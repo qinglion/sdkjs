@@ -8143,11 +8143,14 @@ CDocumentContent.prototype.Read_FromBinary2 = function(Reader)
 	// Long   : Количество элементов в массиве this.Content
 	// Array of string : массив Id элементов
 
-	var LinkData = {};
-
 	this.Id               = Reader.GetString2();
 	this.StartPage        = Reader.GetLong();
-	LinkData.Parent       = Reader.GetString2();
+
+	var oParent = g_oTableId.Get_ById(Reader.GetString2());
+	if (oParent && oParent.SetDocumentContent)
+		oParent.SetDocumentContent(this);
+
+
 	this.TurnOffInnerWrap = Reader.GetBool();
 	this.Split            = Reader.GetBool();
 	this.bPresentation    = AscFormat.readBool(Reader);
@@ -8163,8 +8166,6 @@ CDocumentContent.prototype.Read_FromBinary2 = function(Reader)
 			Element.Parent = this;
 		}
 	}
-
-	AscCommon.CollaborativeEditing.Add_LinkData(this, LinkData);
 
 	var oCellApi = window["Asc"] && window["Asc"]["editor"];
 	if (oCellApi && oCellApi.wbModel)
@@ -8193,10 +8194,7 @@ CDocumentContent.prototype.Read_FromBinary2 = function(Reader)
 };
 CDocumentContent.prototype.Load_LinkData = function(LinkData)
 {
-	if ("undefined" != typeof(LinkData.Parent))
-		this.Parent = g_oTableId.Get_ById(LinkData.Parent);
-
-	if (this.Parent.getDrawingDocument)
+	if (this.Parent && this.Parent.getDrawingDocument)
 	{
 		this.DrawingDocument = this.Parent.getDrawingDocument();
 		for (var i = 0; i < this.Content.length; ++i)

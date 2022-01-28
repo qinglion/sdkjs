@@ -1962,6 +1962,15 @@ CTableCell.prototype.GetContent = function()
 	return this.Content;
 };
 /**
+ * Функция для выставления класса содержимого ячейки (используется в совместке)
+ * @param {CDocumentContent} oDocumentContent
+ */
+CTableCell.prototype.SetDocumentContent = function(oDocumentContent)
+{
+	this.Content = oDocumentContent;
+	oDocumentContent.SetParent(this);
+};
+/**
  * Доступ к родительской строке
  * @returns {null | CTableRow}
  */
