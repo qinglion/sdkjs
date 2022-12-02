@@ -2629,6 +2629,7 @@ background-repeat: no-repeat;\
 		if (!this.canUndoRedoByRestrictions())
 			canUndo = false;
 		
+		console.trace('asc_onCanUndo:'+bCanUndo);
 		this.sendEvent("asc_onCanUndo", canUndo);
 	};
 	asc_docs_api.prototype.sync_CanRedoCallback         = function(canRedo)
@@ -6244,8 +6245,8 @@ background-repeat: no-repeat;\
 		}
 		if (this.documentTitle && this.documentTitle.endsWith(".ppsx"))
 		{
-			return true;
-		}
+				return true;
+			}
 		return false;
 	};
 
@@ -7530,7 +7531,7 @@ background-repeat: no-repeat;\
 			this.inkDrawer.startSilentMode();
 			this.WordControl.m_oLogicDocument.StartAction(AscDFH.historydescription_Presentation_ChangeTheme);
 			this.inkDrawer.endSilentMode();
-			this.bSelectedSlidesTheme = (bSelectedSlides === true);
+            this.bSelectedSlidesTheme = (bSelectedSlides === true);
 			this.ThemeLoader.StartLoadTheme(indexTheme);
 		}
 	};
@@ -9300,7 +9301,7 @@ background-repeat: no-repeat;\
 				this.WordControl.m_oDrawingDocument.placeholders.update(slide.getPlaceholdersControls());
 		}
 		this.turnOffSpecialModes();
-		logicDocument.Document_UpdateInterfaceState();
+			logicDocument.Document_UpdateInterfaceState();
 	};
 
 	asc_docs_api.prototype.isShowShapeAdjustments = function()

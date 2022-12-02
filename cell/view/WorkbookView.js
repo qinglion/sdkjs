@@ -214,7 +214,7 @@
     this.element = elem;
     this.input = inputElem;
     this.Api = Api;
-    this.collaborativeEditing = collaborativeEditing;
+    this.collaborativeEditing = this.CollaborativeEditing = collaborativeEditing;
     this.lastSendInfoRange = null;
     this.oSelectionInfo = null;
     this.canUpdateAfterShiftUp = false;	// Нужно ли обновлять информацию после отпускания Shift
@@ -843,6 +843,7 @@
 			  }, "cleanSelectRange": function () {
 			      self._onCleanSelectRange();
               }, "updateUndoRedoChanged": function (bCanUndo, bCanRedo) {
+				  console.trace('onCanUndo:'+bCanUndo);
 				  self.handlers.trigger("asc_onCanUndoChanged", bCanUndo);
 				  self.handlers.trigger("asc_onCanRedoChanged", bCanRedo);
 			  }, "applyCloseEvent": function () {
@@ -991,6 +992,7 @@
     this.model.handlers.add("setCanUndo", function(bCanUndo) {
       if (!self.Api.canUndoRedoByRestrictions())
         bCanUndo = false;
+		console.trace('asc_onCanUndo:'+bCanUndo);
       self.handlers.trigger("asc_onCanUndoChanged", bCanUndo);
     });
     this.model.handlers.add("setCanRedo", function(bCanRedo) {
@@ -3303,10 +3305,13 @@
 	};
 
   WorkbookView.prototype.undo = function(Options) {
+    if (true === AscCommon.CollaborativeEditing.Get_GlobalLock())
+      return;
+
     this.Api.sendEvent("asc_onBeforeUndoRedo");
-    var oFormulaLocaleInfo = AscCommonExcel.oFormulaLocaleInfo;
-    oFormulaLocaleInfo.Parse = false;
-    oFormulaLocaleInfo.DigitSep = false;
+	  var oFormulaLocaleInfo = AscCommonExcel.oFormulaLocaleInfo;
+	  oFormulaLocaleInfo.Parse = false;
+	  oFormulaLocaleInfo.DigitSep = false;
 	  if (this.Api.isEditVisibleAreaOleEditor) {
 		  const oOleSize = this.getOleSize();
 		  oOleSize.undo();
@@ -3317,8 +3322,8 @@
     } else {
       this.cellEditor.undo();
     }
-    oFormulaLocaleInfo.Parse = true;
-    oFormulaLocaleInfo.DigitSep = true;
+	  oFormulaLocaleInfo.Parse = true;
+	  oFormulaLocaleInfo.DigitSep = true;
     this.Api.sendEvent("asc_onUndoRedo");
   };
 
@@ -4722,8 +4727,8 @@
 		if (typeof (sheet_data) === "string") {
 			base64 = sheet_data;
 			tempWorkbook = new AscCommonExcel.Workbook();
-			tempWorkbook.DrawingDocument = Asc.editor.wbModel.DrawingDocument;
-			tempWorkbook.setCommonIndexObjectsFrom(this.model);
+        tempWorkbook.DrawingDocument = Asc.editor.wbModel.DrawingDocument;
+		tempWorkbook.setCommonIndexObjectsFrom(this.model);
 			aPastedImages = pasteProcessor._readExcelBinary(base64.split('xslData;')[1], tempWorkbook, true);
 			pastedWs = tempWorkbook.aWorksheets[0];
 		} else {
@@ -4948,6 +4953,76 @@
 
 		for (var i = 0; i < eventList.length; i++) {
 			this.handlers.remove(eventList[i]);
+		}
+	};
+	WorkbookView.prototype.Document_UpdateUndoRedoState = function()
+	{
+		if (true === this.TurnOffInterfaceEvents)
+			return;
+
+		if (true === AscCommon.CollaborativeEditing.Get_GlobalLockSelection())
+			return;
+
+		// TODO: Возможно стоит перенсти эту проверку в класс CHistory и присылать
+		//       данные события при изменении значения History.Index
+
+		// Проверяем состояние Undo/Redo
+
+		var bCanUndo = History.Can_Undo();
+		if (true !== bCanUndo && this.Api && this.CollaborativeEditing && true === this.CollaborativeEditing.Is_Fast() && true !== this.CollaborativeEditing.Is_SingleUser())
+			bCanUndo = this.CollaborativeEditing.CanUndo();
+
+		this.Api.sync_CanUndoCallback(bCanUndo);
+		this.Api.sync_CanRedoCallback(History.Can_Redo());
+		this.Api.CheckChangedDocument();
+	};
+	WorkbookView.prototype.Continue_FastCollaborativeEditing = function () {
+		if (true === this.CollaborativeEditing.Get_GlobalLock())
+		{
+			if (this.Api.forceSaveUndoRequest)
+				this.Api.asc_Save(true);
+
+			return;
+		}
+
+		if (this.Api.isLongAction())
+			return;
+
+		if (true !== this.CollaborativeEditing.Is_Fast() || true === this.CollaborativeEditing.Is_SingleUser())
+			return;
+
+		if (true === this.IsMovingTableBorder() || true === this.Api.isStartAddShape || this.DrawingObjects.checkTrackDrawings() || this.Api.isOpenedChartFrame)
+			return;
+
+		var HaveChanges = this.History.Have_Changes(true);
+		if (true !== HaveChanges && (true === this.CollaborativeEditing.Have_OtherChanges() || 0 !== this.CollaborativeEditing.getOwnLocksLength()))
+		{
+			// Принимаем чужие изменения. Своих нет, но функцию отсылки надо вызвать, чтобы снять локи.
+			this.CollaborativeEditing.Apply_Changes();
+			this.CollaborativeEditing.Send_Changes();
+		}
+		else if (true === HaveChanges || true === this.CollaborativeEditing.Have_OtherChanges())
+		{
+			this.Api.asc_Save(true);
+		}
+
+		var CurTime = new Date().getTime();
+		if (true === this.NeedUpdateTargetForCollaboration && (CurTime - this.LastUpdateTargetTime > 1000))
+		{
+			this.NeedUpdateTargetForCollaboration = false;
+			if (true !== HaveChanges)
+			{
+				var CursorInfo = this.History.Get_DocumentPositionBinary();
+				if (null !== CursorInfo)
+				{
+					this.Api.CoAuthoringApi.sendCursor(CursorInfo);
+					this.LastUpdateTargetTime = CurTime;
+				}
+			}
+			else
+			{
+				this.LastUpdateTargetTime = CurTime;
+			}
 		}
 	};
 
@@ -5533,13 +5608,13 @@
 							if (!isLocalDesktop) {
 								//xlst
 								binaryData = null;
-								let jsZlib = new AscCommon.ZLib();
-								if (!jsZlib.open(stream)) {
-									t.model.handlers.trigger("asc_onErrorUpdateExternalReference", eR.Id);
+							let jsZlib = new AscCommon.ZLib();
+							if (!jsZlib.open(stream)) {
+								t.model.handlers.trigger("asc_onErrorUpdateExternalReference", eR.Id);
 									continue;
-								}
+							}
 
-								if (jsZlib.files && jsZlib.files.length) {
+							if (jsZlib.files && jsZlib.files.length) {
 									binaryData = jsZlib.getFile(jsZlib.files[0]);
 								}
 							}
@@ -5633,7 +5708,7 @@
 			const oDataUpdater = new AscCommon.CExternalDataLoader(externalReferences, this.Api, doUpdateData);
 			oDataUpdater.updateExternalData();
 		}
-	};
+			};
 
 	WorkbookView.prototype.updateExternalReferences = function (arr, callback) {
 		this.doUpdateExternalReference(arr, callback);
@@ -6174,7 +6249,7 @@
 					let activeCell =  new AscCommon.CellBase(elem.row, elem.col);
 					ws.setActiveCell(activeCell);
 				} else {
-					ws.setSelection(range);
+				ws.setSelection(range);
 				}
 
 				this.SetCurrent(nId);

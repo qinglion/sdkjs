@@ -623,6 +623,33 @@
 			this.Seek(curPos);
 			return len;
 		};
+		this.Write_ToBinaryNullable = function(Writer)
+		{
+			let StartPos = Writer.GetCurPosition();
+			Writer.Skip(4);
+			let Flags = 0;
+
+			this.WriteNullable(this.chr);
+			this.WriteNullable(this.chrType);
+
+			if (undefined !== this.chr)
+			{
+				Writer.WriteLong(this.chr);
+				Flags |= 1;
+			}
+
+			if (undefined !== this.chrType)
+			{
+				Writer.WriteLong(this.chrType);
+				Flags |= 2;
+			}
+
+			let EndPos = Writer.GetCurPosition();
+			Writer.Seek(StartPos);
+			Writer.WriteLong(Flags);
+			Writer.Seek(EndPos);
+		};
+
 		this.WriteBool          = function(val)
 		{
 			this.CheckSize(1);

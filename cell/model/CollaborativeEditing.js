@@ -56,6 +56,7 @@
 			if (!(this instanceof CCollaborativeEditing)) {
 				return new CCollaborativeEditing();
 			}
+			AscCommon.CCollaborativeEditingBase.call(this);
 
 			this.m_nUseType					= 1;  // 1 - 1 клиент и мы сохраняем историю, -1 - несколько клиентов, 0 - переход из -1 в 1
 			this.m_bIsCollaborativeWithLiveViewer = false;//todo remove after implementing undo in spreadsheet
@@ -86,6 +87,7 @@
 			return this;
 		}
 
+		CCollaborativeEditing.prototype = Object.create(AscCommon.CCollaborativeEditingBase.prototype);
 		CCollaborativeEditing.prototype.init = function () {
 		};
 
@@ -376,6 +378,7 @@
 				this.clearRecalcIndex();
 
 				// Чистим Undo/Redo
+				// AscCommon.History.Clear_Redo();
 				AscCommon.History.Clear();
 
 				// Перерисовываем
@@ -414,6 +417,8 @@
 				// Обновляем точку последнего сохранения в истории
 				AscCommon.History.Reset_SavedIndex(IsUserSave);
 			}
+
+			Asc.editor.wb.Document_UpdateUndoRedoState();
 		};
 
 		CCollaborativeEditing.prototype.getRecalcIndexSave = function (oRecalcIndex) {

@@ -1224,24 +1224,24 @@
 	};
 	CCollaborativeEditingBase.prototype.PreUndo = function()
 	{
-		let logicDocument = this.m_oLogicDocument;
-		
-		logicDocument.sendEvent("asc_onBeforeUndoRedoInCollaboration");
-		logicDocument.DrawingDocument.EndTrackTable(null, true);
-		logicDocument.TurnOffCheckChartSelection();
-
-		return this.private_SaveDocumentState();
+		//let logicDocument = this.m_oLogicDocument;
+		//
+		//logicDocument.sendEvent("asc_onBeforeUndoRedoInCollaboration");
+		//logicDocument.DrawingDocument.EndTrackTable(null, true);
+		//logicDocument.TurnOffCheckChartSelection();
+		//
+		//return this.private_SaveDocumentState();
 	};
 	CCollaborativeEditingBase.prototype.PostUndo = function(state, changes)
 	{
-		this.private_RestoreDocumentState(state);
-		this.private_RecalculateDocument(changes);
-
-		let logicDocument = this.m_oLogicDocument;
-		logicDocument.TurnOnCheckChartSelection();
-		logicDocument.UpdateSelection();
-		logicDocument.UpdateInterface();
-		logicDocument.UpdateRulers();
+		// this.private_RestoreDocumentState(state);
+		// this.private_RecalculateDocument(changes);
+		//
+		// let logicDocument = this.m_oLogicDocument;
+		// logicDocument.TurnOnCheckChartSelection();
+		// logicDocument.UpdateSelection();
+		// logicDocument.UpdateInterface();
+		// logicDocument.UpdateRulers();
 		logicDocument.sendEvent("asc_onUndoRedoInCollaboration");
 	};
 	CCollaborativeEditingBase.prototype.UndoGlobal = function(count)

@@ -59,6 +59,8 @@ function (window, undefined) {
 
 //главный обьект для пересылки изменений
 	function UndoRedoItemSerializable(oClass, nActionType, nSheetId, oRange, oData, LocalChange, bytes) {
+		AscDFH.CChangesBase.call(this, oClass);
+
 		this.oClass = oClass;
 		this.nActionType = nActionType;
 		this.nSheetId = nSheetId;
@@ -67,7 +69,10 @@ function (window, undefined) {
 		this.LocalChange = LocalChange;
 		this.bytes = bytes;
 	}
+	UndoRedoItemSerializable.prototype = Object.create(AscDFH.CChangesBase.prototype);
+	UndoRedoItemSerializable.prototype.CreateReverseChange = function () {
 
+	};
 	UndoRedoItemSerializable.prototype.Serialize = function (oBinaryWriter, collaborativeEditing) {
 		if ((this.oData && this.oData.getType) || (this.oClass && (this.oClass.Save_Changes || this.oClass.WriteToBinary))) {
 			var oThis = this;
@@ -388,6 +393,87 @@ function (window, undefined) {
 		return res;
 	};
 
+	function CCellCoordsWritable(row, col){
+		this.row = row;
+		this.col = col;
+	}
+
+	CCellCoordsWritable.prototype.Write_ToBinary = function(Writer){
+		Writer.WriteLong(this.row);
+		Writer.WriteShort(this.col);
+	};
+
+	CCellCoordsWritable.prototype.Read_FromBinary = function(Reader){
+		this.row = Reader.GetLong();
+		this.col = Reader.GetShort();
+	};
+
+	window['AscDFH'].historyitem_Cell_Base_Value      = window['AscDFH'].historyitem_type_Cell_Base | 1;
+	function CChangesCellValueChange(Class, Old, New, Pos)
+	{
+		AscDFH.CChangesBase.call(this, Class);
+		this.Old    = Old;
+		this.New    = New;
+		this.Pos = Pos;
+	}
+	CChangesCellValueChange.prototype = Object.create(AscDFH.CChangesBase.prototype);
+	CChangesCellValueChange.prototype.constructor = CChangesCellValueChange;
+	CChangesCellValueChange.prototype.Type = AscDFH.historyitem_Cell_Base_Value;
+	CChangesCellValueChange.prototype.Undo = function()
+	{
+		let data = {nRow: this.Pos.row, nCol: this.Pos.col, oOldVal: this.Old, oNewVal: this.New};
+		AscCommonExcel.g_oUndoRedoCell.Undo(AscCH.historyitem_Cell_ChangeValue, data, this.Class.getId());
+	};
+	CChangesCellValueChange.prototype.Redo = function()
+	{
+		let data = {nRow: this.Pos.row, nCol: this.Pos.col, oOldVal: this.Old, oNewVal: this.New};
+		AscCommonExcel.g_oUndoRedoCell.Redo(AscCH.historyitem_Cell_ChangeValue, data, this.Class.getId());
+	};
+	CChangesCellValueChange.prototype.Write_ToBinary = function(Writer)
+	{
+		if(this.Old) {
+			Writer.WriteBool(true);
+			this.Old.Write_ToBinary(Writer);
+		} else {
+			Writer.WriteBool(false);
+		}
+
+		if(this.New) {
+			Writer.WriteBool(true);
+			this.New.Write_ToBinary(Writer);
+		} else {
+			Writer.WriteBool(false);
+		}
+		this.Pos.Write_ToBinary(Writer);
+	};
+	CChangesCellValueChange.prototype.Read_FromBinary = function(Reader)
+	{
+		if(Reader.GetBool()) {
+			this.Old = new UndoRedoData_CellValueData();
+			this.Old.Read_FromBinary(Reader);
+		}
+		if(Reader.GetBool()) {
+			this.New = new UndoRedoData_CellValueData();
+			this.New.Read_FromBinary(Reader);
+		}
+
+		this.Pos = new CCellCoordsWritable();
+		this.Pos.Read_FromBinary(Reader);
+	};
+	CChangesCellValueChange.prototype.IsRelated = function(oChanges)
+	{
+		return false;
+		if (this.Class === oChanges.Class && (AscDFH.historyitem_ParaRun_AddItem === oChanges.Type || AscDFH.historyitem_ParaRun_RemoveItem === oChanges.Type))
+			return true;
+
+		return false;
+	};
+	CChangesCellValueChange.prototype.CreateReverseChange = function()
+	{
+		return null;
+	};
+	window['AscDFH'].CCellCoordsWritable = CCellCoordsWritable;
+	window['AscDFH'].CChangesCellValueChange = CChangesCellValueChange;
 //для сохранения в историю и пересылки изменений
 	var UndoRedoDataTypes = new function () {
 		this.Unknown = -1;
