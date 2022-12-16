@@ -6834,7 +6834,7 @@
 	Worksheet.prototype._forEachCell = function(fAction) {
 		this.getRange3(0, 0, gc_nMaxRow0, gc_nMaxCol0)._foreachNoEmpty(fAction);
 	};
-	Worksheet.prototype.getId=function(){
+	Worksheet.prototype.Get_Id = Worksheet.prototype.getId=function(){
 		return this.Id;
 	};
 	Worksheet.prototype.getIndex=function(){

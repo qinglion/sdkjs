@@ -424,6 +424,8 @@ function CHistory()
   this.UserSavedIndex = null;  // Номер точки, на которой произошло последнее сохранение пользователем (не автосохранение)
 
 	this.PosInCurPoint = null; // position to roll back changes within the current point
+
+	this.oRedoObjectParam = null;
 }
 CHistory.prototype.init = function(workbook) {
 	this.workbook = workbook;
@@ -475,7 +477,7 @@ CHistory.prototype.Undo = function(Options)
 	if (this.Index === this.Points.length - 1)
 		this.LastState = this.workbook.handlers.trigger("getSelectionState");
 
-	var oRedoObjectParam = new AscCommonExcel.RedoObjectParam();
+	var oRedoObjectParam = this.oRedoObjectParam = new AscCommonExcel.RedoObjectParam();
 	this.UndoRedoPrepare(oRedoObjectParam, true);
 
 	var t = this;
@@ -736,6 +738,15 @@ CHistory.prototype.UndoRedoEnd = function (Point, oRedoObjectParam, bUndo) {
 			Asc["editor"].wb.recalculateDrawingObjects(Point, false);
         }
 
+		for (i in oRedoObjectParam.UpdateRigions) {
+			this.workbook.handlers.trigger("cleanCellCache", i, [oRedoObjectParam.UpdateRigions[i]], null, oRedoObjectParam.bAddRemoveRowCol);
+			var curSheet = this.workbook.getWorksheetById(i);
+			if (curSheet)
+				this.workbook.getWorksheetById(i).updateSlicersByRange(oRedoObjectParam.UpdateRigions[i]);
+
+			//this.workbook.oApi.onWorksheetChange(Point.UpdateRigions[i]);
+		}
+
 		if (oRedoObjectParam.oOnUpdateSheetViewSettings[this.workbook.getWorksheet(this.workbook.getActive()).getId()])
 			this.workbook.handlers.trigger("asc_onUpdateSheetViewSettings");
 
@@ -953,6 +964,20 @@ CHistory.prototype.Reset_RecalcIndex = function()
 
 CHistory.prototype.Add_RecalcNumPr = function()
 {};
+
+	CHistory.prototype.Add_UpdateRegion = function(sheetid, range)
+	{
+		if(this.oRedoObjectParam) {
+
+			var updateRange = this.oRedoObjectParam.UpdateRigions[sheetid];
+			if(null != updateRange)
+				updateRange.union2(range);
+			else
+				updateRange = range.clone();
+			this.oRedoObjectParam.UpdateRigions[sheetid] = updateRange;
+		}
+	};
+
 
 CHistory.prototype.Set_Additional_ExtendDocumentToPos = function()
 {

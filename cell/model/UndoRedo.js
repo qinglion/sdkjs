@@ -470,7 +470,11 @@ function (window, undefined) {
 	};
 	CChangesCellValueChange.prototype.CreateReverseChange = function()
 	{
-		return null;
+		return new CChangesCellValueChange(this.Class, this.New, this.Old, this.Pos);
+	};
+	CChangesCellValueChange.prototype.Refresh_RecalcData = function()
+	{
+		History.Add_UpdateRegion(this.Class.Get_Id(), new Asc.Range(this.Pos.col, this.Pos.row, this.Pos.col, this.Pos.row));
 	};
 	window['AscDFH'].CCellCoordsWritable = CCellCoordsWritable;
 	window['AscDFH'].CChangesCellValueChange = CChangesCellValueChange;

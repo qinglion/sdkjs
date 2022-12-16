@@ -3242,6 +3242,7 @@
 			this.activeSheet = null;
 			this.onSlicer = {};
 			this.onSlicerCache = {};
+			this.UpdateRigions = {};
 		}
 
 		/** @constructor */
