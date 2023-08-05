@@ -843,7 +843,7 @@
 			  }, "cleanSelectRange": function () {
 			      self._onCleanSelectRange();
               }, "updateUndoRedoChanged": function (bCanUndo, bCanRedo) {
-				  console.trace('onCanUndo:'+bCanUndo);
+				  console.trace && console.trace('onCanUndo:'+bCanUndo);
 				  self.handlers.trigger("asc_onCanUndoChanged", bCanUndo);
 				  self.handlers.trigger("asc_onCanRedoChanged", bCanRedo);
 			  }, "applyCloseEvent": function () {
@@ -992,7 +992,7 @@
     this.model.handlers.add("setCanUndo", function(bCanUndo) {
       if (!self.Api.canUndoRedoByRestrictions())
         bCanUndo = false;
-		console.trace('asc_onCanUndo:'+bCanUndo);
+		console.trace && console.trace('asc_onCanUndo:'+bCanUndo);
       self.handlers.trigger("asc_onCanUndoChanged", bCanUndo);
     });
     this.model.handlers.add("setCanRedo", function(bCanRedo) {
