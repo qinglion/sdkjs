@@ -71,8 +71,6 @@ $(function() {
 		AscCommonExcel.g_oUndoRedoProtectedWorkbook = new AscCommonExcel.UndoRedoProtectedWorkbook(wbModel);
 		AscCommonExcel.g_oUndoRedoNamedSheetViews = new AscCommonExcel.UndoRedoNamedSheetViews(wbModel);
 		AscCommonExcel.g_oUndoRedoUserProtectedRange = new AscCommonExcel.UndoRedoUserProtectedRange(wbModel);
-
-		History.init(wbModel);
 	};
 	Asc.spreadsheet_api.prototype._onUpdateDocumentCanSave = function() {
 	};

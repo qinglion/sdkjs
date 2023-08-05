@@ -15269,7 +15269,7 @@ function RangeDataManagerElem(bbox, data)
 			var sheetDataSet = this.SheetDataSet[sheetDataSetIndex];
 			var ws = this.worksheets[sheetName];
 			if (!this.worksheets[sheetName]) {
-				var wb = new AscCommonExcel.Workbook(null, window["Asc"]["editor"]);
+				var wb = new AscCommonExcel.Workbook(null, window["Asc"]["editor"], false);
 				ws = new AscCommonExcel.Worksheet(wb);
 				ws.sName = sheetName;
 

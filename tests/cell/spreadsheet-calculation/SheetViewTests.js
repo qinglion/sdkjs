@@ -66,7 +66,6 @@ $(function() {
 	Asc.spreadsheet_api.prototype.initGlobalObjects = function(wbModel) {
 		AscCommonExcel.g_DefNameWorksheet = new AscCommonExcel.Worksheet(wbModel, -1);
 		AscCommonExcel.g_oUndoRedoWorksheet = new AscCommonExcel.UndoRedoWoorksheet(wbModel);
-		History.init(wbModel);
 	};
 	AscCommon.baseEditorsApi.prototype._onEndLoadSdk = function() {
 		AscFonts.g_fontApplication.Init();

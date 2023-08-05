@@ -401,27 +401,65 @@ function (window, undefined) {
 
 	window['AscCH'].historyitem_UserProtectedRange_Ref = 1;
 
-function CHistory()
+function CHistory(Document)
 {
-	this.workbook = null;
-	this.memory = new AscCommon.CMemory();
-    this.Index    = -1;
-    this.Points   = [];
-    this.TurnOffHistory = 0;
-	this.RegisterClasses = 0;
-    this.Transaction = 0;
-    this.LocalChange = false;//если true все добавленный изменения не пойдут в совместное редактирование.
-	this.RecIndex = -1;
-	this.lastDrawingObjects = null;
-	this.LastState = null;
-	this.CanNotAddChanges = false;//флаг для отслеживания ошибок добавления изменений без точки:Create_NewPoint->Add->Save_Changes->Add
-
+	this.Index    = -1;
 	this.SavedIndex = null;			// Номер точки отката, на которой произошло последнее сохранение
-  this.ForceSave  = false;       // Нужно сохранение, случается, когда у нас точка SavedIndex смещается из-за объединения точек, и мы делаем Undo
+	this.ForceSave  = false;       // Нужно сохранение, случается, когда у нас точка SavedIndex смещается из-за объединения точек, и мы делаем Undo
+	this.RecIndex = -1;
+	this.Points   = [];
+	this.workbook = Document;
+	this.Document   = this.workbook;
+	this.Api                  = null;
+	this.CollaborativeEditing = null;
 
-  // Параметры для специального сохранения для локальной версии редактора
-  this.UserSaveMode   = false;
-  this.UserSavedIndex = null;  // Номер точки, на которой произошло последнее сохранение пользователем (не автосохранение)
+	this.CanNotAddChanges = false;//флаг для отслеживания ошибок добавления изменений без точки:Create_NewPoint->Add->Save_Changes->Add
+	//this.CollectChanges       = false;
+	//this.UndoRedoInProgress   = false; //
+
+	// this.RecalculateData = {
+	// 	Inline       : {
+	// 		Pos     : -1,
+	// 		PageNum : 0
+	// 	},
+	// 	Flow         : [],
+	// 	HdrFtr       : [],
+	// 	Drawings     : {
+	// 		All         : false,
+	// 		Map         : {},
+	// 		ThemeInfo   : null,
+	// 		SlideMinIdx : null
+	// 	},
+	// 	Tables       : [],
+	// 	NumPr        : [],
+	// 	NotesEnd     : false,
+	// 	NotesEndPage : 0,
+	// 	LineNumbers  : false,
+	// 	Update       : true
+	// };
+
+	this.TurnOffHistory = 0;
+	this.RegisterClasses = 0;
+	//this.MinorChanges    = false; // Данный параметр нужен, чтобы определить влияют ли добавленные изменения на пересчет
+
+	this.memory = new AscCommon.CMemory();
+	this.BinaryWriter = this.memory;
+
+	// this.FileCheckSum = 0;
+	// this.FileSize     = 0;
+
+	// Параметры для специального сохранения для локальной версии редактора
+	this.UserSaveMode   = false;
+	this.UserSavedIndex = null;  // Номер точки, на которой произошло последнее сохранение пользователем (не автосохранение)
+
+	this.StoredData = [];
+	this.LastState = null;
+
+	//todo remove all below
+	this.Transaction = 0;
+    this.LocalChange = false;//если true все добавленный изменения не пойдут в совместное редактирование.
+
+	this.lastDrawingObjects = null;
 
 	this.PosInCurPoint = null; // position to roll back changes within the current point
 
@@ -430,6 +468,14 @@ function CHistory()
 CHistory.prototype.init = function(workbook) {
 	this.workbook = workbook;
 };
+	CHistory.prototype.Set_LogicDocument = function(LogicDocument) {
+		if (!LogicDocument)
+			return;
+
+		this.workbook = this.Document             = LogicDocument;
+		this.Api                  = LogicDocument.Get_Api();
+		this.CollaborativeEditing = LogicDocument.Get_CollaborativeEditing();
+	};
 CHistory.prototype.Is_UserSaveMode = function() {
   return this.UserSaveMode;
 };

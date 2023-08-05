@@ -2728,7 +2728,7 @@ function (window, undefined) {
 					api.wb.pasteSheet(Data.opt_sheet, 0, Data.name);
 					api.asc_EndMoveSheet2(Data.opt_sheet, 0, Data.name);*/
 
-					var tempWorkbook = new AscCommonExcel.Workbook();
+					var tempWorkbook = new AscCommonExcel.Workbook(undefined, undefined, false);
 					tempWorkbook.DrawingDocument = Asc.editor.wbModel.DrawingDocument;
 					tempWorkbook.setCommonIndexObjectsFrom(wb);
 					AscCommonExcel.g_clipboardExcel.pasteProcessor._readExcelBinary(Data.opt_sheet.split('xslData;')[1], tempWorkbook, true);

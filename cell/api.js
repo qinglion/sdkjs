@@ -363,7 +363,7 @@ var editor;
     }
   };
   spreadsheet_api.prototype._openDocument = function(data) {
-    this.wbModel = new AscCommonExcel.Workbook(this.handlers, this);
+    this.wbModel = new AscCommonExcel.Workbook(this.handlers, this, true);
     this.initGlobalObjects(this.wbModel);
 	  AscFonts.IsCheckSymbols = true;
 	  if(this.isOpenOOXInBrowser) {
@@ -380,8 +380,7 @@ var editor;
   };
 
   spreadsheet_api.prototype.initGlobalObjects = function(wbModel) {
-    // History & global counters
-    History.init(wbModel);
+    // global counters
 
     AscCommonExcel.UndoRedoClassTypes.Clean();
     AscCommonExcel.g_oUndoRedoCell = new AscCommonExcel.UndoRedoCell(wbModel);
@@ -724,7 +723,7 @@ var editor;
 				isCopyPaste: true, activeRange: null, selectAllSheet: true
 			};
 
-			let wb = new AscCommonExcel.Workbook();
+			let wb = new AscCommonExcel.Workbook(undefined, undefined, false);
 			wb.DrawingDocument = Asc.editor.wbModel.DrawingDocument;
 
 			AscFormat.ExecuteNoHistory(function () {
