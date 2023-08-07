@@ -261,7 +261,7 @@ module.exports = function(grunt) {
 		grunt.initConfig(getCompileConfig(getFilesMin(configDraw), getFilesAll(configDraw), 'draw-all-min', 'draw-all', 'draw'));
 		grunt.task.run('closure-compiler');
 	});
-	grunt.registerTask('compile-sdk', [ 'compile-draw']);
+	grunt.registerTask('compile-sdk', [ 'compile-word', 'compile-cell', 'compile-slide', 'compile-draw']);
 
 	grunt.registerTask('clean-deploy', 'Clean files after deploy', function() {
 		grunt.initConfig({
