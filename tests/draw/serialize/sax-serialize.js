@@ -30,58 +30,35 @@
  *
  */
 
-//This file contains definition of object which used in api.js
-//It need to prevent minimize the name of object's method.
+//for zlib async loading
+QUnit.config.autostart = false;
+$(function() {
+	var api = new Asc.asc_draw_api({
+		'id-view': 'editor_sdk'
+	});
+	//todo events
+	setTimeout(startTests, 1000);
 
-var Asc;
-var AscDFH;
-var AscCH;
-var AscFormat;
-var AscFonts;
-var AscCommon;
-var AscCommonWord;
-var AscCommonExcel;
-var AscCommonSlide;
-var AscCommonDraw;
-var AscBuilder;
-var AscWord;
-var AscMath;
-var AscJsonConverter;
-var AscCrypto;
-var AscOForm;
+	function startTests() {
+		QUnit.start();
 
-function jq(){}
-function DE(){}
-function SE(){}
-function SSE(){}
-function PE(){}
-function Ext(){}
-function FB(){}
-function twttr(){}
-function _gaq(){}
+		QUnit.module("Test draw serialize")
 
-function constructor(){}
+		QUnit.test("Test OpenDocumentFromZip", function (assert)
+		{
+			const api = new Asc.asc_draw_api({'id-view': 'editor_sdk'});
+			api.Document = new AscCommonDraw.CVisioDocument(api);
+			let vsdx = AscCommon.Base64.decode(Asc.testVsdx);
+			const openRes = api.OpenDocumentFromZip(vsdx);
+			assert.strictEqual(openRes, true, "Check OpenDocumentFromZip");
+		});
 
-function touchstart(){}
-function touchmove(){}
-function touchend(){}
-function mousedown(){}
-function mousemove(){}
-function mouseup(){}
-function pointerdown(){}
-function pointermove(){}
-function pointerup(){}
-function MSPointerDown(){}
-function MSPointerMove(){}
-function MSPointerUp(){}
-
-var editor;
-
-var WebAssembly;
-WebAssembly.instantiate;
-WebAssembly.instantiateStreaming;
-WebAssembly.Table;
-WebAssembly.Memory;
-function grow(){}
-
-var VBArray;
+		// QUnit.test("Test vsdx files", function (assert)
+		// {
+		// 	const api = new Asc.asc_draw_api({'id-view': 'editor_sdk'});
+		// 	api.Document = new AscCommonDraw.CVisioDocument(api);
+		// 	const openRes = api.OpenDocumentFromZip();
+		// 	assert.strictEqual(openRes, true, "Check OpenDocumentFromZip");
+		// });
+	}
+});

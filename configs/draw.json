@@ -1,0 +1,45 @@
+{
+	"sdk": {
+		"min": [
+			"common/device_scale.js",
+			"common/userinfo_parser.js",
+			"common/browser.js",
+			"common/skin.js",
+			"common/errorCodes.js",
+			"common/commonDefines.js",
+			"common/docscoapicommon.js",
+			"common/docscoapi.js",
+			"common/spellcheckapi.js",
+			"common/apiCommon.js",
+			"vendor/string.js",
+			"vendor/array.js",
+			"common/editorscommon.js",
+			"common/libfont/engine.js",
+			"common/libfont/loader.js",
+			"common/apiBase.js",
+			"common/zlib/zlib.js",
+			"draw/api.js"
+		],
+		"common": [
+			"vendor/easysax.js",
+			"common/openxml.js",
+			"common/stringserialize.js",
+			"draw/model/VisioDocument.js"
+		],
+		"desktop": {
+			"min": [
+			],
+			"common": [
+			]
+		},
+		"mobile_banners": {
+			"min": [
+			],
+			"common": []
+		},
+		"mobile": [
+		],
+		"exclude_mobile": [
+		]
+	}
+}

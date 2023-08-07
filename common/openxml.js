@@ -787,7 +787,10 @@
 		oformUserMaster: {dir: "oform/userMasters", filename: "userMaster[N].xml", contentType: "application/vnd.openxmlformats-package.onlyf-userMaster+xml", relationType: "https://schemas.onlyoffice.com/relationships/oform-userMaster"},
 		oformUser: {dir: "oform/users", filename: "user[N].xml", /*contentType: "application/vnd.openxmlformats-package.onlyf-user+xml",*/ relationType: "https://schemas.onlyoffice.com/relationships/oform-user"},
 		oformField: {dir: "oform/fields", filename: "field[N].xml", /*contentType: "application/vnd.openxmlformats-package.onlyf-field+xml",*/ relationType: "https://schemas.onlyoffice.com/relationships/oform-field"},
-		oformFieldMaster: {dir: "oform/fieldMasters", filename: "fieldMaster[N].xml", contentType: "application/vnd.openxmlformats-package.onlyf-fieldMaster+xml", relationType: "https://schemas.onlyoffice.com/relationships/oform-fieldMaster"}
+		oformFieldMaster: {dir: "oform/fieldMasters", filename: "fieldMaster[N].xml", contentType: "application/vnd.openxmlformats-package.onlyf-fieldMaster+xml", relationType: "https://schemas.onlyoffice.com/relationships/oform-fieldMaster"},
+
+		//visio
+		visioDocument: {dir: "visio", filename: "document.xml", contentType: "application/vnd.ms-visio.drawing.main+xml", relationType: "http://schemas.microsoft.com/visio/2010/relationships/document"}
 	};
 	openXml.TargetMode = {
 		internal: "Internal",

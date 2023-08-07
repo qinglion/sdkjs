@@ -87,6 +87,7 @@ module.exports = function(grunt) {
 		this.word = null;
 		this.cell = null;
 		this.slide = null;
+		this.draw = null;
 
 		this.append(pathConfigs);
 	}
@@ -126,9 +127,10 @@ module.exports = function(grunt) {
 		appendOption.call(this, 'word');
 		appendOption.call(this, 'cell');
 		appendOption.call(this, 'slide');
+		appendOption.call(this, 'draw');
 	};
 	CConfig.prototype.valid = function () {
-		return this.externs && this.word && this.cell && this.slide;
+		return this.externs && this.word && this.cell && this.slide && this.draw;
 	};
 
 	function getExterns(config) {
@@ -186,6 +188,7 @@ module.exports = function(grunt) {
 	const configWord = configs.word['sdk'];
 	const configCell = configs.cell['sdk'];
 	const configSlide = configs.slide['sdk'];
+	const configDraw = configs.draw['sdk'];
 	const deploy = '../deploy/sdkjs/';
 
 	const compilerArgs = getExterns(configs.externs);
@@ -254,7 +257,11 @@ module.exports = function(grunt) {
 		grunt.initConfig(getCompileConfig(getFilesMin(configSlide), getFilesAll(configSlide), 'slide-all-min', 'slide-all', 'slide'));
 		grunt.task.run('closure-compiler');
 	});
-	grunt.registerTask('compile-sdk', ['compile-word', 'compile-cell', 'compile-slide']);
+	grunt.registerTask('compile-draw', 'Compile Draw SDK', function () {
+		grunt.initConfig(getCompileConfig(getFilesMin(configDraw), getFilesAll(configDraw), 'draw-all-min', 'draw-all', 'draw'));
+		grunt.task.run('closure-compiler');
+	});
+	grunt.registerTask('compile-sdk', [ 'compile-draw']);
 
 	grunt.registerTask('clean-deploy', 'Clean files after deploy', function() {
 		grunt.initConfig({
@@ -270,6 +277,8 @@ module.exports = function(grunt) {
 						cellJsMin,
 						slideJsAll,
 						slideJsMin,
+						drawJsAll,
+						drawJsMin,
 					]
 				}
 			}
@@ -279,13 +288,16 @@ module.exports = function(grunt) {
 	const word = path.join(deploy, 'word');
 	const cell = path.join(deploy, 'cell');
 	const slide = path.join(deploy, 'slide');
-	
+	const draw = path.join(deploy, 'draw');
+
 	const wordJsAll = 'word-all.js';
 	const wordJsMin = 'word-all-min.js';
 	const cellJsAll = 'cell-all.js';
 	const cellJsMin = 'cell-all-min.js';
 	const slideJsAll = 'slide-all.js';
 	const slideJsMin = 'slide-all-min.js';
+	const drawJsAll = 'draw-all.js';
+	const drawJsMin = 'draw-all-min.js';
 	grunt.registerTask('deploy-sdk', 'Deploy SDK files', function () {
 		grunt.initConfig({
 			clean: {
@@ -332,6 +344,17 @@ module.exports = function(grunt) {
 							dest: cell,
 							rename: function (dest, src) {
 								return path.join(dest , src.replace('cell', 'sdk'));
+							}
+						},
+						{
+							expand: true,
+							src: [
+								drawJsAll,
+								drawJsMin
+							],
+							dest: draw,
+							rename: function (dest, src) {
+								return path.join(dest , src.replace('draw', 'sdk'));
 							}
 						},
 						{
@@ -398,6 +421,7 @@ module.exports = function(grunt) {
 		writeScripts(configs.word['sdk'], 'word');
 		writeScripts(configs.cell['sdk'], 'cell');
 		writeScripts(configs.slide['sdk'], 'slide');
+		writeScripts(configs.draw['sdk'], 'draw');
 	});
 	grunt.registerTask('deploy', ['deploy-sdk', 'clean', 'copy']);
 	grunt.registerTask('default', ['compile-sdk', 'deploy', 'clean-deploy']);

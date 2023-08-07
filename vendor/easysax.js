@@ -1623,7 +1623,7 @@ function XmlParserContext(){
     this.curChart = null;
     //docx
     this.commentDataById = {};
-    this.oReadResult = new AscCommonWord.DocReadResult();
+    this.oReadResult = AscCommonWord.DocReadResult && new AscCommonWord.DocReadResult();
     this.maxZIndex = 0;
 
     this.oformContext = null;

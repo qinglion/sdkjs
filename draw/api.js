@@ -1,4 +1,4 @@
-/*
+﻿/*
  * (c) Copyright Ascensio System SIA 2010-2023
  *
  * This program is a free software product. You can redistribute it and/or
@@ -30,58 +30,57 @@
  *
  */
 
-//This file contains definition of object which used in api.js
-//It need to prevent minimize the name of object's method.
+"use strict";
 
-var Asc;
-var AscDFH;
-var AscCH;
-var AscFormat;
-var AscFonts;
-var AscCommon;
-var AscCommonWord;
-var AscCommonExcel;
-var AscCommonSlide;
-var AscCommonDraw;
-var AscBuilder;
-var AscWord;
-var AscMath;
-var AscJsonConverter;
-var AscCrypto;
-var AscOForm;
+(function(window, document)
+{
+	/**
+	 *
+	 * @param config
+	 * @constructor
+	 * @extends {AscCommon.baseEditorsApi}
+	 */
+	function asc_draw_api(config)
+	{
+		AscCommon.baseEditorsApi.call(this, config, AscCommon.c_oEditorId.Draw);
 
-function jq(){}
-function DE(){}
-function SE(){}
-function SSE(){}
-function PE(){}
-function Ext(){}
-function FB(){}
-function twttr(){}
-function _gaq(){}
+		this.Document = null;
 
-function constructor(){}
+		this._init();
+		return this;
+	}
 
-function touchstart(){}
-function touchmove(){}
-function touchend(){}
-function mousedown(){}
-function mousemove(){}
-function mouseup(){}
-function pointerdown(){}
-function pointermove(){}
-function pointerup(){}
-function MSPointerDown(){}
-function MSPointerMove(){}
-function MSPointerUp(){}
+	asc_draw_api.prototype = Object.create(AscCommon.baseEditorsApi.prototype);
+	asc_draw_api.prototype.constructor = asc_draw_api;
 
-var editor;
+	asc_draw_api.prototype._init = function(){
+		this._loadModules();
+	};
+	asc_draw_api.prototype.OpenDocumentFromZip = function(data)
+	{
+		return this.OpenDocumentFromZipNoInit(data);
+	};
+	asc_draw_api.prototype.OpenDocumentFromZipNoInit = function(data)
+	{
+		if (!data) {
+			return false;
+		}
+		let xmlParserContext = new AscCommon.XmlParserContext();
 
-var WebAssembly;
-WebAssembly.instantiate;
-WebAssembly.instantiateStreaming;
-WebAssembly.Table;
-WebAssembly.Memory;
-function grow(){}
+		let jsZlib = new AscCommon.ZLib();
+		if (!jsZlib.open(data)) {
+			return false;
+		}
 
-var VBArray;
+		this.Document.fromZip(jsZlib, xmlParserContext);
+
+		jsZlib.close();
+		return true;
+	};
+
+	//-------------------------------------------------------------export---------------------------------------------------
+	window['Asc']                                                       = window['Asc'] || {};
+	window['Asc']['asc_draw_api']                                       = asc_draw_api;
+	asc_draw_api.prototype['OpenDocumentFromZip']             			= asc_draw_api.prototype.OpenDocumentFromZip;
+	
+})(window, window.document);
