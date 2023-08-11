@@ -66,7 +66,7 @@
 			this.fromXml(reader);
 		}
 
-		let windowsPart = doc.getPartByRelationshipType(AscCommon.openXml.Types.visioDocumentWindows.relationType);
+		let windowsPart = documentPart.getPartByRelationshipType(AscCommon.openXml.Types.visioDocumentWindows.relationType);
 		if (windowsPart) {
 			let contentWindows = windowsPart.getDocumentContent();
 			reader = new StaxParser(contentWindows, windowsPart, context);
@@ -74,7 +74,7 @@
 			this.Windows.fromXml(reader);
 		}
 
-		let pagesPart = doc.getPartByRelationshipType(AscCommon.openXml.Types.pages.relationType);
+		let pagesPart = documentPart.getPartByRelationshipType(AscCommon.openXml.Types.pages.relationType);
 		if (pagesPart) {
 			let contentPages = pagesPart.getDocumentContent();
 			reader = new StaxParser(contentPages, pagesPart, context);
