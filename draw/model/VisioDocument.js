@@ -63,6 +63,7 @@
 		if (documentPart) {
 			let contentDocument = documentPart.getDocumentContent();
 			reader = new StaxParser(contentDocument, documentPart, context);
+			// TODO mb create new class like VisioApp and call this.VisioApp.fromXml
 			this.fromXml(reader);
 		}
 
@@ -94,10 +95,18 @@
 		memory.Seek(0);
 	};
 
+
+	// Main classes for reading
+	function CWindows() {
+	}
+
+
+
 	//-------------------------------------------------------------export---------------------------------------------------
 	window['AscCommonDraw']												= window['AscCommonDraw'] || {};
 	window['AscCommonWord']												= window['AscCommonWord'] || {};
 
 	window['AscCommonDraw'].CVisioDocument = CVisioDocument;
+	window['AscCommonDraw'].CWindows = CWindows;
 	
 })(window, window.document);
