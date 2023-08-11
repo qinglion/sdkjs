@@ -50,15 +50,36 @@
 	}
 
 	CVisioDocument.prototype.fromZip = function(zip, context, oReadResult) {
+		// Maybe it should be moved to 	sdkjs-ooxml/visio/Editor/SerializeXml.js like in 'word' case?
+		// 'word' case: 								sdkjs-ooxml/word/Editor/SerializeXml.js
 		context.zip = zip;
 
 		let reader;
 		let doc = new AscCommon.openXml.OpenXmlPackage(zip, null);
+
+		// handle appPart and CorePart like in 'word' case
+
 		let documentPart = doc.getPartByRelationshipType(AscCommon.openXml.Types.visioDocument.relationType);
 		if (documentPart) {
 			let contentDocument = documentPart.getDocumentContent();
 			reader = new StaxParser(contentDocument, documentPart, context);
 			this.fromXml(reader);
+		}
+
+		let windowsPart = doc.getPartByRelationshipType(AscCommon.openXml.Types.visioDocumentWindows.relationType);
+		if (windowsPart) {
+			let contentWindows = windowsPart.getDocumentContent();
+			reader = new StaxParser(contentWindows, windowsPart, context);
+			this.Windows = new AscCommonDraw.CWindows();
+			this.Windows.fromXml(reader);
+		}
+
+		let pagesPart = doc.getPartByRelationshipType(AscCommon.openXml.Types.pages.relationType);
+		if (pagesPart) {
+			let contentPages = pagesPart.getDocumentContent();
+			reader = new StaxParser(contentPages, pagesPart, context);
+			this.Windows = new AscCommonDraw.CWindows();
+			this.Windows.fromXml(reader);
 		}
 	};
 	CVisioDocument.prototype.toZip = function(zip, context) {

@@ -37,7 +37,7 @@ $(function() {
 		'id-view': 'editor_sdk'
 	});
 	//todo events
-	setTimeout(startTests, 1000);
+	setTimeout(startTests, 3000);
 
 	function startTests() {
 		QUnit.start();

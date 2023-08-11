@@ -790,7 +790,9 @@
 		oformFieldMaster: {dir: "oform/fieldMasters", filename: "fieldMaster[N].xml", contentType: "application/vnd.openxmlformats-package.onlyf-fieldMaster+xml", relationType: "https://schemas.onlyoffice.com/relationships/oform-fieldMaster"},
 
 		//visio
-		visioDocument: {dir: "visio", filename: "document.xml", contentType: "application/vnd.ms-visio.drawing.main+xml", relationType: "http://schemas.microsoft.com/visio/2010/relationships/document"}
+		visioDocument: {dir: "visio", filename: "document.xml", contentType: "application/vnd.ms-visio.drawing.main+xml", relationType: "http://schemas.microsoft.com/visio/2010/relationships/document"},
+		visioDocumentWindows: {dir: "visio", filename: "windows.xml", contentType: "application/vnd.ms-visio.windows+xml", relationType: "http://schemas.microsoft.com/visio/2010/relationships/windows"},
+		pages: {dir: "visio/pages", filename: "pages.xml", contentType: "application/vnd.ms-visio.pages+xml", relationType: "http://schemas.microsoft.com/visio/2010/relationships/pages"}
 	};
 	openXml.TargetMode = {
 		internal: "Internal",
