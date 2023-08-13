@@ -34,6 +34,8 @@
 
 (function(window, document)
 {
+	// Docs:
+	// VisioDocument_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/visiodocument_type-complextypevisio-xml
 	function CVisioDocument(Api, isMainLogicDocument) {
 		this.Api = Api;
 
@@ -47,6 +49,11 @@
 		this.PublishSettings = null;
 		this.Any = null;
 		this.AnyAttr = null;
+
+		// TODO mb consider 'this'(CVisioDocument) contains parts(.xml files) like document.xml and windows.xml
+		// only but not XMLmethods and call class representing document.xml VisioDocument_Type
+		// this.VisioDocument_Type = null;
+		this.Windows = null;
 	}
 
 	CVisioDocument.prototype.fromZip = function(zip, context, oReadResult) {
@@ -63,26 +70,22 @@
 		if (documentPart) {
 			let contentDocument = documentPart.getDocumentContent();
 			reader = new StaxParser(contentDocument, documentPart, context);
-			// TODO mb create new class like VisioApp and call this.VisioApp.fromXml
 			this.fromXml(reader);
+			// TODO mb consider 'this' contains parts(.xml files) only but not XML like document.xml and windows.xml
+			// this.VisioDocument_Type = new AscCommonDraw.VisioDocument_Type();
+			// this.VisioDocument_Type.fromXml(reader);
 		}
 
-		let windowsPart = documentPart.getPartByRelationshipType(AscCommon.openXml.Types.visioDocumentWindows.relationType);
-		if (windowsPart) {
-			let contentWindows = windowsPart.getDocumentContent();
-			reader = new StaxParser(contentWindows, windowsPart, context);
-			this.Windows = new AscCommonDraw.CWindows();
-			this.Windows.fromXml(reader);
-		}
-
-		let pagesPart = documentPart.getPartByRelationshipType(AscCommon.openXml.Types.pages.relationType);
-		if (pagesPart) {
-			let contentPages = pagesPart.getDocumentContent();
-			reader = new StaxParser(contentPages, pagesPart, context);
-			this.Windows = new AscCommonDraw.CWindows();
-			this.Windows.fromXml(reader);
-		}
+		// TODO create classes for Windows_Type. some of these are already used in VisioDocument_Type
+		// let windowsPart = documentPart.getPartByRelationshipType(AscCommon.openXml.Types.visioDocumentWindows.relationType);
+		// if (windowsPart) {
+		// 	let contentWindows = windowsPart.getDocumentContent();
+		// 	reader = new StaxParser(contentWindows, windowsPart, context);
+		// 	this.Windows = new AscCommonDraw.CWindows();
+		// 	this.Windows.fromXml(reader);
+		// }
 	};
+	// TODO mb rewrite consider 'CVisioDocument' contains parts(.xml files) only but not XML
 	CVisioDocument.prototype.toZip = function(zip, context) {
 		let memory = new AscCommon.CMemory();
 		memory.context = context;
@@ -97,8 +100,8 @@
 
 
 	// Main classes for reading
-	function CWindows() {
-	}
+	// function CWindows() {
+	// }
 
 
 
@@ -107,6 +110,6 @@
 	window['AscCommonWord']												= window['AscCommonWord'] || {};
 
 	window['AscCommonDraw'].CVisioDocument = CVisioDocument;
-	window['AscCommonDraw'].CWindows = CWindows;
+	// window['AscCommonDraw'].CWindows = CWindows;
 	
 })(window, window.document);
