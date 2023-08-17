@@ -39,16 +39,25 @@
 	function CVisioDocument(Api, isMainLogicDocument) {
 		this.Api = Api;
 
-		this.DocumentSettings = null;
-		this.Colors = [];
-		this.FaceNames = [];
-		this.StyleSheets = [];
-		this.DocumentSheet = null;
-		this.EventList = [];
-		this.HeaderFooter = null;
-		this.PublishSettings = null;
-		this.Any = null;
-		this.AnyAttr = null;
+		this.start = null;
+		this.key = null;
+		this.metric = null;
+		this.buildnum = null;
+		this.version = null;
+		this.docLangID = null;
+		this.documentProperties = null;
+		this.documentSettings = null;
+		this.colors = [];
+		this.faceNames = [];
+		this.styleSheets = [];
+		this.documentSheet = null;
+		this.eventList = [];
+		this.headerFooter = null;
+		this.dataTransferInfo = null;
+		this.publishSettings = null;
+		this.comments = null;
+		this.any = null;
+		this.anyAttr = null;
 
 		// TODO mb consider 'this'(CVisioDocument) contains parts(.xml files) like document.xml and windows.xml
 		// only but not XMLmethods and call class representing document.xml VisioDocument_Type
