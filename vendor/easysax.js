@@ -1853,6 +1853,14 @@ function XmlWriterContext(editorId){
             break;
         }
     }
+
+    //vsdx
+    //environment where I run vsdx now have no AscCommonExcel so
+    //AscCommonExcel.StylesForWrite(); below throws error, so I have to return earlier;
+    if (editorId === AscCommon.c_oEditorId.Draw) {
+        return;
+    }
+
     //docx
     this.document = null;
     this.oNumIdMap = {};

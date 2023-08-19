@@ -53,12 +53,36 @@ $(function() {
 			assert.strictEqual(openRes, true, "Check OpenDocumentFromZip");
 		});
 
-		// QUnit.test("Test vsdx files", function (assert)
-		// {
-		// 	const api = new Asc.asc_draw_api({'id-view': 'editor_sdk'});
-		// 	api.Document = new AscCommonDraw.CVisioDocument(api);
-		// 	const openRes = api.OpenDocumentFromZip();
-		// 	assert.strictEqual(openRes, true, "Check OpenDocumentFromZip");
+		QUnit.test("Test vsdx file", function (assert)
+		{
+			const api = new Asc.asc_draw_api({'id-view': 'editor_sdk'});
+			api.Document = new AscCommonDraw.CVisioDocument(api);
+			let vsdx = AscCommon.Base64.decode(Asc.testVsdx);
+			const openRes = api.OpenDocumentFromZip(vsdx);
+
+			// Creating .vsdx and get Uint8Array to data variable
+			api.saveDocumentToZip(api.Document, AscCommon.c_oEditorId.Draw, function (data) {
+				if (data) {
+					// Download .vsdx
+					AscCommon.DownloadFileFromBytes(data, "title", AscCommon.openXml.GetMimeType("vsdx"));
+				} else {
+					return false;
+				}
+			});
+
+			assert.strictEqual(openRes, true, "Check OpenDocumentFromZip");
+		});
+
+		// Maybe compare .xml files using below example
+		// where assert.step is one string of .xmlfile
+		// QUnit.test('multiple verifications example', assert => {
+		// 	assert.step('one');
+		// 	assert.step('two222');
+		// 	assert.verifySteps(['one', 'two']);
+		//
+		// 	assert.step('three');
+		// 	assert.step('four');
+		// 	assert.verifySteps(['three', 'four']);
 		// });
 	}
 });
