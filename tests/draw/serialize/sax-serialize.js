@@ -55,6 +55,7 @@ $(function() {
 
 		QUnit.test("Test vsdx file", function (assert)
 		{
+			// Read and parse vsdx file
 			const api = new Asc.asc_draw_api({'id-view': 'editor_sdk'});
 			api.Document = new AscCommonDraw.CVisioDocument(api);
 			let vsdx = AscCommon.Base64.decode(Asc.testVsdx);

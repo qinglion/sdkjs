@@ -104,7 +104,9 @@
 		let filePart = new AscCommon.openXml.OpenXmlPackage(zip, memory);
 
 		let docPart = filePart.addPart(AscCommon.openXml.Types.visioDocument);
+		let windowsPart = filePart.addPart(AscCommon.openXml.Types.visioDocumentWindows);
 		docPart.part.setDataXml(this, memory);
+		windowsPart.part.setDataXml(this.Windows, memory);
 		memory.Seek(0);
 	};
 
