@@ -64,7 +64,12 @@
 		// this.VisioDocument_Type = null;
 		this.Windows = null;
 		this.Masters = null;
+		this.MasterContents = [];
+		this.Pages = null;
+		this.PagesContents = [];
+		this.Theme = null;
 	}
+
 
 	CVisioDocument.prototype.fromZip = function(zip, context, oReadResult) {
 		// Maybe it should be moved to 	sdkjs-ooxml/visio/Editor/SerializeXml.js like in 'word' case?
@@ -74,7 +79,30 @@
 		let reader;
 		let doc = new AscCommon.openXml.OpenXmlPackage(zip, null);
 
-		// handle appPart and CorePart like in 'word' case
+		// TODO Import from AscCommon (and dont forget to use(import) AscCommon theme)
+		// let appPart = doc.getPartByRelationshipType(AscCommon.openXml.Types.extendedFileProperties.relationType);
+		// if (appPart) {
+		// 	let appContent = appPart.getDocumentContent();
+		// 	reader = new StaxParser(appContent, appPart, context);
+		// 	this.App = new AscCommon.CApp();
+		// 	this.App.fromXml(reader, true);
+		// }
+		//
+		// let corePart = doc.getPartByRelationshipType(AscCommon.openXml.Types.coreFileProperties.relationType);
+		// if (corePart) {
+		// 	let coreContent = corePart.getDocumentContent();
+		// 	reader = new StaxParser(coreContent, corePart, context);
+		// 	this.Core = new AscCommon.CCore();
+		// 	this.Core.fromXml(reader, true);
+		// }
+		//
+		// let customPrPart = doc.getPartByRelationshipType(AscCommon.openXml.Types.customFileProperties.relationType);
+		// if (customPrPart) {
+		// 	let customPrPartContent = customPrPart.getDocumentContent();
+		// 	reader = new StaxParser(customPrPartContent, customPrPart, context);
+		// 	this.CustomProperties = new AscCommon.CCustomProperties();
+		// 	this.CustomProperties.fromXml(reader, true);
+		// }
 
 		let documentPart = doc.getPartByRelationshipType(AscCommon.openXml.Types.visioDocument.relationType);
 		if (documentPart) {
@@ -84,23 +112,12 @@
 			// TODO mb consider 'this' contains parts(.xml files) only but not XML like document.xml and windows.xml
 			// this.VisioDocument_Type = new AscCommonDraw.VisioDocument_Type();
 			// this.VisioDocument_Type.fromXml(reader);
-		}
 
-		// TODO create classes for Windows_Type. some of these are already used in VisioDocument_Type
-		let windowsPart = documentPart.getPartByRelationshipType(AscCommon.openXml.Types.visioDocumentWindows.relationType);
-		if (windowsPart) {
-			let contentWindows = windowsPart.getDocumentContent();
-			reader = new StaxParser(contentWindows, windowsPart, context);
-			this.Windows = new CWindows();
-			this.Windows.fromXml(reader);
-		}
+			parseWindows.call(this, documentPart, reader, context);
+			parseMasters.call(this, documentPart, reader, context);
+			parsePages.call(this, documentPart, reader, context);
+			// parseTheme.call(this, documentPart, reader, context);
 
-		let mastersPart = documentPart.getPartByRelationshipType(AscCommon.openXml.Types.masters.relationType);
-		if (mastersPart) {
-			let contentMasters = mastersPart.getDocumentContent();
-			reader = new StaxParser(contentMasters, mastersPart, context);
-			this.Masters = new CMasters_Type();
-			this.Masters.fromXml(reader);
 		}
 	};
 	// TODO mb rewrite consider 'CVisioDocument' contains parts(.xml files) only but not XML
@@ -113,11 +130,27 @@
 		let filePart = new AscCommon.openXml.OpenXmlPackage(zip, memory);
 
 		let docPart = filePart.addPart(AscCommon.openXml.Types.visioDocument);
-		let windowsPart = filePart.addPart(AscCommon.openXml.Types.visioDocumentWindows);
-		let mastersPart = filePart.addPart(AscCommon.openXml.Types.masters);
+		let windowsPart = docPart.part.addPart(AscCommon.openXml.Types.visioDocumentWindows);
+		let mastersPart = docPart.part.addPart(AscCommon.openXml.Types.masters);
+		// let themePart = docPart.part.addPart(AscCommon.openXml.Types.theme);
+
+		for (let i = 0; i < this.MasterContents.length; i++) {
+			let masterContent =  mastersPart.part.addPart(AscCommon.openXml.Types.master);
+			masterContent.part.setDataXml(this.MasterContents[i], memory);
+		}
+
+		let pagesPart = docPart.part.addPart(AscCommon.openXml.Types.pages);
+
+		for (let i = 0; i < this.PagesContents.length; i++) {
+			let pageContent =  pagesPart.part.addPart(AscCommon.openXml.Types.page);
+			pageContent.part.setDataXml(this.PagesContents[i], memory);
+		}
+
 		docPart.part.setDataXml(this, memory);
 		windowsPart.part.setDataXml(this.Windows, memory);
 		mastersPart.part.setDataXml(this.Masters, memory);
+		pagesPart.part.setDataXml(this.Pages, memory);
+		// themePart.part.setDataXml(this.Theme, memory);
 		memory.Seek(0);
 	};
 
@@ -141,6 +174,123 @@
 		return this;
 	}
 
+	function CMasterContents_Type() {
+		this.shapes = [];
+		this.connects = [];
+		return this;
+	}
+
+	// Docs:
+	// Pages_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/pages_type-complextypevisio-xml
+	function CPages_Type() {
+		this.page = [];
+		return this;
+	}
+
+	// Docs:
+	// Элемент Shapes (PageContents_Type complexType): https://learn.microsoft.com/ru-ru/office/client-developer/visio/shapes-element-pagecontents_type-complextypevisio-xml
+	// PageContents_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/pagecontents_type-complextypevisio-xml
+	function CPageContents_Type() {
+		this.shapes = [];
+		this.connects = [];
+		return this;
+	}
+
+
+	function parseWindows(documentPart, reader, context) {
+		let windowsPart = documentPart.getPartByRelationshipType(AscCommon.openXml.Types.visioDocumentWindows.relationType);
+		if (windowsPart) {
+			let contentWindows = windowsPart.getDocumentContent();
+			reader = new StaxParser(contentWindows, windowsPart, context);
+			this.Windows = new CWindows();
+			this.Windows.fromXml(reader);
+		}
+	}
+
+	function parseMasters(documentPart, reader, context) {
+		let mastersPart = documentPart.getPartByRelationshipType(AscCommon.openXml.Types.masters.relationType);
+		if (mastersPart) {
+			let contentMasters = mastersPart.getDocumentContent();
+			reader = new StaxParser(contentMasters, mastersPart, context);
+			this.Masters = new CMasters_Type();
+			this.Masters.fromXml(reader);
+
+			let masters = mastersPart.getPartsByRelationshipType(AscCommon.openXml.Types.master.relationType);
+			if (masters) {
+
+				// order is important so sort masters using uri
+				let mastersSort = [];
+				for (let i = 0; i < masters.length; i++) {
+					let masterNumber = masters[i].uri.slice(-5)[0]; // for master3.xml we get 3
+					if (!isNaN(parseFloat(masterNumber)) && !isNaN(masterNumber - 0)) {
+						// if masterNumber is number
+						mastersSort[masterNumber - 1] = masters[i];
+					} else {
+						console.log('check sdkjs/draw/model/VisioDocument.js : 138');
+						mastersSort = masters;
+						break;
+					}
+				}
+				;
+				masters = mastersSort;
+				for (let i = 0; i < masters.length; i++) {
+					let masterPart = masters[i];
+					let contentMaster = masterPart.getDocumentContent();
+					reader = new StaxParser(contentMaster, masterPart, context);
+					let MasterContent = new CMasterContents_Type();
+					MasterContent.fromXml(reader);
+					this.MasterContents.push(MasterContent);
+				}
+			}
+		}
+	}
+
+	function parsePages(documentPart, reader, context) {
+		let pagesPart = documentPart.getPartByRelationshipType(AscCommon.openXml.Types.pages.relationType);
+		if (pagesPart) {
+			let contentPages = pagesPart.getDocumentContent();
+			reader = new StaxParser(contentPages, pagesPart, context);
+			this.Pages = new CPages_Type();
+			this.Pages.fromXml(reader);
+
+			let pages = pagesPart.getPartsByRelationshipType(AscCommon.openXml.Types.page.relationType);
+			if (pages) {
+				// order is important so sort masters using uri
+				let pagesSort = [];
+				for (let i = 0; i < pages.length; i++) {
+					let pageNumber = pages[i].uri.slice(-5)[0]; // for page3.xml we get 3
+					if (!isNaN(parseFloat(pageNumber)) && !isNaN(pageNumber - 0)) {
+						// if masterNumber is number
+						pagesSort[pageNumber - 1] = pages[i];
+					} else {
+						console.log('check sdkjs/draw/model/VisioDocument.js : 261');
+						pagesSort = pages;
+						break;
+					}
+				}
+				;
+				pages = pagesSort;
+				for (let i = 0; i < pages.length; i++) {
+					let pagePart = pages[i];
+					let contentPage = pagePart.getDocumentContent();
+					reader = new StaxParser(contentPage, pagePart, context);
+					let PageContent = new CPageContents_Type();
+					PageContent.fromXml(reader);
+					this.PagesContents.push(PageContent);
+				}
+			}
+		}
+	}
+
+	// function parseTheme(documentPart, reader, context) {
+	// 	let themePart = documentPart.getPartByRelationshipType(AscCommon.openXml.Types.theme.relationType);
+	// 	if (themePart) {
+	// 		let contentTheme = themePart.getDocumentContent();
+	// 		reader = new StaxParser(contentTheme, themePart, context);
+	// 		this.Theme = new CTheme();
+	// 		this.Theme.fromXml(reader);
+	// 	}
+	// }
 
 
 	//-------------------------------------------------------------export---------------------------------------------------
@@ -150,6 +300,9 @@
 	window['AscCommonDraw'].CVisioDocument = CVisioDocument;
 	window['AscCommonDraw'].CWindows = CWindows;
 	window['AscCommonDraw'].CMasters_Type = CMasters_Type;
+	window['AscCommonDraw'].CMasterContents_Type = CMasterContents_Type;
+	window['AscCommonDraw'].CPages_Type = CPages_Type;
+	window['AscCommonDraw'].CPageContents_Type = CPageContents_Type;
 
 
 	//Copied from sdkjs/common/Drawings/Metafile.js
