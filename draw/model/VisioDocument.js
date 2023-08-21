@@ -63,6 +63,7 @@
 		// only but not XMLmethods and call class representing document.xml VisioDocument_Type
 		// this.VisioDocument_Type = null;
 		this.Windows = null;
+		this.Masters = null;
 	}
 
 	CVisioDocument.prototype.fromZip = function(zip, context, oReadResult) {
@@ -93,6 +94,14 @@
 			this.Windows = new CWindows();
 			this.Windows.fromXml(reader);
 		}
+
+		let mastersPart = documentPart.getPartByRelationshipType(AscCommon.openXml.Types.masters.relationType);
+		if (mastersPart) {
+			let contentMasters = mastersPart.getDocumentContent();
+			reader = new StaxParser(contentMasters, mastersPart, context);
+			this.Masters = new CMasters_Type();
+			this.Masters.fromXml(reader);
+		}
 	};
 	// TODO mb rewrite consider 'CVisioDocument' contains parts(.xml files) only but not XML
 	CVisioDocument.prototype.toZip = function(zip, context) {
@@ -105,8 +114,10 @@
 
 		let docPart = filePart.addPart(AscCommon.openXml.Types.visioDocument);
 		let windowsPart = filePart.addPart(AscCommon.openXml.Types.visioDocumentWindows);
+		let mastersPart = filePart.addPart(AscCommon.openXml.Types.masters);
 		docPart.part.setDataXml(this, memory);
 		windowsPart.part.setDataXml(this.Windows, memory);
+		mastersPart.part.setDataXml(this.Masters, memory);
 		memory.Seek(0);
 	};
 
@@ -115,11 +126,18 @@
 
 	// Docs:
 	// Windows_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/windows_type-complextypevisio-xml
-
 	function CWindows() {
 		this.clientWidth = null;
 		this.clientHeight = null;
 		this.window = [];
+		return this;
+	}
+
+	// Docs:
+	// Masters_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/masters_type-complextypevisio-xml
+	function CMasters_Type() {
+		this.master = [];
+		this.masterShortcut = [];
 		return this;
 	}
 
@@ -131,6 +149,7 @@
 
 	window['AscCommonDraw'].CVisioDocument = CVisioDocument;
 	window['AscCommonDraw'].CWindows = CWindows;
+	window['AscCommonDraw'].CMasters_Type = CMasters_Type;
 
 
 	//Copied from sdkjs/common/Drawings/Metafile.js
