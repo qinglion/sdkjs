@@ -37,8 +37,6 @@
 	// Docs:
 	// VisioDocument_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/visiodocument_type-complextypevisio-xml
 	function CVisioDocument(Api, isMainLogicDocument) {
-		this.Api = Api;
-
 		this.start = null;
 		this.key = null;
 		this.metric = null;
@@ -68,6 +66,24 @@
 		this.Pages = null;
 		this.PagesContents = [];
 		this.Theme = null;
+
+		//------------------------------------------------------------------------------------------------------------------
+		//  Сохраняем ссылки на глобальные объекты
+		//------------------------------------------------------------------------------------------------------------------
+		this.History              = History;
+		this.IdCounter            = AscCommon.g_oIdCounter;
+		this.TableId              = AscCommon.g_oTableId;
+		// this.CollaborativeEditing = (("undefined" !== typeof(AscCommon.CWordCollaborativeEditing) && AscCommon.CollaborativeEditing instanceof AscCommon.CWordCollaborativeEditing) ? AscCommon.CollaborativeEditing : null);
+		this.Api                  = Api;
+		//------------------------------------------------------------------------------------------------------------------
+		//  Выставляем ссылки на главный класс
+		//------------------------------------------------------------------------------------------------------------------
+		if (false !== isMainLogicDocument)
+		{
+			// if (this.History)
+			// 	this.History.Set_LogicDocument(this);
+		}
+		this.MainDocument = false !== isMainLogicDocument;
 	}
 
 
@@ -294,9 +310,14 @@
 
 
 	//-------------------------------------------------------------export---------------------------------------------------
-	window['AscCommonDraw']												= window['AscCommonDraw'] || {};
-	window['AscCommonWord']												= window['AscCommonWord'] || {};
-	window['AscFormat']														= window['AscFormat'] || {};
+	window['Asc']            = window['Asc'] || {};
+	window['AscCommon']      = window['AscCommon'] || {};
+	window['AscCommonWord']  = window['AscCommonWord'] || {};
+	window['AscCommonSlide'] = window['AscCommonSlide'] || {};
+	window['AscCommonExcel'] = window['AscCommonExcel'] || {};
+	window['AscCommonDraw']  = window['AscCommonDraw'] || {};
+	window['AscFormat'] = window['AscFormat'] || {};
+	window['AscWord'] = window['AscWord'] || {};
 
 	window['AscCommonDraw'].CVisioDocument = CVisioDocument;
 	window['AscCommonDraw'].CWindows = CWindows;

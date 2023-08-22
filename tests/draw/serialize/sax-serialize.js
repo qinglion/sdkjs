@@ -36,6 +36,8 @@ $(function() {
 	var api = new Asc.asc_draw_api({
 		'id-view': 'editor_sdk'
 	});
+	AscCommon.g_oTableId.init()
+
 	//todo events
 	setTimeout(startTests, 3000);
 

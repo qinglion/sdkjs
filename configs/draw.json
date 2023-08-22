@@ -11,12 +11,21 @@
 			"common/docscoapi.js",
 			"common/spellcheckapi.js",
 			"common/apiCommon.js",
+			"common/SerializeCommonWordExcel.js",
 			"vendor/string.js",
 			"vendor/array.js",
 			"common/editorscommon.js",
+			"common/HistoryCommon.js",
+			"common/TableId.js",
+			"common/TableIdChanges.js",
 			"common/libfont/engine.js",
 			"common/libfont/loader.js",
+			"common/collaborativeHistory.js",
+			"common/CollaborativeEditingBase.js",
+			"common/macros.js",
 			"common/apiBase.js",
+			"common/apiBase_plugins.js",
+			"common/spell/spell.js",
 			"common/zlib/zlib.js",
 			"draw/api.js"
 		],
@@ -26,7 +35,46 @@
 			"common/stringserialize.js",
 			"draw/model/VisioDocument.js",
 
-			"common/Drawings/Format/Format.js"
+			"common/libfont/common.js",
+			"common/libfont/map.js",
+			"common/libfont/rasterheap.js",
+			"common/libfont/glyphstring.js",
+			"common/libfont/character.js",
+			"common/libfont/grapheme.js",
+			"common/libfont/textshaper.js",
+			"common/libfont/file.js",
+			"common/libfont/manager.js",
+
+			"common/Drawings/Metafile.js",
+			"common/libfont/textmeasurer.js",
+
+			"word/Editor/History.js",
+
+			"common/Drawings/CommonController.js",
+			"common/Drawings/States.js",
+			"common/Drawings/DrawingsChanges.js",
+			"common/Drawings/Format/Format.js",
+			"common/Drawings/Format/CreateGeometry.js",
+			"common/Drawings/Format/Geometry.js",
+			"common/Drawings/Format/GraphicObjectBase.js",
+			"common/Drawings/Format/Shape.js",
+			"common/Drawings/Format/CnxShape.js",
+			"common/Drawings/Format/Path.js",
+			"common/Drawings/Format/Image.js",
+			"common/Drawings/Format/GroupShape.js",
+			"common/Drawings/Format/Data.js",
+			"common/Drawings/Format/ChartSpace.js",
+			"common/Drawings/Format/ChartFormat.js",
+			"common/Drawings/Format/TextBody.js",
+			"common/Drawings/Format/GraphicFrame.js",
+			"common/Charts/DrawingObjects.js",
+
+			"word/Editor/DocumentContentBase.js",
+			"word/Editor/DocumentContent.js",
+
+			"common/Drawings/Format/OleObject.js",
+			"common/Drawings/Format/DrawingContent.js"
+
 		],
 		"desktop": {
 			"min": [
