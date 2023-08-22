@@ -24,7 +24,9 @@
 			"vendor/easysax.js",
 			"common/openxml.js",
 			"common/stringserialize.js",
-			"draw/model/VisioDocument.js"
+			"draw/model/VisioDocument.js",
+
+			"common/Drawings/Format/Format.js"
 		],
 		"desktop": {
 			"min": [

@@ -116,7 +116,7 @@
 			parseWindows.call(this, documentPart, reader, context);
 			parseMasters.call(this, documentPart, reader, context);
 			parsePages.call(this, documentPart, reader, context);
-			// parseTheme.call(this, documentPart, reader, context);
+			parseTheme.call(this, documentPart, reader, context);
 
 		}
 	};
@@ -231,7 +231,7 @@
 						break;
 					}
 				}
-				;
+
 				masters = mastersSort;
 				for (let i = 0; i < masters.length; i++) {
 					let masterPart = masters[i];
@@ -282,20 +282,21 @@
 		}
 	}
 
-	// function parseTheme(documentPart, reader, context) {
-	// 	let themePart = documentPart.getPartByRelationshipType(AscCommon.openXml.Types.theme.relationType);
-	// 	if (themePart) {
-	// 		let contentTheme = themePart.getDocumentContent();
-	// 		reader = new StaxParser(contentTheme, themePart, context);
-	// 		this.Theme = new CTheme();
-	// 		this.Theme.fromXml(reader);
-	// 	}
-	// }
+	function parseTheme(documentPart, reader, context) {
+		let themePart = documentPart.getPartByRelationshipType(AscCommon.openXml.Types.theme.relationType);
+		if (themePart) {
+			let themePartContent = themePart.getDocumentContent();
+			reader = new StaxParser(themePartContent, themePart, context);
+			this.theme = new AscFormat.CTheme();
+			this.theme.fromXml(reader, true);
+		}
+	}
 
 
 	//-------------------------------------------------------------export---------------------------------------------------
 	window['AscCommonDraw']												= window['AscCommonDraw'] || {};
 	window['AscCommonWord']												= window['AscCommonWord'] || {};
+	window['AscFormat']														= window['AscFormat'] || {};
 
 	window['AscCommonDraw'].CVisioDocument = CVisioDocument;
 	window['AscCommonDraw'].CWindows = CWindows;
