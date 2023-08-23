@@ -795,7 +795,8 @@
 		pages: {dir: "pages", filename: "pages.xml", contentType: "application/vnd.ms-visio.pages+xml", relationType: "http://schemas.microsoft.com/visio/2010/relationships/pages"},
 		page: {dir: "", filename: "page[N].xml", contentType: "application/vnd.ms-visio.page+xml", relationType: "http://schemas.microsoft.com/visio/2010/relationships/page"},
 		masters: {dir: "masters", filename: "masters.xml", contentType: "application/vnd.ms-visio.masters+xml", relationType: "http://schemas.microsoft.com/visio/2010/relationships/masters"},
-		master: {dir: "", filename: "master[N].xml", contentType: "application/vnd.ms-visio.master+xml", relationType: "http://schemas.microsoft.com/visio/2010/relationships/master"}
+		master: {dir: "", filename: "master[N].xml", contentType: "application/vnd.ms-visio.master+xml", relationType: "http://schemas.microsoft.com/visio/2010/relationships/master"},
+		masterFromPage: {dir: "../masters", filename: "master[N].xml", contentType: "application/vnd.ms-visio.master+xml", relationType: "http://schemas.microsoft.com/visio/2010/relationships/master"}
 	};
 	openXml.TargetMode = {
 		internal: "Internal",

@@ -158,10 +158,23 @@
 		let pagesPart = docPart.part.addPart(AscCommon.openXml.Types.pages);
 
 		for (let i = 0; i < this.PagesContents.length; i++) {
-			let pageContent =  pagesPart.part.addPart(AscCommon.openXml.Types.page);
+			let pageContent = pagesPart.part.addPart(AscCommon.openXml.Types.page);
 			pageContent.part.setDataXml(this.PagesContents[i], memory);
-		}
 
+			// I add page[N].xml.rels below
+			// It has links to all masters but
+			// in test1 file in page[N].xml.rels rId[N] states to random master[N]
+			// e.g. rId3 to ../masters/master1.xml
+			// here rId1 will state to master1, rId2 to master2, etc.
+			// TODO consider is this important
+			// in page[N].xml there is no rId used only <Shape ... Master="[ID]">
+			// e. g. <Shape ... Master="1">
+			for (let i = 0; i < this.MasterContents.length; i++) {
+				pageContent.part.addRelationship(AscCommon.openXml.Types.masterFromPage.relationType,
+					"../masters/master" + (i + 1) + ".xml");
+			}
+		}
+		
 		docPart.part.setDataXml(this, memory);
 		windowsPart.part.setDataXml(this.Windows, memory);
 		mastersPart.part.setDataXml(this.Masters, memory);
@@ -284,7 +297,6 @@
 						break;
 					}
 				}
-				;
 				pages = pagesSort;
 				for (let i = 0; i < pages.length; i++) {
 					let pagePart = pages[i];
