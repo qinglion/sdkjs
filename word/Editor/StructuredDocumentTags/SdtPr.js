@@ -44,6 +44,7 @@ function CSdtPr()
 	this.Tag   = undefined;
 	this.Label = undefined;
 	this.Lock  = undefined;
+	this.DataBinding = undefined;
 
 	this.DocPartObj = {
 		Gallery  : undefined,
@@ -88,6 +89,9 @@ CSdtPr.prototype.Copy = function()
 	oPr.Lock       = this.Lock;
 	oPr.Appearance = this.Appearance;
 	oPr.Color      = (this.Color ? this.Color.Copy() : undefined);
+
+	if (this.DataBinding)
+		oPr.DataBinding = this.DataBinding;
 
 	if (this.CheckBox)
 		oPr.CheckBox = this.CheckBox.Copy();

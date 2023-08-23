@@ -1452,6 +1452,9 @@ CBlockLevelSdt.prototype.SetPr = function(oPr)
 
 	if (undefined !== oPr.Color)
 		this.SetColor(oPr.Color);
+
+	if (undefined !== oPr.DataBinding)
+		this.SetDataBinding(oPr.DataBinding);
 };
 /**
  * Выставляем настройки текста по умолчанию для данного контрола
@@ -1548,6 +1551,40 @@ CBlockLevelSdt.prototype.SetColor = function(oColor)
 		History.Add(new CChangesSdtPrColor(this, this.Pr.Color, oColor));
 		this.Pr.Color = oColor;
 	}
+};
+CBlockLevelSdt.prototype.SetDataBinding = function (oDataBinding)
+{
+	History.Add(new CChangesSdtPrDataBinding(this, this.Pr.oDataBinding, oDataBinding));
+	this.Pr.DataBinding = oDataBinding;
+};
+CBlockLevelSdt.prototype.SetContent = function (oContent)
+{
+	if (this.Pr.DataBinding)
+	{
+		this.SetContentFromDataBindings()
+	}
+	else
+	{
+		this.Content.ReplaceContent(oContent);
+	}
+
+}
+CBlockLevelSdt.prototype.SetContentFromDataBindings = function ()
+{
+	if (!this.Pr.DataBinding)
+		return;
+
+	let oTextContent = this.LogicDocument.FindInCustomXML(this.Pr.DataBinding);
+	let oParagraph = new Paragraph(this.LogicDocument.DrawingDocument);
+	let oParaRun = new ParaRun(oParagraph);
+	oParaRun.AddText(oTextContent);
+	oParagraph.Add_ToContent(0, oParaRun);
+	this.Content.Remove_FromContent(0, 1, false);
+	this.Content.ReplaceContent([oParagraph]);
+}
+CBlockLevelSdt.prototype.GetDataBinding = function ()
+{
+	return this.Pr.DataBinding;
 };
 CBlockLevelSdt.prototype.GetColor = function()
 {

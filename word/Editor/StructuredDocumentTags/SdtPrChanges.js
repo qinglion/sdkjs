@@ -45,6 +45,7 @@ AscDFH.changesFactory[AscDFH.historyitem_SdtPr_Lock]             = CChangesSdtPr
 AscDFH.changesFactory[AscDFH.historyitem_SdtPr_DocPartObj]       = CChangesSdtPrDocPartObj;
 AscDFH.changesFactory[AscDFH.historyitem_SdtPr_Appearance]       = CChangesSdtPrAppearance;
 AscDFH.changesFactory[AscDFH.historyitem_SdtPr_Color]            = CChangesSdtPrColor;
+AscDFH.changesFactory[AscDFH.historyitem_SdtPr_DataBinding]      = CChangesSdtPrDataBinding;
 AscDFH.changesFactory[AscDFH.historyitem_SdtPr_CheckBox]         = CChangesSdtPrCheckBox;
 AscDFH.changesFactory[AscDFH.historyitem_SdtPr_CheckBox_Checked] = CChangesSdtPrCheckBoxChecked;
 AscDFH.changesFactory[AscDFH.historyitem_SdtPr_Picture]          = CChangesSdtPrPicture;
@@ -87,6 +88,9 @@ AscDFH.changesRelationMap[AscDFH.historyitem_SdtPr_Appearance] = [
 ];
 AscDFH.changesRelationMap[AscDFH.historyitem_SdtPr_Color] = [
 	AscDFH.historyitem_SdtPr_Color
+];
+AscDFH.changesRelationMap[AscDFH.historyitem_SdtPr_DataBinding] = [
+	AscDFH.historyitem_SdtPr_DataBinding
 ];
 AscDFH.changesRelationMap[AscDFH.historyitem_SdtPr_CheckBox] = [
 	AscDFH.historyitem_SdtPr_CheckBox,
@@ -415,6 +419,32 @@ CChangesSdtPrColor.prototype.IsNeedRecalculate = function()
 {
 	return false;
 };
+
+/**
+ * @constructor
+ * @extends {AscDFH.CChangesBaseObjectProperty}
+ */
+function CChangesSdtPrDataBinding(Class, Old, New)
+{
+	AscDFH.CChangesBaseObjectProperty.call(this, Class, Old, New);
+}
+CChangesSdtPrDataBinding.prototype = Object.create(AscDFH.CChangesBaseObjectProperty.prototype);
+CChangesSdtPrDataBinding.prototype.constructor = CChangesSdtPrDataBinding;
+CChangesSdtPrDataBinding.prototype.Type = AscDFH.historyitem_SdtPr_DataBinding;
+CChangesSdtPrDataBinding.prototype.private_SetValue = function(Value)
+{
+	this.Class.Pr.DataBinding = Value;
+};
+CChangesSdtPrDataBinding.prototype.private_CreateObject = function()
+{
+	return {};
+};
+CChangesSdtPrDataBinding.prototype.IsNeedRecalculate = function()
+{
+	return false;
+};
+
+
 /**
  * @constructor
  * @extends {AscDFH.CChangesBaseObjectProperty}

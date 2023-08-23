@@ -12960,21 +12960,22 @@ function Binary_DocumentTableReader(doc, oReadResult, openParams, stream, curNot
 				oSdtContentReader.oCurComments = this.oCurComments;
 				oSdtContentReader.Read(length, oSdtContent);
 				this.nCurCommentsCount = oSdtContentReader.nCurCommentsCount;
-				if (oSdtContent.length > 0) {
-					oSdt.Content.ReplaceContent(oSdtContent);
-				}
+				oSdt.SetContent(oSdtContent.length > 0 ? oSdtContent : []);
 			} else if (1 === typeContainer) {
 				res = this.bcr.Read1(length, function(t, l) {
 					return oThis.ReadParagraphContent(t, l, container);
 				});
+				oSdt.SetContent()
 			} else if (2 === typeContainer) {
 				res = this.bcr.Read1(length, function(t, l) {
 					return oThis.Read_TableContent(t, l, container);
 				});
+				oSdt.SetContent()
 			} else if (3 === typeContainer) {
 				res = this.bcr.Read1(length, function(t, l) {
 					return oThis.ReadRowContent(t, l, container);
 				});
+				oSdt.SetContent()
 			}
 		} else {
 			res = c_oSerConstants.ReadUnknown;
@@ -13012,12 +13013,15 @@ function Binary_DocumentTableReader(doc, oReadResult, openParams, stream, curNot
 			if(textPr.Color){
 				oSdtPr.Color = textPr.Color;
 			}
-		// } else if (c_oSerSdt.DataBinding === type) {
-		// 	oSdtPr.DataBinding = {};
-		// 	res = this.bcr.Read1(length, function(t, l) {
-		// 		return oThis.ReadSdtPrDataBinding(t, l, oSdtPr.DataBinding);
-		// 	});
-		} else if (c_oSerSdt.PrDate === type) {
+		}
+		else if (c_oSerSdt.DataBinding === type)
+		{
+			oSdtPr.DataBinding = {};
+			res = this.bcr.Read1(length, function(t, l) {
+				return oThis.ReadSdtPrDataBinding(t, l, oSdtPr.DataBinding);
+			});
+		}
+		else if (c_oSerSdt.PrDate === type) {
 			var datePicker = new AscWord.CSdtDatePickerPr();
 			res = this.bcr.Read1(length, function(t, l) {
 				return oThis.ReadSdtPrDate(t, l, datePicker);
@@ -16109,6 +16113,212 @@ function Binary_OtherTableReader(doc, oReadResult, stream)
         return res;
     };
 };
+
+function parseBinaryXML(binaryArray) {
+	binaryArray = new Uint8Array(binaryArray);
+	let currentIndex = 0;
+
+	function parseTextContent() {
+		let textContent = "";
+		let nStart = currentIndex;
+
+		while (binaryArray[currentIndex] !== 60) { // Знак "<" означает начало нового тега
+			currentIndex++;
+		}
+
+		return new TextDecoder().decode(binaryArray.slice(nStart, currentIndex));
+	}
+
+	function parseTag()
+	{
+		const startTag = binaryArray.indexOf(60, currentIndex); // <
+		let endTag = binaryArray.indexOf(32, startTag); // " "
+		let nEndTag = binaryArray.indexOf(62, startTag); // >
+		let nETag = binaryArray.indexOf(47, startTag); // /
+
+		let isClose = false;
+
+		if (nEndTag < endTag)
+			endTag = nEndTag;
+
+		if (nETag < endTag)
+			endTag = nETag;
+
+		if (startTag === -1 || endTag === -1) {
+			return null;
+		}
+
+		const tagName = new TextDecoder().decode(binaryArray.slice(startTag + 1, endTag));
+
+		currentIndex = endTag;
+
+		return tagName;
+	}
+
+	function parseAttributes() {
+		if (binaryArray[currentIndex] === 62)
+			return {};
+		const attributes = {};
+
+		while (
+			binaryArray[currentIndex] === 9  ||
+			binaryArray[currentIndex] === 10 || // символ перехода на новую строку
+			binaryArray[currentIndex] === 13 || // символ возврата каретки
+			binaryArray[currentIndex] === 32
+			) {
+			currentIndex++;
+		}
+
+		while (binaryArray[currentIndex] !== 62 && binaryArray[currentIndex] !== 47 && binaryArray[currentIndex] !== 63) {
+			const attributeNameStart = currentIndex;
+			while (binaryArray[currentIndex] !== 32 && binaryArray[currentIndex] !== 9 && binaryArray[currentIndex] !== 61) {
+				currentIndex++;
+			}
+
+			const attributeName = new TextDecoder().decode(binaryArray.slice(attributeNameStart, currentIndex));
+
+			while (binaryArray[currentIndex] !== 34) {
+				currentIndex++;
+			}
+			currentIndex++; // пропускаем кавычку
+
+			const attributeValueStart = currentIndex;
+			while (binaryArray[currentIndex] !== 34) {
+				currentIndex++;
+			}
+
+			const attributeValue = new TextDecoder().decode(binaryArray.slice(attributeValueStart, currentIndex));
+
+			attributes[attributeName] = attributeValue;
+			currentIndex++; // пропускаем кавычку и пробел
+
+			// Пропускаем символы перехода на новую строку и табуляции
+			while (
+				binaryArray[currentIndex] === 10 ||
+				binaryArray[currentIndex] === 13 ||
+				binaryArray[currentIndex] === 9 ||
+				binaryArray[currentIndex] === 32
+				) {
+				currentIndex++;
+			}
+		}
+
+		return attributes;
+	}
+
+
+	function parseElement() {
+		const tagName = parseTag();
+		let textContent = "";
+
+		if (!tagName)
+			return null;
+
+		const attributes = parseAttributes();
+		const children = [];
+
+		while (
+			binaryArray[currentIndex] === 9  ||
+			binaryArray[currentIndex] === 10 || // символ перехода на новую строку
+			binaryArray[currentIndex] === 13 || // символ возврата каретки
+			binaryArray[currentIndex] === 32
+			) {
+			currentIndex++;
+		}
+
+		if (binaryArray[currentIndex] === 47 && binaryArray[currentIndex+1] === 62)
+		{
+			currentIndex++;
+			currentIndex++;
+			return {
+				tagName: tagName,
+				attributes: attributes,
+				children: children,
+				textContent: textContent,
+			};
+		}
+
+		if (binaryArray[currentIndex] === 63 && binaryArray[currentIndex + 1] === 62)
+		{
+			currentIndex++;
+			currentIndex++;
+			return {
+				tagName: tagName,
+				attributes: attributes,
+				children: [parseElement()],
+				textContent: textContent,
+			};
+		}
+
+		if (binaryArray[currentIndex] === 62)
+		{
+			currentIndex++;
+
+			while (
+				binaryArray[currentIndex] === 9  ||
+				binaryArray[currentIndex] === 10 || // символ перехода на новую строку
+				binaryArray[currentIndex] === 13 || // символ возврата каретки
+				binaryArray[currentIndex] === 32
+				) {
+				currentIndex++;
+			}
+
+			if (binaryArray[currentIndex] !== 60)
+			{
+				textContent = parseTextContent();
+				currentIndex += 2; // пропускаем </
+				currentIndex += tagName.length; // пропускаем имя закрывающего тега
+				currentIndex += 1; // пропускаем >
+			}
+			else
+			{
+				while (currentIndex < binaryArray.length)
+				{
+					if (binaryArray[currentIndex] === 60 && binaryArray[currentIndex + 1] !== 47)
+					{
+						const child = parseElement();
+						if (child)
+						{
+							children.push(child);
+						}
+					}
+					else if (binaryArray[currentIndex] === 60 && binaryArray[currentIndex + 1] === 47)
+					{
+						currentIndex += 2; // пропускаем </
+						currentIndex += tagName.length; // пропускаем имя закрывающего тега
+						currentIndex += 1; // пропускаем >
+						break;
+					}
+					else
+					{
+						// Пропускаем символы перехода на новую строку и табуляции
+						if (binaryArray[currentIndex] !== 10 && binaryArray[currentIndex] !== 9)
+						{
+							currentIndex++;
+						}
+						else
+						{
+							currentIndex++;
+							while (binaryArray[currentIndex] === 10 || binaryArray[currentIndex] === 9)
+							{
+								currentIndex++;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		return {
+			tagName: tagName,
+			attributes: attributes,
+			children: children,
+			textContent: textContent,
+		};
+	}
+
+	return parseElement();
+}
 function Binary_CustomsTableReader(doc, oReadResult, stream, CustomXmls) {
 	this.Document = doc;
 	this.oReadResult = oReadResult;
@@ -16129,6 +16339,9 @@ function Binary_CustomsTableReader(doc, oReadResult, stream, CustomXmls) {
 			res = this.bcr.Read1(length, function(t, l) {
 				return oThis.ReadCustomContent(t, l, custom);
 			});
+
+			custom.Content = parseBinaryXML(custom.Content);
+
 			this.CustomXmls.push(custom);
 		}
 		else
