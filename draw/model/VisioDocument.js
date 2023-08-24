@@ -66,6 +66,9 @@
 		this.Pages = null;
 		this.PagesContents = [];
 		this.Theme = null;
+		this.App = null;
+		this.Core = null;
+		this.CustomProperties = null;
 
 		//------------------------------------------------------------------------------------------------------------------
 		//  Сохраняем ссылки на глобальные объекты
@@ -159,8 +162,8 @@
 
 		docPart.part.setDataXml(this, memory);
 		appPart.part.setDataXml(this.App, memory);
-		corePart.part.setDataXml(this.CustomProperties, memory);
-		customPrPart.part.setDataXml(this.Core, memory);
+		corePart.part.setDataXml(this.Core, memory);
+		customPrPart.part.setDataXml(this.CustomProperties, memory);
 		windowsPart.part.setDataXml(this.Windows, memory);
 		mastersPart.part.setDataXml(this.Masters, memory);
 		pagesPart.part.setDataXml(this.Pages, memory);
