@@ -33,7 +33,7 @@
 //for zlib async loading
 QUnit.config.autostart = false;
 $(function() {
-	var api = new Asc.asc_draw_api({
+	var api = new Asc.asc_docs_api({
 		'id-view': 'editor_sdk'
 	});
 	AscCommon.g_oTableId.init()
@@ -48,8 +48,8 @@ $(function() {
 
 		QUnit.test("Test OpenDocumentFromZip", function (assert)
 		{
-			const api = new Asc.asc_draw_api({'id-view': 'editor_sdk'});
-			api.Document = new AscCommonDraw.CVisioDocument(api);
+			const api = new Asc.asc_docs_api({'id-view': 'editor_sdk'});
+			api.InitEditor();
 			let vsdx = AscCommon.Base64.decode(Asc.testVsdx);
 			const openRes = api.OpenDocumentFromZip(vsdx);
 			assert.strictEqual(openRes, true, "Check OpenDocumentFromZip");
@@ -58,8 +58,8 @@ $(function() {
 		QUnit.test("Test vsdx file", function (assert)
 		{
 			// Read and parse vsdx file
-			const api = new Asc.asc_draw_api({'id-view': 'editor_sdk'});
-			api.Document = new AscCommonDraw.CVisioDocument(api);
+			const api = new Asc.asc_docs_api({'id-view': 'editor_sdk'});
+			api.InitEditor();
 			let vsdx = AscCommon.Base64.decode(Asc.testVsdx);
 			const openRes = api.OpenDocumentFromZip(vsdx);
 

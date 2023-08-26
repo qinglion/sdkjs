@@ -898,27 +898,37 @@
 		let contentTypes = contentTypesBytes ? AscCommon.UTF8ArrayToString(contentTypesBytes, 0, contentTypesBytes.length) : "";
 		jsZlib.close();
 
-		if (-1 !== contentTypes.indexOf("application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml") ||
+		let isWord = -1 !== contentTypes.indexOf("application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml") ||
 			-1 !== contentTypes.indexOf("application/vnd.openxmlformats-officedocument.wordprocessingml.template.main+xml") ||
 			-1 !== contentTypes.indexOf("application/vnd.ms-word.document.macroEnabled.main+xml") ||
 			-1 !== contentTypes.indexOf("application/vnd.ms-word.template.macroEnabledTemplate.main+xml") ||
 			-1 !== contentTypes.indexOf("application/vnd.openxmlformats-officedocument.wordprocessingml.document.oform") ||
-			-1 !== contentTypes.indexOf("application/vnd.openxmlformats-officedocument.wordprocessingml.document.docxf")) {
-			return AscCommon.c_oEditorId.Word;
-		} else if (-1 !== contentTypes.indexOf("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml") ||
+			-1 !== contentTypes.indexOf("application/vnd.openxmlformats-officedocument.wordprocessingml.document.docxf");
+		let isExcel = -1 !== contentTypes.indexOf("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml") ||
 			-1 !== contentTypes.indexOf("application/vnd.openxmlformats-officedocument.spreadsheetml.template.main+xml") ||
 			-1 !== contentTypes.indexOf("application/vnd.ms-excel.sheet.macroEnabled.main+xml") ||
 			-1 !== contentTypes.indexOf("application/vnd.ms-excel.template.macroEnabled.main+xml") ||
-			-1 !== contentTypes.indexOf("application/vnd.ms-excel.sheet.binary.macroEnabled.main")) {
-			return AscCommon.c_oEditorId.Spreadsheet;
-		} else if (-1 !== contentTypes.indexOf(
-				"application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml") ||
+			-1 !== contentTypes.indexOf("application/vnd.ms-excel.sheet.binary.macroEnabled.main");
+		let isSlide = -1 !== contentTypes.indexOf("application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml") ||
 			-1 !== contentTypes.indexOf("application/vnd.openxmlformats-officedocument.presentationml.slideshow.main+xml") ||
 			-1 !== contentTypes.indexOf("application/vnd.openxmlformats-officedocument.presentationml.template.main+xml") ||
 			-1 !== contentTypes.indexOf("application/vnd.ms-powerpoint.presentation.macroEnabled.main+xml") ||
 			-1 !== contentTypes.indexOf("application/vnd.ms-powerpoint.slideshow.macroEnabled.main+xml") ||
-			-1 !== contentTypes.indexOf("application/vnd.ms-powerpoint.template.macroEnabled.main+xml")) {
+			-1 !== contentTypes.indexOf("application/vnd.ms-powerpoint.template.macroEnabled.main+xml");
+		let isDraw = -1 !== contentTypes.indexOf("application/vnd.ms-visio.drawing.main+xml") ||
+			-1 !== contentTypes.indexOf("application/vnd.ms-visio.stencil.main+xml") ||
+			-1 !== contentTypes.indexOf("application/vnd.ms-visio.template.main+xml") ||
+			-1 !== contentTypes.indexOf("application/vnd.ms-visio.drawing.macroEnabled.main+xml") ||
+			-1 !== contentTypes.indexOf("application/vnd.ms-visio.stencil.macroEnabled.main+xml") ||
+			-1 !== contentTypes.indexOf("application/vnd.ms-visio.template.macroEnabled.main+xml");
+		if (isWord) {
+			return AscCommon.c_oEditorId.Word;
+		} else if (isExcel) {
+			return AscCommon.c_oEditorId.Spreadsheet;
+		} else if (isSlide) {
 			return AscCommon.c_oEditorId.Presentation;
+		} else if (isDraw) {
+			return AscCommon.c_oEditorId.Draw;
 		} else {
 			return null;
 		}

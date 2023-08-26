@@ -40,7 +40,7 @@
 	 * @constructor
 	 * @extends {AscCommon.baseEditorsApi}
 	 */
-	function asc_draw_api(config)
+	function asc_docs_api(config)
 	{
 		AscCommon.baseEditorsApi.call(this, config, AscCommon.c_oEditorId.Draw);
 
@@ -50,17 +50,17 @@
 		return this;
 	}
 
-	asc_draw_api.prototype = Object.create(AscCommon.baseEditorsApi.prototype);
-	asc_draw_api.prototype.constructor = asc_draw_api;
+	asc_docs_api.prototype = Object.create(AscCommon.baseEditorsApi.prototype);
+	asc_docs_api.prototype.constructor = asc_docs_api;
 
-	asc_draw_api.prototype._init = function(){
-		this._loadModules();
+	asc_docs_api.prototype.InitEditor = function(){
+		this.Document = new AscCommonDraw.CVisioDocument(this);
 	};
-	asc_draw_api.prototype.OpenDocumentFromZip = function(data)
+	asc_docs_api.prototype.OpenDocumentFromZip = function(data)
 	{
 		return this.OpenDocumentFromZipNoInit(data);
 	};
-	asc_draw_api.prototype.OpenDocumentFromZipNoInit = function(data)
+	asc_docs_api.prototype.OpenDocumentFromZipNoInit = function(data)
 	{
 		if (!data) {
 			return false;
@@ -77,10 +77,72 @@
 		jsZlib.close();
 		return true;
 	};
+	// Callbacks
+	/* все имена callback'оф начинаются с On. Пока сделаны:
+	 */
+	var _callbacks = {};
+
+	asc_docs_api.prototype.asc_registerCallback = function(name, callback)
+	{
+		if (!_callbacks.hasOwnProperty(name))
+			_callbacks[name] = [];
+		_callbacks[name].push(callback);
+	};
+	asc_docs_api.prototype.asc_nativeOpenFile = function(base64File, version)
+	{
+		// this.SpellCheckUrl = '';
+		//
+		// this.User = new AscCommon.asc_CUser();
+		// this.User.setId("TM");
+		// this.User.setUserName("native");
+
+		this.InitEditor();
+
+		AscCommon.g_oIdCounter.Set_Load(true);
+
+		this.InitEditor();
+
+		this.isOpenOOXInBrowser = this["asc_isSupportFeature"]("ooxml") && AscCommon.checkOOXMLSignature(base64File);
+		if (this.isOpenOOXInBrowser) {
+			//slice because array contains garbage after end of function
+			this.openOOXInBrowserZip = base64File.slice();
+			this.OpenDocumentFromZipNoInit(base64File);
+		}
+
+		this.LoadedObject = 1;
+		AscCommon.g_oIdCounter.Set_Load(false);
+	};
+
+	asc_docs_api.prototype.asc_nativeApplyChanges2 = function(data, isFull)
+	{
+		// Чтобы заново созданные параграфы не отображались залоченными
+		AscCommon.g_oIdCounter.Set_Load(true);
+		//todo
+
+		AscCommon.g_oIdCounter.Set_Load(false);
+	};
+
+	asc_docs_api.prototype.asc_nativeGetFileData = function()
+	{
+		if (this.isOpenOOXInBrowser && this.saveDocumentToZip) {
+			let res;
+			this.saveDocumentToZip(this.Document, this.editorId, function (data) {
+				res = data;
+			});
+			if (res) {
+				window["native"]["Save_End"](";v10;", res.length);
+				return res;
+			}
+			return new Uint8Array(0);
+		}
+	};
 
 	//-------------------------------------------------------------export---------------------------------------------------
 	window['Asc']                                                       = window['Asc'] || {};
-	window['Asc']['asc_draw_api']                                       = asc_draw_api;
-	asc_draw_api.prototype['OpenDocumentFromZip']             			= asc_draw_api.prototype.OpenDocumentFromZip;
-	
+	window['Asc']['asc_docs_api']                                       = asc_docs_api;
+	asc_docs_api.prototype['OpenDocumentFromZip']             			= asc_docs_api.prototype.OpenDocumentFromZip;
+	asc_docs_api.prototype['asc_nativeOpenFile']             			= asc_docs_api.prototype.asc_nativeOpenFile;
+	asc_docs_api.prototype['asc_nativeApplyChanges2']             		= asc_docs_api.prototype.asc_nativeApplyChanges2;
+	asc_docs_api.prototype['asc_nativeGetFileData']             		= asc_docs_api.prototype.asc_nativeGetFileData;
+
 })(window, window.document);

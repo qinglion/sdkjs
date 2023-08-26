@@ -261,7 +261,7 @@ function NativeOpenFileData(data, version, xlsx_file_path, options)
 	if (options && undefined !== options["translate"])
 		configApi["translate"] = options["translate"];
 
-	if (window.NATIVE_DOCUMENT_TYPE === "presentation" || window.NATIVE_DOCUMENT_TYPE === "document")
+	if (window.NATIVE_DOCUMENT_TYPE === "presentation" || window.NATIVE_DOCUMENT_TYPE === "document" || window.NATIVE_DOCUMENT_TYPE === "draw")
 	{
         Api = new window["Asc"]["asc_docs_api"](configApi);
 		if (options && options["documentLayout"] && undefined !== options["documentLayout"]["openedAt"])
