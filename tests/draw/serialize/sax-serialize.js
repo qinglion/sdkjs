@@ -46,46 +46,123 @@ $(function() {
 
 		QUnit.module("Test draw serialize")
 
-		QUnit.test("Test OpenDocumentFromZip", function (assert)
+		QUnit.test("Test api.OpenDocumentFromZip", function (assert)
 		{
 			const api = new Asc.asc_docs_api({'id-view': 'editor_sdk'});
 			api.InitEditor();
-			let vsdx = AscCommon.Base64.decode(Asc.testVsdx);
+			// get Uint8Array
+			let vsdx = AscCommon.Base64.decode(Asc.exampleVsdx);
 			const openRes = api.OpenDocumentFromZip(vsdx);
 			assert.strictEqual(openRes, true, "Check OpenDocumentFromZip");
 		});
 
-		QUnit.test("Test vsdx file", function (assert)
+		QUnit.test("Check api.saveDocumentToZip", function (assert)
 		{
 			// Read and parse vsdx file
 			const api = new Asc.asc_docs_api({'id-view': 'editor_sdk'});
 			api.InitEditor();
-			let vsdx = AscCommon.Base64.decode(Asc.testVsdx);
+			let vsdx = AscCommon.Base64.decode(Asc.exampleVsdx);
+			const openRes = api.OpenDocumentFromZip(vsdx);
+
+			// Creating .vsdx from api and get Uint8Array to data variable
+			api.saveDocumentToZip(api.Document, AscCommon.c_oEditorId.Draw, function (data) {
+				if (data) {
+					assert.strictEqual(Boolean(data), true, "saveDocumentToZip returned data");
+
+					// Download .vsdx
+					// AscCommon.DownloadFileFromBytes(data, "title", AscCommon.openXml.GetMimeType("vsdx"));
+				}
+			});
+		});
+
+		QUnit.test("Compare files structure", function (assert)
+		{
+			// Read and parse vsdx file
+			const api = new Asc.asc_docs_api({'id-view': 'editor_sdk'});
+			api.InitEditor();
+			let vsdx = AscCommon.Base64.decode(Asc.exampleVsdx);
 			const openRes = api.OpenDocumentFromZip(vsdx);
 
 			// Creating .vsdx and get Uint8Array to data variable
 			api.saveDocumentToZip(api.Document, AscCommon.c_oEditorId.Draw, function (data) {
 				if (data) {
-					// Download .vsdx
-					AscCommon.DownloadFileFromBytes(data, "title", AscCommon.openXml.GetMimeType("vsdx"));
+					// Read and parse vsdx file
+					const api2 = new Asc.asc_docs_api({'id-view': 'editor_sdk'});
+					api2.InitEditor();
+
+					let jsZlib = new AscCommon.ZLib();
+					jsZlib.open(data);
+
+					assert.strictEqual(jsZlib.files.length, 23, "Parsed vsdx contains 23 xml files like initial vsdx. Files Count correctly.");
+
+					const openRes2 = api2.OpenDocumentFromZip(data);
+
 				} else {
 					return false;
 				}
 			});
-
-			assert.strictEqual(openRes, true, "Check OpenDocumentFromZip");
 		});
 
-		// Maybe compare .xml files using below example
-		// where assert.step is one string of .xmlfile
-		// QUnit.test('multiple verifications example', assert => {
-		// 	assert.step('one');
-		// 	assert.step('two222');
-		// 	assert.verifySteps(['one', 'two']);
-		//
-		// 	assert.step('three');
-		// 	assert.step('four');
-		// 	assert.verifySteps(['three', 'four']);
-		// });
+		QUnit.module("Comparing file structures")
+
+		testFile("Basic ShapesA_start", Asc.BasicShapesA_start);
+
+
+		function testFile(fileName, base64) {
+			QUnit.test('File ' + fileName, function (assert)
+			{
+				// Read and parse vsdx file
+				const api = new Asc.asc_docs_api({'id-view': 'editor_sdk'});
+				api.InitEditor();
+				let vsdx = AscCommon.Base64.decode(base64);
+				const openRes = api.OpenDocumentFromZip(vsdx);
+
+				let jsZlib = new AscCommon.ZLib();
+				jsZlib.open(vsdx);
+				let originalFiles = jsZlib.files;
+
+				api.saveDocumentToZip(api.Document, AscCommon.c_oEditorId.Draw, function (data) {
+					if (data) {
+						// Read and parse vsdx file
+						const api2 = new Asc.asc_docs_api({'id-view': 'editor_sdk'});
+						api2.InitEditor();
+						const openRes2 = api2.OpenDocumentFromZip(data);
+
+						let jsZlibCustom = new AscCommon.ZLib();
+						jsZlibCustom.open(data);
+						let customFiles = jsZlibCustom.files;
+
+						assert.strictEqual(originalFiles.length, customFiles.length, "Parsed vsdx contains as many xml files as initial vsdx");
+
+						originalFiles = originalFiles.sort( function (a, b) { return  a.localeCompare(b);});
+						customFiles = customFiles.sort( function (a, b) { return  a.localeCompare(b);});
+
+						assert.deepEqual(originalFiles, customFiles, 'Original vsdx has the same file structire as custom vsdx');
+
+						// TODO compare files content using DOMParser
+						console.log(DOMParser);
+						// let memory = new AscCommon.CMemory();
+						// let textDecoder = new TextDecoder("utf-8");
+						//
+						// api2.Document.toXml(memory);
+						// let documentCustom = textDecoder.decode(memory.GetData());
+						//
+						// memory = new AscCommon.CMemory();
+						// api.Document.toXml(memory);
+						// let documentOrig = textDecoder.decode(memory.GetData());
+						// let a =1;
+
+
+
+					} else {
+						return false;
+					}
+				});
+			});
+		}
+
+		function a() {
+
+		}
 	}
 });
