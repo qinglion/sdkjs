@@ -69,6 +69,7 @@
 		this.App = null;
 		this.Core = null;
 		this.CustomProperties = null;
+		this.Thumbnail = null;
 
 		//------------------------------------------------------------------------------------------------------------------
 		//  Сохраняем ссылки на глобальные объекты
@@ -89,7 +90,7 @@
 		this.MainDocument = false !== isMainLogicDocument;
 	}
 
-
+	// TODO Check thumbnail parse in fromZip and setData in toZip
 	CVisioDocument.prototype.fromZip = function(zip, context, oReadResult) {
 		// Maybe it should be moved to 	sdkjs-ooxml/visio/Editor/SerializeXml.js like in 'word' case?
 		// 'word' case: 								sdkjs-ooxml/word/Editor/SerializeXml.js
@@ -101,6 +102,7 @@
 		parseApp.call(this, doc, reader, context);
 		parseCore.call(this, doc, reader, context);
 		parseCustomProperties.call(this, doc, reader, context);
+		parseThumbnail.call(this, doc, reader, context);
 
 		let documentPart = doc.getPartByRelationshipType(AscCommon.openXml.Types.visioDocument.relationType);
 		if (documentPart) {
@@ -131,6 +133,7 @@
 		let appPart = filePart.addPart(AscCommon.openXml.Types.extendedFileProperties);
 		let corePart = filePart.addPart(AscCommon.openXml.Types.coreFileProperties);
 		let customPrPart = filePart.addPart(AscCommon.openXml.Types.customFileProperties);
+		let thumbNailPart = filePart.addPart(AscCommon.openXml.Types.thumbnail);
 		let windowsPart = docPart.part.addPart(AscCommon.openXml.Types.visioDocumentWindows);
 		let mastersPart = docPart.part.addPart(AscCommon.openXml.Types.masters);
 		let themePart = docPart.part.addPart(AscCommon.openXml.Types.theme);
@@ -164,6 +167,7 @@
 		appPart.part.setDataXml(this.App, memory);
 		corePart.part.setDataXml(this.Core, memory);
 		customPrPart.part.setDataXml(this.CustomProperties, memory);
+		thumbNailPart.part.setData(this.Thumbnail, memory);
 		windowsPart.part.setDataXml(this.Windows, memory);
 		mastersPart.part.setDataXml(this.Masters, memory);
 		pagesPart.part.setDataXml(this.Pages, memory);
@@ -191,6 +195,7 @@
 		return this;
 	}
 
+	// Another name in docs
 	function CMasterContents_Type() {
 		this.shapes = [];
 		this.connects = [];
@@ -241,6 +246,14 @@
 			reader = new StaxParser(customPrPartContent, customPrPart, context);
 			this.CustomProperties = new AscCommon.CCustomProperties();
 			this.CustomProperties.fromXml(reader, true);
+		}
+	}
+
+	function parseThumbnail(doc, reader, context) {
+		let thumbnailPart = doc.getPartByRelationshipType(AscCommon.openXml.Types.thumbnail.relationType);
+		if (thumbnailPart) {
+			let thumbnailPartContent = thumbnailPart.getDocumentContent();
+			this.Thumbnail = thumbnailPartContent;
 		}
 	}
 
