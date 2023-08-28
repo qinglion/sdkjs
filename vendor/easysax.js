@@ -1854,12 +1854,6 @@ function XmlWriterContext(editorId){
         }
     }
 
-    //vsdx
-    //environment where I run vsdx now have no AscCommonExcel so
-    //AscCommonExcel.StylesForWrite(); below throws error, so I have to return earlier;
-    if (editorId === AscCommon.c_oEditorId.Draw) {
-        return;
-    }
 
     //docx
     this.document = null;
@@ -1877,7 +1871,7 @@ function XmlWriterContext(editorId){
     this.sheetIds = [];
     this.sharedStrings = null;
     this.isCopyPaste = null;
-    this.stylesForWrite = new AscCommonExcel.StylesForWrite();
+    this.stylesForWrite = AscCommonExcel.StylesForWrite && new AscCommonExcel.StylesForWrite(); //no StylesForWrite in vsdx now
     this.oSharedStrings = {index: 0, strings: {}};
     this.oleDrawings = [];
     this.signatureDrawings = [];
