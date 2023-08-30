@@ -195,7 +195,7 @@
 		return this;
 	}
 
-	// Another name in docs
+	// Another name in docs PageContents_Type
 	function CMasterContents_Type() {
 		this.shapes = [];
 		this.connects = [];

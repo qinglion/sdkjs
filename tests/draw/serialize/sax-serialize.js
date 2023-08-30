@@ -68,14 +68,13 @@ $(function() {
 			api.saveDocumentToZip(api.Document, AscCommon.c_oEditorId.Draw, function (data) {
 				if (data) {
 					assert.strictEqual(Boolean(data), true, "saveDocumentToZip returned data");
-
 					// Download .vsdx
 					// AscCommon.DownloadFileFromBytes(data, "title", AscCommon.openXml.GetMimeType("vsdx"));
 				}
 			});
 		});
 
-		QUnit.test("Compare files structure", function (assert)
+		QUnit.test("Compare files count", function (assert)
 		{
 			// Read and parse vsdx file
 			const api = new Asc.asc_docs_api({'id-view': 'editor_sdk'});
@@ -105,28 +104,31 @@ $(function() {
 
 		QUnit.module("Comparing file structures")
 
-		testFile("Basic ShapesA_start", Asc.BasicShapesA_start);
+		let ignoreFolders = ["docProps"];
+		let ignoreFiles = ["theme1.xml"];
+		testFile("Basic ShapesA_start", Asc.BasicShapesA_start, ignoreFolders, ignoreFiles);
+		testFile("generatedVsdx2schema", Asc.generatedVsdx2schema, ignoreFolders, ignoreFiles);
 
 
-		function testFile(fileName, base64) {
+		function testFile(fileName, base64, ignoreFolders, ignoreFiles) {
 			QUnit.test('File ' + fileName, function (assert)
 			{
 				// Read and parse vsdx file
 				const api = new Asc.asc_docs_api({'id-view': 'editor_sdk'});
 				api.InitEditor();
-				let vsdx = AscCommon.Base64.decode(base64);
-				const openRes = api.OpenDocumentFromZip(vsdx);
+				let vsdxOriginal = AscCommon.Base64.decode(base64);
+				const openResOriginal = api.OpenDocumentFromZip(vsdxOriginal);
 
-				let jsZlib = new AscCommon.ZLib();
-				jsZlib.open(vsdx);
-				let originalFiles = jsZlib.files;
+				let jsZlibOriginal = new AscCommon.ZLib();
+				jsZlibOriginal.open(vsdxOriginal);
+				let originalFiles = jsZlibOriginal.files;
 
 				api.saveDocumentToZip(api.Document, AscCommon.c_oEditorId.Draw, function (data) {
 					if (data) {
-						// Read and parse vsdx file
+						// Read and parse custom vsdx file
 						const api2 = new Asc.asc_docs_api({'id-view': 'editor_sdk'});
 						api2.InitEditor();
-						const openRes2 = api2.OpenDocumentFromZip(data);
+						const openResCustom = api2.OpenDocumentFromZip(data);
 
 						let jsZlibCustom = new AscCommon.ZLib();
 						jsZlibCustom.open(data);
@@ -139,30 +141,175 @@ $(function() {
 
 						assert.deepEqual(originalFiles, customFiles, 'Original vsdx has the same file structire as custom vsdx');
 
-						// TODO compare files content using DOMParser
-						console.log(DOMParser);
-						// let memory = new AscCommon.CMemory();
-						// let textDecoder = new TextDecoder("utf-8");
-						//
-						// api2.Document.toXml(memory);
-						// let documentCustom = textDecoder.decode(memory.GetData());
-						//
-						// memory = new AscCommon.CMemory();
-						// api.Document.toXml(memory);
-						// let documentOrig = textDecoder.decode(memory.GetData());
-						// let a =1;
+						let docOriginal = new AscCommon.openXml.OpenXmlPackage(jsZlibOriginal, null);
+						let docCustom = new AscCommon.openXml.OpenXmlPackage(jsZlibCustom, null);
+						for (let i = 0; i < originalFiles.length; i++) {
+							let path = originalFiles[i];
+							if (originalFiles[i].includes('/')) {
+								path = "/" + path;
+							}
+							if (pathCheckFolderPresence(path, ignoreFolders)) {
+								assert.ok(true, format('Checking %s was successful. Path is ignored.', path));
+								continue;
+							}
+							if (ignoreFiles.includes(path.split('/').pop())) {
+								assert.ok(true, format('Checking %s was successful. File is ignored.', path));
+								continue;
+							}
 
+							let contentOriginal = docOriginal.getPartByUri(path).getDocumentContent();
+							let contentCustom = docCustom.getPartByUri(path).getDocumentContent();
+							contentOriginal = contentOriginal.trim();
+							contentCustom = contentCustom.trim();
 
+							// global js API DOMParser
+							const domParser = new DOMParser();
+							let fileDomOriginal = domParser.parseFromString(contentOriginal, "application/xml");
+							let fileDomCustom = domParser.parseFromString(contentCustom, "application/xml");
 
+							let compareResult = compareDOMs(fileDomOriginal, fileDomCustom);
+							let differences = compareResult.filter(function (compareObject) {
+								return compareObject.missingElements.length || compareObject.extraElements.length;
+							});
+
+							let message = '';
+							if (differences.length === 0) {
+								message = format('Checking %s was successful. Files are equal.', path);
+							} else {
+								let differencesString = differencesToString(differences);
+								message = format('Checking %s was not successful.\nDifferences:\n%s', path, differencesString);
+							}
+							assert.strictEqual(differences.length, 0, message);
+						}
 					} else {
 						return false;
 					}
 				});
 			});
 		}
+	}
 
-		function a() {
+	function pathCheckFolderPresence(path, folders) {
+		let foldersUsed = path.split('/').slice(0, -1);
+		let isIgnored = foldersUsed.some(function (folder) {
+			return folders.includes(folder);
+		})
+		return isIgnored;
+	}
 
+	function format () {
+		var args = [].slice.call(arguments);
+		var initial = args.shift();
+
+		function replacer (text, replacement) {
+			return text.replace('%s', replacement);
 		}
+		return args.reduce(replacer, initial);
+	}
+
+	function differencesToString(differences) {
+		return differences.map(function (differenceObject) {
+			return differenceToString(differenceObject);
+		}).join('\n');
+	}
+
+	function differenceToString(difference) {
+		let result = '';
+		result += format('\nComparing elements <%s>.', difference.tagsCompared);
+		if (difference.missingElements.length) {
+			let missingElements = difference.missingElements.map(function (el) {
+				return format('<%s>', el.nodeName);
+			} );
+			result += format('\nMissing in custom: %s.\n', missingElements.join(', '));
+		} else {
+			let extraElements = difference.extraElements.map(function (el) {
+				return format('<%s>', el.nodeName);
+			});
+			result += format('\nExtra in custom: %s.\n', extraElements.join(', '));
+		}
+		return result;
+	}
+
+	function compareDOMs(originalNode, customNode, result) {
+		if (typeof result === 'undefined') {
+			result = [];
+		}
+		if (originalNode.children.length !== 0) { // Check if it's an element node
+			let originalElement = originalNode;
+			let customElement = customNode;
+
+			let differencesInChildren = compareTagsFlat(originalElement, customElement);
+			result.push({
+				tagsCompared : originalNode.nodeName,
+				missingElements : differencesInChildren.missingElements,
+				equalElements : differencesInChildren.equalElements,
+				extraElements : differencesInChildren.extraElements
+			});
+
+
+			let equalElements = differencesInChildren.equalElements;
+			// recursive cals
+			for (let i = 0; i < equalElements.length; i++) {
+				result = result.concat(compareDOMs(equalElements[i][0], equalElements[i][1]));
+			}
+		}
+		return result;
+	}
+
+	function compareTagsFlat(originalElement, customElement) {
+		// indifferent of children.length there may be extra nodes missing nodes and nodes with equal nodeNames
+		// eg
+		// Orig Custom          Orig Custom
+		//  A   D                 D   A                   A   C
+		//  B   E                 E   B                   B   D
+		//  C                         C
+		// Mis ABC Extra DE       Mis DE Extra ABC        Mis AB Extra CD
+
+		//  A   D                 D   A                   A   A
+		//  B   B                 C   B                   B   B
+		//  C                         C
+		// Mis AC Extra D Equ B   Mis D Extra AB Equ C    Equ AB
+
+		// B    B
+		// B
+		// Mis B (second) Extra - Equ B (first). So in that case we recursively comprate two first B
+		// TODO: Not checking each B values or attributes. This is a flaw.
+		// Bcs if 2-nd B in original and 1-st B in custom are absolutely equal then original B 1-rst is missing
+		// But result is 2-nd B in orig is missing and orig 1-st B is not equal to custom  1-st B
+
+		let originalElementChildren = Array.from(originalElement.children);
+		let customElementChildren = Array.from(customElement.children);
+
+		const missingElements = [];
+		const equalElements = [];
+		const extraElements = [];
+
+		// Iterate through the children of originalElement and check if they are missing in customElement
+		originalElementChildren.forEach(function (originalChild) {
+			const foundIndex = customElementChildren.findIndex(function(customChild) {
+				return customChild.nodeName === originalChild.nodeName;
+			});
+
+			if (foundIndex  === -1) {
+				missingElements.push(originalChild);
+			} else {
+				// Remove the found child from customElement to handle duplicates
+				const removedChild = customElementChildren.splice(foundIndex, 1)[0];
+				equalElements.push([originalChild, removedChild]);
+			}
+		});
+
+		// Find extra elements present in customElement but not in originalElement
+		customElementChildren.forEach(function (customChild) {
+			if (!originalElementChildren.some(function (originalChild) {return originalChild.nodeName === customChild.nodeName;})) {
+				extraElements.push(customChild);
+			}
+		});
+
+		return {
+			missingElements: missingElements,
+			equalElements: equalElements,
+			extraElements: extraElements
+		};
 	}
 });
