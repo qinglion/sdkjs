@@ -134,12 +134,12 @@ $(function() {
 						jsZlibCustom.open(data);
 						let customFiles = jsZlibCustom.files;
 
-						assert.strictEqual(originalFiles.length, customFiles.length, "Parsed vsdx contains as many xml files as initial vsdx");
+						assert.strictEqual(customFiles.length, originalFiles.length, "Parsed vsdx contains as many xml files as initial vsdx");
 
 						originalFiles = originalFiles.sort( function (a, b) { return  a.localeCompare(b);});
 						customFiles = customFiles.sort( function (a, b) { return  a.localeCompare(b);});
 
-						assert.deepEqual(originalFiles, customFiles, 'Original vsdx has the same file structire as custom vsdx');
+						assert.deepEqual(customFiles, originalFiles, 'Original vsdx has the same file structire as custom vsdx');
 
 						let docOriginal = new AscCommon.openXml.OpenXmlPackage(jsZlibOriginal, null);
 						let docCustom = new AscCommon.openXml.OpenXmlPackage(jsZlibCustom, null);

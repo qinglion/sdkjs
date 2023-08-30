@@ -70,6 +70,10 @@
 		this.Core = null;
 		this.CustomProperties = null;
 		this.Thumbnail = null;
+		this.Comments = null;
+		this.Extensions = null;
+		this.DataConnections = null;
+		this.DataRecordSets = null;
 
 		//------------------------------------------------------------------------------------------------------------------
 		//  Сохраняем ссылки на глобальные объекты
@@ -117,8 +121,10 @@
 			parseMasters.call(this, documentPart, reader, context);
 			parsePages.call(this, documentPart, reader, context);
 			parseTheme.call(this, documentPart, reader, context);
-			// TODO parse connections (DataConnection_Type);
-
+			parseComments.call(this, documentPart, reader, context);
+			parseExtensions.call(this, documentPart, reader, context);
+			parseDataConnections.call(this, documentPart, reader, context);
+			parseDataRecordSets.call(this, documentPart, reader, context);
 		}
 	};
 	// TODO mb rewrite consider 'CVisioDocument' contains parts(.xml files) only but not XML
@@ -137,6 +143,10 @@
 		let windowsPart = docPart.part.addPart(AscCommon.openXml.Types.visioDocumentWindows);
 		let mastersPart = docPart.part.addPart(AscCommon.openXml.Types.masters);
 		let themePart = docPart.part.addPart(AscCommon.openXml.Types.theme);
+		let commentsPart = docPart.part.addPart(AscCommon.openXml.Types.visioComments);
+		let extensionsPart = docPart.part.addPart(AscCommon.openXml.Types.visioExtensions);
+		let dataConnectionsPart = docPart.part.addPart(AscCommon.openXml.Types.visioDataConnections);
+		let dataRecordSetsPart = docPart.part.addPart(AscCommon.openXml.Types.visioDataRecordSets);
 
 		for (let i = 0; i < this.MasterContents.length; i++) {
 			let masterContent =  mastersPart.part.addPart(AscCommon.openXml.Types.master);
@@ -166,12 +176,35 @@
 		docPart.part.setDataXml(this, memory);
 		appPart.part.setDataXml(this.App, memory);
 		corePart.part.setDataXml(this.Core, memory);
-		customPrPart.part.setDataXml(this.CustomProperties, memory);
-		thumbNailPart.part.setData(this.Thumbnail, memory);
-		windowsPart.part.setDataXml(this.Windows, memory);
+		if (this.CustomProperties) {
+			// if Custom part exists
+			customPrPart.part.setDataXml(this.CustomProperties, memory);
+		}
+		if (this.Thumbnail) {
+			thumbNailPart.part.setData(this.Thumbnail, memory);
+		}
+		if (this.Windows) {
+			// if Windows part exists
+			windowsPart.part.setDataXml(this.Windows, memory);
+		}
 		mastersPart.part.setDataXml(this.Masters, memory);
 		pagesPart.part.setDataXml(this.Pages, memory);
-		themePart.part.setDataXml(this.Theme, memory);
+		if (this.Theme) {
+			// if Theme part exists (by docs it MUST exist)
+			themePart.part.setDataXml(this.Theme, memory);
+		}
+		if (this.Comments) {
+			commentsPart.part.setDataXml(this.Comments, memory);
+		}
+		if (this.Extensions) {
+			extensionsPart.part.setDataXml(this.Extensions, memory);
+		}
+		if (this.DataConnections) {
+			dataConnectionsPart.part.setDataXml(this.DataConnections, memory);
+		}
+		if (this.DataRecordSets) {
+			dataRecordSetsPart.part.setDataXml(this.DataRecordSets, memory);
+		}
 		memory.Seek(0);
 	};
 
@@ -218,6 +251,42 @@
 		return this;
 	}
 
+	// Docs:
+// Comments_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/comments_type-complextypevisio-xml
+	function CComments() {
+		this.showCommentTags = null;
+		this.authorList = [];
+		this.commentList = [];
+		return this;
+	}
+
+	// Docs:
+// Extensions_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/extensions_type-complextypevisio-xml
+	function CExtensions() {
+		this.cellDef = [];
+		this.functionDef = [];
+		this.sectionDef = [];
+		return this;
+	}
+
+	// Docs:
+// DataConnections_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/dataconnections_type-complextypevisio-xml
+	function CDataConnections() {
+		this.nextID = null;
+		this.dataConnection = [];
+		return this;
+	}
+
+	// Docs:
+	// DataRecordSets_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/datarecordsets_type-complextypevisio-xml
+	function CDataRecordSets() {
+		this.nextID = null;
+		this.activeRecordsetID = null;
+		this.dataWindowOrder = null;
+		this.dataRecordSet = [];
+		return this;
+	}
+
 
 	function parseApp(doc, reader, context) {
 		let appPart = doc.getPartByRelationshipType(AscCommon.openXml.Types.extendedFileProperties.relationType);
@@ -257,7 +326,6 @@
 		}
 	}
 
-
 	function parseWindows(documentPart, reader, context) {
 		let windowsPart = documentPart.getPartByRelationshipType(AscCommon.openXml.Types.visioDocumentWindows.relationType);
 		if (windowsPart) {
@@ -287,7 +355,7 @@
 						// if masterNumber is number
 						mastersSort[masterNumber - 1] = masters[i];
 					} else {
-						console.log('check sdkjs/draw/model/VisioDocument.js : 138');
+						console.log('check sdkjs/draw/model/VisioDocument.js : parseMasters');
 						mastersSort = masters;
 						break;
 					}
@@ -324,7 +392,7 @@
 						// if masterNumber is number
 						pagesSort[pageNumber - 1] = pages[i];
 					} else {
-						console.log('check sdkjs/draw/model/VisioDocument.js : 261');
+						console.log('check sdkjs/draw/model/VisioDocument.js : parsePages');
 						pagesSort = pages;
 						break;
 					}
@@ -352,6 +420,46 @@
 		}
 	}
 
+	function parseComments(documentPart, reader, context) {
+		let commentsPart = documentPart.getPartByRelationshipType(AscCommon.openXml.Types.visioComments.relationType);
+		if (commentsPart) {
+			let commentsPartContent = commentsPart.getDocumentContent();
+			reader = new StaxParser(commentsPartContent, commentsPart, context);
+			this.Comments = new CComments();
+			this.Comments.fromXml(reader, true);
+		}
+	}
+
+	function parseExtensions(documentPart, reader, context) {
+		let extensionsPart = documentPart.getPartByRelationshipType(AscCommon.openXml.Types.visioExtensions.relationType);
+		if (extensionsPart) {
+			let extensionsPartContent = extensionsPart.getDocumentContent();
+			reader = new StaxParser(extensionsPartContent, extensionsPart, context);
+			this.Extensions = new CExtensions();
+			this.Extensions.fromXml(reader, true);
+		}
+	}
+
+	function parseDataConnections(documentPart, reader, context) {
+		let dataConnectionsPart = documentPart.getPartByRelationshipType(AscCommon.openXml.Types.visioDataConnections.relationType);
+		if (dataConnectionsPart) {
+			let dataConnectionsPartContent = dataConnectionsPart.getDocumentContent();
+			reader = new StaxParser(dataConnectionsPartContent, dataConnectionsPart, context);
+			this.DataConnections = new CDataConnections();
+			this.DataConnections.fromXml(reader, true);
+		}
+	}
+
+	function parseDataRecordSets(documentPart, reader, context) {
+		let dataRecordSetsPart = documentPart.getPartByRelationshipType(AscCommon.openXml.Types.visioDataRecordSets.relationType);
+		if (dataRecordSetsPart) {
+			let dataRecordSetsPartContent = dataRecordSetsPart.getDocumentContent();
+			reader = new StaxParser(dataRecordSetsPartContent, dataRecordSetsPart, context);
+			this.DataRecordSets = new CDataRecordSets();
+			this.DataRecordSets.fromXml(reader, true);
+		}
+	}
+
 
 	//-------------------------------------------------------------export---------------------------------------------------
 	window['Asc']            = window['Asc'] || {};
@@ -369,4 +477,8 @@
 	window['AscCommonDraw'].CMasterContents_Type = CMasterContents_Type;
 	window['AscCommonDraw'].CPages_Type = CPages_Type;
 	window['AscCommonDraw'].CPageContents_Type = CPageContents_Type;
+	window['AscCommonDraw'].CComments = CComments;
+	window['AscCommonDraw'].CExtensions = CExtensions;
+	window['AscCommonDraw'].CDataConnections = CDataConnections;
+	window['AscCommonDraw'].CDataRecordSets = CDataRecordSets;
 })(window, window.document);

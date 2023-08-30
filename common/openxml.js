@@ -797,7 +797,11 @@
 		masters: {dir: "masters", filename: "masters.xml", contentType: "application/vnd.ms-visio.masters+xml", relationType: "http://schemas.microsoft.com/visio/2010/relationships/masters"},
 		master: {dir: "", filename: "master[N].xml", contentType: "application/vnd.ms-visio.master+xml", relationType: "http://schemas.microsoft.com/visio/2010/relationships/master"},
 		masterFromPage: {dir: "../masters", filename: "master[N].xml", contentType: "application/vnd.ms-visio.master+xml", relationType: "http://schemas.microsoft.com/visio/2010/relationships/master"},
-		thumbnail: {dir: "docProps", filename: "thumbnail.emf", contentType: "image/x-emf", relationType: "http://schemas.openxmlformats.org/package/2006/relationships/metadata/thumbnail"}
+		thumbnail: {dir: "docProps", filename: "thumbnail.emf", contentType: "image/x-emf", relationType: "http://schemas.openxmlformats.org/package/2006/relationships/metadata/thumbnail"},
+		visioComments: {dir: "", filename: "comments.xml", contentType: "application/vnd.ms-visio.comments+xml", relationType: "http://schemas.microsoft.com/visio/2010/relationships/comments"},
+		visioExtensions: {dir: "", filename: "extensions.xml", contentType: "application/vnd.ms-visio.extensions+xml", relationType: "http://schemas.microsoft.com/visio/2010/relationships/extensions"},
+		visioDataConnections: {dir: "data", filename: "connections.xml", contentType: "application/vnd.ms-visio.connections+xml", relationType : "http://schemas.microsoft.com/visio/2010/relationships/connections"},
+		visioDataRecordSets : {dir: "data", filename: "recordsets.xml", contentType: "application/vnd.ms-visio.recordsets+xml", relationType: "http://schemas.microsoft.com/visio/2010/relationships/recordsets"}
 	};
 	openXml.TargetMode = {
 		internal: "Internal",
