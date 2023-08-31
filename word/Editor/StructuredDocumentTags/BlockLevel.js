@@ -1581,20 +1581,26 @@ CBlockLevelSdt.prototype.SetContentFromDataBindings = function ()
 
 	let oParagraph = new Paragraph(this.LogicDocument.DrawingDocument);
 	let oParaRun = new ParaRun(oParagraph);
+	oParagraph.Add_ToContent(0, oParaRun);
 
+	debugger
 
 	if (this.IsPicture())
 	{
-		let oPicture = new ParaDrawing(null, null, null, this.LogicDocument.DrawingDocument, this.LogicDocument, this.Parent);
-		//Paragraph
-		//Run
-		// ParaDrawing
-		//var oDrawing = new Object();
+		oTextContent = "data:image/jpeg;base64," + oTextContent;
+
+		let oDrawing = new ParaDrawing(10 * 36000, 10 * 36000, null, this.LogicDocument.DrawingDocument,this.LogicDocument, null);
+		let oImage = this.LogicDocument.DrawingObjects.createImage(oTextContent, 0, 0, 10 * 36000, 10 * 36000);
+		oImage.setParent(oDrawing);
+		oDrawing.Set_GraphicObject(oImage);
+
+		oParaRun.Add_ToContent(0, oDrawing, false);
+		this.Content.Remove_FromContent(0, 1, false);
+		this.Content.ReplaceContent([oParagraph]);
 	}
 	else
 	{
 		oParaRun.AddText(oTextContent);
-		oParagraph.Add_ToContent(0, oParaRun);
 		this.Content.Remove_FromContent(0, 1, false);
 		this.Content.ReplaceContent([oParagraph]);
 	}
