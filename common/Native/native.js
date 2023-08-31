@@ -240,7 +240,8 @@ document.documentElement = _null_object;
 document.body = _null_object;
 
 // NATIVE OBJECT
-window.native = native;
+//native undefiend if run without CNativeControlEmbed
+window.native = typeof native != "undefined" ? native : undefined;
 function GetNativeEngine() { return window.native; }
 
 var Api = null; // main builder object
@@ -251,7 +252,7 @@ if (window.native && window.native.GetDevicePixelRatio)
 // OPEN
 function NativeOpenFileData(data, version, xlsx_file_path, options)
 {
-	window.NATIVE_DOCUMENT_TYPE = window.native.GetEditorType();
+	window.NATIVE_DOCUMENT_TYPE = "draw";
     Api = null;
 
     if (options && options["printOptions"] && options["printOptions"]["retina"])
@@ -291,7 +292,7 @@ var clearInterval = window.clearInterval = function() {};
 var setInterval = window.setInterval = function() {};
 
 var console = {
-	log: function (param) { window.native.ConsoleLog(param); },
+	log: function (param) { window.native && window.native.ConsoleLog(param); },
 	time: function (param) {},
 	timeEnd: function (param) {},
 	warn: function() {}

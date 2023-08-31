@@ -130,7 +130,7 @@
 				res = data;
 			});
 			if (res) {
-				window["native"]["Save_End"](";v10;", res.length);
+				window["native"] && window["native"]["Save_End"] && window["native"]["Save_End"](";v10;", res.length);
 				return res;
 			}
 			return new Uint8Array(0);
