@@ -1575,12 +1575,29 @@ CBlockLevelSdt.prototype.SetContentFromDataBindings = function ()
 		return;
 
 	let oTextContent = this.LogicDocument.FindInCustomXML(this.Pr.DataBinding);
+
+	if (!oTextContent)
+		return;
+
 	let oParagraph = new Paragraph(this.LogicDocument.DrawingDocument);
 	let oParaRun = new ParaRun(oParagraph);
-	oParaRun.AddText(oTextContent);
-	oParagraph.Add_ToContent(0, oParaRun);
-	this.Content.Remove_FromContent(0, 1, false);
-	this.Content.ReplaceContent([oParagraph]);
+
+
+	if (this.IsPicture())
+	{
+		let oPicture = new ParaDrawing(null, null, null, this.LogicDocument.DrawingDocument, this.LogicDocument, this.Parent);
+		//Paragraph
+		//Run
+		// ParaDrawing
+		//var oDrawing = new Object();
+	}
+	else
+	{
+		oParaRun.AddText(oTextContent);
+		oParagraph.Add_ToContent(0, oParaRun);
+		this.Content.Remove_FromContent(0, 1, false);
+		this.Content.ReplaceContent([oParagraph]);
+	}
 }
 CBlockLevelSdt.prototype.GetDataBinding = function ()
 {

@@ -27136,7 +27136,55 @@ CDocument.prototype.IsCheckFormPlaceholder = function()
 	
 	return this.CheckFormPlaceHolder;
 };
+CDocument.prototype.WriteCustomXML = function(oDataBindings, ContentToWrite)
+{
+	for (let i = 0; i < this.CustomXmls.length; i++)
+	{
+		let oCurCustomXml = this.CustomXmls[i];
 
+		if (oDataBindings.StoreItemID === oCurCustomXml.ItemId)
+		{
+			let xPath = oDataBindings.XPath;
+
+			function findElementsByXPath(root, xpath) {
+				var parts = xpath.split('/');
+				parts.shift(); // Убираем пустой первый элемент
+
+				var currentElement = root;
+
+				for (var i = 0; i < parts.length; i++) {
+					var part = parts[i];
+					var namespaceAndTag = part.split('[')[0];
+					var index = parseInt(part.split('[')[1].slice(0, -1)) - 1;
+					var tagName = namespaceAndTag.split(':')[1];
+
+					var matchingChildren = currentElement.content.filter(function (child) {
+						let arr = child.name.split(":");
+						if (arr.length > 1)
+						{
+							return arr[1] === tagName;
+						}
+						else
+						{
+							return arr[0] === tagName;
+						}
+
+					});
+
+					if (matchingChildren.length <= index) {
+						return null; // Элемент не найден
+					}
+
+					currentElement = matchingChildren[index];
+				}
+
+				return currentElement.textContent = ContentToWrite;
+			}
+
+			return findElementsByXPath(oCurCustomXml.Content, xPath);
+		}
+	}
+}
 CDocument.prototype.FindInCustomXML = function(oDataBindings)
 {
 	for (let i = 0; i < this.CustomXmls.length; i++)
@@ -27160,8 +27208,17 @@ CDocument.prototype.FindInCustomXML = function(oDataBindings)
 					var index = parseInt(part.split('[')[1].slice(0, -1)) - 1;
 					var tagName = namespaceAndTag.split(':')[1];
 
-					var matchingChildren = currentElement.children.filter(function (child) {
-						return child.tagName.split(":")[1] === tagName;
+					var matchingChildren = currentElement.content.filter(function (child) {
+						let arr = child.name.split(":");
+						if (arr.length > 1)
+						{
+							return arr[1] === tagName;
+						}
+						else
+						{
+							return arr[0] === tagName;
+						}
+
 					});
 
 					if (matchingChildren.length <= index) {

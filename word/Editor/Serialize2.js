@@ -6491,12 +6491,23 @@ function BinaryDocumentTableWriter(memory, doc, oMapCommentId, oNumIdMap, copyPa
 		// if (oSdt.EndPr) {
 		// 	this.bs.WriteItem(c_oSerSdt.EndPr, function(){oThis.brPrs.Write_rPr(oSdt.EndPr, null, null);});
 		// }
-		if (0 === type) {
+
+		if (oSdt.Pr.DataBinding)
+		{
+			this.Document.WriteCustomXML(oSdt.Pr.DataBinding, oSdt.Content.Content[0].GetText());
+		}
+
+		if (0 === type)
+		{
 			var oInnerDocument = new BinaryDocumentTableWriter(this.memory, this.Document, this.oMapCommentId, this.oNumIdMap, this.copyParams, this.saveParams, this.oBinaryHeaderFooterTableWriter);
 			this.bs.WriteItem(c_oSerSdt.Content, function(){oInnerDocument.WriteDocumentContent(oSdt.Content);});
-		} else if (1 === type) {
+		}
+		else if (1 === type)
+		{
 			this.bs.WriteItem(c_oSerSdt.Content, function(){oThis.WriteParagraphContent(oSdt, false, false);});
 		}
+
+
 	};
 	this.WriteSdtPr = function (val, oSdt)
 	{
@@ -6514,9 +6525,9 @@ function BinaryDocumentTableWriter(memory, doc, oMapCommentId, oNumIdMap, copyPa
 			rPr.Color = val.Color;
 			oThis.bs.WriteItem(c_oSerSdt.Color, function (){oThis.brPrs.Write_rPr(rPr, null, null);});
 		}
-		// if (null != val.DataBinding) {
-		// 	oThis.bs.WriteItem(c_oSerSdt.DataBinding, function (){oThis.WriteSdtPrDataBinding(val.DataBinding);});
-		// }
+		if (null != val.DataBinding) {
+			oThis.bs.WriteItem(c_oSerSdt.DataBinding, function (){oThis.WriteSdtPrDataBinding(val.DataBinding);});
+		}
 		// if (null != val.DocPartList) {
 		// 	oThis.bs.WriteItem(c_oSerSdt.DocPartList, function (){oThis.WriteDocPartList(val.DocPartList);});
 		// }
@@ -7544,8 +7555,10 @@ function BinaryCustomsTableWriter(memory, doc, CustomXmls)
 			});
 		}
 		if (null !== customXml.Content) {
+			let mem = this.bs.memory;
 			this.bs.WriteItem(c_oSerCustoms.ContentA, function() {
-				oThis.memory.WriteBuffer(customXml.Content, 0, customXml.Content.length)
+				let buffer = customXml.Content.GetBuffer();
+				oThis.memory.WriteBuffer(buffer.data, 1, buffer.pos);
 			});
 		}
 	};
@@ -12961,23 +12974,31 @@ function Binary_DocumentTableReader(doc, oReadResult, openParams, stream, curNot
 				oSdtContentReader.Read(length, oSdtContent);
 				this.nCurCommentsCount = oSdtContentReader.nCurCommentsCount;
 				oSdt.SetContent(oSdtContent.length > 0 ? oSdtContent : []);
-			} else if (1 === typeContainer) {
+			}
+			else if (1 === typeContainer)
+			{
 				res = this.bcr.Read1(length, function(t, l) {
 					return oThis.ReadParagraphContent(t, l, container);
 				});
-				oSdt.SetContent()
-			} else if (2 === typeContainer) {
+				oSdt.SetContent();
+			}
+			else if (2 === typeContainer)
+			{
 				res = this.bcr.Read1(length, function(t, l) {
 					return oThis.Read_TableContent(t, l, container);
 				});
-				oSdt.SetContent()
-			} else if (3 === typeContainer) {
+				oSdt.SetContent();
+			}
+			else if (3 === typeContainer)
+			{
 				res = this.bcr.Read1(length, function(t, l) {
 					return oThis.ReadRowContent(t, l, container);
 				});
-				oSdt.SetContent()
+				oSdt.SetContent();
 			}
-		} else {
+		}
+		else
+		{
 			res = c_oSerConstants.ReadUnknown;
 		}
 		return res;
@@ -16114,211 +16135,6 @@ function Binary_OtherTableReader(doc, oReadResult, stream)
     };
 };
 
-function parseBinaryXML(binaryArray) {
-	binaryArray = new Uint8Array(binaryArray);
-	let currentIndex = 0;
-
-	function parseTextContent() {
-		let textContent = "";
-		let nStart = currentIndex;
-
-		while (binaryArray[currentIndex] !== 60) { // Знак "<" означает начало нового тега
-			currentIndex++;
-		}
-
-		return new TextDecoder().decode(binaryArray.slice(nStart, currentIndex));
-	}
-
-	function parseTag()
-	{
-		const startTag = binaryArray.indexOf(60, currentIndex); // <
-		let endTag = binaryArray.indexOf(32, startTag); // " "
-		let nEndTag = binaryArray.indexOf(62, startTag); // >
-		let nETag = binaryArray.indexOf(47, startTag); // /
-
-		let isClose = false;
-
-		if (nEndTag < endTag)
-			endTag = nEndTag;
-
-		if (nETag < endTag)
-			endTag = nETag;
-
-		if (startTag === -1 || endTag === -1) {
-			return null;
-		}
-
-		const tagName = new TextDecoder().decode(binaryArray.slice(startTag + 1, endTag));
-
-		currentIndex = endTag;
-
-		return tagName;
-	}
-
-	function parseAttributes() {
-		if (binaryArray[currentIndex] === 62)
-			return {};
-		const attributes = {};
-
-		while (
-			binaryArray[currentIndex] === 9  ||
-			binaryArray[currentIndex] === 10 || // символ перехода на новую строку
-			binaryArray[currentIndex] === 13 || // символ возврата каретки
-			binaryArray[currentIndex] === 32
-			) {
-			currentIndex++;
-		}
-
-		while (binaryArray[currentIndex] !== 62 && binaryArray[currentIndex] !== 47 && binaryArray[currentIndex] !== 63) {
-			const attributeNameStart = currentIndex;
-			while (binaryArray[currentIndex] !== 32 && binaryArray[currentIndex] !== 9 && binaryArray[currentIndex] !== 61) {
-				currentIndex++;
-			}
-
-			const attributeName = new TextDecoder().decode(binaryArray.slice(attributeNameStart, currentIndex));
-
-			while (binaryArray[currentIndex] !== 34) {
-				currentIndex++;
-			}
-			currentIndex++; // пропускаем кавычку
-
-			const attributeValueStart = currentIndex;
-			while (binaryArray[currentIndex] !== 34) {
-				currentIndex++;
-			}
-
-			const attributeValue = new TextDecoder().decode(binaryArray.slice(attributeValueStart, currentIndex));
-
-			attributes[attributeName] = attributeValue;
-			currentIndex++; // пропускаем кавычку и пробел
-
-			// Пропускаем символы перехода на новую строку и табуляции
-			while (
-				binaryArray[currentIndex] === 10 ||
-				binaryArray[currentIndex] === 13 ||
-				binaryArray[currentIndex] === 9 ||
-				binaryArray[currentIndex] === 32
-				) {
-				currentIndex++;
-			}
-		}
-
-		return attributes;
-	}
-
-
-	function parseElement() {
-		const tagName = parseTag();
-		let textContent = "";
-
-		if (!tagName)
-			return null;
-
-		const attributes = parseAttributes();
-		const children = [];
-
-		while (
-			binaryArray[currentIndex] === 9  ||
-			binaryArray[currentIndex] === 10 || // символ перехода на новую строку
-			binaryArray[currentIndex] === 13 || // символ возврата каретки
-			binaryArray[currentIndex] === 32
-			) {
-			currentIndex++;
-		}
-
-		if (binaryArray[currentIndex] === 47 && binaryArray[currentIndex+1] === 62)
-		{
-			currentIndex++;
-			currentIndex++;
-			return {
-				tagName: tagName,
-				attributes: attributes,
-				children: children,
-				textContent: textContent,
-			};
-		}
-
-		if (binaryArray[currentIndex] === 63 && binaryArray[currentIndex + 1] === 62)
-		{
-			currentIndex++;
-			currentIndex++;
-			return {
-				tagName: tagName,
-				attributes: attributes,
-				children: [parseElement()],
-				textContent: textContent,
-			};
-		}
-
-		if (binaryArray[currentIndex] === 62)
-		{
-			currentIndex++;
-
-			while (
-				binaryArray[currentIndex] === 9  ||
-				binaryArray[currentIndex] === 10 || // символ перехода на новую строку
-				binaryArray[currentIndex] === 13 || // символ возврата каретки
-				binaryArray[currentIndex] === 32
-				) {
-				currentIndex++;
-			}
-
-			if (binaryArray[currentIndex] !== 60)
-			{
-				textContent = parseTextContent();
-				currentIndex += 2; // пропускаем </
-				currentIndex += tagName.length; // пропускаем имя закрывающего тега
-				currentIndex += 1; // пропускаем >
-			}
-			else
-			{
-				while (currentIndex < binaryArray.length)
-				{
-					if (binaryArray[currentIndex] === 60 && binaryArray[currentIndex + 1] !== 47)
-					{
-						const child = parseElement();
-						if (child)
-						{
-							children.push(child);
-						}
-					}
-					else if (binaryArray[currentIndex] === 60 && binaryArray[currentIndex + 1] === 47)
-					{
-						currentIndex += 2; // пропускаем </
-						currentIndex += tagName.length; // пропускаем имя закрывающего тега
-						currentIndex += 1; // пропускаем >
-						break;
-					}
-					else
-					{
-						// Пропускаем символы перехода на новую строку и табуляции
-						if (binaryArray[currentIndex] !== 10 && binaryArray[currentIndex] !== 9)
-						{
-							currentIndex++;
-						}
-						else
-						{
-							currentIndex++;
-							while (binaryArray[currentIndex] === 10 || binaryArray[currentIndex] === 9)
-							{
-								currentIndex++;
-							}
-						}
-					}
-				}
-			}
-		}
-
-		return {
-			tagName: tagName,
-			attributes: attributes,
-			children: children,
-			textContent: textContent,
-		};
-	}
-
-	return parseElement();
-}
 function Binary_CustomsTableReader(doc, oReadResult, stream, CustomXmls) {
 	this.Document = doc;
 	this.oReadResult = oReadResult;
@@ -16334,13 +16150,131 @@ function Binary_CustomsTableReader(doc, oReadResult, stream, CustomXmls) {
 	this.ReadCustom = function(type, length) {
 		var res = c_oSerConstants.ReadOk;
 		var oThis = this;
+
 		if (c_oSerCustoms.Custom === type) {
 			var custom = {Uri: [], ItemId: null, Content: null};
 			res = this.bcr.Read1(length, function(t, l) {
 				return oThis.ReadCustomContent(t, l, custom);
 			});
 
-			custom.Content = parseBinaryXML(custom.Content);
+			let two = String.fromCharCode.apply(String, custom.Content);
+			console.log(two)
+			let one = new StaxParser(two);
+			let curCont = null;
+
+			function CustomXMLItem(par, name)
+			{
+				this.parent = par;
+				this.content = [];
+				this.name = name ? name : "";
+				this.attribute = {};
+				this.textContent = "";
+				this.current = undefined;
+
+				this.AddAttribute = function (name, value)
+				{
+					this.attribute[name] = value;
+				}
+				this.AddContent = function (name)
+				{
+					let one = new CustomXMLItem(this, name);
+					curCont = one;
+					this.content.push(one);
+				}
+				this.GetParent = function ()
+				{
+					if (this.parent)
+						return this.parent;
+
+					return null;
+				}
+				this.SetParent = function (oPar)
+				{
+					this.parent = oPar;
+				}
+				this.AddTextContent = function (text)
+				{
+					if (text !== "")
+						this.textContent += text;
+				}
+				this.GetBuffer = function()
+				{
+					let writer = new AscCommon.CMemory();
+
+					function Write(content)
+					{
+						let current = null;
+
+						if (!content.name)
+						{
+							writer.WriteXmlString("\x8B\x00\x00\x00<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+							current = content.content[0];
+						}
+						else
+						{
+							current = content;
+						}
+
+						writer.WriteXmlNodeStart(current.name);
+
+						let atr = Object.keys(current.attribute)
+
+						for (let i = 0; i < atr.length; i++)
+						{
+							let cur = atr[i];
+							writer.WriteXmlAttributeStringEncode(cur, current.attribute[cur]);
+						}
+						writer.WriteXmlAttributesEnd();
+						writer.WriteXmlString("\r\n");
+
+
+						for (let i = 0; i < current.content.length; i++)
+						{
+							let curContent = current.content[i];
+							Write(curContent);
+						}
+
+						if (current.textContent)
+						{
+							writer.WriteXmlString(current.textContent);
+						}
+
+						writer.WriteXmlNodeEnd(current.name);
+						writer.WriteXmlString("\r\n");
+					}
+
+					Write(this);
+					return writer;
+				}
+			}
+
+			let ParCont = new CustomXMLItem(null);
+
+			curCont = ParCont;
+
+			while(one.Read())
+			{
+				switch (one.GetEventType())
+				{
+					case EasySAXEvent.CHARACTERS: curCont.AddTextContent(one.text.trim().replace(/\s/g,'')); break;
+					case EasySAXEvent.END_ELEMENT: curCont = curCont.parent; break;
+					case EasySAXEvent.START_ELEMENT:
+						let name = one.GetName();
+						curCont.AddContent(name)
+
+						while (one.MoveToNextAttribute())
+						{
+							let nameAttrib =  one.GetName();
+							let valueAttrib = one.GetValue();
+							curCont.AddAttribute(nameAttrib, valueAttrib);
+						}
+						break;
+				}
+			}
+
+			debugger
+			console.log(ParCont);
+			custom.Content = ParCont;
 
 			this.CustomXmls.push(custom);
 		}
