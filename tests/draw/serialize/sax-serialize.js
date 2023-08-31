@@ -104,13 +104,25 @@ $(function() {
 
 		QUnit.module("Comparing file structures")
 
-		let ignoreFolders = ["docProps"];
-		let ignoreFiles = ["theme1.xml"];
-		// testFile("Basic ShapesA_start", Asc.BasicShapesA_start, ignoreFolders, ignoreFiles);
-		testFile("generatedVsdx2schema", Asc.generatedVsdx2schema, ignoreFolders, ignoreFiles);
+		let ignoredFolders = ["docProps"];
+
+		// In theme1.xml after parse lost <a:extLst>, <a:font> - fonts for each language only main fonts remain,
+		// missing <a:tileRect> and <a:effectStyle>, some effectStyles are applied (e.g. shadows)
+		let ignoredFiles = ["theme1.xml"];
+
+		// Remove elements with ignoredTags from extraElements or missingElements
+		// So they are not considered in test result but still their children compared
+
+		// Remove Shapes because in random generated file there may be empty Shapes tag
+		// when in original file there was no Shapes tag
+		let ignoredTags = ["Shapes"];
+
+		testFile("Basic ShapesA_start", Asc.BasicShapesA_start, ignoredFolders, ignoredFiles, ignoredTags);
+		testFile("generatedVsdx2schema", Asc.generatedVsdx2schema, ignoredFolders, ignoredFiles, ignoredTags);
+		testFile("Timeline_diagram_start", Asc.Timeline_diagram_start, ignoredFolders, ignoredFiles, ignoredTags);
 
 
-		function testFile(fileName, base64, ignoreFolders, ignoreFiles) {
+		function testFile(fileName, base64, ignoreFolders, ignoreFiles, ignoredTags) {
 			QUnit.test('File ' + fileName, function (assert)
 			{
 				// Read and parse vsdx file
@@ -125,6 +137,9 @@ $(function() {
 
 				api.saveDocumentToZip(api.Document, AscCommon.c_oEditorId.Draw, function (data) {
 					if (data) {
+						// download
+						// AscCommon.DownloadFileFromBytes(data, "title", AscCommon.openXml.GetMimeType("vsdx"));
+
 						// Read and parse custom vsdx file
 						const api2 = new Asc.asc_docs_api({'id-view': 'editor_sdk'});
 						api2.InitEditor();
@@ -168,7 +183,10 @@ $(function() {
 							let fileDomCustom = domParser.parseFromString(contentCustom, "application/xml");
 
 							let compareResult = compareDOMs(fileDomOriginal, fileDomCustom);
-							let differences = compareResult.filter(function (compareObject) {
+
+							let compareResultIgnoredTags = getCompareResultIgnoredTags(compareResult, ignoredTags);
+
+							let differences = compareResultIgnoredTags.filter(function (compareObject) {
 								return compareObject.missingElements.length || compareObject.extraElements.length;
 							});
 
@@ -179,6 +197,7 @@ $(function() {
 								let differencesString = differencesToString(differences);
 								message = format('Checking %s was not successful.\nDifferences:\n%s', path, differencesString);
 							}
+
 							assert.strictEqual(differences.length, 0, message);
 						}
 					} else {
@@ -187,6 +206,23 @@ $(function() {
 				});
 			});
 		}
+	}
+
+	function getCompareResultIgnoredTags(compareResult, ignoredTags) {
+		return compareResult.map(function (compareObject) {
+			let newMissingElements = compareObject.missingElements.filter(function (missingElement) {
+				return !ignoredTags.includes(missingElement.nodeName);
+			});
+			let newExtraElements = compareObject.extraElements.filter(function (extraElement) {
+				return !ignoredTags.includes(extraElement.nodeName);
+			});
+			return {
+				tagsCompared: compareObject.tagsCompared,
+				missingElements: newMissingElements,
+				equalElements: compareObject.equalElements,
+				extraElements: newExtraElements
+			}
+		});
 	}
 
 	function pathCheckFolderPresence(path, folders) {
