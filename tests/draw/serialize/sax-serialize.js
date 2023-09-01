@@ -117,12 +117,15 @@ $(function() {
 		// when in original file there was no Shapes tag
 		let ignoredTags = ["Shapes"];
 
-		testFile("Basic ShapesA_start", Asc.BasicShapesA_start, ignoredFolders, ignoredFiles, ignoredTags);
-		testFile("generatedVsdx2schema", Asc.generatedVsdx2schema, ignoredFolders, ignoredFiles, ignoredTags);
-		testFile("Timeline_diagram_start", Asc.Timeline_diagram_start, ignoredFolders, ignoredFiles, ignoredTags);
+		let ignoredAttributes = ["xsi:schemaLocation", "xmlns:xsi", "xmlns", "xmlns:r", "xml:space"];
+
+		testFile("Basic ShapesA_start", Asc.BasicShapesA_start, ignoredFolders, ignoredFiles, ignoredTags, ignoredAttributes, false);
+		testFile("generatedVsdx2schema", Asc.generatedVsdx2schema, ignoredFolders, ignoredFiles, ignoredTags, ignoredAttributes, false);
+		testFile("Timeline_diagram_start", Asc.Timeline_diagram_start, ignoredFolders, ignoredFiles, ignoredTags, ignoredAttributes, false);
+		testFile("rows_test", Asc.rows_test, ignoredFolders, ignoredFiles, ignoredTags, ignoredAttributes, false);
 
 
-		function testFile(fileName, base64, ignoreFolders, ignoreFiles, ignoredTags) {
+		function testFile(fileName, base64, ignoreFolders, ignoreFiles, ignoredTags, ignoredAttributes, downloadFile) {
 			QUnit.test('File ' + fileName, function (assert)
 			{
 				// Read and parse vsdx file
@@ -137,8 +140,9 @@ $(function() {
 
 				api.saveDocumentToZip(api.Document, AscCommon.c_oEditorId.Draw, function (data) {
 					if (data) {
-						// download
-						// AscCommon.DownloadFileFromBytes(data, "title", AscCommon.openXml.GetMimeType("vsdx"));
+						if(downloadFile) {
+							AscCommon.DownloadFileFromBytes(data, "title", AscCommon.openXml.GetMimeType("vsdx"));
+						}
 
 						// Read and parse custom vsdx file
 						const api2 = new Asc.asc_docs_api({'id-view': 'editor_sdk'});
@@ -184,10 +188,15 @@ $(function() {
 
 							let compareResult = compareDOMs(fileDomOriginal, fileDomCustom);
 
+							// TODO consider attributes check
 							let compareResultIgnoredTags = getCompareResultIgnoredTags(compareResult, ignoredTags);
+							let compareResultIgnoredAttributes = getCompareResultIgnoredAttributes(compareResultIgnoredTags, ignoredAttributes);
 
-							let differences = compareResultIgnoredTags.filter(function (compareObject) {
-								return compareObject.missingElements.length || compareObject.extraElements.length;
+							let differences = compareResultIgnoredAttributes.filter(function (compareObject) {
+								let attrDifs = compareObject.differencesInAttributes;
+								let wrongAttributes = attrDifs.wrongValuesAttributePairs.length ||
+									attrDifs.extraAttributes.length || attrDifs.missingAttributes.length;
+								return compareObject.missingElements.length || compareObject.extraElements.length || wrongAttributes;
 							});
 
 							let message = '';
@@ -220,7 +229,36 @@ $(function() {
 				tagsCompared: compareObject.tagsCompared,
 				missingElements: newMissingElements,
 				equalElements: compareObject.equalElements,
-				extraElements: newExtraElements
+				extraElements: newExtraElements,
+				differencesInAttributes : compareObject.differencesInAttributes
+			}
+		});
+	}
+
+	function getCompareResultIgnoredAttributes(compareResult, ignoredAttributes) {
+		return compareResult.map(function (compareObject) {
+			let attrDifs = compareObject.differencesInAttributes;
+			let newMissingAttributes = attrDifs.missingAttributes.filter(function (missingAttribute) {
+				return !ignoredAttributes.includes(missingAttribute.name);
+			});
+			attrDifs.missingAttributes = newMissingAttributes;
+
+			let newExtraAttributes = attrDifs.extraAttributes.filter(function (extraAttribute) {
+				return !ignoredAttributes.includes(extraAttribute.name);
+			});
+			attrDifs.extraAttributes = newExtraAttributes;
+
+			let newWrongValuesAttributePairs = attrDifs.wrongValuesAttributePairs.filter(function (wrongValuesAttributePair) {
+				return !ignoredAttributes.includes(wrongValuesAttributePair[1].name); //[1] is equal to [0] here
+			});
+			attrDifs.wrongValuesAttributePairs = newWrongValuesAttributePairs;
+
+			return {
+				tagsCompared: compareObject.tagsCompared,
+				missingElements: compareObject.missingElements,
+				equalElements: compareObject.equalElements,
+				extraElements: compareObject.extraElements,
+				differencesInAttributes : compareObject.differencesInAttributes // changed implicitly
 			}
 		});
 	}
@@ -243,29 +281,6 @@ $(function() {
 		return args.reduce(replacer, initial);
 	}
 
-	function differencesToString(differences) {
-		return differences.map(function (differenceObject) {
-			return differenceToString(differenceObject);
-		}).join('\n');
-	}
-
-	function differenceToString(difference) {
-		let result = '';
-		result += format('\nComparing elements <%s>.', difference.tagsCompared);
-		if (difference.missingElements.length) {
-			let missingElements = difference.missingElements.map(function (el) {
-				return format('<%s>', el.nodeName);
-			} );
-			result += format('\nMissing in custom: %s.\n', missingElements.join(', '));
-		} else {
-			let extraElements = difference.extraElements.map(function (el) {
-				return format('<%s>', el.nodeName);
-			});
-			result += format('\nExtra in custom: %s.\n', extraElements.join(', '));
-		}
-		return result;
-	}
-
 	function compareDOMs(originalNode, customNode, result) {
 		if (typeof result === 'undefined') {
 			result = [];
@@ -275,13 +290,14 @@ $(function() {
 			let customElement = customNode;
 
 			let differencesInChildren = compareTagsFlat(originalElement, customElement);
+			let differencesInAttributes = compareAttributes(originalElement, customElement);
 			result.push({
 				tagsCompared : originalNode.nodeName,
 				missingElements : differencesInChildren.missingElements,
 				equalElements : differencesInChildren.equalElements,
-				extraElements : differencesInChildren.extraElements
+				extraElements : differencesInChildren.extraElements,
+				differencesInAttributes : differencesInAttributes
 			});
-
 
 			let equalElements = differencesInChildren.equalElements;
 			// recursive cals
@@ -290,6 +306,62 @@ $(function() {
 			}
 		}
 		return result;
+	}
+
+	function compareAttributes(originalElement, customElement) {
+		let originalAttributes;
+		let customAttributes;
+		if (originalElement.attributes) {
+			originalAttributes = Array.from(originalElement.attributes);
+			originalAttributes.sort(function (a, b) {return a.name.localeCompare(b);})
+		} else {
+			originalAttributes = [];
+		}
+		if (customElement.attributes) {
+			customAttributes = Array.from(customElement.attributes);
+			customAttributes.sort(function (a, b) {return a.name.localeCompare(b);})
+		} else {
+			customAttributes = [];
+		}
+
+		const missingAttributes = [];
+		const extraAttributes = [];
+		const wrongValuesAttributePairs = [];
+		const correctAttributePairs = [];
+
+		// Iterate through the children of originalElement and check if they are missing in customElement
+		originalAttributes.forEach(function (originalAttribute) {
+			const foundIndex = customAttributes.findIndex(function(customAttribute) {
+				return customAttribute.name === originalAttribute.name;
+			});
+
+			if (foundIndex  === -1) {
+				missingAttributes.push(originalAttribute);
+			} else {
+				// Remove the found child from customElement to handle duplicates
+				const removedChild = customAttributes.splice(foundIndex, 1)[0];
+				if (originalAttribute.value === removedChild.value) {
+					correctAttributePairs.push([originalAttribute, removedChild]);
+				} else {
+					wrongValuesAttributePairs.push([originalAttribute, removedChild]);
+				}
+			}
+		});
+
+		// Find extra elements present in customElement but not in originalElement
+		// may be some() check can be omitted
+		customAttributes.forEach(function (customAttribute) {
+			if (!originalAttributes.some(function (originalAttribute) {return originalAttribute.name === customAttribute.name;})) {
+				extraAttributes.push(customAttribute);
+			}
+		});
+
+		return {
+			missingAttributes,
+			extraAttributes,
+			wrongValuesAttributePairs,
+			correctAttributePairs
+		};
 	}
 
 	function compareTagsFlat(originalElement, customElement) {
@@ -348,4 +420,50 @@ $(function() {
 			extraElements: extraElements
 		};
 	}
+
+	function differencesToString(differences) {
+		return differences.map(function (differenceObject) {
+			return differenceToString(differenceObject);
+		}).join('\n');
+	}
+
+	function differenceToString(difference) {
+		let result = '';
+		result += format('\nComparing elements <%s>.', difference.tagsCompared);
+
+		if (difference.missingElements.length) {
+			let missingElements = difference.missingElements.map(function (el) {
+				return format('<%s>', el.nodeName);
+			} );
+			result += format('\nMissing in custom: %s.\n', missingElements.join(', '));
+		}
+
+		if (difference.extraElements.length) {
+			let extraElements = difference.extraElements.map(function (el) {
+				return format('<%s>', el.nodeName);
+			});
+			result += format('\nExtra in custom: %s.\n', extraElements.join(', '));
+		}
+
+		if (difference.differencesInAttributes.missingAttributes.length) {
+			let badAttributesElements = difference.differencesInAttributes.missingAttributes.map(function (el) {
+				return format('%s', el.name);
+			});
+			result += format('\nMissing attributes in custom: %s.\n', badAttributesElements.join(', '));
+		}
+		if (difference.differencesInAttributes.extraAttributes.length) {
+			let badAttributesElements = difference.differencesInAttributes.extraAttributes.map(function (el) {
+				return format('%s', el.name);
+			});
+			result += format('\nExtra attributes in custom: %s.\n', badAttributesElements.join(', '));
+		}
+		if (difference.differencesInAttributes.wrongValuesAttributePairs.length) {
+			let badAttributesElements = difference.differencesInAttributes.wrongValuesAttributePairs.map(function (el) {
+				return format('%s: %s !== %s', el[0].name, el[0].value, el[1].value);
+			});
+			result += format('\nWrong values in custom attributes:\n%s.\n', badAttributesElements.join('\n'));
+		}
+		return result;
+	}
+
 });

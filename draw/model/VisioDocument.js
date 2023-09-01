@@ -57,6 +57,8 @@
 		this.any = null;
 		this.anyAttr = null;
 
+		this.xmlSpace = null;
+
 		// TODO mb consider 'this'(CVisioDocument) contains parts(.xml files) like document.xml and windows.xml
 		// only but not XMLmethods and call class representing document.xml VisioDocument_Type
 		// this.VisioDocument_Type = null;
@@ -217,6 +219,7 @@
 		this.clientWidth = null;
 		this.clientHeight = null;
 		this.window = [];
+		this.xmlSpace = null;
 		return this;
 	}
 
@@ -225,6 +228,7 @@
 	function CMasters_Type() {
 		this.master = [];
 		this.masterShortcut = [];
+		this.xmlSpace = null;
 		return this;
 	}
 
@@ -232,6 +236,7 @@
 	function CMasterContents_Type() {
 		this.shapes = [];
 		this.connects = [];
+		this.xmlSpace = null;
 		return this;
 	}
 
@@ -239,6 +244,7 @@
 	// Pages_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/pages_type-complextypevisio-xml
 	function CPages_Type() {
 		this.page = [];
+		this.xmlSpace = null;
 		return this;
 	}
 
@@ -248,6 +254,7 @@
 	function CPageContents_Type() {
 		this.shapes = [];
 		this.connects = [];
+		this.xmlSpace = null;
 		return this;
 	}
 
@@ -257,6 +264,7 @@
 		this.showCommentTags = null;
 		this.authorList = [];
 		this.commentList = [];
+		this.xmlSpace = null;
 		return this;
 	}
 
@@ -266,6 +274,7 @@
 		this.cellDef = [];
 		this.functionDef = [];
 		this.sectionDef = [];
+		this.xmlSpace = null;
 		return this;
 	}
 
@@ -274,6 +283,7 @@
 	function CDataConnections() {
 		this.nextID = null;
 		this.dataConnection = [];
+		this.xmlSpace = null;
 		return this;
 	}
 
@@ -284,6 +294,7 @@
 		this.activeRecordsetID = null;
 		this.dataWindowOrder = null;
 		this.dataRecordSet = [];
+		this.xmlSpace = null;
 		return this;
 	}
 
@@ -350,7 +361,7 @@
 				// order is important so sort masters using uri
 				let mastersSort = [];
 				for (let i = 0; i < masters.length; i++) {
-					let masterNumber = masters[i].uri.slice(-5)[0]; // for master3.xml we get 3
+					let masterNumber = +masters[i].uri.match(/\d+/)[0]; // for master3.xml we get 3
 					if (!isNaN(parseFloat(masterNumber)) && !isNaN(masterNumber - 0)) {
 						// if masterNumber is number
 						mastersSort[masterNumber - 1] = masters[i];
