@@ -77,6 +77,13 @@
 		this.DataConnections = null;
 		this.DataRecordSets = null;
 
+		// Not realized, file defines schema and data of that schema
+		// this.Solutions = null;
+		// this.SolutionContents = [];
+
+		// unfinished
+		// this.EmbeddedData = null;
+
 		//------------------------------------------------------------------------------------------------------------------
 		//  Сохраняем ссылки на глобальные объекты
 		//------------------------------------------------------------------------------------------------------------------
@@ -127,7 +134,12 @@
 			parseExtensions.call(this, documentPart, reader, context);
 			parseDataConnections.call(this, documentPart, reader, context);
 			parseDataRecordSets.call(this, documentPart, reader, context);
+			// Not realized, file defines schema and data of that schema
+			// parseSolutions.call(this, documentPart, reader, context);
 		}
+		// unfinished
+		// saveEmbeddedData.call(this, doc);
+		// handleEmbeddedDataRels.call(this, zip);
 	};
 	// TODO mb rewrite consider 'CVisioDocument' contains parts(.xml files) only but not XML
 	CVisioDocument.prototype.toZip = function(zip, context) {
@@ -149,9 +161,11 @@
 		let extensionsPart = docPart.part.addPart(AscCommon.openXml.Types.visioExtensions);
 		let dataConnectionsPart = docPart.part.addPart(AscCommon.openXml.Types.visioDataConnections);
 		let dataRecordSetsPart = docPart.part.addPart(AscCommon.openXml.Types.visioDataRecordSets);
+		// Not realized, file defines schema and data of that schema
+		// let solutionsPart = docPart.part.addPart(AscCommon.openXml.Types.solutions);
 
 		for (let i = 0; i < this.MasterContents.length; i++) {
-			let masterContent =  mastersPart.part.addPart(AscCommon.openXml.Types.master);
+			let masterContent = mastersPart.part.addPart(AscCommon.openXml.Types.master);
 			masterContent.part.setDataXml(this.MasterContents[i], memory);
 		}
 
@@ -163,7 +177,7 @@
 
 			// I add page[N].xml.rels below
 			// It has links to all masters but
-			// in test1 file in page[N].xml.rels rId[N] states to random master[N]
+			// in examplevsdx file in page[N].xml.rels rId[N] states to random master[N]
 			// e.g. rId3 to ../masters/master1.xml
 			// here rId1 will state to master1, rId2 to master2, etc.
 			// TODO check if this is important
@@ -174,6 +188,12 @@
 					"../masters/master" + (i + 1) + ".xml");
 			}
 		}
+
+		// Not realized, file defines schema and data of that schema
+		// for (let i = 0; i < this.SolutionContents.length; i++) {
+		// 	let solutionContent = solutionsPart.part.addPart(AscCommon.openXml.Types.solution);
+		// 	solutionContent.part.setDataXml(this.SolutionContents[i], memory);
+		// }
 
 		docPart.part.setDataXml(this, memory);
 		appPart.part.setDataXml(this.App, memory);
@@ -207,6 +227,10 @@
 		if (this.DataRecordSets) {
 			dataRecordSetsPart.part.setDataXml(this.DataRecordSets, memory);
 		}
+		// Not realized, file defines schema and data of that schema
+		// if (this.Solutions) {
+		// 	solutionsPart.part.setDataXml(this.Solutions, memory);
+		// }
 		memory.Seek(0);
 	};
 
@@ -298,6 +322,13 @@
 		return this;
 	}
 
+	// Not realized, file defines schema and data of that schema
+	// Docs:
+	// Solutions_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/solutions_type-complextypevisio-xml
+	// function CSolutions() {
+	// 	this.solution = [];
+	// 	return this;
+	// }
 
 	function parseApp(doc, reader, context) {
 		let appPart = doc.getPartByRelationshipType(AscCommon.openXml.Types.extendedFileProperties.relationType);
@@ -471,6 +502,44 @@
 		}
 	}
 
+	// Not realized, file defines schema and data of that schema
+	// function parseSolutions(documentPart, reader, context) {
+	// 	let solutionsPart = documentPart.getPartByRelationshipType(AscCommon.openXml.Types.visioDataRecordSets.relationType);
+	// 	if (solutionsPart) {
+	// 		let solutionsPartContent = solutionsPart.getDocumentContent();
+	// 		reader = new StaxParser(solutionsPartContent, solutionsPart, context);
+	// 		this.Solutions = new CSolutions();
+	// 		this.Solutions.fromXml(reader, true);
+	// 	}
+	//
+	// 	// TODO parse each solution
+	// }
+
+	// function handleEmbeddedDataRels(fullDocPart) {
+	// 	// unfinished
+	// 	// Proposal: find embedded data files related to parts
+	//	// and add links to this.EmbeddedData(see below)[n] consider embedded data file path from it
+	// 	// save this links so varibles like StyleSheet.embeddedData['rId1'] or
+	//	// Document.embeddedData['rId2']
+	// 	let relationTypes = ["http://schemas.openxmlformats.org/officeDocument/2006/relationships/oleObject"];
+	//
+	// 	let parts = fullDocPart.getParts();
+	// 	let partsWithForeignDataLinks = parts.filter(function findPartsWhichLinksToForeignData(part) {
+	// 		return -1 !== part.getRelationships().findIndex(function (relationship) {
+	// 			return relationTypes.includes(relationship.relationshipType);
+	// 		})
+	// 	});
+	//
+	// 	let a = 1;
+	// }
+
+	// function saveEmbeddedData(zip) {
+	// 	// unfinished
+	// 	// Proposal: save embedded files (e.g. .xmls .emf, ...) data like base64 string
+	// 	// Create obj with that string, filepath, and filename
+	// 	// to this(VisioDocument) like this.EmbeddedData = [];
+	// }
+
 
 	//-------------------------------------------------------------export---------------------------------------------------
 	window['Asc']            = window['Asc'] || {};
@@ -492,4 +561,6 @@
 	window['AscCommonDraw'].CExtensions = CExtensions;
 	window['AscCommonDraw'].CDataConnections = CDataConnections;
 	window['AscCommonDraw'].CDataRecordSets = CDataRecordSets;
+	// Not realized, file defines schema and data of that schema
+	// window['AscCommonDraw'].CSolutions = CSolutions;
 })(window, window.document);

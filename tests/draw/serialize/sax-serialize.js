@@ -102,13 +102,21 @@ $(function() {
 			});
 		});
 
-		QUnit.module("Comparing file structures")
+		QUnit.module("Comparing file structures");
+
+		testFile.skip = function testFileSkip(fileName, base64, ignoreFolders, ignoreFiles, ignoredTags, ignoredAttributes, downloadFile) {
+			this(fileName, base64, ignoreFolders, ignoreFiles, ignoredTags, ignoredAttributes, downloadFile, true);
+		}
 
 		let ignoredFolders = ["docProps"];
+		// ignore some files related to embedded files. Embedded files not yet needed
+		ignoredFolders = ignoredFolders.concat(["media", "embeddings"]);
 
 		// In theme1.xml after parse lost <a:extLst>, <a:font> - fonts for each language only main fonts remain,
 		// missing <a:tileRect> and <a:effectStyle>, some effectStyles are applied (e.g. shadows)
 		let ignoredFiles = ["theme1.xml"];
+		// Not realized, Solution defines its own schema and data of that schema
+		ignoredFiles = ignoredFiles.concat(["solutions.xml.rels", "solution1.xml", "solutions.xml"]);
 
 		// Remove elements with ignoredTags from extraElements or missingElements
 		// So they are not considered in test result but still their children compared
@@ -119,14 +127,27 @@ $(function() {
 
 		let ignoredAttributes = ["xsi:schemaLocation", "xmlns:xsi", "xmlns", "xmlns:r", "xml:space"];
 
+		// TODO validation tag
+
 		testFile("Basic ShapesA_start", Asc.BasicShapesA_start, ignoredFolders, ignoredFiles, ignoredTags, ignoredAttributes, false);
 		testFile("generatedVsdx2schema", Asc.generatedVsdx2schema, ignoredFolders, ignoredFiles, ignoredTags, ignoredAttributes, false);
-		testFile("Timeline_diagram_start", Asc.Timeline_diagram_start, ignoredFolders, ignoredFiles, ignoredTags, ignoredAttributes, false);
+		// ignore some files related to embedded files. Embedded files not yet needed
+		let timeLineIgnoreFiles = ignoredFiles.concat(["master6.xml.rels"])
+		testFile("Timeline_diagram_start", Asc.Timeline_diagram_start, ignoredFolders, timeLineIgnoreFiles, ignoredTags, ignoredAttributes, false);
 		testFile("rows_test", Asc.rows_test, ignoredFolders, ignoredFiles, ignoredTags, ignoredAttributes, false);
 
+		QUnit.module("Comparing file structures. Many files");
+		for (let i = 0; true; i++) {
+			let fileBase64 = Asc[i];
+			if (!fileBase64) {
+				break;
+			}
+			testFile("File " + i, fileBase64, ignoredFolders, ignoredFiles, ignoredTags, ignoredAttributes, false);
+		}
 
-		function testFile(fileName, base64, ignoreFolders, ignoreFiles, ignoredTags, ignoredAttributes, downloadFile) {
-			QUnit.test('File ' + fileName, function (assert)
+		function testFile(fileName, base64, ignoreFolders, ignoreFiles, ignoredTags, ignoredAttributes, downloadFile, skip) {
+			let testFunction = skip ? QUnit.test.skip : QUnit.test;
+			testFunction('File ' + fileName, function (assert)
 			{
 				// Read and parse vsdx file
 				const api = new Asc.asc_docs_api({'id-view': 'editor_sdk'});
@@ -141,7 +162,7 @@ $(function() {
 				api.saveDocumentToZip(api.Document, AscCommon.c_oEditorId.Draw, function (data) {
 					if (data) {
 						if(downloadFile) {
-							AscCommon.DownloadFileFromBytes(data, "title", AscCommon.openXml.GetMimeType("vsdx"));
+							AscCommon.DownloadFileFromBytes(data, fileName, AscCommon.openXml.GetMimeType("vsdx"));
 						}
 
 						// Read and parse custom vsdx file
@@ -153,10 +174,26 @@ $(function() {
 						jsZlibCustom.open(data);
 						let customFiles = jsZlibCustom.files;
 
+						let exceptionsMessage = format('Ignoring:\nFolders: %s\nFiles: %s\nTags: %s\nAttributes: %s',
+							ignoredFolders.join(', '), ignoredFiles.join(', '), ignoredTags.join(', '), ignoredAttributes.join(', '));
+						// \n doesnt work in success assert to split
+						exceptionsMessage.split('\n').forEach(function(line) { return assert.ok(true, line);})
+
+						originalFiles = originalFiles.filter(function (path) {
+							let folderIgnored = pathCheckFolderPresence(path, ignoreFolders);
+							let fileIgnored = ignoreFiles.includes(path.split('/').pop());
+							return !folderIgnored && !fileIgnored;
+						});
+						customFiles = customFiles.filter(function (path) {
+							let folderIgnored = pathCheckFolderPresence(path, ignoreFolders);
+							let fileIgnored = ignoreFiles.includes(path.split('/').pop());
+							return !folderIgnored && !fileIgnored;
+						});
+
 						assert.strictEqual(customFiles.length, originalFiles.length, "Parsed vsdx contains as many xml files as initial vsdx");
 
-						originalFiles = originalFiles.sort( function (a, b) { return  a.localeCompare(b);});
-						customFiles = customFiles.sort( function (a, b) { return  a.localeCompare(b);});
+						originalFiles = originalFiles.sort( function(a, b) { return a.localeCompare(b);});
+						customFiles = customFiles.sort( function(a, b) { return a.localeCompare(b);});
 
 						assert.deepEqual(customFiles, originalFiles, 'Original vsdx has the same file structire as custom vsdx');
 
@@ -167,17 +204,21 @@ $(function() {
 							if (originalFiles[i].includes('/')) {
 								path = "/" + path;
 							}
-							if (pathCheckFolderPresence(path, ignoreFolders)) {
-								assert.ok(true, format('Checking %s was successful. Path is ignored!', path));
-								continue;
-							}
-							if (ignoreFiles.includes(path.split('/').pop())) {
-								assert.ok(true, format('Checking %s was successful. File is ignored!', path));
-								continue;
-							}
 
 							let contentOriginal = docOriginal.getPartByUri(path).getDocumentContent();
-							let contentCustom = docCustom.getPartByUri(path).getDocumentContent();
+
+							let contentCustom;
+							try {
+								contentCustom = docCustom.getPartByUri(path).getDocumentContent();
+							} catch (exception) {
+								// check if TypeError
+								if (exception.name === "TypeError") {
+									assert.strictEqual("Cant read file", "File read", format(
+										"Checking %s failed. Cant read custom file, check files count and file structure checks.",
+										path));
+									continue;
+								}
+							}
 							contentOriginal = contentOriginal.trim();
 							contentCustom = contentCustom.trim();
 

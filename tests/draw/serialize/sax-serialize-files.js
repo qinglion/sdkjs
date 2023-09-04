@@ -30,6 +30,8 @@
  *
  */
 
+// If soft wraps enabled automatically in WebStorm open using other editor
+
 $(function() {
 	window['Asc'] = window['Asc'] || {};
 	// first simple vsdx file with some figures
@@ -131,3 +133,5 @@ $(function() {
 // 			Pages					Document																	Pages
 // 			Recordsets		Document																	DataRecordSets
 // 			Theme					Document																	Theme
+
+// If soft wraps enabled automatically in WebStorm open using other editor
