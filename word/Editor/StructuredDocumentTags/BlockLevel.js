@@ -1571,30 +1571,42 @@ CBlockLevelSdt.prototype.SetContent = function (oContent)
 }
 CBlockLevelSdt.prototype.SetContentFromDataBindings = function ()
 {
-	if (!this.Pr.DataBinding)
+	let logicDocument = this.GetLogicDocument();
+	if (!logicDocument || !this.Pr.DataBinding)
 		return;
 
-	let oTextContent = this.LogicDocument.FindInCustomXML(this.Pr.DataBinding);
+	let oTextContent = logicDocument.FindInCustomXML(this.Pr.DataBinding);
 
 	if (!oTextContent)
 		return;
 
-	let oParagraph = new Paragraph(this.LogicDocument.DrawingDocument);
-	let oParaRun = new ParaRun(oParagraph);
+	let oParagraph = new AscWord.CParagraph(logicDocument.GetDrawingDocument());
+	let oParaRun = new AscWord.CRun();
 	oParagraph.Add_ToContent(0, oParaRun);
 
 	debugger
 
 	if (this.IsPicture())
 	{
-		oTextContent = "data:image/jpeg;base64," + oTextContent;
+		// let allDrawings = this.GetAllDrawingObjects();
+		// if (!allDrawings.length)
+		// 	return;
+		//
+		// let drawing = allDrawings[0];
+		
+		let imageData = "data:image/jpeg;base64," + oTextContent;
+		let editor = logicDocument.GetApi();
+		editor.ImageLoader.LoadImagesWithCallback([imageData], function(){}, 0, true);
+		
+		let w = 100; // 10 * 3600
+		let h = 100; // 10 * 3600
 
-		let oDrawing = new ParaDrawing(10 * 36000, 10 * 36000, null, this.LogicDocument.DrawingDocument,this.LogicDocument, null);
-		let oImage = this.LogicDocument.DrawingObjects.createImage(oTextContent, 0, 0, 10 * 36000, 10 * 36000);
-		oImage.setParent(oDrawing);
-		oDrawing.Set_GraphicObject(oImage);
-
-		oParaRun.Add_ToContent(0, oDrawing, false);
+		let drawing = new ParaDrawing(w, h, null, logicDocument.GetDrawingDocument());
+		let imageShape = logicDocument.DrawingObjects.createImage(imageData, 0, 0, w, h);
+		imageShape.setParent(drawing);
+		drawing.Set_GraphicObject(imageShape);
+		
+		oParaRun.Add_ToContent(0, drawing, false);
 		this.Content.Remove_FromContent(0, 1, false);
 		this.Content.ReplaceContent([oParagraph]);
 	}
