@@ -61,25 +61,27 @@
 
 		// TODO mb consider 'this'(CVisioDocument) contains parts(.xml files) like document.xml and windows.xml
 		// only but not XMLmethods and call class representing document.xml VisioDocument_Type
-		// this.VisioDocument_Type = null;
-		this.Windows = null;
-		this.Masters = null;
-		this.MasterContents = [];
-		this.Pages = null;
-		this.PagesContents = [];
-		this.Theme = null;
-		this.App = null;
-		this.Core = null;
-		this.CustomProperties = null;
-		this.Thumbnail = null;
-		this.Comments = null;
-		this.Extensions = null;
-		this.DataConnections = null;
-		this.DataRecordSets = null;
+		// this.visioDocument_Type = null;
+		this.windows = null;
+		this.masters = null;
+		this.masterContents = [];
+		this.pages = null;
+		this.pagesContents = [];
+		this.theme = null;
+		this.app = null;
+		this.core = null;
+		this.customProperties = null;
+		this.thumbnail = null;
+		this.commentsPart = null;
+		this.extensions = null;
+		this.dataConnections = null;
+		this.dataRecordSets = null;
 
 		// Not realized, file defines schema and data of that schema
 		// this.Solutions = null;
 		// this.SolutionContents = [];
+
+		// Validation also not realized
 
 		// unfinished
 		// this.EmbeddedData = null;
@@ -87,20 +89,20 @@
 		//------------------------------------------------------------------------------------------------------------------
 		//  Сохраняем ссылки на глобальные объекты
 		//------------------------------------------------------------------------------------------------------------------
-		this.History              = History;
-		this.IdCounter            = AscCommon.g_oIdCounter;
-		this.TableId              = AscCommon.g_oTableId;
-		// this.CollaborativeEditing = (("undefined" !== typeof(AscCommon.CWordCollaborativeEditing) && AscCommon.CollaborativeEditing instanceof AscCommon.CWordCollaborativeEditing) ? AscCommon.CollaborativeEditing : null);
-		this.Api                  = Api;
+		this.history              = History;
+		this.idCounter            = AscCommon.g_oIdCounter;
+		this.tableId              = AscCommon.g_oTableId;
+		// this.collaborativeEditing = (("undefined" !== typeof(AscCommon.CWordCollaborativeEditing) && AscCommon.CollaborativeEditing instanceof AscCommon.CWordCollaborativeEditing) ? AscCommon.CollaborativeEditing : null);
+		this.api                  = Api;
 		//------------------------------------------------------------------------------------------------------------------
 		//  Выставляем ссылки на главный класс
 		//------------------------------------------------------------------------------------------------------------------
 		if (false !== isMainLogicDocument)
 		{
-			// if (this.History)
-			// 	this.History.Set_LogicDocument(this);
+			// if (this.history)
+			// 	this.history.Set_LogicDocument(this);
 		}
-		this.MainDocument = false !== isMainLogicDocument;
+		this.mainDocument = false !== isMainLogicDocument;
 	}
 
 	// TODO Check thumbnail parse in fromZip and setData in toZip
@@ -123,8 +125,8 @@
 			reader = new StaxParser(contentDocument, documentPart, context);
 			this.fromXml(reader);
 			// TODO mb consider 'this' contains parts(.xml files) only but not XML like document.xml and windows.xml
-			// this.VisioDocument_Type = new AscCommonDraw.VisioDocument_Type();
-			// this.VisioDocument_Type.fromXml(reader);
+			// this.visioDocument_Type = new AscCommonDraw.VisioDocument_Type();
+			// this.visioDocument_Type.fromXml(reader);
 
 			parseWindows.call(this, documentPart, reader, context);
 			parseMasters.call(this, documentPart, reader, context);
@@ -164,16 +166,16 @@
 		// Not realized, file defines schema and data of that schema
 		// let solutionsPart = docPart.part.addPart(AscCommon.openXml.Types.solutions);
 
-		for (let i = 0; i < this.MasterContents.length; i++) {
+		for (let i = 0; i < this.masterContents.length; i++) {
 			let masterContent = mastersPart.part.addPart(AscCommon.openXml.Types.master);
-			masterContent.part.setDataXml(this.MasterContents[i], memory);
+			masterContent.part.setDataXml(this.masterContents[i], memory);
 		}
 
 		let pagesPart = docPart.part.addPart(AscCommon.openXml.Types.pages);
 
-		for (let i = 0; i < this.PagesContents.length; i++) {
+		for (let i = 0; i < this.pagesContents.length; i++) {
 			let pageContent = pagesPart.part.addPart(AscCommon.openXml.Types.page);
-			pageContent.part.setDataXml(this.PagesContents[i], memory);
+			pageContent.part.setDataXml(this.pagesContents[i], memory);
 
 			// I add page[N].xml.rels below
 			// It has links to all masters but
@@ -183,7 +185,7 @@
 			// TODO check if this is important
 			// in page[N].xml there is no rId used only <Shape ... Master="[ID]">
 			// e. g. <Shape ... Master="1">
-			for (let i = 0; i < this.MasterContents.length; i++) {
+			for (let i = 0; i < this.masterContents.length; i++) {
 				pageContent.part.addRelationship(AscCommon.openXml.Types.masterFromPage.relationType,
 					"../masters/master" + (i + 1) + ".xml");
 			}
@@ -196,36 +198,36 @@
 		// }
 
 		docPart.part.setDataXml(this, memory);
-		appPart.part.setDataXml(this.App, memory);
-		corePart.part.setDataXml(this.Core, memory);
-		if (this.CustomProperties) {
+		appPart.part.setDataXml(this.app, memory);
+		corePart.part.setDataXml(this.core, memory);
+		if (this.customProperties) {
 			// if Custom part exists
-			customPrPart.part.setDataXml(this.CustomProperties, memory);
+			customPrPart.part.setDataXml(this.customProperties, memory);
 		}
-		if (this.Thumbnail) {
-			thumbNailPart.part.setData(this.Thumbnail, memory);
+		if (this.thumbnail) {
+			thumbNailPart.part.setData(this.thumbnail, memory);
 		}
-		if (this.Windows) {
+		if (this.windows) {
 			// if Windows part exists
-			windowsPart.part.setDataXml(this.Windows, memory);
+			windowsPart.part.setDataXml(this.windows, memory);
 		}
-		mastersPart.part.setDataXml(this.Masters, memory);
-		pagesPart.part.setDataXml(this.Pages, memory);
-		if (this.Theme) {
+		mastersPart.part.setDataXml(this.masters, memory);
+		pagesPart.part.setDataXml(this.pages, memory);
+		if (this.theme) {
 			// if Theme part exists (by docs it MUST exist)
-			themePart.part.setDataXml(this.Theme, memory);
+			themePart.part.setDataXml(this.theme, memory);
 		}
-		if (this.Comments) {
-			commentsPart.part.setDataXml(this.Comments, memory);
+		if (this.commentsPart) {
+			commentsPart.part.setDataXml(this.commentsPart, memory);
 		}
-		if (this.Extensions) {
-			extensionsPart.part.setDataXml(this.Extensions, memory);
+		if (this.extensions) {
+			extensionsPart.part.setDataXml(this.extensions, memory);
 		}
-		if (this.DataConnections) {
-			dataConnectionsPart.part.setDataXml(this.DataConnections, memory);
+		if (this.dataConnections) {
+			dataConnectionsPart.part.setDataXml(this.dataConnections, memory);
 		}
-		if (this.DataRecordSets) {
-			dataRecordSetsPart.part.setDataXml(this.DataRecordSets, memory);
+		if (this.dataRecordSets) {
+			dataRecordSetsPart.part.setDataXml(this.dataRecordSets, memory);
 		}
 		// Not realized, file defines schema and data of that schema
 		// if (this.Solutions) {
@@ -335,8 +337,8 @@
 		if (appPart) {
 			let appContent = appPart.getDocumentContent();
 			reader = new StaxParser(appContent, appPart, context);
-			this.App = new AscCommon.CApp();
-			this.App.fromXml(reader, true);
+			this.app = new AscCommon.CApp();
+			this.app.fromXml(reader, true);
 		}
 	}
 
@@ -345,8 +347,8 @@
 		if (corePart) {
 			let coreContent = corePart.getDocumentContent();
 			reader = new StaxParser(coreContent, corePart, context);
-			this.Core = new AscCommon.CCore();
-			this.Core.fromXml(reader, true);
+			this.core = new AscCommon.CCore();
+			this.core.fromXml(reader, true);
 		}
 	}
 
@@ -355,8 +357,8 @@
 		if (customPrPart) {
 			let customPrPartContent = customPrPart.getDocumentContent();
 			reader = new StaxParser(customPrPartContent, customPrPart, context);
-			this.CustomProperties = new AscCommon.CCustomProperties();
-			this.CustomProperties.fromXml(reader, true);
+			this.customProperties = new AscCommon.CCustomProperties();
+			this.customProperties.fromXml(reader, true);
 		}
 	}
 
@@ -364,7 +366,7 @@
 		let thumbnailPart = doc.getPartByRelationshipType(AscCommon.openXml.Types.thumbnail.relationType);
 		if (thumbnailPart) {
 			let thumbnailPartContent = thumbnailPart.getDocumentContent();
-			this.Thumbnail = thumbnailPartContent;
+			this.thumbnail = thumbnailPartContent;
 		}
 	}
 
@@ -373,8 +375,8 @@
 		if (windowsPart) {
 			let contentWindows = windowsPart.getDocumentContent();
 			reader = new StaxParser(contentWindows, windowsPart, context);
-			this.Windows = new CWindows();
-			this.Windows.fromXml(reader);
+			this.windows = new CWindows();
+			this.windows.fromXml(reader);
 		}
 	}
 
@@ -383,8 +385,8 @@
 		if (mastersPart) {
 			let contentMasters = mastersPart.getDocumentContent();
 			reader = new StaxParser(contentMasters, mastersPart, context);
-			this.Masters = new CMasters_Type();
-			this.Masters.fromXml(reader);
+			this.masters = new CMasters_Type();
+			this.masters.fromXml(reader);
 
 			let masters = mastersPart.getPartsByRelationshipType(AscCommon.openXml.Types.master.relationType);
 			if (masters) {
@@ -410,7 +412,7 @@
 					reader = new StaxParser(contentMaster, masterPart, context);
 					let MasterContent = new CMasterContents_Type();
 					MasterContent.fromXml(reader);
-					this.MasterContents.push(MasterContent);
+					this.masterContents.push(MasterContent);
 				}
 			}
 		}
@@ -421,8 +423,8 @@
 		if (pagesPart) {
 			let contentPages = pagesPart.getDocumentContent();
 			reader = new StaxParser(contentPages, pagesPart, context);
-			this.Pages = new CPages_Type();
-			this.Pages.fromXml(reader);
+			this.pages = new CPages_Type();
+			this.pages.fromXml(reader);
 
 			let pages = pagesPart.getPartsByRelationshipType(AscCommon.openXml.Types.page.relationType);
 			if (pages) {
@@ -446,7 +448,7 @@
 					reader = new StaxParser(contentPage, pagePart, context);
 					let PageContent = new CPageContents_Type();
 					PageContent.fromXml(reader);
-					this.PagesContents.push(PageContent);
+					this.pagesContents.push(PageContent);
 				}
 			}
 		}
@@ -457,8 +459,8 @@
 		if (themePart) {
 			let themePartContent = themePart.getDocumentContent();
 			reader = new StaxParser(themePartContent, themePart, context);
-			this.Theme = new AscFormat.CTheme();
-			this.Theme.fromXml(reader, true);
+			this.theme = new AscFormat.CTheme();
+			this.theme.fromXml(reader, true);
 		}
 	}
 
@@ -467,8 +469,8 @@
 		if (commentsPart) {
 			let commentsPartContent = commentsPart.getDocumentContent();
 			reader = new StaxParser(commentsPartContent, commentsPart, context);
-			this.Comments = new CComments();
-			this.Comments.fromXml(reader, true);
+			this.commentsPart = new CComments();
+			this.commentsPart.fromXml(reader, true);
 		}
 	}
 
@@ -477,8 +479,8 @@
 		if (extensionsPart) {
 			let extensionsPartContent = extensionsPart.getDocumentContent();
 			reader = new StaxParser(extensionsPartContent, extensionsPart, context);
-			this.Extensions = new CExtensions();
-			this.Extensions.fromXml(reader, true);
+			this.extensions = new CExtensions();
+			this.extensions.fromXml(reader, true);
 		}
 	}
 
@@ -487,8 +489,8 @@
 		if (dataConnectionsPart) {
 			let dataConnectionsPartContent = dataConnectionsPart.getDocumentContent();
 			reader = new StaxParser(dataConnectionsPartContent, dataConnectionsPart, context);
-			this.DataConnections = new CDataConnections();
-			this.DataConnections.fromXml(reader, true);
+			this.dataConnections = new CDataConnections();
+			this.dataConnections.fromXml(reader, true);
 		}
 	}
 
@@ -497,8 +499,8 @@
 		if (dataRecordSetsPart) {
 			let dataRecordSetsPartContent = dataRecordSetsPart.getDocumentContent();
 			reader = new StaxParser(dataRecordSetsPartContent, dataRecordSetsPart, context);
-			this.DataRecordSets = new CDataRecordSets();
-			this.DataRecordSets.fromXml(reader, true);
+			this.dataRecordSets = new CDataRecordSets();
+			this.dataRecordSets.fromXml(reader, true);
 		}
 	}
 
