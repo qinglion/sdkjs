@@ -132,7 +132,10 @@
 			"cell/model/Workbook.js",
 			"cell/model/Serialize.js",
 			"cell/model/CellInfo.js",
-
+			
+			"word/Editor/custom-xml/custom-xml.js",
+			"word/Editor/custom-xml/custom-xml-manager.js",
+			"word/Editor/custom-xml/data-binding.js",
 			"word/Editor/Paragraph/Run/FontClassification.js",
 			"word/Editor/Paragraph/Run/FontCalculator.js",
 			"word/Editor/Paragraph/Run/RunAutoCorrect.js",

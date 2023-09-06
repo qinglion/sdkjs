@@ -1575,7 +1575,7 @@ CBlockLevelSdt.prototype.SetContentFromDataBindings = function ()
 	if (!logicDocument || !this.Pr.DataBinding)
 		return;
 
-	let oTextContent = logicDocument.FindInCustomXML(this.Pr.DataBinding);
+	let oTextContent = logicDocument.getCustomXmlManager().getContentByDataBinding(this.Pr.DataBinding);
 
 	if (!oTextContent)
 		return;
@@ -1583,8 +1583,6 @@ CBlockLevelSdt.prototype.SetContentFromDataBindings = function ()
 	let oParagraph = new AscWord.CParagraph(logicDocument.GetDrawingDocument());
 	let oParaRun = new AscWord.CRun();
 	oParagraph.Add_ToContent(0, oParaRun);
-
-	debugger
 
 	if (this.IsPicture())
 	{
