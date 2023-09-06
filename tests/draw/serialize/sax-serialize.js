@@ -33,15 +33,19 @@
 //for zlib async loading
 QUnit.config.autostart = false;
 $(function() {
-	var api = new Asc.asc_docs_api({
+	const api = new Asc.asc_docs_api({
 		'id-view': 'editor_sdk'
 	});
-	AscCommon.g_oTableId.init()
+	AscCommon.g_oTableId.init();
+	let memory = new AscCommon.CMemory();
+	memory.SetXmlAttributeQuote(0x27);
 
 	//todo events
 	setTimeout(startTests, 3000);
 
 	function startTests() {
+		api.InitEditor();
+
 		QUnit.start();
 
 		QUnit.module("Test draw serialize")
@@ -100,6 +104,22 @@ $(function() {
 					return false;
 				}
 			});
+		});
+
+		QUnit.test("Compare document.xml", function (assert)
+		{
+			let document = new AscCommonDraw.CVisioDocument(api);
+			testXml(assert, document, Asc.documentXml);
+		});
+		QUnit.test("Compare document.xml generated", function (assert)
+		{
+			let document = new AscCommonDraw.CVisioDocument(api);
+			testXml(assert, document, Asc.documentXmlGenerated);
+		});
+		QUnit.test("Compare masters.xml", function (assert)
+		{
+			let masters = new AscCommonDraw.CMasters_Type(api);
+			testXml(assert, masters, Asc.mastersXml,);
 		});
 
 		QUnit.module("Comparing files");
@@ -258,6 +278,31 @@ $(function() {
 				});
 			});
 		}
+	}
+
+	function testXml(assert, serializeObj, expecteedXml) {
+		//fromXml
+		let context = new AscCommon.XmlParserContext();
+		let zip = new AscCommon.ZLib();
+		let rels = new AscCommon.openXml.OpenXmlPackage(zip, null);
+		let reader = new StaxParser(expecteedXml, rels, context);
+		serializeObj.fromXml(reader);
+
+		//toXml
+		memory.Seek(0);
+		memory.context = new AscCommon.XmlWriterContext();
+		memory.context.clearCurrentPartDataMaps();
+		context.document = serializeObj;
+		let filePart = new AscCommon.openXml.OpenXmlPackage(zip, memory);
+		let data = filePart.getXmlBytes(this, serializeObj, memory);
+		let content = AscCommon.UTF8ArrayToString(data, 0, data.length);
+
+		//compare
+		let expectedContent = expecteedXml.replace(/\t/g,'');
+		let resultContent = content;
+		//todo flag in memeory?
+		resultContent = resultContent.replace(/&quot;/g,'"');
+		assert.strictEqual(resultContent, expectedContent, "Compare xml");
 	}
 
 	function getCompareResultIgnoredTagsExistance(compareResult, ignoredTags) {

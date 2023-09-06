@@ -146,6 +146,7 @@
 	// TODO mb rewrite consider 'CVisioDocument' contains parts(.xml files) only but not XML
 	CVisioDocument.prototype.toZip = function(zip, context) {
 		let memory = new AscCommon.CMemory();
+		memory.SetXmlAttributeQuote(0x27);
 		memory.context = context;
 		context.document = this;
 
