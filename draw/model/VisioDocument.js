@@ -211,7 +211,9 @@
 			// if Windows part exists
 			windowsPart.part.setDataXml(this.windows, memory);
 		}
-		mastersPart.part.setDataXml(this.masters, memory);
+		if (this.masters) {
+			mastersPart.part.setDataXml(this.masters, memory);
+		}
 		pagesPart.part.setDataXml(this.pages, memory);
 		if (this.theme) {
 			// if Theme part exists (by docs it MUST exist)
