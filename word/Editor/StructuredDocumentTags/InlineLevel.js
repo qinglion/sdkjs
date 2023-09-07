@@ -1636,7 +1636,7 @@ CInlineLevelSdt.prototype.SetPr = function(oPr)
 		this.SetOForm(oPr.OForm);
 
 	if (undefined !== oPr.DataBinding)
-		this.SetDataBinding(oPr.DataBinding);
+		this.setDataBinding(oPr.DataBinding);
 };
 /**
  * Выставляем настройки текста по умолчанию для данного контрола
@@ -3729,11 +3729,6 @@ CInlineLevelSdt.prototype.CorrectSingleLineFormContent = function()
 			run.AddToContent(index, new AscWord.CRunSpace());
 		}
 	}
-};
-CInlineLevelSdt.prototype.SetDataBinding = function (oDataBinding)
-{
-	History.Add(new CChangesSdtPrDataBinding(this, this.Pr.oDataBinding, oDataBinding));
-	this.Pr.DataBinding = oDataBinding;
 };
 CInlineLevelSdt.prototype.fillContentWithDataBinding = function(content)
 {

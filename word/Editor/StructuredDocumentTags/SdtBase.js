@@ -1071,6 +1071,15 @@ CSdtBase.prototype.IsHideContentControlTrack = function()
 	
 	return Asc.c_oAscSdtAppearance.Hidden === this.GetAppearance();
 };
+CSdtBase.prototype.setDataBinding = function(dataBinding)
+{
+	AscCommon.History.Add(new CChangesSdtPrDataBinding(this, this.Pr.DataBinding, dataBinding));
+	this.Pr.DataBinding = dataBinding;
+};
+CSdtBase.prototype.getDataBinding = function()
+{
+	return this.Pr.DataBinding;
+};
 /**
  * Проверяем, есть ли привязанные данные, и если есть заполняем ими содержимое контрола
  */

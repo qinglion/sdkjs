@@ -49,6 +49,16 @@
 	};
 	DataBinding.prototype.toBinary = function(writer)
 	{
+		return this.Write_ToBinary(writer);
+	};
+	DataBinding.fromBinary = function(reader)
+	{
+		let data = new DataBinding();
+		data.Read_FromBinary(reader);
+		return data;
+	};
+	DataBinding.prototype.Write_ToBinary = function(writer)
+	{
 		let startPos = writer.GetCurPosition();
 		writer.Skip(4);
 		let flags = 0;
@@ -76,17 +86,15 @@
 		writer.WriteLong(flags);
 		writer.Seek(endPos);
 	};
-	DataBinding.fromBinary = function(reader)
+	DataBinding.prototype.Read_FromBinary = function(reader)
 	{
-		let data = new DataBinding();
-		
 		let flags = reader.GetLong();
 		if (flags & 1)
-			data.prefixMappings = reader.GetString2();
+			this.prefixMappings = reader.GetString2();
 		if (flags & 2)
-			data.storeItemID = reader.GetString2();
+			this.storeItemID = reader.GetString2();
 		if (flags & 4)
-			data.xpath = reader.GetString2();
+			this.xpath = reader.GetString2();
 	};
 	
 	//--------------------------------------------------------export----------------------------------------------------

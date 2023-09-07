@@ -45,7 +45,6 @@ AscDFH.changesFactory[AscDFH.historyitem_SdtPr_Lock]             = CChangesSdtPr
 AscDFH.changesFactory[AscDFH.historyitem_SdtPr_DocPartObj]       = CChangesSdtPrDocPartObj;
 AscDFH.changesFactory[AscDFH.historyitem_SdtPr_Appearance]       = CChangesSdtPrAppearance;
 AscDFH.changesFactory[AscDFH.historyitem_SdtPr_Color]            = CChangesSdtPrColor;
-AscDFH.changesFactory[AscDFH.historyitem_SdtPr_DataBinding]      = CChangesSdtPrDataBinding;
 AscDFH.changesFactory[AscDFH.historyitem_SdtPr_CheckBox]         = CChangesSdtPrCheckBox;
 AscDFH.changesFactory[AscDFH.historyitem_SdtPr_CheckBox_Checked] = CChangesSdtPrCheckBoxChecked;
 AscDFH.changesFactory[AscDFH.historyitem_SdtPr_Picture]          = CChangesSdtPrPicture;
@@ -62,6 +61,8 @@ AscDFH.changesFactory[AscDFH.historyitem_SdtPr_TextForm]         = CChangesSdtPr
 AscDFH.changesFactory[AscDFH.historyitem_SdtPr_FormPr]           = CChangesSdtPrFormPr;
 AscDFH.changesFactory[AscDFH.historyitem_SdtPr_PictureFormPr]    = CChangesSdtPrPictureFormPr;
 AscDFH.changesFactory[AscDFH.historyitem_SdtPr_ComplexFormPr]    = CChangesSdtPrComplexFormPr;
+AscDFH.changesFactory[AscDFH.historyitem_SdtPr_OForm]            = CChangesSdtPrOForm;
+AscDFH.changesFactory[AscDFH.historyitem_SdtPr_DataBinding]      = CChangesSdtPrDataBinding;
 //----------------------------------------------------------------------------------------------------------------------
 // Карта зависимости изменений
 //----------------------------------------------------------------------------------------------------------------------
@@ -437,13 +438,12 @@ CChangesSdtPrDataBinding.prototype.private_SetValue = function(Value)
 };
 CChangesSdtPrDataBinding.prototype.private_CreateObject = function()
 {
-	return {};
+	return new AscWord.DataBinding();
 };
 CChangesSdtPrDataBinding.prototype.IsNeedRecalculate = function()
 {
-	return false;
+	return true;
 };
-
 
 /**
  * @constructor

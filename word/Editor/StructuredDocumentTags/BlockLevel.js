@@ -1454,7 +1454,7 @@ CBlockLevelSdt.prototype.SetPr = function(oPr)
 		this.SetColor(oPr.Color);
 
 	if (undefined !== oPr.DataBinding)
-		this.SetDataBinding(oPr.DataBinding);
+		this.setDataBinding(oPr.DataBinding);
 };
 /**
  * Выставляем настройки текста по умолчанию для данного контрола
@@ -1551,11 +1551,6 @@ CBlockLevelSdt.prototype.SetColor = function(oColor)
 		History.Add(new CChangesSdtPrColor(this, this.Pr.Color, oColor));
 		this.Pr.Color = oColor;
 	}
-};
-CBlockLevelSdt.prototype.SetDataBinding = function (oDataBinding)
-{
-	History.Add(new CChangesSdtPrDataBinding(this, this.Pr.oDataBinding, oDataBinding));
-	this.Pr.DataBinding = oDataBinding;
 };
 CBlockLevelSdt.prototype.fillContentWithDataBinding = function(content)
 {
