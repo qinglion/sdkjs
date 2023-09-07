@@ -40,6 +40,10 @@ $(function() {
 	let memory = new AscCommon.CMemory();
 	memory.SetXmlAttributeQuote(0x27);
 
+	testFileSerizlizeUseParseCompare.skip = function testFileSkip(fileName, base64, ignoreFolders, ignoreFiles, ignoredTags, ignoredAttributes, downloadFile) {
+		this(fileName, base64, ignoreFolders, ignoreFiles, ignoredTags, ignoredAttributes, downloadFile, true);
+	}
+
 	//todo events
 	setTimeout(startTests, 3000);
 
@@ -48,7 +52,7 @@ $(function() {
 
 		QUnit.start();
 
-		QUnit.module("Test draw serialize")
+		QUnit.module("Test main functions")
 
 		QUnit.test("Test api.OpenDocumentFromZip", function (assert)
 		{
@@ -72,8 +76,6 @@ $(function() {
 			api.saveDocumentToZip(api.Document, AscCommon.c_oEditorId.Draw, function (data) {
 				if (data) {
 					assert.strictEqual(Boolean(data), true, "saveDocumentToZip returned data");
-					// Download .vsdx
-					// AscCommon.DownloadFileFromBytes(data, "title", AscCommon.openXml.GetMimeType("vsdx"));
 				}
 			});
 		});
@@ -106,27 +108,44 @@ $(function() {
 			});
 		});
 
-		QUnit.test("Compare document.xml", function (assert)
-		{
-			let document = new AscCommonDraw.CVisioDocument(api);
-			testXml(assert, document, Asc.documentXml);
-		});
-		QUnit.test("Compare document.xml generated", function (assert)
-		{
-			let document = new AscCommonDraw.CVisioDocument(api);
-			testXml(assert, document, Asc.documentXmlGenerated);
-		});
-		QUnit.test("Compare masters.xml", function (assert)
-		{
-			let masters = new AscCommonDraw.CMasters_Type(api);
-			testXml(assert, masters, Asc.mastersXml,);
+		QUnit.module("Test file serialize use strings compare");
+
+		let atovaGeneratedXmlFiles = AscCommon.Base64.decode(Asc.altovaXml);
+
+		let jsZlibOriginal = new AscCommon.ZLib();
+		jsZlibOriginal.open(atovaGeneratedXmlFiles);
+		let originalFiles = jsZlibOriginal.files;
+
+		//TODO message with files currently ignored to HTML maybe using
+		// QUnit.test("Ignoring files ...", function (assert)
+		// {
+		// 	assert.ok(true, true, "just message");
+		// });
+
+		originalFiles.forEach(function(originalFilePath) {
+			// fileNames are important! use file name === root tag name
+			let ignoreFiles = ["Solutions.xml", "SolutionsXML.xml", "Validation.xml"];
+			let ignoreQuotes = true;
+			if (!ignoreFiles.includes(originalFilePath)) {
+				let fileUint8 = jsZlibOriginal.getFile(originalFilePath);
+				let fileContent = AscCommon.UTF8ArrayToString(fileUint8, 0, fileUint8.length);
+
+				let testName = "Compare " + originalFilePath;
+				let componentClassName = "C" + originalFilePath.slice(0, -4);
+				let componentClass = new AscCommonDraw[componentClassName](api);
+				testFileSerializeUseStringsCompare(testName, componentClass, fileContent, ignoreQuotes);
+			}
 		});
 
-		QUnit.module("Comparing files");
+		let liquidGeneratedXmlFiles = AscCommon.Base64.decode(Asc.liquidXml);
+		//TODO check liquid xml like above
 
-		testFile.skip = function testFileSkip(fileName, base64, ignoreFolders, ignoreFiles, ignoredTags, ignoredAttributes, downloadFile) {
-			this(fileName, base64, ignoreFolders, ignoreFiles, ignoredTags, ignoredAttributes, downloadFile, true);
-		}
+
+		// testFileSerializeUseStringsCompare("Compare document.xml", new AscCommonDraw.CVisioDocument(api), Asc.documentXml);
+		// testFileSerializeUseStringsCompare("Compare document.xml generated", new AscCommonDraw.CVisioDocument(api), Asc.documentXmlGenerated);
+		// testFileSerializeUseStringsCompare("Compare masters.xml", new AscCommonDraw.CMasters(api), Asc.mastersXml);
+
+		QUnit.module.skip("Test file serialize use parse compare");
 
 		let ignoredFolders = ["docProps"];
 		// ignore some files related to embedded files. Embedded files not yet needed
@@ -151,136 +170,166 @@ $(function() {
 
 		// tags order and tag values are not compared - no such functionality for now
 
-		testFile("Example vsdx", Asc.exampleVsdx, ignoredFolders, ignoredFiles, ignoredTagsExistence, ignoredAttributes, false);
-		testFile("Basic ShapesA_start", Asc.BasicShapesA_start, ignoredFolders, ignoredFiles, ignoredTagsExistence, ignoredAttributes, false);
-		testFile("generatedVsdx2schema", Asc.generatedVsdx2schema, ignoredFolders, ignoredFiles, ignoredTagsExistence, ignoredAttributes, false);
+		testFileSerizlizeUseParseCompare("Example vsdx", Asc.exampleVsdx, ignoredFolders, ignoredFiles, ignoredTagsExistence, ignoredAttributes, false);
+		testFileSerizlizeUseParseCompare("Basic ShapesA_start", Asc.BasicShapesA_start, ignoredFolders, ignoredFiles, ignoredTagsExistence, ignoredAttributes, false);
+		testFileSerizlizeUseParseCompare("generatedVsdx2schema", Asc.generatedVsdx2schema, ignoredFolders, ignoredFiles, ignoredTagsExistence, ignoredAttributes, false);
 		// ignore some files related to embedded files. Embedded files not yet needed
 		let timeLineIgnoreFiles = ignoredFiles.concat(["master6.xml.rels"])
-		testFile("Timeline_diagram_start", Asc.Timeline_diagram_start, ignoredFolders, timeLineIgnoreFiles, ignoredTagsExistence, ignoredAttributes, false);
-		testFile("rows_test", Asc.rows_test, ignoredFolders, ignoredFiles, ignoredTagsExistence, ignoredAttributes, false);
+		testFileSerizlizeUseParseCompare("Timeline_diagram_start", Asc.Timeline_diagram_start, ignoredFolders, timeLineIgnoreFiles, ignoredTagsExistence, ignoredAttributes, false);
+		testFileSerizlizeUseParseCompare("rows_test", Asc.rows_test, ignoredFolders, ignoredFiles, ignoredTagsExistence, ignoredAttributes, false);
 
 		// Some errors still there in module below
 		QUnit.module.skip("Comparing many files");
+
 		for (let key in Asc) {
 			if (key.startsWith('test_file')) {
 				let fileBase64 = Asc[key];
-				 testFile(key, fileBase64, ignoredFolders, ignoredFiles, ignoredTagsExistence, ignoredAttributes, false);
+				 testFileSerizlizeUseParseCompare(key, fileBase64, ignoredFolders, ignoredFiles, ignoredTagsExistence, ignoredAttributes, false);
 			}
-		}
-
-		function testFile(fileName, base64, ignoreFolders, ignoreFiles, ignoredTagsExistence, ignoredAttributes, downloadFile, skip) {
-			let testFunction = skip ? QUnit.test.skip : QUnit.test;
-			testFunction('File ' + fileName, function (assert)
-			{
-				// Read and parse vsdx file
-				const api = new Asc.asc_docs_api({'id-view': 'editor_sdk'});
-				api.InitEditor();
-				let vsdxOriginal = AscCommon.Base64.decode(base64);
-				const openResOriginal = api.OpenDocumentFromZip(vsdxOriginal);
-
-				let jsZlibOriginal = new AscCommon.ZLib();
-				jsZlibOriginal.open(vsdxOriginal);
-				let originalFiles = jsZlibOriginal.files;
-
-				api.saveDocumentToZip(api.Document, AscCommon.c_oEditorId.Draw, function (data) {
-					if (data) {
-						if(downloadFile) {
-							AscCommon.DownloadFileFromBytes(data, fileName, AscCommon.openXml.GetMimeType("vsdx"));
-						}
-
-						// Read and parse custom vsdx file
-						const api2 = new Asc.asc_docs_api({'id-view': 'editor_sdk'});
-						api2.InitEditor();
-						const openResCustom = api2.OpenDocumentFromZip(data);
-
-						let jsZlibCustom = new AscCommon.ZLib();
-						jsZlibCustom.open(data);
-						let customFiles = jsZlibCustom.files;
-
-						let exceptionsMessage = format('Ignoring:\nFolders: %s\nFiles: %s\nTags: %s\nAttributes: %s',
-							ignoredFolders.join(', '), ignoredFiles.join(', '), ignoredTagsExistence.join(', '), ignoredAttributes.join(', '));
-						// \n doesnt work in success assert to split
-						exceptionsMessage.split('\n').forEach(function(line) { return assert.ok(true, line);})
-
-						originalFiles = originalFiles.filter(function (path) {
-							let folderIgnored = pathCheckFolderPresence(path, ignoreFolders);
-							let fileIgnored = ignoreFiles.includes(path.split('/').pop());
-							return !folderIgnored && !fileIgnored;
-						});
-						customFiles = customFiles.filter(function (path) {
-							let folderIgnored = pathCheckFolderPresence(path, ignoreFolders);
-							let fileIgnored = ignoreFiles.includes(path.split('/').pop());
-							return !folderIgnored && !fileIgnored;
-						});
-
-						assert.strictEqual(customFiles.length, originalFiles.length, "Parsed vsdx contains as many xml files as initial vsdx");
-
-						originalFiles = originalFiles.sort( function(a, b) { return a.localeCompare(b);});
-						customFiles = customFiles.sort( function(a, b) { return a.localeCompare(b);});
-
-						assert.deepEqual(customFiles, originalFiles, 'Original vsdx has the same file structire as custom vsdx');
-
-						let docOriginal = new AscCommon.openXml.OpenXmlPackage(jsZlibOriginal, null);
-						let docCustom = new AscCommon.openXml.OpenXmlPackage(jsZlibCustom, null);
-						for (let i = 0; i < originalFiles.length; i++) {
-							let path = originalFiles[i];
-							if (originalFiles[i].includes('/')) {
-								path = "/" + path;
-							}
-
-							let contentOriginal = docOriginal.getPartByUri(path).getDocumentContent();
-
-							let contentCustom;
-							try {
-								contentCustom = docCustom.getPartByUri(path).getDocumentContent();
-							} catch (exception) {
-								// check if TypeError
-								if (exception.name === "TypeError") {
-									assert.strictEqual("Cant read file", "File read", format(
-										"Checking %s failed. Cant read custom file, check files count and file structure checks.",
-										path));
-									continue;
-								}
-							}
-							contentOriginal = contentOriginal.trim();
-							contentCustom = contentCustom.trim();
-
-							// global js API DOMParser
-							const domParser = new DOMParser();
-							let fileDomOriginal = domParser.parseFromString(contentOriginal, "application/xml");
-							let fileDomCustom = domParser.parseFromString(contentCustom, "application/xml");
-
-							let compareResult = compareDOMs(fileDomOriginal, fileDomCustom);
-
-							let compareResultIgnoredTags = getCompareResultIgnoredTagsExistance(compareResult, ignoredTagsExistence);
-							let compareResultIgnoredAttributes = getCompareResultIgnoredAttributes(compareResultIgnoredTags, ignoredAttributes);
-
-							let differences = compareResultIgnoredAttributes.filter(function (compareObject) {
-								let attrDifs = compareObject.differencesInAttributes;
-								let wrongAttributes = attrDifs.wrongValuesAttributePairs.length ||
-									attrDifs.extraAttributes.length || attrDifs.missingAttributes.length;
-								return compareObject.missingElements.length || compareObject.extraElements.length || wrongAttributes;
-							});
-
-							let message = '';
-							if (differences.length === 0) {
-								message = format('Checking %s was successful. Files are equal.', path);
-							} else {
-								let differencesString = differencesToString(differences);
-								message = format('Checking %s was not successful.\nDifferences:\n%s', path, differencesString);
-							}
-
-							assert.strictEqual(differences.length, 0, message);
-						}
-					} else {
-						return false;
-					}
-				});
-			});
 		}
 	}
 
-	function testXml(assert, serializeObj, expecteedXml) {
+
+	function testFileSerializeUseStringsCompare(testName, componentClass, expectedXml, ignoreQuotes) {
+		QUnit.test(testName, function (assert)
+		{
+			testXml(assert, componentClass, expectedXml, ignoreQuotes);
+		});
+	}
+
+	function testFileSerizlizeUseParseCompare(fileName, base64, ignoreFolders, ignoreFiles, ignoredTagsExistence, ignoredAttributes, downloadFile, skip) {
+		let testFunction = skip ? QUnit.test.skip : QUnit.test;
+		testFunction('File ' + fileName, function (assert)
+		{
+			// Read and parse vsdx file
+			const api = new Asc.asc_docs_api({'id-view': 'editor_sdk'});
+			api.InitEditor();
+			let vsdxOriginal = AscCommon.Base64.decode(base64);
+			const openResOriginal = api.OpenDocumentFromZip(vsdxOriginal);
+
+			let jsZlibOriginal = new AscCommon.ZLib();
+			jsZlibOriginal.open(vsdxOriginal);
+			let originalFiles = jsZlibOriginal.files;
+
+			api.saveDocumentToZip(api.Document, AscCommon.c_oEditorId.Draw, function (data) {
+				if (data) {
+					if(downloadFile) {
+						AscCommon.DownloadFileFromBytes(data, fileName, AscCommon.openXml.GetMimeType("vsdx"));
+					}
+
+					// Read and parse custom vsdx file
+					const api2 = new Asc.asc_docs_api({'id-view': 'editor_sdk'});
+					api2.InitEditor();
+					const openResCustom = api2.OpenDocumentFromZip(data);
+
+					let jsZlibCustom = new AscCommon.ZLib();
+					jsZlibCustom.open(data);
+					let customFiles = jsZlibCustom.files;
+
+					let exceptionsMessage = format('Ignoring:\nFolders: %s\nFiles: %s\nTags: %s\nAttributes: %s',
+						ignoredFolders.join(', '), ignoredFiles.join(', '), ignoredTagsExistence.join(', '), ignoredAttributes.join(', '));
+					// \n doesnt work in success assert to split
+					exceptionsMessage.split('\n').forEach(function(line) { return assert.ok(true, line);})
+
+					originalFiles = originalFiles.filter(function (path) {
+						let folderIgnored = pathCheckFolderPresence(path, ignoreFolders);
+						let fileIgnored = ignoreFiles.includes(path.split('/').pop());
+						return !folderIgnored && !fileIgnored;
+					});
+					customFiles = customFiles.filter(function (path) {
+						let folderIgnored = pathCheckFolderPresence(path, ignoreFolders);
+						let fileIgnored = ignoreFiles.includes(path.split('/').pop());
+						return !folderIgnored && !fileIgnored;
+					});
+
+					assert.strictEqual(customFiles.length, originalFiles.length, "Parsed vsdx contains as many xml files as initial vsdx");
+
+					originalFiles = originalFiles.sort( function(a, b) { return a.localeCompare(b);});
+					customFiles = customFiles.sort( function(a, b) { return a.localeCompare(b);});
+
+					assert.deepEqual(customFiles, originalFiles, 'Original vsdx has the same file structire as custom vsdx');
+
+					let docOriginal = new AscCommon.openXml.OpenXmlPackage(jsZlibOriginal, null);
+					let docCustom = new AscCommon.openXml.OpenXmlPackage(jsZlibCustom, null);
+					for (let i = 0; i < originalFiles.length; i++) {
+						let path = originalFiles[i];
+						if (originalFiles[i].includes('/')) {
+							path = "/" + path;
+						}
+
+						let contentOriginal = docOriginal.getPartByUri(path).getDocumentContent();
+
+						let contentCustom;
+						try {
+							contentCustom = docCustom.getPartByUri(path).getDocumentContent();
+						} catch (exception) {
+							// check if TypeError
+							if (exception.name === "TypeError") {
+								assert.strictEqual("Cant read file", "File read", format(
+									"Checking %s failed. Cant read custom file, check files count and file structure checks.",
+									path));
+								continue;
+							}
+						}
+						contentOriginal = contentOriginal.trim();
+						contentCustom = contentCustom.trim();
+
+						// global js API DOMParser
+						const domParser = new DOMParser();
+						let fileDomOriginal = domParser.parseFromString(contentOriginal, "application/xml");
+						let fileDomCustom = domParser.parseFromString(contentCustom, "application/xml");
+
+						let compareResult = compareDOMs(fileDomOriginal, fileDomCustom);
+
+						let compareResultIgnoredTags = getCompareResultIgnoredTagsExistence(compareResult, ignoredTagsExistence);
+						let compareResultIgnoredAttributes = getCompareResultIgnoredAttributes(compareResultIgnoredTags, ignoredAttributes);
+
+						let differences = compareResultIgnoredAttributes.filter(function (compareObject) {
+							let attrDifs = compareObject.differencesInAttributes;
+							let wrongAttributes = attrDifs.wrongValuesAttributePairs.length ||
+								attrDifs.extraAttributes.length || attrDifs.missingAttributes.length;
+							return compareObject.missingElements.length || compareObject.extraElements.length || wrongAttributes;
+						});
+
+						let message = '';
+						if (differences.length === 0) {
+							message = format('Checking %s was successful. Files are equal.', path);
+						} else {
+							let differencesString = differencesToString(differences);
+							message = format('Checking %s was not successful.\nDifferences:\n%s', path, differencesString);
+						}
+
+						assert.strictEqual(differences.length, 0, message);
+					}
+				} else {
+					return false;
+				}
+			});
+		});
+	}
+	function addLineBreaks(xmlString) {
+		// bad line breaks
+		for (let i = 0; i < 2; i++) {
+			xmlString = xmlString.replaceAll(/(<\w.+?)<(\w)/g, '$1\n<$2');
+		}
+		return xmlString;
+	}
+
+	function compareStringsResetLineBreaks(resultContent, expectedContent, message, assertArg, ignoreQuotes) {
+		// \n handle
+		resultContent = resultContent.replaceAll(/[\r\n]+/g, '');
+		expectedContent = expectedContent.replaceAll(/[\r\n]+/g, '');
+		resultContent = addLineBreaks(resultContent);
+		expectedContent = addLineBreaks(expectedContent);
+
+		if (ignoreQuotes) {
+			resultContent = resultContent.replaceAll("\"", "'");
+			expectedContent = expectedContent.replaceAll("\"", "'");
+		}
+		assertArg.strictEqual(resultContent, expectedContent, message);
+	}
+
+	function testXml(assert, serializeObj, expecteedXml, ignoreQuotes) {
 		//fromXml
 		let context = new AscCommon.XmlParserContext();
 		let zip = new AscCommon.ZLib();
@@ -302,10 +351,10 @@ $(function() {
 		let resultContent = content;
 		//todo flag in memeory?
 		resultContent = resultContent.replace(/&quot;/g,'"');
-		assert.strictEqual(resultContent, expectedContent, "Compare xml");
+		compareStringsResetLineBreaks(resultContent, expectedContent, "Compare xml", assert, ignoreQuotes);
 	}
 
-	function getCompareResultIgnoredTagsExistance(compareResult, ignoredTags) {
+	function getCompareResultIgnoredTagsExistence(compareResult, ignoredTags) {
 		return compareResult.map(function (compareObject) {
 			let newMissingElements = compareObject.missingElements.filter(function (missingElement) {
 				return !ignoredTags.includes(missingElement.nodeName);

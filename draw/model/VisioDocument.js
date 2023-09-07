@@ -254,7 +254,7 @@
 
 	// Docs:
 	// Masters_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/masters_type-complextypevisio-xml
-	function CMasters_Type() {
+	function CMasters() {
 		this.master = [];
 		this.masterShortcut = [];
 		this.xmlSpace = null;
@@ -262,7 +262,7 @@
 	}
 
 	// Another name in docs PageContents_Type
-	function CMasterContents_Type() {
+	function CMasterContents() {
 		this.shapes = [];
 		this.connects = [];
 		this.xmlSpace = null;
@@ -271,7 +271,7 @@
 
 	// Docs:
 	// Pages_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/pages_type-complextypevisio-xml
-	function CPages_Type() {
+	function CPages() {
 		this.page = [];
 		this.xmlSpace = null;
 		return this;
@@ -280,7 +280,7 @@
 	// Docs:
 	// Элемент Shapes (PageContents_Type complexType): https://learn.microsoft.com/ru-ru/office/client-developer/visio/shapes-element-pagecontents_type-complextypevisio-xml
 	// PageContents_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/pagecontents_type-complextypevisio-xml
-	function CPageContents_Type() {
+	function CPageContents() {
 		this.shapes = [];
 		this.connects = [];
 		this.xmlSpace = null;
@@ -388,7 +388,7 @@
 		if (mastersPart) {
 			let contentMasters = mastersPart.getDocumentContent();
 			reader = new StaxParser(contentMasters, mastersPart, context);
-			this.masters = new CMasters_Type();
+			this.masters = new CMasters();
 			this.masters.fromXml(reader);
 
 			let masters = mastersPart.getPartsByRelationshipType(AscCommon.openXml.Types.master.relationType);
@@ -413,7 +413,7 @@
 					let masterPart = masters[i];
 					let contentMaster = masterPart.getDocumentContent();
 					reader = new StaxParser(contentMaster, masterPart, context);
-					let MasterContent = new CMasterContents_Type();
+					let MasterContent = new CMasterContents();
 					MasterContent.fromXml(reader);
 					this.masterContents.push(MasterContent);
 				}
@@ -426,7 +426,7 @@
 		if (pagesPart) {
 			let contentPages = pagesPart.getDocumentContent();
 			reader = new StaxParser(contentPages, pagesPart, context);
-			this.pages = new CPages_Type();
+			this.pages = new CPages();
 			this.pages.fromXml(reader);
 
 			let pages = pagesPart.getPartsByRelationshipType(AscCommon.openXml.Types.page.relationType);
@@ -449,7 +449,7 @@
 					let pagePart = pages[i];
 					let contentPage = pagePart.getDocumentContent();
 					reader = new StaxParser(contentPage, pagePart, context);
-					let PageContent = new CPageContents_Type();
+					let PageContent = new CPageContents();
 					PageContent.fromXml(reader);
 					this.pagesContents.push(PageContent);
 				}
@@ -558,10 +558,10 @@
 
 	window['AscCommonDraw'].CVisioDocument = CVisioDocument;
 	window['AscCommonDraw'].CWindows = CWindows;
-	window['AscCommonDraw'].CMasters_Type = CMasters_Type;
-	window['AscCommonDraw'].CMasterContents_Type = CMasterContents_Type;
-	window['AscCommonDraw'].CPages_Type = CPages_Type;
-	window['AscCommonDraw'].CPageContents_Type = CPageContents_Type;
+	window['AscCommonDraw'].CMasters = CMasters;
+	window['AscCommonDraw'].CMasterContents = CMasterContents;
+	window['AscCommonDraw'].CPages = CPages;
+	window['AscCommonDraw'].CPageContents = CPageContents;
 	window['AscCommonDraw'].CComments = CComments;
 	window['AscCommonDraw'].CExtensions = CExtensions;
 	window['AscCommonDraw'].CDataConnections = CDataConnections;
