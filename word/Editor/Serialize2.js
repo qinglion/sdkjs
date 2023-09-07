@@ -11327,6 +11327,7 @@ function Binary_DocumentTableReader(doc, oReadResult, openParams, stream, curNot
 			res = this.bcr.Read1(length, function(t, l){
 				return oThis.ReadSdt(t,l, oSdt, 0);
 			});
+			oSdt.checkDataBinding();
 			Content.push(oSdt);
 		// } else if ( c_oSerParType.Background === type ) {
 			// oThis.Document.Background = {Color: null, Unifill: null, shape: null};
@@ -11670,6 +11671,7 @@ function Binary_DocumentTableReader(doc, oReadResult, openParams, stream, curNot
 			res = this.bcr.Read1(length, function(t, l){
 				return oThis.ReadSdt(t,l, oSdt, 1, oSdt);
 			});
+			oSdt.checkDataBinding();
 			if (oSdt.IsEmpty())
 				oSdt.ReplaceContentWithPlaceHolder();
 			paragraphContent.AddToContentToEnd(oSdt);
@@ -12976,28 +12978,24 @@ function Binary_DocumentTableReader(doc, oReadResult, openParams, stream, curNot
 				oSdtContentReader.oCurComments = this.oCurComments;
 				oSdtContentReader.Read(length, oSdtContent);
 				this.nCurCommentsCount = oSdtContentReader.nCurCommentsCount;
-				oSdt.SetContent(oSdtContent.length > 0 ? oSdtContent : []);
+				if (oSdtContent.length > 0) {
+					oSdt.Content.ReplaceContent(oSdtContent);
+				}
 			}
-			else if (1 === typeContainer)
-			{
+			else if (1 === typeContainer) {
 				res = this.bcr.Read1(length, function(t, l) {
 					return oThis.ReadParagraphContent(t, l, container);
 				});
-				oSdt.SetContent();
 			}
-			else if (2 === typeContainer)
-			{
+			else if (2 === typeContainer) {
 				res = this.bcr.Read1(length, function(t, l) {
 					return oThis.Read_TableContent(t, l, container);
 				});
-				oSdt.SetContent();
 			}
-			else if (3 === typeContainer)
-			{
+			else if (3 === typeContainer) {
 				res = this.bcr.Read1(length, function(t, l) {
 					return oThis.ReadRowContent(t, l, container);
 				});
-				oSdt.SetContent();
 			}
 		}
 		else

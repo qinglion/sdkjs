@@ -1557,64 +1557,18 @@ CBlockLevelSdt.prototype.SetDataBinding = function (oDataBinding)
 	History.Add(new CChangesSdtPrDataBinding(this, this.Pr.oDataBinding, oDataBinding));
 	this.Pr.DataBinding = oDataBinding;
 };
-CBlockLevelSdt.prototype.SetContent = function (oContent)
-{
-	if (this.Pr.DataBinding)
-	{
-		this.SetContentFromDataBindings()
-	}
-	else
-	{
-		this.Content.ReplaceContent(oContent);
-	}
-
-}
-CBlockLevelSdt.prototype.SetContentFromDataBindings = function ()
+CBlockLevelSdt.prototype.fillContentWithDataBinding = function(content)
 {
 	let logicDocument = this.GetLogicDocument();
-	if (!logicDocument || !this.Pr.DataBinding)
-		return;
-
-	let oTextContent = logicDocument.getCustomXmlManager().getContentByDataBinding(this.Pr.DataBinding);
-
-	if (!oTextContent)
-		return;
-
-	let oParagraph = new AscWord.CParagraph(logicDocument.GetDrawingDocument());
-	let oParaRun = new AscWord.CRun();
-	oParagraph.Add_ToContent(0, oParaRun);
-
-	if (this.IsPicture())
-	{
-		// let allDrawings = this.GetAllDrawingObjects();
-		// if (!allDrawings.length)
-		// 	return;
-		//
-		// let drawing = allDrawings[0];
-		
-		let imageData = "data:image/jpeg;base64," + oTextContent;
-		let editor = logicDocument.GetApi();
-		editor.ImageLoader.LoadImagesWithCallback([imageData], function(){}, 0, true);
-		
-		let w = 100; // 10 * 3600
-		let h = 100; // 10 * 3600
-
-		let drawing = new ParaDrawing(w, h, null, logicDocument.GetDrawingDocument());
-		let imageShape = logicDocument.DrawingObjects.createImage(imageData, 0, 0, w, h);
-		imageShape.setParent(drawing);
-		drawing.Set_GraphicObject(imageShape);
-		
-		oParaRun.Add_ToContent(0, drawing, false);
-		this.Content.Remove_FromContent(0, 1, false);
-		this.Content.ReplaceContent([oParagraph]);
-	}
-	else
-	{
-		oParaRun.AddText(oTextContent);
-		this.Content.Remove_FromContent(0, 1, false);
-		this.Content.ReplaceContent([oParagraph]);
-	}
-}
+	
+	let paragraph = new AscWord.CParagraph(logicDocument.GetDrawingDocument());
+	this.Content.ClearContent(false);
+	this.Content.AddToContent(0, paragraph);
+	
+	let run = new AscWord.CRun();
+	run.AddText(content);
+	paragraph.AddToContent(0, run);
+};
 CBlockLevelSdt.prototype.GetDataBinding = function ()
 {
 	return this.Pr.DataBinding;
