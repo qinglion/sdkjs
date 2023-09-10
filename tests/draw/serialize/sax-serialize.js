@@ -140,7 +140,7 @@ $(function() {
 
 		testXmlFilesArchieve(Asc.realFileTimelineDiagramm);
 
-		QUnit.module.skip("Test file serialize use parse compare");
+		QUnit.module("Test file serialize use parse compare");
 
 		let ignoredFolders = ["docProps"];
 		// ignore some files related to embedded files. Embedded files not yet needed
@@ -174,7 +174,7 @@ $(function() {
 		testFileSerizlizeUseParseCompare("rows_test", Asc.rows_test, ignoredFolders, ignoredFiles, ignoredTagsExistence, ignoredAttributes, false);
 
 		// Some errors still there in module below
-		QUnit.module.skip("Comparing many files");
+		QUnit.module("Comparing many files");
 
 		for (let key in Asc) {
 			if (key.startsWith('test_file')) {
@@ -195,7 +195,7 @@ $(function() {
 			// let ignoreFiles = ["Solutions.xml", "SolutionsXML.xml", "Validation.xml"];
 			let ignoreFiles = ["to prepare file check.txt"];
 			let ignoreQuotes = true;
-			let resetLineBreaks = true;
+			let doRemoveLineBreaks = false;
 			if (!ignoreFiles.includes(originalFilePath)) {
 				let fileUint8 = jsZlibOriginal.getFile(originalFilePath);
 				let fileContent = AscCommon.UTF8ArrayToString(fileUint8, 0, fileUint8.length);
@@ -210,12 +210,12 @@ $(function() {
 					if (componentClass) {
 						let componentObject = new componentClass(api);
 						QUnit.test(testName, function (assert) {
-							testFileSerializeUseStringsCompare(assert, componentObject, fileContent, ignoreQuotes, resetLineBreaks);
+							testFileSerializeUseStringsCompare(assert, componentObject, fileContent, ignoreQuotes, doRemoveLineBreaks);
 						});
 					} else {
 						QUnit.test(testName, function (assert)
 						{
-							QUnit.assert.ok(componentClass, "Class not found");
+							QUnit.assert.ok(componentClass, "Class for parse not found");
 						});
 					}
 				}	else {
@@ -258,7 +258,7 @@ $(function() {
 					let customFiles = jsZlibCustom.files;
 
 					let exceptionsMessage = format('Ignoring:\nFolders: %s\nFiles: %s\nTags: %s\nAttributes: %s',
-						ignoredFolders.join(', '), ignoredFiles.join(', '), ignoredTagsExistence.join(', '), ignoredAttributes.join(', '));
+						ignoreFolders.join(', '), ignoreFiles.join(', '), ignoredTagsExistence.join(', '), ignoredAttributes.join(', '));
 					// \n doesnt work in success assert to split
 					exceptionsMessage.split('\n').forEach(function(line) { return assert.ok(true, line);})
 
@@ -347,21 +347,30 @@ $(function() {
 		return xmlString;
 	}
 
-	function compareStringsResetLineBreaks(resultContent, expectedContent, message, assertArg, ignoreQuotes) {
-		// \n handle
-		resultContent = resultContent.replaceAll(/[\r\n]+/g, '');
-		expectedContent = expectedContent.replaceAll(/[\r\n]+/g, '');
-		resultContent = addLineBreaks(resultContent);
-		expectedContent = addLineBreaks(expectedContent);
-
-		if (ignoreQuotes) {
-			resultContent = resultContent.replaceAll("\"", "'");
-			expectedContent = expectedContent.replaceAll("\"", "'");
-		}
-		assertArg.strictEqual(resultContent, expectedContent, message);
+	function removeLineBreaks(string) {
+		string = string.replaceAll(/[\r\n]+/g, '');
+		string = addLineBreaks(string);
+		return string;
 	}
 
-	function testFileSerializeUseStringsCompare(assert, serializeObj, expecteedXml, ignoreQuotes, resetLineBreaks) {
+	function findFirstDifference(str1, str2) {
+		const minLength = Math.min(str1.length, str2.length);
+
+		for (let i = 0; i < minLength; i++) {
+			if (str1[i] !== str2[i]) {
+				return `Difference found at position ${i}: char ${str1.charCodeAt(i)} !== char ${str2.charCodeAt(i)}`;
+			}
+		}
+
+		if (str1.length !== str2.length) {
+			const longerStr = str1.length > str2.length ? str1 : str2;
+			return `Strings have different lengths. First difference found at position ${minLength}: ${longerStr[minLength]}`;
+		}
+
+		return "No difference found";
+	}
+
+	function testFileSerializeUseStringsCompare(assert, serializeObj, expecteedXml, ignoreQuotes, doRemoveLineBreaks) {
 		//fromXml
 		let context = new AscCommon.XmlParserContext();
 		let zip = new AscCommon.ZLib();
@@ -383,11 +392,18 @@ $(function() {
 		let resultContent = content;
 		//todo flag in memeory?
 		resultContent = resultContent.replace(/&quot;/g,'"');
-		if (resetLineBreaks) {
-			compareStringsResetLineBreaks(resultContent, expectedContent, "Compare xml", assert, ignoreQuotes);
-		} else {
-			assert.strictEqual(resultContent, expectedContent, "Compare xml");
+		if (ignoreQuotes) {
+			resultContent = resultContent.replaceAll("\"", "'");
+			expectedContent = expectedContent.replaceAll("\"", "'");
 		}
+		if (doRemoveLineBreaks) {
+			resultContent = removeLineBreaks(resultContent);
+			resultContent = addLineBreaks(resultContent);
+			expectedContent = removeLineBreaks(expectedContent);
+			expectedContent = addLineBreaks(expectedContent);
+		}
+		let message = `Comparing ${serializeObj.constructor.name} xml stings. ${findFirstDifference(resultContent, expectedContent)}`;
+		assert.strictEqual(resultContent, expectedContent, message);
 	}
 
 	function getCompareResultIgnoredTagsExistence(compareResult, ignoredTags) {
