@@ -58,6 +58,8 @@
 		this.anyAttr = null;
 
 		this.xmlSpace = null;
+		this.xmlns = null;
+		this.r = null;
 
 		// TODO mb consider 'this'(CVisioDocument) contains parts(.xml files) like document.xml and windows.xml
 		// only but not XMLmethods and call class representing document.xml VisioDocument_Type
@@ -249,6 +251,8 @@
 		this.clientHeight = null;
 		this.window = [];
 		this.xmlSpace = null;
+		this.xmlns = null;
+		this.r = null;
 		return this;
 	}
 
@@ -258,6 +262,8 @@
 		this.master = [];
 		this.masterShortcut = [];
 		this.xmlSpace = null;
+		this.xmlns = null;
+		this.r = null;
 		return this;
 	}
 
@@ -266,6 +272,8 @@
 		this.shapes = [];
 		this.connects = [];
 		this.xmlSpace = null;
+		this.xmlns = null;
+		this.r = null;
 		return this;
 	}
 
@@ -274,6 +282,8 @@
 	function CPages() {
 		this.page = [];
 		this.xmlSpace = null;
+		this.xmlns = null;
+		this.r = null;
 		return this;
 	}
 
@@ -284,6 +294,8 @@
 		this.shapes = [];
 		this.connects = [];
 		this.xmlSpace = null;
+		this.xmlns = null;
+		this.r = null;
 		return this;
 	}
 
@@ -294,6 +306,8 @@
 		this.authorList = [];
 		this.commentList = [];
 		this.xmlSpace = null;
+		this.xmlns = null;
+		this.r = null;
 		return this;
 	}
 
@@ -304,6 +318,8 @@
 		this.functionDef = [];
 		this.sectionDef = [];
 		this.xmlSpace = null;
+		this.xmlns = null;
+		this.r = null;
 		return this;
 	}
 
@@ -313,6 +329,8 @@
 		this.nextID = null;
 		this.dataConnection = [];
 		this.xmlSpace = null;
+		this.xmlns = null;
+		this.r = null;
 		return this;
 	}
 
@@ -324,6 +342,8 @@
 		this.dataWindowOrder = null;
 		this.dataRecordSet = [];
 		this.xmlSpace = null;
+		this.xmlns = null;
+		this.r = null;
 		return this;
 	}
 

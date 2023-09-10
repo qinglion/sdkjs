@@ -108,42 +108,37 @@ $(function() {
 			});
 		});
 
-		QUnit.module("Test file serialize use strings compare");
 
-		let atovaGeneratedXmlFiles = AscCommon.Base64.decode(Asc.altovaXml);
+		// File contents (strings) before and after parse are the same but
 
-		let jsZlibOriginal = new AscCommon.ZLib();
-		jsZlibOriginal.open(atovaGeneratedXmlFiles);
-		let originalFiles = jsZlibOriginal.files;
+		// Exceptions:
+		// comments, schema tags - schema namespace, schema location,
+		// hidden characters: /n/t,
+		// quotes: double or single,
+		// xml declaration: UTF and utf,
+		// attributes order (order set like in MS but in generated file with XMLSpy and Linquid studio they are different),
+		// ignoring long fractial numbers eg 3.1415926535897900073734945 cuts to 3.14159265358979,
+		// tag auto-generated_for_wildcard,
+		// files SolutionXML, SolutionsXML, Validation
+		// and attributes and tags with any type
 
-		//TODO message with files currently ignored to HTML maybe using
-		// QUnit.test("Ignoring files ...", function (assert)
-		// {
-		// 	assert.ok(true, true, "just message");
-		// });
+		// Errors in:
+		// <Cell N='Value' U='STR'>&lt;?xml version='1.0'?&gt;&lt;VisioReportDefinition xmlns='urn:schemas-microsoft-com:office:visio:reportdefinition' ReportExists='1' SelectDrawingDataMethod='2' Description='Summary of milestones in timeline with start date and duration' Precision='2' ShowUnits='1' CaseSensitive='0' UserCells='0' HiddenProperties='0' AdvancedFilter='0' FilterExpression='' Version='3'&gt;&lt;Name&gt;Milestone Summary&lt;/Name&gt;&lt;Title&gt;Milestone Summary&lt;/Title&gt;&lt;VisioRptDefField ID='1' Display='1' DisplayOrder='3' Type='2' SummaryTypes='0' Tag='2'&gt;&lt;Name&gt;Duration&lt;/Name&gt;&lt;DisplayName&gt;Duration&lt;/DisplayName&gt;&lt;/VisioRptDefField&gt;&lt;VisioRptDefField ID='2' Display='1' DisplayOrder='2' Type='5' SummaryTypes='0' Tag='2'&gt;&lt;Name&gt;Start&lt;/Name&gt;&lt;DisplayName&gt;Start&lt;/DisplayName&gt;&lt;/VisioRptDefField&gt;&lt;VisioRptDefField ID='3' Display='1' DisplayOrder='1' Type='0' SummaryTypes='0' Tag='2'&gt;&lt;Name&gt;Task Name&lt;/Name&gt;&lt;DisplayName&gt;Task Name&lt;/DisplayName&gt;&lt;/VisioRptDefField&gt;&lt;VisioRptDefGroup ID='0' GroupingField='0' ItemDisplay='1' GrandSummary='0' ExcludeDuplicates='0'/&gt;&lt;VisioRptDefSort ID='1' SortField='2' Ascending='1' CaseSensitive='0'/&gt;&lt;/VisioReportDefinition&gt;</Cell>
+		// <Text><cp IX='0'/>Project Timeline</Text>
+		// <Text><cp IX='0'/><fld IX='0'>4/1/2014</fld></Text>
 
-		originalFiles.forEach(function(originalFilePath) {
-			// fileNames are important! use file name === root tag name
-			let ignoreFiles = ["Solutions.xml", "SolutionsXML.xml", "Validation.xml"];
-			let ignoreQuotes = true;
-			if (!ignoreFiles.includes(originalFilePath)) {
-				let fileUint8 = jsZlibOriginal.getFile(originalFilePath);
-				let fileContent = AscCommon.UTF8ArrayToString(fileUint8, 0, fileUint8.length);
+		// Only .xml check no .rels check or embeddings
+		QUnit.module("Test xml serialize use strings compare Altova generated");
 
-				let testName = "Compare " + originalFilePath;
-				let componentClassName = "C" + originalFilePath.slice(0, -4);
-				let componentClass = new AscCommonDraw[componentClassName](api);
-				testFileSerializeUseStringsCompare(testName, componentClass, fileContent, ignoreQuotes);
-			}
-		});
+		testXmlFilesArchieve(Asc.altovaXml);
 
-		let liquidGeneratedXmlFiles = AscCommon.Base64.decode(Asc.liquidXml);
-		//TODO check liquid xml like above
+		QUnit.module("Test xml serialize use strings compare Liquid generated");
 
+		testXmlFilesArchieve(Asc.liquidXml);
 
-		// testFileSerializeUseStringsCompare("Compare document.xml", new AscCommonDraw.CVisioDocument(api), Asc.documentXml);
-		// testFileSerializeUseStringsCompare("Compare document.xml generated", new AscCommonDraw.CVisioDocument(api), Asc.documentXmlGenerated);
-		// testFileSerializeUseStringsCompare("Compare masters.xml", new AscCommonDraw.CMasters(api), Asc.mastersXml);
+		QUnit.module("Test xml serialize use strings compare real file");
+
+		testXmlFilesArchieve(Asc.realFileTimelineDiagramm);
 
 		QUnit.module.skip("Test file serialize use parse compare");
 
@@ -189,11 +184,47 @@ $(function() {
 		}
 	}
 
+	function testXmlFilesArchieve(base64zip) {
+		let generatedXmlFiles = AscCommon.Base64.decode(base64zip);
 
-	function testFileSerializeUseStringsCompare(testName, componentClass, expectedXml, ignoreQuotes) {
-		QUnit.test(testName, function (assert)
-		{
-			testXml(assert, componentClass, expectedXml, ignoreQuotes);
+		let jsZlibOriginal = new AscCommon.ZLib();
+		jsZlibOriginal.open(generatedXmlFiles);
+		let originalFiles = jsZlibOriginal.files;
+
+		originalFiles.forEach(function(originalFilePath) {
+			// let ignoreFiles = ["Solutions.xml", "SolutionsXML.xml", "Validation.xml"];
+			let ignoreFiles = ["to prepare file check.txt"];
+			let ignoreQuotes = true;
+			let resetLineBreaks = true;
+			if (!ignoreFiles.includes(originalFilePath)) {
+				let fileUint8 = jsZlibOriginal.getFile(originalFilePath);
+				let fileContent = AscCommon.UTF8ArrayToString(fileUint8, 0, fileUint8.length);
+
+				let testName = "Compare " + originalFilePath;
+
+				// className === C + rootTagName(first tag name)
+				let rootTagNameMatchResult = fileContent.match(/<(\w+)/);
+				if (rootTagNameMatchResult) {
+					let componentClassName = "C" + rootTagNameMatchResult[1];
+					let componentClass = AscCommonDraw[componentClassName];
+					if (componentClass) {
+						let componentObject = new componentClass(api);
+						QUnit.test(testName, function (assert) {
+							testFileSerializeUseStringsCompare(assert, componentObject, fileContent, ignoreQuotes, resetLineBreaks);
+						});
+					} else {
+						QUnit.test(testName, function (assert)
+						{
+							QUnit.assert.ok(componentClass, "Class not found");
+						});
+					}
+				}	else {
+					QUnit.test(testName, function (assert)
+					{
+						QUnit.assert.ok(false, "rootTagNameMatchResult is false");
+					});
+				}
+			}
 		});
 	}
 
@@ -312,6 +343,7 @@ $(function() {
 		for (let i = 0; i < 2; i++) {
 			xmlString = xmlString.replaceAll(/(<\w.+?)<(\w)/g, '$1\n<$2');
 		}
+		xmlString = xmlString.replaceAll('></', '>\n</');
 		return xmlString;
 	}
 
@@ -329,7 +361,7 @@ $(function() {
 		assertArg.strictEqual(resultContent, expectedContent, message);
 	}
 
-	function testXml(assert, serializeObj, expecteedXml, ignoreQuotes) {
+	function testFileSerializeUseStringsCompare(assert, serializeObj, expecteedXml, ignoreQuotes, resetLineBreaks) {
 		//fromXml
 		let context = new AscCommon.XmlParserContext();
 		let zip = new AscCommon.ZLib();
@@ -351,7 +383,11 @@ $(function() {
 		let resultContent = content;
 		//todo flag in memeory?
 		resultContent = resultContent.replace(/&quot;/g,'"');
-		compareStringsResetLineBreaks(resultContent, expectedContent, "Compare xml", assert, ignoreQuotes);
+		if (resetLineBreaks) {
+			compareStringsResetLineBreaks(resultContent, expectedContent, "Compare xml", assert, ignoreQuotes);
+		} else {
+			assert.strictEqual(resultContent, expectedContent, "Compare xml");
+		}
 	}
 
 	function getCompareResultIgnoredTagsExistence(compareResult, ignoredTags) {
