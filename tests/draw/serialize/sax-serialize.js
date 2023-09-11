@@ -138,7 +138,7 @@ $(function() {
 
 		QUnit.module("Test xml serialize use strings compare real file");
 
-		testXmlFilesArchieve(Asc.realFileTimelineDiagramm);
+		testXmlFilesArchieve(Asc.timelineDiagrammVisioSpecificXmlOnly);
 
 		QUnit.module("Test file serialize use parse compare");
 
