@@ -78,12 +78,11 @@
 		this.extensions = null;
 		this.dataConnections = null;
 		this.dataRecordSets = null;
+		this.validation = null;
 
 		// Not realized, file defines schema and data of that schema
 		// this.Solutions = null;
 		// this.SolutionContents = [];
-
-		// Validation also not realized
 
 		// unfinished
 		// this.EmbeddedData = null;
@@ -138,6 +137,7 @@
 			parseExtensions.call(this, documentPart, reader, context);
 			parseDataConnections.call(this, documentPart, reader, context);
 			parseDataRecordSets.call(this, documentPart, reader, context);
+			parseValidation.call(this, documentPart, reader, context);
 			// Not realized, file defines schema and data of that schema
 			// parseSolutions.call(this, documentPart, reader, context);
 		}
@@ -166,6 +166,7 @@
 		let extensionsPart = docPart.part.addPart(AscCommon.openXml.Types.visioExtensions);
 		let dataConnectionsPart = docPart.part.addPart(AscCommon.openXml.Types.visioDataConnections);
 		let dataRecordSetsPart = docPart.part.addPart(AscCommon.openXml.Types.visioDataRecordSets);
+		let validationPart = docPart.part.addPart(AscCommon.openXml.Types.validation);
 		// Not realized, file defines schema and data of that schema
 		// let solutionsPart = docPart.part.addPart(AscCommon.openXml.Types.solutions);
 
@@ -233,6 +234,9 @@
 		}
 		if (this.dataRecordSets) {
 			dataRecordSetsPart.part.setDataXml(this.dataRecordSets, memory);
+		}
+		if (this.validation) {
+			validationPart.part.setDataXml(this.validation, memory);
 		}
 		// Not realized, file defines schema and data of that schema
 		// if (this.Solutions) {
@@ -341,6 +345,18 @@
 		this.activeRecordsetID = null;
 		this.dataWindowOrder = null;
 		this.dataRecordSet = [];
+		this.xmlSpace = null;
+		this.xmlns = null;
+		this.r = null;
+		return this;
+	}
+
+	// Docs old:
+	// Validation_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/validation_type-complextypevisio-xml
+	function CValidation() {
+		this.validationProperties = null;
+		this.ruleSets = [];
+		this.issues = [];
 		this.xmlSpace = null;
 		this.xmlns = null;
 		this.r = null;
@@ -527,6 +543,16 @@
 		}
 	}
 
+	function parseValidation(documentPart, reader, context) {
+		let validationPart = documentPart.getPartByRelationshipType(AscCommon.openXml.Types.validation.relationType);
+		if (validationPart) {
+			let validationPartContent = validationPart.getDocumentContent();
+			reader = new StaxParser(validationPartContent, validationPart, context);
+			this.validation = new CValidation();
+			this.validation.fromXml(reader, true);
+		}
+	}
+
 	// Not realized, file defines schema and data of that schema
 	// function parseSolutions(documentPart, reader, context) {
 	// 	let solutionsPart = documentPart.getPartByRelationshipType(AscCommon.openXml.Types.visioDataRecordSets.relationType);
@@ -586,6 +612,7 @@
 	window['AscCommonDraw'].CExtensions = CExtensions;
 	window['AscCommonDraw'].CDataConnections = CDataConnections;
 	window['AscCommonDraw'].CDataRecordSets = CDataRecordSets;
+	window['AscCommonDraw'].CValidation = CValidation;
 	// Not realized, file defines schema and data of that schema
 	// window['AscCommonDraw'].CSolutions = CSolutions;
 })(window, window.document);

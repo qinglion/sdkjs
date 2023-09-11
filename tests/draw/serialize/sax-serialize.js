@@ -121,11 +121,15 @@ $(function() {
 		// tag auto-generated_for_wildcard,
 		// files SolutionXML, SolutionsXML, Validation
 		// and attributes and tags with any type
-
-		// Errors in:
-		// <Cell N='Value' U='STR'>&lt;?xml version='1.0'?&gt;&lt;VisioReportDefinition xmlns='urn:schemas-microsoft-com:office:visio:reportdefinition' ReportExists='1' SelectDrawingDataMethod='2' Description='Summary of milestones in timeline with start date and duration' Precision='2' ShowUnits='1' CaseSensitive='0' UserCells='0' HiddenProperties='0' AdvancedFilter='0' FilterExpression='' Version='3'&gt;&lt;Name&gt;Milestone Summary&lt;/Name&gt;&lt;Title&gt;Milestone Summary&lt;/Title&gt;&lt;VisioRptDefField ID='1' Display='1' DisplayOrder='3' Type='2' SummaryTypes='0' Tag='2'&gt;&lt;Name&gt;Duration&lt;/Name&gt;&lt;DisplayName&gt;Duration&lt;/DisplayName&gt;&lt;/VisioRptDefField&gt;&lt;VisioRptDefField ID='2' Display='1' DisplayOrder='2' Type='5' SummaryTypes='0' Tag='2'&gt;&lt;Name&gt;Start&lt;/Name&gt;&lt;DisplayName&gt;Start&lt;/DisplayName&gt;&lt;/VisioRptDefField&gt;&lt;VisioRptDefField ID='3' Display='1' DisplayOrder='1' Type='0' SummaryTypes='0' Tag='2'&gt;&lt;Name&gt;Task Name&lt;/Name&gt;&lt;DisplayName&gt;Task Name&lt;/DisplayName&gt;&lt;/VisioRptDefField&gt;&lt;VisioRptDefGroup ID='0' GroupingField='0' ItemDisplay='1' GrandSummary='0' ExcludeDuplicates='0'/&gt;&lt;VisioRptDefSort ID='1' SortField='2' Ascending='1' CaseSensitive='0'/&gt;&lt;/VisioReportDefinition&gt;</Cell>
-		// <Text><cp IX='0'/>Project Timeline</Text>
-		// <Text><cp IX='0'/><fld IX='0'>4/1/2014</fld></Text>
+		
+		// in:
+		// <Cell N='AutoGen' U='string' E='string' F='string' V='string'>
+		// 	<RefBy T='string' ID='4730' />
+		// 	<RefBy T='string' ID='6554' />
+		// 	<RefBy T='string' ID='6015' />
+		// </Cell>
+		// line drop doesnt exist in this situation in real file. And Cell handles only one line drop
+		// because it is considered as text content.
 
 		// Only .xml check no .rels check or embeddings
 		QUnit.module("Test xml serialize use strings compare Altova generated");

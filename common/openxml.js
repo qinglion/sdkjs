@@ -803,7 +803,8 @@
 		visioDataConnections: {dir: "data", filename: "connections.xml", contentType: "application/vnd.ms-visio.connections+xml", relationType : "http://schemas.microsoft.com/visio/2010/relationships/connections"},
 		visioDataRecordSets : {dir: "data", filename: "recordsets.xml", contentType: "application/vnd.ms-visio.recordsets+xml", relationType: "http://schemas.microsoft.com/visio/2010/relationships/recordsets"},
 		solutions: {dir: "solutions", filename: "solutions.xml", contentType: "application/vnd.ms-visio.solutions+xml", relationType: "http://schemas.microsoft.com/visio/2010/relationships/solutions"},
-		solution: {dir: "", filename: "solution[N].xml", contentType: "application/vnd.ms-visio.solution+xml", relationType: "http://schemas.microsoft.com/visio/2010/relationships/solution"}
+		solution: {dir: "", filename: "solution[N].xml", contentType: "application/vnd.ms-visio.solution+xml", relationType: "http://schemas.microsoft.com/visio/2010/relationships/solution"},
+		validation : {dir: "", filename: "validation.xml", contentType: "application/vnd.ms-visio.validation+xml", relationType: "http://schemas.microsoft.com/visio/2010/relationships/validation"}
 	};
 	openXml.TargetMode = {
 		internal: "Internal",
