@@ -255,9 +255,6 @@
 		var w = w_px;
 		var h = h_px;
 
-		w /= AscCommon.AscBrowser.retinaPixelRatio;
-		h /= AscCommon.AscBrowser.retinaPixelRatio;
-
 		var _pageWidth  = logic_w_mm * g_dKoef_mm_to_pix;
 		var _pageHeight = logic_h_mm * g_dKoef_mm_to_pix;
 
@@ -289,12 +286,12 @@
 		var w_px = (w_mm * dKoef) >> 0;
 		var h_px = (h_mm * dKoef) >> 0;
 
-		var _canvas = api.canvas;
+		let _canvas = api.canvas;
+		_canvas.width = AscCommon.AscBrowser.convertToRetinaValue(_canvas.clientWidth, true);
+		_canvas.height = AscCommon.AscBrowser.convertToRetinaValue(_canvas.clientHeight, true);
 		var ctx = _canvas.getContext('2d');
 		ctx.fillStyle = "#FFFFFF";
-		const canvasW = _canvas.getBoundingClientRect().width;
-		const canvasH = _canvas.getBoundingClientRect().height;
-		ctx.fillRect(0, 0, canvasW, canvasH);
+		ctx.fillRect(0, 0, w_px, h_px);
 
 
 		var graphics = new AscCommon.CGraphics();
@@ -303,13 +300,14 @@
 
 		let shapes = this.convertToShapes(logic_w_mm, logic_h_mm);
 		shapes.forEach(function(shape) {
-			// graphics.transform(1, 0, 0, 1, 0, 0);
-			// graphics.transform3(shape.transform);
-
+			graphics.SaveGrState();
+			graphics.SetIntegerGrid(false);
+			graphics.transform3(shape.transform);
 			let shape_drawer = new AscCommon.CShapeDrawer();
 			shape_drawer.fromShape2(shape, graphics, shape.getGeometry());
 			shape_drawer.draw(shape.getGeometry());
 			shape_drawer.Clear();
+			graphics.RestoreGrState();
 		});
 	};
 	function getRandomPrst() {
@@ -321,13 +319,13 @@
 		var prst = getRandomPrst();
 		var geom = new AscFormat.CreateGeometry(prst);
 		var oFill   = AscFormat.CreateUnfilFromRGB(0,127,0);
-		var oStroke = AscFormat.builder_CreateLine(1000 * 36000, AscFormat.CreateUnfilFromRGB(255,0,0));
+		var oStroke = AscFormat.builder_CreateLine(12700, {UniFill: AscFormat.CreateUnfilFromRGB(255,0,0)});
 		shapes.push(this.convertToShape(logic_w_mm / 3, logic_h_mm / 3, oFill, oStroke, geom));
 
 		var prst = getRandomPrst();
 		var geom = new AscFormat.CreateGeometry(prst);
 		var oFill   = AscFormat.CreateUnfilFromRGB(0,0,127);
-		var oStroke = AscFormat.builder_CreateLine(1000 * 36000, AscFormat.CreateUnfilFromRGB(255,0,0));
+		var oStroke = AscFormat.builder_CreateLine(12700, {UniFill: AscFormat.CreateUnfilFromRGB(255,0,0)});
 		shapes.push(this.convertToShape(logic_w_mm / 5, logic_h_mm / 5, oFill, oStroke, geom));
 		return shapes;
 	};
