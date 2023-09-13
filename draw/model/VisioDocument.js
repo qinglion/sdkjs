@@ -69,7 +69,7 @@
 		this.masterContents = [];
 		this.pages = null;
 		this.pageContents = [];
-		this.theme = null;
+		this.theme = new AscFormat.CTheme();
 		this.app = null;
 		this.core = null;
 		this.customProperties = null;
@@ -245,7 +245,108 @@
 		}
 		memory.Seek(0);
 	};
+	CVisioDocument.prototype.getObjectType = function() {
+		//todo remove it is temporary. to be parent of shape
+		return 0;
+	};
+	CVisioDocument.prototype.zoom_FitToPage_value = function(logic_w_mm, logic_h_mm, w_px, h_px) {
+		var _value = 100;
 
+		var w = w_px;
+		var h = h_px;
+
+		w /= AscCommon.AscBrowser.retinaPixelRatio;
+		h /= AscCommon.AscBrowser.retinaPixelRatio;
+
+		var _pageWidth  = logic_w_mm * g_dKoef_mm_to_pix;
+		var _pageHeight = logic_h_mm * g_dKoef_mm_to_pix;
+
+		var _hor_Zoom = 100;
+		if (0 != _pageWidth)
+			_hor_Zoom = (100 * w) / _pageWidth;
+		var _ver_Zoom = 100;
+		if (0 != _pageHeight)
+			_ver_Zoom = (100 * h) / _pageHeight;
+
+		_value = (Math.min(_hor_Zoom, _ver_Zoom) - 0.5) >> 0;
+
+		if (_value < 5)
+			_value = 5;
+		return _value;
+	};
+	CVisioDocument.prototype.draw = function() {
+		let api = this.api;
+		//CSlideSize.prototype.DEFAULT_CX
+		let logic_w_mm = 9144000 / g_dKoef_mm_to_emu;
+		let logic_h_mm = 6858000 / g_dKoef_mm_to_emu;
+
+		let zoom = this.zoom_FitToPage_value(logic_w_mm, logic_h_mm, api.HtmlElement.offsetWidth, api.HtmlElement.offsetHeight);
+		var dKoef = zoom * g_dKoef_mm_to_pix / 100;
+		dKoef *= AscCommon.AscBrowser.retinaPixelRatio;
+
+		var w_mm = logic_w_mm;
+		var h_mm = logic_h_mm;
+		var w_px = (w_mm * dKoef) >> 0;
+		var h_px = (h_mm * dKoef) >> 0;
+
+		var _canvas = api.canvas;
+		var ctx = _canvas.getContext('2d');
+		ctx.fillStyle = "#FFFFFF";
+		const canvasW = _canvas.getBoundingClientRect().width;
+		const canvasH = _canvas.getBoundingClientRect().height;
+		ctx.fillRect(0, 0, canvasW, canvasH);
+
+
+		var graphics = new AscCommon.CGraphics();
+		graphics.init(ctx, w_px, h_px, w_mm, h_mm);
+		graphics.m_oFontManager = AscCommon.g_fontManager;
+
+		let shapes = this.convertToShapes(logic_w_mm, logic_h_mm);
+		shapes.forEach(function(shape) {
+			// graphics.transform(1, 0, 0, 1, 0, 0);
+			// graphics.transform3(shape.transform);
+
+			let shape_drawer = new AscCommon.CShapeDrawer();
+			shape_drawer.fromShape2(shape, graphics, shape.getGeometry());
+			shape_drawer.draw(shape.getGeometry());
+			shape_drawer.Clear();
+		});
+	};
+	function getRandomPrst() {
+		let types = AscCommon.g_oAutoShapesTypes[Math.floor(Math.random()*AscCommon.g_oAutoShapesTypes.length)];
+		return types[Math.floor(Math.random()*types.length)].Type;
+	}
+	CVisioDocument.prototype.convertToShapes = function(logic_w_mm, logic_h_mm) {
+		let shapes = [];
+		var prst = getRandomPrst();
+		var geom = new AscFormat.CreateGeometry(prst);
+		var oFill   = AscFormat.CreateUnfilFromRGB(0,127,0);
+		var oStroke = AscFormat.builder_CreateLine(1000 * 36000, AscFormat.CreateUnfilFromRGB(255,0,0));
+		shapes.push(this.convertToShape(logic_w_mm / 3, logic_h_mm / 3, oFill, oStroke, geom));
+
+		var prst = getRandomPrst();
+		var geom = new AscFormat.CreateGeometry(prst);
+		var oFill   = AscFormat.CreateUnfilFromRGB(0,0,127);
+		var oStroke = AscFormat.builder_CreateLine(1000 * 36000, AscFormat.CreateUnfilFromRGB(255,0,0));
+		shapes.push(this.convertToShape(logic_w_mm / 5, logic_h_mm / 5, oFill, oStroke, geom));
+		return shapes;
+	};
+	CVisioDocument.prototype.convertToShape = function(w_mm, h_mm, oFill, oStroke, geom) {
+		let sType   = "rect";
+		let nWidth_mm  = Math.round(w_mm);
+		let nHeight_mm = Math.round(h_mm);
+		let nIndLeft = Math.round(w_mm);
+		let nIndTop  = Math.round(h_mm);
+		//let oDrawingDocument = new AscCommon.CDrawingDocument();
+		let shape = AscFormat.builder_CreateShape(sType, nWidth_mm, nHeight_mm,
+			oFill, oStroke, this, this.theme, null, false);
+		shape.spPr.xfrm.setOffX(nIndLeft);
+		shape.spPr.xfrm.setOffY(nIndTop);
+
+		shape.spPr.setGeometry(geom);
+		shape.recalculate();
+		return shape;
+	};
 
 	// Main classes for reading
 

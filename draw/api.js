@@ -45,6 +45,8 @@
 		AscCommon.baseEditorsApi.call(this, config, AscCommon.c_oEditorId.Draw);
 
 		this.Document = null;
+		this.HtmlElement = null;
+		this.canvas = null;
 
 		this._init();
 		return this;
@@ -56,6 +58,25 @@
 	asc_docs_api.prototype.InitEditor = function(){
 		this.Document = new AscCommonDraw.CVisioDocument(this);
 	};
+	asc_docs_api.prototype._onEndLoadSdk  = function()
+	{
+		AscCommon.baseEditorsApi.prototype._onEndLoadSdk.call(this);
+
+		this.CreateComponents();
+	};
+	asc_docs_api.prototype.CreateComponents = function()
+	{
+		if (this.HtmlElement != null)
+			this.HtmlElement.innerHTML = ("<div id=\"id_main\" class=\"block_elem\" style=\"width:100%;height:100%;touch-action:none;-ms-touch-action: none;-moz-user-select:none;-khtml-user-select:none;user-select:none;background-color:" + AscCommon.GlobalSkin.BackgroundColor + ";overflow:hidden;\" UNSELECTABLE=\"on\">\
+                                    <div id=\"id_main_view\" class=\"block_elem\" style=\"width:100%;height:100%;touch-action:none;overflow:hidden\">\
+                                        <canvas id=\"id_viewer\" class=\"block_elem\" style=\"width:100%;height:100%;touch-action:none;-ms-touch-action: none;-webkit-user-select: none; background-color:" + AscCommon.GlobalSkin.BackgroundColor + ";z-index:1\"></canvas>\
+									    <canvas id=\"id_viewer_overlay\" class=\"block_elem\" style=\"touch-action:none;-ms-touch-action: none;-webkit-user-select: none; z-index:2\"></canvas>\
+									    <div id=\"id_target_cursor\" class=\"block_elem\" width=\"1\" height=\"1\" style=\"touch-action:none;-ms-touch-action: none;-webkit-user-select: none;width:2px;height:13px;z-index:4;\"></div>\
+                                    </div>\
+									</div>" + this.HtmlElement.innerHTML);
+		this.canvas = document.getElementById("id_viewer");
+	};
+
 	asc_docs_api.prototype.OpenDocumentFromZip = function(data)
 	{
 		return this.OpenDocumentFromZipNoInit(data);
@@ -76,6 +97,14 @@
 
 		jsZlib.close();
 		return true;
+	};
+	asc_docs_api.prototype.asc_CloseFile            = function()
+	{
+		History.Clear();
+		g_oTableId.Clear();
+		this.isApplyChangesOnOpenEnabled = true;
+		this.isDocumentLoadComplete = false;
+		this.turnOffSpecialModes();
 	};
 	// Callbacks
 	/* все имена callback'оф начинаются с On. Пока сделаны:
