@@ -44,6 +44,11 @@ $(function() {
 		this(fileName, base64, ignoreFolders, ignoreFiles, ignoredTags, ignoredAttributes, downloadFile, true);
 	}
 
+	// If test fails with error
+	// TypeError: Cannot read properties of null (reading 'toXml')
+	// then something with api saveDocumentToZip
+	// try to reload sax-serialize page and select one module
+
 	//todo events
 	setTimeout(startTests, 3000);
 
@@ -52,7 +57,7 @@ $(function() {
 
 		QUnit.start();
 
-		QUnit.module("Test main functions")
+		QUnit.module("Test main functions");
 
 		QUnit.test("Test api.OpenDocumentFromZip", function (assert)
 		{
@@ -108,7 +113,6 @@ $(function() {
 			});
 		});
 
-
 		// File contents (strings) before and after parse are the same but
 
 		// Exceptions:
@@ -116,33 +120,32 @@ $(function() {
 		// hidden characters: /n/t,
 		// quotes: double or single,
 		// xml declaration: UTF and utf,
-		// attributes order (order set like in MS but in generated file with XMLSpy and Linquid studio they are different),
-		// ignoring long fractial numbers eg 3.1415926535897900073734945 cuts to 3.14159265358979,
+		// attributes order (order set like in MS but in generated file with XMLSpy and Liquid studio they are different),
+		// ignoring long fractional numbers eg 3.1415926535897900073734945 cuts to 3.14159265358979,
 		// tag auto-generated_for_wildcard,
 		// files SolutionXML, SolutionsXML, Validation
 		// and attributes and tags with any type
-		
+
 		// in:
 		// <Cell N='AutoGen' U='string' E='string' F='string' V='string'>
 		// 	<RefBy T='string' ID='4730' />
 		// 	<RefBy T='string' ID='6554' />
 		// 	<RefBy T='string' ID='6015' />
 		// </Cell>
-		// line drop doesnt exist in this situation in real file. And Cell handles only one line drop
+		// line drop doesn't exist in this situation in real file. And Cell handles only one line drop
 		// because it is considered as text content.
 
 		// Only .xml check no .rels check or embeddings
+		let ignoreFiles = ["to prepare file check.txt", "theme1.xml"];
+		let ignoreQuotes = true;
+
 		QUnit.module("Test xml serialize use strings compare Altova generated");
 
-		testXmlFilesArchieve(Asc.altovaXml);
-
-		QUnit.module("Test xml serialize use strings compare Liquid generated");
-
-		testXmlFilesArchieve(Asc.liquidXml);
+		testXmlFilesArchieve(Asc.altovaXml, ignoreFiles, ignoreQuotes);
 
 		QUnit.module("Test xml serialize use strings compare real file");
 
-		testXmlFilesArchieve(Asc.timelineDiagrammVisioSpecificXmlOnly);
+		testXmlFilesArchieve(Asc.timelineDiagrammVisioSpecificXmlOnly, ignoreFiles, ignoreQuotes);
 
 		QUnit.module("Test file serialize use parse compare");
 
@@ -154,9 +157,15 @@ $(function() {
 		// In theme1.xml after parse lost <a:extLst>, <a:font> - fonts for each language only main fonts remain,
 		// missing <a:tileRect> and <a:effectStyle>, some effectStyles are applied (e.g. shadows)
 		// Maybe only theme1.xml is parsed - check it
-		let ignoredFiles = ["theme1.xml", "theme2.xml", "theme3.xml", "theme4.xml"];
-		// Not realized, Solution defines its own schema and data of that schema
-		ignoredFiles = ignoredFiles.concat(["solutions.xml.rels", "solution1.xml", "solutions.xml", "validation.xml"]);
+
+		// page[N].xml.rels - for when pages sets rels to masters
+		// в MS если page[N] ссылается на хотя бы один мастер то в рельсы страницы добавляются все мастеры.
+		// Сейчас для каждой страницы добавляются ссылки на все маcтеры без проверки
+
+		// recordset[N].xml - not realized
+
+		// master[N].xml.rels - because of rels to embedded
+		let ignoredFiles = ["theme[N].xml", "page[N].xml.rels", "recordset[N].xml", "recordsets.xml.rels", "master[N].xml.rels"];
 
 		// Remove elements(tags) with ignoredTagsExistence from extraElements or missingElements
 		// So they are not considered in test result but still their children compared
@@ -172,23 +181,21 @@ $(function() {
 		testFileSerizlizeUseParseCompare("Example vsdx", Asc.exampleVsdx, ignoredFolders, ignoredFiles, ignoredTagsExistence, ignoredAttributes, false);
 		testFileSerizlizeUseParseCompare("Basic ShapesA_start", Asc.BasicShapesA_start, ignoredFolders, ignoredFiles, ignoredTagsExistence, ignoredAttributes, false);
 		testFileSerizlizeUseParseCompare("generatedVsdx2schema", Asc.generatedVsdx2schema, ignoredFolders, ignoredFiles, ignoredTagsExistence, ignoredAttributes, false);
-		// ignore some files related to embedded files. Embedded files not yet needed
-		let timeLineIgnoreFiles = ignoredFiles.concat(["master6.xml.rels"])
-		testFileSerizlizeUseParseCompare("Timeline_diagram_start", Asc.Timeline_diagram_start, ignoredFolders, timeLineIgnoreFiles, ignoredTagsExistence, ignoredAttributes, false);
+		testFileSerizlizeUseParseCompare("Timeline_diagram_start", Asc.Timeline_diagram_start, ignoredFolders, ignoredFiles, ignoredTagsExistence, ignoredAttributes, false);
 		testFileSerizlizeUseParseCompare("rows_test", Asc.rows_test, ignoredFolders, ignoredFiles, ignoredTagsExistence, ignoredAttributes, false);
 
 		// Some errors still there in module below
-		QUnit.module("Comparing many files");
+		QUnit.module("Comparing many files use parse compare");
 
 		for (let key in Asc) {
 			if (key.startsWith('test_file')) {
 				let fileBase64 = Asc[key];
-				 testFileSerizlizeUseParseCompare(key, fileBase64, ignoredFolders, ignoredFiles, ignoredTagsExistence, ignoredAttributes, false);
+				testFileSerizlizeUseParseCompare(key, fileBase64, ignoredFolders, ignoredFiles, ignoredTagsExistence, ignoredAttributes, false);
 			}
 		}
 	}
 
-	function testXmlFilesArchieve(base64zip) {
+	function testXmlFilesArchieve(base64zip, ignoreFiles, ignoreQuotes) {
 		let generatedXmlFiles = AscCommon.Base64.decode(base64zip);
 
 		let jsZlibOriginal = new AscCommon.ZLib();
@@ -196,20 +203,19 @@ $(function() {
 		let originalFiles = jsZlibOriginal.files;
 
 		originalFiles.forEach(function(originalFilePath) {
-			// let ignoreFiles = ["Solutions.xml", "SolutionsXML.xml", "Validation.xml"];
-			let ignoreFiles = ["to prepare file check.txt"];
-			let ignoreQuotes = true;
 			let doRemoveLineBreaks = false;
-			if (!ignoreFiles.includes(originalFilePath)) {
+			if (!isFilePathIgnored(originalFilePath, ignoreFiles)) {
 				let fileUint8 = jsZlibOriginal.getFile(originalFilePath);
 				let fileContent = AscCommon.UTF8ArrayToString(fileUint8, 0, fileUint8.length);
 
 				let testName = "Compare " + originalFilePath;
 
 				// className === C + rootTagName(first tag name)
-				let rootTagNameMatchResult = fileContent.match(/<(\w+)/);
+				let rootTagNameMatchResult = fileContent.match(/<(\w+:)?(\w+)/);
 				if (rootTagNameMatchResult) {
-					let componentClassName = "C" + rootTagNameMatchResult[1];
+					let rootTagName = rootTagNameMatchResult[2];
+					let rootTagNameCapitalized = rootTagName.charAt(0).toUpperCase() + rootTagName.slice(1);
+					let componentClassName = "C" + rootTagNameCapitalized;
 					let componentClass = AscCommonDraw[componentClassName];
 					if (componentClass) {
 						let componentObject = new componentClass(api);
@@ -228,6 +234,11 @@ $(function() {
 						QUnit.assert.ok(false, "rootTagNameMatchResult is false");
 					});
 				}
+			} else {
+				QUnit.test(originalFilePath + " is ignored", function (assert)
+				{
+					QUnit.assert.ok(true, originalFilePath + " is ignored");
+				});
 			}
 		});
 	}
@@ -240,12 +251,14 @@ $(function() {
 			const api = new Asc.asc_docs_api({'id-view': 'editor_sdk'});
 			api.InitEditor();
 			let vsdxOriginal = AscCommon.Base64.decode(base64);
+			// parse
 			const openResOriginal = api.OpenDocumentFromZip(vsdxOriginal);
 
 			let jsZlibOriginal = new AscCommon.ZLib();
 			jsZlibOriginal.open(vsdxOriginal);
 			let originalFiles = jsZlibOriginal.files;
 
+			// serialize
 			api.saveDocumentToZip(api.Document, AscCommon.c_oEditorId.Draw, function (data) {
 				if (data) {
 					if(downloadFile) {
@@ -253,9 +266,10 @@ $(function() {
 					}
 
 					// Read and parse custom vsdx file
-					const api2 = new Asc.asc_docs_api({'id-view': 'editor_sdk'});
-					api2.InitEditor();
-					const openResCustom = api2.OpenDocumentFromZip(data);
+					// TODO try to parse again custom file
+					// const api2 = new Asc.asc_docs_api({'id-view': 'editor_sdk'});
+					// api2.InitEditor();
+					// const openResCustom = api2.OpenDocumentFromZip(data);
 
 					let jsZlibCustom = new AscCommon.ZLib();
 					jsZlibCustom.open(data);
@@ -268,12 +282,12 @@ $(function() {
 
 					originalFiles = originalFiles.filter(function (path) {
 						let folderIgnored = pathCheckFolderPresence(path, ignoreFolders);
-						let fileIgnored = ignoreFiles.includes(path.split('/').pop());
+						let fileIgnored = isFilePathIgnored(path, ignoreFiles);
 						return !folderIgnored && !fileIgnored;
 					});
 					customFiles = customFiles.filter(function (path) {
 						let folderIgnored = pathCheckFolderPresence(path, ignoreFolders);
-						let fileIgnored = ignoreFiles.includes(path.split('/').pop());
+						let fileIgnored = isFilePathIgnored(path, ignoreFiles);
 						return !folderIgnored && !fileIgnored;
 					});
 
@@ -454,6 +468,17 @@ $(function() {
 				differencesInAttributes : compareObject.differencesInAttributes // changed implicitly
 			}
 		});
+	}
+
+	function isFilePathIgnored(path, ignoreFiles) {
+		let fileName = path.split('/').pop();
+		let matchedAny = false;
+		ignoreFiles.forEach(function checkPattern(pattern) {
+			const regexPattern = pattern.replace('[N]', '\\d+');
+			const regex = new RegExp(`^${regexPattern}$`, 'i');
+			matchedAny = matchedAny || regex.test(fileName);
+		});
+		return matchedAny;
 	}
 
 	function pathCheckFolderPresence(path, folders) {

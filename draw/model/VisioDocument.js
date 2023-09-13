@@ -68,7 +68,7 @@
 		this.masters = null;
 		this.masterContents = [];
 		this.pages = null;
-		this.pagesContents = [];
+		this.pageContents = [];
 		this.theme = null;
 		this.app = null;
 		this.core = null;
@@ -81,8 +81,9 @@
 		this.validation = null;
 
 		// Not realized, file defines schema and data of that schema
-		// this.Solutions = null;
-		// this.SolutionContents = [];
+		this.solutions = null;
+		// solution contents
+		this.solutionXMLs = [];
 
 		// unfinished
 		// this.EmbeddedData = null;
@@ -139,7 +140,7 @@
 			parseDataRecordSets.call(this, documentPart, reader, context);
 			parseValidation.call(this, documentPart, reader, context);
 			// Not realized, file defines schema and data of that schema
-			// parseSolutions.call(this, documentPart, reader, context);
+			parseSolutions.call(this, documentPart, reader, context);
 		}
 		// unfinished
 		// saveEmbeddedData.call(this, doc);
@@ -168,7 +169,7 @@
 		let dataRecordSetsPart = docPart.part.addPart(AscCommon.openXml.Types.visioDataRecordSets);
 		let validationPart = docPart.part.addPart(AscCommon.openXml.Types.validation);
 		// Not realized, file defines schema and data of that schema
-		// let solutionsPart = docPart.part.addPart(AscCommon.openXml.Types.solutions);
+		let solutionsPart = docPart.part.addPart(AscCommon.openXml.Types.solutions);
 
 		for (let i = 0; i < this.masterContents.length; i++) {
 			let masterContent = mastersPart.part.addPart(AscCommon.openXml.Types.master);
@@ -177,9 +178,9 @@
 
 		let pagesPart = docPart.part.addPart(AscCommon.openXml.Types.pages);
 
-		for (let i = 0; i < this.pagesContents.length; i++) {
+		for (let i = 0; i < this.pageContents.length; i++) {
 			let pageContent = pagesPart.part.addPart(AscCommon.openXml.Types.page);
-			pageContent.part.setDataXml(this.pagesContents[i], memory);
+			pageContent.part.setDataXml(this.pageContents[i], memory);
 
 			// I add page[N].xml.rels below
 			// It has links to all masters but
@@ -196,10 +197,10 @@
 		}
 
 		// Not realized, file defines schema and data of that schema
-		// for (let i = 0; i < this.SolutionContents.length; i++) {
-		// 	let solutionContent = solutionsPart.part.addPart(AscCommon.openXml.Types.solution);
-		// 	solutionContent.part.setDataXml(this.SolutionContents[i], memory);
-		// }
+		for (let i = 0; i < this.solutionXMLs.length; i++) {
+			let solutionContent = solutionsPart.part.addPart(AscCommon.openXml.Types.solution);
+			solutionContent.part.setDataXml(this.solutionXMLs[i], memory);
+		}
 
 		docPart.part.setDataXml(this, memory);
 		appPart.part.setDataXml(this.app, memory);
@@ -239,9 +240,9 @@
 			validationPart.part.setDataXml(this.validation, memory);
 		}
 		// Not realized, file defines schema and data of that schema
-		// if (this.Solutions) {
-		// 	solutionsPart.part.setDataXml(this.Solutions, memory);
-		// }
+		if (this.solutions) {
+			solutionsPart.part.setDataXml(this.solutions, memory);
+		}
 		memory.Seek(0);
 	};
 
@@ -366,10 +367,20 @@
 	// Not realized, file defines schema and data of that schema
 	// Docs:
 	// Solutions_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/solutions_type-complextypevisio-xml
-	// function CSolutions() {
-	// 	this.solution = [];
-	// 	return this;
-	// }
+	function CSolutions() {
+		this.solution = [];
+		this.xmlSpace = null;
+		this.xmlns = null;
+		this.r = null;
+		return this;
+	}
+
+	function CSolutionXML() {
+		this.name = null;
+		// string containing overall xml
+		this.fileContents = null;
+		return this;
+	}
 
 	function parseApp(doc, reader, context) {
 		let appPart = doc.getPartByRelationshipType(AscCommon.openXml.Types.extendedFileProperties.relationType);
@@ -487,7 +498,7 @@
 					reader = new StaxParser(contentPage, pagePart, context);
 					let PageContent = new CPageContents();
 					PageContent.fromXml(reader);
-					this.pagesContents.push(PageContent);
+					this.pageContents.push(PageContent);
 				}
 			}
 		}
@@ -554,17 +565,41 @@
 	}
 
 	// Not realized, file defines schema and data of that schema
-	// function parseSolutions(documentPart, reader, context) {
-	// 	let solutionsPart = documentPart.getPartByRelationshipType(AscCommon.openXml.Types.visioDataRecordSets.relationType);
-	// 	if (solutionsPart) {
-	// 		let solutionsPartContent = solutionsPart.getDocumentContent();
-	// 		reader = new StaxParser(solutionsPartContent, solutionsPart, context);
-	// 		this.Solutions = new CSolutions();
-	// 		this.Solutions.fromXml(reader, true);
-	// 	}
-	//
-	// 	// TODO parse each solution
-	// }
+	function parseSolutions(documentPart, reader, context) {
+		let solutionsPart = documentPart.getPartByRelationshipType(AscCommon.openXml.Types.solutions.relationType);
+		if (solutionsPart) {
+			let solutionsPartContent = solutionsPart.getDocumentContent();
+			reader = new StaxParser(solutionsPartContent, solutionsPart, context);
+			this.solutions = new CSolutions();
+			this.solutions.fromXml(reader, true);
+
+			let solutions = solutionsPart.getPartsByRelationshipType(AscCommon.openXml.Types.solution.relationType);
+			if (solutions) {
+				// order is important so sort masters using uri
+				let solutionsSort = [];
+				for (let i = 0; i < solutions.length; i++) {
+					let solutionNumber = +solutions[i].uri.match(/\d+/)[0];
+					if (!isNaN(parseFloat(solutionNumber)) && !isNaN(solutionNumber - 0)) {
+						// if masterNumber is number
+						solutionsSort[solutionNumber - 1] = solutions[i];
+					} else {
+						console.log('check sdkjs/draw/model/VisioDocument.js : parseMasters');
+						solutionsSort = solutions;
+						break;
+					}
+				}
+				solutions = solutionsSort;
+				for (let i = 0; i < solutions.length; i++) {
+					let solutionPart = solutions[i];
+					let contentSolution = solutionPart.getDocumentContent();
+					reader = new StaxParser(contentSolution, solutionPart, context);
+					let solutionContent = new CSolutionXML();
+					solutionContent.fromXml(reader);
+					this.solutionXMLs.push(solutionContent);
+				}
+			}
+		}
+	}
 
 	// function handleEmbeddedDataRels(fullDocPart) {
 	// 	// unfinished
@@ -614,5 +649,6 @@
 	window['AscCommonDraw'].CDataRecordSets = CDataRecordSets;
 	window['AscCommonDraw'].CValidation = CValidation;
 	// Not realized, file defines schema and data of that schema
-	// window['AscCommonDraw'].CSolutions = CSolutions;
+	window['AscCommonDraw'].CSolutions = CSolutions;
+	window['AscCommonDraw'].CSolutionXML = CSolutionXML;
 })(window, window.document);
