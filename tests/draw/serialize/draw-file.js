@@ -95,4 +95,11 @@
 
 		return false;
 	};
+
+	window.onload = function() {
+		setTimeout(function (){
+			let testFileRectangle = AscCommon.Base64.decode(Asc.rectangle);
+			drawFile(testFileRectangle);
+		}, 3000);
+	};
 }();

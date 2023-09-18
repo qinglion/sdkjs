@@ -316,8 +316,7 @@
 	}
 	CVisioDocument.prototype.convertToShapes = function(logic_w_mm, logic_h_mm) {
 		let shapes = [];
-		var prst = getRandomPrst();
-		var geom = new AscFormat.CreateGeometry(prst);
+		var geom = AscCommonDraw.getGeometryFromClass(this);
 		var oFill   = AscFormat.CreateUnfilFromRGB(0,127,0);
 		var oStroke = AscFormat.builder_CreateLine(12700, {UniFill: AscFormat.CreateUnfilFromRGB(255,0,0)});
 		shapes.push(this.convertToShape(logic_w_mm / 3, logic_h_mm / 3, oFill, oStroke, geom));

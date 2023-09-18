@@ -103,6 +103,7 @@ var MAP_FMLA_TO_TYPE = {};
     MAP_TYPE_TO_FMLA[FORMULA_TYPE_VALUE] =   "val";
 
 var cToRad = Math.PI/(60000*180);
+// it is not cToDeg. it is radToC. cToDeg = 1/60000
 var cToDeg = 1/cToRad;
 var MAX_ITER_COUNT = 50;
 
@@ -1039,6 +1040,7 @@ function CChangesGeometryAddAdj(Class, Name, OldValue, NewValue, OldAvValue, bRe
             });
     };
 
+    // if cnx is connection so may be it should be cxn like in ECMA-376-1_5th_edition?
     Geometry.prototype.AddCnx = function(ang, x, y)
     {
         History.CanAddChanges() && History.Add(new CChangesGeometryAddCnx(this, ang, x, y));
