@@ -137,15 +137,16 @@ $(function() {
 
 		// Only .xml check no .rels check or embeddings
 		let ignoreFiles = ["to prepare file check.txt", "theme1.xml"];
-		let ignoreQuotes = true;
+		// not used anymore
+		// let ignoreQuotes = true;
 
 		QUnit.module("Test xml serialize use strings compare Altova generated");
 
-		testXmlFilesArchieve(Asc.altovaXml, ignoreFiles, ignoreQuotes);
+		testXmlFilesArchieve(Asc.altovaXml, ignoreFiles);
 
 		QUnit.module("Test xml serialize use strings compare real file");
 
-		testXmlFilesArchieve(Asc.timelineDiagrammVisioSpecificXmlOnly, ignoreFiles, ignoreQuotes);
+		testXmlFilesArchieve(Asc.timelineDiagrammVisioSpecificXmlOnly, ignoreFiles);
 
 		QUnit.module("Test file serialize use parse compare");
 
@@ -195,7 +196,7 @@ $(function() {
 		}
 	}
 
-	function testXmlFilesArchieve(base64zip, ignoreFiles, ignoreQuotes) {
+	function testXmlFilesArchieve(base64zip, ignoreFiles) {
 		let generatedXmlFiles = AscCommon.Base64.decode(base64zip);
 
 		let jsZlibOriginal = new AscCommon.ZLib();
@@ -203,7 +204,8 @@ $(function() {
 		let originalFiles = jsZlibOriginal.files;
 
 		originalFiles.forEach(function(originalFilePath) {
-			let doRemoveLineBreaks = false;
+			// not used anymore
+			// let doRemoveLineBreaks = false;
 			if (!isFilePathIgnored(originalFilePath, ignoreFiles)) {
 				let fileUint8 = jsZlibOriginal.getFile(originalFilePath);
 				let fileContent = AscCommon.UTF8ArrayToString(fileUint8, 0, fileUint8.length);
@@ -220,7 +222,7 @@ $(function() {
 					if (componentClass) {
 						let componentObject = new componentClass(api);
 						QUnit.test(testName, function (assert) {
-							testFileSerializeUseStringsCompare(assert, componentObject, fileContent, ignoreQuotes, doRemoveLineBreaks);
+							testFileSerializeUseStringsCompare(assert, componentObject, fileContent);
 						});
 					} else {
 						QUnit.test(testName, function (assert)
@@ -388,7 +390,7 @@ $(function() {
 		return "No difference found";
 	}
 
-	function testFileSerializeUseStringsCompare(assert, serializeObj, expecteedXml, ignoreQuotes, doRemoveLineBreaks) {
+	function testFileSerializeUseStringsCompare(assert, serializeObj, expecteedXml) {
 		//fromXml
 		let context = new AscCommon.XmlParserContext();
 		let zip = new AscCommon.ZLib();
