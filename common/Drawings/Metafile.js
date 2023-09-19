@@ -989,6 +989,114 @@
 					break;
 			}
 		};
+		this.WriteXmlStringEncodeInSingleQuote = function(val)
+		{
+			var pCur = 0;
+			var pEnd = val.length;
+			while (pCur < pEnd)
+			{
+				var code = val.charCodeAt(pCur++);
+				if (code >= 0xD800 && code <= 0xDFFF && pCur < pEnd)
+				{
+					code = 0x10000 + (((code & 0x3FF) << 10) | (0x03FF & val.charCodeAt(pCur++)));
+				}
+				this.WriteXmlCharCodeInSingleQuote(code);
+			}
+		};
+		this.WriteXmlCharCodeInSingleQuote = function(code)
+		{
+			switch (code)
+			{
+				case 0x26:
+					//&
+					this.WriteUtf8Char(0x26);
+					this.WriteUtf8Char(0x61);
+					this.WriteUtf8Char(0x6d);
+					this.WriteUtf8Char(0x70);
+					this.WriteUtf8Char(0x3b);
+					break;
+				case 0x27:
+					//'
+					this.WriteUtf8Char(0x26);
+					this.WriteUtf8Char(0x61);
+					this.WriteUtf8Char(0x70);
+					this.WriteUtf8Char(0x6f);
+					this.WriteUtf8Char(0x73);
+					this.WriteUtf8Char(0x3b);
+					break;
+				case 0x3c:
+					//<
+					this.WriteUtf8Char(0x26);
+					this.WriteUtf8Char(0x6c);
+					this.WriteUtf8Char(0x74);
+					this.WriteUtf8Char(0x3b);
+					break;
+				case 0x3e:
+					//>
+					this.WriteUtf8Char(0x26);
+					this.WriteUtf8Char(0x67);
+					this.WriteUtf8Char(0x74);
+					this.WriteUtf8Char(0x3b);
+					break;
+				default:
+					this.WriteUtf8Char(code);
+					break;
+			}
+		};
+		this.WriteXmlStringEncodeInDoubleQuote = function(val)
+		{
+			var pCur = 0;
+			var pEnd = val.length;
+			while (pCur < pEnd)
+			{
+				var code = val.charCodeAt(pCur++);
+				if (code >= 0xD800 && code <= 0xDFFF && pCur < pEnd)
+				{
+					code = 0x10000 + (((code & 0x3FF) << 10) | (0x03FF & val.charCodeAt(pCur++)));
+				}
+				this.WriteXmlCharCodeInDoubleQuote(code);
+			}
+		};
+		this.WriteXmlCharCodeInDoubleQuote = function(code)
+		{
+			switch (code)
+			{
+				case 0x26:
+					//&
+					this.WriteUtf8Char(0x26);
+					this.WriteUtf8Char(0x61);
+					this.WriteUtf8Char(0x6d);
+					this.WriteUtf8Char(0x70);
+					this.WriteUtf8Char(0x3b);
+					break;
+				case 0x3c:
+					//<
+					this.WriteUtf8Char(0x26);
+					this.WriteUtf8Char(0x6c);
+					this.WriteUtf8Char(0x74);
+					this.WriteUtf8Char(0x3b);
+					break;
+				case 0x3e:
+					//>
+					this.WriteUtf8Char(0x26);
+					this.WriteUtf8Char(0x67);
+					this.WriteUtf8Char(0x74);
+					this.WriteUtf8Char(0x3b);
+					break;
+				case 0x22:
+					//"
+					this.WriteUtf8Char(0x26);
+					this.WriteUtf8Char(0x71);
+					this.WriteUtf8Char(0x75);
+					this.WriteUtf8Char(0x6f);
+					this.WriteUtf8Char(0x74);
+					this.WriteUtf8Char(0x3b);
+					break;
+				default:
+					this.WriteUtf8Char(code);
+					break;
+			}
+		};
 		this.WriteXmlBool = function(val)
 		{
 			this.WriteXmlString(val ? '1' : '0');
@@ -1084,7 +1192,12 @@
 			this.WriteXmlString(name);
 			this.WriteUtf8Char(0x3d);
 			this.WriteUtf8Char(this.attrQuote);
-			this.WriteXmlStringEncode(val.toString());
+			//todo remove if. save method to proerty like attrQuote
+			if (this.attrQuote === 0x22) {
+				this.WriteXmlStringEncodeInDoubleQuote(val.toString());
+			} else {
+				this.WriteXmlStringEncodeInSingleQuote(val.toString());
+			}
 			this.WriteUtf8Char(this.attrQuote);
 		};
 		this.WriteXmlAttributeBool = function(name, val)

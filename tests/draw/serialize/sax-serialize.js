@@ -406,20 +406,8 @@ $(function() {
 		let content = AscCommon.UTF8ArrayToString(data, 0, data.length);
 
 		//compare
-		let expectedContent = expecteedXml.replace(/\t/g,'');
+		let expectedContent = expecteedXml;
 		let resultContent = content;
-		//todo flag in memeory?
-		resultContent = resultContent.replace(/&quot;/g,'"');
-		if (ignoreQuotes) {
-			resultContent = resultContent.replaceAll("\"", "'");
-			expectedContent = expectedContent.replaceAll("\"", "'");
-		}
-		if (doRemoveLineBreaks) {
-			resultContent = removeLineBreaks(resultContent);
-			resultContent = addLineBreaks(resultContent);
-			expectedContent = removeLineBreaks(expectedContent);
-			expectedContent = addLineBreaks(expectedContent);
-		}
 		let message = `Comparing ${serializeObj.constructor.name} xml stings. ${findFirstDifference(resultContent, expectedContent)}`;
 		assert.strictEqual(resultContent, expectedContent, message);
 	}

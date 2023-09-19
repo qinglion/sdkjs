@@ -252,7 +252,7 @@ if (window.native && window.native.GetDevicePixelRatio)
 // OPEN
 function NativeOpenFileData(data, version, xlsx_file_path, options)
 {
-	window.NATIVE_DOCUMENT_TYPE = "draw";
+	window.NATIVE_DOCUMENT_TYPE = window.native.GetEditorType();
     Api = null;
 
     if (options && options["printOptions"] && options["printOptions"]["retina"])
