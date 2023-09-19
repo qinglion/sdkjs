@@ -157,8 +157,6 @@
 	}
 
 	function getGeometryFromClass(visioDocument) {
-		// DOES NOT WORK NOW
-
 		// see ECMA-376-1_5th_edition and Geometry.js
 
 		//TODO maybe get Zip so that we can find parts by relationships
@@ -182,15 +180,15 @@
 		let moveToYTextValue = findCell(moveToRow, "n", "Y").v;
 
 		let lineToRows = findRows(geometrySection, "t", "LineTo");
-		let lineToPoints = [];
+		let lineToCommandPoints = [];
 		lineToRows.forEach(function (rowObject) {
 			let xTextValue = findCell(rowObject, "n", "X").v;
 			let yTextValue = findCell(rowObject, "n", "Y").v;
-			lineToPoints.push({x: xTextValue, y: yTextValue});
+			lineToCommandPoints.push({x: xTextValue, y: yTextValue});
 		});
 
 		/* extrusionOk, fill, stroke, w, h*/
-		f.AddPathCommand(0,undefined, /*fillValue*/ undefined, undefined, undefined, undefined);
+		f.AddPathCommand(0,undefined, undefined /*fillValue*/ , undefined, undefined, undefined);
 		// f.AddCnx('_3cd4', 'hc', 't');
 		// f.AddCnx('cd2', 'l', 'vc');
 		// f.AddCnx('cd4', 'hc', 'b');
@@ -199,7 +197,7 @@
 		let yStartPointCorrectUnits = convertUnits(moveToYTextValue, additionalDivide);
 		f.AddPathCommand(1, xStartPointCorrectUnits, yStartPointCorrectUnits);
 
-		lineToPoints.forEach(function (point, i) {
+		lineToCommandPoints.forEach(function (point, i) {
 			let num = i + 1;
 
 			let xTextValue = point.x;

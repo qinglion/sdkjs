@@ -332,8 +332,8 @@
 		let sType   = "rect";
 		let nWidth_mm  = Math.round(w_mm);
 		let nHeight_mm = Math.round(h_mm);
-		let nIndLeft = Math.round(w_mm);
-		let nIndTop  = Math.round(h_mm);
+		let nIndLeft = Math.round(w_mm) * 1.5;
+		let nIndTop  = Math.round(h_mm) * 1.5;
 		//let oDrawingDocument = new AscCommon.CDrawingDocument();
 		let shape = AscFormat.builder_CreateShape(sType, nWidth_mm, nHeight_mm,
 			oFill, oStroke, this, this.theme, null, false);
