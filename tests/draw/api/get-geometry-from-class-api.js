@@ -151,33 +151,67 @@
 		return emus;
 	}
 
-	function convertUnits(textValue, additionalDivide) {
-		let textValueCorrectUnits = String(mmToEmu(+textValue / additionalDivide));
+	function convertUnits(textValue, additionalUnitKoef) {
+		let textValueCorrectUnits = String(mmToEmu(+textValue * additionalUnitKoef));
 		return textValueCorrectUnits;
 	}
 
-	function getGeometryFromClass(visioDocument) {
-		// see ECMA-376-1_5th_edition and Geometry.js
+	function mirrorVertically(points) {
+		let minY = Number.MAX_VALUE;
+		let maxY = Number.MIN_VALUE;
+		points.forEach(function (point) {
+			minY = Math.min(minY, point.y);
+			maxY = Math.max(maxY, point.y);
+		});
 
-		//TODO maybe get Zip so that we can find parts by relationships
-		let master1shape1 = visioDocument.masterContents[0].shapes[0];
+		let newPoints = points.map(function (point) {
+			let yMiddle = (maxY - minY) / 2;
+			let newY = yMiddle - (point.y - yMiddle);
+			return {x: point.x, y: newY};
+		});
 
-		// TODO add line style fill style text style
+		return newPoints;
+	}
 
-		let geometrySection = findSection(master1shape1.elements, "n", "Geometry");
-		let noFillCell = findCell(geometrySection, "n", "NoFill");
-		let fillValue = Number(noFillCell.v) ? undefined : "norm";
+	function initGeometryFromPoints(geometry, pointsNewUnits, fillValue) {
+		/* extrusionOk, fill, stroke, w, h*/
+		geometry.AddPathCommand(0, undefined, fillValue, undefined, undefined, undefined);
 
-		// TODO parse formula and units
+		pointsNewUnits.forEach(function (point, i) {
+			let xName = 'x' + i;
+			let yName = 'y' + i;
 
-		let geometry = new AscFormat.Geometry();
-		let f = geometry;
+			geometry.AddGuide(xName, FORMULA_TYPE_VALUE, point.x);
+			geometry.AddGuide(yName, FORMULA_TYPE_VALUE, point.y);
 
-		const additionalDivide = 1000;
+			if (i === 0) {
+				geometry.AddPathCommand(1, xName, yName);
+			} else {
+				geometry.AddPathCommand(2, xName, yName);
+			}
+		})
+
+		geometry.AddPathCommand(6);
+		geometry.setPreset("master1shape1");
+	}
+
+	function fromMMtoNewUnits(points, additionalUnitKoef) {
+		let pointsNewUnits = points.map(function (point) {
+			let newX = convertUnits(point.x, additionalUnitKoef);
+			let newY = convertUnits(point.y, additionalUnitKoef);
+			return {x: newX, y: newY};
+		});
+		return pointsNewUnits;
+	}
+
+	function getPointsFromGeometrySection(geometrySection) {
+		let points = [];
 
 		let moveToRow = findRow(geometrySection, "t", "MoveTo");
 		let moveToXTextValue = findCell(moveToRow, "n", "X").v;
 		let moveToYTextValue = findCell(moveToRow, "n", "Y").v;
+
+		points.push({x: moveToXTextValue, y: moveToYTextValue});
 
 		let lineToRows = findRows(geometrySection, "t", "LineTo");
 		let lineToCommandPoints = [];
@@ -187,67 +221,49 @@
 			lineToCommandPoints.push({x: xTextValue, y: yTextValue});
 		});
 
-		/* extrusionOk, fill, stroke, w, h*/
-		f.AddPathCommand(0,undefined, undefined /*fillValue*/ , undefined, undefined, undefined);
+		points = points.concat(lineToCommandPoints)
+
+		return points;
+	}
+
+	function getGeometryFromShape(master1shape1) {
+		let geometrySection = findSection(master1shape1.elements, "n", "Geometry");
+		let noFillCell = findCell(geometrySection, "n", "NoFill");
+		let fillValue = Number(noFillCell.v) ? undefined : "norm";
+
+		// TODO parse formula and units
+		// TODO parse line style fill style text style
+
+		const additionalUnitCoefficient = 1 / 1000;
+
+		let points = getPointsFromGeometrySection(geometrySection);
+
+		// seems like visio y coordinate goes up while
+		// ECMA-376-11_5th_edition and Geometry.js y coordinate goes down
+		// so without mirror we get shapes up side down
+		// TODO flip all page contents but not each shape
+		points = mirrorVertically(points);
+
+		// imply that units were in mm until units parse realized
+		let pointsNewUnits = fromMMtoNewUnits(points, additionalUnitCoefficient);
+
+		let geometry = new AscFormat.Geometry();
+		initGeometryFromPoints(geometry, pointsNewUnits, fillValue);
+		// TODO add connections
 		// f.AddCnx('_3cd4', 'hc', 't');
 		// f.AddCnx('cd2', 'l', 'vc');
 		// f.AddCnx('cd4', 'hc', 'b');
 		// f.AddCnx('0', 'r', 'vc');
-		let xStartPointCorrectUnits = convertUnits(moveToXTextValue, additionalDivide);
-		let yStartPointCorrectUnits = convertUnits(moveToYTextValue, additionalDivide);
-		f.AddPathCommand(1, xStartPointCorrectUnits, yStartPointCorrectUnits);
-
-		lineToCommandPoints.forEach(function (point, i) {
-			let num = i + 1;
-
-			let xTextValue = point.x;
-			let yTextValue = point.y;
-
-			let xGuideName = 'x' + num;
-			let yGuideName = 'y' + num;
-
-			let xCorrect = convertUnits(xTextValue, additionalDivide);
-			let yCorrect = convertUnits(yTextValue, additionalDivide);
-
-			f.AddGuide(xGuideName, FORMULA_TYPE_VALUE, xCorrect);
-			f.AddGuide(yGuideName, FORMULA_TYPE_VALUE, yCorrect);
-			f.AddPathCommand(2, xGuideName, yGuideName);
-		})
-		f.AddPathCommand(6);
-
-
-		// f.AddGuide('md', 9, 'w', 'h', '0');
-		// f.AddGuide('dx', 0, '1', 'md', '20');
-		// f.AddGuide('y1', 1, '0', 'b', 'dx');
-		// f.AddGuide('x1', 1, '0', 'r', 'dx');
-		//
-		// f.AddPathCommand(0,undefined, undefined, undefined, undefined, undefined);
-		// f.AddPathCommand(1, 'l', 't');
-		// f.AddPathCommand(2, 'dx', 't');
-		// f.AddPathCommand(2, 'dx', 'dx');
-		// f.AddPathCommand(2, 'l', 'dx');
-		// f.AddPathCommand(6);
-		// f.AddPathCommand(0,undefined, undefined, undefined, undefined, undefined);
-		// f.AddPathCommand(1, 'l', 'y1');
-		// f.AddPathCommand(2, 'dx', 'y1');
-		// f.AddPathCommand(2, 'dx', 'b');
-		// f.AddPathCommand(2, 'l', 'b');
-		// f.AddPathCommand(6);
-		// f.AddPathCommand(0,undefined, undefined, undefined, undefined, undefined);
-		// f.AddPathCommand(1, 'x1', 't');
-		// f.AddPathCommand(2, 'r', 't');
-		// f.AddPathCommand(2, 'r', 'dx');
-		// f.AddPathCommand(2, 'x1', 'dx');
-		// f.AddPathCommand(6);
-		// f.AddPathCommand(0,undefined, undefined, undefined, undefined, undefined);
-		// f.AddPathCommand(1, 'x1', 'y1');
-		// f.AddPathCommand(2, 'r', 'y1');
-		// f.AddPathCommand(2, 'r', 'b');
-		// f.AddPathCommand(2, 'x1', 'b');
-		// f.AddPathCommand(6);
-
-		geometry.setPreset("master1shape1");
 		return geometry;
+	}
+
+	function getGeometryFromClass(visioDocument) {
+		// see ECMA-376-1_5th_edition and Geometry.js
+
+		//TODO maybe get Zip so that we can find parts by relationships
+		let master1shape1 = visioDocument.masterContents[0].shapes[0];
+		let master1shape1Geometry = getGeometryFromShape(master1shape1)
+		return master1shape1Geometry;
 	}
 
 	window['AscCommonDraw'].getGeometryFromClass = getGeometryFromClass;
