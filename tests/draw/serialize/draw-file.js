@@ -100,7 +100,8 @@
 		setTimeout(function (){
 			let testFileRectangle = AscCommon.Base64.decode(Asc.rectangle);
 			let testFileTriangle = AscCommon.Base64.decode(Asc.triangle);
-			drawFile(testFileTriangle);
+			let testFileLineShapes = AscCommon.Base64.decode(Asc.lineShapes);
+			drawFile(testFileLineShapes);
 		}, 3000);
 	};
 }();

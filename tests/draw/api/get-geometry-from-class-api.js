@@ -178,17 +178,19 @@
 		geometry.AddPathCommand(0, undefined, fillValue, undefined, undefined, undefined);
 
 		pointsNewUnits.forEach(function (point, i) {
-			let xName = 'x' + i;
-			let yName = 'y' + i;
+			// let xName = 'x' + i;
+			// let yName = 'y' + i;
+			//
+			// geometry.AddGuide(xName, FORMULA_TYPE_VALUE, point.x);
+			// geometry.AddGuide(yName, FORMULA_TYPE_VALUE, point.y);
+			//
+			// if (i === 0) {
+			// 	geometry.AddPathCommand(1, xName, yName);
+			// } else {
+			// 	geometry.AddPathCommand(2, xName, yName);
+			// }
 
-			geometry.AddGuide(xName, FORMULA_TYPE_VALUE, point.x);
-			geometry.AddGuide(yName, FORMULA_TYPE_VALUE, point.y);
-
-			if (i === 0) {
-				geometry.AddPathCommand(1, xName, yName);
-			} else {
-				geometry.AddPathCommand(2, xName, yName);
-			}
+			geometry.AddPathCommand(i === 0 ? 1 : 2, point.x, point.y);
 		})
 
 		geometry.AddPathCommand(6);
@@ -234,7 +236,7 @@
 		// TODO parse formula and units
 		// TODO parse line style fill style text style
 
-		const additionalUnitCoefficient = 1 / 1000;
+		const additionalUnitCoefficient = g_dKoef_in_to_mm;
 
 		let points = getPointsFromGeometrySection(geometrySection);
 
@@ -257,12 +259,11 @@
 		return geometry;
 	}
 
-	function getGeometryFromClass(visioDocument) {
+	function getGeometryFromClass(shape) {
 		// see ECMA-376-1_5th_edition and Geometry.js
 
 		//TODO maybe get Zip so that we can find parts by relationships
-		let master1shape1 = visioDocument.masterContents[0].shapes[0];
-		let master1shape1Geometry = getGeometryFromShape(master1shape1)
+		let master1shape1Geometry = getGeometryFromShape(shape)
 		return master1shape1Geometry;
 	}
 

@@ -274,8 +274,11 @@
 	CVisioDocument.prototype.draw = function() {
 		let api = this.api;
 		//CSlideSize.prototype.DEFAULT_CX
-		let logic_w_mm = 9144000 / g_dKoef_mm_to_emu;
-		let logic_h_mm = 6858000 / g_dKoef_mm_to_emu;
+		//todo units, indexes
+		let logic_w_inch = this.pages.page[0].pageSheet.elements.find(function(elem) {return elem.n === "PageWidth"}).v;
+		let logic_h_inch = this.pages.page[0].pageSheet.elements.find(function(elem) {return elem.n === "PageHeight"}).v;
+		let logic_w_mm = logic_w_inch * g_dKoef_in_to_mm;
+		let logic_h_mm = logic_h_inch * g_dKoef_in_to_mm;
 
 		let zoom = this.zoom_FitToPage_value(logic_w_mm, logic_h_mm, api.HtmlElement.offsetWidth, api.HtmlElement.offsetHeight);
 		var dKoef = zoom * g_dKoef_mm_to_pix / 100;
@@ -316,29 +319,37 @@
 	}
 	CVisioDocument.prototype.convertToShapes = function(logic_w_mm, logic_h_mm) {
 		let shapes = [];
-		var geom = AscCommonDraw.getGeometryFromClass(this);
 		var oFill   = AscFormat.CreateUnfilFromRGB(0,127,0);
 		var oStroke = AscFormat.builder_CreateLine(12700, {UniFill: AscFormat.CreateUnfilFromRGB(255,0,0)});
-		shapes.push(this.convertToShape(logic_w_mm / 3, logic_h_mm / 3, oFill, oStroke, geom));
 
-		var prst = getRandomPrst();
-		var geom = new AscFormat.CreateGeometry(prst);
-		var oFill   = AscFormat.CreateUnfilFromRGB(0,0,127);
-		var oStroke = AscFormat.builder_CreateLine(12700, {UniFill: AscFormat.CreateUnfilFromRGB(255,0,0)});
-		shapes.push(this.convertToShape(logic_w_mm / 5, logic_h_mm / 5, oFill, oStroke, geom));
+		//todo master index
+		for(let i = 0; i < this.pageContents[0].shapes.length; i++) {
+			let shapePage = this.pageContents[0].shapes[i];
+			let x_inch = shapePage.elements.find(function(elem) {return elem.n === "PinX"}).v;
+			let y_inch = shapePage.elements.find(function(elem) {return elem.n === "PinY"}).v;
+			let x_mm = x_inch * g_dKoef_in_to_mm;
+			let y_mm = y_inch * g_dKoef_in_to_mm;
+			let shapeMaster = this.masterContents[i].shapes[0];
+			let geom = AscCommonDraw.getGeometryFromClass(shapeMaster);
+			shapes.push(this.convertToShape(x_mm, y_mm, logic_w_mm / 3, logic_h_mm / 3, oFill, oStroke, geom));
+		}
+
+		// var prst = getRandomPrst();
+		// var geom = new AscFormat.CreateGeometry(prst);
+		// var oFill   = AscFormat.CreateUnfilFromRGB(0,0,127);
+		// var oStroke = AscFormat.builder_CreateLine(12700, {UniFill: AscFormat.CreateUnfilFromRGB(255,0,0)});
+		// shapes.push(this.convertToShape(logic_w_mm / 5, logic_h_mm / 5, oFill, oStroke, geom));
 		return shapes;
 	};
-	CVisioDocument.prototype.convertToShape = function(w_mm, h_mm, oFill, oStroke, geom) {
+	CVisioDocument.prototype.convertToShape = function(x, y, w_mm, h_mm, oFill, oStroke, geom) {
 		let sType   = "rect";
 		let nWidth_mm  = Math.round(w_mm);
 		let nHeight_mm = Math.round(h_mm);
-		let nIndLeft = Math.round(w_mm) * 1.5;
-		let nIndTop  = Math.round(h_mm) * 1.5;
 		//let oDrawingDocument = new AscCommon.CDrawingDocument();
 		let shape = AscFormat.builder_CreateShape(sType, nWidth_mm, nHeight_mm,
 			oFill, oStroke, this, this.theme, null, false);
-		shape.spPr.xfrm.setOffX(nIndLeft);
-		shape.spPr.xfrm.setOffY(nIndTop);
+		shape.spPr.xfrm.setOffX(x);
+		shape.spPr.xfrm.setOffY(y);
 
 		shape.spPr.setGeometry(geom);
 		shape.recalculate();
