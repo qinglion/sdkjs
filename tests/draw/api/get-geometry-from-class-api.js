@@ -121,26 +121,77 @@
 		return results;
 	}
 
+	/**
+	 *
+	 * @param obj
+	 * @param attributeName
+	 * @param attributeValue
+	 * @returns {Section_Type}
+	 */
 	function findSection(obj, attributeName, attributeValue) {
 		return findObject(obj, "Section_Type", attributeName, attributeValue);
 	}
+
+	/**
+	 *
+	 * @param obj
+	 * @param attributeName
+	 * @param attributeValue
+	 * @returns {Row_Type}
+	 */
 	function findRow(obj, attributeName, attributeValue) {
 		return findObject(obj, "Row_Type", attributeName, attributeValue);
 	}
+
+	/**
+	 *
+	 * @param obj
+	 * @param attributeName
+	 * @param attributeValue
+	 * @returns {Cell_Type}
+	 */
 	function findCell(obj, attributeName, attributeValue) {
 		return findObject(obj, "Cell_Type", attributeName, attributeValue);
 	}
 
+	/**
+	 *
+	 * @param obj
+	 * @param attributeName
+	 * @param attributeValue
+	 * @returns {Section_Type[]}
+	 */
 	function findSections(obj, attributeName, attributeValue) {
 		return findObjects(obj, "Section_Type", attributeName, attributeValue);
 	}
+
+	/**
+	 *
+	 * @param obj
+	 * @param attributeName
+	 * @param attributeValue
+	 * @returns {Row_Type[]}
+	 */
 	function findRows(obj, attributeName, attributeValue) {
 		return findObjects(obj, "Row_Type", attributeName, attributeValue);
 	}
+
+	/**
+	 *
+	 * @param obj
+	 * @param attributeName
+	 * @param attributeValue
+	 * @returns {Cell_Type[]}
+	 */
 	function findCells(obj, attributeName, attributeValue) {
 		return findObjects(obj, "Cell_Type", attributeName, attributeValue);
 	}
 
+	/**
+	 *
+	 * @param {number} mm
+	 * @returns {number} emus
+	 */
 	function mmToEmu(mm) {
 		// Conversion factor: 1 cm = 360000 EMUs, 1 cm = 10 mm
 		const emusPerCm = 360000;
@@ -151,33 +202,52 @@
 		return emus;
 	}
 
+	/**
+	 * Calls mmToEmu on textValue:
+	 * Parse textValue * additionalUnitKoef then convert to Emus then to string
+	 * @param {string} textValue - mmUnits value saved in string
+	 * @param {number} additionalUnitKoef
+	 * @returns {string} textValueCorrectUnits
+	 */
 	function convertUnits(textValue, additionalUnitKoef) {
 		let textValueCorrectUnits = String(mmToEmu(+textValue * additionalUnitKoef));
 		return textValueCorrectUnits;
 	}
 
-	function mirrorVertically(points) {
+	/**
+	 * Gets points from commands, finds min and max Y points, then mirrors all y values,
+	 * consider yMiddle = (maxY - minY) / 2 is Y axis
+	 * @param commands
+	 * @returns {*} commandsNewPoints
+	 */
+	function mirrorVertically(commands) {
 		let minY = Number.MAX_VALUE;
 		let maxY = Number.MIN_VALUE;
-		points.forEach(function (point) {
-			minY = Math.min(minY, point.y);
-			maxY = Math.max(maxY, point.y);
+		commands.forEach(function (command) {
+			minY = Math.min(minY, command.y);
+			maxY = Math.max(maxY, command.y);
 		});
 
-		let newPoints = points.map(function (point) {
+		let commandsNewPoints = commands.map(function (command) {
 			let yMiddle = (maxY - minY) / 2;
-			let newY = yMiddle - (point.y - yMiddle);
-			return {x: point.x, y: newY};
+			let newY = yMiddle - (command.y - yMiddle);
+			return {x: command.x, y: newY};
 		});
 
-		return newPoints;
+		return commandsNewPoints;
 	}
 
-	function initGeometryFromPoints(geometry, pointsNewUnits, fillValue) {
+	/**
+	 *
+	 * @param {Geometry} geometry
+	 * @param commands
+	 * @param fillValue
+	 */
+	function initGeometryFromShapeCommands(geometry, commands, fillValue) {
 		/* extrusionOk, fill, stroke, w, h*/
 		geometry.AddPathCommand(0, undefined, fillValue, undefined, undefined, undefined);
 
-		pointsNewUnits.forEach(function (point, i) {
+		commands.forEach(function (command, i) {
 			// let xName = 'x' + i;
 			// let yName = 'y' + i;
 			//
@@ -190,42 +260,61 @@
 			// 	geometry.AddPathCommand(2, xName, yName);
 			// }
 
-			geometry.AddPathCommand(i === 0 ? 1 : 2, point.x, point.y);
+			geometry.AddPathCommand(i === 0 ? 1 : 2, command.x, command.y);
 		})
 
 		geometry.AddPathCommand(6);
 		geometry.setPreset("master1shape1");
 	}
 
-	function fromMMtoNewUnits(points, additionalUnitKoef) {
+	/**
+	 * calls convertUnits(value, additionalUnitCoef)  on points
+	 * @param points
+	 * @param additionalUnitCoef
+	 * @returns {*} pointsNewUnits
+	 */
+	function fromMMtoNewUnits(points, additionalUnitCoef) {
 		let pointsNewUnits = points.map(function (point) {
-			let newX = convertUnits(point.x, additionalUnitKoef);
-			let newY = convertUnits(point.y, additionalUnitKoef);
+			let newX = convertUnits(point.x, additionalUnitCoef);
+			let newY = convertUnits(point.y, additionalUnitCoef);
 			return {x: newX, y: newY};
 		});
 		return pointsNewUnits;
 	}
 
-	function getPointsFromGeometrySection(geometrySection) {
-		let points = [];
+	/**
+	 *
+	 * @param geometrySection
+	 * @returns {{name: String, x: String, y: String}[]} commands
+	 */
+	function getShapeCommandsFromGeometrySection(geometrySection) {
+		let commands = [];
 
-		let moveToRow = findRow(geometrySection, "t", "MoveTo");
-		let moveToXTextValue = findCell(moveToRow, "n", "X").v;
-		let moveToYTextValue = findCell(moveToRow, "n", "Y").v;
+		for (let i = 0; true; i++) {
+			let rowNum = i + 1;
+			let commandRow = findRow(geometrySection, "iX", rowNum);
+			if (!commandRow) {
+				break;
+			}
+			let commandName = commandRow.t;
+			switch (commandName) {
+				case "MoveTo":
+					let moveToXTextValue = findCell(commandRow, "n", "X").v;
+					let moveToYTextValue = findCell(commandRow, "n", "Y").v;
+					commands.push({name: commandName, x: moveToXTextValue, y: moveToYTextValue});
+					break;
+				case "LineTo":
+					let xTextValue = findCell(commandRow, "n", "X").v;
+					let yTextValue = findCell(commandRow, "n", "Y").v;
+					commands.push({name: commandName, x: xTextValue, y: yTextValue});
+					break;
+				case "EllipticalArcTo":
 
-		points.push({x: moveToXTextValue, y: moveToYTextValue});
+					break;
+			}
+		}
 
-		let lineToRows = findRows(geometrySection, "t", "LineTo");
-		let lineToCommandPoints = [];
-		lineToRows.forEach(function (rowObject) {
-			let xTextValue = findCell(rowObject, "n", "X").v;
-			let yTextValue = findCell(rowObject, "n", "Y").v;
-			lineToCommandPoints.push({x: xTextValue, y: yTextValue});
-		});
-
-		points = points.concat(lineToCommandPoints)
-
-		return points;
+		return commands;
 	}
 
 	function getGeometryFromShape(master1shape1) {
@@ -238,19 +327,19 @@
 
 		const additionalUnitCoefficient = g_dKoef_in_to_mm;
 
-		let points = getPointsFromGeometrySection(geometrySection);
+		let shapeCommands = getShapeCommandsFromGeometrySection(geometrySection);
 
 		// seems like visio y coordinate goes up while
 		// ECMA-376-11_5th_edition and Geometry.js y coordinate goes down
 		// so without mirror we get shapes up side down
 		// TODO flip all page contents but not each shape
-		points = mirrorVertically(points);
+		shapeCommands = mirrorVertically(shapeCommands);
 
 		// imply that units were in mm until units parse realized
-		let pointsNewUnits = fromMMtoNewUnits(points, additionalUnitCoefficient);
+		let shapeCommandsNewPointUnits = fromMMtoNewUnits(shapeCommands, additionalUnitCoefficient);
 
 		let geometry = new AscFormat.Geometry();
-		initGeometryFromPoints(geometry, pointsNewUnits, fillValue);
+		initGeometryFromShapeCommands(geometry, shapeCommandsNewPointUnits, fillValue);
 		// TODO add connections
 		// f.AddCnx('_3cd4', 'hc', 't');
 		// f.AddCnx('cd2', 'l', 'vc');
