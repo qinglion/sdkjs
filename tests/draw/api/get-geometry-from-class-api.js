@@ -230,11 +230,35 @@
 
 		let commandsNewPoints = commands.map(function (command) {
 			let yMiddle = (maxY - minY) / 2;
-			let newY = yMiddle - (command.y - yMiddle);
-			return {x: command.x, y: newY};
+			let newY = yMiddle - (command.y - yMiddle)
+			return {name: command.name, x: command.x, y: String(newY)};
 		});
 
 		return commandsNewPoints;
+	}
+
+	function transformEllipticalArcParams(x0, y0, x, y, a, b, c, d) {
+		// CONSIDER C == 0 otherwise not possible to convert to ECMA 376 arcTo arguments.
+		if (c !== 0) {
+			return;
+		}
+		// http://visguy.com/vgforum/index.php?topic=2464.0
+
+		let d2 = d*d;
+		let cx = ((x0-x)*(x0+x)*(y-b)-(x-a)*(x+a)*(y0-y)+d2*(y0-y)*(y-b)*(y0-b))/(2.0*((x0-x)*(y-b)-(x-a)*(y0-y)));
+		let cy = ((x0-x)*(x-a)*(x0-a)/d2+(x-a)*(y0-y)*(y0+y)-(x0-x)*(y-b)*(y+b))/(2.0*((x-a)*(y0-y)-(x0-x)*(y-b)));
+
+		let rx = Math.sqrt(Math.pow(x0-cx, 2) + Math.pow(y0-cy,2) * d2);
+		let ry = rx / d;
+
+		let wR = rx;
+		let hR = ry;
+
+		//TODO angles
+		let stAng = 180;
+		let swAng = 180;
+
+		return {wR, hR, stAng, swAng};
 	}
 
 	/**
@@ -246,6 +270,8 @@
 	function initGeometryFromShapeCommands(geometry, commands, fillValue) {
 		/* extrusionOk, fill, stroke, w, h*/
 		geometry.AddPathCommand(0, undefined, fillValue, undefined, undefined, undefined);
+
+		let lastPoint = { x: 0, y : 0};
 
 		commands.forEach(function (command, i) {
 			// let xName = 'x' + i;
@@ -259,8 +285,22 @@
 			// } else {
 			// 	geometry.AddPathCommand(2, xName, yName);
 			// }
-
-			geometry.AddPathCommand(i === 0 ? 1 : 2, command.x, command.y);
+			switch (command.name) {
+				case "MoveTo":
+					geometry.AddPathCommand( 1, command.x, command.y);
+					lastPoint.x = command.x;
+					lastPoint.y = command.y;
+					break;
+				case "LineTo":
+					geometry.AddPathCommand( 2, command.x, command.y);
+					lastPoint.x = command.x;
+					lastPoint.y = command.y;
+					break;
+				case "EllipticalArcTo":
+					let newParams = transformEllipticalArcParams(lastPoint.x, lastPoint.y, command.x, command.y, command.a, command.b, command.c, command.d);
+					geometry.AddPathCommand( 3, newParams.wR, newParams.hR, newParams.stAng, newParams.swAng);
+					break;
+			}
 		})
 
 		geometry.AddPathCommand(6);
@@ -273,13 +313,15 @@
 	 * @param additionalUnitCoef
 	 * @returns {*} pointsNewUnits
 	 */
-	function fromMMtoNewUnits(points, additionalUnitCoef) {
-		let pointsNewUnits = points.map(function (point) {
-			let newX = convertUnits(point.x, additionalUnitCoef);
-			let newY = convertUnits(point.y, additionalUnitCoef);
-			return {x: newX, y: newY};
+	function fromMMtoNewUnits(commands, additionalUnitCoef) {
+		let commandsNewUnits = commands.map(function (command) {
+			if (command.name === 'LineTo' || command.name === 'MoveTo') {
+				let newX = convertUnits(command.x, additionalUnitCoef);
+				let newY = convertUnits(command.y, additionalUnitCoef);
+				return {name: command.name, x: newX, y: newY};
+			}
 		});
-		return pointsNewUnits;
+		return commandsNewUnits;
 	}
 
 	/**
@@ -309,7 +351,13 @@
 					commands.push({name: commandName, x: xTextValue, y: yTextValue});
 					break;
 				case "EllipticalArcTo":
-
+					let x = findCell(commandRow, "n", "X").v;
+					let y = findCell(commandRow, "n", "Y").v;
+					let a = findCell(commandRow, "n", "A").v;
+					let b = findCell(commandRow, "n", "B").v;
+					let c = findCell(commandRow, "n", "C").v;
+					let d = findCell(commandRow, "n", "D").v;
+					commands.push({name: commandName, x: x, y: y, a : a, b : b, c : c, d : d});
 					break;
 			}
 		}
