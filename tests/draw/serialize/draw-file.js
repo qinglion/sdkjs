@@ -101,7 +101,10 @@
 			let testFileRectangle = AscCommon.Base64.decode(Asc.rectangle);
 			let testFileTriangle = AscCommon.Base64.decode(Asc.triangle);
 			let testFileLineShapes = AscCommon.Base64.decode(Asc.lineShapes);
-			drawFile(testFileLineShapes);
+			let testFileCircle = AscCommon.Base64.decode(Asc.circle);
+			let rectAndCircle = AscCommon.Base64.decode(Asc.rectAndCircle);
+			let basicShapesBstart = AscCommon.Base64.decode(Asc.basic_ShapesB_start);
+			drawFile(rectAndCircle);
 		}, 3000);
 	};
 }();

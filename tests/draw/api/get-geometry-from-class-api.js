@@ -214,51 +214,75 @@
 		return textValueCorrectUnits;
 	}
 
-	/**
-	 * Gets points from commands, finds min and max Y points, then mirrors all y values,
-	 * consider yMiddle = (maxY - minY) / 2 is Y axis
-	 * @param commands
-	 * @returns {*} commandsNewPoints
-	 */
-	function mirrorVertically(commands) {
-		let minY = Number.MAX_VALUE;
-		let maxY = Number.MIN_VALUE;
-		commands.forEach(function (command) {
-			minY = Math.min(minY, command.y);
-			maxY = Math.max(maxY, command.y);
-		});
+	function computeSweep(startAngle, endAngle, ctrlAngle) {
+		let sweep;
 
-		let commandsNewPoints = commands.map(function (command) {
-			let yMiddle = (maxY - minY) / 2;
-			let newY = yMiddle - (command.y - yMiddle)
-			return {name: command.name, x: command.x, y: String(newY)};
-		});
+		startAngle = (360.0 + startAngle) % 360.0;
+		endAngle = (360.0 + endAngle) % 360.0;
+		ctrlAngle = (360.0 + ctrlAngle) % 360.0;
 
-		return commandsNewPoints;
+		// different sweeps depending on where the control point is
+
+		if (startAngle < endAngle) {
+			if (startAngle < ctrlAngle && ctrlAngle < endAngle) {
+				sweep = startAngle - endAngle;
+			} else {
+				sweep = 360 + (startAngle - endAngle);
+			}
+		} else {
+			if (endAngle < ctrlAngle && ctrlAngle < startAngle) {
+				sweep = startAngle - endAngle;
+			} else {
+				sweep = - (360 - (startAngle - endAngle));
+			}
+		}
+
+		return sweep;
 	}
 
 	function transformEllipticalArcParams(x0, y0, x, y, a, b, c, d) {
 		// CONSIDER C == 0 otherwise not possible to convert to ECMA 376 arcTo arguments.
-		if (c !== 0) {
+		if (parseInt(c) !== 0) {
+			console.log('c is not 0\n in sdkjs/tests/draw/api/get-geometry-from-class-api.js');
 			return;
 		}
-		// http://visguy.com/vgforum/index.php?topic=2464.0
+		x0 = parseInt(x0);
+		y0 = parseInt(y0);
+		x = parseInt(x);
+		y = parseInt(y);
+		a = parseInt(a);
+		b = parseInt(b);
+		c = parseInt(c);
+		d = parseInt(d);
 
+		// http://visguy.com/vgforum/index.php?topic=2464.0
 		let d2 = d*d;
 		let cx = ((x0-x)*(x0+x)*(y-b)-(x-a)*(x+a)*(y0-y)+d2*(y0-y)*(y-b)*(y0-b))/(2.0*((x0-x)*(y-b)-(x-a)*(y0-y)));
 		let cy = ((x0-x)*(x-a)*(x0-a)/d2+(x-a)*(y0-y)*(y0+y)-(x0-x)*(y-b)*(y+b))/(2.0*((x-a)*(y0-y)-(x0-x)*(y-b)));
+		// can also be helpful https://stackoverflow.com/questions/6729056/mapping-svg-arcto-to-html-canvas-arcto
 
+		// TODO make no imprecise calculations
+		// https://javascript.info/number#imprecise-calculations
 		let rx = Math.sqrt(Math.pow(x0-cx, 2) + Math.pow(y0-cy,2) * d2);
 		let ry = rx / d;
 
 		let wR = rx;
 		let hR = ry;
 
-		//TODO angles
-		let stAng = 180;
-		let swAng = 180;
+		let degToC = 60000;
 
-		return {wR, hR, stAng, swAng};
+		let radToDeg = 180 / Math.PI;
+
+		let ctrlAngle = Math.atan2((b-cy)/ry, (a-cx)/rx) * radToDeg;
+		let startAngle = Math.atan2((y0-cy)/ry, (x0-cx)/rx) * radToDeg;
+		let endAngle = Math.atan2((y-cy)/ry, (x-cx)/rx) * radToDeg;
+
+		let sweep = computeSweep(startAngle, endAngle, ctrlAngle);
+
+		let stAng = startAngle * degToC;
+		let swAng = sweep * degToC;
+
+		return {wR : String(wR), hR : String(hR), stAng : String(stAng), swAng : String(swAng)};
 	}
 
 	/**
@@ -299,6 +323,8 @@
 				case "EllipticalArcTo":
 					let newParams = transformEllipticalArcParams(lastPoint.x, lastPoint.y, command.x, command.y, command.a, command.b, command.c, command.d);
 					geometry.AddPathCommand( 3, newParams.wR, newParams.hR, newParams.stAng, newParams.swAng);
+					lastPoint.x = command.x;
+					lastPoint.y = command.y;
 					break;
 			}
 		})
@@ -319,6 +345,12 @@
 				let newX = convertUnits(command.x, additionalUnitCoef);
 				let newY = convertUnits(command.y, additionalUnitCoef);
 				return {name: command.name, x: newX, y: newY};
+			} else if (command.name === 'EllipticalArcTo') {
+				let newX = convertUnits(command.x, additionalUnitCoef);
+				let newY = convertUnits(command.y, additionalUnitCoef);
+				let newA = convertUnits(command.a, additionalUnitCoef);
+				let newB = convertUnits(command.b, additionalUnitCoef);
+				return {name: command.name, x: newX, y: newY, a: newA, b: newB, c : command.c, d : command.d};
 			}
 		});
 		return commandsNewUnits;
@@ -380,8 +412,7 @@
 		// seems like visio y coordinate goes up while
 		// ECMA-376-11_5th_edition and Geometry.js y coordinate goes down
 		// so without mirror we get shapes up side down
-		// TODO flip all page contents but not each shape
-		shapeCommands = mirrorVertically(shapeCommands);
+		// TODO flip all page contents
 
 		// imply that units were in mm until units parse realized
 		let shapeCommandsNewPointUnits = fromMMtoNewUnits(shapeCommands, additionalUnitCoefficient);
