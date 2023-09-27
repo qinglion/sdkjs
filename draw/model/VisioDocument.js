@@ -322,15 +322,22 @@
 		var oFill   = AscFormat.CreateUnfilFromRGB(0,127,0);
 		var oStroke = AscFormat.builder_CreateLine(12700, {UniFill: AscFormat.CreateUnfilFromRGB(255,0,0)});
 
-		//todo master index
 		for(let i = 0; i < this.pageContents[0].shapes.length; i++) {
-			let shapePage = this.pageContents[0].shapes[i];
-			let x_inch = shapePage.elements.find(function(elem) {return elem.n === "PinX"}).v;
-			let y_inch = shapePage.elements.find(function(elem) {return elem.n === "PinY"}).v;
+			let shape = this.pageContents[0].shapes[i];
+			let shapeMasterID = shape.getMasterID();
+			if (shapeMasterID) {
+				let shapeMaster = this.getMasterByID(shapeMasterID);
+				shape.realizeMasterToShapeInheritance(shapeMaster);
+			}
+			let pinX_inch = shape.elements.find(function(elem) {return elem.n === "PinX"}).v;
+			let pinY_inch = shape.elements.find(function(elem) {return elem.n === "PinY"}).v;
+			let shapeWidth_inch = shape.elements.find(function(elem) {return elem.n === "Width"}).v;
+			let shapeHeight_inch = shape.elements.find(function(elem) {return elem.n === "Height"}).v;
+			let x_inch = pinX_inch - shapeWidth_inch / 2;
+			let y_inch = pinY_inch - shapeHeight_inch / 2;
 			let x_mm = x_inch * g_dKoef_in_to_mm;
 			let y_mm = y_inch * g_dKoef_in_to_mm;
-			let shapeMaster = this.masterContents[i].shapes[0];
-			let geom = AscCommonDraw.getGeometryFromClass(shapeMaster);
+			let geom = AscCommonDraw.getGeometryFromShape(shape);
 			shapes.push(this.convertToShape(x_mm, y_mm, logic_w_mm / 3, logic_h_mm / 3, oFill, oStroke, geom));
 		}
 

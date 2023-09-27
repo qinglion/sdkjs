@@ -72,6 +72,10 @@
 	MAP_FMLA_TO_TYPE["tan"] = FORMULA_TYPE_TAN;
 	MAP_FMLA_TO_TYPE["val"] = FORMULA_TYPE_VALUE;
 
+	const degToC = 60000;
+
+	const radToDeg = 180 / Math.PI;
+
 	function getRandomPrst() {
 		let types = AscCommon.g_oAutoShapesTypes[Math.floor(Math.random()*AscCommon.g_oAutoShapesTypes.length)];
 		return types[Math.floor(Math.random()*types.length)].Type;
@@ -269,10 +273,6 @@
 		let wR = rx;
 		let hR = ry;
 
-		let degToC = 60000;
-
-		let radToDeg = 180 / Math.PI;
-
 		let ctrlAngle = Math.atan2((b-cy)/ry, (a-cx)/rx) * radToDeg;
 		let startAngle = Math.atan2((y0-cy)/ry, (x0-cx)/rx) * radToDeg;
 		let endAngle = Math.atan2((y-cy)/ry, (x-cx)/rx) * radToDeg;
@@ -282,7 +282,14 @@
 		let stAng = startAngle * degToC;
 		let swAng = sweep * degToC;
 
-		return {wR : String(wR), hR : String(hR), stAng : String(stAng), swAng : String(swAng)};
+		return {wR : wR, hR : hR, stAng : stAng, swAng : swAng};
+	}
+
+	function transformEllipseParams(x, y, a, b, c, d) {
+		let rx = a - x;
+		let ry = d - y;
+
+		return {wR : rx, hR : ry};
 	}
 
 	/**
@@ -291,13 +298,19 @@
 	 * @param commands
 	 * @param fillValue
 	 */
-	function initGeometryFromShapeCommands(geometry, commands, fillValue) {
+	function initGeometryFromShapeCommands(geometry, commands, fillValue, shape) {
 		/* extrusionOk, fill, stroke, w, h*/
 		geometry.AddPathCommand(0, undefined, fillValue, undefined, undefined, undefined);
 
+		//TODO maybe get shapeWidth and Height from outside
+		//TODO shape with RelMoveTo and RelLineTo takes wrong position
+
+		let shapeWidth = findCell(shape.elements, "n", "Width").v;
+		let shapeHeight = findCell(shape.elements, "n", "Height").v;
+
 		let lastPoint = { x: 0, y : 0};
 
-		commands.forEach(function (command, i) {
+		commands.forEach(function (command) {
 			// let xName = 'x' + i;
 			// let yName = 'y' + i;
 			//
@@ -315,14 +328,37 @@
 					lastPoint.x = command.x;
 					lastPoint.y = command.y;
 					break;
+				case "RelMoveTo":
+					let newX = parseInt(command.x) * shapeWidth;
+					let newY = parseInt(command.y) * shapeHeight;
+					geometry.AddPathCommand( 1, newX, newY);
+					lastPoint.x = newX;
+					lastPoint.y = newY;
+					break;
 				case "LineTo":
 					geometry.AddPathCommand( 2, command.x, command.y);
 					lastPoint.x = command.x;
 					lastPoint.y = command.y;
 					break;
+				case "RelLineTo":
+					let newXRel = parseInt(command.x) * shapeWidth;
+					let newYRel = parseInt(command.y) * shapeHeight;
+					geometry.AddPathCommand( 2, newXRel, newYRel);
+					lastPoint.x = newXRel;
+					lastPoint.y = newYRel;
+					break;
 				case "EllipticalArcTo":
 					let newParams = transformEllipticalArcParams(lastPoint.x, lastPoint.y, command.x, command.y, command.a, command.b, command.c, command.d);
 					geometry.AddPathCommand( 3, newParams.wR, newParams.hR, newParams.stAng, newParams.swAng);
+					lastPoint.x = command.x;
+					lastPoint.y = command.y;
+					break;
+				case "Ellipse":
+					let wRhR = transformEllipseParams(command.x, command.y, command.a, command.b, command.c, command.d);
+					geometry.AddPathCommand( 1, wRhR.wR * 2, wRhR.hR);
+					geometry.AddPathCommand( 3, wRhR.wR, wRhR.hR, 0, 180 * degToC);
+					geometry.AddPathCommand( 3, wRhR.wR, wRhR.hR, 180 * degToC, 180 * degToC);
+					//TODO maybe add move to to continue drawing shape correctly
 					lastPoint.x = command.x;
 					lastPoint.y = command.y;
 					break;
@@ -341,7 +377,8 @@
 	 */
 	function fromMMtoNewUnits(commands, additionalUnitCoef) {
 		let commandsNewUnits = commands.map(function (command) {
-			if (command.name === 'LineTo' || command.name === 'MoveTo') {
+			if (command.name === 'LineTo' || command.name === 'RelLineTo'
+				|| command.name === 'MoveTo' || command.name === 'RelMoveTo') {
 				let newX = convertUnits(command.x, additionalUnitCoef);
 				let newY = convertUnits(command.y, additionalUnitCoef);
 				return {name: command.name, x: newX, y: newY};
@@ -351,6 +388,14 @@
 				let newA = convertUnits(command.a, additionalUnitCoef);
 				let newB = convertUnits(command.b, additionalUnitCoef);
 				return {name: command.name, x: newX, y: newY, a: newA, b: newB, c : command.c, d : command.d};
+			} else if (command.name === 'Ellipse') {
+				let newX = convertUnits(command.x, additionalUnitCoef);
+				let newY = convertUnits(command.y, additionalUnitCoef);
+				let newA = convertUnits(command.a, additionalUnitCoef);
+				let newB = convertUnits(command.b, additionalUnitCoef);
+				let newC = convertUnits(command.c, additionalUnitCoef);
+				let newD = convertUnits(command.d, additionalUnitCoef);
+				return {name: command.name, x: newX, y: newY, a: newA, b: newB, c : newC, d : newD};
 			}
 		});
 		return commandsNewUnits;
@@ -377,10 +422,20 @@
 					let moveToYTextValue = findCell(commandRow, "n", "Y").v;
 					commands.push({name: commandName, x: moveToXTextValue, y: moveToYTextValue});
 					break;
+				case "RelMoveTo":
+					let relMoveToXTextValue = findCell(commandRow, "n", "X").v;
+					let relMoveToYTextValue = findCell(commandRow, "n", "Y").v;
+					commands.push({name: commandName, x: relMoveToXTextValue, y: relMoveToYTextValue});
+					break;
 				case "LineTo":
-					let xTextValue = findCell(commandRow, "n", "X").v;
-					let yTextValue = findCell(commandRow, "n", "Y").v;
-					commands.push({name: commandName, x: xTextValue, y: yTextValue});
+					let lineToXTextValue = findCell(commandRow, "n", "X").v;
+					let lineToYTextValue = findCell(commandRow, "n", "Y").v;
+					commands.push({name: commandName, x: lineToXTextValue, y: lineToYTextValue});
+					break;
+				case "RelLineTo":
+					let relLineToXTextValue = findCell(commandRow, "n", "X").v;
+					let relLineToYTextValue = findCell(commandRow, "n", "Y").v;
+					commands.push({name: commandName, x: relLineToXTextValue, y: relLineToYTextValue});
 					break;
 				case "EllipticalArcTo":
 					let x = findCell(commandRow, "n", "X").v;
@@ -391,14 +446,24 @@
 					let d = findCell(commandRow, "n", "D").v;
 					commands.push({name: commandName, x: x, y: y, a : a, b : b, c : c, d : d});
 					break;
+				case "Ellipse":
+					let centerPointXTextValue = findCell(commandRow, "n", "X").v;
+					let centerPointYTextValue = findCell(commandRow, "n", "Y").v;
+					let somePointXTextValue = findCell(commandRow, "n", "A").v;
+					let somePointYTextValue = findCell(commandRow, "n", "B").v;
+					let anotherPointXTextValue = findCell(commandRow, "n", "C").v;
+					let anotherPointYTextValue = findCell(commandRow, "n", "D").v;
+					commands.push({name: commandName, x: centerPointXTextValue, y: centerPointYTextValue,
+						a : somePointXTextValue, b : somePointYTextValue,
+						c : anotherPointXTextValue, d : anotherPointYTextValue});
 			}
 		}
 
 		return commands;
 	}
 
-	function getGeometryFromShape(master1shape1) {
-		let geometrySection = findSection(master1shape1.elements, "n", "Geometry");
+	function getGeometryFromShape(shape) {
+		let geometrySection = findSection(shape.elements, "n", "Geometry");
 		let noFillCell = findCell(geometrySection, "n", "NoFill");
 		let fillValue = Number(noFillCell.v) ? undefined : "norm";
 
@@ -418,7 +483,7 @@
 		let shapeCommandsNewPointUnits = fromMMtoNewUnits(shapeCommands, additionalUnitCoefficient);
 
 		let geometry = new AscFormat.Geometry();
-		initGeometryFromShapeCommands(geometry, shapeCommandsNewPointUnits, fillValue);
+		initGeometryFromShapeCommands(geometry, shapeCommandsNewPointUnits, fillValue, shape);
 		// TODO add connections
 		// f.AddCnx('_3cd4', 'hc', 't');
 		// f.AddCnx('cd2', 'l', 'vc');
@@ -435,5 +500,6 @@
 		return master1shape1Geometry;
 	}
 
+	window['AscCommonDraw'].getGeometryFromShape = getGeometryFromShape;
 	window['AscCommonDraw'].getGeometryFromClass = getGeometryFromClass;
 })(window, window.document);

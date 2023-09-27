@@ -104,7 +104,7 @@
 			let testFileCircle = AscCommon.Base64.decode(Asc.circle);
 			let rectAndCircle = AscCommon.Base64.decode(Asc.rectAndCircle);
 			let basicShapesBstart = AscCommon.Base64.decode(Asc.basic_ShapesB_start);
-			drawFile(rectAndCircle);
+			drawFile(basicShapesBstart);
 		}, 3000);
 	};
 }();
