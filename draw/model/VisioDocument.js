@@ -300,15 +300,18 @@
 		graphics.init(ctx, w_px, h_px, w_mm, h_mm);
 		graphics.m_oFontManager = AscCommon.g_fontManager;
 
+		//visio y coordinate goes up while
+		//ECMA-376-11_5th_edition and Geometry.js y coordinate goes down
+		//so without mirror we get page up side down
+		// ctx.translate(0, height), ctx.scale(1, -1);
+		graphics.m_oCoordTransform.ty = h_px;
+		graphics.m_oCoordTransform.sy = - graphics.m_oCoordTransform.sy;
+
 		let shapes = this.convertToShapes(logic_w_mm, logic_h_mm);
 		shapes.forEach(function(shape) {
 			graphics.SaveGrState();
 			graphics.SetIntegerGrid(false);
 
-			//TODO apply canvas coordinate system change instead of working with shapes
-			// ctx.translate(0, height), ctx.scale(1, -1);
-			shape.transform.sy = -1 * shape.transform.sy; // mirror shape along its local x axis
-			shape.transform.ty = h_mm - shape.transform.ty; // recalculate y, like y axis goes from bottom to top
 			graphics.transform3(shape.transform);
 			let shape_drawer = new AscCommon.CShapeDrawer();
 			shape_drawer.fromShape2(shape, graphics, shape.getGeometry());
