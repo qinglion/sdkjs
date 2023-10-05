@@ -244,20 +244,63 @@
 		return sweep;
 	}
 
+	/**
+	 * afin rotate clockwise
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {number} radiansRotateAngle radians Rotate AntiClockWise Angle. E.g. 30 degrees rotates does DOWN.
+	 * @returns {{x: number, y: number}} point
+	 */
+	function rotatePointAroundCordsStartClockWise(x, y, radiansRotateAngle) {
+		let newX = x * Math.cos(radiansRotateAngle) + y * Math.sin(radiansRotateAngle);
+		let newY = x * (-1) * Math.sin(radiansRotateAngle) + y * Math.cos(radiansRotateAngle);
+		return {x : newX, y: newY};
+	}
+
 	function transformEllipticalArcParams(x0, y0, x, y, a, b, c, d) {
-		// CONSIDER C == 0 otherwise not possible to convert to ECMA 376 arcTo arguments.
-		if (parseInt(c) !== 0) {
-			console.log('c is not 0\n in sdkjs/tests/draw/api/get-geometry-from-class-api.js');
-			return;
-		}
-		x0 = parseInt(x0);
-		y0 = parseInt(y0);
-		x = parseInt(x);
-		y = parseInt(y);
-		a = parseInt(a);
-		b = parseInt(b);
-		c = parseInt(c);
-		d = parseInt(d);
+		// https://www.figma.com/file/hs43oiAUyuoqFULVoJ5lyZ/EllipticArcConvert?type=design&node-id=1-2&mode=design&t=QJu8MtR3JV62WiW9-0
+
+		//TODO maybe not Math.round(x0 * 1e4) / 1e4; but round in the end to not loose precision
+		x0 = Number(x0);
+		y0 = Number(y0);
+		x = Number(x);
+		y = Number(y);
+		a = Number(a);
+		b = Number(b);
+		c = Number(c);
+		d = Number(d);
+
+		// it is not necessary, but I try to avoid imprecise calculations
+		// with points:
+		// 		convert
+		// 			719999.9999999999 			to 720000
+		// 			719999.5555 						to 719999.5555
+		// with angles (see below):
+		// 		convert
+		// 			-90.00000000000006 			to -90
+		// 			6.176024640130164e-15 	to 0
+		// 		but lost precision on convert
+		// 			54.61614630046808 			to 54.6161
+		// can be enhanced by if add: if rounded angle is 0 so round otherwise dont
+
+		// lets save only 4 digits after point coordinates to avoid imprecise calculations to perform correct compares later
+		x0 = Math.round(x0 * 1e4) / 1e4;
+		y0 = Math.round(y0 * 1e4) / 1e4;
+		x = Math.round(x * 1e4) / 1e4;
+		y = Math.round(y * 1e4) / 1e4;
+		a = Math.round(a * 1e4) / 1e4;
+		b = Math.round(b * 1e4) / 1e4;
+
+		// translate points to ellipse angle
+		let startPoint = rotatePointAroundCordsStartClockWise(x0, y0, c);
+		let endPoint = rotatePointAroundCordsStartClockWise(x, y, c);
+		let controlPoint = rotatePointAroundCordsStartClockWise(a, b, c);
+		x0 = startPoint.x;
+		y0 = startPoint.y;
+		x = endPoint.x;
+		y = endPoint.y;
+		a = controlPoint.x;
+		b = controlPoint.y;
 
 		// http://visguy.com/vgforum/index.php?topic=2464.0
 		let d2 = d*d;
@@ -265,24 +308,49 @@
 		let cy = ((x0-x)*(x-a)*(x0-a)/d2+(x-a)*(y0-y)*(y0+y)-(x0-x)*(y-b)*(y+b))/(2.0*((x-a)*(y0-y)-(x0-x)*(y-b)));
 		// can also be helpful https://stackoverflow.com/questions/6729056/mapping-svg-arcto-to-html-canvas-arcto
 
-		// TODO make no imprecise calculations
-		// https://javascript.info/number#imprecise-calculations
 		let rx = Math.sqrt(Math.pow(x0-cx, 2) + Math.pow(y0-cy,2) * d2);
 		let ry = rx / d;
+
+		// lets NOT save only 4 digits after to avoid precision loss
+		// rx = Math.round(rx * 1e4) / 1e4;
+		// ry = Math.round(ry * 1e4) / 1e4;
+		// cy = Math.round(cy * 1e4) / 1e4;
+
+		let ctrlAngle = Math.atan2(b-cy, a-cx) * radToDeg;
+		let startAngle = Math.atan2(y0-cy, x0-cx) * radToDeg;
+		let endAngle = Math.atan2(y-cy, x-cx) * radToDeg;
+
+		// lets save only 4 digits after to avoid imprecise calculations result
+		ctrlAngle = Math.round(ctrlAngle * 1e4) / 1e4;
+		startAngle = Math.round(startAngle * 1e4) / 1e4;
+		endAngle = Math.round(endAngle * 1e4) / 1e4;
+		// set -0 to 0
+		ctrlAngle = ctrlAngle === -0 ? 0 : ctrlAngle;
+		startAngle = startAngle === -0 ? 0 : startAngle;
+		endAngle = endAngle === -0 ? 0 : endAngle;
+
+		let sweep = computeSweep(startAngle, endAngle, ctrlAngle);
+
+		// convert from anticlockwise angle system to clockwise see comment below
+		let stAng = (360 - startAngle) * degToC;
+		let swAng = sweep * degToC;
 
 		let wR = rx;
 		let hR = ry;
 
-		let ctrlAngle = Math.atan2((b-cy)/ry, (a-cx)/rx) * radToDeg;
-		let startAngle = Math.atan2((y0-cy)/ry, (x0-cx)/rx) * radToDeg;
-		let endAngle = Math.atan2((y-cy)/ry, (x-cx)/rx) * radToDeg;
+		// ellipseRotation is AntiClockwise so 30 deg go up in Visio
+		// but in ECMA it should be another angle
+		// because in ECMA angles are clockwise ang 30 deg go down.
+		let ellipseRotationInDeg = 360 - c * radToDeg;
+		ellipseRotationInDeg = Math.round(ellipseRotationInDeg * 1e4) / 1e4;
 
-		let sweep = computeSweep(startAngle, endAngle, ctrlAngle);
+		ellipseRotationInDeg = ellipseRotationInDeg === 360 ? 0 : ellipseRotationInDeg;
+		let ellipseRotationInC = ellipseRotationInDeg * degToC;
 
-		let stAng = startAngle * degToC;
-		let swAng = sweep * degToC;
+		//TODO may be invert y
+		// Bcs in CVisioDocument.draw it can be mirrored again
 
-		return {wR : wR, hR : hR, stAng : stAng, swAng : swAng};
+		return {wR : wR, hR : hR, stAng : stAng, swAng : swAng, ellipseRotation : ellipseRotationInC};
 	}
 
 	function transformEllipseParams(x, y, a, b, c, d) {
@@ -348,8 +416,10 @@
 					lastPoint.y = newYRel;
 					break;
 				case "EllipticalArcTo":
-					let newParams = transformEllipticalArcParams(lastPoint.x, lastPoint.y, command.x, command.y, command.a, command.b, command.c, command.d);
-					geometry.AddPathCommand( 3, newParams.wR, newParams.hR, newParams.stAng, newParams.swAng);
+					let newParams = transformEllipticalArcParams(lastPoint.x, lastPoint.y, command.x, command.y,
+						command.a, command.b, command.c, command.d);
+					geometry.AddPathCommand( 3, newParams.wR, newParams.hR, newParams.stAng,
+						newParams.swAng, newParams.ellipseRotation);
 					lastPoint.x = command.x;
 					lastPoint.y = command.y;
 					break;
@@ -465,7 +535,12 @@
 	function getGeometryFromShape(shape) {
 		let geometrySection = findSection(shape.elements, "n", "Geometry");
 		let noFillCell = findCell(geometrySection, "n", "NoFill");
-		let fillValue = Number(noFillCell.v) ? undefined : "norm";
+		let fillValue;
+		if (noFillCell) {
+			fillValue = Number(noFillCell.v) ? undefined : "norm";
+		} else {
+			fillValue = "norm";
+		}
 
 		// TODO parse formula and units
 		// TODO parse line style fill style text style
@@ -473,11 +548,6 @@
 		const additionalUnitCoefficient = g_dKoef_in_to_mm;
 
 		let shapeCommands = getShapeCommandsFromGeometrySection(geometrySection);
-
-		// seems like visio y coordinate goes up while
-		// ECMA-376-11_5th_edition and Geometry.js y coordinate goes down
-		// so without mirror we get shapes up side down
-		// TODO flip all page contents
 
 		// imply that units were in mm until units parse realized
 		let shapeCommandsNewPointUnits = fromMMtoNewUnits(shapeCommands, additionalUnitCoefficient);

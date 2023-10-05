@@ -304,8 +304,8 @@
 		//ECMA-376-11_5th_edition and Geometry.js y coordinate goes down
 		//so without mirror we get page up side down
 		// ctx.translate(0, height), ctx.scale(1, -1);
-		graphics.m_oCoordTransform.ty = h_px;
-		graphics.m_oCoordTransform.sy = - graphics.m_oCoordTransform.sy;
+		// graphics.m_oCoordTransform.ty = h_px;
+		// graphics.m_oCoordTransform.sy = - graphics.m_oCoordTransform.sy;
 
 		let shapes = this.convertToShapes(logic_w_mm, logic_h_mm);
 		shapes.forEach(function(shape) {

@@ -309,9 +309,14 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
     {
         this.addPathCommand({id:lineTo, X:x, Y:y});
     };
-    Path.prototype.arcTo = function(wR, hR, stAng, swAng)
+    Path.prototype.arcTo = function(wR, hR, stAng, swAng, ellipseRotation)
     {
-        this.addPathCommand({id: arcTo, wR: wR, hR: hR, stAng: stAng, swAng: swAng});
+        if (typeof ellipseRotation !== 'undefined') {
+            // to be sure for backwards compatibility
+            this.addPathCommand({id: arcTo, wR: wR, hR: hR, stAng: stAng, swAng: swAng, ellipseRotation: ellipseRotation});
+        } else {
+            this.addPathCommand({id: arcTo, wR: wR, hR: hR, stAng: stAng, swAng: swAng});
+        }
     };
     Path.prototype.quadBezTo = function(x0, y0, x1, y1)
     {
@@ -376,7 +381,7 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
             dCustomPathCoeffH = 1/36000;
         }
         var APCI=this.ArrPathCommandInfo, n = APCI.length, cmd;
-        var x0, y0, x1, y1, x2, y2, wR, hR, stAng, swAng, lastX, lastY;
+        var x0, y0, x1, y1, x2, y2, wR, hR, stAng, swAng, ellipseRotation, lastX, lastY;
         for(var i=0; i<n; ++i)
         {
             cmd=APCI[i];
@@ -445,6 +450,7 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                     if((swAng < 0) && (a3 > 0)) swAng += 21600000;
                     if(swAng == 0 && a3 != 0) swAng = 21600000;
 
+                    // https://www.figma.com/file/yu8coYrishrdVNuOzTqNAP/FindArcEndPoint?type=design&node-id=1-2&mode=design&t=aQWcxsn7zI9HBVsx-0
                     var a = wR;
                     var b = hR;
                     var sin2 = Math.sin(stAng*cToRad);
@@ -461,17 +467,91 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                     var _yrad1 = sin1 / b;
                     var l1 = 1 / Math.sqrt(_xrad1 * _xrad1 + _yrad1 * _yrad1);
 
-                    this.ArrPathCommand[i]={id: arcTo,
-                        stX: lastX,
-                        stY: lastY,
-                        wR: wR,
-                        hR: hR,
-                        stAng: stAng*cToRad,
-                        swAng: swAng*cToRad};
+                    if (cmd.ellipseRotation === undefined ) {
+                        this.ArrPathCommand[i]={id: arcTo,
+                            stX: lastX,
+                            stY: lastY,
+                            wR: wR,
+                            hR: hR,
+                            stAng: stAng*cToRad,
+                            swAng: swAng*cToRad};
 
-                    lastX = xc + l1 * cos1;
-                    lastY = yc + l1 * sin1;
+                        lastX = xc + l1 * cos1;
+                        lastY = yc + l1 * sin1;
+                    } else {
+                        // do calculations with ellipseRotation by analogy. ellipseRotation is added later
+                        ellipseRotation = gdLst[cmd.ellipseRotation];
+                        if(ellipseRotation===undefined)
+                        {
+                            ellipseRotation=parseInt(cmd.ellipseRotation, 10);
+                        }
 
+                        var a4 = ellipseRotation;
+
+                        ellipseRotation = Math.atan2(ch * Math.sin(a4 * cToRad), cw * Math.cos(a4 * cToRad)) / cToRad;
+
+                        if((ellipseRotation > 0) && (a4 < 0)) ellipseRotation -= 21600000;
+                        if((ellipseRotation < 0) && (a4 > 0)) ellipseRotation += 21600000;
+                        if(ellipseRotation == 0 && a4 != 0) ellipseRotation = 21600000;
+
+                        this.ArrPathCommand[i]={id: arcTo,
+                            stX: lastX,
+                            stY: lastY,
+                            wR: wR,
+                            hR: hR,
+                            stAng: stAng*cToRad,
+                            swAng: swAng*cToRad,
+                            ellipseRotation: ellipseRotation*cToRad};
+
+                        // https://www.figma.com/file/yu8coYrishrdVNuOzTqNAP/FindArcEndPoint?type=design&node-id=233-2&mode=design&t=5pnGMAMRtk1rwR0l-0
+
+                        // lets convert ECMA clockwise angle to trigonometrical
+                        // (anti clockwise) angle to correctly calculate sin and cos
+                        // of l1 angle to calculate l1 end point cords
+                        let l1AntiClockWiseAngle = (360 - (stAng + swAng)) * cToRad;
+
+                        //  new cord system center is ellipse center and its y does up
+                        let l1xNewCordSystem = l1 * Math.cos(l1AntiClockWiseAngle);
+                        let l1yNewCordSystem = l1 * Math.sin(l1AntiClockWiseAngle);
+                        // if no rotate it is:
+                        // lastX = xc + l1xNewCordSystem;
+                        // lastY = yc - l1yNewCordSystem;
+                        // we invert y because start and calculate point coordinate systems are different. see figma
+
+                        //TODO import
+                        /**
+                         * afin rotate clockwise
+                         * @param {number} x
+                         * @param {number} y
+                         * @param {number} radiansRotateAngle radians Rotate AntiClockWise Angle. E.g. 30 degrees rotates does DOWN.
+                         * @returns {{x: number, y: number}} point
+                         */
+                        function rotatePointAroundCordsStartClockWise(x, y, radiansRotateAngle) {
+                            let newX = x * Math.cos(radiansRotateAngle) + y * Math.sin(radiansRotateAngle);
+                            let newY = x * (-1) * Math.sin(radiansRotateAngle) + y * Math.cos(radiansRotateAngle);
+                            return {x : newX, y: newY};
+                        }
+                        let l1xyRotatedEllipseNewCordSystem = rotatePointAroundCordsStartClockWise(l1xNewCordSystem,
+                          l1yNewCordSystem, ellipseRotation * cToRad);
+                        let l1xRotatedEllipseOldCordSystem = l1xyRotatedEllipseNewCordSystem.x + xc;
+                        let l1yRotatedEllipseOldCordSystem = yc - l1xyRotatedEllipseNewCordSystem.y;
+
+                        // calculate last point offset after ellipse rotate
+                        let lastXnewCordSystem = lastX - xc;
+                        let lastYnewCordSystem = -lastY + yc;
+                        // center of cord system now is the center of ellipse
+                        // blue point
+                        let rotatedLastXYnewCordSystem = rotatePointAroundCordsStartClockWise(lastXnewCordSystem,
+                          lastYnewCordSystem, ellipseRotation * cToRad);
+                        let rotatedLastXoldCordSystem = rotatedLastXYnewCordSystem.x + xc;
+                        let rotatedLastYoldCordSystem = yc - rotatedLastXYnewCordSystem.y;
+                        // calculate vector
+                        let lastPointOffsetVectorX = lastX - rotatedLastXoldCordSystem;
+                        let lastPointOffsetVectorY = lastY - rotatedLastYoldCordSystem;
+
+                        lastX = l1xRotatedEllipseOldCordSystem + lastPointOffsetVectorX;
+                        lastY = l1yRotatedEllipseOldCordSystem + lastPointOffsetVectorY;
+                    }
 
                     break;
                 }

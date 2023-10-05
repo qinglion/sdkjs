@@ -104,7 +104,9 @@
 			let testFileCircle = AscCommon.Base64.decode(Asc.circle);
 			let rectAndCircle = AscCommon.Base64.decode(Asc.rectAndCircle);
 			let basicShapesBstart = AscCommon.Base64.decode(Asc.basic_ShapesB_start);
-			drawFile(basicShapesBstart);
+			let rotatedEllipticalArc = AscCommon.Base64.decode(Asc.rotatedEllipticalArc);
+			let rotatedEllipticalArc30 = AscCommon.Base64.decode(Asc.rotatedEllipticalArc30);
+			drawFile(rotatedEllipticalArc30);
 		}, 3000);
 	};
 }();
