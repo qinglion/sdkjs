@@ -34,7 +34,6 @@
 	let api = new Asc.asc_docs_api({
 		'id-view'  : 'editor_sdk'
 	});
-	api.InitEditor();
 	window.editor = api;
 	//todo
 	window.editor = {

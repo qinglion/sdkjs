@@ -93,6 +93,7 @@
 			return false;
 		}
 
+		this.InitEditor();
 		this.Document.fromZip(jsZlib, xmlParserContext);
 
 		jsZlib.close();

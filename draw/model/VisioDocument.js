@@ -303,9 +303,8 @@
 		//visio y coordinate goes up while
 		//ECMA-376-11_5th_edition and Geometry.js y coordinate goes down
 		//so without mirror we get page up side down
-		// ctx.translate(0, height), ctx.scale(1, -1);
-		// graphics.m_oCoordTransform.ty = h_px;
-		// graphics.m_oCoordTransform.sy = - graphics.m_oCoordTransform.sy;
+		//global_MatrixTransformer.Reflect(graphics.m_oCoordTransform, false, true);
+		//global_MatrixTransformer.TranslateAppend(graphics.m_oCoordTransform, 0, h_px);
 
 		let shapes = this.convertToShapes(logic_w_mm, logic_h_mm);
 		shapes.forEach(function(shape) {
@@ -340,12 +339,14 @@
 			let pinY_inch = shape.elements.find(function(elem) {return elem.n === "PinY"}).v;
 			let shapeWidth_inch = shape.elements.find(function(elem) {return elem.n === "Width"}).v;
 			let shapeHeight_inch = shape.elements.find(function(elem) {return elem.n === "Height"}).v;
+			let shapeWidth_mm = shapeWidth_inch * g_dKoef_in_to_mm;
+			let shapeHeight_mm = shapeHeight_inch * g_dKoef_in_to_mm;
 			let x_inch = pinX_inch - shapeWidth_inch / 2;
 			let y_inch = pinY_inch - shapeHeight_inch / 2;
 			let x_mm = x_inch * g_dKoef_in_to_mm;
 			let y_mm = y_inch * g_dKoef_in_to_mm;
 			let geom = AscCommonDraw.getGeometryFromShape(shape);
-			shapes.push(this.convertToShape(x_mm, y_mm, logic_w_mm / 3, logic_h_mm / 3, oFill, oStroke, geom));
+			shapes.push(this.convertToShape(x_mm, y_mm, shapeWidth_mm, shapeHeight_mm, oFill, oStroke, geom));
 		}
 
 		// var prst = getRandomPrst();
