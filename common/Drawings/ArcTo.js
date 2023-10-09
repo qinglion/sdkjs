@@ -129,6 +129,7 @@
         // it is not used if ellipseRotation not used
         let rotatePoint = {x : fX + fXRad * Math.cos( AngToEllPrm( fAngle1, fXRad, fYRad ) ),
             y : fY + fYRad * Math.sin( AngToEllPrm( fAngle1, fXRad, fYRad ) )};
+        // let rotatePoint = {x : fX - fXRad, y : fY};
         if ( !bClockDirection )
         {
             if ( fAngle1 <= fAngle2 )
@@ -232,6 +233,7 @@
         var fCY2 = fY2 - fAlpha * fYRad * cos2;
 
         if (ellipseRotation !== undefined) {
+            // https://www.figma.com/file/hs43oiAUyuoqFULVoJ5lyZ/EllipticArcConvert?type=design&node-id=265-2&mode=design&t=pla9h2OkZAde8Xim-0
             // ellipseRotation = 0;
             // TODO import
             /**
