@@ -479,7 +479,8 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                         lastX = xc + l1 * cos1;
                         lastY = yc + l1 * sin1;
                     } else {
-                        // do calculations with ellipseRotation by analogy. ellipseRotation is added later
+                        // do transformations with ellipseRotation by analogy. ellipseRotation is added later
+                        // then calculate new end point
                         ellipseRotation = gdLst[cmd.ellipseRotation];
                         if(ellipseRotation===undefined)
                         {
@@ -758,7 +759,7 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                 }
                 case arcTo:
                 {
-                    ArcToCurvers(checker, cmd.stX, cmd.stY, cmd.wR, cmd.hR, cmd.stAng, cmd.swAng);
+                    ArcToCurvers(checker, cmd.stX, cmd.stY, cmd.wR, cmd.hR, cmd.stAng, cmd.swAng, cmd.ellipseRotation /*ellipseRotation added later*/);
                     break;
                 }
                 case close:
