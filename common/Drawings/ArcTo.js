@@ -232,7 +232,7 @@
         var fCY2 = fY2 - fAlpha * fYRad * cos2;
 
         if (ellipseRotation !== undefined) {
-            ellipseRotation = 0;
+            // ellipseRotation = 0;
             // TODO import
             /**
              * afin rotate clockwise
