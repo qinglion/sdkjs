@@ -260,7 +260,6 @@
 	function transformEllipticalArcParams(x0, y0, x, y, a, b, c, d) {
 		// https://www.figma.com/file/hs43oiAUyuoqFULVoJ5lyZ/EllipticArcConvert?type=design&node-id=1-2&mode=design&t=QJu8MtR3JV62WiW9-0
 
-		//TODO maybe not Math.round(x0 * 1e4) / 1e4; but round in the end to not loose precision
 		x0 = Number(x0);
 		y0 = Number(y0);
 		x = Number(x);
@@ -331,10 +330,6 @@
 
 		let sweep = computeSweep(startAngle, endAngle, ctrlAngle);
 
-		// convert from anticlockwise angle system to clockwise see comment below
-		let stAng = (360 - startAngle) * degToC;
-		let swAng = sweep * degToC;
-
 		let wR = rx;
 		let hR = ry;
 
@@ -345,10 +340,22 @@
 		ellipseRotationInDeg = Math.round(ellipseRotationInDeg * 1e4) / 1e4;
 
 		ellipseRotationInDeg = ellipseRotationInDeg === 360 ? 0 : ellipseRotationInDeg;
-		let ellipseRotationInC = ellipseRotationInDeg * degToC;
 
-		//TODO may be invert y
-		// Bcs in CVisioDocument.draw it can be mirrored again
+		// convert from anticlockwise angle system to clockwise see comment above
+		let stAngDeg = 360 - startAngle;
+
+		// TODO check results consider sweep sign is important: clockwise or anti-clockwise
+
+		let mirrorVertically = false;
+		if (mirrorVertically) {
+			stAngDeg = 360 - stAngDeg;
+			sweep = -sweep;
+			ellipseRotationInDeg = - ellipseRotationInDeg;
+		}
+
+		let swAng = sweep * degToC;
+		let stAng = stAngDeg * degToC;
+		let ellipseRotationInC = ellipseRotationInDeg * degToC;
 
 		return {wR : wR, hR : hR, stAng : stAng, swAng : swAng, ellipseRotation : ellipseRotationInC};
 	}
@@ -484,6 +491,9 @@
 			let commandRow = findRow(geometrySection, "iX", rowNum);
 			if (!commandRow) {
 				break;
+			}
+			if (commandRow.del) {
+				continue;
 			}
 			let commandName = commandRow.t;
 			switch (commandName) {
