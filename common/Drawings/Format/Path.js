@@ -711,7 +711,7 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                 case arcTo:
                 {
                     bIsDrawLast = true;
-                    ArcToCurvers(shape_drawer, cmd.stX, cmd.stY, cmd.wR, cmd.hR, cmd.stAng, cmd.swAng, shape_drawer.Shape.calcGeometry);
+                    ArcToCurvers(shape_drawer, cmd.stX, cmd.stY, cmd.wR, cmd.hR, cmd.stAng, cmd.swAng, cmd.ellipseRotation);
                     break;
                 }
                 case close:
