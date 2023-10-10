@@ -450,7 +450,7 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                     if((swAng < 0) && (a3 > 0)) swAng += 21600000;
                     if(swAng == 0 && a3 != 0) swAng = 21600000;
 
-                    // https://www.figma.com/file/yu8coYrishrdVNuOzTqNAP/FindArcEndPoint?type=design&node-id=1-2&mode=design&t=aQWcxsn7zI9HBVsx-0
+                    // https://www.figma.com/file/hs43oiAUyuoqFULVoJ5lyZ/EllipticArcConvert?type=design&node-id=291-2&mode=design&t=jLr0jZ6jdV6YhG2S-0
                     var a = wR;
                     var b = hR;
                     var sin2 = Math.sin(stAng*cToRad);
@@ -504,7 +504,7 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                             swAng: swAng*cToRad,
                             ellipseRotation: ellipseRotation*cToRad};
 
-                        // https://www.figma.com/file/yu8coYrishrdVNuOzTqNAP/FindArcEndPoint?type=design&node-id=233-2&mode=design&t=5pnGMAMRtk1rwR0l-0
+                        // https://www.figma.com/file/hs43oiAUyuoqFULVoJ5lyZ/EllipticArcConvert?type=design&node-id=291-34&mode=design&t=LKiEAjzKEzKacCBc-0
 
                         // lets convert ECMA clockwise angle to trigonometrical
                         // (anti clockwise) angle to correctly calculate sin and cos
