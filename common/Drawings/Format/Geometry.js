@@ -1139,6 +1139,14 @@ function CChangesGeometryAddAdj(Class, Name, OldValue, NewValue, OldAvValue, bRe
                 this.pathLst[this.pathLst.length-1].close();
                 break;
             }
+            case 7:
+            {
+                // x, y, a, b, c, d
+                // https://learn.microsoft.com/en-us/office/client-developer/visio/ellipticalarcto-row-geometry-section
+                // but with a length in EMUs units and an angle in C-units, which will be expected clockwise as in other functions.
+                this.pathLst[this.pathLst.length-1].ellipticalArcTo(x1, y1, x2, y2, x3, y3);
+                break;
+            }
         }
     };
 

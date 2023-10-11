@@ -219,43 +219,6 @@
 	}
 
 	/**
-	 * accepts angles in anti-clockwise system
-	 * @param {number} startAngle
-	 * @param {number} endAngle
-	 * @param {number} ctrlAngle
-	 * @returns {number} sweep - positive sweep means anti-clockwise
-	 */
-	function computeSweep(startAngle, endAngle, ctrlAngle) {
-		let sweep;
-
-		startAngle = (360.0 + startAngle) % 360.0;
-		endAngle = (360.0 + endAngle) % 360.0;
-		ctrlAngle = (360.0 + ctrlAngle) % 360.0;
-
-		// different sweeps depending on where the control point is
-
-		if (startAngle < endAngle) {
-			if (startAngle < ctrlAngle && ctrlAngle < endAngle) {
-				// positive sweep - anti-clockwise
-				sweep = endAngle - startAngle;
-			} else {
-				// negative sweep - clockwise
-				sweep = (endAngle - startAngle) - 360;
-			}
-		} else {
-			if (endAngle < ctrlAngle && ctrlAngle < startAngle) {
-				// negative sweep - clockwise
-				sweep = endAngle - startAngle;
-			} else {
-				// positive sweep - anti-clockwise
-				sweep = 360 - (startAngle - endAngle);
-			}
-		}
-
-		return sweep;
-	}
-
-	/**
 	 * afin rotate clockwise
 	 * @param {number} x
 	 * @param {number} y
@@ -266,112 +229,6 @@
 		let newX = x * Math.cos(radiansRotateAngle) + y * Math.sin(radiansRotateAngle);
 		let newY = x * (-1) * Math.sin(radiansRotateAngle) + y * Math.cos(radiansRotateAngle);
 		return {x : newX, y: newY};
-	}
-
-	function transformEllipticalArcParams(x0, y0, x, y, a, b, c, d) {
-		// https://www.figma.com/file/hs43oiAUyuoqFULVoJ5lyZ/EllipticArcConvert?type=design&node-id=1-2&mode=design&t=QJu8MtR3JV62WiW9-0
-
-		x0 = Number(x0);
-		y0 = Number(y0);
-		x = Number(x);
-		y = Number(y);
-		a = Number(a);
-		b = Number(b);
-		c = Number(c);
-		d = Number(d);
-
-		// it is not necessary, but I try to avoid imprecise calculations
-		// with points:
-		// 		convert
-		// 				719999.9999999999 			to 720000
-		// 				719999.5555 						to 719999.5555
-		// with angles (see below):
-		// 		convert
-		// 				-90.00000000000006 			to -90
-		// 				6.176024640130164e-15 	to 0
-		// 		but lost precision on convert
-		// 				54.61614630046808 			to 54.6161
-		// can be enhanced by if add: if rounded angle is 0 so round otherwise dont
-
-		// lets save only 4 digits after point coordinates to avoid imprecise calculations to perform correct compares later
-		x0 = Math.round(x0 * 1e4) / 1e4;
-		y0 = Math.round(y0 * 1e4) / 1e4;
-		x = Math.round(x * 1e4) / 1e4;
-		y = Math.round(y * 1e4) / 1e4;
-		a = Math.round(a * 1e4) / 1e4;
-		b = Math.round(b * 1e4) / 1e4;
-
-		// translate points to ellipse angle
-		let startPoint = rotatePointAroundCordsStartClockWise(x0, y0, c);
-		let endPoint = rotatePointAroundCordsStartClockWise(x, y, c);
-		let controlPoint = rotatePointAroundCordsStartClockWise(a, b, c);
-		x0 = startPoint.x;
-		y0 = startPoint.y;
-		x = endPoint.x;
-		y = endPoint.y;
-		a = controlPoint.x;
-		b = controlPoint.y;
-
-		// http://visguy.com/vgforum/index.php?topic=2464.0
-		let d2 = d*d;
-		let cx = ((x0-x)*(x0+x)*(y-b)-(x-a)*(x+a)*(y0-y)+d2*(y0-y)*(y-b)*(y0-b))/(2.0*((x0-x)*(y-b)-(x-a)*(y0-y)));
-		let cy = ((x0-x)*(x-a)*(x0-a)/d2+(x-a)*(y0-y)*(y0+y)-(x0-x)*(y-b)*(y+b))/(2.0*((x-a)*(y0-y)-(x0-x)*(y-b)));
-		// can also be helpful https://stackoverflow.com/questions/6729056/mapping-svg-arcto-to-html-canvas-arcto
-
-		let rx = Math.sqrt(Math.pow(x0-cx, 2) + Math.pow(y0-cy,2) * d2);
-		let ry = rx / d;
-
-		// lets NOT save only 4 digits after to avoid precision loss
-		// rx = Math.round(rx * 1e4) / 1e4;
-		// ry = Math.round(ry * 1e4) / 1e4;
-		// cy = Math.round(cy * 1e4) / 1e4;
-
-		let ctrlAngle = Math.atan2(b-cy, a-cx) * radToDeg;
-		let startAngle = Math.atan2(y0-cy, x0-cx) * radToDeg;
-		let endAngle = Math.atan2(y-cy, x-cx) * radToDeg;
-
-		// lets save only 4 digits after to avoid imprecise calculations result
-		ctrlAngle = Math.round(ctrlAngle * 1e4) / 1e4;
-		startAngle = Math.round(startAngle * 1e4) / 1e4;
-		endAngle = Math.round(endAngle * 1e4) / 1e4;
-		// set -0 to 0
-		ctrlAngle = ctrlAngle === -0 ? 0 : ctrlAngle;
-		startAngle = startAngle === -0 ? 0 : startAngle;
-		endAngle = endAngle === -0 ? 0 : endAngle;
-
-		let sweep = computeSweep(startAngle, endAngle, ctrlAngle);
-
-		let ellipseRotationAngle = c * radToDeg;
-		ellipseRotationAngle = Math.round(ellipseRotationAngle * 1e4) / 1e4;
-		ellipseRotationAngle = ellipseRotationAngle === -0 ? 0 : ellipseRotationAngle;
-		ellipseRotationAngle = ellipseRotationAngle === 360 ? 0 : ellipseRotationAngle;
-
-		// TODO check results consider sweep sign is important: clockwise or anti-clockwise
-
-		// let mirrorVertically = false;
-		// if (mirrorVertically) {
-		// 	startAngle = 360 - startAngle;
-		// 	sweep = -sweep;
-		// 	ellipseRotationAngle = - ellipseRotationAngle;
-		// }
-
-		// WARNING these are not ECMA params exactly, stAng and swAng angles are anti-clockwise!
-		// about ECMA cord system:
-		// c is AntiClockwise so 30 deg go up in Visio
-		// but in ECMA it should be another angle
-		// because in ECMA angles are clockwise ang 30 deg go down.
-		// convert from anticlockwise angle system to clockwise
-		// angleEcma = 360 - angleVisio;
-		// using visio angles here but still multiply to degToC
-		// then cord system trasformed in sdkjs/draw/model/VisioDocument.js CVisioDocument.prototype.draw
-		let swAng = sweep * degToC;
-		let stAng = startAngle * degToC;
-		let ellipseRotationInC = ellipseRotationAngle * degToC;
-
-		let wR = rx;
-		let hR = ry;
-
-		return {wR : wR, hR : hR, stAng : stAng, swAng : swAng, ellipseRotation : ellipseRotationInC};
 	}
 
 	function transformEllipseParams(x, y, a, b, c, d) {
@@ -437,18 +294,17 @@
 					lastPoint.y = newYRel;
 					break;
 				case "EllipticalArcTo":
-					let newParams = transformEllipticalArcParams(lastPoint.x, lastPoint.y, command.x, command.y,
-						command.a, command.b, command.c, command.d);
-					geometry.AddPathCommand( 3, newParams.wR, newParams.hR, newParams.stAng,
-						newParams.swAng, newParams.ellipseRotation);
+					geometry.AddPathCommand( 7, command.x, command.y,
+						command.a, command.b, Number(command.c) * radToDeg * degToC, command.d);
 					lastPoint.x = command.x;
 					lastPoint.y = command.y;
 					break;
 				case "Ellipse":
-					let wRhR = transformEllipseParams(command.x, command.y, command.a, command.b, command.c, command.d);
-					geometry.AddPathCommand( 1, wRhR.wR * 2, wRhR.hR);
-					geometry.AddPathCommand( 3, wRhR.wR, wRhR.hR, 0, 180 * degToC);
-					geometry.AddPathCommand( 3, wRhR.wR, wRhR.hR, 180 * degToC, 180 * degToC);
+					// TODO Ellipse draw
+					// let wRhR = transformEllipseParams(command.x, command.y, command.a, command.b, command.c, command.d);
+					// geometry.AddPathCommand( 1, wRhR.wR * 2, wRhR.hR);
+					// geometry.AddPathCommand( 3, wRhR.wR, wRhR.hR, 0, 180 * degToC);
+					// geometry.AddPathCommand( 3, wRhR.wR, wRhR.hR, 180 * degToC, 180 * degToC);
 					//TODO maybe add move to to continue drawing shape correctly
 					lastPoint.x = command.x;
 					lastPoint.y = command.y;
