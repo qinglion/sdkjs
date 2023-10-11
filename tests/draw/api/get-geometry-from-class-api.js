@@ -218,6 +218,13 @@
 		return textValueCorrectUnits;
 	}
 
+	/**
+	 * accepts angles in anti-clockwise system
+	 * @param {number} startAngle
+	 * @param {number} endAngle
+	 * @param {number} ctrlAngle
+	 * @returns {number} sweep - positive sweep means anti-clockwise
+	 */
 	function computeSweep(startAngle, endAngle, ctrlAngle) {
 		let sweep;
 
@@ -229,15 +236,19 @@
 
 		if (startAngle < endAngle) {
 			if (startAngle < ctrlAngle && ctrlAngle < endAngle) {
-				sweep = startAngle - endAngle;
+				// positive sweep - anti-clockwise
+				sweep = endAngle - startAngle;
 			} else {
-				sweep = 360 + (startAngle - endAngle);
+				// negative sweep - clockwise
+				sweep = (endAngle - startAngle) - 360;
 			}
 		} else {
 			if (endAngle < ctrlAngle && ctrlAngle < startAngle) {
-				sweep = startAngle - endAngle;
+				// negative sweep - clockwise
+				sweep = endAngle - startAngle;
 			} else {
-				sweep = - (360 - (startAngle - endAngle));
+				// positive sweep - anti-clockwise
+				sweep = 360 - (startAngle - endAngle);
 			}
 		}
 
@@ -272,14 +283,14 @@
 		// it is not necessary, but I try to avoid imprecise calculations
 		// with points:
 		// 		convert
-		// 			719999.9999999999 			to 720000
-		// 			719999.5555 						to 719999.5555
+		// 				719999.9999999999 			to 720000
+		// 				719999.5555 						to 719999.5555
 		// with angles (see below):
 		// 		convert
-		// 			-90.00000000000006 			to -90
-		// 			6.176024640130164e-15 	to 0
+		// 				-90.00000000000006 			to -90
+		// 				6.176024640130164e-15 	to 0
 		// 		but lost precision on convert
-		// 			54.61614630046808 			to 54.6161
+		// 				54.61614630046808 			to 54.6161
 		// can be enhanced by if add: if rounded angle is 0 so round otherwise dont
 
 		// lets save only 4 digits after point coordinates to avoid imprecise calculations to perform correct compares later
@@ -330,32 +341,35 @@
 
 		let sweep = computeSweep(startAngle, endAngle, ctrlAngle);
 
-		let wR = rx;
-		let hR = ry;
-
-		// ellipseRotation is AntiClockwise so 30 deg go up in Visio
-		// but in ECMA it should be another angle
-		// because in ECMA angles are clockwise ang 30 deg go down.
-		let ellipseRotationInDeg = 360 - c * radToDeg;
-		ellipseRotationInDeg = Math.round(ellipseRotationInDeg * 1e4) / 1e4;
-
-		ellipseRotationInDeg = ellipseRotationInDeg === 360 ? 0 : ellipseRotationInDeg;
-
-		// convert from anticlockwise angle system to clockwise see comment above
-		let stAngDeg = 360 - startAngle;
+		let ellipseRotationAngle = c * radToDeg;
+		ellipseRotationAngle = Math.round(ellipseRotationAngle * 1e4) / 1e4;
+		ellipseRotationAngle = ellipseRotationAngle === -0 ? 0 : ellipseRotationAngle;
+		ellipseRotationAngle = ellipseRotationAngle === 360 ? 0 : ellipseRotationAngle;
 
 		// TODO check results consider sweep sign is important: clockwise or anti-clockwise
 
-		let mirrorVertically = false;
-		if (mirrorVertically) {
-			stAngDeg = 360 - stAngDeg;
-			sweep = -sweep;
-			ellipseRotationInDeg = - ellipseRotationInDeg;
-		}
+		// let mirrorVertically = false;
+		// if (mirrorVertically) {
+		// 	startAngle = 360 - startAngle;
+		// 	sweep = -sweep;
+		// 	ellipseRotationAngle = - ellipseRotationAngle;
+		// }
 
+		// WARNING these are not ECMA params exactly, stAng and swAng angles are anti-clockwise!
+		// about ECMA cord system:
+		// c is AntiClockwise so 30 deg go up in Visio
+		// but in ECMA it should be another angle
+		// because in ECMA angles are clockwise ang 30 deg go down.
+		// convert from anticlockwise angle system to clockwise
+		// angleEcma = 360 - angleVisio;
+		// using visio angles here but still multiply to degToC
+		// then cord system trasformed in sdkjs/draw/model/VisioDocument.js CVisioDocument.prototype.draw
 		let swAng = sweep * degToC;
-		let stAng = stAngDeg * degToC;
-		let ellipseRotationInC = ellipseRotationInDeg * degToC;
+		let stAng = startAngle * degToC;
+		let ellipseRotationInC = ellipseRotationAngle * degToC;
+
+		let wR = rx;
+		let hR = ry;
 
 		return {wR : wR, hR : hR, stAng : stAng, swAng : swAng, ellipseRotation : ellipseRotationInC};
 	}

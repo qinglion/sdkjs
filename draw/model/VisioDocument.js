@@ -305,6 +305,8 @@
 		//so without mirror we get page up side down
 		//global_MatrixTransformer.Reflect(graphics.m_oCoordTransform, false, true);
 		//global_MatrixTransformer.TranslateAppend(graphics.m_oCoordTransform, 0, h_px);
+		graphics.m_oCoordTransform.ty = h_px;
+		graphics.m_oCoordTransform.sy = - graphics.m_oCoordTransform.sy;
 
 		let shapes = this.convertToShapes(logic_w_mm, logic_h_mm);
 		shapes.forEach(function(shape) {

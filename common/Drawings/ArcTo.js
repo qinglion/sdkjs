@@ -79,7 +79,6 @@
         var fSrtAngle = (2 * Math.PI) - fStartAngle;
         // by this moment we have endAngle( = fEndAngle) and startAngle( = fSrtAngle) clockwise
 
-        // why inverted: fSweepAngle = -fSweepAngle? maybe should be opposite bClockDirection value?
         if( fSweepAngle > 0 )
             bClockDirection = true;
 
@@ -95,6 +94,8 @@
 
     function AngToEllPrm(fAngle, fXRad, fYRad)
     {
+        // to ellipse parametric equation angle parameter - t
+        // https://www.mathopenref.com/coordparamellipse.html
         return Math.atan2( Math.sin( fAngle ) / fYRad,  Math.cos( fAngle ) / fXRad );
     }
 
