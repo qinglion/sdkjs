@@ -73,8 +73,8 @@
 	MAP_FMLA_TO_TYPE["val"] = FORMULA_TYPE_VALUE;
 
 	const degToC = 60000;
-
 	const radToDeg = 180 / Math.PI;
+	const radToC = radToDeg * degToC;
 
 	function getRandomPrst() {
 		let types = AscCommon.g_oAutoShapesTypes[Math.floor(Math.random()*AscCommon.g_oAutoShapesTypes.length)];
@@ -207,15 +207,15 @@
 	}
 
 	/**
-	 * Calls mmToEmu on textValue:
-	 * Parse textValue * additionalUnitKoef then convert to Emus then to string
-	 * @param {string | number} textValue - mmUnits value saved in string
+	 * Calls mmToEmu on value:
+	 * value * additionalUnitKoef then convert to Emus
+	 * @param {number} value - mmUnits value
 	 * @param {number} additionalUnitKoef
-	 * @returns {string} textValueCorrectUnits
+	 * @returns {number} valueCorrectUnits
 	 */
-	function convertUnits(textValue, additionalUnitKoef) {
-		let textValueCorrectUnits = String(mmToEmu(+textValue * additionalUnitKoef));
-		return textValueCorrectUnits;
+	function convertUnits(value, additionalUnitKoef) {
+		let valueCorrectUnits = mmToEmu(value * additionalUnitKoef);
+		return valueCorrectUnits;
 	}
 
 	/**
@@ -267,9 +267,13 @@
 		//TODO maybe get shapeWidth and Height from outside
 		//TODO shape with RelMoveTo and RelLineTo takes wrong position
 
-		let shapeWidth = findCell(shape.elements, "n", "Width").v;
-		let shapeHeight = findCell(shape.elements, "n", "Height").v;
+		let shapeWidth = Number(findCell(shape.elements, "n", "Width").v);
+		let shapeHeight = Number(findCell(shape.elements, "n", "Height").v);
 
+		/**
+		 *
+		 * @type {{x: number, y: number}}
+		 */
 		let lastPoint = { x: 0, y : 0};
 
 		for (let i = 0; true; i++) {
@@ -285,8 +289,8 @@
 			switch (commandName) {
 				case "MoveTo":
 				{
-					let moveToXTextValue = findCell(commandRow, "n", "X").v;
-					let moveToYTextValue = findCell(commandRow, "n", "Y").v;
+					let moveToXTextValue = Number(findCell(commandRow, "n", "X").v);
+					let moveToYTextValue = Number(findCell(commandRow, "n", "Y").v);
 
 					let newX = convertUnits(moveToXTextValue, additionalUnitCoefficient);
 					let newY = convertUnits(moveToYTextValue, additionalUnitCoefficient);
@@ -298,14 +302,14 @@
 				}
 				case "RelMoveTo":
 				{
-					let relMoveToXTextValue = findCell(commandRow, "n", "X").v;
-					let relMoveToYTextValue = findCell(commandRow, "n", "Y").v;
+					let relMoveToXTextValue = Number(findCell(commandRow, "n", "X").v);
+					let relMoveToYTextValue = Number(findCell(commandRow, "n", "Y").v);
 
 					let newX = convertUnits(relMoveToXTextValue, additionalUnitCoefficient);
 					let newY = convertUnits(relMoveToYTextValue, additionalUnitCoefficient);
 
-					let relX = Number(newX) * shapeWidth;
-					let relY = Number(newY) * shapeHeight;
+					let relX = newX * shapeWidth;
+					let relY = newY * shapeHeight;
 					geometry.AddPathCommand( 1, relX, relY);
 					lastPoint.x = relX;
 					lastPoint.y = relY;
@@ -313,8 +317,8 @@
 				}
 				case "LineTo":
 				{
-					let lineToXTextValue = findCell(commandRow, "n", "X").v;
-					let lineToYTextValue = findCell(commandRow, "n", "Y").v;
+					let lineToXTextValue = Number(findCell(commandRow, "n", "X").v);
+					let lineToYTextValue = Number(findCell(commandRow, "n", "Y").v);
 
 					let newX = convertUnits(lineToXTextValue, additionalUnitCoefficient);
 					let newY = convertUnits(lineToYTextValue, additionalUnitCoefficient);
@@ -326,14 +330,14 @@
 				}
 				case "RelLineTo":
 				{
-					let relLineToXTextValue = findCell(commandRow, "n", "X").v;
-					let relLineToYTextValue = findCell(commandRow, "n", "Y").v;
+					let relLineToXTextValue = Number(findCell(commandRow, "n", "X").v);
+					let relLineToYTextValue = Number(findCell(commandRow, "n", "Y").v);
 
 					let newX = convertUnits(relLineToXTextValue, additionalUnitCoefficient);
 					let newY = convertUnits(relLineToYTextValue, additionalUnitCoefficient);
 
-					let newXRel = Number(newX) * shapeWidth;
-					let newYRel = Number(newY) * shapeHeight;
+					let newXRel = newX * shapeWidth;
+					let newYRel = newY * shapeHeight;
 					geometry.AddPathCommand( 2, newXRel, newYRel);
 					lastPoint.x = newXRel;
 					lastPoint.y = newYRel;
@@ -342,18 +346,18 @@
 				case "EllipticalArcTo":
 				{
 					// https://learn.microsoft.com/en-us/office/client-developer/visio/ellipticalarcto-row-geometry-section
-					let x = findCell(commandRow, "n", "X").v;
-					let y = findCell(commandRow, "n", "Y").v;
-					let a = findCell(commandRow, "n", "A").v;
-					let b = findCell(commandRow, "n", "B").v;
-					let c = findCell(commandRow, "n", "C").v;
-					let d = findCell(commandRow, "n", "D").v;
+					let x = Number(findCell(commandRow, "n", "X").v);
+					let y = Number(findCell(commandRow, "n", "Y").v);
+					let a = Number(findCell(commandRow, "n", "A").v);
+					let b = Number(findCell(commandRow, "n", "B").v);
+					let c = Number(findCell(commandRow, "n", "C").v);
+					let d = Number(findCell(commandRow, "n", "D").v);
 
 					let newX = convertUnits(x, additionalUnitCoefficient);
 					let newY = convertUnits(y, additionalUnitCoefficient);
 					let newA = convertUnits(a, additionalUnitCoefficient);
 					let newB = convertUnits(b, additionalUnitCoefficient);
-					let newC = Number(c) * radToDeg * degToC;
+					let newC = c * radToC;
 					let newD = d;
 
 					// same but with a length in EMUs units and an angle in C-units, which will be expected clockwise
@@ -365,12 +369,12 @@
 				}
 				case "Ellipse":
 				{
-					let centerPointXTextValue = findCell(commandRow, "n", "X").v;
-					let centerPointYTextValue = findCell(commandRow, "n", "Y").v;
-					let somePointXTextValue = findCell(commandRow, "n", "A").v;
-					let somePointYTextValue = findCell(commandRow, "n", "B").v;
-					let anotherPointXTextValue = findCell(commandRow, "n", "C").v;
-					let anotherPointYTextValue = findCell(commandRow, "n", "D").v;
+					let centerPointXTextValue = Number(findCell(commandRow, "n", "X").v);
+					let centerPointYTextValue = Number(findCell(commandRow, "n", "Y").v);
+					let somePointXTextValue = Number(findCell(commandRow, "n", "A").v);
+					let somePointYTextValue = Number(findCell(commandRow, "n", "B").v);
+					let anotherPointXTextValue = Number(findCell(commandRow, "n", "C").v);
+					let anotherPointYTextValue = Number(findCell(commandRow, "n", "D").v);
 
 					let newX = convertUnits(centerPointXTextValue, additionalUnitCoefficient);
 					let newY = convertUnits(centerPointYTextValue, additionalUnitCoefficient);
@@ -384,9 +388,9 @@
 					geometry.AddPathCommand( 1, wRhR.wR * 2, wRhR.hR);
 					geometry.AddPathCommand( 3, wRhR.wR, wRhR.hR, 0, 180 * degToC);
 					geometry.AddPathCommand( 3, wRhR.wR, wRhR.hR, 180 * degToC, 180 * degToC);
-					//TODO maybe add move to to continue drawing shape correctly
 					lastPoint.x = newX;
 					lastPoint.y = newY;
+					break;
 				}
 				case "ArcTo":
 				{
@@ -395,13 +399,13 @@
 
 					// middleGap = a can be negative which leads to opposite arc direction clockwise or anti-clockwise
 
-					let x = findCell(commandRow, "n", "X").v;					// xEnd
-					let y = findCell(commandRow, "n", "Y").v;					// yEnd
-					let a = findCell(commandRow, "n", "A").v;					// middleGap
+					let x = Number(findCell(commandRow, "n", "X").v)					// xEnd
+					let y = Number(findCell(commandRow, "n", "Y").v);					// yEnd
+					let a = Number(findCell(commandRow, "n", "A").v);					// middleGap
 
-					let newX = Number(convertUnits(x, additionalUnitCoefficient));
-					let newY = Number(convertUnits(y, additionalUnitCoefficient));
-					let newA = Number(convertUnits(a, additionalUnitCoefficient));
+					let newX = convertUnits(x, additionalUnitCoefficient);
+					let newY = convertUnits(y, additionalUnitCoefficient);
+					let newA = convertUnits(a, additionalUnitCoefficient);
 
 					// transform params for ellipticalArcTo
 					let chordVector = {x: newX - lastPoint.x, y: newY - lastPoint.y };
@@ -409,12 +413,13 @@
 					chordVectorAngle = Math.abs(chordVectorAngle);
 					let gapVectorAngle = chordVectorAngle - Math.PI / 2; // perpendicular clock wise
 					let gapVector = {x: newA * Math.cos(gapVectorAngle), y: newA * Math.sin(gapVectorAngle)};
-					let chordCenter = {x: chordVector.x / 2 + Number(lastPoint.x), y: chordVector.y / 2 + Number(lastPoint.y)};
+					let chordCenter = {x: chordVector.x / 2 + lastPoint.x, y: chordVector.y / 2 + lastPoint.y};
 					let controlPoint = {x: chordCenter.x + gapVector.x, y: chordCenter.y + gapVector.y};
 
 					geometry.AddPathCommand( 7, newX, newY, controlPoint.x, controlPoint.y, 0, 1);
 					lastPoint.x = newX;
 					lastPoint.y = newY;
+					break;
 				}
 			}
 		}
@@ -423,10 +428,10 @@
 		geometry.setPreset("master1shape1");
 
 		// TODO add connections
-		// f.AddCnx('_3cd4', 'hc', 't');
-		// f.AddCnx('cd2', 'l', 'vc');
-		// f.AddCnx('cd4', 'hc', 'b');
-		// f.AddCnx('0', 'r', 'vc');
+		// geometry.AddCnx('_3cd4', 'hc', 't');
+		// geometry.AddCnx('cd2', 'l', 'vc');
+		// geometry.AddCnx('cd4', 'hc', 'b');
+		// geometry.AddCnx('0', 'r', 'vc');
 		return geometry;
 	}
 
