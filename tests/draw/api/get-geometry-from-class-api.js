@@ -209,7 +209,7 @@
 	/**
 	 * Calls mmToEmu on textValue:
 	 * Parse textValue * additionalUnitKoef then convert to Emus then to string
-	 * @param {string} textValue - mmUnits value saved in string
+	 * @param {string | number} textValue - mmUnits value saved in string
 	 * @param {number} additionalUnitKoef
 	 * @returns {string} textValueCorrectUnits
 	 */
@@ -341,6 +341,7 @@
 				}
 				case "EllipticalArcTo":
 				{
+					// https://learn.microsoft.com/en-us/office/client-developer/visio/ellipticalarcto-row-geometry-section
 					let x = findCell(commandRow, "n", "X").v;
 					let y = findCell(commandRow, "n", "Y").v;
 					let a = findCell(commandRow, "n", "A").v;
@@ -355,6 +356,8 @@
 					let newC = Number(c) * radToDeg * degToC;
 					let newD = d;
 
+					// same but with a length in EMUs units and an angle in C-units, which will be expected clockwise
+					// as in other sdkjs/common/Drawings/Format/Path.js functions.
 					geometry.AddPathCommand( 7, newX, newY, newA, newB, newC, newD);
 					lastPoint.x = newX;
 					lastPoint.y = newY;
@@ -377,10 +380,39 @@
 					let newD = convertUnits(anotherPointYTextValue, additionalUnitCoefficient);
 
 					let wRhR = transformEllipseParams(newX, newY, newA, newB, newC, newD);
+					// start to draw from ellipse right point
 					geometry.AddPathCommand( 1, wRhR.wR * 2, wRhR.hR);
 					geometry.AddPathCommand( 3, wRhR.wR, wRhR.hR, 0, 180 * degToC);
 					geometry.AddPathCommand( 3, wRhR.wR, wRhR.hR, 180 * degToC, 180 * degToC);
 					//TODO maybe add move to to continue drawing shape correctly
+					lastPoint.x = newX;
+					lastPoint.y = newY;
+				}
+				case "ArcTo":
+				{
+					// https://learn.microsoft.com/en-us/office/client-developer/visio/arcto-row-geometry-section
+					// circular arc
+
+					// middleGap = a can be negative which leads to opposite arc direction clockwise or anti-clockwise
+
+					let x = findCell(commandRow, "n", "X").v;					// xEnd
+					let y = findCell(commandRow, "n", "Y").v;					// yEnd
+					let a = findCell(commandRow, "n", "A").v;					// middleGap
+
+					let newX = Number(convertUnits(x, additionalUnitCoefficient));
+					let newY = Number(convertUnits(y, additionalUnitCoefficient));
+					let newA = Number(convertUnits(a, additionalUnitCoefficient));
+
+					// transform params for ellipticalArcTo
+					let chordVector = {x: newX - lastPoint.x, y: newY - lastPoint.y };
+					let chordVectorAngle = Math.atan2(chordVector.y, chordVector.x);
+					chordVectorAngle = Math.abs(chordVectorAngle);
+					let gapVectorAngle = chordVectorAngle - Math.PI / 2; // perpendicular clock wise
+					let gapVector = {x: newA * Math.cos(gapVectorAngle), y: newA * Math.sin(gapVectorAngle)};
+					let chordCenter = {x: chordVector.x / 2 + Number(lastPoint.x), y: chordVector.y / 2 + Number(lastPoint.y)};
+					let controlPoint = {x: chordCenter.x + gapVector.x, y: chordCenter.y + gapVector.y};
+
+					geometry.AddPathCommand( 7, newX, newY, controlPoint.x, controlPoint.y, 0, 1);
 					lastPoint.x = newX;
 					lastPoint.y = newY;
 				}

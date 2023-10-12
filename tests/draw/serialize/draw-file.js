@@ -105,7 +105,13 @@
 			let basicShapesBstart = AscCommon.Base64.decode(Asc.basic_ShapesB_start);
 			let rotatedEllipticalArc = AscCommon.Base64.decode(Asc.rotatedEllipticalArc);
 			let rotatedEllipticalArc30 = AscCommon.Base64.decode(Asc.rotatedEllipticalArc30);
-			drawFile(rotatedEllipticalArc30);
+			let rotatedEllipticalArc30NoBBCross = AscCommon.Base64.decode(Asc.rotatedEllipticalArc30NoBBCross);
+			let antiClockwiseEllipticalArc = AscCommon.Base64.decode(Asc.antiClockwiseEllipticalArc);
+			let rotatedEllipticalArc2_45 = AscCommon.Base64.decode(Asc.rotatedEllipticalArc2_45);
+			let rotatedEllipticalArcMod = AscCommon.Base64.decode(Asc.rotatedEllipticalArcMod);
+			let basic_ShapesC_start = AscCommon.Base64.decode(Asc.basic_ShapesC_start);
+			let sizeAndPositionStart = AscCommon.Base64.decode(Asc.sizeAndPositionStart);
+			drawFile(sizeAndPositionStart);
 		}, 3000);
 	};
 }();
