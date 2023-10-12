@@ -239,12 +239,28 @@
 	}
 
 	/**
-	 *
-	 * @param {Geometry} geometry
-	 * @param commands
-	 * @param fillValue
+	 * get Geometry object from shape object reading shape.elements
+	 * @param {Shape_Type} shape
+	 * @returns {Geometry} geometry
 	 */
-	function initGeometryFromShapeCommands(geometry, commands, fillValue, shape) {
+	function getGeometryFromShape(shape) {
+		let geometrySection = findSection(shape.elements, "n", "Geometry");
+		let noFillCell = findCell(geometrySection, "n", "NoFill");
+		let fillValue;
+		if (noFillCell) {
+			fillValue = Number(noFillCell.v) ? undefined : "norm";
+		} else {
+			fillValue = "norm";
+		}
+
+		// imply that units were in mm until units parse realized
+		// TODO parse formula and units
+		// TODO parse line style fill style text style
+
+		const additionalUnitCoefficient = g_dKoef_in_to_mm;
+
+		// init geometry
+		let geometry = new AscFormat.Geometry();
 		/* extrusionOk, fill, stroke, w, h*/
 		geometry.AddPathCommand(0, undefined, fillValue, undefined, undefined, undefined);
 
@@ -255,100 +271,6 @@
 		let shapeHeight = findCell(shape.elements, "n", "Height").v;
 
 		let lastPoint = { x: 0, y : 0};
-
-		commands.forEach(function (command) {
-			// let xName = 'x' + i;
-			// let yName = 'y' + i;
-			//
-			// geometry.AddGuide(xName, FORMULA_TYPE_VALUE, point.x);
-			// geometry.AddGuide(yName, FORMULA_TYPE_VALUE, point.y);
-
-			switch (command.name) {
-				case "MoveTo":
-					geometry.AddPathCommand( 1, command.x, command.y);
-					lastPoint.x = command.x;
-					lastPoint.y = command.y;
-					break;
-				case "RelMoveTo":
-					let newX = parseInt(command.x) * shapeWidth;
-					let newY = parseInt(command.y) * shapeHeight;
-					geometry.AddPathCommand( 1, newX, newY);
-					lastPoint.x = newX;
-					lastPoint.y = newY;
-					break;
-				case "LineTo":
-					geometry.AddPathCommand( 2, command.x, command.y);
-					lastPoint.x = command.x;
-					lastPoint.y = command.y;
-					break;
-				case "RelLineTo":
-					let newXRel = parseInt(command.x) * shapeWidth;
-					let newYRel = parseInt(command.y) * shapeHeight;
-					geometry.AddPathCommand( 2, newXRel, newYRel);
-					lastPoint.x = newXRel;
-					lastPoint.y = newYRel;
-					break;
-				case "EllipticalArcTo":
-					geometry.AddPathCommand( 7, command.x, command.y,
-						command.a, command.b, Number(command.c) * radToDeg * degToC, command.d);
-					lastPoint.x = command.x;
-					lastPoint.y = command.y;
-					break;
-				case "Ellipse":
-					let wRhR = transformEllipseParams(command.x, command.y, command.a, command.b, command.c, command.d);
-					geometry.AddPathCommand( 1, wRhR.wR * 2, wRhR.hR);
-					geometry.AddPathCommand( 3, wRhR.wR, wRhR.hR, 0, 180 * degToC);
-					geometry.AddPathCommand( 3, wRhR.wR, wRhR.hR, 180 * degToC, 180 * degToC);
-					//TODO maybe add move to to continue drawing shape correctly
-					lastPoint.x = command.x;
-					lastPoint.y = command.y;
-					break;
-			}
-		})
-
-		geometry.AddPathCommand(6);
-		geometry.setPreset("master1shape1");
-	}
-
-	/**
-	 * calls convertUnits(value, additionalUnitCoef)  on points
-	 * @param points
-	 * @param additionalUnitCoef
-	 * @returns {*} pointsNewUnits
-	 */
-	function fromMMtoNewUnits(commands, additionalUnitCoef) {
-		let commandsNewUnits = commands.map(function (command) {
-			if (command.name === 'LineTo' || command.name === 'RelLineTo'
-				|| command.name === 'MoveTo' || command.name === 'RelMoveTo') {
-				let newX = convertUnits(command.x, additionalUnitCoef);
-				let newY = convertUnits(command.y, additionalUnitCoef);
-				return {name: command.name, x: newX, y: newY};
-			} else if (command.name === 'EllipticalArcTo') {
-				let newX = convertUnits(command.x, additionalUnitCoef);
-				let newY = convertUnits(command.y, additionalUnitCoef);
-				let newA = convertUnits(command.a, additionalUnitCoef);
-				let newB = convertUnits(command.b, additionalUnitCoef);
-				return {name: command.name, x: newX, y: newY, a: newA, b: newB, c : command.c, d : command.d};
-			} else if (command.name === 'Ellipse') {
-				let newX = convertUnits(command.x, additionalUnitCoef);
-				let newY = convertUnits(command.y, additionalUnitCoef);
-				let newA = convertUnits(command.a, additionalUnitCoef);
-				let newB = convertUnits(command.b, additionalUnitCoef);
-				let newC = convertUnits(command.c, additionalUnitCoef);
-				let newD = convertUnits(command.d, additionalUnitCoef);
-				return {name: command.name, x: newX, y: newY, a: newA, b: newB, c : newC, d : newD};
-			}
-		});
-		return commandsNewUnits;
-	}
-
-	/**
-	 *
-	 * @param geometrySection
-	 * @returns {{name: String, x: String, y: String}[]} commands
-	 */
-	function getShapeCommandsFromGeometrySection(geometrySection) {
-		let commands = [];
 
 		for (let i = 0; true; i++) {
 			let rowNum = i + 1;
@@ -365,28 +287,56 @@
 				{
 					let moveToXTextValue = findCell(commandRow, "n", "X").v;
 					let moveToYTextValue = findCell(commandRow, "n", "Y").v;
-					commands.push({name: commandName, x: moveToXTextValue, y: moveToYTextValue});
+
+					let newX = convertUnits(moveToXTextValue, additionalUnitCoefficient);
+					let newY = convertUnits(moveToYTextValue, additionalUnitCoefficient);
+
+					geometry.AddPathCommand( 1, newX, newY);
+					lastPoint.x = newX;
+					lastPoint.y = newY;
 					break;
 				}
 				case "RelMoveTo":
 				{
 					let relMoveToXTextValue = findCell(commandRow, "n", "X").v;
 					let relMoveToYTextValue = findCell(commandRow, "n", "Y").v;
-					commands.push({name: commandName, x: relMoveToXTextValue, y: relMoveToYTextValue});
+
+					let newX = convertUnits(relMoveToXTextValue, additionalUnitCoefficient);
+					let newY = convertUnits(relMoveToYTextValue, additionalUnitCoefficient);
+
+					let relX = Number(newX) * shapeWidth;
+					let relY = Number(newY) * shapeHeight;
+					geometry.AddPathCommand( 1, relX, relY);
+					lastPoint.x = relX;
+					lastPoint.y = relY;
 					break;
 				}
 				case "LineTo":
 				{
 					let lineToXTextValue = findCell(commandRow, "n", "X").v;
 					let lineToYTextValue = findCell(commandRow, "n", "Y").v;
-					commands.push({name: commandName, x: lineToXTextValue, y: lineToYTextValue});
+
+					let newX = convertUnits(lineToXTextValue, additionalUnitCoefficient);
+					let newY = convertUnits(lineToYTextValue, additionalUnitCoefficient);
+
+					geometry.AddPathCommand( 2, newX, newY);
+					lastPoint.x = newX;
+					lastPoint.y = newY;
 					break;
 				}
 				case "RelLineTo":
 				{
 					let relLineToXTextValue = findCell(commandRow, "n", "X").v;
 					let relLineToYTextValue = findCell(commandRow, "n", "Y").v;
-					commands.push({name: commandName, x: relLineToXTextValue, y: relLineToYTextValue});
+
+					let newX = convertUnits(relLineToXTextValue, additionalUnitCoefficient);
+					let newY = convertUnits(relLineToYTextValue, additionalUnitCoefficient);
+
+					let newXRel = Number(newX) * shapeWidth;
+					let newYRel = Number(newY) * shapeHeight;
+					geometry.AddPathCommand( 2, newXRel, newYRel);
+					lastPoint.x = newXRel;
+					lastPoint.y = newYRel;
 					break;
 				}
 				case "EllipticalArcTo":
@@ -397,7 +347,17 @@
 					let b = findCell(commandRow, "n", "B").v;
 					let c = findCell(commandRow, "n", "C").v;
 					let d = findCell(commandRow, "n", "D").v;
-					commands.push({name: commandName, x: x, y: y, a: a, b: b, c: c, d: d});
+
+					let newX = convertUnits(x, additionalUnitCoefficient);
+					let newY = convertUnits(y, additionalUnitCoefficient);
+					let newA = convertUnits(a, additionalUnitCoefficient);
+					let newB = convertUnits(b, additionalUnitCoefficient);
+					let newC = Number(c) * radToDeg * degToC;
+					let newD = d;
+
+					geometry.AddPathCommand( 7, newX, newY, newA, newB, newC, newD);
+					lastPoint.x = newX;
+					lastPoint.y = newY;
 					break;
 				}
 				case "Ellipse":
@@ -408,39 +368,28 @@
 					let somePointYTextValue = findCell(commandRow, "n", "B").v;
 					let anotherPointXTextValue = findCell(commandRow, "n", "C").v;
 					let anotherPointYTextValue = findCell(commandRow, "n", "D").v;
-					commands.push({
-						name: commandName, x: centerPointXTextValue, y: centerPointYTextValue,
-						a: somePointXTextValue, b: somePointYTextValue,
-						c: anotherPointXTextValue, d: anotherPointYTextValue});
+
+					let newX = convertUnits(centerPointXTextValue, additionalUnitCoefficient);
+					let newY = convertUnits(centerPointYTextValue, additionalUnitCoefficient);
+					let newA = convertUnits(somePointXTextValue, additionalUnitCoefficient);
+					let newB = convertUnits(somePointYTextValue, additionalUnitCoefficient);
+					let newC = convertUnits(anotherPointXTextValue, additionalUnitCoefficient);
+					let newD = convertUnits(anotherPointYTextValue, additionalUnitCoefficient);
+
+					let wRhR = transformEllipseParams(newX, newY, newA, newB, newC, newD);
+					geometry.AddPathCommand( 1, wRhR.wR * 2, wRhR.hR);
+					geometry.AddPathCommand( 3, wRhR.wR, wRhR.hR, 0, 180 * degToC);
+					geometry.AddPathCommand( 3, wRhR.wR, wRhR.hR, 180 * degToC, 180 * degToC);
+					//TODO maybe add move to to continue drawing shape correctly
+					lastPoint.x = newX;
+					lastPoint.y = newY;
 				}
 			}
 		}
 
-		return commands;
-	}
+		geometry.AddPathCommand(6);
+		geometry.setPreset("master1shape1");
 
-	function getGeometryFromShape(shape) {
-		let geometrySection = findSection(shape.elements, "n", "Geometry");
-		let noFillCell = findCell(geometrySection, "n", "NoFill");
-		let fillValue;
-		if (noFillCell) {
-			fillValue = Number(noFillCell.v) ? undefined : "norm";
-		} else {
-			fillValue = "norm";
-		}
-
-		// TODO parse formula and units
-		// TODO parse line style fill style text style
-
-		const additionalUnitCoefficient = g_dKoef_in_to_mm;
-
-		let shapeCommands = getShapeCommandsFromGeometrySection(geometrySection);
-
-		// imply that units were in mm until units parse realized
-		let shapeCommandsNewPointUnits = fromMMtoNewUnits(shapeCommands, additionalUnitCoefficient);
-
-		let geometry = new AscFormat.Geometry();
-		initGeometryFromShapeCommands(geometry, shapeCommandsNewPointUnits, fillValue, shape);
 		// TODO add connections
 		// f.AddCnx('_3cd4', 'hc', 't');
 		// f.AddCnx('cd2', 'l', 'vc');
