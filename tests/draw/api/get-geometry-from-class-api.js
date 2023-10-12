@@ -262,12 +262,7 @@
 			//
 			// geometry.AddGuide(xName, FORMULA_TYPE_VALUE, point.x);
 			// geometry.AddGuide(yName, FORMULA_TYPE_VALUE, point.y);
-			//
-			// if (i === 0) {
-			// 	geometry.AddPathCommand(1, xName, yName);
-			// } else {
-			// 	geometry.AddPathCommand(2, xName, yName);
-			// }
+
 			switch (command.name) {
 				case "MoveTo":
 					geometry.AddPathCommand( 1, command.x, command.y);
@@ -300,11 +295,10 @@
 					lastPoint.y = command.y;
 					break;
 				case "Ellipse":
-					// TODO Ellipse draw
-					// let wRhR = transformEllipseParams(command.x, command.y, command.a, command.b, command.c, command.d);
-					// geometry.AddPathCommand( 1, wRhR.wR * 2, wRhR.hR);
-					// geometry.AddPathCommand( 3, wRhR.wR, wRhR.hR, 0, 180 * degToC);
-					// geometry.AddPathCommand( 3, wRhR.wR, wRhR.hR, 180 * degToC, 180 * degToC);
+					let wRhR = transformEllipseParams(command.x, command.y, command.a, command.b, command.c, command.d);
+					geometry.AddPathCommand( 1, wRhR.wR * 2, wRhR.hR);
+					geometry.AddPathCommand( 3, wRhR.wR, wRhR.hR, 0, 180 * degToC);
+					geometry.AddPathCommand( 3, wRhR.wR, wRhR.hR, 180 * degToC, 180 * degToC);
 					//TODO maybe add move to to continue drawing shape correctly
 					lastPoint.x = command.x;
 					lastPoint.y = command.y;
@@ -368,44 +362,57 @@
 			let commandName = commandRow.t;
 			switch (commandName) {
 				case "MoveTo":
+				{
 					let moveToXTextValue = findCell(commandRow, "n", "X").v;
 					let moveToYTextValue = findCell(commandRow, "n", "Y").v;
 					commands.push({name: commandName, x: moveToXTextValue, y: moveToYTextValue});
 					break;
+				}
 				case "RelMoveTo":
+				{
 					let relMoveToXTextValue = findCell(commandRow, "n", "X").v;
 					let relMoveToYTextValue = findCell(commandRow, "n", "Y").v;
 					commands.push({name: commandName, x: relMoveToXTextValue, y: relMoveToYTextValue});
 					break;
+				}
 				case "LineTo":
+				{
 					let lineToXTextValue = findCell(commandRow, "n", "X").v;
 					let lineToYTextValue = findCell(commandRow, "n", "Y").v;
 					commands.push({name: commandName, x: lineToXTextValue, y: lineToYTextValue});
 					break;
+				}
 				case "RelLineTo":
+				{
 					let relLineToXTextValue = findCell(commandRow, "n", "X").v;
 					let relLineToYTextValue = findCell(commandRow, "n", "Y").v;
 					commands.push({name: commandName, x: relLineToXTextValue, y: relLineToYTextValue});
 					break;
+				}
 				case "EllipticalArcTo":
+				{
 					let x = findCell(commandRow, "n", "X").v;
 					let y = findCell(commandRow, "n", "Y").v;
 					let a = findCell(commandRow, "n", "A").v;
 					let b = findCell(commandRow, "n", "B").v;
 					let c = findCell(commandRow, "n", "C").v;
 					let d = findCell(commandRow, "n", "D").v;
-					commands.push({name: commandName, x: x, y: y, a : a, b : b, c : c, d : d});
+					commands.push({name: commandName, x: x, y: y, a: a, b: b, c: c, d: d});
 					break;
+				}
 				case "Ellipse":
+				{
 					let centerPointXTextValue = findCell(commandRow, "n", "X").v;
 					let centerPointYTextValue = findCell(commandRow, "n", "Y").v;
 					let somePointXTextValue = findCell(commandRow, "n", "A").v;
 					let somePointYTextValue = findCell(commandRow, "n", "B").v;
 					let anotherPointXTextValue = findCell(commandRow, "n", "C").v;
 					let anotherPointYTextValue = findCell(commandRow, "n", "D").v;
-					commands.push({name: commandName, x: centerPointXTextValue, y: centerPointYTextValue,
-						a : somePointXTextValue, b : somePointYTextValue,
-						c : anotherPointXTextValue, d : anotherPointYTextValue});
+					commands.push({
+						name: commandName, x: centerPointXTextValue, y: centerPointYTextValue,
+						a: somePointXTextValue, b: somePointYTextValue,
+						c: anotherPointXTextValue, d: anotherPointYTextValue});
+				}
 			}
 		}
 
