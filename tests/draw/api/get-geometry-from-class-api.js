@@ -113,13 +113,12 @@
 		}
 		// Check if the current object has the desired attribute, value, and constructor name
 		if (obj.constructor.name === constructorName && obj[attributeName] === attributeValue) {
-			return [obj];
+			results.push(obj);
 		}
 		// Iterate over object properties and recursively search for the attribute and constructor name
 		for (const key in obj) {
 			if (obj.hasOwnProperty(key)) {
-				const result = findObjects(obj[key], constructorName, attributeName, attributeValue, results);
-				results = results.concat(result);
+				findObjects(obj[key], constructorName, attributeName, attributeValue, results);
 			}
 		}
 		return results;
@@ -244,187 +243,260 @@
 	 * @returns {Geometry} geometry
 	 */
 	function getGeometryFromShape(shape) {
-		let geometrySection = findSection(shape.elements, "n", "Geometry");
-		let noFillCell = findCell(geometrySection, "n", "NoFill");
-		let fillValue;
-		if (noFillCell) {
-			fillValue = Number(noFillCell.v) ? undefined : "norm";
-		} else {
-			fillValue = "norm";
-		}
-
-		// imply that units were in mm until units parse realized
-		// TODO parse formula and units
-		// TODO parse line style fill style text style
-
-		const additionalUnitCoefficient = g_dKoef_in_to_mm;
-
 		// init geometry
 		let geometry = new AscFormat.Geometry();
-		/* extrusionOk, fill, stroke, w, h*/
-		geometry.AddPathCommand(0, undefined, fillValue, undefined, undefined, undefined);
 
-		//TODO maybe get shapeWidth and Height from outside
-		//TODO shape with RelMoveTo and RelLineTo takes wrong position
+		// in visio Geometry section represents Path:
+		// A path is a collection of vertices and line or curve segments that specifies an enclosed area.
+		// The geometry of a shape is specified by a collection of paths.
+		// Each Geometry (Section_Type) element specifies a path.
+		let geometrySections = findSections(shape.elements, "n", "Geometry");
+		geometrySections.forEach(function (geometrySection) {
+			// see [MS-VSDX]-220215 2.2.3.2.2.Geometry Path
 
-		let shapeWidth = Number(findCell(shape.elements, "n", "Width").v);
-		let shapeHeight = Number(findCell(shape.elements, "n", "Height").v);
+			//	<xsd:complexType name="Geometry_Type">
+			// 		<xsd:complexContent>
+			// 			<xsd:extension base="Section_Type">
+			// 				<xsd:choice minOccurs="0" maxOccurs="unbounded">
+			// 					<xsd:element name="Cell" type="Cell_Type" minOccurs="0" maxOccurs="unbounded">
+			// 						<xsd:alternative test="@N = 'NoFill'" type="NoFill_Type"/>
+			// 						<xsd:alternative test="@N = 'NoLine'" type="NoLine_Type"/>
+			// 						<xsd:alternative test="@N = 'NoShow'" type="NoShow_Type"/>
+			// 						<xsd:alternative test="@N = 'NoSnap'" type="NoSnap_Type"/>
+			// 						<xsd:alternative test="@N = 'NoQuickDrag'" type="NoQuickDrag_Type"/>
+			// 						<xsd:alternative test="@N = 'Path'" type="Path_Type"/>
+			// 					</xsd:element>
+			// 					<xsd:element name="Row" type="GeometryRow_Type" minOccurs="0" maxOccurs="unbounded">
+			// 						<xsd:alternative test="@T = 'MoveTo'" type="MoveTo_Type"/>
+			// 						<xsd:alternative test="@T = 'RelMoveTo'" type="RelMoveTo_Type"/>
+			// 						<xsd:alternative test="@T = 'LineTo'" type="LineTo_Type"/>
+			// 						<xsd:alternative test="@T = 'RelLineTo'" type="RelLineTo_Type"/>
+			// 						<xsd:alternative test="@T = 'ArcTo'" type="ArcTo_Type"/>
+			// 						<xsd:alternative test="@T = 'InfiniteLine'" type="InfiniteLine_Type"/>
+			// 						<xsd:alternative test="@T = 'Ellipse'" type="Ellipse_Type"/>
+			// 						<xsd:alternative test="@T = 'EllipticalArcTo'" type="EllipticalArcTo_Type"/>
+			// 						<xsd:alternative test="@T = 'RelEllipticalArcTo'" type="RelEllipticalArcTo_Type"/>
+			// 						<xsd:alternative test="@T = 'SplineStart'" type="SplineStart_Type"/>
+			// 						<xsd:alternative test="@T = 'SplineKnot'" type="SplineKnot_Type"/>
+			// 						<xsd:alternative test="@T = 'PolylineTo'" type="PolylineTo_Type"/>
+			// 						<xsd:alternative test="@T = 'NURBSTo'" type="NURBSTo_Type"/>
+			// 						<xsd:alternative test="@T = 'RelCubBezTo'" type="RelCubBezTo_Type"/>
+			// 						<xsd:alternative test="@T = 'RelQuadBezTo'" type="RelQuadBezTo_Type"/>
+			// 					</xsd:element>
+			// 				</xsd:choice>
+			// 			</xsd:extension>
+			// 		</xsd:complexContent>
+			// 	</xsd:complexType>
 
-		/**
-		 *
-		 * @type {{x: number, y: number}}
-		 */
-		let lastPoint = { x: 0, y : 0};
+			// The visibility of the path’s line and the visibility of the path’s fill are specified, respectively,
+			// by the NoLine and NoFill Cell_Type child elements of the path’s Geometry Section_Type element.
 
-		for (let i = 0; true; i++) {
-			let rowNum = i + 1;
-			let commandRow = findRow(geometrySection, "iX", rowNum);
-			if (!commandRow) {
-				break;
+			// While the format of the path’s line and the format of the path’s fill are specified, respectively,
+			// by the line property and fill property of the shape containing the path.
+
+			// For a path to be visible, the following conditions are necessary.
+			// §	The shape containing the path is not on a layer whose Visible Cell_Type element has a value equal to zero.
+			// §	The value of the NoShow Cell_Type child of the path’s Geometry Section_Type element is not equal to one.
+
+			// NoSnap is not related to drawing.
+			// NoQuickDrag is not related to drawing too. It doesn't allow us to select the shape.
+
+			// The Path trigger is unused and MUST be ignored.
+
+			// So Geometry section defines (for drawing): path (by rows), isShown (NoShow), NoLine, NoFill
+			// So we can represent visio Geometry section using Path object
+			// Use it below
+
+			let noFillCell = findCell(geometrySection, "n", "NoFill");
+			let fillValue;
+			if (noFillCell) {
+				fillValue = Number(noFillCell.v) ? undefined : "norm";
+			} else {
+				fillValue = "norm";
 			}
-			if (commandRow.del) {
-				continue;
+
+			// imply that units were in mm until units parse realized
+			// TODO parse formula and units
+			// TODO parse line style fill style text style
+
+			const additionalUnitCoefficient = g_dKoef_in_to_mm;
+
+			let path = new AscFormat.Path();
+			path.setExtrusionOk( false);
+			path.setFill( fillValue);
+			path.setStroke( true);
+			path.setPathW(undefined);
+			path.setPathH(undefined);
+			/* extrusionOk, fill, stroke, w, h*/
+			// path.AddPathCommand(0, undefined, fillValue, undefined, undefined, undefined);
+
+			//TODO maybe get shapeWidth and Height from outside
+			//TODO shape with RelMoveTo and RelLineTo takes wrong position
+
+			let shapeWidth = Number(findCell(shape.elements, "n", "Width").v);
+			let shapeHeight = Number(findCell(shape.elements, "n", "Height").v);
+
+			/**
+			 *
+			 * @type {{x: number, y: number}}
+			 */
+			let lastPoint = { x: 0, y : 0};
+
+			for (let i = 0; true; i++) {
+				let rowNum = i + 1;
+				let commandRow = findRow(geometrySection, "iX", rowNum);
+				if (!commandRow) {
+					break;
+				}
+				if (commandRow.del) {
+					continue;
+				}
+				let commandName = commandRow.t;
+				switch (commandName) {
+					case "MoveTo":
+					{
+						let moveToXTextValue = Number(findCell(commandRow, "n", "X").v);
+						let moveToYTextValue = Number(findCell(commandRow, "n", "Y").v);
+
+						let newX = convertUnits(moveToXTextValue, additionalUnitCoefficient);
+						let newY = convertUnits(moveToYTextValue, additionalUnitCoefficient);
+
+						path.moveTo(newX, newY);
+						lastPoint.x = newX;
+						lastPoint.y = newY;
+						break;
+					}
+					case "RelMoveTo":
+					{
+						let relMoveToXTextValue = Number(findCell(commandRow, "n", "X").v);
+						let relMoveToYTextValue = Number(findCell(commandRow, "n", "Y").v);
+
+						let newX = convertUnits(relMoveToXTextValue, additionalUnitCoefficient);
+						let newY = convertUnits(relMoveToYTextValue, additionalUnitCoefficient);
+
+						let relX = newX * shapeWidth;
+						let relY = newY * shapeHeight;
+						path.moveTo(relX, relY);
+						lastPoint.x = relX;
+						lastPoint.y = relY;
+						break;
+					}
+					case "LineTo":
+					{
+						let lineToXTextValue = Number(findCell(commandRow, "n", "X").v);
+						let lineToYTextValue = Number(findCell(commandRow, "n", "Y").v);
+
+						let newX = convertUnits(lineToXTextValue, additionalUnitCoefficient);
+						let newY = convertUnits(lineToYTextValue, additionalUnitCoefficient);
+
+						path.lnTo(newX, newY);
+						lastPoint.x = newX;
+						lastPoint.y = newY;
+						break;
+					}
+					case "RelLineTo":
+					{
+						let relLineToXTextValue = Number(findCell(commandRow, "n", "X").v);
+						let relLineToYTextValue = Number(findCell(commandRow, "n", "Y").v);
+
+						let newX = convertUnits(relLineToXTextValue, additionalUnitCoefficient);
+						let newY = convertUnits(relLineToYTextValue, additionalUnitCoefficient);
+
+						let newXRel = newX * shapeWidth;
+						let newYRel = newY * shapeHeight;
+						path.lnTo(newXRel, newYRel);
+						lastPoint.x = newXRel;
+						lastPoint.y = newYRel;
+						break;
+					}
+					case "EllipticalArcTo":
+					{
+						// https://learn.microsoft.com/en-us/office/client-developer/visio/ellipticalarcto-row-geometry-section
+						let x = Number(findCell(commandRow, "n", "X").v);
+						let y = Number(findCell(commandRow, "n", "Y").v);
+						let a = Number(findCell(commandRow, "n", "A").v);
+						let b = Number(findCell(commandRow, "n", "B").v);
+						let c = Number(findCell(commandRow, "n", "C").v);
+						let d = Number(findCell(commandRow, "n", "D").v);
+
+						let newX = convertUnits(x, additionalUnitCoefficient);
+						let newY = convertUnits(y, additionalUnitCoefficient);
+						let newA = convertUnits(a, additionalUnitCoefficient);
+						let newB = convertUnits(b, additionalUnitCoefficient);
+						let newC = c * radToC;
+						let newD = d;
+
+						// same but with a length in EMUs units and an angle in C-units, which will be expected clockwise
+						// as in other sdkjs/common/Drawings/Format/Path.js functions.
+						path.ellipticalArcTo(newX, newY, newA, newB, newC, newD);
+						lastPoint.x = newX;
+						lastPoint.y = newY;
+						break;
+					}
+					case "Ellipse":
+					{
+						let centerPointXTextValue = Number(findCell(commandRow, "n", "X").v);
+						let centerPointYTextValue = Number(findCell(commandRow, "n", "Y").v);
+						let somePointXTextValue = Number(findCell(commandRow, "n", "A").v);
+						let somePointYTextValue = Number(findCell(commandRow, "n", "B").v);
+						let anotherPointXTextValue = Number(findCell(commandRow, "n", "C").v);
+						let anotherPointYTextValue = Number(findCell(commandRow, "n", "D").v);
+
+						let newX = convertUnits(centerPointXTextValue, additionalUnitCoefficient);
+						let newY = convertUnits(centerPointYTextValue, additionalUnitCoefficient);
+						let newA = convertUnits(somePointXTextValue, additionalUnitCoefficient);
+						let newB = convertUnits(somePointYTextValue, additionalUnitCoefficient);
+						let newC = convertUnits(anotherPointXTextValue, additionalUnitCoefficient);
+						let newD = convertUnits(anotherPointYTextValue, additionalUnitCoefficient);
+
+						let wRhR = transformEllipseParams(newX, newY, newA, newB, newC, newD);
+						// start to draw from ellipse right point
+
+						//TODO Check [MS-VSDX]-220215 2.2.3.2.2.Geometry Path
+						// If the Row_Type element is of type Ellipse or InfiniteLine, it specifies the only segment of the path.
+						// So mb remove move to
+						path.moveTo(wRhR.wR * 2, wRhR.hR);
+						path.arcTo(wRhR.wR, wRhR.hR, 0, 180 * degToC);
+						path.arcTo(wRhR.wR, wRhR.hR, 180 * degToC, 180 * degToC);
+						lastPoint.x = newX;
+						lastPoint.y = newY;
+						break;
+					}
+					case "ArcTo":
+					{
+						// https://learn.microsoft.com/en-us/office/client-developer/visio/arcto-row-geometry-section
+						// circular arc
+
+						// middleGap = a can be negative which leads to opposite arc direction clockwise or anti-clockwise
+
+						let x = Number(findCell(commandRow, "n", "X").v)					// xEnd
+						let y = Number(findCell(commandRow, "n", "Y").v);					// yEnd
+						let a = Number(findCell(commandRow, "n", "A").v);					// middleGap
+
+						let newX = convertUnits(x, additionalUnitCoefficient);
+						let newY = convertUnits(y, additionalUnitCoefficient);
+						let newA = convertUnits(a, additionalUnitCoefficient);
+
+						// transform params for ellipticalArcTo
+						let chordVector = {x: newX - lastPoint.x, y: newY - lastPoint.y };
+						let chordVectorAngle = Math.atan2(chordVector.y, chordVector.x);
+						let gapVectorAngle = chordVectorAngle - Math.PI / 2; // perpendicular clock wise
+						let gapVector = {x: newA * Math.cos(gapVectorAngle), y: newA * Math.sin(gapVectorAngle)};
+						let chordCenter = {x: chordVector.x / 2 + lastPoint.x, y: chordVector.y / 2 + lastPoint.y};
+						let controlPoint = {x: chordCenter.x + gapVector.x, y: chordCenter.y + gapVector.y};
+
+						path.ellipticalArcTo(newX, newY, controlPoint.x, controlPoint.y, 0, 1);
+						lastPoint.x = newX;
+						lastPoint.y = newY;
+						break;
+					}
+				}
 			}
-			let commandName = commandRow.t;
-			switch (commandName) {
-				case "MoveTo":
-				{
-					let moveToXTextValue = Number(findCell(commandRow, "n", "X").v);
-					let moveToYTextValue = Number(findCell(commandRow, "n", "Y").v);
 
-					let newX = convertUnits(moveToXTextValue, additionalUnitCoefficient);
-					let newY = convertUnits(moveToYTextValue, additionalUnitCoefficient);
-
-					geometry.AddPathCommand( 1, newX, newY);
-					lastPoint.x = newX;
-					lastPoint.y = newY;
-					break;
-				}
-				case "RelMoveTo":
-				{
-					let relMoveToXTextValue = Number(findCell(commandRow, "n", "X").v);
-					let relMoveToYTextValue = Number(findCell(commandRow, "n", "Y").v);
-
-					let newX = convertUnits(relMoveToXTextValue, additionalUnitCoefficient);
-					let newY = convertUnits(relMoveToYTextValue, additionalUnitCoefficient);
-
-					let relX = newX * shapeWidth;
-					let relY = newY * shapeHeight;
-					geometry.AddPathCommand( 1, relX, relY);
-					lastPoint.x = relX;
-					lastPoint.y = relY;
-					break;
-				}
-				case "LineTo":
-				{
-					let lineToXTextValue = Number(findCell(commandRow, "n", "X").v);
-					let lineToYTextValue = Number(findCell(commandRow, "n", "Y").v);
-
-					let newX = convertUnits(lineToXTextValue, additionalUnitCoefficient);
-					let newY = convertUnits(lineToYTextValue, additionalUnitCoefficient);
-
-					geometry.AddPathCommand( 2, newX, newY);
-					lastPoint.x = newX;
-					lastPoint.y = newY;
-					break;
-				}
-				case "RelLineTo":
-				{
-					let relLineToXTextValue = Number(findCell(commandRow, "n", "X").v);
-					let relLineToYTextValue = Number(findCell(commandRow, "n", "Y").v);
-
-					let newX = convertUnits(relLineToXTextValue, additionalUnitCoefficient);
-					let newY = convertUnits(relLineToYTextValue, additionalUnitCoefficient);
-
-					let newXRel = newX * shapeWidth;
-					let newYRel = newY * shapeHeight;
-					geometry.AddPathCommand( 2, newXRel, newYRel);
-					lastPoint.x = newXRel;
-					lastPoint.y = newYRel;
-					break;
-				}
-				case "EllipticalArcTo":
-				{
-					// https://learn.microsoft.com/en-us/office/client-developer/visio/ellipticalarcto-row-geometry-section
-					let x = Number(findCell(commandRow, "n", "X").v);
-					let y = Number(findCell(commandRow, "n", "Y").v);
-					let a = Number(findCell(commandRow, "n", "A").v);
-					let b = Number(findCell(commandRow, "n", "B").v);
-					let c = Number(findCell(commandRow, "n", "C").v);
-					let d = Number(findCell(commandRow, "n", "D").v);
-
-					let newX = convertUnits(x, additionalUnitCoefficient);
-					let newY = convertUnits(y, additionalUnitCoefficient);
-					let newA = convertUnits(a, additionalUnitCoefficient);
-					let newB = convertUnits(b, additionalUnitCoefficient);
-					let newC = c * radToC;
-					let newD = d;
-
-					// same but with a length in EMUs units and an angle in C-units, which will be expected clockwise
-					// as in other sdkjs/common/Drawings/Format/Path.js functions.
-					geometry.AddPathCommand( 7, newX, newY, newA, newB, newC, newD);
-					lastPoint.x = newX;
-					lastPoint.y = newY;
-					break;
-				}
-				case "Ellipse":
-				{
-					let centerPointXTextValue = Number(findCell(commandRow, "n", "X").v);
-					let centerPointYTextValue = Number(findCell(commandRow, "n", "Y").v);
-					let somePointXTextValue = Number(findCell(commandRow, "n", "A").v);
-					let somePointYTextValue = Number(findCell(commandRow, "n", "B").v);
-					let anotherPointXTextValue = Number(findCell(commandRow, "n", "C").v);
-					let anotherPointYTextValue = Number(findCell(commandRow, "n", "D").v);
-
-					let newX = convertUnits(centerPointXTextValue, additionalUnitCoefficient);
-					let newY = convertUnits(centerPointYTextValue, additionalUnitCoefficient);
-					let newA = convertUnits(somePointXTextValue, additionalUnitCoefficient);
-					let newB = convertUnits(somePointYTextValue, additionalUnitCoefficient);
-					let newC = convertUnits(anotherPointXTextValue, additionalUnitCoefficient);
-					let newD = convertUnits(anotherPointYTextValue, additionalUnitCoefficient);
-
-					let wRhR = transformEllipseParams(newX, newY, newA, newB, newC, newD);
-					// start to draw from ellipse right point
-					geometry.AddPathCommand( 1, wRhR.wR * 2, wRhR.hR);
-					geometry.AddPathCommand( 3, wRhR.wR, wRhR.hR, 0, 180 * degToC);
-					geometry.AddPathCommand( 3, wRhR.wR, wRhR.hR, 180 * degToC, 180 * degToC);
-					lastPoint.x = newX;
-					lastPoint.y = newY;
-					break;
-				}
-				case "ArcTo":
-				{
-					// https://learn.microsoft.com/en-us/office/client-developer/visio/arcto-row-geometry-section
-					// circular arc
-
-					// middleGap = a can be negative which leads to opposite arc direction clockwise or anti-clockwise
-
-					let x = Number(findCell(commandRow, "n", "X").v)					// xEnd
-					let y = Number(findCell(commandRow, "n", "Y").v);					// yEnd
-					let a = Number(findCell(commandRow, "n", "A").v);					// middleGap
-
-					let newX = convertUnits(x, additionalUnitCoefficient);
-					let newY = convertUnits(y, additionalUnitCoefficient);
-					let newA = convertUnits(a, additionalUnitCoefficient);
-
-					// transform params for ellipticalArcTo
-					let chordVector = {x: newX - lastPoint.x, y: newY - lastPoint.y };
-					let chordVectorAngle = Math.atan2(chordVector.y, chordVector.x);
-					let gapVectorAngle = chordVectorAngle - Math.PI / 2; // perpendicular clock wise
-					let gapVector = {x: newA * Math.cos(gapVectorAngle), y: newA * Math.sin(gapVectorAngle)};
-					let chordCenter = {x: chordVector.x / 2 + lastPoint.x, y: chordVector.y / 2 + lastPoint.y};
-					let controlPoint = {x: chordCenter.x + gapVector.x, y: chordCenter.y + gapVector.y};
-
-					geometry.AddPathCommand( 7, newX, newY, controlPoint.x, controlPoint.y, 0, 1);
-					lastPoint.x = newX;
-					lastPoint.y = newY;
-					break;
-				}
-			}
-		}
-
-		geometry.AddPathCommand(6);
-		geometry.setPreset("master1shape1");
+			path.close();
+			geometry.AddPath(path);
+		});
+		geometry.setPreset("Any");
 
 		// TODO add connections
 		// geometry.AddCnx('_3cd4', 'hc', 't');
