@@ -652,12 +652,7 @@
 			}
 
       this.Api.onKeyDown = function (event) {
-        self.Api.sendEvent("asc_onBeforeKeyDown", event);
-        self.controller._onWindowKeyDown(event);
-        if (self.isCellEditMode) {
-          self.cellEditor._onWindowKeyDown(event, false);
-        }
-        self.Api.sendEvent("asc_onKeyDown", event);
+				self.onKeyDown(event);
       };
       this.Api.onKeyPress = function (event) {
         self.controller._onWindowKeyPress(event);
@@ -1123,6 +1118,25 @@
     this.cellEditor.destroy();
     return this;
   };
+
+	WorkbookView.prototype.onKeyDown = function (event) {
+		this.Api.sendEvent("asc_onBeforeKeyDown", event);
+
+		let nRetValue = this.controller._onWindowKeyDown(event);
+		if (this.isCellEditMode) {
+			nRetValue = nRetValue | this.cellEditor._onWindowKeyDown(event, false);
+		}
+
+		if (nRetValue & keydownresult_PreventPropagation)
+		{
+			event.stopPropagation();
+		}
+		if (nRetValue & keydownresult_PreventDefault)
+		{
+			event.preventDefault();
+		}
+		this.Api.sendEvent("asc_onKeyDown", event);
+	};
 
 	WorkbookView.prototype.scrollToOleSize = function () {
 		var ws = this.getWorksheet();

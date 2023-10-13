@@ -772,540 +772,521 @@
 			this.resizeTimerId = window.setTimeout(function () {self.handlers.trigger("resize", event);}, 150);
 		};
 
-		/** @param event {KeyboardEvent} */
-		asc_CEventsController.prototype._onWindowKeyDown = function (event) {
-			var t = this, dc = 0, dr = 0, canEdit = this.canEdit(), action = false, enterOptions;
-			var macOs = AscCommon.AscBrowser.isMacOs;
-			var ctrlKey = !AscCommon.getAltGr(event) && (event.metaKey || event.ctrlKey);
-			var macCmdKey = AscCommon.AscBrowser.isMacOs && event.metaKey;
-			var shiftKey = event.shiftKey;
-			var selectionDialogMode = this.getSelectionDialogMode();
-			var isFormulaEditMode = this.getFormulaEditMode();
-			var isChangeVisibleAreaMode = this.view.Api.isEditVisibleAreaOleEditor;
-
-			var result = true;
-
-			function stop(immediate) {
-				event.stopPropagation();
-				immediate ? event.stopImmediatePropagation() : true;
-				event.preventDefault();
-				result = false;
-			}
-
+		/** @param oEvent {KeyboardEvent} */
+		asc_CEventsController.prototype._onWindowKeyDown = function (oEvent) {
+			const oThis = this;
 			// для исправления Bug 15902 - Alt забирает фокус из приложения
 			// этот код должен выполняться самым первым
-			if (event.which === 18) {
-				t.lastKeyCode = event.which;
+			if (oEvent.keyCode === 18) {
+				oThis.lastKeyCode = oEvent.keyCode;
 			}
+			let nRetValue = keydownresult_PreventNothing;
 
-			if (!t.getCellEditMode() && !t.isMousePressed && t.enableKeyEvents && t.handlers.trigger("graphicObjectWindowKeyDown", event)) {
-				return result;
+			if (!oThis.getCellEditMode() && !oThis.isMousePressed && oThis.enableKeyEvents && oThis.handlers.trigger("graphicObjectWindowKeyDown", oEvent)) {
+				return nRetValue;
 			}
-
-			// Двигаемся ли мы в выделенной области
-			var selectionActivePointChanged = false;
+			nRetValue = keydownresult_PreventKeyPress;
+			AscCommon.check_KeyboardEvent(oEvent);
+			const oGlobalEvent = AscCommon.global_keyboardEvent;
+			const nShortcutAction = oThis.view.Api.getShortcut(oGlobalEvent);
 
 			// Для таких браузеров, которые не присылают отжатие левой кнопки мыши для двойного клика, при выходе из
 			// окна редактора и отпускания кнопки, будем отрабатывать выход из окна (только Chrome присылает эвент MouseUp даже при выходе из браузера)
 			this.showCellEditorCursor();
 
-			while (t.getCellEditMode() && !t.hasFocus || !t.enableKeyEvents && event.emulated !== true || t.isSelectMode ||
-			t.isFillHandleMode || t.isMoveRangeMode || t.isMoveResizeRange) {
+			if (oThis.getCellEditMode() && !oThis.hasFocus || !oThis.enableKeyEvents && oEvent.emulated !== true || oThis.isSelectMode ||
+				oThis.isFillHandleMode || oThis.isMoveRangeMode || oThis.isMoveResizeRange) {
 				// Почему-то очень хочется обрабатывать лишние условия в нашем коде, вместо обработки наверху...
-				if (!t.enableKeyEvents && ctrlKey && (80 === event.which/* || 83 === event.which*/)) {
+				if (oThis.enableKeyEvents || (nShortcutAction !== Asc.c_oAscSpreadsheetShortcutType.Print)) {
 					// Только если отключены эвенты и нажаты Ctrl+S или Ctrl+P мы их обработаем
-					break;
+					return nRetValue;
 				}
-
-				return result;
 			}
 
-			t._setSkipKeyPress(true);
+			let bIsSelect = oGlobalEvent.IsShift();
+			const bIsMacOs = AscCommon.AscBrowser.isMacOs;
+			const bSelectionDialogMode = this.getSelectionDialogMode();
+			const bIsFormulaEditMode = this.getFormulaEditMode();
+			const bCanEdit = this.canEdit();
+			let nDeltaColumn = 0;
+			let nDeltaRow = 0;
+			// Двигаемся ли мы в выделенной области
+			let bSelectionActivePointChanged = false;
+			let bIsNeedCheckActiveCellChanged = null;
+			let oActiveCell;
 
-			var isNeedCheckActiveCellChanged = null;
-			var _activeCell;
-
-			switch (event.which) {
-				case 116:
-					if (canEdit && !t.getCellEditMode() && !selectionDialogMode &&
-						event.altKey && t.handlers.trigger("refreshConnections", !!event.ctrlKey)) {
-						return result;
+			switch (nShortcutAction) {
+				case Asc.c_oAscSpreadsheetShortcutType.RecalculateAll: {
+					oThis.handlers.trigger("calculate", Asc.c_oAscCalculateType.All);
+					break;
+				}
+				case Asc.c_oAscSpreadsheetShortcutType.RecalculateActiveSheet: {
+					oThis.handlers.trigger("calculate", Asc.c_oAscCalculateType.ActiveSheet);
+					break;
+				}
+				case Asc.c_oAscSpreadsheetShortcutType.RefreshAllPivots:
+				case Asc.c_oAscSpreadsheetShortcutType.RefreshSelectedPivots: {
+					if (bCanEdit && !oThis.getCellEditMode() && !bSelectionDialogMode) {
+						oThis.handlers.trigger("refreshConnections", nShortcutAction === Asc.c_oAscSpreadsheetShortcutType.RefreshAllPivots);
 					}
-					t._setSkipKeyPress(false);
-					return true;
-				case 82:
-					if (ctrlKey && shiftKey) {
-						stop();
-						if (canEdit && !t.getCellEditMode() && !selectionDialogMode) {
-							t.handlers.trigger("changeFormatTableInfo");
-						}
-						return result;
+					break;
+				}
+				case Asc.c_oAscSpreadsheetShortcutType.EditSelectAll: {
+					if (!oThis.getCellEditMode()) {
+						oThis.handlers.trigger("selectColumnsByRange");
+						oThis.handlers.trigger("selectRowsByRange");
+						nRetValue = keydownresult_PreventAll;
 					}
-					t._setSkipKeyPress(false);
-					return true;
-
-				case 120: // F9
-					var type;
-					if (ctrlKey && event.altKey && shiftKey) {
-						type = Asc.c_oAscCalculateType.All;
-					} else if (ctrlKey && event.altKey) {
-						type = Asc.c_oAscCalculateType.Workbook;
-					} else if (shiftKey) {
-						type = Asc.c_oAscCalculateType.ActiveSheet;
-					} else {
-						type = Asc.c_oAscCalculateType.WorkbookOnlyChanged;
+					break;
+				}
+				case Asc.c_oAscSpreadsheetShortcutType.CellInsertDate:
+				case Asc.c_oAscSpreadsheetShortcutType.CellInsertTime: {
+					if (!bCanEdit || oThis.getCellEditMode() || bSelectionDialogMode) {
+						break;
 					}
-					t.handlers.trigger("calculate", type);
-					return result;
-
-				case 113: // F2
-					if (!canEdit || t.getCellEditMode() || selectionDialogMode) {
-						return true;
+					// При нажатии символа, фокус не ставим. Очищаем содержимое ячейки
+					const oEnterOptions = new AscCommonExcel.CEditorEnterOptions();
+					oEnterOptions.newText = '';
+					oEnterOptions.quickInput = true;
+					this.handlers.trigger("editCell", oEnterOptions);
+					break;
+				}
+				case Asc.c_oAscSpreadsheetShortcutType.NextWorksheet: {
+					oThis.handlers.trigger("showNextPrevWorksheet", +1);
+					nRetValue = keydownresult_PreventAll;
+					break;
+				}
+				case Asc.c_oAscSpreadsheetShortcutType.PreviousWorksheet: {
+					oThis.handlers.trigger("showNextPrevWorksheet", -1);
+					nRetValue = keydownresult_PreventAll;
+					break;
+				}
+				case Asc.c_oAscSpreadsheetShortcutType.Strikeout: {
+					if (!bCanEdit || bSelectionDialogMode || oThis.getCellEditMode()) {
+						break;
+					}
+					oThis.handlers.trigger("setFontAttributes", "s");
+					nRetValue = keydownresult_PreventAll;
+					break;
+				}
+				case Asc.c_oAscSpreadsheetShortcutType.Italic: {
+					if (!bCanEdit || bSelectionDialogMode || oThis.getCellEditMode()) {
+						break;
+					}
+					oThis.handlers.trigger("setFontAttributes", "i");
+					nRetValue = keydownresult_PreventAll;
+					break;
+				}
+				case Asc.c_oAscSpreadsheetShortcutType.Bold: {
+					if (!bCanEdit || bSelectionDialogMode || oThis.getCellEditMode()) {
+						break;
+					}
+					oThis.handlers.trigger("setFontAttributes", "b");
+					nRetValue = keydownresult_PreventAll;
+					break;
+				}
+				case Asc.c_oAscSpreadsheetShortcutType.Underline: {
+					if (!bCanEdit || bSelectionDialogMode || oThis.getCellEditMode()) {
+						break;
+					}
+					oThis.handlers.trigger("setFontAttributes", "u");
+					nRetValue = keydownresult_PreventAll;
+					break;
+				}
+				case Asc.c_oAscSpreadsheetShortcutType.EditRedo: {
+					if (!(bCanEdit || oThis.handlers.trigger('isRestrictionComments')) || bSelectionDialogMode || oThis.getCellEditMode()) {
+						break;
+					}
+					bIsNeedCheckActiveCellChanged = true;
+					oThis.handlers.trigger("redo");
+					nRetValue = keydownresult_PreventAll;
+					break;
+				}
+				case Asc.c_oAscSpreadsheetShortcutType.EditUndo: {
+					if (!(bCanEdit || oThis.handlers.trigger('isRestrictionComments')) || bSelectionDialogMode || oThis.getCellEditMode()) {
+						break;
+					}
+					bIsNeedCheckActiveCellChanged = true;
+					oThis.handlers.trigger("undo");
+					nRetValue = keydownresult_PreventAll;
+					break;
+				}
+				case Asc.c_oAscSpreadsheetShortcutType.SpeechWorker: {
+					if (oThis.getCellEditMode() || bSelectionDialogMode) {
+						break;
+					}
+					AscCommon.EditorActionSpeaker.toggle();
+					nRetValue = keydownresult_PreventAll;
+					break;
+				}
+				case Asc.c_oAscSpreadsheetShortcutType.CellInsertSumFunction: {
+					if (!bCanEdit || oThis.getCellEditMode() || bSelectionDialogMode) {
+						break;
+					}
+					this.handlers.trigger('addFunction',
+						AscCommonExcel.cFormulaFunctionToLocale ? AscCommonExcel.cFormulaFunctionToLocale['SUM'] :
+							'SUM', Asc.c_oAscPopUpSelectorType.Func, true);
+					nRetValue = keydownresult_PreventAll;
+					break;
+				}
+				case Asc.c_oAscSpreadsheetShortcutType.Print: {
+					if (oThis.getCellEditMode()) {
+						break;
+					}
+					oThis.handlers.trigger("print");
+					nRetValue = keydownresult_PreventAll;
+					break;
+				}
+				case Asc.c_oAscSpreadsheetShortcutType.EditOpenCellEditor: {
+					if (!bCanEdit || oThis.getCellEditMode() || bSelectionDialogMode) {
+						break;
 					}
 					if (AscBrowser.isOpera) {
-						stop();
+						nRetValue = keydownresult_PreventAll;
 					}
 					// При F2 выставляем фокус в редакторе
-					enterOptions = new AscCommonExcel.CEditorEnterOptions();
-					enterOptions.focus = true;
-					t.handlers.trigger("editCell", enterOptions);
-					return result;
-
-				case 59:
-				case 186: // add current date or time Ctrl + (Shift) + ;
-					if (!canEdit || t.getCellEditMode() || selectionDialogMode) {
-						return true;
-					}
-					if (ctrlKey) {
-						// При нажатии символа, фокус не ставим. Очищаем содержимое ячейки
-						enterOptions = new AscCommonExcel.CEditorEnterOptions();
-						enterOptions.newText = '';
-						enterOptions.quickInput = true;
-						this.handlers.trigger("editCell", enterOptions);
-						return result;
-					}
-					t._setSkipKeyPress(false);
-					return true;
-
-
-				case 8: // backspace
-					if (!canEdit || t.getCellEditMode() || selectionDialogMode) {
-						return true;
-					}
-					stop();
-
-					// При backspace фокус не в редакторе (стираем содержимое)
-					enterOptions = new AscCommonExcel.CEditorEnterOptions();
-					enterOptions.newText = '';
-					t.handlers.trigger("editCell", enterOptions);
-					return true;
-
-				case 46: // Del
-					if (!canEdit || this.getCellEditMode() || selectionDialogMode || shiftKey) {
-						return true;
-					}
-					// Удаляем содержимое
-					this.handlers.trigger("empty");
-					return result;
-
-				case 9: // tab
-					if (t.getCellEditMode() || selectionDialogMode) {
-						return true;
-					}
-					// Отключим стандартную обработку браузера нажатия tab
-					stop();
-
-					// Особый случай (возможно движение в выделенной области)
-					selectionActivePointChanged = true;
-					if (shiftKey) {
-						dc = -1;			// (shift + tab) - движение по ячейкам влево на 1 столбец
-						shiftKey = false;	// Сбросим shift, потому что мы не выделяем
-					} else {
-						_activeCell = t.handlers.trigger("getActiveCell");
-						if (t.lastTab === null) {
-							if (_activeCell) {
-								t.lastTab = _activeCell.c2;
-							}
-						} else if (!_activeCell) {
-							t.lastTab = null;
-						}
-						dc = +1;			// (tab) - движение по ячейкам вправо на 1 столбец
-					}
+					const oEnterOptions = new AscCommonExcel.CEditorEnterOptions();
+					oEnterOptions.focus = true;
+					oThis.handlers.trigger("editCell", oEnterOptions);
 					break;
-
-				case 13:  // "enter"
-					if (t.getCellEditMode() || selectionDialogMode) {
-						return true;
-					}
-					// Особый случай (возможно движение в выделенной области)
-					selectionActivePointChanged = true;
-					if (shiftKey) {
-						dr = -1;			// (shift + enter) - движение по ячейкам наверх на 1 строку
-						shiftKey = false;	// Сбросим shift, потому что мы не выделяем
-						t.lastTab = null;
-					} else {
-						if (t.lastTab !== null) {
-							_activeCell = t.handlers.trigger("getActiveCell");
-							if (_activeCell) {
-								dc = t.lastTab - _activeCell.c2;
-							} else {
-								t.lastTab = null;
-							}
-						}
-						dr = +1;			// (enter) - движение по ячейкам вниз на 1 строку
-					}
-					break;
-
-				case 27: // Esc
-					t.handlers.trigger("stopFormatPainter");
-					t.handlers.trigger("stopAddShape");
-					t.handlers.trigger("cleanCutData", true, true);
-					t.handlers.trigger("cleanCopyData", true, true);
-					t.view.Api.cancelEyedropper();
-					window['AscCommon'].g_specialPasteHelper.SpecialPasteButton_Hide();
-					return result;
-
-				case 144: //Num Lock
-				case 145: //Scroll Lock
-					if (AscBrowser.isOpera) {
-						stop();
-					}
-					return result;
-
-				case 32: // Spacebar
-					if (t.getCellEditMode()) {
-						return true;
-					}
-					var isSelectColumns = ctrlKey;
-					var isSelectAllMacOs = isSelectColumns && shiftKey && macOs;
-					// Обработать как обычный текст
-					if ((!isSelectColumns && !shiftKey) || isSelectAllMacOs) {
-						//теперь пробел обрабатывается на WindowKeyDown
-						//вторыы аргументом передаю true, чтобы два раза пробел не добавлялся и сработало событие CellEditor.prototype._onWindowKeyDown
-						//задача функции EnterText в данном случае - либо добавить данные в графику, либо открыть редактор ячейки, чтобы потом
-						//была вызвана следующая инструкия в функции выше -> Api.onKeyDown
-						window["Asc"]["editor"].wb.EnterText(event.which, true);
-						t._setSkipKeyPress(false);
-						return false;
-					}
-					// Отключим стандартную обработку браузера нажатия
-					// Ctrl+Shift+Spacebar, Ctrl+Spacebar, Shift+Spacebar
-					stop();
-					if (isSelectColumns) {
-						t.handlers.trigger("selectColumnsByRange");
-					}
-					if (shiftKey) {
-						t.handlers.trigger("selectRowsByRange");
-					}
-					return result;
-
-				case 110: //NumpadDecimal
-					if (!canEdit || t.getCellEditMode() || selectionDialogMode) {
-						return true;
+				}
+				case Asc.c_oAscSpreadsheetShortcutType.CellAddSeparator: {
+					if (!bCanEdit || oThis.getCellEditMode() || bSelectionDialogMode) {
+						break;
 					}
 					window["Asc"]["editor"].wb.EnterText(this.view.Api.asc_getDecimalSeparator().charCodeAt(0), true);
 					//stop to prevent double enter
-					stop();
-					return result;
-
-				case 33: // PageUp
-					// Отключим стандартную обработку браузера нажатия PageUp
-					stop();
-					if (ctrlKey || event.altKey) {
-						// Перемещение по листам справа налево
-						// В chrome не работает (т.к. там своя обработка на некоторые нажатия вместе с Ctrl
-						t.handlers.trigger("showNextPrevWorksheet", -1);
-						return true;
-					} else {
-						// Solution design department to handle Alt + PgUp \ Alt + PgDown as a transition by sheets
-						/*event.altKey ? dc = -0.5 : */
-						dr = -0.5;
-					}
-					isNeedCheckActiveCellChanged = true;
+					nRetValue = keydownresult_PreventAll;
 					break;
-
-				case 34: // PageDown
-					// Отключим стандартную обработку браузера нажатия PageDown
-					stop();
-					if (ctrlKey || event.altKey) {
-						// Перемещение по листам слева направо
-						// В chrome не работает (т.к. там своя обработка на некоторые нажатия вместе с Ctrl
-						t.handlers.trigger("showNextPrevWorksheet", +1);
-						return true;
-					} else {
-						// Solution design department to handle Alt + PgUp \ Alt + PgDown as a transition by sheets
-						/*event.altKey ? dc = +0.5 : */
-						dr = +0.5;
-					}
-					isNeedCheckActiveCellChanged = true;
-					break;
-
-				case 37: // left
-					stop();                          // Отключим стандартную обработку браузера нажатия left
-					dc = ctrlKey ? -1.5 : -1;  // Движение стрелками (влево-вправо, вверх-вниз)
-					isNeedCheckActiveCellChanged = true;
-					break;
-
-				case 38: // up
-					stop();                          // Отключим стандартную обработку браузера нажатия up
-					if (canEdit && !t.getCellEditMode() && !selectionDialogMode && event.altKey && t.handlers.trigger("onDataValidation")) {
-						return result;
-					}
-					dr = ctrlKey ? -1.5 : -1;  // Движение стрелками (влево-вправо, вверх-вниз)
-					isNeedCheckActiveCellChanged = true;
-					break;
-
-				case 39: // right
-					stop();                          // Отключим стандартную обработку браузера нажатия right
-					dc = ctrlKey ? +1.5 : +1;  // Движение стрелками (влево-вправо, вверх-вниз)
-					isNeedCheckActiveCellChanged = true;
-					break;
-
-				case 40: // down
-					stop();                          // Отключим стандартную обработку браузера нажатия down
-					// Обработка Alt + down
-					if (canEdit && !t.getCellEditMode() && !selectionDialogMode && event.altKey) {
-						if (t.handlers.trigger("onShowFilterOptionsActiveCell")) {
-							return result;
-						}
-						if (t.handlers.trigger("onDataValidation")) {
-							return result;
-						}
-						t.handlers.trigger("showAutoComplete");
-						return result;
-					}
-					dr = ctrlKey ? +1.5 : +1;  // Движение стрелками (влево-вправо, вверх-вниз)
-					isNeedCheckActiveCellChanged = true;
-					break;
-
-				case 36: // home
-					stop();                          // Отключим стандартную обработку браузера нажатия home
-					if (isFormulaEditMode) {
+				}
+				case Asc.c_oAscSpreadsheetShortcutType.CellNumberFormat: {
+					if (!bCanEdit || bSelectionDialogMode || oThis.getCellEditMode()) {
 						break;
 					}
-					dc = -2.5;
-					if (ctrlKey) {
-						dr = -2.5;
-					}
-					isNeedCheckActiveCellChanged = true;
+					oThis.handlers.trigger("setCellFormat", Asc.c_oAscNumFormatType.Number);
+					nRetValue = keydownresult_PreventAll;
 					break;
-
-				case 35: // end
-					stop();                          // Отключим стандартную обработку браузера нажатия end
-					if (isFormulaEditMode) {
+				}
+				case Asc.c_oAscSpreadsheetShortcutType.CellTimeFormat: {
+					if (!bCanEdit || bSelectionDialogMode || oThis.getCellEditMode()) {
 						break;
 					}
-					dc = 2.5;
-					if (ctrlKey) {
-						dr = 2.5;
-					}
-					isNeedCheckActiveCellChanged = true;
+					oThis.handlers.trigger("setCellFormat", Asc.c_oAscNumFormatType.Time);
+					nRetValue = keydownresult_PreventAll;
 					break;
+				}
+				case Asc.c_oAscSpreadsheetShortcutType.CellDateFormat: {
+					if (!bCanEdit || bSelectionDialogMode || oThis.getCellEditMode()) {
+						break;
+					}
+					oThis.handlers.trigger("setCellFormat", Asc.c_oAscNumFormatType.Date);
+					nRetValue = keydownresult_PreventAll;
+					break;
+				}
+				case Asc.c_oAscSpreadsheetShortcutType.CellCurrencyFormat: {
+					if (!bCanEdit || bSelectionDialogMode || oThis.getCellEditMode()) {
+						break;
+					}
+					oThis.handlers.trigger("setCellFormat", Asc.c_oAscNumFormatType.Currency);
+					nRetValue = keydownresult_PreventAll;
+					break;
+				}
+				case Asc.c_oAscSpreadsheetShortcutType.CellPercentFormat: {
+					if (!bCanEdit || bSelectionDialogMode || oThis.getCellEditMode()) {
+						break;
+					}
+					oThis.handlers.trigger("setCellFormat", Asc.c_oAscNumFormatType.Percent);
+					nRetValue = keydownresult_PreventAll;
+					break;
+				}
+				case Asc.c_oAscSpreadsheetShortcutType.CellExponentialFormat: {
+					if (!bCanEdit || bSelectionDialogMode || oThis.getCellEditMode()) {
+						break;
+					}
+					oThis.handlers.trigger("setCellFormat", Asc.c_oAscNumFormatType.Scientific);
+					nRetValue = keydownresult_PreventAll;
+					break;
+				}
+				case Asc.c_oAscSpreadsheetShortcutType.CellGeneralFormat: {
+					if (!bCanEdit || bSelectionDialogMode || oThis.getCellEditMode()) {
+						break;
+					}
+					oThis.handlers.trigger("setCellFormat", Asc.c_oAscNumFormatType.General);
+					nRetValue = keydownresult_PreventAll;
+					break;
+				}
 
-				case 49:  // set number format		Ctrl + Shift + !
-				case 50:  // set time format		Ctrl + Shift + @
-				case 51:  // set date format		Ctrl + Shift + #
-				case 52:  // set currency format	Ctrl + Shift + $
-				case 53:  // make strikethrough		Ctrl + 5
-				case 54:  // set exponential format Ctrl + Shift + ^
-				case 66:  // make bold				Ctrl + b
-				case 73:  // make italic			Ctrl + i
-				//case 83: // save					Ctrl + s
-				case 85:  // make underline			Ctrl + u
-				case 192: // set general format 	Ctrl + Shift + ~
-					if (!canEdit || selectionDialogMode) {
-						return true;
+				case Asc.c_oAscSpreadsheetShortcutType.ShowFormulas: {
+					if (bSelectionDialogMode || oThis.getCellEditMode()) {
+						break;
 					}
-
-				case 89:  // redo					Ctrl + y
-				case 90:  // undo					Ctrl + z
-					if (!(canEdit || t.handlers.trigger('isRestrictionComments'))|| selectionDialogMode) {
-						return true;
-					}
-					//TODO temporary fix for speaker. in the future need to switch to a common scheme
-					if (event.altKey && (event.metaKey || event.ctrlKey)) {
-						ctrlKey = true;
-					}
-
-					isNeedCheckActiveCellChanged = true;
-
-				case 65: // select all      Ctrl + a
-				case 80: // print           Ctrl + p
-					if (t.getCellEditMode()) {
-						return true;
-					}
-
-					if (!ctrlKey) {
-						t._setSkipKeyPress(false);
-						return true;
-					}
-
-					switch (event.which) {
-						case 49:
-							if (shiftKey) {
-								t.handlers.trigger("setCellFormat", Asc.c_oAscNumFormatType.Number);
-								action = true;
-							}
+					oThis.handlers.trigger("showFormulas");
+					nRetValue = keydownresult_PreventAll;
+					break;
+				}
+				default: {
+					const oCustom = oThis.view.Api.getCustomShortcutAction(nShortcutAction);
+					if (oCustom) {
+						if (!bCanEdit || bSelectionDialogMode || oThis.getCellEditMode()) {
 							break;
-						case 50:
-							if (shiftKey) {
-								t.handlers.trigger("setCellFormat", Asc.c_oAscNumFormatType.Time);
-								action = true;
-							}
-							break;
-						case 51:
-							if (shiftKey) {
-								t.handlers.trigger("setCellFormat", Asc.c_oAscNumFormatType.Date);
-								action = true;
-							}
-							break;
-						case 52:
-							if (shiftKey) {
-								t.handlers.trigger("setCellFormat", Asc.c_oAscNumFormatType.Currency);
-								action = true;
-							}
-							break;
-						case 53:
-							if (shiftKey) {
-								t.handlers.trigger("setCellFormat", Asc.c_oAscNumFormatType.Percent);
-							} else {
-								t.handlers.trigger("setFontAttributes", "s");
-							}
-							action = true;
-							break;
-						case 54:
-							if (shiftKey) {
-								t.handlers.trigger("setCellFormat", Asc.c_oAscNumFormatType.Scientific);
-								action = true;
-							}
-							break;
-						case 65:
-							t.handlers.trigger("selectColumnsByRange");
-							t.handlers.trigger("selectRowsByRange");
-							action = true;
-							break;
-						case 66:
-							t.handlers.trigger("setFontAttributes", "b");
-							action = true;
-							break;
-						case 73:
-							t.handlers.trigger("setFontAttributes", "i");
-							action = true;
-							break;
-						case 80:
-							t.handlers.trigger("print");
-							action = true;
-							break;
-						/*case 83:
-							t.handlers.trigger("save");
-						 	action = true;
-							break;*/
-						case 85:
-							t.handlers.trigger("setFontAttributes", "u");
-							action = true;
-							break;
-						case 89:
-							t.handlers.trigger("redo");
-							action = true;
-							break;
-						case 90:
-							if (event.altKey) {
-								AscCommon.EditorActionSpeaker.toggle();
-							} else {
-								t.handlers.trigger("undo");
-							}
-							action = true;
-							break;
-						case 192:
-							if (shiftKey) {
-								t.handlers.trigger("setCellFormat", Asc.c_oAscNumFormatType.General);
-								action = true;
-							} else {
-								t.handlers.trigger("showFormulas");
-								action = true;
-							}
-							break;
-					}
-
-					if (!action) {
-						t._setSkipKeyPress(false);
-						return true;
-					}
-					stop();
-					return result;
-				case 61:  // Firefox, Opera (+/=)
-				case 187: // +/=
-					if (!canEdit || t.getCellEditMode() || selectionDialogMode) {
-						return true;
-					}
-					if (event.altKey && (!macOs || (macOs && event.ctrlKey))) {
-						this.handlers.trigger('addFunction',
-							AscCommonExcel.cFormulaFunctionToLocale ? AscCommonExcel.cFormulaFunctionToLocale['SUM'] :
-								'SUM', Asc.c_oAscPopUpSelectorType.Func, true);
-						stop();
+						}
+						if (AscCommon.c_oAscCustomShortcutType.Symbol === oCustom.Type) {
+							const oEnterOptions = new AscCommonExcel.CEditorEnterOptions();
+							oEnterOptions.newText = '';
+							oEnterOptions.quickInput = true;
+							this.handlers.trigger("editCell", oEnterOptions);
+						}
 					} else {
-						t._setSkipKeyPress(false);
+						nRetValue = keydownresult_PreventNothing;
 					}
-					return result;
-
-				case 93:
-					if (!macCmdKey) {
-						stop();
-						this.handlers.trigger('onContextMenu', event);
-						return result;
-					}
-
-				default:
-					t._setSkipKeyPress(false);
-					return true;
-
-			} // end of switch
-
-
-			var activeCellBefore;
-			if (isNeedCheckActiveCellChanged) {
-				activeCellBefore = t.handlers.trigger("getActiveCell");
+					break;
+				}
 			}
-			var _checkLastTab = function () {
-				if (isNeedCheckActiveCellChanged) {
-					var activeCellAfter = t.handlers.trigger("getActiveCell");
-					if (!activeCellBefore || !activeCellAfter || !activeCellAfter.isEqual(activeCellBefore)) {
-						t.lastTab = null;
+			if (!nShortcutAction) {
+				switch (oGlobalEvent.GetKeyCode()) {
+					case 82:
+						if (oGlobalEvent.CtrlKey && bIsSelect) {
+							if (bCanEdit && !oThis.getCellEditMode() && !bSelectionDialogMode) {
+								oThis.handlers.trigger("changeFormatTableInfo");
+							}
+							nRetValue = keydownresult_PreventAll;
+						}
+						break;
+					case 8: // backspace
+						if (!bCanEdit || oThis.getCellEditMode() || bSelectionDialogMode) {
+							break;
+						}
+						nRetValue = keydownresult_PreventAll;
+
+						// При backspace фокус не в редакторе (стираем содержимое)
+						const oEnterOptions = new AscCommonExcel.CEditorEnterOptions();
+						oEnterOptions.newText = '';
+						oThis.handlers.trigger("editCell", oEnterOptions);
+						break;
+
+					case 46: // Del
+						if (!bCanEdit || this.getCellEditMode() || bSelectionDialogMode || bIsSelect) {
+							break;
+						}
+						// Удаляем содержимое
+						this.handlers.trigger("empty");
+						break;
+
+					case 9: // tab
+						if (oThis.getCellEditMode() || bSelectionDialogMode) {
+							break;
+						}
+						// Отключим стандартную обработку браузера нажатия tab
+						nRetValue = keydownresult_PreventAll;
+
+						// Особый случай (возможно движение в выделенной области)
+						bSelectionActivePointChanged = true;
+						if (bIsSelect) {
+							nDeltaColumn = -1;			// (shift + tab) - движение по ячейкам влево на 1 столбец
+							bIsSelect = false;	// Сбросим shift, потому что мы не выделяем
+						} else {
+							oActiveCell = oThis.handlers.trigger("getActiveCell");
+							if (oThis.lastTab === null) {
+								if (oActiveCell) {
+									oThis.lastTab = oActiveCell.c2;
+								}
+							} else if (!oActiveCell) {
+								oThis.lastTab = null;
+							}
+							nDeltaColumn = +1;			// (tab) - движение по ячейкам вправо на 1 столбец
+						}
+						break;
+
+					case 13:  // "enter"
+						if (oThis.getCellEditMode() || bSelectionDialogMode) {
+							break;
+						}
+						// Особый случай (возможно движение в выделенной области)
+						bSelectionActivePointChanged = true;
+						if (bIsSelect) {
+							nDeltaRow = -1;			// (shift + enter) - движение по ячейкам наверх на 1 строку
+							bIsSelect = false;	// Сбросим shift, потому что мы не выделяем
+							oThis.lastTab = null;
+						} else {
+							if (oThis.lastTab !== null) {
+								oActiveCell = oThis.handlers.trigger("getActiveCell");
+								if (oActiveCell) {
+									nDeltaColumn = oThis.lastTab - oActiveCell.c2;
+								} else {
+									oThis.lastTab = null;
+								}
+							}
+							nDeltaRow = +1;			// (enter) - движение по ячейкам вниз на 1 строку
+						}
+						break;
+
+					case 27: // Esc
+						oThis.handlers.trigger("stopFormatPainter");
+						oThis.handlers.trigger("stopAddShape");
+						oThis.handlers.trigger("cleanCutData", true, true);
+						oThis.handlers.trigger("cleanCopyData", true, true);
+						oThis.view.Api.cancelEyedropper();
+						window['AscCommon'].g_specialPasteHelper.SpecialPasteButton_Hide();
+						break;
+
+					case 144: //Num Lock
+					case 145: //Scroll Lock
+						if (AscBrowser.isOpera) {
+							nRetValue = keydownresult_PreventAll;
+						}
+						break;
+
+					case 32: // Spacebar
+						if (oThis.getCellEditMode()) {
+							break;
+						}
+						const bIsSelectColumns = oGlobalEvent.CtrlKey;
+						if (bIsSelectColumns && bIsSelect && bIsMacOs) {
+							break;
+						}
+						// Отключим стандартную обработку браузера нажатия
+						// Ctrl+Shift+Spacebar, Ctrl+Spacebar, Shift+Spacebar
+						nRetValue = keydownresult_PreventAll;
+						if (bIsSelectColumns) {
+							oThis.handlers.trigger("selectColumnsByRange");
+						}
+						if (bIsSelect) {
+							oThis.handlers.trigger("selectRowsByRange");
+						}
+						break;
+					case 33: // PageUp
+						nDeltaRow = -0.5;
+						bIsNeedCheckActiveCellChanged = true;
+						nRetValue = keydownresult_PreventAll;
+						break;
+
+					case 34: // PageDown
+						nDeltaRow = +0.5;
+						bIsNeedCheckActiveCellChanged = true;
+						nRetValue = keydownresult_PreventAll;
+						break;
+
+					case 37: // left
+						nDeltaColumn = oGlobalEvent.CtrlKey ? -1.5 : -1;  // Движение стрелками (влево-вправо, вверх-вниз)
+						bIsNeedCheckActiveCellChanged = true;
+						nRetValue = keydownresult_PreventAll;                          // Отключим стандартную обработку браузера нажатия left
+						break;
+
+					case 38: // up
+						if (bCanEdit && !oThis.getCellEditMode() && !bSelectionDialogMode && oGlobalEvent.IsAlt() && oThis.handlers.trigger("onDataValidation")) {
+							break;
+						}
+						nDeltaRow = oGlobalEvent.CtrlKey ? -1.5 : -1;  // Движение стрелками (влево-вправо, вверх-вниз)
+						bIsNeedCheckActiveCellChanged = true;
+						nRetValue = keydownresult_PreventAll;                           // Отключим стандартную обработку браузера нажатия up
+						break;
+
+					case 39: // right
+						nDeltaColumn = oGlobalEvent.CtrlKey ? +1.5 : +1;  // Движение стрелками (влево-вправо, вверх-вниз)
+						bIsNeedCheckActiveCellChanged = true;
+						nRetValue = keydownresult_PreventAll;                           // Отключим стандартную обработку браузера нажатия right
+						break;
+
+					case 40: // down
+						nRetValue = keydownresult_PreventAll;                           // Отключим стандартную обработку браузера нажатия down
+						// Обработка Alt + down
+						if (bCanEdit && !oThis.getCellEditMode() && !bSelectionDialogMode && oGlobalEvent.IsAlt()) {
+							if (oThis.handlers.trigger("onShowFilterOptionsActiveCell")) {
+								break;
+							}
+							if (oThis.handlers.trigger("onDataValidation")) {
+								break;
+							}
+							oThis.handlers.trigger("showAutoComplete");
+							break;
+						}
+						nDeltaRow = oGlobalEvent.CtrlKey ? +1.5 : +1;  // Движение стрелками (влево-вправо, вверх-вниз)
+						bIsNeedCheckActiveCellChanged = true;
+						break;
+
+					case 36: // home
+						nRetValue = keydownresult_PreventAll;                           // Отключим стандартную обработку браузера нажатия home
+						if (bIsFormulaEditMode) {
+							break;
+						}
+						nDeltaColumn = -2.5;
+						if (oGlobalEvent.CtrlKey) {
+							nDeltaRow = -2.5;
+						}
+						bIsNeedCheckActiveCellChanged = true;
+						break;
+
+					case 35: // end
+						nRetValue = keydownresult_PreventAll;                           // Отключим стандартную обработку браузера нажатия end
+						if (bIsFormulaEditMode) {
+							break;
+						}
+						nDeltaColumn = 2.5;
+						if (oGlobalEvent.CtrlKey) {
+							nDeltaRow = 2.5;
+						}
+						bIsNeedCheckActiveCellChanged = true;
+						break;
+					case 93:
+						if (!oGlobalEvent.MacCmdKey) {
+							nRetValue = keydownresult_PreventAll;
+							this.handlers.trigger('onContextMenu', oGlobalEvent);
+						}
+						break;
+					default:
+						nRetValue = keydownresult_PreventNothing;
+						break;
+				}
+			}
+
+			let oActiveCellBefore;
+			if (bIsNeedCheckActiveCellChanged) {
+				oActiveCellBefore = oThis.handlers.trigger("getActiveCell");
+			}
+			const CheckLastTab = function () {
+				if (bIsNeedCheckActiveCellChanged) {
+					const oActiveCellAfter = oThis.handlers.trigger("getActiveCell");
+					if (!oActiveCellBefore || !oActiveCellAfter || !oActiveCellAfter.isEqual(oActiveCellBefore)) {
+						oThis.lastTab = null;
 					}
 				}
 			};
 
-			if ((dc !== 0 || dr !== 0) && false === t.handlers.trigger("isGlobalLockEditCell")) {
-				if (isChangeVisibleAreaMode) {
-				t.handlers.trigger("changeVisibleArea", !shiftKey, dc, dr, false, function (d) {
-						const wb = window["Asc"]["editor"].wb;
-						if (t.targetInfo) {
-							wb._onUpdateWorksheet(t.targetInfo.coordX, t.targetInfo.coordY, false);
+			if ((nDeltaColumn !== 0 || nDeltaRow !== 0) && false === oThis.handlers.trigger("isGlobalLockEditCell")) {
+				const bIsChangeVisibleAreaMode = this.view.Api.isEditVisibleAreaOleEditor;
+				if (bIsChangeVisibleAreaMode) {
+					oThis.handlers.trigger("changeVisibleArea", !bIsSelect, nDeltaColumn, nDeltaRow, false, function (d) {
+						const oWb = window["Asc"]["editor"].wb;
+						if (oThis.targetInfo) {
+							oWb._onUpdateWorksheet(oThis.targetInfo.coordX, oThis.targetInfo.coordY, false);
 						}
-						t.scroll(d);
-						const oOleSize = wb.getOleSize();
+						oThis.scroll(d);
+						const oOleSize = oWb.getOleSize();
 						oOleSize.addPointToLocalHistory();
-						_checkLastTab();
+						CheckLastTab();
 					}, true);
-				} else if (selectionActivePointChanged) { // Проверка на движение в выделенной области
-					t.handlers.trigger("selectionActivePointChanged", dc, dr, function (d) {
-						t.scroll(d);
-						_checkLastTab();
+				} else if (bSelectionActivePointChanged) { // Проверка на движение в выделенной области
+					oThis.handlers.trigger("selectionActivePointChanged", nDeltaColumn, nDeltaRow, function (d) {
+						oThis.scroll(d);
+						CheckLastTab();
 					});
 				} else {
-					t.handlers.trigger("changeSelection", /*isStartPoint*/!shiftKey, dc, dr, /*isCoord*/false, false,
+					oThis.handlers.trigger("changeSelection", /*isStartPoint*/!bIsSelect, nDeltaColumn, nDeltaRow, /*isCoord*/false, false,
 						function (d) {
-							var wb = window["Asc"]["editor"].wb;
-							if (t.targetInfo) {
-								wb._onUpdateWorksheet(t.targetInfo.coordX, t.targetInfo.coordY, false);
+							const oWb = window["Asc"]["editor"].wb;
+							if (oThis.targetInfo) {
+								oWb._onUpdateWorksheet(oThis.targetInfo.coordX, oThis.targetInfo.coordY, false);
 							}
-							t.scroll(d);
-							_checkLastTab();
+							oThis.scroll(d);
+							CheckLastTab();
 						});
 				}
 			}
 
-			return result;
+			if (nRetValue & keydownresult_PreventKeyPress) {
+				oThis._setSkipKeyPress(true);
+			}
+			return nRetValue;
 		};
 
 		/** @param event {KeyboardEvent} */

@@ -589,6 +589,47 @@ var c_oAscPopUpSelectorType = {
     dependent: 2
   };
 
+	var c_oAscSpreadsheetShortcutType = {
+		RefreshAllPivots         : 1,
+		RefreshSelectedPivots    : 2,
+		EditSelectAll            : 3,
+		RecalculateAll           : 4,
+		RecalculateActiveSheet   : 5,
+		CellInsertDate           : 6,
+		CellInsertTime           : 7,
+		CellInsertSumFunction    : 8,
+		NextWorksheet            : 9,
+		PreviousWorksheet        : 10,
+		Strikeout                : 11,
+		Italic                   : 12,
+		Bold                     : 13,
+		Underline                : 14,
+		EditUndo                 : 15,
+		EditRedo                 : 16,
+		SpeechWorker             : 17,
+		Print                    : 18,
+		EditOpenCellEditor       : 19,
+		CellAddSeparator         : 20,
+		CellNumberFormat         : 21,
+		CellTimeFormat           : 22,
+		CellDateFormat           : 23,
+		CellCurrencyFormat       : 24,
+		CellPercentFormat        : 25,
+		CellExponentialFormat    : 26,
+		CellGeneralFormat        : 27,
+		ShowFormulas             : 28,
+		DrawingIncreaseFontSize  : 29,
+		DrawingDecreaseFontSize  : 31,
+		DrawingSubscript         : 32,
+		DrawingSuperscript       : 33,
+		DrawingCenterPara        : 34,
+		DrawingJustifyPara       : 35,
+		DrawingLeftPara          : 36,
+		DrawingRightPara         : 37,
+		CellEditorSwitchReference: 38,
+		DrawingEnDash            : 39
+	};
+
   //----------------------------------------------------------export----------------------------------------------------
   window['AscCommonExcel'] = window['AscCommonExcel'] || {};
   window['AscCommonExcel'].c_oAscDrawDepOptions = c_oAscDrawDepOptions;
@@ -998,5 +1039,45 @@ var c_oAscPopUpSelectorType = {
   prot['precedent'] = prot.precedent;
   prot['dependent'] = prot.dependent;
 
+	window['Asc']['c_oAscSpreadsheetShortcutType'] = window['Asc'].c_oAscSpreadsheetShortcutType = c_oAscSpreadsheetShortcutType;
+	prot = c_oAscSpreadsheetShortcutType;
+	prot["RefreshAllPivots"] = prot.RefreshAllPivots;
+	prot["RefreshSelectedPivots"] = prot.RefreshSelectedPivots;
+	prot["EditSelectAll"] = prot.EditSelectAll;
+	prot["RecalculateAll"] = prot.RecalculateAll;
+	prot["RecalculateActiveSheet"] = prot.RecalculateActiveSheet;
+	prot["CellInsertDate"] = prot.CellInsertDate;
+	prot["CellInsertTime"] = prot.CellInsertTime;
+	prot["CellInsertSumFunction"] = prot.CellInsertSumFunction;
+	prot["NextWorksheet"] = prot.NextWorksheet;
+	prot["PreviousWorksheet"] = prot.PreviousWorksheet;
+	prot["Strikeout"] = prot.Strikeout;
+	prot["Italic"] = prot.Italic;
+	prot["Bold"] = prot.Bold;
+	prot["Underline"] = prot.Underline;
+	prot["EditUndo"] = prot.EditUndo;
+	prot["EditRedo"] = prot.EditRedo;
+	prot["SpeechWorker"] = prot.SpeechWorker;
+	prot["Print"] = prot.Print;
+	prot["EditOpenCellEditor"] = prot.EditOpenCellEditor;
+	prot["CellAddSeparator"] = prot.CellAddSeparator;
+	prot["CellNumberFormat"] = prot.CellNumberFormat;
+	prot["CellTimeFormat"] = prot.CellTimeFormat;
+	prot["CellDateFormat"] = prot.CellDateFormat;
+	prot["CellCurrencyFormat"] = prot.CellCurrencyFormat;
+	prot["CellPercentFormat"] = prot.CellPercentFormat;
+	prot["CellExponentialFormat"] = prot.CellExponentialFormat;
+	prot["CellGeneralFormat"] = prot.CellGeneralFormat;
+	prot["ShowFormulas"] = prot.ShowFormulas;
+	prot["DrawingIncreaseFontSize"] = prot.DrawingIncreaseFontSize;
+	prot["DrawingDecreaseFontSize"] = prot.DrawingDecreaseFontSize;
+	prot["DrawingSubscript"] = prot.DrawingSubscript;
+	prot["DrawingSuperscript"] = prot.DrawingSuperscript;
+	prot["DrawingCenterPara"] = prot.DrawingCenterPara;
+	prot["DrawingJustifyPara"] = prot.DrawingJustifyPara;
+	prot["DrawingLeftPara"] = prot.DrawingLeftPara;
+	prot["DrawingRightPara"] = prot.DrawingRightPara;
+	prot["DrawingEnDash"] = prot.DrawingEnDash;
+	prot["CellEditorSwitchReference"] = prot.CellEditorSwitchReference;
 
 })(window);

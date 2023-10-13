@@ -2414,383 +2414,348 @@
 
 	/**
 	 *
-	 * @param event {KeyboardEvent}
-	 * @param isInput {boolean}
-	 * @returns {boolean}
+	 * @param oEvent {KeyboardEvent}
+	 * @param bIsInput {boolean}
+	 * @returns {number}
 	 */
-	CellEditor.prototype._onWindowKeyDown = function (event, isInput) {
-		var t = this, kind = undefined, hieroglyph = false;
-		var ctrlKey = !AscCommon.getAltGr(event) && (event.metaKey || event.ctrlKey);
-		const bIsMacOs = AscCommon.AscBrowser.isMacOs;
-		const bIsWordRemove = bIsMacOs ? event.altKey : ctrlKey;
+	CellEditor.prototype._onWindowKeyDown = function (oEvent, bIsInput) {
+		const oThis = this;
+		const oApi = window["Asc"]["editor"];
+		let nKind = undefined;
+		let bHieroglyph = false;
+		let nRetValue = keydownresult_PreventNothing;
 
-		if (this.handlers.trigger('getWizard') || !t.isOpened || (!isInput && !t.enableKeyEvents && event.emulated !== true)) {
-			return true;
+		if (this.handlers.trigger('getWizard') || !oThis.isOpened || (!bIsInput && !oThis.enableKeyEvents && oEvent.emulated !== true)) {
+			return nRetValue;
 		}
 
 		// для исправления Bug 15902 - Alt забирает фокус из приложения
-		if (event.which === 18) {
-			t.lastKeyCode = event.which;
+		if (oEvent.which === 18) {
+			oThis.lastKeyCode = oEvent.which;
 		}
 
-		t._setSkipKeyPress(true);
-		t.skipTLUpdate = false;
+		oThis._setSkipKeyPress(false);
+		oThis.skipTLUpdate = true;
 
 		// определение ввода иероглифов
-		if (t.isTopLineActive && AscCommonExcel.getFragmentsLength(t.options.fragments) !== t.input.value.length) {
-			hieroglyph = true;
+		if (oThis.isTopLineActive && AscCommonExcel.getFragmentsLength(oThis.options.fragments) !== oThis.input.value.length) {
+			bHieroglyph = true;
 		}
 
-		let api = window["Asc"]["editor"];
-		switch (event.which) {
-
-			case 27:  // "esc"
-				if (t.handlers.trigger("isGlobalLockEditCell") || this.getMenuEditorMode()) {
-					return false;
+		nRetValue = keydownresult_PreventKeyPress;
+		AscCommon.check_KeyboardEvent(oEvent);
+		const oGlobalEvent = AscCommon.global_keyboardEvent;
+		const nShortcutAction = oApi.getShortcut(oGlobalEvent);
+		switch (nShortcutAction) {
+			case Asc.c_oAscSpreadsheetShortcutType.Strikeout: {
+				if (bHieroglyph) {
+					oThis._syncEditors();
 				}
-				t.close();
-				event.stopPropagation();
-				event.preventDefault();
-				return false;
+				oThis.setTextStyle("s", null);
+				nRetValue = keydownresult_PreventAll;
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.Bold: {
+				if (bHieroglyph) {
+					oThis._syncEditors();
+				}
+				oThis.setTextStyle("b", null);
+				nRetValue = keydownresult_PreventAll;
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.Italic: {
+				if (bHieroglyph) {
+					oThis._syncEditors();
+				}
+				oThis.setTextStyle("i", null);
+				nRetValue = keydownresult_PreventAll;
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.Underline: {
+				if (bHieroglyph) {
+					oThis._syncEditors();
+				}
+				oThis.setTextStyle("u", null);
+				nRetValue = keydownresult_PreventAll;
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.EditSelectAll: {
+				if (!oThis.hasFocus) {
+					oThis.setFocus(true);
+				}
+				if (!oThis.isTopLineActive) {
+					nRetValue = keydownresult_PreventAll;
+				}
+				oThis._moveCursor(kBeginOfText);
+				oThis._selectChars(kEndOfText);
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.EditUndo: {
+				oThis.undo();
+				nRetValue = keydownresult_PreventAll;
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.EditRedo: {
+				oThis.redo();
+				nRetValue = keydownresult_PreventAll;
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.CellInsertTime: {
+				const oDate = new Asc.cDate();
+				oThis._addChars(oDate.getTimeString(oApi));
+				nRetValue = keydownresult_PreventAll;
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.CellInsertDate: {
+				const oDate = new Asc.cDate();
+				oThis._addChars(oDate.getDateString(oApi));
+				nRetValue = keydownresult_PreventAll;
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.Print: {
+				nRetValue = keydownresult_PreventAll;
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.EditOpenCellEditor: {
+				if (AscBrowser.isOpera) {
+					nRetValue = keydownresult_PreventAll;
+				}
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.CellAddSeparator: {
+				oThis._addChars(oApi.asc_getDecimalSeparator());
+				nRetValue = keydownresult_PreventAll;
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.CellEditorSwitchReference: {
+				const oRes = this._findRangeUnderCursor();
+				if (oRes.range) {
+					oRes.range.switchReference();
+					// ToDo add change ref to other sheet
+					this.changeCellRange(oRes.range);
+				}
 
-			case 13:  // "enter"
-				if (window['IS_NATIVE_EDITOR']) {
-					t._addNewLine();
+				nRetValue = keydownresult_PreventAll;
+				break;
+			}
+			default: {
+				const oCustom = oApi.getCustomShortcutAction(nShortcutAction);
+				if (oCustom) {
+					if (AscCommon.c_oAscCustomShortcutType.Symbol === oCustom.Type) {
+						oApi["asc_insertSymbol"](oCustom.Font, oCustom.CharCode);
+					}
 				} else {
-					if (!(event.altKey && event.shiftKey)) {
-						if (event.altKey) {
-							t._addNewLine();
-						} else if(this.getMenuEditorMode()) {
-							t._addNewLine();
-						} else {
-							if (false === t.handlers.trigger("isGlobalLockEditCell")) {
-								if (t.textFlags) {
-									t.textFlags.ctrlKey = event.ctrlKey;
-									t.textFlags.shiftKey = event.shiftKey;
+					nRetValue = keydownresult_PreventNothing;
+				}
+				break;
+			}
+		}
+
+		if (!nShortcutAction) {
+			const bIsMacOs = AscCommon.AscBrowser.isMacOs;
+			const bIsWordRemove = bIsMacOs ? oGlobalEvent.IsAlt() : oGlobalEvent.CtrlKey;
+			switch (oGlobalEvent.GetKeyCode()) {
+				case 27: { // "esc"
+
+					if (oThis.handlers.trigger("isGlobalLockEditCell") || this.getMenuEditorMode()) {
+						break;
+					}
+					oThis.close();
+					nRetValue = keydownresult_PreventAll;
+					break;
+				}
+
+				case 13: {  // "enter"
+					if (window['IS_NATIVE_EDITOR']) {
+						oThis._addNewLine();
+					} else {
+						if (!(oGlobalEvent.IsAlt() && oGlobalEvent.IsShift())) {
+							if (oGlobalEvent.IsAlt()) {
+								oThis._addNewLine();
+							} else if (this.getMenuEditorMode()) {
+								oThis._addNewLine();
+							} else {
+								if (false === oThis.handlers.trigger("isGlobalLockEditCell")) {
+									if (oThis.textFlags) {
+										oThis.textFlags.ctrlKey = oEvent.ctrlKey;
+										oThis.textFlags.shiftKey = oGlobalEvent.IsShift();
+									}
+									oThis._tryCloseEditor(oEvent);
 								}
-								t._tryCloseEditor(event);
 							}
 						}
 					}
-				}
-				event.stopPropagation();
-				event.preventDefault();
-				return false;
-
-			case 9: // tab
-				if (hieroglyph) {
-					t._syncEditors();
-				}
-
-				if (false === t.handlers.trigger("isGlobalLockEditCell")) {
-					t._tryCloseEditor(event);
-				}
-				return false;
-
-			case 8:   // "backspace"
-				if (!this.enableKeyEvents) {
+					nRetValue = keydownresult_PreventAll;
 					break;
 				}
-
-				if (!window['IS_NATIVE_EDITOR']) {
-					// Отключим стандартную обработку браузера нажатия backspace
-					event.stopPropagation();
-					event.preventDefault();
-					if (hieroglyph) {
-						t._syncEditors();
+				case 9: { // tab
+					if (bHieroglyph) {
+						oThis._syncEditors();
 					}
-				}
-				t._removeChars(bIsWordRemove ? kPrevWord : kPrevChar);
-				return false;
 
-			case 32:  // "space"
-
-				t._addChars(String.fromCharCode(32));
-				event.stopPropagation();
-				event.preventDefault();
-
-				t._setSkipKeyPress(false);
-				return false;
-
-			case 35:  // "end"
-				if (!this.enableKeyEvents) {
-					break;
-				}
-
-				// Отключим стандартную обработку браузера нажатия end
-				event.stopPropagation();
-				event.preventDefault();
-				if (!t.hasFocus) {
-					break;
-				}
-				if (hieroglyph) {
-					t._syncEditors();
-				}
-				kind = ctrlKey ? kEndOfText : kEndOfLine;
-				event.shiftKey ? t._selectChars(kind) : t._moveCursor(kind);
-				return false;
-
-			case 36:  // "home"
-				if (!this.enableKeyEvents) {
-					break;
-				}
-
-				// Отключим стандартную обработку браузера нажатия home
-				event.stopPropagation();
-				event.preventDefault();
-				if (!t.hasFocus) {
-					break;
-				}
-				if (hieroglyph) {
-					t._syncEditors();
-				}
-				kind = ctrlKey ? kBeginOfText : kBeginOfLine;
-				event.shiftKey ? t._selectChars(kind) : t._moveCursor(kind);
-				return false;
-
-			case 37:  // "left"
-				if (!this.enableKeyEvents) {
-					this._delayedUpdateCursorByTopLine();
-					break;
-				}
-
-				event.stopPropagation();
-				event.preventDefault();
-				if (!t.hasFocus) {
-					break;
-				}
-				if (hieroglyph) {
-					t._syncEditors();
-				}
-				if (bIsMacOs && ctrlKey)
-				{
-					event.shiftKey ? t._selectChars(kBeginOfLine) : t._moveCursor(kBeginOfLine);
-				}
-				else
-				{
-					const bWord = bIsMacOs ? event.altKey : ctrlKey;
-					kind = bWord ? kPrevWord : kPrevChar;
-					event.shiftKey ? t._selectChars(kind) : t._moveCursor(kind);
-				}
-
-				return false;
-
-			case 38:  // "up"
-				if (!this.enableKeyEvents) {
-					this._delayedUpdateCursorByTopLine();
-					break;
-				}
-
-				event.stopPropagation();
-				event.preventDefault();
-				if (!t.hasFocus) {
-					break;
-				}
-				if (hieroglyph) {
-					t._syncEditors();
-				}
-				event.shiftKey ? t._selectChars(kPrevLine) : t._moveCursor(kPrevLine);
-				return false;
-
-			case 39:  // "right"
-				if (!this.enableKeyEvents) {
-					this._delayedUpdateCursorByTopLine();
-					break;
-				}
-
-				event.stopPropagation();
-				event.preventDefault();
-				if (!t.hasFocus) {
-					break;
-				}
-				if (hieroglyph) {
-					t._syncEditors();
-				}
-				if (bIsMacOs && ctrlKey)
-				{
-					event.shiftKey ? t._selectChars(kEndOfLine) : t._moveCursor(kEndOfLine);
-				}
-				else
-				{
-					const bWord = bIsMacOs ? event.altKey : ctrlKey;
-					kind = bWord ? kNextWord : kNextChar;
-					event.shiftKey ? t._selectChars(kind) : t._moveCursor(kind);
-				}
-				return false;
-
-			case 40:  // "down"
-				if (!this.enableKeyEvents) {
-					this._delayedUpdateCursorByTopLine();
-					break;
-				}
-
-				event.stopPropagation();
-				event.preventDefault();
-				if (!t.hasFocus) {
-					break;
-				}
-				if (hieroglyph) {
-					t._syncEditors();
-				}
-				event.shiftKey ? t._selectChars(kNextLine) : t._moveCursor(kNextLine);
-				return false;
-
-			case 46:  // "del"
-				if (!this.enableKeyEvents || event.shiftKey) {
-					break;
-				}
-
-				if (hieroglyph) {
-					t._syncEditors();
-				}
-				event.stopPropagation();
-				event.preventDefault();
-				t._removeChars(bIsWordRemove ? kNextWord : kNextChar);
-				return true;
-
-			case 53: // 5
-				if (ctrlKey) {
-					// Отключим стандартную обработку браузера нажатия ctrl + 5
-					event.stopPropagation();
-					event.preventDefault();
-					if (hieroglyph) {
-						t._syncEditors();
+					if (false === oThis.handlers.trigger("isGlobalLockEditCell")) {
+						oThis._tryCloseEditor(oEvent);
 					}
-					t.setTextStyle("s", null);
-					return true;
+					break;
 				}
-				break;
-
-			case 65: // A
-				if (ctrlKey) {
-					if (!t.hasFocus) {
-						t.setFocus(true);
+				case 8: {  // "backspace"
+					if (!this.enableKeyEvents) {
+						break;
 					}
-					// Отключим стандартную обработку браузера нажатия ctrl + a
-					if (!t.isTopLineActive) {
-						event.stopPropagation();
-						event.preventDefault();
+
+					if (!window['IS_NATIVE_EDITOR']) {
+						// Отключим стандартную обработку браузера нажатия backspace
+						nRetValue = keydownresult_PreventAll;
+						if (bHieroglyph) {
+							oThis._syncEditors();
+						}
 					}
-					t._moveCursor(kBeginOfText);
-					t._selectChars(kEndOfText);
-					return true;
+					oThis._removeChars(bIsWordRemove ? kPrevWord : kPrevChar);
+					break;
 				}
-				break;
-
-			case 66: // B
-				if (ctrlKey) {
-					// Отключим стандартную обработку браузера нажатия ctrl + b
-					event.stopPropagation();
-					event.preventDefault();
-					if (hieroglyph) {
-						t._syncEditors();
+				case 35: {  // "end"
+					if (!this.enableKeyEvents) {
+						break;
 					}
-					t.setTextStyle("b", null);
-					return true;
-				}
-				break;
 
-			case 73: // I
-				if (ctrlKey) {
-					// Отключим стандартную обработку браузера нажатия ctrl + i
-					event.stopPropagation();
-					event.preventDefault();
-					if (hieroglyph) {
-						t._syncEditors();
+					// Отключим стандартную обработку браузера нажатия end
+					nRetValue = keydownresult_PreventAll;
+					if (!oThis.hasFocus) {
+						break;
 					}
-					t.setTextStyle("i", null);
-					return true;
-				}
-				break;
-
-			/*case 83: // S
-			 if (ctrlKey) {
-			 if (hieroglyph) {t._syncEditors();}
-
-			 if (false === t.handlers.trigger("isGlobalLockEditCell"))
-			 t._tryCloseEditor(event);
-			 return false;
-			 }
-			 break;*/
-
-			case 85: // U
-				if (ctrlKey) {
-					// Отключим стандартную обработку браузера нажатия ctrl + u
-					event.stopPropagation();
-					event.preventDefault();
-					if (hieroglyph) {
-						t._syncEditors();
+					if (bHieroglyph) {
+						oThis._syncEditors();
 					}
-					t.setTextStyle("u", null);
-					return true;
+					nKind = oGlobalEvent.CtrlKey ? kEndOfText : kEndOfLine;
+					oGlobalEvent.IsShift() ? oThis._selectChars(nKind) : oThis._moveCursor(nKind);
+					break;
 				}
-				break;
+				case 36: { // "home"
+					if (!this.enableKeyEvents) {
+						break;
+					}
 
-			case 144://Num Lock
-			case 145://Scroll Lock
-				if (AscBrowser.isOpera) {
-					event.stopPropagation();
-					event.preventDefault();
+					// Отключим стандартную обработку браузера нажатия home
+					nRetValue = keydownresult_PreventAll;
+					if (!oThis.hasFocus) {
+						break;
+					}
+					if (bHieroglyph) {
+						oThis._syncEditors();
+					}
+					nKind = oGlobalEvent.CtrlKey ? kBeginOfText : kBeginOfLine;
+					oGlobalEvent.IsShift() ? oThis._selectChars(nKind) : oThis._moveCursor(nKind);
+					break;
 				}
-				return false;
+				case 37: { // "left"
+					if (!this.enableKeyEvents) {
+						this._delayedUpdateCursorByTopLine();
+						break;
+					}
 
-			case 80: // print           Ctrl + p
-				if (ctrlKey) {
-					event.stopPropagation();
-					event.preventDefault();
-					return false;
+					nRetValue = keydownresult_PreventAll;
+					if (!oThis.hasFocus) {
+						break;
+					}
+					if (bHieroglyph) {
+						oThis._syncEditors();
+					}
+					if (bIsMacOs && oGlobalEvent.CtrlKey) {
+						oGlobalEvent.IsShift() ? oThis._selectChars(kBeginOfLine) : oThis._moveCursor(kBeginOfLine);
+					} else {
+						const bWord = bIsMacOs ? oGlobalEvent.IsAlt() : oGlobalEvent.CtrlKey;
+						nKind = bWord ? kPrevWord : kPrevChar;
+						oGlobalEvent.IsShift() ? oThis._selectChars(nKind) : oThis._moveCursor(nKind);
+					}
+
+					break;
 				}
-				break;
-			case 89:  // ctrl + y
-			case 90:  // ctrl + z
-				if (ctrlKey) {
-					event.stopPropagation();
-					event.preventDefault();
-					event.which === 90 ? t.undo() : t.redo();
-					return false;
-				}
-				break;
+				case 38: {// "up"
+					if (!this.enableKeyEvents) {
+						this._delayedUpdateCursorByTopLine();
+						break;
+					}
 
-			case 110: //NumpadDecimal
-				t._addChars(api.asc_getDecimalSeparator());
-				event.stopPropagation();
-				event.preventDefault();
-				return false;
-
-			case 113: // F2
-				if (AscBrowser.isOpera) {
-					event.stopPropagation();
-					event.preventDefault();
-				}
-				return false;
-
-			case 115: // F4
-				var res = this._findRangeUnderCursor();
-				if (res.range) {
-					res.range.switchReference();
-					// ToDo add change ref to other sheet
-					this.changeCellRange(res.range);
+					nRetValue = keydownresult_PreventAll;
+					if (!oThis.hasFocus) {
+						break;
+					}
+					if (bHieroglyph) {
+						oThis._syncEditors();
+					}
+					oGlobalEvent.IsShift() ? oThis._selectChars(kPrevLine) : oThis._moveCursor(kPrevLine);
+					break;
 				}
 
-				event.stopPropagation();
-				event.preventDefault();
-				return false;
+				case 39: {// "right"
+					if (!this.enableKeyEvents) {
+						this._delayedUpdateCursorByTopLine();
+						break;
+					}
 
-			case 59:
-			case 186: // ctrl + (shift) + ;
-				if (ctrlKey) {
-					var oDate = new Asc.cDate();
-					t._addChars(event.shiftKey ? oDate.getTimeString(api) : oDate.getDateString(api));
-					event.stopPropagation();
-					event.preventDefault();
+					nRetValue = keydownresult_PreventAll;
+					if (!oThis.hasFocus) {
+						break;
+					}
+					if (bHieroglyph) {
+						oThis._syncEditors();
+					}
+					if (bIsMacOs && oGlobalEvent.CtrlKey) {
+						oGlobalEvent.IsShift() ? oThis._selectChars(kEndOfLine) : oThis._moveCursor(kEndOfLine);
+					} else {
+						const bWord = bIsMacOs ? oGlobalEvent.IsAlt() : oGlobalEvent.CtrlKey;
+						nKind = bWord ? kNextWord : kNextChar;
+						oGlobalEvent.IsShift() ? oThis._selectChars(nKind) : oThis._moveCursor(nKind);
+					}
+					break;
 				}
-				t._setSkipKeyPress(false);
-				return false;
+				case 40: { // "down"
+					if (!this.enableKeyEvents) {
+						this._delayedUpdateCursorByTopLine();
+						break;
+					}
+
+					nRetValue = keydownresult_PreventAll;
+					if (!oThis.hasFocus) {
+						break;
+					}
+					if (bHieroglyph) {
+						oThis._syncEditors();
+					}
+					oGlobalEvent.IsShift() ? oThis._selectChars(kNextLine) : oThis._moveCursor(kNextLine);
+					break;
+				}
+				case 46: {// "del"
+					if (!this.enableKeyEvents || oGlobalEvent.IsShift()) {
+						break;
+					}
+
+					if (bHieroglyph) {
+						oThis._syncEditors();
+					}
+					nRetValue = keydownresult_PreventAll;
+					oThis._removeChars(bIsWordRemove ? kNextWord : kNextChar);
+					break;
+				}
+				case 144://Num Lock
+				case 145: {//Scroll Lock
+					if (AscBrowser.isOpera) {
+						nRetValue = keydownresult_PreventAll;
+					}
+					break;
+				}
+				default: {
+					nRetValue = keydownresult_PreventNothing;
+					break;
+				}
+			}
 		}
 
-		t._setSkipKeyPress(false);
-		t.skipTLUpdate = true;
-		return true;
+		if (nRetValue & keydownresult_PreventKeyPress) {
+			oThis._setSkipKeyPress(true);
+			oThis.skipTLUpdate = false;
+		}
+		return nRetValue;
 	};
 
 	/** @param event {KeyboardEvent} */

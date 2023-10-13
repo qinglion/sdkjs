@@ -119,6 +119,7 @@ var keydownflags_PreventKeyPress = 0x0002;
 var keydownresult_PreventNothing  = 0x0000;
 var keydownresult_PreventDefault  = 0x0001;
 var keydownresult_PreventKeyPress = 0x0002;
+var keydownresult_PreventPropagation = 0x0004;
 var keydownresult_PreventAll      = 0xFFFF;
 
 var MEASUREMENT_MAX_MM_VALUE = 1000; // Маскимальное значение в мм, используемое в документе (MS Word) - 55,87 см, или 558,7 мм.
