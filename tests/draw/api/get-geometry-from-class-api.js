@@ -453,13 +453,13 @@
 						// start to draw from ellipse right point
 
 						//TODO Check [MS-VSDX]-220215 2.2.3.2.2.Geometry Path
-						// If the Row_Type element is of type Ellipse or InfiniteLine, it specifies the only segment of the path.
-						// So mb remove move to
 						path.moveTo(wRhR.wR * 2, wRhR.hR);
 						path.arcTo(wRhR.wR, wRhR.hR, 0, 180 * degToC);
 						path.arcTo(wRhR.wR, wRhR.hR, 180 * degToC, 180 * degToC);
-						lastPoint.x = newX;
-						lastPoint.y = newY;
+						// If the Row_Type element is of type Ellipse or InfiniteLine, it specifies the only segment of the path.
+						path.moveTo(lastPoint.x, lastPoint.y);
+						// lastPoint.x = newX;
+						// lastPoint.y = newY;
 						break;
 					}
 					case "ArcTo":
@@ -493,7 +493,7 @@
 				}
 			}
 
-			path.close();
+			// path.close();
 			geometry.AddPath(path);
 		});
 		geometry.setPreset("Any");
