@@ -410,7 +410,6 @@
 					// transform params for ellipticalArcTo
 					let chordVector = {x: newX - lastPoint.x, y: newY - lastPoint.y };
 					let chordVectorAngle = Math.atan2(chordVector.y, chordVector.x);
-					chordVectorAngle = Math.abs(chordVectorAngle);
 					let gapVectorAngle = chordVectorAngle - Math.PI / 2; // perpendicular clock wise
 					let gapVector = {x: newA * Math.cos(gapVectorAngle), y: newA * Math.sin(gapVectorAngle)};
 					let chordCenter = {x: chordVector.x / 2 + lastPoint.x, y: chordVector.y / 2 + lastPoint.y};
