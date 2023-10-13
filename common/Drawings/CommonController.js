@@ -5730,10 +5730,10 @@
 								if (this.getTargetDocContent(false, false)) {
 									if (AscCommon.c_oAscCustomShortcutType.Symbol === oCustom.Type) {
 										oApi["asc_insertSymbol"](oCustom.Font, oCustom.CharCode);
-										bRetValue = true;
 									}
 								}
 							}
+							bRetValue = true;
 							break;
 						}
 					}
