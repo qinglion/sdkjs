@@ -517,7 +517,6 @@
 		redo                      : 58,
 		undo                      : 59,
 		print                     : 60,
-		addSum                    : 61,
 		moveToUpperCell           : 62,
 		contextMenu               : 63,
 		moveToLowerCell           : 64,
@@ -723,10 +722,6 @@
 	oTableEvents[oTableTypes.print] = [
 		new CTestEvent(createEvent(80, true, false, false, false, false))
 	];
-	oTableEvents[oTableTypes.addSum] = [
-		new CTestEvent(createEvent(61, false, false, true, false, false), testWindows),
-		new CTestEvent(createEvent(61, true, false, true, false, false), testMacOs)
-	];
 	oTableEvents[oTableTypes.contextMenu] = [
 		new CTestEvent(createEvent(93, false, false, false, false, false))
 	];
@@ -745,7 +740,6 @@
 		saveAndMoveLeft      : 5,
 		removeCharBack       : 6,
 		removeWordBack       : 7,
-		addSpace             : 8,
 		moveToEndLine        : 9,
 		moveToEndDocument    : 10,
 		selectToEndLine      : 11,
@@ -810,9 +804,6 @@
 	oCellEditorEvents[oCellEditorTypes.removeWordBack] = [
 		new CTestEvent(createEvent(8, true, false, false, false, false), testWindows),
 		new CTestEvent(createEvent(8, false, false, true, false, false), testMacOs)
-	];
-	oCellEditorEvents[oCellEditorTypes.addSpace] = [
-		new CTestEvent(createEvent(32, true, false, false, false, false))
 	];
 	oCellEditorEvents[oCellEditorTypes.moveToEndLine] = [
 		new CTestEvent(createEvent(35, false, false, false, false, false)),

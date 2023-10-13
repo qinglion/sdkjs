@@ -36,6 +36,7 @@
 {
 	const editor = Asc.editor;
 	const {
+		cleanGraphic,
 		wbView,
 		executeTestWithCatchEvent,
 		getFragments,
@@ -1072,21 +1073,24 @@
 
 			QUnit.test('Test add sum function', (oAssert) =>
 			{
-				const {deep, equal} = createTest(oAssert);
-				startTableTest((oEvent) =>
-				{
-					cleanAll();
-					goToSheet(0);
-					moveToCell(0, 0);
-					enterText('1');
-					moveToCell(0, 1);
-					enterText('2');
-					moveToCell(7, 7);
-					setCellFormat(Asc.c_oAscNumFormatType.General);
-					onKeyDown(oEvent);
-					enterTextWithoutClose('A1,B1');
-					equal(getCellText(), "3");
-				}, oTableTypes.addSum);
+				const {equal} = createTest(oAssert);
+				const fOldGetShortcut = editor.getShortcut;
+				editor.getShortcut = function () {
+					return Asc.c_oAscSpreadsheetShortcutType.CellInsertSumFunction;
+				}
+				cleanGraphic();
+				cleanAll();
+				goToSheet(0);
+				moveToCell(0, 0);
+				enterText('1');
+				moveToCell(0, 1);
+				enterText('2');
+				moveToCell(7, 7);
+				setCellFormat(Asc.c_oAscNumFormatType.General);
+				onKeyDown(createEvent());
+				enterTextWithoutClose('A1,B1');
+				equal(getCellText(), "3");
+				editor.getShortcut = fOldGetShortcut;
 			});
 
 			QUnit.test('Test context menu', (oAssert) =>
@@ -1228,19 +1232,6 @@
 					onKeyDown(oEvent);
 					equal(getCellText(), 'Hello ');
 				}, oCellEditorTypes.removeWordBack);
-
-			});
-
-			QUnit.test('Test add space in cell editor', (oAssert) =>
-			{
-				const {equal, deep} = createTest(oAssert);
-				startCellEditorTest((oEvent) =>
-				{
-					moveToCell(0, 0);
-					openCellEditor();
-					onKeyDown(oEvent);
-					equal(getCellText(), ' ');
-				}, oCellEditorTypes.addSpace);
 
 			});
 

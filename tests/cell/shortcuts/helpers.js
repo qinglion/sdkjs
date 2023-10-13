@@ -35,6 +35,9 @@
 var AscTestShortcut = AscTestShortcut || {};
 (function (window)
 {
+	AscCommon.calculateCanvasSize = function () {
+		
+	}
 	window.AscFonts = AscFonts || {};
 	window.setTimeout = function (callback)
 	{
