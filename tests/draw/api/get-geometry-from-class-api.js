@@ -251,6 +251,13 @@
 		// The geometry of a shape is specified by a collection of paths.
 		// Each Geometry (Section_Type) element specifies a path.
 		let geometrySections = findSections(shape.elements, "n", "Geometry");
+
+		// DEBUG
+		// let filterPinX = 7.625;
+		// let shapePinXОbj = shape.elements.find(function (el) {return el.n === "PinX";});
+		// let shapePinXValue = Number(shapePinXОbj.v);
+		// if (shapePinXValue != filterPinX) return geometry;
+
 		geometrySections.forEach(function (geometrySection) {
 			// see [MS-VSDX]-220215 2.2.3.2.2.Geometry Path
 
@@ -310,7 +317,7 @@
 			let noFillCell = findCell(geometrySection, "n", "NoFill");
 			let fillValue;
 			if (noFillCell) {
-				fillValue = Number(noFillCell.v) ? undefined : "norm";
+				fillValue = Number(noFillCell.v) === 1 ? "none" : "norm";
 			} else {
 				fillValue = "norm";
 			}
@@ -452,7 +459,7 @@
 						let wRhR = transformEllipseParams(newX, newY, newA, newB, newC, newD);
 						// start to draw from ellipse right point
 
-						//TODO Check [MS-VSDX]-220215 2.2.3.2.2.Geometry Path
+						// Check [MS-VSDX]-220215 2.2.3.2.2.Geometry Path
 						path.moveTo(wRhR.wR * 2, wRhR.hR);
 						path.arcTo(wRhR.wR, wRhR.hR, 0, 180 * degToC);
 						path.arcTo(wRhR.wR, wRhR.hR, 180 * degToC, 180 * degToC);
