@@ -640,32 +640,45 @@
 				this.eventListeners.push(eventInfo);
 
 
-				eventInfo = new AscCommon.CEventListenerInfo(this.input, "keydown", function (event) {
-					if (this.isCellEditMode) {
-						this.handlers.trigger('asc_onInputKeyDown', event);
-						if (!event.defaultPrevented) {
-							this.cellEditor._onWindowKeyDown(event, true);
-						}
-					}
-				}.bind(this), false);
-				this.eventListeners.push(eventInfo);
-			}
+	      eventInfo = new AscCommon.CEventListenerInfo(this.input, "keydown", function (event) {
+		      if (this.isCellEditMode) {
+			      this.handlers.trigger('asc_onInputKeyDown', event);
+			      if (!event.defaultPrevented) {
+				      AscCommon.check_KeyboardEvent(event);
+				      const nRetValue = this.cellEditor._onWindowKeyDown(AscCommon.global_keyboardEvent);
+				      if (nRetValue & keydownresult_PreventPropagation) {
+					      event.stopPropagation();
+				      }
+				      if (nRetValue & keydownresult_PreventDefault) {
+					      event.preventDefault();
+				      }
+			      }
+		      }
+	      }.bind(this), false);
+	      this.eventListeners.push(eventInfo);
+      }
 
-      this.Api.onKeyDown = function (event) {
-				self.onKeyDown(event);
-      };
-      this.Api.onKeyPress = function (event) {
-        self.controller._onWindowKeyPress(event);
-        if (self.isCellEditMode) {
-          self.cellEditor._onWindowKeyPress(event);
-        }
-      };
-      this.Api.onKeyUp = function (event) {
-        self.controller._onWindowKeyUp(event);
-        if (self.isCellEditMode) {
-          self.cellEditor._onWindowKeyUp(event);
-        }
-      };
+		  this.Api.onKeyDown = function (oEvent) {
+			  if (!self.enableKeyEvents && oEvent.emulated !== true && oEvent.keyCode !== 80) {
+				  return;
+			  }
+			  AscCommon.check_KeyboardEvent(oEvent);
+			  const nRetValue = self.onKeyDown(AscCommon.global_keyboardEvent);
+			  if (nRetValue & keydownresult_PreventPropagation) {
+				  oEvent.stopPropagation();
+			  }
+			  if (nRetValue & keydownresult_PreventDefault) {
+				  oEvent.preventDefault();
+			  }
+		  };
+		  this.Api.onKeyPress = function (oEvent) {
+			  AscCommon.check_KeyboardEvent(oEvent);
+			  self.onKeyPress(AscCommon.global_keyboardEvent);
+		  };
+		  this.Api.onKeyUp = function (oEvent) {
+			  AscCommon.check_KeyboardEvent(oEvent);
+			  self.onKeyUp(AscCommon.global_keyboardEvent);
+		  };
       this.Api.Begin_CompositeInput = function () {
         var oWSView = self.getWorksheet();
         if (oWSView && oWSView.isSelectOnShape) {
@@ -1119,23 +1132,34 @@
     return this;
   };
 
-	WorkbookView.prototype.onKeyDown = function (event) {
-		this.Api.sendEvent("asc_onBeforeKeyDown", event);
+	WorkbookView.prototype.onKeyDown = function (oEvent) {
+		this.Api.sendEvent("asc_onBeforeKeyDown", oEvent);
+		let nRetValue = keydownresult_PreventNothing;
 
-		let nRetValue = this.controller._onWindowKeyDown(event);
+		if (!this.getCellEditMode() && !this.controller.isMousePressed && this.enableKeyEvents) {
+			nRetValue |= this.controller.handlers.trigger("graphicObjectWindowKeyDown", oEvent);
+		}
+		if (nRetValue === keydownresult_PreventNothing) {
+			nRetValue |= this.controller._onWindowKeyDown(oEvent);
+			if (this.isCellEditMode) {
+				nRetValue |= this.cellEditor._onWindowKeyDown(oEvent);
+			}
+		}
+		this.Api.sendEvent("asc_onKeyDown", oEvent);
+		return nRetValue;
+	};
+
+	WorkbookView.prototype.onKeyPress = function (oEvent) {
+		this.controller._onWindowKeyPress(oEvent);
 		if (this.isCellEditMode) {
-			nRetValue = nRetValue | this.cellEditor._onWindowKeyDown(event, false);
+			this.cellEditor._onWindowKeyPress(oEvent);
 		}
-
-		if (nRetValue & keydownresult_PreventPropagation)
-		{
-			event.stopPropagation();
+	};
+	WorkbookView.prototype.onKeyUp = function (oEvent) {
+		this.controller._onWindowKeyUp(oEvent);
+		if (this.isCellEditMode) {
+			this.cellEditor._onWindowKeyUp(oEvent);
 		}
-		if (nRetValue & keydownresult_PreventDefault)
-		{
-			event.preventDefault();
-		}
-		this.Api.sendEvent("asc_onKeyDown", event);
 	};
 
 	WorkbookView.prototype.scrollToOleSize = function () {

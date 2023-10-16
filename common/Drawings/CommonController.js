@@ -5575,19 +5575,17 @@
 					const bCanEdit = this.canEdit();
 					const oApi = window["Asc"]["editor"];
 
-					AscCommon.check_KeyboardEvent(oEvent);
-					const oGlobalEvent = AscCommon.global_keyboardEvent;
-					const bIsCtrl = oGlobalEvent.IsCtrl();
-					let bRetValue = false;
+					const bIsCtrl = oEvent.IsCtrl();
+					let nRetValue = keydownresult_PreventNothing;
 
-					const nShortcutAction = oApi.getShortcut(oGlobalEvent);
+					const nShortcutAction = oApi.getShortcut(oEvent);
 					switch (nShortcutAction) {
 						case Asc.c_oAscSpreadsheetShortcutType.Bold: {
 							if (bCanEdit) {
 								const oTextPr = this.getParagraphTextPr();
 								if (isRealObject(oTextPr)) {
 									this.setCellBold(oTextPr.Bold !== true);
-									bRetValue = true;
+									nRetValue = keydownresult_PreventDefault;
 								}
 							}
 							break;
@@ -5597,7 +5595,7 @@
 								const oTextPr = this.getParagraphTextPr();
 								if (isRealObject(oTextPr)) {
 									this.setCellItalic(oTextPr.Italic !== true);
-									bRetValue = true;
+									nRetValue = keydownresult_PreventDefault;
 								}
 							}
 							break;
@@ -5607,7 +5605,7 @@
 								const oTextPr = this.getParagraphTextPr();
 								if (isRealObject(oTextPr)) {
 									this.setCellUnderline(oTextPr.Underline !== true);
-									bRetValue = true;
+									nRetValue = keydownresult_PreventDefault;
 								}
 							}
 							break;
@@ -5615,12 +5613,12 @@
 						case Asc.c_oAscSpreadsheetShortcutType.EditSelectAll: {
 							this.selectAll();
 							this.drawingObjects.sendGraphicObjectProps();
-							bRetValue = true;
+							nRetValue = keydownresult_PreventDefault;
 							break;
 						}
 						case Asc.c_oAscSpreadsheetShortcutType.EditOpenCellEditor: //todo: add the ability to insert formulas into shapes
 						{
-							bRetValue = true;
+							nRetValue = keydownresult_PreventDefault;
 							break;
 						}
 						case Asc.c_oAscSpreadsheetShortcutType.DrawingIncreaseFontSize: {
@@ -5628,7 +5626,7 @@
 								break;
 							}
 							this.increaseFontSize();
-							bRetValue = true;
+							nRetValue = keydownresult_PreventDefault;
 							break;
 						}
 						case Asc.c_oAscSpreadsheetShortcutType.DrawingDecreaseFontSize: {
@@ -5636,7 +5634,7 @@
 								break;
 							}
 							this.decreaseFontSize();
-							bRetValue = true;
+							nRetValue = keydownresult_PreventDefault;
 							break;
 						}
 						case Asc.c_oAscSpreadsheetShortcutType.DrawingSubscript: {
@@ -5646,7 +5644,7 @@
 							const oTextPr = this.getParagraphTextPr();
 							if (isRealObject(oTextPr)) {
 								this.setCellSubscript(oTextPr.VertAlign !== AscCommon.vertalign_SubScript);
-								bRetValue = true;
+								nRetValue = keydownresult_PreventDefault;
 							}
 							break;
 						}
@@ -5657,7 +5655,7 @@
 							const oTextPr = this.getParagraphTextPr();
 							if (isRealObject(oTextPr)) {
 								this.setCellSuperscript(oTextPr.VertAlign !== AscCommon.vertalign_SuperScript);
-								bRetValue = true;
+								nRetValue = keydownresult_PreventDefault;
 							}
 							break;
 						}
@@ -5668,7 +5666,7 @@
 							const oParaPr = this.getParagraphParaPr();
 							if (isRealObject(oParaPr)) {
 								this.setCellAlign(oParaPr.Jc === AscCommon.align_Center ? AscCommon.align_Left : AscCommon.align_Center);
-								bRetValue = true;
+								nRetValue = keydownresult_PreventDefault;
 							}
 							break;
 						}
@@ -5679,7 +5677,7 @@
 							const oParaPr = this.getParagraphParaPr();
 							if (isRealObject(oParaPr)) {
 								this.setCellAlign(oParaPr.Jc === AscCommon.align_Justify ? AscCommon.align_Left : AscCommon.align_Justify);
-								bRetValue = true;
+								nRetValue = keydownresult_PreventDefault;
 							}
 							break;
 						}
@@ -5690,7 +5688,7 @@
 							const oParaPr = this.getParagraphParaPr();
 							if (isRealObject(oParaPr)) {
 								this.setCellAlign(oParaPr.Jc === AscCommon.align_Left ? AscCommon.align_Justify : AscCommon.align_Left);
-								bRetValue = true;
+								nRetValue = keydownresult_PreventDefault;
 							}
 							break;
 						}
@@ -5701,7 +5699,7 @@
 							const oParaPr = this.getParagraphParaPr();
 							if (isRealObject(oParaPr)) {
 								this.setCellAlign(oParaPr.Jc === AscCommon.align_Right ? AscCommon.align_Left : AscCommon.align_Right);
-								bRetValue = true;
+								nRetValue = keydownresult_PreventDefault;
 							}
 							break;
 						}
@@ -5718,7 +5716,7 @@
 								};
 								this.checkSelectedObjectsAndCallback(Callback, [], false, AscDFH.historydescription_Spreadsheet_AddItem, undefined, window["Asc"]["editor"].collaborativeEditing.getFast());
 							}
-							bRetValue = true;
+							nRetValue = keydownresult_PreventDefault;
 							break;
 						}
 						default: {
@@ -5733,18 +5731,18 @@
 									}
 								}
 							}
-							bRetValue = true;
+							nRetValue = keydownresult_PreventDefault;
 							break;
 						}
 					}
 
 					if (nShortcutAction) {
-					} else if (oGlobalEvent.KeyCode === 8 && bCanEdit) // BackSpace
+					} else if (oEvent.KeyCode === 8 && bCanEdit) // BackSpace
 					{
-						const bIsWord = bIsMacOs ? oGlobalEvent.AltKey : bIsCtrl;
+						const bIsWord = bIsMacOs ? oEvent.AltKey : bIsCtrl;
 						this.remove(-1, undefined, undefined, undefined, bIsWord);
-						bRetValue = true;
-					} else if (oGlobalEvent.KeyCode === 9 && bCanEdit) // Tab
+						nRetValue = keydownresult_PreventDefault;
+					} else if (oEvent.KeyCode === 9 && bCanEdit) // Tab
 					{
 						if (this.getTargetDocContent()) {
 							if (!this.checkSelectedObjectsProtectionText()) {
@@ -5755,15 +5753,15 @@
 								this.checkSelectedObjectsAndCallback(Callback, [], false, AscDFH.historydescription_Spreadsheet_AddTab, undefined, window["Asc"]["editor"].collaborativeEditing.getFast())
 							}
 						} else {
-							this.selectNextObject(!oGlobalEvent.ShiftKey ? 1 : -1);
+							this.selectNextObject(!oEvent.ShiftKey ? 1 : -1);
 						}
-						bRetValue = true;
-					} else if (oGlobalEvent.KeyCode === 13 && bCanEdit) // Enter
+						nRetValue = keydownresult_PreventDefault;
+					} else if (oEvent.KeyCode === 13 && bCanEdit) // Enter
 					{
 						const oTargetDocContent = this.getTargetDocContent();
 						if (oTargetDocContent) {
 							const oHyperlink = this.hyperlinkCheck(false);
-							if (oHyperlink && !oGlobalEvent.ShiftKey) {
+							if (oHyperlink && !oEvent.ShiftKey) {
 								window["Asc"]["editor"].wb.handlers.trigger("asc_onHyperlinkClick", oHyperlink.GetValue());
 								oHyperlink.SetVisited(true);
 								this.drawingObjects.showDrawingObjects();
@@ -5778,7 +5776,7 @@
 										}, [], false, AscDFH.historydescription_Spreadsheet_AddNewParagraph, undefined, window["Asc"]["editor"].collaborativeEditing.getFast());
 										this.recalculate();
 									} else {
-										if (oGlobalEvent.ShiftKey) {
+										if (oEvent.ShiftKey) {
 											const oThis = this;
 											const Callback = function () {
 												oThis.paragraphAdd(new AscWord.CRunBreak(AscWord.break_Line));
@@ -5800,8 +5798,8 @@
 								}
 							}
 						}
-						bRetValue = true;
-					} else if (oGlobalEvent.KeyCode === 27) // Esc
+						nRetValue = keydownresult_PreventDefault;
+					} else if (oEvent.KeyCode === 27) // Esc
 					{
 						const oContent = this.getTargetDocContent();
 						if (oContent) {
@@ -5845,160 +5843,152 @@
 								}
 							}
 						}
-						bRetValue = true;
-					} else if (oGlobalEvent.KeyCode === 33) // PgUp
+						nRetValue = keydownresult_PreventDefault;
+					} else if (oEvent.KeyCode === 33) // PgUp
 					{
-					} else if (oGlobalEvent.KeyCode === 34) // PgDn
+					} else if (oEvent.KeyCode === 34) // PgDn
 					{
-					} else if (oGlobalEvent.KeyCode === 35) // клавиша End
+					} else if (oEvent.KeyCode === 35) // клавиша End
 					{
 						const oContent = this.getTargetDocContent();
 						if (oContent) {
 							if (bIsCtrl) // Ctrl + End - переход в конец документа
 							{
-								oContent.MoveCursorToEndPos(oGlobalEvent.ShiftKey);
+								oContent.MoveCursorToEndPos(oEvent.ShiftKey);
 								this.updateSelectionState();
 								this.updateOverlay();
 								this.drawingObjects.sendGraphicObjectProps();
 
 							} else // Переходим в конец строки
 							{
-								oContent.MoveCursorToEndOfLine(oGlobalEvent.ShiftKey);
+								oContent.MoveCursorToEndOfLine(oEvent.ShiftKey);
 								this.updateSelectionState();
 								this.updateOverlay();
 								this.drawingObjects.sendGraphicObjectProps();
 							}
 						}
-						bRetValue = true;
-					} else if (oGlobalEvent.KeyCode === 36) // клавиша Home
+						nRetValue = keydownresult_PreventDefault;
+					} else if (oEvent.KeyCode === 36) // клавиша Home
 					{
 						const oContent = this.getTargetDocContent();
 						if (oContent) {
 							if (bIsCtrl) // Ctrl + End - переход в конец документа
 							{
-								oContent.MoveCursorToStartPos(oGlobalEvent.ShiftKey);
+								oContent.MoveCursorToStartPos(oEvent.ShiftKey);
 								this.updateSelectionState();
 								this.updateOverlay();
 								this.drawingObjects.sendGraphicObjectProps();
 							} else // Переходим в конец строки
 							{
-								oContent.MoveCursorToStartOfLine(oGlobalEvent.ShiftKey);
+								oContent.MoveCursorToStartOfLine(oEvent.ShiftKey);
 								this.updateSelectionState();
 								this.updateOverlay();
 								this.drawingObjects.sendGraphicObjectProps();
 							}
 						}
-						bRetValue = true;
-					} else if (oGlobalEvent.KeyCode === 37) // Left Arrow
+						nRetValue = keydownresult_PreventDefault;
+					} else if (oEvent.KeyCode === 37) // Left Arrow
 					{
 						const oTargetTextObject = getTargetTextObject(this);
 						if (!oTargetTextObject) {
-							this.cursorMoveLeft(oGlobalEvent.ShiftKey, bIsCtrl);
+							this.cursorMoveLeft(oEvent.ShiftKey, bIsCtrl);
 						} else if (bIsMacOs && bIsCtrl) {
 							const oContent = this.getTargetDocContent();
 							if (oContent) {
-								oContent.MoveCursorToStartOfLine(oGlobalEvent.ShiftKey);
+								oContent.MoveCursorToStartOfLine(oEvent.ShiftKey);
 							}
 						} else {
-							const bIsWord = bIsMacOs ? oGlobalEvent.AltKey : bIsCtrl;
-							this.cursorMoveLeft(oGlobalEvent.ShiftKey, bIsWord);
+							const bIsWord = bIsMacOs ? oEvent.AltKey : bIsCtrl;
+							this.cursorMoveLeft(oEvent.ShiftKey, bIsWord);
 						}
 
 						this.updateSelectionState();
 						this.updateOverlay();
 						this.drawingObjects.sendGraphicObjectProps();
-						bRetValue = true;
-					} else if (oGlobalEvent.KeyCode === 38) // Top Arrow
+						nRetValue = keydownresult_PreventDefault;
+					} else if (oEvent.KeyCode === 38) // Top Arrow
 					{
-						this.cursorMoveUp(oGlobalEvent.ShiftKey, bIsCtrl);
+						this.cursorMoveUp(oEvent.ShiftKey, bIsCtrl);
 
 						this.updateSelectionState();
 						this.updateOverlay();
 						this.drawingObjects.sendGraphicObjectProps();
-						bRetValue = true;
-					} else if (oGlobalEvent.KeyCode === 39) // Right Arrow
+						nRetValue = keydownresult_PreventDefault;
+					} else if (oEvent.KeyCode === 39) // Right Arrow
 					{
 						const oTargetTextObject = getTargetTextObject(this);
 						if (!oTargetTextObject) {
-							this.cursorMoveRight(oGlobalEvent.ShiftKey, bIsCtrl);
+							this.cursorMoveRight(oEvent.ShiftKey, bIsCtrl);
 						} else if (bIsMacOs && bIsCtrl) {
 							const oContent = this.getTargetDocContent();
 							if (oContent) {
-								oContent.MoveCursorToEndOfLine(oGlobalEvent.ShiftKey);
+								oContent.MoveCursorToEndOfLine(oEvent.ShiftKey);
 							}
 						} else {
-							const bIsWord = bIsMacOs ? oGlobalEvent.AltKey : bIsCtrl;
-							this.cursorMoveRight(oGlobalEvent.ShiftKey, bIsWord);
+							const bIsWord = bIsMacOs ? oEvent.AltKey : bIsCtrl;
+							this.cursorMoveRight(oEvent.ShiftKey, bIsWord);
 						}
 
 						this.updateSelectionState();
 						this.updateOverlay();
 						this.drawingObjects.sendGraphicObjectProps();
-						bRetValue = true;
-					} else if (oGlobalEvent.KeyCode === 40) // Bottom Arrow
+						nRetValue = keydownresult_PreventDefault;
+					} else if (oEvent.KeyCode === 40) // Bottom Arrow
 					{
-						this.cursorMoveDown(oGlobalEvent.ShiftKey, bIsCtrl);
+						this.cursorMoveDown(oEvent.ShiftKey, bIsCtrl);
 
 						this.updateSelectionState();
 						this.updateOverlay();
 						this.drawingObjects.sendGraphicObjectProps();
-						bRetValue = true;
-					} else if (oGlobalEvent.KeyCode === 45) // Insert
+						nRetValue = keydownresult_PreventDefault;
+					} else if (oEvent.KeyCode === 45) // Insert
 					{
 						//TODO
-					} else if (oGlobalEvent.KeyCode === 46 && bCanEdit) // Delete
+					} else if (oEvent.KeyCode === 46 && bCanEdit) // Delete
 					{
-						if (!oGlobalEvent.ShiftKey) {
-							const bIsWord = bIsMacOs ? oGlobalEvent.AltKey : bIsCtrl;
+						if (!oEvent.ShiftKey) {
+							const bIsWord = bIsMacOs ? oEvent.AltKey : bIsCtrl;
 							this.remove(1, undefined, undefined, undefined, bIsWord);
-							bRetValue = true;
+							nRetValue = keydownresult_PreventDefault;
 						}
-					} else if (oGlobalEvent.KeyCode === 67) // C
+					} else if (oEvent.KeyCode === 67) // C
 					{
-						if (oGlobalEvent.AltKey && (!bIsMacOs || bIsMacOs && true === bIsCtrl)) {
+						if (oEvent.AltKey && (!bIsMacOs || bIsMacOs && true === bIsCtrl)) {
 							const oSelector = this.selection.groupSelection || this;
 							const aSelected = oSelector.selectedObjects;
 							if (aSelected.length === 1 && aSelected[0].getObjectType() === AscDFH.historyitem_type_SlicerView) {
 								aSelected[0].handleClearButtonClick();
-								bRetValue = true;
+								nRetValue = keydownresult_PreventDefault;
 							}
 						}
-					} else if (oGlobalEvent.KeyCode === 75 && bCanEdit && true === bIsCtrl) // Ctrl + K - добавление гиперссылки
+					} else if (oEvent.KeyCode === 75 && bCanEdit && true === bIsCtrl) // Ctrl + K - добавление гиперссылки
 					{
 						//TODO
-						bRetValue = true;
-					} else if (oGlobalEvent.KeyCode === 77 && bCanEdit && true === bIsCtrl) // Ctrl + M + ...
+						nRetValue = keydownresult_PreventDefault;
+					} else if (oEvent.KeyCode === 77 && bCanEdit && true === bIsCtrl) // Ctrl + M + ...
 					{
-						bRetValue = true;
-					} else if (oGlobalEvent.KeyCode === 83) //  S - save
+						nRetValue = keydownresult_PreventDefault;
+					} else if (oEvent.KeyCode === 83) //  S - save
 					{
-						if (oGlobalEvent.AltKey && (!bIsMacOs || bIsMacOs && true === bIsCtrl)) {
+						if (oEvent.AltKey && (!bIsMacOs || bIsMacOs && true === bIsCtrl)) {
 							const oSelector = this.selection.groupSelection || this;
 							const aSelected = oSelector.selectedObjects;
 							if (aSelected.length === 1 && aSelected[0].getObjectType() === AscDFH.historyitem_type_SlicerView) {
 								aSelected[0].invertMultiSelect();
-								bRetValue = true;
+								nRetValue = keydownresult_PreventDefault;
 							}
 						}
-					} else if (oGlobalEvent.KeyCode === 86 && bCanEdit && true === bIsCtrl) // Ctrl + V - paste
+					} else if (oEvent.KeyCode === 86 && bCanEdit && true === bIsCtrl) // Ctrl + V - paste
 					{
 
-					} else if (oGlobalEvent.KeyCode === 88 && bCanEdit && true === bIsCtrl) // Ctrl + X - cut
+					} else if (oEvent.KeyCode === 88 && bCanEdit && true === bIsCtrl) // Ctrl + X - cut
 					{
 						//не возвращаем true чтобы не было preventDefault
-					} else if ((oGlobalEvent.KeyCode === 93 && !oGlobalEvent.MacCmdKey) || 57351 === oGlobalEvent.KeyCode/*в Opera такой код*/) // контекстное меню
+					} else if ((oEvent.KeyCode === 93 && !oEvent.MacCmdKey) || 57351 === oEvent.KeyCode/*в Opera такой код*/) // контекстное меню
 					{
-						bRetValue = true;
-					} else if (oGlobalEvent.KeyCode === 121 && true === oGlobalEvent.ShiftKey) // Shift + F10 - контекстное меню
-					{
-					} else if (oGlobalEvent.KeyCode === 144) // Num Lock
-					{
-					} else if (oGlobalEvent.KeyCode === 145) // Scroll Lock
-					{
+						nRetValue = keydownresult_PreventDefault;
 					}
-					if (bRetValue)
-						oEvent.preventDefault();
-					return bRetValue;
+					return nRetValue;
 				},
 
 				haveTrackedObjects: function () {

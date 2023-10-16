@@ -3053,7 +3053,8 @@ window["native"]["offline_keyboard_down"] = function(inputKeys) {
                 
                 event.keyCode = 65;
                 event.ctrlKey = true;
-                ws.objectRender.graphicObjectKeyDown(event);
+	              AscCommon.check_KeyboardEvent(event);
+                ws.objectRender.graphicObjectKeyDown(AscCommon.global_keyboardEvent);
                 
             } else if (3 === operationCode) {    // SELECT
                 
@@ -3078,11 +3079,11 @@ window["native"]["offline_keyboard_down"] = function(inputKeys) {
                 }
 
             } else {
-                
+	              AscCommon.check_KeyboardEvent(event);
                 if (8 === codeKey || 13 === codeKey || 27 == codeKey) {
-                    ws.objectRender.graphicObjectKeyDown(event);
+                    ws.objectRender.graphicObjectKeyDown(AscCommon.global_keyboardEvent);
                 } else {
-                    ws.objectRender.graphicObjectKeyPress(event);
+                    ws.objectRender.graphicObjectKeyPress(AscCommon.global_keyboardEvent);
                 }
                 
                 if (27 == codeKey) {
@@ -3214,22 +3215,21 @@ window["native"]["offline_cell_editor_process_input_commands"] = function(sendAr
         operationCode   = sendArguments[i + 0];
         value           = sendArguments[i + 1];
         value2          = sendArguments[i + 2];
-        
-        var event = {which:value,metaKey:undefined,ctrlKey:undefined};
-        event.stopPropagation = function() {};
-        event.preventDefault = function() {};
+
+        var event = {which: value, keyCode: value, ctrlKey: false, shiftKey: false, altKey: false, metaKey: false};
+	      AscCommon.check_KeyboardEvent(event);
         
         switch (operationCode) {
                 
                 // KEY_DOWN
             case 0: {
-                cellEditor._onWindowKeyDown(event);
+                cellEditor._onWindowKeyDown(AscCommon.global_keyboardEvent);
                 break;
             }
                 
                 // KEY_PRESS
             case 1: {
-                cellEditor._onWindowKeyPress(event);
+                cellEditor._onWindowKeyPress(AscCommon.global_keyboardEvent);
                 break;
             }
                 
@@ -3395,7 +3395,7 @@ window["native"]["offline_cell_editor_mouse_event"] = function(sendEvents) {
             cellEditor.textRender.chars.length];
 }
 window["native"]["offline_cell_editor_close"] = function(x, y, width, height, ratio) {
-    var e = {which: 13, shiftKey: false, metaKey: false, ctrlKey: false};
+    var e = {which: 13, keyCode: 13, altKey: false, shiftKey: false, metaKey: false, ctrlKey: false};
     
     var wb = _api.wb;
     var ws = _api.wb.getWorksheet();
@@ -3406,7 +3406,8 @@ window["native"]["offline_cell_editor_close"] = function(x, y, width, height, ra
     var length = cellEditor.undoList.length;
     
     if (cellEditor.close(true)) {
-        wb.getWorksheet().handlers.trigger('applyCloseEvent', e);
+	      AscCommon.check_KeyboardEvent(e);
+        wb.getWorksheet().handlers.trigger('applyCloseEvent', AscCommon.global_keyboardEvent);
     } else {
         cellEditor.close();
         length = 0;
@@ -3627,7 +3628,8 @@ window["native"]["offline_delete"] = function() {
     var ws = _api.wb.getWorksheet();
     var graphicObjects = ws.objectRender.getSelectedGraphicObjects();
     if (graphicObjects.length) {
-        if (ws.objectRender.graphicObjectKeyDown(e)) {
+	    AscCommon.check_KeyboardEvent(e);
+        if (ws.objectRender.graphicObjectKeyDown(AscCommon.global_keyboardEvent)) {
             stream["WriteLong"](1);    // SHAPE
             return stream;
         }

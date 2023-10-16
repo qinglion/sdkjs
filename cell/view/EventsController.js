@@ -81,7 +81,6 @@
 			this.hasCursor = false;
 			this.hasFocus = false;
 			this.skipKeyPress = undefined;
-			this.lastKeyCode = undefined;
 			this.targetInfo = undefined;
 			this.isResizeMode = false;
 			this.isResizeModeMove = false;
@@ -772,29 +771,17 @@
 			this.resizeTimerId = window.setTimeout(function () {self.handlers.trigger("resize", event);}, 150);
 		};
 
-		/** @param oEvent {KeyboardEvent} */
+		/** @param oEvent {AscCommon.CKeyboardEvent} */
 		asc_CEventsController.prototype._onWindowKeyDown = function (oEvent) {
 			const oThis = this;
-			// для исправления Bug 15902 - Alt забирает фокус из приложения
-			// этот код должен выполняться самым первым
-			if (oEvent.keyCode === 18) {
-				oThis.lastKeyCode = oEvent.keyCode;
-			}
-			let nRetValue = keydownresult_PreventNothing;
-
-			if (!oThis.getCellEditMode() && !oThis.isMousePressed && oThis.enableKeyEvents && oThis.handlers.trigger("graphicObjectWindowKeyDown", oEvent)) {
-				return nRetValue;
-			}
-			nRetValue = keydownresult_PreventKeyPress;
-			AscCommon.check_KeyboardEvent(oEvent);
-			const oGlobalEvent = AscCommon.global_keyboardEvent;
-			const nShortcutAction = oThis.view.Api.getShortcut(oGlobalEvent);
+			let nRetValue = keydownresult_PreventKeyPress;
+			const nShortcutAction = oThis.view.Api.getShortcut(oEvent);
 
 			// Для таких браузеров, которые не присылают отжатие левой кнопки мыши для двойного клика, при выходе из
 			// окна редактора и отпускания кнопки, будем отрабатывать выход из окна (только Chrome присылает эвент MouseUp даже при выходе из браузера)
 			this.showCellEditorCursor();
 
-			if (oThis.getCellEditMode() && !oThis.hasFocus || !oThis.enableKeyEvents && oEvent.emulated !== true || oThis.isSelectMode ||
+			if (oThis.getCellEditMode() && !oThis.hasFocus || oThis.isSelectMode ||
 				oThis.isFillHandleMode || oThis.isMoveRangeMode || oThis.isMoveResizeRange) {
 				// Почему-то очень хочется обрабатывать лишние условия в нашем коде, вместо обработки наверху...
 				if (oThis.enableKeyEvents || (nShortcutAction !== Asc.c_oAscSpreadsheetShortcutType.Print)) {
@@ -803,7 +790,7 @@
 				}
 			}
 
-			let bIsSelect = oGlobalEvent.IsShift();
+			let bIsSelect = oEvent.IsShift();
 			const bIsMacOs = AscCommon.AscBrowser.isMacOs;
 			const bSelectionDialogMode = this.getSelectionDialogMode();
 			const bIsFormulaEditMode = this.getFormulaEditMode();
@@ -1043,9 +1030,9 @@
 				}
 			}
 			if (!nShortcutAction) {
-				switch (oGlobalEvent.GetKeyCode()) {
+				switch (oEvent.GetKeyCode()) {
 					case 82:
-						if (oGlobalEvent.CtrlKey && bIsSelect) {
+						if (oEvent.CtrlKey && bIsSelect) {
 							if (bCanEdit && !oThis.getCellEditMode() && !bSelectionDialogMode) {
 								oThis.handlers.trigger("changeFormatTableInfo");
 							}
@@ -1140,7 +1127,7 @@
 						if (oThis.getCellEditMode()) {
 							break;
 						}
-						const bIsSelectColumns = oGlobalEvent.CtrlKey;
+						const bIsSelectColumns = oEvent.CtrlKey;
 						if (bIsSelectColumns && bIsSelect && bIsMacOs) {
 							break;
 						}
@@ -1167,22 +1154,22 @@
 						break;
 
 					case 37: // left
-						nDeltaColumn = oGlobalEvent.CtrlKey ? -1.5 : -1;  // Движение стрелками (влево-вправо, вверх-вниз)
+						nDeltaColumn = oEvent.CtrlKey ? -1.5 : -1;  // Движение стрелками (влево-вправо, вверх-вниз)
 						bIsNeedCheckActiveCellChanged = true;
 						nRetValue = keydownresult_PreventAll;                          // Отключим стандартную обработку браузера нажатия left
 						break;
 
 					case 38: // up
-						if (bCanEdit && !oThis.getCellEditMode() && !bSelectionDialogMode && oGlobalEvent.IsAlt() && oThis.handlers.trigger("onDataValidation")) {
+						if (bCanEdit && !oThis.getCellEditMode() && !bSelectionDialogMode && oEvent.IsAlt() && oThis.handlers.trigger("onDataValidation")) {
 							break;
 						}
-						nDeltaRow = oGlobalEvent.CtrlKey ? -1.5 : -1;  // Движение стрелками (влево-вправо, вверх-вниз)
+						nDeltaRow = oEvent.CtrlKey ? -1.5 : -1;  // Движение стрелками (влево-вправо, вверх-вниз)
 						bIsNeedCheckActiveCellChanged = true;
 						nRetValue = keydownresult_PreventAll;                           // Отключим стандартную обработку браузера нажатия up
 						break;
 
 					case 39: // right
-						nDeltaColumn = oGlobalEvent.CtrlKey ? +1.5 : +1;  // Движение стрелками (влево-вправо, вверх-вниз)
+						nDeltaColumn = oEvent.CtrlKey ? +1.5 : +1;  // Движение стрелками (влево-вправо, вверх-вниз)
 						bIsNeedCheckActiveCellChanged = true;
 						nRetValue = keydownresult_PreventAll;                           // Отключим стандартную обработку браузера нажатия right
 						break;
@@ -1190,7 +1177,7 @@
 					case 40: // down
 						nRetValue = keydownresult_PreventAll;                           // Отключим стандартную обработку браузера нажатия down
 						// Обработка Alt + down
-						if (bCanEdit && !oThis.getCellEditMode() && !bSelectionDialogMode && oGlobalEvent.IsAlt()) {
+						if (bCanEdit && !oThis.getCellEditMode() && !bSelectionDialogMode && oEvent.IsAlt()) {
 							if (oThis.handlers.trigger("onShowFilterOptionsActiveCell")) {
 								break;
 							}
@@ -1200,7 +1187,7 @@
 							oThis.handlers.trigger("showAutoComplete");
 							break;
 						}
-						nDeltaRow = oGlobalEvent.CtrlKey ? +1.5 : +1;  // Движение стрелками (влево-вправо, вверх-вниз)
+						nDeltaRow = oEvent.CtrlKey ? +1.5 : +1;  // Движение стрелками (влево-вправо, вверх-вниз)
 						bIsNeedCheckActiveCellChanged = true;
 						break;
 
@@ -1210,7 +1197,7 @@
 							break;
 						}
 						nDeltaColumn = -2.5;
-						if (oGlobalEvent.CtrlKey) {
+						if (oEvent.CtrlKey) {
 							nDeltaRow = -2.5;
 						}
 						bIsNeedCheckActiveCellChanged = true;
@@ -1222,15 +1209,15 @@
 							break;
 						}
 						nDeltaColumn = 2.5;
-						if (oGlobalEvent.CtrlKey) {
+						if (oEvent.CtrlKey) {
 							nDeltaRow = 2.5;
 						}
 						bIsNeedCheckActiveCellChanged = true;
 						break;
 					case 93:
-						if (!oGlobalEvent.MacCmdKey) {
+						if (!oEvent.MacCmdKey) {
 							nRetValue = keydownresult_PreventAll;
-							this.handlers.trigger('onContextMenu', oGlobalEvent);
+							this.handlers.trigger('onContextMenu', oEvent);
 						}
 						break;
 					default:
@@ -1289,7 +1276,7 @@
 			return nRetValue;
 		};
 
-		/** @param event {KeyboardEvent} */
+		/** @param event {AscCommon.CKeyboardEvent} */
 		asc_CEventsController.prototype._onWindowKeyPress = function (event) {
 			// Нельзя при отключенных эвентах возвращать false (это касается и ViewerMode)
 			if (!this.enableKeyEvents) {
@@ -1313,7 +1300,7 @@
 				return true;
 			}
 
-			if (this.skipKeyPress || event.which < 32) {
+			if (this.skipKeyPress || event.KeyCode < 32) {
 				this._setSkipKeyPress(true);
 				return true;
 			}
@@ -1375,20 +1362,13 @@
 			return true;
 		};
 
-		/** @param event {KeyboardEvent} */
+		/** @param event {AscCommon.CKeyboardEvent} */
 		asc_CEventsController.prototype._onWindowKeyUp = function (event) {
-			var t = this;
-
-			// для исправления Bug 15902 - Alt забирает фокус из приложения
-			if (t.lastKeyCode === 18 && event.which === 18) {
-				return false;
-			}
 			// При отпускании shift нужно переслать информацию о выделении
-			if (16 === event.which) {
+			if (16 === event.KeyCode) {
 				this.handlers.trigger("updateSelectionName");
 			}
 			this.handlers.trigger("graphicObjectWindowKeyUp", event);
-			
 			return true;
 		};
 

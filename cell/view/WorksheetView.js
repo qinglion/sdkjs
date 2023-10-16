@@ -1882,7 +1882,7 @@
 					break;
 				}
 				case AscCommon.SpeakerActionType.keyDown: {
-					if ((action.event.keyCode >= 35 && action.event.keyCode <= 40) || (action.event.keyCode === 9 || action.event.keyCode === 13)) {
+					if ((action.event.KeyCode >= 35 && action.event.KeyCode <= 40) || (action.event.KeyCode === 9 || action.event.KeyCode === 13)) {
 						return this._getSpeechDescriptionSelection(prevState, curState);
 					}
 					break;

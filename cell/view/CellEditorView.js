@@ -148,7 +148,6 @@
 		this.loadFonts = false;
 		this.isOpened = false;
 		this.callTopLineMouseup = false;
-		this.lastKeyCode = undefined;
 		this.m_nEditorState = c_oAscCellEditorState.editEnd; // Состояние редактора
 
 		// Функции, которые будем отключать
@@ -2414,24 +2413,17 @@
 
 	/**
 	 *
-	 * @param oEvent {KeyboardEvent}
-	 * @param bIsInput {boolean}
+	 * @param oEvent {AscCommon.CKeyboardEvent}
 	 * @returns {number}
 	 */
-	CellEditor.prototype._onWindowKeyDown = function (oEvent, bIsInput) {
+	CellEditor.prototype._onWindowKeyDown = function (oEvent) {
 		const oThis = this;
 		const oApi = window["Asc"]["editor"];
-		let nKind = undefined;
 		let bHieroglyph = false;
 		let nRetValue = keydownresult_PreventNothing;
 
-		if (this.handlers.trigger('getWizard') || !oThis.isOpened || (!bIsInput && !oThis.enableKeyEvents && oEvent.emulated !== true)) {
+		if (this.handlers.trigger('getWizard') || !oThis.isOpened) {
 			return nRetValue;
-		}
-
-		// для исправления Bug 15902 - Alt забирает фокус из приложения
-		if (oEvent.which === 18) {
-			oThis.lastKeyCode = oEvent.which;
 		}
 
 		oThis._setSkipKeyPress(false);
@@ -2443,9 +2435,7 @@
 		}
 
 		nRetValue = keydownresult_PreventKeyPress;
-		AscCommon.check_KeyboardEvent(oEvent);
-		const oGlobalEvent = AscCommon.global_keyboardEvent;
-		const nShortcutAction = oApi.getShortcut(oGlobalEvent);
+		const nShortcutAction = oApi.getShortcut(oEvent);
 		switch (nShortcutAction) {
 			case Asc.c_oAscSpreadsheetShortcutType.Strikeout: {
 				if (bHieroglyph) {
@@ -2553,8 +2543,8 @@
 
 		if (!nShortcutAction) {
 			const bIsMacOs = AscCommon.AscBrowser.isMacOs;
-			const bIsWordRemove = bIsMacOs ? oGlobalEvent.IsAlt() : oGlobalEvent.CtrlKey;
-			switch (oGlobalEvent.GetKeyCode()) {
+			const bIsWordRemove = bIsMacOs ? oEvent.IsAlt() : oEvent.CtrlKey;
+			switch (oEvent.GetKeyCode()) {
 				case 27: { // "esc"
 
 					if (oThis.handlers.trigger("isGlobalLockEditCell") || this.getMenuEditorMode()) {
@@ -2569,16 +2559,16 @@
 					if (window['IS_NATIVE_EDITOR']) {
 						oThis._addNewLine();
 					} else {
-						if (!(oGlobalEvent.IsAlt() && oGlobalEvent.IsShift())) {
-							if (oGlobalEvent.IsAlt()) {
+						if (!(oEvent.IsAlt() && oEvent.IsShift())) {
+							if (oEvent.IsAlt()) {
 								oThis._addNewLine();
 							} else if (this.getMenuEditorMode()) {
 								oThis._addNewLine();
 							} else {
 								if (false === oThis.handlers.trigger("isGlobalLockEditCell")) {
 									if (oThis.textFlags) {
-										oThis.textFlags.ctrlKey = oEvent.ctrlKey;
-										oThis.textFlags.shiftKey = oGlobalEvent.IsShift();
+										oThis.textFlags.ctrlKey = oEvent.CtrlKey;
+										oThis.textFlags.shiftKey = oEvent.IsShift();
 									}
 									oThis._tryCloseEditor(oEvent);
 								}
@@ -2626,8 +2616,8 @@
 					if (bHieroglyph) {
 						oThis._syncEditors();
 					}
-					nKind = oGlobalEvent.CtrlKey ? kEndOfText : kEndOfLine;
-					oGlobalEvent.IsShift() ? oThis._selectChars(nKind) : oThis._moveCursor(nKind);
+					const nKind = oEvent.CtrlKey ? kEndOfText : kEndOfLine;
+					oEvent.IsShift() ? oThis._selectChars(nKind) : oThis._moveCursor(nKind);
 					break;
 				}
 				case 36: { // "home"
@@ -2643,8 +2633,8 @@
 					if (bHieroglyph) {
 						oThis._syncEditors();
 					}
-					nKind = oGlobalEvent.CtrlKey ? kBeginOfText : kBeginOfLine;
-					oGlobalEvent.IsShift() ? oThis._selectChars(nKind) : oThis._moveCursor(nKind);
+					const nKind = oEvent.CtrlKey ? kBeginOfText : kBeginOfLine;
+					oEvent.IsShift() ? oThis._selectChars(nKind) : oThis._moveCursor(nKind);
 					break;
 				}
 				case 37: { // "left"
@@ -2660,12 +2650,12 @@
 					if (bHieroglyph) {
 						oThis._syncEditors();
 					}
-					if (bIsMacOs && oGlobalEvent.CtrlKey) {
-						oGlobalEvent.IsShift() ? oThis._selectChars(kBeginOfLine) : oThis._moveCursor(kBeginOfLine);
+					if (bIsMacOs && oEvent.CtrlKey) {
+						oEvent.IsShift() ? oThis._selectChars(kBeginOfLine) : oThis._moveCursor(kBeginOfLine);
 					} else {
-						const bWord = bIsMacOs ? oGlobalEvent.IsAlt() : oGlobalEvent.CtrlKey;
-						nKind = bWord ? kPrevWord : kPrevChar;
-						oGlobalEvent.IsShift() ? oThis._selectChars(nKind) : oThis._moveCursor(nKind);
+						const bWord = bIsMacOs ? oEvent.IsAlt() : oEvent.CtrlKey;
+						const nKind = bWord ? kPrevWord : kPrevChar;
+						oEvent.IsShift() ? oThis._selectChars(nKind) : oThis._moveCursor(nKind);
 					}
 
 					break;
@@ -2683,7 +2673,7 @@
 					if (bHieroglyph) {
 						oThis._syncEditors();
 					}
-					oGlobalEvent.IsShift() ? oThis._selectChars(kPrevLine) : oThis._moveCursor(kPrevLine);
+					oEvent.IsShift() ? oThis._selectChars(kPrevLine) : oThis._moveCursor(kPrevLine);
 					break;
 				}
 
@@ -2700,12 +2690,12 @@
 					if (bHieroglyph) {
 						oThis._syncEditors();
 					}
-					if (bIsMacOs && oGlobalEvent.CtrlKey) {
-						oGlobalEvent.IsShift() ? oThis._selectChars(kEndOfLine) : oThis._moveCursor(kEndOfLine);
+					if (bIsMacOs && oEvent.CtrlKey) {
+						oEvent.IsShift() ? oThis._selectChars(kEndOfLine) : oThis._moveCursor(kEndOfLine);
 					} else {
-						const bWord = bIsMacOs ? oGlobalEvent.IsAlt() : oGlobalEvent.CtrlKey;
-						nKind = bWord ? kNextWord : kNextChar;
-						oGlobalEvent.IsShift() ? oThis._selectChars(nKind) : oThis._moveCursor(nKind);
+						const bWord = bIsMacOs ? oEvent.IsAlt() : oEvent.CtrlKey;
+						const nKind = bWord ? kNextWord : kNextChar;
+						oEvent.IsShift() ? oThis._selectChars(nKind) : oThis._moveCursor(nKind);
 					}
 					break;
 				}
@@ -2722,11 +2712,11 @@
 					if (bHieroglyph) {
 						oThis._syncEditors();
 					}
-					oGlobalEvent.IsShift() ? oThis._selectChars(kNextLine) : oThis._moveCursor(kNextLine);
+					oEvent.IsShift() ? oThis._selectChars(kNextLine) : oThis._moveCursor(kNextLine);
 					break;
 				}
 				case 46: {// "del"
-					if (!this.enableKeyEvents || oGlobalEvent.IsShift()) {
+					if (!this.enableKeyEvents || oEvent.IsShift()) {
 						break;
 					}
 
@@ -2763,15 +2753,15 @@
 		var t = this;
 
 		if (!window['IS_NATIVE_EDITOR']) {
-			if (event.which < 32 || t.skipKeyPress) {
+			if (event.KeyCode < 32 || t.skipKeyPress) {
 				t._setSkipKeyPress(true);
 				return true;
 			}
 		}
 
 		let Code;
-		if (null != event.which) {
-			Code = event.which;
+		if (null != event.Which) {
+			Code = event.Which;
 		} else if (event.KeyCode) {
 			Code = event.KeyCode;
 		} else {
@@ -2842,12 +2832,6 @@
 
 	/** @param event {KeyboardEvent} */
 	CellEditor.prototype._onWindowKeyUp = function ( event ) {
-		var t = this;
-
-		// для исправления Bug 15902 - Alt забирает фокус из приложения
-		if ( t.lastKeyCode === 18 && event.which === 18 ) {
-			return false;
-		}
 	};
 
 	/** @param event {MouseEvent} */
@@ -3169,7 +3153,7 @@
 
 		if (action) {
 			let bWord = false;
-			if (action.type !== AscCommon.SpeakerActionType.keyDown || action.event.keyCode < 35 || action.event.keyCode > 40) {
+			if (action.type !== AscCommon.SpeakerActionType.keyDown || action.event.KeyCode < 35 || action.event.KeyCode > 40) {
 				return null;
 			}
 
@@ -3179,14 +3163,12 @@
 
 			let event = action.event;
 			let isWizard = this.handlers.trigger('getWizard');
-			if (!action.event || isWizard || !t.isOpened || (!t.enableKeyEvents && event.emulated !== true)) {
+			if (!action.event || isWizard || !t.isOpened) {
 				return null;
 			}
 
-			var ctrlKey = !AscCommon.getAltGr(event) && (event.metaKey || event.ctrlKey);
 			const bIsMacOs = AscCommon.AscBrowser.isMacOs;
-
-			switch (event.keyCode) {
+			switch (event.GetKeyCode()) {
 				case 8:   // "backspace"
 					/*const bIsWord = bIsMacOs ? event.altKey : ctrlKey;
 					t._removeChars(bIsWord ? kPrevWord : kPrevChar);*/
@@ -3201,10 +3183,10 @@
 					event.shiftKey ? t._selectChars(kind) : t._moveCursor(kind);*/
 					break;
 				case 37:  // "left"
-					if (bIsMacOs && ctrlKey) {
+					if (bIsMacOs && event.CtrlKey) {
 						//event.shiftKey ? t._selectChars(kBeginOfLine) : t._moveCursor(kBeginOfLine);
 					} else {
-						bWord = bIsMacOs ? event.altKey : ctrlKey;
+						bWord = bIsMacOs ? event.AltKey : event.CtrlKey;
 						/*kind = bWord ? kPrevWord : kPrevChar;
 						event.shiftKey ? t._selectChars(kind) : t._moveCursor(kind);*/
 					}
@@ -3214,10 +3196,10 @@
 					//event.shiftKey ? t._selectChars(kPrevLine) : t._moveCursor(kPrevLine);
 					break;
 				case 39:  // "right"
-					if (bIsMacOs && ctrlKey) {
+					if (bIsMacOs && event.CtrlKey) {
 						//event.shiftKey ? t._selectChars(kEndOfLine) : t._moveCursor(kEndOfLine);
 					} else {
-						bWord = bIsMacOs ? event.altKey : ctrlKey;
+						bWord = bIsMacOs ? event.AltKey : event.CtrlKey;
 						/*kind = bWord ? kNextWord : kNextChar;
 						event.shiftKey ? t._selectChars(kind) : t._moveCursor(kind);*/
 					}
