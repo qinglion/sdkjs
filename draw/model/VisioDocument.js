@@ -306,6 +306,7 @@
 		//global_MatrixTransformer.Reflect(graphics.m_oCoordTransform, false, true);
 		//global_MatrixTransformer.TranslateAppend(graphics.m_oCoordTransform, 0, h_px);
 		graphics.m_oCoordTransform.ty = h_px;
+		// TODO consider old m_oCoordTransform.ty
 		graphics.m_oCoordTransform.sy = - graphics.m_oCoordTransform.sy;
 
 		let shapes = this.convertToShapes(logic_w_mm, logic_h_mm);
@@ -332,6 +333,7 @@
 
 		for(let i = 0; i < this.pageContents[0].shapes.length; i++) {
 			let shape = this.pageContents[0].shapes[i];
+
 			let shapeMasterID = shape.getMasterID();
 			if (shapeMasterID) {
 				let shapeMaster = this.getMasterByID(shapeMasterID);
@@ -347,8 +349,14 @@
 			let y_inch = pinY_inch - shapeHeight_inch / 2;
 			let x_mm = x_inch * g_dKoef_in_to_mm;
 			let y_mm = y_inch * g_dKoef_in_to_mm;
-			let geom = AscCommonDraw.getGeometryFromShape(shape);
-			shapes.push(this.convertToShape(x_mm, y_mm, shapeWidth_mm, shapeHeight_mm, oFill, oStroke, geom));
+
+			let shapeGeom = AscCommonDraw.getGeometryFromShape(shape);
+
+			let shapeAngle = Number(shape.elements.find(function(elem) {return elem.n === "Angle"}).v);
+
+			let cShape = this.convertToShape(x_mm, y_mm, shapeWidth_mm, shapeHeight_mm, shapeAngle, oFill, oStroke, shapeGeom);
+
+			shapes.push(cShape);
 		}
 
 		// var prst = getRandomPrst();
@@ -358,7 +366,7 @@
 		// shapes.push(this.convertToShape(logic_w_mm / 5, logic_h_mm / 5, oFill, oStroke, geom));
 		return shapes;
 	};
-	CVisioDocument.prototype.convertToShape = function(x, y, w_mm, h_mm, oFill, oStroke, geom) {
+	CVisioDocument.prototype.convertToShape = function(x, y, w_mm, h_mm, rot, oFill, oStroke, geom) {
 		let sType   = "rect";
 		let nWidth_mm  = Math.round(w_mm);
 		let nHeight_mm = Math.round(h_mm);
@@ -367,6 +375,7 @@
 			oFill, oStroke, this, this.theme, null, false);
 		shape.spPr.xfrm.setOffX(x);
 		shape.spPr.xfrm.setOffY(y);
+		shape.spPr.xfrm.setRot(rot);
 
 		shape.spPr.setGeometry(geom);
 		shape.recalculate();
