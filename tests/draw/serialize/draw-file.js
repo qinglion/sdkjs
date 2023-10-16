@@ -77,6 +77,24 @@
 		e.preventDefault();
 		return false;
 	};
+	function ab2str(buf) {
+		var bufView  = new Uint8Array(buf);
+		var resultStrArr = [];
+		for (var i=0, strLen = bufView.length; i < strLen; i++) {
+			let char = String.fromCharCode(bufView[i]);
+			resultStrArr.push(char);
+		}
+		var result = resultStrArr.join('');
+		return result;
+	}
+	function str2ab(str) {
+		var buf = new ArrayBuffer(str.length);
+		var bufView = new Uint8Array(buf);
+		for (var i=0, strLen=str.length; i < strLen; i++) {
+			bufView[i] = str.charCodeAt(i);
+		}
+		return buf;
+	}
 	holder.ondrop = function(e)
 	{
 		var file = e.dataTransfer.files ? e.dataTransfer.files[0] : null;
@@ -89,6 +107,10 @@
 		var reader = new FileReader();
 		reader.onload = function(e) {
 			drawFile(e.target.result);
+
+			let arrayBuffer = e.target.result;
+			console.log('saving file for testing');
+			localStorage.droppedTestFile = ab2str(arrayBuffer);
 		};
 		reader.readAsArrayBuffer(file);
 
@@ -111,7 +133,12 @@
 			let rotatedEllipticalArcMod = AscCommon.Base64.decode(Asc.rotatedEllipticalArcMod);
 			let basic_ShapesC_start = AscCommon.Base64.decode(Asc.basic_ShapesC_start);
 			let sizeAndPositionStart = AscCommon.Base64.decode(Asc.sizeAndPositionStart);
-			drawFile(sizeAndPositionStart);
+
+			if (localStorage.droppedTestFile) {
+				console.log('There is saved test file in local storage');
+			}
+			let droppedTestFileArrayBuffer = str2ab(localStorage.droppedTestFile);
+			drawFile(droppedTestFileArrayBuffer);
 		}, 3000);
 	};
 }();
