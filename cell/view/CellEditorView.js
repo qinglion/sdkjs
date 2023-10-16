@@ -2534,6 +2534,7 @@
 					if (AscCommon.c_oAscCustomShortcutType.Symbol === oCustom.Type) {
 						oApi["asc_insertSymbol"](oCustom.Font, oCustom.CharCode);
 					}
+					nRetValue = keydownresult_PreventAll;
 				} else {
 					nRetValue = keydownresult_PreventNothing;
 				}

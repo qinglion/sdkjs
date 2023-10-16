@@ -5730,8 +5730,8 @@
 										oApi["asc_insertSymbol"](oCustom.Font, oCustom.CharCode);
 									}
 								}
+								nRetValue = keydownresult_PreventDefault;
 							}
-							nRetValue = keydownresult_PreventDefault;
 							break;
 						}
 					}
