@@ -281,7 +281,7 @@
 		if (_elem)
 			return;
 
-		let guidAsync = window.g_asc_plugins ? window.g_asc_plugins.setPluginMethodReturnAsync() : null;
+		window.g_asc_plugins && window.g_asc_plugins.setPluginMethodReturnAsync();
 		_elem = document.createElement("div");
 		_elem.id = "pmpastehtml";
 		_elem.style.color = "rgb(0,0,0)";
@@ -331,9 +331,7 @@
 				if (_t.checkLongActionCallback(fCallback, null)) {
 					fCallback();
 				}
-				if (guidAsync) {
-					window.g_asc_plugins.onPluginMethodReturn(guidAsync, true);
-				}
+				window.g_asc_plugins &&	window.g_asc_plugins.onPluginMethodReturn(true);
 			}
 		);
 	};
@@ -551,7 +549,7 @@
 	 * @property {number} height The watermark height measured in millimeters.
 	 * @property {number} rotate The watermark rotation angle measured in degrees.
 	 * @property {Array.<number>} margins The text margins measured in millimeters in the watermark shape.
-	 * @property {Array.<number>} fill The watermark fill color in the RGB format. The empty array [] means that the watermark has no fill.
+	 * @property {Array.<number> | string} fill The watermark fill color in the RGB format, or the URL to image (base64 support: data:image/png;...). The empty array [] means that the watermark has no fill.
      * @property {number} stroke-width The watermark stroke width measured in millimeters.
 	 * @property {Array.<number>} stroke The watermark stroke color in the RGB format. The empty array [] means that the watermark stroke has no fill.
 	 * @property {number} align The vertical text align in the watermark shape: <b>0</b> - bottom, <b>1</b> - center, <b>4</b> - top.
@@ -1113,7 +1111,7 @@
      */
     Api.prototype["pluginMethod_ReplaceTextSmart"] = function(arrString, sParaTab, sParaNewLine)
     {
-		let guid = window.g_asc_plugins ? window.g_asc_plugins.setPluginMethodReturnAsync() : null;
+		window.g_asc_plugins && window.g_asc_plugins.setPluginMethodReturnAsync();
 		this.incrementCounterLongAction();
 
 		function ReplaceTextSmart()
@@ -1134,8 +1132,7 @@
 
 			this.decrementCounterLongAction();
 
-			if (guid)
-				window.g_asc_plugins.onPluginMethodReturn(guid, true);
+			window.g_asc_plugins && window.g_asc_plugins.onPluginMethodReturn(true);
 		}
 
 		let sOverAll = "";
@@ -1156,7 +1153,7 @@
      */
 	Api.prototype["pluginMethod_GetFileToDownload"] = function(format)
 	{
-		let guid = window.g_asc_plugins ? window.g_asc_plugins.setPluginMethodReturnAsync() : null;
+		window.g_asc_plugins && window.g_asc_plugins.setPluginMethodReturnAsync();
 		let dwnldF = Asc.c_oAscFileType[format] || Asc.c_oAscFileType[this.DocInfo.Format.toUpperCase()];
 		let opts = new Asc.asc_CDownloadOptions(dwnldF);
 		let _t = this;
@@ -1164,8 +1161,7 @@
 			_t.sync_EndAction(Asc.c_oAscAsyncActionType.BlockInteraction, Asc.c_oAscAsyncAction.DownloadAs);
 			_t.fCurCallback = function(res) {
 				let data = (res.status == "ok") ? res.data : "error";
-				if (guid)
-					window.g_asc_plugins.onPluginMethodReturn(guid, data);
+				window.g_asc_plugins && window.g_asc_plugins.onPluginMethodReturn(data);
 			};
 		}
 		this.downloadAs(Asc.c_oAscAsyncAction.DownloadAs, opts);
@@ -1208,7 +1204,11 @@
      */
 	Api.prototype["pluginMethod_PutImageDataToSelection"] = function(oImageData)
 	{
-		let sMethodGuid = window.g_asc_plugins.setPluginMethodReturnAsync();
+		if(this.isViewMode || this.isPdfEditor())
+		{
+			return;
+		}
+		window.g_asc_plugins.setPluginMethodReturnAsync();
 		let sImgSrc = oImageData["src"];
 		this.asc_checkImageUrlAndAction(sImgSrc, function(oImage)
 		{
@@ -1221,8 +1221,7 @@
 				nHeight = oImage.Image.height;
 			}
 			this.putImageToSelection(AscCommon.g_oDocumentUrls.getImageLocal(oImage.src), nWidth, nHeight, oImageData["replaceMode"]);
-			window.g_asc_plugins.onPluginMethodReturn(sMethodGuid);
-
+			window.g_asc_plugins.onPluginMethodReturn();
 		});
 	};
 
@@ -1591,7 +1590,7 @@
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {string} id - The button ID.
 	 * @param {boolean} bShow - The flag specifies whether the button is shown (**true**) or hidden (**false**).
-	 * @param {string} align - The parameter indicates whether the button will be displayed on the right side of the window or on the left (*left* by default).
+	 * @param {string} align - The parameter indicates whether the button will be displayed on the right side of the window or on the left. The default value is "left".
 	 * @alias ShowButton 
 	 * @since 7.2.0
 	 */
@@ -1609,19 +1608,18 @@
 		if (!this.keychainStorage)
 			this.keychainStorage = new AscCrypto.Storage.CStorageLocalStorage();
 
-		var guidAsync = window.g_asc_plugins.setPluginMethodReturnAsync();
-
+		window.g_asc_plugins.setPluginMethodReturnAsync();
 		this.keychainStorage.command(keys, function(retObj){
-			window.g_asc_plugins.onPluginMethodReturn(guidAsync, retObj);
+			window.g_asc_plugins.onPluginMethodReturn(retObj);
 		});
 	};
 
 	Api.prototype["pluginMethod_SetKeychainStorageInfo"] = function(items)
 	{
-		var guidAsync = window.g_asc_plugins.setPluginMethodReturnAsync();
+		window.g_asc_plugins.setPluginMethodReturnAsync();
 
-		this.keychainStorage.command(items, function(retObj){
-			window.g_asc_plugins.onPluginMethodReturn(guidAsync, retObj);
+		this.keychainStorage.command(items, function(retObj) {
+			window.g_asc_plugins.onPluginMethodReturn(retObj);
 		});
 	};
 
@@ -1759,7 +1757,7 @@
 	 */
 	Api.prototype["pluginMethod_ShowWindow"] = function(frameId, variation)
 	{
-		variation["guid"] = window.g_asc_plugins.guidAsyncMethod;
+		variation["guid"] = window.g_asc_plugins.getCurrentPluginGuid();
 		this.sendEvent("asc_onPluginWindowShow", frameId, variation);
 	};
 
@@ -1804,9 +1802,9 @@
 	 */
 	Api.prototype["pluginMethod_ResizeWindow"] = function(frameId, size, minSize, maxSize)
 	{
-		let guidAsync = window.g_asc_plugins.setPluginMethodReturnAsync();
+		window.g_asc_plugins.setPluginMethodReturnAsync();
 		this.sendEvent("asc_onPluginWindowResize", frameId, size, minSize, maxSize, function(){
-			window.g_asc_plugins.onPluginMethodReturn(guidAsync, 'resize_result');
+			window.g_asc_plugins.onPluginMethodReturn("resize_result");
 		});
 	};
 

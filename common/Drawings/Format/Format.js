@@ -4106,7 +4106,7 @@
 			for(let nPrst = 0; nPrst < aPresets.length; ++nPrst) {
 				let oShd = new asc_CShadowProperty();
 				let sPrst = aPresets[nPrst];
-				oShd.changePreset(sPrst);
+				oShd.putPreset(sPrst);
 				if(this.IsIdentical(oShd)) {
 					return sPrst;
 				}
@@ -4241,7 +4241,7 @@
 			this.dist = nVal * 36000 + 0.5 >> 0;
 		};
 		asc_CShadowProperty.prototype.getColor = function() {
-			return AscFormat.CreateAscColor(this.color);
+			return AscCommon.CreateAscColor(this.color);
 		};
 		asc_CShadowProperty.prototype.putColor = function(oAscColor) {
 			let nTransparency = this.getTransparency();
@@ -4254,6 +4254,13 @@
 			}
 			this.color = AscFormat.CorrectUniColor(oAscColor, this.color, nFlag);
 			this.putTransparency(nTransparency);
+		};
+		asc_CShadowProperty.prototype.checkColor = function(oTheme, oColorMap) {
+			if(this.color) {
+				if(oTheme && oColorMap) {
+					this.color.check(oTheme, oColorMap);
+				}
+			}
 		};
 
 
@@ -7375,6 +7382,9 @@
 				this.chExtY === xfrm.chExtY;
 		};
 		CXfrm.prototype.merge = function (xfrm) {
+			if(!xfrm) {
+				return;
+			}
 			if (xfrm.offX != null) {
 				this.offX = xfrm.offX;
 			}

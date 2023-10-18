@@ -4775,14 +4775,14 @@
             //HorizontalCentered
             let bHorizontalCentered = oPrintOptions.asc_getHorizontalCentered();
             if (null != bHorizontalCentered) {
-                this.memory.WriteByte(c_oSer_PrintOptions.Headings);
+                this.memory.WriteByte(c_oSer_PrintOptions.HorizontalCentered);
                 this.memory.WriteByte(c_oSerPropLenType.Byte);
                 this.memory.WriteBool(bHorizontalCentered);
             }
             //VerticalCentered
             let bVerticalCentered = oPrintOptions.asc_getVerticalCentered();
             if (null != bVerticalCentered) {
-                this.memory.WriteByte(c_oSer_PrintOptions.Headings);
+                this.memory.WriteByte(c_oSer_PrintOptions.VerticalCentered);
                 this.memory.WriteByte(c_oSerPropLenType.Byte);
                 this.memory.WriteBool(bVerticalCentered);
             }
@@ -11618,6 +11618,10 @@
                 //при открытии подобных формул ms удаляет префикс
                 //TODO так же он проставляет флаг ca - рассмотреть стоит ли его нам доблавлять
                 formula.v = formula.v.replace("_xludf.", "");
+            }
+            if (formula.v.startsWith("=")) {
+                //LO write "=" to file
+                formula.v = formula.v.replace("=", "");
             }
 
             var offsetRow;
