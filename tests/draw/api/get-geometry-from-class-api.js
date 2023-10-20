@@ -76,6 +76,9 @@
 	const radToDeg = 180 / Math.PI;
 	const radToC = radToDeg * degToC;
 
+	const mmToEmuCoef = 36000;
+	const emuToMM = 1/36000;
+
 	function getRandomPrst() {
 		let types = AscCommon.g_oAutoShapesTypes[Math.floor(Math.random()*AscCommon.g_oAutoShapesTypes.length)];
 		return types[Math.floor(Math.random()*types.length)].Type;
@@ -495,6 +498,112 @@
 						path.ellipticalArcTo(newX, newY, controlPoint.x, controlPoint.y, 0, 1);
 						lastPoint.x = newX;
 						lastPoint.y = newY;
+						break;
+					}
+					case "PolylineTo":
+					{
+						console.log("PolylineTo command draw is not realized");
+						break;
+					}
+					case "NURBSTo":
+					{
+						// https://learn.microsoft.com/en-us/office/client-developer/visio/nurbsto-row-geometry-section
+						let xEndPoint = Number(findCell(commandRow, "n", "X").v);
+						let yEndPoint = Number(findCell(commandRow, "n", "Y").v);
+						let preLastKnot = Number(findCell(commandRow, "n", "A").v);
+						let lastWeight = Number(findCell(commandRow, "n", "B").v);
+						let firstKnot = Number(findCell(commandRow, "n", "C").v);
+						let firstWeight = Number(findCell(commandRow, "n", "D").v);
+						// NURBS formula: knotLast, degree, xType, yType, x1, y1, knot1, weight1, x2, y2, knot2, weight2, ...
+						let formula = String(findCell(commandRow, "n", "E").v).trim();
+
+						// let use inches for now not EMUs
+						let prevLastX = lastPoint.x * emuToMM * 1/additionalUnitCoefficient;
+						let prevLastY = lastPoint.y * emuToMM * 1/additionalUnitCoefficient;
+
+						let formulaValues = formula.substring(6, formula.length - 1).split(",");
+						let lastKnot = Number(formulaValues[0]);
+						let degree = Number(formulaValues[1]);
+						let xType =	parseInt(formulaValues[2]);
+						let yType = parseInt(formulaValues[3]);
+
+						let xScale = 1;
+						let yScale = 1;
+
+						//TODO maybe recalculate using BeginX BeginY
+						if (xType == 0)
+							xScale = shapeWidth;
+						if (yType == 0)
+							yScale = shapeHeight;
+
+						/** @type {{x: Number, y: Number}[]} */
+						let controlPoints = [];
+						/** @type {Number[]} */
+						let weights = [];
+						/** @type {Number[]} */
+						let knots = [];
+
+						knots.push(firstKnot);
+						weights.push(firstWeight);
+						controlPoints.push({x: prevLastX, y: prevLastY});
+
+						// point + knot groups
+						let groupsCount = (formulaValues.length - 4) / 4;
+						for (let j = 0; j < groupsCount; j++) {
+							let controlPointX = Number(formulaValues[4 + j * 4]);
+							let controlPointY = Number(formulaValues[4 + j * 4 + 1]);
+							let knot = Number(formulaValues[4 + j * 4 + 2]);
+							let weight = Number(formulaValues[4 + j * 4 + 3]);
+
+							// scale only in formula
+							let scaledX = controlPointX * xScale;
+							let scaledY = controlPointY * yScale;
+
+							controlPoints.push({x: scaledX, y: scaledY});
+							knots.push(knot);
+							weights.push(weight);
+						}
+
+						knots.push(preLastKnot);
+						knots.push(lastKnot);
+						// add 3 more knots for 3 degree NURBS to clamp curve at end point
+						for (let j = 0; j < degree; j++) {
+							knots.push(lastKnot);
+						}
+						weights.push(lastWeight);
+						controlPoints.push({x: xEndPoint, y: yEndPoint});
+
+						console.log("NURBSTo command draw is not realized");
+						break;
+					}
+					case "SplineStart":
+					{
+						console.log("SplineStart command draw is not realized");
+						break;
+					}
+					case "SplineKnot":
+					{
+						console.log("SplineKnot command draw is not realized");
+						break;
+					}
+					case "InfiniteLine":
+					{
+						console.log("InfiniteLine command draw is not realized");
+						break;
+					}
+					case "RelCubBezTo":
+					{
+						console.log("RelCubBezTo command draw is not realized");
+						break;
+					}
+					case "RelEllipticalArcTo":
+					{
+						console.log("RelEllipticalArcTo command draw is not realized");
+						break;
+					}
+					case "RelQuadBezTo":
+					{
+						console.log("RelQuadBezTo command draw is not realized");
 						break;
 					}
 				}
