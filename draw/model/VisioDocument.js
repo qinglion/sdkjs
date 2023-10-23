@@ -326,6 +326,19 @@
 		let types = AscCommon.g_oAutoShapesTypes[Math.floor(Math.random()*AscCommon.g_oAutoShapesTypes.length)];
 		return types[Math.floor(Math.random()*types.length)].Type;
 	}
+	//TODO import
+	/**
+	 * afin rotate clockwise
+	 * @param {number} x
+	 * @param {number} y
+	 * @param {number} radiansRotateAngle radians Rotate AntiClockWise Angle. E.g. 30 degrees rotates does DOWN.
+	 * @returns {{x: number, y: number}} point
+	 */
+	function rotatePointAroundCordsStartClockWise(x, y, radiansRotateAngle) {
+		let newX = x * Math.cos(radiansRotateAngle) + y * Math.sin(radiansRotateAngle);
+		let newY = x * (-1) * Math.sin(radiansRotateAngle) + y * Math.cos(radiansRotateAngle);
+		return {x : newX, y: newY};
+	}
 	CVisioDocument.prototype.convertToShapes = function(logic_w_mm, logic_h_mm) {
 		let shapes = [];
 		var oFill   = AscFormat.CreateUnfilFromRGB(0,127,0);
@@ -339,20 +352,33 @@
 				let shapeMaster = this.getMasterByID(shapeMasterID);
 				shape.realizeMasterToShapeInheritance(shapeMaster);
 			}
-			let pinX_inch = shape.elements.find(function(elem) {return elem.n === "PinX"}).v;
-			let pinY_inch = shape.elements.find(function(elem) {return elem.n === "PinY"}).v;
-			let shapeWidth_inch = shape.elements.find(function(elem) {return elem.n === "Width"}).v;
-			let shapeHeight_inch = shape.elements.find(function(elem) {return elem.n === "Height"}).v;
-			let shapeWidth_mm = shapeWidth_inch * g_dKoef_in_to_mm;
-			let shapeHeight_mm = shapeHeight_inch * g_dKoef_in_to_mm;
-			let x_inch = pinX_inch - shapeWidth_inch / 2;
-			let y_inch = pinY_inch - shapeHeight_inch / 2;
+			let pinX_inch = Number(shape.elements.find(function(elem) {return elem.n === "PinX"}).v);
+			let pinY_inch = Number(shape.elements.find(function(elem) {return elem.n === "PinY"}).v);
+			let shapeWidth_inch = Number(shape.elements.find(function(elem) {return elem.n === "Width"}).v);
+			let shapeHeight_inch = Number(shape.elements.find(function(elem) {return elem.n === "Height"}).v);
+
+			// LocPinX and LocPinY set shape rotate point and add offset to initial shape center
+			// to rotate around point we 1) add one more offset 2) rotate around center
+			// could be refactored maybe
+			// https://www.figma.com/file/jr1stjGUa3gKUBWxNAR80T/locPinHandle?type=design&node-id=0%3A1&mode=design&t=raXzFFsssqSexysi-1
+			let shapeAngle = Number(shape.elements.find(function(elem) {return elem.n === "Angle"}).v);
+			let locPinX_inch = Number(shape.elements.find(function(elem) {return elem.n === "LocPinX"}).v);
+			let locPinY_inch = Number(shape.elements.find(function(elem) {return elem.n === "LocPinY"}).v);
+			let redVector = {x: -(locPinX_inch - shapeWidth_inch/2), y: -(locPinY_inch - shapeHeight_inch/2)};
+			// rotate antiClockWise by shapeAngle
+			let purpleVector = rotatePointAroundCordsStartClockWise(redVector.x, redVector.y, -shapeAngle);
+			let rotatedCenter = {x: pinX_inch - redVector.x + purpleVector.x, y: pinY_inch - redVector.y + purpleVector.y};
+			let turquoiseVector = {x: -shapeWidth_inch/2, y: -shapeHeight_inch/2};
+			// locPinX and locPinY not only set rotate point but shifts center too!
+			let x_inch = rotatedCenter.x + turquoiseVector.x + redVector.x;
+			let y_inch = rotatedCenter.y + turquoiseVector.y + redVector.y;
+
 			let x_mm = x_inch * g_dKoef_in_to_mm;
 			let y_mm = y_inch * g_dKoef_in_to_mm;
+			let shapeWidth_mm = shapeWidth_inch * g_dKoef_in_to_mm;
+			let shapeHeight_mm = shapeHeight_inch * g_dKoef_in_to_mm;
 
 			let shapeGeom = AscCommonDraw.getGeometryFromShape(shape);
-
-			let shapeAngle = Number(shape.elements.find(function(elem) {return elem.n === "Angle"}).v);
 
 			let cShape = this.convertToShape(x_mm, y_mm, shapeWidth_mm, shapeHeight_mm, shapeAngle, oFill, oStroke, shapeGeom);
 
