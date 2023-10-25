@@ -477,7 +477,7 @@
 						// https://learn.microsoft.com/en-us/office/client-developer/visio/arcto-row-geometry-section
 						// circular arc
 
-						// middleGap = a can be negative which leads to opposite arc direction clockwise or anti-clockwise
+						// middleGap = a. can be negative which leads to opposite arc direction clockwise or anti-clockwise
 
 						let x = Number(findCell(commandRow, "n", "X").v)					// xEnd
 						let y = Number(findCell(commandRow, "n", "Y").v);					// yEnd
@@ -507,112 +507,175 @@
 					}
 					case "NURBSTo":
 					{
-						// using https://github.com/thibauts/b-spline by thibauts under MIT Licence
-						// The MIT License (MIT)
-						//
-						// Copyright (c) 2015 Thibaut Séguy <thibaut.seguy@gmail.com>
-						//
-						// Permission is hereby granted, free of charge, to any person obtaining a copy
-						// of this software and associated documentation files (the "Software"), to deal
-						// in the Software without restriction, including without limitation the rights
-						// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-						// copies of the Software, and to permit persons to whom the Software is
-						// furnished to do so, subject to the following conditions:
-						//
-						// The above copyright notice and this permission notice shall be included in
-						// all copies or substantial portions of the Software.
-						//
-						// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-						// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-						// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-						// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-						// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-						// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-						// THE SOFTWARE.
-						function interpolate(t, degree, points, knots, weights, result) {
+						/**
+						 * for NURBS to Bezier convert https://math.stackexchange.com/questions/417859/convert-a-b-spline-into-bezier-curves
+						 * @param {{x: Number, y: Number, z? :Number}[]} controlPoints
+						 * @param {Number[]} weights
+						 * @param {Number[]} knots
+						 * @param {Number} multiplicity
+						 * @returns {{controlPoints: {x: Number, y: Number, z? :Number}[], weights: Number[], knots: Number[]}} new bezier data
+						 */
+						function duplicateKnots(controlPoints, weights, knots, multiplicity) {
+							/**
+							 * http://preserve.mactech.com/articles/develop/issue_25/schneider.html
+							 * can be found with pictures
+							 * @param {{x: Number, y: Number, z? :Number}[]} controlPoints
+							 * @param {Number[]} weights
+							 * @param {Number[]} knots
+							 * @param {Number} tNew
+							 * @return {{controlPoints: {x: Number, y: Number, z? :Number}[], weights: Number[], knots: Number[]}} new bezier data
+							 */
+							function insertKnot(controlPoints, weights, knots, tNew) {
+								let n = controlPoints.length;
+								let order = knots.length - controlPoints.length;
+								let k = order;
 
-							var i,j,s,l;              // function-scoped iteration variables
-							var n = points.length;    // points count
-							var d = points[0].length; // point dimensionality
+								let calculateZ = controlPoints[0].z !== undefined;
 
-							if(degree < 1) throw new Error('degree must be at least 1 (linear)');
-							if(degree > (n-1)) throw new Error('degree must be less than or equal to point count - 1');
+								let newKnots = [];
+								let newWeights = [];
+								let newControlPoints = [];
 
-							if(!weights) {
-								// build weight vector of length [n]
-								weights = [];
-								for(i=0; i<n; i++) {
-									weights[i] = 1;
-								}
-							}
-
-							if(!knots) {
-								// build knot vector of length [n + degree + 1]
-								var knots = [];
-								for(i=0; i<n+degree+1; i++) {
-									knots[i] = i;
-								}
-							} else {
-								if(knots.length !== n+degree+1) throw new Error('bad knot vector length');
-							}
-
-							var domain = [
-								degree,
-								knots.length-1 - degree
-							];
-
-							// remap t to the domain where the spline is defined
-							var low  = knots[domain[0]];
-							var high = knots[domain[1]];
-							t = t * (high - low) + low;
-
-							if(t < low || t > high) throw new Error('out of bounds');
-
-							// find s (the spline segment) for the [t] value provided
-							for(s=domain[0]; s<domain[1]; s++) {
-								if(t >= knots[s] && t <= knots[s+1]) {
-									break;
-								}
-							}
-
-							// convert points to homogeneous coordinates
-							var v = [];
-							for(i=0; i<n; i++) {
-								v[i] = [];
-								for(j=0; j<d; j++) {
-									v[i][j] = points[i][j] * weights[i];
-								}
-								v[i][d] = weights[i];
-							}
-
-							// l (level) goes from 1 to the curve degree + 1
-							var alpha;
-							for(l=1; l<=degree+1; l++) {
-								// build level l of the pyramid
-								for(i=s; i>s-degree-1+l; i--) {
-									alpha = (t - knots[i]) / (knots[i+degree+1-l] - knots[i]);
-
-									// interpolate each component
-									for(j=0; j<d+1; j++) {
-										v[i][j] = (1 - alpha) * v[i-1][j] + alpha * v[i][j];
+								// find index to insert tNew after
+								let i = -1;
+								for (let j = 0; j < n + k; j++) {
+									if (tNew > knots[j] && tNew <= knots[j + 1]) {
+										i = j;
+										break;
 									}
 								}
+
+								// insert tNew
+								if (i === -1) {
+									throw new Error("Not found position to insert new knot");
+								} else {
+									// Copy knots to new array.
+									for (let j = 0; j < n + k + 1; j++) {
+										if (j <= i) {
+											newKnots[j] = knots[j];
+										} else if (j === i + 1) {
+											newKnots[j] = tNew;
+										} else {
+											newKnots[j] = knots[j - 1];
+										}
+									}
+								}
+
+								// Compute position of new control point and new positions of
+								// existing ones.
+								let alpha;
+								for (let j = 0; j < n + 1; j++) {
+									if (j <= i - k + 1) {
+										alpha = 1;
+									} else if (i - k + 2 <= j && j <= i) {
+										if (knots[j + k - 1] - knots[j] == 0) {
+											alpha = 0;
+										} else {
+											alpha = (tNew - knots[j]) / (knots[j + k - 1] - knots[j]);
+										}
+									} else {
+										alpha = 0;
+									}
+									if (alpha == 0) {
+										newControlPoints[j] = controlPoints[j - 1];
+										newWeights[j] = weights[j - 1];
+									} else if (alpha == 1) {
+										newControlPoints[j] = controlPoints[j];
+										newWeights[j] = weights[j];
+									} else {
+										newControlPoints[j] = {};
+										newControlPoints[j].x =
+											(1 - alpha) * controlPoints[j - 1].x + alpha * controlPoints[j].x;
+										newControlPoints[j].y =
+											(1 - alpha) * controlPoints[j - 1].y + alpha * controlPoints[j].y;
+										if (calculateZ) {
+											newControlPoints[j].z =
+												(1 - alpha) * controlPoints[j - 1].z + alpha * controlPoints[j].z;
+										}
+										newWeights[j] = (1 - alpha) * weights[j - 1] + alpha * weights[j];
+									}
+								}
+
+								return {
+									controlPoints: newControlPoints,
+									weights: newWeights,
+									knots: newKnots,
+								};
 							}
 
-							// convert back to cartesian and return
-							var result = result || [];
-							for(i=0; i<d; i++) {
-								result[i] = v[s][i] / v[s][d];
-							}
+							let knotValue = knots[0];
+							let knotIndex;
+							while (true) {
+								let knotsCount = 0;
+								for(let i = 0; i < knots.length; i++) {
+									knotsCount += knots[i] === knotValue ? 1 : 0;
+								}
 
-							return result;
+								knotIndex = knots.indexOf(knotValue);
+								let insertCount = multiplicity - knotsCount;
+								insertCount = insertCount < 0 ? 0 : insertCount;
+								for (let i = 0; i < insertCount; i++) {
+									let newNURBSdata;
+									try {
+										newNURBSdata = insertKnot(controlPoints, weights, knots, knotValue);
+									} catch (e) {
+										console.log('Unknown error. unexpected t');
+									}
+									controlPoints = newNURBSdata.controlPoints;
+									weights = newNURBSdata.weights;
+									knots = newNURBSdata.knots;
+								}
+
+								knotIndex = knotIndex + knotsCount + insertCount ;
+								if (knotIndex === knots.length) {
+									// out of bounds
+									break;
+								}
+								knotValue = knots[knotIndex];
+							}
+							return {controlPoints: controlPoints, weights: weights, knots: knots};
+						}
+
+						/**
+						 *
+						 * @param {{x: Number, y: Number, z? :Number}[]} controlPoints
+						 * @returns { {
+						 *              startPoint:     {x: Number, y: Number, z? :Number},
+						 *              controlPoint1:  {x: Number, y: Number, z? :Number},
+						 *              controlPoint2:  {x: Number, y: Number, z? :Number},
+						 *              endPoint:       {x: Number, y: Number, z? :Number},
+						 *            }[] }
+						 */
+						function NURBSnormalizedToBezier(controlPoints) {
+							let bezierArray = [];
+							let nthBezier = {
+								startPoint: controlPoints[0],
+								controlPoint1: controlPoints[1],
+								controlPoint2: controlPoints[2],
+								// endPoint: controlPoints[3]
+							};
+							// bezier.push(firstBezier);
+							for (let i = 3; i < controlPoints.length; i++) {
+								const point = controlPoints[i];
+								if (i % 3 === 0) {
+									nthBezier.endPoint = point;
+									let nthBezierCopy = JSON.parse(JSON.stringify(nthBezier));
+									bezierArray.push(nthBezierCopy);
+									nthBezier = {
+										startPoint: point
+									};
+								} else if (i % 3 === 1) {
+									nthBezier.controlPoint1 = point;
+								} else if (i % 3 === 2) {
+									nthBezier.controlPoint2 = point;
+								}
+							}
+							return bezierArray;
 						}
 
 						//TODO
-						// check relative of what to calculate xScale and yScale maybe it is not shapeWidth and shapeHeight
-						// get to know what is xType and yType
 						// check non 3-degrees NURBS
-						// consider homogenous or euclidian points weights
+						// consider homogenous or euclidean weighted points weights
 						// consider NURBS length setting points count
 
 						// https://learn.microsoft.com/en-us/office/client-developer/visio/nurbsto-row-geometry-section
@@ -638,10 +701,9 @@
 						let xScale = 1;
 						let yScale = 1;
 
-						//TODO maybe recalculate using BeginX BeginY
-						if (xType == 0)
+						if (xType === 0)
 							xScale = shapeWidth;
-						if (yType == 0)
+						if (yType === 0)
 							yScale = shapeHeight;
 
 						/** @type {{x: Number, y: Number}[]} */
@@ -682,29 +744,22 @@
 						weights.push(lastWeight);
 						controlPoints.push({x: xEndPoint, y: yEndPoint});
 
+						// Convert to Bezier
+						let newNURBSform = duplicateKnots(controlPoints, weights, knots, 3);
+						let bezierArray = NURBSnormalizedToBezier(newNURBSform.controlPoints);
+
 						// Drawing commands create
-						let pointsCount = 1000;
-						let controlPointsArrayFormat = controlPoints.map(function (point) {
-							return [point.x, point.y];
+						bezierArray.forEach(function (bezier) {
+							let cp1x = convertUnits(bezier.controlPoint1.x, additionalUnitCoefficient);
+							let cp1y = convertUnits(bezier.controlPoint1.y, additionalUnitCoefficient);
+							let cp2x = convertUnits(bezier.controlPoint2.x, additionalUnitCoefficient);
+							let cp2y = convertUnits(bezier.controlPoint2.y, additionalUnitCoefficient);
+							let endx = convertUnits(bezier.endPoint.x, additionalUnitCoefficient);
+							let endy = convertUnits(bezier.endPoint.y, additionalUnitCoefficient);
+							path.cubicBezTo(cp1x, cp1y, cp2x, cp2y, endx, endy);
 						});
-						let prevX = convertUnits(prevLastX, additionalUnitCoefficient);
-						let prevY = convertUnits(prevLastY, additionalUnitCoefficient);
-						for(let t = 0; t < 1; t += 1/pointsCount) {
-							let point;
-							try {
-								point = interpolate(t, degree, controlPointsArrayFormat, knots, weights);
-							} catch (e) {
-								console.log(e);
-								break;
-							}
-							let newX = convertUnits(point[0], additionalUnitCoefficient);
-							let newY = convertUnits(point[1], additionalUnitCoefficient);
-							path.lnTo(newX, newY);
-							prevX = newX;
-							prevY = newY;
-						}
-						lastPoint.x = prevX;
-						lastPoint.y = prevY;
+						lastPoint.x = convertUnits(bezierArray[bezierArray.length-1].endPoint.x, additionalUnitCoefficient);
+						lastPoint.y = convertUnits(bezierArray[bezierArray.length-1].endPoint.y, additionalUnitCoefficient);
 						break;
 					}
 					case "SplineStart":
