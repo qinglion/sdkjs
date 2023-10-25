@@ -44,7 +44,8 @@ var moveTo=0,
     bezier3=3,
     bezier4=4,
     close=5,
-    ellipticalArcTo=6;
+    ellipticalArcTo=6,
+    nurbsTo=7;
 
 // Import
 var cToRad = AscFormat.cToRad;
@@ -340,6 +341,25 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
     Path.prototype.ellipticalArcTo = function(x, y, a, b, c, d)
     {
         this.addPathCommand({id: ellipticalArcTo, x: x, y: y, a: a, b: b, c: c, d: d});
+    };
+    /**
+     * https://learn.microsoft.com/en-us/office/client-developer/visio/nurbsto-row-geometry-section
+     * but with a length in EMUs units
+     * Also this command may implicitly use shapeWidth or shapeHeight to scale x and y of NURBS points inside
+     * e argument - NURBS formula if xType or yType in formula is equal to 0
+     * @param x
+     * @param y
+     * @param a
+     * @param b
+     * @param c
+     * @param d
+     * @param e
+     * @param shapeWidth
+     * @param shapeHeight
+     */
+    Path.prototype.nurbsTo = function(x, y, a, b, c, d, e, shapeWidth, shapeHeight)
+    {
+        this.addPathCommand({id: nurbsTo, x: x, y: y, a: a, b: b, c: c, d: d, e: e, shapeWidth: shapeWidth, shapeHeight: shapeHeight});
     };
 	Path.prototype.calculateCommandCoord = function(oGdLst, sFormula, dFormulaCoeff, dNumberCoeff)
     {
@@ -765,6 +785,270 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                     lastY = y;
                     break;
                 }
+                case nurbsTo:
+                {
+                    // https://learn.microsoft.com/en-us/office/client-developer/visio/nurbsto-row-geometry-section
+                    // but with a length in EMUs units
+
+                    //TODO
+                    // check non 3-degrees NURBS
+                    // consider homogenous or euclidean weighted points weights
+
+                    /**
+                     * for NURBS to Bezier convert https://math.stackexchange.com/questions/417859/convert-a-b-spline-into-bezier-curves
+                     * @param {{x: Number, y: Number, z? :Number}[]} controlPoints
+                     * @param {Number[]} weights
+                     * @param {Number[]} knots
+                     * @param {Number} multiplicity
+                     * @returns {{controlPoints: {x: Number, y: Number, z? :Number}[], weights: Number[], knots: Number[]}} new bezier data
+                     */
+                    function duplicateKnots(controlPoints, weights, knots, multiplicity) {
+                        /**
+                         * http://preserve.mactech.com/articles/develop/issue_25/schneider.html
+                         * can be found with pictures
+                         * @param {{x: Number, y: Number, z? :Number}[]} controlPoints
+                         * @param {Number[]} weights
+                         * @param {Number[]} knots
+                         * @param {Number} tNew
+                         * @return {{controlPoints: {x: Number, y: Number, z? :Number}[], weights: Number[], knots: Number[]}} new bezier data
+                         */
+                        function insertKnot(controlPoints, weights, knots, tNew) {
+                            let n = controlPoints.length;
+                            let order = knots.length - controlPoints.length;
+                            let k = order;
+
+                            let calculateZ = controlPoints[0].z !== undefined;
+
+                            let newKnots = [];
+                            let newWeights = [];
+                            let newControlPoints = [];
+
+                            // find index to insert tNew after
+                            let i = -1;
+                            for (let j = 0; j < n + k; j++) {
+                                if (tNew > knots[j] && tNew <= knots[j + 1]) {
+                                    i = j;
+                                    break;
+                                }
+                            }
+
+                            // insert tNew
+                            if (i === -1) {
+                                throw new Error("Not found position to insert new knot");
+                            } else {
+                                // Copy knots to new array.
+                                for (let j = 0; j < n + k + 1; j++) {
+                                    if (j <= i) {
+                                        newKnots[j] = knots[j];
+                                    } else if (j === i + 1) {
+                                        newKnots[j] = tNew;
+                                    } else {
+                                        newKnots[j] = knots[j - 1];
+                                    }
+                                }
+                            }
+
+                            // Compute position of new control point and new positions of
+                            // existing ones.
+                            let alpha;
+                            for (let j = 0; j < n + 1; j++) {
+                                if (j <= i - k + 1) {
+                                    alpha = 1;
+                                } else if (i - k + 2 <= j && j <= i) {
+                                    if (knots[j + k - 1] - knots[j] == 0) {
+                                        alpha = 0;
+                                    } else {
+                                        alpha = (tNew - knots[j]) / (knots[j + k - 1] - knots[j]);
+                                    }
+                                } else {
+                                    alpha = 0;
+                                }
+                                if (alpha == 0) {
+                                    newControlPoints[j] = controlPoints[j - 1];
+                                    newWeights[j] = weights[j - 1];
+                                } else if (alpha == 1) {
+                                    newControlPoints[j] = controlPoints[j];
+                                    newWeights[j] = weights[j];
+                                } else {
+                                    newControlPoints[j] = {};
+                                    newControlPoints[j].x =
+                                      (1 - alpha) * controlPoints[j - 1].x + alpha * controlPoints[j].x;
+                                    newControlPoints[j].y =
+                                      (1 - alpha) * controlPoints[j - 1].y + alpha * controlPoints[j].y;
+                                    if (calculateZ) {
+                                        newControlPoints[j].z =
+                                          (1 - alpha) * controlPoints[j - 1].z + alpha * controlPoints[j].z;
+                                    }
+                                    newWeights[j] = (1 - alpha) * weights[j - 1] + alpha * weights[j];
+                                }
+                            }
+
+                            return {
+                                controlPoints: newControlPoints,
+                                weights: newWeights,
+                                knots: newKnots,
+                            };
+                        }
+
+                        let knotValue = knots[0];
+                        let knotIndex;
+                        while (true) {
+                            let knotsCount = 0;
+                            for(let i = 0; i < knots.length; i++) {
+                                knotsCount += knots[i] === knotValue ? 1 : 0;
+                            }
+
+                            knotIndex = knots.indexOf(knotValue);
+                            let insertCount = multiplicity - knotsCount;
+                            insertCount = insertCount < 0 ? 0 : insertCount;
+                            for (let i = 0; i < insertCount; i++) {
+                                let newNURBSdata;
+                                try {
+                                    newNURBSdata = insertKnot(controlPoints, weights, knots, knotValue);
+                                } catch (e) {
+                                    console.log('Unknown error. unexpected t');
+                                }
+                                controlPoints = newNURBSdata.controlPoints;
+                                weights = newNURBSdata.weights;
+                                knots = newNURBSdata.knots;
+                            }
+
+                            knotIndex = knotIndex + knotsCount + insertCount ;
+                            if (knotIndex === knots.length) {
+                                // out of bounds
+                                break;
+                            }
+                            knotValue = knots[knotIndex];
+                        }
+                        return {controlPoints: controlPoints, weights: weights, knots: knots};
+                    }
+
+                    /**
+                     *
+                     * @param {{x: Number, y: Number, z? :Number}[]} controlPoints
+                     * @returns { {
+                     *              startPoint:     {x: Number, y: Number, z? :Number},
+                     *              controlPoint1:  {x: Number, y: Number, z? :Number},
+                     *              controlPoint2:  {x: Number, y: Number, z? :Number},
+                     *              endPoint:       {x: Number, y: Number, z? :Number},
+                     *            }[] }
+                     */
+                    function NURBSnormalizedToBezier(controlPoints) {
+                        let bezierArray = [];
+                        let nthBezier = {
+                            startPoint: controlPoints[0],
+                            controlPoint1: controlPoints[1],
+                            controlPoint2: controlPoints[2],
+                            // endPoint: controlPoints[3]
+                        };
+                        // bezier.push(firstBezier);
+                        for (let i = 3; i < controlPoints.length; i++) {
+                            const point = controlPoints[i];
+                            if (i % 3 === 0) {
+                                nthBezier.endPoint = point;
+                                let nthBezierCopy = JSON.parse(JSON.stringify(nthBezier));
+                                bezierArray.push(nthBezierCopy);
+                                nthBezier = {
+                                    startPoint: point
+                                };
+                            } else if (i % 3 === 1) {
+                                nthBezier.controlPoint1 = point;
+                            } else if (i % 3 === 2) {
+                                nthBezier.controlPoint2 = point;
+                            }
+                        }
+                        return bezierArray;
+                    }
+
+                    // Init arguments
+                    let x, y, a, b, c, d, e, shapeWidth, shapeHeight;
+                    x = this.calculateCommandCoord(gdLst, cmd.x, cw, dCustomPathCoeffW);
+                    y = this.calculateCommandCoord(gdLst, cmd.y, ch, dCustomPathCoeffH);
+
+                    a=Number(cmd.a);
+                    b=Number(cmd.b);
+                    c=Number(cmd.c);
+                    d=Number(cmd.d);
+                    e=String(cmd.e); // e should be string - formula
+
+                    shapeWidth = Number(cmd.shapeWidth);
+                    shapeHeight = Number(cmd.shapeHeight);
+
+                    // Parse arguments
+                    let xEndPoint = x;
+                    let yEndPoint = y;
+                    let preLastKnot = a;
+                    let lastWeight = b;
+                    let firstKnot = c;
+                    let firstWeight = d;
+                    // NURBS formula: knotLast, degree, xType, yType, x1, y1, knot1, weight1, x2, y2, knot2, weight2, ...
+                    let formula = e;
+
+                    let formulaValues = formula.substring(6, formula.length - 1).split(",");
+                    let lastKnot = Number(formulaValues[0]);
+                    let degree = Number(formulaValues[1]);
+                    let xType =	parseInt(formulaValues[2]);
+                    let yType = parseInt(formulaValues[3]);
+
+                    let xScale = 1;
+                    let yScale = 1;
+
+                    if (xType === 0)
+                        xScale = shapeWidth;
+                    if (yType === 0)
+                        yScale = shapeHeight;
+
+                    /** @type {{x: Number, y: Number}[]} */
+                    let controlPoints = [];
+                    /** @type {Number[]} */
+                    let weights = [];
+                    /** @type {Number[]} */
+                    let knots = [];
+
+                    knots.push(firstKnot);
+                    weights.push(firstWeight);
+                    controlPoints.push({x: lastX, y: lastY});
+
+                    // point + knot groups
+                    let groupsCount = (formulaValues.length - 4) / 4;
+                    for (let j = 0; j < groupsCount; j++) {
+                        let emuControlPointX = Number(formulaValues[4 + j * 4]);
+                        let controlPointX = this.calculateCommandCoord(gdLst, emuControlPointX, cw, dCustomPathCoeffW);
+                        let emuControlPointY = Number(formulaValues[4 + j * 4 + 1])
+                        let controlPointY =  this.calculateCommandCoord(gdLst, emuControlPointY, ch, dCustomPathCoeffH);;
+                        let knot = Number(formulaValues[4 + j * 4 + 2]);
+                        let weight = Number(formulaValues[4 + j * 4 + 3]);
+
+                        // scale only in formula
+                        let scaledX = controlPointX * xScale;
+                        let scaledY = controlPointY * yScale;
+
+                        controlPoints.push({x: scaledX, y: scaledY});
+                        knots.push(knot);
+                        weights.push(weight);
+                    }
+
+                    knots.push(preLastKnot);
+                    knots.push(lastKnot);
+                    // add 3 more knots for 3 degree NURBS to clamp curve at end point
+                    // a clamped knot vector must have `degree + 1` equal knots
+                    for (let j = 0; j < degree; j++) {
+                        knots.push(lastKnot);
+                    }
+                    weights.push(lastWeight);
+                    controlPoints.push({x: xEndPoint, y: yEndPoint});
+
+                    // Convert to Bezier
+                    let newNURBSform = duplicateKnots(controlPoints, weights, knots, degree);
+                    let bezierArray = NURBSnormalizedToBezier(newNURBSform.controlPoints);
+
+                    // change nurbsTo params to draw using bezier
+                    this.ArrPathCommand[i]={id: nurbsTo, bezierArray: bezierArray};
+
+                    lastX = bezierArray[bezierArray.length-1].endPoint.x;
+                    lastY = bezierArray[bezierArray.length-1].endPoint.y;
+                    break;
+                }
                 default:
                 {
                     break;
@@ -929,6 +1213,20 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                     ArcToCurvers(shape_drawer, cmd.stX, cmd.stY, cmd.wR, cmd.hR, cmd.stAng, cmd.swAng, cmd.ellipseRotation);
                     break;
                 }
+                case nurbsTo:
+                {
+                    bIsDrawLast = true;
+                    cmd.bezierArray.forEach(function (bezier) {
+                        let cp1x = bezier.controlPoint1.x;
+                        let cp1y = bezier.controlPoint1.y;
+                        let cp2x = bezier.controlPoint2.x;
+                        let cp2y = bezier.controlPoint2.y;
+                        let endx = bezier.endPoint.x;
+                        let endy = bezier.endPoint.y;
+                        shape_drawer._c(cp1x, cp1y, cp2x, cp2y,endx, endy);
+                    });
+                    break;
+                }
             }
         }
 
@@ -980,6 +1278,19 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                 case ellipticalArcTo:
                 {
                     ArcToCurvers(checker, cmd.stX, cmd.stY, cmd.wR, cmd.hR, cmd.stAng, cmd.swAng, cmd.ellipseRotation);
+                    break;
+                }
+                case nurbsTo:
+                {
+                    cmd.bezierArray.forEach(function (bezier) {
+                        let cp1x = bezier.controlPoint1.x;
+                        let cp1y = bezier.controlPoint1.y;
+                        let cp2x = bezier.controlPoint2.x;
+                        let cp2y = bezier.controlPoint2.y;
+                        let endx = bezier.endPoint.x;
+                        let endy = bezier.endPoint.y;
+                        checker._c(cp1x, cp1y, cp2x, cp2y,endx, endy);
+                    });
                     break;
                 }
             }
