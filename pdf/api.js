@@ -370,15 +370,17 @@
 			return false;
 		}
 		
-		oDoc.activeForm.EnterText(text);
+		let isEntered = oDoc.activeForm.EnterText(text);
 		if (viewer.pagesInfo.pages[oDoc.activeForm._page].needRedrawForms) {
 			viewer._paint();
 			viewer.onUpdateOverlay();
 		}
 		
-		this.WordControl.m_oDrawingDocument.TargetStart();
-		// Чтобы при зажатой клавише курсор не пропадал
-		this.WordControl.m_oDrawingDocument.showTarget(true);
+		if (isEntered) {
+			this.WordControl.m_oDrawingDocument.TargetStart();
+			// Чтобы при зажатой клавише курсор не пропадал
+			this.WordControl.m_oDrawingDocument.showTarget(true);
+		}
 		
 		return true;
 	};
@@ -448,7 +450,7 @@
 		
 		oField.SelectOption(nIdx);
 		let isNeedRedraw = oField.IsNeedCommit();
-		if (oField._commitOnSelChange && oField.IsNeedCommit()) {
+		if (oField.IsCommitOnSelChange() && oField.IsNeedCommit()) {
 			oField.Commit();
 			isNeedRedraw = true;
 			
@@ -579,6 +581,11 @@
 		CommentData.Read_FromAscCommentData(AscCommentData);
 		oDoc.EditComment(Id, CommentData);
 	};
+	PDFEditorApi.prototype.asc_selectComment = function(Id)
+	{
+		this.getPDFDoc().GoToAnnot(Id);
+	};
+
 	PDFEditorApi.prototype.asc_EditSelectAll = function()
 	{
 		let oViewer = this.getDocumentRenderer();
@@ -866,9 +873,13 @@
 	PDFEditorApi.prototype['asc_hideComments']             = PDFEditorApi.prototype.asc_hideComments;
 	PDFEditorApi.prototype['asc_removeComment']            = PDFEditorApi.prototype.asc_removeComment;
 	PDFEditorApi.prototype['asc_changeComment']            = PDFEditorApi.prototype.asc_changeComment;
+	PDFEditorApi.prototype['asc_selectComment']            = PDFEditorApi.prototype.asc_selectComment;
 
 	PDFEditorApi.prototype['asc_setSkin']                  = PDFEditorApi.prototype.asc_setSkin;
 	PDFEditorApi.prototype['asc_getAnchorPosition']        = PDFEditorApi.prototype.asc_getAnchorPosition;
 	PDFEditorApi.prototype['SetMarkerFormat']              = PDFEditorApi.prototype.SetMarkerFormat;
+	PDFEditorApi.prototype['asc_EditSelectAll']            = PDFEditorApi.prototype.asc_EditSelectAll;
+	PDFEditorApi.prototype['Undo']                         = PDFEditorApi.prototype.Undo;
+	PDFEditorApi.prototype['Redo']                         = PDFEditorApi.prototype.Redo;
 
 })(window, window.document);

@@ -1543,13 +1543,13 @@
 							}
 						}
 
-						var bStartMedia = !!(window["AscDesktopEditor"] && object.getMediaFileName());
-						if (object.canMove() || bStartMedia) {
-							if (this.isSlideShow()) {
-								if (!bStartMedia) {
-									return null;
-								}
+						let bStartMedia = !!(window["AscDesktopEditor"] && object.getMediaFileName());
+						if (this.isSlideShow()) {
+							if (!bStartMedia) {
+								return null;
 							}
+						}
+						if (object.canMove() || bStartMedia) {
 							this.checkSelectedObjectsForMove(pageIndex);
 							if (!isRealObject(group)) {
 								var bGroupSelection = AscCommon.isRealObject(this.selection.groupSelection);
@@ -8412,6 +8412,9 @@
 					var _this = this;
 					var callback2 = function (bLock, bSync) {
 						if (bLock) {
+
+							const API = _this.getEditorApi();
+							API.sendEvent("asc_onUserActionStart");
 							var nPointType = AscFormat.isRealNumber(nHistoryPointType) ? nHistoryPointType : AscDFH.historydescription_CommonControllerCheckSelected;
 							History.Create_NewPoint(nPointType);
 							if (bSync !== true) {
@@ -8428,6 +8431,7 @@
 							callback.apply(_this, args);
 							_this.startRecalculate();
 							oApi.checkChangesSize();
+							API.sendEvent("asc_onUserActionEnd");
 							if (!(bNoSendProps === true)) {
 								_this.drawingObjects.sendGraphicObjectProps();
 							}
@@ -8447,10 +8451,15 @@
 					}
 					var _this = this;
 					var callback2 = function (bLock) {
+
+						const API = _this.getEditorApi();
+						API.sendEvent("asc_onUserActionStart");
 						if (bLock) {
 							History.Create_NewPoint();
 						}
 						callback.apply(_this, [bLock]);
+
+						API.sendEvent("asc_onUserActionEnd");
 						if (bLock) {
 							_this.startRecalculate();
 							_this.drawingObjects.sendGraphicObjectProps();
@@ -11230,6 +11239,22 @@
 			return aDiff;
 		};
 
+		function GetSelectedDrawings() {
+			const nEditorId = Asc.editor.getEditorId()
+			switch (nEditorId) {
+				case AscCommon.c_oEditorId.Word: {
+					return Asc.editor.getLogicDocument().DrawingObjects.selectedObjects;
+				}
+				case AscCommon.c_oEditorId.Spreadsheet: {
+					return Asc.editor.wb.getWorksheet().objectRender.controller.selectedObjects;
+				}
+				case AscCommon.c_oEditorId.Presentation: {
+					return Asc.editor.WordControl.m_oLogicDocument.GetCurrentController().selectedObjects;
+				}
+			}
+			return [];
+		}
+
 		//--------------------------------------------------------export----------------------------------------------------
 		window['AscFormat'] = window['AscFormat'] || {};
 		window['AscFormat'].HANDLE_EVENT_MODE_HANDLE = HANDLE_EVENT_MODE_HANDLE;
@@ -11319,4 +11344,5 @@
 		window["AscCommon"].CDrawingControllerStateBase = CDrawingControllerStateBase;
 		window["AscCommon"].getSpeechDescription = getSpeechDescription;
 		window["AscCommon"].getArrayElementsDiff = getArrayElementsDiff;
+		window["AscCommon"].GetSelectedDrawings = GetSelectedDrawings;
 	})(window);

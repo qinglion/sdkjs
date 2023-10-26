@@ -43,6 +43,11 @@
         g: 228,
         b: 255
     };
+    let FIELDS_HIGHLIGHT_REQ = {
+        r: 176,
+        g: 176,
+        b: 255
+    };
 
     let BUTTON_PRESSED = {
         r: 153,
@@ -100,7 +105,7 @@
 
     const MAX_TEXT_SIZE = 32767;
 	
-	const DEFAULT_FIELD_FONT = "Arial";
+	const DEFAULT_FIELD_FONT = "Times New Roman";
 	
 	
 	// freeze objects
@@ -143,6 +148,7 @@
         this._borderColor   = undefined;
         this._submitName    = "";
         this._textColor     = [0,0,0];
+        this._textFont      = undefined;
         this._fgColor       = undefined;
         this._textSize      = 10; // 0 == max text size // to do
         this._userName      = ""; // It is intended to be used as tooltip text whenever the cursor enters a field. 
@@ -203,7 +209,15 @@
         this.api = this.GetFormApi();
         this["api"] = this.api;
     }
-    
+
+    CBaseField.prototype.SetApIdx = function(nIdx) {
+        this.GetDocument().UpdateApIdx(nIdx);
+        this._apIdx = nIdx;
+    };
+    CBaseField.prototype.GetApIdx = function() {
+        return this._apIdx;
+    };
+
     CBaseField.prototype.AddToChildsMap = function(nIdx) {
         this.GetDocument().AddFieldToChildsMap(this, nIdx);
     };
@@ -365,7 +379,7 @@
         if (this._parent)
         {
             if (this._partialName != undefined)
-                return `${this._parent.GetFullName()}.${this._partialName}`
+                return this._parent.GetFullName() + "." + this._partialName;
             else
                 return this._parent.GetFullName();
         }
@@ -396,7 +410,7 @@
                     oAction.SetField(this);
                     break;
                 case AscPDF.ACTIONS_TYPES.ResetForm:
-                    oAction = new AscPDF.CActionReset(aFields, aActionsInfo[i]["Fields"]);
+                    oAction = new AscPDF.CActionReset(aActionsInfo[i]["Fields"], Boolean(aActionsInfo[i]["Flags"]));
                     aActions.push(oAction);
                     oAction.SetField(this);
                     break;
@@ -556,7 +570,61 @@
 
         return null;
     };
+    CBaseField.prototype.GetListActions = function() {
+        let aActions = [];
 
+        let oAction = this.GetTrigger(AscPDF.FORMS_TRIGGERS_TYPES.MouseUp);
+        if (oAction) {
+            aActions.push(oAction);
+        }
+        
+        oAction = this.GetTrigger(AscPDF.FORMS_TRIGGERS_TYPES.MouseDown);
+        if (oAction) {
+            aActions.push(oAction);
+        }
+
+        oAction = this.GetTrigger(AscPDF.FORMS_TRIGGERS_TYPES.MouseEnter);
+        if (oAction) {
+            aActions.push(oAction);
+        }
+
+        oAction = this.GetTrigger(AscPDF.FORMS_TRIGGERS_TYPES.MouseExit);
+        if (oAction) {
+            aActions.push(oAction);
+        }
+
+        oAction = this.GetTrigger(AscPDF.FORMS_TRIGGERS_TYPES.OnFocus);
+        if (oAction) {
+            aActions.push(oAction);
+        }
+
+        oAction = this.GetTrigger(AscPDF.FORMS_TRIGGERS_TYPES.OnBlur);
+        if (oAction) {
+            aActions.push(oAction);
+        }
+
+        oAction = this.GetTrigger(AscPDF.FORMS_TRIGGERS_TYPES.Keystroke);
+        if (oAction) {
+            aActions.push(oAction);
+        }
+
+        oAction = this.GetTrigger(AscPDF.FORMS_TRIGGERS_TYPES.Validate);
+        if (oAction) {
+            aActions.push(oAction);
+        }
+
+        oAction = this.GetTrigger(AscPDF.FORMS_TRIGGERS_TYPES.Calculate);
+        if (oAction) {
+            aActions.push(oAction);
+        }
+
+        oAction = this.GetTrigger(AscPDF.FORMS_TRIGGERS_TYPES.Format);
+        if (oAction) {
+            aActions.push(oAction);
+        }
+        
+        return aActions;
+    };
     CBaseField.prototype.GetDocument = function() {
         return this._doc;
     };
@@ -643,11 +711,14 @@
 
         oCtx.globalCompositeOperation = "destination-over";
         if (this.IsNeedDrawFromStream())
-            oCtx.globalCompositeOperation = "multiply";
+            AscPDF.startMultiplyMode(oCtx);
         
         if (this.GetType() == AscPDF.FIELD_TYPES.radiobutton && this._chStyle == AscPDF.CHECKBOX_STYLES.circle) {
             oCtx.beginPath();
-            oCtx.fillStyle = `rgb(${FIELDS_HIGHLIGHT.r}, ${FIELDS_HIGHLIGHT.g}, ${FIELDS_HIGHLIGHT.b})`;
+            if (this.IsRequired())
+                oCtx.fillStyle = 'rgb(' + FIELDS_HIGHLIGHT_REQ.r + ', ' + FIELDS_HIGHLIGHT_REQ.g + ', ' + FIELDS_HIGHLIGHT_REQ.b + ')';
+            else 
+                oCtx.fillStyle = 'rgb(' + FIELDS_HIGHLIGHT.r + ', ' + FIELDS_HIGHLIGHT.g + ', ' + FIELDS_HIGHLIGHT.b + ')';
             // выставляем в центр круга
             let centerX = X + W / 2;
             let centerY = Y + H / 2;
@@ -658,11 +729,14 @@
         }
         else if (this.GetType() != AscPDF.FIELD_TYPES.button){
             oCtx.beginPath();
-            oCtx.fillStyle = `rgb(${FIELDS_HIGHLIGHT.r}, ${FIELDS_HIGHLIGHT.g}, ${FIELDS_HIGHLIGHT.b})`;
+            if (this.IsRequired())
+                oCtx.fillStyle = 'rgb(' + FIELDS_HIGHLIGHT_REQ.r + ', ' + FIELDS_HIGHLIGHT_REQ.g + ', ' + FIELDS_HIGHLIGHT_REQ.b + ')';
+            else 
+                oCtx.fillStyle = 'rgb(' + FIELDS_HIGHLIGHT.r + ', ' + FIELDS_HIGHLIGHT.g + ', ' + FIELDS_HIGHLIGHT.b + ')';
             oCtx.fillRect(X, Y, W, H);
             oCtx.closePath();
         }
-        oCtx.globalCompositeOperation = "source-over";
+        AscPDF.endMultiplyMode(oCtx);
     };
     CBaseField.prototype.DrawBorders = function(oGraphicsPDF) {
         let oViewer     = editor.getDocumentRenderer();
@@ -984,7 +1058,7 @@
         }        
 
         // pressed border
-        if (this.GetType() == AscPDF.FIELD_TYPES.button && this.IsPressed() && this.GetHighlight() == AscPDF.BUTTON_HIGHLIGHT_TYPES.push && this._images.mouseDown == undefined) {
+        if (this.GetType() == AscPDF.FIELD_TYPES.button && this.IsPressed() && this.GetHighlight() == AscPDF.BUTTON_HIGHLIGHT_TYPES.push && this._imgData.mouseDown == undefined) {
             switch (this._borderStyle) {
                 case BORDER_TYPES.solid:
                 case BORDER_TYPES.dashed:
@@ -1186,19 +1260,34 @@
     CBaseField.prototype.SetReadOnly = function(bReadOnly) {
         this._readonly = bReadOnly;
     };
+    CBaseField.prototype.IsReadOnly = function() {
+        return this._readonly;
+    };
     
     CBaseField.prototype.SetRequired = function(bRequired) {
         if (this.GetType() != AscPDF.FIELD_TYPES.button)
             this._required = bRequired;
     };
+    CBaseField.prototype.IsRequired = function() {
+        return this._required;
+    };
     CBaseField.prototype.SetBorderColor = function(aColor) {
         this._strokeColor = this._borderColor = aColor;
+    };
+    CBaseField.prototype.GetBorderColor = function() {
+        return this._strokeColor;
     };
     CBaseField.prototype.SetBackgroundColor = function(aColor) {
         this._fillColor = this._bgColor = aColor;
     };
     CBaseField.prototype.GetBackgroundColor = function() {
         return this._fillColor;
+    };
+    CBaseField.prototype.SetHighlight = function(nType) {
+        this._highlight = nType;
+    };
+    CBaseField.prototype.GetHighlight = function() {
+        return this._highlight;
     };
     CBaseField.prototype.IsHidden = function() {
         let nType = this.GetDisplay();
@@ -1600,17 +1689,15 @@
         return null;
     };
 	
-    CBaseField.prototype.DrawOnPage = function(pdfGraphics, textBoxGraphics, pageIndex) {
-        if (this.IsHidden())
-            return;
+	CBaseField.prototype.DrawOnPage = function(pdfGraphics, textBoxGraphics, pageIndex) {
+		if (this.IsHidden())
+			return;
 		
-        if (this.IsNeedDrawFromStream()) {
-            this.Recalculate();
-            this.DrawFromStream(pdfGraphics);
-        }
-        else
-            this.DrawFromTextBox(pdfGraphics, textBoxGraphics, pageIndex);
-    };
+		if (this.IsNeedDrawFromStream())
+			this.DrawFromStream(pdfGraphics);
+		else
+			this.DrawFromTextBox(pdfGraphics, textBoxGraphics, pageIndex);
+	};
 
     CBaseField.prototype.DrawFromStream = function(oGraphicsPDF) {
         let originView      = this.GetOriginView(this.IsHovered && this.IsHovered() ? AscPDF.APPEARANCE_TYPE.rollover : undefined);
@@ -1703,6 +1790,56 @@
     CBaseField.prototype.GetTextColor = function() {
         return this._textColor;
     };
+    CBaseField.prototype.SetTextFont = function(sFontName) {
+        this._textFont = sFontName;
+        
+        // if (this.content) {
+        //     let oPara       = this.content.GetElement(0);
+        //     let oApiPara    = editor.private_CreateApiParagraph(oPara);
+
+        //     oApiPara.SetColor(oRGB.r, oRGB.g, oRGB.b, false);
+        //     oPara.RecalcCompiledPr(true);
+        // }
+        // if (this.contentFormat) {
+        //     let oPara       = this.contentFormat.GetElement(0);
+        //     let oApiPara    = editor.private_CreateApiParagraph(oPara);
+
+        //     oApiPara.SetColor(oRGB.r, oRGB.g, oRGB.b, false);
+        //     oPara.RecalcCompiledPr(true);
+        // }
+        
+        this.SetWasChanged(true);
+        this.AddToRedraw();
+    };
+    CBaseField.prototype.GetTextFont = function() {
+        return this._textFont;
+    };
+    CBaseField.prototype.SetTextSize = function(nSize) {
+        this._textSize = nSize;
+        
+        if (nSize != 0) {
+            if (this.content) {
+                let oPara       = this.content.GetElement(0);
+                let oApiPara    = editor.private_CreateApiParagraph(oPara);
+    
+                oApiPara.SetFontSize(nSize * 2);
+                oPara.RecalcCompiledPr(true);
+            }
+            if (this.contentFormat) {
+                let oPara       = this.contentFormat.GetElement(0);
+                let oApiPara    = editor.private_CreateApiParagraph(oPara);
+    
+                oApiPara.SetFontSize(nSize * 2);
+                oPara.RecalcCompiledPr(true);
+            }
+        }
+        
+        this.SetWasChanged(true);
+        this.AddToRedraw();
+    };
+    CBaseField.prototype.GetTextSize = function() {
+        return this._textSize;
+    };
     /**
      * Is the field completely within the window of view.
 	 * @memberof CBaseField
@@ -1793,6 +1930,207 @@
             "h" : this._pagePos.h
         };
     };
+    CBaseField.prototype.WriteToBinaryBase = function(memory) {
+        // type
+        memory.WriteByte(this.GetType());
+
+        // apidx
+        memory.WriteLong(this.GetApIdx());
+
+        // annont flags
+        let bHidden      = false;
+        let bPrint       = false;
+        let bNoView      = false;
+        let ToggleNoView = false;
+        let locked       = false;
+        let lockedC      = false;
+        let noZoom       = false;
+        let noRotate     = false;
+
+        let nDisplayType = this.GetDisplay();
+        if (nDisplayType == 1) {
+            bHidden = true;
+        }
+        else if (nDisplayType == 0 || nDisplayType == 3) {
+            bPrint = true;
+            if (nDisplayType == 3) {
+                bNoView = true;
+            }
+        }
+        let annotFlags = (bHidden << 1) |
+        (bPrint << 2) |
+        (noZoom << 3) |
+        (noRotate << 4) |
+        (bNoView << 5) |
+        (locked << 7) |
+        (ToggleNoView << 8) |
+        (lockedC << 9);
+
+        memory.WriteLong(annotFlags);
+
+        // page
+        memory.WriteLong(this.GetOriginPage());
+
+        // rect
+        let aOrigRect = this.GetOrigRect();
+        memory.WriteDouble(aOrigRect[0]); // x1
+        memory.WriteDouble(aOrigRect[1]); // y1
+        memory.WriteDouble(aOrigRect[2]); // x2
+        memory.WriteDouble(aOrigRect[3]); // y2
+
+        // pos for flags
+        let nStartPos = memory.GetCurPosition();
+        memory.Skip(4);
+        
+        annotFlags = 0;
+        let nBorder = this.GetBorderStyle();
+        let nBorderW = this.GetBordersWidth();
+        if (nBorder != null || nBorderW != null) {
+            annotFlags |= (1 << 4);
+            memory.WriteByte(nBorder);
+            memory.WriteDouble(nBorderW);
+        }
+        
+        // write flags
+        let nEndPos = memory.GetCurPosition();
+        memory.Seek(nStartPos);
+        memory.WriteLong(annotFlags);
+        memory.Seek(nEndPos);
+    };
+    CBaseField.prototype.GetFontSizeAP = function() {
+        let oPara   = this.content.GetElement(0);
+        let oRun    = oPara.GetElement(0);
+        let oTextPr = oRun.Get_CompiledPr(true);
+
+        return oTextPr.FontSize;
+    };
+    CBaseField.prototype.WriteToBinaryBase2 = function(memory) {
+        // font name
+        let sFontName = this.GetTextFont();
+        if (sFontName != null) {
+            memory.WriteString(sFontName);
+        }
+
+        // text size
+        let nFontSize = this.GetTextSize();
+        if (nFontSize != null) {
+            memory.WriteDouble(nFontSize);
+        }
+
+        // text size for ap
+        memory.WriteDouble(this.GetFontSizeAP());
+
+        // text style
+        let nStyle = 0;
+        let isBold = true;
+        let isItalic = true;
+        if (isBold) {
+            nStyle |= (1 << 0);
+        }
+        if (isItalic) {
+            nStyle |= (1 << 1);
+        }
+        memory.WriteLong(nStyle);
+
+        // text color
+        let aTextColor = this.GetTextColor();
+        if (aTextColor && aTextColor.length != 0) {
+            memory.WriteLong(aTextColor.length);
+
+            for (let i = 0; i < aTextColor.length; i++) {
+                memory.WriteDouble(aTextColor[i]);
+            }
+        }
+
+        // align 
+        if (this.GetType() == AscPDF.FIELD_TYPES.text) {
+            let nAlignType = this.GetAlign();
+            memory.WriteByte(nAlignType);
+        }
+
+        // сюда пойдут 1ые флаги полей
+        memory.fieldFlags1   = 0;
+        memory.posForFlags1  = memory.GetCurPosition();
+        memory.Skip(4);
+        
+        // if (this.IsReadOnly()) {
+        //     memory.fieldFlags1 |= (1 << 0);
+        // }
+
+        if (this.IsRequired()) {
+            memory.fieldFlags1 |= (1 << 1);
+        }
+
+        // if (this.IsNoExport()) {
+        //     memory.fieldFlags1 |= (1 << 2);
+        // }
+
+        // сюда пойдут 2ые флаги полей
+        memory.fieldFlags2   = 0;
+        memory.posForFlags2  = memory.GetCurPosition();
+        memory.Skip(4);
+        
+        //
+        // username
+        //
+
+        //
+        // default style
+        //
+
+        // highlight
+        let nHighlightType = this.GetHighlight();
+        if (nHighlightType != null) {
+            memory.fieldFlags2 |= (1 << 3);
+            memory.WriteByte(nHighlightType);
+        }
+
+        let aBorderColor = this.GetBorderColor();
+        if (aBorderColor && aBorderColor.length != 0) {
+            memory.fieldFlags2 |= (1 << 5);
+            memory.WriteLong(aBorderColor.length);
+            for (let i = 0; i < aBorderColor.length; i++) {
+                memory.WriteDouble(aBorderColor[i]);
+            }
+        }
+
+        //
+        // rotate
+        //
+
+        let aBgColor = this.GetBackgroundColor();
+        if (aBgColor && aBgColor.length != 0) {
+            memory.fieldFlags2 |= (1 << 7);
+            memory.WriteLong(aBgColor.length);
+            for (let i = 0; i < aBgColor.length; i++) {
+                memory.WriteDouble(aBgColor[i]);;
+            }
+        }
+
+        let defValue = this.GetDefaultValue();
+        if (defValue != null) {
+            memory.fieldFlags2 |= (1 << 8);
+            memory.WriteString(defValue);
+        }
+
+        //
+        // parent
+        //
+
+        let sName = this.GetPartialName();
+        if (sName != null) {
+            memory.fieldFlags2 |= (1 << 18);
+            memory.WriteString(sName);
+        }
+
+        // actions
+        let aActions = this.GetListActions();
+        memory.WriteLong(aActions.length);
+        
+        for (let i = 0; i < aActions.length; i++) {
+            aActions[i].WriteToBinary(memory);
+        }
+    };
 
     // for format
 
@@ -1864,6 +2202,9 @@
             if (oViewer.pageDetector.pages[i].num == nPage)
                 pageCoords = oViewer.pageDetector.pages[i];
         }
+
+        if (!pageCoords)
+            pageCoords = oViewer.getPageLikeDetector(nPage);
 
         let result = {
             X : (X * pageCoords.w / oViewer.file.pages[nPage].W + pageCoords.x) / AscCommon.AscBrowser.retinaPixelRatio,
