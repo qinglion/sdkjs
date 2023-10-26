@@ -134,6 +134,13 @@ const cellEditorWidth = 100;
 	Asc.spreadsheet_api.prototype._loadFonts = function (fonts, callback) {callback();};
 	Asc.spreadsheet_api.prototype.onEndLoadFile = function (fonts, callback) {OpenDocument();};
 	AscCommon.baseEditorsApi.prototype._onEndLoadSdk = function () {this.ImageLoader = AscCommon.g_image_loader;};
+	AscCommon.baseEditorsApi.prototype.getShortcut = function (e)
+	{
+		if (AscFormat.isRealNumber(e.nShortcutType))
+		{
+			return e.nShortcutType;
+		}
+	};
 
 	let editor;
 	function InitEditor(Callback)
