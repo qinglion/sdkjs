@@ -63,6 +63,7 @@ const cellEditorWidth = 100;
 	AscCommonExcel.WorksheetView.prototype._fixVisibleRange = function () {};
 	AscCommonExcel.WorksheetView.prototype.getCursorTypeFromXY = function () {return {};};
 	AscCommonExcel.WorksheetView.prototype._calcActiveCellOffset = function () {return {};};
+	AscCommonExcel.WorksheetView.prototype._initCellsArea = function () {};
 	AscCommonExcel.WorksheetView.prototype._prepareDrawingObjects = function ()
 	{
 		this.objectRender = new AscFormat.DrawingObjects();

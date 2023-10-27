@@ -579,7 +579,10 @@
 	tableEvents[tableHotkeyTypes.contextMenu] = [new CNativeEvent(keyCodes.ContextMenu, false, false, false, false)];
 	tableEvents[tableHotkeyTypes.showFilterOptions] = [new CNativeEvent(keyCodes.ArrowBottom, false, false, true, false)];
 	tableEvents[tableHotkeyTypes.showAutoComplete] = [new CNativeEvent(keyCodes.ArrowBottom, false, false, true, false)];
-	tableEvents[tableHotkeyTypes.showDataValidation] = [new CNativeEvent(keyCodes.ArrowBottom, false, false, true, false)];
+	tableEvents[tableHotkeyTypes.showDataValidation] = [
+		new CNativeEvent(keyCodes.ArrowBottom, false, false, true, false),
+		new CNativeEvent(keyCodes.ArrowTop, false, false, true, false)
+	];
 
 	const cellEditorHotkeyTypes = {
 		closeWithoutSave     : 0,

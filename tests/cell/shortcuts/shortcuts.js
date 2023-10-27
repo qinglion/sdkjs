@@ -60,6 +60,17 @@ QUnit.config.autostart = false;
 		QUnit.start();
 	});
 
+	function UpdateView()
+	{
+		wsView._cleanCache(new Asc.Range(0, 0, wsView.cols.length - 1, wsView.rows.length - 1));
+		wsView.changeWorksheet("update", {reinitRanges: true});
+	}
+	
+	function GetCellCacheText(column, row)
+	{
+		return wsView._getCellTextCache(column, row).state.chars.map((e) => String.fromCharCode(e)).join('');
+	}
+
 	function GetParagraphText(paragraph)
 	{
 		return paragraph.GetText({ParaEndToSpace: false});
@@ -1202,6 +1213,9 @@ QUnit.config.autostart = false;
 		Select(0, 0, 0, 0, 0, 0);
 		ExecuteTableHotkey(tableHotkeyTypes.showDataValidation);
 		assert.true(check);
+		check = false;
+		ExecuteTableHotkey(tableHotkeyTypes.showDataValidation, 1);
+		assert.true(check);
 		ws.deleteDataValidationById(props.Get_Id());
 		wbView.handlers.remove("asc_onValidationListMenu", ShowDataValidations);
 		check = false;
@@ -1572,6 +1586,15 @@ QUnit.config.autostart = false;
 		assert.true(wsView.getCellEditMode(), 'Check open cell editor');
 		assert.strictEqual(cellEditor.textRender.getLinesCount(), 1, "Check lines count");
 		CloseCellEditor();
+	});
+	QUnit.test('Check show formulas shortcut', (assert) =>
+	{
+		Select(0, 0, 0, 0, 0, 0);
+		FillActiveCell("=sum(1+2)");
+		UpdateView();
+		assert.strictEqual(GetCellCacheText(0, 0), "3", "Check show value");
+		ExecuteShortcut(Asc.c_oAscSpreadsheetShortcutType.ShowFormulas);
+		assert.strictEqual(GetCellCacheText(0, 0), "=SUM(1+2)", "Check show formula");
 	});
 
 	QUnit.test('Check prevent default in Opera', (assert) =>
