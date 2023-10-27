@@ -446,10 +446,15 @@
 		selectToUpperCell         : 66,
 		showFilterOptions         : 67,
 		showAutoComplete          : 68,
-		showDataValidation        : 69
+		showDataValidation        : 69,
+		openCellEditor            : 70,
 	};
 
 	const tableEvents = {};
+	tableEvents[tableHotkeyTypes.openCellEditor] = [
+		new CNativeEvent(keyCodes.Enter, true, false, false, false),
+		new CNativeEvent(keyCodes.Enter, false, false, true, false)
+	];
 	tableEvents[tableHotkeyTypes.changeFormatTableInfo] = [
 		new CNativeEvent(keyCodes.R, true, true, false, false)
 	];

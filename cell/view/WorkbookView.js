@@ -1141,9 +1141,11 @@
 		}
 		if (nRetValue === keydownresult_PreventNothing) {
 			nRetValue |= this.controller._onWindowKeyDown(oEvent);
-			if (this.isCellEditMode) {
+
+			if (this.isCellEditMode && !this.controller.skipCellEditor) {
 				nRetValue |= this.cellEditor._onWindowKeyDown(oEvent);
 			}
+			this.controller.setSkipCellEditor(false);
 		}
 		this.Api.sendEvent("asc_onKeyDown", oEvent);
 		return nRetValue;

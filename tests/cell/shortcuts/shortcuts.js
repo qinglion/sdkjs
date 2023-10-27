@@ -1560,6 +1560,18 @@ QUnit.config.autostart = false;
 		Select(0, 0, 0, 0, 0, 0);
 		ExecuteShortcut(Asc.c_oAscSpreadsheetShortcutType.EditOpenCellEditor);
 		assert.true(wsView.getCellEditMode(), 'Check open cell editor');
+		assert.strictEqual(cellEditor.textRender.getLinesCount(), 1, "Check lines count");
+		CloseCellEditor();
+
+		ExecuteTableHotkey(tableHotkeyTypes.openCellEditor);
+		assert.true(wsView.getCellEditMode(), 'Check open cell editor');
+		assert.strictEqual(cellEditor.textRender.getLinesCount(), 1, "Check lines count");
+		CloseCellEditor();
+
+		ExecuteTableHotkey(tableHotkeyTypes.openCellEditor, 1);
+		assert.true(wsView.getCellEditMode(), 'Check open cell editor');
+		assert.strictEqual(cellEditor.textRender.getLinesCount(), 1, "Check lines count");
+		CloseCellEditor();
 	});
 
 	QUnit.test('Check prevent default in Opera', (assert) =>

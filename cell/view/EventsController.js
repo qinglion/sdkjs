@@ -132,6 +132,8 @@
 
             this.lastTab = null;
 
+						this.skipCellEditor = false;
+
             return this;
 		}
 
@@ -1087,6 +1089,14 @@
 
 					case 13:  // "enter"
 						if (oThis.getCellEditMode() || bSelectionDialogMode) {
+							break;
+						}
+
+						if (bCanEdit && (oEvent.CtrlKey || oEvent.AltKey)) {
+							oThis.setSkipCellEditor(true);
+							const oEnterOptions = new AscCommonExcel.CEditorEnterOptions();
+							oEnterOptions.focus = true;
+							oThis.handlers.trigger("editCell", oEnterOptions);
 							break;
 						}
 						// Особый случай (возможно движение в выделенной области)
@@ -2061,6 +2071,10 @@
 
 		asc_CEventsController.prototype._setSkipKeyPress = function (val) {
 			this.skipKeyPress = val;
+		};
+
+		asc_CEventsController.prototype.setSkipCellEditor = function (val) {
+			this.skipCellEditor = val;
 		};
 
 		//------------------------------------------------------------export---------------------------------------------------
