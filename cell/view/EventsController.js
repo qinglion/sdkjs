@@ -809,6 +809,7 @@
 				}
 				case Asc.c_oAscSpreadsheetShortcutType.RecalculateActiveSheet: {
 					oThis.handlers.trigger("calculate", Asc.c_oAscCalculateType.ActiveSheet);
+					nRetValue = keydownresult_PreventAll;
 					break;
 				}
 				case Asc.c_oAscSpreadsheetShortcutType.RefreshAllPivots:
