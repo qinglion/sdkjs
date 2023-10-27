@@ -528,7 +528,7 @@
 						var _cut                    = false;
 						if (isCtrl && !isShift && (keyCode == 67 || keyCode == 88)) // copy
 							bIsBeforeCopyCutEmulate = true;
-						if (!isCtrl && isShift && keyCode == 45) // cut
+						if (!isCtrl && isShift && (keyCode == 45 || keyCode == 46)) // cut
 						{
 							bIsBeforeCopyCutEmulate = true;
 							_cut                    = true;
