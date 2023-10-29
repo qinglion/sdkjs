@@ -261,7 +261,9 @@
 		// let shapePinXValue = Number(shapePinXОbj.v);
 		// if (shapePinXValue != filterPinX) return geometry;
 
-		geometrySections.forEach(function (geometrySection) {
+		// set path objects - parts of geometry objects
+		for (let i = 0; i < geometrySections.length; i++) {
+			const geometrySection = geometrySections[i];
 			// see [MS-VSDX]-220215 2.2.3.2.2.Geometry Path
 
 			//	<xsd:complexType name="Geometry_Type">
@@ -316,6 +318,11 @@
 			// So Geometry section defines (for drawing): path (by rows), isShown (NoShow), NoLine, NoFill
 			// So we can represent visio Geometry section using Path object
 			// Use it below
+			let noShowCell = findCell(geometrySection, "n", "NoShow");
+			if (Number(noShowCell.v) === 1) {
+				continue;
+			}
+
 
 			let noFillCell = findCell(geometrySection, "n", "NoFill");
 			let fillValue;
@@ -352,8 +359,8 @@
 			 */
 			let lastPoint = { x: 0, y : 0};
 
-			for (let i = 0; true; i++) {
-				let rowNum = i + 1;
+			for (let j = 0; true; j++) {
+				let rowNum = j + 1;
 				let commandRow = findRow(geometrySection, "iX", rowNum);
 				if (!commandRow) {
 					break;
@@ -526,10 +533,10 @@
 						//Convert units
 						let xEndPointNew = convertUnits(xEndPoint, additionalUnitCoefficient);
 						let yEndPointNew = convertUnits(yEndPoint, additionalUnitCoefficient);
-						for (let j = 4; j < formulaValues.length; j++) {
-							if (j % 4 == 0 || j % 4 == 1) {
+						for (let k = 4; k < formulaValues.length; k++) {
+							if (k % 4 == 0 || k % 4 == 1) {
 								// convert x and y
-								formulaValues[j] = convertUnits(Number(formulaValues[j]), additionalUnitCoefficient);
+								formulaValues[k] = convertUnits(Number(formulaValues[k]), additionalUnitCoefficient);
 							}
 						}
 
@@ -560,7 +567,25 @@
 					}
 					case "RelCubBezTo":
 					{
-						console.log("RelCubBezTo command draw is not realized");
+						// https://learn.microsoft.com/en-us/office/client-developer/visio/relcubbezto-row-geometry-section
+						let x = Number(findCell(commandRow, "n", "X").v);
+						let y = Number(findCell(commandRow, "n", "Y").v);
+						let a = Number(findCell(commandRow, "n", "A").v);
+						let b = Number(findCell(commandRow, "n", "B").v);
+						let c = Number(findCell(commandRow, "n", "C").v);
+						let d = Number(findCell(commandRow, "n", "D").v);
+
+						let xNew = convertUnits(x, additionalUnitCoefficient) * shapeWidth;
+						let yNew = convertUnits(y, additionalUnitCoefficient) * shapeHeight;
+						let aNew = convertUnits(a, additionalUnitCoefficient) * shapeWidth;
+						let bNew = convertUnits(b, additionalUnitCoefficient) * shapeHeight;
+						let cNew = convertUnits(c, additionalUnitCoefficient) * shapeWidth;
+						let dNew = convertUnits(d, additionalUnitCoefficient) * shapeHeight;
+
+						path.cubicBezTo(aNew, bNew, cNew, dNew, xNew, yNew);
+
+						lastPoint.x = xNew;
+						lastPoint.y = yNew;
 						break;
 					}
 					case "RelEllipticalArcTo":
@@ -578,7 +603,7 @@
 
 			// path.close();
 			geometry.AddPath(path);
-		});
+		};
 		geometry.setPreset("Any");
 
 		// TODO add connections
