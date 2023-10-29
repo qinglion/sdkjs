@@ -590,7 +590,25 @@
 					}
 					case "RelEllipticalArcTo":
 					{
-						console.log("RelEllipticalArcTo command draw is not realized");
+						let x = Number(findCell(commandRow, "n", "X").v);
+						let y = Number(findCell(commandRow, "n", "Y").v);
+						let a = Number(findCell(commandRow, "n", "A").v);
+						let b = Number(findCell(commandRow, "n", "B").v);
+						let c = Number(findCell(commandRow, "n", "C").v);
+						let d = Number(findCell(commandRow, "n", "D").v);
+
+						let newX = convertUnits(x, additionalUnitCoefficient) * shapeWidth;
+						let newY = convertUnits(y, additionalUnitCoefficient) * shapeHeight;
+						let newA = convertUnits(a, additionalUnitCoefficient) * shapeWidth;
+						let newB = convertUnits(b, additionalUnitCoefficient) * shapeHeight;
+						let newC = c * radToC;
+						let newD = d;
+
+						// same but with a length in EMUs units and an angle in C-units, which will be expected clockwise
+						// as in other sdkjs/common/Drawings/Format/Path.js functions.
+						path.ellipticalArcTo(newX, newY, newA, newB, newC, newD);
+						lastPoint.x = newX;
+						lastPoint.y = newY;
 						break;
 					}
 					case "RelQuadBezTo":
