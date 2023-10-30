@@ -337,20 +337,51 @@
 		return {x : newX, y: newY};
 	}
 	CVisioDocument.prototype.convertToShapes = function(logic_w_mm, logic_h_mm) {
+		let shapeClasses = [];
 		let shapes = [];
-		var oFill   = AscFormat.CreateUnfilFromRGB(0,127,0);
-		var oStroke = AscFormat.builder_CreateLine(12700, {UniFill: AscFormat.CreateUnfilFromRGB(255,0,0)});
 
 		for(let i = 0; i < this.pageContents[0].shapes.length; i++) {
 			let shape = this.pageContents[0].shapes[i];
 
-			let shapeMasterID = shape.getMasterID();
-			if (shapeMasterID) {
-				let shapeMaster = this.getMasterByID(shapeMasterID);
-				shape.realizeMasterToShapeInheritance(shapeMaster);
+			let masters = this.joinMastersInfoAndContents();
+			// TODO dont change shape class
+			shape.realizeMasterToShapeInheritance(masters);
+			shapeClasses.push(shape);
+
+			let subShapes = shape.shapes;
+			for (let j = 0; j < subShapes.length; j++) {
+				const subShape = subShapes[j];
+
+				let shape_pinX_inch = Number(shape.elements.find(function(elem) {return elem.n === "PinX"}).v);
+				let shape_pinY_inch = Number(shape.elements.find(function(elem) {return elem.n === "PinY"}).v);
+				// let shapeWidth = Number(shape.elements.find(function(elem) {return elem.n === "Width"}).v);
+				// let shapeHeight = Number(shape.elements.find(function(elem) {return elem.n === "Height"}).v);
+				let shape_locPinX_inch = Number(shape.elements.find(function(elem) {return elem.n === "LocPinX"}).v);
+				let shape_locPinY_inch = Number(shape.elements.find(function(elem) {return elem.n === "LocPinY"}).v);
+
+				let subShapePinX = subShape.elements.find(function(elem) {return elem.n === "PinX"});
+				let subShapePinY = subShape.elements.find(function(elem) {return elem.n === "PinY"});
+				let sub_shape_pinX_inch = Number(subShapePinX.v);
+				let sub_shape_pinY_inch = Number(subShapePinY.v);
+
+				// TODO dont change subShape class
+				subShapePinX.v = shape_pinX_inch - shape_locPinX_inch + sub_shape_pinX_inch;
+				subShapePinY.v = shape_pinY_inch - shape_locPinY_inch + sub_shape_pinY_inch;
+
+				shapeClasses.push(subShape);
 			}
+		}
+
+		for (let i = 0; i < shapeClasses.length; i++) {
+			const shape = shapeClasses[i];
+			// if (shape.iD !== 54) {
+			// 	continue;
+			// }
 			let pinX_inch = Number(shape.elements.find(function(elem) {return elem.n === "PinX"}).v);
 			let pinY_inch = Number(shape.elements.find(function(elem) {return elem.n === "PinY"}).v);
+			let shapeAngle = Number(shape.elements.find(function(elem) {return elem.n === "Angle"}).v);
+			let locPinX_inch = Number(shape.elements.find(function(elem) {return elem.n === "LocPinX"}).v);
+			let locPinY_inch = Number(shape.elements.find(function(elem) {return elem.n === "LocPinY"}).v);
 			let shapeWidth_inch = Number(shape.elements.find(function(elem) {return elem.n === "Width"}).v);
 			let shapeHeight_inch = Number(shape.elements.find(function(elem) {return elem.n === "Height"}).v);
 
@@ -358,9 +389,7 @@
 			// to rotate around point we 1) add one more offset 2) rotate around center
 			// could be refactored maybe
 			// https://www.figma.com/file/jr1stjGUa3gKUBWxNAR80T/locPinHandle?type=design&node-id=0%3A1&mode=design&t=raXzFFsssqSexysi-1
-			let shapeAngle = Number(shape.elements.find(function(elem) {return elem.n === "Angle"}).v);
-			let locPinX_inch = Number(shape.elements.find(function(elem) {return elem.n === "LocPinX"}).v);
-			let locPinY_inch = Number(shape.elements.find(function(elem) {return elem.n === "LocPinY"}).v);
+
 			let redVector = {x: -(locPinX_inch - shapeWidth_inch/2), y: -(locPinY_inch - shapeHeight_inch/2)};
 			// rotate antiClockWise by shapeAngle
 			let purpleVector = rotatePointAroundCordsStartClockWise(redVector.x, redVector.y, -shapeAngle);
@@ -376,6 +405,9 @@
 			let shapeHeight_mm = shapeHeight_inch * g_dKoef_in_to_mm;
 
 			let shapeGeom = AscCommonDraw.getGeometryFromShape(shape);
+
+			var oFill   = AscFormat.CreateUnfilFromRGB(0,127,0);
+			var oStroke = AscFormat.builder_CreateLine(12700, {UniFill: AscFormat.CreateUnfilFromRGB(255,0,0)});
 
 			let cShape = this.convertToShape(x_mm, y_mm, shapeWidth_mm, shapeHeight_mm, shapeAngle, oFill, oStroke, shapeGeom);
 
