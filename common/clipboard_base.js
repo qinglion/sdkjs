@@ -555,7 +555,7 @@
 					if (g_clipboardBase.IsPasteOnlyInEditable)
 					{
 						var bIsBeforePasteEmulate = false;
-						if (isCtrl && !isShift && keyCode == 86)
+						if (isCtrl && keyCode == 86)
 							bIsBeforePasteEmulate = true;
 						if (!isCtrl && isShift && keyCode == 45)
 							bIsBeforePasteEmulate = true;
