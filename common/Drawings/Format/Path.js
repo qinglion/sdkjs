@@ -343,23 +343,15 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
         this.addPathCommand({id: ellipticalArcTo, x: x, y: y, a: a, b: b, c: c, d: d});
     };
     /**
-     * https://learn.microsoft.com/en-us/office/client-developer/visio/nurbsto-row-geometry-section
-     * but with a length in EMUs units
-     * Also this command may implicitly use shapeWidth or shapeHeight to scale x and y of NURBS points inside
-     * e argument - NURBS formula if xType or yType in formula is equal to 0
-     * @param x
-     * @param y
-     * @param a
-     * @param b
-     * @param c
-     * @param d
-     * @param e
-     * @param shapeWidth
-     * @param shapeHeight
+     * curveOrder (4 for 3 degree NURBS) + points count = knots count
+     * @param {{x, y}[]} controlPoints
+     * @param {[]} weights
+     * @param {[]} knots
+     * @param {Number} degree
      */
-    Path.prototype.nurbsTo = function(x, y, a, b, c, d, e, shapeWidth, shapeHeight)
+    Path.prototype.nurbsTo = function(controlPoints, weights, knots, degree)
     {
-        this.addPathCommand({id: nurbsTo, x: x, y: y, a: a, b: b, c: c, d: d, e: e, shapeWidth: shapeWidth, shapeHeight: shapeHeight});
+        this.addPathCommand({id: nurbsTo, controlPoints: controlPoints, weights: weights, knots: knots, degree: degree});
     };
 	Path.prototype.calculateCommandCoord = function(oGdLst, sFormula, dFormulaCoeff, dNumberCoeff)
     {
@@ -787,9 +779,6 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                 }
                 case nurbsTo:
                 {
-                    // https://learn.microsoft.com/en-us/office/client-developer/visio/nurbsto-row-geometry-section
-                    // but with a length in EMUs units
-
                     //TODO
                     // check non 3-degrees NURBS
                     // consider homogenous or euclidean weighted points weights
@@ -890,6 +879,10 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                             };
                         }
 
+                        if (multiplicity === undefined) {
+                            throw new Error('multiplicity is undefined');
+                        }
+
                         let knotValue = knots[0];
                         let knotIndex;
                         while (true) {
@@ -960,83 +953,20 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                         return bezierArray;
                     }
 
+
                     // Init arguments
-                    let x, y, a, b, c, d, e, shapeWidth, shapeHeight;
-                    x = this.calculateCommandCoord(gdLst, cmd.x, cw, dCustomPathCoeffW);
-                    y = this.calculateCommandCoord(gdLst, cmd.y, ch, dCustomPathCoeffH);
-
-                    a=Number(cmd.a);
-                    b=Number(cmd.b);
-                    c=Number(cmd.c);
-                    d=Number(cmd.d);
-                    e=String(cmd.e); // e should be string - formula
-
-                    shapeWidth = Number(cmd.shapeWidth);
-                    shapeHeight = Number(cmd.shapeHeight);
-
-                    // Parse arguments
-                    let xEndPoint = x;
-                    let yEndPoint = y;
-                    let preLastKnot = a;
-                    let lastWeight = b;
-                    let firstKnot = c;
-                    let firstWeight = d;
-                    // NURBS formula: knotLast, degree, xType, yType, x1, y1, knot1, weight1, x2, y2, knot2, weight2, ...
-                    let formula = e;
-
-                    let formulaValues = formula.substring(6, formula.length - 1).split(",");
-                    let lastKnot = Number(formulaValues[0]);
-                    let degree = Number(formulaValues[1]);
-                    let xType =	parseInt(formulaValues[2]);
-                    let yType = parseInt(formulaValues[3]);
-
-                    let xScale = 1;
-                    let yScale = 1;
-
-                    if (xType === 0)
-                        xScale = shapeWidth;
-                    if (yType === 0)
-                        yScale = shapeHeight;
-
-                    /** @type {{x: Number, y: Number}[]} */
-                    let controlPoints = [];
-                    /** @type {Number[]} */
-                    let weights = [];
-                    /** @type {Number[]} */
-                    let knots = [];
-
-                    knots.push(firstKnot);
-                    weights.push(firstWeight);
-                    controlPoints.push({x: lastX, y: lastY});
-
-                    // point + knot groups
-                    let groupsCount = (formulaValues.length - 4) / 4;
-                    for (let j = 0; j < groupsCount; j++) {
-                        let emuControlPointX = Number(formulaValues[4 + j * 4]);
-                        let controlPointX = this.calculateCommandCoord(gdLst, emuControlPointX, cw, dCustomPathCoeffW);
-                        let emuControlPointY = Number(formulaValues[4 + j * 4 + 1])
-                        let controlPointY =  this.calculateCommandCoord(gdLst, emuControlPointY, ch, dCustomPathCoeffH);;
-                        let knot = Number(formulaValues[4 + j * 4 + 2]);
-                        let weight = Number(formulaValues[4 + j * 4 + 3]);
-
-                        // scale only in formula
-                        let scaledX = controlPointX * xScale;
-                        let scaledY = controlPointY * yScale;
-
-                        controlPoints.push({x: scaledX, y: scaledY});
-                        knots.push(knot);
-                        weights.push(weight);
+                    let controlPoints = cmd.controlPoints;
+                    let weights = cmd.weights;
+                    let knots = cmd.knots;
+                    let degree = cmd.degree;
+                    for (let j = 0; j < controlPoints.length; j++) {
+                        controlPoints[j].x = this.calculateCommandCoord(gdLst, controlPoints[j].x, cw, dCustomPathCoeffW);
+                        controlPoints[j].y = this.calculateCommandCoord(gdLst, controlPoints[j].y, ch, dCustomPathCoeffH);
                     }
 
-                    knots.push(preLastKnot);
-                    knots.push(lastKnot);
-                    // add 3 more knots for 3 degree NURBS to clamp curve at end point
-                    // a clamped knot vector must have `degree + 1` equal knots
-                    for (let j = 0; j < degree; j++) {
-                        knots.push(lastKnot);
+                    if (degree + 1 + controlPoints.length !== knots.length) {
+                        throw new Error('Wrong arguments format');
                     }
-                    weights.push(lastWeight);
-                    controlPoints.push({x: xEndPoint, y: yEndPoint});
 
                     // Convert to Bezier
                     let newNURBSform = duplicateKnots(controlPoints, weights, knots, degree);

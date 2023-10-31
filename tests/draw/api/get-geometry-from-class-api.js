@@ -523,14 +523,9 @@
 						let firstWeight = Number(findCell(commandRow, "n", "D").v);
 						// NURBS formula: knotLast, degree, xType, yType, x1, y1, knot1, weight1, x2, y2, knot2, weight2, ...
 						let formula = String(findCell(commandRow, "n", "E").v).trim();
-
 						let formulaValues = formula.substring(6, formula.length - 1).split(",");
-						// let lastKnot = Number(formulaValues[0]);
-						// let degree = Number(formulaValues[1]);
-						// let xType =	parseInt(formulaValues[2]);
-						// let yType = parseInt(formulaValues[3]);
 
-						//Convert units
+						//Convert units to EMUs
 						let xEndPointNew = convertUnits(xEndPoint, additionalUnitCoefficient);
 						let yEndPointNew = convertUnits(yEndPoint, additionalUnitCoefficient);
 						for (let k = 4; k < formulaValues.length; k++) {
@@ -540,11 +535,62 @@
 							}
 						}
 
-						let formulaNew = "NURBS(" + formulaValues.join(",") + ")";
+						let prevLastX = lastPoint.x;
+						let prevLastY = lastPoint.y;
 
-						path.nurbsTo(xEndPointNew, yEndPointNew, preLastKnot, lastWeight,
-							firstKnot, firstWeight, formulaNew, shapeWidth, shapeHeight);
+						//Parse arguments
+						let lastKnot = Number(formulaValues[0]);
+						let degree = Number(formulaValues[1]);
+						let xType =	parseInt(formulaValues[2]);
+						let yType = parseInt(formulaValues[3]);
 
+						let xScale = 1;
+						let yScale = 1;
+
+						if (xType === 0)
+							xScale = shapeWidth;
+						if (yType === 0)
+							yScale = shapeHeight;
+
+						/** @type {{x: Number, y: Number}[]} */
+						let controlPoints = [];
+						/** @type {Number[]} */
+						let weights = [];
+						/** @type {Number[]} */
+						let knots = [];
+
+						knots.push(firstKnot);
+						weights.push(firstWeight);
+						controlPoints.push({x: prevLastX, y: prevLastY});
+
+						// point + knot groups
+						let groupsCount = (formulaValues.length - 4) / 4;
+						for (let j = 0; j < groupsCount; j++) {
+							let controlPointX = Number(formulaValues[4 + j * 4]);
+							let controlPointY = Number(formulaValues[4 + j * 4 + 1]);
+							let knot = Number(formulaValues[4 + j * 4 + 2]);
+							let weight = Number(formulaValues[4 + j * 4 + 3]);
+
+							// scale only in formula
+							let scaledX = controlPointX * xScale;
+							let scaledY = controlPointY * yScale;
+
+							controlPoints.push({x: scaledX, y: scaledY});
+							knots.push(knot);
+							weights.push(weight);
+						}
+
+						knots.push(preLastKnot);
+						knots.push(lastKnot);
+						// add 3 more knots for 3 degree NURBS to clamp curve at end point
+						// a clamped knot vector must have `degree + 1` equal knots
+						for (let j = 0; j < degree; j++) {
+							knots.push(lastKnot);
+						}
+						weights.push(lastWeight);
+						controlPoints.push({x: xEndPointNew, y: yEndPointNew});
+
+						path.nurbsTo(controlPoints, weights, knots, degree);
 
 						lastPoint.x = xEndPointNew;
 						lastPoint.y = yEndPointNew;
