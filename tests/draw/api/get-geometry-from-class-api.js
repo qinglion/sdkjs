@@ -359,6 +359,28 @@
 			 */
 			let lastPoint = { x: 0, y : 0};
 
+			/**
+			 * https://learn.microsoft.com/en-us/office/client-developer/visio/splinestart-row-geometry-section
+			 * fistControlPoint is taken from previous command
+			 * @type {{
+			 *   	firstControlPointX,
+			 * 		firstControlPointY,
+			 * 		secondControlPointX,
+			 * 		secondControlPointY,
+			 * 		secondKnot,
+			 * 		firstKnot,
+			 * 		lastKnot,
+			 * 		degree
+			 * }}
+			 */
+			let splineStartCommandData;
+			/**
+			 * https://learn.microsoft.com/en-us/office/client-developer/visio/splineknot-row-geometry-section
+			 * @type {{controlPointX, controlPointY, knot}[]}
+			 */
+			let splineKnotCommandsData = [];
+			let prevCommandName;
+
 			for (let j = 0; true; j++) {
 				let rowNum = j + 1;
 				let commandRow = findRow(geometrySection, "iX", rowNum);
@@ -369,6 +391,7 @@
 					continue;
 				}
 				let commandName = commandRow.t;
+
 				switch (commandName) {
 					case "MoveTo":
 					{
@@ -598,12 +621,30 @@
 					}
 					case "SplineStart":
 					{
-						console.log("SplineStart command draw is not realized");
+						// https://learn.microsoft.com/en-us/office/client-developer/visio/splinestart-row-geometry-section
+						splineStartCommandData = {
+							firstControlPointX : lastPoint.x,
+							firstControlPointY: lastPoint.y,
+							secondControlPointX: convertUnits(Number(findCell(commandRow, "n", "X").v),
+								additionalUnitCoefficient),
+							secondControlPointY: convertUnits(Number(findCell(commandRow, "n", "Y").v),
+								additionalUnitCoefficient),
+							secondKnot: Number(findCell(commandRow, "n", "A").v),
+							firstKnot: Number(findCell(commandRow, "n", "B").v),
+							lastKnot: Number(findCell(commandRow, "n", "C").v),
+							degree: Number(findCell(commandRow, "n", "D").v)
+						};
 						break;
 					}
 					case "SplineKnot":
 					{
-						console.log("SplineKnot command draw is not realized");
+						splineKnotCommandsData.push({
+							controlPointX: convertUnits(Number(findCell(commandRow, "n", "X").v),
+								additionalUnitCoefficient),
+							controlPointY: convertUnits(Number(findCell(commandRow, "n", "Y").v),
+								additionalUnitCoefficient),
+							knot: Number(findCell(commandRow, "n", "A").v)
+						});
 						break;
 					}
 					case "InfiniteLine":
@@ -663,6 +704,45 @@
 						break;
 					}
 				}
+				if (prevCommandName === "SplineKnot" &&
+					(commandName !== "SplineKnot" || i === geometrySections.length - 1) &&
+					splineStartCommandData !== undefined) {
+					// draw spline
+
+					/** @type {{x: Number, y: Number}[]} */
+					let controlPoints = [];
+					/** @type {Number[]} */
+					let knots = [];
+
+					let degree = splineStartCommandData.degree;
+
+					controlPoints.push({x: splineStartCommandData.firstControlPointX,
+						y: splineStartCommandData.firstControlPointY});
+					controlPoints.push({x: splineStartCommandData.secondControlPointX,
+						y: splineStartCommandData.secondControlPointY});
+					knots.push(splineStartCommandData.firstKnot);
+					knots.push(splineStartCommandData.secondKnot);
+
+					splineKnotCommandsData.forEach(function (splineKnotCommandData) {
+						controlPoints.push({x: splineKnotCommandData.controlPointX, y: splineKnotCommandData.controlPointY});
+						knots.push(splineKnotCommandData.knot);
+					});
+
+					knots.push(splineStartCommandData.lastKnot);
+					// add 3 more knots for 3 degree NURBS to clamp curve at end point
+					// a clamped knot vector must have `degree + 1` equal knots
+					for (let j = 0; j < degree; j++) {
+						knots.push(splineStartCommandData.lastKnot);
+					}
+
+					let weights = new Array(controlPoints.length).fill(1);
+
+					path.nurbsTo(controlPoints, weights, knots, degree);
+
+					lastPoint.x = controlPoints[controlPoints.length - 1].x;
+					lastPoint.y = controlPoints[controlPoints.length - 1].y;
+				}
+				prevCommandName = commandName;
 			}
 
 			// path.close();
