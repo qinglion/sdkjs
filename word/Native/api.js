@@ -987,7 +987,6 @@ Asc['asc_docs_api'].prototype["Call_Menu_Event"] = function(type, _params)
         }
         case 9 : // ASC_MENU_EVENT_TYPE_IMAGE
         {
-			debugger
             var _imagePr = new Asc.asc_CImgProperty();
             while (_continue)
             {

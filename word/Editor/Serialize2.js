@@ -16170,9 +16170,11 @@ function Binary_CustomsTableReader(doc, oReadResult, stream) {
 		var res = c_oSerConstants.ReadOk;
 		var oThis = this;
 
-		if (c_oSerCustoms.Custom === type) {
+		if (c_oSerCustoms.Custom === type)
+		{
 			var custom = {Uri: [], ItemId: null, Content: null};
-			res = this.bcr.Read1(length, function(t, l) {
+			res = this.bcr.Read1(length, function (t, l)
+			{
 				return oThis.ReadCustomContent(t, l, custom);
 			});
 
@@ -16180,6 +16182,9 @@ function Binary_CustomsTableReader(doc, oReadResult, stream) {
 			console.log(two)
 			let one = new StaxParser(two);
 			let curCont = null;
+
+			let tg = new CT_XmlNode();
+			let stax = new StaxParser(two, tg);
 
 			function CustomXMLItem(par, name)
 			{
@@ -16216,7 +16221,7 @@ function Binary_CustomsTableReader(doc, oReadResult, stream) {
 					if (text !== "")
 						this.textContent += text;
 				}
-				this.GetBuffer = function()
+				this.GetBuffer = function ()
 				{
 					let writer = new AscCommon.CMemory();
 
@@ -16228,8 +16233,7 @@ function Binary_CustomsTableReader(doc, oReadResult, stream) {
 						{
 							writer.WriteXmlString("\x8B\x00\x00\x00<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
 							current = content.content[0];
-						}
-						else
+						} else
 						{
 							current = content;
 						}
@@ -16271,30 +16275,30 @@ function Binary_CustomsTableReader(doc, oReadResult, stream) {
 
 			curCont = ParCont;
 
-			while(one.Read())
+			while (one.Read())
 			{
 				switch (one.GetEventType())
 				{
-					case EasySAXEvent.CHARACTERS: curCont.AddTextContent(one.text.trim().replace(/\s/g,'')); break;
-					case EasySAXEvent.END_ELEMENT: curCont = curCont.parent; break;
+					case EasySAXEvent.CHARACTERS:
+						curCont.AddTextContent(one.text);
+						break;
+					case EasySAXEvent.END_ELEMENT:
+						curCont = curCont.parent;
+						break;
 					case EasySAXEvent.START_ELEMENT:
 						let name = one.GetName();
 						curCont.AddContent(name)
 
 						while (one.MoveToNextAttribute())
 						{
-							let nameAttrib =  one.GetName();
+							let nameAttrib = one.GetName();
 							let valueAttrib = one.GetValue();
 							curCont.AddAttribute(nameAttrib, valueAttrib);
 						}
 						break;
 				}
 			}
-
-			debugger
-			console.log(ParCont);
 			custom.Content = ParCont;
-
 			this.customXmlManager.add(custom);
 		}
 		else

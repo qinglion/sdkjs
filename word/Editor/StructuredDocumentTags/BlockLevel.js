@@ -1550,14 +1550,115 @@ CBlockLevelSdt.prototype.SetColor = function(oColor)
 CBlockLevelSdt.prototype.fillContentWithDataBinding = function(content)
 {
 	let logicDocument = this.GetLogicDocument();
-	
-	let paragraph = new AscWord.CParagraph(logicDocument.GetDrawingDocument());
-	this.Content.ClearContent(false);
-	this.Content.AddToContent(0, paragraph);
-	
-	let run = new AscWord.CRun();
-	run.AddText(content);
-	paragraph.AddToContent(0, run);
+
+	if (this.IsCheckBox())
+	{
+		let checkBoxPr = new AscWord.CSdtCheckBoxPr();
+		if (content === "true" || content === "1")
+			checkBoxPr.SetChecked(true);
+		this.SetCheckBoxPr(checkBoxPr)
+	}
+	else
+	{
+		content = content.replaceAll("&lt;", "<");
+		content = content.replaceAll("&gt;", ">");
+		content = content.replaceAll("<?xml version=\"1.0\" standalone=\"yes\"?>", "");
+		content = content.replaceAll("<?mso-application progid=\"Word.Document\"?>", "");
+		let zLib = new AscCommon.ZLib;
+		let zip = zLib.create();
+
+		let nPos = 0;
+
+		zLib.addFile('[Content_Types].xml', new TextEncoder("utf-8").encode('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+			'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+			'<Default Extension="wmf" ContentType="image/x-wmf"/>' +
+			'<Default Extension="png" ContentType="image/png"/>' +
+			'<Default Extension="jpeg" ContentType="image/jpeg"/>' +
+			'<Default Extension="xml" ContentType="application/xml"/>' +
+			'<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+			'<Default Extension="bin" ContentType="application/vnd.openxmlformats-officedocument.oleObject"/>' +
+			'<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>' +
+			'<Override PartName="/word/fontTable.xml"' +
+			'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.fontTable+xml"/>' +
+			'<Override PartName="/word/styles.xml"' +
+			'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
+			'<Override PartName="/word/document.xml"' +
+			'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+			'<Override PartName="/word/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>' +
+			'<Override PartName="/word/endnotes.xml"' +
+			'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.endnotes+xml"/>' +
+			'<Override PartName="/word/webSettings.xml"' +
+			'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.webSettings+xml"/>' +
+			'<Override PartName="/word/glossary/webSettings.xml"' +
+			'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.webSettings+xml"/>' +
+			'<Override PartName="/word/glossary/fontTable.xml"' +
+			'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.fontTable+xml"/>' +
+			'<Override PartName="/word/glossary/settings.xml"' +
+			'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/>' +
+			'<Override PartName="/docProps/app.xml"' +
+			'ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>' +
+			'<Override PartName="/word/footnotes.xml"' +
+			'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml"/>' +
+			'<Override PartName="/word/settings.xml"' +
+			'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/>' +
+			'<Override PartName="/word/glossary/styles.xml"' +
+			'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
+			'<Override PartName="/word/glossary/document.xml"' +
+			'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.glossary+xml"/>' +
+			'<Override PartName="/customXml/itemProps1.xml"' +
+			'ContentType="application/vnd.openxmlformats-officedocument.customXmlProperties+xml"/>' +
+			'</Types>'));
+
+		while (true)
+		{
+			let nStartPos = nPos = content.indexOf('<pkg:part', nPos);
+
+			if (!nStartPos || nStartPos === -1)
+				break;
+			let nEndPos = nPos = content.indexOf('</pkg:part>', nStartPos);
+
+			let strText = content.substring(nStartPos, nEndPos);
+
+			let nPosStartName = strText.indexOf('name="', 0) + 'name="'.length;
+			let nPosEndName = strText.indexOf('"', nPosStartName);
+			let name = strText.substring(nPosStartName, nPosEndName);
+
+			let nDataStartPos = strText.indexOf('<pkg:xmlData>', 0) + '<pkg:xmlData>'.length;
+			let nDataEndPos = strText.indexOf('</pkg:xmlData>', nDataStartPos);
+			//nPos = nDataEndPos + '</pkg:xmlData>'.length;
+			let data = strText.substring(nDataStartPos, nDataEndPos).trim();
+			if (name[0] === "/")
+				name = name.substring(1, name.length);
+			zLib.addFile(name, new TextEncoder("utf-8").encode(data));
+		}
+
+		let arr = zLib.save();
+
+		let draw = logicDocument.DrawingDocument;
+		let Doc = new CDocument(draw, false);
+
+		let xmlParserContext = new AscCommon.XmlParserContext();
+		xmlParserContext.DrawingDocument = draw;
+
+		let jsZlib = new AscCommon.ZLib();
+		if (!jsZlib.open(arr)) {
+			return false;
+		}
+
+		let reader, openParams = {};
+		let oBinaryFileReader = new AscCommonWord.BinaryFileReader(Doc, openParams);
+		oBinaryFileReader.PreLoadPrepare();
+
+		Doc.fromZip(jsZlib, xmlParserContext, oBinaryFileReader.oReadResult);
+
+		oBinaryFileReader.PostLoadPrepare(xmlParserContext);
+		jsZlib.close();
+		debugger
+
+		this.Content.RemoveFromContent(0, 1);
+		this.Content.AddContent(Doc.Content);
+		this.Content.Recalculate(true);
+	}
 };
 CBlockLevelSdt.prototype.GetDataBinding = function ()
 {
