@@ -573,6 +573,9 @@
 
 						// then go to x y from command args
 						path.lnTo(xEndPointNew, yEndPointNew);
+
+						lastPoint.x = xEndPointNew;
+						lastPoint.y = yEndPointNew;
 						break;
 					}
 					case "NURBSTo":
@@ -689,7 +692,29 @@
 					}
 					case "InfiniteLine":
 					{
-						console.log("InfiniteLine command draw is not realized");
+						// https://learn.microsoft.com/en-us/office/client-developer/visio/infiniteline-row-geometry-section
+						let x = Number(findCell(commandRow, "n", "X").v);
+						let y = Number(findCell(commandRow, "n", "Y").v);
+						let a = Number(findCell(commandRow, "n", "A").v);
+						let b = Number(findCell(commandRow, "n", "B").v);
+
+						let xNew = convertUnits(x, additionalUnitCoefficient);
+						let yNew = convertUnits(y, additionalUnitCoefficient);
+						let aNew = convertUnits(a, additionalUnitCoefficient);
+						let bNew = convertUnits(b, additionalUnitCoefficient);
+
+						let maxValue = 10000000000;
+						if (xNew === aNew) {
+							path.moveTo(xNew, -maxValue);
+							path.lnTo(xNew, maxValue);
+						} else if (yNew === bNew) {
+							path.moveTo(-maxValue, yNew);
+							path.lnTo(maxValue, yNew);
+						} else {
+							// visio doesnt draw diagonals
+							console.log("visio doesnt draw diagonals");
+						}
+						// don't set last point here bcs it is always the only one element in geometry
 						break;
 					}
 					case "RelCubBezTo":
