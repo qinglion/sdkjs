@@ -765,7 +765,21 @@
 					}
 					case "RelQuadBezTo":
 					{
-						console.log("RelQuadBezTo command draw is not realized");
+						// https://learn.microsoft.com/en-us/office/client-developer/visio/relquadbezto-row-geometry-section
+						let x = Number(findCell(commandRow, "n", "X").v);
+						let y = Number(findCell(commandRow, "n", "Y").v);
+						let a = Number(findCell(commandRow, "n", "A").v);
+						let b = Number(findCell(commandRow, "n", "B").v);
+
+						let xNew = convertUnits(x, additionalUnitCoefficient) * shapeWidth;
+						let yNew = convertUnits(y, additionalUnitCoefficient) * shapeHeight;
+						let aNew = convertUnits(a, additionalUnitCoefficient) * shapeWidth;
+						let bNew = convertUnits(b, additionalUnitCoefficient) * shapeHeight;
+
+						path.quadBezTo(aNew, bNew, xNew, yNew);
+
+						lastPoint.x = xNew;
+						lastPoint.y = yNew;
 						break;
 					}
 				}
