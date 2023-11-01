@@ -532,7 +532,47 @@
 					}
 					case "PolylineTo":
 					{
-						console.log("PolylineTo command draw is not realized");
+						// https://learn.microsoft.com/en-us/office/client-developer/visio/polylineto-row-geometry-section
+						let x = Number(findCell(commandRow, "n", "X").v);
+						let y = Number(findCell(commandRow, "n", "Y").v);
+						// formula: knotLast, degree, xType, yType, x1, y1, x2, y2, ...
+						let formula = String(findCell(commandRow, "n", "A").v).trim();
+						let formulaValues = formula.substring(9, formula.length - 1).split(",");
+
+						//Convert units to EMUs
+						let xEndPointNew = convertUnits(x, additionalUnitCoefficient);
+						let yEndPointNew = convertUnits(y, additionalUnitCoefficient);
+						for (let k = 2; k < formulaValues.length; k++) {
+							// convert x and y
+							formulaValues[k] = convertUnits(Number(formulaValues[k]), additionalUnitCoefficient);
+						}
+
+						let xType =	parseInt(formulaValues[0]);
+						let yType = parseInt(formulaValues[1]);
+
+						let xScale = 1;
+						let yScale = 1;
+
+						if (xType === 0)
+							xScale = shapeWidth;
+						if (yType === 0)
+							yScale = shapeHeight;
+
+						// scale x and y and draw line
+						let groupsCount = (formulaValues.length - 2) / 2;
+						for (let j = 0; j < groupsCount; j++) {
+							let pointX = Number(formulaValues[2 + j * 2]);
+							let pointY = Number(formulaValues[2 + j * 2 + 1]);
+
+							// scale only in formula
+							let scaledX = pointX * xScale;
+							let scaledY = pointY * yScale;
+
+							path.lnTo(scaledX, scaledY);
+						}
+
+						// then go to x y from command args
+						path.lnTo(xEndPointNew, yEndPointNew);
 						break;
 					}
 					case "NURBSTo":
