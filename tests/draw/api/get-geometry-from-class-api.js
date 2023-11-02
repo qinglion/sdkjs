@@ -339,9 +339,9 @@
 			const additionalUnitCoefficient = g_dKoef_in_to_mm;
 
 			let path = new AscFormat.Path();
-			path.setExtrusionOk( false);
-			path.setFill( fillValue);
-			path.setStroke( true);
+			path.setExtrusionOk(false);
+			path.setFill(fillValue);
+			path.setStroke(true);
 			path.setPathW(undefined);
 			path.setPathH(undefined);
 			/* extrusionOk, fill, stroke, w, h*/
@@ -681,6 +681,7 @@
 					}
 					case "SplineKnot":
 					{
+						// https://learn.microsoft.com/en-us/office/client-developer/visio/splineknot-row-geometry-section
 						splineKnotCommandsData.push({
 							controlPointX: convertUnits(Number(findCell(commandRow, "n", "X").v),
 								additionalUnitCoefficient),
@@ -784,8 +785,9 @@
 					}
 				}
 				if (prevCommandName === "SplineKnot" &&
-					(commandName !== "SplineKnot" || i === geometrySections.length - 1) &&
+					(commandName !== "SplineKnot" || j === geometrySection.rows.length - 1) &&
 					splineStartCommandData !== undefined) {
+					// assume every row have iX
 					// draw spline
 
 					/** @type {{x: Number, y: Number}[]} */
