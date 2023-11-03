@@ -780,7 +780,6 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                 case nurbsTo:
                 {
                     //TODO
-                    // check non 3-degrees NURBS
                     // consider homogenous or euclidean weighted points weights
 
                     /**
@@ -919,35 +918,32 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                     /**
                      *
                      * @param {{x: Number, y: Number, z? :Number}[]} controlPoints
+                     * @param {Number} degree
                      * @returns { {
                      *              startPoint:     {x: Number, y: Number, z? :Number},
-                     *              controlPoint1:  {x: Number, y: Number, z? :Number},
-                     *              controlPoint2:  {x: Number, y: Number, z? :Number},
+                     *              controlPoints:  {x: Number, y: Number, z? :Number}[]
                      *              endPoint:       {x: Number, y: Number, z? :Number},
                      *            }[] }
                      */
-                    function NURBSnormalizedToBezier(controlPoints) {
+                    function NURBSnormalizedToBezier(controlPoints, degree) {
                         let bezierArray = [];
+                        // first Bezier
                         let nthBezier = {
                             startPoint: controlPoints[0],
-                            controlPoint1: controlPoints[1],
-                            controlPoint2: controlPoints[2],
-                            // endPoint: controlPoints[3]
+                            controlPoints: []
                         };
-                        // bezier.push(firstBezier);
-                        for (let i = 3; i < controlPoints.length; i++) {
+                        for (let i = 1; i < controlPoints.length; i++) {
                             const point = controlPoints[i];
-                            if (i % 3 === 0) {
+                            if (i % degree === 0) {
                                 nthBezier.endPoint = point;
                                 let nthBezierCopy = JSON.parse(JSON.stringify(nthBezier));
                                 bezierArray.push(nthBezierCopy);
                                 nthBezier = {
-                                    startPoint: point
+                                    startPoint: point,
+                                    controlPoints: []
                                 };
-                            } else if (i % 3 === 1) {
-                                nthBezier.controlPoint1 = point;
-                            } else if (i % 3 === 2) {
-                                nthBezier.controlPoint2 = point;
+                            } else {
+                                nthBezier.controlPoints.push(point);
                             }
                         }
                         return bezierArray;
@@ -959,21 +955,41 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                     let weights = cmd.weights;
                     let knots = cmd.knots;
                     let degree = cmd.degree;
+
                     for (let j = 0; j < controlPoints.length; j++) {
                         controlPoints[j].x = this.calculateCommandCoord(gdLst, controlPoints[j].x, cw, dCustomPathCoeffW);
                         controlPoints[j].y = this.calculateCommandCoord(gdLst, controlPoints[j].y, ch, dCustomPathCoeffH);
                     }
 
                     if (degree + 1 + controlPoints.length !== knots.length) {
-                        throw new Error('Wrong arguments format');
+                        console.log("Wrong arguments format.", "Degree + 1 + controlPoints.length !== knots.length",
+                          degree + 1 + controlPoints.length, "!==", knots.length);
+                        break;
+                    }
+
+                    let clampedStart = true;
+                    for (let j = 0; j < degree; j++) {
+                        // compare first degree + 1 knots
+                        clampedStart = clampedStart === false ? clampedStart : knots[j] === knots[j + 1];
+                    }
+                    if (!clampedStart) {
+                        console.log("first degree + 1 knots are not equal. Non clamped start is not yet supported",
+                          "Degree is", degree, "knots:", knots);
+                        break;
+                    }
+
+                    if (!(degree === 3 || degree === 2)) {
+                        console.log("NURBS with degree", degree, "is not yet supported");
+                        break;
                     }
 
                     // Convert to Bezier
                     let newNURBSform = duplicateKnots(controlPoints, weights, knots, degree);
-                    let bezierArray = NURBSnormalizedToBezier(newNURBSform.controlPoints);
+                    let bezierArray = NURBSnormalizedToBezier(newNURBSform.controlPoints, degree);
 
                     // change nurbsTo params to draw using bezier
-                    this.ArrPathCommand[i]={id: nurbsTo, bezierArray: bezierArray};
+                    // nurbs degree is equal to each bezier degree
+                    this.ArrPathCommand[i]={id: nurbsTo, degree: degree, bezierArray: bezierArray};
 
                     lastX = bezierArray[bezierArray.length-1].endPoint.x;
                     lastY = bezierArray[bezierArray.length-1].endPoint.y;
@@ -1147,13 +1163,21 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                 {
                     bIsDrawLast = true;
                     cmd.bezierArray.forEach(function (bezier) {
-                        let cp1x = bezier.controlPoint1.x;
-                        let cp1y = bezier.controlPoint1.y;
-                        let cp2x = bezier.controlPoint2.x;
-                        let cp2y = bezier.controlPoint2.y;
-                        let endx = bezier.endPoint.x;
-                        let endy = bezier.endPoint.y;
-                        shape_drawer._c(cp1x, cp1y, cp2x, cp2y,endx, endy);
+                        if (cmd.degree === 2) {
+                            let cp1x = bezier.controlPoints[0].x;
+                            let cp1y = bezier.controlPoints[0].y;
+                            let endx = bezier.endPoint.x;
+                            let endy = bezier.endPoint.y;
+                            shape_drawer._c2(cp1x, cp1y, endx, endy);
+                        } else if (cmd.degree === 3) {
+                            let cp1x = bezier.controlPoints[0].x;
+                            let cp1y = bezier.controlPoints[0].y;
+                            let cp2x = bezier.controlPoints[1].x;
+                            let cp2y = bezier.controlPoints[1].y;
+                            let endx = bezier.endPoint.x;
+                            let endy = bezier.endPoint.y;
+                            shape_drawer._c(cp1x, cp1y, cp2x, cp2y,endx, endy);
+                        }
                     });
                     break;
                 }
@@ -1213,13 +1237,21 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                 case nurbsTo:
                 {
                     cmd.bezierArray.forEach(function (bezier) {
-                        let cp1x = bezier.controlPoint1.x;
-                        let cp1y = bezier.controlPoint1.y;
-                        let cp2x = bezier.controlPoint2.x;
-                        let cp2y = bezier.controlPoint2.y;
-                        let endx = bezier.endPoint.x;
-                        let endy = bezier.endPoint.y;
-                        checker._c(cp1x, cp1y, cp2x, cp2y,endx, endy);
+                        if (cmd.degree === 2) {
+                            let cp1x = bezier.controlPoints[0].x;
+                            let cp1y = bezier.controlPoints[0].y;
+                            let endx = bezier.endPoint.x;
+                            let endy = bezier.endPoint.y;
+                            checker._c2(cp1x, cp1y, endx, endy);
+                        } else if (cmd.degree === 3) {
+                            let cp1x = bezier.controlPoints[0].x;
+                            let cp1y = bezier.controlPoints[0].y;
+                            let cp2x = bezier.controlPoints[1].x;
+                            let cp2y = bezier.controlPoints[1].y;
+                            let endx = bezier.endPoint.x;
+                            let endy = bezier.endPoint.y;
+                            checker._c(cp1x, cp1y, cp2x, cp2y, endx, endy);
+                        }
                     });
                     break;
                 }
