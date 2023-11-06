@@ -534,6 +534,110 @@ CGraphics.prototype =
             this.m_oContext.quadraticCurveTo(_x1 + 0.5,_y1 + 0.5,_x2 + 0.5,_y2 + 0.5);
         }
     },
+    /**
+     * @param {{x: Number, y: Number, z? :Number}} startPoint
+     * @param {{x: Number, y: Number, z? :Number}[]} controlPoints
+     * @param {{x: Number, y: Number, z? :Number}} endPoint
+     */
+    drawNthDegreeBezier : function(startPoint, controlPoints, endPoint)
+    {
+        //TODO move pointsCount init outside of function
+        /**
+         * Uses de Casteljau's algorithm
+         * @param {{x: Number, y: Number, z? :Number}} startPoint
+         * @param {{x: Number, y: Number, z? :Number}[]} controlPoints
+         * @param {{x: Number, y: Number, z? :Number}} endPoint
+         * @param {Number} pointsCount
+         * @param {CanvasRenderingContext2D} canvasRenderingContext
+         */
+        function drawNthDegreeBezierOnCanvas(startPoint, controlPoints, endPoint,
+                                             pointsCount, canvasRenderingContext)
+        {
+            /**Computes a point's coordinates for a value of t
+             * @param {Number} t - a value between o and 1
+             * @param {{x: Number, y: Number, z? :Number}} startPoint
+             * @param {{x: Number, y: Number, z? :Number}[]} controlPoints
+             * @param {{x: Number, y: Number, z? :Number}} endPoint
+             * @return {{x: Number, y: Number}} point
+             **/
+            function computeBezierPoint(t, startPoint, controlPoints, endPoint)
+            {
+                /**Computes Bernstain
+                 *@param {Integer} i - the i-th index
+                 *@param {Integer} n - the total number of points
+                 *@param {Number} t - the value of parameter t , between 0 and 1
+                 **/
+                function computeBernstainCoef(i,n,t)
+                {
+                    /**Computes factorial*/
+                    function fact(k){
+                        if(k==0 || k==1){
+                            return 1;
+                        }
+                        else{
+                            return k * fact(k-1);
+                        }
+                    }
+
+                    //if(n < i) throw "Wrong";
+                    return fact(n) / (fact(i) * fact(n-i))* Math.pow(t, i) * Math.pow(1-t, n-i);
+                }
+
+                var points = [].concat(startPoint, controlPoints, endPoint);
+                var r = {
+                    x: 0,
+                    y: 0
+                };
+                var n = points.length-1;
+                for(var i=0; i <= n; i++){
+                    r.x += points[i].x * computeBernstainCoef(i, n, t);
+                    r.y += points[i].y * computeBernstainCoef(i, n, t);
+                }
+                return r;
+            }
+
+
+            for (let t = 0; t < 1; t+= 1/pointsCount) {
+               let point = computeBezierPoint(t, startPoint, controlPoints, endPoint);
+               canvasRenderingContext.lineTo(point.x, point.y);
+            }
+        }
+
+        if (false === this.m_bIntegerGrid)
+        {
+            drawNthDegreeBezierOnCanvas(startPoint, controlPoints, endPoint, 1000, this.m_oContext);
+
+            if (this.ArrayPoints != null)
+            {
+                // I do it by analogy
+
+                let thisContext = this;
+                controlPoints.forEach(function(controlPoint) {
+                    thisContext.ArrayPoints[thisContext.ArrayPoints.length] = {x: controlPoint.x, y: controlPoint.y};
+                });
+                this.ArrayPoints[this.ArrayPoints.length] = {x: endPoint.x, y: endPoint.y};
+            }
+        }
+        else
+        {
+            // I do it by analogy
+
+            startPoint.x = ((this.m_oFullTransform.TransformPointX(startPoint.x,startPoint.y)) >> 0) + 0.5;
+            startPoint.y = ((this.m_oFullTransform.TransformPointY(startPoint.x,startPoint.y)) >> 0) + 0.5;
+
+            // change controlPoints
+            for (let i = 0; i < controlPoints.length; i++) {
+                let controlPoint = controlPoints[i];
+                controlPoint.x = ((this.m_oFullTransform.TransformPointX(controlPoint.x,controlPoint.y)) >> 0) + 0.5;
+                controlPoint.y = ((this.m_oFullTransform.TransformPointY(controlPoint.x,controlPoint.y)) >> 0) + 0.5;
+            }
+
+            endPoint.x = ((this.m_oFullTransform.TransformPointX(endPoint.x,endPoint.y)) >> 0) + 0.5;
+            endPoint.y = ((this.m_oFullTransform.TransformPointY(endPoint.x,endPoint.y)) >> 0) + 0.5;
+
+            drawNthDegreeBezierOnCanvas(startPoint, controlPoints, endPoint, 1000, this.m_oContext);
+        }
+    },
     ds : function()
     {
         this.m_oContext.stroke();

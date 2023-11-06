@@ -712,8 +712,8 @@
 							path.moveTo(-maxValue, yNew);
 							path.lnTo(maxValue, yNew);
 						} else {
-							// visio doesnt draw diagonals
-							console.log("visio doesnt draw diagonals");
+							// visio doesnt draw diagonal infinite lines
+							console.log("visio doesnt draw diagonal infinite lines");
 						}
 						// don't set last point here bcs it is always the only one element in geometry
 						break;
@@ -787,7 +787,6 @@
 				if (prevCommandName === "SplineKnot" &&
 					(commandName !== "SplineKnot" || j === geometrySection.rows.length - 1) &&
 					splineStartCommandData !== undefined) {
-					// assume every row have iX
 					// draw spline
 
 					/** @type {{x: Number, y: Number}[]} */

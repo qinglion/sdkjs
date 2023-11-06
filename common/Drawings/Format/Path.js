@@ -919,11 +919,11 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                      *
                      * @param {{x: Number, y: Number, z? :Number}[]} controlPoints
                      * @param {Number} degree
-                     * @returns { {
+                     * @returns {{
                      *              startPoint:     {x: Number, y: Number, z? :Number},
-                     *              controlPoints:  {x: Number, y: Number, z? :Number}[]
-                     *              endPoint:       {x: Number, y: Number, z? :Number},
-                     *            }[] }
+                     *              controlPoints:  {x: Number, y: Number, z? :Number}[],
+                     *              endPoint:       {x: Number, y: Number, z? :Number}
+                     *            }[]}
                      */
                     function NURBSnormalizedToBezier(controlPoints, degree) {
                         let bezierArray = [];
@@ -975,11 +975,6 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                     if (!clampedStart) {
                         console.log("first degree + 1 knots are not equal. Non clamped start is not yet supported",
                           "Degree is", degree, "knots:", knots);
-                        break;
-                    }
-
-                    if (!(degree === 3 || degree === 2)) {
-                        console.log("NURBS with degree", degree, "is not yet supported");
                         break;
                     }
 
@@ -1177,6 +1172,13 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                             let endx = bezier.endPoint.x;
                             let endy = bezier.endPoint.y;
                             shape_drawer._c(cp1x, cp1y, cp2x, cp2y,endx, endy);
+                        } else {
+                            let startPoint = bezier.startPoint;
+                            let controlPoints = bezier.controlPoints;
+                            let endPoint = bezier.endPoint;
+                            // unlike in other commands pass start point bcs other commands use canvas system end point
+                            // for next command start point
+                            shape_drawer.drawNthDegreeBezier(startPoint, controlPoints, endPoint);
                         }
                     });
                     break;
@@ -1251,6 +1253,13 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                             let endx = bezier.endPoint.x;
                             let endy = bezier.endPoint.y;
                             checker._c(cp1x, cp1y, cp2x, cp2y, endx, endy);
+                        } else {
+                            let startPoint = bezier.startPoint;
+                            let controlPoints = bezier.controlPoints;
+                            let endPoint = bezier.endPoint;
+                            let pointsToCheck = controlPoints.concat(endPoint);
+                            pointsToCheck = pointsToCheck.concat(startPoint);
+                            checker.checkPoints(pointsToCheck);
                         }
                     });
                     break;
