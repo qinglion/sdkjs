@@ -535,6 +535,8 @@ CGraphics.prototype =
         }
     },
     /**
+     * accepts values in px
+     * http://html5tutorial.com/how-to-draw-n-grade-bezier-curve-with-canvas-api/
      * @param {{x: Number, y: Number, z? :Number}} startPoint
      * @param {{x: Number, y: Number, z? :Number}[]} controlPoints
      * @param {{x: Number, y: Number, z? :Number}} endPoint
@@ -603,9 +605,28 @@ CGraphics.prototype =
             }
         }
 
+        function sumDistanceBetweenPoints(points)
+        {
+            function distance(a, b){
+                return Math.sqrt(Math.pow(a.x-b.x, 2) + Math.pow(a.y-b.y, 2));
+            }
+            /**Compute the incremental step*/
+            let tLength = 0;
+            for(let i=0; i < points.length - 1; i++){
+                tLength += distance(points[i], points[i+1]);
+            }
+            return tLength;
+        }
+
+        let bezierPoints = [].concat(startPoint, controlPoints, endPoint);
+        // https://www.figma.com/file/FT0m9czNuvK34TK227cQ6e/pointsToCalculatePerOnePixelLengthUnit?type=design&node-id=0%3A1&mode=design&t=0S7e2nxkt2sbCHqw-1
+        let pointsToCalculatePerOnePixelLengthUnit = 1;
+        let interpolationPointsCount = pointsToCalculatePerOnePixelLengthUnit * sumDistanceBetweenPoints(bezierPoints);
+
         if (false === this.m_bIntegerGrid)
         {
-            drawNthDegreeBezierOnCanvas(startPoint, controlPoints, endPoint, 1000, this.m_oContext);
+            drawNthDegreeBezierOnCanvas(startPoint, controlPoints, endPoint,
+              interpolationPointsCount, this.m_oContext);
 
             if (this.ArrayPoints != null)
             {
@@ -635,7 +656,8 @@ CGraphics.prototype =
             endPoint.x = ((this.m_oFullTransform.TransformPointX(endPoint.x,endPoint.y)) >> 0) + 0.5;
             endPoint.y = ((this.m_oFullTransform.TransformPointY(endPoint.x,endPoint.y)) >> 0) + 0.5;
 
-            drawNthDegreeBezierOnCanvas(startPoint, controlPoints, endPoint, 1000, this.m_oContext);
+            drawNthDegreeBezierOnCanvas(startPoint, controlPoints, endPoint,
+              interpolationPointsCount, this.m_oContext);
         }
     },
     ds : function()
