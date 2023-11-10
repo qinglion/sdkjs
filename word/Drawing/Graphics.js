@@ -535,7 +535,9 @@ CGraphics.prototype =
         }
     },
     /**
-     * accepts values in px
+     * accepts values in unknown units (mb mm) which to be scaled and transformed later
+     * (using this.m_oFullTransform maybe) or in it
+     * made with the use of:
      * http://html5tutorial.com/how-to-draw-n-grade-bezier-curve-with-canvas-api/
      * @param {{x: Number, y: Number, z? :Number}} startPoint
      * @param {{x: Number, y: Number, z? :Number}[]} controlPoints
@@ -543,7 +545,7 @@ CGraphics.prototype =
      */
     drawNthDegreeBezier : function(startPoint, controlPoints, endPoint)
     {
-        //TODO move pointsCount init outside of function
+        //TODO move pointsCount init outside of function as optional parameter
         /**
          * Uses de Casteljau's algorithm
          * @param {{x: Number, y: Number, z? :Number}} startPoint
@@ -598,8 +600,8 @@ CGraphics.prototype =
                 return r;
             }
 
-
-            for (let t = 0; t < 1; t+= 1/pointsCount) {
+            // in fact pointsCount is larger by 1 point. bcs if pointsCount = 2 t will be 0, 1/2 and 1 - 3 times total
+            for (let t = 0; t <= 1; t+= 1/pointsCount) {
                let point = computeBezierPoint(t, startPoint, controlPoints, endPoint);
                canvasRenderingContext.lineTo(point.x, point.y);
             }
@@ -618,10 +620,31 @@ CGraphics.prototype =
             return tLength;
         }
 
+        function transformPoints(points, transform)
+        {
+            let pointsCopy = Array(points.length);
+            for(let i=0; i < pointsCopy.length; i++){
+                pointsCopy[i] = {x: null, y: null};
+                pointsCopy[i].x = transform.TransformPointX(points[i].x, points[i].y);
+                pointsCopy[i].y = transform.TransformPointY(points[i].x, points[i].y);
+            }
+            return pointsCopy;
+        }
+
         let bezierPoints = [].concat(startPoint, controlPoints, endPoint);
+
         // https://www.figma.com/file/FT0m9czNuvK34TK227cQ6e/pointsToCalculatePerOnePixelLengthUnit?type=design&node-id=0%3A1&mode=design&t=0S7e2nxkt2sbCHqw-1
+        // not integer more like precision coefficient. can be 0.3 for example
         let pointsToCalculatePerOnePixelLengthUnit = 1;
-        let interpolationPointsCount = pointsToCalculatePerOnePixelLengthUnit * sumDistanceBetweenPoints(bezierPoints);
+
+        // convert length to pixels length units
+        // https://www.figma.com/file/FT0m9czNuvK34TK227cQ6e/pointsToCalculatePerOnePixelLengthUnit?type=design&node-id=41-49&mode=design&t=pH5bF1EvWeWjzkS0-0
+        // Canvas resize is not considered!
+        let bezierPointsCopy = transformPoints(bezierPoints, this.m_oFullTransform);
+
+        // add + 1 to avoid divide by 0 later when calculating interpolation step which is 1/interpolationPointsCount
+        let interpolationPointsCount = pointsToCalculatePerOnePixelLengthUnit *
+          sumDistanceBetweenPoints(bezierPointsCopy) + 1;
 
         if (false === this.m_bIntegerGrid)
         {
