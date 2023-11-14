@@ -539,13 +539,13 @@ CGraphics.prototype =
      * (using this.m_oFullTransform maybe) or in it
      * made with the use of:
      * http://html5tutorial.com/how-to-draw-n-grade-bezier-curve-with-canvas-api/
+     * uses de Casteljau's algorithm
      * @param {{x: Number, y: Number, z? :Number}} startPoint
      * @param {{x: Number, y: Number, z? :Number}[]} controlPoints
      * @param {{x: Number, y: Number, z? :Number}} endPoint
      */
     drawNthDegreeBezier : function(startPoint, controlPoints, endPoint)
     {
-        //TODO move pointsCount init outside of function as optional parameter
         /**
          * Uses de Casteljau's algorithm
          * @param {{x: Number, y: Number, z? :Number}} startPoint
@@ -642,6 +642,9 @@ CGraphics.prototype =
         // Canvas resize is not considered!
         let bezierPointsCopy = transformPoints(bezierPoints, this.m_oFullTransform);
 
+        // As we calculate length of a curve as sum of control points there might be performance issue with
+        // high order curves because they have many control points and so length will be considered
+        // as long and there will be many control points
         // add + 1 to avoid divide by 0 later when calculating interpolation step which is 1/interpolationPointsCount
         let interpolationPointsCount = pointsToCalculatePerOnePixelLengthUnit *
           sumDistanceBetweenPoints(bezierPointsCopy) + 1;
