@@ -265,13 +265,15 @@
 		if (0 != _pageHeight)
 			_ver_Zoom = (100 * h) / _pageHeight;
 
+		// we take minimal zoom so page comes to closest canvas border
+		// 42.3 --> 41 is it ok? when Math.min(_hor_Zoom, _ver_Zoom) = 42.3
 		_value = (Math.min(_hor_Zoom, _ver_Zoom) - 0.5) >> 0;
 
 		if (_value < 5)
 			_value = 5;
 		return _value;
 	};
-	CVisioDocument.prototype.draw = function() {
+	CVisioDocument.prototype.draw = function(pageScale) {
 		let api = this.api;
 		//CSlideSize.prototype.DEFAULT_CX
 		//todo units, indexes
@@ -290,11 +292,19 @@
 		var h_px = (h_mm * dKoef) >> 0;
 
 		let _canvas = api.canvas;
+
+		// use scale
+		// consider previous scale maybe
+		_canvas.style.width = pageScale * 100 + "%";
+		_canvas.style.height = pageScale * 100 + "%";
+
+		// set pixels count for width and height
 		_canvas.width = AscCommon.AscBrowser.convertToRetinaValue(_canvas.clientWidth, true);
 		_canvas.height = AscCommon.AscBrowser.convertToRetinaValue(_canvas.clientHeight, true);
 		var ctx = _canvas.getContext('2d');
 		ctx.fillStyle = "#FFFFFF";
-		ctx.fillRect(0, 0, w_px, h_px);
+		// use scale
+		ctx.fillRect(0, 0, w_px * pageScale, h_px * pageScale);
 
 		var graphics = new AscCommon.CGraphics();
 		graphics.init(ctx, w_px, h_px, w_mm, h_mm);
@@ -305,6 +315,8 @@
 		//so without mirror we get page up side down
 		global_MatrixTransformer.Reflect(graphics.m_oCoordTransform, false, true);
 		global_MatrixTransformer.TranslateAppend(graphics.m_oCoordTransform, 0, h_px);
+		// use scale
+		global_MatrixTransformer.ScaleAppend(graphics.m_oCoordTransform, pageScale, pageScale);
 
 		let shapes = this.convertToShapes(logic_w_mm, logic_h_mm);
 		shapes.forEach(function(shape) {
@@ -354,8 +366,6 @@
 
 				let shape_pinX_inch = Number(shape.elements.find(function(elem) {return elem.n === "PinX"}).v);
 				let shape_pinY_inch = Number(shape.elements.find(function(elem) {return elem.n === "PinY"}).v);
-				// let shapeWidth = Number(shape.elements.find(function(elem) {return elem.n === "Width"}).v);
-				// let shapeHeight = Number(shape.elements.find(function(elem) {return elem.n === "Height"}).v);
 				let shape_locPinX_inch = Number(shape.elements.find(function(elem) {return elem.n === "LocPinX"}).v);
 				let shape_locPinY_inch = Number(shape.elements.find(function(elem) {return elem.n === "LocPinY"}).v);
 
@@ -374,7 +384,7 @@
 
 		for (let i = 0; i < shapeClasses.length; i++) {
 			const shape = shapeClasses[i];
-			// if (shape.iD !== 54) {
+			// if (shape.iD !== 13) {
 			// 	continue;
 			// }
 			let pinX_inch = Number(shape.elements.find(function(elem) {return elem.n === "PinX"}).v);
@@ -389,7 +399,6 @@
 			// to rotate around point we 1) add one more offset 2) rotate around center
 			// could be refactored maybe
 			// https://www.figma.com/file/jr1stjGUa3gKUBWxNAR80T/locPinHandle?type=design&node-id=0%3A1&mode=design&t=raXzFFsssqSexysi-1
-
 			let redVector = {x: -(locPinX_inch - shapeWidth_inch/2), y: -(locPinY_inch - shapeHeight_inch/2)};
 			// rotate antiClockWise by shapeAngle
 			let purpleVector = rotatePointAroundCordsStartClockWise(redVector.x, redVector.y, -shapeAngle);
@@ -407,7 +416,7 @@
 			let shapeGeom = AscCommonDraw.getGeometryFromShape(shape);
 
 			var oFill   = AscFormat.CreateUnfilFromRGB(0,127,0);
-			var oStroke = AscFormat.builder_CreateLine(12700, {UniFill: AscFormat.CreateUnfilFromRGB(255,0,0)});
+			var oStroke = AscFormat.builder_CreateLine(12700/2, {UniFill: AscFormat.CreateUnfilFromRGB(255,0,0)});
 
 			let cShape = this.convertToShape(x_mm, y_mm, shapeWidth_mm, shapeHeight_mm, shapeAngle, oFill, oStroke, shapeGeom);
 

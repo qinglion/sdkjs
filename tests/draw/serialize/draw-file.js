@@ -30,6 +30,8 @@
  *
  */
 +function ($) {
+	"use strict";
+
 	window.editor = new AscCommon.baseEditorsApi({});
 	let api = new Asc.asc_docs_api({
 		'id-view'  : 'editor_sdk'
@@ -46,15 +48,48 @@
 			}
 		}
 	};
+	var holder = document.getElementById("editor_sdk");
+	holder.ondragover = holderOnDradOver;
+	holder.ondrop = holderOnDrop;
+	window.onload = windowOnLoad;
+
+	// enable native scrolls
+	var id_main_view = document.getElementById("id_main_view");
+	id_main_view.style.overflow = "auto";
+
+	let pageScale = 1;
+
+	// Cross browser support unchecked!
+	// May slow down scrolling! Because handler will wait until its job is finished and will fire mouse wheel only
+	// after it (because it now can call prevent default - prevent scroll during handlers
+	// work because of { passive: false })
+	window.addEventListener('mousewheel', onWindowMouseWheel, { passive: false });
+
+	function onWindowMouseWheel(e) {
+		if (e.ctrlKey === true)
+		{
+			e.preventDefault(); // case described above
+			if (e.deltaY > 0) {
+				// console.log('Down');
+				pageScale = pageScale / 1.1;
+			} else {
+				// console.log('Up');
+				pageScale = pageScale * 1.1;
+			}
+			let droppedTestFileArrayBuffer = AscCommon.Base64.decode(localStorage.droppedTestFile);
+			drawFile(droppedTestFileArrayBuffer);
+			console.log('draw using scale ', pageScale);
+		}
+	}
+
 
 	function drawFile(data){
 		api.asc_CloseFile();
 		api.OpenDocumentFromZip(data);
-		api.Document.draw();
+		api.Document.draw(pageScale);
 	}
 
-	var holder = document.getElementById("editor_sdk");
-	holder.ondragover = function(e)
+	function holderOnDradOver(e)
 	{
 		var isFile = false;
 		if (e.dataTransfer.types)
@@ -77,7 +112,8 @@
 		e.preventDefault();
 		return false;
 	};
-	holder.ondrop = function(e)
+
+	function holderOnDrop(e)
 	{
 		var file = e.dataTransfer.files ? e.dataTransfer.files[0] : null;
 		if (!file)
@@ -98,9 +134,9 @@
 		reader.readAsArrayBuffer(file);
 
 		return false;
-	};
+	}
 
-	window.onload = function() {
+	function windowOnLoad() {
 		setTimeout(function (){
 			let testFileRectangle = AscCommon.Base64.decode(Asc.rectangle);
 			let testFileTriangle = AscCommon.Base64.decode(Asc.triangle);
@@ -123,5 +159,5 @@
 			let droppedTestFileArrayBuffer = AscCommon.Base64.decode(localStorage.droppedTestFile);
 			drawFile(droppedTestFileArrayBuffer);
 		}, 3000);
-	};
+	}
 }();
