@@ -493,7 +493,8 @@
 						// start to draw from ellipse right point
 
 						// Check [MS-VSDX]-220215 2.2.3.2.2.Geometry Path
-						path.moveTo(wRhR.wR * 2, wRhR.hR);
+						// ellipse command implies moveTo
+						path.moveTo(newX + wRhR.wR, newY);
 						path.arcTo(wRhR.wR, wRhR.hR, 0, 180 * degToC);
 						path.arcTo(wRhR.wR, wRhR.hR, 180 * degToC, 180 * degToC);
 						// If the Row_Type element is of type Ellipse or InfiniteLine, it specifies the only segment of the path.

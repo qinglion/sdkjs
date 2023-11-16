@@ -395,7 +395,7 @@
 			let shapeWidth_inch = Number(shape.elements.find(function(elem) {return elem.n === "Width"}).v);
 			let shapeHeight_inch = Number(shape.elements.find(function(elem) {return elem.n === "Height"}).v);
 
-			// LocPinX and LocPinY set shape rotate point and add offset to initial shape center
+			// PinX and PinY set shape rotate point and LocPinX LocPinY add offset to initial shape center
 			// to rotate around point we 1) add one more offset 2) rotate around center
 			// could be refactored maybe
 			// https://www.figma.com/file/jr1stjGUa3gKUBWxNAR80T/locPinHandle?type=design&node-id=0%3A1&mode=design&t=raXzFFsssqSexysi-1
@@ -404,7 +404,6 @@
 			let purpleVector = rotatePointAroundCordsStartClockWise(redVector.x, redVector.y, -shapeAngle);
 			let rotatedCenter = {x: pinX_inch - redVector.x + purpleVector.x, y: pinY_inch - redVector.y + purpleVector.y};
 			let turquoiseVector = {x: -shapeWidth_inch/2, y: -shapeHeight_inch/2};
-			// locPinX and locPinY not only set rotate point but shifts center too!
 			let x_inch = rotatedCenter.x + turquoiseVector.x + redVector.x;
 			let y_inch = rotatedCenter.y + turquoiseVector.y + redVector.y;
 
