@@ -233,13 +233,6 @@
 		return {x : newX, y: newY};
 	}
 
-	function transformEllipseParams(x, y, a, b, c, d) {
-		let rx = a - x;
-		let ry = d - y;
-
-		return {wR : rx, hR : ry};
-	}
-
 	/**
 	 * get Geometry object from shape object reading shape.elements
 	 * @param {Shape_Type} shape
@@ -475,6 +468,45 @@
 					}
 					case "Ellipse":
 					{
+						/**
+						 * computes radii using center and two points on ellipse
+						 * @param {number} cx
+						 * @param {number} cy
+						 * @param {number} x1
+						 * @param {number} y1
+						 * @param {number} x2
+						 * @param {number} y2
+						 * @return {{hR: number, wR: number} | false} radii
+						 */
+						function transformEllipseParams(cx, cy, x1, y1, x2, y2) {
+							// subtract center from points
+							// let rX1 = x1 - cx;
+							// let rY1 = y1 - cy;
+							// let rX2 = x2 - cx;
+							// let rY2 = y2 - cy;
+
+							// passing two points to (x1/a)^2 + (y1/b)^2 = 1 and (x2/a)^2 + (y2/b)^2 = 1 ellipse equations
+							// we can wind radii: a and b values;
+							// we can write it like below
+							// let b = Math.sqrt((rX2*rX2*rY1*rY1-rY2*rY2*rX1*rX1)/(rX2*rX2-rX1*rX1));
+							// let a = Math.sqrt(rX1*rX1*b*b/(b*b-rY1*rY1));
+							// it is not useful I guess bcs ellipse is rotated so we need another equation
+
+							// console.log('For ellipse with relative center (', cx, ', ', cy, ')');
+							// console.log('point 1: (', x1, ', ', y1, '), point 2: (', x2, ', ', y2, ')');
+
+							let rx = Math.hypot(x1 - cx, y1 - cy);
+							let ry = Math.hypot(x2 - cx, y2 - cy);
+
+							if ((x1 !== cx && y1 !== cy) || (x2 !== cx && y2 !== cy)) {
+								// if some of points is not on the same vertical or horizontal as ellipse
+								// ellipse command for rotated ellipse is not yet realized
+								return false;
+							}
+
+							return {wR: rx, hR: ry};
+						}
+
 						let centerPointXTextValue = Number(findCell(commandRow, "n", "X").v);
 						let centerPointYTextValue = Number(findCell(commandRow, "n", "Y").v);
 						let somePointXTextValue = Number(findCell(commandRow, "n", "A").v);
@@ -490,6 +522,9 @@
 						let newD = convertUnits(anotherPointYTextValue, additionalUnitCoefficient);
 
 						let wRhR = transformEllipseParams(newX, newY, newA, newB, newC, newD);
+						if (!wRhR) {
+							console.log('Ellipse command for rotated ellipse is not yet realized');
+						}
 						// start to draw from ellipse right point
 
 						// Check [MS-VSDX]-220215 2.2.3.2.2.Geometry Path
