@@ -374,6 +374,7 @@ var editor;
     // History & global counters
     History.init(wbModel);
 
+    AscCommonExcel.UndoRedoClassTypes.Clean();
     AscCommonExcel.g_oUndoRedoCell = new AscCommonExcel.UndoRedoCell(wbModel);
     AscCommonExcel.g_oUndoRedoWorksheet = new AscCommonExcel.UndoRedoWoorksheet(wbModel);
     AscCommonExcel.g_oUndoRedoWorkbook = new AscCommonExcel.UndoRedoWorkbook(wbModel);
@@ -1931,6 +1932,7 @@ var editor;
 						xmlParserContext.InitOpenManager.InitStyleManager(oStyleObject, aCellXfs);
 						dxfs = oStyleObject.aDxfs;
 						wb.oNumFmtsOpen = oStyleObject.oNumFmts;
+						wb.dxfsOpen = oStyleObject.aDxfs;
 					}
 				}
 				xmlParserContext.InitOpenManager.aCellXfs = aCellXfs;
@@ -4021,9 +4023,13 @@ var editor;
 	}
 
 	if (window["NATIVE_EDITOR_ENJINE"]) {
-		var ws = this.wb.getWorksheet();
-		var activeCell = this.wbModel.getActiveWs().selectionRange.activeCell;
-		result = [ws.getCellLeftRelative(activeCell.col, 0), ws.getCellTopRelative(activeCell.row, 0)];
+        if (SearchEngine.Count > 0) {
+            var ws = this.wb.getWorksheet();
+            var activeCell = this.wbModel.getActiveWs().selectionRange.activeCell;
+            result = [ws.getCellLeftRelative(activeCell.col, 0), ws.getCellTopRelative(activeCell.row, 0)];
+        } else {
+            result = null;
+        }
 	} else {
 		result = SearchEngine.Count;
 	}
@@ -9049,6 +9055,28 @@ var editor;
 	};
 
 
+	spreadsheet_api.prototype.asc_GetSeriesSettings = function() {
+		let res = new Asc.asc_CSeriesSettings();
+
+		let ws = this.wb && this.wb.getWorksheet();
+		res.prepare(ws);
+
+		return res;
+	};
+
+	spreadsheet_api.prototype.asc_ApplySeriesSettings = function(settings) {
+		if (this.collaborativeEditing.getGlobalLock() || !this.canEdit()) {
+			return;
+		}
+		let wb = this.wb;
+		if (!wb) {
+			return;
+		}
+
+		var ws = this.wb.getWorksheet();
+		return ws.applySeriesSettings(settings);
+	};
+
   /*
    * Export
    * -----------------------------------------------------------------------------
@@ -9410,6 +9438,8 @@ var editor;
   prot["asc_showAutoComplete"] = prot.asc_showAutoComplete;
   prot["asc_getHeaderFooterMode"] = prot.asc_getHeaderFooterMode;
   prot["asc_getActiveRangeStr"] = prot.asc_getActiveRangeStr;
+  prot["asc_getActiveRange"] = prot.asc_getActiveRange;
+
 
 
   prot["asc_onMouseUp"] = prot.asc_onMouseUp;
@@ -9629,8 +9659,8 @@ var editor;
   prot["asc_ContinueGoalSeek"]= prot.asc_ContinueGoalSeek;
   prot["asc_StepGoalSeek"]= prot.asc_StepGoalSeek;
 
-
-
+  prot["asc_GetSeriesSettings"]= prot.asc_GetSeriesSettings;
+  prot["asc_ApplySeriesSettings"]= prot.asc_ApplySeriesSettings;
 
 
 })(window);

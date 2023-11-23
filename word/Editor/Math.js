@@ -1149,7 +1149,7 @@ ParaMath.prototype.GetSelectContent = function(isAll)
     return this.Root.GetSelectContent(isAll);
 };
 
-ParaMath.prototype.GetCurrentParaPos = function()
+ParaMath.prototype.GetCurrentParaPos = function(align)
 {
     return this.Root.GetCurrentParaPos();
 };
@@ -3274,6 +3274,10 @@ ParaMath.prototype.ConvertFromUnicodeMath = function()
     this.Root.CorrectAllMathWords(false);
     this.Root.ConvertAllSpecialWords(false);
 	var strUnicode = this.GetText();
+	if (strUnicode[strUnicode.length - 1] === " ")
+	{
+		strUnicode = strUnicode.slice(0, -1)
+	}
 	this.Root.Remove_Content(0,this.Root.Content.length);
     this.Root.Correct_Content(true);
 	AscMath.CUnicodeConverter(strUnicode, this.Root);

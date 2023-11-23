@@ -211,7 +211,10 @@
 
 		if (!data)
 			return;
-		
+
+		if (oField && (oField.GetType() != AscPDF.FIELD_TYPES.text || oField.IsMultiline() == false))
+			data = data.trim().replace(/[\n\r]/g, ' ');
+
 		if (oField && (oField.GetType() === AscPDF.FIELD_TYPES.text || (oField.GetType() === AscPDF.FIELD_TYPES.combobox && oField.IsEditable()))) {
 			let aChars = [];
 			for (let i = 0; i < data.length; i++)
@@ -371,10 +374,6 @@
 		}
 		
 		let isEntered = oDoc.activeForm.EnterText(text);
-		if (viewer.pagesInfo.pages[oDoc.activeForm._page].needRedrawForms) {
-			viewer._paint();
-			viewer.onUpdateOverlay();
-		}
 		
 		if (isEntered) {
 			this.WordControl.m_oDrawingDocument.TargetStart();
@@ -405,6 +404,14 @@
 			oDoc.OnExitFieldByClick();
 
 		if (this.isMarkerFormat) {
+			let aSelQuads = this.getDocumentRenderer().file.getSelectionQuads();
+        	if (aSelQuads.length == 0) {
+				oDoc.bOffMarkerAfterUsing = false;
+			}
+			else {
+				oDoc.bOffMarkerAfterUsing = true;
+			}
+
 			switch (this.curMarkerType) {
 				case AscPDF.ANNOTATIONS_TYPES.Highlight:
 					this.SetHighlight(r, g, b, opacity);
@@ -417,6 +424,16 @@
 					break;
 			}
 		}
+		else {
+			oDoc.bOffMarkerAfterUsing = true;
+		}
+	};
+	PDFEditorApi.prototype.Paste = function()
+	{
+		if (AscCommon.g_clipboardBase.IsWorking())
+			return false;
+
+		return AscCommon.g_clipboardBase.Button_Paste();
 	};
 	PDFEditorApi.prototype.asc_setSkin = function(theme)
     {
@@ -488,7 +505,86 @@
 		if (!bIsFreeze)
 			this.WordControl.OnScroll();
 	};
-	
+	// composite input
+	PDFEditorApi.prototype.Begin_CompositeInput = function()
+	{
+		let viewer = this.DocumentRenderer;
+		if (!viewer)
+			return false;
+		
+		let pdfDoc = viewer.getPDFDoc();
+		if (!pdfDoc.activeForm || !pdfDoc.activeForm.IsEditable())
+			return false;
+		
+		function begin() {
+			pdfDoc.activeForm.beginCompositeInput();
+		}
+		
+		if (!pdfDoc.checkDefaultFieldFonts(begin))
+			return true;
+		
+		begin();
+		return true;
+	};
+	PDFEditorApi.prototype.Add_CompositeText = function(codePoint) {
+		let form = this._getActiveForm();
+		if (!form || !form.IsEditable())
+			return;
+		
+		form.addCompositeText(codePoint);
+	};
+	PDFEditorApi.prototype.Remove_CompositeText = function(count) {
+		let form = this._getActiveForm();
+		if (!form || !form.IsEditable())
+			return;
+		
+		form.removeCompositeText(count);
+	};
+	PDFEditorApi.prototype.Replace_CompositeText = function(codePoints) {
+		let form = this._getActiveForm();
+		if (!form || !form.IsEditable())
+			return;
+		
+		form.replaceCompositeText(codePoints);
+	};
+	PDFEditorApi.prototype.End_CompositeInput = function()
+	{
+		let form = this._getActiveForm();
+		if (!form || !form.IsEditable())
+			return;
+		
+		form.endCompositeInput();
+	};
+	PDFEditorApi.prototype.Set_CursorPosInCompositeText = function(pos) {
+		let form = this._getActiveForm();
+		if (!form || !form.IsEditable())
+			return;
+		
+		form.setPosInCompositeInput(pos);
+	};
+	PDFEditorApi.prototype.Get_CursorPosInCompositeText = function() {
+		let form = this._getActiveForm();
+		if (!form || !form.IsEditable())
+			return 0;
+		
+		return form.getPosInCompositeInput();
+	};
+	PDFEditorApi.prototype.Get_MaxCursorPosInCompositeText = function() {
+		let form = this._getActiveForm();
+		if (!form || !form.IsEditable())
+			return 0;
+		
+		return form.getMaxPosInCompositeInput();
+	};
+	PDFEditorApi.prototype._getActiveForm = function() {
+		let viewer = this.DocumentRenderer;
+		if (!viewer)
+			return null;
+		
+		let pdfDoc = viewer.getPDFDoc();
+		return pdfDoc.activeForm;
+	};
+
 
 	// for comments
 	PDFEditorApi.prototype.can_AddQuotedComment = function()
@@ -591,7 +687,21 @@
 		let oViewer = this.getDocumentRenderer();
 		let oDoc = oViewer.getPDFDoc();
 
-		oViewer.file.selectAll();
+		if (oDoc.activeForm && [AscPDF.FIELD_TYPES.text, AscPDF.FIELD_TYPES.combobox].includes(oDoc.activeForm.GetType()))
+		{
+			if (oDoc.activeForm.IsNeedDrawHighlight())
+				return;
+
+			oDoc.activeForm.content.SelectAll();
+			if (oDoc.activeForm.content.IsSelectionUse())
+				this.Api.WordControl.m_oDrawingDocument.TargetEnd();
+			
+			this.onUpdateOverlay();
+		}
+		else {
+			oViewer.file.selectAll();
+		}
+		
 		oDoc.UpdateCopyCutState();
 	};
 	PDFEditorApi.prototype.asc_showComment = function(Id)
@@ -837,7 +947,9 @@
 	PDFEditorApi.prototype.isEnabledDropTarget = function() {
 		return false;
 	};
-
+	PDFEditorApi.prototype.checkDocumentTitleFonts = function() {
+		// Do not load any fonts
+	};
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Export
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -881,5 +993,9 @@
 	PDFEditorApi.prototype['asc_EditSelectAll']            = PDFEditorApi.prototype.asc_EditSelectAll;
 	PDFEditorApi.prototype['Undo']                         = PDFEditorApi.prototype.Undo;
 	PDFEditorApi.prototype['Redo']                         = PDFEditorApi.prototype.Redo;
+	PDFEditorApi.prototype['asc_SelectionCut']             = PDFEditorApi.prototype.asc_SelectionCut;
+	PDFEditorApi.prototype['asc_CheckCopy']                = PDFEditorApi.prototype.asc_CheckCopy;
+	PDFEditorApi.prototype['Paste']                        = PDFEditorApi.prototype.Paste;
+	PDFEditorApi.prototype['asc_PasteData']                = PDFEditorApi.prototype.asc_PasteData;
 
 })(window, window.document);

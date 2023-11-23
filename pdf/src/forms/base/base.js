@@ -208,8 +208,17 @@
         this._partialName = sName;
         this.api = this.GetFormApi();
         this["api"] = this.api;
+		
+		this.compositeInput = null;
+		this.compositeReplaceCount = 0;
     }
 
+    CBaseField.prototype.IsAnnot = function() {
+        return false;
+    };
+    CBaseField.prototype.IsForm = function() {
+        return true;
+    };
     CBaseField.prototype.SetApIdx = function(nIdx) {
         this.GetDocument().UpdateApIdx(nIdx);
         this._apIdx = nIdx;
@@ -741,7 +750,12 @@
     CBaseField.prototype.DrawBorders = function(oGraphicsPDF) {
         let oViewer     = editor.getDocumentRenderer();
         let aOringRect  = this.GetOrigRect();
-        let aBgColor    = this.IsNeedDrawHighlight() == false ? (this.GetBackgroundColor() || [1]) : [1];
+        let aBgColor;
+        if (this.GetType() == AscPDF.FIELD_TYPES.button)
+            aBgColor = this.GetBackgroundColor() || [1];
+        else
+            aBgColor = this.IsNeedDrawHighlight() == false ? (this.GetBackgroundColor() || [1]) : [1];
+
         let oBgRGBColor = this.GetRGBColor(aBgColor);
 
         if (aBgColor && aBgColor.length != 0)
@@ -1116,16 +1130,16 @@
 
         if (aInternalColor.length == 1) {
             oColor = {
-                r: aInternalColor[0] * 255,
-                g: aInternalColor[0] * 255,
-                b: aInternalColor[0] * 255
+                r: Math.round(aInternalColor[0] * 255),
+                g: Math.round(aInternalColor[0] * 255),
+                b: Math.round(aInternalColor[0] * 255)
             }
         }
         else if (aInternalColor.length == 3) {
             oColor = {
-                r: aInternalColor[0] * 255,
-                g: aInternalColor[1] * 255,
-                b: aInternalColor[2] * 255
+                r: Math.round(aInternalColor[0] * 255),
+                g: Math.round(aInternalColor[1] * 255),
+                b: Math.round(aInternalColor[2] * 255)
             }
         }
         else if (aInternalColor.length == 4) {
@@ -1229,6 +1243,7 @@
 
     CBaseField.prototype.AddToRedraw = function() {
         let oViewer = editor.getDocumentRenderer();
+        oViewer.paint();
         if (oViewer.pagesInfo.pages[this.GetPage()])
             oViewer.pagesInfo.pages[this.GetPage()].needRedrawForms = true;
     };
@@ -1311,7 +1326,98 @@
     CBaseField.prototype.SetDefaultValue = function(value) {
         this._defaultValue = value;
     };
-
+	
+	CBaseField.prototype.canBeginCompositeInput = function() {
+		return false;
+	};
+	CBaseField.prototype.beforeCompositeInput = function() {
+	};
+	CBaseField.prototype.getRunForCompositeInput = function() {
+		return null;
+	};
+	CBaseField.prototype.EnterText = function(codePoints) {
+	};
+	CBaseField.prototype.beginCompositeInput = function() {
+		if (!this.canBeginCompositeInput() || this.compositeInput)
+			return;
+		
+		this.CreateNewHistoryPoint(true);
+		this.beforeCompositeInput();
+		let run = this.getRunForCompositeInput();
+		if (!run) {
+			// TODO: Cancel composite input
+			AscCommon.History.Undo();
+			return;
+		}
+		
+		this.compositeReplaceCount = 0;
+		this.compositeInput = new AscWord.RunCompositeInput(false);
+		this.compositeInput.begin(run);
+	};
+	CBaseField.prototype.endCompositeInput = function() {
+		if (!this.compositeInput)
+			return;
+		
+		// TODO: As a result, we have two history points here if the text was selected before input
+		//       To avoid this, we need to fix the issue with restoring a selection on undo or we should save the
+		//       selection positions when composite input begins
+		let codePoints = this.compositeInput.getCodePoints();
+		this.compositeInput.end();
+		this.compositeInput = null;
+		while (this.compositeReplaceCount > 0)
+		{
+			AscCommon.History.Undo();
+			--this.compositeReplaceCount;
+		}
+		
+		this.EnterText(codePoints);
+	};
+	CBaseField.prototype.addCompositeText = function(codePoint) {
+		if (!this.compositeInput)
+			return;
+		
+		this.CreateNewHistoryPoint(true);
+		this.compositeReplaceCount++;
+		this.compositeInput.add(codePoint);
+		this.SetNeedRecalc(true);
+		this.AddToRedraw();
+	};
+	CBaseField.prototype.removeCompositeText = function(count) {
+		if (!this.compositeInput)
+			return;
+		
+		this.CreateNewHistoryPoint(true);
+		this.compositeReplaceCount++;
+		this.compositeInput.remove(count);
+		this.SetNeedRecalc(true);
+		this.AddToRedraw();
+	};
+	CBaseField.prototype.replaceCompositeText = function(codePoints) {
+		if (!this.compositeInput)
+			return;
+		
+		this.CreateNewHistoryPoint(true);
+		this.compositeReplaceCount++;
+		this.compositeInput.replace(codePoints);
+		this.SetNeedRecalc(true);
+		this.AddToRedraw();
+	};
+	CBaseField.prototype.setPosInCompositeInput = function(pos) {
+		if (this.compositeInput)
+			this.compositeInput.setPos(pos);
+	};
+	CBaseField.prototype.getPosInCompositeInput = function(pos) {
+		if (this.compositeInput)
+			return this.compositeInput.getPos(pos);
+		
+		return 0;
+	};
+	CBaseField.prototype.getMaxPosInCompositeInput = function() {
+		if (this.compositeInput)
+			return this.compositeInput.getLength();
+		
+		return 0;
+	};
     /**
 	 * Sets default value for form.
 	 * @memberof CBaseField
@@ -1736,29 +1842,29 @@
         return null;
     };
 
-    CBaseField.prototype.SetApiTextColor = function(aColor) {
+    CBaseField.prototype.SetApiTextColor = function(aApiColor) {
         if ([AscPDF.FIELD_TYPES.radiobutton, AscPDF.FIELD_TYPES.checkbox].includes(this.GetType()))
             return;
 
         let color = AscPDF.Api.Objects.color;
 
-        let oRGB = color.convert(aColor, "RGB");
+        let oRGB = color.convert(aApiColor, "RGB");
         if (this.content) {
             let oPara       = this.content.GetElement(0);
             let oApiPara    = editor.private_CreateApiParagraph(oPara);
 
-            oApiPara.SetColor(oRGB[1] * 255, oRGB[2] * 255, oRGB[3] * 255, false);
+            oApiPara.SetColor(Math.round(oRGB[1] * 255), Math.round(oRGB[2] * 255), Math.round(oRGB[3] * 255), false);
             oPara.RecalcCompiledPr(true);
         }
         if (this.contentFormat) {
             let oPara       = this.contentFormat.GetElement(0);
             let oApiPara    = editor.private_CreateApiParagraph(oPara);
 
-            oApiPara.SetColor(oRGB[1] * 255, oRGB[2] * 255, oRGB[3] * 255, false);
+            oApiPara.SetColor(Math.round(oRGB[1] * 255), Math.round(oRGB[2] * 255), Math.round(oRGB[3] * 255), false);
             oPara.RecalcCompiledPr(true);
         }
 
-        let oApiColor   = color.convert(oRGB, aColor[0]);
+        let oApiColor   = color.convert(oRGB, aApiColor[0]);
         this._textColor = oApiColor.slice(1);
 
         this.SetWasChanged(true);

@@ -3845,7 +3845,12 @@ window["native"]["offline_apply_event"] = function(type,params) {
                             _imagePr.verticalTextAlign = params[_current.pos++];
                             break;
                         }
-                        case 21:
+                        case 21: 
+                        {
+                            _imagePr.vert = params[_current.pos++];
+                            break;      
+                        }
+                        case 22:
                         { 
                             var bIsNeed = params[_current.pos++];
                             if (bIsNeed) {
