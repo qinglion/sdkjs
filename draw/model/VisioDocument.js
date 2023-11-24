@@ -397,7 +397,7 @@
 
 			// TODO dont change shape class
 			// copy master properties to new object to draw the shape THEN DELETE OBJECT TO SAVE MEMORY
-			shape.realizeMasterToShapeInheritance(masters);
+			shape.realizeMasterToShapeInheritanceRecursive(masters);
 			shapeClasses = shapeClasses.concat(collectSubshapesRecursive(shape, true));
 		}
 
