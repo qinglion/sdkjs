@@ -349,42 +349,61 @@
 		return {x : newX, y: newY};
 	}
 	CVisioDocument.prototype.convertToShapes = function(logic_w_mm, logic_h_mm) {
+		/**
+		 * @param {Shape_Type} parentShape
+		 * @param [recalculatePinCords]
+		 * @param [resultArray = []]
+		 * @return {Shape_Type[]}
+		 */
+		function collectSubshapesRecursive(parentShape, recalculatePinCords, resultArray) {
+			if (resultArray === undefined) {
+				resultArray = [];
+			}
+
+			resultArray.push(parentShape);
+
+			let subShapes = parentShape.shapes;
+			for (let j = 0; j < subShapes.length; j++) {
+				const subShape = subShapes[j];
+
+				if (recalculatePinCords) {
+					let parentShapePinX = Number(parentShape.elements.find(function (elem) {return elem.n === "PinX"}).v);
+					let parentShapePinY = Number(parentShape.elements.find(function (elem) {return elem.n === "PinY"}).v);
+					let parentShapeLocPinX = Number(parentShape.elements.find(function (elem) {return elem.n === "LocPinX"}).v);
+					let parentShapeLocPinY = Number(parentShape.elements.find(function (elem) {return elem.n === "LocPinY"}).v);
+
+					let subShapePinX = subShape.elements.find(function (elem) {return elem.n === "PinX"});
+					let subShapePinY = subShape.elements.find(function (elem) {return elem.n === "PinY"});
+					let sub_shape_pinX_inch = Number(subShapePinX.v);
+					let sub_shape_pinY_inch = Number(subShapePinY.v);
+
+					// TODO dont change subShape class maybe
+					subShapePinX.v = parentShapePinX - parentShapeLocPinX + sub_shape_pinX_inch;
+					subShapePinY.v = parentShapePinY - parentShapeLocPinY + sub_shape_pinY_inch;
+				}
+
+				collectSubshapesRecursive(subShape, recalculatePinCords, resultArray);
+			}
+
+			return resultArray;
+		}
+
 		let shapeClasses = [];
 		let shapes = [];
+		let masters = this.joinMastersInfoAndContents();
 
 		for(let i = 0; i < this.pageContents[0].shapes.length; i++) {
 			let shape = this.pageContents[0].shapes[i];
 
-			let masters = this.joinMastersInfoAndContents();
 			// TODO dont change shape class
+			// copy master properties to new object to draw the shape THEN DELETE OBJECT TO SAVE MEMORY
 			shape.realizeMasterToShapeInheritance(masters);
-			shapeClasses.push(shape);
-
-			let subShapes = shape.shapes;
-			for (let j = 0; j < subShapes.length; j++) {
-				const subShape = subShapes[j];
-
-				let shape_pinX_inch = Number(shape.elements.find(function(elem) {return elem.n === "PinX"}).v);
-				let shape_pinY_inch = Number(shape.elements.find(function(elem) {return elem.n === "PinY"}).v);
-				let shape_locPinX_inch = Number(shape.elements.find(function(elem) {return elem.n === "LocPinX"}).v);
-				let shape_locPinY_inch = Number(shape.elements.find(function(elem) {return elem.n === "LocPinY"}).v);
-
-				let subShapePinX = subShape.elements.find(function(elem) {return elem.n === "PinX"});
-				let subShapePinY = subShape.elements.find(function(elem) {return elem.n === "PinY"});
-				let sub_shape_pinX_inch = Number(subShapePinX.v);
-				let sub_shape_pinY_inch = Number(subShapePinY.v);
-
-				// TODO dont change subShape class
-				subShapePinX.v = shape_pinX_inch - shape_locPinX_inch + sub_shape_pinX_inch;
-				subShapePinY.v = shape_pinY_inch - shape_locPinY_inch + sub_shape_pinY_inch;
-
-				shapeClasses.push(subShape);
-			}
+			shapeClasses = shapeClasses.concat(collectSubshapesRecursive(shape, true));
 		}
 
 		for (let i = 0; i < shapeClasses.length; i++) {
 			const shape = shapeClasses[i];
-			// if (shape.iD !== 13) {
+			// if (shape.iD === 199) {
 			// 	continue;
 			// }
 			let pinX_inch = Number(shape.elements.find(function(elem) {return elem.n === "PinX"}).v);
@@ -415,7 +434,7 @@
 			let shapeGeom = AscCommonDraw.getGeometryFromShape(shape);
 
 			var oFill   = AscFormat.CreateUnfilFromRGB(0,127,0);
-			var oStroke = AscFormat.builder_CreateLine(12700/2, {UniFill: AscFormat.CreateUnfilFromRGB(255,0,0)});
+			var oStroke = AscFormat.builder_CreateLine(12700, {UniFill: AscFormat.CreateUnfilFromRGB(255,0,0)});
 
 			let cShape = this.convertToShape(x_mm, y_mm, shapeWidth_mm, shapeHeight_mm, shapeAngle, oFill, oStroke, shapeGeom);
 
@@ -494,6 +513,10 @@
 	// Элемент Shapes (PageContents_Type complexType): https://learn.microsoft.com/ru-ru/office/client-developer/visio/shapes-element-pagecontents_type-complextypevisio-xml
 	// PageContents_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/pagecontents_type-complextypevisio-xml
 	function CPageContents() {
+		/**
+		 *
+		 * @type {Shape_Type[]}
+		 */
 		this.shapes = [];
 		this.connects = [];
 		this.xmlSpace = null;
@@ -781,7 +804,7 @@
 						// if masterNumber is number
 						solutionsSort[solutionNumber - 1] = solutions[i];
 					} else {
-						console.log('check sdkjs/draw/model/VisioDocument.js : parseMasters');
+						console.log('check sdkjs/draw/model/VisioDocument.js : parseSolutions');
 						solutionsSort = solutions;
 						break;
 					}
