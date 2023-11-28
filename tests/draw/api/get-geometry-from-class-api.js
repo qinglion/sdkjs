@@ -312,6 +312,10 @@
 			// So we can represent visio Geometry section using Path object
 			// Use it below
 			let noShowCell = findCell(geometrySection, "n", "NoShow");
+			if (noShowCell === null || noShowCell === undefined) {
+				console.log("noShowCell variable is null or undefined see shape: ", shape);
+				continue;
+			}
 			if (Number(noShowCell.v) === 1) {
 				continue;
 			}

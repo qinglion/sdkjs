@@ -349,45 +349,6 @@
 		return {x : newX, y: newY};
 	}
 	CVisioDocument.prototype.convertToShapes = function(logic_w_mm, logic_h_mm) {
-		/**
-		 * @param {Shape_Type} parentShape
-		 * @param [recalculatePinCords]
-		 * @param [resultArray = []]
-		 * @return {Shape_Type[]}
-		 */
-		function collectSubshapesRecursive(parentShape, recalculatePinCords, resultArray) {
-			if (resultArray === undefined) {
-				resultArray = [];
-			}
-
-			resultArray.push(parentShape);
-
-			let subShapes = parentShape.shapes;
-			for (let j = 0; j < subShapes.length; j++) {
-				const subShape = subShapes[j];
-
-				if (recalculatePinCords) {
-					let parentShapePinX = Number(parentShape.elements.find(function (elem) {return elem.n === "PinX"}).v);
-					let parentShapePinY = Number(parentShape.elements.find(function (elem) {return elem.n === "PinY"}).v);
-					let parentShapeLocPinX = Number(parentShape.elements.find(function (elem) {return elem.n === "LocPinX"}).v);
-					let parentShapeLocPinY = Number(parentShape.elements.find(function (elem) {return elem.n === "LocPinY"}).v);
-
-					let subShapePinX = subShape.elements.find(function (elem) {return elem.n === "PinX"});
-					let subShapePinY = subShape.elements.find(function (elem) {return elem.n === "PinY"});
-					let sub_shape_pinX_inch = Number(subShapePinX.v);
-					let sub_shape_pinY_inch = Number(subShapePinY.v);
-
-					// TODO dont change subShape class maybe
-					subShapePinX.v = parentShapePinX - parentShapeLocPinX + sub_shape_pinX_inch;
-					subShapePinY.v = parentShapePinY - parentShapeLocPinY + sub_shape_pinY_inch;
-				}
-
-				collectSubshapesRecursive(subShape, recalculatePinCords, resultArray);
-			}
-
-			return resultArray;
-		}
-
 		let shapeClasses = [];
 		let shapes = [];
 		let masters = this.joinMastersInfoAndContents();
@@ -397,8 +358,10 @@
 
 			// TODO dont change shape class
 			// copy master properties to new object to draw the shape THEN DELETE OBJECT TO SAVE MEMORY
+			// let shapeInherited = shape.realizeMasterToShapeInheritanceRecursive(masters);
 			shape.realizeMasterToShapeInheritanceRecursive(masters);
-			shapeClasses = shapeClasses.concat(collectSubshapesRecursive(shape, true));
+			// shapeClasses = shapeClasses.concat(shapeInherited.collectSubshapesRecursive(true));
+			shapeClasses = shapeClasses.concat(shape.collectSubshapesRecursive(true));
 		}
 
 		for (let i = 0; i < shapeClasses.length; i++) {
@@ -406,8 +369,27 @@
 			// if (shape.iD === 199) {
 			// 	continue;
 			// }
-			let pinX_inch = Number(shape.elements.find(function(elem) {return elem.n === "PinX"}).v);
-			let pinY_inch = Number(shape.elements.find(function(elem) {return elem.n === "PinY"}).v);
+
+			// there was case with shape type group with no PinX and PinY
+			// https://disk.yandex.ru/d/tl877cuzcRcZYg
+			let pinXindex = shape.elements.findIndex(function(elem) {return elem.n === "PinX"});
+			let pinX_inch;
+			if (pinXindex !== -1) {
+				pinX_inch = Number(shape.elements[pinXindex].v);
+			}
+
+			let pinYindex = shape.elements.findIndex(function(elem) {return elem.n === "PinY"});
+			let pinY_inch;
+			if (pinYindex !== -1) {
+				pinY_inch = Number(shape.elements[pinYindex].v);
+			}
+
+			// also check for {}, undefined, NaN
+			if (isNaN(pinX_inch) || isNaN(pinY_inch)) {
+				console.log('pinX_inch or pinY_inch is NaN for', shape);
+				continue;
+			}
+
 			let shapeAngle = Number(shape.elements.find(function(elem) {return elem.n === "Angle"}).v);
 			let locPinX_inch = Number(shape.elements.find(function(elem) {return elem.n === "LocPinX"}).v);
 			let locPinY_inch = Number(shape.elements.find(function(elem) {return elem.n === "LocPinY"}).v);
