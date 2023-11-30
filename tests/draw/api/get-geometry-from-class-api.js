@@ -84,115 +84,6 @@
 		return types[Math.floor(Math.random()*types.length)].Type;
 	}
 
-	function findObject(obj, constructorName, attributeName, attributeValue) {
-		// Base case: if the object is null or undefined, or if it's not an object
-		if (!obj || typeof obj !== 'object') {
-			return null;
-		}
-		// Check if the current object has the desired attribute, value, and constructor name
-		if (obj.constructor.name === constructorName && obj[attributeName] === attributeValue) {
-			return obj;
-		}
-		// Iterate over object properties and recursively search for the attribute and constructor name
-		for (const key in obj) {
-			if (obj.hasOwnProperty(key)) {
-				const result = findObject(obj[key], constructorName, attributeName, attributeValue);
-				if (result) {
-					return result;
-				}
-			}
-		}
-		// If the attribute was not found, return null
-		return null;
-	}
-
-	function findObjects(obj, constructorName, attributeName, attributeValue, results) {
-		if (typeof results === "undefined") {
-			results = [];
-		}
-		// Base case: if the object is null or undefined, or if it's not an object
-		if (!obj || typeof obj !== 'object') {
-			return [];
-		}
-		// Check if the current object has the desired attribute, value, and constructor name
-		if (obj.constructor.name === constructorName && obj[attributeName] === attributeValue) {
-			results.push(obj);
-		}
-		// Iterate over object properties and recursively search for the attribute and constructor name
-		for (const key in obj) {
-			if (obj.hasOwnProperty(key)) {
-				findObjects(obj[key], constructorName, attributeName, attributeValue, results);
-			}
-		}
-		return results;
-	}
-
-	/**
-	 *
-	 * @param obj
-	 * @param attributeName
-	 * @param attributeValue
-	 * @returns {Section_Type}
-	 */
-	function findSection(obj, attributeName, attributeValue) {
-		return findObject(obj, "Section_Type", attributeName, attributeValue);
-	}
-
-	/**
-	 *
-	 * @param obj
-	 * @param attributeName
-	 * @param attributeValue
-	 * @returns {Row_Type}
-	 */
-	function findRow(obj, attributeName, attributeValue) {
-		return findObject(obj, "Row_Type", attributeName, attributeValue);
-	}
-
-	/**
-	 *
-	 * @param obj
-	 * @param attributeName
-	 * @param attributeValue
-	 * @returns {Cell_Type}
-	 */
-	function findCell(obj, attributeName, attributeValue) {
-		return findObject(obj, "Cell_Type", attributeName, attributeValue);
-	}
-
-	/**
-	 *
-	 * @param obj
-	 * @param attributeName
-	 * @param attributeValue
-	 * @returns {Section_Type[]}
-	 */
-	function findSections(obj, attributeName, attributeValue) {
-		return findObjects(obj, "Section_Type", attributeName, attributeValue);
-	}
-
-	/**
-	 *
-	 * @param obj
-	 * @param attributeName
-	 * @param attributeValue
-	 * @returns {Row_Type[]}
-	 */
-	function findRows(obj, attributeName, attributeValue) {
-		return findObjects(obj, "Row_Type", attributeName, attributeValue);
-	}
-
-	/**
-	 *
-	 * @param obj
-	 * @param attributeName
-	 * @param attributeValue
-	 * @returns {Cell_Type[]}
-	 */
-	function findCells(obj, attributeName, attributeValue) {
-		return findObjects(obj, "Cell_Type", attributeName, attributeValue);
-	}
-
 	/**
 	 *
 	 * @param {number} mm
@@ -234,7 +125,7 @@
 	}
 
 	/**
-	 * get Geometry object from shape object reading shape.elements
+	 * get Geometry object from shape object reading shape elements
 	 * @param {Shape_Type} shape
 	 * @returns {Geometry} geometry
 	 */
@@ -246,13 +137,7 @@
 		// A path is a collection of vertices and line or curve segments that specifies an enclosed area.
 		// The geometry of a shape is specified by a collection of paths.
 		// Each Geometry (Section_Type) element specifies a path.
-		let geometrySections = findSections(shape.elements, "n", "Geometry");
-
-		// DEBUG
-		// let filterPinX = 7.625;
-		// let shapePinXОbj = shape.elements.find(function (el) {return el.n === "PinX";});
-		// let shapePinXValue = Number(shapePinXОbj.v);
-		// if (shapePinXValue != filterPinX) return geometry;
+		let geometrySections = shape.getSections("Geometry");
 
 		// set path objects - parts of geometry objects
 		for (let i = 0; i < geometrySections.length; i++) {
@@ -311,7 +196,8 @@
 			// So Geometry section defines (for drawing): path (by rows), isShown (NoShow), NoLine, NoFill
 			// So we can represent visio Geometry section using Path object
 			// Use it below
-			let noShowCell = findCell(geometrySection, "n", "NoShow");
+			let noShowCell = geometrySection.getCell("NoShow");
+
 			if (noShowCell === null || noShowCell === undefined) {
 				console.log("noShowCell variable is null or undefined see shape: ", shape);
 				continue;
@@ -321,7 +207,7 @@
 			}
 
 
-			let noFillCell = findCell(geometrySection, "n", "NoFill");
+			let noFillCell = geometrySection.getCell("NoFill");
 			let fillValue;
 			if (noFillCell) {
 				fillValue = Number(noFillCell.v) === 1 ? "none" : "norm";
@@ -347,8 +233,8 @@
 			//TODO maybe get shapeWidth and Height from outside
 			//TODO shape with RelMoveTo and RelLineTo takes wrong position
 
-			let shapeWidth = Number(findCell(shape.elements, "n", "Width").v);
-			let shapeHeight = Number(findCell(shape.elements, "n", "Height").v);
+			let shapeWidth = Number(shape.getCell("Width").v);
+			let shapeHeight = Number(shape.getCell("Height").v);
 
 			/**
 			 *
@@ -380,7 +266,7 @@
 
 			for (let j = 0; true; j++) {
 				let rowNum = j + 1;
-				let commandRow = findRow(geometrySection, "iX", rowNum);
+				let commandRow = geometrySection.getRow(rowNum);
 				if (!commandRow) {
 					break;
 				}
@@ -392,8 +278,8 @@
 				switch (commandName) {
 					case "MoveTo":
 					{
-						let moveToXTextValue = Number(findCell(commandRow, "n", "X").v);
-						let moveToYTextValue = Number(findCell(commandRow, "n", "Y").v);
+						let moveToXTextValue = Number(commandRow.getCell("X").v);
+						let moveToYTextValue = Number(commandRow.getCell("Y").v);
 
 						let newX = convertUnits(moveToXTextValue, additionalUnitCoefficient);
 						let newY = convertUnits(moveToYTextValue, additionalUnitCoefficient);
@@ -405,8 +291,8 @@
 					}
 					case "RelMoveTo":
 					{
-						let relMoveToXTextValue = Number(findCell(commandRow, "n", "X").v);
-						let relMoveToYTextValue = Number(findCell(commandRow, "n", "Y").v);
+						let relMoveToXTextValue = Number(commandRow.getCell("X").v);
+						let relMoveToYTextValue = Number(commandRow.getCell("Y").v);
 
 						let newX = convertUnits(relMoveToXTextValue, additionalUnitCoefficient);
 						let newY = convertUnits(relMoveToYTextValue, additionalUnitCoefficient);
@@ -420,8 +306,8 @@
 					}
 					case "LineTo":
 					{
-						let lineToXTextValue = Number(findCell(commandRow, "n", "X").v);
-						let lineToYTextValue = Number(findCell(commandRow, "n", "Y").v);
+						let lineToXTextValue = Number(commandRow.getCell("X").v);
+						let lineToYTextValue = Number(commandRow.getCell("Y").v);
 
 						let newX = convertUnits(lineToXTextValue, additionalUnitCoefficient);
 						let newY = convertUnits(lineToYTextValue, additionalUnitCoefficient);
@@ -433,8 +319,8 @@
 					}
 					case "RelLineTo":
 					{
-						let relLineToXTextValue = Number(findCell(commandRow, "n", "X").v);
-						let relLineToYTextValue = Number(findCell(commandRow, "n", "Y").v);
+						let relLineToXTextValue = Number(commandRow.getCell("X").v);
+						let relLineToYTextValue = Number(commandRow.getCell("Y").v);
 
 						let newX = convertUnits(relLineToXTextValue, additionalUnitCoefficient);
 						let newY = convertUnits(relLineToYTextValue, additionalUnitCoefficient);
@@ -449,12 +335,12 @@
 					case "EllipticalArcTo":
 					{
 						// https://learn.microsoft.com/en-us/office/client-developer/visio/ellipticalarcto-row-geometry-section
-						let x = Number(findCell(commandRow, "n", "X").v);
-						let y = Number(findCell(commandRow, "n", "Y").v);
-						let a = Number(findCell(commandRow, "n", "A").v);
-						let b = Number(findCell(commandRow, "n", "B").v);
-						let c = Number(findCell(commandRow, "n", "C").v);
-						let d = Number(findCell(commandRow, "n", "D").v);
+						let x = Number(commandRow.getCell("X").v);
+						let y = Number(commandRow.getCell("Y").v);
+						let a = Number(commandRow.getCell("A").v);
+						let b = Number(commandRow.getCell("B").v);
+						let c = Number(commandRow.getCell("C").v);
+						let d = Number(commandRow.getCell("D").v);
 
 						let newX = convertUnits(x, additionalUnitCoefficient);
 						let newY = convertUnits(y, additionalUnitCoefficient);
@@ -511,12 +397,12 @@
 							return {wR: rx, hR: ry};
 						}
 
-						let centerPointXTextValue = Number(findCell(commandRow, "n", "X").v);
-						let centerPointYTextValue = Number(findCell(commandRow, "n", "Y").v);
-						let somePointXTextValue = Number(findCell(commandRow, "n", "A").v);
-						let somePointYTextValue = Number(findCell(commandRow, "n", "B").v);
-						let anotherPointXTextValue = Number(findCell(commandRow, "n", "C").v);
-						let anotherPointYTextValue = Number(findCell(commandRow, "n", "D").v);
+						let centerPointXTextValue = Number(commandRow.getCell("X").v);
+						let centerPointYTextValue = Number(commandRow.getCell("Y").v);
+						let somePointXTextValue = Number(commandRow.getCell("A").v);
+						let somePointYTextValue = Number(commandRow.getCell("B").v);
+						let anotherPointXTextValue = Number(commandRow.getCell("C").v);
+						let anotherPointYTextValue = Number(commandRow.getCell("D").v);
 
 						let newX = convertUnits(centerPointXTextValue, additionalUnitCoefficient);
 						let newY = convertUnits(centerPointYTextValue, additionalUnitCoefficient);
@@ -549,9 +435,9 @@
 
 						// middleGap = a. can be negative which leads to opposite arc direction clockwise or anti-clockwise
 
-						let x = Number(findCell(commandRow, "n", "X").v)					// xEnd
-						let y = Number(findCell(commandRow, "n", "Y").v);					// yEnd
-						let a = Number(findCell(commandRow, "n", "A").v);					// middleGap
+						let x = Number(commandRow.getCell("X").v);					// xEnd
+						let y = Number(commandRow.getCell("Y").v);					// yEnd
+						let a = Number(commandRow.getCell("A").v);					// middleGap
 
 						let newX = convertUnits(x, additionalUnitCoefficient);
 						let newY = convertUnits(y, additionalUnitCoefficient);
@@ -573,10 +459,10 @@
 					case "PolylineTo":
 					{
 						// https://learn.microsoft.com/en-us/office/client-developer/visio/polylineto-row-geometry-section
-						let x = Number(findCell(commandRow, "n", "X").v);
-						let y = Number(findCell(commandRow, "n", "Y").v);
+						let x = Number(commandRow.getCell("X").v);
+						let y = Number(commandRow.getCell("Y").v);
 						// formula: knotLast, degree, xType, yType, x1, y1, x2, y2, ...
-						let formula = String(findCell(commandRow, "n", "A").v).trim();
+						let formula = String(commandRow.getCell("A").v).trim();
 						let formulaValues = formula.substring(9, formula.length - 1).split(",");
 
 						//Convert units to EMUs
@@ -587,7 +473,7 @@
 							formulaValues[k] = convertUnits(Number(formulaValues[k]), additionalUnitCoefficient);
 						}
 
-						let xType =	parseInt(formulaValues[0]);
+						let xType = parseInt(formulaValues[0]);
 						let yType = parseInt(formulaValues[1]);
 
 						let xScale = 1;
@@ -621,14 +507,14 @@
 					case "NURBSTo":
 					{
 						// https://learn.microsoft.com/en-us/office/client-developer/visio/nurbsto-row-geometry-section
-						let xEndPoint = Number(findCell(commandRow, "n", "X").v);
-						let yEndPoint = Number(findCell(commandRow, "n", "Y").v);
-						let preLastKnot = Number(findCell(commandRow, "n", "A").v);
-						let lastWeight = Number(findCell(commandRow, "n", "B").v);
-						let firstKnot = Number(findCell(commandRow, "n", "C").v);
-						let firstWeight = Number(findCell(commandRow, "n", "D").v);
+						let xEndPoint = Number(commandRow.getCell("X").v);
+						let yEndPoint = Number(commandRow.getCell("Y").v);
+						let preLastKnot = Number(commandRow.getCell("A").v);
+						let lastWeight = Number(commandRow.getCell("B").v);
+						let firstKnot = Number(commandRow.getCell("C").v);
+						let firstWeight = Number(commandRow.getCell("D").v);
 						// NURBS formula: knotLast, degree, xType, yType, x1, y1, knot1, weight1, x2, y2, knot2, weight2, ...
-						let formula = String(findCell(commandRow, "n", "E").v).trim();
+						let formula = String(commandRow.getCell("E").v).trim();
 						let formulaValues = formula.substring(6, formula.length - 1).split(",");
 
 						//Convert units to EMUs
@@ -734,10 +620,10 @@
 					case "InfiniteLine":
 					{
 						// https://learn.microsoft.com/en-us/office/client-developer/visio/infiniteline-row-geometry-section
-						let x = Number(findCell(commandRow, "n", "X").v);
-						let y = Number(findCell(commandRow, "n", "Y").v);
-						let a = Number(findCell(commandRow, "n", "A").v);
-						let b = Number(findCell(commandRow, "n", "B").v);
+						let x = Number(commandRow.getCell("X").v);
+						let y = Number(commandRow.getCell("Y").v);
+						let a = Number(commandRow.getCell("A").v);
+						let b = Number(commandRow.getCell("B").v);
 
 						let xNew = convertUnits(x, additionalUnitCoefficient);
 						let yNew = convertUnits(y, additionalUnitCoefficient);
@@ -761,12 +647,12 @@
 					case "RelCubBezTo":
 					{
 						// https://learn.microsoft.com/en-us/office/client-developer/visio/relcubbezto-row-geometry-section
-						let x = Number(findCell(commandRow, "n", "X").v);
-						let y = Number(findCell(commandRow, "n", "Y").v);
-						let a = Number(findCell(commandRow, "n", "A").v);
-						let b = Number(findCell(commandRow, "n", "B").v);
-						let c = Number(findCell(commandRow, "n", "C").v);
-						let d = Number(findCell(commandRow, "n", "D").v);
+						let x = Number(commandRow.getCell("X").v);
+						let y = Number(commandRow.getCell("Y").v);
+						let a = Number(commandRow.getCell("A").v);
+						let b = Number(commandRow.getCell("B").v);
+						let c = Number(commandRow.getCell("C").v);
+						let d = Number(commandRow.getCell("D").v);
 
 						let xNew = convertUnits(x, additionalUnitCoefficient) * shapeWidth;
 						let yNew = convertUnits(y, additionalUnitCoefficient) * shapeHeight;
@@ -783,12 +669,12 @@
 					}
 					case "RelEllipticalArcTo":
 					{
-						let x = Number(findCell(commandRow, "n", "X").v);
-						let y = Number(findCell(commandRow, "n", "Y").v);
-						let a = Number(findCell(commandRow, "n", "A").v);
-						let b = Number(findCell(commandRow, "n", "B").v);
-						let c = Number(findCell(commandRow, "n", "C").v);
-						let d = Number(findCell(commandRow, "n", "D").v);
+						let x = Number(commandRow.getCell("X").v);
+						let y = Number(commandRow.getCell("Y").v);
+						let a = Number(commandRow.getCell("A").v);
+						let b = Number(commandRow.getCell("B").v);
+						let c = Number(commandRow.getCell("C").v);
+						let d = Number(commandRow.getCell("D").v);
 
 						let newX = convertUnits(x, additionalUnitCoefficient) * shapeWidth;
 						let newY = convertUnits(y, additionalUnitCoefficient) * shapeHeight;
@@ -807,10 +693,10 @@
 					case "RelQuadBezTo":
 					{
 						// https://learn.microsoft.com/en-us/office/client-developer/visio/relquadbezto-row-geometry-section
-						let x = Number(findCell(commandRow, "n", "X").v);
-						let y = Number(findCell(commandRow, "n", "Y").v);
-						let a = Number(findCell(commandRow, "n", "A").v);
-						let b = Number(findCell(commandRow, "n", "B").v);
+						let x = Number(commandRow.getCell("X").v);
+						let y = Number(commandRow.getCell("Y").v);
+						let a = Number(commandRow.getCell("A").v);
+						let b = Number(commandRow.getCell("B").v);
 
 						let xNew = convertUnits(x, additionalUnitCoefficient) * shapeWidth;
 						let yNew = convertUnits(y, additionalUnitCoefficient) * shapeHeight;

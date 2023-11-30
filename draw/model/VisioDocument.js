@@ -349,6 +349,9 @@
 		return {x : newX, y: newY};
 	}
 	CVisioDocument.prototype.convertToShapes = function(logic_w_mm, logic_h_mm) {
+		/**
+		 * @type {Shape_Type[]}
+		 */
 		let shapeClasses = [];
 		let shapes = [];
 		let masters = this.joinMastersInfoAndContents();
@@ -368,29 +371,27 @@
 
 			// there was case with shape type group with no PinX and PinY
 			// https://disk.yandex.ru/d/tl877cuzcRcZYg
-			let pinXindex = shape.elements.findIndex(function(elem) {return elem.n === "PinX"});
+			let pinXCell = shape.getCell("PinX");
 			let pinX_inch;
-			if (pinXindex !== -1) {
-				pinX_inch = Number(shape.elements[pinXindex].v);
+			if (pinXCell !== null) {
+				pinX_inch = Number(pinXCell.v);
 			}
-
-			let pinYindex = shape.elements.findIndex(function(elem) {return elem.n === "PinY"});
+			let pinYCell = shape.getCell("PinY");
 			let pinY_inch;
-			if (pinYindex !== -1) {
-				pinY_inch = Number(shape.elements[pinYindex].v);
+			if (pinYCell !== null) {
+				pinY_inch = Number(pinYCell.v);
 			}
-
 			// also check for {}, undefined, NaN
 			if (isNaN(pinX_inch) || isNaN(pinY_inch)) {
 				console.log('pinX_inch or pinY_inch is NaN for', shape);
 				continue;
 			}
 
-			let shapeAngle = Number(shape.elements.find(function(elem) {return elem.n === "Angle"}).v);
-			let locPinX_inch = Number(shape.elements.find(function(elem) {return elem.n === "LocPinX"}).v);
-			let locPinY_inch = Number(shape.elements.find(function(elem) {return elem.n === "LocPinY"}).v);
-			let shapeWidth_inch = Number(shape.elements.find(function(elem) {return elem.n === "Width"}).v);
-			let shapeHeight_inch = Number(shape.elements.find(function(elem) {return elem.n === "Height"}).v);
+			let shapeAngle = Number(shape.getCell("Angle").v);
+			let locPinX_inch = Number(shape.getCell("LocPinX").v);
+			let locPinY_inch = Number(shape.getCell("LocPinY").v);
+			let shapeWidth_inch = Number(shape.getCell("Width").v);
+			let shapeHeight_inch = Number(shape.getCell("Height").v);
 
 			// PinX and PinY set shape rotate point and LocPinX LocPinY add offset to initial shape center
 			// to rotate around point we 1) add one more offset 2) rotate around center
