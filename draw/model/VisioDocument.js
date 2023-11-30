@@ -356,11 +356,7 @@
 		for(let i = 0; i < this.pageContents[0].shapes.length; i++) {
 			let shape = this.pageContents[0].shapes[i];
 
-			// TODO dont change shape class
-			// copy master properties to new object to draw the shape THEN DELETE OBJECT TO SAVE MEMORY
-			// let shapeInherited = shape.realizeMasterToShapeInheritanceRecursive(masters);
 			shape.realizeMasterToShapeInheritanceRecursive(masters);
-			// shapeClasses = shapeClasses.concat(shapeInherited.collectSubshapesRecursive(true));
 			shapeClasses = shapeClasses.concat(shape.collectSubshapesRecursive(true));
 		}
 
