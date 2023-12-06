@@ -361,6 +361,51 @@
 		};
 
 
+		// Visio Extensions
+		function CvariationClrSchemeLst() {
+			CBaseNoIdObject.call(this);
+			this.vt = null;
+			/**
+			 * @type {CvariationClrScheme[]}
+			 */
+			this.variationClrScheme = [];
+		}
+		InitClass(CvariationClrSchemeLst, CBaseNoIdObject, 0);
+
+		function CvariationClrScheme() {
+			CBaseNoIdObject.call(this);
+			/**
+			 *
+			 * @type {*}
+			 */
+			this.monotone = null;
+			/**
+			 * read from varColor1, varColor2, varColor3, ...
+			 * @type {CvarColor[]}
+			 */
+			this.varColor = [];
+		}
+		InitClass(CvariationClrScheme, CBaseNoIdObject, 0);
+
+		function CvarColor() {
+			CBaseNoIdObject.call(this);
+			/**
+			 * @type {CsrgbClr}
+			 */
+			this.srgbClr = null;
+		}
+		InitClass(CvarColor, CBaseNoIdObject, 0);
+
+		function CsrgbClr() {
+			CBaseNoIdObject.call(this);
+			/**
+			 * HEX color without #
+			 * @type {String}
+			 */
+			this.val = null;
+		}
+		InitClass(CsrgbClr, CBaseNoIdObject, 0);
+
 		function CT_Hyperlink() {
 			CBaseNoIdObject.call(this);
 			this.snd = null;
@@ -7926,6 +7971,11 @@
 			CBaseNoIdObject.call(this);
 			this.name = "";
 			this.colors = [];
+			/**
+			 * Used to store xml extensions (e.g. visio variant colors)
+			 * set in sdkjs-ooxml/common/Drawings/Format.js ClrScheme.prototype.readChildXml
+			 */
+			this.extLst = null;
 
 			for (var i = g_clr_MIN; i <= g_clr_MAX; i++)
 				this.colors[i] = null;
@@ -15620,5 +15670,11 @@
 		window['AscFormat'].CLR_NAME_MAP = CLR_NAME_MAP;
 		window['AscFormat'].LINE_PRESETS_MAP = LINE_PRESETS_MAP;
 		window['AscFormat'].OBJECT_MORPH_MARKER = OBJECT_MORPH_MARKER;
+
+		// Visio extensions
+		window['AscFormat'].CvariationClrSchemeLst = CvariationClrSchemeLst;
+		window['AscFormat'].CvariationClrScheme = CvariationClrScheme;
+		window['AscFormat'].CvarColor = CvarColor;
+		window['AscFormat'].CsrgbClr = CsrgbClr;
 	})
 (window);

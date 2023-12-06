@@ -166,7 +166,7 @@ $(function() {
 		// recordset[N].xml - not realized
 
 		// master[N].xml.rels - because of rels to embedded
-		let ignoredFiles = ["theme[N].xml", "page[N].xml.rels", "recordset[N].xml", "recordsets.xml.rels", "master[N].xml.rels"];
+		let ignoredFiles = ["page[N].xml.rels", "recordset[N].xml", "recordsets.xml.rels", "master[N].xml.rels"];
 
 		// Remove elements(tags) with ignoredTagsExistence from extraElements or missingElements
 		// So they are not considered in test result but still their children compared
