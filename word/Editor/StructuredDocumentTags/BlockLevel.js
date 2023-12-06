@@ -1558,6 +1558,13 @@ CBlockLevelSdt.prototype.fillContentWithDataBinding = function(content)
 			checkBoxPr.SetChecked(true);
 		this.SetCheckBoxPr(checkBoxPr)
 	}
+	else if (this.IsDatePicker())
+	{
+		let datePr = new AscWord.CSdtDatePickerPr();
+		datePr.SetFullDate(content);
+		this.SetDatePickerPr(datePr);
+		this.private_UpdateDatePickerContent();
+	}
 	else
 	{
 		content = content.replaceAll("&lt;", "<");
@@ -1565,8 +1572,7 @@ CBlockLevelSdt.prototype.fillContentWithDataBinding = function(content)
 		content = content.replaceAll("<?xml version=\"1.0\" standalone=\"yes\"?>", "");
 		content = content.replaceAll("<?mso-application progid=\"Word.Document\"?>", "");
 		let zLib = new AscCommon.ZLib;
-		let zip = zLib.create();
-
+		zLib.create();
 		let nPos = 0;
 
 		zLib.addFile('[Content_Types].xml', new TextEncoder("utf-8").encode('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
@@ -1623,9 +1629,24 @@ CBlockLevelSdt.prototype.fillContentWithDataBinding = function(content)
 			let nPosEndName = strText.indexOf('"', nPosStartName);
 			let name = strText.substring(nPosStartName, nPosEndName);
 
-			let nDataStartPos = strText.indexOf('<pkg:xmlData>', 0) + '<pkg:xmlData>'.length;
-			let nDataEndPos = strText.indexOf('</pkg:xmlData>', nDataStartPos);
-			//nPos = nDataEndPos + '</pkg:xmlData>'.length;
+			let nDataStartPos = strText.indexOf('<pkg:xmlData>', 0);
+			let nDataEndPos;
+			if (nDataStartPos !== -1)
+			{
+				nDataStartPos = nDataStartPos + '<pkg:xmlData>'.length;
+				nDataEndPos = strText.indexOf('</pkg:xmlData>', nDataStartPos);
+			}
+			else
+			{
+				nDataStartPos = strText.indexOf('<pkg:binaryData>', 0);
+				if (nDataStartPos !== -1)
+					nDataStartPos += '<pkg:binaryData>'.length;
+				nDataEndPos = strText.indexOf('</pkg:binaryData>', nDataStartPos);
+			}
+
+			if (nStartPos === -1 || nEndPos === -1)
+				continue;
+
 			let data = strText.substring(nDataStartPos, nDataEndPos).trim();
 			if (name[0] === "/")
 				name = name.substring(1, name.length);
@@ -1653,9 +1674,8 @@ CBlockLevelSdt.prototype.fillContentWithDataBinding = function(content)
 
 		oBinaryFileReader.PostLoadPrepare(xmlParserContext);
 		jsZlib.close();
-		debugger
 
-		this.Content.RemoveFromContent(0, 1);
+		this.Content.RemoveFromContent(0, this.Content.Content.length);
 		this.Content.AddContent(Doc.Content);
 		this.Content.Recalculate(true);
 	}
@@ -1787,6 +1807,8 @@ CBlockLevelSdt.prototype.CanBeDeleted = function()
  */
 CBlockLevelSdt.prototype.CanBeEdited = function()
 {
+	//for debugging pictures
+	this.SkipSpecialLock = true;
 	if (!this.SkipSpecialLock && (this.IsCheckBox() || this.IsPicture() || this.IsDropDownList()))
 		return false;
 
@@ -2116,6 +2138,12 @@ CBlockLevelSdt.prototype.private_UpdateCheckBoxContent = function()
 		oRun.SetRFontsCS({Index : -1, Name : this.Pr.CheckBox.UncheckedFont});
 		oRun.SetRFontsEastAsia({Index : -1, Name : this.Pr.CheckBox.UncheckedFont});
 	}
+
+	if (this.Pr.DataBinding)
+	{
+		let CustomManager = this.LogicDocument.getCustomXmlManager();
+		CustomManager.setContentByDataBinding(this.Pr.DataBinding, isChecked ? "true" : "false");
+	}
 };
 /**
  * Проверяем, является ли данный класс специальным контейнером для картинки
@@ -2303,6 +2331,12 @@ CBlockLevelSdt.prototype.SelectListItem = function(sValue)
 
 	var sText = oList.GetTextByValue(sValue);
 
+	if (this.Pr.DataBinding)
+	{
+		let CustomManager = this.LogicDocument.getCustomXmlManager();
+		CustomManager.setContentByDataBinding(this.Pr.DataBinding, sText);
+	}
+
 	if (this.LogicDocument && this.LogicDocument.IsTrackRevisions())
 	{
 		if (!sText && this.IsPlaceHolder())
@@ -2451,6 +2485,12 @@ CBlockLevelSdt.prototype.private_UpdateDatePickerContent = function()
 
 	var oRun;
 	var sText = this.Pr.Date.ToString();
+
+	if (this.Pr.DataBinding)
+	{
+		let CustomManager = this.LogicDocument.getCustomXmlManager();
+		CustomManager.setContentByDataBinding(this.Pr.DataBinding, sText);
+	}
 
 	if (this.LogicDocument && this.LogicDocument.IsTrackRevisions())
 	{

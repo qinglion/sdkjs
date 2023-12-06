@@ -27088,11 +27088,10 @@ CDocument.prototype.IsCheckFormPlaceholder = function()
 };
 CDocument.prototype.WriteCustomXML = function(oDataBindings, ContentToWrite)
 {
-	for (let i = 0; i < this.CustomXmls.length; i++)
+	for (let i = 0; i < this.customXml.xml.length; i++)
 	{
-		let oCurCustomXml = this.CustomXmls[i];
-
-		if (oDataBindings.storeItemID === oCurCustomXml.ItemId)
+		let oCurCustomXml = this.customXml.xml[i];
+		if (oDataBindings.storeItemID === oCurCustomXml.itemId)
 		{
 			let xPath = oDataBindings.xpath;
 
@@ -27130,8 +27129,7 @@ CDocument.prototype.WriteCustomXML = function(oDataBindings, ContentToWrite)
 
 				return currentElement.textContent = ContentToWrite;
 			}
-
-			return findElementsByXPath(oCurCustomXml.Content, xPath);
+			return findElementsByXPath(oCurCustomXml.content, xPath);
 		}
 	}
 }

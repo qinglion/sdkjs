@@ -1084,7 +1084,7 @@ CSdtBase.prototype.checkDataBinding = function()
 	if (!logicDocument || !this.Pr.DataBinding)
 		return;
 	
-	let content = logicDocument.getCustomXmlManager().getContentByDataBinding(this.Pr.DataBinding);
+	let content = logicDocument.getCustomXmlManager().getContentByDataBinding(this.Pr.DataBinding, this);
 	if (!content)
 		return;
 	

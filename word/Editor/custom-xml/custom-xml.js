@@ -37,11 +37,12 @@
 	/**
 	 * @constructor
 	 */
-	function CustomXml()
+	function CustomXml(uri, itemId, content, oContentLink)
 	{
-		this.uri     = [];
-		this.itemID  = "";
-		this.content = null;
+		this.uri				= uri ? uri : [];
+		this.itemId				= itemId ? itemId : "";
+		this.content			= content ? content : null;
+		this.oContentLink		= oContentLink ? oContentLink : null;
 	}
 	
 	//--------------------------------------------------------export----------------------------------------------------
