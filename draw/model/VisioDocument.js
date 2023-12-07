@@ -360,6 +360,7 @@
 			let shape = this.pageContents[0].shapes[i];
 
 			shape.realizeMasterToShapeInheritanceRecursive(masters);
+			shape.realizeStyleToShapeInheritanceRecursive(this.styleSheets);
 			shapeClasses = shapeClasses.concat(shape.collectSubshapesRecursive(true));
 		}
 
@@ -411,6 +412,13 @@
 			let shapeHeight_mm = shapeHeight_inch * g_dKoef_in_to_mm;
 
 			let shapeGeom = AscCommonDraw.getGeometryFromShape(shape);
+
+			let fillColor = shape.getCell("FillForegnd");
+			if (fillColor !== null) {
+				console.log("FillForegnd was found:", fillColor);
+			} else {
+				console.log("FillForegnd cell not found for shape", shape);
+			}
 
 			var oFill   = AscFormat.CreateUnfilFromRGB(0,127,0);
 			var oStroke = AscFormat.builder_CreateLine(12700, {UniFill: AscFormat.CreateUnfilFromRGB(255,0,0)});
