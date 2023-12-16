@@ -350,6 +350,118 @@
 	}
 	CVisioDocument.prototype.convertToShapes = function(logic_w_mm, logic_h_mm) {
 		/**
+		 * @param {Cell_Type} cell
+		 * @param {Shape_Type} shape
+		 * @param {CVisioDocument} visioDocument
+		 * @return {{r: Number, g: Number, b:Number}} rgb color
+		 */
+		function calculateColor(cell, shape, visioDocument) {
+			let color;
+
+			//TODO import from web-apps/apps/common/main/lib/util/utils.js
+			let getRgbColor = function(clr){
+				var color = (typeof(clr) == 'object') ? clr.color : clr;
+
+				color=color.replace(/#/,'');
+				if(color.length==3) color=color.replace(/(.)/g,'$1$1');
+				color=parseInt(color,16);
+				var c = new Asc.asc_CColor();
+				c.put_type( (typeof(clr) == 'object' && clr.effectId !== undefined)? Asc.c_oAscColor.COLOR_TYPE_SCHEME : Asc.c_oAscColor.COLOR_TYPE_SRGB);
+				c.put_r(color>>16);
+				c.put_g((color&0xff00)>>8);
+				c.put_b(color&0xff);
+				c.put_a(0xff);
+				if (clr.effectId !== undefined)
+					c.put_value(clr.effectId);
+				return c;
+			};
+
+			let cellValue = cell.v;
+
+			if (/#\w{6}/.test(cellValue)) {
+				// check if hex
+				let extendedColorObj = getRgbColor(cellValue);
+				color = {r: extendedColorObj.r, g: extendedColorObj.g, b: extendedColorObj.b};
+			} else if (cellValue === 'Themed') {
+				// check theme props
+
+				// theme and variation
+				let themeProperties = [
+					"ConnectorSchemeIndex",		"EffectSchemeIndex",		"ColorSchemeIndex",		"FontSchemeIndex",
+					"VariationColorIndex",		"VariationStyleIndex",		"EmbellishmentIndex" ];
+				let defaultThemeIsSet;
+				try {
+					defaultThemeIsSet = themeProperties.reduce(function(acc, val, i) {
+						let themePropertyCell = shape.getCell(themeProperties[i]);
+						if (themePropertyCell === null) {
+							throw new Error("theme cell not found");
+						}
+						let themePropertyValue = Number(themePropertyCell.v);
+						acc = themePropertyValue === 65534 ? acc : false;
+						return acc;
+					}, true);
+				} catch (e) {
+					console.log(e);
+					return {r: 0, g: 127, b: 0};
+				}
+				if (defaultThemeIsSet) {
+					// check quick styles
+					console.log("Default theme is set");
+
+					// if all quick style props set to 100 for example variation color 0 is used
+					// if it is 103 variation color with zero based index 3 is used
+
+					// zero-based
+					let variationColorIndex = Number(shape.getCell("QuickStyleLineMatrix").v) % 100;
+
+					let quickStyleProperties = [
+						"QuickStyleLineMatrix",		"QuickStyleFillMatrix",		"QuickStyleEffectsMatrix",
+						"QuickStyleLineColor",		"QuickStyleFillColor",		"QuickStyleShadowColor",
+						"QuickStyleFontColor",		"QuickStyleFontMatrix" ];
+					let noQuickStyleSet = quickStyleProperties.reduce(function(acc, val, i) {
+						let quickStylePropertyValue = Number(shape.getCell(quickStyleProperties[i]).v);
+						acc = quickStylePropertyValue % 100 === variationColorIndex ? acc : false;
+						return acc;
+					}, true);
+
+					// quickStyleType === 2 is 2d
+					let quickStyleType = Number(shape.getCell("QuickStyleType").v);
+					let quickStyleVariation = Number(shape.getCell("QuickStyleVariation").v);
+
+					if (noQuickStyleSet && (quickStyleType === 2 || quickStyleType === 0) && quickStyleVariation === 0) {
+						console.log("No quick style is set for shape.");
+						/**
+						 * @type CvariationClrSchemeLst
+						 */
+						let clrScheme = visioDocument.theme.themeElements.clrScheme;
+						if (clrScheme.extLst) {
+							let variationClrSchemeLst = clrScheme.extLst.list[2].data;
+							let colorObj = variationClrSchemeLst.variationClrScheme[0].varColor[variationColorIndex];
+							let colorValue = colorObj.srgbClr.val;
+							console.log("Color of shape is:", colorValue);
+							let extendedColorObj = getRgbColor(colorValue);
+							color = {r: extendedColorObj.r, g: extendedColorObj.g, b: extendedColorObj.b};
+						} else {
+							console.log("no clrScheme.extLst found");
+							color = {r: 0, g: 127, b: 0};
+						}
+					} else {
+						console.log("Quick styles were applied for shape or something so painting green.");
+						color = {r: 0, g: 127, b: 0};
+					}
+				} else {
+					console.log("Non default theme set. so painting green.");
+					color = {r: 0, g: 127, b: 0};
+				}
+			} else {
+				console.log("Non themed and non directly hex value. Painted green");
+				color = {r: 0, g: 127, b: 0};
+			}
+
+			return color;
+		}
+
+		/**
 		 * @type {Shape_Type[]}
 		 */
 		let shapeClasses = [];
@@ -413,14 +525,21 @@
 
 			let shapeGeom = AscCommonDraw.getGeometryFromShape(shape);
 
+			// TODO check if gradient enabled
+			// let gradientEnabled = shape.getCell("FillGradientEnabled");
+			// console.log("Gradient enabled:", gradientEnabled);
+
 			let fillColor = shape.getCell("FillForegnd");
+			let color;
 			if (fillColor !== null) {
 				console.log("FillForegnd was found:", fillColor);
+				color = calculateColor(fillColor, shape, this);
 			} else {
 				console.log("FillForegnd cell not found for shape", shape);
+				color = {r: 0, g: 127, b: 0};
 			}
 
-			var oFill   = AscFormat.CreateUnfilFromRGB(0,127,0);
+			var oFill   = AscFormat.CreateUnfilFromRGB(color.r, color.g, color.b);
 			var oStroke = AscFormat.builder_CreateLine(12700, {UniFill: AscFormat.CreateUnfilFromRGB(255,0,0)});
 
 			let cShape = this.convertToShape(x_mm, y_mm, shapeWidth_mm, shapeHeight_mm, shapeAngle, oFill, oStroke, shapeGeom);
