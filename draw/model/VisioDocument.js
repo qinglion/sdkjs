@@ -683,11 +683,36 @@
 			// let gradientEnabled = shape.getCell("FillGradientEnabled");
 			// console.log("Gradient enabled:", gradientEnabled);
 
-			let fillColor = shape.getCell("FillForegnd");
-			let uniFill;
-			if (fillColor !== null) {
-				console.log("FillForegnd was found:", fillColor);
-				uniFill = calculateUniFill(fillColor, shape, this);
+			let uniFill, uniFillForegnd, uniFillBkgnd, nPatternType = null;
+			let fillForegnd = shape.getCell("FillForegnd");
+			if (fillForegnd) {
+				console.log("FillForegnd was found:", fillForegnd);
+				uniFillForegnd = calculateUniFill(fillForegnd, shape, this);
+			}
+			let fillBkgnd = shape.getCell("FillBkgnd");
+			if (fillBkgnd) {
+				console.log("FillBkgnd was found:", fillBkgnd);
+				uniFillBkgnd = calculateUniFill(fillBkgnd, shape, this);
+			}
+			let fillPattern = shape.getCell("FillPattern");
+			if (fillPattern) {
+				console.log("fillPattern was found:", fillPattern);
+				let fillPatternType = parseInt(fillPattern.v);
+				if (!isNaN(fillPatternType)) {
+					if (0 === fillPatternType) {
+						//todo
+						uniFillForegnd = AscFormat.CreateNoFillUniFill();
+					} else if(fillPatternType > 1) {
+						//todo types
+						nPatternType = 0;//"cross";
+					}
+				}
+			}
+			if (null !== nPatternType && uniFillBkgnd && uniFillForegnd) {
+				uniFill = AscFormat.CreatePatternFillUniFill(nPatternType, uniFillBkgnd.fill.color, uniFillForegnd.fill.color);
+				// uniFill = AscFormat.builder_CreatePatternFill(nPatternType, uniFillBkgnd.fill.color, uniFillForegnd.fill.color);
+			} else if (uniFillForegnd) {
+				uniFill = uniFillForegnd;
 			} else {
 				console.log("FillForegnd cell not found for shape", shape);
 				uniFill = AscFormat.CreateNoFillUniFill();
