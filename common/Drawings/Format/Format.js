@@ -396,6 +396,46 @@
 		}
 		InitClass(CvarColor, CBaseNoIdObject, 0);
 
+		function CThemeExt() {
+			CBaseNoIdObject.call(this);
+
+			this.fmtConnectorScheme = null;
+			this.themeScheme = null;
+			this.fmtSchemeEx = null;
+			this.fmtConnectorSchemeEx = null;
+			this.fillStyles = null;
+			this.lineStyles = null;
+			this.fontStylesGroup = null;
+			this.variationStyleSchemeLst = null;
+			this.variationStyleScheme = [];
+		}
+		InitClass(CThemeExt, CBaseNoIdObject, 0);
+
+		function CVariationStyleSchemeLst() {
+			CBaseNoIdObject.call(this);
+
+			this.variationStyleScheme = [];
+		}
+		InitClass(CVariationStyleSchemeLst, CBaseNoIdObject, 0);
+
+		function CVariationStyleScheme() {
+			CBaseNoIdObject.call(this);
+
+			this.embellishment = null;
+			this.varStyle = [];
+		}
+		InitClass(CVariationStyleScheme, CBaseNoIdObject, 0);
+
+		function CVarStyle() {
+			CBaseNoIdObject.call(this);
+
+			this.fillIdx = null;
+			this.lineIdx = null;
+			this.effectIdx = null;
+			this.fontIdx = null;
+		}
+		InitClass(CVarStyle, CBaseNoIdObject, 0);
+
 		function CT_Hyperlink() {
 			CBaseNoIdObject.call(this);
 			this.snd = null;
@@ -8616,6 +8656,8 @@
 			this.clrScheme = new ClrScheme();
 			this.fontScheme = new FontScheme();
 			this.fmtScheme = new FmtScheme();
+
+			this.themeExt = null;
 		}
 
 		InitClass(ThemeElements, CBaseNoIdObject, 0);
@@ -8760,6 +8802,9 @@
 		CTheme.prototype.setFontScheme = function (fontScheme) {
 			History.Add(new CChangesDrawingsObjectNoId(this, AscDFH.historyitem_ThemeSetFontScheme, this.themeElements.fontScheme, fontScheme));
 			this.themeElements.fontScheme = fontScheme;
+		};
+		CTheme.prototype.setThemeExt = function (themeExt) {
+			this.themeElements.themeExt = themeExt;
 		};
 		CTheme.prototype.changeFontScheme = function (fontScheme) {
 			this.setFontScheme(fontScheme);
@@ -8920,6 +8965,13 @@
 						}
 					}
 				}
+			}
+			return null;
+		};
+		CTheme.prototype.getVariationStyleScheme = function (variationIndex, styleIndex) {
+			let themeExt = this.themeElements.themeExt;
+			if (themeExt && themeExt.variationStyleScheme[variationIndex]) {
+				return themeExt.variationStyleScheme[variationIndex].varStyle[styleIndex] || null;
 			}
 			return null;
 		};
@@ -15697,5 +15749,8 @@
 		window['AscFormat'].CvariationClrSchemeLst = CvariationClrSchemeLst;
 		window['AscFormat'].CvariationClrScheme = CvariationClrScheme;
 		window['AscFormat'].CvarColor = CvarColor;
+		window['AscFormat'].CThemeExt = CThemeExt;
+		window['AscFormat'].CVariationStyleScheme = CVariationStyleScheme;
+		window['AscFormat'].CVarStyle = CVarStyle;
 	})
 (window);

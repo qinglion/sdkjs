@@ -383,8 +383,10 @@
 				let extendedColorObj = getRgbColor(cellValue);
 				uniFill = AscFormat.CreateUnfilFromRGB(extendedColorObj.r, extendedColorObj.g, extendedColorObj.b);
 			} else if (cellValue === 'Themed') {
-				let quickStyleFillColor = parseInt(shape.getCell("QuickStyleFillColor").v);
-				let quickStyleFillMatrix = parseInt(shape.getCell("QuickStyleFillMatrix").v);
+				let quickStyleFillColorElem = shape.getCell("QuickStyleFillColor");
+				let quickStyleFillMatrixElem = shape.getCell("QuickStyleFillMatrix");
+				let quickStyleFillColor = parseInt(quickStyleFillColorElem && quickStyleFillColorElem.v);
+				let quickStyleFillMatrix = parseInt(quickStyleFillMatrixElem && quickStyleFillMatrixElem.v);
 				if (!isNaN(quickStyleFillColor)) {
 					if (100 <= quickStyleFillColor && quickStyleFillColor <= 106 || (200 <= quickStyleFillColor && quickStyleFillColor <= 206)) {
 						//todo 200-206?
@@ -430,6 +432,25 @@
 								break;
 							default:
 								break;
+						}
+					}
+				}
+				if (!isNaN(quickStyleFillMatrix)) {
+					if (0 === quickStyleFillMatrix) {
+						//todo
+					} else if (1 <= quickStyleFillMatrix && quickStyleFillMatrix <= 6) {
+						uniFill = visioDocument.theme.getFillStyle(quickStyleFillMatrix, uniFill && uniFill.fill.color);
+					} else if (100 <= quickStyleFillMatrix && quickStyleFillMatrix <= 103) {
+						let variationStyleIndex = parseInt(shape.getCell("VariationStyleIndex").v);
+						if (!isNaN(variationStyleIndex)) {
+							if (65534 === variationStyleIndex) {
+								//todo 65534
+								variationStyleIndex = 0;
+							}
+							let varStyle = visioDocument.theme.getVariationStyleScheme(variationStyleIndex, quickStyleFillMatrix % 100);
+							if (varStyle && null !== varStyle.fillIdx) {
+								uniFill = visioDocument.theme.getFillStyle(varStyle.fillIdx, uniFill && uniFill.fill.color);
+							}
 						}
 					}
 				}
