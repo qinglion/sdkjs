@@ -355,8 +355,8 @@
 		 * @param {CVisioDocument} visioDocument
 		 * @return {{r: Number, g: Number, b:Number}} rgb color
 		 */
-		function calculateColor(cell, shape, visioDocument) {
-			let color;
+		function calculateUniFill(cell, shape, visioDocument) {
+			let uniFill;
 
 			//TODO import from web-apps/apps/common/main/lib/util/utils.js
 			let getRgbColor = function(clr){
@@ -381,7 +381,58 @@
 			if (/#\w{6}/.test(cellValue)) {
 				// check if hex
 				let extendedColorObj = getRgbColor(cellValue);
-				color = {r: extendedColorObj.r, g: extendedColorObj.g, b: extendedColorObj.b};
+				uniFill = AscFormat.CreateUnfilFromRGB(extendedColorObj.r, extendedColorObj.g, extendedColorObj.b);
+			} else if (cellValue === 'Themed') {
+				let quickStyleFillColor = parseInt(shape.getCell("QuickStyleFillColor").v);
+				let quickStyleFillMatrix = parseInt(shape.getCell("QuickStyleFillMatrix").v);
+				if (!isNaN(quickStyleFillColor)) {
+					if (100 <= quickStyleFillColor && quickStyleFillColor <= 106 || (200 <= quickStyleFillColor && quickStyleFillColor <= 206)) {
+						//todo 200-206?
+						let variationColorIndex = parseInt(shape.getCell("VariationColorIndex").v);
+						if (!isNaN(variationColorIndex)) {
+							if (65534 === variationColorIndex) {
+								//todo 65534
+								variationColorIndex = 0;
+							}
+							let color = visioDocument.theme.getVariationClrSchemeColor(variationColorIndex, quickStyleFillColor % 100);
+							if (color) {
+								uniFill = AscFormat.CreateUniFillByUniColor(color);
+							}
+						}
+					} else {
+						switch(quickStyleFillColor) {
+							case 0:
+								uniFill = AscFormat.CreateUnifillSolidFillSchemeColorByIndex(AscFormat.g_clr_dk1);
+								break;
+							case 1:
+								uniFill = AscFormat.CreateUnifillSolidFillSchemeColorByIndex(AscFormat.g_clr_lt1);
+								break;
+							case 2:
+								uniFill = AscFormat.CreateUnifillSolidFillSchemeColorByIndex(AscFormat.g_clr_accent1);
+								break;
+							case 3:
+								uniFill = AscFormat.CreateUnifillSolidFillSchemeColorByIndex(AscFormat.g_clr_accent2);
+								break;
+							case 4:
+								uniFill = AscFormat.CreateUnifillSolidFillSchemeColorByIndex(AscFormat.g_clr_accent3);
+								break;
+							case 5:
+								uniFill = AscFormat.CreateUnifillSolidFillSchemeColorByIndex(AscFormat.g_clr_accent4);
+								break;
+							case 6:
+								uniFill = AscFormat.CreateUnifillSolidFillSchemeColorByIndex(AscFormat.g_clr_accent5);
+								break;
+							case 7:
+								uniFill = AscFormat.CreateUnifillSolidFillSchemeColorByIndex(AscFormat.g_clr_accent6);
+								break;
+							case 8:
+								//todo
+								break;
+							default:
+								break;
+						}
+					}
+				}
 			} else if (cellValue === 'Themed') {
 				// check theme props
 
@@ -437,28 +488,110 @@
 						if (clrScheme.extLst) {
 							let variationClrSchemeLst = clrScheme.extLst.list[2].data;
 							let colorObj = variationClrSchemeLst.variationClrScheme[0].varColor[variationColorIndex];
-							let colorValue = colorObj.srgbClr.val;
+							let colorValue = colorObj.unicolor.val;
 							console.log("Color of shape is:", colorValue);
 							let extendedColorObj = getRgbColor(colorValue);
-							color = {r: extendedColorObj.r, g: extendedColorObj.g, b: extendedColorObj.b};
+							uniFill = AscFormat.CreateUnfilFromRGB(extendedColorObj.r, extendedColorObj.g, extendedColorObj.b);
 						} else {
 							console.log("no clrScheme.extLst found");
-							color = {r: 0, g: 127, b: 0};
+							uniFill = AscFormat.CreateUnfilFromRGB(0, 127, 0);
 						}
 					} else {
 						console.log("Quick styles were applied for shape or something so painting green.");
-						color = {r: 0, g: 127, b: 0};
+						uniFill = AscFormat.CreateUnfilFromRGB(0, 127, 0);
 					}
 				} else {
 					console.log("Non default theme set. so painting green.");
-					color = {r: 0, g: 127, b: 0};
+					uniFill = AscFormat.CreateUnfilFromRGB(0, 127, 0);
 				}
 			} else {
-				console.log("Non themed and non directly hex value. Painted green");
-				color = {r: 0, g: 127, b: 0};
+				let colorIndex = parseInt(cellValue);
+				if (!isNaN(colorIndex)) {
+					let color;
+					switch (colorIndex) {
+						case 0:
+							color = getRgbColor('#000000');
+							break;
+						case 1:
+							color = getRgbColor('#FFFFFF');
+							break;
+						case 2:
+							color = getRgbColor('#FF0000');
+							break;
+						case 3:
+							color = getRgbColor('#00FF00');
+							break;
+						case 4:
+							color = getRgbColor('#0000FF');
+							break;
+						case 5:
+							color = getRgbColor('#FFFF00');
+							break;
+						case 6:
+							color = getRgbColor('#FF00FF');
+							break;
+						case 7:
+							color = getRgbColor('#00FFFF');
+							break;
+						case 8:
+							color = getRgbColor('#800000');
+							break;
+						case 9:
+							color = getRgbColor('#008000');
+							break;
+						case 10:
+							color = getRgbColor('#000080');
+							break;
+						case 11:
+							color = getRgbColor('#808000');
+							break;
+						case 12:
+							color = getRgbColor('#800080');
+							break;
+						case 13:
+							color = getRgbColor('#008080');
+							break;
+						case 14:
+							color = getRgbColor('#C0C0C0');
+							break;
+						case 15:
+							color = getRgbColor('#E6E6E6');
+							break;
+						case 16:
+							color = getRgbColor('#CDCDCD');
+							break;
+						case 17:
+							color = getRgbColor('#B3B3B3');
+							break;
+						case 18:
+							color = getRgbColor('#9A9A9A');
+							break;
+						case 19:
+							color = getRgbColor('#808080');
+							break;
+						case 20:
+							color = getRgbColor('#666666');
+							break;
+						case 21:
+							color = getRgbColor('#4D4D4D');
+							break;
+						case 22:
+							color = getRgbColor('#333333');
+							break;
+						case 23:
+							color = getRgbColor('#1A1A1A');
+							break;
+					}
+					if (color) {
+						uniFill = AscFormat.CreateUnfilFromRGB(color.r, color.g, color.b);
+					}
+				}
 			}
-
-			return color;
+			if(!uniFill) {
+				console.log("no color found. so painting green.");
+				uniFill = AscFormat.CreateUnfilFromRGB(0, 127, 0);
+			}
+			return uniFill;
 		}
 
 		/**
@@ -530,19 +663,18 @@
 			// console.log("Gradient enabled:", gradientEnabled);
 
 			let fillColor = shape.getCell("FillForegnd");
-			let color;
+			let uniFill;
 			if (fillColor !== null) {
 				console.log("FillForegnd was found:", fillColor);
-				color = calculateColor(fillColor, shape, this);
+				uniFill = calculateUniFill(fillColor, shape, this);
 			} else {
 				console.log("FillForegnd cell not found for shape", shape);
-				color = {r: 0, g: 127, b: 0};
+				uniFill = AscFormat.CreateNoFillUniFill();
 			}
 
-			var oFill   = AscFormat.CreateUnfilFromRGB(color.r, color.g, color.b);
 			var oStroke = AscFormat.builder_CreateLine(12700, {UniFill: AscFormat.CreateUnfilFromRGB(255,0,0)});
 
-			let cShape = this.convertToShape(x_mm, y_mm, shapeWidth_mm, shapeHeight_mm, shapeAngle, oFill, oStroke, shapeGeom);
+			let cShape = this.convertToShape(x_mm, y_mm, shapeWidth_mm, shapeHeight_mm, shapeAngle, uniFill, oStroke, shapeGeom);
 
 			shapes.push(cShape);
 		}

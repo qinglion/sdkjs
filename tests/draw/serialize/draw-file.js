@@ -155,9 +155,12 @@
 
 			if (localStorage.droppedTestFile) {
 				console.log('There is saved test file in local storage');
+				let droppedTestFileArrayBuffer = AscCommon.Base64.decode(localStorage.droppedTestFile);
+				drawFile(droppedTestFileArrayBuffer);
+			} else {
+				drawFile(sizeAndPositionStart);
 			}
-			let droppedTestFileArrayBuffer = AscCommon.Base64.decode(localStorage.droppedTestFile);
-			drawFile(droppedTestFileArrayBuffer);
+
 		}, 3000);
 	}
 }();

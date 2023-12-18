@@ -86,6 +86,7 @@
 			"common/Drawings/Format/Shape.js",
 			"common/Drawings/Format/CnxShape.js",
 			"slide/Editor/Format/ShapePrototype.js",
+			"draw/model/ShapePrototype.js",
 			"common/Drawings/Format/Path.js",
 			"common/Drawings/Format/Image.js",
 			"common/Drawings/Format/GroupShape.js",

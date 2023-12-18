@@ -390,21 +390,11 @@
 		function CvarColor() {
 			CBaseNoIdObject.call(this);
 			/**
-			 * @type {CsrgbClr}
+			 * @type {CUniColor}
 			 */
-			this.srgbClr = null;
+			this.unicolor = null;
 		}
 		InitClass(CvarColor, CBaseNoIdObject, 0);
-
-		function CsrgbClr() {
-			CBaseNoIdObject.call(this);
-			/**
-			 * HEX color without #
-			 * @type {String}
-			 */
-			this.val = null;
-		}
-		InitClass(CsrgbClr, CBaseNoIdObject, 0);
 
 		function CT_Hyperlink() {
 			CBaseNoIdObject.call(this);
@@ -8916,6 +8906,23 @@
 		CTheme.prototype.Read_FromBinary2 = function (r) {
 			this.Id = r.GetString2();
 		};
+		CTheme.prototype.getVariationClrSchemeColor = function (variationIndex, colorIndex) {
+			let clrScheme = this.themeElements.clrScheme;
+			if (clrScheme.extLst) {
+				//todo remove extLst
+				let variationClrSchemeLst = clrScheme.extLst.list[2].data;
+				if (variationClrSchemeLst) {
+					let variation = variationClrSchemeLst.variationClrScheme[variationIndex];
+					if (variation) {
+						let colorObj = variation.varColor[colorIndex];
+						if (colorObj) {
+							return colorObj.unicolor;
+						}
+					}
+				}
+			}
+			return null;
+		};
 // ----------------------------------
 
 // CSLD -----------------------------
@@ -15504,6 +15511,21 @@
 		window['AscFormat'].LineEndSize = LineEndSize;
 		window['AscFormat'].LineJoinType = LineJoinType;
 
+		window['AscFormat'].g_clr_MIN = g_clr_MIN;
+		window['AscFormat'].g_clr_accent1 = g_clr_accent1;
+		window['AscFormat'].g_clr_accent2 = g_clr_accent2;
+		window['AscFormat'].g_clr_accent3 = g_clr_accent3;
+		window['AscFormat'].g_clr_accent4 = g_clr_accent4;
+		window['AscFormat'].g_clr_accent5 = g_clr_accent5;
+		window['AscFormat'].g_clr_accent6 = g_clr_accent6;
+		window['AscFormat'].g_clr_dk1 = g_clr_dk1;
+		window['AscFormat'].g_clr_dk2 = g_clr_dk2;
+		window['AscFormat'].g_clr_folHlink = g_clr_folHlink;
+		window['AscFormat'].g_clr_hlink = g_clr_hlink;
+		window['AscFormat'].g_clr_lt1 = g_clr_lt1;
+		window['AscFormat'].g_clr_lt2 = g_clr_lt2;
+		window['AscFormat'].g_clr_MAX = g_clr_MAX;
+
 //типы плейсхолдеров
 		window['AscFormat'].phType_body = 0;
 		window['AscFormat'].phType_chart = 1;
@@ -15675,6 +15697,5 @@
 		window['AscFormat'].CvariationClrSchemeLst = CvariationClrSchemeLst;
 		window['AscFormat'].CvariationClrScheme = CvariationClrScheme;
 		window['AscFormat'].CvarColor = CvarColor;
-		window['AscFormat'].CsrgbClr = CsrgbClr;
 	})
 (window);
