@@ -609,8 +609,10 @@
 				}
 			}
 			if(!uniFill) {
-				console.log("no color found. so painting green.");
-				uniFill = AscFormat.CreateUnfilFromRGB(0, 127, 0);
+				console.log("no color found. so painting white.");
+				uniFill = AscFormat.CreateUnfilFromRGB(255, 255, 255);
+				//todo
+				// uniFill = AscFormat.CreateUnifillSolidFillSchemeColorByIndex(AscFormat.g_clr_lt1);
 			}
 			return uniFill;
 		}
@@ -1016,6 +1018,8 @@
 			reader = new StaxParser(themePartContent, themePart, context);
 			this.theme = new AscFormat.CTheme();
 			this.theme.fromXml(reader, true);
+		} else {
+			this.theme = AscFormat.GenerateDefaultTheme(null, null);
 		}
 	}
 
