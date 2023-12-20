@@ -358,30 +358,12 @@
 		function calculateUniFill(cell, shape, visioDocument) {
 			let uniFill;
 
-			//TODO import from web-apps/apps/common/main/lib/util/utils.js
-			let getRgbColor = function(clr){
-				var color = (typeof(clr) == 'object') ? clr.color : clr;
-
-				color=color.replace(/#/,'');
-				if(color.length==3) color=color.replace(/(.)/g,'$1$1');
-				color=parseInt(color,16);
-				var c = new Asc.asc_CColor();
-				c.put_type( (typeof(clr) == 'object' && clr.effectId !== undefined)? Asc.c_oAscColor.COLOR_TYPE_SCHEME : Asc.c_oAscColor.COLOR_TYPE_SRGB);
-				c.put_r(color>>16);
-				c.put_g((color&0xff00)>>8);
-				c.put_b(color&0xff);
-				c.put_a(0xff);
-				if (clr.effectId !== undefined)
-					c.put_value(clr.effectId);
-				return c;
-			};
-
 			let cellValue = cell.v;
 
 			if (/#\w{6}/.test(cellValue)) {
 				// check if hex
-				let extendedColorObj = getRgbColor(cellValue);
-				uniFill = AscFormat.CreateUnfilFromRGB(extendedColorObj.r, extendedColorObj.g, extendedColorObj.b);
+				let rgba = AscCommon.RgbaHexToRGBA(cellValue);
+				uniFill = AscFormat.CreateUnfilFromRGB(rgba.R, rgba.G, rgba.B);
 			} else if (cellValue === 'Themed') {
 				let quickStyleFillColorElem = shape.getCell("QuickStyleFillColor");
 				let quickStyleFillMatrixElem = shape.getCell("QuickStyleFillMatrix");
@@ -402,36 +384,40 @@
 							}
 						}
 					} else {
+						let uniColor;
 						switch(quickStyleFillColor) {
 							case 0:
-								uniFill = AscFormat.CreateUnifillSolidFillSchemeColorByIndex(AscFormat.g_clr_dk1);
+								uniColor = AscFormat.builder_CreateSchemeColor("dk1");
 								break;
 							case 1:
-								uniFill = AscFormat.CreateUnifillSolidFillSchemeColorByIndex(AscFormat.g_clr_lt1);
+								uniColor = AscFormat.builder_CreateSchemeColor("lt1");
 								break;
 							case 2:
-								uniFill = AscFormat.CreateUnifillSolidFillSchemeColorByIndex(AscFormat.g_clr_accent1);
+								uniColor = AscFormat.builder_CreateSchemeColor("accent1");
 								break;
 							case 3:
-								uniFill = AscFormat.CreateUnifillSolidFillSchemeColorByIndex(AscFormat.g_clr_accent2);
+								uniColor = AscFormat.builder_CreateSchemeColor("accent2");
 								break;
 							case 4:
-								uniFill = AscFormat.CreateUnifillSolidFillSchemeColorByIndex(AscFormat.g_clr_accent3);
+								uniColor = AscFormat.builder_CreateSchemeColor("accent3");
 								break;
 							case 5:
-								uniFill = AscFormat.CreateUnifillSolidFillSchemeColorByIndex(AscFormat.g_clr_accent4);
+								uniColor = AscFormat.builder_CreateSchemeColor("accent4");
 								break;
 							case 6:
-								uniFill = AscFormat.CreateUnifillSolidFillSchemeColorByIndex(AscFormat.g_clr_accent5);
+								uniColor = AscFormat.builder_CreateSchemeColor("accent5");
 								break;
 							case 7:
-								uniFill = AscFormat.CreateUnifillSolidFillSchemeColorByIndex(AscFormat.g_clr_accent6);
+								uniColor = AscFormat.builder_CreateSchemeColor("accent6");
 								break;
 							case 8:
 								//todo
 								break;
 							default:
 								break;
+						}
+						if (uniColor) {
+							uniFill = AscFormat.CreateUniFillByUniColor(uniColor);
 						}
 					}
 				}
@@ -511,8 +497,8 @@
 							let colorObj = variationClrSchemeLst.variationClrScheme[0].varColor[variationColorIndex];
 							let colorValue = colorObj.unicolor.val;
 							console.log("Color of shape is:", colorValue);
-							let extendedColorObj = getRgbColor(colorValue);
-							uniFill = AscFormat.CreateUnfilFromRGB(extendedColorObj.r, extendedColorObj.g, extendedColorObj.b);
+							let rgba = AscCommon.RgbaHexToRGBA(colorValue);
+							uniFill = AscFormat.CreateUnfilFromRGB(rgba.R, rgba.G, rgba.B);
 						} else {
 							console.log("no clrScheme.extLst found");
 							uniFill = AscFormat.CreateUnfilFromRGB(0, 127, 0);
@@ -528,91 +514,89 @@
 			} else {
 				let colorIndex = parseInt(cellValue);
 				if (!isNaN(colorIndex)) {
-					let color;
+					let rgba = AscCommon.RgbaHexToRGBA(cellValue);;
 					switch (colorIndex) {
 						case 0:
-							color = getRgbColor('#000000');
+							rgba = AscCommon.RgbaHexToRGBA('#000000');
 							break;
 						case 1:
-							color = getRgbColor('#FFFFFF');
+							rgba = AscCommon.RgbaHexToRGBA('#FFFFFF');
 							break;
 						case 2:
-							color = getRgbColor('#FF0000');
+							rgba = AscCommon.RgbaHexToRGBA('#FF0000');
 							break;
 						case 3:
-							color = getRgbColor('#00FF00');
+							rgba = AscCommon.RgbaHexToRGBA('#00FF00');
 							break;
 						case 4:
-							color = getRgbColor('#0000FF');
+							rgba = AscCommon.RgbaHexToRGBA('#0000FF');
 							break;
 						case 5:
-							color = getRgbColor('#FFFF00');
+							rgba = AscCommon.RgbaHexToRGBA('#FFFF00');
 							break;
 						case 6:
-							color = getRgbColor('#FF00FF');
+							rgba = AscCommon.RgbaHexToRGBA('#FF00FF');
 							break;
 						case 7:
-							color = getRgbColor('#00FFFF');
+							rgba = AscCommon.RgbaHexToRGBA('#00FFFF');
 							break;
 						case 8:
-							color = getRgbColor('#800000');
+							rgba = AscCommon.RgbaHexToRGBA('#800000');
 							break;
 						case 9:
-							color = getRgbColor('#008000');
+							rgba = AscCommon.RgbaHexToRGBA('#008000');
 							break;
 						case 10:
-							color = getRgbColor('#000080');
+							rgba = AscCommon.RgbaHexToRGBA('#000080');
 							break;
 						case 11:
-							color = getRgbColor('#808000');
+							rgba = AscCommon.RgbaHexToRGBA('#808000');
 							break;
 						case 12:
-							color = getRgbColor('#800080');
+							rgba = AscCommon.RgbaHexToRGBA('#800080');
 							break;
 						case 13:
-							color = getRgbColor('#008080');
+							rgba = AscCommon.RgbaHexToRGBA('#008080');
 							break;
 						case 14:
-							color = getRgbColor('#C0C0C0');
+							rgba = AscCommon.RgbaHexToRGBA('#C0C0C0');
 							break;
 						case 15:
-							color = getRgbColor('#E6E6E6');
+							rgba = AscCommon.RgbaHexToRGBA('#E6E6E6');
 							break;
 						case 16:
-							color = getRgbColor('#CDCDCD');
+							rgba = AscCommon.RgbaHexToRGBA('#CDCDCD');
 							break;
 						case 17:
-							color = getRgbColor('#B3B3B3');
+							rgba = AscCommon.RgbaHexToRGBA('#B3B3B3');
 							break;
 						case 18:
-							color = getRgbColor('#9A9A9A');
+							rgba = AscCommon.RgbaHexToRGBA('#9A9A9A');
 							break;
 						case 19:
-							color = getRgbColor('#808080');
+							rgba = AscCommon.RgbaHexToRGBA('#808080');
 							break;
 						case 20:
-							color = getRgbColor('#666666');
+							rgba = AscCommon.RgbaHexToRGBA('#666666');
 							break;
 						case 21:
-							color = getRgbColor('#4D4D4D');
+							rgba = AscCommon.RgbaHexToRGBA('#4D4D4D');
 							break;
 						case 22:
-							color = getRgbColor('#333333');
+							rgba = AscCommon.RgbaHexToRGBA('#333333');
 							break;
 						case 23:
-							color = getRgbColor('#1A1A1A');
+							rgba = AscCommon.RgbaHexToRGBA('#1A1A1A');
 							break;
 					}
-					if (color) {
-						uniFill = AscFormat.CreateUnfilFromRGB(color.r, color.g, color.b);
+					if (rgba) {
+						uniFill = AscFormat.CreateUnfilFromRGB(rgba.R, rgba.G, rgba.B);
 					}
 				}
 			}
 			if(!uniFill) {
-				console.log("no color found. so painting white.");
-				uniFill = AscFormat.CreateUnfilFromRGB(255, 255, 255);
-				//todo
-				// uniFill = AscFormat.CreateUnifillSolidFillSchemeColorByIndex(AscFormat.g_clr_lt1);
+				console.log("no color found. so painting lt1.");
+				uniFill = AscFormat.CreateUniFillByUniColor(AscFormat.builder_CreateSchemeColor("lt1"));
 			}
 			return uniFill;
 		}

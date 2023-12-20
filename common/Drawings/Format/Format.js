@@ -15563,21 +15563,6 @@
 		window['AscFormat'].LineEndSize = LineEndSize;
 		window['AscFormat'].LineJoinType = LineJoinType;
 
-		window['AscFormat'].g_clr_MIN = g_clr_MIN;
-		window['AscFormat'].g_clr_accent1 = g_clr_accent1;
-		window['AscFormat'].g_clr_accent2 = g_clr_accent2;
-		window['AscFormat'].g_clr_accent3 = g_clr_accent3;
-		window['AscFormat'].g_clr_accent4 = g_clr_accent4;
-		window['AscFormat'].g_clr_accent5 = g_clr_accent5;
-		window['AscFormat'].g_clr_accent6 = g_clr_accent6;
-		window['AscFormat'].g_clr_dk1 = g_clr_dk1;
-		window['AscFormat'].g_clr_dk2 = g_clr_dk2;
-		window['AscFormat'].g_clr_folHlink = g_clr_folHlink;
-		window['AscFormat'].g_clr_hlink = g_clr_hlink;
-		window['AscFormat'].g_clr_lt1 = g_clr_lt1;
-		window['AscFormat'].g_clr_lt2 = g_clr_lt2;
-		window['AscFormat'].g_clr_MAX = g_clr_MAX;
-
 //типы плейсхолдеров
 		window['AscFormat'].phType_body = 0;
 		window['AscFormat'].phType_chart = 1;
