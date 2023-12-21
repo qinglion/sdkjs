@@ -370,7 +370,8 @@
 				let quickStyleFillColor = parseInt(quickStyleFillColorElem && quickStyleFillColorElem.v);
 				let quickStyleFillMatrix = parseInt(quickStyleFillMatrixElem && quickStyleFillMatrixElem.v);
 				if (!isNaN(quickStyleFillColor)) {
-					if (100 <= quickStyleFillColor && quickStyleFillColor <= 106 || (200 <= quickStyleFillColor && quickStyleFillColor <= 206)) {
+					if (100 <= quickStyleFillColor && quickStyleFillColor <= 106 ||
+						(200 <= quickStyleFillColor && quickStyleFillColor <= 206)) {
 						//todo 200-206?
 						let variationColorIndex = parseInt(shape.getCell("VariationColorIndex").v);
 						if (!isNaN(variationColorIndex)) {
@@ -378,7 +379,8 @@
 								//todo 65534
 								variationColorIndex = 0;
 							}
-							let color = visioDocument.theme.getVariationClrSchemeColor(variationColorIndex, quickStyleFillColor % 100);
+							let color = visioDocument.theme.getVariationClrSchemeColor(variationColorIndex,
+								quickStyleFillColor % 100);
 							if (color) {
 								uniFill = AscFormat.CreateUniFillByUniColor(color);
 							}
@@ -440,78 +442,80 @@
 						}
 					}
 				}
-			} else if (cellValue === 'Themed') {
-				// check theme props
-
-				// theme and variation
-				let themeProperties = [
-					"ConnectorSchemeIndex",		"EffectSchemeIndex",		"ColorSchemeIndex",		"FontSchemeIndex",
-					"VariationColorIndex",		"VariationStyleIndex",		"EmbellishmentIndex" ];
-				let defaultThemeIsSet;
-				try {
-					defaultThemeIsSet = themeProperties.reduce(function(acc, val, i) {
-						let themePropertyCell = shape.getCell(themeProperties[i]);
-						if (themePropertyCell === null) {
-							throw new Error("theme cell not found");
-						}
-						let themePropertyValue = Number(themePropertyCell.v);
-						acc = themePropertyValue === 65534 ? acc : false;
-						return acc;
-					}, true);
-				} catch (e) {
-					console.log(e);
-					return {r: 0, g: 127, b: 0};
-				}
-				if (defaultThemeIsSet) {
-					// check quick styles
-					console.log("Default theme is set");
-
-					// if all quick style props set to 100 for example variation color 0 is used
-					// if it is 103 variation color with zero based index 3 is used
-
-					// zero-based
-					let variationColorIndex = Number(shape.getCell("QuickStyleLineMatrix").v) % 100;
-
-					let quickStyleProperties = [
-						"QuickStyleLineMatrix",		"QuickStyleFillMatrix",		"QuickStyleEffectsMatrix",
-						"QuickStyleLineColor",		"QuickStyleFillColor",		"QuickStyleShadowColor",
-						"QuickStyleFontColor",		"QuickStyleFontMatrix" ];
-					let noQuickStyleSet = quickStyleProperties.reduce(function(acc, val, i) {
-						let quickStylePropertyValue = Number(shape.getCell(quickStyleProperties[i]).v);
-						acc = quickStylePropertyValue % 100 === variationColorIndex ? acc : false;
-						return acc;
-					}, true);
-
-					// quickStyleType === 2 is 2d
-					let quickStyleType = Number(shape.getCell("QuickStyleType").v);
-					let quickStyleVariation = Number(shape.getCell("QuickStyleVariation").v);
-
-					if (noQuickStyleSet && (quickStyleType === 2 || quickStyleType === 0) && quickStyleVariation === 0) {
-						console.log("No quick style is set for shape.");
-						/**
-						 * @type CvariationClrSchemeLst
-						 */
-						let clrScheme = visioDocument.theme.themeElements.clrScheme;
-						if (clrScheme.extLst) {
-							let variationClrSchemeLst = clrScheme.extLst.list[2].data;
-							let colorObj = variationClrSchemeLst.variationClrScheme[0].varColor[variationColorIndex];
-							let colorValue = colorObj.unicolor.val;
-							console.log("Color of shape is:", colorValue);
-							let rgba = AscCommon.RgbaHexToRGBA(colorValue);
-							uniFill = AscFormat.CreateUnfilFromRGB(rgba.R, rgba.G, rgba.B);
-						} else {
-							console.log("no clrScheme.extLst found");
-							uniFill = AscFormat.CreateUnfilFromRGB(0, 127, 0);
-						}
-					} else {
-						console.log("Quick styles were applied for shape or something so painting green.");
-						uniFill = AscFormat.CreateUnfilFromRGB(0, 127, 0);
-					}
-				} else {
-					console.log("Non default theme set. so painting green.");
-					uniFill = AscFormat.CreateUnfilFromRGB(0, 127, 0);
-				}
-			} else {
+			}
+			// else if (cellValue === 'Themed') {
+			// 	// check theme props
+			//
+			// 	// theme and variation
+			// 	let themeProperties = [
+			// 		"ConnectorSchemeIndex",		"EffectSchemeIndex",		"ColorSchemeIndex",		"FontSchemeIndex",
+			// 		"VariationColorIndex",		"VariationStyleIndex",		"EmbellishmentIndex" ];
+			// 	let defaultThemeIsSet;
+			// 	try {
+			// 		defaultThemeIsSet = themeProperties.reduce(function(acc, val, i) {
+			// 			let themePropertyCell = shape.getCell(themeProperties[i]);
+			// 			if (themePropertyCell === null) {
+			// 				throw new Error("theme cell not found");
+			// 			}
+			// 			let themePropertyValue = Number(themePropertyCell.v);
+			// 			acc = themePropertyValue === 65534 ? acc : false;
+			// 			return acc;
+			// 		}, true);
+			// 	} catch (e) {
+			// 		console.log(e);
+			// 		return {r: 0, g: 127, b: 0};
+			// 	}
+			// 	if (defaultThemeIsSet) {
+			// 		// check quick styles
+			// 		console.log("Default theme is set");
+			//
+			// 		// if all quick style props set to 100 for example variation color 0 is used
+			// 		// if it is 103 variation color with zero based index 3 is used
+			//
+			// 		// zero-based
+			// 		let variationColorIndex = Number(shape.getCell("QuickStyleLineMatrix").v) % 100;
+			//
+			// 		let quickStyleProperties = [
+			// 			"QuickStyleLineMatrix",		"QuickStyleFillMatrix",		"QuickStyleEffectsMatrix",
+			// 			"QuickStyleLineColor",		"QuickStyleFillColor",		"QuickStyleShadowColor",
+			// 			"QuickStyleFontColor",		"QuickStyleFontMatrix" ];
+			// 		let noQuickStyleSet = quickStyleProperties.reduce(function(acc, val, i) {
+			// 			let quickStylePropertyValue = Number(shape.getCell(quickStyleProperties[i]).v);
+			// 			acc = quickStylePropertyValue % 100 === variationColorIndex ? acc : false;
+			// 			return acc;
+			// 		}, true);
+			//
+			// 		// quickStyleType === 2 is 2d
+			// 		let quickStyleType = Number(shape.getCell("QuickStyleType").v);
+			// 		let quickStyleVariation = Number(shape.getCell("QuickStyleVariation").v);
+			//
+			// 		if (noQuickStyleSet && (quickStyleType === 2 || quickStyleType === 0) && quickStyleVariation === 0) {
+			// 			console.log("No quick style is set for shape.");
+			// 			/**
+			// 			 * @type CvariationClrSchemeLst
+			// 			 */
+			// 			let clrScheme = visioDocument.theme.themeElements.clrScheme;
+			// 			if (clrScheme.extLst) {
+			// 				let variationClrSchemeLst = clrScheme.extLst.list[2].data;
+			// 				let colorObj = variationClrSchemeLst.variationClrScheme[0].varColor[variationColorIndex];
+			// 				let colorValue = colorObj.unicolor.val;
+			// 				console.log("Color of shape is:", colorValue);
+			// 				let rgba = AscCommon.RgbaHexToRGBA(colorValue);
+			// 				uniFill = AscFormat.CreateUnfilFromRGB(rgba.R, rgba.G, rgba.B);
+			// 			} else {
+			// 				console.log("no clrScheme.extLst found");
+			// 				uniFill = AscFormat.CreateUnfilFromRGB(0, 127, 0);
+			// 			}
+			// 		} else {
+			// 			console.log("Quick styles were applied for shape or something so painting green.");
+			// 			uniFill = AscFormat.CreateUnfilFromRGB(0, 127, 0);
+			// 		}
+			// 	} else {
+			// 		console.log("Non default theme set. so painting green.");
+			// 		uniFill = AscFormat.CreateUnfilFromRGB(0, 127, 0);
+			// 	}
+			// }
+			else {
 				let colorIndex = parseInt(cellValue);
 				if (!isNaN(colorIndex)) {
 					let rgba = AscCommon.RgbaHexToRGBA(cellValue);;
