@@ -362,6 +362,13 @@
 
 
 		// Visio Extensions
+		function CClrSchemeExtLst() {
+			CBaseNoIdObject.call(this);
+			/** @type {CvariationClrSchemeLst} */
+			this.variationClrSchemeLst = null;
+		}
+		InitClass(CClrSchemeExtLst, CBaseNoIdObject, 0);
+
 		function CvariationClrSchemeLst() {
 			CBaseNoIdObject.call(this);
 			this.vt = null;
@@ -396,6 +403,10 @@
 		}
 		InitClass(CvarColor, CBaseNoIdObject, 0);
 
+		/**
+		 * General theme extensions. Tag inside themeElements.
+		 * @constructor
+		 */
 		function CThemeExt() {
 			CBaseNoIdObject.call(this);
 
@@ -2366,6 +2377,7 @@
 			return duplicate;
 		};
 		CSchemeColor.prototype.Calculate = function (theme, slide, layout, masterSlide, RGBA, colorMap) {
+			// if exception below: maybe color is not passed
 			if (theme.themeElements.clrScheme) {
 				if (this.id === phClr) {
 					this.RGBA = RGBA;
@@ -8005,7 +8017,7 @@
 			 * Used to store xml extensions (e.g. visio variant colors)
 			 * set in sdkjs-ooxml/common/Drawings/Format.js ClrScheme.prototype.readChildXml
 			 */
-			this.extLst = null;
+			this.clrSchemeExtLst = null;
 
 			for (var i = g_clr_MIN; i <= g_clr_MAX; i++)
 				this.colors[i] = null;
@@ -8953,9 +8965,8 @@
 		};
 		CTheme.prototype.getVariationClrSchemeColor = function (variationIndex, colorIndex) {
 			let clrScheme = this.themeElements.clrScheme;
-			if (clrScheme.extLst) {
-				//todo remove extLst
-				let variationClrSchemeLst = clrScheme.extLst.list[2].data;
+			if (clrScheme.clrSchemeExtLst) {
+				let variationClrSchemeLst = clrScheme.clrSchemeExtLst.variationClrSchemeLst;
 				if (variationClrSchemeLst) {
 					let variation = variationClrSchemeLst.variationClrScheme[variationIndex];
 					if (variation) {
@@ -15731,6 +15742,7 @@
 		window['AscFormat'].OBJECT_MORPH_MARKER = OBJECT_MORPH_MARKER;
 
 		// Visio extensions
+		window['AscFormat'].CClrSchemeExtLst = CClrSchemeExtLst;
 		window['AscFormat'].CvariationClrSchemeLst = CvariationClrSchemeLst;
 		window['AscFormat'].CvariationClrScheme = CvariationClrScheme;
 		window['AscFormat'].CvarColor = CvarColor;
