@@ -364,22 +364,22 @@
 		// Visio Extensions
 		function CClrSchemeExtLst() {
 			CBaseNoIdObject.call(this);
-			/** @type {CvariationClrSchemeLst} */
+			/** @type {CVariationClrSchemeLst} */
 			this.variationClrSchemeLst = null;
 		}
 		InitClass(CClrSchemeExtLst, CBaseNoIdObject, 0);
 
-		function CvariationClrSchemeLst() {
+		function CVariationClrSchemeLst() {
 			CBaseNoIdObject.call(this);
 			this.vt = null;
 			/**
-			 * @type {CvariationClrScheme[]}
+			 * @type {CVariationClrScheme[]}
 			 */
 			this.variationClrScheme = [];
 		}
-		InitClass(CvariationClrSchemeLst, CBaseNoIdObject, 0);
+		InitClass(CVariationClrSchemeLst, CBaseNoIdObject, 0);
 
-		function CvariationClrScheme() {
+		function CVariationClrScheme() {
 			CBaseNoIdObject.call(this);
 			/**
 			 *
@@ -388,20 +388,20 @@
 			this.monotone = null;
 			/**
 			 * read from varColor1, varColor2, varColor3, ...
-			 * @type {CvarColor[]}
+			 * @type {CVarColor[]}
 			 */
 			this.varColor = [];
 		}
-		InitClass(CvariationClrScheme, CBaseNoIdObject, 0);
+		InitClass(CVariationClrScheme, CBaseNoIdObject, 0);
 
-		function CvarColor() {
+		function CVarColor() {
 			CBaseNoIdObject.call(this);
 			/**
 			 * @type {CUniColor}
 			 */
 			this.unicolor = null;
 		}
-		InitClass(CvarColor, CBaseNoIdObject, 0);
+		InitClass(CVarColor, CBaseNoIdObject, 0);
 
 		/**
 		 * General theme extensions. Tag inside themeElements.
@@ -15743,9 +15743,9 @@
 
 		// Visio extensions
 		window['AscFormat'].CClrSchemeExtLst = CClrSchemeExtLst;
-		window['AscFormat'].CvariationClrSchemeLst = CvariationClrSchemeLst;
-		window['AscFormat'].CvariationClrScheme = CvariationClrScheme;
-		window['AscFormat'].CvarColor = CvarColor;
+		window['AscFormat'].CVariationClrSchemeLst = CVariationClrSchemeLst;
+		window['AscFormat'].CVariationClrScheme = CVariationClrScheme;
+		window['AscFormat'].CVarColor = CVarColor;
 		window['AscFormat'].CThemeExt = CThemeExt;
 		window['AscFormat'].CVariationStyleScheme = CVariationStyleScheme;
 		window['AscFormat'].CVarStyle = CVarStyle;
