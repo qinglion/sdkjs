@@ -369,6 +369,16 @@
 			 * @type {CVariationClrScheme[]}
 			 */
 			this.variationClrSchemeLst = [];
+			/**
+			 * from vt:bkgnd tag. Not visible background but something else
+			 * @type {?CVarColor}
+			 */
+			this.background = null;
+			/**
+			 * attribute schemeEnum from vt:schemeID tag
+			 * @type {?string}
+			 */
+			this.schemeEnum = null;
 		}
 		InitClass(CClrSchemeExtLst, CBaseNoIdObject, 0);
 
