@@ -364,20 +364,13 @@
 		// Visio Extensions
 		function CClrSchemeExtLst() {
 			CBaseNoIdObject.call(this);
-			/** @type {CVariationClrSchemeLst} */
-			this.variationClrSchemeLst = null;
-		}
-		InitClass(CClrSchemeExtLst, CBaseNoIdObject, 0);
 
-		function CVariationClrSchemeLst() {
-			CBaseNoIdObject.call(this);
-			this.vt = null;
 			/**
 			 * @type {CVariationClrScheme[]}
 			 */
-			this.variationClrScheme = [];
+			this.variationClrSchemeLst = [];
 		}
-		InitClass(CVariationClrSchemeLst, CBaseNoIdObject, 0);
+		InitClass(CClrSchemeExtLst, CBaseNoIdObject, 0);
 
 		function CVariationClrScheme() {
 			CBaseNoIdObject.call(this);
@@ -8968,7 +8961,7 @@
 			if (clrScheme.clrSchemeExtLst) {
 				let variationClrSchemeLst = clrScheme.clrSchemeExtLst.variationClrSchemeLst;
 				if (variationClrSchemeLst) {
-					let variation = variationClrSchemeLst.variationClrScheme[variationIndex];
+					let variation = variationClrSchemeLst[variationIndex];
 					if (variation) {
 						let colorObj = variation.varColor[colorIndex];
 						if (colorObj) {
@@ -15743,7 +15736,6 @@
 
 		// Visio extensions
 		window['AscFormat'].CClrSchemeExtLst = CClrSchemeExtLst;
-		window['AscFormat'].CVariationClrSchemeLst = CVariationClrSchemeLst;
 		window['AscFormat'].CVariationClrScheme = CVariationClrScheme;
 		window['AscFormat'].CVarColor = CVarColor;
 		window['AscFormat'].CThemeExt = CThemeExt;
