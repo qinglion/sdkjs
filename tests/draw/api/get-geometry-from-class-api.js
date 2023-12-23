@@ -594,14 +594,14 @@
 						splineStartCommandData = {
 							firstControlPointX : lastPoint.x,
 							firstControlPointY: lastPoint.y,
-							secondControlPointX: convertUnits(Number(findCell(commandRow, "n", "X").v),
+							secondControlPointX: convertUnits(Number(commandRow.getCell("X").v),
 								additionalUnitCoefficient),
-							secondControlPointY: convertUnits(Number(findCell(commandRow, "n", "Y").v),
+							secondControlPointY: convertUnits(Number(commandRow.getCell("Y").v),
 								additionalUnitCoefficient),
-							secondKnot: Number(findCell(commandRow, "n", "A").v),
-							firstKnot: Number(findCell(commandRow, "n", "B").v),
-							lastKnot: Number(findCell(commandRow, "n", "C").v),
-							degree: Number(findCell(commandRow, "n", "D").v)
+							secondKnot: Number(commandRow.getCell("A").v),
+							firstKnot: Number(commandRow.getCell("B").v),
+							lastKnot: Number(commandRow.getCell("C").v),
+							degree: Number(commandRow.getCell("D").v)
 						};
 						break;
 					}
@@ -609,11 +609,11 @@
 					{
 						// https://learn.microsoft.com/en-us/office/client-developer/visio/splineknot-row-geometry-section
 						splineKnotCommandsData.push({
-							controlPointX: convertUnits(Number(findCell(commandRow, "n", "X").v),
+							controlPointX: convertUnits(Number(commandRow.getCell("X").v),
 								additionalUnitCoefficient),
-							controlPointY: convertUnits(Number(findCell(commandRow, "n", "Y").v),
+							controlPointY: convertUnits(Number(commandRow.getCell("Y").v),
 								additionalUnitCoefficient),
-							knot: Number(findCell(commandRow, "n", "A").v)
+							knot: Number(commandRow.getCell("A").v)
 						});
 						break;
 					}
