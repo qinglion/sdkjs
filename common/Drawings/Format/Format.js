@@ -413,10 +413,28 @@
 		function CThemeExt() {
 			CBaseNoIdObject.call(this);
 
+			/**
+			 * @type {?FmtScheme}
+			 */
 			this.fmtConnectorScheme = null;
-			this.themeScheme = null;
-			this.fmtSchemeEx = null;
-			this.fmtConnectorSchemeEx = null;
+
+			/**
+			 * The only value from themeScheme tag
+			 * @type {?string}
+			 */
+			this.themeSchemeSchemeEnum = null;
+
+			/**
+			 * The only value from fmtSchemeEx tag
+			 * @type {?string}
+			 */
+			this.fmtSchemeExSchemeEnum = null;
+
+			/**
+			 * The only value from fmtConnectorSchemeEx tag
+			 * @type {?string}
+			 */
+			this.fmtConnectorSchemeExSchemeEnum = null;
 			this.fillStyles = null;
 			this.lineStyles = null;
 			this.fontStylesGroup = null;
