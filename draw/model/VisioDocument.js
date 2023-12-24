@@ -353,7 +353,7 @@
 		 * @param {Cell_Type} cell
 		 * @param {Shape_Type} shape
 		 * @param {CVisioDocument} visioDocument
-		 * @return {{r: Number, g: Number, b:Number}} rgb color
+		 * @return {CUniFill} cUniFill
 		 */
 		function calculateUniFill(cell, shape, visioDocument) {
 			let uniFill;
@@ -423,6 +423,7 @@
 						}
 					}
 				}
+				// add effects to fill consider fill color
 				if (!isNaN(quickStyleFillMatrix)) {
 					if (0 === quickStyleFillMatrix) {
 						//todo
@@ -435,7 +436,8 @@
 								//todo 65534
 								variationStyleIndex = 0;
 							}
-							let varStyle = visioDocument.theme.getVariationStyleScheme(variationStyleIndex, quickStyleFillMatrix % 100);
+							let varStyle = visioDocument.theme.getVariationStyleScheme(variationStyleIndex,
+								quickStyleFillMatrix % 100);
 							if (varStyle && null !== varStyle.fillIdx) {
 								uniFill = visioDocument.theme.getFillStyle(varStyle.fillIdx, uniFill && uniFill.fill.color);
 							}
