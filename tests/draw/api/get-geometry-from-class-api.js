@@ -139,6 +139,27 @@
 		// Each Geometry (Section_Type) element specifies a path.
 		let geometrySections = shape.getSections("Geometry");
 
+		// NEW VERSION: MAKE ONE TWO PATHS PER SHAPE:
+		// One path for path with strokes for them to subtract but:
+		// - it may not work well with more than 2 geometry path
+		// - we cant set different setStroke for geometry paths now because it is one path now
+		// see test folder https://disk.yandex.ru/d/_MQCkWbngkSz8w
+		// 25.12.2023 commit
+		let pathWithFill = new AscFormat.Path();
+		let pathWithoutFill = new AscFormat.Path();
+
+		pathWithFill.setExtrusionOk(false);
+		pathWithFill.setFill("norm");
+		pathWithFill.setStroke(true);
+		pathWithFill.setPathW(undefined);
+		pathWithFill.setPathH(undefined);
+
+		pathWithoutFill.setExtrusionOk(false);
+		pathWithoutFill.setFill("none");
+		pathWithoutFill.setStroke(true); // no difference
+		pathWithoutFill.setPathW(undefined);
+		pathWithoutFill.setPathH(undefined);
+
 		// set path objects - parts of geometry objects
 		for (let i = 0; i < geometrySections.length; i++) {
 			const geometrySection = geometrySections[i];
@@ -196,6 +217,7 @@
 			// So Geometry section defines (for drawing): path (by rows), isShown (NoShow), NoLine, NoFill
 			// So we can represent visio Geometry section using Path object
 			// Use it below
+
 			let noShowCell = geometrySection.getCell("NoShow");
 
 			if (noShowCell === null || noShowCell === undefined) {
@@ -206,7 +228,6 @@
 				continue;
 			}
 
-
 			let noFillCell = geometrySection.getCell("NoFill");
 			let fillValue;
 			if (noFillCell) {
@@ -215,18 +236,23 @@
 				fillValue = "norm";
 			}
 
+			let path;
+
+			// use one of two available path objects
+			if (fillValue === "norm") {
+				path = pathWithFill;
+			} else {
+				path = pathWithoutFill;
+			}
+
+
 			// imply that units were in mm until units parse realized
 			// TODO parse formula and units
 			// TODO parse line style fill style text style
 
 			const additionalUnitCoefficient = g_dKoef_in_to_mm;
 
-			let path = new AscFormat.Path();
-			path.setExtrusionOk(false);
-			path.setFill(fillValue);
-			path.setStroke(true);
-			path.setPathW(undefined);
-			path.setPathH(undefined);
+
 			/* extrusionOk, fill, stroke, w, h*/
 			// path.AddPathCommand(0, undefined, fillValue, undefined, undefined, undefined);
 
@@ -752,9 +778,11 @@
 			}
 
 			// path.close();
-			geometry.AddPath(path);
+
 		};
 		geometry.setPreset("Any");
+		geometry.AddPath(pathWithFill);
+		geometry.AddPath(pathWithoutFill);
 
 		// TODO add connections
 		// geometry.AddCnx('_3cd4', 'hc', 't');
