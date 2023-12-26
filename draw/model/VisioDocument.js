@@ -350,28 +350,54 @@
 	}
 	CVisioDocument.prototype.convertToShapes = function(logic_w_mm, logic_h_mm) {
 		/**
+		 * used for fill or line color calculation
 		 * @param {Cell_Type} cell
 		 * @param {Shape_Type} shape
 		 * @param {CVisioDocument} visioDocument
 		 * @return {CUniFill} cUniFill
 		 */
 		function calculateUniFill(cell, shape, visioDocument) {
+			// if cell value is not 'Themed' waiting number representing color otherwise
+			// if QuickStyle cell is from 100 to 106 or from 200 to 206 using VariationColorIndex cell value and
+			// 	QuickStyle cell value % 100 get color from theme
+			// if QuickStyle cell value is not in that range it is smt like from 0 to 7 representing theme colors like:
+			//  dk1, lt1, accent1, ...
+
 			let uniFill;
 
 			let cellValue = cell.v;
+			let cellName = cell.n;
+
+			let quickStyleCellName;
+			let quickStyleModifiersCellName;
+			let getModifiersMethod;
+			let variationStyleIndexVariable;
+
+			if (cellName === "LineColor") {
+				quickStyleCellName = "QuickStyleLineColor";
+				quickStyleModifiersCellName = "QuickStyleLineMatrix";
+				getModifiersMethod = visioDocument.theme.getLnStyle;
+				variationStyleIndexVariable = "lineIdx";
+				//TODO if LinePattern = 0 - no UniFill
+			} else {
+				quickStyleCellName = "QuickStyleFillColor";
+				quickStyleModifiersCellName = "QuickStyleFillMatrix";
+				getModifiersMethod = visioDocument.theme.getFillStyle;
+				variationStyleIndexVariable = "fillIdx";
+			}
 
 			if (/#\w{6}/.test(cellValue)) {
 				// check if hex
 				let rgba = AscCommon.RgbaHexToRGBA(cellValue);
 				uniFill = AscFormat.CreateUnfilFromRGB(rgba.R, rgba.G, rgba.B);
 			} else if (cellValue === 'Themed') {
-				let quickStyleFillColorElem = shape.getCell("QuickStyleFillColor");
-				let quickStyleFillMatrixElem = shape.getCell("QuickStyleFillMatrix");
-				let quickStyleFillColor = parseInt(quickStyleFillColorElem && quickStyleFillColorElem.v);
-				let quickStyleFillMatrix = parseInt(quickStyleFillMatrixElem && quickStyleFillMatrixElem.v);
-				if (!isNaN(quickStyleFillColor)) {
-					if (100 <= quickStyleFillColor && quickStyleFillColor <= 106 ||
-						(200 <= quickStyleFillColor && quickStyleFillColor <= 206)) {
+				let quickStyleColorElem = shape.getCell(quickStyleCellName);
+				let quickStyleMatrixElem = shape.getCell(quickStyleModifiersCellName);
+				let quickStyleColor = parseInt(quickStyleColorElem && quickStyleColorElem.v);
+				let quickStyleMatrix = parseInt(quickStyleMatrixElem && quickStyleMatrixElem.v);
+				if (!isNaN(quickStyleColor)) {
+					if (100 <= quickStyleColor && quickStyleColor <= 106 ||
+						(200 <= quickStyleColor && quickStyleColor <= 206)) {
 						//todo 200-206?
 						let variationColorIndex = parseInt(shape.getCell("VariationColorIndex").v);
 						if (!isNaN(variationColorIndex)) {
@@ -380,14 +406,14 @@
 								variationColorIndex = 0;
 							}
 							let color = visioDocument.theme.getVariationClrSchemeColor(variationColorIndex,
-								quickStyleFillColor % 100);
+								quickStyleColor % 100);
 							if (color) {
 								uniFill = AscFormat.CreateUniFillByUniColor(color);
 							}
 						}
 					} else {
 						let uniColor;
-						switch(quickStyleFillColor) {
+						switch(quickStyleColor) {
 							case 0:
 								uniColor = AscFormat.builder_CreateSchemeColor("dk1");
 								break;
@@ -423,23 +449,23 @@
 						}
 					}
 				}
-				// add effects to fill consider fill color
-				if (!isNaN(quickStyleFillMatrix)) {
-					if (0 === quickStyleFillMatrix) {
+				// add matrix modifiers consider color
+				if (!isNaN(quickStyleMatrix)) {
+					if (0 === quickStyleMatrix) {
 						//todo
-					} else if (1 <= quickStyleFillMatrix && quickStyleFillMatrix <= 6) {
-						uniFill = visioDocument.theme.getFillStyle(quickStyleFillMatrix, uniFill && uniFill.fill.color);
-					} else if (100 <= quickStyleFillMatrix && quickStyleFillMatrix <= 103) {
+					} else if (1 <= quickStyleMatrix && quickStyleMatrix <= 6) {
+						uniFill = getModifiersMethod.call(visioDocument.theme, quickStyleMatrix, uniFill && uniFill.fill.color);
+					} else if (100 <= quickStyleMatrix && quickStyleMatrix <= 103) {
 						let variationStyleIndex = parseInt(shape.getCell("VariationStyleIndex").v);
 						if (!isNaN(variationStyleIndex)) {
 							if (65534 === variationStyleIndex) {
-								//todo 65534
 								variationStyleIndex = 0;
 							}
 							let varStyle = visioDocument.theme.getVariationStyleScheme(variationStyleIndex,
-								quickStyleFillMatrix % 100);
-							if (varStyle && null !== varStyle.fillIdx) {
-								uniFill = visioDocument.theme.getFillStyle(varStyle.fillIdx, uniFill && uniFill.fill.color);
+								quickStyleMatrix % 100);
+							if (varStyle && null !== varStyle[variationStyleIndexVariable]) {
+								let styleId = varStyle[variationStyleIndexVariable];
+								uniFill = getModifiersMethod.call(visioDocument.theme, styleId, uniFill && uniFill.fill.color);
 							}
 						}
 					}
@@ -534,6 +560,7 @@
 			return uniFill;
 		}
 
+		
 		/**
 		 * @type {Shape_Type[]}
 		 */
@@ -602,7 +629,7 @@
 			// let gradientEnabled = shape.getCell("FillGradientEnabled");
 			// console.log("Gradient enabled:", gradientEnabled);
 
-			let uniFill, uniFillForegnd, uniFillBkgnd, nPatternType = null;
+			let uniFill = null, uniFillForegnd = null, uniFillBkgnd = null, nPatternType = null;
 			let fillForegnd = shape.getCell("FillForegnd");
 			if (fillForegnd) {
 				console.log("FillForegnd was found:", fillForegnd);
@@ -633,11 +660,19 @@
 			} else if (uniFillForegnd) {
 				uniFill = uniFillForegnd;
 			} else {
-				console.log("FillForegnd cell not found for shape", shape);
+				console.log("FillForegnd not found for shape", shape);
 				uniFill = AscFormat.CreateNoFillUniFill();
 			}
 
-			var oStroke = AscFormat.builder_CreateLine(12700, {UniFill: AscFormat.CreateUnfilFromRGB(255,0,0)});
+			let lineColor = shape.getCell("LineColor");
+			let oStrokeUnifill;
+			if (lineColor) {
+				console.log("LineColor was found for shape", lineColor);
+				oStrokeUnifill = calculateUniFill(lineColor, shape, this);
+			}
+
+			var oStroke = AscFormat.builder_CreateLine(12700, {UniFill: oStrokeUnifill});
+			// var oStroke = AscFormat.builder_CreateLine(12700, {UniFill: AscFormat.CreateUnfilFromRGB(255,0,0)});
 
 			let cShape = this.convertToShape(x_mm, y_mm, shapeWidth_mm, shapeHeight_mm, shapeAngle, uniFill, oStroke, shapeGeom);
 
