@@ -666,20 +666,41 @@
 				uniFill = AscFormat.CreateNoFillUniFill();
 			}
 
-			let oStrokeUnifill;
-
+			let oStrokeUniFill = null;
+			let lineWidthEmu = null;
 			let linePattern = shape.getCell("LinePattern");
-			if (linePattern.v === "0") {
-				oStrokeUnifill = AscFormat.CreateNoFillUniFill();
-			} else {
-				let lineColor = shape.getCell("LineColor");
-				if (lineColor) {
-					// console.log("LineColor was found for shape", lineColor);
-					oStrokeUnifill = calculateUniFill(lineColor, shape, this);
+			if (linePattern) {
+				if (linePattern.v === "0") {
+					oStrokeUniFill = AscFormat.CreateNoFillUniFill();
+					lineWidthEmu = 0;
+				} else {
+					let lineColor = shape.getCell("LineColor");
+					if (lineColor) {
+						// console.log("LineColor was found for shape", lineColor);
+						oStrokeUniFill = calculateUniFill(lineColor, shape, this);
+
+						let lineWeightCell = shape.getCell("LineWeight");
+						if (lineWeightCell) {
+							// to cell.v visio always saves inches
+							let lineWeightInches = Number(lineWeightCell.v);
+							lineWidthEmu = lineWeightInches * AscCommonWord.g_dKoef_in_to_mm * AscCommonWord.g_dKoef_mm_to_emu;
+						} else {
+							console.log("LineWeight cell was not found. line will be painted 12700 emus");
+							lineWidthEmu = 12700;
+						}
+					} else {
+						console.log("LineColor cell for line stroke (border) was not found painting red");
+						oStrokeUniFill = AscFormat.CreateUnfilFromRGB(255,0,0);
+						lineWidthEmu = 12700;
+					}
 				}
+			} else {
+				console.log("LinePattern cell for line stroke (border) was not found painting red");
+				oStrokeUniFill = AscFormat.CreateUnfilFromRGB(255,0,0);
+				lineWidthEmu = 12700;
 			}
 
-			var oStroke = AscFormat.builder_CreateLine(12700 * 2, {UniFill: oStrokeUnifill});
+			var oStroke = AscFormat.builder_CreateLine(lineWidthEmu, {UniFill: oStrokeUniFill});
 			// var oStroke = AscFormat.builder_CreateLine(12700, {UniFill: AscFormat.CreateUnfilFromRGB(255,0,0)});
 
 			let cShape = this.convertToShape(x_mm, y_mm, shapeWidth_mm, shapeHeight_mm, shapeAngle, uniFill, oStroke, shapeGeom);
