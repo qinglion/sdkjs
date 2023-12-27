@@ -363,6 +363,9 @@
 			// if QuickStyle cell value is not in that range it is smt like from 0 to 7 representing theme colors like:
 			//  dk1, lt1, accent1, ...
 
+			// TODO handle multiple themes by schemeEnum tags from theme xml and theme properties cells
+			// https://disk.yandex.ru/d/YZEevC0lUeUBfQ
+
 			let uniFill;
 
 			let cellValue = cell.v;
@@ -402,7 +405,6 @@
 						let variationColorIndex = parseInt(shape.getCell("VariationColorIndex").v);
 						if (!isNaN(variationColorIndex)) {
 							if (65534 === variationColorIndex) {
-								//todo 65534
 								variationColorIndex = 0;
 							}
 							let color = visioDocument.theme.getVariationClrSchemeColor(variationColorIndex,
@@ -637,12 +639,12 @@
 			}
 			let fillBkgnd = shape.getCell("FillBkgnd");
 			if (fillBkgnd) {
-				console.log("FillBkgnd was found:", fillBkgnd);
+				// console.log("FillBkgnd was found:", fillBkgnd);
 				uniFillBkgnd = calculateUniFill(fillBkgnd, shape, this);
 			}
 			let fillPattern = shape.getCell("FillPattern");
 			if (fillPattern) {
-				console.log("fillPattern was found:", fillPattern);
+				// console.log("fillPattern was found:", fillPattern);
 				let fillPatternType = parseInt(fillPattern.v);
 				if (!isNaN(fillPatternType)) {
 					if (0 === fillPatternType) {
@@ -664,14 +666,20 @@
 				uniFill = AscFormat.CreateNoFillUniFill();
 			}
 
-			let lineColor = shape.getCell("LineColor");
 			let oStrokeUnifill;
-			if (lineColor) {
-				console.log("LineColor was found for shape", lineColor);
-				oStrokeUnifill = calculateUniFill(lineColor, shape, this);
+
+			let linePattern = shape.getCell("LinePattern");
+			if (linePattern.v === "0") {
+				oStrokeUnifill = AscFormat.CreateNoFillUniFill();
+			} else {
+				let lineColor = shape.getCell("LineColor");
+				if (lineColor) {
+					// console.log("LineColor was found for shape", lineColor);
+					oStrokeUnifill = calculateUniFill(lineColor, shape, this);
+				}
 			}
 
-			var oStroke = AscFormat.builder_CreateLine(12700, {UniFill: oStrokeUnifill});
+			var oStroke = AscFormat.builder_CreateLine(12700 * 2, {UniFill: oStrokeUnifill});
 			// var oStroke = AscFormat.builder_CreateLine(12700, {UniFill: AscFormat.CreateUnfilFromRGB(255,0,0)});
 
 			let cShape = this.convertToShape(x_mm, y_mm, shapeWidth_mm, shapeHeight_mm, shapeAngle, uniFill, oStroke, shapeGeom);
