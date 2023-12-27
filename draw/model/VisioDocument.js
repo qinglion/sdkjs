@@ -381,7 +381,6 @@
 				quickStyleModifiersCellName = "QuickStyleLineMatrix";
 				getModifiersMethod = visioDocument.theme.getLnStyle;
 				variationStyleIndexVariable = "lineIdx";
-				//TODO if LinePattern = 0 - no UniFill
 			} else {
 				quickStyleCellName = "QuickStyleFillColor";
 				quickStyleModifiersCellName = "QuickStyleFillMatrix";
@@ -468,6 +467,10 @@
 							if (varStyle && null !== varStyle[variationStyleIndexVariable]) {
 								let styleId = varStyle[variationStyleIndexVariable];
 								uniFill = getModifiersMethod.call(visioDocument.theme, styleId, uniFill && uniFill.fill.color);
+								// HOTFIX
+								if (quickStyleCellName === "QuickStyleLineColor") {
+									uniFill = uniFill.Fill;
+								}
 							}
 						}
 					}
@@ -667,6 +670,7 @@
 			}
 
 			let oStrokeUniFill = null;
+			// add read matrix modifier width?
 			let lineWidthEmu = null;
 			let linePattern = shape.getCell("LinePattern");
 			if (linePattern) {
@@ -680,12 +684,17 @@
 						oStrokeUniFill = calculateUniFill(lineColor, shape, this);
 
 						let lineWeightCell = shape.getCell("LineWeight");
-						if (lineWeightCell) {
+						if (lineWeightCell && lineWeightCell.v && lineWeightCell.v !== "Themed") {
 							// to cell.v visio always saves inches
 							let lineWeightInches = Number(lineWeightCell.v);
-							lineWidthEmu = lineWeightInches * AscCommonWord.g_dKoef_in_to_mm * AscCommonWord.g_dKoef_mm_to_emu;
+							if (!isNaN(lineWeightInches)) {
+								lineWidthEmu = lineWeightInches * AscCommonWord.g_dKoef_in_to_mm * AscCommonWord.g_dKoef_mm_to_emu;
+							} else {
+								console.log("catched unknown error. line will be painted 12700 emus");
+								lineWidthEmu = 12700;
+							}
 						} else {
-							console.log("LineWeight cell was not found. line will be painted 12700 emus");
+							console.log("LineWeight cell was not calculated. line will be painted 12700 emus");
 							lineWidthEmu = 12700;
 						}
 					} else {
