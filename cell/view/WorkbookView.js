@@ -992,7 +992,6 @@
     this.model.handlers.add("setCanUndo", function(bCanUndo) {
       if (!self.Api.canUndoRedoByRestrictions())
         bCanUndo = false;
-		console.trace && console.trace('asc_onCanUndo:'+bCanUndo);
       self.handlers.trigger("asc_onCanUndoChanged", bCanUndo);
     });
     this.model.handlers.add("setCanRedo", function(bCanRedo) {
@@ -3324,6 +3323,10 @@
     }
 	  oFormulaLocaleInfo.Parse = true;
 	  oFormulaLocaleInfo.DigitSep = true;
+    if (!AscCommon.CollaborativeEditing.Get_GlobalLock()) {
+      this.restoreFocus();
+    }
+
     this.Api.sendEvent("asc_onUndoRedo");
   };
 
