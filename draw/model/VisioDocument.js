@@ -740,6 +740,52 @@
 		return shape;
 	};
 
+	CVisioDocument.prototype.joinMastersInfoAndContents = function() {
+		// join Master_Type and MasterContents_Type
+		if (this.masters === null || this.masters === undefined) {
+			return [];
+		}
+		let masterFromMastersInfoArray = this.masters.master;
+		let master = null;
+		let mastersJoined = [];
+
+		let thisContext = this;
+		for (let i = 0; i < masterFromMastersInfoArray.length; i++) {
+			const masterFromMasters = masterFromMastersInfoArray[i];
+			let masterFromMastersArrayRelId = masterFromMasters.rel.id;
+			// TODO find file by relationships
+			let masterContentNum = +masterFromMastersArrayRelId.match(/\d+/)[0];
+			let masterContent = thisContext.masterContents[masterContentNum - 1];
+			master = masterFromMasters;
+			master.content = masterContent;
+			mastersJoined.push(master);
+		}
+		return mastersJoined;
+	}
+
+	// CVisioDocument.prototype.getMasterByID = function(ID) {
+	// 	// join Master_Type and MasterContents_Type
+	// 	let masterFromMastersArray = this.masters.master;
+	// 	let master = null;
+	//
+	// 	let thisContext = this;
+	// 	for (let i = 0; i < masterFromMastersArray.length; i++) {
+	// 		const masterFromMasters = masterFromMastersArray[i];
+	// 		if (masterFromMasters.iD === ID) {
+	// 			let masterFromMastersArrayRelId = masterFromMasters.rel.id;
+	// 			// TODO find file by relationships
+	// 			let masterContentNum = +masterFromMastersArrayRelId.match(/\d+/)[0];
+	// 			let masterContent = thisContext.masterContents[masterContentNum - 1];
+	// 			master = masterFromMasters;
+	// 			master.content = masterContent;
+	// 			break;
+	// 		}
+	// 	}
+	// 	return master;
+	// }
+	//
+	//
+
 	// Main classes for reading
 
 	// Docs:
