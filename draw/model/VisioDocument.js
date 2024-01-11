@@ -34,8 +34,11 @@
 
 (function(window, document)
 {
-	// Docs:
-	// VisioDocument_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/visiodocument_type-complextypevisio-xml
+	/**
+	 * 	Docs:
+	 * 	VisioDocument_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/visiodocument_type-complextypevisio-xml
+	 * @constructor
+	 */
 	function CVisioDocument(Api, isMainLogicDocument) {
 		this.start = null;
 		this.key = null;
@@ -107,7 +110,10 @@
 		this.mainDocument = false !== isMainLogicDocument;
 	}
 
-	// TODO Check thumbnail parse in fromZip and setData in toZip
+	/**
+	 * TODO Check thumbnail parse in fromZip and setData in toZip
+	 * @memberOf CVisioDocument
+	 */
 	CVisioDocument.prototype.fromZip = function(zip, context, oReadResult) {
 		// Maybe it should be moved to 	sdkjs-ooxml/visio/Editor/SerializeXml.js like in 'word' case?
 		// 'word' case: 								sdkjs-ooxml/word/Editor/SerializeXml.js
@@ -146,7 +152,11 @@
 		// saveEmbeddedData.call(this, doc);
 		// handleEmbeddedDataRels.call(this, zip);
 	};
-	// TODO mb rewrite consider 'CVisioDocument' contains parts(.xml files) only but not XML
+
+	/**
+	 * 	TODO mb rewrite consider 'CVisioDocument' contains parts(.xml files) only but not XML
+	 * @memberOf CVisioDocument
+	 */
 	CVisioDocument.prototype.toZip = function(zip, context) {
 		let memory = new AscCommon.CMemory();
 		memory.SetXmlAttributeQuote(0x27);
@@ -245,10 +255,18 @@
 		}
 		memory.Seek(0);
 	};
+
+	/**
+	 * @memberOf CVisioDocument
+	 */
 	CVisioDocument.prototype.getObjectType = function() {
-		//todo remove it is temporary. to be parent of shape
+		//to be parent of shape
 		return 0;
 	};
+
+	/**
+	 * @memberOf CVisioDocument
+	 */
 	CVisioDocument.prototype.zoom_FitToPage_value = function(logic_w_mm, logic_h_mm, w_px, h_px) {
 		var _value = 100;
 
@@ -273,6 +291,10 @@
 			_value = 5;
 		return _value;
 	};
+
+	/**
+	 * @memberOf CVisioDocument
+	 */
 	CVisioDocument.prototype.draw = function(pageScale) {
 		let api = this.api;
 		//CSlideSize.prototype.DEFAULT_CX
@@ -348,6 +370,10 @@
 		let newY = x * (-1) * Math.sin(radiansRotateAngle) + y * Math.cos(radiansRotateAngle);
 		return {x : newX, y: newY};
 	}
+
+	/**
+	 * @memberOf CVisioDocument
+	 */
 	CVisioDocument.prototype.convertToShapes = function(logic_w_mm, logic_h_mm) {
 		/**
 		 * used for fill or line color calculation
@@ -357,6 +383,8 @@
 		 * @return {CUniFill} cUniFill
 		 */
 		function calculateUniFill(cell, shape, visioDocument) {
+			// https://visualsignals.typepad.co.uk/vislog/2013/05/visio-2013-themes-in-the-shapesheet-part-2.html
+
 			// if cell value is not 'Themed' waiting number representing color otherwise
 			// if QuickStyle cell is from 100 to 106 or from 200 to 206 using VariationColorIndex cell value and
 			// 	QuickStyle cell value % 100 get color from theme
@@ -393,10 +421,12 @@
 				let rgba = AscCommon.RgbaHexToRGBA(cellValue);
 				uniFill = AscFormat.CreateUnfilFromRGB(rgba.R, rgba.G, rgba.B);
 			} else if (cellValue === 'Themed') {
+				// Equal to THEMEVAL() call
 				let quickStyleColorElem = shape.getCell(quickStyleCellName);
 				let quickStyleMatrixElem = shape.getCell(quickStyleModifiersCellName);
 				let quickStyleColor = parseInt(quickStyleColorElem && quickStyleColorElem.v);
 				let quickStyleMatrix = parseInt(quickStyleMatrixElem && quickStyleMatrixElem.v);
+				// get color using "VariationColorIndex" cell and quickStyleColor cell
 				if (!isNaN(quickStyleColor)) {
 					if (100 <= quickStyleColor && quickStyleColor <= 106 ||
 						(200 <= quickStyleColor && quickStyleColor <= 206)) {
@@ -450,7 +480,7 @@
 						}
 					}
 				}
-				// add matrix modifiers consider color
+				// add matrix modifiers consider color and cells: "VariationStyleIndex" and quickStyleModifiersCellName
 				if (!isNaN(quickStyleMatrix)) {
 					if (0 === quickStyleMatrix) {
 						//todo
@@ -645,6 +675,7 @@
 				// console.log("FillBkgnd was found:", fillBkgnd);
 				uniFillBkgnd = calculateUniFill(fillBkgnd, shape, this);
 			}
+
 			let fillPattern = shape.getCell("FillPattern");
 			if (fillPattern) {
 				// console.log("fillPattern was found:", fillPattern);
@@ -692,6 +723,46 @@
 			}
 			console.log("Calculated oStrokeUniFill unifill", oStrokeUniFill, "for shape", shape);
 
+			// consider "QuickStyleVariation" cell
+			// https://visualsignals.typepad.co.uk/vislog/2013/05/visio-2013-themes-in-the-shapesheet-part-2.html
+			let backgroundColorHSL = {H: undefined, S: undefined, L: undefined};
+			let lineColorHSL = {H: undefined, S: undefined, L: undefined};
+			let fillColorHSL = {H: undefined, S: undefined, L: undefined};
+			let strokeColor = oStrokeUniFill.fill && oStrokeUniFill.fill.color && oStrokeUniFill.fill.color.color.RGBA;
+			let fillColor = uniFill.fill && uniFill.fill.color && uniFill.fill.color.color.RGBA;
+
+			if (strokeColor !== undefined && fillColor !== undefined) {
+				AscFormat.CColorModifiers.prototype.RGB2HSL(255, 255, 255, backgroundColorHSL);
+				AscFormat.CColorModifiers.prototype.RGB2HSL(strokeColor.R, strokeColor.G, strokeColor.B, lineColorHSL);
+				AscFormat.CColorModifiers.prototype.RGB2HSL(fillColor.R, fillColor.G, fillColor.B, fillColorHSL);
+
+				// covert L to percents
+				backgroundColorHSL.L = backgroundColorHSL.L / 255 * 100;
+				lineColorHSL.L = lineColorHSL.L / 255 * 100;
+				fillColorHSL.L = fillColorHSL.L / 255 * 100;
+
+				let quickStyleVariationCell = shape.getCell("QuickStyleVariation");
+				let quickStyleVariationCellValue = Number(quickStyleVariationCell.v);
+				if ((quickStyleVariationCellValue & 4) === 4) {
+					// line color variation enabled (bit mask used)
+					if (Math.abs(backgroundColorHSL.L - lineColorHSL.L < 16.66)) {
+						if (backgroundColorHSL.L <= 72.92 ) {
+							// if background is dark set stroke to white
+							oStrokeUniFill = AscFormat.CreateUnfilFromRGB(255,255,255);
+						} else {
+							if (Math.abs(backgroundColorHSL.L - fillColorHSL.L) >
+								Math.abs(backgroundColorHSL.L - lineColorHSL.L)) {
+								strokeColor.R = fillColor.R;
+								strokeColor.G = fillColor.G;
+								strokeColor.B = fillColor.B;
+							} else {
+								// something
+							}
+						}
+					}
+				}
+			}
+
 			let lineWidthEmu = null;
 			let lineWeightCell = shape.getCell("LineWeight");
 			if (lineWeightCell && lineWeightCell.v && lineWeightCell.v !== "Themed") {
@@ -723,6 +794,10 @@
 		// shapes.push(this.convertToShape(logic_w_mm / 5, logic_h_mm / 5, oFill, oStroke, geom));
 		return shapes;
 	};
+
+	/**
+	 * @memberOf CVisioDocument
+	 */
 	CVisioDocument.prototype.convertToShape = function(x, y, w_mm, h_mm, rot, oFill, oStroke, geom) {
 		let sType   = "rect";
 		let nWidth_mm  = Math.round(w_mm);
@@ -739,6 +814,9 @@
 		return shape;
 	};
 
+	/**
+	 * @memberOf CVisioDocument
+	 */
 	CVisioDocument.prototype.joinMastersInfoAndContents = function() {
 		// join Master_Type and MasterContents_Type
 		if (this.masters === null || this.masters === undefined) {

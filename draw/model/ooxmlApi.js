@@ -791,6 +791,10 @@
 		return findObject(this.cells, "Cell_Type", "n", formula);
 	}
 
+	/**
+	 * @memberOf Cell_Type
+	 * @return {number}
+	 */
 	Cell_Type.prototype.getValueInMM = function () {
 		let res;
 		//todo all units
@@ -826,6 +830,10 @@
 		}
 		return res;
 	};
+	/**
+	 * @memberOf Cell_Type
+	 * @return {number}
+	 */
 	Cell_Type.prototype.getValueInInch = function () {
 		let res = this.getValueInMM() / g_dKoef_in_to_mm;
 		return res;
