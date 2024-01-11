@@ -671,41 +671,40 @@
 
 			let oStrokeUniFill = null;
 			// add read matrix modifier width?
-			let lineWidthEmu = null;
 			let linePattern = shape.getCell("LinePattern");
 			if (linePattern) {
 				if (linePattern.v === "0") {
 					oStrokeUniFill = AscFormat.CreateNoFillUniFill();
-					lineWidthEmu = 0;
 				} else {
 					let lineColor = shape.getCell("LineColor");
 					if (lineColor) {
 						// console.log("LineColor was found for shape", lineColor);
 						oStrokeUniFill = calculateUniFill(lineColor, shape, this);
 
-						let lineWeightCell = shape.getCell("LineWeight");
-						if (lineWeightCell && lineWeightCell.v && lineWeightCell.v !== "Themed") {
-							// to cell.v visio always saves inches
-							let lineWeightInches = Number(lineWeightCell.v);
-							if (!isNaN(lineWeightInches)) {
-								lineWidthEmu = lineWeightInches * AscCommonWord.g_dKoef_in_to_mm * AscCommonWord.g_dKoef_mm_to_emu;
-							} else {
-								console.log("catched unknown error. line will be painted 12700 emus");
-								lineWidthEmu = 12700;
-							}
-						} else {
-							console.log("LineWeight cell was not calculated. line will be painted 12700 emus");
-							lineWidthEmu = 12700;
-						}
 					} else {
 						console.log("LineColor cell for line stroke (border) was not found painting red");
 						oStrokeUniFill = AscFormat.CreateUnfilFromRGB(255,0,0);
-						lineWidthEmu = 12700;
 					}
 				}
 			} else {
 				console.log("LinePattern cell for line stroke (border) was not found painting red");
 				oStrokeUniFill = AscFormat.CreateUnfilFromRGB(255,0,0);
+			}
+			console.log("Calculated oStrokeUniFill unifill", oStrokeUniFill, "for shape", shape);
+
+			let lineWidthEmu = null;
+			let lineWeightCell = shape.getCell("LineWeight");
+			if (lineWeightCell && lineWeightCell.v && lineWeightCell.v !== "Themed") {
+				// to cell.v visio always saves inches
+				let lineWeightInches = Number(lineWeightCell.v);
+				if (!isNaN(lineWeightInches)) {
+					lineWidthEmu = lineWeightInches * AscCommonWord.g_dKoef_in_to_mm * AscCommonWord.g_dKoef_mm_to_emu;
+				} else {
+					console.log("caught unknown error. line will be painted 12700 emus");
+					lineWidthEmu = 12700;
+				}
+			} else {
+				console.log("LineWeight cell was not calculated. line will be painted 12700 emus");
 				lineWidthEmu = 12700;
 			}
 
