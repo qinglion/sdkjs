@@ -307,6 +307,7 @@
 			"vendor/easysax.js",
 			"common/openxml.js",
 			"draw/model/ooxmlApi.js",
+			"draw/model/visioFunctionsApi.js",
 			"draw/model/VisioDocument.js"
 		],
 		"desktop": {

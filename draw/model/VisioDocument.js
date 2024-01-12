@@ -375,140 +375,23 @@
 	 * @memberOf CVisioDocument
 	 */
 	CVisioDocument.prototype.convertToShapes = function(logic_w_mm, logic_h_mm) {
-		/**
-		 * used for fill or line color calculation
-		 * @param {Cell_Type} cell
-		 * @param {Shape_Type} shape
-		 * @param {CVisioDocument} visioDocument
-		 * @return {CUniFill} cUniFill
-		 */
-		function calculateUniFill(cell, shape, visioDocument) {
-			// https://visualsignals.typepad.co.uk/vislog/2013/05/visio-2013-themes-in-the-shapesheet-part-2.html
-
-			// if cell value is not 'Themed' waiting number representing color otherwise
-			// if QuickStyle cell is from 100 to 106 or from 200 to 206 using VariationColorIndex cell value and
-			// 	QuickStyle cell value % 100 get color from theme
-			// if QuickStyle cell value is not in that range it is smt like from 0 to 7 representing theme colors like:
-			//  dk1, lt1, accent1, ...
-
-			// TODO handle multiple themes by schemeEnum tags from theme xml and theme properties cells
-			// https://disk.yandex.ru/d/YZEevC0lUeUBfQ
+		function calculateCellUniFill(theme, shape, cell) {
+			let cellValue = cell && cell.v;
+			let cellName = cell && cell.n;
 
 			let uniFill;
-
-			let cellValue = cell.v;
-			let cellName = cell.n;
-
-			let quickStyleCellName;
-			let quickStyleModifiersCellName;
-			let getModifiersMethod;
-			let variationStyleIndexVariable;
-
-			if (cellName === "LineColor") {
-				quickStyleCellName = "QuickStyleLineColor";
-				quickStyleModifiersCellName = "QuickStyleLineMatrix";
-				getModifiersMethod = visioDocument.theme.getLnStyle;
-				variationStyleIndexVariable = "lineIdx";
-			} else {
-				quickStyleCellName = "QuickStyleFillColor";
-				quickStyleModifiersCellName = "QuickStyleFillMatrix";
-				getModifiersMethod = visioDocument.theme.getFillStyle;
-				variationStyleIndexVariable = "fillIdx";
-			}
 
 			if (/#\w{6}/.test(cellValue)) {
 				// check if hex
 				let rgba = AscCommon.RgbaHexToRGBA(cellValue);
 				uniFill = AscFormat.CreateUnfilFromRGB(rgba.R, rgba.G, rgba.B);
 			} else if (cellValue === 'Themed') {
-				// Equal to THEMEVAL() call
-				let quickStyleColorElem = shape.getCell(quickStyleCellName);
-				let quickStyleMatrixElem = shape.getCell(quickStyleModifiersCellName);
-				let quickStyleColor = parseInt(quickStyleColorElem && quickStyleColorElem.v);
-				let quickStyleMatrix = parseInt(quickStyleMatrixElem && quickStyleMatrixElem.v);
-				// get color using "VariationColorIndex" cell and quickStyleColor cell
-				if (!isNaN(quickStyleColor)) {
-					if (100 <= quickStyleColor && quickStyleColor <= 106 ||
-						(200 <= quickStyleColor && quickStyleColor <= 206)) {
-						//todo 200-206?
-						let variationColorIndex = parseInt(shape.getCell("VariationColorIndex").v);
-						if (!isNaN(variationColorIndex)) {
-							if (65534 === variationColorIndex) {
-								variationColorIndex = 0;
-							}
-							let color = visioDocument.theme.getVariationClrSchemeColor(variationColorIndex,
-								quickStyleColor % 100);
-							if (color) {
-								uniFill = AscFormat.CreateUniFillByUniColor(color);
-							}
-						}
-					} else {
-						let uniColor;
-						switch(quickStyleColor) {
-							case 0:
-								uniColor = AscFormat.builder_CreateSchemeColor("dk1");
-								break;
-							case 1:
-								uniColor = AscFormat.builder_CreateSchemeColor("lt1");
-								break;
-							case 2:
-								uniColor = AscFormat.builder_CreateSchemeColor("accent1");
-								break;
-							case 3:
-								uniColor = AscFormat.builder_CreateSchemeColor("accent2");
-								break;
-							case 4:
-								uniColor = AscFormat.builder_CreateSchemeColor("accent3");
-								break;
-							case 5:
-								uniColor = AscFormat.builder_CreateSchemeColor("accent4");
-								break;
-							case 6:
-								uniColor = AscFormat.builder_CreateSchemeColor("accent5");
-								break;
-							case 7:
-								uniColor = AscFormat.builder_CreateSchemeColor("accent6");
-								break;
-							case 8:
-								//todo
-								break;
-							default:
-								break;
-						}
-						if (uniColor) {
-							uniFill = AscFormat.CreateUniFillByUniColor(uniColor);
-						}
-					}
-				}
-				// add matrix modifiers consider color and cells: "VariationStyleIndex" and quickStyleModifiersCellName
-				if (!isNaN(quickStyleMatrix)) {
-					if (0 === quickStyleMatrix) {
-						//todo
-					} else if (1 <= quickStyleMatrix && quickStyleMatrix <= 6) {
-						uniFill = getModifiersMethod.call(visioDocument.theme, quickStyleMatrix, uniFill && uniFill.fill.color);
-					} else if (100 <= quickStyleMatrix && quickStyleMatrix <= 103) {
-						let variationStyleIndex = parseInt(shape.getCell("VariationStyleIndex").v);
-						if (!isNaN(variationStyleIndex)) {
-							if (65534 === variationStyleIndex) {
-								variationStyleIndex = 0;
-							}
-							let varStyle = visioDocument.theme.getVariationStyleScheme(variationStyleIndex,
-								quickStyleMatrix % 100);
-							if (varStyle && null !== varStyle[variationStyleIndexVariable]) {
-								let styleId = varStyle[variationStyleIndexVariable];
-								uniFill = getModifiersMethod.call(visioDocument.theme, styleId, uniFill && uniFill.fill.color);
-								// HOTFIX
-								if (quickStyleCellName === "QuickStyleLineColor") {
-									uniFill = uniFill.Fill;
-								}
-							}
-						}
-					}
-				}
+				// equal to THEMEVAL() call
+				uniFill = AscCommonDraw.themeval(theme, shape, cell);
 			} else {
 				let colorIndex = parseInt(cellValue);
 				if (!isNaN(colorIndex)) {
-					let rgba = AscCommon.RgbaHexToRGBA(cellValue);;
+					let rgba = AscCommon.RgbaHexToRGBA(cellValue);
 					switch (colorIndex) {
 						case 0:
 							rgba = AscCommon.RgbaHexToRGBA('#000000');
@@ -588,14 +471,94 @@
 					}
 				}
 			}
-			if(!uniFill) {
+			if (!uniFill) {
 				console.log("no color found. so painting lt1.");
 				uniFill = AscFormat.CreateUniFillByUniColor(AscFormat.builder_CreateSchemeColor("lt1"));
 			}
 			return uniFill;
 		}
 
-		
+		function handleQuickStyleVariation(oStrokeUniFill, uniFill, shape) {
+			// https://learn.microsoft.com/en-us/openspecs/sharepoint_protocols/ms-vsdx/68bb0221-d8a1-476e-a132-8c60a49cea63?redirectedfrom=MSDN
+			// consider "QuickStyleVariation" cell
+			// https://visualsignals.typepad.co.uk/vislog/2013/05/visio-2013-themes-in-the-shapesheet-part-2.html
+			let backgroundColorHSL = {H: undefined, S: undefined, L: undefined};
+			let strokeColorHSL = {H: undefined, S: undefined, L: undefined};
+			let fillColorHSL = {H: undefined, S: undefined, L: undefined};
+			let strokeColor = oStrokeUniFill.fill && oStrokeUniFill.fill.color && oStrokeUniFill.fill.color.color.RGBA;
+			let fillColor = uniFill.fill && uniFill.fill.color && uniFill.fill.color.color.RGBA;
+
+			if (strokeColor !== undefined && fillColor !== undefined) {
+				AscFormat.CColorModifiers.prototype.RGB2HSL(255, 255, 255, backgroundColorHSL);
+				AscFormat.CColorModifiers.prototype.RGB2HSL(strokeColor.R, strokeColor.G, strokeColor.B, strokeColorHSL);
+				AscFormat.CColorModifiers.prototype.RGB2HSL(fillColor.R, fillColor.G, fillColor.B, fillColorHSL);
+
+				// covert L to percents
+				backgroundColorHSL.L = backgroundColorHSL.L / 255 * 100;
+				strokeColorHSL.L = strokeColorHSL.L / 255 * 100;
+				fillColorHSL.L = fillColorHSL.L / 255 * 100;
+
+				let quickStyleVariationCell = shape.getCell("QuickStyleVariation");
+				if (quickStyleVariationCell) {
+					let quickStyleVariationCellValue = Number(quickStyleVariationCell.v);
+					if ((quickStyleVariationCellValue & 4) === 4) {
+						// line color variation enabled (bit mask used)
+						if (Math.abs(backgroundColorHSL.L - strokeColorHSL.L) < 16.66) {
+							if (backgroundColorHSL.L <= 72.92) {
+								// if background is dark set stroke to white
+								strokeColor.R = 255;
+								strokeColor.G = 255;
+								strokeColor.B = 255;
+							} else {
+								if (Math.abs(backgroundColorHSL.L - fillColorHSL.L) >
+									Math.abs(backgroundColorHSL.L - strokeColorHSL.L)) {
+									// evaluation = THEMEVAL("FillColor")
+									// get theme shape fill color despite cell
+									// line below will give unifill with pattern maybe or gradient
+									// oStrokeUniFill = AscCommonDraw.themeval(this.theme, shape, null, "FillColor");
+									strokeColor.R = fillColor.R;
+									strokeColor.G = fillColor.G;
+									strokeColor.B = fillColor.B;
+								} else {
+									// evaluation = THEMEVAL("LineColor") or not affected I guess
+									// get theme line color despite cell
+									// oStrokeUniFill = AscCommonDraw.themeval(this.theme, shape, null, "LineColor");
+								}
+							}
+						}
+					}
+
+					if ((quickStyleVariationCellValue & 8) === 8) {
+						// fill color variation enabled (bit mask used)
+						if (Math.abs(backgroundColorHSL.L - fillColorHSL.L) < 16.66) {
+							if (backgroundColorHSL.L <= 72.92) {
+								// if background is dark set stroke to white
+								fillColor.R = 255;
+								fillColor.G = 255;
+								fillColor.B = 255;
+							} else {
+								if (Math.abs(backgroundColorHSL.L - strokeColorHSL.L) >
+									Math.abs(backgroundColorHSL.L - fillColorHSL.L)) {
+									// evaluation = THEMEVAL("FillColor")
+									// get theme shape fill color despite cell
+									// line below will give unifill with pattern maybe or gradient
+									// oStrokeUniFill = AscCommonDraw.themeval(this.theme, shape, null, "FillColor");
+									fillColor.R = strokeColor.R;
+									fillColor.G = strokeColor.G;
+									fillColor.B = strokeColor.B;
+								}
+							}
+						}
+					}
+
+					if ((quickStyleVariationCellValue & 2) === 2) {
+						// text color variation enabled (bit mask used)
+					}
+				}
+			}
+		}
+
+
 		/**
 		 * @type {Shape_Type[]}
 		 */
@@ -668,12 +631,12 @@
 			let fillForegnd = shape.getCell("FillForegnd");
 			if (fillForegnd) {
 				console.log("FillForegnd was found:", fillForegnd);
-				uniFillForegnd = calculateUniFill(fillForegnd, shape, this);
+				uniFillForegnd = calculateCellUniFill(this.theme, shape, fillForegnd);;
 			}
 			let fillBkgnd = shape.getCell("FillBkgnd");
 			if (fillBkgnd) {
 				// console.log("FillBkgnd was found:", fillBkgnd);
-				uniFillBkgnd = calculateUniFill(fillBkgnd, shape, this);
+				uniFillBkgnd = calculateCellUniFill(this.theme, shape, fillBkgnd);;
 			}
 
 			let fillPattern = shape.getCell("FillPattern");
@@ -710,8 +673,7 @@
 					let lineColor = shape.getCell("LineColor");
 					if (lineColor) {
 						// console.log("LineColor was found for shape", lineColor);
-						oStrokeUniFill = calculateUniFill(lineColor, shape, this);
-
+						oStrokeUniFill = calculateCellUniFill(this.theme, shape, lineColor);
 					} else {
 						console.log("LineColor cell for line stroke (border) was not found painting red");
 						oStrokeUniFill = AscFormat.CreateUnfilFromRGB(255,0,0);
@@ -723,45 +685,7 @@
 			}
 			console.log("Calculated oStrokeUniFill unifill", oStrokeUniFill, "for shape", shape);
 
-			// consider "QuickStyleVariation" cell
-			// https://visualsignals.typepad.co.uk/vislog/2013/05/visio-2013-themes-in-the-shapesheet-part-2.html
-			let backgroundColorHSL = {H: undefined, S: undefined, L: undefined};
-			let lineColorHSL = {H: undefined, S: undefined, L: undefined};
-			let fillColorHSL = {H: undefined, S: undefined, L: undefined};
-			let strokeColor = oStrokeUniFill.fill && oStrokeUniFill.fill.color && oStrokeUniFill.fill.color.color.RGBA;
-			let fillColor = uniFill.fill && uniFill.fill.color && uniFill.fill.color.color.RGBA;
-
-			if (strokeColor !== undefined && fillColor !== undefined) {
-				AscFormat.CColorModifiers.prototype.RGB2HSL(255, 255, 255, backgroundColorHSL);
-				AscFormat.CColorModifiers.prototype.RGB2HSL(strokeColor.R, strokeColor.G, strokeColor.B, lineColorHSL);
-				AscFormat.CColorModifiers.prototype.RGB2HSL(fillColor.R, fillColor.G, fillColor.B, fillColorHSL);
-
-				// covert L to percents
-				backgroundColorHSL.L = backgroundColorHSL.L / 255 * 100;
-				lineColorHSL.L = lineColorHSL.L / 255 * 100;
-				fillColorHSL.L = fillColorHSL.L / 255 * 100;
-
-				let quickStyleVariationCell = shape.getCell("QuickStyleVariation");
-				let quickStyleVariationCellValue = Number(quickStyleVariationCell.v);
-				if ((quickStyleVariationCellValue & 4) === 4) {
-					// line color variation enabled (bit mask used)
-					if (Math.abs(backgroundColorHSL.L - lineColorHSL.L < 16.66)) {
-						if (backgroundColorHSL.L <= 72.92 ) {
-							// if background is dark set stroke to white
-							oStrokeUniFill = AscFormat.CreateUnfilFromRGB(255,255,255);
-						} else {
-							if (Math.abs(backgroundColorHSL.L - fillColorHSL.L) >
-								Math.abs(backgroundColorHSL.L - lineColorHSL.L)) {
-								strokeColor.R = fillColor.R;
-								strokeColor.G = fillColor.G;
-								strokeColor.B = fillColor.B;
-							} else {
-								// something
-							}
-						}
-					}
-				}
-			}
+			handleQuickStyleVariation(oStrokeUniFill, uniFill, shape);
 
 			let lineWidthEmu = null;
 			let lineWeightCell = shape.getCell("LineWeight");
