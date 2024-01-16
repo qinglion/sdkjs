@@ -576,7 +576,7 @@
 
 		for (let i = 0; i < shapeClasses.length; i++) {
 			const shape = shapeClasses[i];
-			// if (shape.iD === 199) {
+			// if (shape.iD !== 108) {
 			// 	continue;
 			// }
 
@@ -695,12 +695,13 @@
 				if (!isNaN(lineWeightInches)) {
 					lineWidthEmu = lineWeightInches * AscCommonWord.g_dKoef_in_to_mm * AscCommonWord.g_dKoef_mm_to_emu;
 				} else {
-					console.log("caught unknown error. line will be painted 12700 emus");
-					lineWidthEmu = 12700;
+					console.log("caught unknown error. line will be painted 9525 emus");
+					// 9255 emus = 0.01041666666666667 inches is document.xml StyleSheet ID=0 LineWeight e. g. default value
+					lineWidthEmu = 9525;
 				}
 			} else {
-				console.log("LineWeight cell was not calculated. line will be painted 12700 emus");
-				lineWidthEmu = 12700;
+				console.log("LineWeight cell was not calculated. line will be painted 9525 emus");
+				lineWidthEmu = 9525;
 			}
 
 			var oStroke = AscFormat.builder_CreateLine(lineWidthEmu, {UniFill: oStrokeUniFill});

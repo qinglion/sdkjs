@@ -59,7 +59,7 @@
 
 		let uniFill;
 
-		let cellValue = cell && cell.v;
+		let cellValue = cell && cell.v; // formula?
 		let cellName = cell && cell.n;
 
 		let quickStyleCellName;
@@ -81,11 +81,25 @@
 			quickStyleModifiersCellName = "QuickStyleLineMatrix";
 			getModifiersMethod = theme.getLnStyle;
 			variationStyleIndexVariable = "lineIdx";
+
+			if (theme.name === "") {
+				// no theme file ---> return document.xml StyleSheet ID=0 value
+				return AscFormat.CreateUnfilFromRGB(0,0,0);
+			}
 		} else {
 			quickStyleCellName = "QuickStyleFillColor";
 			quickStyleModifiersCellName = "QuickStyleFillMatrix";
 			getModifiersMethod = theme.getFillStyle;
 			variationStyleIndexVariable = "fillIdx";
+
+			if (theme.name === "") {
+				// no theme file ---> return document.xml StyleSheet ID=0 value
+				if (cellName === "FillForegnd") {
+					return AscFormat.CreateUnfilFromRGB(255,255,255);
+				} else if (cellName === "FillBkgnd") {
+					return AscFormat.CreateUnfilFromRGB(0,0,0);
+				}
+			}
 		}
 
 		let quickStyleColorElem = shape.getCell(quickStyleCellName);
