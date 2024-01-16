@@ -721,6 +721,7 @@
 
 	/**
 	 * @memberOf CVisioDocument
+	 * @return {CShape} CShape
 	 */
 	CVisioDocument.prototype.convertToShape = function(x, y, w_mm, h_mm, rot, oFill, oStroke, geom) {
 		let sType   = "rect";

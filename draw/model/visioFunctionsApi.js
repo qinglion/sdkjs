@@ -88,7 +88,6 @@
 			variationStyleIndexVariable = "fillIdx";
 		}
 
-		// Equal to THEMEVAL() call
 		let quickStyleColorElem = shape.getCell(quickStyleCellName);
 		let quickStyleMatrixElem = shape.getCell(quickStyleModifiersCellName);
 		let quickStyleColor = parseInt(quickStyleColorElem && quickStyleColorElem.v);
