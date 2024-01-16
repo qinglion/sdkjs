@@ -3016,7 +3016,7 @@
 			if (isRealObject(parents.theme) && isRealObject(compiled_style) && isRealObject(compiled_style.lnRef)) {
 				//compiled_style.lnRef.Color.Calculate(parents.theme, parents.slide, parents.layout, parents.master, {R: 0, G: 0, B: 0, A:255});
 				//RGBA = compiled_style.lnRef.Color.RGBA;
-				// WRONG STYLE FOR VISIO
+				// compiled_style is default style
 				this.pen = parents.theme.getLnStyle(compiled_style.lnRef.idx, compiled_style.lnRef.Color);
 				//if (isRealObject(this.pen)) {
 				//    if (isRealObject(compiled_style.lnRef.Color.color)
@@ -3035,6 +3035,7 @@
 				this.pen = null;
 			}
 
+			// compiled line is given line props object
 			var oCompiledLine = this.getCompiledLine();
 			if (oCompiledLine) {
 				if (!this.pen) {
