@@ -111,7 +111,11 @@
 			if (100 <= quickStyleColor && quickStyleColor <= 106 ||
 				(200 <= quickStyleColor && quickStyleColor <= 206)) {
 				//todo 200-206?
-				let variationColorIndex = parseInt(shape.getCell("VariationColorIndex").v);
+				let variationColorIndexCell = shape.getCell("VariationColorIndex");
+				let variationColorIndex = 0;
+				if (variationColorIndexCell) {
+					variationColorIndex = parseInt(variationColorIndexCell.v);
+				}
 				if (!isNaN(variationColorIndex)) {
 					if (65534 === variationColorIndex) {
 						variationColorIndex = 0;
@@ -167,7 +171,11 @@
 			} else if (1 <= quickStyleMatrix && quickStyleMatrix <= 6) {
 				uniFill = getModifiersMethod.call(theme, quickStyleMatrix, uniFill && uniFill.fill.color);
 			} else if (100 <= quickStyleMatrix && quickStyleMatrix <= 103) {
-				let variationStyleIndex = parseInt(shape.getCell("VariationStyleIndex").v);
+				let variationStyleIndexCell = shape.getCell("VariationStyleIndex");
+				let variationStyleIndex = 0;
+				if (variationStyleIndexCell) {
+					variationStyleIndex = parseInt(variationStyleIndexCell.v);
+				}
 				if (!isNaN(variationStyleIndex)) {
 					if (65534 === variationStyleIndex) {
 						variationStyleIndex = 0;

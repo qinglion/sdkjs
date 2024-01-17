@@ -630,7 +630,7 @@
 			let uniFill = null, uniFillForegnd = null, uniFillBkgnd = null, nPatternType = null;
 			let fillForegnd = shape.getCell("FillForegnd");
 			if (fillForegnd) {
-				console.log("FillForegnd was found:", fillForegnd);
+				// console.log("FillForegnd was found:", fillForegnd);
 				uniFillForegnd = calculateCellUniFill(this.theme, shape, fillForegnd);;
 			}
 			let fillBkgnd = shape.getCell("FillBkgnd");
@@ -683,7 +683,7 @@
 				console.log("LinePattern cell for line stroke (border) was not found painting red");
 				oStrokeUniFill = AscFormat.CreateUnfilFromRGB(255,0,0);
 			}
-			console.log("Calculated oStrokeUniFill unifill", oStrokeUniFill, "for shape", shape);
+			// console.log("Calculated oStrokeUniFill unifill", oStrokeUniFill, "for shape", shape);
 
 			handleQuickStyleVariation(oStrokeUniFill, uniFill, shape);
 

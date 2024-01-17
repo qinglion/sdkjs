@@ -611,18 +611,87 @@
 	 * @param {StyleSheet_Type[]} styles
 	 */
 	function realizeStyleToSheetObjInheritanceRecursive(thisArgument, styles) {
+		// if (thisArgument.lineStyle === null || thisArgument.fillStyle === null || thisArgument.textStyle === null) {
+		// 	console.log('Unhandled realizeStyleToShapeInheritanceRecursive case. lineStyle or fillStlye or textStyle is ' +
+		// 		'null.\nShape:', thisArgument);
+		// 	return;
+		// }
+		if (!(thisArgument.lineStyle === thisArgument.fillStyle && thisArgument.lineStyle === thisArgument.textStyle)) {
+			// Attribute	Cell_Type elements
+
+			// LineStyle	Specifies Cell_Type elements related to line properties except for Cell_Type child elements
+			// of a FillGradient Section_Type.
+			// Line property information in shapes, masters, and styles is specified by the LineColor, LinePattern, LineWeight,
+			// LineCap, BeginArrow, EndArrow, LineColorTrans, CompoundType, BeginArrowSize, EndArrowSize, Rounding,
+			// LineGradientDir, LineGradientAngle, and LineGradientEnabled Cell_Type elements, and the Cell_Type
+			// elements belonging to the LineGradient Section_Type.
+
+			// FillStyle	Specifies Cell_Type elements related to fill properties and effect properties
+			// including Cell_Type child elements of a FillGradient Section_Type.
+			// Fill property information in shapes, masters, and styles is specified by the FillForegnd,
+			// FillForegndTrans, FillBkgnd, FillBkgndTrans, FillPattern,
+			// FillGradientDir, FillGradientAngle, FillGradientEnabled,
+			// RotateGradientWithShape, and UseGroupGradientCell_Type elements,
+			// and the Cell_Type elements belonging to the FillGradient Section_Type.
+			// Shadow effect set information in shapes, masters, and styles is specified by the ShdwForegnd, ShdwForegndTrans,
+			// ShdwPattern, ShapeShdwType, ShapeShdwOffsetX, ShapeShdwOffsetY, ShapeShdwObliqueAngle, ShapeShdwScaleFactor,
+			// and ShapeShdwBlur Cell_Type elements.
+
+			// TextStyle	Specifies Cell_Type elements related to text.
+
+			// What about Quick style cells?
+
+			// cells rows sections
+			// TODO check cells inside section LineGradient
+				let lineStyleElements = ["LineColor", "LinePattern", "LineWeight", "LineCap", "BeginArrow", "EndArrow",
+					"LineColorTrans", "CompoundType", "BeginArrowSize", "EndArrowSize", "Rounding",
+					"LineGradientDir", "LineGradientAngle", "LineGradientEnabled", "LineGradient",
+					"QuickStyleLineColor", "QuickStyleLineMatrix"];
+
+			// TODO check cells inside section FillGradient
+				let fillStyleElements = ["FillForegnd", "FillForegndTrans", "FillBkgnd", "FillBkgndTrans", "FillPattern",
+					"FillGradientDir", "FillGradientAngle", "FillGradientEnabled",
+					"RotateGradientWithShape", "UseGroupGradientCell_Type", "FillGradient",
+					"ShdwForegnd", "ShdwForegndTrans", "ShdwPattern", "ShapeShdwType", "ShapeShdwOffsetX", "ShapeShdwOffsetY",
+					"ShapeShdwObliqueAngle", "ShapeShdwScaleFactor", "ShapeShdwBlur",
+				"QuickStyleFillColor", "QuickStyleFillMatrix"];
+
+				let textStyleElements = ["TextBkgnd", "TextDirection", "TextBkgndTrans", "LockTextEdit", "HideText",
+					"TheText", "IsTextEditTarget", "KeepTextFlat", "ReplaceLockText", "TextPosAfterBullet"];
+
+				if (thisArgument.lineStyle !== null) {
+					let styleId = Number(thisArgument.lineStyle);
+					let styleSheet = styles.find(function(style) {
+						return style.iD === styleId;
+					});
+					realizeStyleToSheetObjInheritanceRecursive(styleSheet, styles);
+					mergeElementArrays(thisArgument.elements, styleSheet.elements, lineStyleElements);
+				}
+
+				if (thisArgument.fillStyle !== null) {
+					let styleId = Number(thisArgument.fillStyle);
+					let styleSheet = styles.find(function(style) {
+						return style.iD === styleId;
+					});
+					realizeStyleToSheetObjInheritanceRecursive(styleSheet, styles);
+					mergeElementArrays(thisArgument.elements, styleSheet.elements, fillStyleElements);
+				}
+
+				if (thisArgument.textStyle !== null) {
+					let styleId = Number(thisArgument.textStyle);
+					let styleSheet = styles.find(function(style) {
+						return style.iD === styleId;
+					});
+					realizeStyleToSheetObjInheritanceRecursive(styleSheet, styles);
+					mergeElementArrays(thisArgument.elements, styleSheet.elements, textStyleElements);
+				}
+
+			// console.log('Unhandled realizeStyleToShapeInheritanceRecursive case. lineStyle fillStlye textStyle are not ' +
+			// 	'equal. So multiple styles should be inherited with specific properties.\nShape:', thisArgument);
+			return;
+		}
 		if (thisArgument.lineStyle === null && thisArgument.fillStyle === null && thisArgument.textStyle === null) {
 			// console.log('Top parent style');
-			return;
-		}
-		if (thisArgument.lineStyle === null || thisArgument.fillStyle === null || thisArgument.textStyle === null) {
-			console.log('Unhandled realizeStyleToShapeInheritanceRecursive case. lineStyle or fillStlye or textStyle is ' +
-				'null.\nShape:', thisArgument);
-			return;
-		}
-		if (!(thisArgument.lineStyle === thisArgument.fillStyle && thisArgument.lineStyle === thisArgument.textStyle)) {
-			console.log('Unhandled realizeStyleToShapeInheritanceRecursive case. lineStyle fillStlye textStyle are not ' +
-				'equal. So multiple styles should be inherited with specific properties.\nShape:', thisArgument);
 			return;
 		}
 
@@ -656,8 +725,10 @@
 	 * For Sections and Rows merge is recursive: we compare inner cells by their names
 	 * @param shapeElements - cells rows sections
 	 * @param masterElements - cells rows sections
+	 * @param {string[]?} elementsToMerge - cells rows sections list we can merge
+	 * @param {boolean?} isParentInList
 	 */
-	function mergeElementArrays(shapeElements, masterElements) {
+	function mergeElementArrays(shapeElements, masterElements, elementsToMerge, isParentInList) {
 		/**
 		 * find index of cell row or section
 		 * @param elementsArray
@@ -705,28 +776,46 @@
 			});
 		}
 
+		let mergeAll = false;
+
+		if (elementsToMerge === undefined) {
+			mergeAll = true;
+		}
+
 		masterElements.forEach(function(masterElement) {
 			let mergeElementIndex = findIndexComparingByNorIX(shapeElements, masterElement);
 			let elementExistsAlready = mergeElementIndex !== -1;
 
+			let elementIsInList = elementsToMerge !== undefined && elementsToMerge.includes(masterElement.n);
+			let listCheck = elementIsInList || isParentInList || mergeAll;
+
 			if (!elementExistsAlready) {
-				// TODO fix order
-				// mb lets not add cell after section
-				let elementCopy = clone(masterElement);
-				shapeElements.push(elementCopy);
-				// ix wrong order causes problems
-				shapeElements.sort(function(a, b) {return a.iX - b.iX;});
+				if (listCheck) {
+					// TODO fix order
+					// mb lets not add cell after section
+					let elementCopy = clone(masterElement);
+					shapeElements.push(elementCopy);
+					// ix wrong order causes problems
+					shapeElements.sort(function (a, b) {
+						return a.iX - b.iX;
+					});
+				}
 			} else {
 				// merge inner elements recursive if not cell
 				if (masterElement.constructor.name !== 'Cell_Type') {
 					// if Section or Row
 					let shapeElement = shapeElements[mergeElementIndex];
 					if (masterElement.constructor.name == 'Section_Type') {
-						// recursive
-						mergeElementArrays(shapeElement.cells, masterElement.cells);
-						mergeElementArrays(shapeElement.rows, masterElement.rows);
+						// for future checks
+						isParentInList = elementIsInList || isParentInList;
+						// recursive calls
+						mergeElementArrays(shapeElement.cells, masterElement.cells, elementsToMerge, isParentInList);
+						mergeElementArrays(shapeElement.rows, masterElement.rows, elementsToMerge, isParentInList);
 					} else if (masterElement.constructor.name == 'Row_Type') {
-						mergeElementArrays(shapeElement.cells, masterElement.cells);
+						// for future checks
+						isParentInList = elementIsInList || isParentInList;
+						// recursive calls
+						mergeElementArrays(shapeElement.cells, masterElement.cells, elementsToMerge, isParentInList);
 					}
 				}
 			}
