@@ -621,8 +621,6 @@
 			let shapeWidth_mm = shapeWidth_inch * g_dKoef_in_to_mm;
 			let shapeHeight_mm = shapeHeight_inch * g_dKoef_in_to_mm;
 
-			let shapeGeom = AscCommonDraw.getGeometryFromShape(shape);
-
 			// TODO check if gradient enabled
 			// let gradientEnabled = shape.getCell("FillGradientEnabled");
 			// console.log("Gradient enabled:", gradientEnabled);
@@ -631,12 +629,44 @@
 			let fillForegnd = shape.getCell("FillForegnd");
 			if (fillForegnd) {
 				// console.log("FillForegnd was found:", fillForegnd);
-				uniFillForegnd = calculateCellUniFill(this.theme, shape, fillForegnd);;
+				uniFillForegnd = calculateCellUniFill(this.theme, shape, fillForegnd);
+
+				let fillForegndTrans = shape.getCell("FillForegndTrans");
+				if (fillForegndTrans) {
+					let fillForegndTransValue = Number(fillForegndTrans.v);
+					if (!isNaN(fillForegndTransValue)) {
+						let fillObj = uniFillForegnd.fill;
+						if (fillObj.constructor.name === "CPattFill") {
+							// pattern fill
+							fillObj.fgClr.color.RGBA.A = fillObj.fgClr.color.RGBA.A * (1 - fillForegndTransValue);
+						} else {
+							fillObj.color.color.RGBA.A = fillObj.color.color.RGBA.A * (1 - fillForegndTransValue);
+						}
+					} else {
+						// console.log("fillForegndTrans value is themed or something. Not calculated for", shape);
+					}
+				}
 			}
 			let fillBkgnd = shape.getCell("FillBkgnd");
 			if (fillBkgnd) {
 				// console.log("FillBkgnd was found:", fillBkgnd);
-				uniFillBkgnd = calculateCellUniFill(this.theme, shape, fillBkgnd);;
+				uniFillBkgnd = calculateCellUniFill(this.theme, shape, fillBkgnd);
+
+				let fillBkgndTrans = shape.getCell("FillBkgndTrans");
+				if (fillBkgndTrans) {
+					let fillBkgndTransValue = Number(fillBkgndTrans.v);
+					if (!isNaN(fillBkgndTransValue)) {
+						let fillObj = uniFillBkgnd.fill;
+						if (fillObj.constructor.name === "CPattFill") {
+							// pattern fill
+							fillObj.bgClr.color.RGBA.A = fillObj.fgClr.color.RGBA.A * (1 - fillBkgndTransValue);
+						} else {
+							fillObj.color.color.RGBA.A = fillObj.color.color.RGBA.A * (1 - fillBkgndTransValue);
+						}
+					} else {
+						// console.log("fillBkgndTrans value is themed or something. Not calculated for", shape);
+					}
+				}
 			}
 
 			let fillPattern = shape.getCell("FillPattern");
@@ -707,7 +737,7 @@
 			var oStroke = AscFormat.builder_CreateLine(lineWidthEmu, {UniFill: oStrokeUniFill});
 			// var oStroke = AscFormat.builder_CreateLine(12700, {UniFill: AscFormat.CreateUnfilFromRGB(255,0,0)});
 
-			let cShape = this.convertToShape(x_mm, y_mm, shapeWidth_mm, shapeHeight_mm, shapeAngle, uniFill, oStroke, shapeGeom);
+			let cShape = shape.convertToCShape(x_mm, y_mm, shapeWidth_mm, shapeHeight_mm, shapeAngle, uniFill, oStroke, this);
 
 			shapes.push(cShape);
 		}
@@ -718,26 +748,6 @@
 		// var oStroke = AscFormat.builder_CreateLine(12700, {UniFill: AscFormat.CreateUnfilFromRGB(255,0,0)});
 		// shapes.push(this.convertToShape(logic_w_mm / 5, logic_h_mm / 5, oFill, oStroke, geom));
 		return shapes;
-	};
-
-	/**
-	 * @memberOf CVisioDocument
-	 * @return {CShape} CShape
-	 */
-	CVisioDocument.prototype.convertToShape = function(x, y, w_mm, h_mm, rot, oFill, oStroke, geom) {
-		let sType   = "rect";
-		let nWidth_mm  = Math.round(w_mm);
-		let nHeight_mm = Math.round(h_mm);
-		//let oDrawingDocument = new AscCommon.CDrawingDocument();
-		let shape = AscFormat.builder_CreateShape(sType, nWidth_mm, nHeight_mm,
-			oFill, oStroke, this, this.theme, null, false);
-		shape.spPr.xfrm.setOffX(x);
-		shape.spPr.xfrm.setOffY(y);
-		shape.spPr.xfrm.setRot(rot);
-
-		shape.spPr.setGeometry(geom);
-		shape.recalculate();
-		return shape;
 	};
 
 	/**

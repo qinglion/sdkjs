@@ -116,6 +116,20 @@
 		return this;
 	}
 
+	// Docs old:
+	// Row_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/row_type-complextypevisio-xml
+	function Row_Type() {
+		this.n = null;
+		this.localName = null;
+		this.iX = null;
+		this.t = null;
+		this.del = null;
+
+		this.cells = [];
+		this.triggers = [];
+		return this;
+	}
+
 
 	Shape_Type.prototype.getMasterID = function() {
 		return this.master;
@@ -854,19 +868,27 @@
 		return copy;
 	}
 
-	// Docs old:
-	// Row_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/row_type-complextypevisio-xml
-	function Row_Type() {
-		this.n = null;
-		this.localName = null;
-		this.iX = null;
-		this.t = null;
-		this.del = null;
+	/**
+	 * @memberOf Shape_Type
+	 * @return {CShape} CShape
+	 */
+	Shape_Type.prototype.convertToCShape = function(x, y, w_mm, h_mm, rot, oFill, oStroke, cVisioDocument) {
+		let shapeGeom = AscCommonDraw.getGeometryFromShape(this);
 
-		this.cells = [];
-		this.triggers = [];
-		return this;
-	}
+		let sType   = "rect";
+		let nWidth_mm  = Math.round(w_mm);
+		let nHeight_mm = Math.round(h_mm);
+		//let oDrawingDocument = new AscCommon.CDrawingDocument();
+		let shape = AscFormat.builder_CreateShape(sType, nWidth_mm, nHeight_mm,
+			oFill, oStroke, cVisioDocument, cVisioDocument.theme, null, false);
+		shape.spPr.xfrm.setOffX(x);
+		shape.spPr.xfrm.setOffY(y);
+		shape.spPr.xfrm.setRot(rot);
+
+		shape.spPr.setGeometry(shapeGeom);
+		shape.recalculate();
+		return shape;
+	};
 
 
 	/**
