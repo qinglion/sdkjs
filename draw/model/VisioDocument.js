@@ -285,7 +285,7 @@
 			_ver_Zoom = (100 * h) / _pageHeight;
 
 		_value = Math.min(_hor_Zoom, _ver_Zoom);
-		
+
 		return _value;
 	};
 
@@ -741,7 +741,16 @@
 					"Check shape.elements --> ForeignData_Type obj. See shape:", shape);
 			}
 
-			let cShape = shape.convertToCShape(x_mm, y_mm, shapeWidth_mm, shapeHeight_mm, shapeAngle, uniFill, oStroke, this);
+			let flipXCell = shape.getCell("FlipX");
+			let flipHorizontally = flipXCell ? flipXCell.v === "1" : false;
+
+			let flipYCell = shape.getCell("FlipY");
+			let flipVertically = flipYCell ?  flipYCell.v === "1" : false;
+
+			
+			let cShape = shape.convertToCShape({x_mm: x_mm, y_mm: y_mm,
+				w_mm: shapeWidth_mm, h_mm: shapeHeight_mm, rot: shapeAngle, oFill: uniFill, oStroke: oStroke,
+				flipHorizontally: flipHorizontally, flipVertically: flipVertically, cVisioDocument: this});
 
 			shapes.push(cShape);
 		}

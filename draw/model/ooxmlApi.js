@@ -870,9 +870,21 @@
 
 	/**
 	 * @memberOf Shape_Type
+	 * @param {{x_mm, y_mm, w_mm, h_mm, rot, oFill, oStroke, flipHorizontally, flipVertically, cVisioDocument}} paramsObj
 	 * @return {CShape} CShape
 	 */
-	Shape_Type.prototype.convertToCShape = function(x, y, w_mm, h_mm, rot, oFill, oStroke, cVisioDocument) {
+	Shape_Type.prototype.convertToCShape = function(paramsObj) {
+		let x = paramsObj.x_mm;
+		let y = paramsObj.y_mm;
+		let w_mm = paramsObj.w_mm;
+		let h_mm = paramsObj.h_mm;
+		let rot = paramsObj.rot;
+		let oFill = paramsObj.oFill;
+		let oStroke = paramsObj.oStroke;
+		let cVisioDocument = paramsObj.cVisioDocument;
+		let flipHorizontally = paramsObj.flipHorizontally;
+		let flipVertically = paramsObj.flipVertically;
+
 		let shapeGeom = AscCommonDraw.getGeometryFromShape(this);
 
 		let sType   = "rect";
@@ -884,6 +896,8 @@
 		shape.spPr.xfrm.setOffX(x);
 		shape.spPr.xfrm.setOffY(y);
 		shape.spPr.xfrm.setRot(rot);
+		shape.spPr.xfrm.setFlipH(flipHorizontally);
+		shape.spPr.xfrm.setFlipV(flipVertically);
 
 		shape.spPr.setGeometry(shapeGeom);
 		shape.recalculate();
