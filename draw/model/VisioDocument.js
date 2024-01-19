@@ -265,6 +265,7 @@
 	};
 
 	/**
+	 * get zoom from 0 to 100
 	 * @memberOf CVisioDocument
 	 */
 	CVisioDocument.prototype.zoom_FitToPage_value = function(logic_w_mm, logic_h_mm, w_px, h_px) {
@@ -283,12 +284,8 @@
 		if (0 != _pageHeight)
 			_ver_Zoom = (100 * h) / _pageHeight;
 
-		// we take minimal zoom so page comes to closest canvas border
-		// 42.3 --> 41 is it ok? when Math.min(_hor_Zoom, _ver_Zoom) = 42.3
-		_value = (Math.min(_hor_Zoom, _ver_Zoom) - 0.5) >> 0;
-
-		if (_value < 5)
-			_value = 5;
+		_value = Math.min(_hor_Zoom, _ver_Zoom);
+		
 		return _value;
 	};
 
@@ -315,7 +312,7 @@
 
 		let _canvas = api.canvas;
 
-		// use scale
+		// consider scale for zoom
 		// consider previous scale maybe
 		_canvas.style.width = pageScale * 100 + "%";
 		_canvas.style.height = pageScale * 100 + "%";
@@ -325,7 +322,7 @@
 		_canvas.height = AscCommon.AscBrowser.convertToRetinaValue(_canvas.clientHeight, true);
 		var ctx = _canvas.getContext('2d');
 		ctx.fillStyle = "#FFFFFF";
-		// use scale
+		// consider scale for zoom
 		ctx.fillRect(0, 0, w_px * pageScale, h_px * pageScale);
 
 		var graphics = new AscCommon.CGraphics();
@@ -334,10 +331,10 @@
 
 		//visio y coordinate goes up while
 		//ECMA-376-11_5th_edition and Geometry.js y coordinate goes down
-		//so without mirror we get page up side down
+		//so without mirror we get page upside down
 		global_MatrixTransformer.Reflect(graphics.m_oCoordTransform, false, true);
 		global_MatrixTransformer.TranslateAppend(graphics.m_oCoordTransform, 0, h_px);
-		// use scale
+		// consider scale for zoom
 		global_MatrixTransformer.ScaleAppend(graphics.m_oCoordTransform, pageScale, pageScale);
 
 		let shapes = this.convertToShapes(logic_w_mm, logic_h_mm);
@@ -713,7 +710,6 @@
 				console.log("LinePattern cell for line stroke (border) was not found painting red");
 				oStrokeUniFill = AscFormat.CreateUnfilFromRGB(255,0,0);
 			}
-			// console.log("Calculated oStrokeUniFill unifill", oStrokeUniFill, "for shape", shape);
 
 			handleQuickStyleVariation(oStrokeUniFill, uniFill, shape);
 
@@ -734,8 +730,16 @@
 				lineWidthEmu = 9525;
 			}
 
+			// console.log("Calculated oStrokeUniFill unifill", oStrokeUniFill, "for shape", shape);
+			// console.log("Calculated fill UniFill", uniFill, "for shape", shape);
+
 			var oStroke = AscFormat.builder_CreateLine(lineWidthEmu, {UniFill: oStrokeUniFill});
 			// var oStroke = AscFormat.builder_CreateLine(12700, {UniFill: AscFormat.CreateUnfilFromRGB(255,0,0)});
+
+			if (shape.type === "Foreign") {
+				console.log("Shape has type Foreign and may not be displayed. " +
+					"Check shape.elements --> ForeignData_Type obj. See shape:", shape);
+			}
 
 			let cShape = shape.convertToCShape(x_mm, y_mm, shapeWidth_mm, shapeHeight_mm, shapeAngle, uniFill, oStroke, this);
 
