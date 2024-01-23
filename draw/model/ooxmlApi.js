@@ -1252,6 +1252,8 @@
 			w_mm: shapeWidth_mm, h_mm: shapeHeight_mm, rot: shapeAngle, oFill: uniFill, oStroke: oStroke,
 			flipHorizontally: flipHorizontally, flipVertically: flipVertically, cVisioDocument: visioDocument});
 
+		cShape.Id = String(this.iD); // it was string in cShape
+
 		return cShape;
 	}
 

@@ -356,12 +356,9 @@
 			}
 		}
 
-		let shapesAndGroups = this.convertToShapes(logic_w_mm, logic_h_mm);
-		shapesAndGroups.topLevelShapes.forEach(function(shape) {
-			drawShapeOrGroupRecursively(shape);
-		});
-		shapesAndGroups.topLevelGroups.forEach(function(group) {
-			drawShapeOrGroupRecursively(group);
+		let topLevelShapesAndGroups = this.convertToShapes(logic_w_mm, logic_h_mm);
+		topLevelShapesAndGroups.forEach(function(shapeOrGroup) {
+			drawShapeOrGroupRecursively(shapeOrGroup);
 		});
 	};
 	function getRandomPrst() {
@@ -389,6 +386,7 @@
 			} catch (e) {
 				// pinX or pinY is null is the only error for now
 				// console.log(e);
+				// handler is on level above
 				throw e;
 			}
 
@@ -404,6 +402,8 @@
 				groupShape.setSpPr(cShape.spPr);
 				groupShape.spPr.setParent(groupShape);
 				groupShape.rot = cShape.rot;
+
+				groupShape.Id = cShape.Id;
 
 				if (!currentGroupHandling) {
 					currentGroupHandling = groupShape;
@@ -448,14 +448,9 @@
 		let shapeClasses = [];
 
 		/**
-		 * @type {CShape[]}
+		 * @type {(CShape | CGroupShape)[]}
 		 */
-		let topLevelShapes = [];
-
-		/**
-		 * @type {CGroupShape[]}
-		 */
-		let topLevelGroups = [];
+		let topLevelShapesAndGroups = [];
 
 		let masters = this.joinMastersInfoAndContents();
 
@@ -470,10 +465,10 @@
 			try {
 				if (shape.type === "Group") {
 					let cGroupShape = convertToCGroupShapeRecursively(shape, this);
-					topLevelGroups.push(cGroupShape);
+					topLevelShapesAndGroups.push(cGroupShape);
 				} else {
 					let cShape = shape.convertToCShape(this);
-					topLevelShapes.push(cShape);
+					topLevelShapesAndGroups.push(cShape);
 				}
 			} catch (e) {
 				// the only error expected is PinX or PinY is null which is alright for some files
@@ -485,20 +480,7 @@
 			// shapeClasses = shapeClasses.concat(shape.collectSubshapesRecursive(false));
 		}
 
-		// let group = null;
-
-		// for (let i = 0; i < shapeClasses.length; i++) {
-		// 	const shape = shapeClasses[i];
-		// 	// if (shape.iD !== 108) {
-		// 	// 	continue;
-		// 	// }
-		//
-		//
-		//
-		//
-		// }
-
-		return {topLevelShapes: topLevelShapes, topLevelGroups: topLevelGroups};
+		return topLevelShapesAndGroups;
 	};
 
 	/**
