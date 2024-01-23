@@ -14724,7 +14724,11 @@
 		}
 
 
-		/* Common Functions For Builder*/
+
+		/**
+		 * Common Functions For Builder
+		 * @return {CShape}
+		 */
 		function builder_CreateShape(sType, nWidth, nHeight, oFill, oStroke, oParent, oTheme, oDrawingDocument, bWord, worksheet) {
 			var oShapeTrack = new AscFormat.NewShapeTrack(sType, 0, 0, oTheme, null, null, null, 0);
 			oShapeTrack.track({}, nWidth, nHeight);

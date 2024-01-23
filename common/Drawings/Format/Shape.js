@@ -3434,7 +3434,8 @@
 				}
 
 
-				if (this.checkAutofit && this.checkAutofit() && (!this.bWordShape || !this.group || this.bCheckAutoFitFlag) && !bNotesShape) {
+				if (this.checkAutofit && this.checkAutofit() &&
+					(!this.bWordShape || !this.group || this.bCheckAutoFitFlag) && !bNotesShape) {
 					var oBodyPr = this.getBodyPr();
 					if (this.bWordShape) {
 						if (this.recalcInfo.recalculateTxBoxContent) {

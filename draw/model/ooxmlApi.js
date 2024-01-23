@@ -34,9 +34,14 @@
 
 (function(window, document)
 {
-	// Docs old:
-	// Useless see ShapeSheet_Type - old
-	// Inherites(extends) ShapeSheet_Type in new schema
+
+	/**
+	 *    // Docs old:
+	 *    // Useless see ShapeSheet_Type - old
+	 *    // Inherites(extends) ShapeSheet_Type in new schema
+	 * @return {Shape_Type}
+	 * @constructor
+	 */
 	function Shape_Type() {
 		this.iD = null;
 		this.originalID = null;
@@ -321,6 +326,7 @@
 	 * returns this shape and subshapes array without cloning so objects are linked.
 	 * @param {boolean} [recalculatePinCords] if true changes subshapes cords from parent shape relative to absolute
 	 * @param [resultArray = []]
+	 * @memberof Shape_Type
 	 * @return {Shape_Type[]}
 	 */
 	Shape_Type.prototype.collectSubshapesRecursive = function(recalculatePinCords, resultArray) {
@@ -387,7 +393,7 @@
 	 *  Also use setter functions.
 	 *
 	 * @param masters
-	 * @param {Shape_Type[]} ancestorMasterShapes
+	 * @param {Shape_Type[]?} ancestorMasterShapes
 	 * @return {Shape_Type} shape with all its props
 	 */
 	Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive = function(masters, ancestorMasterShapes) {
@@ -869,11 +875,393 @@
 	}
 
 	/**
+	 * calculateShapeParamsAndConvertToCShape
+	 * @memberof Shape_Type
+	 * @param {CVisioDocument} visioDocument
+	 * @return {CShape | Error}
+	 */
+	Shape_Type.prototype.convertToCShape = function (visioDocument) {
+		function calculateCellUniFill(theme, shape, cell) {
+			let cellValue = cell && cell.v;
+			let cellName = cell && cell.n;
+
+			let uniFill;
+
+			if (/#\w{6}/.test(cellValue)) {
+				// check if hex
+				let rgba = AscCommon.RgbaHexToRGBA(cellValue);
+				uniFill = AscFormat.CreateUnfilFromRGB(rgba.R, rgba.G, rgba.B);
+			} else if (cellValue === 'Themed') {
+				// equal to THEMEVAL() call
+				uniFill = AscCommonDraw.themeval(theme, shape, cell);
+			} else {
+				let colorIndex = parseInt(cellValue);
+				if (!isNaN(colorIndex)) {
+					let rgba = AscCommon.RgbaHexToRGBA(cellValue);
+					switch (colorIndex) {
+						case 0:
+							rgba = AscCommon.RgbaHexToRGBA('#000000');
+							break;
+						case 1:
+							rgba = AscCommon.RgbaHexToRGBA('#FFFFFF');
+							break;
+						case 2:
+							rgba = AscCommon.RgbaHexToRGBA('#FF0000');
+							break;
+						case 3:
+							rgba = AscCommon.RgbaHexToRGBA('#00FF00');
+							break;
+						case 4:
+							rgba = AscCommon.RgbaHexToRGBA('#0000FF');
+							break;
+						case 5:
+							rgba = AscCommon.RgbaHexToRGBA('#FFFF00');
+							break;
+						case 6:
+							rgba = AscCommon.RgbaHexToRGBA('#FF00FF');
+							break;
+						case 7:
+							rgba = AscCommon.RgbaHexToRGBA('#00FFFF');
+							break;
+						case 8:
+							rgba = AscCommon.RgbaHexToRGBA('#800000');
+							break;
+						case 9:
+							rgba = AscCommon.RgbaHexToRGBA('#008000');
+							break;
+						case 10:
+							rgba = AscCommon.RgbaHexToRGBA('#000080');
+							break;
+						case 11:
+							rgba = AscCommon.RgbaHexToRGBA('#808000');
+							break;
+						case 12:
+							rgba = AscCommon.RgbaHexToRGBA('#800080');
+							break;
+						case 13:
+							rgba = AscCommon.RgbaHexToRGBA('#008080');
+							break;
+						case 14:
+							rgba = AscCommon.RgbaHexToRGBA('#C0C0C0');
+							break;
+						case 15:
+							rgba = AscCommon.RgbaHexToRGBA('#E6E6E6');
+							break;
+						case 16:
+							rgba = AscCommon.RgbaHexToRGBA('#CDCDCD');
+							break;
+						case 17:
+							rgba = AscCommon.RgbaHexToRGBA('#B3B3B3');
+							break;
+						case 18:
+							rgba = AscCommon.RgbaHexToRGBA('#9A9A9A');
+							break;
+						case 19:
+							rgba = AscCommon.RgbaHexToRGBA('#808080');
+							break;
+						case 20:
+							rgba = AscCommon.RgbaHexToRGBA('#666666');
+							break;
+						case 21:
+							rgba = AscCommon.RgbaHexToRGBA('#4D4D4D');
+							break;
+						case 22:
+							rgba = AscCommon.RgbaHexToRGBA('#333333');
+							break;
+						case 23:
+							rgba = AscCommon.RgbaHexToRGBA('#1A1A1A');
+							break;
+					}
+					if (rgba) {
+						uniFill = AscFormat.CreateUnfilFromRGB(rgba.R, rgba.G, rgba.B);
+					}
+				}
+			}
+			if (!uniFill) {
+				console.log("no color found. so painting lt1.");
+				uniFill = AscFormat.CreateUniFillByUniColor(AscFormat.builder_CreateSchemeColor("lt1"));
+			}
+			return uniFill;
+		}
+
+		function handleQuickStyleVariation(oStrokeUniFill, uniFill, shape) {
+			// https://learn.microsoft.com/en-us/openspecs/sharepoint_protocols/ms-vsdx/68bb0221-d8a1-476e-a132-8c60a49cea63?redirectedfrom=MSDN
+			// consider "QuickStyleVariation" cell
+			// https://visualsignals.typepad.co.uk/vislog/2013/05/visio-2013-themes-in-the-shapesheet-part-2.html
+			let backgroundColorHSL = {H: undefined, S: undefined, L: undefined};
+			let strokeColorHSL = {H: undefined, S: undefined, L: undefined};
+			let fillColorHSL = {H: undefined, S: undefined, L: undefined};
+			let strokeColor = oStrokeUniFill.fill && oStrokeUniFill.fill.color && oStrokeUniFill.fill.color.color.RGBA;
+			let fillColor = uniFill.fill && uniFill.fill.color && uniFill.fill.color.color.RGBA;
+
+			if (strokeColor !== undefined && fillColor !== undefined) {
+				AscFormat.CColorModifiers.prototype.RGB2HSL(255, 255, 255, backgroundColorHSL);
+				AscFormat.CColorModifiers.prototype.RGB2HSL(strokeColor.R, strokeColor.G, strokeColor.B, strokeColorHSL);
+				AscFormat.CColorModifiers.prototype.RGB2HSL(fillColor.R, fillColor.G, fillColor.B, fillColorHSL);
+
+				// covert L to percents
+				backgroundColorHSL.L = backgroundColorHSL.L / 255 * 100;
+				strokeColorHSL.L = strokeColorHSL.L / 255 * 100;
+				fillColorHSL.L = fillColorHSL.L / 255 * 100;
+
+				let quickStyleVariationCell = shape.getCell("QuickStyleVariation");
+				if (quickStyleVariationCell) {
+					let quickStyleVariationCellValue = Number(quickStyleVariationCell.v);
+					if ((quickStyleVariationCellValue & 4) === 4) {
+						// line color variation enabled (bit mask used)
+						if (Math.abs(backgroundColorHSL.L - strokeColorHSL.L) < 16.66) {
+							if (backgroundColorHSL.L <= 72.92) {
+								// if background is dark set stroke to white
+								strokeColor.R = 255;
+								strokeColor.G = 255;
+								strokeColor.B = 255;
+							} else {
+								if (Math.abs(backgroundColorHSL.L - fillColorHSL.L) >
+									Math.abs(backgroundColorHSL.L - strokeColorHSL.L)) {
+									// evaluation = THEMEVAL("FillColor")
+									// get theme shape fill color despite cell
+									// line below will give unifill with pattern maybe or gradient
+									// oStrokeUniFill = AscCommonDraw.themeval(this.theme, shape, null, "FillColor");
+									strokeColor.R = fillColor.R;
+									strokeColor.G = fillColor.G;
+									strokeColor.B = fillColor.B;
+								} else {
+									// evaluation = THEMEVAL("LineColor") or not affected I guess
+									// get theme line color despite cell
+									// oStrokeUniFill = AscCommonDraw.themeval(this.theme, shape, null, "LineColor");
+								}
+							}
+						}
+					}
+
+					if ((quickStyleVariationCellValue & 8) === 8) {
+						// fill color variation enabled (bit mask used)
+						if (Math.abs(backgroundColorHSL.L - fillColorHSL.L) < 16.66) {
+							if (backgroundColorHSL.L <= 72.92) {
+								// if background is dark set stroke to white
+								fillColor.R = 255;
+								fillColor.G = 255;
+								fillColor.B = 255;
+							} else {
+								if (Math.abs(backgroundColorHSL.L - strokeColorHSL.L) >
+									Math.abs(backgroundColorHSL.L - fillColorHSL.L)) {
+									// evaluation = THEMEVAL("FillColor")
+									// get theme shape fill color despite cell
+									// line below will give unifill with pattern maybe or gradient
+									// oStrokeUniFill = AscCommonDraw.themeval(this.theme, shape, null, "FillColor");
+									fillColor.R = strokeColor.R;
+									fillColor.G = strokeColor.G;
+									fillColor.B = strokeColor.B;
+								}
+							}
+						}
+					}
+
+					if ((quickStyleVariationCellValue & 2) === 2) {
+						// text color variation enabled (bit mask used)
+					}
+				}
+			}
+		}
+
+		//TODO import
+		/**
+		 * afin rotate clockwise
+		 * @param {number} x
+		 * @param {number} y
+		 * @param {number} radiansRotateAngle radians Rotate AntiClockWise Angle. E.g. 30 degrees rotates does DOWN.
+		 * @returns {{x: number, y: number}} point
+		 */
+		function rotatePointAroundCordsStartClockWise(x, y, radiansRotateAngle) {
+			let newX = x * Math.cos(radiansRotateAngle) + y * Math.sin(radiansRotateAngle);
+			let newY = x * (-1) * Math.sin(radiansRotateAngle) + y * Math.cos(radiansRotateAngle);
+			return {x : newX, y: newY};
+		}
+
+		// there was case with shape type group with no PinX and PinY
+		// https://disk.yandex.ru/d/tl877cuzcRcZYg
+		let pinXCell = this.getCell("PinX");
+		let pinX_inch;
+		if (pinXCell !== null) {
+			pinX_inch = Number(pinXCell.v);
+		}
+		let pinYCell = this.getCell("PinY");
+		let pinY_inch;
+		if (pinYCell !== null) {
+			pinY_inch = Number(pinYCell.v);
+		}
+		// also check for {}, undefined, NaN
+		if (isNaN(pinX_inch) || isNaN(pinY_inch)) {
+			// console.log('pinX_inch or pinY_inch is NaN for', this);
+			throw new Error("pinX_inch or pinY_inch is NaN for shape");
+		}
+
+		let shapeAngle = Number(this.getCell("Angle").v);
+		let locPinX_inch = Number(this.getCell("LocPinX").v);
+		let locPinY_inch = Number(this.getCell("LocPinY").v);
+		let shapeWidth_inch = Number(this.getCell("Width").v);
+		let shapeHeight_inch = Number(this.getCell("Height").v);
+
+		// PinX and PinY set shape rotate point and LocPinX LocPinY add offset to initial shape center
+		// to rotate around point we 1) add one more offset 2) rotate around center
+		// could be refactored maybe
+		// https://www.figma.com/file/jr1stjGUa3gKUBWxNAR80T/locPinHandle?type=design&node-id=0%3A1&mode=design&t=raXzFFsssqSexysi-1
+		let redVector = {x: -(locPinX_inch - shapeWidth_inch/2), y: -(locPinY_inch - shapeHeight_inch/2)};
+		// rotate antiClockWise by shapeAngle
+		let purpleVector = rotatePointAroundCordsStartClockWise(redVector.x, redVector.y, -shapeAngle);
+		let rotatedCenter = {x: pinX_inch - redVector.x + purpleVector.x, y: pinY_inch - redVector.y + purpleVector.y};
+		let turquoiseVector = {x: -shapeWidth_inch/2, y: -shapeHeight_inch/2};
+		let x_inch = rotatedCenter.x + turquoiseVector.x + redVector.x;
+		let y_inch = rotatedCenter.y + turquoiseVector.y + redVector.y;
+
+		let x_mm = x_inch * g_dKoef_in_to_mm;
+		let y_mm = y_inch * g_dKoef_in_to_mm;
+		let shapeWidth_mm = shapeWidth_inch * g_dKoef_in_to_mm;
+		let shapeHeight_mm = shapeHeight_inch * g_dKoef_in_to_mm;
+
+		// TODO check if gradient enabled
+		// let gradientEnabled = shape.getCell("FillGradientEnabled");
+		// console.log("Gradient enabled:", gradientEnabled);
+
+		let uniFill = null, uniFillForegnd = null, uniFillBkgnd = null, nPatternType = null;
+		let fillForegnd = this.getCell("FillForegnd");
+		if (fillForegnd) {
+			// console.log("FillForegnd was found:", fillForegnd);
+			uniFillForegnd = calculateCellUniFill(visioDocument.theme, this, fillForegnd);
+
+			let fillForegndTrans = this.getCell("FillForegndTrans");
+			if (fillForegndTrans) {
+				let fillForegndTransValue = Number(fillForegndTrans.v);
+				if (!isNaN(fillForegndTransValue)) {
+					let fillObj = uniFillForegnd.fill;
+					if (fillObj.constructor.name === "CPattFill") {
+						// pattern fill
+						fillObj.fgClr.color.RGBA.A = fillObj.fgClr.color.RGBA.A * (1 - fillForegndTransValue);
+					} else {
+						fillObj.color.color.RGBA.A = fillObj.color.color.RGBA.A * (1 - fillForegndTransValue);
+					}
+				} else {
+					// console.log("fillForegndTrans value is themed or something. Not calculated for", shape);
+				}
+			}
+		}
+		let fillBkgnd = this.getCell("FillBkgnd");
+		if (fillBkgnd) {
+			// console.log("FillBkgnd was found:", fillBkgnd);
+			uniFillBkgnd = calculateCellUniFill(visioDocument.theme, this, fillBkgnd);
+
+			let fillBkgndTrans = this.getCell("FillBkgndTrans");
+			if (fillBkgndTrans) {
+				let fillBkgndTransValue = Number(fillBkgndTrans.v);
+				if (!isNaN(fillBkgndTransValue)) {
+					let fillObj = uniFillBkgnd.fill;
+					if (fillObj.constructor.name === "CPattFill") {
+						// pattern fill
+						fillObj.bgClr.color.RGBA.A = fillObj.fgClr.color.RGBA.A * (1 - fillBkgndTransValue);
+					} else {
+						fillObj.color.color.RGBA.A = fillObj.color.color.RGBA.A * (1 - fillBkgndTransValue);
+					}
+				} else {
+					// console.log("fillBkgndTrans value is themed or something. Not calculated for", this);
+				}
+			}
+		}
+
+		let fillPattern = this.getCell("FillPattern");
+		if (fillPattern) {
+			// console.log("fillPattern was found:", fillPattern);
+			let fillPatternType = parseInt(fillPattern.v);
+			if (!isNaN(fillPatternType)) {
+				if (0 === fillPatternType) {
+					//todo
+					uniFillForegnd = AscFormat.CreateNoFillUniFill();
+				} else if(fillPatternType > 1) {
+					//todo types
+					nPatternType = 0;//"cross";
+				}
+			}
+		}
+		if (null !== nPatternType && uniFillBkgnd && uniFillForegnd) {
+			uniFill = AscFormat.CreatePatternFillUniFill(nPatternType, uniFillBkgnd.fill.color, uniFillForegnd.fill.color);
+			// uniFill = AscFormat.builder_CreatePatternFill(nPatternType, uniFillBkgnd.fill.color, uniFillForegnd.fill.color);
+		} else if (uniFillForegnd) {
+			uniFill = uniFillForegnd;
+		} else {
+			console.log("FillForegnd not found for shape", this);
+			uniFill = AscFormat.CreateNoFillUniFill();
+		}
+
+		let oStrokeUniFill = null;
+		// add read matrix modifier width?
+		let linePattern = this.getCell("LinePattern");
+		if (linePattern) {
+			if (linePattern.v === "0") {
+				oStrokeUniFill = AscFormat.CreateNoFillUniFill();
+			} else {
+				let lineColor = this.getCell("LineColor");
+				if (lineColor) {
+					// console.log("LineColor was found for shape", lineColor);
+					oStrokeUniFill = calculateCellUniFill(visioDocument.theme, this, lineColor);
+				} else {
+					console.log("LineColor cell for line stroke (border) was not found painting red");
+					oStrokeUniFill = AscFormat.CreateUnfilFromRGB(255,0,0);
+				}
+			}
+		} else {
+			console.log("LinePattern cell for line stroke (border) was not found painting red");
+			oStrokeUniFill = AscFormat.CreateUnfilFromRGB(255,0,0);
+		}
+
+		handleQuickStyleVariation(oStrokeUniFill, uniFill, this);
+
+		let lineWidthEmu = null;
+		let lineWeightCell = this.getCell("LineWeight");
+		if (lineWeightCell && lineWeightCell.v && lineWeightCell.v !== "Themed") {
+			// to cell.v visio always saves inches
+			let lineWeightInches = Number(lineWeightCell.v);
+			if (!isNaN(lineWeightInches)) {
+				lineWidthEmu = lineWeightInches * AscCommonWord.g_dKoef_in_to_mm * AscCommonWord.g_dKoef_mm_to_emu;
+			} else {
+				console.log("caught unknown error. line will be painted 9525 emus");
+				// 9255 emus = 0.01041666666666667 inches is document.xml StyleSheet ID=0 LineWeight e. g. default value
+				lineWidthEmu = 9525;
+			}
+		} else {
+			console.log("LineWeight cell was not calculated. line will be painted 9525 emus");
+			lineWidthEmu = 9525;
+		}
+
+		// console.log("Calculated oStrokeUniFill unifill", oStrokeUniFill, "for shape", this);
+		// console.log("Calculated fill UniFill", uniFill, "for shape", this);
+
+		var oStroke = AscFormat.builder_CreateLine(lineWidthEmu, {UniFill: oStrokeUniFill});
+		// var oStroke = AscFormat.builder_CreateLine(12700, {UniFill: AscFormat.CreateUnfilFromRGB(255,0,0)});
+
+		if (this.type === "Foreign") {
+			console.log("Shape has type Foreign and may not be displayed. " +
+				"Check shape.elements --> ForeignData_Type obj. See shape:", this);
+		}
+
+		let flipXCell = this.getCell("FlipX");
+		let flipHorizontally = flipXCell ? flipXCell.v === "1" : false;
+
+		let flipYCell = this.getCell("FlipY");
+		let flipVertically = flipYCell ?  flipYCell.v === "1" : false;
+
+		let cShape = this.convertToCShapeUsingParamsObj({x_mm: x_mm, y_mm: y_mm,
+			w_mm: shapeWidth_mm, h_mm: shapeHeight_mm, rot: shapeAngle, oFill: uniFill, oStroke: oStroke,
+			flipHorizontally: flipHorizontally, flipVertically: flipVertically, cVisioDocument: visioDocument});
+
+		return cShape;
+	}
+
+
+	/**
 	 * @memberOf Shape_Type
 	 * @param {{x_mm, y_mm, w_mm, h_mm, rot, oFill, oStroke, flipHorizontally, flipVertically, cVisioDocument}} paramsObj
 	 * @return {CShape} CShape
 	 */
-	Shape_Type.prototype.convertToCShape = function(paramsObj) {
+	Shape_Type.prototype.convertToCShapeUsingParamsObj = function(paramsObj) {
 		let x = paramsObj.x_mm;
 		let y = paramsObj.y_mm;
 		let w_mm = paramsObj.w_mm;
