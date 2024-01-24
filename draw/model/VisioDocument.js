@@ -370,9 +370,6 @@
 				let groupGeometry = cShapeFromGroup.getGeometry();
 				shape_drawer.draw(groupGeometry);
 
-				// try group draw
-				// shapeOrGroup.drawLocks(shapeOrGroup.transform, graphics);
-
 				shape_drawer.Clear();
 				graphics.RestoreGrState();
 
@@ -408,87 +405,6 @@
 	 * @memberOf CVisioDocument
 	 */
 	CVisioDocument.prototype.convertToShapes = function(logic_w_mm, logic_h_mm) {
-
-		/**
-		 * let's say shape can only have subshapes if its Type='Group'
-		 * @param {Shape_Type} shape
-		 * @param {CVisioDocument} visioDocument
-		 * @param {CGroupShape?} currentGroupHandling
-		 * @return {CGroupShape | Error}
-		 */
-		function convertToCGroupShapeRecursively(shape, visioDocument,
-												 currentGroupHandling) {
-			let cShape;
-			try {
-				cShape = shape.convertToCShape(visioDocument);
-			} catch (e) {
-				// pinX or pinY is null is the only error for now
-				// console.log(e);
-				// handler is on level above
-				throw e;
-			}
-
-			if (shape.type === "Group") {
-				let groupShape = new AscFormat.CGroupShape();
-				// group = groupShape;
-
-				groupShape.setLocks(0);
-
-				groupShape.setBDeleted(false);
-
-				groupShape.setSpPr(cShape.spPr);
-				groupShape.spPr.setParent(groupShape);
-				groupShape.rot = cShape.rot;
-				groupShape.brush = cShape.brush;
-				groupShape.bounds = cShape.bounds;
-				groupShape.flipH = cShape.flipH;
-				groupShape.flipV = cShape.flipV;
-				groupShape.localTransform = cShape.localTransform;
-				groupShape.pen = cShape.pen;
-
-				groupShape.Id = cShape.Id;
-
-				if (!currentGroupHandling) {
-					groupShape.setParent2(visioDocument);
-
-					currentGroupHandling = groupShape;
-					let subShapes = shape.getSubshapes();
-					for (let i = 0; i < subShapes.length; i++) {
-						const subShape = subShapes[i];
-						convertToCGroupShapeRecursively(subShape, visioDocument, currentGroupHandling);
-					}
-				} else {
-					groupShape.setParent2(currentGroupHandling);
-
-					currentGroupHandling.addToSpTree(currentGroupHandling.spTree.length, groupShape);
-					currentGroupHandling.spTree[currentGroupHandling.spTree.length-1].setGroup(currentGroupHandling);
-					groupShape.recalculateLocalTransform(groupShape.transform);
-
-					currentGroupHandling = groupShape;
-					let subShapes = shape.getSubshapes();
-					for (let i = 0; i < subShapes.length; i++) {
-						const subShape = subShapes[i];
-						convertToCGroupShapeRecursively(subShape, visioDocument, currentGroupHandling);
-					}
-				}
-			} else {
-				// if read cShape not CGroupShape
-				if (!currentGroupHandling) {
-					throw new Error("Group handler was called on simple shape");
-				} else {
-					currentGroupHandling.addToSpTree(currentGroupHandling.spTree.length, cShape);
-					currentGroupHandling.spTree[currentGroupHandling.spTree.length-1].setGroup(currentGroupHandling);
-					cShape.recalculateLocalTransform(cShape.transform);
-				}
-			}
-
-			if (currentGroupHandling) {
-				currentGroupHandling.recalculate();
-			}
-
-			return currentGroupHandling;
-		}
-
 		/**
 		 * @type {Shape_Type[]}
 		 */
@@ -504,14 +420,14 @@
 		for(let i = 0; i < this.pageContents[0].shapes.length; i++) {
 			let shape = this.pageContents[0].shapes[i];
 
-			shape.realizeMasterToShapeInheritanceRecursive(masters);
-			shape.realizeStyleToShapeInheritanceRecursive(this.styleSheets);
+			shape.realizeMasterInheritanceRecursively(masters);
+			shape.realizeStyleInheritanceRecursively(this.styleSheets);
 
 			// see sdkjs/common/Shapes/Serialize.js this.ReadGroupShape = function(type) to
 			// learn how to work with shape groups
 			try {
 				if (shape.type === "Group") {
-					let cGroupShape = convertToCGroupShapeRecursively(shape, this);
+					let cGroupShape = shape.convertToCGroupShapeRecursively(this);
 					topLevelShapesAndGroups.push(cGroupShape);
 				} else {
 					let cShape = shape.convertToCShape(this);

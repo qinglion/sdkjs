@@ -396,7 +396,7 @@
 	 * @param {Shape_Type[]?} ancestorMasterShapes
 	 * @return {Shape_Type} shape with all its props
 	 */
-	Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive = function(masters, ancestorMasterShapes) {
+	Shape_Type.prototype.realizeMasterInheritanceRecursively = function(masters, ancestorMasterShapes) {
 		// 2.2.5.4.1	Master-to-Shape Inheritance
 		// If shape has master or masterShape that have 1 top level shape
 		//  - inherit elements (sections, rows, cells) and subshapes
@@ -562,7 +562,7 @@
 		// call recursive on all subshapes
 		let subshapes = this.shapes;
 		subshapes.forEach(function(shape) {
-			shape.realizeMasterToShapeInheritanceRecursive(masters, ancestorMasterShapes);
+			shape.realizeMasterInheritanceRecursively(masters, ancestorMasterShapes);
 		});
 
 		// return thisShapeCopy;
@@ -726,17 +726,18 @@
 	}
 
 	/**
+	 * Style-To-Shape inheritance
 	 * Copy all style elements (sections, rows, cells) to shape.
 	 * (Doesnt take much memory < 300MB with master inheritance for the most large files)
 	 * @param styles
 	 */
-	Shape_Type.prototype.realizeStyleToShapeInheritanceRecursive = function(styles) {
+	Shape_Type.prototype.realizeStyleInheritanceRecursively = function(styles) {
 		realizeStyleToSheetObjInheritanceRecursive(this, styles);
 
 		// call recursive on all subshapes
 		let subshapes = this.shapes;
 		subshapes.forEach(function(shape) {
-			shape.realizeStyleToShapeInheritanceRecursive(styles);
+			shape.realizeStyleInheritanceRecursively(styles);
 		});
 	}
 
@@ -1257,6 +1258,87 @@
 		return cShape;
 	}
 
+	/**
+	 * converts !Shape TypeGroup! To CGroupShape Recursively.
+	 * let's say shape can only have subshapes if its Type='Group'.
+	 * @memberOf Shape_Type
+	 * @param {CVisioDocument} visioDocument
+	 * @param {CGroupShape?} currentGroupHandling
+	 * @return {CGroupShape | Error}
+	 */
+	Shape_Type.prototype.convertToCGroupShapeRecursively = function (visioDocument,
+																																								 currentGroupHandling) {
+		let cShape;
+		try {
+			cShape = this.convertToCShape(visioDocument);
+		} catch (e) {
+			// pinX or pinY is null is the only error for now
+			// console.log(e);
+			// handler is on level above
+			throw e;
+		}
+
+		if (this.type === "Group") {
+			let groupShape = new AscFormat.CGroupShape();
+			// this.graphicObjectsController = new AscFormat.DrawingObjectsController();
+			// let groupShape = AscFormat.builder_CreateGroup();
+
+			groupShape.setLocks(0);
+
+			groupShape.setBDeleted(false);
+
+			groupShape.setSpPr(cShape.spPr);
+			groupShape.spPr.setParent(groupShape);
+			groupShape.rot = cShape.rot;
+			groupShape.brush = cShape.brush;
+			groupShape.bounds = cShape.bounds;
+			groupShape.flipH = cShape.flipH;
+			groupShape.flipV = cShape.flipV;
+			groupShape.localTransform = cShape.localTransform;
+			groupShape.pen = cShape.pen;
+
+			groupShape.Id = cShape.Id;
+
+			if (!currentGroupHandling) {
+				groupShape.setParent2(visioDocument);
+
+				currentGroupHandling = groupShape;
+				let subShapes = this.getSubshapes();
+				for (let i = 0; i < subShapes.length; i++) {
+					const subShape = subShapes[i];
+					subShape.convertToCGroupShapeRecursively(visioDocument, currentGroupHandling);
+				}
+			} else {
+				groupShape.setParent2(currentGroupHandling);
+
+				currentGroupHandling.addToSpTree(currentGroupHandling.spTree.length, groupShape);
+				currentGroupHandling.spTree[currentGroupHandling.spTree.length-1].setGroup(currentGroupHandling);
+				groupShape.recalculateLocalTransform(groupShape.transform);
+
+				currentGroupHandling = groupShape;
+				let subShapes = this.getSubshapes();
+				for (let i = 0; i < subShapes.length; i++) {
+					const subShape = subShapes[i];
+					subShape.convertToCGroupShapeRecursively(visioDocument, currentGroupHandling);
+				}
+			}
+		} else {
+			// if read cShape not CGroupShape
+			if (!currentGroupHandling) {
+				throw new Error("Group handler was called on simple shape");
+			} else {
+				currentGroupHandling.addToSpTree(currentGroupHandling.spTree.length, cShape);
+				currentGroupHandling.spTree[currentGroupHandling.spTree.length-1].setGroup(currentGroupHandling);
+				cShape.recalculateLocalTransform(cShape.transform);
+			}
+		}
+
+		if (currentGroupHandling) {
+			currentGroupHandling.recalculate();
+		}
+
+		return currentGroupHandling;
+	}
 
 	/**
 	 * @memberOf Shape_Type
