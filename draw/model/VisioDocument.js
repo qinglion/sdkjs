@@ -341,6 +341,42 @@
 		function drawShapeOrGroupRecursively(shapeOrGroup) {
 			if (shapeOrGroup.spTree) {
 				// group came to argument
+				// draw group geometry
+				graphics.SaveGrState();
+				graphics.SetIntegerGrid(false);
+
+				graphics.transform3(shapeOrGroup.transform);
+
+				// create shape to draw group geometry
+				let cShapeFromGroup = new AscFormat.CShape();
+				// cShape.setParent();
+				cShapeFromGroup.setLocks(0);
+				cShapeFromGroup.setBDeleted(false);
+
+				cShapeFromGroup.setSpPr(shapeOrGroup.spPr);
+				cShapeFromGroup.spPr.setParent(cShapeFromGroup);
+				cShapeFromGroup.rot = shapeOrGroup.rot;
+				cShapeFromGroup.Id = shapeOrGroup.Id;
+				cShapeFromGroup.brush = shapeOrGroup.brush;
+				cShapeFromGroup.bounds = shapeOrGroup.bounds;
+				cShapeFromGroup.flipH = shapeOrGroup.flipH;
+				cShapeFromGroup.flipV = shapeOrGroup.flipV;
+				cShapeFromGroup.localTransform = shapeOrGroup.localTransform;
+				cShapeFromGroup.pen = shapeOrGroup.pen;
+
+
+				let shape_drawer = new AscCommon.CShapeDrawer();
+				shape_drawer.fromShape2(cShapeFromGroup, graphics, cShapeFromGroup.getGeometry());
+				let groupGeometry = cShapeFromGroup.getGeometry();
+				shape_drawer.draw(groupGeometry);
+
+				// try group draw
+				// shapeOrGroup.drawLocks(shapeOrGroup.transform, graphics);
+
+				shape_drawer.Clear();
+				graphics.RestoreGrState();
+
+				// handle group children
 				shapeOrGroup.spTree.forEach(drawShapeOrGroupRecursively);
 			} else {
 				// shape came to argument
@@ -348,10 +384,12 @@
 				graphics.SetIntegerGrid(false);
 
 				graphics.transform3(shapeOrGroup.transform);
+
 				let shape_drawer = new AscCommon.CShapeDrawer();
 				shape_drawer.fromShape2(shapeOrGroup, graphics, shapeOrGroup.getGeometry());
 				shape_drawer.draw(shapeOrGroup.getGeometry());
 				shape_drawer.Clear();
+
 				graphics.RestoreGrState();
 			}
 		}
@@ -397,15 +435,22 @@
 				groupShape.setLocks(0);
 
 				groupShape.setBDeleted(false);
-				groupShape.setParent2(this);
 
 				groupShape.setSpPr(cShape.spPr);
 				groupShape.spPr.setParent(groupShape);
 				groupShape.rot = cShape.rot;
+				groupShape.brush = cShape.brush;
+				groupShape.bounds = cShape.bounds;
+				groupShape.flipH = cShape.flipH;
+				groupShape.flipV = cShape.flipV;
+				groupShape.localTransform = cShape.localTransform;
+				groupShape.pen = cShape.pen;
 
 				groupShape.Id = cShape.Id;
 
 				if (!currentGroupHandling) {
+					groupShape.setParent2(visioDocument);
+
 					currentGroupHandling = groupShape;
 					let subShapes = shape.getSubshapes();
 					for (let i = 0; i < subShapes.length; i++) {
@@ -413,6 +458,8 @@
 						convertToCGroupShapeRecursively(subShape, visioDocument, currentGroupHandling);
 					}
 				} else {
+					groupShape.setParent2(currentGroupHandling);
+
 					currentGroupHandling.addToSpTree(currentGroupHandling.spTree.length, groupShape);
 					currentGroupHandling.spTree[currentGroupHandling.spTree.length-1].setGroup(currentGroupHandling);
 					groupShape.recalculateLocalTransform(groupShape.transform);
