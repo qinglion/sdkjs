@@ -1093,8 +1093,14 @@
 		}
 		// also check for {}, undefined, NaN
 		if (isNaN(pinX_inch) || isNaN(pinY_inch)) {
-			// console.log('pinX_inch or pinY_inch is NaN for', this);
-			throw new Error("pinX_inch or pinY_inch is NaN for shape");
+			console.log('pinX_inch or pinY_inch is NaN for Shape. Its ok sometimes. ' +
+				'Empty CShape is returned. See original shape: ', this);
+			// let's use empty shape
+			var spPr = new AscFormat.CSpPr();
+			let emptyCShape = new AscFormat.CShape();
+			emptyCShape.setSpPr(spPr);
+			spPr.setParent(emptyCShape)
+			return emptyCShape;
 		}
 
 		let shapeAngle = Number(this.getCell("Angle").v);
@@ -1268,15 +1274,7 @@
 	 */
 	Shape_Type.prototype.convertToCGroupShapeRecursively = function (visioDocument,
 																																								 currentGroupHandling) {
-		let cShape;
-		try {
-			cShape = this.convertToCShape(visioDocument);
-		} catch (e) {
-			// pinX or pinY is null is the only error for now
-			// console.log(e);
-			// handler is on level above
-			throw e;
-		}
+		let cShape = this.convertToCShape(visioDocument);
 
 		if (this.type === "Group") {
 			let groupShape = new AscFormat.CGroupShape();

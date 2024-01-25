@@ -338,6 +338,8 @@
 		// consider scale for zoom
 		global_MatrixTransformer.ScaleAppend(graphics.m_oCoordTransform, pageScale, pageScale);
 
+		// see sdkjs/common/Shapes/Serialize.js this.ReadGroupShape = function(type) to
+		// learn how to work with shape groups
 		function drawShapeOrGroupRecursively(shapeOrGroup) {
 			if (shapeOrGroup.spTree) {
 				// group came to argument
@@ -423,24 +425,13 @@
 			shape.realizeMasterInheritanceRecursively(masters);
 			shape.realizeStyleInheritanceRecursively(this.styleSheets);
 
-			// see sdkjs/common/Shapes/Serialize.js this.ReadGroupShape = function(type) to
-			// learn how to work with shape groups
-			try {
-				if (shape.type === "Group") {
-					let cGroupShape = shape.convertToCGroupShapeRecursively(this);
-					topLevelShapesAndGroups.push(cGroupShape);
-				} else {
-					let cShape = shape.convertToCShape(this);
-					topLevelShapesAndGroups.push(cShape);
-				}
-			} catch (e) {
-				// the only error expected is PinX or PinY is null which is alright for some files
-				// there was case with shape type group with no PinX and PinY
-				// https://disk.yandex.ru/d/tl877cuzcRcZYg
-				console.log(e, "for shape", shape);
+			if (shape.type === "Group") {
+				let cGroupShape = shape.convertToCGroupShapeRecursively(this);
+				topLevelShapesAndGroups.push(cGroupShape);
+			} else {
+				let cShape = shape.convertToCShape(this);
+				topLevelShapesAndGroups.push(cShape);
 			}
-
-			// shapeClasses = shapeClasses.concat(shape.collectSubshapesRecursive(false));
 		}
 
 		return topLevelShapesAndGroups;
