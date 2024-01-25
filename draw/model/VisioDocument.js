@@ -72,7 +72,7 @@
 		this.masterContents = [];
 		this.pages = null;
 		this.pageContents = [];
-		this.theme = new AscFormat.CTheme();
+		this.themes = [];
 		this.app = null;
 		this.core = null;
 		this.customProperties = null;
@@ -139,7 +139,7 @@
 			parseWindows.call(this, documentPart, reader, context);
 			parseMasters.call(this, documentPart, reader, context);
 			parsePages.call(this, documentPart, reader, context);
-			parseTheme.call(this, documentPart, reader, context);
+			parseThemes.call(this, documentPart, reader, context);
 			parseComments.call(this, documentPart, reader, context);
 			parseExtensions.call(this, documentPart, reader, context);
 			parseDataConnections.call(this, documentPart, reader, context);
@@ -172,7 +172,7 @@
 		let thumbNailPart = filePart.addPart(AscCommon.openXml.Types.thumbnail);
 		let windowsPart = docPart.part.addPart(AscCommon.openXml.Types.visioDocumentWindows);
 		let mastersPart = docPart.part.addPart(AscCommon.openXml.Types.masters);
-		let themePart = docPart.part.addPart(AscCommon.openXml.Types.theme);
+		let themesPart = docPart.part.addPart(AscCommon.openXml.Types.theme);
 		let commentsPart = docPart.part.addPart(AscCommon.openXml.Types.visioComments);
 		let extensionsPart = docPart.part.addPart(AscCommon.openXml.Types.visioExtensions);
 		let dataConnectionsPart = docPart.part.addPart(AscCommon.openXml.Types.visioDataConnections);
@@ -230,9 +230,9 @@
 			mastersPart.part.setDataXml(this.masters, memory);
 		}
 		pagesPart.part.setDataXml(this.pages, memory);
-		if (this.theme) {
-			// if Theme part exists (by docs it MUST exist)
-			themePart.part.setDataXml(this.theme, memory);
+		for (let i = 0; i < this.themes.length; i++) {
+			let themeContent = themesPart.part.addPart(AscCommon.openXml.Types.theme);
+			themeContent.part.setDataXml(this.themes[i], memory);
 		}
 		if (this.commentsPart) {
 			commentsPart.part.setDataXml(this.commentsPart, memory);
@@ -293,6 +293,9 @@
 	 * @memberOf CVisioDocument
 	 */
 	CVisioDocument.prototype.draw = function(pageScale) {
+		//HOTFIX
+		this.theme = this.themes[0];
+
 		let api = this.api;
 		//CSlideSize.prototype.DEFAULT_CX
 		//todo units, indexes
@@ -682,8 +685,7 @@
 			this.masters.fromXml(reader);
 
 			let masters = mastersPart.getPartsByRelationshipType(AscCommon.openXml.Types.master.relationType);
-			if (masters) {
-
+			if (masters.length > 0) {
 				// order is important so sort masters using uri
 				let mastersSort = [];
 				for (let i = 0; i < masters.length; i++) {
@@ -720,7 +722,7 @@
 			this.pages.fromXml(reader);
 
 			let pages = pagesPart.getPartsByRelationshipType(AscCommon.openXml.Types.page.relationType);
-			if (pages) {
+			if (pages.length  > 0) {
 				// order is important so sort masters using uri
 				let pagesSort = [];
 				for (let i = 0; i < pages.length; i++) {
@@ -747,15 +749,33 @@
 		}
 	}
 
-	function parseTheme(documentPart, reader, context) {
-		let themePart = documentPart.getPartByRelationshipType(AscCommon.openXml.Types.theme.relationType);
-		if (themePart) {
-			let themePartContent = themePart.getDocumentContent();
-			reader = new StaxParser(themePartContent, themePart, context);
-			this.theme = new AscFormat.CTheme();
-			this.theme.fromXml(reader, true);
+	function parseThemes(documentPart, reader, context) {
+		let themeParts = documentPart.getPartsByRelationshipType(AscCommon.openXml.Types.theme.relationType);
+		if (themeParts.length > 0) {
+			// order is important so sort themes using uri
+			let themesSort = [];
+			for (let i = 0; i < themeParts.length; i++) {
+				let themeNumber = +themeParts[i].uri.match(/\d+/)[0];
+				if (!isNaN(parseFloat(themeNumber)) && !isNaN(themeNumber)) {
+					// if themeNumber is number
+					themesSort[themeNumber - 1] = themeParts[i];
+				} else {
+					console.log('check sdkjs/draw/model/VisioDocument.js : parseThemes');
+					themesSort = themeParts;
+					break;
+				}
+			}
+			themeParts = themesSort;
+			for (let i = 0; i < themeParts.length; i++) {
+				let themePart = themeParts[i];
+				let themePartContent = themePart.getDocumentContent();
+				reader = new StaxParser(themePartContent, themePart, context);
+				let theme = new AscFormat.CTheme();
+				theme.fromXml(reader, true);
+				this.themes.push(theme);
+			}
 		} else {
-			this.theme = AscFormat.GenerateDefaultTheme(null, null);
+			this.themes.push(AscFormat.GenerateDefaultTheme(null, null));
 		}
 	}
 
@@ -819,7 +839,7 @@
 			this.solutions.fromXml(reader, true);
 
 			let solutions = solutionsPart.getPartsByRelationshipType(AscCommon.openXml.Types.solution.relationType);
-			if (solutions) {
+			if (solutions.length > 0) {
 				// order is important so sort masters using uri
 				let solutionsSort = [];
 				for (let i = 0; i < solutions.length; i++) {
