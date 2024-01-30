@@ -308,7 +308,10 @@
 			"common/openxml.js",
 			"draw/model/ooxmlApi.js",
 			"draw/model/visioFunctionsApi.js",
-			"draw/model/VisioDocument.js"
+			"draw/model/VisioDocument.js",
+
+			"slide/Editor/CollaborativeEditing.js",
+			"slide/apiBuilder.js"
 		],
 		"desktop": {
 			"min": [

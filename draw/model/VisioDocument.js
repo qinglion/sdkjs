@@ -325,7 +325,7 @@
 		_canvas.width = AscCommon.AscBrowser.convertToRetinaValue(_canvas.clientWidth, true);
 		_canvas.height = AscCommon.AscBrowser.convertToRetinaValue(_canvas.clientHeight, true);
 		var ctx = _canvas.getContext('2d');
-		ctx.fillStyle = "#FFFFFF";
+		ctx.fillStyle = "#EEEEEE";
 		// consider scale for zoom
 		ctx.fillRect(0, 0, w_px * pageScale, h_px * pageScale);
 
@@ -397,6 +397,7 @@
 		}
 
 		let topLevelShapesAndGroups = this.convertToShapes(logic_w_mm, logic_h_mm);
+
 		topLevelShapesAndGroups.forEach(function(shapeOrGroup) {
 			drawShapeOrGroupRecursively(shapeOrGroup);
 		});
@@ -409,7 +410,7 @@
 	/**
 	 * @memberOf CVisioDocument
 	 */
-	CVisioDocument.prototype.convertToShapes = function(logic_w_mm, logic_h_mm) {
+	CVisioDocument.prototype.convertToShapes = function() {
 		/**
 		 * @type {Shape_Type[]}
 		 */

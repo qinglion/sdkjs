@@ -1079,6 +1079,84 @@
 			return {x : newX, y: newY};
 		}
 
+		function addText(cShape) {
+			// see sdkjs/common/Drawings/CommonController.js createTextArt: function (nStyle, bWord, wsModel, sStartString)
+			// for examples
+			let oShape = cShape;
+			let sText = "Hello text";
+			let nFontSize = 16;
+			let bWord = false;
+
+			oShape.setWordShape(bWord === true);
+			oShape.setBDeleted(false);
+
+			if (bWord) {
+				nFontSize = 36;
+				oShape.createTextBoxContent();
+			} else {
+				nFontSize = 54;
+				oShape.createTextBody();
+			}
+
+			var oContent = oShape.getDocContent();
+			AscFormat.AddToContentFromString(oContent, sText);
+			oShape.bSelectedText = false;
+
+			var oTextPr;
+
+			oTextPr = new CTextPr();
+			oTextPr.FontSize = nFontSize;
+			oTextPr.RFonts.Ascii = {Name: "Cambria Math", Index: -1};
+			oTextPr.RFonts.HAnsi = {Name: "Cambria Math", Index: -1};
+			oTextPr.RFonts.CS = {Name: "Cambria Math", Index: -1};
+			oTextPr.RFonts.EastAsia = {Name: "Cambria Math", Index: -1};
+
+			oContent.SetApplyToAll(true);
+			oContent.AddToParagraph(new ParaTextPr(oTextPr));
+			oContent.SetParagraphAlign(AscCommon.align_Center);
+			oContent.SetApplyToAll(false);
+
+			var oBodyPr = oShape.getBodyPr().createDuplicate();
+			oBodyPr.rot = 0;
+			oBodyPr.spcFirstLastPara = false;
+			oBodyPr.vertOverflow = AscFormat.nVOTOverflow;
+			oBodyPr.horzOverflow = AscFormat.nHOTOverflow;
+			oBodyPr.vert = AscFormat.nVertTThorz;
+			oBodyPr.wrap = AscFormat.nTWTNone;
+			oBodyPr.setDefaultInsets();
+			oBodyPr.numCol = 1;
+			oBodyPr.spcCol = 0;
+			oBodyPr.rtlCol = 0;
+			oBodyPr.fromWordArt = false;
+			oBodyPr.anchor = 4;
+			oBodyPr.anchorCtr = false;
+			oBodyPr.forceAA = false;
+			oBodyPr.compatLnSpc = true;
+			oBodyPr.prstTxWarp = AscFormat.CreatePrstTxWarpGeometry("textNoShape");
+			oBodyPr.textFit = new AscFormat.CTextFit();
+			oBodyPr.textFit.type = AscFormat.text_fit_Auto;
+
+			// if (bWord) {
+			// 	oShape.setBodyPr(oBodyPr);
+			// } else {
+			// 	oShape.txBody.setBodyPr(oBodyPr);
+			// }
+
+			let oUniNvPr = new AscFormat.UniNvPr();
+			oUniNvPr.nvPr.ph = Asc.asc_docs_api.prototype.CreatePlaceholder("object");
+
+			oShape.txBody.content2 = oShape.txBody.content;
+
+			oShape.setNvSpPr(oUniNvPr);
+
+			oShape.recalculate();
+			// oShape.recalculateTextStyles();
+			// oShape.recalculateTransformText();
+			// oShape.recalculateContent()
+			// oShape.recalculateContent2();
+			// oShape.recalculateContentWitCompiledPr();
+		}
+
 		// there was case with shape type group with no PinX and PinY
 		// https://disk.yandex.ru/d/tl877cuzcRcZYg
 		let pinXCell = this.getCell("PinX");
@@ -1260,6 +1338,8 @@
 			flipHorizontally: flipHorizontally, flipVertically: flipVertically, cVisioDocument: visioDocument});
 
 		cShape.Id = String(this.iD); // it was string in cShape
+
+		addText(cShape);
 
 		return cShape;
 	}
