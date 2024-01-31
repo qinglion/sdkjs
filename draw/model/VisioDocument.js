@@ -329,7 +329,7 @@
 		_canvas.width = AscCommon.AscBrowser.convertToRetinaValue(_canvas.clientWidth, true);
 		_canvas.height = AscCommon.AscBrowser.convertToRetinaValue(_canvas.clientHeight, true);
 		var ctx = _canvas.getContext('2d');
-		ctx.fillStyle = "#EEEEEE";
+		ctx.fillStyle = "#FFFFFF";
 		// consider scale for zoom
 		ctx.fillRect(0, 0, w_px * pageScale, h_px * pageScale);
 
@@ -350,6 +350,8 @@
 		function drawShapeOrGroupRecursively(shapeOrGroup) {
 			if (shapeOrGroup.spTree) {
 				// group came to argument
+				// if we use CGroupShape.draw it doesn't draw group geometry, only its children
+
 				// draw group geometry
 				graphics.SaveGrState();
 				graphics.SetIntegerGrid(false);
@@ -415,6 +417,7 @@
 
 	/**
 	 * @memberOf CVisioDocument
+	 * @return {(CShape | CGroupShape)[]} topLevelShapesAndGroups
 	 */
 	CVisioDocument.prototype.convertToShapes = function() {
 		/**

@@ -142,12 +142,16 @@
 
 
 	function findObject(obj, constructorName, attributeName, attributeValue) {
+		let attributeCheck = true;
+		if (attributeName === undefined) {
+			attributeCheck = false;
+		}
 		// Base case: if the object is null or undefined, or if it's not an object
 		if (!obj || typeof obj !== 'object') {
 			return null;
 		}
 		// Check if the current object has the desired attribute, value, and constructor name
-		if (obj.constructor.name === constructorName && obj[attributeName] === attributeValue) {
+		if (obj.constructor.name === constructorName && (attributeCheck ? obj[attributeName] === attributeValue : true)) {
 			return obj;
 		}
 		// Iterate over object properties and recursively search for the attribute and constructor name
@@ -249,6 +253,19 @@
 	Shape_Type.prototype.getCell = function findCell(formula) {
 		// Cells can have N only no IX
 		return findObject(this.elements, "Cell_Type", "n", formula);
+	}
+
+	/**
+	 * Always use it see Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive js docs for explanation.
+	 * Finds shape text element.
+	 *
+	 * Returns object of shape not copy!
+	 *
+	 * @memberof Shape_Type
+	 * @returns {Text_Type | null}
+	 */
+	Shape_Type.prototype.getTextElement = function getTextElement() {
+		return findObject(this.elements, "Text_Type");
 	}
 
 	/**
@@ -1079,82 +1096,92 @@
 			return {x : newX, y: newY};
 		}
 
-		function addText(cShape) {
-			// see sdkjs/common/Drawings/CommonController.js createTextArt: function (nStyle, bWord, wsModel, sStartString)
-			// for examples
-			let oShape = cShape;
-			let sText = "Hello text";
-			let nFontSize = 16;
-			let bWord = false;
-
-			oShape.setWordShape(bWord === true);
-			oShape.setBDeleted(false);
-
-			if (bWord) {
-				nFontSize = 36;
-				oShape.createTextBoxContent();
-			} else {
-				nFontSize = 54;
-				oShape.createTextBody();
+		function handleText(shape, cShape) {
+			let textElement = shape.getTextElement();
+			if (!textElement) {
+				return;
 			}
 
-			var oContent = oShape.getDocContent();
-			AscFormat.AddToContentFromString(oContent, sText);
-			oShape.bSelectedText = false;
+			let sText = "";
+			textElement.elements.forEach(function(textElement) {
+				if (typeof textElement === "string") {
+					sText += textElement;
+				}
+			});
 
-			var oTextPr;
+			if (sText !== "") {
+				// see sdkjs/common/Drawings/CommonController.js createTextArt: function (nStyle, bWord, wsModel, sStartString)
+				// for examples
+				let nFontSize = 10;
+				let bWord = false;
 
-			oTextPr = new CTextPr();
-			oTextPr.FontSize = nFontSize;
-			oTextPr.RFonts.Ascii = {Name: "Arial", Index: -1};
-			oTextPr.RFonts.HAnsi = {Name: "Arial", Index: -1};
-			oTextPr.RFonts.CS = {Name: "Arial", Index: -1};
-			oTextPr.RFonts.EastAsia = {Name: "Arial", Index: -1};
+				cShape.setWordShape(bWord === true);
+				cShape.setBDeleted(false);
 
-			oContent.SetApplyToAll(true);
-			oContent.AddToParagraph(new ParaTextPr(oTextPr));
-			oContent.SetParagraphAlign(AscCommon.align_Center);
-			oContent.SetApplyToAll(false);
+				if (bWord) {
+					cShape.createTextBoxContent();
+				} else {
+					cShape.createTextBody();
+				}
 
-			var oBodyPr = oShape.getBodyPr().createDuplicate();
-			oBodyPr.rot = 0;
-			oBodyPr.spcFirstLastPara = false;
-			oBodyPr.vertOverflow = AscFormat.nVOTOverflow;
-			oBodyPr.horzOverflow = AscFormat.nHOTOverflow;
-			oBodyPr.vert = AscFormat.nVertTThorz;
-			oBodyPr.wrap = AscFormat.nTWTNone;
-			oBodyPr.setDefaultInsets();
-			oBodyPr.numCol = 1;
-			oBodyPr.spcCol = 0;
-			oBodyPr.rtlCol = 0;
-			oBodyPr.fromWordArt = false;
-			oBodyPr.anchor = 4;
-			oBodyPr.anchorCtr = false;
-			oBodyPr.forceAA = false;
-			oBodyPr.compatLnSpc = true;
-			oBodyPr.prstTxWarp = AscFormat.CreatePrstTxWarpGeometry("textNoShape");
-			oBodyPr.textFit = new AscFormat.CTextFit();
-			oBodyPr.textFit.type = AscFormat.text_fit_Auto;
+				var oContent = cShape.getDocContent();
+				AscFormat.AddToContentFromString(oContent, sText);
+				cShape.bSelectedText = false;
 
-			// if (bWord) {
-			// 	oShape.setBodyPr(oBodyPr);
-			// } else {
-			// 	oShape.txBody.setBodyPr(oBodyPr);
-			// }
+				var oTextPr;
 
-			let oUniNvPr = new AscFormat.UniNvPr();
-			oUniNvPr.nvPr.ph = Asc.asc_docs_api.prototype.CreatePlaceholder("object");
+				oTextPr = new CTextPr();
+				oTextPr.FontSize = nFontSize;
+				oTextPr.RFonts.Ascii = {Name: "Arial", Index: -1};
+				oTextPr.RFonts.HAnsi = {Name: "Arial", Index: -1};
+				oTextPr.RFonts.CS = {Name: "Arial", Index: -1};
+				oTextPr.RFonts.EastAsia = {Name: "Arial", Index: -1};
 
-			oShape.txBody.content2 = oShape.txBody.content;
+				oContent.SetApplyToAll(true);
+				oContent.AddToParagraph(new ParaTextPr(oTextPr));
+				oContent.SetParagraphAlign(AscCommon.align_Center);
+				oContent.SetApplyToAll(false);
 
-			oShape.setNvSpPr(oUniNvPr);
+				var oBodyPr = cShape.getBodyPr().createDuplicate();
+				oBodyPr.rot = 0;
+				oBodyPr.spcFirstLastPara = false;
+				oBodyPr.vertOverflow = AscFormat.nVOTOverflow;
+				oBodyPr.horzOverflow = AscFormat.nHOTOverflow;
+				oBodyPr.vert = AscFormat.nVertTThorz;
+				oBodyPr.wrap = AscFormat.nTWTSquare;
+				oBodyPr.setDefaultInsets();
+				oBodyPr.numCol = 1;
+				oBodyPr.spcCol = 0;
+				oBodyPr.rtlCol = 0;
+				oBodyPr.fromWordArt = false;
+				oBodyPr.anchor = 1; // 4 - bottom, 1,2,3 - center
+				oBodyPr.anchorCtr = false;
+				oBodyPr.forceAA = false;
+				oBodyPr.compatLnSpc = true;
+				oBodyPr.prstTxWarp = AscFormat.CreatePrstTxWarpGeometry("textNoShape");
+				oBodyPr.textFit = new AscFormat.CTextFit();
+				oBodyPr.textFit.type = AscFormat.text_fit_Auto;
 
-			oShape.recalculate();
-			// oShape.recalculateTextStyles();
-			// oShape.recalculateTransformText();
-			// oShape.recalculateContent()
-			// oShape.recalculateContent2();
-			// oShape.recalculateContentWitCompiledPr();
+				if (bWord) {
+					cShape.setBodyPr(oBodyPr);
+				} else {
+					cShape.txBody.setBodyPr(oBodyPr);
+				}
+
+				let oUniNvPr = new AscFormat.UniNvPr();
+				oUniNvPr.nvPr.ph = Asc.asc_docs_api.prototype.CreatePlaceholder("object");
+
+				// cShape.txBody.content2 = cShape.txBody.content;
+
+				cShape.setNvSpPr(oUniNvPr);
+
+				cShape.recalculate();
+				cShape.recalculateTextStyles();
+				cShape.recalculateTransformText();
+				cShape.recalculateContent()
+				cShape.recalculateContent2();
+				cShape.recalculateContentWitCompiledPr();
+			}
 		}
 
 		// there was case with shape type group with no PinX and PinY
@@ -1333,13 +1360,18 @@
 		let flipYCell = this.getCell("FlipY");
 		let flipVertically = flipYCell ?  flipYCell.v === "1" : false;
 
-		let cShape = this.convertToCShapeUsingParamsObj({x_mm: x_mm, y_mm: y_mm,
-			w_mm: shapeWidth_mm, h_mm: shapeHeight_mm, rot: shapeAngle, oFill: uniFill, oStroke: oStroke,
-			flipHorizontally: flipHorizontally, flipVertically: flipVertically, cVisioDocument: visioDocument});
+		let cShape = this.convertToCShapeUsingParamsObj({
+			x_mm: x_mm, y_mm: y_mm,
+			w_mm: shapeWidth_mm, h_mm: shapeHeight_mm,
+			rot: shapeAngle,
+			oFill: uniFill, oStroke: oStroke,
+			flipHorizontally: flipHorizontally, flipVertically: flipVertically,
+			cVisioDocument: visioDocument
+		});
 
 		cShape.Id = String(this.iD); // it was string in cShape
 
-		addText(cShape);
+		handleText(this, cShape);
 
 		return cShape;
 	}
@@ -1354,6 +1386,8 @@
 	 */
 	Shape_Type.prototype.convertToCGroupShapeRecursively = function (visioDocument,
 																																								 currentGroupHandling) {
+		// if we need to create CGroupShape create CShape first then copy its properties to CGroupShape object
+		// so anyway create CShape
 		let cShape = this.convertToCShape(visioDocument);
 
 		if (this.type === "Group") {

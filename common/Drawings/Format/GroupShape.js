@@ -439,6 +439,9 @@
 			return false;
 		};
 
+		/**
+		 * @memberOf CGroupShape
+		 */
 		CGroupShape.prototype.draw = function (graphics) {
 			if (this.checkNeedRecalculate && this.checkNeedRecalculate()) {
 				return;

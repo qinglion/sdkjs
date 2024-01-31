@@ -5050,6 +5050,9 @@
 			}
 		};
 
+		/**
+		 * @memberOf CShape
+		 */
 		CShape.prototype.draw = function (graphics, transform, transformText, pageIndex, opt) {
 
 			if (this.checkNeedRecalculate && this.checkNeedRecalculate()) {
