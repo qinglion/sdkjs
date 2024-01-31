@@ -9444,6 +9444,14 @@
 		doc.SearchEngine = {
 			Selection: []
 		};
+
+		doc.GetApi = function() {
+			return Asc.editor;
+		};
+
+		doc.GetDrawingDocument = function() {
+			return Asc.editor.getDrawingDocument();
+		};
 	}
 
 	/**
