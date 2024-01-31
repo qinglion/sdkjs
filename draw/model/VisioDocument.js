@@ -39,7 +39,7 @@
 	 * 	VisioDocument_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/visiodocument_type-complextypevisio-xml
 	 * @constructor
 	 */
-	function CVisioDocument(Api, isMainLogicDocument) {
+	function CVisioDocument(Api, DrawingDocument, isMainLogicDocument) {
 		this.start = null;
 		this.key = null;
 		this.metric = null;
@@ -99,6 +99,7 @@
 		this.tableId              = AscCommon.g_oTableId;
 		// this.collaborativeEditing = (("undefined" !== typeof(AscCommon.CWordCollaborativeEditing) && AscCommon.CollaborativeEditing instanceof AscCommon.CWordCollaborativeEditing) ? AscCommon.CollaborativeEditing : null);
 		this.api                  = Api;
+		this.DrawingDocument = DrawingDocument
 		//------------------------------------------------------------------------------------------------------------------
 		//  Выставляем ссылки на главный класс
 		//------------------------------------------------------------------------------------------------------------------
@@ -108,6 +109,9 @@
 			// 	this.history.Set_LogicDocument(this);
 		}
 		this.mainDocument = false !== isMainLogicDocument;
+
+		//stubs for compatibility with DocumentContent
+		AscCommon.mockLogicDoc(CVisioDocument.prototype);
 	}
 
 	/**

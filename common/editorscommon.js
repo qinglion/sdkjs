@@ -9415,6 +9415,36 @@
 
 		return result;
 	}
+	function mockLogicDoc(doc){
+		doc.Get_PageLimits = function(PageAbs) {
+			return {X: 0, Y: 0, XLimit: Page_Width, YLimit: Page_Height};
+		};
+		doc.Get_PageFields = function (PageAbs, isInHdrFtr) {
+			return {X: 0, Y: 0, XLimit: 2000, YLimit: 2000};
+		};
+
+		doc.IsTrackRevisions = function() {
+			return false;
+		};
+
+		doc.IsDocumentEditor = function() {
+			return false;
+		};
+		doc.Spelling = {
+			AddParagraphToCheck: function(Para) {}
+		};
+
+		doc.IsSplitPageBreakAndParaMark = function () {
+			return false;
+		};
+		doc.IsDoNotExpandShiftReturn = function () {
+			return false;
+		};
+
+		doc.SearchEngine = {
+			Selection: []
+		};
+	}
 
 	/**
 	 * Функция сравнивает две строки (они могут быть не заданы)
@@ -13410,6 +13440,7 @@
 	window["AscCommon"].CompareStrings = CompareStrings;
 	window["AscCommon"].IsSupportAscFeature = IsSupportAscFeature;
 	window["AscCommon"].IsSupportOFormFeature = IsSupportOFormFeature;
+	window["AscCommon"].mockLogicDoc = mockLogicDoc;
 
 	window["AscCommon"].loadSdk = loadSdk;
     window["AscCommon"].loadScript = loadScript;

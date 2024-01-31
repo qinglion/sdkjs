@@ -3896,36 +3896,7 @@
 
             const oShape = AscFormat.ExecuteNoHistory(function() {
 
-                const oMockLogicDoc = {
-                    Get_PageLimits : function(PageAbs) {
-                        return {X: 0, Y: 0, XLimit: Page_Width, YLimit: Page_Height};
-                    },
-                    Get_PageFields : function (PageAbs, isInHdrFtr) {
-                        return {X: 0, Y: 0, XLimit: 2000, YLimit: 2000};
-                    },
-
-                    IsTrackRevisions: function() {
-                        return false;
-                    },
-
-                    IsDocumentEditor: function() {
-                        return false;
-                    },
-                    Spelling: {
-                        AddParagraphToCheck: function(Para) {}
-                    },
-
-                    IsSplitPageBreakAndParaMark: function () {
-                        return false;
-                    },
-                    IsDoNotExpandShiftReturn: function () {
-                        return false;
-                    },
-
-                    SearchEngine: {
-                        Selection: []
-                    }
-                };
+                const oMockLogicDoc = AscCommon.mockLogicDoc({});
 
                 const oShape = new AscFormat.CShape();
                 oShape.setWorksheet(t.model);

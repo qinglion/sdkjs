@@ -1339,8 +1339,7 @@
 
 		cShape.Id = String(this.iD); // it was string in cShape
 
-		//addText(cShape);
-		cShape.txBody = null;
+		addText(cShape);
 
 		return cShape;
 	}

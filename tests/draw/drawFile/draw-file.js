@@ -31,23 +31,8 @@
  */
 +function ($) {
 	"use strict";
+	let api = new Asc.asc_docs_api({'id-view'  : 'editor_sdk'});
 
-	window.editor = new AscCommon.baseEditorsApi({});
-	let api = new Asc.asc_docs_api({
-		'id-view'  : 'editor_sdk'
-	});
-	window.editor = api;
-	//todo
-	window.editor = {
-		'WordControl': {
-			'm_oLogicDocument': {
-				'DrawingDocument': null,
-				"IsTrackRevisions": function () {
-					return false
-				}
-			}
-		}
-	};
 	var holder = document.getElementById("editor_sdk");
 	holder.ondragover = holderOnDradOver;
 	holder.ondrop = holderOnDrop;

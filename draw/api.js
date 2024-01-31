@@ -56,7 +56,10 @@
 	asc_docs_api.prototype.constructor = asc_docs_api;
 
 	asc_docs_api.prototype.InitEditor = function(){
-		this.Document = new AscCommonDraw.CVisioDocument(this);
+		this.Document = new AscCommonDraw.CVisioDocument(this, this.WordControl.m_oDrawingDocument);
+
+		this.WordControl.m_oLogicDocument = this.Document;
+		this.WordControl.m_oDrawingDocument.m_oLogicDocument = this.WordControl.m_oLogicDocument;
 	};
 	asc_docs_api.prototype._onEndLoadSdk  = function()
 	{
@@ -66,6 +69,12 @@
 	};
 	asc_docs_api.prototype.CreateComponents = function()
 	{
+		window.editor = this;
+
+		//stubs for html page
+		window.CLayoutThumbnailDrawer = function () {};
+		window.CMasterThumbnailDrawer = function () {};
+		this.WordControl  = new AscCommonSlide.CEditorPage(this);
 		if (this.HtmlElement != null)
 			this.HtmlElement.innerHTML = ("<div id=\"id_main\" class=\"block_elem\" style=\"width:100%;height:100%;touch-action:none;-ms-touch-action: none;-moz-user-select:none;-khtml-user-select:none;user-select:none;background-color:" + AscCommon.GlobalSkin.BackgroundColor + ";overflow:hidden;\" UNSELECTABLE=\"on\">\
                                     <div id=\"id_main_view\" class=\"block_elem\" style=\"width:100%;height:100%;touch-action:none;overflow:hidden\">\
