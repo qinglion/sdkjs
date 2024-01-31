@@ -1106,10 +1106,10 @@
 
 			oTextPr = new CTextPr();
 			oTextPr.FontSize = nFontSize;
-			oTextPr.RFonts.Ascii = {Name: "Cambria Math", Index: -1};
-			oTextPr.RFonts.HAnsi = {Name: "Cambria Math", Index: -1};
-			oTextPr.RFonts.CS = {Name: "Cambria Math", Index: -1};
-			oTextPr.RFonts.EastAsia = {Name: "Cambria Math", Index: -1};
+			oTextPr.RFonts.Ascii = {Name: "Arial", Index: -1};
+			oTextPr.RFonts.HAnsi = {Name: "Arial", Index: -1};
+			oTextPr.RFonts.CS = {Name: "Arial", Index: -1};
+			oTextPr.RFonts.EastAsia = {Name: "Arial", Index: -1};
 
 			oContent.SetApplyToAll(true);
 			oContent.AddToParagraph(new ParaTextPr(oTextPr));
@@ -1339,7 +1339,8 @@
 
 		cShape.Id = String(this.iD); // it was string in cShape
 
-		addText(cShape);
+		//addText(cShape);
+		cShape.txBody = null;
 
 		return cShape;
 	}

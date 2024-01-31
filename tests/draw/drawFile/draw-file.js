@@ -83,10 +83,23 @@
 	}
 
 
+
+
+	api.asyncFontsDocumentStartLoaded = function() {};
+	api.asyncFontsDocumentEndLoaded = function() {
+		api.Document.draw(pageScale);
+	};
+	api.asc_getLocale = function() {
+		return "en";
+	};
 	function drawFile(data){
 		api.asc_CloseFile();
 		api.OpenDocumentFromZip(data);
-		api.Document.draw(pageScale);
+
+
+		let aFonts = [];
+		aFonts.push(new AscFonts.CFont("Arial", 0, "", 0));
+		api.FontLoader.LoadDocumentFonts(aFonts, false);
 	}
 
 	function holderOnDradOver(e)

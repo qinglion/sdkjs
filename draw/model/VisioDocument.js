@@ -382,17 +382,19 @@
 				shapeOrGroup.spTree.forEach(drawShapeOrGroupRecursively);
 			} else {
 				// shape came to argument
-				graphics.SaveGrState();
-				graphics.SetIntegerGrid(false);
 
-				graphics.transform3(shapeOrGroup.transform);
-
-				let shape_drawer = new AscCommon.CShapeDrawer();
-				shape_drawer.fromShape2(shapeOrGroup, graphics, shapeOrGroup.getGeometry());
-				shape_drawer.draw(shapeOrGroup.getGeometry());
-				shape_drawer.Clear();
-
-				graphics.RestoreGrState();
+				shapeOrGroup.draw(graphics);
+				// graphics.SaveGrState();
+				// graphics.SetIntegerGrid(false);
+				//
+				// graphics.transform3(shapeOrGroup.transform);
+				//
+				// let shape_drawer = new AscCommon.CShapeDrawer();
+				// shape_drawer.fromShape2(shapeOrGroup, graphics, shapeOrGroup.getGeometry());
+				// shape_drawer.draw(shapeOrGroup.getGeometry());
+				// shape_drawer.Clear();
+				//
+				// graphics.RestoreGrState();
 			}
 		}
 
