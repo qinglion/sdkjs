@@ -1096,6 +1096,11 @@
 			return {x : newX, y: newY};
 		}
 
+		/**
+		 *
+		 * @param {Shape_Type} shape
+		 * @param {CShape} cShape
+		 */
 		function handleText(shape, cShape) {
 			let textElement = shape.getTextElement();
 			if (!textElement) {
@@ -1112,8 +1117,9 @@
 			if (sText !== "") {
 				// see sdkjs/common/Drawings/CommonController.js createTextArt: function (nStyle, bWord, wsModel, sStartString)
 				// for examples
+				// https://api.onlyoffice.com/docbuilder/textdocumentapi just some related info
 				let nFontSize = 10;
-				let bWord = false;
+				let bWord = true;
 
 				cShape.setWordShape(bWord === true);
 				cShape.setBDeleted(false);
@@ -1158,15 +1164,17 @@
 				oBodyPr.anchorCtr = false;
 				oBodyPr.forceAA = false;
 				oBodyPr.compatLnSpc = true;
-				oBodyPr.prstTxWarp = AscFormat.CreatePrstTxWarpGeometry("textNoShape");
-				oBodyPr.textFit = new AscFormat.CTextFit();
-				oBodyPr.textFit.type = AscFormat.text_fit_Auto;
+				// oBodyPr.prstTxWarp = AscFormat.CreatePrstTxWarpGeometry("textNoShape");
+				// oBodyPr.textFit = new AscFormat.CTextFit();
+				// oBodyPr.textFit.type = AscFormat.text_fit_Auto;
 
 				if (bWord) {
 					cShape.setBodyPr(oBodyPr);
 				} else {
 					cShape.txBody.setBodyPr(oBodyPr);
 				}
+
+				// cShape.setVerticalAlign(1); // sets text vert align equal to anchor set
 
 				let oUniNvPr = new AscFormat.UniNvPr();
 				oUniNvPr.nvPr.ph = Asc.asc_docs_api.prototype.CreatePlaceholder("object");
@@ -1175,10 +1183,21 @@
 
 				cShape.setNvSpPr(oUniNvPr);
 
+				// copy settings from presentations debug
+				// cShape.txBody.content.CurPos.TableMove = 1;
+				// cShape.txBody.content.ReindexStartPos = 0;
+				// cShape.txBody.content.Content[0].Content[1].CollPrChangeMine = false;
+				// cShape.txBody.content.Content[0].Content[1].State.ContentPos = 10;
+				// cShape.txBody.content.Content[0].Index = -1;
+				// cShape.txBody.compiledBodyPr = null;
+
+				// Set Paragraph (the only one paragraph exist) justify/align text - center
+				cShape.txBody.content.Content[0].Pr.SetJc(AscCommon.align_Center);
+
 				cShape.recalculate();
 				cShape.recalculateTextStyles();
-				cShape.recalculateTransformText();
-				cShape.recalculateContent()
+				cShape.recalculateTransformText(); // recalculates text position (i. e. transformText objects);
+				cShape.recalculateContent();
 				cShape.recalculateContent2();
 				cShape.recalculateContentWitCompiledPr();
 			}
