@@ -1119,7 +1119,7 @@
 				// for examples
 				// https://api.onlyoffice.com/docbuilder/textdocumentapi just some related info
 				let nFontSize = 10;
-				let bWord = true;
+				let bWord = false;
 
 				cShape.setWordShape(bWord === true);
 				cShape.setBDeleted(false);
@@ -1130,12 +1130,29 @@
 					cShape.createTextBody();
 				}
 
+				// AscFormat.AddToContentFromString(oContent, sText);
+
+				// copy https://api.onlyoffice.com/docbuilder/presentationapi/apishape using api implementation code
 				var oContent = cShape.getDocContent();
-				AscFormat.AddToContentFromString(oContent, sText);
-				cShape.bSelectedText = false;
+				cShape.setVerticalAlign(1); // sets text vert align center equal to anchor set to txBody bodyPr
+				let paragraph = new Paragraph(cShape.getDrawingDocument(), null, true);
 
+				// Set paragraph justify/align text - center
+				paragraph.Pr.SetJc(AscCommon.align_Center);
+
+				// ApiParagraph.prototype.AddText
+				var oRun = new ParaRun(paragraph, false);
+				oRun.AddText(sText);
+				paragraph.Add_ToContent(paragraph.Content.length - 1, oRun);
+
+				// oDocContent.Push(oParagraph); - ApiDocumentContent.prototype.Push
+				cShape.txBody.content.Content[0] = paragraph;
+				paragraph.SetParent(oContent);
+
+				// cShape.bSelectedText = false;
+
+				// setup text properties
 				var oTextPr;
-
 				oTextPr = new CTextPr();
 				oTextPr.FontSize = nFontSize;
 				oTextPr.RFonts.Ascii = {Name: "Arial", Index: -1};
@@ -1143,45 +1160,45 @@
 				oTextPr.RFonts.CS = {Name: "Arial", Index: -1};
 				oTextPr.RFonts.EastAsia = {Name: "Arial", Index: -1};
 
+				// apply text propterties
 				oContent.SetApplyToAll(true);
 				oContent.AddToParagraph(new ParaTextPr(oTextPr));
-				oContent.SetParagraphAlign(AscCommon.align_Center);
+				// oContent.SetParagraphAlign(AscCommon.align_Center);
 				oContent.SetApplyToAll(false);
-
-				var oBodyPr = cShape.getBodyPr().createDuplicate();
-				oBodyPr.rot = 0;
-				oBodyPr.spcFirstLastPara = false;
-				oBodyPr.vertOverflow = AscFormat.nVOTOverflow;
-				oBodyPr.horzOverflow = AscFormat.nHOTOverflow;
-				oBodyPr.vert = AscFormat.nVertTThorz;
-				oBodyPr.wrap = AscFormat.nTWTSquare;
-				oBodyPr.setDefaultInsets();
-				oBodyPr.numCol = 1;
-				oBodyPr.spcCol = 0;
-				oBodyPr.rtlCol = 0;
-				oBodyPr.fromWordArt = false;
-				oBodyPr.anchor = 1; // 4 - bottom, 1,2,3 - center
-				oBodyPr.anchorCtr = false;
-				oBodyPr.forceAA = false;
-				oBodyPr.compatLnSpc = true;
-				// oBodyPr.prstTxWarp = AscFormat.CreatePrstTxWarpGeometry("textNoShape");
-				// oBodyPr.textFit = new AscFormat.CTextFit();
-				// oBodyPr.textFit.type = AscFormat.text_fit_Auto;
-
-				if (bWord) {
-					cShape.setBodyPr(oBodyPr);
-				} else {
-					cShape.txBody.setBodyPr(oBodyPr);
-				}
-
-				// cShape.setVerticalAlign(1); // sets text vert align equal to anchor set
-
-				let oUniNvPr = new AscFormat.UniNvPr();
-				oUniNvPr.nvPr.ph = Asc.asc_docs_api.prototype.CreatePlaceholder("object");
-
-				// cShape.txBody.content2 = cShape.txBody.content;
-
-				cShape.setNvSpPr(oUniNvPr);
+				//
+				// var oBodyPr = cShape.getBodyPr().createDuplicate();
+				// oBodyPr.rot = 0;
+				// oBodyPr.spcFirstLastPara = false;
+				// oBodyPr.vertOverflow = AscFormat.nVOTOverflow;
+				// oBodyPr.horzOverflow = AscFormat.nHOTOverflow;
+				// oBodyPr.vert = AscFormat.nVertTThorz;
+				// oBodyPr.wrap = AscFormat.nTWTSquare;
+				// oBodyPr.setDefaultInsets();
+				// oBodyPr.numCol = 1;
+				// oBodyPr.spcCol = 0;
+				// oBodyPr.rtlCol = 0;
+				// oBodyPr.fromWordArt = false;
+				// oBodyPr.anchor = 1; // 4 - bottom, 1,2,3 - center
+				// oBodyPr.anchorCtr = false;
+				// oBodyPr.forceAA = false;
+				// oBodyPr.compatLnSpc = true;
+				// // oBodyPr.prstTxWarp = AscFormat.CreatePrstTxWarpGeometry("textNoShape");
+				// // oBodyPr.textFit = new AscFormat.CTextFit();
+				// // oBodyPr.textFit.type = AscFormat.text_fit_Auto;
+				//
+				// if (bWord) {
+				// 	cShape.setBodyPr(oBodyPr);
+				// } else {
+				// 	cShape.txBody.setBodyPr(oBodyPr);
+				// }
+				//
+				//
+				// let oUniNvPr = new AscFormat.UniNvPr();
+				// oUniNvPr.nvPr.ph = Asc.asc_docs_api.prototype.CreatePlaceholder("object");
+				//
+				// // cShape.txBody.content2 = cShape.txBody.content;
+				//
+				// cShape.setNvSpPr(oUniNvPr);
 
 				// copy settings from presentations debug
 				// cShape.txBody.content.CurPos.TableMove = 1;
@@ -1192,7 +1209,7 @@
 				// cShape.txBody.compiledBodyPr = null;
 
 				// Set Paragraph (the only one paragraph exist) justify/align text - center
-				cShape.txBody.content.Content[0].Pr.SetJc(AscCommon.align_Center);
+				// cShape.txBody.content.Content[0].Pr.SetJc(AscCommon.align_Center);
 
 				cShape.recalculate();
 				cShape.recalculateTextStyles();
