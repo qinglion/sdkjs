@@ -1118,10 +1118,15 @@
 				// see sdkjs/common/Drawings/CommonController.js createTextArt: function (nStyle, bWord, wsModel, sStartString)
 				// for examples
 				// https://api.onlyoffice.com/docbuilder/textdocumentapi just some related info
+
+				// cShape.transformText represents left-upper corner of paragraph.
+				// It doesnt matter if text in paragraph is aligned to left or to right,
+				// cShape.transformText (which is equal to cShape.localTransformText) will be the same.
+
 				let nFontSize = 10;
 				let bWord = false;
 
-				cShape.setWordShape(bWord === true);
+				cShape.setWordShape(bWord);
 				cShape.setBDeleted(false);
 
 				if (bWord) {
@@ -1130,26 +1135,12 @@
 					cShape.createTextBody();
 				}
 
-				// AscFormat.AddToContentFromString(oContent, sText);
-
-				// copy https://api.onlyoffice.com/docbuilder/presentationapi/apishape using api implementation code
 				var oContent = cShape.getDocContent();
 				cShape.setVerticalAlign(1); // sets text vert align center equal to anchor set to txBody bodyPr
-				let paragraph = new Paragraph(cShape.getDrawingDocument(), null, true);
 
-				// Set paragraph justify/align text - center
-				paragraph.Pr.SetJc(AscCommon.align_Center);
+				AscFormat.AddToContentFromString(oContent, sText);
 
-				// ApiParagraph.prototype.AddText
-				var oRun = new ParaRun(paragraph, false);
-				oRun.AddText(sText);
-				paragraph.Add_ToContent(paragraph.Content.length - 1, oRun);
-
-				// oDocContent.Push(oParagraph); - ApiDocumentContent.prototype.Push
-				cShape.txBody.content.Content[0] = paragraph;
-				paragraph.SetParent(oContent);
-
-				// cShape.bSelectedText = false;
+				cShape.bSelectedText = false;
 
 				// setup text properties
 				var oTextPr;
@@ -1163,16 +1154,16 @@
 				// apply text propterties
 				oContent.SetApplyToAll(true);
 				oContent.AddToParagraph(new ParaTextPr(oTextPr));
-				// oContent.SetParagraphAlign(AscCommon.align_Center);
+				oContent.SetParagraphAlign(AscCommon.align_Center);
 				oContent.SetApplyToAll(false);
-				//
-				// var oBodyPr = cShape.getBodyPr().createDuplicate();
+
+				var oBodyPr = cShape.getBodyPr().createDuplicate();
 				// oBodyPr.rot = 0;
 				// oBodyPr.spcFirstLastPara = false;
 				// oBodyPr.vertOverflow = AscFormat.nVOTOverflow;
 				// oBodyPr.horzOverflow = AscFormat.nHOTOverflow;
-				// oBodyPr.vert = AscFormat.nVertTThorz;
-				// oBodyPr.wrap = AscFormat.nTWTSquare;
+				// oBodyPr.vert = AscFormat.nVertTThorz; // default //( ( Horizontal ))
+				// oBodyPr.wrap = AscFormat.nTWTSquare; // default
 				// oBodyPr.setDefaultInsets();
 				// oBodyPr.numCol = 1;
 				// oBodyPr.spcCol = 0;
@@ -1183,14 +1174,17 @@
 				// oBodyPr.forceAA = false;
 				// oBodyPr.compatLnSpc = true;
 				// // oBodyPr.prstTxWarp = AscFormat.CreatePrstTxWarpGeometry("textNoShape");
-				// // oBodyPr.textFit = new AscFormat.CTextFit();
-				// // oBodyPr.textFit.type = AscFormat.text_fit_Auto;
-				//
-				// if (bWord) {
-				// 	cShape.setBodyPr(oBodyPr);
-				// } else {
-				// 	cShape.txBody.setBodyPr(oBodyPr);
-				// }
+
+				// cShape.bCheckAutoFitFlag = true;
+				// oBodyPr.textFit = new AscFormat.CTextFit();
+				// oBodyPr.textFit.type = AscFormat.text_fit_Auto;
+
+				// oBodyPr.upright = false; // default
+				if (bWord) {
+					cShape.setBodyPr(oBodyPr);
+				} else {
+					cShape.txBody.setBodyPr(oBodyPr);
+				}
 				//
 				//
 				// let oUniNvPr = new AscFormat.UniNvPr();
@@ -1212,11 +1206,13 @@
 				// cShape.txBody.content.Content[0].Pr.SetJc(AscCommon.align_Center);
 
 				cShape.recalculate();
-				cShape.recalculateTextStyles();
-				cShape.recalculateTransformText(); // recalculates text position (i. e. transformText objects);
-				cShape.recalculateContent();
-				cShape.recalculateContent2();
-				cShape.recalculateContentWitCompiledPr();
+				cShape.recalculateLocalTransform(cShape.transform);
+
+				// cShape.recalculateTextStyles();
+				// cShape.recalculateTransformText(); // recalculates text position (i. e. transformText objects);
+				// cShape.recalculateContent();
+				// cShape.recalculateContent2();
+				// cShape.recalculateContentWitCompiledPr();
 			}
 		}
 
@@ -1407,6 +1403,7 @@
 
 		cShape.Id = String(this.iD); // it was string in cShape
 
+		// and recalculate
 		handleText(this, cShape);
 
 		return cShape;
@@ -1520,7 +1517,7 @@
 		shape.spPr.xfrm.setFlipV(flipVertically);
 
 		shape.spPr.setGeometry(shapeGeom);
-		shape.recalculate();
+		// shape.recalculate();
 		return shape;
 	};
 
