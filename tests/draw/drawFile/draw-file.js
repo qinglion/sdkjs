@@ -80,7 +80,7 @@
 	function drawFile(data){
 		api.asc_CloseFile();
 		api.OpenDocumentFromZip(data);
-
+		AscCommon.g_oIdCounter.Set_Load(false);
 
 		let aFonts = [];
 		aFonts.push(new AscFonts.CFont("Arial", 0, "", 0));

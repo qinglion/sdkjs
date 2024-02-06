@@ -110,8 +110,9 @@
 	};
 	asc_docs_api.prototype.asc_CloseFile            = function()
 	{
-		History.Clear();
-		g_oTableId.Clear();
+		AscCommon.History.Clear();
+		AscCommon.g_oTableId.Clear();
+		AscCommon.g_oIdCounter.Clear();
 		this.isApplyChangesOnOpenEnabled = true;
 		this.isDocumentLoadComplete = false;
 		this.turnOffSpecialModes();
