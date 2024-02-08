@@ -213,16 +213,13 @@
 
 	/**
 	 * Always use it see Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive js docs for explanation.
-	 * Finds shape cell by formula - if it is /d+ search goes by IX attribute or
-	 * search by N attribute otherwise. But if it is Geometry search by both N and IX and
-	 * use formula like Geometry0, Geometry1, Geometry2, ... So if it is N use name of Section
-	 * if search is by IX use number only
+	 * Finds shape section by formula. Compares N with string argument. For Geometry use find sections.
 	 * @param {String} formula
 	 * @memberof Shape_Type
 	 * @returns {Section_Type | null}
 	 */
-	Shape_Type.prototype.getSection = function findSection(formula) {
-		throw new Error("Shape_Type.prototype.findSection not realized");
+	Shape_Type.prototype.getSection = function getSection(formula) {
+		return findObject(this.elements, "Section_Type", "n", formula);
 	}
 
 	/**
@@ -899,19 +896,32 @@
 	 * @return {CShape | Error}
 	 */
 	Shape_Type.prototype.convertToCShape = function (visioDocument) {
-		function calculateCellUniFill(theme, shape, cell) {
+		/**
+		 * Can parse themeval
+		 * @param {CTheme} theme
+		 * @param {Shape_Type} shape
+		 * @param {Cell_Type} cell
+		 * @return {(CUniFill | CUniColor | *)}
+		 */
+		function calculateCellValue(theme, shape, cell) {
 			let cellValue = cell && cell.v;
 			let cellName = cell && cell.n;
 
-			let uniFill;
+			let returnValue;
 
 			if (/#\w{6}/.test(cellValue)) {
 				// check if hex
 				let rgba = AscCommon.RgbaHexToRGBA(cellValue);
-				uniFill = AscFormat.CreateUnfilFromRGB(rgba.R, rgba.G, rgba.B);
+				if (cellName === "LineColor" || cellName === "FillForegnd") {
+					returnValue = AscFormat.CreateUnfilFromRGB(rgba.R, rgba.G, rgba.B);
+				} else if (cellName === "Color") {
+					// for text color
+					returnValue = AscFormat.CreateUnfilFromRGB(rgba.R, rgba.G, rgba.B).fill.color;
+				}
+
 			} else if (cellValue === 'Themed') {
 				// equal to THEMEVAL() call
-				uniFill = AscCommonDraw.themeval(theme, shape, cell);
+				returnValue = AscCommonDraw.themeval(theme, shape, cell);
 			} else {
 				let colorIndex = parseInt(cellValue);
 				if (!isNaN(colorIndex)) {
@@ -991,15 +1001,21 @@
 							break;
 					}
 					if (rgba) {
-						uniFill = AscFormat.CreateUnfilFromRGB(rgba.R, rgba.G, rgba.B);
+						returnValue = AscFormat.CreateUnfilFromRGB(rgba.R, rgba.G, rgba.B);
+						if (cellName === "Color") {
+							returnValue = returnValue.fill.color;
+						}
 					}
 				}
 			}
-			if (!uniFill) {
+			if (!returnValue) {
 				console.log("no color found. so painting lt1.");
-				uniFill = AscFormat.CreateUniFillByUniColor(AscFormat.builder_CreateSchemeColor("lt1"));
+				returnValue = AscFormat.CreateUniFillByUniColor(AscFormat.builder_CreateSchemeColor("lt1"));
+				if (cellName === "Color") {
+					returnValue = returnValue.fill.color;
+				}
 			}
-			return uniFill;
+			return returnValue;
 		}
 
 		function handleQuickStyleVariation(oStrokeUniFill, uniFill, shape) {
@@ -1077,6 +1093,7 @@
 
 					if ((quickStyleVariationCellValue & 2) === 2) {
 						// text color variation enabled (bit mask used)
+						console.log("Text color variation is not realized");
 					}
 				}
 			}
@@ -1097,123 +1114,172 @@
 		}
 
 		/**
-		 *
+		 * @param {CTheme} theme
 		 * @param {Shape_Type} shape
 		 * @param {CShape} cShape
 		 */
-		function handleText(shape, cShape) {
+		function handleText(theme, shape, cShape) {
+			// see 2.2.8	Text [MS-VSDX]-220215
+
 			let textElement = shape.getTextElement();
 			if (!textElement) {
 				return;
 			}
 
-			let sText = "";
-			textElement.elements.forEach(function(textElement) {
-				if (typeof textElement === "string") {
-					sText += textElement;
+			// set default settings
+			// see sdkjs/common/Drawings/CommonController.js createTextArt: function (nStyle, bWord, wsModel, sStartString)
+			// for examples
+			// https://api.onlyoffice.com/docbuilder/textdocumentapi just some related info
+			let nFontSize = 10;
+			let bWord = false;
+			cShape.setWordShape(bWord);
+			cShape.setBDeleted(false);
+			if (bWord) {
+				cShape.createTextBoxContent();
+			} else {
+				cShape.createTextBody();
+			}
+			cShape.setVerticalAlign(1); // sets text vert align center equal to anchor set to txBody bodyPr
+			cShape.bSelectedText = false;
+
+			// instead of AscFormat.AddToContentFromString(oContent, sText);
+			// use https://api.onlyoffice.com/docbuilder/presentationapi/apishape api implementation code
+			// to work with text separated into ParaRuns to split properties use
+			// now create paragraph
+			let oContent = cShape.getDocContent();
+			let paragraph = new Paragraph(cShape.getDrawingDocument(), null, true);
+			// Set paragraph justify/align text - center
+			paragraph.Pr.SetJc(AscCommon.align_Center);
+			// oDocContent.Push(oParagraph); - ApiDocumentContent.prototype.Push
+			cShape.txBody.content.Content = [paragraph];
+			paragraph.SetParent(oContent);
+
+			// read propsCommonObjects
+			let characherPropsCommon = shape.getSection("Character");
+
+			// to store last entries of cp/pp/tp like
+			//					<cp IX='0'/> or
+			//         <pp IX='0'/> or
+			//         <tp IX='0'/>
+			// character properties are used until another element specifies new character properties.
+			// TODO tp_Type in not parsed?
+			let propsRunsObjects = {
+				"cp_Type": null,
+				"pp_Type": null,
+				"tp_Type": null
+			};
+
+			// read text
+			textElement.elements.forEach(function(textElementPart, i) {
+				if (typeof textElementPart === "string") {
+					// TODO The characters in a text run can be specified explicitly or can be a reference to a text field.
+
+					// create paraRun using propsObjects
+					// equal to ApiParagraph.prototype.AddText method
+					let oRun = new ParaRun(paragraph, false);
+					oRun.AddText(textElementPart);
+
+					// setup Run
+					// check character properties
+					let characterRowNum = propsRunsObjects["cp_Type"] && propsRunsObjects["cp_Type"].iX;
+					let characterPropsFinal = characterRowNum !== null && characherPropsCommon.getRow(characterRowNum);
+					let characterColorCell = characterPropsFinal && characterPropsFinal.getCell("Color");
+					if (characterColorCell && characterColorCell.constructor.name === "Cell_Type") {
+						let fontColor = calculateCellValue(theme, shape, characterColorCell);
+						// no a channel considered
+						fontColor.Calculate(theme);
+						var textColor1 = new CDocumentColor(fontColor.color.RGBA.R, fontColor.color.RGBA.G,
+							fontColor.color.RGBA.B, false);
+						oRun.Set_Color(textColor1);
+					}
+
+					// add run to paragraph
+					paragraph.Add_ToContent(paragraph.Content.length - 1, oRun);
+				} else {
+					// push props object
+					let textElementName = textElementPart.constructor.name;
+					if (textElementName === "cp_Type" || textElementName === "tp_Type" || textElementName === "pp_Type") {
+						propsRunsObjects[textElementName] = textElementPart;
+					} else if (textElementName === "fld_Type") {
+						console.log("fld_Type is unhandled for now");
+					} else {
+						console.log("undkown type in text tag");
+					}
 				}
 			});
 
-			if (sText !== "") {
-				// see sdkjs/common/Drawings/CommonController.js createTextArt: function (nStyle, bWord, wsModel, sStartString)
-				// for examples
-				// https://api.onlyoffice.com/docbuilder/textdocumentapi just some related info
+			// setup text properties
+			var oTextPr;
+			oTextPr = new CTextPr();
+			oTextPr.FontSize = nFontSize;
+			oTextPr.RFonts.Ascii = {Name: "Arial", Index: -1};
+			oTextPr.RFonts.HAnsi = {Name: "Arial", Index: -1};
+			oTextPr.RFonts.CS = {Name: "Arial", Index: -1};
+			oTextPr.RFonts.EastAsia = {Name: "Arial", Index: -1};
 
-				// cShape.transformText represents left-upper corner of paragraph.
-				// It doesnt matter if text in paragraph is aligned to left or to right,
-				// cShape.transformText (which is equal to cShape.localTransformText) will be the same.
+			// apply text propterties
+			oContent.SetApplyToAll(true);
+			oContent.AddToParagraph(new ParaTextPr(oTextPr));
+			// oContent.SetParagraphAlign(AscCommon.align_Center);
+			oContent.SetApplyToAll(false);
 
-				let nFontSize = 10;
-				let bWord = false;
+			var oBodyPr = cShape.getBodyPr().createDuplicate();
+			// oBodyPr.rot = 0;
+			// oBodyPr.spcFirstLastPara = false;
+			// oBodyPr.vertOverflow = AscFormat.nVOTOverflow;
+			// oBodyPr.horzOverflow = AscFormat.nHOTOverflow;
+			// oBodyPr.vert = AscFormat.nVertTThorz; // default //( ( Horizontal ))
+			// oBodyPr.wrap = AscFormat.nTWTSquare; // default
+			// oBodyPr.setDefaultInsets();
+			// oBodyPr.numCol = 1;
+			// oBodyPr.spcCol = 0;
+			// oBodyPr.rtlCol = 0;
+			// oBodyPr.fromWordArt = false;
+			// oBodyPr.anchor = 1; // 4 - bottom, 1,2,3 - center
+			// oBodyPr.anchorCtr = false;
+			// oBodyPr.forceAA = false;
+			// oBodyPr.compatLnSpc = true;
+			// // oBodyPr.prstTxWarp = AscFormat.CreatePrstTxWarpGeometry("textNoShape");
 
-				cShape.setWordShape(bWord);
-				cShape.setBDeleted(false);
+			// cShape.bCheckAutoFitFlag = true;
+			// oBodyPr.textFit = new AscFormat.CTextFit();
+			// oBodyPr.textFit.type = AscFormat.text_fit_Auto;
 
-				if (bWord) {
-					cShape.createTextBoxContent();
-				} else {
-					cShape.createTextBody();
-				}
-
-				var oContent = cShape.getDocContent();
-				cShape.setVerticalAlign(1); // sets text vert align center equal to anchor set to txBody bodyPr
-
-				AscFormat.AddToContentFromString(oContent, sText);
-
-				cShape.bSelectedText = false;
-
-				// setup text properties
-				var oTextPr;
-				oTextPr = new CTextPr();
-				oTextPr.FontSize = nFontSize;
-				oTextPr.RFonts.Ascii = {Name: "Arial", Index: -1};
-				oTextPr.RFonts.HAnsi = {Name: "Arial", Index: -1};
-				oTextPr.RFonts.CS = {Name: "Arial", Index: -1};
-				oTextPr.RFonts.EastAsia = {Name: "Arial", Index: -1};
-
-				// apply text propterties
-				oContent.SetApplyToAll(true);
-				oContent.AddToParagraph(new ParaTextPr(oTextPr));
-				oContent.SetParagraphAlign(AscCommon.align_Center);
-				oContent.SetApplyToAll(false);
-
-				var oBodyPr = cShape.getBodyPr().createDuplicate();
-				// oBodyPr.rot = 0;
-				// oBodyPr.spcFirstLastPara = false;
-				// oBodyPr.vertOverflow = AscFormat.nVOTOverflow;
-				// oBodyPr.horzOverflow = AscFormat.nHOTOverflow;
-				// oBodyPr.vert = AscFormat.nVertTThorz; // default //( ( Horizontal ))
-				// oBodyPr.wrap = AscFormat.nTWTSquare; // default
-				// oBodyPr.setDefaultInsets();
-				// oBodyPr.numCol = 1;
-				// oBodyPr.spcCol = 0;
-				// oBodyPr.rtlCol = 0;
-				// oBodyPr.fromWordArt = false;
-				// oBodyPr.anchor = 1; // 4 - bottom, 1,2,3 - center
-				// oBodyPr.anchorCtr = false;
-				// oBodyPr.forceAA = false;
-				// oBodyPr.compatLnSpc = true;
-				// // oBodyPr.prstTxWarp = AscFormat.CreatePrstTxWarpGeometry("textNoShape");
-
-				// cShape.bCheckAutoFitFlag = true;
-				// oBodyPr.textFit = new AscFormat.CTextFit();
-				// oBodyPr.textFit.type = AscFormat.text_fit_Auto;
-
-				// oBodyPr.upright = false; // default
-				if (bWord) {
-					cShape.setBodyPr(oBodyPr);
-				} else {
-					cShape.txBody.setBodyPr(oBodyPr);
-				}
-				//
-				//
-				// let oUniNvPr = new AscFormat.UniNvPr();
-				// oUniNvPr.nvPr.ph = Asc.asc_docs_api.prototype.CreatePlaceholder("object");
-				//
-				// // cShape.txBody.content2 = cShape.txBody.content;
-				//
-				// cShape.setNvSpPr(oUniNvPr);
-
-				// copy settings from presentations debug
-				// cShape.txBody.content.CurPos.TableMove = 1;
-				// cShape.txBody.content.ReindexStartPos = 0;
-				// cShape.txBody.content.Content[0].Content[1].CollPrChangeMine = false;
-				// cShape.txBody.content.Content[0].Content[1].State.ContentPos = 10;
-				// cShape.txBody.content.Content[0].Index = -1;
-				// cShape.txBody.compiledBodyPr = null;
-
-				// Set Paragraph (the only one paragraph exist) justify/align text - center
-				// cShape.txBody.content.Content[0].Pr.SetJc(AscCommon.align_Center);
-
-				cShape.recalculate();
-				cShape.recalculateLocalTransform(cShape.transform);
-
-				// cShape.recalculateTextStyles();
-				// cShape.recalculateTransformText(); // recalculates text position (i. e. transformText objects);
-				// cShape.recalculateContent();
-				// cShape.recalculateContent2();
-				// cShape.recalculateContentWitCompiledPr();
+			// oBodyPr.upright = false; // default
+			if (bWord) {
+				cShape.setBodyPr(oBodyPr);
+			} else {
+				cShape.txBody.setBodyPr(oBodyPr);
 			}
+			//
+			//
+			// let oUniNvPr = new AscFormat.UniNvPr();
+			// oUniNvPr.nvPr.ph = Asc.asc_docs_api.prototype.CreatePlaceholder("object");
+			//
+			// // cShape.txBody.content2 = cShape.txBody.content;
+			//
+			// cShape.setNvSpPr(oUniNvPr);
+
+			// copy settings from presentations debug
+			// cShape.txBody.content.CurPos.TableMove = 1;
+			// cShape.txBody.content.ReindexStartPos = 0;
+			// cShape.txBody.content.Content[0].Content[1].CollPrChangeMine = false;
+			// cShape.txBody.content.Content[0].Content[1].State.ContentPos = 10;
+			// cShape.txBody.content.Content[0].Index = -1;
+			// cShape.txBody.compiledBodyPr = null;
+
+			// Set Paragraph (the only one paragraph exist) justify/align text - center
+			// cShape.txBody.content.Content[0].Pr.SetJc(AscCommon.align_Center);
+
+			// cShape.recalculateTextStyles();
+			// cShape.recalculateTransformText(); // recalculates text position (i. e. transformText objects);
+			// cShape.recalculateContent();
+			// cShape.recalculateContent2();
+			// cShape.recalculateContentWitCompiledPr();
+
+			// use ParaRun.prototype.Set_Color
+			// cShape.txBody.content.Content[0].Content[1].Pr.Color = TextColor1;
+			// cShape.txBody.content.Content[0].Content[0].Pr.Color = TextColor1;
 		}
 
 		// there was case with shape type group with no PinX and PinY
@@ -1271,7 +1337,7 @@
 		let fillForegnd = this.getCell("FillForegnd");
 		if (fillForegnd) {
 			// console.log("FillForegnd was found:", fillForegnd);
-			uniFillForegnd = calculateCellUniFill(visioDocument.theme, this, fillForegnd);
+			uniFillForegnd = calculateCellValue(visioDocument.theme, this, fillForegnd);
 
 			let fillForegndTrans = this.getCell("FillForegndTrans");
 			if (fillForegndTrans) {
@@ -1292,7 +1358,7 @@
 		let fillBkgnd = this.getCell("FillBkgnd");
 		if (fillBkgnd) {
 			// console.log("FillBkgnd was found:", fillBkgnd);
-			uniFillBkgnd = calculateCellUniFill(visioDocument.theme, this, fillBkgnd);
+			uniFillBkgnd = calculateCellValue(visioDocument.theme, this, fillBkgnd);
 
 			let fillBkgndTrans = this.getCell("FillBkgndTrans");
 			if (fillBkgndTrans) {
@@ -1345,7 +1411,7 @@
 				let lineColor = this.getCell("LineColor");
 				if (lineColor) {
 					// console.log("LineColor was found for shape", lineColor);
-					oStrokeUniFill = calculateCellUniFill(visioDocument.theme, this, lineColor);
+					oStrokeUniFill = calculateCellValue(visioDocument.theme, this, lineColor);
 				} else {
 					console.log("LineColor cell for line stroke (border) was not found painting red");
 					oStrokeUniFill = AscFormat.CreateUnfilFromRGB(255,0,0);
@@ -1403,8 +1469,10 @@
 
 		cShape.Id = String(this.iD); // it was string in cShape
 
-		// and recalculate
-		handleText(this, cShape);
+		handleText(visioDocument.themes[0], this, cShape);
+
+		cShape.recalculate();
+		cShape.recalculateLocalTransform(cShape.transform);
 
 		return cShape;
 	}

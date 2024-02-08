@@ -38,12 +38,14 @@
 	/**
 	 * accepts visio shadow arguments and common arguments, return OnlyOffice api objects of different types.
 	 * So for foreground color it return Unifill and for stroke too. May cause problems
-	 * https://learn.microsoft.com/ru-ru/office/client-developer/visio/themeval-function
+	 * https://learn.microsoft.com/ru-ru/office/client-developer/visio/themeval-function.
+	 * For font color return CUniColor
 	 * @param {CTheme} theme
 	 * @param {Shape_Type} shape
 	 * @param {Cell_Type} cell
 	 * @param {string?} themeValue
 	 * @param {string?} defaultValue
+	 * @return {CUniFill | CUniColor}
 	 */
 	function themeval(theme, shape, cell, themeValue, defaultValue) {
 		// https://visualsignals.typepad.co.uk/vislog/2013/05/visio-2013-themes-in-the-shapesheet-part-2.html
@@ -85,6 +87,17 @@
 			if (theme.name === "") {
 				// no theme file ---> return document.xml StyleSheet ID=0 value
 				return AscFormat.CreateUnfilFromRGB(0,0,0);
+			}
+		} else if (cellName === "Color") {
+			// Text color
+			quickStyleCellName = "QuickStyleFontColor";
+			quickStyleModifiersCellName = "QuickStyleFontMatrix";
+			getModifiersMethod = theme.getFontStyle;
+			variationStyleIndexVariable = "fontIdx";
+
+			if (theme.name === "") {
+				// no theme file ---> return document.xml StyleSheet ID=0 value
+				return AscFormat.CreateUnfilFromRGB(0,0,0).fill.color;
 			}
 		} else {
 			quickStyleCellName = "QuickStyleFillColor";
@@ -165,11 +178,20 @@
 			}
 		}
 		// add matrix modifiers consider color and cells: "VariationStyleIndex" and quickStyleModifiersCellName
+		// add matrix modifiers consider color and cells: "VariationStyleIndex" and quickStyleModifiersCellName
 		if (!isNaN(quickStyleMatrix)) {
 			if (0 === quickStyleMatrix) {
 				//todo
 			} else if (1 <= quickStyleMatrix && quickStyleMatrix <= 6) {
 				uniFill = getModifiersMethod.call(theme, quickStyleMatrix, uniFill && uniFill.fill.color);
+				// HOTFIXES: getModifiersMethod return not only
+				// uniFill, so we narrow down the range of returns
+				if (quickStyleCellName === "QuickStyleLineColor") {
+					uniFill = uniFill.Fill;
+				} else if (quickStyleCellName === "QuickStyleFontColor") {
+					// and it is color
+					uniFill = uniFill.fontPropsObject.color;
+				}
 			} else if (100 <= quickStyleMatrix && quickStyleMatrix <= 103) {
 				let variationStyleIndexCell = shape.getCell("VariationStyleIndex");
 				let variationStyleIndex = 0;
@@ -185,9 +207,13 @@
 					if (varStyle && null !== varStyle[variationStyleIndexVariable]) {
 						let styleId = varStyle[variationStyleIndexVariable];
 						uniFill = getModifiersMethod.call(theme, styleId, uniFill && uniFill.fill.color);
-						// HOTFIX
+						// HOTFIX: getModifiersMethod return not only
+						// uniFill, so we narrow down the range of returns
 						if (quickStyleCellName === "QuickStyleLineColor") {
 							uniFill = uniFill.Fill;
+						} else if (quickStyleCellName === "QuickStyleFontColor") {
+							// and it is color
+							uniFill = uniFill.fontPropsObject.color;
 						}
 					}
 				}
@@ -197,6 +223,10 @@
 		if(!uniFill) {
 			console.log("no color found. so painting lt1.");
 			uniFill = AscFormat.CreateUniFillByUniColor(AscFormat.builder_CreateSchemeColor("lt1"));
+		}
+		// if unifill is istead of unicolor
+		if (quickStyleCellName === "QuickStyleFontColor" && uniFill.fill && uniFill.fill.color) {
+			return uniFill.fill.color;
 		}
 		return uniFill;
 	}

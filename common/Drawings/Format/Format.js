@@ -382,6 +382,55 @@
 		}
 		InitClass(CClrSchemeExtLst, CBaseNoIdObject, 0);
 
+		/**
+		 * props container class
+		 * @constructor
+		 */
+		function CFontProps() {
+			CBaseNoIdObject.call(this);
+
+			/**
+			 * number read as string
+			 * @type {?string}
+			 */
+			this.style = null;
+
+			/**
+			 * concrete props object
+			 * vt:color with a:schemeClr or something else
+			 * See CUniColor for color reference.
+			 * @type {{color: (CSchemeColor | CSysColor
+			 * | CPrstColor | CRGBColor | any)}}
+			 */
+			this.fontPropsObject = {
+				color: null
+			};
+		}
+		InitClass(CFontProps, CBaseNoIdObject, 0);
+		/**
+		 * @param [bSaveFormatting = false] - made by example false is set in other cases by default
+		 * @return {CFontProps}
+		 */
+		CFontProps.prototype.createDuplicate = function (bSaveFormatting) {
+			if (bSaveFormatting === undefined) {
+				bSaveFormatting = false;
+			}
+
+			var duplicate = new CFontProps();
+
+			duplicate.style = this.style;
+
+			if (null !== this.fontPropsObject.color) {
+				if (bSaveFormatting === true) {
+					duplicate.fontPropsObject.color = this.fontPropsObject.color.saveSourceFormatting();
+				} else {
+					duplicate.fontPropsObject.color = this.fontPropsObject.color.createDuplicate();
+				}
+			}
+
+			return duplicate;
+		};
+
 		function CVariationClrScheme() {
 			CBaseNoIdObject.call(this);
 			/**
@@ -437,11 +486,18 @@
 			this.fmtConnectorSchemeExSchemeEnum = null;
 			this.fillStyles = null;
 			this.lineStyles = null;
-			this.fontStylesGroup = null;
+			/**
+			 * @type {{connectorFontStyles: CFontProps[], fontStyles: CFontProps[] }}
+			 */
+			this.fontStylesGroup = {
+				connectorFontStyles: [],
+				fontStyles: []
+			};
 			this.variationStyleSchemeLst = null;
 			this.variationStyleScheme = [];
 		}
 		InitClass(CThemeExt, CBaseNoIdObject, 0);
+		// Theme visio extensions end
 
 		function CVariationStyleSchemeLst() {
 			CBaseNoIdObject.call(this);
@@ -8703,6 +8759,10 @@
 
 		InitClass(ThemeElements, CBaseNoIdObject, 0);
 
+		/**
+		 *
+		 * @constructor
+		 */
 		function CTheme() {
 			CBaseFormatObject.call(this);
 			this.name = "";
@@ -8793,6 +8853,29 @@
 				return ret;
 			}
 			return new CLn();
+		};
+		/**
+		 * Made for visio editor
+		 * @memberof CTheme
+		 * @param idx
+		 * @param unicolor
+		 * @return {CFontProps}
+		 */
+		CTheme.prototype.getFontStyle = function (idx, unicolor) {
+			if (idx === 0 || isNaN(idx)) {
+				console.log("idx getFontStyle argument is 0 or isNaN(idx) is true");
+				return AscFormat.CreateNoFillLine();
+			}
+			let fontProp = this.themeElements.themeExt.fontStylesGroup.fontStyles[idx - 1];
+			if (fontProp) {
+				var ret = fontProp.createDuplicate();
+				if (ret.fontPropsObject.color) {
+					ret.fontPropsObject.color.checkPhColor(unicolor, false);
+				}
+				return ret;
+			}
+			console.log("no fontProp object found for idx. Return empty obj", idx);
+			return new CFontProps();
 		};
 		CTheme.prototype.getExtraClrScheme = function (sName) {
 			for (var i = 0; i < this.extraClrSchemeLst.length; ++i) {
@@ -15774,12 +15857,13 @@
 		window['AscFormat'].LINE_PRESETS_MAP = LINE_PRESETS_MAP;
 		window['AscFormat'].OBJECT_MORPH_MARKER = OBJECT_MORPH_MARKER;
 
-		// Visio extensions
+		// Visio extensions export
 		window['AscFormat'].CClrSchemeExtLst = CClrSchemeExtLst;
 		window['AscFormat'].CVariationClrScheme = CVariationClrScheme;
 		window['AscFormat'].CVarColor = CVarColor;
 		window['AscFormat'].CThemeExt = CThemeExt;
 		window['AscFormat'].CVariationStyleScheme = CVariationStyleScheme;
 		window['AscFormat'].CVarStyle = CVarStyle;
+		window['AscFormat'].CFontProps = CFontProps;
 	})
 (window);

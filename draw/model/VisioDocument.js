@@ -345,6 +345,9 @@
 		// consider scale for zoom
 		global_MatrixTransformer.ScaleAppend(graphics.m_oCoordTransform, pageScale, pageScale);
 
+		let topLevelShapesAndGroups = this.convertToShapes(logic_w_mm, logic_h_mm);
+
+
 		// see sdkjs/common/Shapes/Serialize.js this.ReadGroupShape = function(type) to
 		// learn how to work with shape groups
 		function drawShapeOrGroupRecursively(shapeOrGroup) {
@@ -403,8 +406,6 @@
 				// graphics.RestoreGrState();
 			}
 		}
-
-		let topLevelShapesAndGroups = this.convertToShapes(logic_w_mm, logic_h_mm);
 
 		topLevelShapesAndGroups.forEach(function(shapeOrGroup) {
 			drawShapeOrGroupRecursively(shapeOrGroup);
