@@ -45,7 +45,7 @@
 	 * @param {Cell_Type} cell
 	 * @param {string?} themeValue
 	 * @param {string?} defaultValue
-	 * @return {CUniFill | CUniColor}
+	 * @return {CUniFill | CUniColor | any}
 	 */
 	function themeval(theme, shape, cell, themeValue, defaultValue) {
 		// https://visualsignals.typepad.co.uk/vislog/2013/05/visio-2013-themes-in-the-shapesheet-part-2.html
@@ -59,7 +59,10 @@
 		// TODO handle multiple themes by schemeEnum tags from theme xml and theme properties cells
 		// https://disk.yandex.ru/d/YZEevC0lUeUBfQ
 
-		let uniFill;
+		/** @type {?CUniColor} */
+		let calculatedColor = null;
+		/** @type {CUniFill | CUniColor} */
+		let result = null;
 
 		let cellValue = cell && cell.v; // formula?
 		let cellName = cell && cell.n;
@@ -68,7 +71,6 @@
 		let quickStyleModifiersCellName;
 		let getModifiersMethod;
 		let variationStyleIndexVariable;
-
 
 		if (themeValue === "LineColor") {
 			cellName = "LineColor";
@@ -99,7 +101,7 @@
 				// no theme file ---> return document.xml StyleSheet ID=0 value
 				return AscFormat.CreateUnfilFromRGB(0,0,0).fill.color;
 			}
-		} else {
+		} else if (cellName === "FillForegnd" || cellName === "FillBkgnd") {
 			quickStyleCellName = "QuickStyleFillColor";
 			quickStyleModifiersCellName = "QuickStyleFillMatrix";
 			getModifiersMethod = theme.getFillStyle;
@@ -113,6 +115,9 @@
 					return AscFormat.CreateUnfilFromRGB(0,0,0);
 				}
 			}
+		} else {
+			console.log("themeval argument error. cell name is unknown. return null.");
+			return null;
 		}
 
 		let quickStyleColorElem = shape.getCell(quickStyleCellName);
@@ -133,38 +138,34 @@
 					if (65534 === variationColorIndex) {
 						variationColorIndex = 0;
 					}
-					let color = theme.getVariationClrSchemeColor(variationColorIndex,
+					calculatedColor = theme.getVariationClrSchemeColor(variationColorIndex,
 						quickStyleColor % 100);
-					if (color) {
-						uniFill = AscFormat.CreateUniFillByUniColor(color);
-					}
 				}
 			} else {
-				let uniColor;
 				switch(quickStyleColor) {
 					case 0:
-						uniColor = AscFormat.builder_CreateSchemeColor("dk1");
+						calculatedColor = AscFormat.builder_CreateSchemeColor("dk1");
 						break;
 					case 1:
-						uniColor = AscFormat.builder_CreateSchemeColor("lt1");
+						calculatedColor = AscFormat.builder_CreateSchemeColor("lt1");
 						break;
 					case 2:
-						uniColor = AscFormat.builder_CreateSchemeColor("accent1");
+						calculatedColor = AscFormat.builder_CreateSchemeColor("accent1");
 						break;
 					case 3:
-						uniColor = AscFormat.builder_CreateSchemeColor("accent2");
+						calculatedColor = AscFormat.builder_CreateSchemeColor("accent2");
 						break;
 					case 4:
-						uniColor = AscFormat.builder_CreateSchemeColor("accent3");
+						calculatedColor = AscFormat.builder_CreateSchemeColor("accent3");
 						break;
 					case 5:
-						uniColor = AscFormat.builder_CreateSchemeColor("accent4");
+						calculatedColor = AscFormat.builder_CreateSchemeColor("accent4");
 						break;
 					case 6:
-						uniColor = AscFormat.builder_CreateSchemeColor("accent5");
+						calculatedColor = AscFormat.builder_CreateSchemeColor("accent5");
 						break;
 					case 7:
-						uniColor = AscFormat.builder_CreateSchemeColor("accent6");
+						calculatedColor = AscFormat.builder_CreateSchemeColor("accent6");
 						break;
 					case 8:
 						//todo
@@ -172,26 +173,15 @@
 					default:
 						break;
 				}
-				if (uniColor) {
-					uniFill = AscFormat.CreateUniFillByUniColor(uniColor);
-				}
 			}
 		}
 		// add matrix modifiers consider color and cells: "VariationStyleIndex" and quickStyleModifiersCellName
-		// add matrix modifiers consider color and cells: "VariationStyleIndex" and quickStyleModifiersCellName
 		if (!isNaN(quickStyleMatrix)) {
+			let getMedifiersResult = null;
 			if (0 === quickStyleMatrix) {
 				//todo
 			} else if (1 <= quickStyleMatrix && quickStyleMatrix <= 6) {
-				uniFill = getModifiersMethod.call(theme, quickStyleMatrix, uniFill && uniFill.fill.color);
-				// HOTFIXES: getModifiersMethod return not only
-				// uniFill, so we narrow down the range of returns
-				if (quickStyleCellName === "QuickStyleLineColor") {
-					uniFill = uniFill.Fill;
-				} else if (quickStyleCellName === "QuickStyleFontColor") {
-					// and it is color
-					uniFill = uniFill.fontPropsObject.color;
-				}
+				getMedifiersResult = getModifiersMethod.call(theme, quickStyleMatrix, calculatedColor);
 			} else if (100 <= quickStyleMatrix && quickStyleMatrix <= 103) {
 				let variationStyleIndexCell = shape.getCell("VariationStyleIndex");
 				let variationStyleIndex = 0;
@@ -206,29 +196,49 @@
 						quickStyleMatrix % 100);
 					if (varStyle && null !== varStyle[variationStyleIndexVariable]) {
 						let styleId = varStyle[variationStyleIndexVariable];
-						uniFill = getModifiersMethod.call(theme, styleId, uniFill && uniFill.fill.color);
-						// HOTFIX: getModifiersMethod return not only
-						// uniFill, so we narrow down the range of returns
-						if (quickStyleCellName === "QuickStyleLineColor") {
-							uniFill = uniFill.Fill;
-						} else if (quickStyleCellName === "QuickStyleFontColor") {
-							// and it is color
-							uniFill = uniFill.fontPropsObject.color;
-						}
+						getMedifiersResult = getModifiersMethod.call(theme, styleId, calculatedColor);
 					}
 				}
 			}
+
+			// getModifiersMethod return not only
+			// uniFill, so we narrow down the range of returns
+			if (quickStyleCellName === "QuickStyleLineColor") {
+				result = getMedifiersResult && getMedifiersResult.Fill;
+			} else if (quickStyleCellName === "QuickStyleFontColor") {
+				// and it is color
+				result = getMedifiersResult && getMedifiersResult.fontPropsObject.color;
+			} else if (quickStyleCellName === "QuickStyleFillColor") {
+				//leave result because it is fill
+				result = getMedifiersResult;
+			} else {
+				console.log("Error in themeval. result is not changed to appropriate type or quickStyleCellName is not set.");
+			}
 		}
 
-		if(!uniFill) {
-			console.log("no color found. so painting lt1.");
-			uniFill = AscFormat.CreateUniFillByUniColor(AscFormat.builder_CreateSchemeColor("lt1"));
+		if (result !== null) {
+			// result have appropriate type for cell already
+			return result;
 		}
-		// if unifill is istead of unicolor
-		if (quickStyleCellName === "QuickStyleFontColor" && uniFill.fill && uniFill.fill.color) {
-			return uniFill.fill.color;
+		if (calculatedColor !== null) {
+			let fromColorResult = null;
+			if (cellName === "LineColor" || cellName === "FillForegnd" || cellName === "FillBkgnd") {
+				fromColorResult = AscFormat.CreateUniFillByUniColor(calculatedColor);
+			} else if (cellName === "Color") {
+				fromColorResult = calculatedColor;
+			}
+			return fromColorResult;
+		} else {
+			if (cellName === "LineColor" || cellName === "FillForegnd" || cellName === "FillBkgnd") {
+				console.log("no color found. so painting lt1.");
+				calculatedColor = AscFormat.CreateUniFillByUniColor(AscFormat.builder_CreateSchemeColor("lt1"));
+			} else if (cellName === "Color") {
+				// for text color
+				console.log("no text color found. so painting dk1.");
+				calculatedColor = AscFormat.builder_CreateSchemeColor("dk1");
+			}
+			return calculatedColor;
 		}
-		return uniFill;
 	}
 
 	//-------------------------------------------------------------export---------------------------------------------------

@@ -9075,6 +9075,12 @@
 		CTheme.prototype.Read_FromBinary2 = function (r) {
 			this.Id = r.GetString2();
 		};
+		/**
+		 * @memberOf CTheme
+		 * @param variationIndex
+		 * @param colorIndex
+		 * @return {CUniColor|null}
+		 */
 		CTheme.prototype.getVariationClrSchemeColor = function (variationIndex, colorIndex) {
 			let clrScheme = this.themeElements.clrScheme;
 			if (clrScheme.clrSchemeExtLst) {

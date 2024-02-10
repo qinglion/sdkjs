@@ -912,13 +912,15 @@
 			if (/#\w{6}/.test(cellValue)) {
 				// check if hex
 				let rgba = AscCommon.RgbaHexToRGBA(cellValue);
-				if (cellName === "LineColor" || cellName === "FillForegnd") {
+				if (cellName === "LineColor" || cellName === "FillForegnd" || cellName === "FillBkgnd") {
 					returnValue = AscFormat.CreateUnfilFromRGB(rgba.R, rgba.G, rgba.B);
 				} else if (cellName === "Color") {
 					// for text color
 					returnValue = AscFormat.CreateUnfilFromRGB(rgba.R, rgba.G, rgba.B).fill.color;
+				} else {
+					console.log("wrong calculateCellValue argument cell. Cell unsupported. return null");
+					return null;
 				}
-
 			} else if (cellValue === 'Themed') {
 				// equal to THEMEVAL() call
 				returnValue = AscCommonDraw.themeval(theme, shape, cell);
@@ -1001,18 +1003,25 @@
 							break;
 					}
 					if (rgba) {
-						returnValue = AscFormat.CreateUnfilFromRGB(rgba.R, rgba.G, rgba.B);
-						if (cellName === "Color") {
-							returnValue = returnValue.fill.color;
+						if (cellName === "LineColor" || cellName === "FillForegnd" || cellName === "FillBkgnd") {
+							returnValue = AscFormat.CreateUnfilFromRGB(rgba.R, rgba.G, rgba.B);
+						} else if (cellName === "Color") {
+							returnValue = AscFormat.CreateUnfilFromRGB(rgba.R, rgba.G, rgba.B).fill.color;
+						} else {
+							console.log("wrong calculateCellValue argument cell. Cell unsupported. return null");
+							return null;
 						}
 					}
 				}
 			}
 			if (!returnValue) {
-				console.log("no color found. so painting lt1.");
-				returnValue = AscFormat.CreateUniFillByUniColor(AscFormat.builder_CreateSchemeColor("lt1"));
-				if (cellName === "Color") {
-					returnValue = returnValue.fill.color;
+				if (cellName === "LineColor" || cellName === "FillForegnd" || cellName === "FillBkgnd") {
+					console.log("no color found. so painting lt1.");
+					returnValue = AscFormat.CreateUniFillByUniColor(AscFormat.builder_CreateSchemeColor("lt1"));
+				} else if (cellName === "Color") {
+					// for text color
+					console.log("no text color found. so painting dk1.");
+					returnValue = AscFormat.builder_CreateSchemeColor("dk1");
 				}
 			}
 			return returnValue;
