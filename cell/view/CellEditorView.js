@@ -181,6 +181,9 @@ function (window, undefined) {
 		// Обработчик кликов
 		this.clickCounter = new AscFormat.ClickCounter();
 
+		//temporary - for safari rendering. remove after fixed
+		this._originalCanvasWidth = null;
+
 		this._init();
 
 		return this;
@@ -631,10 +634,10 @@ function (window, undefined) {
 	};
 
 	CellEditor.prototype.checkSymbolBeforeRange = function (char) {
-		if (!char.trim) {
+		if (char && !char.trim) {
 			char = AscCommon.convertUnicodeToUTF16(char);
 		}
-		return this.rangeChars.indexOf(char) >= 0 || char === AscCommon.FormulaSeparators.functionArgumentSeparator;
+		return (this.rangeChars && this.rangeChars.indexOf(char) >= 0) || char === AscCommon.FormulaSeparators.functionArgumentSeparator;
 	};
 
 	CellEditor.prototype.changeCellRange = function (range, moveEndOfText) {
@@ -1478,8 +1481,14 @@ function (window, undefined) {
 		// canvas'ы прозрачные и их увеличенный размер не влияет на результат.
 		//
 		// в новой версии сафари увеличиваем не только canvas'ы, но и дивку тоже.
-		if (AscCommon.AscBrowser.isSafariMacOs && (widthStyle * heightStyle) < 5000)
-			widthStyle = ((5000 / heightStyle) >> 0) + 1;
+		if (AscCommon.AscBrowser.isSafariMacOs) {
+			if ((widthStyle * heightStyle) < 5000) {
+				this._originalCanvasWidth = width;
+				widthStyle = ((5000 / heightStyle) >> 0) + 1;
+			} else {
+				this._originalCanvasWidth = null;
+			}
+		}
 
 		this.canvasOuterStyle.left = left + 'px';
 		this.canvasOuterStyle.top = top + 'px';
@@ -1508,8 +1517,9 @@ function (window, undefined) {
 		var t = this, opt = t.options, ctx = t.drawingCtx;
 
 		if (!window['IS_NATIVE_EDITOR']) {
+			let _width = this._originalCanvasWidth ? this._originalCanvasWidth : ctx.getWidth();
 			ctx.setFillStyle(opt.background)
-				.fillRect(0, 0, ctx.getWidth(), ctx.getHeight());
+				.fillRect(0, 0, _width, ctx.getHeight());
 		}
 
 		if (opt.fragments.length > 0) {
@@ -2824,7 +2834,7 @@ function (window, undefined) {
 		}
 		if (t.textRender.getEndOfText() === t.cursorPos && !t.isFormula()) {
 			var s = AscCommonExcel.getFragmentsText(t.options.fragments);
-			if (!AscCommon.isNumber(s)) {
+			if (!AscCommon.isNumber(s) && s.length !== 0) {
 				var arrAutoComplete = t._getAutoComplete(s.toLowerCase());
 				var lengthInput = s.length;
 				if (1 === arrAutoComplete.length) {
@@ -3047,8 +3057,8 @@ function (window, undefined) {
 		if (checkFragments) {
 			this.selectionBegin = this.beginCompositePos;
 			this.selectionEnd = this.beginCompositePos + this.compositeLength;
-			this.setTextStyle('u', Asc.EUnderline.underlineNone);
 		}
+		this.setTextStyle('u', Asc.EUnderline.underlineNone);
 
 		this.beginCompositePos = -1;
 		this.compositeLength = 0;

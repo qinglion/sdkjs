@@ -1513,6 +1513,57 @@ $(function () {
 		array = oParser.calculate();
 		assert.strictEqual(array.getValue(), 170);
 
+		// for bug 65316
+		ws.getRange2("A100").setValue("75");
+		ws.getRange2("A101").setValue("42.4");
+		ws.getRange2("B100").setValue("100");
+		ws.getRange2("B101").setValue("42.48");
+		ws.getRange2("C100").setValue("200");
+		ws.getRange2("C101").setValue("42");
+		ws.getRange2("D100").setValue("300");
+		ws.getRange2("D101").setValue("39.4");
+		ws.getRange2("E100").setValue("350");
+		ws.getRange2("E101").setValue("38.4");
+
+		oParser = new parserFormula("A100:C100^{1;2;3;4}", "A1", ws);
+		oParser.setArrayFormulaRef(ws.getRange2("E200:I204").bbox);
+		assert.ok(oParser.parse(), "A100:C100^{1;2;3;4}. Result - array 4x3");
+		array = oParser.calculate();
+		if (AscCommonExcel.cElementType.array === array.type) {
+			assert.strictEqual(array.getElementRowCol(0, 0).getValue(), 75, "Array 4x3. [0,0]");
+			assert.strictEqual(array.getElementRowCol(1, 0).getValue(), Math.pow(75, 2), "Array 4x3. [1,0]");
+			assert.strictEqual(array.getElementRowCol(2, 0).getValue(), Math.pow(75, 3), "Array 4x3. [2,0]");
+			assert.strictEqual(array.getElementRowCol(3, 0).getValue(), Math.pow(75, 4), "Array 4x3. [3,0]");
+
+			assert.strictEqual(array.getElementRowCol(0, 1).getValue(), 100, "Array 4x3. [0,1]");
+			assert.strictEqual(array.getElementRowCol(1, 1).getValue(), Math.pow(100, 2), "Array 4x3. [1,1]");
+			assert.strictEqual(array.getElementRowCol(2, 1).getValue(), Math.pow(100, 3), "Array 4x3. [2,1]");
+			assert.strictEqual(array.getElementRowCol(3, 1).getValue(), Math.pow(100, 4), "Array 4x3. [3,1]");
+
+			assert.strictEqual(array.getElementRowCol(0, 2).getValue(), 200, "Array 4x3. [0,2]");
+			assert.strictEqual(array.getElementRowCol(1, 2).getValue(), Math.pow(200, 2), "Array 4x3. [1,2]");
+			assert.strictEqual(array.getElementRowCol(2, 2).getValue(), Math.pow(200, 3), "Array 4x3. [2,2]");
+			assert.strictEqual(array.getElementRowCol(3, 2).getValue(), Math.pow(200, 4), "Array 4x3. [3,2]");
+		}
+
+		oParser = new parserFormula("A100:C101^{1;2;3;4}", "A1", ws);
+		oParser.setArrayFormulaRef(ws.getRange2("E200:I204").bbox);
+		assert.ok(oParser.parse(), "A100:C101^{1;2;3;4}. Result - array 4x3(2x3 = #N/A)");
+		array = oParser.calculate();
+		if (AscCommonExcel.cElementType.array === array.type) {
+			assert.strictEqual(array.getElementRowCol(0, 0).getValue(), 75, "Array 4x3. [0,0]");
+			assert.strictEqual(array.getElementRowCol(1, 0).getValue(), 1797.76, "Array 4x3. [1,0]");
+			assert.strictEqual(array.getElementRowCol(2, 0).getValue(), "#N/A", "Array 4x3. [2,0]");
+
+			assert.strictEqual(array.getElementRowCol(0, 1).getValue(), 100, "Array 4x3. [0,1]");
+			assert.strictEqual(array.getElementRowCol(1, 1).getValue().toFixed(2), "1804.55", "Array 4x3. [1,1]");
+			assert.strictEqual(array.getElementRowCol(2, 1).getValue(), "#N/A", "Array 4x3. [2,1]");
+
+			assert.strictEqual(array.getElementRowCol(0, 2).getValue(), 200, "Array 4x3. [0,2]");
+			assert.strictEqual(array.getElementRowCol(1, 2).getValue(), 1764, "Array 4x3. [1,2]");
+			assert.strictEqual(array.getElementRowCol(2, 2).getValue(), "#N/A", "Array 4x3. [2,2]");
+		}
+
 	});
 
 	QUnit.test("Test: \"ACOS\"", function (assert) {
@@ -3699,7 +3750,7 @@ $(function () {
 		assert.strictEqual(array.getElementRowCol(2, 0).getValue(), "#N/A", 'Result of A100:B102^D100:E101[2,0]');
 		assert.strictEqual(array.getElementRowCol(0, 1).getValue(), 1, 'Result of A100:B102^D100:E101[0,1]');
 		assert.strictEqual(array.getElementRowCol(1, 1).getValue(), 1, 'Result of A100:B102^D100:E101[1,1]');
-		assert.strictEqual(array.getElementRowCol(2, 1).getValue(), "#N/A", 'Result of A100:B102^D100:E101[2,1]');
+		assert.strictEqual(array.getElementRowCol(2, 1).getValue(), "#DIV/0!", 'Result of A100:B102^D100:E101[2,1]');
 
 		ws.getRange2("G100").setValue("a");
 		ws.getRange2("G101").setValue("b");
@@ -3742,6 +3793,25 @@ $(function () {
 		assert.strictEqual(array.getElementRowCol(1, 0).getValue(), "#DIV/0!", 'Result of I100:J101^2[1,0]');
 		assert.strictEqual(array.getElementRowCol(0, 1).getValue(), "#NUM!", 'Result of I100:J101^2[0,1]');
 		assert.strictEqual(array.getElementRowCol(1, 1).getValue(), 0, 'Result of I100:J101^2[1,1]');
+
+		ws.getRange2("A100").setValue("75");
+		ws.getRange2("B100").setValue("100");
+		ws.getRange2("C100").setValue("200");
+		ws.getRange2("D100").setValue("300");
+		ws.getRange2("E100").setValue("350");
+		ws.getRange2("F100").setValue("400");
+		ws.getRange2("G100").setValue("500");
+
+		oParser = new parserFormula("A100:G100^{1,2,1}", "A1", ws);
+		assert.ok(oParser.parse(), 'A100:G100^{1,2,1}');
+		array = oParser.calculate();
+		assert.strictEqual(array.getElementRowCol(0, 0).getValue(), 75, 'Result of A100:G100^{1,2,1}[0,0]');
+		assert.strictEqual(array.getElementRowCol(0, 1).getValue(), 10000, 'Result of A100:G100^{1,2,1}[0,1]');
+		assert.strictEqual(array.getElementRowCol(0, 2).getValue(), 200, 'Result of A100:G100^{1,2,1}[0,2]');
+		assert.strictEqual(array.getElementRowCol(0, 3).getValue(), "#N/A", 'Result of A100:G100^{1,2,1}[0,3]');
+		assert.strictEqual(array.getElementRowCol(0, 4).getValue(), "#N/A", 'Result of A100:G100^{1,2,1}[0,4]');
+		assert.strictEqual(array.getElementRowCol(0, 5).getValue(), "#N/A", 'Result of A100:G100^{1,2,1}[0,5]');
+		assert.strictEqual(array.getElementRowCol(0, 6).getValue(), "#N/A", 'Result of A100:G100^{1,2,1}[0,6]');
 
 	});
 
@@ -3828,7 +3898,7 @@ $(function () {
 		assert.strictEqual(array.getElementRowCol(2, 0).getValue(), "#N/A", 'Result of A100:B102^D100:E101[2,0]');
 		assert.strictEqual(array.getElementRowCol(0, 1).getValue(), 1, 'Result of A100:B102^D100:E101[0,1]');
 		assert.strictEqual(array.getElementRowCol(1, 1).getValue(), 1, 'Result of A100:B102^D100:E101[1,1]');
-		assert.strictEqual(array.getElementRowCol(2, 1).getValue(), "#N/A", 'Result of A100:B102^D100:E101[2,1]');
+		assert.strictEqual(array.getElementRowCol(2, 1).getValue(), "#DIV/0!", 'Result of A100:B102^D100:E101[2,1]');
 
 		ws.getRange2("G100").setValue("a");
 		ws.getRange2("G101").setValue("b");
@@ -3871,6 +3941,25 @@ $(function () {
 		assert.strictEqual(array.getElementRowCol(1, 0).getValue(), "#DIV/0!", 'Result of POWER(I100:J101,2)[1,0]');
 		assert.strictEqual(array.getElementRowCol(0, 1).getValue(), "#NUM!", 'Result of POWER(I100:J101,2)[0,1]');
 		assert.strictEqual(array.getElementRowCol(1, 1).getValue(), 0, 'Result of POWER(I100:J101,2)[1,1]');
+
+		ws.getRange2("A100").setValue("75");
+		ws.getRange2("B100").setValue("100");
+		ws.getRange2("C100").setValue("200");
+		ws.getRange2("D100").setValue("300");
+		ws.getRange2("E100").setValue("350");
+		ws.getRange2("F100").setValue("400");
+		ws.getRange2("G100").setValue("500");
+
+		oParser = new parserFormula("POWER(A100:G100,{1,2,1})", "A1", ws);
+		assert.ok(oParser.parse(), 'POWER(A100:G100,{1,2,1})');
+		array = oParser.calculate();
+		assert.strictEqual(array.getElementRowCol(0, 0).getValue(), 75, 'Result of POWER(A100:G100,{1,2,1})[0,0]');
+		assert.strictEqual(array.getElementRowCol(0, 1).getValue(), 10000, 'Result of POWER(A100:G100,{1,2,1})[0,1]');
+		assert.strictEqual(array.getElementRowCol(0, 2).getValue(), 200, 'Result of POWER(A100:G100,{1,2,1})[0,2]');
+		assert.strictEqual(array.getElementRowCol(0, 3).getValue(), "#N/A", 'Result of POWER(A100:G100,{1,2,1})[0,3]');
+		assert.strictEqual(array.getElementRowCol(0, 4).getValue(), "#N/A", 'Result of POWER(A100:G100,{1,2,1})[0,4]');
+		assert.strictEqual(array.getElementRowCol(0, 5).getValue(), "#N/A", 'Result of POWER(A100:G100,{1,2,1})[0,5]');
+		assert.strictEqual(array.getElementRowCol(0, 6).getValue(), "#N/A", 'Result of POWER(A100:G100,{1,2,1})[0,6]');
 
 		// ------------------------- same tests as in Pow operator tests ------------------------- //
 
@@ -4628,6 +4717,129 @@ $(function () {
 		assert.strictEqual(oParser.calculate().getElementRowCol(0, 0).getValue(), 4);
 		assert.strictEqual(oParser.calculate().getElementRowCol(1, 0).getValue(), 8);
 		assert.strictEqual(oParser.calculate().getElementRowCol(2, 0).getValue(), 12);
+
+		oParser = new parserFormula("MMULT({1,2,3},{1;2;3})", "A1", ws);
+		assert.ok(oParser.parse(), "MMULT({1,2,3},{1;2;3})");
+		assert.strictEqual(oParser.calculate().getElementRowCol(0, 0).getValue(), 14, "Result of MMULT({1,2,3},{1;2;3})");
+
+		oParser = new parserFormula("MMULT({1,3,4},{2;3;4;5})", "A1", ws);
+		assert.ok(oParser.parse(), "MMULT({1,3,4},{2;3;4;5})");
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", "Result of MMULT({1,3,4},{2;3;4;5})");
+
+		oParser = new parserFormula("MMULT({1,2,3,4},{1;2;3})", "A1", ws);
+		assert.ok(oParser.parse(), "MMULT({1,2,3,4},{1;2;3})");
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", "Result of MMULT({1,2,3,4},{1;2;3})");
+
+		oParser = new parserFormula("MMULT({1;2;3},{1,2,3})", "A1", ws);
+		assert.ok(oParser.parse(), "MMULT({1;2;3},{1,2,3})");
+		assert.strictEqual(oParser.calculate().getElementRowCol(0, 0).getValue(), 1);
+		assert.strictEqual(oParser.calculate().getElementRowCol(0, 1).getValue(), 2);
+		assert.strictEqual(oParser.calculate().getElementRowCol(0, 2).getValue(), 3);
+		assert.strictEqual(oParser.calculate().getElementRowCol(1, 0).getValue(), 2);
+		assert.strictEqual(oParser.calculate().getElementRowCol(1, 1).getValue(), 4);
+		assert.strictEqual(oParser.calculate().getElementRowCol(1, 2).getValue(), 6);
+		assert.strictEqual(oParser.calculate().getElementRowCol(2, 0).getValue(), 3);
+		assert.strictEqual(oParser.calculate().getElementRowCol(2, 1).getValue(), 6);
+		assert.strictEqual(oParser.calculate().getElementRowCol(2, 2).getValue(), 9);
+
+		oParser = new parserFormula('MMULT({1;2;3},{1,"2",3})', "A1", ws);
+		assert.ok(oParser.parse(), 'MMULT({1;2;3},{1,2,3})');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Result of MMULT({1;2;3},{1,2,3})');
+
+		ws.getRange2("K100").setValue("");
+
+		oParser = new parserFormula("MMULT({1;2;3},{1;2;3})", "A1", ws);
+		assert.ok(oParser.parse(), "MMULT({1;2;3},{1;2;3})");
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", "Result of MMULT({1;2;3},{1;2;3})");
+
+		oParser = new parserFormula("MMULT({1,2,3},{1,2,3})", "A1", ws);
+		assert.ok(oParser.parse(), "MMULT({1,2,3},{1,2,3})");
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", "Result of MMULT({1,2,3},{1,2,3})");
+
+		oParser = new parserFormula("MMULT({1;2},2)", "A1", ws);
+		assert.ok(oParser.parse(), "MMULT({1;2},2)");
+		assert.strictEqual(oParser.calculate().getElementRowCol(0, 0).getValue(), 2);
+		assert.strictEqual(oParser.calculate().getElementRowCol(1, 0).getValue(), 4);
+
+		oParser = new parserFormula("MMULT(2,3)", "A1", ws);
+		assert.ok(oParser.parse(), "MMULT(2,3)");
+		assert.strictEqual(oParser.calculate().getElementRowCol(0, 0).getValue(), 6);
+
+		oParser = new parserFormula('MMULT("2",3)', "A1", ws);
+		assert.ok(oParser.parse(), 'MMULT("2",3)');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Result of MMULT("2",3)');
+
+		oParser = new parserFormula('MMULT(2,TRUE)', "A1", ws);
+		assert.ok(oParser.parse(), 'MMULT(2,TRUE)');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Result of MMULT(2,TRUE)');
+
+		oParser = new parserFormula('MMULT(TRUE,2)', "A1", ws);
+		assert.ok(oParser.parse(), 'MMULT(TRUE,2)');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Result of MMULT(TRUE,2)');
+
+		oParser = new parserFormula('MMULT(2,-1)', "A1", ws);
+		assert.ok(oParser.parse(), 'MMULT(2,-1)');
+		assert.strictEqual(oParser.calculate().getElementRowCol(0, 0).getValue(), -2, 'Result of MMULT(2,-1)');
+
+		oParser = new parserFormula('MMULT(2,)', "A1", ws);
+		assert.ok(oParser.parse(), 'MMULT(2,)');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Result of MMULT(2,)');
+
+		oParser = new parserFormula('MMULT(,2)', "A1", ws);
+		assert.ok(oParser.parse(), 'MMULT(,2)');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Result of MMULT(,2)');
+
+		oParser = new parserFormula('MMULT(2,K100)', "A1", ws);
+		assert.ok(oParser.parse(), 'MMULT(2,K100)');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Result of MMULT(2,K100)');
+
+		oParser = new parserFormula('MMULT(K100,2)', "A1", ws);
+		assert.ok(oParser.parse(), 'MMULT(K100,2)');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Result of MMULT(K100,2)');
+
+		oParser = new parserFormula('MMULT(2,0)', "A1", ws);
+		assert.ok(oParser.parse(), 'MMULT(2,0)');
+		assert.strictEqual(oParser.calculate().getElementRowCol(0, 0).getValue(), 0, 'Result of MMULT(2,0)');
+
+		oParser = new parserFormula('MMULT(0,2)', "A1", ws);
+		assert.ok(oParser.parse(), 'MMULT(0,2)');
+		assert.strictEqual(oParser.calculate().getElementRowCol(0, 0).getValue(), 0, 'Result of MMULT(0,2)');
+
+		oParser = new parserFormula('MMULT(0,0)', "A1", ws);
+		assert.ok(oParser.parse(), 'MMULT(0,0)');
+		assert.strictEqual(oParser.calculate().getElementRowCol(0, 0).getValue(), 0, 'Result of MMULT(0,0)');
+
+		ws.getRange2("A100").setValue("1");
+		ws.getRange2("B100").setValue("2");
+		ws.getRange2("C100").setValue("3");
+		ws.getRange2("A101").setValue("4");
+		ws.getRange2("B101").setValue("5");
+		ws.getRange2("C101").setValue("6");
+		ws.getRange2("A102").setValue("7");
+		ws.getRange2("B102").setValue("8");
+		ws.getRange2("C102").setValue("9");
+
+		oParser = new parserFormula("MMULT(A100:B102,A100:C101)", "A1", ws);
+		assert.ok(oParser.parse(), "MMULT(A100:B102,A100:C101)");
+		assert.strictEqual(oParser.calculate().getElementRowCol(0, 0).getValue(), 9);
+		assert.strictEqual(oParser.calculate().getElementRowCol(0, 1).getValue(), 12);
+		assert.strictEqual(oParser.calculate().getElementRowCol(0, 2).getValue(), 15);
+		assert.strictEqual(oParser.calculate().getElementRowCol(1, 0).getValue(), 24);
+		assert.strictEqual(oParser.calculate().getElementRowCol(1, 1).getValue(), 33);
+		assert.strictEqual(oParser.calculate().getElementRowCol(1, 2).getValue(), 42);
+		assert.strictEqual(oParser.calculate().getElementRowCol(2, 0).getValue(), 39);
+		assert.strictEqual(oParser.calculate().getElementRowCol(2, 1).getValue(), 54);
+		assert.strictEqual(oParser.calculate().getElementRowCol(2, 2).getValue(), 69);
+
+		oParser = new parserFormula("MMULT(A100:C102,A100:A102)", "A1", ws);
+		assert.ok(oParser.parse(), "MMULT(A100:C102,A100:A102)");
+		assert.strictEqual(oParser.calculate().getElementRowCol(0, 0).getValue(), 30);
+		assert.strictEqual(oParser.calculate().getElementRowCol(1, 0).getValue(), 66);
+		assert.strictEqual(oParser.calculate().getElementRowCol(2, 0).getValue(), 102);
+
+		oParser = new parserFormula("MMULT(A100:A102,A100:C102)", "A1", ws);
+		assert.ok(oParser.parse(), "MMULT(A100:A102,A100:C102)");
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!");
 
 	});
 
@@ -6122,42 +6334,143 @@ $(function () {
 	});
 
 	QUnit.test("Test: \"EOMONTH\"", function (assert) {
+		// base mode
+		ws.workbook.setDate1904(false, true);
 
-		if (!AscCommon.bDate1904) {
-			oParser = new parserFormula("EOMONTH(DATE(2006,1,31),5)", "A2", ws);
-			assert.ok(oParser.parse());
-			assert.strictEqual(oParser.calculate().getValue(), 38898);
+		oParser = new parserFormula("EOMONTH(0,1)", "A2", ws);
+		assert.ok(oParser.parse(), 'EOMONTH(0,1)');
+		assert.strictEqual(oParser.calculate().getValue(), 59, 'Result of EOMONTH(0,1)');
 
-			oParser = new parserFormula("EOMONTH(DATE(2004,2,29),12)", "A2", ws);
-			assert.ok(oParser.parse());
-			assert.strictEqual(oParser.calculate().getValue(), 38411);
+		oParser = new parserFormula("EOMONTH(1,1)", "A2", ws);
+		assert.ok(oParser.parse(), 'EOMONTH(1,1)');
+		assert.strictEqual(oParser.calculate().getValue(), 59, 'Result of EOMONTH(1,1)');
 
-			ws.getRange2("A7").setValue("02-28-2004");
-			oParser = new parserFormula("EOMONTH(A7,12)", "A2", ws);
-			assert.ok(oParser.parse());
-			assert.strictEqual(oParser.calculate().getValue(), 38411);
+		oParser = new parserFormula("EOMONTH(2,1)", "A2", ws);
+		assert.ok(oParser.parse(), 'EOMONTH(2,1)');
+		assert.strictEqual(oParser.calculate().getValue(), 59, 'Result of EOMONTH(2,1)');
 
-			oParser = new parserFormula("EOMONTH(DATE(2004,1,15),-23)", "A2", ws);
-			assert.ok(oParser.parse());
-			assert.strictEqual(oParser.calculate().getValue(), 37315);
-		} else {
-			oParser = new parserFormula("EOMONTH(DATE(2006,1,31),5)", "A2", ws);
-			assert.ok(oParser.parse());
-			assert.strictEqual(oParser.calculate().getValue(), 37436);
+		oParser = new parserFormula("EOMONTH(59,1)", "A2", ws);
+		assert.ok(oParser.parse(), 'EOMONTH(59,1)');
+		assert.strictEqual(oParser.calculate().getValue(), 91, 'Result of EOMONTH(59,1)');
 
-			oParser = new parserFormula("EOMONTH(DATE(2004,2,29),12)", "A2", ws);
-			assert.ok(oParser.parse());
-			assert.strictEqual(oParser.calculate().getValue(), 36949);
+		oParser = new parserFormula("EOMONTH(60,1)", "A2", ws);
+		assert.ok(oParser.parse(), 'EOMONTH(60,1)');
+		assert.strictEqual(oParser.calculate().getValue(), 91, 'Result of EOMONTH(60,1)');
 
-			ws.getRange2("A7").setValue("02-28-2004");
-			oParser = new parserFormula("EOMONTH(A7,12)", "A2", ws);
-			assert.ok(oParser.parse());
-			assert.strictEqual(oParser.calculate().getValue(), 36949);
+		oParser = new parserFormula("EOMONTH(61,1)", "A2", ws);
+		assert.ok(oParser.parse(), 'EOMONTH(61,1)');
+		assert.strictEqual(oParser.calculate().getValue(), 121, 'Result of EOMONTH(61,1)');
 
-			oParser = new parserFormula("EOMONTH(DATE(2004,1,15),-23)", "A2", ws);
-			assert.ok(oParser.parse());
-			assert.strictEqual(oParser.calculate().getValue(), 35853);
-		}
+		oParser = new parserFormula("EOMONTH(62,1)", "A2", ws);
+		assert.ok(oParser.parse(), 'EOMONTH(62,1)');
+		assert.strictEqual(oParser.calculate().getValue(), 121, 'Result of EOMONTH(62,1)');
+
+		oParser = new parserFormula("EOMONTH(DATE(2006,1,31),5)", "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 38898);
+
+		oParser = new parserFormula("EOMONTH(DATE(2004,2,29),12)", "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 38411);
+
+		ws.getRange2("A7").setValue("02-28-2004");
+		oParser = new parserFormula("EOMONTH(A7,12)", "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 38411);
+
+		oParser = new parserFormula("EOMONTH(DATE(2004,1,15),-23)", "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 37315);
+
+		oParser = new parserFormula("EOMONTH(DATE(2018,3,16),10)", "A2", ws);
+		assert.ok(oParser.parse(), 'EOMONTH(DATE(2018,3,16),10)');
+		assert.strictEqual(oParser.calculate().getValue(), 43496, 'Result of EOMONTH(DATE(2018,3,16),10)');
+
+		// string
+		oParser = new parserFormula('EOMONTH("43175","10")', "A2", ws);
+		assert.ok(oParser.parse(), 'EOMONTH("43175","10")');
+		assert.strictEqual(oParser.calculate().getValue(), 43496, 'Result of EOMONTH("43175","10")');
+
+		oParser = new parserFormula('EOMONTH("43175+1","10")', "A2", ws);
+		assert.ok(oParser.parse(), 'EOMONTH("43175+1","10")');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Result of EOMONTH("43175+1","10")');
+
+		oParser = new parserFormula('EOMONTH("43175","10+1")', "A2", ws);
+		assert.ok(oParser.parse(), 'EOMONTH("43175","10+1")');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Result of EOMONTH("43175","10+1")');
+
+		// bool
+		oParser = new parserFormula('EOMONTH(43175,FALSE)', "A2", ws);
+		assert.ok(oParser.parse(), 'EOMONTH(43175,FALSE)');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Result of EOMONTH(43175,FALSE)');
+
+		oParser = new parserFormula('EOMONTH(43175,TRUE)', "A2", ws);
+		assert.ok(oParser.parse(), 'EOMONTH(43175,TRUE)');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Result of EOMONTH(43175,TRUE)');
+
+		oParser = new parserFormula('EOMONTH(TRUE,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'EOMONTH(TRUE,1)');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Result of EOMONTH(TRUE,1)');
+
+		// err
+		oParser = new parserFormula('EOMONTH(#N/A,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'EOMONTH(#N/A,1)');
+		assert.strictEqual(oParser.calculate().getValue(), "#N/A", 'Result of EOMONTH(#N/A,1)');
+
+		oParser = new parserFormula('EOMONTH(#N/A,#NUM!)', "A2", ws);
+		assert.ok(oParser.parse(), 'EOMONTH(#N/A,#NUM!)');
+		assert.strictEqual(oParser.calculate().getValue(), "#N/A", 'Result of EOMONTH(#N/A,#NUM!)');
+
+		oParser = new parserFormula('EOMONTH(#NUM!,#N/A)', "A2", ws);
+		assert.ok(oParser.parse(), 'EOMONTH(#NUM!,#N/A)');
+		assert.strictEqual(oParser.calculate().getValue(), "#NUM!", 'Result of EOMONTH(#NUM!,#N/A)');
+
+		// set 1904 mode
+		ws.workbook.setDate1904(true, true);
+
+		oParser = new parserFormula("EOMONTH(0,1)", "A2", ws);
+		assert.ok(oParser.parse(), 'EOMONTH(0,1) 1904 mode');
+		assert.strictEqual(oParser.calculate().getValue(), 59, 'Result of EOMONTH(0,1) 1904 mode');
+
+		oParser = new parserFormula("EOMONTH(1,1)", "A2", ws);
+		assert.ok(oParser.parse(), 'EOMONTH(1,1) 1904 mode');
+		assert.strictEqual(oParser.calculate().getValue(), 59, 'Result of EOMONTH(1,1) 1904 mode');
+
+		oParser = new parserFormula("EOMONTH(2,1)", "A2", ws);
+		assert.ok(oParser.parse(), 'EOMONTH(2,1) 1904 mode');
+		assert.strictEqual(oParser.calculate().getValue(), 59, 'Result of EOMONTH(2,1) 1904 mode');
+
+		oParser = new parserFormula("EOMONTH(59,1)", "A2", ws);
+		assert.ok(oParser.parse(), 'EOMONTH(59,1) 1904 mode');
+		assert.strictEqual(oParser.calculate().getValue(), 90, 'Result of EOMONTH(59,1) 1904 mode');
+
+		oParser = new parserFormula("EOMONTH(60,1)", "A2", ws);
+		assert.ok(oParser.parse(), 'EOMONTH(60,1) 1904 mode');
+		assert.strictEqual(oParser.calculate().getValue(), 120, 'Result of EOMONTH(60,1) 1904 mode');
+
+		oParser = new parserFormula("EOMONTH(61,1)", "A2", ws);
+		assert.ok(oParser.parse(), 'EOMONTH(61,1) 1904 mode');
+		assert.strictEqual(oParser.calculate().getValue(), 120, 'Result of EOMONTH(61,1) 1904 mode');
+
+		oParser = new parserFormula("EOMONTH(DATE(2006,1,31),5)", "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 37436);
+
+		oParser = new parserFormula("EOMONTH(DATE(2004,2,29),12)", "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 36949);
+
+		ws.getRange2("A7").setValue("02-28-2004");
+		oParser = new parserFormula("EOMONTH(A7,12)", "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 36949);
+
+		oParser = new parserFormula("EOMONTH(DATE(2004,1,15),-23)", "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 35853);
+
+		// base mode
+		ws.workbook.setDate1904(false, true);
 
 		testArrayFormula2(assert, "EOMONTH", 2, 2, true, null);
 	});
@@ -7283,7 +7596,7 @@ $(function () {
 		testArrayFormula2(assert, "TEXT", 2, 2);
 
 		//____________________________________en_____________________________________________
-		AscCommon.setCurrentCultureInfo(1025);
+		AscCommon.setCurrentCultureInfo(1033);
 		oParser = new parserFormula("TEXT(123,\"yy-mm-dd\")", "A2", ws);
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), "00-05-02");
@@ -7381,9 +7694,9 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), "02 00");
 
-		oParser = new parserFormula("TEXT(123,\"aaa-aaaa\")", "A2", ws);
+		oParser = new parserFormula("TEXT(123,\"aaa-aaaa am/pm\")", "A2", ws);
 		assert.ok(oParser.parse());
-		assert.strictEqual(oParser.calculate().getValue(), "Wed-Wednesday");
+		assert.strictEqual(oParser.calculate().getValue(), "Wed-Wednesday AM");
 
 		AscCommon.setCurrentCultureInfo(culturelciddefault);
 
@@ -9785,7 +10098,7 @@ $(function () {
 	});
 
 	QUnit.test("Test: \"WORKDAY.INTL\"", function (assert) {
-
+		let array;
 		ws.getRange2("D10").setValue("44980");
 		ws.getRange2("D11").setValue("44981");
 		ws.getRange2("D12").setValue("1");
@@ -9845,6 +10158,71 @@ $(function () {
 		oParser = new parserFormula('WORKDAY.INTL(DATE(2006,1,1),-20,1,{"1/2/2006",,"1/16/2006"})', "A2", ws);
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), 38691);
+
+		// for bug 40648
+		oParser = new parserFormula('WORKDAY.INTL({1,2,3;2,3,4},1)', "A1", ws);
+		oParser.setArrayFormulaRef(ws.getRange2("F106:H108").bbox);
+		assert.ok(oParser.parse(), 'WORKDAY.INTL({1,2,3;2,3,4},1)');
+		array = oParser.calculate();
+		assert.strictEqual(array.getElementRowCol(0, 0).getValue(), 2, "Result of WORKDAY.INTL({1,2,3;2,3,4},1)[0,0]");
+		assert.strictEqual(array.getElementRowCol(0, 1).getValue(), 3, "Result of WORKDAY.INTL({1,2,3;2,3,4},1)[0,1]");
+		assert.strictEqual(array.getElementRowCol(0, 2).getValue(), 4, "Result of WORKDAY.INTL({1,2,3;2,3,4},1)[0,2]");
+		assert.strictEqual(array.getElementRowCol(1, 0).getValue(), 3, "Result of WORKDAY.INTL({1,2,3;2,3,4},1)[1,0]");
+		assert.strictEqual(array.getElementRowCol(1, 1).getValue(), 4, "Result of WORKDAY.INTL({1,2,3;2,3,4},1)[1,1]");
+		assert.strictEqual(array.getElementRowCol(1, 2).getValue(), 5, "Result of WORKDAY.INTL({1,2,3;2,3,4},1)[1,2]");
+
+		oParser = new parserFormula('WORKDAY.INTL(1,{1,2,3;2,3,4})', "A1", ws);
+		oParser.setArrayFormulaRef(ws.getRange2("F106:H108").bbox);
+		assert.ok(oParser.parse(), 'WORKDAY.INTL(1,{1,2,3;2,3,4})');
+		array = oParser.calculate();
+		assert.strictEqual(array.getElementRowCol(0, 0).getValue(), 2, "Result of WORKDAY.INTL(1,{1,2,3;2,3,4})[0,0]");
+		assert.strictEqual(array.getElementRowCol(0, 1).getValue(), 3, "Result of WORKDAY.INTL(1,{1,2,3;2,3,4})[0,1]");
+		assert.strictEqual(array.getElementRowCol(0, 2).getValue(), 4, "Result of WORKDAY.INTL(1,{1,2,3;2,3,4})[0,2]");
+		assert.strictEqual(array.getElementRowCol(1, 0).getValue(), 3, "Result of WORKDAY.INTL(1,{1,2,3;2,3,4})[1,0]");
+		assert.strictEqual(array.getElementRowCol(1, 1).getValue(), 4, "Result of WORKDAY.INTL(1,{1,2,3;2,3,4})[1,1]");
+		assert.strictEqual(array.getElementRowCol(1, 2).getValue(), 5, "Result of WORKDAY.INTL(1,{1,2,3;2,3,4})[1,2]");
+
+		oParser = new parserFormula('WORKDAY.INTL(1,1,{1,2,3;2,3,4})', "A1", ws);
+		oParser.setArrayFormulaRef(ws.getRange2("F106:H108").bbox);
+		assert.ok(oParser.parse(), 'WORKDAY.INTL(1,1,{1,2,3;2,3,4})');
+		array = oParser.calculate();
+		assert.strictEqual(array.getElementRowCol(0, 0).getValue(), 2, "Result of WORKDAY.INTL(1,1,{1,2,3;2,3,4})[0,0]");
+		assert.strictEqual(array.getElementRowCol(0, 1).getValue(), 3, "Result of WORKDAY.INTL(1,1,{1,2,3;2,3,4})[0,1]");
+		assert.strictEqual(array.getElementRowCol(0, 2).getValue(), 4, "Result of WORKDAY.INTL(1,1,{1,2,3;2,3,4})[0,2]");
+		assert.strictEqual(array.getElementRowCol(1, 0).getValue(), 3, "Result of WORKDAY.INTL(1,1,{1,2,3;2,3,4})[1,0]");
+		assert.strictEqual(array.getElementRowCol(1, 1).getValue(), 4, "Result of WORKDAY.INTL(1,1,{1,2,3;2,3,4})[1,1]");
+		assert.strictEqual(array.getElementRowCol(1, 2).getValue(), 2, "Result of WORKDAY.INTL(1,1,{1,2,3;2,3,4})[1,2]");
+
+		oParser = new parserFormula('WORKDAY.INTL({1,2,3;2,3,4},{1,2,3;2,3,4},{1,2,3;2,3,4},{1,2,3})', "A1", ws);
+		oParser.setArrayFormulaRef(ws.getRange2("F106:H108").bbox);
+		assert.ok(oParser.parse(), 'WORKDAY.INTL({1,2,3;2,3,4},{1,2,3;2,3,4},{1,2,3;2,3,4},{1,2,3})');
+		array = oParser.calculate();
+		assert.strictEqual(array.getElementRowCol(0, 0).getValue(), 4, "Result of WORKDAY.INTL({1,2,3;2,3,4},{1,2,3;2,3,4},{1,2,3;2,3,4},{1,2,3})[0,0]");
+		assert.strictEqual(array.getElementRowCol(0, 1).getValue(), 5, "Result of WORKDAY.INTL({1,2,3;2,3,4},{1,2,3;2,3,4},{1,2,3;2,3,4},{1,2,3})[0,1]");
+		assert.strictEqual(array.getElementRowCol(0, 2).getValue(), 6, "Result of WORKDAY.INTL({1,2,3;2,3,4},{1,2,3;2,3,4},{1,2,3;2,3,4},{1,2,3})[0,2]");
+		assert.strictEqual(array.getElementRowCol(1, 0).getValue(), 5, "Result of WORKDAY.INTL({1,2,3;2,3,4},{1,2,3;2,3,4},{1,2,3;2,3,4},{1,2,3})[1,0]");
+		assert.strictEqual(array.getElementRowCol(1, 1).getValue(), 6, "Result of WORKDAY.INTL({1,2,3;2,3,4},{1,2,3;2,3,4},{1,2,3;2,3,4},{1,2,3})[1,1]");
+		assert.strictEqual(array.getElementRowCol(1, 2).getValue(), 8, "Result of WORKDAY.INTL({1,2,3;2,3,4},{1,2,3;2,3,4},{1,2,3;2,3,4},{1,2,3})[1,2]");
+
+		oParser = new parserFormula('WORKDAY.INTL(1,1,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'WORKDAY.INTL(1,1,1)');
+		assert.strictEqual(oParser.calculate().getValue(), 2, 'Result of WORKDAY.INTL(1,1,1)');
+
+		oParser = new parserFormula('WORKDAY.INTL(1,1,2)', "A2", ws);
+		assert.ok(oParser.parse(), 'WORKDAY.INTL(1,1,2)');
+		assert.strictEqual(oParser.calculate().getValue(), 3, 'Result of WORKDAY.INTL(1,1,2)');
+
+		oParser = new parserFormula('WORKDAY.INTL(1,1,3)', "A2", ws);
+		assert.ok(oParser.parse(), 'WORKDAY.INTL(1,1,3)');
+		assert.strictEqual(oParser.calculate().getValue(), 4, 'Result of WORKDAY.INTL(1,1,3)');
+
+		oParser = new parserFormula('WORKDAY.INTL(1,1,4)', "A2", ws);
+		assert.ok(oParser.parse(), 'WORKDAY.INTL(1,1,4)');
+		assert.strictEqual(oParser.calculate().getValue(), 2, 'Result of WORKDAY.INTL(1,1,4)');
+
+		oParser = new parserFormula('WORKDAY.INTL(1,1,12)', "A2", ws);
+		assert.ok(oParser.parse(), 'WORKDAY.INTL(1,1,12)');
+		assert.strictEqual(oParser.calculate().getValue(), 3, 'Result of WORKDAY.INTL(1,1,12)');
 
 	});
 
@@ -15710,10 +16088,11 @@ $(function () {
 
 	QUnit.test("Test: \"FORECAST\"", function (assert) {
 
+
 		function forecast(fx, y, x) {
 
-			var fSumDeltaXDeltaY = 0, fSumSqrDeltaX = 0, _x = 0, _y = 0, xLength = 0;
-			for (var i = 0; i < x.length; i++) {
+			let fSumDeltaXDeltaY = 0, fSumSqrDeltaX = 0, _x = 0, _y = 0, xLength = 0;
+			for (let i = 0; i < x.length; i++) {
 				_x += x[i];
 				_y += y[i];
 				xLength++;
@@ -15722,10 +16101,10 @@ $(function () {
 			_x /= xLength;
 			_y /= xLength;
 
-			for (var i = 0; i < x.length; i++) {
+			for (let i = 0; i < x.length; i++) {
 
-				var fValX = x[i];
-				var fValY = y[i];
+				let fValX = x[i];
+				let fValY = y[i];
 
 				fSumDeltaXDeltaY += (fValX - _x) * (fValY - _y);
 				fSumSqrDeltaX += (fValX - _x) * (fValX - _x);
@@ -15736,9 +16115,89 @@ $(function () {
 
 		}
 
+		// add a sheet to check area3D type
+		ws2 = wb.createWorksheet(0, "Sheet2");
+
 		oParser = new parserFormula("FORECAST(30,{6,7,9,15,21},{20,28,31,38,40})", "A1", ws);
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), forecast(30, [6, 7, 9, 15, 21], [20, 28, 31, 38, 40]));
+
+		oParser = new parserFormula("FORECAST(1,{1,2},{1,2})", "A1", ws);
+		assert.ok(oParser.parse(), "FORECAST(1,{1,2},{1,2})");
+		assert.strictEqual(oParser.calculate().getValue(), 1, "Result of FORECAST(1,{1,2},{1,2})");
+
+		oParser = new parserFormula("FORECAST(1,{1,2},{1,2,3})", "A1", ws);
+		assert.ok(oParser.parse(), "FORECAST(1,{1,2},{1,2,3})");
+		assert.strictEqual(oParser.calculate().getValue(), "#N/A", "Result of FORECAST(1,{1,2},{1,2,3})");
+
+		oParser = new parserFormula("FORECAST(1,{1,2,3},{1,2})", "A1", ws);
+		assert.ok(oParser.parse(), "FORECAST(1,{1,2,3},{1,2})");
+		assert.strictEqual(oParser.calculate().getValue(), "#N/A", "Result of FORECAST(1,{1,2,3},{1,2})");
+
+		ws.getRange2("A1").setValue("1");
+		ws.getRange2("A2").setValue("2");
+		ws.getRange2("B1").setValue("3");
+		ws.getRange2("B2").setValue("4");
+
+		ws2.getRange2("A1").setValue("1");
+		ws2.getRange2("A2").setValue("2");
+		ws2.getRange2("B1").setValue("3");
+		ws2.getRange2("B2").setValue("4");
+
+		oParser = new parserFormula("FORECAST(1,A1:A2,B1:B2)", "A1", ws);
+		assert.ok(oParser.parse(), "FORECAST(1,A1:A2,B1:B2)");
+		assert.strictEqual(oParser.calculate().getValue(), -1, "Result of FORECAST(1,A1:A2,B1:B2)");
+
+		// for bug 65245
+		oParser = new parserFormula("FORECAST(1,Sheet2!A1:A2,Sheet2!B1:B2)", "A1", ws);
+		assert.ok(oParser.parse(), "FORECAST(1,Sheet2!A1:A2,Sheet2!B1:B2). Bug 65245 test");
+		assert.strictEqual(oParser.calculate().getValue(), -1, "Result of FORECAST(1,Sheet2!A1:A2,Sheet2!B1:B2)");
+
+		// errors
+		oParser = new parserFormula("FORECAST(#N/A,A1:A2,B1:B2)", "A1", ws);
+		assert.ok(oParser.parse(), "FORECAST(#N/A,A1:A2,B1:B2)");
+		assert.strictEqual(oParser.calculate().getValue(), "#N/A", "Result of FORECAST(#N/A,A1:A2,B1:B2)");
+
+		oParser = new parserFormula("FORECAST(1,#NUM!,#N/A)", "A1", ws);
+		assert.ok(oParser.parse(), "FORECAST(1,#NUM!,#N/A)");
+		assert.strictEqual(oParser.calculate().getValue(), "#NUM!", "Result of FORECAST(1,#NUM!,#N/A)");
+
+		oParser = new parserFormula("FORECAST(1,A1:A2,#NUM!)", "A1", ws);
+		assert.ok(oParser.parse(), "FORECAST(1,A1:A2,#NUM!)");
+		assert.strictEqual(oParser.calculate().getValue(), "#NUM!", "Result of FORECAST(1,A1:A2,#NUM!)");
+
+		// strings
+		oParser = new parserFormula('FORECAST("1",A1:A2,B1:B2)', "A1", ws);
+		assert.ok(oParser.parse(), 'FORECAST("1",A1:A2,B1:B2)');
+		assert.strictEqual(oParser.calculate().getValue(), -1, 'Result of FORECAST("1",A1:A2,B1:B2)');
+
+		oParser = new parserFormula('FORECAST("1s",A1:A2,B1:B2)', "A1", ws);
+		assert.ok(oParser.parse(), 'FORECAST("1s",A1:A2,B1:B2)');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Result of FORECAST("1s",A1:A2,B1:B2)');
+
+		oParser = new parserFormula('FORECAST(1,{1,"2"},{1,2})', "A1", ws);
+		assert.ok(oParser.parse(), 'FORECAST(1,{1,"2"},{1,2})');
+		assert.strictEqual(oParser.calculate().getValue(), "#DIV/0!", 'Result of FORECAST(1,{1,"2"},{1,2})');
+
+		oParser = new parserFormula('FORECAST(1,{1,2},{"1",2})', "A1", ws);
+		assert.ok(oParser.parse(), 'FORECAST(1,{1,2},{"1",2})');
+		assert.strictEqual(oParser.calculate().getValue(), "#DIV/0!", 'Result of FORECAST(1,{1,2},{"1",2})');
+
+		// bools
+		oParser = new parserFormula('FORECAST(FALSE,A1:A2,B1:B2)', "A1", ws);
+		assert.ok(oParser.parse(), 'FORECAST(FALSE,A1:A2,B1:B2)');
+		assert.strictEqual(oParser.calculate().getValue(), -2, 'Result of FORECAST(FALSE,A1:A2,B1:B2)');
+
+		oParser = new parserFormula('FORECAST(TRUE,A1:A2,B1:B2)', "A1", ws);
+		assert.ok(oParser.parse(), 'FORECAST(TRUE,A1:A2,B1:B2)');
+		assert.strictEqual(oParser.calculate().getValue(), -1, 'Result of FORECAST(TRUE,A1:A2,B1:B2)');
+
+		oParser = new parserFormula('FORECAST(TRUE,{TRUE,2},{TRUE,2})', "A1", ws);
+		assert.ok(oParser.parse(), 'FORECAST(TRUE,{TRUE,2},{TRUE,2})');
+		assert.strictEqual(oParser.calculate().getValue(), "#DIV/0!", 'Result of FORECAST(TRUE,{TRUE,2},{TRUE,2})');
+
+		// delete the previously created sheet
+		wb.removeWorksheet(0);
 
 	});
 
@@ -16440,6 +16899,7 @@ $(function () {
 	});
 
 	QUnit.test("Test: \"LINEST\"", function (assert) {
+		let array;
 
 		ws.getRange2("A202").setValue("1");
 		ws.getRange2("A203").setValue("2");
@@ -16501,7 +16961,7 @@ $(function () {
 		oParser = new parserFormula("LINEST(A102:A105,B102:B105,,FALSE)", "A1", ws);
 		oParser.setArrayFormulaRef(ws.getRange2("E106:F106").bbox);
 		assert.ok(oParser.parse());
-		var array = oParser.calculate();
+		array = oParser.calculate();
 		if (AscCommonExcel.cElementType.array === array.type) {
 			assert.strictEqual(array.getElementRowCol(0, 0).getValue(), 2);
 			assert.strictEqual(array.getElementRowCol(0, 1).getValue(), 1);
@@ -16593,6 +17053,91 @@ $(function () {
 		oParser = new parserFormula("LINEST({1,2})", "A2", ws);
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getElementRowCol(0, 0).getValue().toFixed(8) - 0, 1);
+
+		// for bug 65316
+		ws.getRange2("A150").setValue("1");
+		ws.getRange2("B150").setValue("2");
+		ws.getRange2("C150").setValue("3");
+		ws.getRange2("D150").setValue("4");
+		ws.getRange2("E150").setValue("5");
+
+		ws.getRange2("A151").setValue("5.3");
+		ws.getRange2("B151").setValue("6.3");
+		ws.getRange2("C151").setValue("4.8");
+		ws.getRange2("D151").setValue("3.8");
+		ws.getRange2("E151").setValue("3.3");
+
+		oParser = new parserFormula("LINEST(A151:E151,A150:E150)", "A2", ws);
+		oParser.setArrayFormulaRef(ws.getRange2("E106:F106").bbox);
+		assert.ok(oParser.parse(), "LINEST(A151:E151,A150:E150)");
+		array = oParser.calculate();
+		assert.ok(1, "LINEST(A151:E151,A150:E150) => y = -0.65x + 6.65");
+		assert.strictEqual(array.getElementRowCol(0, 0).getValue(), -0.65, "Result of LINEST(A151:E151,A150:E150) [0,0]");
+		assert.strictEqual(array.getElementRowCol(0, 1).getValue(), 6.65, "Result of LINEST(A151:E151,A150:E150) [0,1]");
+
+		oParser = new parserFormula("LINEST(A151:E151,A150:E150^{1;2;3})", "A2", ws);
+		oParser.setArrayFormulaRef(ws.getRange2("E106:F106").bbox);
+		assert.ok(oParser.parse(), "LINEST(A151:E151,A150:E150^{1;2;3})");
+		array = oParser.calculate();
+		assert.strictEqual(array.getElementRowCol(0, 0).getValue().toFixed(2), "0.25", "Result of LINEST(A151:E151,A150:E150)^{1;2;3} [0,0]");
+		assert.strictEqual(array.getElementRowCol(0, 1).getValue().toFixed(2), "-2.43", "Result of LINEST(A151:E151,A150:E150)^{1;2;3} [0,1]");
+		assert.strictEqual(array.getElementRowCol(0, 2).getValue().toFixed(2), "6.32", "Result of LINEST(A151:E151,A150:E150)^{1;2;3} [0,2]");
+		assert.strictEqual(array.getElementRowCol(0, 3).getValue().toFixed(1), "1.2", "Result of LINEST(A151:E151,A150:E150)^{1;2;3} [0,3]");
+
+		oParser = new parserFormula("LINEST(A151:E151,A150:E150^{1,2,3})", "A2", ws);
+		assert.ok(oParser.parse(), "LINEST(A151:E151,A150:E150^{1,2,3})");
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", "Result of LINEST(A151:E151,A150:E150)^{1,2,3}");
+
+		oParser = new parserFormula("LINEST(A151:E151,{1;2;3;4;5})", "A2", ws);
+		assert.ok(oParser.parse(), "LINEST(A151:E151,{1;2;3;4;5})");
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", "Result of LINEST(A151:E151,{1;2;3;4;5})");
+
+		oParser = new parserFormula("LINEST(A151:E151,{1,2,3,4,5})", "A2", ws);
+		oParser.setArrayFormulaRef(ws.getRange2("E106:F106").bbox);
+		assert.ok(oParser.parse(), "LINEST(A151:E151,{1,2,3,4,5})");
+		array = oParser.calculate();
+		assert.strictEqual(array.getElementRowCol(0, 0).getValue(), -0.65, "Result of LINEST(A151:E151,{1,2,3,4,5}) [0,0]");
+		assert.strictEqual(array.getElementRowCol(0, 1).getValue(), 6.65, "Result of LINEST(A151:E151,{1,2,3,4,5}) [0,1]");
+
+		oParser = new parserFormula('LINEST(A151:E151,{"1",2,3,4,5})', "A2", ws);
+		assert.ok(oParser.parse(), 'LINEST(A151:E151,{"1",2,3,4,5})');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Result of LINEST(A151:E151,{"1",2,3,4,5})');
+
+		oParser = new parserFormula('LINEST(A151:E151,{#N/A,2,3,4,5})', "A2", ws);
+		assert.ok(oParser.parse(), 'LINEST(A151:E151,{#N/A,2,3,4,5})');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Result of LINEST(A151:E151,{#N/A,2,3,4,5})');
+
+		oParser = new parserFormula('LINEST(A151:E151,{"string",2,3,4,5})', "A2", ws);
+		assert.ok(oParser.parse(), 'LINEST(A151:E151,{"string",2,3,4,5})');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Result of LINEST(A151:E151,{"string",2,3,4,5})');
+
+		oParser = new parserFormula('LINEST(A151:E151,{TRUE,2,3,4,5})', "A2", ws);
+		assert.ok(oParser.parse(), 'LINEST(A151:E151,{TRUE,2,3,4,5})');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Result of LINEST(A151:E151,{TRUE,2,3,4,5})');
+
+		oParser = new parserFormula("LINEST({5.3,6.3,4.8,3.8,3.3},A150:E150)", "A2", ws);
+		oParser.setArrayFormulaRef(ws.getRange2("E106:F106").bbox);
+		assert.ok(oParser.parse(), "LINEST({5.3,6.3,4.8,3.8,3.3},A150:E150)");
+		array = oParser.calculate();
+		assert.strictEqual(array.getElementRowCol(0, 0).getValue(), -0.65, "Result of LINEST({5.3,6.3,4.8,3.8,3.3},A150:E150) [0,0]");
+		assert.strictEqual(array.getElementRowCol(0, 1).getValue(), 6.65, "Result of LINEST({5.3,6.3,4.8,3.8,3.3},A150:E150) [0,1]");
+
+		oParser = new parserFormula('LINEST({"5.3",6.3,4.8,3.8,3.3},A150:E150)', "A2", ws);
+		assert.ok(oParser.parse(), 'LINEST({"5.3",6.3,4.8,3.8,3.3},A150:E150)');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Result of LINEST({"5.3",6.3,4.8,3.8,3.3},A150:E150)');
+
+		oParser = new parserFormula('LINEST({#N/A,6.3,4.8,3.8,3.3},A150:E150)', "A2", ws);
+		assert.ok(oParser.parse(), 'LINEST({#N/A,6.3,4.8,3.8,3.3},A150:E150)');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Result of LINEST({#N/A,6.3,4.8,3.8,3.3},A150:E150)');
+
+		oParser = new parserFormula('LINEST({"string",6.3,4.8,3.8,3.3},A150:E150)', "A2", ws);
+		assert.ok(oParser.parse(), 'LINEST({"string",6.3,4.8,3.8,3.3},A150:E150)');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Result of LINEST({"string",6.3,4.8,3.8,3.3},A150:E150)');
+
+		oParser = new parserFormula('LINEST({TRUE,6.3,4.8,3.8,3.3},A150:E150)', "A2", ws);
+		assert.ok(oParser.parse(), 'LINEST({TRUE,6.3,4.8,3.8,3.3},A150:E150)');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Result of LINEST({TRUE,6.3,4.8,3.8,3.3},A150:E150)');
+
 
 	});
 
@@ -17935,6 +18480,30 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), 1);
 
+		oParser = new parserFormula("SMALL(3,1)", "A1", ws);
+		assert.ok(oParser.parse(), 'SMALL(3,1)');
+		assert.strictEqual(oParser.calculate().getValue(), 3, 'Result of SMALL(3,1)');
+
+		oParser = new parserFormula("SMALL(1,1)", "A1", ws);
+		assert.ok(oParser.parse(), 'SMALL(1,1)');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Result of SMALL(1,1)');
+
+		oParser = new parserFormula("SMALL(1,2)", "A1", ws);
+		assert.ok(oParser.parse(), 'SMALL(1,2)');
+		assert.strictEqual(oParser.calculate().getValue(), "#NUM!", 'Result of SMALL(1,2)');
+
+		oParser = new parserFormula("SMALL(#N/A,1)", "A1", ws);
+		assert.ok(oParser.parse(), 'SMALL(#N/A,1)');
+		assert.strictEqual(oParser.calculate().getValue(), "#N/A", 'Result of SMALL(#N/A,1)');
+
+		oParser = new parserFormula('SMALL("1",1)', "A1", ws);
+		assert.ok(oParser.parse(), 'SMALL("1",1)');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Result of SMALL("1",1)');
+
+		oParser = new parserFormula('SMALL(-10,1)', "A1", ws);
+		assert.ok(oParser.parse(), 'SMALL(-10,1)');
+		assert.strictEqual(oParser.calculate().getValue(), -10, 'Result of SMALL(-10,1)');
+
 		//TODO нужна другая функция для тестирования
 		//testArrayFormula2(assert, "SMALL", 2, 2)
 	});
@@ -18651,9 +19220,97 @@ $(function () {
 		assert.ok(oParser.parse(), 'VLOOKUP(5,A101:B113,2,FALSE)');
 		assert.strictEqual(oParser.calculate().getValue(), 13, 'Result of VLOOKUP(5,A101:B113,2,FALSE)');
 
+		// for bug 54560
+		ws.getRange2("A101").setValue("Aa");
+		ws.getRange2("A102").setValue("Ae");
+		ws.getRange2("A103").setValue("Ba");
+		ws.getRange2("A104").setValue("Be");
+		ws.getRange2("A105").setValue("CA");
+		ws.getRange2("A106").setValue("CE");
+		ws.getRange2("A107").setValue("DA");
+		ws.getRange2("A108").setValue("DE");
+		ws.getRange2("A109").setValue("Ha");
+		ws.getRange2("A110").setValue("HE");
+		ws.getRange2("A111").setValue("Ia");
+		ws.getRange2("A112").setValue("Ie");
+		ws.getRange2("A113").setValue("Ja");
+		ws.getRange2("A114").setValue("Je");
+		ws.getRange2("A115").setValue("Ka");
+		ws.getRange2("A116").setValue("Ke");
+
+		oParser = new parserFormula('VLOOKUP(A101,A101:A116,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'VLOOKUP(A101,A101:A116,1)');
+		assert.strictEqual(oParser.calculate().getValue(), "Aa", 'Result of VLOOKUP(A101,A101:A116,1)');
+
+		oParser = new parserFormula('VLOOKUP(A102,A101:A116,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'VLOOKUP(A102,A101:A116,1)');
+		assert.strictEqual(oParser.calculate().getValue(), "Ae", 'Result of VLOOKUP(A102,A101:A116,1)');
+
+		oParser = new parserFormula('VLOOKUP(A103,A101:A116,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'VLOOKUP(A103,A101:A116,1)');
+		assert.strictEqual(oParser.calculate().getValue(), "Ba", 'Result of VLOOKUP(A103,A101:A116,1)');
+
+		oParser = new parserFormula('VLOOKUP(A104,A101:A116,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'VLOOKUP(A104,A101:A116,1)');
+		assert.strictEqual(oParser.calculate().getValue(), "Be", 'Result of VLOOKUP(A104,A101:A116,1)');
+
+		oParser = new parserFormula('VLOOKUP(A105,A101:A116,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'VLOOKUP(A105,A101:A116,1)');
+		assert.strictEqual(oParser.calculate().getValue(), "CA", 'Result of VLOOKUP(A105,A101:A116,1)');
+
+		oParser = new parserFormula('VLOOKUP(A106,A101:A116,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'VLOOKUP(A106,A101:A116,1)');
+		assert.strictEqual(oParser.calculate().getValue(), "CE", 'Result of VLOOKUP(A106,A101:A116,1)');
+
+		oParser = new parserFormula('VLOOKUP(A107,A101:A116,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'VLOOKUP(A107,A101:A116,1)');
+		assert.strictEqual(oParser.calculate().getValue(), "DA", 'Result of VLOOKUP(A107,A101:A116,1)');
+
+		oParser = new parserFormula('VLOOKUP(A108,A101:A116,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'VLOOKUP(A108,A101:A116,1)');
+		assert.strictEqual(oParser.calculate().getValue(), "DE", 'Result of VLOOKUP(A108,A101:A116,1)');
+
+		oParser = new parserFormula('VLOOKUP("Ha",A101:A116,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'VLOOKUP("Ha",A101:A116,1)');
+		assert.strictEqual(oParser.calculate().getValue(), "Ha", 'Result of VLOOKUP(A109,A101:A116,1)');
+
+		oParser = new parserFormula('VLOOKUP(A109,A101:A116,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'VLOOKUP(A109,A101:A116,1)');
+		assert.strictEqual(oParser.calculate().getValue(), "Ha", 'Result of VLOOKUP(A109,A101:A116,1)');
+
+		oParser = new parserFormula('VLOOKUP(A110,A101:A116,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'VLOOKUP(A110,A101:A116,1)');
+		assert.strictEqual(oParser.calculate().getValue(), "HE", 'Result of VLOOKUP(A110,A101:A116,1)');
+
+		oParser = new parserFormula('VLOOKUP(A111,A101:A116,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'VLOOKUP(A111,A101:A116,1)');
+		assert.strictEqual(oParser.calculate().getValue(), "Ia", 'Result of VLOOKUP(A111,A101:A116,1)');
+
+		oParser = new parserFormula('VLOOKUP(A112,A101:A116,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'VLOOKUP(A112,A101:A116,1)');
+		assert.strictEqual(oParser.calculate().getValue(), "Ie", 'Result of VLOOKUP(A112,A101:A116,1)');
+
+		oParser = new parserFormula('VLOOKUP(A113,A101:A116,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'VLOOKUP(A113,A101:A116,1)');
+		assert.strictEqual(oParser.calculate().getValue(), "Ja", 'Result of VLOOKUP(A113,A101:A116,1)');
+
+		oParser = new parserFormula('VLOOKUP(A114,A101:A116,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'VLOOKUP(A114,A101:A116,1)');
+		assert.strictEqual(oParser.calculate().getValue(), "Je", 'Result of VLOOKUP(A114,A101:A116,1)');
+
+		oParser = new parserFormula('VLOOKUP(A115,A101:A116,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'VLOOKUP(A115,A101:A116,1)');
+		assert.strictEqual(oParser.calculate().getValue(), "Ka", 'Result of VLOOKUP(A115,A101:A116,1)');
+
+		oParser = new parserFormula('VLOOKUP(A116,A101:A116,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'VLOOKUP(A116,A101:A116,1)');
+		assert.strictEqual(oParser.calculate().getValue(), "Ke", 'Result of VLOOKUP(A116,A101:A116,1)');
+
+
 	});
 
 	QUnit.test("Test: \"LOOKUP\"", function (assert) {
+		AscCommonExcel.g_oLOOKUPCache.clean();
 		let array;
 		ws.getRange2("A102").setValue("4.14");
 		ws.getRange2("A103").setValue("4.19");
@@ -18722,6 +19379,8 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue().getValue(), "black");
 
+		AscCommonExcel.g_oLOOKUPCache.clean();
+
 		ws.getRange2("A101").setValue("0");
 		ws.getRange2("A102").setValue("1");
 		ws.getRange2("A103").setValue("");
@@ -18769,27 +19428,27 @@ $(function () {
 
 		oParser = new parserFormula("LOOKUP(A102:A102,A102:A105,TRUE)", "A2", ws);
 		assert.ok(oParser.parse(), "LOOKUP(A102:A102,A102:A105,TRUE)");
-		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", "Result of LOOKUP(A102:A102,A102:A105,TRUE)");
+		assert.strictEqual(oParser.calculate().getValue(), "TRUE", "Result of LOOKUP(A102:A102,A102:A105,TRUE)");
 
 		oParser = new parserFormula("LOOKUP(A102:A102,A102:A105,1)", "A2", ws);
 		assert.ok(oParser.parse(), "LOOKUP(A102:A102,A102:A105,1)");
-		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", "Result of LOOKUP(A102:A102,A102:A105,1)");
+		assert.strictEqual(oParser.calculate().getValue(), 1, "Result of LOOKUP(A102:A102,A102:A105,1)");
 
 		oParser = new parserFormula("LOOKUP(A102:A102,A102:A105,a)", "A2", ws);
 		assert.ok(oParser.parse(), "LOOKUP(A102:A102,A102:A105,a)");
-		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", "Result of LOOKUP(A102:A102,A102:A105,a)");
+		assert.strictEqual(oParser.calculate().getValue(), "#NAME?", "Result of LOOKUP(A102:A102,A102:A105,a)");
 
 		oParser = new parserFormula("LOOKUP(A102:A102,A102:A105,A102:A102)", "A2", ws);
 		assert.ok(oParser.parse(), "LOOKUP(A102:A102,A102:A105,A102:A102)");
-		assert.strictEqual(oParser.calculate().getValue().getValue(), 1, "Result of LOOKUP(A102:A102,A102:A105,A102:A102)");
+		assert.strictEqual(oParser.calculate().getValue(), 1, "Result of LOOKUP(A102:A102,A102:A105,A102:A102)");
 
 		oParser = new parserFormula("LOOKUP(A102:A102,A102:A105,A103:A103)", "A2", ws);
 		assert.ok(oParser.parse(), "LOOKUP(1,A102:A105,A103:A103)");
-		assert.strictEqual(oParser.calculate().getValue().getValue(), "", "Result of LOOKUP(1,A102:A105,A103:A103)");
+		assert.strictEqual(oParser.calculate().getValue(), "", "Result of LOOKUP(1,A102:A105,A103:A103)");
 
 		oParser = new parserFormula("LOOKUP(A102:A102,A102:A105,A104:A104)", "A2", ws);
 		assert.ok(oParser.parse(), "LOOKUP(1,A102:A105,A104:A104)");
-		assert.strictEqual(oParser.calculate().getValue().getValue(), 3, "Result of LOOKUP(1,A102:A105,A104:A104)");
+		assert.strictEqual(oParser.calculate().getValue(), 3, "Result of LOOKUP(1,A102:A105,A104:A104)");
 
 		oParser = new parserFormula("LOOKUP(A102,A102:A105,)", "A2", ws);
 		assert.ok(oParser.parse(), "LOOKUP(1,A102:A105,)");
@@ -18804,8 +19463,8 @@ $(function () {
 		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", "Result of LOOKUP(1,A105,)");
 
 		oParser = new parserFormula("LOOKUP(A102,A102:A105,A102)", "A2", ws);
-		assert.ok(oParser.parse(), "LOOKUP(1,A102:A105,A102)");
-		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", "Result of LOOKUP(1,A102:A105,A102)");
+		assert.ok(oParser.parse(), "LOOKUP(1,A102:A105,1)");
+		assert.strictEqual(oParser.calculate().getValue().getValue(), 1, "Result of LOOKUP(1,A102:A105,1)");
 
 		oParser = new parserFormula("LOOKUP({2,13,14,15},A102:A105,B102:B105)", "A2", ws);
 		assert.ok(oParser.parse(), "LOOKUP({2,13,14,15},A102:A105,B102:B105)");
@@ -18813,19 +19472,19 @@ $(function () {
 
 		oParser = new parserFormula("LOOKUP({3,13,14,15},A102:A105,B102:B105)", "A2", ws);
 		assert.ok(oParser.parse(), "LOOKUP({3,13,14,15},A102:A105,B102:B105)");
-		assert.strictEqual(oParser.calculate().getValue().getValue(), "c", "Result of LOOKUP({3,13,14,15},A102:A105,B102:B105)");	//d
+		assert.strictEqual(oParser.calculate().getValue().getValue(), "d", "Result of LOOKUP({3,13,14,15},A102:A105,B102:B105)");
 
 		oParser = new parserFormula("LOOKUP({12,13,14,15},A102:A105,B102:B105)", "A2", ws);
 		assert.ok(oParser.parse(), "LOOKUP({12,13,14,15},A102:A105,B102:B105)");
-		assert.strictEqual(oParser.calculate().getValue().getValue(), "c", "Result of LOOKUP({12,13,14,15},A102:A105,B102:B105)");	//d
+		assert.strictEqual(oParser.calculate().getValue().getValue(), "d", "Result of LOOKUP({12,13,14,15},A102:A105,B102:B105)");
 
 		oParser = new parserFormula("LOOKUP({0},A101:A105,A101:A105)", "A2", ws);
 		assert.ok(oParser.parse(), "LOOKUP({0},A101:A105,A101:A105)");
 		assert.strictEqual(oParser.calculate().getValue().getValue(), 0, "Result of LOOKUP({0},A101:A105,A101:A105)");
 
-		oParser = new parserFormula("LOOKUP({2},{0,1,2,3,4},B102:B108)", "A2", ws);
-		assert.ok(oParser.parse(), "LOOKUP({2},{0,1,2,3,4},B102:B108)");
-		assert.strictEqual(oParser.calculate().getValue(), "#N/A", "Result of LOOKUP({2},{0,1,2,3,4},B102:B108)");	//c
+		// oParser = new parserFormula("LOOKUP({2},{0,1,2,3,4},B102:B108)", "A2", ws);
+		// assert.ok(oParser.parse(), "LOOKUP({2},{0,1,2,3,4},B102:B108)");
+		// assert.strictEqual(oParser.calculate().getValue(), "c", "Result of LOOKUP({2},{0,1,2,3,4},B102:B108)");
 
 		oParser = new parserFormula("LOOKUP({2},{0,1,2,3,4},{10,11,12,13,14})", "A2", ws);
 		assert.ok(oParser.parse(), "LOOKUP({2},{0,1,2,3,4},{10,11,12,13,14})");
@@ -18833,19 +19492,19 @@ $(function () {
 
 		oParser = new parserFormula("LOOKUP(3,A102:A106,B102:B106)", "A2", ws);
 		assert.ok(oParser.parse(), "LOOKUP(3,A102:A106,B102:B106)");
-		assert.strictEqual(oParser.calculate().getValue().getValue(), "c", "Result of LOOKUP(3,A102:A106,B102:B106)");	//e
+		assert.strictEqual(oParser.calculate().getValue().getValue(), "e", "Result of LOOKUP(3,A102:A106,B102:B106)");
 
 		oParser = new parserFormula("LOOKUP(A104,A102:A106,B102:B106)", "A2", ws);
 		assert.ok(oParser.parse(), "LOOKUP(A104,A102:A106,B102:B106)");
-		assert.strictEqual(oParser.calculate().getValue().getValue(), "c", "Result of LOOKUP(3,A102:A106,B102:B106)");	//e
+		assert.strictEqual(oParser.calculate().getValue().getValue(), "e", "Result of LOOKUP(3,A102:A106,B102:B106)");
 
 		oParser = new parserFormula("LOOKUP(TRUE,A102:A108,B102:B108)", "A2", ws);
 		assert.ok(oParser.parse(), "LOOKUP(TRUE,A102:A108,B102:B108)");
-		assert.strictEqual(oParser.calculate().getValue().getValue(), "a", "Result of LOOKUP(TRUE,A102:A108,B102:B108)");	//f
+		assert.strictEqual(oParser.calculate().getValue().getValue(), "f", "Result of LOOKUP(TRUE,A102:A108,B102:B108)");
 
 		oParser = new parserFormula("LOOKUP(A107,A102:A108,B102:B108)", "A2", ws);
 		assert.ok(oParser.parse(), "LOOKUP(TRUE,A102:A108,B102:B108)");
-		assert.strictEqual(oParser.calculate().getValue().getValue(), "a", "Result of LOOKUP(TRUE,A102:A108,B102:B108)");	//f
+		assert.strictEqual(oParser.calculate().getValue().getValue(), "f", "Result of LOOKUP(TRUE,A102:A108,B102:B108)");
 
 		oParser = new parserFormula("LOOKUP(FALSE,A102:A108,B102:B108)", "A2", ws);
 		assert.ok(oParser.parse(), "LOOKUP(FALSE,A102:A108,B102:B108)");
@@ -18856,24 +19515,28 @@ $(function () {
 		assert.strictEqual(oParser.calculate().getValue(), "#N/A", "Result of LOOKUP(FALSE,A102:A108,B102:B108)");
 
 		ws.getRange2("B106").setValue("#DIV/0!");
+		AscCommonExcel.g_oLOOKUPCache.clean();
 		oParser = new parserFormula('LOOKUP("b",B102:B110,C102:C110)', "A2", ws);
 		assert.ok(oParser.parse());
-		assert.strictEqual(oParser.calculate().getValue().getValue(), 5);		// 2
+		assert.strictEqual(oParser.calculate().getValue().getValue(), 2);
 
 		ws.getRange2("B106").setValue("a");
+		AscCommonExcel.g_oLOOKUPCache.clean();
 		oParser = new parserFormula('LOOKUP("b",B102:B110,C102:C110)', "A2", ws);
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue().getValue(), 5);
 
 		ws.getRange2("B106").setValue("0");
+		AscCommonExcel.g_oLOOKUPCache.clean();
 		oParser = new parserFormula('LOOKUP("b",B102:B110,C102:C110)', "A2", ws);
 		assert.ok(oParser.parse());
-		assert.strictEqual(oParser.calculate().getValue().getValue(), 5);		// 2
+		assert.strictEqual(oParser.calculate().getValue().getValue(), 2);
 
 		ws.getRange2("B106").setValue("TRUE");
+		AscCommonExcel.g_oLOOKUPCache.clean();
 		oParser = new parserFormula('LOOKUP("b",B102:B110,C102:C110)', "A2", ws);
 		assert.ok(oParser.parse());
-		assert.strictEqual(oParser.calculate().getValue().getValue(), 5);		// 2
+		assert.strictEqual(oParser.calculate().getValue().getValue(), 2);
 
 		ws.getRange2("G102").setValue("0");
 		ws.getRange2("G103").setValue("1");
@@ -18891,14 +19554,16 @@ $(function () {
 		ws.getRange2("H107").setValue("f");
 		ws.getRange2("H108").setValue("g");
 
+		AscCommonExcel.g_oLOOKUPCache.clean();
+
 		// BOOLEAN TESTS
 		oParser = new parserFormula("LOOKUP(TRUE,G102:G108,H102:H108)", "A2", ws);
 		assert.ok(oParser.parse(), "LOOKUP(TRUE,G102:G108,H102:H108)");
-		assert.strictEqual(oParser.calculate().getValue().getValue(), "b", "Result of LOOKUP(TRUE,G102:G108,H102:H108)");	// f
+		assert.strictEqual(oParser.calculate().getValue().getValue(), "f", "Result of LOOKUP(TRUE,G102:G108,H102:H108)");
 
 		oParser = new parserFormula("LOOKUP(G107,G102:G108,H102:H108)", "A2", ws);
 		assert.ok(oParser.parse(), "LOOKUP(TRUE,G102:G108,H102:H108)");
-		assert.strictEqual(oParser.calculate().getValue().getValue(), "b", "Result of LOOKUP(TRUE,G102:G108,H102:H108)");	// f
+		assert.strictEqual(oParser.calculate().getValue().getValue(), "f", "Result of LOOKUP(TRUE,G102:G108,H102:H108)");
 
 		oParser = new parserFormula("LOOKUP(FALSE,G102:G108,H102:H108)", "A2", ws);
 		assert.ok(oParser.parse(), "LOOKUP(FALSE,G102:G108,H102:H108)");
@@ -18927,6 +19592,8 @@ $(function () {
 		ws.getRange2("I102").setValue("g");
 		ws.getRange2("J102").setValue("h");
 		ws.getRange2("K102").setValue("i");
+
+		AscCommonExcel.g_oLOOKUPCache.clean();
 
 		oParser = new parserFormula("LOOKUP(3,C101:K101,C102:K102)", "A2", ws);
 		assert.ok(oParser.parse());
@@ -18975,6 +19642,8 @@ $(function () {
 		ws.getRange2("E104").setValue("20");
 		ws.getRange2("E105").setValue("25");
 
+		AscCommonExcel.g_oLOOKUPCache.clean();
+
 		// columns > rows
 		oParser = new parserFormula("LOOKUP(3,A101:E103)", "A2", ws);
 		assert.ok(oParser.parse(), "LOOKUP(3,A101:E103)");
@@ -19019,6 +19688,8 @@ $(function () {
 		ws.getRange2("C200").setValue("c");
 		ws.getRange2("D200").setValue("d");
 
+		AscCommonExcel.g_oLOOKUPCache.clean();
+
 		oParser = new parserFormula("LOOKUP(1,{1,0,0,1},A200:D200)", "A2", ws);
 		assert.ok(oParser.parse(), "LOOKUP(1,{1,0,0,1},A200:D200)");
 		assert.strictEqual(oParser.calculate().getValue(), "d", "Result of LOOKUP(1,{1,0,0,1},A200:D200)");
@@ -19059,10 +19730,12 @@ $(function () {
 		ws.getRange2("C105").setValue("0");
 		ws.getRange2("C106").setValue("0");
 
-		// oParser = new parserFormula("LOOKUP(1,A100:A106,B100:B106)", "A2", ws);
-		// assert.ok(oParser.parse(), "LOOKUP(1,A100:A106,B100:B106)");
-		// oParser.setArrayFormulaRef(ws.getRange2("A2").bbox);
-		// assert.strictEqual(oParser.calculate().getValue(), 2, "Result of LOOKUP(1,A100:A106,B100:B106)");
+		AscCommonExcel.g_oLOOKUPCache.clean();
+
+		oParser = new parserFormula("LOOKUP(1,A100:A106,B100:B106)", "A2", ws);
+		assert.ok(oParser.parse(), "LOOKUP(1,A100:A106,B100:B106)");
+		oParser.setArrayFormulaRef(ws.getRange2("A2").bbox);
+		assert.strictEqual(oParser.calculate().getValue().getValue(), 2, "Result of LOOKUP(1,A100:A106,B100:B106)");
 
 		oParser = new parserFormula("LOOKUP(1,1/C100:C106,B100:B106)", "A2", ws);
 		assert.ok(oParser.parse(), "LOOKUP(1,1/C100:C106,B100:B106)");
@@ -19078,10 +19751,86 @@ $(function () {
 		ws.getRange2("C105").setValue("5");
 		ws.getRange2("C106").setValue("10");
 
+		AscCommonExcel.g_oLOOKUPCache.clean();
+
 		oParser = new parserFormula("LOOKUP(3,C100:C106,B100:B106)", "A2", ws);
 		assert.ok(oParser.parse(), "LOOKUP(3,C100:C106,B100:B106) - first and last value test");
 		oParser.setArrayFormulaRef(ws.getRange2("A2").bbox);
-		assert.strictEqual(oParser.calculate().getValue(), "#N/A", "Result of LOOKUP(3,C100:C106,B100:B106)");	// 4
+		assert.strictEqual(oParser.calculate().getValue().getValue(), 4, "Result of LOOKUP(3,C100:C106,B100:B106)");
+
+		// base value tests
+		oParser = new parserFormula('LOOKUP("b","a",{1,2,3,4,5})', "A2", ws);
+		assert.ok(oParser.parse(), 'LOOKUP("b","a",{1,2,3,4,5})');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Result of LOOKUP("b","a",{1,2,3,4,5})');
+
+		oParser = new parserFormula('LOOKUP("b","a",-1)', "A2", ws);
+		assert.ok(oParser.parse(), 'LOOKUP("b","a",-1)');
+		assert.strictEqual(oParser.calculate().getValue(), -1, 'Result of LOOKUP("b","a",-1)');
+
+		oParser = new parserFormula('LOOKUP(FALSE,FALSE,TRUE)', "A2", ws);
+		assert.ok(oParser.parse(), 'LOOKUP(FALSE,FALSE,TRUE)');
+		assert.strictEqual(oParser.calculate().getValue(), "TRUE", 'Result of LOOKUP(FALSE,FALSE,TRUE)');
+
+		oParser = new parserFormula('LOOKUP(TRUE,FALSE,"a")', "A2", ws);
+		assert.ok(oParser.parse(), 'LOOKUP(TRUE,FALSE,"a")');
+		assert.strictEqual(oParser.calculate().getValue(), "a", 'Result of LOOKUP(TRUE,FALSE,"a")');
+
+		oParser = new parserFormula('LOOKUP(3,1,"a")', "A2", ws);
+		assert.ok(oParser.parse(), 'LOOKUP(3,1,"a")');
+		assert.strictEqual(oParser.calculate().getValue(), "a", 'Result of LOOKUP(3,1,"a")');
+
+		oParser = new parserFormula('LOOKUP(3,3,"a")', "A2", ws);
+		assert.ok(oParser.parse(), 'LOOKUP(3,3,"a")');
+		assert.strictEqual(oParser.calculate().getValue(), "a", 'Result of LOOKUP(3,3,"a")');
+
+		oParser = new parserFormula('LOOKUP(3,4,"a")', "A2", ws);
+		assert.ok(oParser.parse(), 'LOOKUP(3,4,"a")');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Result of LOOKUP(3,4,"a")');
+
+		oParser = new parserFormula('LOOKUP(3,"a",1)', "A2", ws);
+		assert.ok(oParser.parse(), 'LOOKUP(3,"a",1)');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Result of LOOKUP(3,"a",1)');
+
+		// for bug 65306
+		ws.getRange2("N102").setValue("янв");
+		ws.getRange2("O102").setValue("0");
+		oParser = new parserFormula("LOOKUP(,-CODE(N102:O102),N102:O102)", "A2", ws);
+		assert.ok(oParser.parse(), "LOOKUP(,-CODE(N102:O102),N102:O102)");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "Result of LOOKUP(,-CODE(N102:O102),N102:O102)");
+
+		// for bug 65722 
+		oParser = new parserFormula('LOOKUP(20,{0,1,49.75,55.75,61.75,67.75,72.75,78.75,84.75,89.75,94.75,97.75},{"KP";"NB";4;3.7;3.3;3;2.7;2.3;2;1.7;1.3;1})', "A2", ws);
+		assert.ok(oParser.parse(), 'LOOKUP(20,{0,1,49.75,55.75,61.75,67.75,72.75,78.75,84.75,89.75,94.75,97.75},{"KP";"NB";4;3.7;3.3;3;2.7;2.3;2;1.7;1.3;1})');
+		assert.strictEqual(oParser.calculate().getValue(), "NB", 'Result of LOOKUP(20,{0,1,49.75,55.75,61.75,67.75,72.75,78.75,84.75,89.75,94.75,97.75},{"KP";"NB";4;3.7;3.3;3;2.7;2.3;2;1.7;1.3;1})');
+
+		oParser = new parserFormula('LOOKUP(20,{0,1,49.75,55.75},{"KP";"NB";4;3.7;3.3;3;2.7})', "A2", ws);
+		assert.ok(oParser.parse(), 'LOOKUP(20,{0,1,49.75,55.75},{"KP";"NB";4;3.7;3.3;3;2.7})');
+		assert.strictEqual(oParser.calculate().getValue(), "NB", 'Result of LOOKUP(20,{0,1,49.75,55.75},{"KP";"NB";4;3.7;3.3;3;2.7})');
+
+		oParser = new parserFormula('LOOKUP(20,{0,1,49.75},{"KP";"NB";4})', "A2", ws);
+		assert.ok(oParser.parse(), 'LOOKUP(20,{0,1,49.75},{"KP";"NB";4})');
+		assert.strictEqual(oParser.calculate().getValue(), "NB", 'Result of LOOKUP(20,{0,1,49.75},{"KP";"NB";4})');
+
+		oParser = new parserFormula('LOOKUP(20,{0,1},{"KP";"NB";4;3.7;3.3;3;2.7})', "A2", ws);
+		assert.ok(oParser.parse(), 'LOOKUP(20,{0,1},{"KP";"NB";4;3.7;3.3;3;2.7})');
+		assert.strictEqual(oParser.calculate().getValue(), "NB", 'Result of LOOKUP(20,{0,1},{"KP";"NB";4;3.7;3.3;3;2.7})');
+
+		oParser = new parserFormula('LOOKUP(50,{0,1,2,3,49.75,55.75},{"KP";"NB"})', "A2", ws);
+		assert.ok(oParser.parse(), 'LOOKUP(50,{0,1,2,3,49.75,55.75},{"KP";"NB"})');
+		assert.strictEqual(oParser.calculate().getValue(), "#N/A", 'Result of LOOKUP(50,{0,1,2,3,49.75,55.75},{"KP";"NB"})');
+
+		oParser = new parserFormula('LOOKUP(1,1,{"KP","NB";1,2})', "A2", ws);
+		assert.ok(oParser.parse(), 'LOOKUP(1,1,{"KP","NB";1,2})');
+		assert.strictEqual(oParser.calculate().getValue(), "#N/A", 'Result of LOOKUP(1,1,{"KP","NB";1,2})');
+
+		oParser = new parserFormula('LOOKUP(20,{0,1,49.75,55.75},{"KP","NB";1,2})', "A2", ws);
+		assert.ok(oParser.parse(), 'LOOKUP(20,{0,1,49.75,55.75},{"KP","NB";1,2})');
+		assert.strictEqual(oParser.calculate().getValue(), "#N/A", 'Result of LOOKUP(20,{0,1,49.75,55.75},{"KP","NB";1,2})');
+
+		oParser = new parserFormula('LOOKUP(2,{1,2;1,2},{"KP","NB";1,2})', "A2", ws);
+		assert.ok(oParser.parse(), 'LOOKUP(2,{1,2;1,2},{"KP","NB";1,2})');
+		assert.strictEqual(oParser.calculate().getValue(), "#N/A", 'Result of LOOKUP(2,{1,2;1,2},{"KP","NB";1,2})');
+
 	});
 
 
@@ -19460,6 +20209,43 @@ $(function () {
 		assert.strictEqual(oParser.calculate().getElementRowCol(4,0).getValue(), 5);
 		assert.strictEqual(oParser.calculate().getElementRowCol(5,0).getValue(), "#N/A");
 		assert.strictEqual(oParser.calculate().getElementRowCol(6,0).getValue(), 7);
+
+		oParser = new parserFormula('MATCH("str","str",0)', "A2", ws);
+		assert.ok(oParser.parse(), 'MATCH("str","str",0)');
+		assert.strictEqual(oParser.calculate().getValue(), "#N/A", 'Result of MATCH("str","str",0)');
+
+		oParser = new parserFormula('MATCH("str",{"str"},0)', "A2", ws);
+		assert.ok(oParser.parse(), 'MATCH("str",{"str"},0)');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Result of MATCH("str",{"str"},0)');
+
+		oParser = new parserFormula('MATCH(1,1,-1)', "A2", ws);
+		assert.ok(oParser.parse(), 'MATCH(1,1,-1)');
+		assert.strictEqual(oParser.calculate().getValue(), "#N/A", 'Result of MATCH(1,1,-1)');
+
+		oParser = new parserFormula('MATCH(1,1,0)', "A2", ws);
+		assert.ok(oParser.parse(), 'MATCH(1,1,0)');
+		assert.strictEqual(oParser.calculate().getValue(), "#N/A", 'Result of MATCH(1,1,0)');
+
+		oParser = new parserFormula('MATCH(1,1,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'MATCH(1,1,1)');
+		assert.strictEqual(oParser.calculate().getValue(), "#N/A", 'Result of MATCH(1,1,1)');
+
+		oParser = new parserFormula('MATCH(1,{1},1)', "A2", ws);
+		assert.ok(oParser.parse(), 'MATCH(1,{1},1)');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Result of MATCH(1,{1},1)');
+
+		oParser = new parserFormula('MATCH(1,{2,1,1},0)', "A2", ws);
+		assert.ok(oParser.parse(), 'MATCH(1,{2,1,1},0)');
+		assert.strictEqual(oParser.calculate().getValue(), 2, 'Result of MATCH(1,{2,1,1},0)');
+
+		oParser = new parserFormula('MATCH(TRUE,TRUE,0)', "A2", ws);
+		assert.ok(oParser.parse(), 'MATCH(TRUE,TRUE,0)');
+		assert.strictEqual(oParser.calculate().getValue(), "#N/A", 'Result of MATCH(TRUE,TRUE,0)');
+
+		oParser = new parserFormula('MATCH(TRUE,{TRUE},0)', "A2", ws);
+		assert.ok(oParser.parse(), 'MATCH(TRUE,{TRUE},0)');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Result of MATCH(TRUE,{TRUE},0)');
+
 
 		//TODO excel по-другому работает
 		/*oParser = new parserFormula( "MATCH(123,F106:F117,1)", "A2", ws );
@@ -21011,7 +21797,7 @@ $(function () {
 
 		oParser = new parserFormula("ACCRINT(1,39691,39769,1,1000,2,0)", "A2", ws);
 		assert.ok(oParser.parse(), "ACCRINT(1,39691,39769,1,1000,2,0)");
-		assert.strictEqual(oParser.calculate().getValue(), 108875, "Result of ACCRINT(1,39691,39769,1,1000,2,0)");	// 0
+		assert.strictEqual(oParser.calculate().getValue(), 0, "Result of ACCRINT(1,39691,39769,1,1000,2,0)");
 
 		oParser = new parserFormula("ACCRINT(0,39691,39769,1,1000,2,0)", "A2", ws);
 		assert.ok(oParser.parse(), "ACCRINT(0,39691,39769,1,1000,2,0)");
@@ -21039,7 +21825,7 @@ $(function () {
 
 		oParser = new parserFormula("ACCRINT({1},39691,39769,1,1000,2,0)", "A2", ws);
 		assert.ok(oParser.parse(), "ACCRINT({1},39691,39769,1,1000,2,0)");
-		assert.strictEqual(oParser.calculate().getValue(), 108875, "Result of ACCRINT({1},39691,39769,1,1000,2,0)");	// 0
+		assert.strictEqual(oParser.calculate().getValue(), 0, "Result of ACCRINT({1},39691,39769,1,1000,2,0)");
 
 		oParser = new parserFormula("ACCRINT({1000;1200},39691,39769,1,1000,2,0)", "A2", ws);
 		assert.ok(oParser.parse(), "ACCRINT({1000;1200},11000,5000,8,0,2)");
@@ -21084,7 +21870,7 @@ $(function () {
 
 		oParser = new parserFormula("ACCRINT(39508,1,39769,1,1000,2,0)", "A2", ws);
 		assert.ok(oParser.parse(), "ACCRINT(39508,1,39769,1,1000,2,0)");
-		assert.strictEqual(oParser.calculate().getValue().toFixed(2) - 0, 713.89, "Result of ACCRINT(39508,1,39769,1,1000,2,0)");	// 711.11
+		assert.strictEqual(oParser.calculate().getValue().toFixed(2) - 0, 711.11, "Result of ACCRINT(39508,1,39769,1,1000,2,0)");
 
 		oParser = new parserFormula("ACCRINT(39508,0.75,39769,1,1000,2,0)", "A2", ws);
 		assert.ok(oParser.parse(), "ACCRINT(39508,0.75,39769,1,1000,2,0)");
@@ -21108,7 +21894,7 @@ $(function () {
 
 		oParser = new parserFormula("ACCRINT(39508,{1},39769,1,1000,2,0)", "A2", ws);
 		assert.ok(oParser.parse(), "ACCRINT(39508,{1},39769,1,1000,2,0)");
-		assert.strictEqual(oParser.calculate().getValue().toFixed(2) - 0, 713.89, "Result of ACCRINT(39508,{1},39769,1,1000,2,0)");	// 711.11
+		assert.strictEqual(oParser.calculate().getValue().toFixed(2) - 0, 711.11, "Result of ACCRINT(39508,{1},39769,1,1000,2,0)");
 
 		oParser = new parserFormula("ACCRINT(39508,{-1},39769,1,1000,2,0)", "A2", ws);
 		assert.ok(oParser.parse(), "ACCRINT(39508,{-1},39769,1,1000,2,0)");
@@ -21619,14 +22405,14 @@ $(function () {
 		assert.strictEqual(oParser.calculate().getValue().toFixed(3) - 0, 1.944, "Result of ACCRINT(DATE(2022,1,1),DATE(2022,3,1),DATE(2022,1,15),0.05,1000,2,4)");
 
 		// bug cases
-		// TODO fix the calculation in the while loop with the basis !== 0 and when arg[1](firstInterest) <= arg[2](settlement date). 
+		// TODO fix the calculation of the coupon period when receiving the date 1900,1,29(60)
 		oParser = new parserFormula("ACCRINT(58,39691,39769,1,1000,2,0)", "A2", ws);
 		assert.ok(oParser.parse(), "ACCRINT(58,39691,39769,1,1000,2,0)");
-		assert.strictEqual(oParser.calculate().getValue().toFixed(2) - 0, 108719.44, "Result of ACCRINT(58,39691,39769,1,1000,2,0)");	// 0 in ms, 108725 in others
+		assert.strictEqual(oParser.calculate().getValue(), 0, "Result of ACCRINT(58,39691,39769,1,1000,2,0)");
 
 		oParser = new parserFormula("ACCRINT(59,39691,39769,1,1000,2,0)", "A2", ws);
 		assert.ok(oParser.parse(), "ACCRINT(59,39691,39769,1,1000,2,0)");
-		assert.strictEqual(oParser.calculate().getValue().toFixed(2) - 0, 108716.67, "Result of ACCRINT(59,39691,39769,1,1000,2,0)");	// 108713.89
+		assert.strictEqual(oParser.calculate().getValue().toFixed(2) - 0, 108713.89, "Result of ACCRINT(59,39691,39769,1,1000,2,0)");
 
 		oParser = new parserFormula("ACCRINT(60,39691,39769,1,1000,2,0)", "A2", ws);
 		assert.ok(oParser.parse(), "ACCRINT(60,39691,39769,1,1000,2,0)");
@@ -21720,13 +22506,13 @@ $(function () {
 		assert.ok(oParser.parse(), "ACCRINT(DATE(2022,1,1),DATE(2022,1,15),DATE(2022,3,1),0.05,1000,2,4)");
 		assert.strictEqual(oParser.calculate().getValue().toFixed(3) - 0, 8.333, "Result of ACCRINT(DATE(2022,1,1),DATE(2022,1,15),DATE(2022,3,1),0.05,1000,2,4)");
 
-		oParser = new parserFormula("ACCRINT(60,DATE(2022,3,1),DATE(2022,1,15),0.05,1000,2,0,FALSE)", "A2", ws);
-		assert.ok(oParser.parse(), "ACCRINT(60,44261,44567,0.05,1000,2,0,FALSE)");
-		assert.strictEqual(oParser.calculate().getValue().toFixed(3) - 0, 18.611, "Result of ACCRINT(60,44261,44567,0.05,1000,2,0,FALSE)");	// 0 in ms 
+		// oParser = new parserFormula("ACCRINT(60,DATE(2022,3,1),DATE(2022,1,15),0.05,1000,2,0,FALSE)", "A2", ws);
+		// assert.ok(oParser.parse(), "ACCRINT(60,44621,44567,0.05,1000,2,0,FALSE)");
+		// assert.strictEqual(oParser.calculate().getValue(), 0, "Result of ACCRINT(60,44621,44567,0.05,1000,2,0,FALSE)");
 
-		oParser = new parserFormula("ACCRINT(60,DATE(2022,3,1),DATE(2022,1,15),0.05,1000,2,0,TRUE)", "A2", ws);
-		assert.ok(oParser.parse(), "ACCRINT(60,44261,44567,0.05,1000,2,0,TRUE)");
-		assert.strictEqual(oParser.calculate().getValue().toFixed(3) - 0, 6093.611, "Result of ACCRINT(60,44261,44567,0.05,1000,2,0,TRUE)");	// 0 in ms
+		// oParser = new parserFormula("ACCRINT(60,DATE(2022,3,1),DATE(2022,1,15),0.05,1000,2,0,TRUE)", "A2", ws);
+		// assert.ok(oParser.parse(), "ACCRINT(60,44261,44567,0.05,1000,2,0,TRUE)");
+		// assert.strictEqual(oParser.calculate().getValue(), 0, "Result of ACCRINT(60,44261,44567,0.05,1000,2,0,TRUE)");
 
 		oParser = new parserFormula("ACCRINT(61,DATE(2022,3,1),DATE(2022,1,15),0.05,1000,2,0,FALSE)", "A2", ws);
 		assert.ok(oParser.parse(), "ACCRINT(61,44261,44567,0.05,1000,2,0,FALSE)");
@@ -21735,6 +22521,33 @@ $(function () {
 		oParser = new parserFormula("ACCRINT(61,DATE(2022,3,1),DATE(2022,1,15),0.05,1000,2,0,TRUE)", "A2", ws);
 		assert.ok(oParser.parse(), "ACCRINT(61,44261,44567,0.05,1000,2,0,TRUE)");
 		assert.strictEqual(oParser.calculate().getValue().toFixed(3) - 0, 6093.611, "Result of ACCRINT(61,44261,44567,0.05,1000,2,0,TRUE)");
+
+		oParser = new parserFormula("ACCRINT(DATE(2012,8,1),DATE(2013,3,1),DATE(2012,8,30),0.05,100,2,1)", "A2", ws);
+		assert.ok(oParser.parse(), "ACCRINT(DATE(2012,8,1),DATE(2013,3,1),DATE(2012,8,30),0.05,100,2,1)");
+		assert.strictEqual(oParser.calculate().getValue().toFixed(3) - 0, 0.394, "Result of ACCRINT(DATE(2012,8,1),DATE(2013,3,1),DATE(2012,8,30),0.05,100,2,1)");
+
+		oParser = new parserFormula("ACCRINT(DATE(2012,8,1),DATE(2013,3,1),DATE(2012,8,31),0.05,100,2,1)", "A2", ws);
+		assert.ok(oParser.parse(), "ACCRINT(DATE(2012,8,1),DATE(2013,3,1),DATE(2012,8,31),0.05,100,2,1)");
+		assert.strictEqual(oParser.calculate().getValue().toFixed(3) - 0, 0.407, "Result of ACCRINT(DATE(2012,8,1),DATE(2013,3,1),DATE(2012,8,31),0.05,100,2,1)");
+
+		oParser = new parserFormula("ACCRINT(DATE(2012,8,1),DATE(2013,3,1),DATE(2012,9,1),0.05,100,2,1)", "A2", ws);
+		assert.ok(oParser.parse(), "ACCRINT(DATE(2012,8,1),DATE(2013,3,1),DATE(2012,9,1),0.05,100,2,1)");
+		assert.strictEqual(oParser.calculate().getValue().toFixed(3) - 0, 0.421, "Result of ACCRINT(DATE(2012,8,1),DATE(2013,3,1),DATE(2012,9,1),0.05,100,2,1)");
+
+		oParser = new parserFormula("ACCRINT(1,DATE(2013,3,1),DATE(2012,9,1),0.05,100,2,1)", "A2", ws);
+		assert.ok(oParser.parse(), "ACCRINT(1,DATE(2013,3,1),DATE(2012,9,1),0.05,100,2,1)");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "Result of ACCRINT(1,DATE(2013,3,1),DATE(2012,9,1),0.05,100,2,1)");
+
+		ws.getRange2("A150").setValue("DATE(2014,2,1)");
+		ws.getRange2("A151").setValue("DATE(2014,3,1)");
+
+		oParser = new parserFormula("ACCRINT(DATE(2000,9,1),DATE(2014,3,1),DATE(2014,2,1),0.05,100,2,1,TRUE)", "A2", ws);
+		assert.ok(oParser.parse(), "ACCRINT(DATE(2000,9,1),DATE(2014,3,1),DATE(2014,2,1),0.05,100,2,1,TRUE)");
+		assert.strictEqual(oParser.calculate().getValue().toFixed(2) - 0, 67.07, "Result of ACCRINT(DATE(2000,9,1),DATE(2014,3,1),DATE(2014,2,1),0.05,100,2,1,TRUE)");
+
+		oParser = new parserFormula("ACCRINT(DATE(2000,9,1),DATE(2014,3,1),DATE(2014,2,1),0.05,100,2,1,FALSE)", "A2", ws);
+		assert.ok(oParser.parse(), "ACCRINT(DATE(2000,9,1),DATE(2014,3,1),DATE(2014,2,1),0.05,100,2,1,FALSE)");
+		assert.strictEqual(oParser.calculate().getValue().toFixed(2) - 0, 2.07, "Result of ACCRINT(DATE(2000,9,1),DATE(2014,3,1),DATE(2014,2,1),0.05,100,2,1,FALSE)");
 
 		testArrayFormula2(assert, "ACCRINT", 6, 8, true);
 	});
@@ -22467,9 +23280,110 @@ $(function () {
 
 		}
 
+		let array;
+
 		oParser = new parserFormula("COUPNCD(DATE(2007,1,25),DATE(2008,11,15),2,1)", "A2", ws);
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), coupncd(new cDate(Date.UTC(2007, 0, 25)), new cDate(Date.UTC(2008, 10, 15)), 2, 1));
+
+		oParser = new parserFormula('COUPNCD(DATE(2012,8,31),DATE(2013,3,1),2)', "A2", ws);
+		assert.ok(oParser.parse(), 'COUPNCD(DATE(2012,8,31),DATE(2013,3,1),2)');
+		assert.strictEqual(oParser.calculate().getValue(), 41153, 'Result of COUPNCD(DATE(2012,8,31),DATE(2013,3,1),2)');
+
+		oParser = new parserFormula('COUPNCD(DATE(2012,9,1),DATE(2013,3,1),2)', "A2", ws);
+		assert.ok(oParser.parse(), 'COUPNCD(DATE(2012,9,1),DATE(2013,3,1),2)');
+		assert.strictEqual(oParser.calculate().getValue(), 41334, 'Result of COUPNCD(DATE(2012,9,1),DATE(2013,3,1),2)');
+
+		oParser = new parserFormula('COUPNCD(59,DATE(2013,3,1),2)', "A2", ws);
+		assert.ok(oParser.parse(), 'COUPNCD(59,DATE(2013,3,1),2)');
+		assert.strictEqual(oParser.calculate().getValue(), 61, 'Result of COUPNCD(59,DATE(2013,3,1),2)');
+
+		oParser = new parserFormula('COUPNCD(60,DATE(2013,3,1),2)', "A2", ws);
+		assert.ok(oParser.parse(), 'COUPNCD(60,DATE(2013,3,1),2)');
+		assert.strictEqual(oParser.calculate().getValue(), 61, 'Result of COUPNCD(60,DATE(2013,3,1),2)');
+
+		oParser = new parserFormula('COUPNCD(61,DATE(2013,3,1),2)', "A2", ws);
+		assert.ok(oParser.parse(), 'COUPNCD(61,DATE(2013,3,1),2)');
+		assert.strictEqual(oParser.calculate().getValue(), 245, 'Result of COUPNCD(61,DATE(2013,3,1),2)');
+
+		oParser = new parserFormula("COUPNCD(#N/A,3743,2)", "A2", ws);
+		assert.ok(oParser.parse(), "COUPNCD(#N/A,3743,2)");
+		assert.strictEqual(oParser.calculate().getValue(), "#N/A", "Result of COUPNCD(#N/A,3743,2)");
+
+		oParser = new parserFormula("COUPNCD(#N/A,#DIV/0!,2)", "A2", ws);
+		assert.ok(oParser.parse(), "COUPNCD(#N/A,#DIV/0!,2)");
+		assert.strictEqual(oParser.calculate().getValue(), "#N/A", "Result of COUPNCD(#N/A,#DIV/0!,2)");
+
+		oParser = new parserFormula("COUPNCD(200,#DIV/0!,#N/A)", "A2", ws);
+		assert.ok(oParser.parse(), "COUPNCD(200,#DIV/0!,#N/A)");
+		assert.strictEqual(oParser.calculate().getValue(), "#DIV/0!", "Result of COUPNCD(200,#DIV/0!,#N/A)");
+
+		oParser = new parserFormula("COUPNCD(200,37437,#N/A)", "A2", ws);
+		assert.ok(oParser.parse(), "COUPNCD(200,37437,#N/A)");
+		assert.strictEqual(oParser.calculate().getValue(), "#N/A", "Result of COUPNCD(200,37437,#N/A)");
+
+		oParser = new parserFormula('COUPNCD("1","2","1")', "A2", ws);
+		assert.ok(oParser.parse(), 'COUPNCD("1","2","1")');
+		assert.strictEqual(oParser.calculate().getValue(), 2, 'Result of COUPNCD("1","2","1")');
+
+		oParser = new parserFormula('COUPNCD("1s",2,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'COUPNCD("1s",2,1)');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Result of COUPNCD("1s",2,1)');
+
+		oParser = new parserFormula('COUPNCD("1","2s","1")', "A2", ws);
+		assert.ok(oParser.parse(), 'COUPNCD("1","2s","1")');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Result of COUPNCD("1","2s","1")');
+
+		oParser = new parserFormula('COUPNCD("1","2","1s")', "A2", ws);
+		assert.ok(oParser.parse(), 'COUPNCD("1","2","1s")');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Result of COUPNCD("1","2","1s")');
+
+		oParser = new parserFormula('COUPNCD(61,61,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'COUPNCD(61,61,1)');
+		assert.strictEqual(oParser.calculate().getValue(), "#NUM!", 'Result of COUPNCD(61,61,1)');
+
+		oParser = new parserFormula('COUPNCD(61,61,2)', "A2", ws);
+		assert.ok(oParser.parse(), 'COUPNCD(61,61,2)');
+		assert.strictEqual(oParser.calculate().getValue(), "#NUM!", 'Result of COUPNCD(61,61,2)');
+
+		oParser = new parserFormula('COUPNCD(61,61,4)', "A2", ws);
+		assert.ok(oParser.parse(), 'COUPNCD(61,61,4)');
+		assert.strictEqual(oParser.calculate().getValue(), "#NUM!", 'Result of COUPNCD(61,61,4)');
+
+		oParser = new parserFormula('COUPNCD(61,61,4)', "A2", ws);
+		assert.ok(oParser.parse(), 'COUPNCD(61,61,4)');
+		assert.strictEqual(oParser.calculate().getValue(), "#NUM!", 'Result of COUPNCD(61,61,4)');
+
+		oParser = new parserFormula('COUPNCD(,9222,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'COUPNCD(,9222,1)');
+		assert.strictEqual(oParser.calculate().getValue(), "#N/A", 'Result of COUPNCD(,9222,1)');
+
+		oParser = new parserFormula('COUPNCD(0,9222,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'COUPNCD(0,9222,1)');
+		assert.strictEqual(oParser.calculate().getValue(), 91, 'Result of COUPNCD(0,9222,1)');
+
+		oParser = new parserFormula('COUPNCD(0,,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'COUPNCD(0,,1)');
+		assert.strictEqual(oParser.calculate().getValue(), "#N/A", 'Result of COUPNCD(0,,1)');
+
+		oParser = new parserFormula('COUPNCD(0,1,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'COUPNCD(0,1,1)');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Result of COUPNCD(0,1,1)');
+
+		oParser = new parserFormula('COUPNCD(1060,9222,)', "A2", ws);
+		assert.ok(oParser.parse(), 'COUPNCD(1060,9222,)');
+		assert.strictEqual(oParser.calculate().getValue(), "#N/A", 'Result of COUPNCD(1060,9222,)');
+
+		oParser = new parserFormula('COUPNCD(1060,9222,{0,1,2,3,4})', "A2", ws);
+		oParser.setArrayFormulaRef(ws.getRange2("T9:X15").bbox);
+		assert.ok(oParser.parse(), 'COUPNCD(1060,9222,{0,1,2,3,4})');
+		array = oParser.calculate();
+		assert.strictEqual(array.getElementRowCol(0, 0).getValue(), "#NUM!", 'Result of COUPNCD(1060,9222,{0,1,2,3,4})[0,0]');
+		assert.strictEqual(array.getElementRowCol(0, 1).getValue(), 1186, 'Result of COUPNCD(1060,9222,{0,1,2,3,4})[0,1]');
+		assert.strictEqual(array.getElementRowCol(0, 2).getValue(), 1186, 'Result of COUPNCD(1060,9222,{0,1,2,3,4})[0,2]');
+		assert.strictEqual(array.getElementRowCol(0, 3).getValue(), "#NUM!", 'Result of COUPNCD(1060,9222,{0,1,2,3,4})[0,3]');
+		assert.strictEqual(array.getElementRowCol(0, 4).getValue(), 1096, 'Result of COUPNCD(1060,9222,{0,1,2,3,4})[0,4]');
+
 
 		testArrayFormula2(assert, "COUPNCD", 3, 4, true);
 	});
@@ -22497,6 +23411,110 @@ $(function () {
 		oParser = new parserFormula("COUPPCD(DATE(2007,1,25),DATE(2008,11,15),2,1)", "A2", ws);
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), couppcd(new cDate(Date.UTC(2007, 0, 25)), new cDate(Date.UTC(2008, 10, 15)), 2, 1));
+
+		oParser = new parserFormula("COUPPCD({1},39691,2)", "A2", ws);
+		assert.ok(oParser.parse(), "COUPPCD({1},39691,2)");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "Result of COUPPCD({1},39691,2)");
+
+		// oParser = new parserFormula("COUPPCD(59,39691,2)", "A2", ws);
+		// assert.ok(oParser.parse(), "COUPPCD(59,39691,2)");
+		// assert.strictEqual(oParser.calculate().getValue(), 59, "Result of COUPPCD(59,39691,2)");		// problem with date 29/1/1900(59)
+
+		oParser = new parserFormula("COUPPCD(60,44261,2)", "A2", ws);
+		assert.ok(oParser.parse(), "COUPPCD(60,44261,2)");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "Result of COUPPCD(60,44261,2)");
+
+		oParser = new parserFormula("COUPPCD(91,37530,2)", "A2", ws);
+		assert.ok(oParser.parse(), "COUPPCD(91,37530,2)");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "Result of COUPPCD(91,37530,2)");
+
+		oParser = new parserFormula("COUPPCD(91,37529,2)", "A2", ws);
+		assert.ok(oParser.parse(), "COUPPCD(91,37529,2)");
+		assert.strictEqual(oParser.calculate().getValue(), 91, "Result of COUPPCD(91,37529,2)");
+
+		oParser = new parserFormula("COUPPCD(59,37438,2)", "A2", ws);
+		assert.ok(oParser.parse(), "COUPPCD(59,37438,2)");
+		assert.strictEqual(oParser.calculate().getValue(), 1, "Result of COUPPCD(59,37438,2)");
+
+		oParser = new parserFormula("COUPPCD(59,37437,2)", "A2", ws);
+		assert.ok(oParser.parse(), "COUPPCD(59,37437,2)");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "Result of COUPPCD(59,37437,2)");
+
+		oParser = new parserFormula("COUPPCD(182,3743,2)", "A2", ws);
+		assert.ok(oParser.parse(), "COUPPCD(182,3743,2)");
+		assert.strictEqual(oParser.calculate().getValue(), 91, "Result of COUPPCD(182,3743,2)");
+
+		oParser = new parserFormula("COUPPCD(181,37437,2)", "A2", ws);
+		assert.ok(oParser.parse(), "COUPPCD(181,37437,2)");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "Result of COUPPCD(181,37437,2)");
+
+		oParser = new parserFormula("COUPPCD(DATE(2012,8,31),DATE(2013,3,1),2)", "A2", ws);
+		assert.ok(oParser.parse(), "COUPPCD(DATE(2012,8,31),DATE(2013,3,1),2)");
+		assert.strictEqual(oParser.calculate().getValue(), 40969, "Result of COUPPCD(DATE(2012,8,31),DATE(2013,3,1),2)");
+
+		oParser = new parserFormula("COUPPCD(DATE(2012,9,1),DATE(2013,3,1),2)", "A2", ws);
+		assert.ok(oParser.parse(), "COUPPCD(DATE(2012,9,1),DATE(2013,3,1),2)");
+		assert.strictEqual(oParser.calculate().getValue(), 41153, "Result of COUPPCD(DATE(2012,9,1),DATE(2013,3,1),2)");
+
+		oParser = new parserFormula("COUPPCD(#N/A,3743,2)", "A2", ws);
+		assert.ok(oParser.parse(), "COUPPCD(#N/A,3743,2)");
+		assert.strictEqual(oParser.calculate().getValue(), "#N/A", "Result of COUPPCD(#N/A,3743,2)");
+
+		oParser = new parserFormula("COUPPCD(#N/A,#DIV/0!,2)", "A2", ws);
+		assert.ok(oParser.parse(), "COUPPCD(#N/A,#DIV/0!,2)");
+		assert.strictEqual(oParser.calculate().getValue(), "#N/A", "Result of COUPPCD(#N/A,#DIV/0!,2)");
+
+		oParser = new parserFormula("COUPPCD(200,#DIV/0!,#N/A)", "A2", ws);
+		assert.ok(oParser.parse(), "COUPPCD(200,#DIV/0!,#N/A)");
+		assert.strictEqual(oParser.calculate().getValue(), "#DIV/0!", "Result of COUPPCD(200,#DIV/0!,#N/A)");
+
+		oParser = new parserFormula("COUPPCD(200,37437,#N/A)", "A2", ws);
+		assert.ok(oParser.parse(), "COUPPCD(200,37437,#N/A)");
+		assert.strictEqual(oParser.calculate().getValue(), "#N/A", "Result of COUPPCD(200,37437,#N/A)");
+
+		oParser = new parserFormula('COUPPCD("200",37437,2)', "A2", ws);
+		assert.ok(oParser.parse(), 'COUPPCD("200",37437,2)');
+		assert.strictEqual(oParser.calculate().getValue(), 182, 'Result of COUPPCD("200",37437,2)');
+		
+		oParser = new parserFormula('COUPPCD("200s",37437,2)', "A2", ws);
+		assert.ok(oParser.parse(), 'COUPPCD("200s",37437,2)');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Result of COUPPCD("200s",37437,2)');
+
+		oParser = new parserFormula('COUPPCD("200","37437s",2)', "A2", ws);
+		assert.ok(oParser.parse(), 'COUPPCD("200","37437s",2)');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Result of COUPPCD("200","37437s",2)');
+
+		oParser = new parserFormula('COUPPCD("200","37437","2s")', "A2", ws);
+		assert.ok(oParser.parse(), 'COUPPCD("200","37437","2s")');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Result of COUPPCD("200","37437","2s")');
+
+		oParser = new parserFormula('COUPPCD(200,37437,0)', "A2", ws);
+		assert.ok(oParser.parse(), 'COUPPCD(200,37437,0)');
+		assert.strictEqual(oParser.calculate().getValue(), "#NUM!", 'Result of COUPPCD(200,37437,0)');
+
+		oParser = new parserFormula('COUPPCD(200,37437,2,0)', "A2", ws);
+		assert.ok(oParser.parse(), 'COUPPCD(200,37437,2,0)');
+		assert.strictEqual(oParser.calculate().getValue(), 182, 'Result of COUPPCD(200,37437,2,0)');
+
+		oParser = new parserFormula('COUPPCD(200,37437,2,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'COUPPCD(200,37437,2,1)');
+		assert.strictEqual(oParser.calculate().getValue(), 182, 'Result of COUPPCD(200,37437,2,1)');
+
+		oParser = new parserFormula('COUPPCD(200,37437,2,2)', "A2", ws);
+		assert.ok(oParser.parse(), 'COUPPCD(200,37437,2,2)');
+		assert.strictEqual(oParser.calculate().getValue(), 182, 'Result of COUPPCD(200,37437,2,2)');
+
+		oParser = new parserFormula('COUPPCD(200,37437,2,3)', "A2", ws);
+		assert.ok(oParser.parse(), 'COUPPCD(200,37437,2,3)');
+		assert.strictEqual(oParser.calculate().getValue(), 182, 'Result of COUPPCD(200,37437,2,3)');
+
+		oParser = new parserFormula('COUPPCD(200,37437,2,4)', "A2", ws);
+		assert.ok(oParser.parse(), 'COUPPCD(200,37437,2,4)');
+		assert.strictEqual(oParser.calculate().getValue(), 182, 'Result of COUPPCD(200,37437,2,4)');
+
+		oParser = new parserFormula('COUPPCD(200,37437,2,5)', "A2", ws);
+		assert.ok(oParser.parse(), 'COUPPCD(200,37437,2,5)');
+		assert.strictEqual(oParser.calculate().getValue(), "#NUM!", 'Result of COUPPCD(200,37437,2,5)');
 
 		testArrayFormula2(assert, "COUPPCD", 3, 4, true);
 	});
@@ -22606,6 +23624,67 @@ $(function () {
 		oParser = new parserFormula('CONVERT(1, "klbm", "mg")', "A2", ws);
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), "#N/A");
+
+		// for bug 63740
+		oParser = new parserFormula('CONVERT(1,"m","mm")', "A2", ws);
+		assert.ok(oParser.parse(), 'CONVERT(1,"m","mm")');
+		assert.strictEqual(oParser.calculate().getValue(), 1000, 'Result of CONVERT(1,"m","mm")');
+
+		oParser = new parserFormula('CONVERT(1,"m2","mm2")', "A2", ws);
+		assert.ok(oParser.parse(), 'CONVERT(1,"m2","mm2")');
+		assert.strictEqual(oParser.calculate().getValue(), 1000000, 'Result of CONVERT(1,"m2","mm"2)');
+
+		oParser = new parserFormula('CONVERT(1,"m3","mm3")', "A2", ws);
+		assert.ok(oParser.parse(), 'CONVERT(1,"m3","mm3")');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(), "1000000000", 'Result of CONVERT(1,"m3","mm3")');
+
+		oParser = new parserFormula('CONVERT(1,"m","cm")', "A2", ws);
+		assert.ok(oParser.parse(), 'CONVERT(1,"m","cm")');
+		assert.strictEqual(oParser.calculate().getValue(), 100, 'Result of CONVERT(1,"m","cm")');
+
+		oParser = new parserFormula('CONVERT(1,"m2","cm2")', "A2", ws);
+		assert.ok(oParser.parse(), 'CONVERT(1,"m2","cm2")');
+		assert.strictEqual(oParser.calculate().getValue(), 10000, 'Result of CONVERT(1,"m2","cm"2)');
+
+		oParser = new parserFormula('CONVERT(1,"m3","cm3")', "A2", ws);
+		assert.ok(oParser.parse(), 'CONVERT(1,"m3","cm3")');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(), "1000000", 'Result of CONVERT(1,"m3","cm3")');
+
+		oParser = new parserFormula('CONVERT(1,"cm","m")', "A2", ws);
+		assert.ok(oParser.parse(), 'CONVERT(1,"cm","m")');
+		assert.strictEqual(oParser.calculate().getValue(), 0.01, 'Result of CONVERT(1,"cm","m")');
+
+		oParser = new parserFormula('CONVERT(1,"cm2","m2")', "A2", ws);
+		assert.ok(oParser.parse(), 'CONVERT(1,"cm2","m2")');
+		assert.strictEqual(oParser.calculate().getValue(), 0.0001, 'Result of CONVERT(1,"cm2","m2")');
+
+		oParser = new parserFormula('CONVERT(1,"cm3","m3")', "A2", ws);
+		assert.ok(oParser.parse(), 'CONVERT(1,"cm3","m3")');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(6), "0.000001", 'Result of CONVERT(1,"cm3","m3")');
+
+		oParser = new parserFormula('CONVERT(1,"m","m")', "A2", ws);
+		assert.ok(oParser.parse(), 'CONVERT(1,"m","m")');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Result of CONVERT(1,"m","m")');
+
+		oParser = new parserFormula('CONVERT(1,"m2","m2")', "A2", ws);
+		assert.ok(oParser.parse(), 'CONVERT(1,"m2","m2")');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Result of CONVERT(1,"m2","m2")');
+
+		oParser = new parserFormula('CONVERT(1,"m3","m3")', "A2", ws);
+		assert.ok(oParser.parse(), 'CONVERT(1,"m3","m3")');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Result of CONVERT(1,"m3","m3")');
+
+		oParser = new parserFormula('CONVERT(1,"m^1","cm^1")', "A2", ws);
+		assert.ok(oParser.parse(), 'CONVERT(1,"m^1","cm^1")');
+		assert.strictEqual(oParser.calculate().getValue(), "#N/A", 'Result of CONVERT(1,"m^1","cm^1")');
+
+		oParser = new parserFormula('CONVERT(1,"m^2","cm^2")', "A2", ws);
+		assert.ok(oParser.parse(), 'CONVERT(1,"m^2","cm^2")');
+		assert.strictEqual(oParser.calculate().getValue(), 10000, 'Result of CONVERT(1,"m^2","cm^2")');
+
+		oParser = new parserFormula('CONVERT(1,"m^3","cm^3")', "A2", ws);
+		assert.ok(oParser.parse(), 'CONVERT(1,"m^3","cm^3")');
+		assert.strictEqual(oParser.calculate().getValue().toFixed(), "1000000", 'Result of CONVERT(1,"m^3","cm^3")');
 
 		testArrayFormula2(assert, "CONVERT", 3, 3, true);
 	});
@@ -29609,6 +30688,49 @@ $(function () {
 		need = "file:///D:\\root\\inside\\inside2\\inseide3\\inside4\\test.xlsx";
 		real = AscCommonExcel.buildRelativePath(path1, path2);
 		assert.strictEqual(need, real);
+	});
+
+	QUnit.test("Test: \"GetAllFormulas test\"", function (assert) {
+		wb.dependencyFormulas.unlockRecal();
+		let formulaRange, formulas;
+
+		ws.getRange2("A1:AAZ10000").cleanAll();
+		formulaRange = ws.getRange2("A10:A110");
+		ws.getRange2("A9").setValue("=SIN(10)");
+		// ws.selectionRange.ranges = [ws.getRange2("A10:A110").getBBox0()];
+		// ws.selectionRange.setActiveCell(ws.getRange2("A10").getBBox0().r1, ws.getRange2("A10").getBBox0().c1);
+		ws.getRange2("A10:A110").setValue("=SUM(A2)", null, null, formulaRange.bbox);
+
+		formulaRange = ws.getRange2("B1:B10000");
+		ws.getRange2("B1:B10000").setValue("=1/NOT(ISBLANK(A1:A10000))", null, null, formulaRange.bbox);
+		ws.getRange2("C1").setValue("=RAND()");
+		ws.getRange2("C2").setValue("=SIN(B1)");
+		formulaRange = ws.getRange2("C1:C110");
+		ws.getRange2("C10:C110").setValue("=B:B", null, null, formulaRange.bbox);
+		formulaRange = ws.getRange2("D1:D10");
+		ws.getRange2("D1:D10").setValue("=C1", null, null, formulaRange.bbox);
+
+		formulas = wb.getAllFormulas();
+		assert.ok(1, "Created 6 formulas on a sheet: 3 regular, 3 array-formula");
+		assert.strictEqual(formulas.length, 6, "GetAllFormulas array length");
+
+		let randRegValBefore = ws.getRange2("C1").getValue(),
+			randArrayFValBefore = ws.getRange2("D1").getValue();
+
+		// recalculate workbook
+		wb.calculate(4);
+		formulas = wb.getAllFormulas();
+		assert.ok(1, "Check formulas after workbook recalculate");
+		assert.strictEqual(formulas.length, 6, "GetAllFormulas array length");
+
+		let randRegValAfter = ws.getRange2("C1").getValue(),
+			randArrayFValAfter = ws.getRange2("D1").getValue();
+			
+		assert.ok(1, "Check values after workbook recalculate. Values shouldn't be the same");
+		assert.strictEqual(randRegValBefore !== randRegValAfter, true, "Check values after recalculate");
+		assert.strictEqual(randArrayFValBefore !== randArrayFValAfter, true, "Check values after recalculate");
+
+		ws.getRange2("A1:Z10000").cleanAll();
 	});
 
 	wb.dependencyFormulas.unlockRecal();

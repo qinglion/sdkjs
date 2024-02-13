@@ -6020,6 +6020,8 @@ StyleManager.prototype =
 		this.bUpdateLocation = false;
 
 		this.bVisited = false;
+
+		this.bHyperlinkFunction = null;
 	}
 
 	Hyperlink.prototype.clone = function (oNewWs) {
@@ -6218,6 +6220,12 @@ StyleManager.prototype =
 				}
 			}
 		}
+	};
+	Hyperlink.prototype.setHyperlinkFunction = function (val) {
+		this.bHyperlinkFunction = val;
+	};
+	Hyperlink.prototype.getHyperlinkFunction = function () {
+		return this.bHyperlinkFunction;
 	};
 
 	/** @constructor */
@@ -8358,7 +8366,7 @@ function RangeDataManagerElem(bbox, data)
 
 		this.QueryTable = null;
 		this.tableType = null;
-		
+
 		this.altText = null;
 		this.altTextSummary = null;
 
@@ -8367,7 +8375,7 @@ function RangeDataManagerElem(bbox, data)
 	}
 
 	TablePart.prototype.clone = function () {
-		var i, res = new TablePart(this.handlers);
+		let i, res = new TablePart(this.handlers);
 		res.Ref = this.Ref ? this.Ref.clone() : null;
 		res.HeaderRowCount = this.HeaderRowCount;
 		res.TotalsRowCount = this.TotalsRowCount;
@@ -8407,7 +8415,7 @@ function RangeDataManagerElem(bbox, data)
 		return res;
 	};
 	TablePart.prototype.renameSheetCopy = function (ws, renameParams) {
-		for (var i = 0; i < this.TableColumns.length; ++i) {
+		for (let i = 0; i < this.TableColumns.length; ++i) {
 			this.TableColumns[i].renameSheetCopy(ws, renameParams);
 		}
 	};
@@ -8415,22 +8423,22 @@ function RangeDataManagerElem(bbox, data)
 		if (!opt_cols) {
 			opt_cols = this.TableColumns;
 		}
-		for (var i = 0; i < opt_cols.length; ++i) {
+		for (let i = 0; i < opt_cols.length; ++i) {
 			opt_cols[i].removeDependencies();
 		}
 	};
 	TablePart.prototype.buildDependencies = function () {
-		for (var i = 0; i < this.TableColumns.length; ++i) {
+		for (let i = 0; i < this.TableColumns.length; ++i) {
 			this.TableColumns[i].buildDependencies();
 		}
 	};
 	TablePart.prototype.getAllFormulas = function (formulas) {
-		for (var i = 0; i < this.TableColumns.length; ++i) {
+		for (let i = 0; i < this.TableColumns.length; ++i) {
 			this.TableColumns[i].getAllFormulas(formulas);
 		}
 	};
 	TablePart.prototype.moveRef = function (col, row) {
-		var ref = this.Ref.clone();
+		let ref = this.Ref.clone();
 		ref.setOffset(new AscCommon.CellBase(row || 0, col || 0));
 
 		this.Ref = ref;
@@ -8445,8 +8453,8 @@ function RangeDataManagerElem(bbox, data)
 		}
 	};
 	TablePart.prototype.changeRef = function (col, row, bIsFirst, bIsNotChangeAutoFilter) {
-		var ref = this.Ref.clone();
-		var offset = new AscCommon.CellBase(row || 0, col || 0);
+		let ref = this.Ref.clone();
+		let offset = new AscCommon.CellBase(row || 0, col || 0);
 		if (bIsFirst) {
 			ref.setOffsetFirst(offset);
 		} else {
@@ -8472,20 +8480,20 @@ function RangeDataManagerElem(bbox, data)
 
 		//add table columns
 		if (generateNewTableColumns) {
-			var newTableColumns = [];
-			var intersectionRanges = this.Ref.intersection(range);
+			let newTableColumns = [];
+			let intersectionRanges = this.Ref.intersection(range);
 
 			if (null !== intersectionRanges) {
 				this.removeDependencies();
-				var tableColumn;
-				var headerRow = this.isHeaderRow() ? this.Ref.r1 : this.Ref.r1 - 1;
-				for (var i = range.c1; i <= range.c2; i++) {
+				let tableColumn;
+				let headerRow = this.isHeaderRow() ? this.Ref.r1 : this.Ref.r1 - 1;
+				for (let i = range.c1; i <= range.c2; i++) {
 					if (i >= intersectionRanges.c1 && i <= intersectionRanges.c2) {
-						var tableIndex = i - this.Ref.c1;
+						let tableIndex = i - this.Ref.c1;
 						tableColumn = this.TableColumns[tableIndex];
 					} else {
 						tableColumn = new TableColumn();
-						var cell = autoFilters.worksheet.getCell3(headerRow, i);
+						let cell = autoFilters.worksheet.getCell3(headerRow, i);
 						if (!cell.isNullText()) {
 							tableColumn.Name =
 								autoFilters.checkTableColumnName(newTableColumns.concat(this.TableColumns),
@@ -8496,7 +8504,7 @@ function RangeDataManagerElem(bbox, data)
 					newTableColumns.push(tableColumn);
 				}
 
-				for (var j = 0; j < newTableColumns.length; j++) {
+				for (let j = 0; j < newTableColumns.length; j++) {
 					tableColumn = newTableColumns[j];
 					if (!tableColumn) {
 						tableColumn = newTableColumns[j] = new TableColumn();
@@ -8510,9 +8518,9 @@ function RangeDataManagerElem(bbox, data)
 				this.buildDependencies();
 			}
 		}
-		var wb = autoFilters.worksheet.workbook;
+		let wb = autoFilters.worksheet.workbook;
 		if (this.isTotalsRow() && this.Ref.r2 !== range.r2 && !wb.bUndoChanges && !wb.bRedoChanges) {
-			var rangeTotal = autoFilters.worksheet.getRange3(this.Ref.r2, this.Ref.c1, this.Ref.r2, this.Ref.c2);
+			let rangeTotal = autoFilters.worksheet.getRange3(this.Ref.r2, this.Ref.c1, this.Ref.r2, this.Ref.c2);
 			rangeTotal.cleanText()
 		}
 
@@ -8526,12 +8534,12 @@ function RangeDataManagerElem(bbox, data)
 		this.handlers.trigger("changeRefTablePart", this);
 
 		if (this.AutoFilter) {
-			var filterRange = new Asc.Range(range.c1, range.r1, range.c2, this.isTotalsRow() ? range.r2 - 1 : range.r2);
+			let filterRange = new Asc.Range(range.c1, range.r1, range.c2, this.isTotalsRow() ? range.r2 - 1 : range.r2);
 			this.AutoFilter.changeRefOnRange(filterRange);
 		}
 	};
 	TablePart.prototype.isApplyAutoFilter = function () {
-		var res = false;
+		let res = false;
 
 		if (this.AutoFilter) {
 			res = this.AutoFilter.isApplyAutoFilter();
@@ -8540,7 +8548,7 @@ function RangeDataManagerElem(bbox, data)
 		return res;
 	};
 	TablePart.prototype.isApplySortConditions = function () {
-		var res = false;
+		let res = false;
 
 		if (this.SortState && this.SortState.SortConditions && this.SortState.SortConditions[0]) {
 			res = true;
@@ -8560,7 +8568,7 @@ function RangeDataManagerElem(bbox, data)
 			return;
 		}
 
-		var diff = null, startCol;
+		let diff = null, startCol;
 		if (activeRange.c1 < this.Ref.c1 && activeRange.c2 >= this.Ref.c1 && activeRange.c2 < this.Ref.c2)//until
 		{
 			diff = activeRange.c2 - this.Ref.c1 + 1;
@@ -8576,7 +8584,7 @@ function RangeDataManagerElem(bbox, data)
 		}
 
 		if (diff !== null) {
-			var deleted = this.TableColumns.splice(startCol, diff);
+			let deleted = this.TableColumns.splice(startCol, diff);
 			this.removeDependencies(deleted);
 
 			if (this.QueryTable) {
@@ -8586,14 +8594,14 @@ function RangeDataManagerElem(bbox, data)
 			}
 
 			//todo undo
-			var deletedMap = {};
-			for (var i = 0; i < deleted.length; ++i) {
+			let deletedMap = {};
+			for (let i = 0; i < deleted.length; ++i) {
 				deletedMap[deleted[i].Name] = 1;
 			}
 			this.handlers.trigger("deleteColumnTablePart", this.DisplayName, deletedMap);
 
 			if (this.SortState) {
-				var bIsDeleteSortState = this.SortState.changeColumns(activeRange, true);
+				let bIsDeleteSortState = this.SortState.changeColumns(activeRange, true);
 				if (bIsDeleteSortState) {
 					this.SortState = null;
 				}
@@ -8603,10 +8611,10 @@ function RangeDataManagerElem(bbox, data)
 	};
 
 	TablePart.prototype.addTableColumns = function (activeRange, autoFilters) {
-		var newTableColumns = [], num = 0;
+		let newTableColumns = [], num = 0;
 		this.removeDependencies();
-		for (var j = 0; j < this.TableColumns.length;) {
-			var curCol = num + this.Ref.c1;
+		for (let j = 0; j < this.TableColumns.length;) {
+			let curCol = num + this.Ref.c1;
 			if (activeRange.c1 <= curCol && activeRange.c2 >= curCol) {
 				newTableColumns[newTableColumns.length] = new TableColumn();
 			} else {
@@ -8617,8 +8625,8 @@ function RangeDataManagerElem(bbox, data)
 			num++;
 		}
 
-		for (var j = 0; j < newTableColumns.length; j++) {
-			var tableColumn = newTableColumns[j];
+		for (let j = 0; j < newTableColumns.length; j++) {
+			let tableColumn = newTableColumns[j];
 			if (tableColumn.Name === null) {
 				tableColumn.Name = autoFilters._generateColumnName2(newTableColumns);
 			}
@@ -8633,10 +8641,10 @@ function RangeDataManagerElem(bbox, data)
 
 		/*if(this.SortState && this.SortState.SortConditions && this.SortState.SortConditions[0])
 		 {
-		 var SortConditions = this.SortState.SortConditions[0];
+		 let SortConditions = this.SortState.SortConditions[0];
 		 if(activeRange.c1 <= SortConditions.Ref.c1)
 		 {
-		 var offset = activeRange.c2 - activeRange.c1 + 1;
+		 let offset = activeRange.c2 - activeRange.c1 + 1;
 		 SortConditions.Ref.c1 += offset;
 		 SortConditions.Ref.c2 += offset;
 		 }
@@ -8651,7 +8659,7 @@ function RangeDataManagerElem(bbox, data)
 
 	TablePart.prototype.addTableLastColumn = function (activeRange, autoFilters, isAddLastColumn) {
 		this.removeDependencies();
-		var newTableColumns = this.TableColumns;
+		let newTableColumns = this.TableColumns;
 		newTableColumns.push(new TableColumn());
 		newTableColumns[newTableColumns.length - 1].Name = autoFilters._generateColumnName2(newTableColumns);
 
@@ -8672,9 +8680,9 @@ function RangeDataManagerElem(bbox, data)
 	};
 
 	TablePart.prototype.getTableRangeForFormula = function (objectParam) {
-		var res = null;
-		var startRow = this.HeaderRowCount === null ? this.Ref.r1 + 1 : this.Ref.r1;
-		var endRow = this.TotalsRowCount ? this.Ref.r2 - 1 : this.Ref.r2;
+		let res = null;
+		let startRow = this.HeaderRowCount === null ? this.Ref.r1 + 1 : this.Ref.r1;
+		let endRow = this.TotalsRowCount ? this.Ref.r2 - 1 : this.Ref.r2;
 		switch (objectParam.param) {
 			case FormulaTablePartInfo.all: {
 				res = new Asc.Range(this.Ref.c1, this.Ref.r1, this.Ref.c2, this.Ref.r2);
@@ -8717,8 +8725,8 @@ function RangeDataManagerElem(bbox, data)
 				break;
 			}
 			case FormulaTablePartInfo.columns: {
-				var startCol = this.getTableIndexColumnByName(objectParam.startCol);
-				var endCol = this.getTableIndexColumnByName(objectParam.endCol);
+				let startCol = this.getTableIndexColumnByName(objectParam.startCol);
+				let endCol = this.getTableIndexColumnByName(objectParam.endCol);
 
 				if (startCol === null) {
 					break;
@@ -8742,12 +8750,12 @@ function RangeDataManagerElem(bbox, data)
 	};
 
 	TablePart.prototype.getTableIndexColumnByName = function (name) {
-		var res = null;
+		let res = null;
 		if (name === null || name === undefined || !this.TableColumns) {
 			return res;
 		}
 
-		for (var i = 0; i < this.TableColumns.length; i++) {
+		for (let i = 0; i < this.TableColumns.length; i++) {
 			if (name.toLowerCase() === this.TableColumns[i].Name.toLowerCase()) {
 				res = i;
 				break;
@@ -8758,12 +8766,12 @@ function RangeDataManagerElem(bbox, data)
 	};
 
 	TablePart.prototype.getTableRangeColumnByName = function (name) {
-		var res = null;
+		let res = null;
 		if (name === null || name === undefined || !this.TableColumns) {
 			return res;
 		}
 
-		for (var i = 0; i < this.TableColumns.length; i++) {
+		for (let i = 0; i < this.TableColumns.length; i++) {
 			if (name.toLowerCase() === this.TableColumns[i].Name.toLowerCase()) {
 				res = new Asc.Range(this.Ref.c1 + i, this.Ref.r1, this.Ref.c1 + i, this.Ref.r2);
 				break;
@@ -8774,12 +8782,12 @@ function RangeDataManagerElem(bbox, data)
 	};
 
 	TablePart.prototype.getTableNameColumnByIndex = function (index) {
-		var res = null;
+		let res = null;
 		if (index === null || index === undefined || !this.TableColumns) {
 			return res;
 		}
 
-		if(this.TableColumns[index]) {
+		if (this.TableColumns[index]) {
 			res = this.TableColumns[index].Name;
 		}
 
@@ -8787,12 +8795,12 @@ function RangeDataManagerElem(bbox, data)
 	};
 
 	TablePart.prototype.getIndexByColumnName = function (name) {
-		var res = null;
+		let res = null;
 		if (name === null || name === undefined || !this.TableColumns) {
 			return res;
 		}
 
-		for (var i = 0; i < this.TableColumns.length; i++) {
+		for (let i = 0; i < this.TableColumns.length; i++) {
 			if (name.toLowerCase() === this.TableColumns[i].Name.toLowerCase()) {
 				res = i;
 				break;
@@ -8818,7 +8826,7 @@ function RangeDataManagerElem(bbox, data)
 	};
 
 	TablePart.prototype.isShowButton = function () {
-		var res = false;
+		let res = false;
 
 		if (this.AutoFilter) {
 			res = this.AutoFilter.isShowButton();
@@ -8846,19 +8854,19 @@ function RangeDataManagerElem(bbox, data)
 	};
 
 	TablePart.prototype.getRangeWithoutHeaderFooter = function () {
-		var startRow = this.HeaderRowCount === null ? this.Ref.r1 + 1 : this.Ref.r1;
-		var endRow = this.TotalsRowCount ? this.Ref.r2 - 1 : this.Ref.r2;
+		let startRow = this.HeaderRowCount === null ? this.Ref.r1 + 1 : this.Ref.r1;
+		let endRow = this.TotalsRowCount ? this.Ref.r2 - 1 : this.Ref.r2;
 
 		return Asc.Range(this.Ref.c1, startRow, this.Ref.c2, endRow);
 	};
 
 	TablePart.prototype.getColumnRange = function (index, withoutHeader, withoutFooter, opt_range) {
-		var tableRange = opt_range ? opt_range : this.Ref;
-		var startRow = tableRange.r1;
+		let tableRange = opt_range ? opt_range : this.Ref;
+		let startRow = tableRange.r1;
 		if (withoutHeader && this.isHeaderRow()) {
 			startRow++;
 		}
-		var endRow = tableRange.r2;
+		let endRow = tableRange.r2;
 		if (withoutFooter && this.isTotalsRow()) {
 			endRow--;
 		}
@@ -8866,7 +8874,7 @@ function RangeDataManagerElem(bbox, data)
 	};
 
 	TablePart.prototype.checkTotalRowFormula = function (ws) {
-		for (var i = 0; i < this.TableColumns.length; i++) {
+		for (let i = 0; i < this.TableColumns.length; i++) {
 			this.TableColumns[i].checkTotalRowFormula(ws, this);
 		}
 	};
@@ -8880,8 +8888,8 @@ function RangeDataManagerElem(bbox, data)
 	};
 
 	TablePart.prototype.addAutoFilter = function () {
-		var autoFilter = new AscCommonExcel.AutoFilter();
-		var cloneRef = this.Ref.clone();
+		let autoFilter = new AscCommonExcel.AutoFilter();
+		let cloneRef = this.Ref.clone();
 		if (this.TotalsRowCount) {
 			cloneRef.r2--
 		}
@@ -8900,9 +8908,9 @@ function RangeDataManagerElem(bbox, data)
 	};
 
 	TablePart.prototype.getTotalsRowRange = function () {
-		var res = null;
+		let res = null;
 
-		if(this.TotalsRowCount > 0) {
+		if (this.TotalsRowCount > 0) {
 			res = new Asc.Range(this.Ref.c1, this.Ref.r2, this.Ref.c2, this.Ref.r2);
 		}
 
@@ -8918,9 +8926,9 @@ function RangeDataManagerElem(bbox, data)
 	//при открытии в случае если не валидный Ref приходит в объекте AutoFilter
 	//получаем этот Ref из табличного
 	TablePart.prototype.generateAutoFilterRef = function () {
-		var res = null;
-		if(this.Ref) {
-			if(this.isTotalsRow()) {
+		let res = null;
+		if (this.Ref) {
+			if (this.isTotalsRow()) {
 				res = new Asc.Range(this.Ref.c1, this.Ref.r1, this.Ref.c2, this.Ref.r2 - 1);
 			} else {
 				res = new Asc.Range(this.Ref.c1, this.Ref.r1, this.Ref.c2, this.Ref.r2);
@@ -8930,19 +8938,19 @@ function RangeDataManagerElem(bbox, data)
 	};
 
 	TablePart.prototype.syncTotalLabels = function (ws) {
-		if(this.Ref) {
-			if(this.isTotalsRow()) {
-				for(var i = 0; i < this.TableColumns.length; i++) {
-					if(null !== this.TableColumns[i].TotalsRowLabel) {
-						var cell = ws.getCell3(this.Ref.r2, this.Ref.c1 + i);
-						if(cell.isFormula()) {
+		if (this.Ref) {
+			if (this.isTotalsRow()) {
+				for (let i = 0; i < this.TableColumns.length; i++) {
+					if (null !== this.TableColumns[i].TotalsRowLabel) {
+						let cell = ws.getCell3(this.Ref.r2, this.Ref.c1 + i);
+						if (cell.isFormula()) {
 							this.TableColumns[i].TotalsRowLabel = null;
-							if(null === this.TableColumns[i].TotalsRowFunction) {
+							if (null === this.TableColumns[i].TotalsRowFunction) {
 								this.TableColumns[i].TotalsRowFunction = Asc.ETotalsRowFunction.totalrowfunctionCustom;
 							}
 						} else {
-							var val = cell.getValue();
-							if(val !== this.TableColumns[i].TotalsRowLabel) {
+							let val = cell.getValue();
+							if (val !== this.TableColumns[i].TotalsRowLabel) {
 								this.TableColumns[i].TotalsRowLabel = val;
 							}
 						}
@@ -8961,14 +8969,14 @@ function RangeDataManagerElem(bbox, data)
 		//TODO в следующих версиях необходимо реализовать данный функционал в полном объеме
 		this.QueryTable = null;
 		this.tableType = null;
-		for(var i = 0; i < this.TableColumns.length; i++) {
+		for (let i = 0; i < this.TableColumns.length; i++) {
 			this.TableColumns[i].queryTableFieldId = null;
 			this.TableColumns[i].uniqueName = null;
 		}
 	};
 
-	TablePart.prototype.getColIdByName = function(name) {
-		for (var i = 0; i < this.TableColumns.length; i++) {
+	TablePart.prototype.getColIdByName = function (name) {
+		for (let i = 0; i < this.TableColumns.length; i++) {
 			if (name === this.TableColumns[i].Name) {
 				return i;
 			}
@@ -8976,13 +8984,192 @@ function RangeDataManagerElem(bbox, data)
 		return null;
 	};
 
-	TablePart.prototype.getIndexTableColumnById = function(id) {
-		for (var i = 0; i < this.TableColumns.length; i++) {
+	TablePart.prototype.getIndexTableColumnById = function (id) {
+		for (let i = 0; i < this.TableColumns.length; i++) {
 			if (id === this.TableColumns[i].id) {
 				return i + 1;
 			}
 		}
 		return null;
+	};
+
+	TablePart.prototype.getSelectionString = function(activeCell, handleSelectionRange) {
+		let getColumnNameRange = function (_start, _end, _needAddParenthesis) {
+			if (_start !== _end) {
+				return "[" + _start + "]" +  ":" +  "[" + _end + "]";
+			} else {
+				return _needAddParenthesis ? "[" + _start + "]" : _start;
+			}
+		};
+
+		if (this.Ref.containsRange(handleSelectionRange)) {
+
+			let argsSeparator = AscCommon.FormulaSeparators.functionArgumentSeparator;
+			let startCol = this.getTableNameColumnByIndex(handleSelectionRange.c1 - this.Ref.c1);
+			let endCol = this.getTableNameColumnByIndex(handleSelectionRange.c2 - this.Ref.c1);
+
+			if (this.Ref.isEqual(handleSelectionRange)) {
+				//Table1[#All]
+				return this.DisplayName + "[" + AscCommon.cStrucTableReservedWords.all + "]";
+			} else if (this.Ref.r1 === handleSelectionRange.r1 && this.Ref.r2 === handleSelectionRange.r2) {
+				//Table1[[#All];[Column1]]
+				//Table1[[#All];[Column1]:[Column2]]
+				return this.DisplayName + "[" + "[" + AscCommon.cStrucTableReservedWords.all + "]" + argsSeparator + getColumnNameRange(startCol, endCol, true) + "]";
+			}
+
+			let dataContains = this._isDataTableContainsRange(handleSelectionRange);
+			if (dataContains && dataContains.partialIntersection) {
+				//check on @
+				if (handleSelectionRange.isOneRow()) {
+					if (activeCell.row === handleSelectionRange.r1) {
+						if (handleSelectionRange.c1 === this.Ref.c1 && handleSelectionRange.c2 === this.Ref.c2) {
+							//all row
+							//Table1[@]
+							return this.DisplayName + "[" + AscCommon.cStrucTableReservedWords.at + "]";
+						} else {
+							//part of row
+							//Table1[@[Column2]:[Column3]]
+							//Table1[@Column1]
+							return this.DisplayName + "[" + AscCommon.cStrucTableReservedWords.at + getColumnNameRange(startCol, endCol) + "]";
+						}
+					}
+				}
+				return null;
+			}
+			let totalContains = this._isTotalRowContainsRange(handleSelectionRange);
+			if (totalContains && totalContains.partialIntersection) {
+				return null;
+			}
+			let headerContains = this._isHeaderRowContainsRange(handleSelectionRange);
+			if (headerContains && headerContains.partialIntersection) {
+				return null;
+			}
+
+
+			//1. only data - Table1
+			//2. only data Table4[[Column1]:[Column2]] / Table4[Column1]
+			if (dataContains && !totalContains && !headerContains) {
+				return dataContains.all ? this.DisplayName : this.DisplayName + "[" + getColumnNameRange(startCol, endCol) + "]";
+			}
+
+			//3. only all totals - Table4[#Totals]
+			//4. only totals - Table4[[#Totals];[Column1]:[Column2]]
+			if (!dataContains && totalContains && !headerContains) {
+				if (totalContains.all) {
+					return this.DisplayName + "[" + AscCommon.cStrucTableReservedWords.totals + "]";
+				} else {
+					return this.DisplayName + "[" + "[" +  AscCommon.cStrucTableReservedWords.totals + "]" + argsSeparator + getColumnNameRange(startCol, endCol, true) + "]";
+				}
+			}
+
+			//5. only all headers - Table4[#Headers]
+			//6. only headers - Table4[[#Headers];[Column1]:[Column2]]
+			if (!dataContains && !totalContains && headerContains) {
+				if (headerContains.all) {
+					return this.DisplayName + "[" + AscCommon.cStrucTableReservedWords.headers + "]";
+				} else {
+					return this.DisplayName + "[" + "[" +  AscCommon.cStrucTableReservedWords.headers + "]" + argsSeparator + getColumnNameRange(startCol, endCol, true) + "]";
+				}
+			}
+
+
+			//hybrid totals/headers/data
+
+			//Table4[[#Data];[#Totals];[Column1]]
+			//Table4[[#Headers];[#Data];[Column1]]
+			//Table4[[#Totals];[Column1]]
+			//Table4[[#Headers];[#Data];[Column1]:[Column2]]
+
+
+			//all hybrid
+			//Table4[[#Data];[#Totals]]
+			if (dataContains || totalContains || headerContains) {
+				let isAll;
+				let res = this.DisplayName + "[";
+				let needDelimiter = false;
+				if (headerContains) {
+					res += "[" + AscCommon.cStrucTableReservedWords.headers + "]";
+					needDelimiter = true;
+					if (headerContains.all) {
+						isAll = true;
+					}
+				}
+				if (dataContains) {
+					if (needDelimiter) {
+						res += argsSeparator;
+					}
+					res += "[" + AscCommon.cStrucTableReservedWords.data + "]";
+					needDelimiter = true;
+					if (dataContains.all) {
+						isAll = true;
+					}
+				}
+				if (totalContains) {
+					if (needDelimiter) {
+						res += argsSeparator;
+					}
+					res += "[" + AscCommon.cStrucTableReservedWords.totals + "]";
+					needDelimiter = true;
+					if (totalContains.all) {
+						isAll = true;
+					}
+				}
+
+				if (!isAll) {
+					res += argsSeparator + getColumnNameRange(startCol, endCol, true);
+				}
+
+				res += "]";
+
+				return res;
+			}
+		}
+		return null;
+	};
+
+	//return {all: bool, partIntersection: bool}/true/false
+	TablePart.prototype._getContainsRange = function(range, tablePartRange, checkPartialIntersection) {
+		let intersection = range.intersection(tablePartRange);
+		if (intersection) {
+			if (tablePartRange.isEqual(intersection)) {
+				return {all: true};
+			} else {
+				if (checkPartialIntersection && (intersection.r1 !== tablePartRange.r1 || intersection.r2 !== tablePartRange.r2)) {
+					return {partialIntersection: true};
+				}
+				return true;
+			}
+		}
+
+		return false;
+	};
+
+	TablePart.prototype._isTotalRowContainsRange = function(range) {
+		if (range && this.isTotalsRow()) {
+			if (this.Ref.containsRange(range)) {
+				let _totalRange = this.getTableRangeForFormula({param: FormulaTablePartInfo.totals});
+				return this._getContainsRange(range, _totalRange);
+			}
+		}
+		return false;
+	};
+
+	TablePart.prototype._isHeaderRowContainsRange = function(range) {
+		if (range && this.isHeaderRow()) {
+			if (this.Ref.containsRange(range)) {
+				let _headerRange = this.getTableRangeForFormula({param: FormulaTablePartInfo.headers});
+				return this._getContainsRange(range, _headerRange);
+			}
+		}
+		return false;
+	};
+
+	TablePart.prototype._isDataTableContainsRange = function(range) {
+		if (this.Ref.containsRange(range)) {
+			let _dataRange = this.getTableRangeForFormula({param: FormulaTablePartInfo.data});
+			return this._getContainsRange(range, _dataRange, true);
+		}
+		return false;
 	};
 
 
@@ -13469,7 +13656,8 @@ function RangeDataManagerElem(bbox, data)
 			} else {
 				this.evenFooter = new Asc.CHeaderFooterData();
 				this.evenFooter.setStr(newVal);
-				this.evenFooter.setType(Asc.c_oAscPageHFType.evenFooter);
+				//TODO separate on read/init in open
+				this.evenFooter.setType(Asc.c_oAscPageHFType && Asc.c_oAscPageHFType.evenFooter);
 			}
 
 			if (this.ws && History.Is_On()) {
@@ -13487,7 +13675,8 @@ function RangeDataManagerElem(bbox, data)
 			} else {
 				this.evenHeader = new Asc.CHeaderFooterData();
 				this.evenHeader.setStr(newVal);
-				this.evenHeader.setType(Asc.c_oAscPageHFType.evenHeader);
+				//TODO separate on read/init in open
+				this.evenHeader.setType(Asc.c_oAscPageHFType && Asc.c_oAscPageHFType.evenHeader);
 			}
 
 			if (this.ws && History.Is_On()) {
@@ -13505,7 +13694,8 @@ function RangeDataManagerElem(bbox, data)
 			} else {
 				this.firstFooter = new Asc.CHeaderFooterData();
 				this.firstFooter.setStr(newVal);
-				this.firstFooter.setType(Asc.c_oAscPageHFType.firstFooter);
+				//TODO separate on read/init in open
+				this.firstFooter.setType(Asc.c_oAscPageHFType && Asc.c_oAscPageHFType.firstFooter);
 			}
 
 			if (this.ws && History.Is_On()) {
@@ -13523,7 +13713,8 @@ function RangeDataManagerElem(bbox, data)
 			} else {
 				this.firstHeader = new Asc.CHeaderFooterData();
 				this.firstHeader.setStr(newVal);
-				this.firstHeader.setType(Asc.c_oAscPageHFType.firstHeader);
+				//TODO separate on read/init in open
+				this.firstHeader.setType(Asc.c_oAscPageHFType && Asc.c_oAscPageHFType.firstHeader);
 			}
 
 			if (this.ws && History.Is_On()) {
@@ -13541,7 +13732,8 @@ function RangeDataManagerElem(bbox, data)
 			} else {
 				this.oddFooter = new Asc.CHeaderFooterData();
 				this.oddFooter.setStr(newVal);
-				this.oddFooter.setType(Asc.c_oAscPageHFType.oddFooter);
+				//TODO separate on read/init in open
+				this.oddFooter.setType(Asc.c_oAscPageHFType && Asc.c_oAscPageHFType.oddFooter);
 			}
 
 			if (this.ws && History.Is_On()) {
@@ -13559,7 +13751,8 @@ function RangeDataManagerElem(bbox, data)
 			} else {
 				this.oddHeader = new Asc.CHeaderFooterData();
 				this.oddHeader.setStr(newVal);
-				this.oddHeader.setType(Asc.c_oAscPageHFType.oddHeader);
+				//TODO separate on read/init in open
+				this.oddHeader.setType(Asc.c_oAscPageHFType && Asc.c_oAscPageHFType.oddHeader);
 			}
 
 			if (this.ws && History.Is_On()) {
@@ -15860,7 +16053,7 @@ function RangeDataManagerElem(bbox, data)
 	 * @property {number|null} stopValue - Stop value
 	 * @property {boolean|null} trend - Trend
 	 * @property {object} contextMenuAllowedProps - Allowed properties
-	 * @property {c_oAscFillRightClickOptions} contextMenuChosenProperty - Chosen property of context menu
+	 * @property {c_oAscFillType} contextMenuChosenProperty - Chosen property of context menu
 	 * @constructor
 	 * @returns {asc_CSeriesSettings}
 	 */
@@ -15877,6 +16070,7 @@ function RangeDataManagerElem(bbox, data)
 		//transfer right click fill information
 		this.contextMenuAllowedProps = null;
 		this.contextMenuChosenProperty = null;
+		this.toolbarMenuAllowedProps = null;
 
 		return this;
 	}
@@ -15900,9 +16094,93 @@ function RangeDataManagerElem(bbox, data)
 
 		res.contextMenuAllowedProps = this.contextMenuAllowedProps;
 		res.contextMenuChosenProperty = this.contextMenuChosenProperty;
+		res.toolbarMenuAllowedProps = this.toolbarMenuAllowedProps;
 
 		return res;
 	};
+
+	/**
+	 * Function returns next value from range
+	 * @param {Range} oRange - Range object from Workbook model
+	 * @param {Cell} oCell
+	 * @param {boolean} bVertical
+	 * @returns {string} Value without format of next cell
+	 * @private
+	 */
+	function _getNextValueFromRange(oRange, oCell, bVertical) {
+		let ws = oRange.worksheet;
+
+		if (bVertical) {
+			let nNextItRow = oCell.nRow + 1;
+			if (nNextItRow <= oRange.bbox.r2) {
+				return ws.getCell3(nNextItRow, oCell.nCol).getValueWithoutFormat();
+			}
+		} else {
+			let nNextItCol = oCell.nCol + 1;
+			if (nNextItCol <= oRange.bbox.c2) {
+				return ws.getCell3(oCell.nRow, nNextItCol).getValueWithoutFormat();
+			}
+		}
+
+		return '';
+	}
+	/**
+	 * Function returns range with filled cells.
+	 * @param {Range} oRange - Range object from Workbook model
+	 * @param {boolean} bVertical - Vertical or horizontal direction
+	 * @returns  Range object from Workbook model
+	 * @private
+	 */
+	function _getFilledRange(oRange, bVertical) {
+		let oFilledRange = oRange.clone();
+		let nRow = oFilledRange.bbox.r1;
+		let nCol = oFilledRange.bbox.c1;
+		let sFirstValue = null;
+
+		oRange._foreach(function (oCell, nCurRow, nCurCol) {
+			if (oCell && oCell.getValueWithoutFormat()) {
+				nRow = nCurRow;
+				nCol = nCurCol;
+				if (nCurRow === oRange.bbox.r1 && nCurCol === oRange.bbox.c1) {
+					sFirstValue = oCell.getValueWithoutFormat();
+				}
+			} else {
+				let sNextValue = _getNextValueFromRange(oRange, oCell, bVertical);
+				if (!sFirstValue && sNextValue) {
+					if (bVertical) {
+						oFilledRange.bbox.r1 = nCurRow + 1;
+						oFilledRange.bbox.c1 = nCurCol;
+					} else {
+						oFilledRange.bbox.c1 = nCurCol + 1;
+						oFilledRange.bbox.r1 = nCurRow;
+					}
+				}
+			}
+		});
+		oFilledRange.bbox.r2 = nRow;
+		oFilledRange.bbox.c2 = nCol;
+
+		return oFilledRange;
+	}
+	/**
+	 * Rounds numbers with 0 after a point. E.g. Numbers like 0.500000001
+	 * @param {number} nValue Number to need round
+	 * @returns {number} Rounded number
+	 */
+	function _roundResult(nValue) {
+		if (!Number.isInteger(nValue)) {
+			let sValue = nValue.toString();
+			let secondPartOfNumber = sValue.split('.')[1];
+
+			if (secondPartOfNumber.includes('00000') && !sValue.includes('.00000')) {
+				let nRoundIndex = secondPartOfNumber.indexOf('00000');
+				return parseFloat(nValue.toFixed(nRoundIndex));
+			}
+		}
+
+		// Return value without changes
+		return nValue;
+	}
 	/**
 	 * Method fills data of SeriesSettings object for context menu and dialog window
 	 * @memberof asc_CSeriesSettings
@@ -15913,45 +16191,95 @@ function RangeDataManagerElem(bbox, data)
 			return;
 		}
 
-		function actionCell(cell) {
+		function calcAvg(seriesInType) {
+			let filledRangeLength = 0;
+
+			if (seriesInType === Asc.c_oAscSeriesInType.rows) {
+				filledRange._foreach2(function (cell, curRow, curCol, rowStart, colStart) {
+					if ((cell && cell.getNumberValue() != null) && curRow === rowStart) {
+						// If columns range not starts with 0, define indexCell by difference between current column and start column
+						let indexCell = curCol - colStart;
+						ySum += cell.getNumberValue();
+						xSum += indexCell;
+						filledRangeLength++;
+					}
+				});
+			} else {
+				filledRange._foreach2(function (cell, curRow, curCol, rowStart, colStart) {
+					if ((cell && cell.getNumberValue() != null) && curCol === colStart) {
+						let indexCell = curRow - rowStart;
+						ySum += cell.getNumberValue();
+						xSum += indexCell;
+						filledRangeLength++;
+					}
+				});
+			}
+
+			xAvg = xSum / filledRangeLength;
+			yAvg = ySum / filledRangeLength;
+		}
+		function actionCell(cell, curRow, curCol, rowStart, colStart) {
 			if (cell && cell.getValueWithoutFormat()) {
 				// Fill type
-				seriesSettings.asc_setType(Asc.c_oAscSeriesType.linear);
-				if (cell.xfs != null && cell.xfs.num != null && cell.xfs.num.getFormat() != null) {
-					let numFormat = AscCommon.oNumFormatCache.get(cell.xfs.num.getFormat());
-					if (numFormat.isDateTimeFormat()) {
-						seriesSettings.asc_setType(Asc.c_oAscSeriesType.date);
+				if (seriesSettings.asc_getType() == null) {
+					seriesSettings.asc_setType(Asc.c_oAscSeriesType.linear);
+					if (cell.xfs != null && cell.xfs.num != null && cell.xfs.num.getFormat() != null) {
+						let numFormat = AscCommon.oNumFormatCache.get(cell.xfs.num.getFormat());
+						if (numFormat.isDateTimeFormat() && numFormat.getType() === Asc.c_oAscNumFormatType.Date) {
+							seriesSettings.asc_setType(Asc.c_oAscSeriesType.date);
 
-						contextMenuAllowedProps[Asc.c_oAscFillRightClickOptions.fillDays] = true;
-						contextMenuAllowedProps[Asc.c_oAscFillRightClickOptions.fillWeekdays] = true;
-						contextMenuAllowedProps[Asc.c_oAscFillRightClickOptions.fillMonths] = true;
-						contextMenuAllowedProps[Asc.c_oAscFillRightClickOptions.fillYears] = true;
+							contextMenuAllowedProps[Asc.c_oAscFillType.fillDays] = true;
+							//contextMenuAllowedProps[Asc.c_oAscFillType.fillWeekdays] = true;
+							//contextMenuAllowedProps[Asc.c_oAscFillType.fillMonths] = true;
+							//contextMenuAllowedProps[Asc.c_oAscFillType.fillYears] = true;
+						}
 					}
 				}
 
 				// Fill step value
 				let cellNumberValue = cell.getNumberValue();
+				let isVertical = seriesSettings.asc_getSeriesIn() === Asc.c_oAscSeriesInType.columns;
+				let cellIndex = isVertical ? curRow - rowStart : curCol - colStart;
+
 				if (cell.isFormula()) {
 					seriesSettings.asc_setStepValue(1);
-				} else if (prevValue) {
-					if (cellNumberValue) {
-						seriesSettings.asc_setStepValue(cellNumberValue - prevValue);
-
-						contextMenuAllowedProps[Asc.c_oAscFillRightClickOptions.fillSeries] = true;
-						if (seriesSettings.asc_getType() !== Asc.c_oAscSeriesType.date) {
-							contextMenuAllowedProps[Asc.c_oAscFillRightClickOptions.linearTrend] = true;
-							contextMenuAllowedProps[Asc.c_oAscFillRightClickOptions.growthTrend] = true;
+				} else if (firstValue != null) {
+					if (cellNumberValue != null) {
+						numeratorOfSlope += (cellIndex - xAvg) * (cellNumberValue - yAvg);
+						denominatorOfSlope += Math.pow((cellIndex - xAvg), 2);
+						if (seriesSettings.asc_getType() === Asc.c_oAscSeriesType.date) {
+							let firstValueDate = new Asc.cDate().getDateFromExcel(firstValue < 60 ? firstValue + 1 : firstValue);
+							let curValueDate = new Asc.cDate().getDateFromExcel(cellNumberValue < 60 ? cellNumberValue + 1 : cellNumberValue);
+							let nextValue = _getNextValueFromRange(filledRange, cell, isVertical) - 0;
+							let nextValueDate = new Asc.cDate().getDateFromExcel(nextValue < 60 ? nextValue + 1 : nextValue);
+							let isSequenceSeries = isVertical ? curRow === (rowStart + 1) : curCol === (colStart + 1);
+							// For recognize month
+							let daysIsEqual = firstValueDate.getDate() === curValueDate.getDate() && firstValueDate.getDate() === nextValueDate.getDate();
+							let monthsIsNotEqual = firstValue!== cellNumberValue && firstValue!== nextValue;
+							// For recognize year
+							let monthIsNotSequence = firstValueDate.getMonth() === curValueDate.getMonth();
+							let yearsIsNotEqual = firstValueDate.getFullYear() !== curValueDate.getFullYear() && firstValueDate.getFullYear() !== nextValueDate.getFullYear();
+							if (daysIsEqual && monthsIsNotEqual && !monthIsNotSequence) {
+								seriesSettings.asc_setDateUnit(Asc.c_oAscDateUnitType.month);
+								seriesSettings.asc_setStepValue(Math.round((cellNumberValue - firstValue) / 30));
+							} else if (daysIsEqual && yearsIsNotEqual) {
+								seriesSettings.asc_setDateUnit(Asc.c_oAscDateUnitType.year);
+								seriesSettings.asc_setStepValue(curValueDate.getFullYear() - firstValueDate.getFullYear());
+							}  else if(isSequenceSeries) {
+								seriesSettings.asc_setStepValue(cellNumberValue - firstValue);
+							}
 						}
-						contextMenuAllowedProps[Asc.c_oAscFillRightClickOptions.series] = true;
 					} else {
 						seriesSettings.asc_setStepValue(1);
 
-						contextMenuAllowedProps[Asc.c_oAscFillRightClickOptions.fillSeries] = true;
-						contextMenuAllowedProps[Asc.c_oAscFillRightClickOptions.series] = true;
+						contextMenuAllowedProps[Asc.c_oAscFillType.fillSeries] = true;
+						contextMenuAllowedProps[Asc.c_oAscFillType.series] = true;
 					}
 				} else {
-					if (cellNumberValue) {
-						prevValue = cellNumberValue;
+					if (cellNumberValue != null) {
+						numeratorOfSlope += (cellIndex - xAvg) * (cellNumberValue - yAvg);
+						denominatorOfSlope += Math.pow((cellIndex - xAvg), 2);
+						firstValue = cellNumberValue;
 					} else {
 						seriesSettings.asc_setStepValue(1);
 
@@ -15959,23 +16287,22 @@ function RangeDataManagerElem(bbox, data)
 						if (typeCell === AscCommon.CellValueType.String) {
 							let cellValue = cell.getValueWithoutFormat();
 							if (cellValue[cellValue.length - 1] >= '0' && cellValue[cellValue.length - 1] <= '9') {
-								contextMenuAllowedProps[Asc.c_oAscFillRightClickOptions.fillSeries] = true;
+								contextMenuAllowedProps[Asc.c_oAscFillType.fillSeries] = true;
 							}
 						}
 					}
 				}
-			} else {
+			} else if (firstValue == null){
 				seriesSettings.asc_setStepValue(1);
-
-				if(prevValue != null) {
-					contextMenuAllowedProps[Asc.c_oAscFillRightClickOptions.series] = true;
-					contextMenuAllowedProps[Asc.c_oAscFillRightClickOptions.fillSeries] = true;
-				}
 			}
 
-			if (seriesSettings.asc_getStepValue()) {
+			if (seriesSettings.asc_getStepValue() != null) {
 				if (seriesSettings.asc_getType() == null) {
 					seriesSettings.asc_setType(Asc.c_oAscSeriesType.linear);
+				}
+				if (seriesSettings.asc_getType() === Asc.c_oAscSeriesType.date) {
+					contextMenuAllowedProps[Asc.c_oAscFillType.fillSeries] = true;
+					contextMenuAllowedProps[Asc.c_oAscFillType.series] = true;
 				}
 				return true;
 			}
@@ -15989,56 +16316,238 @@ function RangeDataManagerElem(bbox, data)
 			return;
 		}
 		let rangeModel = ws.model.getRange3(range.r1, range.c1, range.r2, range.c2);
-		let prevValue = null;
+		let firstValue = null;
 		let contextMenuAllowedProps = {};
-		contextMenuAllowedProps[Asc.c_oAscFillRightClickOptions.copyCells] = true;
-		contextMenuAllowedProps[Asc.c_oAscFillRightClickOptions.fillSeries] = false;
-		contextMenuAllowedProps[Asc.c_oAscFillRightClickOptions.fillFormattingOnly] = null;
-		contextMenuAllowedProps[Asc.c_oAscFillRightClickOptions.fillWithoutFormatting] = null;
-		contextMenuAllowedProps[Asc.c_oAscFillRightClickOptions.fillDays] = false;
-		contextMenuAllowedProps[Asc.c_oAscFillRightClickOptions.fillWeekdays] = false;
-		contextMenuAllowedProps[Asc.c_oAscFillRightClickOptions.fillMonths] = false;
-		contextMenuAllowedProps[Asc.c_oAscFillRightClickOptions.fillYears] = false;
-		contextMenuAllowedProps[Asc.c_oAscFillRightClickOptions.linearTrend] = false;
-		contextMenuAllowedProps[Asc.c_oAscFillRightClickOptions.growthTrend] = false;
-		contextMenuAllowedProps[Asc.c_oAscFillRightClickOptions.flashFill] = null;
-		contextMenuAllowedProps[Asc.c_oAscFillRightClickOptions.series] = false;
+		contextMenuAllowedProps[Asc.c_oAscFillType.copyCells] = true;
+		contextMenuAllowedProps[Asc.c_oAscFillType.fillSeries] = false;
+		contextMenuAllowedProps[Asc.c_oAscFillType.fillFormattingOnly] = null;
+		contextMenuAllowedProps[Asc.c_oAscFillType.fillWithoutFormatting] = null;
+		contextMenuAllowedProps[Asc.c_oAscFillType.fillDays] = false;
+		contextMenuAllowedProps[Asc.c_oAscFillType.fillWeekdays] = null;
+		contextMenuAllowedProps[Asc.c_oAscFillType.fillMonths] = null;
+		contextMenuAllowedProps[Asc.c_oAscFillType.fillYears] = null;
+		contextMenuAllowedProps[Asc.c_oAscFillType.linearTrend] = false;
+		contextMenuAllowedProps[Asc.c_oAscFillType.growthTrend] = false;
+		contextMenuAllowedProps[Asc.c_oAscFillType.flashFill] = null;
+		contextMenuAllowedProps[Asc.c_oAscFillType.series] = false;
 
 		let countOfCol = range.c2 - range.c1;
 		let countOfRow = range.r2 - range.r1;
+		let filledRange = _getFilledRange(rangeModel, countOfCol <= countOfRow);
+		let countOfFilledRow = filledRange.bbox.r2 - filledRange.bbox.r1;
+		let countOfFilledCol = filledRange.bbox.c2 - filledRange.bbox.c1;
+		// Init variables for calc step. x - index, y - value of cell.
+		let xSum = 0;
+		let ySum = 0;
+		let xAvg = 0;
+		let yAvg = 0;
+		let numeratorOfSlope = 0;
+		let denominatorOfSlope = 0;
 
-		if (countOfCol >= countOfRow) {
-			this.asc_setSeriesIn(Asc.c_oAscSeriesInType.rows);
-			rangeModel._foreachNoEmpty(actionCell);
-		} else {
-			this.asc_setSeriesIn(Asc.c_oAscSeriesInType.columns);
-			rangeModel._foreachNoEmpty(function (cell, curRow, curCol, rowStart, colStart) {
-				if (curCol === colStart) {
-					return actionCell(cell);
+		let isApplyFilter = false;
+		//if sheet contains applyed filter -> only copy cell
+		if (ws.model && ws.model.AutoFilter && ws.model.AutoFilter.isApplyAutoFilter()) {
+			isApplyFilter = true;
+		} else if (ws.model) {
+			for (let i = 0; i < selectionRanges.length; i++) {
+				let tables =  ws.model.autoFilters.getTablesIntersectionRange(selectionRanges[i]);
+				for (let j = 0; j < tables.length; j++) {
+					if (tables[i].isApplyAutoFilter()) {
+						isApplyFilter = true;
+						break;
+					}
 				}
-			});
+				if (isApplyFilter) {
+					break;
+				}
+			}
 		}
-		if (seriesSettings.asc_getStepValue() == null) {
-			seriesSettings.asc_setStepValue(1);
-		}
-		this.asc_setTrend(false);
 		this.asc_setDateUnit(Asc.c_oAscDateUnitType.day);
+		this.asc_setTrend(false);
+		// select one cell and use fill handle
+		if (!isApplyFilter) {
+			if (ws.activeFillHandle != null) {
+				if (ws.fillHandleDirection === 0) {
+					this.asc_setSeriesIn(Asc.c_oAscSeriesInType.rows);
+				} else {
+					this.asc_setSeriesIn(Asc.c_oAscSeriesInType.columns);
+				}
+				// Calculate xAvg, yAvg
+				calcAvg(this.asc_getSeriesIn());
+				filledRange._foreach2(actionCell);
+				if (rangeModel.getType() === AscCommon.CellValueType.Number) {
+					contextMenuAllowedProps[Asc.c_oAscFillType.fillSeries] = true;
+					contextMenuAllowedProps[Asc.c_oAscFillType.series] = true;
+				}
+			} else if (countOfCol >= countOfRow) {
+				this.asc_setSeriesIn(Asc.c_oAscSeriesInType.rows);
+				calcAvg(Asc.c_oAscSeriesInType.rows);
+				filledRange._foreach2(function (cell, curRow, curCol, rowStart, colStart) {
+					if (curRow === rowStart) {
+						return actionCell(cell, curRow, curCol, rowStart, colStart);
+					}
+				});
+			} else {
+				this.asc_setSeriesIn(Asc.c_oAscSeriesInType.columns);
+				calcAvg(Asc.c_oAscSeriesInType.columns);
+				filledRange._foreach2(function (cell, curRow, curCol, rowStart, colStart) {
+					if (curCol === colStart) {
+						return actionCell(cell, curRow, curCol, rowStart, colStart);
+					}
+				});
+			}
+		}
+
+		if (!isApplyFilter && seriesSettings.asc_getStepValue() == null) {
+			let isVertical = this.asc_getSeriesIn() === Asc.c_oAscSeriesInType.columns;
+			let rangeLen = isVertical ? countOfRow + 1 : countOfCol + 1;
+			let filledRangeLen = isVertical ? countOfFilledRow + 1 : countOfFilledCol + 1;
+			let isStartPointShifted = rangeModel.bbox.r1 !== filledRange.bbox.r1 || rangeModel.bbox.c1 !== filledRange.bbox.c1;
+
+			// all selected cells are filled or only one cell is filled or first cell is empty
+			if (filledRangeLen === rangeLen || firstValue === ySum || firstValue == null || isStartPointShifted) {
+				this.asc_setStepValue(1);
+			} else {
+				let slope = _roundResult(numeratorOfSlope / denominatorOfSlope);
+				if (this.asc_getType() === Asc.c_oAscSeriesType.date && !Number.isInteger(slope)) {
+					this.asc_setStepValue(1);
+				} else {
+					this.asc_setStepValue(slope);
+				}
+			}
+
+			if (firstValue != null) {
+				contextMenuAllowedProps[Asc.c_oAscFillType.fillSeries] = true;
+				contextMenuAllowedProps[Asc.c_oAscFillType.series] = true;
+				if (firstValue !== ySum && seriesSettings.asc_getType() !== Asc.c_oAscSeriesType.date) {
+					contextMenuAllowedProps[Asc.c_oAscFillType.linearTrend] = true;
+					contextMenuAllowedProps[Asc.c_oAscFillType.growthTrend] = true;
+				}
+			}
+		}
 
 		//2. init for context menu - allowed options
 		this.asc_setContextMenuAllowedProps(contextMenuAllowedProps);
+
+		//3. toolbar - allowed options
+		let toolbarMenuAllowedProps = {};
+		toolbarMenuAllowedProps[Asc.c_oAscFillType.fillDown] = true;
+		toolbarMenuAllowedProps[Asc.c_oAscFillType.fillRight] = true;
+		toolbarMenuAllowedProps[Asc.c_oAscFillType.fillUp] = true;
+		toolbarMenuAllowedProps[Asc.c_oAscFillType.fillLeft] = true;
+		toolbarMenuAllowedProps[Asc.c_oAscFillType.series] = !isApplyFilter;
+
+		if (range.isOneCol()) {
+			if (range.c1 === 0) {
+				toolbarMenuAllowedProps[Asc.c_oAscFillType.fillRight] = false;
+			} else if (range.c1 === AscCommon.gc_nMaxCol0) {
+				toolbarMenuAllowedProps[Asc.c_oAscFillType.fillLeft] = false;
+			}
+		}
+		if (range.isOneRow()) {
+			if (range.r1 === 0) {
+				toolbarMenuAllowedProps[Asc.c_oAscFillType.fillDown] = false;
+			} else if (range.r1 === AscCommon.gc_nMaxRow0) {
+				toolbarMenuAllowedProps[Asc.c_oAscFillType.fillUp] = false;
+			}
+		}
+
+		this.asc_setToolbarMenuAllowedProps(toolbarMenuAllowedProps);
 	};
 	/**
-	 * Method updates "Type" and "Trend" attributes of SeriesSettings object for chosen context menu property
+	 * Method updates "Type", "Trend" and "Step Value" (for Date type) attributes of SeriesSettings object for chosen context menu property
+	 * @param {WorksheetView} wsView
 	 * @memberof asc_CSeriesSettings
 	 */
-	asc_CSeriesSettings.prototype.init = function () {
+	asc_CSeriesSettings.prototype.init = function (wsView) {
 		const chosenContextMenuProp = this.asc_getContextMenuChosenProperty();
-		if (chosenContextMenuProp === Asc.c_oAscFillRightClickOptions.linearTrend) {
-			this.asc_setType(Asc.c_oAscSeriesType.linear);
-			this.asc_setTrend(true);
-		} else if (chosenContextMenuProp === Asc.c_oAscFillRightClickOptions.growthTrend) {
-			this.asc_setType(Asc.c_oAscSeriesType.growth);
-			this.asc_setTrend(true);
+		const fillType = Asc.c_oAscFillType;
+		const seriesSettings = this;
+		function calcStepForDate() {
+			const arn = wsView.model && wsView.model.getSelection().getLast();
+			const activeFillHandle = wsView.activeFillHandle;
+			const rangeModel = wsView.model.getRange3(arn.r1, arn.c1, arn.r2, arn.c2);
+			const index = wsView.fillHandleDirection === 0 ? activeFillHandle.c2 - arn.c1 : activeFillHandle.r2 - arn.r1;
+			const dateUnitType = Asc.c_oAscDateUnitType;
+
+			let prevCellValue = null;
+
+			function actionCell(cell) {
+				if (cell && cell.getValueWithoutFormat()) {
+					let dateUnit = seriesSettings.asc_getDateUnit();
+					let cellValue;
+
+					if (dateUnit === dateUnitType.day || dateUnit === dateUnitType.weekday) {
+						cellValue = cell.getNumberValue();
+					} else if (dateUnit === dateUnitType.month) {
+						let dateVal = new Asc.cDate().getDateFromExcel(cell.getNumberValue());
+						cellValue = dateVal.getMonth();
+					} else {
+						let dateVal = new Asc.cDate().getDateFromExcel(cell.getNumberValue());
+						cellValue = dateVal.getFullYear();
+					}
+
+					if (prevCellValue != null) {
+						seriesSettings.asc_setStepValue(cellValue - prevCellValue);
+						return true;
+					} else {
+						prevCellValue = cellValue;
+					}
+				} else {
+					return true;
+				}
+			}
+
+			if (arn.isOneCell()) {
+				seriesSettings.asc_setStepValue(1);
+			} else {
+				if (seriesSettings.asc_getSeriesIn() === Asc.c_oAscSeriesInType.rows) {
+					rangeModel._foreach2(actionCell);
+				} else {
+					rangeModel._foreach2(function (cell, curRow, curCol, rowStart, colStart) {
+						if (curCol === colStart) {
+							return actionCell(cell);
+						}
+					});
+				}
+			}
+
+			// Define direction step
+			let step = seriesSettings.asc_getStepValue();
+			if (index < 0) {
+				seriesSettings.asc_setStepValue(step * -1);
+			}
+		}
+
+		switch (chosenContextMenuProp) {
+			case fillType.linearTrend:
+				this.asc_setType(Asc.c_oAscSeriesType.linear);
+				this.asc_setTrend(true);
+				break;
+			case fillType.growthTrend:
+				this.asc_setType(Asc.c_oAscSeriesType.growth);
+				this.asc_setTrend(true);
+				break;
+			case fillType.fillDays:
+				this.asc_setType(Asc.c_oAscSeriesType.date);
+				this.asc_setDateUnit(Asc.c_oAscDateUnitType.day);
+				calcStepForDate()
+				break;
+			case fillType.fillWeekdays:
+				this.asc_setType(Asc.c_oAscSeriesType.date);
+				this.asc_setDateUnit(Asc.c_oAscDateUnitType.weekday);
+				calcStepForDate()
+				break;
+			case fillType.fillMonths:
+				this.asc_setType(Asc.c_oAscSeriesType.date);
+				this.asc_setDateUnit(Asc.c_oAscDateUnitType.month);
+				calcStepForDate()
+				break;
+			case fillType.fillYears:
+				this.asc_setType(Asc.c_oAscSeriesType.date);
+				this.asc_setDateUnit(Asc.c_oAscDateUnitType.year);
+				calcStepForDate()
+				break;
 		}
 	};
 	/**
@@ -16093,7 +16602,7 @@ function RangeDataManagerElem(bbox, data)
 	 * Method returns "contextMenuAllowedProps" attribute of SeriesSettings object.
 	 * Uses for hide and shade menu items in context menu.
 	 * @memberof asc_CSeriesSettings
-	 * @returns {object} - object with properties of Asc.c_oAscFillRightClickOptions
+	 * @returns {object} - object with properties of Asc.c_oAscFillType
 	 */
 	asc_CSeriesSettings.prototype.asc_getContextMenuAllowedProps = function () {
 		return this.contextMenuAllowedProps;
@@ -16102,10 +16611,19 @@ function RangeDataManagerElem(bbox, data)
 	 * Method returns "contextMenuChosenProperty" attribute of SeriesSettings object.
 	 * Uses for recognize chosen item in context menu.
 	 * @memberof asc_CSeriesSettings
-	 * @returns {c_oAscFillRightClickOptions}
+	 * @returns {c_oAscFillType}
 	 */
 	asc_CSeriesSettings.prototype.asc_getContextMenuChosenProperty = function () {
 		return this.contextMenuChosenProperty;
+	};
+	/**
+	 * Method returns "toolbarMenuAllowedProps" attribute of SeriesSettings object.
+	 * Uses for hide and shade menu items in context menu.
+	 * @memberof asc_CSeriesSettings
+	 * @returns {object} - object with properties of Asc.c_oAscFillType
+	 */
+	asc_CSeriesSettings.prototype.asc_getToolbarMenuAllowedProps = function () {
+		return this.toolbarMenuAllowedProps;
 	};
 	/**
 	 * Method sets "Series In" attribute of SeriesSettings object
@@ -16154,13 +16672,58 @@ function RangeDataManagerElem(bbox, data)
 		this.stopValue = val;
 	};
 	/**
+	 * Method checks "Step Value" attribute of SeriesSettings object
+	 * @param {number} val
+	 */
+	asc_CSeriesSettings.prototype.asc_isValidStepValue = function (val) {
+		return this.checkValidValue(val);
+	};
+
+	/**
+	 * Method checks "Stop Value" attribute of SeriesSettings object
+	 * @param {number} val
+	 */
+	asc_CSeriesSettings.prototype.asc_isValidStopValue = function (val) {
+		return this.checkValidValue(val);
+	};
+
+	/**
+	 * Method checks input values
+	 * @param {number} val
+	 */
+	asc_CSeriesSettings.prototype.checkValidValue = function (val) {
+		let errCode = Asc.c_oAscError.ID.No;
+
+		let regstr = new RegExp('^\s*[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)\s*$');
+		if (typeof val === 'string') {
+			let findComma = val.match(/,/g);
+			if (findComma && findComma.length === 1) {
+				val = val.replace(',','.');
+			}
+		}
+
+		if (val !== '' && (!regstr.test(val.trim()) || isNaN(parseFloat(val)))) {
+			//check on format
+			let parsedRes = AscCommon.g_oFormatParser.parse(val);
+			if (parsedRes === null) {
+				errCode = Asc.c_oAscError.ID.MustIntegerOrDecimalNumber;
+				val = null;
+			} else {
+				val = parsedRes.value;
+			}
+		}
+
+		return [errCode, (val != null && val !== "") ? parseFloat(val) : null];
+	};
+
+	/**
 	 * Method sets "contextMenuAllowedProps" attribute of SeriesSettings object.
 	 * Uses for hide and shade menu items in context menu.
 	 * * true - unshade menu item
 	 * * false - shade menu item
 	 * * null - hide menu item
 	 * @memberof asc_CSeriesSettings
-	 * @param {object} val - object with properties of Asc.c_oAscFillRightClickOptions as attribute and boolean or null as value
+	 * @param {object} val - object with properties of Asc.c_oAscFillType as attribute and boolean or null as value
 	 */
 	asc_CSeriesSettings.prototype.asc_setContextMenuAllowedProps = function (val) {
 		this.contextMenuAllowedProps = val;
@@ -16168,10 +16731,252 @@ function RangeDataManagerElem(bbox, data)
 	/**
 	 * Method sets "contextMenuChosenProperty" attribute of SeriesSettings object.
 	 * Uses for recognize chosen item in context menu.
-	 * @param {c_oAscFillRightClickOptions} val - attribute of c_oAscFillRightClickOptions
+	 * @param {c_oAscFillType} val - attribute of c_oAscFillType
 	 */
 	asc_CSeriesSettings.prototype.asc_setContextMenuChosenProperty = function (val) {
 		this.contextMenuChosenProperty = val;
+	};
+
+	/**
+	 * Method sets "toolbarMenuAllowedProps" attribute of SeriesSettings object.
+	 * Uses for hide and shade menu items in context menu.
+	 * * true - unshade menu item
+	 * * false - shade menu item
+	 * * null - hide menu item
+	 * @memberof asc_CSeriesSettings
+	 * @param {object} val - object with properties of Asc.c_oAscFillType as attribute and boolean or null as value
+	 */
+	asc_CSeriesSettings.prototype.asc_setToolbarMenuAllowedProps = function (val) {
+		this.toolbarMenuAllowedProps = val;
+	};
+
+
+	function CTimeline() {
+		this.name = null;
+		this.cache = null;
+		this.caption = null;
+
+		this.scrollPosition = null;
+		this.uid = null;
+
+		this.level = null;
+		this.selectionLevel = null;
+		this.showHeader = null;
+
+		this.showHorizontalScrollbar = null;
+		this.showSelectionLabel = null;
+		this.showTimeLevel = null;
+		this.style = null;
+
+		return this;
+	}
+	CTimeline.prototype.clone = function () {
+		var res = new CTimeline();
+
+		res.name = this.name;
+		res.cache = this.cache;
+		res.caption = this.caption;
+
+		res.scrollPosition = this.scrollPosition;
+		res.uid = this.uid;
+
+		res.level = this.level;
+		res.selectionLevel = this.selectionLevel;
+		res.showHeader = this.showHeader;
+
+		res.showHorizontalScrollbar = this.showHorizontalScrollbar;
+		res.showSelectionLabel = this.showSelectionLabel;
+		res.showTimeLevel = this.showTimeLevel;
+		res.style = this.style;
+
+		return res;
+	};
+
+	function CTimelineCacheDefinition() {
+		this.name = null;
+		this.sourceName = null;
+		this.uid = null;
+
+		this.pivotTables = null;
+		this.state = null;
+		this.pivotFilter = null;
+
+		return this;
+	}
+	CTimelineCacheDefinition.prototype.clone = function () {
+		var res = new CTimelineCacheDefinition();
+
+		res.name = this.name;
+		res.sourceName = this.sourceName;
+		res.uid = this.uid;
+
+		res.pivotTables = this.pivotTables;
+		res.state = this.state;
+		res.pivotFilter = this.pivotFilter;
+
+		return res;
+	};
+	CTimelineCacheDefinition.prototype.initPostOpen = function (tableIds, sheetIds) {
+		if (this.pivotTables) {
+			this.pivotTables.forEach(function(elem){
+				elem.initPostOpen(tableIds, sheetIds);
+			});
+		}
+	};
+
+	CTimelineCacheDefinition.prototype.isCachePivotTable = function (sheetId, pivotName) {
+		if (this.pivotTables) {
+			for (let i = 0; i < this.pivotTables.length; i++) {
+				if (this.pivotTables[i].isCachePivotTable(sheetId, pivotName)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	};
+
+
+	function CTimelineCachePivotTable() {
+		this.name = null;
+		this.tabId = null;
+	}
+	CTimelineCachePivotTable.prototype.clone = function () {
+		var res = new CTimelineCachePivotTable();
+
+		res.name = this.name;
+		res.tabId = this.tabId;
+
+		return res;
+	};
+	CTimelineCachePivotTable.prototype.initPostOpen = function (tableIds, sheetIds) {
+		var ws = null;
+		if (null != this.tabId) {
+			ws = sheetIds[this.tabId];
+			if (ws) {
+				this.tabId = ws.getId();
+			}
+		}
+		return ws;
+	};
+	CTimelineCachePivotTable.prototype.isCachePivotTable = function (sheetId, pivotName) {
+		return this.tabId === sheetId && this.name === pivotName;
+	};
+
+
+	function CTimelineState() {
+		this.name = null;
+		this.filterState = null;
+
+		this.pivotCacheId = null;
+		this.minimalRefreshVersion = null;
+
+		this.lastRefreshVersion = null;
+		this.filterType = null;
+
+		this.selection = null;
+		this.bounds = null;
+	}
+	CTimelineState.prototype.clone = function () {
+		var res = new CTimelineState();
+
+		res.name = this.name;
+		res.filterState = this.filterState;
+
+		res.pivotCacheId = this.pivotCacheId;
+		res.minimalRefreshVersion = this.minimalRefreshVersion;
+
+		res.lastRefreshVersion = this.lastRefreshVersion;
+		res.filterType = this.filterType;
+
+		res.selection = this.selection && this.selection.clone();
+		res.bounds = this.bounds && this.bounds.clone();
+
+		return res;
+	};
+
+	function CTimelineRange() {
+		this.startDate = null;
+		this.endDate = null;
+	}
+	CTimelineRange.prototype.clone = function () {
+		var res = new CTimelineRange();
+
+		res.startDate = this.startDate;
+		res.endDate = this.endDate;
+
+		return res;
+	};
+
+	function CTimelineStyles() {
+		this.defaultTimelineStyle = null;
+		this.timelineStyles = null;
+	}
+	CTimelineStyles.prototype.clone = function () {
+		var res = new CTimelineRange();
+
+		res.defaultTimelineStyle = this.defaultTimelineStyle;
+		if (this.timelineStyles) {
+			res.timelineStyles = [];
+			for (let i = 0; i < this.timelineStyles.length; i++) {
+				res.timelineStyles.push(this.timelineStyles[i].clone());
+			}
+		}
+
+		return res;
+	};
+
+	function CTimelineStyle() {
+		this.name = null;
+		this.timelineStyleElements = null;
+	}
+	CTimelineStyle.prototype.clone = function () {
+		var res = new CTimelineRange();
+
+		res.name = this.name;
+		if (this.timelineStyleElements) {
+			res.timelineStyleElements = [];
+			for (let i = 0; i < this.timelineStyleElements.length; i++) {
+				res.timelineStyleElements.push(this.timelineStyleElements[i].clone());
+			}
+		}
+
+		return res;
+	};
+
+	function CTimelineStyleElement() {
+		this.type = null;
+		this.dxfId = null;
+	}
+	CTimelineStyleElement.prototype.clone = function () {
+		var res = new CTimelineRange();
+
+		res.type = this.type;
+		res.dxfId = this.dxfId;
+
+		return res;
+	};
+
+	function CTimelinePivotFilter() {
+		this.name = null;
+		this.description = null;
+		this.useWholeDay = null;
+		this.id = null;
+		this.fld = null;
+
+		this.autoFilter = null;
+	}
+	CTimelinePivotFilter.prototype.clone = function () {
+		var res = new CTimelinePivotFilter();
+
+		res.name = this.name;
+		res.description = this.description;
+		res.useWholeDay = this.name;
+		res.id = this.description;
+		res.fld = this.name;
+
+		res.autoFilter = this.autoFilter && this.autoFilter.clone();
+
+		return res;
 	};
 
 
@@ -16475,6 +17280,11 @@ function RangeDataManagerElem(bbox, data)
 	prot["asc_getPrintTitlesHeight"] = prot.asc_getPrintTitlesHeight;
 	prot["asc_getHeaderFooter"] = prot.asc_getHeaderFooter;
 	prot["asc_setHeaderFooter"] = prot.asc_setHeaderFooter;
+	prot["asc_getHorizontalCentered"] = prot.asc_getHorizontalCentered;
+	prot["asc_getVerticalCentered"] = prot.asc_getVerticalCentered;
+	prot["asc_setHorizontalCentered"] = prot.asc_setHorizontalCentered;
+	prot["asc_setVerticalCentered"] = prot.asc_setVerticalCentered;
+
 
 	window["Asc"]["CHeaderFooter"] = window["Asc"].CHeaderFooter = CHeaderFooter;
 	window["Asc"]["CHeaderFooterData"] = window["Asc"].CHeaderFooterData = CHeaderFooterData;
@@ -16653,21 +17463,37 @@ function RangeDataManagerElem(bbox, data)
 	prot = asc_CSeriesSettings.prototype;
 	prot["asc_getSeriesIn"] = prot.asc_getSeriesIn;
 	prot["asc_getType"] = prot.asc_getType;
-	prot["asc_getDateInit"] = prot.asc_getDateUnit;
+	prot["asc_getDateUnit"] = prot.asc_getDateUnit;
 	prot["asc_getTrend"] = prot.asc_getTrend;
 	prot["asc_getStepValue"] = prot.asc_getStepValue;
 	prot["asc_getStopValue"] = prot.asc_getStopValue;
 	prot["asc_getContextMenuAllowedProps"] = prot.asc_getContextMenuAllowedProps;
 	prot["asc_getContextMenuChosenProperty"] = prot.asc_getContextMenuChosenProperty;
+	prot["asc_getToolbarMenuAllowedProps"] = prot.asc_getToolbarMenuAllowedProps;
 
 	prot["asc_setSeriesIn"] = prot.asc_setSeriesIn;
 	prot["asc_setType"] = prot.asc_setType;
-	prot["asc_setDateInit"] = prot.asc_setDateUnit;
+	prot["asc_setDateUnit"] = prot.asc_setDateUnit;
 	prot["asc_setTrend"] = prot.asc_setTrend;
 	prot["asc_setStepValue"] = prot.asc_setStepValue;
 	prot["asc_setStopValue"] = prot.asc_setStopValue;
+	prot["asc_isValidStepValue"] = prot.asc_isValidStepValue;
+	prot["asc_isValidStopValue"] = prot.asc_isValidStopValue;
 	prot["asc_setContextMenuAllowedProps"] = prot.asc_setContextMenuAllowedProps;
 	prot["asc_setContextMenuChosenProperty"] = prot.asc_setContextMenuChosenProperty;
+	prot["asc_setToolbarMenuAllowedProps"] = prot.asc_setToolbarMenuAllowedProps;
+
+
+	window["AscCommonExcel"].CTimeline = CTimeline;
+	window["AscCommonExcel"].CTimelineCacheDefinition = CTimelineCacheDefinition;
+	window["AscCommonExcel"].CTimelineCachePivotTable = CTimelineCachePivotTable;
+	window["AscCommonExcel"].CTimelineState = CTimelineState;
+	window["AscCommonExcel"].CTimelineRange = CTimelineRange;
+	window["AscCommonExcel"].CTimelineStyles = CTimelineStyles;
+	window["AscCommonExcel"].CTimelineStyle = CTimelineStyle;
+	window["AscCommonExcel"].CTimelineStyleElement = CTimelineStyleElement;
+	window["AscCommonExcel"].CTimelinePivotFilter = CTimelinePivotFilter;
+
 
 
 })(window);
