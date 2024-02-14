@@ -245,7 +245,7 @@
 	 * but Row for example can be found by IX N
 	 * @param {String} formula
 	 * @memberof Shape_Type
-	 * @returns {Cell_Type | null}
+	 * @returns {Cell_Type|null}
 	 */
 	Shape_Type.prototype.getCell = function findCell(formula) {
 		// Cells can have N only no IX
@@ -691,7 +691,8 @@
 				"QuickStyleFillColor", "QuickStyleFillMatrix"];
 
 				let textStyleElements = ["TextBkgnd", "TextDirection", "TextBkgndTrans", "LockTextEdit", "HideText",
-					"TheText", "IsTextEditTarget", "KeepTextFlat", "ReplaceLockText", "TextPosAfterBullet"];
+					"TheText", "IsTextEditTarget", "KeepTextFlat", "ReplaceLockText", "TextPosAfterBullet",
+					"Character", "Paragraph", "Tabs"];
 
 				if (thisArgument.lineStyle !== null) {
 					let styleId = Number(thisArgument.lineStyle);

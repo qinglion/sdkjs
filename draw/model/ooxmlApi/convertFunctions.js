@@ -186,19 +186,19 @@
 			// consider "QuickStyleVariation" cell
 			// https://visualsignals.typepad.co.uk/vislog/2013/05/visio-2013-themes-in-the-shapesheet-part-2.html
 			let backgroundColorHSL = {H: undefined, S: undefined, L: undefined};
-			let strokeColorHSL = {H: undefined, S: undefined, L: undefined};
+			let lineColorHSL = {H: undefined, S: undefined, L: undefined};
 			let fillColorHSL = {H: undefined, S: undefined, L: undefined};
-			let strokeColor = oStrokeUniFill.fill && oStrokeUniFill.fill.color && oStrokeUniFill.fill.color.color.RGBA;
+			let lineColor = oStrokeUniFill.fill && oStrokeUniFill.fill.color && oStrokeUniFill.fill.color.color.RGBA;
 			let fillColor = uniFill.fill && uniFill.fill.color && uniFill.fill.color.color.RGBA;
 
-			if (strokeColor !== undefined && fillColor !== undefined) {
+			if (lineColor !== undefined && fillColor !== undefined) {
 				AscFormat.CColorModifiers.prototype.RGB2HSL(255, 255, 255, backgroundColorHSL);
-				AscFormat.CColorModifiers.prototype.RGB2HSL(strokeColor.R, strokeColor.G, strokeColor.B, strokeColorHSL);
+				AscFormat.CColorModifiers.prototype.RGB2HSL(lineColor.R, lineColor.G, lineColor.B, lineColorHSL);
 				AscFormat.CColorModifiers.prototype.RGB2HSL(fillColor.R, fillColor.G, fillColor.B, fillColorHSL);
 
 				// covert L to percents
 				backgroundColorHSL.L = backgroundColorHSL.L / 255 * 100;
-				strokeColorHSL.L = strokeColorHSL.L / 255 * 100;
+				lineColorHSL.L = lineColorHSL.L / 255 * 100;
 				fillColorHSL.L = fillColorHSL.L / 255 * 100;
 
 				let quickStyleVariationCell = shape.getCell("QuickStyleVariation");
@@ -206,26 +206,26 @@
 					let quickStyleVariationCellValue = Number(quickStyleVariationCell.v);
 					if ((quickStyleVariationCellValue & 4) === 4) {
 						// line color variation enabled (bit mask used)
-						if (Math.abs(backgroundColorHSL.L - strokeColorHSL.L) < 16.66) {
+						if (Math.abs(backgroundColorHSL.L - lineColorHSL.L) < 16.66) {
 							if (backgroundColorHSL.L <= 72.92) {
 								// if background is dark set stroke to white
-								strokeColor.R = 255;
-								strokeColor.G = 255;
-								strokeColor.B = 255;
+								lineColor.R = 255;
+								lineColor.G = 255;
+								lineColor.B = 255;
 							} else {
 								if (Math.abs(backgroundColorHSL.L - fillColorHSL.L) >
-									Math.abs(backgroundColorHSL.L - strokeColorHSL.L)) {
+									Math.abs(backgroundColorHSL.L - lineColorHSL.L)) {
 									// evaluation = THEMEVAL("FillColor")
 									// get theme shape fill color despite cell
 									// line below will give unifill with pattern maybe or gradient
-									// oStrokeUniFill = AscCommonDraw.themeval(this.theme, shape, null, "FillColor");
-									strokeColor.R = fillColor.R;
-									strokeColor.G = fillColor.G;
-									strokeColor.B = fillColor.B;
+									// lineUniFill = AscCommonDraw.themeval(this.theme, shape, null, "FillColor");
+									lineColor.R = fillColor.R;
+									lineColor.G = fillColor.G;
+									lineColor.B = fillColor.B;
 								} else {
 									// evaluation = THEMEVAL("LineColor") or not affected I guess
 									// get theme line color despite cell
-									// oStrokeUniFill = AscCommonDraw.themeval(this.theme, shape, null, "LineColor");
+									// lineUniFill = AscCommonDraw.themeval(this.theme, shape, null, "LineColor");
 								}
 							}
 						}
@@ -240,15 +240,15 @@
 								fillColor.G = 255;
 								fillColor.B = 255;
 							} else {
-								if (Math.abs(backgroundColorHSL.L - strokeColorHSL.L) >
+								if (Math.abs(backgroundColorHSL.L - lineColorHSL.L) >
 									Math.abs(backgroundColorHSL.L - fillColorHSL.L)) {
 									// evaluation = THEMEVAL("FillColor")
 									// get theme shape fill color despite cell
 									// line below will give unifill with pattern maybe or gradient
-									// oStrokeUniFill = AscCommonDraw.themeval(this.theme, shape, null, "FillColor");
-									fillColor.R = strokeColor.R;
-									fillColor.G = strokeColor.G;
-									fillColor.B = strokeColor.B;
+									// lineUniFill = AscCommonDraw.themeval(this.theme, shape, null, "FillColor");
+									fillColor.R = lineColor.R;
+									fillColor.G = lineColor.G;
+									fillColor.B = lineColor.B;
 								}
 							}
 						}
@@ -256,7 +256,7 @@
 
 					if ((quickStyleVariationCellValue & 2) === 2) {
 						// text color variation enabled (bit mask used)
-						console.log("Text color variation is not realized");
+						// Text color variation is realized in handleText function
 					}
 				}
 			}
@@ -280,9 +280,78 @@
 		 * @param {CTheme} theme
 		 * @param {Shape_Type} shape
 		 * @param {CShape} cShape
+		 * @param {CUniFill} lineUniFill
+		 * @param {CUniFill} fillUniFill
 		 */
-		function handleText(theme, shape, cShape) {
+		function handleText(theme, shape, cShape, lineUniFill, fillUniFill) {
 			// see 2.2.8	Text [MS-VSDX]-220215
+
+			function handleTextQuickStyleVariation(textUniColor, lineUniFill, fillUniFill) {
+				// https://learn.microsoft.com/en-us/openspecs/sharepoint_protocols/ms-vsdx/68bb0221-d8a1-476e-a132-8c60a49cea63?redirectedfrom=MSDN
+				// consider "QuickStyleVariation" cell
+				// https://visualsignals.typepad.co.uk/vislog/2013/05/visio-2013-themes-in-the-shapesheet-part-2.html
+
+				// line and fill QuickStyleVariation are handled in handleQuickStyleVariation
+				let backgroundColorHSL = {H: undefined, S: undefined, L: undefined};
+				let textColorHSL = {H: undefined, S: undefined, L: undefined};
+				let lineColorHSL = {H: undefined, S: undefined, L: undefined};
+				let fillColorHSL = {H: undefined, S: undefined, L: undefined};
+
+				let textColorRGBA = textUniColor.color && textUniColor.color.RGBA;
+				let lineColorRGBA = lineUniFill.fill && lineUniFill.fill.color && lineUniFill.fill.color.color.RGBA;
+				let fillColorRGBA = fillUniFill.fill && fillUniFill.fill.color && fillUniFill.fill.color.color.RGBA;
+
+				if (lineColorRGBA !== undefined && fillColorRGBA !== undefined && textColorRGBA !== undefined) {
+					AscFormat.CColorModifiers.prototype.RGB2HSL(255, 255, 255, backgroundColorHSL);
+					AscFormat.CColorModifiers.prototype.RGB2HSL(lineColorRGBA.R, lineColorRGBA.G, lineColorRGBA.B, lineColorHSL);
+					AscFormat.CColorModifiers.prototype.RGB2HSL(fillColorRGBA.R, fillColorRGBA.G, fillColorRGBA.B, fillColorHSL);
+					AscFormat.CColorModifiers.prototype.RGB2HSL(textColorRGBA.R, textColorRGBA.G, textColorRGBA.B, textColorHSL);
+
+					// covert L to percents
+					backgroundColorHSL.L = backgroundColorHSL.L / 255 * 100;
+					lineColorHSL.L = lineColorHSL.L / 255 * 100;
+					fillColorHSL.L = fillColorHSL.L / 255 * 100;
+					textColorHSL.L = textColorHSL.L / 255 * 100;
+
+
+					let quickStyleVariationCell = shape.getCell("QuickStyleVariation");
+					if (quickStyleVariationCell) {
+						let quickStyleVariationCellValue = Number(quickStyleVariationCell.v);
+
+						if ((quickStyleVariationCellValue & 2) === 2) {
+							// text color variation enabled (bit mask used)
+							if (Math.abs(backgroundColorHSL.L - textColorHSL.L) < 16.66) {
+								if (backgroundColorHSL.L <= 72.92) {
+									// if background is dark set stroke to white
+									textColorRGBA.R = 255;
+									textColorRGBA.G = 255;
+									textColorRGBA.B = 255;
+								} else {
+									// return the color with the largest absolute difference in luminance from the
+									// formula evaluation of the "TextColor", "FillColor", and "LineColor"
+									let fillDifferenceIsTheLargest =
+										Math.abs(backgroundColorHSL.L - fillColorHSL.L) >
+										Math.abs(backgroundColorHSL.L - lineColorHSL.L) &&
+										Math.abs(backgroundColorHSL.L - fillColorHSL.L) >
+											Math.abs(backgroundColorHSL.L - textColorHSL.L);
+									if (fillDifferenceIsTheLargest) {
+										textColorRGBA.R = fillColorRGBA.R;
+										textColorRGBA.G = fillColorRGBA.G;
+										textColorRGBA.B = fillColorRGBA.B;
+									} else {
+										if (Math.abs(backgroundColorHSL.L - lineColorHSL.L) >
+											Math.abs(backgroundColorHSL.L - textColorHSL.L)) {
+											textColorRGBA.R = lineColorRGBA.R;
+											textColorRGBA.G = lineColorRGBA.G;
+											textColorRGBA.B = lineColorRGBA.B;
+										} // else leave text color
+									}
+								}
+							}
+						}
+					}
+				}
+			}
 
 			let textElement = shape.getTextElement();
 			if (!textElement) {
@@ -351,9 +420,16 @@
 						let fontColor = calculateCellValue(theme, shape, characterColorCell);
 						// no RGBA.A alpha channel considered
 						fontColor.Calculate(theme);
+
+						handleTextQuickStyleVariation(fontColor, lineUniFill, fillUniFill);
+
 						var textColor1 = new CDocumentColor(fontColor.color.RGBA.R, fontColor.color.RGBA.G,
 							fontColor.color.RGBA.B, false);
 						oRun.Set_Color(textColor1);
+					} else {
+						console.log("text color cell not found! set text color as black");
+						var blackColor = new CDocumentColor(0, 0, 0, false);
+						oRun.Set_Color(blackColor);
 					}
 
 					// add run to paragraph
@@ -496,11 +572,32 @@
 		// let gradientEnabled = shape.getCell("FillGradientEnabled");
 		// console.log("Gradient enabled:", gradientEnabled);
 
-		let uniFill = null, uniFillForegnd = null, uniFillBkgnd = null, nPatternType = null;
-		let fillForegnd = this.getCell("FillForegnd");
-		if (fillForegnd) {
-			// console.log("FillForegnd was found:", fillForegnd);
-			uniFillForegnd = calculateCellValue(visioDocument.theme, this, fillForegnd);
+		/** @type {CUniFill} */
+		let uniFillForegndWithPattern = null;
+		/**
+		 * We need fill without pattern applied bcs pattern applied can set NoSoilidFill object without color,
+		 * so we will not be able to calculate handleVariationColor function result
+		 * @type {CUniFill} */
+		let uniFillForegnd = null;
+
+		/** @type {CUniFill} */
+		let	uniFillBkgnd = null;
+
+		let	nPatternType = null;
+
+		/** @type {CUniFill} */
+		let lineUniFillWithPattern = null;
+		/**
+		 * We need fill without pattern applied bcs pattern applied can set NoSoilidFill object without color,
+		 * so we will not be able to calculate handleVariationColor function result
+		 * @type {CUniFill} */
+		let lineUniFill = null;
+
+
+		let fillForegndCell = this.getCell("FillForegnd");
+		if (fillForegndCell) {
+			// console.log("FillForegnd was found:", fillForegndCell);
+			uniFillForegnd = calculateCellValue(visioDocument.theme, this, fillForegndCell);
 
 			let fillForegndTrans = this.getCell("FillForegndTrans");
 			if (fillForegndTrans) {
@@ -518,10 +615,10 @@
 				}
 			}
 		}
-		let fillBkgnd = this.getCell("FillBkgnd");
-		if (fillBkgnd) {
-			// console.log("FillBkgnd was found:", fillBkgnd);
-			uniFillBkgnd = calculateCellValue(visioDocument.theme, this, fillBkgnd);
+		let fillBkgndCell = this.getCell("FillBkgnd");
+		if (fillBkgndCell) {
+			// console.log("FillBkgnd was found:", fillBkgndCell);
+			uniFillBkgnd = calculateCellValue(visioDocument.theme, this, fillBkgndCell);
 
 			let fillBkgndTrans = this.getCell("FillBkgndTrans");
 			if (fillBkgndTrans) {
@@ -540,6 +637,55 @@
 			}
 		}
 
+		let lineColorCell = this.getCell("LineColor");
+		if (lineColorCell) {
+			// console.log("LineColor was found for shape", lineColorCell);
+			lineUniFill = calculateCellValue(visioDocument.theme, this, lineColorCell);
+		} else {
+			console.log("LineColor cell for line stroke (border) was not found painting red");
+			lineUniFill = AscFormat.CreateUnfilFromRGB(255,0,0);
+		}
+
+		// calculate variation before pattern bcs it can make NoFillUniFill object without color
+		handleQuickStyleVariation(lineUniFill, uniFillForegnd, this);
+
+		// add read matrix modifier width?
+		// + handle line pattens?
+		let linePattern = this.getCell("LinePattern");
+		if (linePattern) {
+			if (linePattern.v === "0") {
+				lineUniFillWithPattern = AscFormat.CreateNoFillUniFill();
+			} else {
+				//todo types
+				lineUniFillWithPattern = lineUniFill;
+			}
+		}
+
+		// TODO may be bug when uniFillForegnd sets to NoFillUniFill and text variation color is not calculated
+		// code below tries to do it but it doesnt work well
+		// // https://learn.microsoft.com/ru-ru/office/client-developer/visio/fillpattern-cell-fill-format-section
+		// let fillPattern = this.getCell("FillPattern");
+		// if (fillPattern) {
+		// 	// console.log("fillPattern was found:", fillPattern);
+		// 	let fillPatternType = parseInt(fillPattern.v);
+		// 	if (!isNaN(fillPatternType)) {
+		// 		if (0 === fillPatternType) {
+		// 			uniFillForegndWithPattern = AscFormat.CreateNoFillUniFill();
+		// 		} else if (fillPatternType === 1) {
+		// 			uniFillForegndWithPattern = uniFillForegnd;
+		// 		} else if(fillPatternType > 1) {
+		// 			//todo types
+		// 			nPatternType = 0;//"cross";
+		// 			if (uniFillBkgnd && uniFillBkgnd.fill && uniFillForegnd && uniFillForegnd.fill) {
+		// 				uniFillForegndWithPattern = AscFormat.CreatePatternFillUniFill(nPatternType,
+		// 					uniFillBkgnd.fill.color, uniFillForegnd.fill.color);
+		// 			}
+		// 		} else {
+		// 			uniFillForegndWithPattern = uniFillForegnd;
+		// 		}
+		// 	}
+		// }
+
 		let fillPattern = this.getCell("FillPattern");
 		if (fillPattern) {
 			// console.log("fillPattern was found:", fillPattern);
@@ -555,37 +701,14 @@
 			}
 		}
 		if (null !== nPatternType && uniFillBkgnd && uniFillForegnd) {
-			uniFill = AscFormat.CreatePatternFillUniFill(nPatternType, uniFillBkgnd.fill.color, uniFillForegnd.fill.color);
+			uniFillForegndWithPattern = AscFormat.CreatePatternFillUniFill(nPatternType, uniFillBkgnd.fill.color, uniFillForegnd.fill.color);
 			// uniFill = AscFormat.builder_CreatePatternFill(nPatternType, uniFillBkgnd.fill.color, uniFillForegnd.fill.color);
 		} else if (uniFillForegnd) {
-			uniFill = uniFillForegnd;
+			uniFillForegndWithPattern = uniFillForegnd;
 		} else {
 			console.log("FillForegnd not found for shape", this);
-			uniFill = AscFormat.CreateNoFillUniFill();
+			uniFillForegndWithPattern = AscFormat.CreateNoFillUniFill();
 		}
-
-		let oStrokeUniFill = null;
-		// add read matrix modifier width?
-		let linePattern = this.getCell("LinePattern");
-		if (linePattern) {
-			if (linePattern.v === "0") {
-				oStrokeUniFill = AscFormat.CreateNoFillUniFill();
-			} else {
-				let lineColorCell = this.getCell("LineColor");
-				if (lineColorCell) {
-					// console.log("LineColor was found for shape", lineColorCell);
-					oStrokeUniFill = calculateCellValue(visioDocument.theme, this, lineColorCell);
-				} else {
-					console.log("LineColor cell for line stroke (border) was not found painting red");
-					oStrokeUniFill = AscFormat.CreateUnfilFromRGB(255,0,0);
-				}
-			}
-		} else {
-			console.log("LinePattern cell for line stroke (border) was not found painting red");
-			oStrokeUniFill = AscFormat.CreateUnfilFromRGB(255,0,0);
-		}
-
-		handleQuickStyleVariation(oStrokeUniFill, uniFill, this);
 
 		let lineWidthEmu = null;
 		let lineWeightCell = this.getCell("LineWeight");
@@ -604,10 +727,10 @@
 			lineWidthEmu = 9525;
 		}
 
-		// console.log("Calculated oStrokeUniFill unifill", oStrokeUniFill, "for shape", this);
-		// console.log("Calculated fill UniFill", uniFill, "for shape", this);
+		// console.log("Calculated lineUniFill unifill", lineUniFill, "for shape", this);
+		// console.log("Calculated fill UniFill", uniFillForegndWithPattern, "for shape", this);
 
-		var oStroke = AscFormat.builder_CreateLine(lineWidthEmu, {UniFill: oStrokeUniFill});
+		var oStroke = AscFormat.builder_CreateLine(lineWidthEmu, {UniFill: lineUniFillWithPattern});
 		// var oStroke = AscFormat.builder_CreateLine(12700, {UniFill: AscFormat.CreateUnfilFromRGB(255,0,0)});
 
 		if (this.type === "Foreign") {
@@ -625,14 +748,14 @@
 			x_mm: x_mm, y_mm: y_mm,
 			w_mm: shapeWidth_mm, h_mm: shapeHeight_mm,
 			rot: shapeAngle,
-			oFill: uniFill, oStroke: oStroke,
+			oFill: uniFillForegndWithPattern, oStroke: oStroke,
 			flipHorizontally: flipHorizontally, flipVertically: flipVertically,
 			cVisioDocument: visioDocument
 		});
 
 		cShape.Id = String(this.iD); // it was string in cShape
 
-		handleText(visioDocument.themes[0], this, cShape);
+		handleText(visioDocument.themes[0], this, cShape, lineUniFill, uniFillForegnd);
 
 		cShape.recalculate();
 		cShape.recalculateLocalTransform(cShape.transform);
