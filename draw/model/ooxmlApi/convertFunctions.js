@@ -254,10 +254,10 @@
 						}
 					}
 
-					if ((quickStyleVariationCellValue & 2) === 2) {
-						// text color variation enabled (bit mask used)
-						// Text color variation is realized in handleText function
-					}
+					// if ((quickStyleVariationCellValue & 2) === 2) {
+					// 	// text color variation enabled (bit mask used)
+					// 	// Text color variation is realized in handleText function handleTextQuickStyleVariation
+					// }
 				}
 			}
 		}
@@ -572,25 +572,25 @@
 		// let gradientEnabled = shape.getCell("FillGradientEnabled");
 		// console.log("Gradient enabled:", gradientEnabled);
 
-		/** @type {CUniFill} */
+		/** @type CUniFill */
 		let uniFillForegndWithPattern = null;
 		/**
-		 * We need fill without pattern applied bcs pattern applied can set NoSoilidFill object without color,
-		 * so we will not be able to calculate handleVariationColor function result
-		 * @type {CUniFill} */
+		 * Fill without pattern applied.We need fill without pattern applied bcs pattern applied can set
+		 * NoSolidFill object without color, so we will not be able to calculate handleVariationColor function result.
+		 * @type CUniFill */
 		let uniFillForegnd = null;
 
-		/** @type {CUniFill} */
+		/** @type CUniFill */
 		let	uniFillBkgnd = null;
 
 		let	nPatternType = null;
 
-		/** @type {CUniFill} */
+		/** @type CUniFill */
 		let lineUniFillWithPattern = null;
 		/**
-		 * We need fill without pattern applied bcs pattern applied can set NoSoilidFill object without color,
+		 * We need fill without pattern applied bcs pattern applied can set NoSolidFill object without color,
 		 * so we will not be able to calculate handleVariationColor function result
-		 * @type {CUniFill} */
+		 * @type CUniFill */
 		let lineUniFill = null;
 
 
@@ -661,48 +661,30 @@
 			}
 		}
 
-		// TODO may be bug when uniFillForegnd sets to NoFillUniFill and text variation color is not calculated
-		// code below tries to do it but it doesnt work well
-		// // https://learn.microsoft.com/ru-ru/office/client-developer/visio/fillpattern-cell-fill-format-section
-		// let fillPattern = this.getCell("FillPattern");
-		// if (fillPattern) {
-		// 	// console.log("fillPattern was found:", fillPattern);
-		// 	let fillPatternType = parseInt(fillPattern.v);
-		// 	if (!isNaN(fillPatternType)) {
-		// 		if (0 === fillPatternType) {
-		// 			uniFillForegndWithPattern = AscFormat.CreateNoFillUniFill();
-		// 		} else if (fillPatternType === 1) {
-		// 			uniFillForegndWithPattern = uniFillForegnd;
-		// 		} else if(fillPatternType > 1) {
-		// 			//todo types
-		// 			nPatternType = 0;//"cross";
-		// 			if (uniFillBkgnd && uniFillBkgnd.fill && uniFillForegnd && uniFillForegnd.fill) {
-		// 				uniFillForegndWithPattern = AscFormat.CreatePatternFillUniFill(nPatternType,
-		// 					uniFillBkgnd.fill.color, uniFillForegnd.fill.color);
-		// 			}
-		// 		} else {
-		// 			uniFillForegndWithPattern = uniFillForegnd;
-		// 		}
-		// 	}
-		// }
-
 		let fillPattern = this.getCell("FillPattern");
+		/** @type ?number */
+		let fillPatternType = null;
 		if (fillPattern) {
 			// console.log("fillPattern was found:", fillPattern);
-			let fillPatternType = parseInt(fillPattern.v);
-			if (!isNaN(fillPatternType)) {
-				if (0 === fillPatternType) {
-					//todo
-					uniFillForegnd = AscFormat.CreateNoFillUniFill();
-				} else if(fillPatternType > 1) {
-					//todo types
-					nPatternType = 0;//"cross";
-				}
+			let fillPatternTypeTryParse = parseInt(fillPattern.v);
+			if (!isNaN(fillPatternTypeTryParse)) {
+				fillPatternType = fillPatternTypeTryParse;
 			}
 		}
-		if (null !== nPatternType && uniFillBkgnd && uniFillForegnd) {
-			uniFillForegndWithPattern = AscFormat.CreatePatternFillUniFill(nPatternType, uniFillBkgnd.fill.color, uniFillForegnd.fill.color);
-			// uniFill = AscFormat.builder_CreatePatternFill(nPatternType, uniFillBkgnd.fill.color, uniFillForegnd.fill.color);
+
+		if (null !== fillPatternType && uniFillBkgnd && uniFillForegnd) {
+			// https://learn.microsoft.com/ru-ru/office/client-developer/visio/fillpattern-cell-fill-format-section
+			if (fillPatternType === 0) {
+				uniFillForegndWithPattern = AscFormat.CreateNoFillUniFill();
+			} else if (fillPatternType === 1) {
+				uniFillForegndWithPattern = uniFillForegnd;
+			} else if (fillPatternType > 1) {
+				//todo types
+				nPatternType = 0;//"cross";
+				uniFillForegndWithPattern = AscFormat.CreatePatternFillUniFill(nPatternType,
+					uniFillBkgnd.fill.color, uniFillForegnd.fill.color);
+				// uniFill = AscFormat.builder_CreatePatternFill(nPatternType, uniFillBkgnd.fill.color, uniFillForegnd.fill.color);
+			}
 		} else if (uniFillForegnd) {
 			uniFillForegndWithPattern = uniFillForegnd;
 		} else {

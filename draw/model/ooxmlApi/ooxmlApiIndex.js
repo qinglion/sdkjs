@@ -80,9 +80,13 @@
 		return this;
 	}
 
-	// Docs old:
-	// Элемент RefBy (Cell_Type complexType): https://learn.microsoft.com/ru-ru/office/client-developer/visio/refby-element-cell_type-complextypevisio-xml
-	// Cell_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/cell_type-complextypevisio-xml
+	/**
+	 * Docs old:
+	 * Элемент RefBy (Cell_Type complexType): https://learn.microsoft.com/ru-ru/office/client-developer/visio/refby-element-cell_type-complextypevisio-xml
+	 * Cell_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/cell_type-complextypevisio-xml
+	 * @return {Cell_Type}
+	 * @constructor
+	 */
 	function Cell_Type() {
 		// read all as strings
 		/**

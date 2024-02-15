@@ -5163,6 +5163,7 @@
 			return null;
 		}
 
+		/** @constructor */
 		function CUniFill() {
 			CBaseNoIdObject.call(this);
 			this.fill = null;
