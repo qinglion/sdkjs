@@ -70,6 +70,8 @@
 	asc_docs_api.prototype.CreateComponents = function()
 	{
 		window.editor = this;
+		//for CShapeDrawer.CheckDash
+		window.Asc.editor = this;
 
 		//stubs for html page
 		window.CLayoutThumbnailDrawer = function () {};
