@@ -753,13 +753,15 @@
 	 * @param {CGroupShape?} currentGroupHandling
 	 * @return {CGroupShape | Error}
 	 */
-	Shape_Type.prototype.convertToCGroupShapeRecursively = function (visioDocument,
-																																	 currentGroupHandling) {
+	Shape_Type.prototype.convertToCGroupShapeRecursively = function (visioDocument, currentGroupHandling) {
 		// if we need to create CGroupShape create CShape first then copy its properties to CGroupShape object
 		// so anyway create CShape
 		let cShape = this.convertToCShape(visioDocument);
 
 		if (this.type === "Group") {
+			// CGroupShape cant support text. So cShape will represent everything related to Shape Type="Group".
+			// Let's push cShape into CGroupShape object.
+
 			let groupShape = new AscFormat.CGroupShape();
 			// this.graphicObjectsController = new AscFormat.DrawingObjectsController();
 			// let groupShape = AscFormat.builder_CreateGroup();
@@ -768,7 +770,12 @@
 
 			groupShape.setBDeleted(false);
 
-			groupShape.setSpPr(cShape.spPr);
+			// Create CGroupShape with SpPr from cShape but with no fill and line
+			let noLineFillSpPr = cShape.spPr.createDuplicate();
+			noLineFillSpPr.setFill(AscFormat.CreateNoFillUniFill());
+			noLineFillSpPr.setLn(AscFormat.CreateNoFillLine());
+
+			groupShape.setSpPr(noLineFillSpPr);
 			groupShape.spPr.setParent(groupShape);
 			groupShape.rot = cShape.rot;
 			groupShape.brush = cShape.brush;
@@ -777,11 +784,19 @@
 			groupShape.flipV = cShape.flipV;
 			groupShape.localTransform = cShape.localTransform;
 			groupShape.pen = cShape.pen;
+			groupShape.Id = cShape.Id + "Group";
 
-			groupShape.Id = cShape.Id;
+			groupShape.addToSpTree(groupShape.spTree.length, cShape);
+			groupShape.spTree[groupShape.spTree.length-1].setGroup(groupShape);
+
+			cShape.spPr.xfrm.setOffX(0);
+			cShape.spPr.xfrm.setOffY(0);
+
+			// cShape.setLocks(1)?;
+
+			groupShape.setParent2(visioDocument);
 
 			if (!currentGroupHandling) {
-				groupShape.setParent2(visioDocument);
 
 				currentGroupHandling = groupShape;
 				let subShapes = this.getSubshapes();
@@ -790,7 +805,6 @@
 					subShape.convertToCGroupShapeRecursively(visioDocument, currentGroupHandling);
 				}
 			} else {
-				groupShape.setParent2(currentGroupHandling);
 
 				currentGroupHandling.addToSpTree(currentGroupHandling.spTree.length, groupShape);
 				currentGroupHandling.spTree[currentGroupHandling.spTree.length-1].setGroup(currentGroupHandling);
@@ -803,6 +817,12 @@
 					subShape.convertToCGroupShapeRecursively(visioDocument, currentGroupHandling);
 				}
 			}
+			// recalculate text other positions to local (group) coordinates
+			cShape.recalculateLocalTransform(cShape.transform);
+			cShape.recalculateTransformText();
+			cShape.recalculateContent();
+			// cShape.recalculate(); // doesnt work here
+
 		} else {
 			// if read cShape not CGroupShape
 			if (!currentGroupHandling) {
@@ -811,6 +831,12 @@
 				currentGroupHandling.addToSpTree(currentGroupHandling.spTree.length, cShape);
 				currentGroupHandling.spTree[currentGroupHandling.spTree.length-1].setGroup(currentGroupHandling);
 				cShape.recalculateLocalTransform(cShape.transform);
+
+				// recalculate text other positions to local (group) coordinates
+				cShape.recalculateLocalTransform(cShape.transform);
+				cShape.recalculateTransformText();
+				cShape.recalculateContent();
+				// cShape.recalculate(); // doesnt work here
 			}
 		}
 

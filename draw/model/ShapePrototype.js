@@ -33,10 +33,14 @@
 "use strict";
 
 // Import
-var CShape = AscFormat.CShape;
+// var CShape = AscFormat.CShape;
+// // var CGroupShape = AscFormat.CGroupShape;
+//
+// // default realization
+// CShape.prototype.getParentObjects = function ()
+// {
+//     let oTheme = this.parent ? this.parent.theme : AscFormat.GenerateDefaultTheme(null, null);
+//     return {slide: null, layout: null, master: null, theme: oTheme};
+// };
 
-CShape.prototype.getParentObjects = function ()
-{
-    let oTheme = this.parent ? this.parent.theme : AscFormat.GenerateDefaultTheme(null, null);
-    return {slide: null, layout: null, master: null, theme: oTheme};
-};
+// // CGroupShape.prototype.getParentObjects = CShape.prototype.getParentObjects;
