@@ -1430,7 +1430,7 @@ CopyProcessor.prototype =
 
 			pptx_content_writer.Start_UseFullUrl();
 			for (var i = 0; i < elements.length; ++i) {
-				if (!(elements[i].Drawing instanceof CGraphicFrame)) {
+				if (!elements[i].Drawing.isTable()) {
 					oThis.oPresentationWriter.WriteBool(true);
 
 					oThis.CopyGraphicObject(oDomTarget, elements[i].Drawing, elements[i]);
@@ -1897,7 +1897,7 @@ CopyProcessor.prototype =
 			this.CopyTable(oDomTarget, Item, aSelectedRows);
 		}
 		History.TurnOff();
-		var graphic_frame = new CGraphicFrame(graphicFrame.parent);
+		var graphic_frame = new AscFormat.CGraphicFrame(graphicFrame.parent);
 		var grid = [];
 
 		for (var i = nMinGrid; i <= nMaxGrid; ++i) {
@@ -2285,8 +2285,8 @@ function sendImgUrls(api, images, callback, bNotShowError, token) {
     var _data = [];
     for (var i = 0; i < images.length; i++)
     {
-      var _url = window["native"]["getImageUrl"](images[i]);
-      var _full_path = window["native"]["getImagesDirectory"]() + "/" + _url;
+      var _url = window["native"]["GetImageUrl"](images[i]);
+      var _full_path = window["native"]["GetImagesPath"]() + "/" + _url;
       var _local_url = "media/" + _url;
       AscCommon.g_oDocumentUrls.addUrls({_local_url:_full_path});
       _data[i] = {url:_full_path, path:_local_url};
@@ -2416,7 +2416,7 @@ function PasteProcessor(api, bUploadImage, bUploadFonts, bNested, pasteInExcel, 
     this.bInBlock = null;
 
 	//ширина элемента в который вставляем страница или ячейка
-    this.dMaxWidth = Page_Width - X_Left_Margin - X_Right_Margin;
+    this.dMaxWidth = getPageWidth();
 	//коэфициент сжатия(например при вставке таблица сжалась, значит при вставке содержимого ячейки к картинкам и таблице будет применен этот коэффициент)
     this.dScaleKoef = 1;
     this.bUseScaleKoef = false;
@@ -2429,7 +2429,8 @@ function PasteProcessor(api, bUploadImage, bUploadFonts, bNested, pasteInExcel, 
         "tab-stops": 1, "list-style-type": 1, "mso-special-character": 1, "mso-column-break-before": 1, "mso-break-type": 1, "mso-padding-alt": 1, "mso-border-insidev": 1,
         "mso-border-insideh": 1, "mso-row-margin-left": 1, "mso-row-margin-right": 1, "mso-cellspacing": 1, "mso-border-alt": 1,
         "mso-border-left-alt": 1, "mso-border-top-alt": 1, "mso-border-right-alt": 1, "mso-border-bottom-alt": 1, "mso-border-between": 1, "mso-list": 1,
-		"mso-comment-reference": 1, "mso-comment-date": 1, "mso-comment-continuation": 1, "mso-data-placement": 1};
+		"mso-comment-reference": 1, "mso-comment-date": 1, "mso-comment-continuation": 1, "mso-data-placement": 1, "mso-table-layout-alt": 1, "mso-table-left": 1,
+		"mso-table-top": 1};
     this.oBorderCache = {};
 
 	this.msoListMap = [];
@@ -3416,14 +3417,11 @@ PasteProcessor.prototype =
 			presentationSelectedContent.DocContent.Elements[i] = oSelectedElement;
 		}
 
-		if(presentation.InsertContent(presentationSelectedContent)) {
-			presentation.Recalculate();
-            editor.checkChangesSize();
-			presentation.Document_UpdateInterfaceState();
-
+		let bInsert = presentation.InsertContent(presentationSelectedContent);
+		presentation.FinalizeAction();
+		presentation.UpdateInterface();
+		if(bInsert) {
 			this._setSpecialPasteShowOptionsPresentation();
-		} else {
-			//window['AscCommon'].g_specialPasteHelper.CleanButtonInfo();
 		}
 
 		window['AscCommon'].g_specialPasteHelper.Paste_Process_End();
@@ -4008,15 +4006,12 @@ PasteProcessor.prototype =
 					var presentationSelectedContent = new PresentationSelectedContent();
 					presentationSelectedContent.Drawings = arr_shapes;
 
-
-					if (presentation.InsertContent(presentationSelectedContent)) {
-						presentation.Recalculate();
-                        editor.checkChangesSize();
-						presentation.Document_UpdateInterfaceState();
-					} else {
-						window['AscCommon'].g_specialPasteHelper.CleanButtonInfo();
+					let bInsert = presentation.InsertContent(presentationSelectedContent);
+					presentation.FinalizeAction();
+					presentation.UpdateInterface();
+					if (!bInsert) {
+						window['AscCommon'].g_specialPasteHelper.CleanButtonInfo()
 					}
-
 					window['AscCommon'].g_specialPasteHelper.Paste_Process_End();
 				}
 			};
@@ -4043,7 +4038,7 @@ PasteProcessor.prototype =
 			var fonts = [];
 			//грузим картинки и фонты
 			for (var i in font_map) {
-				fonts.push(new CFont(i, 0, "", 0));
+				fonts.push(new CFont(i));
 			}
 
 			//images
@@ -4079,7 +4074,7 @@ PasteProcessor.prototype =
 					//TODO переделать количество строк и ширину
 					var W = 100;
 					var Rows = 3;
-					var graphic_frame = new CGraphicFrame();
+					var graphic_frame = new AscFormat.CGraphicFrame();
 					graphic_frame.setSpPr(new AscFormat.CSpPr());
 					graphic_frame.spPr.setParent(graphic_frame);
 					graphic_frame.spPr.setXfrm(new AscFormat.CXfrm());
@@ -4105,17 +4100,15 @@ PasteProcessor.prototype =
 			var paste_callback_presentation = function () {
 				if (false == oThis.bNested) {
 
-					if (presentation.InsertContent(presentationSelectedContent)) {
-						presentation.Recalculate();
-                        editor.checkChangesSize();
-						presentation.Document_UpdateInterfaceState();
-
-						var props = [Asc.c_oSpecialPasteProps.destinationFormatting, Asc.c_oSpecialPasteProps.keepTextOnly];
+					let bInsert = presentation.InsertContent(presentationSelectedContent);
+					presentation.FinalizeAction();
+					presentation.UpdateInterface();
+					if (bInsert) {
+						let props = [Asc.c_oSpecialPasteProps.destinationFormatting, Asc.c_oSpecialPasteProps.keepTextOnly];
 						oThis._setSpecialPasteShowOptionsPresentation(props);
 					} else {
 						window['AscCommon'].g_specialPasteHelper.CleanButtonInfo();
 					}
-
 					window['AscCommon'].g_specialPasteHelper.Paste_Process_End();
 				}
 			};
@@ -4274,7 +4267,7 @@ PasteProcessor.prototype =
 					var W = oThis.oDocument.GetWidthMM() / 1.45;
 					var Rows = element.GetRowsCount();
 					var H = Rows * 7.478268771701388;
-					var graphic_frame = new CGraphicFrame();
+					var graphic_frame = new AscFormat.CGraphicFrame();
 					graphic_frame.setSpPr(new AscFormat.CSpPr());
 					graphic_frame.spPr.setParent(graphic_frame);
 					graphic_frame.spPr.setXfrm(new AscFormat.CXfrm());
@@ -4328,7 +4321,7 @@ PasteProcessor.prototype =
 				//для таблиц необходимо рассчитать их размер, чтобы разместить в центре
 				var slide = presentation.Slides[0];
 				for (var i = 0; i < presentationSelectedContent.Drawings.length; i++) {
-					if (presentationSelectedContent.Drawings[i].Drawing instanceof CGraphicFrame) {
+					if (presentationSelectedContent.Drawings[i].Drawing instanceof AscFormat.CGraphicFrame) {
 						var drawing = presentationSelectedContent.Drawings[i].Drawing;
 						var oldParent = drawing.parent;
 						var bDeleted = drawing.bDeleted;
@@ -4344,13 +4337,12 @@ PasteProcessor.prototype =
 					}
 				}
 
-				if (presentation.InsertContent(presentationSelectedContent)) {
-					presentation.Recalculate();
-                    editor.checkChangesSize();
-					presentation.Document_UpdateInterfaceState();
-
+				let bInsert = presentation.InsertContent(presentationSelectedContent);
+				presentation.FinalizeAction();
+				presentation.UpdateInterface();
+				if (bInsert) {
 					if (!onlyImages) {
-						var props = [Asc.c_oSpecialPasteProps.destinationFormatting, Asc.c_oSpecialPasteProps.keepTextOnly];
+						let props = [Asc.c_oSpecialPasteProps.destinationFormatting, Asc.c_oSpecialPasteProps.keepTextOnly];
 						oThis._setSpecialPasteShowOptionsPresentation(props);
 					} else {
 						window['AscCommon'].g_specialPasteHelper.CleanButtonInfo();
@@ -4371,7 +4363,7 @@ PasteProcessor.prototype =
 		//перебираем шрифты
 		var fonts = [];
 		for (var i in font_map)
-			fonts.push(new CFont(i, 0, "", 0));
+			fonts.push(new CFont(i));
 
 		var oObjectsForDownload = GetObjectsForImageDownload(aContent.aPastedImages);
 		if (oObjectsForDownload.aUrls.length > 0) {
@@ -4380,7 +4372,7 @@ PasteProcessor.prototype =
 				ResetNewUrls(data, oObjectsForDownload.aUrls, oObjectsForDownload.aBuilderImagesByUrl, oImageMap);
 				//ковертим изображения в презентационный формат
 				for (var i = 0; i < presentationSelectedContent.Drawings.length; i++) {
-					if (!(presentationSelectedContent.Drawings[i].Drawing instanceof CGraphicFrame)) {
+					if (!(presentationSelectedContent.Drawings[i].Drawing instanceof AscFormat.CGraphicFrame)) {
 						AscFormat.ExecuteNoHistory(function () {
 							if (presentationSelectedContent.Drawings[i].Drawing.setBDeleted2) {
 								presentationSelectedContent.Drawings[i].Drawing.setBDeleted2(true);
@@ -4398,7 +4390,7 @@ PasteProcessor.prototype =
 		} else {
 			//ковертим изображения в презентационный формат
 			for (var i = 0; i < presentationSelectedContent.Drawings.length; i++) {
-				if (!(presentationSelectedContent.Drawings[i].Drawing instanceof CGraphicFrame)) {
+				if (!(presentationSelectedContent.Drawings[i].Drawing instanceof AscFormat.CGraphicFrame)) {
 					presentationSelectedContent.Drawings[i].Drawing = presentationSelectedContent.Drawings[i].Drawing.convertToPPTX(oThis.oDocument.DrawingDocument, undefined, true);
 					AscFormat.checkBlipFillRasterImages(presentationSelectedContent.Drawings[i].Drawing);
 				}
@@ -4474,7 +4466,7 @@ PasteProcessor.prototype =
 
 					//перебираем шрифты
 					for (var i in font_map) {
-						fonts.push(new CFont(i, 0, "", 0));
+						fonts.push(new CFont(i));
 					}
 
 					//TODO стиль не прокидывается. в будущем нужно реализовать
@@ -4492,7 +4484,7 @@ PasteProcessor.prototype =
 			//если несколько графических объектов, то собираем base64 у таблиц(graphicFrame)
 			if (arr_shapes.length > 1) {
 				for (var i = 0; i < arr_shapes.length; i++) {
-					if (typeof CGraphicFrame !== "undefined" && arr_shapes[i].Drawing instanceof CGraphicFrame) {
+					if (arr_shapes[i].Drawing && arr_shapes[i].Drawing.isTable()) {
 						arrImages.push(new AscCommon.CBuilderImages(null, arr_shapes[i].base64, arr_shapes[i], null, null));
 					}
 				}
@@ -4619,9 +4611,9 @@ PasteProcessor.prototype =
 				if (false === oThis.bNested) {
 					var bPaste = presentation.InsertContent2(aContents, nIndex);
 
-					presentation.Recalculate();
-                    editor.checkChangesSize();
-					presentation.Document_UpdateInterfaceState();
+
+					presentation.FinalizeAction();
+					presentation.UpdateInterface();
 
 					//пока не показываю значок специальной вставки после copy/paste слайдов
 					var bSlideObjects = aContents[nIndex] && aContents[nIndex].SlideObjects && aContents[nIndex].SlideObjects.length > 0;
@@ -5049,7 +5041,7 @@ PasteProcessor.prototype =
 					}
 				}
 				for (var key in oFontMap) {
-					fonts.push(new CFont(key, 0, "", 0));
+					fonts.push(new CFont(key));
 				}
 			}
 			if (bIsEmptyContent) {
@@ -5167,9 +5159,8 @@ PasteProcessor.prototype =
 					let oSelectedContent = new PresentationSelectedContent();
 					oSelectedContent.Drawings = aCopyObjects;
 					let bPaste = oPresentation.InsertContent(oSelectedContent);
-					oPresentation.Recalculate();
+					oPresentation.FinalizeAction();
 					oPresentation.UpdateInterface();
-					oAPI.checkChangesSize();
 
 					//check only images
 					let bOnlyImg = false;
@@ -5195,6 +5186,12 @@ PasteProcessor.prototype =
 						oThis._setSpecialPasteShowOptionsPresentation([Asc.c_oSpecialPasteProps.sourceformatting, Asc.c_oSpecialPasteProps.keepTextOnly]);
 					}
 					oPasteHelper.Paste_Process_End();
+				}
+
+				if (false === oThis.bNested) {
+					if (oThis.pasteCallback) {
+						oThis.pasteCallback();
+					}
 				}
 			};
 			if (oPresentation.GetSlidesCount() === 0) {
@@ -5673,7 +5670,7 @@ PasteProcessor.prototype =
 
 			fonts = [];
 			for (var i in font_map) {
-				fonts.push(new CFont(i, 0, "", 0));
+				fonts.push(new CFont(i));
 			}
 
 			if (tempParagraph)
@@ -5734,7 +5731,7 @@ PasteProcessor.prototype =
 
 			if (!t.oFonts[fontFamily]) {
 				t.oFonts[fontFamily] = {Name: fontFamily, Index: -1};
-				fonts.push(new CFont(fontFamily, 0, "", 0));
+				fonts.push(new CFont(fontFamily));
 			}
 		};
 
@@ -5973,7 +5970,7 @@ PasteProcessor.prototype =
 
 			if (!t.oFonts[fontFamily]) {
 				t.oFonts[fontFamily] = {Name: fontFamily, Index: -1};
-				fonts.push(new CFont(fontFamily, 0, "", 0));
+				fonts.push(new CFont(fontFamily));
 			}
 		};
 
@@ -6507,8 +6504,8 @@ PasteProcessor.prototype =
 			var originalSrcArr = [];
 			for (var image in this.oImages) {
 				var src = this.oImages[image];
-				if (undefined !== window["Native"] && undefined !== window["Native"]["GetImageUrl"]) {
-					this.oImages[image] = window["Native"]["GetImageUrl"](this.oImages[image]);
+				if (undefined !== window["native"] && undefined !== window["native"]["GetImageUrl"]) {
+					this.oImages[image] = window["native"]["GetImageUrl"](this.oImages[image]);
 				} else if (!g_oDocumentUrls.getImageLocal(src)) {
 					if (oThis.rtfImages && oThis.rtfImages[src]) {
 						aImagesToDownload.push(oThis.rtfImages[src]);
@@ -6613,7 +6610,7 @@ PasteProcessor.prototype =
 				var oFontItem = this.oFonts[font_family];
 				//Ищем среди наших шрифтов
 				this.oFonts[font_family].Index = -1;
-				aPrepeareFonts.push(new CFont(oFontItem.Name, 0, "", 0));
+				aPrepeareFonts.push(new CFont(oFontItem.Name));
 			}
 
 			return aPrepeareFonts;
@@ -7080,6 +7077,7 @@ PasteProcessor.prototype =
 				var oLineHeight = AscCommon.valueToMmType(line_height);
 				if (oLineHeight && ("%" === oLineHeight.type || "none" === oLineHeight.type)) {
 					Spacing.Line = oLineHeight.val;
+					Spacing.LineRule = Asc.linerule_Auto;
 				} else if (line_height && null != (line_height = AscCommon.valueToMm(line_height)) && line_height >= 0) {
 					Spacing.Line = line_height;
 					Spacing.LineRule = Asc.linerule_AtLeast;
@@ -7931,6 +7929,7 @@ PasteProcessor.prototype =
 			};
 
 			res = this.oLogicDocument.GetNumbering().CreateNum();
+			res.CreateDefault();
 			for (var i = 1; i < aNumbering.length; i++) {
 				var curNumbering = aNumbering[i];
 				if (!curNumbering) {
@@ -8459,6 +8458,7 @@ PasteProcessor.prototype =
 		var oDocument = this.oDocument;
 		var tableNode = node, newNode, headNode;
 		var bPresentation = !PasteElementsId.g_bIsDocumentCopyPaste;
+		let tBodyNode;
 
 		//Ищем если есть tbody
 		var i, length, j, length2;
@@ -8486,11 +8486,10 @@ PasteProcessor.prototype =
 
 		if (newNode) {
 			node = newNode;
-			tableNode = newNode;
+			tBodyNode = newNode;
 		} else if (headNode) {
 			node = headNode;
-			//tableNode = headNode;
-			//pPr.repeatHeaderRow = true;
+			tBodyNode = tableNode;
 		}
 
 		//валидация талиц. В таблице не может быть строк состоящих из вертикально замерженых ячеек.
@@ -8670,8 +8669,23 @@ PasteProcessor.prototype =
 				aSumGrid[i] = nSum;
 			}
 			//набиваем content
-			this._ExecuteTable(tableNode, node, table, aSumGrid, nMaxColCount !== nMinColCount ? aColsCountByRow : null, pPr, bUseScaleKoef, dScaleKoef, arrShapes, arrImages, arrTables);
+			this._ExecuteTable(tBodyNode, node, table, aSumGrid, nMaxColCount !== nMinColCount ? aColsCountByRow : null, pPr, bUseScaleKoef, dScaleKoef, arrShapes, arrImages, arrTables);
 			table.MoveCursorToStartPos();
+
+			if (tableNode) {
+				let nWidth = null;
+				if (tableNode.style.width.indexOf('%') !== -1 || tableNode.width.indexOf('%') !== -1) {
+					nWidth = -1 * parseInt(tableNode.style.width || tableNode.width);
+				} else {
+					let nodeStyleWidth =  node.style.width;
+					nWidth = AscCommon.valueToMmType(nodeStyleWidth);
+					nWidth = nWidth && nWidth.val;
+				}
+
+				if (nWidth != null) {
+					table.SetTableProps({TableWidth: nWidth});
+				}
+			}
 
 			if (!bPresentation) {
 				this.aContent.push(table);
@@ -8967,19 +8981,19 @@ PasteProcessor.prototype =
 		}
 	},
 
-	_ExecuteTable: function (tableNode, node, table, aSumGrid, aColsCountByRow, pPr, bUseScaleKoef, dScaleKoef, arrShapes, arrImages, arrTables) {
+	_ExecuteTable: function (tableBodyNode, node, table, aSumGrid, aColsCountByRow, pPr, bUseScaleKoef, dScaleKoef, arrShapes, arrImages, arrTables) {
 		var bPresentation = !PasteElementsId.g_bIsDocumentCopyPaste;
 
 		table.SetTableLayout(tbllayout_AutoFit);
 		//Pr
 		var Pr = table.Pr;
-		//align смотрим у parent tableNode
+		//align смотрим у parent tableBodyNode
 		var sTableAlign = null;
-		if (null != tableNode.align)
-			sTableAlign = tableNode.align;
-		else if (null != tableNode.parentNode && this.oRootNode !== tableNode.parentNode) {
-			var computedStyleParent = this._getComputedStyle(tableNode.parentNode);
-			sTableAlign = this._getStyle(tableNode.parentNode, computedStyleParent, "text-align");
+		if (null != tableBodyNode.align)
+			sTableAlign = tableBodyNode.align;
+		else if (null != tableBodyNode.parentNode && this.oRootNode !== tableBodyNode.parentNode) {
+			var computedStyleParent = this._getComputedStyle(tableBodyNode.parentNode);
+			sTableAlign = this._getStyle(tableBodyNode.parentNode, computedStyleParent, "text-align");
 		}
 		if (null != sTableAlign) {
 			if (-1 !== sTableAlign.indexOf('center'))
@@ -8991,6 +9005,7 @@ PasteProcessor.prototype =
 		table.Set_TableBorder_InsideH(new CDocumentBorder());
 		table.Set_TableBorder_InsideV(new CDocumentBorder());
 
+		let tableNode = tableBodyNode.parentNode && tableBodyNode.parentNode.nodeName && "table" === tableBodyNode.parentNode.nodeName.toLowerCase() ? tableBodyNode.parentNode : tableBodyNode;
 		var style = tableNode.getAttribute("style");
 		if (style) {
 			var tblPrMso = {};
@@ -9032,34 +9047,69 @@ PasteProcessor.prototype =
 			var insidev = tblPrMso["mso-border-insidev"];
 			if (null != insidev)
 				table.Set_TableBorder_InsideV(this._ExecuteParagraphBorder(insidev));
+
+			//todo need support
+			/*
+				border-collapse:collapse;
+				mso-table-layout-alt:fixed;
+				border:none;
+				mso-border-alt:solid windowtext .5pt;
+				mso-yfti-tbllook:1184;
+				mso-table-lspace:7.1pt;
+				margin-left:4.85pt;
+				mso-table-rspace:7.1pt;
+				margin-right:4.85pt;
+
+				mso-table-anchor-vertical:page;
+				mso-table-anchor-horizontal:page;
+				mso-table-left:17.0pt;
+				mso-table-top:14.25pt;
+				mso-padding-alt:0cm 5.4pt 0cm 5.4pt
+			*/
+			
+			/*let tableLayout = tblPrMso["mso-table-layout-alt"];
+			if (null != tableLayout && tableLayout === "fixed") {
+				table.SetTableLayout(tbllayout_Fixed);
+			}
+
+			let tablePositionH = tblPrMso["mso-table-left"];
+			if (null != tablePositionH && null != (tablePositionH = AscCommon.valueToMm(tablePositionH))) {
+				table.Set_PositionH(c_oAscHAnchor.Page, false, tablePositionH);
+			}
+
+			let tablePositionV = tblPrMso["mso-table-top"];
+			if (null != tablePositionV && null != (tablePositionV = AscCommon.valueToMm(tablePositionV))) {
+				table.Set_PositionV(c_oAscHAnchor.Page, false, tablePositionV);
+			}*/
 		}
-		var computedStyle = this._getComputedStyle(tableNode);
+
+		var computedStyle = this._getComputedStyle(tableBodyNode);
 		if (align_Left === table.Get_TableAlign()) {
-			var margin_left = this._getStyle(tableNode, computedStyle, "margin-left");
+			var margin_left = this._getStyle(tableBodyNode, computedStyle, "margin-left");
 			//todo возможно надо еще учесть ширину таблицы
 			if (margin_left && null != (margin_left = AscCommon.valueToMm(margin_left)) && margin_left < Page_Width - X_Left_Margin)
 				table.Set_TableInd(margin_left);
 		}
-		var background_color = this._getStyle(tableNode, computedStyle, "background-color");
+		var background_color = this._getStyle(tableBodyNode, computedStyle, "background-color");
 		if (null != background_color && (background_color = this._ParseColor(background_color)))
 			table.Set_TableShd(c_oAscShdClear, background_color.r, background_color.g, background_color.b);
-		var oLeftBorder = this._ExecuteBorder(computedStyle, tableNode, "left", "Left", bPresentation);
+		var oLeftBorder = this._ExecuteBorder(computedStyle, tableBodyNode, "left", "Left", bPresentation);
 		if (null != oLeftBorder)
 			table.Set_TableBorder_Left(oLeftBorder);
-		var oTopBorder = this._ExecuteBorder(computedStyle, tableNode, "top", "Top", bPresentation);
+		var oTopBorder = this._ExecuteBorder(computedStyle, tableBodyNode, "top", "Top", bPresentation);
 		if (null != oTopBorder)
 			table.Set_TableBorder_Top(oTopBorder);
-		var oRightBorder = this._ExecuteBorder(computedStyle, tableNode, "right", "Right", bPresentation);
+		var oRightBorder = this._ExecuteBorder(computedStyle, tableBodyNode, "right", "Right", bPresentation);
 		if (null != oRightBorder)
 			table.Set_TableBorder_Right(oRightBorder);
-		var oBottomBorder = this._ExecuteBorder(computedStyle, tableNode, "bottom", "Bottom", bPresentation);
+		var oBottomBorder = this._ExecuteBorder(computedStyle, tableBodyNode, "bottom", "Bottom", bPresentation);
 		if (null != oBottomBorder)
 			table.Set_TableBorder_Bottom(oBottomBorder);
 
 		if (null == spacing) {
-			spacing = this._getStyle(tableNode, computedStyle, "padding");
+			spacing = this._getStyle(tableBodyNode, computedStyle, "padding");
 			if (!spacing)
-				spacing = tableNode.style.padding;
+				spacing = tableBodyNode.style.padding;
 			if (!spacing)
 				spacing = null;
 			if (spacing && null != (spacing = AscCommon.valueToMm(spacing)))
@@ -10969,6 +11019,16 @@ function CheckDefaultFontSize(val, api)
 	return "0px" === val && api && api.getDefaultFontSize ? api.getDefaultFontSize() + "pt" : val;
 }
 
+function getPageWidth()
+{
+	let logicDocument = editor && editor.WordControl && editor.WordControl.m_oLogicDocument && editor.WordControl.m_oLogicDocument;
+	let isPortraitOrient = true;
+	if (logicDocument) {
+		isPortraitOrient = logicDocument && logicDocument.Get_DocumentOrientation && logicDocument.Get_DocumentOrientation();
+	}
+	return !isPortraitOrient ? Page_Height - (Y_Top_Margin + Y_Bottom_Margin) : Page_Width - (X_Left_Margin + X_Right_Margin);
+}
+
 function CreateImageFromBinary(bin, nW, nH)
 {
     var w, h;
@@ -11029,7 +11089,7 @@ function Check_LoadingDataBeforePrepaste(_api, _fonts, _images, _callback)
     let aPrepeareFonts = [];
     for (var font_family in _fonts)
     {
-        aPrepeareFonts.push(new CFont(font_family, 0, "", 0));
+        aPrepeareFonts.push(new CFont(font_family));
     }
     AscFonts.FontPickerByCharacter.extendFonts(aPrepeareFonts);
 
@@ -11038,9 +11098,9 @@ function Check_LoadingDataBeforePrepaste(_api, _fonts, _images, _callback)
     for (let image in _images)
     {
         var src = _images[image];
-        if (undefined !== window["Native"] && undefined !== window["Native"]["GetImageUrl"])
+        if (undefined !== window["native"] && undefined !== window["native"]["GetImageUrl"])
         {
-            _images[image] = window["Native"]["GetImageUrl"](_images[image]);
+            _images[image] = window["native"]["GetImageUrl"](_images[image]);
         }
         else if (!g_oDocumentUrls.getImageUrl(src) && !g_oDocumentUrls.getImageLocal(src) && !g_oDocumentUrls.isThemeUrl(src))
         {

@@ -641,4 +641,6 @@
     window['AscFormat'].ArcToCurvers = Arc3;
     window['AscFormat'].HitToArc = _HitToArc;
     window['AscFormat'].ArcToOnCanvas = _ArcToOnCanvas;
+    window['AscFormat'].EllipseOnCanvas = EllipseOnCanvas;
+
 })(window);
