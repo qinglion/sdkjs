@@ -296,54 +296,81 @@
 	/**
 	 * @memberOf CVisioDocument
 	 */
-	CVisioDocument.prototype.draw = function(pageScale) {
+	CVisioDocument.prototype.GetWidthMM = function() {
+		//todo units, indexes
+		let logic_w_inch = this.pages.page[0].pageSheet.elements.find(function(elem) {return elem.n === "PageWidth"}).v;
+		return logic_w_inch * g_dKoef_in_to_mm;
+	}
+	/**
+	 * @memberOf CVisioDocument
+	 */
+	CVisioDocument.prototype.GetHeightMM = function() {
+		let logic_h_inch = this.pages.page[0].pageSheet.elements.find(function(elem) {return elem.n === "PageHeight"}).v;
+		return logic_h_inch * g_dKoef_in_to_mm;
+	}
+	/**
+	 * @memberOf CVisioDocument
+	 */
+	CVisioDocument.prototype.draw = function(pageScale, pGraphics) {
 		//HOTFIX
 		this.theme = this.themes[0];
 
 		let api = this.api;
-		//CSlideSize.prototype.DEFAULT_CX
-		//todo units, indexes
-		let logic_w_inch = this.pages.page[0].pageSheet.elements.find(function(elem) {return elem.n === "PageWidth"}).v;
-		let logic_h_inch = this.pages.page[0].pageSheet.elements.find(function(elem) {return elem.n === "PageHeight"}).v;
-		let logic_w_mm = logic_w_inch * g_dKoef_in_to_mm;
-		let logic_h_mm = logic_h_inch * g_dKoef_in_to_mm;
+		let logic_w_mm = this.GetWidthMM();
+		let logic_h_mm = this.GetHeightMM();
 
-		let zoom = this.zoom_FitToPage_value(logic_w_mm, logic_h_mm, api.HtmlElement.offsetWidth,
-			api.HtmlElement.offsetHeight);
-		var dKoef = zoom * g_dKoef_mm_to_pix / 100;
-		dKoef *= AscCommon.AscBrowser.retinaPixelRatio;
+		let graphics;
+		if (pGraphics) {
+			graphics = pGraphics;
+		} else {
+			let zoom = this.zoom_FitToPage_value(logic_w_mm, logic_h_mm, api.HtmlElement.offsetWidth,
+				api.HtmlElement.offsetHeight);
+			var dKoef = zoom * g_dKoef_mm_to_pix / 100;
+			dKoef *= AscCommon.AscBrowser.retinaPixelRatio;
 
-		var w_mm = logic_w_mm;
-		var h_mm = logic_h_mm;
-		var w_px = (w_mm * dKoef) >> 0;
-		var h_px = (h_mm * dKoef) >> 0;
+			var w_mm = logic_w_mm;
+			var h_mm = logic_h_mm;
+			var w_px = (w_mm * dKoef) >> 0;
+			var h_px = (h_mm * dKoef) >> 0;
 
-		let _canvas = api.canvas;
+			let _canvas = api.canvas;
 
-		// consider scale for zoom
-		// consider previous scale maybe
-		_canvas.style.width = pageScale * 100 + "%";
-		_canvas.style.height = pageScale * 100 + "%";
+			// consider scale for zoom
+			// consider previous scale maybe
+			_canvas.style.width = pageScale * 100 + "%";
+			_canvas.style.height = pageScale * 100 + "%";
 
-		// set pixels count for width and height
-		_canvas.width = AscCommon.AscBrowser.convertToRetinaValue(_canvas.clientWidth, true);
-		_canvas.height = AscCommon.AscBrowser.convertToRetinaValue(_canvas.clientHeight, true);
-		var ctx = _canvas.getContext('2d');
-		ctx.fillStyle = "#FFFFFF";
-		// consider scale for zoom
-		ctx.fillRect(0, 0, w_px * pageScale, h_px * pageScale);
+			// set pixels count for width and height
+			_canvas.width = AscCommon.AscBrowser.convertToRetinaValue(_canvas.clientWidth, true);
+			_canvas.height = AscCommon.AscBrowser.convertToRetinaValue(_canvas.clientHeight, true);
+			var ctx = _canvas.getContext('2d');
+			ctx.fillStyle = "#FFFFFF";
+			// consider scale for zoom
+			ctx.fillRect(0, 0, w_px * pageScale, h_px * pageScale);
 
-		var graphics = new AscCommon.CGraphics();
-		graphics.init(ctx, w_px, h_px, w_mm, h_mm);
-		graphics.m_oFontManager = AscCommon.g_fontManager;
+			graphics = new AscCommon.CGraphics();
+			graphics.init(ctx, w_px, h_px, w_mm, h_mm);
+			graphics.m_oFontManager = AscCommon.g_fontManager;
+		}
+
 
 		//visio y coordinate goes up while
 		//ECMA-376-11_5th_edition and Geometry.js y coordinate goes down
-		//so without mirror we get page upside down
-		global_MatrixTransformer.Reflect(graphics.m_oCoordTransform, false, true);
-		global_MatrixTransformer.TranslateAppend(graphics.m_oCoordTransform, 0, h_px);
-		// consider scale for zoom
-		global_MatrixTransformer.ScaleAppend(graphics.m_oCoordTransform, pageScale, pageScale);
+		if (!graphics.m_oCoordTransform && graphics.SetBaseTransform) {
+			let m_oCoordTransform = new AscCommon.CMatrixL();
+			//so without mirror we get page upside down
+			global_MatrixTransformer.Reflect(m_oCoordTransform, false, true);
+			global_MatrixTransformer.TranslateAppend(m_oCoordTransform, 0, logic_h_mm);
+			// consider scale for zoom
+			global_MatrixTransformer.ScaleAppend(m_oCoordTransform, pageScale, pageScale);
+			graphics.SetBaseTransform(m_oCoordTransform);
+		} else {
+			//so without mirror we get page upside down
+			global_MatrixTransformer.Reflect(graphics.m_oCoordTransform, false, true);
+			global_MatrixTransformer.TranslateAppend(graphics.m_oCoordTransform, 0, h_px);
+			// consider scale for zoom
+			global_MatrixTransformer.ScaleAppend(graphics.m_oCoordTransform, pageScale, pageScale);
+		}
 
 		let topLevelShapesAndGroups = this.convertToShapes(logic_w_mm, logic_h_mm);
 

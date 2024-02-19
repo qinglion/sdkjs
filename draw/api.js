@@ -177,6 +177,92 @@
 		}
 	};
 
+	asc_docs_api.prototype.asc_nativeCalculateFile = function(options)
+	{
+	};
+	asc_docs_api.prototype.asc_nativePrintPagesCount = function()
+	{
+		return 1;
+	};
+	asc_docs_api.prototype.asc_nativeGetPDF = function(options)
+	{
+		var pagescount = this["asc_nativePrintPagesCount"]();
+		if (options && options["printOptions"] && options["printOptions"]["onlyFirstPage"])
+			pagescount = 1;
+
+		var _renderer                         = new AscCommon.CDocumentRenderer();
+		_renderer.InitPicker(AscCommon.g_oTextMeasurer.m_oManager);
+		_renderer.VectorMemoryForPrint        = new AscCommon.CMemory();
+		_renderer.DocInfo(this.asc_getCoreProps());
+		var _bOldShowMarks                    = this.ShowParaMarks;
+		this.ShowParaMarks                    = false;
+		_renderer.IsNoDrawingEmptyPlaceholder = true;
+
+		let nativeOptions = options ? options["nativeOptions"] : undefined;
+		let pages = nativeOptions ? AscCommon.getNativePrintRanges(nativeOptions["pages"], nativeOptions["currentPage"], pagescount) : undefined;
+
+		for (var i = 0; i < pagescount; i++)
+		{
+			if (pages !== undefined && !pages[i])
+				continue;
+			this["asc_nativePrint"](_renderer, i, options);
+		}
+
+		//todo ShowParaMarks
+		this.ShowParaMarks = _bOldShowMarks;
+
+		window["native"]["Save_End"]("", _renderer.Memory.GetCurPosition());
+
+		return _renderer.Memory.data;
+	};
+	asc_docs_api.prototype.asc_nativePrint = function(_printer, _page, _options)
+	{
+		if (undefined === _printer && _page === undefined)
+		{
+			if (undefined !== window["AscDesktopEditor"]) {
+				var isSelection = (_options && _options["printOptions"] && _options["printOptions"]["selection"]) ? true : false;
+				//todo isSelection
+				let pagescount = 1;
+				var _logic_doc = this.Document;
+
+				window["AscDesktopEditor"]["Print_Start"](this.DocumentUrl, pagescount, "", 0);
+
+				var oDocRenderer = new AscCommon.CDocumentRenderer();
+				oDocRenderer.InitPicker(AscCommon.g_oTextMeasurer.m_oManager);
+				oDocRenderer.VectorMemoryForPrint = new AscCommon.CMemory();
+				var bOldShowMarks = this.ShowParaMarks;
+				this.ShowParaMarks = false;
+				oDocRenderer.IsNoDrawingEmptyPlaceholder = true;
+
+				for (var i = 0; i < pagescount; i++) {
+					oDocRenderer.Memory.Seek(0);
+					oDocRenderer.VectorMemoryForPrint.ClearNoAttack();
+
+					oDocRenderer.BeginPage(_logic_doc.GetWidthMM(), _logic_doc.GetHeightMM());
+					_logic_doc.draw(1, oDocRenderer);
+					oDocRenderer.EndPage();
+
+					window["AscDesktopEditor"]["Print_Page"](oDocRenderer.Memory.GetBase64Memory(), _logic_doc.GetWidthMM(), _logic_doc.GetHeightMM());
+				}
+				if (0 === pagescount) {
+					oDocRenderer.BeginPage(_logic_doc.GetWidthMM(), _logic_doc.GetHeightMM());
+					oDocRenderer.EndPage();
+
+					window["AscDesktopEditor"]["Print_Page"](oDocRenderer.Memory.GetBase64Memory());
+				}
+
+				this.ShowParaMarks = bOldShowMarks;
+
+				window["AscDesktopEditor"]["Print_End"]();
+			}
+		} else {
+			let _logic_doc = this.Document;
+			_printer.BeginPage(_logic_doc.GetWidthMM(), _logic_doc.GetHeightMM());
+			_logic_doc.draw(1, _printer);
+			_printer.EndPage();
+		}
+	};
+
 	//-------------------------------------------------------------export---------------------------------------------------
 	window['Asc']                                                       = window['Asc'] || {};
 	window['Asc']['asc_docs_api']                                       = asc_docs_api;
@@ -184,5 +270,9 @@
 	asc_docs_api.prototype['asc_nativeOpenFile']             			= asc_docs_api.prototype.asc_nativeOpenFile;
 	asc_docs_api.prototype['asc_nativeApplyChanges2']             		= asc_docs_api.prototype.asc_nativeApplyChanges2;
 	asc_docs_api.prototype['asc_nativeGetFileData']             		= asc_docs_api.prototype.asc_nativeGetFileData;
+	asc_docs_api.prototype['asc_nativeCalculateFile']             		= asc_docs_api.prototype.asc_nativeCalculateFile;
+	asc_docs_api.prototype['asc_nativePrintPagesCount']             	= asc_docs_api.prototype.asc_nativePrintPagesCount;
+	asc_docs_api.prototype['asc_nativeGetPDF']             				= asc_docs_api.prototype.asc_nativeGetPDF;
+	asc_docs_api.prototype['asc_nativePrint']             				= asc_docs_api.prototype.asc_nativePrint;
 
 })(window, window.document);

@@ -312,6 +312,7 @@
 			"common/openxml.js",
 			"draw/model/ooxmlApi/ooxmlApiIndex.js",
 			"draw/model/ooxmlApi/convertFunctions.js",
+			"draw/model/ooxmlApi/get-geometry-from-class.js",
 			"draw/model/visioFunctionsApi.js",
 			"draw/model/VisioDocument.js",
 
