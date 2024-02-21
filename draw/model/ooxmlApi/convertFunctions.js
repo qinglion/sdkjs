@@ -456,7 +456,7 @@
 			oTextPr.RFonts.CS = {Name: "Arial", Index: -1};
 			oTextPr.RFonts.EastAsia = {Name: "Arial", Index: -1};
 
-			// apply text propterties
+			// apply text properties
 			oContent.SetApplyToAll(true);
 			oContent.AddToParagraph(new ParaTextPr(oTextPr));
 			// oContent.SetParagraphAlign(AscCommon.align_Center);
@@ -538,10 +538,24 @@
 			console.log('pinX_inch or pinY_inch is NaN for Shape. Its ok sometimes. ' +
 				'Empty CShape is returned. See original shape: ', this);
 			// let's use empty shape
-			var spPr = new AscFormat.CSpPr();
 			let emptyCShape = new AscFormat.CShape();
-			emptyCShape.setSpPr(spPr);
-			spPr.setParent(emptyCShape)
+			emptyCShape.setWordShape(false);
+			emptyCShape.setBDeleted(false);
+
+			var oSpPr = new AscFormat.CSpPr();
+			var oXfrm = new AscFormat.CXfrm();
+			// oXfrm.setOffX(0);
+			// oXfrm.setOffY(0);
+			// oXfrm.setExtX(0);
+			// oXfrm.setExtY(0);
+
+			oSpPr.setXfrm(oXfrm);
+			oXfrm.setParent(oSpPr);
+			// oSpPr.setFill(AscFormat.CreateNoFillUniFill());
+			// oSpPr.setLn(AscFormat.CreateNoFillLine());
+
+			emptyCShape.setSpPr(oSpPr);
+			oSpPr.setParent(emptyCShape)
 			return emptyCShape;
 		}
 
@@ -791,7 +805,7 @@
 
 			cShape.spPr.xfrm.setOffX(0);
 			cShape.spPr.xfrm.setOffY(0);
-
+			
 			// cShape.setLocks(1)?;
 
 			groupShape.setParent2(visioDocument);
