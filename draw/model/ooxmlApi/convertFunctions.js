@@ -415,6 +415,8 @@
 					// check character properties: get cp_Type object and in characherPropsCommon get needed Row
 					let characterRowNum = propsRunsObjects["cp_Type"] && propsRunsObjects["cp_Type"].iX;
 					let characterPropsFinal = characterRowNum !== null && characherPropsCommon.getRow(characterRowNum);
+
+					// handle Color
 					let characterColorCell = characterPropsFinal && characterPropsFinal.getCell("Color");
 					if (characterColorCell && characterColorCell.constructor.name === "Cell_Type") {
 						let fontColor = calculateCellValue(theme, shape, characterColorCell);
@@ -462,7 +464,7 @@
 			// oContent.SetParagraphAlign(AscCommon.align_Center);
 			oContent.SetApplyToAll(false);
 
-			var oBodyPr = cShape.getBodyPr().createDuplicate();
+			let oBodyPr = cShape.getBodyPr().createDuplicate();
 			// oBodyPr.rot = 0;
 			// oBodyPr.spcFirstLastPara = false;
 			// oBodyPr.vertOverflow = AscFormat.nVOTOverflow;
@@ -490,7 +492,66 @@
 			} else {
 				cShape.txBody.setBodyPr(oBodyPr);
 			}
-			//
+
+			// handle cords
+			// to rotate around point we 1) add one more offset 2) rotate around center
+			// could be refactored maybe
+			// https://www.figma.com/file/jr1stjGUa3gKUBWxNAR80T/locPinHandle?type=design&node-id=0%3A1&mode=design&t=raXzFFsssqSexysi-1
+			let txtPinXCell = shape.getCell("TxtPinX");
+			let txtPinX_inch;
+			if (txtPinXCell !== null) {
+				txtPinX_inch = Number(txtPinXCell.v);
+			}
+			let txtPinYCell = shape.getCell("TxtPinY");
+			let txtPinY_inch;
+			if (txtPinYCell !== null) {
+				txtPinY_inch = Number(txtPinYCell.v);
+			}
+
+			// also check for {}, undefined, NaN
+			if (!isNaN(txtPinX_inch) && !isNaN(txtPinY_inch)) {
+				// https://www.figma.com/file/WiAC4sxQuJaq65h6xppMYC/cloudFare?type=design&node-id=0%3A1&mode=design&t=SZbio0yIyxq0YnMa-1s
+				// consider https://disk.yandex.ru/d/2XzRaPTKzKHFjA
+				// where TxtHeight and TxtWidth get all shape height and width
+
+				let shapeWidth = Number(shape.getCell("Width").v);
+				let shapeHeight = Number(shape.getCell("Height").v);
+				let shapeLocPinX = Number(shape.getCell("LocPinX").v);
+				let shapeLocPinY = Number(shape.getCell("LocPinY").v);
+				let txtWidth_inch = Number(shape.getCell("TxtWidth").v);
+				let txtHeight_inch = Number(shape.getCell("TxtHeight").v);
+				let txtLocPinX_inch = Number(shape.getCell("TxtLocPinX").v);
+				let txtLocPinY_inch = Number(shape.getCell("TxtLocPinY").v);
+
+				// FOR HOTFIX: we dont set text block width and height
+				let textBlockIsShape = shapeWidth === txtWidth_inch && shapeHeight === txtHeight_inch &&
+					shapeLocPinX === txtPinX_inch && shapeLocPinY === txtPinY_inch;
+				if (!textBlockIsShape) {
+					let textAngle = Number(shape.getCell("TxtAngle").v);
+
+					paragraph.Pr.SetJc(AscCommon.align_Left);
+					let oBodyPr = cShape.getBodyPr().createDuplicate();
+					oBodyPr.anchor = 4; // 4 - bottom, 1,2,3 - center
+
+					// CHECKS SIGN but positive tIns gives bottom inset. Check https://disk.yandex.ru/d/IU1vdjzcF9p3IQ
+					oBodyPr.tIns = (txtPinY_inch - txtLocPinY_inch) * g_dKoef_in_to_mm;
+					// add 4/72 in = 4 pt padding
+					// oBodyPr.tIns = oBodyPr.tIns < 0 ? oBodyPr.tIns - 4/72 * g_dKoef_in_to_mm :
+					// 	oBodyPr.tIns + 4/72 * g_dKoef_in_to_mm;
+					oBodyPr.bIns = 0;
+					oBodyPr.lIns = (txtPinX_inch - txtLocPinX_inch) * g_dKoef_in_to_mm;
+					oBodyPr.rIns = 0;
+
+
+					if (bWord) {
+						cShape.setBodyPr(oBodyPr);
+					} else {
+						cShape.txBody.setBodyPr(oBodyPr);
+					}
+				}
+			}
+
+			// just trash below
 			//
 			// let oUniNvPr = new AscFormat.UniNvPr();
 			// oUniNvPr.nvPr.ph = Asc.asc_docs_api.prototype.CreatePlaceholder("object");
@@ -565,7 +626,6 @@
 		let shapeWidth_inch = Number(this.getCell("Width").v);
 		let shapeHeight_inch = Number(this.getCell("Height").v);
 
-		// PinX and PinY set shape rotate point and LocPinX LocPinY add offset to initial shape center
 		// to rotate around point we 1) add one more offset 2) rotate around center
 		// could be refactored maybe
 		// https://www.figma.com/file/jr1stjGUa3gKUBWxNAR80T/locPinHandle?type=design&node-id=0%3A1&mode=design&t=raXzFFsssqSexysi-1
