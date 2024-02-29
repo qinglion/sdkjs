@@ -86,7 +86,6 @@
 			"common/Drawings/Format/Shape.js",
 			"common/Drawings/Format/CnxShape.js",
 			"slide/Editor/Format/ShapePrototype.js",
-			"draw/model/overrides.js",
 			"common/Drawings/Format/Path.js",
 			"common/Drawings/Format/Image.js",
 			"common/Drawings/Format/GroupShape.js",
@@ -338,6 +337,7 @@
 			"draw/model/ooxmlApi/get-geometry-from-class.js",
 			"draw/model/visioFunctionsApi.js",
 			"draw/model/VisioDocument.js",
+			"draw/model/overrides.js",
 
 			"slide/Editor/CollaborativeEditing.js"
 		],
