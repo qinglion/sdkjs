@@ -33,14 +33,28 @@
 "use strict";
 
 // Import
-// var CShape = AscFormat.CShape;
-// // var CGroupShape = AscFormat.CGroupShape;
-//
-// // default realization
-// CShape.prototype.getParentObjects = function ()
-// {
-//     let oTheme = this.parent ? this.parent.theme : AscFormat.GenerateDefaultTheme(null, null);
-//     return {slide: null, layout: null, master: null, theme: oTheme};
-// };
+var CShape = AscFormat.CShape;
+var CGroupShape = AscFormat.CGroupShape;
 
-// // CGroupShape.prototype.getParentObjects = CShape.prototype.getParentObjects;
+// override realization
+/**
+ * @memberOf CShape
+ * @return {{layout: null, slide: null, theme: CTheme, master: null}}
+ */
+CShape.prototype.getParentObjects = function ()
+{
+	let oTheme = null;
+	if (this.parent) {
+		oTheme = this.parent.theme;
+	} else {
+		console.log("Parent was not set for shape/group. GenerateDefaultTheme is used. shape/group:", this);
+		oTheme = AscFormat.GenerateDefaultTheme(null, null);
+	}
+	return {slide: null, layout: null, master: null, theme: oTheme};
+};
+
+/**
+ * @memberOf CGroupShape
+ * @type {function(): {layout: null, slide: null, theme: CTheme, master: null}}
+ */
+CGroupShape.prototype.getParentObjects = CShape.prototype.getParentObjects;

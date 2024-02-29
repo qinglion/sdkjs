@@ -331,15 +331,6 @@ CShape.prototype.getParentObjects = function ()
 {
     if(this.parent)
     {
-        if (this.parent.constructor.name === "CVisioDocument") {
-            return {
-                presentation: null,
-                slide: null,
-                layout: null,
-                master: null,
-                theme: this.themeOverride ? this.themeOverride : (this.parent.theme)
-            }
-        }
         switch(this.parent.getObjectType())
         {
             case AscDFH.historyitem_type_Slide:
