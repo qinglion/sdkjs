@@ -436,7 +436,7 @@ CShape.prototype.recalculate = function ()
     if(this.parent.getObjectType() === AscDFH.historyitem_type_Notes){
         return;
     }
-    var check_slide_placeholder = !this.isPlaceholder() || (this.parent && (this.parent.getObjectType() === AscDFH.historyitem_type_Slide || this.parent.constructor.name === "CVisioDocument"));
+    var check_slide_placeholder = !this.isPlaceholder() || (this.parent && (this.parent.getObjectType() === AscDFH.historyitem_type_Slide));
     AscFormat.ExecuteNoHistory(function(){
 
         var bRecalcShadow = this.recalcInfo.recalculateBrush ||

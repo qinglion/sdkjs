@@ -36,7 +36,6 @@
 var CShape = AscFormat.CShape;
 var CGroupShape = AscFormat.CGroupShape;
 
-// override realization
 /**
  * @memberOf CShape
  * @return {{layout: null, slide: null, theme: CTheme, master: null}}
@@ -58,3 +57,74 @@ CShape.prototype.getParentObjects = function ()
  * @type {function(): {layout: null, slide: null, theme: CTheme, master: null}}
  */
 CGroupShape.prototype.getParentObjects = CShape.prototype.getParentObjects;
+
+
+/**
+ * @memberof CShape
+ */
+CShape.prototype.recalculate = function ()
+{
+	if(this.bDeleted || !this.parent) {
+		console.log("no recalculate for bDeleted or no parent");
+		return;
+	}
+
+	if(this.parent.getObjectType() === AscDFH.historyitem_type_Notes){
+		return;
+	}
+
+	// var check_slide_placeholder = !this.isPlaceholder() || (this.parent && (this.parent.getObjectType() === AscDFH.historyitem_type_Slide));
+	let check_placeholder = !this.isPlaceholder() || (this.parent && this.parent.constructor.name === "CVisioDocument");
+	AscFormat.ExecuteNoHistory(function(){
+
+		var bRecalcShadow = this.recalcInfo.recalculateBrush ||
+			this.recalcInfo.recalculatePen ||
+			this.recalcInfo.recalculateTransform ||
+			this.recalcInfo.recalculateGeometry ||
+			this.recalcInfo.recalculateBounds;
+		if (this.recalcInfo.recalculateBrush) {
+			this.recalculateBrush();
+			this.recalcInfo.recalculateBrush = false;
+		}
+
+		if (this.recalcInfo.recalculatePen) {
+			this.recalculatePen();
+			this.recalcInfo.recalculatePen = false;
+		}
+		if (this.recalcInfo.recalculateTransform) {
+			this.recalculateTransform();
+			this.recalculateSnapArrays();
+			this.recalcInfo.recalculateTransform = false;
+		}
+
+		if (this.recalcInfo.recalculateGeometry) {
+			this.recalculateGeometry();
+			this.recalcInfo.recalculateGeometry = false;
+		}
+
+		if (this.recalcInfo.recalculateContent && check_placeholder) {
+			this.recalcInfo.oContentMetrics = this.recalculateContent();
+			this.recalcInfo.recalculateContent = false;
+		}
+		if (this.recalcInfo.recalculateContent2 && check_placeholder) {
+			this.recalculateContent2();
+			this.recalcInfo.recalculateContent2 = false;
+		}
+
+		if (this.recalcInfo.recalculateTransformText && check_placeholder) {
+			this.recalculateTransformText();
+			this.recalcInfo.recalculateTransformText = false;
+		}
+		if(this.recalcInfo.recalculateBounds)
+		{
+			this.recalculateBounds();
+			this.recalcInfo.recalculateBounds = false;
+		}
+		if(bRecalcShadow)
+		{
+			this.recalculateShdw();
+		}
+
+		this.clearCropObject();
+	}, this, []);
+};
