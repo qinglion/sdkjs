@@ -41,9 +41,9 @@
 	 * calculateShapeParamsAndConvertToCShape
 	 * @memberof Shape_Type
 	 * @param {CVisioDocument} visioDocument
-	 * @return {CShape | Error}
+	 * @return {{geometryCShape: CShape, textCShape: ?CShape}} cShapesObjects
 	 */
-	Shape_Type.prototype.convertToCShape = function (visioDocument) {
+	Shape_Type.prototype.toGeometryAndTextCShapes = function (visioDocument) {
 		/**
 		 * Can parse themeval
 		 * @param {CTheme} theme
@@ -282,10 +282,10 @@
 		 * @param {CShape} cShape
 		 * @param {CUniFill} lineUniFill
 		 * @param {CUniFill} fillUniFill
+		 * @return {CShape} textCShape
 		 */
 		function handleText(theme, shape, cShape, lineUniFill, fillUniFill) {
 			// see 2.2.8	Text [MS-VSDX]-220215
-
 			function handleTextQuickStyleVariation(textUniColor, lineUniFill, fillUniFill) {
 				// https://learn.microsoft.com/en-us/openspecs/sharepoint_protocols/ms-vsdx/68bb0221-d8a1-476e-a132-8c60a49cea63?redirectedfrom=MSDN
 				// consider "QuickStyleVariation" cell
@@ -355,8 +355,17 @@
 
 			let textElement = shape.getTextElement();
 			if (!textElement) {
-				return;
+				return null;
 			}
+
+			/**
+			 * text shape saves text only no fill and no line. it goes along with CShape with the same id + "Text".
+			 * It has not local coordinates but the same cord system like shape.
+			 * @type {CShape}
+			 */
+			let textCShape = new AscFormat.CShape();
+			textCShape.Id = cShape.Id + "Text";
+			textCShape.setParent(visioDocument);
 
 			// set default settings
 			// see sdkjs/common/Drawings/CommonController.js createTextArt: function (nStyle, bWord, wsModel, sStartString)
@@ -364,26 +373,26 @@
 			// https://api.onlyoffice.com/docbuilder/textdocumentapi just some related info
 			let nFontSize = 10;
 			let bWord = false;
-			cShape.setWordShape(bWord);
-			cShape.setBDeleted(false);
+			textCShape.setWordShape(bWord);
+			textCShape.setBDeleted(false);
 			if (bWord) {
-				cShape.createTextBoxContent();
+				textCShape.createTextBoxContent();
 			} else {
-				cShape.createTextBody();
+				textCShape.createTextBody();
 			}
-			cShape.setVerticalAlign(1); // sets text vert align center equal to anchor set to txBody bodyPr
-			cShape.bSelectedText = false;
+			textCShape.setVerticalAlign(1); // sets text vert align center equal to anchor set to txBody bodyPr
+			textCShape.bSelectedText = false;
 
 			// instead of AscFormat.AddToContentFromString(oContent, sText);
 			// use https://api.onlyoffice.com/docbuilder/presentationapi/apishape api implementation code
 			// to work with text separated into ParaRuns to split properties use
 			// now create paragraph
-			let oContent = cShape.getDocContent();
-			let paragraph = new Paragraph(cShape.getDrawingDocument(), null, true);
+			let oContent = textCShape.getDocContent();
+			let paragraph = new Paragraph(textCShape.getDrawingDocument(), null, true);
 			// Set paragraph justify/align text - center
 			paragraph.Pr.SetJc(AscCommon.align_Center);
 			// oDocContent.Push(oParagraph); - ApiDocumentContent.prototype.Push
-			cShape.txBody.content.Content = [paragraph];
+			textCShape.txBody.content.Content = [paragraph];
 			paragraph.SetParent(oContent);
 
 			// read propsCommonObjects
@@ -413,7 +422,7 @@
 
 					// setup Run
 					// check character properties: get cp_Type object and in characherPropsCommon get needed Row
-					let characterRowNum = propsRunsObjects["cp_Type"] && propsRunsObjects["cp_Type"].iX;
+					let characterRowNum = propsRunsObjects.cp_Type && propsRunsObjects.cp_Type.iX;
 					let characterPropsFinal = characterRowNum !== null && characherPropsCommon.getRow(characterRowNum);
 
 					// handle Color
@@ -450,7 +459,7 @@
 			});
 
 			// setup text properties
-			var oTextPr;
+			let oTextPr;
 			oTextPr = new CTextPr();
 			oTextPr.FontSize = nFontSize;
 			oTextPr.RFonts.Ascii = {Name: "Arial", Index: -1};
@@ -464,7 +473,7 @@
 			// oContent.SetParagraphAlign(AscCommon.align_Center);
 			oContent.SetApplyToAll(false);
 
-			let oBodyPr = cShape.getBodyPr().createDuplicate();
+			let oBodyPr = textCShape.getBodyPr().createDuplicate();
 			// oBodyPr.rot = 0;
 			// oBodyPr.spcFirstLastPara = false;
 			// oBodyPr.vertOverflow = AscFormat.nVOTOverflow;
@@ -488,9 +497,9 @@
 
 			// oBodyPr.upright = false; // default
 			if (bWord) {
-				cShape.setBodyPr(oBodyPr);
+				textCShape.setBodyPr(oBodyPr);
 			} else {
-				cShape.txBody.setBodyPr(oBodyPr);
+				textCShape.txBody.setBodyPr(oBodyPr);
 			}
 
 			// handle cords
@@ -524,31 +533,74 @@
 				let txtLocPinY_inch = Number(shape.getCell("TxtLocPinY").v);
 
 				// FOR HOTFIX: we dont set text block width and height
-				let textBlockIsShape = shapeWidth === txtWidth_inch && shapeHeight === txtHeight_inch &&
-					shapeLocPinX === txtPinX_inch && shapeLocPinY === txtPinY_inch;
-				if (!textBlockIsShape) {
+				// let textBlockIsShape = shapeWidth === txtWidth_inch && shapeHeight === txtHeight_inch &&
+				// 	shapeLocPinX === txtPinX_inch && shapeLocPinY === txtPinY_inch;
+				if (true) {
 					let textAngle = Number(shape.getCell("TxtAngle").v);
 
-					paragraph.Pr.SetJc(AscCommon.align_Left);
-					let oBodyPr = cShape.getBodyPr().createDuplicate();
-					oBodyPr.anchor = 4; // 4 - bottom, 1,2,3 - center
+					// paragraph.Pr.SetJc(AscCommon.align_Left);
+					let oBodyPr = textCShape.getBodyPr().createDuplicate();
+					// oBodyPr.anchor = 4; // 4 - bottom, 1,2,3 - center
+
+					let oSpPr = new AscFormat.CSpPr();
+					let oXfrm = new AscFormat.CXfrm();
+
+					let globalXmm = cShape.spPr.xfrm.offX;
+					let localXmm = (txtPinX_inch - txtLocPinX_inch) * g_dKoef_in_to_mm;
+					oXfrm.setOffX(globalXmm + localXmm); // mm
+
+					let globalYmm = cShape.spPr.xfrm.offY;
+					let localYmm = (txtPinY_inch - txtLocPinY_inch) * g_dKoef_in_to_mm;
+					oXfrm.setOffY(globalYmm + localYmm);
+
+					oXfrm.setExtX(txtWidth_inch * g_dKoef_in_to_mm);
+					oXfrm.setExtY(txtHeight_inch * g_dKoef_in_to_mm);
+					oXfrm.setRot(0);
+
+					oSpPr.setXfrm(oXfrm);
+					oXfrm.setParent(oSpPr);
+					oSpPr.setFill(AscFormat.CreateNoFillUniFill());
+					oSpPr.setLn(AscFormat.CreateNoFillLine());
+
+					textCShape.setSpPr(oSpPr);
+					oSpPr.setParent(textCShape);
+
 
 					// CHECKS SIGN but positive tIns gives bottom inset. Check https://disk.yandex.ru/d/IU1vdjzcF9p3IQ
-					oBodyPr.tIns = (txtPinY_inch - txtLocPinY_inch) * g_dKoef_in_to_mm;
+					// oBodyPr.tIns = (txtPinY_inch - txtLocPinY_inch) * g_dKoef_in_to_mm;
 					// add 4/72 in = 4 pt padding
 					// oBodyPr.tIns = oBodyPr.tIns < 0 ? oBodyPr.tIns - 4/72 * g_dKoef_in_to_mm :
 					// 	oBodyPr.tIns + 4/72 * g_dKoef_in_to_mm;
-					oBodyPr.bIns = 0;
-					oBodyPr.lIns = (txtPinX_inch - txtLocPinX_inch) * g_dKoef_in_to_mm;
-					oBodyPr.rIns = 0;
+					// oBodyPr.bIns = 0;
+					// oBodyPr.lIns = (txtPinX_inch - txtLocPinX_inch) * g_dKoef_in_to_mm;
+					// oBodyPr.rIns = 0;
 
 
 					if (bWord) {
-						cShape.setBodyPr(oBodyPr);
+						textCShape.setBodyPr(oBodyPr);
 					} else {
-						cShape.txBody.setBodyPr(oBodyPr);
+						textCShape.txBody.setBodyPr(oBodyPr);
 					}
 				}
+			} else {
+				// create text block with shape sizes
+				let oSpPr = new AscFormat.CSpPr();
+				let oXfrm = new AscFormat.CXfrm();
+				let globalXmm = cShape.spPr.xfrm.offX;
+				let globalYmm = cShape.spPr.xfrm.offY;
+				oXfrm.setOffX(globalXmm); // mm
+				oXfrm.setOffY(globalYmm);
+				oXfrm.setExtX(shapeWidth_inch * g_dKoef_in_to_mm);
+				oXfrm.setExtY(shapeHeight_inch * g_dKoef_in_to_mm);
+				oXfrm.setRot(0);
+
+				oSpPr.setXfrm(oXfrm);
+				oXfrm.setParent(oSpPr);
+				oSpPr.setFill(AscFormat.CreateNoFillUniFill());
+				oSpPr.setLn(AscFormat.CreateNoFillLine());
+
+				textCShape.setSpPr(oSpPr);
+				oSpPr.setParent(textCShape);
 			}
 
 			// just trash below
@@ -580,6 +632,8 @@
 			// use ParaRun.prototype.Set_Color
 			// cShape.txBody.content.Content[0].Content[1].Pr.Color = TextColor1;
 			// cShape.txBody.content.Content[0].Content[0].Pr.Color = TextColor1;
+
+			return textCShape;
 		}
 
 		// there was case with shape type group with no PinX and PinY
@@ -617,7 +671,7 @@
 
 			emptyCShape.setSpPr(oSpPr);
 			oSpPr.setParent(emptyCShape)
-			return emptyCShape;
+			return {geometryCShape: emptyCShape, textCShape: null};
 		}
 
 		let shapeAngle = Number(this.getCell("Angle").v);
@@ -811,12 +865,17 @@
 
 		cShape.Id = String(this.iD); // it was string in cShape
 
-		handleText(visioDocument.themes[0], this, cShape, lineUniFill, uniFillForegnd);
+		let textCShape = handleText(visioDocument.themes[0], this, cShape, lineUniFill, uniFillForegnd);
 
 		cShape.recalculate();
 		cShape.recalculateLocalTransform(cShape.transform);
 
-		return cShape;
+		if (textCShape !== null) {
+			textCShape.recalculate();
+			textCShape.recalculateLocalTransform(textCShape.transform);
+		}
+
+		return {geometryCShape: cShape, textCShape: textCShape};
 	}
 
 	/**
@@ -825,12 +884,12 @@
 	 * @memberOf Shape_Type
 	 * @param {CVisioDocument} visioDocument
 	 * @param {CGroupShape?} currentGroupHandling
-	 * @return {CGroupShape | Error}
+	 * @return {{cGroupShape: CGroupShape, textCShape: CShape}}
 	 */
-	Shape_Type.prototype.convertToCGroupShapeRecursively = function (visioDocument, currentGroupHandling) {
+	Shape_Type.prototype.toCGroupShapeRecursively = function (visioDocument, currentGroupHandling) {
 		// if we need to create CGroupShape create CShape first then copy its properties to CGroupShape object
-		// so anyway create CShape
-		let cShape = this.convertToCShape(visioDocument);
+		// so anyway create CShapes
+		let cShapes = this.toGeometryAndTextCShapes(visioDocument);
 
 		if (this.type === "Group") {
 			// CGroupShape cant support text. So cShape will represent everything related to Shape Type="Group".
@@ -845,26 +904,26 @@
 			groupShape.setBDeleted(false);
 
 			// Create CGroupShape with SpPr from cShape but with no fill and line
-			let noLineFillSpPr = cShape.spPr.createDuplicate();
+			let noLineFillSpPr = cShapes.geometryCShape.spPr.createDuplicate();
 			noLineFillSpPr.setFill(AscFormat.CreateNoFillUniFill());
 			noLineFillSpPr.setLn(AscFormat.CreateNoFillLine());
 
 			groupShape.setSpPr(noLineFillSpPr);
 			groupShape.spPr.setParent(groupShape);
-			groupShape.rot = cShape.rot;
-			groupShape.brush = cShape.brush;
-			groupShape.bounds = cShape.bounds;
-			groupShape.flipH = cShape.flipH;
-			groupShape.flipV = cShape.flipV;
-			groupShape.localTransform = cShape.localTransform;
-			groupShape.pen = cShape.pen;
-			groupShape.Id = cShape.Id + "Group";
+			groupShape.rot = cShapes.geometryCShape.rot;
+			groupShape.brush = cShapes.geometryCShape.brush;
+			groupShape.bounds = cShapes.geometryCShape.bounds;
+			groupShape.flipH = cShapes.geometryCShape.flipH;
+			groupShape.flipV = cShapes.geometryCShape.flipV;
+			groupShape.localTransform = cShapes.geometryCShape.localTransform;
+			groupShape.pen = cShapes.geometryCShape.pen;
+			groupShape.Id = cShapes.geometryCShape.Id + "Group";
 
-			groupShape.addToSpTree(groupShape.spTree.length, cShape);
+			groupShape.addToSpTree(groupShape.spTree.length, cShapes.geometryCShape);
 			groupShape.spTree[groupShape.spTree.length-1].setGroup(groupShape);
 
-			cShape.spPr.xfrm.setOffX(0);
-			cShape.spPr.xfrm.setOffY(0);
+			cShapes.geometryCShape.spPr.xfrm.setOffX(0);
+			cShapes.geometryCShape.spPr.xfrm.setOffY(0);
 			
 			// cShape.setLocks(1)?;
 
@@ -876,41 +935,69 @@
 				let subShapes = this.getSubshapes();
 				for (let i = 0; i < subShapes.length; i++) {
 					const subShape = subShapes[i];
-					subShape.convertToCGroupShapeRecursively(visioDocument, currentGroupHandling);
+					subShape.toCGroupShapeRecursively(visioDocument, currentGroupHandling);
 				}
+
+				// textCShape is returned from this function
+
 			} else {
+
+				// if currentGroupHandling add groupShape (withShape in it) and textCShape to it
 
 				currentGroupHandling.addToSpTree(currentGroupHandling.spTree.length, groupShape);
 				currentGroupHandling.spTree[currentGroupHandling.spTree.length-1].setGroup(currentGroupHandling);
 				groupShape.recalculateLocalTransform(groupShape.transform);
 
+				if (cShapes.textCShape !== null) {
+					currentGroupHandling.addToSpTree(currentGroupHandling.spTree.length, cShapes.textCShape);
+					currentGroupHandling.spTree[currentGroupHandling.spTree.length-1].setGroup(currentGroupHandling);
+					// cShapes.textCShape.recalculateLocalTransform(cShapes.textCShape.transform); // exists below
+				}
+
 				currentGroupHandling = groupShape;
 				let subShapes = this.getSubshapes();
 				for (let i = 0; i < subShapes.length; i++) {
 					const subShape = subShapes[i];
-					subShape.convertToCGroupShapeRecursively(visioDocument, currentGroupHandling);
+					subShape.toCGroupShapeRecursively(visioDocument, currentGroupHandling);
 				}
 			}
 			// recalculate text other positions to local (group) coordinates
-			cShape.recalculateLocalTransform(cShape.transform);
-			cShape.recalculateTransformText();
-			cShape.recalculateContent();
+			cShapes.geometryCShape.recalculateLocalTransform(cShapes.geometryCShape.transform);
+			cShapes.geometryCShape.recalculateTransformText();
+			cShapes.geometryCShape.recalculateContent();
 			// cShape.recalculate(); // doesnt work here
+
+			if (cShapes.textCShape !== null) {
+				// even if not add textCShape to currentGroupHandling above do recalculate just in case
+				cShapes.textCShape.recalculateLocalTransform(cShapes.textCShape.transform);
+				cShapes.textCShape.recalculateTransformText();
+				cShapes.textCShape.recalculateContent();
+			}
 
 		} else {
 			// if read cShape not CGroupShape
 			if (!currentGroupHandling) {
 				throw new Error("Group handler was called on simple shape");
 			} else {
-				currentGroupHandling.addToSpTree(currentGroupHandling.spTree.length, cShape);
+				// add shape and text to currentGroupHandling
+
+				currentGroupHandling.addToSpTree(currentGroupHandling.spTree.length, cShapes.geometryCShape);
 				currentGroupHandling.spTree[currentGroupHandling.spTree.length-1].setGroup(currentGroupHandling);
-				cShape.recalculateLocalTransform(cShape.transform);
 
 				// recalculate text other positions to local (group) coordinates
-				cShape.recalculateLocalTransform(cShape.transform);
-				cShape.recalculateTransformText();
-				cShape.recalculateContent();
+				cShapes.geometryCShape.recalculateLocalTransform(cShapes.geometryCShape.transform);
+				cShapes.geometryCShape.recalculateTransformText();
+				cShapes.geometryCShape.recalculateContent();
 				// cShape.recalculate(); // doesnt work here
+
+				if (cShapes.textCShape !== null) {
+					currentGroupHandling.addToSpTree(currentGroupHandling.spTree.length, cShapes.textCShape);
+					currentGroupHandling.spTree[currentGroupHandling.spTree.length-1].setGroup(currentGroupHandling);
+
+					cShapes.textCShape.recalculateLocalTransform(cShapes.textCShape.transform);
+					cShapes.textCShape.recalculateTransformText();
+					cShapes.textCShape.recalculateContent();
+				}
 			}
 		}
 
@@ -918,7 +1005,7 @@
 			currentGroupHandling.recalculate();
 		}
 
-		return currentGroupHandling;
+		return {cGroupShape: currentGroupHandling, textCShape: cShapes.textCShape};
 	}
 
 	/**

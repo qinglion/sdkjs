@@ -372,7 +372,7 @@
 			global_MatrixTransformer.ScaleAppend(graphics.m_oCoordTransform, pageScale, pageScale);
 		}
 
-		let topLevelShapesAndGroups = this.convertToShapes(logic_w_mm, logic_h_mm);
+		let topLevelShapesAndGroups = this.convertToCShapes();
 
 
 		// see sdkjs/common/Shapes/Serialize.js this.ReadGroupShape = function(type) to
@@ -447,15 +447,11 @@
 	 * @memberOf CVisioDocument
 	 * @return {(CShape | CGroupShape)[]} topLevelShapesAndGroups
 	 */
-	CVisioDocument.prototype.convertToShapes = function() {
-		/**
-		 * @type {Shape_Type[]}
-		 */
+	CVisioDocument.prototype.convertToCShapes = function() {
+		/** @type {Shape_Type[]} */
 		let shapeClasses = [];
 
-		/**
-		 * @type {(CShape | CGroupShape)[]}
-		 */
+		/** @type {(CShape | CGroupShape)[]} */
 		let topLevelShapesAndGroups = [];
 
 		let masters = this.joinMastersInfoAndContents();
@@ -467,11 +463,17 @@
 			shape.realizeStyleInheritanceRecursively(this.styleSheets);
 
 			if (shape.type === "Group") {
-				let cGroupShape = shape.convertToCGroupShapeRecursively(this);
-				topLevelShapesAndGroups.push(cGroupShape);
+				let cGroupShapeAndText = shape.toCGroupShapeRecursively(this);
+				topLevelShapesAndGroups.push(cGroupShapeAndText.cGroupShape);
+				if (cGroupShapeAndText.textCShape) {
+					topLevelShapesAndGroups.push(cGroupShapeAndText.textCShape);
+				}
 			} else {
-				let cShape = shape.convertToCShape(this);
-				topLevelShapesAndGroups.push(cShape);
+				let cShapes = shape.toGeometryAndTextCShapes(this);
+				topLevelShapesAndGroups.push(cShapes.geometryCShape);
+				if (cShapes.textCShape !== null) {
+					topLevelShapesAndGroups.push(cShapes.textCShape);
+				}
 			}
 		}
 
