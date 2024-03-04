@@ -371,7 +371,7 @@
 			// see sdkjs/common/Drawings/CommonController.js createTextArt: function (nStyle, bWord, wsModel, sStartString)
 			// for examples
 			// https://api.onlyoffice.com/docbuilder/textdocumentapi just some related info
-			let nFontSize = 10;
+			let nFontSize = 9;
 			let bWord = false;
 			textCShape.setWordShape(bWord);
 			textCShape.setBDeleted(false);
@@ -416,6 +416,7 @@
 					// TODO The characters in a text run can be a reference to a text field.
 
 					// create paraRun using propsObjects
+
 					// equal to ApiParagraph.prototype.AddText method
 					let oRun = new ParaRun(paragraph, false);
 					oRun.AddText(textElementPart);
@@ -443,6 +444,21 @@
 						oRun.Set_Color(blackColor);
 					}
 
+					// handle fontSize
+					let fontSizeCell = characterPropsFinal && characterPropsFinal.getCell("Size");
+					if (fontSizeCell && fontSizeCell.constructor.name === "Cell_Type") {
+						// omit calculateCellValue here
+						// let fontColor = calculateCellValue(theme, shape, characterColorCell);
+						let fontSize = Number(fontSizeCell.v);
+						if (!isNaN(fontSize)) {
+							nFontSize = fontSize * 72; // convert from in to pt
+						} else {
+							console.log("font size was not parsed so default is set (9 pt)");
+						}
+					} else {
+						console.log("font size was not found so default is set (9 pt)");
+					}
+
 					// add run to paragraph
 					paragraph.Add_ToContent(paragraph.Content.length - 1, oRun);
 				} else {
@@ -458,9 +474,29 @@
 				}
 			});
 
+			// handle vertical align
+			let verticalAlignCell = shape.getCell("VerticalAlign");
+			if (verticalAlignCell) {
+				// 0 - top, 1 - middle, 2 - bottom
+				let verticalAlign = Number(verticalAlignCell.v);
+				// 0 - top, 1, 2, 3 - center, 4 - bottom
+				if (verticalAlign === 0) {
+					textCShape.setVerticalAlign(0); // sets text vert align center equal to anchor set to txBody bodyPr
+				} else if (verticalAlign === 2) {
+					textCShape.setVerticalAlign(4); // sets text vert align center equal to anchor set to txBody bodyPr
+				}
+				// else leave center align
+			} else {
+				console.log("vertical align cell was not found for shape. align set to center. Shape:", shape);
+			}
+
+			// handle horizontal align i. e. paragraph align
+
+
 			// setup text properties
 			let oTextPr;
 			oTextPr = new CTextPr();
+			// Why set font size to textPr not to text run?
 			oTextPr.FontSize = nFontSize;
 			oTextPr.RFonts.Ascii = {Name: "Arial", Index: -1};
 			oTextPr.RFonts.HAnsi = {Name: "Arial", Index: -1};
@@ -517,11 +553,13 @@
 				txtPinY_inch = Number(txtPinYCell.v);
 			}
 
+			// consider https://disk.yandex.ru/d/2XzRaPTKzKHFjA
+			// where TxtHeight and TxtWidth get all shape height and width
 			// also check for {}, undefined, NaN
+
+
 			if (!isNaN(txtPinX_inch) && !isNaN(txtPinY_inch)) {
 				// https://www.figma.com/file/WiAC4sxQuJaq65h6xppMYC/cloudFare?type=design&node-id=0%3A1&mode=design&t=SZbio0yIyxq0YnMa-1s
-				// consider https://disk.yandex.ru/d/2XzRaPTKzKHFjA
-				// where TxtHeight and TxtWidth get all shape height and width
 
 				let shapeWidth = Number(shape.getCell("Width").v);
 				let shapeHeight = Number(shape.getCell("Height").v);
@@ -532,55 +570,50 @@
 				let txtLocPinX_inch = Number(shape.getCell("TxtLocPinX").v);
 				let txtLocPinY_inch = Number(shape.getCell("TxtLocPinY").v);
 
-				// FOR HOTFIX: we dont set text block width and height
-				// let textBlockIsShape = shapeWidth === txtWidth_inch && shapeHeight === txtHeight_inch &&
-				// 	shapeLocPinX === txtPinX_inch && shapeLocPinY === txtPinY_inch;
-				if (true) {
-					let textAngle = Number(shape.getCell("TxtAngle").v);
+				let textAngle = Number(shape.getCell("TxtAngle").v);
 
-					// paragraph.Pr.SetJc(AscCommon.align_Left);
-					let oBodyPr = textCShape.getBodyPr().createDuplicate();
-					// oBodyPr.anchor = 4; // 4 - bottom, 1,2,3 - center
+				// paragraph.Pr.SetJc(AscCommon.align_Left);
+				let oBodyPr = textCShape.getBodyPr().createDuplicate();
+				// oBodyPr.anchor = 4; // 4 - bottom, 1,2,3 - center
 
-					let oSpPr = new AscFormat.CSpPr();
-					let oXfrm = new AscFormat.CXfrm();
+				let oSpPr = new AscFormat.CSpPr();
+				let oXfrm = new AscFormat.CXfrm();
 
-					let globalXmm = cShape.spPr.xfrm.offX;
-					let localXmm = (txtPinX_inch - txtLocPinX_inch) * g_dKoef_in_to_mm;
-					oXfrm.setOffX(globalXmm + localXmm); // mm
+				let globalXmm = cShape.spPr.xfrm.offX;
+				let localXmm = (txtPinX_inch - txtLocPinX_inch) * g_dKoef_in_to_mm;
+				oXfrm.setOffX(globalXmm + localXmm); // mm
 
-					let globalYmm = cShape.spPr.xfrm.offY;
-					let localYmm = (txtPinY_inch - txtLocPinY_inch) * g_dKoef_in_to_mm;
-					oXfrm.setOffY(globalYmm + localYmm);
+				let globalYmm = cShape.spPr.xfrm.offY;
+				let localYmm = (txtPinY_inch - txtLocPinY_inch) * g_dKoef_in_to_mm;
+				oXfrm.setOffY(globalYmm + localYmm);
 
-					oXfrm.setExtX(txtWidth_inch * g_dKoef_in_to_mm);
-					oXfrm.setExtY(txtHeight_inch * g_dKoef_in_to_mm);
-					oXfrm.setRot(0);
+				oXfrm.setExtX(txtWidth_inch * g_dKoef_in_to_mm);
+				oXfrm.setExtY(txtHeight_inch * g_dKoef_in_to_mm);
+				oXfrm.setRot(0);
 
-					oSpPr.setXfrm(oXfrm);
-					oXfrm.setParent(oSpPr);
-					oSpPr.setFill(AscFormat.CreateNoFillUniFill());
-					oSpPr.setLn(AscFormat.CreateNoFillLine());
+				oSpPr.setXfrm(oXfrm);
+				oXfrm.setParent(oSpPr);
+				oSpPr.setFill(AscFormat.CreateNoFillUniFill());
+				oSpPr.setLn(AscFormat.CreateNoFillLine());
 
-					textCShape.setSpPr(oSpPr);
-					oSpPr.setParent(textCShape);
+				textCShape.setSpPr(oSpPr);
+				oSpPr.setParent(textCShape);
 
 
-					// CHECKS SIGN but positive tIns gives bottom inset. Check https://disk.yandex.ru/d/IU1vdjzcF9p3IQ
-					// oBodyPr.tIns = (txtPinY_inch - txtLocPinY_inch) * g_dKoef_in_to_mm;
-					// add 4/72 in = 4 pt padding
-					// oBodyPr.tIns = oBodyPr.tIns < 0 ? oBodyPr.tIns - 4/72 * g_dKoef_in_to_mm :
-					// 	oBodyPr.tIns + 4/72 * g_dKoef_in_to_mm;
-					// oBodyPr.bIns = 0;
-					// oBodyPr.lIns = (txtPinX_inch - txtLocPinX_inch) * g_dKoef_in_to_mm;
-					// oBodyPr.rIns = 0;
+				// CHECKS SIGN but positive tIns gives bottom inset. Check https://disk.yandex.ru/d/IU1vdjzcF9p3IQ
+				// oBodyPr.tIns = (txtPinY_inch - txtLocPinY_inch) * g_dKoef_in_to_mm;
+				// add 4/72 in = 4 pt padding
+				// oBodyPr.tIns = oBodyPr.tIns < 0 ? oBodyPr.tIns - 4/72 * g_dKoef_in_to_mm :
+				// 	oBodyPr.tIns + 4/72 * g_dKoef_in_to_mm;
+				// oBodyPr.bIns = 0;
+				// oBodyPr.lIns = (txtPinX_inch - txtLocPinX_inch) * g_dKoef_in_to_mm;
+				// oBodyPr.rIns = 0;
 
 
-					if (bWord) {
-						textCShape.setBodyPr(oBodyPr);
-					} else {
-						textCShape.txBody.setBodyPr(oBodyPr);
-					}
+				if (bWord) {
+					textCShape.setBodyPr(oBodyPr);
+				} else {
+					textCShape.txBody.setBodyPr(oBodyPr);
 				}
 			} else {
 				// create text block with shape sizes
@@ -605,6 +638,7 @@
 
 			// just trash below
 			//
+			// // placeholder
 			// let oUniNvPr = new AscFormat.UniNvPr();
 			// oUniNvPr.nvPr.ph = Asc.asc_docs_api.prototype.CreatePlaceholder("object");
 			//
