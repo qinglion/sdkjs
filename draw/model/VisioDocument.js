@@ -311,46 +311,49 @@
 	/**
 	 * @memberOf CVisioDocument
 	 */
-	CVisioDocument.prototype.draw = function(pageScale, pGraphics) {
+	CVisioDocument.prototype.draw = function(Zoom, pGraphics) {
 		//HOTFIX
 		this.theme = this.themes[0];
+
+
+		let topLevelShapesAndGroups = this.convertToCShapes();
 
 		let api = this.api;
 		let logic_w_mm = this.GetWidthMM();
 		let logic_h_mm = this.GetHeightMM();
 
 		let graphics;
+		let pageScale = Zoom / 100;
 		if (pGraphics) {
 			graphics = pGraphics;
 		} else {
-			let zoom = this.zoom_FitToPage_value(logic_w_mm, logic_h_mm, api.HtmlElement.offsetWidth,
-				api.HtmlElement.offsetHeight);
-			var dKoef = zoom * g_dKoef_mm_to_pix / 100;
+			let dKoef = pageScale * g_dKoef_mm_to_pix;
 			dKoef *= AscCommon.AscBrowser.retinaPixelRatio;
 
-			var w_mm = logic_w_mm;
-			var h_mm = logic_h_mm;
-			var w_px = (w_mm * dKoef) >> 0;
-			var h_px = (h_mm * dKoef) >> 0;
+			let  w_mm = logic_w_mm;
+			let h_mm = logic_h_mm;
+
+			var w_px = (w_mm * dKoef + 0.5) >> 0;
+			var h_px = (h_mm * dKoef + 0.5) >> 0;
 
 			let _canvas = api.canvas;
 
 			// consider scale for zoom
 			// consider previous scale maybe
-			_canvas.style.width = pageScale * 100 + "%";
-			_canvas.style.height = pageScale * 100 + "%";
 
-			// set pixels count for width and height
-			_canvas.width = AscCommon.AscBrowser.convertToRetinaValue(_canvas.clientWidth, true);
-			_canvas.height = AscCommon.AscBrowser.convertToRetinaValue(_canvas.clientHeight, true);
-			var ctx = _canvas.getContext('2d');
-			ctx.fillStyle = "#FFFFFF";
-			// consider scale for zoom
-			ctx.fillRect(0, 0, w_px * pageScale, h_px * pageScale);
+			let parentElement = _canvas.parentElement;
+			_canvas.style.width  = parentElement.offsetWidth + "px";
+			_canvas.style.height = parentElement.offsetHeight + "px";
+
+			AscCommon.calculateCanvasSize(_canvas);
+
+			let ctx = _canvas.getContext('2d');
+
 
 			graphics = new AscCommon.CGraphics();
 			graphics.init(ctx, w_px, h_px, w_mm, h_mm);
 			graphics.m_oFontManager = AscCommon.g_fontManager;
+
 		}
 
 
@@ -369,11 +372,19 @@
 			global_MatrixTransformer.Reflect(graphics.m_oCoordTransform, false, true);
 			global_MatrixTransformer.TranslateAppend(graphics.m_oCoordTransform, 0, h_px);
 			// consider scale for zoom
-			global_MatrixTransformer.ScaleAppend(graphics.m_oCoordTransform, pageScale, pageScale);
+			//global_MatrixTransformer.ScaleAppend(graphics.m_oCoordTransform, pageScale, pageScale);
+
+			let ctx = graphics.m_oContext;
+			ctx.clearRect(0, 0, api.canvas.width, api.canvas.height);
 		}
 
-		let topLevelShapesAndGroups = this.convertToCShapes();
-
+		graphics.SaveGrState();
+		graphics.SetIntegerGrid(false);
+		graphics.transform3(new AscCommon.CMatrix());
+		graphics.b_color1( 255, 255, 255, 255 );
+		graphics.rect( 0, 0, logic_w_mm, logic_h_mm );
+		graphics.df();
+		graphics.RestoreGrState();
 
 		// see sdkjs/common/Shapes/Serialize.js this.ReadGroupShape = function(type) to
 		// learn how to work with shape groups

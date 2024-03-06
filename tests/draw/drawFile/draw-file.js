@@ -42,28 +42,42 @@
 	var id_main_view = document.getElementById("id_main_view");
 	id_main_view.style.overflow = "auto";
 
-	let pageScale = 1;
+	let Zoom = 100;
 
 	// Cross browser support unchecked!
 	// May slow down scrolling! Because handler will wait until its job is finished and will fire mouse wheel only
 	// after it (because it now can call prevent default - prevent scroll during handlers
 	// work because of { passive: false })
 	window.addEventListener('mousewheel', onWindowMouseWheel, { passive: false });
-
+	let aZooms = [50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 210, 220, 230, 240, 250, 260, 270, 280, 290, 300, 320, 340, 360, 380, 400, 425, 450, 475, 500];
 	function onWindowMouseWheel(e) {
 		if (e.ctrlKey === true)
 		{
 			e.preventDefault(); // case described above
+			let Zoom_ = Zoom;
 			if (e.deltaY > 0) {
-				// console.log('Down');
-				pageScale = pageScale / 1.1;
+				Zoom_ = aZooms[0]
+				for(let nIdx = aZooms.length - 1; nIdx > -1; --nIdx) {
+					if(aZooms[nIdx] < Zoom) {
+						Zoom_ = aZooms[nIdx];
+						break;
+					}
+				}
+
 			} else {
 				// console.log('Up');
-				pageScale = pageScale * 1.1;
+				Zoom_ = aZooms[aZooms.length - 1]
+				for(let nIdx = 0; nIdx < aZooms.length; ++nIdx) {
+					if(aZooms[nIdx] > Zoom) {
+						Zoom_ = aZooms[nIdx];
+						break;
+					}
+				}
 			}
+			Zoom = Zoom_;
 			let droppedTestFileArrayBuffer = AscCommon.Base64.decode(localStorage.droppedTestFile);
 			drawFile(droppedTestFileArrayBuffer);
-			console.log('draw using scale ', pageScale);
+			console.log('draw using Zoom ', Zoom);
 		}
 	}
 
@@ -72,7 +86,7 @@
 
 	api.asyncFontsDocumentStartLoaded = function() {};
 	api.asyncFontsDocumentEndLoaded = function() {
-		api.Document.draw(pageScale);
+		api.Document.draw(Zoom);
 	};
 	api.asc_getLocale = function() {
 		return "en";
