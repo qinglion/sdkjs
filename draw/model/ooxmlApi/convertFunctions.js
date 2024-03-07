@@ -256,7 +256,7 @@
 
 					// if ((quickStyleVariationCellValue & 2) === 2) {
 					// 	// text color variation enabled (bit mask used)
-					// 	// Text color variation is realized in handleText function handleTextQuickStyleVariation
+					// 	// Text color variation is realized in getTextCShape function handleTextQuickStyleVariation
 					// }
 				}
 			}
@@ -284,7 +284,7 @@
 		 * @param {CUniFill} fillUniFill
 		 * @return {CShape} textCShape
 		 */
-		function handleText(theme, shape, cShape, lineUniFill, fillUniFill) {
+		function getTextCShape(theme, shape, cShape, lineUniFill, fillUniFill) {
 			// see 2.2.8	Text [MS-VSDX]-220215
 			function handleTextQuickStyleVariation(textUniColor, lineUniFill, fillUniFill) {
 				// https://learn.microsoft.com/en-us/openspecs/sharepoint_protocols/ms-vsdx/68bb0221-d8a1-476e-a132-8c60a49cea63?redirectedfrom=MSDN
@@ -386,34 +386,40 @@
 			// instead of AscFormat.AddToContentFromString(oContent, sText);
 			// use https://api.onlyoffice.com/docbuilder/presentationapi/apishape api implementation code
 			// to work with text separated into ParaRuns to split properties use
-			// now create paragraph
-			let oContent = textCShape.getDocContent();
-			let paragraph = new Paragraph(textCShape.getDrawingDocument(), null, true);
-			// Set paragraph justify/align text - center
-			paragraph.Pr.SetJc(AscCommon.align_Center);
-			// oDocContent.Push(oParagraph); - ApiDocumentContent.prototype.Push
-			textCShape.txBody.content.Content = [paragraph];
-			paragraph.SetParent(oContent);
 
 			// read propsCommonObjects
 			let characherPropsCommon = shape.getSection("Character");
+			let paragraphPropsCommon = shape.getSection("Paragraph");
 
 			// to store last entries of cp/pp/tp like
 			//					<cp IX='0'/> or
-			//         <pp IX='0'/> or
 			//         <tp IX='0'/>
 			// character properties are used until another element specifies new character properties.
 			// TODO tp_Type is not parsed?
 			let propsRunsObjects = {
 				"cp_Type": null,
-				"pp_Type": null,
 				"tp_Type": null
 			};
+
+			let oContent = textCShape.getDocContent();
+			oContent.Content = [];
 
 			// read text
 			textElement.elements.forEach(function(textElementPart, i) {
 				if (typeof textElementPart === "string") {
 					// TODO The characters in a text run can be a reference to a text field.
+
+					// now create defaultParagraph
+					if (oContent.Content.length === 0) {
+						// create defaultParagraph
+						let defaultParagraph = new Paragraph(textCShape.getDrawingDocument(), null, true);
+						// Set defaultParagraph justify/align text - center
+						defaultParagraph.Pr.SetJc(AscCommon.align_Center);
+						// oDocContent.Push(oParagraph); - ApiDocumentContent.prototype.Push
+						oContent.Content.push(defaultParagraph);
+						defaultParagraph.SetParent(oContent);
+					}
+					let paragraph = oContent.Content.slice(-1)[0];
 
 					// create paraRun using propsObjects
 
@@ -459,12 +465,70 @@
 						console.log("font size was not found so default is set (9 pt)");
 					}
 
-					// add run to paragraph
+					// add run to defaultParagraph
 					paragraph.Add_ToContent(paragraph.Content.length - 1, oRun);
 				} else {
 					// push props object
 					let textElementName = textElementPart.constructor.name;
-					if (textElementName === "cp_Type" || textElementName === "tp_Type" || textElementName === "pp_Type") {
+					if (textElementName === "pp_Type") {
+						// setup Paragraph
+
+						// check defaultParagraph properties: get pp_Type object and in paragraphPropsCommon get needed Row
+						let paragraphRowNum = textElementPart.iX;
+						let paragraphPropsFinal = paragraphRowNum !== null && paragraphPropsCommon.getRow(paragraphRowNum);
+
+						// handle horizontal align
+
+						// 0 Specifies that the defaultParagraph is left aligned.
+						// 1 Specifies that the defaultParagraph is centered.
+						// 2 Specifies that the defaultParagraph is right aligned.
+						// 3 Specifies that the defaultParagraph is justified.
+						// 4 Specifies that the defaultParagraph is distributed.
+						let hAlignCell = paragraphPropsFinal && paragraphPropsFinal.getCell("HorzAlign");
+
+						let horizontalAlign = AscCommon.align_Left;
+						if (hAlignCell && hAlignCell.constructor.name === "Cell_Type") {
+							// omit calculateCellValue here
+							// let fontColor = calculateCellValue(theme, shape, characterColorCell);
+							let horAlignTryParse = Number(hAlignCell.v);
+							if (!isNaN(horAlignTryParse)) {
+								switch (horAlignTryParse) {
+									case 0:
+										horizontalAlign = AscCommon.align_Left;
+										break;
+									case 1:
+										horizontalAlign = AscCommon.align_Center;
+										break;
+									case 2:
+										horizontalAlign = AscCommon.align_Right;
+										break;
+									case 3:
+										horizontalAlign = AscCommon.align_Justify;
+										break;
+									case 4:
+										horizontalAlign = AscCommon.align_Distributed;
+										break;
+								}
+							} else {
+								console.log("horizontal align was not parsed so default is set (left)");
+							}
+						} else {
+							console.log("horizontal align cell was not found so default is set (left)");
+						}
+
+
+						// create new paragraph to hold new properties
+						let oContent = textCShape.getDocContent();
+						let paragraph = new Paragraph(textCShape.getDrawingDocument(), null, true);
+						// Set defaultParagraph justify/align text - center
+						paragraph.Pr.SetJc(horizontalAlign);
+						oContent.Content.push(paragraph);
+						paragraph.SetParent(oContent);
+
+						// paragraph.Pr.Spacing.Before = 0;
+						// paragraph.Pr.Spacing.After = 0;
+
+					} else if (textElementName === "cp_Type" || textElementName === "tp_Type") {
 						propsRunsObjects[textElementName] = textElementPart;
 					} else if (textElementName === "fld_Type") {
 						console.log("fld_Type is unhandled for now");
@@ -474,23 +538,40 @@
 				}
 			});
 
+			// create defaultParagraph if no strings found
+			if (oContent.Content.length === 0) {
+				// create defaultParagraph
+				let defaultParagraph = new Paragraph(textCShape.getDrawingDocument(), null, true);
+				// Set defaultParagraph justify/align text - center
+				defaultParagraph.Pr.SetJc(AscCommon.align_Center);
+				// oDocContent.Push(oParagraph); - ApiDocumentContent.prototype.Push
+				oContent.Content.push(defaultParagraph);
+				defaultParagraph.SetParent(oContent);
+			}
+
+			// handle horizontal align i. e. defaultParagraph align
+
 			// handle vertical align
 			let verticalAlignCell = shape.getCell("VerticalAlign");
 			if (verticalAlignCell) {
 				// 0 - top, 1 - middle, 2 - bottom
 				let verticalAlign = Number(verticalAlignCell.v);
-				// 0 - top, 1, 2, 3 - center, 4 - bottom
-				if (verticalAlign === 0) {
-					textCShape.setVerticalAlign(0); // sets text vert align center equal to anchor set to txBody bodyPr
-				} else if (verticalAlign === 2) {
-					textCShape.setVerticalAlign(4); // sets text vert align center equal to anchor set to txBody bodyPr
+				if (!isNaN(verticalAlign)) {
+					//  0 - bottom, 1, 2, 3 - ctr, 4, - top
+					// but global_MatrixTransformer transformations changes values to
+					// 0 - top, 1, 2, 3 - center, 4 - bottom
+					if (verticalAlign === 0) {
+						textCShape.setVerticalAlign(0); // sets text vert align center equal to anchor set to txBody bodyPr
+					} else if (verticalAlign === 2) {
+						textCShape.setVerticalAlign(4); // sets text vert align center equal to anchor set to txBody bodyPr
+					}
+					// else leave center align
+				} else {
+					console.log("vertical align cell was not parsed for shape. align set to center. Shape:", shape);
 				}
-				// else leave center align
 			} else {
 				console.log("vertical align cell was not found for shape. align set to center. Shape:", shape);
 			}
-
-			// handle horizontal align i. e. paragraph align
 
 
 			// setup text properties
@@ -515,7 +596,7 @@
 			// oBodyPr.vertOverflow = AscFormat.nVOTOverflow;
 			// oBodyPr.horzOverflow = AscFormat.nHOTOverflow;
 			// oBodyPr.vert = AscFormat.nVertTThorz; // default //( ( Horizontal ))
-			// oBodyPr.wrap = AscFormat.nTWTSquare; // default
+			oBodyPr.wrap = AscFormat.nTWTSquare; // default
 			// oBodyPr.setDefaultInsets();
 			// oBodyPr.numCol = 1;
 			// oBodyPr.spcCol = 0;
@@ -572,7 +653,7 @@
 
 				let textAngle = Number(shape.getCell("TxtAngle").v);
 
-				// paragraph.Pr.SetJc(AscCommon.align_Left);
+				// defaultParagraph.Pr.SetJc(AscCommon.align_Left);
 				let oBodyPr = textCShape.getBodyPr().createDuplicate();
 				// oBodyPr.anchor = 4; // 4 - bottom, 1,2,3 - center
 
@@ -654,7 +735,7 @@
 			// cShape.txBody.content.Content[0].Index = -1;
 			// cShape.txBody.compiledBodyPr = null;
 
-			// Set Paragraph (the only one paragraph exist) justify/align text - center
+			// Set Paragraph (the only one defaultParagraph exist) justify/align text - center
 			// cShape.txBody.content.Content[0].Pr.SetJc(AscCommon.align_Center);
 
 			// cShape.recalculateTextStyles();
@@ -899,7 +980,7 @@
 
 		cShape.Id = String(this.iD); // it was string in cShape
 
-		let textCShape = handleText(visioDocument.themes[0], this, cShape, lineUniFill, uniFillForegnd);
+		let textCShape = getTextCShape(visioDocument.themes[0], this, cShape, lineUniFill, uniFillForegnd);
 
 		cShape.recalculate();
 		cShape.recalculateLocalTransform(cShape.transform);
