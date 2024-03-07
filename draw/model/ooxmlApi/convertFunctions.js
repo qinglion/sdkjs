@@ -390,6 +390,7 @@
 			// read propsCommonObjects
 			let characherPropsCommon = shape.getSection("Character");
 			let paragraphPropsCommon = shape.getSection("Paragraph");
+			let fieldPropsCommon = shape.getSection("Field");
 
 			// to store last entries of cp/pp/tp like
 			//					<cp IX='0'/> or
@@ -406,7 +407,7 @@
 
 			// read text
 			textElement.elements.forEach(function(textElementPart, i) {
-				if (typeof textElementPart === "string") {
+				if (typeof textElementPart === "string" || textElementPart.constructor.name === "fld_Type") {
 					// TODO The characters in a text run can be a reference to a text field.
 
 					// now create defaultParagraph
@@ -425,7 +426,23 @@
 
 					// equal to ApiParagraph.prototype.AddText method
 					let oRun = new ParaRun(paragraph, false);
-					oRun.AddText(textElementPart);
+					if (typeof textElementPart === "string") {
+						oRun.AddText(textElementPart);
+					} else if (textElementPart.constructor.name === "fld_Type") {
+						let optionalValue = textElementPart.value;
+
+						let fieldRowNum = textElementPart.iX;
+						let fieldPropsFinal = fieldRowNum !== null && fieldPropsCommon.getRow(fieldRowNum);
+
+						// handle Value
+						let fieldValueCell = fieldPropsFinal && fieldPropsFinal.getCell("Value");
+
+						if (fieldValueCell.v || optionalValue) {
+							oRun.AddText(fieldValueCell.v || optionalValue);
+						} else {
+							console.log("field_Type was not parsed");
+						}
+					}
 
 					// setup Run
 					// check character properties: get cp_Type object and in characherPropsCommon get needed Row
