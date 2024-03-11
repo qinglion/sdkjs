@@ -451,21 +451,19 @@
 
 					// handle Color
 					let characterColorCell = characterPropsFinal && characterPropsFinal.getCell("Color");
+					let fontColor;
 					if (characterColorCell && characterColorCell.constructor.name === "Cell_Type") {
-						let fontColor = calculateCellValue(theme, shape, characterColorCell);
-						// no RGBA.A alpha channel considered
-						fontColor.Calculate(theme);
-
-						handleTextQuickStyleVariation(fontColor, lineUniFill, fillUniFill);
-
-						var textColor1 = new CDocumentColor(fontColor.color.RGBA.R, fontColor.color.RGBA.G,
-							fontColor.color.RGBA.B, false);
-						oRun.Set_Color(textColor1);
+						fontColor = calculateCellValue(theme, shape, characterColorCell);
 					} else {
-						console.log("text color cell not found! set text color as black");
-						var blackColor = new CDocumentColor(0, 0, 0, false);
-						oRun.Set_Color(blackColor);
+						console.log("text color cell not found! set text color as themed");
+						fontColor = AscCommonDraw.themeval(visioDocument.themes[0], shape, null, "TextColor");
 					}
+					// no RGBA.A alpha channel considered
+					fontColor.Calculate(theme);
+					handleTextQuickStyleVariation(fontColor, lineUniFill, fillUniFill);
+					var textColor1 = new CDocumentColor(fontColor.color.RGBA.R, fontColor.color.RGBA.G,
+						fontColor.color.RGBA.B, false);
+					oRun.Set_Color(textColor1);
 
 					// handle fontSize
 					let fontSizeCell = characterPropsFinal && characterPropsFinal.getCell("Size");
@@ -484,74 +482,68 @@
 
 					// add run to defaultParagraph
 					paragraph.Add_ToContent(paragraph.Content.length - 1, oRun);
-				} else {
-					// push props object
-					let textElementName = textElementPart.constructor.name;
-					if (textElementName === "pp_Type") {
-						// setup Paragraph
+				} else if (textElementPart.constructor.name === "pp_Type") {
+					// setup Paragraph
 
-						// check defaultParagraph properties: get pp_Type object and in paragraphPropsCommon get needed Row
-						let paragraphRowNum = textElementPart.iX;
-						let paragraphPropsFinal = paragraphRowNum !== null && paragraphPropsCommon.getRow(paragraphRowNum);
+					// check defaultParagraph properties: get pp_Type object and in paragraphPropsCommon get needed Row
+					let paragraphRowNum = textElementPart.iX;
+					let paragraphPropsFinal = paragraphRowNum !== null && paragraphPropsCommon.getRow(paragraphRowNum);
 
-						// handle horizontal align
+					// handle horizontal align
 
-						// 0 Specifies that the defaultParagraph is left aligned.
-						// 1 Specifies that the defaultParagraph is centered.
-						// 2 Specifies that the defaultParagraph is right aligned.
-						// 3 Specifies that the defaultParagraph is justified.
-						// 4 Specifies that the defaultParagraph is distributed.
-						let hAlignCell = paragraphPropsFinal && paragraphPropsFinal.getCell("HorzAlign");
+					// 0 Specifies that the defaultParagraph is left aligned.
+					// 1 Specifies that the defaultParagraph is centered.
+					// 2 Specifies that the defaultParagraph is right aligned.
+					// 3 Specifies that the defaultParagraph is justified.
+					// 4 Specifies that the defaultParagraph is distributed.
+					let hAlignCell = paragraphPropsFinal && paragraphPropsFinal.getCell("HorzAlign");
 
-						let horizontalAlign = AscCommon.align_Left;
-						if (hAlignCell && hAlignCell.constructor.name === "Cell_Type") {
-							// omit calculateCellValue here
-							// let fontColor = calculateCellValue(theme, shape, characterColorCell);
-							let horAlignTryParse = Number(hAlignCell.v);
-							if (!isNaN(horAlignTryParse)) {
-								switch (horAlignTryParse) {
-									case 0:
-										horizontalAlign = AscCommon.align_Left;
-										break;
-									case 1:
-										horizontalAlign = AscCommon.align_Center;
-										break;
-									case 2:
-										horizontalAlign = AscCommon.align_Right;
-										break;
-									case 3:
-										horizontalAlign = AscCommon.align_Justify;
-										break;
-									case 4:
-										horizontalAlign = AscCommon.align_Distributed;
-										break;
-								}
-							} else {
-								console.log("horizontal align was not parsed so default is set (left)");
+					let horizontalAlign = AscCommon.align_Left;
+					if (hAlignCell && hAlignCell.constructor.name === "Cell_Type") {
+						// omit calculateCellValue here
+						// let fontColor = calculateCellValue(theme, shape, characterColorCell);
+						let horAlignTryParse = Number(hAlignCell.v);
+						if (!isNaN(horAlignTryParse)) {
+							switch (horAlignTryParse) {
+								case 0:
+									horizontalAlign = AscCommon.align_Left;
+									break;
+								case 1:
+									horizontalAlign = AscCommon.align_Center;
+									break;
+								case 2:
+									horizontalAlign = AscCommon.align_Right;
+									break;
+								case 3:
+									horizontalAlign = AscCommon.align_Justify;
+									break;
+								case 4:
+									horizontalAlign = AscCommon.align_Distributed;
+									break;
 							}
 						} else {
-							console.log("horizontal align cell was not found so default is set (left)");
+							console.log("horizontal align was not parsed so default is set (left)");
 						}
-
-
-						// create new paragraph to hold new properties
-						let oContent = textCShape.getDocContent();
-						let paragraph = new Paragraph(textCShape.getDrawingDocument(), null, true);
-						// Set defaultParagraph justify/align text - center
-						paragraph.Pr.SetJc(horizontalAlign);
-						oContent.Content.push(paragraph);
-						paragraph.SetParent(oContent);
-
-						// paragraph.Pr.Spacing.Before = 0;
-						// paragraph.Pr.Spacing.After = 0;
-
-					} else if (textElementName === "cp_Type" || textElementName === "tp_Type") {
-						propsRunsObjects[textElementName] = textElementPart;
-					} else if (textElementName === "fld_Type") {
-						console.log("fld_Type is unhandled for now");
 					} else {
-						console.log("undkown type in text tag");
+						console.log("horizontal align cell was not found so default is set (left)");
 					}
+
+
+					// create new paragraph to hold new properties
+					let oContent = textCShape.getDocContent();
+					let paragraph = new Paragraph(textCShape.getDrawingDocument(), null, true);
+					// Set defaultParagraph justify/align text - center
+					paragraph.Pr.SetJc(horizontalAlign);
+					oContent.Content.push(paragraph);
+					paragraph.SetParent(oContent);
+
+					// paragraph.Pr.Spacing.Before = 0;
+					// paragraph.Pr.Spacing.After = 0;
+
+				} else if (textElementPart.constructor.name === "cp_Type" || textElementPart.constructor.name === "tp_Type") {
+					propsRunsObjects[textElementPart.constructor.name] = textElementPart;
+				} else {
+					console.log("undkown type in text tag");
 				}
 			});
 
@@ -630,6 +622,20 @@
 			// oBodyPr.textFit.type = AscFormat.text_fit_Auto;
 
 			// oBodyPr.upright = false; // default
+
+			let leftMarginInch = shape.getCellNumberValue("LeftMargin");
+			let topMarginInch = shape.getCellNumberValue("TopMargin");
+			let rightMarginInch = shape.getCellNumberValue("RightMargin");
+			let bottomMarginInch = shape.getCellNumberValue("BottomMargin");
+
+
+			// CHECKS SIGN but positive tIns gives bottom inset. Check https://disk.yandex.ru/d/IU1vdjzcF9p3IQ
+			// it is may global graphics transform issue so set bottom inset as top and opposite
+			oBodyPr.tIns = bottomMarginInch * g_dKoef_in_to_mm;
+			oBodyPr.bIns = topMarginInch * g_dKoef_in_to_mm;
+			oBodyPr.lIns = leftMarginInch * g_dKoef_in_to_mm;
+			oBodyPr.rIns = rightMarginInch * g_dKoef_in_to_mm;
+
 			if (bWord) {
 				textCShape.setBodyPr(oBodyPr);
 			} else {
@@ -640,35 +646,26 @@
 			// to rotate around point we 1) add one more offset 2) rotate around center
 			// could be refactored maybe
 			// https://www.figma.com/file/jr1stjGUa3gKUBWxNAR80T/locPinHandle?type=design&node-id=0%3A1&mode=design&t=raXzFFsssqSexysi-1
-			let txtPinXCell = shape.getCell("TxtPinX");
-			let txtPinX_inch;
-			if (txtPinXCell !== null) {
-				txtPinX_inch = Number(txtPinXCell.v);
-			}
-			let txtPinYCell = shape.getCell("TxtPinY");
-			let txtPinY_inch;
-			if (txtPinYCell !== null) {
-				txtPinY_inch = Number(txtPinYCell.v);
-			}
+			let txtPinX_inch = shape.getCellNumberValue("TxtPinX");;
+			let txtPinY_inch = shape.getCellNumberValue("TxtPinY");
+
 
 			// consider https://disk.yandex.ru/d/2XzRaPTKzKHFjA
-			// where TxtHeight and TxtWidth get all shape height and width
-			// also check for {}, undefined, NaN
-
-
-			if (!isNaN(txtPinX_inch) && !isNaN(txtPinY_inch)) {
+			// where TxtHeight and TxtWidth get all shape height and width and txtPinX_inch and txtPinY_inch are not defined
+			// also check for {}, undefined, NaN, null
+			if (!(isNaN(txtPinX_inch) || txtPinX_inch === null)  && !(isNaN(txtPinY_inch) || txtPinY_inch === null)) {
 				// https://www.figma.com/file/WiAC4sxQuJaq65h6xppMYC/cloudFare?type=design&node-id=0%3A1&mode=design&t=SZbio0yIyxq0YnMa-1s
 
-				let shapeWidth = Number(shape.getCell("Width").v);
-				let shapeHeight = Number(shape.getCell("Height").v);
-				let shapeLocPinX = Number(shape.getCell("LocPinX").v);
-				let shapeLocPinY = Number(shape.getCell("LocPinY").v);
-				let txtWidth_inch = Number(shape.getCell("TxtWidth").v);
-				let txtHeight_inch = Number(shape.getCell("TxtHeight").v);
-				let txtLocPinX_inch = Number(shape.getCell("TxtLocPinX").v);
-				let txtLocPinY_inch = Number(shape.getCell("TxtLocPinY").v);
+				let shapeWidth = shape.getCellNumberValue("Width");
+				let shapeHeight = shape.getCellNumberValue("Height");
+				let shapeLocPinX = shape.getCellNumberValue("LocPinX");
+				let shapeLocPinY = shape.getCellNumberValue("LocPinY");
+				let txtWidth_inch = shape.getCellNumberValue("TxtWidth");
+				let txtHeight_inch = shape.getCellNumberValue("TxtHeight");
+				let txtLocPinX_inch = shape.getCellNumberValue("TxtLocPinX");
+				let txtLocPinY_inch = shape.getCellNumberValue("TxtLocPinY");
 
-				let textAngle = Number(shape.getCell("TxtAngle").v);
+				let textAngle = shape.getCellNumberValue("TxtAngle");
 
 				// defaultParagraph.Pr.SetJc(AscCommon.align_Left);
 				let oBodyPr = textCShape.getBodyPr().createDuplicate();
@@ -696,23 +693,6 @@
 
 				textCShape.setSpPr(oSpPr);
 				oSpPr.setParent(textCShape);
-
-
-				// CHECKS SIGN but positive tIns gives bottom inset. Check https://disk.yandex.ru/d/IU1vdjzcF9p3IQ
-				// oBodyPr.tIns = (txtPinY_inch - txtLocPinY_inch) * g_dKoef_in_to_mm;
-				// add 4/72 in = 4 pt padding
-				// oBodyPr.tIns = oBodyPr.tIns < 0 ? oBodyPr.tIns - 4/72 * g_dKoef_in_to_mm :
-				// 	oBodyPr.tIns + 4/72 * g_dKoef_in_to_mm;
-				// oBodyPr.bIns = 0;
-				// oBodyPr.lIns = (txtPinX_inch - txtLocPinX_inch) * g_dKoef_in_to_mm;
-				// oBodyPr.rIns = 0;
-
-
-				if (bWord) {
-					textCShape.setBodyPr(oBodyPr);
-				} else {
-					textCShape.txBody.setBodyPr(oBodyPr);
-				}
 			} else {
 				// create text block with shape sizes
 				let oSpPr = new AscFormat.CSpPr();
@@ -770,18 +750,11 @@
 
 		// there was case with shape type group with no PinX and PinY
 		// https://disk.yandex.ru/d/tl877cuzcRcZYg
-		let pinXCell = this.getCell("PinX");
-		let pinX_inch;
-		if (pinXCell !== null) {
-			pinX_inch = Number(pinXCell.v);
-		}
-		let pinYCell = this.getCell("PinY");
-		let pinY_inch;
-		if (pinYCell !== null) {
-			pinY_inch = Number(pinYCell.v);
-		}
-		// also check for {}, undefined, NaN
-		if (isNaN(pinX_inch) || isNaN(pinY_inch)) {
+		let pinX_inch = this.getCellNumberValue("PinX");
+		let pinY_inch = this.getCellNumberValue("PinY");
+
+		// also check for {}, undefined, NaN, null
+		if (isNaN(pinX_inch) || pinX_inch === null || isNaN(pinY_inch) || pinY_inch === null) {
 			console.log('pinX_inch or pinY_inch is NaN for Shape. Its ok sometimes. ' +
 				'Empty CShape is returned. See original shape: ', this);
 			// let's use empty shape
@@ -806,11 +779,11 @@
 			return {geometryCShape: emptyCShape, textCShape: null};
 		}
 
-		let shapeAngle = Number(this.getCell("Angle").v);
-		let locPinX_inch = Number(this.getCell("LocPinX").v);
-		let locPinY_inch = Number(this.getCell("LocPinY").v);
-		let shapeWidth_inch = Number(this.getCell("Width").v);
-		let shapeHeight_inch = Number(this.getCell("Height").v);
+		let shapeAngle = this.getCellNumberValue("Angle");
+		let locPinX_inch = this.getCellNumberValue("LocPinX");
+		let locPinY_inch = this.getCellNumberValue("LocPinY");
+		let shapeWidth_inch = this.getCellNumberValue("Width");
+		let shapeHeight_inch = this.getCellNumberValue("Height");
 
 		// to rotate around point we 1) add one more offset 2) rotate around center
 		// could be refactored maybe

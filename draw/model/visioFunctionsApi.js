@@ -39,7 +39,8 @@
 	 * accepts visio shadow arguments and common arguments, return OnlyOffice api objects of different types.
 	 * So for foreground color it return Unifill and for stroke too. May cause problems
 	 * https://learn.microsoft.com/ru-ru/office/client-developer/visio/themeval-function.
-	 * For font color return CUniColor
+	 * For font color return CUniColor.
+	 * themeValue - if no cell passed.
 	 * @param {CTheme} theme
 	 * @param {Shape_Type} shape
 	 * @param {Cell_Type} cell
@@ -77,6 +78,9 @@
 			cellValue = "Themed";
 		} else if (themeValue === "FillColor") {
 			// cellName = "FillForegnd";
+			cellValue = "Themed";
+		} else if (themeValue === "TextColor") {
+			cellName = "Color";
 			cellValue = "Themed";
 		}
 
