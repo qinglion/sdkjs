@@ -338,17 +338,24 @@
 
 			let _canvas = api.canvas;
 
-			// consider scale for zoom
-			// consider previous scale maybe
+			// Version 1
+			// let parentElement = _canvas.parentElement;
+			// _canvas.style.width  = parentElement.offsetWidth + "px";
+			// _canvas.style.height = parentElement.offsetHeight + "px";
 
-			let parentElement = _canvas.parentElement;
-			_canvas.style.width  = parentElement.offsetWidth + "px";
-			_canvas.style.height = parentElement.offsetHeight + "px";
+			// Version 2 with correct scroll lines
+			// setup scroll lines
+			_canvas.style.width  = w_px + "px";
+			_canvas.style.height = h_px + "px";
+			// set pixels count for width and height
+			_canvas.width = AscCommon.AscBrowser.convertToRetinaValue(_canvas.clientWidth, true);
+			_canvas.height = AscCommon.AscBrowser.convertToRetinaValue(_canvas.clientHeight, true);
+
+			// canvas#id_viewer_overlay and div#id_target_cursor creates empty gray space below any drawing
 
 			AscCommon.calculateCanvasSize(_canvas);
 
 			let ctx = _canvas.getContext('2d');
-
 
 			graphics = new AscCommon.CGraphics();
 			graphics.init(ctx, w_px, h_px, w_mm, h_mm);

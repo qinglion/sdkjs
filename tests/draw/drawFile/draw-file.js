@@ -49,7 +49,7 @@
 	// after it (because it now can call prevent default - prevent scroll during handlers
 	// work because of { passive: false })
 	window.addEventListener('mousewheel', onWindowMouseWheel, { passive: false });
-	let aZooms = [50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 210, 220, 230, 240, 250, 260, 270, 280, 290, 300, 320, 340, 360, 380, 400, 425, 450, 475, 500];
+	let aZooms = [40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 160, 170, 180, 190, 200, 210, 220, 230, 240, 250, 260, 270, 280, 290, 300, 320, 340, 360, 380, 400, 425, 450, 475, 500];
 	function onWindowMouseWheel(e) {
 		if (e.ctrlKey === true)
 		{
