@@ -661,13 +661,14 @@
 	 * Inherits all style elements (sections, rows, cells).
 	 * @param {Shape_Type | StyleSheet_Type} thisArgument
 	 * @param {StyleSheet_Type[]} styles
+	 * @param {?Set} stylesWithRealizedInheritance
 	 */
-	function realizeStyleToSheetObjInheritanceRecursive(thisArgument, styles) {
-		// if (thisArgument.lineStyle === null || thisArgument.fillStyle === null || thisArgument.textStyle === null) {
-		// 	console.log('Unhandled realizeStyleToShapeInheritanceRecursive case. lineStyle or fillStlye or textStyle is ' +
-		// 		'null.\nShape:', thisArgument);
-		// 	return;
-		// }
+	function realizeStyleToSheetObjInheritanceRecursive(thisArgument, styles, stylesWithRealizedInheritance) {
+		if (stylesWithRealizedInheritance.has(thisArgument)) {
+			// console.log("style has realized inheritance already. return");
+			return;
+		}
+
 		if (!(thisArgument.lineStyle === thisArgument.fillStyle && thisArgument.lineStyle === thisArgument.textStyle)) {
 			// Attribute	Cell_Type elements
 
@@ -695,54 +696,58 @@
 
 			// cells rows sections
 			// TODO check cells inside section LineGradient
-				let lineStyleElements = ["LineColor", "LinePattern", "LineWeight", "LineCap", "BeginArrow", "EndArrow",
-					"LineColorTrans", "CompoundType", "BeginArrowSize", "EndArrowSize", "Rounding",
-					"LineGradientDir", "LineGradientAngle", "LineGradientEnabled", "LineGradient",
-					"QuickStyleLineColor", "QuickStyleLineMatrix"];
+			let lineStyleElements = ["LineColor", "LinePattern", "LineWeight", "LineCap", "BeginArrow", "EndArrow",
+				"LineColorTrans", "CompoundType", "BeginArrowSize", "EndArrowSize", "Rounding",
+				"LineGradientDir", "LineGradientAngle", "LineGradientEnabled", "LineGradient",
+				"QuickStyleLineColor", "QuickStyleLineMatrix"];
 
 			// TODO check cells inside section FillGradient
-				let fillStyleElements = ["FillForegnd", "FillForegndTrans", "FillBkgnd", "FillBkgndTrans", "FillPattern",
+			let fillStyleElements = ["FillForegnd", "FillForegndTrans", "FillBkgnd", "FillBkgndTrans", "FillPattern",
 					"FillGradientDir", "FillGradientAngle", "FillGradientEnabled",
 					"RotateGradientWithShape", "UseGroupGradientCell_Type", "FillGradient",
 					"ShdwForegnd", "ShdwForegndTrans", "ShdwPattern", "ShapeShdwType", "ShapeShdwOffsetX", "ShapeShdwOffsetY",
 					"ShapeShdwObliqueAngle", "ShapeShdwScaleFactor", "ShapeShdwBlur",
 				"QuickStyleFillColor", "QuickStyleFillMatrix"];
 
-				let textStyleElements = ["TextBkgnd", "TextDirection", "TextBkgndTrans", "LockTextEdit", "HideText",
+			let textStyleElements = ["TextBkgnd", "TextDirection", "TextBkgndTrans", "LockTextEdit", "HideText",
 					"TheText", "IsTextEditTarget", "KeepTextFlat", "ReplaceLockText", "TextPosAfterBullet",
 					"Character", "Paragraph", "Tabs"];
 
-				if (thisArgument.lineStyle !== null) {
-					let styleId = Number(thisArgument.lineStyle);
-					let styleSheet = styles.find(function(style) {
-						return style.iD === styleId;
-					});
-					realizeStyleToSheetObjInheritanceRecursive(styleSheet, styles);
-					mergeElementArrays(thisArgument.elements, styleSheet.elements, lineStyleElements);
-				}
+			if (thisArgument.lineStyle !== null) {
+				let styleId = Number(thisArgument.lineStyle);
+				let styleSheet = styles.find(function(style) {
+					return style.iD === styleId;
+				});
+				realizeStyleToSheetObjInheritanceRecursive(styleSheet, styles, stylesWithRealizedInheritance);
+				mergeElementArrays(thisArgument.elements, styleSheet.elements, lineStyleElements);
+			}
 
-				if (thisArgument.fillStyle !== null) {
-					let styleId = Number(thisArgument.fillStyle);
-					let styleSheet = styles.find(function(style) {
-						return style.iD === styleId;
-					});
-					realizeStyleToSheetObjInheritanceRecursive(styleSheet, styles);
-					mergeElementArrays(thisArgument.elements, styleSheet.elements, fillStyleElements);
-				}
+			if (thisArgument.fillStyle !== null) {
+				let styleId = Number(thisArgument.fillStyle);
+				let styleSheet = styles.find(function(style) {
+					return style.iD === styleId;
+				});
+				realizeStyleToSheetObjInheritanceRecursive(styleSheet, styles, stylesWithRealizedInheritance);
+				mergeElementArrays(thisArgument.elements, styleSheet.elements, fillStyleElements);
+			}
 
-				if (thisArgument.textStyle !== null) {
-					let styleId = Number(thisArgument.textStyle);
-					let styleSheet = styles.find(function(style) {
-						return style.iD === styleId;
-					});
-					realizeStyleToSheetObjInheritanceRecursive(styleSheet, styles);
-					mergeElementArrays(thisArgument.elements, styleSheet.elements, textStyleElements);
-				}
+			if (thisArgument.textStyle !== null) {
+				let styleId = Number(thisArgument.textStyle);
+				let styleSheet = styles.find(function(style) {
+					return style.iD === styleId;
+				});
+				realizeStyleToSheetObjInheritanceRecursive(styleSheet, styles, stylesWithRealizedInheritance);
+				mergeElementArrays(thisArgument.elements, styleSheet.elements, textStyleElements);
+			}
 
-			// console.log('Unhandled realizeStyleToShapeInheritanceRecursive case. lineStyle fillStlye textStyle are not ' +
-			// 	'equal. So multiple styles should be inherited with specific properties.\nShape:', thisArgument);
+			if (thisArgument.constructor.name === "StyleSheet_Type") {
+				// memorize: that style has realized inheritance
+				stylesWithRealizedInheritance.add(thisArgument);
+			}
+
 			return;
 		}
+
 		if (thisArgument.lineStyle === null && thisArgument.fillStyle === null && thisArgument.textStyle === null) {
 			// console.log('Top parent style');
 			return;
@@ -753,24 +758,34 @@
 			return style.iD === styleId;
 		});
 
-		realizeStyleToSheetObjInheritanceRecursive(styleSheet, styles);
+		realizeStyleToSheetObjInheritanceRecursive(styleSheet, styles, stylesWithRealizedInheritance);
 
-		mergeElementArrays(thisArgument.elements, styleSheet.elements);
+		mergeElementArrays(thisArgument.elements, styleSheet.elements)
+
+		if (thisArgument.constructor.name === "StyleSheet_Type") {
+			// memorize: that style has realized inheritance
+			stylesWithRealizedInheritance.add(thisArgument);
+		}
 	}
 
 	/**
 	 * Style-To-Shape inheritance
 	 * Copy all style elements (sections, rows, cells) to shape.
-	 * (Doesnt take much memory < 300MB with master inheritance for the most large files)
+	 * (Doesnt take much memory < 300MB with master inheritance for the most large files).
+	 * stylesWithRealizedInheritance was added for optimization.
 	 * @param styles
+	 * @param {?Set} [stylesWithRealizedInheritance]
 	 */
-	Shape_Type.prototype.realizeStyleInheritanceRecursively = function(styles) {
-		realizeStyleToSheetObjInheritanceRecursive(this, styles);
+	Shape_Type.prototype.realizeStyleInheritanceRecursively = function(styles, stylesWithRealizedInheritance) {
+		if (stylesWithRealizedInheritance === undefined) {
+			stylesWithRealizedInheritance = new Set();
+		}
+		realizeStyleToSheetObjInheritanceRecursive(this, styles, stylesWithRealizedInheritance);
 
 		// call recursive on all subshapes
 		let subshapes = this.shapes;
 		subshapes.forEach(function(shape) {
-			shape.realizeStyleInheritanceRecursively(styles);
+			shape.realizeStyleInheritanceRecursively(styles, stylesWithRealizedInheritance);
 		});
 	}
 
