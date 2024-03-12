@@ -84,10 +84,6 @@
 
 
 
-	api.asyncFontsDocumentStartLoaded = function() {};
-	api.asyncFontsDocumentEndLoaded = function() {
-		api.Document.draw(Zoom);
-	};
 	api.asc_getLocale = function() {
 		return "en";
 	};
@@ -96,9 +92,9 @@
 		api.OpenDocumentFromZip(data);
 		AscCommon.g_oIdCounter.Set_Load(false);
 
-		let aFonts = [];
-		aFonts.push(new AscFonts.CFont("Arial", 0, "", 0));
-		api.FontLoader.LoadDocumentFonts(aFonts, false);
+		api.Document.loadFonts(function loadFontsCallback() {
+			api.Document.draw(Zoom);
+		});
 	}
 
 	function holderOnDradOver(e)

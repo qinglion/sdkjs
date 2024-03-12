@@ -657,8 +657,8 @@
 	}
 
 	/**
+	 * Inherits style to master/shape or style to style. Process is the same.
 	 * Inherits all style elements (sections, rows, cells).
-	 * inherites style to master/shape or style to style. Process is the same.
 	 * @param {Shape_Type | StyleSheet_Type} thisArgument
 	 * @param {StyleSheet_Type[]} styles
 	 */

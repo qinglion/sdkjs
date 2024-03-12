@@ -301,6 +301,37 @@
 		let logic_w_inch = this.pages.page[0].pageSheet.elements.find(function(elem) {return elem.n === "PageWidth"}).v;
 		return logic_w_inch * g_dKoef_in_to_mm;
 	}
+
+	/**
+	 * Load fonts which are used in document and do callback (can be used to call CVisioDocument.prototype.draw)
+	 * @memberOf CVisioDocument
+	 * @param {function} callback
+	 */
+	CVisioDocument.prototype.loadFonts = function(callback) {
+		let api = this.api;
+
+		api.asyncFontsDocumentStartLoaded = function() {};
+		api.asyncFontsDocumentEndLoaded = callback;
+
+		let aFonts = [];
+		let newFontIndex = 0;
+		this.faceNames.forEach(function (faceName_Type) {
+			let nameU = faceName_Type.nameU;
+			let fontInfo = api.FontLoader.fontInfos.find(function(cFontInfo) {
+				return cFontInfo.Name === nameU;
+			});
+			if (fontInfo === undefined || fontInfo === null) {
+				console.log("Unknown font used in visio file");
+			} else {
+				console.log("Font", nameU, "will be loaded");
+				aFonts.push(new AscFonts.CFont(nameU, newFontIndex, "", 0));
+				newFontIndex += 1;
+			}
+		})
+
+		api.FontLoader.LoadDocumentFonts(aFonts, false);
+	}
+
 	/**
 	 * @memberOf CVisioDocument
 	 */
@@ -314,7 +345,6 @@
 	CVisioDocument.prototype.draw = function(Zoom, pGraphics) {
 		//HOTFIX
 		this.theme = this.themes[0];
-
 
 		let topLevelShapesAndGroups = this.convertToCShapes();
 

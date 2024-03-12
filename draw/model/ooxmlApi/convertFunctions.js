@@ -371,7 +371,6 @@
 			// see sdkjs/common/Drawings/CommonController.js createTextArt: function (nStyle, bWord, wsModel, sStartString)
 			// for examples
 			// https://api.onlyoffice.com/docbuilder/textdocumentapi just some related info
-			let nFontSize = 9;
 			let bWord = false;
 			textCShape.setWordShape(bWord);
 			textCShape.setBDeleted(false);
@@ -405,12 +404,13 @@
 			let oContent = textCShape.getDocContent();
 			oContent.Content = [];
 
+			let nFontSize = 9;
+
 			// read text
 			textElement.elements.forEach(function(textElementPart, i) {
 				if (typeof textElementPart === "string" || textElementPart.constructor.name === "fld_Type") {
-					// TODO The characters in a text run can be a reference to a text field.
 
-					// now create defaultParagraph
+					// create defaultParagraph
 					if (oContent.Content.length === 0) {
 						// create defaultParagraph
 						let defaultParagraph = new Paragraph(textCShape.getDrawingDocument(), null, true);
@@ -429,6 +429,8 @@
 					if (typeof textElementPart === "string") {
 						oRun.AddText(textElementPart);
 					} else if (textElementPart.constructor.name === "fld_Type") {
+						// text field
+
 						let optionalValue = textElementPart.value;
 
 						let fieldRowNum = textElementPart.iX;
@@ -479,6 +481,31 @@
 					} else {
 						console.log("font size was not found so default is set (9 pt)");
 					}
+					// oRun.SetFontSize(nFontSize);
+
+					// handle font (RFonts)
+					// TODO handle fonts that were unsopported on fonts loading in CVisioDocument.prototype.loadFonts
+					let cRFonts = new CRFonts();
+					cRFonts.Ascii = {Name: "Calibri", Index: 1};
+					cRFonts.HAnsi = {Name: "Calibri", Index: 1};
+					cRFonts.CS = {Name: "Calibri", Index: 1};
+					cRFonts.EastAsia = {Name: "Calibri", Index: 1};
+					let fontCell = characterPropsFinal && characterPropsFinal.getCell("Font");
+					if (fontCell && fontCell.constructor.name === "Cell_Type") {
+						// omit calculateCellValue here
+						// let fontColor = calculateCellValue(theme, shape, characterColorCell);
+
+						// all document fonts all loaded already in CVisioDocument.prototype.loadFonts
+
+						let fontName = fontCell.v;
+						cRFonts.Ascii = {Name: fontName, Index: 1};
+						cRFonts.HAnsi = {Name: fontName, Index: 1};
+						cRFonts.CS = {Name: fontName, Index: 1};
+						cRFonts.EastAsia = {Name: fontName, Index: 1};
+					} else {
+						console.log("fontCell was not found so default is set (Calibri). Check mb AsianFont or ScriptFont");
+					}
+					// oRun.Set_RFonts2(cRFonts);
 
 					// add run to defaultParagraph
 					paragraph.Add_ToContent(paragraph.Content.length - 1, oRun);
@@ -586,12 +613,11 @@
 			// setup text properties
 			let oTextPr;
 			oTextPr = new CTextPr();
-			// Why set font size to textPr not to text run?
 			oTextPr.FontSize = nFontSize;
-			oTextPr.RFonts.Ascii = {Name: "Arial", Index: -1};
-			oTextPr.RFonts.HAnsi = {Name: "Arial", Index: -1};
-			oTextPr.RFonts.CS = {Name: "Arial", Index: -1};
-			oTextPr.RFonts.EastAsia = {Name: "Arial", Index: -1};
+			oTextPr.RFonts.Ascii = {Name: "Calibri", Index: 1};
+			oTextPr.RFonts.HAnsi = {Name: "Calibri", Index: 1};
+			oTextPr.RFonts.CS = {Name: "Calibri", Index: 1};
+			oTextPr.RFonts.EastAsia = {Name: "Calibri", Index: 1};
 
 			// apply text properties
 			oContent.SetApplyToAll(true);
