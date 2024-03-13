@@ -467,7 +467,7 @@
 						fontColor.color.RGBA.B, false);
 					oRun.Set_Color(textColor1);
 
-					// handle fontSize
+					// handle fontSize (doesn't work - see comment below)
 					let fontSizeCell = characterPropsFinal && characterPropsFinal.getCell("Size");
 					if (fontSizeCell && fontSizeCell.constructor.name === "Cell_Type") {
 						// omit calculateCellValue here
@@ -481,6 +481,7 @@
 					} else {
 						console.log("font size was not found so default is set (9 pt)");
 					}
+					// i dont know why but when i set font size not for overall shape but for runs text shifts to the top
 					// oRun.SetFontSize(nFontSize);
 
 					// handle font (RFonts)
@@ -498,14 +499,16 @@
 						// all document fonts all loaded already in CVisioDocument.prototype.loadFonts
 
 						let fontName = fontCell.v;
-						cRFonts.Ascii = {Name: fontName, Index: 1};
-						cRFonts.HAnsi = {Name: fontName, Index: 1};
-						cRFonts.CS = {Name: fontName, Index: 1};
-						cRFonts.EastAsia = {Name: fontName, Index: 1};
+						if (fontName !== "Themed") {
+							cRFonts.Ascii = {Name: fontName, Index: -1};
+							cRFonts.HAnsi = {Name: fontName, Index: -1};
+							cRFonts.CS = {Name: fontName, Index: -1};
+							cRFonts.EastAsia = {Name: fontName, Index: -1};
+						}
 					} else {
 						console.log("fontCell was not found so default is set (Calibri). Check mb AsianFont or ScriptFont");
 					}
-					// oRun.Set_RFonts2(cRFonts);
+					// oRun.Set_RFonts(cRFonts);
 
 					// add run to defaultParagraph
 					paragraph.Add_ToContent(paragraph.Content.length - 1, oRun);
@@ -613,11 +616,12 @@
 			// setup text properties
 			let oTextPr;
 			oTextPr = new CTextPr();
+			// i dont know why but when i set font size not for overall shape but for runs text shifts to the top
 			oTextPr.FontSize = nFontSize;
-			oTextPr.RFonts.Ascii = {Name: "Calibri", Index: 1};
-			oTextPr.RFonts.HAnsi = {Name: "Calibri", Index: 1};
-			oTextPr.RFonts.CS = {Name: "Calibri", Index: 1};
-			oTextPr.RFonts.EastAsia = {Name: "Calibri", Index: 1};
+			oTextPr.RFonts.Ascii = {Name: "Calibri", Index: -1};
+			oTextPr.RFonts.HAnsi = {Name: "Calibri", Index: -1};
+			oTextPr.RFonts.CS = {Name: "Calibri", Index: -1};
+			oTextPr.RFonts.EastAsia = {Name: "Calibri", Index: -1};
 
 			// apply text properties
 			oContent.SetApplyToAll(true);

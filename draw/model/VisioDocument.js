@@ -314,7 +314,9 @@
 		api.asyncFontsDocumentEndLoaded = callback;
 
 		let aFonts = [];
-		let newFontIndex = 0;
+		// load Arial by default
+		aFonts.push(new AscFonts.CFont("Arial", 0, "", 0));
+		let newFontIndex = 1;
 		this.faceNames.forEach(function (faceName_Type) {
 			let nameU = faceName_Type.nameU;
 			let fontInfo = api.FontLoader.fontInfos.find(function(cFontInfo) {
@@ -327,7 +329,7 @@
 				aFonts.push(new AscFonts.CFont(nameU, newFontIndex, "", 0));
 				newFontIndex += 1;
 			}
-		})
+		});
 
 		api.FontLoader.LoadDocumentFonts(aFonts, false);
 	}
