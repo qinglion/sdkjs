@@ -170,6 +170,8 @@
 					// for text color
 					console.log("no text color found. so painting dk1.");
 					returnValue = AscFormat.builder_CreateSchemeColor("dk1");
+				} else {
+					console.log("no calculateCellValue result return undefined");
 				}
 			}
 			return returnValue;
@@ -484,8 +486,7 @@
 					// i dont know why but when i set font size not for overall shape but for runs text shifts to the top
 					// oRun.SetFontSize(nFontSize);
 
-					// handle font (RFonts)
-					// TODO handle fonts that were unsopported on fonts loading in CVisioDocument.prototype.loadFonts
+					// handle font
 					let cRFonts = new CRFonts();
 					cRFonts.Ascii = {Name: "Calibri", Index: 1};
 					cRFonts.HAnsi = {Name: "Calibri", Index: 1};
@@ -493,22 +494,31 @@
 					cRFonts.EastAsia = {Name: "Calibri", Index: 1};
 					let fontCell = characterPropsFinal && characterPropsFinal.getCell("Font");
 					if (fontCell && fontCell.constructor.name === "Cell_Type") {
-						// omit calculateCellValue here
+						// TODO support Themed values
 						// let fontColor = calculateCellValue(theme, shape, characterColorCell);
 
 						// all document fonts all loaded already in CVisioDocument.prototype.loadFonts
 
 						let fontName = fontCell.v;
-						if (fontName !== "Themed") {
-							cRFonts.Ascii = {Name: fontName, Index: -1};
-							cRFonts.HAnsi = {Name: fontName, Index: -1};
-							cRFonts.CS = {Name: fontName, Index: -1};
-							cRFonts.EastAsia = {Name: fontName, Index: -1};
+						if ( fontName !== "Themed") {
+							let loadedCFont = visioDocument.loadedFonts.find(function (cFont) {
+								return cFont.name === fontName;
+							});
+							if (loadedCFont !== undefined) {
+								cRFonts.Ascii = {Name: fontName, Index: -1};
+								cRFonts.HAnsi = {Name: fontName, Index: -1};
+								cRFonts.CS = {Name: fontName, Index: -1};
+								cRFonts.EastAsia = {Name: fontName, Index: -1};
+							} else {
+								console.log("Font was not found for Run. So default is set (Calibri).");
+							}
+						} else {
+							console.log("Font themed is unhandeled, Calibri is used.");
 						}
 					} else {
 						console.log("fontCell was not found so default is set (Calibri). Check mb AsianFont or ScriptFont");
 					}
-					// oRun.Set_RFonts(cRFonts);
+					oRun.Set_RFonts(cRFonts);
 
 					// add run to defaultParagraph
 					paragraph.Add_ToContent(paragraph.Content.length - 1, oRun);
@@ -618,10 +628,10 @@
 			oTextPr = new CTextPr();
 			// i dont know why but when i set font size not for overall shape but for runs text shifts to the top
 			oTextPr.FontSize = nFontSize;
-			oTextPr.RFonts.Ascii = {Name: "Calibri", Index: -1};
-			oTextPr.RFonts.HAnsi = {Name: "Calibri", Index: -1};
-			oTextPr.RFonts.CS = {Name: "Calibri", Index: -1};
-			oTextPr.RFonts.EastAsia = {Name: "Calibri", Index: -1};
+			// oTextPr.RFonts.Ascii = {Name: "Calibri", Index: -1};
+			// oTextPr.RFonts.HAnsi = {Name: "Calibri", Index: -1};
+			// oTextPr.RFonts.CS = {Name: "Calibri", Index: -1};
+			// oTextPr.RFonts.EastAsia = {Name: "Calibri", Index: -1};
 
 			// apply text properties
 			oContent.SetApplyToAll(true);

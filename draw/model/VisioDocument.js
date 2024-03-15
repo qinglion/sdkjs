@@ -50,6 +50,11 @@
 		this.documentSettings = null;
 		this.colors = [];
 		this.faceNames = [];
+		/**
+		 * see loadFonts function
+		 * @type {CFont[]}
+		 */
+		this.loadedFonts = [];
 		this.styleSheets = [];
 		this.documentSheet = null;
 		this.eventList = [];
@@ -303,7 +308,8 @@
 	}
 
 	/**
-	 * Load fonts which are used in document and do callback (can be used to call CVisioDocument.prototype.draw)
+	 * Load fonts which are used in document and do callback (can be used to call CVisioDocument.prototype.draw).
+	 * Inits this.loadedFonts.
 	 * @memberOf CVisioDocument
 	 * @param {function} callback
 	 */
@@ -313,7 +319,7 @@
 		api.asyncFontsDocumentStartLoaded = function() {};
 		api.asyncFontsDocumentEndLoaded = callback;
 
-		let aFonts = [];
+		let aFonts = this.loadedFonts;
 		// load Arial by default
 		aFonts.push(new AscFonts.CFont("Arial", 0, "", 0));
 		let newFontIndex = 1;
@@ -331,6 +337,7 @@
 			}
 		});
 
+		// may immediately call callback
 		api.FontLoader.LoadDocumentFonts(aFonts, false);
 	}
 

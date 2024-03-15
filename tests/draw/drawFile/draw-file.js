@@ -119,7 +119,7 @@
 		e.dataTransfer.dropEffect = isFile ? "copy" : "none";
 		e.preventDefault();
 		return false;
-	};
+	}
 
 	function holderOnDrop(e)
 	{
@@ -146,19 +146,19 @@
 
 	function windowOnLoad() {
 		setTimeout(function (){
-			let testFileRectangle = AscCommon.Base64.decode(Asc.rectangle);
-			let testFileTriangle = AscCommon.Base64.decode(Asc.triangle);
-			let testFileLineShapes = AscCommon.Base64.decode(Asc.lineShapes);
-			let testFileCircle = AscCommon.Base64.decode(Asc.circle);
-			let rectAndCircle = AscCommon.Base64.decode(Asc.rectAndCircle);
-			let basicShapesBstart = AscCommon.Base64.decode(Asc.basic_ShapesB_start);
-			let rotatedEllipticalArc = AscCommon.Base64.decode(Asc.rotatedEllipticalArc);
-			let rotatedEllipticalArc30 = AscCommon.Base64.decode(Asc.rotatedEllipticalArc30);
-			let rotatedEllipticalArc30NoBBCross = AscCommon.Base64.decode(Asc.rotatedEllipticalArc30NoBBCross);
-			let antiClockwiseEllipticalArc = AscCommon.Base64.decode(Asc.antiClockwiseEllipticalArc);
-			let rotatedEllipticalArc2_45 = AscCommon.Base64.decode(Asc.rotatedEllipticalArc2_45);
-			let rotatedEllipticalArcMod = AscCommon.Base64.decode(Asc.rotatedEllipticalArcMod);
-			let basic_ShapesC_start = AscCommon.Base64.decode(Asc.basic_ShapesC_start);
+			// let testFileRectangle = AscCommon.Base64.decode(Asc.rectangle);
+			// let testFileTriangle = AscCommon.Base64.decode(Asc.triangle);
+			// let testFileLineShapes = AscCommon.Base64.decode(Asc.lineShapes);
+			// let testFileCircle = AscCommon.Base64.decode(Asc.circle);
+			// let rectAndCircle = AscCommon.Base64.decode(Asc.rectAndCircle);
+			// let basicShapesBstart = AscCommon.Base64.decode(Asc.basic_ShapesB_start);
+			// let rotatedEllipticalArc = AscCommon.Base64.decode(Asc.rotatedEllipticalArc);
+			// let rotatedEllipticalArc30 = AscCommon.Base64.decode(Asc.rotatedEllipticalArc30);
+			// let rotatedEllipticalArc30NoBBCross = AscCommon.Base64.decode(Asc.rotatedEllipticalArc30NoBBCross);
+			// let antiClockwiseEllipticalArc = AscCommon.Base64.decode(Asc.antiClockwiseEllipticalArc);
+			// let rotatedEllipticalArc2_45 = AscCommon.Base64.decode(Asc.rotatedEllipticalArc2_45);
+			// let rotatedEllipticalArcMod = AscCommon.Base64.decode(Asc.rotatedEllipticalArcMod);
+			// let basic_ShapesC_start = AscCommon.Base64.decode(Asc.basic_ShapesC_start);
 			let sizeAndPositionStart = AscCommon.Base64.decode(Asc.sizeAndPositionStart);
 
 			if (localStorage.droppedTestFile) {
