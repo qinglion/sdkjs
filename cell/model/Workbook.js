@@ -9378,83 +9378,14 @@
 	 * @param {PivotDataElem} dataRow
 	 */
 	Worksheet.prototype._updatePivotTableCellsData = function(pivotTable, dataRow) {
-		const rowFields = pivotTable.asc_getRowFields();
 		const rowItems = pivotTable.getRowItems();
-		const colFields = pivotTable.asc_getColumnFields();
 		const colItems = pivotTable.getColItems();
-		const pivotFields = pivotTable.asc_getPivotFields();
 		const dataFields = pivotTable.asc_getDataFields();
 		if (!rowItems || !colItems || !dataFields) {
 			this.setFormatsCellsDataNoDataField(pivotTable);
 			return;
 		}
-		const valuesIndex = pivotTable.getRowFieldsValuesIndex();
-		const pivotRange = pivotTable.getRange();
-		const location = pivotTable.location;
-		const r1 = pivotRange.r1 + location.firstDataRow;
-		const c1 = pivotRange.c1 + location.firstDataCol;
-
-		const traversal = new AscCommonExcel.DataRowTraversal(pivotFields, dataFields, rowItems, colItems, rowFields, colFields);
-		traversal.initRow(dataRow);
-
-		const props = {rowFieldSubtotal: undefined, itemSd: undefined};
-		let fieldIndex;
-		for (let rowItemsIndex = 0; rowItemsIndex < rowItems.length; ++rowItemsIndex) {
-			const rowItem = rowItems[rowItemsIndex];
-			if (Asc.c_oAscItemType.Blank === rowItem.t) {
-				continue;
-			}
-			const rowR = rowItem.getR();
-			traversal.setStartRowIndex(rowR);
-			props.rowFieldSubtotal = Asc.c_oAscItemType.Default;
-			props.itemSd = true;
-			if (Asc.c_oAscItemType.Grand !== rowItem.t && rowFields) {
-				for (let rowItemsXIndex = 0; rowItemsXIndex < rowItem.x.length; ++rowItemsXIndex) {
-					fieldIndex = rowFields[rowR + rowItemsXIndex].asc_getIndex();
-					if (!traversal.setRowIndex(pivotFields, fieldIndex, rowItem, rowR, rowItemsXIndex, props)) {
-						break;
-					}
-				}
-			} else {
-				traversal.rowValueCache = [];
-				traversal.rowFieldItemCache = [];
-			}
-			if (Asc.c_oAscItemType.Data !== rowItem.t || !rowFields || rowR + rowItem.x.length === rowFields.length ||
-				(AscCommonExcel.st_VALUES !== fieldIndex && pivotFields[fieldIndex] &&
-				(pivotFields[fieldIndex].checkSubtotalTop() || !props.itemSd) && rowR > valuesIndex)) {
-
-				traversal.initCol(dataRow);
-				for (let colItemsIndex = 0; colItemsIndex < colItems.length; ++colItemsIndex) {
-					const colItem = colItems[colItemsIndex];
-					const colR = colItem.getR();
-					traversal.setStartColIndex(pivotFields, colItem, colR, colFields);
-					const oCellValue = traversal.getCellValue(dataFields, rowItem, colItem, props, dataRow, rowItemsIndex, colItemsIndex);
-					if (oCellValue) {
-						const dataIndex = Math.max(rowItem.i, colItem.i);
-						const cell = this.getRange4(r1 + rowItemsIndex, c1 + colItemsIndex);
-						const isGrandRow = rowItem.t === Asc.c_oAscItemType.Grand;
-						const isGrandCol = colItem.t === Asc.c_oAscItemType.Grand;
-						const axis = isGrandRow ? Asc.c_oAscAxis.AxisCol : Asc.c_oAscAxis.AxisRow;
-						const formatting = pivotTable.getFormatting({
-							valuesInfo: traversal.getCurrentItemFieldsInfo(rowItem, colItem),
-							isGrandRow: isGrandRow,
-							isGrandCol: isGrandCol,
-							isData: true,
-							type: Asc.c_oAscPivotAreaType.Normal,
-							field: isGrandRow ? traversal.fieldIndex : fieldIndex,
-							axis: axis,
-						});
-						if (formatting !== null) {
-							formatting.num = formatting.num || (dataFields[dataIndex].num)
-							cell.setStyle(formatting);
-						} else if (dataFields[dataIndex].num){
-							cell.setNum(dataFields[dataIndex].num);
-						}
-						cell.setValueData(new AscCommonExcel.UndoRedoData_CellValueData(null, oCellValue));
-					}
-				}
-			}
-		}
+		pivotTable.dataManager.update(dataRow);
 	};
 	/**
 	 * @param {CT_pivotTableDefinition} pivotTable 
