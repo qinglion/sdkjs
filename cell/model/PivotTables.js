@@ -326,6 +326,9 @@ function PivotDataElem(dataLength, isCalculated, isReady) {
 	/**@type {Object<number, PivotDataElem>} */
 	this.vals = {};
 	/**@type {Object<number, PivotDataElem>} */
+	/**@type {Object<number, PivotDataElem>} */
+	this.vals = {};
+	/**@type {Object<number, PivotDataElem>} */
 	this.subtotal = this.vals;
 	/**@type {StatisticOnlineAlgorithm[]} */
 	this.total = new Array(dataLength);
