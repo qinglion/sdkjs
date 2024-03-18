@@ -683,6 +683,7 @@
 			}
 
 			// handle cords
+
 			// to rotate around point we 1) add one more offset 2) rotate around center
 			// could be refactored maybe
 			// https://www.figma.com/file/jr1stjGUa3gKUBWxNAR80T/locPinHandle?type=design&node-id=0%3A1&mode=design&t=raXzFFsssqSexysi-1
@@ -718,9 +719,44 @@
 				let localXmm = (txtPinX_inch - txtLocPinX_inch) * g_dKoef_in_to_mm;
 				oXfrm.setOffX(globalXmm + localXmm); // mm
 
-				let globalYmm = cShape.spPr.xfrm.offY;
-				let localYmm = (txtPinY_inch - txtLocPinY_inch) * g_dKoef_in_to_mm;
-				oXfrm.setOffY(globalYmm + localYmm);
+				let flipYCell = shape.getCell("FlipY");
+				let flipVertically = flipYCell ?  flipYCell.v === "1" : false;
+				if (flipVertically) {
+					// if we flip figure we flip text pinY around shape pinY
+
+					if (txtPinY_inch > 0) {
+						// y cord of text block start. when cord system starts in left bottom corner on shape
+						let blockCord = txtPinY_inch - txtLocPinY_inch;
+						// (y part of vector) from shape center to txt block start
+						let fromShapeCenterToBlockStart = blockCord - shapeLocPinY;
+
+						let globalYmm = cShape.spPr.xfrm.offY;
+
+						// mirror distance fromBlock start ToShapeCenter then add text block height to it
+						// + shapeLocPinY made shift from shape center to shape bottom bcs we calculate
+						// localYmm starting from bottom of shape not from center
+						let localYmm = (-fromShapeCenterToBlockStart - txtHeight_inch + shapeLocPinY) * g_dKoef_in_to_mm;
+						oXfrm.setOffY(globalYmm + localYmm);
+					} else {
+						// negative, y part of vector. y cord of text block start. when cord system starts in left bottom corner on shape
+						let blockCord = txtPinY_inch + (txtHeight_inch - txtLocPinY_inch);
+
+						// lets make it negative like y part of vector. It comes from top to bottom.
+						// It is vector that comes from shape center to text block start.
+						let fromBlockToShapeCenter = blockCord - shapeLocPinY;
+
+						let globalYmm = cShape.spPr.xfrm.offY;
+						// Finally we mirror fromBlockToShapeCenter by multiplying by -1 and add shapeLocPinY to move its
+						// start to bottom on shape
+						let localYmm = (-fromBlockToShapeCenter + shapeLocPinY) * g_dKoef_in_to_mm;
+						oXfrm.setOffY(globalYmm + localYmm);
+					}
+				} else {
+					let globalYmm = cShape.spPr.xfrm.offY;
+					let localYmm = (txtPinY_inch - txtLocPinY_inch) * g_dKoef_in_to_mm;
+					oXfrm.setOffY(globalYmm + localYmm);
+				}
+
 
 				oXfrm.setExtX(txtWidth_inch * g_dKoef_in_to_mm);
 				oXfrm.setExtY(txtHeight_inch * g_dKoef_in_to_mm);
