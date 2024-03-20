@@ -9117,6 +9117,22 @@ PivotDataManager.prototype.getNextPaths = function(rowArrayV, colArrayV, rowItem
 	return null;
 };
 /**
+ * @param {CT_Field[]} fields 
+ * @param {number[]} arrayV 
+ */
+PivotDataManager.prototype.getParentVPath = function(fields, arrayV) {
+	if (arrayV.length < 2) {
+		return [];
+	}
+	if (arrayV.length === 2 && fields[0].asc_getIndex() === AscCommonExcel.st_VALUES) {
+		return [];
+	}
+	if (fields[arrayV.length - 2].asc_getIndex() !== AscCommonExcel.st_VALUES) {
+		return arrayV.slice(0, -1);
+	}
+	return arrayV.slice(0, -2);
+};
+/**
  * @return {ShowAsFunction}
  */
 PivotDataManager.prototype.getPercentOfCol = function() {
@@ -9127,7 +9143,7 @@ PivotDataManager.prototype.getPercentOfCol = function() {
 		const colItems = t.pivot.getColItems();
 		const colItem = colItems[options.colItemIndex];
 		const dataField = t.pivot.asc_getDataFields()[options.dataIndex];
-		const colElem = t.getDataElemSubtotal(options.colArrayV, colItem.getR(), t.rowCache[0], colItem);
+		const colElem = t.getDataElemSubtotal(options.colArrayV, 0, t.rowCache[0], colItem);
 		const colTotal = colElem.total[options.dataIndex];
 		const colTotalCellValue = colTotal.getCellValue(dataField.subtotal, Asc.c_oAscItemType.Default, Asc.c_oAscItemType.Grand, colItem.t);
 		const cellValue = t.getCellValue({
@@ -9168,6 +9184,118 @@ PivotDataManager.prototype.getPercentOfRow = function() {
 			cachedColDepth: colItem.getR(),
 		}) || t.getZeroCellValue();
 		return t.divCellValues(cellValue, rowTotalCellValue);
+	}
+};
+/**
+ * @return {ShowAsFunction}
+ */
+PivotDataManager.prototype.getPercentOfParentRow = function() {
+	const t = this;
+	return function(options) {
+		const rowItems = t.pivot.getRowItems();
+		const rowItem = rowItems[options.rowItemIndex];
+		const colItems = t.pivot.getColItems();
+		const colItem = colItems[options.colItemIndex];
+		const rowFields = t.pivot.asc_getRowFields();
+		const dataField = t.pivot.asc_getDataFields()[options.dataIndex];
+		const rowParentV = t.getParentVPath(rowFields, options.rowArrayV);
+		const rowParentCellValue = t.getCellValue({
+			rowArrayV: rowParentV,
+			colArrayV: options.colArrayV,
+			rowItem: rowItem,
+			colItem: colItem,
+			dataField: dataField,
+			dataIndex: options.dataIndex,
+			cachedRowDepth: rowParentV.length,
+			cachedColDepth: 0,
+		});
+		const cellValue = t.getCellValue({
+			rowArrayV: options.rowArrayV,
+			colArrayV: options.colArrayV,
+			rowItem: rowItem,
+			colItem: colItem,
+			dataField: dataField,
+			dataIndex: options.dataIndex,
+			cachedRowDepth: rowItem.getR(),
+			cachedColDepth: colItem.getR(),
+		}) || t.getZeroCellValue();
+		return t.divCellValues(cellValue, rowParentCellValue);
+	}
+};
+/**
+ * @return {ShowAsFunction}
+ */
+PivotDataManager.prototype.getPercentOfParentCol = function() {
+	const t = this;
+	return function(options) {
+		const rowItems = t.pivot.getRowItems();
+		const rowItem = rowItems[options.rowItemIndex];
+		const colItems = t.pivot.getColItems();
+		const colItem = colItems[options.colItemIndex];
+		const colFields = t.pivot.asc_getColumnFields();
+		const dataField = t.pivot.asc_getDataFields()[options.dataIndex];
+		const colParentV = t.getParentVPath(colFields, options.colArrayV);
+		const colParentCellValue = t.getCellValue({
+			rowArrayV: options.rowArrayV,
+			colArrayV: colParentV,
+			rowItem: rowItem,
+			colItem: colItem,
+			dataField: dataField,
+			dataIndex: options.dataIndex,
+			cachedRowDepth: rowItem.getR(),
+			cachedColDepth: colParentV.length,
+		});
+		const cellValue = t.getCellValue({
+			rowArrayV: options.rowArrayV,
+			colArrayV: options.colArrayV,
+			rowItem: rowItem,
+			colItem: colItem,
+			dataField: dataField,
+			dataIndex: options.dataIndex,
+			cachedRowDepth: rowItem.getR(),
+			cachedColDepth: colItem.getR(),
+		}) || t.getZeroCellValue();
+		return t.divCellValues(cellValue, colParentCellValue);
+	}
+};
+/**
+ * @return {ShowAsFunction}
+ */
+PivotDataManager.prototype.getIndex = function() {
+	const t = this;
+	return function(options) {
+		const rowItems = t.pivot.getRowItems();
+		const rowItem = rowItems[options.rowItemIndex];
+		const colItems = t.pivot.getColItems();
+		const colItem = colItems[options.colItemIndex];
+		const dataField = t.pivot.asc_getDataFields()[options.dataIndex];
+
+		const colElem = t.getDataElemSubtotal(options.colArrayV, 0, t.rowCache[0], colItem);
+		const colTotal = colElem.total[options.dataIndex];
+		const colTotalCellValue = colTotal.getCellValue(dataField.subtotal, Asc.c_oAscItemType.Default, Asc.c_oAscItemType.Grand, colItem.t);
+
+		const rowElem = t.getDataElemVal(options.rowArrayV, rowItem.getR(), rowItem);
+		const rowTotal = rowElem.data.total[options.dataIndex];
+		const rowTotalCellValue = rowTotal.getCellValue(dataField.subtotal, rowElem.subtotalType, rowItem.t, Asc.c_oAscItemType.Grand);
+
+		const total = t.rowCache[0].total[options.dataIndex];
+		const grandCellValue = total.getCellValue(dataField.subtotal, Asc.c_oAscItemType.Default, Asc.c_oAscItemType.Grand, Asc.c_oAscItemType.Grand);
+
+		const cellValue = t.getCellValue({
+			rowArrayV: options.rowArrayV,
+			colArrayV: options.colArrayV,
+			rowItem: rowItem,
+			colItem: colItem,
+			dataField: dataField,
+			dataIndex: options.dataIndex,
+			cachedRowDepth: rowItem.getR(),
+			cachedColDepth: colItem.getR(),
+		}) || t.getZeroCellValue();
+
+		const specGravity = t.divCellValues(cellValue, colTotalCellValue);
+		const totalSpecGravity = t.divCellValues(rowTotalCellValue, grandCellValue);
+
+		return t.divCellValues(specGravity, totalSpecGravity);
 	}
 };
 /**
@@ -9218,7 +9346,8 @@ PivotDataManager.prototype.getPercentOfTotal = function() {
 			cachedColDepth: colItem.getR(),
 		});
 		if (totalCellValue) {
-			const grandCellValue = t.rowCache[0].total[dataIndex].getCellValue(dataField.subtotal, Asc.c_oAscItemType.Default, Asc.c_oAscItemType.Grand, Asc.c_oAscItemType.Grand)
+			const total = t.rowCache[0].total[dataIndex];
+			const grandCellValue = total.getCellValue(dataField.subtotal, Asc.c_oAscItemType.Default, Asc.c_oAscItemType.Grand, Asc.c_oAscItemType.Grand);
 			return t.divCellValues(totalCellValue, grandCellValue);
 		}
 		return t.getZeroCellValue();
@@ -9230,6 +9359,7 @@ PivotDataManager.prototype.getPercentOfTotal = function() {
 PivotDataManager.prototype.getDifference = function() {
 	const t = this;
 	return function(options) {
+		// TODO
 		if (t.cache[options.rowItemIndex] && t.cache[options.rowItemIndex][options.colItemIndex]) {
 			return t.cache[options.rowItemIndex][options.colItemIndex];
 		}
@@ -9361,7 +9491,6 @@ PivotDataManager.prototype.getCellValue = function(options) {
 		}
 		return null;
 	}
-	// return this.getErrorCellvalue(AscCommonExcel.cErrorType.not_available);
 	return null;
 };
 /**
