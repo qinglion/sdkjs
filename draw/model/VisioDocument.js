@@ -267,6 +267,7 @@
 
 	/**
 	 * @memberOf CVisioDocument
+	 * @return {number}
 	 */
 	CVisioDocument.prototype.getObjectType = function() {
 		//to be parent of shape
@@ -276,22 +277,25 @@
 	/**
 	 * get zoom from 0 to 100
 	 * @memberOf CVisioDocument
+	 * @param displayedWidthPx
+	 * @param displayedHeightPX
+	 * @return {number}
 	 */
-	CVisioDocument.prototype.zoom_FitToPage_value = function(logic_w_mm, logic_h_mm, w_px, h_px) {
-		var _value = 100;
+	CVisioDocument.prototype.getFitZoomValue = function(displayedWidthPx, displayedHeightPX) {
+		let logic_w_mm = this.getWidthMM();
+		let logic_h_mm = this.getHeightMM();
 
-		var w = w_px;
-		var h = h_px;
+		var _value = 100;
 
 		var _pageWidth  = logic_w_mm * g_dKoef_mm_to_pix;
 		var _pageHeight = logic_h_mm * g_dKoef_mm_to_pix;
 
 		var _hor_Zoom = 100;
 		if (0 != _pageWidth)
-			_hor_Zoom = (100 * w) / _pageWidth;
+			_hor_Zoom = (100 * displayedWidthPx) / _pageWidth;
 		var _ver_Zoom = 100;
 		if (0 != _pageHeight)
-			_ver_Zoom = (100 * h) / _pageHeight;
+			_ver_Zoom = (100 * displayedHeightPX) / _pageHeight;
 
 		_value = Math.min(_hor_Zoom, _ver_Zoom);
 
@@ -301,10 +305,19 @@
 	/**
 	 * @memberOf CVisioDocument
 	 */
-	CVisioDocument.prototype.GetWidthMM = function() {
+	CVisioDocument.prototype.getWidthMM = function() {
 		//todo units, indexes
 		let logic_w_inch = this.pages.page[0].pageSheet.elements.find(function(elem) {return elem.n === "PageWidth"}).v;
 		return logic_w_inch * g_dKoef_in_to_mm;
+	}
+
+
+	/**
+	 * @memberOf CVisioDocument
+	 */
+	CVisioDocument.prototype.getHeightMM = function() {
+		let logic_h_inch = this.pages.page[0].pageSheet.elements.find(function(elem) {return elem.n === "PageHeight"}).v;
+		return logic_h_inch * g_dKoef_in_to_mm;
 	}
 
 	/**
@@ -341,13 +354,7 @@
 		api.FontLoader.LoadDocumentFonts(aFonts, false);
 	}
 
-	/**
-	 * @memberOf CVisioDocument
-	 */
-	CVisioDocument.prototype.GetHeightMM = function() {
-		let logic_h_inch = this.pages.page[0].pageSheet.elements.find(function(elem) {return elem.n === "PageHeight"}).v;
-		return logic_h_inch * g_dKoef_in_to_mm;
-	}
+
 	/**
 	 * @memberOf CVisioDocument
 	 */
@@ -358,11 +365,18 @@
 		let topLevelShapesAndGroups = this.convertToCShapes();
 
 		let api = this.api;
-		let logic_w_mm = this.GetWidthMM();
-		let logic_h_mm = this.GetHeightMM();
+		let logic_w_mm = this.getWidthMM();
+		let logic_h_mm = this.getHeightMM();
 
 		let graphics;
-		let pageScale = Zoom / 100;
+
+		let useFitToScreenZoom = true;
+		let pageScale;
+		if (useFitToScreenZoom) {
+			Zoom = Zoom/100 * this.getFitZoomValue(api.HtmlElement.offsetWidth,api.HtmlElement.offsetHeight);
+		}
+		pageScale = Zoom / 100;
+
 		if (pGraphics) {
 			graphics = pGraphics;
 		} else {
