@@ -355,6 +355,166 @@
 				}
 			}
 
+			/**
+			 * @param propsRowNum
+			 * @param {?Section_Type} paragraphPropsCommon
+			 * @param textCShape
+			 */
+			function parseParagraphAndAddToShapeContent(propsRowNum, paragraphPropsCommon, textCShape) {
+				if (paragraphPropsCommon === null) {
+					console.log("paragraphPropsCommon is null. Creating default paragraph");
+					// create new paragraph to hold new properties
+					let oContent = textCShape.getDocContent();
+					let paragraph = new Paragraph(textCShape.getDrawingDocument(), null, true);
+					// Set defaultParagraph justify/align text - center
+					paragraph.Pr.SetJc(AscCommon.align_Left);
+					oContent.Content.push(paragraph);
+					paragraph.SetParent(oContent);
+					return;
+				}
+				let paragraphPropsFinal = propsRowNum !== null && paragraphPropsCommon.getRow(propsRowNum);
+
+				// handle horizontal align
+
+				// 0 Specifies that the defaultParagraph is left aligned.
+				// 1 Specifies that the defaultParagraph is centered.
+				// 2 Specifies that the defaultParagraph is right aligned.
+				// 3 Specifies that the defaultParagraph is justified.
+				// 4 Specifies that the defaultParagraph is distributed.
+				let hAlignCell = paragraphPropsFinal && paragraphPropsFinal.getCell("HorzAlign");
+
+				let horizontalAlign = AscCommon.align_Left;
+				if (hAlignCell && hAlignCell.constructor.name === "Cell_Type") {
+					// omit calculateCellValue here
+					// let fontColor = calculateCellValue(theme, shape, characterColorCell);
+					let horAlignTryParse = Number(hAlignCell.v);
+					if (!isNaN(horAlignTryParse)) {
+						switch (horAlignTryParse) {
+							case 0:
+								horizontalAlign = AscCommon.align_Left;
+								break;
+							case 1:
+								horizontalAlign = AscCommon.align_Center;
+								break;
+							case 2:
+								horizontalAlign = AscCommon.align_Right;
+								break;
+							case 3:
+								horizontalAlign = AscCommon.align_Justify;
+								break;
+							case 4:
+								horizontalAlign = AscCommon.align_Distributed;
+								break;
+						}
+					} else {
+						console.log("horizontal align was not parsed so default is set (left)");
+					}
+				} else {
+					console.log("horizontal align cell was not found so default is set (left)");
+				}
+
+
+				// create new paragraph to hold new properties
+				let oContent = textCShape.getDocContent();
+				let paragraph = new Paragraph(textCShape.getDrawingDocument(), null, true);
+				// Set defaultParagraph justify/align text - center
+				paragraph.Pr.SetJc(horizontalAlign);
+				oContent.Content.push(paragraph);
+				paragraph.SetParent(oContent);
+
+				// paragraph.Pr.Spacing.Before = 0;
+				// paragraph.Pr.Spacing.After = 0;
+			}
+
+
+			/**
+			 * Parses run props and adds run to paragraph
+			 * @param characterRowNum
+			 * @param characterPropsCommon
+			 * @param oRun
+			 * @param paragraph
+			 * @param lineUniFill
+			 * @param fillUniFill
+			 * @param theme
+			 * @param shape
+			 * @param visioDocument
+			 */
+			function parseRunAndAddToParagraph(characterRowNum, characterPropsCommon,  oRun, paragraph, lineUniFill, fillUniFill, theme, shape, visioDocument) {
+				let characterPropsFinal = characterRowNum !== null && characterPropsCommon.getRow(characterRowNum);
+
+				// handle Color
+				let characterColorCell = characterPropsFinal && characterPropsFinal.getCell("Color");
+				let fontColor;
+				if (characterColorCell && characterColorCell.constructor.name === "Cell_Type") {
+					fontColor = calculateCellValue(theme, shape, characterColorCell);
+				} else {
+					console.log("text color cell not found! set text color as themed");
+					fontColor = AscCommonDraw.themeval(visioDocument.themes[0], shape, null, "TextColor");
+				}
+				// no RGBA.A alpha channel considered
+				fontColor.Calculate(theme);
+				handleTextQuickStyleVariation(fontColor, lineUniFill, fillUniFill);
+				const textColor1 = new CDocumentColor(fontColor.color.RGBA.R, fontColor.color.RGBA.G,
+					fontColor.color.RGBA.B, false);
+				oRun.Set_Color(textColor1);
+
+				// handle fontSize (doesn't work - see comment below)
+				let fontSizeCell = characterPropsFinal && characterPropsFinal.getCell("Size");
+				if (fontSizeCell && fontSizeCell.constructor.name === "Cell_Type") {
+					// omit calculateCellValue here
+					// let fontColor = calculateCellValue(theme, shape, characterColorCell);
+					let fontSize = Number(fontSizeCell.v);
+					if (!isNaN(fontSize)) {
+						nFontSize = fontSize * 72; // convert from in to pt
+					} else {
+						console.log("font size was not parsed so default is set (9 pt)");
+					}
+				} else {
+					console.log("font size was not found so default is set (9 pt)");
+				}
+				// i dont know why but when i set font size not for overall shape but for runs text shifts to the top
+				// oRun.SetFontSize(nFontSize);
+
+				// handle font
+				let cRFonts = new CRFonts();
+				cRFonts.Ascii = {Name: "Calibri", Index: 1};
+				cRFonts.HAnsi = {Name: "Calibri", Index: 1};
+				cRFonts.CS = {Name: "Calibri", Index: 1};
+				cRFonts.EastAsia = {Name: "Calibri", Index: 1};
+				let fontCell = characterPropsFinal && characterPropsFinal.getCell("Font");
+				if (fontCell && fontCell.constructor.name === "Cell_Type") {
+					// TODO support Themed values
+					// let fontColor = calculateCellValue(theme, shape, characterColorCell);
+
+					// all document fonts all loaded already in CVisioDocument.prototype.loadFonts
+
+					let fontName = fontCell.v;
+					if (fontName !== "Themed") {
+						let loadedCFont = visioDocument.loadedFonts.find(function (cFont) {
+							return cFont.name === fontName;
+						});
+						if (loadedCFont !== undefined) {
+							cRFonts.Ascii = {Name: fontName, Index: -1};
+							cRFonts.HAnsi = {Name: fontName, Index: -1};
+							cRFonts.CS = {Name: fontName, Index: -1};
+							cRFonts.EastAsia = {Name: fontName, Index: -1};
+						} else {
+							console.log("Font was not found for Run. So default is set (Calibri).");
+						}
+					} else {
+						console.log("Font themed is unhandeled, Calibri is used.");
+					}
+				} else {
+					console.log("fontCell was not found so default is set (Calibri). Check mb AsianFont or ScriptFont");
+				}
+				oRun.Set_RFonts(cRFonts);
+
+				// add run to last paragraph
+				paragraph.Add_ToContent(paragraph.Content.length - 1, oRun);
+			}
+
+
+
 			let textElement = shape.getTextElement();
 			if (!textElement) {
 				return null;
@@ -389,7 +549,7 @@
 			// to work with text separated into ParaRuns to split properties use
 
 			// read propsCommonObjects
-			let characherPropsCommon = shape.getSection("Character");
+			let characterPropsCommon = shape.getSection("Character");
 			let paragraphPropsCommon = shape.getSection("Paragraph");
 			let fieldPropsCommon = shape.getSection("Field");
 
@@ -414,13 +574,7 @@
 
 					// create defaultParagraph
 					if (oContent.Content.length === 0) {
-						// create defaultParagraph
-						let defaultParagraph = new Paragraph(textCShape.getDrawingDocument(), null, true);
-						// Set defaultParagraph justify/align text - center
-						defaultParagraph.Pr.SetJc(AscCommon.align_Center);
-						// oDocContent.Push(oParagraph); - ApiDocumentContent.prototype.Push
-						oContent.Content.push(defaultParagraph);
-						defaultParagraph.SetParent(oContent);
+						parseParagraphAndAddToShapeContent(0, paragraphPropsCommon, textCShape);
 					}
 					let paragraph = oContent.Content.slice(-1)[0];
 
@@ -449,136 +603,20 @@
 					}
 
 					// setup Run
-					// check character properties: get cp_Type object and in characherPropsCommon get needed Row
+					// check character properties: get cp_Type object and in characterPropsCommon get needed Row
 					let characterRowNum = propsRunsObjects.cp_Type && propsRunsObjects.cp_Type.iX;
-					let characterPropsFinal = characterRowNum !== null && characherPropsCommon.getRow(characterRowNum);
-
-					// handle Color
-					let characterColorCell = characterPropsFinal && characterPropsFinal.getCell("Color");
-					let fontColor;
-					if (characterColorCell && characterColorCell.constructor.name === "Cell_Type") {
-						fontColor = calculateCellValue(theme, shape, characterColorCell);
-					} else {
-						console.log("text color cell not found! set text color as themed");
-						fontColor = AscCommonDraw.themeval(visioDocument.themes[0], shape, null, "TextColor");
+					if (propsRunsObjects.cp_Type === null) {
+						characterRowNum = 0;
 					}
-					// no RGBA.A alpha channel considered
-					fontColor.Calculate(theme);
-					handleTextQuickStyleVariation(fontColor, lineUniFill, fillUniFill);
-					var textColor1 = new CDocumentColor(fontColor.color.RGBA.R, fontColor.color.RGBA.G,
-						fontColor.color.RGBA.B, false);
-					oRun.Set_Color(textColor1);
-
-					// handle fontSize (doesn't work - see comment below)
-					let fontSizeCell = characterPropsFinal && characterPropsFinal.getCell("Size");
-					if (fontSizeCell && fontSizeCell.constructor.name === "Cell_Type") {
-						// omit calculateCellValue here
-						// let fontColor = calculateCellValue(theme, shape, characterColorCell);
-						let fontSize = Number(fontSizeCell.v);
-						if (!isNaN(fontSize)) {
-							nFontSize = fontSize * 72; // convert from in to pt
-						} else {
-							console.log("font size was not parsed so default is set (9 pt)");
-						}
-					} else {
-						console.log("font size was not found so default is set (9 pt)");
-					}
-					// i dont know why but when i set font size not for overall shape but for runs text shifts to the top
-					// oRun.SetFontSize(nFontSize);
-
-					// handle font
-					let cRFonts = new CRFonts();
-					cRFonts.Ascii = {Name: "Calibri", Index: 1};
-					cRFonts.HAnsi = {Name: "Calibri", Index: 1};
-					cRFonts.CS = {Name: "Calibri", Index: 1};
-					cRFonts.EastAsia = {Name: "Calibri", Index: 1};
-					let fontCell = characterPropsFinal && characterPropsFinal.getCell("Font");
-					if (fontCell && fontCell.constructor.name === "Cell_Type") {
-						// TODO support Themed values
-						// let fontColor = calculateCellValue(theme, shape, characterColorCell);
-
-						// all document fonts all loaded already in CVisioDocument.prototype.loadFonts
-
-						let fontName = fontCell.v;
-						if ( fontName !== "Themed") {
-							let loadedCFont = visioDocument.loadedFonts.find(function (cFont) {
-								return cFont.name === fontName;
-							});
-							if (loadedCFont !== undefined) {
-								cRFonts.Ascii = {Name: fontName, Index: -1};
-								cRFonts.HAnsi = {Name: fontName, Index: -1};
-								cRFonts.CS = {Name: fontName, Index: -1};
-								cRFonts.EastAsia = {Name: fontName, Index: -1};
-							} else {
-								console.log("Font was not found for Run. So default is set (Calibri).");
-							}
-						} else {
-							console.log("Font themed is unhandeled, Calibri is used.");
-						}
-					} else {
-						console.log("fontCell was not found so default is set (Calibri). Check mb AsianFont or ScriptFont");
-					}
-					oRun.Set_RFonts(cRFonts);
-
-					// add run to defaultParagraph
-					paragraph.Add_ToContent(paragraph.Content.length - 1, oRun);
+					parseRunAndAddToParagraph(characterRowNum, characterPropsCommon,
+						oRun, paragraph, lineUniFill, fillUniFill, theme, shape,
+						visioDocument);
 				} else if (textElementPart.constructor.name === "pp_Type") {
 					// setup Paragraph
 
 					// check defaultParagraph properties: get pp_Type object and in paragraphPropsCommon get needed Row
 					let paragraphRowNum = textElementPart.iX;
-					let paragraphPropsFinal = paragraphRowNum !== null && paragraphPropsCommon.getRow(paragraphRowNum);
-
-					// handle horizontal align
-
-					// 0 Specifies that the defaultParagraph is left aligned.
-					// 1 Specifies that the defaultParagraph is centered.
-					// 2 Specifies that the defaultParagraph is right aligned.
-					// 3 Specifies that the defaultParagraph is justified.
-					// 4 Specifies that the defaultParagraph is distributed.
-					let hAlignCell = paragraphPropsFinal && paragraphPropsFinal.getCell("HorzAlign");
-
-					let horizontalAlign = AscCommon.align_Left;
-					if (hAlignCell && hAlignCell.constructor.name === "Cell_Type") {
-						// omit calculateCellValue here
-						// let fontColor = calculateCellValue(theme, shape, characterColorCell);
-						let horAlignTryParse = Number(hAlignCell.v);
-						if (!isNaN(horAlignTryParse)) {
-							switch (horAlignTryParse) {
-								case 0:
-									horizontalAlign = AscCommon.align_Left;
-									break;
-								case 1:
-									horizontalAlign = AscCommon.align_Center;
-									break;
-								case 2:
-									horizontalAlign = AscCommon.align_Right;
-									break;
-								case 3:
-									horizontalAlign = AscCommon.align_Justify;
-									break;
-								case 4:
-									horizontalAlign = AscCommon.align_Distributed;
-									break;
-							}
-						} else {
-							console.log("horizontal align was not parsed so default is set (left)");
-						}
-					} else {
-						console.log("horizontal align cell was not found so default is set (left)");
-					}
-
-
-					// create new paragraph to hold new properties
-					let oContent = textCShape.getDocContent();
-					let paragraph = new Paragraph(textCShape.getDrawingDocument(), null, true);
-					// Set defaultParagraph justify/align text - center
-					paragraph.Pr.SetJc(horizontalAlign);
-					oContent.Content.push(paragraph);
-					paragraph.SetParent(oContent);
-
-					// paragraph.Pr.Spacing.Before = 0;
-					// paragraph.Pr.Spacing.After = 0;
+					parseParagraphAndAddToShapeContent(paragraphRowNum, paragraphPropsCommon, textCShape);
 
 				} else if (textElementPart.constructor.name === "cp_Type" || textElementPart.constructor.name === "tp_Type") {
 					propsRunsObjects[textElementPart.constructor.name] = textElementPart;
@@ -590,12 +628,7 @@
 			// create defaultParagraph if no strings found
 			if (oContent.Content.length === 0) {
 				// create defaultParagraph
-				let defaultParagraph = new Paragraph(textCShape.getDrawingDocument(), null, true);
-				// Set defaultParagraph justify/align text - center
-				defaultParagraph.Pr.SetJc(AscCommon.align_Center);
-				// oDocContent.Push(oParagraph); - ApiDocumentContent.prototype.Push
-				oContent.Content.push(defaultParagraph);
-				defaultParagraph.SetParent(oContent);
+				parseParagraphAndAddToShapeContent(0, paragraphPropsCommon, textCShape);
 			}
 
 			// handle horizontal align i. e. defaultParagraph align
@@ -640,7 +673,7 @@
 			oContent.SetApplyToAll(false);
 
 			let oBodyPr = textCShape.getBodyPr().createDuplicate();
-			// oBodyPr.rot = 0;
+			oBodyPr.rot = 0;
 			// oBodyPr.spcFirstLastPara = false;
 			// oBodyPr.vertOverflow = AscFormat.nVOTOverflow;
 			// oBodyPr.horzOverflow = AscFormat.nHOTOverflow;
@@ -682,18 +715,21 @@
 				textCShape.txBody.setBodyPr(oBodyPr);
 			}
 
+
 			// handle cords
 
 			// to rotate around point we 1) add one more offset 2) rotate around center
 			// could be refactored maybe
 			// https://www.figma.com/file/jr1stjGUa3gKUBWxNAR80T/locPinHandle?type=design&node-id=0%3A1&mode=design&t=raXzFFsssqSexysi-1
-			let txtPinX_inch = shape.getCellNumberValue("TxtPinX");;
+			let txtPinX_inch = shape.getCellNumberValue("TxtPinX");
 			let txtPinY_inch = shape.getCellNumberValue("TxtPinY");
 
 
 			// consider https://disk.yandex.ru/d/2XzRaPTKzKHFjA
 			// where TxtHeight and TxtWidth get all shape height and width and txtPinX_inch and txtPinY_inch are not defined
 			// also check for {}, undefined, NaN, null
+			let oSpPr = new AscFormat.CSpPr();
+			let oXfrm = new AscFormat.CXfrm();
 			if (!(isNaN(txtPinX_inch) || txtPinX_inch === null)  && !(isNaN(txtPinY_inch) || txtPinY_inch === null)) {
 				// https://www.figma.com/file/WiAC4sxQuJaq65h6xppMYC/cloudFare?type=design&node-id=0%3A1&mode=design&t=SZbio0yIyxq0YnMa-1s
 
@@ -711,9 +747,6 @@
 				// defaultParagraph.Pr.SetJc(AscCommon.align_Left);
 				let oBodyPr = textCShape.getBodyPr().createDuplicate();
 				// oBodyPr.anchor = 4; // 4 - bottom, 1,2,3 - center
-
-				let oSpPr = new AscFormat.CSpPr();
-				let oXfrm = new AscFormat.CXfrm();
 
 				let globalXmm = cShape.spPr.xfrm.offX;
 				let localXmm = (txtPinX_inch - txtLocPinX_inch) * g_dKoef_in_to_mm;
@@ -757,22 +790,11 @@
 					oXfrm.setOffY(globalYmm + localYmm);
 				}
 
-
 				oXfrm.setExtX(txtWidth_inch * g_dKoef_in_to_mm);
 				oXfrm.setExtY(txtHeight_inch * g_dKoef_in_to_mm);
-				oXfrm.setRot(0);
-
-				oSpPr.setXfrm(oXfrm);
-				oXfrm.setParent(oSpPr);
-				oSpPr.setFill(AscFormat.CreateNoFillUniFill());
-				oSpPr.setLn(AscFormat.CreateNoFillLine());
-
-				textCShape.setSpPr(oSpPr);
-				oSpPr.setParent(textCShape);
+				oXfrm.setRot( 0);
 			} else {
 				// create text block with shape sizes
-				let oSpPr = new AscFormat.CSpPr();
-				let oXfrm = new AscFormat.CXfrm();
 				let globalXmm = cShape.spPr.xfrm.offX;
 				let globalYmm = cShape.spPr.xfrm.offY;
 				oXfrm.setOffX(globalXmm); // mm
@@ -780,15 +802,14 @@
 				oXfrm.setExtX(shapeWidth_inch * g_dKoef_in_to_mm);
 				oXfrm.setExtY(shapeHeight_inch * g_dKoef_in_to_mm);
 				oXfrm.setRot(0);
-
-				oSpPr.setXfrm(oXfrm);
-				oXfrm.setParent(oSpPr);
-				oSpPr.setFill(AscFormat.CreateNoFillUniFill());
-				oSpPr.setLn(AscFormat.CreateNoFillLine());
-
-				textCShape.setSpPr(oSpPr);
-				oSpPr.setParent(textCShape);
 			}
+			oSpPr.setXfrm(oXfrm);
+			oXfrm.setParent(oSpPr);
+			oSpPr.setFill(AscFormat.CreateNoFillUniFill());
+			oSpPr.setLn(AscFormat.CreateNoFillLine());
+
+			textCShape.setSpPr(oSpPr);
+			oSpPr.setParent(textCShape);
 
 			// just trash below
 			//

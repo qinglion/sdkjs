@@ -65,8 +65,13 @@
 		return this;
 	}
 
-	// Docs old:
-	// Section_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/section_type-complextypevisio-xml
+
+	/**
+	 *    // Docs old:
+	 *    // Section_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/section_type-complextypevisio-xml
+	 * @return {Section_Type}
+	 * @constructor
+	 */
 	function Section_Type() {
 		this.n = null;
 		this.del = null;
@@ -125,8 +130,13 @@
 		return this;
 	}
 
-	// Docs old:
-	// Row_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/row_type-complextypevisio-xml
+
+	/**
+	 *    // Docs old:
+	 *    // Row_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/row_type-complextypevisio-xml
+	 * @return {Row_Type}
+	 * @constructor
+	 */
 	function Row_Type() {
 		this.n = null;
 		this.localName = null;
@@ -145,6 +155,14 @@
 	}
 
 
+	/**
+	 *
+	 * @param obj
+	 * @param {string} constructorName
+	 * @param {string} [attributeName]
+	 * @param attributeValue
+	 * @return {*|null}
+	 */
 	function findObject(obj, constructorName, attributeName, attributeValue) {
 		let attributeCheck = true;
 		if (attributeName === undefined) {
