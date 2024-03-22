@@ -2549,6 +2549,10 @@
 				return aColors[this.val % aColors.length];
 			}
 		};
+
+		/**
+		 * @constructor
+		 */
 		function CUniColor() {
 			CBaseNoIdObject.call(this);
 			this.color = null;

@@ -277,13 +277,14 @@
 	/**
 	 * get zoom from 0 to 100
 	 * @memberOf CVisioDocument
+	 * @param pageIndex
 	 * @param displayedWidthPx
 	 * @param displayedHeightPX
 	 * @return {number}
 	 */
-	CVisioDocument.prototype.getFitZoomValue = function(displayedWidthPx, displayedHeightPX) {
-		let logic_w_mm = this.getWidthMM();
-		let logic_h_mm = this.getHeightMM();
+	CVisioDocument.prototype.getFitZoomValue = function(pageIndex, displayedWidthPx, displayedHeightPX) {
+		let logic_w_mm = this.getWidthMM(pageIndex);
+		let logic_h_mm = this.getHeightMM(pageIndex);
 
 		var _value = 100;
 
@@ -303,20 +304,22 @@
 	};
 
 	/**
+	 * @param pageIndex
 	 * @memberOf CVisioDocument
 	 */
-	CVisioDocument.prototype.getWidthMM = function() {
+	CVisioDocument.prototype.getWidthMM = function(pageIndex) {
 		//todo units, indexes
-		let logic_w_inch = this.pages.page[0].pageSheet.elements.find(function(elem) {return elem.n === "PageWidth"}).v;
+		let logic_w_inch = this.pages.page[pageIndex].pageSheet.elements.find(function(elem) {return elem.n === "PageWidth"}).v;
 		return logic_w_inch * g_dKoef_in_to_mm;
 	}
 
 
 	/**
+	 * @param pageIndex
 	 * @memberOf CVisioDocument
 	 */
-	CVisioDocument.prototype.getHeightMM = function() {
-		let logic_h_inch = this.pages.page[0].pageSheet.elements.find(function(elem) {return elem.n === "PageHeight"}).v;
+	CVisioDocument.prototype.getHeightMM = function(pageIndex) {
+		let logic_h_inch = this.pages.page[pageIndex].pageSheet.elements.find(function(elem) {return elem.n === "PageHeight"}).v;
 		return logic_h_inch * g_dKoef_in_to_mm;
 	}
 
@@ -362,18 +365,22 @@
 		//HOTFIX
 		this.theme = this.themes[0];
 
-		let topLevelShapesAndGroups = this.convertToCShapes();
+		let pageIndex = 0;
+		let pageInfo = this.pages.page[pageIndex];
+		let pageContent = this.pageContents[pageIndex];
+
+		let topLevelShapesAndGroups = this.convertToCShapesAndGroups(pageInfo, pageContent);
 
 		let api = this.api;
-		let logic_w_mm = this.getWidthMM();
-		let logic_h_mm = this.getHeightMM();
+		let logic_w_mm = this.getWidthMM(pageIndex);
+		let logic_h_mm = this.getHeightMM(pageIndex);
 
 		let graphics;
 
 		let useFitToScreenZoom = true;
 		let pageScale;
 		if (useFitToScreenZoom) {
-			Zoom = Zoom/100 * this.getFitZoomValue(api.HtmlElement.offsetWidth,api.HtmlElement.offsetHeight);
+			Zoom = Zoom/100 * this.getFitZoomValue(pageIndex, api.HtmlElement.offsetWidth,api.HtmlElement.offsetHeight);
 		}
 		pageScale = Zoom / 100;
 
@@ -383,7 +390,7 @@
 			let dKoef = pageScale * g_dKoef_mm_to_pix;
 			dKoef *= AscCommon.AscBrowser.retinaPixelRatio;
 
-			let  w_mm = logic_w_mm;
+			let w_mm = logic_w_mm;
 			let h_mm = logic_h_mm;
 
 			var w_px = (w_mm * dKoef + 0.5) >> 0;
@@ -516,9 +523,11 @@
 
 	/**
 	 * @memberOf CVisioDocument
+	 * @param pageInfo
+	 * @param pageContent
 	 * @return {(CShape | CGroupShape)[]} topLevelShapesAndGroups
 	 */
-	CVisioDocument.prototype.convertToCShapes = function() {
+	CVisioDocument.prototype.convertToCShapesAndGroups = function(pageInfo, pageContent) {
 		/** @type {Shape_Type[]} */
 		let shapeClasses = [];
 
@@ -527,20 +536,20 @@
 
 		let masters = this.joinMastersInfoAndContents();
 
-		for(let i = 0; i < this.pageContents[0].shapes.length; i++) {
-			let shape = this.pageContents[0].shapes[i];
+		for(let i = 0; i < pageContent.shapes.length; i++) {
+			let shape = pageContent.shapes[i];
 
 			shape.realizeMasterInheritanceRecursively(masters);
 			shape.realizeStyleInheritanceRecursively(this.styleSheets);
 
 			if (shape.type === "Group") {
-				let cGroupShapeAndText = shape.toCGroupShapeRecursively(this);
+				let cGroupShapeAndText = shape.toCGroupShapeRecursively(this,pageInfo);
 				topLevelShapesAndGroups.push(cGroupShapeAndText.cGroupShape);
 				if (cGroupShapeAndText.textCShape) {
 					topLevelShapesAndGroups.push(cGroupShapeAndText.textCShape);
 				}
 			} else {
-				let cShapes = shape.toGeometryAndTextCShapes(this);
+				let cShapes = shape.toGeometryAndTextCShapes(this, pageInfo);
 				topLevelShapesAndGroups.push(cShapes.geometryCShape);
 				if (cShapes.textCShape !== null) {
 					topLevelShapesAndGroups.push(cShapes.textCShape);

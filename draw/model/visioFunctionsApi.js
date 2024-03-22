@@ -40,15 +40,16 @@
 	 * So for foreground color it return Unifill and for stroke too. May cause problems
 	 * https://learn.microsoft.com/ru-ru/office/client-developer/visio/themeval-function.
 	 * For font color return CUniColor.
-	 * themeValue - if no cell passed.
-	 * @param {CTheme} theme
-	 * @param {Shape_Type} shape
+	 * themeValue - if no cell passed. cell is ignored.
 	 * @param {Cell_Type} cell
+	 * @param {Shape_Type} shape
+	 * @param {Page_Type} pageInfo
+	 * @param {CTheme[]} themes
 	 * @param {string?} themeValue
 	 * @param {string?} defaultValue
 	 * @return {CUniFill | CUniColor | any}
 	 */
-	function themeval(theme, shape, cell, themeValue, defaultValue) {
+	function themeval(cell, shape, pageInfo, themes, themeValue, defaultValue) {
 		// https://visualsignals.typepad.co.uk/vislog/2013/05/visio-2013-themes-in-the-shapesheet-part-2.html
 
 		// if cell value is not 'Themed' waiting number representing color otherwise
@@ -60,7 +61,7 @@
 		// TODO handle multiple themes by schemeEnum tags from theme xml and theme properties cells
 		// https://disk.yandex.ru/d/YZEevC0lUeUBfQ
 
-		/** @type {?CUniColor} */
+		/** @type {CUniColor} */
 		let calculatedColor = null;
 		/** @type {CUniFill | CUniColor} */
 		let result = null;
@@ -84,45 +85,89 @@
 			cellValue = "Themed";
 		}
 
+		let initialDefaultValue = null;
+
 		if (cellName === "LineColor") {
 			quickStyleCellName = "QuickStyleLineColor";
 			quickStyleModifiersCellName = "QuickStyleLineMatrix";
-			getModifiersMethod = theme.getLnStyle;
+			getModifiersMethod = themes[0].getLnStyle;
 			variationStyleIndexVariable = "lineIdx";
 
-			if (theme.name === "") {
-				// no theme file ---> return document.xml StyleSheet ID=0 value
-				return AscFormat.CreateUnfilFromRGB(0,0,0);
-			}
+			initialDefaultValue = AscFormat.CreateUnfilFromRGB(0,0,0);
 		} else if (cellName === "Color") {
 			// Text color
 			quickStyleCellName = "QuickStyleFontColor";
 			quickStyleModifiersCellName = "QuickStyleFontMatrix";
-			getModifiersMethod = theme.getFontStyle;
+			getModifiersMethod = themes[0].getFontStyle;
 			variationStyleIndexVariable = "fontIdx";
 
-			if (theme.name === "") {
-				// no theme file ---> return document.xml StyleSheet ID=0 value
-				return AscFormat.CreateUnfilFromRGB(0,0,0).fill.color;
-			}
+
+			initialDefaultValue =  AscFormat.CreateUnfilFromRGB(0,0,0).fill.color;
 		} else if (cellName === "FillForegnd" || cellName === "FillBkgnd") {
 			quickStyleCellName = "QuickStyleFillColor";
 			quickStyleModifiersCellName = "QuickStyleFillMatrix";
-			getModifiersMethod = theme.getFillStyle;
+			getModifiersMethod = themes[0].getFillStyle;
 			variationStyleIndexVariable = "fillIdx";
 
-			if (theme.name === "") {
-				// no theme file ---> return document.xml StyleSheet ID=0 value
-				if (cellName === "FillForegnd") {
-					return AscFormat.CreateUnfilFromRGB(255,255,255);
-				} else if (cellName === "FillBkgnd") {
-					return AscFormat.CreateUnfilFromRGB(0,0,0);
-				}
+			if (cellName === "FillForegnd") {
+				initialDefaultValue =  AscFormat.CreateUnfilFromRGB(255,255,255);
+			} else if (cellName === "FillBkgnd") {
+				initialDefaultValue =  AscFormat.CreateUnfilFromRGB(0,0,0);
 			}
 		} else {
 			console.log("themeval argument error. cell name is unknown. return null.");
 			return null;
 		}
+
+		// find theme index
+		let themeIndex = 0; // zero index means no theme
+		let shapeThemeIndex = shape.getCellNumberValue("ThemeIndex");
+		if (isNaN(shapeThemeIndex) || shapeThemeIndex === null) {
+			shapeThemeIndex = 0; // zero index means no theme
+		}
+		if (shapeThemeIndex === 65534) {
+			let pageThemeIndexCell = pageInfo.pageSheet.elements.find(function (el) {
+				return el.n === "ThemeIndex";
+			});
+			if (pageThemeIndexCell !== undefined) {
+				let pageThemeIndex = Number(pageThemeIndexCell.v);
+				if (!isNaN(pageThemeIndex)) {
+					themeIndex = pageThemeIndex;
+				} else {
+					console.log("pageThemeIndex was not parsed");
+				}
+			} else {
+				// it's ok sometimes
+				// console.log("pageThemeIndexCell not found");
+			}
+		} else {
+			themeIndex = shapeThemeIndex;
+		}
+
+
+		// if THEMEVAL was called with themeValue (argument like "FillColor") even if themeIndex is 0 we should
+		// use any theme otherwise if no themeValue argument was passed and 0 themeIndex is used we should return
+		// default value
+		// see colored rectangle in that file https://disk.yandex.ru/d/IzxVtx0a7GqbQA
+		let theme = themes[0];
+		if ((themeValue === null || themeValue === undefined) && themeIndex === 0) {
+			return initialDefaultValue;
+		}
+		if (themeIndex === 0) {
+			// use themes[0] for THEMEVAL()
+			theme = themes[0];
+		} else {
+			// find theme by themeIndex
+			theme = themes.find(function (theme) {
+				let themeEnum = Number(theme.themeElements.themeExt.themeSchemeSchemeEnum);
+				return themeEnum === themeIndex;
+			});
+			if (theme === null) {
+				console.log("Theme was not found by theme enum in themes. using themes[0]");
+				theme = themes[0];
+			}
+		}
+
 
 		let quickStyleColorElem = shape.getCell(quickStyleCellName);
 		let quickStyleMatrixElem = shape.getCell(quickStyleModifiersCellName);

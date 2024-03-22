@@ -41,17 +41,19 @@
 	 * calculateShapeParamsAndConvertToCShape
 	 * @memberof Shape_Type
 	 * @param {CVisioDocument} visioDocument
+	 * @param {Page_Type} pageInfo
 	 * @return {{geometryCShape: CShape, textCShape: ?CShape}} cShapesObjects
 	 */
-	Shape_Type.prototype.toGeometryAndTextCShapes = function (visioDocument) {
+	Shape_Type.prototype.toGeometryAndTextCShapes = function (visioDocument, pageInfo) {
 		/**
 		 * Can parse themeval
-		 * @param {CTheme} theme
-		 * @param {Shape_Type} shape
 		 * @param {Cell_Type} cell
+		 * @param {Shape_Type} shape
+		 * @param {Page_Type} pageInfo
+		 * @param {CTheme[]} themes
 		 * @return {(CUniFill | CUniColor | *)}
 		 */
-		function calculateCellValue(theme, shape, cell) {
+		function calculateCellValue(cell, shape, pageInfo, themes) {
 			let cellValue = cell && cell.v;
 			let cellName = cell && cell.n;
 
@@ -71,7 +73,7 @@
 				}
 			} else if (cellValue === 'Themed') {
 				// equal to THEMEVAL() call
-				returnValue = AscCommonDraw.themeval(theme, shape, cell);
+				returnValue = AscCommonDraw.themeval(cell, shape, pageInfo, themes);
 			} else {
 				let colorIndex = parseInt(cellValue);
 				if (!isNaN(colorIndex)) {
@@ -446,7 +448,7 @@
 				let characterColorCell = characterPropsFinal && characterPropsFinal.getCell("Color");
 				let fontColor;
 				if (characterColorCell && characterColorCell.constructor.name === "Cell_Type") {
-					fontColor = calculateCellValue(theme, shape, characterColorCell);
+					fontColor = calculateCellValue(characterColorCell, shape, pageInfo, visioDocument.themes);
 				} else {
 					console.log("text color cell not found! set text color as themed");
 					fontColor = AscCommonDraw.themeval(visioDocument.themes[0], shape, null, "TextColor");
@@ -927,7 +929,7 @@
 		let fillForegndCell = this.getCell("FillForegnd");
 		if (fillForegndCell) {
 			// console.log("FillForegnd was found:", fillForegndCell);
-			uniFillForegnd = calculateCellValue(visioDocument.theme, this, fillForegndCell);
+			uniFillForegnd = calculateCellValue(fillForegndCell, this, pageInfo, visioDocument.themes);
 
 			let fillForegndTrans = this.getCell("FillForegndTrans");
 			if (fillForegndTrans) {
@@ -948,7 +950,7 @@
 		let fillBkgndCell = this.getCell("FillBkgnd");
 		if (fillBkgndCell) {
 			// console.log("FillBkgnd was found:", fillBkgndCell);
-			uniFillBkgnd = calculateCellValue(visioDocument.theme, this, fillBkgndCell);
+			uniFillBkgnd = calculateCellValue(fillBkgndCell, this, pageInfo, visioDocument.themes);
 
 			let fillBkgndTrans = this.getCell("FillBkgndTrans");
 			if (fillBkgndTrans) {
@@ -970,7 +972,7 @@
 		let lineColorCell = this.getCell("LineColor");
 		if (lineColorCell) {
 			// console.log("LineColor was found for shape", lineColorCell);
-			lineUniFill = calculateCellValue(visioDocument.theme, this, lineColorCell);
+			lineUniFill = calculateCellValue(lineColorCell, this, pageInfo, visioDocument.themes);
 		} else {
 			console.log("LineColor cell for line stroke (border) was not found painting red");
 			lineUniFill = AscFormat.CreateUnfilFromRGB(255,0,0);
@@ -1085,13 +1087,14 @@
 	 * let's say shape can only have subshapes if its Type='Group'.
 	 * @memberOf Shape_Type
 	 * @param {CVisioDocument} visioDocument
+	 * @param {Page_Type} pageInfo
 	 * @param {CGroupShape?} currentGroupHandling
 	 * @return {{cGroupShape: CGroupShape, textCShape: CShape}}
 	 */
-	Shape_Type.prototype.toCGroupShapeRecursively = function (visioDocument, currentGroupHandling) {
+	Shape_Type.prototype.toCGroupShapeRecursively = function (visioDocument, pageInfo, currentGroupHandling) {
 		// if we need to create CGroupShape create CShape first then copy its properties to CGroupShape object
 		// so anyway create CShapes
-		let cShapes = this.toGeometryAndTextCShapes(visioDocument);
+		let cShapes = this.toGeometryAndTextCShapes(visioDocument, pageInfo);
 
 		if (this.type === "Group") {
 			// CGroupShape cant support text. So cShape will represent everything related to Shape Type="Group".
@@ -1137,7 +1140,7 @@
 				let subShapes = this.getSubshapes();
 				for (let i = 0; i < subShapes.length; i++) {
 					const subShape = subShapes[i];
-					subShape.toCGroupShapeRecursively(visioDocument, currentGroupHandling);
+					subShape.toCGroupShapeRecursively(visioDocument, pageInfo, currentGroupHandling);
 				}
 
 				// textCShape is returned from this function
@@ -1160,7 +1163,7 @@
 				let subShapes = this.getSubshapes();
 				for (let i = 0; i < subShapes.length; i++) {
 					const subShape = subShapes[i];
-					subShape.toCGroupShapeRecursively(visioDocument, currentGroupHandling);
+					subShape.toCGroupShapeRecursively(visioDocument, pageInfo, currentGroupHandling);
 				}
 			}
 			// recalculate text other positions to local (group) coordinates
