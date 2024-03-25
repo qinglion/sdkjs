@@ -284,7 +284,7 @@
 		if (cell !== null) {
 			return Number(cell.v);
 		} else {
-			return null;
+			return undefined;
 		}
 	}
 
@@ -730,6 +730,15 @@
 			let textStyleElements = ["TextBkgnd", "TextDirection", "TextBkgndTrans", "LockTextEdit", "HideText",
 					"TheText", "IsTextEditTarget", "KeepTextFlat", "ReplaceLockText", "TextPosAfterBullet",
 					"Character", "Paragraph", "Tabs"];
+
+			let commonElements = ["ColorSchemeIndex", "EffectSchemeIndex", "ConnectorSchemeIndex", "FontSchemeIndex",
+					"ThemeIndex", "VariationColorIndex", "VariationStyleIndex", "EmbellishmentIndex",
+			"QuickStyleLineColor", "QuickStyleFillColor", "QuickStyleShadowColor", "QuickStyleFontColor",
+			"QuickStyleLineMatrix", "QuickStyleFillMatrix", "QuickStyleEffectsMatrix", "QuickStyleFontMatrix",
+			"QuickStyleType", "QuickStyleVariation"];
+			lineStyleElements = lineStyleElements.concat(commonElements);
+			fillStyleElements = fillStyleElements.concat(commonElements);
+			textStyleElements = textStyleElements.concat(commonElements);
 
 			if (thisArgument.lineStyle !== null) {
 				let styleId = Number(thisArgument.lineStyle);

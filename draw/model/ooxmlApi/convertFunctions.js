@@ -453,8 +453,7 @@
 					console.log("text color cell not found! set text color as themed");
 					fontColor = AscCommonDraw.themeval(visioDocument.themes[0], shape, null, "TextColor");
 				}
-				// no RGBA.A alpha channel considered
-				fontColor.Calculate(theme);
+
 				handleTextQuickStyleVariation(fontColor, lineUniFill, fillUniFill);
 				const textColor1 = new CDocumentColor(fontColor.color.RGBA.R, fontColor.color.RGBA.G,
 					fontColor.color.RGBA.B, false);

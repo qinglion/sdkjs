@@ -380,7 +380,7 @@
 		let useFitToScreenZoom = true;
 		let pageScale;
 		if (useFitToScreenZoom) {
-			Zoom = Zoom/100 * this.getFitZoomValue(pageIndex, api.HtmlElement.offsetWidth,api.HtmlElement.offsetHeight);
+			Zoom = Zoom * this.getFitZoomValue(pageIndex, api.HtmlElement.offsetWidth,api.HtmlElement.offsetHeight) / 100;
 		}
 		pageScale = Zoom / 100;
 

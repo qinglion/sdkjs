@@ -120,19 +120,24 @@
 		}
 
 		// find theme index
-		let themeIndex = 0; // zero index means no theme
-		let shapeThemeIndex = shape.getCellNumberValue("ThemeIndex");
-		if (isNaN(shapeThemeIndex) || shapeThemeIndex === null) {
-			shapeThemeIndex = 0; // zero index means no theme
+		// ! Because now we only calculate colors lets find theme by
+		// ext uri="{2703A3B3-D2E1-43D9-8057-6E9D74E0F44A}" clrScheme extension schemeEnum
+		// which is sometimes different from ext uri="{D75FF423-9257-4291-A4FE-1B2448832E17} - themeSchemeSchemeEnum
+		// and pick ColorSchemeIndex instead of ThemeIndex cell
+		let colorSchemeThemeIndex = 0; // zero index means no theme
+		let themeScopeCellName = "ColorSchemeIndex";
+		let shapeColorSchemeThemeIndex = shape.getCellNumberValue(themeScopeCellName);
+		if (isNaN(shapeColorSchemeThemeIndex) || shapeColorSchemeThemeIndex === null) {
+			shapeColorSchemeThemeIndex = 0; // zero index means no theme
 		}
-		if (shapeThemeIndex === 65534) {
+		if (shapeColorSchemeThemeIndex === 65534) {
 			let pageThemeIndexCell = pageInfo.pageSheet.elements.find(function (el) {
-				return el.n === "ThemeIndex";
+				return el.n === themeScopeCellName;
 			});
 			if (pageThemeIndexCell !== undefined) {
 				let pageThemeIndex = Number(pageThemeIndexCell.v);
 				if (!isNaN(pageThemeIndex)) {
-					themeIndex = pageThemeIndex;
+					colorSchemeThemeIndex = pageThemeIndex;
 				} else {
 					console.log("pageThemeIndex was not parsed");
 				}
@@ -141,7 +146,7 @@
 				// console.log("pageThemeIndexCell not found");
 			}
 		} else {
-			themeIndex = shapeThemeIndex;
+			colorSchemeThemeIndex = shapeColorSchemeThemeIndex;
 		}
 
 
@@ -150,29 +155,32 @@
 		// default value
 		// see colored rectangle in that file https://disk.yandex.ru/d/IzxVtx0a7GqbQA
 		let theme = themes[0];
-		if ((themeValue === null || themeValue === undefined) && themeIndex === 0) {
+		if ((themeValue === null || themeValue === undefined) && colorSchemeThemeIndex === 0) {
 			return initialDefaultValue;
 		}
-		if (themeIndex === 0) {
+		if (colorSchemeThemeIndex === 0) {
 			// use themes[0] for THEMEVAL()
 			theme = themes[0];
 		} else {
 			// find theme by themeIndex
+			// theme = themes.find(function (theme) {
+			// 	let themeEnum = Number(theme.themeElements.themeExt.themeSchemeSchemeEnum);
+			// 	return themeEnum === themeIndex;
+			// });
 			theme = themes.find(function (theme) {
-				let themeEnum = Number(theme.themeElements.themeExt.themeSchemeSchemeEnum);
-				return themeEnum === themeIndex;
+				// if search by theme index - theme.themeElements.themeExt.themeSchemeSchemeEnum
+				let clrSchemeThemeEnum = Number(theme.themeElements.clrScheme.clrSchemeExtLst.schemeEnum);
+				return clrSchemeThemeEnum === colorSchemeThemeIndex;
 			});
-			if (theme === null) {
+			if (theme === undefined) {
 				console.log("Theme was not found by theme enum in themes. using themes[0]");
 				theme = themes[0];
 			}
 		}
 
 
-		let quickStyleColorElem = shape.getCell(quickStyleCellName);
-		let quickStyleMatrixElem = shape.getCell(quickStyleModifiersCellName);
-		let quickStyleColor = parseInt(quickStyleColorElem && quickStyleColorElem.v);
-		let quickStyleMatrix = parseInt(quickStyleMatrixElem && quickStyleMatrixElem.v);
+		let quickStyleColor = shape.getCellNumberValue(quickStyleCellName);
+		let quickStyleMatrix = shape.getCellNumberValue(quickStyleModifiersCellName);
 		// get color using "VariationColorIndex" cell and quickStyleColor cell
 		if (!isNaN(quickStyleColor)) {
 			if (100 <= quickStyleColor && quickStyleColor <= 106 ||
@@ -186,6 +194,19 @@
 				if (!isNaN(variationColorIndex)) {
 					if (65534 === variationColorIndex) {
 						variationColorIndex = 0;
+						let pageVariationColorIndexCell = pageInfo.pageSheet.elements.find(function (el) {
+							return el.n === "VariationColorIndex";
+						});
+						if (pageVariationColorIndexCell !== undefined) {
+							let pageVariationColorIndexIndex = Number(pageVariationColorIndexCell.v);
+							if (!isNaN(pageVariationColorIndexIndex)) {
+								variationColorIndex = pageVariationColorIndexIndex;
+							} else {
+								console.log("pageVariationColorIndexIndex was not parsed");
+							}
+						} else {
+							// console.log("pageVariationColorIndexIndex not found");
+						}
 					}
 					calculatedColor = theme.getVariationClrSchemeColor(variationColorIndex,
 						quickStyleColor % 100);
@@ -240,6 +261,19 @@
 				if (!isNaN(variationStyleIndex)) {
 					if (65534 === variationStyleIndex) {
 						variationStyleIndex = 0;
+						let pageVariationStyleIndexCell = pageInfo.pageSheet.elements.find(function (el) {
+							return el.n === "VariationStyleIndex";
+						});
+						if (pageVariationStyleIndexCell !== undefined) {
+							let pageVariationStyleIndexIndex = Number(pageVariationStyleIndexCell.v);
+							if (!isNaN(pageVariationStyleIndexIndex)) {
+								variationStyleIndex = pageVariationStyleIndexIndex;
+							} else {
+								console.log("pageVariationStyleIndexIndex was not parsed");
+							}
+						} else {
+							// console.log("pageVariationStyleIndexIndex not found");
+						}
 					}
 					let varStyle = theme.getVariationStyleScheme(variationStyleIndex,
 						quickStyleMatrix % 100);
@@ -265,9 +299,25 @@
 			}
 		}
 
+		/**
+		 * calculate color on theme. for quickStyleVariation to consider real color
+		 * @param {CUniColor | CUniFill} color
+		 * @param {CTheme} theme
+		 */
+		function calculateOnTheme(color, theme) {
+			if (color.constructor.name === "CUniColor") {
+				color.Calculate(theme);
+			} else if (color.constructor.name === "CUniFill") {
+				color.calculate(theme);
+			}
+
+			 // otherwise it is a link to theme color
+			return color.createDuplicate();
+		}
+
 		if (result !== null) {
 			// result have appropriate type for cell already
-			return result;
+			return calculateOnTheme(result, theme);
 		}
 		if (calculatedColor !== null) {
 			let fromColorResult = null;
@@ -276,7 +326,8 @@
 			} else if (cellName === "Color") {
 				fromColorResult = calculatedColor;
 			}
-			return fromColorResult;
+
+			return calculateOnTheme(result, theme);
 		} else {
 			if (cellName === "LineColor" || cellName === "FillForegnd" || cellName === "FillBkgnd") {
 				console.log("no color found. so painting lt1.");
@@ -286,7 +337,8 @@
 				console.log("no text color found. so painting dk1.");
 				calculatedColor = AscFormat.builder_CreateSchemeColor("dk1");
 			}
-			return calculatedColor;
+
+			return calculateOnTheme(result, theme);
 		}
 	}
 

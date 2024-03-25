@@ -60,6 +60,7 @@ CGroupShape.prototype.getParentObjects = CShape.prototype.getParentObjects;
 
 
 /**
+ * Draw editor.
  * @memberof CShape
  */
 CShape.prototype.recalculate = function ()
