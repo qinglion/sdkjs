@@ -8933,14 +8933,20 @@
 		 * @memberof CTheme
 		 * @param idx
 		 * @param unicolor
+		 * @param {Boolean} getConnectorStyle
 		 * @return {CFontProps}
 		 */
-		CTheme.prototype.getFontStyle = function (idx, unicolor) {
+		CTheme.prototype.getFontStyle = function (idx, unicolor, getConnectorStyle) {
 			if (idx === 0 || isNaN(idx)) {
 				console.log("idx getFontStyle argument is 0 or isNaN(idx) is true");
 				return AscFormat.CreateNoFillLine();
 			}
-			let fontProp = this.themeElements.themeExt.fontStylesGroup.fontStyles[idx - 1];
+			let fontProp;
+			if (getConnectorStyle) {
+				fontProp = this.themeElements.themeExt.fontStylesGroup.connectorFontStyles[idx - 1];
+			} else {
+				fontProp = this.themeElements.themeExt.fontStylesGroup.fontStyles[idx - 1];
+			}
 			if (fontProp) {
 				var ret = fontProp.createDuplicate();
 				if (ret.fontPropsObject.color) {

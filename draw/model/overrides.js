@@ -35,6 +35,7 @@
 // Import
 var CShape = AscFormat.CShape;
 var CGroupShape = AscFormat.CGroupShape;
+var CTheme = AscFormat.CTheme;
 
 /**
  * @memberOf CShape
@@ -128,4 +129,63 @@ CShape.prototype.recalculate = function ()
 
 		this.clearCropObject();
 	}, this, []);
+};
+
+/**
+ *
+ * @param idx
+ * @param unicolor
+ * @param {Boolean} isConnectorShape
+ * @return {CUniFill|*}
+ */
+CTheme.prototype.getFillStyle = function (idx, unicolor, isConnectorShape) {
+	if (idx === 0 || idx === 1000) {
+		return AscFormat.CreateNoFillUniFill();
+	}
+	var ret;
+	let fmtScheme = isConnectorShape ?
+		this.themeElements.themeExt.fmtConnectorScheme :
+		this.themeElements.fmtScheme;
+	if (idx >= 1 && idx <= 999) {
+		if (fmtScheme.fillStyleLst[idx - 1]) {
+			ret = fmtScheme.fillStyleLst[idx - 1].createDuplicate();
+			if (ret) {
+				ret.checkPhColor(unicolor, false);
+				return ret;
+			}
+		}
+	} else if (idx >= 1001) {
+		if (fmtScheme.bgFillStyleLst[idx - 1001]) {
+			ret = fmtScheme.bgFillStyleLst[idx - 1001].createDuplicate();
+			if (ret) {
+				ret.checkPhColor(unicolor, false);
+				return ret;
+			}
+		}
+	}
+	return CreateSolidFillRGBA(0, 0, 0, 255);
+};
+
+/**
+ *
+ * @param idx
+ * @param unicolor
+ * @param {Boolean} isConnectorShape
+ * @return {CLn|*}
+ */
+CTheme.prototype.getLnStyle = function (idx, unicolor, isConnectorShape) {
+	if (idx === 0) {
+		return AscFormat.CreateNoFillLine();
+	}
+	let fmtScheme = isConnectorShape ?
+		this.themeElements.themeExt.fmtConnectorScheme :
+		this.themeElements.fmtScheme;
+	if (fmtScheme.lnStyleLst[idx - 1]) {
+		var ret = fmtScheme.lnStyleLst[idx - 1].createDuplicate();
+		if (ret.Fill) {
+			ret.Fill.checkPhColor(unicolor, false);
+		}
+		return ret;
+	}
+	return new CLn();
 };

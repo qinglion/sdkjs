@@ -161,7 +161,7 @@
 	 * @param {string} constructorName
 	 * @param {string} [attributeName]
 	 * @param attributeValue
-	 * @return {*|null}
+	 * @return {*|undefined}
 	 */
 	function findObject(obj, constructorName, attributeName, attributeValue) {
 		let attributeCheck = true;
@@ -185,8 +185,8 @@
 				}
 			}
 		}
-		// If the attribute was not found, return null
-		return null;
+		// If the attribute was not found, return undefined
+		return undefined;
 	}
 
 	function findObjects(obj, constructorName, attributeName, attributeValue, results) {
@@ -281,7 +281,7 @@
 	 */
 	Shape_Type.prototype.getCellNumberValue = function (formula) {
 		let cell = this.getCell(formula);
-		if (cell !== null) {
+		if (cell !== undefined) {
 			return Number(cell.v);
 		} else {
 			return undefined;

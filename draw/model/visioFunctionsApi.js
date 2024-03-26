@@ -40,7 +40,7 @@
 	 * So for foreground color it return Unifill and for stroke too. May cause problems
 	 * https://learn.microsoft.com/ru-ru/office/client-developer/visio/themeval-function.
 	 * For font color return CUniColor.
-	 * themeValue - if no cell passed. cell is ignored.
+	 * themeValue - if no cell passed (cell is ignored)
 	 * @param {Cell_Type} cell
 	 * @param {Shape_Type} shape
 	 * @param {Page_Type} pageInfo
@@ -101,7 +101,6 @@
 			getModifiersMethod = themes[0].getFontStyle;
 			variationStyleIndexVariable = "fontIdx";
 
-
 			initialDefaultValue =  AscFormat.CreateUnfilFromRGB(0,0,0).fill.color;
 		} else if (cellName === "FillForegnd" || cellName === "FillBkgnd") {
 			quickStyleCellName = "QuickStyleFillColor";
@@ -119,13 +118,19 @@
 			return null;
 		}
 
+		// lets define if shape is connector
+		let isConnectorShape = shape.getCellNumberValue("EndArrow") !== 0
+			|| shape.getCellNumberValue("BeginArrow") !== 0;
+
 		// find theme index
 		// ! Because now we only calculate colors lets find theme by
 		// ext uri="{2703A3B3-D2E1-43D9-8057-6E9D74E0F44A}" clrScheme extension schemeEnum
 		// which is sometimes different from ext uri="{D75FF423-9257-4291-A4FE-1B2448832E17} - themeSchemeSchemeEnum
 		// and pick ColorSchemeIndex instead of ThemeIndex cell
-		let colorSchemeThemeIndex = 0; // zero index means no theme
-		let themeScopeCellName = "ColorSchemeIndex";
+		// upd: if connector styles are used lets use ConnectorSchemeIndex cell and
+		// ext uri="{D75FF423-9257-4291-A4FE-1B2448832E17} - themeSchemeSchemeEnum to find theme
+		let themeIndex = 0; // zero index means no theme - use default values
+		let themeScopeCellName = isConnectorShape ? "ConnectorSchemeIndex" : "ColorSchemeIndex";
 		let shapeColorSchemeThemeIndex = shape.getCellNumberValue(themeScopeCellName);
 		if (isNaN(shapeColorSchemeThemeIndex) || shapeColorSchemeThemeIndex === null) {
 			shapeColorSchemeThemeIndex = 0; // zero index means no theme
@@ -137,7 +142,7 @@
 			if (pageThemeIndexCell !== undefined) {
 				let pageThemeIndex = Number(pageThemeIndexCell.v);
 				if (!isNaN(pageThemeIndex)) {
-					colorSchemeThemeIndex = pageThemeIndex;
+					themeIndex = pageThemeIndex;
 				} else {
 					console.log("pageThemeIndex was not parsed");
 				}
@@ -146,7 +151,7 @@
 				// console.log("pageThemeIndexCell not found");
 			}
 		} else {
-			colorSchemeThemeIndex = shapeColorSchemeThemeIndex;
+			themeIndex = shapeColorSchemeThemeIndex;
 		}
 
 
@@ -155,10 +160,10 @@
 		// default value
 		// see colored rectangle in that file https://disk.yandex.ru/d/IzxVtx0a7GqbQA
 		let theme = themes[0];
-		if ((themeValue === null || themeValue === undefined) && colorSchemeThemeIndex === 0) {
+		if ((themeValue === null || themeValue === undefined) && themeIndex === 0) {
 			return initialDefaultValue;
 		}
-		if (colorSchemeThemeIndex === 0) {
+		if (themeIndex === 0) {
 			// use themes[0] for THEMEVAL()
 			theme = themes[0];
 		} else {
@@ -169,8 +174,11 @@
 			// });
 			theme = themes.find(function (theme) {
 				// if search by theme index - theme.themeElements.themeExt.themeSchemeSchemeEnum
-				let clrSchemeThemeEnum = Number(theme.themeElements.clrScheme.clrSchemeExtLst.schemeEnum);
-				return clrSchemeThemeEnum === colorSchemeThemeIndex;
+				let findThemeByElement = isConnectorShape?
+					theme.themeElements.themeExt.themeSchemeSchemeEnum :
+					theme.themeElements.clrScheme.clrSchemeExtLst.schemeEnum;
+				let clrSchemeThemeEnum = Number(findThemeByElement);
+				return clrSchemeThemeEnum === themeIndex;
 			});
 			if (theme === undefined) {
 				console.log("Theme was not found by theme enum in themes. using themes[0]");
@@ -251,7 +259,7 @@
 			if (0 === quickStyleMatrix) {
 				//todo
 			} else if (1 <= quickStyleMatrix && quickStyleMatrix <= 6) {
-				getMedifiersResult = getModifiersMethod.call(theme, quickStyleMatrix, calculatedColor);
+				getMedifiersResult = getModifiersMethod.call(theme, quickStyleMatrix, calculatedColor, isConnectorShape);
 			} else if (100 <= quickStyleMatrix && quickStyleMatrix <= 103) {
 				let variationStyleIndexCell = shape.getCell("VariationStyleIndex");
 				let variationStyleIndex = 0;
@@ -279,7 +287,8 @@
 						quickStyleMatrix % 100);
 					if (varStyle && null !== varStyle[variationStyleIndexVariable]) {
 						let styleId = varStyle[variationStyleIndexVariable];
-						getMedifiersResult = getModifiersMethod.call(theme, styleId, calculatedColor);
+						getMedifiersResult = getModifiersMethod.call(theme, styleId, calculatedColor, isConnectorShape);
+
 					}
 				}
 			}
