@@ -289,6 +289,20 @@
 	}
 
 	/**
+	 * Calls getCell on Shape and tries to parse as String(cell.v) if cell exists.
+	 * @param {String} formula
+	 * @return {?String} string
+	 */
+	Shape_Type.prototype.getCellStringValue = function (formula) {
+		let cell = this.getCell(formula);
+		if (cell !== undefined) {
+			return String(cell.v);
+		} else {
+			return undefined;
+		}
+	}
+
+	/**
 	 * Always use it see Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive js docs for explanation.
 	 * Finds shape text element.
 	 *

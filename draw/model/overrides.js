@@ -36,6 +36,7 @@
 var CShape = AscFormat.CShape;
 var CGroupShape = AscFormat.CGroupShape;
 var CTheme = AscFormat.CTheme;
+var CreateSolidFillRGBA = AscFormat.CreateSolidFillRGBA;
 
 /**
  * @memberOf CShape
@@ -163,6 +164,7 @@ CTheme.prototype.getFillStyle = function (idx, unicolor, isConnectorShape) {
 			}
 		}
 	}
+	console.log("getFillStyle has not found fill and returned transparent fill")
 	return CreateSolidFillRGBA(0, 0, 0, 255);
 };
 

@@ -51,9 +51,10 @@
 		 * @param {Shape_Type} shape
 		 * @param {Page_Type} pageInfo
 		 * @param {CTheme[]} themes
+		 * @param {{fontColor?: boolean, lineUniFill?: boolean, uniFillForegnd?: boolean}} themeValWasUsedFor - changes during function
 		 * @return {(CUniFill | CUniColor | *)}
 		 */
-		function calculateCellValue(cell, shape, pageInfo, themes) {
+		function calculateCellValue(cell, shape, pageInfo, themes, themeValWasUsedFor) {
 			let cellValue = cell && cell.v;
 			let cellName = cell && cell.n;
 
@@ -74,6 +75,15 @@
 			} else if (cellValue === 'Themed') {
 				// equal to THEMEVAL() call
 				returnValue = AscCommonDraw.themeval(cell, shape, pageInfo, themes);
+
+				if (cellName === "LineColor") {
+					themeValWasUsedFor.lineUniFill = true;
+				} else if (cellName === "FillForegnd") {
+					themeValWasUsedFor.uniFillForegnd = true;
+				} else if (cellName === "Color") {
+					// for text color
+					themeValWasUsedFor.fontColor = true;
+				}
 			} else {
 				let colorIndex = parseInt(cellValue);
 				if (!isNaN(colorIndex)) {
@@ -180,12 +190,14 @@
 		}
 
 		/**
+		 * handle QuickStyleVariation cell which can change color (but only if color is a result of ThemeVal)
 		 * cant be separated for unifill and stroke
 		 * @param {CUniFill} oStrokeUniFill
 		 * @param {CUniFill} uniFill
 		 * @param {Shape_Type} shape
+		 * @param {{lineUniFill: boolean, uniFillForegnd: boolean}} themeValWasUsedFor
 		 */
-		function handleQuickStyleVariation(oStrokeUniFill, uniFill, shape) {
+		function handleQuickStyleVariation(oStrokeUniFill, uniFill, shape, themeValWasUsedFor) {
 			// https://learn.microsoft.com/en-us/openspecs/sharepoint_protocols/ms-vsdx/68bb0221-d8a1-476e-a132-8c60a49cea63?redirectedfrom=MSDN
 			// consider "QuickStyleVariation" cell
 			// https://visualsignals.typepad.co.uk/vislog/2013/05/visio-2013-themes-in-the-shapesheet-part-2.html
@@ -208,7 +220,7 @@
 				let quickStyleVariationCell = shape.getCell("QuickStyleVariation");
 				if (quickStyleVariationCell) {
 					let quickStyleVariationCellValue = Number(quickStyleVariationCell.v);
-					if ((quickStyleVariationCellValue & 4) === 4) {
+					if ((quickStyleVariationCellValue & 4) === 4 && themeValWasUsedFor.lineUniFill) {
 						// line color variation enabled (bit mask used)
 						if (Math.abs(backgroundColorHSL.L - lineColorHSL.L) < 16.66) {
 							if (backgroundColorHSL.L <= 72.92) {
@@ -235,7 +247,7 @@
 						}
 					}
 
-					if ((quickStyleVariationCellValue & 8) === 8) {
+					if ((quickStyleVariationCellValue & 8) === 8 && themeValWasUsedFor.uniFillForegnd) {
 						// fill color variation enabled (bit mask used)
 						if (Math.abs(backgroundColorHSL.L - fillColorHSL.L) < 16.66) {
 							if (backgroundColorHSL.L <= 72.92) {
@@ -290,12 +302,24 @@
 		 */
 		function getTextCShape(theme, shape, cShape, lineUniFill, fillUniFill) {
 			// see 2.2.8	Text [MS-VSDX]-220215
-			function handleTextQuickStyleVariation(textUniColor, lineUniFill, fillUniFill) {
+			/**
+			 * handle QuickStyleVariation cell which can change color (but only if color is a result of ThemeVal)
+			 * @param textUniColor
+			 * @param lineUniFill
+			 * @param fillUniFill
+			 * @param {{fontColor:boolean}} themeValWasUsedFor - sets during calculateCellValue
+			 */
+			function handleTextQuickStyleVariation(textUniColor, lineUniFill, fillUniFill, themeValWasUsedFor) {
 				// https://learn.microsoft.com/en-us/openspecs/sharepoint_protocols/ms-vsdx/68bb0221-d8a1-476e-a132-8c60a49cea63?redirectedfrom=MSDN
 				// consider "QuickStyleVariation" cell
 				// https://visualsignals.typepad.co.uk/vislog/2013/05/visio-2013-themes-in-the-shapesheet-part-2.html
 
 				// line and fill QuickStyleVariation are handled in handleQuickStyleVariation
+
+				if (!themeValWasUsedFor.fontColor) {
+					return;
+				}
+
 				let backgroundColorHSL = {H: undefined, S: undefined, L: undefined};
 				let textColorHSL = {H: undefined, S: undefined, L: undefined};
 				let lineColorHSL = {H: undefined, S: undefined, L: undefined};
@@ -324,6 +348,14 @@
 
 						if ((quickStyleVariationCellValue & 2) === 2) {
 							// text color variation enabled (bit mask used)
+
+							// let fillPattern = shape.getCellNumberValue("FillPattern");
+							// if (fillPattern !== 0) {
+							// 	console.log("TextQuickStyleVariation for shapes with FillPattern !== 0 is disabled");
+							// 	// consider example https://disk.yandex.ru/d/2fbgXRrCBThlCw
+							// 	return;
+							// }
+
 							if (Math.abs(backgroundColorHSL.L - textColorHSL.L) < 16.66) {
 								if (backgroundColorHSL.L <= 72.92) {
 									// if background is dark set stroke to white
@@ -444,17 +476,28 @@
 			function parseRunAndAddToParagraph(characterRowNum, characterPropsCommon,  oRun, paragraph, lineUniFill, fillUniFill, theme, shape, visioDocument) {
 				let characterPropsFinal = characterRowNum !== null && characterPropsCommon.getRow(characterRowNum);
 
+				/**
+				 * Let's memorize what color properties used themeVal because quickStyleVariation can change only those
+				 * color props that used themeVal function.
+				 * @type {{fontColor:boolean}}
+				 */
+				let themeValWasUsedFor = {
+					fontColor: false
+				}
+
 				// handle Color
 				let characterColorCell = characterPropsFinal && characterPropsFinal.getCell("Color");
 				let fontColor;
 				if (characterColorCell && characterColorCell.constructor.name === "Cell_Type") {
-					fontColor = calculateCellValue(characterColorCell, shape, pageInfo, visioDocument.themes);
+					fontColor = calculateCellValue(characterColorCell, shape, pageInfo,
+						visioDocument.themes, themeValWasUsedFor);
 				} else {
 					console.log("text color cell not found! set text color as themed");
-					fontColor = AscCommonDraw.themeval(visioDocument.themes[0], shape, null, "TextColor");
+					fontColor = AscCommonDraw.themeval(null, shape, pageInfo, visioDocument.themes, "TextColor");
+					themeValWasUsedFor.fontColor = true;
 				}
 
-				handleTextQuickStyleVariation(fontColor, lineUniFill, fillUniFill);
+				handleTextQuickStyleVariation(fontColor, lineUniFill, fillUniFill, themeValWasUsedFor);
 				const textColor1 = new CDocumentColor(fontColor.color.RGBA.R, fontColor.color.RGBA.G,
 					fontColor.color.RGBA.B, false);
 				oRun.Set_Color(textColor1);
@@ -924,11 +967,22 @@
 		 * @type CUniFill */
 		let lineUniFill = null;
 
+		/**
+		 * Let's memorize what color properties used themeVal because quickStyleVariation can change only those
+		 * color props that used themeVal function.
+		 * @type {{lineUniFill: boolean, uniFillForegnd: boolean}}
+		 */
+		let themeValWasUsedFor = {
+			lineUniFill : false,
+			uniFillForegnd: false
+		}
+
 
 		let fillForegndCell = this.getCell("FillForegnd");
 		if (fillForegndCell) {
 			// console.log("FillForegnd was found:", fillForegndCell);
-			uniFillForegnd = calculateCellValue(fillForegndCell, this, pageInfo, visioDocument.themes);
+			uniFillForegnd = calculateCellValue(fillForegndCell, this, pageInfo,
+				visioDocument.themes, themeValWasUsedFor);
 
 			let fillForegndTrans = this.getCell("FillForegndTrans");
 			if (fillForegndTrans) {
@@ -949,7 +1003,8 @@
 		let fillBkgndCell = this.getCell("FillBkgnd");
 		if (fillBkgndCell) {
 			// console.log("FillBkgnd was found:", fillBkgndCell);
-			uniFillBkgnd = calculateCellValue(fillBkgndCell, this, pageInfo, visioDocument.themes);
+			uniFillBkgnd = calculateCellValue(fillBkgndCell, this, pageInfo,
+				visioDocument.themes, themeValWasUsedFor);
 
 			let fillBkgndTrans = this.getCell("FillBkgndTrans");
 			if (fillBkgndTrans) {
@@ -971,14 +1026,15 @@
 		let lineColorCell = this.getCell("LineColor");
 		if (lineColorCell) {
 			// console.log("LineColor was found for shape", lineColorCell);
-			lineUniFill = calculateCellValue(lineColorCell, this, pageInfo, visioDocument.themes);
+			lineUniFill = calculateCellValue(lineColorCell, this, pageInfo,
+				visioDocument.themes, themeValWasUsedFor);
 		} else {
 			console.log("LineColor cell for line stroke (border) was not found painting red");
 			lineUniFill = AscFormat.CreateUnfilFromRGB(255,0,0);
 		}
 
-		// calculate variation before pattern bcs it can make NoFillUniFill object without color
-		handleQuickStyleVariation(lineUniFill, uniFillForegnd, this);
+		// calculate variation before pattern bcs pattern can make NoFillUniFill object without color
+		handleQuickStyleVariation(lineUniFill, uniFillForegnd, this, themeValWasUsedFor);
 
 		// add read matrix modifier width?
 		// + handle line pattens?
