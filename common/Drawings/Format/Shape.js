@@ -5232,7 +5232,7 @@
 						graphics.RestoreGrState();
 					}
 
-					if (this.textBoxContent && !graphics.isSupportTextDraw() && this.transformText) {
+					if (this.textBoxContent && graphics.isSupportTextDraw() && this.transformText) {
 						var old_start_page = this.textBoxContent.Get_StartPage_Relative();
 						this.textBoxContent.Set_StartPage(pageIndex);
 

@@ -34,7 +34,6 @@
 
 (function(window, undefined)
 {
-
 	// Import
 	var g_fontApplication = AscFonts.g_fontApplication;
 
@@ -3538,6 +3537,33 @@
 			this.tx  = 0.0;
 			this.ty  = 0.0;
 		},
+		CopyTo          : function(m)
+		{
+			m.sx  = this.sx;
+			m.shx = this.shx;
+			m.shy = this.shy;
+			m.sy  = this.sy;
+			m.tx  = this.tx;
+			m.ty  = this.ty;
+		},
+		CopyFrom        : function(m)
+		{
+			this.sx  = m.sx;
+			this.shx = m.shx;
+			this.shy = m.shy;
+			this.sy  = m.sy;
+			this.tx  = m.tx;
+			this.ty  = m.ty;
+		},
+		SetValues       : function(sx,shy,shx,sy,tx,ty)
+		{
+			this.sx  = sx;
+			this.shx = shx;
+			this.shy = shy;
+			this.sy  = sy;
+			this.tx  = tx;
+			this.ty  = ty;
+		},
 		// трансформ
 		Multiply        : function(matrix, order)
 		{
@@ -3774,8 +3800,6 @@
 		return a * 60000;
 	};
 
-	var CMatrixL = CMatrix;
-
 	function CGlobalMatrixTransformer()
 	{
 		this.TranslateAppend = function(m, _tx, _ty)
@@ -3853,7 +3877,7 @@
 
 		this.MultiplyPrepend = function(m1, m2)
 		{
-			var m = new CMatrixL();
+			var m = new CMatrix();
 			m.sx  = m2.sx;
 			m.shx = m2.shx;
 			m.shy = m2.shy;
@@ -3869,8 +3893,9 @@
 			m1.ty  = m.ty;
 		}
 
-		this.Reflect = function (matrix, isHorizontal, isVertical) {
-			var m = new CMatrixL();
+		this.Reflect = function (matrix, isHorizontal, isVertical)
+		{
+			var m = new CMatrix();
 			m.shx = 0;
 			m.sy  = 1;
 			m.tx  = 0;
@@ -3892,13 +3917,8 @@
 
 		this.CreateDublicateM = function(matrix)
 		{
-			var m = new CMatrixL();
-			m.sx  = matrix.sx;
-			m.shx = matrix.shx;
-			m.shy = matrix.shy;
-			m.sy  = matrix.sy;
-			m.tx  = matrix.tx;
-			m.ty  = matrix.ty;
+			let m = new CMatrix();
+			m.CopyFrom(matrix);
 			return m;
 		}
 
@@ -4156,7 +4176,6 @@
 	window['AscCommon'].MATRIX_ORDER_PREPEND     = MATRIX_ORDER_PREPEND;
 	window['AscCommon'].MATRIX_ORDER_APPEND      = MATRIX_ORDER_APPEND;
 	window['AscCommon'].CMatrix                  = CMatrix;
-	window['AscCommon'].CMatrixL                 = CMatrixL;
 	window['AscCommon'].CGlobalMatrixTransformer = CGlobalMatrixTransformer;
 	window['AscCommon'].CClipManager             = CClipManager;
 	window['AscCommon'].CPen                     = CPen;
