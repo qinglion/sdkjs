@@ -241,7 +241,7 @@
 					oDocRenderer.VectorMemoryForPrint.ClearNoAttack();
 
 					oDocRenderer.BeginPage(_logic_doc.GetWidthMM(i), _logic_doc.GetHeightMM(i));
-					_logic_doc.draw(1, oDocRenderer);
+					_logic_doc.draw(100, oDocRenderer);
 					oDocRenderer.EndPage();
 
 					window["AscDesktopEditor"]["Print_Page"](oDocRenderer.Memory.GetBase64Memory(), _logic_doc.GetWidthMM(i), _logic_doc.GetHeightMM(i));
