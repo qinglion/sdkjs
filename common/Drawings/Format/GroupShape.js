@@ -463,7 +463,7 @@
 				return;
 			}
 			var oClipRect;
-			if (!graphics.IsSlideBoundsCheckerType) {
+			if (!graphics.isBoundsChecker()) {
 				oClipRect = this.getClipRect();
 			}
 			if (oClipRect) {
