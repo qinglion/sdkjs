@@ -423,27 +423,15 @@
 
 		}
 
+		if (graphics.m_oContext) {
+			graphics.m_oContext.clearRect(0, 0, api.canvas.width, api.canvas.height);
+		}
 
 		//visio y coordinate goes up while
 		//ECMA-376-11_5th_edition and Geometry.js y coordinate goes down
-		if (!graphics.m_oCoordTransform && graphics.SetBaseTransform) {
-			let m_oCoordTransform = new AscCommon.CMatrix();
-			//so without mirror we get page upside down
-			global_MatrixTransformer.Reflect(m_oCoordTransform, false, true);
-			global_MatrixTransformer.TranslateAppend(m_oCoordTransform, 0, logic_h_mm);
-			// consider scale for zoom
-			global_MatrixTransformer.ScaleAppend(m_oCoordTransform, pageScale, pageScale);
-			graphics.SetBaseTransform(m_oCoordTransform);
-		} else {
-			//so without mirror we get page upside down
-			global_MatrixTransformer.Reflect(graphics.m_oCoordTransform, false, true);
-			global_MatrixTransformer.TranslateAppend(graphics.m_oCoordTransform, 0, h_px);
-			// consider scale for zoom
-			//global_MatrixTransformer.ScaleAppend(graphics.m_oCoordTransform, pageScale, pageScale);
-
-			let ctx = graphics.m_oContext;
-			ctx.clearRect(0, 0, api.canvas.width, api.canvas.height);
-		}
+		let baseMatrix = new AscCommon.CMatrix();
+		baseMatrix.SetValues(1, 0, 0, -1, 0, logic_h_mm);
+		graphics.SetBaseTransform(baseMatrix);
 
 		graphics.SaveGrState();
 		graphics.SetIntegerGrid(false);
