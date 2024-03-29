@@ -399,7 +399,7 @@
 					console.log("paragraphPropsCommon is null. Creating default paragraph");
 					// create new paragraph to hold new properties
 					let oContent = textCShape.getDocContent();
-					let paragraph = new Paragraph(textCShape.getDrawingDocument(), null, true);
+					let paragraph = new Paragraph(textCShape.getDrawingDocument(), true);
 					// Set defaultParagraph justify/align text - center
 					paragraph.Pr.SetJc(AscCommon.align_Left);
 					oContent.Content.push(paragraph);
@@ -450,7 +450,7 @@
 
 				// create new paragraph to hold new properties
 				let oContent = textCShape.getDocContent();
-				let paragraph = new Paragraph(textCShape.getDrawingDocument(), null, true);
+				let paragraph = new Paragraph(textCShape.getDrawingDocument(), true);
 				// Set defaultParagraph justify/align text - center
 				paragraph.Pr.SetJc(horizontalAlign);
 				oContent.Content.push(paragraph);
