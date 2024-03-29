@@ -283,8 +283,8 @@
 	 * @return {number}
 	 */
 	CVisioDocument.prototype.getFitZoomValue = function(pageIndex, displayedWidthPx, displayedHeightPX) {
-		let logic_w_mm = this.getWidthMM(pageIndex);
-		let logic_h_mm = this.getHeightMM(pageIndex);
+		let logic_w_mm = this.GetWidthMM(pageIndex);
+		let logic_h_mm = this.GetHeightMM(pageIndex);
 
 		var _value = 100;
 
@@ -307,7 +307,7 @@
 	 * @param pageIndex
 	 * @memberOf CVisioDocument
 	 */
-	CVisioDocument.prototype.getWidthMM = function(pageIndex) {
+	CVisioDocument.prototype.GetWidthMM = function(pageIndex) {
 		//todo units, indexes
 		let logic_w_inch = this.pages.page[pageIndex].pageSheet.elements.find(function(elem) {return elem.n === "PageWidth"}).v;
 		return logic_w_inch * g_dKoef_in_to_mm;
@@ -318,7 +318,7 @@
 	 * @param pageIndex
 	 * @memberOf CVisioDocument
 	 */
-	CVisioDocument.prototype.getHeightMM = function(pageIndex) {
+	CVisioDocument.prototype.GetHeightMM = function(pageIndex) {
 		let logic_h_inch = this.pages.page[pageIndex].pageSheet.elements.find(function(elem) {return elem.n === "PageHeight"}).v;
 		return logic_h_inch * g_dKoef_in_to_mm;
 	}
@@ -372,12 +372,12 @@
 		let topLevelShapesAndGroups = this.convertToCShapesAndGroups(pageInfo, pageContent);
 
 		let api = this.api;
-		let logic_w_mm = this.getWidthMM(pageIndex);
-		let logic_h_mm = this.getHeightMM(pageIndex);
+		let logic_w_mm = this.GetWidthMM(pageIndex);
+		let logic_h_mm = this.GetHeightMM(pageIndex);
 
 		let graphics;
 
-		let useFitToScreenZoom = true;
+		let useFitToScreenZoom = !pGraphics;
 		let pageScale;
 		if (useFitToScreenZoom) {
 			Zoom = Zoom * this.getFitZoomValue(pageIndex, api.HtmlElement.offsetWidth,api.HtmlElement.offsetHeight) / 100;
@@ -427,7 +427,7 @@
 		//visio y coordinate goes up while
 		//ECMA-376-11_5th_edition and Geometry.js y coordinate goes down
 		if (!graphics.m_oCoordTransform && graphics.SetBaseTransform) {
-			let m_oCoordTransform = new AscCommon.CMatrixL();
+			let m_oCoordTransform = new AscCommon.CMatrix();
 			//so without mirror we get page upside down
 			global_MatrixTransformer.Reflect(m_oCoordTransform, false, true);
 			global_MatrixTransformer.TranslateAppend(m_oCoordTransform, 0, logic_h_mm);
