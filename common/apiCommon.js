@@ -185,17 +185,108 @@ function (window, undefined) {
 		return false;
 	}
 
-	let c_oLicenseResult = {
-		Error: 1,
-		Expired: 2,
-		Success: 3,
-		UnknownUser: 4,
-		Connections: 5,
-		ExpiredTrial: 6,
-		SuccessLimit: 7,
-		UsersCount: 8,
-		ConnectionsOS: 9,
-		UsersCountOS: 10,
+
+	function asc_menu_ReadPaddings(_params, _cursor){
+		const _paddings = new Asc.asc_CPaddings();
+		_paddings.read(_params, _cursor);
+		return _paddings;
+	}
+
+	function asc_menu_ReadColor(_params, _cursor) {
+		const _color = new Asc.asc_CColor();
+		_color.read(_params, _cursor);
+		return _color;
+	}
+
+	function parseJSDoc(jsDoc) {
+		// function for parsing jsDoc (for builder method "AddCustomFunction")
+		const result = [];
+
+		// A regular expression for searching for JSDoc comments describing parameters, properties, and functions
+		const jsDocRegex = /\/\*\*([\s\S]*?)\*\//g;
+		const paramRegex = /@param\s+{(\??)(.+?)}\s+(?:(\[)?([\w.]+|\{[\w.]+\}))?(?:\s*=\s*([^@]+?)(?=\s|\)|$))?(?:\s+(.+))?/g;
+		const propertyRegex = /@property\s+{(\??)(.+?)}\s+(?:(\[)?([\w.]+|\{[\w.]+\}))?(?:\s*=\s*([^@]+?)(?=\s|\)|$))?(?:\s+(.+))?/g;
+	
+		let match;
+		while ((match = jsDocRegex.exec(jsDoc)) !== null) {
+			const parsedData = {};
+			const commentBlock = match[1].trim();
+	
+			// Parsing of function parameters
+			const params = [];
+			let paramMatch;
+			while ((paramMatch = paramRegex.exec(commentBlock)) !== null) {
+				const type = paramMatch[2];
+				const isOptional = paramMatch[3] !== undefined || paramMatch[1] === '?';
+				const name = paramMatch[4];
+				const defaultValue = isOptional && paramMatch[5] !== undefined ? paramMatch[5].trim().replace(/\]$/, '') : undefined;
+				const description = paramMatch[6] || '';
+	
+				params.push({
+					type,
+					name,
+					isOptional,
+					defaultValue,
+					description
+				});
+			}
+	
+			// Parsing properties
+			const properties = [];
+			let propertyMatch;
+			while ((propertyMatch = propertyRegex.exec(commentBlock)) !== null) {
+				const type = propertyMatch[2];
+				const isOptional = propertyMatch[3] !== undefined || propertyMatch[1] === '?';
+				const name = propertyMatch[4];
+				const defaultValue = isOptional && propertyMatch[5] !== undefined ? propertyMatch[5].trim().replace(/\]$/, '') : undefined;
+				const description = propertyMatch[6] || '';
+	
+				properties.push({
+					type,
+					name,
+					isOptional,
+					defaultValue,
+					description
+				});
+			}
+	
+			// Parsing what the function returns
+			const returnRegex = /@returns?\s+{(.+?)}\s+(.+)/g;
+			let returnInfo = null;
+			const returnMatch = returnRegex.exec(commentBlock);
+			if (returnMatch !== null) {
+				returnInfo = {
+					type: returnMatch[1],
+					description: returnMatch[2]
+				};
+			}
+	
+			// Parsing function description
+			const descriptionRegex = /\*\s*(.*)/g;
+			const descriptionMatch = descriptionRegex.exec(commentBlock);
+			const description = descriptionMatch ? descriptionMatch[1].trim() : '';
+	
+			parsedData.params = params;
+			parsedData.properties = properties;
+			parsedData.returnInfo = returnInfo;
+			parsedData.description = description;
+			result.push(parsedData);
+		}
+	
+		return result;
+	};
+
+	var c_oLicenseResult = {
+		Error         : 1,
+		Expired       : 2,
+		Success       : 3,
+		UnknownUser   : 4,
+		Connections   : 5,
+		ExpiredTrial  : 6,
+		SuccessLimit  : 7,
+		UsersCount    : 8,
+		ConnectionsOS : 9,
+		UsersCountOS  : 10,
 		ExpiredLimited: 11,
 		ConnectionsLiveOS: 12,
 		ConnectionsLive: 13,
@@ -4463,6 +4554,8 @@ function (window, undefined) {
 		this.EncryptedInfo;
 		this.IsEnabledPlugins = true;
 		this.IsEnabledMacroses = true;
+		this.IsWebOpening = false;
+		this.SupportsOnSaveDocument = false;
 
 		//for external reference
 		this.ReferenceData = null;
@@ -4609,6 +4702,18 @@ function (window, undefined) {
 	};
 	prot.put_ReferenceData = prot.asc_putReferenceData = function (v) {
 		this.ReferenceData = v;
+	};
+	prot.put_IsWebOpening = prot.asc_putIsWebOpening = function (v) {
+		this.IsWebOpening = v;
+	};
+	prot.get_IsWebOpening = prot.asc_getIsWebOpening = function () {
+		return this.IsWebOpening;
+	};
+	prot.put_SupportsOnSaveDocument = prot.asc_putSupportsOnSaveDocument = function (v) {
+		this.SupportsOnSaveDocument = v;
+	};
+	prot.get_SupportsOnSaveDocument = prot.asc_getSupportsOnSaveDocument = function () {
+		return this.SupportsOnSaveDocument;
 	};
 
 	function COpenProgress() {
@@ -5229,16 +5334,18 @@ function (window, undefined) {
 
 	// ----------------------------- plugins ------------------------------- //
 	let PluginType = {
-		System: 0, // Системный, неотключаемый плагин.
-		Background: 1, // Фоновый плагин. Тоже самое, что и системный, но отключаемый.
-		Window: 2, // Окно
-		Panel: 3  // Панель
+		System: 0,      // Системный, неотключаемый плагин.
+		Background: 1,  // Фоновый плагин. Тоже самое, что и системный, но отключаемый.
+		Window: 2,      // Окно
+		Panel: 3,       // Панель
+		Invisible : 4   // Невидимый
 	};
 
 	PluginType["System"] = PluginType.System;
 	PluginType["Background"] = PluginType.Background;
 	PluginType["Window"] = PluginType.Window;
 	PluginType["Panel"] = PluginType.Panel;
+	PluginType["Unvisible"] = PluginType.Unvisible;
 
 	function CPluginVariation() {
 		this.description = "";
@@ -5392,10 +5499,16 @@ function (window, undefined) {
 			if ("system" === _type) this.type = PluginType.System;
 			if ("window" === _type) this.type = PluginType.Window;
 			if ("panel" === _type) this.type = PluginType.Panel;
+			if ("invisible" === _type) this.type = PluginType.Invisible;
 		}
 		else {
-			if (true === _object["isSystem"]) this.type = PluginType.System;
-			if (true === _object["isVisual"]) this.type = (true === _object["isInsideMode"]) ? PluginType.Panel : PluginType.Window;
+			// old version: not support background plugins
+			if (true === _object["isSystem"])
+				this.type = PluginType.System;
+			else if (true === _object["isVisual"])
+				this.type = (true === _object["isInsideMode"]) ? PluginType.Panel : PluginType.Window;
+			else
+				this.type = PluginType.Invisible;
 		}
 
 		this.isCustomWindow = (_object["isCustomWindow"] != null) ? _object["isCustomWindow"] : this.isCustomWindow;
@@ -6546,6 +6659,10 @@ function (window, undefined) {
 	prot["get_CoEditingMode"] = prot["asc_getCoEditingMode"] = prot.asc_getCoEditingMode;
 	prot["put_CoEditingMode"] = prot["asc_putCoEditingMode"] = prot.asc_putCoEditingMode;
 	prot["put_ReferenceData"] = prot["asc_putReferenceData"] = prot.asc_putReferenceData;
+	prot["put_IsWebOpening"] = prot["asc_putIsWebOpening"] = prot.asc_putIsWebOpening;
+	prot["get_IsWebOpening"] = prot["asc_getIsWebOpening"] = prot.asc_getIsWebOpening;
+	prot["put_SupportsOnSaveDocument"] = prot["asc_putSupportsOnSaveDocument"] = prot.asc_putSupportsOnSaveDocument;
+	prot["get_SupportsOnSaveDocument"] = prot["asc_getSupportsOnSaveDocument"] = prot.asc_getSupportsOnSaveDocument;
 
 	window["AscCommon"].COpenProgress = COpenProgress;
 	prot = COpenProgress.prototype;
@@ -6590,6 +6707,7 @@ function (window, undefined) {
 	window["AscCommon"].isFileBuild = isFileBuild;
 	window["AscCommon"].checkCanvasInDiv = checkCanvasInDiv;
 	window["AscCommon"].isValidJs = isValidJs;
+    window["AscCommon"].parseJSDoc = parseJSDoc;
 
 	window["Asc"]["PluginType"] = window["Asc"].PluginType = PluginType;
 	window["Asc"]["CPluginVariation"] = window["Asc"].CPluginVariation = CPluginVariation;

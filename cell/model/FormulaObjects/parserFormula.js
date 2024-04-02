@@ -47,8 +47,9 @@ function (window, undefined) {
   var parserHelp = AscCommon.parserHelp;
   var g_oFormatParser = AscCommon.g_oFormatParser;
   var CellAddress = AscCommon.CellAddress;
-	var cDate = Asc.cDate;
+  var cDate = Asc.cDate;
   var bIsSupportArrayFormula = true;
+  var bIsSupportDynamicArrays = false;
 
   var c_oAscError = Asc.c_oAscError;
 
@@ -70,7 +71,9 @@ function (window, undefined) {
 
 	var TOK_SUBTYPE_UNION = 15;
 
-	var arrayFunctionsMap = {"SUMPRODUCT": 1, "FILTER": 1, "AGGREGATE": 1};
+	var arrayFunctionsMap = {"SUMPRODUCT": 1, "FILTER": 1, "SUM": 1, "AGGREGATE": 1};
+
+	var importRangeLinksState = {importRangeLinks: null, startBuildImportRangeLinks: null};
 
 	function getArrayCopy(arr) {
 		var newArray = [];
@@ -501,7 +504,8 @@ var cErrorType = {
 		not_numeric         : 6,
 		not_available       : 7,
 		getting_data        : 8,
-		array_not_calc      : 9
+		array_not_calc      : 9,
+		cannot_be_spilled	: 10
   };
 //добавляю константу cReturnFormulaType для корректной обработки формул массива
 // value - функция умеет возвращать только значение(не массив)
@@ -514,6 +518,7 @@ var cErrorType = {
 // area_to_ref - заменяем area на массив ссылок на ячейку(REF)
 // replace_only_array - в случае с Area - оставляем его в аргументах и рассчитываем только 1 значение(аналогично array)
 // replace_only_array - в слуае с массивом - обрабатываем стандартно по элементам
+// dynamic_array - в отличие от обычного массива такой тип будут использовать формулы которые могут не иметь в аргументах диапазонов/массивов, но при этом будут их возвращать(прим. SEQUENCE)
 
 /** @enum */
 var cReturnFormulaType = {
@@ -522,7 +527,8 @@ var cReturnFormulaType = {
 	array: 2,
 	area_to_ref: 3,
 	replace_only_array: 4,
-	setArrayRefAsArg: 5//для row/column если нет аргументов
+	setArrayRefAsArg: 5, //для row/column если нет аргументов
+	dynamic_array: 6
 };
 
 var cExcelSignificantDigits = 15; //количество цифр в числе после запятой
@@ -533,6 +539,7 @@ var c_Date1900Const = 25568; //разница в днях между 01.01.1970 
 var rx_sFuncPref = /_xlfn\./i;
 var rx_sFuncPrefXlWS = /_xlws\./i;// /_xlfn\.(_xlws\.)?/i;
 var rx_sDefNamePref = /_xlnm\./i;
+var rx_sFuncPrefXLUFD = /__xludf.DUMMYFUNCTION\./i;
 var cNumFormatFirstCell = -1;
 var cNumFormatNone = -2;
 var cNumFormatNull = -3;
@@ -632,7 +639,7 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 		return res;
 	};
 
-	cBaseType.prototype.toArray = function (putValue, checkOnError) {
+	cBaseType.prototype.toArray = function (putValue, checkOnError, fPrepareElem) {
 		let arr = [];
 		if (this.getMatrix) {
 			arr = this.getMatrix();
@@ -645,6 +652,14 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 							if (checkOnError) {
 								if (arr[i][j].type === cElementType.error) {
 									return arr[i][j];
+								}
+							}
+							if (fPrepareElem) {
+								arr[i][j] = fPrepareElem(arr[i][j]);
+								if (checkOnError) {
+									if (arr[i][j].type === cElementType.error) {
+										return arr[i][j];
+									}
 								}
 							}
 							if (putValue) {
@@ -660,11 +675,16 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 					return this;
 				}
 			}
-
+			let _res = fPrepareElem ? fPrepareElem(this) : this;
+			if (fPrepareElem && checkOnError) {
+				if (this.type === cElementType.error) {
+					return this;
+				}
+			}
 			if (!arr[0]) {
 				arr[0] = [];
 			}
-			arr[0][0] = putValue ? this.getValue() : this;
+			arr[0][0] = putValue ? _res.getValue() : _res;
 		}
 		return arr;
 	};
@@ -885,6 +905,13 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 				this.errorType = cErrorType.array_not_calc;
 				break;
 			}
+			case cErrorLocal["spill"]:
+			case cErrorOrigin["spill"]:
+			case cErrorType.cannot_be_spilled: {
+				this.value = "#SPILL!";
+				this.errorType = cErrorType.cannot_be_spilled;
+				break;
+			}
 		}
 
 		return this;
@@ -946,6 +973,10 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 			case cErrorType.array_not_calc: {
 				return cErrorLocal["calc"];
 			}
+			case cErrorOrigin["spill"]:
+			case cErrorType.cannot_be_spilled: {
+				return cErrorLocal["spill"];
+			}
 		}
 		return cErrorLocal["na"];
 	};
@@ -990,6 +1021,10 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 			}
 			case cErrorOrigin["calc"]: {
 				res = cErrorType.array_not_calc;
+				break;
+			}
+			case cErrorOrigin["spill"]: {
+				res = cErrorType.cannot_be_spilled;
 				break;
 			}
 			default: {
@@ -1040,6 +1075,10 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 			}
 			case cErrorType.array_not_calc: {
 				res = cErrorOrigin["calc"];
+				break;
+			}
+			case cErrorType.cannot_be_spilled: {
+				res = cErrorOrigin["spill"];
 				break;
 			}
 			default:
@@ -3173,6 +3212,8 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 		}
 		if (this.isXLFN || this.isXLWS) {
 			return new cString((this.isXLFN ? "_xlfn." : "") + (this.isXLWS ? "_xlws." : "") + this.name + "(" + str + ")");
+		} else if (this.isXLUDF) {
+			//return new cString("__xludf.DUMMYFUNCTION." + this.name + "(" + str + ")");
 		}
 		return new cString(this.toString() + "(" + str + ")");
 	};
@@ -3195,7 +3236,7 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 	cBaseFunction.prototype.toString = function (/*locale*/) {
 		/*var name = this.toString();
 		var localeName = locale ? locale[name] : name;*/
-		return this.name.replace(rx_sFuncPref, "_xlfn.").replace(rx_sFuncPrefXlWS, "_xlws.");
+		return this.name.replace(rx_sFuncPref, "_xlfn.").replace(rx_sFuncPrefXlWS, "_xlws.").replace(rx_sFuncPrefXLUFD, "__xludf.DUMMYFUNCTION.");
 	};
 	cBaseFunction.prototype.toLocaleString = function (/*locale*/) {
 		var name = this.toString();
@@ -3566,6 +3607,19 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 		var res = null;
 		var t = this;
 
+		let dynamicRange = null, dynamicArraySize = null;
+		if (AscCommonExcel.bIsSupportDynamicArrays) {
+			if (!parserFormula.dynamicRange && !parserFormula.ref) {
+				dynamicArraySize = this.getDynamicArraySize(arg);
+				if (dynamicArraySize && parserFormula.parent && parserFormula.parent.nCol != null && parserFormula.parent.nRow != null) {
+					dynamicRange = Asc.Range(parserFormula.parent.nCol, parserFormula.parent.nRow, dynamicArraySize.width + parserFormula.parent.nCol - 1, dynamicArraySize.height + parserFormula.parent.nRow - 1);
+					// parserFormula.ref = dynamicRange;
+					parserFormula.dynamicRange = dynamicRange;
+					this.bArrayFormula = true;
+				}
+			}
+		}
+
 		var functionsCanReturnArray = ["index"];
 
 		var returnFormulaType = this.returnValueType;
@@ -3748,15 +3802,112 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 			}
 		}
 
+		if (AscCommonExcel.bIsSupportDynamicArrays && (dynamicRange || dynamicArraySize)) {
+			// parserFormula.ref = null;
+			this.bArrayFormula = null;
+		}
+
 		return res;
 	};
 
+	cBaseFunction.prototype.checkFormulaArray2 = function (arg, opt_bbox, opt_defName, parserFormula, bIsSpecialFunction, argumentsCount) {
+		if (AscCommonExcel.bIsSupportDynamicArrays) {
+			const t = this;
+			let res = null;
+			let functionsCanReturnArray = ["index"];
+	
+			let returnFormulaType = this.returnValueType;
+			if (cReturnFormulaType.setArrayRefAsArg === returnFormulaType) {
+				// todo check if this situation occurs
+				if (arg.length === 0 && parserFormula.ref) {
+					res = this.Calculate([new cArea(parserFormula.ref.getName(), parserFormula.ws)], opt_bbox, opt_defName, parserFormula.ws);
+				} else {
+					return null;
+				}
+			}
+	
+			let arrayIndexes = this.arrayIndexes;
+			let replaceAreaByValue = cReturnFormulaType.value_replace_area === returnFormulaType;
+			let replaceAreaByRefs = cReturnFormulaType.area_to_ref === returnFormulaType;
+			let replaceOnlyArray = cReturnFormulaType.replace_only_array === returnFormulaType;
+	
+			const checkArrayIndex = function(index) {
+				let res = false;
+				if(arrayIndexes) {
+					if(1 === arrayIndexes[index]) {
+						res = true;
+					} else if(typeof arrayIndexes[index] === "object") {
+						// for this situation check object 0 for an index, the value of the argument index is stored there
+						// which determines whether a given argument should be treated as an array or not
+						let tempsArgIndex = arrayIndexes[index][0];
+						if(undefined !== tempsArgIndex && arg[tempsArgIndex]) {
+							if(cElementType.cellsRange === arg[tempsArgIndex].type || cElementType.cellsRange3D === arg[tempsArgIndex].type || cElementType.array === arg[tempsArgIndex].type) {
+								res = true;
+							}
+						}
+					}
+				}
+				return res;
+			};
+			if((!returnFormulaType || replaceAreaByValue || replaceAreaByRefs || arrayIndexes || replaceOnlyArray)) {
+				if (functionsCanReturnArray.indexOf(this.name.toLowerCase()) !== -1) {
+					let _tmp = this.Calculate(arg, opt_bbox, opt_defName, this.ws, bIsSpecialFunction);
+					if (_tmp && _tmp.type === cElementType.array) {
+						return _tmp;
+					}
+				}
+	
+				let tempArgs = [], tempArg, firstArray, _checkArrayIndex;
+				for (let j = 0; j < argumentsCount; j++) {
+					tempArg = arg[j];
+	
+					_checkArrayIndex = checkArrayIndex(j);
+					if (!_checkArrayIndex) {
+						if (cElementType.cellsRange === tempArg.type || cElementType.cellsRange3D === tempArg.type || cElementType.array === tempArg.type) {
+							res = true
+						}
+					}
+					if (res) {
+						return res;
+					}
+	
+					tempArgs.push(tempArg);
+				}
+			}
+	
+			return res;
+		}
+	};
+
+	cBaseFunction.prototype.getDynamicArraySize = function (arg) {
+
+		if (!AscCommonExcel.bIsSupportDynamicArrays || this.returnValueType === AscCommonExcel.cReturnFormulaType.array) {
+			return null;
+		}
+
+		let width = 1, height = 1;
+		for (let i = 0; i < arg.length; i++) {
+			if (!this.arrayIndexes || !this.arrayIndexes[i]) {
+				let objSize = arg[i].getDimensions();
+				if (objSize) {
+					height = Math.max(objSize.row, height);
+					width = Math.max(objSize.col, width);
+				}
+			}
+		}
+
+		if (width !== 1 || height !== 1) {
+			return {width: width, height: height};
+		}
+		return null;
+	};
 
 	/** @constructor */
 	function cUnknownFunction(name) {
 		this.name = name;
 		this.isXLFN = null;
 		this.isXLWS = null;
+		this.isXLUDF = null;
 	}
 	cUnknownFunction.prototype = Object.create(cBaseFunction.prototype);
 	cUnknownFunction.prototype.constructor = cUnknownFunction;
@@ -5997,7 +6148,7 @@ function parserFormula( formula, parent, _ws ) {
 		var needAssemble = false;
 		var cFormulaList;
 
-		var startArrayFunc = false, counterArrayFunc = 0;
+		var startArrayFunc = false, counterArrayFunc = 0, isFoundImportFunctions;
 
 		if (this.isParsed) {
 			return this.isParsed;
@@ -6199,6 +6350,7 @@ function parserFormula( formula, parent, _ws ) {
 								elem = new cUnknownFunction(val);
 								let xlfnFrefix = "_xlfn.";
 								let xlwsFrefix = "_xlws.";
+								//let xludfFrefix = "__xludf.DUMMYFUNCTION.";
 								//_xlws only together with _xlfn
 								elem.isXLFN = (val.indexOf(xlfnFrefix) === 0);
 								elem.isXLWS = elem.isXLFN && xlfnFrefix.length === val.indexOf(xlwsFrefix);
@@ -6847,7 +6999,7 @@ function parserFormula( formula, parent, _ws ) {
 							if (!parseResult.externalReferenesNeedAdd[externalLink]) {
 								parseResult.externalReferenesNeedAdd[externalLink] = [];
 							}
-							parseResult.externalReferenesNeedAdd[externalLink].push(_3DRefTmp[1]);
+							parseResult.externalReferenesNeedAdd[externalLink].push({sheet: _3DRefTmp[1]});
 						}
 					}
 
@@ -6992,7 +7144,7 @@ function parserFormula( formula, parent, _ws ) {
 					elemArr.push(new cMultOperator());
 				}
 
-				var found_operator = null, operandStr = ph.operand_str.replace(rx_sFuncPref, "").replace(rx_sFuncPrefXlWS, "").toUpperCase();
+				var found_operator = null, operandStr = ph.operand_str.replace(rx_sFuncPref, "").replace(rx_sFuncPrefXlWS, "").replace(rx_sFuncPrefXLUFD, "").toUpperCase();
 				if (operandStr in cFormulaList) {
 					found_operator = cFormulaList[operandStr].prototype;
 				} else if (operandStr in cAllFormulaFunction) {
@@ -7001,6 +7153,8 @@ function parserFormula( formula, parent, _ws ) {
 					found_operator = new cUnknownFunction(operandStr);
 					let xlfnFrefix = "_xlfn.";
 					let xlwsFrefix = "_xlws.";
+					//let xludfFrefix = "__xludf.DUMMYFUNCTION.";
+
 					//_xlws only together with _xlfn
 					found_operator.isXLFN = (ph.operand_str.indexOf(xlfnFrefix) === 0);
 					found_operator.isXLWS = found_operator.isXLFN && xlfnFrefix.length === ph.operand_str.indexOf(xlwsFrefix);
@@ -7018,6 +7172,10 @@ function parserFormula( formula, parent, _ws ) {
 					parseResult.addElem(found_operator);
 					if (arrayFunctionsMap[found_operator.name]) {
 						startArrayFunc = true;
+					}
+
+					if (found_operator.name === "IMPORTRANGE") {
+						isFoundImportFunctions = true;
 					}
 
 					if (needCalcArgPos) {
@@ -7187,12 +7345,169 @@ function parserFormula( formula, parent, _ws ) {
 			if (needAssemble) {
 				this.Formula = this.assemble();
 			}
+			if (isFoundImportFunctions) {
+				//share external links
+				AscCommonExcel.importRangeLinksState.startBuildImportRangeLinks = true;
+				this.calculate();
+				AscCommonExcel.importRangeLinksState.startBuildImportRangeLinks = null;
+
+				this.importFunctionsRangeLinks = AscCommonExcel.importRangeLinksState.importRangeLinks;
+
+				if (this.importFunctionsRangeLinks) {
+					for (let i in this.importFunctionsRangeLinks) {
+						let externalLink = this.wb.getExternalLinkIndexByName(i);
+						if (externalLink === null) {
+							externalLink = i;
+							if (!parseResult.externalReferenesNeedAdd) {
+								parseResult.externalReferenesNeedAdd = [];
+							}
+							if (!parseResult.externalReferenesNeedAdd[externalLink]) {
+								parseResult.externalReferenesNeedAdd[externalLink] = [];
+							}
+
+							for (var j = 0; j < this.importFunctionsRangeLinks[i].length; j++) {
+								parseResult.externalReferenesNeedAdd[externalLink].push({sheet: this.importFunctionsRangeLinks[i][j].sheet, notUpdateId: true});
+							}
+						}
+					}
+
+					AscCommonExcel.importRangeLinksState.importRangeLinks = null;
+				}
+			}
 			return this.isParsed = true;
 		} else {
 			return this.isParsed = false;
 		}
 	};
 
+	parserFormula.prototype.findRefByOutStack = function () {
+		if (AscCommonExcel.bIsSupportDynamicArrays) {
+			// using outStack, look at all the arguments in the formulas and compare them with the arrayIndex positions for this formula
+			// go through the stack in the same order as .calculate method
+			if (this.ref) {
+				return true;
+			}
+
+			if (this.outStack && this.outStack.length > 0) {
+				let elemArr = [], _tmp, currentElement = null, bIsSpecialFunction, argumentsCount, defNameCalcArr, defNameArgCount = 0;
+				let length = this.outStack.length;
+				let isRef, opt_bbox;
+
+				if (!opt_bbox && this.parent && this.parent.onFormulaEvent) {
+					opt_bbox = this.parent.onFormulaEvent(AscCommon.c_oNotifyParentType.GetRangeCell);
+				}
+				if (!opt_bbox) {
+					opt_bbox = new Asc.Range(0, 0, 0, 0);
+				}
+
+				if (length === 1) {
+					let singleElem = this.outStack[0];
+					if (singleElem.type === cElementType.cellsRange || singleElem.type === cElementType.cellsRange3D || singleElem.type === cElementType.array) {
+						isRef = true;
+					} else if (singleElem.type === cElementType.name || singleElem.type === cElementType.name3D) {
+						// let defName = singleElem.getDefName();
+						let defNameResult = singleElem.Calculate(null, opt_bbox, true);
+						if (defNameResult && defNameResult.type === cElementType.array || defNameResult.type === cElementType.cellsRange || defNameResult.type === cElementType.cellsRange3D) {
+							isRef = true;
+						}
+					} else if (singleElem.type === cElementType.table) {
+						let tableArea = singleElem.toRef(opt_bbox);
+						if (tableArea && tableArea.type === cElementType.cellsRange || tableArea.type === cElementType.cellsRange3D || tableArea.type === cElementType.array) {
+							isRef = true;
+						}
+					}
+
+					if (isRef) {
+						return isRef;
+					}
+				}
+
+				for (let i = 0; i < this.outStack.length; i++) {
+					currentElement = this.outStack[i];
+					if (!currentElement) {
+						continue;
+					}
+
+					if(currentElement.name === "(" || currentElement.type === cElementType.specialFunctionStart || currentElement.type === cElementType.specialFunctionEnd || "number" === typeof(currentElement)) {
+						continue;
+					}
+		
+					if (currentElement.type === cElementType.operator || currentElement.type === cElementType.func) {
+						argumentsCount = "number" === typeof(this.outStack[i - 1]) ? this.outStack[i - 1] : currentElement.argumentsCurrent;
+						if (argumentsCount < 0) {
+							argumentsCount = -argumentsCount;
+							currentElement.bArrayFormula = true;
+						}
+						if (elemArr.length < argumentsCount) {
+							// elemArr = [];
+							// todo test these cases
+							return false;
+						} else if (argumentsCount + defNameArgCount > currentElement.argumentsMax) {
+							// elemArr = [];
+							// todo test these cases
+							return false;
+						} else {
+							// if operator - check whether each of the arguments is a range or an array
+							let isOperator = currentElement.type === cElementType.operator;
+							let arg = [];
+							for (let i = 0; i < argumentsCount + defNameArgCount; i++) {
+								if ("number" === typeof(elemArr[elemArr.length - 1])) {
+									elemArr.pop();
+								}
+								let tempElem = elemArr.pop();
+								if (isOperator && (tempElem.type === cElementType.cellsRange || tempElem.type === cElementType.cellsRange3D || tempElem.type === cElementType.array)) {
+									isRef = true;
+								}
+
+								// arg.unshift(elemArr.pop());
+								arg.unshift(tempElem);
+							}
+		
+							let formulaArray = null;
+							if (currentElement.type === cElementType.func) {
+								formulaArray = cBaseFunction.prototype.checkFormulaArray2.call(currentElement, arg, opt_bbox, null, this, bIsSpecialFunction, argumentsCount);
+							} else if (currentElement.type === cElementType.operator && currentElement.bArrayFormula) {
+								bIsSpecialFunction = true;
+							}
+
+							if(formulaArray) {
+								isRef = true;
+							} else {
+								// todo results SEQUENCE, RANDARRAY etc... can return an array when using regular values ​​in arguments
+								_tmp = currentElement.Calculate(arg, opt_bbox, null, this.ws, bIsSpecialFunction);
+							}
+
+							if (isRef || (_tmp && (_tmp.type === cElementType.array || _tmp.type === cElementType.cellsRange || _tmp.type === cElementType.cellsRange3D))) {
+								return true;
+							}
+		
+							defNameArgCount = 0;
+							elemArr.push(_tmp);
+						}
+					} else if (currentElement.type === cElementType.name || currentElement.type === cElementType.name3D) {
+						// let defName = currentElement.getDefName();
+						defNameCalcArr = currentElement.Calculate(null, opt_bbox, true);
+						defNameArgCount = [];
+						if(defNameCalcArr && defNameCalcArr.length) {
+							defNameArgCount = defNameCalcArr.length - 1;
+							for(let j = 0; j < defNameCalcArr.length; j++) {
+								elemArr.push(defNameCalcArr[j]);
+							}
+						} else {
+							elemArr.push(defNameCalcArr);
+						}
+					} else if (currentElement.type === cElementType.table) {
+						elemArr.push(currentElement.toRef(opt_bbox));
+					} else {
+						elemArr.push(currentElement);
+					}
+				}
+
+				return isRef;
+			}
+			return false;
+		}
+	};
 	parserFormula.prototype.calculateCycleError = function () {
 			this.value = new cError(cErrorType.bad_reference);
 			this._endCalculate();
@@ -7312,14 +7627,53 @@ function parserFormula( formula, parent, _ws ) {
 			}
 		}
 
+		// ref(CSE) - legacy array-formula
+		// dynamic range(DAF) - newest dynamic array-formula
+		// Differences:
+		// The DAF formula is entered into one cell and is completed by simply pressing enter 'spill' occurs automatically
+		// In the case of CSE, you must select the range in advance and press the cse combination after entering the formula
+		// The DAF size automatically changes when the data in the original range changes. Dynamic range reference is written in D2# format
+		// DAF is edited in the first cell (parent) of the range; to edit cse we need to select the entire previously created range
+		// In CSE we cannot delete previously created rows, but DAF can be edited
+		// CSE can expand to all cells except the same CSE arrays, tables, pivot tables
+		// DAF can only expand to completely empty cells(empty values)
+
+		let isRangeCanFitIntoCells;
 		//TODO заглушка для парсинга множественного диапазона в _xlnm.Print_Area. Сюда попадаем только в одном случае - из функции findCell для отображения диапазона области печати
 		if(checkMultiSelect && elemArr.length > 1 && this.parent && this.parent instanceof window['AscCommonExcel'].DefName /*&& this.parent.name === "_xlnm.Print_Area"*/) {
 			this.value = elemArr;
+
+			if (AscCommonExcel.bIsSupportDynamicArrays) {
+				// check further dynamic range
+				isRangeCanFitIntoCells =  this.checkDynamicRangeByElement(this.value, opt_bbox);
+				if (!isRangeCanFitIntoCells) {
+					this.aca = true;
+					this.ca = true;
+					this.value = new cError(cErrorType.cannot_be_spilled);
+				} else {
+					this.ca = false;
+					this.aca = false;
+				}
+			}
+
 			this._endCalculate();
 		} else {
 			this.value = elemArr.pop();
-			this.value.numFormat = numFormat;
 
+			if (AscCommonExcel.bIsSupportDynamicArrays) {
+				// check further dynamic range
+				isRangeCanFitIntoCells = this.checkDynamicRangeByElement(this.value, opt_bbox);
+				if (!isRangeCanFitIntoCells) {
+					this.aca = true;
+					this.ca = true;
+					this.value = new cError(cErrorType.cannot_be_spilled);
+				} else {
+					this.ca = false;
+					this.aca = false;
+				}
+			}
+
+			this.value.numFormat = numFormat;
 			//***array-formula***
 			//для обработки формулы массива
 			//передаётся последним параметром cell и временно подменяется parent у parserFormula для того, чтобы поменялось значение в элементе массива
@@ -7984,6 +8338,22 @@ function parserFormula( formula, parent, _ws ) {
 				}
 			}
 		}
+
+		if (this.importFunctionsRangeLinks) {
+			for (let i in this.importFunctionsRangeLinks) {
+				let externalLink = this.wb.getExternalLinkByName(i);
+				if (externalLink) {
+					for (let j in this.importFunctionsRangeLinks[i]) {
+						let _rangeInfo = this.importFunctionsRangeLinks[i][j];
+						let _ws = externalLink.worksheets[_rangeInfo.sheet];
+						if (_ws) {
+							this._buildDependenciesRef(_ws.getId(), AscCommonExcel.g_oRangeCache.getRangesFromSqRef(_rangeInfo.range)[0], null, true);
+						}
+					}
+				}
+			}
+
+		}
 	};
 	parserFormula.prototype.removeDependencies = function() {
 		if (!this.isInDependencies) {
@@ -8153,6 +8523,11 @@ function parserFormula( formula, parent, _ws ) {
 	parserFormula.prototype.getArrayFormulaRef = function() {
 		return this.ref;
 	};
+	parserFormula.prototype.getDynamicRef = function() {
+		if (AscCommonExcel.bIsSupportDynamicArrays) {
+			return this.dynamicRange;
+		}
+	};
 	parserFormula.prototype.setArrayFormulaRef = function(ref) {
 		this.ref = ref;
 	};
@@ -8198,7 +8573,7 @@ function parserFormula( formula, parent, _ws ) {
 		return false;
 	};
 	parserFormula.prototype.simplifyRefType = function (val, opt_ws, opt_row, opt_col) {
-		var ref = this.getArrayFormulaRef(), row, col;
+		let ref = this.getArrayFormulaRef(), dynamicRef = this.getDynamicRef(), row, col;
 
 		if (val == null) {
 			return;
@@ -8232,20 +8607,25 @@ function parserFormula( formula, parent, _ws ) {
 			}
 		} else if (cElementType.cellsRange === val.type || cElementType.cellsRange3D === val.type) {
 			if (opt_ws) {
-				var range;
+				let range;
 				if (ref) {
 					range = val.getRange();
 					if (range) {
-						var bbox = range.bbox;
-						var rowCount = bbox.r2 - bbox.r1 + 1;
-						var colCount = bbox.c2 - bbox.c1 + 1;
+						let bbox = range.bbox;
+						let rowCount = bbox.r2 - bbox.r1 + 1,
+							colCount = bbox.c2 - bbox.c1 + 1;
+						
 						row = 1 === rowCount ? 0 : opt_row - ref.r1;
 						col = 1 === colCount ? 0 : opt_col - ref.c1;
 						if (row > rowCount - 1 || col > colCount - 1) {
 							val = null;
 						} else {
 							val = val.getValueByRowCol(row, col);
+							if (!val) {
+								val = new cEmpty();
+							}
 						}
+
 						if (!val) {
 							val = new window['AscCommonExcel'].cError(window['AscCommonExcel'].cErrorType.not_available);
 						}
@@ -8295,6 +8675,125 @@ function parserFormula( formula, parent, _ws ) {
 			}
 		}
 		return false;
+	};
+
+	parserFormula.prototype.setDynamicRef = function (range) {
+		if (!range) {
+			return
+		}
+		this.ref = range;
+		this.dynamicRange = range;
+	};
+
+	parserFormula.prototype.checkDynamicRange = function () {
+		/* this function checks if the current value in formula can fit in the cells */
+		if (!this.dynamicRange) {
+			return true
+		}
+
+		if (this.value && (this.value.type !== cElementType.array && this.value.type !== cElementType.cellsRange)) {
+			return true
+		} else if (this.value && (this.value.type === cElementType.array || this.value.type === cElementType.cellsRange)) {
+			// go through the range and see if the array can fit into it
+			let dimensions = this.value.getDimensions(), 
+				mainCell = this.parent, isHaveNonEmptyCell;
+
+			if (this.value.isOneElement()) {
+				return true
+			}
+
+			if (mainCell) {
+				const t = this;
+				let rangeRow = mainCell.nRow,
+					rangeCol = mainCell.nCol;
+
+				for (let i = rangeRow; i < (rangeRow + dimensions.row); i++) {
+					for (let j = rangeCol; j < (rangeCol + dimensions.col); j++) {
+						if (i === rangeRow && j === rangeCol) {
+							continue
+						}
+						this.ws._getCellNoEmpty(i, j, function(cell) {
+							if (cell) {
+								let formula = cell.getFormulaParsed();
+								let dynamicRangeFromCell = formula && formula.getDynamicRef();
+								if (formula && dynamicRangeFromCell) {
+									// check if cell belong to current dynamicRange
+									// this is necessary so that spill errors do not occur during the second check of the range (since the values ​​in it have already been entered earlier)
+									if (!t.dynamicRange.isEqual(dynamicRangeFromCell)) {
+										// if the cell is part of another dynamic range, then the range that is in the area of ​​the previous range is displayed (except for the first cell, but we do not check it)
+										// that is, if one of the ranges is “lower” or “to the right” in the editor, then it will be displayed, and the other will receive a SPILL error
+										isHaveNonEmptyCell = true
+									}
+								} else if (cell.formulaParsed || !cell.isEmptyTextString()) {
+									isHaveNonEmptyCell = true
+								}
+							}
+						});
+						if (isHaveNonEmptyCell) {
+							return false
+						}
+					}
+				}
+				return true
+			}
+		}
+
+		return false
+	};
+
+	parserFormula.prototype.checkDynamicRangeByElement = function (element, parentCell) {
+		/* this function checks if element can fit in the cells */
+		if (!element || !parentCell) {
+			return true;
+		}
+
+		if (element.type !== cElementType.array && element.type !== cElementType.cellsRange && element.type !== cElementType.cellsRange3D) {
+			return true;
+		} else if (element.type === cElementType.array || element.type === cElementType.cellsRange || element.type === cElementType.cellsRange3D) {
+			// go through the range and see if the array can fit into it
+			let dimensions = element.getDimensions(), isHaveNonEmptyCell;
+
+			if (element.isOneElement()) {
+				return true
+			}
+
+			// todo if an element is defname, it has no parent element?
+			const t = this;
+			let rangeRow = parentCell.r1,
+				rangeCol = parentCell.c1;
+
+			let supposedDynamicRange = this.ws.getRange3(rangeRow, rangeCol, (rangeRow + dimensions.row) - 1, (rangeCol + dimensions.col) - 1);
+			for (let i = rangeRow; i < (rangeRow + dimensions.row); i++) {
+				for (let j = rangeCol; j < (rangeCol + dimensions.col); j++) {
+					if (i === rangeRow && j === rangeCol) {
+						continue
+					}
+					this.ws._getCellNoEmpty(i, j, function(cell) {
+						if (cell) {
+							let formula = cell.getFormulaParsed();
+							let dynamicRangeFromCell = formula && formula.getDynamicRef();
+							if (formula && dynamicRangeFromCell) {
+								// check if cell belong to current dynamicRange
+								// this is necessary so that spill errors do not occur during the second check of the range (since the values ​​in it have already been entered earlier)
+								if (!supposedDynamicRange.bbox.isEqual(dynamicRangeFromCell)) {
+									// if the cell is part of another dynamic range, then the range that is in the area of ​​the previous range is displayed (except for the first cell, but we do not check it)
+									// that is, if one of the ranges is “lower” or “to the right” in the editor, then it will be displayed, and the other will receive a SPILL error
+									isHaveNonEmptyCell = true
+								}
+							} else if (cell.formulaParsed || !cell.isEmptyTextString()) {
+								isHaveNonEmptyCell = true
+							}
+						}
+					});
+					if (isHaveNonEmptyCell) {
+						return false
+					}
+				}
+			}
+			return true
+		}
+
+		return false
 	};
 
 	function CalcRecursion() {
@@ -9068,6 +9567,7 @@ function parserFormula( formula, parent, _ws ) {
 	window['AscCommonExcel'].cReturnFormulaType = cReturnFormulaType;
 
 	window['AscCommonExcel'].bIsSupportArrayFormula = bIsSupportArrayFormula;
+	window['AscCommonExcel'].bIsSupportDynamicArrays = bIsSupportDynamicArrays;
 
 	window['AscCommonExcel'].cNumber = cNumber;
 	window['AscCommonExcel'].cString = cString;
@@ -9116,5 +9616,7 @@ function parserFormula( formula, parent, _ws ) {
 	window['AscCommonExcel'].convertAreaToArray = convertAreaToArray;
 	window['AscCommonExcel'].convertAreaToArrayRefs = convertAreaToArrayRefs;
 	window['AscCommonExcel'].getArrayHelper = getArrayHelper;
+
+	window['AscCommonExcel'].importRangeLinksState = importRangeLinksState;
 
 })(window);
