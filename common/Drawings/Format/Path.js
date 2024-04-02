@@ -1176,9 +1176,10 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                             let startPoint = bezier.startPoint;
                             let controlPoints = bezier.controlPoints;
                             let endPoint = bezier.endPoint;
-                            // unlike in other commands pass start point bcs other commands use canvas system end point
-                            // for next command start point
-                            shape_drawer.drawNthDegreeBezier(startPoint, controlPoints, endPoint);
+                            // unlike in other commands pass start point bcs other commands use canvas system
+                            // end point for next command start point
+                            // (which we cant get explicitly for _cN calculation)
+                            shape_drawer._cN(startPoint, controlPoints, endPoint);
                         }
                     });
                     break;

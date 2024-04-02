@@ -628,43 +628,43 @@
 	};
 
 	/**
-	 * Adapted from CGraphics. Now cant calculate length of the curve in pixels and so precision cant be calculated
-	 * and set to 1000 points.
 	 * made with the use of:
 	 * http://html5tutorial.com/how-to-draw-n-grade-bezier-curve-with-canvas-api/
 	 * uses de Casteljau's algorithm
 	 * @param {{x: Number, y: Number, z? :Number}} startPoint
 	 * @param {{x: Number, y: Number, z? :Number}[]} controlPoints
 	 * @param {{x: Number, y: Number, z? :Number}} endPoint
-	 * @param lineWidth
 	 */
-	CGraphicsBase.prototype.drawNthDegreeBezier = function(startPoint, controlPoints, endPoint, lineWidth)
+	CGraphicsBase.prototype._cN = function(startPoint, controlPoints, endPoint)
 	{
-		// function sumDistanceBetweenPoints(points)
-		// {
-		// 	function distance(a, b){
-		// 		return Math.sqrt(Math.pow(a.x-b.x, 2) + Math.pow(a.y-b.y, 2));
-		// 	}
-		// 	/**Compute the incremental step*/
-		// 	let tLength = 0;
-		// 	for(let i=0; i < points.length - 1; i++){
-		// 		tLength += distance(points[i], points[i+1]);
-		// 	}
-		// 	return tLength;
-		// }
+		function sumDistanceBetweenPoints(points)
+		{
+			function distance(a, b){
+				return Math.sqrt(Math.pow(a.x-b.x, 2) + Math.pow(a.y-b.y, 2));
+			}
+			/**Compute the incremental step*/
+			let tLength = 0;
+			for(let i=0; i < points.length - 1; i++){
+				tLength += distance(points[i], points[i+1]);
+			}
+			return tLength;
+		}
 
-		// function transformPoints(points, transform)
-		// {
-		// 	let pointsCopy = Array(points.length);
-		// 	for(let i=0; i < pointsCopy.length; i++){
-		// 		pointsCopy[i] = {x: null, y: null};
-		// 		pointsCopy[i].x = transform.TransformPointX(points[i].x, points[i].y);
-		// 		pointsCopy[i].y = transform.TransformPointY(points[i].x, points[i].y);
-		// 	}
-		// 	return pointsCopy;
-		// }
+		function transformPoints(points, dpi)
+		{
+			let pointsCopy = Array(points.length);
+			let mmToIch = 0.03937007874;
+			for(let i=0; i < pointsCopy.length; i++){
+				pointsCopy[i] = {x: null, y: null};
+				// pointsCopy[i].x = transform.TransformPointX(points[i].x, points[i].y);
+				// pointsCopy[i].y = transform.TransformPointY(points[i].x, points[i].y);
+				pointsCopy[i].x = points[i].x * mmToIch * dpi;
+				pointsCopy[i].y = points[i].y * mmToIch * dpi;
+			}
+			return pointsCopy;
+		}
 
-		/**Computes a point's coordinates for a value of t
+		/** Computes a point's coordinates for a value of t
 		 * @param {Number} t - a value between o and 1
 		 * @param {{x: Number, y: Number, z? :Number}} startPoint
 		 * @param {{x: Number, y: Number, z? :Number}[]} controlPoints
@@ -707,29 +707,39 @@
 			return r;
 		}
 
-		// let bezierPoints = [].concat(startPoint, controlPoints, endPoint);
+		// to calculate points count curve length should be calculated in pixels (approximately)
+		// so arguments should be in mm units and graphics.transform should be applied already
+		let calculatePointsCount = false;
 
-		// https://www.figma.com/file/FT0m9czNuvK34TK227cQ6e/pointsToCalculatePerOnePixelLengthUnit?type=design&node-id=0%3A1&mode=design&t=0S7e2nxkt2sbCHqw-1
-		// not integer more like precision coefficient. can be 0.3 for example
-		// let pointsToCalculatePerOnePixelLengthUnit = 1;
+		let interpolationPointsCount;
+		if (calculatePointsCount) {
+			// https://www.figma.com/file/FT0m9czNuvK34TK227cQ6e/pointsToCalculatePerOnePixelLengthUnit?type=design&node-id=0%3A1&mode=design&t=0S7e2nxkt2sbCHqw-1
+			// not integer more like precision coefficient. can be 0.3 for example
+			let pointsToCalculatePerOnePixelLengthUnit = 1;
 
-		// this.m_oFullTransform doesn't exist in that Graphics
-		// convert length to pixels length units
-		// https://www.figma.com/file/FT0m9czNuvK34TK227cQ6e/pointsToCalculatePerOnePixelLengthUnit?type=design&node-id=41-49&mode=design&t=pH5bF1EvWeWjzkS0-0
-		// Canvas resize is not considered!
-		// let bezierPointsCopy = transformPoints(bezierPoints, this.m_oFullTransform);
+			let dpi = 96;
 
-		// As we calculate length of a curve as sum of control points there might be performance issue with
-		// high order curves because they have many control points and so length will be considered
-		// as long and there will be many control points
-		// add + 1 to avoid divide by 0 later when calculating interpolation step which is 1/interpolationPointsCount
-		// let interpolationPointsCount = pointsToCalculatePerOnePixelLengthUnit *
-		// 	sumDistanceBetweenPoints(bezierPointsCopy) + 1;
-		let interpolationPointsCount = 1000;
+			let bezierPoints = [].concat(startPoint, controlPoints, endPoint);
 
-		this.p_width(lineWidth);
-		this._s();
-		this._m(startPoint.x, startPoint.y);
+			// this.m_oFullTransform doesn't exist in that Graphics
+			// convert length to pixels length units
+			// https://www.figma.com/file/FT0m9czNuvK34TK227cQ6e/pointsToCalculatePerOnePixelLengthUnit?type=design&node-id=41-49&mode=design&t=pH5bF1EvWeWjzkS0-0
+			// Canvas resize is not considered!
+			let bezierPointsCopy = transformPoints(bezierPoints, dpi);
+
+			// As we calculate length of a curve as sum of control points there might be performance issue with
+			// high order curves because they have many control points and so length will be considered
+			// as long and there will be many control points
+			// add + 1 to avoid divide by 0 later when calculating interpolation step which is 1/interpolationPointsCount
+			interpolationPointsCount = pointsToCalculatePerOnePixelLengthUnit *
+				sumDistanceBetweenPoints(bezierPointsCopy) + 1;
+		} else {
+			interpolationPointsCount = 1000;
+		}
+
+		// this.p_width(lineWidth);
+		// this._s(); // beginPath
+		// this._m(startPoint.x, startPoint.y);
 
 		// in fact real pointsCount is larger by 1 point. bcs if pointsCount = 2 t will be 0, 1/2 and 1 - 3 times total
 		for (let t = 0; t <= 1; t+= 1/interpolationPointsCount) {
@@ -737,9 +747,10 @@
 			this._l(point.x, point.y);
 		}
 
-		this._z();
-		this.ds();
-		this._e();
+		// https://github.com/ONLYOFFICE/sdkjs/blob/ebcb7401438a8260151cd96f7568d521e04f91e9/word/Drawing/Graphics.js#L438
+		// this._z(); // close path
+		// this.ds(); // draw stroke
+		// this._e(); // beginPath
 	};
 
 	// FONT

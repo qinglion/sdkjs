@@ -915,7 +915,7 @@ CShapeDrawer.prototype =
      * @param {{x: Number, y: Number, z? :Number}[]} controlPoints
      * @param {{x: Number, y: Number, z? :Number}} endPoint
      */
-    drawNthDegreeBezier : function(startPoint, controlPoints, endPoint)
+    _cN : function(startPoint, controlPoints, endPoint)
     {
         if (this.bIsCheckBounds)
         {
@@ -927,7 +927,7 @@ CShapeDrawer.prototype =
             return;
         }
 
-        this.Graphics.drawNthDegreeBezier(startPoint, controlPoints, endPoint);
+        this.Graphics._cN(startPoint, controlPoints, endPoint);
     },
 
     _z : function()
