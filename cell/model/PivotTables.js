@@ -8939,7 +8939,7 @@ PivotDataManager.prototype.getDataElemSubtotal = function(arrayV, cachedDepth, v
 };
 
 /**
- * @typedef PathInfo
+ * @typedef PivotDataPathInfo
  * @property {number[]} rowArrayV
  * @property {number[]} colArrayV
  * @property {number} rowItemIndex
@@ -8948,7 +8948,7 @@ PivotDataManager.prototype.getDataElemSubtotal = function(arrayV, cachedDepth, v
  */
 
 /**
- * @param {PathInfo & {
+ * @param {PivotDataPathInfo & {
 * cachedRowDepth: number | undefined,
 * cachedColDepth: number | undefined,
 * }} options
@@ -8992,7 +8992,7 @@ PivotDataManager.prototype.getCellValue = function(options) {
 };
 /**
  * @callback ShowAsFunction
- * @param {PathInfo} options
+ * @param {PivotDataPathInfo} options
  * @return {CCellValue}
  */
 
@@ -9179,7 +9179,7 @@ PivotDataManager.prototype.getNextPath = function(arrayV, diffIndex, items, item
 	};
 };
 /**
- * @param {PathInfo} options
+ * @param {PivotDataPathInfo} options
  * @return {{rowArrayV: number[], colArrayV: number[], diffColIndex: number | null, diffRowIndex: number | null}}
  */
 PivotDataManager.prototype.getIndexedVPaths = function(options) {
@@ -9236,8 +9236,8 @@ PivotDataManager.prototype.getDiffIndex = function(fieldIndex, fields) {
 	return null;
 };
 /**
- * @param {PathInfo} options
- * @return {PathInfo}
+ * @param {PivotDataPathInfo} options
+ * @return {PivotDataPathInfo}
  */
 PivotDataManager.prototype.getNextPaths = function(options) {
 	const dataFields = this.pivot.asc_getDataFields();
@@ -9266,7 +9266,7 @@ PivotDataManager.prototype.getNextPaths = function(options) {
 	}
 };
 /**
- * @param {PathInfo} options
+ * @param {PivotDataPathInfo} options
  * @return {CCellValue}
  */
 PivotDataManager.prototype.getIndexedCellValue = function(options) {
@@ -9298,8 +9298,8 @@ PivotDataManager.prototype.getParentVPath = function(fields, arrayV) {
 	return arrayV.slice(0, -2);
 };
 /**
- * @param {PathInfo} options
- * @return {PathInfo[]}
+ * @param {PivotDataPathInfo} options
+ * @return {PivotDataPathInfo[]}
  */
 PivotDataManager.prototype.getPathsList = function(options) {
 	const result = [options];
@@ -9334,7 +9334,7 @@ PivotDataManager.prototype.save = function(rowItemIndex, colItemIndex, cellValue
 	this.cache[rowItemIndex][colItemIndex] = cellValue;
 };
 /**
- * @param {PathInfo} options
+ * @param {PivotDataPathInfo} options
  * @return {CCellValue | null}
  */
 PivotDataManager.prototype.checkBaseFieldShowAs = function(options) {
