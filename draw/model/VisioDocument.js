@@ -420,7 +420,6 @@
 			graphics = new AscCommon.CGraphics();
 			graphics.init(ctx, w_px, h_px, w_mm, h_mm);
 			graphics.m_oFontManager = AscCommon.g_fontManager;
-
 		}
 
 		if (graphics.m_oContext) {
@@ -430,8 +429,18 @@
 		//visio y coordinate goes up while
 		//ECMA-376-11_5th_edition and Geometry.js y coordinate goes down
 		let baseMatrix = new AscCommon.CMatrix();
+		// baseMatrix.SetValues(1, 0, 0, 1, 0, 0);
 		baseMatrix.SetValues(1, 0, 0, -1, 0, logic_h_mm);
 		graphics.SetBaseTransform(baseMatrix);
+
+		// let baseTextMatrix = new AscCommon.CMatrix();
+		// baseTextMatrix.SetValues(1, 0, 0, -1, 0, logic_h_mm);
+
+		/**
+		 * @type {boolean}
+		 */
+		let changeTextDirection = true;
+
 
 		graphics.SaveGrState();
 		graphics.SetIntegerGrid(false);
@@ -443,16 +452,18 @@
 
 		// see sdkjs/common/Shapes/Serialize.js this.ReadGroupShape = function(type) to
 		// learn how to work with shape groups
-		function drawShapeOrGroupRecursively(shapeOrGroup) {
+		function drawShapeOrGroupRecursively(shapeOrGroup, currentGroupHandling) {
 			if (shapeOrGroup.spTree) {
 				// group came to argument
+				/** @type CGroupShape */
+				let group = shapeOrGroup;
 				// if we use CGroupShape.draw it doesn't draw group geometry, only its children
 
 				// draw group geometry
 				graphics.SaveGrState();
 				graphics.SetIntegerGrid(false);
 
-				graphics.transform3(shapeOrGroup.transform);
+				graphics.transform3(group.transform);
 
 				// create shape to draw group geometry
 				let cShapeFromGroup = new AscFormat.CShape();
@@ -460,16 +471,16 @@
 				cShapeFromGroup.setLocks(0);
 				cShapeFromGroup.setBDeleted(false);
 
-				cShapeFromGroup.setSpPr(shapeOrGroup.spPr);
+				cShapeFromGroup.setSpPr(group.spPr);
 				cShapeFromGroup.spPr.setParent(cShapeFromGroup);
-				cShapeFromGroup.rot = shapeOrGroup.rot;
-				cShapeFromGroup.Id = shapeOrGroup.Id;
-				cShapeFromGroup.brush = shapeOrGroup.brush;
-				cShapeFromGroup.bounds = shapeOrGroup.bounds;
-				cShapeFromGroup.flipH = shapeOrGroup.flipH;
-				cShapeFromGroup.flipV = shapeOrGroup.flipV;
-				cShapeFromGroup.localTransform = shapeOrGroup.localTransform;
-				cShapeFromGroup.pen = shapeOrGroup.pen;
+				cShapeFromGroup.rot = group.rot;
+				cShapeFromGroup.Id = group.Id;
+				cShapeFromGroup.brush = group.brush;
+				cShapeFromGroup.bounds = group.bounds;
+				cShapeFromGroup.flipH = group.flipH;
+				cShapeFromGroup.flipV = group.flipV;
+				cShapeFromGroup.localTransform = group.localTransform;
+				cShapeFromGroup.pen = group.pen;
 
 
 				let shape_drawer = new AscCommon.CShapeDrawer();
@@ -481,22 +492,49 @@
 				graphics.RestoreGrState();
 
 				// handle group children
-				shapeOrGroup.spTree.forEach(drawShapeOrGroupRecursively);
+				group.spTree.forEach(function(shapeOrGroup) {
+					drawShapeOrGroupRecursively(shapeOrGroup, group);
+				});
 			} else {
 				// shape came to argument
 
-				shapeOrGroup.draw(graphics);
-				// graphics.SaveGrState();
-				// graphics.SetIntegerGrid(false);
-				//
-				// graphics.transform3(shapeOrGroup.transform);
-				//
-				// let shape_drawer = new AscCommon.CShapeDrawer();
-				// shape_drawer.fromShape2(shapeOrGroup, graphics, shapeOrGroup.getGeometry());
-				// shape_drawer.draw(shapeOrGroup.getGeometry());
-				// shape_drawer.Clear();
-				//
-				// graphics.RestoreGrState();
+				if (changeTextDirection && shapeOrGroup.Id.substring(shapeOrGroup.Id.length - 4) === "Text") {
+					// graphics.SetBaseTransform(baseTextMatrix);
+
+					let reflectedTextHeight;
+					if (shapeOrGroup.txBody.content.Content[0].Lines.length === 2) {
+						reflectedTextHeight = shapeOrGroup.txBody.content.Content[0].Lines[0].Metrics.TextAscent;
+					} else if (shapeOrGroup.txBody.content.Content[0].Lines.length > 2) {
+						let contentHeight = shapeOrGroup.txBody.content.GetSummaryHeight();
+						let emptyLineHeight = shapeOrGroup.txBody.content.Content[0].Lines.slice(-1)[0].Bottom - shapeOrGroup.txBody.content.Content[0].Lines.slice(-2)[0].Bottom;
+						let lastNonEmptyLineDescent = shapeOrGroup.txBody.content.Content[0].Lines.slice(-2)[0].Metrics.Descent;
+						reflectedTextHeight = contentHeight - lastNonEmptyLineDescent - emptyLineHeight;
+					} else {
+						reflectedTextHeight = 0;
+					}
+					shapeOrGroup.transformText.sy = -1;
+					shapeOrGroup.transformText.ty = shapeOrGroup.transformText.ty + reflectedTextHeight * 2;
+
+					// shapeOrGroup.transformText.ty = 0;
+					// if (currentGroupHandling === undefined) {
+					// 	// shapeOrGroup.transformText.sy = -1;
+					// 	// let offset = shapeOrGroup.transform.ty - shapeOrGroup.transformText.ty; // > 0
+					// 	// let correctTextTy = shapeOrGroup.transform.ty + offset;
+					// 	// shapeOrGroup.transform.ty = logic_h_mm - shapeOrGroup.transform.ty; // doesn't change anything
+						// shapeOrGroup.transformText.ty = logic_h_mm - shapeOrGroup.transformText.ty;
+					// 	// shapeOrGroup.transformText.ty = 10; // mm
+					// 	// shapeOrGroup.transformText.sy = -1;
+					//
+					// } else {
+					// 	shapeOrGroup.transformText.tx = 0;
+					// }
+				}
+
+				shapeOrGroup.draw(graphics, shapeOrGroup.transform, shapeOrGroup.transformText);
+
+				// if (changeTextDirection && shapeOrGroup.Id.substring(shapeOrGroup.Id.length - 4) === "Text") {
+				// 	graphics.SetBaseTransform(baseMatrix);
+				// }
 			}
 		}
 

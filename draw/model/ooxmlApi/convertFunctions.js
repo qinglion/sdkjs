@@ -684,7 +684,7 @@
 				let verticalAlign = Number(verticalAlignCell.v);
 				if (!isNaN(verticalAlign)) {
 					//  0 - bottom, 1, 2, 3 - ctr, 4, - top
-					// but global_MatrixTransformer transformations changes values to
+					// but baseMatrix transformations changes values to
 					// 0 - top, 1, 2, 3 - center, 4 - bottom
 					if (verticalAlign === 0) {
 						textCShape.setVerticalAlign(0); // sets text vert align center equal to anchor set to txBody bodyPr
