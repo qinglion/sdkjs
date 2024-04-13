@@ -4642,7 +4642,7 @@ var wb, ws, wsData, pivotStyle, tableName, defNameName, defNameLocalName, report
 	}
 
 	function testPivotManipulationField() {
-		QUnit.test.skip("Test: Field Manipulation", function(assert ) {
+		QUnit.test("Test: Field Manipulation", function(assert) {
 			var pivot = api._asc_insertPivot(wb, dataRef, ws, reportRange);
 			var props = new Asc.CT_pivotTableDefinition();
 			props.ascHideValuesRow = true;

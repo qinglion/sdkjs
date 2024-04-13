@@ -441,6 +441,7 @@ function (window, undefined) {
 		this.DynamicFilter = 75;
 		this.Top10 = 76;
 
+		this.DataField = 79;
 		this.PivotTable = 80;
 		this.PivotField = 81;
 		this.PivotRowItems = 82;
@@ -587,6 +588,8 @@ function (window, undefined) {
 					return new UndoRedoData_DefinedNames();
 				case this.PivotTable:
 					return new UndoRedoData_PivotTable();
+				case this.DataField:
+					return new UndoRedoData_DataField();
 				case this.PivotField:
 					return new UndoRedoData_PivotField();
 				case this.PivotRowItems:
@@ -1334,6 +1337,52 @@ function (window, undefined) {
 	UndoRedoData_PivotTableRedo.prototype = Object.create(UndoRedoData_PivotTable.prototype);
 	UndoRedoData_PivotTableRedo.prototype.Properties = {
 		pivot: 0, to: 2
+	};
+
+	function UndoRedoData_DataField(pivot, from, to, name) {
+		this.pivot = pivot;
+		this.from = from;
+		this.to = to;
+		this.name = name;
+	}
+
+	UndoRedoData_DataField.prototype.Properties = {
+		pivot: 0, from: 1, to: 2, name: 3
+	};
+	UndoRedoData_DataField.prototype.getType = function () {
+		return UndoRedoDataTypes.DataField;
+	};
+	UndoRedoData_DataField.prototype.getProperties = function () {
+		return this.Properties;
+	};
+	UndoRedoData_DataField.prototype.getProperty = function (nType) {
+		switch (nType) {
+			case this.Properties.pivot:
+				return this.pivot;
+			case this.Properties.from:
+				return this.from;
+			case this.Properties.to:
+				return this.to;
+			case this.Properties.name:
+				return this.name;
+		}
+		return null;
+	};
+	UndoRedoData_DataField.prototype.setProperty = function (nType, value) {
+		switch (nType) {
+			case this.Properties.pivot:
+				this.pivot = value;
+				break;
+			case this.Properties.from:
+				this.from = value;
+				break;
+			case this.Properties.to:
+				this.to = value;
+				break;
+			case this.Properties.name:
+				this.name = value;
+				break;
+		}
 	};
 
 	function UndoRedoData_PivotField(pivot, index, from, to) {
@@ -4165,7 +4214,11 @@ function (window, undefined) {
 				if (bUndo) {
 					pivotTable.removeDataField(Data.from, Data.to);
 				} else {
-					pivotTable.addDataField(Data.from, Data.to);
+					pivotTable.addDataField({
+						pivotIndex: Data.from,
+						insertIndex: Data.to,
+						name: Data.name
+					});
 				}
 				break;
 			case AscCH.historyitem_PivotTable_RemovePageField:
@@ -4192,7 +4245,11 @@ function (window, undefined) {
 			case AscCH.historyitem_PivotTable_RemoveDataField:
 				if (bUndo) {
 					for (var i = Data.to.length - 1; i >= 0; --i) {
-						pivotTable.addDataField(Data.from, Data.to[i]);
+						pivotTable.addDataField({
+							pivotIndex: Data.from,
+							insertIndex: Data.to[i],
+							name: Data.name[i]
+						});
 					}
 				} else {
 					for (var i = 0; i < Data.to.length; ++i) {
@@ -5130,6 +5187,7 @@ function (window, undefined) {
 	window['AscCommonExcel'].UndoRedoData_FrozenBBox = UndoRedoData_FrozenBBox;
 	window['AscCommonExcel'].UndoRedoData_SortData = UndoRedoData_SortData;
 	window['AscCommonExcel'].UndoRedoData_PivotTable = UndoRedoData_PivotTable;
+	window['AscCommonExcel'].UndoRedoData_DataField = UndoRedoData_DataField;
 	window['AscCommonExcel'].UndoRedoData_PivotTableRedo = UndoRedoData_PivotTableRedo;
 	window['AscCommonExcel'].UndoRedoData_PivotField = UndoRedoData_PivotField;
 	window['AscCommonExcel'].UndoRedoData_Layout = UndoRedoData_Layout;
