@@ -1151,6 +1151,9 @@
 					// this.cImageShape.pen = cShape.pen;
 					this.cImageShape.Id = cShape.Id;
 
+					this.cImageShape.setParent2(visioDocument);
+					this.cImageShape.recalculate();
+
 					cShape = this.cImageShape;
 				} else {
 					console.log("Unknown error: cImageShape was not initialized on ooxml parse");
