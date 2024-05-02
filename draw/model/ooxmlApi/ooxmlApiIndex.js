@@ -61,6 +61,13 @@
 		 */
 		this.shapes = [];
 
+		/**
+		 * Shape_Type.prototype.toGeometryAndTextCShapes creates CShape from Shape_Type but for image as an
+		 * exception we make variable to store CImageShape in advance because convertion needs StaxParser reader object.
+		 * @type {CImageShape}
+		 */
+		this.cImageShape = null;
+
 		setShapeSheetClassMembers.call(this);
 		return this;
 	}

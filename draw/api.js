@@ -107,6 +107,10 @@
 		this.InitEditor();
 		this.Document.fromZip(jsZlib, xmlParserContext);
 
+		// var context = reader.context;
+		// this.WordControl.m_oLogicDocument.ImageMap = context.loadDataLinks();
+		this.Document.imageMap = xmlParserContext.loadDataLinks();
+
 		jsZlib.close();
 		return true;
 	};

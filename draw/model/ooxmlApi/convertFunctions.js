@@ -889,6 +889,8 @@
 			return textCShape;
 		}
 
+		// Method start
+
 		// there was case with shape type group with no PinX and PinY
 		// https://disk.yandex.ru/d/tl877cuzcRcZYg
 		let pinX_inch = this.getCellNumberValue("PinX");
@@ -1102,11 +1104,6 @@
 		var oStroke = AscFormat.builder_CreateLine(lineWidthEmu, {UniFill: lineUniFillWithPattern});
 		// var oStroke = AscFormat.builder_CreateLine(12700, {UniFill: AscFormat.CreateUnfilFromRGB(255,0,0)});
 
-		if (this.type === "Foreign") {
-			console.log("Shape has type Foreign and may not be displayed. " +
-				"Check shape.elements --> ForeignData_Type obj. See shape:", this);
-		}
-
 		let flipXCell = this.getCell("FlipX");
 		let flipHorizontally = flipXCell ? flipXCell.v === "1" : false;
 
@@ -1132,6 +1129,27 @@
 		if (textCShape !== null) {
 			textCShape.recalculate();
 			textCShape.recalculateLocalTransform(textCShape.transform);
+		}
+
+		if (this.type === "Foreign") {
+			// TODO check if shape is image
+			console.log("Shape has type Foreign and may not be displayed. " +
+				"Check shape.elements --> ForeignData_Type obj. See shape:", this);
+
+			this.cImageShape.setLocks(0);
+			this.cImageShape.setBDeleted(false);
+			this.cImageShape.setSpPr(cShape.spPr.createDuplicate());
+			this.cImageShape.spPr.setParent(this.cImageShape);
+			this.cImageShape.rot = cShape.rot;
+			// this.cImageShape.brush = cShape.brush;
+			this.cImageShape.bounds = cShape.bounds;
+			this.cImageShape.flipH = cShape.flipH;
+			this.cImageShape.flipV = cShape.flipV;
+			this.cImageShape.localTransform = cShape.localTransform;
+			// this.cImageShape.pen = cShape.pen;
+			this.cImageShape.Id = cShape.Id;
+
+			cShape = this.cImageShape;
 		}
 
 		return {geometryCShape: cShape, textCShape: textCShape};

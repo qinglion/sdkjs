@@ -93,6 +93,13 @@
 		// solution contents
 		this.solutionXMLs = [];
 
+		/**
+		 * not parsed data. inits in OpenDocumentFromZipNoInit, xmlParserContext.loadDataLinks()
+		 * {index: number, path: string}
+		 * @type {{}}
+		 */
+		this.imageMap = null;
+
 		// unfinished
 		// this.EmbeddedData = null;
 
