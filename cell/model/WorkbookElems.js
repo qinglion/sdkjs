@@ -11234,56 +11234,32 @@ function RangeDataManagerElem(bbox, data)
 				}
 				case c_oAscCustomAutoFilter.beginsWith://beginsWith
 				{
-					if (!isDigitValue) {
-						result = matchingValues(trimFilterVal + "*", trimVal);
-					}
-
+					result = matchingValues(trimFilterVal + "*", trimVal);
 					break;
 				}
 				case c_oAscCustomAutoFilter.doesNotBeginWith://doesNotBeginWith
 				{
-					if (!isDigitValue) {
-						result = matchingValues(trimFilterVal + "*", trimVal, "<>");
-					} else {
-						result = true;
-					}
-
+					result = matchingValues(trimFilterVal + "*", trimVal, "<>");
 					break;
 				}
 				case c_oAscCustomAutoFilter.endsWith://endsWith
 				{
-					if (!isDigitValue) {
-						result = matchingValues("*" + trimFilterVal, trimVal);
-					}
-
+					result = matchingValues("*" + trimFilterVal, trimVal);
 					break;
 				}
 				case c_oAscCustomAutoFilter.doesNotEndWith://doesNotEndWith
 				{
-					if (!isDigitValue) {
-						result = matchingValues("*" + trimFilterVal, trimVal, "<>");
-					} else {
-						result = true;
-					}
-
+					result = matchingValues("*" + trimFilterVal, trimVal, "<>");
 					break;
 				}
 				case c_oAscCustomAutoFilter.contains://contains
 				{
-					if (!isDigitValue) {
-						result = matchingValues("*" + trimFilterVal + "*", trimVal);
-					}
-
+					result = matchingValues("*" + trimFilterVal + "*", trimVal);
 					break;
 				}
 				case c_oAscCustomAutoFilter.doesNotContain://doesNotContain
 				{
-					if (!isDigitValue) {
-						result = matchingValues("*" + trimFilterVal + "*", trimVal, "<>");
-					} else {
-						result = true;
-					}
-
+					result = matchingValues("*" + trimFilterVal + "*", trimVal, "<>");
 					break;
 				}
 			}

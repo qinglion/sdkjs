@@ -4041,13 +4041,13 @@ var wb, ws, wsData, pivotStyle, tableName, defNameName, defNameLocalName, report
 		"label1":[
 			["Units","Price","Cost","Sum of Ship date"],
 			["10","13.74","13.33","38383"],
-			["","13,74 Total","","38383"],
+			["","13.74 Total","","38383"],
 			["10 Total","","","38383"],
 			["12","13","12.6","38383"],
 			["","13 Total","","38383"],
 			["12 Total","","","38383"],
 			["15","13.42","13.29","38383"],
-			["","13,42 Total","","38383"],
+			["","13.42 Total","","38383"],
 			["15 Total","","","38383"],
 			["Grand Total","","","115149"]
 		],
@@ -4362,7 +4362,7 @@ var wb, ws, wsData, pivotStyle, tableName, defNameName, defNameLocalName, report
 	}
 
 	function testPivotInsertBlankRow() {
-		QUnit.test("Test: InsertBlankRow", function(assert ) {
+		QUnit.test("Test: InsertBlankRow", function(assert) {
 			var pivot = api._asc_insertPivot(wb, dataRef, ws, reportRange);
 			pivot.asc_getStyleInfo().asc_setName(api, pivot, pivotStyle);
 			pivot.checkPivotFieldItems(0);
@@ -4397,9 +4397,10 @@ var wb, ws, wsData, pivotStyle, tableName, defNameName, defNameLocalName, report
 	}
 
 	function testPivotPageFilterLayout() {
-		QUnit.test.skip("Test: PageFilter layout", function(assert ) {
+		QUnit.test("Test: PageFilter layout", function(assert ) {
 			var pivot = api._asc_insertPivot(wb, dataRef, ws, reportRange);
 			pivot.asc_getStyleInfo().asc_setName(api, pivot, pivotStyle);
+			pivot.pivotTableDefinitionX14 = new Asc.CT_pivotTableDefinitionX14();
 
 			AscCommon.History.Clear();
 			pivot = checkHistoryOperation(assert, pivot, standards["filter_downThenOver1"], "downThenOver1", function(){
@@ -4549,48 +4550,48 @@ var wb, ws, wsData, pivotStyle, tableName, defNameName, defNameLocalName, report
 				}
 			});
 
-			// pivot = checkHistoryOperation(assert, pivot, standards["data_values2"], "values2", function() {
-			// 	var props = new Asc.CT_pivotTableDefinition();
-			// 	props.ascHideValuesRow = true;
-			// 	props.asc_setDataRef(dataRef2);
-			// 	pivot.asc_set(api, props);
-			// });
-
-			// pivot = checkHistoryOperation(assert, pivot, standards["data_values3"], "values3", function() {
-			// 	var props = new Asc.CT_pivotTableDefinition();
-			// 	props.ascHideValuesRow = true;
-			// 	props.asc_setDataRef(dataRef3);
-			// 	pivot.asc_set(api, props);
-			// });
-
-			// pivot = checkHistoryOperation(assert, pivot, standards["data_values4"], "values4", function() {
-			// 	var props = new Asc.CT_pivotTableDefinition();
-			// 	props.ascHideValuesRow = true;
-			// 	props.asc_setDataRef(dataRef4);
-			// 	pivot.asc_set(api, props);
-			// });
-
-			// TODO Fix dataRow count logic
-			pivot = checkHistoryOperation(assert, pivot, standards["data_values5"], "values5", function() {
+			pivot = checkHistoryOperation(assert, pivot, standards["data_values2"], "values2", function() {
 				var props = new Asc.CT_pivotTableDefinition();
 				props.ascHideValuesRow = true;
-				props.asc_setDataRef(dataRef5);
+				props.asc_setDataRef(dataRef2);
 				pivot.asc_set(api, props);
 			});
 
-			// pivot = checkHistoryOperation(assert, pivot, standards["data_values6"], "values6", function() {
+			pivot = checkHistoryOperation(assert, pivot, standards["data_values3"], "values3", function() {
+				var props = new Asc.CT_pivotTableDefinition();
+				props.ascHideValuesRow = true;
+				props.asc_setDataRef(dataRef3);
+				pivot.asc_set(api, props);
+			});
+
+			pivot = checkHistoryOperation(assert, pivot, standards["data_values4"], "values4", function() {
+				var props = new Asc.CT_pivotTableDefinition();
+				props.ascHideValuesRow = true;
+				props.asc_setDataRef(dataRef4);
+				pivot.asc_set(api, props);
+			});
+
+			// TODO Fix dataRow count logic
+			// pivot = checkHistoryOperation(assert, pivot, standards["data_values5"], "values5", function() {
 			// 	var props = new Asc.CT_pivotTableDefinition();
 			// 	props.ascHideValuesRow = true;
-			// 	props.asc_setDataRef(dataRef6);
+			// 	props.asc_setDataRef(dataRef5);
 			// 	pivot.asc_set(api, props);
 			// });
 
-			// pivot = checkHistoryOperation(assert, pivot, standards["data_values7"], "values7", function() {
-			// 	var props = new Asc.CT_pivotTableDefinition();
-			// 	props.ascHideValuesRow = true;
-			// 	props.asc_setDataRef(dataRef7);
-			// 	pivot.asc_set(api, props);
-			// });
+			pivot = checkHistoryOperation(assert, pivot, standards["data_values6"], "values6", function() {
+				var props = new Asc.CT_pivotTableDefinition();
+				props.ascHideValuesRow = true;
+				props.asc_setDataRef(dataRef6);
+				pivot.asc_set(api, props);
+			});
+
+			pivot = checkHistoryOperation(assert, pivot, standards["data_values7"], "values7", function() {
+				var props = new Asc.CT_pivotTableDefinition();
+				props.ascHideValuesRow = true;
+				props.asc_setDataRef(dataRef7);
+				pivot.asc_set(api, props);
+			});
 
 			ws.deletePivotTables(new AscCommonExcel.MultiplyRange(pivot.getReportRanges()).getUnionRange());
 		});
@@ -5079,7 +5080,7 @@ var wb, ws, wsData, pivotStyle, tableName, defNameName, defNameLocalName, report
 	}
 
 	function testFiltersLabel() {
-		QUnit.test.skip("Test: filters label", function(assert ) {
+		QUnit.test("Test: filters label", function(assert) {
 			var pivot = api._asc_insertPivot(wb, dataRef, ws, reportRange);
 			setPivotLayout(pivot, 'tabular');
 			pivot.asc_getStyleInfo().asc_setName(api, pivot, pivotStyle);
@@ -5091,7 +5092,7 @@ var wb, ws, wsData, pivotStyle, tableName, defNameName, defNameLocalName, report
 			var getNewFilter = function(type1, val1, type2, val3){
 				var pivotFilterObj = new Asc.PivotFilterObj();
 				pivotFilterObj.asc_setDataFieldIndexSorting(0);
-				pivotFilterObj.asc_setDataFieldIndexFilter(1);
+				pivotFilterObj.asc_setDataFieldIndexFilter(val3);
 				pivotFilterObj.asc_setIsPageFilter(false);
 				pivotFilterObj.asc_setIsMultipleItemSelectionAllowed(false);
 				pivotFilterObj.asc_setIsTop10Sum(false);
@@ -5113,7 +5114,7 @@ var wb, ws, wsData, pivotStyle, tableName, defNameName, defNameLocalName, report
 					customFilters.push(customFilter);
 				}
 				filter.asc_setCustomFilters(customFilters);
-				var autoFilterObject = new Asc.AutoFiltersOptions();
+				var autoFilterObject = new  Asc.AutoFiltersOptions();
 				autoFilterObject.pivotObj = pivotFilterObj;
 				autoFilterObject.filter = filterObj;
 				return autoFilterObject;
@@ -5121,9 +5122,9 @@ var wb, ws, wsData, pivotStyle, tableName, defNameName, defNameLocalName, report
 
 			AscCommon.History.Clear();
 			pivot = checkHistoryOperation(assert, pivot, standards["label1"], "label1", function(){
-				pivot.filterByFieldIndex(api, getNewFilter(Asc.c_oAscCustomAutoFilter.isGreaterThan, 10.6), 6, true);
-				pivot.filterByFieldIndex(api, getNewFilter(Asc.c_oAscCustomAutoFilter.contains, 3), 5, true);
-				pivot.filterByFieldIndex(api, getNewFilter(Asc.c_oAscCustomAutoFilter.doesNotEqual, 11), 4, true);
+				pivot.filterByFieldIndex(api, getNewFilter(Asc.c_oAscCustomAutoFilter.isGreaterThan, 10.6, undefined, 1), 6, true);
+				pivot.filterByFieldIndex(api, getNewFilter(Asc.c_oAscCustomAutoFilter.contains, 3, undefined, 0), 5, true);
+				pivot.filterByFieldIndex(api, getNewFilter(Asc.c_oAscCustomAutoFilter.doesNotEqual, "11", undefined, 0), 4, true);
 			});
 
 			ws.deletePivotTables(new AscCommonExcel.MultiplyRange(pivot.getReportRanges()).getUnionRange());
@@ -5131,7 +5132,7 @@ var wb, ws, wsData, pivotStyle, tableName, defNameName, defNameLocalName, report
 	}
 
 	function testFiltersReIndex() {
-		QUnit.test("Test: filters reIndex", function(assert ) {
+		QUnit.test("Test: filters reIndex", function(assert) {
 			var pivot = api._asc_insertPivot(wb, dataRef, ws, reportRange);
 			setPivotLayout(pivot, 'tabular');
 			pivot.asc_getStyleInfo().asc_setName(api, pivot, pivotStyle);
@@ -6078,13 +6079,13 @@ var wb, ws, wsData, pivotStyle, tableName, defNameName, defNameLocalName, report
 
 		testPivotInsertBlankRow();
 
-		testPivotPageFilterLayout();
+		// testPivotPageFilterLayout();
 
 		testFieldProperty();
 
 		testFieldSubtotal();
 
-		// testDataValues();
+		testDataValues();
 
 		testHeaderRename();
 
@@ -6102,7 +6103,7 @@ var wb, ws, wsData, pivotStyle, tableName, defNameName, defNameLocalName, report
 
 		testFiltersTop10();
 
-		testFiltersLabel();
+		// testFiltersLabel();
 
 		testFiltersReIndex();
 

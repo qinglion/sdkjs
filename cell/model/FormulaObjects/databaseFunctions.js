@@ -136,7 +136,7 @@ function (window, undefined) {
 		}
 		oCellValue = new AscCommonExcel.CCellValue();
 		oCellValue.type = AscCommon.CellValueType.Number;
-		if (null !== this.errorType) {
+		if (null !== this.errorType && dataType !== Asc.c_oAscItemType.Count && dataType !== Asc.c_oAscItemType.CountA) {
 			oCellValue.type = AscCommon.CellValueType.Error;
 			oCellValue.text = AscCommonExcel.cError.prototype.getStringFromErrorType(this.errorType);
 			return oCellValue;

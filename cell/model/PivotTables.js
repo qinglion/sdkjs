@@ -2284,8 +2284,9 @@ CT_PivotCacheRecords.prototype._getDataMapRowToTotal = function(cacheFields, row
 				total.add(val.val);
 			} else if (c_oAscPivotRecType.Error === val.type) {
 				total.addError(val.val);
+				total.addCount();
 			} else if (c_oAscPivotRecType.Missing !== val.type) {
-				total.addCount(val.val);
+				total.addCount();
 			}
 		}
 	}
