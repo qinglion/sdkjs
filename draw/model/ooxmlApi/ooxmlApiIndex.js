@@ -823,6 +823,7 @@
 	 * stylesWithRealizedInheritance was added for optimization.
 	 * @param styles
 	 * @param {?Set} [stylesWithRealizedInheritance]
+	 * @memberOf Shape_Type
 	 */
 	Shape_Type.prototype.realizeStyleInheritanceRecursively = function(styles, stylesWithRealizedInheritance) {
 		if (stylesWithRealizedInheritance === undefined) {
@@ -939,6 +940,15 @@
 		});
 	}
 
+	/**
+	 * @memberOf Shape_Type
+	 * @return {ForeignData_Type | undefined}
+	 */
+	Shape_Type.prototype.getForeignDataObject = function getForeignDataObject() {
+		return this.elements.find(function findForeignData(element) {
+			return element.constructor.name === "ForeignData_Type";
+		});
+	}
 
 	/**
 	 * get deep copy of object with prototypes

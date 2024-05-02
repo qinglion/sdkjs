@@ -558,13 +558,13 @@
 	 * @memberOf CVisioDocument
 	 * @param pageInfo
 	 * @param pageContent
-	 * @return {(CShape | CGroupShape)[]} topLevelShapesAndGroups
+	 * @return {(CShape | CGroupShape | CImageShape)[]} topLevelShapesAndGroups
 	 */
 	CVisioDocument.prototype.convertToCShapesAndGroups = function(pageInfo, pageContent) {
 		/** @type {Shape_Type[]} */
 		let shapeClasses = [];
 
-		/** @type {(CShape | CGroupShape)[]} */
+		/** @type {(CShape | CGroupShape | CImageShape)[]} */
 		let topLevelShapesAndGroups = [];
 
 		let masters = this.joinMastersInfoAndContents();

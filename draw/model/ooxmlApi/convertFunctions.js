@@ -42,7 +42,7 @@
 	 * @memberof Shape_Type
 	 * @param {CVisioDocument} visioDocument
 	 * @param {Page_Type} pageInfo
-	 * @return {{geometryCShape: CShape, textCShape: ?CShape}} cShapesObjects
+	 * @return {{geometryCShape: CShape | CImageShape, textCShape: ?CShape}} cShapesObjects
 	 */
 	Shape_Type.prototype.toGeometryAndTextCShapes = function (visioDocument, pageInfo) {
 		/**
@@ -1132,24 +1132,30 @@
 		}
 
 		if (this.type === "Foreign") {
-			// TODO check if shape is image
 			console.log("Shape has type Foreign and may not be displayed. " +
 				"Check shape.elements --> ForeignData_Type obj. See shape:", this);
 
-			this.cImageShape.setLocks(0);
-			this.cImageShape.setBDeleted(false);
-			this.cImageShape.setSpPr(cShape.spPr.createDuplicate());
-			this.cImageShape.spPr.setParent(this.cImageShape);
-			this.cImageShape.rot = cShape.rot;
-			// this.cImageShape.brush = cShape.brush;
-			this.cImageShape.bounds = cShape.bounds;
-			this.cImageShape.flipH = cShape.flipH;
-			this.cImageShape.flipV = cShape.flipV;
-			this.cImageShape.localTransform = cShape.localTransform;
-			// this.cImageShape.pen = cShape.pen;
-			this.cImageShape.Id = cShape.Id;
+			let foreignDataObject = this.getForeignDataObject();
+			if (foreignDataObject.foreignType === "Bitmap") {
+				if (this.cImageShape !== null) {
+					this.cImageShape.setLocks(0);
+					this.cImageShape.setBDeleted(false);
+					this.cImageShape.setSpPr(cShape.spPr.createDuplicate());
+					this.cImageShape.spPr.setParent(this.cImageShape);
+					this.cImageShape.rot = cShape.rot;
+					// this.cImageShape.brush = cShape.brush;
+					this.cImageShape.bounds = cShape.bounds;
+					this.cImageShape.flipH = cShape.flipH;
+					this.cImageShape.flipV = cShape.flipV;
+					this.cImageShape.localTransform = cShape.localTransform;
+					// this.cImageShape.pen = cShape.pen;
+					this.cImageShape.Id = cShape.Id;
 
-			cShape = this.cImageShape;
+					cShape = this.cImageShape;
+				} else {
+					console.log("Unknown error: cImageShape was not initialized on ooxml parse");
+				}
+			}
 		}
 
 		return {geometryCShape: cShape, textCShape: textCShape};
