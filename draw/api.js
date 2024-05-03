@@ -65,6 +65,15 @@
 	{
 		AscCommon.baseEditorsApi.prototype._onEndLoadSdk.call(this);
 
+		AscFonts.g_fontApplication.Init();
+
+		this.FontLoader  = AscCommon.g_font_loader;
+		this.ImageLoader = AscCommon.g_image_loader;
+		this.FontLoader.put_Api(this);
+		this.ImageLoader.put_Api(this);
+
+		this._loadSdkImages();
+
 		this.CreateComponents();
 	};
 	asc_docs_api.prototype.CreateComponents = function()
@@ -86,6 +95,92 @@
                                     </div>\
 									</div>" + this.HtmlElement.innerHTML);
 		this.canvas = document.getElementById("id_viewer");
+	};
+	// работа с шрифтами
+	asc_docs_api.prototype.asyncFontsDocumentStartLoaded = function(blockType)
+	{
+		this.sync_StartAction(undefined === blockType ? Asc.c_oAscAsyncActionType.BlockInteraction : blockType, Asc.c_oAscAsyncAction.LoadDocumentFonts);
+		var _progress         = this.OpenDocumentProgress;
+		_progress.Type        = Asc.c_oAscAsyncAction.LoadDocumentFonts;
+		_progress.FontsCount  = this.FontLoader.fonts_loading.length;
+		_progress.CurrentFont = 0;
+
+		var _loader_object = this.WordControl.m_oLogicDocument;
+		var _count         = 0;
+		if (_loader_object !== undefined && _loader_object != null)
+		{
+			for (var i in _loader_object.ImageMap)
+			{
+				if (this.DocInfo && this.DocInfo.get_OfflineApp())
+				{
+					var localUrl = _loader_object.ImageMap[i];
+					g_oDocumentUrls.addImageUrl(localUrl, this.documentUrl + 'media/' + localUrl);
+				}
+				++_count;
+			}
+		}
+
+		_progress.ImagesCount  = _count;
+		_progress.CurrentImage = 0;
+	};
+	asc_docs_api.prototype.asyncFontsDocumentEndLoaded   = function(blockType) {
+		this.sync_EndAction(undefined === blockType ? Asc.c_oAscAsyncActionType.BlockInteraction : blockType, Asc.c_oAscAsyncAction.LoadDocumentFonts);
+
+		this.EndActionLoadImages = 0;
+
+		if (null != this.WordControl.m_oLogicDocument)
+		{
+			//this.WordControl.m_oDrawingDocument.CheckGuiControlColors();
+			this.sendColorThemes(this.WordControl.m_oLogicDocument.themes[0]);
+		}
+
+		// открытие после загрузки документа
+
+		var _loader_object = this.WordControl.m_oLogicDocument;
+		if (null == _loader_object)
+			_loader_object = this.WordControl.m_oDrawingDocument.m_oDocumentRenderer;
+
+		var _count = 0;
+		for (var i in _loader_object.ImageMap)
+			++_count;
+
+		if (_count > 0)
+		{
+			this.EndActionLoadImages = 1;
+			this.sync_StartAction(Asc.c_oAscAsyncActionType.BlockInteraction, Asc.c_oAscAsyncAction.LoadDocumentImages);
+		}
+
+		this.ImageLoader.bIsLoadDocumentFirst = true;
+		this.ImageLoader.LoadDocumentImages(_loader_object.ImageMap);
+	};
+	asc_docs_api.prototype.asyncImagesDocumentEndLoaded = function()
+	{
+		this.ImageLoader.bIsLoadDocumentFirst = false;
+
+		// на методе _openDocumentEndCallback может поменяться this.EndActionLoadImages
+		if (this.EndActionLoadImages == 1)
+		{
+			this.sync_EndAction(Asc.c_oAscAsyncActionType.BlockInteraction, Asc.c_oAscAsyncAction.LoadDocumentImages);
+		}
+		this.EndActionLoadImages = 0;
+
+		this.ServerImagesWaitComplete = true;
+		this._openDocumentEndCallback();
+	};
+	asc_docs_api.prototype._openDocumentEndCallback = function()
+	{
+		if (this.isDocumentLoadComplete || !this.ServerImagesWaitComplete || !this.ServerIdWaitComplete || !this.WordControl || !this.WordControl.m_oLogicDocument)
+			return;
+
+		if (this.isViewMode)
+			this.asc_setViewMode(true);
+
+		this.onDocumentContentReady();
+
+		// Меняем тип состояния (на никакое)
+		this.advancedOptionsAction = AscCommon.c_oAscAdvancedOptionsAction.None;
+
+		this.Document.draw(this.Document.zoom);
 	};
 
 	asc_docs_api.prototype.OpenDocumentFromZip = function(data)
@@ -109,7 +204,9 @@
 
 		// var context = reader.context;
 		// this.WordControl.m_oLogicDocument.ImageMap = context.loadDataLinks();
+		AscCommon.pptx_content_loader.Reader.ImageMapChecker = AscCommon.pptx_content_loader.ImageMapChecker;
 		this.Document.imageMap = xmlParserContext.loadDataLinks();
+		this.ServerIdWaitComplete = true;
 
 		jsZlib.close();
 		return true;
@@ -122,6 +219,7 @@
 		this.isApplyChangesOnOpenEnabled = true;
 		this.isDocumentLoadComplete = false;
 		this.turnOffSpecialModes();
+		AscCommon.pptx_content_loader.ImageMapChecker = {};
 	};
 	// Callbacks
 	/* все имена callback'оф начинаются с On. Пока сделаны:

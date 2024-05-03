@@ -121,6 +121,7 @@
 			// 	this.history.Set_LogicDocument(this);
 		}
 		this.mainDocument = false !== isMainLogicDocument;
+		this.zoom = 100;
 
 		//stubs for compatibility with DocumentContent
 		AscCommon.mockLogicDoc(CVisioDocument.prototype);
@@ -336,11 +337,8 @@
 	 * @memberOf CVisioDocument
 	 * @param {function} callback
 	 */
-	CVisioDocument.prototype.loadFonts = function(callback) {
+	CVisioDocument.prototype.loadFonts = function() {
 		let api = this.api;
-
-		api.asyncFontsDocumentStartLoaded = function() {};
-		api.asyncFontsDocumentEndLoaded = callback;
 
 		let aFonts = this.loadedFonts;
 		// load Arial by default
