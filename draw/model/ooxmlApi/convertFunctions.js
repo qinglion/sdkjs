@@ -1136,7 +1136,7 @@
 				"Check shape.elements --> ForeignData_Type obj. See shape:", this);
 
 			let foreignDataObject = this.getForeignDataObject();
-			if (foreignDataObject.foreignType === "Bitmap") {
+			if (foreignDataObject && foreignDataObject.foreignType === "Bitmap") {
 				if (this.cImageShape !== null) {
 					this.cImageShape.setLocks(0);
 					this.cImageShape.setBDeleted(false);
@@ -1248,10 +1248,10 @@
 					subShape.toCGroupShapeRecursively(visioDocument, pageInfo, currentGroupHandling);
 				}
 			}
-			// recalculate text other positions to local (group) coordinates
+			// recalculate positions to local (group) coordinates
 			cShapes.geometryCShape.recalculateLocalTransform(cShapes.geometryCShape.transform);
-			cShapes.geometryCShape.recalculateTransformText();
-			cShapes.geometryCShape.recalculateContent();
+			// cShapes.geometryCShape.recalculateTransformText();
+			// cShapes.geometryCShape.recalculateContent();
 			// cShape.recalculate(); // doesnt work here
 
 			if (cShapes.textCShape !== null) {
@@ -1271,10 +1271,10 @@
 				currentGroupHandling.addToSpTree(currentGroupHandling.spTree.length, cShapes.geometryCShape);
 				currentGroupHandling.spTree[currentGroupHandling.spTree.length-1].setGroup(currentGroupHandling);
 
-				// recalculate text other positions to local (group) coordinates
+				// recalculate positions to local (group) coordinates
 				cShapes.geometryCShape.recalculateLocalTransform(cShapes.geometryCShape.transform);
-				cShapes.geometryCShape.recalculateTransformText();
-				cShapes.geometryCShape.recalculateContent();
+				// cShapes.geometryCShape.recalculateTransformText();
+				// cShapes.geometryCShape.recalculateContent();
 				// cShape.recalculate(); // doesnt work here
 
 				if (cShapes.textCShape !== null) {

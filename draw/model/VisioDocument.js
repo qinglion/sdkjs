@@ -335,7 +335,6 @@
 	 * Load fonts which are used in document and do callback (can be used to call CVisioDocument.prototype.draw).
 	 * Inits this.loadedFonts.
 	 * @memberOf CVisioDocument
-	 * @param {function} callback
 	 */
 	CVisioDocument.prototype.loadFonts = function() {
 		let api = this.api;
