@@ -11173,33 +11173,63 @@ function RangeDataManagerElem(bbox, data)
 			switch (this.Operator) {
 				case c_oAscCustomAutoFilter.equals://equals
 				{
-					result = matchingValues(trimFilterVal, trimVal);
+					if (!isDigitValue) {
+						result = matchingValues(trimFilterVal, trimVal);
+					} else if (trimVal === trimFilterVal) {
+						result = true;
+					}
+
 					break;
 				}
 				case c_oAscCustomAutoFilter.doesNotEqual://doesNotEqual
 				{
-					result = matchingValues(trimFilterVal, trimVal, "<>");
+					if (!isDigitValue) {
+						result = matchingValues(trimFilterVal, trimVal, "<>");
+					} else if (trimVal !== trimFilterVal) {
+						result = true;
+					}
+
 					break;
 				}
 
 				case c_oAscCustomAutoFilter.isGreaterThan://isGreaterThan
 				{
-					result = matchingValues(trimFilterVal, trimVal, ">");
+					if (!isDigitValue) {
+						result = matchingValues(trimFilterVal, trimVal, ">");
+					} else if (val > filterVal) {
+						result = true;
+					}
+
 					break;
 				}
 				case c_oAscCustomAutoFilter.isGreaterThanOrEqualTo://isGreaterThanOrEqualTo
 				{
-					result = matchingValues(trimFilterVal, trimVal, ">=");
+					if (!isDigitValue) {
+						result = matchingValues(trimFilterVal, trimVal, ">=");
+					} else if (val >= filterVal) {
+						result = true;
+					}
+
 					break;
 				}
 				case c_oAscCustomAutoFilter.isLessThan://isLessThan
 				{
-					result = matchingValues(trimFilterVal, trimVal, "<");
+					if (!isDigitValue) {
+						result = matchingValues(trimFilterVal, trimVal, "<");
+					} else if (val < filterVal) {
+						result = true;
+					}
+
 					break;
 				}
 				case c_oAscCustomAutoFilter.isLessThanOrEqualTo://isLessThanOrEqualTo
 				{
-					result = matchingValues(trimFilterVal, trimVal, "<=");
+					if (!isDigitValue) {
+						result = matchingValues(trimFilterVal, trimVal, "<=");
+					} else if (val <= filterVal) {
+						result = true;
+					}
+
 					break;
 				}
 				case c_oAscCustomAutoFilter.beginsWith://beginsWith
