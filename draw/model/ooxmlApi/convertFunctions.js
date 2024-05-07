@@ -585,7 +585,7 @@
 			} else {
 				textCShape.createTextBody();
 			}
-			textCShape.setVerticalAlign(1); // sets text vert align center equal to anchor set to txBody bodyPr
+			textCShape.setVerticalAlign(1); // sets text vert align center. equal to anchor set to txBody bodyPr
 			textCShape.bSelectedText = false;
 
 			// instead of AscFormat.AddToContentFromString(oContent, sText);
@@ -686,10 +686,11 @@
 					//  0 - bottom, 1, 2, 3 - ctr, 4, - top
 					// but baseMatrix transformations changes values to
 					// 0 - top, 1, 2, 3 - center, 4 - bottom
+					// NO REVERT NOW TOP IS TOP BOTTOM IS BOTTOM
 					if (verticalAlign === 0) {
-						textCShape.setVerticalAlign(0); // sets text vert align center equal to anchor set to txBody bodyPr
-					} else if (verticalAlign === 2) {
 						textCShape.setVerticalAlign(4); // sets text vert align center equal to anchor set to txBody bodyPr
+					} else if (verticalAlign === 2) {
+						textCShape.setVerticalAlign(0); // sets text vert align center equal to anchor set to txBody bodyPr
 					}
 					// else leave center align
 				} else {
@@ -748,8 +749,8 @@
 
 			// CHECKS SIGN but positive tIns gives bottom inset. Check https://disk.yandex.ru/d/IU1vdjzcF9p3IQ
 			// it is may global graphics transform issue so set bottom inset as top and opposite
-			oBodyPr.tIns = bottomMarginInch * g_dKoef_in_to_mm;
-			oBodyPr.bIns = topMarginInch * g_dKoef_in_to_mm;
+			oBodyPr.tIns = topMarginInch * g_dKoef_in_to_mm;
+			oBodyPr.bIns = bottomMarginInch * g_dKoef_in_to_mm;
 			oBodyPr.lIns = leftMarginInch * g_dKoef_in_to_mm;
 			oBodyPr.rIns = rightMarginInch * g_dKoef_in_to_mm;
 

@@ -437,7 +437,8 @@
 		baseMatrix.SetValues(1, 0, 0, -1, 0, logic_h_mm);
 		graphics.SetBaseTransform(baseMatrix);
 
-		// let baseTextMatrix = new AscCommon.CMatrix();
+		let baseTextMatrix = new AscCommon.CMatrix();
+		baseTextMatrix.SetValues(1, 0, 0, 1, 0, 0);
 		// baseTextMatrix.SetValues(1, 0, 0, -1, 0, logic_h_mm);
 
 		/**
@@ -470,26 +471,26 @@
 				graphics.transform3(group.transform);
 
 				// create shape to draw group geometry
-				let cShapeFromGroup = new AscFormat.CShape();
+				let сGroupShape = new AscFormat.CShape();
 				// cShape.setParent();
-				cShapeFromGroup.setLocks(0);
-				cShapeFromGroup.setBDeleted(false);
+				сGroupShape.setLocks(0);
+				сGroupShape.setBDeleted(false);
 
-				cShapeFromGroup.setSpPr(group.spPr);
-				cShapeFromGroup.spPr.setParent(cShapeFromGroup);
-				cShapeFromGroup.rot = group.rot;
-				cShapeFromGroup.Id = group.Id;
-				cShapeFromGroup.brush = group.brush;
-				cShapeFromGroup.bounds = group.bounds;
-				cShapeFromGroup.flipH = group.flipH;
-				cShapeFromGroup.flipV = group.flipV;
-				cShapeFromGroup.localTransform = group.localTransform;
-				cShapeFromGroup.pen = group.pen;
+				сGroupShape.setSpPr(group.spPr);
+				сGroupShape.spPr.setParent(сGroupShape);
+				сGroupShape.rot = group.rot;
+				сGroupShape.Id = group.Id;
+				сGroupShape.brush = group.brush;
+				сGroupShape.bounds = group.bounds;
+				сGroupShape.flipH = group.flipH;
+				сGroupShape.flipV = group.flipV;
+				сGroupShape.localTransform = group.localTransform;
+				сGroupShape.pen = group.pen;
 
 
 				let shape_drawer = new AscCommon.CShapeDrawer();
-				shape_drawer.fromShape2(cShapeFromGroup, graphics, cShapeFromGroup.getGeometry());
-				let groupGeometry = cShapeFromGroup.getGeometry();
+				shape_drawer.fromShape2(сGroupShape, graphics, сGroupShape.getGeometry());
+				let groupGeometry = сGroupShape.getGeometry();
 				shape_drawer.draw(groupGeometry);
 
 				shape_drawer.Clear();
@@ -502,43 +503,73 @@
 			} else {
 				// shape came to argument
 
-				if (changeTextDirection && shapeOrGroup.Id.substring(shapeOrGroup.Id.length - 4) === "Text") {
-					// graphics.SetBaseTransform(baseTextMatrix);
+				// flip images
+				if (shapeOrGroup.constructor.name === "CImageShape") {
+					shapeOrGroup.transform.sy = -1;
+					shapeOrGroup.transform.ty += shapeOrGroup.spPr.xfrm.extY;
+				}
 
-					let reflectedTextHeight;
-					if (shapeOrGroup.txBody.content.Content[0].Lines.length === 2) {
-						reflectedTextHeight = shapeOrGroup.txBody.content.Content[0].Lines[0].Metrics.TextAscent;
-					} else if (shapeOrGroup.txBody.content.Content[0].Lines.length > 2) {
-						let contentHeight = shapeOrGroup.txBody.content.GetSummaryHeight();
-						let emptyLineHeight = shapeOrGroup.txBody.content.Content[0].Lines.slice(-1)[0].Bottom - shapeOrGroup.txBody.content.Content[0].Lines.slice(-2)[0].Bottom;
-						let lastNonEmptyLineDescent = shapeOrGroup.txBody.content.Content[0].Lines.slice(-2)[0].Metrics.Descent;
-						reflectedTextHeight = contentHeight - lastNonEmptyLineDescent - emptyLineHeight;
-					} else {
-						reflectedTextHeight = 0;
-					}
-					shapeOrGroup.transformText.sy = -1;
-					shapeOrGroup.transformText.ty = shapeOrGroup.transformText.ty + reflectedTextHeight * 2;
+				if (changeTextDirection && shapeOrGroup.Id.substring(shapeOrGroup.Id.length - 4) === "Text") {
+					graphics.SetBaseTransform(baseTextMatrix);
+
+					// let reflectedTextHeight;
+					// if (shapeOrGroup.txBody.content.Content[0].Lines.length === 2) {
+					// 	reflectedTextHeight = shapeOrGroup.txBody.content.Content[0].Lines[0].Metrics.TextAscent;
+					// } else if (shapeOrGroup.txBody.content.Content[0].Lines.length > 2) {
+					// 	let contentHeight = shapeOrGroup.txBody.content.GetSummaryHeight();
+					// 	let emptyLineHeight = shapeOrGroup.txBody.content.Content[0].Lines.slice(-1)[0].Bottom - shapeOrGroup.txBody.content.Content[0].Lines.slice(-2)[0].Bottom;
+					// 	let lastNonEmptyLineDescent = shapeOrGroup.txBody.content.Content[0].Lines.slice(-2)[0].Metrics.Descent;
+					// 	reflectedTextHeight = contentHeight - lastNonEmptyLineDescent - emptyLineHeight;
+					// } else {
+					// 	reflectedTextHeight = 0;
+					// }
+					// shapeOrGroup.transformText.sy = -1;
+					// shapeOrGroup.spPr.xfrm.rot = Math.PI;
+					// shapeOrGroup.recalculateTransform();
+					// shapeOrGroup.recalculateTransformText();
+					// shapeOrGroup.recalculateLocalTransform(shapeOrGroup.transform);
+					// shapeOrGroup.recalculate();
+					// shapeOrGroup.transformText.ty = shapeOrGroup.transformText.ty + reflectedTextHeight * 2;
 
 					// shapeOrGroup.transformText.ty = 0;
-					// if (currentGroupHandling === undefined) {
-					// 	// shapeOrGroup.transformText.sy = -1;
-					// 	// let offset = shapeOrGroup.transform.ty - shapeOrGroup.transformText.ty; // > 0
-					// 	// let correctTextTy = shapeOrGroup.transform.ty + offset;
-					// 	// shapeOrGroup.transform.ty = logic_h_mm - shapeOrGroup.transform.ty; // doesn't change anything
-						// shapeOrGroup.transformText.ty = logic_h_mm - shapeOrGroup.transformText.ty;
-					// 	// shapeOrGroup.transformText.ty = 10; // mm
-					// 	// shapeOrGroup.transformText.sy = -1;
+
+					// shapeOrGroup.transformText.sy = -1;
+					// let offset = shapeOrGroup.transform.ty - shapeOrGroup.transformText.ty; // > 0
+					// let correctTextTy = shapeOrGroup.transform.ty + offset;
+					shapeOrGroup.transform.ty = logic_h_mm - shapeOrGroup.transform.ty - shapeOrGroup.spPr.xfrm.extY;
+					// let oContent = shapeOrGroup.getDocContent();
+					// let height = oContent.GetSummaryHeight();
+					// shapeOrGroup.transform.ty += height/2;
+					shapeOrGroup.recalculateTransformText();
+					// shapeOrGroup.recalculate();
+					// shapeOrGroup.recalculateContent2();
+					// shapeOrGroup.transformText.ty = logic_h_mm - shapeOrGroup.transformText.ty;
+					// shapeOrGroup.transformText.ty = 10; // mm
+					// shapeOrGroup.transformText.sy = -1;
+
+					// graphics.SaveGrState();
+					// graphics.SetIntegerGrid(false);
+					// graphics.transform3(new AscCommon.CMatrix());
+					// graphics.b_color1( 255, 0, 0, 255 );
+					// graphics.rect( shapeOrGroup.transform.tx, shapeOrGroup.transform.ty, shapeOrGroup.spPr.xfrm.extX, shapeOrGroup.spPr.xfrm.extY );
+					// // graphics.rect( shapeOrGroup.transform.tx, shapeOrGroup.transform.ty, 10, 1 );
+					// graphics.df();
+					// graphics.RestoreGrState();
 					//
-					// } else {
-					// 	shapeOrGroup.transformText.tx = 0;
-					// }
+					// graphics.SaveGrState();
+					// graphics.SetIntegerGrid(false);
+					// graphics.transform3(new AscCommon.CMatrix());
+					// graphics.b_color1( 0, 255, 0, 100 );
+					// graphics.rect( shapeOrGroup.transformText.tx, shapeOrGroup.transformText.ty, 10, 1);
+					// graphics.df();
+					// graphics.RestoreGrState();
 				}
 
 				shapeOrGroup.draw(graphics, shapeOrGroup.transform, shapeOrGroup.transformText);
 
-				// if (changeTextDirection && shapeOrGroup.Id.substring(shapeOrGroup.Id.length - 4) === "Text") {
-				// 	graphics.SetBaseTransform(baseMatrix);
-				// }
+				if (changeTextDirection && shapeOrGroup.Id.substring(shapeOrGroup.Id.length - 4) === "Text") {
+					graphics.SetBaseTransform(baseMatrix);
+				}
 			}
 		}
 
