@@ -89,6 +89,8 @@
 	};
 	function drawFile(data){
 		api.asc_CloseFile();
+
+		api.isOpenOOXInBrowser = api["asc_isSupportFeature"]("ooxml") && AscCommon.checkOOXMLSignature(data);
 		api.OpenDocumentFromZip(data);
 		AscCommon.g_oIdCounter.Set_Load(false);
 
@@ -132,12 +134,12 @@
 
 		var reader = new FileReader();
 		reader.onload = function(e) {
-			drawFile(e.target.result);
-
 			let arrayBuffer = e.target.result;
 			let uInt8Array = new Uint8Array(arrayBuffer);
 			console.log('saving file for testing');
 			localStorage.droppedTestFile = AscCommon.Base64.encode(uInt8Array);
+
+			drawFile(uInt8Array);
 		};
 		reader.readAsArrayBuffer(file);
 
