@@ -725,6 +725,11 @@
 			let shapeElements = this.elements;
 			let masterElements = masterShapeToInheritFrom.elements;
 			mergeElementArrays(shapeElements, masterElements);
+			if (masterShapeToInheritFrom.type === "Foreign") {
+				if (masterShapeToInheritFrom.cImageShape) {
+					this.cImageShape = clone(masterShapeToInheritFrom.cImageShape);
+				}
+			}
 
 			let shapeSubshapes = this.shapes;
 			let masterSubshapes = masterShapeToInheritFrom.shapes;

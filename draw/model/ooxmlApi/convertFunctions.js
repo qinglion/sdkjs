@@ -1137,7 +1137,7 @@
 				"Check shape.elements --> ForeignData_Type obj. See shape:", this);
 
 			let foreignDataObject = this.getForeignDataObject();
-			if (foreignDataObject && foreignDataObject.foreignType === "Bitmap") {
+			if (foreignDataObject) {
 				if (this.cImageShape !== null) {
 					this.cImageShape.setLocks(0);
 					this.cImageShape.setBDeleted(false);
