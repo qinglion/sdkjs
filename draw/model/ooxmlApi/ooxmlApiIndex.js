@@ -34,133 +34,43 @@
 
 (function(window, document)
 {
-
 	/**
-	 *    // Docs old:
-	 *    // Useless see ShapeSheet_Type - old
-	 *    // Inherites(extends) ShapeSheet_Type in new schema
-	 * @return {Shape_Type}
+	 *
 	 * @constructor
 	 */
-	function Shape_Type() {
-		this.iD = null;
-		this.originalID = null;
-		this.del = null;
-		this.masterShape = null;
-		this.uniqueID = null;
-		this.name = null;
-		this.nameU = null;
-		this.isCustomName = null;
-		this.isCustomNameU = null;
-		this.master = null;
-		this.type = null;
-		/**
-		 * use get subshapes method
-		 * Always use it see Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive js docs for explanation.
-		 * @type {Shape_Type[]}
-		 */
-		this.shapes = [];
+	function SheetElementsStorage() {
+		// for ooxml classes
+		function setShapeSheetClassMembers() {
+			// 3 attr below inherited from Sheet_Type using old schema
+			// or from ShapeSheet_Type using new schema
+			this.lineStyle = null;
+			this.fillStyle = null;
+			this.textStyle = null;
+			/**
+			 * When working with shapes use getElements/setElements methods
+			 * Always use it see Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive js docs for explanation.
+			 * elements is used bcs text can appear here maybe
+			 * @type {*[]}
+			 */
+			this.elements = [];
+			// elements below are stored in elements to support new schema
 
-		/**
-		 * Shape_Type.prototype.toGeometryAndTextCShapes creates CShape from Shape_Type but for image as an
-		 * exception we make variable to store CImageShape in advance because convertion needs StaxParser reader object.
-		 * @type {CImageShape}
-		 */
-		this.cImageShape = null;
+			// // 3 arrays below inherited from Sheet_Type
+			// this.cells = [];
+			// this.triggers = [];
+			// this.sections = [];
+			//
+			//
+			// // new attributes inherited from ShapeSheet_Type
+			// this.text = null;
+			// this.data1 = null;
+			// this.data2 = null;
+			// this.data3 = null;
+			// this.foreignData = null;
+		}
 
 		setShapeSheetClassMembers.call(this);
-		return this;
 	}
-
-
-	/**
-	 *    // Docs old:
-	 *    // Section_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/section_type-complextypevisio-xml
-	 * @return {Section_Type}
-	 * @constructor
-	 */
-	function Section_Type() {
-		this.n = null;
-		this.del = null;
-		this.iX = null;
-
-		// always use getter setter methods
-		// Always use it see Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive js docs for explanation.
-		this.cells = [];
-		this.triggers = [];
-		this.rows = [];
-		return this;
-	}
-
-	/**
-	 * Docs old:
-	 * Элемент RefBy (Cell_Type complexType): https://learn.microsoft.com/ru-ru/office/client-developer/visio/refby-element-cell_type-complextypevisio-xml
-	 * Cell_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/cell_type-complextypevisio-xml
-	 * @return {Cell_Type}
-	 * @constructor
-	 */
-	function Cell_Type() {
-		// read all as strings
-		/**
-		 * read as string
-		 * @type {string}
-		 */
-		this.n = null;
-		/**
-		 * read as string
-		 * @type {string}
-		 */
-		this.u = null;
-		/**
-		 * read as string
-		 * @type {string}
-		 */
-		this.e = null;
-		/**
-		 * read as string
-		 * @type {string}
-		 */
-		this.f = null;
-		/**
-		 * read as string
-		 * @type {string}
-		 */
-		this.v = null;
-		this.refBy = [];
-		this.textContent = null;
-
-		// not same case like in Text_Type
-		// I suppose text cant go along with inner text
-		// There is either textContent or refBy
-		// I dont make it like it Text_Type to
-		// left separate attributes refBy  and textContent and dont replace both by elements
-		return this;
-	}
-
-
-	/**
-	 *    // Docs old:
-	 *    // Row_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/row_type-complextypevisio-xml
-	 * @return {Row_Type}
-	 * @constructor
-	 */
-	function Row_Type() {
-		this.n = null;
-		this.localName = null;
-		this.iX = null;
-		this.t = null;
-		this.del = null;
-
-		this.cells = [];
-		this.triggers = [];
-		return this;
-	}
-
-
-	Shape_Type.prototype.getMasterID = function() {
-		return this.master;
-	}
-
 
 	/**
 	 *
@@ -247,7 +157,7 @@
 	 * @memberof Shape_Type
 	 * @returns {Section_Type | null}
 	 */
-	Shape_Type.prototype.getSection = function getSection(formula) {
+	SheetElementsStorage.prototype.getSection = function getSection(formula) {
 		return findObject(this.elements, "Section_Type", "n", formula);
 	}
 
@@ -257,7 +167,7 @@
 	 * @memberof Shape_Type
 	 * @returns {Row_Type | null}
 	 */
-	Shape_Type.prototype.getRow = function findRow(formula) {
+	SheetElementsStorage.prototype.getRow = function findRow(formula) {
 		throw new Error("not realized");
 	}
 
@@ -276,17 +186,17 @@
 	 * @memberof Shape_Type
 	 * @returns {Cell_Type|null}
 	 */
-	Shape_Type.prototype.getCell = function findCell(formula) {
+	SheetElementsStorage.prototype.getCell = function findCell(formula) {
 		// Cells can have N only no IX
 		return findObject(this.elements, "Cell_Type", "n", formula);
 	}
 
 	/**
-	 * Calls getCell on Shape and tries to parse as Number(cell.v) if cell exists.
+	 * Calls getCell on object and tries to parse as Number(cell.v) if cell exists.
 	 * @param {String} formula
 	 * @return {?Number} number
 	 */
-	Shape_Type.prototype.getCellNumberValue = function (formula) {
+	SheetElementsStorage.prototype.getCellNumberValue = function (formula) {
 		let cell = this.getCell(formula);
 		if (cell !== undefined) {
 			return Number(cell.v);
@@ -296,11 +206,11 @@
 	}
 
 	/**
-	 * Calls getCell on Shape and tries to parse as String(cell.v) if cell exists.
+	 * Calls getCell on object and tries to parse as String(cell.v) if cell exists.
 	 * @param {String} formula
 	 * @return {?String} string
 	 */
-	Shape_Type.prototype.getCellStringValue = function (formula) {
+	SheetElementsStorage.prototype.getCellStringValue = function (formula) {
 		let cell = this.getCell(formula);
 		if (cell !== undefined) {
 			return String(cell.v);
@@ -311,26 +221,13 @@
 
 	/**
 	 * Always use it see Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive js docs for explanation.
-	 * Finds shape text element.
-	 *
-	 * Returns object of shape not copy!
-	 *
-	 * @memberof Shape_Type
-	 * @returns {Text_Type | null}
-	 */
-	Shape_Type.prototype.getTextElement = function getTextElement() {
-		return findObject(this.elements, "Text_Type");
-	}
-
-	/**
-	 * Always use it see Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive js docs for explanation.
 	 * if in formula we have both ix and n we should use findSection instead.
 	 * or if we use it with number in formula
 	 * @param {String} formula
 	 * @memberof Shape_Type
 	 * @returns {Section_Type[] | null}
 	 */
-	Shape_Type.prototype.getSections = function(formula) {
+	SheetElementsStorage.prototype.getSections = function(formula) {
 		if (/^\d+$/.test(formula)) {
 			// if number
 			console.log('strange findSections use (with number)');
@@ -341,20 +238,31 @@
 
 	/**
 	 * Always use it see Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive js docs for explanation.
-	 * @memberof Shape_Type
-	 * @return {Shape_Type[]}
-	 */
-	Shape_Type.prototype.getSubshapes = function () {
-		return this.shapes;
-	}
-
-	/**
-	 * Always use it see Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive js docs for explanation.
 	 * get elements inherited from shape sheet type
 	 * @return {*}
 	 */
-	Shape_Type.prototype.getElements = function () {
+	SheetElementsStorage.prototype.getElements = function () {
 		return this.elements;
+	}
+
+
+	/**
+	 *    // Docs old:
+	 *    // Section_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/section_type-complextypevisio-xml
+	 * @return {Section_Type}
+	 * @constructor
+	 */
+	function Section_Type() {
+		this.n = null;
+		this.del = null;
+		this.iX = null;
+
+		// always use getter setter methods
+		// Always use it see Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive js docs for explanation.
+		this.cells = [];
+		this.triggers = [];
+		this.rows = [];
+		return this;
 	}
 
 	/**
@@ -392,6 +300,203 @@
 		return findObject(this.rows, "Row_Type", "n", formula);
 	}
 
+
+	/**
+	 *    // Docs old:
+	 *    // Row_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/row_type-complextypevisio-xml
+	 * @return {Row_Type}
+	 * @constructor
+	 */
+	function Row_Type() {
+		this.n = null;
+		this.localName = null;
+		this.iX = null;
+		this.t = null;
+		this.del = null;
+
+		this.cells = [];
+		this.triggers = [];
+		return this;
+	}
+
+	/**
+	 * returns link not clone
+	 * @param {String} formula
+	 * @memberof Row_Type
+	 * @returns {null | Cell_Type}
+	 */
+	Row_Type.prototype.getCell = function (formula) {
+		// Cells can have N only no IX
+		return findObject(this.cells, "Cell_Type", "n", formula);
+	}
+
+
+	/**
+	 * Docs old:
+	 * Элемент RefBy (Cell_Type complexType): https://learn.microsoft.com/ru-ru/office/client-developer/visio/refby-element-cell_type-complextypevisio-xml
+	 * Cell_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/cell_type-complextypevisio-xml
+	 * @return {Cell_Type}
+	 * @constructor
+	 */
+	function Cell_Type() {
+		// read all as strings
+		/**
+		 * read as string
+		 * @type {string}
+		 */
+		this.n = null;
+		/**
+		 * read as string
+		 * @type {string}
+		 */
+		this.u = null;
+		/**
+		 * read as string
+		 * @type {string}
+		 */
+		this.e = null;
+		/**
+		 * read as string
+		 * @type {string}
+		 */
+		this.f = null;
+		/**
+		 * read as string
+		 * @type {string}
+		 */
+		this.v = null;
+		this.refBy = [];
+		this.textContent = null;
+
+		// not same case like in Text_Type
+		// I suppose text cant go along with inner text
+		// There is either textContent or refBy
+		// I dont make it like it Text_Type to
+		// left separate attributes refBy  and textContent and dont replace both by elements
+		return this;
+	}
+
+	/**
+	 * @memberOf Cell_Type
+	 * @return {number}
+	 */
+	Cell_Type.prototype.getValueInMM = function () {
+		let res;
+		//todo all units
+		switch (this.u) {
+			case "DL":
+			case "IN":
+			case "IN_F":
+				res = parseFloat(this.v) * g_dKoef_in_to_mm;
+				break;
+			case "FT":
+				res = parseFloat(this.v) * 12 * g_dKoef_in_to_mm;
+				break;
+			case "F_I":
+				res = parseFloat(this.v);
+				let intPart = Math.floor(res);
+				res = (intPart * 12 + (res - intPart)) * g_dKoef_in_to_mm;
+				break;
+			case "KM":
+				res = parseFloat(this.v) * 1000000;
+				break;
+			case "M":
+				res = parseFloat(this.v) * 1000;
+				break;
+			case "CM":
+				res = parseFloat(this.v) * 10;
+				break;
+			case "MM":
+				res = parseFloat(this.v);
+				break;
+			default:
+				res = parseFloat(this.v) * g_dKoef_in_to_mm;
+				break;
+		}
+		return res;
+	};
+
+	/**
+	 * @memberOf Cell_Type
+	 * @return {number}
+	 */
+	Cell_Type.prototype.getValueInInch = function () {
+		let res = this.getValueInMM() / g_dKoef_in_to_mm;
+		return res;
+	}
+
+
+	/**
+	 *    // Docs old:
+	 *    // Useless see ShapeSheet_Type - old
+	 *    // Inherites(extends) ShapeSheet_Type in new schema
+	 * @return {Shape_Type}
+	 * @constructor
+	 * @extends SheetElementsStorage
+	 */
+	function Shape_Type() {
+		this.iD = null;
+		this.originalID = null;
+		this.del = null;
+		this.masterShape = null;
+		this.uniqueID = null;
+		this.name = null;
+		this.nameU = null;
+		this.isCustomName = null;
+		this.isCustomNameU = null;
+		this.master = null;
+		this.type = null;
+		/**
+		 * use get subshapes method
+		 * Always use it see Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive js docs for explanation.
+		 * @type {Shape_Type[]}
+		 */
+		this.shapes = [];
+
+		/**
+		 * Shape_Type.prototype.toGeometryAndTextCShapes creates CShape from Shape_Type but for image as an
+		 * exception we make variable to store CImageShape in advance because convertion needs StaxParser reader object.
+		 * @type {CImageShape}
+		 */
+		this.cImageShape = null;
+
+		// call parent class constructor
+		let parentClassConstructor = SheetElementsStorage;
+		parentClassConstructor.call(this);
+
+		return this;
+	}
+	// inherit parent class methods
+	// https://developer.mozilla.org/ru/docs/Web/JavaScript/Reference/Global_Objects/Object/create#%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80_%D0%BA%D0%BB%D0%B0%D1%81%D1%81%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%BE%D0%B5_%D0%BD%D0%B0%D1%81%D0%BB%D0%B5%D0%B4%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D0%B5_%D1%81_object.create
+	Shape_Type.prototype = Object.create(SheetElementsStorage.prototype);
+	Shape_Type.prototype.constructor = Shape_Type;
+
+
+	Shape_Type.prototype.getMasterID = function() {
+		return this.master;
+	}
+
+	/**
+	 * Always use it see Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive js docs for explanation.
+	 * @memberof Shape_Type
+	 * @return {Shape_Type[]}
+	 */
+	Shape_Type.prototype.getSubshapes = function () {
+		return this.shapes;
+	}
+
+	/**
+	 * Always use it see Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive js docs for explanation.
+	 * Finds shape text element.
+	 *
+	 * Returns object of shape not copy!
+	 *
+	 * @memberof Shape_Type
+	 * @returns {Text_Type | null}
+	 */
+	Shape_Type.prototype.getTextElement = function getTextElement() {
+		return findObject(this.elements, "Text_Type");
+	}
 
 	/**
 	 * returns this shape and subshapes array without cloning so objects are linked.
@@ -983,94 +1088,139 @@
 
 
 	/**
-	 * returns link not clone
-	 * @param {String} formula
-	 * @memberof Row_Type
-	 * @returns {null | Cell_Type}
+	 * // Docs old:
+	 * // Элемент PageSheet (Page_Type complexType): https://learn.microsoft.com/ru-ru/office/client-developer/visio/pagesheet-element-page_type-complextypevisio-xml
+	 * // Элемент Rel (Page_Type complexType): https://learn.microsoft.com/ru-ru/office/client-developer/visio/rel-element-page_type-complextypevisio-xml
+	 * // Page_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/page_type-complextypevisio-xml
+	 * @returns {Page_Type}
+	 * @constructor
 	 */
-	Row_Type.prototype.getCell = function (formula) {
-		// Cells can have N only no IX
-		return findObject(this.cells, "Cell_Type", "n", formula);
+	function Page_Type() {
+		this.iD = null;
+		this.name = null;
+		this.nameU = null;
+		this.isCustomName = null;
+		this.isCustomNameU = null;
+		this.background = null;
+		this.backPage = null;
+		this.viewScale = null;
+		this.viewCenterX = null;
+		this.viewCenterY = null;
+		this.reviewerID = null;
+		this.associatedPage = null;
+		this.pageSheet = null;
+		this.rel = null;
+		return this;
 	}
-
 
 	/**
-	 * @memberOf Cell_Type
-	 * @return {number}
+	 * // Docs old:
+	 * // PageSheet_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/pagesheet_type-complextypevisio-xml
+	 * // In new schema inherits from ShapeSheet_Type
+	 * @returns {PageSheet_Type}
+	 * @constructor
+	 * @extends SheetElementsStorage
 	 */
-	Cell_Type.prototype.getValueInMM = function () {
-		let res;
-		//todo all units
-		switch (this.u) {
-			case "DL":
-			case "IN":
-			case "IN_F":
-				res = parseFloat(this.v) * g_dKoef_in_to_mm;
-				break;
-			case "FT":
-				res = parseFloat(this.v) * 12 * g_dKoef_in_to_mm;
-				break;
-			case "F_I":
-				res = parseFloat(this.v);
-				let intPart = Math.floor(res);
-				res = (intPart * 12 + (res - intPart)) * g_dKoef_in_to_mm;
-				break;
-			case "KM":
-				res = parseFloat(this.v) * 1000000;
-				break;
-			case "M":
-				res = parseFloat(this.v) * 1000;
-				break;
-			case "CM":
-				res = parseFloat(this.v) * 10;
-				break;
-			case "MM":
-				res = parseFloat(this.v);
-				break;
-			default:
-				res = parseFloat(this.v) * g_dKoef_in_to_mm;
-				break;
-		}
-		return res;
-	};
+	function PageSheet_Type() {
+		this.uniqueID = null;
+
+		// call parent class constructor
+		let parentClassConstructor = SheetElementsStorage;
+		parentClassConstructor.call(this);
+		return this;
+	}
+	// inherit parent class methods
+	// https://developer.mozilla.org/ru/docs/Web/JavaScript/Reference/Global_Objects/Object/create#%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80_%D0%BA%D0%BB%D0%B0%D1%81%D1%81%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%BE%D0%B5_%D0%BD%D0%B0%D1%81%D0%BB%D0%B5%D0%B4%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D0%B5_%D1%81_object.create
+	PageSheet_Type.prototype = Object.create(SheetElementsStorage.prototype);
+	PageSheet_Type.prototype.constructor = PageSheet_Type;
+
 	/**
-	 * @memberOf Cell_Type
-	 * @return {number}
+	 * // Docs old:
+	 * // DocumentSheet_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/documentsheet_type-complextypevisio-xml
+	 * // In new schema inherites from ShapeSheet_Type
+	 * @returns {DocumentSheet_Type}
+	 * @constructor
+	 * @extends SheetElementsStorage
 	 */
-	Cell_Type.prototype.getValueInInch = function () {
-		let res = this.getValueInMM() / g_dKoef_in_to_mm;
-		return res;
-	}
+	function DocumentSheet_Type() {
+		this.name = null;
+		this.nameU = null;
+		this.isCustomName = null;
+		this.isCustomNameU = null;
+		this.uniqueID = null;
 
-	// for ooxml classes
-	function setShapeSheetClassMembers() {
-		// 3 attr below inherited from Sheet_Type using old schema
-		// or from ShapeSheet_Type using new schema
-		this.lineStyle = null;
-		this.fillStyle = null;
-		this.textStyle = null;
-		/**
-		 * When working with shapes use getElements/setElements methods
-		 * Always use it see Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive js docs for explanation.
-		 * elements is used bcs text can appear here maybe
-		 * @type {*[]}
-		 */
-		this.elements = [];
-		// elements below are stored in elements to support new schema
-
-		// // 3 arrays below inherited from Sheet_Type
-		// this.cells = [];
-		// this.triggers = [];
-		// this.sections = [];
-		//
-		//
-		// // new attributes inherited from ShapeSheet_Type
-		// this.text = null;
-		// this.data1 = null;
-		// this.data2 = null;
-		// this.data3 = null;
-		// this.foreignData = null;
+		// call parent class constructor
+		let parentClassConstructor = SheetElementsStorage;
+		parentClassConstructor.call(this);
+		return this;
 	}
+	// inherit parent class methods
+	// https://developer.mozilla.org/ru/docs/Web/JavaScript/Reference/Global_Objects/Object/create#%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80_%D0%BA%D0%BB%D0%B0%D1%81%D1%81%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%BE%D0%B5_%D0%BD%D0%B0%D1%81%D0%BB%D0%B5%D0%B4%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D0%B5_%D1%81_object.create
+	DocumentSheet_Type.prototype = Object.create(SheetElementsStorage.prototype);
+	DocumentSheet_Type.prototype.constructor = DocumentSheet_Type;
+
+	/**
+	 * // Docs old:
+	 *    // StyleSheet_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/stylesheet_type-complextypevisio-xml
+	 *    //In new schema inherites from ShapeSheet_Type
+	 * @returns {StyleSheet_Type}
+	 * @constructor
+	 * @extends SheetElementsStorage
+	 */
+	function StyleSheet_Type() {
+		this.iD = null;
+		this.name = null;
+		this.nameU = null;
+		this.isCustomName = null;
+		this.isCustomNameU = null;
+
+		// call parent class constructor
+		let parentClassConstructor = SheetElementsStorage;
+		parentClassConstructor.call(this);
+		return this;
+	}
+	// inherit parent class methods
+	// https://developer.mozilla.org/ru/docs/Web/JavaScript/Reference/Global_Objects/Object/create#%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80_%D0%BA%D0%BB%D0%B0%D1%81%D1%81%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%BE%D0%B5_%D0%BD%D0%B0%D1%81%D0%BB%D0%B5%D0%B4%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D0%B5_%D1%81_object.create
+	StyleSheet_Type.prototype = Object.create(SheetElementsStorage.prototype);
+	StyleSheet_Type.prototype.constructor = StyleSheet_Type;
+
+	/**
+	 * // Docs old:
+	 *    // Элемент Shapes (ShapeSheet_Type complexType): https://learn.microsoft.com/ru-ru/office/client-developer/visio/shapes-element-shapesheet_type-complextypevisio-xml
+	 *    // ShapeSheet_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/shapesheet_type-complextypevisio-xml
+	 * @returns {ShapeSheet_Type}
+	 * @constructor
+	 * @extends SheetElementsStorage
+	 */
+	function ShapeSheet_Type() {
+		this.iD = null;
+		this.originalID = null;
+		this.del = null;
+		this.masterShape = null;
+		this.uniqueID = null;
+		this.name = null;
+		this.nameU = null;
+		this.isCustomName = null;
+		this.isCustomNameU = null;
+		this.master = null;
+		this.type = null;
+
+		this.shapes = [];
+
+		this.items = null;
+		this.anyAttr = null;
+
+		// call parent class constructor
+		let parentClassConstructor = SheetElementsStorage;
+		parentClassConstructor.call(this);
+		return this;
+	}
+	// inherit parent class methods
+	// https://developer.mozilla.org/ru/docs/Web/JavaScript/Reference/Global_Objects/Object/create#%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80_%D0%BA%D0%BB%D0%B0%D1%81%D1%81%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%BE%D0%B5_%D0%BD%D0%B0%D1%81%D0%BB%D0%B5%D0%B4%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D0%B5_%D1%81_object.create
+	ShapeSheet_Type.prototype = Object.create(SheetElementsStorage.prototype);
+	ShapeSheet_Type.prototype.constructor = ShapeSheet_Type;
+
+
 
 	//-------------------------------------------------------------export---------------------------------------------------
 	window['Asc']            = window['Asc'] || {};
@@ -1086,7 +1236,10 @@
 	window['AscCommonDraw'].Cell_Type = Cell_Type;
 	window['AscCommonDraw'].Shape_Type = Shape_Type;
 	window['AscCommonDraw'].Section_Type = Section_Type;
-
-	window['AscCommonDraw'].setShapeSheetClassMembers = setShapeSheetClassMembers;
+	window['AscCommonDraw'].Page_Type = Page_Type;
+	window['AscCommonDraw'].PageSheet_Type = PageSheet_Type;
+	window['AscCommonDraw'].DocumentSheet_Type = DocumentSheet_Type;
+	window['AscCommonDraw'].StyleSheet_Type = StyleSheet_Type;
+	window['AscCommonDraw'].ShapeSheet_Type = ShapeSheet_Type;
 
 })(window, window.document);

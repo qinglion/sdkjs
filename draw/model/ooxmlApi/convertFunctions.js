@@ -1320,7 +1320,7 @@
 		let nHeight_mm = Math.round(h_mm);
 		//let oDrawingDocument = new AscCommon.CDrawingDocument();
 		let shape = AscFormat.builder_CreateShape(sType, nWidth_mm, nHeight_mm,
-			oFill, oStroke, cVisioDocument, cVisioDocument.theme, null, false);
+			oFill, oStroke, cVisioDocument, cVisioDocument.themes[0], null, false);
 		shape.spPr.xfrm.setOffX(x);
 		shape.spPr.xfrm.setOffY(y);
 		shape.spPr.xfrm.setRot(rot);
