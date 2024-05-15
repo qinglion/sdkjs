@@ -1812,9 +1812,13 @@ XmlParserContext.prototype.loadDataLinks = function() {
             let data = this.zip.getFile(path);
             if (data) {
                 if (!window["NATIVE_EDITOR_ENJINE"]) {
-                    let blob = this.zip.getImageBlob(path);
-                    let url = window.URL.createObjectURL(blob);
-                    AscCommon.g_oDocumentUrls.addImageUrl(path, url);
+                    try {
+                        let blob = this.zip.getImageBlob(path);
+                        let url = window.URL.createObjectURL(blob);
+                        AscCommon.g_oDocumentUrls.addImageUrl(path, url);
+                    } catch (e) {
+                        console.log("ERROR: Image blob was not loaded");
+                    }
                 }
                 this.imageMap[path].forEach(function(blipFill) {
                     AscCommon.pptx_content_loader.Reader.initAfterBlipFill(path, blipFill);
