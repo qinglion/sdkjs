@@ -1010,7 +1010,7 @@
 			mergeAll = true;
 		}
 
-		masterElements.forEach(function(masterElement) {
+		masterElements.forEach(function(masterElement, i, masterElements) {
 			let mergeElementIndex = findIndexComparingByNorIX(shapeElements, masterElement);
 			let elementExistsAlready = mergeElementIndex !== -1;
 
@@ -1023,10 +1023,6 @@
 					// mb lets not add cell after section
 					let elementCopy = clone(masterElement);
 					shapeElements.push(elementCopy);
-					// ix wrong order causes problems
-					shapeElements.sort(function (a, b) {
-						return a.iX - b.iX;
-					});
 				}
 			} else {
 				// merge inner elements recursive if not cell
@@ -1046,6 +1042,12 @@
 						mergeElementArrays(shapeElement.cells, masterElement.cells, elementsToMerge, isParentInList);
 					}
 				}
+			}
+			if (i === masterElements.length - 1) {
+				// ix wrong order causes problems
+				shapeElements.sort(function (a, b) {
+					return a.iX - b.iX;
+				});
 			}
 		});
 	}
