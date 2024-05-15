@@ -1067,15 +1067,15 @@
 	 */
 	function clone(object) {
 		function cloneWithPrototypesRecursive(copyObject, originalObject) {
-			Object.setPrototypeOf(copyObject, Object.getPrototypeOf(originalObject));
 
-			// Iterate over object properties and recursively
+			// Iterate over object properties recursively
 			for (const key in originalObject) {
 				if (originalObject.hasOwnProperty(key)) {
 					if (typeof originalObject[key] === 'object' && originalObject[key] !== null) {
-						// so after line below when we set array props using copyObject[key] = originalObject[key];
+						// after recursive call when we set array props using copyObject[key] = originalObject[key];
 						// array length will change automatically
-						copyObject[key] = Array.isArray(originalObject[key]) ? [] : Object.create(null);
+						copyObject[key] = Array.isArray(originalObject[key]) ? [] :
+							Object.create(Object.getPrototypeOf(originalObject[key]));
 						cloneWithPrototypesRecursive(copyObject[key], originalObject[key]);
 					} else {
 						copyObject[key] = originalObject[key];
@@ -1084,7 +1084,7 @@
 			}
 		}
 
-		let copy = Object.create(null);
+		let copy = Object.create(Object.getPrototypeOf(object));
 		// let copy = JSON.parse(JSON.stringify(object));
 		cloneWithPrototypesRecursive(copy, object);
 		// console.log("Clone function test.\nObject before: ", object, "\nAfter: ", copy);
