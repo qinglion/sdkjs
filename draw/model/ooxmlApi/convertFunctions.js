@@ -298,9 +298,10 @@
 		 * @param {CShape} cShape
 		 * @param {CUniFill} lineUniFill
 		 * @param {CUniFill} fillUniFill
+		 * @param {number} antiScale
 		 * @return {CShape} textCShape
 		 */
-		function getTextCShape(theme, shape, cShape, lineUniFill, fillUniFill) {
+		function getTextCShape(theme, shape, cShape, lineUniFill, fillUniFill, antiScale) {
 			// see 2.2.8	Text [MS-VSDX]-220215
 			/**
 			 * handle QuickStyleVariation cell which can change color (but only if color is a result of ThemeVal)
@@ -705,6 +706,7 @@
 			let oTextPr;
 			oTextPr = new CTextPr();
 			// i dont know why but when i set font size not for overall shape but for runs text shifts to the top
+			// oTextPr.FontSize = nFontSize * antiScale;
 			oTextPr.FontSize = nFontSize;
 			// oTextPr.RFonts.Ascii = {Name: "Calibri", Index: -1};
 			// oTextPr.RFonts.HAnsi = {Name: "Calibri", Index: -1};
@@ -1099,10 +1101,18 @@
 			lineWidthEmu = 9525;
 		}
 
+		// Antiscale should be applied (drawing scale should not be considered) for text font size and stoke size
+		// https://support.microsoft.com/en-us/office/change-the-drawing-scale-on-a-page-in-visio-05c24456-67bf-47f7-b5dc-d5caa9974f19
+		// https://stackoverflow.com/questions/63295483/how-properly-set-line-scaling-in-ms-visio
+		let drawingScale = pageInfo.pageSheet.getCellNumberValue("DrawingScale");
+		let pageScale = pageInfo.pageSheet.getCellNumberValue("PageScale");
+		let antiScale = drawingScale / pageScale;
+		let lineWidthEmuAntiScaled = lineWidthEmu * antiScale;
+
 		// console.log("Calculated lineUniFill unifill", lineUniFill, "for shape", this);
 		// console.log("Calculated fill UniFill", uniFillForegndWithPattern, "for shape", this);
 
-		var oStroke = AscFormat.builder_CreateLine(lineWidthEmu, {UniFill: lineUniFillWithPattern});
+		var oStroke = AscFormat.builder_CreateLine(lineWidthEmuAntiScaled, {UniFill: lineUniFillWithPattern});
 		// var oStroke = AscFormat.builder_CreateLine(12700, {UniFill: AscFormat.CreateUnfilFromRGB(255,0,0)});
 
 		let flipXCell = this.getCell("FlipX");
@@ -1122,7 +1132,7 @@
 
 		cShape.Id = String(this.iD); // it was string in cShape
 
-		let textCShape = getTextCShape(visioDocument.themes[0], this, cShape, lineUniFill, uniFillForegnd);
+		let textCShape = getTextCShape(visioDocument.themes[0], this, cShape, lineUniFill, uniFillForegnd, antiScale);
 
 		cShape.recalculate();
 		cShape.recalculateLocalTransform(cShape.transform);
