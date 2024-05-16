@@ -2801,6 +2801,7 @@ function CT_pivotTableDefinition(setDefaults) {
 	this.rowItems = null;
 	this.colFields = null;
 	this.colItems = null;
+	/**@type {CT_PageFields} */
 	this.pageFields = null;
 	/**@type {CT_DataFields} */
 	this.dataFields = null;
@@ -3765,8 +3766,19 @@ CT_pivotTableDefinition.prototype.updatePivotType = function () {
 CT_pivotTableDefinition.prototype.hasCompact = function () {
 	return false !== this.compactData || this.hasCompactField;
 };
-CT_pivotTableDefinition.prototype.intersection = function (range) {
-	return (this.location && this.location.intersection(range)) || this.pageFieldsIntersection(range);
+CT_pivotTableDefinition.prototype.intersection = function (bbox) {
+	//todo triggers on mouse move event so do not create tmp object in getReportRanges
+	//todo add new intersection with array argument
+	var ranges = this.getReportRanges();
+	return ranges.some(function (range) {
+		if (Array.isArray(bbox)) {
+			return bbox.some(function (element) {
+				return element.intersectionSimple(range);
+			});
+		} else {
+			return bbox.intersectionSimple(range);
+		}
+	});
 };
 CT_pivotTableDefinition.prototype.isInRange = function(bbox) {
 	var ranges = this.getReportRanges();
@@ -3783,8 +3795,10 @@ CT_pivotTableDefinition.prototype.pageFieldsIntersection = function (range) {
 		});
 };
 CT_pivotTableDefinition.prototype.contains = function (col, row) {
-	return (this.location && this.location.contains(col, row)) ||
-		this.pageFieldsIntersection(new Asc.Range(col, row, col, row));
+	var ranges = this.getReportRanges();
+	return ranges.some(function(range) {
+		return range.contains(col, row);
+	});
 };
 CT_pivotTableDefinition.prototype.containsRange = function (bbox) {
 	var ranges = this.getReportRanges();
@@ -3804,9 +3818,10 @@ CT_pivotTableDefinition.prototype.getReportRanges = function () {
 			res.push(new Asc.Range(pos.col, pos.row, pos.col + 1, pos.row));
 		}
 	}
-
-	var pivotRange = this.getRange();
-	res.push(new Asc.Range(pivotRange.c1, pivotRange.r1, pivotRange.c2, pivotRange.r2));
+	if (!this.isFilterReport()) {
+		var pivotRange = this.getRange();
+		res.push(new Asc.Range(pivotRange.c1, pivotRange.r1, pivotRange.c2, pivotRange.r2));
+	}
 	return res;
 };
 CT_pivotTableDefinition.prototype.getFirstHeaderRow0 = function () {
@@ -4210,6 +4225,9 @@ CT_pivotTableDefinition.prototype.getRowFieldsValuesIndex = function() {
 };
 CT_pivotTableDefinition.prototype.getDataFieldsCount = function () {
 	return (this.dataFields && this.dataFields.dataField.length) || 0;
+};
+CT_pivotTableDefinition.prototype.getPageFieldsCount = function () {
+	return (this.pageFields && this.pageFields.pageField.length) || 0;
 };
 CT_pivotTableDefinition.prototype.getField = function (arrFields, callback) {
 	return arrFields && arrFields.map(callback, this);
@@ -5145,6 +5163,9 @@ CT_pivotTableDefinition.prototype.syncSlicersWithPivot = function(cacheFieldsWit
 };
 CT_pivotTableDefinition.prototype.isEmptyReport = function() {
 	return 0 === this.getColumnFieldsCount() + this.getRowFieldsCount() + this.getDataFieldsCount();
+};
+CT_pivotTableDefinition.prototype.isFilterReport = function() {
+	return this.isEmptyReport() && 0 !== this.getPageFieldsCount();
 };
 CT_pivotTableDefinition.prototype.asc_set = function (api, newVal) {
 	if (null !== newVal.ascDataRef && newVal.ascDataRef !== this.asc_getDataRef() && !this.isValidDataRef(newVal.ascDataRef)) {
@@ -16481,7 +16502,11 @@ CT_PivotFilter.prototype.initFromCustom = function(index, filter, iMeasureFld) {
 			}
 		}
 	}
-	this.autoFilter.FilterColumns[0].CustomFiltersObj = filter;
+	//convert "contains" to "equal" after "type" setting
+	let filterMod = filter.clone();
+	filterMod.check();
+	filterMod.correctFromInterface();
+	this.autoFilter.FilterColumns[0].CustomFiltersObj = filterMod;
 };
 CT_PivotFilter.prototype.initFromDynamic = function(index, filter) {
 	this.initTemplate(index);
@@ -20063,6 +20088,7 @@ prot["asc_getFillDownLabelsDefault"] = prot.asc_getFillDownLabelsDefault;
 prot["asc_setDataRef"] = prot.asc_setDataRef;
 prot["asc_setTitle"] = prot.asc_setTitle;
 prot["asc_setDescription"] = prot.asc_setDescription;
+prot["asc_setHideValuesRow"] = prot.asc_setHideValuesRow;
 prot["asc_setInsertBlankRow"] = prot.asc_setInsertBlankRow;
 prot["asc_setDefaultSubtotal"] = prot.asc_setDefaultSubtotal;
 prot["asc_setSubtotalTop"] = prot.asc_setSubtotalTop;

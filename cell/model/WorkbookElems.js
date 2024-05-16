@@ -11125,6 +11125,9 @@ function RangeDataManagerElem(bbox, data)
 		} else {
 			var isNumberFilter = this.Operator === c_oAscCustomAutoFilter.isGreaterThan || this.Operator === c_oAscCustomAutoFilter.isGreaterThanOrEqualTo || this.Operator === c_oAscCustomAutoFilter.isLessThan || this.Operator === c_oAscCustomAutoFilter.isLessThanOrEqualTo;
 
+			if (isLabelFilter && !isNumberFilter) {
+				isDigitValue = false;
+			}
 			if (c_oAscCustomAutoFilter.equals === this.Operator || c_oAscCustomAutoFilter.doesNotEqual === this.Operator) {
 				filterVal = isNaN(this.Val) ? this.Val.toLowerCase() : this.Val;
 			} else if (isNumberFilter) {
@@ -11234,32 +11237,56 @@ function RangeDataManagerElem(bbox, data)
 				}
 				case c_oAscCustomAutoFilter.beginsWith://beginsWith
 				{
-					result = matchingValues(trimFilterVal + "*", trimVal);
+					if (!isDigitValue) {
+						result = matchingValues(trimFilterVal + "*", trimVal);
+					}
+
 					break;
 				}
 				case c_oAscCustomAutoFilter.doesNotBeginWith://doesNotBeginWith
 				{
-					result = matchingValues(trimFilterVal + "*", trimVal, "<>");
+					if (!isDigitValue) {
+						result = matchingValues(trimFilterVal + "*", trimVal, "<>");
+					} else {
+						result = true;
+					}
+
 					break;
 				}
 				case c_oAscCustomAutoFilter.endsWith://endsWith
 				{
-					result = matchingValues("*" + trimFilterVal, trimVal);
+					if (!isDigitValue) {
+						result = matchingValues("*" + trimFilterVal, trimVal);
+					}
+
 					break;
 				}
 				case c_oAscCustomAutoFilter.doesNotEndWith://doesNotEndWith
 				{
-					result = matchingValues("*" + trimFilterVal, trimVal, "<>");
+					if (!isDigitValue) {
+						result = matchingValues("*" + trimFilterVal, trimVal, "<>");
+					} else {
+						result = true;
+					}
+
 					break;
 				}
 				case c_oAscCustomAutoFilter.contains://contains
 				{
-					result = matchingValues("*" + trimFilterVal + "*", trimVal);
+					if (!isDigitValue) {
+						result = matchingValues("*" + trimFilterVal + "*", trimVal);
+					}
+
 					break;
 				}
 				case c_oAscCustomAutoFilter.doesNotContain://doesNotContain
 				{
-					result = matchingValues("*" + trimFilterVal + "*", trimVal, "<>");
+					if (!isDigitValue) {
+						result = matchingValues("*" + trimFilterVal + "*", trimVal, "<>");
+					} else {
+						result = true;
+					}
+
 					break;
 				}
 			}

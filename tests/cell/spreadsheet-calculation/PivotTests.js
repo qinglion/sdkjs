@@ -3270,35 +3270,25 @@ var wb, ws, wsData, pivotStyle, tableName, defNameName, defNameLocalName, report
 		],
 		"filter_downThenOver1":[
 			["Region","(All)"],
-			["",""],
-			["",""]
 		],
 		"filter_downThenOver3":[
 			["Region","(All)"],
 			["Gender","(All)"],
 			["Style","(All)"],
-			["",""],
-			["",""]
 		],
 		"filter_downThenOver3_2wrap":[
 			["Region","(All)","","Style","(All)"],
-			["Gender","(All)","","",""],
-			["","","","",""],
-			["","","","",""]
+			["Gender","(All)","","",""]
 		],
 		"filter_downThenOver7_2wrap":[
 			["Region","(All)","","Style","(All)","","Units","(All)","","Cost","(All)"],
 			["Gender","(All)","","Ship date","(All)","","Price","(All)","","",""],
-			["","","","","","","","","","",""],
-			["","","","","","","","","","",""]
 		],
 		"filter_overThenDown7_2wrap":[
 			["Region","(All)","","Gender","(All)"],
 			["Style","(All)","","Ship date","(All)"],
 			["Units","(All)","","Price","(All)"],
-			["Cost","(All)","","",""],
-			["","","","",""],
-			["","","","",""]
+			["Cost","(All)","","",""]
 		],
 		"data_values1":[
 			["Row Labels","Count of Price1","Count of Price2","Min of Price3","Max of Price4","Sum of Price5","Average of Price6","Product of Price7","StdDev of Price8","StdDevp of Price9","Var of Price10","Varp of Price11"],
@@ -3342,13 +3332,13 @@ var wb, ws, wsData, pivotStyle, tableName, defNameName, defNameLocalName, report
 		],
 		"data_values5": [
 			["Row Labels","Count of Price1","Count of Price2","Min of Price3","Max of Price4","Sum of Price5","Average of Price6","Product of Price7","StdDev of Price8","StdDevp of Price9","Var of Price10","Varp of Price11"],
-			["East","#N/A","#N/A","#N/A","#N/A","#N/A","#N/A","#N/A","#N/A","#N/A","#N/A","#N/A"],
+			["East","6","3","#N/A","#N/A","#N/A","#N/A","#N/A","#N/A","#N/A","#N/A","#N/A"],
 			["Boy","3","2","#N/A","#N/A","#N/A","#N/A","#N/A","#N/A","#N/A","#N/A","#N/A"],
 			["Girl","3","1","#N/A","#N/A","#N/A","#N/A","#N/A","#N/A","#N/A","#N/A","#N/A"],
 			["West","5","5","11.44","13.42","61.03","12.206","268454.7463","0.834973053","0.746822603","0.69718","0.557744"],
 			["Boy","3","3","11.44","12.63","36.13","12.04333333","1742.515632","0.595175044","0.485958389","0.354233333","0.236155556"],
 			["Girl","2","2","11.48","13.42","24.9","12.45","154.0616","1.371787156","0.97","1.8818","0.9409"],
-			["Grand Total","#N/A","#N/A","#N/A","#N/A","#N/A","#N/A","#N/A","#N/A","#N/A","#N/A","#N/A"]
+			["Grand Total","11","8","#N/A","#N/A","#N/A","#N/A","#N/A","#N/A","#N/A","#N/A","#N/A"]
 		],
 		"data_values6": [
 			["Row Labels","Count of Price1","Count of Price2","Min of Price3","Max of Price4","Sum of Price5","Average of Price6","Product of Price7","StdDev of Price8","StdDevp of Price9","Var of Price10","Varp of Price11"],
@@ -4572,12 +4562,12 @@ var wb, ws, wsData, pivotStyle, tableName, defNameName, defNameLocalName, report
 			});
 
 			// TODO Fix dataRow count logic
-			// pivot = checkHistoryOperation(assert, pivot, standards["data_values5"], "values5", function() {
-			// 	var props = new Asc.CT_pivotTableDefinition();
-			// 	props.ascHideValuesRow = true;
-			// 	props.asc_setDataRef(dataRef5);
-			// 	pivot.asc_set(api, props);
-			// });
+			pivot = checkHistoryOperation(assert, pivot, standards["data_values5"], "values5", function() {
+				var props = new Asc.CT_pivotTableDefinition();
+				props.ascHideValuesRow = true;
+				props.asc_setDataRef(dataRef5);
+				pivot.asc_set(api, props);
+			});
 
 			pivot = checkHistoryOperation(assert, pivot, standards["data_values6"], "values6", function() {
 				var props = new Asc.CT_pivotTableDefinition();
@@ -4969,19 +4959,19 @@ var wb, ws, wsData, pivotStyle, tableName, defNameName, defNameLocalName, report
 
 			AscCommon.History.Clear();
 			pivot = checkHistoryOperation(assert, pivot, standards["valueFilterOrder1"], "order1", function(){
-				pivot.filterByFieldIndex(api, getNewFilter(1), 4, true);
-				pivot.filterByFieldIndex(api, getNewFilter(2), 3, true);
-				pivot.filterByFieldIndex(api, getNewFilter(18), 0, true);
-				pivot.filterByFieldIndex(api, getNewFilter(20), 1, true);
+				pivot.filterByFieldIndex(api, getNewFilter("1"), 4, true);
+				pivot.filterByFieldIndex(api, getNewFilter("2"), 3, true);
+				pivot.filterByFieldIndex(api, getNewFilter("18"), 0, true);
+				pivot.filterByFieldIndex(api, getNewFilter("20"), 1, true);
 			});
 
 			pivot = checkHistoryOperation(assert, pivot, standards["valueFilterOrder2"], "order2", function(){
 				pivot.asc_removeFilters(api);
 
-				pivot.filterByFieldIndex(api, getNewFilter(20), 1, true);
-				pivot.filterByFieldIndex(api, getNewFilter(18), 0, true);
-				pivot.filterByFieldIndex(api, getNewFilter(1), 4, true);
-				pivot.filterByFieldIndex(api, getNewFilter(2), 3, true);
+				pivot.filterByFieldIndex(api, getNewFilter("20"), 1, true);
+				pivot.filterByFieldIndex(api, getNewFilter("18"), 0, true);
+				pivot.filterByFieldIndex(api, getNewFilter("1"), 4, true);
+				pivot.filterByFieldIndex(api, getNewFilter("2"), 3, true);
 			});
 
 			ws.deletePivotTables(new AscCommonExcel.MultiplyRange(pivot.getReportRanges()).getUnionRange());
@@ -5022,7 +5012,7 @@ var wb, ws, wsData, pivotStyle, tableName, defNameName, defNameLocalName, report
 
 			AscCommon.History.Clear();
 			pivot = checkHistoryOperation(assert, pivot, standards["bug-46141-row"], "rows", function(){
-				pivot.filterByFieldIndex(api, getNewFilter(13.5), 2, true);
+				pivot.filterByFieldIndex(api, getNewFilter("13.5"), 2, true);
 			});
 
 			pivot = checkHistoryOperation(assert, pivot, standards["bug-46141-col"], "cols", function(){
@@ -5089,7 +5079,7 @@ var wb, ws, wsData, pivotStyle, tableName, defNameName, defNameLocalName, report
 			pivot.asc_addRowField(api, 6);
 			pivot.asc_addDataField(api, 3);
 
-			var getNewFilter = function(type1, val1, type2, val3){
+			var getNewFilter = function(type1, val1, type2, val2, val3){
 				var pivotFilterObj = new Asc.PivotFilterObj();
 				pivotFilterObj.asc_setDataFieldIndexSorting(0);
 				pivotFilterObj.asc_setDataFieldIndexFilter(val3);
@@ -5108,6 +5098,7 @@ var wb, ws, wsData, pivotStyle, tableName, defNameName, defNameLocalName, report
 				customFilter.asc_setVal(val1);
 				customFilters.push(customFilter);
 				if (undefined !== type2) {
+					filter.asc_setAnd(false);
 					customFilter = new Asc.CustomFilter();
 					customFilter.asc_setOperator(type2);
 					customFilter.asc_setVal(val2);
@@ -5122,9 +5113,11 @@ var wb, ws, wsData, pivotStyle, tableName, defNameName, defNameLocalName, report
 
 			AscCommon.History.Clear();
 			pivot = checkHistoryOperation(assert, pivot, standards["label1"], "label1", function(){
-				pivot.filterByFieldIndex(api, getNewFilter(Asc.c_oAscCustomAutoFilter.isGreaterThan, 10.6, undefined, 1), 6, true);
-				pivot.filterByFieldIndex(api, getNewFilter(Asc.c_oAscCustomAutoFilter.contains, 3, undefined, 0), 5, true);
-				pivot.filterByFieldIndex(api, getNewFilter(Asc.c_oAscCustomAutoFilter.doesNotEqual, "11", undefined, 0), 4, true);
+				pivot.filterByFieldIndex(api, getNewFilter(Asc.c_oAscCustomAutoFilter.isGreaterThan, "10.6", undefined, undefined, 1), 6, true);
+				pivot.filterByFieldIndex(api, getNewFilter(Asc.c_oAscCustomAutoFilter.contains, "3", undefined, undefined, 0), 5, true);
+				//todo fix matchingValues("11", "11", "<>");
+				// pivot.filterByFieldIndex(api, getNewFilter(Asc.c_oAscCustomAutoFilter.doesNotEqual, "11", undefined, undefined, 0), 4, true);
+				pivot.filterByFieldIndex(api, getNewFilter(Asc.c_oAscCustomAutoFilter.isLessThan, "11", Asc.c_oAscCustomAutoFilter.isGreaterThan, "11", 0), 4, true);
 			});
 
 			ws.deletePivotTables(new AscCommonExcel.MultiplyRange(pivot.getReportRanges()).getUnionRange());
@@ -6079,7 +6072,7 @@ var wb, ws, wsData, pivotStyle, tableName, defNameName, defNameLocalName, report
 
 		testPivotInsertBlankRow();
 
-		// testPivotPageFilterLayout();
+		testPivotPageFilterLayout();
 
 		testFieldProperty();
 
@@ -6103,7 +6096,7 @@ var wb, ws, wsData, pivotStyle, tableName, defNameName, defNameLocalName, report
 
 		testFiltersTop10();
 
-		// testFiltersLabel();
+		testFiltersLabel();
 
 		testFiltersReIndex();
 
