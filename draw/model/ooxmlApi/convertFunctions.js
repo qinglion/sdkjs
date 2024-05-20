@@ -298,10 +298,10 @@
 		 * @param {CShape} cShape
 		 * @param {CUniFill} lineUniFill
 		 * @param {CUniFill} fillUniFill
-		 * @param {number} antiScale
+		 * @param {number} scale
 		 * @return {CShape} textCShape
 		 */
-		function getTextCShape(theme, shape, cShape, lineUniFill, fillUniFill, antiScale) {
+		function getTextCShape(theme, shape, cShape, lineUniFill, fillUniFill, scale) {
 			// see 2.2.8	Text [MS-VSDX]-220215
 			/**
 			 * handle QuickStyleVariation cell which can change color (but only if color is a result of ThemeVal)
@@ -565,6 +565,13 @@
 				return null;
 			}
 
+			// see https://disk.yandex.ru/d/xy2yxhAQHlUHsA shape with number-text has HideText cell v=1 and when we
+			// open file and display all unit numbers
+			// like number-text in that file these numbers can overlap like there https://disk.yandex.ru/d/G_GaAB2yH9OMDg
+			if (shape.getCellNumberValue("HideText") === 1) {
+				return null;
+			}
+
 			/**
 			 * text shape saves text only no fill and no line. it goes along with CShape with the same id + "Text".
 			 * It has not local coordinates but the same cord system like shape.
@@ -706,8 +713,8 @@
 			let oTextPr;
 			oTextPr = new CTextPr();
 			// i dont know why but when i set font size not for overall shape but for runs text shifts to the top
-			// oTextPr.FontSize = nFontSize * antiScale;
-			oTextPr.FontSize = nFontSize;
+			oTextPr.FontSize = nFontSize * scale;
+			// oTextPr.FontSize = nFontSize;
 			// oTextPr.RFonts.Ascii = {Name: "Calibri", Index: -1};
 			// oTextPr.RFonts.HAnsi = {Name: "Calibri", Index: -1};
 			// oTextPr.RFonts.CS = {Name: "Calibri", Index: -1};
@@ -1106,8 +1113,8 @@
 		// https://stackoverflow.com/questions/63295483/how-properly-set-line-scaling-in-ms-visio
 		let drawingScale = pageInfo.pageSheet.getCellNumberValue("DrawingScale");
 		let pageScale = pageInfo.pageSheet.getCellNumberValue("PageScale");
-		let antiScale = drawingScale / pageScale;
-		let lineWidthEmuAntiScaled = lineWidthEmu * antiScale;
+		let scale = drawingScale / pageScale;
+		let lineWidthEmuAntiScaled = lineWidthEmu * scale;
 
 		// console.log("Calculated lineUniFill unifill", lineUniFill, "for shape", this);
 		// console.log("Calculated fill UniFill", uniFillForegndWithPattern, "for shape", this);
@@ -1132,7 +1139,7 @@
 
 		cShape.Id = String(this.iD); // it was string in cShape
 
-		let textCShape = getTextCShape(visioDocument.themes[0], this, cShape, lineUniFill, uniFillForegnd, antiScale);
+		let textCShape = getTextCShape(visioDocument.themes[0], this, cShape, lineUniFill, uniFillForegnd, scale);
 
 		cShape.recalculate();
 		cShape.recalculateLocalTransform(cShape.transform);
