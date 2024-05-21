@@ -35,6 +35,77 @@
 (function(window, document)
 {
 	/**
+	 *    // Docs old:
+	 * // Text_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/text_type-complextypevisio-xml
+	 * @returns {Text_Type}
+	 * @constructor
+	 */
+	function Text_Type() {
+		this.elements = []
+		// array to store elems below. see ShapeSheet element
+		// this.cp = [];
+		// this.pp = [];
+		// this.tp = [];
+		// this.fld = [];
+
+		// but we can have text among elements
+
+		// <Text><cp IX='0'/><pp IX='0'/>Page <fld IX='0'>21</fld>\r\n</Text>
+		// <Text><cp IX='0'/><fld IX='0'>2/10</fld>\r\n</Text>
+		// <Text><cp IX='0'/><pp IX='0'/><fld IX='0'>3/10/2013</fld> - <fld IX='1'>3/17/2013</fld>\r\n</Text>
+
+		// notice \r\n. \r is CR symbol and \n is LF symbol. So \r\n gives us line drop used in .xml files we work with.
+		// \r\n only happens after xml declaration and in text. So in text it is important, it is a part of text.
+		// here is an example of 1 2 3 4 5 each on new line
+		// <Text><cp IX='0'/>1\r\n2\r\n3\r\n4\r\n5\r\n\r\n</Text>
+		// if you want to see \r\n set proper settings in your editor
+		return this;
+	}
+
+	/**
+	 * // Docs old:
+	 * @returns {Data_Type}
+	 * @constructor
+	 */
+	function Data_Type() {
+		this.value = null;
+		// to serialize in function writeShapeSheetElementsXml
+		this.tagName = null;
+		return this;
+	}
+
+	/**
+	 *    // Docs old:
+	 * // Элемент Rel (ForeignData_Type complexType): https://learn.microsoft.com/ru-ru/office/client-developer/visio/rel-element-foreigndata_type-complextypevisio-xml
+	 * // ForeignData_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/foreigndata_type-complextypevisio-xml
+	 * @returns {ForeignData_Type}
+	 * @constructor
+	 */
+	function ForeignData_Type() {
+		this.foreignType = null;
+		this.objectType = null;
+		this.showAsIcon = null;
+		this.objectWidth = null;
+		this.objectHeight = null;
+		this.mappingMode = null;
+		this.extentX = null;
+		this.extentY = null;
+		this.compressionType = null;
+		this.compressionLevel = null;
+		this.rel = null;
+		return this;
+	}
+
+	/**
+	 *    // https://learn.microsoft.com/ru-ru/office/client-developer/visio/trigger_type-complextypevisio-xml
+	 * @constructor
+	 */
+	function Trigger_Type() {
+		this.refBy = [];
+		this.n = null;
+	}
+
+	/**
 	 *
 	 * @constructor
 	 */
@@ -71,6 +142,141 @@
 
 		setShapeSheetClassMembers.call(this);
 	}
+
+	// inheritance from ShapeSheetType for
+	// StyleSheet_Type, DocumentSheet_Type, PageSheet_Type and Shape_Type
+	// consider using with new schema and support old schema
+	SheetElementsStorage.prototype.readShapeSheetElementsXml = function readShapeSheetElementsXml(tagName, reader) {
+		let elem;
+		switch (tagName) {
+			case "Text" : {
+				elem = new Text_Type();
+				elem.fromXml(reader);
+				this.elements.push(elem);
+				break;
+			}
+			case "Data1" : {
+				elem = new Data_Type();
+				elem.tagName = "Data1";
+				elem.fromXml(reader);
+				this.elements.push(elem);
+				break;
+			}
+			case "Data2" : {
+				elem = new Data_Type();
+				elem.tagName = "Data2";
+				elem.fromXml(reader);
+				this.elements.push(elem);
+				break;
+			}
+			case "Data3" : {
+				elem = new Data_Type();
+				elem.tagName = "Data3";
+				elem.fromXml(reader);
+				this.elements.push(elem);
+				break;
+			}
+			case "ForeignData" : {
+				elem = new ForeignData_Type();
+				elem.fromXml(reader);
+				this.elements.push(elem);
+				break;
+			}
+
+			case "Cell" : {
+				elem = new Cell_Type();
+				elem.fromXml(reader);
+				this.elements.push(elem);
+				break;
+			}
+			case "Trigger" : {
+				elem = new Trigger_Type();
+				elem.fromXml(reader);
+				this.elements.push(elem);
+				break;
+			}
+			case "Section" : {
+				elem = new Section_Type();
+				elem.fromXml(reader);
+				this.elements.push(elem);
+				break;
+			}
+		}
+	}
+
+	SheetElementsStorage.prototype.readShapeSheetAttributes = function readShapeSheetAttributes(attrName, reader) {
+		switch (attrName) {
+			case "LineStyle": {
+				this.lineStyle = reader.GetValueUInt(this.lineStyle);
+				break;
+			}
+			case "FillStyle": {
+				this.fillStyle = reader.GetValueUInt(this.fillStyle);
+				break;
+			}
+			case "TextStyle": {
+				this.textStyle = reader.GetValueUInt(this.textStyle);
+				break;
+			}
+		}
+	}
+
+	SheetElementsStorage.prototype.writeShapeSheetAttributes = function writeShapeSheetAttributes(writer) {
+		writer.WriteXmlNullableAttributeUInt("LineStyle", this.lineStyle);
+		writer.WriteXmlNullableAttributeUInt("FillStyle", this.fillStyle);
+		writer.WriteXmlNullableAttributeUInt("TextStyle", this.textStyle);
+	}
+
+	//New schema
+	// <xsd:complexType name="ShapeSheet_Type">
+	// 	<xsd:choice minOccurs="0" maxOccurs="unbounded">
+	// 		<xsd:element name="Text" type="Text_Type" minOccurs="0" maxOccurs="1"/>
+	// 		<xsd:element name="Data1" type="Data1_Type" minOccurs="0" maxOccurs="1"/>
+	// 		<xsd:element name="Data2" type="Data2_Type" minOccurs="0" maxOccurs="1"/>
+	// 		<xsd:element name="Data3" type="Data3_Type" minOccurs="0" maxOccurs="1"/>
+	// 		<xsd:element name="ForeignData" type="ForeignData_Type" minOccurs="0" maxOccurs="1"/>
+	// 		<xsd:element name="Cell" type="Cell_Type" minOccurs="0" maxOccurs="unbounded">
+	// 		</xsd:element>
+	// 		<xsd:element name="Section" type="Section_Type" minOccurs="0" maxOccurs="unbounded">
+	// 		</xsd:element>
+	// 		<xsd:any namespace="##any" processContents="lax" minOccurs="0" maxOccurs="unbounded"/>
+	// 	</xsd:choice>
+	// 	<xsd:attribute name="LineStyle" type="xsd:unsignedInt"/>
+	// 	<xsd:attribute name="FillStyle" type="xsd:unsignedInt"/>
+	// 	<xsd:attribute name="TextStyle" type="xsd:unsignedInt"/>
+	// 	<xsd:anyAttribute namespace="##other" processContents="lax"/>
+	// </xsd:complexType>
+
+	// Consider choice we can have any order of elements with any occurrence
+	// for elements in choice: Text, Data1, Data2, Data3, ForeignData, Cell, Section.
+	// So store them in one array to save order and save all the elements
+	// lets add triggers from old schema to this array too
+	SheetElementsStorage.prototype.writeShapeSheetElementsXml = function writeShapeSheetElementsXml(writer) {
+			this.elements.forEach(function(elem) {
+				switch (elem.constructor.name) {
+					case "Cell_Type":
+						writer.WriteXmlNullable(elem, "Cell");
+						break;
+					case "Trigger_Type":
+						writer.WriteXmlNullable(elem, "Trigger");
+						break;
+					case "Section_Type":
+						writer.WriteXmlNullable(elem, "Section");
+						break;
+
+					case "Text_Type":
+						writer.WriteXmlNullable(elem, "Text");
+						break;
+					case "Data_Type":
+						writer.WriteXmlNullable(elem, elem.tagName);
+						break;
+					case "ForeignData_Type":
+						writer.WriteXmlNullable(elem, "ForeignData");
+						break;
+				}
+			});
+		}
+
 
 	/**
 	 *
@@ -1239,6 +1445,11 @@
 	window['AscFormat']  = window['AscFormat'] || {};
 	window['AscWord'] = window['AscWord'] || {};
 
+
+	window['AscCommonDraw'].Text_Type = Text_Type;
+	window['AscCommonDraw'].Data_Type = Data_Type;
+	window['AscCommonDraw'].ForeignData_Type = ForeignData_Type;
+	window['AscCommonDraw'].Trigger_Type = Trigger_Type;
 	window['AscCommonDraw'].Row_Type = Row_Type;
 	window['AscCommonDraw'].Cell_Type = Cell_Type;
 	window['AscCommonDraw'].Shape_Type = Shape_Type;
