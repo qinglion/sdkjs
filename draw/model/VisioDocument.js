@@ -540,12 +540,18 @@
 					// let oContent = shapeOrGroup.getDocContent();
 					// let height = oContent.GetSummaryHeight();
 					// shapeOrGroup.transform.ty += height/2;
-					shapeOrGroup.recalculateTransformText();
 					// shapeOrGroup.recalculate();
 					// shapeOrGroup.recalculateContent2();
 					// shapeOrGroup.transformText.ty = logic_h_mm - shapeOrGroup.transformText.ty;
 					// shapeOrGroup.transformText.ty = 10; // mm
-					// shapeOrGroup.transformText.sy = -1;
+					shapeOrGroup.recalculateTransformText();
+					// transformText before recalculateTransformText doesn't change anything
+					// let scale = 50
+					// shapeOrGroup.transformText.sx = scale;
+					// shapeOrGroup.transformText.sy = scale;
+					// shapeOrGroup.transformText.ty -= shapeOrGroup.spPr.xfrm.extY * scale / 2;
+					// shapeOrGroup.transformText.tx -= shapeOrGroup.spPr.xfrm.extX * scale / 2;
+
 
 					// graphics.SaveGrState();
 					// graphics.SetIntegerGrid(false);

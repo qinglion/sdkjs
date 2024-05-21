@@ -1114,12 +1114,12 @@
 		let drawingScale = pageInfo.pageSheet.getCellNumberValue("DrawingScale");
 		let pageScale = pageInfo.pageSheet.getCellNumberValue("PageScale");
 		let scale = drawingScale / pageScale;
-		let lineWidthEmuAntiScaled = lineWidthEmu * scale;
+		let lineWidthEmuScaled = lineWidthEmu * scale;
 
 		// console.log("Calculated lineUniFill unifill", lineUniFill, "for shape", this);
 		// console.log("Calculated fill UniFill", uniFillForegndWithPattern, "for shape", this);
 
-		var oStroke = AscFormat.builder_CreateLine(lineWidthEmuAntiScaled, {UniFill: lineUniFillWithPattern});
+		var oStroke = AscFormat.builder_CreateLine(lineWidthEmuScaled, {UniFill: lineUniFillWithPattern});
 		// var oStroke = AscFormat.builder_CreateLine(12700, {UniFill: AscFormat.CreateUnfilFromRGB(255,0,0)});
 
 		let flipXCell = this.getCell("FlipX");
