@@ -136,9 +136,7 @@
 			shapeColorSchemeThemeIndex = 0; // zero index means no theme
 		}
 		if (shapeColorSchemeThemeIndex === 65534) {
-			let pageThemeIndexCell = pageInfo.pageSheet.elements.find(function (el) {
-				return el.n === themeScopeCellName;
-			});
+			let pageThemeIndexCell = pageInfo.pageSheet.getCell(themeScopeCellName);
 			if (pageThemeIndexCell !== undefined) {
 				let pageThemeIndex = Number(pageThemeIndexCell.v);
 				if (!isNaN(pageThemeIndex)) {
@@ -202,9 +200,7 @@
 				if (!isNaN(variationColorIndex)) {
 					if (65534 === variationColorIndex) {
 						variationColorIndex = 0;
-						let pageVariationColorIndexCell = pageInfo.pageSheet.elements.find(function (el) {
-							return el.n === "VariationColorIndex";
-						});
+						let pageVariationColorIndexCell = pageInfo.pageSheet.getCell("VariationColorIndex");
 						if (pageVariationColorIndexCell !== undefined) {
 							let pageVariationColorIndexIndex = Number(pageVariationColorIndexCell.v);
 							if (!isNaN(pageVariationColorIndexIndex)) {
@@ -269,9 +265,7 @@
 				if (!isNaN(variationStyleIndex)) {
 					if (65534 === variationStyleIndex) {
 						variationStyleIndex = 0;
-						let pageVariationStyleIndexCell = pageInfo.pageSheet.elements.find(function (el) {
-							return el.n === "VariationStyleIndex";
-						});
+						let pageVariationStyleIndexCell = pageInfo.pageSheet.getCell("VariationStyleIndex");
 						if (pageVariationStyleIndexCell !== undefined) {
 							let pageVariationStyleIndexIndex = Number(pageVariationStyleIndexCell.v);
 							if (!isNaN(pageVariationStyleIndexIndex)) {

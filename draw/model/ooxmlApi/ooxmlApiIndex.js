@@ -106,7 +106,7 @@
 	}
 
 	/**
-	 *
+	 * Abstract class
 	 * @constructor
 	 */
 	function SheetElementsStorage() {
@@ -121,9 +121,9 @@
 			 * When working with shapes use getElements/setElements methods
 			 * Always use it see Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive js docs for explanation.
 			 * elements is used bcs text can appear here maybe
-			 * @type {*[]}
+			 * @type {{}}
 			 */
-			this.elements = [];
+			this.elements = {};
 			// elements below are stored in elements to support new schema
 
 			// // 3 arrays below inherited from Sheet_Type
@@ -146,59 +146,120 @@
 	// inheritance from ShapeSheetType for
 	// StyleSheet_Type, DocumentSheet_Type, PageSheet_Type and Shape_Type
 	// consider using with new schema and support old schema
+
+	// 2.3.4.2.5	Cell_Type
+	// N attribute MUST be unique amongst all of the Cell_Type elements of the containing Row_Type element
+
+	// 2.3.4.2.81	Row_Type
+	// If a Row_Type element specifies an N attribute, then it MUST NOT specify an IX attribute.
+	// This attribute MUST be unique amongst all of the Row_Type elements of the containing Section_Type
+	// element.
+
+	// If a Row_Type element specifies an IX attribute, then it MUST NOT specify an N attribute.
+	// The IX attribute of a Row_Type element MUST be unique amongst all of the Row_Type elements
+	// of the containing Section_Type element.
+
+	// 2.3.4.2.85	Section_Type
+	// N attribute MUST be unique amongst all of the Section_Type elements of the containing Sheet_Type element
+	// unless it is equal to "Geometry"!
+
+	// IX attribute MUST be unique amongst all of the Section_Type elements with the same N attribute
+	// of the containing Sheet_Type.
+
+	// When the IX attribute is not present, the index of the element is calculated implicitly
+	// by counting the number of  preceding Section_Type elements with the same N attribute in the containing
+	// Sheet_Type.
+
+	function createKeyFromSheetObject(object) {
+		let key;
+		if (object.constructor.name === "Cell_Type") {
+			key = object.n;
+		} else if (object.constructor.name === "Section_Type")	{
+			if (object.n === "Geometry") {
+				key = "Geometry_" + object.iX;
+			} else if (object.iX !== null) {
+				key = object.iX;
+			} else if (object.n !== null) {
+				key = object.n;
+			} else {
+				console.log("Cant calculate key to store object", object);
+			}
+		} else if (object.constructor.name === "Text_Type") {
+			key = "Text";
+		} else if (object.constructor.name === "Data_Type") {
+			key = object.tagName;
+		} else if (object.constructor.name === "ForeignData_Type") {
+			key = "ForeignData";
+		} else if (object.constructor.name === "Trigger_Type") {
+			key = object.n;
+		} else {
+			console.log("Unknown object in SheetElementsStorage", object);
+		}
+
+		return key;
+	}
+
 	SheetElementsStorage.prototype.readShapeSheetElementsXml = function readShapeSheetElementsXml(tagName, reader) {
 		let elem;
 		switch (tagName) {
 			case "Text" : {
 				elem = new Text_Type();
 				elem.fromXml(reader);
-				this.elements.push(elem);
+				let key = createKeyFromSheetObject(elem);
+				this.elements[key] = elem;
 				break;
 			}
 			case "Data1" : {
 				elem = new Data_Type();
 				elem.tagName = "Data1";
 				elem.fromXml(reader);
-				this.elements.push(elem);
+				let key = createKeyFromSheetObject(elem);
+				this.elements[key] = elem;
 				break;
 			}
 			case "Data2" : {
 				elem = new Data_Type();
 				elem.tagName = "Data2";
 				elem.fromXml(reader);
-				this.elements.push(elem);
+				let key = createKeyFromSheetObject(elem);
+				this.elements[key] = elem;
 				break;
 			}
 			case "Data3" : {
 				elem = new Data_Type();
 				elem.tagName = "Data3";
 				elem.fromXml(reader);
-				this.elements.push(elem);
+				let key = createKeyFromSheetObject(elem);
+				this.elements[key] = elem;
 				break;
 			}
 			case "ForeignData" : {
 				elem = new ForeignData_Type();
 				elem.fromXml(reader);
-				this.elements.push(elem);
+				let key = createKeyFromSheetObject(elem);
+				this.elements[key] = elem;
 				break;
 			}
 
 			case "Cell" : {
 				elem = new Cell_Type();
 				elem.fromXml(reader);
-				this.elements.push(elem);
+				let key = createKeyFromSheetObject(elem);
+				this.elements[key] = elem;
 				break;
 			}
 			case "Trigger" : {
 				elem = new Trigger_Type();
 				elem.fromXml(reader);
-				this.elements.push(elem);
+				let key = createKeyFromSheetObject(elem);
+				this.elements[key] = elem;
 				break;
 			}
 			case "Section" : {
 				elem = new Section_Type();
 				elem.fromXml(reader);
-				this.elements.push(elem);
+				let key = createKeyFromSheetObject(elem);
+				this.elements[key] = elem;
 				break;
 			}
 		}
@@ -252,30 +313,31 @@
 	// So store them in one array to save order and save all the elements
 	// lets add triggers from old schema to this array too
 	SheetElementsStorage.prototype.writeShapeSheetElementsXml = function writeShapeSheetElementsXml(writer) {
-			this.elements.forEach(function(elem) {
-				switch (elem.constructor.name) {
-					case "Cell_Type":
-						writer.WriteXmlNullable(elem, "Cell");
-						break;
-					case "Trigger_Type":
-						writer.WriteXmlNullable(elem, "Trigger");
-						break;
-					case "Section_Type":
-						writer.WriteXmlNullable(elem, "Section");
-						break;
+		for (const key in this.elements) {
+			const elem = this.elements[key];
+			switch (elem.constructor.name) {
+				case "Cell_Type":
+					writer.WriteXmlNullable(elem, "Cell");
+					break;
+				case "Trigger_Type":
+					writer.WriteXmlNullable(elem, "Trigger");
+					break;
+				case "Section_Type":
+					writer.WriteXmlNullable(elem, "Section");
+					break;
 
-					case "Text_Type":
-						writer.WriteXmlNullable(elem, "Text");
-						break;
-					case "Data_Type":
-						writer.WriteXmlNullable(elem, elem.tagName);
-						break;
-					case "ForeignData_Type":
-						writer.WriteXmlNullable(elem, "ForeignData");
-						break;
-				}
-			});
+				case "Text_Type":
+					writer.WriteXmlNullable(elem, "Text");
+					break;
+				case "Data_Type":
+					writer.WriteXmlNullable(elem, elem.tagName);
+					break;
+				case "ForeignData_Type":
+					writer.WriteXmlNullable(elem, "ForeignData");
+					break;
+			}
 		}
+	}
 
 
 	/**
@@ -333,29 +395,6 @@
 		return results;
 	}
 
-	// 2.3.4.2.5	Cell_Type
-	// N attribute MUST be unique amongst all of the Cell_Type elements of the containing Row_Type element
-
-	// 2.3.4.2.81	Row_Type
-	// If a Row_Type element specifies an N attribute, then it MUST NOT specify an IX attribute.
-	// This attribute MUST be unique amongst all of the Row_Type elements of the containing Section_Type
-	// element.
-
-	// If a Row_Type element specifies an IX attribute, then it MUST NOT specify an N attribute.
-	// The IX attribute of a Row_Type element MUST be unique amongst all of the Row_Type elements
-	// of the containing Section_Type element.
-
-	// 2.3.4.2.85	Section_Type
-	// N attribute MUST be unique amongst all of the Section_Type elements of the containing Sheet_Type element
-	// unless it is equal to "Geometry"!
-
-	// IX attribute MUST be unique amongst all of the Section_Type elements with the same N attribute
-	// of the containing Sheet_Type.
-
-	// When the IX attribute is not present, the index of the element is calculated implicitly
-	// by counting the number of  preceding Section_Type elements with the same N attribute in the containing
-	// Sheet_Type.
-
 	/**
 	 * Always use it see Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive js docs for explanation.
 	 * Finds shape section by formula. Compares N with string argument. For Geometry use find sections.
@@ -364,7 +403,8 @@
 	 * @returns {Section_Type | null}
 	 */
 	SheetElementsStorage.prototype.getSection = function getSection(formula) {
-		return findObject(this.elements, "Section_Type", "n", formula);
+		// return findObject(this.elements, "Section_Type", "n", formula);
+		return this.elements[formula];
 	}
 
 	/**
@@ -394,7 +434,8 @@
 	 */
 	SheetElementsStorage.prototype.getCell = function findCell(formula) {
 		// Cells can have N only no IX
-		return findObject(this.elements, "Cell_Type", "n", formula);
+		return this.elements[formula];
+		// return findObject(this.elements, "Cell_Type", "n", formula);
 	}
 
 	/**
@@ -434,12 +475,32 @@
 	 * @returns {Section_Type[] | null}
 	 */
 	SheetElementsStorage.prototype.getSections = function(formula) {
+		// TODO check may be optimized. maybe use getGeometrySections
 		if (/^\d+$/.test(formula)) {
 			// if number
 			console.log('strange findSections use (with number)');
-			return findObjects(this.elements, "Section_Type", "iX", formula);
+			let resultArr = [];
+			for (const key in this.elements) {
+				const element = this.elements[key];
+				if (element.constructor.name === "Section_Type" && String(element.iX) === formula) {
+					resultArr.push(element);
+				}
+			}
+			return resultArr;
+			// return findObjects(this.elements, "Section_Type", "iX", formula);
 		}
-		return findObjects(this.elements, "Section_Type", "n", formula);
+		let resultArr = [];
+		for (const key in this.elements) {
+			const element = this.elements[key];
+			if (element.constructor.name === "Section_Type" && element.n === formula) {
+				resultArr.push(element);
+			}
+		}
+		resultArr.sort(function (a, b) {
+				return a.iX - b.iX;
+		});
+		return resultArr;
+		// return findObjects(this.elements, "Section_Type", "n", formula);
 	}
 
 	/**
@@ -701,7 +762,8 @@
 	 * @returns {Text_Type | null}
 	 */
 	Shape_Type.prototype.getTextElement = function getTextElement() {
-		return findObject(this.elements, "Text_Type");
+		return this.elements["Text"];
+		// return findObject(this.elements, "Text_Type");
 	}
 
 	/**
@@ -1165,11 +1227,11 @@
 	function mergeElementArrays(shapeElements, masterElements, elementsToMerge, isParentInList) {
 		/**
 		 * find index of cell row or section
-		 * @param elementsArray
+		 * @param elementsObject
 		 * @param elementToFind
 		 * @returns {*}
 		 */
-		function findIndexComparingByNorIX(elementsArray, elementToFind) {
+		function findObjectIn(elementsObject, elementToFind) {
 			// 2.3.4.2.5	Cell_Type
 			// N attribute MUST be unique amongst all of the Cell_Type elements of the containing Row_Type element
 
@@ -1192,22 +1254,35 @@
 			// When the IX attribute is not present, the index of the element is calculated implicitly
 			// by counting the number of  preceding Section_Type elements with the same N attribute in the containing
 			// Sheet_Type.
-			return elementsArray.findIndex(function (element) {
-				let nAttributeExists = element.n !== null && typeof element.n !== 'undefined';
-				let iXAttributeExists = element.iX !== null && typeof element.iX !== 'undefined';
+			let nAttributeExists = elementToFind.n !== null && typeof elementToFind.n !== 'undefined';
+			let iXAttributeExists = elementToFind.iX !== null && typeof elementToFind.iX !== 'undefined';
+
+			if (!Array.isArray(elementsObject)) {
+				let objKey = AscCommonDraw.createKeyFromSheetObject(elementToFind);
+				return elementsObject[objKey];
+			}
+
+			// for old version: rows and cells arrays
+			for (const elementKey in elementsObject) {
+				const element = elementsObject[elementKey];
+
+				let found = false;
 
 				if (nAttributeExists && iXAttributeExists) {
-					return element.iX == elementToFind.iX && element.n === elementToFind.n;
+					found = element.iX === elementToFind.iX && element.n === elementToFind.n;
+				} else if (nAttributeExists) {
+					found = element.n === elementToFind.n;
+				} else if (iXAttributeExists) {
+					found = element.iX === elementToFind.iX;
+				} else {
+					console.log("TODO check various data inheritance")
+					found = element.constructor.name === elementToFind.constructor.name;
 				}
-				if (nAttributeExists) {
-					return element.n === elementToFind.n;
+
+				if (found) {
+					return element;
 				}
-				if (iXAttributeExists) {
-					return element.iX === elementToFind.iX;
-				}
-				// if smth wrong with nAttributeExists or iXAttributeExists
-				return false;
-			});
+			}
 		}
 
 		let mergeAll = false;
@@ -1216,32 +1291,42 @@
 			mergeAll = true;
 		}
 
-		masterElements.forEach(function(masterElement, i, masterElements) {
-			let mergeElementIndex = findIndexComparingByNorIX(shapeElements, masterElement);
-			let elementExistsAlready = mergeElementIndex !== -1;
+		for (const key in masterElements) {
+			const masterElement = masterElements[key];
+
+			let overrideObject = findObjectIn(shapeElements, masterElement);
+			let elementExistsAlready = overrideObject !== undefined;
 
 			let elementIsInList = elementsToMerge !== undefined && elementsToMerge.includes(masterElement.n);
-			let listCheck = elementIsInList || isParentInList || mergeAll;
+			let listCheck = mergeAll || isParentInList || elementIsInList;
 
 			if (!elementExistsAlready) {
 				if (listCheck) {
 					// TODO fix order
+					// now Section sort is realized in getSections,
+					// rowsSort is not needed see getRow findObject call
+					
 					// mb lets not add cell after section
 					let elementCopy = clone(masterElement);
-					shapeElements.push(elementCopy);
+					// shapeElements[key] = elementCopy;
+					if (Array.isArray(shapeElements)) {
+						shapeElements.push(elementCopy);
+					} else {
+						shapeElements[key] = elementCopy;
+					}
 				}
 			} else {
 				// merge inner elements recursive if not cell
 				if (masterElement.constructor.name !== 'Cell_Type') {
 					// if Section or Row
-					let shapeElement = shapeElements[mergeElementIndex];
-					if (masterElement.constructor.name == 'Section_Type') {
+					let shapeElement = overrideObject;
+					if (masterElement.constructor.name === 'Section_Type') {
 						// for future checks
 						isParentInList = elementIsInList || isParentInList;
 						// recursive calls
 						mergeElementArrays(shapeElement.cells, masterElement.cells, elementsToMerge, isParentInList);
 						mergeElementArrays(shapeElement.rows, masterElement.rows, elementsToMerge, isParentInList);
-					} else if (masterElement.constructor.name == 'Row_Type') {
+					} else if (masterElement.constructor.name === 'Row_Type') {
 						// for future checks
 						isParentInList = elementIsInList || isParentInList;
 						// recursive calls
@@ -1249,13 +1334,7 @@
 					}
 				}
 			}
-			if (i === masterElements.length - 1) {
-				// ix wrong order causes problems
-				shapeElements.sort(function (a, b) {
-					return a.iX - b.iX;
-				});
-			}
-		});
+		}
 	}
 
 	/**
@@ -1263,9 +1342,10 @@
 	 * @return {ForeignData_Type | undefined}
 	 */
 	Shape_Type.prototype.getForeignDataObject = function getForeignDataObject() {
-		return this.elements.find(function findForeignData(element) {
-			return element.constructor.name === "ForeignData_Type";
-		});
+		return this.elements["ForeignData"];
+		// return this.elements.find(function findForeignData(element) {
+		// 	return element.constructor.name === "ForeignData_Type";
+		// });
 	}
 
 	/**
@@ -1459,5 +1539,6 @@
 	window['AscCommonDraw'].DocumentSheet_Type = DocumentSheet_Type;
 	window['AscCommonDraw'].StyleSheet_Type = StyleSheet_Type;
 	window['AscCommonDraw'].ShapeSheet_Type = ShapeSheet_Type;
+	window['AscCommonDraw'].createKeyFromSheetObject = createKeyFromSheetObject;
 
 })(window, window.document);
