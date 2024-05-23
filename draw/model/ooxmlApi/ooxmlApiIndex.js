@@ -597,6 +597,16 @@
 		return findObject(this.cells, "Cell_Type", "n", formula);
 	}
 
+	/**
+	 *
+	 * @returns {(Cell_Type | Trigger_Type)[]}
+	 */
+	Row_Type.prototype.getElements = function () {
+		return this.cells.concat(this.triggers);
+	}
+
+
+
 
 	/**
 	 * Docs old:
@@ -741,6 +751,53 @@
 
 	Shape_Type.prototype.getMasterID = function() {
 		return this.master;
+	}
+
+	/**
+	 * get Shape properties that come from layers.
+	 * if shape has multiple layers attached only equal layer properties applied (and added to object).
+	 * @memberOf Shape_Type
+	 * @param {Page_Type} pageInfo
+	 * @return {*}
+	 */
+	Shape_Type.prototype.getLayerProperties = function getLayerProperties(pageInfo) {
+		let layerMemberString = this.getCellStringValue("LayerMember");
+		if (layerMemberString === undefined) {
+			return {};
+		}
+		let layersArray = layerMemberString.split(";");
+		let layersInfo = pageInfo.pageSheet.getSection("Layer");
+		if (layersInfo === undefined) {
+			return {};
+		}
+		let previousLayer = undefined;
+		/** @type {Set<string>} */
+		let unEqualProperties = new Set();
+		layersArray.forEach(function (layerIndexString) {
+			let layerIndex = Number(layerIndexString);
+			let layerInfo = layersInfo.getRow(layerIndex);
+			if (previousLayer === undefined) {
+				previousLayer = layerInfo;
+			} else {
+				// compare with previous shape layer
+				layerInfo.getElements().forEach(function (cell) {
+					let previousLayerCell = previousLayer.getCell(cell.n);
+					if (previousLayerCell.v !== cell.v) {
+						unEqualProperties.add(cell.n);
+					}
+				});
+				previousLayer = layerInfo;
+			}
+		});
+		// layers have the same set of properties so lets take any of them
+		// and remove unEqualProperties
+		let resultObject = {};
+		previousLayer.getElements().forEach(function (cell) {
+			if (!unEqualProperties.has(cell.n)) {
+				resultObject[cell.n] = cell.v;
+			}
+		});
+		return resultObject;
 	}
 
 	/**
@@ -1305,7 +1362,7 @@
 					// TODO fix order
 					// now Section sort is realized in getSections,
 					// rowsSort is not needed see getRow findObject call
-					
+
 					// mb lets not add cell after section
 					let elementCopy = clone(masterElement);
 					// shapeElements[key] = elementCopy;

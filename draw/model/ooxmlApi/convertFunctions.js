@@ -906,8 +906,13 @@
 		let pinX_inch = this.getCellNumberValue("PinX");
 		let pinY_inch = this.getCellNumberValue("PinY");
 
+		let layerProperties = this.getLayerProperties(pageInfo);
+		// only if all shape layers are invisible shape is invisible
+		let areShapeLayersInvisible = layerProperties["Visible"] === "0";
+
+
 		// also check for {}, undefined, NaN, null
-		if (isNaN(pinX_inch) || pinX_inch === null || isNaN(pinY_inch) || pinY_inch === null) {
+		if (isNaN(pinX_inch) || pinX_inch === null || isNaN(pinY_inch) || pinY_inch === null || areShapeLayersInvisible) {
 			console.log('pinX_inch or pinY_inch is NaN for Shape. Its ok sometimes. ' +
 				'Empty CShape is returned. See original shape: ', this);
 			// let's use empty shape
