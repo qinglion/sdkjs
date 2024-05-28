@@ -913,7 +913,7 @@
 
 		// also check for {}, undefined, NaN, null
 		if (isNaN(pinX_inch) || pinX_inch === null || isNaN(pinY_inch) || pinY_inch === null || areShapeLayersInvisible) {
-			console.log('pinX_inch or pinY_inch is NaN for Shape. Its ok sometimes. ' +
+			console.log('pinX_inch or pinY_inch is NaN for Shape or areShapeLayersInvisible. Its ok sometimes. ' +
 				'Empty CShape is returned. See original shape: ', this);
 			// let's use empty shape
 			let emptyCShape = new AscFormat.CShape();
