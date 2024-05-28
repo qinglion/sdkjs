@@ -106,42 +106,63 @@
 	}
 
 	/**
-	 * Abstract class
+	 * Abstract class. For all Cell containers: ShapeSheet_Type (Sheet_Type) descendents and
+	 * sections and rows also.
 	 * @constructor
 	 */
-	function SheetElementsStorage() {
+	function SheetStorage() {
 		// for ooxml classes
-		function setShapeSheetClassMembers() {
-			// 3 attr below inherited from Sheet_Type using old schema
-			// or from ShapeSheet_Type using new schema
-			this.lineStyle = null;
-			this.fillStyle = null;
-			this.textStyle = null;
-			/**
-			 * When working with shapes use getElements/setElements methods
-			 * Always use it see Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive js docs for explanation.
-			 * elements is used bcs text can appear here maybe
-			 * @type {{}}
-			 */
-			this.elements = {};
-			// elements below are stored in elements to support new schema
 
-			// // 3 arrays below inherited from Sheet_Type
-			// this.cells = [];
-			// this.triggers = [];
-			// this.sections = [];
-			//
-			//
-			// // new attributes inherited from ShapeSheet_Type
-			// this.text = null;
-			// this.data1 = null;
-			// this.data2 = null;
-			// this.data3 = null;
-			// this.foreignData = null;
-		}
+		// setSheetClassMembers
 
-		setShapeSheetClassMembers.call(this);
+		/**
+		 * When working with shapes use getElements/setElements methods
+		 * Always use it see Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive js docs for explanation.
+		 * elements is used bcs text can appear here maybe
+		 * @type {{}}
+		 */
+		this.elements = {};
+		// elements below are stored in elements to support new schema
+
+		// // 3 arrays below inherited from Sheet_Type
+		// this.cells = [];
+		// this.triggers = [];
+		// this.sections = [];
+		// also rows
+
+		// // new attributes inherited from ShapeSheet_Type
+		// this.text = null;
+		// this.data1 = null;
+		// this.data2 = null;
+		// this.data3 = null;
+		// this.foreignData = null;
 	}
+
+	/**
+	 * Abstract class for ShapeSheet_Type (Sheet_Type) descendents only.
+	 * @constructor
+	 * @extends SheetStorage
+	 */
+	function SheetStorageAndStyles() {
+		// for ooxml classes
+
+		// setShapeSheetClassMembers
+
+		// 3 attr below inherited from Sheet_Type using old schema
+		// or from ShapeSheet_Type using new schema
+		this.lineStyle = null;
+		this.fillStyle = null;
+		this.textStyle = null;
+
+		// call parent class constructor
+		let parentClassConstructor = SheetStorage;
+		parentClassConstructor.call(this);
+	}
+	// inherit parent class methods
+	// https://developer.mozilla.org/ru/docs/Web/JavaScript/Reference/Global_Objects/Object/create#%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80_%D0%BA%D0%BB%D0%B0%D1%81%D1%81%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%BE%D0%B5_%D0%BD%D0%B0%D1%81%D0%BB%D0%B5%D0%B4%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D0%B5_%D1%81_object.create
+	SheetStorageAndStyles.prototype = Object.create(SheetStorage.prototype);
+	SheetStorageAndStyles.prototype.constructor = SheetStorageAndStyles;
+
 
 	// inheritance from ShapeSheetType for
 	// StyleSheet_Type, DocumentSheet_Type, PageSheet_Type and Shape_Type
@@ -174,6 +195,14 @@
 		let key;
 		if (object.constructor.name === "Cell_Type") {
 			key = object.n;
+		} else if (object.constructor.name === "Row_Type") {
+			if (object.n !== null) {
+				key = object.n;
+			} else if (object.iX !== null) {
+				key = object.iX;
+			} else {
+				console.log("Cant calculate key to store object", object);
+			}
 		} else if (object.constructor.name === "Section_Type")	{
 			if (object.n === "Geometry") {
 				key = "Geometry_" + object.iX;
@@ -199,9 +228,42 @@
 		return key;
 	}
 
-	SheetElementsStorage.prototype.readShapeSheetElementsXml = function readShapeSheetElementsXml(tagName, reader) {
+	/**
+	 * @memberOf SheetStorage
+	 * @param tagName
+	 * @param reader
+	 */
+	SheetStorage.prototype.readInheritedElements = function readInheritedElements(tagName, reader) {
 		let elem;
 		switch (tagName) {
+			case "Cell" : {
+				elem = new Cell_Type();
+				elem.fromXml(reader);
+				let key = createKeyFromSheetObject(elem);
+				this.elements[key] = elem;
+				break;
+			}
+			case "Trigger" : {
+				elem = new Trigger_Type();
+				elem.fromXml(reader);
+				let key = createKeyFromSheetObject(elem);
+				this.elements[key] = elem;
+				break;
+			}
+			case "Row" : {
+				elem = new Row_Type();
+				elem.fromXml(reader);
+				let key = createKeyFromSheetObject(elem);
+				this.elements[key] = elem;
+				break;
+			}
+			case "Section" : {
+				elem = new Section_Type();
+				elem.fromXml(reader);
+				let key = createKeyFromSheetObject(elem);
+				this.elements[key] = elem;
+				break;
+			}
 			case "Text" : {
 				elem = new Text_Type();
 				elem.fromXml(reader);
@@ -240,32 +302,15 @@
 				this.elements[key] = elem;
 				break;
 			}
-
-			case "Cell" : {
-				elem = new Cell_Type();
-				elem.fromXml(reader);
-				let key = createKeyFromSheetObject(elem);
-				this.elements[key] = elem;
-				break;
-			}
-			case "Trigger" : {
-				elem = new Trigger_Type();
-				elem.fromXml(reader);
-				let key = createKeyFromSheetObject(elem);
-				this.elements[key] = elem;
-				break;
-			}
-			case "Section" : {
-				elem = new Section_Type();
-				elem.fromXml(reader);
-				let key = createKeyFromSheetObject(elem);
-				this.elements[key] = elem;
-				break;
-			}
 		}
 	}
 
-	SheetElementsStorage.prototype.readShapeSheetAttributes = function readShapeSheetAttributes(attrName, reader) {
+	/**
+	 * @memberOf SheetStorageAndStyles
+	 * @param attrName
+	 * @param reader
+	 */
+	SheetStorageAndStyles.prototype.readInheritedAttributes = function readInheritedAttributes(attrName, reader) {
 		switch (attrName) {
 			case "LineStyle": {
 				this.lineStyle = reader.GetValueUInt(this.lineStyle);
@@ -282,7 +327,11 @@
 		}
 	}
 
-	SheetElementsStorage.prototype.writeShapeSheetAttributes = function writeShapeSheetAttributes(writer) {
+	/**
+	 * @memberOf SheetStorageAndStyles
+	 * @param writer
+	 */
+	SheetStorageAndStyles.prototype.writeInheritedAttributes = function writeInheritedAttributes(writer) {
 		writer.WriteXmlNullableAttributeUInt("LineStyle", this.lineStyle);
 		writer.WriteXmlNullableAttributeUInt("FillStyle", this.fillStyle);
 		writer.WriteXmlNullableAttributeUInt("TextStyle", this.textStyle);
@@ -312,7 +361,11 @@
 	// for elements in choice: Text, Data1, Data2, Data3, ForeignData, Cell, Section.
 	// So store them in one array to save order and save all the elements
 	// lets add triggers from old schema to this array too
-	SheetElementsStorage.prototype.writeShapeSheetElementsXml = function writeShapeSheetElementsXml(writer) {
+	/**
+	 * @memberOf SheetStorage
+	 * @param writer
+	 */
+	SheetStorage.prototype.writeInheritedElements = function writeInheritedElements(writer) {
 		for (const key in this.elements) {
 			const elem = this.elements[key];
 			switch (elem.constructor.name) {
@@ -324,6 +377,9 @@
 					break;
 				case "Section_Type":
 					writer.WriteXmlNullable(elem, "Section");
+					break;
+				case "Row_Type":
+					writer.WriteXmlNullable(elem, "Row");
 					break;
 
 				case "Text_Type":
@@ -399,22 +455,22 @@
 	 * Always use it see Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive js docs for explanation.
 	 * Finds shape section by formula. Compares N with string argument. For Geometry use find sections.
 	 * @param {String} formula
-	 * @memberof Shape_Type
+	 * @memberof SheetStorage
 	 * @returns {Section_Type | null}
 	 */
-	SheetElementsStorage.prototype.getSection = function getSection(formula) {
-		// return findObject(this.elements, "Section_Type", "n", formula);
+	SheetStorage.prototype.getSection = function getSection(formula) {
 		return this.elements[formula];
 	}
 
 	/**
 	 * Always use it see Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive js docs for explanation.
+	 * Returns link to object not copy.
 	 * @param {String} formula
-	 * @memberof Shape_Type
+	 * @memberof SheetStorage
 	 * @returns {Row_Type | null}
 	 */
-	SheetElementsStorage.prototype.getRow = function findRow(formula) {
-		throw new Error("not realized");
+	SheetStorage.prototype.getRow = function getRow(formula) {
+		return this.elements[formula];
 	}
 
 	/**
@@ -427,15 +483,23 @@
 	 * Returns object of shape not copy!
 	 *
 	 * visio can use formulas like Geometry1.X2 - first geometrySection, second Row, X column
-	 * but Row for example can be found by IX N
+	 * but Row for example can be found by IX N.
+	 *
+	 * Cells in Section (section is like table in visio) can exist by itself, directy in section like here
+	 * https://disk.yandex.ru/d/Ud6-wmVjNnOyUA
+	 * with their names like Width, Height, Angle (for Shape Thansform section)
+	 * or they can be in Rows like here
+	 * https://disk.yandex.ru/i/4ASd_5KHYIlXKw
+	 * with names X, Y, A, B (for Geometry SplineStart Row).
+	 *
+	 * Let's search cells only directly in Section for now (if called on Section).
 	 * @param {String} formula
-	 * @memberof Shape_Type
+	 * @memberof SheetStorage
 	 * @returns {Cell_Type|null}
 	 */
-	SheetElementsStorage.prototype.getCell = function findCell(formula) {
+	SheetStorage.prototype.getCell = function getCell(formula) {
 		// Cells can have N only no IX
 		return this.elements[formula];
-		// return findObject(this.elements, "Cell_Type", "n", formula);
 	}
 
 	/**
@@ -443,7 +507,7 @@
 	 * @param {String} formula
 	 * @return {?Number} number
 	 */
-	SheetElementsStorage.prototype.getCellNumberValue = function (formula) {
+	SheetStorage.prototype.getCellNumberValue = function (formula) {
 		let cell = this.getCell(formula);
 		if (cell !== undefined) {
 			return Number(cell.v);
@@ -457,7 +521,7 @@
 	 * @param {String} formula
 	 * @return {?String} string
 	 */
-	SheetElementsStorage.prototype.getCellStringValue = function (formula) {
+	SheetStorage.prototype.getCellStringValue = function (formula) {
 		let cell = this.getCell(formula);
 		if (cell !== undefined) {
 			return String(cell.v);
@@ -471,10 +535,10 @@
 	 * if in formula we have both ix and n we should use findSection instead.
 	 * or if we use it with number in formula
 	 * @param {String} formula
-	 * @memberof Shape_Type
+	 * @memberof SheetStorage
 	 * @returns {Section_Type[] | null}
 	 */
-	SheetElementsStorage.prototype.getSections = function(formula) {
+	SheetStorage.prototype.getSections = function(formula) {
 		// TODO check may be optimized. maybe use getGeometrySections
 		if (/^\d+$/.test(formula)) {
 			// if number
@@ -506,9 +570,10 @@
 	/**
 	 * Always use it see Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive js docs for explanation.
 	 * get elements inherited from shape sheet type
+	 * @memberOf SheetStorage
 	 * @return {*}
 	 */
-	SheetElementsStorage.prototype.getElements = function () {
+	SheetStorage.prototype.getElements = function () {
 		return this.elements;
 	}
 
@@ -518,6 +583,7 @@
 	 *    // Section_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/section_type-complextypevisio-xml
 	 * @return {Section_Type}
 	 * @constructor
+	 * @extends SheetStorage
 	 */
 	function Section_Type() {
 		this.n = null;
@@ -526,46 +592,15 @@
 
 		// always use getter setter methods
 		// Always use it see Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive js docs for explanation.
-		this.cells = [];
-		this.triggers = [];
-		this.rows = [];
+		// call parent class constructor
+		let parentClassConstructor = SheetStorage;
+		parentClassConstructor.call(this);
 		return this;
 	}
-
-	/**
-	 * Always use it see Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive js docs for explanation.
-	 *
-	 * Cells in Section (section is like table in visio) can exist by itself, directy in section like here
-	 * https://disk.yandex.ru/d/Ud6-wmVjNnOyUA
-	 * with their names like Width, Height, Angle (for Shape Thansform section)
-	 * or they can be in Rows like here
-	 * https://disk.yandex.ru/i/4ASd_5KHYIlXKw
-	 * with names X, Y, A, B (for Geometry SplineStart Row).
-	 *
-	 * Lets search cells only directly in Section for now.
-	 *
-	 * @param {String} formula
-	 * @memberof Section_Type
-	 * @returns {Cell_Type | null}
-	 */
-	Section_Type.prototype.getCell = function (formula) {
-		// Cells can have N only no IX
-		return findObject(this.cells, "Cell_Type", "n", formula);
-	}
-
-	/**
-	 * Always use it see Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive js docs for explanation.
-	 * Finds row in sections. Returns link to object not copy.
-	 * @param {String | Number} formula
-	 * @memberof Section_Type
-	 * @returns {null | Row_Type}
-	 */
-	Section_Type.prototype.getRow = function (formula) {
-		if (typeof formula === "number" || /^\d+$/.test(formula)) {
-			return findObject(this.rows, "Row_Type", "iX", Number(formula));
-		}
-		return findObject(this.rows, "Row_Type", "n", formula);
-	}
+	// inherit parent class methods
+	// https://developer.mozilla.org/ru/docs/Web/JavaScript/Reference/Global_Objects/Object/create#%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80_%D0%BA%D0%BB%D0%B0%D1%81%D1%81%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%BE%D0%B5_%D0%BD%D0%B0%D1%81%D0%BB%D0%B5%D0%B4%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D0%B5_%D1%81_object.create
+	Section_Type.prototype = Object.create(SheetStorage.prototype);
+	Section_Type.prototype.constructor = Section_Type;
 
 
 	/**
@@ -573,6 +608,7 @@
 	 *    // Row_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/row_type-complextypevisio-xml
 	 * @return {Row_Type}
 	 * @constructor
+	 * @extends SheetStorage
 	 */
 	function Row_Type() {
 		this.n = null;
@@ -581,31 +617,17 @@
 		this.t = null;
 		this.del = null;
 
-		this.cells = [];
-		this.triggers = [];
+		// always use getter setter methods
+		// Always use it see Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive js docs for explanation.
+		// call parent class constructor
+		let parentClassConstructor = SheetStorage;
+		parentClassConstructor.call(this);
 		return this;
 	}
-
-	/**
-	 * returns link not clone
-	 * @param {String} formula
-	 * @memberof Row_Type
-	 * @returns {null | Cell_Type}
-	 */
-	Row_Type.prototype.getCell = function (formula) {
-		// Cells can have N only no IX
-		return findObject(this.cells, "Cell_Type", "n", formula);
-	}
-
-	/**
-	 *
-	 * @returns {(Cell_Type | Trigger_Type)[]}
-	 */
-	Row_Type.prototype.getElements = function () {
-		return this.cells.concat(this.triggers);
-	}
-
-
+	// inherit parent class methods
+	// https://developer.mozilla.org/ru/docs/Web/JavaScript/Reference/Global_Objects/Object/create#%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80_%D0%BA%D0%BB%D0%B0%D1%81%D1%81%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%BE%D0%B5_%D0%BD%D0%B0%D1%81%D0%BB%D0%B5%D0%B4%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D0%B5_%D1%81_object.create
+	Row_Type.prototype = Object.create(SheetStorage.prototype);
+	Row_Type.prototype.constructor = Row_Type;
 
 
 	/**
@@ -709,7 +731,7 @@
 	 *    // Inherites(extends) ShapeSheet_Type in new schema
 	 * @return {Shape_Type}
 	 * @constructor
-	 * @extends SheetElementsStorage
+	 * @extends SheetStorageAndStyles
 	 */
 	function Shape_Type() {
 		this.iD = null;
@@ -738,14 +760,14 @@
 		this.cImageShape = null;
 
 		// call parent class constructor
-		let parentClassConstructor = SheetElementsStorage;
+		let parentClassConstructor = SheetStorageAndStyles;
 		parentClassConstructor.call(this);
 
-		return this;
+		// return this;
 	}
 	// inherit parent class methods
 	// https://developer.mozilla.org/ru/docs/Web/JavaScript/Reference/Global_Objects/Object/create#%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80_%D0%BA%D0%BB%D0%B0%D1%81%D1%81%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%BE%D0%B5_%D0%BD%D0%B0%D1%81%D0%BB%D0%B5%D0%B4%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D0%B5_%D1%81_object.create
-	Shape_Type.prototype = Object.create(SheetElementsStorage.prototype);
+	Shape_Type.prototype = Object.create(SheetStorageAndStyles.prototype);
 	Shape_Type.prototype.constructor = Shape_Type;
 
 
@@ -780,23 +802,25 @@
 				previousLayer = layerInfo;
 			} else {
 				// compare with previous shape layer
-				layerInfo.getElements().forEach(function (cell) {
+				for (const cellKey in layerInfo.getElements()) {
+					const cell = previousLayer.getCell(cellKey);
 					let previousLayerCell = previousLayer.getCell(cell.n);
 					if (previousLayerCell.v !== cell.v) {
 						unEqualProperties.add(cell.n);
 					}
-				});
+				}
 				previousLayer = layerInfo;
 			}
 		});
 		// layers have the same set of properties so lets take any of them
 		// and remove unEqualProperties
 		let resultObject = {};
-		previousLayer.getElements().forEach(function (cell) {
+		for (const cellKey in previousLayer.getElements()) {
+			const cell = previousLayer.getCell(cellKey);
 			if (!unEqualProperties.has(cell.n)) {
 				resultObject[cell.n] = cell.v;
 			}
-		});
+		}
 		return resultObject;
 	}
 
@@ -1289,57 +1313,8 @@
 		 * @returns {*}
 		 */
 		function findObjectIn(elementsObject, elementToFind) {
-			// 2.3.4.2.5	Cell_Type
-			// N attribute MUST be unique amongst all of the Cell_Type elements of the containing Row_Type element
-
-			// 2.3.4.2.81	Row_Type
-			// If a Row_Type element specifies an N attribute, then it MUST NOT specify an IX attribute.
-			// This attribute MUST be unique amongst all of the Row_Type elements of the containing Section_Type
-			// element.
-
-			// If a Row_Type element specifies an IX attribute, then it MUST NOT specify an N attribute.
-			// The IX attribute of a Row_Type element MUST be unique amongst all of the Row_Type elements
-			// of the containing Section_Type element.
-
-			// 2.3.4.2.85	Section_Type
-			// N attribute MUST be unique amongst all of the Section_Type elements of the containing Sheet_Type element
-			// unless it is equal to "Geometry"!
-
-			// IX attribute MUST be unique amongst all of the Section_Type elements with the same N attribute
-			// of the containing Sheet_Type.
-
-			// When the IX attribute is not present, the index of the element is calculated implicitly
-			// by counting the number of  preceding Section_Type elements with the same N attribute in the containing
-			// Sheet_Type.
-			let nAttributeExists = elementToFind.n !== null && typeof elementToFind.n !== 'undefined';
-			let iXAttributeExists = elementToFind.iX !== null && typeof elementToFind.iX !== 'undefined';
-
-			if (!Array.isArray(elementsObject)) {
-				let objKey = AscCommonDraw.createKeyFromSheetObject(elementToFind);
-				return elementsObject[objKey];
-			}
-
-			// for old version: rows and cells arrays
-			for (const elementKey in elementsObject) {
-				const element = elementsObject[elementKey];
-
-				let found = false;
-
-				if (nAttributeExists && iXAttributeExists) {
-					found = element.iX === elementToFind.iX && element.n === elementToFind.n;
-				} else if (nAttributeExists) {
-					found = element.n === elementToFind.n;
-				} else if (iXAttributeExists) {
-					found = element.iX === elementToFind.iX;
-				} else {
-					console.log("TODO check various data inheritance")
-					found = element.constructor.name === elementToFind.constructor.name;
-				}
-
-				if (found) {
-					return element;
-				}
-			}
+			let objKey = AscCommonDraw.createKeyFromSheetObject(elementToFind);
+			return elementsObject[objKey];
 		}
 
 		let mergeAll = false;
@@ -1365,29 +1340,18 @@
 
 					// mb lets not add cell after section
 					let elementCopy = clone(masterElement);
-					// shapeElements[key] = elementCopy;
-					if (Array.isArray(shapeElements)) {
-						shapeElements.push(elementCopy);
-					} else {
-						shapeElements[key] = elementCopy;
-					}
+					shapeElements[key] = elementCopy;
 				}
 			} else {
 				// merge inner elements recursive if not cell
 				if (masterElement.constructor.name !== 'Cell_Type') {
 					// if Section or Row
 					let shapeElement = overrideObject;
-					if (masterElement.constructor.name === 'Section_Type') {
+					if (masterElement.constructor.name === 'Section_Type' || masterElement.constructor.name === 'Row_Type') {
 						// for future checks
 						isParentInList = elementIsInList || isParentInList;
 						// recursive calls
-						mergeElementArrays(shapeElement.cells, masterElement.cells, elementsToMerge, isParentInList);
-						mergeElementArrays(shapeElement.rows, masterElement.rows, elementsToMerge, isParentInList);
-					} else if (masterElement.constructor.name === 'Row_Type') {
-						// for future checks
-						isParentInList = elementIsInList || isParentInList;
-						// recursive calls
-						mergeElementArrays(shapeElement.cells, masterElement.cells, elementsToMerge, isParentInList);
+						mergeElementArrays(shapeElement.elements, masterElement.elements, elementsToMerge, isParentInList);
 					}
 				}
 			}
@@ -1469,19 +1433,19 @@
 	 * // In new schema inherits from ShapeSheet_Type
 	 * @returns {PageSheet_Type}
 	 * @constructor
-	 * @extends SheetElementsStorage
+	 * @extends SheetStorageAndStyles
 	 */
 	function PageSheet_Type() {
 		this.uniqueID = null;
 
 		// call parent class constructor
-		let parentClassConstructor = SheetElementsStorage;
+		let parentClassConstructor = SheetStorageAndStyles;
 		parentClassConstructor.call(this);
 		return this;
 	}
 	// inherit parent class methods
 	// https://developer.mozilla.org/ru/docs/Web/JavaScript/Reference/Global_Objects/Object/create#%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80_%D0%BA%D0%BB%D0%B0%D1%81%D1%81%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%BE%D0%B5_%D0%BD%D0%B0%D1%81%D0%BB%D0%B5%D0%B4%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D0%B5_%D1%81_object.create
-	PageSheet_Type.prototype = Object.create(SheetElementsStorage.prototype);
+	PageSheet_Type.prototype = Object.create(SheetStorageAndStyles.prototype);
 	PageSheet_Type.prototype.constructor = PageSheet_Type;
 
 	/**
@@ -1490,7 +1454,7 @@
 	 * // In new schema inherites from ShapeSheet_Type
 	 * @returns {DocumentSheet_Type}
 	 * @constructor
-	 * @extends SheetElementsStorage
+	 * @extends SheetStorageAndStyles
 	 */
 	function DocumentSheet_Type() {
 		this.name = null;
@@ -1500,13 +1464,13 @@
 		this.uniqueID = null;
 
 		// call parent class constructor
-		let parentClassConstructor = SheetElementsStorage;
+		let parentClassConstructor = SheetStorageAndStyles;
 		parentClassConstructor.call(this);
 		return this;
 	}
 	// inherit parent class methods
 	// https://developer.mozilla.org/ru/docs/Web/JavaScript/Reference/Global_Objects/Object/create#%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80_%D0%BA%D0%BB%D0%B0%D1%81%D1%81%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%BE%D0%B5_%D0%BD%D0%B0%D1%81%D0%BB%D0%B5%D0%B4%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D0%B5_%D1%81_object.create
-	DocumentSheet_Type.prototype = Object.create(SheetElementsStorage.prototype);
+	DocumentSheet_Type.prototype = Object.create(SheetStorageAndStyles.prototype);
 	DocumentSheet_Type.prototype.constructor = DocumentSheet_Type;
 
 	/**
@@ -1515,7 +1479,7 @@
 	 *    //In new schema inherites from ShapeSheet_Type
 	 * @returns {StyleSheet_Type}
 	 * @constructor
-	 * @extends SheetElementsStorage
+	 * @extends SheetStorageAndStyles
 	 */
 	function StyleSheet_Type() {
 		this.iD = null;
@@ -1525,13 +1489,13 @@
 		this.isCustomNameU = null;
 
 		// call parent class constructor
-		let parentClassConstructor = SheetElementsStorage;
+		let parentClassConstructor = SheetStorageAndStyles;
 		parentClassConstructor.call(this);
 		return this;
 	}
 	// inherit parent class methods
 	// https://developer.mozilla.org/ru/docs/Web/JavaScript/Reference/Global_Objects/Object/create#%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80_%D0%BA%D0%BB%D0%B0%D1%81%D1%81%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%BE%D0%B5_%D0%BD%D0%B0%D1%81%D0%BB%D0%B5%D0%B4%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D0%B5_%D1%81_object.create
-	StyleSheet_Type.prototype = Object.create(SheetElementsStorage.prototype);
+	StyleSheet_Type.prototype = Object.create(SheetStorageAndStyles.prototype);
 	StyleSheet_Type.prototype.constructor = StyleSheet_Type;
 
 	/**
@@ -1540,7 +1504,7 @@
 	 *    // ShapeSheet_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/shapesheet_type-complextypevisio-xml
 	 * @returns {ShapeSheet_Type}
 	 * @constructor
-	 * @extends SheetElementsStorage
+	 * @extends SheetStorageAndStyles
 	 */
 	function ShapeSheet_Type() {
 		this.iD = null;
@@ -1561,13 +1525,13 @@
 		this.anyAttr = null;
 
 		// call parent class constructor
-		let parentClassConstructor = SheetElementsStorage;
+		let parentClassConstructor = SheetStorageAndStyles;
 		parentClassConstructor.call(this);
 		return this;
 	}
 	// inherit parent class methods
 	// https://developer.mozilla.org/ru/docs/Web/JavaScript/Reference/Global_Objects/Object/create#%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80_%D0%BA%D0%BB%D0%B0%D1%81%D1%81%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%BE%D0%B5_%D0%BD%D0%B0%D1%81%D0%BB%D0%B5%D0%B4%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D0%B5_%D1%81_object.create
-	ShapeSheet_Type.prototype = Object.create(SheetElementsStorage.prototype);
+	ShapeSheet_Type.prototype = Object.create(SheetStorageAndStyles.prototype);
 	ShapeSheet_Type.prototype.constructor = ShapeSheet_Type;
 
 
