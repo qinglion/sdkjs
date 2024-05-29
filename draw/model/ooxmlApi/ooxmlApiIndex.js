@@ -849,19 +849,16 @@
 
 	/**
 	 * returns this shape and subshapes array without cloning so objects are linked.
-	 * @param {boolean} [recalculatePinCords] if true changes subshapes cords from parent shape relative to absolute
 	 * @param [resultArray = []]
 	 * @memberof Shape_Type
 	 * @return {Shape_Type[]}
 	 */
-	Shape_Type.prototype.collectSubshapesRecursive = function(recalculatePinCords, resultArray) {
+	Shape_Type.prototype.collectSubshapesRecursive = function(resultArray) {
 		if (resultArray === undefined) {
 			resultArray = [];
 		}
 
-		if (recalculatePinCords === undefined || recalculatePinCords === null) {
-			recalculatePinCords = false;
-		}
+		// ! Don't change cell.v bcs you may change master values
 
 		resultArray.push(this);
 
@@ -869,28 +866,7 @@
 		for (let j = 0; j < subShapes.length; j++) {
 			const subShape = subShapes[j];
 
-			if (recalculatePinCords) {
-				let parentShapePinX = Number(this.getCell("PinX").v);
-				let parentShapePinY = Number(this.getCell("PinY").v);
-				let parentShapeLocPinX = Number(this.getCell("LocPinX").v);
-				let parentShapeLocPinY = Number(this.getCell("LocPinY").v);
-
-				let subShapePinX = subShape.getCell("PinX");
-				let subShapePinY = subShape.getCell("PinY");
-
-				// there was case with shape type group with no PinX and PinY
-				if (subShapePinX !== null) {
-					let sub_shape_pinX_inch = Number(subShapePinX.v);
-					subShapePinX.v = parentShapePinX - parentShapeLocPinX + sub_shape_pinX_inch;
-				}
-
-				if (subShapePinY !== null) {
-					let sub_shape_pinY_inch = Number(subShapePinY.v);
-					subShapePinY.v = parentShapePinY - parentShapeLocPinY + sub_shape_pinY_inch;
-				}
-			}
-
-			subShape.collectSubshapesRecursive(recalculatePinCords, resultArray);
+			subShape.collectSubshapesRecursive(resultArray);
 		}
 
 		return resultArray;
@@ -1031,7 +1007,7 @@
 				let masterIndex = -1;
 				if (ancestorMasterShapes.length === 1) {
 					// if master has one top level shape
-					let masterSubshapes = ancestorMasterShapes[0].collectSubshapesRecursive(false);
+					let masterSubshapes = ancestorMasterShapes[0].collectSubshapesRecursive();
 					masterIndex = masterSubshapes.findIndex(function (masterSubshape) {
 						return masterShapeId === masterSubshape.iD;
 					});
@@ -1040,7 +1016,7 @@
 				} else {
 					let masterSubshapes = [];
 					ancestorMasterShapes.forEach(function(ancestorMasterShape) {
-						let masterSubshapesNth = ancestorMasterShape.collectSubshapesRecursive(false);
+						let masterSubshapesNth = ancestorMasterShape.collectSubshapesRecursive();
 						masterSubshapes = masterSubshapes.concat(masterSubshapesNth);
 					})
 					masterIndex = masterSubshapes.findIndex(function (masterSubshape) {
@@ -1339,8 +1315,9 @@
 					// rowsSort is not needed see getRow findObject call
 
 					// mb lets not add cell after section
-					let elementCopy = clone(masterElement);
-					shapeElements[key] = elementCopy;
+					// let elementCopy = clone(masterElement);
+					let elementLink = masterElement;
+					shapeElements[key] = elementLink;
 				}
 			} else {
 				// merge inner elements recursive if not cell
