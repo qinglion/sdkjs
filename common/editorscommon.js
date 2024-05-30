@@ -3781,7 +3781,7 @@
 
 		return false;
 	};
-	// Парсим ссылку на диапазон в листе
+// Парсим ссылку на диапазон в листе
 	parserHelper.prototype.parse3DRef = function (formula)
 	{
 		// Сначала получаем лист

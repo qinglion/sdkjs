@@ -2794,7 +2794,7 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 				}
 			}
 		}
-		
+
 		this.callback = callback;
 	}
 
@@ -7323,7 +7323,7 @@ function parserFormula( formula, parent, _ws ) {
 			if (opt_isPivotTable && (_tableTMP = parserHelp.isPivot.call(ph, t.Formula, ph.pCurrPos, local))) {
 
 				found_operand = cStrucPivotTable.prototype.createFromVal(_tableTMP, opt_pivotCallback);
-				
+
 				//todo undo delete column
 				if (found_operand.type === cElementType.error) {
 					/*используется неверный именованный диапазон или таблица*/
@@ -7930,6 +7930,8 @@ function parserFormula( formula, parent, _ws ) {
 						}
 					} else if (currentElement.type === cElementType.table) {
 						elemArr.push(currentElement.toRef(opt_bbox));
+					} else if (currentElement.type === cElementType.pivotTable) {
+						elemArr.push(currentElement.Calculate());
 					} else {
 						elemArr.push(currentElement);
 					}
