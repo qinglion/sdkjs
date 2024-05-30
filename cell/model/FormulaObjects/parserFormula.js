@@ -490,7 +490,8 @@ var cElementType = {
 		table       : 14,
 		name3D      : 15,
 		specialFunctionStart: 16,
-		specialFunctionEnd  : 17
+		specialFunctionEnd  : 17,
+		pivotTable  : 18
 
   };
 /** @enum */
@@ -2663,6 +2664,42 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 				}
 			}
 		}
+	};
+
+	/**
+	 * @constructor
+	 * @extends {cBaseType}
+	 */
+	function cStrucPivotTable(val, callback) {
+		//you can add the necessary fields and methods
+		cBaseType.call(this, val);
+
+		this.callback = callback;
+	}
+
+	cStrucPivotTable.prototype = Object.create(cBaseType.prototype);
+	cStrucPivotTable.prototype.constructor = cStrucPivotTable;
+
+	cStrucPivotTable.prototype.type = cElementType.pivotTable;
+	cStrucPivotTable.prototype.createFromVal = function (val, callback) {
+		//TODO check on error
+		let res = new cStrucPivotTable(val, callback);
+		return res;
+	};
+	cStrucPivotTable.prototype.clone = function () {
+
+	};
+	cStrucPivotTable.prototype.Calculate = function () {
+
+	};
+	cStrucPivotTable.prototype.toString = function () {
+		return this._toString(false);
+	};
+	cStrucPivotTable.prototype.toLocaleString = function () {
+		return this._toString(true);
+	};
+	cStrucPivotTable.prototype._toString = function (isLocal) {
+
 	};
 
 	/**
@@ -6190,7 +6227,7 @@ function parserFormula( formula, parent, _ws ) {
 		this.isInDependencies = false;
 	};
 
-	parserFormula.prototype.parse = function (local, digitDelim, parseResult, ignoreErrors, renameSheetMap, tablesMap) {
+	parserFormula.prototype.parse = function (local, digitDelim, parseResult, ignoreErrors, renameSheetMap, tablesMap, opt_isPivotTable, opt_pivotCallback) {
 		var elemArr = [];
 		var ph = {operand_str: null, pCurrPos: 0};
 		var needAssemble = false;
@@ -7026,7 +7063,29 @@ function parserFormula( formula, parent, _ws ) {
 			var prevCurrPos = ph.pCurrPos;
 
 			/* Booleans */
-			if (parserHelp.isBoolean.call(ph, t.Formula, ph.pCurrPos, local)) {
+			if (opt_isPivotTable && (_tableTMP = parserHelp.isPivot.call(ph, t.Formula, ph.pCurrPos, local))) {
+
+				found_operand = cStrucPivotTable.prototype.createFromVal(_tableTMP, opt_pivotCallback);
+
+				//todo undo delete column
+				if (found_operand.type === cElementType.error) {
+					/*используется неверный именованный диапазон или таблица*/
+					parseResult.setError(c_oAscError.ID.FrmlAnotherParsingError);
+					if (!ignoreErrors) {
+						t.outStack = [];
+						return false;
+					}
+				}
+
+				if (!_checkReferenceCount(2)) {
+					return false;
+				}
+
+				/*if (found_operand.type !== cElementType.error) {
+					parseResult.addRefPos(ph.pCurrPos - ph.operand_str.length, ph.pCurrPos, t.outStack.length, found_operand, true);
+				}*/
+
+			} else if (parserHelp.isBoolean.call(ph, t.Formula, ph.pCurrPos, local)) {
 				if (!_checkReferenceCount(0.5)) {
 					return false;
 				}
@@ -7594,6 +7653,8 @@ function parserFormula( formula, parent, _ws ) {
 						}
 					} else if (currentElement.type === cElementType.table) {
 						elemArr.push(currentElement.toRef(opt_bbox));
+					} else if (currentElement.type === cElementType.pivotTable) {
+						elemArr.push(currentElement.Calculate());
 					} else {
 						elemArr.push(currentElement);
 					}
@@ -10154,6 +10215,7 @@ function parserFormula( formula, parent, _ws ) {
 	window['AscCommonExcel'].cUnknownFunction = cUnknownFunction;
 	window['AscCommonExcel'].cStrucTable = cStrucTable;
 	window['AscCommonExcel'].cBaseOperator = cBaseOperator;
+	window['AscCommonExcel'].cStrucPivotTable = cStrucPivotTable;
 
 	window['AscCommonExcel'].checkTypeCell = checkTypeCell;
 	window['AscCommonExcel'].cFormulaFunctionGroup = cFormulaFunctionGroup;
