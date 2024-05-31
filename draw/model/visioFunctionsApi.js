@@ -47,9 +47,11 @@
 	 * @param {CTheme[]} themes
 	 * @param {string?} themeValue
 	 * @param {string?} defaultValue
+	 * @param {boolean?} gradientEnabled
 	 * @return {CUniFill | CUniColor | any}
 	 */
-	function themeval(cell, shape, pageInfo, themes, themeValue, defaultValue) {
+	function themeval(cell, shape, pageInfo, themes, themeValue,
+					  defaultValue, gradientEnabled) {
 		// https://visualsignals.typepad.co.uk/vislog/2013/05/visio-2013-themes-in-the-shapesheet-part-2.html
 
 		// if cell value is not 'Themed' waiting number representing color otherwise
@@ -86,6 +88,10 @@
 		}
 
 		let initialDefaultValue = null;
+
+		if (gradientEnabled === undefined) {
+			gradientEnabled = true;
+		}
 
 		if (cellName === "LineColor") {
 			quickStyleCellName = "QuickStyleLineColor";
@@ -285,6 +291,11 @@
 
 					}
 				}
+			}
+
+			if (!gradientEnabled && getMedifiersResult && getMedifiersResult.fill.constructor.name === "CGradFill") {
+				// disable gradient
+				getMedifiersResult = AscFormat.CreateUniFillByUniColor(calculatedColor);
 			}
 
 			// getModifiersMethod return not only

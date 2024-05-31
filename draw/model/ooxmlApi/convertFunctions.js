@@ -52,9 +52,11 @@
 		 * @param {Page_Type} pageInfo
 		 * @param {CTheme[]} themes
 		 * @param {{fontColor?: boolean, lineUniFill?: boolean, uniFillForegnd?: boolean}} themeValWasUsedFor - changes during function
+		 * @param {boolean?} gradientEnabled
 		 * @return {(CUniFill | CUniColor | *)}
 		 */
-		function calculateCellValue(cell, shape, pageInfo, themes, themeValWasUsedFor) {
+		function calculateCellValue(cell, shape, pageInfo, themes, themeValWasUsedFor,
+									gradientEnabled) {
 			let cellValue = cell && cell.v;
 			let cellName = cell && cell.n;
 
@@ -74,7 +76,7 @@
 				}
 			} else if (cellValue === 'Themed') {
 				// equal to THEMEVAL() call
-				returnValue = AscCommonDraw.themeval(cell, shape, pageInfo, themes);
+				returnValue = AscCommonDraw.themeval(cell, shape, pageInfo, themes, undefined, undefined, gradientEnabled);
 
 				if (cellName === "LineColor") {
 					themeValWasUsedFor.lineUniFill = true;
@@ -994,12 +996,15 @@
 			uniFillForegnd: false
 		}
 
+		// themed or smth
+		let gradientEnabled = this.getCellStringValue("FillGradientEnabled") !== "0";
+
 
 		let fillForegndCell = this.getCell("FillForegnd");
 		if (fillForegndCell) {
 			// console.log("FillForegnd was found:", fillForegndCell);
 			uniFillForegnd = calculateCellValue(fillForegndCell, this, pageInfo,
-				visioDocument.themes, themeValWasUsedFor);
+				visioDocument.themes, themeValWasUsedFor, gradientEnabled);
 
 			let fillForegndTrans = this.getCell("FillForegndTrans");
 			if (fillForegndTrans) {
