@@ -1006,20 +1006,17 @@
 			uniFillForegnd = calculateCellValue(fillForegndCell, this, pageInfo,
 				visioDocument.themes, themeValWasUsedFor, gradientEnabled);
 
-			let fillForegndTrans = this.getCell("FillForegndTrans");
-			if (fillForegndTrans) {
-				let fillForegndTransValue = Number(fillForegndTrans.v);
-				if (!isNaN(fillForegndTransValue)) {
-					let fillObj = uniFillForegnd.fill;
-					if (fillObj.constructor.name === "CPattFill") {
-						// pattern fill
-						fillObj.fgClr.color.RGBA.A = fillObj.fgClr.color.RGBA.A * (1 - fillForegndTransValue);
-					} else {
-						fillObj.color.color.RGBA.A = fillObj.color.color.RGBA.A * (1 - fillForegndTransValue);
-					}
+			let fillForegndTransValue = this.getCellNumberValue("FillForegndTrans");
+			if (!isNaN(fillForegndTransValue)) {
+				let fillObj = uniFillForegnd.fill;
+				if (fillObj.constructor.name === "CPattFill") {
+					// pattern fill
+					fillObj.fgClr.color.RGBA.A = fillObj.fgClr.color.RGBA.A * (1 - fillForegndTransValue);
 				} else {
-					// console.log("fillForegndTrans value is themed or something. Not calculated for", shape);
+					fillObj.color.color.RGBA.A = fillObj.color.color.RGBA.A * (1 - fillForegndTransValue);
 				}
+			} else {
+				// console.log("fillForegndTrans value is themed or something. Not calculated for", shape);
 			}
 		}
 		let fillBkgndCell = this.getCell("FillBkgnd");
@@ -1028,20 +1025,17 @@
 			uniFillBkgnd = calculateCellValue(fillBkgndCell, this, pageInfo,
 				visioDocument.themes, themeValWasUsedFor);
 
-			let fillBkgndTrans = this.getCell("FillBkgndTrans");
-			if (fillBkgndTrans) {
-				let fillBkgndTransValue = Number(fillBkgndTrans.v);
-				if (!isNaN(fillBkgndTransValue)) {
-					let fillObj = uniFillBkgnd.fill;
-					if (fillObj.constructor.name === "CPattFill") {
-						// pattern fill
-						fillObj.bgClr.color.RGBA.A = fillObj.fgClr.color.RGBA.A * (1 - fillBkgndTransValue);
-					} else {
-						fillObj.color.color.RGBA.A = fillObj.color.color.RGBA.A * (1 - fillBkgndTransValue);
-					}
+			let fillBkgndTransValue = this.getCellNumberValue("FillBkgndTrans");
+			if (!isNaN(fillBkgndTransValue)) {
+				let fillObj = uniFillBkgnd.fill;
+				if (fillObj.constructor.name === "CPattFill") {
+					// pattern fill
+					fillObj.bgClr.color.RGBA.A = fillObj.fgClr.color.RGBA.A * (1 - fillBkgndTransValue);
 				} else {
-					// console.log("fillBkgndTrans value is themed or something. Not calculated for", this);
+					fillObj.color.color.RGBA.A = fillObj.color.color.RGBA.A * (1 - fillBkgndTransValue);
 				}
+			} else {
+				// console.log("fillBkgndTrans value is themed or something. Not calculated for", this);
 			}
 		}
 
@@ -1070,18 +1064,10 @@
 			}
 		}
 
-		let fillPattern = this.getCell("FillPattern");
 		/** @type ?number */
-		let fillPatternType = null;
-		if (fillPattern) {
-			// console.log("fillPattern was found:", fillPattern);
-			let fillPatternTypeTryParse = parseInt(fillPattern.v);
-			if (!isNaN(fillPatternTypeTryParse)) {
-				fillPatternType = fillPatternTypeTryParse;
-			}
-		}
+		let fillPatternType = this.getCellNumberValue("FillPattern");
 
-		if (null !== fillPatternType && uniFillBkgnd && uniFillForegnd) {
+		if (!isNaN(fillPatternType) && uniFillBkgnd && uniFillForegnd) {
 			// https://learn.microsoft.com/ru-ru/office/client-developer/visio/fillpattern-cell-fill-format-section
 			if (fillPatternType === 0) {
 				uniFillForegndWithPattern = AscFormat.CreateNoFillUniFill();
@@ -1132,11 +1118,9 @@
 		var oStroke = AscFormat.builder_CreateLine(lineWidthEmuScaled, {UniFill: lineUniFillWithPattern});
 		// var oStroke = AscFormat.builder_CreateLine(12700, {UniFill: AscFormat.CreateUnfilFromRGB(255,0,0)});
 
-		let flipXCell = this.getCell("FlipX");
-		let flipHorizontally = flipXCell ? flipXCell.v === "1" : false;
+		let flipHorizontally = this.getCellNumberValue("FlipX") === 1;
 
-		let flipYCell = this.getCell("FlipY");
-		let flipVertically = flipYCell ?  flipYCell.v === "1" : false;
+		let flipVertically = this.getCellNumberValue("FlipY") === 1;
 
 		let cShape = this.convertToCShapeUsingParamsObj({
 			x_mm: x_mm, y_mm: y_mm,

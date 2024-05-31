@@ -138,7 +138,7 @@
 		let themeIndex = 0; // zero index means no theme - use default values
 		let themeScopeCellName = isConnectorShape ? "ConnectorSchemeIndex" : "ColorSchemeIndex";
 		let shapeColorSchemeThemeIndex = shape.getCellNumberValue(themeScopeCellName);
-		if (isNaN(shapeColorSchemeThemeIndex) || shapeColorSchemeThemeIndex === null) {
+		if (isNaN(shapeColorSchemeThemeIndex)) {
 			shapeColorSchemeThemeIndex = 0; // zero index means no theme
 		}
 		if (shapeColorSchemeThemeIndex === 65534) {
@@ -198,23 +198,14 @@
 			if (100 <= quickStyleColor && quickStyleColor <= 106 ||
 				(200 <= quickStyleColor && quickStyleColor <= 206)) {
 				//todo 200-206?
-				let variationColorIndexCell = shape.getCell("VariationColorIndex");
-				let variationColorIndex = 0;
-				if (variationColorIndexCell) {
-					variationColorIndex = parseInt(variationColorIndexCell.v);
-				}
+				let variationColorIndex = shape.getCellNumberValue("VariationColorIndex");
 				if (!isNaN(variationColorIndex)) {
 					if (65534 === variationColorIndex) {
-						variationColorIndex = 0;
-						let pageVariationColorIndexCell = pageInfo.pageSheet.getCell("VariationColorIndex");
-						if (pageVariationColorIndexCell !== undefined) {
-							let pageVariationColorIndexIndex = Number(pageVariationColorIndexCell.v);
-							if (!isNaN(pageVariationColorIndexIndex)) {
-								variationColorIndex = pageVariationColorIndexIndex;
-							} else {
-								console.log("pageVariationColorIndexIndex was not parsed");
-							}
+						let pageVariationColorIndexIndex = pageInfo.pageSheet.getCellNumberValue("VariationColorIndex");
+						if (!isNaN(pageVariationColorIndexIndex)) {
+							variationColorIndex = pageVariationColorIndexIndex;
 						} else {
+							variationColorIndex = 0;
 							// console.log("pageVariationColorIndexIndex not found");
 						}
 					}
@@ -263,23 +254,14 @@
 			} else if (1 <= quickStyleMatrix && quickStyleMatrix <= 6) {
 				getMedifiersResult = getModifiersMethod.call(theme, quickStyleMatrix, calculatedColor, isConnectorShape);
 			} else if (100 <= quickStyleMatrix && quickStyleMatrix <= 103) {
-				let variationStyleIndexCell = shape.getCell("VariationStyleIndex");
-				let variationStyleIndex = 0;
-				if (variationStyleIndexCell) {
-					variationStyleIndex = parseInt(variationStyleIndexCell.v);
-				}
+				let variationStyleIndex = shape.getCellNumberValue("VariationStyleIndex");
 				if (!isNaN(variationStyleIndex)) {
 					if (65534 === variationStyleIndex) {
-						variationStyleIndex = 0;
-						let pageVariationStyleIndexCell = pageInfo.pageSheet.getCell("VariationStyleIndex");
-						if (pageVariationStyleIndexCell !== undefined) {
-							let pageVariationStyleIndexIndex = Number(pageVariationStyleIndexCell.v);
-							if (!isNaN(pageVariationStyleIndexIndex)) {
-								variationStyleIndex = pageVariationStyleIndexIndex;
-							} else {
-								console.log("pageVariationStyleIndexIndex was not parsed");
-							}
+						let pageVariationStyleIndexIndex = pageInfo.pageSheet.getCellNumberValue("VariationStyleIndex");
+						if (!isNaN(pageVariationStyleIndexIndex)) {
+							variationStyleIndex = pageVariationStyleIndexIndex;
 						} else {
+							variationStyleIndex = 0;
 							// console.log("pageVariationStyleIndexIndex not found");
 						}
 					}
