@@ -80,7 +80,7 @@
 			cellName = "LineColor";
 			cellValue = "Themed";
 		} else if (themeValue === "FillColor") {
-			// cellName = "FillForegnd";
+			cellName = "FillForegnd";
 			cellValue = "Themed";
 		} else if (themeValue === "TextColor") {
 			cellName = "Color";
@@ -164,7 +164,7 @@
 		// default value
 		// see colored rectangle in that file https://disk.yandex.ru/d/IzxVtx0a7GqbQA
 		let theme = themes[0];
-		if ((themeValue === null || themeValue === undefined) && themeIndex === 0) {
+		if (themeIndex === 0) {
 			return initialDefaultValue;
 		}
 		if (themeIndex === 0) {
@@ -307,7 +307,7 @@
 				color.calculate(theme);
 			}
 
-			 // otherwise it is a link to theme color
+			// otherwise it is a link to theme color
 			return color.createDuplicate();
 		}
 

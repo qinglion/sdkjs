@@ -67,7 +67,7 @@
 				let rgba = AscCommon.RgbaHexToRGBA(cellValue);
 				if (cellName === "LineColor" || cellName === "FillForegnd" || cellName === "FillBkgnd") {
 					returnValue = AscFormat.CreateUnfilFromRGB(rgba.R, rgba.G, rgba.B);
-				} else if (cellName === "Color") {
+				} else if (cellName === "Color" || cellName === "GradientStopColor") {
 					// for text color
 					returnValue = AscFormat.CreateUnfilFromRGB(rgba.R, rgba.G, rgba.B).fill.color;
 				} else {
@@ -167,7 +167,7 @@
 					if (rgba) {
 						if (cellName === "LineColor" || cellName === "FillForegnd" || cellName === "FillBkgnd") {
 							returnValue = AscFormat.CreateUnfilFromRGB(rgba.R, rgba.G, rgba.B);
-						} else if (cellName === "Color") {
+						} else if (cellName === "Color" || cellName === "GradientStopColor") {
 							returnValue = AscFormat.CreateUnfilFromRGB(rgba.R, rgba.G, rgba.B).fill.color;
 						} else {
 							console.log("wrong calculateCellValue argument cell. Cell unsupported. return null");
@@ -181,9 +181,12 @@
 					console.log("no color found. so painting lt1.");
 					returnValue = AscFormat.CreateUniFillByUniColor(AscFormat.builder_CreateSchemeColor("lt1"));
 				} else if (cellName === "Color") {
-					// for text color
+					// cellName === "Color" for text color
 					console.log("no text color found. so painting dk1.");
 					returnValue = AscFormat.builder_CreateSchemeColor("dk1");
+				} else if (cellName === "GradientStopColor") {
+					console.log("no GradientStopColor color found. so painting lk1.");
+					returnValue = AscFormat.builder_CreateSchemeColor("lt1");
 				} else {
 					console.log("no calculateCellValue result return undefined");
 				}
@@ -996,29 +999,128 @@
 			uniFillForegnd: false
 		}
 
-		// themed or smth
-		let gradientEnabled = this.getCellStringValue("FillGradientEnabled") !== "0";
+		// themed/0/1
+		let gradientEnabledString = this.getCellStringValue("FillGradientEnabled");
+		let themedFill = AscCommonDraw.themeval(null, this, pageInfo, visioDocument.themes, "FillColor",
+			undefined, true);
+		let themedFillIsGradient = themedFill.fill.constructor.name === "CGradFill";
+		let gradientEnabled;
+		if (gradientEnabledString === "1" || (gradientEnabledString === "Themed" && themedFillIsGradient)) {
+			gradientEnabled = true;
+		} else {
+			gradientEnabled = false;
+		}
 
+		if (gradientEnabled) {
+			// global matrix transform: invert Y axis causes 0 is bottom of gradient and 100000 is top
+			let invertGradient = true;
+			// before come through gradient stops let's get themeval values from fill object
+			let gradFill = new AscFormat.CGradFill();
 
-		let fillForegndCell = this.getCell("FillForegnd");
-		if (fillForegndCell) {
-			// console.log("FillForegnd was found:", fillForegndCell);
-			uniFillForegnd = calculateCellValue(fillForegndCell, this, pageInfo,
-				visioDocument.themes, themeValWasUsedFor, gradientEnabled);
+			// now lets init lin params changing themeval to cloned themedFill obj props
+			// angle and scale
+			let lin = new AscFormat.GradLin();
 
-			let fillForegndTransValue = this.getCellNumberValue("FillForegndTrans");
-			if (!isNaN(fillForegndTransValue)) {
-				let fillObj = uniFillForegnd.fill;
-				if (fillObj.constructor.name === "CPattFill") {
-					// pattern fill
-					fillObj.fgClr.color.RGBA.A = fillObj.fgClr.color.RGBA.A * (1 - fillForegndTransValue);
-				} else {
-					fillObj.color.color.RGBA.A = fillObj.color.color.RGBA.A * (1 - fillForegndTransValue);
-				}
+			let angle;
+			let fillGradientAngle = this.getCellStringValue("FillGradientAngle");
+			// TODO fillGradientAngle can be themed witout themedFillIsGradient - handle it
+			// TODO handle multiple gradient types like radial
+			if (fillGradientAngle === "Themed" && themedFillIsGradient) {
+				angle = themedFill.fill.lin.angle;
 			} else {
-				// console.log("fillForegndTrans value is themed or something. Not calculated for", shape);
+				let angleRads = Number(fillGradientAngle);
+				// 20.1.10.3 ST_Angle (Angle)
+				// This simple type represents an angle in 60,000ths of a degree. Positive angles are clockwise (i.e., towards the
+				// positive y axis); negative angles are counter-clockwise (i.e., towards the negative y axis)
+				// direction is considered in global transform
+				let stAngle = angleRads / Math.PI * 180 * 60000;
+				if (!isNaN(stAngle)) {
+					angle = stAngle;
+				} else {
+					angle = 5400000;
+				}
+			}
+
+			lin.angle = angle;
+			gradFill.setLin(lin);
+
+			// now let's come through gradient stops
+			let fillGradientStops = this.getSection("FillGradient");
+			let rows = fillGradientStops.getElements();
+			for (const rowKey in rows) {
+				let row = rows[rowKey];
+				if (row.del) {
+					continue;
+				}
+
+				// has color (CUniColor) and pos from 0 to 100000
+				let colorStop = new AscFormat.CGs();
+
+				// calculate color (CUniColor)
+				let color = new AscFormat.CUniColor();
+				let gradientStopColorCell = row.getCell("GradientStopColor");
+				if (gradientStopColorCell.v === "Themed") {
+					if (themedFillIsGradient && themedFill.fill.colors[rowKey]) {
+						color = themedFill.fill.colors[rowKey].color;
+					} else {
+						// themed fill gradient was calculated already and there is no color in that pos
+						// so it is default color (white) with default pos (0)
+						color = AscFormat.builder_CreateSchemeColor("lt1");
+					}
+				} else {
+					 color = calculateCellValue(gradientStopColorCell, this, pageInfo,
+						visioDocument.themes, themeValWasUsedFor);
+				}
+				let gradientStopColorTransCell = row.getCell("GradientStopColorTrans");
+				if (gradientStopColorTransCell.v !== "Themed") {
+					let gradientStopColorTransValue = Number(gradientStopColorTransCell.v);
+					color.RGBA.A = color.RGBA.A * (1 - gradientStopColorTransValue);
+				}
+
+				// now let's get pos
+				let pos = null;
+				let gradientStopPositionCell = row.getCell("GradientStopPosition");
+				if (gradientStopPositionCell.v === "Themed") {
+					if (themedFillIsGradient && themedFill.fill.colors[rowKey]) {
+						pos = themedFill.fill.colors[rowKey].pos;
+					} else {
+						pos = 0;
+					}
+				} else {
+					pos = Number(gradientStopPositionCell.v) * 100000;
+				}
+				pos = invertGradient ? 100000 - pos : pos;
+
+				colorStop.setColor(color);
+				colorStop.setPos(pos);
+
+				gradFill.addColor(colorStop);
+			}
+			uniFillForegnd = new AscFormat.CUniFill();
+			uniFillForegnd.fill = gradFill;
+		} else {
+			let fillForegndCell = this.getCell("FillForegnd");
+			if (fillForegndCell) {
+				// console.log("FillForegnd was found:", fillForegndCell);
+				uniFillForegnd = calculateCellValue(fillForegndCell, this, pageInfo,
+					visioDocument.themes, themeValWasUsedFor, gradientEnabled);
+
+				let fillForegndTransValue = this.getCellNumberValue("FillForegndTrans");
+				if (!isNaN(fillForegndTransValue)) {
+					let fillObj = uniFillForegnd.fill;
+					if (fillObj.constructor.name === "CPattFill") {
+						// pattern fill
+						fillObj.fgClr.color.RGBA.A = fillObj.fgClr.color.RGBA.A * (1 - fillForegndTransValue);
+					} else {
+						fillObj.color.color.RGBA.A = fillObj.color.color.RGBA.A * (1 - fillForegndTransValue);
+					}
+				} else {
+					// console.log("fillForegndTrans value is themed or something. Not calculated for", shape);
+				}
 			}
 		}
+
+
 		let fillBkgndCell = this.getCell("FillBkgnd");
 		if (fillBkgndCell) {
 			// console.log("FillBkgnd was found:", fillBkgndCell);
@@ -1069,9 +1171,10 @@
 
 		if (!isNaN(fillPatternType) && uniFillBkgnd && uniFillForegnd) {
 			// https://learn.microsoft.com/ru-ru/office/client-developer/visio/fillpattern-cell-fill-format-section
+			let isfillPatternTypeGradient = fillPatternType >= 25 && fillPatternType <= 40;
 			if (fillPatternType === 0) {
 				uniFillForegndWithPattern = AscFormat.CreateNoFillUniFill();
-			} else if (fillPatternType === 1) {
+			} else if (fillPatternType === 1 || isfillPatternTypeGradient) {
 				uniFillForegndWithPattern = uniFillForegnd;
 			} else if (fillPatternType > 1) {
 				//todo types

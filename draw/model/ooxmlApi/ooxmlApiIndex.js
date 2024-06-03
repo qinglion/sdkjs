@@ -571,7 +571,7 @@
 	 * Always use it see Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive js docs for explanation.
 	 * get elements inherited from shape sheet type
 	 * @memberOf SheetStorage
-	 * @return {*}
+	 * @return {{*}}
 	 */
 	SheetStorage.prototype.getElements = function () {
 		return this.elements;
