@@ -142,17 +142,13 @@
 			shapeColorSchemeThemeIndex = 0; // zero index means no theme
 		}
 		if (shapeColorSchemeThemeIndex === 65534) {
-			let pageThemeIndexCell = pageInfo.pageSheet.getCell(themeScopeCellName);
-			if (pageThemeIndexCell !== undefined) {
-				let pageThemeIndex = Number(pageThemeIndexCell.v);
-				if (!isNaN(pageThemeIndex)) {
-					themeIndex = pageThemeIndex;
-				} else {
-					console.log("pageThemeIndex was not parsed");
-				}
+			let pageThemeIndex = pageInfo.pageSheet.getCellNumberValue(themeScopeCellName);
+			if (!isNaN(pageThemeIndex)) {
+				themeIndex = pageThemeIndex;
 			} else {
 				// it's ok sometimes
 				// console.log("pageThemeIndexCell not found");
+				themeIndex = 0;
 			}
 		} else {
 			themeIndex = shapeColorSchemeThemeIndex;
@@ -166,10 +162,6 @@
 		let theme = themes[0];
 		if (themeIndex === 0) {
 			return initialDefaultValue;
-		}
-		if (themeIndex === 0) {
-			// use themes[0] for THEMEVAL()
-			theme = themes[0];
 		} else {
 			// find theme by themeIndex
 			// theme = themes.find(function (theme) {
@@ -314,28 +306,32 @@
 		if (result !== null) {
 			// result have appropriate type for cell already
 			return calculateOnTheme(result, theme);
-		}
-		if (calculatedColor !== null) {
-			let fromColorResult = null;
-			if (cellName === "LineColor" || cellName === "FillForegnd" || cellName === "FillBkgnd") {
-				fromColorResult = AscFormat.CreateUniFillByUniColor(calculatedColor);
-			} else if (cellName === "Color") {
-				fromColorResult = calculatedColor;
-			}
-
-			return calculateOnTheme(result, theme);
 		} else {
-			if (cellName === "LineColor" || cellName === "FillForegnd" || cellName === "FillBkgnd") {
-				console.log("no color found. so painting lt1.");
-				calculatedColor = AscFormat.CreateUniFillByUniColor(AscFormat.builder_CreateSchemeColor("lt1"));
-			} else if (cellName === "Color") {
-				// for text color
-				console.log("no text color found. so painting dk1.");
-				calculatedColor = AscFormat.builder_CreateSchemeColor("dk1");
-			}
-
-			return calculateOnTheme(result, theme);
+			console.log("Unknown themeval error");
 		}
+		// code below never calls. result is always calculated. Default values are set above are returned if
+		// default theme is used
+		// if (calculatedColor !== null) {
+		// 	let fromColorResult = null;
+		// 	if (cellName === "LineColor" || cellName === "FillForegnd" || cellName === "FillBkgnd") {
+		// 		fromColorResult = AscFormat.CreateUniFillByUniColor(calculatedColor);
+		// 	} else if (cellName === "Color") {
+		// 		fromColorResult = calculatedColor;
+		// 	}
+		//
+		// 	return calculateOnTheme(result, theme);
+		// } else {
+		// 	if (cellName === "LineColor" || cellName === "FillForegnd" || cellName === "FillBkgnd") {
+		// 		console.log("no color found. so painting lt1.");
+		// 		calculatedColor = AscFormat.CreateUniFillByUniColor(AscFormat.builder_CreateSchemeColor("lt1"));
+		// 	} else if (cellName === "Color") {
+		// 		// for text color
+		// 		console.log("no text color found. so painting dk1.");
+		// 		calculatedColor = AscFormat.builder_CreateSchemeColor("dk1");
+		// 	}
+		//
+		// 	return calculateOnTheme(result, theme);
+		// }
 	}
 
 	//-------------------------------------------------------------export---------------------------------------------------

@@ -1207,7 +1207,7 @@
 			lineWidthEmu = 9525;
 		}
 
-		// Antiscale should be applied (drawing scale should not be considered) for text font size and stoke size
+		// Scale should be applied (drawing scale should not be considered) for text font size and stoke size
 		// https://support.microsoft.com/en-us/office/change-the-drawing-scale-on-a-page-in-visio-05c24456-67bf-47f7-b5dc-d5caa9974f19
 		// https://stackoverflow.com/questions/63295483/how-properly-set-line-scaling-in-ms-visio
 		let drawingScale = pageInfo.pageSheet.getCellNumberValue("DrawingScale");
