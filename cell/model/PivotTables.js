@@ -15579,10 +15579,9 @@ CT_PivotField.prototype.removeGroupFromAxis = function() {
 /**
  * @param {CT_SharedItems} sharedItems
  * @param {CT_SharedItems} oldSharedItems
- * @param {CT_PivotCacheDefinition} cacheDefinition
  * @return {PivotItemFieldsMap} old index to new index cacheField
  */
-CT_PivotField.prototype.refreshPivotFieldItem = function(sharedItems, oldSharedItems, cacheDefinition) {
+CT_PivotField.prototype.refreshPivotFieldItem = function(sharedItems, oldSharedItems) {
 	let cacheFieldIndexesMap = new Map();
 	if (this.items) {
 		for (let i = 0; i < this.items.item.length; ++i) {
