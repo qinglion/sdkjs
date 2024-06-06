@@ -19332,9 +19332,6 @@ PivotRecordValue.prototype.isDateOrNum = function() {
 PivotRecordValue.prototype.shallowEqual = function(elem) {
 	return this.type === elem.type && this.val === elem.val;
 };
-PivotRecordValue.prototype.isCalculated = function(elem) {
-	return this.type === elem.type && this.val === elem.val;
-};
 
 function PivotRecords() {
 	this.chunks = [];
