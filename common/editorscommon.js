@@ -3676,7 +3676,19 @@
 
 		return false;
 	};
-// Парсим ссылку на диапазон в листе
+	parserHelper.prototype.isPivot = function (formula, start_pos, local)
+	{
+		if (this instanceof parserHelper)
+		{
+			this._reset();
+		}
+
+		//TODO
+
+
+		return false;
+	};
+	// Парсим ссылку на диапазон в листе
 	parserHelper.prototype.parse3DRef = function (formula)
 	{
 		// Сначала получаем лист
