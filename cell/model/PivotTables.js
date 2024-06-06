@@ -326,9 +326,6 @@ function PivotDataElem(dataLength, isCalculated, isReady) {
 	/**@type {Object<number, PivotDataElem>} */
 	this.vals = {};
 	/**@type {Object<number, PivotDataElem>} */
-	/**@type {Object<number, PivotDataElem>} */
-	this.vals = {};
-	/**@type {Object<number, PivotDataElem>} */
 	this.subtotal = this.vals;
 	/**@type {StatisticOnlineAlgorithm[]} */
 	this.total = new Array(dataLength);
@@ -16618,9 +16615,10 @@ CT_PivotField.prototype.removeGroupFromAxis = function() {
 /**
  * @param {CT_SharedItems} sharedItems
  * @param {CT_SharedItems} oldSharedItems
+ * @param {CT_PivotCacheDefinition} cacheDefinition
  * @return {PivotItemFieldsMap} old index to new index cacheField
  */
-CT_PivotField.prototype.refreshPivotFieldItem = function(sharedItems, oldSharedItems) {
+CT_PivotField.prototype.refreshPivotFieldItem = function(sharedItems, oldSharedItems, cacheDefinition) {
 	let cacheFieldIndexesMap = new Map();
 	if (this.items) {
 		for (let i = 0; i < this.items.item.length; ++i) {
@@ -20435,6 +20433,9 @@ PivotRecordValue.prototype.isDateOrNum = function() {
 	return c_oAscPivotRecType.DateTime === this.type || c_oAscPivotRecType.Number === this.type;
 };
 PivotRecordValue.prototype.shallowEqual = function(elem) {
+	return this.type === elem.type && this.val === elem.val;
+};
+PivotRecordValue.prototype.isCalculated = function(elem) {
 	return this.type === elem.type && this.val === elem.val;
 };
 
