@@ -19980,6 +19980,22 @@ PivotLayout.prototype.canExpandCollapse = function() {
 	return true;
 };
 
+function PivotChangeResult(error, warning, changed, ranges, updateRes){
+	this.error = error || c_oAscError.ID.No;
+	this.warning = warning || c_oAscError.ID.No;
+	this.changedPivots = changed ? [changed] : [];
+	this.ranges = ranges || [];
+	this.updateRes = updateRes;
+}
+PivotChangeResult.prototype.merge = function(changeRes) {
+	this.error = changeRes.error;
+	this.warning = changeRes.warning;
+	this.changedPivots = this.changedPivots.concat(changeRes.changedPivots);
+	this.ranges = this.ranges.concat(changeRes.ranges);
+	this.updateRes = changeRes.updateRes;
+};
+
+
 var prot;
 
 window['Asc']['c_oAscSourceType'] = window['Asc'].c_oAscSourceType = c_oAscSourceType;
@@ -20215,6 +20231,7 @@ window['AscCommonExcel'].NEW_PIVOT_COL = NEW_PIVOT_COL;
 window['AscCommonExcel'].ToName_ST_ItemType = ToName_ST_ItemType;
 window['AscCommonExcel'].ToName_ST_DataConsolidateFunction = ToName_ST_DataConsolidateFunction;
 window['AscCommonExcel'].cmpPivotItems = cmpPivotItems;
+window['AscCommonExcel'].PivotChangeResult = PivotChangeResult;
 
 window['Asc']['CT_PivotCacheDefinition'] = window['Asc'].CT_PivotCacheDefinition = CT_PivotCacheDefinition;
 window['Asc']['CT_pivotTableDefinitionX14'] = window['Asc'].CT_pivotTableDefinitionX14 = CT_pivotTableDefinitionX14;
