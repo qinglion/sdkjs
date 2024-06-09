@@ -2431,7 +2431,7 @@ CT_PivotCacheRecords.prototype._fillDataMapCalculated = function(options) {
 				currentIndex: options.currentIndex + 1,
 				dataFields: options.dataFields,
 				itemsWithDataMap: options.itemsWithDataMap,
-				itemsMapArray: options.itemsMapArray.concat([options.indexes[options.currentIndex], i])
+				itemsMapArray: options.itemsMapArray.concat([[options.indexes[options.currentIndex], +i]])
 			})
 		}
 	}
@@ -6030,6 +6030,10 @@ CT_pivotTableDefinition.prototype.updateCacheData = function (dataRef) {
 	newCacheDefinition.asc_create();
 	newCacheDefinition.fromDataRef(dataRef);
 	newCacheDefinition.setPivotCacheId(this.cacheDefinition.getPivotCacheId());
+
+	// TODO
+	newCacheDefinition.calculatedItems = this.cacheDefinition.calculatedItems;
+	// DELETE IN FUTURE
 
 	let oldPivotField = this.asc_getPivotFields().map(function(elem) {return elem.clone();});
 	var pivotFieldsMap = new Map();
@@ -17723,7 +17727,7 @@ CT_PivotArea.prototype.getItemFieldsMap = function() {
 	if (references) {
 		references.forEach(function(reference) {
 			if (reference.x) {
-				result.set(reference.x[0].getV())
+				result.set(reference.field, reference.x[0].getV())
 			}
 		});
 	}
