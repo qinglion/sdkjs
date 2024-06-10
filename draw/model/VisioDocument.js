@@ -379,12 +379,22 @@
 		let logic_w_mm = this.GetWidthMM(pageIndex);
 		let logic_h_mm = this.GetHeightMM(pageIndex);
 
+		/**
+		 * sometimes text suddenly gets huge sizes that take all of a picture space.
+		 * It usually happens on low zoom (when we scroll down a lot). This coefficient fixes this issue but
+		 * makes extra space and scroll lines get wrong sizes. fixScale number was randomly selected.
+		 * High fixScale value can make high load and break page, especially on high zooming. Low values
+		 * may not fix text on low zoom.
+		 * @type {number}
+		 */
+		let fixScale = 2;
+
 		let graphics;
 
 		let useFitToScreenZoom = !pGraphics;
 		let pageScale;
 		if (useFitToScreenZoom) {
-			Zoom = Zoom * this.getFitZoomValue(pageIndex, api.HtmlElement.offsetWidth,api.HtmlElement.offsetHeight) / 100;
+			Zoom = Zoom * this.getFitZoomValue(pageIndex, api.HtmlElement.offsetWidth,api.HtmlElement.offsetHeight) / 100 * fixScale;
 		}
 		pageScale = Zoom / 100;
 
@@ -434,11 +444,11 @@
 		//ECMA-376-11_5th_edition and Geometry.js y coordinate goes down
 		let baseMatrix = new AscCommon.CMatrix();
 		// baseMatrix.SetValues(1, 0, 0, 1, 0, 0);
-		baseMatrix.SetValues(1, 0, 0, -1, 0, logic_h_mm);
+		baseMatrix.SetValues(1 / fixScale, 0, 0, -1 / fixScale, 0, logic_h_mm / fixScale);
 		graphics.SetBaseTransform(baseMatrix);
 
 		let baseTextMatrix = new AscCommon.CMatrix();
-		baseTextMatrix.SetValues(1, 0, 0, 1, 0, 0);
+		baseTextMatrix.SetValues(1 / fixScale, 0, 0, 1 / fixScale, 0, 0);
 		// baseTextMatrix.SetValues(1, 0, 0, -1, 0, logic_h_mm);
 
 		/**

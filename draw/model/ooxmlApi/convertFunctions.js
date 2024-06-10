@@ -981,8 +981,8 @@
 
 		let	nPatternType = null;
 
-		/** @type CUniFill */
-		let lineUniFillWithPattern = null;
+		// /** @type CUniFill */
+		// let lineUniFillWithPattern = null;
 		/**
 		 * We need fill without pattern applied bcs pattern applied can set NoSolidFill object without color,
 		 * so we will not be able to calculate handleVariationColor function result
@@ -1011,42 +1011,23 @@
 			gradientEnabled = false;
 		}
 
+		// FillGradientDir and FillPattern can tell about gradient type
+
 		if (gradientEnabled) {
+			let fillGradientDir = this.getCellNumberValue("FillGradientDir");
+
 			// global matrix transform: invert Y axis causes 0 is bottom of gradient and 100000 is top
 			let invertGradient = true;
-			// before come through gradient stops let's get themeval values from fill object
-			let gradFill = new AscFormat.CGradFill();
-
-			// now lets init lin params changing themeval to cloned themedFill obj props
-			// angle and scale
-			let lin = new AscFormat.GradLin();
-
-			let angle;
-			let fillGradientAngle = this.getCellStringValue("FillGradientAngle");
-			// TODO fillGradientAngle can be themed witout themedFillIsGradient - handle it
-			// TODO handle multiple gradient types like radial
-			if (fillGradientAngle === "Themed" && themedFillIsGradient) {
-				angle = themedFill.fill.lin.angle;
-			} else {
-				let angleRads = Number(fillGradientAngle);
-				// 20.1.10.3 ST_Angle (Angle)
-				// This simple type represents an angle in 60,000ths of a degree. Positive angles are clockwise (i.e., towards the
-				// positive y axis); negative angles are counter-clockwise (i.e., towards the negative y axis)
-				// direction is considered in global transform
-				let stAngle = angleRads / Math.PI * 180 * 60000;
-				if (!isNaN(stAngle)) {
-					angle = stAngle;
-				} else {
-					angle = 5400000;
-				}
+			if (fillGradientDir === 3) {
+				// radial gradient seems to be handled in another way
+				invertGradient = false;
 			}
 
-			lin.angle = angle;
-			gradFill.setLin(lin);
 
-			// now let's come through gradient stops
-			let fillGradientStops = this.getSection("FillGradient");
-			let rows = fillGradientStops.getElements();
+				// now let's come through gradient stops
+			let fillGradientStopsSection = this.getSection("FillGradient");
+			let rows = fillGradientStopsSection.getElements();
+			let fillGradientStops = [];
 			for (const rowKey in rows) {
 				let row = rows[rowKey];
 				if (row.del) {
@@ -1094,10 +1075,36 @@
 				colorStop.setColor(color);
 				colorStop.setPos(pos);
 
-				gradFill.addColor(colorStop);
+				fillGradientStops.push({Gs : colorStop});
 			}
-			uniFillForegnd = new AscFormat.CUniFill();
-			uniFillForegnd.fill = gradFill;
+
+			if (fillGradientDir === 3) {
+				// radial
+				uniFillForegnd = AscFormat.builder_CreateRadialGradient(fillGradientStops);
+			} else {
+				// also if fillGradientDir === 0
+				let angle;
+				let fillGradientAngle = this.getCellStringValue("FillGradientAngle");
+				// TODO fillGradientAngle can be themed without themedFillIsGradient - handle how to calculate it
+				// TODO handle multiple gradient types like radial
+				if (fillGradientAngle === "Themed" && themedFillIsGradient) {
+					angle = themedFill.fill.lin.angle;
+				} else {
+					let angleRads = Number(fillGradientAngle);
+					// 20.1.10.3 ST_Angle (Angle)
+					// This simple type represents an angle in 60,000ths of a degree. Positive angles are clockwise (i.e., towards the
+					// positive y axis); negative angles are counter-clockwise (i.e., towards the negative y axis)
+					// direction is considered in global transform
+					let stAngle = angleRads / Math.PI * 180 * 60000;
+					if (!isNaN(stAngle)) {
+						angle = stAngle;
+					} else {
+						angle = 5400000;
+					}
+				}
+
+				uniFillForegnd = AscFormat.builder_CreateLinearGradient(fillGradientStops, angle);
+			}
 		} else {
 			let fillForegndCell = this.getCell("FillForegnd");
 			if (fillForegndCell) {
@@ -1154,42 +1161,6 @@
 		// calculate variation before pattern bcs pattern can make NoFillUniFill object without color
 		handleQuickStyleVariation(lineUniFill, uniFillForegnd, this, themeValWasUsedFor);
 
-		// add read matrix modifier width?
-		// + handle line pattens?
-		let linePattern = this.getCell("LinePattern");
-		if (linePattern) {
-			if (linePattern.v === "0") {
-				lineUniFillWithPattern = AscFormat.CreateNoFillUniFill();
-			} else {
-				//todo types
-				lineUniFillWithPattern = lineUniFill;
-			}
-		}
-
-		/** @type ?number */
-		let fillPatternType = this.getCellNumberValue("FillPattern");
-
-		if (!isNaN(fillPatternType) && uniFillBkgnd && uniFillForegnd) {
-			// https://learn.microsoft.com/ru-ru/office/client-developer/visio/fillpattern-cell-fill-format-section
-			let isfillPatternTypeGradient = fillPatternType >= 25 && fillPatternType <= 40;
-			if (fillPatternType === 0) {
-				uniFillForegndWithPattern = AscFormat.CreateNoFillUniFill();
-			} else if (fillPatternType === 1 || isfillPatternTypeGradient) {
-				uniFillForegndWithPattern = uniFillForegnd;
-			} else if (fillPatternType > 1) {
-				//todo types
-				nPatternType = 0;//"cross";
-				uniFillForegndWithPattern = AscFormat.CreatePatternFillUniFill(nPatternType,
-					uniFillBkgnd.fill.color, uniFillForegnd.fill.color);
-				// uniFill = AscFormat.builder_CreatePatternFill(nPatternType, uniFillBkgnd.fill.color, uniFillForegnd.fill.color);
-			}
-		} else if (uniFillForegnd) {
-			uniFillForegndWithPattern = uniFillForegnd;
-		} else {
-			console.log("FillForegnd not found for shape", this);
-			uniFillForegndWithPattern = AscFormat.CreateNoFillUniFill();
-		}
-
 		let lineWidthEmu = null;
 		let lineWeightCell = this.getCell("LineWeight");
 		if (lineWeightCell && lineWeightCell.v && lineWeightCell.v !== "Themed") {
@@ -1215,11 +1186,91 @@
 		let scale = drawingScale / pageScale;
 		let lineWidthEmuScaled = lineWidthEmu * scale;
 
-		// console.log("Calculated lineUniFill unifill", lineUniFill, "for shape", this);
-		// console.log("Calculated fill UniFill", uniFillForegndWithPattern, "for shape", this);
-
-		var oStroke = AscFormat.builder_CreateLine(lineWidthEmuScaled, {UniFill: lineUniFillWithPattern});
+		/**	 * @type {CLn}	 */
+		let oStroke = AscFormat.builder_CreateLine(lineWidthEmuScaled, {UniFill: lineUniFill});
 		// var oStroke = AscFormat.builder_CreateLine(12700, {UniFill: AscFormat.CreateUnfilFromRGB(255,0,0)});
+
+		// add read matrix modifier width?
+		// + handle line pattens?
+		let linePattern = this.getCell("LinePattern");
+		if (linePattern) {
+			// see ECMA-376-1 - L.4.8.5.2 Line Dash Properties and [MS-VSDX]-220215 (1) - 2.4.4.180	LinePattern
+			switch (linePattern.v) {
+				case "0":
+					oStroke.Fill = AscFormat.CreateNoFillUniFill();
+					break;
+				case "1":
+					oStroke.setPrstDash(oStroke.GetDashCode(""));
+					break;
+				case "2":
+					oStroke.setPrstDash(oStroke.GetDashCode("lgDash"));
+					break;
+				case "3":
+					oStroke.setPrstDash(oStroke.GetDashCode("dash"));
+					break;
+				case "4":
+					oStroke.setPrstDash(oStroke.GetDashCode("dashDot"));
+					break;
+				case "5":
+					oStroke.setPrstDash(oStroke.GetDashCode("lgDashDotDot"));
+					break;
+				case "9":
+					oStroke.setPrstDash(oStroke.GetDashCode("sysDash"));
+					break;
+				case "10":
+					oStroke.setPrstDash(oStroke.GetDashCode("sysDot"));
+					break;
+				case "11":
+					oStroke.setPrstDash(oStroke.GetDashCode("sysDashDot"));
+					break;
+				case "12":
+					oStroke.setPrstDash(oStroke.GetDashCode("sysDashDotDot"));
+					break;
+				case "17":
+					oStroke.setPrstDash(oStroke.GetDashCode("dot"));
+					break;
+				case "18":
+					oStroke.setPrstDash(oStroke.GetDashCode("lgDashDot"));
+					break;
+				case "6":
+				case "7":
+				case "8":
+				case "19":
+				case "Themed":
+					oStroke.setPrstDash(oStroke.GetDashCode("solid"));
+					break;
+				case !isNaN(Number(linePattern.v)):
+					oStroke.setPrstDash(oStroke.GetDashCode("lgDash"));
+					break;
+				default:
+					oStroke.setPrstDash(oStroke.GetDashCode("solid"));
+			}
+		}
+
+		/** @type ?number */
+		let fillPatternType = this.getCellNumberValue("FillPattern");
+
+		// we get NaN if fillPatternType is Themed so just get themed uniFillForegnd
+		if (!isNaN(fillPatternType) && uniFillBkgnd && uniFillForegnd) {
+			// https://learn.microsoft.com/ru-ru/office/client-developer/visio/fillpattern-cell-fill-format-section
+			let isfillPatternTypeGradient = fillPatternType >= 25 && fillPatternType <= 40;
+			if (fillPatternType === 0) {
+				uniFillForegndWithPattern = AscFormat.CreateNoFillUniFill();
+			} else if (fillPatternType === 1 || isfillPatternTypeGradient) {
+				uniFillForegndWithPattern = uniFillForegnd;
+			} else if (fillPatternType > 1) {
+				//todo types
+				nPatternType = 0;//"cross";
+				uniFillForegndWithPattern = AscFormat.CreatePatternFillUniFill(nPatternType,
+					uniFillBkgnd.fill.color, uniFillForegnd.fill.color);
+				// uniFill = AscFormat.builder_CreatePatternFill(nPatternType, uniFillBkgnd.fill.color, uniFillForegnd.fill.color);
+			}
+		} else if (uniFillForegnd) {
+			uniFillForegndWithPattern = uniFillForegnd;
+		} else {
+			console.log("FillForegnd not found for shape", this);
+			uniFillForegndWithPattern = AscFormat.CreateNoFillUniFill();
+		}
 
 		let flipHorizontally = this.getCellNumberValue("FlipX") === 1;
 
