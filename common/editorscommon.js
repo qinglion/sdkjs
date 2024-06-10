@@ -3729,7 +3729,18 @@
 			this._reset();
 		}
 
-		//TODO
+
+		const subSTR = formula.substring(start_pos);
+
+		const reg = /\'?(.+?)\'?\[\'?(.+?)\'?\]/
+		const match  = reg.exec(subSTR);
+
+		if (match !== null && match[1] && match[2])
+		{
+			this.operand_str = match[0];
+			this.pCurrPos += match[0].length;
+			return match;
+		}
 
 
 		return false;

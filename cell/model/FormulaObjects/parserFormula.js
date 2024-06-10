@@ -2680,7 +2680,8 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 	function cStrucPivotTable(val, callback) {
 		//you can add the necessary fields and methods
 		cBaseType.call(this, val);
-
+		this.fieldString = val && val[1];
+		this.itemString = val && val[2];
 		this.callback = callback;
 	}
 
@@ -2697,7 +2698,8 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 
 	};
 	cStrucPivotTable.prototype.Calculate = function () {
-
+		const number = this.callback(this.fieldString, this.itemString);
+		return new cNumber(number);
 	};
 	cStrucPivotTable.prototype.toString = function () {
 		return this._toString(false);
@@ -7083,7 +7085,7 @@ function parserFormula( formula, parent, _ws ) {
 			if (opt_isPivotTable && (_tableTMP = parserHelp.isPivot.call(ph, t.Formula, ph.pCurrPos, local))) {
 
 				found_operand = cStrucPivotTable.prototype.createFromVal(_tableTMP, opt_pivotCallback);
-
+				
 				//todo undo delete column
 				if (found_operand.type === cElementType.error) {
 					/*используется неверный именованный диапазон или таблица*/
@@ -7806,6 +7808,8 @@ function parserFormula( formula, parent, _ws ) {
 				}
 			} else if (currentElement.type === cElementType.table) {
 				elemArr.push(currentElement.toRef(opt_bbox));
+			} else if (currentElement.type === cElementType.pivotTable) {
+				elemArr.push(currentElement.Calculate());
 			} else if (opt_offset) {
 				elemArr.push(this.applyOffset(currentElement, opt_offset));
 			} else {

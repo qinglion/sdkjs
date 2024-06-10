@@ -54,6 +54,16 @@ var c_oAscFieldSortType = {
 	Ascending: 1,
 	Descending: 2
 };
+/**@enum */
+var BaseStatisticOnlineAlgorithmFieldType = {
+	count: 1,
+	countNums: 2,
+	min: 3,
+	max: 4,
+	sum: 5,
+	product: 6,
+}
+/**@enum */
 var c_oAscDataConsolidateFunction = {
 	Average: 1,
 	CountNums: 2,
@@ -2389,9 +2399,105 @@ CT_PivotCacheRecords.prototype._getDataMapSkeleton = function(options) {
 	}
 	return dataMap;
 };
+CT_PivotCacheRecords.prototype._getTotal = function(dataMap, itemsMapArray, dataIndex) {
+	let res = dataMap;
+	for (let i = 0; i < itemsMapArray.length; i += 1) {
+		const itemIndex = itemsMapArray[i][1];
+		res = res && res.vals[itemIndex];
+	}
+	return res && res.total[dataIndex];
+};
+/**
+ * @param {StatisticOnlineAlgorithm} total 
+ * @param {BaseStatisticOnlineAlgorithmFieldType} type 
+ */
+CT_PivotCacheRecords.prototype._getTotalValue = function(total, type) {
+	switch(type) {
+		case BaseStatisticOnlineAlgorithmFieldType.sum:
+			return total.sum;
+		case BaseStatisticOnlineAlgorithmFieldType.count:
+			return total.count;
+		case BaseStatisticOnlineAlgorithmFieldType.countNums:
+			return total.countNums;
+		case BaseStatisticOnlineAlgorithmFieldType.product:
+			return total.product;
+		case BaseStatisticOnlineAlgorithmFieldType.max:
+			return total.max;
+		case BaseStatisticOnlineAlgorithmFieldType.min:
+			return total.min;
+		default:
+			break;
+	}
+};
+/**
+ * @param {StatisticOnlineAlgorithm} total
+ * @param {number} value 
+ * @param {BaseStatisticOnlineAlgorithmFieldType} type 
+ */
+CT_PivotCacheRecords.prototype._setTotalValue = function(total, value, type) {
+	switch(type) {
+		case BaseStatisticOnlineAlgorithmFieldType.sum:
+			total.sum = value.value;
+			break;
+		case BaseStatisticOnlineAlgorithmFieldType.count:
+			total.count = value.value;
+			break;
+		case BaseStatisticOnlineAlgorithmFieldType.countNums:
+			total.countNums = value.value;
+			break;
+		case BaseStatisticOnlineAlgorithmFieldType.product:
+			total.product = value.value;
+			break;
+		case BaseStatisticOnlineAlgorithmFieldType.max:
+			total.max = value.value;
+			break;
+		case BaseStatisticOnlineAlgorithmFieldType.min:
+			total.min = value.value;
+			break;
+		default:
+			break;
+	}
+};
+/**
+ * @param {{
+ * formula: parserFormula,
+ * dataMap: PivotDataElem,
+ * dataIndex: number,
+ * cacheDefinition: CT_PivotCacheDefinition,
+ * cacheFields: CT_CacheField[],
+ * itemsMapArray: PivotItemFieldsMapArray,
+ * dataType: BaseStatisticOnlineAlgorithmFieldType,
+ * resultTotal: StatisticOnlineAlgorithm
+ * }} options 
+ */
+CT_PivotCacheRecords.prototype._calculateFormula = function(options) {
+	const t = this;
+	options.formula.parse(undefined, undefined, undefined, undefined, undefined, undefined, true, function(fieldString, itemString) {
+		const fieldIndex = options.cacheDefinition.getFieldIndexByName(fieldString);
+		const cacheField = options.cacheFields[fieldIndex];
+		const shatedItems = cacheField.getSharedItems();
+		for (let i = 0; i < cacheField.sharedItems.getCount(); i += 1) {
+			const sharedItem = shatedItems.getItem(i);
+			if (sharedItem.getCellValue().text === itemString) {
+				const newItemsMapArray = [];
+				for (let j = 0; j < options.itemsMapArray.length; j += 1) {
+					if (options.itemsMapArray[j][0] === fieldIndex) {
+						newItemsMapArray.push([fieldIndex, i]);
+					} else {
+						newItemsMapArray.push([options.itemsMapArray[j][0], options.itemsMapArray[j][1]]);
+					}
+				}
+				const total = t._getTotal(options.dataMap, newItemsMapArray, options.dataIndex);
+				return t._getTotalValue(total, options.dataType);
+			}
+		}
+	});
+	t._setTotalValue(options.resultTotal, options.formula.calculate(), options.dataType);
+};
 /**
  * @param {{
  * cacheDefinition: CT_PivotCacheDefinition,
+ * currentDataMap: PivotDataElem
  * dataMap: PivotDataElem,
  * cacheFields: CT_CacheField[],
  * indexes: number[],
@@ -2402,37 +2508,53 @@ CT_PivotCacheRecords.prototype._getDataMapSkeleton = function(options) {
  * }} options 
  */
 CT_PivotCacheRecords.prototype._fillDataMapCalculated = function(options) {
+	const t = this;
 	if (options.currentIndex === options.indexes.length) {
-		if (options.dataMap.isCalculated) {
-			const formula = options.cacheDefinition.getCalculatedFormula(options.itemsMapArray);
-			console.log(formula);
-			debugger;
-			// const total = CALCULATE ALL TOTAL FIELDS (return from parserCalculate)
+		if (options.currentDataMap.isCalculated) {
+			const calculatedFormula = options.cacheDefinition.getCalculatedFormula(options.itemsMapArray);
+			options.currentDataMap.total.forEach(function(total, dataIndex) {
+				for (let i in BaseStatisticOnlineAlgorithmFieldType) {
+					if (BaseStatisticOnlineAlgorithmFieldType.hasOwnProperty(i)) {
+						const formula = new AscCommonExcel.parserFormula(calculatedFormula, this, AscCommonExcel.g_DefNameWorksheet);
+						t._calculateFormula({
+							formula: formula,
+							dataMap: options.dataMap,
+							cacheDefinition: options.cacheDefinition,
+							cacheFields: options.cacheFields,
+							itemsMapArray: options.itemsMapArray,
+							dataType: BaseStatisticOnlineAlgorithmFieldType[i],
+							resultTotal: total,
+							dataIndex: dataIndex,
+						})
+					}
+				}
+			});
 		}
 	}
-	const dataMap = options.dataMap;
+	const currentDataMap = options.currentDataMap;
 	const calculatedIndexes = this._getCalculatedIndexes(options.cacheFields, options.indexes[options.currentIndex]);
 	const itemsMap = options.itemsWithDataMap.get(options.indexes[options.currentIndex + 1]);
 	calculatedIndexes.forEach(function(itemIndex) {
-		dataMap.vals[itemIndex] = new PivotDataElem(options.dataFields.length);
+		currentDataMap.vals[itemIndex] = new PivotDataElem(options.dataFields.length, true);
 		if (itemsMap) {
 			itemsMap.forEach(function(value, key) {
-				dataMap.vals[itemIndex].vals[key] = new PivotDataElem(options.dataFields.length, true)
+				currentDataMap.vals[itemIndex].vals[key] = new PivotDataElem(options.dataFields.length, true)
 			});
 		}
 	});
-	for (let i in dataMap.vals) {
-		if (dataMap.vals.hasOwnProperty(i)) {
+	for (let i in currentDataMap.vals) {
+		if (currentDataMap.vals.hasOwnProperty(i)) {
 			this._fillDataMapCalculated({
 				cacheDefinition: options.cacheDefinition,
-				dataMap: dataMap.vals[i],
+				dataMap: options.dataMap,
+				currentDataMap: currentDataMap.vals[i],
 				cacheFields: options.cacheFields,
 				indexes: options.indexes,
 				currentIndex: options.currentIndex + 1,
 				dataFields: options.dataFields,
 				itemsWithDataMap: options.itemsWithDataMap,
 				itemsMapArray: options.itemsMapArray.concat([[options.indexes[options.currentIndex], +i]])
-			})
+			});
 		}
 	}
 };
@@ -2464,6 +2586,7 @@ CT_PivotCacheRecords.prototype.getDataMap = function(options) {
 	this._fillDataMapCalculated({
 		cacheDefinition: options.cacheDefinition,
 		dataMap: dataMap,
+		currentDataMap: dataMap,
 		cacheFields: options.cacheFields,
 		indexes: indexes,
 		currentIndex: 0,
