@@ -131,7 +131,7 @@
 		if (null != this.WordControl.m_oLogicDocument)
 		{
 			//this.WordControl.m_oDrawingDocument.CheckGuiControlColors();
-			this.sendColorThemes(this.WordControl.m_oLogicDocument.themes[0]);
+			// this.sendColorThemes(this.WordControl.m_oLogicDocument.themes[0]);
 		}
 
 		// открытие после загрузки документа
