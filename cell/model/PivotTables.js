@@ -2036,14 +2036,21 @@ CT_PivotCacheDefinition.prototype.getCalculatedFormula = function(itemMapArray) 
 	function checkItem(calculatedItem) {
 		const pivotArea = calculatedItem.pivotArea;
 		const itemsMap = pivotArea.getItemFieldsMap();
+		let count = itemsMap.size;
 		for (let j = 0; j < itemMapArray.length; j += 1) {
 			const pivotFieldIndex = itemMapArray[j][0];
 			const fieldItemIndex = itemMapArray[j][1];
 			if (itemsMap.has(pivotFieldIndex) && itemsMap.get(pivotFieldIndex) !== fieldItemIndex) {
 				return false;
 			}
+			if (itemsMap.has(pivotFieldIndex) && itemsMap.get(pivotFieldIndex) === fieldItemIndex) {
+				count -= 1;
+			}
 		}
-		return true;
+		if (count === 0) {
+			return true;
+		}
+		return false;
 	}
 
 	const calculatedItems = this.getCalculatedItems();
@@ -2412,6 +2419,9 @@ CT_PivotCacheRecords.prototype._getTotal = function(dataMap, itemsMapArray, data
  * @param {BaseStatisticOnlineAlgorithmFieldType} type 
  */
 CT_PivotCacheRecords.prototype._getTotalValue = function(total, type) {
+	if (!total) {
+		return 0;
+	}
 	switch(type) {
 		case BaseStatisticOnlineAlgorithmFieldType.sum:
 			return total.sum;
@@ -2532,14 +2542,14 @@ CT_PivotCacheRecords.prototype._fillDataMapCalculated = function(options) {
 	}
 	const currentDataMap = options.currentDataMap;
 	const calculatedIndexes = this._getCalculatedIndexes(options.cacheFields, options.indexes[options.currentIndex]);
-	const itemsMap = options.itemsWithDataMap.get(options.indexes[options.currentIndex + 1]);
+	const itemsMap = options.itemsWithDataMap.get(options.indexes[options.currentIndex]);
+	if (currentDataMap.isCalculated && itemsMap) {
+		itemsMap.forEach(function(value, key) {
+			currentDataMap.vals[key] = new PivotDataElem(options.dataFields.length, true)
+		});
+	}
 	calculatedIndexes.forEach(function(itemIndex) {
 		currentDataMap.vals[itemIndex] = new PivotDataElem(options.dataFields.length, true);
-		if (itemsMap) {
-			itemsMap.forEach(function(value, key) {
-				currentDataMap.vals[itemIndex].vals[key] = new PivotDataElem(options.dataFields.length, true)
-			});
-		}
 	});
 	for (let i in currentDataMap.vals) {
 		if (currentDataMap.vals.hasOwnProperty(i)) {
