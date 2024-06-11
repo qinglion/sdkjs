@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -1177,6 +1177,9 @@ TextArtPreviewManager.prototype.getShape =  function()
 		oShape.setWorksheet(api_sheet.wb.getWorksheet().model);
 		oWorkSheet = api_sheet.wb.getWorksheet().model;
 		bWord = false;
+	}
+	else if (Asc.editor.isPdfEditor()) {
+		bWord = false;
 	} else {
 		if (editor && editor.WordControl && Array.isArray(editor.WordControl.m_oLogicDocument.Slides)) {
 			if (editor.WordControl.m_oLogicDocument.Slides[editor.WordControl.m_oLogicDocument.CurPage]) {
@@ -1223,6 +1226,7 @@ TextArtPreviewManager.prototype.getShape =  function()
 	oShape.spPr.xfrm.setOffY(0);
 	oShape.spPr.xfrm.setExtX(this.shapeWidth);
 	oShape.spPr.xfrm.setExtY(this.shapeHeight);
+	oShape._page = 0;
 	return oShape;
 };
 

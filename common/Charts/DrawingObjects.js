@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -468,7 +468,7 @@ asc_CChartBinary.prototype = {
         var stream = AscFormat.CreateBinaryReader(this["binary"], 0, this["binary"].length);
         //надо сбросить то, что остался после открытия документа
         AscCommon.pptx_content_loader.Clear();
-        var oNewChartSpace = new AscFormat.CChartSpace();
+        var oNewChartSpace = Asc.editor.isPdfEditor() ? new AscPDF.CPdfChart() : new AscFormat.CChartSpace();
         var oBinaryChartReader = new AscCommon.BinaryChartReader(stream);
         oBinaryChartReader.ExternalReadCT_ChartSpace(stream.size , oNewChartSpace, workSheet);
         return oNewChartSpace;

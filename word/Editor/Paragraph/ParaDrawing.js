@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -1509,7 +1509,6 @@ ParaDrawing.prototype.Update_Position = function(Paragraph, ParaLayout, PageLimi
 	this.updatePosition3(this.PageNum, this.X, this.Y, OldPageNum);
 	this.useWrap = this.Use_TextWrap();
 };
-
 ParaDrawing.prototype.GetClipRect = function ()
 {
 	if (this.Is_Inline() || this.Use_TextWrap())

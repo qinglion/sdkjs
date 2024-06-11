@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -39,6 +39,7 @@ const allTests = [
 	'cell/spreadsheet-calculation/AutoFilterTests.html',
 	'word/unit-tests/paragraphContentPos.html',
 	'word/content-control/block-level/cursorAndSelection.html',
+	'word/content-control/inline-level/checkbox.html',
 	'word/content-control/inline-level/cursorAndSelection.html',
 	'word/document-calculation/floating-position/drawing.html',
 	'word/document-calculation/paragraph.html',

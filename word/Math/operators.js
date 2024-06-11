@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -4067,6 +4067,22 @@ CDelimiter.prototype.GetTextOfElement = function(isLaTeX) {
 
 	for (let intCount = 0; intCount < this.Content.length; intCount++)
 	{
+		// Word поддерживает только "matrix" (матрица без скобок) и "pmatrix"
+		// Пока делаем так же
+		if (isLaTeX && this.Content[intCount] instanceof CMathContent && this.Pr.begChr === 40 && this.Pr.endChr === 41)
+		{
+			if (this.Content[0].Content.length === 1 && this.Content[0].Content[0] instanceof CMathMatrix
+				||
+				this.Content[0].Content.length >= 2
+				&& this.Content[0].Content[0].Is_Empty()
+				&& this.Content[0].Content[2].Is_Empty()
+				&& this.Content[0].Content[1] instanceof CMathMatrix)
+			{
+				return this.Content[intCount].GetMultipleContentForGetText(isLaTeX, true);
+			}
+		}
+		//
+
 		strTemp += this.Content[intCount].GetMultipleContentForGetText(isLaTeX, true);
 		if (strSeparatorSymbol && this.Content.length > 1 && intCount < this.Content.length - 1)
 			strTemp += strSeparatorSymbol;

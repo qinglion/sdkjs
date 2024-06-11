@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -220,12 +220,12 @@
                     else if(oStylesObject.layout)
                     {
                         this.SlideNum = oStylesObject.layout.lastRecalcSlideIndex;
-                        sStr = '' + (oStylesObject.layout.lastRecalcSlideIndex + nFirstSlideNum);
+                        sStr = '<#>';
                     }
                     else if(oStylesObject.master)
                     {
                         this.SlideNum = oStylesObject.master.lastRecalcSlideIndex;
-                        sStr = '' + (oStylesObject.master.lastRecalcSlideIndex + nFirstSlideNum);
+                        sStr = '<#>';
                     }
                 }
             }

@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -142,17 +142,14 @@
 		
 		if (this.diffX > MAX_DIFF - 1)
 		{
-			this.line  = -1;
-			this.range = -1;
-			
-			this.pos       = para.GetStartPos();
+			this.pos       = para.Get_StartRangePos2(this.line, this.range);
 			this.inTextPos = this.pos.Copy();
 		}
 	};
 	ParagraphSearchPositionXY.prototype.handleRun = function(run)
 	{
 		// For the case when we didn't find any run with content
-		if (this.diffX > MAX_DIFF - 1)
+		if (this.diffX > MAX_DIFF - 1 && !this.posInfo.run)
 		{
 			this.posInfo.run = run;
 			this.posInfo.pos = run.GetElementsCount();

@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -1691,6 +1691,8 @@
 		this.ctDocumentEdit		= 204;
 		this.ctDocumentClose	= 205;
 		this.ctPageEdit			= 206;
+		this.ctPageClear		= 207;
+		this.ctPageRotate		= 208;
 
 		this.ctError = 255;
 	}
@@ -3660,6 +3662,12 @@
 		{
 			return x * this.shy + y * this.sy + this.ty;
 		},
+		TransformPoint : function(x, y)
+		{
+			const transformedX = x * this.sx + y * this.shx + this.tx;
+			const transformedY = x * this.shy + y * this.sy + this.ty;
+			return { x: transformedX, y: transformedY };
+		},
 		// calculate rotate angle
 		GetRotation     : function()
 		{
@@ -3741,6 +3749,18 @@
 			var x2 = this.TransformPointX(1, 1);
 			var y2 = this.TransformPointY(1, 1);
 			return Math.sqrt(((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1))/2);
+		},
+
+		exportToObject : function()
+		{
+			return {
+				"SX": this.sx,
+				"SHX": this.shx,
+				"SHY": this.shy,
+				"SY": this.sy,
+				"TX": this.tx,
+				"TY": this.ty
+			};
 		}
 	};
 
@@ -4169,6 +4189,7 @@
 	window['AscCommon'].CFontSetup               = CFontSetup;
 	window['AscCommon'].CGrState                 = CGrState;
 	window['AscCommon'].CMemory                  = CMemory;
+	window['AscCommon'].CMetafile				 = CMetafile;
 	window['AscCommon'].CDocumentRenderer        = CDocumentRenderer;
 	window['AscCommon'].MATRIX_ORDER_PREPEND     = MATRIX_ORDER_PREPEND;
 	window['AscCommon'].MATRIX_ORDER_APPEND      = MATRIX_ORDER_APPEND;

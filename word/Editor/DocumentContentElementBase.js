@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -1408,6 +1408,11 @@ CDocumentContentElementBase.prototype.getLayoutScaleCoefficient = function()
 CDocumentContentElementBase.prototype.updateTrackRevisions = function()
 {
 	AscWord.checkElementInRevision(this);
+};
+CDocumentContentElementBase.prototype.isPreventedPreDelete = function()
+{
+	let logicDocument = this.GetLogicDocument();
+	return !logicDocument || !logicDocument.IsDocumentEditor() || logicDocument.isPreventedPreDelete();
 };
 
 //--------------------------------------------------------export--------------------------------------------------------

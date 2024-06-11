@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -68,6 +68,9 @@ CWordCollaborativeEditing.prototype.Clear = function()
 };
 CWordCollaborativeEditing.prototype.Send_Changes = function(IsUserSave, AdditionalInfo, IsUpdateInterface, isAfterAskSave)
 {
+	if (!this.canSendChanges())
+		return;
+	
     // Пересчитываем позиции
     this.Refresh_DCChanges();
 
@@ -271,7 +274,7 @@ CWordCollaborativeEditing.prototype.OnEnd_CheckLock = function(isDontLockInFastM
 		}
 	}
 
-	if (true === isDontLockInFastMode && true === this.Is_Fast())
+	if ((true === isDontLockInFastMode && true === this.Is_Fast()) || !this.canSendChanges())
 	{
 		if (fCallback)
 		{
