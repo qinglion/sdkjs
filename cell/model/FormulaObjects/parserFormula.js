@@ -2680,8 +2680,8 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 	function cStrucPivotTable(val, callback) {
 		//you can add the necessary fields and methods
 		cBaseType.call(this, val);
-		this.fieldString = val && val[1];
-		this.itemString = val && val[2];
+		this.fieldString = val && val[1].replace(/\'\'/g,'\'');;
+		this.itemString = val && val[2].replace(/\'\'/g,'\'');
 		this.callback = callback;
 	}
 
