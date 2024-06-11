@@ -2475,6 +2475,7 @@ CT_PivotCacheRecords.prototype._setTotalValue = function(total, value, type) {
  * dataIndex: number,
  * cacheDefinition: CT_PivotCacheDefinition,
  * cacheFields: CT_CacheField[],
+ * pivotFields: CT_PivotField[],
  * itemsMapArray: PivotItemFieldsMapArray,
  * resultTotal: PivotDataElem
  * }} options 
@@ -2487,22 +2488,19 @@ CT_PivotCacheRecords.prototype._calculateFormula = function(options) {
 			formula.parse(undefined, undefined, undefined, undefined, undefined, undefined, true, function(fieldString, itemString) {
 				const fieldIndex = options.cacheDefinition.getFieldIndexByName(fieldString);
 				const cacheField = options.cacheFields[fieldIndex];
-				const shatedItems = cacheField.getSharedItems();
-				for (let i = 0; i < cacheField.sharedItems.getCount(); i += 1) {
-					const sharedItem = shatedItems.getItem(i);
-					if (sharedItem.getCellValue().text === itemString) {
-						const newItemsMapArray = [];
-						for (let j = 0; j < options.itemsMapArray.length; j += 1) {
-							if (options.itemsMapArray[j][0] === fieldIndex) {
-								newItemsMapArray.push([fieldIndex, i]);
-							} else {
-								newItemsMapArray.push([options.itemsMapArray[j][0], options.itemsMapArray[j][1]]);
-							}
-						}
-						const total = t._getTotal(options.dataMap, newItemsMapArray, options.dataIndex);
-						return t._getTotalValue(total, BaseStatisticOnlineAlgorithmFieldType[dataType]);
+				const pivotField = options.pivotFields[fieldIndex];
+				const fieldItem = pivotField.findFieldItemByTextValue(cacheField, itemString);
+				const itemIndex = fieldItem.x
+				const newItemsMapArray = [];
+				for (let j = 0; j < options.itemsMapArray.length; j += 1) {
+					if (options.itemsMapArray[j][0] === fieldIndex) {
+						newItemsMapArray.push([fieldIndex, itemIndex]);
+					} else {
+						newItemsMapArray.push([options.itemsMapArray[j][0], options.itemsMapArray[j][1]]);
 					}
 				}
+				const total = t._getTotal(options.dataMap, newItemsMapArray, options.dataIndex);
+				return t._getTotalValue(total, BaseStatisticOnlineAlgorithmFieldType[dataType]);
 			});
 			t._setTotalValue(options.resultTotal, formula.calculate(), BaseStatisticOnlineAlgorithmFieldType[dataType]);
 		}
@@ -2515,6 +2513,7 @@ CT_PivotCacheRecords.prototype._calculateFormula = function(options) {
  * currentDataMap: PivotDataElem
  * dataMap: PivotDataElem,
  * cacheFields: CT_CacheField[],
+ * pivotFields: CT_PivotField[],
  * indexes: number[],
  * currentIndex: number
  * dataFields: CT_DataField[],
@@ -2533,6 +2532,7 @@ CT_PivotCacheRecords.prototype._fillDataMapCalculated = function(options) {
 					dataMap: options.dataMap,
 					cacheDefinition: options.cacheDefinition,
 					cacheFields: options.cacheFields,
+					pivotFields: options.pivotFields,
 					itemsMapArray: options.itemsMapArray,
 					resultTotal: total,
 					dataIndex: dataIndex,
@@ -2558,6 +2558,7 @@ CT_PivotCacheRecords.prototype._fillDataMapCalculated = function(options) {
 				dataMap: options.dataMap,
 				currentDataMap: currentDataMap.vals[i],
 				cacheFields: options.cacheFields,
+				pivotFields: options.pivotFields,
 				indexes: options.indexes,
 				currentIndex: options.currentIndex + 1,
 				dataFields: options.dataFields,
@@ -2570,6 +2571,7 @@ CT_PivotCacheRecords.prototype._fillDataMapCalculated = function(options) {
 /**
  * @param {{
  * cacheFields: CT_CacheField[],
+ * pivotFields: CT_PivotField[],
  * filterMaps: Map,
  * cacheFieldsWithData: Array,
  * rowIndexes: number[],
@@ -2597,6 +2599,7 @@ CT_PivotCacheRecords.prototype.getDataMap = function(options) {
 		dataMap: dataMap,
 		currentDataMap: dataMap,
 		cacheFields: options.cacheFields,
+		pivotFields: options.pivotFields,
 		indexes: indexes,
 		currentIndex: 0,
 		dataFields: options.dataFields,
@@ -4941,6 +4944,7 @@ CT_pivotTableDefinition.prototype.calculateDataRow = function () {
 		var filterMaps = this.getFilterMaps(res.cacheFieldsWithData);
 		res.dataRow = cacheRecords.getDataMap({
 			cacheFields: this.asc_getCacheFields(),
+			pivotFields: this.asc_getPivotFields(),
 			filterMaps: filterMaps,
 			cacheFieldsWithData: res.cacheFieldsWithData,
 			rowIndexes: rowIndexes,
@@ -15120,7 +15124,6 @@ CT_PivotField.prototype.getItem = function (index) {
 	return this.items && this.items.item[index];
 };
 CT_PivotField.prototype.getItemIndexByValue = function(value) {
-	var res = {};
 	var items = this.getItems();
 	if (items) {
 		for (var i = 0; i < items.length; ++i) {
