@@ -6152,10 +6152,7 @@ CT_pivotTableDefinition.prototype.updateCacheData = function (dataRef) {
 	newCacheDefinition.asc_create();
 	newCacheDefinition.fromDataRef(dataRef);
 	newCacheDefinition.setPivotCacheId(this.cacheDefinition.getPivotCacheId());
-
-	// TODO
 	newCacheDefinition.calculatedItems = this.cacheDefinition.calculatedItems;
-	// DELETE IN FUTURE
 
 	let oldPivotField = this.asc_getPivotFields().map(function(elem) {return elem.clone();});
 	var pivotFieldsMap = new Map();
