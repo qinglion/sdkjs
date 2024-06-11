@@ -45,7 +45,8 @@ function (window, undefined) {
 	var cError = AscCommonExcel.cError;
 	var argType = Asc.c_oAscFormulaArgumentType;
 
-	function StatisticOnlineAlgorithm() {
+	function StatisticOnlineAlgorithm(isCalculated) {
+		this.isCalculated = !!isCalculated;
 		this.reset();
 	}
 
@@ -131,7 +132,7 @@ function (window, undefined) {
 	};
 	StatisticOnlineAlgorithm.prototype.getCellValue = function (dataType, fieldType, rowType, colType) {
 		var oCellValue;
-		if (this.isEmpty()) {
+		if (this.isEmpty() && !this.isCalculated) {
 			return oCellValue;
 		}
 		oCellValue = new AscCommonExcel.CCellValue();

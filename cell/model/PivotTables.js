@@ -330,7 +330,7 @@ function PivotDataElem(dataLength, isCalculated) {
 	/**@type {StatisticOnlineAlgorithm[]} */
 	this.total = new Array(dataLength);
 	for (var i = 0; i < dataLength; ++i) {
-		this.total[i] = new AscCommonExcel.StatisticOnlineAlgorithm();
+		this.total[i] = new AscCommonExcel.StatisticOnlineAlgorithm(!!isCalculated);
 	}
 	this.isCalculated = !!isCalculated;
 }
@@ -2460,39 +2460,44 @@ CT_PivotCacheRecords.prototype._setTotalValue = function(total, value, type) {
 };
 /**
  * @param {{
- * formula: parserFormula,
+ * formula: string,
  * dataMap: PivotDataElem,
  * dataIndex: number,
  * cacheDefinition: CT_PivotCacheDefinition,
  * cacheFields: CT_CacheField[],
  * itemsMapArray: PivotItemFieldsMapArray,
- * dataType: BaseStatisticOnlineAlgorithmFieldType,
- * resultTotal: StatisticOnlineAlgorithm
+ * resultTotal: PivotDataElem
  * }} options 
  */
 CT_PivotCacheRecords.prototype._calculateFormula = function(options) {
 	const t = this;
-	options.formula.parse(undefined, undefined, undefined, undefined, undefined, undefined, true, function(fieldString, itemString) {
-		const fieldIndex = options.cacheDefinition.getFieldIndexByName(fieldString);
-		const cacheField = options.cacheFields[fieldIndex];
-		const shatedItems = cacheField.getSharedItems();
-		for (let i = 0; i < cacheField.sharedItems.getCount(); i += 1) {
-			const sharedItem = shatedItems.getItem(i);
-			if (sharedItem.getCellValue().text === itemString) {
-				const newItemsMapArray = [];
-				for (let j = 0; j < options.itemsMapArray.length; j += 1) {
-					if (options.itemsMapArray[j][0] === fieldIndex) {
-						newItemsMapArray.push([fieldIndex, i]);
-					} else {
-						newItemsMapArray.push([options.itemsMapArray[j][0], options.itemsMapArray[j][1]]);
+	for (let dataType in BaseStatisticOnlineAlgorithmFieldType) {
+		if (BaseStatisticOnlineAlgorithmFieldType.hasOwnProperty(dataType)) {
+			const formula = new AscCommonExcel.parserFormula(options.formula, this, AscCommonExcel.g_DefNameWorksheet);
+			formula.parse(undefined, undefined, undefined, undefined, undefined, undefined, true, function(fieldString, itemString) {
+				const fieldIndex = options.cacheDefinition.getFieldIndexByName(fieldString);
+				const cacheField = options.cacheFields[fieldIndex];
+				const shatedItems = cacheField.getSharedItems();
+				for (let i = 0; i < cacheField.sharedItems.getCount(); i += 1) {
+					const sharedItem = shatedItems.getItem(i);
+					if (sharedItem.getCellValue().text === itemString) {
+						const newItemsMapArray = [];
+						for (let j = 0; j < options.itemsMapArray.length; j += 1) {
+							if (options.itemsMapArray[j][0] === fieldIndex) {
+								newItemsMapArray.push([fieldIndex, i]);
+							} else {
+								newItemsMapArray.push([options.itemsMapArray[j][0], options.itemsMapArray[j][1]]);
+							}
+						}
+						const total = t._getTotal(options.dataMap, newItemsMapArray, options.dataIndex);
+						return t._getTotalValue(total, BaseStatisticOnlineAlgorithmFieldType[dataType]);
 					}
 				}
-				const total = t._getTotal(options.dataMap, newItemsMapArray, options.dataIndex);
-				return t._getTotalValue(total, options.dataType);
-			}
+			});
+			t._setTotalValue(options.resultTotal, formula.calculate(), BaseStatisticOnlineAlgorithmFieldType[dataType]);
 		}
-	});
-	t._setTotalValue(options.resultTotal, options.formula.calculate(), options.dataType);
+	}
+	return options.resultTotal;
 };
 /**
  * @param {{
@@ -2513,21 +2518,15 @@ CT_PivotCacheRecords.prototype._fillDataMapCalculated = function(options) {
 		if (options.currentDataMap.isCalculated) {
 			const calculatedFormula = options.cacheDefinition.getCalculatedFormula(options.itemsMapArray);
 			options.currentDataMap.total.forEach(function(total, dataIndex) {
-				for (let i in BaseStatisticOnlineAlgorithmFieldType) {
-					if (BaseStatisticOnlineAlgorithmFieldType.hasOwnProperty(i)) {
-						const formula = new AscCommonExcel.parserFormula(calculatedFormula, this, AscCommonExcel.g_DefNameWorksheet);
-						t._calculateFormula({
-							formula: formula,
-							dataMap: options.dataMap,
-							cacheDefinition: options.cacheDefinition,
-							cacheFields: options.cacheFields,
-							itemsMapArray: options.itemsMapArray,
-							dataType: BaseStatisticOnlineAlgorithmFieldType[i],
-							resultTotal: total,
-							dataIndex: dataIndex,
-						})
-					}
-				}
+				total = t._calculateFormula({
+					formula: calculatedFormula,
+					dataMap: options.dataMap,
+					cacheDefinition: options.cacheDefinition,
+					cacheFields: options.cacheFields,
+					itemsMapArray: options.itemsMapArray,
+					resultTotal: total,
+					dataIndex: dataIndex,
+				});
 			});
 		}
 	}
