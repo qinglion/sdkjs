@@ -61,7 +61,8 @@ function (window, undefined) {
 		this.M2 = 0;
 		this.errorType = null;
 	};
-	StatisticOnlineAlgorithm.prototype.union = function (val) {
+	StatisticOnlineAlgorithm.prototype.union = function (val, isCalculated) {
+		this.isCalculated = !!isCalculated;
 		this.min = Math.min(this.min, val.min);
 		this.max = Math.max(this.max, val.max);
 		this.sum = this.sum + val.sum;

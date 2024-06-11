@@ -334,9 +334,9 @@ function PivotDataElem(dataLength, isCalculated) {
 	}
 	this.isCalculated = !!isCalculated;
 }
-PivotDataElem.prototype.unionTotal = function(val){
+PivotDataElem.prototype.unionTotal = function(val, isCalculated){
 	for (var i = 0; i < this.total.length; ++i) {
-		this.total[i].union(val.total[i]);
+		this.total[i].union(val.total[i], isCalculated);
 	}
 }
 PivotDataElem.prototype.getTotalCount = function (val) {
@@ -2304,7 +2304,7 @@ CT_PivotCacheRecords.prototype._getDataMapMergeSubtotal = function(rowMapFrom, r
 			}
 			var subFrom = rowMapFrom.subtotal[i];
 			if(!skipUnion) {
-				subTo.unionTotal(subFrom);
+				subTo.unionTotal(subFrom, subFrom.isCalculated);
 			}
 			this._getDataMapMergeSubtotal(subFrom, subTo, skipUnion);
 		}
