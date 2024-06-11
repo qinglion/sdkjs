@@ -384,10 +384,10 @@
 		 * It usually happens on low zoom (when we scroll down a lot). This coefficient fixes this issue but
 		 * makes extra space and scroll lines get wrong sizes. fixScale number was randomly selected.
 		 * High fixScale value can make high load and break page, especially on high zooming. Low values
-		 * may not fix text on low zoom.
+		 * may not fix text on low zoom. 1 is default.
 		 * @type {number}
 		 */
-		let fixScale = 2;
+		let fixScale = 1;
 
 		let graphics;
 
