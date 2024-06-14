@@ -7708,8 +7708,6 @@ function parserFormula( formula, parent, _ws ) {
 						}
 					} else if (currentElement.type === cElementType.table) {
 						elemArr.push(currentElement.toRef(opt_bbox));
-					} else if (currentElement.type === cElementType.pivotTable) {
-						elemArr.push(currentElement.Calculate());
 					} else {
 						elemArr.push(currentElement);
 					}
