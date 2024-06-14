@@ -646,5 +646,18 @@ $(function() {
 				});
 			}
 		});
+		QUnit.test('Test: CALCULATED-ITEMS', function (assert) {
+			const file = Asc.test_calculated;
+			const wb = openDocument(file);
+			const row = 4;
+			const col = 0;
+			let pivot = wb.getWorksheetByName('Sheet2').getPivotTable(col, row);
+			const standard = getReportValues(pivot);
+			pivot = checkHistoryOperation(assert, pivot, standard, standard, "refresh pivot", function(){
+				pivot.asc_refresh(api);
+			}, function(assert, pivot, values, message) {
+				assert.deepEqual(getReportValues(pivot), values, message);
+			});
+		});
 	}
 });
