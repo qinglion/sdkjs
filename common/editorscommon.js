@@ -3732,7 +3732,7 @@
 
 		const subSTR = formula.substring(start_pos);
 
-		const reg = /\'?(.+?)\'?\[\'?(.+?)\'?\]/
+		const reg = /\'?(.+?)\'?\[(\'?(.+?)\'?)\]/
 		const match  = reg.exec(subSTR);
 
 		if (match !== null && match[1] && match[2])

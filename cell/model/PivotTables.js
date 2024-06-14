@@ -2347,7 +2347,7 @@ CT_PivotCacheRecords.prototype._getDataMapTotal = function(rowMap, index, length
 	for (i in rowMap.vals) {
 		if (rowMap.vals.hasOwnProperty(i)) {
 			this._getDataMapTotal(rowMap.vals[i], index + 1, length);
-			rowMap.unionTotal(rowMap.vals[i]);
+			rowMap.unionTotal(rowMap.vals[i], rowMap.vals[i].isCalculated);
 		}
 	}
 };
@@ -2445,6 +2445,10 @@ CT_PivotCacheRecords.prototype._getTotalValue = function(total, type) {
  * @param {BaseStatisticOnlineAlgorithmFieldType} type 
  */
 CT_PivotCacheRecords.prototype._setTotalValue = function(total, value, type) {
+	if (value instanceof AscCommonExcel.cError) {
+		total.errorType = value.errorType;
+		return;
+	}
 	switch(type) {
 		case BaseStatisticOnlineAlgorithmFieldType.sum:
 			total.sum = value.value;
@@ -2485,22 +2489,46 @@ CT_PivotCacheRecords.prototype._calculateFormula = function(options) {
 	for (let dataType in BaseStatisticOnlineAlgorithmFieldType) {
 		if (BaseStatisticOnlineAlgorithmFieldType.hasOwnProperty(dataType)) {
 			const formula = new AscCommonExcel.parserFormula(options.formula, this, AscCommonExcel.g_DefNameWorksheet);
-			formula.parse(undefined, undefined, undefined, undefined, undefined, undefined, true, function(fieldString, itemString) {
+			formula.parse(undefined, undefined, undefined, undefined, undefined, undefined, true, function(fieldString, itemString, isIndex) {
 				const fieldIndex = options.cacheDefinition.getFieldIndexByName(fieldString);
 				const cacheField = options.cacheFields[fieldIndex];
 				const pivotField = options.pivotFields[fieldIndex];
-				const fieldItem = pivotField.findFieldItemByTextValue(cacheField, itemString);
+				let fieldItem = null;
+				if (isIndex) {
+					let index = +itemString - 1;
+					if (index < 0) {
+						index = pivotField.getVisibleIndexes().length + index;
+					}
+					fieldItem = pivotField.getItem(index);
+					if (!fieldItem) {
+						return new AscCommonExcel.cError(AscCommonExcel.cErrorType.bad_reference)
+					}
+				} else {
+					fieldItem = pivotField.findFieldItemByTextValue(cacheField, itemString);
+					if (!fieldItem) {
+						// TODO throw Error cannot found item
+					}
+				}
+				
 				const itemIndex = fieldItem.x
 				const newItemsMapArray = [];
 				for (let j = 0; j < options.itemsMapArray.length; j += 1) {
 					if (options.itemsMapArray[j][0] === fieldIndex) {
+						if (options.itemsMapArray[j][1] === itemIndex) {
+							// TODO throw new Error circular reference
+							return new AscCommonExcel.cError(AscCommonExcel.cErrorType.bad_reference);
+						}
 						newItemsMapArray.push([fieldIndex, itemIndex]);
 					} else {
 						newItemsMapArray.push([options.itemsMapArray[j][0], options.itemsMapArray[j][1]]);
 					}
 				}
 				const total = t._getTotal(options.dataMap, newItemsMapArray, options.dataIndex);
-				return t._getTotalValue(total, BaseStatisticOnlineAlgorithmFieldType[dataType]);
+				if (total && total.errorType !== null) {
+					return new AscCommonExcel.cError(total.errorType);
+				}
+				const value = t._getTotalValue(total, BaseStatisticOnlineAlgorithmFieldType[dataType]);
+				return new AscCommonExcel.cNumber(value);
 			});
 			t._setTotalValue(options.resultTotal, formula.calculate(), BaseStatisticOnlineAlgorithmFieldType[dataType]);
 		}

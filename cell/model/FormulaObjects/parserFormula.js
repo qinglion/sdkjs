@@ -2680,8 +2680,15 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 	function cStrucPivotTable(val, callback) {
 		//you can add the necessary fields and methods
 		cBaseType.call(this, val);
-		this.fieldString = val && val[1].replace(/\'\'/g,'\'');;
-		this.itemString = val && val[2].replace(/\'\'/g,'\'');
+		if (val) {
+			this.isIndex = false;
+			this.fieldString = val[1] && val[1].replace(/\'\'/g,'\'');;
+			this.itemString = val[3] && val[3].replace(/\'\'/g,'\'');
+			if (val[3] === val[2] && !isNaN(val[3])) {
+				this.isIndex = true;
+			}
+		}
+		
 		this.callback = callback;
 	}
 
@@ -2698,8 +2705,7 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 
 	};
 	cStrucPivotTable.prototype.Calculate = function () {
-		const number = this.callback(this.fieldString, this.itemString);
-		return new cNumber(number);
+		return this.callback(this.fieldString, this.itemString, this.isIndex);
 	};
 	cStrucPivotTable.prototype.toString = function () {
 		return this._toString(false);
