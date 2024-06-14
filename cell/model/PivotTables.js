@@ -2033,11 +2033,14 @@ CT_PivotCacheDefinition.prototype.getCalculatedItems = function() {
 /**
  * @param {PivotItemFieldsMapArray} itemMapArray
  */
-CT_PivotCacheDefinition.prototype.getCalculatedFormula = function(itemMapArray) {
+CT_PivotCacheDefinition.prototype.getCalculatedFormula = function(itemMapArray, dataField) {
 	function checkItem(calculatedItem) {
 		const pivotArea = calculatedItem.pivotArea;
 		const itemsMap = pivotArea.getItemFieldsMap();
 		let count = itemsMap.size;
+		if (calculatedItem.field !== null && calculatedItem.field !== dataField.fld) {
+			return false;
+		}
 		for (let j = 0; j < itemMapArray.length; j += 1) {
 			const pivotFieldIndex = itemMapArray[j][0];
 			const fieldItemIndex = itemMapArray[j][1];
@@ -2554,8 +2557,8 @@ CT_PivotCacheRecords.prototype._fillDataMapCalculated = function(options) {
 	const t = this;
 	if (options.currentIndex === options.indexes.length) {
 		if (options.currentDataMap.isCalculated) {
-			const calculatedFormula = options.cacheDefinition.getCalculatedFormula(options.itemsMapArray);
 			options.currentDataMap.total.forEach(function(total, dataIndex) {
+				const calculatedFormula = options.cacheDefinition.getCalculatedFormula(options.itemsMapArray, options.dataFields[dataIndex]);
 				total = t._calculateFormula({
 					formula: calculatedFormula,
 					dataMap: options.dataMap,
