@@ -335,6 +335,7 @@ function PivotDataElem(dataLength, isCalculated) {
 	this.isCalculated = !!isCalculated;
 }
 PivotDataElem.prototype.unionTotal = function(val, isCalculated){
+	this.isCalculated = isCalculated;
 	for (var i = 0; i < this.total.length; ++i) {
 		this.total[i].union(val.total[i], isCalculated);
 	}
