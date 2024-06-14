@@ -322,7 +322,7 @@ function cmpPivotItems(sharedItems, a, b) {
 	}
 	return 0;
 }
-function PivotDataElem(dataLength, isCalculated) {
+function PivotDataElem(dataLength, isCalculated, isReady) {
 	/**@type {Object<number, PivotDataElem>} */
 	this.vals = {};
 	/**@type {Object<number, PivotDataElem>} */
@@ -333,6 +333,8 @@ function PivotDataElem(dataLength, isCalculated) {
 		this.total[i] = new AscCommonExcel.StatisticOnlineAlgorithm(!!isCalculated);
 	}
 	this.isCalculated = !!isCalculated;
+	this.isReady = false;
+	this.isProcess = false;
 }
 PivotDataElem.prototype.unionTotal = function(val, isCalculated){
 	this.isCalculated = isCalculated;
@@ -2410,13 +2412,13 @@ CT_PivotCacheRecords.prototype._getDataMapSkeleton = function(options) {
 	}
 	return dataMap;
 };
-CT_PivotCacheRecords.prototype._getTotal = function(dataMap, itemsMapArray, dataIndex) {
+CT_PivotCacheRecords.prototype._getElem = function(dataMap, itemsMapArray) {
 	let res = dataMap;
 	for (let i = 0; i < itemsMapArray.length; i += 1) {
 		const itemIndex = itemsMapArray[i][1];
 		res = res && res.vals[itemIndex];
 	}
-	return res && res.total[dataIndex];
+	return res;
 };
 /**
  * @param {StatisticOnlineAlgorithm} total 
@@ -2477,15 +2479,10 @@ CT_PivotCacheRecords.prototype._setTotalValue = function(total, value, type) {
 	}
 };
 /**
- * @param {{
+ * @param {PivotFillDataMapCalculatedOptions & {
  * formula: string,
- * dataMap: PivotDataElem,
  * dataIndex: number,
- * cacheDefinition: CT_PivotCacheDefinition,
- * cacheFields: CT_CacheField[],
- * pivotFields: CT_PivotField[],
- * itemsMapArray: PivotItemFieldsMapArray,
- * resultTotal: PivotDataElem
+ * resultTotal: StatisticOnlineAlgorithm
  * }} options 
  */
 CT_PivotCacheRecords.prototype._calculateFormula = function(options) {
@@ -2510,7 +2507,8 @@ CT_PivotCacheRecords.prototype._calculateFormula = function(options) {
 				} else {
 					fieldItem = pivotField.findFieldItemByTextValue(cacheField, itemString);
 					if (!fieldItem) {
-						// TODO throw Error cannot found item
+						// Cannot find item
+						return new AscCommonExcel.cError(AscCommonExcel.cErrorType.bad_reference);
 					}
 				}
 				
@@ -2518,16 +2516,27 @@ CT_PivotCacheRecords.prototype._calculateFormula = function(options) {
 				const newItemsMapArray = [];
 				for (let j = 0; j < options.itemsMapArray.length; j += 1) {
 					if (options.itemsMapArray[j][0] === fieldIndex) {
-						if (options.itemsMapArray[j][1] === itemIndex) {
-							// TODO throw new Error circular reference
-							return new AscCommonExcel.cError(AscCommonExcel.cErrorType.bad_reference);
-						}
 						newItemsMapArray.push([fieldIndex, itemIndex]);
 					} else {
 						newItemsMapArray.push([options.itemsMapArray[j][0], options.itemsMapArray[j][1]]);
 					}
 				}
-				const total = t._getTotal(options.dataMap, newItemsMapArray, options.dataIndex);
+				let elem = t._getElem(options.dataMap, newItemsMapArray);
+				if (elem && elem.isCalculated && elem.isProcess) {
+					// Circular formula
+					return new AscCommonExcel.cError(AscCommonExcel.cErrorType.bad_reference);
+				}
+				if (elem && elem.isCalculated && !elem.isReady) {
+					const newOptions = {};
+					for (let key in options) {
+						newOptions[key] = options[key];
+					}
+					newOptions.currentDataMap = elem;
+					newOptions.itemsMapArray = newItemsMapArray;
+					elem = t._fillDataMapCalculated(newOptions);
+				}
+
+				const total = elem && elem.total[options.dataIndex];
 				if (total && total.errorType !== null) {
 					return new AscCommonExcel.cError(total.errorType);
 				}
@@ -2539,6 +2548,20 @@ CT_PivotCacheRecords.prototype._calculateFormula = function(options) {
 	}
 	return options.resultTotal;
 };
+
+/**
+ * @typedef PivotFillDataMapCalculatedOptions
+ * @property {CT_PivotCacheDefinition} cacheDefinition
+ * @property {PivotDataElem} currentDataMap
+ * @property {PivotDataElem} dataMap
+ * @property {CT_CacheField[]} cacheFields
+ * @property {CT_PivotField[]} pivotFields
+ * @property {number[]} indexes
+ * @property {number} currentIndex
+ * @property {CT_DataField[]} dataFields
+ * @property {PivotItemFieldsMapArray} itemsMapArray
+ */
+
 /**
  * @param {{
  * cacheDefinition: CT_PivotCacheDefinition,
@@ -2549,29 +2572,57 @@ CT_PivotCacheRecords.prototype._calculateFormula = function(options) {
  * indexes: number[],
  * currentIndex: number
  * dataFields: CT_DataField[],
- * itemsWithDataMap: Map<number, Map<number, boolean>>
  * itemsMapArray: PivotItemFieldsMapArray
  * }} options 
  */
 CT_PivotCacheRecords.prototype._fillDataMapCalculated = function(options) {
 	const t = this;
 	if (options.currentIndex === options.indexes.length) {
-		if (options.currentDataMap.isCalculated) {
+		if (options.currentDataMap.isCalculated && !options.currentDataMap.isReady) {
+			options.currentDataMap.isProcess = true;
 			options.currentDataMap.total.forEach(function(total, dataIndex) {
 				const calculatedFormula = options.cacheDefinition.getCalculatedFormula(options.itemsMapArray, options.dataFields[dataIndex]);
-				total = t._calculateFormula({
-					formula: calculatedFormula,
-					dataMap: options.dataMap,
-					cacheDefinition: options.cacheDefinition,
-					cacheFields: options.cacheFields,
-					pivotFields: options.pivotFields,
-					itemsMapArray: options.itemsMapArray,
-					resultTotal: total,
-					dataIndex: dataIndex,
-				});
+				const calculateFormulaOptions = {};
+				for (let key in options) {
+					calculateFormulaOptions[key] = options[key];
+				}
+				calculateFormulaOptions.formula = calculatedFormula;
+				calculateFormulaOptions.resultTotal = total;
+				calculateFormulaOptions.dataIndex = dataIndex;
+				total = t._calculateFormula(calculateFormulaOptions);
+			});
+			options.currentDataMap.isReady = true;
+			options.currentDataMap.isProcess = false;
+		}
+	}
+	const currentDataMap = options.currentDataMap;
+	for (let i in currentDataMap.vals) {
+		if (currentDataMap.vals.hasOwnProperty(i)) {
+			this._fillDataMapCalculated({
+				cacheDefinition: options.cacheDefinition,
+				dataMap: options.dataMap,
+				currentDataMap: currentDataMap.vals[i],
+				cacheFields: options.cacheFields,
+				pivotFields: options.pivotFields,
+				indexes: options.indexes,
+				currentIndex: options.currentIndex + 1,
+				dataFields: options.dataFields,
+				itemsMapArray: options.itemsMapArray.concat([[options.indexes[options.currentIndex], +i]])
 			});
 		}
 	}
+};
+/**
+ * @param {{
+ * currentDataMap: PivotDataElem
+ * cacheFields: CT_CacheField[],
+ * indexes: number[],
+ * currentIndex: number
+ * dataFields: CT_DataField[],
+ * itemsWithDataMap: Map<number, Map<number, boolean>>
+ * }} options 
+ */
+CT_PivotCacheRecords.prototype._addCalculatedInDataMap = function(options) {
 	const currentDataMap = options.currentDataMap;
 	const calculatedIndexes = this._getCalculatedIndexes(options.cacheFields, options.indexes[options.currentIndex]);
 	const itemsMap = options.itemsWithDataMap.get(options.indexes[options.currentIndex]);
@@ -2585,17 +2636,13 @@ CT_PivotCacheRecords.prototype._fillDataMapCalculated = function(options) {
 	});
 	for (let i in currentDataMap.vals) {
 		if (currentDataMap.vals.hasOwnProperty(i)) {
-			this._fillDataMapCalculated({
-				cacheDefinition: options.cacheDefinition,
-				dataMap: options.dataMap,
+			this._addCalculatedInDataMap({
 				currentDataMap: currentDataMap.vals[i],
 				cacheFields: options.cacheFields,
-				pivotFields: options.pivotFields,
 				indexes: options.indexes,
 				currentIndex: options.currentIndex + 1,
 				dataFields: options.dataFields,
 				itemsWithDataMap: options.itemsWithDataMap,
-				itemsMapArray: options.itemsMapArray.concat([[options.indexes[options.currentIndex], +i]])
 			});
 		}
 	}
@@ -2625,6 +2672,14 @@ CT_PivotCacheRecords.prototype.getDataMap = function(options) {
 		cacheFieldsWithData: options.cacheFieldsWithData,
 		dataFields: options.dataFields,
 		itemsWithDataMap: itemsWithDataMap
+	});
+	this._addCalculatedInDataMap({
+		currentDataMap: dataMap,
+		cacheFields: options.cacheFields,
+		indexes: indexes,
+		currentIndex: 0,
+		dataFields: options.dataFields,
+		itemsWithDataMap: itemsWithDataMap,
 	});
 	this._fillDataMapCalculated({
 		cacheDefinition: options.cacheDefinition,
