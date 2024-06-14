@@ -3709,7 +3709,6 @@
 		{
 			this._reset();
 		}
-
 		var subSTR = formula.substring(start_pos),
 			match  = XRegExp.exec(subSTR, local ? rx_table_local : rx_table);
 
@@ -3728,12 +3727,11 @@
 		{
 			this._reset();
 		}
-
+		debugger;
 
 		const subSTR = formula.substring(start_pos);
-
-		const reg = /\'?(.+?)\'?\[(\'?(.+?)\'?)\]/
-		const match  = reg.exec(subSTR);
+		const reg = /^(\w+|(?:\'.+?\'))\[(\w+|(?:\'.+?\'))\]/
+		const match = reg.exec(subSTR);
 
 		if (match !== null && match[1] && match[2])
 		{

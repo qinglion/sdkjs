@@ -2683,9 +2683,22 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 		if (val) {
 			this.isIndex = false;
 			this.fieldString = val[1] && val[1].replace(/\'\'/g,'\'');;
-			this.itemString = val[3] && val[3].replace(/\'\'/g,'\'');
-			if (val[3] === val[2] && !isNaN(val[3])) {
+			this.itemString = val[2] && val[2].replace(/\'\'/g,'\'');
+			if (!isNaN(val[2])) {
 				this.isIndex = true;
+			} else {
+				if (this.fieldString[0] === '\'') {
+					this.fieldString = this.fieldString.slice(1);
+				}
+				if (this.fieldString[this.fieldString.length - 1] === '\'') {
+					this.fieldString = this.fieldString.slice(0, -1);
+				}
+				if (this.itemString[0] === '\'') {
+					this.itemString = this.itemString.slice(1);
+				}
+				if (this.itemString[0] === '\'') {
+					this.itemString = this.itemString.slice(0, -1);
+				}
 			}
 		}
 		
