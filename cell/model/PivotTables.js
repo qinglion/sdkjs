@@ -2499,10 +2499,10 @@ CT_PivotCacheRecords.prototype._calculateFormula = function(options) {
 					if (index < 0) {
 						index = pivotField.getVisibleIndexes().length + index;
 					}
-					fieldItem = pivotField.getItem(index);
-					if (!fieldItem) {
-						return new AscCommonExcel.cError(AscCommonExcel.cErrorType.bad_reference)
+					if (index >= pivotField.getVisibleIndexes().length) {
+						return new AscCommonExcel.cError(AscCommonExcel.cErrorType.bad_reference);
 					}
+					fieldItem = pivotField.getItem(index);
 				} else {
 					fieldItem = pivotField.findFieldItemByTextValue(cacheField, itemString);
 					if (!fieldItem) {
