@@ -904,6 +904,67 @@
 			return textCShape;
 		}
 
+		/**
+		 * endArrow can be beginning or ending
+		 * @param {Cell_Type} arrowTypeCell
+		 * @param {Cell_Type}  arrowSizeCell
+		 * @return {AscFormat.EndArrow} endArrowObject
+		 */
+		function getEndArrowFromCells(arrowTypeCell, arrowSizeCell) {
+			// 2.4.4.20	BeginArrow in MS-VSDX and 20.1.10.33 ST_LineEndType (Line End Type) in ECMA
+			let endArrow = new AscFormat.EndArrow();
+
+			if (arrowTypeCell) {
+				switch (arrowTypeCell.v) {
+					case "0":
+						endArrow.type = endArrow.GetTypeCode("none");
+						break;
+					case "1":
+					case "3":
+					case "12":
+						endArrow.type = endArrow.GetTypeCode("arrow");
+						break;
+					case "22":
+						endArrow.type = endArrow.GetTypeCode("diamond");
+						break;
+					case "20":
+					case "41":
+					case "10":
+					case "42":
+						endArrow.type = endArrow.GetTypeCode("oval");
+						break;
+					case "5":
+					case "8":
+					case "17":
+					case "19":
+						endArrow.type = endArrow.GetTypeCode("stealth");
+						break;
+					case "2":
+					case "4":
+					case "6":
+					case "13":
+					case "14":
+					case "15":
+					case "16":
+					case "18":
+						endArrow.type = endArrow.GetTypeCode("triangle");
+						break;
+					case "Themed":
+						endArrow.type = endArrow.GetTypeCode("none");
+						break;
+					case !isNaN(Number(arrowTypeCell.v)) && arrowTypeCell.v:
+						// is unhandled number
+						endArrow.type = endArrow.GetTypeCode("arrow");
+						break;
+					default:
+						endArrow.type = endArrow.GetTypeCode("none");
+				}
+			}
+
+			return endArrow;
+		}
+
+
 		// Method start
 
 		// there was case with shape type group with no PinX and PinY
@@ -964,10 +1025,6 @@
 		let shapeWidth_mm = shapeWidth_inch * g_dKoef_in_to_mm;
 		let shapeHeight_mm = shapeHeight_inch * g_dKoef_in_to_mm;
 
-		// TODO check if gradient enabled
-		// let gradientEnabled = shape.getCell("FillGradientEnabled");
-		// console.log("Gradient enabled:", gradientEnabled);
-
 		/** @type CUniFill */
 		let uniFillForegndWithPattern = null;
 		/**
@@ -1024,7 +1081,7 @@
 			}
 
 
-				// now let's come through gradient stops
+			// now let's come through gradient stops
 			let fillGradientStopsSection = this.getSection("FillGradient");
 			let rows = fillGradientStopsSection.getElements();
 			let fillGradientStops = [];
@@ -1191,7 +1248,6 @@
 		// var oStroke = AscFormat.builder_CreateLine(12700, {UniFill: AscFormat.CreateUnfilFromRGB(255,0,0)});
 
 		// add read matrix modifier width?
-		// + handle line pattens?
 		let linePattern = this.getCell("LinePattern");
 		if (linePattern) {
 			// see ECMA-376-1 - L.4.8.5.2 Line Dash Properties and [MS-VSDX]-220215 (1) - 2.4.4.180	LinePattern
@@ -1200,7 +1256,7 @@
 					oStroke.Fill = AscFormat.CreateNoFillUniFill();
 					break;
 				case "1":
-					oStroke.setPrstDash(oStroke.GetDashCode(""));
+					oStroke.setPrstDash(oStroke.GetDashCode("solid"));
 					break;
 				case "2":
 					oStroke.setPrstDash(oStroke.GetDashCode("lgDash"));
@@ -1232,20 +1288,28 @@
 				case "18":
 					oStroke.setPrstDash(oStroke.GetDashCode("lgDashDot"));
 					break;
-				case "6":
-				case "7":
-				case "8":
-				case "19":
 				case "Themed":
 					oStroke.setPrstDash(oStroke.GetDashCode("solid"));
 					break;
-				case !isNaN(Number(linePattern.v)):
+				case !isNaN(Number(linePattern.v)) && linePattern.v:
+					// is unhandled number
 					oStroke.setPrstDash(oStroke.GetDashCode("lgDash"));
 					break;
 				default:
 					oStroke.setPrstDash(oStroke.GetDashCode("solid"));
 			}
 		}
+
+		let endArrowTypeCell = this.getCell("EndArrow");
+		let endArrowSizeCell = this.getCell("EndArrowSize");
+		let endArrow = getEndArrowFromCells(endArrowTypeCell, endArrowSizeCell);
+		oStroke.setTailEnd(endArrow);
+
+		let beginArrowTypeCell = this.getCell("BeginArrow");
+		let beginArrowSizeCell = this.getCell("BeginArrowSize");
+		let beginArrow = getEndArrowFromCells(beginArrowTypeCell, beginArrowSizeCell);
+		oStroke.setHeadEnd(beginArrow);
+
 
 		/** @type ?number */
 		let fillPatternType = this.getCellNumberValue("FillPattern");
