@@ -1717,6 +1717,31 @@
 	// 9 - sysDashDotDot
 	// 10- sysDot
 
+	//		visio types
+	// 		vsdxTransparent		: 11,
+	// 		vsdxSolid			: 12,
+	// 		vsdxDash			: 13,
+	// 		vsdxDot				: 14,
+	// 		vsdxDashDot			: 15,
+	// 		vsdxDashDotDot		: 16,
+	// 		vsdxDashDashDot		: 17,
+	// 		vsdxLongDashShortDash   		: 18,
+	// 		vsdxLongDashShortDashShortDash  : 19,
+	// 		vsdxHalfDash  			: 20,
+	// 		vsdxHalfDot				: 21,
+	// 		vsdxHalfDashDot			: 22,
+	// 		vsdxHalfDashDotDot		: 23,
+	// 		vsdxHalfDashDashDot   	: 24,
+	// 		vsdxHalfLongDashShortDash   		 : 25,
+	// 		vsdxHalfLongDashShortDashShortDash   : 26,
+	// 		vsdxDoubleDot   		: 27,
+	// 		vsdxDoubleDashDot   	: 28,
+	// 		vsdxDoubleDashDotDot   	: 29,
+	// 		vsdxDoubleDashDashDot   : 30,
+	// 		vsdxDoubleLongDashShortDash   			: 31,
+	// 		vsdxDoubleLongDashShortDashShortDash    : 32,
+	// 		vsdxHalfHalfDash   		: 33,
+
 	var DashPatternPresets = [
 		[4, 3],
 		[4, 3, 1, 3],
@@ -1728,7 +1753,33 @@
 		[3, 1],
 		[3, 1, 1, 1],
 		[3, 1, 1, 1, 1, 1],
-		[1, 1]
+		[1, 1],
+		// visio types
+		[0, 1], // vsdxTransparent
+		[1, 0], // vsdxSolid
+		[9, 3], // vsdxDash
+		[2, 3], // vsdxDot
+		[9, 3, 2, 3], // vsdxDashDot
+		[9, 3, 2, 3, 2, 3], // vsdxDashDotDot
+		[9, 3, 9, 3, 2, 3], // vsdxDashDashDot
+		[21, 3, 9, 3], // vsdxLongDashShortDash
+		[21, 3, 9, 3, 9, 3], // vsdxLongDashShortDashShortDash
+		[5, 1], // vsdxHalfDash
+		[2, 1], // vsdxHalfDot
+		[5, 1, 2, 1],// vsdxHalfDashDot
+		[5, 1, 2, 1, 2, 1],// vsdxHalfDashDotDot
+		[5, 1, 5, 1, 2, 1], // vsdxHalfDashDashDot
+		[11, 1, 5, 1], // vsdxHalfLongDashShortDash
+		[11, 1, 5, 1, 5, 1],		// vsdxHalfLongDashShortDashShortDash
+		[16, 8], // vsdxDoubleDash
+		[2, 7], // vsdxDoubleDot
+		[16, 8, 2, 8],// vsdxDoubleDashDot
+		[17, 7, 2, 7, 2, 7], // vsdxDoubleDashDotDot
+		[16, 7, 16, 7, 2, 7], // vsdxDoubleDashDashDot
+		[41, 7, 17, 7], // vsdxDoubleLongDashShortDash
+		[41, 7, 17, 7, 17, 7], // vsdxDoubleLongDashShortDashShortDash
+		[1, 0], // vsdxHalfHalfDash (in visio is solid)
+
 	];
 
 	function CMetafileFontPicker(manager)

@@ -6699,6 +6699,30 @@
 				case "sysDot": {
 					return 10;
 				}
+				case "vsdxTransparent": { return 11; }
+				case "vsdxSolid": { return 12; }
+				case "vsdxDash": { return 13; }
+				case "vsdxDot": { return 14; }
+				case "vsdxDashDot": { return 15; }
+				case "vsdxDashDotDot": { return 16; }
+				case "vsdxDashDashDot": { return 17; }
+				case "vsdxLongDashShortDash": { return 18; }
+				case "vsdxLongDashShortDashShortDash": { return 19; }
+				case "vsdxHalfDash": { return 20; }
+				case "vsdxHalfDot": { return 21; }
+				case "vsdxHalfDashDot": { return 22; }
+				case "vsdxHalfDashDotDot": { return 23; }
+				case "vsdxHalfDashDashDot": { return 24; }
+				case "vsdxHalfLongDashShortDash": { return 25; }
+				case "vsdxHalfLongDashShortDashShortDash": { return 26; }
+				case "vsdxDoubleDash": { return 27; }
+				case "vsdxDoubleDot": { return 28; }
+				case "vsdxDoubleDashDot": { return 29; }
+				case "vsdxDoubleDashDotDot": { return 30; }
+				case "vsdxDoubleDashDashDot": { return 31; }
+				case "vsdxDoubleLongDashShortDash": { return 32; }
+				case "vsdxDoubleLongDashShortDashShortDash": { return 33; }
+				case "vsdxHalfHalfDash": { return 34; }
 			}
 			return 6;
 		};
@@ -6737,6 +6761,30 @@
 				case 10 : {
 					return "sysDot";
 				}
+				case 11: { return "vsdxTransparent"; }
+				case 12: { return "vsdxSolid"; }
+				case 13: { return "vsdxDash"; }
+				case 14: { return "vsdxDot"; }
+				case 15: { return "vsdxDashDot"; }
+				case 16: { return "vsdxDashDotDot"; }
+				case 17: { return "vsdxDashDashDot"; }
+				case 18: { return "vsdxLongDashShortDash"; }
+				case 19: { return "vsdxLongDashShortDashShortDash"; }
+				case 20: { return "vsdxHalfDash"; }
+				case 21: { return "vsdxHalfDot"; }
+				case 22: { return "vsdxHalfDashDot"; }
+				case 23: { return "vsdxHalfDashDotDot"; }
+				case 24: { return "vsdxHalfDashDashDot"; }
+				case 25: { return "vsdxHalfLongDashShortDash"; }
+				case 26: { return "vsdxHalfLongDashShortDashShortDash"; }
+				case 27: { return "vsdxDoubleDash"; }
+				case 28: { return "vsdxDoubleDot"; }
+				case 29: { return "vsdxDoubleDashDot"; }
+				case 30: { return "vsdxDoubleDashDotDot"; }
+				case 31: { return "vsdxDoubleDashDashDot"; }
+				case 32: { return "vsdxDoubleLongDashShortDash"; }
+				case 33: { return "vsdxDoubleLongDashShortDashShortDash"; }
+				case 34: { return "vsdxHalfHalfDash"; }
 			}
 			return null;
 		};
