@@ -45,161 +45,6 @@
 	 * @return {{geometryCShape: CShape | CImageShape, textCShape: ?CShape}} cShapesObjects
 	 */
 	Shape_Type.prototype.toGeometryAndTextCShapes = function (visioDocument, pageInfo) {
-		/**
-		 * Can parse themeval
-		 * @param {Cell_Type} cell
-		 * @param {Shape_Type} shape
-		 * @param {Page_Type} pageInfo
-		 * @param {CTheme[]} themes
-		 * @param {{fontColor?: boolean, lineUniFill?: boolean, uniFillForegnd?: boolean}} themeValWasUsedFor - changes during function
-		 * @param {boolean?} gradientEnabled
-		 * @return {(CUniFill | CUniColor | *)}
-		 */
-		function calculateCellValue(cell, shape, pageInfo, themes, themeValWasUsedFor,
-									gradientEnabled) {
-			let cellValue = cell && cell.v;
-			let cellName = cell && cell.n;
-
-			let returnValue;
-
-			if (cellName === "LinePattern") {
-				let cellNumberValue = cell.getNumberValue();
-				if (!isNaN(cellNumberValue)) {
-					return cellNumberValue;
-				}
-			}
-
-			if (/#\w{6}/.test(cellValue)) {
-				// check if hex
-				let rgba = AscCommon.RgbaHexToRGBA(cellValue);
-				if (cellName === "LineColor" || cellName === "FillForegnd" || cellName === "FillBkgnd") {
-					returnValue = AscFormat.CreateUnfilFromRGB(rgba.R, rgba.G, rgba.B);
-				} else if (cellName === "Color" || cellName === "GradientStopColor") {
-					// for text color
-					returnValue = AscFormat.CreateUnfilFromRGB(rgba.R, rgba.G, rgba.B).fill.color;
-				} else {
-					console.log("wrong calculateCellValue argument cell. Cell unsupported. return null");
-					return null;
-				}
-			} else if (cellValue === 'Themed') {
-				// equal to THEMEVAL() call
-				returnValue = AscCommonDraw.themeval(cell, shape, pageInfo, themes, undefined, undefined, gradientEnabled);
-
-				if (cellName === "LineColor") {
-					themeValWasUsedFor.lineUniFill = true;
-				} else if (cellName === "FillForegnd") {
-					themeValWasUsedFor.uniFillForegnd = true;
-				} else if (cellName === "Color") {
-					// for text color
-					themeValWasUsedFor.fontColor = true;
-				}
-			} else {
-				let colorIndex = parseInt(cellValue);
-				if (!isNaN(colorIndex)) {
-					let rgba = AscCommon.RgbaHexToRGBA(cellValue);
-					switch (colorIndex) {
-						case 0:
-							rgba = AscCommon.RgbaHexToRGBA('#000000');
-							break;
-						case 1:
-							rgba = AscCommon.RgbaHexToRGBA('#FFFFFF');
-							break;
-						case 2:
-							rgba = AscCommon.RgbaHexToRGBA('#FF0000');
-							break;
-						case 3:
-							rgba = AscCommon.RgbaHexToRGBA('#00FF00');
-							break;
-						case 4:
-							rgba = AscCommon.RgbaHexToRGBA('#0000FF');
-							break;
-						case 5:
-							rgba = AscCommon.RgbaHexToRGBA('#FFFF00');
-							break;
-						case 6:
-							rgba = AscCommon.RgbaHexToRGBA('#FF00FF');
-							break;
-						case 7:
-							rgba = AscCommon.RgbaHexToRGBA('#00FFFF');
-							break;
-						case 8:
-							rgba = AscCommon.RgbaHexToRGBA('#800000');
-							break;
-						case 9:
-							rgba = AscCommon.RgbaHexToRGBA('#008000');
-							break;
-						case 10:
-							rgba = AscCommon.RgbaHexToRGBA('#000080');
-							break;
-						case 11:
-							rgba = AscCommon.RgbaHexToRGBA('#808000');
-							break;
-						case 12:
-							rgba = AscCommon.RgbaHexToRGBA('#800080');
-							break;
-						case 13:
-							rgba = AscCommon.RgbaHexToRGBA('#008080');
-							break;
-						case 14:
-							rgba = AscCommon.RgbaHexToRGBA('#C0C0C0');
-							break;
-						case 15:
-							rgba = AscCommon.RgbaHexToRGBA('#E6E6E6');
-							break;
-						case 16:
-							rgba = AscCommon.RgbaHexToRGBA('#CDCDCD');
-							break;
-						case 17:
-							rgba = AscCommon.RgbaHexToRGBA('#B3B3B3');
-							break;
-						case 18:
-							rgba = AscCommon.RgbaHexToRGBA('#9A9A9A');
-							break;
-						case 19:
-							rgba = AscCommon.RgbaHexToRGBA('#808080');
-							break;
-						case 20:
-							rgba = AscCommon.RgbaHexToRGBA('#666666');
-							break;
-						case 21:
-							rgba = AscCommon.RgbaHexToRGBA('#4D4D4D');
-							break;
-						case 22:
-							rgba = AscCommon.RgbaHexToRGBA('#333333');
-							break;
-						case 23:
-							rgba = AscCommon.RgbaHexToRGBA('#1A1A1A');
-							break;
-					}
-					if (rgba) {
-						if (cellName === "LineColor" || cellName === "FillForegnd" || cellName === "FillBkgnd") {
-							returnValue = AscFormat.CreateUnfilFromRGB(rgba.R, rgba.G, rgba.B);
-						} else if (cellName === "Color" || cellName === "GradientStopColor") {
-							returnValue = AscFormat.CreateUnfilFromRGB(rgba.R, rgba.G, rgba.B).fill.color;
-						} else {
-							console.log("wrong calculateCellValue argument cell. Cell unsupported. return null");
-							return null;
-						}
-					}
-				}
-			}
-			if (returnValue === null || returnValue === undefined) {
-				if (cellName === "LineColor" || cellName === "FillForegnd" || cellName === "FillBkgnd") {
-					console.log("no color found. so painting lt1.");
-					returnValue = AscFormat.CreateUniFillByUniColor(AscFormat.builder_CreateSchemeColor("lt1"));
-				} else if (cellName === "Color") {
-					// cellName === "Color" for text color
-					console.log("no text color found. so painting dk1.");
-					returnValue = AscFormat.builder_CreateSchemeColor("dk1");
-				} else if (cellName === "GradientStopColor") {
-					console.log("no GradientStopColor color found. so painting lk1.");
-					returnValue = AscFormat.builder_CreateSchemeColor("lt1");
-				} else {
-					console.log("no calculateCellValue result return undefined");
-				}
-			}
-			return returnValue;
-		}
 
 		/**
 		 * handle QuickStyleVariation cell which can change color (but only if color is a result of ThemeVal)
@@ -502,7 +347,7 @@
 				let characterColorCell = characterPropsFinal && characterPropsFinal.getCell("Color");
 				let fontColor;
 				if (characterColorCell && characterColorCell.constructor.name === "Cell_Type") {
-					fontColor = calculateCellValue(characterColorCell, shape, pageInfo,
+					fontColor = characterColorCell.calculateValue(shape, pageInfo,
 						visioDocument.themes, themeValWasUsedFor);
 				} else {
 					console.log("text color cell not found! set text color as themed");
@@ -1113,7 +958,7 @@
 						color = AscFormat.builder_CreateSchemeColor("lt1");
 					}
 				} else {
-					 color = calculateCellValue(gradientStopColorCell, this, pageInfo,
+					 color = gradientStopColorCell.calculateValue(this, pageInfo,
 						visioDocument.themes, themeValWasUsedFor);
 				}
 				let gradientStopColorTransCell = row.getCell("GradientStopColorTrans");
@@ -1173,7 +1018,7 @@
 			let fillForegndCell = this.getCell("FillForegnd");
 			if (fillForegndCell) {
 				// console.log("FillForegnd was found:", fillForegndCell);
-				uniFillForegnd = calculateCellValue(fillForegndCell, this, pageInfo,
+				uniFillForegnd = fillForegndCell.calculateValue(this, pageInfo,
 					visioDocument.themes, themeValWasUsedFor, gradientEnabled);
 
 				let fillForegndTransValue = this.getCellNumberValue("FillForegndTrans");
@@ -1195,7 +1040,7 @@
 		let fillBkgndCell = this.getCell("FillBkgnd");
 		if (fillBkgndCell) {
 			// console.log("FillBkgnd was found:", fillBkgndCell);
-			uniFillBkgnd = calculateCellValue(fillBkgndCell, this, pageInfo,
+			uniFillBkgnd = fillBkgndCell.calculateValue(this, pageInfo,
 				visioDocument.themes, themeValWasUsedFor);
 
 			let fillBkgndTransValue = this.getCellNumberValue("FillBkgndTrans");
@@ -1215,7 +1060,7 @@
 		let lineColorCell = this.getCell("LineColor");
 		if (lineColorCell) {
 			// console.log("LineColor was found for shape", lineColorCell);
-			lineUniFill = calculateCellValue(lineColorCell, this, pageInfo,
+			lineUniFill = lineColorCell.calculateValue(this, pageInfo,
 				visioDocument.themes, themeValWasUsedFor);
 		} else {
 			console.log("LineColor cell for line stroke (border) was not found painting red");
@@ -1256,7 +1101,7 @@
 
 		// add read matrix modifier width?
 		let linePattern = this.getCell("LinePattern");
-		let linePatternValue = calculateCellValue(linePattern, this, pageInfo, visioDocument.themes, themeValWasUsedFor);
+		let linePatternValue = linePattern.calculateValue(this, pageInfo, visioDocument.themes, themeValWasUsedFor);
 		if (linePattern) {
 			// see ECMA-376-1 - L.4.8.5.2 Line Dash Properties and [MS-VSDX]-220215 (1) - 2.4.4.180	LinePattern
 			let linePatternNumber = linePatternValue;

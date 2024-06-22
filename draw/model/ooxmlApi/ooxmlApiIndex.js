@@ -677,6 +677,7 @@
 
 	/**
 	 * get Number(cell.v)
+	 * @memberOf Cell_Type
 	 * @return {undefined | number}
 	 */
 	Cell_Type.prototype.getNumberValue = function () {
@@ -687,6 +688,162 @@
 			return undefined;
 		}
 	}
+
+	/**
+	 * Can parse themeval
+	 * @param {Shape_Type} shape
+	 * @param {Page_Type} pageInfo
+	 * @param {CTheme[]} themes
+	 * @param {{fontColor?: boolean, lineUniFill?: boolean, uniFillForegnd?: boolean}} themeValWasUsedFor - changes during function
+	 * @param {boolean?} gradientEnabled
+	 * @return {(CUniFill | CUniColor | *)}
+	 */
+	Cell_Type.prototype.calculateValue = function calculateCellValue(shape, pageInfo,
+																		 themes, themeValWasUsedFor,
+																		 gradientEnabled) {
+		let cellValue = this.v;
+		let cellName = this.n;
+
+		let returnValue;
+
+		let fillResultCells = ["LineColor", "FillForegnd", "FillBkgnd"];
+		let fillColorResultCells = ["Color", "GradientStopColor"];
+		let numberResultCells = ["LinePattern"];
+
+		if (cellValue === "Themed") {
+			// equal to THEMEVAL() call
+			returnValue = AscCommonDraw.themeval(this, shape, pageInfo, themes, undefined, undefined, gradientEnabled);
+
+			if (cellName === "LineColor") {
+				themeValWasUsedFor.lineUniFill = true;
+			} else if (cellName === "FillForegnd") {
+				themeValWasUsedFor.uniFillForegnd = true;
+			} else if (cellName === "Color") {
+				// for text color
+				themeValWasUsedFor.fontColor = true;
+			}
+		} else if (fillResultCells.includes(cellName) || fillColorResultCells.includes(cellName)) {
+			let rgba = null;
+			if (/#\w{6}/.test(cellValue)) {
+				// check if hex
+				rgba = AscCommon.RgbaHexToRGBA(cellValue);
+			} else {
+				let colorIndex = parseInt(cellValue);
+				if (!isNaN(colorIndex)) {
+					switch (colorIndex) {
+						case 0:
+							rgba = AscCommon.RgbaHexToRGBA('#000000');
+							break;
+						case 1:
+							rgba = AscCommon.RgbaHexToRGBA('#FFFFFF');
+							break;
+						case 2:
+							rgba = AscCommon.RgbaHexToRGBA('#FF0000');
+							break;
+						case 3:
+							rgba = AscCommon.RgbaHexToRGBA('#00FF00');
+							break;
+						case 4:
+							rgba = AscCommon.RgbaHexToRGBA('#0000FF');
+							break;
+						case 5:
+							rgba = AscCommon.RgbaHexToRGBA('#FFFF00');
+							break;
+						case 6:
+							rgba = AscCommon.RgbaHexToRGBA('#FF00FF');
+							break;
+						case 7:
+							rgba = AscCommon.RgbaHexToRGBA('#00FFFF');
+							break;
+						case 8:
+							rgba = AscCommon.RgbaHexToRGBA('#800000');
+							break;
+						case 9:
+							rgba = AscCommon.RgbaHexToRGBA('#008000');
+							break;
+						case 10:
+							rgba = AscCommon.RgbaHexToRGBA('#000080');
+							break;
+						case 11:
+							rgba = AscCommon.RgbaHexToRGBA('#808000');
+							break;
+						case 12:
+							rgba = AscCommon.RgbaHexToRGBA('#800080');
+							break;
+						case 13:
+							rgba = AscCommon.RgbaHexToRGBA('#008080');
+							break;
+						case 14:
+							rgba = AscCommon.RgbaHexToRGBA('#C0C0C0');
+							break;
+						case 15:
+							rgba = AscCommon.RgbaHexToRGBA('#E6E6E6');
+							break;
+						case 16:
+							rgba = AscCommon.RgbaHexToRGBA('#CDCDCD');
+							break;
+						case 17:
+							rgba = AscCommon.RgbaHexToRGBA('#B3B3B3');
+							break;
+						case 18:
+							rgba = AscCommon.RgbaHexToRGBA('#9A9A9A');
+							break;
+						case 19:
+							rgba = AscCommon.RgbaHexToRGBA('#808080');
+							break;
+						case 20:
+							rgba = AscCommon.RgbaHexToRGBA('#666666');
+							break;
+						case 21:
+							rgba = AscCommon.RgbaHexToRGBA('#4D4D4D');
+							break;
+						case 22:
+							rgba = AscCommon.RgbaHexToRGBA('#333333');
+							break;
+						case 23:
+							rgba = AscCommon.RgbaHexToRGBA('#1A1A1A');
+							break;
+					}
+				}
+			}
+			if (fillResultCells.includes(cellName)) {
+				returnValue = AscFormat.CreateUnfilFromRGB(rgba.R, rgba.G, rgba.B);
+			} else if (fillColorResultCells.includes(cellName)) {
+				// for text color
+				returnValue = AscFormat.CreateUnfilFromRGB(rgba.R, rgba.G, rgba.B).fill.color;
+			} else {
+				console.log("wrong calculateCellValue argument cell. Cell unsupported. return null");
+				return null;
+			}
+		} else if (numberResultCells.includes(cellName)) {
+			let cellNumberValue = this.getNumberValue();
+			if (!isNaN(cellNumberValue)) {
+				return cellNumberValue;
+			}
+		} else {
+			console.log("Cell was not calculated in calculate cell value");
+		}
+
+		// code below is unused because we dont need default values here. Cell value is either parsed well or
+		// default value is used in themeval function.
+		// if (returnValue === null || returnValue === undefined) {
+		// 	if (cellName === "LineColor" || cellName === "FillForegnd" || cellName === "FillBkgnd") {
+		// 		console.log("no color found. so painting lt1.");
+		// 		returnValue = AscFormat.CreateUniFillByUniColor(AscFormat.builder_CreateSchemeColor("lt1"));
+		// 	} else if (cellName === "Color") {
+		// 		// cellName === "Color" for text color
+		// 		console.log("no text color found. so painting dk1.");
+		// 		returnValue = AscFormat.builder_CreateSchemeColor("dk1");
+		// 	} else if (cellName === "GradientStopColor") {
+		// 		console.log("no GradientStopColor color found. so painting lk1.");
+		// 		returnValue = AscFormat.builder_CreateSchemeColor("lt1");
+		// 	} else {
+		// 		console.log("no calculateCellValue result return undefined");
+		// 	}
+		// }
+		return returnValue;
+	}
+
 
 	// /**
 	//  * @memberOf Cell_Type
