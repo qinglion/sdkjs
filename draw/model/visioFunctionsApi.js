@@ -45,10 +45,10 @@
 	 * @param {Shape_Type} shape
 	 * @param {Page_Type} pageInfo
 	 * @param {CTheme[]} themes
-	 * @param {string?} themeValue
+	 * @param {string?} themeValue - value to calculate if cell is not considered
 	 * @param {string?} defaultValue
 	 * @param {boolean?} gradientEnabled
-	 * @return {CUniFill | CUniColor | any}
+	 * @return {CUniFill | CUniColor | number | any}
 	 */
 	function themeval(cell, shape, pageInfo, themes, themeValue,
 					  defaultValue, gradientEnabled) {
@@ -60,12 +60,9 @@
 		// if QuickStyle cell value is not in that range it is smt like from 0 to 7 representing theme colors like:
 		//  dk1, lt1, accent1, ...
 
-		// TODO handle multiple themes by schemeEnum tags from theme xml and theme properties cells
-		// https://disk.yandex.ru/d/YZEevC0lUeUBfQ
-
 		/** @type {CUniColor} */
 		let calculatedColor = null;
-		/** @type {CUniFill | CUniColor} */
+		/** @type {CUniFill | CUniColor | number | any} */
 		let result = null;
 
 		let cellValue = cell && cell.v; // formula?
@@ -119,6 +116,15 @@
 			} else if (cellName === "FillBkgnd") {
 				initialDefaultValue =  AscFormat.CreateUnfilFromRGB(0,0,0);
 			}
+		} else if (cellName === "LinePattern") {
+			// dash dot or smth. get from a:ln from a:lnStyleLst
+			// use QuickStyleLineColor to calculate all line params
+			quickStyleCellName = "QuickStyleLineColor";
+			quickStyleModifiersCellName = "QuickStyleLineMatrix";
+			getModifiersMethod = themes[0].getLnStyle;
+			variationStyleIndexVariable = "lineIdx";
+
+			initialDefaultValue = 1; // visio solid
 		} else {
 			console.log("themeval argument error. cell name is unknown. return null.");
 			return null;
@@ -262,7 +268,6 @@
 					if (varStyle && null !== varStyle[variationStyleIndexVariable]) {
 						let styleId = varStyle[variationStyleIndexVariable];
 						getMedifiersResult = getModifiersMethod.call(theme, styleId, calculatedColor, isConnectorShape);
-
 					}
 				}
 			}
@@ -274,12 +279,34 @@
 
 			// getModifiersMethod return not only
 			// uniFill, so we narrow down the range of returns
-			if (quickStyleCellName === "QuickStyleLineColor") {
+			if (cellName === "LineColor") {
 				result = getMedifiersResult && getMedifiersResult.Fill;
-			} else if (quickStyleCellName === "QuickStyleFontColor") {
+			} else if (cellName === "LinePattern") {
+				// simple type - number
+				let originalDashType = getMedifiersResult && getMedifiersResult.prstDash;
+				// map c_oDashType number to c_oDashType visio number
+				let toVisioDashMap = {
+					0: 2,
+					1: 4,
+					2: 3,
+					3: 16,
+					4: 18,
+					5: 19,
+					6: 1,
+					7: 9,
+					8: 22,
+					9: 12,
+					10: 10
+				};
+				result = toVisioDashMap[originalDashType];
+				if (result === undefined) {
+					console.log("Dash map was not realized. Unknown dash type in theme");
+					result = 1; // visio solid
+				}
+			} else if (cellName === "Color") {
 				// and it is color
 				result = getMedifiersResult && getMedifiersResult.fontPropsObject.color;
-			} else if (quickStyleCellName === "QuickStyleFillColor") {
+			} else if (cellName === "FillForegnd" || cellName === "FillBkgnd") {
 				//leave result because it is fill
 				result = getMedifiersResult;
 			} else {
@@ -288,14 +315,14 @@
 		}
 
 		/**
-		 * calculate color on theme. for quickStyleVariation to consider real color
+		 * calculate exact color on theme. for quickStyleVariation to consider real color
 		 * @param {CUniColor | CUniFill} color
 		 * @param {CTheme} theme
 		 */
 		function calculateOnTheme(color, theme) {
-			if (color.constructor.name === "CUniColor") {
+			if (color instanceof AscFormat.CUniColor ) {
 				color.Calculate(theme);
-			} else if (color.constructor.name === "CUniFill") {
+			} else if (color instanceof AscFormat.CUniFill) {
 				color.calculate(theme);
 			}
 
@@ -305,7 +332,12 @@
 
 		if (result !== null) {
 			// result have appropriate type for cell already
-			return calculateOnTheme(result, theme);
+			if (result instanceof AscFormat.CUniColor || result instanceof AscFormat.CUniFill) {
+				return calculateOnTheme(result, theme);
+			} else {
+				// simple type line string - so we don't use clone
+				return result;
+			}
 		} else {
 			console.log("Unknown themeval error");
 		}

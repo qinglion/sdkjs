@@ -1939,7 +1939,7 @@ window.AscCommon.g_cIsBeta = "false";
 		sysDashDotDot : 9,
 		sysDot        : 10,
 		// visio types
-		vsdxTransparent		: 11,
+		vsdxTransparent		: 11, // 0 visio value
 		vsdxSolid			: 12,
 		vsdxDash			: 13,
 		vsdxDot				: 14,

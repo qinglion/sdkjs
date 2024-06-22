@@ -189,5 +189,6 @@ CTheme.prototype.getLnStyle = function (idx, unicolor, isConnectorShape) {
 		}
 		return ret;
 	}
-	return new CLn();
+	console.log("getLnStyle has not found lineStyle and returned new CLn()");
+	return new AscFormat.CLn();
 };

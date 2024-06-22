@@ -62,6 +62,13 @@
 
 			let returnValue;
 
+			if (cellName === "LinePattern") {
+				let cellNumberValue = cell.getNumberValue();
+				if (!isNaN(cellNumberValue)) {
+					return cellNumberValue;
+				}
+			}
+
 			if (/#\w{6}/.test(cellValue)) {
 				// check if hex
 				let rgba = AscCommon.RgbaHexToRGBA(cellValue);
@@ -176,7 +183,7 @@
 					}
 				}
 			}
-			if (!returnValue) {
+			if (returnValue === null || returnValue === undefined) {
 				if (cellName === "LineColor" || cellName === "FillForegnd" || cellName === "FillBkgnd") {
 					console.log("no color found. so painting lt1.");
 					returnValue = AscFormat.CreateUniFillByUniColor(AscFormat.builder_CreateSchemeColor("lt1"));
@@ -1249,71 +1256,19 @@
 
 		// add read matrix modifier width?
 		let linePattern = this.getCell("LinePattern");
+		let linePatternValue = calculateCellValue(linePattern, this, pageInfo, visioDocument.themes, themeValWasUsedFor);
 		if (linePattern) {
 			// see ECMA-376-1 - L.4.8.5.2 Line Dash Properties and [MS-VSDX]-220215 (1) - 2.4.4.180	LinePattern
-			if (linePattern.v === "Themed") {
+			let linePatternNumber = linePatternValue;
+			if (isNaN(linePatternNumber)) {
 				oStroke.setPrstDash(oStroke.GetDashCode("vsdxSolid"));
 			} else {
-				let linePatternNumber = Number(linePattern.v);
-				if (isNaN(linePatternNumber)) {
-					oStroke.setPrstDash(oStroke.GetDashCode("vsdxSolid"));
+				let shift = 11;
+				let dashTypeName = oStroke.GetDashByCode(linePatternNumber + shift);
+				if (dashTypeName !== null) {
+					oStroke.setPrstDash(linePatternNumber + shift);
 				} else {
-					let shift = 11;
-					let dashTypeName = oStroke.GetDashByCode(linePatternNumber + shift);
-					if (dashTypeName !== null) {
-						oStroke.setPrstDash(linePatternNumber + shift);
-					} else {
-						oStroke.setPrstDash(oStroke.GetDashCode("vsdxDash"));
-					}
-					// switch (linePattern.v) {
-					// 	case "0":
-					// 		oStroke.Fill = AscFormat.CreateNoFillUniFill();
-					// 		break;
-					// 	case "1":
-					// 		oStroke.setPrstDash(oStroke.GetDashCode("solid"));
-					// 		break;
-					// 	case "2":
-					// 		oStroke.setPrstDash(oStroke.GetDashCode("lgDash"));
-					// 		break;
-					// 	case "3":
-					// 		// oStroke.setPrstDash(oStroke.GetDashCode("dash"));
-					// 		oStroke.setPrstDash(14);
-					// 		break;
-					// 	case "4":
-					// 		oStroke.setPrstDash(oStroke.GetDashCode("dashDot"));
-					// 		break;
-					// 	case "5":
-					// 		oStroke.setPrstDash(oStroke.GetDashCode("lgDashDotDot"));
-					// 		break;
-					// 	case "9":
-					// 		oStroke.setPrstDash(oStroke.GetDashCode("sysDash"));
-					// 		break;
-					// 	case "10":
-					// 		oStroke.setPrstDash(oStroke.GetDashCode("sysDot"));
-					// 		break;
-					// 	case "11":
-					// 		// oStroke.setPrstDash(oStroke.GetDashCode("sysDashDot"));
-					// 		oStroke.setPrstDash(22);
-					// 		break;
-					// 	case "12":
-					// 		oStroke.setPrstDash(oStroke.GetDashCode("sysDashDotDot"));
-					// 		break;
-					// 	case "17":
-					// 		oStroke.setPrstDash(oStroke.GetDashCode("dot"));
-					// 		break;
-					// 	case "18":
-					// 		oStroke.setPrstDash(oStroke.GetDashCode("lgDashDot"));
-					// 		break;
-					// 	case "Themed":
-					// 		oStroke.setPrstDash(oStroke.GetDashCode("solid"));
-					// 		break;
-					// 	case !isNaN(Number(linePattern.v)) && linePattern.v:
-					// 		// is unhandled number
-					// 		oStroke.setPrstDash(oStroke.GetDashCode("lgDash"));
-					// 		break;
-					// 	default:
-					// 		oStroke.setPrstDash(oStroke.GetDashCode("solid"));
-					// }
+					oStroke.setPrstDash(oStroke.GetDashCode("vsdxDash"));
 				}
 			}
 		}
