@@ -125,6 +125,15 @@
 			variationStyleIndexVariable = "lineIdx";
 
 			initialDefaultValue = 1; // visio solid
+		} else if (cellName === "LineWeight") {
+			// line weight in inches
+			quickStyleCellName = "QuickStyleLineColor";
+			quickStyleModifiersCellName = "QuickStyleLineMatrix";
+			getModifiersMethod = themes[0].getLnStyle;
+			variationStyleIndexVariable = "lineIdx";
+
+			// // 9255 emus = 0.01041666666666667 inches is document.xml StyleSheet ID=0 LineWeight e. g. default value
+			initialDefaultValue = 0.01041666666666667;
 		} else {
 			console.log("themeval argument error. cell name is unknown. return null.");
 			return null;
@@ -309,6 +318,9 @@
 			} else if (cellName === "FillForegnd" || cellName === "FillBkgnd") {
 				//leave result because it is fill
 				result = getMedifiersResult;
+			} else if (cellName === "LineWeight") {
+				// let's map standart ooxml result in emus to visio result - inches
+				result = getMedifiersResult && getMedifiersResult.w / (AscCommonWord.g_dKoef_in_to_mm * AscCommonWord.g_dKoef_mm_to_emu);
 			} else {
 				console.log("Error in themeval. result is not changed to appropriate type or quickStyleCellName is not set.");
 			}
@@ -335,7 +347,7 @@
 			if (result instanceof AscFormat.CUniColor || result instanceof AscFormat.CUniFill) {
 				return calculateOnTheme(result, theme);
 			} else {
-				// simple type line string - so we don't use clone
+				// simple type like string or number - so we don't use clone
 				return result;
 			}
 		} else {

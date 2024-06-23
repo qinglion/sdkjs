@@ -708,7 +708,7 @@
 
 		let fillResultCells = ["LineColor", "FillForegnd", "FillBkgnd"];
 		let fillColorResultCells = ["Color", "GradientStopColor"];
-		let numberResultCells = ["LinePattern"];
+		let numberResultCells = ["LinePattern", "LineWeight"];
 
 		if (cellValue === "Themed") {
 			// equal to THEMEVAL() call

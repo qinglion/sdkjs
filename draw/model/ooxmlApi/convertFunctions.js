@@ -1072,9 +1072,11 @@
 
 		let lineWidthEmu = null;
 		let lineWeightCell = this.getCell("LineWeight");
-		if (lineWeightCell && lineWeightCell.v && lineWeightCell.v !== "Themed") {
+		if (lineWeightCell) {
 			// to cell.v visio always saves inches
-			let lineWeightInches = Number(lineWeightCell.v);
+			// let lineWeightInches = Number(lineWeightCell.v);
+			let lineWeightInches = lineWeightCell.calculateValue(this, pageInfo,
+				visioDocument.themes, themeValWasUsedFor)
 			if (!isNaN(lineWeightInches)) {
 				lineWidthEmu = lineWeightInches * AscCommonWord.g_dKoef_in_to_mm * AscCommonWord.g_dKoef_mm_to_emu;
 			} else {
@@ -1097,14 +1099,11 @@
 
 		/**	 * @type {CLn}	 */
 		let oStroke = AscFormat.builder_CreateLine(lineWidthEmuScaled, {UniFill: lineUniFill});
-		// var oStroke = AscFormat.builder_CreateLine(12700, {UniFill: AscFormat.CreateUnfilFromRGB(255,0,0)});
 
-		// add read matrix modifier width?
 		let linePattern = this.getCell("LinePattern");
-		let linePatternValue = linePattern.calculateValue(this, pageInfo, visioDocument.themes, themeValWasUsedFor);
 		if (linePattern) {
 			// see ECMA-376-1 - L.4.8.5.2 Line Dash Properties and [MS-VSDX]-220215 (1) - 2.4.4.180	LinePattern
-			let linePatternNumber = linePatternValue;
+			let linePatternNumber = linePattern.calculateValue(this, pageInfo, visioDocument.themes, themeValWasUsedFor);
 			if (isNaN(linePatternNumber)) {
 				oStroke.setPrstDash(oStroke.GetDashCode("vsdxSolid"));
 			} else {
