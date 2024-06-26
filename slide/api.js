@@ -4881,6 +4881,107 @@ background-repeat: no-repeat;\
             this.WordControl.m_oLogicDocument.GetCurrentSlide().graphicObjects.startEditCurrentOleObject();
     };
 
+	asc_docs_api.prototype.asc_uniteSelectedShapes = function () {
+		/* Get our selected shapes (paths) */
+		const graphicController = this.getGraphicController();
+		if (!graphicController) { return }
+
+		const selectedShapes = graphicController.getSelectedArray();
+		if (selectedShapes.length < 2) { return }
+
+		/* Create structure of paper classes */
+		paper.setup();
+		const paperShapes = selectedShapes.map(function (shape) {
+			const paperGroup = new paper.Group();
+
+			const pathLst = shape.getGeometry().pathLst;
+			pathLst.forEach(function (path) {
+				const convertedPath = new AscFormat.Path();
+				path.convertToBezierCurves(convertedPath, shape.transform, true);
+
+				const paperCompoundPath = new paper.CompoundPath();
+
+				let paperCurrentPath = new paper.Path();
+				convertedPath.ArrPathCommand.forEach(function (pathCommand) {
+					switch (pathCommand.id) {
+						case AscFormat.moveTo:
+							paperCurrentPath.moveTo(pathCommand.X, pathCommand.Y);
+							break;
+						case AscFormat.lineTo:
+							paperCurrentPath.lineTo(pathCommand.X, pathCommand.Y);
+							break;
+						case AscFormat.bezier4:
+							paperCurrentPath.cubicCurveTo(
+								pathCommand.X0, pathCommand.Y0,
+								pathCommand.X1, pathCommand.Y1,
+								pathCommand.X2, pathCommand.Y2
+							);
+							break;
+						case AscFormat.close:
+							paperCurrentPath.closePath();
+							paperCompoundPath.addChild(paperCurrentPath);
+							paperCurrentPath = new paper.Path();
+							break;
+					}
+				});
+
+				if (!paperCurrentPath.isEmpty()) {
+					paperCompoundPath.addChild(paperCurrentPath);
+				}
+
+				paperGroup.addChild(paperCompoundPath);
+			});
+
+			const paperShape = new paper.CompoundPath();
+			paperShape.addChildren(paperGroup.children);
+			paperShape.fillColor = 'red';
+			return paperShape;
+		});
+
+		/* Get paper shapes union */
+		const paperResult = paperShapes.reduce(function (accumulator, currentPath) {
+			return accumulator.unite(currentPath);
+		});
+
+		/* Creating new geometry */
+		const resultGeometry = new AscFormat.Geometry();
+		resultGeometry.AddPath(new AscFormat.Path())
+
+		const segments = paperResult.toJSON()[1].segments;
+		let lastPoint = [0, 0];
+		for (let segmentIndex = 0; segmentIndex < segments.length; ++segmentIndex) {
+			const segment = segments[segmentIndex];
+
+			if (segmentIndex === 0) {
+				resultGeometry.pathLst[0].moveTo(segment[0], segment[1]);
+				lastPoint = segment;
+			} else {
+				switch (segment.length) {
+					case 2:
+						resultGeometry.pathLst[0].lnTo(segment[0], segment[1]);
+						lastPoint = segment;
+						break;
+					case 3:
+						const point = segment[0];
+						const handleIn = segment[1];
+						const handleOut = segment[2];
+
+						resultGeometry.pathLst[0].cubicBezTo(
+							lastPoint[0] + handleIn[0], lastPoint[1] + handleIn[1],
+							point[0] + handleOut[0], point[1] + handleOut[1],
+							point[0], point[1]
+						)
+						lastPoint = point;
+						break;
+				}
+			}
+		}
+		return resultGeometry;
+
+		// remove old shapes
+		// add result shapes (merged)
+		// update interface
+	};
 
     // signatures
     asc_docs_api.prototype.asc_addSignatureLine = function (oPr, Width, Height, sImgUrl) {
