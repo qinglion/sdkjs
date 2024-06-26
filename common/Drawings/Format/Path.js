@@ -1121,7 +1121,7 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
         }
         return true;
     };
-    Path.prototype.convertToBezierCurves = function (oPath, oTransform) {
+    Path.prototype.convertToBezierCurves = function (oPath, oTransform, bConvertCurvesOnly) {
         const nCmdCount = this.ArrPathCommandInfo.length;
         let dX0, dY0, dX1, dY1, dX2, dY2;
         let oLastMoveTo = null;
@@ -1154,7 +1154,9 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                     dY1 = oTransform.TransformPointY(dLastX + (oCmd.X - dLastX)*(2/3), dLastY + (oCmd.Y - dLastY)*(2/3))*36000 >> 0;
                     dX2 = oTransform.TransformPointX(oCmd.X, oCmd.Y)*36000 >> 0;
                     dY2 = oTransform.TransformPointY(oCmd.X, oCmd.Y)*36000 >> 0;
-                    oPath.cubicBezTo(dX0, dY0, dX1, dY1, dX2, dY2);
+                    (bConvertCurvesOnly)
+						? oPath.lnTo(dX2, dY2)
+						: oPath.cubicBezTo(dX0, dY0, dX1, dY1, dX2, dY2);
                     dLastX = oCmd.X;
                     dLastY = oCmd.Y;
                     break;
@@ -1209,7 +1211,7 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                     break;
                 }
                 case close: {
-                    if(oLastMoveTo) {
+                    if(!bConvertCurvesOnly & oLastMoveTo) {
                         let dXM = oTransform.TransformPointX(oLastMoveTo.X, oLastMoveTo.Y);
                         let dYM = oTransform.TransformPointY(oLastMoveTo.X, oLastMoveTo.Y);
                         let dLastXM = oTransform.TransformPointX(dLastX, dLastY);
