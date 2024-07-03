@@ -4976,11 +4976,25 @@ background-repeat: no-repeat;\
 				}
 			}
 		}
-		return resultGeometry;
 
-		// remove old shapes
-		// add result shapes (merged)
-		// update interface
+		const resultShape = new AscFormat.CShape();
+		resultShape.calcGeometry = resultGeometry;
+
+		/* Replace original shapes with united shape */
+		selectedShapes.forEach(function (shape) {
+			shape.deleteDrawingBase();
+		});
+		graphicController.resetSelection();
+
+		resultShape.setDrawingObjects(graphicController.drawingObjects);
+		if (graphicController.drawingObjects && graphicController.drawingObjects.cSld) {
+			resultShape.setParent(graphicController.drawingObjects);
+		}
+		resultShape.addToDrawingObjects();
+		resultShape.checkDrawingBaseCoords();
+		graphicController.selectObject(resultShape, 0);
+		resultShape.addToRecalculate();
+		graphicController.startRecalculate();
 	};
 
     // signatures
