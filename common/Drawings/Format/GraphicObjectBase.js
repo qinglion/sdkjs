@@ -1051,10 +1051,25 @@
 		}
 	};
 	CGraphicObjectBase.prototype.getOuterShdw = function () {
-		if (this.spPr && this.spPr.effectProps && this.spPr.effectProps.EffectLst && this.spPr.effectProps.EffectLst.outerShdw) {
-			return this.spPr.effectProps.EffectLst.outerShdw;
+		let outerShdw = null;
+		if (this.spPr) {
+			outerShdw = this.spPr.getOuterShdw();
 		}
-		return null;
+		if(!outerShdw) {
+			if(this.getHierarchy) {
+				let aHierarchy = this.getHierarchy();
+				for(let nIdx = 0; nIdx < aHierarchy.length; ++nIdx) {
+					let oDrawing = aHierarchy[nIdx];
+					if(oDrawing) {
+						outerShdw = oDrawing.getOuterShdw();
+						if(outerShdw) {
+							break;
+						}
+					}
+				}
+			}
+		}
+		return outerShdw;
 	};
 	CGraphicObjectBase.prototype.getOuterShdwAsc = function () {
 		const oShdw = this.getOuterShdw();
@@ -1199,6 +1214,11 @@
 			return isRealObject(oUniPr.nvPr) && isRealObject(oUniPr.nvPr.ph);
 		}
 		return false;
+	};
+	CGraphicObjectBase.prototype.getHierarchy = function () {
+		return [];
+	};
+	CGraphicObjectBase.prototype.recalculate = function () {
 	};
 
 	CGraphicObjectBase.prototype.drawShdw = function (graphics) {
@@ -2761,25 +2781,29 @@
 	};
 	CGraphicObjectBase.prototype.createPlaceholderControl = function (aControls) {
 
+		let nParentType = null;
+		if(this.parent && this.parent.getObjectType) {
+			nParentType = this.parent.getObjectType();
+		}
 		let bCanAdd = false;
-		if(this.isPlaceholder() && this.parent && this.parent.getObjectType &&
-			(this.parent.getObjectType() === AscDFH.historyitem_type_SlideMaster ||
-				this.parent.getObjectType() === AscDFH.historyitem_type_SlideLayout)) {
+		let bMasterLtPh = (this.isPlaceholder() && (nParentType === AscDFH.historyitem_type_SlideMaster || nParentType === AscDFH.historyitem_type_SlideLayout))
+		if(bMasterLtPh) {
 			bCanAdd = true;
 		}
 		else {
-			if (!this.isEmptyPlaceholder() || !this.canAddButtonPlaceholder()) {
-				bCanAdd = false;
+			if (this.isEmptyPlaceholder() && this.canAddButtonPlaceholder()) {
+				bCanAdd = true;
 			}
 		}
 
 		if (!bCanAdd) {
 			return;
 		}
-		var phType = this.getPlaceholderType();
-		var aButtons = [];
-		var isLocalDesktop = window["AscDesktopEditor"] && window["AscDesktopEditor"]["IsSupportMedia"] && window["AscDesktopEditor"]["IsSupportMedia"]();
+		let phType = this.getPlaceholderType();
+		let aButtons = [];
+		let isLocalDesktop = window["AscDesktopEditor"] && window["AscDesktopEditor"]["IsSupportMedia"] && window["AscDesktopEditor"]["IsSupportMedia"]();
 		const oRect = {x: 0, y: 0, w: this.extX, h: this.extY};
+		let isDisabled = bMasterLtPh;
 		switch (phType) {
 			case null: {
 				aButtons.push(AscCommon.PlaceholderButtonType.Table);
@@ -2809,6 +2833,7 @@
 				break;
 			}
 			case AscFormat.phType_dgm: {
+				aButtons.push(AscCommon.PlaceholderButtonType.SmartArt);
 				break;
 			}
 			case AscFormat.phType_dt: {
@@ -2865,10 +2890,7 @@
 			}
 		}
 		var nPageNum;
-		if (this.parent && this.parent.getObjectType
-			&& (this.parent.getObjectType() === AscDFH.historyitem_type_Slide
-				|| this.parent.getObjectType() === AscDFH.historyitem_type_SlideLayout
-				|| this.parent.getObjectType() === AscDFH.historyitem_type_SlideMaster )) {
+		if (AscFormat.isSlideLikeObject(this.parent)) {
 			nPageNum = this.getParentNum();
 		} else if (this.worksheet) {
 			nPageNum = this.worksheet.workbook && this.worksheet.workbook.nActive;
@@ -2876,7 +2898,7 @@
 			nPageNum = this.Get_AbsolutePage() || 0;
 		}
 		if (aButtons.length > 0) {
-			aControls.push(AscCommon.CreateDrawingPlaceholder(this.Id, aButtons, nPageNum, oRect, this.transform));
+			aControls.push(AscCommon.CreateDrawingPlaceholder(this.Id, aButtons, nPageNum, oRect, this.transform, isDisabled));
 		}
 	};
 	CGraphicObjectBase.prototype.onSlicerUpdate = function (sName) {
@@ -3487,9 +3509,7 @@
 			if (this.parent.getObjectType) {
 				nParentType = this.parent.getObjectType();
 			}
-			if (nParentType === AscDFH.historyitem_type_SlideLayout ||
-				nParentType === AscDFH.historyitem_type_SlideMaster ||
-				nParentType === AscDFH.historyitem_type_Notes ||
+			if (nParentType === AscDFH.historyitem_type_Notes ||
 				nParentType === AscDFH.historyitem_type_NotesMaster) {
 				return "";
 			}
@@ -3671,6 +3691,38 @@
 		}
 		this.ResetParametersWithResize(true);
 		this.checkDrawingBaseCoords();
+	};
+	CGraphicObjectBase.prototype.checkPlaceholders = function(oPlaceholders) {
+		if(this.isDependentPlaceholder(oPlaceholders)) {
+			this.setRecalculateInfo();
+			this.recalculate();
+			this.handleUpdateTheme();
+			return true;
+		}
+		return false;
+	};
+	CGraphicObjectBase.prototype.isDependentPlaceholder = function(oPlaceholders) {
+		if(!this.isPlaceholder()) return false;
+		let aHierarchy = this.getHierarchy();
+		for(let nIdx = 0; nIdx < aHierarchy.length; ++nIdx) {
+			let oDrawing = aHierarchy[nIdx];
+			if(oDrawing && oPlaceholders[oDrawing.Id]) {
+				return true;
+			}
+		}
+		return false;
+	};
+	CGraphicObjectBase.prototype.handleUpdateTheme = function() {
+
+	};
+	CGraphicObjectBase.prototype.checkOnDeletePlaceholder = function(oPlaceholders) {
+		if(this.isDependentPlaceholder(oPlaceholders)) {
+			if(!(this.spPr && this.spPr.xfrm && this.spPr.xfrm.isNotNull())) {
+				AscFormat.CheckSpPrXfrm(this, true);
+			}
+			return true;
+		}
+		return false;
 	};
 	var ANIM_LABEL_WIDTH_PIX = 22;
 	var ANIM_LABEL_HEIGHT_PIX = 17;

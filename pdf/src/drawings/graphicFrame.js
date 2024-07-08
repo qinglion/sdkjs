@@ -82,6 +82,12 @@
         ret._page = this._page; 
         return ret;
     };
+    CPdfGraphicFrame.prototype.Get_PageContentStartPos = function(nPage) {
+        return this.GetDocument().Get_PageLimits(nPage);
+    };
+    CPdfGraphicFrame.prototype.Get_PageContentStartPos2 = function(nPage) {
+        return this.Get_PageContentStartPos(nPage);
+    };
     CPdfGraphicFrame.prototype.GetDocContent = function() {
         return this.getDocContent();
     };
@@ -153,9 +159,6 @@
         this.updateTransformMatrix();
         this.SetNeedRecalc(false);
     };
-    CPdfGraphicFrame.prototype.SetInTextBox = function(bIn) {
-        this.isInTextBox = bIn;
-    };
     CPdfGraphicFrame.prototype.SetNeedRecalc = function(bRecalc, bSkipAddToRedraw) {
         if (bRecalc == false) {
             this._needRecalc = false;
@@ -182,14 +185,7 @@
         let X = pageObject.x;
         let Y = pageObject.y;
 
-        if (this.hitInBoundingRect(X, Y) || this.hitToHandles(X, Y) != -1 || this.hitInPath(X, Y)) {
-            this.SetInTextBox(false);
-        }
-        else {
-            this.SetInTextBox(true);
-        }
-
-        oDrawingObjects.OnMouseDown(e, X, Y, this.selectStartPage);
+        oDrawingObjects.OnMouseDown(e, X, Y, pageObject.index);
     };
     
     CPdfGraphicFrame.prototype.onMouseUp = function(x, y, e) {

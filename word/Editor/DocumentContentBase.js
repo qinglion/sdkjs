@@ -73,7 +73,8 @@ CDocumentContentBase.prototype.GetLogicDocument = function()
 };
 CDocumentContentBase.prototype.getDrawingDocument = function()
 {
-	return this.GetApi().getDrawingDocument();
+	let api = this.GetApi();
+	return api && api.getDrawingDocument();
 };
 /**
  * Получаем тип активной части документа.
@@ -1936,8 +1937,14 @@ CDocumentContentBase.prototype.RemoveParagraphForReview = function(nPosition)
 	{
 		if (1 === this.Content.length)
 		{
-			if (this.IsBlockLevelSdtContent())
-				this.GetParent().ReplaceContentWithPlaceHolder();
+			let parent = this.GetParent();
+			if (parent && parent instanceof AscWord.CBlockLevelSdt)
+			{
+				// Если после принятия других изменений контент не пустой, то не удаляем ничего,
+				// но если он пустой и нужно было удалить последний параграф в нем, то удаляем его целиком
+				if (parent.IsEmpty())
+					parent.RemoveThisFromParent();
+			}
 			else
 				this.RemoveFromContent(0, 1, true);
 		}

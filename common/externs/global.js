@@ -52,6 +52,7 @@ var AscOForm;
 var AscHyphenation;
 var AscGeometry;
 var AscPDF;
+var AscBidi;
 
 function jq(){}
 function DE(){}

@@ -1741,6 +1741,21 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), -1);
 
+		oParser = new parserFormula('"test" = "test"', "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "TRUE");
+
+		oParser = new parserFormula('"tEsT" = "TeSt"', "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "TRUE");
+
+		oParser = new parserFormula('"TEST" = "TeSt"', "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "TRUE");
+
+		oParser = new parserFormula('"TEST" = "weSt"', "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "FALSE");
 
 		ws.getRange2("K100:Z200").cleanAll();
 		ws.getRange2("M106").setValue("1");
@@ -2619,6 +2634,101 @@ $(function () {
 			assert.strictEqual(array.getElementRowCol(2, 1).getValue(), "", "Array 7x1. [2,1]");
 		}
 
+	});
+
+	QUnit.test("Test: \"Concatenation operator test\"", function (assert) {
+		let array, defName;
+		ws.getRange2("A200").setValue("1");
+		ws.getRange2("A201").setValue("2");
+		ws.getRange2("A202").setValue("3");
+		ws.getRange2("A203").setValue("4");
+		ws.getRange2("A204").setValue("5");
+		ws.getRange2("B200").setValue("A");
+		ws.getRange2("B201").setValue("B");
+		ws.getRange2("B202").setValue("C");
+		ws.getRange2("B203").setValue("D");
+		ws.getRange2("B204").setValue("E");
+
+		wb.dependencyFormulas.addDefName("def_nums", "Sheet1!$A$200:$A$204");
+		wb.dependencyFormulas.addDefName("def_strings", "Sheet1!$B$200:$B$204");
+		wb.dependencyFormulas.addDefName("def_strings", "Sheet1!$B$200:$B$204");
+
+		defName = new AscCommonExcel.DefName(wb, "n_1", '{1,2,3}', null, null, Asc.c_oAscDefNameType.none);
+		wb.dependencyFormulas._addDefName(defName);
+		wb.dependencyFormulas.defNames.wb["n_1"].setRef(defName.ref, true, true, true);
+
+		defName = new AscCommonExcel.DefName(wb, "n_2", '{"str1","str2","str3"}', null, null, Asc.c_oAscDefNameType.none);
+		wb.dependencyFormulas._addDefName(defName);
+		wb.dependencyFormulas.defNames.wb["n_2"].setRef(defName.ref, true, true, true);
+
+		defName = new AscCommonExcel.DefName(wb, "n_if", 'IF(0,n_2,n_1&n_2)', null, null, Asc.c_oAscDefNameType.none);
+		wb.dependencyFormulas._addDefName(defName);
+		wb.dependencyFormulas.defNames.wb["n_if"].setRef(defName.ref, true, true, true);
+
+		// wb.dependencyFormulas.addDefNameOpen(defName.Name, defName.Ref, defName.LocalSheetId, defName.Hidden, _type);
+
+		// INDEX
+		oParser = new parserFormula('INDEX(n_if,2)', "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "2str2");
+
+		oParser = new parserFormula('INDEX(A200:A204&A200:A204,2)', "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "22");
+
+		oParser = new parserFormula('INDEX(def_nums&def_nums,2)', "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "22");
+
+		oParser = new parserFormula('INDEX(B200:B204&B200:B204,2)', "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "BB");
+
+		oParser = new parserFormula('INDEX(def_strings&def_strings,2)', "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "BB");
+
+		// other formulas
+		oParser = new parserFormula('COLUMNS(A200:A204&A200:A204)', "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 1);
+
+		oParser = new parserFormula('COLUMNS(1+A200:A204&A200:A204)', "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 1);
+
+		oParser = new parserFormula('COLUMNS(def_nums&def_nums)', "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 1);
+
+		oParser = new parserFormula('COLUMNS(def_strings&def_strings)', "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 1);
+
+		oParser = new parserFormula('ROWS(A200:A204&A200:A204)', "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 5);
+
+		oParser = new parserFormula('ROWS(1+A200:A204&A200:A204)', "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 5);
+
+		oParser = new parserFormula('ROWS(def_nums&def_nums)', "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 5);
+
+		oParser = new parserFormula('ROWS(def_strings&def_strings)', "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 5);
+
+		oParser = new parserFormula('CONCAT(A200:A204,A200:A204&A200:A204)', "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "123451122334455");
+
+		// remove all created earlier defNames
+		wb.dependencyFormulas._foreachDefName(function(defName) {
+			wb.dependencyFormulas.removeDefName(undefined, defName.name);
+		});
 	});
 
 	QUnit.test("Test: \"ACOS\"", function (assert) {
@@ -8692,6 +8802,35 @@ $(function () {
 		oParser = new parserFormula("SUMIFS(C:D,E:E,$H2)", "A11", ws);
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!");
+
+		// for bug 58684
+		let calculateResult = new AscCommonExcel.CalculateResult(true);
+
+		oParser = new parserFormula("SUMIFS({1,2,3},A2:A9,A2)", "A11", ws);
+		assert.ok(oParser.parse(), 'SUMIFS({1,2,3},A2:A9,A2) - wrong argument type check');
+		assert.strictEqual(oParser.calculate(null, null, null, null, calculateResult).getValue(), "#NULL!", 'Result of SUMIFS({1,2,3},A2:A9,A2) - wrong argument type check');
+
+		oParser = new parserFormula("SUMIFS(MONTH(A2:A9),A2:A9,A2)", "A11", ws);
+		assert.ok(oParser.parse(), 'SUMIFS(MONTH(A2:A9),A2:A9,A2) - wrong argument type check');
+		assert.strictEqual(oParser.calculate(null, null, null, null, calculateResult).getValue(), "#NULL!", 'Result of SUMIFS(MONTH(A2:A9),A2:A9,A2) - wrong argument type check');
+
+		oParser = new parserFormula("SUMIFS(A2:A9,{1,2,3},A2)", "A11", ws);
+		assert.ok(oParser.parse(), 'SUMIFS(A2:A9,{1,2,3},A2) - wrong argument type check');
+		assert.strictEqual(oParser.calculate(null, null, null, null, calculateResult).getValue(), "#NULL!", 'Result of SUMIFS(A2:A9,{1,2,3},A2) - wrong argument type check');
+
+		oParser = new parserFormula("SUMIFS(A2:A9,A2:A9*2,A2)", "A11", ws);
+		assert.ok(oParser.parse(), 'SUMIFS(A2:A9,A2:A9*2,A2) - wrong argument type check');
+		assert.strictEqual(oParser.calculate(null, null, null, null, calculateResult).getValue(), "#NULL!", 'Result of SUMIFS(A2:A9,A2:A9*2,A2) - wrong argument type check');
+
+		oParser = new parserFormula("SUMIFS(A2:A9,A2:A9,A2,{1,2,3},A2)", "A11", ws);
+		assert.ok(oParser.parse(), 'SUMIFS(A2:A9,A2:A9,A2,{1,2,3},A2) - wrong argument type check');
+		assert.strictEqual(oParser.calculate(null, null, null, null, calculateResult).getValue(), "#NULL!", 'Result of SUMIFS(A2:A9,A2:A9,A2,{1,2,3},A2) - wrong argument type check');
+
+		oParser = new parserFormula("SUMIFS(A2:A9,A2:A9,A2,A2:A9*2,A2)", "A11", ws);
+		assert.ok(oParser.parse(), 'SUMIFS(A2:A9,A2:A9,A2,A2:A9*2,A2) - wrong argument type check');
+		assert.strictEqual(oParser.calculate(null, null, null, null, calculateResult).getValue(), "#NULL!", 'Result of SUMIFS(A2:A9,A2:A9,A2,A2:A9*2,A2) - wrong argument type check');
+
+
 	});
 
 	QUnit.test("Test: \"MAXIFS\"", function (assert) {
@@ -14426,7 +14565,6 @@ $(function () {
 		oParser = new parserFormula("COUNTIF(C102:C1002,2)/1000", "A1", ws);
 		assert.ok(oParser.parse());
 		res = Math.round(oParser.calculate().getValue() * 100);
-		console.log(res);
 		assert.ok(res >= 20 && res <= 29, "Spreading percentages for number 2 in COUNTIF(C102:C1002,2)/1000");
 
 		oParser = new parserFormula("COUNTIF(C102:C1002,3)/1000", "A1", ws);
@@ -16533,7 +16671,129 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!");
 
+		// bool, ref, num, string, err
+		ws.getRange2("A88").setValue("#DIV/0!");
+		ws.getRange2("A89").setValue("#NUM!");
+		ws.getRange2("A90").setValue("TRUE");
+		ws.getRange2("A91").setValue("TRUE");
+		ws.getRange2("A92").setValue("FALSE");
+		ws.getRange2("A93").setValue("FALSE");
+		ws.getRange2("A94").setValue("1");
+		ws.getRange2("A95").setValue("0");
+		ws.getRange2("A96").setValue("1s");
+		ws.getRange2("A97").setValue("1");
+		ws.getRange2("A97").setNumFormat("@");
+		ws.getRange2("A98").setValue("");
+		ws.getRange2("A99").setValue("0");
+
+		oParser = new parserFormula('COUNTIFS(A90:A99,TRUE)', "E1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 2);
+
+		oParser = new parserFormula('COUNTIFS(A90:A99,A90)', "E1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 2);
+
+		oParser = new parserFormula('COUNTIFS(A90:A99,FALSE)', "E1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 2);
+
+		oParser = new parserFormula('COUNTIFS(A90:A99,A92)', "E1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 2);
+
+		oParser = new parserFormula('COUNTIFS(A90:A99,1)', "E1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 2);
+
+		oParser = new parserFormula('COUNTIFS(A90:A99,A94)', "E1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 2);
+
+		oParser = new parserFormula('COUNTIFS(A90:A99,A97)', "E1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 2);
+
+		oParser = new parserFormula('COUNTIFS(A90:A99,0)', "E1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 2);
+
+		oParser = new parserFormula('COUNTIFS(A90:A99,A95)', "E1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 2);
+
+		oParser = new parserFormula('COUNTIFS(A90:A99,"")', "E1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 1);
+
+		oParser = new parserFormula('COUNTIFS(A90:A99,A98)', "E1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 2);
+
+		oParser = new parserFormula('COUNTIFS(A90:A99,A88)', "E1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0);
+
+		oParser = new parserFormula('COUNTIFS(A90:A99,#DIV/0!)', "E1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0);
+
+		oParser = new parserFormula('COUNTIFS(A90:A99,#NUM!)', "E1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0);
+
+		oParser = new parserFormula('COUNTIFS(A90:A99,A89)', "E1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0);
+
+		// arg0 = #DIV/0!
+		oParser = new parserFormula('COUNTIFS(A88,A88:A99)', "E1", ws);
+		oParser.setArrayFormulaRef(ws.getRange2("AD6:AF8").bbox);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 1, 'Result of COUNTIFS(A88,A88:A99)[0,0]');
+		assert.strictEqual(oParser.calculate().getElementRowCol(1,0).getValue(), 0, 'Result of COUNTIFS(A88,A88:A99)[1,0]');
+		assert.strictEqual(oParser.calculate().getElementRowCol(2,0).getValue(), 0, 'Result of COUNTIFS(A88,A88:A99)[2,0]');
+		assert.strictEqual(oParser.calculate().getElementRowCol(3,0).getValue(), 0, 'Result of COUNTIFS(A88,A88:A99)[3,0]');
+
+		// arg0 = TRUE
+		oParser = new parserFormula('COUNTIFS(A90,A88:A99)', "E1", ws);
+		oParser.setArrayFormulaRef(ws.getRange2("AD6:AF8").bbox);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 0, 'Result of COUNTIFS(A90,A88:A99)[0,0]');
+		assert.strictEqual(oParser.calculate().getElementRowCol(1,0).getValue(), 0, 'Result of COUNTIFS(A90,A88:A99)[1,0]');
+		assert.strictEqual(oParser.calculate().getElementRowCol(2,0).getValue(), 1, 'Result of COUNTIFS(A90,A88:A99)[2,0]');
+		assert.strictEqual(oParser.calculate().getElementRowCol(3,0).getValue(), 1, 'Result of COUNTIFS(A90,A88:A99)[3,0]');
+		assert.strictEqual(oParser.calculate().getElementRowCol(4,0).getValue(), 0, 'Result of COUNTIFS(A90,A88:A99)[4,0]');
+
+		// arg0 = 0
+		oParser = new parserFormula('COUNTIFS(A95,A88:A99)', "E1", ws);
+		oParser.setArrayFormulaRef(ws.getRange2("AD6:AF8").bbox);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getElementRowCol(4,0).getValue(), 0, 'Result of COUNTIFS(A95,A88:A99)[4,0]');
+		assert.strictEqual(oParser.calculate().getElementRowCol(5,0).getValue(), 0, 'Result of COUNTIFS(A95,A88:A99)[5,0]');
+		assert.strictEqual(oParser.calculate().getElementRowCol(6,0).getValue(), 0, 'Result of COUNTIFS(A95,A88:A99)[6,0]');
+		assert.strictEqual(oParser.calculate().getElementRowCol(7,0).getValue(), 1, 'Result of COUNTIFS(A95,A88:A99)[7,0]');
+		assert.strictEqual(oParser.calculate().getElementRowCol(8,0).getValue(), 0, 'Result of COUNTIFS(A95,A88:A99)[8,0]');
+		assert.strictEqual(oParser.calculate().getElementRowCol(9,0).getValue(), 0, 'Result of COUNTIFS(A95,A88:A99)[9,0]');
+		assert.strictEqual(oParser.calculate().getElementRowCol(10,0).getValue(), 1, 'Result of COUNTIFS(A95,A88:A99)[10,0]');
+		assert.strictEqual(oParser.calculate().getElementRowCol(11,0).getValue(), 1, 'Result of COUNTIFS(A95,A88:A99)[11,0]');
+
+		// arg0 = cEmpty
+		oParser = new parserFormula('COUNTIFS(A98,A88:A99)', "E1", ws);
+		oParser.setArrayFormulaRef(ws.getRange2("AD6:AF8").bbox);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getElementRowCol(4,0).getValue(), 0, 'Result of COUNTIFS(A98,A88:A99)[4,0]');
+		assert.strictEqual(oParser.calculate().getElementRowCol(5,0).getValue(), 0, 'Result of COUNTIFS(A98,A88:A99)[5,0]');
+		assert.strictEqual(oParser.calculate().getElementRowCol(6,0).getValue(), 0, 'Result of COUNTIFS(A98,A88:A99)[6,0]');
+		assert.strictEqual(oParser.calculate().getElementRowCol(7,0).getValue(), 0, 'Result of COUNTIFS(A98,A88:A99)[7,0]');
+		assert.strictEqual(oParser.calculate().getElementRowCol(8,0).getValue(), 0, 'Result of COUNTIFS(A98,A88:A99)[8,0]');
+		assert.strictEqual(oParser.calculate().getElementRowCol(9,0).getValue(), 0, 'Result of COUNTIFS(A98,A88:A99)[9,0]');
+		assert.strictEqual(oParser.calculate().getElementRowCol(10,0).getValue(), 0, 'Result of COUNTIFS(A98,A88:A99)[10,0]');
+		assert.strictEqual(oParser.calculate().getElementRowCol(11,0).getValue(), 0, 'Result of COUNTIFS(A98,A88:A99)[11,0]');
+
+
 		// bug 58497
+		ws.getRange2("A100:Z300").cleanAll();
 		ws.getRange2("A101").setValue("str1");
 		ws.getRange2("A102").setValue("str2");
 		ws.getRange2("A103").setValue("");
@@ -16541,19 +16801,23 @@ $(function () {
 
 		oParser = new parserFormula('COUNTIFS(A101:A104,A101:A104)', "E1", ws);
 		assert.ok(oParser.parse(), "COUNTIFS(A101:A104,A101:A104)");
-		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", "Result of COUNTIFS(A101:A104,A101:A104)");		// 1
+		// without setArrayFormulaRef executed as .cross and as result and as a result, #VALUE comes into the second argument
+		assert.strictEqual(oParser.calculate().getValue(), 0, "Result of COUNTIFS(A101:A104,A101:A104)");
 
 		oParser = new parserFormula('COUNTIFS(A101:A104,A101:A104&"")', "E1", ws);
 		assert.ok(oParser.parse(), 'COUNTIFS(A101:A104,A101:A104&"")');
-		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'Result of COUNTIFS(A101:A104,A101:A104&"")');	// 1
+		assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 1, 'Result of COUNTIFS(A101:A104,A101:A104&"")[0,0]');
+		assert.strictEqual(oParser.calculate().getElementRowCol(1,0).getValue(), 1, 'Result of COUNTIFS(A101:A104,A101:A104&"")[1,0]');
+		assert.strictEqual(oParser.calculate().getElementRowCol(2,0).getValue(), 2, 'Result of COUNTIFS(A101:A104,A101:A104&"")[2,0]');
+		assert.strictEqual(oParser.calculate().getElementRowCol(3,0).getValue(), 2, 'Result of COUNTIFS(A101:A104,A101:A104&"")[3,0]');
 
 		oParser = new parserFormula('COUNTIFS(A101:A104,A101:A104)', "E1", ws);
 		oParser.setArrayFormulaRef(ws.getRange2("AD6:AF8").bbox);
 		assert.ok(oParser.parse(), "COUNTIFS(A101:A104,A101:A104)");
 		assert.strictEqual(oParser.calculate().getElementRowCol(0,0).getValue(), 1, "Result of COUNTIFS(A101:A104,A101:A104)[0,0]");
 		assert.strictEqual(oParser.calculate().getElementRowCol(1,0).getValue(), 1, "Result of COUNTIFS(A101:A104,A101:A104)[1,0]");
-		assert.strictEqual(oParser.calculate().getElementRowCol(2,0).getValue(), 2, "Result of COUNTIFS(A101:A104,A101:A104)[2,0]");		// 0
-		assert.strictEqual(oParser.calculate().getElementRowCol(3,0).getValue(), 2, "Result of COUNTIFS(A101:A104,A101:A104)[3,0]");		// 0
+		assert.strictEqual(oParser.calculate().getElementRowCol(2,0).getValue(), 0, "Result of COUNTIFS(A101:A104,A101:A104)[2,0]");
+		assert.strictEqual(oParser.calculate().getElementRowCol(3,0).getValue(), 0, "Result of COUNTIFS(A101:A104,A101:A104)[3,0]");
 
 		oParser = new parserFormula('COUNTIFS(A101:A104,A101:A104&"")', "E1", ws);
 		oParser.setArrayFormulaRef(ws.getRange2("AD6:AF8").bbox);
@@ -21066,6 +21330,25 @@ $(function () {
 		assert.ok(oParser.parse(), 'VLOOKUP(A116,A101:A116,1)');
 		assert.strictEqual(oParser.calculate().getValue(), "Ke", 'Result of VLOOKUP(A116,A101:A116,1)');
 
+		// for bug 67099
+		ws.getRange2("M101:M134").setValue("W");
+		ws.getRange2("M127").setValue("1");
+		ws.getRange2("M128").setValue("2");
+		ws.getRange2("M129").setValue("3");
+		ws.getRange2("M130").setValue("4");
+		ws.getRange2("M131").setValue("5");
+		ws.getRange2("M132").setValue("6");
+		ws.getRange2("M133").setValue("7");
+		ws.getRange2("M134").setValue("8");
+		ws.getRange2("N129").setValue("Looked result(3)");
+
+		oParser = new parserFormula('VLOOKUP(3,M101:N134,2)', "A2", ws);
+		assert.ok(oParser.parse(), 'VLOOKUP(3,M101:N134,2)');
+		assert.strictEqual(oParser.calculate().getValue(), "Looked result(3)", 'Result of VLOOKUP(3,M101:N134,2)');
+
+		oParser = new parserFormula('VLOOKUP(M129,M101:N134,2)', "A2", ws);
+		assert.ok(oParser.parse(), 'VLOOKUP(M129,M101:N134,2)');
+		assert.strictEqual(oParser.calculate().getValue(), "Looked result(3)", 'Result of VLOOKUP(M129,M101:N134,2)');
 
 	});
 
@@ -22983,6 +23266,7 @@ $(function () {
 	});
 
 	QUnit.test("Test: \"INDEX\"", function (assert) {
+		let array;
 
 		ws.getRange2("A651").setValue("1");
 		ws.getRange2("A652").setValue("2");
@@ -23012,7 +23296,7 @@ $(function () {
 
 		oParser = new parserFormula("INDEX(\"Apples\",2,2)", "A2", ws);
 		assert.ok(oParser.parse());
-		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!");
+		assert.strictEqual(oParser.calculate().getValue(), "#REF!");
 
 		oParser = new parserFormula("INDEX({\"Apples\",\"Lemons\"},,2)", "A2", ws);
 		assert.ok(oParser.parse());
@@ -23108,6 +23392,114 @@ $(function () {
 		oParser = new parserFormula("INDEX(A651:A655,A651,0)", "A2", ws);
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue().getValue(), 1);
+
+		// val from arr
+		oParser = new parserFormula('INDEX({"",1,2,3,4,5},1)', "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "");
+
+		oParser = new parserFormula('INDEX({"",1,2,3,4,5},2)', "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 1);
+
+		oParser = new parserFormula('INDEX({"",1,2,3,4,5},5)', "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 4);
+
+		oParser = new parserFormula('INDEX({1,2,3,4,5},,1)', "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 1);
+
+		oParser = new parserFormula('INDEX({1,2,3,4,5},,2)', "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 2);
+
+		oParser = new parserFormula('INDEX({1,2,3,4,5},,10)', "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "#REF!");
+
+		oParser = new parserFormula('INDEX({"";1;2;3;4;5},1)', "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "");
+
+		oParser = new parserFormula('INDEX({"";1;2;3;4;5},5)', "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 4);
+
+		// arr
+		oParser = new parserFormula('INDEX({"";1;2;3;4;5},,1)', "A2", ws);
+		assert.ok(oParser.parse());
+		array = oParser.calculate();
+		assert.strictEqual(array.getElementRowCol(0, 0).getValue(), "", 'Result of INDEX({"";1;2;3;4;5},,1)[0,0]');
+		assert.strictEqual(array.getElementRowCol(1, 0).getValue(), 1, 'Result of INDEX({"";1;2;3;4;5},,1)[1,0]');
+		assert.strictEqual(array.getElementRowCol(2, 0).getValue(), 2, 'Result of INDEX({"";1;2;3;4;5},,1)[2,0]');
+		assert.strictEqual(array.getElementRowCol(3, 0).getValue(), 3, 'Result of INDEX({"";1;2;3;4;5},,1)[3,0]');
+		assert.strictEqual(array.getElementRowCol(4, 0).getValue(), 4, 'Result of INDEX({"";1;2;3;4;5},,1)[4,0]');
+		assert.strictEqual(array.getElementRowCol(5, 0).getValue(), 5, 'Result of INDEX({"";1;2;3;4;5},,1)[5,0]');
+		
+		oParser = new parserFormula('INDEX({"";1;2;3;4;5},,)', "A2", ws);
+		assert.ok(oParser.parse());
+		array = oParser.calculate();
+		assert.strictEqual(array.getElementRowCol(0, 0).getValue(), "", 'Result of INDEX({"";1;2;3;4;5},,)[0,0]');
+		assert.strictEqual(array.getElementRowCol(1, 0).getValue(), 1, 'Result of INDEX({"";1;2;3;4;5},,)[1,0]');
+		assert.strictEqual(array.getElementRowCol(2, 0).getValue(), 2, 'Result of INDEX({"";1;2;3;4;5},,)[2,0]');
+		assert.strictEqual(array.getElementRowCol(3, 0).getValue(), 3, 'Result of INDEX({"";1;2;3;4;5},,)[3,0]');
+		assert.strictEqual(array.getElementRowCol(4, 0).getValue(), 4, 'Result of INDEX({"";1;2;3;4;5},,)[4,0]');
+		assert.strictEqual(array.getElementRowCol(5, 0).getValue(), 5, 'Result of INDEX({"";1;2;3;4;5},,)[5,0]');
+
+		oParser = new parserFormula('INDEX({"";1;2;3;4;5},,55)', "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "#REF!");
+		
+		// arr two dimensional
+		oParser = new parserFormula('INDEX({"Apples","Lemons";"Apple","Lemon"},,)', "A2", ws);
+		assert.ok(oParser.parse());
+		array = oParser.calculate();
+		assert.strictEqual(array.getElementRowCol(0, 0).getValue(), "Apples", 'Result of INDEX({"Apples","Lemons";"Apple","Lemon"},,)[0,0]');
+		assert.strictEqual(array.getElementRowCol(0, 1).getValue(), "Lemons", 'Result of INDEX({"Apples","Lemons";"Apple","Lemon"},,)[0,1]');
+		assert.strictEqual(array.getElementRowCol(1, 0).getValue(), "Apple", 'Result of INDEX({"Apples","Lemons";"Apple","Lemon"},,)[1,0]');
+		assert.strictEqual(array.getElementRowCol(1, 1).getValue(), "Lemon", 'Result of INDEX({"Apples","Lemons";"Apple","Lemon"},,)[1,1]');
+
+		oParser = new parserFormula('INDEX({"Apples","Lemons";"Apple","Lemon"},1,)', "A2", ws);
+		assert.ok(oParser.parse());
+		array = oParser.calculate();
+		assert.strictEqual(array.getElementRowCol(0, 0).getValue(), "Apples", 'Result of INDEX({"Apples","Lemons";"Apple","Lemon"},1,)[0,0]');
+		assert.strictEqual(array.getElementRowCol(0, 1).getValue(), "Lemons", 'Result of INDEX({"Apples","Lemons";"Apple","Lemon"},1,)[0,1]');
+
+		oParser = new parserFormula('INDEX({"Apples","Lemons";"Apple","Lemon"},2,)', "A2", ws);
+		assert.ok(oParser.parse());
+		array = oParser.calculate();
+		assert.strictEqual(array.getElementRowCol(0, 0).getValue(), "Apple", 'Result of INDEX({"Apples","Lemons";"Apple","Lemon"},2,)[0,0]');
+		assert.strictEqual(array.getElementRowCol(0, 1).getValue(), "Lemon", 'Result of INDEX({"Apples","Lemons";"Apple","Lemon"},2,)[0,1]');
+
+		oParser = new parserFormula('INDEX({"Apples","Lemons";"Apple","Lemon"},,1)', "A2", ws);
+		assert.ok(oParser.parse());
+		array = oParser.calculate();
+		assert.strictEqual(array.getElementRowCol(0, 0).getValue(), "Apples", 'Result of INDEX({"Apples","Lemons";"Apple","Lemon"},,1)[0,0]');
+		assert.strictEqual(array.getElementRowCol(1, 0).getValue(), "Apple", 'Result of INDEX({"Apples","Lemons";"Apple","Lemon"},,1)[1,0]');
+
+		oParser = new parserFormula('INDEX({"Apples","Lemons";"Apple","Lemon"},3,2)', "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "#REF!");
+
+		ws.getRange2("A100").setValue("1")
+		ws.getRange2("B100").setValue("2")
+		ws.getRange2("A101").setValue("3")
+		ws.getRange2("B101").setValue("4")
+
+		// the behavior with array and range is different in these case(when arg2 is ommited)
+		oParser = new parserFormula('INDEX({1,2;3,4},)', "A2", ws);
+		assert.ok(oParser.parse());
+		array = oParser.calculate();
+		assert.strictEqual(array.getElementRowCol(0, 0).getValue(), 1, 'Result of INDEX({1,2;3,4},)[0,0]');
+		assert.strictEqual(array.getElementRowCol(1, 0).getValue(), 3, 'Result of INDEX({1,2;3,4},)[1,0]');
+		assert.strictEqual(array.getElementRowCol(0, 1).getValue(), 2, 'Result of INDEX({1,2;3,4},)[0,1]');
+		assert.strictEqual(array.getElementRowCol(1, 1).getValue(), 4, 'Result of INDEX({1,2;3,4},)[1,1]');
+
+		oParser = new parserFormula('INDEX(A100:B101,)', "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "#REF!");
+		
 	});
 
 	QUnit.test("Test: \"INDIRECT\"", function (assert) {
@@ -26875,7 +27267,7 @@ $(function () {
 	});
 
 	QUnit.test("Test: \"ODDFYIELD\"", function (assert) {
-
+		ws.getRange2("A10:Z100").cleanAll();
 		oParser = new parserFormula("ODDFYIELD(DATE(1990,6,1),DATE(1995,12,31),DATE(1990,1,1),DATE(1990,12,31),6%,790,100,1,1)", "A2", ws);
 		assert.ok(oParser.parse());
 		assert.ok(oParser.assemble() == "ODDFYIELD(DATE(1990,6,1),DATE(1995,12,31),DATE(1990,1,1),DATE(1990,12,31),6%,790,100,1,1)");
@@ -26890,6 +27282,21 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.ok(oParser.assemble() == "ODDFYIELD(DATE(2008,12,11),DATE(2021,4,1),DATE(2008,10,15),DATE(2009,4,1),6%,100,100,4,1)");
 		assert.ok(difBetween(oParser.calculate().getValue(), 0.0599769985558904));
+
+		// for bug 21211
+		ws.getRange2("A12").setValue("November 11, 2008");
+		ws.getRange2("A13").setValue("March 1, 2021");
+		ws.getRange2("A14").setValue("October 15, 2008");
+		ws.getRange2("A15").setValue("March 1, 2009");
+		ws.getRange2("A16").setValue("5.75%");
+		ws.getRange2("A17").setValue("84.50");
+		ws.getRange2("A18").setValue("100");
+		ws.getRange2("A19").setValue("2");
+		ws.getRange2("A20").setValue("0");
+
+		oParser = new parserFormula("ODDFYIELD(A12, A13, A14, A15, A16, A17, A18, A19, A20)", "A2", ws);
+		assert.ok(oParser.parse(), 'ODDFYIELD(A12, A13, A14, A15, A16, A17, A18, A19, A20)');
+		assert.ok(oParser.calculate().getValue(), 0.08, 'Result of ODDFYIELD(A12, A13, A14, A15, A16, A17, A18, A19, A20)');
 
 		testArrayFormula2(assert, "ODDFYIELD", 8, 9, true);
 	});
@@ -29125,6 +29532,7 @@ $(function () {
 	});
 
 	QUnit.test("Test: \"FIND\"", function (assert) {
+		ws.getRange2("A101:F101").cleanAll();
 		ws.getRange2("A101").setValue("Miriam McGovern");
 
 		oParser = new parserFormula('FIND("M",A101)', "A2", ws);
@@ -29142,6 +29550,34 @@ $(function () {
 		oParser = new parserFormula('FIND("U",TRUE)', "A2", ws);
 		assert.ok(oParser.parse(), 'FIND("T",TRUE)');
 		assert.strictEqual(oParser.calculate().getValue(), 3, 'FIND("T",TRUE)');
+
+		// for bug 68343
+		ws.getRange2("B101").setValue("31° 57' 14.6\" S BT 3 18° 54' 20.3\" E");
+		oParser = new parserFormula('FIND(""" S",B101,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'FIND(""" S",B101,1)');
+		assert.strictEqual(oParser.calculate().getValue(), 13, 'FIND(""" S",B101,1)');
+
+		oParser = new parserFormula('FIND(" S",B101,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'FIND(" S",B101,1)');
+		assert.strictEqual(oParser.calculate().getValue(), 14, 'FIND(" S",B101,1)');
+
+		ws.getRange2("C101").setValue("6\" S");
+		oParser = new parserFormula('FIND(""" S",C101,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'FIND(""" S",C101,1)');
+		assert.strictEqual(oParser.calculate().getValue(), 2, 'FIND(""" S",C101,1)');
+
+		oParser = new parserFormula('FIND(" S",C101,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'FIND(" S",C101,1)');
+		assert.strictEqual(oParser.calculate().getValue(), 3, 'FIND(" S",C101,1)');
+
+		ws.getRange2("D101").setValue("testtest \" String\"abcdString");
+		oParser = new parserFormula('FIND(""" String",D101,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'FIND(""" String",D101,1)');
+		assert.strictEqual(oParser.calculate().getValue(), 10, 'FIND(""" String",D101,1)');
+
+		oParser = new parserFormula('FIND(" String",D101,1)', "A2", ws);
+		assert.ok(oParser.parse(), 'FIND(" String",D101,1)');
+		assert.strictEqual(oParser.calculate().getValue(), 11, 'FIND(" String",D101,1)');
 
 		testArrayFormula2(assert, "FIND", 2, 3);
 	});

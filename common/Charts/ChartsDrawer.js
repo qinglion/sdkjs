@@ -1603,6 +1603,7 @@ CChartsDrawer.prototype =
 		// add Trendline coordinates and precalculate all the necessary results
 		if (chartSpace && chartSpace.chart && chartSpace.chart.plotArea && chartSpace.chart.plotArea.charts) {
 			const charts = chartSpace.chart.plotArea.charts;
+			const dispBlanksAs = chartSpace.chart.dispBlanksAs;
 			for (let i = 0; i < charts.length; i++) {
 				if (charts[i].series) {
 					const subType = this.getChartGrouping(charts[i]);
@@ -1617,14 +1618,45 @@ CChartsDrawer.prototype =
 								if (!valPts || !valPts.length || seria.isHidden === true || valPts.length < 2) {
 									continue;
 								}
-								this.trendline.init(valNumCache.ptCount);
 
 								// if xVal is given
 								const catNumCache = seria.xVal ? this.getNumCache(seria.xVal) : null;
 								const catPts = catNumCache ? catNumCache.pts : null;
-								for (let k = 0; k < valPts.length; k++) {
-									const catVal = catPts ? catPts[k].val : valPts[k].idx + 1;
-									this.trendline.addCoordinate(catVal, valPts[k].val , charts[i].Id, seria.Id);
+
+								// obtain reference of targetPts either catpts or valpts;
+								const targetPts = catPts ? catPts : valPts;
+								let valIterator = 0;
+								let catIterator = 0;
+
+								const decideCatValue = function (index) {
+									++catIterator;
+									return catPts ? targetPts[index].val : targetPts[index].idx + 1;
+								}
+
+								const decideValValue = function () {
+									return valPts[valIterator++].val
+								}
+
+								if (dispBlanksAs === AscFormat.DISP_BLANKS_AS_ZERO) {
+									const ptCount = catNumCache ? catNumCache.ptCount : valNumCache.ptCount;
+									for (let k = 0; k < ptCount; k++) {
+										const statement1 = catIterator < targetPts.length;
+										const statement2 = valIterator < valPts.length;
+										const catVal = statement1 && k === targetPts[catIterator].idx ? decideCatValue(catIterator) : 0;
+										const valVal = statement2 && k === valPts[valIterator].idx ? decideValValue() : 0;
+										this.trendline.addCoordinate(catVal, valVal, charts[i].Id, seria.Id);
+									}
+								} else {
+									for (let k = 0; k < targetPts.length && valIterator < valPts.length; k++) {
+										if ( targetPts[k].idx === valPts[valIterator].idx) {
+											const catVal = decideCatValue(k);
+											const valVal = decideValValue();
+											this.trendline.addCoordinate(catVal, valVal, charts[i].Id, seria.Id);
+										} else if (targetPts[k].idx > valPts[valIterator].idx) {
+											valIterator++;
+											k--;
+										}
+									}
 								}
 							}
 						}
@@ -1827,8 +1859,15 @@ CChartsDrawer.prototype =
 					pointVal = oErrVal.val;
 				}
 
-				var plusErrVal = oErrVal.plusErrVal;
-				var minusErrVal = oErrVal.minusErrVal
+				const remainder = oErrVal.plusErrVal % 1;
+				var plusErrVal = remainder <= 0.5 ? Math.floor(oErrVal.plusErrVal) : Math.ceil(oErrVal.plusErrVal);
+				var minusErrVal = Math.floor(oErrVal.minusErrVal);
+				if (!AscFormat.isRealNumber(plusErrVal)) {
+					plusErrVal = 0;
+				}
+				if (!AscFormat.isRealNumber(minusErrVal)) {
+					plusErrVal = 0;
+				}
 				switch (errBar.errBarType) {
 					case AscFormat.st_errbartypeBOTH: {
 						if (maxErr === null || maxErr < pointVal + plusErrVal) {
@@ -2520,12 +2559,15 @@ CChartsDrawer.prototype =
 		this.calcProp.xaxispos = null;
 		this.calcProp.yaxispos = null;
 
+		const isChartEx = chartSpace.isChartEx();
+
+		if (!isChartEx) {
+			this.calcProp.type = this._getChartType(chartSpace.chart.plotArea.chart);
+			this.calcProp.subType = this.getChartGrouping(chartSpace.chart.plotArea.chart);
+		}
 
 		if (!notCalcExtremum) {
-			const isChartEx = chartSpace.isChartEx();
 			if (!isChartEx) {
-				this.calcProp.type = this._getChartType(chartSpace.chart.plotArea.chart);
-				this.calcProp.subType = this.getChartGrouping(chartSpace.chart.plotArea.chart);
 				//calculate calcProp -> /min/max/ymax/ymin/
 				this._calculateExtremumAllCharts(chartSpace);
 			} else {
@@ -14164,10 +14206,10 @@ drawScatterChart.prototype = {
 						//this.paths.series[i][n] = {path: this.cChartDrawer.calculateSplineLine(x, y, x1, y1, x2, y2, x3, y3, this.catAx, this.valAx), idx: points[i][n].idx};
 						this.paths.series[i][n] = this.cChartDrawer.calculateSplineLine(x, y, x1, y1, x2, y2, x3, y3, this.catAx, this.valAx);
 					} else {
-						x = this.cChartDrawer.getYPosition(points[i][n].x, this.catAx);
+						x = this.cChartDrawer.getYPosition(points[i][n].x, this.catAx, true);
 						y = this.cChartDrawer.getYPosition(points[i][n].y, this.valAx, true);
 
-						x1 = this.cChartDrawer.getYPosition(points[i][n + 1].x, this.catAx);
+						x1 = this.cChartDrawer.getYPosition(points[i][n + 1].x, this.catAx, true);
 						y1 = this.cChartDrawer.getYPosition(points[i][n + 1].y, this.valAx, true);
 
 						//this.paths.series[i][n] = {path: this._calculateLine(x, y, x1, y1), idx: points[i][n].idx};
@@ -17405,7 +17447,7 @@ CColorObj.prototype =
 	function CTrendline(chartsDrawer) {
 		this.cChartDrawer = chartsDrawer;
 		this.storage = {};//[chartId][seriaId]
-		this.ptCount = null;
+		this.ptCount = 0;
 
 		//control trend calculate type
 		this.bAllowDrawByBezier = true;
@@ -17416,15 +17458,6 @@ CColorObj.prototype =
 	CTrendline.prototype = {
 
 		constructor: CTrendline,
-
-		// find max ptCount
-		init: function (ptCount) {
-			if (!this.ptCount) {
-				this.ptCount = ptCount;
-			} else {
-				this.ptCount = Math.max(ptCount);
-			}
-		},
 
 		addCoordinate: function (xVal, yVal, chartId, seriaId) {
 			if (!this.storage[chartId]) {
@@ -17439,6 +17472,7 @@ CColorObj.prototype =
 
 			// in the case of duplicated data, no further adding should be allowed
 			if (!this.stopAdding) {
+				this.ptCount+=1;
 				this.storage[chartId][seriaId].addCatVal(xVal);
 				this.storage[chartId][seriaId].addValVal(yVal);
 	
