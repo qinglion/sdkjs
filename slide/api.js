@@ -4978,7 +4978,32 @@ background-repeat: no-repeat;\
 		}
 
 		const resultShape = new AscFormat.CShape();
-		resultShape.calcGeometry = resultGeometry;
+		resultShape.setBDeleted(false);
+		resultShape.spPr = new AscFormat.CSpPr();
+		resultShape.spPr.setParent(resultShape);
+		resultShape.spPr.setXfrm(new AscFormat.CXfrm());
+		resultShape.spPr.xfrm.setParent(resultShape.spPr);
+
+		/*
+			СОЗДАЮ ФЕЙКОВУЮ ГЕОМЕТРИЮ
+		*/
+
+		// Эту геометрию я взял из фигуры, полученной объединением круга и квадрата с помощью PowerPoint
+		const parsedGeometry = JSON.parse('{"Id":"1434","parent":null,"gdLstInfo":[{"name":"connsiteX0","formula":0,"x":"0","y":"w","z":"800000"},{"name":"connsiteY0","formula":0,"x":"0","y":"h","z":"800000"},{"name":"connsiteX1","formula":0,"x":"600000","y":"w","z":"800000"},{"name":"connsiteY1","formula":0,"x":"0","y":"h","z":"800000"},{"name":"connsiteX2","formula":0,"x":"600000","y":"w","z":"800000"},{"name":"connsiteY2","formula":0,"x":"400000","y":"h","z":"800000"},{"name":"connsiteX3","formula":0,"x":"800000","y":"w","z":"800000"},{"name":"connsiteY3","formula":0,"x":"600000","y":"h","z":"800000"},{"name":"connsiteX4","formula":0,"x":"600000","y":"w","z":"800000"},{"name":"connsiteY4","formula":0,"x":"800000","y":"h","z":"800000"},{"name":"connsiteX5","formula":0,"x":"400000","y":"w","z":"800000"},{"name":"connsiteY5","formula":0,"x":"600000","y":"h","z":"800000"},{"name":"connsiteX6","formula":0,"x":"0","y":"w","z":"800000"},{"name":"connsiteY6","formula":0,"x":"600000","y":"h","z":"800000"}],"gdLst":{"_3cd4":16200000,"_3cd8":8100000,"_5cd8":13500000,"_7cd8":18900000,"cd2":10800000,"cd4":5400000,"cd8":2700000,"l":0,"t":0,"h":22.22222222222222,"b":22.22222222222222,"hd2":11.11111111111111,"hd3":7.407407407407407,"hd4":5.555555555555555,"hd5":4.444444444444445,"hd6":3.7037037037037037,"hd8":2.7777777777777777,"hd10":2.2222222222222223,"hd12":1.8518518518518519,"hd32":0.6944444444444444,"vc":11.11111111111111,"w":22.22222222222222,"r":22.22222222222222,"wd2":11.11111111111111,"wd3":7.407407407407407,"wd4":5.555555555555555,"wd5":4.444444444444445,"wd6":3.7037037037037037,"wd8":2.7777777777777777,"wd10":2.2222222222222223,"wd12":1.8518518518518519,"wd32":0.6944444444444444,"hc":11.11111111111111,"ls":22.22222222222222,"ss":22.22222222222222,"ssd2":11.11111111111111,"ssd4":5.555555555555555,"ssd6":3.7037037037037037,"ssd8":2.7777777777777777,"ssd16":1.3888888888888888,"ssd32":0.6944444444444444,"connsiteX0":0,"connsiteY0":0,"connsiteX1":16.666666666666664,"connsiteY1":0,"connsiteX2":16.666666666666664,"connsiteY2":11.11111111111111,"connsiteX3":22.22222222222222,"connsiteY3":16.666666666666664,"connsiteX4":16.666666666666664,"connsiteY4":22.22222222222222,"connsiteX5":11.11111111111111,"connsiteY5":16.666666666666664,"connsiteX6":0,"connsiteY6":16.666666666666664},"avLst":{},"cnxLstInfo":[{"ang":"0","x":"connsiteX0","y":"connsiteY0"},{"ang":"0","x":"connsiteX1","y":"connsiteY1"},{"ang":"0","x":"connsiteX2","y":"connsiteY2"},{"ang":"0","x":"connsiteX3","y":"connsiteY3"},{"ang":"0","x":"connsiteX4","y":"connsiteY4"},{"ang":"0","x":"connsiteX5","y":"connsiteY5"},{"ang":"0","x":"connsiteX6","y":"connsiteY6"}],"cnxLst":[{"ang":0,"x":0,"y":0},{"ang":0,"x":16.666666666666664,"y":0},{"ang":0,"x":16.666666666666664,"y":11.11111111111111},{"ang":0,"x":22.22222222222222,"y":16.666666666666664},{"ang":0,"x":16.666666666666664,"y":22.22222222222222},{"ang":0,"x":11.11111111111111,"y":16.666666666666664},{"ang":0,"x":0,"y":16.666666666666664}],"ahXYLstInfo":[],"ahXYLst":[],"ahPolarLstInfo":[],"ahPolarLst":[],"pathLst":[{"Id":"1435","parent":null,"stroke":true,"extrusionOk":false,"fill":"norm","pathH":800000,"pathW":800000,"ArrPathCommandInfo":[{"id":0,"X":"0","Y":"0"},{"id":1,"X":"600000","Y":"0"},{"id":1,"X":"600000","Y":"400000"},{"id":4,"X0":"710457","Y0":"400000","X1":"800000","Y1":"489543","X2":"800000","Y2":"600000"},{"id":4,"X0":"800000","Y0":"710457","X1":"710457","Y1":"800000","X2":"600000","Y2":"800000"},{"id":4,"X0":"489543","Y0":"800000","X1":"400000","Y1":"710457","X2":"400000","Y2":"600000"},{"id":1,"X":"0","Y":"600000"},{"id":5}],"ArrPathCommand":[{"id":0,"X":0,"Y":0},{"id":1,"X":16.666666666666664,"Y":0},{"id":1,"X":16.666666666666664,"Y":11.11111111111111},{"id":4,"X0":19.734916666666667,"Y0":11.11111111111111,"X1":22.22222222222222,"Y1":13.598416666666665,"X2":22.22222222222222,"Y2":16.666666666666664},{"id":4,"X0":22.22222222222222,"Y0":19.734916666666667,"X1":19.734916666666667,"Y1":22.22222222222222,"X2":16.666666666666664,"Y2":22.22222222222222},{"id":4,"X0":13.598416666666665,"Y0":22.22222222222222,"X1":11.11111111111111,"Y1":19.734916666666667,"X2":11.11111111111111,"Y2":16.666666666666664},{"id":1,"X":0,"Y":16.666666666666664},{"id":5}]}],"preset":null,"rectS":{"l":"l","t":"t","r":"r","b":"b"},"bDrawSmart":false,"rect":{"l":0,"t":0,"r":22.22222222222222,"b":22.22222222222222},"spPr":null}');
+
+		resultGeometry.cnxLst = parsedGeometry.cnxLst;
+		resultGeometry.cnxLstInfo = parsedGeometry.cnxLstInfo;
+		resultGeometry.gdLst = parsedGeometry.gdLst;
+		resultGeometry.gdLstInfo = parsedGeometry.gdLstInfo;
+		parsedGeometry.pathLst.forEach(function (path, index) {
+			resultGeometry.pathLst[index].ArrPathCommand = parsedGeometry.pathLst[index].ArrPathCommand;
+			resultGeometry.pathLst[index].ArrPathCommandInfo = parsedGeometry.pathLst[index].ArrPathCommandInfo;
+		})
+		resultGeometry.pathLst[0].fill = 'norm';
+		resultGeometry.rect = parsedGeometry.rect;
+		resultGeometry.rectS = parsedGeometry.rectS;
+		resultGeometry.parent = resultShape;
+		resultShape.spPr.setGeometry(resultGeometry);
 
 		/* Replace original shapes with united shape */
 		selectedShapes.forEach(function (shape) {
