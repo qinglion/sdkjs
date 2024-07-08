@@ -5004,6 +5004,8 @@ background-repeat: no-repeat;\
 		resultGeometry.rectS = parsedGeometry.rectS;
 		resultGeometry.parent = resultShape;
 		resultShape.spPr.setGeometry(resultGeometry);
+		resultShape.spPr.setFill(AscFormat.CreateSolidFillRGBA(255, 0, 0, 255));
+		resultShape.spPr.setLn(AscFormat.builder_CreateLine(12700, AscFormat.CreateSolidFillRGBA(0, 255, 0, 255)));
 
 		/* Replace original shapes with united shape */
 		selectedShapes.forEach(function (shape) {
