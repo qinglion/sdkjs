@@ -909,20 +909,16 @@
 		}
 
 		// themed/0/1
-		let gradientEnabledString = this.getCellStringValue("FillGradientEnabled");
-		let themedFill = AscCommonDraw.themeval(null, this, pageInfo, visioDocument.themes, "FillColor",
-			undefined, true);
-		let themedFillIsGradient = themedFill.fill.constructor.name === "CGradFill";
-		let gradientEnabled;
-		if (gradientEnabledString === "1" || (gradientEnabledString === "Themed" && themedFillIsGradient)) {
-			gradientEnabled = true;
-		} else {
-			gradientEnabled = false;
-		}
+		let gradientEnabledCell = this.getCell("FillGradientEnabled");
+		let gradientEnabled = gradientEnabledCell.calculateValue(this, pageInfo,
+			visioDocument.themes, themeValWasUsedFor, true);
 
 		// FillGradientDir and FillPattern can tell about gradient type
-
 		if (gradientEnabled) {
+			let themedFill = AscCommonDraw.themeval(null, this, pageInfo, visioDocument.themes, "FillColor",
+				undefined, true);
+			let themedFillIsGradient = themedFill.fill.constructor.name === "CGradFill";
+
 			let fillGradientDir = this.getCellNumberValue("FillGradientDir");
 
 			// global matrix transform: invert Y axis causes 0 is bottom of gradient and 100000 is top

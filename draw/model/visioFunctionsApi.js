@@ -134,6 +134,13 @@
 
 			// // 9255 emus = 0.01041666666666667 inches is document.xml StyleSheet ID=0 LineWeight e. g. default value
 			initialDefaultValue = 0.01041666666666667;
+		} else if (cellName === "FillGradientEnabled") {
+			quickStyleCellName = "QuickStyleFillColor";
+			quickStyleModifiersCellName = "QuickStyleFillMatrix";
+			getModifiersMethod = themes[0].getFillStyle;
+			variationStyleIndexVariable = "fillIdx";
+
+			initialDefaultValue = false;
 		} else {
 			console.log("themeval argument error. cell name is unknown. return null.");
 			return null;
@@ -281,7 +288,7 @@
 				}
 			}
 
-			if (!gradientEnabled && getMedifiersResult && getMedifiersResult.fill.constructor.name === "CGradFill") {
+			if (!gradientEnabled && getMedifiersResult && getMedifiersResult.fill instanceof AscFormat.CGradFill) {
 				// disable gradient
 				getMedifiersResult = AscFormat.CreateUniFillByUniColor(calculatedColor);
 			}
@@ -320,7 +327,11 @@
 				result = getMedifiersResult;
 			} else if (cellName === "LineWeight") {
 				// let's map standart ooxml result in emus to visio result - inches
-				result = getMedifiersResult && getMedifiersResult.w / (AscCommonWord.g_dKoef_in_to_mm * AscCommonWord.g_dKoef_mm_to_emu);
+				result = getMedifiersResult && getMedifiersResult.w /
+					(AscCommonWord.g_dKoef_in_to_mm * AscCommonWord.g_dKoef_mm_to_emu);
+			} else if (cellName === "FillGradientEnabled") {
+				// and it is color
+				result = getMedifiersResult && getMedifiersResult.fill instanceof AscFormat.CGradFill;
 			} else {
 				console.log("Error in themeval. result is not changed to appropriate type or quickStyleCellName is not set.");
 			}

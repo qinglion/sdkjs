@@ -690,13 +690,38 @@
 	}
 
 	/**
+	 * try parse string "0" then get Boolean(cell.v)
+	 * @memberOf Cell_Type
+	 * @return {undefined | boolean}
+	 */
+	Cell_Type.prototype.getBooleanValue = function () {
+		let cell = this;
+		if (cell !== undefined) {
+			if (typeof cell.v === "string") {
+				if (cell.v === "1") {
+					return true;
+				} else if (cell.v === "0") {
+					return false;
+				} else {
+					// unknown string
+					return true;
+				}
+			} else {
+				return Boolean(cell.v);
+			}
+		} else {
+			return undefined;
+		}
+	}
+
+	/**
 	 * Can parse themeval
 	 * @param {Shape_Type} shape
 	 * @param {Page_Type} pageInfo
 	 * @param {CTheme[]} themes
 	 * @param {{fontColor?: boolean, lineUniFill?: boolean, uniFillForegnd?: boolean}} themeValWasUsedFor - changes during function
 	 * @param {boolean?} gradientEnabled
-	 * @return {(CUniFill | CUniColor | *)}
+	 * @return {(CUniFill | CUniColor | boolean | *)}
 	 */
 	Cell_Type.prototype.calculateValue = function calculateCellValue(shape, pageInfo,
 																		 themes, themeValWasUsedFor,
@@ -706,9 +731,11 @@
 
 		let returnValue;
 
+		// supported cells
 		let fillResultCells = ["LineColor", "FillForegnd", "FillBkgnd"];
 		let fillColorResultCells = ["Color", "GradientStopColor"];
 		let numberResultCells = ["LinePattern", "LineWeight"];
+		let booleanResultCells = ["FillGradientEnabled"];
 
 		if (cellValue === "Themed") {
 			// equal to THEMEVAL() call
@@ -820,6 +847,9 @@
 			if (!isNaN(cellNumberValue)) {
 				return cellNumberValue;
 			}
+		} else if (booleanResultCells.includes(cellName)) {
+			let cellBooleanValue = this.getBooleanValue();
+			return cellBooleanValue;
 		} else {
 			console.log("Cell was not calculated in calculate cell value");
 		}
