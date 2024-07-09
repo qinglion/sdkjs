@@ -4947,46 +4947,33 @@ background-repeat: no-repeat;\
 		const resultGeometry = new AscFormat.Geometry();
 		resultGeometry.AddPath(new AscFormat.Path())
 
+		let lastVisitedSegment;
 		const segments = paperResult.toJSON()[1].segments;
-		let lastPoint = [0, 0];
-		for (let segmentIndex = 0; segmentIndex < segments.length; ++segmentIndex) {
-			const segment = segments[segmentIndex];
+		segments.forEach(function (segment, index) {
+			const point = segment.length === 2 ? segment : segment[0];
+			const handleIn = segment.length === 2 ? [0, 0] : segment[1];
+			const handleOut = segment.length === 2 ? [0, 0] : segment[2];
 
-			if (segmentIndex === 0) {
+			if (index === 0) {
 				resultGeometry.pathLst[0].ArrPathCommandInfo.push({
-					"id": 0,
-					"X": String(segment[0] * 36000 >> 0),
-					"Y": String(segment[1] * 36000 >> 0)
-				});
-				lastPoint = segment;
+					'id': 0,
+					'X': '' + (point[0] * 36000 >> 0),
+					'Y': '' + (point[1] * 36000 >> 0)
+				})
 			} else {
-				switch (segment.length) {
-					case 2:
-						resultGeometry.pathLst[0].ArrPathCommandInfo.push({
-							"id": 1,
-							"X": String(segment[0] * 36000 >> 0),
-							"Y": String(segment[1] * 36000 >> 0)
-						});
-						lastPoint = segment;
-						break;
-					case 3:
-						const point = segment[0];
-						const handleIn = segment[1];
-						const handleOut = segment[2];
-						resultGeometry.pathLst[0].ArrPathCommandInfo.push({
-							"id": 4,
-							"X0": String(36000 * (lastPoint[0] + handleIn[0]) >> 0),
-							"Y0": String(36000 * (lastPoint[1] + handleIn[1]) >> 0),
-							"X1": String(36000 * (point[0] + handleOut[0]) >> 0),
-							"Y1": String(36000 * (point[1] + handleOut[1]) >> 0),
-							"X2": String(36000 * point[0] >> 0),
-							"Y2": String(36000 * point[1] >> 0)
-						})
-						lastPoint = point;
-						break;
-				}
+				resultGeometry.pathLst[0].ArrPathCommandInfo.push({
+					'id': 4,
+					'X0': '' + ((lastVisitedSegment.point[0] + lastVisitedSegment.handleOut[0]) * 36000 >> 0),
+					'Y0': '' + ((lastVisitedSegment.point[1] + lastVisitedSegment.handleOut[1]) * 36000 >> 0),
+					'X1': '' + ((point[0] + handleIn[0]) * 36000 >> 0),
+					'Y1': '' + ((point[1] + handleIn[1]) * 36000 >> 0),
+					'X2': '' + (point[0] * 36000 >> 0),
+					'Y2': '' + (point[1] * 36000 >> 0)
+				})
 			}
-		}
+
+			lastVisitedSegment = {point: point, handleIn: handleIn, handleOut: handleOut};
+		});
 
 		const resultShape = new AscFormat.CShape();
 		resultShape.setBDeleted(false);
