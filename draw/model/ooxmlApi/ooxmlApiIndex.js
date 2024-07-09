@@ -499,7 +499,11 @@
 	 */
 	SheetStorage.prototype.getCell = function getCell(formula) {
 		// Cells can have N only no IX
-		return this.elements[formula];
+		let cell = this.elements[formula];
+		if (!(cell instanceof Cell_Type) && cell !== undefined) {
+			console.log("ERR: Tried to get cell but got other object!");
+		}
+		return cell;
 	}
 
 	/**
@@ -721,11 +725,12 @@
 	 * @param {CTheme[]} themes
 	 * @param {{fontColor?: boolean, lineUniFill?: boolean, uniFillForegnd?: boolean}} themeValWasUsedFor - changes during function
 	 * @param {boolean?} gradientEnabled
+	 * @param {number?}  themedColorsRow
 	 * @return {(CUniFill | CUniColor | boolean | *)}
 	 */
 	Cell_Type.prototype.calculateValue = function calculateCellValue(shape, pageInfo,
 																		 themes, themeValWasUsedFor,
-																		 gradientEnabled) {
+																		 gradientEnabled, themedColorsRow) {
 		let cellValue = this.v;
 		let cellName = this.n;
 
@@ -734,12 +739,15 @@
 		// supported cells
 		let fillResultCells = ["LineColor", "FillForegnd", "FillBkgnd"];
 		let fillColorResultCells = ["Color", "GradientStopColor"];
-		let numberResultCells = ["LinePattern", "LineWeight"];
+		let numberResultCells = ["LinePattern", "LineWeight", "GradientStopColorTrans", "GradientStopPosition",
+		"FillGradientAngle"];
 		let booleanResultCells = ["FillGradientEnabled"];
 
 		if (cellValue === "Themed") {
 			// equal to THEMEVAL() call
-			returnValue = AscCommonDraw.themeval(this, shape, pageInfo, themes, undefined, undefined, gradientEnabled);
+			// add themeval support for every supported cell
+			returnValue = AscCommonDraw.themeval(this, shape, pageInfo, themes, undefined,
+				undefined, gradientEnabled, themedColorsRow);
 
 			if (cellName === "LineColor") {
 				themeValWasUsedFor.lineUniFill = true;
@@ -833,6 +841,7 @@
 					}
 				}
 			}
+
 			if (fillResultCells.includes(cellName)) {
 				returnValue = AscFormat.CreateUnfilFromRGB(rgba.R, rgba.G, rgba.B);
 			} else if (fillColorResultCells.includes(cellName)) {
@@ -845,6 +854,23 @@
 		} else if (numberResultCells.includes(cellName)) {
 			let cellNumberValue = this.getNumberValue();
 			if (!isNaN(cellNumberValue)) {
+				if (cellName === "GradientStopPosition") {
+					cellNumberValue *= 100000;
+				} else if (cellName === "FillGradientAngle") {
+					let angleRads = cellNumberValue;
+					let angle = null;
+					// 20.1.10.3 ST_Angle (Angle)
+					// This simple type represents an angle in 60,000ths of a degree. Positive angles are clockwise (i.e., towards the
+					// positive y axis); negative angles are counter-clockwise (i.e., towards the negative y axis)
+					// direction is considered in global transform
+					let stAngle = angleRads / Math.PI * 180 * 60000;
+					if (!isNaN(stAngle)) {
+						angle = stAngle;
+					} else {
+						angle = 5400000;
+					}
+					cellNumberValue = angle;
+				}
 				return cellNumberValue;
 			}
 		} else if (booleanResultCells.includes(cellName)) {
@@ -971,6 +997,10 @@
 	Shape_Type.prototype.constructor = Shape_Type;
 
 
+	/**
+	 * @memberOf Shape_Type
+	 * @return {*} masterId
+	 */
 	Shape_Type.prototype.getMasterID = function() {
 		return this.master;
 	}

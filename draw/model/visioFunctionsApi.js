@@ -48,10 +48,11 @@
 	 * @param {string?} themeValue - value to calculate if cell is not considered
 	 * @param {string?} defaultValue
 	 * @param {boolean?} gradientEnabled
+	 * @param {number?}  themedColorsRow
 	 * @return {CUniFill | CUniColor | number | any}
 	 */
 	function themeval(cell, shape, pageInfo, themes, themeValue,
-					  defaultValue, gradientEnabled) {
+					  defaultValue, gradientEnabled, themedColorsRow) {
 		// https://visualsignals.typepad.co.uk/vislog/2013/05/visio-2013-themes-in-the-shapesheet-part-2.html
 
 		// if cell value is not 'Themed' waiting number representing color otherwise
@@ -105,7 +106,9 @@
 			variationStyleIndexVariable = "fontIdx";
 
 			initialDefaultValue =  AscFormat.CreateUnfilFromRGB(0,0,0).fill.color;
-		} else if (cellName === "FillForegnd" || cellName === "FillBkgnd") {
+		} else if (cellName === "FillForegnd" || cellName === "FillBkgnd" ||
+			cellName === "GradientStopColor" || cellName === "GradientStopPosition" ||
+			cellName === "FillGradientAngle" ) {
 			quickStyleCellName = "QuickStyleFillColor";
 			quickStyleModifiersCellName = "QuickStyleFillMatrix";
 			getModifiersMethod = themes[0].getFillStyle;
@@ -115,6 +118,12 @@
 				initialDefaultValue =  AscFormat.CreateUnfilFromRGB(255,255,255);
 			} else if (cellName === "FillBkgnd") {
 				initialDefaultValue =  AscFormat.CreateUnfilFromRGB(0,0,0);
+			} else if (cellName === "GradientStopColor") {
+				initialDefaultValue =  AscFormat.CreateUniColorRGB(255,255,255);
+			} else if (cellName === "GradientStopPosition") {
+				initialDefaultValue =  0;
+			} else if (cellName === "FillGradientAngle") {
+				initialDefaultValue =  5400000;
 			}
 		} else if (cellName === "LinePattern") {
 			// dash dot or smth. get from a:ln from a:lnStyleLst
@@ -141,6 +150,15 @@
 			variationStyleIndexVariable = "fillIdx";
 
 			initialDefaultValue = false;
+		} else if (cellName === "GradientStopColorTrans") {
+			// quickStyleCellName = "QuickStyleFillColor";
+			// quickStyleModifiersCellName = "QuickStyleFillMatrix";
+			// getModifiersMethod = themes[0].getFillStyle;
+			// variationStyleIndexVariable = "fillIdx";
+			//
+			// initialDefaultValue = 0;
+			console.log("Themed GradientStopColorTrans is unhandled");
+			return 0;
 		} else {
 			console.log("themeval argument error. cell name is unknown. return null.");
 			return null;
@@ -330,8 +348,29 @@
 				result = getMedifiersResult && getMedifiersResult.w /
 					(AscCommonWord.g_dKoef_in_to_mm * AscCommonWord.g_dKoef_mm_to_emu);
 			} else if (cellName === "FillGradientEnabled") {
-				// and it is color
 				result = getMedifiersResult && getMedifiersResult.fill instanceof AscFormat.CGradFill;
+			} else if (cellName === "GradientStopColor") {
+				// and it is color
+				let themedFillIsGradient = getMedifiersResult && getMedifiersResult.fill instanceof AscFormat.CGradFill;
+				if (themedFillIsGradient && getMedifiersResult.fill.colors[themedColorsRow]) {
+					result = getMedifiersResult.fill.colors[themedColorsRow].color;
+				} else {
+					return initialDefaultValue;
+				}
+			} else if (cellName === "GradientStopPosition") {
+				let themedFillIsGradient = getMedifiersResult && getMedifiersResult.fill instanceof AscFormat.CGradFill;
+				if (themedFillIsGradient && getMedifiersResult.fill.colors[themedColorsRow]) {
+					result = getMedifiersResult.fill.colors[themedColorsRow].pos;
+				} else {
+					return initialDefaultValue;
+				}
+			} else if (cellName === "FillGradientAngle") {
+				let themedFillIsGradient = getMedifiersResult && getMedifiersResult.fill instanceof AscFormat.CGradFill;
+				if (themedFillIsGradient && getMedifiersResult.fill.lin) {
+					result = getMedifiersResult.fill.lin.angle;
+				} else {
+					return initialDefaultValue;
+				}
 			} else {
 				console.log("Error in themeval. result is not changed to appropriate type or quickStyleCellName is not set.");
 			}

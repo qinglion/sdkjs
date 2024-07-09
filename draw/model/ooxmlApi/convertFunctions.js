@@ -819,6 +819,17 @@
 
 		// Method start
 
+		// Refact:
+		// 1) I guess any cell can be = THEMEVAL() so better to always
+		// use Cell_Type.calculateValue method
+		// consider sometimes = THEMEVAL() can be replaced not to Themed but
+		// to concrete value on save
+		// 2) May be create methods on rows sections and shape -
+		// this.calculateCellValue("FillBkgnd",this, pageInfo,
+		// 			visioDocument.themes, themeValWasUsedFor, true);
+		// 3) May be bind arguments to calculateValue function
+
+
 		// there was case with shape type group with no PinX and PinY
 		// https://disk.yandex.ru/d/tl877cuzcRcZYg
 		let pinX_inch = this.getCellNumberValue("PinX");
@@ -908,17 +919,12 @@
 			uniFillForegnd: false
 		}
 
-		// themed/0/1
 		let gradientEnabledCell = this.getCell("FillGradientEnabled");
 		let gradientEnabled = gradientEnabledCell.calculateValue(this, pageInfo,
 			visioDocument.themes, themeValWasUsedFor, true);
 
 		// FillGradientDir and FillPattern can tell about gradient type
 		if (gradientEnabled) {
-			let themedFill = AscCommonDraw.themeval(null, this, pageInfo, visioDocument.themes, "FillColor",
-				undefined, true);
-			let themedFillIsGradient = themedFill.fill.constructor.name === "CGradFill";
-
 			let fillGradientDir = this.getCellNumberValue("FillGradientDir");
 
 			// global matrix transform: invert Y axis causes 0 is bottom of gradient and 100000 is top
@@ -927,7 +933,6 @@
 				// radial gradient seems to be handled in another way
 				invertGradient = false;
 			}
-
 
 			// now let's come through gradient stops
 			let fillGradientStopsSection = this.getSection("FillGradient");
@@ -945,36 +950,18 @@
 				// calculate color (CUniColor)
 				let color = new AscFormat.CUniColor();
 				let gradientStopColorCell = row.getCell("GradientStopColor");
-				if (gradientStopColorCell.v === "Themed") {
-					if (themedFillIsGradient && themedFill.fill.colors[rowKey]) {
-						color = themedFill.fill.colors[rowKey].color;
-					} else {
-						// themed fill gradient was calculated already and there is no color in that pos
-						// so it is default color (white) with default pos (0)
-						color = AscFormat.builder_CreateSchemeColor("lt1");
-					}
-				} else {
-					 color = gradientStopColorCell.calculateValue(this, pageInfo,
-						visioDocument.themes, themeValWasUsedFor);
-				}
+				color = gradientStopColorCell.calculateValue(this, pageInfo,
+					visioDocument.themes, themeValWasUsedFor, gradientEnabled, rowKey);
+
 				let gradientStopColorTransCell = row.getCell("GradientStopColorTrans");
-				if (gradientStopColorTransCell.v !== "Themed") {
-					let gradientStopColorTransValue = Number(gradientStopColorTransCell.v);
-					color.RGBA.A = color.RGBA.A * (1 - gradientStopColorTransValue);
-				}
+				let gradientStopColorTransValue = gradientStopColorTransCell.calculateValue(this, pageInfo,
+					visioDocument.themes, themeValWasUsedFor, gradientEnabled, rowKey);
+				color.RGBA.A = color.RGBA.A * (1 - gradientStopColorTransValue);
 
 				// now let's get pos
-				let pos = null;
 				let gradientStopPositionCell = row.getCell("GradientStopPosition");
-				if (gradientStopPositionCell.v === "Themed") {
-					if (themedFillIsGradient && themedFill.fill.colors[rowKey]) {
-						pos = themedFill.fill.colors[rowKey].pos;
-					} else {
-						pos = 0;
-					}
-				} else {
-					pos = Number(gradientStopPositionCell.v) * 100000;
-				}
+				let pos = gradientStopPositionCell.calculateValue(this, pageInfo,
+					visioDocument.themes, themeValWasUsedFor, gradientEnabled, rowKey);
 				pos = invertGradient ? 100000 - pos : pos;
 
 				colorStop.setColor(color);
@@ -988,27 +975,12 @@
 				uniFillForegnd = AscFormat.builder_CreateRadialGradient(fillGradientStops);
 			} else {
 				// also if fillGradientDir === 0
-				let angle;
-				let fillGradientAngle = this.getCellStringValue("FillGradientAngle");
-				// TODO fillGradientAngle can be themed without themedFillIsGradient - handle how to calculate it
-				// TODO handle multiple gradient types like radial
-				if (fillGradientAngle === "Themed" && themedFillIsGradient) {
-					angle = themedFill.fill.lin.angle;
-				} else {
-					let angleRads = Number(fillGradientAngle);
-					// 20.1.10.3 ST_Angle (Angle)
-					// This simple type represents an angle in 60,000ths of a degree. Positive angles are clockwise (i.e., towards the
-					// positive y axis); negative angles are counter-clockwise (i.e., towards the negative y axis)
-					// direction is considered in global transform
-					let stAngle = angleRads / Math.PI * 180 * 60000;
-					if (!isNaN(stAngle)) {
-						angle = stAngle;
-					} else {
-						angle = 5400000;
-					}
-				}
+				let fillGradientAngleCell = this.getCell("FillGradientAngle");
+				// TODO handle multiple gradient types
+				let fillGradientAngle = fillGradientAngleCell.calculateValue(this, pageInfo,
+					visioDocument.themes, themeValWasUsedFor, gradientEnabled);
 
-				uniFillForegnd = AscFormat.builder_CreateLinearGradient(fillGradientStops, angle);
+				uniFillForegnd = AscFormat.builder_CreateLinearGradient(fillGradientStops, fillGradientAngle);
 			}
 		} else {
 			let fillForegndCell = this.getCell("FillForegnd");
