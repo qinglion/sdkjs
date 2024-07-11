@@ -839,9 +839,12 @@
 		// only if all shape layers are invisible shape is invisible
 		let areShapeLayersInvisible = layerProperties["Visible"] === "0";
 
+		let isShapeDeleted = this.del === "1";
+
 
 		// also check for {}, undefined, NaN, null
-		if (isNaN(pinX_inch) || pinX_inch === null || isNaN(pinY_inch) || pinY_inch === null || areShapeLayersInvisible) {
+		if (isNaN(pinX_inch) || pinX_inch === null || isNaN(pinY_inch) || pinY_inch === null ||
+			areShapeLayersInvisible || isShapeDeleted) {
 			console.log('pinX_inch or pinY_inch is NaN for Shape or areShapeLayersInvisible. Its ok sometimes. ' +
 				'Empty CShape is returned. See original shape: ', this);
 			// let's use empty shape
@@ -924,6 +927,18 @@
 			visioDocument.themes, themeValWasUsedFor, true);
 
 		// FillGradientDir and FillPattern can tell about gradient type
+		// if FillGradient Enabled
+		// FillGradientDir defines gradient type (shape) and clolors define colors. If gradient is linear gradient type is complemented with angle.
+		// 13 FillGradientDir is path. path cant be set in interface. also like some radial gradient types witch cant be set in interface.
+		// FillGradientDir > 13 is linear like FillGradientDir = 0
+		//
+		// if FillGradientEnabled Disabled
+		// FillPattern defines gradient type and colors define. There linear types with different predefined angles, rectandulat and radial gradient types.
+		// Rectangular and radial gradient types differs. There are two colors when i set three colors for gradient. Also FillPattern gradients are not listed in
+		// interface. Only true patterns.
+		//
+		// Its better to convert linear FillPattern gradients there. But FillPattern radial gradients seems to be
+		// not like FillGradientDir radial gradients but with different colors
 		if (gradientEnabled) {
 			let fillGradientDir = this.getCellNumberValue("FillGradientDir");
 
@@ -974,7 +989,7 @@
 				// radial
 				uniFillForegnd = AscFormat.builder_CreateRadialGradient(fillGradientStops);
 			} else {
-				// also if fillGradientDir === 0
+				// also if fillGradientDir === 0 - linear
 				let fillGradientAngleCell = this.getCell("FillGradientAngle");
 				// TODO handle multiple gradient types
 				let fillGradientAngle = fillGradientAngleCell.calculateValue(this, pageInfo,
@@ -1044,7 +1059,7 @@
 			// to cell.v visio always saves inches
 			// let lineWeightInches = Number(lineWeightCell.v);
 			let lineWeightInches = lineWeightCell.calculateValue(this, pageInfo,
-				visioDocument.themes, themeValWasUsedFor)
+				visioDocument.themes, themeValWasUsedFor);
 			if (!isNaN(lineWeightInches)) {
 				lineWidthEmu = lineWeightInches * AscCommonWord.g_dKoef_in_to_mm * AscCommonWord.g_dKoef_mm_to_emu;
 			} else {

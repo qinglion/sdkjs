@@ -779,7 +779,7 @@
 
 			// path.close();
 
-		};
+		}
 		geometry.setPreset("Any");
 		geometry.AddPath(pathWithFill);
 		geometry.AddPath(pathWithoutFill);
