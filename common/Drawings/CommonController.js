@@ -11179,6 +11179,143 @@
 				|| nType === AscDFH.historyitem_type_SlideMaster );
 		}
 
+		// Shapes merge
+		const uniteSelectedShapes = function () {
+			const graphicController = editor.getGraphicController();
+			if (!graphicController) return;
+
+			const selectedShapes = graphicController.getSelectedArray();
+			if (selectedShapes.length < 2) return;
+
+			const paperShapes = convertShapesToPaperObjects(selectedShapes);
+			const paperResult = paperShapes.reduce(function (accumulator, currentPath) {
+				return accumulator.unite(currentPath);
+			});
+			const resultShape = convertPaperObjectToShape(paperResult);
+
+			selectedShapes.forEach(function (shape) {
+				shape.deleteDrawingBase();
+			});
+			graphicController.resetSelection();
+			resultShape.setDrawingObjects(graphicController.drawingObjects);
+			if (graphicController.drawingObjects && graphicController.drawingObjects.cSld) {
+				resultShape.setParent(graphicController.drawingObjects);
+			}
+			resultShape.addToDrawingObjects();
+			resultShape.checkDrawingBaseCoords();
+			graphicController.selectObject(resultShape, 0);
+			resultShape.addToRecalculate();
+			graphicController.startRecalculate();
+		}
+
+		function convertShapesToPaperObjects(shapes) {
+			paper.setup();
+			const paperShapes = shapes.map(function (shape) {
+				const paperGroup = new paper.Group();
+
+				const pathLst = shape.getGeometry().pathLst;
+				pathLst.forEach(function (path) {
+					const convertedPath = new AscFormat.Path();
+					path.convertToBezierCurves(convertedPath, shape.transform, true);
+
+					const paperCompoundPath = new paper.CompoundPath();
+
+					let paperCurrentPath = new paper.Path();
+					convertedPath.ArrPathCommand.forEach(function (pathCommand) {
+						switch (pathCommand.id) {
+							case AscFormat.moveTo:
+								paperCurrentPath.moveTo(pathCommand.X, pathCommand.Y);
+								break;
+							case AscFormat.lineTo:
+								paperCurrentPath.lineTo(pathCommand.X, pathCommand.Y);
+								break;
+							case AscFormat.bezier4:
+								paperCurrentPath.cubicCurveTo(
+									pathCommand.X0, pathCommand.Y0,
+									pathCommand.X1, pathCommand.Y1,
+									pathCommand.X2, pathCommand.Y2
+								);
+								break;
+							case AscFormat.close:
+								paperCurrentPath.closePath();
+								paperCompoundPath.addChild(paperCurrentPath);
+								paperCurrentPath = new paper.Path();
+								break;
+						}
+					});
+
+					if (!paperCurrentPath.isEmpty()) {
+						paperCompoundPath.addChild(paperCurrentPath);
+					}
+
+					paperGroup.addChild(paperCompoundPath);
+				});
+
+				const paperShape = new paper.CompoundPath();
+				paperShape.addChildren(paperGroup.children);
+				return paperShape;
+			});
+			return paperShapes;
+		}
+		function convertPaperObjectToShape(paperShape) {
+			const paperBounds = paperShape.bounds;
+			paperShape.position = paperShape.position.subtract(paperBounds.topLeft);
+
+			const resultGeometry = new AscFormat.Geometry();
+			resultGeometry.AddPath(new AscFormat.Path())
+
+			let lastVisitedSegment;
+			const segments = paperShape.toJSON()[1].segments;
+			segments.forEach(function (segment, index) {
+				const point = segment.length === 2 ? segment : segment[0];
+				const handleIn = segment.length === 2 ? [0, 0] : segment[1];
+				const handleOut = segment.length === 2 ? [0, 0] : segment[2];
+
+				if (index === 0) {
+					resultGeometry.pathLst[0].ArrPathCommandInfo.push({
+						'id': 0,
+						'X': '' + (point[0] * 36000 >> 0),
+						'Y': '' + (point[1] * 36000 >> 0)
+					})
+				} else {
+					resultGeometry.pathLst[0].ArrPathCommandInfo.push({
+						'id': 4,
+						'X0': '' + ((lastVisitedSegment.point[0] + lastVisitedSegment.handleOut[0]) * 36000 >> 0),
+						'Y0': '' + ((lastVisitedSegment.point[1] + lastVisitedSegment.handleOut[1]) * 36000 >> 0),
+						'X1': '' + ((point[0] + handleIn[0]) * 36000 >> 0),
+						'Y1': '' + ((point[1] + handleIn[1]) * 36000 >> 0),
+						'X2': '' + (point[0] * 36000 >> 0),
+						'Y2': '' + (point[1] * 36000 >> 0)
+					})
+				}
+
+				lastVisitedSegment = { point: point, handleIn: handleIn, handleOut: handleOut };
+			});
+
+			resultGeometry.pathLst[0].pathW = paperBounds.width * 36000;
+			resultGeometry.pathLst[0].pathH = paperBounds.height * 36000;
+
+			const resultShape = new AscFormat.CShape();
+			resultShape.setBDeleted(false);
+
+			resultShape.spPr = new AscFormat.CSpPr();
+			resultShape.spPr.setParent(resultShape);
+
+			resultShape.spPr.setXfrm(new AscFormat.CXfrm());
+			resultShape.spPr.xfrm.setParent(resultShape.spPr);
+			resultShape.spPr.xfrm.setOffX(paperBounds.left);
+			resultShape.spPr.xfrm.setOffY(paperBounds.top);
+			resultShape.spPr.xfrm.setExtX(paperBounds.width);
+			resultShape.spPr.xfrm.setExtY(paperBounds.height);
+
+			resultGeometry.parent = resultShape;
+			resultShape.spPr.setGeometry(resultGeometry);
+			resultShape.spPr.setFill(AscFormat.CreateSolidFillRGBA(0, 0, 255, 255));
+
+			return resultShape;
+		}
+		// -- Shapes merge
+
 		//--------------------------------------------------------export----------------------------------------------------
 		window['AscFormat'] = window['AscFormat'] || {};
 		window['AscFormat'].HANDLE_EVENT_MODE_HANDLE = HANDLE_EVENT_MODE_HANDLE;
@@ -11271,4 +11408,6 @@
 		window["AscCommon"].getSpeechDescription = getSpeechDescription;
 		window["AscCommon"].getArrayElementsDiff = getArrayElementsDiff;
 		window["AscCommon"].GetSelectedDrawings = GetSelectedDrawings;
+
+		window['AscFormat'].uniteSelectedShapes = uniteSelectedShapes;
 	})(window);
