@@ -1014,7 +1014,7 @@
 	 */
 	Shape_Type.prototype.getLayerProperties = function getLayerProperties(pageInfo) {
 		let layerMemberString = this.getCellStringValue("LayerMember");
-		if (layerMemberString === undefined) {
+		if (layerMemberString === undefined || layerMemberString === "") {
 			return {};
 		}
 		let layersArray = layerMemberString.split(";");

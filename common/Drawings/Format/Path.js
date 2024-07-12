@@ -581,7 +581,7 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                 {
                     x0 = this.calculateCommandCoord(gdLst, cmd.X, cw, dCustomPathCoeffW);
                     y0 = this.calculateCommandCoord(gdLst, cmd.Y, ch, dCustomPathCoeffH);
-                    this.ArrPathCommand[i] ={id:cmd.id, X:x0, Y:y0};
+                    this.ArrPathCommand[i] ={id: lineTo, X:x0, Y:y0};
                     lastX = x0;
                     lastY = y0;
                     break;
@@ -763,15 +763,22 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                     let newParams = transformEllipticalArcParams(lastX, lastY, x, y,
                       a, b, cRadians, d);
 
-                    // change ellipticalArcTo params to draw arc easy
-                    this.ArrPathCommand[i]={id: ellipticalArcTo,
-                        stX: lastX,
-                        stY: lastY,
-                        wR: newParams.wR,
-                        hR: newParams.hR,
-                        stAng: newParams.stAng*cToRad,
-                        swAng: newParams.swAng*cToRad,
-                        ellipseRotation: newParams.ellipseRotation*cToRad};
+                    // check if it not ellipse arc in fact but line (three points on one line)
+                    // (Ax * (By - Cy) + Bx * (Cy - Ay) + Cx * (Ay - By) ) / 2 - triangle square
+                    let triangleSquare = (x * (b - lastY) + a * (lastY - y) + lastX * (y - b)) / 2;
+                    if ( Math.round(triangleSquare * 100) / 100  === 0) {
+                        this.ArrPathCommand[i] ={id: lineTo, X:x, Y:y};
+                    } else {
+                        // change ellipticalArcTo params to draw arc easy
+                        this.ArrPathCommand[i]={id: ellipticalArcTo,
+                            stX: lastX,
+                            stY: lastY,
+                            wR: newParams.wR,
+                            hR: newParams.hR,
+                            stAng: newParams.stAng*cToRad,
+                            swAng: newParams.swAng*cToRad,
+                            ellipseRotation: newParams.ellipseRotation*cToRad};
+                    }
 
                     lastX = x;
                     lastY = y;
