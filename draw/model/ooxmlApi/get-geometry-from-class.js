@@ -477,7 +477,12 @@
 						let chordCenter = {x: chordVector.x / 2 + lastPoint.x, y: chordVector.y / 2 + lastPoint.y};
 						let controlPoint = {x: chordCenter.x + gapVector.x, y: chordCenter.y + gapVector.y};
 
+						if (a === 0) {
+							path.lnTo(newX, newY);
+						} else  {
 						path.ellipticalArcTo(newX, newY, controlPoint.x, controlPoint.y, 0, 1);
+						}
+
 						lastPoint.x = newX;
 						lastPoint.y = newY;
 						break;
