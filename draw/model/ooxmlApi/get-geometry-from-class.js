@@ -478,9 +478,15 @@
 						let controlPoint = {x: chordCenter.x + gapVector.x, y: chordCenter.y + gapVector.y};
 
 						if (a === 0) {
+							// in fact it is line is a - arc gap = 0
+							// ellipticalArcTo could catch cases line these but
+							// there inaccuracy comes
 							path.lnTo(newX, newY);
+							console.log("tranform ellipticalArcTo to line",
+								newX, newY, controlPoint.x, controlPoint.y, 0, 1);
+							// path.ellipticalArcTo(newX, newY, controlPoint.x, controlPoint.y, 0, 1);
 						} else  {
-						path.ellipticalArcTo(newX, newY, controlPoint.x, controlPoint.y, 0, 1);
+							path.ellipticalArcTo(newX, newY, controlPoint.x, controlPoint.y, 0, 1);
 						}
 
 						lastPoint.x = newX;
