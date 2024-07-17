@@ -137,6 +137,7 @@ CShape.prototype.recalculate = function ()
  * @param idx
  * @param unicolor
  * @param {Boolean} isConnectorShape
+ * @memberOf CTheme
  * @return {CUniFill|*}
  */
 CTheme.prototype.getFillStyle = function (idx, unicolor, isConnectorShape) {
@@ -173,6 +174,7 @@ CTheme.prototype.getFillStyle = function (idx, unicolor, isConnectorShape) {
  * @param idx
  * @param unicolor
  * @param {Boolean} isConnectorShape
+ * @memberOf CTheme
  * @return {CLn|*}
  */
 CTheme.prototype.getLnStyle = function (idx, unicolor, isConnectorShape) {

@@ -442,6 +442,60 @@
 			return duplicate;
 		};
 
+		/**
+		 * line props container class. child element of fmtConnectorSchemeLineStyles or fmtSchemeLineStyles.
+		 * see 2.3.4.2.20	CT_LineStyle
+		 * @constructor
+		 */
+		function CLineStyle() {
+			CBaseNoIdObject.call(this);
+
+			/**
+			 * 2.3.4.2.19	CT_LineEx
+			 * @type {Object}
+			 */
+			this.lineEx = {};
+
+			/**
+			 * 2.3.4.2.25	CT_Sketch
+			 * @type {Object}
+			 */
+			this.sketch = {};
+		}
+		InitClass(CLineStyle, CBaseNoIdObject, 0);
+		/**
+		 * @param [bSaveFormatting = false] - made by example false is set in other cases by default
+		 * @return {CLineStyle}
+		 */
+		CLineStyle.prototype.createDuplicate = function (bSaveFormatting) {
+			if (bSaveFormatting === undefined) {
+				bSaveFormatting = false;
+			}
+
+			var duplicate = new CLineStyle();
+
+			if (null !== this.lineEx) {
+				// duplicate.lineEx = this.lineEx.createDuplicate();
+				duplicate.lineEx.rndg = this.lineEx.rndg;
+				duplicate.lineEx.start = this.lineEx.start;
+				duplicate.lineEx.startSize = this.lineEx.startSize;
+				duplicate.lineEx.end = this.lineEx.end;
+				duplicate.lineEx.endSize = this.lineEx.endSize;
+				duplicate.lineEx.pattern = this.lineEx.pattern;
+			}
+
+			if (null !== this.sketch) {
+				// 2.3.4.2.25	CT_Sketch
+				// duplicate.sketch = this.sketch.createDuplicate();
+				duplicate.sketch.lnAmp = this.sketch.lnAmp;
+				duplicate.sketch.fillAmp = this.sketch.fillAmp;
+				duplicate.sketch.lnWeight = this.sketch.lnWeight;
+				duplicate.sketch.numPts = this.sketch.numPts;
+			}
+
+			return duplicate;
+		};
+
 		function CVariationClrScheme() {
 			CBaseNoIdObject.call(this);
 			/**
@@ -496,7 +550,15 @@
 			 */
 			this.fmtConnectorSchemeExSchemeEnum = null;
 			this.fillStyles = null;
-			this.lineStyles = null;
+
+			/**
+			 * @type {{fmtConnectorSchemeLineStyles: CLineStyle[], fmtSchemeLineStyles: CLineStyle[] }}
+			 */
+			this.lineStyles = {
+				fmtConnectorSchemeLineStyles: [],
+				fmtSchemeLineStyles: []
+			};
+
 			/**
 			 * @type {{connectorFontStyles: CFontProps[], fontStyles: CFontProps[] }}
 			 */
@@ -18563,5 +18625,6 @@
 		window['AscFormat'].CVariationStyleScheme = CVariationStyleScheme;
 		window['AscFormat'].CVarStyle = CVarStyle;
 		window['AscFormat'].CFontProps = CFontProps;
+		window['AscFormat'].CLineStyle = CLineStyle;
 	})
 (window);

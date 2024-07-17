@@ -743,6 +743,8 @@
 		"FillGradientAngle"];
 		let booleanResultCells = ["FillGradientEnabled"];
 
+		// TODO handle 2.2.7.5	Fixed Theme
+
 		if (cellValue === "Themed") {
 			// equal to THEMEVAL() call
 			// add themeval support for every supported cell

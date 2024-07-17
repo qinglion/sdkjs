@@ -165,9 +165,11 @@
 		}
 
 		// lets define if shape is connector
+		// TODO rewrite consider 2.2.7.4.9	Connector
 		let isConnectorShape = shape.getCellNumberValue("EndArrow") !== 0
 			|| shape.getCellNumberValue("BeginArrow") !== 0;
 
+		// TODO rewrite themeScopeCellName choose consider 2.2.7.4.2	Dynamic Theme Identification
 		// find theme index
 		// ! Because now we only calculate colors lets find theme by
 		// ext uri="{2703A3B3-D2E1-43D9-8057-6E9D74E0F44A}" clrScheme extension schemeEnum
@@ -229,7 +231,6 @@
 		if (!isNaN(quickStyleColor)) {
 			if (100 <= quickStyleColor && quickStyleColor <= 106 ||
 				(200 <= quickStyleColor && quickStyleColor <= 206)) {
-				//todo 200-206?
 				let variationColorIndex = shape.getCellNumberValue("VariationColorIndex");
 				if (!isNaN(variationColorIndex)) {
 					if (65534 === variationColorIndex) {
@@ -282,7 +283,8 @@
 		if (!isNaN(quickStyleMatrix)) {
 			let getMedifiersResult = null;
 			if (0 === quickStyleMatrix) {
-				//todo
+				// consider 2.4.4.275	QuickStyleLineMatrix return root stylesheet value (default value)
+				return initialDefaultValue;
 			} else if (1 <= quickStyleMatrix && quickStyleMatrix <= 6) {
 				getMedifiersResult = getModifiersMethod.call(theme, quickStyleMatrix, calculatedColor, isConnectorShape);
 			} else if (100 <= quickStyleMatrix && quickStyleMatrix <= 103) {
@@ -302,6 +304,7 @@
 					if (varStyle && null !== varStyle[variationStyleIndexVariable]) {
 						let styleId = varStyle[variationStyleIndexVariable];
 						getMedifiersResult = getModifiersMethod.call(theme, styleId, calculatedColor, isConnectorShape);
+						// TODO GET ARROW FORMAT from fmtConnectorSchemeLineStyles / fmtSchemeLineStyles
 					}
 				}
 			}
