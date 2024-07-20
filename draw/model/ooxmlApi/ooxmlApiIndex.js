@@ -500,7 +500,7 @@
 	SheetStorage.prototype.getCell = function getCell(formula) {
 		// Cells can have N only no IX
 		let cell = this.elements[formula];
-		if (!(cell instanceof Cell_Type) && cell !== undefined) {
+		if (cell !== undefined && !(cell instanceof Cell_Type)) {
 			console.log("ERR: Tried to get cell but got other object!");
 		}
 		return cell;
@@ -680,6 +680,20 @@
 	}
 
 	/**
+	 * get String(cell.v)
+	 * @memberOf Cell_Type
+	 * @return {undefined | string}
+	 */
+	Cell_Type.prototype.getStringValue = function () {
+		let cell = this;
+		if (cell !== undefined) {
+			return String(cell.v);
+		} else {
+			return undefined;
+		}
+	}
+
+	/**
 	 * get Number(cell.v)
 	 * @memberOf Cell_Type
 	 * @return {undefined | number}
@@ -741,6 +755,7 @@
 		let fillColorResultCells = ["Color", "GradientStopColor"];
 		let numberResultCells = ["LinePattern", "LineWeight", "GradientStopColorTrans", "GradientStopPosition",
 		"FillGradientAngle"];
+		let stringResultCells = ["EndArrow", "BeginArrow"];
 		let booleanResultCells = ["FillGradientEnabled"];
 
 		// TODO handle 2.2.7.5	Fixed Theme
@@ -878,6 +893,9 @@
 		} else if (booleanResultCells.includes(cellName)) {
 			let cellBooleanValue = this.getBooleanValue();
 			return cellBooleanValue;
+		} else if (stringResultCells.includes(cellName)) {
+			let cellStringValue = this.getStringValue();
+			return cellStringValue;
 		} else {
 			console.log("Cell was not calculated in calculate cell value");
 		}

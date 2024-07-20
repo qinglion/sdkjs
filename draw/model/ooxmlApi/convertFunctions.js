@@ -758,59 +758,57 @@
 
 		/**
 		 * endArrow can be beginning or ending
-		 * @param {Cell_Type} arrowTypeCell
+		 * @param {string} arrowType
 		 * @param {Cell_Type}  arrowSizeCell
 		 * @return {AscFormat.EndArrow} endArrowObject
 		 */
-		function getEndArrowFromCells(arrowTypeCell, arrowSizeCell) {
+		function getEndArrowFromCells(arrowType, arrowSizeCell) {
 			// 2.4.4.20	BeginArrow in MS-VSDX and 20.1.10.33 ST_LineEndType (Line End Type) in ECMA
 			let endArrow = new AscFormat.EndArrow();
 
-			if (arrowTypeCell) {
-				switch (arrowTypeCell.v) {
-					case "0":
-						endArrow.type = endArrow.GetTypeCode("none");
-						break;
-					case "1":
-					case "3":
-					case "12":
-						endArrow.type = endArrow.GetTypeCode("arrow");
-						break;
-					case "22":
-						endArrow.type = endArrow.GetTypeCode("diamond");
-						break;
-					case "20":
-					case "41":
-					case "10":
-					case "42":
-						endArrow.type = endArrow.GetTypeCode("oval");
-						break;
-					case "5":
-					case "8":
-					case "17":
-					case "19":
-						endArrow.type = endArrow.GetTypeCode("stealth");
-						break;
-					case "2":
-					case "4":
-					case "6":
-					case "13":
-					case "14":
-					case "15":
-					case "16":
-					case "18":
-						endArrow.type = endArrow.GetTypeCode("triangle");
-						break;
-					case "Themed":
-						endArrow.type = endArrow.GetTypeCode("none");
-						break;
-					case !isNaN(Number(arrowTypeCell.v)) && arrowTypeCell.v:
-						// is unhandled number
-						endArrow.type = endArrow.GetTypeCode("arrow");
-						break;
-					default:
-						endArrow.type = endArrow.GetTypeCode("none");
-				}
+			switch (arrowType) {
+				case "0":
+					endArrow.type = endArrow.GetTypeCode("none");
+					break;
+				case "1":
+				case "3":
+				case "12":
+					endArrow.type = endArrow.GetTypeCode("arrow");
+					break;
+				case "22":
+					endArrow.type = endArrow.GetTypeCode("diamond");
+					break;
+				case "20":
+				case "41":
+				case "10":
+				case "42":
+					endArrow.type = endArrow.GetTypeCode("oval");
+					break;
+				case "5":
+				case "8":
+				case "17":
+				case "19":
+					endArrow.type = endArrow.GetTypeCode("stealth");
+					break;
+				case "2":
+				case "4":
+				case "6":
+				case "13":
+				case "14":
+				case "15":
+				case "16":
+				case "18":
+					endArrow.type = endArrow.GetTypeCode("triangle");
+					break;
+				case "Themed":
+					endArrow.type = endArrow.GetTypeCode("none");
+					break;
+				case !isNaN(Number(arrowType)) && arrowType:
+					// is unhandled number
+					endArrow.type = endArrow.GetTypeCode("arrow");
+					break;
+				default:
+					endArrow.type = endArrow.GetTypeCode("none");
 			}
 
 			return endArrow;
@@ -1102,12 +1100,16 @@
 
 		let endArrowTypeCell = this.getCell("EndArrow");
 		let endArrowSizeCell = this.getCell("EndArrowSize");
-		let endArrow = getEndArrowFromCells(endArrowTypeCell, endArrowSizeCell);
+		let endArrowType = endArrowTypeCell.calculateValue(this, pageInfo,
+			visioDocument.themes, themeValWasUsedFor);
+		let endArrow = getEndArrowFromCells(endArrowType, endArrowSizeCell);
 		oStroke.setTailEnd(endArrow);
 
 		let beginArrowTypeCell = this.getCell("BeginArrow");
 		let beginArrowSizeCell = this.getCell("BeginArrowSize");
-		let beginArrow = getEndArrowFromCells(beginArrowTypeCell, beginArrowSizeCell);
+		let beginArrowType = beginArrowTypeCell.calculateValue(this, pageInfo,
+			visioDocument.themes, themeValWasUsedFor);
+		let beginArrow = getEndArrowFromCells(beginArrowType, beginArrowSizeCell);
 		oStroke.setHeadEnd(beginArrow);
 
 

@@ -159,6 +159,13 @@
 			// initialDefaultValue = 0;
 			console.log("Themed GradientStopColorTrans is unhandled");
 			return 0;
+		} else if (cellName === "EndArrow" || cellName === "BeginArrow") {
+			quickStyleCellName = null; // so color will not be calculated
+			quickStyleModifiersCellName = "QuickStyleLineMatrix";
+			getModifiersMethod = themes[0].getLineEndStyle;
+			variationStyleIndexVariable = "lineIdx";
+
+			initialDefaultValue = "0"; // string is return type in calculateValue
 		} else {
 			console.log("themeval argument error. cell name is unknown. return null.");
 			return null;
@@ -286,7 +293,13 @@
 				// consider 2.4.4.275	QuickStyleLineMatrix return root stylesheet value (default value)
 				return initialDefaultValue;
 			} else if (1 <= quickStyleMatrix && quickStyleMatrix <= 6) {
-				getMedifiersResult = getModifiersMethod.call(theme, quickStyleMatrix, calculatedColor, isConnectorShape);
+				if (cellName === "EndArrow" || cellName === "EndArrowSize" ||
+					cellName === "BeginArrow" || cellName === "BeginArrowSize") {
+					// getLineEndStyle is method
+					getMedifiersResult = theme.getLineEndStyle(quickStyleMatrix, isConnectorShape);
+				} else {
+					getMedifiersResult = getModifiersMethod.call(theme, quickStyleMatrix, calculatedColor, isConnectorShape);
+				}
 			} else if (100 <= quickStyleMatrix && quickStyleMatrix <= 103) {
 				let variationStyleIndex = shape.getCellNumberValue("VariationStyleIndex");
 				if (!isNaN(variationStyleIndex)) {
@@ -303,8 +316,13 @@
 						quickStyleMatrix % 100);
 					if (varStyle && null !== varStyle[variationStyleIndexVariable]) {
 						let styleId = varStyle[variationStyleIndexVariable];
-						getMedifiersResult = getModifiersMethod.call(theme, styleId, calculatedColor, isConnectorShape);
-						// TODO GET ARROW FORMAT from fmtConnectorSchemeLineStyles / fmtSchemeLineStyles
+						if (cellName === "EndArrow" || cellName === "EndArrowSize" ||
+							cellName === "BeginArrow" || cellName === "BeginArrowSize") {
+							// getLineEndStyle is method
+							getMedifiersResult = theme.getLineEndStyle(styleId, isConnectorShape);
+						} else {
+							getMedifiersResult = getModifiersMethod.call(theme, styleId, calculatedColor, isConnectorShape);
+						}
 					}
 				}
 			}
@@ -374,6 +392,12 @@
 				} else {
 					return initialDefaultValue;
 				}
+			} else if (cellName === "EndArrow") {
+				let endArrowType = getMedifiersResult && getMedifiersResult.lineEx.end;
+				return String(endArrowType);
+			} else if (cellName === "BeginArrow") {
+				let beginArrowType = getMedifiersResult && getMedifiersResult.lineEx.start;
+				return String(beginArrowType);
 			} else {
 				console.log("Error in themeval. result is not changed to appropriate type or quickStyleCellName is not set.");
 			}

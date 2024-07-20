@@ -451,10 +451,12 @@
 			CBaseNoIdObject.call(this);
 
 			/**
-			 * 2.3.4.2.19	CT_LineEx
+			 * 2.3.4.2.19	CT_LineEx.
+			 * default is
+			 * <vt:lineEx rndg="0" start="0" startSize="2" end="0" endSize="2" pattern="1"/>
 			 * @type {Object}
 			 */
-			this.lineEx = {};
+			this.lineEx = {rndg: 0, start: 0, startSize: 2, end: 0, endSize: 2, pattern: 1};
 
 			/**
 			 * 2.3.4.2.25	CT_Sketch
@@ -8976,6 +8978,10 @@
 			this.fontScheme = new FontScheme();
 			this.fmtScheme = new FmtScheme();
 
+			/**
+			 *
+			 * @type {CThemeExt}
+			 */
 			this.themeExt = null;
 		}
 
@@ -9079,7 +9085,7 @@
 		/**
 		 * Made for visio editor
 		 * @memberof CTheme
-		 * @param idx
+		 * @param {number} idx
 		 * @param unicolor
 		 * @param {Boolean} getConnectorStyle
 		 * @return {CFontProps}
@@ -9105,6 +9111,33 @@
 			console.log("no fontProp object found for idx. Return empty obj", idx);
 			return new CFontProps();
 		};
+		/**
+		 * Made for visio editor. Get line end props - lineStyles extension.
+		 * @memberof CTheme
+		 * @param {number} idx
+		 * @param {Boolean} getConnectorStyle
+		 * @return {CLineStyle} lineStyle
+		 */
+		CTheme.prototype.getLineEndStyle = function (idx, getConnectorStyle) {
+			if (idx === 0 || isNaN(idx)) {
+				console.log("idx getFontStyle argument is 0 or isNaN(idx) is true");
+				return new CLineStyle();
+			}
+			let lineEndProp;
+			if (getConnectorStyle) {
+				lineEndProp = this.themeElements.themeExt.lineStyles.fmtConnectorSchemeLineStyles[idx];
+			} else {
+				lineEndProp = this.themeElements.themeExt.lineStyles.fmtSchemeLineStyles[idx];
+			}
+			if (lineEndProp) {
+				var ret = lineEndProp.createDuplicate();
+				return ret;
+			}
+			console.log("no fontProp object found for idx. Its ok sometimes." +
+				" Return new CLineStyle()", idx);
+			return new CLineStyle();
+		};
+
 		CTheme.prototype.getExtraClrScheme = function (sName) {
 			for (var i = 0; i < this.extraClrSchemeLst.length; ++i) {
 				if (this.extraClrSchemeLst[i].clrScheme && this.extraClrSchemeLst[i].clrScheme.name === sName) {
