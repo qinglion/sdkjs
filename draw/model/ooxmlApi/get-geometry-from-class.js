@@ -160,13 +160,12 @@
 		pathWithoutFill.setPathW(undefined);
 		pathWithoutFill.setPathH(undefined);
 
-		// for path overlap fix: created two variables counting
-		// handled geometry section. If there is only one geometry section handled
-		// we can set true NoLine value
-		let geometrySectionsFilledPath = 0;
-		let geometrySectionsUnfilledPath = 0;
+		// for path overlap fix: If there is only equal geometry section NoLine values
+		// we can set true NoLine value for path
 		let filledPathNoLine = false;
 		let unfilledPathNoLine = false;
+		let allFilledPathNoLineValuesEqual = true;
+		let allUnfilledPathNoLineValuesEqual = true;
 
 		// set path objects - parts of geometry objects
 		for (let i = 0; i < geometrySections.length; i++) {
@@ -257,12 +256,19 @@
 			// use one of two available path objects
 			if (fillValue === "norm") {
 				path = pathWithFill;
-				geometrySectionsFilledPath += 1;
-				filledPathNoLine = noLineValue;
+				if (i !== 0 && noLineValue !== filledPathNoLine) {
+					// if new !== first
+					allFilledPathNoLineValuesEqual = false;
+				} else {
+					filledPathNoLine = noLineValue;
+				}
 			} else {
 				path = pathWithoutFill;
-				geometrySectionsUnfilledPath += 1;
-				unfilledPathNoLine = noLineValue;
+				if (i !== 0 && noLineValue !== unfilledPathNoLine) {
+					allUnfilledPathNoLineValuesEqual = false;
+				} else {
+					unfilledPathNoLine = noLineValue;
+				}
 			}
 
 
@@ -812,11 +818,11 @@
 
 		}
 
-		if (geometrySectionsFilledPath === 1) {
+		if (allFilledPathNoLineValuesEqual) {
 			pathWithFill.setStroke(!filledPathNoLine);
 		}
 
-		if (geometrySectionsUnfilledPath === 1) {
+		if (allUnfilledPathNoLineValuesEqual) {
 			pathWithoutFill.setStroke(!unfilledPathNoLine);
 		}
 
