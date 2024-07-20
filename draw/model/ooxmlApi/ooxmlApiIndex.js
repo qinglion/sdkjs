@@ -754,7 +754,7 @@
 		let fillResultCells = ["LineColor", "FillForegnd", "FillBkgnd"];
 		let fillColorResultCells = ["Color", "GradientStopColor"];
 		let numberResultCells = ["LinePattern", "LineWeight", "GradientStopColorTrans", "GradientStopPosition",
-		"FillGradientAngle"];
+		"FillGradientAngle", "EndArrowSize", "BeginArrowSize"];
 		let stringResultCells = ["EndArrow", "BeginArrow"];
 		let booleanResultCells = ["FillGradientEnabled"];
 

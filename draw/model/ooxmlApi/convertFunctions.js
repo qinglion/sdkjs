@@ -759,10 +759,10 @@
 		/**
 		 * endArrow can be beginning or ending
 		 * @param {string} arrowType
-		 * @param {Cell_Type}  arrowSizeCell
+		 * @param {number}  arrowSize
 		 * @return {AscFormat.EndArrow} endArrowObject
 		 */
-		function getEndArrowFromCells(arrowType, arrowSizeCell) {
+		function getEndArrowFromCells(arrowType, arrowSize) {
 			// 2.4.4.20	BeginArrow in MS-VSDX and 20.1.10.33 ST_LineEndType (Line End Type) in ECMA
 			let endArrow = new AscFormat.EndArrow();
 
@@ -809,6 +809,21 @@
 					break;
 				default:
 					endArrow.type = endArrow.GetTypeCode("none");
+			}
+
+			if (arrowSize >= 0 && arrowSize <= 2 ) {
+				endArrow.len = AscFormat.LineEndSize.Small;
+				endArrow.w = AscFormat.LineEndSize.Small;
+			} else if (arrowSize >= 3 && arrowSize <= 4) {
+				endArrow.len = AscFormat.LineEndSize.Mid;
+				endArrow.w = AscFormat.LineEndSize.Mid;
+			} else if (arrowSize >= 5 && arrowSize <= 6) {
+				endArrow.len = AscFormat.LineEndSize.Large;
+				endArrow.w = AscFormat.LineEndSize.Large;
+			} else {
+				console.log("arrowSize unknown:", arrowSize);
+				endArrow.len = AscFormat.LineEndSize.Mid;
+				endArrow.w = AscFormat.LineEndSize.Mid;
 			}
 
 			return endArrow;
@@ -903,8 +918,6 @@
 
 		let	nPatternType = null;
 
-		// /** @type CUniFill */
-		// let lineUniFillWithPattern = null;
 		/**
 		 * We need fill without pattern applied bcs pattern applied can set NoSolidFill object without color,
 		 * so we will not be able to calculate handleVariationColor function result
@@ -1103,14 +1116,18 @@
 		let endArrowSizeCell = this.getCell("EndArrowSize");
 		let endArrowType = endArrowTypeCell.calculateValue(this, pageInfo,
 			visioDocument.themes, themeValWasUsedFor);
-		let endArrow = getEndArrowFromCells(endArrowType, endArrowSizeCell);
+		let endArrowSize = endArrowSizeCell.calculateValue(this, pageInfo,
+			visioDocument.themes, themeValWasUsedFor);
+		let endArrow = getEndArrowFromCells(endArrowType, endArrowSize);
 		oStroke.setTailEnd(endArrow);
 
 		let beginArrowTypeCell = this.getCell("BeginArrow");
 		let beginArrowSizeCell = this.getCell("BeginArrowSize");
 		let beginArrowType = beginArrowTypeCell.calculateValue(this, pageInfo,
 			visioDocument.themes, themeValWasUsedFor);
-		let beginArrow = getEndArrowFromCells(beginArrowType, beginArrowSizeCell);
+		let beginArrowSize = beginArrowSizeCell.calculateValue(this, pageInfo,
+			visioDocument.themes, themeValWasUsedFor);
+		let beginArrow = getEndArrowFromCells(beginArrowType, beginArrowSize);
 		oStroke.setHeadEnd(beginArrow);
 
 

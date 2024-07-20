@@ -166,6 +166,13 @@
 			variationStyleIndexVariable = "lineIdx";
 
 			initialDefaultValue = "0"; // string is return type in calculateValue
+		} else if (cellName === "EndArrowSize" || cellName === "BeginArrowSize") {
+			quickStyleCellName = null; // so color will not be calculated
+			quickStyleModifiersCellName = "QuickStyleLineMatrix";
+			getModifiersMethod = themes[0].getLineEndStyle;
+			variationStyleIndexVariable = "lineIdx";
+
+			initialDefaultValue = 2; // number is return type in calculateValue
 		} else {
 			console.log("themeval argument error. cell name is unknown. return null.");
 			return null;
@@ -316,9 +323,11 @@
 						quickStyleMatrix % 100);
 					if (varStyle && null !== varStyle[variationStyleIndexVariable]) {
 						let styleId = varStyle[variationStyleIndexVariable];
-						if (cellName === "EndArrow" || cellName === "EndArrowSize" ||
-							cellName === "BeginArrow" || cellName === "BeginArrowSize") {
-							// getLineEndStyle is method
+						if (getModifiersMethod.name === "getLineEndStyle") {
+							// getLineEndStyle is method.
+							// When we get lineEnd/lineStart type or its size we don't need
+							// calculatedColor and so arguments are different
+							// getModifiersMethod.call(theme, styleId, isConnectorShape);
 							getMedifiersResult = theme.getLineEndStyle(styleId, isConnectorShape);
 						} else {
 							getMedifiersResult = getModifiersMethod.call(theme, styleId, calculatedColor, isConnectorShape);
@@ -398,6 +407,12 @@
 			} else if (cellName === "BeginArrow") {
 				let beginArrowType = getMedifiersResult && getMedifiersResult.lineEx.start;
 				return String(beginArrowType);
+			} else if (cellName === "EndArrowSize") {
+				let endArrowSize = getMedifiersResult && getMedifiersResult.lineEx.endSize;
+				return Number(endArrowSize);
+			} else if (cellName === "BeginArrowSize") {
+				let beginArrowSize = getMedifiersResult && getMedifiersResult.lineEx.startSize;
+				return Number(beginArrowSize);
 			} else {
 				console.log("Error in themeval. result is not changed to appropriate type or quickStyleCellName is not set.");
 			}
