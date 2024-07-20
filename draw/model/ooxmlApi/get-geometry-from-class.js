@@ -156,9 +156,17 @@
 
 		pathWithoutFill.setExtrusionOk(false);
 		pathWithoutFill.setFill("none");
-		pathWithoutFill.setStroke(true); // no difference
+		pathWithoutFill.setStroke(true);
 		pathWithoutFill.setPathW(undefined);
 		pathWithoutFill.setPathH(undefined);
+
+		// for path overlap fix: created two variables counting
+		// handled geometry section. If there is only one geometry section handled
+		// we can set true NoLine value
+		let geometrySectionsFilledPath = 0;
+		let geometrySectionsUnfilledPath = 0;
+		let filledPathNoLine = false;
+		let unfilledPathNoLine = false;
 
 		// set path objects - parts of geometry objects
 		for (let i = 0; i < geometrySections.length; i++) {
@@ -236,13 +244,25 @@
 				fillValue = "norm";
 			}
 
+			let noLineCell = geometrySection.getCell("NoLine");
+			let noLineValue = false;
+			if (noLineCell) {
+				noLineValue = Number(noLineCell.v) === 1;
+			} else {
+				noLineValue = false;
+			}
+
 			let path;
 
 			// use one of two available path objects
 			if (fillValue === "norm") {
 				path = pathWithFill;
+				geometrySectionsFilledPath += 1;
+				filledPathNoLine = noLineValue;
 			} else {
 				path = pathWithoutFill;
+				geometrySectionsUnfilledPath += 1;
+				unfilledPathNoLine = noLineValue;
 			}
 
 
@@ -791,6 +811,15 @@
 			// path.close();
 
 		}
+
+		if (geometrySectionsFilledPath === 1) {
+			pathWithFill.setStroke(!filledPathNoLine);
+		}
+
+		if (geometrySectionsUnfilledPath === 1) {
+			pathWithoutFill.setStroke(!unfilledPathNoLine);
+		}
+
 		geometry.setPreset("Any");
 		geometry.AddPath(pathWithFill);
 		geometry.AddPath(pathWithoutFill);
