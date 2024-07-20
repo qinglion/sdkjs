@@ -843,8 +843,8 @@
 		// also check for {}, undefined, NaN, null
 		if (isNaN(pinX_inch) || pinX_inch === null || isNaN(pinY_inch) || pinY_inch === null ||
 			areShapeLayersInvisible || isShapeDeleted) {
-			console.log('pinX_inch or pinY_inch is NaN for Shape or areShapeLayersInvisible. Its ok sometimes. ' +
-				'Empty CShape is returned. See original shape: ', this);
+			// console.log('pinX_inch or pinY_inch is NaN for Shape or areShapeLayersInvisible. Its ok sometimes. ' +
+				// 'Empty CShape is returned. See original shape: ', this);
 			// let's use empty shape
 			let emptyCShape = new AscFormat.CShape();
 			emptyCShape.setWordShape(false);
@@ -863,7 +863,8 @@
 			// oSpPr.setLn(AscFormat.CreateNoFillLine());
 
 			emptyCShape.setSpPr(oSpPr);
-			oSpPr.setParent(emptyCShape)
+			oSpPr.setParent(emptyCShape);
+			emptyCShape.setParent2(visioDocument);
 			return {geometryCShape: emptyCShape, textCShape: null};
 		}
 
@@ -1164,8 +1165,8 @@
 		}
 
 		if (this.type === "Foreign") {
-			console.log("Shape has type Foreign and may not be displayed. " +
-				"Check shape.elements --> ForeignData_Type obj. See shape:", this);
+			// console.log("Shape has type Foreign and may not be displayed. " +
+			// 	"Check shape.elements --> ForeignData_Type obj. See shape:", this);
 
 			let foreignDataObject = this.getForeignDataObject();
 			if (foreignDataObject) {
