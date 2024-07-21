@@ -11187,11 +11187,14 @@
 			const selectedShapes = graphicController.getSelectedArray();
 			if (selectedShapes.length < 2) return;
 
-			const paperShapes = convertShapesToPaperObjects(selectedShapes);
-			const paperResult = paperShapes.reduce(function (accumulator, currentPath) {
-				return accumulator.unite(currentPath);
+			const paperShapes = selectedShapes.map(function (shape) {
+				const paperPathLst = convertShapeToPaperPathLst(shape);
+				return new paper.CompoundPath(paperPathLst);
 			});
-			const resultShape = convertPaperObjectToShape(paperResult);
+			const paperResult = paperShapes.reduce(function (accumulator, currentGroup) {
+				return accumulator.unite(currentGroup);
+			});
+			const resultShape = convertPaperPathToShape(paperResult);
 
 			selectedShapes.forEach(function (shape) {
 				shape.deleteDrawingBase();
@@ -11206,90 +11209,77 @@
 			graphicController.selectObject(resultShape, 0);
 			resultShape.addToRecalculate();
 			graphicController.startRecalculate();
+		};
+
+		function convertShapeToPaperPathLst(shape) {
+			paper.setup();
+
+			const paperPathLst = shape.getGeometry().pathLst.map(function (path) {
+				const convertedPath = new AscFormat.Path();
+				path.convertToBezierCurves(convertedPath, shape.transform, true);
+
+				const paperCompoundPath = new paper.CompoundPath();
+				convertedPath.ArrPathCommand.forEach(function (pathCommand) {
+					switch (pathCommand.id) {
+						case AscFormat.moveTo:
+							paperCompoundPath.moveTo([pathCommand.X, pathCommand.Y]);
+							break;
+						case AscFormat.lineTo:
+							paperCompoundPath.lineTo([pathCommand.X, pathCommand.Y]);
+							break;
+						case AscFormat.bezier4:
+							paperCompoundPath.cubicCurveTo(
+								[pathCommand.X0, pathCommand.Y0],
+								[pathCommand.X1, pathCommand.Y1],
+								[pathCommand.X2, pathCommand.Y2]
+							);
+							break;
+						case AscFormat.close:
+							paperCompoundPath.closePath();
+							break;
+					}
+				});
+				return paperCompoundPath;
+			});
+
+			return paperPathLst;
 		}
 
-		function convertShapesToPaperObjects(shapes) {
-			paper.setup();
-			const paperShapes = shapes.map(function (shape) {
-				const paperGroup = new paper.Group();
+		function convertPaperPathToShape(paperPath) {
+			const paperBounds = paperPath.bounds;
+			paperPath.position = paperPath.position.subtract(paperBounds.topLeft);
 
-				const pathLst = shape.getGeometry().pathLst;
-				pathLst.forEach(function (path) {
-					const convertedPath = new AscFormat.Path();
-					path.convertToBezierCurves(convertedPath, shape.transform, true);
+			const pathsToHandle = paperPath.children || [paperPath];
+			const resultGeometry = new AscFormat.Geometry();
+			pathsToHandle.forEach(function (path, pathIndex) {
+				resultGeometry.AddPath(new AscFormat.Path());
+				let lastVisitedSegment;
+				const segments = path.toJSON()[1].segments;
+				segments.forEach(function (segment, segmentIndex) {
+					const point = segment.length === 2 ? segment : segment[0];
+					const handleIn = segment.length === 2 ? [0, 0] : segment[1];
+					const handleOut = segment.length === 2 ? [0, 0] : segment[2];
 
-					const paperCompoundPath = new paper.CompoundPath();
-
-					let paperCurrentPath = new paper.Path();
-					convertedPath.ArrPathCommand.forEach(function (pathCommand) {
-						switch (pathCommand.id) {
-							case AscFormat.moveTo:
-								paperCurrentPath.moveTo(pathCommand.X, pathCommand.Y);
-								break;
-							case AscFormat.lineTo:
-								paperCurrentPath.lineTo(pathCommand.X, pathCommand.Y);
-								break;
-							case AscFormat.bezier4:
-								paperCurrentPath.cubicCurveTo(
-									pathCommand.X0, pathCommand.Y0,
-									pathCommand.X1, pathCommand.Y1,
-									pathCommand.X2, pathCommand.Y2
-								);
-								break;
-							case AscFormat.close:
-								paperCurrentPath.closePath();
-								paperCompoundPath.addChild(paperCurrentPath);
-								paperCurrentPath = new paper.Path();
-								break;
-						}
-					});
-
-					if (!paperCurrentPath.isEmpty()) {
-						paperCompoundPath.addChild(paperCurrentPath);
+					if (segmentIndex === 0) {
+						resultGeometry.pathLst[pathIndex].ArrPathCommandInfo.push({
+							'id': 0,
+							'X': '' + (point[0] * 36000 >> 0),
+							'Y': '' + (point[1] * 36000 >> 0)
+						});
+					} else {
+						resultGeometry.pathLst[pathIndex].ArrPathCommandInfo.push({
+							'id': 4,
+							'X0': '' + ((lastVisitedSegment.point[0] + lastVisitedSegment.handleOut[0]) * 36000 >> 0),
+							'Y0': '' + ((lastVisitedSegment.point[1] + lastVisitedSegment.handleOut[1]) * 36000 >> 0),
+							'X1': '' + ((point[0] + handleIn[0]) * 36000 >> 0),
+							'Y1': '' + ((point[1] + handleIn[1]) * 36000 >> 0),
+							'X2': '' + (point[0] * 36000 >> 0),
+							'Y2': '' + (point[1] * 36000 >> 0)
+						});
 					}
 
-					paperGroup.addChild(paperCompoundPath);
+					lastVisitedSegment = { point: point, handleIn: handleIn, handleOut: handleOut };
 				});
-
-				const paperShape = new paper.CompoundPath();
-				paperShape.addChildren(paperGroup.children);
-				return paperShape;
-			});
-			return paperShapes;
-		}
-		function convertPaperObjectToShape(paperShape) {
-			const paperBounds = paperShape.bounds;
-			paperShape.position = paperShape.position.subtract(paperBounds.topLeft);
-
-			const resultGeometry = new AscFormat.Geometry();
-			resultGeometry.AddPath(new AscFormat.Path())
-
-			let lastVisitedSegment;
-			const segments = paperShape.toJSON()[1].segments;
-			segments.forEach(function (segment, index) {
-				const point = segment.length === 2 ? segment : segment[0];
-				const handleIn = segment.length === 2 ? [0, 0] : segment[1];
-				const handleOut = segment.length === 2 ? [0, 0] : segment[2];
-
-				if (index === 0) {
-					resultGeometry.pathLst[0].ArrPathCommandInfo.push({
-						'id': 0,
-						'X': '' + (point[0] * 36000 >> 0),
-						'Y': '' + (point[1] * 36000 >> 0)
-					})
-				} else {
-					resultGeometry.pathLst[0].ArrPathCommandInfo.push({
-						'id': 4,
-						'X0': '' + ((lastVisitedSegment.point[0] + lastVisitedSegment.handleOut[0]) * 36000 >> 0),
-						'Y0': '' + ((lastVisitedSegment.point[1] + lastVisitedSegment.handleOut[1]) * 36000 >> 0),
-						'X1': '' + ((point[0] + handleIn[0]) * 36000 >> 0),
-						'Y1': '' + ((point[1] + handleIn[1]) * 36000 >> 0),
-						'X2': '' + (point[0] * 36000 >> 0),
-						'Y2': '' + (point[1] * 36000 >> 0)
-					})
-				}
-
-				lastVisitedSegment = { point: point, handleIn: handleIn, handleOut: handleOut };
 			});
 
 			resultGeometry.pathLst[0].pathW = paperBounds.width * 36000;
