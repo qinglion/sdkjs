@@ -11251,8 +11251,9 @@
 
 			const pathsToHandle = paperPath.children || [paperPath];
 			const resultGeometry = new AscFormat.Geometry();
-			pathsToHandle.forEach(function (path, pathIndex) {
-				resultGeometry.AddPath(new AscFormat.Path());
+			resultGeometry.AddPath(new AscFormat.Path()); // result geometry always contains only one path until proven otherwise :)
+
+			pathsToHandle.forEach(function (path) {
 				let lastVisitedSegment;
 				const segments = path.toJSON()[1].segments;
 				segments.forEach(function (segment, segmentIndex) {
@@ -11261,13 +11262,13 @@
 					const handleOut = segment.length === 2 ? [0, 0] : segment[2];
 
 					if (segmentIndex === 0) {
-						resultGeometry.pathLst[pathIndex].ArrPathCommandInfo.push({
+						resultGeometry.pathLst[0].ArrPathCommandInfo.push({
 							'id': 0,
 							'X': '' + (point[0] * 36000 >> 0),
 							'Y': '' + (point[1] * 36000 >> 0)
 						});
 					} else {
-						resultGeometry.pathLst[pathIndex].ArrPathCommandInfo.push({
+						resultGeometry.pathLst[0].ArrPathCommandInfo.push({
 							'id': 4,
 							'X0': '' + ((lastVisitedSegment.point[0] + lastVisitedSegment.handleOut[0]) * 36000 >> 0),
 							'Y0': '' + ((lastVisitedSegment.point[1] + lastVisitedSegment.handleOut[1]) * 36000 >> 0),
