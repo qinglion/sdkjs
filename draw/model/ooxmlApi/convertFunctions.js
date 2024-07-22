@@ -762,7 +762,7 @@
 		 * @param {number}  arrowSize
 		 * @return {AscFormat.EndArrow} endArrowObject
 		 */
-		function getEndArrowFromCells(arrowType, arrowSize) {
+		function getEndArrow(arrowType, arrowSize) {
 			// 2.4.4.20	BeginArrow in MS-VSDX and 20.1.10.33 ST_LineEndType (Line End Type) in ECMA
 			let endArrow = new AscFormat.EndArrow();
 
@@ -915,8 +915,6 @@
 
 		/** @type CUniFill */
 		let	uniFillBkgnd = null;
-
-		let	nPatternType = null;
 
 		/**
 		 * We need fill without pattern applied bcs pattern applied can set NoSolidFill object without color,
@@ -1118,7 +1116,7 @@
 			visioDocument.themes, themeValWasUsedFor);
 		let endArrowSize = endArrowSizeCell.calculateValue(this, pageInfo,
 			visioDocument.themes, themeValWasUsedFor);
-		let endArrow = getEndArrowFromCells(endArrowType, endArrowSize);
+		let endArrow = getEndArrow(endArrowType, endArrowSize);
 		oStroke.setTailEnd(endArrow);
 
 		let beginArrowTypeCell = this.getCell("BeginArrow");
@@ -1127,14 +1125,14 @@
 			visioDocument.themes, themeValWasUsedFor);
 		let beginArrowSize = beginArrowSizeCell.calculateValue(this, pageInfo,
 			visioDocument.themes, themeValWasUsedFor);
-		let beginArrow = getEndArrowFromCells(beginArrowType, beginArrowSize);
+		let beginArrow = getEndArrow(beginArrowType, beginArrowSize);
 		oStroke.setHeadEnd(beginArrow);
 
 
-		/** @type ?number */
-		let fillPatternType = this.getCellNumberValue("FillPattern");
+		let fillPatternTypeCell = this.getCell("FillPattern");
+		let fillPatternType = fillPatternTypeCell.calculateValue(this, pageInfo, visioDocument.themes,
+			themeValWasUsedFor);
 
-		// we get NaN if fillPatternType is Themed so just get themed uniFillForegnd
 		if (!isNaN(fillPatternType) && uniFillBkgnd && uniFillForegnd) {
 			// https://learn.microsoft.com/ru-ru/office/client-developer/visio/fillpattern-cell-fill-format-section
 			let isfillPatternTypeGradient = fillPatternType >= 25 && fillPatternType <= 40;
@@ -1143,11 +1141,66 @@
 			} else if (fillPatternType === 1 || isfillPatternTypeGradient) {
 				uniFillForegndWithPattern = uniFillForegnd;
 			} else if (fillPatternType > 1) {
-				//todo types
-				nPatternType = 0;//"cross";
-				uniFillForegndWithPattern = AscFormat.CreatePatternFillUniFill(nPatternType,
+
+				function mapVisioFillPatternToOOXML(fillPatternType) {
+					switch (fillPatternType) {
+						case 2:
+							return AscCommon.global_hatch_offsets.upDiag;
+						case 3:
+							return AscCommon.global_hatch_offsets.cross;
+						case 4:
+							return AscCommon.global_hatch_offsets.diagCross;
+						case 5:
+							return AscCommon.global_hatch_offsets.dnDiag;
+						case 6:
+							return AscCommon.global_hatch_offsets.horz;
+						case 7:
+							return AscCommon.global_hatch_offsets.vert;
+						case 8:
+							return AscCommon.global_hatch_offsets.pct60;
+						case 9:
+							return AscCommon.global_hatch_offsets.pct40;
+						case 10:
+							return AscCommon.global_hatch_offsets.pct25;
+						case 11:
+							return AscCommon.global_hatch_offsets.pct20;
+						case 12:
+							return AscCommon.global_hatch_offsets.pct10;
+						case 13:
+							return AscCommon.global_hatch_offsets.dkHorz;
+						case 14:
+							return AscCommon.global_hatch_offsets.dkVert;
+						case 15:
+							return AscCommon.global_hatch_offsets.dkDnDiag;
+						case 16:
+							return AscCommon.global_hatch_offsets.dkUpDiag;
+						case 17:
+							return AscCommon.global_hatch_offsets.smCheck;
+						case 18:
+							return AscCommon.global_hatch_offsets.trellis;
+						case 19:
+							return AscCommon.global_hatch_offsets.ltHorz;
+						case 20:
+							return AscCommon.global_hatch_offsets.ltVert;
+						case 21:
+							return AscCommon.global_hatch_offsets.ltDnDiag;
+						case 22:
+							return AscCommon.global_hatch_offsets.ltUpDiag;
+						case 23:
+							return AscCommon.global_hatch_offsets.smGrid;
+						case 24:
+							return AscCommon.global_hatch_offsets.pct50;
+						case "Themed":
+							console.log("Themed patten fill unhandled");
+							return AscCommon.global_hatch_offsets.cross;
+						default:
+							return AscCommon.global_hatch_offsets.cross;
+					}
+				}
+
+				let ooxmlFillPatternType = mapVisioFillPatternToOOXML(fillPatternType);
+				uniFillForegndWithPattern = AscFormat.CreatePatternFillUniFill(ooxmlFillPatternType,
 					uniFillBkgnd.fill.color, uniFillForegnd.fill.color);
-				// uniFill = AscFormat.builder_CreatePatternFill(nPatternType, uniFillBkgnd.fill.color, uniFillForegnd.fill.color);
 			}
 		} else if (uniFillForegnd) {
 			uniFillForegndWithPattern = uniFillForegnd;
