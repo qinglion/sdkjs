@@ -174,8 +174,8 @@
 
 			initialDefaultValue = 2; // number is return type in calculateValue
 		} else {
-			console.log("themeval argument error. cell name is unknown. return null.");
-			return null;
+			console.log("themeval argument error. cell name is unknown. return undefined.");
+			return undefined;
 		}
 
 		// lets define if shape is connector
