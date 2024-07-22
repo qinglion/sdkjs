@@ -568,18 +568,9 @@
 				connectorFontStyles: [],
 				fontStyles: []
 			};
-			this.variationStyleSchemeLst = null;
-			this.variationStyleScheme = [];
+			this.variationStyleSchemeLst = [];
 		}
 		InitClass(CThemeExt, CBaseNoIdObject, 0);
-		// Theme visio extensions end
-
-		function CVariationStyleSchemeLst() {
-			CBaseNoIdObject.call(this);
-
-			this.variationStyleScheme = [];
-		}
-		InitClass(CVariationStyleSchemeLst, CBaseNoIdObject, 0);
 
 		function CVariationStyleScheme() {
 			CBaseNoIdObject.call(this);
@@ -598,6 +589,8 @@
 			this.fontIdx = null;
 		}
 		InitClass(CVarStyle, CBaseNoIdObject, 0);
+		// Theme visio extensions end
+
 
 		function CT_Hyperlink() {
 			CBaseNoIdObject.call(this);
@@ -9383,8 +9376,8 @@
 		};
 		CTheme.prototype.getVariationStyleScheme = function (variationIndex, styleIndex) {
 			let themeExt = this.themeElements.themeExt;
-			if (themeExt && themeExt.variationStyleScheme[variationIndex]) {
-				return themeExt.variationStyleScheme[variationIndex].varStyle[styleIndex] || null;
+			if (themeExt && themeExt.variationStyleSchemeLst[variationIndex]) {
+				return themeExt.variationStyleSchemeLst[variationIndex].varStyle[styleIndex] || null;
 			}
 			return null;
 		};
