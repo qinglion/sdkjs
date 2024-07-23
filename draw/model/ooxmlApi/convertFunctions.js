@@ -836,7 +836,7 @@
 		// 1) I guess any cell can be = THEMEVAL() so better to always
 		// use Cell_Type.calculateValue method
 		// consider sometimes = THEMEVAL() can be replaced not to Themed but
-		// to concrete value on save for Cell_Type.v 
+		// to concrete value on save for Cell_Type.v
 		// 2) May be create methods on rows sections and shape -
 		// this.calculateCellValue("FillBkgnd",this, pageInfo,
 		// 			visioDocument.themes, themeValWasUsedFor, true);

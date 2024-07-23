@@ -44,6 +44,10 @@
 	{
 		AscCommon.baseEditorsApi.call(this, config, AscCommon.c_oEditorId.Draw);
 
+		/**
+		 *
+		 * @type {CVisioDocument}
+		 */
 		this.Document = null;
 		this.HtmlElement = null;
 		this.canvas = null;
@@ -180,7 +184,7 @@
 		// Меняем тип состояния (на никакое)
 		this.advancedOptionsAction = AscCommon.c_oAscAdvancedOptionsAction.None;
 
-		this.Document.draw(this.Document.zoom);
+		this.Document.draw(this.Document.zoom, undefined, this.Document.pageIndex);
 	};
 
 	asc_docs_api.prototype.OpenDocumentFromZip = function(data)

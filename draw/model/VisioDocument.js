@@ -122,6 +122,7 @@
 		}
 		this.mainDocument = false !== isMainLogicDocument;
 		this.zoom = 100;
+		this.pageIndex = 0;
 
 		//stubs for compatibility with DocumentContent
 		AscCommon.mockLogicDoc(CVisioDocument.prototype);
@@ -361,15 +362,16 @@
 		api.FontLoader.LoadDocumentFonts(aFonts, false);
 	}
 
-
 	/**
 	 * @memberOf CVisioDocument
+	 * @param {number} Zoom
+	 * @param pGraphics
+	 * @param {number} pageIndex
 	 */
-	CVisioDocument.prototype.draw = function(Zoom, pGraphics) {
+	CVisioDocument.prototype.draw = function(Zoom, pGraphics, pageIndex) {
 		//HOTFIX
 		this.theme = this.themes[0];
 
-		let pageIndex = 0;
 		let pageInfo = this.pages.page[pageIndex];
 		let pageContent = this.pageContents[pageIndex];
 
