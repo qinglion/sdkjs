@@ -9122,6 +9122,7 @@
 				return new CLineStyle();
 			}
 			let lineEndProp;
+			// not using idx - 1. Seems like visio bug here. See file https://disk.yandex.ru/d/OQVR9m1U255B1Q
 			if (getConnectorStyle) {
 				lineEndProp = this.themeElements.themeExt.lineStyles.fmtConnectorSchemeLineStyles[idx];
 			} else {
