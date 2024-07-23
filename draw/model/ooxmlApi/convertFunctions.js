@@ -836,11 +836,12 @@
 		// 1) I guess any cell can be = THEMEVAL() so better to always
 		// use Cell_Type.calculateValue method
 		// consider sometimes = THEMEVAL() can be replaced not to Themed but
-		// to concrete value on save
+		// to concrete value on save for Cell_Type.v 
 		// 2) May be create methods on rows sections and shape -
 		// this.calculateCellValue("FillBkgnd",this, pageInfo,
 		// 			visioDocument.themes, themeValWasUsedFor, true);
 		// 3) May be bind arguments to calculateValue function
+		// 4) May be move getTextCShape to other file
 
 
 		// there was case with shape type group with no PinX and PinY
