@@ -551,7 +551,12 @@
 			 * @type {?string}
 			 */
 			this.fmtConnectorSchemeExSchemeEnum = null;
-			this.fillStyles = null;
+
+			/**
+			 * vt:fillStyles
+			 * @type {{pattern: number}[]}
+			 */
+			this.fillStyles = [];
 
 			/**
 			 * @type {{fmtConnectorSchemeLineStyles: CLineStyle[], fmtSchemeLineStyles: CLineStyle[] }}
@@ -9129,6 +9134,27 @@
 			console.log("no fontProp object found for idx. Its ok sometimes." +
 				" Return new CLineStyle()", idx);
 			return new CLineStyle();
+		};
+
+		/**
+		 * Made for visio editor. Get fill pattern from <vt:fillStyles...
+		 * @memberof CTheme
+		 * @param {number} idx
+		 * @return {{pattern: number}} lineStyle
+		 */
+		CTheme.prototype.getFillProp = function (idx) {
+			if (idx === 0 || isNaN(idx)) {
+				console.log("idx getFillProp argument is 0 or isNaN(idx) is true");
+				return {pattern: 1}; // solid
+			}
+			let fillProp = this.themeElements.themeExt.fillStyles[idx - 1];
+			if (fillProp) {
+				var ret = {pattern: fillProp.pattern};
+				return ret;
+			}
+			console.log("no FillProp object found for idx. Its ok sometimes." +
+				" Return default FillProp", idx);
+			return {pattern: 1};
 		};
 
 		CTheme.prototype.getExtraClrScheme = function (sName) {

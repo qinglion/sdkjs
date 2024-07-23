@@ -173,8 +173,15 @@
 			variationStyleIndexVariable = "lineIdx";
 
 			initialDefaultValue = 2; // number is return type in calculateValue
+		} else if (cellName === "FillPattern") {
+			quickStyleCellName = null; // so color will not be calculated
+			quickStyleModifiersCellName = "QuickStyleFillMatrix";
+			getModifiersMethod = themes[0].getFillProp;
+			variationStyleIndexVariable = "fillIdx";
+
+			initialDefaultValue = 1; // number is return type in calculateValue. Solid fill.
 		} else {
-			console.log("themeval argument error. cell name is unknown. return undefined.");
+			console.log("themeval argument error. cell name: " + cellName + " is unknown. return undefined.");
 			return undefined;
 		}
 
@@ -413,6 +420,9 @@
 			} else if (cellName === "BeginArrowSize") {
 				let beginArrowSize = getMedifiersResult && getMedifiersResult.lineEx.startSize;
 				return Number(beginArrowSize);
+			} else if (cellName === "FillPattern") {
+				let fillPattern = getMedifiersResult && getMedifiersResult.pattern;
+				return Number(fillPattern);
 			} else {
 				console.log("Error in themeval. result is not changed to appropriate type or quickStyleCellName is not set.");
 			}

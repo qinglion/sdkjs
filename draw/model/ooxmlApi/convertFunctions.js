@@ -1024,7 +1024,7 @@
 						fillObj.color.color.RGBA.A = fillObj.color.color.RGBA.A * (1 - fillForegndTransValue);
 					}
 				} else {
-					// console.log("fillForegndTrans value is themed or something. Not calculated for", shape);
+					console.log("fillForegndTrans value is themed or something. Not calculated for", this);
 				}
 			}
 		}
@@ -1143,15 +1143,19 @@
 			} else if (fillPatternType > 1) {
 
 				function mapVisioFillPatternToOOXML(fillPatternType) {
+					// change down to up and up to down bcs of Global matrix inverted
+					let upSideDownPatterns = true;
 					switch (fillPatternType) {
 						case 2:
-							return AscCommon.global_hatch_offsets.upDiag;
+							return upSideDownPatterns ? AscCommon.global_hatch_offsets.dnDiag :
+								AscCommon.global_hatch_offsets.upDiag;
 						case 3:
 							return AscCommon.global_hatch_offsets.cross;
 						case 4:
 							return AscCommon.global_hatch_offsets.diagCross;
 						case 5:
-							return AscCommon.global_hatch_offsets.dnDiag;
+							return upSideDownPatterns ? AscCommon.global_hatch_offsets.upDiag :
+								AscCommon.global_hatch_offsets.dnDiag;
 						case 6:
 							return AscCommon.global_hatch_offsets.horz;
 						case 7:
@@ -1171,9 +1175,11 @@
 						case 14:
 							return AscCommon.global_hatch_offsets.dkVert;
 						case 15:
-							return AscCommon.global_hatch_offsets.dkDnDiag;
+							return upSideDownPatterns ? AscCommon.global_hatch_offsets.dkUpDiag :
+								AscCommon.global_hatch_offsets.dkDnDiag;
 						case 16:
-							return AscCommon.global_hatch_offsets.dkUpDiag;
+							return upSideDownPatterns ? AscCommon.global_hatch_offsets.dkDnDiag :
+								AscCommon.global_hatch_offsets.dkUpDiag;
 						case 17:
 							return AscCommon.global_hatch_offsets.smCheck;
 						case 18:
@@ -1183,24 +1189,29 @@
 						case 20:
 							return AscCommon.global_hatch_offsets.ltVert;
 						case 21:
-							return AscCommon.global_hatch_offsets.ltDnDiag;
+							return upSideDownPatterns ? AscCommon.global_hatch_offsets.ltUpDiag :
+								AscCommon.global_hatch_offsets.ltDnDiag;
 						case 22:
-							return AscCommon.global_hatch_offsets.ltUpDiag;
+							return upSideDownPatterns ? AscCommon.global_hatch_offsets.ltDnDiag :
+								AscCommon.global_hatch_offsets.ltUpDiag;
 						case 23:
 							return AscCommon.global_hatch_offsets.smGrid;
 						case 24:
 							return AscCommon.global_hatch_offsets.pct50;
-						case "Themed":
-							console.log("Themed patten fill unhandled");
-							return AscCommon.global_hatch_offsets.cross;
 						default:
+							console.log("patten fill unhandled");
 							return AscCommon.global_hatch_offsets.cross;
 					}
 				}
 
 				let ooxmlFillPatternType = mapVisioFillPatternToOOXML(fillPatternType);
-				uniFillForegndWithPattern = AscFormat.CreatePatternFillUniFill(ooxmlFillPatternType,
-					uniFillBkgnd.fill.color, uniFillForegnd.fill.color);
+				if (uniFillForegnd.fill instanceof AscFormat.CPattFill) {
+					uniFillForegndWithPattern = AscFormat.CreatePatternFillUniFill(ooxmlFillPatternType,
+						uniFillForegnd.fill.bgClr, uniFillForegnd.fill.fgClr);
+				} else {
+					uniFillForegndWithPattern = AscFormat.CreatePatternFillUniFill(ooxmlFillPatternType,
+						uniFillBkgnd.fill.color, uniFillForegnd.fill.color);
+				}
 			}
 		} else if (uniFillForegnd) {
 			uniFillForegndWithPattern = uniFillForegnd;
