@@ -11191,8 +11191,8 @@
 				const paperPathLst = convertShapeToPaperPathLst(shape);
 				return new paper.CompoundPath(paperPathLst);
 			});
-			const paperResult = paperShapes.reduce(function (accumulator, currentGroup) {
-				return accumulator.unite(currentGroup);
+			const paperResult = paperShapes.reduce(function (accumulator, currentShape) {
+				return accumulator.unite(currentShape);
 			});
 			const resultShape = convertPaperPathToShape(paperResult);
 
@@ -11254,32 +11254,48 @@
 			resultGeometry.AddPath(new AscFormat.Path()); // result geometry always contains only one path until proven otherwise :)
 
 			pathsToHandle.forEach(function (path) {
-				let lastVisitedSegment;
-				const segments = path.toJSON()[1].segments;
-				segments.forEach(function (segment, segmentIndex) {
+				const segments = path.toJSON()[1].segments.map(function (segment) {
 					const point = segment.length === 2 ? segment : segment[0];
 					const handleIn = segment.length === 2 ? [0, 0] : segment[1];
 					const handleOut = segment.length === 2 ? [0, 0] : segment[2];
+					return { point: point, handleIn: handleIn, handleOut: handleOut };
+				});
+
+				segments.forEach(function (segment, segmentIndex, segments) {
+					const prevSegment = segments[(segmentIndex - 1 + segments.length) % segments.length];
 
 					if (segmentIndex === 0) {
-						resultGeometry.pathLst[0].ArrPathCommandInfo.push({
-							'id': 0,
-							'X': '' + (point[0] * 36000 >> 0),
-							'Y': '' + (point[1] * 36000 >> 0)
-						});
-					} else {
-						resultGeometry.pathLst[0].ArrPathCommandInfo.push({
-							'id': 4,
-							'X0': '' + ((lastVisitedSegment.point[0] + lastVisitedSegment.handleOut[0]) * 36000 >> 0),
-							'Y0': '' + ((lastVisitedSegment.point[1] + lastVisitedSegment.handleOut[1]) * 36000 >> 0),
-							'X1': '' + ((point[0] + handleIn[0]) * 36000 >> 0),
-							'Y1': '' + ((point[1] + handleIn[1]) * 36000 >> 0),
-							'X2': '' + (point[0] * 36000 >> 0),
-							'Y2': '' + (point[1] * 36000 >> 0)
+						return resultGeometry.pathLst[0].ArrPathCommandInfo.push({
+							'id': AscFormat.moveTo,
+							'X': '' + (segment.point[0] * 36000 >> 0),
+							'Y': '' + (segment.point[1] * 36000 >> 0)
 						});
 					}
 
-					lastVisitedSegment = { point: point, handleIn: handleIn, handleOut: handleOut };
+					resultGeometry.pathLst[0].ArrPathCommandInfo.push({
+						'id': AscFormat.bezier4,
+						'X0': '' + ((prevSegment.point[0] + prevSegment.handleOut[0]) * 36000 >> 0),
+						'Y0': '' + ((prevSegment.point[1] + prevSegment.handleOut[1]) * 36000 >> 0),
+						'X1': '' + ((segment.point[0] + segment.handleIn[0]) * 36000 >> 0),
+						'Y1': '' + ((segment.point[1] + segment.handleIn[1]) * 36000 >> 0),
+						'X2': '' + (segment.point[0] * 36000 >> 0),
+						'Y2': '' + (segment.point[1] * 36000 >> 0)
+					});
+
+					if (segmentIndex === segments.length - 1 && path.isClosed()) {
+						resultGeometry.pathLst[0].ArrPathCommandInfo.push({
+							'id': AscFormat.bezier4,
+							'X0': '' + ((segment.point[0] + segment.handleOut[0]) * 36000 >> 0),
+							'Y0': '' + ((segment.point[1] + segment.handleOut[1]) * 36000 >> 0),
+							'X1': '' + ((segments[0].point[0] + segments[0].handleIn[0]) * 36000 >> 0),
+							'Y1': '' + ((segments[0].point[1] + segments[0].handleIn[1]) * 36000 >> 0),
+							'X2': '' + (segments[0].point[0] * 36000 >> 0),
+							'Y2': '' + (segments[0].point[1] * 36000 >> 0)
+						});
+						return resultGeometry.pathLst[0].ArrPathCommandInfo.push({
+							'id': AscFormat.close
+						});
+					}
 				});
 			});
 
