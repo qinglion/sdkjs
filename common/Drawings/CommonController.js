@@ -11180,7 +11180,7 @@
 		}
 
 		// Shapes merge
-		const uniteSelectedShapes = function () {
+		const mergeSelectedShapes = function (operation) {
 			const graphicController = editor.getGraphicController();
 			if (!graphicController) return;
 
@@ -11189,10 +11189,13 @@
 
 			const paperShapes = selectedShapes.map(function (shape) {
 				const paperPathLst = convertShapeToPaperPathLst(shape);
-				return new paper.CompoundPath(paperPathLst);
+				const mergedPathLst = paperPathLst.reduce(function (accumulator, currentPath) {
+					return accumulator.unite(currentPath);
+				});
+				return new paper.CompoundPath(mergedPathLst);
 			});
 			const paperResult = paperShapes.reduce(function (accumulator, currentShape) {
-				return accumulator.unite(currentShape);
+				return accumulator[operation](currentShape);
 			});
 			const resultShape = convertPaperPathToShape(paperResult);
 
@@ -11214,7 +11217,8 @@
 		function convertShapeToPaperPathLst(shape) {
 			paper.setup();
 
-			const paperPathLst = shape.getGeometry().pathLst.map(function (path) {
+			const pathLst = shape.getGeometry().pathLst;
+			const paperPathLst = pathLst.map(function (path) {
 				const convertedPath = new AscFormat.Path();
 				path.convertToBezierCurves(convertedPath, shape.transform, true);
 
@@ -11272,6 +11276,7 @@
 						});
 					}
 
+					// TODO: Check if bezier curve is just a straight line
 					resultGeometry.pathLst[0].ArrPathCommandInfo.push({
 						'id': AscFormat.bezier4,
 						'X0': '' + ((prevSegment.point[0] + prevSegment.handleOut[0]) * 36000 >> 0),
@@ -11416,5 +11421,5 @@
 		window["AscCommon"].getArrayElementsDiff = getArrayElementsDiff;
 		window["AscCommon"].GetSelectedDrawings = GetSelectedDrawings;
 
-		window['AscFormat'].uniteSelectedShapes = uniteSelectedShapes;
+		window['AscFormat'].mergeSelectedShapes = mergeSelectedShapes;
 	})(window);

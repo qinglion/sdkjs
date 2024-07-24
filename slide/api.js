@@ -4881,8 +4881,9 @@ background-repeat: no-repeat;\
             this.WordControl.m_oLogicDocument.GetCurrentSlide().graphicObjects.startEditCurrentOleObject();
     };
 
-	asc_docs_api.prototype.asc_uniteSelectedShapes = function () {
-		AscFormat.uniteSelectedShapes();
+	asc_docs_api.prototype.asc_mergeSelectedShapes = function (operation) {
+		const operations = ['unite', 'intersect', 'subtract', 'exclude', 'divide'];
+		if (operations.indexOf(operation) !== -1) AscFormat.mergeSelectedShapes(operation);
 	};
 
     // signatures
