@@ -302,10 +302,10 @@
 
 		var _hor_Zoom = 100;
 		if (0 != _pageWidth)
-			_hor_Zoom = (100 * displayedWidthPx) / _pageWidth;
+			_hor_Zoom = 100 * displayedWidthPx / _pageWidth;
 		var _ver_Zoom = 100;
 		if (0 != _pageHeight)
-			_ver_Zoom = (100 * displayedHeightPX) / _pageHeight;
+			_ver_Zoom = 100 * displayedHeightPX / _pageHeight;
 
 		_value = Math.min(_hor_Zoom, _ver_Zoom);
 
@@ -544,12 +544,11 @@
 			if (useFitToScreenZoom) {
 				fitZoom = Zoom * this.getFitZoomValue(thumbPageIndex, apiHtmlElement.offsetWidth, apiHtmlElement.offsetHeight) / 100 * fixScale;
 			}
-			let fitZoomThumb = 100 * this.getFitZoomValue(thumbPageIndex, apiHtmlElement.offsetWidth, apiHtmlElement.offsetHeight) / 100 * fixScale;
+			let fitZoomThumb = 100 * this.getFitZoomValue(thumbPageIndex, thumbnailCanvas.offsetWidth,
+				thumbnailCanvas.offsetHeight) / 100 * fixScale;
 
 			let pageScale = fitZoom / 100;
 			let pageScaleThumb = fitZoomThumb / 100;
-
-			let decreaseThumbSize = 1 / 6;
 
 			if (pGraphics) {
 				graphics = pGraphics;
@@ -577,11 +576,11 @@
 
 				// Version 2 with correct scroll lines
 				// setup scroll lines
-				thumbnailCanvas.style.width  = w_px_thumb * decreaseThumbSize + "px";
-				thumbnailCanvas.style.height = h_px_thumb * decreaseThumbSize + "px";
+				thumbnailCanvas.style.width  = w_px_thumb + "px";
+				thumbnailCanvas.style.height = h_px_thumb + "px";
 				// set pixels count for width and height
-				thumbnailCanvas.width = AscCommon.AscBrowser.convertToRetinaValue(thumbnailCanvas.clientWidth * decreaseThumbSize, true);
-				thumbnailCanvas.height = AscCommon.AscBrowser.convertToRetinaValue(thumbnailCanvas.clientHeight * decreaseThumbSize, true);
+				thumbnailCanvas.width = AscCommon.AscBrowser.convertToRetinaValue(thumbnailCanvas.clientWidth, true);
+				thumbnailCanvas.height = AscCommon.AscBrowser.convertToRetinaValue(thumbnailCanvas.clientHeight, true);
 
 				// canvas#id_viewer_overlay and div#id_target_cursor creates empty gray space below any drawing
 
@@ -591,8 +590,8 @@
 				let ctxThumbnails = thumbnailCanvas.getContext('2d');
 
 				graphicsThumbnail = new AscCommon.CGraphics();
-				graphicsThumbnail.init(ctxThumbnails, w_px_thumb * decreaseThumbSize,
-					h_px_thumb * decreaseThumbSize, w_mm, h_mm);
+				graphicsThumbnail.init(ctxThumbnails, w_px_thumb,
+					h_px_thumb, w_mm, h_mm);
 				graphicsThumbnail.m_oFontManager = AscCommon.g_fontManager;
 			}
 
