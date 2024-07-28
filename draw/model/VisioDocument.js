@@ -362,114 +362,19 @@
 		api.FontLoader.LoadDocumentFonts(aFonts, false);
 	}
 
+
 	/**
+	 *
 	 * @memberOf CVisioDocument
 	 * @param {number} Zoom
 	 * @param pGraphics
 	 * @param {number} pageIndex
 	 */
 	CVisioDocument.prototype.draw = function(Zoom, pGraphics, pageIndex) {
-		//HOTFIX
-		this.theme = this.themes[0];
-
-		let pageInfo = this.pages.page[pageIndex];
-		let pageContent = this.pageContents[pageIndex];
-
-		let topLevelShapesAndGroups = this.convertToCShapesAndGroups(pageInfo, pageContent);
-
-		let api = this.api;
-		let logic_w_mm = this.GetWidthMM(pageIndex);
-		let logic_h_mm = this.GetHeightMM(pageIndex);
-
-		/**
-		 * sometimes text suddenly gets huge sizes that take all of a picture space.
-		 * It usually happens on low zoom (when we scroll down a lot). This coefficient fixes this issue but
-		 * makes extra space and scroll lines get wrong sizes. fixScale number was randomly selected.
-		 * High fixScale value can make high load and break page, especially on high zooming. Low values
-		 * may not fix text on low zoom. 1 is default.
-		 * @type {number}
-		 */
-		let fixScale = 1;
-
-		let graphics;
-
-		let useFitToScreenZoom = !pGraphics;
-		let pageScale;
-		if (useFitToScreenZoom) {
-			Zoom = Zoom * this.getFitZoomValue(pageIndex, api.HtmlElement.offsetWidth,api.HtmlElement.offsetHeight) / 100 * fixScale;
-		}
-		pageScale = Zoom / 100;
-
-		if (pGraphics) {
-			graphics = pGraphics;
-		} else {
-			let dKoef = pageScale * g_dKoef_mm_to_pix;
-			dKoef *= AscCommon.AscBrowser.retinaPixelRatio;
-
-			let w_mm = logic_w_mm;
-			let h_mm = logic_h_mm;
-
-			var w_px = (w_mm * dKoef + 0.5) >> 0;
-			var h_px = (h_mm * dKoef + 0.5) >> 0;
-
-			let _canvas = api.canvas;
-
-			// Version 1
-			// let parentElement = _canvas.parentElement;
-			// _canvas.style.width  = parentElement.offsetWidth + "px";
-			// _canvas.style.height = parentElement.offsetHeight + "px";
-
-			// Version 2 with correct scroll lines
-			// setup scroll lines
-			_canvas.style.width  = w_px + "px";
-			_canvas.style.height = h_px + "px";
-			// set pixels count for width and height
-			_canvas.width = AscCommon.AscBrowser.convertToRetinaValue(_canvas.clientWidth, true);
-			_canvas.height = AscCommon.AscBrowser.convertToRetinaValue(_canvas.clientHeight, true);
-
-			// canvas#id_viewer_overlay and div#id_target_cursor creates empty gray space below any drawing
-
-			AscCommon.calculateCanvasSize(_canvas);
-
-			let ctx = _canvas.getContext('2d');
-
-			graphics = new AscCommon.CGraphics();
-			graphics.init(ctx, w_px, h_px, w_mm, h_mm);
-			graphics.m_oFontManager = AscCommon.g_fontManager;
-		}
-
-		if (graphics.m_oContext) {
-			graphics.m_oContext.clearRect(0, 0, api.canvas.width, api.canvas.height);
-		}
-
-		//visio y coordinate goes up while
-		//ECMA-376-11_5th_edition and Geometry.js y coordinate goes down
-		let baseMatrix = new AscCommon.CMatrix();
-		// baseMatrix.SetValues(1, 0, 0, 1, 0, 0);
-		baseMatrix.SetValues(1 / fixScale, 0, 0, -1 / fixScale, 0, logic_h_mm / fixScale);
-		graphics.SetBaseTransform(baseMatrix);
-
-		let baseTextMatrix = new AscCommon.CMatrix();
-		baseTextMatrix.SetValues(1 / fixScale, 0, 0, 1 / fixScale, 0, 0);
-		// baseTextMatrix.SetValues(1, 0, 0, -1, 0, logic_h_mm);
-
-		/**
-		 * @type {boolean}
-		 */
-		let changeTextDirection = true;
-
-
-		graphics.SaveGrState();
-		graphics.SetIntegerGrid(false);
-		graphics.transform3(new AscCommon.CMatrix());
-		graphics.b_color1( 255, 255, 255, 255 );
-		graphics.rect( 0, 0, logic_w_mm, logic_h_mm );
-		graphics.df();
-		graphics.RestoreGrState();
-
 		// see sdkjs/common/Shapes/Serialize.js this.ReadGroupShape = function(type) to
 		// learn how to work with shape groups
-		function drawShapeOrGroupRecursively(shapeOrGroup, currentGroupHandling) {
+		function drawShapeOrGroupRecursively(graphics, shapeOrGroup, baseMatrix,
+											 baseTextMatrix, changeTextDirection, logic_h_mm, currentGroupHandling) {
 			if (shapeOrGroup.spTree) {
 				// group came to argument
 				/** @type CGroupShape */
@@ -510,7 +415,8 @@
 
 				// handle group children
 				group.spTree.forEach(function(shapeOrGroup) {
-					drawShapeOrGroupRecursively(shapeOrGroup, group);
+					drawShapeOrGroupRecursively(graphics, shapeOrGroup, baseMatrix, baseTextMatrix, changeTextDirection,
+						logic_h_mm, group);
 				});
 			} else {
 				// shape came to argument
@@ -591,9 +497,296 @@
 			}
 		}
 
+
+		//HOTFIX
+		this.theme = this.themes[0];
+
+		let api = this.api;
+		let apiHtmlElement = api.HtmlElement.querySelector("#id_main");
+		let documentCanvas = api.canvas;
+		let panelThumbnails = api.HtmlElement.querySelector("#id_panel_thumbnails");
+		panelThumbnails.innerHTML = "";
+		for (let thumbPageIndex = 0; thumbPageIndex < this.pages.page.length; thumbPageIndex++) {
+			// var thumbnailCanvas = document.createElement("<canvas id=\"id_thumbnails\" class=\"block_elem\" style=\"user-select: none; z-index: 2; left: 0px; top: 0px; width: 100%; height:100%; cursor: default;\"></canvas>");
+			let thumbnailCanvas = document.createElement("canvas");
+			thumbnailCanvas.style.width = "70%";
+			thumbnailCanvas.style.height = "30%";
+			let thisContext = this;
+			thumbnailCanvas.onclick = function () {
+				thisContext.draw(Zoom, pGraphics, thumbPageIndex);
+				thisContext.pageIndex = thumbPageIndex;
+			}
+
+			panelThumbnails.appendChild(thumbnailCanvas);
+
+			let pageInfo = this.pages.page[thumbPageIndex];
+			let pageContent = this.pageContents[thumbPageIndex];
+
+			let logic_w_mm = this.GetWidthMM(thumbPageIndex);
+			let logic_h_mm = this.GetHeightMM(thumbPageIndex);
+
+			/**
+			 * sometimes text suddenly gets huge sizes that take all of a picture space.
+			 * It usually happens on low zoom (when we scroll down a lot). This coefficient fixes this issue but
+			 * makes extra space and scroll lines get wrong sizes. fixScale number was randomly selected.
+			 * High fixScale value can make high load and break page, especially on high zooming. Low values
+			 * may not fix text on low zoom. 1 is default.
+			 * @type {number}
+			 */
+			let fixScale = 1;
+
+			let graphics;
+
+			let graphicsThumbnail;
+
+			let useFitToScreenZoom = !pGraphics;
+			let fitZoom;
+			if (useFitToScreenZoom) {
+				fitZoom = Zoom * this.getFitZoomValue(thumbPageIndex, apiHtmlElement.offsetWidth, apiHtmlElement.offsetHeight) / 100 * fixScale;
+			}
+			let fitZoomThumb = 100 * this.getFitZoomValue(thumbPageIndex, apiHtmlElement.offsetWidth, apiHtmlElement.offsetHeight) / 100 * fixScale;
+
+			let pageScale = fitZoom / 100;
+			let pageScaleThumb = fitZoomThumb / 100;
+
+			let decreaseThumbSize = 1 / 6;
+
+			if (pGraphics) {
+				graphics = pGraphics;
+			} else {
+				/**
+				 * mm to px coef
+				 * @type {number}
+				 */
+				let dKoef = pageScale * g_dKoef_mm_to_pix * AscCommon.AscBrowser.retinaPixelRatio;
+				let dKoefThumb = pageScaleThumb * g_dKoef_mm_to_pix * AscCommon.AscBrowser.retinaPixelRatio;
+
+				let w_mm = logic_w_mm;
+				let h_mm = logic_h_mm;
+
+				let w_px = (w_mm * dKoef + 0.5) >> 0;
+				let h_px = (h_mm * dKoef + 0.5) >> 0;
+
+				var w_px_thumb = (w_mm * dKoefThumb + 0.5) >> 0;
+				var h_px_thumb = (h_mm * dKoefThumb + 0.5) >> 0;
+
+				// Version 1
+				// let parentElement = documentCanvas.parentElement;
+				// documentCanvas.style.width  = parentElement.offsetWidth + "px";
+				// documentCanvas.style.height = parentElement.offsetHeight + "px";
+
+				// Version 2 with correct scroll lines
+				// setup scroll lines
+				thumbnailCanvas.style.width  = w_px_thumb * decreaseThumbSize + "px";
+				thumbnailCanvas.style.height = h_px_thumb * decreaseThumbSize + "px";
+				// set pixels count for width and height
+				thumbnailCanvas.width = AscCommon.AscBrowser.convertToRetinaValue(thumbnailCanvas.clientWidth * decreaseThumbSize, true);
+				thumbnailCanvas.height = AscCommon.AscBrowser.convertToRetinaValue(thumbnailCanvas.clientHeight * decreaseThumbSize, true);
+
+				// canvas#id_viewer_overlay and div#id_target_cursor creates empty gray space below any drawing
+
+				AscCommon.calculateCanvasSize(thumbnailCanvas);
+
+
+				let ctxThumbnails = thumbnailCanvas.getContext('2d');
+
+				graphicsThumbnail = new AscCommon.CGraphics();
+				graphicsThumbnail.init(ctxThumbnails, w_px_thumb * decreaseThumbSize,
+					h_px_thumb * decreaseThumbSize, w_mm, h_mm);
+				graphicsThumbnail.m_oFontManager = AscCommon.g_fontManager;
+			}
+
+			if (graphicsThumbnail.m_oContext) {
+				graphicsThumbnail.m_oContext.clearRect(0, 0, thumbnailCanvas.width, thumbnailCanvas.height);
+			}
+
+			//visio y coordinate goes up while
+			//ECMA-376-11_5th_edition and Geometry.js y coordinate goes down
+			let baseThumbnailsMatrix = new AscCommon.CMatrix();
+			// baseThumbnailsMatrix.SetValues(1, 0, 0, 1, 0, 0);
+			baseThumbnailsMatrix.SetValues(1 / fixScale, 0, 0, -1 / fixScale,
+				0, logic_h_mm / fixScale);
+			graphicsThumbnail.SetBaseTransform(baseThumbnailsMatrix);
+
+			let baseTextMatrix = new AscCommon.CMatrix();
+			// baseTextMatrix.SetValues(1, 0, 0, -1, 0, logic_h_mm);
+			baseTextMatrix.SetValues(1 / fixScale, 0, 0, 1 / fixScale, 0, 0);
+
+
+			/**
+			 * @type {boolean}
+			 */
+			let changeTextDirection = true;
+
+			graphicsThumbnail.SaveGrState();
+			graphicsThumbnail.SetIntegerGrid(false);
+			graphicsThumbnail.transform3(new AscCommon.CMatrix());
+			graphicsThumbnail.b_color1( 255, 255, 255, 255 );
+			graphicsThumbnail.rect( 0, 0, logic_w_mm, logic_h_mm );
+			graphicsThumbnail.df();
+			graphicsThumbnail.RestoreGrState();
+
+			let topLevelShapesAndGroups = this.convertToCShapesAndGroups(pageInfo, pageContent);
+
+			topLevelShapesAndGroups.forEach(function(shapeOrGroup) {
+				drawShapeOrGroupRecursively(graphicsThumbnail, shapeOrGroup, baseThumbnailsMatrix, baseTextMatrix,
+					changeTextDirection, logic_h_mm);
+			});
+
+		}
+
+		let pageInfo = this.pages.page[pageIndex];
+		let pageContent = this.pageContents[pageIndex];
+
+		// let thumbnailsCanvas = api.thumbnailsCanvas;
+
+		let logic_w_mm = this.GetWidthMM(pageIndex);
+		let logic_h_mm = this.GetHeightMM(pageIndex);
+
+		/**
+		 * sometimes text suddenly gets huge sizes that take all of a picture space.
+		 * It usually happens on low zoom (when we scroll down a lot). This coefficient fixes this issue but
+		 * makes extra space and scroll lines get wrong sizes. fixScale number was randomly selected.
+		 * High fixScale value can make high load and break page, especially on high zooming. Low values
+		 * may not fix text on low zoom. 1 is default.
+		 * @type {number}
+		 */
+		let fixScale = 1;
+
+		let graphics;
+
+		// let graphicsThumbnails;
+
+		let useFitToScreenZoom = !pGraphics;
+		let fitZoom;
+		if (useFitToScreenZoom) {
+			fitZoom = Zoom * this.getFitZoomValue(pageIndex, apiHtmlElement.offsetWidth, apiHtmlElement.offsetHeight) / 100 * fixScale;
+		}
+		// let fitZoomThumb = 100 * this.getFitZoomValue(pageIndex, apiHtmlElement.offsetWidth, apiHtmlElement.offsetHeight) / 100 * fixScale;
+
+		let pageScale = fitZoom / 100;
+		// let pageScaleThumb = fitZoomThumb / 100;
+
+		// let decreaseThumbSize = 1/10;
+
+		if (pGraphics) {
+			graphics = pGraphics;
+		} else {
+			/**
+			 * mm to px coef
+			 * @type {number}
+			 */
+			let dKoef = pageScale * g_dKoef_mm_to_pix * AscCommon.AscBrowser.retinaPixelRatio;
+			// let dKoefThumb = pageScaleThumb * g_dKoef_mm_to_pix * AscCommon.AscBrowser.retinaPixelRatio;
+
+			let w_mm = logic_w_mm;
+			let h_mm = logic_h_mm;
+
+			let w_px = (w_mm * dKoef + 0.5) >> 0;
+			let h_px = (h_mm * dKoef + 0.5) >> 0;
+
+			// var w_px_thumb = (w_mm * dKoefThumb + 0.5) >> 0;
+			// var h_px_thumb = (h_mm * dKoefThumb + 0.5) >> 0;
+
+			// Version 1
+			// let parentElement = documentCanvas.parentElement;
+			// documentCanvas.style.width  = parentElement.offsetWidth + "px";
+			// documentCanvas.style.height = parentElement.offsetHeight + "px";
+
+			// Version 2 with correct scroll lines
+			// setup scroll lines
+			documentCanvas.style.width  = w_px + "px";
+			documentCanvas.style.height = h_px + "px";
+			// set pixels count for width and height
+			documentCanvas.width = AscCommon.AscBrowser.convertToRetinaValue(documentCanvas.clientWidth, true);
+			documentCanvas.height = AscCommon.AscBrowser.convertToRetinaValue(documentCanvas.clientHeight, true);
+
+			// thumbnailsCanvas.style.width  = w_px_thumb * decreaseThumbSize + "px";
+			// thumbnailsCanvas.style.height = h_px_thumb * decreaseThumbSize + "px";
+			// // set pixels count for width and height
+			// thumbnailsCanvas.width = AscCommon.AscBrowser.convertToRetinaValue(thumbnailsCanvas.clientWidth * decreaseThumbSize, true);
+			// thumbnailsCanvas.height = AscCommon.AscBrowser.convertToRetinaValue(thumbnailsCanvas.clientHeight * decreaseThumbSize, true);
+
+			// canvas#id_viewer_overlay and div#id_target_cursor creates empty gray space below any drawing
+
+			AscCommon.calculateCanvasSize(documentCanvas);
+
+			// AscCommon.calculateCanvasSize(thumbnailsCanvas);
+
+			let ctx = documentCanvas.getContext('2d');
+
+			// let ctxThumbnails = thumbnailsCanvas.getContext('2d');
+
+			graphics = new AscCommon.CGraphics();
+			graphics.init(ctx, w_px, h_px, w_mm, h_mm);
+			graphics.m_oFontManager = AscCommon.g_fontManager;
+
+			// graphicsThumbnails = new AscCommon.CGraphics();
+			// graphicsThumbnails.init(ctxThumbnails, w_px_thumb * decreaseThumbSize,
+			// 	h_px_thumb * decreaseThumbSize, w_mm, h_mm);
+			// graphicsThumbnails.m_oFontManager = AscCommon.g_fontManager;
+		}
+
+		if (graphics.m_oContext) {
+			graphics.m_oContext.clearRect(0, 0, api.canvas.width, api.canvas.height);
+		}
+
+		// if (graphicsThumbnails.m_oContext) {
+		// 	graphicsThumbnails.m_oContext.clearRect(0, 0, api.thumbnailsCanvas.width, api.thumbnailsCanvas.height);
+		// }
+
+		//visio y coordinate goes up while
+		//ECMA-376-11_5th_edition and Geometry.js y coordinate goes down
+		let baseMatrix = new AscCommon.CMatrix();
+		// baseMatrix.SetValues(1, 0, 0, 1, 0, 0);
+		baseMatrix.SetValues(1 / fixScale, 0, 0, -1 / fixScale, 0, logic_h_mm / fixScale);
+		graphics.SetBaseTransform(baseMatrix);
+
+		// let baseThumbnailsMatrix = new AscCommon.CMatrix();
+		// // baseMatrix.SetValues(1, 0, 0, 1, 0, 0);
+		// baseThumbnailsMatrix.SetValues(1 / fixScale, 0, 0, -1 / fixScale,
+		// 	0, logic_h_mm / fixScale);
+		// graphicsThumbnails.SetBaseTransform(baseThumbnailsMatrix);
+
+		let baseTextMatrix = new AscCommon.CMatrix();
+		baseTextMatrix.SetValues(1 / fixScale, 0, 0, 1 / fixScale, 0, 0);
+		// baseTextMatrix.SetValues(1, 0, 0, -1, 0, logic_h_mm);
+
+		/**
+		 * @type {boolean}
+		 */
+		let changeTextDirection = true;
+
+
+		graphics.SaveGrState();
+		graphics.SetIntegerGrid(false);
+		graphics.transform3(new AscCommon.CMatrix());
+		graphics.b_color1( 255, 255, 255, 255 );
+		graphics.rect( 0, 0, logic_w_mm, logic_h_mm );
+		graphics.df();
+		graphics.RestoreGrState();
+
+		// graphicsThumbnails.SaveGrState();
+		// graphicsThumbnails.SetIntegerGrid(false);
+		// graphicsThumbnails.transform3(new AscCommon.CMatrix());
+		// graphicsThumbnails.b_color1( 255, 255, 255, 255 );
+		// graphicsThumbnails.rect( 0, 0, logic_w_mm, logic_h_mm );
+		// graphicsThumbnails.df();
+		// graphicsThumbnails.RestoreGrState();
+
+		// see sdkjs/common/Shapes/Serialize.js this.ReadGroupShape = function(type) to
+		// learn how to work with shape groups
+
+		let topLevelShapesAndGroups = this.convertToCShapesAndGroups(pageInfo, pageContent);
+
 		topLevelShapesAndGroups.forEach(function(shapeOrGroup) {
-			drawShapeOrGroupRecursively(shapeOrGroup);
+			drawShapeOrGroupRecursively(graphics, shapeOrGroup, baseMatrix, baseTextMatrix, changeTextDirection,
+				logic_h_mm);
 		});
+
+		// topLevelShapesAndGroups.forEach(function(shapeOrGroup) {
+		// 	drawShapeOrGroupRecursively(graphicsThumbnails, shapeOrGroup);
+		// });
 	};
 	function getRandomPrst() {
 		let types = AscCommon.g_oAutoShapesTypes[Math.floor(Math.random()*AscCommon.g_oAutoShapesTypes.length)];

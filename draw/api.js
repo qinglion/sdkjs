@@ -49,8 +49,15 @@
 		 * @type {CVisioDocument}
 		 */
 		this.Document = null;
+
+		/**		 * @type {HTMLDivElement}		*/
 		this.HtmlElement = null;
+
+		/**		 * @type {HTMLCanvasElement}	*/
 		this.canvas = null;
+
+		/**		 * @type {HTMLCanvasElement}	*/
+		this.thumbnailsCanvas = null;
 
 		this._init();
 		return this;
@@ -90,14 +97,19 @@
 		window.CLayoutThumbnailDrawer = function () {};
 		window.CMasterThumbnailDrawer = function () {};
 		this.WordControl  = new AscCommonSlide.CEditorPage(this);
-		if (this.HtmlElement != null)
-			this.HtmlElement.innerHTML = ("<div id=\"id_main\" class=\"block_elem\" style=\"width:100%;height:100%;touch-action:none;-ms-touch-action: none;-moz-user-select:none;-khtml-user-select:none;user-select:none;background-color:" + AscCommon.GlobalSkin.BackgroundColor + ";overflow:hidden;\" UNSELECTABLE=\"on\">\
-                                    <div id=\"id_main_view\" class=\"block_elem\" style=\"width:100%;height:100%;touch-action:none;overflow:hidden\">\
-                                        <canvas id=\"id_viewer\" class=\"block_elem\" style=\"width:100%;height:100%;touch-action:none;-ms-touch-action: none;-webkit-user-select: none; background-color:" + AscCommon.GlobalSkin.BackgroundColor + ";z-index:1\"></canvas>\
-									    <canvas id=\"id_viewer_overlay\" class=\"block_elem\" style=\"touch-action:none;-ms-touch-action: none;-webkit-user-select: none; z-index:2\"></canvas>\
-									    <div id=\"id_target_cursor\" class=\"block_elem\" width=\"1\" height=\"1\" style=\"touch-action:none;-ms-touch-action: none;-webkit-user-select: none;width:2px;height:13px;z-index:4;\"></div>\
-                                    </div>\
-									</div>" + this.HtmlElement.innerHTML);
+		if (this.HtmlElement != null) {
+			let thumbsHtmlString = 	"<div id=\"id_panel_thumbnails\" class=\"block_elem\" style=\"touch-action: none; background-color: rgb(64, 64, 64); display: block; left: 0px; top: 0px; width: 20%; height:100%;\">" +
+											"</div>";
+			this.HtmlElement.innerHTML = ("<div id=\"id_main\" class=\"block_elem\" style=\"width:80%;height:100%;touch-action:none;-ms-touch-action: none;-moz-user-select:none;-khtml-user-select:none;user-select:none;background-color:" + AscCommon.GlobalSkin.BackgroundColor + ";overflow:hidden;\" UNSELECTABLE=\"on\">\
+											<div id=\"id_main_view\" class=\"block_elem\" style=\"width:100%;height:100%;touch-action:none;overflow:hidden\">\
+												<canvas id=\"id_viewer\" class=\"block_elem\" style=\"width:100%;height:100%;touch-action:none;-ms-touch-action: none;-webkit-user-select: none; background-color:" + AscCommon.GlobalSkin.BackgroundColor + ";z-index:1\"></canvas>\
+												<canvas id=\"id_viewer_overlay\" class=\"block_elem\" style=\"touch-action:none;-ms-touch-action: none;-webkit-user-select: none; z-index:2\"></canvas>\
+												<div id=\"id_target_cursor\" class=\"block_elem\" width=\"1\" height=\"1\" style=\"touch-action:none;-ms-touch-action: none;-webkit-user-select: none;width:2px;height:13px;z-index:4;\"></div>\
+											</div>" + this.HtmlElement.innerHTML);
+			this.HtmlElement.innerHTML = thumbsHtmlString + this.HtmlElement.innerHTML;
+		}
+
+
 		this.canvas = document.getElementById("id_viewer");
 	};
 	// работа с шрифтами
