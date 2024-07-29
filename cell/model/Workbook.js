@@ -2605,6 +2605,10 @@
 		this.timelineCaches.forEach(function(elem){
 			elem.initPostOpen(tableIds, sheetIds);
 		});
+		//external references
+		this.externalReferences.forEach(function(elem){
+			elem && elem.initPostOpen && elem.initPostOpen();
+		});
 		//show active if it hidden
 		var wsActive = this.getActiveWs();
 		if (wsActive && wsActive.getHidden()) {
@@ -14710,7 +14714,10 @@
 				nListenerCellIndex = getCellIndex(oListenerCell.nRow, oListenerCell.nCol);
 			}
 			if (nListenerCellIndex == null) {
-				return;
+				continue;
+			}
+			if (oListenerCell instanceof Asc.CT_WorksheetSource) {
+				continue;
 			}
 			let oRes = fAction(nListenerCellIndex, oListenerCell, oCell);
 			if (oRes != null) {
