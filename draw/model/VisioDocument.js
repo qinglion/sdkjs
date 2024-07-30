@@ -395,26 +395,26 @@
 				graphics.transform3(group.transform);
 
 				// create shape to draw group geometry
-				let сGroupShape = new AscFormat.CShape();
+				let cGroupShape = new AscFormat.CShape();
 				// cShape.setParent();
-				сGroupShape.setLocks(0);
-				сGroupShape.setBDeleted(false);
+				cGroupShape.setLocks(0);
+				cGroupShape.setBDeleted(false);
 
-				сGroupShape.setSpPr(group.spPr);
-				сGroupShape.spPr.setParent(сGroupShape);
-				сGroupShape.rot = group.rot;
-				сGroupShape.Id = group.Id;
-				сGroupShape.brush = group.brush;
-				сGroupShape.bounds = group.bounds;
-				сGroupShape.flipH = group.flipH;
-				сGroupShape.flipV = group.flipV;
-				сGroupShape.localTransform = group.localTransform;
-				сGroupShape.pen = group.pen;
+				cGroupShape.setSpPr(group.spPr);
+				cGroupShape.spPr.setParent(cGroupShape);
+				cGroupShape.rot = group.rot;
+				cGroupShape.Id = group.Id;
+				cGroupShape.brush = group.brush;
+				cGroupShape.bounds = group.bounds;
+				cGroupShape.flipH = group.flipH;
+				cGroupShape.flipV = group.flipV;
+				cGroupShape.localTransform = group.localTransform;
+				cGroupShape.pen = group.pen;
 
 
 				let shape_drawer = new AscCommon.CShapeDrawer();
-				shape_drawer.fromShape2(сGroupShape, graphics, сGroupShape.getGeometry());
-				let groupGeometry = сGroupShape.getGeometry();
+				shape_drawer.fromShape2(cGroupShape, graphics, cGroupShape.getGeometry());
+				let groupGeometry = cGroupShape.getGeometry();
 				shape_drawer.draw(groupGeometry);
 
 				shape_drawer.Clear();
