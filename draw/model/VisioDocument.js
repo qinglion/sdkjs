@@ -124,11 +124,11 @@
 		this.zoom = 100;
 		this.pageIndex = 0;
 
-		// /**
-		//  * topLevelShapesAndGroups taken from visio shapes conversion
-		//  * @type {(CShape | CGroupShape | CImageShape)[]} topLevelShapesAndGroups
-		//  */
-		// this.pageShapesCache = [];
+		/**
+		 * topLevelShapesAndGroups taken from visio shapes conversion
+		 * @type {(CShape | CGroupShape | CImageShape)[][]} topLevelShapesAndGroups
+		 */
+		this.pageShapesCache = [];
 
 		//stubs for compatibility with DocumentContent
 		AscCommon.mockLogicDoc(CVisioDocument.prototype);
@@ -501,14 +501,24 @@
 				if (changeTextDirection && shapeOrGroup.Id.substring(shapeOrGroup.Id.length - 4) === "Text") {
 					graphics.SetBaseTransform(baseMatrix);
 				}
+
+				// set shape transform that was before fix
+				if (changeTextDirection && shapeOrGroup.Id.substring(shapeOrGroup.Id.length - 4) === "Text") {
+					shapeOrGroup.transform.ty = logic_h_mm - shapeOrGroup.transform.ty - shapeOrGroup.spPr.xfrm.extY;
+					shapeOrGroup.recalculateTransformText();
+				}
+				if (shapeOrGroup.constructor.name === "CImageShape") {
+					shapeOrGroup.transform.sy = 1;
+					shapeOrGroup.transform.ty -= shapeOrGroup.spPr.xfrm.extY;
+				}
 			}
 		}
 
 		function drawOnCanvas(pageIndex, visioDocument, canvas, isThumbnail) {
-			let pageInfo = visioDocument.pages.page[pageIndex];
-			let pageContent = visioDocument.pageContents[pageIndex];
-			let topLevelShapesAndGroups = visioDocument.convertToCShapesAndGroups(pageInfo, pageContent);
-
+			// let pageInfo = visioDocument.pages.page[pageIndex];
+			// let pageContent = visioDocument.pageContents[pageIndex];
+			// let topLevelShapesAndGroups = visioDocument.convertToCShapesAndGroups(pageInfo, pageContent);
+			let topLevelShapesAndGroups = visioDocument.pageShapesCache[pageIndex];
 
 			let logic_w_mm = visioDocument.GetWidthMM(pageIndex);
 			let logic_h_mm = visioDocument.GetHeightMM(pageIndex);
@@ -618,15 +628,14 @@
 			});
 		}
 
-		// for (let pageIndex = 0; pageIndex < this.pages.page.length; pageIndex++) {
-		// 	if (this.pageShapesCache[pageIndex] === undefined) {
-		// 		let pageInfo = this.pages.page[pageIndex];
-		// 		let pageContent = this.pageContents[pageIndex];
-		// 		let topLevelShapesAndGroups = this.convertToCShapesAndGroups(pageInfo, pageContent);
-		// 		this.pageShapesCache[pageIndex] = topLevelShapesAndGroups;
-		// 	}
-		// }
-
+		for (let pageIndex = 0; pageIndex < this.pages.page.length; pageIndex++) {
+			if (this.pageShapesCache[pageIndex] === undefined) {
+				let pageInfo = this.pages.page[pageIndex];
+				let pageContent = this.pageContents[pageIndex];
+				let topLevelShapesAndGroups = this.convertToCShapesAndGroups(pageInfo, pageContent);
+				this.pageShapesCache[pageIndex] = topLevelShapesAndGroups;
+			}
+		}
 
 		//HOTFIX
 		this.theme = this.themes[0];
@@ -665,9 +674,6 @@
 	 * @return {(CShape | CGroupShape | CImageShape)[]} topLevelShapesAndGroups
 	 */
 	CVisioDocument.prototype.convertToCShapesAndGroups = function(pageInfo, pageContent) {
-		/** @type {Shape_Type[]} */
-		let shapeClasses = [];
-
 		/** @type {(CShape | CGroupShape | CImageShape)[]} */
 		let topLevelShapesAndGroups = [];
 
