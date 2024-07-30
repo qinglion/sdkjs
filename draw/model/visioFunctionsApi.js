@@ -410,19 +410,19 @@
 				}
 			} else if (cellName === "EndArrow") {
 				let endArrowType = getMedifiersResult && getMedifiersResult.lineEx.end;
-				return String(endArrowType);
+				result = String(endArrowType);
 			} else if (cellName === "BeginArrow") {
 				let beginArrowType = getMedifiersResult && getMedifiersResult.lineEx.start;
-				return String(beginArrowType);
+				result = String(beginArrowType);
 			} else if (cellName === "EndArrowSize") {
 				let endArrowSize = getMedifiersResult && getMedifiersResult.lineEx.endSize;
-				return Number(endArrowSize);
+				result = Number(endArrowSize);
 			} else if (cellName === "BeginArrowSize") {
 				let beginArrowSize = getMedifiersResult && getMedifiersResult.lineEx.startSize;
-				return Number(beginArrowSize);
+				result = Number(beginArrowSize);
 			} else if (cellName === "FillPattern") {
 				let fillPattern = getMedifiersResult && getMedifiersResult.pattern;
-				return Number(fillPattern);
+				result = Number(fillPattern);
 			} else {
 				console.log("Error in themeval. result is not changed to appropriate type or quickStyleCellName is not set.");
 			}
@@ -444,7 +444,9 @@
 			return color.createDuplicate();
 		}
 
-		if (result !== null) {
+		// typeof NaN === "number", isNaN({...}) === true so NaN check is typeof result === "number" && isNaN(result)
+		if (result !== null && !(typeof result === "number" && isNaN(result)) && result !== "null" &&
+			result !== undefined && result !== "undefined") {
 			// result have appropriate type for cell already
 			if (result instanceof AscFormat.CUniColor || result instanceof AscFormat.CUniFill) {
 				return calculateOnTheme(result, theme);
@@ -453,7 +455,8 @@
 				return result;
 			}
 		} else {
-			console.log("Unknown themeval error");
+			console.log("Unknown themeval error. Return initialDefaultValue");
+			return initialDefaultValue;
 		}
 		// code below never calls. result is always calculated. Default values are set above are returned if
 		// default theme is used
