@@ -507,9 +507,9 @@
 	}
 
 	/**
-	 * Calls getCell on object and tries to parse as Number(cell.v) if cell exists.
+	 * Calls getCell on object and tries to parse as Number(cell.v) if cell exists otherwise return undefined.
 	 * @param {String} formula
-	 * @return {?Number} number
+	 * @return {Number | undefined} number
 	 */
 	SheetStorage.prototype.getCellNumberValue = function (formula) {
 		let cell = this.getCell(formula);
@@ -521,9 +521,9 @@
 	}
 
 	/**
-	 * Calls getCell on object and tries to parse as String(cell.v) if cell exists.
+	 * Calls getCell on object and tries to parse as String(cell.v) if cell exists otherwise return undefined.
 	 * @param {String} formula
-	 * @return {?String} string
+	 * @return {String | undefined} string
 	 */
 	SheetStorage.prototype.getCellStringValue = function (formula) {
 		let cell = this.getCell(formula);
@@ -1065,6 +1065,9 @@
 		// layers have the same set of properties so lets take any of them
 		// and remove unEqualProperties
 		let resultObject = {};
+		if (previousLayer === undefined) {
+			return resultObject;
+		}
 		for (const cellKey in previousLayer.getElements()) {
 			const cell = previousLayer.getCell(cellKey);
 			if (!unEqualProperties.has(cell.n)) {

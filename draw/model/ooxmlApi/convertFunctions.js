@@ -934,8 +934,14 @@
 		}
 
 		let gradientEnabledCell = this.getCell("FillGradientEnabled");
-		let gradientEnabled = gradientEnabledCell.calculateValue(this, pageInfo,
+		let gradientEnabled;
+		if (gradientEnabledCell !== undefined) {
+			gradientEnabled = gradientEnabledCell.calculateValue(this, pageInfo,
 			visioDocument.themes, themeValWasUsedFor, true);
+		} else {
+			gradientEnabled = false;
+		}
+
 
 		// FillGradientDir and FillPattern can tell about gradient type
 		// if FillGradient Enabled
@@ -1113,26 +1119,26 @@
 
 		let endArrowTypeCell = this.getCell("EndArrow");
 		let endArrowSizeCell = this.getCell("EndArrowSize");
-		let endArrowType = endArrowTypeCell.calculateValue(this, pageInfo,
-			visioDocument.themes, themeValWasUsedFor);
-		let endArrowSize = endArrowSizeCell.calculateValue(this, pageInfo,
-			visioDocument.themes, themeValWasUsedFor);
+		let endArrowType = endArrowTypeCell ? endArrowTypeCell.calculateValue(this, pageInfo,
+			visioDocument.themes, themeValWasUsedFor) : 0;
+		let endArrowSize = endArrowSizeCell ? endArrowSizeCell.calculateValue(this, pageInfo,
+			visioDocument.themes, themeValWasUsedFor) : 1;
 		let endArrow = getEndArrow(endArrowType, endArrowSize);
 		oStroke.setTailEnd(endArrow);
 
 		let beginArrowTypeCell = this.getCell("BeginArrow");
 		let beginArrowSizeCell = this.getCell("BeginArrowSize");
-		let beginArrowType = beginArrowTypeCell.calculateValue(this, pageInfo,
-			visioDocument.themes, themeValWasUsedFor);
-		let beginArrowSize = beginArrowSizeCell.calculateValue(this, pageInfo,
-			visioDocument.themes, themeValWasUsedFor);
+		let beginArrowType = beginArrowTypeCell ? beginArrowTypeCell.calculateValue(this, pageInfo,
+			visioDocument.themes, themeValWasUsedFor) : 0;
+		let beginArrowSize = beginArrowSizeCell ? beginArrowSizeCell.calculateValue(this, pageInfo,
+			visioDocument.themes, themeValWasUsedFor) : 1;
 		let beginArrow = getEndArrow(beginArrowType, beginArrowSize);
 		oStroke.setHeadEnd(beginArrow);
 
 
 		let fillPatternTypeCell = this.getCell("FillPattern");
-		let fillPatternType = fillPatternTypeCell.calculateValue(this, pageInfo, visioDocument.themes,
-			themeValWasUsedFor);
+		let fillPatternType = fillPatternTypeCell ? fillPatternTypeCell.calculateValue(this, pageInfo, visioDocument.themes,
+			themeValWasUsedFor) : 1;
 
 		if (!isNaN(fillPatternType) && uniFillBkgnd && uniFillForegnd) {
 			// https://learn.microsoft.com/ru-ru/office/client-developer/visio/fillpattern-cell-fill-format-section
