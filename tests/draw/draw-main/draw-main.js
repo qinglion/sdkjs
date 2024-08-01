@@ -44,7 +44,6 @@
     id_main_view.style.overflow = "auto";
 
     let Zoom = 100;
-    let pageIndex = 0;
 
     // Cross browser support unchecked!
     // May slow down scrolling! Because handler will wait until its job is finished and will fire mouse wheel only
@@ -77,6 +76,7 @@
                 }
             }
             Zoom = Zoom_;
+            api.Document.zoom = Zoom;
             let droppedTestFileArrayBuffer = AscCommon.Base64.decode(localStorage.droppedTestFile);
             drawFile(droppedTestFileArrayBuffer);
             console.log('draw using Zoom ', Zoom);
@@ -88,17 +88,26 @@
     api.asc_getLocale = function() {
         return "en";
     };
+
+    let firstRun = true;
+
     function drawFile(data){
-        api.asc_CloseFile();
+        if (firstRun) {
 
-        api.isOpenOOXInBrowser = api["asc_isSupportFeature"]("ooxml") && AscCommon.checkOOXMLSignature(data);
-        api.OpenDocumentFromZip(data);
-        AscCommon.g_oIdCounter.Set_Load(false);
+            api.asc_CloseFile();
 
-        api.Document.zoom = Zoom;
-        api.Document.pageIndex = pageIndex;
-        AscCommon.pptx_content_loader.CheckImagesNeeds(api.WordControl.m_oLogicDocument);
-        api.Document.loadFonts();
+            api.isOpenOOXInBrowser = api["asc_isSupportFeature"]("ooxml") && AscCommon.checkOOXMLSignature(data);
+            api.OpenDocumentFromZip(data);
+            AscCommon.g_oIdCounter.Set_Load(false);
+            firstRun = false;
+
+            api.Document.zoom = Zoom;
+            AscCommon.pptx_content_loader.CheckImagesNeeds(api.WordControl.m_oLogicDocument);
+            api.Document.loadFonts(); // calls loadImages() and openDocumentEndCallback
+            // and api.Document.draw(api.Document.zoom, undefined, api.Document.pageIndex);
+        } else {
+            api.Document.draw(api.Document.zoom, undefined, api.Document.pageIndex);
+        }
     }
 
     function holderOnDradOver(e)
@@ -133,6 +142,9 @@
             e.preventDefault();
             return false;
         }
+
+        firstRun = true;
+        Zoom = 100;
 
         var reader = new FileReader();
         reader.onload = function(e) {
@@ -182,15 +194,16 @@
     }
 
     function windowOnKeydown(e) {
-        console.log("Event handled: ", e);
+        console.log("Event windowOnKeydown catched: ", e);
         if (e.keyCode == '37') {
             // left arrow
-            pageIndex -= 1;
+            api.Document.pageIndex -= 1;
+            drawSavedFile();
         }
         else if (e.keyCode == '39') {
             // right arrow
-            pageIndex += 1;
+            api.Document.pageIndex += 1;
+            drawSavedFile();
         }
-        drawSavedFile();
     }
 }();
