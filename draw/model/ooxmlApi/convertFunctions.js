@@ -868,15 +868,9 @@
 
 			var oSpPr = new AscFormat.CSpPr();
 			var oXfrm = new AscFormat.CXfrm();
-			// oXfrm.setOffX(0);
-			// oXfrm.setOffY(0);
-			// oXfrm.setExtX(0);
-			// oXfrm.setExtY(0);
 
 			oSpPr.setXfrm(oXfrm);
 			oXfrm.setParent(oSpPr);
-			// oSpPr.setFill(AscFormat.CreateNoFillUniFill());
-			// oSpPr.setLn(AscFormat.CreateNoFillLine());
 
 			emptyCShape.setSpPr(oSpPr);
 			oSpPr.setParent(emptyCShape);
@@ -1137,8 +1131,8 @@
 
 
 		let fillPatternTypeCell = this.getCell("FillPattern");
-		let fillPatternType = fillPatternTypeCell ? fillPatternTypeCell.calculateValue(this, pageInfo, visioDocument.themes,
-			themeValWasUsedFor) : 1;
+		let fillPatternType = fillPatternTypeCell ? fillPatternTypeCell.calculateValue(this, pageInfo,
+			visioDocument.themes, themeValWasUsedFor) : 1;
 
 		if (!isNaN(fillPatternType) && uniFillBkgnd && uniFillForegnd) {
 			// https://learn.microsoft.com/ru-ru/office/client-developer/visio/fillpattern-cell-fill-format-section

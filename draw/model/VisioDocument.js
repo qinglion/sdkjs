@@ -628,6 +628,12 @@
 			});
 		}
 
+		if (this.pages === null) {
+			// doesn't work after correct file read
+			alert("No pages or wrong file");
+			return;
+		}
+
 		for (let pageIndex = 0; pageIndex < this.pages.page.length; pageIndex++) {
 			if (this.pageShapesCache[pageIndex] === undefined) {
 				let pageInfo = this.pages.page[pageIndex];
@@ -652,6 +658,7 @@
 			thumbnailCanvas.style.height = "30%";
 			let thisContext = this;
 			thumbnailCanvas.onclick = function () {
+				// Zoom = 100;
 				thisContext.draw(Zoom, pGraphics, thumbPageIndex);
 				thisContext.pageIndex = thumbPageIndex;
 			}
