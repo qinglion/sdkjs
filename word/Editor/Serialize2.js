@@ -7661,8 +7661,8 @@ function getCustomXmlFromContentControl(customXml)
 				ctfText = replaceSubstring(ctfText, nStart, nEnd, text);
 			}
 
-			outputUString += "<pkg:part pkg:name=\"/" + path + "\"" +
-				"pkg:contentType=\"" + type +"\">" +
+			outputUString += "<pkg:part pkg:name=\"/" + path + "\" " +
+				"pkg:contentType=\"" + type +"\"> " +
 				"<pkg:xmlData>" + ctfText.replace("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>", "").replace("\n", "") + "</pkg:xmlData></pkg:part>"
 		}
 	});
