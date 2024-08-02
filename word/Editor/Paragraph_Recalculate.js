@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -60,7 +60,7 @@ Paragraph.prototype.Recalculate_FastWholeParagraph = function()
 
     // TODO: Отключаем это ускорение в таблицах, т.к. в таблицах и так есть свое ускорение. Но можно и это ускорение
     // подключить, для этого надо проверять изменились ли MinMax ширины и набираем ли мы в строке заголовков.
-	var oCell = this.Parent.IsTableCellContent(true);
+	var oCell = this.IsTableCellContent(true);
     if (oCell && oCell.GetTable())
 	{
 		if (tbllayout_AutoFit === oCell.GetTable().Get_CompiledPr(false).TablePr.TableLayout || oCell.IsInHeader(true))
@@ -225,7 +225,7 @@ Paragraph.prototype.RecalculateFastRunRange = function(oParaPos)
 
     // TODO: Отключаем это ускорение в таблицах, т.к. в таблицах и так есть свое ускорение. Но можно и это ускорение
     // подключить, для этого надо проверять изменились ли MinMax ширины и набираем ли мы в строке заголовков.
-    if ( undefined === this.Parent || true === this.Parent.IsTableCellContent() )
+    if ( undefined === this.Parent || true === this.IsTableCellContent() )
         return -1;
 
     //Не запускаемм быстрый пересчет, когда параграф находится в автофигуре с выставленным флагом подбора размера по размеру контента,
@@ -680,7 +680,7 @@ Paragraph.prototype.private_RecalculatePageInternal = function(PRS, CurPage, bFi
     //-------------------------------------------------------------------------------------------------------------
     // Обрабатываем настройку "не отрывать от следующего"
     //-------------------------------------------------------------------------------------------------------------
-    if (false === this.private_RecalculatePageKeepNext(CurLine, CurPage, PRS, ParaPr))
+    if (false === this.private_RecalculatePageKeepNext(CurPage, PRS, ParaPr))
         return PRS.RecalcResult;
 
     //-------------------------------------------------------------------------------------------------------------
@@ -716,7 +716,7 @@ Paragraph.prototype.private_RecalculatePageInternal = function(PRS, CurPage, bFi
     {
         PRS.Line = CurLine;
         PRS.RecalcResult = recalcresult_NextLine;
-        PRS.ComplexFields.PushState();
+        let complexFieldState = PRS.ComplexFields.getState();
 
         this.private_RecalculateLine(CurLine, CurPage, PRS, ParaPr);
 
@@ -745,7 +745,7 @@ Paragraph.prototype.private_RecalculatePageInternal = function(PRS, CurPage, bFi
             // были заполнены при последнем неудачном рассчете.
 
             PRS.Restore_RunRecalcInfo();
-			PRS.ComplexFields.PopState();
+			PRS.ComplexFields.setState(complexFieldState);
         }
         else if (RecalcResult & recalcresult_NextElement || RecalcResult & recalcresult_NextPage)
         {
@@ -777,58 +777,19 @@ Paragraph.prototype.private_RecalculatePageInternal = function(PRS, CurPage, bFi
     return RecalcResult;
 };
 
-Paragraph.prototype.private_RecalculatePageKeepNext    = function(CurLine, CurPage, PRS, ParaPr)
+Paragraph.prototype.private_RecalculatePageKeepNext = function(CurPage, PRS, paraPr)
 {
-    // Такая настройка срабатывает в единственном случае:
-    // У предыдущего параграфа выставлена данная настройка, а текущий параграф сразу начинается с новой страницы
-    // ( при этом у него не выставлен флаг "начать с новой страницы", иначе будет зацикливание здесь ).
-    if (1 === CurPage && true === this.Check_EmptyPages(0) && this.Parent instanceof CDocument && false === ParaPr.PageBreakBefore)
-    {
-        // Если у предыдущего параграфа стоит настройка "не отрывать от следующего".
-        // И сам параграф не разбит на несколько страниц и не начинается с новой страницы,
-        // тогда мы должны пересчитать предыдущую страницу, с учетом того, что предыдущий параграф
-        // надо начать с новой страницы.
-        var Curr = this.Get_DocumentPrev();
-        while (null != Curr && type_Paragraph === Curr.GetType() && undefined === Curr.Get_SectionPr())
-        {
-            var CurrKeepNext = Curr.Get_CompiledPr2(false).ParaPr.KeepNext;
-            if ((true === CurrKeepNext && Curr.Pages.length > 1) || false === CurrKeepNext || true !== Curr.Is_Inline() || true === Curr.Check_PageBreak())
-            {
-                break;
-            }
-            else
-            {
-                var Prev = Curr.Get_DocumentPrev();
-                if (null === Prev || (type_Paragraph === Prev.GetType() && undefined !== Prev.Get_SectionPr()))
-                    break;
-
-                if (type_Paragraph != Prev.GetType() || false === Prev.Get_CompiledPr2(false).ParaPr.KeepNext)
-                {
-                    if (true === this.Parent.RecalcInfo.Can_RecalcObject())
-                    {
-                        this.Parent.RecalcInfo.Set_KeepNext(Curr, this);
-                        PRS.RecalcResult = recalcresult_PrevPage | recalcresultflags_Column;
-                        return false;
-                    }
-                    else
-                        break;
-                }
-                else
-                {
-                    Curr = Prev;
-                }
-            }
-        }
-    }
-
-    if (true === this.Parent.RecalcInfo.Check_KeepNextEnd(this))
-    {
-        // Дошли до сюда, значит уже пересчитали данную ситуацию.
-        // Делаем Reset здесь, потому что Reset надо делать в том же месте, гды мы запросили пересчет заново.
-        this.Parent.RecalcInfo.Reset();
-    }
-
-    return true;
+	if (paraPr.PageBreakBefore)
+		return true;
+	
+	let recalcResult = this.RecalculateKeepNext(CurPage);
+	if (recalcresult_NextElement !== recalcResult)
+	{
+		PRS.RecalcResult = recalcResult;
+		return false;
+	}
+	
+	return true;
 };
 
 Paragraph.prototype.private_RecalculatePageXY          = function(CurLine, CurPage, PRS, ParaPr)
@@ -1042,6 +1003,7 @@ Paragraph.prototype.private_RecalculateLine            = function(CurLine, CurPa
     //-------------------------------------------------------------------------------------------------------------
     this.Lines.length   = CurLine + 1;
     this.Lines[CurLine] = new CParaLine();
+	this.Lines[CurLine].CF = PRS.ComplexFields.getState();
 
     //-------------------------------------------------------------------------------------------------------------
     // 2. Проверяем, является ли данная строка висячей
@@ -1557,7 +1519,7 @@ Paragraph.prototype.private_RecalculateLinePosition    = function(CurLine, CurPa
 		// TODO: Здесь нужно сделать корректировку YLimit с учетом сносок. Надо разобраться почему вообще здесь
 		// используется this.YLimit вместо Page.YLimit
 
-		if (!this.Parent.IsCalculatingContinuousSectionBottomLine() && false === this.Parent.IsTableCellContent() && Bottom > this.YLimit && Bottom - this.YLimit <= ParaPr.Spacing.After)
+		if (!this.Parent.IsCalculatingContinuousSectionBottomLine() && false === this.IsTableCellContent() && Bottom > this.YLimit && Bottom - this.YLimit <= ParaPr.Spacing.After)
 			Bottom = this.YLimit;
 	}
 
@@ -1595,7 +1557,7 @@ Paragraph.prototype.private_RecalculateLineBottomBound = function(CurLine, CurPa
     var Bottom2 = PRS.LineBottom2;
 
     // В ячейке перенос страницы происходит по нижней границе, т.е. с учетом Spacing.After и границы
-    if ( true === this.Parent.IsTableCellContent() )
+    if ( true === this.IsTableCellContent() )
         Bottom2 = PRS.LineBottom;
 
     // Переносим строку по PageBreak. Если в строке ничего нет кроме PageBreak, и это не конец параграфа, тогда нам не надо проверять высоту строки и обтекание.
@@ -1637,7 +1599,7 @@ Paragraph.prototype.private_RecalculateLineBottomBound = function(CurLine, CurPa
 		&& (CurLine != this.Pages[CurPage].FirstLine
 		|| false === bNoFootnotes
 		|| (0 === RealCurPage && ((null != this.Get_DocumentPrev() && !this.Parent.IsElementStartOnNewPage(this.GetIndex()))
-		|| (true === this.Parent.IsTableCellContent() && true !== this.Parent.IsTableFirstRowOnNewPage())
+		|| (true === this.IsTableCellContent() && true !== this.Parent.IsTableFirstRowOnNewPage())
 		|| (true === this.Parent.IsBlockLevelSdtContent() && true !== this.Parent.IsBlockLevelSdtFirstOnNewPage()))))
 		&& false === BreakPageLineEmpty)
     {
@@ -1936,7 +1898,7 @@ Paragraph.prototype.private_RecalculateLineAlign       = function(CurLine, CurPa
 		PRSC.Range.W      = 0;
 		PRSC.Range.WEnd   = 0;
 		PRSC.Range.WBreak = 0;
-        if ( true === this.Numbering.Check_Range(CurRange, CurLine) )
+        if ( true === this.Numbering.checkRange(CurRange, CurLine) )
             PRSC.Range.W += this.Numbering.WidthVisible;
 
         for ( var Pos = StartPos; Pos <= EndPos; Pos++ )
@@ -1944,6 +1906,14 @@ Paragraph.prototype.private_RecalculateLineAlign       = function(CurLine, CurPa
             var Item = this.Content[Pos];
             Item.Recalculate_Range_Width( PRSC, CurLine, CurRange );
         }
+		
+		// TODO: Right edge is wrong
+		let jc = ParaPr.Jc;
+		if (ParaPr.Bidi && (jc === AscCommon.align_Left || jc === AscCommon.align_Justify))
+		{
+			PRSC.Range.W += PRSC.SpaceLen;
+			PRSC.SpaceLen = 0;
+		}
 
         var JustifyWord  = 0;
         var JustifySpace = 0;
@@ -1970,8 +1940,16 @@ Paragraph.prototype.private_RecalculateLineAlign       = function(CurLine, CurPa
             }
             else
             {
-                // RangeWidth - ширина всего пространства в данном отрезке, а Range.W - ширина занимаемого пространства
-                switch (ParaPr.Jc)
+				if (ParaPr.Bidi)
+				{
+					if (AscCommon.align_Left === jc)
+						jc = AscCommon.align_Right;
+					else if (AscCommon.align_Right === jc)
+						jc = AscCommon.align_Left;
+				}
+				
+				// RangeWidth - ширина всего пространства в данном отрезке, а Range.W - ширина занимаемого пространства
+                switch (jc)
                 {
                     case AscCommon.align_Left :
                     {
@@ -2076,11 +2054,18 @@ Paragraph.prototype.private_RecalculateLineAlign       = function(CurLine, CurPa
             PRSA.Y1 += _LineMetrics.LineGap;
 
         this.Lines[CurLine].Ranges[CurRange].XVisible = X;
+		if (ParaPr.Bidi && Line.Info & paralineinfo_End && CurRange === Line.Ranges.length - 1)
+		{
+			let paraMark = this.GetParaEndRun().GetParaEnd();
+			if (paraMark)
+				this.Lines[CurLine].Ranges[CurRange].XVisible -= paraMark.GetWidthVisible();
+		}
+			
 
         if ( 0 === CurRange )
             this.Lines[CurLine].X = X - PRSW.XStart;
 
-        if ( true === this.Numbering.Check_Range(CurRange, CurLine) )
+        if ( true === this.Numbering.checkRange(CurRange, CurLine) )
             PRSA.X += this.Numbering.WidthVisible;
 
         for ( var Pos = StartPos; Pos <= EndPos; Pos++ )
@@ -2442,7 +2427,7 @@ Paragraph.prototype.private_RecalculateMoveLineToNextPage = function(CurLine, Cu
 			let compatibilityMode = PRS.getCompatibilityMode();
 			if (compatibilityMode <= AscCommon.document_compatibility_mode_Word14)
 			{
-				if (null != this.Get_DocumentPrev() && true != this.Parent.IsTableCellContent() && 0 === CurPage)
+				if (null != this.Get_DocumentPrev() && !this.IsTableCellContent() && 0 === CurPage)
 				{
 					CurLine = 0;
 					PRS.RunRecalcInfoBreak = null;
@@ -2750,6 +2735,7 @@ function CParaLine()
                        // 2 бит : пустая ли строка (без учета PageBreak)
                        // 3 бит : последняя ли это строка (т.е. строка с ParaEnd)
                        // 4 бит : строка переносится по Y по обтекаемому объекту
+	this.CF      = [];
 }
 
 CParaLine.prototype =
@@ -3167,6 +3153,7 @@ ParagraphRecalculateStateBase.prototype.unlock = function()
 {
 	this.locked = false;
 };
+window['AscWord'].ParagraphRecalculateStateBase = ParagraphRecalculateStateBase;
 
 function ParagraphStatePool()
 {
@@ -3209,7 +3196,7 @@ ParagraphStatePool.prototype.getEndInfoState = function()
 };
 ParagraphStatePool.prototype.getDrawState = function()
 {
-	return this.getInstance(this.draw, ParagraphDrawState);
+	return this.getInstance(this.draw, AscWord.ParagraphDrawState);
 };
 window['AscWord'].ParagraphStatePool = new ParagraphStatePool();
 
@@ -3262,7 +3249,7 @@ function CParagraphRecalculateStateWrap()
 	this.BreakLine          = false; // Строка закончилась принудительным разрывом
 	this.LongWord           = false;
 
-	this.ComplexFields = new CParagraphComplexFieldsInfo();
+	this.ComplexFields = new AscWord.ParagraphComplexFieldStack();
 
 	this.WordLen         = 0;
     this.SpaceLen        = 0;
@@ -3381,8 +3368,9 @@ CParagraphRecalculateStateWrap.prototype.Reset_Page = function(Paragraph, CurPag
 	this.TopDocument = Paragraph.Parent.GetTopDocumentContent();
 	this.PageAbs     = Paragraph.Get_AbsolutePage(CurPage);
 	this.ColumnAbs   = Paragraph.Get_AbsoluteColumn(CurPage);
-	this.InTable     = Paragraph.Parent.IsTableCellContent();
+	this.InTable     = Paragraph.IsTableCellContent();
 	this.SectPr      = null;
+	this.TopIndex    = -1;
 	
 	this.CondensedSpaces = Paragraph.IsCondensedSpaces();
 	this.BalanceSBDB     = Paragraph.IsBalanceSingleByteDoubleByteWidth();
@@ -3399,9 +3387,9 @@ CParagraphRecalculateStateWrap.prototype.Reset_Page = function(Paragraph, CurPag
 	this.RunRecalcInfoLast  = (0 === CurPage ? null : Paragraph.Pages[CurPage - 1].EndInfo.RunRecalcInfo);
 	this.RunRecalcInfoBreak = this.RunRecalcInfoLast;
 	
-	this.ComplexFields.ResetPage(Paragraph, CurPage);
-	this.alignState.ComplexFields.ResetPage(Paragraph, CurPage);
-	this.counterState.ComplexFields.ResetPage(Paragraph, CurPage);
+	this.ComplexFields.resetPage(Paragraph, CurPage);
+	this.alignState.ComplexFields.resetPage(Paragraph, CurPage);
+	this.counterState.ComplexFields.resetPage(Paragraph, CurPage);
 };
 CParagraphRecalculateStateWrap.prototype.Reset_Line = function()
 {
@@ -4263,7 +4251,7 @@ function CParagraphRecalculateStateCounter(wrapState)
     this.SpacesSkip  = 0;
     this.LettersSkip = 0;
 
-    this.ComplexFields = new CParagraphComplexFieldsInfo();
+    this.ComplexFields = new AscWord.ParagraphComplexFieldStack();
 }
 CParagraphRecalculateStateCounter.prototype.Reset = function(Paragraph, Range)
 {
@@ -4309,12 +4297,39 @@ function CParagraphRecalculateStateAlign(wrapState)
     this.RecalcFast    = false; // Если пересчет быстрый, тогда все "плавающие" объекты мы не трогаем
     this.RecalcFast2   = false; // Второй вариант быстрого пересчета
 
-	this.ComplexFields = new CParagraphComplexFieldsInfo();
+	this.ComplexFields = new AscWord.ParagraphComplexFieldStack();
 }
 CParagraphRecalculateStateAlign.prototype.IsFastRangeRecalc = function()
 {
 	return this.RecalcFast;
 };
+CParagraphRecalculateStateAlign.prototype.getLogicDocument = function()
+{
+	return this.wrapState.Paragraph.GetLogicDocument();
+};
+CParagraphRecalculateStateAlign.prototype.getDocumentSettings = function()
+{
+	let logicDocument = this.Paragraph.GetLogicDocument();
+	if (logicDocument && logicDocument.IsDocumentEditor())
+		return logicDocument.getDocumentSettings();
+	
+	return AscWord.DEFAULT_DOCUMENT_SETTINGS;
+};
+CParagraphRecalculateStateAlign.prototype.getCompatibilityMode = function()
+{
+	return this.getDocumentSettings().getCompatibilityMode();
+};
+CParagraphRecalculateStateAlign.prototype.getLineTop = function()
+{
+	let p = this.Paragraph;
+	return p.Pages[this.wrapState.Page].Y + p.Lines[this.wrapState.Line].Top;
+};
+CParagraphRecalculateStateAlign.prototype.getLineBottom = function()
+{
+	let p = this.Paragraph;
+	return p.Pages[this.wrapState.Page].Y + p.Lines[this.wrapState.Line].Bottom;
+};
+
 
 function CParagraphRecalculateStateInfo()
 {
@@ -4378,7 +4393,7 @@ CParagraphRecalculateStateInfo.prototype.RemoveComment = function(Id)
 		}
 	}
 };
-CParagraphRecalculateStateInfo.prototype.ProcessFieldChar = function(oFieldChar)
+CParagraphRecalculateStateInfo.prototype.processFieldChar = function(oFieldChar)
 {
 	if (!oFieldChar || !oFieldChar.IsUse())
 		return;
@@ -4412,13 +4427,13 @@ CParagraphRecalculateStateInfo.prototype.ProcessFieldChar = function(oFieldChar)
 		}
 	}
 };
-CParagraphRecalculateStateInfo.prototype.IsComplexField = function()
+CParagraphRecalculateStateInfo.prototype.isComplexField = function()
 {
 	return (this.ComplexFields.length > 0 ? true : false);
 };
-CParagraphRecalculateStateInfo.prototype.IsComplexFieldCode = function()
+CParagraphRecalculateStateInfo.prototype.isComplexFieldCode = function()
 {
-	if (!this.IsComplexField())
+	if (!this.isComplexField())
 		return false;
 
 	for (var nIndex = 0, nCount = this.ComplexFields.length; nIndex < nCount; ++nIndex)
@@ -4429,7 +4444,7 @@ CParagraphRecalculateStateInfo.prototype.IsComplexFieldCode = function()
 
 	return false;
 };
-CParagraphRecalculateStateInfo.prototype.ProcessFieldCharAndCollectComplexField = function(oChar)
+CParagraphRecalculateStateInfo.prototype.processFieldCharAndCollectComplexField = function(oChar)
 {
 	if (oChar.IsBegin())
 	{
@@ -4477,7 +4492,7 @@ CParagraphRecalculateStateInfo.prototype.ProcessFieldCharAndCollectComplexField 
 		}
 	}
 };
-CParagraphRecalculateStateInfo.prototype.ProcessInstruction = function(oInstruction)
+CParagraphRecalculateStateInfo.prototype.processInstruction = function(oInstruction)
 {
 	if (this.ComplexFields.length <= 0)
 		return;
@@ -4488,37 +4503,6 @@ CParagraphRecalculateStateInfo.prototype.ProcessInstruction = function(oInstruct
 };
 
 const g_PRSI = new CParagraphRecalculateStateInfo();
-
-function ParagraphDrawState()
-{
-	ParagraphRecalculateStateBase.call(this);
-	
-	this.highlightState  = new CParagraphDrawStateHighlights();
-	this.runElementState = new CParagraphDrawStateElements();
-	this.lineState       = new CParagraphDrawStateLines();
-}
-
-ParagraphDrawState.prototype = Object.create(ParagraphRecalculateStateBase.prototype);
-ParagraphDrawState.prototype.constructor = ParagraphDrawState;
-
-ParagraphDrawState.prototype.init = function(paragraph, graphics)
-{
-	this.highlightState.init(paragraph, graphics);
-	this.runElementState.init(paragraph, graphics);
-	this.lineState.init(paragraph, graphics);
-};
-ParagraphDrawState.prototype.getHighlightState = function()
-{
-	return this.highlightState;
-};
-ParagraphDrawState.prototype.getRunElementState = function()
-{
-	return this.runElementState;
-};
-ParagraphDrawState.prototype.getLineState = function()
-{
-	return this.lineState;
-};
 
 function CParagraphRecalculateObject()
 {

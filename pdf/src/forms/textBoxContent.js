@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -43,6 +43,12 @@
 			CS : {Name : AscPDF.DEFAULT_FIELD_FONT, Index : -1}
 		}
 	});
+	STYLES.Default.ParaPr.Merge({
+		KeepLines : false,
+		KeepNext : false,
+		WidowControl : false,
+		PageBreakBefore : false
+	});
 	
 	/**
 	 * Class for working with rich text
@@ -51,14 +57,16 @@
 	 * @constructor
 	 * @extends {AscWord.CDocumentContent}
 	 */
-	function CTextBoxContent(parent, pdfDocument) {
+	function CTextBoxContent(parent, pdfDocument, isFormatContent) {
 		AscWord.CDocumentContent.call(this, null, pdfDocument ? pdfDocument.GetDrawingDocument() : undefined, 0, 0, 0, 0, false, false, false);
 		
 		this.Content[0].LogicDocument = pdfDocument;
 		
-		this.ParentPDF = parent;
-		this.PdfDoc    = pdfDocument;
+		this.ParentPDF 			= parent;
+		this.PdfDoc    			= pdfDocument;
+		this.isFormatContent	= !!isFormatContent;
 		
+		this.transform = new AscCommon.CMatrix();
 		this.SetUseXLimit(false);
 		this.MoveCursorToStartPos();
 	}
@@ -70,23 +78,14 @@
 		return this.PdfDoc;
 	};
 	CTextBoxContent.prototype.SetAlign = function(alignType) {
-		let _alignType = AscCommon.align_Left;
-		switch (alignType) {
-			case AscPDF.ALIGN_TYPE.left:
-				_alignType = AscCommon.align_Left;
-				break;
-			case AscPDF.ALIGN_TYPE.center:
-				_alignType = AscCommon.align_Center;
-				break;
-			case AscPDF.ALIGN_TYPE.right:
-				_alignType = AscCommon.align_Right;
-				break;
-		}
+		let _alignType = getInternalAlignByPdfType(alignType);
 		
 		this.SetApplyToAll(true);
 		this.SetParagraphAlign(_alignType);
-		this.GetElement(0).RecalcCompiledPr(true);
 		this.SetApplyToAll(false);
+		this.Content.forEach(function(para) {
+			para.RecalcCompiledPr(true);
+		});
 	};
 	CTextBoxContent.prototype.GetAlign = function() {
 		let align = this.GetElement(0).GetParagraphAlign();
@@ -111,7 +110,9 @@
 	};
 	CTextBoxContent.prototype.SetFont = function(fontName) {
 		this.SetApplyToAll(true);
-		this.AddToParagraph(new AscWord.ParaTextPr({RFonts : {Ascii : {Name : fontName, Index : -1}}}));
+		let oParaTextPr = new AscWord.ParaTextPr();
+		oParaTextPr.Value.RFonts.SetAll(fontName, -1);
+		this.AddToParagraph(oParaTextPr);
 		this.SetApplyToAll(false);
 	};
 	CTextBoxContent.prototype.SetFontSize = function(fontSize) {
@@ -119,17 +120,15 @@
 		this.AddToParagraph(new AscWord.ParaTextPr({FontSize : fontSize}));
 		this.SetApplyToAll(false);
 	};
-	CTextBoxContent.prototype.getCurrentRun = function() {
-		let paragraph = this.GetElement(0);
-		if (!paragraph || !paragraph.IsParagraph())
-			return null;
-		
-		let paraPos = paragraph.Get_ParaContentPos(false);
-		let run = paragraph.GetElementByPos(paraPos);
-		if (!run || !(run instanceof AscWord.CRun))
-			return null;
-		
-		return run;
+	CTextBoxContent.prototype.SetBold = function(bBold) {
+		this.SetApplyToAll(true);
+		this.AddToParagraph(new AscWord.ParaTextPr({Bold : bBold}));
+		this.SetApplyToAll(false);
+	};
+	CTextBoxContent.prototype.SetItalic = function(bItalic) {
+		this.SetApplyToAll(true);
+		this.AddToParagraph(new AscWord.ParaTextPr({Italic : bItalic}));
+		this.SetApplyToAll(false);
 	};
 	CTextBoxContent.prototype.replaceAllText = function(value) {
 		let codePoints = typeof(value) === "string" ? value.codePointsArray() : value;
@@ -145,12 +144,18 @@
 		paragraph.RemoveFromContent(1, paragraph.GetElementsCount() - 1);
 		run.ClearContent();
 		
-		for (let index = 0, inRunIndex = 0, count = codePoints.length; index < count; ++index) {
-			let runElement = AscWord.codePointToRunElement(codePoints[index]);
-			if (runElement)
-				run.AddToContent(inRunIndex++, runElement, true);
+		if (codePoints) {
+			if (this.ParentPDF && this.ParentPDF.IsComb && this.ParentPDF.IsComb() && codePoints.length > this.ParentPDF.GetCharLimit()) {
+				codePoints.length = this.ParentPDF.GetCharLimit();
+			}
+
+			for (let index = 0, inRunIndex = 0, count = codePoints.length; index < count; ++index) {
+				let runElement = AscPDF.codePointToRunElement(codePoints[index]);
+				if (runElement)
+					run.AddToContent(inRunIndex++, runElement, true);
+			}
+			this.MoveCursorToEndPos();
 		}
-		this.MoveCursorToEndPos();
 	};
 	CTextBoxContent.prototype.getAllText = function() {
 		let paragraph = this.GetElement(0);
@@ -163,14 +168,55 @@
 		return text;
 	};
 	CTextBoxContent.prototype.OnContentChange = function() {
-		if (this.ParentPDF && this.ParentPDF.OnContentChange)
+		if (this.ParentPDF && this.ParentPDF.OnContentChange && this.isFormatContent == false)
 			this.ParentPDF.OnContentChange();
 	};
+	CTextBoxContent.prototype.Get_ParentTextTransform = function() {
+		return this.transform;
+	};
+	CTextBoxContent.prototype.Get_AbsolutePage = function() {
+		return this.ParentPDF.GetPage();
+	};
+	CTextBoxContent.prototype.Get_ParentTextTransform = function() {};
 	
+	function getInternalAlignByPdfType(nPdfType) {
+		let nInternalType = AscCommon.align_Left;
+		switch (nPdfType) {
+			case AscPDF.ALIGN_TYPE.left:
+				nInternalType = AscCommon.align_Left;
+				break;
+			case AscPDF.ALIGN_TYPE.center:
+				nInternalType = AscCommon.align_Center;
+				break;
+			case AscPDF.ALIGN_TYPE.right:
+				nInternalType = AscCommon.align_Right;
+				break;
+		}
+
+		return nInternalType;
+	}
+
+	function getPdfTypeAlignByInternal(nInternalType) {
+		let nPdfType = AscPDF.ALIGN_TYPE.left;
+		switch (nInternalType) {
+			case AscCommon.align_Left:
+				nPdfType = AscPDF.ALIGN_TYPE.left;
+				break;
+			case AscCommon.align_Center:
+				nPdfType = AscPDF.ALIGN_TYPE.center;
+				break;
+			case AscCommon.align_Right:
+				nPdfType = AscPDF.ALIGN_TYPE.right;
+				break;
+		}
+
+		return nPdfType;
+	}
 	//--------------------------------------------------------export----------------------------------------------------
 	window['AscPDF'] = window['AscPDF'] || {};
-	window['AscPDF'].CTextBoxContent = CTextBoxContent;
-	
+
+	window['AscPDF'].getInternalAlignByPdfType	= getInternalAlignByPdfType;
+	window['AscPDF'].getPdfTypeAlignByInternal	= getPdfTypeAlignByInternal;
+	window['AscPDF'].CTextBoxContent			= CTextBoxContent;
 	
 })(window);
-

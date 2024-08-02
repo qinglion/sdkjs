@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -1149,7 +1149,7 @@ ParaMath.prototype.GetSelectContent = function(isAll)
     return this.Root.GetSelectContent(isAll);
 };
 
-ParaMath.prototype.GetCurrentParaPos = function()
+ParaMath.prototype.GetCurrentParaPos = function(align)
 {
     return this.Root.GetCurrentParaPos();
 };
@@ -1301,14 +1301,13 @@ ParaMath.prototype.GetSelectedText = function(bAll, bClearText, oPr)
 
 ParaMath.prototype.GetText = function(isLaTeX)
 {
-    var res = "";
-    if (this.Root && this.Root.GetTextContent) {
-        var textContent = this.Root.GetTextContent(false, isLaTeX);
-        if (textContent && textContent.str) {
-            res = textContent.str;
-        }
-    }
-    return res;
+    let oMathText = this.GetTextOfElement(isLaTeX);
+    return oMathText.GetText();
+};
+
+ParaMath.prototype.GetTextOfElement = function (isLaTeX)
+{
+    return this.Root.GetTextOfElement(isLaTeX);
 };
 
 ParaMath.prototype.GetSelectDirection = function()
@@ -2051,12 +2050,10 @@ ParaMath.prototype.Get_ParaPosByContentPos = function(ContentPos, Depth)
 {
     return this.Root.Get_ParaPosByContentPos(ContentPos, Depth);
 };
-
-ParaMath.prototype.Recalculate_CurPos = function(_X, Y, CurrentRun, _CurRange, _CurLine, _CurPage, UpdateCurPos, UpdateTarget, ReturnTarget)
+ParaMath.prototype.recalculateCursorPosition = function(positionCalculator, isCurrent)
 {
-    return this.Root.Recalculate_CurPos(_X, Y, CurrentRun, _CurRange, _CurLine, _CurPage, UpdateCurPos, UpdateTarget, ReturnTarget);
+	positionCalculator.handleParaMath(this, isCurrent);
 };
-
 ParaMath.prototype.Refresh_RecalcData = function(Data)
 {
     this.Paragraph.Refresh_RecalcData2(0);
@@ -2513,44 +2510,9 @@ ParaMath.prototype.Get_Default_TPrp = function()
 //-----------------------------------------------------------------------------------
 // Функции отрисовки
 //-----------------------------------------------------------------------------------
-ParaMath.prototype.Draw_HighLights = function(PDSH)
+ParaMath.prototype.Draw_HighLights = function(drawState)
 {
-    if(false == this.Root.IsEmptyRange(PDSH.Line, PDSH.Range))
-    {
-        var X  = PDSH.X;
-        var Y0 = PDSH.Y0;
-        var Y1 = PDSH.Y1;
-
-        var Comm = PDSH.Save_Comm();
-        var Coll = PDSH.Save_Coll();
-
-        this.Root.Draw_HighLights(PDSH, false);
-
-        var CommFirst = PDSH.Comm.Get_Next();
-        var CollFirst = PDSH.Coll.Get_Next();
-
-        PDSH.Load_Comm(Comm);
-        PDSH.Load_Coll(Coll);
-
-        if (null !== CommFirst)
-        {
-            var CommentsCount = PDSH.Comments.length;
-            var CommentId     = ( CommentsCount > 0 ? PDSH.Comments[CommentsCount - 1] : null );
-            var CommentsFlag  = PDSH.CommentsFlag;
-
-            var Bounds = this.Root.Get_LineBound(PDSH.Line, PDSH.Range);
-            Comm.Add(Bounds.Y, Bounds.Y + Bounds.H, Bounds.X, Bounds.X + Bounds.W, 0, 0, 0, 0, { Active : CommentsFlag === AscCommon.comments_ActiveComment ? true : false, CommentId : CommentId } );
-        }
-
-        if (null !== CollFirst)
-        {
-            var Bounds = this.Root.Get_LineBound(PDSH.Line, PDSH.Range);
-            Coll.Add(Bounds.Y, Bounds.Y + Bounds.H, Bounds.X, Bounds.X + Bounds.W, 0, CollFirst.r, CollFirst.g, CollFirst.b);
-        }
-
-        PDSH.Y0 = Y0;
-        PDSH.Y1 = Y1;
-    }
+	drawState.handleParaMath(this);
 };
 ParaMath.prototype.Draw_Elements = function(PDSE)
 {
@@ -2670,42 +2632,9 @@ ParaMath.prototype.MoveCursorToEndPos = function(SelectFromEnd)
 	this.Root.MoveCursorToEndPos(SelectFromEnd);
 };
 
-ParaMath.prototype.Get_ParaContentPosByXY = function(SearchPos, Depth, _CurLine, _CurRange, StepEnd, Flag) // получить логическую позицию по XY
+ParaMath.prototype.getParagraphContentPosByXY = function(searchState)
 {
-	var Result = false;
-
-	var CurX = SearchPos.CurX;
-
-	var MathX = SearchPos.CurX;
-	var MathW = this.Root.GetWidth(_CurLine, _CurRange);
-
-	// Если мы попадаем четко в формулу, тогда ищем внутри нее, если нет, тогда не заходим внутрь
-	if ((SearchPos.X > MathX && SearchPos.X < MathX + MathW) || SearchPos.DiffX > 1000000 - 1)
-	{
-		var bFirstItem = SearchPos.DiffX > 1000000 - 1 ? true : false;
-
-		Result = this.Root.Get_ParaContentPosByXY(SearchPos, Depth, _CurLine, _CurRange, StepEnd);
-
-		if (SearchPos.InText)
-			SearchPos.DiffX = 0.001; // чтобы всегда встать в формулу, если попали в текст
-
-		// TODO: Пересмотреть данную проверку. Надо выяснить насколько сильно она вообще нужна
-		// Если мы попадаем в формулу, тогда не ищем позицию вне ее. За исключением, случая когда формула идет в начале
-		// строки. Потому что в последнем случае из формулы 100% придет true, а позиция, возможно, находится за формулой.
-		if (Result && !bFirstItem)
-			SearchPos.DiffX = 0;
-	}
-
-	// Такое возможно, если все элементы до этого (в том числе и этот) были пустыми, тогда, чтобы не возвращать
-	// неправильную позицию вернем позицию начала данного элемента.
-	if (SearchPos.DiffX > 1000000 - 1)
-	{
-		this.Get_StartPos(SearchPos.Pos, Depth);
-		Result = true;
-	}
-
-	SearchPos.CurX = CurX + MathW;
-	return Result;
+	searchState.handleParaMath(this);
 };
 
 ParaMath.prototype.Get_ParaContentPos = function(bSelection, bStart, ContentPos, bUseCorrection)
@@ -2828,9 +2757,9 @@ ParaMath.prototype.SelectAll = function(Direction)
     this.Root.SelectAll(Direction);
 };
 
-ParaMath.prototype.Selection_DrawRange = function(_CurLine, _CurRange, SelectionDraw)
+ParaMath.prototype.drawSelectionInRange = function(line, range, drawState)
 {
-    this.Root.Selection_DrawRange(_CurLine, _CurRange, SelectionDraw);
+    this.Root.drawSelectionInRange(line, range, drawState);
 };
 
 ParaMath.prototype.IsSelectionEmpty = function(CheckEnd)
@@ -3251,43 +3180,34 @@ ParaMath.prototype.CalculateTextToTable = function(oEngine)
 };
 ParaMath.prototype.ConvertFromLaTeX = function()
 {
-	AscMath.SetIsLaTeXGetParaRun(false);
-	var strLaTeX = this.GetText(true);
-	AscMath.SetIsLaTeXGetParaRun(true);
-
+	var oLaTeX = this.GetTextOfElement(true);
     this.Root.Remove_Content(0, this.Root.Content.length);
-    this.Root.Correct_Content(true);
-    AscMath.ConvertLaTeXToTokensList(strLaTeX, this.Root);
-    this.Root.CorrectAllMathWords(true);
-    this.Root.ConvertAllSpecialWords(true);
+    this.Root.CurPos = 0;
+    AscMath.ConvertLaTeXToTokensList(oLaTeX, this.Root);
+    // this.Root.CorrectAllMathWords(true);
+    // this.Root.ConvertAllSpecialWords(true);
 	this.Root.Correct_Content(true);
+    this.Root.CurPos++;
 };
 ParaMath.prototype.ConvertToLaTeX = function()
 {
-	var strLatex = this.GetText(true);
-	this.Root.Remove_Content(0,this.Root.Content.length);
-	this.Root.Add_Text(strLatex, this.Paragraph);
-    this.Root.CurPos = this.Root.Content.length - 1;
+	let oLaTeXContent = this.GetTextOfElement(true);
+    oLaTeXContent.Flat(this.Root);
 };
 ParaMath.prototype.ConvertFromUnicodeMath = function()
 {
-    this.Root.CorrectAllMathWords(false);
-    this.Root.ConvertAllSpecialWords(false);
-	var strUnicode = this.GetText();
+	let oUnicode = this.GetTextOfElement(false);
 	this.Root.Remove_Content(0,this.Root.Content.length);
-    this.Root.Correct_Content(true);
-	AscMath.CUnicodeConverter(strUnicode, this.Root);
+    this.Root.CurPos = 0;
+	AscMath.CUnicodeConverter(oUnicode, this.Root);
 	this.Root.Correct_Content(true);
+    this.Root.CurPos++;
 };
 ParaMath.prototype.ConvertToUnicodeMath = function()
 {
-	var strUnicode = this.GetText();
-    if (strUnicode[strUnicode.length - 1] === " ")
-    {
-        strUnicode = strUnicode.slice(0, -1)
-    }
-	this.Root.Remove_Content(0,this.Root.Content.length);
-	this.Root.Add_Text(strUnicode, this.Paragraph);
+	let oUnicodeContent = this.GetTextOfElement(false);
+    oUnicodeContent.Flat(this.Root);
+    this.Paragraph.updateTrackRevisions();
 };
 ParaMath.prototype.ConvertView = function(isToLinear, nInputType)
 {
@@ -3525,3 +3445,4 @@ CMathRecalculateObject.prototype.Compare = function(PageInfo)
 window['AscCommonWord'] = window['AscCommonWord'] || {};
 window['AscCommonWord'].MathMenu = MathMenu;
 window['AscCommonWord'].ParaMath = ParaMath;
+window['AscWord'].ParaMath = ParaMath;

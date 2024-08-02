@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -52,6 +52,10 @@ function (window, undefined) {
 	window['AscCH'].historyitem_Workbook_PivotWorksheetSource = 10;
 	window['AscCH'].historyitem_Workbook_Date1904 = 11;
 	window['AscCH'].historyitem_Workbook_ChangeExternalReference = 12;
+	window['AscCH'].historyitem_Workbook_TimelineCacheDelete = 13;
+	window['AscCH'].historyitem_Workbook_CalcPr_iterate = 14;
+	window['AscCH'].historyitem_Workbook_CalcPr_iterateCount = 15;
+	window['AscCH'].historyitem_Workbook_CalcPr_iterateDelta = 16;
 
 	window['AscCH'].historyitem_Worksheet_RemoveCell = 1;
 	window['AscCH'].historyitem_Worksheet_RemoveRows = 2;
@@ -119,6 +123,9 @@ function (window, undefined) {
 	window['AscCH'].historyitem_Worksheet_ChangeRowColBreaks = 63;
 
 	window['AscCH'].historyitem_Worksheet_ChangeLegacyDrawingHFDrawing = 64;
+
+	window['AscCH'].historyitem_Worksheet_TimelineDelete = 65;
+
 
 	window['AscCH'].historyitem_RowCol_Fontname = 1;
 	window['AscCH'].historyitem_RowCol_Fontsize = 2;
@@ -256,6 +263,10 @@ function (window, undefined) {
 	window['AscCH'].historyitem_PivotTable_DataFieldSetBaseItem = 59;
 	window['AscCH'].historyitem_PivotTable_DataFieldSetNumFormat = 60;
 	window['AscCH'].historyitem_PivotTable_PivotFieldSetNumFormat = 61;
+	window['AscCH'].historyitem_PivotTable_FormatsReindex = 62;
+	window['AscCH'].historyitem_PivotTable_FormatsRemoveField = 63;
+	window['AscCH'].historyitem_PivotTable_FormatsAddRowField = 64;
+	window['AscCH'].historyitem_PivotTable_FormatsAddColField = 65;
 
 	window['AscCH'].historyitem_SharedFormula_ChangeFormula = 1;
 	window['AscCH'].historyitem_SharedFormula_ChangeShared = 2;
@@ -1182,7 +1193,7 @@ CHistory.prototype.StartTransaction = function()
 	}
 	this.Transaction++;
 };
-CHistory.prototype.EndTransaction = function()
+CHistory.prototype.EndTransaction = function(checkLockLastAction)
 {
 	if (1 === this.Transaction && !this.Is_LastPointEmpty()) {
 		var api = this.workbook && this.workbook.oApi;
@@ -1202,6 +1213,8 @@ CHistory.prototype.EndTransaction = function()
 
 		if (this.Is_LastPointEmpty()) {
 			this.Remove_LastPoint();
+		} else if (checkLockLastAction && this.isActionLock()) {
+			this.Undo();
 		}
 	}
 };
@@ -1386,6 +1399,14 @@ CHistory.prototype.GetSerializeArray = function()
 		if (!this.Points[this.Index] || this.Points[this.Index].Items.length <= 0)
 			return true;
 
+		return false;
+	};
+	CHistory.prototype.isActionLock = function()
+	{
+		let wb = this.workbook && this.workbook.oApi && this.workbook.oApi.wb;
+		if (wb && !wb.canEdit()) {
+			return true;
+		}
 		return false;
 	};
 	//------------------------------------------------------------export--------------------------------------------------

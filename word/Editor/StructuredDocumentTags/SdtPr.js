@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -487,7 +487,11 @@ CContentControlPr.prototype.FillFromContentControl = function(oContentControl)
 	this.Temporary  = oContentControl.IsContentControlTemporary();
 
 	if (oContentControl.IsCheckBox())
+	{
 		this.CheckBoxPr = oContentControl.GetCheckBoxPr().Copy();
+		if (oContentControl.IsRadioButton())
+			this.CheckBoxPr.SetChoiceName(oContentControl.GetFormKey());
+	}
 	else if (oContentControl.IsComboBox())
 		this.ComboBoxPr = oContentControl.GetComboBoxPr().Copy();
 	else if (oContentControl.IsDropDownList())
@@ -564,9 +568,18 @@ CContentControlPr.prototype.SetToContentControl = function(oContentControl)
 
 	if (undefined !== this.CheckBoxPr)
 	{
-		if (undefined !== this.CheckBoxPr.GroupKey && undefined !== this.CheckBoxPr.Checked)
+		let prevGroupKey = oContentControl.GetCheckBoxPr() ? oContentControl.GetCheckBoxPr().GetGroupKey() : undefined;
+		if (prevGroupKey !== this.CheckBoxPr.GroupKey && undefined !== this.CheckBoxPr.Checked)
 			this.CheckBoxPr.Checked = false;
-
+		
+		let choiceName = this.CheckBoxPr.GetChoiceName(true);
+		if (undefined !== choiceName)
+		{
+			oContentControl.SetFormKey(choiceName);
+			if (this.FormPr)
+				this.FormPr.SetKey(choiceName);
+		}
+		
 		oContentControl.SetCheckBoxPr(this.CheckBoxPr);
 		oContentControl.private_UpdateCheckBoxContent();
 	}

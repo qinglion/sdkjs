@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -192,7 +192,7 @@ CBlockLevelSdt.prototype.Read_FromBinary2 = function(Reader)
 };
 CBlockLevelSdt.prototype.Draw = function(CurPage, oGraphics)
 {
-	if (this.LogicDocument.GetSdtGlobalShowHighlight() && undefined === oGraphics.RENDERER_PDF_FLAG)
+	if (this.LogicDocument.GetSdtGlobalShowHighlight() && !oGraphics.isPdf())
 	{
 		var oBounds = this.GetContentBounds(CurPage);
 		var oColor  = this.LogicDocument.GetSdtGlobalColor();
@@ -215,7 +215,7 @@ CBlockLevelSdt.prototype.Draw = function(CurPage, oGraphics)
 	if (isPlaceHolder && oGraphics.setTextGlobalAlpha)
 		oGraphics.setTextGlobalAlpha(nTextAlpha);
 
-	if (AscCommon.locktype_None !== this.Lock.Get_Type())
+	if (AscCommon.c_oAscLockTypes.kLockTypeNone !== this.Lock.Get_Type())
 	{
 		var oBounds = this.GetContentBounds(CurPage);
 		oGraphics.DrawLockObjectRect(this.Lock.Get_Type(), oBounds.Left, oBounds.Top, oBounds.Right - oBounds.Left, oBounds.Bottom - oBounds.Top);
@@ -599,6 +599,9 @@ CBlockLevelSdt.prototype.Add = function(oParaItem)
 };
 CBlockLevelSdt.prototype.PreDelete = function()
 {
+	if (this.isPreventedPreDelete())
+		return;
+	
 	if (this.IsPlaceHolder())
 		return;
 
@@ -1356,29 +1359,41 @@ CBlockLevelSdt.prototype.RemoveContentControlWrapper = function()
 	var nParentCurPos            = this.Parent.CurPos.ContentPos;
 	var nParentSelectionStartPos = this.Parent.Selection.StartPos;
 	var nParentSelectionEndPos   = this.Parent.Selection.EndPos;
-
+	
+	let contentPos     = this.Content.CurPos.ContentPos;
+	let selectionStart = this.Content.Selection.StartPos;
+	let selectionEnd   = this.Content.Selection.EndPos;
+	
+	let logicDocument = this.GetLogicDocument();
+	if (logicDocument && logicDocument.IsDocumentEditor())
+		logicDocument.PreventPreDelete = true;
+	else
+		logicDocument = null;
+	
 	this.Parent.Remove_FromContent(nElementPos, 1);
 	for (var nIndex = 0, nCount = this.Content.Content.length; nIndex < nCount; ++nIndex)
 	{
 		this.Parent.Add_ToContent(nElementPos + nIndex, this.Content.Content[nIndex]);
 	}
-
+	this.Content.RemoveFromContent(0, this.Content.Content.length, false);
+	
+	if (logicDocument)
+		logicDocument.PreventPreDelete = false;
+	
 	if (nParentCurPos === nElementPos)
-		this.Parent.CurPos.ContentPos = nParentCurPos + this.Content.CurPos.ContentPos;
+		this.Parent.CurPos.ContentPos = nParentCurPos + contentPos;
 	else if (nParentCurPos > nElementPos)
 		this.Parent.CurPos.ContentPos = nParentCurPos + nCount - 1;
 
 	if (nParentSelectionStartPos === nElementPos)
-		this.Parent.Selection.StartPos = nParentSelectionStartPos + this.Content.Selection.StartPos;
+		this.Parent.Selection.StartPos = nParentSelectionStartPos + selectionStart;
 	else if (nParentSelectionStartPos > nElementPos)
 		this.Parent.Selection.StartPos = nParentSelectionStartPos + nCount - 1;
 
 	if (nParentSelectionEndPos === nElementPos)
-		this.Parent.Selection.EndPos = nParentSelectionEndPos + this.Content.Selection.EndPos;
+		this.Parent.Selection.EndPos = nParentSelectionEndPos + selectionEnd;
 	else if (nParentSelectionEndPos > nElementPos)
 		this.Parent.Selection.EndPos = nParentSelectionEndPos + nCount - 1;
-
-	this.Content.RemoveFromContent(0, this.Content.Content.length, false);
 };
 CBlockLevelSdt.prototype.IsTableFirstRowOnNewPage = function()
 {
@@ -1745,7 +1760,7 @@ CBlockLevelSdt.prototype.GetSearchElementId = function(bNext, bCurrent)
 //----------------------------------------------------------------------------------------------------------------------
 CBlockLevelSdt.prototype.ClearContentControl = function()
 {
-	var oParagraph = new Paragraph(this.LogicDocument.Get_DrawingDocument(), this.Content);
+	var oParagraph = new AscWord.Paragraph(this.Content);
 	oParagraph.Correct_Content();
 
 	oParagraph.SelectAll();
@@ -1831,7 +1846,7 @@ CBlockLevelSdt.prototype.private_ReplacePlaceHolderWithContent = function(isSkip
 
 	this.Content.RemoveFromContent(0, this.Content.GetElementsCount(), false);
 
-	var oParagraph = new Paragraph(this.LogicDocument ? this.LogicDocument.GetDrawingDocument() : null, this.Content, false);
+	var oParagraph = new AscWord.Paragraph(this.Content, false);
 	oParagraph.Correct_Content();
 
 	oParagraph.SelectAll();
@@ -1904,7 +1919,7 @@ CBlockLevelSdt.prototype.private_FillPlaceholderContent = function()
 	}
 	else
 	{
-		var oParagraph = new Paragraph(this.LogicDocument ? this.LogicDocument.GetDrawingDocument() : null, this.Content, false);
+		var oParagraph = new AscWord.Paragraph(this.Content, false);
 		oParagraph.Correct_Content();
 
 		oParagraph.SelectAll();
@@ -2086,7 +2101,7 @@ CBlockLevelSdt.prototype.private_UpdateCheckBoxContent = function()
 		var oDocContent = this.Content;
 		if (oDocContent.Content.length <= 0 || !oDocContent.Content[0].IsParagraph())
 		{
-			oFirstParagraph = new Paragraph(this.LogicDocument.GetDrawingDocument(), oDocContent);
+			oFirstParagraph = new AscWord.Paragraph(oDocContent);
 			oDocContent.AddToContent(0, oFirstParagraph);
 		}
 		else
@@ -2388,7 +2403,7 @@ CBlockLevelSdt.prototype.SelectListItem = function(sValue)
 				}
 				else
 				{
-					oParagraph = new Paragraph(this.LogicDocument.GetDrawingDocument(), this.Content);
+					oParagraph = new AscWord.Paragraph(this.Content);
 					this.Content.AddToParagraph(this.Content.length, oParagraph);
 				}
 
@@ -2540,7 +2555,7 @@ CBlockLevelSdt.prototype.private_UpdateDatePickerContent = function()
 				}
 				else
 				{
-					oParagraph = new Paragraph(this.LogicDocument.GetDrawingDocument(), this.Content);
+					oParagraph = new AscWord.Paragraph(this.Content);
 					this.Content.AddToParagraph(this.Content.length, oParagraph);
 				}
 
@@ -2828,6 +2843,37 @@ CBlockLevelSdt.prototype.OnContentChange = function()
 	
 	if (this.Parent && this.Parent.OnContentChange)
 		this.Parent.OnContentChange();
+};
+CBlockLevelSdt.prototype.RemoveThisFromParent = function(updatePosition)
+{
+	let docContent = this.Parent;
+	if (!docContent)
+		return;
+	
+	let posInParent = this.GetIndex();
+	
+	let curPos = docContent.CurPos.ContentPos;
+	docContent.RemoveFromContent(posInParent, 1);
+	
+	if (updatePosition)
+	{
+		if (posInParent === curPos)
+		{
+			if (posInParent >= docContent.GetElementsCount())
+			{
+				docContent.MoveCursorToEndPos();
+			}
+			else
+			{
+				docContent.CurPos.ContentPos = Math.max(0, Math.min(docContent.GetElementsCount() - 1, posInParent));
+				docContent.Content[docContent.CurPos.ContentPos].MoveCursorToStartPos();
+			}
+		}
+		else if (posInParent < curPos)
+		{
+			docContent.CurPos.ContentPos = Math.max(0, Math.min(docContent.GetElementsCount() - 1, curPos - 1));
+		}
+	}
 };
 //--------------------------------------------------------export--------------------------------------------------------
 window['AscCommonWord'] = window['AscCommonWord'] || {};

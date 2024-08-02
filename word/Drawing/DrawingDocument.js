@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -1082,7 +1082,7 @@ CPage.prototype.Draw = function (context, xDst, yDst, wDst, hDst, api)
 		else
 		{
 			var backColor = api.getPageBackgroundColor();
-			context.fillStyle = "#" + backColor[0].toString(16) + backColor[1].toString(16) + backColor[2].toString(16);
+			context.fillStyle = "#" + backColor.R.toString(16) + backColor.G.toString(16) + backColor.B.toString(16);
 		}
 
 		strokeColor = GlobalSkin.PageOutline;
@@ -1096,11 +1096,12 @@ CPage.prototype.Draw = function (context, xDst, yDst, wDst, hDst, api)
 
 	if (strokeColor)
 	{
-		var rPR = AscCommon.AscBrowser.retinaPixelRatio;
-		context.lineWidth = Math.round(rPR);
+		let lineW = Math.round(AscCommon.AscBrowser.retinaPixelRatio);
+		let offset = 0.5 * lineW;
+		context.lineWidth = lineW;
 		context.strokeStyle = strokeColor;
 		context.beginPath();
-		context.strokeRect(xDst - 0.5 * rPR, yDst - 0.5 * rPR, wDst + rPR, hDst + rPR);
+		context.strokeRect(xDst - offset, yDst - offset, wDst + lineW, hDst + lineW);
 		context.beginPath();
 	}
 };
@@ -1985,6 +1986,7 @@ function CDrawingDocument()
 	// viewer
 	this.m_lCurrentRendererPage = -1;
 	this.m_oDocRenderer = null;
+	this.isHideTargetBeforeFirstClick = true;
 
 	// rulers
 	this.HorVerAnchors = [];
@@ -2094,6 +2096,15 @@ function CDrawingDocument()
 	// target
 	this.showTarget = function (isShow)
 	{
+		if (this.isHideTargetBeforeFirstClick)
+		{
+			if (!this.isHideTarget())
+				this.isHideTargetBeforeFirstClick = false;
+
+			if (this.isHideTargetBeforeFirstClick)
+				isShow = false;
+		}
+
 		if (this.TargetHtmlElementBlock)
 			this.TargetHtmlElement.style.display = isShow ? "display" : "none";
 		else
@@ -2190,15 +2201,17 @@ function CDrawingDocument()
 			this.TargetHtmlElement.oldColor = { R : newColor.R, G : newColor.G, B : newColor.B };
 		}
 
-		if (null == this.TextMatrix || global_MatrixTransformer.IsIdentity2(this.TextMatrix))
+
+		let TextMatrix = this.AutoShapesTrack.transformPageMatrix(this.TextMatrix);
+		if (null == TextMatrix || global_MatrixTransformer.IsIdentity2(TextMatrix))
 		{
-			if (null != this.TextMatrix)
+			if (null != TextMatrix)
 			{
-				x += this.TextMatrix.tx;
-				y += this.TextMatrix.ty;
+				x += TextMatrix.tx;
+				y += TextMatrix.ty;
 			}
 
-			var pos = this.m_oDocumentRenderer == null ? this.ConvertCoordsToCursor4(x, y, this.m_lCurrentPage, true) :  this.ConvertCoordsToCursor5(x, y, this.m_lCurrentPage, true);
+			var pos = this.ConvertCoordsToCursor4(x, y, this.m_lCurrentPage, true);
 			this.TargetHtmlElementLeft = pos.X >> 0;
 			this.TargetHtmlElementTop = (pos.Y + 0.5) >> 0;
 
@@ -2221,8 +2234,8 @@ function CDrawingDocument()
 		}
 		else
 		{
-			var x1 = this.TextMatrix.TransformPointX(x, y);
-			var y1 = this.TextMatrix.TransformPointY(x, y);
+			var x1 = TextMatrix.TransformPointX(x, y);
+			var y1 = TextMatrix.TransformPointY(x, y);
 
 			var pos1 = this.ConvertCoordsToCursor4(x1, y1, this.m_lCurrentPage, true);
 			pos1.X -= (newW / 2);
@@ -2230,8 +2243,8 @@ function CDrawingDocument()
 			this.TargetHtmlElementLeft = pos1.X >> 0;
 			this.TargetHtmlElementTop = pos1.Y >> 0;
 
-			var transform = "matrix(" + this.TextMatrix.sx + ", " + this.TextMatrix.shy + ", " + this.TextMatrix.shx + ", " +
-				this.TextMatrix.sy + ", " + pos1.X + ", " + pos1.Y + ")";
+			var transform = "matrix(" + TextMatrix.sx + ", " + TextMatrix.shy + ", " + TextMatrix.shx + ", " +
+				TextMatrix.sy + ", " + pos1.X + ", " + pos1.Y + ")";
 
 			this.TargetHtmlElement.style.left = "0px";
 			this.TargetHtmlElement.style.top = "0px";
@@ -2302,6 +2315,14 @@ function CDrawingDocument()
 		if (this.m_oWordControl.m_oLogicDocument && pageIndex >= this.m_arrPages.length)
 			return;
 
+		if (this.m_oWordControl.m_oApi.isPdfEditor())
+		{
+			this.m_dTargetX = x;
+			this.m_dTargetY = y;
+			this.m_lTargetPage = pageIndex;
+			this.CheckTargetDraw(x, y);
+		}
+
 		var bIsPageChanged = false;
 		if (this.m_lCurrentPage != pageIndex)
 		{
@@ -2314,21 +2335,21 @@ function CDrawingDocument()
 		var targetSizePx = (this.m_dTargetSize * this.m_oWordControl.m_nZoomValue * g_dKoef_mm_to_pix / 100) >> 0;
 
 		var pos = null;
+		
+		this.AutoShapesTrack.SetCurrentPage(pageIndex);
+		let TextMatrix = this.AutoShapesTrack.transformPageMatrix(this.TextMatrix);
 		if (this.m_oWordControl.m_oLogicDocument)
 		{
-			if (!this.TextMatrix)
+			if (!TextMatrix)
 			{
 				pos = this.ConvertCoordsToCursor2(x, y, this.m_lCurrentPage);
 			}
 			else
 			{
-				pos = this.ConvertCoordsToCursor2(this.TextMatrix.TransformPointX(x, y),
-					this.TextMatrix.TransformPointY(x, y), this.m_lCurrentPage);
+				pos = this.ConvertCoordsToCursor2(TextMatrix.TransformPointX(x, y),
+					TextMatrix.TransformPointY(x, y), this.m_lCurrentPage);
 			}
 		}
-		// pdf
-		else
-			pos = this.ConvertCoordsToCursor5(x, y, this.m_lCurrentPage);
 
 		if (true == pos.Error && (false == bIsPageChanged))
 			return;
@@ -2497,11 +2518,29 @@ function CDrawingDocument()
 		oThis.TargetHtmlElement.style.top = oThis.TargetHtmlElementTop + "px";
 	};
 
+	this.isHideTarget = function()
+	{
+		let api = this.m_oWordControl.m_oApi;
+		if (api.isViewMode || (api.isRestrictionView() && !api.isRestrictionForms()))
+			return this.isHideTargetBeforeFirstClick;
+		return false;
+	};
+
 	this.DrawTarget = function()
 	{
 		if (oThis.NeedTarget)
 		{
-			if (oThis.m_oWordControl.IsFocus && !oThis.m_oWordControl.m_oApi.isBlurEditor)
+			let isActive = true;
+			let api = oThis.m_oWordControl.m_oApi;
+
+			if (!oThis.m_oWordControl.IsFocus)
+				isActive = false;
+			else if (oThis.m_oWordControl.m_oApi.isBlurEditor)
+				isActive = false;
+			else if (api.isViewMode || (api.isRestrictionView() && !api.isRestrictionForms()))
+				isActive = false;
+
+			if (isActive)
 				oThis.showTarget(!oThis.isShowTarget());
 			else
 				oThis.showTarget(true);
@@ -2589,7 +2628,11 @@ function CDrawingDocument()
 				this.GuiControlColorsMap[i] = arr_colors[i];
 			}
 
-			this.SendControlColors();
+			if (false == Asc.editor.isPdfEditor())
+			{
+				this.SendControlColors();
+			}
+			
 		}
 	};
 
@@ -2882,7 +2925,7 @@ function CDrawingDocument()
 		var _oldTurn = editor.isViewMode;
 		editor.isViewMode = true;
 
-		var par = new Paragraph(this, this.m_oWordControl.m_oLogicDocument);
+		var par = new AscWord.Paragraph(this.m_oWordControl.m_oLogicDocument);
 
 		par.MoveCursorToStartPos();
 
@@ -3193,7 +3236,7 @@ function CDrawingDocument()
 			{
 				var sStyleName = AscCommon.translateManager.getValue(arrLevels[nLvl].Styles[nStyle]);
 
-				var oParagraph = new Paragraph(this, oDocumentContent, false);
+				var oParagraph = new AscWord.Paragraph(oDocumentContent, false);
 				oDocumentContent.AddToContent(oParaIndex++, oParagraph);
 				oParagraph.SetParagraphStyleById(sStyleId);
 
@@ -3400,7 +3443,7 @@ function CDrawingDocument()
 				{
 					var sStyleName = AscCommon.translateManager.getValue(arrLevels[nCurrentLevel - 1].Styles[nStyle]);
 
-					var oParagraph = new Paragraph(this, oDocumentContent, false);
+					var oParagraph = new AscWord.Paragraph(oDocumentContent, false);
 					oDocumentContent.AddToContent(nCurrentLevel - 1, oParagraph);
 					oParagraph.SetParagraphStyleById(sStyleId);
 
@@ -3599,7 +3642,7 @@ function CDrawingDocument()
 		var bIncludeLabel = props.get_IncludeLabelAndNumber();
 		for (var nIndex = 0; nIndex < nCount; ++nIndex)
 		{
-			var oParagraph = new Paragraph(this, oDocumentContent, false);
+			var oParagraph = new AscWord.Paragraph(oDocumentContent, false);
 			oDocumentContent.AddToContent(oParaIndex++, oParagraph);
 			oParagraph.SetParagraphStyleById(sStyleId);
 
@@ -4368,7 +4411,7 @@ function CDrawingDocument()
 		g.transform(1, 0, 0, 1, 0, 0);
 
 		if (this.m_oWordControl.m_oApi.isDarkMode)
-			g.darkModeOverride3();
+			g.setDarkMode();
 
 		if (null == this.m_oDocumentRenderer)
 			this.m_oLogicDocument.DrawPage(pageIndex, g);
@@ -4630,27 +4673,6 @@ function CDrawingDocument()
 			return this.private_ConvertCoordsToCursor(x, y, pageIndex, true, 0.5, 0.5);
 		return this.private_ConvertCoordsToCursor(x, y, pageIndex, false);
 	};
-	// for pdf viewer
-	this.ConvertCoordsToCursor5 = function (x, y, pageIndex, isNoRound)
-	{
-		// теперь крутить всякие циклы нет смысла
-		if (pageIndex < 0 || pageIndex >= this.m_lPagesCount)
-		{
-			return {X: 0, Y: 0, Error: true};
-		}
-
-		let oPos	= AscPDF.GetGlobalCoordsByPageCoords(x, y, pageIndex);
-		let X		= oPos["X"];
-		let Y		= oPos["Y"];
-
-		if (true !== isNoRound)
-		{
-			X = (X + 0.5) >> 0;
-			Y = (Y + 0.5) >> 0;
-		}
-
-		return {X: X, Y: Y, Error: false};
-	};
 	this.ConvertCoordsToCursorWR = function (x, y, pageIndex, transform, id_ruler_no_use)
 	{
 		var _x = 0;
@@ -4769,33 +4791,11 @@ function CDrawingDocument()
 		this.IsTextMatrixUse = ((null != this.TextMatrix) && !global_MatrixTransformer.IsIdentity(this.TextMatrix));
 		var rPR = AscCommon.AscBrowser.retinaPixelRatio;
 		var page = this.m_arrPages[pageIndex];
-		var drawPage;
-		if (!this.m_oDocumentRenderer)
-		{
-			drawPage = page.drawingPage;
-		}
-		else
-		{
-			let oViewer = this.m_oDocumentRenderer;
-			let oPdfDoc = oViewer.getPDFDoc();
-			let nPage	= oPdfDoc.activeForm.GetPage();
-
-			page = {
-				width_mm: this.m_oDocumentRenderer.drawingPages[nPage].W / oViewer.zoom * g_dKoef_pix_to_mm,
-				height_mm: this.m_oDocumentRenderer.drawingPages[nPage].H / oViewer.zoom * g_dKoef_pix_to_mm
-			}
-			drawPage = {
-				left:	0,
-				right:	this.m_oDocumentRenderer.drawingPages[nPage].W,
-				top:	0,
-				bottom:	this.m_oDocumentRenderer.drawingPages[nPage].H
-			}
-			this.Overlay = this.m_oDocumentRenderer.overlay;
-		}
+		var drawPage = page.drawingPage;
 
 		var dKoefX = (drawPage.right - drawPage.left) / page.width_mm;
 		var dKoefY = (drawPage.bottom - drawPage.top) / page.height_mm;
-
+		this.AutoShapesTrack.SetCurrentPage(pageIndex, true);
 		if (!this.IsTextMatrixUse)
 		{
 			var _x = ((drawPage.left + dKoefX * x) >> 0);
@@ -4809,7 +4809,6 @@ function CDrawingDocument()
 
 			this.Overlay.CheckRect(rPR * _x, rPR * _y, rPR * _w, rPR * _h);
 			this.Overlay.m_oContext.rect((rPR * _x) >> 0, (rPR *_y) >> 0, (_w * rPR) >> 0, (_h * rPR) >> 0);
-			// this.Overlay.
 		}
 		else
 		{
@@ -5903,8 +5902,8 @@ function CDrawingDocument()
 			}
 		}
 	};
-
-	this.IsCursorInTableCur = function (x, y, page)
+	
+	this.IsCursorInTableCur = function (x, y, page, checkArea)
 	{
 		var _table = this.TableOutlineDr.TableOutline;
 		if (_table == null)
@@ -5923,7 +5922,7 @@ function CDrawingDocument()
 
 		if ((x > (_x - _dist)) && (x < _r) && (y > (_y - _dist)) && (y < _b))
 		{
-			if ((x < _x) || (y < _y))
+			if ((x < _x && y < _y) || (checkArea && (x < _x || y < _y)))
 			{
 				this.TableOutlineDr.Counter = 0;
 				this.TableOutlineDr.bIsNoTable = false;
@@ -6639,6 +6638,9 @@ function CDrawingDocument()
 			this.m_oWordControl.m_oApi.ShowParaMarks = this.m_bOldShowMarks;
 			this.printedDocument = null;
 		}
+		
+		// TODO: Когда в интерфейсе появится флаг как писать заголовки послать его вторым параметром
+		renderer.AddHeadings(_this.m_oLogicDocument, true);
 
 		if (noBase64) {
 			return renderer.Memory.GetData();
@@ -7386,6 +7388,9 @@ function CDrawingDocument()
                 TargetShow : function () {},
                 GetVisibleMMHeight : function () { return editor.WordControl.m_oDrawingDocument.GetVisibleMMHeight(); },
                 UpdateTargetTransform : function () {},
+				UpdateTarget : function() {},
+				SetTargetColor : function() {},
+				SetTargetSize : function() {},
                 SetTextSelectionOutline : function () {},
                 ClearCachePages : function () {},
                 FirePaint : function () {},

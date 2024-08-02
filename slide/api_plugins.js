@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -52,6 +52,7 @@
 	 * @property {string} Time - The time when the comment was posted (in milliseconds).
 	 * @property {boolean} Solved - Specifies if the comment is resolved (**true**) or not (**false**).
 	 * @property {CommentData[]} Replies - An array containing the comment replies represented as the *CommentData* object.
+	 * @see office-js-api/Examples/Plugins/Slide/Enumeration/CommentData.js
 	 */
 
 	/**
@@ -62,6 +63,7 @@
 	 * @param {CommentData}  oCommentData - An object which contains the comment data.
 	 * @return {string | null} - The comment ID in the string format or null if the comment cannot be added.
 	 * @since 7.3.0
+	 * @see office-js-api/Examples/Plugins/Slide/Api/Methods/AddComment.js
 	 */
 	Api.prototype["pluginMethod_AddComment"] = function(oCommentData)
 	{
@@ -88,6 +90,7 @@
 	 * @param {CommentData} oCommentData - An object which contains the new comment data.
 	 * @return {boolean}
 	 * @since 7.3.0
+	 * @see office-js-api/Examples/Plugins/Slide/Api/Methods/ChangeComment.js
 	 */
 	Api.prototype["pluginMethod_ChangeComment"] = function(sId, oCommentData)
 	{
@@ -111,6 +114,7 @@
 	 * @typeofeditors ["CPE"]
 	 * @alias RemoveComments
 	 * @since 7.3.0
+	 * @see office-js-api/Examples/Plugins/Slide/Api/Methods/RemoveComments.js
 	 */
 	Api.prototype["pluginMethod_RemoveComments"] = function(arrIds)
 	{
@@ -123,4 +127,126 @@
 		}
 	};
 
+	/**
+	 * Returns all the comments from the document.
+	 * @memberof Api
+	 * @typeofeditors ["CPE"]
+	 * @alias GetAllComments
+	 * @returns {comment[]} - An array of comment objects containing the comment data.
+	 * @since 8.1.0
+	 * @see office-js-api/Examples/Plugins/Slide/Api/Methods/GetAllComments.js
+	 */
+	Api.prototype["pluginMethod_GetAllComments"] = function()
+	{
+		const oLogicDocument = this.WordControl.m_oLogicDocument;
+		if (!oLogicDocument)
+			return;
+
+		const arrResult = [];
+
+		const oComments = oLogicDocument.GetAllComments();
+		for (let index = 0; index < oComments.length; index++)
+		{
+			const oComment = oComments[index].comment;
+			arrResult.push({"Id" : oComment.GetId(), "Data" : oComment.GetData().ConvertToSimpleObject()});
+		}
+
+		return arrResult;
+	};
+
+	/**
+	 * Starts the presentation slide show.
+	 * @memberof Api
+	 * @typeofeditors ["CPE"]
+	 * @alias StartSlideShow
+	 * @since 8.0.0
+	 * @see office-js-api/Examples/Plugins/Slide/Api/Methods/StartSlideShow.js
+	 */
+	Api.prototype["pluginMethod_StartSlideShow"] = function()
+	{
+		this.sendEvent("asc_onStartDemonstration");
+	};
+
+	/**
+	 * Pauses the current slide show.
+	 * @memberof Api
+	 * @typeofeditors ["CPE"]
+	 * @alias PauseSlideShow
+	 * @since 8.0.0
+	 * @see office-js-api/Examples/Plugins/Slide/Api/Methods/PauseSlideShow.js
+	 */
+	Api.prototype["pluginMethod_PauseSlideShow"] = function()
+	{
+		this.WordControl.DemonstrationManager.Pause();
+		this.sendEvent("asc_onDemonstrationStatus", "pause");
+	};
+	/**
+	 * Resumes the current slide show.
+	 * @memberof Api
+	 * @typeofeditors ["CPE"]
+	 * @alias ResumeSlideShow
+	 * @since 8.0.0
+	 * @see office-js-api/Examples/Plugins/Slide/Api/Methods/ResumeSlideShow.js
+	 */
+	Api.prototype["pluginMethod_ResumeSlideShow"] = function()
+	{
+		this.WordControl.DemonstrationManager.Play();
+		this.sendEvent("asc_onDemonstrationStatus", "play");
+	};
+
+
+	/**
+	 * Ends the current slide show.
+	 * @memberof Api
+	 * @typeofeditors ["CPE"]
+	 * @alias EndSlideShow
+	 * @since 8.0.0
+	 * @see office-js-api/Examples/Plugins/Slide/Api/Methods/EndSlideShow.js
+	 */
+	Api.prototype["pluginMethod_EndSlideShow"] = function()
+	{
+		this.EndDemonstration();
+	};
+
+	/**
+	 * Displays the slide following the current slide in the slide show.
+	 * @memberof Api
+	 * @typeofeditors ["CPE"]
+	 * @alias GoToNextSlideInSlideShow
+	 * @since 8.0.0
+	 * @see office-js-api/Examples/Plugins/Slide/Api/Methods/GoToNextSlideInSlideShow.js
+	 */
+	Api.prototype["pluginMethod_GoToNextSlideInSlideShow"] = function()
+	{
+		this.DemonstrationNextSlide();
+	};
+
+	/**
+	 * Displays the slide following the current slide in the slide show.
+	 * @memberof Api
+	 * @typeofeditors ["CPE"]
+	 * @alias GoToPreviousSlideInSlideShow
+	 * @since 8.0.0
+	 * @see office-js-api/Examples/Plugins/Slide/Api/Methods/GoToPreviousSlideInSlideShow.js
+	 */
+	Api.prototype["pluginMethod_GoToPreviousSlideInSlideShow"] = function()
+	{
+		this.DemonstrationPrevSlide();
+	};
+
+	/**
+	 * Displays the slide with the specific index.
+	 * @memberof Api
+	 * @typeofeditors ["CPE"]
+	 * @alias GoToSlideInSlideShow
+	 * @param {number} nSlideIndex - The slide index.
+	 * @since 8.0.0
+	 * @see office-js-api/Examples/Plugins/Slide/Api/Methods/GoToSlideInSlideShow.js
+	 */
+	Api.prototype["pluginMethod_GoToSlideInSlideShow"] = function(nSlideIndex)
+	{
+		this.DemonstrationGoToSlide(nSlideIndex - 1);
+	};
+
 })(window);
+

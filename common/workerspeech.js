@@ -1,5 +1,5 @@
 ﻿/*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -114,7 +114,14 @@
 		this.isEnabled = false;
 		this.speechElement = null;
 		this.isLogEnabled = false;
-		this.timerEqualValue = -1;
+
+		this.timerSetValue = -1;
+		this.value = "";
+		this.valueEqualAddon = false;
+
+		this.equalAddon = "&nbsp;";
+		if (AscCommon.AscBrowser.isMacOs)
+			this.equalAddon = "<br/>";
 
 		this.setEnabled = function(isEnabled)
 		{
@@ -122,7 +129,13 @@
 				return;
 
 			if (!AscCommon.g_inputContext)
+			{
+				var worker = this;
+				AscCommon.inputMethodAddInitEvent(function() {
+					worker.setEnabled(isEnabled);
+				});
 				return;
+			}
 
 			this.isEnabled = isEnabled;
 			if (this.isEnabled)
@@ -130,19 +143,17 @@
 				this.speechElement = document.createElement("div");
 				this.speechElement.innerHTML = "";
 				this.speechElement.id = "area_id_screen_reader";
-				this.speechElement.style.zIndex = -2;
 
-				if (AscCommon.AscBrowser.isWindows || (AscCommon.AscBrowser.isChrome && !AscCommon.AscBrowser.isMacOs))
-					this.speechElement.style.display = "none";
-				else
-					this.speechElement.style.opacity = 0;
+				let style = "position: absolute; left:0; top:-1; z-index: -2; opacity: 0;";
+				this.speechElement.setAttribute("style", style);
 
 				this.speechElement.setAttribute("role", "region");
-				this.speechElement.setAttribute("aria-live", "polite");
+				this.speechElement.setAttribute("aria-label", "");
+				this.speechElement.setAttribute("aria-live", "assertive");
 				this.speechElement.setAttribute("aria-atomic", "true");
 				this.speechElement.setAttribute("aria-hidden", "false");
 
-				AscCommon.g_inputContext.HtmlArea.setAttribute("aria-describedby", "area_id_screen_reader");
+				//AscCommon.g_inputContext.HtmlArea.setAttribute("aria-describedby", "area_id_screen_reader");
 				AscCommon.g_inputContext.HtmlDiv.appendChild(this.speechElement);
 			}
 			else if (this.speechElement)
@@ -160,12 +171,15 @@
 			console.log(message);
 		};
 
-		this._setValue = function(value)
+		// Variants for text setting
+
+		// 1) Resolve the problem with equals with temporary set empty value
+		this._setValueWithCheckEqual = function(value)
 		{
-			if (-1 !== this.timerEqualValue)
+			if (-1 !== this.timerSetValue)
 			{
-				clearTimeout(this.timerEqualValue);
-				this.timerEqualValue = -1;
+				clearTimeout(this.timerSetValue);
+				this.timerSetValue = -1;
 			}
 
 			if (value !== this.speechElement.innerHTML)
@@ -180,17 +194,79 @@
 
 				if ("" !== value)
 				{
-					this.timerEqualValue = setTimeout(function(){
-						AscCommon.SpeechWorker.timerEqualValue = -1;
-						AscCommon.SpeechWorker._setValue(value);
+					this.timerSetValue = setTimeout(function(){
+						AscCommon.SpeechWorker.timerSetValue = -1;
+						AscCommon.SpeechWorker._setValuePermanently(value);
 					}, 50);
 				}
 			}
 		};
 
-		this.speech = function(type, obj)
+		// 2) Set value permanently
+		this._setValuePermanently = function(value)
+		{
+			this.speechElement.innerHTML = value;
+			if (this.isLogEnabled)
+				console.log("[speech]: " + value);
+		};
+
+		// 3) Resolve the problem with equals with nbsp
+		this._setValuePermanentlyDiffEqual = function(value)
+		{
+			if (this.value !== value)
+			{
+				this.value = value;
+				this.speechElement.innerHTML = this.value;
+				this.valueEqualAddon = false;
+			}
+			else
+			{
+				this.valueEqualAddon = !this.valueEqualAddon;
+				if (this.valueEqualAddon)
+				{
+					this.speechElement.innerHTML = this.value + this.equalAddon;
+				}
+				else
+				{
+					this.speechElement.innerHTML = this.value;
+				}
+			}
+
+			if (this.isLogEnabled)
+				console.log("[speech]: " + this.speechElement.innerHTML);
+		};
+
+		// 4) Simple timer
+		this._setValueWithTimeout = function(value)
+		{
+			if (-1 !== this.timerSetValue)
+			{
+				clearTimeout(this.timerSetValue);
+				this.timerSetValue = -1;
+			}
+
+			this.timerSetValue = setTimeout(function(){
+				AscCommon.SpeechWorker._setValuePermanentlyDiffEqual(value);
+				AscCommon.SpeechWorker.timerSetValue = -1;
+			}, 5000);
+		};
+
+		this._setValue = this._setValuePermanentlyDiffEqual;
+
+		this.isSpeechEnabled = function()
 		{
 			if (!this.isEnabled)
+				return false;
+
+			if (AscCommon.g_inputContext && AscCommon.g_inputContext.isCompositionProcess())
+				return false;
+
+			return true;
+		};
+
+		this.speech = function(type, obj)
+		{
+			if (!this.isSpeechEnabled())
 				return;
 
 			if (undefined === obj)
@@ -216,6 +292,10 @@
 				this._log("End of the document");
 			else if (obj.moveToEndOfLine)
 				this._log("End of the line");
+			else if (obj.movePageUp)
+				this._log("Page up");
+			else if (obj.movePageDown)
+				this._log("Page down");
 
 			let translateManager = AscCommon.translateManager;
 			switch (type)
@@ -401,12 +481,16 @@
 		this.onApplyChanges       = null;
 		this.onBeforeUndoRedo     = null;
 		this.onUndoRedo           = null;
+		this.onCloseFile          = null;
 		
 		this.selectionState = null;
 		this.isAction       = false;
 		this.isApplyChanges = false;
 		this.isKeyDown      = false;
 		this.isUndoRedo     = false;
+
+		if (AscCommon.EditorActionSpeakerInitData && AscCommon.EditorActionSpeakerInitData.isEnabled)
+			this.run();
 	}
 	EditorActionSpeaker.prototype.toggle = function()
 	{
@@ -434,11 +518,14 @@
 		this.editor.asc_registerCallback('asc_onApplyChanges', this.onApplyChanges);
 		this.editor.asc_registerCallback('asc_onBeforeUndoRedo', this.onBeforeUndoRedo);
 		this.editor.asc_registerCallback('asc_onUndoRedo', this.onUndoRedo);
+		this.editor.asc_registerCallback('asc_onBeforeUndoRedoInCollaboration', this.onBeforeUndoRedo);
+		this.editor.asc_registerCallback('asc_onUndoRedoInCollaboration', this.onUndoRedo);
+		this.editor.asc_registerCallback('asc_onCloseFile', this.onCloseFile);
 
 		//se
 		this.editor.asc_registerCallback('asc_onActiveSheetChanged', this.onActiveSheetChanged);
 		
-		this.selectionState = this.editor.getSelectionState();
+		this.selectionState = this.editor.isDocumentLoadComplete ? this.editor.getSelectionState() : null;
 		this.isAction       = false;
 		this.isApplyChanges = false;
 		this.isKeyDown      = false;
@@ -461,6 +548,9 @@
 		this.editor.asc_unregisterCallback('asc_onApplyChanges', this.onApplyChanges);
 		this.editor.asc_unregisterCallback('asc_onBeforeUndoRedo', this.onBeforeUndoRedo);
 		this.editor.asc_unregisterCallback('asc_onUndoRedo', this.onUndoRedo);
+		this.editor.asc_unregisterCallback('asc_onBeforeUndoRedoInCollaboration', this.onBeforeUndoRedo);
+		this.editor.asc_unregisterCallback('asc_onUndoRedoInCollaboration', this.onUndoRedo);
+		this.editor.asc_unregisterCallback('asc_onCloseFile', this.onCloseFile);
 		
 		//se
 		this.editor.asc_unregisterCallback('asc_onActiveSheetChanged', this.onActiveSheetChanged);
@@ -543,6 +633,11 @@
 			_t.handleSpeechDescription({type: SpeakerActionType.sheetChange, index : index});
 		};
 		
+		this.onCloseFile = function()
+		{
+			_t.resetState();
+		};
+		
 	};
 	EditorActionSpeaker.prototype.handleSpeechDescription = function(action)
 	{
@@ -564,32 +659,12 @@
 	{
 		this.selectionState = this.editor.getSelectionState();
 	};
+	EditorActionSpeaker.prototype.resetState = function()
+	{
+		this.selectionState = null;
+	};
 	
 	window.AscCommon.EditorActionSpeaker = new EditorActionSpeaker();
 	window.AscCommon.SpeakerActionType = SpeakerActionType;
-	
-	window.AscCommon.SpeechWorker.testFunction = function()
-	{
-		AscCommon.SpeechWorker.setEnabled(true);
-		Asc.editor.asc_registerCallback('asc_onSelectionEnd', function() {
-
-			let text_data = {
-				data:     "",
-				pushData: function (format, value) {
-					this.data = value;
-				}
-			};
-
-			Asc.editor.asc_CheckCopy(text_data, 1);
-			if (text_data.data == null)
-				text_data.data = "";
-
-			if (text_data.data === "")
-				AscCommon.SpeechWorker.speech(SpeechWorkerType.TextUnselected);
-			else
-				AscCommon.SpeechWorker.speech(SpeechWorkerType.TextSelected, { text : text_data.data, isBefore : true });
-
-		});
-	};
 
 })(window);

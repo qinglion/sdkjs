@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -86,7 +86,7 @@
         this._state         = undefined;
         this._stateModel    = undefined;
         this._width         = undefined;
-        this._strokeColor   = [1, 0.82, 0];
+        this._fillColor     = [1, 0.82, 0];
 
         // internal
         TurnOffHistory();
@@ -126,7 +126,7 @@
         this._replies.push(oReply);
     };
     CAnnotationText.prototype.GetAscCommentData = function() {
-        let oAscCommData = new Asc["asc_CCommentDataWord"](null);
+        let oAscCommData = new Asc.asc_CCommentDataWord(null);
         oAscCommData.asc_putText(this.GetContents());
         let sModDate = this.GetModDate();
         if (sModDate)
@@ -197,7 +197,9 @@
         let oDoc = this.GetDocument();
         oDoc.TurnOffHistory();
 
-        let oNewAnnot = new CAnnotationText(AscCommon.CreateGUID(), this.GetPage(), this.GetRect().slice(), oDoc);
+        let oNewAnnot = new CAnnotationText(AscCommon.CreateGUID(), this.GetPage(), this.GetOrigRect().slice(), oDoc);
+
+        oNewAnnot.lazyCopy = true;
 
         if (this._pagePos) {
             oNewAnnot._pagePos = {
@@ -212,9 +214,11 @@
         if (this._origRect)
             oNewAnnot._origRect = this._origRect.slice();
 
+        let aFillColor = this.GetFillColor();
+
         oNewAnnot._originView = this._originView;
         oNewAnnot._apIdx = this._apIdx;
-        oNewAnnot.SetStrokeColor(this.GetStrokeColor());
+        oNewAnnot.SetFillColor(aFillColor ? aFillColor.slice() : undefined);
         oNewAnnot.SetOriginPage(this.GetOriginPage());
         oNewAnnot.SetAuthor(this.GetAuthor());
         oNewAnnot.SetModDate(this.GetModDate());
@@ -231,11 +235,13 @@
         if (!this.graphicObjects)
             this.graphicObjects = new AscFormat.DrawingObjectsController(this);
 
-        let oRGB            = this.GetRGBColor(this.GetStrokeColor());
+        let oRGB            = this.GetRGBColor(this.GetFillColor());
         let ICON_TO_DRAW    = this.GetIconImg();
 
         let aRect       = this.GetRect();
+        let nPage       = this.GetPage();
         let aOrigRect   = this.GetOrigRect();
+        let nRotAngle   = this.GetDocument().Viewer.getPageRotate(nPage);
 
         let nWidth  = (aRect[2] - aRect[0]) * AscCommon.AscBrowser.retinaPixelRatio;
         let nHeight = (aRect[3] - aRect[1]) * AscCommon.AscBrowser.retinaPixelRatio;
@@ -251,36 +257,50 @@
         let canvas = document.createElement('canvas');
         let context = canvas.getContext('2d');
 
+        if (oGraphics.isThumbnails) {
+            let oTr = oGraphics.GetTransform();
+            wScaled = wScaled * oTr.sy + 0.5 >> 0;
+            hScaled = hScaled * oTr.sy + 0.5 >> 0;
+        }
+        
         // Set the canvas dimensions to match the image
         canvas.width = wScaled;
         canvas.height = hScaled;
 
         // Draw the image onto the canvas
-        context.drawImage(ICON_TO_DRAW, 0, 0, imgW, imgH, 0, 0, wScaled, hScaled);
+        let nOpacity = this.GetOpacity();
+        context.save();
+        context.globalAlpha = nOpacity;
+        context.translate(wScaled >> 1, hScaled >> 1);
+        context.rotate(-nRotAngle * Math.PI / 180);
+        context.drawImage(ICON_TO_DRAW, 0, 0, imgW, imgH, -wScaled / 2, -hScaled / 2, wScaled, hScaled);
+        context.restore();
 
-        if (oRGB.r != 255 || oRGB.g != 209 || oRGB.b != 0) {
-            // Get the pixel data of the canvas
-            let imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-            let data = imageData.data;
-
-            // Loop through each pixel
-            for (let i = 0; i < data.length; i += 4) {
-                const red = data[i];
-                const green = data[i + 1];
-                const blue = data[i + 2];
-
-                // Check if the pixel is black (R = 0, G = 0, B = 0)
-                if (red === 255 && green === 209 && blue === 0) {
-                    // Change the pixel color to red (R = 255, G = 0, B = 0)
-                    data[i] = oRGB.r; // Red
-                    data[i + 1] = oRGB.g; // Green
-                    data[i + 2] = oRGB.b; // Blue
-                    // Note: The alpha channel (transparency) remains unchanged
+        if (!AscCommon.AscBrowser.isIE || AscCommon.AscBrowser.isIeEdge) {
+            if (oRGB.r != 255 || oRGB.g != 209 || oRGB.b != 0) {
+                // Get the pixel data of the canvas
+                let imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                let data = imageData.data;
+    
+                // Loop through each pixel
+                for (let i = 0; i < data.length; i += 4) {
+                    const red = data[i];
+                    const green = data[i + 1];
+                    const blue = data[i + 2];
+    
+                    // Check if the pixel is black (R = 0, G = 0, B = 0)
+                    if (red === 255 && green === 209 && blue === 0) {
+                        // Change the pixel color to red (R = 255, G = 0, B = 0)
+                        data[i] = oRGB.r; // Red
+                        data[i + 1] = oRGB.g; // Green
+                        data[i + 2] = oRGB.b; // Blue
+                        // Note: The alpha channel (transparency) remains unchanged
+                    }
                 }
+    
+                // Put the modified pixel data back onto the canvas
+                context.putImageData(imageData, 0, 0);
             }
-
-            // Put the modified pixel data back onto the canvas
-            context.putImageData(imageData, 0, 0);
         }
 
         // Draw the comment note
@@ -291,23 +311,26 @@
     CAnnotationText.prototype.IsNeedDrawFromStream = function() {
         return false;
     };
-    CAnnotationText.prototype.onMouseDown = function(e) {
-        let oViewer         = editor.getDocumentRenderer();
+    CAnnotationText.prototype.onMouseDown = function(x, y, e) {
+        let oViewer         = Asc.editor.getDocumentRenderer();
         let oDrawingObjects = oViewer.DrawingObjects;
-        let oDoc            = this.GetDocument();
-        let oDrDoc          = oDoc.GetDrawingDocument();
 
         this.selectStartPage = this.GetPage();
-        let oPos    = oDrDoc.ConvertCoordsFromCursor2(AscCommon.global_mouseEvent.X, AscCommon.global_mouseEvent.Y);
-        let X       = oPos.X;
-        let Y       = oPos.Y;
 
-        let pageObject = oViewer.getPageByCoords3(AscCommon.global_mouseEvent.X - oViewer.x, AscCommon.global_mouseEvent.Y - oViewer.y);
+        let pageObject = oViewer.getPageByCoords2(x, y);
+        if (!pageObject)
+            return false;
+
+        let X = pageObject.x;
+        let Y = pageObject.y;
 
         oDrawingObjects.OnMouseDown(e, X, Y, pageObject.index);
     };
     CAnnotationText.prototype.IsComment = function() {
         return true;
+    };
+    CAnnotationText.prototype.getObjectType = function() {
+        return -1;
     };
     
     CAnnotationText.prototype.WriteToBinary = function(memory) {
@@ -347,10 +370,6 @@
         memory.Seek(nStartPos);
         memory.WriteLong(nEndPos - nStartPos);
         memory.Seek(nEndPos);
-
-        this._replies.forEach(function(reply) {
-            reply.WriteToBinary(memory); 
-        });
     };
     // CAnnotationText.prototype.ClearCache = function() {};
     function TurnOffHistory() {
