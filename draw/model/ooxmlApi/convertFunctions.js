@@ -790,6 +790,9 @@
 				case "19":
 					endArrow.type = endArrow.GetTypeCode("stealth");
 					break;
+				case "9":
+					endArrow.type = AscFormat.LineEndType.vsdxDimensionLine;
+					break;
 				case "2":
 				case "4":
 				case "6":
@@ -811,19 +814,15 @@
 					endArrow.type = endArrow.GetTypeCode("none");
 			}
 
-			if (arrowSize >= 0 && arrowSize <= 2 ) {
-				endArrow.len = AscFormat.LineEndSize.Small;
-				endArrow.w = AscFormat.LineEndSize.Small;
-			} else if (arrowSize >= 3 && arrowSize <= 4) {
-				endArrow.len = AscFormat.LineEndSize.Mid;
-				endArrow.w = AscFormat.LineEndSize.Mid;
-			} else if (arrowSize >= 5 && arrowSize <= 6) {
-				endArrow.len = AscFormat.LineEndSize.Large;
-				endArrow.w = AscFormat.LineEndSize.Large;
+			if (arrowSize >= 0 && arrowSize <= 6 ) {
+				let sizeEnumVsdxShift = 3;
+				// see AscFormat.LineEndSize
+				endArrow.len = arrowSize + sizeEnumVsdxShift;
+				endArrow.w = arrowSize + sizeEnumVsdxShift;
 			} else {
 				console.log("arrowSize unknown:", arrowSize);
-				endArrow.len = AscFormat.LineEndSize.Mid;
-				endArrow.w = AscFormat.LineEndSize.Mid;
+				endArrow.len = AscFormat.LineEndSize.vsdxMedium;
+				endArrow.w = AscFormat.LineEndSize.vsdxMedium;
 			}
 
 			return endArrow;
