@@ -98,7 +98,7 @@
 		window.CMasterThumbnailDrawer = function () {};
 		this.WordControl  = new AscCommonSlide.CEditorPage(this);
 		if (this.HtmlElement != null) {
-			let thumbsHtmlString = 	"<div id=\"id_panel_thumbnails\" class=\"block_elem\" style=\"touch-action: none; background-color: rgb(64, 64, 64); display: block; left: 0px; top: 0px; width: 20%; height:100%;\">" +
+			let thumbsHtmlString = 	"<div id=\"id_panel_thumbnails\" class=\"block_elem\" style=\"touch-action: none; background-color: rgb(64, 64, 64); display: block; left: 0px; top: 0px; width: 20%; height:100%; overflow: scroll;\">" +
 											"</div>";
 			this.HtmlElement.innerHTML = ("<div id=\"id_main\" class=\"block_elem\" style=\"width:80%;height:100%;touch-action:none;-ms-touch-action: none;-moz-user-select:none;-khtml-user-select:none;user-select:none;background-color:" + AscCommon.GlobalSkin.BackgroundColor + ";overflow:hidden;\" UNSELECTABLE=\"on\">\
 											<div id=\"id_main_view\" class=\"block_elem\" style=\"width:100%;height:100%;touch-action:none;overflow:hidden\">\
