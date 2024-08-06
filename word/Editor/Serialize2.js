@@ -7592,109 +7592,115 @@ function BinaryNotesTableWriter(memory, doc, oNumIdMap, oMapCommentId, copyParam
 
 
 //temp location
-function getCustomXmlFromContentControl(customXml)
+function getCustomXmlFromContentControl(customXml, customXmlManager)
 {
-	let oContent = customXml.oContentLink;
-
-	let writer = new AscCommon.CMemory()
-	writer.context = new AscCommon.XmlWriterContext(AscCommon.c_oEditorId.Word);
-	writer.context.docSaveParams =  new DocSaveParams(undefined, undefined, false, undefined);
-
-	let drawDoc = new AscCommon.CDrawingDocument();
-	drawDoc.m_oWordControl = drawDoc
-	drawDoc.m_oWordControl.m_oApi = window.editor;
-	let doc = new AscWord.CDocument(drawDoc);
-	doc.ReplaceContent(oContent.Content.Content);
-
-	let jsZlib = new AscCommon.ZLib();
-	jsZlib.create();
-	doc.toZip(jsZlib, new AscCommon.XmlWriterContext(AscCommon.c_oEditorId.Word));
-	let data = jsZlib.save();
-	let jsZlib2 = new AscCommon.ZLib();
-	jsZlib2.open(data);
-
-	var openDoc = new AscCommon.openXml.OpenXmlPackage(jsZlib2, null);
-
-	let outputUString = "<?xml version=\"1.0\" standalone=\"yes\"?>\n" +
-		"<?mso-application progid=\"Word.Document\"?>\n" +
-		"<pkg:package xmlns:pkg=\"http://schemas.microsoft.com/office/2006/xmlPackage\">";
-
 	function replaceSubstring(originalString, startPoint, endPoint, insertionString)
 	{
 		if (startPoint < 0 || endPoint >= originalString.length || startPoint > endPoint)
 			return originalString;
-		const prefix = originalString.substring(0, startPoint);
-		const suffix = originalString.substring(endPoint + 1);
+
+		const prefix	= originalString.substring(0, startPoint);
+		const suffix	= originalString.substring(endPoint + 1);
+
 		return prefix + insertionString + suffix;
 	}
 
-	jsZlib2.files.forEach(function(path){
-		if ((path === "_rels/.rels" || path === "word/document.xml" || path === "word/_rels/document.xml.rels") && !path.includes("glossary"))
-		{
-			let ctfBytes = jsZlib2.getFile(path);
-			let ctfText = AscCommon.UTF8ArrayToString(ctfBytes, 0, ctfBytes.length);
-			let type = openDoc.getContentType(path);
-			console.log(ctfText, openDoc, type)
+	let oContent					= customXml.oContentLink;
+	let oDataBinding				= oContent.GetDataBinding();
 
-			if (path === "word/_rels/document.xml.rels")
+	if (oContent.IsCheckBox() || oContent.IsDatePicker() || oContent.IsPicture() || oContent.IsDropDownList() || oContent.IsComboBox())
+	{
+		return customXml.content.GetStringFromBuffer();
+	}
+	else
+	{
+		let writer						= new AscCommon.CMemory();
+		writer.context					= new AscCommon.XmlWriterContext(AscCommon.c_oEditorId.Word);
+		writer.context.docSaveParams	= new DocSaveParams(undefined, undefined, false, undefined);
+
+		let drawDoc						= new AscCommon.CDrawingDocument();
+		drawDoc.m_oWordControl			= drawDoc;
+		drawDoc.m_oWordControl.m_oApi	= window.editor;
+		let doc 						= new AscWord.CDocument(drawDoc);
+
+		doc.ReplaceContent(oContent.Content.Content);
+
+		let jsZlib						= new AscCommon.ZLib();
+		jsZlib.create();
+		doc.toZip(jsZlib, new AscCommon.XmlWriterContext(AscCommon.c_oEditorId.Word));
+
+		let data 						= jsZlib.save();
+		let jsZlib2						= new AscCommon.ZLib();
+		jsZlib2.open(data);
+		var openDoc						= new AscCommon.openXml.OpenXmlPackage(jsZlib2, null);
+
+		let outputUString = "<?xml version=\"1.0\" standalone=\"yes\"?>\n" +
+			"<?mso-application progid=\"Word.Document\"?>\n" +
+			"<pkg:package xmlns:pkg=\"http://schemas.microsoft.com/office/2006/xmlPackage\">";
+
+		jsZlib2.files.forEach(function(path) {
+			if ((path === "_rels/.rels" || path === "word/document.xml" || path === "word/_rels/document.xml.rels") && !path.includes("glossary"))
 			{
-				let text = '';
-				let arrRelationships = openDoc.getRelationships();
-				for (let i = 0; i < arrRelationships.length; i++)
+				let ctfBytes	= jsZlib2.getFile(path);
+				let ctfText		= AscCommon.UTF8ArrayToString(ctfBytes, 0, ctfBytes.length);
+				let type		= openDoc.getContentType(path);
+
+				if (path === "word/_rels/document.xml.rels")
 				{
-					let relation = arrRelationships[i];
-					let relId = relation.relationshipId;
-					let relType = relation.relationshipType;
-					let relTarget = relation.target;
-					if(i===0)
+					let text = '';
+					let arrRelationships = openDoc.getRelationships();
+					for (let i = 0; i < arrRelationships.length; i++)
 					{
-						relType = relType.replace("relationships\/officeDocument", "relationships\/styles");
-						relTarget = relTarget.replace("word/document.xml", "styles.xml");
+						let relation	= arrRelationships[i];
+						let relId		= relation.relationshipId;
+						let relType		= relation.relationshipType;
+						let relTarget	= relation.target;
+						if(i===0)
+						{
+							relType		= relType.replace("relationships\/officeDocument", "relationships\/styles");
+							relTarget	= relTarget.replace("word/document.xml", "styles.xml");
+						}
+
+						text			+= "<Relationship Id=\"" + relId + "\" Type=\"" + relType + "\" Target=\"" + relTarget + "\"/>"
 					}
 
-					text += "<Relationship Id=\"" + relId + "\" Type=\"" + relType + "\" Target=\"" + relTarget + "\"/>"
+					let nStart	= ctfText.indexOf("<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">", 0) + "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">".length;
+					let nEnd	= ctfText.indexOf("</Relationships>", nStart) - 1;
+					ctfText		= replaceSubstring(ctfText, nStart, nEnd, text);
 				}
 
-				let nStart = ctfText.indexOf("<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">", 0) + "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">".length;
-				let nEnd = ctfText.indexOf("</Relationships>", nStart) - 1;
-
-				ctfText = replaceSubstring(ctfText, nStart, nEnd, text);
+				outputUString += "<pkg:part pkg:name=\"/" + path + "\" " +
+					"pkg:contentType=\"" + type +"\"> " +
+					"<pkg:xmlData>" + ctfText.replace("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>", "").replace("\n", "") + "</pkg:xmlData></pkg:part>"
 			}
+		});
 
-			outputUString += "<pkg:part pkg:name=\"/" + path + "\" " +
-				"pkg:contentType=\"" + type +"\"> " +
-				"<pkg:xmlData>" + ctfText.replace("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>", "").replace("\n", "") + "</pkg:xmlData></pkg:part>"
-		}
-	});
+		//check diffrences between main write and this, when save main document higlight write correct
+		//	outputUString = outputUString.replace("FFFF00", "yellow");
 
-	//check diffrences between main write and this, when save main document higlight write correct
-	outputUString = outputUString.replace("FFFF00", "yellow");
+		//need get contentType from openXml.Types
+		outputUString = outputUString.replace("pkg:contentType=\"application/xml\"", "pkg:contentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml\"");
+		outputUString = outputUString.replace("pkg:contentType=\"application/vnd.openxmlformats-package.relationships+xml\"", "pkg:contentType=\"application/vnd.openxmlformats-package.relationships+xml\" pkg:padding=\"512\"")
+		outputUString = outputUString.replace("\"/word/_rels/document.xml.rels\"pkg:contentType=\"application/vnd.openxmlformats-package.relationships+xml\"", "\"/word/_rels/document.xml.rels\"pkg:contentType=\"application/vnd.openxmlformats-package.relationships+xml\" pkg:padding=\"256\"")
 
-	//need get contentType from openXml.Types
-	outputUString = outputUString.replace("pkg:contentType=\"application/xml\"", "pkg:contentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml\"");
-	outputUString = outputUString.replace("pkg:contentType=\"application/vnd.openxmlformats-package.relationships+xml\"", "pkg:contentType=\"application/vnd.openxmlformats-package.relationships+xml\" pkg:padding=\"512\"")
-	outputUString = outputUString.replace("\"/word/_rels/document.xml.rels\"pkg:contentType=\"application/vnd.openxmlformats-package.relationships+xml\"", "\"/word/_rels/document.xml.rels\"pkg:contentType=\"application/vnd.openxmlformats-package.relationships+xml\" pkg:padding=\"256\"")
+		outputUString += "</pkg:package>";
 
-	outputUString += "</pkg:package>";
+		//create flat xml
+		outputUString = outputUString.replaceAll("<", "&lt;");
+		outputUString = outputUString.replaceAll(">", "&gt;");
 
-	//create flat xml
-	outputUString = outputUString.replaceAll("<", "&lt;");
-	outputUString = outputUString.replaceAll(">", "&gt;");
+		let str = customXml.content.GetStringFromBuffer();
+		let nStartIndex = str.indexOf("<simpleText>") + '<simpleText>'.length;
+		let nEndIndex = str.indexOf("/pkg:package&gt;") + '/pkg:package&gt;'.length ;
 
-	let str = customXml.content.GetStringFromBuffer();
-	let nStartIndex = str.indexOf("<simpleText>") + '<simpleText>'.length;
-	let nEndIndex = str.indexOf("/pkg:package&gt;") + '/pkg:package&gt;'.length ;
+		str = replaceSubstring(str, nStartIndex, nEndIndex, outputUString);
 
-	str = replaceSubstring(str, nStartIndex, nEndIndex, outputUString);
+		// nStartIndex = str.indexOf("<simpleText>") + '<simpleText>'.length;
+		// nEndIndex = str.indexOf("/pkg:package&gt;") + '/pkg:package&gt;'.length ;
+		//customXml.oContentLink.Pr.DataBinding.recalculateCheckSum(str.substring(nStartIndex, nEndIndex));
 
-	//for now hardcode
-	str = str.replace("<w:highlight w:val=\"FFFF00\"/>", "<w:highlight w:val=\"yellow\"/>")
-
-	// nStartIndex = str.indexOf("<simpleText>") + '<simpleText>'.length;
-	// nEndIndex = str.indexOf("/pkg:package&gt;") + '/pkg:package&gt;'.length ;
-	//customXml.oContentLink.Pr.DataBinding.recalculateCheckSum(str.substring(nStartIndex, nEndIndex));
-
-	return str;
+		return str;
+	}
 }
 
 function BinaryCustomsTableWriter(memory, doc, customXmlManager)
@@ -7723,14 +7729,14 @@ function BinaryCustomsTableWriter(memory, doc, customXmlManager)
 				oThis.memory.WriteString3(customXml.uri[i]);
 			});
 		}
-		if (null !== customXml.ItemId) {
+		if (null !== customXml.itemId) {
 			this.bs.WriteItem(c_oSerCustoms.ItemId, function() {
 				oThis.memory.WriteString3(customXml.itemId);
 			});
 		}
-		if (null !== customXml.Content) {
+		if (null !== customXml.content) {
 			this.bs.WriteItem(c_oSerCustoms.ContentA, function() {
-				let str = getCustomXmlFromContentControl(customXml);
+				let str = getCustomXmlFromContentControl(customXml, customXmlManager);
 				oThis.memory.WriteCustomStringA(str);
 			});
 		}
@@ -16196,8 +16202,6 @@ function Binary_CustomsTableReader(doc, oReadResult, stream) {
 
 			let strContent = "".fromUtf8(custom.content)
 			strContent = strContent.slice(strContent.indexOf("<"), strContent.length); // Skip "L"
-
-			console.log('start', strContent);
 
 			let oStax = new StaxParser(strContent);
 			let oCurrentContent = null;

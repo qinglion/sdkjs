@@ -594,6 +594,15 @@ CBlockLevelSdt.prototype.Add = function(oParaItem)
 		this.Content.AddToParagraph(oParaItem);
 	}
 
+	if (this.Pr.DataBinding)
+	{
+		var nContentPos = this.Content.CurPos.ContentPos;
+		var Item     = this.Content.Content[nContentPos];
+
+		let CustomManager = this.LogicDocument.getCustomXmlManager();
+		CustomManager.setContentByDataBinding(this.Pr.DataBinding, Item.GetText());
+	}
+
 	if (isRemoveWrapper)
 		this.RemoveContentControlWrapper();
 };
@@ -1580,6 +1589,16 @@ CBlockLevelSdt.prototype.fillContentWithDataBinding = function(content)
 		this.SetDatePickerPr(datePr);
 		this.private_UpdateDatePickerContent();
 	}
+	else if (this.IsDropDownList() || this.IsComboBox())
+	{
+		let oRun = new ParaRun();
+		oRun.AddText(content);
+
+		// now style reset todo
+		this.Content.Remove_FromContent(0, this.Content.Content.length);
+
+		this.Content.AddToParagraph(oRun);
+	}
 	else
 	{
 		content = content.replaceAll("&lt;", "<");
@@ -2346,12 +2365,6 @@ CBlockLevelSdt.prototype.SelectListItem = function(sValue)
 
 	var sText = oList.GetTextByValue(sValue);
 
-	if (this.Pr.DataBinding)
-	{
-		let CustomManager = this.LogicDocument.getCustomXmlManager();
-		CustomManager.setContentByDataBinding(this.Pr.DataBinding, sText);
-	}
-
 	if (this.LogicDocument && this.LogicDocument.IsTrackRevisions())
 	{
 		if (!sText && this.IsPlaceHolder())
@@ -2428,6 +2441,12 @@ CBlockLevelSdt.prototype.SelectListItem = function(sValue)
 			var oRun = this.private_UpdateListContent();
 			if (oRun)
 				oRun.AddText(sText);
+
+			if (this.Pr.DataBinding)
+			{
+				let CustomManager = this.LogicDocument.getCustomXmlManager();
+				CustomManager.setContentByDataBinding(this.Pr.DataBinding, sText);
+			}
 		}
 	}
 };
