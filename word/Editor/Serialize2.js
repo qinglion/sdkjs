@@ -7736,7 +7736,7 @@ function BinaryCustomsTableWriter(memory, doc, customXmlManager)
 		}
 		if (null !== customXml.content) {
 			this.bs.WriteItem(c_oSerCustoms.ContentA, function() {
-				let str = getCustomXmlFromContentControl(customXml, customXmlManager);
+				let str = customXmlManager.getCustomXMLString(customXml);
 				oThis.memory.WriteCustomStringA(str);
 			});
 		}
@@ -16203,129 +16203,7 @@ function Binary_CustomsTableReader(doc, oReadResult, stream) {
 			let strContent = "".fromUtf8(custom.content)
 			strContent = strContent.slice(strContent.indexOf("<"), strContent.length); // Skip "L"
 
-			let oStax = new StaxParser(strContent);
-			let oCurrentContent = null;
-
-			// switch to CT_Node
-			function CustomXMLItem(par, name)
-			{
-				this.parent = par;
-				this.content = [];
-				this.name = name ? name : "";
-				this.attribute = {};
-				this.textContent = "";
-				this.current = undefined;
-
-				this.str = "";
-
-				this.AddAttribute = function (name, value)
-				{
-					this.attribute[name] = value;
-				}
-				this.AddContent = function (name)
-				{
-					let one = new CustomXMLItem(this, name);
-					oCurrentContent = one;
-					this.content.push(one);
-				}
-				this.GetParent = function ()
-				{
-					if (this.parent)
-						return this.parent;
-
-					return null;
-				}
-				this.SetParent = function (oPar)
-				{
-					this.parent = oPar;
-				}
-				this.AddTextContent = function (text)
-				{
-					if (text !== "")
-						this.textContent += text;
-				}
-				this.GetStringFromBuffer = function ()
-				{
-					let buffer = this.GetBuffer();
-					let arr = Array.prototype.slice.call(buffer.data.slice(1, buffer.pos));
-					let str = String.fromCharCode.apply(null, arr);
-					str = str.replaceAll("&quot;", "\"");
-					str = str.replaceAll("&amp;", "&");
-
-					this.str = str;
-					return str;
-				}
-				this.GetBuffer = function ()
-				{
-					let writer = new AscCommon.CMemory();
-
-					function Write(content)
-					{
-						let current = null;
-
-						if (!content.name)
-						{
-							writer.WriteXmlString("\x00<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-							current = content.content[0];
-						} else
-						{
-							current = content;
-						}
-
-						writer.WriteXmlNodeStart(current.name);
-
-						let atr = Object.keys(current.attribute)
-
-						for (let i = 0; i < atr.length; i++)
-						{
-							let cur = atr[i];
-							writer.WriteXmlAttributeStringEncode(cur, current.attribute[cur]);
-						}
-						writer.WriteXmlAttributesEnd();
-
-						for (let i = 0; i < current.content.length; i++)
-						{
-							let curContent = current.content[i];
-							Write(curContent);
-						}
-
-						if (current.textContent)
-							writer.WriteXmlStringEncode(current.textContent.toString());
-
-						writer.WriteXmlNodeEnd(current.name);
-					}
-
-					Write(this);
-					return writer;
-				}
-			}
-
-			let oParContent = oCurrentContent = new CustomXMLItem(null);
-
-			while (oStax.Read())
-			{
-				switch (oStax.GetEventType())
-				{
-					case EasySAXEvent.CHARACTERS:
-						oCurrentContent.AddTextContent(oStax.text);
-						break;
-					case EasySAXEvent.END_ELEMENT:
-						oCurrentContent = oCurrentContent.parent;
-						break;
-					case EasySAXEvent.START_ELEMENT:
-						let name = oStax.GetName();
-						oCurrentContent.AddContent(name)
-
-						while (oStax.MoveToNextAttribute())
-						{
-							let nameAttrib = oStax.GetName();
-							let valueAttrib = oStax.GetValue();
-							oCurrentContent.AddAttribute(nameAttrib, valueAttrib);
-						}
-						break;
-				}
-			}
-			custom.content = oParContent;
+			custom.content = this.customXmlManager.parseCustomXML(strContent);
 			this.customXmlManager.add(custom);
 		}
 		else

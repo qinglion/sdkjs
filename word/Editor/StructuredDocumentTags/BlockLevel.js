@@ -1589,7 +1589,7 @@ CBlockLevelSdt.prototype.fillContentWithDataBinding = function(content)
 		this.SetDatePickerPr(datePr);
 		this.private_UpdateDatePickerContent();
 	}
-	else if (this.IsDropDownList() || this.IsComboBox())
+	else if (this.IsDropDownList() || this.IsComboBox() || this.Pr.Text === true || !content.includes('&lt;?xml version=\\"1.0\\" standalone=\\"yes\\"?&gt;'))
 	{
 		let oRun = new ParaRun();
 		oRun.AddText(content);
