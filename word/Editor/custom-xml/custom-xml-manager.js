@@ -297,7 +297,8 @@
 			drawDoc.m_oWordControl.m_oApi	= window.editor;
 			let doc 						= new AscWord.CDocument(drawDoc);
 
-			doc.ReplaceContent(oContent.Content);
+			let oSdtContent = oContent.GetContent();
+			doc.ReplaceContent(oSdtContent.Content);
 
 			let jsZlib						= new AscCommon.ZLib();
 			jsZlib.create();

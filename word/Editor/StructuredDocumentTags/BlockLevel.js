@@ -1589,15 +1589,15 @@ CBlockLevelSdt.prototype.fillContentWithDataBinding = function(content)
 		this.SetDatePickerPr(datePr);
 		this.private_UpdateDatePickerContent();
 	}
-	else if (this.IsDropDownList() || this.IsComboBox() || this.Pr.Text === true || !content.includes('&lt;?xml version=\\"1.0\\" standalone=\\"yes\\"?&gt;'))
+	else if (this.IsDropDownList() || this.IsComboBox() || this.Pr.Text === true)
 	{
 		let oRun = new ParaRun();
 		oRun.AddText(content);
 
 		// now style reset todo
 		this.Content.Remove_FromContent(0, this.Content.Content.length);
-
-		this.Content.AddToParagraph(oRun);
+		this.AddNewParagraph();
+		this.Content.AddText(content);
 	}
 	else
 	{
