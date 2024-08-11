@@ -37,6 +37,8 @@ var CShape = AscFormat.CShape;
 var CGroupShape = AscFormat.CGroupShape;
 var CTheme = AscFormat.CTheme;
 var CreateSolidFillRGBA = AscFormat.CreateSolidFillRGBA;
+var CShapeDrawer = AscCommon.CShapeDrawer;
+var DrawLineEnd = AscCommon.DrawLineEnd;
 
 /**
  * @memberOf CShape
@@ -194,3 +196,160 @@ CTheme.prototype.getLnStyle = function (idx, unicolor, isConnectorShape) {
 	console.log("getLnStyle has not found lineStyle and returned new CLn()");
 	return new AscFormat.CLn();
 };
+
+
+CShapeDrawer.prototype.ds = function()
+{
+	if (this.bIsNoStrokeAttack)
+		return;
+
+	if (this.Graphics.isTrack())
+		this.Graphics.m_oOverlay.ClearAll = true;
+
+	if (null != this.OldLineJoin && !this.IsArrowsDrawing)
+	{
+		switch (this.Ln.Join.type)
+		{
+			case AscFormat.LineJoinType.Round:
+			{
+				this.Graphics.m_oContext.lineJoin = "round";
+				break;
+			}
+			case AscFormat.LineJoinType.Bevel:
+			{
+				this.Graphics.m_oContext.lineJoin = "bevel";
+				break;
+			}
+			case AscFormat.LineJoinType.Empty:
+			{
+				this.Graphics.m_oContext.lineJoin = "miter";
+				break;
+			}
+			case AscFormat.LineJoinType.Miter:
+			{
+				this.Graphics.m_oContext.lineJoin = "miter";
+				break;
+			}
+		}
+	}
+
+	var arr = this.Graphics.isTrack() ? this.Graphics.Graphics.ArrayPoints : this.Graphics.ArrayPoints;
+	var isArrowsPresent = (arr != null && arr.length > 1 && this.IsCurrentPathCanArrows === true) ? true : false;
+
+	var rgba = this.StrokeUniColor;
+	let nAlpha = 0xFF;
+	if(!isArrowsPresent && !this.IsArrowsDrawing || Asc.editor.isPdfEditor())
+	{
+		if (this.Ln && this.Ln.Fill != null && this.Ln.Fill.transparent != null)
+			nAlpha = this.Ln.Fill.transparent;
+	}
+
+	this.Graphics.p_color(rgba.R, rgba.G, rgba.B, nAlpha);
+
+	if (this.IsRectShape && this.Graphics.AddSmartRect !== undefined)
+	{
+		if (undefined !== this.Shape.extX)
+			this.Graphics.AddSmartRect(0, 0, this.Shape.extX, this.Shape.extY, this.StrokeWidth);
+		else
+			this.Graphics.ds();
+	}
+	else
+	{
+		this.Graphics.ds();
+	}
+
+	if (null != this.OldLineJoin && !this.IsArrowsDrawing)
+	{
+		this.Graphics.m_oContext.lineJoin = this.OldLineJoin;
+	}
+
+	if (isArrowsPresent)
+	{
+		this.IsArrowsDrawing = true;
+		this.Graphics.p_dash(null);
+		// значит стрелки есть. теперь:
+		// определяем толщину линии "как есть"
+		// трансформируем точки в окончательные.
+		// и отправляем на отрисовку (с матрицей)
+
+		var _graphicsCtx = this.Graphics.isTrack() ? this.Graphics.Graphics : this.Graphics;
+
+		var trans = _graphicsCtx.m_oFullTransform;
+		trans.sx = 1;
+		trans.sy = 1;
+		var trans1 = AscCommon.global_MatrixTransformer.Invert(trans);
+
+		var x1 = trans.TransformPointX(0, 0);
+		var y1 = trans.TransformPointY(0, 0);
+		var x2 = trans.TransformPointX(1, 1);
+		var y2 = trans.TransformPointY(1, 1);
+		// var dKoef = Math.sqrt(((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1))/2);
+		var dKoef = 1;
+		var _pen_w = this.Graphics.isTrack() ? (this.Graphics.Graphics.m_oContext.lineWidth * dKoef) : (this.Graphics.m_oContext.lineWidth * dKoef);
+		var _max_w = undefined;
+		if (_graphicsCtx.IsThumbnail === true)
+			_max_w = 2;
+
+		var _max_delta_eps2 = 0.001;
+
+		// var arrKoef = this.isArrPix ? (1 / AscCommon.g_dKoef_mm_to_pix) : 1;
+		var arrKoef = 1;
+
+		if (this.Ln.headEnd != null)
+		{
+			var _x1 = trans.TransformPointX(arr[0].x, arr[0].y);
+			var _y1 = trans.TransformPointY(arr[0].x, arr[0].y);
+			var _x2 = trans.TransformPointX(arr[1].x, arr[1].y);
+			var _y2 = trans.TransformPointY(arr[1].x, arr[1].y);
+
+			var _max_delta_eps = Math.max(this.Ln.headEnd.GetLen(_pen_w), 5);
+
+			var _max_delta = Math.max(Math.abs(_x1 - _x2), Math.abs(_y1 - _y2));
+			var cur_point = 2;
+			while (_max_delta < _max_delta_eps && cur_point < arr.length)
+			{
+				_x2 = trans.TransformPointX(arr[cur_point].x, arr[cur_point].y);
+				_y2 = trans.TransformPointY(arr[cur_point].x, arr[cur_point].y);
+				_max_delta = Math.max(Math.abs(_x1 - _x2), Math.abs(_y1 - _y2));
+				cur_point++;
+			}
+
+			if (_max_delta > _max_delta_eps2)
+			{
+				_graphicsCtx.ArrayPoints = null;
+				DrawLineEnd(_x1, _y1, _x2, _y2, this.Ln.headEnd.type, arrKoef * this.Ln.headEnd.GetWidth(_pen_w, _max_w), arrKoef * this.Ln.headEnd.GetLen(_pen_w, _max_w), this, trans1);
+				_graphicsCtx.ArrayPoints = arr;
+			}
+		}
+		if (this.Ln.tailEnd != null)
+		{
+			var _1 = arr.length-1;
+			var _2 = arr.length-2;
+			var _x1 = trans.TransformPointX(arr[_1].x, arr[_1].y);
+			var _y1 = trans.TransformPointY(arr[_1].x, arr[_1].y);
+			var _x2 = trans.TransformPointX(arr[_2].x, arr[_2].y);
+			var _y2 = trans.TransformPointY(arr[_2].x, arr[_2].y);
+
+			var _max_delta_eps = Math.max(this.Ln.tailEnd.GetLen(_pen_w), 5);
+
+			var _max_delta = Math.max(Math.abs(_x1 - _x2), Math.abs(_y1 - _y2));
+			var cur_point = _2 - 1;
+			while (_max_delta < _max_delta_eps && cur_point >= 0)
+			{
+				_x2 = trans.TransformPointX(arr[cur_point].x, arr[cur_point].y);
+				_y2 = trans.TransformPointY(arr[cur_point].x, arr[cur_point].y);
+				_max_delta = Math.max(Math.abs(_x1 - _x2), Math.abs(_y1 - _y2));
+				cur_point--;
+			}
+
+			if (_max_delta > _max_delta_eps2)
+			{
+				_graphicsCtx.ArrayPoints = null;
+				DrawLineEnd(_x1, _y1, _x2, _y2, this.Ln.tailEnd.type, arrKoef * this.Ln.tailEnd.GetWidth(_pen_w, _max_w), arrKoef * this.Ln.tailEnd.GetLen(_pen_w, _max_w), this, trans1);
+				_graphicsCtx.ArrayPoints = arr;
+			}
+		}
+		this.IsArrowsDrawing = false;
+		this.CheckDash();
+	}
+}

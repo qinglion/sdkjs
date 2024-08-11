@@ -6174,8 +6174,10 @@
 			Square:				9,
 			Slash:				10,
 
-			vsdxNone:			11,
-			vsdxDimensionLine:	20
+			vsdxNone:			0 + 11,
+			vsdxArrow: 			3 + 11,
+			vsdxStealth: 		7 + 11,
+			vsdxDimensionLine:	9 + 11
 		};
 		var LineEndSize = {
 			Large: 0,
@@ -6235,8 +6237,11 @@
 		};
 		EndArrow.prototype.GetWidth = function (_size, _max) {
 			var size = Math.max(_size, _max ? _max : 2);
-			// var size = 2;
 			var _ret = 3 * size;
+			let startSizeInch;
+			let lineWidthInfluenceCoef = 0.028;
+			let inchSize;
+
 			if (null != this.w) {
 				switch (this.w) {
 					case LineEndSize.Large:
@@ -6247,27 +6252,40 @@
 						break;
 
 					case LineEndSize.vsdxVerySmall:
-						_ret = 2 * size;
+						startSizeInch = 0.0391;
+						inchSize = startSizeInch + lineWidthInfluenceCoef * _size *  AscCommonWord.g_dKoef_mm_to_pt;
+						_ret = inchSize * AscCommonWord.g_dKoef_in_to_mm;
 						break;
 					case LineEndSize.vsdxSmall:
-						_ret = 2 * size;
+						startSizeInch = 0.0508;
+						inchSize = startSizeInch + lineWidthInfluenceCoef * _size *  AscCommonWord.g_dKoef_mm_to_pt;
+						_ret = inchSize * AscCommonWord.g_dKoef_in_to_mm;
 						break;
 					case LineEndSize.vsdxMedium:
-						_ret = 3 * size;
+						startSizeInch = 0.0693;
+						inchSize = startSizeInch + lineWidthInfluenceCoef * _size *  AscCommonWord.g_dKoef_mm_to_pt;
+						_ret = inchSize * AscCommonWord.g_dKoef_in_to_mm;
 						break;
 					case LineEndSize.vsdxLarge:
-						_ret = 3 * size;
+						startSizeInch = 0.0898;
+						inchSize = startSizeInch + lineWidthInfluenceCoef * _size *  AscCommonWord.g_dKoef_mm_to_pt;
+						_ret = inchSize * AscCommonWord.g_dKoef_in_to_mm;
 						break;
 					case LineEndSize.vsdxExtraLarge:
-						_ret = 3 * size;
+						startSizeInch = 0.1094;
+						inchSize = startSizeInch + lineWidthInfluenceCoef * _size *  AscCommonWord.g_dKoef_mm_to_pt;
+						_ret = inchSize * AscCommonWord.g_dKoef_in_to_mm;
 						break;
 					case LineEndSize.vsdxJumbo:
-						_ret = 5 * size;
+						startSizeInch = 0.2473;
+						inchSize = startSizeInch + lineWidthInfluenceCoef * _size *  AscCommonWord.g_dKoef_mm_to_pt;
+						_ret = inchSize * AscCommonWord.g_dKoef_in_to_mm;
 						break;
 					case LineEndSize.vsdxColossal:
-						_ret = 7 * size;
+						startSizeInch = 0.499;
+						inchSize = startSizeInch + lineWidthInfluenceCoef * _size *  AscCommonWord.g_dKoef_mm_to_pt;
+						_ret = inchSize * AscCommonWord.g_dKoef_in_to_mm;
 						break;
-
 					default:
 						break;
 				}
@@ -6276,8 +6294,11 @@
 		};
 		EndArrow.prototype.GetLen = function (_size, _max) {
 			var size = Math.max(_size, _max ? _max : 2);
-			// var size = 2;
 			var _ret = 3 * size;
+			let startSizeInch;
+			let lineWidthInfluenceCoef = 0.028;
+			let inchSize;
+
 			if (null != this.len) {
 				switch (this.len) {
 					case LineEndSize.Large:
@@ -6288,25 +6309,39 @@
 						break;
 
 					case LineEndSize.vsdxVerySmall:
-						_ret = 2 * size;
+						startSizeInch = 0.0391;
+						inchSize = startSizeInch + lineWidthInfluenceCoef * _size *  AscCommonWord.g_dKoef_mm_to_pt;
+						_ret = inchSize * AscCommonWord.g_dKoef_in_to_mm;
 						break;
 					case LineEndSize.vsdxSmall:
-						_ret = 2 * size;
+						startSizeInch = 0.0508;
+						inchSize = startSizeInch + lineWidthInfluenceCoef * _size *  AscCommonWord.g_dKoef_mm_to_pt;
+						_ret = inchSize * AscCommonWord.g_dKoef_in_to_mm;
 						break;
 					case LineEndSize.vsdxMedium:
-						_ret = 3 * size;
+						startSizeInch = 0.0693;
+						inchSize = startSizeInch + lineWidthInfluenceCoef * _size *  AscCommonWord.g_dKoef_mm_to_pt;
+						_ret = inchSize * AscCommonWord.g_dKoef_in_to_mm;
 						break;
 					case LineEndSize.vsdxLarge:
-						_ret = 3 * size;
+						startSizeInch = 0.0898;
+						inchSize = startSizeInch + lineWidthInfluenceCoef * _size *  AscCommonWord.g_dKoef_mm_to_pt;
+						_ret = inchSize * AscCommonWord.g_dKoef_in_to_mm;
 						break;
 					case LineEndSize.vsdxExtraLarge:
-						_ret = 3 * size;
+						startSizeInch = 0.1094;
+						inchSize = startSizeInch + lineWidthInfluenceCoef * _size *  AscCommonWord.g_dKoef_mm_to_pt;
+						_ret = inchSize * AscCommonWord.g_dKoef_in_to_mm;
 						break;
 					case LineEndSize.vsdxJumbo:
-						_ret = 5 * size;
+						startSizeInch = 0.2473;
+						inchSize = startSizeInch + lineWidthInfluenceCoef * _size *  AscCommonWord.g_dKoef_mm_to_pt;
+						_ret = inchSize * AscCommonWord.g_dKoef_in_to_mm;
 						break;
 					case LineEndSize.vsdxColossal:
-						_ret = 7 * size;
+						startSizeInch = 0.499;
+						inchSize = startSizeInch + lineWidthInfluenceCoef * _size *  AscCommonWord.g_dKoef_mm_to_pt;
+						_ret = inchSize * AscCommonWord.g_dKoef_in_to_mm;
 						break;
 
 					default:
@@ -6346,6 +6381,8 @@
 				case "sm": {
 					return LineEndSize.Small;
 				}
+
+				// not used for visio end types. use types enum directly
 			}
 			return LineEndSize.Mid;
 		};
@@ -6362,6 +6399,8 @@
 				case LineEndSize.Small: {
 					return "sm";
 				}
+
+				// not used for visio end types. use types enum directly
 			}
 			return "med";
 		};
@@ -6386,6 +6425,8 @@
 				case "triangle": {
 					return LineEndType.Triangle;
 				}
+
+				// not used for visio end types. use types enum directly
 			}
 			return LineEndType.Arrow;
 		};
@@ -6411,6 +6452,8 @@
 				case LineEndType.Triangle: {
 					return "triangle";
 				}
+
+				// not used for visio end types. use types enum directly
 			}
 			return "arrow";
 		};

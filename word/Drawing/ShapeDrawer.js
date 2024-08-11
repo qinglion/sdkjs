@@ -532,6 +532,74 @@ function DrawLineEnd(xEnd, yEnd, xPrev, yPrev, type, w, len, drawer, trans)
             break;
         }
 
+
+        case AscFormat.LineEndType.vsdxArrow:
+        {
+            w *= 2;
+            if (Asc.editor.isPdfEditor() == true) {
+                drawer.CheckDash();
+            }
+
+            var _ex = xPrev - xEnd;
+            var _ey = yPrev - yEnd;
+            var _elen = Math.sqrt(_ex*_ex + _ey*_ey);
+            _ex /= _elen;
+            _ey /= _elen;
+
+            var _vx = _ey;
+            var _vy = -_ex;
+
+            var tmpx = xEnd + len * _ex;
+            var tmpy = yEnd + len * _ey;
+
+            var x1 = tmpx + _vx * w/2;
+            var y1 = tmpy + _vy * w/2;
+
+            var x3 = tmpx - _vx * w/2;
+            var y3 = tmpy - _vy * w/2;
+
+            drawer._s();
+            drawer._m(trans.TransformPointX(x1, y1), trans.TransformPointY(x1, y1));
+            drawer._l(trans.TransformPointX(xEnd, yEnd), trans.TransformPointY(xEnd, yEnd));
+            drawer._l(trans.TransformPointX(x3, y3), trans.TransformPointY(x3, y3));
+            drawer.ds();
+            drawer._e();
+
+            break;
+        }
+        case AscFormat.LineEndType.vsdxStealth:
+        {
+            var _ex = xPrev - xEnd;
+            var _ey = yPrev - yEnd;
+            var _elen = Math.sqrt(_ex*_ex + _ey*_ey);
+            _ex /= _elen;
+            _ey /= _elen;
+
+            var _vx = _ey;
+            var _vy = -_ex;
+
+            var tmpx = xEnd + len * _ex;
+            var tmpy = yEnd + len * _ey;
+
+            var x1 = tmpx + _vx * w/2;
+            var y1 = tmpy + _vy * w/2;
+
+            var x3 = tmpx - _vx * w/2;
+            var y3 = tmpy - _vy * w/2;
+
+            var x4 = xEnd + (len - w/2) * _ex;
+            var y4 = yEnd + (len - w/2) * _ey;
+
+            drawer._s();
+            drawer._m(trans.TransformPointX(x1, y1), trans.TransformPointY(x1, y1));
+            drawer._l(trans.TransformPointX(xEnd, yEnd), trans.TransformPointY(xEnd, yEnd));
+            drawer._l(trans.TransformPointX(x3, y3), trans.TransformPointY(x3, y3));
+            drawer._l(trans.TransformPointX(x4, y4), trans.TransformPointY(x4, y4));
+            drawer._z();
+            drawer.drawStrokeFillStyle();
+            drawer._e();
+            break;
+        }
         case AscFormat.LineEndType.vsdxDimensionLine:
         {
             var _ex = xPrev - xEnd;
@@ -2267,4 +2335,5 @@ window['AscCommon'] = window['AscCommon'] || {};
 window['AscCommon'].CShapeDrawer = CShapeDrawer;
 window['AscCommon'].ShapeToImageConverter = ShapeToImageConverter;
 window['AscCommon'].IsShapeToImageConverter = false;
+window['AscCommon'].DrawLineEnd = DrawLineEnd;
 })(window);

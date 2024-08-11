@@ -768,12 +768,12 @@
 
 			switch (arrowType) {
 				case "0":
-					endArrow.type = endArrow.GetTypeCode("none");
+					endArrow.type = AscFormat.LineEndType.vsdxNone;
 					break;
 				case "1":
 				case "3":
 				case "12":
-					endArrow.type = endArrow.GetTypeCode("arrow");
+					endArrow.type = AscFormat.LineEndType.vsdxArrow;
 					break;
 				case "22":
 					endArrow.type = endArrow.GetTypeCode("diamond");
@@ -788,7 +788,7 @@
 				case "8":
 				case "17":
 				case "19":
-					endArrow.type = endArrow.GetTypeCode("stealth");
+					endArrow.type = AscFormat.LineEndType.vsdxStealth;
 					break;
 				case "9":
 					endArrow.type = AscFormat.LineEndType.vsdxDimensionLine;
@@ -804,14 +804,14 @@
 					endArrow.type = endArrow.GetTypeCode("triangle");
 					break;
 				case "Themed":
-					endArrow.type = endArrow.GetTypeCode("none");
+					endArrow.type = AscFormat.LineEndType.vsdxNone;
 					break;
 				case !isNaN(Number(arrowType)) && arrowType:
 					// is unhandled number
-					endArrow.type = endArrow.GetTypeCode("arrow");
+					endArrow.type = AscFormat.LineEndType.vsdxArrow;
 					break;
 				default:
-					endArrow.type = endArrow.GetTypeCode("none");
+					endArrow.type = AscFormat.LineEndType.vsdxNone;
 			}
 
 			if (arrowSize >= 0 && arrowSize <= 6 ) {
