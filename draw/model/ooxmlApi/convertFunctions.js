@@ -801,7 +801,7 @@
 				case "15":
 				case "16":
 				case "18":
-					endArrow.type = endArrow.GetTypeCode("triangle");
+					endArrow.type = AscFormat.LineEndType.vsdxTriangle;
 					break;
 				case "Themed":
 					endArrow.type = AscFormat.LineEndType.vsdxNone;

@@ -629,6 +629,50 @@ function DrawLineEnd(xEnd, yEnd, xPrev, yPrev, type, w, len, drawer, trans)
             drawer.ds();
             break;
         }
+        case AscFormat.LineEndType.vsdxTriangle:
+        {
+            var _ex = xPrev - xEnd;
+            var _ey = yPrev - yEnd;
+            var _elen = Math.sqrt(_ex*_ex + _ey*_ey);
+            _ex /= _elen;
+            _ey /= _elen;
+
+            var _vx = _ey;
+            var _vy = -_ex;
+
+            var tmpx = xEnd + len * _ex;
+            var tmpy = yEnd + len * _ey;
+
+            var x1 = tmpx + _vx * w/2;
+            var y1 = tmpy + _vy * w/2;
+
+            var x3 = tmpx - _vx * w/2;
+            var y3 = tmpy - _vy * w/2;
+
+            drawer._s();
+            drawer._m(trans.TransformPointX(x1, y1), trans.TransformPointY(x1, y1));
+            drawer._l(trans.TransformPointX(xEnd, yEnd), trans.TransformPointY(xEnd, yEnd));
+            drawer._l(trans.TransformPointX(x3, y3), trans.TransformPointY(x3, y3));
+            drawer._z();
+            if (Asc.editor.isPdfEditor() && drawer.Shape.IsDrawing() == false) {
+                let oRGBColor;
+                if (drawer.Shape.GetRGBColor) {
+                    oRGBColor = drawer.Shape.GetRGBColor(drawer.Shape.GetFillColor());
+                }
+                else if (drawer.Shape.group) {
+                    oRGBColor = drawer.Shape.group.GetRGBColor(drawer.Shape.group.GetFillColor());
+                }
+
+                drawer.Graphics.m_oPen.Color.R = oRGBColor.r;
+                drawer.Graphics.m_oPen.Color.G = oRGBColor.g;
+                drawer.Graphics.m_oPen.Color.B = oRGBColor.b;
+            }
+
+            drawer.drawStrokeFillStyle();
+            drawer._e();
+            break;
+        }
+
     }
 }
 

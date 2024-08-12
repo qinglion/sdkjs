@@ -6176,6 +6176,7 @@
 
 			vsdxNone:			0 + 11,
 			vsdxArrow: 			3 + 11,
+			vsdxTriangle:		4 + 11,
 			vsdxStealth: 		7 + 11,
 			vsdxDimensionLine:	9 + 11
 		};

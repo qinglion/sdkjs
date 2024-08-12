@@ -194,7 +194,7 @@
     }
 
     function windowOnKeydown(e) {
-        console.log("Event windowOnKeydown catched: ", e);
+        // console.log("Event windowOnKeydown catched: ", e);
         if (e.keyCode == '37') {
             // left arrow
             api.Document.pageIndex -= 1;
