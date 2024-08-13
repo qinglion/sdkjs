@@ -11199,6 +11199,12 @@
 			});
 			const resultShape = convertPaperPathToShape(paperResult);
 
+			// coloring
+			const firstShapeFill = selectedShapes[0].getFill();
+			const firstShapeStroke = selectedShapes[0].getStroke();
+			resultShape.spPr.setFill(firstShapeFill.createDuplicate());
+			resultShape.changeLine(firstShapeStroke.createDuplicate());
+
 			selectedShapes.forEach(function (shape) {
 				shape.deleteDrawingBase();
 			});
@@ -11322,7 +11328,6 @@
 
 			resultGeometry.parent = resultShape;
 			resultShape.spPr.setGeometry(resultGeometry);
-			resultShape.spPr.setFill(AscFormat.CreateSolidFillRGBA(0, 0, 255, 255));
 
 			return resultShape;
 		}
