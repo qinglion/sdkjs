@@ -1396,7 +1396,9 @@
 		let langCode = 1033; // en-US
 		let langName = 'en-us';
 		if (api.asc_getLocale) {
-			langName = api.asc_getLocale().replace('_', '-').toLowerCase();
+			let locale = api.asc_getLocale();
+			if (locale)
+				langName = locale.replace('_', '-').toLowerCase();
 		} else if (this.Presentation.GetDefaultLanguage && window['Common']) {
 			langCode = this.Presentation.GetDefaultLanguage();
 			langName = window['Common']['util']['LanguageInfo']['getLocalLanguageName'](langCode)[0].toLowerCase();
@@ -3576,6 +3578,21 @@
 		return JSON.stringify(oWriter.SerGraphicObject(this.Drawing));
 	};
 
+	/**
+	 * Selects the current graphic object.
+	 * @memberof ApiDrawing
+	 * @typeofeditors ["CPE"]
+	 * @see office-js-api/Examples/{Editor}/ApiDrawing/Methods/Select.js
+	 */	
+	ApiDrawing.prototype.Select = function() {
+		let oDrawing = this.Drawing;
+		if(!oDrawing) return;
+        oDrawing.Set_CurrentElement(true, 0, true);
+        let oController = oDrawing.getDrawingObjectsController();
+        oController.updateSelectionState();
+        oController.updateOverlay();
+	};
+
     //------------------------------------------------------------------------------------------------------------------
     //
     // ApiImage
@@ -4598,7 +4615,7 @@
 	ApiDrawing.prototype["GetHeight"]                     = ApiDrawing.prototype.GetHeight;
     ApiDrawing.prototype["GetLockValue"]                  = ApiDrawing.prototype.GetLockValue;
     ApiDrawing.prototype["SetLockValue"]                  = ApiDrawing.prototype.SetLockValue;
-
+    ApiDrawing.prototype["Select"]                        = ApiDrawing.prototype.Select;
 
 
     ApiDrawing.prototype["ToJSON"]                        = ApiDrawing.prototype.ToJSON;
