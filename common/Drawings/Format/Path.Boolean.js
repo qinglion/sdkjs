@@ -7,6 +7,17 @@
 	Point.prototype.clone = function () {
 		return new Point(this.x, this.y);
 	};
+	Point.prototype.negate = function () {
+		return new Point(-this.x, -this.y);
+	};
+	Point.prototype.getAngle = function () {
+		return this.getAngleInRadians.apply(this) * 180 / Math.PI;
+	};
+	Point.prototype.getAngleInRadians = function () {
+		return this.isZero()
+			? this.angle || 0
+			: this.angle = Math.atan2(this.y, this.x);
+	}
 	Point.prototype.isEqual = function (other) {
 		return this.x === other.x && this.y === other.y;
 	};
@@ -45,7 +56,7 @@
 			this.index = props.index;
 		}
 
-		// this._intersection;
+		// this.intersection;
 	}
 	Segment.prototype.setProps = function (props) {
 		this.path = props.path;
@@ -104,6 +115,17 @@
 			Math.pow(1 - t, 3) * P[0].y + 3 * t * Math.pow(1 - t, 2) * P[1].y + 3 * t * t * (1 - t) * P[2].y + Math.pow(t, 3) * P[3].y
 		);
 	};
+	Curve.prototype.getPointAt = function (location) {
+		var values = this.getValues();
+		return Curve.getPoint(values, Curve.getTimeAt(values, location));
+	}
+	Curve.prototype.getTangentAtTime = function (time) {
+		return Curve.getTangent(this.getValues(), time);
+	};
+	Curve.prototype.getTangentAt = function (location) {
+		var values = this.getValues();
+		return Curve.getTangent(values, location);
+	};
 	Curve.prototype.getValues = function () {
 		const p1 = this.segment1.point;
 		const h1 = this.segment1.handleOut;
@@ -122,70 +144,6 @@
 			x2, y2
 		];
 		return values;
-	};
-	Curve.prototype.classify = function (v) {
-		var x0 = v[0], y0 = v[1];
-		let x1 = v[2], y1 = v[3];
-		let x2 = v[4], y2 = v[5];
-		let x3 = v[6], y3 = v[7];
-
-		let a1 = x0 * (y3 - y2) + y0 * (x2 - x3) + x3 * y2 - y3 * x2;
-		let a2 = x1 * (y0 - y3) + y1 * (x3 - x0) + x0 * y3 - y0 * x3;
-		let a3 = x2 * (y1 - y0) + y2 * (x0 - x1) + x1 * y0 - y1 * x0;
-
-		let d3 = 3 * a3;
-		let d2 = d3 - a2;
-		let d1 = d2 - a2 + a1;
-
-		let l = Math.sqrt(d1 * d1 + d2 * d2 + d3 * d3);
-		let s = l !== 0 ? 1 / l : 0;
-
-		let serpentine = 'serpentine';
-
-		d1 *= s;
-		d2 *= s;
-		d3 *= s;
-
-		function type(type, t1, t2) {
-			var hasRoots = t1 !== undefined;
-			var t1Ok = hasRoots && t1 > 0 && t1 < 1;
-			var t2Ok = hasRoots && t2 > 0 && t2 < 1;
-			if (hasRoots && (!(t1Ok || t2Ok) || type === 'loop' && !(t1Ok && t2Ok))) {
-				type = 'arch';
-				t1Ok = t2Ok = false;
-			}
-			return {
-				type: type,
-				roots: t1Ok || t2Ok
-					? t1Ok && t2Ok
-						? t1 < t2 ? [t1, t2] : [t2, t1]
-						: [t1Ok ? t1 : t2]
-					: null
-			};
-		}
-
-		const isZero = function (val) {
-			const EPSILON = 1e-12;
-			return val >= -EPSILON && val <= EPSILON;
-		};
-
-		if (isZero(d1)) {
-			return isZero(d2)
-				? type(isZero(d3) ? 'line' : 'quadratic')
-				: type(serpentine, d3 / (3 * d2));
-		}
-
-		var d = 3 * d2 * d2 - 4 * d1 * d3;
-		if (isZero(d)) {
-			return type('cusp', d2 / (2 * d1));
-		}
-		var f1 = d > 0 ? Math.sqrt(d / 3) : Math.sqrt(-d),
-			f2 = 2 * d1;
-		return type(
-			d > 0 ? serpentine : 'loop',
-			(d2 + f1) / f2,
-			(d2 - f1) / f2
-		);
 	};
 	Curve.prototype.getPrevious = function () {
 		var curves = this.path && this.path.getCurves();
@@ -263,6 +221,70 @@
 			return false;
 		}
 	};
+	Curve.classify = function (v) {
+		var x0 = v[0], y0 = v[1];
+		let x1 = v[2], y1 = v[3];
+		let x2 = v[4], y2 = v[5];
+		let x3 = v[6], y3 = v[7];
+
+		let a1 = x0 * (y3 - y2) + y0 * (x2 - x3) + x3 * y2 - y3 * x2;
+		let a2 = x1 * (y0 - y3) + y1 * (x3 - x0) + x0 * y3 - y0 * x3;
+		let a3 = x2 * (y1 - y0) + y2 * (x0 - x1) + x1 * y0 - y1 * x0;
+
+		let d3 = 3 * a3;
+		let d2 = d3 - a2;
+		let d1 = d2 - a2 + a1;
+
+		let l = Math.sqrt(d1 * d1 + d2 * d2 + d3 * d3);
+		let s = l !== 0 ? 1 / l : 0;
+
+		let serpentine = 'serpentine';
+
+		d1 *= s;
+		d2 *= s;
+		d3 *= s;
+
+		function type(type, t1, t2) {
+			var hasRoots = t1 !== undefined;
+			var t1Ok = hasRoots && t1 > 0 && t1 < 1;
+			var t2Ok = hasRoots && t2 > 0 && t2 < 1;
+			if (hasRoots && (!(t1Ok || t2Ok) || type === 'loop' && !(t1Ok && t2Ok))) {
+				type = 'arch';
+				t1Ok = t2Ok = false;
+			}
+			return {
+				type: type,
+				roots: t1Ok || t2Ok
+					? t1Ok && t2Ok
+						? t1 < t2 ? [t1, t2] : [t2, t1]
+						: [t1Ok ? t1 : t2]
+					: null
+			};
+		}
+
+		const isZero = function (val) {
+			const EPSILON = 1e-12;
+			return val >= -EPSILON && val <= EPSILON;
+		};
+
+		if (isZero(d1)) {
+			return isZero(d2)
+				? type(isZero(d3) ? 'line' : 'quadratic')
+				: type(serpentine, d3 / (3 * d2));
+		}
+
+		var d = 3 * d2 * d2 - 4 * d1 * d3;
+		if (isZero(d)) {
+			return type('cusp', d2 / (2 * d1));
+		}
+		var f1 = d > 0 ? Math.sqrt(d / 3) : Math.sqrt(-d),
+			f2 = 2 * d1;
+		return type(
+			d > 0 ? serpentine : 'loop',
+			(d2 + f1) / f2,
+			(d2 - f1) / f2
+		);
+	};
 	Curve.getLength = function (values, a, b, ds) {
 		if (a === undefined) a = 0;
 		if (b === undefined) b = 1;
@@ -279,83 +301,7 @@
 			var dy = c[7] - c[1];
 			return Math.sqrt(dx * dx + dy * dy);
 		}
-		return integrate(ds || getLengthIntegrand(values), a, b, getIterations(a, b));
-
-		function integrate(f, a, b, n) {
-			var abscissas = [
-				[0.5773502691896257645091488],
-				[0, 0.7745966692414833770358531],
-				[0.3399810435848562648026658, 0.8611363115940525752239465],
-				[0, 0.5384693101056830910363144, 0.9061798459386639927976269],
-				[0.2386191860831969086305017, 0.6612093864662645136613996, 0.9324695142031520278123016],
-				[0, 0.4058451513773971669066064, 0.7415311855993944398638648, 0.9491079123427585245261897],
-				[0.1834346424956498049394761, 0.5255324099163289858177390, 0.7966664774136267395915539, 0.9602898564975362316835609],
-				[0, 0.3242534234038089290385380, 0.6133714327005903973087020, 0.8360311073266357942994298, 0.9681602395076260898355762],
-				[0.1488743389816312108848260, 0.4333953941292471907992659, 0.6794095682990244062343274, 0.8650633666889845107320967, 0.9739065285171717200779640],
-				[0, 0.2695431559523449723315320, 0.5190961292068118159257257, 0.7301520055740493240934163, 0.8870625997680952990751578, 0.9782286581460569928039380],
-				[0.1252334085114689154724414, 0.3678314989981801937526915, 0.5873179542866174472967024, 0.7699026741943046870368938, 0.9041172563704748566784659, 0.9815606342467192506905491],
-				[0, 0.2304583159551347940655281, 0.4484927510364468528779129, 0.6423493394403402206439846, 0.8015780907333099127942065, 0.9175983992229779652065478, 0.9841830547185881494728294],
-				[0.1080549487073436620662447, 0.3191123689278897604356718, 0.5152486363581540919652907, 0.6872929048116854701480198, 0.8272013150697649931897947, 0.9284348836635735173363911, 0.9862838086968123388415973],
-				[0, 0.2011940939974345223006283, 0.3941513470775633698972074, 0.5709721726085388475372267, 0.7244177313601700474161861, 0.8482065834104272162006483, 0.9372733924007059043077589, 0.9879925180204854284895657],
-				[0.0950125098376374401853193, 0.2816035507792589132304605, 0.4580167776572273863424194, 0.6178762444026437484466718, 0.7554044083550030338951012, 0.8656312023878317438804679, 0.9445750230732325760779884, 0.9894009349916499325961542]
-			];
-			var weights = [
-				[1],
-				[0.8888888888888888888888889, 0.5555555555555555555555556],
-				[0.6521451548625461426269361, 0.3478548451374538573730639],
-				[0.5688888888888888888888889, 0.4786286704993664680412915, 0.2369268850561890875142640],
-				[0.4679139345726910473898703, 0.3607615730481386075698335, 0.1713244923791703450402961],
-				[0.4179591836734693877551020, 0.3818300505051189449503698, 0.2797053914892766679014678, 0.1294849661688696932706114],
-				[0.3626837833783619829651504, 0.3137066458778872873379622, 0.2223810344533744705443560, 0.1012285362903762591525314],
-				[0.3302393550012597631645251, 0.3123470770400028400686304, 0.2606106964029354623187429, 0.1806481606948574040584720, 0.0812743883615744119718922],
-				[0.2955242247147528701738930, 0.2692667193099963550912269, 0.2190863625159820439955349, 0.1494513491505805931457763, 0.0666713443086881375935688],
-				[0.2729250867779006307144835, 0.2628045445102466621806889, 0.2331937645919904799185237, 0.1862902109277342514260976, 0.1255803694649046246346943, 0.0556685671161736664827537],
-				[0.2491470458134027850005624, 0.2334925365383548087608499, 0.2031674267230659217490645, 0.1600783285433462263346525, 0.1069393259953184309602547, 0.0471753363865118271946160],
-				[0.2325515532308739101945895, 0.2262831802628972384120902, 0.2078160475368885023125232, 0.1781459807619457382800467, 0.1388735102197872384636018, 0.0921214998377284479144218, 0.0404840047653158795200216],
-				[0.2152638534631577901958764, 0.2051984637212956039659241, 0.1855383974779378137417166, 0.1572031671581935345696019, 0.1215185706879031846894148, 0.0801580871597602098056333, 0.0351194603317518630318329],
-				[0.2025782419255612728806202, 0.1984314853271115764561183, 0.1861610000155622110268006, 0.1662692058169939335532009, 0.1395706779261543144478048, 0.1071592204671719350118695, 0.0703660474881081247092674, 0.0307532419961172683546284],
-				[0.1894506104550684962853967, 0.1826034150449235888667637, 0.1691565193950025381893121, 0.1495959888165767320815017, 0.1246289712555338720524763, 0.0951585116824927848099251, 0.0622535239386478928628438, 0.0271524594117540948517806]
-			];
-
-			var x = abscissas[n - 2];
-			var w = weights[n - 2];
-
-			var A = (b - a) * 0.5;
-			var B = A + a;
-			var i = 0;
-			var m = (n + 1) >> 1;
-			var sum = n & 1 ? w[i++] * f(B) : 0;
-			while (i < m) {
-				var Ax = A * x[i];
-				sum += w[i++] * (f(B + Ax) + f(B - Ax));
-			}
-			return A * sum;
-		}
-
-		function getLengthIntegrand(v) {
-			var x0 = v[0], y0 = v[1],
-				x1 = v[2], y1 = v[3],
-				x2 = v[4], y2 = v[5],
-				x3 = v[6], y3 = v[7],
-
-				ax = 9 * (x1 - x2) + 3 * (x3 - x0),
-				bx = 6 * (x0 + x2) - 12 * x1,
-				cx = 3 * (x1 - x0),
-
-				ay = 9 * (y1 - y2) + 3 * (y3 - y0),
-				by = 6 * (y0 + y2) - 12 * y1,
-				cy = 3 * (y1 - y0);
-
-			return function (t) {
-				var dx = (ax * t + bx) * t + cx,
-					dy = (ay * t + by) * t + cy;
-				return Math.sqrt(dx * dx + dy * dy);
-			};
-		}
-
-		function getIterations(a, b) {
-			return Math.max(2, Math.min(16, Math.ceil(Math.abs(b - a) * 32)));
-		}
+		return Numerical.integrate(ds || getLengthIntegrand(values), a, b, getIterations(a, b));
 	};
 	Curve.subdivide = function (v, t) {
 		var x0 = v[0], y0 = v[1],
@@ -434,7 +380,7 @@
 			: point.getDistance(p3) <= geomEpsilon ? 1
 				: null;
 	}
-	Curve.evaluate = function evaluate(v, t, type, normalized) {
+	Curve.evaluate = function (v, t, type, normalized) {
 		if (t == null || t < 0 || t > 1)
 			return null;
 		var x0 = v[0], y0 = v[1],
@@ -497,8 +443,86 @@
 		return type === 2 ? new Point(y, -x) : new Point(x, y);
 	};
 	Curve.getPoint = function (v, t) {
-		return evaluate(v, t, 0, false);
+		return Curve.evaluate(v, t, 0, false);
+	};
+	Curve.getPeaks = function (v) {
+		var x0 = v[0], y0 = v[1],
+			x1 = v[2], y1 = v[3],
+			x2 = v[4], y2 = v[5],
+			x3 = v[6], y3 = v[7],
+			ax = -x0 + 3 * x1 - 3 * x2 + x3,
+			bx = 3 * x0 - 6 * x1 + 3 * x2,
+			cx = -3 * x0 + 3 * x1,
+			ay = -y0 + 3 * y1 - 3 * y2 + y3,
+			by = 3 * y0 - 6 * y1 + 3 * y2,
+			cy = -3 * y0 + 3 * y1,
+			tMin = 1e-8,
+			tMax = 1 - tMin,
+			roots = [];
+		Numerical.solveCubic(
+			9 * (ax * ax + ay * ay),
+			9 * (ax * bx + by * ay),
+			2 * (bx * bx + by * by) + 3 * (cx * ax + cy * ay),
+			(cx * bx + by * cy),
+			roots, tMin, tMax);
+		return roots.sort();
+	};
+	Curve.getTangent = function (v, t) {
+		return Curve.evaluate(v, t, 1, true);
+	};
+	Curve.getTimeAt = function (v, offset, start) {
+		if (start === undefined)
+			start = offset < 0 ? 1 : 0;
+		if (offset === 0)
+			return start;
+
+		var abs = Math.abs,
+			epsilon = 1e-12,
+			forward = offset > 0,
+			a = forward ? start : 0,
+			b = forward ? 1 : start,
+			ds = getLengthIntegrand(v),
+			rangeLength = Curve.getLength(v, a, b, ds),
+			diff = abs(offset) - rangeLength;
+		if (abs(diff) < epsilon) {
+			return forward ? b : a;
+		} else if (diff > epsilon) {
+			return null;
+		}
+		var guess = offset / rangeLength,
+			length = 0;
+		function f(t) {
+			length += Numerical.integrate(ds, start, t, getIterations(start, t));
+			start = t;
+			return length - offset;
+		}
+		return Numerical.findRoot(f, ds, start + guess, a, b, 32, 1e-12);
 	}
+
+	function getLengthIntegrand(v) {
+		var x0 = v[0], y0 = v[1],
+			x1 = v[2], y1 = v[3],
+			x2 = v[4], y2 = v[5],
+			x3 = v[6], y3 = v[7],
+
+			ax = 9 * (x1 - x2) + 3 * (x3 - x0),
+			bx = 6 * (x0 + x2) - 12 * x1,
+			cx = 3 * (x1 - x0),
+
+			ay = 9 * (y1 - y2) + 3 * (y3 - y0),
+			by = 6 * (y0 + y2) - 12 * y1,
+			cy = 3 * (y1 - y0);
+
+		return function (t) {
+			var dx = (ax * t + bx) * t + cx,
+				dy = (ay * t + by) * t + cy;
+			return Math.sqrt(dx * dx + dy * dy);
+		};
+	}
+	function getIterations(a, b) {
+		return Math.max(2, Math.min(16, Math.ceil(Math.abs(b - a) * 32)));
+	}
+
 
 	function CurveLocation(curve, time) {
 		this.curve = curve;
@@ -510,6 +534,7 @@
 		// this.intersection
 		// this.offset
 		// this.curveOffset
+		// this.overlap
 	}
 	CurveLocation.prototype.getPath = function () {
 		return this.curve ? this.curve.getPath() : null;
@@ -554,7 +579,12 @@
 		}
 		return offset;
 	};
-	CurveLocation.prototype.equals = function (other, ignoreOther) {
+	CurveLocation.prototype.getTangent = function () {
+		var curve = this.getCurve();
+		var time = this.getTime();
+		return time != null && curve && curve.getTangentAt(time, true);
+	};
+	CurveLocation.prototype.equals = function (other, _ignoreOther) {
 		if (this === other) return true;
 		var res = false;
 		if (other instanceof CurveLocation) {
@@ -568,8 +598,8 @@
 
 				var diff = Math.abs(this.getOffset() - other.getOffset());
 
-				var i1 = !_ignoreOther && this._intersection;
-				var i2 = !_ignoreOther && other._intersection;
+				var i1 = !_ignoreOther && this.intersection;
+				var i2 = !_ignoreOther && other.intersection;
 
 				res = (diff < epsilon
 					|| p1 && Math.abs(p1.getLength() - diff) < epsilon)
@@ -578,6 +608,121 @@
 		}
 		return res;
 	};
+	CurveLocation.prototype.hasOverlap = function () {
+		return !!this.overlap;
+	};
+	CurveLocation.prototype.isTouching = function () {
+		var inter = this.intersection;
+		if (inter && this.getTangent().isCollinear(inter.getTangent())) {
+			var curve1 = this.getCurve();
+			var curve2 = inter.getCurve();
+
+			const p1x = curve1.segment1.point.x;
+			const p1y = curve1.segment1.point.y;
+			const v1x = curve1.segment2.point.x - curve1.segment1.point.x;
+			const v1y = curve1.segment2.point.x - curve1.segment1.point.x;
+
+			const p2x = curve2.segment1.point.x;
+			const p2y = curve2.segment1.point.y;
+			const v2x = curve2.segment2.point.x - curve2.segment1.point.x;
+			const v2y = curve2.segment2.point.x - curve2.segment1.point.x;
+
+			return !(curve1.isStraight() && curve2.isStraight()
+				&& intersects(p1x, p1y, v1x, v1y, p2x, p2y, v2x, v2y));
+
+			function intersects(p1x, p1y, v1x, v1y, p2x, p2y, v2x, v2y) {
+				var cross = v1x * v2y - v1y * v2x;
+				if (!Numerical.isMachineZero(cross)) {
+					var dx = p1x - p2x,
+						dy = p1y - p2y,
+						u1 = (v2x * dy - v2y * dx) / cross,
+						u2 = (v1x * dy - v1y * dx) / cross,
+						epsilon = 1e-12,
+						uMin = -epsilon,
+						uMax = 1 + epsilon;
+					if (uMin < u1 && u1 < uMax && uMin < u2 && u2 < uMax) {
+						u1 = u1 <= 0 ? 0 : u1 >= 1 ? 1 : u1;
+						return new Point(p1x + u1 * v1x, p1y + u1 * v1y);
+					}
+				}
+			}
+		}
+		return false;
+	};
+	CurveLocation.prototype.isCrossing = function () {
+		var inter = this.intersection;
+		if (!inter) return false;
+
+		var t1 = this.getTime();
+		var t2 = inter.getTime();
+
+		var tMin = 1e-8;
+		var tMax = 1 - tMin;
+
+		var t1Inside = t1 >= tMin && t1 <= tMax;
+		var t2Inside = t2 >= tMin && t2 <= tMax;
+
+		if (t1Inside && t2Inside)
+			return !this.isTouching();
+
+		var c2 = this.getCurve(),
+			c1 = c2 && t1 < tMin ? c2.getPrevious() : c2,
+			c4 = inter.getCurve(),
+			c3 = c4 && t2 < tMin ? c4.getPrevious() : c4;
+		if (t1 > tMax)
+			c2 = c2.getNext();
+		if (t2 > tMax)
+			c4 = c4.getNext();
+		if (!c1 || !c2 || !c3 || !c4)
+			return false;
+
+		var offsets = [];
+
+		function addOffsets(curve, end) {
+			var v = curve.getValues(),
+				roots = Curve.classify(v).roots || Curve.getPeaks(v),
+				count = roots.length,
+				offset = Curve.getLength(v,
+					end && count ? roots[count - 1] : 0,
+					!end && count ? roots[0] : 1);
+			offsets.push(count ? offset : offset / 32);
+		}
+
+		function isInRange(angle, min, max) {
+			return min < max
+				? angle > min && angle < max
+				: angle > min || angle < max;
+		}
+
+		if (!t1Inside) {
+			addOffsets(c1, true);
+			addOffsets(c2, false);
+		}
+		if (!t2Inside) {
+			addOffsets(c3, true);
+			addOffsets(c4, false);
+		}
+		var pt = this.getPoint(),
+			offset = Math.min.apply(Math, offsets),
+			v2 = t1Inside ? c2.getTangentAtTime(t1)
+				: c2.getPointAt(offset).subtract(pt),
+			v1 = t1Inside ? v2.negate()
+				: c1.getPointAt(-offset).subtract(pt),
+			v4 = t2Inside ? c4.getTangentAtTime(t2)
+				: c4.getPointAt(offset).subtract(pt),
+			v3 = t2Inside ? v4.negate()
+				: c3.getPointAt(-offset).subtract(pt),
+			a1 = v1.getAngle(),
+			a2 = v2.getAngle(),
+			a3 = v3.getAngle(),
+			a4 = v4.getAngle();
+		return !!(t1Inside
+			? (isInRange(a1, a3, a4) ^ isInRange(a2, a3, a4)) && (isInRange(a1, a4, a3) ^ isInRange(a2, a4, a3))
+			: (isInRange(a3, a1, a2) ^ isInRange(a4, a1, a2)) && (isInRange(a3, a2, a1) ^ isInRange(a4, a2, a1))
+		);
+	};
+
+	// static
 	CurveLocation.insert = function (locations, loc, merge) {
 		var length = locations.length;
 		let l = 0;
@@ -693,8 +838,8 @@
 		var hasCrossings = false;
 
 		function hasOverlap(seg, path) {
-			var inter = seg && seg._intersection;
-			return inter && inter._overlap && inter._path === path;
+			var inter = seg && seg.intersection;
+			return inter && inter.overlap && inter.path === path;
 		}
 
 		function handleIntersection(inter) {
@@ -776,7 +921,7 @@
 		}
 
 		function getSelfIntersection(v1, c1, locations, include) {
-			var info = Curve.prototype.classify(v1);
+			var info = Curve.classify(v1);
 			if (info.type === 'loop') {
 				var roots = info.roots;
 				addLocation(locations, include, c1, roots[0], c1, roots[1]);
@@ -822,10 +967,8 @@
 								i2 = t2 * 6,
 								p1 = new Point(v1[i1], v1[i1 + 1]),
 								p2 = new Point(v2[i2], v2[i2 + 1]);
-							if (p1.isClose(p2, epsilon)) {
-								addLocation(locations, include,
-									c1, t1,
-									c2, t2);
+							if (p1.getDistance(p2) <= epsilon) {
+								addLocation(locations, include, c1, t1, c2, t2);
 							}
 						}
 					}
@@ -1244,9 +1387,9 @@
 		function collectPaths(paths) {
 			for (var i = 0, l = paths.length; i < l; i++) {
 				var path = paths[i];
-				Base.push(segments, path._segments);
+				Base.push(segments, path.segments);
 				Base.push(curves, path.getCurves());
-				path._overlapsOnly = true;
+				path.overlapsOnly = true;
 			}
 		}
 
@@ -1492,11 +1635,11 @@
 		MACHINE_EPSILON: 1.12e-16,
 
 		isMachineZero: function (val) {
-			return val >= -MACHINE_EPSILON && val <= MACHINE_EPSILON;
+			return val >= -Numerical.MACHINE_EPSILON && val <= Numerical.MACHINE_EPSILON;
 		},
 
 		isZero: function (val) {
-			return val >= -EPSILON && val <= EPSILON;
+			return val >= -Numerical.EPSILON && val <= Numerical.EPSILON;
 		},
 
 		getNormalizationFactor: function () {
@@ -1533,12 +1676,83 @@
 			return D;
 		},
 
+		findRoot: function (f, df, x, a, b, n, tolerance) {
+			for (var i = 0; i < n; i++) {
+				var fx = f(x),
+					dx = fx / df(x),
+					nx = x - dx;
+				if (Math.abs(dx) < tolerance) {
+					x = nx;
+					break;
+				}
+				if (fx > 0) {
+					b = x;
+					x = nx <= a ? (a + b) * 0.5 : nx;
+				} else {
+					a = x;
+					x = nx >= b ? (a + b) * 0.5 : nx;
+				}
+			}
+			return Numerical.clamp(x, a, b);
+		},
+
+		integrate: function (f, a, b, n) {
+			var abscissas = [
+				[0.5773502691896257645091488],
+				[0, 0.7745966692414833770358531],
+				[0.3399810435848562648026658, 0.8611363115940525752239465],
+				[0, 0.5384693101056830910363144, 0.9061798459386639927976269],
+				[0.2386191860831969086305017, 0.6612093864662645136613996, 0.9324695142031520278123016],
+				[0, 0.4058451513773971669066064, 0.7415311855993944398638648, 0.9491079123427585245261897],
+				[0.1834346424956498049394761, 0.5255324099163289858177390, 0.7966664774136267395915539, 0.9602898564975362316835609],
+				[0, 0.3242534234038089290385380, 0.6133714327005903973087020, 0.8360311073266357942994298, 0.9681602395076260898355762],
+				[0.1488743389816312108848260, 0.4333953941292471907992659, 0.6794095682990244062343274, 0.8650633666889845107320967, 0.9739065285171717200779640],
+				[0, 0.2695431559523449723315320, 0.5190961292068118159257257, 0.7301520055740493240934163, 0.8870625997680952990751578, 0.9782286581460569928039380],
+				[0.1252334085114689154724414, 0.3678314989981801937526915, 0.5873179542866174472967024, 0.7699026741943046870368938, 0.9041172563704748566784659, 0.9815606342467192506905491],
+				[0, 0.2304583159551347940655281, 0.4484927510364468528779129, 0.6423493394403402206439846, 0.8015780907333099127942065, 0.9175983992229779652065478, 0.9841830547185881494728294],
+				[0.1080549487073436620662447, 0.3191123689278897604356718, 0.5152486363581540919652907, 0.6872929048116854701480198, 0.8272013150697649931897947, 0.9284348836635735173363911, 0.9862838086968123388415973],
+				[0, 0.2011940939974345223006283, 0.3941513470775633698972074, 0.5709721726085388475372267, 0.7244177313601700474161861, 0.8482065834104272162006483, 0.9372733924007059043077589, 0.9879925180204854284895657],
+				[0.0950125098376374401853193, 0.2816035507792589132304605, 0.4580167776572273863424194, 0.6178762444026437484466718, 0.7554044083550030338951012, 0.8656312023878317438804679, 0.9445750230732325760779884, 0.9894009349916499325961542]
+			];
+			var weights = [
+				[1],
+				[0.8888888888888888888888889, 0.5555555555555555555555556],
+				[0.6521451548625461426269361, 0.3478548451374538573730639],
+				[0.5688888888888888888888889, 0.4786286704993664680412915, 0.2369268850561890875142640],
+				[0.4679139345726910473898703, 0.3607615730481386075698335, 0.1713244923791703450402961],
+				[0.4179591836734693877551020, 0.3818300505051189449503698, 0.2797053914892766679014678, 0.1294849661688696932706114],
+				[0.3626837833783619829651504, 0.3137066458778872873379622, 0.2223810344533744705443560, 0.1012285362903762591525314],
+				[0.3302393550012597631645251, 0.3123470770400028400686304, 0.2606106964029354623187429, 0.1806481606948574040584720, 0.0812743883615744119718922],
+				[0.2955242247147528701738930, 0.2692667193099963550912269, 0.2190863625159820439955349, 0.1494513491505805931457763, 0.0666713443086881375935688],
+				[0.2729250867779006307144835, 0.2628045445102466621806889, 0.2331937645919904799185237, 0.1862902109277342514260976, 0.1255803694649046246346943, 0.0556685671161736664827537],
+				[0.2491470458134027850005624, 0.2334925365383548087608499, 0.2031674267230659217490645, 0.1600783285433462263346525, 0.1069393259953184309602547, 0.0471753363865118271946160],
+				[0.2325515532308739101945895, 0.2262831802628972384120902, 0.2078160475368885023125232, 0.1781459807619457382800467, 0.1388735102197872384636018, 0.0921214998377284479144218, 0.0404840047653158795200216],
+				[0.2152638534631577901958764, 0.2051984637212956039659241, 0.1855383974779378137417166, 0.1572031671581935345696019, 0.1215185706879031846894148, 0.0801580871597602098056333, 0.0351194603317518630318329],
+				[0.2025782419255612728806202, 0.1984314853271115764561183, 0.1861610000155622110268006, 0.1662692058169939335532009, 0.1395706779261543144478048, 0.1071592204671719350118695, 0.0703660474881081247092674, 0.0307532419961172683546284],
+				[0.1894506104550684962853967, 0.1826034150449235888667637, 0.1691565193950025381893121, 0.1495959888165767320815017, 0.1246289712555338720524763, 0.0951585116824927848099251, 0.0622535239386478928628438, 0.0271524594117540948517806]
+			];
+	
+			var x = abscissas[n - 2];
+			var w = weights[n - 2];
+	
+			var A = (b - a) * 0.5;
+			var B = A + a;
+			var i = 0;
+			var m = (n + 1) >> 1;
+			var sum = n & 1 ? w[i++] * f(B) : 0;
+			while (i < m) {
+				var Ax = A * x[i];
+				sum += w[i++] * (f(B + Ax) + f(B - Ax));
+			}
+			return A * sum;
+		},
+
 		clamp: function (value, min, max) {
 			return value < min ? min : value > max ? max : value;
 		},
 
 		solveCubic: function (a, b, c, d, roots, min, max) {
-			var f = Numerical.getNormalizationFactor(abs(a), abs(b), abs(c), abs(d));
+			var f = Numerical.getNormalizationFactor(Math.abs(a), Math.abs(b), Math.abs(c), Math.abs(d));
 			if (f) {
 				a *= f;
 				b *= f;
@@ -1556,27 +1770,27 @@
 				q = c2 * x + d;
 			}
 
-			if (Math.abs(a) < EPSILON) {
+			if (Math.abs(a) < Numerical.EPSILON) {
 				a = b;
 				b1 = c;
 				c2 = d;
 				x = Infinity;
-			} else if (Math.abs(d) < EPSILON) {
+			} else if (Math.abs(d) < Numerical.EPSILON) {
 				b1 = b;
 				c2 = c;
 				x = 0;
 			} else {
 				evaluate(-(b / a) / 3);
 				var t = q / a,
-					r = pow(Math.abs(t), 1 / 3),
+					r = Math.pow(Math.abs(t), 1 / 3),
 					s = t < 0 ? -1 : 1,
 					td = -qd / a,
-					rd = td > 0 ? 1.324717957244746 * Math.max(r, sqrt(td)) : r,
+					rd = td > 0 ? 1.324717957244746 * Math.max(r, Math.sqrt(td)) : r,
 					x0 = x - s * rd;
 				if (x0 !== x) {
 					do {
 						evaluate(x0);
-						x0 = qd === 0 ? x : x - q / qd / (1 + MACHINE_EPSILON);
+						x0 = qd === 0 ? x : x - q / qd / (1 + Numerical.MACHINE_EPSILON);
 					} while (s * x0 > s * x);
 					if (Math.abs(a) * x * x > Math.abs(d / x)) {
 						c2 = -d / x;
@@ -1588,21 +1802,21 @@
 			var boundless = min == null;
 			if (isFinite(x) && (count === 0
 				|| count > 0 && x !== roots[0] && x !== roots[1])
-				&& (boundless || x > min - EPSILON && x < max + EPSILON))
+				&& (boundless || x > min - Numerical.EPSILON && x < max + Numerical.EPSILON))
 				roots[count++] = boundless ? x : Numerical.clamp(x, min, max);
 			return count;
 		},
 
 		solveQuadratic: function (a, b, c, roots, min, max) {
 			var x1, x2 = Infinity;
-			if (Math.abs(a) < EPSILON) {
-				if (Math.abs(b) < EPSILON)
-					return Math.abs(c) < EPSILON ? -1 : 0;
+			if (Math.abs(a) < Numerical.EPSILON) {
+				if (Math.abs(b) < Numerical.EPSILON)
+					return Math.abs(c) < Numerical.EPSILON ? -1 : 0;
 				x1 = -c / b;
 			} else {
 				b *= -0.5;
 				var D = Numerical.getDiscriminant(a, b, c);
-				if (D && Math.abs(D) < MACHINE_EPSILON) {
+				if (D && Math.abs(D) < Numerical.MACHINE_EPSILON) {
 					var f = Numerical.getNormalizationFactor(Math.abs(a), Math.abs(b), Math.abs(c));
 					if (f) {
 						a *= f;
@@ -1611,7 +1825,7 @@
 						D = Numerical.getDiscriminant(a, b, c);
 					}
 				}
-				if (D >= -MACHINE_EPSILON) {
+				if (D >= -Numerical.MACHINE_EPSILON) {
 					var Q = D < 0 ? 0 : Math.sqrt(D),
 						R = b + (b < 0 ? -Q : Q);
 					if (R === 0) {
@@ -1625,8 +1839,8 @@
 			}
 			var count = 0,
 				boundless = min == null,
-				minB = min - EPSILON,
-				maxB = max + EPSILON;
+				minB = min - Numerical.EPSILON,
+				maxB = max + Numerical.EPSILON;
 			if (isFinite(x1) && (boundless || x1 > minB && x1 < maxB))
 				roots[count++] = boundless ? x1 : Numerical.clamp(x1, min, max);
 			if (x2 !== x1
