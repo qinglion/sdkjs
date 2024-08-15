@@ -3768,10 +3768,42 @@ CInlineLevelSdt.prototype.CorrectSingleLineFormContent = function()
 };
 CInlineLevelSdt.prototype.fillContentWithDataBinding = function(content)
 {
-	let run = new AscWord.CRun();
-	run.AddText(content);
-	this.ClearContent();
-	this.AddToContent(0, run);
+	let logicDocument = this.GetLogicDocument();
+
+	if (this.IsCheckBox())
+	{
+		let checkBoxPr = new AscWord.CSdtCheckBoxPr();
+
+		if (content === "true" || content === "1")
+			checkBoxPr.SetChecked(true);
+		else if (content === "false" || content === "0")
+			checkBoxPr.SetChecked(false);
+
+		this.SetCheckBoxPr(checkBoxPr)
+	}
+	else if (this.IsDatePicker())
+	{
+		let datePr = new AscWord.CSdtDatePickerPr();
+		datePr.SetFullDate(content);
+		this.SetDatePickerPr(datePr);
+		this.private_UpdateDatePickerContent();
+	}
+	else if (this.IsDropDownList() || this.IsComboBox() || this.Pr.Text === true)
+	{
+		let oPar = new Paragraph();
+		let oRun = new ParaRun();
+		oPar.Add(oRun)
+		oRun.AddText(content);
+
+		this.SetParagraph(oPar);
+	}
+	else
+	{
+		let customXmlManager	= logicDocument.getCustomXmlManager();
+		let arrContent			= customXmlManager.proceedLinearXMl(content);
+
+		this.SetParagraph(arrContent[0]);
+	}
 };
 
 

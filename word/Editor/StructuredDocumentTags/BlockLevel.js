@@ -562,6 +562,12 @@ CBlockLevelSdt.prototype.Remove = function(nCount, isRemoveWholeElement, bRemove
 		return true;
 	}
 
+	if (this.Pr.DataBinding)
+	{
+		let CustomManager = this.LogicDocument.getCustomXmlManager();
+		CustomManager.setContentByDataBinding(this.Pr.DataBinding, this, true);
+	}
+
 	return bResult;
 };
 CBlockLevelSdt.prototype.Is_Empty = function()
@@ -600,7 +606,7 @@ CBlockLevelSdt.prototype.Add = function(oParaItem)
 		var Item     = this.Content.Content[nContentPos];
 
 		let CustomManager = this.LogicDocument.getCustomXmlManager();
-		CustomManager.setContentByDataBinding(this.Pr.DataBinding, Item.GetText());
+		CustomManager.setContentByDataBinding(this.Pr.DataBinding, this);
 	}
 
 	if (isRemoveWrapper)
@@ -1578,8 +1584,12 @@ CBlockLevelSdt.prototype.fillContentWithDataBinding = function(content)
 	if (this.IsCheckBox())
 	{
 		let checkBoxPr = new AscWord.CSdtCheckBoxPr();
+
 		if (content === "true" || content === "1")
 			checkBoxPr.SetChecked(true);
+		else if (content === "false" || content === "0")
+			checkBoxPr.SetChecked(false);
+
 		this.SetCheckBoxPr(checkBoxPr)
 	}
 	else if (this.IsDatePicker())
@@ -1601,116 +1611,11 @@ CBlockLevelSdt.prototype.fillContentWithDataBinding = function(content)
 	}
 	else
 	{
-		content = content.replaceAll("&lt;", "<");
-		content = content.replaceAll("&gt;", ">");
-		content = content.replaceAll("<?xml version=\"1.0\" standalone=\"yes\"?>", "");
-		content = content.replaceAll("<?mso-application progid=\"Word.Document\"?>", "");
-		let zLib = new AscCommon.ZLib;
-		zLib.create();
-		let nPos = 0;
-
-		zLib.addFile('[Content_Types].xml', new TextEncoder("utf-8").encode('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
-			'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
-			'<Default Extension="wmf" ContentType="image/x-wmf"/>' +
-			'<Default Extension="png" ContentType="image/png"/>' +
-			'<Default Extension="jpeg" ContentType="image/jpeg"/>' +
-			'<Default Extension="xml" ContentType="application/xml"/>' +
-			'<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
-			'<Default Extension="bin" ContentType="application/vnd.openxmlformats-officedocument.oleObject"/>' +
-			'<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>' +
-			'<Override PartName="/word/fontTable.xml"' +
-			'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.fontTable+xml"/>' +
-			'<Override PartName="/word/styles.xml"' +
-			'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
-			'<Override PartName="/word/document.xml"' +
-			'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
-			'<Override PartName="/word/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>' +
-			'<Override PartName="/word/endnotes.xml"' +
-			'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.endnotes+xml"/>' +
-			'<Override PartName="/word/webSettings.xml"' +
-			'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.webSettings+xml"/>' +
-			'<Override PartName="/word/glossary/webSettings.xml"' +
-			'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.webSettings+xml"/>' +
-			'<Override PartName="/word/glossary/fontTable.xml"' +
-			'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.fontTable+xml"/>' +
-			'<Override PartName="/word/glossary/settings.xml"' +
-			'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/>' +
-			'<Override PartName="/docProps/app.xml"' +
-			'ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>' +
-			'<Override PartName="/word/footnotes.xml"' +
-			'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml"/>' +
-			'<Override PartName="/word/settings.xml"' +
-			'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/>' +
-			'<Override PartName="/word/glossary/styles.xml"' +
-			'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
-			'<Override PartName="/word/glossary/document.xml"' +
-			'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.glossary+xml"/>' +
-			'<Override PartName="/customXml/itemProps1.xml"' +
-			'ContentType="application/vnd.openxmlformats-officedocument.customXmlProperties+xml"/>' +
-			'</Types>'));
-
-		while (true)
-		{
-			let nStartPos = nPos = content.indexOf('<pkg:part', nPos);
-
-			if (!nStartPos || nStartPos === -1)
-				break;
-			let nEndPos = nPos = content.indexOf('</pkg:part>', nStartPos);
-
-			let strText = content.substring(nStartPos, nEndPos);
-
-			let nPosStartName = strText.indexOf('name="', 0) + 'name="'.length;
-			let nPosEndName = strText.indexOf('"', nPosStartName);
-			let name = strText.substring(nPosStartName, nPosEndName);
-
-			let nDataStartPos = strText.indexOf('<pkg:xmlData>', 0);
-			let nDataEndPos;
-			if (nDataStartPos !== -1)
-			{
-				nDataStartPos = nDataStartPos + '<pkg:xmlData>'.length;
-				nDataEndPos = strText.indexOf('</pkg:xmlData>', nDataStartPos);
-			}
-			else
-			{
-				nDataStartPos = strText.indexOf('<pkg:binaryData>', 0);
-				if (nDataStartPos !== -1)
-					nDataStartPos += '<pkg:binaryData>'.length;
-				nDataEndPos = strText.indexOf('</pkg:binaryData>', nDataStartPos);
-			}
-
-			if (nStartPos === -1 || nEndPos === -1)
-				continue;
-
-			let data = strText.substring(nDataStartPos, nDataEndPos).trim();
-			if (name[0] === "/")
-				name = name.substring(1, name.length);
-			zLib.addFile(name, new TextEncoder("utf-8").encode(data));
-		}
-
-		let arr = zLib.save();
-
-		let draw = logicDocument.DrawingDocument;
-		let Doc = new CDocument(draw, false);
-
-		let xmlParserContext = new AscCommon.XmlParserContext();
-		xmlParserContext.DrawingDocument = draw;
-
-		let jsZlib = new AscCommon.ZLib();
-		if (!jsZlib.open(arr)) {
-			return false;
-		}
-
-		let reader, openParams = {};
-		let oBinaryFileReader = new AscCommonWord.BinaryFileReader(Doc, openParams);
-		oBinaryFileReader.PreLoadPrepare();
-
-		Doc.fromZip(jsZlib, xmlParserContext, oBinaryFileReader.oReadResult);
-
-		oBinaryFileReader.PostLoadPrepare(xmlParserContext);
-		jsZlib.close();
+		let customXmlManager	= logicDocument.getCustomXmlManager();
+		let arrContent			= customXmlManager.proceedLinearXMl(content);
 
 		this.Content.RemoveFromContent(0, this.Content.Content.length);
-		this.Content.AddContent(Doc.Content);
+		this.Content.AddContent(arrContent);
 		this.Content.Recalculate(true);
 	}
 };

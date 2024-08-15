@@ -43,6 +43,8 @@
 	{
 		this.document = document;
 		this.xml = [];
+		// check
+		this.RichTextCC = [];
 	}
 	CustomXmlManager.prototype.add = function(customXml)
 	{
@@ -119,10 +121,22 @@
 
 			if (dataBinding.storeItemID === customXml.itemId)
 			{
-				let xPath = dataBinding.xpath;
+				let xPath	= dataBinding.xpath;
+				let content	= this.findElementsByXPath(customXml.content, xPath);
 
-				let content = this.findElementsByXPath(customXml.content, xPath);
-				content.textContent = data;
+				if (data instanceof AscCommonWord.CBlockLevelSdt)
+				{
+					// this.updateRichTextCustomXML(data)
+					// пока при каждом изменении Rich Text записывать изменения не эффективно
+					// запишем какой контент контрол нужно изменить, а обновим при сохранении
+
+					if (!this.RichTextCC.includes(data))
+						this.RichTextCC.push(data);
+
+					return;
+				}
+
+				content.SetTextContent(data);
 			}
 		}
 	};
@@ -172,12 +186,9 @@
 			this.GetStringFromBuffer = function ()
 			{
 				let buffer	= this.GetBuffer();
-				let arr		= Array.prototype.slice.call(buffer.data.slice(1, buffer.pos));
-				let str		= String.fromCharCode.apply(null, arr);
+				let str		= AscCommon.UTF8ArrayToString(buffer.data, 1);
 				str			= str.replaceAll("&quot;", "\"");
 				str			= str.replaceAll("&amp;", "&");
-
-				this.str = str;
 				return str;
 			}
 			this.GetBuffer = function ()
@@ -228,13 +239,17 @@
 					}
 
 					if (current.textContent)
-						writer.WriteXmlStringEncode(current.textContent.toString().trim());
+						writer.WriteXmlString(current.textContent.toString().trim());
 
 					writer.WriteXmlNodeEnd(current.name);
 				}
 
 				Write(this);
 				return writer;
+			}
+			this.SetTextContent = function (str)
+			{
+				this.textContent = str;
 			}
 		}
 
@@ -266,8 +281,7 @@
 
 		return oParContent;
 	};
-
-	CustomXmlManager.prototype.getCustomXMLString = function(customXml)
+	CustomXmlManager.prototype.updateRichTextCustomXML = function (oCC)
 	{
 		function replaceSubstring(originalString, startPoint, endPoint, insertionString)
 		{
@@ -280,103 +294,193 @@
 			return prefix + insertionString + suffix;
 		}
 
-		let oContent					= customXml.oContentLink;
+		AscCommon.History.TurnOff();
 
-		if (oContent.IsCheckBox() || oContent.IsDatePicker() || oContent.IsPicture() || oContent.IsDropDownList() || oContent.IsComboBox() || oContent.Pr.Text)
+		let doc 						= new AscWord.CDocument(null, false);
+		let oSdtContent					= oCC.GetContent();
+		let jsZlib						= new AscCommon.ZLib();
+
+		doc.ReplaceContent(oSdtContent.Content);
+		jsZlib.create();
+		doc.toZip(jsZlib, new AscCommon.XmlWriterContext(AscCommon.c_oEditorId.Word));
+
+		let archive 					= jsZlib.save();
+		let openDoc						= new AscCommon.openXml.OpenXmlPackage(jsZlib, null);
+		let outputUString				= "<?xml version=\"1.0\" standalone=\"yes\"?><?mso-application progid=\"Word.Document\"?><pkg:package xmlns:pkg=\"http://schemas.microsoft.com/office/2006/xmlPackage\">";
+		let arrPath						= jsZlib.getPaths();
+
+		arrPath.forEach(function(path)
 		{
-			return customXml.content.GetStringFromBuffer();
-		}
-		else
-		{
-			let writer						= new AscCommon.CMemory();
-			writer.context					= new AscCommon.XmlWriterContext(AscCommon.c_oEditorId.Word);
-			writer.context.docSaveParams	= new DocSaveParams(undefined, undefined, false, undefined);
+			if ((path === "_rels/.rels" || path === "word/document.xml" || path === "word/_rels/document.xml.rels") && !path.includes("glossary"))
+			{
+				let ctfBytes	= jsZlib.getFile(path);
+				let ctfText		= AscCommon.UTF8ArrayToString(ctfBytes, 0, ctfBytes.length);
+				let type		= openDoc.getContentType(path);
 
-			let drawDoc						= new AscCommon.CDrawingDocument();
-			drawDoc.m_oWordControl			= drawDoc;
-			drawDoc.m_oWordControl.m_oApi	= window.editor;
-			let doc 						= new AscWord.CDocument(drawDoc);
-
-			let oSdtContent = oContent.GetContent();
-			doc.ReplaceContent(oSdtContent.Content);
-
-			let jsZlib						= new AscCommon.ZLib();
-			jsZlib.create();
-			doc.toZip(jsZlib, new AscCommon.XmlWriterContext(AscCommon.c_oEditorId.Word));
-
-			let data 						= jsZlib.save();
-			let jsZlib2						= new AscCommon.ZLib();
-			jsZlib2.open(data);
-			var openDoc						= new AscCommon.openXml.OpenXmlPackage(jsZlib2, null);
-
-			let outputUString = "<?xml version=\"1.0\" standalone=\"yes\"?>\n" +
-				"<?mso-application progid=\"Word.Document\"?>\n" +
-				"<pkg:package xmlns:pkg=\"http://schemas.microsoft.com/office/2006/xmlPackage\">";
-
-			jsZlib2.files.forEach(function(path) {
-				if ((path === "_rels/.rels" || path === "word/document.xml" || path === "word/_rels/document.xml.rels") && !path.includes("glossary"))
+				if (path === "word/_rels/document.xml.rels")
 				{
-					let ctfBytes	= jsZlib2.getFile(path);
-					let ctfText		= AscCommon.UTF8ArrayToString(ctfBytes, 0, ctfBytes.length);
-					let type		= openDoc.getContentType(path);
-
-					if (path === "word/_rels/document.xml.rels")
+					let text = '';
+					let arrRelationships = openDoc.getRelationships();
+					for (let i = 0; i < arrRelationships.length; i++)
 					{
-						let text = '';
-						let arrRelationships = openDoc.getRelationships();
-						for (let i = 0; i < arrRelationships.length; i++)
+						let relation	= arrRelationships[i];
+						let relId		= relation.relationshipId;
+						let relType		= relation.relationshipType;
+						let relTarget	= relation.target;
+						if(i===0)
 						{
-							let relation	= arrRelationships[i];
-							let relId		= relation.relationshipId;
-							let relType		= relation.relationshipType;
-							let relTarget	= relation.target;
-							if(i===0)
-							{
-								relType		= relType.replace("relationships\/officeDocument", "relationships\/styles");
-								relTarget	= relTarget.replace("word/document.xml", "styles.xml");
-							}
-
-							text			+= "<Relationship Id=\"" + relId + "\" Type=\"" + relType + "\" Target=\"" + relTarget + "\"/>"
+							relType		= relType.replace("relationships\/officeDocument", "relationships\/styles");
+							relTarget	= relTarget.replace("word/document.xml", "styles.xml");
 						}
 
-						let nStart	= ctfText.indexOf("<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">", 0) + "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">".length;
-						let nEnd	= ctfText.indexOf("</Relationships>", nStart) - 1;
-						ctfText		= replaceSubstring(ctfText, nStart, nEnd, text);
+						text			+= "<Relationship Id=\"" + relId + "\" Type=\"" + relType + "\" Target=\"" + relTarget + "\"/>"
 					}
 
-					outputUString += "<pkg:part pkg:name=\"/" + path + "\" " +
-						"pkg:contentType=\"" + type +"\"> " +
-						"<pkg:xmlData>" + ctfText.replace("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>", "").replace("\n", "") + "</pkg:xmlData></pkg:part>"
+					let nStart	= ctfText.indexOf("<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">", 0) + "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">".length;
+					let nEnd	= ctfText.indexOf("</Relationships>", nStart) - 1;
+					ctfText		= replaceSubstring(ctfText, nStart, nEnd, text);
 				}
-			});
 
-			//check diffrences between main write and this, when save main document higlight write correct
-			//	outputUString = outputUString.replace("FFFF00", "yellow");
+				outputUString += "<pkg:part pkg:name=\"/" + path + "\" " +
+					"pkg:contentType=\"" + type +"\"> " +
+					"<pkg:xmlData>" + ctfText.replace("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>", "").replace("\n", "") + "</pkg:xmlData></pkg:part>"
+			}
+		});
 
+		//check diffrences between main write and this, when save main document higlight write correct
+		//	outputUString = outputUString.replace("FFFF00", "yellow");
 
-			//need get contentType from openXml.Types
-			outputUString = outputUString.replace("pkg:contentType=\"application/xml\"", "pkg:contentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml\"");
-			outputUString = outputUString.replace("pkg:contentType=\"application/vnd.openxmlformats-package.relationships+xml\"", "pkg:contentType=\"application/vnd.openxmlformats-package.relationships+xml\" pkg:padding=\"512\"")
-			outputUString = outputUString.replace("\"/word/_rels/document.xml.rels\"pkg:contentType=\"application/vnd.openxmlformats-package.relationships+xml\"", "\"/word/_rels/document.xml.rels\"pkg:contentType=\"application/vnd.openxmlformats-package.relationships+xml\" pkg:padding=\"256\"")
+		//need get contentType from openXml.Types
+		outputUString	= outputUString.replace("pkg:contentType=\"application/xml\"", "pkg:contentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml\"");
+		outputUString	= outputUString.replace("pkg:contentType=\"application/vnd.openxmlformats-package.relationships+xml\"", "pkg:contentType=\"application/vnd.openxmlformats-package.relationships+xml\" pkg:padding=\"512\"")
+		outputUString	= outputUString.replace("\"/word/_rels/document.xml.rels\"pkg:contentType=\"application/vnd.openxmlformats-package.relationships+xml\"", "\"/word/_rels/document.xml.rels\"pkg:contentType=\"application/vnd.openxmlformats-package.relationships+xml\" pkg:padding=\"256\"")
+		outputUString	+= "</pkg:package>";
+		outputUString	= outputUString.replaceAll("<", "&lt;");
+		outputUString	= outputUString.replaceAll(">", "&gt;");
 
-			outputUString += "</pkg:package>";
+		AscCommon.History.TurnOn();
+		this.setContentByDataBinding(oCC.Pr.DataBinding, outputUString);
+	};
+	CustomXmlManager.prototype.proceedLinearXMl = function (content)
+	{
+		content					= content.replaceAll("&lt;", "<");
+		content					= content.replaceAll("&gt;", ">");
+		content					= content.replaceAll("<?xml version=\"1.0\" standalone=\"yes\"?>", "");
+		content					= content.replaceAll("<?mso-application progid=\"Word.Document\"?>", "");
 
-			//create flat xml
-			outputUString = outputUString.replaceAll("<", "&lt;");
-			outputUString = outputUString.replaceAll(">", "&gt;");
+		let zLib				= new AscCommon.ZLib;
+		zLib.create();
+		zLib.addFile('[Content_Types].xml', new TextEncoder("utf-8").encode('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+			'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+			'<Default Extension="wmf" ContentType="image/x-wmf"/>' +
+			'<Default Extension="png" ContentType="image/png"/>' +
+			'<Default Extension="jpeg" ContentType="image/jpeg"/>' +
+			'<Default Extension="xml" ContentType="application/xml"/>' +
+			'<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+			'<Default Extension="bin" ContentType="application/vnd.openxmlformats-officedocument.oleObject"/>' +
+			'<Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/>' +
+			'<Override PartName="/word/fontTable.xml"' +
+			'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.fontTable+xml"/>' +
+			'<Override PartName="/word/styles.xml"' +
+			'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
+			'<Override PartName="/word/document.xml"' +
+			'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>' +
+			'<Override PartName="/word/theme/theme1.xml" ContentType="application/vnd.openxmlformats-officedocument.theme+xml"/>' +
+			'<Override PartName="/word/endnotes.xml"' +
+			'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.endnotes+xml"/>' +
+			'<Override PartName="/word/webSettings.xml"' +
+			'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.webSettings+xml"/>' +
+			'<Override PartName="/word/glossary/webSettings.xml"' +
+			'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.webSettings+xml"/>' +
+			'<Override PartName="/word/glossary/fontTable.xml"' +
+			'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.fontTable+xml"/>' +
+			'<Override PartName="/word/glossary/settings.xml"' +
+			'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/>' +
+			'<Override PartName="/docProps/app.xml"' +
+			'ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>' +
+			'<Override PartName="/word/footnotes.xml"' +
+			'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml"/>' +
+			'<Override PartName="/word/settings.xml"' +
+			'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml"/>' +
+			'<Override PartName="/word/glossary/styles.xml"' +
+			'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>' +
+			'<Override PartName="/word/glossary/document.xml"' +
+			'ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.glossary+xml"/>' +
+			'<Override PartName="/customXml/itemProps1.xml"' +
+			'ContentType="application/vnd.openxmlformats-officedocument.customXmlProperties+xml"/>' +
+			'</Types>'));
 
-			let str = customXml.content.GetStringFromBuffer();
-			let nStartIndex = str.indexOf("<simpleText>") + '<simpleText>'.length;
-			let nEndIndex = str.indexOf("/pkg:package&gt;") + '/pkg:package&gt;'.length ;
+		let nPos = 0;
+		while (true)
+		{
+			let nStartPos = nPos = content.indexOf('<pkg:part', nPos);
 
-			str = replaceSubstring(str, nStartIndex, nEndIndex, outputUString);
+			if (!nStartPos || nStartPos === -1)
+				break;
 
-			// nStartIndex = str.indexOf("<simpleText>") + '<simpleText>'.length;
-			// nEndIndex = str.indexOf("/pkg:package&gt;") + '/pkg:package&gt;'.length ;
-			//customXml.oContentLink.Pr.DataBinding.recalculateCheckSum(str.substring(nStartIndex, nEndIndex));
+			let nEndPos			= nPos = content.indexOf('</pkg:part>', nStartPos);
+			let strText			= content.substring(nStartPos, nEndPos);
 
-			return str;
+			let nPosStartName	= strText.indexOf('name="', 0) + 'name="'.length;
+			let nPosEndName		= strText.indexOf('"', nPosStartName);
+			let name			= strText.substring(nPosStartName, nPosEndName);
+
+			let nDataStartPos	= strText.indexOf('<pkg:xmlData>', 0);
+			let nDataEndPos;
+
+			if (nDataStartPos !== -1)
+			{
+				nDataStartPos	= nDataStartPos + '<pkg:xmlData>'.length;
+				nDataEndPos		= strText.indexOf('</pkg:xmlData>', nDataStartPos);
+			}
+			else
+			{
+				nDataStartPos	= strText.indexOf('<pkg:binaryData>', 0);
+				if (nDataStartPos !== -1)
+					nDataStartPos += '<pkg:binaryData>'.length;
+				nDataEndPos		= strText.indexOf('</pkg:binaryData>', nDataStartPos);
+			}
+
+			if (nStartPos === -1 || nEndPos === -1)
+				continue;
+
+			let data = strText.substring(nDataStartPos, nDataEndPos).trim();
+
+			if (name[0] === "/")
+				name = name.substring(1, name.length);
+
+			zLib.addFile(name, new TextEncoder("utf-8").encode(data));
 		}
+
+		let arr					= zLib.save();
+		let draw				= this.document.DrawingDocument;
+		let Doc					= new CDocument(draw, false);
+		let xmlParserContext	= new AscCommon.XmlParserContext();
+		let jsZlib				= new AscCommon.ZLib();
+
+		xmlParserContext.DrawingDocument = draw;
+
+		if (!jsZlib.open(arr))
+			return false;
+
+		let oBinaryFileReader	= new AscCommonWord.BinaryFileReader(Doc, {});
+		oBinaryFileReader.PreLoadPrepare();
+
+		Doc.fromZip(jsZlib, xmlParserContext, oBinaryFileReader.oReadResult);
+
+		oBinaryFileReader.PostLoadPrepare(xmlParserContext);
+		jsZlib.close();
+
+		return Doc.Content;
+	}
+	CustomXmlManager.prototype.getCustomXMLString = function(customXml)
+	{
+		for (let i = 0; i < this.RichTextCC.length; i++)
+		{
+			this.updateRichTextCustomXML(this.RichTextCC[i]);
+		}
+
+		return customXml.content.GetStringFromBuffer();
 	};
 	
 	//--------------------------------------------------------export----------------------------------------------------
