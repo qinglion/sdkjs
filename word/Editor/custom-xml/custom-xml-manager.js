@@ -67,33 +67,48 @@
 
 		let currentElement = root;
 
-		for (let i = 0; i < parts.length; i++) {
+		for (let i = 0; i < parts.length; i++)
+		{
 			let part = parts[i];
-			let namespaceAndTag = part.split('[')[0];
-			let index = parseInt(part.split('[')[1].slice(0, -1)) - 1;
-			let tagName = namespaceAndTag.includes(":") ? namespaceAndTag.split(':')[1] : namespaceAndTag;
+			let namespaceAndTag;
+			let index;
+			let tagName;
+
+			if (part.includes("@"))
+			{
+				let strAttributeName = part.slice(1);
+				return {content: currentElement, attribute: strAttributeName};
+			}
+			if (part.includes("["))
+			{
+				namespaceAndTag				= part.split('[')[0];
+				let partBeforeCloseBrack	= part.split(']')[0];
+				index						= partBeforeCloseBrack.slice(-1) - 1;
+			}
+			else
+			{
+				namespaceAndTag				= part;
+				index						= 0;
+			}
+
+			tagName = namespaceAndTag.includes(":") ? namespaceAndTag.split(':')[1] : namespaceAndTag;
 
 			let matchingChildren = currentElement.content.filter(function (child) {
 				let arr = child.name.split(":");
 				if (arr.length > 1)
-				{
 					return arr[1] === tagName;
-				}
 				else
-				{
 					return arr[0] === tagName;
-				}
-
 			});
 
 			if (matchingChildren.length <= index) {
-				return null; // Элемент не найден
+				break; // Элемент не найден
 			}
 
 			currentElement = matchingChildren[index];
 		}
 
-		return currentElement;
+		return {content: currentElement, attribute: undefined};
 	}
 	CustomXmlManager.prototype.getContentByDataBinding = function(dataBinding, oContentLink)
 	{
@@ -106,10 +121,15 @@
 			// этот атрибут может быть опущен, так искать плохо
 			if (dataBinding.storeItemID === customXml.itemId)
 			{
-				let xPath = dataBinding.xpath;
+				let xPath			= dataBinding.xpath;
+				let oFindEl			= this.findElementsByXPath(customXml.content, xPath);
+				let content			= oFindEl.content;
+				let strAttribute	= oFindEl.attribute;
 
-				let content = this.findElementsByXPath(customXml.content, xPath);
-				return content.textContent;
+				if (undefined !== strAttribute)
+					return content.attribute[strAttribute];
+				else
+					return content.textContent;
 			}
 		}
 	};
@@ -121,22 +141,27 @@
 
 			if (dataBinding.storeItemID === customXml.itemId)
 			{
-				let xPath	= dataBinding.xpath;
-				let content	= this.findElementsByXPath(customXml.content, xPath);
+				let xPath			= dataBinding.xpath;
+				let oFindEl			= this.findElementsByXPath(customXml.content, xPath);
+				let content			= oFindEl.content;
+				let strAttribute	= oFindEl.attribute;
 
 				if (data instanceof AscCommonWord.CBlockLevelSdt)
 				{
-					// this.updateRichTextCustomXML(data)
+					this.updateRichTextCustomXML(data)
+
+
 					// пока при каждом изменении Rich Text записывать изменения не эффективно
 					// запишем какой контент контрол нужно изменить, а обновим при сохранении
-
-					if (!this.RichTextCC.includes(data))
-						this.RichTextCC.push(data);
-
+					// if (!this.RichTextCC.includes(data))
+					// 	this.RichTextCC.push(data);
 					return;
 				}
 
-				content.SetTextContent(data);
+				if (strAttribute)
+					content.SetAttribute(strAttribute, data);
+				else
+					content.SetTextContent(data);
 			}
 		}
 	};
@@ -251,6 +276,10 @@
 			{
 				this.textContent = str;
 			}
+			this.SetAttribute = function (attribute, value)
+			{
+				this.attribute[attribute] = value;
+			}
 		}
 
 		let oParContent = oCurrentContent = new CustomXMLItem(null);
@@ -294,10 +323,16 @@
 			return prefix + insertionString + suffix;
 		}
 
-		AscCommon.History.TurnOff();
+		let isOffHistory = false;
+
+		if (AscCommon.History.IsOn() == true)
+		{
+			AscCommon.History.TurnOff();
+			isOffHistory = true;
+		}
 
 		let doc 						= new AscWord.CDocument(null, false);
-		let oSdtContent					= oCC.GetContent();
+		let oSdtContent					= oCC.GetContent().Copy();
 		let jsZlib						= new AscCommon.ZLib();
 
 		doc.ReplaceContent(oSdtContent.Content);
@@ -358,15 +393,25 @@
 		outputUString	= outputUString.replaceAll("<", "&lt;");
 		outputUString	= outputUString.replaceAll(">", "&gt;");
 
-		AscCommon.History.TurnOn();
+		if (isOffHistory)
+			AscCommon.History.TurnOn();
+
+		doc.Content = [];
 		this.setContentByDataBinding(oCC.Pr.DataBinding, outputUString);
 	};
 	CustomXmlManager.prototype.proceedLinearXMl = function (content)
 	{
+
 		content					= content.replaceAll("&lt;", "<");
 		content					= content.replaceAll("&gt;", ">");
 		content					= content.replaceAll("<?xml version=\"1.0\" standalone=\"yes\"?>", "");
 		content					= content.replaceAll("<?mso-application progid=\"Word.Document\"?>", "");
+
+		// при записи в атрибут больше проблем, изменить подход если в будущем еще будут проблемы c html entry
+		content					= content.replaceAll("&#xA;", "");
+		content					= content.replaceAll("&amp;", "&");
+		content					= content.replaceAll("&quot;", "\"");
+		content					= content.replaceAll("&#039;", "'");
 
 		let zLib				= new AscCommon.ZLib;
 		zLib.create();

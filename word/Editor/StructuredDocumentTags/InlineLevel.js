@@ -150,6 +150,8 @@ CInlineLevelSdt.prototype.Add = function(Item)
 		oNextForm.SetThisElementCurrentInParagraph();
 		oNextForm.MoveCursorToStartPos();
 	}
+
+	this.SetContentByDataBinding(this.Pr.Text ? this.Content[0].GetText() : this);
 	
 	if (!this.IsForm() && this.IsContentControlTemporary())
 		this.RemoveContentControlWrapper();
@@ -907,6 +909,8 @@ CInlineLevelSdt.prototype.Remove = function(nDirection, bOnAddText)
 		this.private_ReplaceContentWithPlaceHolder();
 		result = true;
 	}
+
+	this.SetContentByDataBinding(this.Content[0].GetText());
 
 	return result;
 };
@@ -1993,6 +1997,7 @@ CInlineLevelSdt.prototype.ToggleCheckBox = function(isChecked)
 		return;
 
 	this.SetCheckBoxChecked(!this.Pr.CheckBox.Checked);
+	this.SetContentByDataBinding(this.Pr.CheckBox.Checked ? "true" : "false");
 };
 CInlineLevelSdt.prototype.SetCheckBoxChecked = function(isChecked)
 {
@@ -2374,6 +2379,8 @@ CInlineLevelSdt.prototype.SelectListItem = function(sValue)
 				oRun.AddText(sText);
 		}
 	}
+
+	this.SetContentByDataBinding(sText);
 };
 CInlineLevelSdt.prototype.private_UpdateListContent = function()
 {
@@ -2491,11 +2498,25 @@ CInlineLevelSdt.prototype.private_UpdateDatePickerContent = function()
 
 	if (oRun)
 		oRun.AddText(sText);
-	
+
+	this.SetContentByDataBinding(sText);
+
 	if (isTemporary)
 	{
 		this.Pr.Temporary = true;
 		this.RemoveContentControlWrapper();
+	}
+};
+CInlineLevelSdt.prototype.SetContentByDataBinding = function (inputData)
+{
+	if (this.Pr.DataBinding)
+	{
+		let oLogicDocument = this.GetParagraph().GetLogicDocument();
+		if (oLogicDocument)
+		{
+			let CustomManager = oLogicDocument.getCustomXmlManager();
+			CustomManager.setContentByDataBinding(this.Pr.DataBinding, inputData);
+		}
 	}
 };
 /**

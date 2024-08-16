@@ -562,11 +562,7 @@ CBlockLevelSdt.prototype.Remove = function(nCount, isRemoveWholeElement, bRemove
 		return true;
 	}
 
-	if (this.Pr.DataBinding)
-	{
-		let CustomManager = this.LogicDocument.getCustomXmlManager();
-		CustomManager.setContentByDataBinding(this.Pr.DataBinding, this, true);
-	}
+	this.SetContentByDataBinding(this);
 
 	return bResult;
 };
@@ -605,8 +601,10 @@ CBlockLevelSdt.prototype.Add = function(oParaItem)
 		var nContentPos = this.Content.CurPos.ContentPos;
 		var Item     = this.Content.Content[nContentPos];
 
-		let CustomManager = this.LogicDocument.getCustomXmlManager();
-		CustomManager.setContentByDataBinding(this.Pr.DataBinding, this);
+		if (this.Pr.Text)
+			this.SetContentByDataBinding(Item.GetText());
+		else
+			this.SetContentByDataBinding(this)
 	}
 
 	if (isRemoveWrapper)
@@ -2078,11 +2076,7 @@ CBlockLevelSdt.prototype.private_UpdateCheckBoxContent = function()
 		oRun.SetRFontsEastAsia({Index : -1, Name : this.Pr.CheckBox.UncheckedFont});
 	}
 
-	if (this.Pr.DataBinding)
-	{
-		let CustomManager = this.LogicDocument.getCustomXmlManager();
-		CustomManager.setContentByDataBinding(this.Pr.DataBinding, isChecked ? "true" : "false");
-	}
+	this.SetContentByDataBinding(isChecked ? "true" : "false");
 };
 /**
  * Проверяем, является ли данный класс специальным контейнером для картинки
@@ -2346,14 +2340,10 @@ CBlockLevelSdt.prototype.SelectListItem = function(sValue)
 			var oRun = this.private_UpdateListContent();
 			if (oRun)
 				oRun.AddText(sText);
-
-			if (this.Pr.DataBinding)
-			{
-				let CustomManager = this.LogicDocument.getCustomXmlManager();
-				CustomManager.setContentByDataBinding(this.Pr.DataBinding, sText);
-			}
 		}
 	}
+
+	this.SetContentByDataBinding(sText);
 };
 CBlockLevelSdt.prototype.private_UpdateListContent = function()
 {
@@ -2424,12 +2414,6 @@ CBlockLevelSdt.prototype.private_UpdateDatePickerContent = function()
 
 	var oRun;
 	var sText = this.Pr.Date.ToString();
-
-	if (this.Pr.DataBinding)
-	{
-		let CustomManager = this.LogicDocument.getCustomXmlManager();
-		CustomManager.setContentByDataBinding(this.Pr.DataBinding, sText);
-	}
 
 	if (this.LogicDocument && this.LogicDocument.IsTrackRevisions())
 	{
@@ -2504,6 +2488,16 @@ CBlockLevelSdt.prototype.private_UpdateDatePickerContent = function()
 
 	if (oRun)
 		oRun.AddText(sText);
+
+	this.SetContentByDataBinding(sText);
+};
+CBlockLevelSdt.prototype.SetContentByDataBinding = function (inputData)
+{
+	if (this.Pr.DataBinding)
+	{
+		let CustomManager = this.LogicDocument.getCustomXmlManager();
+		CustomManager.setContentByDataBinding(this.Pr.DataBinding, inputData);
+	}
 };
 CBlockLevelSdt.prototype.Document_Is_SelectionLocked = function(CheckType, bCheckInner)
 {
