@@ -63,11 +63,10 @@
 		this.index = props.index;
 		return this;
 	};
-	Segment.prototype.clone = function () {
-		const props = {
-			path: this.path,
-			index: this.index + 1
-		};
+	Segment.prototype.clone = function (insertToPath) {
+		const props = insertToPath
+			? { path: this.path, index: this.index + 1 }
+			: undefined;
 		return new Segment(this.point.clone(), this.handleIn.clone(), this.handleOut.clone(), props);
 	};
 	Segment.prototype.isEqual = function (other) {
@@ -92,6 +91,15 @@
 			this.path = null;
 			this.index = null;
 		}
+	};
+	Segment.prototype.getIndex = function () {
+		if (this.path && this.index === undefined) {
+			for (let i = 0, l = this.path.getSegments().length; i < l; i++) {
+				if (this.path.segments[i] === this)
+					this.index = i;
+			}
+		}
+		return this.index;
 	};
 
 	function Curve(segment1, segment2) {
@@ -147,16 +155,23 @@
 	};
 	Curve.prototype.getPrevious = function () {
 		var curves = this.path && this.path.getCurves();
-		return curves && (curves[this.segment1.index - 1]
-			|| this.path.closed && curves[curves.length - 1]) || null;
+		const index = this.getIndex();
+		return curves && (curves[index - 1] || this.path.closed && curves[curves.length - 1]) || null;
 	};
 	Curve.prototype.getIndex = function () {
-		return this.segment1.index;
+		let index = this.segment1.index || this.segment1.getIndex();
+		if (index === undefined && this.path) {
+			const curves = this.path.getCurves();
+			for (let i = 0, l = curves.length; i < l; i++) {
+				if (curves[i] === this) index = i;
+			}
+		}
+		return this.index = index;
 	};
 	Curve.prototype.getNext = function () {
 		var curves = this.path && this.path.getCurves();
-		return curves && (curves[this.segment1.index + 1]
-			|| this.path.closed && curves[0]) || null;
+		const index = this.getIndex();
+		return curves && (curves[index + 1] || this.path.closed && curves[0]) || null;
 	};
 	Curve.prototype.getLength = function () {
 		if (this.length == null) {
@@ -765,7 +780,14 @@
 		}
 		locations.splice(l, 0, loc);
 		return loc;
-	}
+	};
+	CurveLocation.expand = function (locations) {
+		var expanded = locations.slice();
+		for (var i = locations.length - 1; i >= 0; i--) {
+			CurveLocation.insert(expanded, locations[i].intersection, false);
+		}
+		return expanded;
+	};
 
 	function Path(segments /* Segment[] */, closed /* Bool */) {
 		const path = this;
@@ -796,6 +818,9 @@
 			this.length = length;
 		}
 		return this.length;
+	};
+	Path.prototype.getSegments = function () {
+		return this.segments;
 	};
 	Path.prototype.getFirstSegment = function () {
 		return this.segments[0];
@@ -1731,10 +1756,10 @@
 				[0.2025782419255612728806202, 0.1984314853271115764561183, 0.1861610000155622110268006, 0.1662692058169939335532009, 0.1395706779261543144478048, 0.1071592204671719350118695, 0.0703660474881081247092674, 0.0307532419961172683546284],
 				[0.1894506104550684962853967, 0.1826034150449235888667637, 0.1691565193950025381893121, 0.1495959888165767320815017, 0.1246289712555338720524763, 0.0951585116824927848099251, 0.0622535239386478928628438, 0.0271524594117540948517806]
 			];
-	
+
 			var x = abscissas[n - 2];
 			var w = weights[n - 2];
-	
+
 			var A = (b - a) * 0.5;
 			var B = A + a;
 			var i = 0;
@@ -1858,20 +1883,39 @@
 
 	// TEST CASE 1
 
-	const pause = window.pause = new CompoundPath([
-		new Path([
-			new Segment(new Point(100, 200)),
-			new Segment(new Point(100, 350)),
-			new Segment(new Point(130, 350)),
-			new Segment(new Point(130, 200)),
-		], true),
-		new Path([
-			new Segment(new Point(180, 200)),
-			new Segment(new Point(180, 350)),
-			new Segment(new Point(150, 350)),
-			new Segment(new Point(150, 200)),
-		], false)
-	]);
+	// const pause = window.pause = new CompoundPath([
+	// 	new Path([
+	// 		new Segment(new Point(100, 200)),
+	// 		new Segment(new Point(100, 350)),
+	// 		new Segment(new Point(130, 350)),
+	// 		new Segment(new Point(130, 200)),
+	// 	], true),
+	// 	new Path([
+	// 		new Segment(new Point(180, 200)),
+	// 		new Segment(new Point(180, 350)),
+	// 		new Segment(new Point(150, 350)),
+	// 		new Segment(new Point(150, 200)),
+	// 	], false)
+	// ]);
+
+	// const circle = window.circle = new Path([
+	// 	new Segment(new Point(100, 100), new Point(-55, 0), new Point(55, 0)),
+	// 	new Segment(new Point(200, 200), new Point(0, -55), new Point(0, 55)),
+	// 	new Segment(new Point(100, 300), new Point(55, 0), new Point(-55, 0)),
+	// 	new Segment(new Point(0, 200), new Point(0, 55), new Point(0, -55))
+	// ], true);
+
+	// const result = traceBoolean(pause, circle, 'exclude');
+	// console.log(result)
+
+	// TEST CASE 2
+
+	const selfInter = new Path([
+		new Segment(new Point(0, 0)),
+		new Segment(new Point(100, 0)),
+		new Segment(new Point(0, 100)),
+		new Segment(new Point(100, 100))
+	], true)
 
 	const circle = window.circle = new Path([
 		new Segment(new Point(100, 100), new Point(-55, 0), new Point(55, 0)),
@@ -1880,7 +1924,7 @@
 		new Segment(new Point(0, 200), new Point(0, 55), new Point(0, -55))
 	], true);
 
-	const result = traceBoolean(pause, circle, 'exclude');
+	const result = traceBoolean(selfInter, circle, 'exclude');
 	console.log(result)
 
 })(window);
