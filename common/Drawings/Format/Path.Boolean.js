@@ -117,6 +117,24 @@
 		}
 		return null;
 	};
+	Segment.prototype.getPath = function () {
+		return this.path || null;
+	};
+	Segment.prototype.getNext = function () {
+		var segments = this.path && this.path.getSegments();
+		return segments && (segments[this.index + 1] || this.path.closed && segments[0]) || null;
+	};
+	Segment.prototype.getPrevious = function () {
+		var segments = this.path && this.path.getSegments();
+		return segments && (segments[this.index - 1] || this.path.closed && segments[segments.length - 1]) || null;
+	};
+	Segment.prototype.isFirst = function () {
+		return !this.index;
+	};
+	Segment.prototype.isLast = function () {
+		var path = this.path;
+		return path && this.index === path.segments.length - 1 || false;
+	};
 
 	function Curve(segment1, segment2) {
 		this.segment1 = segment1;
@@ -131,6 +149,12 @@
 			new Point(this.segment2.point.x + this.segment2.handleIn.x, this.segment2.point.y + this.segment2.handleIn.y),
 			this.segment2.point.clone()
 		];
+	};
+	Curve.prototype.getPoint1 = function () {
+		return this.segment1.point;
+	};
+	Curve.prototype.getPoint2 = function () {
+		return this.segment2.point;
 	};
 	Curve.prototype.getPointAtTime = function (t) {
 		const P = this.getPoints();
@@ -206,6 +230,10 @@
 	};
 	Curve.prototype.hasHandles = function () {
 		return !this.segment1.handleOut.isZero() || !this.segment2.handleIn.isZero();
+	};
+	Curve.prototype.hasLength = function (epsilon) {
+		return (!this.getPoint1().equals(this.getPoint2()) || this.hasHandles())
+			&& this.getLength() > (epsilon || 0);
 	};
 	Curve.prototype.clearHandles = function () {
 		this.segment1.handleOut.set(0, 0);
@@ -591,6 +619,123 @@
 			[x9, y9, x8, y8, x6, y6, x3, y3]
 		];
 	};
+	Curve.getOverlaps = function getOverlaps(v1, v2) {
+		function getSquaredLineLength(v) {
+			var x = v[6] - v[0],
+				y = v[7] - v[1];
+			return x * x + y * y;
+		}
+
+		function getDistance(px, py, vx, vy, x, y, asVector) {
+			if (!asVector) {
+				vx -= px;
+				vy -= py;
+			}
+			const distance = vx === 0 ? (vy > 0 ? x - px : px - x)
+				: vy === 0 ? (vx < 0 ? y - py : py - y)
+					: ((x - px) * vy - (y - py) * vx) / (
+						vy > vx
+							? vy * Math.sqrt(1 + (vx * vx) / (vy * vy))
+							: vx * Math.sqrt(1 + (vy * vy) / (vx * vx))
+					);
+			return Math.abs(distance);
+		}
+
+		var timeEpsilon = 1e-8;
+		var geomEpsilon = 1e-7;
+		var straight1 = Curve.isStraight(v1);
+		var straight2 = Curve.isStraight(v2);
+		var straightBoth = straight1 && straight2;
+		var flip = getSquaredLineLength(v1) < getSquaredLineLength(v2);
+		var l1 = flip ? v2 : v1;
+		var l2 = flip ? v1 : v2;
+		var px = l1[0], py = l1[1];
+		var vx = l1[6] - px, vy = l1[7] - py;
+
+		if (getDistance(px, py, vx, vy, l2[0], l2[1], true) < geomEpsilon &&
+			getDistance(px, py, vx, vy, l2[6], l2[7], true) < geomEpsilon) {
+			if (!straightBoth &&
+				getDistance(px, py, vx, vy, l1[2], l1[3], true) < geomEpsilon &&
+				getDistance(px, py, vx, vy, l1[4], l1[5], true) < geomEpsilon &&
+				getDistance(px, py, vx, vy, l2[2], l2[3], true) < geomEpsilon &&
+				getDistance(px, py, vx, vy, l2[4], l2[5], true) < geomEpsilon) {
+				straight1 = straight2 = straightBoth = true;
+			}
+		} else if (straightBoth) {
+			return null;
+		}
+		if (straight1 ^ straight2) {
+			return null;
+		}
+
+		var v = [v1, v2];
+		var pairs = [];
+		for (var i = 0; i < 4 && pairs.length < 2; i++) {
+			var i1 = i & 1;
+			var i2 = i1 ^ 1;
+
+			var t1 = i >> 1;
+			var t2 = Curve.getTimeOf(v[i1], new Point(v[i2][t1 ? 6 : 0], v[i2][t1 ? 7 : 1]));
+
+			if (t2 != null) {
+				var pair = i1 ? [t1, t2] : [t2, t1];
+				if (!pairs.length ||
+					Math.abs(pair[0] - pairs[0][0]) > timeEpsilon &&
+					Math.abs(pair[1] - pairs[0][1]) > timeEpsilon) {
+					pairs.push(pair);
+				}
+			}
+			if (i > 2 && !pairs.length)
+				break;
+		}
+
+		if (pairs.length !== 2) {
+			pairs = null;
+		} else if (!straightBoth) {
+			var o1 = Curve.getPart(v1, pairs[0][0], pairs[1][0]),
+				o2 = Curve.getPart(v2, pairs[0][1], pairs[1][1]);
+			if (Math.abs(o2[2] - o1[2]) > geomEpsilon ||
+				Math.abs(o2[3] - o1[3]) > geomEpsilon ||
+				Math.abs(o2[4] - o1[4]) > geomEpsilon ||
+				Math.abs(o2[5] - o1[5]) > geomEpsilon)
+				pairs = null;
+		}
+		return pairs;
+	};
+	Curve.getValues = function (segment1, segment2, matrix, straight) {
+		var p1 = segment1.point;
+		var h1 = segment1.handleOut;
+		var h2 = segment2.handleIn;
+		var p2 = segment2.point;
+
+		var x1 = p1.x;
+		var y1 = p1.y;
+		var x2 = p2.x;
+		var y2 = p2.y;
+
+		var values = straight
+			? [x1, y1, x1, y1, x2, y2, x2, y2]
+			: [
+				x1, y1,
+				x1 + h1._x, y1 + h1._y,
+				x2 + h2._x, y2 + h2._y,
+				x2, y2
+			];
+		return values;
+	};
+	Curve.getArea = function (v) {
+		var x0 = v[0];
+		var y0 = v[1];
+		var x1 = v[2];
+		var y1 = v[3];
+		var x2 = v[4];
+		var y2 = v[5];
+		var x3 = v[6];
+		var y3 = v[7];
+		return 3 * ((y3 - y0) * (x1 + x2) - (x3 - x0) * (y1 + y2)
+			+ y1 * (x0 - x2) - x1 * (y0 - y2)
+			+ y3 * (x2 + x0 / 3) - x3 * (y2 + y0 / 3)) / 20;
+	};
 
 	function getLengthIntegrand(v) {
 		var x0 = v[0], y0 = v[1],
@@ -910,9 +1055,9 @@
 
 	function Path(segments /* Segment[] */, closed /* Bool */) {
 		const path = this;
-		this.segments = segments && segments.map(function (segment, index) {
+		this.segments = segments ? segments.map(function (segment, index) {
 			return segment.setProps({ path: path, index: index });
-		});
+		}) : [];
 		this.closed = closed;
 
 		// this.curves
@@ -920,10 +1065,78 @@
 	Path.prototype.clone = function () {
 		const copy = new Path();
 		copy.segments = this.segments.map(function (segment) {
-			return segment.clone();
+			segmentCopy = segment.clone();
+			segmentCopy.setProps({
+				path: copy,
+				index: segment.index
+			});
+			return segmentCopy;
 		})
 		copy.closed = this.closed;
 		return copy;
+	};
+	Path.prototype.compare = function compare(path) {
+		if (!path || path instanceof CompoundPath)
+			return CompoundPath.prototype.compare.call(this, path);
+
+		var curves1 = this.getCurves();
+		var curves2 = path.getCurves();
+
+		var length1 = curves1.length;
+		var length2 = curves2.length;
+
+		if (!length1 || !length2) {
+			return length1 == length2;
+		}
+
+		var v1 = curves1[0].getValues();
+		var values2 = [];
+		var pos1 = 0, pos2;
+		var end1 = 0, end2;
+		for (var i = 0; i < length2; i++) {
+			var v2 = curves2[i].getValues();
+			values2.push(v2);
+			var overlaps = Curve.getOverlaps(v1, v2);
+			if (overlaps) {
+				pos2 = !i && overlaps[0][0] > 0 ? length2 - 1 : i;
+				end2 = overlaps[0][1];
+				break;
+			}
+		}
+		var epsilon = 1e-8;
+		var v2 = values2[pos2];
+		var start2;
+		while (v1 && v2) {
+			var overlaps = Curve.getOverlaps(v1, v2);
+			if (overlaps) {
+				var t1 = overlaps[0][0];
+				if (Math.abs(t1 - end1) < epsilon) {
+					end1 = overlaps[1][0];
+					if (end1 === 1) {
+						v1 = ++pos1 < length1 ? curves1[pos1].getValues() : null;
+						end1 = 0;
+					}
+					var t2 = overlaps[0][1];
+					if (Math.abs(t2 - end2) < epsilon) {
+						if (!start2)
+							start2 = [pos2, t2];
+						end2 = overlaps[1][1];
+						if (end2 === 1) {
+							if (++pos2 >= length2)
+								pos2 = 0;
+							v2 = values2[pos2] || curves2[pos2].getValues();
+							end2 = 0;
+						}
+						if (!v1) {
+							return start2[0] === pos2 && start2[1] === end2;
+						}
+						continue;
+					}
+				}
+			}
+			break;
+		}
+		return false;
 	};
 	Path.prototype.isEmpty = function () {
 		return !this.segments.length;
@@ -963,6 +1176,21 @@
 		}
 		return curves;
 	};
+	Path.prototype.getArea = function () {
+		var area = this.area;
+		if (area == null) {
+			var segments = this.getSegments();
+			area = 0;
+			for (var i = 0, l = segments.length; i < l; i++) {
+				var last = i + 1 === l;
+				area += Curve.getArea(Curve.getValues(
+					segments[i], segments[last ? 0 : i + 1],
+					null, last && !this.closed));
+			}
+			this.area = area;
+		}
+		return area;
+	};
 	Path.prototype.closePath = function () {
 		this.closed = true;
 		var first = this.getFirstSegment();
@@ -975,6 +1203,52 @@
 		}
 		return this;
 	};
+	Path.prototype.setClosed = function (closed) {
+		if (this.closed != (closed = !!closed)) {
+			this.closed = closed;
+			if (this.curves) {
+				var length = this.curves.length = this.countCurves();
+				if (closed) {
+					const newCurve = new Curve(this.segments[length - 1], this.segments[0]);
+					this.curves[length - 1] = newCurve;
+				}
+			}
+		}
+	};
+	Path.prototype.removeSegment = function (index) {
+		return this.removeSegments(index, index + 1)[0] || null;
+	};
+	Path.prototype.removeSegments = function (start, end, _includeCurves) {
+		start = start || 0;
+		end = end !== undefined ? end : this.getSegments().length;
+
+		var segments = this.getSegments();
+		var curves = this.getCurves();
+
+		var count = segments.length;
+		var removed = segments.splice(start, end - start);
+		var amount = removed.length;
+		if (!amount)
+			return removed;
+
+		for (var i = 0; i < amount; i++) {
+			var segment = removed[i];
+			segment.index = segment.path = null;
+		}
+		for (var i = start, l = segments.length; i < l; i++)
+			segments[i].index = i;
+
+		if (curves) {
+			var index = start > 0 && end === count + (this.closed ? 1 : 0) ? start - 1 : start;
+			var curves = curves.splice(index, amount);
+			for (var i = curves.length - 1; i >= 0; i--)
+				curves[i].path = null;
+			if (_includeCurves)
+				removed.curves = curves.slice(1);
+			this.adjustCurves(index, index);
+		}
+		return removed;
+	}
 	Path.prototype.countCurves = function () {
 		var length = this.segments.length;
 		return !this.closed && length > 0 ? length - 1 : length;
@@ -1095,28 +1369,28 @@
 		var clearCurves = hasOverlaps && hasCrossings && [];
 		intersections = CurveLocation.expand(intersections);
 		if (hasOverlaps) {
-			var overlaps = divideLocations(intersections, function (inter) {
-				return inter.hasOverlap();
-			}, clearCurves);
+			function overlaps_include_function(inter) { return inter.hasOverlap(); }
+			var overlaps = divideLocations(intersections, overlaps_include_function, clearCurves);
+
 			for (var i = overlaps.length - 1; i >= 0; i--) {
 				var overlap = overlaps[i],
-					path = overlap._path,
-					seg = overlap._segment,
+					path = overlap.getPath(),
+					seg = overlap.getSegment(),
 					prev = seg.getPrevious(),
 					next = seg.getNext();
 				if (hasOverlap(prev, path) && hasOverlap(next, path)) {
 					seg.remove();
-					prev._handleOut._set(0, 0);
-					next._handleIn._set(0, 0);
+					prev.handleOut.set(0, 0);
+					next.handleIn.set(0, 0);
 					if (prev !== seg && !prev.getCurve().hasLength()) {
-						next._handleIn.set(prev._handleIn);
+						next.handleIn.set(prev.handleIn);
 						prev.remove();
 					}
 				}
 			}
 		}
 		if (hasCrossings) {
-			divideLocations(intersections, hasOverlaps && function (inter) {
+			function crossings_include_function(inter) {
 				var curve1 = inter.getCurve();
 				var seg1 = inter.getSegment();
 				var other = inter.intersection;
@@ -1128,21 +1402,24 @@
 					seg1.intersection = null;
 				if (seg2)
 					seg2.intersection = null;
-			}, clearCurves);
+			}
+			divideLocations(intersections, hasOverlaps && crossings_include_function, clearCurves);
+
 			if (clearCurves)
 				clearCurveHandles(clearCurves);
+
+			const path_segments = [];
+			paths.forEach(function (path) {
+				this.push.apply(this, path.getSegments());
+			}, path_segments);
 
 			// HERE
 			debugger
 
-			// ПЕРЕДЕЛАТЬ
-			const something = Base_each(
-				paths,
-				function (path) { this.push.apply(this, path.getSegments()); },
-				[]
-			);
-			paths = tracePaths(something);
+			// tracePaths пока не до конца перенесен
+			paths = tracePaths(path_segments);
 		}
+
 		var length = paths.length,
 			item;
 		if (length > 1 && this.children) {
@@ -1569,6 +1846,39 @@
 		}
 		return curves;
 	};
+	CompoundPath.prototype.compare = function (path) {
+		var ok = false;
+		if (path) {
+			var paths1 = this._children || [this];
+			var paths2 = path._children ? path._children.slice() : [path];
+
+			var length1 = paths1.length;
+			var length2 = paths2.length;
+
+			var matched = [];
+			var count = 0;
+			ok = true;
+			var boundsOverlaps = CollisionDetection.findItemBoundsCollisions(paths1, paths2, Numerical.GEOMETRIC_EPSILON);
+			for (var i1 = length1 - 1; i1 >= 0 && ok; i1--) {
+				var path1 = paths1[i1];
+				ok = false;
+				var pathBoundsOverlaps = boundsOverlaps[i1];
+				if (pathBoundsOverlaps) {
+					for (var i2 = pathBoundsOverlaps.length - 1; i2 >= 0 && !ok; i2--) {
+						if (path1.compare(paths2[pathBoundsOverlaps[i2]])) {
+							if (!matched[pathBoundsOverlaps[i2]]) {
+								matched[pathBoundsOverlaps[i2]] = true;
+								count++;
+							}
+							ok = true;
+						}
+					}
+				}
+			}
+			ok = ok && count === length2;
+		}
+		return ok;
+	};
 
 
 	// BIG DIVIDING LINE (classes are above)
@@ -1790,6 +2100,184 @@
 	function clearCurveHandles(curves) {
 		for (var i = curves.length - 1; i >= 0; i--)
 			curves[i].clearHandles();
+	}
+
+	function tracePaths(segments, operator) {
+		var paths = [];
+		var starts;
+
+		function isValid(seg) {
+			var winding;
+			return !!(seg && !seg.visited
+				&& (!operator || operator[(winding = seg.winding || {}).winding]
+					&& !(operator.unite && winding.winding === 2 && winding.windingL && winding.windingR)));
+		}
+
+		function isStart(seg) {
+			if (seg) {
+				for (var i = 0, l = starts.length; i < l; i++) {
+					if (seg === starts[i])
+						return true;
+				}
+			}
+			return false;
+		}
+
+		function visitPath(path) {
+			var segments = path.segments;
+			for (var i = 0, l = segments.length; i < l; i++) {
+				segments[i].visited = true;
+			}
+		}
+
+		function getCrossingSegments(segment, collectStarts) {
+			var inter = segment.intersection;
+			var start = inter;
+			var crossings = [];
+			if (collectStarts)
+				starts = [segment];
+
+			function collect(inter, end) {
+				while (inter && inter !== end) {
+					var other = inter.segment;
+					var path = other && other.getPath();
+					if (path) {
+						var next = other.getNext() || path.getFirstSegment();
+						var nextInter = next.intersection;
+						if (other !== segment && (isStart(other)
+							|| isStart(next)
+							|| next && (isValid(other) && (isValid(next) || nextInter && isValid(nextInter._segment))))
+						) {
+							crossings.push(other);
+						}
+						if (collectStarts)
+							starts.push(other);
+					}
+					inter = inter.next;
+				}
+			}
+
+			if (inter) {
+				collect(inter);
+				while (inter && inter.previous)
+					inter = inter.previous;
+				collect(inter, start);
+			}
+			return crossings;
+		}
+
+		segments.sort(function (seg1, seg2) {
+			var inter1 = seg1.intersection;
+			var inter2 = seg2.intersection;
+
+			var over1 = !!(inter1 && inter1._overlap);
+			var over2 = !!(inter2 && inter2._overlap);
+
+			var path1 = seg1._path;
+			var path2 = seg2._path;
+
+			return over1 ^ over2
+				? over1 ? 1 : -1
+				: !inter1 ^ !inter2
+					? inter1 ? 1 : -1
+					: path1 !== path2
+						? path1.id - path2.id
+						: seg1.index - seg2.index;
+		});
+
+		for (var i = 0, l = segments.length; i < l; i++) {
+			var seg = segments[i];
+			var valid = isValid(seg);
+			var path = null;
+			var finished = false;
+			var closed = true;
+			var branches = [];
+			var branch;
+			var visited;
+			var handleIn;
+			if (valid && seg.path && seg.path.overlapsOnly) {
+				var path1 = seg._path;
+				var path2 = seg.intersection.segment.path;
+				if (path1.compare(path2)) {
+					if (path1.getArea())
+						paths.push(path1.clone(false));
+					visitPath(path1);
+					visitPath(path2);
+					valid = false;
+				}
+			}
+			while (valid) {
+				var first = !path;
+				var crossings = getCrossingSegments(seg, first);
+				var other = crossings.shift();
+				var finished = !first && (isStart(seg) || isStart(other));
+				var cross = !finished && other;
+				if (first) {
+					path = new Path();
+					branch = null;
+				}
+				if (finished) {
+					if (seg.isFirst() || seg.isLast())
+						closed = seg.path.closed;
+					seg.visited = true;
+					break;
+				}
+				if (cross && branch) {
+					branches.push(branch);
+					branch = null;
+				}
+				if (!branch) {
+					if (cross)
+						crossings.push(seg);
+					branch = {
+						start: path.getSegments().length,
+						crossings: crossings,
+						visited: visited = [],
+						handleIn: handleIn
+					};
+				}
+				if (cross)
+					seg = other;
+				if (!isValid(seg)) {
+					path.removeSegments(branch.start);
+					for (var j = 0, k = visited.length; j < k; j++) {
+						visited[j].visited = false;
+					}
+					visited.length = 0;
+					do {
+						seg = branch && branch.crossings.shift();
+						if (!seg || !seg.path) {
+							seg = null;
+							branch = branches.pop();
+							if (branch) {
+								visited = branch.visited;
+								handleIn = branch.handleIn;
+							}
+						}
+					} while (branch && !isValid(seg));
+					if (!seg)
+						break;
+				}
+				var next = seg.getNext();
+				path.add(new Segment(seg.point, handleIn, next && seg.handleOut));
+				seg.visited = true;
+				visited.push(seg);
+				seg = next || seg.path ? seg.path.getFirstSegment() : undefined;
+				handleIn = next && next.handleIn;
+			}
+			if (finished) {
+				if (closed) {
+					const firstSegment = path.getFirstSegment()
+					if (firstSegment)
+						firstSegment.setHandleIn(handleIn.x, handleIn.y);
+					path.setClosed(closed);
+				}
+				if (path.getArea() !== 0) {
+					paths.push(path);
+				}
+			}
+		}
+		return paths;
 	}
 
 	const CollisionDetection = {
@@ -2211,8 +2699,9 @@
 		new Segment(new Point(0, 0)),
 		new Segment(new Point(100, 0)),
 		new Segment(new Point(0, 100)),
-		new Segment(new Point(100, 100))
-	], true)
+		new Segment(new Point(100, 100)),
+		new Segment(new Point(0, 0))
+	], false)
 
 	const circle = window.circle = new Path([
 		new Segment(new Point(100, 100), new Point(-55, 0), new Point(55, 0)),
@@ -2222,6 +2711,6 @@
 	], true);
 
 	const result = traceBoolean(selfInter, circle, 'exclude');
-	console.log(result)
+	console.log(result);
 
 })(window);
