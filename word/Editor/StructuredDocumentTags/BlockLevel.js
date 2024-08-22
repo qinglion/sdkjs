@@ -1752,8 +1752,6 @@ CBlockLevelSdt.prototype.CanBeDeleted = function()
  */
 CBlockLevelSdt.prototype.CanBeEdited = function()
 {
-	//for debugging pictures
-	this.SkipSpecialLock = true;
 	if (!this.SkipSpecialLock && (this.IsCheckBox() || this.IsPicture() || this.IsDropDownList()))
 		return false;
 

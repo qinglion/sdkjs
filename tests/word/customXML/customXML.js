@@ -177,7 +177,6 @@ $(function () {
 		'checkboxTrueAnotherXML': "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n	<weather>" + oCustomXMLData.checkboxTrue + "</weather>",
 	}
 
-
 	function CreateContentControl(isInline, nPos)
 	{
 		let para = AscTest.CreateParagraph();
