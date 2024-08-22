@@ -60,6 +60,19 @@
 		return this.content.getStringFromBuffer();
 	};
 	/**
+	 * Find url in uri array
+	 * @return {boolean}
+	 */
+	CustomXml.prototype.checkUrl = function (str)
+	{
+		for (let i = 0; i < this.uri.length; i++)
+		{
+			if (str.includes(this.uri[i]))
+				return true;
+		}
+		return false;
+	}
+	/**
 	 * Add content of CustomXML
 	 * @param arrData {array}
 	 */

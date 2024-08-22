@@ -136,9 +136,8 @@
 		{
 			let customXml			= this.xml[i];
 			customXml.oContentLink	= oContentLink;
-			
-			// этот атрибут может быть опущен, так искать плохо
-			if (dataBinding.storeItemID === customXml.itemId)
+
+			if (dataBinding.storeItemID === customXml.itemId || customXml.checkUrl(dataBinding.prefixMappings))
 			{
 				let xPath			= dataBinding.xpath;
 				let oFindEl			= this.findElementByXPath(customXml.content, xPath);
@@ -228,13 +227,15 @@
 					{
 						let text = '';
 						let arrRelationships = openDoc.getRelationships();
+
 						for (let i = 0; i < arrRelationships.length; i++)
 						{
 							let relation	= arrRelationships[i];
 							let relId		= relation.relationshipId;
 							let relType		= relation.relationshipType;
 							let relTarget	= relation.target;
-							if(i===0)
+
+							if (i === 0)
 							{
 								relType		= relType.replace("relationships\/officeDocument", "relationships\/styles");
 								relTarget	= relTarget.replace("word/document.xml", "styles.xml");
@@ -254,17 +255,10 @@
 				}
 			});
 
-			//check diffrences between main write and this, when save main document higlight write correct
-			//	outputUString = outputUString.replace("FFFF00", "yellow");
-
 			outputUString	= outputUString.replace("pkg:contentType=\"application/xml\"", "pkg:contentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml\"");
-			outputUString	= outputUString.replace("pkg:contentType=\"application/vnd.openxmlformats-package.relationships+xml\"", "pkg:contentType=\"application/vnd.openxmlformats-package.relationships+xml\" pkg:padding=\"512\"")
-			outputUString	= outputUString.replace("\"/word/_rels/document.xml.rels\"pkg:contentType=\"application/vnd.openxmlformats-package.relationships+xml\"", "\"/word/_rels/document.xml.rels\"pkg:contentType=\"application/vnd.openxmlformats-package.relationships+xml\" pkg:padding=\"256\"")
 			outputUString	+= "</pkg:package>";
 			outputUString	= outputUString.replaceAll("<", "&lt;");
 			outputUString	= outputUString.replaceAll(">", "&gt;");
-
-			doc.Content = [];
 			this.setContentByDataBinding(oCC.Pr.DataBinding, outputUString);
 		}, this, []);
 	};
