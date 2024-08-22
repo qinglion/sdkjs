@@ -16082,10 +16082,6 @@ function Binary_CustomsTableReader(doc, oReadResult, stream) {
 				return oThis.ReadCustomContent(t, l, custom);
 			});
 
-			let strContent = "".fromUtf8(custom.content)
-			strContent = strContent.slice(strContent.indexOf("<"), strContent.length); // Skip "L"
-
-			custom.content = this.customXmlManager.parseCustomXML(strContent);
 			this.customXmlManager.add(custom);
 		}
 		else
@@ -16099,7 +16095,7 @@ function Binary_CustomsTableReader(doc, oReadResult, stream) {
 		} else if (c_oSerCustoms.ItemId === type) {
 			custom.itemId = this.stream.GetString2LE(length);
 		} else if (c_oSerCustoms.ContentA === type) {
-			custom.content = this.stream.GetBuffer(length);
+			custom.addContent(this.stream.GetBuffer(length))
 		} else
 			res = c_oSerConstants.ReadUnknown;
 		return res;

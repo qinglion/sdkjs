@@ -35,16 +35,15 @@
 (function(window)
 {
 	/**
-	 * Класс представляющий текстовый символ
+	 * Класс представляющий менеджер CustomXMLs
 	 * @param {AscWord.CDocument} document
 	 * @constructor
 	 */
 	function CustomXmlManager(document)
 	{
-		this.document = document;
-		this.xml = [];
-		// check
-		this.RichTextCC = [];
+		this.document	= document;
+		this.xml		= [];
+		this.saveCCs	= [];
 	}
 	CustomXmlManager.prototype.add = function(customXml)
 	{
@@ -60,30 +59,40 @@
 	{
 		return this.xml[index];
 	};
-	CustomXmlManager.prototype.findElementsByXPath = function (root, xpath)
+
+	/**
+	 * Find element/attribute of CustomXMl by xpath string
+	 * @param root {CustomXMLContent}
+	 * @param xpath {string}
+	 * @return {{attribute: string, content: CustomXMLContent}}
+	 */
+	CustomXmlManager.prototype.findElementByXPath = function (root, xpath)
 	{
-		let parts = xpath.split('/');
-		parts.shift(); // Убираем пустой первый элемент
+		let arrParts		= xpath.split('/');
+		let currentElement	= root;
 
-		let currentElement = root;
+		arrParts.shift(); // Убираем пустой первый элемент
 
-		for (let i = 0; i < parts.length; i++)
+		for (let i = 0; i < arrParts.length; i++)
 		{
-			let part = parts[i];
-			let namespaceAndTag;
-			let index;
-			let tagName;
+			let namespaceAndTag,
+				index,
+				tagName,
+				part = arrParts[i];
 
 			if (part.includes("@"))
 			{
-				let strAttributeName = part.slice(1);
-				return {content: currentElement, attribute: strAttributeName};
+				let strAttributeName		= part.slice(1);
+				return {
+					content: currentElement,
+					attribute: strAttributeName,
+				};
 			}
-			if (part.includes("["))
+			else if (part.includes("["))
 			{
 				namespaceAndTag				= part.split('[')[0];
-				let partBeforeCloseBrack	= part.split(']')[0];
-				index						= partBeforeCloseBrack.slice(-1) - 1;
+				let partBeforeCloseBracket	= part.split(']')[0];
+				index						= partBeforeCloseBracket.slice(-1) - 1;
 			}
 			else
 			{
@@ -91,48 +100,62 @@
 				index						= 0;
 			}
 
-			tagName = namespaceAndTag.includes(":") ? namespaceAndTag.split(':')[1] : namespaceAndTag;
+			tagName = namespaceAndTag.includes(":")
+				? namespaceAndTag.split(':')[1]
+				: namespaceAndTag;
 
 			let matchingChildren = currentElement.content.filter(function (child) {
 				let arr = child.name.split(":");
+
 				if (arr.length > 1)
 					return arr[1] === tagName;
 				else
 					return arr[0] === tagName;
 			});
 
-			if (matchingChildren.length <= index) {
+			if (matchingChildren.length <= index)
 				break; // Элемент не найден
-			}
 
 			currentElement = matchingChildren[index];
 		}
 
-		return {content: currentElement, attribute: undefined};
-	}
+		return {
+			content: currentElement,
+			attribute: undefined,
+		};
+	};
+	/**
+	 * Get custom xml data of content control by data binding property
+	 * @param dataBinding {window.AscWord.DataBinding}
+	 * @param oContentLink {CBlockLevelSdt | CInlineLevelSdt}
+	 * @return {string | undefined}
+	 */
 	CustomXmlManager.prototype.getContentByDataBinding = function(dataBinding, oContentLink)
 	{
 		for (let i = 0; i < this.xml.length; ++i)
 		{
-			let customXml = this.xml[i];
-
-			customXml.oContentLink = oContentLink;
+			let customXml			= this.xml[i];
+			customXml.oContentLink	= oContentLink;
 			
 			// этот атрибут может быть опущен, так искать плохо
 			if (dataBinding.storeItemID === customXml.itemId)
 			{
 				let xPath			= dataBinding.xpath;
-				let oFindEl			= this.findElementsByXPath(customXml.content, xPath);
+				let oFindEl			= this.findElementByXPath(customXml.content, xPath);
 				let content			= oFindEl.content;
 				let strAttribute	= oFindEl.attribute;
 
-				if (undefined !== strAttribute)
-					return content.attribute[strAttribute];
-				else
-					return content.textContent;
+				return (undefined !== strAttribute)
+					? content.attribute[strAttribute]
+					: content.textContent;
 			}
 		}
 	};
+	/**
+	 * Set custom xml data of content control by data binding property
+	 * @param {window.AscWord.DataBinding} dataBinding
+	 * @param data {string | CBlockLevelSdt}
+	 */
 	CustomXmlManager.prototype.setContentByDataBinding = function (dataBinding, data)
 	{
 		for (let i = 0; i < this.xml.length; ++i)
@@ -142,174 +165,31 @@
 			if (dataBinding.storeItemID === customXml.itemId)
 			{
 				let xPath			= dataBinding.xpath;
-				let oFindEl			= this.findElementsByXPath(customXml.content, xPath);
-				let content			= oFindEl.content;
+				let oFindEl			= this.findElementByXPath(customXml.content, xPath);
+				let oContent		= oFindEl.content;
 				let strAttribute	= oFindEl.attribute;
 
 				if (data instanceof AscCommonWord.CBlockLevelSdt)
 				{
-					this.updateRichTextCustomXML(data)
+					// recording changes every time a control with formatted text changes is not efficient
+					// save which control needs to be processed, and update CustomXML field for rich text when save document
+					if (!this.saveCCs.includes(data))
+						this.saveCCs.push(data);
 
-
-					// пока при каждом изменении Rich Text записывать изменения не эффективно
-					// запишем какой контент контрол нужно изменить, а обновим при сохранении
-					// if (!this.RichTextCC.includes(data))
-					// 	this.RichTextCC.push(data);
 					return;
 				}
 
 				if (strAttribute)
-					content.SetAttribute(strAttribute, data);
+					oContent.setAttribute(strAttribute, data);
 				else
-					content.SetTextContent(data);
+					oContent.setTextContent(data);
 			}
 		}
 	};
-	CustomXmlManager.prototype.parseCustomXML = function (strCustomXml)
-	{
-		let oStax			= new StaxParser(strCustomXml);
-		let oCurrentContent	= null;
-
-		// switch to CT_Node
-		function CustomXMLItem(par, name)
-		{
-			this.parent			= par;
-			this.content		= [];
-			this.name			= name ? name : "";
-			this.attribute		= {};
-			this.textContent	= "";
-			this.current		= undefined;
-			this.str			= "";
-
-			this.AddAttribute = function (name, value)
-			{
-				this.attribute[name] = value;
-			}
-			this.AddContent = function (name)
-			{
-				let one			= new CustomXMLItem(this, name);
-				oCurrentContent	= one;
-
-				this.content.push(one);
-			}
-			this.GetParent = function ()
-			{
-				if (this.parent)
-					return this.parent;
-
-				return null;
-			}
-			this.SetParent = function (oPar)
-			{
-				this.parent = oPar;
-			}
-			this.AddTextContent = function (text)
-			{
-				if (text !== "")
-					this.textContent += text;
-			}
-			this.GetStringFromBuffer = function ()
-			{
-				let buffer	= this.GetBuffer();
-				let str		= AscCommon.UTF8ArrayToString(buffer.data, 1);
-				str			= str.replaceAll("&quot;", "\"");
-				str			= str.replaceAll("&amp;", "&");
-				return str;
-			}
-			this.GetBuffer = function ()
-			{
-				let writer = new AscCommon.CMemory();
-				let nTab = 0;
-
-				function Write(content)
-				{
-					let current = null;
-
-					if (!content.name)
-					{
-						writer.WriteXmlString("\x00<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-						current = content.content[0];
-					}
-					else
-					{
-						current = content;
-					}
-
-					for (let i = 0; i < nTab; i++)
-					{
-						writer.WriteXmlString("	");
-					}
-
-					writer.WriteXmlNodeStart(current.name);
-
-					let atr = Object.keys(current.attribute)
-
-					for (let i = 0; i < atr.length; i++)
-					{
-						let cur = atr[i];
-						writer.WriteXmlAttributeStringEncode(cur, current.attribute[cur]);
-					}
-
-					writer.WriteXmlAttributesEnd();
-
-					for (let i = 0; i < current.content.length; i++)
-					{
-						nTab++;
-						if (i === 0)
-							writer.WriteXmlString("\n");
-						let curContent = current.content[i];
-						Write(curContent);
-						nTab--;
-						writer.WriteXmlString("\n");
-					}
-
-					if (current.textContent)
-						writer.WriteXmlString(current.textContent.toString().trim());
-
-					writer.WriteXmlNodeEnd(current.name);
-				}
-
-				Write(this);
-				return writer;
-			}
-			this.SetTextContent = function (str)
-			{
-				this.textContent = str;
-			}
-			this.SetAttribute = function (attribute, value)
-			{
-				this.attribute[attribute] = value;
-			}
-		}
-
-		let oParContent = oCurrentContent = new CustomXMLItem(null);
-
-		while (oStax.Read())
-		{
-			switch (oStax.GetEventType())
-			{
-				case EasySAXEvent.CHARACTERS:
-					oCurrentContent.AddTextContent(oStax.text);
-					break;
-				case EasySAXEvent.END_ELEMENT:
-					oCurrentContent = oCurrentContent.parent;
-					break;
-				case EasySAXEvent.START_ELEMENT:
-					let name = oStax.GetName();
-					oCurrentContent.AddContent(name)
-
-					while (oStax.MoveToNextAttribute())
-					{
-						let nameAttrib = oStax.GetName();
-						let valueAttrib = oStax.GetValue();
-						oCurrentContent.AddAttribute(nameAttrib, valueAttrib);
-					}
-					break;
-			}
-		}
-
-		return oParContent;
-	};
+	/**
+	 * Write linear xml data of content control in CustomXML
+	 * @param oCC {CBlockLevelSdt}
+	 */
 	CustomXmlManager.prototype.updateRichTextCustomXML = function (oCC)
 	{
 		function replaceSubstring(originalString, startPoint, endPoint, insertionString)
@@ -323,95 +203,88 @@
 			return prefix + insertionString + suffix;
 		}
 
-		let isOffHistory = false;
+		AscFormat.ExecuteNoHistory(function() {
+			let doc 						= new AscWord.CDocument(null, false);
+			let oSdtContent					= oCC.GetContent().Copy();
+			let jsZlib						= new AscCommon.ZLib();
 
-		if (AscCommon.History.IsOn() == true)
-		{
-			AscCommon.History.TurnOff();
-			isOffHistory = true;
-		}
+			doc.ReplaceContent(oSdtContent.Content);
+			jsZlib.create();
+			doc.toZip(jsZlib, new AscCommon.XmlWriterContext(AscCommon.c_oEditorId.Word));
 
-		let doc 						= new AscWord.CDocument(null, false);
-		let oSdtContent					= oCC.GetContent().Copy();
-		let jsZlib						= new AscCommon.ZLib();
+			let openDoc						= new AscCommon.openXml.OpenXmlPackage(jsZlib, null);
+			let outputUString				= "<?xml version=\"1.0\" standalone=\"yes\"?><?mso-application progid=\"Word.Document\"?><pkg:package xmlns:pkg=\"http://schemas.microsoft.com/office/2006/xmlPackage\">";
+			let arrPath						= jsZlib.getPaths();
 
-		doc.ReplaceContent(oSdtContent.Content);
-		jsZlib.create();
-		doc.toZip(jsZlib, new AscCommon.XmlWriterContext(AscCommon.c_oEditorId.Word));
-
-		let archive 					= jsZlib.save();
-		let openDoc						= new AscCommon.openXml.OpenXmlPackage(jsZlib, null);
-		let outputUString				= "<?xml version=\"1.0\" standalone=\"yes\"?><?mso-application progid=\"Word.Document\"?><pkg:package xmlns:pkg=\"http://schemas.microsoft.com/office/2006/xmlPackage\">";
-		let arrPath						= jsZlib.getPaths();
-
-		arrPath.forEach(function(path)
-		{
-			if ((path === "_rels/.rels" || path === "word/document.xml" || path === "word/_rels/document.xml.rels") && !path.includes("glossary"))
+			arrPath.forEach(function(path)
 			{
-				let ctfBytes	= jsZlib.getFile(path);
-				let ctfText		= AscCommon.UTF8ArrayToString(ctfBytes, 0, ctfBytes.length);
-				let type		= openDoc.getContentType(path);
-
-				if (path === "word/_rels/document.xml.rels")
+				if ((path === "_rels/.rels" || path === "word/document.xml" || path === "word/_rels/document.xml.rels") && !path.includes("glossary"))
 				{
-					let text = '';
-					let arrRelationships = openDoc.getRelationships();
-					for (let i = 0; i < arrRelationships.length; i++)
+					let ctfBytes	= jsZlib.getFile(path);
+					let ctfText		= AscCommon.UTF8ArrayToString(ctfBytes, 0, ctfBytes.length);
+					let type		= openDoc.getContentType(path);
+
+					if (path === "word/_rels/document.xml.rels")
 					{
-						let relation	= arrRelationships[i];
-						let relId		= relation.relationshipId;
-						let relType		= relation.relationshipType;
-						let relTarget	= relation.target;
-						if(i===0)
+						let text = '';
+						let arrRelationships = openDoc.getRelationships();
+						for (let i = 0; i < arrRelationships.length; i++)
 						{
-							relType		= relType.replace("relationships\/officeDocument", "relationships\/styles");
-							relTarget	= relTarget.replace("word/document.xml", "styles.xml");
+							let relation	= arrRelationships[i];
+							let relId		= relation.relationshipId;
+							let relType		= relation.relationshipType;
+							let relTarget	= relation.target;
+							if(i===0)
+							{
+								relType		= relType.replace("relationships\/officeDocument", "relationships\/styles");
+								relTarget	= relTarget.replace("word/document.xml", "styles.xml");
+							}
+
+							text			+= "<Relationship Id=\"" + relId + "\" Type=\"" + relType + "\" Target=\"" + relTarget + "\"/>"
 						}
 
-						text			+= "<Relationship Id=\"" + relId + "\" Type=\"" + relType + "\" Target=\"" + relTarget + "\"/>"
+						let nStart	= ctfText.indexOf("<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">", 0) + "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">".length;
+						let nEnd	= ctfText.indexOf("</Relationships>", nStart) - 1;
+						ctfText		= replaceSubstring(ctfText, nStart, nEnd, text);
 					}
 
-					let nStart	= ctfText.indexOf("<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">", 0) + "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\">".length;
-					let nEnd	= ctfText.indexOf("</Relationships>", nStart) - 1;
-					ctfText		= replaceSubstring(ctfText, nStart, nEnd, text);
+					outputUString += "<pkg:part pkg:name=\"/" + path + "\" " +
+						"pkg:contentType=\"" + type +"\"> " +
+						"<pkg:xmlData>" + ctfText.replace("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>", "").replace("\n", "") + "</pkg:xmlData></pkg:part>"
 				}
+			});
 
-				outputUString += "<pkg:part pkg:name=\"/" + path + "\" " +
-					"pkg:contentType=\"" + type +"\"> " +
-					"<pkg:xmlData>" + ctfText.replace("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>", "").replace("\n", "") + "</pkg:xmlData></pkg:part>"
-			}
-		});
+			//check diffrences between main write and this, when save main document higlight write correct
+			//	outputUString = outputUString.replace("FFFF00", "yellow");
 
-		//check diffrences between main write and this, when save main document higlight write correct
-		//	outputUString = outputUString.replace("FFFF00", "yellow");
+			outputUString	= outputUString.replace("pkg:contentType=\"application/xml\"", "pkg:contentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml\"");
+			outputUString	= outputUString.replace("pkg:contentType=\"application/vnd.openxmlformats-package.relationships+xml\"", "pkg:contentType=\"application/vnd.openxmlformats-package.relationships+xml\" pkg:padding=\"512\"")
+			outputUString	= outputUString.replace("\"/word/_rels/document.xml.rels\"pkg:contentType=\"application/vnd.openxmlformats-package.relationships+xml\"", "\"/word/_rels/document.xml.rels\"pkg:contentType=\"application/vnd.openxmlformats-package.relationships+xml\" pkg:padding=\"256\"")
+			outputUString	+= "</pkg:package>";
+			outputUString	= outputUString.replaceAll("<", "&lt;");
+			outputUString	= outputUString.replaceAll(">", "&gt;");
 
-		//need get contentType from openXml.Types
-		outputUString	= outputUString.replace("pkg:contentType=\"application/xml\"", "pkg:contentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml\"");
-		outputUString	= outputUString.replace("pkg:contentType=\"application/vnd.openxmlformats-package.relationships+xml\"", "pkg:contentType=\"application/vnd.openxmlformats-package.relationships+xml\" pkg:padding=\"512\"")
-		outputUString	= outputUString.replace("\"/word/_rels/document.xml.rels\"pkg:contentType=\"application/vnd.openxmlformats-package.relationships+xml\"", "\"/word/_rels/document.xml.rels\"pkg:contentType=\"application/vnd.openxmlformats-package.relationships+xml\" pkg:padding=\"256\"")
-		outputUString	+= "</pkg:package>";
-		outputUString	= outputUString.replaceAll("<", "&lt;");
-		outputUString	= outputUString.replaceAll(">", "&gt;");
-
-		if (isOffHistory)
-			AscCommon.History.TurnOn();
-
-		doc.Content = [];
-		this.setContentByDataBinding(oCC.Pr.DataBinding, outputUString);
+			doc.Content = [];
+			this.setContentByDataBinding(oCC.Pr.DataBinding, outputUString);
+		}, this, []);
 	};
-	CustomXmlManager.prototype.proceedLinearXMl = function (content)
+	/**
+	 * Proceed linear xml from CustomXMl attribute or element for fill content control
+	 * @param strLinearXML {string}
+	 * @return {[]} Return array of CC content
+	 */
+	CustomXmlManager.prototype.proceedLinearXMl = function (strLinearXML)
 	{
-
-		content					= content.replaceAll("&lt;", "<");
-		content					= content.replaceAll("&gt;", ">");
-		content					= content.replaceAll("<?xml version=\"1.0\" standalone=\"yes\"?>", "");
-		content					= content.replaceAll("<?mso-application progid=\"Word.Document\"?>", "");
+		strLinearXML					= strLinearXML.replaceAll("&lt;", "<");
+		strLinearXML					= strLinearXML.replaceAll("&gt;", ">");
+		strLinearXML					= strLinearXML.replaceAll("<?xml version=\"1.0\" standalone=\"yes\"?>", "");
+		strLinearXML					= strLinearXML.replaceAll("<?mso-application progid=\"Word.Document\"?>", "");
 
 		// при записи в атрибут больше проблем, изменить подход если в будущем еще будут проблемы c html entry
-		content					= content.replaceAll("&#xA;", "");
-		content					= content.replaceAll("&amp;", "&");
-		content					= content.replaceAll("&quot;", "\"");
-		content					= content.replaceAll("&#039;", "'");
+		strLinearXML					= strLinearXML.replaceAll("&#xA;", "");
+		strLinearXML					= strLinearXML.replaceAll("&amp;", "&");
+		strLinearXML					= strLinearXML.replaceAll("&quot;", "\"");
+		strLinearXML					= strLinearXML.replaceAll("&#039;", "'");
 
 		let zLib				= new AscCommon.ZLib;
 		zLib.create();
@@ -458,13 +331,13 @@
 		let nPos = 0;
 		while (true)
 		{
-			let nStartPos = nPos = content.indexOf('<pkg:part', nPos);
+			let nStartPos = nPos = strLinearXML.indexOf('<pkg:part', nPos);
 
 			if (!nStartPos || nStartPos === -1)
 				break;
 
-			let nEndPos			= nPos = content.indexOf('</pkg:part>', nStartPos);
-			let strText			= content.substring(nStartPos, nEndPos);
+			let nEndPos			= nPos = strLinearXML.indexOf('</pkg:part>', nStartPos);
+			let strText			= strLinearXML.substring(nStartPos, nEndPos);
 
 			let nPosStartName	= strText.indexOf('name="', 0) + 'name="'.length;
 			let nPosEndName		= strText.indexOf('"', nPosStartName);
@@ -506,7 +379,7 @@
 		xmlParserContext.DrawingDocument = draw;
 
 		if (!jsZlib.open(arr))
-			return false;
+			return [];
 
 		let oBinaryFileReader	= new AscCommonWord.BinaryFileReader(Doc, {});
 		oBinaryFileReader.PreLoadPrepare();
@@ -517,17 +390,28 @@
 		jsZlib.close();
 
 		return Doc.Content;
-	}
-	CustomXmlManager.prototype.getCustomXMLString = function(customXml)
-	{
-		for (let i = 0; i < this.RichTextCC.length; i++)
-		{
-			this.updateRichTextCustomXML(this.RichTextCC[i]);
-		}
-
-		return customXml.content.GetStringFromBuffer();
 	};
-	
+	/**
+	 * Get CustomXML text
+	 * @param oCustomXMl {AscWord.CustomXml}
+	 * @return {string}
+	 */
+	CustomXmlManager.prototype.getCustomXMLString = function(oCustomXMl)
+	{
+		this.updateCustomXMlFromRichTextCCs();
+		return oCustomXMl.getText();
+	};
+	/**
+	 * Go through all edited rich text content controls and save it's content in CustomXML
+	 */
+	CustomXmlManager.prototype.updateCustomXMlFromRichTextCCs = function ()
+	{
+		for (let i = 0; i < this.saveCCs.length; i++)
+		{
+			this.updateRichTextCustomXML(this.saveCCs[i]);
+		}
+	};
+
 	//--------------------------------------------------------export----------------------------------------------------
 	window['AscWord'] = window['AscWord'] || {};
 	window['AscWord'].CustomXmlManager = CustomXmlManager;

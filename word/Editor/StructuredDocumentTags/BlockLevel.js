@@ -1609,6 +1609,14 @@ CBlockLevelSdt.prototype.fillContentWithDataBinding = function(content)
 	}
 	else
 	{
+		let oParent = this.Parent;
+		if (oParent instanceof CDocumentContent)
+		 oParent = oParent.Parent
+
+		// if parent element is rich text content control - skip
+		if (oParent instanceof CBlockLevelSdt && oParent.GetSpecificType() === Asc.c_oAscContentControlSpecificType.None)
+			return;
+
 		let customXmlManager	= logicDocument.getCustomXmlManager();
 		let arrContent			= customXmlManager.proceedLinearXMl(content);
 

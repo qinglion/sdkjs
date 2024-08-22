@@ -2096,6 +2096,8 @@ CInlineLevelSdt.prototype.private_UpdateCheckBoxContent = function()
 		oRun.SetRFontsCS({Index : -1, Name : this.Pr.CheckBox.UncheckedFont});
 		oRun.SetRFontsEastAsia({Index : -1, Name : this.Pr.CheckBox.UncheckedFont});
 	}
+
+	this.SetContentByDataBinding(isChecked ? "true" : "false");
 };
 /**
  * Проверяем, является ли данный класс специальным контейнером для картинки
@@ -3809,14 +3811,16 @@ CInlineLevelSdt.prototype.fillContentWithDataBinding = function(content)
 		this.SetDatePickerPr(datePr);
 		this.private_UpdateDatePickerContent();
 	}
-	else if (this.IsDropDownList() || this.IsComboBox() || this.Pr.Text === true)
+	else if (this.IsDropDownList() || this.IsComboBox())
 	{
-		let oPar = new Paragraph();
-		let oRun = new ParaRun();
-		oPar.Add(oRun)
-		oRun.AddText(content);
-
-		this.SetParagraph(oPar);
+		this.ReplacePlaceHolderWithContent();
+		let oRun = this.private_UpdateListContent();
+		if (oRun)
+			oRun.AddText(content);
+	}
+	else if (this.Pr.Text === true)
+	{
+		return
 	}
 	else
 	{

@@ -35,6 +35,12 @@
 (function(window)
 {
 	/**
+	 * @param {array} [uri]
+	 * @param {string} [itemId]
+	 * @param {CustomXMLContent} [content]
+	 * @param [oContentLink]
+	 *
+	 * Класс представляющий CustomXML
 	 * @constructor
 	 */
 	function CustomXml(uri, itemId, content, oContentLink)
@@ -44,9 +50,166 @@
 		this.content			= content ? content : null;
 		this.oContentLink		= oContentLink ? oContentLink : null;
 	}
-	
+
+	/**
+	 * Get CustomXML data by string
+	 * @return {string}
+	 */
+	CustomXml.prototype.getText = function ()
+	{
+		return this.content.getStringFromBuffer();
+	};
+	/**
+	 * Add content of CustomXML
+	 * @param arrData {array}
+	 */
+	CustomXml.prototype.addContent = function (arrData)
+	{
+		let strContent		= "".fromUtf8(arrData),
+			strCustomXml	= strContent.slice(strContent.indexOf("<"), strContent.length); // Skip "L"
+
+		this.addContentByXMLString(strCustomXml);
+	};
+	CustomXml.prototype.addContentByXMLString = function (strCustomXml)
+	{
+		let oStax			= new StaxParser(strCustomXml),
+			rootContent		= new CustomXMLContent(null);
+
+		while (oStax.Read())
+		{
+			switch (oStax.GetEventType()) {
+				case EasySAXEvent.CHARACTERS:
+					rootContent.addTextContent(oStax.text);
+					break;
+				case EasySAXEvent.END_ELEMENT:
+					rootContent = rootContent.getParent();
+					break;
+				case EasySAXEvent.START_ELEMENT:
+					let name = oStax.GetName();
+					let childElement = rootContent.addContent(name);
+
+					while (oStax.MoveToNextAttribute())
+					{
+						let attributeName = oStax.GetName();
+						let attributeValue = oStax.GetValue();
+						childElement.addAttribute(attributeName, attributeValue);
+					}
+
+					rootContent = childElement;
+					break;
+			}
+		}
+
+		this.content = rootContent;
+	}
+
+	function CustomXMLContent(parent, name)
+	{
+		this.parent			= parent;
+		this.name			= name ? name : "";
+		this.content		= [];
+		this.attribute		= {};
+		this.textContent	= "";
+
+		this.addAttribute = function (name, value)
+		{
+			this.attribute[name] = value;
+		};
+		this.addContent = function (name)
+		{
+			let newItem = new CustomXMLContent(this, name);
+
+			this.content.push(newItem);
+			return newItem;
+		};
+		this.getParent = function ()
+		{
+			if (this.parent)
+				return this.parent;
+
+			return null;
+		};
+		this.addTextContent = function (text)
+		{
+			if (text !== "")
+				this.textContent += text;
+		};
+		this.setTextContent = function (str)
+		{
+			this.textContent = str;
+		};
+		this.setAttribute = function (attribute, value)
+		{
+			this.attribute[attribute] = value;
+		};
+		this.getBuffer = function ()
+		{
+			let writer = new AscCommon.CMemory();
+			let nTab = 0;
+
+			function Write(content)
+			{
+				let current = null;
+
+				if (!content.name)
+				{
+					writer.WriteXmlString("\x00<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+					current = content.content[0];
+				}
+				else
+				{
+					current = content;
+				}
+
+				for (let i = 0; i < nTab; i++)
+				{
+					writer.WriteXmlString("	");
+				}
+
+				writer.WriteXmlNodeStart(current.name);
+
+				let atr = Object.keys(current.attribute)
+
+				for (let i = 0; i < atr.length; i++)
+				{
+					let cur = atr[i];
+					writer.WriteXmlAttributeStringEncode(cur, current.attribute[cur]);
+				}
+
+				writer.WriteXmlAttributesEnd();
+
+				for (let i = 0; i < current.content.length; i++)
+				{
+					nTab++;
+					if (i === 0)
+						writer.WriteXmlString("\n");
+					let curContent = current.content[i];
+					Write(curContent);
+					nTab--;
+					writer.WriteXmlString("\n");
+				}
+
+				if (current.textContent)
+					writer.WriteXmlString(current.textContent.toString().trim());
+
+				writer.WriteXmlNodeEnd(current.name);
+			}
+
+			Write(this);
+			return writer;
+		};
+		this.getStringFromBuffer = function ()
+		{
+			let buffer	= this.getBuffer();
+			let str		= AscCommon.UTF8ArrayToString(buffer.data, 1);
+			str			= str.replaceAll("&quot;", "\"");
+			str			= str.replaceAll("&amp;", "&");
+			return str;
+		};
+	}
+
 	//--------------------------------------------------------export----------------------------------------------------
 	window['AscWord'] = window['AscWord'] || {};
 	window['AscWord'].CustomXml = CustomXml;
-	
+
 })(window);
