@@ -65,6 +65,9 @@
 	 */
 	CustomXml.prototype.checkUrl = function (str)
 	{
+		if (!str)
+			return false;
+
 		for (let i = 0; i < this.uri.length; i++)
 		{
 			if (str.includes(this.uri[i]))
