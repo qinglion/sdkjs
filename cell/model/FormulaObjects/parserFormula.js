@@ -3064,11 +3064,13 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 		return this.array;
 	};
 	cArray.prototype.fillFromArray = function (arr) {
-		this.array = arr;
-		this.rowCount = arr.length;
-		for (var i = 0; i < arr.length; i++) {
-			this.countElementInRow[i] = arr[i].length;
-			this.countElement += arr[i].length;
+		if (arr && arr.length !== undefined) {
+			this.array = arr;
+			this.rowCount = arr.length;
+			for (var i = 0; i < arr.length; i++) {
+				this.countElementInRow[i] = arr[i].length;
+				this.countElement += arr[i].length;
+			}
 		}
 	};
 	cArray.prototype.fillEmptyFromRange = function (range) {
@@ -7202,7 +7204,7 @@ function parserFormula( formula, parent, _ws ) {
 			}
 			if (nOperandType === cElementType.cellsRange3D) {
 				const oParentCell = parserFormula.getParent();
-				if (oParentCell instanceof AscCommonExcel.DefName || oParentCell instanceof CT_WorksheetSource) {
+				if (!(oParentCell instanceof AscCommonExcel.CCellWithFormula)) {
 					return false;
 				}
 				const aRanges = found_operand.getRanges().filter(function (oRange) {
@@ -7449,6 +7451,9 @@ function parserFormula( formula, parent, _ws ) {
 				}
 				parseResult.addRefPos(ph.pCurrPos - ph.operand_str.length, ph.pCurrPos, t.outStack.length, found_operand, true);
 				t.ca = isRecursiveFormula(found_operand, t);
+				if (t.ca && defName && defName.parsedRef) {
+					defName.parsedRef.ca = t.ca;
+				}
 			}
 
 			/* Numbers*/ else if (parserHelp.isNumber.call(ph, t.Formula, ph.pCurrPos, digitDelim)) {
