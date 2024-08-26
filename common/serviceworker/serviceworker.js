@@ -1,4 +1,4 @@
-let g_version = "0.0.0-0";//make empty for develop version
+let g_version = "";//make empty for develop version
 const pathnameParts = self.location.pathname.split('/');
 if (pathnameParts.length > 1 && pathnameParts[pathnameParts.length - 2]) {
 	g_version = pathnameParts[pathnameParts.length - 2];
@@ -11,6 +11,9 @@ function putInCache(request, response) {
 	return caches.open(g_cacheName)
 		.then(function (cache) {
 			return cache.put(request, response);
+		})
+		.catch(function (err) {
+			console.error('putInCache failed with ' + err);
 		});
 }
 
@@ -45,6 +48,8 @@ function activateWorker(event) {
 					return caches.delete(cache);
 				}
 			}));
+		}).catch(function (err) {
+			console.error('activateWorker failed with ' + err);
 		});
 }
 
