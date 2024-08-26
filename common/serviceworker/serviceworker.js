@@ -1,4 +1,4 @@
-let g_version = "";//make empty for develop version
+let g_version = "0.0.0-0";//make empty for develop version
 const pathnameParts = self.location.pathname.split('/');
 if (pathnameParts.length > 1 && pathnameParts[pathnameParts.length - 2]) {
 	g_version = pathnameParts[pathnameParts.length - 2];
