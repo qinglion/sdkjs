@@ -11187,149 +11187,174 @@
 			const selectedShapes = graphicController.getSelectedArray();
 			if (selectedShapes.length < 2) return;
 
-			const paperShapes = selectedShapes.map(function (shape) {
-				const paperPathLst = convertShapeToPaperPathLst(shape);
-				const mergedPathLst = paperPathLst.reduce(function (accumulator, currentPath) {
-					return accumulator.unite(currentPath);
+			const compoundPathLst = selectedShapes.map(function (shape) {
+				const shapeGeometry = shape.getGeometry();
+				const pathLst = shapeGeometry.pathLst;
+				const compoundPaths = pathLst.map(function (path) {
+					return convertFormatPathToCompoundPath(path, shape.transform);
 				});
-				return new paper.CompoundPath(mergedPathLst);
+				const unitedCompoundPath = compoundPaths.reduce(function (resultPath, currentPath) {
+					// return PathBoolean.traceBoolean(resultPath, currentPath, 'unite');
+					return resultPath.unite(currentPath);
+				})
+				return unitedCompoundPath;
 			});
-			const paperResult = paperShapes.reduce(function (accumulator, currentShape) {
-				return accumulator[operation](currentShape);
-			});
-			const resultShape = convertPaperPathToShape(paperResult);
 
-			// coloring
-			const firstShapeFill = selectedShapes[0].getFill();
-			const firstShapeStroke = selectedShapes[0].getStroke();
-			resultShape.spPr.setFill(firstShapeFill.createDuplicate());
-			resultShape.changeLine(firstShapeStroke.createDuplicate());
-
-			selectedShapes.forEach(function (shape) {
-				shape.deleteDrawingBase();
+			// resultPath can be either Path or compoundPath
+			const resultPath = compoundPathLst.reduce(function (resultPath, currentPath) {
+				// return PathBoolean.traceBoolean(resultPath, currentPath, operation);
+				return resultPath[operation](currentPath);
 			});
-			graphicController.resetSelection();
-			resultShape.setDrawingObjects(graphicController.drawingObjects);
-			if (graphicController.drawingObjects && graphicController.drawingObjects.cSld) {
-				resultShape.setParent(graphicController.drawingObjects);
-			}
-			resultShape.addToDrawingObjects();
-			resultShape.checkDrawingBaseCoords();
-			graphicController.selectObject(resultShape, 0);
-			resultShape.addToRecalculate();
-			graphicController.startRecalculate();
+
+			const resultShape = createShapeByCompoundPath(resultPath);
+			const resultShapes = [resultShape];
+
+			replaceShapes(selectedShapes, resultShapes, graphicController);
 		};
 
-		function convertShapeToPaperPathLst(shape) {
+		function convertFormatPathToCompoundPath(path, transform) {
 			paper.setup();
 
-			const pathLst = shape.getGeometry().pathLst;
-			const paperPathLst = pathLst.map(function (path) {
-				const convertedPath = new AscFormat.Path();
-				path.convertToBezierCurves(convertedPath, shape.transform, true);
+			const convertedPath = new AscFormat.Path();
+			path.convertToBezierCurves(convertedPath, transform, true);
 
-				const paperCompoundPath = new paper.CompoundPath();
-				convertedPath.ArrPathCommand.forEach(function (pathCommand) {
-					switch (pathCommand.id) {
-						case AscFormat.moveTo:
-							paperCompoundPath.moveTo([pathCommand.X, pathCommand.Y]);
-							break;
-						case AscFormat.lineTo:
-							paperCompoundPath.lineTo([pathCommand.X, pathCommand.Y]);
-							break;
-						case AscFormat.bezier4:
-							paperCompoundPath.cubicCurveTo(
-								[pathCommand.X0, pathCommand.Y0],
-								[pathCommand.X1, pathCommand.Y1],
-								[pathCommand.X2, pathCommand.Y2]
-							);
-							break;
-						case AscFormat.close:
-							paperCompoundPath.closePath();
-							break;
-					}
-				});
-				return paperCompoundPath;
+			// const compoundPath = new PathBoolean.CompoundPath();
+			const compoundPath = new paper.CompoundPath();
+
+			convertedPath.ArrPathCommand.forEach(function (pathCommand) {
+				switch (pathCommand.id) {
+					case AscFormat.moveTo:
+						compoundPath.moveTo(pathCommand.X, pathCommand.Y);
+						break;
+					case AscFormat.lineTo:
+						compoundPath.lineTo(pathCommand.X, pathCommand.Y);
+						break;
+					case AscFormat.bezier4:
+						compoundPath.cubicCurveTo(
+							pathCommand.X0, pathCommand.Y0,
+							pathCommand.X1, pathCommand.Y1,
+							pathCommand.X2, pathCommand.Y2
+						);
+						break;
+					case AscFormat.close:
+						compoundPath.closePath();
+						break;
+				}
 			});
 
-			return paperPathLst;
+			return compoundPath;
 		}
 
-		function convertPaperPathToShape(paperPath) {
-			const paperBounds = paperPath.bounds;
-			paperPath.position = paperPath.position.subtract(paperBounds.topLeft);
+		function convertCompoundPathToFormatPath(compoundPath) {
+			const compoundPathBounds = compoundPath.getBounds();
+			const position = compoundPath.getPosition().subtract(compoundPathBounds.topLeft)
+			compoundPath.setPosition(position);
 
-			const pathsToHandle = paperPath.children || [paperPath];
-			const resultGeometry = new AscFormat.Geometry();
-			resultGeometry.AddPath(new AscFormat.Path()); // result geometry always contains only one path until proven otherwise :)
+			const formatPath = new AscFormat.Path();
+			formatPath.pathW = compoundPathBounds.width * 36000;
+			formatPath.pathH = compoundPathBounds.height * 36000;
 
+			const pathsToHandle = compoundPath.children || [compoundPath];
 			pathsToHandle.forEach(function (path) {
-				const segments = path.toJSON()[1].segments.map(function (segment) {
-					const point = segment.length === 2 ? segment : segment[0];
-					const handleIn = segment.length === 2 ? [0, 0] : segment[1];
-					const handleOut = segment.length === 2 ? [0, 0] : segment[2];
-					return { point: point, handleIn: handleIn, handleOut: handleOut };
-				});
+				const segments = path.getSegments();
 
 				segments.forEach(function (segment, segmentIndex, segments) {
-					const prevSegment = segments[(segmentIndex - 1 + segments.length) % segments.length];
+					const prevSegment = segment.getPrevious();
+					const nextSegment = segment.getNext();
 
-					if (segmentIndex === 0) {
-						return resultGeometry.pathLst[0].ArrPathCommandInfo.push({
+					if (segment.isFirst()) {
+						return formatPath.ArrPathCommandInfo.push({
 							'id': AscFormat.moveTo,
-							'X': '' + (segment.point[0] * 36000 >> 0),
-							'Y': '' + (segment.point[1] * 36000 >> 0)
+							'X': '' + (segment.point.x * 36000 >> 0),
+							'Y': '' + (segment.point.y * 36000 >> 0)
 						});
 					}
 
 					// TODO: Check if bezier curve is just a straight line
-					resultGeometry.pathLst[0].ArrPathCommandInfo.push({
+					formatPath.ArrPathCommandInfo.push({
 						'id': AscFormat.bezier4,
-						'X0': '' + ((prevSegment.point[0] + prevSegment.handleOut[0]) * 36000 >> 0),
-						'Y0': '' + ((prevSegment.point[1] + prevSegment.handleOut[1]) * 36000 >> 0),
-						'X1': '' + ((segment.point[0] + segment.handleIn[0]) * 36000 >> 0),
-						'Y1': '' + ((segment.point[1] + segment.handleIn[1]) * 36000 >> 0),
-						'X2': '' + (segment.point[0] * 36000 >> 0),
-						'Y2': '' + (segment.point[1] * 36000 >> 0)
+						'X0': '' + ((prevSegment.point.x + prevSegment.handleOut.x) * 36000 >> 0),
+						'Y0': '' + ((prevSegment.point.y + prevSegment.handleOut.y) * 36000 >> 0),
+						'X1': '' + ((segment.point.x + segment.handleIn.x) * 36000 >> 0),
+						'Y1': '' + ((segment.point.y + segment.handleIn.y) * 36000 >> 0),
+						'X2': '' + (segment.point.x * 36000 >> 0),
+						'Y2': '' + (segment.point.y * 36000 >> 0)
 					});
 
-					if (segmentIndex === segments.length - 1 && path.isClosed()) {
-						resultGeometry.pathLst[0].ArrPathCommandInfo.push({
+					if (segment.isLast() && path.isClosed()) {
+						formatPath.ArrPathCommandInfo.push({
 							'id': AscFormat.bezier4,
-							'X0': '' + ((segment.point[0] + segment.handleOut[0]) * 36000 >> 0),
-							'Y0': '' + ((segment.point[1] + segment.handleOut[1]) * 36000 >> 0),
-							'X1': '' + ((segments[0].point[0] + segments[0].handleIn[0]) * 36000 >> 0),
-							'Y1': '' + ((segments[0].point[1] + segments[0].handleIn[1]) * 36000 >> 0),
-							'X2': '' + (segments[0].point[0] * 36000 >> 0),
-							'Y2': '' + (segments[0].point[1] * 36000 >> 0)
+							'X0': '' + ((segment.point.x + segment.handleOut.x) * 36000 >> 0),
+							'Y0': '' + ((segment.point.y + segment.handleOut.y) * 36000 >> 0),
+							'X1': '' + ((segments[0].point.x + segments[0].handleIn.x) * 36000 >> 0),
+							'Y1': '' + ((segments[0].point.y + segments[0].handleIn.y) * 36000 >> 0),
+							'X2': '' + (segments[0].point.x * 36000 >> 0),
+							'Y2': '' + (segments[0].point.y * 36000 >> 0)
 						});
-						return resultGeometry.pathLst[0].ArrPathCommandInfo.push({
+						return formatPath.ArrPathCommandInfo.push({
 							'id': AscFormat.close
 						});
 					}
 				});
 			});
 
-			resultGeometry.pathLst[0].pathW = paperBounds.width * 36000;
-			resultGeometry.pathLst[0].pathH = paperBounds.height * 36000;
+			return formatPath;
+		}
+
+		function createShapeByCompoundPath(compoundPath /* compoundPath can be either Path or compoundPath */) {
+			const compoundPathBounds = compoundPath.getBounds();
+			const formatPath = convertCompoundPathToFormatPath(compoundPath);
+			const pathLst = [formatPath];
+
+			const resultGeometry = new AscFormat.Geometry();
+			pathLst.forEach(function (path) {
+				resultGeometry.AddPath(path);
+			})
 
 			const resultShape = new AscFormat.CShape();
 			resultShape.setBDeleted(false);
-
 			resultShape.spPr = new AscFormat.CSpPr();
 			resultShape.spPr.setParent(resultShape);
-
 			resultShape.spPr.setXfrm(new AscFormat.CXfrm());
 			resultShape.spPr.xfrm.setParent(resultShape.spPr);
-			resultShape.spPr.xfrm.setOffX(paperBounds.left);
-			resultShape.spPr.xfrm.setOffY(paperBounds.top);
-			resultShape.spPr.xfrm.setExtX(paperBounds.width);
-			resultShape.spPr.xfrm.setExtY(paperBounds.height);
+			resultShape.spPr.xfrm.setOffX(compoundPathBounds.left);
+			resultShape.spPr.xfrm.setOffY(compoundPathBounds.top);
+			resultShape.spPr.xfrm.setExtX(compoundPathBounds.width);
+			resultShape.spPr.xfrm.setExtY(compoundPathBounds.height);
 
 			resultGeometry.parent = resultShape;
 			resultShape.spPr.setGeometry(resultGeometry);
 
 			return resultShape;
+		}
+
+		function replaceShapes(oldShapes, newShapes, graphicController) {
+			const firstShapeFill = oldShapes[0].getFill();
+			const firstShapeStroke = oldShapes[0].getStroke();
+
+			newShapes.forEach(function (newShape) {
+				newShape.spPr.setFill(firstShapeFill.createDuplicate());
+				newShape.changeLine(firstShapeStroke.createDuplicate());
+			});
+
+			oldShapes.forEach(function (shape) {
+				shape.deleteDrawingBase();
+			});
+
+			graphicController.resetSelection();
+
+			newShapes.forEach(function (newShape) {
+				newShape.setDrawingObjects(graphicController.drawingObjects);
+				if (graphicController.drawingObjects && graphicController.drawingObjects.cSld) {
+					newShape.setParent(graphicController.drawingObjects);
+				}
+				newShape.addToDrawingObjects();
+				newShape.checkDrawingBaseCoords();
+				graphicController.selectObject(newShape, 0);
+				newShape.addToRecalculate();
+			});
+
+			graphicController.startRecalculate();
 		}
 		// -- Shapes merge
 

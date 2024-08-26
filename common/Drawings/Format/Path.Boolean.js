@@ -1826,6 +1826,9 @@
 			return null;
 		}
 	};
+	Path.prototype.getBounds = function () {};
+	Path.prototype.setPosition = function () {};
+	Path.prototype.getPosition = function () {};
 
 	function CompoundPath(children) {
 		this.children = children;
@@ -1879,6 +1882,13 @@
 		}
 		return ok;
 	};
+	CompoundPath.prototype.moveTo = function (x, y) {};
+	CompoundPath.prototype.lineTo = function (x, y) {};
+	CompoundPath.prototype.cubicCurveTo = function (x0, y0, x1, y1, x2, y2) {};
+	CompoundPath.prototype.closePath = function () {};
+	CompoundPath.prototype.getBounds = function () {};
+	CompoundPath.prototype.setPosition = function () {};
+	CompoundPath.prototype.getPosition = function () {};
 
 
 	// BIG DIVIDING LINE (classes are above)
@@ -2695,22 +2705,22 @@
 
 	// TEST CASE 2
 
-	const selfInter = new Path([
-		new Segment(new Point(0, 0)),
-		new Segment(new Point(100, 0)),
-		new Segment(new Point(0, 100)),
-		new Segment(new Point(100, 100)),
-		new Segment(new Point(0, 0))
-	], false)
+	// const selfInter = new Path([
+	// 	new Segment(new Point(0, 0)),
+	// 	new Segment(new Point(100, 0)),
+	// 	new Segment(new Point(0, 100)),
+	// 	new Segment(new Point(100, 100)),
+	// 	new Segment(new Point(0, 0))
+	// ], false)
 
-	const circle = window.circle = new Path([
-		new Segment(new Point(100, 100), new Point(-55, 0), new Point(55, 0)),
-		new Segment(new Point(200, 200), new Point(0, -55), new Point(0, 55)),
-		new Segment(new Point(100, 300), new Point(55, 0), new Point(-55, 0)),
-		new Segment(new Point(0, 200), new Point(0, 55), new Point(0, -55))
-	], true);
+	// const circle = window.circle = new Path([
+	// 	new Segment(new Point(100, 100), new Point(-55, 0), new Point(55, 0)),
+	// 	new Segment(new Point(200, 200), new Point(0, -55), new Point(0, 55)),
+	// 	new Segment(new Point(100, 300), new Point(55, 0), new Point(-55, 0)),
+	// 	new Segment(new Point(0, 200), new Point(0, 55), new Point(0, -55))
+	// ], true);
 
-	const result = traceBoolean(selfInter, circle, 'exclude');
-	console.log(result);
+	// const result = traceBoolean(selfInter, circle, 'exclude');
+	// console.log(result);
 
 })(window);
