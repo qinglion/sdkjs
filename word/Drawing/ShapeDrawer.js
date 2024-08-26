@@ -640,12 +640,15 @@ function DrawLineEnd(xEnd, yEnd, xPrev, yPrev, type, w, len, drawer, trans)
             var _vx = _ey;
             var _vy = -_ex;
 
+            // (xEnd, yEnd) - right arrow point
             var tmpx = xEnd + len * _ex;
             var tmpy = yEnd + len * _ey;
 
+            // (x1, y1) - top arrow point
             var x1 = tmpx + _vx * w/2;
             var y1 = tmpy + _vy * w/2;
 
+            // (x3, y3) - bottom arrow point
             var x3 = tmpx - _vx * w/2;
             var y3 = tmpy - _vy * w/2;
 

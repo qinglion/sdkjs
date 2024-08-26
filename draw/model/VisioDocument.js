@@ -471,11 +471,22 @@
 					// shapeOrGroup.transformText.ty = 10; // mm
 					shapeOrGroup.recalculateTransformText();
 					// transformText before recalculateTransformText doesn't change anything
-					// let scale = 50
-					// shapeOrGroup.transformText.sx = scale;
-					// shapeOrGroup.transformText.sy = scale;
+					// let scale = 20;
+					// shapeOrGroup.transform.sx = scale;
+					// shapeOrGroup.transform.sy = scale;
+
+					// shapeOrGroup.recalculateTransformText();
+
 					// shapeOrGroup.transformText.ty -= shapeOrGroup.spPr.xfrm.extY * scale / 2;
 					// shapeOrGroup.transformText.tx -= shapeOrGroup.spPr.xfrm.extX * scale / 2;
+					// shapeOrGroup.transformText.ty -= shapeOrGroup.spPr.xfrm.extY;
+					// shapeOrGroup.transformText.tx -= shapeOrGroup.spPr.xfrm.extX * scale;
+
+					// shapeOrGroup.transformText.sx = scale;
+					// shapeOrGroup.transformText.sy = scale;
+					//
+					// shapeOrGroup.transformText.ty /= scale;
+					// shapeOrGroup.transformText.tx /= scale;
 
 
 					// graphics.SaveGrState();
@@ -495,6 +506,7 @@
 					// graphics.df();
 					// graphics.RestoreGrState();
 				}
+				// graphics.CalculateFullTransform(true);
 
 				shapeOrGroup.draw(graphics, shapeOrGroup.transform, shapeOrGroup.transformText);
 
@@ -502,7 +514,7 @@
 					graphics.SetBaseTransform(baseMatrix);
 				}
 
-				// set shape transform that was before fix
+				// set shape transform that was before fix for future drawShapeOrGroupRecursively() calls
 				if (changeTextDirection && shapeOrGroup.Id.substring(shapeOrGroup.Id.length - 4) === "Text") {
 					shapeOrGroup.transform.ty = logic_h_mm - shapeOrGroup.transform.ty - shapeOrGroup.spPr.xfrm.extY;
 					shapeOrGroup.recalculateTransformText();
