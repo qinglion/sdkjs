@@ -1826,6 +1826,39 @@
 			return null;
 		}
 	};
+	Path.prototype.moveTo = function (x, y) {
+		if (this.segments.length === 1)
+			this.removeSegment(0);
+		if (!this.segments.length) {
+			this.add([
+				new Segment(
+					new Point(x, y), null, null,
+					{ path: this, index: 0 }
+				)
+			]);
+		}
+	};
+	Path.prototype.lineTo = function (x, y) {
+		this.add([
+			new Segment(
+				new Point(x, y), null, null,
+				{ path: this, index: this.segments.length }
+			)
+		]);
+	};
+	Path.prototype.cubicCurveTo = function (x0, y0, x1, y1, x2, y2) {
+		const index = this.segments.length;
+		const prevSegment = this.getSegments()[index - 1];
+		prevSegment.setHandleOut(x0 - prevSegment.point.x, y0 - prevSegment.point.y);
+		this.add([
+			new Segment(
+				new Point(x2, y2),
+				new Point(x1 - x2, y1 - y2),
+				null,
+				{ path: this, index: index }
+			)
+		]);
+	};
 	Path.prototype.getBounds = function () {};
 	Path.prototype.setPosition = function () {};
 	Path.prototype.getPosition = function () {};
@@ -1882,10 +1915,26 @@
 		}
 		return ok;
 	};
-	CompoundPath.prototype.moveTo = function (x, y) {};
-	CompoundPath.prototype.lineTo = function (x, y) {};
-	CompoundPath.prototype.cubicCurveTo = function (x0, y0, x1, y1, x2, y2) {};
-	CompoundPath.prototype.closePath = function () {};
+	CompoundPath.prototype.moveTo = function (x, y) {
+		const current = this.children[this.children.length - 1];
+		const path = current && current.isEmpty() ? current : new Path();
+		if (path !== current) {
+			this.children.push(path);
+		}
+		path.moveTo(x, y);
+	};
+	CompoundPath.prototype.lineTo = function (x, y) {
+		const current = this.children[this.children.length - 1];
+		current && current.lineTo(x, y);
+	};
+	CompoundPath.prototype.cubicCurveTo = function (x0, y0, x1, y1, x2, y2) {
+		const current = this.children[this.children.length - 1];
+		current && current.cubicCurveTo(x0, y0, x1, y1, x2, y2);
+	};
+	CompoundPath.prototype.closePath = function () {
+		const current = this.children[this.children.length - 1];
+		current && current.closePath();
+	};
 	CompoundPath.prototype.getBounds = function () {};
 	CompoundPath.prototype.setPosition = function () {};
 	CompoundPath.prototype.getPosition = function () {};
