@@ -5237,6 +5237,11 @@ var editor;
     ws.objectRender.unGroupGraphicObjects();
   };
 
+  spreadsheet_api.prototype.asc_mergeSelectedShapes = function (operation) {
+		const operations = ['unite', 'intersect', 'subtract', 'exclude', 'divide'];
+		if (operations.indexOf(operation) !== -1) AscFormat.mergeSelectedShapes(operation);
+	};
+
   spreadsheet_api.prototype.asc_changeShapeType = function(value) {
     this.asc_setGraphicObjectProps(new Asc.asc_CImgProperty({ShapeProperties: {type: value}}));
   };

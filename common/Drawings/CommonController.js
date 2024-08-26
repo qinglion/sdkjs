@@ -11181,7 +11181,7 @@
 
 		// Shapes merge
 		const mergeSelectedShapes = function (operation) {
-			const graphicController = editor.getGraphicController();
+			const graphicController = Asc.editor.getGraphicController();
 			if (!graphicController) return;
 
 			const selectedShapes = graphicController.getSelectedArray();
@@ -11209,7 +11209,7 @@
 			const resultShape = createShapeByCompoundPath(resultPath);
 			const resultShapes = [resultShape];
 
-			replaceShapes(selectedShapes, resultShapes, graphicController);
+			replaceShapes(selectedShapes, resultShapes);
 		};
 
 		function convertFormatPathToCompoundPath(path, transform) {
@@ -11328,7 +11328,7 @@
 			return resultShape;
 		}
 
-		function replaceShapes(oldShapes, newShapes, graphicController) {
+		function replaceShapes(oldShapes, newShapes) {
 			const firstShapeFill = oldShapes[0].getFill();
 			const firstShapeStroke = oldShapes[0].getStroke();
 
@@ -11341,6 +11341,7 @@
 				shape.deleteDrawingBase();
 			});
 
+			const graphicController = Asc.editor.getGraphicController();
 			graphicController.resetSelection();
 
 			newShapes.forEach(function (newShape) {

@@ -6671,6 +6671,11 @@ background-repeat: no-repeat;\
 		this.WordControl.m_oLogicDocument.unGroupShapes();
 	};
 
+	asc_docs_api.prototype.asc_mergeSelectedShapes = function (operation) {
+		const operations = ['unite', 'intersect', 'subtract', 'exclude', 'divide'];
+		if (operations.indexOf(operation) !== -1) AscFormat.mergeSelectedShapes(operation);
+	};
+
 	asc_docs_api.prototype.setVerticalAlign = function(align)
 	{
 		this.WordControl.m_oLogicDocument.setVerticalAlign(align);
