@@ -11209,7 +11209,11 @@
 			const resultShape = createShapeByCompoundPath(resultPath);
 			const resultShapes = [resultShape];
 
+			// for spreadsheets/presentations editor
 			replaceShapes(selectedShapes, resultShapes);
+
+			// for documents editor
+			// de_replaceShapes(selectedShapes, resultShapes);
 		};
 
 		function convertFormatPathToCompoundPath(path, transform) {
@@ -11263,7 +11267,7 @@
 					const nextSegment = segment.getNext();
 
 					if (segment.isFirst()) {
-						return formatPath.ArrPathCommandInfo.push({
+						return formatPath.addPathCommand({
 							'id': AscFormat.moveTo,
 							'X': '' + (segment.point.x * 36000 >> 0),
 							'Y': '' + (segment.point.y * 36000 >> 0)
@@ -11271,7 +11275,7 @@
 					}
 
 					// TODO: Check if bezier curve is just a straight line
-					formatPath.ArrPathCommandInfo.push({
+					formatPath.addPathCommand({
 						'id': AscFormat.bezier4,
 						'X0': '' + ((prevSegment.point.x + prevSegment.handleOut.x) * 36000 >> 0),
 						'Y0': '' + ((prevSegment.point.y + prevSegment.handleOut.y) * 36000 >> 0),
@@ -11282,7 +11286,7 @@
 					});
 
 					if (segment.isLast() && path.isClosed()) {
-						formatPath.ArrPathCommandInfo.push({
+						formatPath.addPathCommand({
 							'id': AscFormat.bezier4,
 							'X0': '' + ((segment.point.x + segment.handleOut.x) * 36000 >> 0),
 							'Y0': '' + ((segment.point.y + segment.handleOut.y) * 36000 >> 0),
@@ -11291,7 +11295,7 @@
 							'X2': '' + (segments[0].point.x * 36000 >> 0),
 							'Y2': '' + (segments[0].point.y * 36000 >> 0)
 						});
-						return formatPath.ArrPathCommandInfo.push({
+						return formatPath.addPathCommand({
 							'id': AscFormat.close
 						});
 					}
@@ -11329,19 +11333,22 @@
 		}
 
 		function replaceShapes(oldShapes, newShapes) {
-			const firstShapeFill = oldShapes[0].getFill();
-			const firstShapeStroke = oldShapes[0].getStroke();
+			const referenceShape = oldShapes[0];
+			const shapeFill = referenceShape.getFill();
+			const shapeStroke = referenceShape.getStroke();
 
+			// Copy Fill and Stroke properties from referenceShape
 			newShapes.forEach(function (newShape) {
 				newShape.getGeometry().pathLst.forEach(function (path) {
 					path.fill = 'norm';
 					path.stroke = true;
 					path.extrusionOk = false;
 				});
-				newShape.spPr.setFill(firstShapeFill.createDuplicate());
-				newShape.spPr.setLn(firstShapeStroke.createDuplicate());
+				newShape.spPr.setFill(shapeFill.createDuplicate());
+				newShape.spPr.setLn(shapeStroke.createDuplicate());
 			});
 
+			// Remove old shapes
 			oldShapes.forEach(function (shape) {
 				shape.deleteDrawingBase();
 			});
@@ -11349,8 +11356,12 @@
 			const graphicController = Asc.editor.getGraphicController();
 			graphicController.resetSelection();
 
+			// Add new shapes to document
 			newShapes.forEach(function (newShape) {
 				newShape.setDrawingObjects(graphicController.drawingObjects);
+				if (graphicController.drawingObjects.getWorksheetModel) {
+					newShape.setWorksheet(graphicController.drawingObjects.getWorksheetModel());
+				}
 				if (graphicController.drawingObjects && graphicController.drawingObjects.cSld) {
 					newShape.setParent(graphicController.drawingObjects);
 				}
@@ -11360,7 +11371,94 @@
 				newShape.addToRecalculate();
 			});
 
+			// Finalize changes
 			graphicController.startRecalculate();
+		}
+
+		function de_replaceShapes(oldShapes, newShapes) {
+			const graphicController = Asc.editor.getGraphicController();
+
+			const referenceShape = oldShapes[0];
+			const shapeFill = referenceShape.getFill();
+			const shapeStroke = referenceShape.getStroke();
+
+			// Copy Fill and Stroke properties from referenceShape
+			newShapes.forEach(function (newShape) {
+				newShape.getGeometry().pathLst.forEach(function (path) {
+					path.fill = 'norm';
+					path.stroke = true;
+					path.extrusionOk = false;
+				});
+				newShape.spPr.setFill(shapeFill.createDuplicate());
+				newShape.spPr.setLn(shapeStroke.createDuplicate());
+			});
+
+			// Disable revision tracking ?
+			let bTrackRevisions = false;
+			if (graphicController.document.IsTrackRevisions()) {
+				bTrackRevisions = graphicController.document.GetLocalTrackRevisions();
+				graphicController.document.SetLocalTrackRevisions(false);
+			}
+
+			// Create drawing paragraph
+			const newShape = newShapes[0];
+			const dOffX = newShape.spPr.xfrm.offX;
+			const dOffY = newShape.spPr.xfrm.offY;
+			newShape.spPr.xfrm.setOffX(0);
+			newShape.spPr.xfrm.setOffY(0);
+
+			const para_drawing = new ParaDrawing(5, 5, null, graphicController.drawingDocument, null, null);
+			para_drawing.Set_GraphicObject(newShape);
+			para_drawing.Set_DrawingType(drawing_Anchor);
+			para_drawing.Set_WrappingType(WRAPPING_TYPE_NONE);
+			para_drawing.setExtent(newShape.spPr.xfrm.extX, newShape.spPr.xfrm.extY);
+
+			const page_index = referenceShape.parent.pageIndex;
+			const nearest_pos = graphicController.document.Get_NearestPos(page_index, dOffX, dOffY, true, para_drawing);
+			nearest_pos.Paragraph.Check_NearestPos(nearest_pos);
+			para_drawing.Set_XYForAdd(dOffX, dOffY, nearest_pos, page_index);
+
+			const first_paragraph = referenceShape.parent.Get_ParentParagraph();
+			para_drawing.AddToParagraph(first_paragraph);
+			para_drawing.Parent = first_paragraph;
+
+			para_drawing.Set_Props(new asc_CImgProperty({
+				PositionH: {
+					RelativeFrom: Asc.c_oAscRelativeFromH.Page,
+					UseAlign: false,
+					Align: undefined,
+					Value: dOffX
+				},
+				PositionV: {
+					RelativeFrom: Asc.c_oAscRelativeFromV.Page,
+					UseAlign: false,
+					Align: undefined,
+					Value: dOffY
+				}
+			}));
+
+			newShape.setParent(para_drawing);
+
+			// Remove old shapes
+			oldShapes.forEach(function (shape) {
+				shape.parent.bNotPreDelete = true;
+				shape.parent.Remove_FromDocument(false);
+				shape.parent.bNotPreDelete = undefined;
+				if (shape.setParent) shape.setParent(null);
+			});
+
+			// Finalize changes
+			graphicController.addGraphicObject(para_drawing);
+			graphicController.resetSelection();
+			graphicController.selectObject(newShape, page_index);
+			graphicController.document.Recalculate();
+			graphicController.document.UpdateInterface();
+			graphicController.document.UpdateSelection();
+
+			// Restore revision tracking
+			if (bTrackRevisions !== false) {
+				graphicController.document.SetLocalTrackRevisions(bTrackRevisions);
+			}
 		}
 		// -- Shapes merge
 
