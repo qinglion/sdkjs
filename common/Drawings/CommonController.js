@@ -11200,7 +11200,7 @@
 				return unitedCompoundPath;
 			});
 
-			// resultPath can be either Path or compoundPath
+			// resultPath can be either Path or CompoundPath
 			const resultPath = compoundPathLst.reduce(function (resultPath, currentPath) {
 				// return PathBoolean.traceBoolean(resultPath, currentPath, operation);
 				return resultPath[operation](currentPath);
@@ -11333,8 +11333,13 @@
 			const firstShapeStroke = oldShapes[0].getStroke();
 
 			newShapes.forEach(function (newShape) {
+				newShape.getGeometry().pathLst.forEach(function (path) {
+					path.fill = 'norm';
+					path.stroke = true;
+					path.extrusionOk = false;
+				});
 				newShape.spPr.setFill(firstShapeFill.createDuplicate());
-				newShape.changeLine(firstShapeStroke.createDuplicate());
+				newShape.spPr.setLn(firstShapeStroke.createDuplicate());
 			});
 
 			oldShapes.forEach(function (shape) {
