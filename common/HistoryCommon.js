@@ -1299,6 +1299,9 @@
 			case AscDFH.historydescription_Presentation_ShowMasterShapes:
 				sString = "historydescription_Presentation_ShowMasterShapes";
 				break;
+			case AscDFH.historydescription_Presentation_MergeSelectedShapes:
+				sString = "Presentation_MergeSelectedShapes";
+				break;
 		}
 		return sString;
 	}
@@ -4818,6 +4821,7 @@
 	window['AscDFH'].historydescription_Document_SectionPageNumFormat               = 0x01b1;
 	window['AscDFH'].historydescription_Document_SetPageColor                       = 0x01b2;
 	window['AscDFH'].historydescription_Document_InsertTextFromFile                 = 0x01b3;
+	window['AscDFH'].historydescription_Presentation_MergeSelectedShapes            = 0x01b4;
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

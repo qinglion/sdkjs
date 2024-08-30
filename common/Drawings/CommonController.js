@@ -11209,18 +11209,23 @@
 			const resultShape = createShapeByCompoundPath(resultPath);
 			const resultShapes = [resultShape];
 
-			// for spreadsheets/presentations editor
-			replaceShapes(selectedShapes, resultShapes);
-
-			// for documents editor
-			// de_replaceShapes(selectedShapes, resultShapes);
+			switch (Asc.editor.editorId) {
+				case AscCommon.c_oEditorId.Word:
+					de_replaceShapes(selectedShapes, resultShapes);
+					break;
+				default:
+					replaceShapes(selectedShapes, resultShapes);
+			}
 		};
 
 		function convertFormatPathToCompoundPath(path, transform) {
 			paper.setup();
 
-			const convertedPath = new AscFormat.Path();
-			path.convertToBezierCurves(convertedPath, transform, true);
+			const convertedPath = AscFormat.ExecuteNoHistory(function (_path) {
+				const _convertedPath = new AscFormat.Path();
+				_path.convertToBezierCurves(_convertedPath, transform, true);
+				return _convertedPath;
+			}, this, [path]);
 
 			// const compoundPath = new PathBoolean.CompoundPath();
 			const compoundPath = new paper.CompoundPath();
