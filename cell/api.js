@@ -5237,9 +5237,19 @@ var editor;
     ws.objectRender.unGroupGraphicObjects();
   };
 
-  spreadsheet_api.prototype.asc_mergeSelectedShapes = function (operation) {
+	spreadsheet_api.prototype.asc_mergeSelectedShapes = function (operation) {
 		const operations = ['unite', 'intersect', 'subtract', 'exclude', 'divide'];
-		if (operations.indexOf(operation) !== -1) AscFormat.mergeSelectedShapes(operation);
+		if (operations.indexOf(operation) === -1)
+			return;
+
+		const controller = this.wb.getWorksheet().objectRender.controller;
+		if (controller.checkSelectedObjectsProtection())
+			return;
+
+		controller.checkSelectedObjectsAndCallback(
+			AscFormat.mergeSelectedShapes, [operation], false,
+			AscDFH.historydescription_Presentation_MergeSelectedShapes
+		);
 	};
 
   spreadsheet_api.prototype.asc_changeShapeType = function(value) {

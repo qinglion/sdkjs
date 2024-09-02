@@ -11260,8 +11260,8 @@
 			compoundPath.setPosition(position);
 
 			const formatPath = new AscFormat.Path();
-			formatPath.pathW = compoundPathBounds.width * 36000;
-			formatPath.pathH = compoundPathBounds.height * 36000;
+			formatPath.setPathW(compoundPathBounds.width * 36000);
+			formatPath.setPathH(compoundPathBounds.height * 36000);
 
 			const pathsToHandle = compoundPath.children || [compoundPath];
 			pathsToHandle.forEach(function (path) {
@@ -11322,7 +11322,7 @@
 
 			const resultShape = new AscFormat.CShape();
 			resultShape.setBDeleted(false);
-			resultShape.spPr = new AscFormat.CSpPr();
+			resultShape.setSpPr(new AscFormat.CSpPr());
 			resultShape.spPr.setParent(resultShape);
 			resultShape.spPr.setXfrm(new AscFormat.CXfrm());
 			resultShape.spPr.xfrm.setParent(resultShape.spPr);
@@ -11331,7 +11331,7 @@
 			resultShape.spPr.xfrm.setExtX(compoundPathBounds.width);
 			resultShape.spPr.xfrm.setExtY(compoundPathBounds.height);
 
-			resultGeometry.parent = resultShape;
+			resultGeometry.setParent(resultShape);
 			resultShape.spPr.setGeometry(resultGeometry);
 
 			return resultShape;
@@ -11345,9 +11345,9 @@
 			// Copy Fill and Stroke properties from referenceShape
 			newShapes.forEach(function (newShape) {
 				newShape.getGeometry().pathLst.forEach(function (path) {
-					path.fill = 'norm';
-					path.stroke = true;
-					path.extrusionOk = false;
+					path.setFill('norm');
+					path.setStroke(true);
+					path.setExtrusionOk(false);
 				});
 				newShape.spPr.setFill(shapeFill.createDuplicate());
 				newShape.spPr.setLn(shapeStroke.createDuplicate());
@@ -11390,9 +11390,9 @@
 			// Copy Fill and Stroke properties from referenceShape
 			newShapes.forEach(function (newShape) {
 				newShape.getGeometry().pathLst.forEach(function (path) {
-					path.fill = 'norm';
-					path.stroke = true;
-					path.extrusionOk = false;
+					path.setFill('norm');
+					path.setStroke(true);
+					path.setExtrusionOk(false);
 				});
 				newShape.spPr.setFill(shapeFill.createDuplicate());
 				newShape.spPr.setLn(shapeStroke.createDuplicate());
@@ -11425,7 +11425,7 @@
 
 			const first_paragraph = referenceShape.parent.Get_ParentParagraph();
 			para_drawing.AddToParagraph(first_paragraph);
-			para_drawing.Parent = first_paragraph;
+			para_drawing.Set_Parent(first_paragraph);
 
 			para_drawing.Set_Props(new asc_CImgProperty({
 				PositionH: {

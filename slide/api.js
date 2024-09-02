@@ -4881,11 +4881,6 @@ background-repeat: no-repeat;\
             this.WordControl.m_oLogicDocument.GetCurrentSlide().graphicObjects.startEditCurrentOleObject();
     };
 
-	asc_docs_api.prototype.asc_mergeSelectedShapes = function (operation) {
-		const operations = ['unite', 'intersect', 'subtract', 'exclude', 'divide'];
-		if (operations.indexOf(operation) !== -1) AscFormat.mergeSelectedShapes(operation);
-	};
-
     // signatures
     asc_docs_api.prototype.asc_addSignatureLine = function (oPr, Width, Height, sImgUrl) {
         if (editor.WordControl.m_oLogicDocument.Document_Is_SelectionLocked(changestype_Drawing_Props) === false){
@@ -6673,7 +6668,8 @@ background-repeat: no-repeat;\
 
 	asc_docs_api.prototype.asc_mergeSelectedShapes = function (operation) {
 		const operations = ['unite', 'intersect', 'subtract', 'exclude', 'divide'];
-		if (operations.indexOf(operation) !== -1) AscFormat.mergeSelectedShapes(operation);
+		if (operations.indexOf(operation) !== -1)
+			this.WordControl.m_oLogicDocument.mergeSelectedShapes(operation);
 	};
 
 	asc_docs_api.prototype.setVerticalAlign = function(align)

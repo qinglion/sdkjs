@@ -8855,6 +8855,20 @@ background-repeat: no-repeat;\
 		return this.WordControl.m_oLogicDocument.CanUnGroup();
 	};
 
+	asc_docs_api.prototype.asc_mergeSelectedShapes = function (operation) {
+		const operations = ['unite', 'intersect', 'subtract', 'exclude', 'divide'];
+		if (operations.indexOf(operation) === -1)
+			return;
+
+		if (this.WordControl.m_oLogicDocument.Document_Is_SelectionLocked(AscCommon.changestype_Drawing_Props))
+			return;
+
+		// Should rename to "AscDFH.historydescription_Common_ShapesMerge"?
+		this.WordControl.m_oLogicDocument.StartAction(AscDFH.historydescription_Presentation_ShapesMerge);
+		AscFormat.mergeSelectedShapes(operation);
+		this.WordControl.m_oLogicDocument.FinalizeAction();
+	};
+
 	asc_docs_api.prototype.CanChangeWrapPolygon = function()
 	{
 		return this.WordControl.m_oLogicDocument.CanChangeWrapPolygon();
