@@ -4592,12 +4592,9 @@ CT_pivotTableDefinition.prototype.getPivotFieldCellValue = function(fieldIndex, 
 	var cacheFields = this.asc_getCacheFields();
 	var pivotField = pivotFields[fieldIndex];
 	var pivotFieldItem = pivotField.getItem(valueIndex);
-	var pivotItemName = pivotFieldItem.getName(cacheFields[fieldIndex]);
-	if (pivotItemName) {
-		const oCellValue = new AscCommonExcel.CCellValue();
-		oCellValue.type = AscCommon.CellValueType.String;
-		oCellValue.text = pivotItemName;
-		return oCellValue;
+	var pivotItemNameCellValue = pivotFieldItem.getNameCellValue(cacheFields[fieldIndex]);
+	if (pivotItemNameCellValue) {
+		return pivotItemNameCellValue;
 	}
 	return new AscCommonExcel.CCellValue();
 };
@@ -18005,6 +18002,19 @@ CT_Item.prototype.getName = function(cacheField) {
 	const sharedItem = cacheField.getGroupOrSharedItem(this.x);
 	if (sharedItem) {
 		return sharedItem.val + "";
+	}
+	return null;
+};
+CT_Item.prototype.getNameCellValue = function(cacheField) {
+	if (this.asc_getName()) {
+		const oCellValue = new AscCommonExcel.CCellValue();
+		oCellValue.type = AscCommon.CellValueType.String;
+		oCellValue.text = this.asc_getName();
+		return oCellValue;
+	}
+	const sharedItem = cacheField.getGroupOrSharedItem(this.x);
+	if (sharedItem) {
+		return sharedItem.getCellValue();
 	}
 	return null;
 }
