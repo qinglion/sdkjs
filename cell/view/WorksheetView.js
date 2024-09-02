@@ -17184,6 +17184,10 @@
 
 			// set the value to the selected range 
 			c.setValue2(val, true);
+			const pivotTable = c.worksheet.getPivotTable(c.bbox.c1, c.bbox.r1);
+			if (pivotTable) {
+				pivotTable.editCell(c.bbox, val);
+			}
 
 			// recalculate all volatile arrays on page
 			t.model.recalculateVolatileArrays();
