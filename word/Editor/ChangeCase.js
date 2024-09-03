@@ -74,6 +74,7 @@
 		this.GlobalSettings   = true;
 		this.CurrentParagraph = 0;
 		this.isAllinTable     = true;
+		this.CurrentMathRun	  = null;
 	}
 	CChangeTextCaseEngine.prototype.ProcessParagraphs = function(arrParagraphs)
 	{
@@ -125,7 +126,12 @@
 
 		for (var nIndex = 0, nCount = this.WordBuffer.length; nIndex < nCount; ++nIndex)
 		{
-			var nCharCode   = this.WordBuffer[nIndex].Run.GetElement(this.WordBuffer[nIndex].Pos).Value;
+			var isMathRun	= this.WordBuffer[nIndex].Run.IsMathRun();
+
+			var nCharCode   = !isMathRun
+				? this.WordBuffer[nIndex].Run.GetElement(this.WordBuffer[nIndex].Pos).Value
+				: this.WordBuffer[nIndex].Run.GetElement(this.WordBuffer[nIndex].Pos).value;
+
 			var nLowerCode = String.fromCharCode(nCharCode).toLowerCase().charCodeAt(0);
 			var nUpperCode = String.fromCharCode(nCharCode).toUpperCase().charCodeAt(0);
 
@@ -173,8 +179,12 @@
 
 				var oRun      = this.WordBuffer[nIndex].Run;
 				var nInRunPos = this.WordBuffer[nIndex].Pos;
+				var isMathRun = oRun.IsMathRun();
 
-				var nCharCode  = oRun.GetElement(nInRunPos).Value;
+				var nCharCode = !isMathRun
+					? oRun.GetElement(nInRunPos).Value
+					: oRun.GetElement(nInRunPos).value;
+
 				var nLowerCode = String.fromCharCode(nCharCode).toLowerCase().charCodeAt(0);
 				var nUpperCode = String.fromCharCode(nCharCode).toUpperCase().charCodeAt(0);
 
@@ -186,7 +196,14 @@
 						|| Asc.c_oAscChangeTextCaseType.UpperCase === nCaseType
 						|| (Asc.c_oAscChangeTextCaseType.CapitalizeWords === nCaseType && 0 === nIndex)))
 					{
-						oRun.AddToContent(nInRunPos, new AscWord.CRunText(nUpperCode), false);
+						var oNewText = !isMathRun
+							? new AscWord.CRunText(nUpperCode)
+							: new CMathText();
+
+						if (isMathRun)
+							oNewText.add(nUpperCode);
+
+						oRun.AddToContent(nInRunPos, oNewText, false);
 						oRun.RemoveFromContent(nInRunPos + 1, 1, false);
 					}
 					else if (nUpperCode === nCharCode
@@ -199,7 +216,14 @@
 							|| (Asc.c_oAscChangeTextCaseType.SentenceCase === nCaseType && bNeddToChange && !(this.StartSentence && 0 === nIndex))
 						))
 					{
-						oRun.AddToContent(nInRunPos, new AscWord.CRunText(nLowerCode), false);
+						var oNewText = !isMathRun
+							? new AscWord.CRunText(nUpperCode)
+							: new CMathText();
+
+						if (isMathRun)
+							oNewText.add(nLowerCode);
+
+						oRun.AddToContent(nInRunPos, oNewText, false);
 						oRun.RemoveFromContent(nInRunPos + 1, 1, false);
 					}
 				}
@@ -356,6 +380,43 @@
 				}
 			}
 		}
+		else if (oItem.IsMathText())
+		{
+			if (this.CurrentMathRun && this.CurrentMathRun !== oItem.GetMathBaseFirst())
+			{
+				this.currentSentence += this.word;
+				this.currentSentence += " ";
+				this.word = "";
+				this.CheckWords(this);
+			}
+
+			if (AscMath.MathLiterals.punct.SearchU(String.fromCharCode(oItem.value))
+				|| AscMath.MathLiterals.space.SearchU(String.fromCharCode(oItem.value))
+				|| AscMath.MathLiterals.operator.SearchU(String.fromCharCode(oItem.value))
+				|| AscMath.MathLiterals.operand.SearchU(String.fromCharCode(oItem.value)))
+			{
+				this.currentSentence += this.word;
+				this.currentSentence += " ";
+				this.word = "";
+				this.CheckWords(this);
+			}
+			else
+			{
+				if (isInSelection)
+				{
+					let nCharCode  = oItem.value;
+					let nLowerCode = String.fromCharCode(nCharCode).toLowerCase().charCodeAt(0);
+					let nUpperCode = String.fromCharCode(nCharCode).toUpperCase().charCodeAt(0);
+
+					if (IsToSpace(nCharCode))
+						this.word += " ";
+					if (nLowerCode !== nCharCode || nUpperCode !== nCharCode)
+						this.word += String.fromCharCode(nCharCode);
+
+					this.CurrentMathRun = oItem.GetMathBaseFirst();
+				}
+			}
+		}
 		else
 		{
 			this.currentSentence += this.word;
@@ -378,12 +439,14 @@
 				this.isAllinTable = false;
 
 			let oThis = this;
-			oParagraph.CheckRunContent(function(oRun)
+			oParagraph.CheckRunContent(function(oRun, nStartPos, nEndPos)
 			{
-				let nStartPos = 0;
-				let nEndPos   = -1;
+				if (undefined === nStartPos)
+					nStartPos = 0;
+				if (undefined === nEndPos)
+					nEndPos   = -1;
 
-				if (oRun.IsSelectionUse())
+				if (oRun.IsSelectionUse() && !oRun.IsMathRun())
 				{
 					nStartPos = oRun.GetSelectionStartPos();
 					nEndPos   = oRun.GetSelectionEndPos();
@@ -394,6 +457,16 @@
 					oThis.CheckItemOnCollect(oRun.GetElement(nPos), nPos >= nStartPos && nPos < nEndPos);
 				}
 			});
+
+			if (this.CurrentMathRun)
+			{
+				this.currentSentence += this.word;
+				this.currentSentence += " ";
+				this.word = "";
+				this.CheckWords(this);
+
+				this.CurrentMathRun = null;
+			}
 
 			this.CurrentParagraph++;
 		}
@@ -445,6 +518,40 @@
 				}
 			}
 		}
+		else if (oItem.IsMathText())
+		{
+			let strMathText = String.fromCharCode(oItem.value);
+
+			if (this.CurrentMathRun && this.CurrentMathRun !== oItem.GetMathBaseFirst())
+			{
+				this.FlushWord();
+				this.SetStartSentence(true);
+			}
+
+			if (AscMath.MathLiterals.punct.SearchU(strMathText)
+				|| AscMath.MathLiterals.operand.SearchU(strMathText)
+				|| AscMath.MathLiterals.operator.SearchU(strMathText))
+			{
+				this.FlushWord();
+				this.SetStartSentence(true);
+			}
+			else
+			{
+				if (!AscMath.MathLiterals.space.SearchU(strMathText))
+					this.AddLetter(oRun, nPos, true);
+				else
+					this.FlushWord();
+
+				let nCharCode = oItem.value;
+				if (33 === nCharCode || 63 === nCharCode || 46 === nCharCode)
+					this.SetStartSentence(true);
+				else
+					this.SetStartSentence(false);
+
+				this.CurrentMathRun = oItem.GetMathBaseFirst();
+			}
+
+		}
 		else
 		{
 			this.FlushWord();
@@ -467,6 +574,34 @@
 		for (let nPos = nStartPos; nPos < nEndPos; ++nPos)
 		{
 			let oItem = oRun.GetElement(nPos);
+
+			if (oItem.IsMathText())
+			{
+				let nCharCode  = oItem.value;
+				let nLowerCode = String.fromCharCode(nCharCode).toLowerCase().charCodeAt(0);
+				let nUpperCode = String.fromCharCode(nCharCode).toUpperCase().charCodeAt(0);
+
+				if (nLowerCode !== nCharCode || nUpperCode !== nCharCode)
+				{
+					if (nLowerCode === nCharCode && (Asc.c_oAscChangeTextCaseType.ToggleCase === this.ChangeType || Asc.c_oAscChangeTextCaseType.UpperCase === this.ChangeType))
+					{
+						let oCMathText = new CMathText();
+						oCMathText.add(nUpperCode);
+
+						oRun.AddToContent(nPos, oCMathText, false);
+						oRun.RemoveFromContent(nPos + 1, 1, false);
+					}
+					else if (nUpperCode === nCharCode && (Asc.c_oAscChangeTextCaseType.ToggleCase === this.ChangeType || Asc.c_oAscChangeTextCaseType.LowerCase === this.ChangeType))
+					{
+						let oCMathText = new CMathText();
+						oCMathText.add(nLowerCode);
+
+						oRun.AddToContent(nPos, oCMathText, false);
+						oRun.RemoveFromContent(nPos + 1, 1, false);
+					}
+				}
+			}
+
 			if (!oItem.IsText())
 				continue;
 
