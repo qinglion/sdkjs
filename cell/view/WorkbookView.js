@@ -2048,9 +2048,7 @@
     var activeWsModel = this.model.getActiveWs();
 	const pivot = activeWsModel.inPivotTable(activeCellRange);
     if (pivot) {
-		if (pivot.canEditCell(activeCellRange)) {
-			// todo error handling
-		} else {
+		if (!pivot.canEditCell(activeCellRange)) {
 			if (t.input.isFocused) {
 				t._blurCellEditor();
 			}
