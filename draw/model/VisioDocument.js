@@ -562,6 +562,12 @@
 						visioDocument.getFitZoomValue(pageIndex, apiHtmlElement.offsetWidth, apiHtmlElement.offsetHeight) / 100 * fixScale;
 
 				}
+			} else {
+				if (isThumbnail) {
+					fitZoom = 10;
+				} else {
+					fitZoom = Zoom;
+				}
 			}
 
 			let pageScale = fitZoom / 100;
