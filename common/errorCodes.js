@@ -166,6 +166,7 @@
 			PivotOverlap				: -314,
 			PivotGroup					: -315,
 			PivotWithoutUnderlyingData	: -316,
+			PivotFieldNameExists        : -317,
 
 			CircularReference			: -320,
 
@@ -358,6 +359,7 @@
 	prot['InvalidReferenceOrName']           = prot.InvalidReferenceOrName;
 	prot['LockCreateDefName']                = prot.LockCreateDefName;
 	prot['LockedCellPivot']                  = prot.LockedCellPivot;
+	prot['PivotFieldNameExists']             = prot.PivotFieldNameExists;
 	prot['PivotLabledColumns']               = prot.PivotLabledColumns;
 	prot['PivotOverlap']                     = prot.PivotOverlap;
 	prot['PivotGroup']                       = prot.PivotGroup;
