@@ -4560,7 +4560,7 @@ function (window, undefined) {
 		if (!pivotTable) {
 			return;
 		}
-		var field = pivotTable.asc_getPivotFields(Data.pivotIndex);
+		var field = pivotTable.asc_getPivotFields()[Data.pivotIndex];
 		var pivotFieldItem = field.getItem(Data.itemIndex)
 		pivotTable.stashCurReportRange();
 
