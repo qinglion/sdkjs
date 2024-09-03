@@ -9034,7 +9034,10 @@ PivotRangeMapper.prototype.getEditPageFieldsLabelFunction = function(bbox) {
 				} else {
 					const pivotFields =  pivot.asc_getPivotFields();
 					const pivotField = pivotFields[pivotIndex];
-					pivotField.asc_setName(text, pivot, pivotIndex, true);
+					const api = t.pivot.worksheet.workbook.oApi;
+					api._changePivotWithLock(t.pivot, function(ws, pivot) {
+						pivotField.asc_setName(text, pivot, pivotIndex, true);
+					});
 				}
 			}
 		}
@@ -9066,9 +9069,13 @@ PivotRangeMapper.prototype.getSingleDataFieldRange = function() {
  * @return {Function}
  */
 PivotRangeMapper.prototype.getEditSingleDataFieldFunction = function() {
+	const t = this;
 	const dataField = this.pivot.asc_getDataFields()[0];
 	return function (text) {
-		dataField.asc_setName(text);
+		const api = t.pivot.worksheet.workbook.oApi;
+		api._changePivotWithLock(t.pivot, function(ws, pivot) {
+			dataField.asc_setName(text, t.pivot, 0, true);
+		});
 	}
 };
 PivotRangeMapper.prototype.getRowFieldsOffset = function() {
@@ -9207,8 +9214,8 @@ PivotRangeMapper.prototype.getEditColLabelCellFunction = function(bbox) {
 			if (findIndex !== -1 && findIndex !== v) {
 				pivotField.asc_moveItem(t.pivot.worksheet.workbook.oApi, t.pivot, pivotIndex, findIndex, v);
 			} else {
-				const api = t.pivot.worksheet.workbook.oApi;
-				api._changePivotWithLock(t.pivot, function(ws, pivot) {
+				const api = pivot.worksheet.workbook.oApi;
+				api._changePivotWithLock(pivot, function(ws, pivot) {
 					fieldItem.asc_setName(text, pivot, pivotIndex, v, true);
 				});
 			}
@@ -9224,10 +9231,13 @@ PivotRangeMapper.prototype.getEditRowHeaderCellFunction = function(bbox) {
 	const pivot = this.pivot;
 	const rowFields = pivot.asc_getRowFields();
 	const range = pivot.getRange();
+	const api = pivot.worksheet.workbook.oApi;
 	if (pivot.compact && bbox.c1 === range.c1) {
 		if (!(rowFields.length === 1 && rowFields[0].asc_getIndex() === AscCommonExcel.st_VALUES)) {
 			return function(text) {
-				pivot.asc_setRowHeaderCaption(text, true);
+				api._changePivotWithLock(pivot, function(ws, pivot) {
+					pivot.asc_setRowHeaderCaption(text, true);
+				});
 			}
 		}
 	}
@@ -9242,15 +9252,19 @@ PivotRangeMapper.prototype.getEditRowHeaderCellFunction = function(bbox) {
 			// todo err
 			return null;
 		}
-		const findIndex = pivot.getFieldIndexByValue(text)
+		const findIndex = pivot.getFieldIndexByValue(text);
 		if (findIndex !== -1 && findIndex !== pivotIndex) {
 			pivot.asc_moveToRowField(pivot.worksheet.workbook.oApi, findIndex, undefined, index);
 		} else {
 			if (pivotIndex !== AscCommonExcel.st_VALUES) {
 				const pivotField = pivotFields[pivotIndex];
-				pivotField.asc_setName(text, pivot, pivotIndex, true);
+				api._changePivotWithLock(pivot, function(ws, pivot) {
+					pivotField.asc_setName(text, pivot, pivotIndex, true);
+				});
 			} else {
-				pivot.asc_setDataCaption(text, true);
+				api._changePivotWithLock(pivot, function(ws, pivot) {
+					pivot.asc_setDataCaption(text, true);
+				});
 			}
 
 		}
@@ -9262,9 +9276,12 @@ PivotRangeMapper.prototype.getEditRowHeaderCellFunction = function(bbox) {
  */
 PivotRangeMapper.prototype.getEditColHeaderCellFunction = function(bbox) {
 	const pivot = this.pivot;
+	const api = pivot.worksheet.workbook.oApi;
 	if (pivot.compact) {
 		return function(text) {
-			pivot.asc_setColHeaderCaption(text, true);
+			api._changePivotWithLock(pivot, function(ws, pivot) {
+				pivot.asc_setColHeaderCaption(text, true);
+			});
 		}
 	}
 	const colFields = pivot.asc_getColumnFields()
@@ -9276,16 +9293,20 @@ PivotRangeMapper.prototype.getEditColHeaderCellFunction = function(bbox) {
 			// todo err
 			return null;
 		}
-		const findIndex = pivot.getFieldIndexByValue(text)
+		const findIndex = pivot.getFieldIndexByValue(text);
 		if (findIndex !== -1 && findIndex !== pivotIndex) {
 			pivot.asc_moveToColField(pivot.worksheet.workbook.oApi, findIndex, undefined, index);
 		} else {
 			if (pivotIndex !== AscCommonExcel.st_VALUES) {
 				const pivotFields =  pivot.asc_getPivotFields();
 				const pivotField = pivotFields[pivotIndex];
-				pivotField.asc_setName(text, pivot, pivotIndex, true);
+				api._changePivotWithLock(pivot, function(ws, pivot) {
+					pivotField.asc_setName(text, pivot, pivotIndex, true);
+				});
 			} else {
-				pivot.asc_setDataCaption(text, true);
+				api._changePivotWithLock(pivot, function(ws, pivot) {
+					pivot.asc_setDataCaption(text, true);
+				});
 			}
 		}
 	}
@@ -9298,8 +9319,10 @@ PivotRangeMapper.prototype.getEditRowGrandTotalCellFunction = function() {
 	const valuesIndex = this.pivot.getRowFieldsValuesIndex();
 	if (valuesIndex < 0) {
 		return function (text) {
-			pivot.asc_setGrandTotalCaption(text, true);
-			pivot.worksheet._updatePivotTableCellsRowColLables(pivot)
+			const api = pivot.worksheet.workbook.oApi;
+			api._changePivotWithLock(pivot, function(ws, pivot) {
+				pivot.asc_setGrandTotalCaption(text, true);
+			});
 		}
 	}
 	return null;
@@ -9313,8 +9336,10 @@ PivotRangeMapper.prototype.getEditColGrandTotalCellFunction = function() {
 	const valuesIndex = this.pivot.getColumnFieldsValuesIndex();
 	if (valuesIndex < 0) {
 		return function (text) {
-			pivot.asc_setGrandTotalCaption(text, true);
-			pivot.worksheet._updatePivotTableCellsRowColLables(pivot, t.getRowFieldsOffset());
+			const api = pivot.worksheet.workbook.oApi;
+			api._changePivotWithLock(pivot, function(ws, pivot) {
+				pivot.asc_setGrandTotalCaption(text, true);
+			});
 		}
 	}
 	return null;
