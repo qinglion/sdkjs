@@ -8116,7 +8116,7 @@ CT_pivotTableDefinition.prototype.getCellByGetPivotDataString = function(stringO
 			if (item !== null) {
 				const cell = this.getCellByGetPivotDataParams({
 					dataFieldName: dataFieldName,
-					optParams: [cacheField.asc_getName(), findValue]
+					optParams: [this.getPivotFieldName(i), findValue]
 				});
 				if (cell) {
 					const res = new cRef(this.worksheet.getCell3(cell.row, cell.col).getName(), this.worksheet);
@@ -8303,6 +8303,7 @@ CT_pivotTableDefinition.prototype.getGetPivotParamsByActiveCell = function(activ
 	const rowItems = this.getRowItems();
 	const colItems = this.getColItems();
 	const dataFields = this.asc_getDataFields();
+	const pivotFields = this.asc_getPivotFields();
 	const cacheFields = this.asc_getCacheFields();
 	const indexes = this.getItemsIndexesByActiveCell(row, col);
 	const dataIndex = Math.max(rowItems[indexes.rowItemIndex].i, colItems[indexes.colItemIndex].i);
@@ -8320,9 +8321,19 @@ CT_pivotTableDefinition.prototype.getGetPivotParamsByActiveCell = function(activ
 		const fieldIndex = item[0];
 		const fieldItemIndex = item[1];
 		const cacheField = cacheFields[fieldIndex];
-		const result = t.getGetPivotParam(cacheField, fieldItemIndex);
-		resultOptParams.push(cacheField.asc_getName(), result.value);
-		resultOptParamsFormula.push('"' + cacheField.asc_getName() + '"', result.formulaValue);
+		const pivotField = pivotFields[fieldIndex];
+		const fieldItem = pivotField.getItem(pivotField.getItemIndexByValue(fieldItemIndex));
+		let result = null;
+		if (fieldItem.asc_getName() != null) {
+			result = {
+				value: fieldItem.asc_getName(),
+				formulaValue: '"' + fieldItem.asc_getName() + '"',
+			};
+		} else {
+			result = t.getGetPivotParam(cacheField, fieldItemIndex);
+		}
+		resultOptParams.push(t.getPivotFieldName(fieldIndex), result.value);
+		resultOptParamsFormula.push('"' + t.getPivotFieldName(fieldIndex) + '"', result.formulaValue);
 	});
 	return {
 		dataFieldName: dataFieldName,
@@ -16155,6 +16166,16 @@ CT_PivotField.prototype.findFieldItemInFieldGroup = function(cacheField, value) 
  * @return {CT_Item}
  */
 CT_PivotField.prototype.findFieldItemByTextValue = function(cacheField, value) {
+	if (typeof value === 'string') {
+		const items = this.getItems();
+		if (items) {
+			for(let i = 0; i < items.length; i += 1) {
+				if (items[i].asc_getName() != null && items[i].asc_getName().toLowerCase() === value.toLowerCase()) {
+					return items[i];
+				}
+			}
+		}
+	}
 	if (cacheField.fieldGroup && cacheField.fieldGroup.rangePr) {
 		return this.findFieldItemInFieldGroup(cacheField, value);
 	}
