@@ -8664,8 +8664,10 @@ PivotRangeMapper.prototype.getEditRowLabelCellFunction = function(bbox) {
 				if (findIndex !== -1 && findIndex !== v) {
 					t.pivot.asc_moveDataField(t.pivot.worksheet.workbook.oApi, findIndex, v);
 				} else {
-					dataFields[v].asc_setName(text, t.pivot, findIndex, true);
-					ws._updatePivotTableCellsRowColLables(t.pivot, rowFieldsOffset)
+					const api = t.pivot.worksheet.workbook.oApi;
+					api._changePivotWithLock(t.pivot, function(ws, pivot) {
+						dataFields[v].asc_setName(text, t.pivot, v, true);
+					});
 				}
 			}
 		}
@@ -8673,14 +8675,19 @@ PivotRangeMapper.prototype.getEditRowLabelCellFunction = function(bbox) {
 		const pivotField = pivotFields[pivotIndex];
 		const fieldItem = pivotField.getItem(v);
 		return function(text) {
-			const findIndex = pivotField.getItems().findIndex(function(item) {
+			const dataItems = pivotField.getItems().filter(function(item) {
+				return item.t === Asc.c_oAscItemType.Data;
+			});
+			const findIndex = dataItems.findIndex(function(item) {
 				return item.getName(cacheFields[pivotIndex]).toLowerCase() === text.toLowerCase();
-			})
-			if (findIndex !== -1) {
+			});
+			if (findIndex !== -1 && findIndex !== v) {
 				pivotField.asc_moveItem(t.pivot.worksheet.workbook.oApi, t.pivot, pivotIndex, findIndex, v);
 			} else {
-				fieldItem.asc_setName(text);
-				ws._updatePivotTableCellsRowColLables(t.pivot, t.getRowFieldsOffset())
+				const api = t.pivot.worksheet.workbook.oApi;
+				api._changePivotWithLock(t.pivot, function(ws, pivot) {
+					fieldItem.asc_setName(text, pivot, pivotIndex, v, true);
+				});
 			}
 		}
 	}
@@ -8718,8 +8725,10 @@ PivotRangeMapper.prototype.getEditColLabelCellFunction = function(bbox) {
 				if (findIndex !== -1 && findIndex !== v) {
 					t.pivot.asc_moveDataField(t.pivot.worksheet.workbook.oApi, findIndex, v);
 				} else {
-					dataFields[v].asc_setName(text, t.pivot, findIndex, true);
-					ws._updatePivotTableCellsRowColLables(t.pivot)
+					const api = t.pivot.worksheet.workbook.oApi;
+					api._changePivotWithLock(t.pivot, function(ws, pivot) {
+						dataFields[v].asc_setName(text, t.pivot, v, true);
+					});
 				}
 			}
 		}
@@ -8727,14 +8736,19 @@ PivotRangeMapper.prototype.getEditColLabelCellFunction = function(bbox) {
 		const pivotField = pivotFields[pivotIndex];
 		const fieldItem = pivotField.getItem(v);
 		return function(text) {
-			const findIndex = pivotField.getItems().findIndex(function(item) {
+			const dataItems = pivotField.getItems().filter(function(item) {
+				return item.t === Asc.c_oAscItemType.Data;
+			})
+			const findIndex = dataItems.findIndex(function(item) {
 				return item.getName(cacheFields[pivotIndex]).toLowerCase() === text.toLowerCase();
 			})
-			if (findIndex !== -1) {
+			if (findIndex !== -1 && findIndex !== v) {
 				pivotField.asc_moveItem(t.pivot.worksheet.workbook.oApi, t.pivot, pivotIndex, findIndex, v);
 			} else {
-				fieldItem.asc_setName(text);
-				ws._updatePivotTableCellsRowColLables(t.pivot)
+				const api = t.pivot.worksheet.workbook.oApi;
+				api._changePivotWithLock(t.pivot, function(ws, pivot) {
+					fieldItem.asc_setName(text, pivot, pivotIndex, v, true);
+				});
 			}
 		}
 	}
