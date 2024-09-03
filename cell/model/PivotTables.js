@@ -16343,7 +16343,7 @@ CT_PivotField.prototype.asc_setName = function (newVal, pivot, index, addToHisto
 		if (newVal && newVal.toLowerCase() !== pivot.getPivotFieldName(index) && pivot.checkInvalidNewFieldName(newVal)) {
 			const wbModel = pivot.worksheet.workbook;
 			const api = wbModel.oApi;
-			api.sendEvent('asc_onError', c_oAscError.ID.LockedCellPivot, c_oAscError.Level.NoCritical);
+			api.sendEvent('asc_onError', c_oAscError.ID.PivotFieldNameExists, c_oAscError.Level.NoCritical);
 			return;
 		}
 	}
@@ -17077,7 +17077,7 @@ CT_DataField.prototype.asc_setName = function(newVal, pivot, index, addToHistory
 		if (this.name && newVal && this.name.toLowerCase() !== newVal.toLowerCase() && pivot.checkInvalidNewFieldName(newVal)) {
 			const wbModel = pivot.worksheet.workbook;
 			const api = wbModel.oApi;
-			api.sendEvent('asc_onError', c_oAscError.ID.LockedCellPivot, c_oAscError.Level.NoCritical);
+			api.sendEvent('asc_onError', c_oAscError.ID.PivotFieldNameExists, c_oAscError.Level.NoCritical);
 			return;
 		}
 	}
