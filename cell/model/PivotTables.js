@@ -9064,8 +9064,8 @@ PivotRangeMapper.prototype.getEditPageFieldsLabelFunction = function(bbox) {
 				} else {
 					const pivotFields =  pivot.asc_getPivotFields();
 					const pivotField = pivotFields[pivotIndex];
-					const api = t.pivot.worksheet.workbook.oApi;
-					api._changePivotWithLock(t.pivot, function(ws, pivot) {
+					const api = pivot.worksheet.workbook.oApi;
+					api._changePivotWithLock(pivot, function(ws, pivot) {
 						pivotField.asc_setName(text, pivot, pivotIndex, true);
 					});
 				}
@@ -9088,9 +9088,10 @@ PivotRangeMapper.prototype.getSingleDataFieldRange = function() {
 		if (this.pivot.getRowFieldsCount()) {
 			return this.pivot.worksheet.getRange3(range.r1, range.c1 + location.firstDataCol, range.r1, range.c1 + location.firstDataCol);
 		}
-		if (this.pivot.getColumnFieldsCount ()) {
+		if (this.pivot.getColumnFieldsCount()) {
 			return this.pivot.worksheet.getRange3(range.r1 + location.firstDataRow, range.c1, range.r1 + location.firstDataRow, range.c1);
 		}
+		return this.pivot.worksheet.getRange3(range.r1, range.c1, range.r1, range.c1);
 	}
 	return null;
 };
