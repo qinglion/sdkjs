@@ -212,6 +212,7 @@ function CEditorPage(api)
 	this.m_oMasterDrawer.DrawingDocument = this.m_oDrawingDocument;
 
 	this.AllLayouts = [];
+	this.LastMaster = null;
 
 	this.m_oDrawingDocument.m_oWordControl           = this;
 	this.m_oDrawingDocument.TransitionSlide.HtmlPage = this;
@@ -738,7 +739,7 @@ function CEditorPage(api)
 				_elem.innerHTML = _text;
 
 				//window.editor.WordControl.Thumbnails.SelectPage(_current - 1);
-				window.editor.WordControl.GoToPage(slideNum, false, false, true);
+				window.editor.WordControl.GoToPage(slideNum, false, false, false, true);
 
 				window.editor.WordControl.OnResizeReporter();
 			});
@@ -1331,6 +1332,15 @@ function CEditorPage(api)
 			this.m_oNotes_scroll.HtmlElement.style.display = "block";
 		}
 
+		if(this.IsAnimPaneShown())
+		{
+			this.m_oAnimationPaneContainer.HtmlElement.style.display = "block";
+		}
+		else
+		{
+			this.m_oAnimationPaneContainer.HtmlElement.style.display = "none";
+		}
+
 		if (true !== isNoNeedResize)
 			this.OnResize2(true);
 	};
@@ -1701,10 +1711,15 @@ function CEditorPage(api)
 		if (false === oThis.m_oApi.bInit_word_control)
 			return;
 
-		var oWordControl = oThis;
-		if (0 < oWordControl.m_oDrawingDocument.SlideCurrent)
+		let oWordControl = oThis;
+		let nCurrentSlide = oWordControl.m_oDrawingDocument.SlideCurrent;
+		if (oWordControl.DemonstrationManager.Mode)
 		{
-			oWordControl.GoToPage(oWordControl.m_oDrawingDocument.SlideCurrent - 1);
+			nCurrentSlide = oWordControl.DemonstrationManager.SlideNum;
+		}
+		if (0 < nCurrentSlide)
+		{
+			oWordControl.GoToPage(nCurrentSlide - 1);
 		}
 		else
 		{
@@ -1716,12 +1731,17 @@ function CEditorPage(api)
 		if (false === oThis.m_oApi.bInit_word_control)
 			return;
 
-		var oWordControl = oThis;
-
+		let oWordControl = oThis;
+		let nCurrentSlide = oWordControl.m_oDrawingDocument.SlideCurrent;
 		let SlidesCount = this.GetSlidesCount();
-		if ((SlidesCount - 1) > oWordControl.m_oDrawingDocument.SlideCurrent)
+		if (oWordControl.DemonstrationManager.Mode)
 		{
-			oWordControl.GoToPage(oWordControl.m_oDrawingDocument.SlideCurrent + 1);
+			nCurrentSlide =  oWordControl.DemonstrationManager.SlideNum;
+			SlidesCount = oWordControl.m_oLogicDocument.Slides.length;
+		}
+		if ((SlidesCount - 1) > nCurrentSlide)
+		{
+			oWordControl.GoToPage(nCurrentSlide + 1);
 		}
 		else if (SlidesCount > 0)
 		{
@@ -2744,7 +2764,7 @@ function CEditorPage(api)
 							this.IsGoToPageMAXPosition = false;
 					}
 
-					this.GoToPage(lNumSlide);
+					this.GoToPage(lNumSlide, false, true);
 					return;
 				}
 				else if (this.SlideScrollMAX < scrollPositionY)
@@ -2753,7 +2773,7 @@ function CEditorPage(api)
 						return;
 
 					this.IsGoToPageMAXPosition = false;
-					this.GoToPage(this.m_oDrawingDocument.SlideCurrent + 1);
+					this.GoToPage(this.m_oDrawingDocument.SlideCurrent + 1, false, true);
 					return;
 				}
 			}
@@ -2762,7 +2782,7 @@ function CEditorPage(api)
 				if (!this.verticalScrollCheckChangeSlide())
 					return;
 
-				this.GoToPage(this.ZoomFreePageNum);
+				this.GoToPage(this.ZoomFreePageNum, false, true);
 			}
 		}
 		else
@@ -2795,7 +2815,7 @@ function CEditorPage(api)
 		}
 
 		if (this.VerticalScrollOnMouseUp.SlideNum != this.m_oDrawingDocument.SlideCurrent)
-			this.GoToPage(this.VerticalScrollOnMouseUp.SlideNum);
+			this.GoToPage(this.VerticalScrollOnMouseUp.SlideNum, false, true);
 		else
 		{
 			this.StartVerticalScroll = false;
@@ -4420,11 +4440,9 @@ function CEditorPage(api)
 		if(window["NATIVE_EDITOR_ENJINE"] === true){
 			return;
 		}
-		let master = null;
 		if (this.m_oLogicDocument.IsEmpty())
 			return;
 
-		master = this.m_oLogicDocument.getLayoutsMasterSlide();
 
 
 		let aAllLayouts = this.m_oLogicDocument.GetAllLayouts();
@@ -4488,12 +4506,17 @@ function CEditorPage(api)
 			}
 
 			this.m_oApi.sendEvent("asc_onUpdateLayout", arr);
-			let oMaster = this.m_oLogicDocument.GetCurrentMaster();
+		}
+
+		let oMaster = this.m_oLogicDocument.GetCurrentMaster();
+		if(this.LastMaster !== oMaster)
+		{
 			if(oMaster)
 			{
 				this.m_oApi.sendEvent("asc_onUpdateThemeIndex", oMaster.getThemeIndex());
 				this.m_oApi.sendColorThemes(oMaster.Theme);
 			}
+			this.LastMaster = oMaster;
 		}
 		this.m_oDrawingDocument.CheckGuiControlColors(bIsAttack);
 	};
@@ -4520,7 +4543,7 @@ function CEditorPage(api)
 		return this.m_oDrawingDocument.GetSlidesCount();
 	};
 
-	this.GoToPage = function(lPageNum, isFromZoom, bIsAttack, isReporterUpdateSlide)
+	this.GoToPage = function(lPageNum, isFromZoom, isScroll, bIsAttack, isReporterUpdateSlide)
 	{
 		if (this.m_oApi.isReporterMode)
 		{
@@ -4538,7 +4561,12 @@ function CEditorPage(api)
 			//return;
 		}
 
-		if (this.DemonstrationManager.Mode && !isReporterUpdateSlide && !isFromZoom)
+		if(this.DemonstrationManager.Mode && (isFromZoom || isScroll))
+		{
+			return;
+		}
+
+		if (this.DemonstrationManager.Mode && !isReporterUpdateSlide)
 		{
 			return this.m_oApi.DemonstrationGoToSlide(lPageNum);
 		}
@@ -4814,7 +4842,9 @@ function CEditorPage(api)
 			this.Splitter2Pos = 0;
 			this.OnResizeSplitter();
 			this.OldSplitter2Pos = old;
-			this.m_oLogicDocument.CheckNotesShow();
+			if(this.m_oLogicDocument) {
+				this.m_oLogicDocument.CheckNotesShow();
+			}
 		}
 	};
 
@@ -4825,9 +4855,7 @@ function CEditorPage(api)
 
 		GlobalSkin.SupportNotes = bEnabled;
 		this.IsSupportNotes = bEnabled;
-		this.Splitter2Pos = 0;
-
-		this.OnResizeSplitter();
+		this.ShowNotes(bEnabled);
 	};
 
 	this.setAnimPaneEnable = function(bEnabled)
@@ -4897,7 +4925,7 @@ function CEditorPage(api)
 		{
 			let manager = this.DemonstrationManager;
 			let transition = manager.Transition;
-			if ((manager.SlideNum >= 0 && manager.SlideNum < manager.SlidesCount) && (!transition || !transition.IsPlaying()))
+			if ((manager.SlideNum >= 0 && manager.SlideNum < manager.GetSlidesCount()) && (!transition || !transition.IsPlaying()))
 			{
 				let _x = (transition.Rect.x / AscCommon.AscBrowser.retinaPixelRatio) >> 0;
 				let _y = (transition.Rect.y / AscCommon.AscBrowser.retinaPixelRatio) >> 0;
@@ -4994,7 +5022,7 @@ function CEditorPage(api)
 		{
 			let manager = this.DemonstrationManager;
 			let transition = manager.Transition;
-			if ((manager.SlideNum >= 0 && manager.SlideNum < manager.SlidesCount) && (!transition || !transition.IsPlaying()))
+			if ((manager.SlideNum >= 0 && manager.SlideNum < manager.GetSlidesCount()) && (!transition || !transition.IsPlaying()))
 			{
 				let _x = (transition.Rect.x / AscCommon.AscBrowser.retinaPixelRatio) >> 0;
 				let _y = (transition.Rect.y / AscCommon.AscBrowser.retinaPixelRatio) >> 0;
@@ -5009,7 +5037,7 @@ function CEditorPage(api)
 				let _b = _y + _h;
 
 				nX = (oMediaFrameRect.l + oMediaFrameRect.r) / 2.0 - nWidth / 2 + 0.5 >> 0;
-				nY = oMediaFrameRect.b - MEDIA_CONTROL_TOP_MARGIN + 0.5 >> 0;
+				nY = oMediaFrameRect.b - MEDIA_CONTROL_TOP_MARGIN - MEDIA_CONTROL_HEIGHT + 0.5 >> 0;
 
 				if(nX < _x)
 					nX = _x;
@@ -5037,21 +5065,31 @@ function CEditorPage(api)
 		{
 			case Asc.c_oAscPresentationViewMode.normal:
 			{
-				this.m_oLogicDocument.Recalculate({Drawings:{All:true, Map:{}}});
 				this.GoToPage(0);
-				this.m_oLogicDocument.Document_UpdateInterfaceState();
 				this.setNotesEnable(true);
 				this.setAnimPaneEnable(true);
+				this.m_oApi.hideMediaControl();
+				this.m_oApi.asc_hideComments();
+				this.m_oLogicDocument.Recalculate({Drawings:{All:true, Map:{}}});
+				this.m_oLogicDocument.Document_UpdateInterfaceState();
 				break;
 			}
 			case Asc.c_oAscPresentationViewMode.masterSlide:
 			{
-				let oSlide = this.m_oLogicDocument.Slides[ this.m_oLogicDocument.CurPage];
-				let nIdx = this.m_oLogicDocument.GetSlideIndex(oSlide.Layout);
+				let oSlide = this.m_oLogicDocument.GetCurrentSlide();
+				let nIdx = 0;
+				if(oSlide) {
+					let nCurIdx = this.m_oLogicDocument.GetSlideIndex(oSlide.Layout);
+					if(nCurIdx !== -1) {
+						nIdx = nCurIdx;
+					}
+				}
+				this.GoToPage(nIdx);
 				this.m_oLogicDocument.Recalculate({Drawings:{All:true, Map:{}}});
 				this.setNotesEnable(false);
 				this.setAnimPaneEnable(false);
-				this.GoToPage(nIdx);
+				this.m_oApi.hideMediaControl();
+				this.m_oApi.asc_hideComments();
 				this.m_oLogicDocument.Document_UpdateInterfaceState();
 				break;
 			}
@@ -5072,7 +5110,7 @@ function CEditorPage(api)
 	};
 }
 
-const MEDIA_CONTROL_HEIGHT = 70;
+const MEDIA_CONTROL_HEIGHT = 40;
 const MIN_MEDIA_CONTROL_WIDTH = 560;
 const MIN_MEDIA_CONTROL_CONTROL_INSET = 20;
 const MEDIA_CONTROL_TOP_MARGIN = 10;

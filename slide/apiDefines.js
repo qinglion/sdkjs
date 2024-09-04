@@ -69,7 +69,8 @@ var c_oAscContextMenuTypes = {
 	Thumbnails : 1,
 	AnimEffect: 3,
 	Master: 4,
-	Layout: 5
+	Layout: 5,
+	TimelineZoom: 6
 };
 
 var THEME_THUMBNAIL_WIDTH   = 180;
@@ -112,7 +113,8 @@ var c_oAscSlideTransitionTypes = {
 	Cover   : 6,
 	Clock   : 7,
 	Zoom    : 8,
-	Morph   : 9
+	Morph   : 9,
+	Random  : 10
 };
 
 /** @enum {number} */
@@ -532,6 +534,9 @@ prot = window['Asc']['c_oAscContextMenuTypes'] = window['Asc'].c_oAscContextMenu
 prot['Main']       = c_oAscContextMenuTypes.Main;
 prot['Thumbnails'] = c_oAscContextMenuTypes.Thumbnails;
 prot['AnimEffect'] = c_oAscContextMenuTypes.AnimEffect;
+prot['Master'] = c_oAscContextMenuTypes.Master;
+prot['Layout'] = c_oAscContextMenuTypes.Layout;
+prot['TimelineZoom'] = c_oAscContextMenuTypes.TimelineZoom;
 
 prot = window['Asc']['c_oAscAlignShapeType'] = c_oAscAlignShapeType;
 prot['ALIGN_LEFT']   = c_oAscAlignShapeType.ALIGN_LEFT;
@@ -556,6 +561,7 @@ prot['Cover']   = c_oAscSlideTransitionTypes.Cover;
 prot['Clock']   = c_oAscSlideTransitionTypes.Clock;
 prot['Zoom']    = c_oAscSlideTransitionTypes.Zoom;
 prot['Morph']   = c_oAscSlideTransitionTypes.Morph;
+prot['Random']   = c_oAscSlideTransitionTypes.Random;
 
 prot = window['Asc']['c_oAscSlideTransitionParams'] = c_oAscSlideTransitionParams;
 prot['Fade_Smoothly']          = c_oAscSlideTransitionParams.Fade_Smoothly;

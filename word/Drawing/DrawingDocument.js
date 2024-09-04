@@ -1096,11 +1096,12 @@ CPage.prototype.Draw = function (context, xDst, yDst, wDst, hDst, api)
 
 	if (strokeColor)
 	{
-		var rPR = AscCommon.AscBrowser.retinaPixelRatio;
-		context.lineWidth = Math.round(rPR);
+		let lineW = Math.round(AscCommon.AscBrowser.retinaPixelRatio);
+		let offset = 0.5 * lineW;
+		context.lineWidth = lineW;
 		context.strokeStyle = strokeColor;
 		context.beginPath();
-		context.strokeRect(xDst - 0.5 * rPR, yDst - 0.5 * rPR, wDst + rPR, hDst + rPR);
+		context.strokeRect(xDst - offset, yDst - offset, wDst + lineW, hDst + lineW);
 		context.beginPath();
 	}
 };
@@ -6637,6 +6638,9 @@ function CDrawingDocument()
 			this.m_oWordControl.m_oApi.ShowParaMarks = this.m_bOldShowMarks;
 			this.printedDocument = null;
 		}
+		
+		// TODO: Когда в интерфейсе появится флаг как писать заголовки послать его вторым параметром
+		renderer.AddHeadings(_this.m_oLogicDocument, true);
 
 		if (noBase64) {
 			return renderer.Memory.GetData();

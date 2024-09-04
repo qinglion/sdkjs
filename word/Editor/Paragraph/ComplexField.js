@@ -83,7 +83,7 @@ ParaFieldChar.prototype.Copy = function()
 };
 ParaFieldChar.prototype.Measure = function(Context, textPr, sectPr)
 {
-	if (!this.IsSeparate())
+	if (!this.IsEnd())
 		return;
 	
 	this.textPr = textPr;
@@ -94,7 +94,7 @@ ParaFieldChar.prototype.Measure = function(Context, textPr, sectPr)
 };
 ParaFieldChar.prototype.Draw = function(x, y, context)
 {
-	if (!this.IsSeparate() || null === this.numText)
+	if (!this.IsEnd() || null === this.numText)
 		return;
 	
 	let fontSize = this.textPr.FontSize * this.textPr.getFontCoef();
@@ -158,6 +158,10 @@ ParaFieldChar.prototype.GetRun = function()
 {
 	return this.Run;
 };
+ParaFieldChar.prototype.GetParagraph = function()
+{
+	return this.Run ? this.Run.GetParagraph() : null;
+};
 ParaFieldChar.prototype.SetXY = function(X, Y)
 {
 	this.X = X;
@@ -199,7 +203,7 @@ ParaFieldChar.prototype.SetNumValue = function(value, numFormat)
 		return;
 	}
 	
-	this.numText = AscCommon.IntToNumberFormat(value, numFormat);
+	this.numText = AscCommon.IntToNumberFormat(value, numFormat, {lang: this.textPr && this.textPr.Lang, isFromField: true, isSkipFractPart: true});
 	this.private_UpdateWidth();
 };
 /**
@@ -274,7 +278,7 @@ ParaFieldChar.prototype.private_UpdateWidth = function()
 };
 ParaFieldChar.prototype.IsNumValue = function()
 {
-	return (this.IsSeparate() && null !== this.numText);
+	return (this.IsEnd() && null !== this.numText);
 };
 ParaFieldChar.prototype.IsNeedSaveRecalculateObject = function()
 {
@@ -501,14 +505,14 @@ CComplexField.prototype.Update = function(isCreateHistoryPoint, isNeedRecalculat
 	this.private_UpdateInstruction();
 
 	if (!this.Instruction || !this.IsValid())
-		return;
+		return false;
 
 	this.SelectFieldValue();
 
 	if (true === isCreateHistoryPoint)
 	{
 		if (true === this.LogicDocument.Document_Is_SelectionLocked(changestype_Paragraph_Content))
-			return;
+			return false;
 
 		this.LogicDocument.StartAction();
 	}
@@ -561,6 +565,8 @@ CComplexField.prototype.Update = function(isCreateHistoryPoint, isNeedRecalculat
 	{
 		this.LogicDocument.FinalizeAction();
 	}
+	
+	return true;
 };
 CComplexField.prototype.CalculateValue = function()
 {
@@ -1237,7 +1243,16 @@ CComplexField.prototype.private_UpdateREF = function()
 };
 CComplexField.prototype.private_CalculateREF = function()
 {
-	var oSelectedContent = this.private_GetREFContent();
+	let logicDocument = this.LogicDocument;
+	
+	let state = logicDocument ? logicDocument.SaveDocumentState() : null;
+	
+	let oSelectedContent = this.private_GetREFContent();
+	oSelectedContent.GetText(null);
+	
+	if (state)
+		logicDocument.LoadDocumentState(state);
+	
 	return oSelectedContent.GetText(null);
 };
 CComplexField.prototype.private_GetMessageContent = function(sMessage, oTextPr)
@@ -1482,20 +1497,31 @@ CComplexField.prototype.SelectFieldValue = function()
 	var oDocument = this.GetTopDocumentContent();
 	if (!oDocument)
 		return;
-
-	oDocument.RemoveSelection();
-
-	var oRun = this.SeparateChar.GetRun();
-	oRun.Make_ThisElementCurrent(false);
-	oRun.SetCursorPosition(oRun.GetElementPosition(this.SeparateChar) + 1);
-	var oStartPos = oDocument.GetContentPosition(false);
-
-	oRun = this.EndChar.GetRun();
-	oRun.Make_ThisElementCurrent(false);
-	oRun.SetCursorPosition(oRun.GetElementPosition(this.EndChar));
-	var oEndPos = oDocument.GetContentPosition(false);
-
-	oDocument.SetSelectionByContentPositions(oStartPos, oEndPos);
+	
+	if (!this.SeparateChar)
+	{
+		let endRun = this.EndChar.GetRun();
+		endRun.Make_ThisElementCurrent(false);
+		endRun.SetCursorPosition(endRun.GetElementPosition(this.EndChar));
+		let endPos = oDocument.GetContentPosition(false);
+		oDocument.SetSelectionByContentPositions(endPos, endPos);
+	}
+	else
+	{
+		oDocument.RemoveSelection();
+		
+		var oRun = this.SeparateChar.GetRun();
+		oRun.Make_ThisElementCurrent(false);
+		oRun.SetCursorPosition(oRun.GetElementPosition(this.SeparateChar) + 1);
+		var oStartPos = oDocument.GetContentPosition(false);
+		
+		oRun = this.EndChar.GetRun();
+		oRun.Make_ThisElementCurrent(false);
+		oRun.SetCursorPosition(oRun.GetElementPosition(this.EndChar));
+		var oEndPos = oDocument.GetContentPosition(false);
+		
+		oDocument.SetSelectionByContentPositions(oStartPos, oEndPos);
+	}
 };
 CComplexField.prototype.SelectFieldCode = function()
 {
@@ -1509,10 +1535,11 @@ CComplexField.prototype.SelectFieldCode = function()
 	oRun.Make_ThisElementCurrent(false);
 	oRun.SetCursorPosition(oRun.GetElementPosition(this.BeginChar) + 1);
 	var oStartPos = oDocument.GetContentPosition(false);
-
-	oRun = this.SeparateChar.GetRun();
+	
+	let endChar = this.SeparateChar ? this.SeparateChar : this.EndChar;
+	oRun = endChar.GetRun();
 	oRun.Make_ThisElementCurrent(false);
-	oRun.SetCursorPosition(oRun.GetElementPosition(this.SeparateChar));
+	oRun.SetCursorPosition(oRun.GetElementPosition(endChar));
 	var oEndPos = oDocument.GetContentPosition(false);
 
 	oDocument.SetSelectionByContentPositions(oStartPos, oEndPos);
@@ -1542,8 +1569,8 @@ CComplexField.prototype.GetFieldValueText = function()
 {
 	let logicDocument = this.LogicDocument;
 	var oDocument = this.GetTopDocumentContent();
-	if (!oDocument)
-		return;
+	if (!oDocument || !this.SeparateChar)
+		return "";
 	
 	let state = logicDocument ? logicDocument.SaveDocumentState() : null;
 	oDocument.RemoveSelection();
@@ -1568,13 +1595,14 @@ CComplexField.prototype.GetFieldValueText = function()
 };
 CComplexField.prototype.GetFieldValueTextPr = function(isCompiled)
 {
+	let fieldChar = this.SeparateChar ? this.SeparateChar : this.EndChar;
 	if (isCompiled)
 	{
-		let run       = this.SeparateChar.GetRun();
+		let run       = fieldChar.GetRun();
 		let runParent = run.GetParent();
 		let runPos    = run.private_GetPosInParent(runParent);
 		
-		let inRunPos  = run.GetElementPosition(this.SeparateChar);
+		let inRunPos  = run.GetElementPosition(fieldChar);
 		if (inRunPos >= run.GetElementsCount() - 1
 			&& runParent
 			&& runParent.GetElement
@@ -1594,9 +1622,9 @@ CComplexField.prototype.GetFieldValueTextPr = function(isCompiled)
 		
 		let state = logicDocument.SaveDocumentState();
 		
-		let run = this.SeparateChar.GetRun();
+		let run = fieldChar.GetRun();
 		run.Make_ThisElementCurrent(false);
-		run.SetCursorPosition(run.GetElementPosition(this.SeparateChar) + 1);
+		run.SetCursorPosition(run.GetElementPosition(fieldChar) + 1);
 		
 		logicDocument.MoveCursorRight(true, false);
 		let textPr = logicDocument.GetDirectTextPr();
@@ -1606,15 +1634,17 @@ CComplexField.prototype.GetFieldValueTextPr = function(isCompiled)
 };
 CComplexField.prototype.GetTopDocumentContent = function()
 {
-	if (!this.BeginChar || !this.SeparateChar || !this.EndChar)
+	if (!this.BeginChar || !this.EndChar)
 		return null;
-
-	var oTopDocument = this.BeginChar.GetTopDocumentContent();
-
-	if (oTopDocument !== this.EndChar.GetTopDocumentContent() || oTopDocument !== this.SeparateChar.GetTopDocumentContent())
+	
+	let topDocument = this.BeginChar.GetTopDocumentContent();
+	if (topDocument !== this.EndChar.GetTopDocumentContent())
 		return null;
-
-	return oTopDocument;
+	
+	if (this.SeparateChar && topDocument !== this.SeparateChar.GetTopDocumentContent())
+		return null;
+	
+	return topDocument;
 };
 CComplexField.prototype.IsUse = function()
 {
@@ -1696,11 +1726,19 @@ CComplexField.prototype.private_CheckNestedComplexFields = function()
 };
 CComplexField.prototype.IsHidden = function()
 {
+	var oInstruction = this.GetInstruction();
+	if (!oInstruction)
+		return false;
+	
+	if (this.EndChar
+		&& this.EndChar.IsNumValue()
+		&& (AscWord.fieldtype_NUMPAGES === oInstruction.GetType() || AscWord.fieldtype_PAGE === oInstruction.GetType() || AscWord.fieldtype_FORMULA === oInstruction.GetType()))
+		return true;
+	
 	if (!this.BeginChar || !this.SeparateChar)
 		return false;
-
-	var oInstruction = this.GetInstruction();
-	return (oInstruction && (AscWord.fieldtype_ASK === oInstruction.GetType() || (this.SeparateChar.IsNumValue() && (AscWord.fieldtype_NUMPAGES === oInstruction.GetType() || AscWord.fieldtype_PAGE === oInstruction.GetType() || AscWord.fieldtype_FORMULA === oInstruction.GetType()))));
+	
+	return (AscWord.fieldtype_ASK === oInstruction.GetType());
 };
 CComplexField.prototype.RemoveFieldWrap = function()
 {
@@ -1844,9 +1882,105 @@ CComplexField.prototype.IsAddin = function()
 {
 	return this.CheckType(AscWord.fieldtype_ADDIN);
 };
+/**
+ * Получаем список связанных параграфов с данным полем (параграфы содержащие метки поля, это не обязательно будут
+ * все параграфы между метками начала и конца)
+ * @ returns {Array[AscWord.Paragraph]}
+ */
+CComplexField.prototype.GetRelatedParagraphs = function()
+{
+	if (!this.IsValid())
+		return [];
+	
+	let begPara = this.BeginChar.GetParagraph();
+	if (!begPara)
+		return [];
+	
+	let result = [begPara];
+	if (this.SeparateChar)
+	{
+		let sepPara = this.SeparateChar.GetParagraph();
+		if (sepPara !== begPara)
+			result.push(sepPara);
+	}
+	
+	let endPara = this.EndChar.GetParagraph();
+	if (-1 === result.indexOf(endPara))
+		result.push(endPara);
+	
+	return result;
+};
+
+function getRefInstruction(sBookmarkName, nType, bHyperlink, bAboveBelow, sSeparator)
+{
+	if (!(typeof sBookmarkName === "string" && sBookmarkName.length > 0))
+	{
+		return;
+	}
+	var sInstr  = "";
+	var sSuffix = "";
+	if (bHyperlink)
+	{
+		sSuffix += " \\h";
+	}
+	if (bAboveBelow && nType !== Asc.c_oAscDocumentRefenceToType.AboveBelow)
+	{
+		sSuffix += " \\p";
+	}
+	if (typeof sSeparator === "string" && sSeparator.length > 0)
+	{
+		sSuffix += " \\d " + sSeparator;
+	}
+	
+	switch (nType)
+	{
+		case Asc.c_oAscDocumentRefenceToType.PageNum:
+		{
+			sInstr = " PAGEREF " + sBookmarkName;
+			sInstr += sSuffix;
+			break;
+		}
+		case Asc.c_oAscDocumentRefenceToType.Text:
+		case Asc.c_oAscDocumentRefenceToType.OnlyCaptionText:
+		case Asc.c_oAscDocumentRefenceToType.OnlyLabelAndNumber:
+		{
+			sInstr = " REF " + sBookmarkName + " ";
+			sInstr += sSuffix;
+			break;
+		}
+		case Asc.c_oAscDocumentRefenceToType.ParaNum:
+		{
+			sInstr = " REF " + sBookmarkName + " \\r ";
+			sInstr += sSuffix;
+			break;
+		}
+		case Asc.c_oAscDocumentRefenceToType.ParaNumNoContext:
+		{
+			sInstr = " REF " + sBookmarkName + " \\n ";
+			sInstr += sSuffix;
+			break;
+		}
+		case Asc.c_oAscDocumentRefenceToType.ParaNumFullContex:
+		{
+			sInstr = " REF " + sBookmarkName + " \\w ";
+			sInstr += sSuffix;
+			break;
+		}
+		case Asc.c_oAscDocumentRefenceToType.AboveBelow:
+		{
+			sInstr = " REF " + sBookmarkName + " \\p ";
+			sInstr += sSuffix;
+			break;
+		}
+	}
+	
+	return sInstr;
+}
+
 //--------------------------------------------------------export----------------------------------------------------
 window['AscCommonWord'] = window['AscCommonWord'] || {};
 window['AscCommonWord'].CComplexField = CComplexField;
 
 window['AscWord'] = window['AscWord'] || {};
+window['AscWord'].getRefInstruction = getRefInstruction;
 window['AscWord'].CComplexField = CComplexField;

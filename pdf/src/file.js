@@ -183,11 +183,15 @@
     };
     CFile.prototype.getFileBinary = function()
     {
-        return this.nativeFile ? this.nativeFile["getFileAsBase64"]() : null;
+        return this.nativeFile ? this.nativeFile["getFileBinary"]() : null;
     };
-    CFile.prototype.memory = function()
+    CFile.prototype.getUint8Array = function(ptr, len)
     {
-        return this.nativeFile ? this.nativeFile["memory"]() : null;
+        return this.nativeFile ? this.nativeFile["getUint8Array"](ptr, len) : null;
+    };
+    CFile.prototype.getUint8ClampedArray = function(ptr, len)
+    {
+        return this.nativeFile ? this.nativeFile["getUint8ClampedArray"](ptr, len) : null;
     };
     CFile.prototype.free = function(pointer)
     {
@@ -320,7 +324,7 @@
         }
         
         var ctx = canvas.getContext("2d");
-        var mappedBuffer = new Uint8ClampedArray(this.memory().buffer, pixels, 4 * width * height);
+        var mappedBuffer = this.getUint8ClampedArray(pixels, 4 * width * height);
         var imageData = null;
         if (supportImageDataConstructor)
         {
@@ -405,7 +409,7 @@ void main() {\n\
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(this.memory().buffer, pixels, 4 * width * height));
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, this.getUint8Array(pixels, 4 * width * height));
 
         if (gl.getError() != gl.NONE)
             throw new Error('FAIL: creating webgl image texture failed');
@@ -548,9 +552,8 @@ void main() {\n\
 
     CFile.prototype.onMouseDown = function(pageIndex, x, y)
     {
-        if (this.pages[pageIndex].isConvertedToShapes) {
+        if (this.pages[pageIndex].isConvertedToShapes)
             return;
-        }
         
         let oDoc = this.viewer.getPDFDoc();
         var ret = this.getNearestPos(pageIndex, x, y);
@@ -579,12 +582,13 @@ void main() {\n\
 			Page2 : 0,
 			Line2 : 0,
 			Glyph2 : 0,
+            quads: [],
 
 			IsSelection : false
 		}
 
         this.cacheSelectionQuads([]);
-        this.viewer.getPDFDoc().TextSelectTrackHandler.Update()
+        this.viewer.getPDFDoc().TextSelectTrackHandler.Update();
     };
     CFile.prototype.isSelectionUse = function() {
         return !(this.Selection.Page1 == this.Selection.Page2 && this.Selection.Glyph1 == this.Selection.Glyph2 && this.Selection.Line1 == this.Selection.Line2);
@@ -610,8 +614,8 @@ void main() {\n\
 
     CFile.prototype.onMouseUp = function()
     {
-        this.viewer.getPDFDoc().TextSelectTrackHandler.Update()
         this.Selection.IsSelection = false;
+        this.viewer.getPDFDoc().TextSelectTrackHandler.Update();
         this.onUpdateSelection();
         this.onUpdateOverlay();
 
@@ -1033,7 +1037,8 @@ void main() {\n\
             Line1: oNearesPos.Line,
             Line2: oNearesPos.Line,
             Page1: pageIndex,
-            Page2: pageIndex
+            Page2: pageIndex,
+            quads: []
         }
 
         let isOnSpace       = false;
@@ -1103,7 +1108,8 @@ void main() {\n\
             Line1: oNearesPos.Line,
             Line2: oNearesPos.Line,
             Page1: pageIndex,
-            Page2: pageIndex
+            Page2: pageIndex,
+            quads: []
         }
 
         this.Selection = oSelectionInfo;
@@ -1198,7 +1204,7 @@ void main() {\n\
 
         for (let i = Page1; i <= Page2; i++) {
             var stream = this.getPageTextStream(i);
-            if (!stream)
+            if (!stream || this.pages[i].isConvertedToShapes)
                 continue;
 
             let oInfo = {
@@ -1432,6 +1438,10 @@ void main() {\n\
     };
     CFile.prototype.drawSelection = function(pageIndex, overlay, x, y)
     {
+        if (this.pages[pageIndex].isConvertedToShapes) {
+            return;
+        }
+        
         var stream = this.getPageTextStream(pageIndex);
         if (!stream)
             return;
@@ -2024,6 +2034,9 @@ void main() {\n\
         var ret = "<div>";
         for (var i = page1; i <= page2; i++)
         {
+            if (this.pages[i].isConvertedToShapes)
+                continue;
+
             ret += this.copySelection(i, _text_format);
         }
         ret += "</div>";
@@ -2113,18 +2126,9 @@ void main() {\n\
 
     CFile.prototype.selectAll = function()
     {
+        this.removeSelection();
         var sel = this.Selection;
-
-        sel.Page1 = 0;
-        sel.Line1 = 0;
-        sel.Glyph1 = 0;
-
-        sel.Page2 = 0;
-        sel.Line2 = 0;
-        sel.Glyph2 = 0;
-
-        sel.IsSelection = false;
-
+        
         var pagesCount = this.pages.length;
         if (0 != pagesCount)
         {
@@ -2140,6 +2144,7 @@ void main() {\n\
 
         this.onUpdateSelection();
         this.onUpdateOverlay();
+        this.viewer.getPDFDoc().TextSelectTrackHandler.Update();
     };
 
     CFile.prototype.onUpdateOverlay = function()
@@ -2870,10 +2875,12 @@ void main() {\n\
             for (var i = 0, len = file.pages.length; i < len; i++)
             {
                 var page = file.pages[i];
-                page.W = page["W"];
-                page.H = page["H"];
-                page.Dpi = page["Dpi"];
-                page.originIndex = i; // исходный индекс в файле
+                page.W              = page["W"];
+                page.H              = page["H"];
+                page.Dpi            = page["Dpi"];
+                page.originIndex    = page["originIndex"]; // исходный индекс в файле
+                page.originRotate   = page["Rotate"];
+                page.Rotate         = page["Rotate"];
             }
 
             //file.cacheManager = new AscCommon.CCacheManager();

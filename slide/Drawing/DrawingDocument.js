@@ -1542,6 +1542,10 @@ function CDrawingDocument()
 
 	this.OnRecalculateSlide = function(index)
 	{
+
+		let thpages = this.m_oWordControl.Thumbnails.m_arrPages;
+		if(index < 0 || index >= thpages.length) return;
+
 		if (this.m_oWordControl && this.m_oWordControl.MobileTouchManager)
 		{
 			this.m_oWordControl.MobileTouchManager.ClearContextMenu();
@@ -1559,7 +1563,6 @@ function CDrawingDocument()
 			this.SendChangeDocumentToApi(true);
 		}
 
-		var thpages = this.m_oWordControl.Thumbnails.m_arrPages;
 		if (thpages.length > index)
 		{
 			thpages[index].IsRecalc = true;
@@ -1586,8 +1589,9 @@ function CDrawingDocument()
 			this.m_oWordControl.m_oApi.checkLastWork();
 
 		this.m_oWordControl.Thumbnails.LockMainObjType = true;
+		this.SlidesCount                               = this.m_oLogicDocument.GetSlidesCount();
 		this.m_oWordControl.CalculateDocumentSize();
-		this.m_oWordControl.m_oApi.sync_countPagesCallback(this.GetSlidesCount());
+		this.m_oWordControl.m_oApi.sync_countPagesCallback(this.SlidesCount);
 		this.m_oWordControl.Thumbnails.LockMainObjType = false;
 	};
 
@@ -1880,67 +1884,36 @@ function CDrawingDocument()
 
 	this.CheckGuiControlColors = function(bIsAttack)
 	{
-		var _slide  = null;
-		var _layout = null;
-		var _master = null;
+		let oPresentation = this.m_oWordControl.m_oLogicDocument;
+		let oTheme = oPresentation.Get_Theme();
+		let oClrMap = oPresentation.Get_ColorMap();
+		if(!oTheme || !oClrMap) return;
 
-		// потом реализовать проверку на то, что нужно ли посылать
-		if (-1 != this.SlideCurrent)
-		{
-			_slide  = this.m_oWordControl.m_oLogicDocument.Slides[this.SlideCurrent];
-			if(!_slide){
-				return;
-			}
-			if( this.m_oWordControl.m_oLogicDocument.FocusOnNotes){
-				if(!_slide.notes){
-					return;
-				}
-				_master = _slide.notes.Master;
-			}
-			else{
-				_layout = _slide.Layout;
-				_master = _layout.Master;
-			}
-		}
-		else if ((0 < this.m_oWordControl.m_oLogicDocument.slideMasters.length) &&
-			(0 < this.m_oWordControl.m_oLogicDocument.slideMasters[0].sldLayoutLst.length))
-		{
-			_layout = this.m_oWordControl.m_oLogicDocument.slideMasters[0].sldLayoutLst[0];
-			_master = this.m_oWordControl.m_oLogicDocument.slideMasters[0];
-		}
-		else
-		{
-			return;
-		}
+		let arr_colors = new Array(10);
 
-		var arr_colors = new Array(10);
-
-		var _theme             = _master.Theme;
-		var rgba               = {R : 0, G : 0, B : 0, A : 255};
+		let rgba               = {R : 0, G : 0, B : 0, A : 255};
 		// bg1,tx1,bg2,tx2,accent1 - accent6
-		var array_colors_types = [6, 15, 7, 16, 0, 1, 2, 3, 4, 5];
-		var _count             = array_colors_types.length;
-
-		var color   = new AscFormat.CUniColor();
+		let array_colors_types = [6, 15, 7, 16, 0, 1, 2, 3, 4, 5];
+		let _count             = array_colors_types.length;
+		let color   = new AscFormat.CUniColor();
 		color.color = new AscFormat.CSchemeColor();
-		for (var i = 0; i < _count; ++i)
+		for (let i = 0; i < _count; ++i)
 		{
 			color.color.id = array_colors_types[i];
-			color.Calculate(_theme, _slide, _layout, _master, rgba);
-
-			var _rgba     = color.RGBA;
+			color.Calculate(oTheme, null, null, null, rgba, oClrMap);
+			let _rgba     = color.RGBA;
 			arr_colors[i] = new Asc.asc_CColor(_rgba.R, _rgba.G, _rgba.B);
 			arr_colors[i].setColorSchemeId(color.color.id);
 		}
 
 		// теперь проверим
-		var bIsSend = false;
+		let bIsSend = false;
 		if (this.GuiControlColorsMap != null)
 		{
-			for (var i = 0; i < _count; ++i)
+			for (let i = 0; i < _count; ++i)
 			{
-				var _color1 = this.GuiControlColorsMap[i];
-				var _color2 = arr_colors[i];
+				let _color1 = this.GuiControlColorsMap[i];
+				let _color2 = arr_colors[i];
 
 				if ((_color1.r != _color2.r) || (_color1.g != _color2.g) || (_color1.b != _color2.b))
 				{
@@ -1957,7 +1930,7 @@ function CDrawingDocument()
 
 		if (bIsSend || (bIsAttack === true))
 		{
-			for (var i = 0; i < _count; ++i)
+			for (let i = 0; i < _count; ++i)
 			{
 				this.GuiControlColorsMap[i] = arr_colors[i];
 			}
@@ -4794,7 +4767,7 @@ function CThumbnailsManager()
 			// это трек
 			oThis.MouseDownTrack.SetPosition(oThis.ConvertCoords2(global_mouseEvent.X, global_mouseEvent.Y));
 
-			if (-1 !== oThis.MouseDownTrack.GetPosition() && !oThis.MouseDownTrack.IsSamePos())
+			if (-1 !== oThis.MouseDownTrack.GetPosition() && (!oThis.MouseDownTrack.IsSamePos() || AscCommon.global_mouseEvent.CtrlKey))
 			{
 				// вызвать функцию апи для смены слайдов местами
 				var _array = oThis.GetSelectedArray();
@@ -5907,9 +5880,10 @@ function CThumbnailsManager()
 
 	this.getSpecialPasteButtonCoords = function(sSlideId)
 	{
+		if(!sSlideId) return null;
 		let nSlideIdx = null;
 		let oPresentation = this.m_oWordControl.m_oLogicDocument;
-		let aSlides = oPresentation.Slides;
+		let aSlides = oPresentation.GetAllSlides();
 		for (let nSld = 0; nSld < aSlides.length; ++nSld)
 		{
 			if (aSlides[nSld].Get_Id() === sSlideId)
@@ -5917,6 +5891,10 @@ function CThumbnailsManager()
 				nSlideIdx = nSld;
 				break;
 			}
+		}
+		if(nSlideIdx === null)
+		{
+			return null;
 		}
 		let oRect = this.GetThumbnailPagePosition(nSlideIdx);
 		if (!oRect)
@@ -6224,9 +6202,11 @@ function CThumbnailsManager()
 	{
 		let sSelectedIdx = this.GetSelectedArray();
 		let oMenuPos;
+		let bIsSlideSelect = false;
 		if(bPosBySelect)
 		{
 			oMenuPos = this.GetThumbnailPagePosition(Math.min.apply(Math, sSelectedIdx));
+			bIsSlideSelect = sSelectedIdx.length > 0;
 		}
 		else
 		{
@@ -6236,6 +6216,9 @@ function CThumbnailsManager()
 				X: global_mouseEvent.X - ((oThCtrlPos.L * g_dKoef_mm_to_pix) >> 0) - oEditorCtrl.X,
 				Y: global_mouseEvent.Y - ((oThCtrlPos.T * g_dKoef_mm_to_pix) >> 0) - oEditorCtrl.Y
 			};
+			
+			let pos = this.ConvertCoords(global_mouseEvent.X, global_mouseEvent.Y);
+			bIsSlideSelect = pos.Page !== -1;
 		}
 		if (oMenuPos)
 		{
@@ -6257,7 +6240,7 @@ function CThumbnailsManager()
 					Type: nType,
 					X_abs: oMenuPos.X,
 					Y_abs: oMenuPos.Y,
-					IsSlideSelect: bPosBySelect,
+					IsSlideSelect: bIsSlideSelect,
 					IsSlideHidden: this.IsSlideHidden(sSelectedIdx)
 				};
 			editor.sync_ContextMenuCallback(new AscCommonSlide.CContextMenuData(oData));
@@ -6405,6 +6388,10 @@ function CSlideDrawer()
 		this.IsCached = false;
 		if (4 * _need_pix_width * _need_pix_height < this.CONST_MAX_SLIDE_CACHE_SIZE)
 			this.IsCached = true;
+
+		// See bug 68871
+		if (this.m_oWordControl.m_oApi.isMobileVersion)
+			this.IsCached = false;
 
 		if (this.IsCached)
 		{
@@ -7135,10 +7122,9 @@ function CPaneDrawerBase(page, htmlElement, parentDrawer, pageControl)
 	{};
 	oThis.Init = function ()
 	{
-		//var oHtmlElem = oThis.GetHtmlElement();
-		//oHtmlElem.onmousedown = oThis.onMouseDown;
-		//oHtmlElem.onmousemove = oThis.onMouseMove;
-		//oHtmlElem.onmouseup =  oThis.onMouseUp;
+
+		var oHtmlElem = oThis.GetHtmlElement();
+		AscCommon.addMouseEvent(oHtmlElem, "up", oThis.onMouseUp);
 		oThis.CheckSubscribeMouseWheel();
 	};
 	oThis.GetCurrentSlideNumber = function ()
@@ -7575,9 +7561,10 @@ function CAnimationPaneDrawer(page, htmlElement)
 		oThis.timeline.Init();
 
 		var oHtmlElem = oThis.GetHtmlElement();
-		oHtmlElem.onmousedown = oThis.onMouseDown;
-		oHtmlElem.onmousemove = oThis.onMouseMove;
-		oHtmlElem.onmouseup = oThis.onMouseUp;
+
+		AscCommon.addMouseEvent(oHtmlElem, "down", oThis.onMouseDown);
+		AscCommon.addMouseEvent(oHtmlElem, "move", oThis.onMouseMove);
+		AscCommon.addMouseEvent(oHtmlElem, "up", oThis.onMouseUp);
 
 		Asc.editor.asc_registerCallback('asc_onFocusObject', function () {
 			// Here we need to check if all animEffects havent been changed
@@ -7715,12 +7702,10 @@ function CAnimationPaneDrawer(page, htmlElement)
 	};
 	oThis.onMouseUp = function (e)
 	{
-		oThis.header.onMouseUp(e);
-		oThis.list.onMouseUp(e);
-		oThis.timeline.onMouseUp(e);
 	};
 	oThis.onMouseWhell = function(e)
 	{
+		return oThis.list.onMouseWhell(e);
 	};
 	oThis.onSelectWheel = function()
 	{
@@ -7740,10 +7725,6 @@ function CAnimationPaneDrawer(page, htmlElement)
 		oThis.list.CheckPaint();
 		oThis.timeline.CheckPaint();
 	};
-	oThis.onMouseWhell = function(e)
-	{
-		return oThis.list.onMouseWhell(e);
-	};
 
 	oThis.UpdateState = function () {
 		if (!oThis.header.Control) { return }
@@ -7752,7 +7733,6 @@ function CAnimationPaneDrawer(page, htmlElement)
 		// TODO: oThis.list.UpdateState();
 		oThis.timeline.UpdateState();
 	};
-
 	oThis.SetCursorType = function(sType, Data) {
 		let elem = this.HtmlElement;
 		// if (Asc.editor.WordControl.DemonstrationManager.Mode)
