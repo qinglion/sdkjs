@@ -8822,7 +8822,7 @@ PivotRangeMapper.prototype.getEditRowHeaderCellFunction = function(bbox) {
 		}
 		const findIndex = pivot.getFieldIndexByValue(text);
 		if (findIndex !== -1 && findIndex !== pivotIndex) {
-			pivot.asc_moveToRowField(pivot.worksheet.workbook.oApi, findIndex, undefined, index);
+			pivot.asc_moveToRowField(pivot.worksheet.workbook.oApi, findIndex, undefined, rowFieldIndex);
 		} else {
 			if (pivotIndex !== AscCommonExcel.st_VALUES) {
 				const pivotField = pivotFields[pivotIndex];
