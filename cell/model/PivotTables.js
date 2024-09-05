@@ -8509,10 +8509,7 @@ CT_pivotTableDefinition.prototype.canEditCell = function(activeCell) {
 	return this.rangeMapper.getEditCellFunction(activeCell) !== null;
 };
 CT_pivotTableDefinition.prototype.editCell = function(bbox, val) {
-	let text = '';
-	for(var i = 0; i < val.length; i += 1) {
-		text += val[i].getFragmentText ? val[i].getFragmentText() : val[i].text;
-	}
+	const text = AscCommonExcel.getFragmentsText(val)
 	const func = this.rangeMapper.getEditCellFunction(bbox);
 	if (func) {
 		func(text);
