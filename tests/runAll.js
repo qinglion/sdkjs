@@ -67,6 +67,7 @@ const allTests = [
 	'word/revisions/paragraph.html',
 	'word/merge-documents/mergeDocuments.html',
 	'word/math-autocorrection/math-autocorrection.html',
+	'word/change-case/change-case.html',
 
 	'cell/shortcuts/shortcuts.html',
 	'slide/shortcuts/shortcuts.html',
