@@ -8713,6 +8713,7 @@ CT_pivotTableDefinition.prototype.getShowDetailsSheetName = function(arrayFieldI
 		return -1;
 	}
 	const cacheFields = this.asc_getCacheFields();
+	const pivotFields = this.asc_getPivotFields();
 	const workbook = this.worksheet.workbook;
 	const api = workbook.oApi;
 	const translatedInfoString = AscCommon.translateManager.getValue('Info');
@@ -8721,15 +8722,11 @@ CT_pivotTableDefinition.prototype.getShowDetailsSheetName = function(arrayFieldI
 		const fieldIndex = value[0];
 		const itemIndex = value[1];
 		const cacheField = cacheFields[fieldIndex];
-		const sharedItem = cacheField.getGroupOrSharedItem(itemIndex);
-		if (sharedItem) {
-			const cellValue = sharedItem.getCellValue();
-			const numFormat = cacheField.num && cacheField.num.getNumFormat();
-			let res = cellValue.getTextValue();
-			if (numFormat && cellValue.type === AscCommon.CellValueType.Number) {
-				res = numFormat.formatToMathInfo(cellValue.number, AscCommon.CellValueType.Number, AscCommon.gc_nMaxDigCountView);
-			}
-			postfix += '-' + res;
+		const pivotField = pivotFields[fieldIndex];
+		const item = pivotField.getItems()[pivotField.getItemIndexByValue(itemIndex)];
+		const name = item.getName(cacheField, true);
+		if (name != null) {
+			postfix += '-' + name;
 		}
 	});
 	const sheetNames = [];
@@ -19860,13 +19857,21 @@ CT_Item.prototype.asc_setName = function(newVal, pivot, pivotIndex, itemIndex, a
 CT_Item.prototype.asc_getName = function() {
 	return this.n;
 }
-CT_Item.prototype.getName = function(cacheField) {
+CT_Item.prototype.getName = function(cacheField, withNum) {
 	if (this.asc_getName()) {
 		return this.asc_getName();
 	}
 	const sharedItem = cacheField.getGroupOrSharedItem(this.x);
 	if (sharedItem) {
-		return sharedItem.val + "";
+		const cellValue = sharedItem.getCellValue();
+		let res = cellValue.getTextValue();
+		if (withNum) {
+			const numFormat = cacheField.num && cacheField.num.getNumFormat();
+			if (numFormat && cellValue.type === AscCommon.CellValueType.Number) {
+				res = numFormat.formatToMathInfo(cellValue.number, AscCommon.CellValueType.Number, AscCommon.gc_nMaxDigCountView);
+			}
+		}
+		return res;
 	}
 	return null;
 };
