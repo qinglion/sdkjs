@@ -1440,6 +1440,9 @@ function ToXml_ST_AllocationMethod(val) {
 	return res;
 }
 
+/**
+ * @constructor
+ */
 function CT_PivotCacheDefinition() {
 //Attributes
 	this.id = null;
@@ -2068,26 +2071,11 @@ CT_PivotCacheDefinition.prototype.getCalculatedFormula = function(itemMapArray, 
 	}
 };
 /**
- * @param {number} fieldIndex cacheField Index
- * @param {number} v sharedItem V
- * @returns {boolean}
+ * @param {PivotItemFieldsMapArray} itemMapArray
  */
-CT_PivotCacheDefinition.prototype.hasCalculatedItem = function(fieldIndex, v) {
-	const calculatedItems = this.getCalculatedItems();
-	if (calculatedItems) {
-		for (let i = 0; i < calculatedItems.length; i += 1) {
-			const calculatedItem = calculatedItems[i];
-			const references = calculatedItem.pivotArea.getReferences();
-			for (let j = 0; j < references.length; j += 1) {
-				if (references[j].field === fieldIndex && references[j].x[0].getV() === v) {
-					return true;
-				}
-			}
-		}
-	}
-	return false;
-};
+CT_PivotCacheDefinition.prototype.addCalculatedItem = function(itemMapArray, dataField) {
 
+};
 function CT_PivotCacheDefinitionX14() {
 //Attributes
 	this.slicerData = false;
@@ -7940,9 +7928,9 @@ CT_pivotTableDefinition.prototype.getCellByDataFieldOnly = function(name) {
 	return null;
 };
 
-/** 
- * @typedef {[number, number][]} PivotItemFieldsMapArray 
+/**
  * [pivotFieldIndex, fieldItemIndex] array which describes the item by the all fields of the pivot table
+ * @typedef {[number, number][]} PivotItemFieldsMapArray
  */
 
 /**
@@ -13742,7 +13730,7 @@ CT_CacheField.prototype.refreshCalculatedShared = function(pivot, index, oldCach
 		const oldSharedItem = oldSharedItems.getItem(i);
 		const addition = oldSharedItem.addition;
 		if (addition) {
-			if (addition.f && cacheDefinition.hasCalculatedItem(index, i)) {
+			if (addition.f) {
 				this.sharedItems.addItem(oldSharedItem);
 			}
 		}
