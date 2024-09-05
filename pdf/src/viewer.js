@@ -1378,6 +1378,8 @@
 							oAnnot.SetLineEnd(oAnnotInfo["LE"]);
 					}
 
+					if (oAnnotInfo["Icon"] != null)
+                        oAnnot.SetIconType(oAnnotInfo["Icon"]);
 					if (oAnnotInfo["RefToReason"] != null)
 						oAnnot.SetRefType(oAnnotInfo["RefToReason"]);
 					if (oAnnotInfo["Popup"] != null)
@@ -1903,8 +1905,8 @@
 				for (let i = page.annots.length -1; i >= 0; i--)
 				{
 					let oAnnot = page.annots[i];
-					let nAnnotWidth		= Math.max(oAnnot._origRect[2] - oAnnot._origRect[0], 32) / (this.zoom * AscCommon.AscBrowser.retinaPixelRatio);
-					let nAnnotHeight	= Math.max(oAnnot._origRect[3] - oAnnot._origRect[1], 32) / (this.zoom * AscCommon.AscBrowser.retinaPixelRatio);
+					let nAnnotWidth		= AscCommon.AscBrowser.retinaPixelRatio * 16 / (this.zoom);
+					let nAnnotHeight	= AscCommon.AscBrowser.retinaPixelRatio * 16 / (this.zoom);
 					
 					if (true !== bGetHidden && oAnnot.IsHidden() == true || false == oAnnot.IsComment())
 						continue;
