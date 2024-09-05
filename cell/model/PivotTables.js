@@ -8262,7 +8262,7 @@ CT_pivotTableDefinition.prototype.getShowDetailsSheetName = function(arrayFieldI
 		const cacheField = cacheFields[fieldIndex];
 		const pivotField = pivotFields[fieldIndex];
 		const item = pivotField.getItems()[pivotField.getItemIndexByValue(itemIndex)];
-		const name = item.getName(cacheField, true);
+		const name = item.getName(cacheField, cacheField.getNumFormat());
 		if (name != null) {
 			postfix += '-' + name;
 		}
@@ -14280,10 +14280,7 @@ CT_PivotField.prototype.getFilterObject = function(cacheField, pageFilterItem, n
 				elem.val = item.x;
 				elem.text = "";
 				if (Asc.c_oAscItemType.Data === item.t) {
-					var sharedItem = cacheField.getGroupOrSharedItem(item.x);
-					if (sharedItem) {
-						elem.text = sharedItem.getCellValue().getTextValue(num);
-					}
+					elem.text = item.getName(cacheField, num);
 				}
 				elem.visible = !item.h && (null == pageFilterItem || i === pageFilterItem);
 				elem.isDateFormat = false;
@@ -18080,21 +18077,14 @@ CT_Item.prototype.asc_setName = function(newVal, pivot, pivotIndex, itemIndex, a
 CT_Item.prototype.asc_getName = function() {
 	return this.n;
 }
-CT_Item.prototype.getName = function(cacheField, withNum) {
+CT_Item.prototype.getName = function(cacheField, num) {
 	if (this.asc_getName()) {
 		return this.asc_getName();
 	}
 	const sharedItem = cacheField.getGroupOrSharedItem(this.x);
 	if (sharedItem) {
 		const cellValue = sharedItem.getCellValue();
-		let res = cellValue.getTextValue();
-		if (withNum) {
-			const numFormat = cacheField.num && cacheField.num.getNumFormat();
-			if (numFormat && cellValue.type === AscCommon.CellValueType.Number) {
-				res = numFormat.formatToMathInfo(cellValue.number, AscCommon.CellValueType.Number, AscCommon.gc_nMaxDigCountView);
-			}
-		}
-		return res;
+		return cellValue.getTextValue(num);
 	}
 	return null;
 };
