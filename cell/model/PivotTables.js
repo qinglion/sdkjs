@@ -16194,10 +16194,7 @@ CT_PivotField.prototype.asc_getBaseItemObject = function(cacheField) {
 			if (Asc.c_oAscItemType.Data === item.t || Asc.c_oAscItemType.Blank === item.t) {
 				let elem = '';
 				if (Asc.c_oAscItemType.Data === item.t) {
-					var sharedItem = cacheField.getGroupOrSharedItem(item.x);
-					if (sharedItem) {
-						elem = sharedItem.getCellValue().getTextValue();
-					}
+					elem = item.getName(cacheField);
 				}
 				values.push({"baseItem": i, "name": elem});
 			}
