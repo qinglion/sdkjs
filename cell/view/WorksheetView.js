@@ -17074,9 +17074,13 @@
 			History.Create_NewPoint();
 			History.StartTransaction();
 		}
-
+		const pivotTable = c.worksheet.getPivotTable(c.bbox.c1, c.bbox.r1);
 		// if there is a formula use setValue, otherwise setValue2
 		if (isFormula) {
+			if (pivotTable) {
+				this.workbook.Api.sendEvent('asc_onError', Asc.c_oAscError.ID.FormulaInPivotFieldName, Asc.c_oAscError.Level.NoCritical);
+				return;
+			}
 			// ToDo - при вводе формулы в заголовок автофильтра надо писать "0"
 			//***array-formula***
 			let ret = true;
@@ -17183,7 +17187,6 @@
 			}
 
 			// set the value to the selected range
-			const pivotTable = c.worksheet.getPivotTable(c.bbox.c1, c.bbox.r1);
 			if (pivotTable) {
 				pivotTable.editCell(c.bbox, val);
 			} else {
