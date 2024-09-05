@@ -167,6 +167,7 @@
 			PivotGroup					: -315,
 			PivotWithoutUnderlyingData	: -316,
 			PivotFieldNameExists        : -317,
+			FormulaInPivotFieldName     : -318,
 
 			CircularReference			: -320,
 
