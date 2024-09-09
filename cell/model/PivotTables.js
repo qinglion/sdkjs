@@ -8505,8 +8505,7 @@ CT_pivotTableDefinition.prototype.moveFieldInAxis = function(api, pivotIndex, ax
 CT_pivotTableDefinition.prototype.canEditCell = function(activeCell) {
 	return this.rangeMapper.getEditCellFunction(activeCell) !== null;
 };
-CT_pivotTableDefinition.prototype.editCell = function(bbox, val) {
-	const text = AscCommonExcel.getFragmentsText(val)
+CT_pivotTableDefinition.prototype.editCell = function(bbox, text) {
 	const func = this.rangeMapper.getEditCellFunction(bbox);
 	if (func) {
 		func(text);
