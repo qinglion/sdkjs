@@ -17188,7 +17188,7 @@
 
 			// set the value to the selected range
 			if (pivotTable) {
-				pivotTable.editCell(c.bbox, val);
+				pivotTable.editCell(c.bbox, AscCommonExcel.getFragmentsText(val));
 			} else {
 				c.setValue2(val, true);
 			}
