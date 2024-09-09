@@ -324,7 +324,10 @@
 	 */
 	CVisioDocument.prototype.GetWidthMM = function(pageIndex) {
 		//todo units, indexes
-		let logic_w_inch = this.pages.page[pageIndex].pageSheet.getCellNumberValue("PageWidth");
+		let pageInfo = this.pages.page[pageIndex];
+		let drawingScale = pageInfo.pageSheet.getCellNumberValue("DrawingScale");
+		let pageScale = pageInfo.pageSheet.getCellNumberValue("PageScale");
+		let logic_w_inch = pageInfo.pageSheet.getCellNumberValueWithScale("PageWidth", drawingScale / pageScale);
 		return logic_w_inch * g_dKoef_in_to_mm;
 	}
 
@@ -334,7 +337,10 @@
 	 * @memberOf CVisioDocument
 	 */
 	CVisioDocument.prototype.GetHeightMM = function(pageIndex) {
-		let logic_h_inch = this.pages.page[pageIndex].pageSheet.getCellNumberValue("PageHeight");
+		let pageInfo = this.pages.page[pageIndex];
+		let drawingScale = pageInfo.pageSheet.getCellNumberValue("DrawingScale");
+		let pageScale = pageInfo.pageSheet.getCellNumberValue("PageScale");
+		let logic_h_inch = pageInfo.pageSheet.getCellNumberValueWithScale("PageHeight", drawingScale / pageScale);
 		return logic_h_inch * g_dKoef_in_to_mm;
 	}
 

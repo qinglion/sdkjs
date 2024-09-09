@@ -519,6 +519,20 @@
 			return undefined;
 		}
 	}
+	/**
+	 * Calls getCell on object and tries to parse as Number(cell.v) if cell exists otherwise return undefined.
+	 * @param {String} formula
+	 * @param {Number} pageScale
+	 * @return {Number | undefined} number
+	 */
+	SheetStorage.prototype.getCellNumberValueWithScale = function (formula, pageScale) {
+		let cell = this.getCell(formula);
+		if (cell !== undefined) {
+			return Number(cell.v) / pageScale;
+		} else {
+			return undefined;
+		}
+	}
 
 	/**
 	 * Calls getCell on object and tries to parse as String(cell.v) if cell exists otherwise return undefined.

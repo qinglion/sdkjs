@@ -129,7 +129,7 @@
 	 * @param {Shape_Type} shape
 	 * @returns {Geometry} geometry
 	 */
-	function getGeometryFromShape(shape) {
+	function getGeometryFromShape(shape, pageScale) {
 		// init geometry
 		let geometry = new AscFormat.Geometry();
 
@@ -276,7 +276,7 @@
 			// TODO parse formula and units
 			// TODO parse line style fill style text style
 
-			const additionalUnitCoefficient = g_dKoef_in_to_mm;
+			const additionalUnitCoefficient = g_dKoef_in_to_mm / pageScale;
 
 
 			/* extrusionOk, fill, stroke, w, h*/
