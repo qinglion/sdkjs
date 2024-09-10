@@ -570,8 +570,8 @@
 			let oTextPr;
 			oTextPr = new CTextPr();
 			// i dont know why but when i set font size not for overall shape but for runs text shifts to the top
-			oTextPr.FontSize = nFontSize * scale;
-			// oTextPr.FontSize = nFontSize;
+			// oTextPr.FontSize = nFontSize * scale;
+			oTextPr.FontSize = nFontSize;
 			// oTextPr.RFonts.Ascii = {Name: "Calibri", Index: -1};
 			// oTextPr.RFonts.HAnsi = {Name: "Calibri", Index: -1};
 			// oTextPr.RFonts.CS = {Name: "Calibri", Index: -1};
@@ -607,10 +607,12 @@
 
 			// oBodyPr.upright = false; // default
 
-			let leftMarginInch = shape.getCellNumberValue("LeftMargin");
-			let topMarginInch = shape.getCellNumberValue("TopMargin");
-			let rightMarginInch = shape.getCellNumberValue("RightMargin");
-			let bottomMarginInch = shape.getCellNumberValue("BottomMargin");
+			let drawingScale = pageInfo.pageSheet.getCellNumberValue("DrawingScale");
+			let pageScale = drawingScale / pageInfo.pageSheet.getCellNumberValue("PageScale");
+			let leftMarginInch = shape.getCellNumberValueWithScale("LeftMargin", pageScale);
+			let topMarginInch = shape.getCellNumberValueWithScale("TopMargin", pageScale);
+			let rightMarginInch = shape.getCellNumberValueWithScale("RightMargin", pageScale);
+			let bottomMarginInch = shape.getCellNumberValueWithScale("BottomMargin", pageScale);
 
 
 			// CHECKS SIGN but positive tIns gives bottom inset. Check https://disk.yandex.ru/d/IU1vdjzcF9p3IQ
@@ -632,8 +634,8 @@
 			// to rotate around point we 1) add one more offset 2) rotate around center
 			// could be refactored maybe
 			// https://www.figma.com/file/jr1stjGUa3gKUBWxNAR80T/locPinHandle?type=design&node-id=0%3A1&mode=design&t=raXzFFsssqSexysi-1
-			let txtPinX_inch = shape.getCellNumberValue("TxtPinX");
-			let txtPinY_inch = shape.getCellNumberValue("TxtPinY");
+			let txtPinX_inch = shape.getCellNumberValueWithScale("TxtPinX", pageScale);
+			let txtPinY_inch = shape.getCellNumberValueWithScale("TxtPinY", pageScale);
 
 
 			// consider https://disk.yandex.ru/d/2XzRaPTKzKHFjA
@@ -644,14 +646,14 @@
 			if (!(isNaN(txtPinX_inch) || txtPinX_inch === null)  && !(isNaN(txtPinY_inch) || txtPinY_inch === null)) {
 				// https://www.figma.com/file/WiAC4sxQuJaq65h6xppMYC/cloudFare?type=design&node-id=0%3A1&mode=design&t=SZbio0yIyxq0YnMa-1s
 
-				let shapeWidth = shape.getCellNumberValue("Width");
-				let shapeHeight = shape.getCellNumberValue("Height");
-				let shapeLocPinX = shape.getCellNumberValue("LocPinX");
-				let shapeLocPinY = shape.getCellNumberValue("LocPinY");
-				let txtWidth_inch = shape.getCellNumberValue("TxtWidth");
-				let txtHeight_inch = shape.getCellNumberValue("TxtHeight");
-				let txtLocPinX_inch = shape.getCellNumberValue("TxtLocPinX");
-				let txtLocPinY_inch = shape.getCellNumberValue("TxtLocPinY");
+				let shapeWidth = shape.getCellNumberValueWithScale("Width", pageScale);
+				let shapeHeight = shape.getCellNumberValueWithScale("Height", pageScale);
+				let shapeLocPinX = shape.getCellNumberValueWithScale("LocPinX", pageScale);
+				let shapeLocPinY = shape.getCellNumberValueWithScale("LocPinY", pageScale);
+				let txtWidth_inch = shape.getCellNumberValueWithScale("TxtWidth", pageScale);
+				let txtHeight_inch = shape.getCellNumberValueWithScale("TxtHeight", pageScale);
+				let txtLocPinX_inch = shape.getCellNumberValueWithScale("TxtLocPinX", pageScale);
+				let txtLocPinY_inch = shape.getCellNumberValueWithScale("TxtLocPinY", pageScale);
 
 				let textAngle = shape.getCellNumberValue("TxtAngle");
 
@@ -842,11 +844,12 @@
 		// 3) May be bind arguments to calculateValue function
 		// 4) May be move getTextCShape to other file
 
-
+		let drawingScale = pageInfo.pageSheet.getCellNumberValue("DrawingScale");
+		let pageScale = drawingScale / pageInfo.pageSheet.getCellNumberValue("PageScale");
 		// there was case with shape type group with no PinX and PinY
 		// https://disk.yandex.ru/d/tl877cuzcRcZYg
-		let pinX_inch = this.getCellNumberValue("PinX");
-		let pinY_inch = this.getCellNumberValue("PinY");
+		let pinX_inch = this.getCellNumberValueWithScale("PinX", pageScale);
+		let pinY_inch = this.getCellNumberValueWithScale("PinY", pageScale);
 
 		let layerProperties = this.getLayerProperties(pageInfo);
 		// only if all shape layers are invisible shape is invisible
@@ -878,10 +881,10 @@
 		}
 
 		let shapeAngle = this.getCellNumberValue("Angle");
-		let locPinX_inch = this.getCellNumberValue("LocPinX");
-		let locPinY_inch = this.getCellNumberValue("LocPinY");
-		let shapeWidth_inch = this.getCellNumberValue("Width");
-		let shapeHeight_inch = this.getCellNumberValue("Height");
+		let locPinX_inch = this.getCellNumberValueWithScale("LocPinX", pageScale);
+		let locPinY_inch = this.getCellNumberValueWithScale("LocPinY", pageScale);
+		let shapeWidth_inch = this.getCellNumberValueWithScale("Width", pageScale);
+		let shapeHeight_inch = this.getCellNumberValueWithScale("Height", pageScale);
 
 		// to rotate around point we 1) add one more offset 2) rotate around center
 		// could be refactored maybe
@@ -1085,9 +1088,10 @@
 		// Scale should be applied (drawing scale should not be considered) for text font size and stoke size
 		// https://support.microsoft.com/en-us/office/change-the-drawing-scale-on-a-page-in-visio-05c24456-67bf-47f7-b5dc-d5caa9974f19
 		// https://stackoverflow.com/questions/63295483/how-properly-set-line-scaling-in-ms-visio
-		let drawingScale = pageInfo.pageSheet.getCellNumberValue("DrawingScale");
-		let pageScale = pageInfo.pageSheet.getCellNumberValue("PageScale");
-		let scale = drawingScale / pageScale;
+		// let drawingScale = pageInfo.pageSheet.getCellNumberValue("DrawingScale");
+		// let pageScale = pageInfo.pageSheet.getCellNumberValue("PageScale");
+		// let scale = drawingScale / pageScale;
+		let scale = 1;
 		let lineWidthEmuScaled = lineWidthEmu * scale;
 
 		/**	 * @type {CLn}	 */
@@ -1230,6 +1234,7 @@
 			rot: shapeAngle,
 			oFill: uniFillForegndWithPattern, oStroke: oStroke,
 			flipHorizontally: flipHorizontally, flipVertically: flipVertically,
+			pageInfo: pageInfo,
 			cVisioDocument: visioDocument
 		});
 
@@ -1425,8 +1430,11 @@
 		let cVisioDocument = paramsObj.cVisioDocument;
 		let flipHorizontally = paramsObj.flipHorizontally;
 		let flipVertically = paramsObj.flipVertically;
+		let pageInfo = paramsObj.pageInfo;
 
-		let shapeGeom = AscCommonDraw.getGeometryFromShape(this);
+		let drawingScale = pageInfo.pageSheet.getCellNumberValue("DrawingScale");
+		let pageScale = pageInfo.pageSheet.getCellNumberValue("PageScale");
+		let shapeGeom = AscCommonDraw.getGeometryFromShape(this, drawingScale / pageScale);
 
 		let sType   = "rect";
 		let nWidth_mm  = Math.round(w_mm);
