@@ -362,6 +362,8 @@
 	prot['LockCreateDefName']                = prot.LockCreateDefName;
 	prot['LockedCellPivot']                  = prot.LockedCellPivot;
 	prot['PivotFieldNameExists']             = prot.PivotFieldNameExists;
+	prot['FormulaInPivotFieldName']          = prot.FormulaInPivotFieldName;
+	prot['PasteInPivot']                     = prot.PasteInPivot;
 	prot['PivotLabledColumns']               = prot.PivotLabledColumns;
 	prot['PivotOverlap']                     = prot.PivotOverlap;
 	prot['PivotGroup']                       = prot.PivotGroup;
