@@ -42,9 +42,10 @@
 	 * @memberof Shape_Type
 	 * @param {CVisioDocument} visioDocument
 	 * @param {Page_Type} pageInfo
+	 * @param {Number} drawingPageScale
 	 * @return {{geometryCShape: CShape | CImageShape, textCShape: ?CShape}} cShapesObjects
 	 */
-	Shape_Type.prototype.toGeometryAndTextCShapes = function (visioDocument, pageInfo) {
+	Shape_Type.prototype.toGeometryAndTextCShapes = function (visioDocument, pageInfo, drawingPageScale) {
 
 		/**
 		 * handle QuickStyleVariation cell which can change color (but only if color is a result of ThemeVal)
@@ -155,10 +156,11 @@
 		 * @param {CShape} cShape
 		 * @param {CUniFill} lineUniFill
 		 * @param {CUniFill} fillUniFill
-		 * @param {number} scale
+		 * @param {number} drawingPageScale
 		 * @return {CShape} textCShape
 		 */
-		function getTextCShape(theme, shape, cShape, lineUniFill, fillUniFill, scale) {
+		function getTextCShape(theme, shape, cShape, lineUniFill,
+							   fillUniFill, drawingPageScale) {
 			// see 2.2.8	Text [MS-VSDX]-220215
 			/**
 			 * handle QuickStyleVariation cell which can change color (but only if color is a result of ThemeVal)
@@ -607,12 +609,10 @@
 
 			// oBodyPr.upright = false; // default
 
-			let drawingScale = pageInfo.pageSheet.getCellNumberValue("DrawingScale");
-			let pageScale = drawingScale / pageInfo.pageSheet.getCellNumberValue("PageScale");
-			let leftMarginInch = shape.getCellNumberValueWithScale("LeftMargin", pageScale);
-			let topMarginInch = shape.getCellNumberValueWithScale("TopMargin", pageScale);
-			let rightMarginInch = shape.getCellNumberValueWithScale("RightMargin", pageScale);
-			let bottomMarginInch = shape.getCellNumberValueWithScale("BottomMargin", pageScale);
+			let leftMarginInch = shape.getCellNumberValueWithScale("LeftMargin", drawingPageScale);
+			let topMarginInch = shape.getCellNumberValueWithScale("TopMargin", drawingPageScale);
+			let rightMarginInch = shape.getCellNumberValueWithScale("RightMargin", drawingPageScale);
+			let bottomMarginInch = shape.getCellNumberValueWithScale("BottomMargin", drawingPageScale);
 
 
 			// CHECKS SIGN but positive tIns gives bottom inset. Check https://disk.yandex.ru/d/IU1vdjzcF9p3IQ
@@ -634,8 +634,8 @@
 			// to rotate around point we 1) add one more offset 2) rotate around center
 			// could be refactored maybe
 			// https://www.figma.com/file/jr1stjGUa3gKUBWxNAR80T/locPinHandle?type=design&node-id=0%3A1&mode=design&t=raXzFFsssqSexysi-1
-			let txtPinX_inch = shape.getCellNumberValueWithScale("TxtPinX", pageScale);
-			let txtPinY_inch = shape.getCellNumberValueWithScale("TxtPinY", pageScale);
+			let txtPinX_inch = shape.getCellNumberValueWithScale("TxtPinX", drawingPageScale);
+			let txtPinY_inch = shape.getCellNumberValueWithScale("TxtPinY", drawingPageScale);
 
 
 			// consider https://disk.yandex.ru/d/2XzRaPTKzKHFjA
@@ -646,14 +646,14 @@
 			if (!(isNaN(txtPinX_inch) || txtPinX_inch === null)  && !(isNaN(txtPinY_inch) || txtPinY_inch === null)) {
 				// https://www.figma.com/file/WiAC4sxQuJaq65h6xppMYC/cloudFare?type=design&node-id=0%3A1&mode=design&t=SZbio0yIyxq0YnMa-1s
 
-				let shapeWidth = shape.getCellNumberValueWithScale("Width", pageScale);
-				let shapeHeight = shape.getCellNumberValueWithScale("Height", pageScale);
-				let shapeLocPinX = shape.getCellNumberValueWithScale("LocPinX", pageScale);
-				let shapeLocPinY = shape.getCellNumberValueWithScale("LocPinY", pageScale);
-				let txtWidth_inch = shape.getCellNumberValueWithScale("TxtWidth", pageScale);
-				let txtHeight_inch = shape.getCellNumberValueWithScale("TxtHeight", pageScale);
-				let txtLocPinX_inch = shape.getCellNumberValueWithScale("TxtLocPinX", pageScale);
-				let txtLocPinY_inch = shape.getCellNumberValueWithScale("TxtLocPinY", pageScale);
+				let shapeWidth = shape.getCellNumberValueWithScale("Width", drawingPageScale);
+				let shapeHeight = shape.getCellNumberValueWithScale("Height", drawingPageScale);
+				let shapeLocPinX = shape.getCellNumberValueWithScale("LocPinX", drawingPageScale);
+				let shapeLocPinY = shape.getCellNumberValueWithScale("LocPinY", drawingPageScale);
+				let txtWidth_inch = shape.getCellNumberValueWithScale("TxtWidth", drawingPageScale);
+				let txtHeight_inch = shape.getCellNumberValueWithScale("TxtHeight", drawingPageScale);
+				let txtLocPinX_inch = shape.getCellNumberValueWithScale("TxtLocPinX", drawingPageScale);
+				let txtLocPinY_inch = shape.getCellNumberValueWithScale("TxtLocPinY", drawingPageScale);
 
 				let textAngle = shape.getCellNumberValue("TxtAngle");
 
@@ -844,12 +844,10 @@
 		// 3) May be bind arguments to calculateValue function
 		// 4) May be move getTextCShape to other file
 
-		let drawingScale = pageInfo.pageSheet.getCellNumberValue("DrawingScale");
-		let pageScale = drawingScale / pageInfo.pageSheet.getCellNumberValue("PageScale");
 		// there was case with shape type group with no PinX and PinY
 		// https://disk.yandex.ru/d/tl877cuzcRcZYg
-		let pinX_inch = this.getCellNumberValueWithScale("PinX", pageScale);
-		let pinY_inch = this.getCellNumberValueWithScale("PinY", pageScale);
+		let pinX_inch = this.getCellNumberValueWithScale("PinX", drawingPageScale);
+		let pinY_inch = this.getCellNumberValueWithScale("PinY", drawingPageScale);
 
 		let layerProperties = this.getLayerProperties(pageInfo);
 		// only if all shape layers are invisible shape is invisible
@@ -881,10 +879,10 @@
 		}
 
 		let shapeAngle = this.getCellNumberValue("Angle");
-		let locPinX_inch = this.getCellNumberValueWithScale("LocPinX", pageScale);
-		let locPinY_inch = this.getCellNumberValueWithScale("LocPinY", pageScale);
-		let shapeWidth_inch = this.getCellNumberValueWithScale("Width", pageScale);
-		let shapeHeight_inch = this.getCellNumberValueWithScale("Height", pageScale);
+		let locPinX_inch = this.getCellNumberValueWithScale("LocPinX", drawingPageScale);
+		let locPinY_inch = this.getCellNumberValueWithScale("LocPinY", drawingPageScale);
+		let shapeWidth_inch = this.getCellNumberValueWithScale("Width", drawingPageScale);
+		let shapeHeight_inch = this.getCellNumberValueWithScale("Height", drawingPageScale);
 
 		// to rotate around point we 1) add one more offset 2) rotate around center
 		// could be refactored maybe
@@ -1085,17 +1083,9 @@
 			lineWidthEmu = 9525;
 		}
 
-		// Scale should be applied (drawing scale should not be considered) for text font size and stoke size
-		// https://support.microsoft.com/en-us/office/change-the-drawing-scale-on-a-page-in-visio-05c24456-67bf-47f7-b5dc-d5caa9974f19
-		// https://stackoverflow.com/questions/63295483/how-properly-set-line-scaling-in-ms-visio
-		// let drawingScale = pageInfo.pageSheet.getCellNumberValue("DrawingScale");
-		// let pageScale = pageInfo.pageSheet.getCellNumberValue("PageScale");
-		// let scale = drawingScale / pageScale;
-		let scale = 1;
-		let lineWidthEmuScaled = lineWidthEmu * scale;
-
+		// not scaling lineWidth
 		/**	 * @type {CLn}	 */
-		let oStroke = AscFormat.builder_CreateLine(lineWidthEmuScaled, {UniFill: lineUniFill});
+		let oStroke = AscFormat.builder_CreateLine(lineWidthEmu, {UniFill: lineUniFill});
 
 		let linePattern = this.getCell("LinePattern");
 		if (linePattern) {
@@ -1235,12 +1225,14 @@
 			oFill: uniFillForegndWithPattern, oStroke: oStroke,
 			flipHorizontally: flipHorizontally, flipVertically: flipVertically,
 			pageInfo: pageInfo,
-			cVisioDocument: visioDocument
+			cVisioDocument: visioDocument,
+			drawingPageScale : drawingPageScale
 		});
 
 		cShape.Id = String(this.iD); // it was string in cShape
 
-		let textCShape = getTextCShape(visioDocument.themes[0], this, cShape, lineUniFill, uniFillForegnd, scale);
+		// not scaling fontSize
+		let textCShape = getTextCShape(visioDocument.themes[0], this, cShape, lineUniFill, uniFillForegnd, drawingPageScale);
 
 		cShape.recalculate();
 		cShape.recalculateLocalTransform(cShape.transform);
@@ -1289,13 +1281,15 @@
 	 * @memberOf Shape_Type
 	 * @param {CVisioDocument} visioDocument
 	 * @param {Page_Type} pageInfo
+	 * @param {Number} drawingPageScale
 	 * @param {CGroupShape?} currentGroupHandling
 	 * @return {{cGroupShape: CGroupShape, textCShape: CShape}}
 	 */
-	Shape_Type.prototype.toCGroupShapeRecursively = function (visioDocument, pageInfo, currentGroupHandling) {
+	Shape_Type.prototype.toCGroupShapeRecursively = function (visioDocument, pageInfo,
+															  drawingPageScale, currentGroupHandling) {
 		// if we need to create CGroupShape create CShape first then copy its properties to CGroupShape object
 		// so anyway create CShapes
-		let cShapes = this.toGeometryAndTextCShapes(visioDocument, pageInfo);
+		let cShapes = this.toGeometryAndTextCShapes(visioDocument, pageInfo, drawingPageScale);
 
 		if (this.type === "Group") {
 			// CGroupShape cant support text. So cShape will represent everything related to Shape Type="Group".
@@ -1341,7 +1335,7 @@
 				let subShapes = this.getSubshapes();
 				for (let i = 0; i < subShapes.length; i++) {
 					const subShape = subShapes[i];
-					subShape.toCGroupShapeRecursively(visioDocument, pageInfo, currentGroupHandling);
+					subShape.toCGroupShapeRecursively(visioDocument, pageInfo, drawingPageScale, currentGroupHandling);
 				}
 
 				// textCShape is returned from this function
@@ -1364,7 +1358,7 @@
 				let subShapes = this.getSubshapes();
 				for (let i = 0; i < subShapes.length; i++) {
 					const subShape = subShapes[i];
-					subShape.toCGroupShapeRecursively(visioDocument, pageInfo, currentGroupHandling);
+					subShape.toCGroupShapeRecursively(visioDocument, pageInfo, drawingPageScale, currentGroupHandling);
 				}
 			}
 			// recalculate positions to local (group) coordinates
@@ -1416,7 +1410,7 @@
 
 	/**
 	 * @memberOf Shape_Type
-	 * @param {{x_mm, y_mm, w_mm, h_mm, rot, oFill, oStroke, flipHorizontally, flipVertically, cVisioDocument}} paramsObj
+	 * @param {{x_mm, y_mm, w_mm, h_mm, rot, oFill, oStroke, flipHorizontally, flipVertically, cVisioDocument, drawingPageScale}} paramsObj
 	 * @return {CShape} CShape
 	 */
 	Shape_Type.prototype.convertToCShapeUsingParamsObj = function(paramsObj) {
@@ -1430,11 +1424,9 @@
 		let cVisioDocument = paramsObj.cVisioDocument;
 		let flipHorizontally = paramsObj.flipHorizontally;
 		let flipVertically = paramsObj.flipVertically;
-		let pageInfo = paramsObj.pageInfo;
+		let drawingPageScale = paramsObj.drawingPageScale;
 
-		let drawingScale = pageInfo.pageSheet.getCellNumberValue("DrawingScale");
-		let pageScale = pageInfo.pageSheet.getCellNumberValue("PageScale");
-		let shapeGeom = AscCommonDraw.getGeometryFromShape(this, drawingScale / pageScale);
+		let shapeGeom = AscCommonDraw.getGeometryFromShape(this, drawingPageScale);
 
 		let sType   = "rect";
 		let nWidth_mm  = Math.round(w_mm);

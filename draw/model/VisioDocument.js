@@ -298,8 +298,8 @@
 	 * @return {number}
 	 */
 	CVisioDocument.prototype.getFitZoomValue = function(pageIndex, displayedWidthPx, displayedHeightPX) {
-		let logic_w_mm = this.GetWidthMM(pageIndex);
-		let logic_h_mm = this.GetHeightMM(pageIndex);
+		let logic_w_mm = this.GetWidthScaledMM(pageIndex);
+		let logic_h_mm = this.GetHeightScaledMM(pageIndex);
 
 		var _value = 100;
 
@@ -322,8 +322,7 @@
 	 * @param pageIndex
 	 * @memberOf CVisioDocument
 	 */
-	CVisioDocument.prototype.GetWidthMM = function(pageIndex) {
-		//todo units, indexes
+	CVisioDocument.prototype.GetWidthScaledMM = function(pageIndex) {
 		let pageInfo = this.pages.page[pageIndex];
 		let drawingScale = pageInfo.pageSheet.getCellNumberValue("DrawingScale");
 		let pageScale = pageInfo.pageSheet.getCellNumberValue("PageScale");
@@ -336,7 +335,7 @@
 	 * @param pageIndex
 	 * @memberOf CVisioDocument
 	 */
-	CVisioDocument.prototype.GetHeightMM = function(pageIndex) {
+	CVisioDocument.prototype.GetHeightScaledMM = function(pageIndex) {
 		let pageInfo = this.pages.page[pageIndex];
 		let drawingScale = pageInfo.pageSheet.getCellNumberValue("DrawingScale");
 		let pageScale = pageInfo.pageSheet.getCellNumberValue("PageScale");
@@ -536,36 +535,25 @@
 			// let pageInfo = visioDocument.pages.page[pageIndex];
 			// let pageContent = visioDocument.pageContents[pageIndex];
 			// let topLevelShapesAndGroups = visioDocument.convertToCShapesAndGroups(pageInfo, pageContent);
+			// calculated in CVisioDocument.prototype.draw
 			let topLevelShapesAndGroups = visioDocument.pageShapesCache[pageIndex];
 
-			let logic_w_mm = visioDocument.GetWidthMM(pageIndex);
-			let logic_h_mm = visioDocument.GetHeightMM(pageIndex);
-
-			/**
-			 * sometimes text suddenly gets huge sizes that take all of a picture space.
-			 * It usually happens on low zoom (when we scroll down a lot). This coefficient fixes this issue but
-			 * makes extra space and scroll lines get wrong sizes. fixScale number was randomly selected.
-			 * High fixScale value can make high load and break page, especially on high zooming. Low values
-			 * may not fix text on low zoom. 1 is default.
-			 * @type {number}
-			 */
-			let fixScale = 1;
+			let logic_w_mm = visioDocument.GetWidthScaledMM(pageIndex);
+			let logic_h_mm = visioDocument.GetHeightScaledMM(pageIndex);
 
 			let graphics;
-
-			// let graphicsThumbnails;
 
 			let useFitToScreenZoom = !pGraphics;
 			let fitZoom;
 			if (useFitToScreenZoom) {
 				if (isThumbnail) {
 					fitZoom = 100 *
-						visioDocument.getFitZoomValue(pageIndex, canvas.offsetWidth, canvas.offsetHeight) / 100 * fixScale;
+						visioDocument.getFitZoomValue(pageIndex, canvas.offsetWidth, canvas.offsetHeight) / 100;
 				} else {
 					let api = visioDocument.api;
 					let apiHtmlElement = api.HtmlElement.querySelector("#id_main");
 					fitZoom = Zoom *
-						visioDocument.getFitZoomValue(pageIndex, apiHtmlElement.offsetWidth, apiHtmlElement.offsetHeight) / 100 * fixScale;
+						visioDocument.getFitZoomValue(pageIndex, apiHtmlElement.offsetWidth, apiHtmlElement.offsetHeight) / 100;
 
 				}
 			} else {
@@ -625,11 +613,11 @@
 			//ECMA-376-11_5th_edition and Geometry.js y coordinate goes down
 			let baseMatrix = new AscCommon.CMatrix();
 			// baseMatrix.SetValues(1, 0, 0, 1, 0, 0);
-			baseMatrix.SetValues(1 / fixScale, 0, 0, -1 / fixScale, 0, logic_h_mm / fixScale);
+			baseMatrix.SetValues(1, 0, 0, -1, 0, logic_h_mm);
 			graphics.SetBaseTransform(baseMatrix);
 
 			let baseTextMatrix = new AscCommon.CMatrix();
-			baseTextMatrix.SetValues(1 / fixScale, 0, 0, 1 / fixScale, 0, 0);
+			baseTextMatrix.SetValues(1, 0, 0, 1, 0, 0);
 			// baseTextMatrix.SetValues(1, 0, 0, -1, 0, logic_h_mm);
 
 			/**
@@ -662,7 +650,16 @@
 			if (this.pageShapesCache[pageIndex] === undefined) {
 				let pageInfo = this.pages.page[pageIndex];
 				let pageContent = this.pageContents[pageIndex];
-				let topLevelShapesAndGroups = this.convertToCShapesAndGroups(pageInfo, pageContent);
+
+				// Scale should be applied. Drawing scale should not be considered for text font size and stoke size
+				// https://support.microsoft.com/en-us/office/change-the-drawing-scale-on-a-page-in-visio-05c24456-67bf-47f7-b5dc-d5caa9974f19
+				// https://stackoverflow.com/questions/63295483/how-properly-set-line-scaling-in-ms-visio
+				// also arrow size
+				let drawingScale = pageInfo.pageSheet.getCellNumberValue("DrawingScale");
+				let pageScale = pageInfo.pageSheet.getCellNumberValue("PageScale");
+				let drawingPageScale = drawingScale / pageScale;
+
+				let topLevelShapesAndGroups = this.convertToCShapesAndGroups(pageInfo, pageContent, drawingPageScale);
 				this.pageShapesCache[pageIndex] = topLevelShapesAndGroups;
 			}
 		}
@@ -702,9 +699,10 @@
 	 * @memberOf CVisioDocument
 	 * @param pageInfo
 	 * @param pageContent
+	 * @param {Number} drawingPageScale
 	 * @return {(CShape | CGroupShape | CImageShape)[]} topLevelShapesAndGroups
 	 */
-	CVisioDocument.prototype.convertToCShapesAndGroups = function(pageInfo, pageContent) {
+	CVisioDocument.prototype.convertToCShapesAndGroups = function(pageInfo, pageContent, drawingPageScale) {
 		/** @type {(CShape | CGroupShape | CImageShape)[]} */
 		let topLevelShapesAndGroups = [];
 
@@ -717,13 +715,13 @@
 			shape.realizeStyleInheritanceRecursively(this.styleSheets);
 
 			if (shape.type === "Group") {
-				let cGroupShapeAndText = shape.toCGroupShapeRecursively(this,pageInfo);
+				let cGroupShapeAndText = shape.toCGroupShapeRecursively(this, pageInfo, drawingPageScale);
 				topLevelShapesAndGroups.push(cGroupShapeAndText.cGroupShape);
 				if (cGroupShapeAndText.textCShape) {
 					topLevelShapesAndGroups.push(cGroupShapeAndText.textCShape);
 				}
 			} else {
-				let cShapes = shape.toGeometryAndTextCShapes(this, pageInfo);
+				let cShapes = shape.toGeometryAndTextCShapes(this, pageInfo, drawingPageScale);
 				topLevelShapesAndGroups.push(cShapes.geometryCShape);
 				if (cShapes.textCShape !== null) {
 					topLevelShapesAndGroups.push(cShapes.textCShape);
