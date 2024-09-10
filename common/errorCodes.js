@@ -168,6 +168,7 @@
 			PivotWithoutUnderlyingData	: -316,
 			PivotFieldNameExists        : -317,
 			FormulaInPivotFieldName     : -318,
+			PasteInPivot                : -319,
 
 			CircularReference			: -320,
 
