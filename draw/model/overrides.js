@@ -277,6 +277,9 @@ CShapeDrawer.prototype.ds = function()
 		var trans = _graphicsCtx.m_oFullTransform;
 		trans.sx = 1;
 		trans.sy = 1;
+		trans.shx = 0;
+		trans.shy = 0;
+
 		var trans1 = AscCommon.global_MatrixTransformer.Invert(trans);
 
 		var x1 = trans.TransformPointX(0, 0);
