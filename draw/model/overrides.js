@@ -309,13 +309,13 @@ CShapeDrawer.prototype.ds = function()
 
 			var _max_delta = Math.max(Math.abs(_x1 - _x2), Math.abs(_y1 - _y2));
 			var cur_point = 2;
-			while (_max_delta < _max_delta_eps && cur_point < arr.length)
-			{
-				_x2 = trans.TransformPointX(arr[cur_point].x, arr[cur_point].y);
-				_y2 = trans.TransformPointY(arr[cur_point].x, arr[cur_point].y);
-				_max_delta = Math.max(Math.abs(_x1 - _x2), Math.abs(_y1 - _y2));
-				cur_point++;
-			}
+			// while (_max_delta < _max_delta_eps && cur_point < arr.length)
+			// {
+			// 	_x2 = trans.TransformPointX(arr[cur_point].x, arr[cur_point].y);
+			// 	_y2 = trans.TransformPointY(arr[cur_point].x, arr[cur_point].y);
+			// 	_max_delta = Math.max(Math.abs(_x1 - _x2), Math.abs(_y1 - _y2));
+			// 	cur_point++;
+			// }
 
 			if (_max_delta > _max_delta_eps2)
 			{
@@ -337,13 +337,13 @@ CShapeDrawer.prototype.ds = function()
 
 			var _max_delta = Math.max(Math.abs(_x1 - _x2), Math.abs(_y1 - _y2));
 			var cur_point = _2 - 1;
-			while (_max_delta < _max_delta_eps && cur_point >= 0)
-			{
-				_x2 = trans.TransformPointX(arr[cur_point].x, arr[cur_point].y);
-				_y2 = trans.TransformPointY(arr[cur_point].x, arr[cur_point].y);
-				_max_delta = Math.max(Math.abs(_x1 - _x2), Math.abs(_y1 - _y2));
-				cur_point--;
-			}
+			// while (_max_delta < _max_delta_eps && cur_point >= 0)
+			// {
+			// 	_x2 = trans.TransformPointX(arr[cur_point].x, arr[cur_point].y);
+			// 	_y2 = trans.TransformPointY(arr[cur_point].x, arr[cur_point].y);
+			// 	_max_delta = Math.max(Math.abs(_x1 - _x2), Math.abs(_y1 - _y2));
+			// 	cur_point--;
+			// }
 
 			if (_max_delta > _max_delta_eps2)
 			{
