@@ -672,20 +672,25 @@
 		let documentCanvas = api.canvas;
 		let panelThumbnails = api.HtmlElement.querySelector("#id_panel_thumbnails");
 		panelThumbnails.innerHTML = "";
-		for (let thumbPageIndex = 0; thumbPageIndex < this.pages.page.length; thumbPageIndex++) {
-			// var thumbnailCanvas = document.createElement("<canvas id=\"id_thumbnails\" class=\"block_elem\" style=\"user-select: none; z-index: 2; left: 0px; top: 0px; width: 100%; height:100%; cursor: default;\"></canvas>");
-			let thumbnailCanvas = document.createElement("canvas");
-			thumbnailCanvas.style.width = "70%";
-			thumbnailCanvas.style.height = "30%";
-			let thisContext = this;
-			thumbnailCanvas.onclick = function () {
-				// Zoom = 100;
-				thisContext.draw(Zoom, pGraphics, thumbPageIndex);
-				thisContext.pageIndex = thumbPageIndex;
-			}
-			panelThumbnails.appendChild(thumbnailCanvas);
 
-			drawOnCanvas(thumbPageIndex, this, thumbnailCanvas, true);
+		let drawThumbnails = false;
+
+		if (drawThumbnails) {
+			for (let thumbPageIndex = 0; thumbPageIndex < this.pages.page.length; thumbPageIndex++) {
+				// var thumbnailCanvas = document.createElement("<canvas id=\"id_thumbnails\" class=\"block_elem\" style=\"user-select: none; z-index: 2; left: 0px; top: 0px; width: 100%; height:100%; cursor: default;\"></canvas>");
+				let thumbnailCanvas = document.createElement("canvas");
+				thumbnailCanvas.style.width = "70%";
+				thumbnailCanvas.style.height = "30%";
+				let thisContext = this;
+				thumbnailCanvas.onclick = function () {
+					// Zoom = 100;
+					thisContext.draw(Zoom, pGraphics, thumbPageIndex);
+					thisContext.pageIndex = thumbPageIndex;
+				}
+				panelThumbnails.appendChild(thumbnailCanvas);
+
+				drawOnCanvas(thumbPageIndex, this, thumbnailCanvas, true);
+			}
 		}
 
 		drawOnCanvas(pageIndex, this, documentCanvas, false);
