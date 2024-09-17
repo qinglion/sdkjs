@@ -673,7 +673,7 @@
 		let panelThumbnails = api.HtmlElement.querySelector("#id_panel_thumbnails");
 		panelThumbnails.innerHTML = "";
 
-		let drawThumbnails = false;
+		let drawThumbnails = true;
 
 		if (drawThumbnails) {
 			for (let thumbPageIndex = 0; thumbPageIndex < this.pages.page.length; thumbPageIndex++) {

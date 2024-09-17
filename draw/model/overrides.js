@@ -275,20 +275,24 @@ CShapeDrawer.prototype.ds = function()
 		var _graphicsCtx = this.Graphics.isTrack() ? this.Graphics.Graphics : this.Graphics;
 
 		var trans = _graphicsCtx.m_oFullTransform;
+		let originalTrans = new AscCommon.CMatrix();
+		originalTrans.CopyFrom(trans);
+
 		trans.sx = 1;
 		trans.sy = 1;
 		trans.shx = 0;
 		trans.shy = 0;
+		// arrowTrans.SetValues(1, 0, 0, 1, trans.tx, trans.ty);
 
 		var trans1 = AscCommon.global_MatrixTransformer.Invert(trans);
 
-		var x1 = trans.TransformPointX(0, 0);
-		var y1 = trans.TransformPointY(0, 0);
-		var x2 = trans.TransformPointX(1, 1);
-		var y2 = trans.TransformPointY(1, 1);
-		// var dKoef = Math.sqrt(((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1))/2);
-		var dKoef = 1;
-		var _pen_w = this.Graphics.isTrack() ? (this.Graphics.Graphics.m_oContext.lineWidth * dKoef) : (this.Graphics.m_oContext.lineWidth * dKoef);
+		var x1 = originalTrans.TransformPointX(0, 0);
+		var y1 = originalTrans.TransformPointY(0, 0);
+		var x2 = originalTrans.TransformPointX(1, 1);
+		var y2 = originalTrans.TransformPointY(1, 1);
+		var dKoef = Math.sqrt(((x2-x1)*(x2-x1)+(y2-y1)*(y2-y1))/2);
+		// var dKoef = 1;
+		var _pen_w = this.Graphics.isTrack() ? (this.Graphics.Graphics.m_oContext.lineWidth /* * dKoef*/) : (this.Graphics.m_oContext.lineWidth  /* * dKoef*/);
 		var _max_w = undefined;
 		if (_graphicsCtx.IsThumbnail === true)
 			_max_w = 2;
@@ -305,17 +309,22 @@ CShapeDrawer.prototype.ds = function()
 			var _x2 = trans.TransformPointX(arr[1].x, arr[1].y);
 			var _y2 = trans.TransformPointY(arr[1].x, arr[1].y);
 
-			var _max_delta_eps = Math.max(this.Ln.headEnd.GetLen(_pen_w), 5);
+			var _x1Orig = originalTrans.TransformPointX(arr[0].x, arr[0].y);
+			var _y1Orig = originalTrans.TransformPointY(arr[0].x, arr[0].y);
+			var _x2Orig = originalTrans.TransformPointX(arr[1].x, arr[1].y);
+			var _y2Orig = originalTrans.TransformPointY(arr[1].x, arr[1].y);
 
-			var _max_delta = Math.max(Math.abs(_x1 - _x2), Math.abs(_y1 - _y2));
+			var _max_delta_eps = Math.max(this.Ln.headEnd.GetLen(_pen_w) * dKoef, 5);
+
+			var _max_delta = Math.max(Math.abs(_x1Orig - _x2Orig), Math.abs(_y1Orig - _y2Orig));
 			var cur_point = 2;
-			// while (_max_delta < _max_delta_eps && cur_point < arr.length)
-			// {
-			// 	_x2 = trans.TransformPointX(arr[cur_point].x, arr[cur_point].y);
-			// 	_y2 = trans.TransformPointY(arr[cur_point].x, arr[cur_point].y);
-			// 	_max_delta = Math.max(Math.abs(_x1 - _x2), Math.abs(_y1 - _y2));
-			// 	cur_point++;
-			// }
+			while (_max_delta < _max_delta_eps && cur_point < arr.length)
+			{
+				_x2 = trans.TransformPointX(arr[cur_point].x, arr[cur_point].y);
+				_y2 = trans.TransformPointY(arr[cur_point].x, arr[cur_point].y);
+				_max_delta = Math.max(Math.abs(_x1Orig - _x2Orig), Math.abs(_y1Orig - _y2Orig));
+				cur_point++;
+			}
 
 			if (_max_delta > _max_delta_eps2)
 			{
@@ -333,17 +342,22 @@ CShapeDrawer.prototype.ds = function()
 			var _x2 = trans.TransformPointX(arr[_2].x, arr[_2].y);
 			var _y2 = trans.TransformPointY(arr[_2].x, arr[_2].y);
 
-			var _max_delta_eps = Math.max(this.Ln.tailEnd.GetLen(_pen_w), 5);
+			var _x1Orig = originalTrans.TransformPointX(arr[_1].x, arr[_1].y);
+			var _y1Orig = originalTrans.TransformPointY(arr[_1].x, arr[_1].y);
+			var _x2Orig = originalTrans.TransformPointX(arr[_2].x, arr[_2].y);
+			var _y2Orig = originalTrans.TransformPointY(arr[_2].x, arr[_2].y);
 
-			var _max_delta = Math.max(Math.abs(_x1 - _x2), Math.abs(_y1 - _y2));
+			var _max_delta_eps = Math.max(this.Ln.tailEnd.GetLen(_pen_w) * dKoef, 5);
+
+			var _max_delta = Math.max(Math.abs(_x1Orig - _x2Orig), Math.abs(_y1Orig - _y2Orig));
 			var cur_point = _2 - 1;
-			// while (_max_delta < _max_delta_eps && cur_point >= 0)
-			// {
-			// 	_x2 = trans.TransformPointX(arr[cur_point].x, arr[cur_point].y);
-			// 	_y2 = trans.TransformPointY(arr[cur_point].x, arr[cur_point].y);
-			// 	_max_delta = Math.max(Math.abs(_x1 - _x2), Math.abs(_y1 - _y2));
-			// 	cur_point--;
-			// }
+			while (_max_delta < _max_delta_eps && cur_point >= 0)
+			{
+				_x2 = trans.TransformPointX(arr[cur_point].x, arr[cur_point].y);
+				_y2 = trans.TransformPointY(arr[cur_point].x, arr[cur_point].y);
+				_max_delta = Math.max(Math.abs(_x1Orig - _x2Orig), Math.abs(_y1Orig - _y2Orig));
+				cur_point--;
+			}
 
 			if (_max_delta > _max_delta_eps2)
 			{
