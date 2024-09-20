@@ -602,26 +602,14 @@ function DrawLineEnd(xEnd, yEnd, xPrev, yPrev, type, w, len, drawer, trans)
         }
         case AscFormat.LineEndType.vsdxDimensionLine:
         {
-            var _ex = xPrev - xEnd;
-            var _ey = yPrev - yEnd;
-            var _elen = Math.sqrt(_ex*_ex + _ey*_ey);
-            _ex /= _elen;
-            _ey /= _elen;
-
-            var _vx = _ey;
-            var _vy = -_ex;
-
-            var tmpx = xEnd + len * _ex;
-            var tmpy = yEnd + len * _ey;
-
-            var angle = Math.atan2(yEnd - yPrev, xEnd - xPrev) + (45 * Math.PI / 180);
+            var drawLineAngle = Math.atan2(yEnd - yPrev, xEnd - xPrev) + (45 * Math.PI / 180);
 
             // Вычисляем координаты конца перпендикулярной линии
-            var perpendicularLength = w;
-            var x1 = xEnd + perpendicularLength * Math.cos(angle - Math.PI / 2);
-            var y1 = yEnd + perpendicularLength * Math.sin(angle - Math.PI / 2);
-            var x2 = xEnd - perpendicularLength * Math.cos(angle - Math.PI / 2);
-            var y2 = yEnd - perpendicularLength * Math.sin(angle - Math.PI / 2);
+            var perpendicularLength = w * Math.sin(Math.PI / 4); // don't know why it's not just =w here
+            var x1 = xEnd + perpendicularLength * Math.cos(drawLineAngle); // top right point for visio
+            var y1 = yEnd + perpendicularLength * Math.sin(drawLineAngle); // top right point for visio
+            var x2 = xEnd - perpendicularLength * Math.cos(drawLineAngle);
+            var y2 = yEnd - perpendicularLength * Math.sin(drawLineAngle);
 
             drawer._s();
             drawer._m(trans.TransformPointX(x1, y1), trans.TransformPointY(x1, y1));
