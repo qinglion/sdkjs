@@ -424,6 +424,7 @@
 	prot['TraceDependentsNoFormulas']        = prot.TraceDependentsNoFormulas;
 	prot['TracePrecedentsNoValidReference']  = prot.TracePrecedentsNoValidReference;
 	prot['MustIntegerOrDecimalNumber']       = prot.MustIntegerOrDecimalNumber;
+	prot['DocumentAndChangeMismatch']        = prot.DocumentAndChangeMismatch;
 
 
 
