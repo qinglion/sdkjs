@@ -535,7 +535,7 @@ function DrawLineEnd(xEnd, yEnd, xPrev, yPrev, type, w, len, drawer, trans)
 
         case AscFormat.LineEndType.vsdxArrow:
         {
-            w *= 2;
+            len /= 2;
             if (Asc.editor.isPdfEditor() == true) {
                 drawer.CheckDash();
             }
