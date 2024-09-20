@@ -773,9 +773,13 @@
 					endArrow.type = AscFormat.LineEndType.vsdxNone;
 					break;
 				case "1":
+					endArrow.type = AscFormat.LineEndType.vsdxOpen90Arrow;
+					break;
 				case "3":
+					endArrow.type = AscFormat.LineEndType.vsdxOpenSharpArrow;
+					break;
 				case "12":
-					endArrow.type = AscFormat.LineEndType.vsdxArrow;
+					endArrow.type = AscFormat.LineEndType.vsdxOpenASMEArrow;
 					break;
 				case "22":
 					endArrow.type = endArrow.GetTypeCode("diamond");
@@ -787,30 +791,41 @@
 					endArrow.type = endArrow.GetTypeCode("oval");
 					break;
 				case "5":
+				case "7":
 				case "8":
 				case "17":
 				case "19":
 					endArrow.type = AscFormat.LineEndType.vsdxStealth;
 					break;
+				case "4":
+					endArrow.type = AscFormat.LineEndType.vsdxFilledSharpArrow;
+					break;
 				case "9":
 					endArrow.type = AscFormat.LineEndType.vsdxDimensionLine;
 					break;
-				case "2":
-				case "4":
-				case "6":
 				case "13":
-				case "14":
-				case "15":
+					endArrow.type = AscFormat.LineEndType.vsdxFilledASMEArrow;
+					break;
 				case "16":
+					endArrow.type = AscFormat.LineEndType.vsdxClosedSharpArrow;
+					break;
+				case "14":
+					endArrow.type = AscFormat.LineEndType.vsdxClosedASMEArrow;
+					break;
+				case "15":
+					endArrow.type = AscFormat.LineEndType.vsdxClosed90Arrow;
+					break;
+				case "2":
+				case "6":
 				case "18":
-					endArrow.type = AscFormat.LineEndType.vsdxTriangle;
+					endArrow.type = AscFormat.LineEndType.vsdxFilled90Arrow;
 					break;
 				case "Themed":
 					endArrow.type = AscFormat.LineEndType.vsdxNone;
 					break;
 				case !isNaN(Number(arrowType)) && arrowType:
 					// is unhandled number
-					endArrow.type = AscFormat.LineEndType.vsdxArrow;
+					endArrow.type = AscFormat.LineEndType.vsdxOpen90Arrow;
 					break;
 				default:
 					endArrow.type = AscFormat.LineEndType.vsdxNone;

@@ -532,8 +532,11 @@ function DrawLineEnd(xEnd, yEnd, xPrev, yPrev, type, w, len, drawer, trans)
             break;
         }
 
-
-        case AscFormat.LineEndType.vsdxArrow:
+        case AscFormat.LineEndType.vsdxOpenASMEArrow:
+            len *= 1.5;
+        case AscFormat.LineEndType.vsdxOpenSharpArrow:
+            len *= 2;
+        case AscFormat.LineEndType.vsdxOpen90Arrow:
         {
             len /= 2;
             if (Asc.editor.isPdfEditor() == true) {
@@ -567,58 +570,14 @@ function DrawLineEnd(xEnd, yEnd, xPrev, yPrev, type, w, len, drawer, trans)
 
             break;
         }
-        case AscFormat.LineEndType.vsdxStealth:
+
+        case AscFormat.LineEndType.vsdxFilledASMEArrow:
+            len *= 1.5;
+        case AscFormat.LineEndType.vsdxFilledSharpArrow:
+            len *= 2;
+        case AscFormat.LineEndType.vsdxFilled90Arrow:
         {
-            var _ex = xPrev - xEnd;
-            var _ey = yPrev - yEnd;
-            var _elen = Math.sqrt(_ex*_ex + _ey*_ey);
-            _ex /= _elen;
-            _ey /= _elen;
-
-            var _vx = _ey;
-            var _vy = -_ex;
-
-            var tmpx = xEnd + len * _ex;
-            var tmpy = yEnd + len * _ey;
-
-            var x1 = tmpx + _vx * w/2;
-            var y1 = tmpy + _vy * w/2;
-
-            var x3 = tmpx - _vx * w/2;
-            var y3 = tmpy - _vy * w/2;
-
-            var x4 = xEnd + (len - w/2) * _ex;
-            var y4 = yEnd + (len - w/2) * _ey;
-
-            drawer._s();
-            drawer._m(trans.TransformPointX(x1, y1), trans.TransformPointY(x1, y1));
-            drawer._l(trans.TransformPointX(xEnd, yEnd), trans.TransformPointY(xEnd, yEnd));
-            drawer._l(trans.TransformPointX(x3, y3), trans.TransformPointY(x3, y3));
-            drawer._l(trans.TransformPointX(x4, y4), trans.TransformPointY(x4, y4));
-            drawer._z();
-            drawer.drawStrokeFillStyle();
-            drawer._e();
-            break;
-        }
-        case AscFormat.LineEndType.vsdxDimensionLine:
-        {
-            var drawLineAngle = Math.atan2(yEnd - yPrev, xEnd - xPrev) + (45 * Math.PI / 180);
-
-            // Вычисляем координаты конца перпендикулярной линии
-            var perpendicularLength = w * Math.sin(Math.PI / 4); // don't know why it's not just =w here
-            var x1 = xEnd + perpendicularLength * Math.cos(drawLineAngle); // top right point for visio
-            var y1 = yEnd + perpendicularLength * Math.sin(drawLineAngle); // top right point for visio
-            var x2 = xEnd - perpendicularLength * Math.cos(drawLineAngle);
-            var y2 = yEnd - perpendicularLength * Math.sin(drawLineAngle);
-
-            drawer._s();
-            drawer._m(trans.TransformPointX(x1, y1), trans.TransformPointY(x1, y1));
-            drawer._l(trans.TransformPointX(x2, y2), trans.TransformPointY(x2, y2));
-            drawer.ds();
-            break;
-        }
-        case AscFormat.LineEndType.vsdxTriangle:
-        {
+            len /= 2;
             var _ex = xPrev - xEnd;
             var _ey = yPrev - yEnd;
             var _elen = Math.sqrt(_ex*_ex + _ey*_ey);
@@ -661,6 +620,114 @@ function DrawLineEnd(xEnd, yEnd, xPrev, yPrev, type, w, len, drawer, trans)
 
             drawer.drawStrokeFillStyle();
             drawer._e();
+            break;
+        }
+        case AscFormat.LineEndType.vsdxClosedASMEArrow:
+        {
+            len *= 1.5;
+        }
+        case AscFormat.LineEndType.vsdxClosedSharpArrow:
+        {
+            len *= 2;
+        }
+        case AscFormat.LineEndType.vsdxClosed90Arrow:
+        {
+            len /= 2;
+            if (Asc.editor.isPdfEditor() == true) {
+                drawer.CheckDash();
+            }
+
+            var _ex = xPrev - xEnd;
+            var _ey = yPrev - yEnd;
+            var _elen = Math.sqrt(_ex*_ex + _ey*_ey);
+            _ex /= _elen;
+            _ey /= _elen;
+
+            var _vx = _ey;
+            var _vy = -_ex;
+
+            var tmpx = xEnd + len * _ex;
+            var tmpy = yEnd + len * _ey;
+
+            var x1 = tmpx + _vx * w/2;
+            var y1 = tmpy + _vy * w/2;
+
+            var x3 = tmpx - _vx * w/2;
+            var y3 = tmpy - _vy * w/2;
+
+            drawer._s();
+            drawer._m(trans.TransformPointX(x1, y1), trans.TransformPointY(x1, y1));
+            drawer._l(trans.TransformPointX(xEnd, yEnd), trans.TransformPointY(xEnd, yEnd));
+            drawer._l(trans.TransformPointX(x3, y3), trans.TransformPointY(x3, y3));
+            drawer._z();
+            drawer.ds();
+            drawer._e();
+            break;
+        }
+
+
+        case AscFormat.LineEndType.vsdxStealth:
+        {
+            var _ex = xPrev - xEnd;
+            var _ey = yPrev - yEnd;
+            var _elen = Math.sqrt(_ex*_ex + _ey*_ey);
+            _ex /= _elen;
+            _ey /= _elen;
+
+            var _vx = _ey;
+            var _vy = -_ex;
+
+            var tmpx = xEnd + len * _ex;
+            var tmpy = yEnd + len * _ey;
+
+            var x1 = tmpx + _vx * w/2;
+            var y1 = tmpy + _vy * w/2;
+
+            var x3 = tmpx - _vx * w/2;
+            var y3 = tmpy - _vy * w/2;
+
+            var x4 = xEnd + (len - w/2) * _ex;
+            var y4 = yEnd + (len - w/2) * _ey;
+
+            drawer._s();
+            drawer._m(trans.TransformPointX(x1, y1), trans.TransformPointY(x1, y1));
+            drawer._l(trans.TransformPointX(xEnd, yEnd), trans.TransformPointY(xEnd, yEnd));
+            drawer._l(trans.TransformPointX(x3, y3), trans.TransformPointY(x3, y3));
+            drawer._l(trans.TransformPointX(x4, y4), trans.TransformPointY(x4, y4));
+            drawer._z();
+
+            if (Asc.editor.isPdfEditor() && drawer.Shape.IsDrawing() == false) {
+                let oRGBColor;
+                if (drawer.Shape.GetRGBColor) {
+                    oRGBColor = drawer.Shape.GetRGBColor(drawer.Shape.GetFillColor());
+                }
+                else if (drawer.Shape.group) {
+                    oRGBColor = drawer.Shape.group.GetRGBColor(drawer.Shape.group.GetFillColor());
+                }
+
+                drawer.Graphics.m_oPen.Color.R = oRGBColor.r;
+                drawer.Graphics.m_oPen.Color.G = oRGBColor.g;
+                drawer.Graphics.m_oPen.Color.B = oRGBColor.b;
+            }
+            drawer.drawStrokeFillStyle();
+            drawer._e();
+            break;
+        }
+        case AscFormat.LineEndType.vsdxDimensionLine:
+        {
+            var drawLineAngle = Math.atan2(yEnd - yPrev, xEnd - xPrev) + (45 * Math.PI / 180);
+
+            // Вычисляем координаты конца перпендикулярной линии
+            var perpendicularLength = w * Math.sin(Math.PI / 4); // don't know why it's not just =w here
+            var x1 = xEnd + perpendicularLength * Math.cos(drawLineAngle); // top right point for visio
+            var y1 = yEnd + perpendicularLength * Math.sin(drawLineAngle); // top right point for visio
+            var x2 = xEnd - perpendicularLength * Math.cos(drawLineAngle);
+            var y2 = yEnd - perpendicularLength * Math.sin(drawLineAngle);
+
+            drawer._s();
+            drawer._m(trans.TransformPointX(x1, y1), trans.TransformPointY(x1, y1));
+            drawer._l(trans.TransformPointX(x2, y2), trans.TransformPointY(x2, y2));
+            drawer.ds();
             break;
         }
 

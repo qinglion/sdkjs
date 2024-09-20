@@ -6174,11 +6174,19 @@
 			Square:				9,
 			Slash:				10,
 
+			// some names are from visio
 			vsdxNone:			0 + 11,
-			vsdxArrow: 			3 + 11,
-			vsdxTriangle:		4 + 11,
+			vsdxOpen90Arrow: 	1 + 11,
+			vsdxFilled90Arrow: 	2 + 11,
+			vsdxOpenSharpArrow:	3 + 11,
+			vsdxFilledSharpArrow:4 + 11,
 			vsdxStealth: 		7 + 11,
-			vsdxDimensionLine:	9 + 11
+			vsdxDimensionLine:	9 + 11,
+			vsdxOpenASMEArrow:	12 + 11,
+			vsdxFilledASMEArrow:13 + 11,
+			vsdxClosedASMEArrow:14 + 11,
+			vsdxClosed90Arrow:	15 + 11,
+			vsdxClosedSharpArrow:16 + 11,
 		};
 		var LineEndSize = {
 			Large: 0,
