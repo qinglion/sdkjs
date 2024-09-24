@@ -39,6 +39,7 @@ var CTheme = AscFormat.CTheme;
 var CreateSolidFillRGBA = AscFormat.CreateSolidFillRGBA;
 var CShapeDrawer = AscCommon.CShapeDrawer;
 var DrawLineEnd = AscCommon.DrawLineEnd;
+// var builder_CreateLine = AscFormat.builder_CreateLine;
 
 /**
  * @memberOf CShape
@@ -197,6 +198,23 @@ CTheme.prototype.getLnStyle = function (idx, unicolor, isConnectorShape) {
 	return new AscFormat.CLn();
 };
 
+
+/**
+ *
+ * @param {number} nWidth - emus
+ * @param oFill
+ * @return {CLn}
+ */
+AscFormat.builder_CreateLine = function(nWidth, oFill) {
+	if (nWidth === 0) {
+		// return new AscFormat.CreateNoFillLine();
+		nWidth = 1000;
+	}
+	var oLn = new AscFormat.CLn();
+	oLn.w = nWidth;
+	oLn.Fill = oFill.UniFill;
+	return oLn;
+}
 
 CShapeDrawer.prototype.ds = function()
 {
