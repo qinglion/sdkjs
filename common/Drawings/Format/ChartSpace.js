@@ -11716,7 +11716,9 @@ function(window, undefined) {
 		this.bCalculated = false;
 		this.fLabelHeight = null;
 		this.fLabelWidth = null;
-		// alpha stands for the amount of additional space that label should have, other than the width of its content;
+		//decisionBoundary states a threshold for the diagonal label width;
+		this.fAutoRotationThreshold = (this.nAxisType === AscDFH.historyitem_type_DateAx) ? 2.5 : 2;
+		// fSpaceBetweenLabels stands for the amount of additional space that label should have, other than the width of its content;
 		// left space + right space = this.fSpaceBetweenLabels
 		this.fSpaceBetweenLabels = (this.nAxisType === AscDFH.historyitem_type_DateAx) ? 1.939 : 0;
 	}
@@ -11957,7 +11959,7 @@ function(window, undefined) {
 			const diagonalLabelWidth = (fUpdatedLabelHight + this.fSpaceBetweenLabels) * updatedLabelsCount;
 
 			// diagonal angle is 45 degree
-			if (diagonalLabelWidth && diagonalLabelWidth <= (fAxisLength + this.fSpaceBetweenLabels)) {
+			if (diagonalLabelWidth && oLabelsBox.maxMinWidth > this.fAutoRotationThreshold * this.fLabelHeight && diagonalLabelWidth <= (fAxisLength + this.fSpaceBetweenLabels)) {
 				this.fLabelWidth = fUpdatedLabelHight;
 				this.rot = -45 * this.degree;
 				return;
