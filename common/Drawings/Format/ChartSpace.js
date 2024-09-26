@@ -1140,7 +1140,6 @@ function(window, undefined) {
 
 					// update the max height
 					fMaxHeight = Math.max(fMaxHeight, fBoxH);
-					console.log(fMaxHeight);
 					
 					var fX1, fY0, fXC, fYC;
 					fY0 = fAxisY + fDistance;
@@ -11717,6 +11716,9 @@ function(window, undefined) {
 		this.bCalculated = false;
 		this.fLabelHeight = null;
 		this.fLabelWidth = null;
+		// alpha stands for the amount of additional space that label should have, other than the width of its content;
+		// left space + right space = this.fSpaceBetweenLabels
+		this.fSpaceBetweenLabels = (this.nAxisType === AscDFH.historyitem_type_DateAx) ? 1.939 : 0;
 	}
 
 	CLabelsParameters.prototype.calculate = function (oLabelsBox, fAxisLength, fRectHeight, nIndex) {
@@ -11902,7 +11904,7 @@ function(window, undefined) {
 		
 		if (this.fLabelWidth) {
 			// toDo test configurations for different number labels on excel: finalTestCatAxis
-			const labelCount = fAxisLength > 0 && fAxisLength >= this.fLabelWidth ? Math.floor(fAxisLength / this.fLabelWidth) : 1;
+			const labelCount = fAxisLength > 0 && fAxisLength >= this.fLabelWidth ? Math.floor((fAxisLength + this.fSpaceBetweenLabels) / (this.fLabelWidth + this.fSpaceBetweenLabels)) : 1;
 			nLblTickSkip = Math.ceil(this.nLabelsCount / labelCount);
 
 			// date ax skips labels by significant days 
@@ -11952,10 +11954,10 @@ function(window, undefined) {
 			// multiplier is the square root of 2; 
 			// diagonal rectangle with h is equal to root(2) * h;
 			const fUpdatedLabelHight = 1.41421356237 * this.fLabelHeight;
-			const diagonalLabelWidth = fUpdatedLabelHight * updatedLabelsCount;
+			const diagonalLabelWidth = (fUpdatedLabelHight + this.fSpaceBetweenLabels) * updatedLabelsCount;
 
 			// diagonal angle is 45 degree
-			if (diagonalLabelWidth && diagonalLabelWidth <= fAxisLength) {
+			if (diagonalLabelWidth && diagonalLabelWidth <= (fAxisLength + this.fSpaceBetweenLabels)) {
 				this.fLabelWidth = fUpdatedLabelHight;
 				this.rot = -45 * this.degree;
 				return;
