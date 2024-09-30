@@ -730,7 +730,554 @@ function DrawLineEnd(xEnd, yEnd, xPrev, yPrev, type, w, len, drawer, trans)
             drawer.ds();
             break;
         }
+    }
 
+    /**
+     * @param {CShapeDrawer} drawer
+     * @param {boolean} isFilled - if not filled it is stroke bcs if both repeat all commands
+     */
+    function stokeOrFillPath(drawer, isFilled) {
+        if (isFilled) {
+            if (Asc.editor.isPdfEditor() && drawer.Shape.IsDrawing() == false) {
+                let oRGBColor;
+                if (drawer.Shape.GetRGBColor) {
+                    oRGBColor = drawer.Shape.GetRGBColor(drawer.Shape.GetFillColor());
+                }
+                else if (drawer.Shape.group) {
+                    oRGBColor = drawer.Shape.group.GetRGBColor(drawer.Shape.group.GetFillColor());
+                }
+
+                drawer.Graphics.m_oPen.Color.R = oRGBColor.r;
+                drawer.Graphics.m_oPen.Color.G = oRGBColor.g;
+                drawer.Graphics.m_oPen.Color.B = oRGBColor.b;
+            }
+            drawer.drawStrokeFillStyle();
+        }
+        let isStroke = !isFilled;
+        if (isStroke) {
+            drawer.ds();
+        }
+    }
+
+
+    if (type === AscFormat.LineEndType.vsdxIndentedFilledArrow ||
+        type === AscFormat.LineEndType.vsdxIndentedClosedArrow ||
+        type === AscFormat.LineEndType.vsdxOutdentedFilledArrow ||
+        type === AscFormat.LineEndType.vsdxOutdentedClosedArrow) {
+        let isArrowFilled;
+        if (type === AscFormat.LineEndType.vsdxIndentedFilledArrow || type === AscFormat.LineEndType.vsdxOutdentedFilledArrow) {
+            isArrowFilled = true;
+        } else {
+            isArrowFilled = false;
+        }
+
+        let isIndented;
+        if (type === AscFormat.LineEndType.vsdxIndentedFilledArrow || type === AscFormat.LineEndType.vsdxIndentedClosedArrow) {
+            isIndented = true;
+        } else {
+            isIndented = false;
+        }
+
+        var _ex = xPrev - xEnd;
+        var _ey = yPrev - yEnd;
+        var _elen = Math.sqrt(_ex*_ex + _ey*_ey);
+        _ex /= _elen; // cos a
+        _ey /= _elen; // sin a
+
+        // a now is 90 - a + invert cos
+        var _vx = _ey;
+        var _vy = -_ex;
+
+        // (xEnd, yEnd) - right arrow point
+        var tmpx = xEnd + len * _ex;
+        var tmpy = yEnd + len * _ey;
+
+        // (x1, y1) - top arrow point
+        var x1 = tmpx + _vx * w/2;
+        var y1 = tmpy + _vy * w/2;
+
+        // (x3, y3) - bottom arrow point
+        var x3 = tmpx - _vx * w/2;
+        var y3 = tmpy - _vy * w/2;
+
+        let controlPointShift = isIndented? 0.75 * len : 1.25 * len;
+
+        var x4 = xEnd + controlPointShift * _ex;
+        var y4 = yEnd + controlPointShift * _ey;
+
+        drawer._s();
+        drawer._m(trans.TransformPointX(x1, y1), trans.TransformPointY(x1, y1));
+        drawer._l(trans.TransformPointX(xEnd, yEnd), trans.TransformPointY(xEnd, yEnd));
+        drawer._l(trans.TransformPointX(x3, y3), trans.TransformPointY(x3, y3));
+        let cpxLocal = trans.TransformPointX(x4, y4);
+        let cpyLocal = trans.TransformPointY(x4, y4);
+        let endXLocal = trans.TransformPointX(x1, y1);
+        let endYLocal = trans.TransformPointY(x1, y1);
+        drawer._c2(cpxLocal, cpyLocal, endXLocal, endYLocal);
+        drawer._z();
+
+        stokeOrFillPath(drawer, isArrowFilled);
+
+        drawer._e();
+    } else if (type === AscFormat.LineEndType.vsdxOpenFletch ||
+        type === AscFormat.LineEndType.vsdxFilledFletch ||
+        type === AscFormat.LineEndType.vsdxClosedFletch) {
+        let isArrowFilled = false;
+        let isArrowClosed = false;
+        if (type === AscFormat.LineEndType.vsdxFilledFletch) {
+            isArrowClosed = true;
+            isArrowFilled = true;
+        } else if (type === AscFormat.LineEndType.vsdxClosedFletch) {
+            isArrowFilled = false;
+            isArrowClosed = true;
+        }
+        var _ex = xPrev - xEnd;
+        var _ey = yPrev - yEnd;
+        var _elen = Math.sqrt(_ex*_ex + _ey*_ey);
+        _ex /= _elen; // cos a
+        _ey /= _elen; // sin a
+
+        // a now is 90 - a + invert cos
+        var _vx = _ey;
+        var _vy = -_ex;
+
+        // (xEnd, yEnd) - right arrow point
+
+        // left arrow point?
+        var tmpx = xEnd + len * _ex;
+        var tmpy = yEnd + len * _ey;
+
+        // (x1, y1) - top arrow point
+        var x1 = tmpx + _vx * w/2;
+        var y1 = tmpy + _vy * w/2;
+
+        // (x3, y3) - bottom arrow point
+        var x3 = tmpx - _vx * w/2;
+        var y3 = tmpy - _vy * w/2;
+
+        let controlPointShift = 0.5 * len;
+
+        var x4 = xEnd + controlPointShift * _ex;
+        var y4 = yEnd + controlPointShift * _ey;
+
+        drawer._s();
+        drawer._m(trans.TransformPointX(x1, y1), trans.TransformPointY(x1, y1));
+        let cpxLocal = trans.TransformPointX(x4, y4);
+        let cpyLocal = trans.TransformPointY(x4, y4);
+        let endXLocal = trans.TransformPointX(xEnd, yEnd);
+        let endYLocal = trans.TransformPointY(xEnd, yEnd);
+        drawer._c2(cpxLocal, cpyLocal, endXLocal, endYLocal);
+
+        // drawer._m(trans.TransformPointX(x3, y3), trans.TransformPointY(x3, y3));
+        drawer._c2(cpxLocal, cpyLocal, trans.TransformPointX(x3, y3), trans.TransformPointY(x3, y3));
+
+        if (isArrowClosed) {
+            // drawer._m(trans.TransformPointX(x3, y3), trans.TransformPointY(x3, y3));
+            drawer._c2(cpxLocal, cpyLocal, trans.TransformPointX(x1, y1),  trans.TransformPointY(x1, y1));
+        }
+
+        // drawer._z();
+
+        stokeOrFillPath(drawer, isArrowFilled);
+
+        drawer._e();
+    } else if (type === AscFormat.LineEndType.vsdxFilledDot || type === AscFormat.LineEndType.vsdxClosedDot) {
+        let isFilled = type === AscFormat.LineEndType.vsdxFilledDot;
+        drawCircle(drawer, xPrev, yPrev, xEnd, yEnd, 0, 0, w, len, isFilled);
+    } else if (type === AscFormat.LineEndType.vsdxFilledSquare || type === AscFormat.LineEndType.vsdxClosedSquare) {
+        let isArrowFilled = type === AscFormat.LineEndType.vsdxFilledSquare;
+        var _ex = xPrev - xEnd;
+        var _ey = yPrev - yEnd;
+        var _elen = Math.sqrt(_ex*_ex + _ey*_ey);
+        _ex /= _elen; // cos a
+        _ey /= _elen; // sin a
+
+        let isRotated = false;
+        _ex = isRotated? _ex : 1; // cos a
+        _ey = isRotated? _ey : 0; // sin a
+
+        // a now is 90 - a + invert cos
+        var _vx = _ey;
+        var _vy = -_ex;
+
+        // (xEnd, yEnd) - right arrow point
+
+        let paramsScale = 0.4;
+
+        // left arrow point?
+        var tmpx = xEnd + len * paramsScale * _ex;
+        var tmpy = yEnd + len * paramsScale * _ey;
+
+        // (x1, y1) - left top arrow point
+        var x1 = tmpx + _vx * w * paramsScale;
+        var y1 = tmpy + _vy * w * paramsScale;
+
+        // (x2, y2) - left bottom arrow point
+        var x2 = tmpx - _vx * w * paramsScale;
+        var y2 = tmpy - _vy * w * paramsScale;
+
+        // right arrow point?
+        var tmpxRight = xEnd - len * paramsScale * _ex;
+        var tmpyRight = yEnd - len * paramsScale * _ey;
+
+        // (x3, y3) - left top arrow point
+        var x3 = tmpxRight + _vx * w * paramsScale;
+        var y3 = tmpyRight + _vy * w * paramsScale;
+
+        // (x4, y4) - left bottom arrow point
+        var x4 = tmpxRight - _vx * w * paramsScale;
+        var y4 = tmpyRight - _vy * w * paramsScale;
+
+        drawer._s();
+        drawer._m(trans.TransformPointX(x1, y1), trans.TransformPointY(x1, y1));
+        drawer._l(trans.TransformPointX(x3, y3), trans.TransformPointY(x3, y3));
+        drawer._l(trans.TransformPointX(x4, y4), trans.TransformPointY(x4, y4));
+        drawer._l(trans.TransformPointX(x2, y2), trans.TransformPointY(x2, y2));
+
+        drawer._z();
+
+        stokeOrFillPath(drawer, isArrowFilled);
+
+        drawer._e();
+    } else if (type === AscFormat.LineEndType.vsdxDiamond) {
+        drawRhomb(drawer, xPrev, yPrev, xEnd, yEnd, 0);
+    } else if (type === AscFormat.LineEndType.vsdxBackslash) {
+        let _ex = xPrev - xEnd;
+        let _ey = yPrev - yEnd;
+
+        const arrowPartLen =  Math.sqrt(_ex * _ex + _ey * _ey);
+        const arrowCos = _ex / arrowPartLen;
+        const arrowSin = _ey / arrowPartLen;
+        let xShift = len * arrowCos;
+        let yShift = len * arrowSin;
+        var drawLineAngle = Math.atan2(yEnd - yPrev, xEnd - xPrev) - (45 * Math.PI / 180);
+
+
+        // Вычисляем координаты конца перпендикулярной линии
+        var perpendicularLength = w * Math.sin(Math.PI / 4); // don't know why it's not just =w here
+        var x1 = xEnd + perpendicularLength * Math.cos(drawLineAngle) + xShift; // top right point for visio
+        var y1 = yEnd + perpendicularLength * Math.sin(drawLineAngle) + yShift; // top right point for visio
+        var x2 = xEnd - perpendicularLength * Math.cos(drawLineAngle) + xShift;
+        var y2 = yEnd - perpendicularLength * Math.sin(drawLineAngle) + yShift;
+
+        drawer._s();
+        drawer._m(trans.TransformPointX(x1, y1), trans.TransformPointY(x1, y1));
+        drawer._l(trans.TransformPointX(x2, y2), trans.TransformPointY(x2, y2));
+        drawer.ds();
+
+        drawer._e();
+    } else if (type === AscFormat.LineEndType.vsdxOpenOneDash) {
+        let shift = 0.75 * len;
+        drawVerticalLine(drawer, xPrev, yPrev, xEnd, yEnd, shift);
+    } else if (type === AscFormat.LineEndType.vsdxOpenTwoDash) {
+        let shift = 0.75 * len;
+        drawVerticalLine(drawer, xPrev, yPrev, xEnd, yEnd, shift);
+        drawVerticalLine(drawer, xPrev, yPrev, xEnd, yEnd, shift * 1.5);
+    } else if (type === AscFormat.LineEndType.vsdxOpenThreeDash) {
+        let shift = 0.75 * len;
+        drawVerticalLine(drawer, xPrev, yPrev, xEnd, yEnd, shift);
+        drawVerticalLine(drawer, xPrev, yPrev, xEnd, yEnd, shift * 1.5);
+        drawVerticalLine(drawer, xPrev, yPrev, xEnd, yEnd, shift * 2);
+    } else if (type === AscFormat.LineEndType.vsdxFork) {
+        drawFork(drawer, xPrev, yPrev, xEnd, yEnd);
+    } else if (type === AscFormat.LineEndType.vsdxDashFork) {
+        drawFork(drawer, xPrev, yPrev, xEnd, yEnd);
+
+        let shift = 1.5 * len * 0.75;
+        drawVerticalLine(drawer, xPrev, yPrev, xEnd, yEnd, shift);
+    } else if (type === AscFormat.LineEndType.vsdxClosedFork) {
+        let isFilled = false;
+        drawFork(drawer, xPrev, yPrev, xEnd, yEnd);
+
+        let _ex = xPrev - xEnd;
+        let _ey = yPrev - yEnd;
+        const arrowPartLen =  Math.sqrt(_ex * _ex + _ey * _ey);
+        const arrowCos = _ex / arrowPartLen;
+        const arrowSin = _ey / arrowPartLen;
+        let xShift = 0.75 * len * arrowCos * 1.5;
+        let yShift = 0.75 * len * arrowSin * 1.5;
+
+        drawCircle(drawer, xPrev, yPrev, xEnd, yEnd, xShift, yShift, w, len, isFilled);
+    } else if (type === AscFormat.LineEndType.vsdxClosedPlus) {
+        let _ex = xPrev - xEnd;
+        let _ey = yPrev - yEnd;
+        const arrowPartLen =  Math.sqrt(_ex * _ex + _ey * _ey);
+        const arrowCos = _ex / arrowPartLen;
+        const arrowSin = _ey / arrowPartLen;
+        let xShift = 0.75 * len * arrowCos * 1.5;
+        let yShift = 0.75 * len * arrowSin * 1.5;
+        drawCircle(drawer, xPrev, yPrev, xEnd, yEnd, xShift, yShift, w, len, false);
+
+        let shift = 0.75 * len * 0.5;
+        drawVerticalLine(drawer, xPrev, yPrev, xEnd, yEnd, shift);
+    } else if (type === AscFormat.LineEndType.vsdxClosedOneDash) {
+        const shift = 0.75 * len * 1.5;
+        drawVerticalLine(drawer, xPrev, yPrev, xEnd, yEnd, shift);
+
+        const _ex = xPrev - xEnd;
+        const _ey = yPrev - yEnd;
+        const arrowPartLen =  Math.sqrt(_ex * _ex + _ey * _ey);
+        const arrowCos = _ex / arrowPartLen;
+        const arrowSin = _ey / arrowPartLen;
+        const xShift = 0.75 * len * arrowCos * 0.5;
+        const yShift = 0.75 * len * arrowSin * 0.5;
+        drawCircle(drawer, xPrev, yPrev, xEnd, yEnd, xShift, yShift, w, len, false);
+    } else if (type === AscFormat.LineEndType.vsdxClosedTwoDash) {
+        let shift = 0.75 * len * 2;
+        drawVerticalLine(drawer, xPrev, yPrev, xEnd, yEnd, shift);
+
+        shift = 0.75 * len * 1.5;
+        drawVerticalLine(drawer, xPrev, yPrev, xEnd, yEnd, shift);
+
+        let _ex = xPrev - xEnd;
+        let _ey = yPrev - yEnd;
+        const arrowPartLen =  Math.sqrt(_ex * _ex + _ey * _ey);
+        const arrowCos = _ex / arrowPartLen;
+        const arrowSin = _ey / arrowPartLen;
+        let xShift = 0.75 * len * arrowCos * 0.5;
+        let yShift = 0.75 * len * arrowSin * 0.5;
+        drawCircle(drawer, xPrev, yPrev, xEnd, yEnd, xShift, yShift, w, len, false);
+    } else if (type === AscFormat.LineEndType.vsdxClosedThreeDash) {
+        let shift = 0.75 * len * 2.5;
+        drawVerticalLine(drawer, xPrev, yPrev, xEnd, yEnd, shift);
+
+        shift = 0.75 * len * 2;
+        drawVerticalLine(drawer, xPrev, yPrev, xEnd, yEnd, shift);
+
+        shift = 0.75 * len * 1.5;
+        drawVerticalLine(drawer, xPrev, yPrev, xEnd, yEnd, shift);
+
+        let _ex = xPrev - xEnd;
+        let _ey = yPrev - yEnd;
+        const arrowPartLen =  Math.sqrt(_ex * _ex + _ey * _ey);
+        const arrowCos = _ex / arrowPartLen;
+        const arrowSin = _ey / arrowPartLen;
+
+        const xShift = 0.75 * len * arrowCos * 0.5;
+        const yShift = 0.75 * len * arrowSin * 0.5;
+        drawCircle(drawer, xPrev, yPrev, xEnd, yEnd, xShift, yShift, w, len, false);
+    } else if (type === AscFormat.LineEndType.vsdxClosedDiamond) {
+        const _ex = xPrev - xEnd;
+        const _ey = yPrev - yEnd;
+        const arrowPartLen =  Math.sqrt(_ex * _ex + _ey * _ey);
+        const arrowCos = _ex / arrowPartLen;
+        const arrowSin = _ey / arrowPartLen;
+
+        let shift = 0.75 * len * arrowCos * 1.25;
+        drawRhomb(drawer, xPrev, yPrev, xEnd, yEnd, shift);
+
+        let xShift = 0.75 * len * arrowCos * 0.5;
+        let yShift = 0.75 * len * arrowSin * 0.5;
+        drawCircle(drawer, xPrev, yPrev, xEnd, yEnd, xShift, yShift, w, len, false);
+    } else if (type === AscFormat.LineEndType.vsdxFilledOneDash) {
+        let shift = 0.75 * len * 1.5;
+        drawVerticalLine(drawer, xPrev, yPrev, xEnd, yEnd, shift);
+
+        const _ex = xPrev - xEnd;
+        const _ey = yPrev - yEnd;
+        const arrowPartLen =  Math.sqrt(_ex * _ex + _ey * _ey);
+        const arrowCos = _ex / arrowPartLen;
+        const arrowSin = _ey / arrowPartLen;
+        const xShift = 0.75 * len * arrowCos * 0.5;
+        const yShift = 0.75 * len * arrowSin * 0.5;
+        drawCircle(drawer, xPrev, yPrev, xEnd, yEnd, xShift, yShift, w, len, true);
+    } else if (type === AscFormat.LineEndType.vsdxFilledTwoDash) {
+        let _ex = xPrev - xEnd;
+        let _ey = yPrev - yEnd;
+        const arrowPartLen =  Math.sqrt(_ex * _ex + _ey * _ey);
+        const arrowCos = _ex / arrowPartLen;
+        const arrowSin = _ey / arrowPartLen;
+
+        let shift = 0.75 * len * 2;
+        drawVerticalLine(drawer, xPrev, yPrev, xEnd, yEnd, shift);
+
+        shift = 0.75 * len * 1.5;
+        drawVerticalLine(drawer, xPrev, yPrev, xEnd, yEnd, shift);
+
+        const xShift = 0.75 * len * arrowCos * 0.5;
+        const yShift = 0.75 * len * arrowSin * 0.5;
+        drawCircle(drawer, xPrev, yPrev, xEnd, yEnd, xShift, yShift, w, len, true);
+    }
+
+    /**
+     * Draws fork BEFORE line end
+     * @param drawer
+     * @param xPrev
+     * @param yPrev
+     * @param xEnd
+     * @param yEnd
+     */
+    function drawFork(drawer, xPrev, yPrev, xEnd, yEnd) {
+        var arrowAngle = Math.atan2(yEnd - yPrev, xEnd - xPrev);
+        var perpendicularAngle = arrowAngle - (90 * Math.PI / 180);
+
+
+        // Вычисляем координаты конца перпендикулярной линии
+        var perpendicularLength = w / 2;
+        let horLength = w * 0.75;
+        var x1 = xEnd + perpendicularLength * Math.cos(perpendicularAngle); // top right point
+        var y1 = yEnd + perpendicularLength * Math.sin(perpendicularAngle); // top right point
+        var x2 = xEnd - perpendicularLength * Math.cos(perpendicularAngle); // bottom right point
+        var y2 = yEnd - perpendicularLength * Math.sin(perpendicularAngle); // bottom right point
+        let x3 = xEnd - horLength * Math.cos(arrowAngle); // left point
+        let y3 = yEnd - horLength * Math.sin(arrowAngle); // left point
+
+        drawer._s();
+        drawer._m(trans.TransformPointX(x1, y1), trans.TransformPointY(x1, y1));
+        drawer._l(trans.TransformPointX(x3, y3), trans.TransformPointY(x3, y3));
+        drawer._l(trans.TransformPointX(x2, y2), trans.TransformPointY(x2, y2));
+        drawer.ds();
+
+        drawer._e();
+    }
+
+    /**
+     * Draws vertical line ON line end
+     * @param drawer
+     * @param xPrev
+     * @param yPrev
+     * @param xEnd
+     * @param yEnd
+     * @param shift
+     */
+    function drawVerticalLine(drawer, xPrev, yPrev, xEnd, yEnd, shift) {
+        let arrowAngle = Math.atan2(yEnd - yPrev, xEnd - xPrev);
+        var drawLineAngle = arrowAngle  - (90 * Math.PI / 180);
+
+        // Вычисляем координаты конца перпендикулярной линии
+        var perpendicularLength = w / 2;
+        var x1 = xEnd + perpendicularLength * Math.cos(drawLineAngle) - shift * Math.cos(arrowAngle); // top right point for visio
+        var y1 = yEnd + perpendicularLength * Math.sin(drawLineAngle) - shift * Math.sin(arrowAngle); // top right point for visio
+        var x2 = xEnd - perpendicularLength * Math.cos(drawLineAngle) - shift * Math.cos(arrowAngle);
+        var y2 = yEnd - perpendicularLength * Math.sin(drawLineAngle) - shift * Math.sin(arrowAngle);
+
+        drawer._s();
+        drawer._m(trans.TransformPointX(x1, y1), trans.TransformPointY(x1, y1));
+        drawer._l(trans.TransformPointX(x2, y2), trans.TransformPointY(x2, y2));
+        drawer.ds();
+
+        drawer._e();
+    }
+
+    /**
+     * Draws center ON line end
+     * @param drawer
+     * @param xPrev
+     * @param yPrev
+     * @param xEnd
+     * @param yEnd
+     * @param xShift
+     * @param yShift
+     * @param w
+     * @param len
+     * @param isArrowFilled
+     */
+    function drawCircle(drawer, xPrev, yPrev, xEnd, yEnd, xShift, yShift, w, len, isArrowFilled) {
+        len *= 0.75;
+        w *= 0.75;
+
+        var _ex = xPrev - xEnd;
+        var _ey = yPrev - yEnd;
+        var _elen = Math.sqrt(_ex*_ex + _ey*_ey);
+        _ex /= _elen; // cos a
+        _ey /= _elen; // sin a
+
+        var _vx = _ey;
+        var _vy = -_ex;
+
+        var tmpx = xEnd + (len / 2 - xShift) * _ex; // left circle point
+        var tmpy = yEnd + (len / 2 - xShift) * _ey; // left circle point
+
+        var tmpx2 = xEnd - (len / 2 + xShift) * _ex; // right circle point
+        var tmpy2 = yEnd - (len / 2 + xShift) * _ey; // right circle point
+
+        // left top control point
+        var cx1 = tmpx + _vx * 3*w/4;
+        var cy1 = tmpy + _vy * 3*w/4;
+        // right top control point
+        var cx2 = tmpx2 + _vx * 3*w/4;
+        var cy2 = tmpy2 + _vy * 3*w/4;
+
+        // left bottom control point
+        var cx3 = tmpx - _vx * 3*w/4;
+        var cy3 = tmpy - _vy * 3*w/4;
+        // right bottom control point
+        var cx4 = tmpx2 - _vx * 3*w/4;
+        var cy4 = tmpy2 - _vy * 3*w/4;
+
+        drawer._s();
+        drawer._m(trans.TransformPointX(tmpx, tmpy), trans.TransformPointY(tmpx, tmpy));
+        drawer._c(trans.TransformPointX(cx1, cy1), trans.TransformPointY(cx1, cy1),
+            trans.TransformPointX(cx2, cy2), trans.TransformPointY(cx2, cy2),
+            trans.TransformPointX(tmpx2, tmpy2), trans.TransformPointY(tmpx2, tmpy2));
+
+        drawer._c(trans.TransformPointX(cx4, cy4), trans.TransformPointY(cx4, cy4),
+            trans.TransformPointX(cx3, cy3), trans.TransformPointY(cx3, cy3),
+            trans.TransformPointX(tmpx, tmpy), trans.TransformPointY(tmpx, tmpy));
+
+        stokeOrFillPath(drawer, isArrowFilled);
+        drawer._e();
+    }
+
+    /**
+     * Draws BEFORE line end
+     * @param drawer
+     * @param xPrev
+     * @param yPrev
+     * @param xEnd
+     * @param yEnd
+     * @param shift
+     */
+    function drawRhomb(drawer, xPrev, yPrev, xEnd, yEnd, shift) {
+        let isArrowFilled = false;
+        let _ex = xPrev - xEnd;
+        let _ey = yPrev - yEnd;
+        const _elen = Math.sqrt(_ex * _ex + _ey * _ey);
+        _ex /= _elen; // cos a
+        _ey /= _elen; // sin a
+
+        let isRotated = true;
+        _ex = isRotated? _ex : 1; // cos a
+        _ey = isRotated? _ey : 0; // sin a
+
+        // a now is 90 - a + invert cos
+        const _vx = _ey;
+        const _vy = -_ex;
+
+        // (xEnd, yEnd) - right arrow point
+        xEnd = xEnd - shift * _ex;
+        yEnd = yEnd - shift * _ey;
+
+        let heightScale = 0.5;
+        let widthScale = 1;
+
+        // middle arrow point
+        const tmpx = xEnd + len * widthScale * _ex;
+        const tmpy = yEnd + len * widthScale * _ey;
+
+        // (x1, y1) - middle top arrow point
+        const x1 = tmpx + _vx * w * heightScale;
+        const y1 = tmpy + _vy * w * heightScale;
+
+        // (x2, y2) - middle bottom arrow point
+        const x2 = tmpx - _vx * w * heightScale;
+        const y2 = tmpy - _vy * w * heightScale;
+
+        // most left point
+        const x3 = tmpx + len * widthScale * _ex;
+        const y3 = tmpy + len * widthScale * _ey;
+
+        drawer._s();
+        drawer._m(trans.TransformPointX(xEnd, yEnd), trans.TransformPointY(xEnd, yEnd));
+        drawer._l(trans.TransformPointX(x1, y1), trans.TransformPointY(x1, y1));
+        drawer._l(trans.TransformPointX(x3, y3), trans.TransformPointY(x3, y3));
+        drawer._l(trans.TransformPointX(x2, y2), trans.TransformPointY(x2, y2));
+
+        drawer._z();
+
+        stokeOrFillPath(drawer, isArrowFilled);
+
+        drawer._e();
     }
 }
 
@@ -1145,6 +1692,12 @@ CShapeDrawer.prototype =
         this.Graphics._c(x1, y1, x2, y2, x3, y3);
     },
 
+    /**
+     * @param x1 - cpx
+     * @param y1 - cpy
+     * @param x2 - end x
+     * @param y2 - end y
+     */
     _c2 : function(x1, y1, x2, y2)
     {
         if (this.bIsCheckBounds)
