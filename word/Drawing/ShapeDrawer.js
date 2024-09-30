@@ -883,7 +883,7 @@ function DrawLineEnd(xEnd, yEnd, xPrev, yPrev, type, w, len, drawer, trans)
         drawer._e();
     } else if (type === AscFormat.LineEndType.vsdxFilledDot || type === AscFormat.LineEndType.vsdxClosedDot) {
         let isFilled = type === AscFormat.LineEndType.vsdxFilledDot;
-        drawCircle(drawer, xPrev, yPrev, xEnd, yEnd, 0, 0, w, len, isFilled);
+        drawCircle(drawer, xPrev, yPrev, xEnd, yEnd, 0, w, len, isFilled);
     } else if (type === AscFormat.LineEndType.vsdxFilledSquare || type === AscFormat.LineEndType.vsdxClosedSquare) {
         let isArrowFilled = type === AscFormat.LineEndType.vsdxFilledSquare;
         var _ex = xPrev - xEnd;
@@ -989,39 +989,20 @@ function DrawLineEnd(xEnd, yEnd, xPrev, yPrev, type, w, len, drawer, trans)
         let isFilled = false;
         drawFork(drawer, xPrev, yPrev, xEnd, yEnd);
 
-        let _ex = xPrev - xEnd;
-        let _ey = yPrev - yEnd;
-        const arrowPartLen =  Math.sqrt(_ex * _ex + _ey * _ey);
-        const arrowCos = _ex / arrowPartLen;
-        const arrowSin = _ey / arrowPartLen;
-        let xShift = 0.75 * len * arrowCos * 1.5;
-        let yShift = 0.75 * len * arrowSin * 1.5;
-
-        drawCircle(drawer, xPrev, yPrev, xEnd, yEnd, xShift, yShift, w, len, isFilled);
+        let shift = 0.75 * len * 1.5;
+        drawCircle(drawer, xPrev, yPrev, xEnd, yEnd, shift, w, len, isFilled);
     } else if (type === AscFormat.LineEndType.vsdxClosedPlus) {
-        let _ex = xPrev - xEnd;
-        let _ey = yPrev - yEnd;
-        const arrowPartLen =  Math.sqrt(_ex * _ex + _ey * _ey);
-        const arrowCos = _ex / arrowPartLen;
-        const arrowSin = _ey / arrowPartLen;
-        let xShift = 0.75 * len * arrowCos * 1.5;
-        let yShift = 0.75 * len * arrowSin * 1.5;
-        drawCircle(drawer, xPrev, yPrev, xEnd, yEnd, xShift, yShift, w, len, false);
+        let shift = 0.75 * len * 1.5;
+        drawCircle(drawer, xPrev, yPrev, xEnd, yEnd, shift, w, len, false);
 
-        let shift = 0.75 * len * 0.5;
+        shift = 0.75 * len * 0.5;
         drawVerticalLine(drawer, xPrev, yPrev, xEnd, yEnd, shift);
     } else if (type === AscFormat.LineEndType.vsdxClosedOneDash) {
-        const shift = 0.75 * len * 1.5;
+        let shift = 0.75 * len * 1.5;
         drawVerticalLine(drawer, xPrev, yPrev, xEnd, yEnd, shift);
 
-        const _ex = xPrev - xEnd;
-        const _ey = yPrev - yEnd;
-        const arrowPartLen =  Math.sqrt(_ex * _ex + _ey * _ey);
-        const arrowCos = _ex / arrowPartLen;
-        const arrowSin = _ey / arrowPartLen;
-        const xShift = 0.75 * len * arrowCos * 0.5;
-        const yShift = 0.75 * len * arrowSin * 0.5;
-        drawCircle(drawer, xPrev, yPrev, xEnd, yEnd, xShift, yShift, w, len, false);
+        shift = 0.75 * len * 0.5;
+        drawCircle(drawer, xPrev, yPrev, xEnd, yEnd, shift, w, len, false);
     } else if (type === AscFormat.LineEndType.vsdxClosedTwoDash) {
         let shift = 0.75 * len * 2;
         drawVerticalLine(drawer, xPrev, yPrev, xEnd, yEnd, shift);
@@ -1029,14 +1010,8 @@ function DrawLineEnd(xEnd, yEnd, xPrev, yPrev, type, w, len, drawer, trans)
         shift = 0.75 * len * 1.5;
         drawVerticalLine(drawer, xPrev, yPrev, xEnd, yEnd, shift);
 
-        let _ex = xPrev - xEnd;
-        let _ey = yPrev - yEnd;
-        const arrowPartLen =  Math.sqrt(_ex * _ex + _ey * _ey);
-        const arrowCos = _ex / arrowPartLen;
-        const arrowSin = _ey / arrowPartLen;
-        let xShift = 0.75 * len * arrowCos * 0.5;
-        let yShift = 0.75 * len * arrowSin * 0.5;
-        drawCircle(drawer, xPrev, yPrev, xEnd, yEnd, xShift, yShift, w, len, false);
+        shift = 0.75 * len * 0.5;
+        drawCircle(drawer, xPrev, yPrev, xEnd, yEnd, shift, w, len, false);
     } else if (type === AscFormat.LineEndType.vsdxClosedThreeDash) {
         let shift = 0.75 * len * 2.5;
         drawVerticalLine(drawer, xPrev, yPrev, xEnd, yEnd, shift);
@@ -1047,56 +1022,25 @@ function DrawLineEnd(xEnd, yEnd, xPrev, yPrev, type, w, len, drawer, trans)
         shift = 0.75 * len * 1.5;
         drawVerticalLine(drawer, xPrev, yPrev, xEnd, yEnd, shift);
 
-        let _ex = xPrev - xEnd;
-        let _ey = yPrev - yEnd;
-        const arrowPartLen =  Math.sqrt(_ex * _ex + _ey * _ey);
-        const arrowCos = _ex / arrowPartLen;
-        const arrowSin = _ey / arrowPartLen;
-
-        const xShift = 0.75 * len * arrowCos * 0.5;
-        const yShift = 0.75 * len * arrowSin * 0.5;
-        drawCircle(drawer, xPrev, yPrev, xEnd, yEnd, xShift, yShift, w, len, false);
+        shift = 0.75 * len * 0.5;
+        drawCircle(drawer, xPrev, yPrev, xEnd, yEnd, shift, w, len, false);
     } else if (type === AscFormat.LineEndType.vsdxClosedDiamond) {
-        const _ex = xPrev - xEnd;
-        const _ey = yPrev - yEnd;
-        const arrowPartLen =  Math.sqrt(_ex * _ex + _ey * _ey);
-        const arrowCos = _ex / arrowPartLen;
-        const arrowSin = _ey / arrowPartLen;
-
-        let shift = 0.75 * len * arrowCos * 1.25;
+        let shift = 0.75 * len * 1.25;
         drawRhomb(drawer, xPrev, yPrev, xEnd, yEnd, shift);
-
-        let xShift = 0.75 * len * arrowCos * 0.5;
-        let yShift = 0.75 * len * arrowSin * 0.5;
-        drawCircle(drawer, xPrev, yPrev, xEnd, yEnd, xShift, yShift, w, len, false);
+        shift = 0.75 * len * 0.5;
+        drawCircle(drawer, xPrev, yPrev, xEnd, yEnd, shift, w, len, false);
     } else if (type === AscFormat.LineEndType.vsdxFilledOneDash) {
         let shift = 0.75 * len * 1.5;
         drawVerticalLine(drawer, xPrev, yPrev, xEnd, yEnd, shift);
-
-        const _ex = xPrev - xEnd;
-        const _ey = yPrev - yEnd;
-        const arrowPartLen =  Math.sqrt(_ex * _ex + _ey * _ey);
-        const arrowCos = _ex / arrowPartLen;
-        const arrowSin = _ey / arrowPartLen;
-        const xShift = 0.75 * len * arrowCos * 0.5;
-        const yShift = 0.75 * len * arrowSin * 0.5;
-        drawCircle(drawer, xPrev, yPrev, xEnd, yEnd, xShift, yShift, w, len, true);
+        shift = 0.75 * len * 0.5;
+        drawCircle(drawer, xPrev, yPrev, xEnd, yEnd, shift, w, len, true);
     } else if (type === AscFormat.LineEndType.vsdxFilledTwoDash) {
-        let _ex = xPrev - xEnd;
-        let _ey = yPrev - yEnd;
-        const arrowPartLen =  Math.sqrt(_ex * _ex + _ey * _ey);
-        const arrowCos = _ex / arrowPartLen;
-        const arrowSin = _ey / arrowPartLen;
-
         let shift = 0.75 * len * 2;
         drawVerticalLine(drawer, xPrev, yPrev, xEnd, yEnd, shift);
-
         shift = 0.75 * len * 1.5;
         drawVerticalLine(drawer, xPrev, yPrev, xEnd, yEnd, shift);
-
-        const xShift = 0.75 * len * arrowCos * 0.5;
-        const yShift = 0.75 * len * arrowSin * 0.5;
-        drawCircle(drawer, xPrev, yPrev, xEnd, yEnd, xShift, yShift, w, len, true);
+        shift = 0.75 * len * 0.5;
+        drawCircle(drawer, xPrev, yPrev, xEnd, yEnd, shift, w, len, true);
     }
 
     /**
@@ -1166,13 +1110,12 @@ function DrawLineEnd(xEnd, yEnd, xPrev, yPrev, type, w, len, drawer, trans)
      * @param yPrev
      * @param xEnd
      * @param yEnd
-     * @param xShift
-     * @param yShift
+     * @param shift - hor shift distance
      * @param w
      * @param len
      * @param isArrowFilled
      */
-    function drawCircle(drawer, xPrev, yPrev, xEnd, yEnd, xShift, yShift, w, len, isArrowFilled) {
+    function drawCircle(drawer, xPrev, yPrev, xEnd, yEnd, shift, w, len, isArrowFilled) {
         len *= 0.75;
         w *= 0.75;
 
@@ -1185,11 +1128,11 @@ function DrawLineEnd(xEnd, yEnd, xPrev, yPrev, type, w, len, drawer, trans)
         var _vx = _ey;
         var _vy = -_ex;
 
-        var tmpx = xEnd + (len / 2 - xShift) * _ex; // left circle point
-        var tmpy = yEnd + (len / 2 - xShift) * _ey; // left circle point
+        var tmpx = xEnd + (len / 2 + shift) * _ex; // left circle point
+        var tmpy = yEnd + (len / 2 + shift) * _ey; // left circle point
 
-        var tmpx2 = xEnd - (len / 2 + xShift) * _ex; // right circle point
-        var tmpy2 = yEnd - (len / 2 + xShift) * _ey; // right circle point
+        var tmpx2 = xEnd - (len / 2 - shift) * _ex; // right circle point
+        var tmpy2 = yEnd - (len / 2 - shift) * _ey; // right circle point
 
         // left top control point
         var cx1 = tmpx + _vx * 3*w/4;
@@ -1245,8 +1188,8 @@ function DrawLineEnd(xEnd, yEnd, xPrev, yPrev, type, w, len, drawer, trans)
         const _vy = -_ex;
 
         // (xEnd, yEnd) - right arrow point
-        xEnd = xEnd - shift * _ex;
-        yEnd = yEnd - shift * _ey;
+        xEnd = xEnd + shift * _ex;
+        yEnd = yEnd + shift * _ey;
 
         let heightScale = 0.5;
         let widthScale = 1;
