@@ -2771,30 +2771,15 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 	 * @extends {cBaseType}
 	 */
 	function cStrucPivotTable(val, callback) {
-		//you can add the necessary fields and methods
 		cBaseType.call(this, val);
 		if (val) {
 			this.isIndex = false;
-			this.fieldString = val[1] && val[1].replace(/\'\'/g,'\'');;
-			this.itemString = val[2] && val[2].replace(/\'\'/g,'\'');
-			if (!isNaN(val[2])) {
+			this.fieldString = val[0];
+			this.itemString = val[1];
+			if (!isNaN(val[1])) {
 				this.isIndex = true;
-			} else {
-				if (this.fieldString[0] === '\'') {
-					this.fieldString = this.fieldString.slice(1);
-				}
-				if (this.fieldString[this.fieldString.length - 1] === '\'') {
-					this.fieldString = this.fieldString.slice(0, -1);
-				}
-				if (this.itemString[0] === '\'') {
-					this.itemString = this.itemString.slice(1);
-				}
-				if (this.itemString[0] === '\'') {
-					this.itemString = this.itemString.slice(0, -1);
-				}
 			}
 		}
-
 		this.callback = callback;
 	}
 
@@ -2820,7 +2805,7 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 		return this._toString(true);
 	};
 	cStrucPivotTable.prototype._toString = function (isLocal) {
-
+		return this.fieldString + '[' + this.itemString + ']';
 	};
 
 	/**

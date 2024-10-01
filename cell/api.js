@@ -397,6 +397,8 @@ var editor;
     AscCommonExcel.g_oUndoRedoSortState = new AscCommonExcel.UndoRedoSortState(wbModel);
     AscCommonExcel.g_oUndoRedoSlicer = new AscCommonExcel.UndoRedoSlicer(wbModel);
     AscCommonExcel.g_oUndoRedoPivotTables = new AscCommonExcel.UndoRedoPivotTables(wbModel);
+	AscCommonExcel.g_oUndoRedoPivotCache = new AscCommonExcel.UndoRedoPivotCache(wbModel);
+	AscCommonExcel.g_oUndoRedoCacheFields = new AscCommonExcel.UndoRedoCacheFields(wbModel);
     AscCommonExcel.g_oUndoRedoPivotFields = new AscCommonExcel.UndoRedoPivotFields(wbModel);
     AscCommonExcel.g_oUndoRedoPivotFieldItems = new AscCommonExcel.UndoRedoPivotFieldItems(wbModel);
     AscCommonExcel.g_oUndoRedoCF = new AscCommonExcel.UndoRedoCF(wbModel);
@@ -7556,7 +7558,7 @@ var editor;
 			onAction();
 		});
 	};
-	spreadsheet_api.prototype._changePivotAndConnectedByPivotCacheWithLock = function (pivot, confirmation, onAction, onRepeat) {
+	spreadsheet_api.prototype._changePivotAndConnectedByPivotCacheWithLock = function (pivot, confirmation, onAction, onRepeat, updateSelection) {
 		// Проверка глобального лока
 
 		var t = this;
@@ -7575,7 +7577,7 @@ var editor;
 			let success = t._changePivotEndCheckError(changeRes, onRepeat);
 			if (success) {
 				//todo pivot
-				t.updateWorksheetByPivotTable(pivot, changeRes, true, true);
+				t.updateWorksheetByPivotTable(pivot, changeRes, true, updateSelection);
 			}
 		});
 	};

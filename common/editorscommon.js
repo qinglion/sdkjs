@@ -3761,24 +3761,28 @@
 	};
 	parserHelper.prototype.isPivot = function (formula, start_pos, local)
 	{
+		debugger;
 		if (this instanceof parserHelper)
 		{
 			this._reset();
 		}
-		debugger;
-
 		const subSTR = formula.substring(start_pos);
-		const reg = /^(\w+|(?:\'.+?\'))\[(\w+|(?:\'.+?\'))\]/
-		const match = reg.exec(subSTR);
+		const fullReg = /^(\w+|(?:\'.+?[^\']\'(?!\')))\[(\w+|(?:\'.+?[^\']\'(?!\')))\]/
+		const fullMatch = fullReg.exec(subSTR);
 
-		if (match !== null && match[1] && match[2])
+		if (fullMatch !== null && fullMatch[1] && fullMatch[2])
 		{
-			this.operand_str = match[0];
-			this.pCurrPos += match[0].length;
-			return match;
+			this.operand_str = fullMatch[0];
+			this.pCurrPos += fullMatch[0].length;
+			return [fullMatch[1], fullMatch[2]];
 		}
-
-
+		const reg = /^(\'.+?[^\']\'(?!\'))/
+		const match = reg.exec(subSTR);
+		if (match !== null && match[1]) {
+			this.operand_str = match[1];
+			this.pCurrPos += match[1].length;
+			return [null, match[1]];
+		}
 		return false;
 	};
 // Парсим ссылку на диапазон в листе

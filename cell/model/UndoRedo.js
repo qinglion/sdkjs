@@ -494,6 +494,8 @@ function (window, undefined) {
 
 		this.LegacyDrawingHFDrawing = 180;
 		this.PivotFieldItem = 181;
+		this.PivotCache = 182;
+		this.CacheFields = 183;
 
 		this.Create = function (nType) {
 			switch (nType) {
@@ -589,6 +591,10 @@ function (window, undefined) {
 					return new UndoRedoData_DefinedNames();
 				case this.PivotTable:
 					return new UndoRedoData_PivotTable();
+				case this.PivotCache:
+					return new UndoRedoData_PivotCache();
+				case this.CacheFields:
+					return new UndoRedoData_CacheFields();
 				case this.DataField:
 					return new UndoRedoData_DataField();
 				case this.PivotField:
@@ -1321,6 +1327,89 @@ function (window, undefined) {
 		switch (nType) {
 			case this.Properties.pivot:
 				this.pivot = value;
+				break;
+			case this.Properties.from:
+				this.from = value;
+				break;
+			case this.Properties.to:
+				this.to = value;
+				break;
+		}
+	};
+	function UndoRedoData_PivotCache(pivot, from, to) {
+		this.pivot = pivot;
+		this.from = from;
+		this.to = to;
+	}
+
+	UndoRedoData_PivotCache.prototype.Properties = {
+		pivot: 0, from: 1, to: 2
+	};
+	UndoRedoData_PivotCache.prototype.getType = function () {
+		return UndoRedoDataTypes.PivotCache;
+	};
+	UndoRedoData_PivotCache.prototype.getProperties = function () {
+		return this.Properties;
+	};
+	UndoRedoData_PivotCache.prototype.getProperty = function (nType) {
+		switch (nType) {
+			case this.Properties.pivot:
+				return this.pivot;
+			case this.Properties.from:
+				return this.from;
+			case this.Properties.to:
+				return this.to;
+		}
+		return null;
+	};
+	UndoRedoData_PivotCache.prototype.setProperty = function (nType, value) {
+		switch (nType) {
+			case this.Properties.pivot:
+				this.pivot = value;
+				break;
+			case this.Properties.from:
+				this.from = value;
+				break;
+			case this.Properties.to:
+				this.to = value;
+				break;
+		}
+	};
+	function UndoRedoData_CacheFields(pivot, index, from, to) {
+		this.pivot = pivot;
+		this.index = index;
+		this.from = from;
+		this.to = to;
+	}
+	UndoRedoData_CacheFields.prototype.Properties = {
+		pivot: 0, index: 1, from: 2, to: 3
+	};
+	UndoRedoData_CacheFields.prototype.getType = function () {
+		return UndoRedoDataTypes.CacheFields;
+	};
+	UndoRedoData_CacheFields.prototype.getProperties = function () {
+		return this.Properties;
+	};
+	UndoRedoData_CacheFields.prototype.getProperty = function (nType) {
+		switch (nType) {
+			case this.Properties.pivot:
+				return this.pivot;
+			case this.Properties.index:
+				return this.index;
+			case this.Properties.from:
+				return this.from;
+			case this.Properties.to:
+				return this.to;
+		}
+		return null;
+	};
+	UndoRedoData_CacheFields.prototype.setProperty = function (nType, value) {
+		switch (nType) {
+			case this.Properties.pivot:
+				this.pivot = value;
+				break;
+			case this.Properties.index:
+				this.index = value;
 				break;
 			case this.Properties.from:
 				this.from = value;
@@ -4427,6 +4516,53 @@ function (window, undefined) {
 				break;
 		}
 	};
+	function UndoRedoPivotCache(wb) {
+		this.wb = wb;
+		this.nType = UndoRedoClassTypes.Add(function () {
+			return AscCommonExcel.g_oUndoRedoPivotCache;
+		});
+	}
+
+	UndoRedoPivotCache.prototype.getClassType = function () {
+		return this.nType;
+	};
+	UndoRedoPivotCache.prototype.Undo = function (Type, Data, nSheetId) {
+		this.UndoRedo(Type, Data, nSheetId, true);
+	};
+	UndoRedoPivotCache.prototype.Redo = function (Type, Data, nSheetId) {
+		this.UndoRedo(Type, Data, nSheetId, false);
+	};
+	UndoRedoPivotCache.prototype.UndoRedo = function (Type, Data, nSheetId, bUndo) {
+		const cacheDefinition = this.wb.getPivotTableById(Data.pivot).cacheDefinition;
+		switch (Type) {
+			case AscCH.historyitem_PivotCache_SetCalculatedItems:
+				bUndo ? cacheDefinition.setCalculatedItems(Data.from) : cacheDefinition.setCalculatedItems(Data.to);
+				break;
+		}
+	};
+	function UndoRedoCacheFields(wb) {
+		this.wb = wb;
+		this.nType = UndoRedoClassTypes.Add(function () {
+			return AscCommonExcel.g_oUndoRedoCacheFields;
+		});
+	}
+	UndoRedoCacheFields.prototype.getClassType = function () {
+		return this.nType;
+	};
+	UndoRedoCacheFields.prototype.Undo = function (Type, Data, nSheetId) {
+		this.UndoRedo(Type, Data, nSheetId, true);
+	};
+	UndoRedoCacheFields.prototype.Redo = function (Type, Data, nSheetId) {
+		this.UndoRedo(Type, Data, nSheetId, false);
+	};
+	UndoRedoCacheFields.prototype.UndoRedo = function (Type, Data, nSheetId, bUndo) {
+		const cacheDefinition = this.wb.getPivotTableById(Data.pivot).cacheDefinition;
+		switch (Type) {
+			case AscCH.historyitem_CacheFields_SetSharedItems:
+				bUndo ? cacheDefinition.setSharedItems(Data.index, Data.from) : cacheDefinition.setSharedItems(Data.index, Data.to);
+				break;
+		}
+	};
 
 	function UndoRedoPivotFields(wb) {
 		this.wb = wb;
@@ -4531,7 +4667,21 @@ function (window, undefined) {
 				field.setNumFormat(value, pivotTable, index);
 				break;
 			case AscCH.historyitem_PivotTable_PivotFieldMoveItem:
-				field.moveItem(pivotTable, index, valueFrom, value)
+				field.moveItem(pivotTable, index, valueFrom, value);
+				break;
+			case AscCH.historyitem_PivotTable_PivotFieldAddCalculatedItem:
+				if (bUndo) {
+					field.removeItem(pivotTable, index, Data.to)
+				} else {
+					field.addCalculatedItem(pivotTable, index, Data.from, Data.to);
+				}
+				break;
+			case AscCH.historyitem_PivotTable_PivotFieldRemoveItem:
+				if (bUndo) {
+					field.addCalculatedItem(pivotTable, index, Data.from, Data.to);
+				} else {
+					field.removeItem(pivotTable, index, Data.from)
+				}
 				break;
 		}
 	};
@@ -5303,6 +5453,8 @@ function (window, undefined) {
 	window['AscCommonExcel'].UndoRedoData_FrozenBBox = UndoRedoData_FrozenBBox;
 	window['AscCommonExcel'].UndoRedoData_SortData = UndoRedoData_SortData;
 	window['AscCommonExcel'].UndoRedoData_PivotTable = UndoRedoData_PivotTable;
+	window['AscCommonExcel'].UndoRedoData_PivotCache = UndoRedoData_PivotCache;
+	window['AscCommonExcel'].UndoRedoData_CacheFields = UndoRedoData_CacheFields;
 	window['AscCommonExcel'].UndoRedoData_DataField = UndoRedoData_DataField;
 	window['AscCommonExcel'].UndoRedoData_PivotTableRedo = UndoRedoData_PivotTableRedo;
 	window['AscCommonExcel'].UndoRedoData_PivotField = UndoRedoData_PivotField;
@@ -5339,6 +5491,8 @@ function (window, undefined) {
 	window['AscCommonExcel'].UndoRedoData_BinaryWrapper2 = UndoRedoData_BinaryWrapper2;
 	window['AscCommonExcel'].UndoRedoPivotTables = UndoRedoPivotTables;
 	window['AscCommonExcel'].UndoRedoPivotFields = UndoRedoPivotFields;
+	window['AscCommonExcel'].UndoRedoPivotCache = UndoRedoPivotCache;
+	window['AscCommonExcel'].UndoRedoCacheFields = UndoRedoCacheFields;
 	window['AscCommonExcel'].UndoRedoPivotFieldItems = UndoRedoPivotFieldItems;
 	window['AscCommonExcel'].UndoRedoSlicer = UndoRedoSlicer;
 	window['AscCommonExcel'].UndoRedoCF = UndoRedoCF;
@@ -5357,6 +5511,8 @@ function (window, undefined) {
 	window['AscCommonExcel'].g_oUndoRedoSparklines = null;
 	window['AscCommonExcel'].g_oUndoRedoPivotTables = null;
 	window['AscCommonExcel'].g_oUndoRedoPivotFields = null;
+	window['AscCommonExcel'].g_oUndoRedoPivotCache = null;
+	window['AscCommonExcel'].g_oUndoRedoCacheFields = null;
 	window['AscCommonExcel'].g_oUndoRedoPivotFieldItems = null;
 	window['AscCommonExcel'].g_oUndoRedoSharedFormula = null;
 	window['AscCommonExcel'].g_oUndoRedoLayout = null;
