@@ -835,6 +835,15 @@
 				case "37":
 					endArrow.type = AscFormat.LineEndType.vsdxFilledThreeDash;
 					break;
+				case "38":
+					endArrow.type = AscFormat.LineEndType.vsdxFilledDiamond;
+					break;
+				case "39":
+					endArrow.type = AscFormat.LineEndType.vsdxFilledDoubleArrow;
+					break;
+				case "40":
+					endArrow.type = AscFormat.LineEndType.vsdxClosedDoubleArrow;
+					break;
 				case "10":
 					endArrow.type = AscFormat.LineEndType.vsdxFilledDot;
 					break;
@@ -842,8 +851,19 @@
 					endArrow.type = AscFormat.LineEndType.vsdxClosedDot;
 					break;
 				case "41":
+					endArrow.type = AscFormat.LineEndType.vsdxClosedNoDash;
+					break;
 				case "42":
-					endArrow.type = endArrow.GetTypeCode("oval");
+					endArrow.type = AscFormat.LineEndType.vsdxFilledNoDash;
+					break;
+				case "43":
+					endArrow.type = AscFormat.LineEndType.vsdxOpenDoubleArrow;
+					break;
+				case "44":
+					endArrow.type = AscFormat.LineEndType.vsdxOpenArrowSingleDash;
+					break;
+				case "45":
+					endArrow.type = AscFormat.LineEndType.vsdxOpenDoubleArrowSingleDash;
 					break;
 				case "5":
 					endArrow.type = AscFormat.LineEndType.vsdxIndentedFilledArrow;
