@@ -3761,13 +3761,12 @@
 	};
 	parserHelper.prototype.isPivot = function (formula, start_pos, local)
 	{
-		debugger;
 		if (this instanceof parserHelper)
 		{
 			this._reset();
 		}
 		const subSTR = formula.substring(start_pos);
-		const fullReg = /^(\w+|(?:\'.+?[^\']\'(?!\')))\[(\w+|(?:\'.+?[^\']\'(?!\')))\]/
+		const fullReg = /^(\w+|(?:\'.+?\'(?!\')))\[(\w+|(?:\'.+?\'(?!\')))\]/
 		const fullMatch = fullReg.exec(subSTR);
 
 		if (fullMatch !== null && fullMatch[1] && fullMatch[2])
@@ -3776,7 +3775,7 @@
 			this.pCurrPos += fullMatch[0].length;
 			return [fullMatch[1], fullMatch[2]];
 		}
-		const reg = /^(\'.+?[^\']\'(?!\'))/
+		const reg = /^(\'.+?\'(?!\'))/
 		const match = reg.exec(subSTR);
 		if (match !== null && match[1]) {
 			this.operand_str = match[1];

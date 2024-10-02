@@ -9909,7 +9909,7 @@ CT_pivotTableDefinition.prototype.convertCalculatedFormula = function(formula, f
 	const items = pivotField.getItems().filter(function(item) {
 		return item.t === Asc.c_oAscItemType.Data
 	});
-	for (let i = 0; i < items.length; i++){
+	for (let i = 0; i < items.length; i += 1){
 		const item = items[i];
 		namesMap.set(this.convertNameToFormula(item.getName(cacheField)).toLowerCase(), this.convertNameToFormula(item.getSourceName(cacheField)));
 	}
