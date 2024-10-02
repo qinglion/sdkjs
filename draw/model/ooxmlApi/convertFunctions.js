@@ -775,17 +775,65 @@
 				case "1":
 					endArrow.type = AscFormat.LineEndType.vsdxOpen90Arrow;
 					break;
+				case "2":
+					endArrow.type = AscFormat.LineEndType.vsdxFilled90Arrow;
+					break;
 				case "3":
 					endArrow.type = AscFormat.LineEndType.vsdxOpenSharpArrow;
+					break;
+				case "4":
+					endArrow.type = AscFormat.LineEndType.vsdxFilledSharpArrow;
+					break;
+				case "5":
+					endArrow.type = AscFormat.LineEndType.vsdxIndentedFilledArrow;
+					break;
+				case "6":
+					endArrow.type = AscFormat.LineEndType.vsdxOutdentedFilledArrow;
+					break;
+				case "7":
+					endArrow.type = AscFormat.LineEndType.vsdxOpenFletch;
+					break;
+				case "8":
+					endArrow.type = AscFormat.LineEndType.vsdxFilledFletch;
+					break;
+				case "9":
+					endArrow.type = AscFormat.LineEndType.vsdxDimensionLine;
+					break;
+				case "10":
+					endArrow.type = AscFormat.LineEndType.vsdxFilledDot;
 					break;
 				case "11":
 					endArrow.type = AscFormat.LineEndType.vsdxFilledSquare;
 					break;
-				case "21":
-					endArrow.type = AscFormat.LineEndType.vsdxClosedSquare;
-					break;
 				case "12":
 					endArrow.type = AscFormat.LineEndType.vsdxOpenASMEArrow;
+					break;
+				case "13":
+					endArrow.type = AscFormat.LineEndType.vsdxFilledASMEArrow;
+					break;
+				case "14":
+					endArrow.type = AscFormat.LineEndType.vsdxClosedASMEArrow;
+					break;
+				case "15":
+					endArrow.type = AscFormat.LineEndType.vsdxClosed90Arrow;
+					break;
+				case "16":
+					endArrow.type = AscFormat.LineEndType.vsdxClosedSharpArrow;
+					break;
+				case "17":
+					endArrow.type = AscFormat.LineEndType.vsdxIndentedClosedArrow;
+					break;
+				case "18":
+					endArrow.type = AscFormat.LineEndType.vsdxOutdentedClosedArrow;
+					break;
+				case "19":
+					endArrow.type = AscFormat.LineEndType.vsdxClosedFletch;
+					break;
+				case "20":
+					endArrow.type = AscFormat.LineEndType.vsdxClosedDot;
+					break;
+				case "21":
+					endArrow.type = AscFormat.LineEndType.vsdxClosedSquare;
 					break;
 				case "22":
 					endArrow.type = AscFormat.LineEndType.vsdxDiamond;
@@ -844,12 +892,6 @@
 				case "40":
 					endArrow.type = AscFormat.LineEndType.vsdxClosedDoubleArrow;
 					break;
-				case "10":
-					endArrow.type = AscFormat.LineEndType.vsdxFilledDot;
-					break;
-				case "20":
-					endArrow.type = AscFormat.LineEndType.vsdxClosedDot;
-					break;
 				case "41":
 					endArrow.type = AscFormat.LineEndType.vsdxClosedNoDash;
 					break;
@@ -864,48 +906,6 @@
 					break;
 				case "45":
 					endArrow.type = AscFormat.LineEndType.vsdxOpenDoubleArrowSingleDash;
-					break;
-				case "5":
-					endArrow.type = AscFormat.LineEndType.vsdxIndentedFilledArrow;
-					break;
-				case "17":
-					endArrow.type = AscFormat.LineEndType.vsdxIndentedClosedArrow;
-					break;
-				case "7":
-					endArrow.type = AscFormat.LineEndType.vsdxOpenFletch;
-					break;
-				case "8":
-					endArrow.type = AscFormat.LineEndType.vsdxFilledFletch;
-					break;
-				case "19":
-					endArrow.type = AscFormat.LineEndType.vsdxClosedFletch;
-					break;
-				case "4":
-					endArrow.type = AscFormat.LineEndType.vsdxFilledSharpArrow;
-					break;
-				case "9":
-					endArrow.type = AscFormat.LineEndType.vsdxDimensionLine;
-					break;
-				case "13":
-					endArrow.type = AscFormat.LineEndType.vsdxFilledASMEArrow;
-					break;
-				case "16":
-					endArrow.type = AscFormat.LineEndType.vsdxClosedSharpArrow;
-					break;
-				case "14":
-					endArrow.type = AscFormat.LineEndType.vsdxClosedASMEArrow;
-					break;
-				case "15":
-					endArrow.type = AscFormat.LineEndType.vsdxClosed90Arrow;
-					break;
-				case "6":
-					endArrow.type = AscFormat.LineEndType.vsdxOutdentedFilledArrow;
-					break;
-				case "18":
-					endArrow.type = AscFormat.LineEndType.vsdxOutdentedClosedArrow;
-					break;
-				case "2":
-					endArrow.type = AscFormat.LineEndType.vsdxFilled90Arrow;
 					break;
 				case "Themed":
 					endArrow.type = AscFormat.LineEndType.vsdxNone;

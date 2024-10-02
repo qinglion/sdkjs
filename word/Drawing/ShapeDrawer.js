@@ -531,97 +531,38 @@ function DrawLineEnd(xEnd, yEnd, xPrev, yPrev, type, w, len, drawer, trans)
             drawer.ds();
             break;
         }
-
-        case AscFormat.LineEndType.vsdxOpenASMEArrow:
-            len *= 1.5;
-        case AscFormat.LineEndType.vsdxOpenSharpArrow:
-            len *= 2;
-        case AscFormat.LineEndType.vsdxOpen90Arrow:
-            len /= 2;
-            drawArrow(drawer, xPrev, yPrev, xEnd, yEnd, 0, false, true, w, len);
-            break;
-
-        case AscFormat.LineEndType.vsdxFilledASMEArrow:
-            len *= 1.5;
-        case AscFormat.LineEndType.vsdxFilledSharpArrow:
-            len *= 2;
-        case AscFormat.LineEndType.vsdxFilled90Arrow:
-            len /= 2;
-            drawArrow(drawer, xPrev, yPrev, xEnd, yEnd, 0, true, false, w, len);
-            break;
-        case AscFormat.LineEndType.vsdxClosedASMEArrow:
-            len *= 1.5;
-        case AscFormat.LineEndType.vsdxClosedSharpArrow:
-            len *= 2;
-        case AscFormat.LineEndType.vsdxClosed90Arrow:
-            len /= 2;
-            drawArrow(drawer, xPrev, yPrev, xEnd, yEnd, 0, false, false, w, len);
-            break;
-
-        case AscFormat.LineEndType.vsdxDimensionLine:
-        {
-            var drawLineAngle = Math.atan2(yEnd - yPrev, xEnd - xPrev) + (45 * Math.PI / 180);
-
-            // Вычисляем координаты конца перпендикулярной линии
-            var perpendicularLength = w * Math.sin(Math.PI / 4); // don't know why it's not just =w here
-            var x1 = xEnd + perpendicularLength * Math.cos(drawLineAngle); // top right point for visio
-            var y1 = yEnd + perpendicularLength * Math.sin(drawLineAngle); // top right point for visio
-            var x2 = xEnd - perpendicularLength * Math.cos(drawLineAngle);
-            var y2 = yEnd - perpendicularLength * Math.sin(drawLineAngle);
-
-            drawer._s();
-            drawer._m(trans.TransformPointX(x1, y1), trans.TransformPointY(x1, y1));
-            drawer._l(trans.TransformPointX(x2, y2), trans.TransformPointY(x2, y2));
-            drawer.ds();
-            break;
-        }
+        // visio types are handled below
     }
 
-    /**
-     * @param {CShapeDrawer} drawer
-     * @param {boolean} isFilled - if not filled it is stroke bcs if both repeat all commands
-     */
-    function stokeOrFillPath(drawer, isFilled) {
-        if (isFilled) {
-            if (Asc.editor.isPdfEditor() && drawer.Shape.IsDrawing() == false) {
-                let oRGBColor;
-                if (drawer.Shape.GetRGBColor) {
-                    oRGBColor = drawer.Shape.GetRGBColor(drawer.Shape.GetFillColor());
-                }
-                else if (drawer.Shape.group) {
-                    oRGBColor = drawer.Shape.group.GetRGBColor(drawer.Shape.group.GetFillColor());
-                }
-
-                drawer.Graphics.m_oPen.Color.R = oRGBColor.r;
-                drawer.Graphics.m_oPen.Color.G = oRGBColor.g;
-                drawer.Graphics.m_oPen.Color.B = oRGBColor.b;
-            }
-            drawer.drawStrokeFillStyle();
-        }
-        let isStroke = !isFilled;
-        if (isStroke) {
-            drawer.ds();
-        }
-    }
-
-
-    if (type === AscFormat.LineEndType.vsdxIndentedFilledArrow ||
+    if (type === AscFormat.LineEndType.vsdxOpenASMEArrow ||
+        type === AscFormat.LineEndType.vsdxFilledASMEArrow ||
+        type === AscFormat.LineEndType.vsdxClosedASMEArrow) {
+        len *= 1.5;
+        let isFilled = type === AscFormat.LineEndType.vsdxFilledASMEArrow;
+        let isOpen = type === AscFormat.LineEndType.vsdxOpenASMEArrow;
+        drawArrow(drawer, xPrev, yPrev, xEnd, yEnd, 0, isFilled, isOpen, w, len);
+    } else if (type === AscFormat.LineEndType.vsdxOpenSharpArrow ||
+        type === AscFormat.LineEndType.vsdxFilledSharpArrow ||
+        type === AscFormat.LineEndType.vsdxClosedSharpArrow) {
+        let isFilled = type === AscFormat.LineEndType.vsdxFilledSharpArrow;
+        let isOpen = type === AscFormat.LineEndType.vsdxOpenSharpArrow;
+        drawArrow(drawer, xPrev, yPrev, xEnd, yEnd, 0, isFilled, isOpen, w, len);
+    } else if (type === AscFormat.LineEndType.vsdxOpen90Arrow ||
+        type === AscFormat.LineEndType.vsdxFilled90Arrow ||
+        type === AscFormat.LineEndType.vsdxClosed90Arrow) {
+        len /= 2;
+        let isFilled = type === AscFormat.LineEndType.vsdxFilled90Arrow;
+        let isOpen = type === AscFormat.LineEndType.vsdxOpen90Arrow;
+        drawArrow(drawer, xPrev, yPrev, xEnd, yEnd, 0, isFilled, isOpen, w, len);
+    } else if (type === AscFormat.LineEndType.vsdxIndentedFilledArrow ||
         type === AscFormat.LineEndType.vsdxIndentedClosedArrow ||
         type === AscFormat.LineEndType.vsdxOutdentedFilledArrow ||
         type === AscFormat.LineEndType.vsdxOutdentedClosedArrow) {
-        let isArrowFilled;
-        if (type === AscFormat.LineEndType.vsdxIndentedFilledArrow || type === AscFormat.LineEndType.vsdxOutdentedFilledArrow) {
-            isArrowFilled = true;
-        } else {
-            isArrowFilled = false;
-        }
+        let isArrowFilled = type === AscFormat.LineEndType.vsdxIndentedFilledArrow ||
+            type === AscFormat.LineEndType.vsdxOutdentedFilledArrow;
 
-        let isIndented;
-        if (type === AscFormat.LineEndType.vsdxIndentedFilledArrow || type === AscFormat.LineEndType.vsdxIndentedClosedArrow) {
-            isIndented = true;
-        } else {
-            isIndented = false;
-        }
+        let isIndented = type === AscFormat.LineEndType.vsdxIndentedFilledArrow ||
+            type === AscFormat.LineEndType.vsdxIndentedClosedArrow;
 
         var _ex = xPrev - xEnd;
         var _ey = yPrev - yEnd;
@@ -726,14 +667,30 @@ function DrawLineEnd(xEnd, yEnd, xPrev, yPrev, type, w, len, drawer, trans)
         stokeOrFillPath(drawer, isArrowFilled);
 
         drawer._e();
-    } else if (type === AscFormat.LineEndType.vsdxFilledDot || type === AscFormat.LineEndType.vsdxClosedDot) {
+    } else if (type === AscFormat.LineEndType.vsdxDimensionLine) {
+        const drawLineAngle = Math.atan2(yEnd - yPrev, xEnd - xPrev) + (45 * Math.PI / 180);
+
+        // Вычисляем координаты конца перпендикулярной линии
+        const perpendicularLength = w * Math.sin(Math.PI / 4); // don't know why it's not just =w here
+        const x1 = xEnd + perpendicularLength * Math.cos(drawLineAngle); // top right point for visio
+        const y1 = yEnd + perpendicularLength * Math.sin(drawLineAngle); // top right point for visio
+        const x2 = xEnd - perpendicularLength * Math.cos(drawLineAngle);
+        const y2 = yEnd - perpendicularLength * Math.sin(drawLineAngle);
+
+        drawer._s();
+        drawer._m(trans.TransformPointX(x1, y1), trans.TransformPointY(x1, y1));
+        drawer._l(trans.TransformPointX(x2, y2), trans.TransformPointY(x2, y2));
+        drawer.ds();
+    } else if (type === AscFormat.LineEndType.vsdxFilledDot ||
+        type === AscFormat.LineEndType.vsdxClosedDot) {
         let isFilled = type === AscFormat.LineEndType.vsdxFilledDot;
         drawCircle(drawer, xPrev, yPrev, xEnd, yEnd, 0, w, len, isFilled);
-    } else if (type === AscFormat.LineEndType.vsdxFilledSquare || type === AscFormat.LineEndType.vsdxClosedSquare) {
+    } else if (type === AscFormat.LineEndType.vsdxFilledSquare ||
+        type === AscFormat.LineEndType.vsdxClosedSquare) {
         let isArrowFilled = type === AscFormat.LineEndType.vsdxFilledSquare;
-        var _ex = xPrev - xEnd;
-        var _ey = yPrev - yEnd;
-        var _elen = Math.sqrt(_ex*_ex + _ey*_ey);
+        let _ex = xPrev - xEnd;
+        let _ey = yPrev - yEnd;
+        let _elen = Math.sqrt(_ex*_ex + _ey*_ey);
         _ex /= _elen; // cos a
         _ey /= _elen; // sin a
 
@@ -742,36 +699,36 @@ function DrawLineEnd(xEnd, yEnd, xPrev, yPrev, type, w, len, drawer, trans)
         _ey = isRotated? _ey : 0; // sin a
 
         // a now is 90 - a + invert cos
-        var _vx = _ey;
-        var _vy = -_ex;
+        let _vx = _ey;
+        let _vy = -_ex;
 
         // (xEnd, yEnd) - right arrow point
 
         let paramsScale = 0.4;
 
         // left arrow point?
-        var tmpx = xEnd + len * paramsScale * _ex;
-        var tmpy = yEnd + len * paramsScale * _ey;
+        let tmpx = xEnd + len * paramsScale * _ex;
+        let tmpy = yEnd + len * paramsScale * _ey;
 
         // (x1, y1) - left top arrow point
-        var x1 = tmpx + _vx * w * paramsScale;
-        var y1 = tmpy + _vy * w * paramsScale;
+        let x1 = tmpx + _vx * w * paramsScale;
+        let y1 = tmpy + _vy * w * paramsScale;
 
         // (x2, y2) - left bottom arrow point
-        var x2 = tmpx - _vx * w * paramsScale;
-        var y2 = tmpy - _vy * w * paramsScale;
+        let x2 = tmpx - _vx * w * paramsScale;
+        let y2 = tmpy - _vy * w * paramsScale;
 
         // right arrow point?
-        var tmpxRight = xEnd - len * paramsScale * _ex;
-        var tmpyRight = yEnd - len * paramsScale * _ey;
+        let tmpxRight = xEnd - len * paramsScale * _ex;
+        let tmpyRight = yEnd - len * paramsScale * _ey;
 
         // (x3, y3) - left top arrow point
-        var x3 = tmpxRight + _vx * w * paramsScale;
-        var y3 = tmpyRight + _vy * w * paramsScale;
+        let x3 = tmpxRight + _vx * w * paramsScale;
+        let y3 = tmpyRight + _vy * w * paramsScale;
 
         // (x4, y4) - left bottom arrow point
-        var x4 = tmpxRight - _vx * w * paramsScale;
-        var y4 = tmpyRight - _vy * w * paramsScale;
+        let x4 = tmpxRight - _vx * w * paramsScale;
+        let y4 = tmpyRight - _vy * w * paramsScale;
 
         drawer._s();
         drawer._m(trans.TransformPointX(x1, y1), trans.TransformPointY(x1, y1));
@@ -793,16 +750,16 @@ function DrawLineEnd(xEnd, yEnd, xPrev, yPrev, type, w, len, drawer, trans)
         const arrowPartLen =  Math.sqrt(_ex * _ex + _ey * _ey);
         const arrowCos = _ex / arrowPartLen;
         const arrowSin = _ey / arrowPartLen;
-        let xShift = len * arrowCos;
-        let yShift = len * arrowSin;
-        var drawLineAngle = Math.atan2(yEnd - yPrev, xEnd - xPrev) - (45 * Math.PI / 180);
+        const xShift = len * arrowCos;
+        const yShift = len * arrowSin;
+        const drawLineAngle = Math.atan2(yEnd - yPrev, xEnd - xPrev) - (45 * Math.PI / 180);
 
         // Вычисляем координаты конца перпендикулярной линии
-        var perpendicularLength = w * Math.sin(Math.PI / 4); // don't know why it's not just =w here
-        var x1 = xEnd + perpendicularLength * Math.cos(drawLineAngle) + xShift; // top right point for visio
-        var y1 = yEnd + perpendicularLength * Math.sin(drawLineAngle) + yShift; // top right point for visio
-        var x2 = xEnd - perpendicularLength * Math.cos(drawLineAngle) + xShift;
-        var y2 = yEnd - perpendicularLength * Math.sin(drawLineAngle) + yShift;
+        const perpendicularLength = w * Math.sin(Math.PI / 4); // don't know why it's not just =w here
+        const x1 = xEnd + perpendicularLength * Math.cos(drawLineAngle) + xShift; // top right point for visio
+        const y1 = yEnd + perpendicularLength * Math.sin(drawLineAngle) + yShift; // top right point for visio
+        const x2 = xEnd - perpendicularLength * Math.cos(drawLineAngle) + xShift;
+        const y2 = yEnd - perpendicularLength * Math.sin(drawLineAngle) + yShift;
 
         drawer._s();
         drawer._m(trans.TransformPointX(x1, y1), trans.TransformPointY(x1, y1));
@@ -920,6 +877,33 @@ function DrawLineEnd(xEnd, yEnd, xPrev, yPrev, type, w, len, drawer, trans)
         drawArrow(drawer, xPrev, yPrev, xEnd, yEnd, len, false, true, w, len);
         let shift = 0.75 * len * 2 + len;
         drawVerticalLine(drawer, xPrev, yPrev, xEnd, yEnd, shift);
+    }
+
+    /**
+     * @param {CShapeDrawer} drawer
+     * @param {boolean} isFilled - if not filled it is stroke bcs if both repeat all commands
+     */
+    function stokeOrFillPath(drawer, isFilled) {
+        if (isFilled) {
+            if (Asc.editor.isPdfEditor() && drawer.Shape.IsDrawing() == false) {
+                let oRGBColor;
+                if (drawer.Shape.GetRGBColor) {
+                    oRGBColor = drawer.Shape.GetRGBColor(drawer.Shape.GetFillColor());
+                }
+                else if (drawer.Shape.group) {
+                    oRGBColor = drawer.Shape.group.GetRGBColor(drawer.Shape.group.GetFillColor());
+                }
+
+                drawer.Graphics.m_oPen.Color.R = oRGBColor.r;
+                drawer.Graphics.m_oPen.Color.G = oRGBColor.g;
+                drawer.Graphics.m_oPen.Color.B = oRGBColor.b;
+            }
+            drawer.drawStrokeFillStyle();
+        }
+        let isStroke = !isFilled;
+        if (isStroke) {
+            drawer.ds();
+        }
     }
 
     /**
