@@ -2144,14 +2144,10 @@ CT_PivotCacheDefinition.prototype.setSharedItems = function(index, sharedItems) 
 /**
  * @param {{
  * index: number,
- * addToHistory?: boolean
  * }} options
  */
 CT_PivotCacheDefinition.prototype.removeCalculatedItem = function(options) {
-	if (options.addToHistory) {
-		// todo
-	}
-	this.calculatedItems.calculatedItem.slice(options.index, 1);
+	this.calculatedItems.calculatedItem.splice(options.index, 1);
 };
 function CT_PivotCacheDefinitionX14() {
 //Attributes
@@ -9913,7 +9909,7 @@ CT_pivotTableDefinition.prototype.convertCalculatedFormula = function(formula, f
 		const item = items[i];
 		namesMap.set(this.convertNameToFormula(item.getName(cacheField)).toLowerCase(), this.convertNameToFormula(item.getSourceName(cacheField)));
 	}
-	// const fieldName
+	// todo fullreg const fieldName
 
 	const parserFormula = new AscCommonExcel.parserFormula(formula, this, AscCommonExcel.g_DefNameWorksheet);
 	parserFormula.parse(undefined, undefined, undefined, undefined, undefined, undefined, true);
@@ -9992,20 +9988,34 @@ CT_pivotTableDefinition.prototype.asc_addCalculatedItem = function(options) {
  */
 CT_pivotTableDefinition.prototype.asc_removeCalculatedItem = function(options) {
 	const api = options.api;
-	api._changePivotWithLock(this, function (ws, pivot) {
-		const pivotField = pivot.asc_getPivotFields()[options.fieldIndex];
-		const cacheField = pivot.asc_getCacheFields()[options.fieldIndex];
-		const sharedItemIndex = pivotField.getItem(options.itemIndex).x;
-		pivot.removeSharedItem({
+	const t = this;
+	api._changePivotAndConnectedByPivotCacheWithLock(this, false, function (confirmation, pivotTables) {
+		const changeRes = new AscCommonExcel.PivotChangeResult();
+		const pivotFields = t.asc_getPivotFields();
+		const pivotField = pivotFields[options.fieldIndex];
+		const items = pivotField.getItems();
+		const x = items[options.itemIndex].x;
+		t.removeSharedItem({
 			fieldIndex: options.fieldIndex,
-			sharedItemIndex: sharedItemIndex,
-			addToHistory: true,
-		})
-		pivot.removeCalculatedItem({
-			itemsMapArray: [[options.fieldIndex, sharedItemIndex]],
+			sharedItemIndex: x,
 			addToHistory: true
 		});
-		pivot.setChanged(true);
+		t.removeCalculatedItem({
+			fieldIndex: options.fieldIndex,
+			itemIndex: x,
+			addToHistory: true
+		});
+		for(let i = 0; i < pivotTables.length; i += 1) {
+			const pivotTable = pivotTables[i];
+			const change = api._changePivot(pivotTable, confirmation, true, function () {
+				const pivotFields = pivotTable.asc_getPivotFields();
+				const pivotField = pivotFields[options.fieldIndex];
+				pivotField.removeItem(pivotTable, options.fieldIndex, options.itemIndex, true);
+				pivotTable._updateCacheDataUpdateSlicersPost();
+			});
+			changeRes.merge(change);
+		}
+		return changeRes;
 	});
 };
 /**
@@ -10027,12 +10037,33 @@ CT_pivotTableDefinition.prototype.addCalculatedItem = function(options) {
 };
 /**
  * @param {
- * {calculatedItemIndex: number,
+ * {fieldIndex: number,
+ * x: number,
  * addToHistory?: boolean}
  * } options
  */
 CT_pivotTableDefinition.prototype.removeCalculatedItem = function(options) {
-	this.cacheDefinition.removeCalculatedItem(options.calculatedItemIndex);
+	const cacheDefinition = this.cacheDefinition;
+	const oldItems = cacheDefinition.calculatedItems.clone();
+	const calculatedItems = cacheDefinition.getCalculatedItems();
+	const suitableIndexes = [];
+	for (let i = 0; i < calculatedItems.length; i += 1) {
+		const calculatedItem = calculatedItems[i];
+		if (calculatedItem.isSuitable(options.fieldIndex, options.x)); {
+			suitableIndexes.push(i);
+		}
+	}
+	for (let i = 0; i < suitableIndexes.length; i += 1) {
+		const suitableIndex = suitableIndexes[i];
+		cacheDefinition.removeCalculatedItem(suitableIndex);
+	}
+	if (cacheDefinition.calculatedItems.calculatedItem.length === 0) {
+		cacheDefinition.calculatedItems = null;
+	}
+	if (options.addToHistory) {
+		History.Add(AscCommonExcel.g_oUndoRedoPivotCache, AscCH.historyitem_PivotCache_SetCalculatedItems,
+			null, null, new AscCommonExcel.UndoRedoData_PivotCache(this.Get_Id(), oldItems, cacheDefinition.calculatedItems));
+	}
 };
 /**
  * @param {
@@ -10083,11 +10114,12 @@ CT_pivotTableDefinition.prototype.removeSharedItem = function(options) {
 	const cacheFields = this.asc_getCacheFields();
 	const cacheField = cacheFields[options.fieldIndex];
 	const sharedItems = cacheField.getSharedItems();
-
-	if (options.addToHistory) {
-		// todo
-	}
+	const oldItems = sharedItems.clone();
 	sharedItems.removeItem(options.sharedItemIndex);
+	if (options.addToHistory) {
+		History.Add(AscCommonExcel.g_oUndoRedoCacheFields, AscCH.historyitem_CacheFields_SetSharedItems,
+			null, null, new AscCommonExcel.UndoRedoData_CacheFields(this.Get_Id(), options.fieldIndex, oldItems, sharedItems));
+	}
 };
 
 /**
@@ -15238,6 +15270,16 @@ CT_CalculatedItem.prototype.toXml = function(writer, name) {
 		this.extLst.toXml(writer, "extLst");
 	}
 	writer.WriteXmlNodeEnd(name);
+};
+CT_CalculatedItem.prototype.isSuitable = function(fieldIndex, x) {
+	const pivotArea = this.pivotArea;
+	const references = pivotArea.getReferences();
+	if (references[0] && references[0].field === fieldIndex) {
+		if (references[0].x[0] && references[0].x[0].getV() === x) {
+			return true;
+		}
+	}
+	return false;
 };
 function CT_CalculatedMember() {
 //Attributes
@@ -21042,10 +21084,12 @@ PivotRecords.prototype.remove = function(index) {
 		const chunk = this.chunks[i];
 		if (chunk.from <= index && index < chunk.to) {
 			if (this.addition[index]) {
-				this.addition.splice(index, 1);
+				delete this.addition[index];
 			}
 			if (chunk.data) {
-				chunk.data.splice(index - chunk.from, 1);
+				chunk.data = chunk.data.filter(function(item, itemIndex) {
+					return itemIndex !== index - chunk.from;
+				})
 			}
 			break;
 		}
