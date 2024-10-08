@@ -4514,7 +4514,10 @@
 				if (false !== this.m_aPositions[Index])
 				{
 					if (CurPos <= this.m_aPositions[Index])
-						this.m_aPositions[Index]++;
+					{
+						if (!checkPos)
+							this.m_aPositions[Index]++;
+					}
 					else
 					{
 						if (AscCommon.contentchanges_Add === this.m_nType)
@@ -4533,7 +4536,10 @@
 					continue;
 				
 				if (CurPos < this.m_aPositions[Index])
-					this.m_aPositions[Index]--;
+				{
+					if (!checkPos)
+						this.m_aPositions[Index]--;
+				}
 				else if (CurPos > this.m_aPositions[Index])
 				{
 					if (AscCommon.contentchanges_Add === this.m_nType)
@@ -14618,6 +14624,32 @@
 	function getArrayRandomElement(aArray) {
 		return aArray[Math.random() * aArray.length | 0];
 	}
+
+	function registerServiceWorker() {
+		if ('serviceWorker' in navigator) {
+			const serviceWorkerName = 'document_editor_service_worker.js';
+			const serviceWorkerPath = '../../../../' + serviceWorkerName;
+			let reg;
+			navigator.serviceWorker.register(serviceWorkerPath)
+				.then(function (registration) {
+					reg = registration;
+					return navigator.serviceWorker.getRegistrations();
+				})
+				.then(function (registrations) {
+					//delete stale service workers
+					for (const registration of registrations) {
+						if (registration !== reg && registration.active && registration.active.scriptURL.endsWith(serviceWorkerName)) {
+							registration.unregister();
+						}
+					}
+				})
+				.catch(function (err) {
+					console.error('Registration failed with ' + err);
+				});
+		}
+	}
+	registerServiceWorker();
+
 	//------------------------------------------------------------export---------------------------------------------------
 	window['AscCommon'] = window['AscCommon'] || {};
 	window["AscCommon"].getSockJs = getSockJs;

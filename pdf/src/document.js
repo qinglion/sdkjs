@@ -682,13 +682,6 @@ var CPresentation = CPresentation || function(){};
     CPDFDoc.prototype.ClearFieldsToCommit = function() {
         this.fieldsToCommit = [];
     };
-    CPDFDoc.prototype.UpdateApIdx = function(newApIdx) {
-        if (this.maxApIdx < newApIdx)
-            this.maxApIdx = newApIdx;
-    };
-    CPDFDoc.prototype.GetMaxApIdx = function() {
-        return this.maxApIdx;
-    };
     CPDFDoc.prototype.SelectNextForm = function() {
         let oViewer         = editor.getDocumentRenderer();
         let oDrDoc          = this.GetDrawingDocument();
@@ -2202,10 +2195,21 @@ var CPresentation = CPresentation || function(){};
 			Image : undefined
 		});
 
+        let oPageInfo;
+        // from history
+        if (oPage.Id) {
+            oPageInfo = AscCommon.g_oTableId.GetById(oPage.Id);
+        }
+        // to history
+        else {
+            oPageInfo = new AscPDF.CPageInfo();
+            oPage.Id = oPageInfo.Id;
+        }
+
         if (oViewer.pagesInfo.pages.length == 0)
             oViewer.pagesInfo.setCount(1);
         else
-            oViewer.pagesInfo.pages.splice(nPos, 0, new AscPDF.CPageInfo());
+            oViewer.pagesInfo.pages.splice(nPos, 0, oPageInfo);
 
         // can be uninitialized on Apply_Changes
         if (oViewer.thumbnails) {
@@ -2286,8 +2290,11 @@ var CPresentation = CPresentation || function(){};
         // убираем информацию о странице
         let aPages = oFile.removePage(nPos);
 		oViewer.drawingPages.splice(nPos, 1);
-        oViewer.pagesInfo.pages.splice(nPos, 1);
+        let aPagesInfo = oViewer.pagesInfo.pages.splice(nPos, 1);
         
+        // to history
+        aPages[0].Id = aPagesInfo[0].Id;
+
         // can be uninitialized on Apply_Changes
         if (oViewer.thumbnails) {
             oViewer.thumbnails._deletePage(nPos);
@@ -2436,9 +2443,7 @@ var CPresentation = CPresentation || function(){};
 
         this.History.Add(new CChangesPDFDocumentAnnotsContent(this, oPagesInfo.pages[nPageNum].annots.length - 1, [oAnnot], true));
         
-        oAnnot.SetApIdx(oProps.apIdx == null ? this.GetMaxApIdx() + 2 : oProps.apIdx);
         oAnnot.AddToRedraw();
-
         return oAnnot;
     };
     CPDFDoc.prototype.AddComment = function(AscCommentData) {
@@ -2498,7 +2503,7 @@ var CPresentation = CPresentation || function(){};
             }
             else {
                 oStickyComm = this.AddAnnot(oProps);
-                AscCommentData.m_sUserData = oStickyComm.GetApIdx();
+                AscCommentData.m_sUserData = oStickyComm.GetId();
                 AscCommentData.m_sQuoteText = "";
                 this.CheckComment(oStickyComm);
             }

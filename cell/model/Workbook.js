@@ -1981,7 +1981,10 @@
 						oCell.initStartCellForIterCalc();
 						if (g_cCalcRecursion.getStartCellIndex()) {
 							aCycleCells.push(oCell);
-							if (oCell.getNumberValue() == null && oCell.getValueText() == null) {
+							if (oCell.getNumberValue() == null && (oCell.getValueText() == null || oCell.getValueText() === '#NUM!')) {
+								if (oCell.getType() !== CellValueType.Number) {
+									oCell.setTypeInternal(CellValueType.Number);
+								}
 								oCell.setValueNumberInternal(0);
 							}
 							oCell.setIsDirty(false);
@@ -6464,8 +6467,8 @@
 	Worksheet.prototype.getSheetView = function () {
 		return this.sheetViews[0];
 	};
-	Worksheet.prototype.getSheetViewSettings = function () {
-		return this.sheetViews[0].clone();
+	Worksheet.prototype.getSheetViewSettings = function (bNotClone) {
+		return bNotClone ? this.sheetViews[0] : this.sheetViews[0].clone();
 	};
 	Worksheet.prototype.setDisplayGridlines = function (value) {
 		var view = this.sheetViews[0];
@@ -6519,6 +6522,20 @@
 			view.showFormulas = value;
 
 			this.workbook.handlers.trigger("changeSheetViewSettings", this.getId(), AscCH.historyitem_Worksheet_SetShowFormulas);
+			if (!this.workbook.bCollaborativeChanges) {
+				this.workbook.handlers.trigger("asc_onUpdateFormulasViewSettings");
+			}
+		}
+	};
+	Worksheet.prototype.setRightToLeft = function (value) {
+		var view = this.sheetViews[0];
+		if (value !== view.rightToLeft) {
+			/*AscCommon.History.Create_NewPoint();
+			AscCommon.History.Add(AscCommonExcel.g_oUndoRedoWorksheet, AscCH.historyitem_Worksheet_SetShowFormulas,
+				this.getId(), new Asc.Range(0, 0, gc_nMaxCol0, gc_nMaxRow0), new UndoRedoData_FromTo(view.showFormulas, value));*/
+			view.rightToLeft = value;
+
+			this.workbook.handlers.trigger("changeSheetViewSettings", this.getId(), AscCH.historyitem_Worksheet_SetRightToLeft);
 			if (!this.workbook.bCollaborativeChanges) {
 				this.workbook.handlers.trigger("asc_onUpdateFormulasViewSettings");
 			}
@@ -13617,6 +13634,9 @@
 			AscCommonExcel.executeInR1C1Mode(false, function () {
 				newFormula.parse();
 			});
+			if (parsed.ca) { // For recursive formulas
+				newFormula.ca = parsed.ca;
+			}
 			var arrayFormulaRef = parsed.getArrayFormulaRef();
 			if(arrayFormulaRef) {
 				newFormula.setArrayFormulaRef(arrayFormulaRef);
@@ -13808,6 +13828,10 @@
 		}
 
 		var DataNew = null;
+		if (g_cCalcRecursion.getCellPasteValue() != null) {
+			this.setValueNumberInternal(g_cCalcRecursion.getCellPasteValue());
+			g_cCalcRecursion.setCellPasteValue(null);
+		}
 		if (AscCommon.History.Is_On()) {
 			DataNew = this.getValueData();
 		}
@@ -13963,7 +13987,7 @@
 
 		var isFirstArrayFormulaCell = byRef && this.nCol === byRef.c1 && this.nRow === byRef.r1;
 		var newFP = null;
-		if (false == bIsTextFormat) {
+		if (false == bIsTextFormat || (byRef && !isFirstArrayFormulaCell)) {
 			/*
 			 Устанавливаем значение в Range ячеек. При этом происходит проверка значения на формулу.
 			 Если значение является формулой, то проверяем содержиться ли в ячейке формула или нет, если "да" - то очищаем в графе зависимостей список, от которых зависит формула(masterNodes), позже будет построен новый. Затем выставляем флаг о необходимости дальнейшего пересчета, и заносим ячейку в список пересчитываемых ячеек.
@@ -14090,22 +14114,28 @@
 				AscCommon.History.Add(AscCommonExcel.g_oUndoRedoCell, typeHistory, this.ws.getId(), new Asc.Range(this.nCol, this.nRow, this.nCol, this.nRow), new UndoRedoData_CellSimpleData(this.nRow, this.nCol, DataOld, DataNew), bHistoryUndo);}
 		}
 	};
-	Cell.prototype.setFormula = function(formula, bHistoryUndo, formulaRef) {
+	Cell.prototype.setFormula = function(formula, bHistoryUndo, formulaRef, caProps) {
 		var cellWithFormula = new CCellWithFormula(this.ws, this.nRow, this.nCol);
 		var parser = new parserFormula(formula, cellWithFormula, this.ws);
+		if (caProps && caProps.ca) {
+			parser.ca = caProps.ca;
+		}
 		if(formulaRef) {
 			parser.setArrayFormulaRef(formulaRef);
 			this.ws.getRange3(formulaRef.r1, formulaRef.c1, formulaRef.r2, formulaRef.c2)._foreachNoEmpty(function(cell){
 				cell.setFormulaParsed(parser, bHistoryUndo);
 			});
 		} else {
-			this.setFormulaParsed(parser, bHistoryUndo);
+			this.setFormulaParsed(parser, bHistoryUndo, caProps);
 		}
 	};
-	Cell.prototype.setFormulaParsed = function(parsed, bHistoryUndo) {
+	Cell.prototype.setFormulaParsed = function(parsed, bHistoryUndo, caProps) {
 		this.setFormulaTemplate(bHistoryUndo, function(cell){
 			cell.setFormulaInternal(parsed);
 			cell.ws.workbook.dependencyFormulas.addToBuildDependencyCell(cell);
+			if (caProps && caProps.oldValue != null) {
+				cell.setValueNumberInternal(caProps.oldValue);
+			}
 		});
 	};
 	Cell.prototype.setFormulaInternal = function(formula, dontTouchPrev) {
@@ -14648,8 +14678,11 @@
 	Cell.prototype.setValueData = function(Val){
 		//значения устанавляваются через setValue, чтобы пересчитались формулы
 		if (null != Val.formula) {
-			this.setFormula(Val.formula, null, Val.formulaRef);
-			this.getFormulaParsed().ca = Val.ca;
+			let caProps = {
+				ca: Val.ca,
+				oldValue: Val.value.number
+			};
+			this.setFormula(Val.formula, null, Val.formulaRef, caProps);
 		} else if (null != Val.value) {
 			var DataOld = null;
 			var DataNew = null;
@@ -20375,7 +20408,12 @@
 											_p_ = oFromCell.getFormulaParsed().clone(null, oFromCell, this);
 											offset = oCopyCell.getOffset2(oFromCell.getName());
 											assemb = _p_.changeOffset(offset).assemble(true);
-											oCopyCell.setFormula(assemb);
+											let oCaProps = {};
+											if (_p_.ca) { // for recursion formulas
+												oCaProps.ca = _p_.ca;
+												oCaProps.oldValue = oFromCell.getNumberValue();
+											}
+											oCopyCell.setFormula(assemb, null, null, oCaProps);
 										}
 
 									}

@@ -6098,11 +6098,17 @@ _func[cElementType.cell3D] = _func[cElementType.cell];
 	};
 
 	ParseResult.prototype.getArgumentsValue = function(sFormula) {
-		var res = null;
+		let res = null;
 		if (sFormula && this.argPosArr) {
-			for (var i = 0; i < this.argPosArr.length; i++) {
+			for (let i = 0; i < this.argPosArr.length; i++) {
 				if (!res) {
 					res = [];
+				}
+
+				if (i === this.argPosArr.length - 1 && this.error !== undefined) {
+					// We don't cut off the line at the last element, but only if the formula is parsed with an error (the formula is not closed or not entered completely)
+					res.push(sFormula.substring(this.argPosArr[i].start - 1, this.argPosArr[i].end));
+					continue
 				}
 				res.push(sFormula.substring(this.argPosArr[i].start - 1, this.argPosArr[i].end - 1));
 			}
@@ -6389,6 +6395,7 @@ function parserFormula( formula, parent, _ws ) {
 		}
 		oRes.isParsed = this.isParsed;
 		oRes.ref = this.ref;
+		oRes.ca = this.ca;
 		return oRes;
 	};
 	parserFormula.prototype.getParent = function() {
@@ -7374,7 +7381,7 @@ function parserFormula( formula, parent, _ws ) {
 						found_operand = new cArea3D(ph.real_str ? ph.real_str.toUpperCase() : ph.operand_str.toUpperCase(), wsF, wsT, externalLink);
 					}
 					parseResult.addRefPos(prevCurrPos, ph.pCurrPos, t.outStack.length, found_operand);
-					if (local) {
+					if (local || (local === false && digitDelim === false)) { // local and digitDelim with value false using only for copypaste mode.
 						t.ca = isRecursiveFormula(found_operand, t);
 					}
 				} else if (parserHelp.isRef.call(ph, t.Formula, ph.pCurrPos)) {
@@ -7388,14 +7395,14 @@ function parserFormula( formula, parent, _ws ) {
 						found_operand = new cRef3D(ph.real_str ? ph.real_str.toUpperCase() : ph.operand_str.toUpperCase(), wsF, externalLink);
 					}
 					parseResult.addRefPos(prevCurrPos, ph.pCurrPos, t.outStack.length, found_operand);
-					if (local) {
+					if (local || (local === false && digitDelim === false)) { // local and digitDelim with value false using only for copypaste mode.
 						t.ca = isRecursiveFormula(found_operand, t);
 					}
 				} else {
 					parserHelp.isName.call(ph, t.Formula, ph.pCurrPos);
 					found_operand = new cName3D(ph.operand_str, wsF, externalLink);
 					parseResult.addRefPos(prevCurrPos, ph.pCurrPos, t.outStack.length, found_operand);
-					if (local) {
+					if (local || (local === false && digitDelim === false)) { // local and digitDelim with value false using only for copypaste mode.
 						t.ca = isRecursiveFormula(found_operand, t);
 					}
 				}
@@ -7407,7 +7414,7 @@ function parserFormula( formula, parent, _ws ) {
 				}
 				found_operand = new cArea(ph.real_str ? ph.real_str.toUpperCase() : ph.operand_str.toUpperCase(), t.ws);
 				parseResult.addRefPos(ph.pCurrPos - ph.operand_str.length, ph.pCurrPos, t.outStack.length, found_operand);
-				if (local) {
+				if (local || (local === false && digitDelim === false)) { // local and digitDelim with value false using only for copypaste mode.
 					t.ca = isRecursiveFormula(found_operand, t);
 				}
 			}
@@ -7418,7 +7425,7 @@ function parserFormula( formula, parent, _ws ) {
 				found_operand = new cRef(ph.real_str ? ph.real_str.toUpperCase() : ph.operand_str.toUpperCase(), t.ws);
 				parseResult.addRefPos(ph.pCurrPos - ph.operand_str.length, ph.pCurrPos, t.outStack.length, found_operand);
 
-				if (local) {
+				if (local || (local === false && digitDelim === false)) { // local and digitDelim with value false using only for copypaste mode.
 					t.ca = isRecursiveFormula(found_operand, t);
 				}
 			} else if (_tableTMP = parserHelp.isTable.call(ph, t.Formula, ph.pCurrPos, local)) {
@@ -7478,7 +7485,7 @@ function parserFormula( formula, parent, _ws ) {
 					needAssemble = true;
 				}
 				parseResult.addRefPos(ph.pCurrPos - ph.operand_str.length, ph.pCurrPos, t.outStack.length, found_operand, true);
-				if (local) {
+				if (local || (local === false && digitDelim === false)) { // local and digitDelim with value false using only for copypaste mode.
 					t.ca = isRecursiveFormula(found_operand, t);
 				}
 				if (t.ca && defName && defName.parsedRef) {
@@ -9218,6 +9225,7 @@ function parserFormula( formula, parent, _ws ) {
 		this.oDiffBetweenIter = null;
 		this.bShowCycleWarn = true;
 		this.oRecursionCells = null;
+		this.nCellPasteValue = null; // for paste recursive cell
 
 		this.bIsEnabledRecursion = null;
 		this.nMaxIterations = null; // Max iterations of recursion calculations. Default value: 100.
@@ -9792,6 +9800,22 @@ function parserFormula( formula, parent, _ws ) {
 				}
 			}
 		});
+	};
+	/**
+	 * Method sets a value from a copying cell for a paste cell.
+	 * @memberof CalcRecursion
+	 * @param {number|null} nCellPasteValue
+	 */
+	CalcRecursion.prototype.setCellPasteValue = function (nCellPasteValue) {
+		this.nCellPasteValue = nCellPasteValue;
+	};
+	/**
+	 * Method gets a value from a copying cell for a paste cell.
+	 * @memberof CalcRecursion
+	 * @returns {number|null}
+	 */
+	CalcRecursion.prototype.getCellPasteValue = function () {
+		return this.nCellPasteValue;
 	};
 
 	const g_cCalcRecursion = new CalcRecursion();

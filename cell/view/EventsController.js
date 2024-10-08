@@ -1339,12 +1339,13 @@
 			};
 
 			if ((dc !== 0 || dr !== 0) && false === t.handlers.trigger("isGlobalLockEditCell")) {
-				if (window.rightToleft) {
+				const wb = window["Asc"]["editor"].wb;
+				let ws = wb.getWorksheet();
+				if (ws && ws.getRightToLeft()) {
 					dc = -dc;
 				}
 				if (isChangeVisibleAreaMode) {
 					t.handlers.trigger("changeVisibleArea", !shiftKey, dc, dr, false, function (d) {
-						const wb = window["Asc"]["editor"].wb;
 						if (t.targetInfo) {
 							wb._onUpdateWorksheet(t.targetInfo.coordX, t.targetInfo.coordY, false);
 						}
@@ -1365,7 +1366,8 @@
 							if (t.targetInfo) {
 								wb._onUpdateWorksheet(t.targetInfo.coordX, t.targetInfo.coordY, false);
 							}
-							t.scroll(d);
+							const ws = wb.getWorksheet();
+							t.scroll(ws.convertOffsetToSmooth(d));
 							_checkLastTab();
 						});
 				}

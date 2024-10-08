@@ -40,12 +40,13 @@
     {
         // если аннотация не shape based
         if (this.Id == undefined) {
+            this.Id = AscCommon.g_oIdCounter.Get_NewId();
             if ((AscCommon.g_oIdCounter.m_bLoad || AscCommon.History.CanAddChanges())) {
-				this.Id = AscCommon.g_oIdCounter.Get_NewId();
 				AscCommon.g_oTableId.Add(this, this.Id);
 			}
         }
 
+        this._apIdx = -1;
         this.type = nType;
 
         this._author                = undefined;
@@ -734,11 +735,11 @@
         }
 
         let oFirstCommToEdit;
-        if (this.GetApIdx() == oCommentData.m_sUserData)
+        if (this.GetId() == oCommentData.m_sUserData)
             oFirstCommToEdit = this;
         else {
             oFirstCommToEdit = this._replies.find(function(oReply) {
-                return oCommentData.m_sUserData == oReply.GetApIdx(); 
+                return oCommentData.m_sUserData == oReply.GetId(); 
             });
         }
         
@@ -752,6 +753,7 @@
         if (oFirstCommToEdit.GetContents() != oCommentData.m_sText) {
             oFirstCommToEdit.SetContents(oCommentData.m_sText);
             oFirstCommToEdit.SetModDate(oCommentData.m_sOOTime);
+            oFirstCommToEdit.SetAuthor(oCommentData.m_sUserName);
         }
 
         let aReplyToDel = [];
@@ -762,7 +764,7 @@
                 continue;
 
             oReplyCommentData = oCommentData.m_aReplies.find(function(item) {
-                return item.m_sUserData == oReply.GetApIdx(); 
+                return item.m_sUserData == oReply.GetId(); 
             });
 
             if (oReplyCommentData) {
@@ -780,7 +782,7 @@
         for (let i = 0; i < oCommentData.m_aReplies.length; i++) {
             oReplyCommentData = oCommentData.m_aReplies[i];
             if (!this._replies.find(function(reply) {
-                return oReplyCommentData.m_sUserData == reply.GetApIdx();
+                return oReplyCommentData.m_sUserData == reply.GetId();
             })) {
                 AscPDF.CAnnotationText.prototype.AddReply.call(this, oReplyCommentData, i);
             }
@@ -821,7 +823,7 @@
         oAscCommData.asc_putUserName(this.GetAuthor());
         oAscCommData.asc_putSolved(false);
         oAscCommData.asc_putQuoteText("");
-        oAscCommData.m_sUserData = this.GetApIdx();
+        oAscCommData.m_sUserData = this.GetId();
 
         this._replies.forEach(function(reply) {
             oAscCommData.m_aReplies.push(reply.GetAscCommentData());
@@ -894,12 +896,23 @@
     };
     CAnnotationBase.prototype.SetApIdx = function(nIdx) {
         let oDoc = Asc.editor.getPDFDoc();
-        oDoc.UpdateApIdx(nIdx);
 
         this._apIdx = nIdx;
         oDoc.History.Add(new CChangesPDFAnnotApIdx(this, undefined, nIdx));
     };
     CAnnotationBase.prototype.GetApIdx = function() {
+        if (-1 == this._apIdx) {
+            if (undefined == this.GetId()) {
+                return -1;
+            }
+            else {
+                let nApIdx = Number(this.GetId().replace("_", ""));
+                if (!isNaN(nApIdx)) {
+                    return nApIdx;
+                }
+            }
+        }
+
         return this._apIdx;
     };
     CAnnotationBase.prototype.AddToRedraw = function() {

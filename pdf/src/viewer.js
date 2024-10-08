@@ -103,6 +103,12 @@
 	// страницы на экране в приоритете.
 	function CPageInfo()
 	{
+		this.Id = null;
+		if ((AscCommon.g_oIdCounter.m_bLoad || AscCommon.History.CanAddChanges())) {
+			this.Id = AscCommon.g_oIdCounter.Get_NewId();
+			AscCommon.g_oTableId.Add(this, this.Id);
+		}
+		
 		this.isPainted				= false;
 		this.links					= null;
 		this.fields					= [];
@@ -112,6 +118,8 @@
 		this.needRedrawDrawings		= true;
 		this.needRedrawAnnots		= true;
 	}
+	AscFormat.InitClass(CPageInfo, AscFormat.CBaseNoIdObject, AscDFH.historyitem_type_Pdf_Page);
+	CPageInfo.prototype.constructor = CPageInfo;
 	
 	function CDocumentPagesInfo()
 	{
@@ -1443,8 +1451,6 @@
 			}
 			
 			this.IsOpenAnnotsInProgress = false;
-
-			oDoc.UpdateApIdx(nMaxIdx);
 		};
 		this.setZoom = function(value, isDisablePaint)
 		{
