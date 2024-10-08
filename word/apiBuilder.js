@@ -1599,7 +1599,7 @@
 			sScreenTipText = "";
 
 		this.GetAllParagraphs();
-		if (this.Paragraphs.length > 1)
+		if (this.Paragraphs.length !== 1)
 			return null;
 
 		var Document	= editor.private_GetLogicDocument();
@@ -1711,6 +1711,7 @@
 		if (startPara.Id === endPara.Id)
 		{
 			RangeParagraphsList.push(new ApiParagraph(startPara));
+			this.Paragraphs = RangeParagraphsList;
 			return RangeParagraphsList;
 		}
 
@@ -1746,7 +1747,6 @@
 		}
 
 		this.Paragraphs = RangeParagraphsList;
-
 		return RangeParagraphsList;
 	};
 
@@ -2626,51 +2626,40 @@
 
 		if (typeof sFontFamily !== "string")
 			return null;
-
-		var oThis               = this;
-		var loader				= AscCommon.g_font_loader;
-		var fontinfo			= g_fontApplication.GetFontInfo(sFontFamily);
-		var isasync				= loader.LoadFont(fontinfo, setFontFamily);
+		
+		LoadFont(sFontFamily);
+		
 		var Document			= private_GetLogicDocument();
-		var oldSelectionInfo	= undefined;
+		let oldSelectionInfo = Document.SaveDocumentState();
 
-		if (isasync === false)
-			setFontFamily()
-
-		function setFontFamily()
+		this.Select(false);
+		if (this.isEmpty || this.isEmpty === undefined)
 		{
-			oldSelectionInfo = Document.SaveDocumentState();
-
-			oThis.Select(false);
-			if (oThis.isEmpty || oThis.isEmpty === undefined)
-			{
-				Document.LoadDocumentState(oldSelectionInfo);
-				return null;
-			}
-
-			private_TrackRangesPositions();
-
-			var FontFamily = {
-				Name : sFontFamily,
-				Index : -1
-			};
-
-			var SelectedContent = Document.GetSelectedElementsInfo({CheckAllSelection : true});
-			if (!SelectedContent.CanEditBlockSdts() || !SelectedContent.CanDeleteInlineSdts())
-			{
-				Document.LoadDocumentState(oldSelectionInfo);
-				Document.UpdateSelection();
-	
-				return null;
-			}
-	
-			var ParaTextPr = new AscCommonWord.ParaTextPr({FontFamily : FontFamily});
-			Document.AddToParagraph(ParaTextPr);
-			
 			Document.LoadDocumentState(oldSelectionInfo);
-			Document.UpdateSelection();
+			return null;
 		}
 
+		private_TrackRangesPositions();
+
+		var FontFamily = {
+			Name : sFontFamily,
+			Index : -1
+		};
+
+		var SelectedContent = Document.GetSelectedElementsInfo({CheckAllSelection : true});
+		if (!SelectedContent.CanEditBlockSdts() || !SelectedContent.CanDeleteInlineSdts())
+		{
+			Document.LoadDocumentState(oldSelectionInfo);
+			Document.UpdateSelection();
+
+			return null;
+		}
+
+		var ParaTextPr = new AscCommonWord.ParaTextPr({FontFamily : FontFamily});
+		Document.AddToParagraph(ParaTextPr);
+		
+		Document.LoadDocumentState(oldSelectionInfo);
+		Document.UpdateSelection();
 		return this;
 	};
 
@@ -6596,32 +6585,6 @@
 		return true;
 	};
 	/**
-	 * Adds a comment to the document.
-	 * @memberof ApiDocument
-	 * @typeofeditors ["CDE"]
-	 * @param {string} sText - The comment text (required).
-	 * @param {string} sAuthor - The author's name (optional).
-	 * @param {string} sUserId - The user ID of the comment author (optional).
-	 * @returns {ApiComment?} - Returns null if the comment was not added.
-	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddComment.js
-	 */
-	ApiDocument.prototype.AddComment = function(sText, sAuthor, sUserId)
-	{
-		if (!sText || typeof(sText) !== "string")
-			return null;
-	
-		if (typeof(sAuthor) !== "string")
-			sAuthor = "";
-		
-		let CommentData = private_CreateCommentData({
-			text: sText,
-			author: sAuthor,
-			userId: sUserId
-		});
-
-		return AddGlobalCommentToDocument(this.Document, CommentData);
-	};
-	/**
 	 * Returns a bookmark range.
 	 * @memberof ApiDocument
 	 * @typeofeditors ["CDE"]
@@ -7832,6 +7795,156 @@
 
 		return oDocInfo;
 	};
+	/**
+	 * Returns the current word or part of the current word
+	 * @param {undefined | "before" | "after"} sWordPart - Specifies the desired part of the current word
+	 * @memberof ApiDocument
+	 * @typeofeditors ["CDE"]
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/GetCurrentWord.js
+	 */
+	ApiDocument.prototype.GetCurrentWord = function(sWordPart)
+	{
+		let part = GetStringParameter(sWordPart, null);
+		let dir  = 0;
+		if ("after" === part)
+			dir = 1;
+		else if ("before" === part)
+			dir = -1;
+		
+		return this.Document.GetCurrentWord(dir);
+	};
+	/**
+	 * Replace the current word or part of the current word with the specified text
+	 * @param sReplace {string} String to replace
+	 * @param {undefined | "before" | "after"} sPart - Specifies the desired part of the current word
+	 * @memberof ApiDocument
+	 * @typeofeditors ["CDE"]
+	 * @returns {boolean}
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/ReplaceCurrentWord.js
+	 */
+	ApiDocument.prototype.ReplaceCurrentWord = function(sReplace, sPart)
+	{
+		let replace = GetStringParameter(sReplace, "");
+		let part    = GetStringParameter(sPart, null);
+		
+		let dir  = 0;
+		if ("after" === part)
+			dir = 1;
+		else if ("before" === part)
+			dir = -1;
+		
+		return this.Document.ReplaceCurrentWord(dir, replace);
+	};
+	/**
+	 * Selects the current word if it possible
+	 * @memberof ApiDocument
+	 * @typeofeditors ["CDE"]
+	 * @returns {object}
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/SelectCurrentWord.js
+	 */
+	ApiDocument.prototype.SelectCurrentWord = function()
+	{
+		return this.Document.SelectCurrentWord();
+	};
+	/**
+	 * Adds a comment to the current selection of the document, or to the current word if there is no text selection
+	 * @memberof ApiDocument
+	 * @typeofeditors ["CDE"]
+	 * @param {string} sText - The comment text (required).
+	 * @param {string} sAuthor - The author's name (optional).
+	 * @param {string} sUserId - The user ID of the comment author (optional).
+	 * @returns {?ApiComment} - Returns null if the comment was not added.
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddComment.js
+	 */
+	ApiDocument.prototype.AddComment = function(sText, sAuthor, sUserId)
+	{
+		if (!sText || typeof(sText) !== "string")
+			return null;
+		
+		sText   = GetStringParameter(sText, "");
+		sAuthor = GetStringParameter(sAuthor, "");
+		
+		let commentData = private_CreateCommentData({
+			text: sText,
+			author: sAuthor,
+			userId: sUserId,
+			quoteText: null
+		});
+		
+		let comment = this.Document.AddComment(commentData);
+		return comment ? new ApiComment(comment) : null;
+	};
+	/**
+	 * Returns the current sentence or part of the current sentence
+	 * @param {undefined | "before" | "after"} sPart - Specifies the desired part of the current sentence
+	 * @memberof ApiDocument
+	 * @typeofeditors ["CDE"]
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/GetCurrentSentence.js
+	 */
+	ApiDocument.prototype.GetCurrentSentence = function(sPart)
+	{
+		let part = GetStringParameter(sPart, null);
+		let dir  = 0;
+		if ("after" === part)
+			dir = 1;
+		else if ("before" === part)
+			dir = -1;
+		
+		return this.Document.GetCurrentSentence(dir);
+	};
+	/**
+	 * Replace the current sentence or part of the current sentence with the specified text
+	 * @param sReplace {string} String to replace
+	 * @param {undefined | "before" | "after"} sPart - Specifies the desired part of the current sentence
+	 * @memberof ApiDocument
+	 * @typeofeditors ["CDE"]
+	 * @returns {boolean}
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/ReplaceCurrentSentence.js
+	 */
+	ApiDocument.prototype.ReplaceCurrentSentence = function(sReplace, sPart)
+	{
+		let replace = GetStringParameter(sReplace, "");
+		let part    = GetStringParameter(sPart, null);
+		
+		let dir  = 0;
+		if ("after" === part)
+			dir = 1;
+		else if ("before" === part)
+			dir = -1;
+		
+		return this.Document.ReplaceCurrentSentence(dir, replace);
+	};
+	/**
+	 * Add a math equation
+	 * @param sText {string} An equation written as a linear text string
+	 * @param [sFormat="unicode"] {"unicode" | "latex"} The format of the specified linear representation
+	 * @memberof ApiDocument
+	 * @typeofeditors ["CDE"]
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddMathEquation.js
+	 */
+	ApiDocument.prototype.AddMathEquation = function(sText, sFormat)
+	{
+		let text   = GetStringParameter(sText, "");
+		let format = GetStringParameter(sFormat, "unicode");
+		
+		LoadFont("Cambria Math");
+		
+		let logicDocument = this.Document;
+		logicDocument.RemoveBeforePaste();
+		logicDocument.RemoveSelection();
+		let mathPr = new AscCommonWord.MathMenu(c_oAscMathType.Default_Text, logicDocument.GetDirectTextPr());
+		mathPr.SetText(text);
+		logicDocument.AddToParagraph(mathPr);
+		
+		let info = logicDocument.GetSelectedElementsInfo();
+		let paraMath = info.GetMath();
+		if (!paraMath)
+			return;
+		
+		paraMath.ConvertView(false, "latex" === format ? Asc.c_oAscMathInputType.LaTeX : Asc.c_oAscMathInputType.Unicode);
+	};
 	//------------------------------------------------------------------------------------------------------------------
 	//
 	// ApiParagraph
@@ -8266,7 +8379,7 @@
 		else
 			return null;
 
-		return new ApiComment(oComment)
+		return new ApiComment(oComment);
 	};
 	/**
 	 * Adds a hyperlink to a paragraph. 
@@ -8486,27 +8599,16 @@
 	{
 		if (typeof sFontFamily !== "string")
 			return null;
-
-		var oThis    = this;
-		var loader   = AscCommon.g_font_loader;
-		var fontinfo = g_fontApplication.GetFontInfo(sFontFamily);
-		var isasync  = loader.LoadFont(fontinfo, setFontFamily);
-
-		if (isasync === false)
-			setFontFamily()
-
-		function setFontFamily()
-		{
-			var FontFamily = {
-				Name : sFontFamily,
+		
+		LoadFont(sFontFamily);
+		this.Paragraph.SetApplyToAll(true);
+		this.Paragraph.Add(new AscCommonWord.ParaTextPr({
+			FontFamily : {
+				Name  : sFontFamily,
 				Index : -1
-			};
-
-			oThis.Paragraph.SetApplyToAll(true);
-			oThis.Paragraph.Add(new AscCommonWord.ParaTextPr({FontFamily : FontFamily}));
-			oThis.Paragraph.SetApplyToAll(false);
-		}
-
+			}
+		}));
+		this.Paragraph.SetApplyToAll(false);
 		return this;
 	};
 	/**
@@ -10172,9 +10274,9 @@
 	 */
 	ApiRun.prototype.SetFontFamily = function(sFontFamily)
 	{
+		LoadFont(sFontFamily);
 		var oTextPr = this.GetTextPr();
 		oTextPr.SetFontFamily(sFontFamily);
-		
 		return oTextPr;
 	};
 	/**
@@ -10473,31 +10575,62 @@
 		oDocument.UpdateSelection();
 		return comment;
 	};
-
+	
 	/**
 	 * Returns a text from the text run.
 	 * @memberof ApiRun
 	 * @param {object} oPr - The resulting string display properties.
-     * @param {string} [oPr.NewLineSeparator='\r'] - Defines how the line separator will be specified in the resulting string.
+	 * @param {string} [oPr.NewLineSeparator='\r'] - Defines how the line separator will be specified in the resulting string.
 	 * @param {string} [oPr.TabSymbol='\t'] - Defines how the tab will be specified in the resulting string.
 	 * @typeofeditors ["CDE"]
 	 * @returns {string}
 	 * @see office-js-api/Examples/{Editor}/ApiRun/Methods/GetText.js
-	 */	
+	 */
 	ApiRun.prototype.GetText = function(oPr)
 	{
-		if (!oPr) {
+		if (!oPr)
 			oPr = {};
-		}
-
+		
 		let oProp = {
-			Text: "",
-			NewLineSeparator:	(oPr.hasOwnProperty("NewLineSeparator")) ? oPr["NewLineSeparator"] : "\r",
-			TabSymbol:			oPr["TabSymbol"],
-			ParaSeparator:		oPr["ParaSeparator"]
+			Text             : "",
+			NewLineSeparator : (oPr.hasOwnProperty("NewLineSeparator")) ? oPr["NewLineSeparator"] : "\r",
+			TabSymbol        : oPr["TabSymbol"],
+			ParaSeparator    : oPr["ParaSeparator"]
 		}
-
+		
 		return this.Run.GetText(oProp);
+	};
+	
+	/**
+	 * Move cursor to a specified position of the current text run.
+	 * If the current run is not assigned to any part of the document then returns false otherwise returns true.
+	 * If there was any selection in the document, it will be removed.
+	 * @memberof ApiRun
+	 * @param {number} [nPos=0] - Desired cursor position.
+	 * @typeofeditors ["CDE"]
+	 * @returns {boolean}
+	 * @see office-js-api/Examples/{Editor}/ApiRun/Methods/MoveCursorToPos.js
+	 */
+	ApiRun.prototype.MoveCursorToPos = function(nPos)
+	{
+		let pos = GetNumberParameter(nPos, 0);
+		if (pos < 0)
+			pos = 0;
+		else if (pos > this.Run.GetElementsCount())
+			pos = this.Run.GetElementsCount();
+		
+		let document = private_GetLogicDocument();
+		if (!document)
+			return false;
+		
+		document.RemoveSelection();
+		
+		if (!this.Run.IsUseInDocument())
+			return false;
+		
+		this.Run.Make_ThisElementCurrent();
+		this.Run.SetCursorPosition(pos);
+		return true;
 	};
 
 	//------------------------------------------------------------------------------------------------------------------
@@ -12965,6 +13098,7 @@
 	 */
 	ApiTextPr.prototype.SetFontFamily = function(sFontFamily)
 	{
+		LoadFont(sFontFamily);
 		this.TextPr.RFonts.SetAll(sFontFamily, -1);
 		this.private_OnChange();
 		return this;
@@ -21571,7 +21705,7 @@
 	ApiRange.prototype["SetEndPos"]                  = ApiRange.prototype.SetEndPos;
 	ApiRange.prototype["GetStartPos"]                = ApiRange.prototype.GetStartPos;
 	ApiRange.prototype["GetEndPos"]                  = ApiRange.prototype.GetEndPos;
-
+	
 	ApiDocument.prototype["GetClassType"]                = ApiDocument.prototype.GetClassType;
 	ApiDocument.prototype["CreateNewHistoryPoint"]       = ApiDocument.prototype.CreateNewHistoryPoint;
 	ApiDocument.prototype["GetDefaultTextPr"]            = ApiDocument.prototype.GetDefaultTextPr;
@@ -21605,7 +21739,6 @@
 	ApiDocument.prototype["Last"]                        = ApiDocument.prototype.Last;
 	ApiDocument.prototype["Push"]                        = ApiDocument.prototype.Push;
 	ApiDocument.prototype["DeleteBookmark"]              = ApiDocument.prototype.DeleteBookmark;
-	ApiDocument.prototype["AddComment"]                  = ApiDocument.prototype.AddComment;
 	ApiDocument.prototype["GetBookmarkRange"]            = ApiDocument.prototype.GetBookmarkRange;
 	ApiDocument.prototype["GetSections"]                 = ApiDocument.prototype.GetSections;
 	ApiDocument.prototype["GetAllTablesOnPage"]          = ApiDocument.prototype.GetAllTablesOnPage;
@@ -21629,23 +21762,27 @@
 	ApiDocument.prototype["GetPageCount"]                = ApiDocument.prototype.GetPageCount;
 	ApiDocument.prototype["GetAllStyles"]                = ApiDocument.prototype.GetAllStyles;
 	ApiDocument.prototype["GetDocumentInfo"]             = ApiDocument.prototype.GetDocumentInfo;
-	
 	ApiDocument.prototype["GetSelectedDrawings"]         = ApiDocument.prototype.GetSelectedDrawings;
 	ApiDocument.prototype["ReplaceCurrentImage"]         = ApiDocument.prototype.ReplaceCurrentImage;
 	ApiDocument.prototype["ReplaceDrawing"]              = ApiDocument.prototype.ReplaceDrawing;
 	ApiDocument.prototype["AcceptAllRevisionChanges"]    = ApiDocument.prototype.AcceptAllRevisionChanges;
 	ApiDocument.prototype["RejectAllRevisionChanges"]    = ApiDocument.prototype.RejectAllRevisionChanges;
-	
-	ApiDocument.prototype["ToJSON"]                  = ApiDocument.prototype.ToJSON;
-	ApiDocument.prototype["UpdateAllTOC"]            = ApiDocument.prototype.UpdateAllTOC;
-	ApiDocument.prototype["UpdateAllTOF"]            = ApiDocument.prototype.UpdateAllTOF;
-	ApiDocument.prototype["UpdateAllFields"]         = ApiDocument.prototype.UpdateAllFields;
-	ApiDocument.prototype["AddTableOfContents"]      = ApiDocument.prototype.AddTableOfContents;
-	ApiDocument.prototype["AddTableOfFigures"]       = ApiDocument.prototype.AddTableOfFigures;
-
-	ApiDocument.prototype["GetAllForms"]             = ApiDocument.prototype.GetAllForms;
-	ApiDocument.prototype["ClearAllFields"]          = ApiDocument.prototype.ClearAllFields;
-	ApiDocument.prototype["SetFormsHighlight"]       = ApiDocument.prototype.SetFormsHighlight;
+	ApiDocument.prototype["ToJSON"]                      = ApiDocument.prototype.ToJSON;
+	ApiDocument.prototype["UpdateAllTOC"]                = ApiDocument.prototype.UpdateAllTOC;
+	ApiDocument.prototype["UpdateAllTOF"]                = ApiDocument.prototype.UpdateAllTOF;
+	ApiDocument.prototype["UpdateAllFields"]             = ApiDocument.prototype.UpdateAllFields;
+	ApiDocument.prototype["AddTableOfContents"]          = ApiDocument.prototype.AddTableOfContents;
+	ApiDocument.prototype["AddTableOfFigures"]           = ApiDocument.prototype.AddTableOfFigures;
+	ApiDocument.prototype["GetAllForms"]                 = ApiDocument.prototype.GetAllForms;
+	ApiDocument.prototype["ClearAllFields"]              = ApiDocument.prototype.ClearAllFields;
+	ApiDocument.prototype["SetFormsHighlight"]           = ApiDocument.prototype.SetFormsHighlight;
+	ApiDocument.prototype["GetCurrentWord"]              = ApiDocument.prototype.GetCurrentWord;
+	ApiDocument.prototype["ReplaceCurrentWord"]          = ApiDocument.prototype.ReplaceCurrentWord;
+	ApiDocument.prototype["SelectCurrentWord"]           = ApiDocument.prototype.SelectCurrentWord;
+	ApiDocument.prototype["AddComment"]                  = ApiDocument.prototype.AddComment;
+	ApiDocument.prototype["GetCurrentSentence"]          = ApiDocument.prototype.GetCurrentSentence;
+	ApiDocument.prototype["ReplaceCurrentSentence"]      = ApiDocument.prototype.ReplaceCurrentSentence;
+	ApiDocument.prototype["AddMathEquation"]             = ApiDocument.prototype.AddMathEquation;
 
 	ApiParagraph.prototype["GetClassType"]           = ApiParagraph.prototype.GetClassType;
 	ApiParagraph.prototype["AddText"]                = ApiParagraph.prototype.AddText;
@@ -21765,6 +21902,7 @@
 	ApiRun.prototype["ToJSON"]                       = ApiRun.prototype.ToJSON;
 	ApiRun.prototype["AddComment"]                   = ApiRun.prototype.AddComment;
 	ApiRun.prototype["GetText"]                      = ApiRun.prototype.GetText;
+	ApiRun.prototype["MoveCursorToPos"]              = ApiRun.prototype.MoveCursorToPos;
 
 
 	ApiHyperlink.prototype["GetClassType"]           = ApiHyperlink.prototype.GetClassType;
@@ -22655,6 +22793,15 @@
 	function private_GetLogicDocument()
 	{
 		return editor.WordControl.m_oLogicDocument;
+	}
+	
+	function LoadFont(fontName)
+	{
+		let api = Asc.editor ? Asc.editor : editor;
+		if (!api)
+			return;
+		
+		api.addBuilderFont(fontName);
 	}
 
 	function private_Twips2MM(twips)

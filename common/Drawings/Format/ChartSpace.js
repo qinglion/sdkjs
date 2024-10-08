@@ -373,7 +373,7 @@ function(window, undefined) {
 	AscDFH.changesFactory[AscDFH.historyitem_ChartSpace_SetNvGrFrProps] = CChangesDrawingsObject;
 	AscDFH.changesFactory[AscDFH.historyitem_ChartSpace_SetThemeOverride] = CChangesDrawingsObject;
 	AscDFH.changesFactory[AscDFH.historyitem_ShapeSetBDeleted] = CChangesDrawingsBool;
-	AscDFH.changesFactory[AscDFH.historyitem_ChartSpace_SetChartData] = CChangesDrawingsObjectNoId;
+	AscDFH.changesFactory[AscDFH.historyitem_ChartSpace_SetChartData] = CChangesDrawingsObject;
 	AscDFH.changesFactory[AscDFH.historyitem_ChartSpace_SetParent] = CChangesDrawingsObject;
 	AscDFH.changesFactory[AscDFH.historyitem_ChartSpace_SetChart] = CChangesDrawingsObject;
 	AscDFH.changesFactory[AscDFH.historyitem_ChartSpace_SetClrMapOvr] = CChangesDrawingsObject;
@@ -1896,7 +1896,7 @@ function(window, undefined) {
 		return this.dataRefs;
 	};
 	CChartSpace.prototype.setChartData = function(pr) {
-		History.CanAddChanges() && History.Add(new CChangesDrawingsObjectNoId(this, AscDFH.historyitem_ChartSpace_SetChartData, this.chartData, pr));
+		History.CanAddChanges() && History.Add(new CChangesDrawingsObject(this, AscDFH.historyitem_ChartSpace_SetChartData, this.chartData, pr));
 		this.chartData = pr;
 	};
 	CChartSpace.prototype.clearDataRefs = function () {
@@ -3820,6 +3820,9 @@ function(window, undefined) {
 		if (this.textLink !== null) {
 			copy.setTextLink(this.textLink);
 		}
+		if(this.chartData) {
+			copy.setChartData(this.chartData.createDuplicate());
+		}
 		if (!oPr || false !== oPr.cacheImage) {
 			copy.cachedImage = this.getBase64Img();
 			copy.cachedPixH = this.cachedPixH;
@@ -4580,8 +4583,8 @@ function(window, undefined) {
 				} else if (cachedData.clusteredColumn.results) {
 						return key ? cachedData.clusteredColumn.results[key].occurrence : cachedData.clusteredColumn.results;
 				}
-			} else if (cachedData.waterfall) {
-				return key ? cachedData.waterfall[key] : cachedData.waterfall;
+			} else if (cachedData.waterfall && cachedData.waterfall.numArr) {
+				return key ? cachedData.waterfall.numArr[key].val : cachedData.waterfall.numArr;
 			} else if (cachedData.funnel) {
 				return key ? cachedData.funnel[key] : cachedData.funnel;
 			}
@@ -9332,6 +9335,58 @@ function(window, undefined) {
 			return null;
 		}
 		return oChartStyleCache.getStyleIdx(this.getChartType(), this.chartStyle.id);
+	};
+	CChartSpace.prototype.getDisplayTrendlinesEquation = function () {
+		let aSeries = this.getAllSeries();
+		let bResult = null;
+		if(aSeries.length === 0) {
+			return bResult;
+		}
+		let aAllTrendlines = [];
+		let oTrendline;
+		for(let nSer = 0; nSer < aSeries.length; ++nSer) {
+			oTrendline = aSeries[nSer].trendline;
+			if(oTrendline) {
+				aAllTrendlines.push(oTrendline);
+			}
+		}
+		if(aAllTrendlines.length === 0) {
+			return null;
+		}
+		if(!oTrendline) {
+			return bResult;
+		}
+		oTrendline = aAllTrendlines[0];
+		bResult = oTrendline.trendlineLbl !== null;
+		for(let nIdx = 1; nIdx < aAllTrendlines.length; ++nIdx) {
+			let bLbl = aAllTrendlines[nIdx].trendlineLbl !== null;
+			if(bResult !== bLbl) {
+				return undefined;
+			}
+		}
+		return bResult;
+	};
+	CChartSpace.prototype.setDisplayTrendlinesEquation = function (bValue) {
+		if(bValue === this.getDisplayTrendlinesEquation()) {
+			return;
+		}
+		let aSeries = this.getAllSeries();
+		let bResult = null;
+		if(aSeries.length === 0) {
+			return;
+		}
+		let aAllTrendlines = [];
+		let oTrendline;
+		for(let nSer = 0; nSer < aSeries.length; ++nSer) {
+			oTrendline = aSeries[nSer].trendline;
+			if(oTrendline) {
+				aAllTrendlines.push(oTrendline);
+			}
+		}
+		for(let nIdx = 0; nIdx < aAllTrendlines.length; ++nIdx) {
+			aAllTrendlines[nIdx].setShowLabel(bValue);
+		}
+		return bResult;
 	};
 	CChartSpace.prototype.buildSeries = function (aRefs) {
 		if (!Array.isArray(aRefs)) {

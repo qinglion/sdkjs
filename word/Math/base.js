@@ -2833,18 +2833,12 @@ CMathBase.prototype.GetTextOfElement = function(oMathText)
 	oMathText = new AscMath.MathTextAndStyles(oMathText);
 	return oMathText;
 };
-
-CMathBase.prototype.GetStartBracetForGetTextContent = function(isLaTeX) {
-	if (isLaTeX) 
-		return '{';
-	else
-		return '(';
-};
-CMathBase.prototype.GetEndBracetForGetTextContent = function(isLaTeX) {
-	if (isLaTeX) 
-		return '}';
-	else
-		return ')';
+CMathBase.prototype.Set_RFont_ForMath = function()
+{
+	this.SetRFontsAscii({Name : "Cambria Math", Index : -1});
+	this.SetRFontsCS({Name : "Cambria Math", Index : -1});
+	this.SetRFontsEastAsia({Name : "Cambria Math", Index : -1});
+	this.SetRFontsHAnsi({Name : "Cambria Math", Index : -1});
 };
 
 function CMathBasePr()
@@ -3268,9 +3262,9 @@ CMathMenuBase.prototype.Set_DeleteForcedBreak = function()
  * ctrlPr - Control Properties
  * @constructor
  */
-function CMathCtrlPr(oParagraph)
+function CMathCtrlPr(ctrPr)
 {
-	this.rPr = new CTextPr(); //по умолчанию должен наследоваться от текущего абзаца
+	this.rPr = ctrPr || new CTextPr(); //по умолчанию должен наследоваться от текущего абзаца
 	this.del = new CTextPr();
 	this.ins = new CTextPr();
 }

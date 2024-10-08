@@ -393,7 +393,7 @@
     this.mainGraphics = new AscCommon.CGraphics();
     this.trackOverlay = new AscCommon.COverlay();
     this.trackOverlay.IsCellEditor = true;
-    if(this.Api.isMobileVersion) {
+    if(/*this.Api.isMobileVersion*/true) {
         this.mainOverlay = new AscCommon.COverlay();
         this.mainOverlay.IsCellEditor = true;
     }
@@ -1258,7 +1258,7 @@
 			this.controller.reinitScrollY(this.controller.vsbApi.settings, this.getSmoothScrolling() ? ws.getFirstVisibleRowSmoothScroll(true) :  ws.getFirstVisibleRow(true), ws.getVerticalScrollRange(), ws.getVerticalScrollMax());
 		}
 
-		if (this.Api.isMobileVersion) {
+		if (this.MobileTouchManager) {
 			this.MobileTouchManager.Resize();
 		}
 	};
@@ -2452,6 +2452,7 @@
       });
 
     }
+	this.checkScrollRtl(ws.getRightToLeft());
     this._onScrollReinitialize(AscCommonExcel.c_oAscScrollType.ScrollVertical | AscCommonExcel.c_oAscScrollType.ScrollHorizontal);
     // Zoom теперь на каждом листе одинаковый, не отправляем смену
 
@@ -4457,13 +4458,16 @@
 	WorkbookView.prototype.IsSelectionUse = function () {
         return !this.getWorksheet().getSelectionShape();
     };
-	WorkbookView.prototype.GetSelectionRectsBounds = function () {
+	WorkbookView.prototype.GetSelectionRectsBounds = function (checkVisibleRange) {
 	    var ws = this.getWorksheet();
 		if (ws.getSelectionShape()) {
             return null;
         }
 
 		var range = ws.model.getSelection().getLast();
+		if (checkVisibleRange && !range.intersectionSimple(ws.visibleRange)) {
+			return null;
+		}
 		var type = range.getType();
 		var l = ws.getCellLeft(range.c1, 3) - ws.getHorizontalScrollCorrect(3);
 		var t = ws.getCellTop(range.r1, 3) - ws.getScrollCorrect(3);
@@ -5366,9 +5370,45 @@
 
 				var updatedReferences = [];
 				for (var i = 0; i < _arrAfterPromise.length; i++) {
-					let externalReferenceId = _arrAfterPromise[i].externalReferenceId;
+					// eR - current External Reference
+					let eRId = _arrAfterPromise[i].externalReferenceId;
 					let stream = _arrAfterPromise[i].stream;
-					let eR = t.model.getExternalReferenceById(externalReferenceId);
+
+					let oPortalData = _arrAfterPromise[i].data;
+					let path = oPortalData && oPortalData["path"];
+					//if after update get short path, check on added such link
+					let eR = t.model.getExternalReferenceById(eRId);
+
+					let externalReferenceId = eRId;
+					if (path && externalReferenceId !== path) {
+						let isNotUpdate = (AscCommonExcel.importRangeLinksState && AscCommonExcel.importRangeLinksState.notUpdateIdMap && AscCommonExcel.importRangeLinksState.notUpdateIdMap[this.Id]) || this.notUpdateId;
+						if (!isNotUpdate) {
+							eR = t.model.getExternalReferenceById(path);
+							//need remove added new link with externalReferenceId id
+							if (eR) {
+								let eRAdded = t.model.getExternalReferenceById(externalReferenceId);
+								if (eRAdded) {
+									let indexFrom = t.model.getExternalReferenceById(externalReferenceId, true);
+									let indexTo = t.model.getExternalReferenceById(path, true);
+
+									for (let wsName in eRAdded.worksheets) {
+										let existedWs = eR.worksheets[wsName];
+										let prepared = t.model.dependencyFormulas.prepareChangeSheet(eRAdded.worksheets[wsName].getId(), {from: indexFrom + 1, to: indexTo + 1});
+
+										prepared.existedWs = existedWs;
+										t.model.dependencyFormulas.changeExternalLink(prepared);
+									}
+									eR.addDataSetFrom(eRAdded);
+									t.model.removeExternalReferences([eRAdded.getAscLink()]);
+								}
+							}
+						}
+					}
+					
+					if (!eR) {
+						eR = t.model.getExternalReferenceById(externalReferenceId);
+					}
+
 					if (stream && eR) {
 						updatedReferences.push(eR);
 						//TODO если внутри не zip, отправляем на конвертацию в xlsx, далее повторно обрабатываем - позже реализовать
@@ -5843,14 +5883,34 @@
 	WorkbookView.prototype.setSmoothScrolling = function(val) {
 		if (this.smoothScroll !== val) {
 			this.smoothScroll = val;
+			for (var i in this.wsViews) {
+				var item = this.wsViews[i];
+				item.setScrollCorrect(null);
+				item.setHorizontalScrollCorrect(null);
+				item.scrollType |= AscCommonExcel.c_oAscScrollType.ScrollVertical;
+				item.scrollType |= AscCommonExcel.c_oAscScrollType.ScrollHorizontal;
+				item._reinitializeScroll();
+			}
 			var ws = this.getWorksheet();
-			ws.setScrollCorrect(null);
 			ws.draw();
 		}
 	};
 
 	WorkbookView.prototype.getSmoothScrolling = function() {
 		return this.smoothScroll;
+	};
+
+	WorkbookView.prototype.checkScrollRtl = function(val) {
+		let controller = this.controller;
+		let hsbApi = controller && controller.hsbApi;
+		let ctx = hsbApi && hsbApi.context;
+		if (ctx) {
+			if (val) {
+				ctx.setTransform(-1,0,0,1,hsbApi.canvasW,0);
+			} else {
+				ctx.setTransform(1,0,0,1,0,0);
+			}
+		}
 	};
 
 	//временно добавляю сюда. в идеале - использовать общий класс из документов(или сделать базовый, от него наследоваться) - CDocumentSearch

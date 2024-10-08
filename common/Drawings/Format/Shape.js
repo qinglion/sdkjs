@@ -202,6 +202,10 @@
 				return -1;
 			}
 
+			if(object.canResize && !object.canResize()) {
+				return -1;
+			}
+
 			if (object.cropObject) {
 				return hitToCropHandles(x, y, object);
 			}
@@ -439,6 +443,10 @@
 				oNewEndPr.Unifill = oNewEndPr.TextFill;
 				oNewEndPr.TextFill = undefined;
 			}
+			if (oNewEndPr.RStyle != undefined) {
+				oNewEndPr.RStyle = undefined;
+			}
+			oNewEndPr.FontScale = undefined;
 			new_paragraph.TextPr.Set_Value(oNewEndPr);
 			new_paragraph.Internal_Content_Remove2(0, new_paragraph.Content.length);
 			ConvertParagraphContentToPPTX(paragraph.Content, new_paragraph, bIsAddMath, bRemoveHyperlink);

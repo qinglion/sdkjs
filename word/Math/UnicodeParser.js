@@ -65,10 +65,11 @@
 	}
 	CUnicodeParser.prototype.IsSpaceExit = function ()
 	{
-		if (this.oLookahead.class !== Literals.space.id || !this.isSpaceExit)
-			return true;
+		// if (this.oLookahead.class !== Literals.space.id || !this.isSpaceExit)
+		// 	return true;
 
-		let isSpace = (this.isSpaceExit && this.oLookahead.class === Literals.space.id || this.oLookahead.class === Literals.invisible.id);
+		let isSpace = this.isSpaceExit
+			&& (this.oLookahead.class === Literals.space.id || this.oLookahead.class === Literals.invisible.id);
 
 		return !isSpace;
 	}
@@ -99,27 +100,27 @@
 			style: this.oLookahead.style
 		};
 
-        arrExp.push(newData);
-        this.EatToken(this.oLookahead.class);
-    };
+		arrExp.push(newData);
+		this.EatToken(this.oLookahead.class);
+	};
 	CUnicodeParser.prototype.GetSpaceLiteral = function ()
 	{
-        const oSpaceLiteral = this.EatToken(Literals.space.id);
+		const oSpaceLiteral = this.EatToken(Literals.space.id);
 		return {
-            type: Struc.space,
+			type: Struc.space,
 			value: oSpaceLiteral.data,
-            style: oSpaceLiteral.style,
+			style: oSpaceLiteral.style,
 		};
 	};
-    CUnicodeParser.prototype.IsSpaceLiteral = function ()
-    {
-        return this.oLookahead.class === Literals.space.id;
-    };
+	CUnicodeParser.prototype.IsSpaceLiteral = function ()
+	{
+		return this.oLookahead.class === Literals.space.id;
+	};
 	CUnicodeParser.prototype.GetOpCloseLiteral = function ()
 	{
 		let oCloseLiteral;
 
-        if (this.oLookahead.data === "┤") //return this.EatToken(this.oLookahead.class).data
+		if (this.oLookahead.data === "┤") //return this.EatToken(this.oLookahead.class).data
 			this.EatToken(this.oLookahead.class);
 
 		if (this.oLookahead.class === Literals.lrBrackets.id) {
@@ -127,7 +128,7 @@
 			return oCloseLiteral.data;
 		}
 
-        oCloseLiteral = this.EatToken(Literals.rBrackets.id);
+		oCloseLiteral = this.EatToken(Literals.rBrackets.id);
 		return oCloseLiteral.data;
 	};
 	// CUnicodeParser.prototype.GetOpCloserLiteral = function ()
@@ -156,15 +157,19 @@
 	CUnicodeParser.prototype.GetOpNaryLiteral = function ()
 	{
 		let oContent;
-        let oNaryPr = this.oLookahead.style;
+		let oNaryPr = this.oLookahead.style;
 		let oOfStyle;
-        let strNaryLiteral = this.EatToken(Literals.nary.id).data;
+		let strNaryLiteral = this.EatToken(Literals.nary.id).data;
 
 		if (this.oLookahead.class === Literals.of.id)
 		{
 			oOfStyle = this.oLookahead.style;
 			this.EatToken( Literals.of.id);
-			oContent = this.GetElementLiteral()
+
+			if (this.oLookahead.data === "〖" )
+				oContent = this.GetExpBracketLiteral();
+			else
+				oContent = this.GetExpLiteral();
 
 			if (oContent.type === Struc.bracket_block && oContent.left === "(" && oContent.right === ")")
 			{
@@ -177,11 +182,11 @@
 		// }
 
 		return {
-            type: Struc.nary,
-            value: strNaryLiteral,
+			type: Struc.nary,
+			value: strNaryLiteral,
 			third: oContent,
-	        thirdStyle: oOfStyle,
-            style: oNaryPr,
+			thirdStyle: oOfStyle,
+			style: oNaryPr,
 		}
 
 	};
@@ -199,7 +204,7 @@
 	{
 		return this.oLookahead.class === Literals.lrBrackets.id ||
 				this.oLookahead.class === Literals.lBrackets.id;
-    };
+	};
 	CUnicodeParser.prototype.IsOpOpenerLiteral = function ()
 	{
 		return this.oLookahead.class === Literals.lBrackets.id;
@@ -215,7 +220,7 @@
 	};
 	CUnicodeParser.prototype.IsDigitsLiteral = function ()
 	{
-        return this.oLookahead.class === Literals.number.id;
+		return this.oLookahead.class === Literals.number.id;
 	};
 	CUnicodeParser.prototype.GetNumberLiteral = function ()
 	{
@@ -227,11 +232,11 @@
 	};
 	CUnicodeParser.prototype.EatCloseOrOpenBracket = function ()
 	{
-        let strOpenLiteral,
-            strCloseLiteral,
-            oExp,
-            startStyle,
-            endStyle;
+		let strOpenLiteral,
+			strCloseLiteral,
+			oExp,
+			startStyle,
+			endStyle;
 
 		if (this.oLookahead.data === "├") {
 			this.strBreakSymbol.push("|", "‖");
@@ -263,16 +268,16 @@
 				strCloseLiteral = ".";
 
 			return {
-                type: Struc.bracket_block,
+				type: Struc.bracket_block,
 				left: strOpenLiteral,
 				right: strCloseLiteral,
 				value: oExp,
 				counter: counter,
-                style: {
-                    startStyle : startStyle,
-                    endStyle : endStyle,
-	                middle: [],
-                }
+				style: {
+					startStyle : startStyle,
+					endStyle : endStyle,
+					middle: [],
+				}
 			};
 		}
 	};
@@ -316,13 +321,13 @@
 				if (this.IsOperandLiteral()) {
 					const operand = this.GetOperandLiteral();
 					return {
-                        type: Struc.minus,
+						type: Struc.minus,
 						value: operand,
 					};
 				}
 
 				return {
-                    type: Struc.char,
+					type: Struc.char,
 					value: minus.data,
 				}
 			case "-∞":
@@ -349,26 +354,26 @@
 	};
 	CUnicodeParser.prototype.IsTextLiteral = function ()
 	{
-        return (this.oLookahead.data === "\"" || this.oLookahead.data === "\'") && !this.isTextLiteral
-    };
+		return (this.oLookahead.data === "\"" || this.oLookahead.data === "\'") && !this.isTextLiteral
+	};
 	CUnicodeParser.prototype.GetTextLiteral = function ()
 	{
 		let arrStyles = [];
 		let strSymbol = this.EatToken(this.oLookahead.class);
 		let strExp = "";
 
-        while (this.oLookahead.data !== "\"" && this.oLookahead.data !== "\'" && this.oLookahead.class !== undefined)
+		while (this.oLookahead.data !== "\"" && this.oLookahead.data !== "\'" && this.oLookahead.class !== undefined)
 		{
 			strExp += this.oLookahead.data;
 			arrStyles.push(this.oLookahead.style);
 			this.EatToken(this.oLookahead.class)
 		}
 
-        if (this.oLookahead.data === "\"" || this.oLookahead.data === "\'")
+		if (this.oLookahead.data === "\"" || this.oLookahead.data === "\'")
 			this.EatToken(this.oLookahead.class);
 
 		return {
-            type: Struc.char, // Struc.plain,
+			type: Struc.char, // Struc.plain,
 			value: strExp,
 			style: arrStyles,
 		}
@@ -382,15 +387,15 @@
 		this.SaveTokensWhileReturn();
 		if (this.oLookahead.data === "□")
 		{
-            let ctrlPr = this.oLookahead.style;
+			let ctrlPr = this.oLookahead.style;
 			this.EatToken(this.oLookahead.class);
 			if (this.IsOperandLiteral())
 			{
 				const oToken = this.GetOperandLiteral();
 				return {
-                    type: Struc.box,
+					type: Struc.box,
 					value: oToken,
-                    style: ctrlPr,
+					style: ctrlPr,
 				};
 			}
 			else
@@ -406,7 +411,7 @@
 	};
 	CUnicodeParser.prototype.isRectLiteral = function ()
 	{
-        return this.oLookahead.class === Literals.rect.id;
+		return this.oLookahead.class === Literals.rect.id;
 	};
 	CUnicodeParser.prototype.GetRectLiteral = function ()
 	{
@@ -422,7 +427,7 @@
 				return {
 					type: Struc.rect,
 					value: oToken,
-                	style: oCtrPr,
+					style: oCtrPr,
 				};
 			}
 			else
@@ -524,10 +529,10 @@
 	CUnicodeParser.prototype.IsRootLiteral = function ()
 	{
 		return this.oLookahead.data === "⒭";
-    };
+	};
 	CUnicodeParser.prototype.GetRootLiteral = function ()
 	{
-        let oRadicalStyle = this.oLookahead.style;
+		let oRadicalStyle = this.oLookahead.style;
 		this.EatToken(this.oLookahead.class);
 		let oIndex = this.GetExpLiteral();
 		let oBase;
@@ -536,19 +541,19 @@
 			oBase = this.GetExpLiteral();
 		}
 		return {
-            type: Struc.radical,
+			type: Struc.radical,
 			index: oIndex,
 			value: oBase,
-            style: oRadicalStyle,
+			style: oRadicalStyle,
 		}
 	};
 	CUnicodeParser.prototype.GetCubertLiteral = function ()
 	{
 		let oRadicalStyle = this.oLookahead.style;
-        this.EatToken(this.oLookahead.class);
+		this.EatToken(this.oLookahead.class);
 
 		return this.GetContentOfAnyTypeRadical({
-            type: Struc.char,
+			type: Struc.char,
 			value: "3",
 			style: oRadicalStyle,
 		}, oRadicalStyle);
@@ -560,10 +565,10 @@
 	CUnicodeParser.prototype.GetFourthrtLiteral = function ()
 	{
 		let oRadicalStyle = this.oLookahead.style;
-        this.EatToken(Literals.radical.id);
+		this.EatToken(Literals.radical.id);
 
 		return this.GetContentOfAnyTypeRadical({
-            type: Struc.char,
+			type: Struc.char,
 			value: "4",
 			style: oRadicalStyle,
 		}, oRadicalStyle);
@@ -574,9 +579,9 @@
 	};
 	CUnicodeParser.prototype.GetNthrtLiteral = function ()
 	{
-        let oPr = this.oLookahead.style;
+		let oPr = this.oLookahead.style;
 		this.EatToken(this.oLookahead.class);
-        return this.GetContentOfAnyTypeRadical(undefined, oPr);
+		return this.GetContentOfAnyTypeRadical(undefined, oPr);
 	};
 	CUnicodeParser.prototype.IsNthrtLiteral = function ()
 	{
@@ -616,10 +621,10 @@
 		}
 
 		return {
-            type: Struc.radical,
+			type: Struc.radical,
 			index: index ? index : oIndex,
 			value: oContent,
-            style: oRadicalStyle
+			style: oRadicalStyle
 		};
 	}
 	CUnicodeParser.prototype.IsFunctionLiteral = function ()
@@ -631,8 +636,8 @@
 			this.IsNthrtLiteral() ||
 			this.IsBoxLiteral() ||
 			this.isRectLiteral() ||
-            this.IsHBracketLiteral()    ||
-	        this.IsStretchArrow()       ||
+			this.IsHBracketLiteral()    ||
+			this.IsStretchArrow()       ||
 			this.IsGetNameOfFunction() ||
 			this.oLookahead.class === "▁" ||
 			this.oLookahead.class === "¯"
@@ -642,17 +647,17 @@
 	{
 		let oFunctionContent;
 
-        if (this.IsRootLiteral())
+		if (this.IsRootLiteral())
 			oFunctionContent = this.GetRootLiteral();
-        else if (this.IsCubertLiteral())
+		else if (this.IsCubertLiteral())
 			oFunctionContent = this.GetCubertLiteral();
-        else if (this.IsFourthrtLiteral())
+		else if (this.IsFourthrtLiteral())
 			oFunctionContent = this.GetFourthrtLiteral();
-        else if (this.IsNthrtLiteral())
+		else if (this.IsNthrtLiteral())
 			oFunctionContent = this.GetNthrtLiteral();
-        else if (this.IsBoxLiteral())
+		else if (this.IsBoxLiteral())
 			oFunctionContent = this.GetBoxLiteral();
-        else if (this.isRectLiteral())
+		else if (this.isRectLiteral())
 			oFunctionContent = this.GetRectLiteral();
 		else if (this.IsBarLiteral())
 			oFunctionContent = this.GetBarLiteral();
@@ -706,7 +711,7 @@
 	}
 	CUnicodeParser.prototype.IsGetNameOfFunction = function ()
 	{
-        return this.oLookahead.class === Literals.func.id;
+		return this.oLookahead.class === Literals.func.id;
 	};
 	CUnicodeParser.prototype.GetNameOfFunction = function ()
 	{
@@ -1029,7 +1034,7 @@
 			return this.GetNumberLiteral();
 		}
 		else if (this.isOtherLiteral()) {
-            return this.GetOtherLiteral();
+			return this.GetOtherLiteral();
 		}
 		else if (this.IsExpBracketLiteral()) {
 			return this.GetExpBracketLiteral();
@@ -1166,6 +1171,26 @@
 	// 		this.oLookahead.class === oLiteralNames.specialIndexOperatorLiteral[0]
 	// 	);
 	// };
+	CUnicodeParser.prototype.GetTextOfContent = function (oInput)
+	{
+		let str = '';
+
+		if (Array.isArray(oInput))
+		{
+			for (let i = 0; i < oInput.length; i++)
+			{
+				let oCurrent = oInput[i];
+				if (oCurrent.type === Struc.char)
+				{
+					str += oCurrent.value;
+				}
+			}
+		}
+		else
+			return oInput.value;
+
+		return str;
+	}
 	CUnicodeParser.prototype.IsExpSubSupLiteral = function ()
 	{
 		return (
@@ -1178,18 +1203,19 @@
 	{
 		let oThirdSoOperand, 
 			oContent,
-            oOfStyle;
+			oOfStyle;
 
 		if (undefined === oBase) {
 			oBase = this.GetScriptBaseLiteral();
 		}
 		else
 		{
-			if (FunctionNames.includes(oBase.value)) {
+			let strBase = this.GetTextOfContent(oBase);
+			if (FunctionNames.includes(strBase)) {
 				oBase.type = Struc.func;
 			}
-			else if (LimitNames.includes(oBase.value)) {
-				oBase.type = Struc.func_lim ;
+			else if (LimitNames.includes(strBase)) {
+				oBase.type = Struc.func_lim;
 			}
 		}
 
@@ -1222,20 +1248,30 @@
 				oBase.type === Struc.radical //todo
 			)
 			{
-                oOfStyle = this.oLookahead.style;
+				oOfStyle = this.oLookahead.style;
 				this.EatToken("▒");
-				oThirdSoOperand = this.GetElementLiteral();
-				return {
-                    type: Struc.sub_sub,
+
+				if (oBase.type === Struc.nary)
+				{
+					if (this.oLookahead.data ===  "〖" )
+						oThirdSoOperand = this.GetExpBracketLiteral();
+					else
+						oThirdSoOperand = this.GetExpLiteral();
+				}
+				else
+					oThirdSoOperand = this.GetElementLiteral();
+
+					return {
+					type: Struc.sub_sub,
 					value: oBase,
 					down: oContent.down,
 					up: oContent.up,
 					third: oThirdSoOperand,
-                    style: {
-                        subStyle: oContent.style.subStyle,
-                        supStyle: oContent.style.supStyle,
-                        ofStyle: oOfStyle,
-                    },
+					style: {
+						subStyle: oContent.style.subStyle,
+						supStyle: oContent.style.supStyle,
+						ofStyle: oOfStyle,
+					},
 				};
 			}
 			else
@@ -1252,7 +1288,7 @@
 		{
 			if (this.oLookahead.class)
 			{
-				if (this.oLookahead.data.charCodeAt(0) === 8289)
+				if (this.oLookahead.data.charCodeAt(0) === 8289 || this.oLookahead.data === " ")
 					this.EatToken(this.oLookahead.class);
 
 				oThirdSoOperand = this.GetOperandLiteral();
@@ -1276,23 +1312,19 @@
 	};
 	CUnicodeParser.prototype.EatOneSpace = function()
 	{
-		// Word doesn't skip spaces, for now disable
-
-		// if (this.oLookahead.class === Literals.space.id)
-		// {
-		// 	this.EatToken(this.oLookahead.class);
-		// }
+		if (this.oLookahead.class === Literals.space.id && this.oLookahead.data === " ")
+			this.EatToken(this.oLookahead.class);
 	}
 	CUnicodeParser.prototype.GetScriptStandardContentLiteral = function (oBase)
 	{
 		let oFirstElement,
 			oSecondElement,
-            oSubStyle,
-            oSupStyle;
+			oSubStyle,
+			oSupStyle;
 
 		if (this.oLookahead.data === "_")
 		{
-            oSubStyle = this.oLookahead.style;
+			oSubStyle = this.oLookahead.style;
 			this.EatToken(this.oLookahead.class);
 
 			if (this.IsSoOperandLiteral())
@@ -1315,7 +1347,7 @@
 			// Get second element
 			if (this.oLookahead.data === "^" && !this.isOneSubSup)
 			{
-                oSupStyle = this.oLookahead.style;
+				oSupStyle = this.oLookahead.style;
 				this.EatToken(this.oLookahead.class);
 
 				if (this.IsSoOperandLiteral())
@@ -1331,23 +1363,24 @@
 					this.EatToken(this.oLookahead.class);
 
 				return {
-                    type: Struc.sub_sub,
+					type: Struc.sub_sub,
 					value: oBase,
 					down: oFirstElement,
 					up: oSecondElement,
-                    style: {supStyle: oSupStyle, subStyle: oSubStyle},
+					style: {supStyle: oSupStyle, subStyle: oSubStyle},
 				};
 			}
+
 			return {
-                type: Struc.sub_sub,
+				type: Struc.sub_sub,
 				value: oBase,
 				down: oFirstElement,
-                style: {supStyle: oSupStyle, subStyle: oSubStyle},
+				style: {supStyle: oSupStyle, subStyle: oSubStyle},
 			};
 		}
 		else if (this.oLookahead.data === "^")
 		{
-            oSupStyle = this.oLookahead.style;
+			oSupStyle = this.oLookahead.style;
 			this.EatToken(this.oLookahead.class);
 
 			if (this.IsSoOperandLiteral())
@@ -1370,7 +1403,7 @@
 
 			if (this.oLookahead.data === "_")
 			{
-                oSubStyle = this.oLookahead.style;
+				oSubStyle = this.oLookahead.style;
 				this.EatToken(this.oLookahead.class);
 
 				if (this.IsSoOperandLiteral()) {
@@ -1385,19 +1418,19 @@
 					this.EatToken(this.oLookahead.class);
 
 				return {
-                    type: Struc.sub_sub,
+					type: Struc.sub_sub,
 					value: oBase,
 					down: oFirstElement,
 					up: oSecondElement,
-                    style: {supStyle: oSupStyle, subStyle: oSubStyle},
+					style: {supStyle: oSupStyle, subStyle: oSubStyle},
 				};
 			}
 
 			return {
-                type: Struc.sub_sub,
+				type: Struc.sub_sub,
 				value: oBase,
 				up: oSecondElement,
-                style: {supStyle: oSupStyle, subStyle: oSubStyle},
+				style: {supStyle: oSupStyle, subStyle: oSubStyle},
 			};
 		}
 	};
@@ -1418,7 +1451,8 @@
 			type = LIMIT_UP;
 
 		this.EatToken(this.oLookahead.class);
-		oBelowAbove = this.GetOperandLiteral();
+
+		oBelowAbove = this.GetSpaceExitFunction(this.GetOperandLiteral)
 
 		if (Literals.horizontal.SearchU(base.value))
 		{
@@ -1483,25 +1517,31 @@
 	};
 	CUnicodeParser.prototype.GetFractionLiteral = function (oNumerator)
 	{
-		let oOperand,
-			strOpOver,
-			intTypeFraction,
-			isBinomialWithBrackets;
+		let oOperand;
 
 		if (undefined === oNumerator) {
 			oNumerator = this.GetOperandLiteral();
 		}
 
-        if (this.oLookahead.class === Literals.divide.id)
+		if (this.oLookahead.class === Literals.divide.id && this.oLookahead.style.metaData.isEscapedSlash !== true)
 		{
-			let oFracStyle = this.oLookahead.style;
-			strOpOver = this.EatToken(Literals.divide.id).data;
+			let oFracStyle				= this.oLookahead.style,
+				strOpOver				= this.EatToken(Literals.divide.id).data,
+				oAddData				= this.oLookahead.style,
+				oMathMetaData			= oAddData ? oAddData.GetMathMetaData() : undefined,
+				isLinearMetaData		= oMathMetaData ? oMathMetaData.getIsLinearFraction() : undefined,
+				isBinomialWithBrackets	= strOpOver === "⒞",
+				intTypeFraction			= AscMath.GetFractionType(strOpOver);
 
-			isBinomialWithBrackets = strOpOver === "⒞";
-			intTypeFraction = AscMath.GetFractionType(strOpOver);
+			if (isLinearMetaData)
+			{
+				intTypeFraction = LINEAR_FRACTION;
+			}
 
 			if (this.IsOperandLiteral())
 				oOperand = this.GetSpaceExitFunction(this.GetFractionLiteral);
+
+			this.EatOneSpace();
 
 			if (isBinomialWithBrackets)
 			{
@@ -1520,55 +1560,67 @@
 			}
 
 			return {
-                type: Struc.frac,
+				type: Struc.frac,
 				up: oNumerator || {},
 				down: oOperand || {},
-                fracType: this.GetFractionType(strOpOver),
-                style: oFracStyle,
+				fracType: this.GetFractionType(strOpOver),
+				style: oFracStyle,
 			};
 		}
 		else
 		{
+			if (this.oLookahead.class !== undefined && this.oLookahead.style.metaData.isEscapedSlash)
+			{
+				let oEscSlash = this.EatToken();
+				return [
+					oNumerator,
+					{
+						type: Struc.char,
+						value: oEscSlash.data,
+						style: oEscSlash.style
+					},
+				];
+			}
 			return oNumerator;
 		}
 	};
-    CUnicodeParser.prototype.GetFractionType = function (str)
-    {
-        switch (str)
-        {
-            case "/"	:	return BAR_FRACTION;
-            case "⁄"	:	return SKEWED_FRACTION;
-            case "⊘"	:	return LITTLE_FRACTION;
-            case "¦"	:	return NO_BAR_FRACTION;
+	CUnicodeParser.prototype.GetFractionType = function (str)
+	{
+		switch (str)
+		{
+			case "/"	:	return BAR_FRACTION;
+			case "⁄"	:	return SKEWED_FRACTION;
+			case "⊘"	:	return LITTLE_FRACTION;
+			case "¦"	:	return NO_BAR_FRACTION;
 			case "∕"	:	return LINEAR_FRACTION;
-        }
-    }
+		}
+	}
 	CUnicodeParser.prototype.IsFractionLiteral = function ()
 	{
 		return this.IsOperandLiteral();
 	};
-    CUnicodeParser.prototype.GetOtherLiteral = function ()
+	CUnicodeParser.prototype.GetOtherLiteral = function ()
 	{
 		return this.GetCharLiteral();
 	};
 	CUnicodeParser.prototype.isOtherLiteral = function ()
 	{
-        return this.oLookahead.class === Literals.char.id;
+		return this.oLookahead.class === Literals.char.id;
 	};
 	CUnicodeParser.prototype.GetOperatorLiteral = function ()
 	{
-	    let oStyle = this.oLookahead.style;
-        let oOperator = this.EatToken(Literals.operator.id);
+		let oStyle = this.oLookahead.style;
+		let oOperator = this.EatToken(Literals.operator.id);
 
 		return {
-            type: Literals.operator.id,
+			type: Literals.operator.id,
 			value: oOperator.data,
-	        style: oStyle,
+			style: oStyle,
 		};
 	};
 	CUnicodeParser.prototype.GetASCIILiteral = function ()
 	{
-        return this.ReadTokensWhileEnd(Literals.number, Struc.number)
+		return this.ReadTokensWhileEnd(Literals.number, Struc.number)
 	};
 	CUnicodeParser.prototype.GetAlphanumericLiteral = function ()
 	{
@@ -1602,8 +1654,8 @@
 	};
 	CUnicodeParser.prototype.GetAnOtherLiteral = function ()
 	{
-        if (this.oLookahead.class === Literals.other.id)
-        {
+		if (this.oLookahead.class === Literals.other.id)
+		{
 			return this.ReadTokensWhileEnd(Literals.other, Struc.other)
 		}
 		else if (this.oLookahead.class === Literals.char.id) {
@@ -1616,9 +1668,12 @@
 		else if (this.oLookahead.class === Literals.number.id) {
 			return this.ReadTokensWhileEnd(Literals.number, Struc.char, false)
 		}
+		else if (this.oLookahead.class === Literals.operand.id) {
+			return this.ReadTokensWhileEnd(Literals.operand, Struc.char, false)
+		}
 		else if (this.oLookahead.data === "." || this.oLookahead.data === ",") {
 			return {
-                type: Literals.char.id,
+				type: Literals.char.id,
 				value: this.EatToken(this.oLookahead.class).data,
 			}
 		}
@@ -1626,9 +1681,10 @@
 	CUnicodeParser.prototype.IsAnOtherLiteral = function ()
 	{
 		return (
-			this.oLookahead.class ===  Literals.other.id ||
-			this.oLookahead.class ===  Literals.char.id ||
-			this.oLookahead.class ===  Literals.number.id ||
+			this.oLookahead.class === Literals.other.id ||
+			this.oLookahead.class === Literals.char.id ||
+			this.oLookahead.class === Literals.number.id ||
+			this.oLookahead.class === Literals.operand.id ||
 			this.oLookahead.class === Literals.alphanumeric.id ||
 			this.oLookahead.data === "." || this.oLookahead.data === ","
 		) && this.IsSpaceExit();
@@ -1646,39 +1702,20 @@
 	};
 	CUnicodeParser.prototype.GetDiacriticBaseLiteral = function ()
 	{
-		let oDiacriticBase;
+		let arrData = [];
 
-		if (this.IsAnLiteral())
+		while(this.IsAnLiteral())
 		{
-			oDiacriticBase = this.GetAnLiteral();
-			return {
-                type: Struc.diacritic_base,
-				value: oDiacriticBase,
-				isAn: true,
-			};
+			arrData.push(this.GetAnLiteral());
 		}
-		else if (this.oLookahead.class === "nASCII") {
-			oDiacriticBase = this.GetASCIILiteral();
-			return {
-                type: Struc.diacritic_base,
-				value: oDiacriticBase,
-			};
-		}
-		else if (this.oLookahead.class === "(") {
-			this.EatToken("(");
-			oDiacriticBase = this.GetExpLiteral();
-			this.EatToken(")");
-			return {
-                type: Struc.diacritic_base,
-				value: oDiacriticBase,
-			};
-		}
+
+		return arrData
 	};
 	CUnicodeParser.prototype.IsDiacriticBaseLiteral = function ()
 	{
 		return (
 			this.IsAnLiteral() ||
-            this.oLookahead.class === Literals.number.id ||
+			this.oLookahead.class === Literals.number.id ||
 			this.oLookahead.class === "("
 		);
 	};
@@ -1697,15 +1734,11 @@
 	};
 	CUnicodeParser.prototype.IsDiacriticsLiteral = function ()
 	{
-        return this.oLookahead.class === Literals.accent.id;
+		return this.oLookahead.class === Literals.accent.id;
 	};
 	CUnicodeParser.prototype.GetAtomLiteral = function ()
 	{
-		const oAtom = this.GetDiacriticBaseLiteral();
-		if (oAtom.isAn) {
-			return oAtom.value
-		}
-		return oAtom;
+		return this.GetDiacriticBaseLiteral();
 	};
 	CUnicodeParser.prototype.IsAtomLiteral = function ()
 	{
@@ -1715,26 +1748,26 @@
 	CUnicodeParser.prototype.GetAtomsLiteral = function ()
 	{
 		const arrAtomsList = [];
-        while (this.IsAtomLiteral())
-        {
-            let atom = this.GetAtomLiteral();
+		while (this.IsAtomLiteral())
+		{
+			let atom = this.GetAtomLiteral();
 
-            if (this.IsPrimeLiteral())
-                arrAtomsList.push(this.GetPrimeLiteral(atom))
-            else
-                arrAtomsList.push(atom);
+			if (this.IsPrimeLiteral())
+				arrAtomsList.push(this.GetPrimeLiteral(atom))
+			else
+				arrAtomsList.push(atom);
 
 		}
-		return this.GetContentOfLiteral(arrAtomsList)
+		return this.GetContentOfLiteral(arrAtomsList);
 	};
 	CUnicodeParser.prototype.IsAtomsLiteral = function ()
 	{
 		return this.IsAtomLiteral();
 	};
-    CUnicodeParser.prototype.GetTextOperandLiteral = function()
-    {
-        return this.ReadTokensWhileEnd(Literals.operand, Struc.char, false)
-    };
+	CUnicodeParser.prototype.GetTextOperandLiteral = function()
+	{
+		return this.ReadTokensWhileEnd(Literals.operand, Struc.char, false)
+	};
 	CUnicodeParser.prototype.GetEntityLiteral = function ()
 	{
 		if (this.IsTextLiteral()) {
@@ -1755,10 +1788,10 @@
 		else if (this.IsHBracketLiteral()) {
 			return this.GetHBracketLiteral();
 		}
-		else if (this.oLookahead.class === Literals.operand.id)
-		{
-			return this.GetTextOperandLiteral()
-		}
+		// else if (this.oLookahead.class === Literals.operand.id)
+		// {
+		// 	return this.GetTextOperandLiteral()
+		// }
 
 	};
 	CUnicodeParser.prototype.IsEntityLiteral = function ()
@@ -1769,39 +1802,39 @@
 			this.IsNumberLiteral() ||
 			this.IsOpNaryLiteral() ||
 			this.IsTextLiteral() ||
-			this.IsHBracketLiteral() ||
-			this.oLookahead.class === Literals.operand.id
+			this.IsHBracketLiteral()
+			//this.oLookahead.class === Literals.operand.id
 		);
 	};
-    CUnicodeParser.prototype.IsPrimeLiteral = function ()
-    {
-        return this.oLookahead.data === "⁗" ||
-            this.oLookahead.data === "‴" ||
-            this.oLookahead.data === "″" ||
-            this.oLookahead.data === "′";
-    };
-    CUnicodeParser.prototype.GetPrimeLiteral = function (oBase)
-    {
-        let oSupStyle = this.oLookahead.style;
-        let strPrime = this.EatToken(this.oLookahead.class).data;
+	CUnicodeParser.prototype.IsPrimeLiteral = function ()
+	{
+		return this.oLookahead.data === "⁗" ||
+			this.oLookahead.data === "‴" ||
+			this.oLookahead.data === "″" ||
+			this.oLookahead.data === "′";
+	};
+	CUnicodeParser.prototype.GetPrimeLiteral = function (oBase)
+	{
+		let oSupStyle = this.oLookahead.style;
+		let strPrime = this.EatToken(this.oLookahead.class).data;
 
-        return {
-            type: Struc.sub_sub,
-            up: {
-                type: Struc.char,
-                value: strPrime,
-            },
-            value: oBase,
-            style: {supStyle: oSupStyle, subStyle: undefined},
-        }
-    };
+		return {
+			type: Struc.sub_sub,
+			up: {
+				type: Struc.char,
+				value: strPrime,
+			},
+			value: oBase,
+			style: {supStyle: oSupStyle, subStyle: undefined},
+		}
+	};
 	CUnicodeParser.prototype.GetFactorLiteral = function ()
 	{
 		if (this.IsDiacriticsLiteral())
 		{
 			const oDiacritic = this.GetDiacriticsLiteral();
 			return {
-                type: Struc.accent,
+				type: Struc.accent,
 				value: oDiacritic,
 			};
 		}
@@ -1854,8 +1887,8 @@
 		else if (this.IsExpSubSupLiteral()) {
 			return this.GetExpSubSupLiteral();
 		}
-		if (this.IsArrayLiteral()) {
-			return this.GetArrayLiteral();
+		if (this.IsMatrixLiteral()) {
+			return this.GetMatrixLiteral();
 		}
 	};
 	CUnicodeParser.prototype.IsFactorLiteral = function ()
@@ -1863,7 +1896,7 @@
 		return this.IsEntityLiteral()
 			|| this.IsFunctionLiteral()
 			|| this.IsDiacriticsLiteral()
-			|| this.IsArrayLiteral()
+			|| this.IsMatrixLiteral()
 	};
 	CUnicodeParser.prototype.IsSpecial = function (isNoSubSup)
 	{
@@ -1889,15 +1922,25 @@
 			{
 				arrFactorList.push(this.GetFactorLiteral());
 
+				if (!this.IsSpaceExit())
+					return this.GetContentOfLiteral(arrFactorList);
+
 				if (arrFactorList[arrFactorList.length - 1])
-					isBreak = arrFactorList[arrFactorList.length - 1].type === 'BracketBlock';
+					isBreak = arrFactorList[arrFactorList.length - 1].type === Struc.bracket_block;
 			}
 
-            if (this.IsSpecial(isNoSubSup) || this.IsHBracketLiteral() && arrFactorList[arrFactorList.length - 1] )
+			if (this.IsSpecial(isNoSubSup)
+				|| this.IsHBracketLiteral()
+				|| this.IsApplicationFunction()
+				&& arrFactorList[arrFactorList.length - 1])
 			{
 				let oContent = arrFactorList[arrFactorList.length - 1];
 
-				while (this.IsSpecial(isNoSubSup)  || this.IsHBracketLiteral() && oContent && oContent.value !== " ")
+				while (this.IsSpecial(isNoSubSup)
+					|| this.IsHBracketLiteral()
+					|| this.IsApplicationFunction()
+					&& oContent
+					&& oContent.value !== " ")
 				{
 					//if next token "_" or "^" proceed as index/degree
 					if (this.oLookahead.data === isNoSubSup || !isNoSubSup && this.IsScriptStandardContentLiteral()) {
@@ -1919,17 +1962,25 @@
 					{
 						oContent = this.GetDoubleIteratorDegree(oContent);
 					}
+					else if (this.IsApplicationFunction())
+					{
+						oContent = this.GetFunctionApplication(oContent);
+					}
 				}
 				arrFactorList[arrFactorList.length - 1] = oContent;
 
 				if (this.oLookahead.class === Literals.space.id)
+				{
 					this.EatToken(this.oLookahead.class);
+					arrFactorList[arrFactorList.length - 1] = oContent;
+					return this.GetContentOfLiteral(arrFactorList);
+				}
 			}
-			else if (!isNoSubSup
-					&& this.oLookahead.class === Literals.space.id
-					&& (arrFactorList[arrFactorList.length - 1] && arrFactorList[arrFactorList.length - 1].type !== Literals.char.id)
-			) {
-				this.EatToken(this.oLookahead.class);
+			else if (!isNoSubSup && this.oLookahead.class === Literals.space.id && !this.isSpaceExit) {
+				let oTemp = this.GetContentOfLiteral(arrFactorList);
+				oTemp = this.GetContentOfLiteral(oTemp);
+				if (oTemp && oTemp.type !== Literals.char.id)
+					this.EatToken(this.oLookahead.class);
 			}
 		}
 
@@ -1944,16 +1995,29 @@
 		let oPr = this.oLookahead.style;
 		this.EatToken(this.oLookahead.class);
 
-		// oBase = {
-		// 	type: Struc.char,
-		// 	value: oBase.data,
-		// 	style: oBase.style,
-		// }
-
 		if (this.IsExpSubSupLiteral())
-			return this.GetExpSubSupLiteral(oBase);
+		{
+			let oContent = this.GetExpSubSupLiteral(this.GetContentOfLiteral(oBase));
 
-		let oValue = this.GetOperandLiteral();
+			if (oBase.type === Struc.func_lim)
+			{
+				return {
+					type: Struc.func_lim,
+					value: { type: Struc.char, value: oContent.value.value},
+					up: oContent.up,
+					down: oContent.down,
+					isBelow: oContent.down ? LIMIT_LOW : LIMIT_UP,
+					style: oContent.style,
+					third: oContent.third,
+				};
+			}
+			else
+			{
+				return oContent;
+			}
+		}
+
+		let oValue = this.GetSpaceExitFunction(this.GetOperandLiteral);
 
 		return {
 			type: Struc.func,
@@ -1999,7 +2063,7 @@
 	{
 		return this.IsExpLiteral() || this.oLookahead.data === "&";
 	};
-    CUnicodeParser.prototype.GetRowLiteral = function (oStyle)
+	CUnicodeParser.prototype.GetRowLiteral = function (oStyle)
 	{
 		let arrRow				= [];
 		let intLength			= 0;
@@ -2012,7 +2076,7 @@
 			
 			if (this.oLookahead.data !== "&")
 			{
-                arrRow.push(this.GetExpLiteral(undefined, true));
+				arrRow.push(this.GetExpLiteral(undefined, true));
 				intLength++;
 				isAlreadyGetContent = true;
 			}
@@ -2044,16 +2108,16 @@
 
 		return arrRow;
 	};
-    CUnicodeParser.prototype.GetRowsLiteral = function (cols, rows)
+	CUnicodeParser.prototype.GetRowsLiteral = function (cols, rows)
 	{
 		let arrRows = [];
 		let nRow = 0;
 		let isHasContent = false;
 
-        while (this.IsRowLiteral() || this.oLookahead.data === "@")
+		while (this.IsRowLiteral() || this.oLookahead.data === "@")
 		{
-            if (this.oLookahead.data === "@")
-            {
+			if (this.oLookahead.data === "@")
+			{
 				cols[nRow] = this.oLookahead.style;
 				this.EatToken("@");
 
@@ -2064,10 +2128,10 @@
 
 				isHasContent = true;
 			}
-            else
-            {
-	            rows[nRow] = {}
-                arrRows.push(this.GetRowLiteral(rows[nRow]));
+			else
+			{
+				rows[nRow] = {}
+				arrRows.push(this.GetRowLiteral(rows[nRow]));
 			}
 		}
 
@@ -2080,7 +2144,7 @@
 		}
 		return arrRows
 	};
-	CUnicodeParser.prototype.GetArrayLiteral = function ()
+	CUnicodeParser.prototype.GetMatrixLiteral = function ()
 	{
 		let oStyles = {
 			head: this.oLookahead.style,
@@ -2136,7 +2200,7 @@
 			};
 		}
 	};
-	CUnicodeParser.prototype.IsArrayLiteral = function ()
+	CUnicodeParser.prototype.IsMatrixLiteral = function ()
 	{
 		return this.oLookahead.class === Literals.matrix.id
 	};
@@ -2146,22 +2210,10 @@
 	};
 	CUnicodeParser.prototype.GetElementLiteral = function ()
 	{
-		const oOperandLiteral = this.GetOperandLiteral();
-
-		if (this.IsApplicationFunction())
-			return this.GetFunctionApplication(oOperandLiteral);
+		let oOperandLiteral = this.GetOperandLiteral();
 		
-		if (this.oLookahead.class === Literals.divide.id) {
-			if (!Array.isArray(oOperandLiteral))
-			{
-				return this.GetFractionLiteral(oOperandLiteral)
-			}
-			else
-			{
-				let frac = this.GetFractionLiteral(oOperandLiteral.pop());
-				oOperandLiteral.push(frac);
-			}
-		}
+		while (this.oLookahead.class === Literals.divide.id)
+			oOperandLiteral = this.GetFractionLiteral(oOperandLiteral);
 
 		return oOperandLiteral;
 	};
@@ -2195,13 +2247,10 @@
 				let oElement = this.GetElementLiteral();
 				
 				if (oElement !== null)
-				{
 					oExpLiteral.push(oElement);
-				}
-				else if (this.isOtherLiteral())
-				{
-					oExpLiteral.push(this.otherLiteral());
-				}
+
+				//if (oElement.length > 0 && oElement[oElement.length - 1].type !== Literals.char.id)
+					this.EatOneSpace();
 			}
 			else if (arrCorrectSymbols.includes(this.oLookahead.data))
 			{
@@ -2209,6 +2258,10 @@
 					type: Struc.char,
 					value: this.EatToken(this.oLookahead.class).data
 				})
+			}
+			else if (this.oLookahead.class === Literals.operator.id && !this.IsDoubleIteratorDegree())
+			{
+				oExpLiteral.push(this.GetOperatorLiteral())
 			}
 			else if (this.IsPreScriptLiteral())
 			{
@@ -2232,11 +2285,6 @@
 					style: oPr,
 				})
 			}
-
-			if (this.oLookahead.class === Literals.operator.id && !this.IsDoubleIteratorDegree())
-			{
-				oExpLiteral.push(this.GetOperatorLiteral())
-			}
 		}
 
 		if (oExpLiteral.length === 1) {
@@ -2253,24 +2301,24 @@
 	 * @return {array} Обработанные токены
 	 * @constructor
 	 */
-    CUnicodeParser.prototype.ReadTokensWhileEnd = function (arrTypeOfLiteral, type, isSpecial)
+	CUnicodeParser.prototype.ReadTokensWhileEnd = function (arrTypeOfLiteral, type, isSpecial)
 	{
 		let arrLiterals = [];
 		let strLiteral = "";
-        let styles = [];
+		let styles = [];
 
 		while (this.oLookahead.class === arrTypeOfLiteral.id
 		&& (styles.length === 0 || styles[styles.length - 1].IsStyleEqual(this.oLookahead.style)))
 		{
-            styles.push(this.oLookahead.style);
+			styles.push(this.oLookahead.style);
 
 			if (isSpecial)
-                strLiteral += UnicodeSpecialScript[this.EatToken(arrTypeOfLiteral.id).data];
+				strLiteral += UnicodeSpecialScript[this.EatToken(arrTypeOfLiteral.id).data];
 			else
-                strLiteral += this.EatToken(arrTypeOfLiteral.id).data;
+				strLiteral += this.EatToken(arrTypeOfLiteral.id).data;
 		}
 
-        arrLiterals.push({type: type, value: strLiteral, style: styles});
+		arrLiterals.push({type: type, value: strLiteral, style: styles});
 
 		if (arrLiterals.length === 1)
 			return arrLiterals[0];
@@ -2308,9 +2356,9 @@
 	};
 	CUnicodeParser.prototype.SkipSpace = function ()
 	{
-        while (this.oLookahead.class === Literals.space.id)
+		while (this.oLookahead.class === Literals.space.id)
 		{
-            this.EatToken(Literals.space.id);
+			this.EatToken(Literals.space.id);
 		}
 	};
 	CUnicodeParser.prototype.SaveTokensWhileReturn = function ()

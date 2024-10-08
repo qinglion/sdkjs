@@ -530,6 +530,10 @@
         if (this.IsNeedRecalc() == false)
             return;
 
+        if (this.IsNeedCheckAlign()) {
+            this.CheckAlignInternal();
+        }
+
         this.RecalcMeasureContent();
         
         if (this.GetTextSize() == 0) {
@@ -667,9 +671,11 @@
         else
             callbackAfterFocus.bind(this, x, y, e)();
 
-        this.AddActionsToQueue(AscPDF.FORMS_TRIGGERS_TYPES.MouseDown);
-        if (false == isInFocus) {
-            this.onFocus();
+        if (isInFocus) {
+            this.AddActionsToQueue(AscPDF.FORMS_TRIGGERS_TYPES.MouseDown);
+        }
+        else {
+            this.AddActionsToQueue(AscPDF.FORMS_TRIGGERS_TYPES.MouseDown, AscPDF.FORMS_TRIGGERS_TYPES.OnFocus);
         }
     };
     CTextField.prototype.onMouseUp = function(x, y, e) {
@@ -973,6 +979,7 @@
 		if (this.IsDoNotScroll()) {
 			let isOutOfForm = this.IsTextOutOfForm(this.content);
 			if ((this.IsMultiline() && isOutOfForm.ver) || (isOutOfForm.hor && this.IsMultiline() == false)) {
+				AscCommon.History.ForbidUnionPoint();
 				AscCommon.History.Undo();
 				AscCommon.History.Clear_Redo();
 			}
@@ -1003,6 +1010,7 @@
 		if (this.IsDoNotScroll()) {
 			let isOutOfForm = this.IsTextOutOfForm(this.content);
 			if ((this.IsMultiline() && isOutOfForm.ver) || (isOutOfForm.hor && this.IsMultiline() == false)) {
+				AscCommon.History.ForbidUnionPoint();
 				AscCommon.History.Undo();
 				AscCommon.History.Clear_Redo();
 			}
@@ -1011,6 +1019,8 @@
 		return true;
 	};
     CTextField.prototype.CheckAlignInternal = function() {
+        this.SetNeedCheckAlign(false);
+
         // если выравнивание по центру или справа, то оно должно переключаться на left если ширина контента выходит за пределы формы
         // вызывается на момент коммита формы
         if ([AscPDF.ALIGN_TYPE.center, AscPDF.ALIGN_TYPE.right].includes(this.GetAlign())) {
@@ -1018,25 +1028,27 @@
             if (this.IsTextOutOfForm(this.content).hor) {
                 if (this.content.GetAlign() != AscPDF.ALIGN_TYPE.left) {
                     this.content.SetAlign(AscPDF.ALIGN_TYPE.left);
-                    this.SetNeedRecalc(true);
                 }
             }
             else if (this.content.GetAlign() != this.GetAlign()) {
                 this.content.SetAlign(this.GetAlign());
-                this.SetNeedRecalc(true);
             }
 
             if (this.IsTextOutOfForm(this.contentFormat).hor) {
                 if (this.contentFormat.GetAlign() != AscPDF.ALIGN_TYPE.left) {
                     this.contentFormat.SetAlign(AscPDF.ALIGN_TYPE.left);
-                    this.SetNeedRecalc(true);
                 }
             }
             else if (this.contentFormat.GetAlign() != this.GetAlign()) {
                 this.contentFormat.SetAlign(this.GetAlign());
-                this.SetNeedRecalc(true);
             }
         }
+    };
+    CTextField.prototype.SetNeedCheckAlign = function(bCheck) {
+        this._needCheckAlign = bCheck;
+    };
+    CTextField.prototype.IsNeedCheckAlign = function() {
+        return this._needCheckAlign;
     };
     CTextField.prototype.InsertChars = function(aChars) {
 		this.content.EnterText(aChars);
@@ -1154,7 +1166,7 @@
         // когда выравнивание посередине или справа, то после того
         // как ширина контента будет больше чем размер формы, выравнивание становится слева, пока текста вновь не станет меньше чем размер формы
         aFields.forEach(function(field) {
-            field.CheckAlignInternal();
+            field.SetNeedCheckAlign(true);
         });
 
         this.SetNeedCommit(false);

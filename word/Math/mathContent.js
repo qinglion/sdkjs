@@ -3368,7 +3368,7 @@ CMathContent.prototype.AddGroupedByStyleText = function (text, paragraph, mathSt
 		{
 			oMathRun.SetReviewTypeWithInfo(
 				oAdditionalData.reviewData.reviewType,
-				oAdditionalData.reviewData.reviewInfo,
+				oAdditionalData.reviewData.reviewInfo
 			);
 		}
 	}
@@ -3391,8 +3391,22 @@ CMathContent.prototype.Add_Text = function(text, paragraph, mathStyle, oAddition
 		oMathRun = this.Content[this.Content.length - 1];
 	}
 
-	if (!oMathRun || !(oMathRun instanceof ParaRun) || (oMathRun && oMathRun instanceof ParaRun && !oAdditionalData.IsStyleEqual(oMathRun)))
-		oMathRun = new AscWord.CRun(undefined, true);
+	let isEscapedSlash = oAdditionalData
+		?  oAdditionalData.GetMathMetaData().getIsEscapedSlash()
+		: false;
+	let oLastContent = oMathRun
+		? oMathRun.GetTextOfElement().GetLastContent()
+		: false;
+	let isPrevEscapedSlash = oLastContent
+		? oLastContent.GetAdditionalData().GetMathMetaData().getIsEscapedSlash()
+		: false;
+
+	if (isEscapedSlash
+		|| isPrevEscapedSlash
+		|| !oMathRun
+		|| !(oMathRun instanceof AscWord.Run)
+		|| (oAdditionalData	&& !oAdditionalData.IsStyleEqual(oMathRun)))
+		oMathRun = new AscWord.Run(undefined, true);
 
 	AscWord.TextToMathRunElements(text, function(item)
 	{
@@ -3411,7 +3425,7 @@ CMathContent.prototype.Add_Text = function(text, paragraph, mathStyle, oAddition
 		{
 			oMathRun.SetReviewTypeWithInfo(
 				oAdditionalData.reviewData.reviewType,
-				oAdditionalData.reviewData.reviewInfo,
+				oAdditionalData.reviewData.reviewInfo
 			);
 		}
 
@@ -6001,6 +6015,7 @@ CMathContent.prototype.haveMixedContent = function(isLaTeX)
 	let isNormalText	= 0;
 	let isCustomContent	= 0;
 	let nMathContent	= 0;
+	let isSpace			= 0;
 
 	for (let i = 0; i < this.Content.length; i++)
 	{
@@ -6012,6 +6027,12 @@ CMathContent.prototype.haveMixedContent = function(isLaTeX)
 			
 			if (oCurrentContent.IsContainNormalText())
 				isNormalText = 1;
+
+			if (oCurrentContent.IsContainSpaces())
+				isSpace = 1;
+
+			// if (oCurrentContent.Content.length > 0)
+			// 	nMathContent++;
 		}
 		else
 		{
@@ -6030,7 +6051,7 @@ CMathContent.prototype.haveMixedContent = function(isLaTeX)
 				return true;
 		}
 
-		if (isOperator + isNormalText > 1 || (!isLaTeX && nMathContent > 1))
+		if (isOperator + isNormalText + isSpace > 1 || (!isLaTeX && nMathContent > 1))
 			return true;
 	}
 
@@ -6042,33 +6063,57 @@ CMathContent.prototype.GetTextOfElement = function(oMathText, isDefaultText)
 
 	const checkIsNotOperatorOrBracket = function (symbol)
 	{
-		return !AscMath.MathLiterals.operator.SearchU(symbol) // если не содержит оператор, скобки
-		&& !AscMath.MathLiterals.lrBrackets.SearchU(symbol)
-		&& !AscMath.MathLiterals.rBrackets.SearchU(symbol)
-		&& !AscMath.MathLiterals.lBrackets.SearchU(symbol)
-	}
+		if (!symbol)
+			return true;
 
+		let isNotOperatorOrBracket = true;
+
+		for (let i = 0; i < symbol.length; i++)
+		{
+			isNotOperatorOrBracket = !AscMath.MathLiterals.operator.SearchU(symbol[i]) // если не содержит оператор, скобки
+				&& !AscMath.MathLiterals.lrBrackets.SearchU(symbol[i])
+				&& !AscMath.MathLiterals.rBrackets.SearchU(symbol[i])
+				&& !AscMath.MathLiterals.lBrackets.SearchU(symbol[i])
+
+			if (!isNotOperatorOrBracket)
+				return false;
+		}
+	}
+	// refactor this to normal methods
 	for (let i = 0; i < this.Content.length; i++)
 	{
 		oMathText.Add(this.Content[i], false);
 
-		if (!(this.Content[i] instanceof ParaRun)) // если текущий элемент математический объект
+		if (!oMathText.IsLaTeX())
 		{
-			if (this.Content[i + 1] && !(this.Content[i + 1] instanceof ParaRun)) // если след эл. мат. объект
+			if (!(this.Content[i] instanceof ParaRun)) // если текущий элемент математический объект
 			{
-				oMathText.AddText(new AscMath.MathText(" ", this.Content[i]));
-			}
-			else if (this.Content[i + 1] && (this.Content[i + 1] instanceof ParaRun) && this.Content[i + 2] && !(this.Content[i + 2] instanceof ParaRun))
-			{
-				let strText = this.Content[i + 1].GetTextOfElement().GetText();
-				if (checkIsNotOperatorOrBracket(strText[0]))
+				if (this.Content[i + 1] && !(this.Content[i + 1] instanceof ParaRun)) // если след эл. мат. объект
+				{
 					oMathText.AddText(new AscMath.MathText(" ", this.Content[i]));
+				}
+				else if (this.Content[i + 1] && (this.Content[i + 1] instanceof ParaRun) && this.Content[i + 2] && !(this.Content[i + 2] instanceof ParaRun))
+				{
+					let strText = this.Content[i + 1].GetTextOfElement().GetText();
+					if (checkIsNotOperatorOrBracket(strText[0]))
+						oMathText.AddText(new AscMath.MathText(" ", this.Content[i]));
+				}
+				else if (this.Content[i + 1] && this.Content[i + 1] instanceof ParaRun) // если след элемент текстовый блок
+				{
+					let strText = this.Content[i + 1].GetTextOfElement().GetText();
+					if (!this.Content[i + 1].Is_Empty() && checkIsNotOperatorOrBracket(strText[0]))
+						oMathText.AddText(new AscMath.MathText(" ", this.Content[i]));
+				}
 			}
-			else if (this.Content[i + 1] && this.Content[i + 1] instanceof ParaRun) // если след элемент текстовый блок
+			else if (this.Content[i] instanceof ParaRun)
 			{
-				let strText = this.Content[i + 1].GetTextOfElement().GetText();
-				if (!this.Content[i + 1].Is_Empty() && checkIsNotOperatorOrBracket(strText[0]))
-					oMathText.AddText(new AscMath.MathText(" ", this.Content[i]));
+				if (this.Content[i + 1] && !(this.Content[i+1] instanceof ParaRun)
+					&& !(this.Content[i+1] instanceof CDelimiter || this.Content[i+1] instanceof CMathFunc))
+				{
+					let strText = this.Content[i].GetTextOfElement().GetText();
+					if (checkIsNotOperatorOrBracket(strText) && !this.Content[i].Is_Empty())
+						oMathText.AddText(new AscMath.MathText(" ", this.Content[i]));
+				}
 			}
 		}
 	}

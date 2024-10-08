@@ -5629,6 +5629,10 @@ CDocument.prototype.Set_TargetPos = function(X, Y, PageNum)
 	this.TargetPos.Y       = Y;
 	this.TargetPos.PageNum = PageNum;
 };
+CDocument.prototype.Get_TargetPos = function()
+{
+	return this.TargetPos;
+};
 /**
  * Запрос на перерисовку заданного отрезка страниц.
  * @param StartPage
@@ -13657,10 +13661,11 @@ CDocument.prototype.Set_SelectionState2 = function(State)
 //----------------------------------------------------------------------------------------------------------------------
 CDocument.prototype.AddComment = function(CommentData, isForceGlobal)
 {
+	let Comment;
 	if (true === isForceGlobal || true != this.CanAddComment())
 	{
 		CommentData.Set_QuoteText(null);
-		var Comment = new AscCommon.CComment(this.Comments, CommentData);
+		Comment = new AscCommon.CComment(this.Comments, CommentData);
 		this.Comments.Add(Comment);
 
 		// Обновляем информацию для Undo/Redo
@@ -13687,7 +13692,7 @@ CDocument.prototype.AddComment = function(CommentData, isForceGlobal)
 		}
 		CommentData.Set_QuoteText(QuotedText);
 
-		var Comment = new AscCommon.CComment(this.Comments, CommentData);
+		Comment = new AscCommon.CComment(this.Comments, CommentData);
 		this.Comments.Add(Comment);
 		this.Controller.AddComment(Comment);
 
@@ -24802,12 +24807,17 @@ CDocument.prototype.AddCaption = function(oPr)
         if(this.DrawingObjects.selectedObjects.length === 1)
         {
             var oDrawing = this.DrawingObjects.selectedObjects[0].parent;
-            if(oDrawing.Is_Inline())
-            {
-                let oDocContent = oDrawing.GetDocumentContent();
-                NewParagraph = new AscWord.Paragraph();
-                oDocContent.Internal_Content_Add(oPr.get_Before() ? oDrawing.Get_ParentParagraph().Index : (oDrawing.Get_ParentParagraph().Index + 1), NewParagraph, true);
-            }
+			if (oDrawing.IsInline())
+			{
+				let parentPara       = oDrawing.GetParagraph();
+				let parentDocContent = parentPara ? parentPara.GetParent() : null;
+				let posInDocContent  = parentPara ? parentPara.GetIndex() : -1;
+				if (parentDocContent && -1 !== posInDocContent)
+				{
+					NewParagraph = new AscWord.Paragraph();
+					parentDocContent.AddToContent(oPr.get_Before() ? posInDocContent : posInDocContent + 1, NewParagraph, true);
+				}
+			}
             else
             {
 

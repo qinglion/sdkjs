@@ -93,11 +93,7 @@
 		return (-1 !== oDoc.drawings.indexOf(this));
 	};
     CPdfDrawingPrototype.prototype.OnBlur = function() {
-        
-        let nPtIndex = AscCommon.History.Index;
-        if (AscCommon.History.Points[nPtIndex]) {
-            AscCommon.History.Points[nPtIndex].forbitUnion = true;
-        }
+        AscCommon.History.ForbidUnionPoint();
     };
     CPdfDrawingPrototype.prototype.recalculateContent = function() {
         let parentPrototype = Object.getPrototypeOf(Object.getPrototypeOf(this));
@@ -237,7 +233,7 @@
             return;
         }
 
-        AscCommon.History.Add(new CChangesPdfDrawingObjectProperty(this, AscDFH.historyitem_type_Pdf_Drawing_Document, this._doc, oDoc));
+        AscCommon.History.Add(new CChangesPDFDocumentSetDocument(this, this._doc, oDoc));
         this._doc = oDoc;
     };
     CPdfDrawingPrototype.prototype.OnContentChange = function() {
@@ -406,6 +402,8 @@
 		
 		let result = content.EnterText(value);
 		content.RecalculateCurPos();
+        
+        this.checkExtentsByDocContent && this.checkExtentsByDocContent();
 		return result;
 	};
 	CPdfDrawingPrototype.prototype.CorrectEnterText = function(oldValue, newValue) {

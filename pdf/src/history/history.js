@@ -87,11 +87,6 @@
 	};
 	History.prototype.CheckUnionLastPoints = function()
     {
-        // Не объединяем точки в истории, когда отключается пересчет.
-        // TODO: Неправильно изменяется RecalcIndex
-        if (this.Document && null == this.Document.Viewer.scheduledRepaintTimer)
-            return false;
-
         // Не объединяем точки во время Undo/Redo
         if (this.Index < this.Points.length - 1)
         	return false;
@@ -106,7 +101,7 @@
         var Point2 = this.Points[this.Points.length - 1];
 
         // запрет на объединение
-        if (Point1.forbitUnion || Point2.forbitUnion) {
+        if (Point1.forbidUnion || Point2.forbidUnion) {
             return false;
         }
 
@@ -207,6 +202,15 @@
 
         return true;
 	};
+    History.prototype.ForbidUnionPoint = function(nIndex) {
+        if (!nIndex) {
+            nIndex = this.Points.length - 1;
+        }
+
+        if (this.Points[nIndex]) {
+            this.Points[nIndex].forbidUnion = true;
+        }
+    };
 	
 	//----------------------------------------------------------export--------------------------------------------------
 	window['AscPDF'] = window['AscPDF'] || {};

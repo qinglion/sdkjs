@@ -9036,12 +9036,6 @@ background-repeat: no-repeat;\
 		else if (this.isUseNativeViewer && this.isDocumentRenderer())
 		{
 			oAdditionalData["c"] = 'savefromorigin';
-			if (this.currentPassword) {
-				oAdditionalData["password"] = this.currentPassword;
-				if (DownloadType.Print !== downloadType) {
-					oAdditionalData["savepassword"] = this.currentPassword;
-				}
-			}
 		}
 
 		let canDownloadFromBytes = null == options.oDocumentMailMerge && null == options.oMailMergeSendData
@@ -9868,13 +9862,17 @@ background-repeat: no-repeat;\
 		logicDocument.CheckActionLock();
 		return true;
 	};
-	asc_docs_api.prototype.onEndBuilderScript = function()
+	asc_docs_api.prototype._onEndBuilderScript = function(callback)
 	{
 		let logicDocument = this.getLogicDocument();
 		logicDocument.Recalculate();
 		logicDocument.UpdateSelection();
 		logicDocument.UpdateInterface();
-		return logicDocument.FinalizeAction();
+		let result = logicDocument.FinalizeAction();
+		if (callback)
+			callback(result);
+		
+		return result;
 	};
 	//----------------------------------------------------------------------------------------------------------------------
 	// Работаем с полями

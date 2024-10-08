@@ -3272,6 +3272,11 @@ var editor;
 
 			this.wb.MobileTouchManager.initEvents(AscCommon.g_inputContext.HtmlArea.id);
 		}
+		else
+		{
+			this.wb.MobileTouchManager = new AscCommonExcel.CMobileTouchManager({eventsElement: "cell_mobile_element", desktopMode : true});
+			this.wb.MobileTouchManager.Init(this);
+		}
 
 		this.asc_CheckGuiControlColors();
 		this.sendColorThemes(this.wbModel.theme);
@@ -3435,7 +3440,12 @@ var editor;
 		this.wbModel.setActive(where);
 		this.wb.updateWorksheetByModel();
 		this.wb.showWorksheet();
+		this.wbModel.dependencyFormulas.lockRecal();
 		History.EndTransaction();
+		if (this.wbModel.dependencyFormulas.changedCell) {
+			this.wbModel.dependencyFormulas.changedCell = null;
+		}
+		this.wbModel.dependencyFormulas.unlockRecal();
 		// Посылаем callback об изменении списка листов
 		this.sheetsChanged();
 		this.inkDrawer.endSilentMode();
@@ -3830,8 +3840,8 @@ var editor;
         }
         t.wbModel.handleChartsOnWorksheetsRemove(arrSheets);
         t.wb.updateWorksheetByModel();
+		History.EndTransaction();
         t.wb.showWorksheet();
-        History.EndTransaction();
         // Посылаем callback об изменении списка листов
         t.sheetsChanged();
       }
@@ -4481,6 +4491,10 @@ var editor;
 
 	spreadsheet_api.prototype.asc_setShowFormulas = function (value) {
 		this.wb.getWorksheet().changeSheetViewSettings(AscCH.historyitem_Worksheet_SetShowFormulas, value);
+	};
+
+	spreadsheet_api.prototype.asc_setRightToLeft = function (value) {
+		this.wb.getWorksheet().changeSheetViewSettings(AscCH.historyitem_Worksheet_SetRightToLeft, value);
 	};
 
 	spreadsheet_api.prototype.asc_getShowFormulas = function () {
@@ -7072,7 +7086,7 @@ var editor;
 	spreadsheet_api.prototype.canRunBuilderScript = function() {
 		return this.asc_canPaste();
 	};
-	spreadsheet_api.prototype.onEndBuilderScript = function() {
+	spreadsheet_api.prototype._onEndBuilderScript = function(callback) {
 		let needDraw = null;
 		if (this.wb && this.wb.customFunctionEngine && this.wb.customFunctionEngine.needRecalculate) {
 			if (this.wbModel.addCustomFunctionToChanged()) {
@@ -7085,7 +7099,10 @@ var editor;
 			const ws = this.wb && this.wb.getWorksheet();
 			ws && ws.draw();
 		}
-
+		
+		if (callback)
+			callback(true);
+		
 		return true;
 	};
 
@@ -9687,6 +9704,8 @@ var editor;
   prot["asc_setShowZeros"] = prot.asc_setShowZeros;
   prot["asc_setShowFormulas"] = prot.asc_setShowFormulas;
   prot["asc_getShowFormulas"] = prot.asc_getShowFormulas;
+  prot["asc_setRightToLeft"] = prot.asc_setRightToLeft;
+
 
 
   // Defined Names

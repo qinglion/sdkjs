@@ -73,8 +73,14 @@
 		if (AscCommon.g_inputContext)
 			AscCommon.g_inputContext.onResize(this.HtmlElementName);
 		
-		if (this.isMobileVersion)
-			this.WordControl.initEventsMobile();
+		this.WordControl.initEventsMobile();
+		this.DocumentRenderer.touchManager = this.WordControl.MobileTouchManager;
+
+		if (undefined !== this.startMobileOffset)
+		{
+			this.WordControl.setOffsetTop(this.startMobileOffset.offset, this.startMobileOffset.offsetScrollTop);
+			delete this.startMobileOffset;
+		}
 		
 		// destroy unused memory
 		let isEditForms = true;
@@ -199,13 +205,11 @@
 		}
 	};
 	PDFEditorApi.prototype["asc_nativeCalculateFile"] = function() {
-		// It was added for testing native font loading
-		
-		// let pdfDoc = this.getPDFDoc();
-		// if (!pdfDoc)
-		// 	return;
-		//
-		// pdfDoc.RecalculateAll();
+		let pdfDoc = this.getPDFDoc();
+		if (!pdfDoc)
+			return;
+
+		pdfDoc.RecalculateAll();
 	};
 	PDFEditorApi.prototype["asc_nativePrintPagesCount"] = function()
 	{
@@ -250,7 +254,7 @@
 		let oActiveDrawing	= oDoc.activeDrawing;
 
 		if (oActiveForm && oActiveForm.content.IsSelectionUse()) {
-			let sText = oActiveForm.content.GetSelectedText(false);
+			let sText = oActiveForm.content.GetSelectedText(false, {NewLine: true});
 			if (!sText)
 				return;
 
@@ -261,7 +265,7 @@
 				_clipboard.pushData(AscCommon.c_oAscClipboardDataFormat.Html, "<div><p><span>" + sText + "</span></p></div>");
 		}
 		else if (oActiveAnnot && oActiveAnnot.IsFreeText() && oActiveAnnot.IsInTextBox()) {
-			let sText = oActiveAnnot.GetDocContent().GetSelectedText(false);
+			let sText = oActiveAnnot.GetDocContent().GetSelectedText(false, {NewLine: true});
 			if (!sText)
 				return;
 
@@ -369,7 +373,7 @@
 		
 		this.needPasteText = false; // если не вставили бинарник, то вставляем текст
 		// пока что копирование бинарником только внутри drawings или самих drawings
-		if ([AscCommon.c_oAscClipboardDataFormat.Internal, AscCommon.c_oAscClipboardDataFormat.HtmlElement].includes(_format) && ((oDoc.GetActiveObject() == null) || oActiveDrawing)) {
+		if ([AscCommon.c_oAscClipboardDataFormat.Internal, AscCommon.c_oAscClipboardDataFormat.HtmlElement, AscCommon.c_oAscClipboardDataFormat.Text].includes(_format) && ((oDoc.GetActiveObject() == null) || oActiveDrawing)) {
 			window['AscCommon'].g_specialPasteHelper.Paste_Process_Start(arguments[5]);
 			AscCommon.Editor_Paste_Exec(this, _format, data1, data2, text_data, undefined, callback);
 		}
@@ -379,9 +383,6 @@
 		
 		if (!this.needPasteText || typeof(data) != "string")
 			return;
-
-		if (oActiveForm && (oActiveForm.GetType() != AscPDF.FIELD_TYPES.text || oActiveForm.IsMultiline() == false))
-			data = data.trim().replace(/[\n\r]/g, ' ');
 
 		AscFonts.FontPickerByCharacter.checkText(data, this, processPaste);
 
@@ -987,6 +988,7 @@
 	PDFEditorApi.prototype.AddFreeTextAnnot = function(nType) {
 		let oDoc = this.getPDFDoc();
 
+		oDoc.BlurActiveObject();
 		function addFreeText() {
 			oDoc.DoAction(function() {
 				oDoc.AddFreeTextAnnot(nType, oDoc.Viewer.currentPage);
@@ -1814,6 +1816,10 @@
 				this._autoSaveInner();
 			}
 		}
+	};
+	PDFEditorApi.prototype._haveChanges = function() {
+		let oDoc = this.getPDFDoc();
+		return oDoc.History.Have_Changes();
 	};
 	PDFEditorApi.prototype.pre_Save = function(_images) {
 		this.isSaveFonts_Images = true;

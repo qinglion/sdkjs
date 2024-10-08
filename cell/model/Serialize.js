@@ -5426,6 +5426,8 @@
                 this.bs.WriteItem(c_oSer_SheetView.TopLeftCell, function(){oThis.memory.WriteString3(oSheetView.topLeftCell.getName());});
             if (null !== oSheetView.view && !oThis.isCopyPaste)
                 this.bs.WriteItem(c_oSer_SheetView.View, function(){oThis.memory.WriteByte(oSheetView.view);});
+            if (null !== oSheetView.rightToLeft && !oThis.isCopyPaste)
+                this.bs.WriteItem(c_oSer_SheetView.RightToLeft, function(){oThis.memory.WriteBool(oSheetView.rightToLeft);});
         };
         this.WriteSheetViewPane = function (oPane) {
             var oThis = this;
@@ -11478,7 +11480,7 @@
 			} else if (c_oSer_SheetView.DefaultGridColor === type) {
 				this.stream.GetBool();
 			} else if (c_oSer_SheetView.RightToLeft === type) {
-				this.stream.GetBool();
+                oSheetView.rightToLeft = this.stream.GetBool();
 			} else if (c_oSer_SheetView.ShowFormulas === type) {
 				oSheetView.showFormulas = this.stream.GetBool();
 			} else if (c_oSer_SheetView.ShowGridLines === type) {
@@ -13841,7 +13843,7 @@
     InitOpenManager.prototype.ParseNum = function(oNum, oNumFmts, _useNumId) {
         var oRes = new AscCommonExcel.Num();
         var useNumId = false;
-        if (null != oNum && null != oNum.f) {
+        if (null != oNum && oNum.f) {//Excel ignors empty format. bug 70667
             oRes.f = oNum.f;
         } else {
             var sStandartNumFormat = AscCommonExcel.aStandartNumFormats[oNum.id];

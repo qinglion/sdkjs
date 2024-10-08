@@ -82,6 +82,10 @@
         if (this.IsNeedRecalc() == false)
             return;
 
+        if (this.IsNeedCheckAlign()) {
+            this.CheckAlignInternal();
+        }
+        
         if (this.GetTextSize() == 0) {
             if (null == this.getFormRelRect()) {
                 this.CalculateContentClipRect();
@@ -290,9 +294,11 @@
         else
             callbackAfterFocus.bind(this, x, y, e)();
 
-        this.AddActionsToQueue(AscPDF.FORMS_TRIGGERS_TYPES.MouseDown);
-        if (false == isInFocus) {
-            this.onFocus();
+        if (isInFocus) {
+            this.AddActionsToQueue(AscPDF.FORMS_TRIGGERS_TYPES.MouseDown);
+        }
+        else {
+            this.AddActionsToQueue(AscPDF.FORMS_TRIGGERS_TYPES.MouseDown, AscPDF.FORMS_TRIGGERS_TYPES.OnFocus);
         }
     };
     
@@ -322,7 +328,7 @@
 
         this.content.MoveCursorToStartPos();
         if (!Asc.editor.getDocumentRenderer().IsOpenFormsInProgress)
-            this.CheckAlignInternal();
+            this.SetNeedCheckAlign(true);
     };
     CComboBoxField.prototype.SetCurIdxs = function(aIdxs) {
         if (this.IsWidget()) {
@@ -513,7 +519,7 @@
         // когда выравнивание посередине или справа, то после того
         // как ширина контента будет больше чем размер формы, выравнивание становится слева, пока текста вновь не станет меньше чем размер формы
         aFields.forEach(function(field) {
-            field.CheckAlignInternal();
+            field.SetNeedCheckAlign(true);
         });
 
         this.SetNeedCommit(false);
@@ -782,6 +788,8 @@
 	CComboBoxField.prototype.onMouseUp              = AscPDF.CTextField.prototype.onMouseUp;
 	CComboBoxField.prototype.OnContentChange        = AscPDF.CTextField.prototype.OnContentChange;
 	CComboBoxField.prototype.UpdateSelectionByEvent = AscPDF.CTextField.prototype.UpdateSelectionByEvent;
+	CComboBoxField.prototype.SetNeedCheckAlign      = AscPDF.CTextField.prototype.SetNeedCheckAlign;
+	CComboBoxField.prototype.IsNeedCheckAlign       = AscPDF.CTextField.prototype.IsNeedCheckAlign;
 
 	window["AscPDF"].CComboBoxField = CComboBoxField;
 })();

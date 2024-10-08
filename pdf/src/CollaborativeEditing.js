@@ -111,14 +111,16 @@ CPDFCollaborativeEditing.prototype.GetDocument = function() {
 CPDFCollaborativeEditing.prototype.Send_Changes = function(IsUserSave, AdditionalInfo, IsUpdateInterface, isAfterAskSave) {
 	if (!this.canSendChanges())
 		return;
-    // Пересчитываем позиции
-    this.Refresh_DCChanges();
-
-    let oDoc        = this.GetDocument();
-    let oHistory    = oDoc.History;
+	
+	let oDoc        = this.GetDocument();
+	let oHistory    = oDoc.History;
 	
 	let localHistory = AscCommon.History;
 	AscCommon.History = oHistory;
+	
+	// Пересчитываем позиции
+	this.Refresh_DCChanges();
+
 	
 	AscCommon.DocumentEditorApi.prototype.asc_Save.apply(this, arguments);
 	
@@ -261,13 +263,16 @@ CPDFCollaborativeEditing.prototype.canSendChanges = function(){
     return oApi && oApi.canSendChanges() && !oActionQueue.IsInProgress();
 };
 CPDFCollaborativeEditing.prototype.Apply_Changes = function(fEndCallBack) {
-    if (this.m_aChanges.length > 0) {
-        this.GetDocument().currInkInDrawingProcess = null; // останавливаем ink рисование
-        AscCommon.CCollaborativeEditingBase.prototype.Apply_Changes.call(this, fEndCallBack);
-    } else {
-		if (fEndCallBack)
-			fEndCallBack();
-	}
+	if (!this.m_aChanges.length)
+		return fEndCallBack ? fEndCallBack() : null;
+
+	let docHistory = this.GetDocument().History;
+	docHistory.TurnOff();
+	
+	this.GetDocument().currInkInDrawingProcess = null; // останавливаем ink рисование
+	AscCommon.CCollaborativeEditingBase.prototype.Apply_Changes.call(this, fEndCallBack);
+	
+	docHistory.TurnOn();
 };
 CPDFCollaborativeEditing.prototype.OnEnd_ReadForeignChanges = function() {
 	AscCommon.CCollaborativeEditingBase.prototype.OnEnd_ReadForeignChanges.apply(this, arguments);

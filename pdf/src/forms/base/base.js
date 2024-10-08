@@ -212,10 +212,21 @@
         return true;
     };
     CBaseField.prototype.SetApIdx = function(nIdx) {
-        this.GetDocument().UpdateApIdx(nIdx);
         this._apIdx = nIdx;
     };
     CBaseField.prototype.GetApIdx = function() {
+        if (-1 == this._apIdx) {
+            if (undefined == this.GetId()) {
+                return -1;
+            }
+            else {
+                let nApIdx = Number(this.GetId().replace("_", ""));
+                if (!isNaN(nApIdx)) {
+                    return nApIdx;
+                }
+            }
+        }
+
         return this._apIdx;
     };
 
@@ -706,19 +717,23 @@
     /**
      * Does the actions setted for specifed trigger type.
 	 * @memberof CBaseField
-     * @param {number} nType - trigger type (FORMS_TRIGGERS_TYPES)
 	 * @typeofeditors ["PDF"]
      * @returns {canvas}
 	 */
-    CBaseField.prototype.AddActionsToQueue = function(nType) {
+    CBaseField.prototype.AddActionsToQueue = function() {
+        let oThis           = this;
         let oDoc            = this.GetDocument();
         let oActionsQueue   = oDoc.GetActionsQueue();
-        let oTrigger        = this.GetTrigger(nType);
+
+        Object.values(arguments).forEach(function(type) {
+            let oTrigger = oThis.GetTrigger(type);
         
-        if (oTrigger && oTrigger.Actions.length > 0 && false == AscCommon.History.UndoRedoInProgress) {
-            oActionsQueue.AddActions(oTrigger.Actions);
-            oActionsQueue.Start();
-        }
+            if (oTrigger && oTrigger.Actions.length > 0 && false == AscCommon.History.UndoRedoInProgress) {
+                oActionsQueue.AddActions(oTrigger.Actions);
+            }
+        })
+        
+        oActionsQueue.Start();
     };
 
     CBaseField.prototype.DrawHighlight = function(oCtx) {
@@ -1955,9 +1970,6 @@
     // common triggers
     CBaseField.prototype.onMouseEnter = function() {
         this.AddActionsToQueue(AscPDF.FORMS_TRIGGERS_TYPES.MouseEnter);
-
-        let oDoc = this.GetDocument();
-        
     };
     CBaseField.prototype.onMouseExit = function() {
         this.AddActionsToQueue(AscPDF.FORMS_TRIGGERS_TYPES.MouseExit);

@@ -230,7 +230,8 @@
 		this.binaryChanges = false;
 
 		this.isBlurEditor = false;
-
+		
+		this.builderFonts = {};
 
 		this.formatPainter = new AscCommon.CFormatPainter(this);
 		this.eyedropper = new AscCommon.CEyedropper(this);
@@ -305,7 +306,11 @@
 				if(t.isDocumentLoadComplete) {
 					//todo disconnect and downloadAs ability
 					t.sendEvent("asc_onError", Asc.c_oAscError.ID.EditingError, c_oAscError.Level.NoCritical);
-					t.asc_setViewMode(true);
+					if (t.isCoAuthoringEnable) {
+						t.asc_coAuthoringDisconnect();
+					} else {
+						t.asc_setViewMode(true);
+					}
 				}
 				else {
 					t.sendEvent("asc_onError", Asc.c_oAscError.ID.ConvertationOpenError, c_oAscError.Level.Critical);
@@ -1323,6 +1328,9 @@
 	// Переопределяется во всех редакторах
 	baseEditorsApi.prototype._haveOtherChanges = function () {
 		return false;
+	};
+	baseEditorsApi.prototype._haveChanges = function() {
+		return AscCommon.History.Have_Changes();
 	};
 	baseEditorsApi.prototype._onSaveCallback = function (e) {
 		var t = this;
@@ -2663,7 +2671,7 @@
 		if (this.canSave && this._saveCheck() && this.canSendChanges()) {
 			this.IsUserSave = !isAutoSave;
 
-			if (this.asc_isDocumentCanSave() || AscCommon.History.Have_Changes() || this._haveOtherChanges() ||
+			if (this.asc_isDocumentCanSave() || this._haveChanges() || this._haveOtherChanges() ||
 				this.canUnlockDocument || this.forceSaveUndoRequest) {
 				if (this._prepareSave(isIdle)) {
 					// Не даем пользователю сохранять, пока не закончится сохранение (если оно началось)
@@ -3310,8 +3318,36 @@
 	{
 		return this.asc_canPaste();
 	};
-	baseEditorsApi.prototype.onEndBuilderScript = function()
+	baseEditorsApi.prototype.onEndBuilderScript = function(callback)
 	{
+		let _t = this;
+		this.loadBuilderFonts(function()
+		{
+			return _t._onEndBuilderScript(callback);
+		});
+		
+		return true;
+	};
+	baseEditorsApi.prototype.addBuilderFont = function(fontName)
+	{
+		this.builderFonts[fontName] = true;
+	};
+	baseEditorsApi.prototype.loadBuilderFonts = function(callback)
+	{
+		let _t = this;
+		this.incrementCounterLongAction();
+		AscCommon.g_font_loader.LoadFonts(this.builderFonts, function(){
+			_t.decrementCounterLongAction();
+			callback();
+		});
+		this.builderFonts = {};
+	};
+	baseEditorsApi.prototype._onEndBuilderScript = function(callback)
+	{
+		// This method is intended to be overridden
+		if (callback)
+			callback(true);
+		
 		return true;
 	};
 
@@ -3827,6 +3863,7 @@
 
 	baseEditorsApi.prototype.asc_setCurrentPassword = function(password)
 	{
+		this.currentPasswordOld = this.currentPassword;
 		this.currentPassword = password;
 		this.asc_Save(false, undefined, true);
 		if (!(this.DocInfo && this.DocInfo.get_OfflineApp())) {
