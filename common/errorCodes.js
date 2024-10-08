@@ -171,6 +171,7 @@
 			PasteInPivot                : -319,
 
 			CircularReference			: -320,
+			PivotItemNameNotFound       : -321,
 
 			ForceSaveButton: -331,
 			ForceSaveTimeout: -332,
@@ -363,6 +364,7 @@
 	prot['LockedCellPivot']                  = prot.LockedCellPivot;
 	prot['PivotFieldNameExists']             = prot.PivotFieldNameExists;
 	prot['FormulaInPivotFieldName']          = prot.FormulaInPivotFieldName;
+	prot['PivotItemNameNotFound']            = prot.PivotItemNameNotFound;
 	prot['PasteInPivot']                     = prot.PasteInPivot;
 	prot['PivotLabledColumns']               = prot.PivotLabledColumns;
 	prot['PivotOverlap']                     = prot.PivotOverlap;
