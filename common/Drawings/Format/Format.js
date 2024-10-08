@@ -1009,7 +1009,7 @@
 		function readObjectNoId(r, valConstructor) {
 			if (r.GetBool()) {
 				const val = new valConstructor();
-				val.Read_FromBinary();
+				val.Read_FromBinary(r);
 				return val;
 			}
 			return null;
