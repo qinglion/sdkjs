@@ -1740,6 +1740,7 @@ var editor;
 		this.openingEnd = {bin: false, xlsxStart: false, xlsx: false, data: null};
 		this.isApplyChangesOnOpenEnabled = true;
 		this.isDocumentLoadComplete = false;
+		this.FontLoadWaitComplete = false;
         this.turnOffSpecialModes();
 
 		//удаляю весь handlersList, добавленный при инициализации wbView

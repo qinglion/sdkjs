@@ -2789,7 +2789,10 @@ function CDrawingDocument()
 	{
 		if (null != this.GuiCanvasFillTexture)
 		{
-			this.GuiCanvasFillTexture.parentNode.removeChild(this.GuiCanvasFillTexture);
+			var _div_elem = document.getElementById(this.GuiCanvasFillTextureParentId);
+			if (_div_elem)
+				_div_elem.removeChild(this.GuiCanvasFillTexture);
+
 			this.GuiCanvasFillTexture = null;
 			this.GuiCanvasFillTextureCtx = null;
 		}
@@ -3056,7 +3059,11 @@ function CDrawingDocument()
 			{
 				if ("" != this.GuiCanvasFillTOCParentId)
 				{
-					this.GuiCanvasFillTOC.parentNode.removeChild(this.GuiCanvasFillTOC);
+					_div_elem = document.getElementById(this.GuiCanvasFillTOCParentId);
+
+					if (this.GuiCanvasFillTOC && _div_elem)
+						_div_elem.removeChild(this.GuiCanvasFillTOC);
+
 					this.GuiCanvasFillTOCParentId = "";
 					this.GuiCanvasFillTOC = null;
 				}
@@ -3065,7 +3072,11 @@ function CDrawingDocument()
 
 			if (id != this.GuiCanvasFillTOCParentId)
 			{
-				this.GuiCanvasFillTOC.parentNode.removeChild(this.GuiCanvasFillTOC);
+				_div_elem = document.getElementById(this.GuiCanvasFillTOCParentId);
+
+				if (this.GuiCanvasFillTOC && _div_elem)
+					_div_elem.removeChild(this.GuiCanvasFillTOC);
+
 				this.GuiCanvasFillTOCParentId = "";
 				this.GuiCanvasFillTOC = null;
 			}
@@ -3200,7 +3211,11 @@ function CDrawingDocument()
 		{
 			if ("" != this.GuiCanvasFillTOFParentId)
 			{
-				this.GuiCanvasFillTOF.parentNode.removeChild(this.GuiCanvasFillTOF);
+				_div_elem = document.getElementById(this.GuiCanvasFillTOFParentId);
+
+				if (this.GuiCanvasFillTOF && _div_elem)
+					_div_elem.removeChild(this.GuiCanvasFillTOF);
+
 				this.GuiCanvasFillTOFParentId = "";
 				this.GuiCanvasFillTOF = null;
 			}
@@ -3209,7 +3224,10 @@ function CDrawingDocument()
 
 		if (id != this.GuiCanvasFillTOFParentId)
 		{
-			this.GuiCanvasFillTOF.parentNode.removeChild(this.GuiCanvasFillTOF);
+			_div_elem = document.getElementById(this.GuiCanvasFillTOFParentId);
+
+			if (this.GuiCanvasFillTOF && _div_elem)
+				_div_elem.removeChild(this.GuiCanvasFillTOF);
 
 			this.GuiCanvasFillTOFParentId = "";
 			this.GuiCanvasFillTOF = null;

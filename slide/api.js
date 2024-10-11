@@ -1209,6 +1209,7 @@
 		AscCommon.CollaborativeEditing.Clear();
 		this.isApplyChangesOnOpenEnabled = true;
 		this.isDocumentLoadComplete = false;
+		this.ServerImagesWaitComplete = false;
 		this.turnOffSpecialModes();
 
 		var oLogicDocument = this.WordControl.m_oLogicDocument;
