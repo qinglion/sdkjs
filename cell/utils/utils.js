@@ -2391,7 +2391,7 @@
 					let ws = wb.getWorksheet();
 					if (ws && ws.getRightToLeft()) {
 						oMatrix.sx = -1;
-						oMatrix.tx = (ctx.getWidth() * vector_koef) - oMatrix.tx;
+						oMatrix.tx = (ws.getCtxWidth() * vector_koef) - oMatrix.tx;
 					}
 					graphics.transform3(oMatrix);
 					var shapeDrawer = new AscCommon.CShapeDrawer();
@@ -4087,6 +4087,7 @@
 		prot["asc_setShowZeros"] = prot.asc_setShowZeros;
 		prot["asc_setShowFormulas"] = prot.asc_setShowFormulas;
 		prot["asc_setRightToLeft"] = prot.asc_setRightToLeft;
+		prot["asc_getRightToLeft"] = prot.asc_getRightToLeft;
 
 		window["AscCommonExcel"].asc_CPane = asc_CPane;
 		window["AscCommonExcel"].asc_CSheetPr = asc_CSheetPr;

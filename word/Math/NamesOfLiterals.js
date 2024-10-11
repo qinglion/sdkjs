@@ -3003,15 +3003,15 @@
 				return strBracket
 			}
 
-			if (MathLiterals.rBrackets.LaTeX[code])
+			if (typeof MathLiterals.rBrackets.LaTeX[code] === 'string')
 			{
 				return MathLiterals.rBrackets.LaTeX[code].charCodeAt(0);
 			}
-			else if (MathLiterals.lrBrackets.LaTeX[code])
+			else if (typeof MathLiterals.lrBrackets.LaTeX[code] === 'string')
 			{
 				return MathLiterals.lrBrackets.LaTeX[code].charCodeAt(0);
 			}
-			else if (MathLiterals.lBrackets.LaTeX[code])
+			else if (typeof MathLiterals.lBrackets.LaTeX[code] === 'string')
 			{
 				return MathLiterals.lBrackets.LaTeX[code].charCodeAt(0);
 			}
@@ -4658,23 +4658,21 @@
 				if (str)
 				{
 					let nCounter = 0;
-					for (let i = oCMathContent.Content.length - 1; i >= 0 && nCounter !== strToken.length; i--)
+
+					let oCurrentElement = oCMathContent.Content[oCMathContent.Content.length - 1];
+					if (!oCurrentElement || !oCurrentElement.Content)
+						return false;
+
+					let oCurrentElementCounter = oCurrentElement.Content.length;
+
+					if (oCurrentElementCounter > strToken.length)
 					{
-						let oCurrentElement = oCMathContent.Content[i];
-						if (!oCurrentElement || !oCurrentElement.Content)
-							return false;
-
-						let oCurrentElementCounter = oCurrentElement.Content.length;
-
-						if (oCurrentElementCounter > strToken.length)
-						{
-							oCurrentElement.RemoveFromContent(oCurrentElementCounter - strToken.length, strToken.length);
-						}
-						else
-						{
-							nCounter += oCurrentElementCounter;
-							oCMathContent.RemoveFromContent(i, 1);
-						}
+						oCurrentElement.RemoveFromContent(oCurrentElementCounter - strToken.length, strToken.length);
+					}
+					else
+					{
+						nCounter += oCurrentElementCounter;
+						oCMathContent.RemoveFromContent(oCMathContent.Content.length - 1, 1);
 					}
 					oCMathContent.Add_TextOnPos(oCMathContent.Content.length, str);
 					return true;
@@ -5003,14 +5001,18 @@
 
 			if (this.IsLaTeX())
 			{
+				let oCurrentStyle = this.globalStyle
+					? this.globalStyle
+					: this.GetStyleFromFirst(oContent);
+
 				if (Array.isArray(Wrap))
 					this.WrapExactElement(oPos, Wrap[0], Wrap[1], this.GetFirstStyle());
 				else if (Wrap === 0 || oContent instanceof ParaRun)
 					return oPos;
 				else if (Wrap === 1 && ((oContent.haveMixedContent && oContent.haveMixedContent(this.IsLaTeX())) || (this.IsLaTeX() && str.length > 1 && this.IsNotWrap === false)))
-					this.WrapExactElement(oPos, "{", "}", this.GetStyleFromFirst(oContent));
+					this.WrapExactElement(oPos, "{", "}", oCurrentStyle);
 				else if (Wrap === 2)
-					this.WrapExactElement(oPos, "{", "}", this.GetStyleFromFirst(oContent));
+					this.WrapExactElement(oPos, "{", "}", oCurrentStyle);
 
 				this.IsNotWrap = false;
 			}

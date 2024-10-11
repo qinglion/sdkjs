@@ -51,6 +51,9 @@
 		this.DocumentType     = 1;
 		
 		this.compositeInput = null;
+		this.isPdfViewer    = false; // Было решено, что флаг isViewMode присылается всегда false, т.к. пдф всегда
+		                             // можно редактировать (во вьювере заполнять поля, например)
+		                             // Данный флаг различает в каком режиме загружен документ (edit/view)
 	}
 	
 	PDFEditorApi.prototype = Object.create(AscCommon.DocumentEditorApi.prototype);
@@ -221,6 +224,8 @@
 		if (this.DocumentRenderer)
 		{
 			let result = this.DocumentRenderer.Save();
+			if (!result)
+				return null;
 			window["native"]["Save_End"]("", result.length);
 			return result;
 		}
@@ -365,8 +370,6 @@
 		
 		let oDoc			= this.DocumentRenderer.getPDFDoc();
 		let data			= typeof(text_data) == "string" ? text_data : data1;
-		let oActiveForm		= oDoc.activeForm;
-		let oActiveAnnot	= oDoc.mouseDownAnnot;
 		let oActiveDrawing	= oDoc.activeDrawing;
 
 		oDoc.StartAction(AscDFH.historydescription_Document_PasteHotKey);
@@ -374,6 +377,10 @@
 		this.needPasteText = false; // если не вставили бинарник, то вставляем текст
 		// пока что копирование бинарником только внутри drawings или самих drawings
 		if ([AscCommon.c_oAscClipboardDataFormat.Internal, AscCommon.c_oAscClipboardDataFormat.HtmlElement, AscCommon.c_oAscClipboardDataFormat.Text].includes(_format) && ((oDoc.GetActiveObject() == null) || oActiveDrawing)) {
+			if (this.isRestrictionView()) {
+				return;
+			}
+
 			window['AscCommon'].g_specialPasteHelper.Paste_Process_Start(arguments[5]);
 			AscCommon.Editor_Paste_Exec(this, _format, data1, data2, text_data, undefined, callback);
 		}
@@ -981,6 +988,13 @@
 	PDFEditorApi.prototype.get_PageHeight = function(nPage) {
 		let oDoc = this.getPDFDoc();
 		return oDoc.GetPageHeightEMU();
+	};
+	PDFEditorApi.prototype.asc_SetFastCollaborative = function(isOn)
+	{
+		if (!AscCommon.CollaborativeEditing)
+			return;
+		
+		AscCommon.CollaborativeEditing.Set_Fast(isOn);
 	};
 	/////////////////////////////////////////////////////////////
 	///////// For annots
@@ -1761,8 +1775,7 @@
 		if (null === this.lastSaveTime) {
 			this.lastSaveTime = _curTime;
 		}
-
-
+		
 		if (AscCommon.CollaborativeEditing.Is_Fast() && !AscCommon.CollaborativeEditing.Is_SingleUser()) {
 			this.WordControl.m_oLogicDocument.Continue_FastCollaborativeEditing();
 		}
@@ -1806,7 +1819,10 @@
 	};
 	PDFEditorApi.prototype._autoSave = function () {
 
-		if (this.canSave && (!this.isViewMode || this.isLiveViewer()) && (this.canUnlockDocument || 0 !== this.autoSaveGap)) {
+		if (this.canSave
+			&& (!this.isViewMode || this.isLiveViewer())
+			&& (this.canUnlockDocument || 0 !== this.autoSaveGap || AscCommon.CollaborativeEditing.Is_Fast()))
+		{
 			if (this.canUnlockDocument) {
 				this.lastSaveTime = new Date();
 				// Check edit mode after unlock document http://bugzilla.onlyoffice.com/show_bug.cgi?id=35971
@@ -2453,6 +2469,7 @@
 		this.isDocumentEditor = false;
 		AscCommon.PasteElementsId.g_bIsDocumentCopyPaste = false;
 		AscCommon.PasteElementsId.g_bIsPDFCopyPaste = true;
+		
 		if (this.isApplyChangesOnOpenEnabled)
 		{
 			if (AscCommon.EncryptionWorker)
@@ -2467,21 +2484,41 @@
 
 			// TODO: onDocumentContentReady вызываем в конце загрузки всех изменений (и объектов для этих изменений)
 			let oThis = this;
-
-			let perfStart = performance.now();
-			let OtherChanges = AscCommon.CollaborativeEditing.Have_OtherChanges();
-			AscCommon.CollaborativeEditing.Apply_Changes(function()
+			
+			// Принимаем изменения на открытии только если это редактор, либо LiveViewer (т.е. включена быстрая совместка)
+			if (this.isLiveViewer() || !this.isPdfViewer)
 			{
-				let perfEnd = performance.now();
-				if (OtherChanges) {
-					AscCommon.sendClientLog("debug", AscCommon.getClientInfoString("onApplyChanges", perfEnd - perfStart), oThis);
-				}
-				oThis.onDocumentContentReady();
-			});
-			AscCommon.CollaborativeEditing.Release_Locks();
+				let perfStart    = performance.now();
+				let OtherChanges = AscCommon.CollaborativeEditing.Have_OtherChanges();
+				AscCommon.CollaborativeEditing.Apply_Changes(function()
+				{
+					let perfEnd = performance.now();
+					if (OtherChanges)
+					{
+						AscCommon.sendClientLog("debug", AscCommon.getClientInfoString("onApplyChanges", perfEnd - perfStart), oThis);
+					}
+					oThis.onDocumentContentReady();
+				});
+				AscCommon.CollaborativeEditing.Release_Locks();
+			}
+			else
+			{
+				this.onDocumentContentReady();
+			}
 
 			this.isApplyChangesOnOpen = true;
 		}
+	};
+	PDFEditorApi.prototype._canSyncCollaborativeChanges = function(isFirstLoad)
+	{
+		return (!this.isPdfViewer && (!isFirstLoad || this.isApplyChangesOnOpen));
+	};
+	PDFEditorApi.prototype.sync_CollaborativeChanges = function()
+	{
+		if (AscCommon.CollaborativeEditing.Is_Fast())
+			return;
+		
+		this.sendEvent("asc_onCollaborativeChanges");
 	};
 	PDFEditorApi.prototype.sync_ContextMenuCallback = function(Data) {
 		this.sendEvent("asc_onContextMenu", new CPdfContextMenuData(Data));
@@ -2498,7 +2535,13 @@
 	{
 		return false;
 	};
-
+	PDFEditorApi.prototype.asc_setPdfViewer = function(isPdfViewer) {
+		this.isPdfViewer = isPdfViewer;
+	};
+	PDFEditorApi.prototype.isLiveViewer = function() {
+		return this.isPdfViewer && AscCommon.CollaborativeEditing.Is_Fast() && !this.VersionHistory;
+	};
+	
 	function CPdfContextMenuData(obj) {
 		if (obj) {
 			this.Type  		= ( undefined != obj.Type ) ? obj.Type : Asc.c_oAscPdfContextMenuTypes.Common;

@@ -1619,10 +1619,44 @@ $(function () {
 			Test("\\sqrt\\frac{1}{2}", [["ParaRun", ""], ["CRadical", "\\sqrt{\\frac{1}{2}}"],["ParaRun", ""]], true, "Check LaTeX words");
 			Test("\\sqrt[2^2]\\frac{1}{2}", [["ParaRun", ""], ["CRadical", "\\sqrt[2^2]{\\frac{1}{2}}"],["ParaRun", ""]], true, "Check LaTeX words");
 			Test("\\sqrt[2^2] {\\frac{1}{2}+3}", [["ParaRun", ""], ["CRadical", "\\sqrt[2^2]{\\frac{1}{2}+3}"],["ParaRun", ""]], true, "Check LaTeX words");
+
+			QUnit.test('Check pos for radical in LaTeX', function (assert)
+			{
+				Clear();
+				logicDocument.SetMathInputType(1);
+
+				AddText('\\pm\\sqrt');
+
+				MathContent.ConvertView(true, Asc.c_oAscMathInputType.LaTeX);
+				assert.ok(true, "Convert to proff. view");
+
+				MathContent.ConvertView(true, Asc.c_oAscMathInputType.LaTeX);
+				assert.ok(true, "Convert to linear view");
+
+				let strFunc = MathContent.GetTextOfElement(0).GetText();
+				assert.strictEqual(strFunc, '\\pm\\sqrt', 'Check complex math func content');
+			})
 		})
 
 		QUnit.module( "bugs", function ()
 		{
+			QUnit.test('Check linear form for nonstandard name func', function (assert)
+			{
+				Clear();
+				logicDocument.SetMathInputType(1);
+
+				AddText('\\lim\\below{\\left(n\\to\\infty\\right){\\left(1+\\frac{1}{n}\\right)^n}}');
+
+				MathContent.ConvertView(true, Asc.c_oAscMathInputType.LaTeX);
+				assert.ok(true, "Convert to proff. view");
+
+				MathContent.ConvertView(true, Asc.c_oAscMathInputType.LaTeX);
+				assert.ok(true, "Convert to linear view");
+
+				let strFunc = MathContent.GetTextOfElement(0).GetText();
+				assert.strictEqual(strFunc, '\\lim\\below{\\left(n\\to\\infty\\right){\\left(1+\\frac{1}{n}\\right)^n}}', 'Check complex math func content');
+			})
+
 			QUnit.module( "Check bug #61007", function ()
 			{
 				Test("\\begin{matrix}1&2\\\\3&4\\\\\\end{matrix}", [["ParaRun", ""], ["CMathMatrix", "\\begin{matrix}1&2\\\\3&4\\\\\\end{matrix}"]], true, "Check bug #61007 default matrix");

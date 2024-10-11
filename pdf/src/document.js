@@ -552,13 +552,13 @@ var CPresentation = CPresentation || function(){};
                 let oBtnField = oDoc.GetFieldBySourceIdx(oIconsInfo["MK"][nBtn]["i"]);
 
                 if (oIconsInfo["MK"][nBtn]["I"]) {
-                    oBtnField.SetImageData(oIconsInfo["MK"][nBtn]["I"]);
+                    oBtnField.SetImageRasterId(oIconsInfo["MK"][nBtn]["I"].src, AscPDF.APPEARANCE_TYPE.normal);
                 }
                 if (oIconsInfo["MK"][nBtn]["RI"]) {
-                    oBtnField.SetImageData(oIconsInfo["MK"][nBtn]["RI"], AscPDF.APPEARANCE_TYPE.rollover);
+                    oBtnField.SetImageRasterId(oIconsInfo["MK"][nBtn]["RI"].src, AscPDF.APPEARANCE_TYPE.rollover);
                 }
                 if (oIconsInfo["MK"][nBtn]["IX"]) {
-                    oBtnField.SetImageData(oIconsInfo["MK"][nBtn]["IX"], AscPDF.APPEARANCE_TYPE.mouseDown);
+                    oBtnField.SetImageRasterId(oIconsInfo["MK"][nBtn]["IX"].src, AscPDF.APPEARANCE_TYPE.mouseDown);
                 }
             }
             oViewer.isRepaint = true;
@@ -2441,6 +2441,10 @@ var CPresentation = CPresentation || function(){};
         this.annots.push(oAnnot);
         oPagesInfo.pages[nPageNum].annots.push(oAnnot);
 
+        if (oProps.apIdx != undefined) {
+            oAnnot.SetApIdx(oProps.apIdx);
+        }
+
         this.History.Add(new CChangesPDFDocumentAnnotsContent(this, oPagesInfo.pages[nPageNum].annots.length - 1, [oAnnot], true));
         
         oAnnot.AddToRedraw();
@@ -2672,7 +2676,8 @@ var CPresentation = CPresentation || function(){};
 
 		AscCommon.History.Get_RecalcData();
 		AscCommon.History.Reset_RecalcIndex();
-
+        Asc.editor.checkLastWork();
+        
         if (false /* тут проверяем локи */) {
             AscCommon.History.Undo();
             AscCommon.History.Clear_Redo();
@@ -5340,7 +5345,7 @@ var CPresentation = CPresentation || function(){};
     CPDFDoc.prototype.Get_DocumentPositionInfoForCollaborative = function() {
         let oActiveObj = this.GetActiveObject();
         
-        if (!oActiveObj) {
+        if (!oActiveObj || (Asc.editor.isRestrictionView()) && !this.IsViewerObject(oActiveObj)) {
             return;
         }
         
@@ -5539,6 +5544,9 @@ var CPresentation = CPresentation || function(){};
         this.fieldsContentChanges.Clear();
         this.drawingsContentChanges.Clear();
 		this.pagesContentChanges.Clear();
+    };
+    CPDFDoc.prototype.UpdateMaxApIdx = function(nApIdx) {
+        AscCommon.g_oIdCounter.m_nIdCounterEdit = Math.max(nApIdx, AscCommon.g_oIdCounter.m_nIdCounterEdit);
     };
     CPDFDoc.prototype.Add_ContentChanges = function(Changes) {
         let oChange = Changes.m_pData.Data;
@@ -6268,13 +6276,15 @@ var CPresentation = CPresentation || function(){};
 	/**
 	 * Speical class for handling the composite input in the pdf-editor
 	 * @param textController
+	 * @param pdfDocument
 	 * @constructor
 	 */
-	function CPDFCompositeInput(textController) {
+	function CPDFCompositeInput(textController, pdfDocument) {
 		this.textController = textController;
 		this.runInput       = new AscWord.RunCompositeInput(false);
-		this.pointCount     = 0;
 		this.contentState   = textController.GetDocContent().GetSelectionState();
+		this.pdfDocument    = pdfDocument;
+		this.startPoint     = -1;
 	}
 	CPDFCompositeInput.begin = function(pdfDocument) {
 		if (!pdfDocument)
@@ -6289,7 +6299,7 @@ var CPresentation = CPresentation || function(){};
 		if (textController.IsDrawing() && Asc.editor.isRestrictionView())
 			return null;
 		
-		let compositeInput = new CPDFCompositeInput(textController);
+		let compositeInput = new CPDFCompositeInput(textController, pdfDocument);
 		compositeInput.createNewHistoryPoint(AscDFH.historydescription_Document_CompositeInput);
 		textController.beforeCompositeInput();
 		let docContent = textController.GetDocContent();
@@ -6299,8 +6309,10 @@ var CPresentation = CPresentation || function(){};
 			return null;
 		}
 		compositeInput.runInput.begin(run);
-
-        this.inUse = true;
+		
+		compositeInput.startPoint = pdfDocument.GetHistory().Index;
+		
+		this.inUse = true;
 		return compositeInput;
 	};
 	CPDFCompositeInput.prototype.end = function() {
@@ -6308,31 +6320,39 @@ var CPresentation = CPresentation || function(){};
 		this.runInput.end();
 		this.runInput = null;
 		
-		this.undoAll();
+		if (this.canSquashChanges()) {
+			console.log("squash")
+			this.undoAll();
+			
+			this.textController.GetDocContent().SetSelectionState(this.contentState);
+			
+			this.pdfDocument.DoAction(function() {
+				this.textController.EnterText(codePoints);
+			}, AscDFH.historydescription_Document_AddLetter, this);
+		}
+		else {
+			console.log("NO squash");
+		}
 		
-		this.textController.GetDocContent().SetSelectionState(this.contentState);
-        
-        let oDoc = this.textController.GetDocument();
-        oDoc.DoAction(function() {
-            this.textController.EnterText(codePoints);    
-        }, AscDFH.historydescription_Document_AddLetter, this);
-
-        this.inUse = false;
+		this.inUse = false;
 	};
 	CPDFCompositeInput.prototype.add = function(codePoint) {
-		this.createNewHistoryPoint();
-		this.runInput.add(codePoint);
-		this.textController.SetNeedRecalc(true);
+		this.doAction(function() {
+			this.runInput.add(codePoint);
+			this.textController.SetNeedRecalc(true);
+		}, AscDFH.historydescription_Document_CompositeInputReplace);
 	};
 	CPDFCompositeInput.prototype.remove = function(count) {
-		this.createNewHistoryPoint();
-		this.runInput.remove(count);
-		this.textController.SetNeedRecalc(true);
+		this.doAction(function() {
+			this.runInput.remove(count);
+			this.textController.SetNeedRecalc(true);
+		}, AscDFH.historydescription_Document_CompositeInputReplace);
 	};
 	CPDFCompositeInput.prototype.replace = function(codePoints) {
-		this.createNewHistoryPoint();
-		this.runInput.replace(codePoints);
-		this.textController.SetNeedRecalc(true);
+		this.doAction(function() {
+			this.runInput.replace(codePoints);
+			this.textController.SetNeedRecalc(true);
+		}, AscDFH.historydescription_Document_CompositeInputReplace);
 	};
 	CPDFCompositeInput.prototype.setPos = function(pos) {
 		return this.runInput.setPos(pos);
@@ -6344,20 +6364,33 @@ var CPresentation = CPresentation || function(){};
 		return this.runInput.getLength();
 	};
 	CPDFCompositeInput.prototype.createNewHistoryPoint = function(description) {
-		if (!AscCommon.History.IsOn())
-			AscCommon.History.TurnOn();
+		let localHistory = this.pdfDocument.GetHistory();
+		if (!localHistory.IsOn())
+			localHistory.TurnOn();
 		
-		AscCommon.History.Create_NewPoint(description);
-		AscCommon.History.SetSourceObjectsToPointPdf(this.textController);
-		this.pointCount++;
+		localHistory.Create_NewPoint(description);
+		localHistory.SetSourceObjectsToPointPdf(this.textController);
 	};
 	CPDFCompositeInput.prototype.undoAll = function() {
-		while (this.pointCount > 0) {
-			AscCommon.History.Undo();
-			--this.pointCount;
-		}
+		if (-1 === this.startPoint)
+			return;
+		
+		let localHistory = this.pdfDocument.GetHistory();
+		while (localHistory.Index >= this.startPoint)
+			localHistory.Undo();
+		
+		this.startPoint = -1;
 	};
-    CPDFCompositeInput.prototype.checkState = function() {};
+	CPDFCompositeInput.prototype.doAction = function(action, description) {
+		this.pdfDocument.DoAction(function() {
+			action.bind(this)();
+		}, description, this);
+	};
+	CPDFCompositeInput.prototype.checkState = function() {};
+	CPDFCompositeInput.prototype.canSquashChanges = function() {
+		let localHistory = this.pdfDocument.GetHistory();
+		return (!AscCommon.CollaborativeEditing.Is_Fast() || AscCommon.CollaborativeEditing.Is_SingleUser()) && localHistory.Index >= this.startPoint;
+	};
     CPDFDoc.prototype.getCompositeInput = function() {
         if (!this.compositeInput) {
             this.compositeInput = new AscWord.DocumentCompositeInput(this);

@@ -593,11 +593,13 @@
 			if (this.startVisiblePage < 0 || this.endVisiblePage < 0)
 				return false;
 
+			let oThumbnails = this.thumbnails;
 			for (var i = 0, len = pages.length; i < len; i++)
 			{
 				if (pages[i] >= this.startVisiblePage && pages[i] <= this.endVisiblePage)
 				{
 					delete this.drawingPages[pages[i]].Image;
+					oThumbnails && oThumbnails._repaintPage(i);
 				}
 			}
 
@@ -1451,6 +1453,7 @@
 			}
 			
 			this.IsOpenAnnotsInProgress = false;
+			oDoc.UpdateMaxApIdx(nMaxIdx);
 		};
 		this.setZoom = function(value, isDisablePaint)
 		{
@@ -1977,6 +1980,8 @@
 
 		this.onMouseDown = function(e)
 		{
+			Asc.editor.checkLastWork();
+
 			if (oThis.touchManager && oThis.touchManager.checkTouchEvent(e))
 			{
 				oThis.touchManager.startTouchingInProcess();
@@ -2094,6 +2099,8 @@
 
 		this.onMouseUp = function(e)
 		{
+			Asc.editor.checkLastWork();
+
 			if (oThis.touchManager && oThis.touchManager.checkTouchEvent(e))
 			{
 				oThis.touchManager.startTouchingInProcess();
@@ -2168,6 +2175,8 @@
 
 		this.onMouseMove = function(e)
 		{
+			Asc.editor.checkLastWork();
+
 			if (oThis.touchManager && oThis.touchManager.checkTouchEvent(e))
 			{
 				oThis.touchManager.startTouchingInProcess();
@@ -2551,6 +2560,8 @@
 
 		this.onUpdateOverlay = function()
 		{
+			Asc.editor.checkLastWork();
+			
 			if (!this.overlay || this.scheduledRepaintTimer != null)
 				return;
 
@@ -2750,7 +2761,8 @@
 		this._paint = function()
 		{
 			let oDoc = this.getPDFDoc();
-
+			Asc.editor.checkLastWork();
+			
 			if (oDoc.fontLoader.isWorking() || this.IsOpenFormsInProgress) {
 				this.paint();
 				return;
@@ -2933,7 +2945,9 @@
 
 			let yPos = this.scrollY >> 0;
 			let xCenter = this.width >> 1;
-
+			if (this.documentWidth > this.width)
+				xCenter = (this.documentWidth >> 1) - (this.scrollX) >> 0;
+			
 			for (let i = this.startVisiblePage; i <= this.endVisiblePage; i++)
 			{
 				let page = this.drawingPages[i];
@@ -4562,10 +4576,12 @@
 					if (oDrawing.IsGraphicFrame()) {
 						let sTableStyleId = oDrawing.graphicObject.GetTableStyle();
 						if (sTableStyleId) {
-							let sStyleGUID = oDoc.globalTableStyles.Get(sTableStyleId).GetStyleId();
-						
-							if (sTableStyleId != undefined) {
-								oMemory.context.tableStylesIdToGuid[sTableStyleId] = sStyleGUID;
+							let oStyle = oDoc.globalTableStyles.Get(sTableStyleId);
+							if (oStyle) {
+								let sStyleGUID = oStyle.GetStyleId();
+								if (sTableStyleId != undefined) {
+									oMemory.context.tableStylesIdToGuid[sTableStyleId] = sStyleGUID;
+								}
 							}
 						}
 					}

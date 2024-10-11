@@ -605,7 +605,7 @@ CChangesPDFFreeTextRC.prototype.WriteToBinary = function(Writer)
 			if (aRC[i]["underlined"]) {
 				nStyle |= (1 << 4);
 			}
-			if (aRC[i]["vertical"]) {
+			if (undefined !== aRC[i]["vertical"]) {
 				nStyle |= (1 << 5);
 				Writer.WriteDouble(aRC[i]["vertical"]);
 			}
@@ -624,8 +624,8 @@ CChangesPDFFreeTextRC.prototype.WriteToBinary = function(Writer)
 				Writer.WriteDouble(component);
 			});
 
-			Writer.WriteString2(aRC[i]["name"]);
-			Writer.WriteString2(aRC[i]["text"]);
+			Writer.WriteString2(aRC[i]["name"] || "");
+			Writer.WriteString2(aRC[i]["text"] || "");
 		}
 	}
 	
@@ -685,7 +685,7 @@ CChangesPDFFreeTextAlign.prototype.Type = AscDFH.historyitem_type_Pdf_Annot_Free
 CChangesPDFFreeTextAlign.prototype.private_SetValue = function(Value)
 {
 	let oAnnot = this.Class;
-	oAnnot.SetDisplay(Value);
+	oAnnot.SetAlign(Value);
 };
 
 /**
