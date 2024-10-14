@@ -5204,14 +5204,6 @@ function(window, undefined) {
 		const isLayoutSizes = this.isLayoutSizes();
 		const oPlotArea = this.getPlotArea();
 		const bWithoutLabels = isLayoutSizes && this.chart.plotArea.layout.layoutTarget === AscFormat.LAYOUT_TARGET_INNER;
-		if (isLayoutSizes && oPlotArea) {
-			oPlotArea.extX = oRect.w;
-			oPlotArea.extY = oRect.h;
-			oPlotArea.x = oRect.x;
-			oPlotArea.y = oRect.y;
-			oPlotArea.rectChanged = true;
-		}
-		
 		let bCorrected = false;
 		let fL = oRect.x, fT = oRect.y, fR = oRect.x + oRect.w, fB = oRect.y + oRect.h;
 		const isChartEx = this.isChartEx();
@@ -5219,10 +5211,27 @@ function(window, undefined) {
 		let fVertPadding = 0.0;
 		let fHorInterval = null;
 		let oCalcMap = {};
+
+		if (isLayoutSizes && oPlotArea) {
+			oPlotArea.extX = oRect.w;
+			oPlotArea.extY = oRect.h;
+			oPlotArea.x = oRect.x;
+			oPlotArea.y = oRect.y;
+			oPlotArea.rectChanged = true;
+		}
+
+		const getCrossGrid = function(oGrid, axis) {
+			if (isChartEx && axis.isVertical() && axis.axPos === 2) {
+				oGrid.fStart = oGrid.fStart + oRect.w;
+				oGrid.fStride = -oGrid.fStride;
+			}
+
+			return oGrid;
+		}
 		for(let nAxesSet = 0; nAxesSet < aAxesSet.length; ++nAxesSet) {
 			let oCurAxis = aAxesSet[nAxesSet];
 			let oCrossAxis = oCurAxis.crossAx;
-			if(oCalcMap && !oCalcMap[oCurAxis.Id]) {
+			if(oCurAxis && !oCalcMap[oCurAxis.Id]) {
 				this.calculateAxisGrid(oCurAxis, oRect);
 				oCalcMap[oCurAxis.Id] = true;
 			}
@@ -5257,7 +5266,7 @@ function(window, undefined) {
 
 			let bCrossAt = false;
 
-			let oCrossGrid = oCrossAxis.grid;
+			let oCrossGrid = getCrossGrid(oCrossAxis.grid, oCurAxis);
 			if(AscFormat.isRealNumber(oCurAxis.crossesAt) && oCrossAxis.scale[0] <= oCurAxis.crossesAt && oCrossAxis.scale[oCrossAxis.scale.length - 1] >= oCurAxis.crossesAt) {
 				fCrossValue = oCurAxis.crossesAt;
 				bCrossAt = true;
@@ -5327,7 +5336,9 @@ function(window, undefined) {
 				}
 			}
 
-			if(oCrossAxis.isReversed()) {
+			// check whether current axis is reversed
+			const isReversed = isChartEx && oCurAxis instanceof AscFormat.CAxis ? oCurAxis.isReversedRepresentation() : oCrossAxis.isReversed();
+			if(isReversed) {
 				fDistanceSign = -fDistanceSign;
 			}
 			let oLabelsBox = null, fPos;
