@@ -7912,7 +7912,7 @@ drawHistogramChart.prototype = {
 	constructor: drawHistogramChart,
 
 	recalculate: function () {
-		const oDataInfo = this.getData();
+		const oDataInfo = this.getHistogramData();
 		this.recalculateHistogram(oDataInfo);
 	},
 
@@ -7960,7 +7960,7 @@ drawHistogramChart.prototype = {
 		}
 	},
 
-	getData : function () {
+	getHistogramData : function () {
 		if (!this.cChartSpace || !this.cChartSpace.chart || !this.cChartSpace.chart.plotArea || !this.cChartSpace.chart.plotArea.plotAreaRegion
 			|| !this.cChartSpace.chart.plotArea.plotAreaRegion.cachedData || !this.cChartSpace.chart.plotArea.plotAreaRegion.cachedData.clusteredColumn) {
 			return null;
@@ -8117,15 +8117,44 @@ function drawParetoChart(seria, chartsDrawer) {
 
 AscFormat.InitClassWithoutType(drawParetoChart, drawHistogramChart);
 
-drawParetoChart.prototype = {
-	recalculate: function () {
-		const oDataInfo = this.getData();
-		drawHistogramChart.prototype.recalculateHistogram.call(this, oDataInfo, this.paretoLine);
+drawParetoChart.prototype.recalculate = function () {
+		const oDataInfo = this.getParetoData();
+		this.recalculateHistogram(oDataInfo, this.paretoLine);
 		this.recalculateLinePath(oDataInfo);
-	},
-	getData: function () {
-		const oDataInfo = drawHistogramChart.prototype.getData.call(this);
-		// I need calculate total amount of
+};
+
+drawParetoChart.prototype.recalculateLinePath = function (oDataInfo) {
+	if (!oDataInfo || !this.cChartSpace.chart.plotArea.axId || !Array.isArray(this.cChartSpace.chart.plotArea.axId) || this.cChartSpace.chart.plotArea.axId.length < 3 || !this.chartProp && !this.chartProp.chartGutter) {
+		return null;
+	}
+	const valAxis = this.cChartSpace.chart.plotArea.axId[2];
+	const pathId = this.cChartSpace.AllocPath();
+	const path = this.cChartSpace.GetPath(pathId);
+
+	const pathH = this.chartProp.pathH;
+	const pathW = this.chartProp.pathW;
+	const pxToMm = this.chartProp.pxToMM;
+
+	// starting point
+	// interval
+	let percentage = 0;
+	for (let i = 0; i < oDataInfo.data.length; i++) {
+		const val = oDataInfo.isAggregation ? oDataInfo.data[i] : oDataInfo.data[i].occurrence;
+		percentage += (val / oDataInfo.total);
+		const yPos = this.cChartDrawer.getYPosition(percentage, valAxis, true);
+		const xPos = this.paretoLine[0] + i * this.paretoLine[1];
+		if (i === 0) {
+			path.moveTo((xPos / pxToMm) * pathW, yPos * pathH);
+		} else {
+			path.lnTo((xPos / pxToMm) * pathW, yPos * pathH);
+		}
+	}
+	this.linePath = pathId;
+};
+
+drawParetoChart.prototype.getParetoData = function () {
+		const oDataInfo = this.getHistogramData();
+		// calculate total amount of
 		if (oDataInfo) {
 			// calculate max number of occurrences
 			const getTotal = function (oDataInfo) {
@@ -8141,56 +8170,25 @@ drawParetoChart.prototype = {
 			oDataInfo.total = getTotal(oDataInfo);
 			return oDataInfo;
 		}
-		return null;
-	},
-	draw: function () {
+};
+
+drawParetoChart.prototype.draw = function () {
 		if (!this.cChartDrawer || !this.cChartDrawer.cShapeDrawer || !this.cChartDrawer.cShapeDrawer.Graphics || !this.chartProp || !this.chartProp.chartGutter) {
 			return;
 		}
-		drawHistogramChart.prototype.startRect.call(this);
-		drawHistogramChart.prototype.drawHistogram.call(this);
+		this.startRect();
+		this.drawHistogram();
 		this.drawParetoLine();
-		drawHistogramChart.prototype.endRect.call(this);
-	},
-	recalculateLinePath: function (oDataInfo) {
-		if (!oDataInfo || !this.cChartSpace.chart.plotArea.axId || !Array.isArray(this.cChartSpace.chart.plotArea.axId) || this.cChartSpace.chart.plotArea.axId.length < 3 || !this.chartProp && !this.chartProp.chartGutter) {
-			return null;
-		}
-		const valAxis = this.cChartSpace.chart.plotArea.axId[2];
-		const pathId = this.cChartSpace.AllocPath();
-		const path = this.cChartSpace.GetPath(pathId);
+		this.endRect();
+};
 
-		const pathH = this.chartProp.pathH;
-		const pathW = this.chartProp.pathW;
-		const pxToMm = this.chartProp.pxToMM;
-
-		// starting point
-		// interval
-		let percentage = 0;
-		for (let i = 0; i < oDataInfo.data.length; i++) {
-			const val = oDataInfo.isAggregation ? oDataInfo.data[i] : oDataInfo.data[i].occurrence;
-			percentage += (val / oDataInfo.total);
-			const yPos = this.cChartDrawer.getYPosition(percentage, valAxis, true);
-			const xPos = this.paretoLine[0] + i * this.paretoLine[1];
-			if (i === 0) {
-				path.moveTo((xPos / pxToMm) * pathW, yPos * pathH);
-			} else {
-				path.lnTo((xPos / pxToMm) * pathW, yPos * pathH);
-			}
-		}
-		this.linePath = pathId;
-	},
-	drawParetoLine: function () {
-		if (!this.linePath) {
-			return;
-		}
-		const pen = this.cChartSpace && this.cChartSpace.chart && this.cChartSpace.chart.plotArea && this.cChartSpace.chart.plotArea.axId && this.cChartSpace.chart.plotArea.axId[1] ? this.cChartSpace.chart.plotArea.axId[1].compiledMajorGridLines : null;
-		if (pen) {
-			this.cChartDrawer.drawPath(this.linePath, pen);
-		}
-	},
-	_calculateDlbl: function (compiledDlb) {
-		drawHistogramChart.prototype._calculateDlbl.call(this, compiledDlb);
+drawParetoChart.prototype.drawParetoLine = function () {
+	if (!this.linePath) {
+		return;
+	}
+	const pen = this.cChartSpace && this.cChartSpace.chart && this.cChartSpace.chart.plotArea && this.cChartSpace.chart.plotArea.axId && this.cChartSpace.chart.plotArea.axId[1] ? this.cChartSpace.chart.plotArea.axId[1].compiledMajorGridLines : null;
+	if (pen) {
+		this.cChartDrawer.drawPath(this.linePath, pen);
 	}
 };
 
