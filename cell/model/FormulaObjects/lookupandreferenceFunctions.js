@@ -4384,10 +4384,6 @@ function (window, undefined) {
 						_res = _range.isOneCell() ?  new cRef3D(rangeName, arg2.getWS()) : new cArea3D(rangeName, arg2.getWS());
 					}
 
-					if (_res.type === cElementType.cellsRange || _res.type === cElementType.cellsRange3D) {
-						_res = _res.getFullArray();
-					}
-
 					return _res;
 				} else {
 					let _length = !bVertical ? dimensions2.row : dimensions2.col;
