@@ -184,8 +184,11 @@ var paper = function (self, undefined) {
 		return this;
 	};
 
+	tmpBaseExtend = Base.extend;
+	Base.exports = {};
 	Base.extend = function extend() {
-		var res = extend.base.apply(this, arguments),
+		// debugger
+		var res = tmpBaseExtend.apply(this, arguments),
 			name = res.prototype._class;
 		if (name && !Base.exports[name])
 			Base.exports[name] = res;
