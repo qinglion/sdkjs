@@ -776,6 +776,109 @@ var paper = function (self, undefined) {
 		}
 	});
 
+	var TestScope = function () {
+		Base.call(this);
+		paper = this;
+		this.settings = new Base({
+			applyMatrix: true,
+			insertItems: true,
+			handleSize: 4,
+			hitTolerance: 0
+		});
+		this.project = null;
+		this.projects = [];
+		this.tools = [];
+		this._id = PaperScope._id++;
+		PaperScope._scopes[this._id] = this;
+		var proto = PaperScope.prototype;
+		if (!this.support) {
+			proto.support = {
+				nativeDash: false,
+			};
+		}
+		if (!this.agent) {
+			var user = self.navigator.userAgent.toLowerCase(),
+				os = (/(darwin|win|mac|linux|freebsd|sunos)/.exec(user) || [])[0],
+				platform = os === 'darwin' ? 'mac' : os,
+				agent = proto.agent = proto.browser = { platform: platform };
+			if (platform)
+				agent[platform] = true;
+			user.replace(
+				/(opera|chrome|safari|webkit|firefox|msie|trident|atom|node|jsdom)\/?\s*([.\d]+)(?:.*version\/([.\d]+))?(?:.*rv\:v?([.\d]+))?/g,
+				function (match, n, v1, v2, rv) {
+					if (!agent.chrome) {
+						var v = n === 'opera' ? v2 :
+							/^(node|trident)$/.test(n) ? rv : v1;
+						agent.version = v;
+						agent.versionNumber = parseFloat(v);
+						n = { trident: 'msie', jsdom: 'node' }[n] || n;
+						agent.name = n;
+						agent[n] = true;
+					}
+				}
+			);
+			if (agent.chrome)
+				delete agent.webkit;
+			if (agent.atom)
+				delete agent.chrome;
+		}
+	};
+	
+	AscFormat.InitClass(TestScope, Base);
+	TestScope.prototype.version = "0.12.17";
+	TestScope.prototype.getPaper = function () {
+		return this;
+	};
+	TestScope.prototype.execute = function (code, options) {
+	};
+	TestScope.prototype.install = function (scope) {
+		var that = this;
+		Base.each(['project', 'view', 'tool'], function (key) {
+			Base.define(scope, key, {
+				configurable: true,
+				get: function () {
+					return that[key];
+				}
+			});
+		});
+		for (var key in this)
+			if (!/^_/.test(key) && this[key])
+				scope[key] = this[key];
+	};
+	TestScope.prototype.setup = function (element) {
+		paper = this;
+		this.project = new Project(element);
+		return this;
+	};
+	TestScope.prototype.activate = function () {
+		paper = this;
+	};
+	TestScope.prototype.clear = function () {
+		var projects = this.projects,
+			tools = this.tools;
+		for (var i = projects.length - 1; i >= 0; i--)
+			projects[i].remove();
+		for (var i = tools.length - 1; i >= 0; i--)
+			tools[i].remove();
+	};
+	TestScope.prototype.remove = function () {
+		this.clear();
+		delete PaperScope._scopes[this._id];
+	};
+	TestScope._scopes= {};
+	TestScope._id= 0;
+	TestScope.get= function (id) {
+		return this._scopes[id] || null;
+	};
+	TestScope.getAttribute = function (el, attr) {
+		return el['getAttribute'](attr) || el['getAttribute']('data-paper-' + attr);
+	};
+	TestScope.hasAttribute = function (el, attr) {
+		return el['hasAttribute'](attr) || el['hasAttribute']('data-paper-' + attr);
+	};
+
+	debugger
+
 	var PaperScopeItem = Base.extend(Emitter, {
 
 		initialize: function (activate) {
