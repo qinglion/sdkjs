@@ -2760,7 +2760,6 @@ var paper = function (self, undefined) {
 			this._children = [];
 			this._namedChildren = {};
 			this._activeLayer = null;
-			this._currentStyle = new Style(null, null, this);
 			this._selectionItems = {};
 			this._selectionCount = 0;
 			this._updateVersion = 0;
@@ -2798,14 +2797,6 @@ var paper = function (self, undefined) {
 			if (!remove.base.call(this))
 				return false;
 			return true;
-		},
-
-		getCurrentStyle: function () {
-			return this._currentStyle;
-		},
-
-		setCurrentStyle: function (style) {
-			this._currentStyle.set(style);
 		},
 
 		getIndex: function () {
@@ -3063,7 +3054,6 @@ var paper = function (self, undefined) {
 				if (point)
 					matrix.translate(point);
 				matrix._owner = this;
-				this._style = new Style(project._currentStyle, this, project);
 				if (internal || hasProps && props.insert == false
 					|| !settings.insertItems && !(hasProps && props.insert == true)) {
 					this._setProject(project);
@@ -3096,7 +3086,7 @@ var paper = function (self, undefined) {
 
 				serialize(this._serializeFields);
 				if (!(this instanceof Group))
-					serialize(this._style._defaults);
+					serialize({});
 				return [this._class, props];
 			},
 
@@ -3150,12 +3140,8 @@ var paper = function (self, undefined) {
 				this._changed(256);
 			},
 
-			getStyle: function () {
-				return this._style;
-			},
-
 			setStyle: function (style) {
-				this.getStyle().set(style);
+				
 			}
 		},
 		Base.each(['locked', 'visible', 'blendMode', 'opacity', 'guide'],
@@ -3380,9 +3366,7 @@ var paper = function (self, undefined) {
 					}
 					var res = this._getBounds(matrix || _matrix, options),
 						rect = res.rect || res,
-						style = this._style,
-						nonscaling = res.nonscaling || style.hasStroke()
-							&& !style.getStrokeScaling();
+						nonscaling = res.nonscaling;
 					if (cacheKey) {
 						if (!bounds) {
 							this._bounds = bounds = {};
@@ -3660,7 +3644,6 @@ var paper = function (self, undefined) {
 
 			equals: function (item) {
 				return item === this || item && this._class === item._class
-					&& this._style.equals(item._style)
 					&& this._matrix.equals(item._matrix)
 					&& this._locked === item._locked
 					&& this._visible === item._visible
@@ -3712,9 +3695,8 @@ var paper = function (self, undefined) {
 			},
 
 			copyAttributes: function (source, excludeMatrix) {
-				this.setStyle(source._style);
-				var keys = ['_locked', '_visible', '_blendMode', '_opacity',
-					'_clipMask', '_guide'];
+				this.setStyle({});
+				var keys = ['_locked', '_visible', '_blendMode', '_opacity', '_clipMask', '_guide'];
 				for (var i = 0, l = keys.length; i < l; i++) {
 					var key = keys[i];
 					if (source.hasOwnProperty(key))
@@ -4169,8 +4151,6 @@ var paper = function (self, undefined) {
 				var owner = this._getOwner(),
 					project = this._project,
 					index = this._index;
-				if (this._style)
-					this._style._dispose();
 				if (owner) {
 					if (this._name)
 						this._removeNamed();
@@ -4252,15 +4232,15 @@ var paper = function (self, undefined) {
 			},
 
 			hasFill: function () {
-				return this.getStyle().hasFill();
+				return false;
 			},
 
 			hasStroke: function () {
-				return this.getStyle().hasStroke();
+				return false
 			},
 
 			hasShadow: function () {
-				return this.getStyle().hasShadow();
+				return false
 			},
 
 			_getOrder: function (item) {
@@ -4369,13 +4349,6 @@ var paper = function (self, undefined) {
 						if (!matrix.isInvertible() && _matrix.isInvertible())
 							_matrix._backup = _matrix.getValues();
 						_matrix.prepend(matrix, true);
-						var style = this._style,
-							fillColor = style.getFillColor(true),
-							strokeColor = style.getStrokeColor(true);
-						if (fillColor)
-							fillColor.transform(matrix);
-						if (strokeColor)
-							strokeColor.transform(matrix);
 					}
 
 					if (applyMatrix && (applyMatrix = this._transformContent(
@@ -4461,48 +4434,6 @@ var paper = function (self, undefined) {
 		{
 
 			_setStyles: function (ctx, param, viewMatrix) {
-				var style = this._style,
-					matrix = this._matrix;
-				if (style.hasFill()) {
-					ctx.fillStyle = style.getFillColor().toCanvasStyle(ctx, matrix);
-				}
-				if (style.hasStroke()) {
-					ctx.strokeStyle = style.getStrokeColor().toCanvasStyle(ctx, matrix);
-					ctx.lineWidth = style.getStrokeWidth();
-					var strokeJoin = style.getStrokeJoin(),
-						strokeCap = style.getStrokeCap(),
-						miterLimit = style.getMiterLimit();
-					if (strokeJoin)
-						ctx.lineJoin = strokeJoin;
-					if (strokeCap)
-						ctx.lineCap = strokeCap;
-					if (miterLimit)
-						ctx.miterLimit = miterLimit;
-					if (paper.support.nativeDash) {
-						var dashArray = style.getDashArray(),
-							dashOffset = style.getDashOffset();
-						if (dashArray && dashArray.length) {
-							if ('setLineDash' in ctx) {
-								ctx.setLineDash(dashArray);
-								ctx.lineDashOffset = dashOffset;
-							} else {
-								ctx.mozDash = dashArray;
-								ctx.mozDashOffset = dashOffset;
-							}
-						}
-					}
-				}
-				if (style.hasShadow()) {
-					var pixelRatio = param.pixelRatio || 1,
-						mx = viewMatrix._shiftless().prepend(
-							new Matrix().scale(pixelRatio, pixelRatio)),
-						blur = mx.transform(new Point(style.getShadowBlur(), 0)),
-						offset = mx.transform(this.getShadowOffset());
-					ctx.shadowColor = style.getShadowColor().toCanvasStyle(ctx);
-					ctx.shadowBlur = blur.getLength();
-					ctx.shadowOffsetX = offset.x;
-					ctx.shadowOffsetY = offset.y;
-				}
 			},
 
 			draw: function (ctx, param, parentStrokeMatrix) {
@@ -4838,9 +4769,8 @@ var paper = function (self, undefined) {
 		},
 
 		_draw: function (ctx, param, viewMatrix, strokeMatrix) {
-			var style = this._style,
-				hasFill = style.hasFill(),
-				hasStroke = style.hasStroke(),
+			var hasFill = false,
+				hasStroke = false,
 				dontPaint = param.dontFinish || param.clip,
 				untransformed = !strokeMatrix;
 			if (hasFill || hasStroke || dontPaint) {
@@ -4902,12 +4832,6 @@ var paper = function (self, undefined) {
 			}
 			if (!dontPaint && (hasFill || hasStroke)) {
 				this._setStyles(ctx, param, viewMatrix);
-				if (hasFill) {
-					ctx.fill(style.getFillRule());
-					ctx.shadowColor = 'rgba(0,0,0,0)';
-				}
-				if (hasStroke)
-					ctx.stroke();
 			}
 		},
 
@@ -4917,9 +4841,7 @@ var paper = function (self, undefined) {
 
 		_getBounds: function (matrix, options) {
 			var rect = new Rectangle(this._size).setCenter(0, 0),
-				style = this._style,
-				strokeWidth = options.stroke && style.hasStroke()
-					&& style.getStrokeWidth();
+				strokeWidth = false;
 			if (matrix)
 				rect = matrix._transformBounds(rect);
 			return strokeWidth
@@ -4966,19 +4888,17 @@ var paper = function (self, undefined) {
 					}
 				},
 
-				_hitTestSelf: function _hitTestSelf(point, options, viewMatrix,
-					strokeMatrix) {
+				_hitTestSelf: function _hitTestSelf(point, options, viewMatrix, strokeMatrix) {
 					var hit = false,
-						style = this._style,
-						hitStroke = options.stroke && style.hasStroke(),
-						hitFill = options.fill && style.hasFill();
+						style = {},
+						hitStroke = false,
+						hitFill = false;
 					if (hitStroke || hitFill) {
 						var type = this._type,
 							radius = this._radius,
-							strokeRadius = hitStroke ? style.getStrokeWidth() / 2 : 0,
+							strokeRadius = 0,
 							strokePadding = options._tolerancePadding.add(
-								Path._getStrokePadding(strokeRadius,
-									!style.getStrokeScaling() && strokeMatrix));
+								Path._getStrokePadding(strokeRadius, false && strokeMatrix));
 						if (type === 'rectangle') {
 							var padding = strokePadding.multiply(2),
 								center = getCornerCenter(this, point, padding);
@@ -7395,9 +7315,7 @@ var paper = function (self, undefined) {
 				this.getBounds({ internal: true, handle: true }))
 				? this._getWinding(point)
 				: {};
-			return winding.onPath || !!(this.getFillRule() === 'evenodd'
-				? winding.windingL & 1 || winding.windingR & 1
-				: winding.winding);
+			return winding.onPath || !!(winding.winding);
 		},
 
 		getIntersections: function (path, include, _matrix, _returnFirst) {
@@ -7558,11 +7476,6 @@ var paper = function (self, undefined) {
 			} else if (flags & 64) {
 				this._bounds = undefined;
 			}
-		},
-
-		getStyle: function () {
-			var parent = this._parent;
-			return (parent instanceof CompoundPath ? parent : this)._style;
 		},
 
 		getSegments: function () {
@@ -8320,7 +8233,6 @@ var paper = function (self, undefined) {
 
 		_hitTestSelf: function (point, options, viewMatrix, strokeMatrix) {
 			var that = this,
-				style = this.getStyle(),
 				segments = this._segments,
 				numSegments = segments.length,
 				closed = this._closed,
@@ -8328,18 +8240,15 @@ var paper = function (self, undefined) {
 				strokePadding = tolerancePadding,
 				join, cap, miterLimit,
 				area, loc, res,
-				hitStroke = options.stroke && style.hasStroke(),
-				hitFill = options.fill && style.hasFill(),
+				hitStroke = false,
+				hitFill = false,
 				hitCurves = options.curves,
-				strokeRadius = hitStroke
-					? style.getStrokeWidth() / 2
-					: hitFill && options.tolerance > 0 || hitCurves
-						? 0 : null;
+				strokeRadius = hitFill && options.tolerance > 0 || hitCurves ? 0 : null;
 			if (strokeRadius !== null) {
 				if (strokeRadius > 0) {
-					join = style.getStrokeJoin();
-					cap = style.getStrokeCap();
-					miterLimit = style.getMiterLimit();
+					join = 'miter';
+					cap = 'butt';
+					miterLimit = 10;
 					strokePadding = strokePadding.add(
 						Path._getStrokePadding(strokeRadius, strokeMatrix));
 				} else {
@@ -8621,10 +8530,9 @@ var paper = function (self, undefined) {
 				_draw: function (ctx, param, viewMatrix, strokeMatrix) {
 					var dontStart = param.dontStart,
 						dontPaint = param.dontFinish || param.clip,
-						style = this.getStyle(),
-						hasFill = style.hasFill(),
-						hasStroke = style.hasStroke(),
-						dashArray = style.getDashArray(),
+						hasFill = false,
+						hasStroke = false,
+						dashArray = [],
 						dashLength = !paper.support.nativeDash && hasStroke
 							&& dashArray && dashArray.length;
 
@@ -8637,38 +8545,8 @@ var paper = function (self, undefined) {
 							ctx.closePath();
 					}
 
-					function getOffset(i) {
-						return dashArray[((i % dashLength) + dashLength) % dashLength];
-					}
-
 					if (!dontPaint && (hasFill || hasStroke)) {
 						this._setStyles(ctx, param, viewMatrix);
-						if (hasFill) {
-							ctx.fill(style.getFillRule());
-							ctx.shadowColor = 'rgba(0,0,0,0)';
-						}
-						if (hasStroke) {
-							if (dashLength) {
-								if (!dontStart)
-									ctx.beginPath();
-								var flattener = new PathFlattener(this, 0.25, 32, false,
-									strokeMatrix),
-									length = flattener.length,
-									from = -style.getDashOffset(), to,
-									i = 0;
-								while (from > 0) {
-									from -= getOffset(i--) + getOffset(i--);
-								}
-								while (from < length) {
-									to = from + getOffset(i++);
-									if (from > 0 || to > 0)
-										flattener.drawPart(ctx,
-											Math.max(from, 0), Math.max(to, 0));
-									from = to + getOffset(i++);
-								}
-							}
-							ctx.stroke();
-						}
 					}
 				},
 
@@ -8961,9 +8839,8 @@ var paper = function (self, undefined) {
 			},
 
 			getStrokeBounds: function (segments, closed, path, matrix, options) {
-				var style = path.getStyle(),
-					stroke = style.hasStroke(),
-					strokeWidth = style.getStrokeWidth(),
+				var	stroke = false,
+					strokeWidth = 1,
 					strokeMatrix = stroke && path._getStrokeMatrix(matrix, options),
 					strokePadding = stroke && Path._getStrokePadding(strokeWidth,
 						strokeMatrix),
@@ -8972,9 +8849,9 @@ var paper = function (self, undefined) {
 				if (!stroke)
 					return bounds;
 				var strokeRadius = strokeWidth / 2,
-					join = style.getStrokeJoin(),
-					cap = style.getStrokeCap(),
-					miterLimit = style.getMiterLimit(),
+					join = 'miter',
+					cap = 'butt',
+					miterLimit = 10,
 					joinBounds = new Rectangle(new Size(strokePadding));
 
 				function addPoint(point) {
@@ -9085,18 +8962,14 @@ var paper = function (self, undefined) {
 			},
 
 			getHandleBounds: function (segments, closed, path, matrix, options) {
-				var style = path.getStyle(),
-					stroke = options.stroke && style.hasStroke(),
+				var stroke = false,
 					strokePadding,
 					joinPadding;
 				if (stroke) {
 					var strokeMatrix = path._getStrokeMatrix(matrix, options),
-						strokeRadius = style.getStrokeWidth() / 2,
+						strokeRadius = 1 / 2,
 						joinRadius = strokeRadius;
-					if (style.getStrokeJoin() === 'miter')
-						joinRadius = strokeRadius * style.getMiterLimit();
-					if (style.getStrokeCap() === 'square')
-						joinRadius = Math.max(joinRadius, strokeRadius * Math.SQRT2);
+					joinRadius = strokeRadius * 10;
 					strokePadding = Path._getStrokePadding(strokeRadius, strokeMatrix);
 					joinPadding = Path._getStrokePadding(joinRadius, strokeMatrix);
 				}
@@ -9422,13 +9295,6 @@ var paper = function (self, undefined) {
 
 			if (!param.clip) {
 				this._setStyles(ctx, param, viewMatrix);
-				var style = this._style;
-				if (style.hasFill()) {
-					ctx.fill(style.getFillRule());
-					ctx.shadowColor = 'rgba(0,0,0,0)';
-				}
-				if (style.hasStroke())
-					ctx.stroke();
 			}
 		},
 
@@ -9525,7 +9391,7 @@ var paper = function (self, undefined) {
 				}
 				res = res
 					.resolveCrossings()
-					.reorient(res.getFillRule() === 'nonzero', true);
+					.reorient(true, true);
 			}
 			return res;
 		}
@@ -11276,243 +11142,6 @@ var paper = function (self, undefined) {
 			}, {
 			});
 		});
-
-	var Style = Base.extend(new function () {
-		var itemDefaults = {
-			fillColor: null,
-			fillRule: 'nonzero',
-			strokeColor: null,
-			strokeWidth: 1,
-			strokeCap: 'butt',
-			strokeJoin: 'miter',
-			strokeScaling: true,
-			miterLimit: 10,
-			dashOffset: 0,
-			dashArray: [],
-			shadowColor: null,
-			shadowBlur: 0,
-			shadowOffset: new Point(),
-			selectedColor: null
-		},
-			groupDefaults = Base.set({}, itemDefaults, {
-				fontFamily: 'sans-serif',
-				fontWeight: 'normal',
-				fontSize: 12,
-				leading: null,
-				justification: 'left'
-			}),
-			textDefaults = Base.set({}, groupDefaults, {
-				fillColor: new Color()
-			}),
-			flags = {
-				strokeWidth: 193,
-				strokeCap: 193,
-				strokeJoin: 193,
-				strokeScaling: 201,
-				miterLimit: 193,
-				fontFamily: 9,
-				fontWeight: 9,
-				fontSize: 9,
-				font: 9,
-				leading: 9,
-				justification: 9
-			},
-			item = {
-				beans: true
-			},
-			fields = {
-				_class: 'Style',
-				beans: true,
-
-				initialize: function Style(style, _owner, _project) {
-					this._values = {};
-					this._owner = _owner;
-					this._project = _owner && _owner._project || _project
-						|| paper.project;
-					this._defaults = !_owner || _owner instanceof Group
-						? groupDefaults
-						: itemDefaults;
-					if (style)
-						this.set(style);
-				}
-			};
-
-		Base.each(groupDefaults, function (value, key) {
-			var isColor = /Color$/.test(key),
-				isPoint = key === 'shadowOffset',
-				part = Base.capitalize(key),
-				flag = flags[key],
-				set = 'set' + part,
-				get = 'get' + part;
-
-			fields[set] = function (value) {
-				var owner = this._owner,
-					children = owner && owner._children,
-					applyToChildren = children && children.length > 0
-						&& !(owner instanceof CompoundPath);
-				if (applyToChildren) {
-					for (var i = 0, l = children.length; i < l; i++)
-						children[i]._style[set](value);
-				}
-				if ((key === 'selectedColor' || !applyToChildren)
-					&& key in this._defaults) {
-					var old = this._values[key];
-					if (old !== value) {
-						if (isColor) {
-							if (old) {
-								Color._setOwner(old, null);
-								old._canvasStyle = null;
-							}
-							if (value && value.constructor === Color) {
-								value = Color._setOwner(value, owner,
-									applyToChildren && set);
-							}
-						}
-						this._values[key] = value;
-						if (owner)
-							owner._changed(flag || 129);
-					}
-				}
-			};
-
-			fields[get] = function (_dontMerge) {
-				var owner = this._owner,
-					children = owner && owner._children,
-					applyToChildren = children && children.length > 0
-						&& !(owner instanceof CompoundPath),
-					value;
-				if (applyToChildren && !_dontMerge) {
-					for (var i = 0, l = children.length; i < l; i++) {
-						var childValue = children[i]._style[get]();
-						if (!i) {
-							value = childValue;
-						} else if (!Base.equals(value, childValue)) {
-							return undefined;
-						}
-					}
-				} else if (key in this._defaults) {
-					var value = this._values[key];
-					if (value === undefined) {
-						value = this._defaults[key];
-						if (value && value.clone) {
-							value = value.clone();
-						}
-					} else {
-						var ctor = isColor ? Color : isPoint ? Point : null;
-						if (ctor && !(value && value.constructor === ctor)) {
-							this._values[key] = value = ctor.read([value], 0,
-								{ readNull: true, clone: true });
-						}
-					}
-				}
-				if (value && isColor) {
-					value = Color._setOwner(value, owner, applyToChildren && set);
-				}
-				return value;
-			};
-
-			item[get] = function (_dontMerge) {
-				return this._style[get](_dontMerge);
-			};
-
-			item[set] = function (value) {
-				this._style[set](value);
-			};
-		});
-
-		Base.each({
-			Font: 'FontFamily',
-			WindingRule: 'FillRule'
-		}, function (value, key) {
-			var get = 'get' + key,
-				set = 'set' + key;
-			fields[get] = item[get] = '#get' + value;
-			fields[set] = item[set] = '#set' + value;
-		});
-
-		Item.inject(item);
-		return fields;
-	}, {
-		set: function (style) {
-			var isStyle = style instanceof Style,
-				values = isStyle ? style._values : style;
-			if (values) {
-				for (var key in values) {
-					if (key in this._defaults) {
-						var value = values[key];
-						this[key] = value && isStyle && value.clone
-							? value.clone() : value;
-					}
-				}
-			}
-		},
-
-		equals: function (style) {
-			function compare(style1, style2, secondary) {
-				var values1 = style1._values,
-					values2 = style2._values,
-					defaults2 = style2._defaults;
-				for (var key in values1) {
-					var value1 = values1[key],
-						value2 = values2[key];
-					if (!(secondary && key in values2) && !Base.equals(value1,
-						value2 === undefined ? defaults2[key] : value2))
-						return false;
-				}
-				return true;
-			}
-
-			return style === this || style && this._class === style._class
-				&& compare(this, style)
-				&& compare(style, this, true)
-				|| false;
-		},
-
-		_dispose: function () {
-			var color;
-			color = this.getFillColor();
-			if (color) color._canvasStyle = null;
-			color = this.getStrokeColor();
-			if (color) color._canvasStyle = null;
-			color = this.getShadowColor();
-			if (color) color._canvasStyle = null;
-		},
-
-		hasFill: function () {
-			var color = this.getFillColor();
-			return !!color && color.alpha > 0;
-		},
-
-		hasStroke: function () {
-			var color = this.getStrokeColor();
-			return !!color && color.alpha > 0 && this.getStrokeWidth() > 0;
-		},
-
-		hasShadow: function () {
-			var color = this.getShadowColor();
-			return !!color && color.alpha > 0 && (this.getShadowBlur() > 0
-				|| !this.getShadowOffset().isZero());
-		},
-
-		getFontStyle: function () {
-			var fontSize = this.getFontSize();
-			return this.getFontWeight()
-				+ ' ' + fontSize + (/[a-z]/i.test(fontSize + '') ? ' ' : 'px ')
-				+ this.getFontFamily();
-		},
-
-		getFont: '#getFontFamily',
-		setFont: '#setFontFamily',
-
-		getLeading: function getLeading() {
-			var leading = getLeading.base.call(this),
-				fontSize = this.getFontSize();
-			if (/pt|em|%|px/.test(fontSize))
-				fontSize = 32;
-			return leading != null ? leading : fontSize * 1.2;
-		}
-
-	});
 
 	var paper = new (PaperScope.inject(Base.exports, {
 		Base: Base,
