@@ -105,15 +105,14 @@ function CTable(DrawingDocument, Parent, Inline, Rows, Cols, TableGrid, bPresent
 		this.Lock.Set_Type(AscCommon.c_oAscLockTypes.kLockTypeMine, false);
 		AscCommon.CollaborativeEditing.Add_Unlock2(this);
 	}
-
-    this.DrawingDocument = null;
-    this.LogicDocument   = null;
-
-    if ( undefined !== DrawingDocument && null !== DrawingDocument )
-    {
-        this.DrawingDocument = DrawingDocument;
-        this.LogicDocument   = this.DrawingDocument.m_oLogicDocument;
-    }
+	
+	this.DrawingDocument = DrawingDocument ? DrawingDocument : null;
+	this.LogicDocument   = null;
+	
+	if (Parent && Parent.GetLogicDocument)
+		this.LogicDocument = Parent.GetLogicDocument();
+	else if (this.DrawingDocument)
+		this.LogicDocument = this.DrawingDocument.m_oLogicDocument;
 
     this.CompiledPr =
     {
@@ -3129,12 +3128,14 @@ CTable.prototype.private_CheckRangeOnReset = function()
 {
 	let X      = this.X;
 	let XLimit = this.XLimit;
-
+	
+	let compatibilityMode = this.LogicDocument && this.LogicDocument.GetCompatibilityMode ? this.LogicDocument.GetCompatibilityMode() : AscCommon.document_compatibility_mode_Current;
 	if (this.LogicDocument
 		&& this.LogicDocument.IsDocumentEditor()
 		&& this.IsInline()
 		&& this.Parent
-		&& this.Parent.CheckRange)
+		&& this.Parent.CheckRange
+		&& compatibilityMode <= AscCommon.document_compatibility_mode_Word14)
 	{
 		var arrRanges = this.Parent.CheckRange(X, this.Y, XLimit, this.Y + 0.001, this.Y, this.Y + 0.001, X, XLimit, this.private_GetRelativePageIndex(0));
 		if (arrRanges.length > 0)

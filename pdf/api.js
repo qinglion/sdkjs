@@ -62,8 +62,7 @@
 	PDFEditorApi.prototype.openDocument = function(file) {
 		let perfStart = performance.now();
 		
-		this.isOnlyReaderMode     = false;
-		this.ServerIdWaitComplete = true;
+		this.isOnlyReaderMode = false;
 		
 		window["AscViewer"]["baseUrl"] = (typeof document !== 'undefined' && document.currentScript) ? "" : "./../../../../sdkjs/pdf/src/engine/";
 		window["AscViewer"]["baseEngineUrl"] = "./../../../../sdkjs/pdf/src/engine/";
@@ -378,6 +377,7 @@
 		// пока что копирование бинарником только внутри drawings или самих drawings
 		if ([AscCommon.c_oAscClipboardDataFormat.Internal, AscCommon.c_oAscClipboardDataFormat.HtmlElement, AscCommon.c_oAscClipboardDataFormat.Text].includes(_format) && ((oDoc.GetActiveObject() == null) || oActiveDrawing)) {
 			if (this.isRestrictionView()) {
+				oDoc.FinalizeAction(true)
 				return;
 			}
 
@@ -1844,6 +1844,9 @@
 	};
 	
 	PDFEditorApi.prototype.initCollaborativeEditing = function() {
+		if (AscCommon.CollaborativeEditing)
+			return;
+		
 		AscCommon.CollaborativeEditing = new AscPDF.CPDFCollaborativeEditing();
 	};
 	PDFEditorApi.prototype.ChangeReaderMode = function() {};
@@ -2728,5 +2731,6 @@
 	PDFEditorApi.prototype['remTable']						= PDFEditorApi.prototype.remTable;
 	PDFEditorApi.prototype['asc_getTableStylesPreviews']	= PDFEditorApi.prototype.asc_getTableStylesPreviews;
 	PDFEditorApi.prototype['asc_GetSelectionBounds']		= PDFEditorApi.prototype.asc_GetSelectionBounds;
+	PDFEditorApi.prototype['asc_setPdfViewer']		        = PDFEditorApi.prototype.asc_setPdfViewer;
 
 })(window, window.document);

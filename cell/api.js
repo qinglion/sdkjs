@@ -3262,20 +3262,20 @@ var editor;
 			if (_container) {
 				_container.style.overflow = "hidden";
 			}
-			this.wb.MobileTouchManager = new AscCommonExcel.CMobileTouchManager({eventsElement: "cell_mobile_element"});
-			this.wb.MobileTouchManager.Init(this);
 
 			// input context must be created!!!
 			var _areaId = AscCommon.g_inputContext.HtmlArea.id;
 			var _element = document.getElementById(_areaId);
 			_element.parentNode.parentNode.style.zIndex = 10;
-
-			this.wb.MobileTouchManager.initEvents(AscCommon.g_inputContext.HtmlArea.id);
 		}
-		else
+
+		if ((typeof AscCommonExcel.CMobileTouchManager) !== "undefined")
 		{
-			this.wb.MobileTouchManager = new AscCommonExcel.CMobileTouchManager({eventsElement: "cell_mobile_element", desktopMode : true});
+			this.wb.MobileTouchManager = new AscCommonExcel.CMobileTouchManager({eventsElement: "cell_mobile_element", desktopMode : !this.isMobileVersion});
 			this.wb.MobileTouchManager.Init(this);
+
+			if (this.isMobileVersion)
+				this.wb.MobileTouchManager.initEvents(AscCommon.g_inputContext.HtmlArea.id);
 		}
 
 		this.asc_CheckGuiControlColors();
@@ -3856,7 +3856,7 @@ var editor;
       if (arrBooks.length) {
         this.sendSheetsToOtherBooks(where, arrNames, arrSheets, arrBooks);
         this.asc_deleteWorksheet(arrSheets.slice());
-      } else if (window["AscDesktopEditor"]) {
+      } else if (window["AscDesktopEditor"] && window["AscDesktopEditor"]["IsLocalFile"]()) {
 		  this.copyToNewWorkbook(arrSheets);
       }
 	  this.removeDocumentInfoEvent();
@@ -3925,7 +3925,7 @@ var editor;
     if (arrBooks) {
 		if (arrBooks.length) {
 			this.sendSheetsToOtherBooks(where, arrNames, arrSheets, arrBooks);
-		} else if (window["AscDesktopEditor"]) {
+		} else if (window["AscDesktopEditor"] && window["AscDesktopEditor"]["IsLocalFile"]()) {
 			this.copyToNewWorkbook(arrSheets);
 		}
 		this.removeDocumentInfoEvent();
@@ -6894,6 +6894,14 @@ var editor;
        } else {
 		   _adjustPrint.asc_setIgnorePrintArea(true);
        }
+
+	   if (_options["adjustOptions"])
+	   {
+		   if (_options["adjustOptions"]["startPageIndex"])
+			   _adjustPrint.asc_setStartPageIndex(_options["adjustOptions"]["startPageIndex"]);
+		   if (_options["adjustOptions"]["endPageIndex"])
+			   _adjustPrint.asc_setEndPageIndex(_options["adjustOptions"]["endPageIndex"]);
+	   }
 
 	   _adjustPrint.asc_setPrintType(Asc.c_oAscPrintType.EntireWorkbook);
 

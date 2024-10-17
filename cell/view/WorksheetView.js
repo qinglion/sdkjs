@@ -519,6 +519,9 @@
 
 		this.cellPasteHelper = new CCellPasteHelper(this);
 
+		this.vScrollPxStep = null;
+		this.hScrollPxStep = null;
+
 		this._init();
 
 		return this;
@@ -537,6 +540,18 @@
 		this.model.updatePivotTablesStyle(null);
 		this._cleanCellsTextMetricsCache();
 		this._prepareCellTextMetricsCache();
+		
+		let isMobileVersion = this.workbook && this.workbook.Api && this.workbook.Api.isMobileVersion;
+		if (isMobileVersion) {
+			let oView = this.workbook && this.workbook.controller && this.workbook.controller.settings;
+			let defaultStep = 10;
+			this.vScrollPxStep = oView ? oView.vscrollStep : defaultStep;
+			this.hScrollPxStep = oView ? oView.hscrollStep : defaultStep;
+		} else {
+			this.vScrollPxStep = this.defaultRowHeightPx;
+			this.hScrollPxStep = this.defaultColWidthPx;
+		}
+
 		// initializing is completed
 		this.handlers.trigger("initialized");
 	};
@@ -1144,7 +1159,7 @@
 
 
 		beforeVisibleRangeHeight += this.getScrollCorrect();
-		let defaultScrollPxStep = Asc.round(this.defaultRowHeightPx * this.getZoom());
+		let defaultScrollPxStep = Asc.round(this.getVScrollStep());
 		return defaultScrollPxStep === 0 ? 0 : ((beforeVisibleRangeHeight - frozenVisibleRangeHeight)/defaultScrollPxStep);
 	};
 
@@ -1171,7 +1186,7 @@
 			tmp -= 1;
 		}*/
 		let row = Math.max(0, i); // Диапазон скрола должен быть меньше количества строк, чтобы не было прибавления строк при перетаскивании бегунка
-		let defaultScrollPxStep = Asc.round(this.defaultRowHeightPx * this.getZoom());
+		let defaultScrollPxStep = Asc.round(this.getVScrollStep());
 		let beforeVisibleRangeHeight = this._getRowTop(row) - this.cellsTop;
 		beforeVisibleRangeHeight += this.getScrollCorrect();
 		return defaultScrollPxStep === 0 ? 0 : ((beforeVisibleRangeHeight - frozenVisibleRangeHeight)/defaultScrollPxStep);
@@ -1189,7 +1204,7 @@
 
 
 		beforeVisibleRangeWidth += this.getHorizontalScrollCorrect();
-		let defaultScrollPxStep = Asc.round(this.defaultColWidthPx * this.getZoom() * this.getRetinaPixelRatio());
+		let defaultScrollPxStep = Asc.round(this.getHScrollStep());
 		return defaultScrollPxStep === 0 ? 0 : ((beforeVisibleRangeWidth - frozenVisibleRangeWidth)/defaultScrollPxStep);
 	};
 
@@ -1216,7 +1231,7 @@
 			tmp -= 1;
 		}*/
 		let col = Math.max(0, i); // Диапазон скрола должен быть меньше количества строк, чтобы не было прибавления строк при перетаскивании бегунка
-		let defaultScrollPxStep = Asc.round(this.defaultColWidthPx * this.getZoom() * this.getRetinaPixelRatio());
+		let defaultScrollPxStep = Asc.round(this.getHScrollStep());
 		let beforeVisibleRangeWidth = this._getColLeft(col) - this.cellsLeft;
 		beforeVisibleRangeWidth += this.getHorizontalScrollCorrect();
 		return defaultScrollPxStep === 0 ? 0 : ((beforeVisibleRangeWidth - frozenVisibleRangeWidth)/defaultScrollPxStep);
@@ -1373,9 +1388,9 @@
 		if (_left < this.cellsLeft) {
 			_left = this.cellsLeft;
 		}
-		/*if (checkFrozenOffset && _left < frozenOffset) {
+		if (checkFrozenOffset && frozenOffset && _left < frozenOffset) {
 			_left = frozenOffset;
-		}*/
+		}
         return _left * asc_getcvt(0/*px*/, u, this._getPPIX());
     };
 
@@ -1399,9 +1414,9 @@
 		if (_top < this.cellsTop) {
 			_top = this.cellsTop;
 		}
-		/*if (checkFrozenOffset && _top < frozenOffset) {
+		if (checkFrozenOffset && frozenOffset && _top < frozenOffset) {
 			_top = frozenOffset;
-		}*/
+		}
         return _top * asc_getcvt(0/*px*/, u, this._getPPIY());
     };
 
@@ -3685,15 +3700,6 @@
 		if (AscCommon.AscBrowser.isCustomScaling()) {
 			vector_koef /= t.getRetinaPixelRatio();
 		}
-		let renderingSettings = this.getRenderingSettings();
-		if (!renderingSettings) {
-			renderingSettings = this.initRenderingSettings();
-		}
-		renderingSettings && renderingSettings.setCtxWidth(printPagesData.pageWidth / vector_koef);
-		renderingSettings && renderingSettings.setPageLeftOffset(printPagesData.leftFieldInPx);
-		let pageRightField = c_oAscPrintDefaultSettings.PageRightField;
-		renderingSettings && renderingSettings.setPageRightOffset(pageRightField / vector_koef);
-		this.getRightToLeft() && this.objectRender.updateDrawingsTransform({target: c_oTargetType.ColumnResize, col: 0});
 
 
 		this.stringRender.fontNeedUpdate = true;
@@ -3714,6 +3720,18 @@
 			}
 			drawingCtx.EndPage && drawingCtx.EndPage();
 		} else {
+			if (this.getRightToLeft()) {
+				let renderingSettings = this.getRenderingSettings();
+				if (!renderingSettings) {
+					renderingSettings = this.initRenderingSettings();
+				}
+				renderingSettings && renderingSettings.setCtxWidth(printPagesData.pageWidth / vector_koef);
+				renderingSettings && renderingSettings.setPageLeftOffset(printPagesData.leftFieldInPx);
+				let pageRightField = c_oAscPrintDefaultSettings.PageRightField;
+				renderingSettings && renderingSettings.setPageRightOffset(pageRightField / vector_koef);
+				this.objectRender.updateDrawingsTransform({target: c_oTargetType.ColumnResize, col: 0});
+			}
+
 			drawingCtx.BeginPage && drawingCtx.BeginPage(printPagesData.pageWidth, printPagesData.pageHeight);
 
 			//special thumbnail split
@@ -3725,7 +3743,7 @@
 				let currentRowCount = (printPagesData.pageRange.r2 - printPagesData.pageRange.r1) + (printPagesData.titleRowRange ? (printPagesData.titleRowRange.r2 - printPagesData.titleRowRange.r1) : 0);
 				if (currentRowCount > thumbnailMaxRowCount) {
 					let renderingSettings = this.getRenderingSettings();
-					if (!this.getRenderingSettings()) {
+					if (!renderingSettings) {
 						renderingSettings = this.initRenderingSettings();
 					}
 					let splitNumber = 2;
@@ -3753,6 +3771,8 @@
 			let clipLeftShape, clipTopShape, clipWidthShape, clipHeightShape;
 
 			let doDraw = function(range, titleWidth, titleHeight) {
+				drawingCtx.AddClipRect && drawingCtx.AddClipRect(clipLeft, clipTop, clipWidth, clipHeight);
+
 				let transformMatrix;
 				let _transform = drawingCtx.Transform;
 				if (printScale !== 1 && _transform) {
@@ -3777,7 +3797,6 @@
 					drawingCtx.updateTransforms && drawingCtx.updateTransforms();
 				}
 
-				drawingCtx.AddClipRect && drawingCtx.AddClipRect(clipLeft, clipTop, clipWidth, clipHeight);
 
 				let offsetCols = printPagesData.startOffsetPx;
 				//range = printPagesData.pageRange;
@@ -4627,12 +4646,7 @@
 		return stringRender;
 	};
 	WorksheetView.prototype._fillText = function (ctx, text, x, y, maxWidth, charWidths, angle) {
-		if (this.getRightToLeft()) {
-			ctx.fillText( text, x, y, maxWidth, charWidths, angle)
-		} else {
-			ctx.fillText(text, x, y, maxWidth, charWidths);
-		}
-
+		ctx.fillText(text, x, y, maxWidth, charWidths, angle);
 		return ctx;
 
 	};
@@ -4929,7 +4943,6 @@
 		ctx.AddClipRect(x, y, w, h);
 		ctx.setFillStyle(color);
 
-		let _originalMatrix;
 		let charsWidth = 0;
 		if (this.getRightToLeft()) {
 			for (let i in sr.charWidths) {
@@ -5228,7 +5241,7 @@
 			}
         }
         if (0 !== cFrozen) {
-            offsetX = this._getOffsetX(0);
+            offsetX = this._getOffsetX(0, true);
             // Почистим для pane
             colStart = Math.max(0, colStart);
             colEnd = Math.min(cFrozen, colEnd);
@@ -5276,7 +5289,7 @@
             }
         }
         if (0 !== rFrozen) {
-            offsetY = this._getOffsetY(0);
+            offsetY = this._getOffsetY(0, true);
             // Почистим для pane
             rowStart = Math.max(0, rowStart);
             rowEnd = Math.min(rFrozen, rowEnd);
@@ -6180,6 +6193,12 @@
 		var y2 = y1 + h;
 		var bl = y2 - Asc.round(
 				(isMerged ? (ct.metrics.height - ct.metrics.baseline) : this._getRowDescender(rowB)) * this.getZoom());
+		if (this.getRightToLeft()) {
+			let temp = x1;
+			x1 = x2;
+			x2 = temp;
+			w = -w;
+		}
 		var x1ct = isMerged ? x1 : this._getColLeft(col, true, ctx) - offsetX;
 		var x2ct = isMerged ? x2 : x1ct + this._getColumnWidth(col) - gridlineSize;
 		var textX = this._calcTextHorizPos(x1ct, x2ct, ct.metrics, ct.cellHA);
@@ -6203,7 +6222,11 @@
 			txtRotW = ct.textBound.width + xb1 - ct.textBound.offsetX;
 
 			if (isMerged) {
-				wb = this._getColLeft(colR + 1, true, ctx) - this._getColLeft(colL, true, ctx);
+				wb = this._getColLeft(colR + 1, null, ctx) - this._getColLeft(colL, null, ctx);
+				if (this.getRightToLeft()) {
+					xb1 += this._getColumnWidth(col) - wb;
+				}
+
 				hb = this._getRowTop(rowB + 1) - this._getRowTop(rowT);
 				ctx.AddClipRect(xb1, yb1, wb, hb);
 				clipUse = true;
@@ -8007,7 +8030,7 @@
             rFrozen -= 1;
             if (0 <= cFrozen && 0 <= rFrozen) {
                 oFrozenRange = new asc_Range(0, 0, cFrozen, rFrozen);
-                res = drawFunction.call(this, oFrozenRange, this._getColLeft(0) - this.cellsLeft, this._getOffsetY(0), args);
+                res = drawFunction.call(this, oFrozenRange, this._getColLeft(0) - this.cellsLeft, this._getOffsetY(0, true), args);
                 if (!res) {
                     return;
                 }
@@ -10194,7 +10217,7 @@
         var fixStartRow = new asc_Range(vr.c1, vr.r1, vr.c2, vr.r1);
 
 		let isReverse = delta < 0;
-		let unitDeltaStep = Asc.round(this.defaultRowHeightPx * this.getZoom());
+		let unitDeltaStep = Asc.round(this.getVScrollStep());
 
 		let defaultScrollPxStep = unitDeltaStep * Math.abs(delta);
 		if (defaultScrollPxStep < 1) {
@@ -10393,7 +10416,7 @@
         var clearTop = this.cellsTop + diffHeight + (scrollDown && moveHeight > 0 ? moveHeight : 0);
         var clearHeight = (moveHeight > 0) ? Math.abs(dy) + lastRowHeight : ctxH - (this.cellsTop + diffHeight);
         let clearOffset = 0;
-        if (this.workbook.getSmoothScrolling()) {
+        if (this.workbook.getSmoothScrolling() && (diffHeight + this._getRowTop(0)) !== clearTop) {
 			//need clear full row height
 			let firstDrawRow = vr.r1;
 			if (moveHeight > 0 && scrollDown) {
@@ -10562,7 +10585,7 @@
         var fixStartCol = new asc_Range(vr.c1, vr.r1, vr.c1, vr.r2);
 
 		let isReverse = delta < 0;
-		let unitDeltaStep = Asc.round(this.defaultColWidthPx * this.getZoom() * this.getRetinaPixelRatio());
+		let unitDeltaStep = Asc.round(this.getHScrollStep());
 
 		let defaultScrollPxStep = unitDeltaStep * Math.abs(delta);
 		if (defaultScrollPxStep < 1) {
@@ -16301,6 +16324,9 @@
 			} else if (AscCH.historyitem_Worksheet_SetRightToLeft === type) {
 				t.model.setRightToLeft(val);
 				t.workbook.checkScrollRtl(val);
+				if (t.objectRender) {
+					t.objectRender.updateDrawingsTransform({target: c_oTargetType.ColumnResize, col: 0});
+				}
 				fullUpdate = true;
 			} else {
 				t.model.setDisplayGridlines(val);
@@ -18258,7 +18284,9 @@
 			fl = this._getCellFlags(c);
 		}
 
-		fl.wrapText = col === 0 && this.getRightToLeft();
+		if (this.getRightToLeft() && col === 0) {
+			fl.wrapText = true;
+		}
 
 		var align = c.getAlign();
 		var indent = align && align.indent;
@@ -18471,9 +18499,10 @@
 			},
 			getSides: function () {
 				var _c1, _r1, _c2, _r2, ri = 0, bi = 0;
+				let isRtl = t.getRightToLeft();
 				if (isMerged) {
-					_c1 = mc.c1;
-					_c2 = mc.c2;
+					_c1 = isRtl ? mc.c2 : mc.c1;
+					_c2 = isRtl ? mc.c1 : mc.c2;
 					_r1 = mc.r1;
 					_r2 = mc.r2;
 				} else {
@@ -18483,32 +18512,55 @@
 				var vro = getVisibleRangeObject();
 				var i, w, h, arrLeftS = [], arrRightS = [], arrBottomS = [];
 				var offsX = t._getColLeft(vro.vr.c1) - t._getColLeft(0) - vro.offsetX;
-				if (t.getRightToLeft()) {
+				if (isRtl) {
 					offsX = -offsX;
 				}
 				var offsY = t._getRowTop(vro.vr.r1) - t._getRowTop(0) - vro.offsetY;
 				var cellX = t._getColLeft(_c1, true) - offsX, cellY = t._getRowTop(_r1) - offsY;
 				var _left = cellX;
-				for (i = _c1; i >= vro.vr.c1; --i) {
-					w = t._getColumnWidth(i);
-					if (0 < w) {
-						arrLeftS.push(_left);
+				if (isRtl) {
+					for (i = _c1; i >= vro.vr.c1; --i) {
+						w = t._getColumnWidth(i);
+						if (0 < w) {
+							arrLeftS.push(_left);
+						}
+						_left -= w;
 					}
-					_left -= w;
+				} else {
+					for (i = _c1; i <= vro.vr.c2; ++i) {
+						w = t._getColumnWidth(i);
+						if (0 < w) {
+							arrLeftS.push(_left);
+						}
+						_left -= w;
+					}
 				}
 
 				if (_c2 > vro.vr.c2) {
 					_c2 = vro.vr.c2;
 				}
 				_left = cellX;
-				for (i = _c1; i <= vro.vr.c2; ++i) {
-					w = t._getColumnWidth(i);
-					_left += w;
-					if (0 < w) {
-						arrRightS.push(_left);
+				if (isRtl) {
+					for (i = _c1; i >= vro.vr.c1; --i) {
+						w = t._getColumnWidth(i);
+						_left += w;
+						if (0 < w) {
+							arrRightS.push(_left);
+						}
+						if (_c2 === i) {
+							ri = arrRightS.length - 1;
+						}
 					}
-					if (_c2 === i) {
-						ri = arrRightS.length - 1;
+				} else {
+					for (i = _c1; i <= vro.vr.c2; ++i) {
+						w = t._getColumnWidth(i);
+						_left += w;
+						if (0 < w) {
+							arrRightS.push(_left);
+						}
+						if (_c2 === i) {
+							ri = arrRightS.length - 1;
+						}
 					}
 				}
 				w = t.drawingCtx.getWidth();
@@ -22793,13 +22845,13 @@
 							var collasedEndCol = this._getGroupCollapsed(arrayLines[i][j].end + 1);
 							//var collasedEndCol = rowLevelMap[arrayLines[i][j].end + 1] && rowLevelMap[arrayLines[i][j].end + 1].collapsed;
 							if(!collasedEndCol) {
-								ctx.lineVerPrevPx(posX, startPos, endPos + paddingTop);
+								ctx.lineVerPrevPx(posX - this.getRightToLeftOffset(), startPos, endPos + paddingTop);
 							}
 
 							// _
 							//|
 							if(!collasedEndCol && startY === arrayLines[i][j].start) {
-								ctx.lineHorPrevPx(posX - lineWidthDiff + thickLineDiff, startPos, posX + 4*padding);
+								ctx.lineHorPrevPx(posX - lineWidthDiff + thickLineDiff  + this.getRightToLeftOffset(), startPos, posX + 4*padding + this.getRightToLeftOffset());
 							}
 						} else {
 							if(endPosArr[arrayLines[i][j].start]) {
@@ -22938,14 +22990,14 @@
 			x = x - offsetX;
 			y = y - offsetY;
 
-			ctx.AddClipRect(bCol ? pos.pos - borderSize - offsetX : x - borderSize, bCol ? y - borderSize : pos.pos - borderSize - offsetY, bCol ? pos.size + borderSize : w + borderSize, bCol ? h + borderSize : pos.size + borderSize);
+			ctx.AddClipRect(bCol ? pos.pos - borderSize - offsetX : x - borderSize, bCol ? y - borderSize : pos.pos - borderSize - offsetY, bCol ? pos.size + borderSize : w + borderSize + this.getRightToLeftOffset(), bCol ? h + borderSize : pos.size + borderSize);
 			ctx.beginPath();
 
 			if(buttons[i].clean) {
 				ctx.clearRect(x, y, w, h);
 			}
 
-			ctx.lineHorPrevPx(x, y, x + w);
+			ctx.lineHorPrevPx(x, y, x + w + this.getRightToLeftOffset());
 			ctx.lineHorPrevPx(x + w, y + h, x);
 			ctx.lineVerPrevPx(x + w, y, y + h);
 			ctx.lineVerPrevPx(x, y + h, y - borderSize);
@@ -22983,9 +23035,10 @@
 
 			if(w > sizeLine + 2) {
 				if(this._getGroupCollapsed(val, bCol)/*rowLevelMap[val] && rowLevelMap[val].collapsed*/) {
-					ctx.lineHorPrevPx(x + paddingLine, y + h / 2 + 1, x + sizeLine + paddingLine);
-					ctx.lineVerPrevPx(x + paddingLine + sizeLine / 2 + 1, y + h / 2 - sizeLine / 2,  y + h / 2 + sizeLine / 2);
+					ctx.lineHorPrevPx(x + paddingLine + this.getRightToLeftOffset(), y + h / 2 + 1, x + sizeLine + paddingLine + this.getRightToLeftOffset());
+					ctx.lineVerPrevPx(x + paddingLine + sizeLine / 2 + 1 - this.getRightToLeftOffset(), y + h / 2 - sizeLine / 2,  y + h / 2 + sizeLine / 2);
 				} else {
+					x += this.getRightToLeftOffset();
 					ctx.lineHorPrevPx(x + paddingLine, y + h / 2 + diff, x + sizeLine + paddingLine);
 				}
 			}
@@ -23165,7 +23218,8 @@
 		if(w > tm.width + 3) {
 			var diff = bActive ? 1 : 0;
 			ctx.setFillStyle(st.color);
-			this._fillText(ctx, text, x + w / 2 - tm.width / 2 + diff, y + Asc.round(tm.baseline) + h / 2 -  tm.height / 2 + diff, undefined, sr.charWidths);
+
+			this._fillText(ctx, text, x + (this.getRightToLeft() ? w : w/2) - tm.width / 2 + diff, y + Asc.round(tm.baseline) + h / 2 -  tm.height / 2 + diff, undefined, sr.charWidths);
 		}
 
 		ctx.stroke();
@@ -23395,6 +23449,7 @@
 							if((arrayLines[i][j].end + 1 === target.row && !bCol) || (arrayLines[i][j].end + 1 === target.col && bCol)) {
 								props = t._getGroupDataButtonPos(arrayLines[i][j].end + 1, i, bCol);
 								collapsed = t._getGroupCollapsed(arrayLines[i][j].end + 1, bCol);/*levelMap[arrayLines[i][j].end + 1] && levelMap[arrayLines[i][j].end + 1].collapsed*/
+								x = t.checkRtl(x);
 								if(props) {
 									if(x >= props.x - offsetX && x <= props.x + props.w - offsetX && y >= props.y - offsetY && y <= props.y - offsetY + props.h) {
 										if(AscCommon.getPtrEvtName("up") === type) {
@@ -23469,6 +23524,8 @@
 			}
 		}
 
+		x = this.checkRtl(x);
+
 		//TODO для группировки колонок - y должен быть больше поля колонок
 		var bButtonClick = !bCol && x <= this.cellsLeft && this.groupWidth && x < this.groupWidth && y < this.cellsTop;
 		if(!bButtonClick) {
@@ -23490,10 +23547,10 @@
 			for(var i = 0; i <= groupArr.length; i++) {
 				props = this.getGroupDataMenuButPos(i, bCol);
 				if(x >= props.x && y >= props.y && x <= props.x + props.w && y <= props.y + props.h) {
-					if("mouseup" === type) {
+					if("mouseup" === type || "pointerup" === type) {
 						this.hideGroupLevel(i + 1, bCol);
 						this.clickedGroupButton = null;
-					} else if("mousedown" === type){
+					} else if("mousedown" === type || "pointerdown" === type){
 						this._drawGroupDataMenuButton(null, i, true, true, bCol);
 						this.clickedGroupButton = {level: i, bCol: bCol};
 						return true;
@@ -24893,9 +24950,9 @@
         return new AscFormat.CGraphicBounds(l - this.getRightToLeftOffset(), t, r, b);
     };
 
-    WorksheetView.prototype.rangeToRectRel = function(oRange, units) {
-        var l = this.checkRtl(this.getCellLeftRelative(oRange.c1, units, true), null, units);
-        var t = this.getCellTopRelative(oRange.r1, units, true);
+    WorksheetView.prototype.rangeToRectRel = function(oRange, units, checkFrozenArea) {
+        var l = this.checkRtl(this.getCellLeftRelative(oRange.c1, units, checkFrozenArea), null, units);
+        var t = this.getCellTopRelative(oRange.r1, units, checkFrozenArea);
         var r = this.checkRtl(this.getCellLeftRelative(oRange.c2, units) + this.getColumnWidth(oRange.c2, units), null, units);
         var b = this.getCellTopRelative(oRange.r2, units) + this.getRowHeight(oRange.r2, units);
 
@@ -26450,6 +26507,14 @@
 	WorksheetView.prototype.initRenderingSettings = function () {
 		this.renderingSettings = new CRenderingSettings();
 		return this.renderingSettings;
+	};
+
+	WorksheetView.prototype.getVScrollStep = function () {
+		return this.vScrollPxStep * this.getZoom() * this.getRetinaPixelRatio();
+	};
+
+	WorksheetView.prototype.getHScrollStep = function () {
+		return this.hScrollPxStep * this.getZoom() * this.getRetinaPixelRatio();
 	};
 
 	WorksheetView.prototype.checkRtl = function (x, ctx, units, checkOffsets) {

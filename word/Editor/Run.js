@@ -4688,8 +4688,30 @@ ParaRun.prototype.Recalculate_Range = function(PRS, ParaPr, Depth)
 					PRS.ComplexFields.processFieldChar(Item);
 
 					isHiddenCFPart = PRS.ComplexFields.isComplexFieldCode();
-
-					if (Item.IsEnd() && !isHiddenCFPart)
+					
+					if (Item.IsSeparate())
+					{
+						var oComplexField = Item.GetComplexField();
+						var oHdrFtr       = Para.Parent.IsHdrFtr(true);
+						if (oHdrFtr && !oComplexField && this.Paragraph)
+						{
+							// Т.к. Recalculate_Width запускается после Recalculate_Range, то возможен случай, когда у нас
+							// поля еще не собраны, но в колонтитулах они нам нужны уже собранные
+							this.Paragraph.ProcessComplexFields();
+							oComplexField = Item.GetComplexField();
+						}
+						
+						var oInstruction = oComplexField ? oComplexField.GetInstruction() : null;
+						
+						let isHiddenValue = !!(oHdrFtr
+							&& oInstruction
+							&& (AscWord.fieldtype_NUMPAGES === oInstruction.GetType()
+								|| AscWord.fieldtype_PAGE === oInstruction.GetType()
+								|| AscWord.fieldtype_FORMULA === oInstruction.GetType()));
+						
+						Item.SetHiddenValue(isHiddenValue);
+					}
+					else if (Item.IsEnd() && !isHiddenCFPart)
 					{
 						// Специальная ветка, для полей PAGE и NUMPAGES, находящихся в колонтитуле
 						var oComplexField = Item.GetComplexField();
@@ -4762,13 +4784,14 @@ ParaRun.prototype.Recalculate_Range = function(PRS, ParaPr, Depth)
 							var oParent = this.GetParent();
 							var nRunPos = this.private_GetPosInParent(oParent);
 							
-							// Заглушка на случай, когда настройки текущего рана не совпадают с настройками рана, где расположен текст
-							if (Pos >= ContentLen - 1 && oParent && oParent.Content[nRunPos + 1] instanceof ParaRun)
-							{
-								var oNumValuePr = oParent.Content[nRunPos + 1].Get_CompiledPr(false);
-								g_oTextMeasurer.SetTextPr(oNumValuePr, this.Paragraph.Get_Theme());
-								Item.Measure(g_oTextMeasurer, oNumValuePr);
-							}
+							// Заглушка на случай, когда настройки текущего рана не совпадают с настройками рана,
+							// где расположено значение поля, либо начало поля
+							let numValueTextPr = this.Get_CompiledPr(false);
+							if (Pos <= 0 && oParent && nRunPos > 0 && oParent.Content[nRunPos - 1] instanceof AscWord.Run)
+								numValueTextPr = oParent.Content[nRunPos - 1].Get_CompiledPr(false);
+
+							g_oTextMeasurer.SetTextPr(numValueTextPr, this.Paragraph.Get_Theme());
+							Item.Measure(g_oTextMeasurer, numValueTextPr);
 							
 							// Если до этого было слово, тогда не надо проверять убирается ли оно, но если стояли пробелы,
 							// тогда мы их учитываем при проверке убирается ли данный элемент, и добавляем только если

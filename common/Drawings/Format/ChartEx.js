@@ -298,6 +298,16 @@ function (window, undefined) {
 		return !this.isVertical();
 	};
 	CAxis.prototype.isVertical = function() {
+		if(this.isChartExCat()) {
+			let oChartSpace = this.getChartSpace();
+			if(oChartSpace) {
+				let aSeries = oChartSpace.getAllSeries();
+				let oFirstSeries = aSeries[0];
+				if(oFirstSeries && oFirstSeries.layoutId === AscFormat.SERIES_LAYOUT_FUNNEL) {
+					return true;
+				}
+			}
+		}
 		return this.isValuesAxis();
 	};
 
@@ -2467,14 +2477,14 @@ function (window, undefined) {
 	AscDFH.changesFactory[AscDFH.historyitem_Dimension_SetType] = window['AscDFH'].CChangesDrawingsLong;
 
 	function CDimension() {
-		CBaseChartObject.call(this);
+		AscFormat.CChartRefBase.call(this);
 		this.f = null;
 		this.nf = null;
 		this.type = null;
 		this.levelData = [];
 	}
 
-	InitClass(CDimension, CBaseChartObject, AscDFH.historyitem_type_Dimension);
+	InitClass(CDimension, AscFormat.CChartRefBase, AscDFH.historyitem_type_Dimension);
 
 	CDimension.prototype.fillObject = function (oCopy) {
 		CBaseChartObject.prototype.fillObject.call(this, oCopy);
@@ -2506,9 +2516,16 @@ function (window, undefined) {
 	CDimension.prototype.fillCellVal = function (oCell, oLvl, nPtIdx) {
 		return null;
 	};
+	CDimension.prototype.clearLevelData = function () {
+		for(let nIdx = this.levelData.length; nIdx > -1; --nIdx) {
+			this.removeLevelDataByPos(nIdx)
+		}
+	};
+	CDimension.prototype.removeLevelDataByPos = function (nIdx) {
+	};
 	CDimension.prototype.updateReferences = function (bDisplayEmptyCellsAs, bDisplayHidden) {
 
-
+		this.clearLevelData();
 		if (!this.f) {
 			return;
 		}
@@ -2595,7 +2612,11 @@ function (window, undefined) {
 			}
 		}
 	};
-
+	CDimension.prototype.updateCache = function() {
+		AscFormat.ExecuteNoHistory(function () {
+			this.updateReferences();
+		}, this, []);
+	};
 	// NumericDimension
 	drawingContentChanges[AscDFH.historyitem_NumericDimension_AddLevelData] =
 		drawingContentChanges[AscDFH.historyitem_NumericDimension_RemoveLevelData] = function (oClass) {
@@ -2654,7 +2675,6 @@ function (window, undefined) {
 			oLvl.addPt(oPt);
 		}
 	};
-
 
 
 	// // PageMargins (CPageMarginsChart contains in ChartFormat.js)
@@ -3578,6 +3598,7 @@ function (window, undefined) {
 
 
 
+
 	function CSubtotals() {
 		AscFormat.CBaseNoIdObject.call(this);
 		this.idx = [];
@@ -3670,12 +3691,12 @@ function (window, undefined) {
 	AscDFH.changesFactory[AscDFH.historyitem_TextData_SetV] = window['AscDFH'].CChangesDrawingsString;
 
 	function CTextData() {
-		CBaseChartObject.call(this);
+		AscFormat.CChartRefBase.call(this);
 		this.f = null;
 		this.v = null;
 	}
 
-	InitClass(CTextData, CBaseChartObject, AscDFH.historyitem_type_TextData);
+	InitClass(CTextData, AscFormat.CChartRefBase, AscDFH.historyitem_type_TextData);
 
 	CTextData.prototype.fillObject = function (oCopy) {
 		CBaseChartObject.prototype.fillObject.call(this, oCopy);
@@ -3695,6 +3716,30 @@ function (window, undefined) {
 		this.v = pr;
 	};
 
+	CTextData.prototype.updateCache = function() {
+		AscFormat.ExecuteNoHistory(function () {
+			if(this.f) {
+				let sContent = this.f.content;
+
+				let aParsedRef = AscFormat.fParseChartFormula(sContent);
+				if (!Array.isArray(aParsedRef) || aParsedRef.length === 0) {
+					return false;
+				}
+				if (aParsedRef.length > 0) {
+					let oRef = aParsedRef[0];
+					let oBBox = oRef.bbox;
+					let oWS = oRef.worksheet;
+					let oCell = oWS.getCell3(oBBox.r1, oBBox.c1);
+					if(oCell) {
+						let sVal = oCell.getValueWithFormat();
+						if (typeof sVal === "string" && sVal.length > 0) {
+							this.setV(sVal);
+						}
+					}
+				}
+			}
+		}, this, []);
+	};
 
 	// // TickLabels (unused, bool instead this class)
 	// function CTickLabels() {

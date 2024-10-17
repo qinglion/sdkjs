@@ -1909,6 +1909,10 @@
 			}
 			// На старте не нужно ничего делать
 			if (isStartEvent) {
+				// TODO: Возможна ситуация, что это событие придет до onEndLoadSdk, и класс совместки еще не создан
+				//       Стоит перенести старт совместки после загрузки sdk, а если sdk не загружено, то тут просто пометить,
+				//       что надо будет начать совместку
+				t.initCollaborativeEditing();
 				t.startCollaborationEditing();
 			} else {
 				t._unlockDocument(isWaitAuth);
@@ -3866,7 +3870,7 @@
 		this.currentPasswordOld = this.currentPassword;
 		this.currentPassword = password;
 		this.asc_Save(false, undefined, true);
-		if (!(this.DocInfo && this.DocInfo.get_OfflineApp())) {
+		if (!(this.DocInfo && this.DocInfo.get_OfflineApp()) && !this.isViewMode && !this.isRestrictionView()) {
 			var rData = {
 				"c": 'setpassword',
 				"id": this.documentId,
@@ -5279,7 +5283,8 @@
 		loader.map_font_index = AscFonts.g_map_font_index;
 
 		window["InitNativeObject"]();
-		window["InitNativeTextMeasurer"]();
+		if (window["InitNativeTextMeasurer"]) // fonts_ie.js
+			window["InitNativeTextMeasurer"]();
 		window["InitNativeZLib"]();
 	};
 

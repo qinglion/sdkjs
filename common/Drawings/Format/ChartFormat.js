@@ -3108,6 +3108,12 @@
         }
         return "";
     };
+    CDLbl.prototype.getCategoryName = function() {
+        if(this.series && this.pt) {
+            return this.series.getCatName(this.pt.idx);
+        }
+        return "";
+    };
     CDLbl.prototype.getDefaultTextForTxBody = function() {
         var compiled_string = "";
         var separator;
@@ -3362,7 +3368,12 @@
             this.txBody = this.tx.rich;
             this.txBody.parent = this;
         }
+        else if(this.txPr && this.txPr.content && !this.txPr.content.IsEmpty()) {
+            this.txBody = this.txPr.createDuplicate();
+            this.txBody.parent = this;
+        }
         else {
+
             if(this.parent && this.parent.getObjectType() === AscDFH.historyitem_type_TrendLine) {
                 this.txBody = AscFormat.CreateTextBodyFromString("", this.getDrawingDocument(), this);
                 this.parent.fillEquationContent( this.txBody.content);
@@ -5936,6 +5947,18 @@
     };
     CPlotArea.prototype.changeChartType = function(nType) {
         if(!this.parent) {
+            return;
+        }
+        if(this.isChartEx()) {
+            let oChartSpace = this.getChartSpace();
+            if(!oChartSpace) return;
+            let settings = AscFormat.DrawingObjectsController.prototype.getPropsFromChart(oChartSpace);
+            settings.type = nType;
+            let aSeries = AscFormat.getChartSeries(settings);
+            let oNewChartSpace =  AscFormat.DrawingObjectsController.prototype._getChartSpace.call(this, aSeries, settings, true);
+            if(oNewChartSpace) {
+                oChartSpace.setChart(oNewChartSpace.chart.createDuplicate());
+            }
             return;
         }
         if(this.charts.length < 1) {
@@ -14491,11 +14514,13 @@
         if(bShow) {
             if(!this.trendlineLbl) {
                 this.setTrendlineLbl(this.createLabel());
+                this.setDispEq(null);
             }
         }
         else {
             if(this.trendlineLbl) {
                 this.setTrendlineLbl(null);
+                this.setDispEq(false);
             }
         }
     };
@@ -17581,16 +17606,55 @@
         if(!this.chartSpace) {
             return;
         }
-        var aSeries = this.chartSpace.getAllSeries();
-        aSeries.sort(function(a, b) {
-            return a.order - b.order;
-        });
-        var nSeries;
-        var oSeriesRefs;
-        var nStartIdx = aSeries.length;
+        let aSeries = this.chartSpace.getAllSeries();
+        let nSeries;
+        let oSeriesRefs;
+        let nStartIdx = aSeries.length;
+        if(this.chartSpace.isChartEx()) {
+            let oChartData = this.chartSpace.chartData;
+            if(!oChartData) return;
 
-        for(nSeries = 0; nSeries < aSeries.length; ++nSeries) {
-            this.seriesRefs.push(new CSeriesDataRefs(aSeries[nSeries]));
+            aSeries.sort(function(a, b) {
+                return a.formatIdx - b.formatIdx;
+            });
+
+            for(nSeries = 0; nSeries < aSeries.length; ++nSeries) {
+                let oSeries = aSeries[nSeries];
+                let oData = oSeries.getData();
+                if(oData) {
+                    let oSeriesDataRefs = new CSeriesDataRefs();
+                    let oNumDim = oData.getValDimensions()[0];
+                    let oStrDim = oData.getCatDimensions()[0];
+                    let oTxDim = oSeries.tx && oSeries.tx.txData;
+                    let sFormula;
+                    if(oNumDim && oNumDim.f) {
+                        sFormula = oNumDim.f.content;
+                        oSeriesDataRefs.val = new CDataRefs(AscFormat.fParseChartFormula(sFormula));
+                        oSeriesDataRefs.val.ref = oNumDim;
+                    }
+                    if(oStrDim && oStrDim.f) {
+                        sFormula = oStrDim.f.content;
+                        oSeriesDataRefs.cat = new CDataRefs(AscFormat.fParseChartFormula(sFormula));
+                        oSeriesDataRefs.cat.ref = oStrDim;
+                    }
+                    if(oTxDim && oTxDim.f) {
+                        sFormula = oTxDim.f.content;
+                        oSeriesDataRefs.tx = new CDataRefs(AscFormat.fParseChartFormula(sFormula));
+                        oSeriesDataRefs.tx.ref = oTxDim;
+                    }
+                    this.tx = new CDataRefs([]);
+                    this.seriesRefs.push(oSeriesDataRefs);
+                }
+            }
+        }
+        else {
+            aSeries.sort(function(a, b) {
+                return a.order - b.order;
+            });
+
+            for(nSeries = 0; nSeries < aSeries.length; ++nSeries) {
+                this.seriesRefs.push(new CSeriesDataRefs(aSeries[nSeries]));
+            }
         }
         for(nSeries = 0; nSeries < this.seriesRefs.length; ++nSeries) {
             oSeriesRefs = this.seriesRefs[nSeries];
@@ -19108,6 +19172,7 @@
     window['AscFormat'].CHeaderFooterChart = CHeaderFooterChart;
     window['AscFormat'].CPageMarginsChart = CPageMarginsChart;
     window['AscFormat'].CPageSetup = CPageSetup;
+    window['AscFormat'].CChartRefBase = CChartRefBase;
     window['AscFormat'].CreateTextBodyFromString = CreateTextBodyFromString;
     window['AscFormat'].CreateDocContentFromString = CreateDocContentFromString;
     window['AscFormat'].AddToContentFromString = AddToContentFromString;

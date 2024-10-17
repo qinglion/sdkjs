@@ -1095,6 +1095,8 @@ CSparklineView.prototype.draw = function(graphics, offX, offY)
     var x = this.ws.getCellLeft(this.col, 3) - offX;
     var y = this.ws.getCellTop(this.row, 3) - offY;
 
+    x = this.ws.checkRtl(x, undefined, 3);
+
     var i;
 
     var extX;
@@ -1103,7 +1105,7 @@ CSparklineView.prototype.draw = function(graphics, offX, offY)
     if(oMergeInfo){
         extX = 0;
         for(i = oMergeInfo.c1; i <= oMergeInfo.c2; ++i){
-            extX += this.ws.getColumnWidth(i, 3)
+            extX += this.ws.getColumnWidth(i, 3);
         }
         extY = 0;
         for(i = oMergeInfo.r1; i <= oMergeInfo.r2; ++i){
@@ -1115,6 +1117,9 @@ CSparklineView.prototype.draw = function(graphics, offX, offY)
         extY = this.ws.getRowHeight(this.row, 3);
     }
 
+    if (this.ws.getRightToLeft()) {
+        x -= extX;
+    }
 
     var bExtent = Math.abs(this.extX - extX) > 0.01 || Math.abs(this.extY - extY) > 0.01;
     var bPosition = Math.abs(this.x - x) > 0.01 || Math.abs(this.y - y) > 0.01;
@@ -1378,6 +1383,9 @@ CSparklineView.prototype.setMinMaxValAx = function(minVal, maxVal, oSparklineGro
                     metrics.y = this.pxToMm( coordsFrom.y );
                     metrics.extX = this.ext.cx;
                     metrics.extY = this.ext.cy;
+                    if (this.worksheet.getRightToLeft()) {
+                        metrics.x -= metrics.extX;
+                    }
                 }
                 break;
             }
@@ -2427,7 +2435,7 @@ CSparklineView.prototype.setMinMaxValAx = function(minVal, maxVal, oSparklineGro
     //-----------------------------------------------------------------------------------
 
 
-    _this.calculateObjectMetrics = function (object, width, height) {
+    _this.calculateObjectMetrics = function (object, width, height, opt_checkRtl) {
         // Обработка картинок большого разрешения
         var bCorrect = false;
         var metricCoeff = 1;
@@ -2454,6 +2462,9 @@ CSparklineView.prototype.setMinMaxValAx = function(minVal, maxVal, oSparklineGro
             bCorrect = true;
         }
 
+        if (opt_checkRtl && worksheet.getRightToLeft()) {
+            width *= -1;
+        }
         var toCell = worksheet.findCellByXY(realLeftOffset + width, realTopOffset + height, true, false, false);
         object.to.col = toCell.col;
         object.to.colOff = pxToMm(toCell.colOff);
@@ -2486,10 +2497,15 @@ CSparklineView.prototype.setMinMaxValAx = function(minVal, maxVal, oSparklineGro
                 oSize = new AscCommon.asc_CImageSize(Math.max((options.width * AscCommon.g_dKoef_pix_to_mm), 1),
                     Math.max((options.height * AscCommon.g_dKoef_pix_to_mm), 1), true);
             }
-            var bCorrect = _this.calculateObjectMetrics(drawingObject, mmToPx(oSize.asc_getImageWidth()), mmToPx(oSize.asc_getImageHeight()));
+            var bCorrect = _this.calculateObjectMetrics(drawingObject, mmToPx(oSize.asc_getImageWidth()), mmToPx(oSize.asc_getImageHeight()), true);
 
             var coordsFrom = _this.calculateCoords(drawingObject.from);
             var coordsTo = _this.calculateCoords(drawingObject.to);
+            if (worksheet.getRightToLeft()) {
+                let temp = coordsTo.x;
+                coordsTo.x = coordsFrom.x;
+                coordsFrom.x = temp;
+            }
             if(bCorrect) {
                 _this.controller.addImageFromParams(_image.src, pxToMm(coordsFrom.x) + MOVE_DELTA, pxToMm(coordsFrom.y) + MOVE_DELTA, pxToMm(coordsTo.x - coordsFrom.x), pxToMm(coordsTo.y - coordsFrom.y));
             }
@@ -2894,13 +2910,42 @@ CSparklineView.prototype.setMinMaxValAx = function(minVal, maxVal, oSparklineGro
 
                             function fillTableFromRef(ref)
                             {
-                                var cache = ref.numCache ? ref.numCache : (ref.strCache ? ref.strCache : null);
+                                var cache;
+                                if(ref.numCache) {
+                                    cache =ref.numCache;
+                                }
+                                else if(ref.strCache) {
+                                    cache = ref.strCache;
+                                }
+                                else {
+                                    if(Array.isArray(ref.levelData)) {
+                                        cache = ref.levelData[0];
+                                    }
+                                    else if(typeof ref.v === "string") {
+                                        cache = AscFormat.ExecuteNoHistory(
+                                            function() {
+                                                let oStrCache = new AscFormat.CStrCache();
+                                                let oPt = new AscFormat.CStringPoint();
+                                                oPt.idx = 0;
+                                                oPt.val = ref.v;
+                                                oStrCache.addPt(oPt);
+                                                return oStrCache;
+                                            }, this, []
+                                        );
+                                    }
+                                }
+                                var sFormula = "";
+                                if(typeof ref.f === "string") {
+                                    sFormula = ref.f;
+                                }
+                                else if(ref.f && ref.f.content) {
+                                    sFormula = ref.f.content;
+                                }
                                 var lit_format_code;
                                 if(cache)
                                 {
                                     lit_format_code = (typeof cache.formatCode === "string" && cache.formatCode.length > 0) ? cache.formatCode : "General";
 
-                                    var sFormula = ref.f + "";
                                     if(sFormula[0] === '(')
                                         sFormula = sFormula.slice(1);
                                     if(sFormula[sFormula.length-1] === ')')
@@ -3047,6 +3092,27 @@ CSparklineView.prototype.setMinMaxValAx = function(minVal, maxVal, oSparklineGro
                                         if(ser.tx && ser.tx.strRef)
                                         {
                                             fillTableFromRef(ser.tx.strRef);
+                                        }
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                if(oNewChartSpace.isChartEx()) {
+                                    let aSeries = oNewChartSpace.getAllSeries();
+
+                                    for(let nS = 0; nS < aSeries.length; ++nS) {
+                                        let oSeries = aSeries[nS];
+                                        let oData = oSeries.getData();
+                                        if(oData) {
+                                            let aDims = oData.dimension;
+                                            for(let nDim = 0; nDim < aDims.length; ++nDim) {
+                                                let oDim = aDims[nDim];
+                                                fillTableFromRef(oDim);
+                                            }
+                                        }
+                                        if(oSeries.tx && oSeries.tx.txData) {
+                                            fillTableFromRef(oSeries.tx.txData);
                                         }
                                     }
                                 }
