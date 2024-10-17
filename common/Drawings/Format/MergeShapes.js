@@ -674,11 +674,9 @@ var paper = function (self, undefined) {
 			PaperScope._scopes[this._id] = this;
 			var proto = PaperScope.prototype;
 			if (!this.support) {
-				var ctx = CanvasProvider.getContext(1, 1) || {};
 				proto.support = {
-					nativeDash: 'setLineDash' in ctx || 'mozDash' in ctx,
+					nativeDash: false,
 				};
-				CanvasProvider.release(ctx);
 			}
 			if (!this.agent) {
 				var user = self.navigator.userAgent.toLowerCase(),
@@ -710,11 +708,6 @@ var paper = function (self, undefined) {
 
 		version: "0.12.17",
 
-		getView: function () {
-			var project = this.project;
-			return project && project._view;
-		},
-
 		getPaper: function () {
 			return this;
 		},
@@ -741,10 +734,6 @@ var paper = function (self, undefined) {
 			paper = this;
 			this.project = new Project(element);
 			return this;
-		},
-
-		createCanvas: function (width, height) {
-			return CanvasProvider.getCanvas(width, height);
 		},
 
 		activate: function () {
@@ -820,10 +809,6 @@ var paper = function (self, undefined) {
 			this._scope = null;
 			return true;
 		},
-
-		getView: function () {
-			return this._scope.getView();
-		}
 	});
 
 	var CollisionDetection = {
@@ -2776,8 +2761,6 @@ var paper = function (self, undefined) {
 			this._namedChildren = {};
 			this._activeLayer = null;
 			this._currentStyle = new Style(null, null, this);
-			this._view = View.create(this,
-				element || CanvasProvider.getCanvas(1, 1));
 			this._selectionItems = {};
 			this._selectionCount = 0;
 			this._updateVersion = 0;
@@ -2788,14 +2771,6 @@ var paper = function (self, undefined) {
 		},
 
 		_changed: function (flags, item) {
-			if (flags & 1) {
-				var view = this._view;
-				if (view) {
-					view._needsUpdate = true;
-					if (!view._requested && view._autoUpdate)
-						view.requestUpdate();
-				}
-			}
 			var changes = this._changes;
 			if (changes && item) {
 				var changesById = this._changesById,
@@ -2822,13 +2797,7 @@ var paper = function (self, undefined) {
 		remove: function remove() {
 			if (!remove.base.call(this))
 				return false;
-			if (this._view)
-				this._view.remove();
 			return true;
-		},
-
-		getView: function () {
-			return this._view;
 		},
 
 		getCurrentStyle: function () {
@@ -3054,22 +3023,18 @@ var paper = function (self, undefined) {
 				function (name) {
 					this._events[name] = {
 						install: function (type) {
-							this.getView()._countItemEvent(type, 1);
 						},
 
 						uninstall: function (type) {
-							this.getView()._countItemEvent(type, -1);
 						}
 					};
 				}, {
 				_events: {
 					onFrame: {
 						install: function () {
-							this.getView()._animateItem(this, true);
 						},
 
 						uninstall: function () {
-							this.getView()._animateItem(this, false);
 						}
 					},
 
@@ -3438,7 +3403,7 @@ var paper = function (self, undefined) {
 					var parent = this.getStrokeScaling() ? null
 						: options && options.internal ? this
 							: this._parent || this._symbol && this._symbol._item,
-						mx = parent ? parent.getViewMatrix().invert() : matrix;
+						mx = matrix;
 					return mx && mx._shiftless();
 				},
 
@@ -3604,10 +3569,6 @@ var paper = function (self, undefined) {
 				return _dontClone ? matrix : matrix.clone();
 			},
 
-			getViewMatrix: function () {
-				return this.getGlobalMatrix().prepend(this.getView()._matrix);
-			},
-
 			getApplyMatrix: function () {
 				return this._applyMatrix;
 			},
@@ -3637,10 +3598,6 @@ var paper = function (self, undefined) {
 				}
 				if (installEvents)
 					this._installEvents(true);
-			},
-
-			getView: function () {
-				return this._project._view;
 			},
 
 			_installEvents: function _installEvents(install) {
@@ -3872,7 +3829,7 @@ var paper = function (self, undefined) {
 				var matrix = this._matrix,
 					viewMatrix = parentViewMatrix
 						? parentViewMatrix.appended(matrix)
-						: this.getGlobalMatrix().prepend(this.getView()._matrix),
+						: this.getGlobalMatrix(),
 					tolerance = Math.max(options.tolerance, 1e-12),
 					tolerancePadding = options._tolerancePadding = new Size(
 						Path._getStrokePadding(tolerance,
@@ -4549,82 +4506,6 @@ var paper = function (self, undefined) {
 			},
 
 			draw: function (ctx, param, parentStrokeMatrix) {
-				var updateVersion = this._updateVersion = this._project._updateVersion;
-				if (!this._visible || this._opacity === 0)
-					return;
-				var matrices = param.matrices,
-					viewMatrix = param.viewMatrix,
-					matrix = this._matrix,
-					globalMatrix = matrices[matrices.length - 1].appended(matrix);
-				if (!globalMatrix.isInvertible())
-					return;
-
-				viewMatrix = viewMatrix ? viewMatrix.appended(globalMatrix)
-					: globalMatrix;
-
-				matrices.push(globalMatrix);
-				if (param.updateMatrix) {
-					this._globalMatrix = globalMatrix;
-				}
-
-				var blendMode = this._blendMode,
-					opacity = Numerical.clamp(this._opacity, 0, 1),
-					normalBlend = blendMode === 'normal',
-					direct = normalBlend && opacity === 1
-						|| param.dontStart
-						|| param.clip
-						|| (normalBlend && opacity < 1)
-						&& this._canComposite(),
-					pixelRatio = param.pixelRatio || 1,
-					mainCtx, itemOffset, prevOffset;
-				if (!direct) {
-					var bounds = this.getStrokeBounds(viewMatrix);
-					if (!bounds.width || !bounds.height) {
-						matrices.pop();
-						return;
-					}
-					prevOffset = param.offset;
-					itemOffset = param.offset = bounds.getTopLeft().floor();
-					mainCtx = ctx;
-					ctx = CanvasProvider.getContext(bounds.getSize().ceil().add(1)
-						.multiply(pixelRatio));
-					if (pixelRatio !== 1)
-						ctx.scale(pixelRatio, pixelRatio);
-				}
-				ctx.save();
-				var strokeMatrix = parentStrokeMatrix
-					? parentStrokeMatrix.appended(matrix)
-					: this._canScaleStroke && !this.getStrokeScaling(true)
-					&& viewMatrix,
-					clip = !direct && param.clipItem,
-					transform = !strokeMatrix || clip;
-				if (direct) {
-					ctx.globalAlpha = opacity;
-				} else if (transform) {
-					ctx.translate(-itemOffset.x, -itemOffset.y);
-				}
-				if (transform) {
-					(direct ? matrix : viewMatrix).applyToContext(ctx);
-				}
-				if (clip) {
-					param.clipItem.draw(ctx, param.extend({ clip: true }));
-				}
-				if (strokeMatrix) {
-					ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-					var offset = param.offset;
-					if (offset)
-						ctx.translate(-offset.x, -offset.y);
-				}
-				this._draw(ctx, param, viewMatrix, strokeMatrix);
-				ctx.restore();
-				matrices.pop();
-				if (param.clip && !param.dontFinish) {
-					ctx.clip(this.getFillRule());
-				}
-				if (!direct) {
-					CanvasProvider.release(ctx);
-					param.offset = prevOffset;
-				}
 			},
 
 			_isUpdated: function (updateVersion) {
@@ -10882,19 +10763,16 @@ var paper = function (self, undefined) {
 				if (!color) {
 					if (window) {
 						if (!colorCtx) {
-							colorCtx = CanvasProvider.getContext(1, 1, {
-								willReadFrequently: true
-							});
+							colorCtx = {};
 							colorCtx.globalCompositeOperation = 'copy';
 						}
 						colorCtx.fillStyle = 'rgba(0,0,0,0)';
 						colorCtx.fillStyle = string;
 						colorCtx.fillRect(0, 0, 1, 1);
-						var data = colorCtx.getImageData(0, 0, 1, 1).data;
 						color = namedColors[string] = [
-							data[0] / 255,
-							data[1] / 255,
-							data[2] / 255
+							0 / 255,
+							0 / 255,
+							0 / 255
 						];
 					} else {
 						color = [0, 0, 0];
@@ -11616,10 +11494,6 @@ var paper = function (self, undefined) {
 				|| !this.getShadowOffset().isZero());
 		},
 
-		getView: function () {
-			return this._project._view;
-		},
-
 		getFontStyle: function () {
 			var fontSize = this.getFontSize();
 			return this.getFontWeight()
@@ -11634,947 +11508,33 @@ var paper = function (self, undefined) {
 			var leading = getLeading.base.call(this),
 				fontSize = this.getFontSize();
 			if (/pt|em|%|px/.test(fontSize))
-				fontSize = this.getView().getPixelSize(fontSize);
+				fontSize = 32;
 			return leading != null ? leading : fontSize * 1.2;
 		}
 
 	});
 
-	var DomElement = new function () {
-		function handlePrefix(el, name, set, value) {
-			var prefixes = ['', 'webkit', 'moz', 'Moz', 'ms', 'o'],
-				suffix = name[0].toUpperCase() + name.substring(1);
-			for (var i = 0; i < 6; i++) {
-				var prefix = prefixes[i],
-					key = prefix ? prefix + suffix : name;
-				if (key in el) {
-					if (set) {
-						el[key] = value;
-					} else {
-						return el[key];
-					}
-					break;
-				}
-			}
-		}
-
-		return {
-			getStyles: function (el) {
-				var doc = el && el.nodeType !== 9 ? el.ownerDocument : el,
-					view = doc && doc.defaultView;
-				return view && view.getComputedStyle(el, '');
-			},
-
-			getBounds: function (el, viewport) {
-				var doc = el.ownerDocument,
-					body = doc.body,
-					html = doc.documentElement,
-					rect;
-				try {
-					rect = el.getBoundingClientRect();
-				} catch (e) {
-					rect = { left: 0, top: 0, width: 0, height: 0 };
-				}
-				var x = rect.left - (html.clientLeft || body.clientLeft || 0),
-					y = rect.top - (html.clientTop || body.clientTop || 0);
-				if (!viewport) {
-					var view = doc.defaultView;
-					x += view.pageXOffset || html.scrollLeft || body.scrollLeft;
-					y += view.pageYOffset || html.scrollTop || body.scrollTop;
-				}
-				return new Rectangle(x, y, rect.width, rect.height);
-			},
-
-			getViewportBounds: function (el) {
-				var doc = el.ownerDocument,
-					view = doc.defaultView,
-					html = doc.documentElement;
-				return new Rectangle(0, 0,
-					view.innerWidth || html.clientWidth,
-					view.innerHeight || html.clientHeight
-				);
-			},
-
-			getOffset: function (el, viewport) {
-				return DomElement.getBounds(el, viewport).getPoint();
-			},
-
-			getSize: function (el) {
-				return DomElement.getBounds(el, true).getSize();
-			},
-
-			isInvisible: function (el) {
-				return DomElement.getSize(el).equals(new Size(0, 0));
-			},
-
-			isInView: function (el) {
-				return !DomElement.isInvisible(el)
-					&& DomElement.getViewportBounds(el).intersects(
-						DomElement.getBounds(el, true));
-			},
-
-			isInserted: function (el) {
-				return document.body.contains(el);
-			},
-
-			getPrefixed: function (el, name) {
-				return el && handlePrefix(el, name);
-			},
-
-			setPrefixed: function (el, name, value) {
-				if (typeof name === 'object') {
-					for (var key in name)
-						handlePrefix(el, key, true, name[key]);
-				} else {
-					handlePrefix(el, name, true, value);
-				}
-			}
-		};
-	};
-
-	var DomEvent = {
-		add: function (el, events) {
-			if (el) {
-				for (var type in events) {
-					var func = events[type],
-						parts = type.split(/[\s,]+/g);
-					for (var i = 0, l = parts.length; i < l; i++) {
-						var name = parts[i];
-						var options = (
-							el === document
-							&& (name === 'touchstart' || name === 'touchmove')
-						) ? { passive: false } : false;
-						el.addEventListener(name, func, options);
-					}
-				}
-			}
-		},
-
-		remove: function (el, events) {
-			if (el) {
-				for (var type in events) {
-					var func = events[type],
-						parts = type.split(/[\s,]+/g);
-					for (var i = 0, l = parts.length; i < l; i++)
-						el.removeEventListener(parts[i], func, false);
-				}
-			}
-		},
-
-		getPoint: function (event) {
-			var pos = event.targetTouches
-				? event.targetTouches.length
-					? event.targetTouches[0]
-					: event.changedTouches[0]
-				: event;
-			return new Point(
-				pos.pageX || pos.clientX + document.documentElement.scrollLeft,
-				pos.pageY || pos.clientY + document.documentElement.scrollTop
-			);
-		},
-
-		getTarget: function (event) {
-			return event.target || event.srcElement;
-		},
-
-		getRelatedTarget: function (event) {
-			return event.relatedTarget || event.toElement;
-		},
-
-		getOffset: function (event, target) {
-			return DomEvent.getPoint(event).subtract(DomElement.getOffset(
-				target || DomEvent.getTarget(event)));
-		}
-	};
-
-	DomEvent.requestAnimationFrame = new function () {
-		var nativeRequest = DomElement.getPrefixed(window, 'requestAnimationFrame'),
-			requested = false,
-			callbacks = [],
-			timer;
-
-		function handleCallbacks() {
-			var functions = callbacks;
-			callbacks = [];
-			for (var i = 0, l = functions.length; i < l; i++)
-				functions[i]();
-			requested = nativeRequest && callbacks.length;
-			if (requested)
-				nativeRequest(handleCallbacks);
-		}
-
-		return function (callback) {
-			callbacks.push(callback);
-			if (nativeRequest) {
-				if (!requested) {
-					nativeRequest(handleCallbacks);
-					requested = true;
-				}
-			} else if (!timer) {
-				timer = setInterval(handleCallbacks, 1000 / 60);
-			}
-		};
-	};
-
-	var View = Base.extend(Emitter, {
-		_class: 'View',
-
-		initialize: function View(project, element) {
-
-			function getSize(name) {
-				return element[name] || parseInt(element.getAttribute(name), 10);
-			}
-
-			function getCanvasSize() {
-				var size = DomElement.getSize(element);
-				return size.isNaN() || size.isZero()
-					? new Size(getSize('width'), getSize('height'))
-					: size;
-			}
-
-			var size;
-			if (window && element) {
-				this._id = element.getAttribute('id');
-				if (this._id == null)
-					element.setAttribute('id', this._id = 'paper-view-' + View._id++);
-				DomEvent.add(element, this._viewEvents);
-				var none = 'none';
-				DomElement.setPrefixed(element.style, {
-					userDrag: none,
-					userSelect: none,
-					touchCallout: none,
-					contentZooming: none,
-					tapHighlightColor: 'rgba(0,0,0,0)'
-				});
-
-				if (PaperScope.hasAttribute(element, 'resize')) {
-					var that = this;
-					DomEvent.add(window, this._windowEvents = {
-						resize: function () {
-							that.setViewSize(getCanvasSize());
-						}
-					});
-				}
-
-				size = getCanvasSize();
-
-				if (PaperScope.hasAttribute(element, 'stats')
-					&& typeof Stats !== 'undefined') {
-					this._stats = new Stats();
-					var stats = this._stats.domElement,
-						style = stats.style,
-						offset = DomElement.getOffset(element);
-					style.position = 'absolute';
-					style.left = offset.x + 'px';
-					style.top = offset.y + 'px';
-					document.body.appendChild(stats);
-				}
-			} else {
-				size = new Size(element);
-				element = null;
-			}
-			this._project = project;
-			this._scope = project._scope;
-			this._element = element;
-			if (!this._pixelRatio)
-				this._pixelRatio = window && window.devicePixelRatio || 1;
-			this._setElementSize(size.width, size.height);
-			this._viewSize = size;
-			View._views.push(this);
-			View._viewsById[this._id] = this;
-			(this._matrix = new Matrix())._owner = this;
-			if (!View._focused)
-				View._focused = this;
-			this._frameItems = {};
-			this._frameItemCount = 0;
-			this._itemEvents = { native: {}, virtual: {} };
-			this._autoUpdate = !paper.agent.node;
-			this._needsUpdate = false;
-		},
-
-		remove: function () {
-			if (!this._project)
-				return false;
-			if (View._focused === this)
-				View._focused = null;
-			View._views.splice(View._views.indexOf(this), 1);
-			delete View._viewsById[this._id];
-			var project = this._project;
-			if (project._view === this)
-				project._view = null;
-			DomEvent.remove(this._element, this._viewEvents);
-			DomEvent.remove(window, this._windowEvents);
-			this._element = this._project = null;
-			this.off('frame');
-			this._animate = false;
-			this._frameItems = {};
-			return true;
-		},
-
-		_events: Base.each(
-			Item._itemHandlers.concat(['onResize', 'onKeyDown', 'onKeyUp']),
-			function (name) {
-				this[name] = {};
-			}, {
-			onFrame: {
-				install: function () {
-					this.play();
-				},
-
-				uninstall: function () {
-					this.pause();
-				}
-			}
-		}
-		),
-
-		_animate: false,
-		_time: 0,
-		_count: 0,
-
-		getAutoUpdate: function () {
-			return this._autoUpdate;
-		},
-
-		setAutoUpdate: function (autoUpdate) {
-			this._autoUpdate = autoUpdate;
-			if (autoUpdate)
-				this.requestUpdate();
-		},
-
-		update: function () {
-		},
-
-		draw: function () {
-			this.update();
-		},
-
-		requestUpdate: function () {
-			if (!this._requested) {
-				var that = this;
-				DomEvent.requestAnimationFrame(function () {
-					that._requested = false;
-					if (that._animate) {
-						that.requestUpdate();
-						var element = that._element;
-						if ((!DomElement.getPrefixed(document, 'hidden')
-							|| PaperScope.getAttribute(element, 'keepalive')
-							=== 'true') && DomElement.isInView(element)) {
-							that._handleFrame();
-						}
-					}
-					if (that._autoUpdate)
-						that.update();
-				});
-				this._requested = true;
-			}
-		},
-
-		play: function () {
-			this._animate = true;
-			this.requestUpdate();
-		},
-
-		pause: function () {
-			this._animate = false;
-		},
-
-		_handleFrame: function () {
-			paper = this._scope;
-			var now = Date.now() / 1000,
-				delta = this._last ? now - this._last : 0;
-			this._last = now;
-			this.emit('frame', new Base({
-				delta: delta,
-				time: this._time += delta,
-				count: this._count++
-			}));
-			if (this._stats)
-				this._stats.update();
-		},
-
-		_animateItem: function (item, animate) {
-			var items = this._frameItems;
-			if (animate) {
-				items[item._id] = {
-					item: item,
-					time: 0,
-					count: 0
-				};
-				if (++this._frameItemCount === 1)
-					this.on('frame', this._handleFrameItems);
-			} else {
-				delete items[item._id];
-				if (--this._frameItemCount === 0) {
-					this.off('frame', this._handleFrameItems);
-				}
-			}
-		},
-
-		_handleFrameItems: function (event) {
-			for (var i in this._frameItems) {
-				var entry = this._frameItems[i];
-				entry.item.emit('frame', new Base(event, {
-					time: entry.time += event.delta,
-					count: entry.count++
-				}));
-			}
-		},
-
-		_changed: function () {
-			this._project._changed(4097);
-			this._bounds = this._decomposed = undefined;
-		},
-
-		getElement: function () {
-			return this._element;
-		},
-
-		getPixelRatio: function () {
-			return this._pixelRatio;
-		},
-
-		getResolution: function () {
-			return this._pixelRatio * 72;
-		},
-
-		getViewSize: function () {
-			var size = this._viewSize;
-			return new LinkedSize(size.width, size.height, this, 'setViewSize');
-		},
-
-		setViewSize: function () {
-			var size = Size.read(arguments),
-				delta = size.subtract(this._viewSize);
-			if (delta.isZero())
-				return;
-			this._setElementSize(size.width, size.height);
-			this._viewSize.set(size);
-			this._changed();
-			this.emit('resize', { size: size, delta: delta });
-			if (this._autoUpdate) {
-				this.update();
-			}
-		},
-
-		_setElementSize: function (width, height) {
-			var element = this._element;
-			if (element) {
-				if (element.width !== width)
-					element.width = width;
-				if (element.height !== height)
-					element.height = height;
-			}
-		},
-
-		getBounds: function () {
-			if (!this._bounds)
-				this._bounds = this._matrix.inverted()._transformBounds(
-					new Rectangle(new Point(), this._viewSize));
-			return this._bounds;
-		},
-
-		getSize: function () {
-			return this.getBounds().getSize();
-		},
-
-		isVisible: function () {
-			return DomElement.isInView(this._element);
-		},
-
-		isInserted: function () {
-			return DomElement.isInserted(this._element);
-		},
-
-		getPixelSize: function (size) {
-			var element = this._element,
-				pixels;
-			if (element) {
-				var parent = element.parentNode,
-					temp = document.createElement('div');
-				temp.style.fontSize = size;
-				parent.appendChild(temp);
-				pixels = parseFloat(DomElement.getStyles(temp).fontSize);
-				parent.removeChild(temp);
-			} else {
-				pixels = parseFloat(pixels);
-			}
-			return pixels;
-		},
-
-		getTextWidth: function (font, lines) {
-			return 0;
-		}
-	}, Base.each(['rotate', 'scale', 'shear', 'skew'], function (key) {
-		var rotate = key === 'rotate';
-		this[key] = function () {
-			var args = arguments,
-				value = (rotate ? Base : Point).read(args),
-				center = Point.read(args, 0, { readNull: true });
-			return this.transform(new Matrix()[key](value,
-				center || this.getCenter(true)));
-		};
-	}, {
-		_decompose: function () {
-			return this._decomposed || (this._decomposed = this._matrix.decompose());
-		},
-
-		translate: function () {
-			var mx = new Matrix();
-			return this.transform(mx.translate.apply(mx, arguments));
-		},
-
-		getCenter: function () {
-			return this.getBounds().getCenter();
-		},
-
-		setCenter: function () {
-			var center = Point.read(arguments);
-			this.translate(this.getCenter().subtract(center));
-		},
-
-		getZoom: function () {
-			var scaling = this._decompose().scaling;
-			return (scaling.x + scaling.y) / 2;
-		},
-
-		setZoom: function (zoom) {
-			this.transform(new Matrix().scale(zoom / this.getZoom(),
-				this.getCenter()));
-		},
-
-		getRotation: function () {
-			return this._decompose().rotation;
-		},
-
-		setRotation: function (rotation) {
-			var current = this.getRotation();
-			if (current != null && rotation != null) {
-				this.rotate(rotation - current);
-			}
-		},
-
-		getScaling: function () {
-			var scaling = this._decompose().scaling;
-			return new LinkedPoint(scaling.x, scaling.y, this, 'setScaling');
-		},
-
-		setScaling: function () {
-			var current = this.getScaling(),
-				scaling = Point.read(arguments, 0, { clone: true, readNull: true });
-			if (current && scaling) {
-				this.scale(scaling.x / current.x, scaling.y / current.y);
-			}
-		},
-
-		getMatrix: function () {
-			return this._matrix;
-		},
-
-		setMatrix: function () {
-			var matrix = this._matrix;
-			matrix.set.apply(matrix, arguments);
-		},
-
-		transform: function (matrix) {
-			this._matrix.append(matrix);
-		},
-
-		scrollBy: function () {
-			this.translate(Point.read(arguments).negate());
-		}
-	}), {
-
-		projectToView: function () {
-			return this._matrix._transformPoint(Point.read(arguments));
-		},
-
-		viewToProject: function () {
-			return this._matrix._inverseTransform(Point.read(arguments));
-		},
-
-		getEventPoint: function (event) {
-			return this.viewToProject(DomEvent.getOffset(event, this._element));
-		},
-
-	}, {
-		statics: {
-			_views: [],
-			_viewsById: {},
-			_id: 0,
-
-			create: function (project, element) {
-				if (document && typeof element === 'string')
-					element = document.getElementById(element);
-				var ctor = View;
-				return new ctor(project, element);
-			}
-		}
-	},
-		new function () {
-			if (!window)
-				return;
-			var prevFocus,
-				tempFocus,
-				dragging = false,
-				mouseDown = false;
-
-			function getView(event) {
-				var target = DomEvent.getTarget(event);
-				return target.getAttribute && View._viewsById[
-					target.getAttribute('id')];
-			}
-
-			function updateFocus() {
-				var view = View._focused;
-				if (!view || !view.isVisible()) {
-					for (var i = 0, l = View._views.length; i < l; i++) {
-						if ((view = View._views[i]).isVisible()) {
-							View._focused = tempFocus = view;
-							break;
-						}
-					}
-				}
-			}
-
-			function handleMouseMove(view, event, point) {
-				view._handleMouseEvent('mousemove', event, point);
-			}
-
-			var navigator = window.navigator,
-				mousedown, mousemove, mouseup;
-			if (navigator.pointerEnabled || navigator.msPointerEnabled) {
-				mousedown = 'pointerdown MSPointerDown';
-				mousemove = 'pointermove MSPointerMove';
-				mouseup = 'pointerup pointercancel MSPointerUp MSPointerCancel';
-			} else {
-				mousedown = 'touchstart';
-				mousemove = 'touchmove';
-				mouseup = 'touchend touchcancel';
-				if (!('ontouchstart' in window && navigator.userAgent.match(
-					/mobile|tablet|ip(ad|hone|od)|android|silk/i))) {
-					mousedown += ' mousedown';
-					mousemove += ' mousemove';
-					mouseup += ' mouseup';
-				}
-			}
-
-			var viewEvents = {},
-				docEvents = {
-					mouseout: function (event) {
-						var view = View._focused,
-							target = DomEvent.getRelatedTarget(event);
-						if (view && (!target || target.nodeName === 'HTML')) {
-							var offset = DomEvent.getOffset(event, view._element),
-								x = offset.x,
-								abs = Math.abs,
-								ax = abs(x),
-								max = 1 << 25,
-								diff = ax - max;
-							offset.x = abs(diff) < ax ? diff * (x < 0 ? -1 : 1) : x;
-							handleMouseMove(view, event, view.viewToProject(offset));
-						}
-					},
-
-					scroll: updateFocus
-				};
-
-			viewEvents[mousedown] = function (event) {
-				var view = View._focused = getView(event);
-				if (!dragging) {
-					dragging = true;
-					view._handleMouseEvent('mousedown', event);
-				}
-			};
-
-			docEvents[mousemove] = function (event) {
-				var view = View._focused;
-				if (!mouseDown) {
-					var target = getView(event);
-					if (target) {
-						if (view !== target) {
-							if (view)
-								handleMouseMove(view, event);
-							if (!prevFocus)
-								prevFocus = view;
-							view = View._focused = tempFocus = target;
-						}
-					} else if (tempFocus && tempFocus === view) {
-						if (prevFocus && !prevFocus.isInserted())
-							prevFocus = null;
-						view = View._focused = prevFocus;
-						prevFocus = null;
-						updateFocus();
-					}
-				}
-				if (view)
-					handleMouseMove(view, event);
-			};
-
-			docEvents[mousedown] = function () {
-				mouseDown = true;
-			};
-
-			docEvents[mouseup] = function (event) {
-				var view = View._focused;
-				if (view && dragging)
-					view._handleMouseEvent('mouseup', event);
-				mouseDown = dragging = false;
-			};
-
-			DomEvent.add(document, docEvents);
-
-			DomEvent.add(window, {
-				load: updateFocus
-			});
-
-			var called = false,
-				prevented = false,
-				fallbacks = {
-					doubleclick: 'click',
-					mousedrag: 'mousemove'
-				},
-				wasInView = false,
-				overView,
-				downPoint,
-				lastPoint,
-				downItem,
-				overItem,
-				dragItem,
-				clickItem,
-				clickTime,
-				dblClick;
-
-			function emitMouseEvent(obj, target, type, event, point, prevPoint,
-				stopItem) {
-				return false;
-			}
-
-			function emitMouseEvents(view, hitItem, type, event, point, prevPoint) {
-				view._project.removeOn(type);
-				prevented = called = false;
-				return (dragItem && emitMouseEvent(dragItem, null, type, event,
-					point, prevPoint)
-					|| hitItem && hitItem !== dragItem
-					&& !hitItem.isDescendant(dragItem)
-					&& emitMouseEvent(hitItem, null, type === 'mousedrag' ?
-						'mousemove' : type, event, point, prevPoint, dragItem)
-					|| emitMouseEvent(view, dragItem || hitItem || view, type, event,
-						point, prevPoint));
-			}
-
-			var itemEventsMap = {
-				mousedown: {
-					mousedown: 1,
-					mousedrag: 1,
-					click: 1,
-					doubleclick: 1
-				},
-				mouseup: {
-					mouseup: 1,
-					mousedrag: 1,
-					click: 1,
-					doubleclick: 1
-				},
-				mousemove: {
-					mousedrag: 1,
-					mousemove: 1,
-					mouseenter: 1,
-					mouseleave: 1
-				}
-			};
-
-			return {
-				_viewEvents: viewEvents,
-
-				_handleMouseEvent: function (type, event, point) {
-					var itemEvents = this._itemEvents,
-						hitItems = itemEvents.native[type],
-						nativeMove = type === 'mousemove',
-						tool = this._scope.tool,
-						view = this;
-
-					function responds(type) {
-						return itemEvents.virtual[type] || view.responds(type)
-							|| tool && tool.responds(type);
-					}
-
-					if (nativeMove && dragging && responds('mousedrag'))
-						type = 'mousedrag';
-					if (!point)
-						point = this.getEventPoint(event);
-
-					var inView = this.getBounds().contains(point),
-						hit = hitItems && inView && view._project.hitTest(point, {
-							tolerance: 0,
-							fill: true,
-							stroke: true
-						}),
-						hitItem = hit && hit.item || null,
-						handle = false,
-						mouse = {};
-					mouse[type.substr(5)] = true;
-
-					if (hitItems && hitItem !== overItem) {
-						if (overItem) {
-							emitMouseEvent(overItem, null, 'mouseleave', event, point);
-						}
-						if (hitItem) {
-							emitMouseEvent(hitItem, null, 'mouseenter', event, point);
-						}
-						overItem = hitItem;
-					}
-					if (wasInView ^ inView) {
-						emitMouseEvent(this, null, inView ? 'mouseenter' : 'mouseleave',
-							event, point);
-						overView = inView ? this : null;
-						handle = true;
-					}
-					if ((inView || mouse.drag) && !point.equals(lastPoint)) {
-						emitMouseEvents(this, hitItem, nativeMove ? type : 'mousemove',
-							event, point, lastPoint);
-						handle = true;
-					}
-					wasInView = inView;
-					if (mouse.down && inView || mouse.up && downPoint) {
-						emitMouseEvents(this, hitItem, type, event, point, downPoint);
-						if (mouse.down) {
-							dblClick = hitItem === clickItem
-								&& (Date.now() - clickTime < 300);
-							downItem = clickItem = hitItem;
-							if (!prevented && hitItem) {
-								var item = hitItem;
-								while (item && !item.responds('mousedrag'))
-									item = item._parent;
-								if (item)
-									dragItem = hitItem;
-							}
-							downPoint = point;
-						} else if (mouse.up) {
-							if (!prevented && hitItem === downItem) {
-								clickTime = Date.now();
-								emitMouseEvents(this, hitItem, dblClick ? 'doubleclick'
-									: 'click', event, point, downPoint);
-								dblClick = false;
-							}
-							downItem = dragItem = null;
-						}
-						wasInView = false;
-						handle = true;
-					}
-					lastPoint = point;
-					if (handle && tool) {
-						called = tool._handleMouseEvent(type, event, point, mouse)
-							|| called;
-					}
-
-					if (
-						event.cancelable !== false
-						&& (called && !mouse.move || mouse.down && responds('mouseup'))
-					) {
-						event.preventDefault();
-					}
-				},
-
-				_handleKeyEvent: function (type, event, key, character) {
-					var scope = this._scope,
-						tool = scope.tool,
-						keyEvent;
-
-					function emit(obj) {
-						if (obj.responds(type)) {
-							paper = scope;
-							obj.emit(type, keyEvent = keyEvent || {});
-						}
-					}
-
-					if (this.isVisible()) {
-						emit(this);
-						if (tool && tool.responds(type))
-							emit(tool);
-					}
-				},
-
-				_countItemEvent: function (type, sign) {
-					var itemEvents = this._itemEvents,
-						native = itemEvents.native,
-						virtual = itemEvents.virtual;
-					for (var key in itemEventsMap) {
-						native[key] = (native[key] || 0)
-							+ (itemEventsMap[key][type] || 0) * sign;
-					}
-					virtual[type] = (virtual[type] || 0) + sign;
-				},
-
-				statics: {
-					updateFocus: updateFocus,
-
-					_resetState: function () {
-						dragging = mouseDown = called = wasInView = false;
-						prevFocus = tempFocus = overView = downPoint = lastPoint =
-							downItem = overItem = dragItem = clickItem = clickTime =
-							dblClick = null;
-					}
-				}
-			};
-		});
-
-	var CanvasProvider = Base.exports.CanvasProvider = {
-		canvases: [],
-
-		getCanvas: function (width, height, options) {
-			if (!window)
-				return null;
-			var canvas,
-				clear = true;
-			if (typeof width === 'object') {
-				height = width.height;
-				width = width.width;
-			}
-			if (this.canvases.length) {
-				canvas = this.canvases.pop();
-			} else {
-				canvas = document.createElement('canvas');
-				clear = false;
-			}
-			var ctx = canvas.getContext('2d', options || {});
-			if (!ctx) {
-				throw new Error('Canvas ' + canvas +
-					' is unable to provide a 2D context.');
-			}
-			if (canvas.width === width && canvas.height === height) {
-				if (clear)
-					ctx.clearRect(0, 0, width + 1, height + 1);
-			} else {
-				canvas.width = width;
-				canvas.height = height;
-			}
-			ctx.save();
-			return canvas;
-		},
-
-		getContext: function (width, height, options) {
-			var canvas = this.getCanvas(width, height, options);
-			return canvas ? canvas.getContext('2d', options || {}) : null;
-		},
-
-		release: function (obj) {
-			var canvas = obj && obj.canvas ? obj.canvas : obj;
-			if (canvas && canvas.getContext) {
-				canvas.getContext('2d').restore();
-				this.canvases.push(canvas);
-			}
-		}
-	};
-
 	var paper = new (PaperScope.inject(Base.exports, {
 		Base: Base,
 		Numerical: Numerical,
-		DomEvent: DomEvent,
-		DomElement: DomElement,
 		document: document,
 		window: window,
 	}))();
+
+	window.PathBoolean = {
+		Base,
+		Emitter, Formatter,
+		CollisionDetection, Numerical, UID,
+		Point, LinkedPoint,
+		Size, LinkedSize,
+		Rectangle, LinkedRectangle,
+		Matrix, Line, Item, Group,
+		Layer, Shape, HitResult,
+		Segment, SegmentPoint,
+		Curve, CurveLocation,
+		Path, PathItem,
+		CompoundPath, PathFitter, PathFlattener
+	}
 
 	return paper;
 }.call(this, typeof self === 'object' ? self : null);

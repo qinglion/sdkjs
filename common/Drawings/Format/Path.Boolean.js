@@ -2721,9 +2721,9 @@
 
 	// EXPORTS
 
-	window.PathBoolean = {
-		Point, Segment, Curve, CurveLocation, Path, CompoundPath, traceBoolean
-	};
+	// window.PathBoolean = {
+	// 	Point, Segment, Curve, CurveLocation, Path, CompoundPath, traceBoolean
+	// };
 
 	// TEST CASE 1
 

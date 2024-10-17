@@ -11194,7 +11194,6 @@
 					return convertFormatPathToCompoundPath(path, shape.transform);
 				});
 				const unitedCompoundPath = compoundPaths.reduce(function (resultPath, currentPath) {
-					// return PathBoolean.traceBoolean(resultPath, currentPath, 'unite');
 					return resultPath.unite(currentPath);
 				})
 				return unitedCompoundPath;
@@ -11202,7 +11201,6 @@
 
 			// resultPath can be either Path or CompoundPath
 			const resultPath = compoundPathLst.reduce(function (resultPath, currentPath) {
-				// return PathBoolean.traceBoolean(resultPath, currentPath, operation);
 				return resultPath[operation](currentPath);
 			});
 
@@ -11227,8 +11225,7 @@
 				return _convertedPath;
 			}, this, [path]);
 
-			// const compoundPath = new PathBoolean.CompoundPath();
-			const compoundPath = new paper.CompoundPath();
+			const compoundPath = new PathBoolean.CompoundPath();
 
 			convertedPath.ArrPathCommand.forEach(function (pathCommand) {
 				switch (pathCommand.id) {
