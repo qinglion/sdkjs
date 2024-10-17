@@ -1,6 +1,17 @@
 // Copy of paper-full.js (paperjs.org)
 
 var paper = function (self, undefined) {
+
+	function InitClassWithStatics(fClass, fBase, nType) {
+		AscFormat.InitClass(fClass, fBase, nType);
+		
+		Object.getOwnPropertyNames(fBase).forEach(function(prop) {
+			if (['prototype', 'name', 'length'].includes(prop) || Function.prototype.hasOwnProperty(prop)) { return; }
+			Object.defineProperty(fClass, prop, Object.getOwnPropertyDescriptor(fBase, prop));
+		});
+		fClass.base = fBase;
+	}
+
 	var window = self.window,
 		document = self.document;
 
@@ -8,8 +19,7 @@ var paper = function (self, undefined) {
 		var beansNames = {};
 
 		function field(name, val) {
-			val = val || (val = Object.getOwnPropertyDescriptor(src, name))
-				&& (val.get ? val : val.value);
+			val = val || (val = Object.getOwnPropertyDescriptor(src, name)) && (val.get ? val : val.value);
 			if (typeof val === 'string' && val[0] === '#')
 				val = dest[val.substring(1)] || val;
 			var isFunc = typeof val === 'function',
@@ -656,127 +666,7 @@ var paper = function (self, undefined) {
 		}
 	};
 
-	var PaperScope = Base.extend({
-		_class: 'PaperScope',
-
-		initialize: function PaperScope() {
-			paper = this;
-			this.settings = new Base({
-				applyMatrix: true,
-				insertItems: true,
-				handleSize: 4,
-				hitTolerance: 0
-			});
-			this.project = null;
-			this.projects = [];
-			this.tools = [];
-			this._id = PaperScope._id++;
-			PaperScope._scopes[this._id] = this;
-			var proto = PaperScope.prototype;
-			if (!this.support) {
-				proto.support = {
-					nativeDash: false,
-				};
-			}
-			if (!this.agent) {
-				var user = self.navigator.userAgent.toLowerCase(),
-					os = (/(darwin|win|mac|linux|freebsd|sunos)/.exec(user) || [])[0],
-					platform = os === 'darwin' ? 'mac' : os,
-					agent = proto.agent = proto.browser = { platform: platform };
-				if (platform)
-					agent[platform] = true;
-				user.replace(
-					/(opera|chrome|safari|webkit|firefox|msie|trident|atom|node|jsdom)\/?\s*([.\d]+)(?:.*version\/([.\d]+))?(?:.*rv\:v?([.\d]+))?/g,
-					function (match, n, v1, v2, rv) {
-						if (!agent.chrome) {
-							var v = n === 'opera' ? v2 :
-								/^(node|trident)$/.test(n) ? rv : v1;
-							agent.version = v;
-							agent.versionNumber = parseFloat(v);
-							n = { trident: 'msie', jsdom: 'node' }[n] || n;
-							agent.name = n;
-							agent[n] = true;
-						}
-					}
-				);
-				if (agent.chrome)
-					delete agent.webkit;
-				if (agent.atom)
-					delete agent.chrome;
-			}
-		},
-
-		version: "0.12.17",
-
-		getPaper: function () {
-			return this;
-		},
-
-		execute: function (code, options) {
-		},
-
-		install: function (scope) {
-			var that = this;
-			Base.each(['project', 'view', 'tool'], function (key) {
-				Base.define(scope, key, {
-					configurable: true,
-					get: function () {
-						return that[key];
-					}
-				});
-			});
-			for (var key in this)
-				if (!/^_/.test(key) && this[key])
-					scope[key] = this[key];
-		},
-
-		setup: function (element) {
-			paper = this;
-			this.project = new Project(element);
-			return this;
-		},
-
-		activate: function () {
-			paper = this;
-		},
-
-		clear: function () {
-			var projects = this.projects,
-				tools = this.tools;
-			for (var i = projects.length - 1; i >= 0; i--)
-				projects[i].remove();
-			for (var i = tools.length - 1; i >= 0; i--)
-				tools[i].remove();
-		},
-
-		remove: function () {
-			this.clear();
-			delete PaperScope._scopes[this._id];
-		},
-
-		statics: new function () {
-			function handleAttribute(name) {
-				name += 'Attribute';
-				return function (el, attr) {
-					return el[name](attr) || el[name]('data-paper-' + attr);
-				};
-			}
-
-			return {
-				_scopes: {},
-				_id: 0,
-
-				get: function (id) {
-					return this._scopes[id] || null;
-				},
-
-				getAttribute: handleAttribute('get'),
-				hasAttribute: handleAttribute('has')
-			};
-		}
-	});
-
-	var TestScope = function () {
+	var PaperScope = function () {
 		Base.call(this);
 		paper = this;
 		this.settings = new Base({
@@ -824,14 +714,14 @@ var paper = function (self, undefined) {
 		}
 	};
 	
-	AscFormat.InitClass(TestScope, Base);
-	TestScope.prototype.version = "0.12.17";
-	TestScope.prototype.getPaper = function () {
+	InitClassWithStatics(PaperScope, Base);
+	PaperScope.prototype.version = "0.12.17";
+	PaperScope.prototype.getPaper = function () {
 		return this;
 	};
-	TestScope.prototype.execute = function (code, options) {
+	PaperScope.prototype.execute = function (code, options) {
 	};
-	TestScope.prototype.install = function (scope) {
+	PaperScope.prototype.install = function (scope) {
 		var that = this;
 		Base.each(['project', 'view', 'tool'], function (key) {
 			Base.define(scope, key, {
@@ -845,15 +735,15 @@ var paper = function (self, undefined) {
 			if (!/^_/.test(key) && this[key])
 				scope[key] = this[key];
 	};
-	TestScope.prototype.setup = function (element) {
+	PaperScope.prototype.setup = function (element) {
 		paper = this;
 		this.project = new Project(element);
 		return this;
 	};
-	TestScope.prototype.activate = function () {
+	PaperScope.prototype.activate = function () {
 		paper = this;
 	};
-	TestScope.prototype.clear = function () {
+	PaperScope.prototype.clear = function () {
 		var projects = this.projects,
 			tools = this.tools;
 		for (var i = projects.length - 1; i >= 0; i--)
@@ -861,58 +751,170 @@ var paper = function (self, undefined) {
 		for (var i = tools.length - 1; i >= 0; i--)
 			tools[i].remove();
 	};
-	TestScope.prototype.remove = function () {
+	PaperScope.prototype.remove = function () {
 		this.clear();
 		delete PaperScope._scopes[this._id];
 	};
-	TestScope._scopes= {};
-	TestScope._id= 0;
-	TestScope.get= function (id) {
+	PaperScope._scopes= {};
+	PaperScope._id= 0;
+	PaperScope.get= function (id) {
 		return this._scopes[id] || null;
 	};
-	TestScope.getAttribute = function (el, attr) {
+	PaperScope.getAttribute = function (el, attr) {
 		return el['getAttribute'](attr) || el['getAttribute']('data-paper-' + attr);
 	};
-	TestScope.hasAttribute = function (el, attr) {
+	PaperScope.hasAttribute = function (el, attr) {
 		return el['hasAttribute'](attr) || el['hasAttribute']('data-paper-' + attr);
 	};
 
-	debugger
+	var PaperScopeItem = function (activate) {
+		Base.call();
+		this._scope = paper;
+		this._index = this._scope[this._list].push(this) - 1;
+		if (activate || !this._scope[this._reference])
+			this.activate();
+	};
 
-	var PaperScopeItem = Base.extend(Emitter, {
+	InitClassWithStatics(PaperScopeItem, Base);
 
-		initialize: function (activate) {
-			this._scope = paper;
-			this._index = this._scope[this._list].push(this) - 1;
-			if (activate || !this._scope[this._reference])
-				this.activate();
-		},
+	PaperScopeItem.prototype.on = function (type, func) {
+		if (typeof type !== 'string') {
+			Base.each(type, function (value, key) {
+				this.on(key, value);
+			}, this);
+		} else {
+			var types = this._eventTypes,
+				entry = types && types[type],
+				handlers = this._callbacks = this._callbacks || {};
+			handlers = handlers[type] = handlers[type] || [];
+			if (handlers.indexOf(func) === -1) {
+				handlers.push(func);
+				if (entry && entry.install && handlers.length === 1)
+					entry.install.call(this, type);
+			}
+		}
+		return this;
+	};
+	PaperScopeItem.prototype.off = function (type, func) {
+		if (typeof type !== 'string') {
+			Base.each(type, function (value, key) {
+				this.off(key, value);
+			}, this);
+			return;
+		}
+		var types = this._eventTypes,
+			entry = types && types[type],
+			handlers = this._callbacks && this._callbacks[type],
+			index;
+		if (handlers) {
+			if (!func || (index = handlers.indexOf(func)) !== -1
+				&& handlers.length === 1) {
+				if (entry && entry.uninstall)
+					entry.uninstall.call(this, type);
+				delete this._callbacks[type];
+			} else if (index !== -1) {
+				handlers.splice(index, 1);
+			}
+		}
+		return this;
+	};
+	PaperScopeItem.prototype.once = function (type, func) {
+		return this.on(type, function handler() {
+			func.apply(this, arguments);
+			this.off(type, handler);
+		});
+	};
+	PaperScopeItem.prototype.emit = function (type, event) {
+		var handlers = this._callbacks && this._callbacks[type];
+		if (!handlers)
+			return false;
+		var args = Base.slice(arguments, 1),
+			setTarget = event && event.target && !event.currentTarget;
+		handlers = handlers.slice();
+		if (setTarget)
+			event.currentTarget = this;
+		for (var i = 0, l = handlers.length; i < l; i++) {
+			if (handlers[i].apply(this, args) == false) {
+				if (event && event.stop)
+					event.stop();
+				break;
+			}
+		}
+		if (setTarget)
+			delete event.currentTarget;
+		return true;
+	};
+	PaperScopeItem.prototype.responds = function (type) {
+		return !!(this._callbacks && this._callbacks[type]);
+	};
+	PaperScopeItem.prototype._installEvents = function (install) {
+		var types = this._eventTypes,
+			handlers = this._callbacks,
+			key = install ? 'install' : 'uninstall';
+		if (types) {
+			for (var type in handlers) {
+				if (handlers[type].length > 0) {
+					var entry = types[type],
+						func = entry && entry[key];
+					if (func)
+						func.call(this, type);
+				}
+			}
+		}
+	};
+	PaperScopeItem.prototype.activate = function () {
+		if (!this._scope)
+			return false;
+		var prev = this._scope[this._reference];
+		if (prev && prev !== this)
+			prev.emit('deactivate');
+		this._scope[this._reference] = this;
+		this.emit('activate', prev);
+		return true;
+	};
+	PaperScopeItem.prototype.isActive = function () {
+		return this._scope[this._reference] === this;
+	};
+	PaperScopeItem.prototype.remove = function () {
+		if (this._index == null)
+			return false;
+		Base.splice(this._scope[this._list], null, this._index, 1);
+		if (this._scope[this._reference] == this)
+			this._scope[this._reference] = null;
+		this._scope = null;
+		return true;
+	};
+	PaperScopeItem.prototype.attach = PaperScopeItem.prototype.on;
+	PaperScopeItem.prototype.detach = PaperScopeItem.prototype.off;
+	PaperScopeItem.prototype.fire = PaperScopeItem.prototype.emit;
 
-		activate: function () {
-			if (!this._scope)
-				return false;
-			var prev = this._scope[this._reference];
-			if (prev && prev !== this)
-				prev.emit('deactivate');
-			this._scope[this._reference] = this;
-			this.emit('activate', prev);
-			return true;
-		},
-
-		isActive: function () {
-			return this._scope[this._reference] === this;
-		},
-
-		remove: function () {
-			if (this._index == null)
-				return false;
-			Base.splice(this._scope[this._list], null, this._index, 1);
-			if (this._scope[this._reference] == this)
-				this._scope[this._reference] = null;
-			this._scope = null;
-			return true;
-		},
-	});
+	PaperScopeItem.inject = function inject(src) {
+		var events = src._events;
+		if (events) {
+			var types = {};
+			Base.each(events, function (entry, key) {
+				var isString = typeof entry === 'string',
+					name = isString ? entry : key,
+					part = Base.capitalize(name),
+					type = name.substring(2).toLowerCase();
+				types[type] = isString ? {} : entry;
+				name = '_' + name;
+				src['get' + part] = function () {
+					return this[name];
+				};
+				src['set' + part] = function (func) {
+					var prev = this[name];
+					if (prev)
+						this.off(type, prev);
+					if (func)
+						this.on(type, func);
+					this[name] = func;
+				};
+			});
+			src._eventTypes = types;
+		}
+		return Base.inject.apply(this, arguments);
+	};
 
 	var CollisionDetection = {
 		findItemBoundsCollisions: function (items1, items2, tolerance) {
@@ -1072,36 +1074,32 @@ var paper = function (self, undefined) {
 		}
 	};
 
-	var Formatter = Base.extend({
-		initialize: function (precision) {
-			this.precision = Base.pick(precision, 5);
-			this.multiplier = Math.pow(10, this.precision);
-		},
+	var Formatter = function (precision) {
+		Base.call(this);
+		this.precision = Base.pick(precision, 5);
+		this.multiplier = Math.pow(10, this.precision);
+	}
 
-		number: function (val) {
-			return this.precision < 16
-				? Math.round(val * this.multiplier) / this.multiplier : val;
-		},
+	InitClassWithStatics(Formatter, Base);
 
-		pair: function (val1, val2, separator) {
-			return this.number(val1) + (separator || ',') + this.number(val2);
-		},
-
-		point: function (val, separator) {
-			return this.number(val.x) + (separator || ',') + this.number(val.y);
-		},
-
-		size: function (val, separator) {
-			return this.number(val.width) + (separator || ',')
-				+ this.number(val.height);
-		},
-
-		rectangle: function (val, separator) {
-			return this.point(val, separator) + (separator || ',')
-				+ this.size(val, separator);
-		}
-	});
-
+	Formatter.prototype.number = function (val) {
+		return this.precision < 16
+			? Math.round(val * this.multiplier) / this.multiplier : val;
+	};
+	Formatter.prototype.pair = function (val1, val2, separator) {
+		return this.number(val1) + (separator || ',') + this.number(val2);
+	};
+	Formatter.prototype.point = function (val, separator) {
+		return this.number(val.x) + (separator || ',') + this.number(val.y);
+	};
+	Formatter.prototype.size = function (val, separator) {
+		return this.number(val.width) + (separator || ',')
+			+ this.number(val.height);
+	};
+	Formatter.prototype.rectangle = function (val, separator) {
+		return this.point(val, separator) + (separator || ',')
+			+ this.size(val, separator);
+	};
 	Formatter.instance = new Formatter();
 
 	var Numerical = new function () {
@@ -1357,313 +1355,281 @@ var paper = function (self, undefined) {
 		}
 	};
 
-	var Point = Base.extend({
-		_class: 'Point',
-		_readIndex: true,
-
-		initialize: function Point(arg0, arg1) {
-			var type = typeof arg0,
-				reading = this.__read,
-				read = 0;
-			if (type === 'number') {
-				var hasY = typeof arg1 === 'number';
-				this._set(arg0, hasY ? arg1 : arg0);
-				if (reading)
-					read = hasY ? 2 : 1;
-			} else if (type === 'undefined' || arg0 === null) {
-				this._set(0, 0);
-				if (reading)
-					read = arg0 === null ? 1 : 0;
-			} else {
-				var obj = type === 'string' ? arg0.split(/[\s,]+/) || [] : arg0;
-				read = 1;
-				if (Array.isArray(obj)) {
-					this._set(+obj[0], +(obj.length > 1 ? obj[1] : obj[0]));
-				} else if ('x' in obj) {
-					this._set(obj.x || 0, obj.y || 0);
-				} else if ('width' in obj) {
-					this._set(obj.width || 0, obj.height || 0);
-				} else if ('angle' in obj) {
-					this._set(obj.length || 0, 0);
-					this.setAngle(obj.angle || 0);
-				} else {
-					this._set(0, 0);
-					read = 0;
-				}
-			}
+	var Point = function (arg0, arg1) {
+		Base.call(this);
+		var type = typeof arg0,
+			reading = this.__read,
+			read = 0;
+		if (type === 'number') {
+			var hasY = typeof arg1 === 'number';
+			this._set(arg0, hasY ? arg1 : arg0);
 			if (reading)
-				this.__read = read;
-			return this;
-		},
-
-		set: '#initialize',
-
-		_set: function (x, y) {
-			this.x = x;
-			this.y = y;
-			return this;
-		},
-
-		equals: function (point) {
-			return this === point || point
-				&& (this.x === point.x && this.y === point.y
-					|| Array.isArray(point)
-					&& this.x === point[0] && this.y === point[1])
-				|| false;
-		},
-
-		clone: function () {
-			return new Point(this.x, this.y);
-		},
-
-		toString: function () {
-			var f = Formatter.instance;
-			return '{ x: ' + f.number(this.x) + ', y: ' + f.number(this.y) + ' }';
-		},
-
-		_serialize: function (options) {
-			var f = options.formatter;
-			return [f.number(this.x), f.number(this.y)];
-		},
-
-		getLength: function () {
-			return Math.sqrt(this.x * this.x + this.y * this.y);
-		},
-
-		setLength: function (length) {
-			if (this.isZero()) {
-				var angle = this._angle || 0;
-				this._set(
-					Math.cos(angle) * length,
-					Math.sin(angle) * length
-				);
+				read = hasY ? 2 : 1;
+		} else if (type === 'undefined' || arg0 === null) {
+			this._set(0, 0);
+			if (reading)
+				read = arg0 === null ? 1 : 0;
+		} else {
+			var obj = type === 'string' ? arg0.split(/[\s,]+/) || [] : arg0;
+			read = 1;
+			if (Array.isArray(obj)) {
+				this._set(+obj[0], +(obj.length > 1 ? obj[1] : obj[0]));
+			} else if ('x' in obj) {
+				this._set(obj.x || 0, obj.y || 0);
+			} else if ('width' in obj) {
+				this._set(obj.width || 0, obj.height || 0);
+			} else if ('angle' in obj) {
+				this._set(obj.length || 0, 0);
+				this.setAngle(obj.angle || 0);
 			} else {
-				var scale = length / this.getLength();
-				if (Numerical.isZero(scale))
-					this.getAngle();
-				this._set(
-					this.x * scale,
-					this.y * scale
-				);
+				this._set(0, 0);
+				read = 0;
 			}
-		},
-		getAngle: function () {
-			return this.getAngleInRadians.apply(this, arguments) * 180 / Math.PI;
-		},
-
-		setAngle: function (angle) {
-			this.setAngleInRadians.call(this, angle * Math.PI / 180);
-		},
-
-		getAngleInDegrees: '#getAngle',
-		setAngleInDegrees: '#setAngle',
-
-		getAngleInRadians: function () {
-			if (!arguments.length) {
-				return this.isZero()
-					? this._angle || 0
-					: this._angle = Math.atan2(this.y, this.x);
-			} else {
-				var point = Point.read(arguments),
-					div = this.getLength() * point.getLength();
-				if (Numerical.isZero(div)) {
-					return NaN;
-				} else {
-					var a = this.dot(point) / div;
-					return Math.acos(a < -1 ? -1 : a > 1 ? 1 : a);
-				}
-			}
-		},
-
-		setAngleInRadians: function (angle) {
-			this._angle = angle;
-			if (!this.isZero()) {
-				var length = this.getLength();
-				this._set(
-					Math.cos(angle) * length,
-					Math.sin(angle) * length
-				);
-			}
-		},
-
-		getQuadrant: function () {
-			return this.x >= 0 ? this.y >= 0 ? 1 : 4 : this.y >= 0 ? 2 : 3;
 		}
-	}, {
-		beans: false,
-
-		getDirectedAngle: function () {
-			var point = Point.read(arguments);
-			return Math.atan2(this.cross(point), this.dot(point)) * 180 / Math.PI;
-		},
-
-		getDistance: function () {
-			var args = arguments,
-				point = Point.read(args),
-				x = point.x - this.x,
-				y = point.y - this.y,
-				d = x * x + y * y,
-				squared = Base.read(args);
-			return squared ? d : Math.sqrt(d);
-		},
-
-		normalize: function (length) {
-			if (length === undefined)
-				length = 1;
-			var current = this.getLength(),
-				scale = current !== 0 ? length / current : 0,
-				point = new Point(this.x * scale, this.y * scale);
-			if (scale >= 0)
-				point._angle = this._angle;
-			return point;
-		},
-
-		rotate: function (angle, center) {
-			if (angle === 0)
-				return this.clone();
-			angle = angle * Math.PI / 180;
-			var point = center ? this.subtract(center) : this,
-				sin = Math.sin(angle),
-				cos = Math.cos(angle);
-			point = new Point(
-				point.x * cos - point.y * sin,
-				point.x * sin + point.y * cos
+		if (reading)
+			this.__read = read;
+		return this;
+	};
+	
+	InitClassWithStatics(Point, Base);
+	
+	Point.prototype.initialize = Point;
+	Point.prototype._class = 'Point';
+	Point.prototype._readIndex = true;
+	Point.prototype.set = Point;
+	Point.prototype._set = function (x, y) {
+		this.x = x;
+		this.y = y;
+		return this;
+	};
+	Point.prototype.equals = function (point) {
+		return this === point || point
+			&& (this.x === point.x && this.y === point.y
+				|| Array.isArray(point)
+				&& this.x === point[0] && this.y === point[1])
+			|| false;
+	};
+	Point.prototype.clone = function () {
+		return new Point(this.x, this.y);
+	};
+	Point.prototype.toString = function () {
+		var f = Formatter.instance;
+		return '{ x: ' + f.number(this.x) + ', y: ' + f.number(this.y) + ' }';
+	};
+	Point.prototype._serialize = function (options) {
+		var f = options.formatter;
+		return [f.number(this.x), f.number(this.y)];
+	};
+	Point.prototype.getLength = function () {
+		return Math.sqrt(this.x * this.x + this.y * this.y);
+	};
+	Point.prototype.setLength = function (length) {
+		if (this.isZero()) {
+			var angle = this._angle || 0;
+			this._set(
+				Math.cos(angle) * length,
+				Math.sin(angle) * length
 			);
-			return center ? point.add(center) : point;
-		},
-
-		transform: function (matrix) {
-			return matrix ? matrix._transformPoint(this) : this;
-		},
-
-		add: function () {
-			var point = Point.read(arguments);
-			return new Point(this.x + point.x, this.y + point.y);
-		},
-
-		subtract: function () {
-			var point = Point.read(arguments);
-			return new Point(this.x - point.x, this.y - point.y);
-		},
-
-		multiply: function () {
-			var point = Point.read(arguments);
-			return new Point(this.x * point.x, this.y * point.y);
-		},
-
-		divide: function () {
-			var point = Point.read(arguments);
-			return new Point(this.x / point.x, this.y / point.y);
-		},
-
-		modulo: function () {
-			var point = Point.read(arguments);
-			return new Point(this.x % point.x, this.y % point.y);
-		},
-
-		negate: function () {
-			return new Point(-this.x, -this.y);
-		},
-
-		isInside: function () {
-			return Rectangle.read(arguments).contains(this);
-		},
-
-		isClose: function () {
-			var args = arguments,
-				point = Point.read(args),
-				tolerance = Base.read(args);
-			return this.getDistance(point) <= tolerance;
-		},
-
-		isCollinear: function () {
-			var point = Point.read(arguments);
-			return Point.isCollinear(this.x, this.y, point.x, point.y);
-		},
-
-		isColinear: '#isCollinear',
-
-		isOrthogonal: function () {
-			var point = Point.read(arguments);
-			return Point.isOrthogonal(this.x, this.y, point.x, point.y);
-		},
-
-		isZero: function () {
-			var isZero = Numerical.isZero;
-			return isZero(this.x) && isZero(this.y);
-		},
-
-		isNaN: function () {
-			return isNaN(this.x) || isNaN(this.y);
-		},
-
-		isInQuadrant: function (q) {
-			return this.x * (q > 1 && q < 4 ? -1 : 1) >= 0
-				&& this.y * (q > 2 ? -1 : 1) >= 0;
-		},
-
-		dot: function () {
-			var point = Point.read(arguments);
-			return this.x * point.x + this.y * point.y;
-		},
-
-		cross: function () {
-			var point = Point.read(arguments);
-			return this.x * point.y - this.y * point.x;
-		},
-
-		project: function () {
+		} else {
+			var scale = length / this.getLength();
+			if (Numerical.isZero(scale))
+				this.getAngle();
+			this._set(
+				this.x * scale,
+				this.y * scale
+			);
+		}
+	};
+	Point.prototype.getAngle = function () {
+		return this.getAngleInRadians.apply(this, arguments) * 180 / Math.PI;
+	};
+	Point.prototype.setAngle = function (angle) {
+		this.setAngleInRadians.call(this, angle * Math.PI / 180);
+	};
+	Point.prototype.getAngleInDegrees = Point.prototype.getAngle;
+	Point.prototype.setAngleInDegrees = Point.prototype.setAngle;
+	Point.prototype.getAngleInRadians = function () {
+		if (!arguments.length) {
+			return this.isZero()
+				? this._angle || 0
+				: this._angle = Math.atan2(this.y, this.x);
+		} else {
 			var point = Point.read(arguments),
-				scale = point.isZero() ? 0 : this.dot(point) / point.dot(point);
-			return new Point(
-				point.x * scale,
-				point.y * scale
-			);
-		},
-
-		statics: {
-			min: function () {
-				var args = arguments,
-					point1 = Point.read(args),
-					point2 = Point.read(args);
-				return new Point(
-					Math.min(point1.x, point2.x),
-					Math.min(point1.y, point2.y)
-				);
-			},
-
-			max: function () {
-				var args = arguments,
-					point1 = Point.read(args),
-					point2 = Point.read(args);
-				return new Point(
-					Math.max(point1.x, point2.x),
-					Math.max(point1.y, point2.y)
-				);
-			},
-
-			random: function () {
-				return new Point(Math.random(), Math.random());
-			},
-
-			isCollinear: function (x1, y1, x2, y2) {
-				return Math.abs(x1 * y2 - y1 * x2)
-					<= Math.sqrt((x1 * x1 + y1 * y1) * (x2 * x2 + y2 * y2))
-					* 1e-8;
-			},
-
-			isOrthogonal: function (x1, y1, x2, y2) {
-				return Math.abs(x1 * x2 + y1 * y2)
-					<= Math.sqrt((x1 * x1 + y1 * y1) * (x2 * x2 + y2 * y2))
-					* 1e-8;
+				div = this.getLength() * point.getLength();
+			if (Numerical.isZero(div)) {
+				return NaN;
+			} else {
+				var a = this.dot(point) / div;
+				return Math.acos(a < -1 ? -1 : a > 1 ? 1 : a);
 			}
 		}
-	}, Base.each(['round', 'ceil', 'floor', 'abs'], function (key) {
-		var op = Math[key];
-		this[key] = function () {
-			return new Point(op(this.x), op(this.y));
-		};
-	}, {}));
+	};
+	Point.prototype.setAngleInRadians = function (angle) {
+		this._angle = angle;
+		if (!this.isZero()) {
+			var length = this.getLength();
+			this._set(
+				Math.cos(angle) * length,
+				Math.sin(angle) * length
+			);
+		}
+	};
+	Point.prototype.getQuadrant = function () {
+		return this.x >= 0 ? this.y >= 0 ? 1 : 4 : this.y >= 0 ? 2 : 3;
+	};
+	Point.prototype.beans = false;
+	Point.prototype.getDirectedAngle = function () {
+		var point = Point.read(arguments);
+		return Math.atan2(this.cross(point), this.dot(point)) * 180 / Math.PI;
+	};
+	Point.prototype.getDistance = function () {
+		var args = arguments,
+			point = Point.read(args),
+			x = point.x - this.x,
+			y = point.y - this.y,
+			d = x * x + y * y,
+			squared = Base.read(args);
+		return squared ? d : Math.sqrt(d);
+	};
+	Point.prototype.normalize = function (length) {
+		if (length === undefined)
+			length = 1;
+		var current = this.getLength(),
+			scale = current !== 0 ? length / current : 0,
+			point = new Point(this.x * scale, this.y * scale);
+		if (scale >= 0)
+			point._angle = this._angle;
+		return point;
+	};
+	Point.prototype.rotate = function (angle, center) {
+		if (angle === 0)
+			return this.clone();
+		angle = angle * Math.PI / 180;
+		var point = center ? this.subtract(center) : this,
+			sin = Math.sin(angle),
+			cos = Math.cos(angle);
+		point = new Point(
+			point.x * cos - point.y * sin,
+			point.x * sin + point.y * cos
+		);
+		return center ? point.add(center) : point;
+	};
+	Point.prototype.transform = function (matrix) {
+		return matrix ? matrix._transformPoint(this) : this;
+	};
+	Point.prototype.add = function () {
+		var point = Point.read(arguments);
+		return new Point(this.x + point.x, this.y + point.y);
+	};
+	Point.prototype.subtract = function () {
+		var point = Point.read(arguments);
+		return new Point(this.x - point.x, this.y - point.y);
+	};
+	Point.prototype.multiply = function () {
+		var point = Point.read(arguments);
+		return new Point(this.x * point.x, this.y * point.y);
+	};
+	Point.prototype.divide = function () {
+		var point = Point.read(arguments);
+		return new Point(this.x / point.x, this.y / point.y);
+	};
+	Point.prototype.modulo = function () {
+		var point = Point.read(arguments);
+		return new Point(this.x % point.x, this.y % point.y);
+	};
+	Point.prototype.negate = function () {
+		return new Point(-this.x, -this.y);
+	};
+	Point.prototype.isInside = function () {
+		return Rectangle.read(arguments).contains(this);
+	};
+	Point.prototype.isClose = function () {
+		var args = arguments,
+			point = Point.read(args),
+			tolerance = Base.read(args);
+		return this.getDistance(point) <= tolerance;
+	};
+	Point.prototype.isCollinear = function () {
+		var point = Point.read(arguments);
+		return Point.isCollinear(this.x, this.y, point.x, point.y);
+	};
+	Point.prototype.isColinear = Point.prototype.isCollinear;
+	Point.prototype.isOrthogonal = function () {
+		var point = Point.read(arguments);
+		return Point.isOrthogonal(this.x, this.y, point.x, point.y);
+	};
+	Point.prototype.isZero = function () {
+		var isZero = Numerical.isZero;
+		return isZero(this.x) && isZero(this.y);
+	};
+	Point.prototype.isNaN = function () {
+		return isNaN(this.x) || isNaN(this.y);
+	};
+	Point.prototype.isInQuadrant = function (q) {
+		return this.x * (q > 1 && q < 4 ? -1 : 1) >= 0
+			&& this.y * (q > 2 ? -1 : 1) >= 0;
+	};
+	Point.prototype.dot = function () {
+		var point = Point.read(arguments);
+		return this.x * point.x + this.y * point.y;
+	};
+	Point.prototype.cross = function () {
+		var point = Point.read(arguments);
+		return this.x * point.y - this.y * point.x;
+	};
+	Point.prototype.project = function () {
+		var point = Point.read(arguments),
+			scale = point.isZero() ? 0 : this.dot(point) / point.dot(point);
+		return new Point(
+			point.x * scale,
+			point.y * scale
+		);
+	};
+	
+	Point.min = function () {
+		var args = arguments,
+			point1 = Point.read(args),
+			point2 = Point.read(args);
+		return new Point(
+			Math.min(point1.x, point2.x),
+			Math.min(point1.y, point2.y)
+		);
+	};
+	Point.max = function () {
+		var args = arguments,
+			point1 = Point.read(args),
+			point2 = Point.read(args);
+		return new Point(
+			Math.max(point1.x, point2.x),
+			Math.max(point1.y, point2.y)
+		);
+	};
+	Point.random = function () {
+		return new Point(Math.random(), Math.random());
+	};
+	Point.isCollinear = function (x1, y1, x2, y2) {
+		return Math.abs(x1 * y2 - y1 * x2)
+			<= Math.sqrt((x1 * x1 + y1 * y1) * (x2 * x2 + y2 * y2))
+			* 1e-8;
+	};
+	Point.isOrthogonal = function (x1, y1, x2, y2) {
+		return Math.abs(x1 * x2 + y1 * y2)
+			<= Math.sqrt((x1 * x1 + y1 * y1) * (x2 * x2 + y2 * y2))
+			* 1e-8;
+	};
+
+	Point.prototype.round = function () {
+		return new Point(Math.round(this.x), Math.round(this.y));
+	};
+	Point.prototype.ceil = function () {
+		return new Point(Math.ceil(this.x), Math.ceil(this.y));
+	};
+	Point.prototype.floor = function () {
+		return new Point(Math.floor(this.x), Math.floor(this.y));
+	};
+	Point.prototype.abs = function () {
+		return new Point(Math.abs(this.x), Math.abs(this.y));
+	};
 
 	var LinkedPoint = Point.extend({
 		initialize: function Point(x, y, owner, setter) {
@@ -1711,6 +1677,50 @@ var paper = function (self, undefined) {
 			return this._setter === 'setPosition' ? 4 : 0;
 		}
 	});
+
+	var CLinkedPoint = function (x, y, owner, setter) {
+		Point.call(this);
+		this._x = x;
+		this._y = y;
+		this._owner = owner;
+		this._setter = setter;
+	};
+	
+	InitClassWithStatics(CLinkedPoint, Point);
+	CLinkedPoint.prototype.initialize = CLinkedPoint;
+	
+	CLinkedPoint.prototype._set = function (x, y, _dontNotify) {
+		this._x = x;
+		this._y = y;
+		if (!_dontNotify)
+			this._owner[this._setter](this);
+		return this;
+	};
+	CLinkedPoint.prototype.getX = function () {
+		return this._x;
+	};
+	CLinkedPoint.prototype.setX = function (x) {
+		this._x = x;
+		this._owner[this._setter](this);
+	};
+	CLinkedPoint.prototype.getY = function () {
+		return this._y;
+	};
+	CLinkedPoint.prototype.setY = function (y) {
+		this._y = y;
+		this._owner[this._setter](this);
+	};
+	CLinkedPoint.prototype.isSelected = function () {
+		return !!(this._owner._selection & this._getSelection());
+	};
+	CLinkedPoint.prototype.setSelected = function (selected) {
+		this._owner._changeSelection(this._getSelection(), selected);
+	};
+	CLinkedPoint.prototype._getSelection = function () {
+		return this._setter === 'setPosition' ? 4 : 0;
+	};
+
+	debugger
 
 	var Size = Base.extend({
 		_class: 'Size',
