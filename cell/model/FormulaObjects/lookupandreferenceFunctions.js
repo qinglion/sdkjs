@@ -1254,7 +1254,7 @@ function (window, undefined) {
 			if (cElementType.cell !== pivot_table_ref.type && cElementType.cell3D !== pivot_table_ref.type && cElementType.cellsRange !== pivot_table_ref.type && cElementType.cellsRange3D !== pivot_table_ref.type) {
 				return refError;
 			}
-			let worksheet = pivot_table_ref.ws;
+			let worksheet = pivot_table_ref.getWS();
 			let bbox = pivot_table_ref.getBBox0();
 
 			let pivotTables = worksheet.getPivotTablesIntersectingRange(bbox);
@@ -4382,10 +4382,6 @@ function (window, undefined) {
 						_res = _range.isOneCell() ? new cRef(rangeName, arg2.getWS()) : new cArea(rangeName, arg2.getWS());
 					} else {
 						_res = _range.isOneCell() ?  new cRef3D(rangeName, arg2.getWS()) : new cArea3D(rangeName, arg2.getWS());
-					}
-
-					if (_res.type === cElementType.cellsRange || _res.type === cElementType.cellsRange3D) {
-						_res = _res.getFullArray();
 					}
 
 					return _res;

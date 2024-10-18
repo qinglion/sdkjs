@@ -442,7 +442,7 @@ CDocumentContent.prototype.Get_Numbering = function()
 };
 CDocumentContent.prototype.GetNumbering = function()
 {
-	if (this.LogicDocument)
+	if (this.LogicDocument && this.LogicDocument.GetNumbering)
 		return this.LogicDocument.GetNumbering();
 
 	return AscCommonWord.DEFAULT_NUMBERING;
@@ -456,7 +456,7 @@ CDocumentContent.prototype.GetStyles = function(nLvl)
 	if (this.bPresentation && this.Parent)
 		return this.Parent.Get_Styles(nLvl);
 
-	if (this.LogicDocument)
+	if (this.LogicDocument && this.LogicDocument.GetStyles)
 		return this.LogicDocument.GetStyles();
 
 	return AscWord.DEFAULT_STYLES;
@@ -7772,7 +7772,7 @@ CDocumentContent.prototype.Load_LinkData = function(LinkData)
 	if ("undefined" != typeof(LinkData.Parent))
 		this.Parent = g_oTableId.Get_ById(LinkData.Parent);
 
-	if (this.Parent.getDrawingDocument)
+	if (this.Parent && this.Parent.getDrawingDocument)
 	{
 		this.DrawingDocument = this.Parent.getDrawingDocument();
 		for (var i = 0; i < this.Content.length; ++i)

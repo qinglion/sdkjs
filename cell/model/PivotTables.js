@@ -384,7 +384,7 @@ function setFieldProperty(pivot, index, oldVal, newVal, addToHistory, historyTyp
 	if (pivot && changeData) {
 		pivot.setChanged(true);
 	}
-}
+};
 function setFieldItemProperty(pivot, pivotIndex, itemIndex, oldVal, newVal, addToHistory, historyType, changeData) {
 	if (oldVal === newVal) {
 		return;
@@ -5695,6 +5695,7 @@ CT_pivotTableDefinition.prototype.asc_set = function (api, newVal) {
 	});
 };
 CT_pivotTableDefinition.prototype.asc_setName = function(newVal, addToHistory) {
+
 	setTableProperty(this, this.name, newVal, addToHistory, AscCH.historyitem_PivotTable_SetName);
 	this.name = newVal;
 };
