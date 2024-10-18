@@ -6453,7 +6453,7 @@ function parserFormula( formula, parent, _ws ) {
 		this.isInDependencies = false;
 	};
 
-	parserFormula.prototype.parse = function (local, digitDelim, parseResult, ignoreErrors, renameSheetMap, tablesMap, opt_isPivotTable, opt_pivotCallback) {
+	parserFormula.prototype.parse = function (local, digitDelim, parseResult, ignoreErrors, renameSheetMap, tablesMap, opt_pivotNamesList, opt_pivotCallback) {
 		var elemArr = [];
 		var ph = {operand_str: null, pCurrPos: 0};
 		var needAssemble = false;
@@ -7305,7 +7305,7 @@ function parserFormula( formula, parent, _ws ) {
 			var prevCurrPos = ph.pCurrPos;
 
 			/* Booleans */
-			if (opt_isPivotTable && (_tableTMP = parserHelp.isPivot.call(ph, t.Formula, ph.pCurrPos, local))) {
+			if (opt_pivotNamesList && (_tableTMP = opt_pivotCallback ? parserHelp.isPivotRaw.call(ph, t.Formula, ph.pCurrPos, local) : parserHelp.isPivot.call(ph, t.Formula, ph.pCurrPos, local, opt_pivotNamesList))) {
 
 				found_operand = cStrucPivotTable.prototype.createFromVal(_tableTMP, opt_pivotCallback);
 

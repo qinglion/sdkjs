@@ -2523,6 +2523,7 @@ CT_PivotCacheRecords.prototype._calculateFormula = function(options) {
 		}
 		return result;
 	};
+
 	const t = this;
 	let error = null;
 	for (let dataType in BaseStatisticOnlineAlgorithmFieldType) {
@@ -2549,7 +2550,6 @@ CT_PivotCacheRecords.prototype._calculateFormula = function(options) {
 						return new AscCommonExcel.cError(AscCommonExcel.cErrorType.bad_reference);
 					}
 				}
-
 				const itemIndex = fieldItem.x
 				const newItemsMapArray = [];
 				for (let j = 0; j < options.itemsMapArray.length; j += 1) {
@@ -2571,9 +2571,7 @@ CT_PivotCacheRecords.prototype._calculateFormula = function(options) {
 					}
 					newOptions.currentDataMap = elem;
 					newOptions.itemsMapArray = newItemsMapArray;
-					const calculateResult = t._fillDataMapCalculated(newOptions);
-					elem = calculateResult.resultTotal;
-					error = error || calculateResult.error;
+					error = error || t._fillDataMapCalculated(newOptions);
 				}
 
 				const total = elem && elem.total[options.dataIndex];
@@ -2741,7 +2739,7 @@ CT_PivotCacheRecords.prototype.getDataMap = function(options) {
 	this._getDataMapTotal(dataMap, 0, indexes.length);
 	this._getDataMapSubtotal(dataMap, 0, options.rowIndexes);
 	this._getDataMapApplyValueFilters(dataMap, options.rowIndexes, options.colIndexes, options.filterMaps, options.dataFields);
-	return {dataRow: dataMap, error: err};
+	return {dataRow: dataMap, error: null};
 };
 CT_PivotCacheRecords.prototype._getDataMapApplyValueFilters = function(rowMap, rowIndexes, colIndexes, filterMaps, dataFields) {
 	var tmp;
@@ -9920,6 +9918,7 @@ CT_pivotTableDefinition.prototype.convertNameFromFormula = function(name) {
  * @return {string}
  */
 CT_pivotTableDefinition.prototype.convertCalculatedFormula = function(formula, fieldIndex) {
+	const t = this;
 	const cacheFields = this.asc_getCacheFields();
 	const pivotFields = this.asc_getPivotFields();
 	const pivotField = pivotFields[fieldIndex];
@@ -9933,8 +9932,11 @@ CT_pivotTableDefinition.prototype.convertCalculatedFormula = function(formula, f
 		namesMap.set(this.asc_convertNameToFormula(item.getName(cacheField)).toLowerCase(), this.asc_convertNameToFormula(item.getSourceName(cacheField)));
 	}
 	const fieldName = pivotField.asc_getName() || cacheField.asc_getName();
+	const pivotNames = [[fieldName], items.map(function(item) {
+		return t.asc_convertNameToFormula(item.getName(cacheField));
+	})];
 	const parserFormula = new AscCommonExcel.parserFormula(formula, this, AscCommonExcel.g_DefNameWorksheet);
-	parserFormula.parse(undefined, undefined, undefined, undefined, undefined, undefined, true);
+	parserFormula.parse(undefined, undefined, undefined, undefined, undefined, undefined, pivotNames);
 	const outStack = parserFormula.outStack;
 	const resOutStack = [];
 	for(let i = 0; i < outStack.length; i += 1) {
@@ -10049,7 +10051,7 @@ CT_pivotTableDefinition.prototype.asc_modifyCalculatedItem = function(options) {
 		const items = pivotField.getItems();
 		const sharedItemIndex = items[options.itemIndex].x;
 		try {
-			const formula = this.convertCalculatedFormula(options.formula, options.fieldIndex);
+			const formula = t.convertCalculatedFormula(options.formula, options.fieldIndex);
 			t.modifyCalculatedItem({
 				itemsMapArray: [[options.fieldIndex, sharedItemIndex]],
 				formula: formula,
@@ -10079,7 +10081,6 @@ CT_pivotTableDefinition.prototype.asc_modifyCalculatedItem = function(options) {
  */
 CT_pivotTableDefinition.prototype.asc_removeCalculatedItem = function(options) {
 	const api = options.api;
-	debugger
 	const t = this;
 	api._changePivotAndConnectedByPivotCacheWithLock(this, false, function (confirmation, pivotTables) {
 		const changeRes = new AscCommonExcel.PivotChangeResult();
@@ -16543,7 +16544,7 @@ CT_PivotField.prototype.getValuebleIndexes = function() {
 CT_PivotField.prototype.getVisibleIndexes = function() {
 	const items = this.getItems();
 	return this.getValuebleIndexes().filter(function(itemIndex) {
-		return items[itemIndex].h
+		return !items[itemIndex].h
 	});
 };
 CT_PivotField.prototype.isAllVisible = function() {

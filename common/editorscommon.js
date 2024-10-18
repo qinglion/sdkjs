@@ -3759,28 +3759,59 @@
 
 		return false;
 	};
-	parserHelper.prototype.isPivot = function (formula, start_pos, local)
+	parserHelper.prototype.isPivot = function (formula, start_pos, local, opt_namesList)
+	{
+		if (this instanceof parserHelper)
+		{
+			this._reset();
+		}
+		// todo если строка подстрока другой
+		const subSTR = formula.substring(start_pos);
+		const fieldName = opt_namesList[0][0];
+		const itemNames = opt_namesList[1];
+		const fullPatterns = itemNames.map(function(name) {
+			return '^' + fieldName + '\\s*\\[\\s*(' + name + ')\\s*\\]'
+		});
+		const fullRegs = fullPatterns.map(function(pattern) {
+			return new RegExp(pattern, 'i');
+		});
+		for (let i = 0; i < fullRegs.length; i += 1) {
+			const match = fullRegs[i].exec(subSTR);
+			if (match !== null) {
+				this.operand_str = match[0];
+				this.pCurrPos += match[0].length;
+				return [fieldName, match[1]];
+			}
+		}
+		const shortPatterns = itemNames.map(function(name) {
+			return '^(' + name + ')\\W'
+		});
+		const shortRegs = shortPatterns.map(function(pattern) {
+			return new RegExp(pattern, 'i');
+		});
+		for (let i = 0; i < shortRegs.length; i += 1) {
+			const match = shortRegs[i].exec(subSTR);
+			if (match !== null) {
+				this.operand_str = match[0];
+				this.pCurrPos += match[0].length;
+				return [null, match[1]];
+			}
+		}
+		return false;
+	};
+	parserHelper.prototype.isPivotRaw = function (formula, start_pos, local)
 	{
 		if (this instanceof parserHelper)
 		{
 			this._reset();
 		}
 		const subSTR = formula.substring(start_pos);
-		const fullReg = /^(\w+|(?:\'.+?\'(?!\')))\[(\w+|(?:\'.+?\'(?!\')))\]/
-		const fullMatch = fullReg.exec(subSTR);
-
-		if (fullMatch !== null && fullMatch[1] && fullMatch[2])
-		{
-			this.operand_str = fullMatch[0];
-			this.pCurrPos += fullMatch[0].length;
-			return [fullMatch[1], fullMatch[2]];
-		}
-		const reg = /^(\'.+?\'(?!\'))/
+		const reg = /^(\w+|(?:\'.+?\'(?!\')))\[(\w+|(?:\'.+?\'(?!\')))\]/;
 		const match = reg.exec(subSTR);
-		if (match !== null && match[1]) {
-			this.operand_str = match[1];
-			this.pCurrPos += match[1].length;
-			return [null, match[1]];
+		if (match !== null && match[1] && match[2]) {
+			this.operand_str = match[0];
+			this.pCurrPos += match[0].length;
+			return [match[1], match[2]];
 		}
 		return false;
 	};
