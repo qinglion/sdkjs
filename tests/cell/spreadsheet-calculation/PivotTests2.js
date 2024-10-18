@@ -684,9 +684,9 @@ $(function() {
 				assert.deepEqual(getReportValues(pivot), values, message);
 			});
 		});
-		QUnit.test('Test: CALCULATED-ITEMS set, modify, remove', function (assert) {
-			const fileStart = Asc.CalculatedItemsStart;
-			const fileEnd = Asc.CalculatedItemsStandard;
+		QUnit.test('Test: CALCULATED-ITEMS add', function (assert) {
+			const fileStart = Asc.AddCalculatedItemsStart;
+			const fileEnd = Asc.AddCalculatedItemsStandard;
 			const startWb = openDocument(fileStart);
 			const standardWb = openDocument(fileEnd);
 			const row = 4;
@@ -694,31 +694,27 @@ $(function() {
 			let pivot = startWb.getWorksheetByName('Sheet2').getPivotTable(col, row);
 			const standardPivot = standardWb.getWorksheetByName('Sheet2').getPivotTable(col, row);
 			prepareTest(assert, startWb);
-
+			const undo = getReportValues(pivot);
 			const standard = getReportValues(standardPivot);
-			pivot = checkHistoryOperation(assert, pivot, standard, standard, "refresh pivot", function(){
+			pivot = checkHistoryOperation(assert, pivot, undo, standard, "refresh pivot", function(){
 				pivot.asc_addCalculatedItem({
 					api: api,
 					fieldIndex: 0,
 					name: 'Formula3',
 					formula: "East2-10+'we''s t'"
-				})
+				});
 				pivot.asc_addCalculatedItem({
 					api: api,
 					fieldIndex: 1,
 					name: 'Formula2',
 					formula: "Boy-Girl"
 				});
-				pivot.asc_modifyCalculatedItem({
+				pivot.asc_addCalculatedItem({
 					api: api,
-					fieldIndex: 0,
-					itemIndex: 2,
-					formula: "East2-100"
-				})
-				pivot.modifyCalculatedItem({
-					itemsMapArray: [[0, 3], [1, 0], [2, 0]],
-					formula: "East2+100"
-				})
+					fieldIndex: 2,
+					name: 'Formula1',
+					formula: "Fancy+Tee"
+				});
 			}, function(assert, pivot, values, message) {
 				assert.deepEqual(getReportValues(pivot), values, message);
 			});

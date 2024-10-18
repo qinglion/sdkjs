@@ -3796,7 +3796,7 @@
 			}
 		}
 		const shortPatterns = itemNames.map(function(name) {
-			return '^(' + name + ')\\W'
+			return '^(' + name + ')(?:\\W|$)'
 		});
 		const shortRegs = shortPatterns.map(function(pattern) {
 			return new RegExp(pattern, 'i');
@@ -3804,8 +3804,8 @@
 		for (let i = 0; i < shortRegs.length; i += 1) {
 			const match = shortRegs[i].exec(subSTR);
 			if (match !== null) {
-				this.operand_str = match[0];
-				this.pCurrPos += match[0].length;
+				this.operand_str = match[1];
+				this.pCurrPos += match[1].length;
 				return [null, match[1]];
 			}
 		}
