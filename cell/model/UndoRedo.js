@@ -1578,58 +1578,6 @@ function (window, undefined) {
 		}
 	};
 
-	function UndoRedoData_PivotFieldItem(pivot, pivotIndex, itemIndex, from, to) {
-		this.pivot = pivot;
-		this.pivotIndex = pivotIndex;
-		this.itemIndex = itemIndex;
-		this.from = from;
-		this.to = to;
-	}
-
-	UndoRedoData_PivotFieldItem.prototype.Properties = {
-		pivot: 0, pivotIndex: 1, itemIndex: 2, from: 3, to: 4
-	};
-	UndoRedoData_PivotFieldItem.prototype.getType = function () {
-		return UndoRedoDataTypes.PivotFieldItem;
-	};
-	UndoRedoData_PivotFieldItem.prototype.getProperties = function () {
-		return this.Properties;
-	};
-	UndoRedoData_PivotFieldItem.prototype.getProperty = function (nType) {
-		switch (nType) {
-			case this.Properties.pivot:
-				return this.pivot;
-			case this.Properties.pivotIndex:
-				return this.pivotIndex;
-			case this.Properties.itemIndex:
-				return this.itemIndex;
-			case this.Properties.from:
-				return this.from;
-			case this.Properties.to:
-				return this.to;
-		}
-		return null;
-	};
-	UndoRedoData_PivotFieldItem.prototype.setProperty = function (nType, value) {
-		switch (nType) {
-			case this.Properties.pivot:
-				this.pivot = value;
-				break;
-			case this.Properties.pivotIndex:
-				this.pivotIndex = value;
-				break;
-			case this.Properties.itemIndex:
-				this.itemIndex = value;
-				break;
-			case this.Properties.from:
-				this.from = value;
-				break;
-			case this.Properties.to:
-				this.to = value;
-				break;
-		}
-	};
-
 	function UndoRedoData_BinaryWrapper(data) {
 		this.binary = null;
 		this.len = 0;
