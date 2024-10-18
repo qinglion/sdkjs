@@ -696,7 +696,7 @@ $(function() {
 			prepareTest(assert, startWb);
 			const undo = getReportValues(pivot);
 			const standard = getReportValues(standardPivot);
-			pivot = checkHistoryOperation(assert, pivot, undo, standard, "refresh pivot", function(){
+			pivot = checkHistoryOperation(assert, pivot, undo, standard, "add items", function(){
 				pivot.asc_addCalculatedItem({
 					api: api,
 					fieldIndex: 0,
