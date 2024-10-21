@@ -11253,14 +11253,15 @@
 
 		function convertCompoundPathToFormatPath(compoundPath) {
 			const compoundPathBounds = compoundPath.getBounds();
-			const position = compoundPath.getPosition().subtract(compoundPathBounds.topLeft)
+			const position = compoundPath.getPosition().subtract(compoundPathBounds.getTopLeft())
 			compoundPath.setPosition(position);
 
 			const formatPath = new AscFormat.Path();
 			formatPath.setPathW(compoundPathBounds.width * 36000);
 			formatPath.setPathH(compoundPathBounds.height * 36000);
 
-			const pathsToHandle = compoundPath.children || [compoundPath];
+			const pathChildren = compoundPath.getChildren();
+			const pathsToHandle = Array.isArray(pathChildren) && pathChildren.length > 0 ? pathChildren : [compoundPath];
 			pathsToHandle.forEach(function (path) {
 				const segments = path.getSegments();
 
@@ -11271,31 +11272,31 @@
 					if (segment.isFirst()) {
 						return formatPath.addPathCommand({
 							'id': AscFormat.moveTo,
-							'X': '' + (segment.point.x * 36000 >> 0),
-							'Y': '' + (segment.point.y * 36000 >> 0)
+							'X': '' + (segment.getPoint().getX() * 36000 >> 0),
+							'Y': '' + (segment.getPoint().getY() * 36000 >> 0)
 						});
 					}
 
 					// TODO: Check if bezier curve is just a straight line
 					formatPath.addPathCommand({
 						'id': AscFormat.bezier4,
-						'X0': '' + ((prevSegment.point.x + prevSegment.handleOut.x) * 36000 >> 0),
-						'Y0': '' + ((prevSegment.point.y + prevSegment.handleOut.y) * 36000 >> 0),
-						'X1': '' + ((segment.point.x + segment.handleIn.x) * 36000 >> 0),
-						'Y1': '' + ((segment.point.y + segment.handleIn.y) * 36000 >> 0),
-						'X2': '' + (segment.point.x * 36000 >> 0),
-						'Y2': '' + (segment.point.y * 36000 >> 0)
+						'X0': '' + ((prevSegment.getPoint().getX() + prevSegment.getHandleOut().getX()) * 36000 >> 0),
+						'Y0': '' + ((prevSegment.getPoint().getY() + prevSegment.getHandleOut().getY()) * 36000 >> 0),
+						'X1': '' + ((segment.getPoint().getX() + segment.getHandleIn().getX()) * 36000 >> 0),
+						'Y1': '' + ((segment.getPoint().getY() + segment.getHandleIn().getY()) * 36000 >> 0),
+						'X2': '' + (segment.getPoint().getX() * 36000 >> 0),
+						'Y2': '' + (segment.getPoint().getY() * 36000 >> 0)
 					});
 
 					if (segment.isLast() && path.isClosed()) {
 						formatPath.addPathCommand({
 							'id': AscFormat.bezier4,
-							'X0': '' + ((segment.point.x + segment.handleOut.x) * 36000 >> 0),
-							'Y0': '' + ((segment.point.y + segment.handleOut.y) * 36000 >> 0),
-							'X1': '' + ((segments[0].point.x + segments[0].handleIn.x) * 36000 >> 0),
-							'Y1': '' + ((segments[0].point.y + segments[0].handleIn.y) * 36000 >> 0),
-							'X2': '' + (segments[0].point.x * 36000 >> 0),
-							'Y2': '' + (segments[0].point.y * 36000 >> 0)
+							'X0': '' + ((segment.getPoint().getX() + segment.getHandleOut().getX()) * 36000 >> 0),
+							'Y0': '' + ((segment.getPoint().getY() + segment.getHandleOut().getY()) * 36000 >> 0),
+							'X1': '' + ((segments[0].getPoint().getX() + segments[0].getHandleIn().getX()) * 36000 >> 0),
+							'Y1': '' + ((segments[0].getPoint().getY() + segments[0].getHandleIn().getY()) * 36000 >> 0),
+							'X2': '' + (segments[0].getPoint().getX() * 36000 >> 0),
+							'Y2': '' + (segments[0].getPoint().getY() * 36000 >> 0)
 						});
 						return formatPath.addPathCommand({
 							'id': AscFormat.close

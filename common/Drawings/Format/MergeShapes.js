@@ -4,8 +4,8 @@ var paper = function (self, undefined) {
 
 	function InitClassWithStatics(fClass, fBase, nType) {
 		AscFormat.InitClass(fClass, fBase, nType);
-		
-		Object.getOwnPropertyNames(fBase).forEach(function(prop) {
+
+		Object.getOwnPropertyNames(fBase).forEach(function (prop) {
 			if (['prototype', 'name', 'length'].includes(prop) || Function.prototype.hasOwnProperty(prop)) { return; }
 			Object.defineProperty(fClass, prop, Object.getOwnPropertyDescriptor(fBase, prop));
 		});
@@ -197,7 +197,6 @@ var paper = function (self, undefined) {
 	tmpBaseExtend = Base.extend;
 	Base.exports = {};
 	Base.extend = function extend() {
-		// debugger
 		var res = tmpBaseExtend.apply(this, arguments),
 			name = res.prototype._class;
 		if (name && !Base.exports[name])
@@ -713,7 +712,7 @@ var paper = function (self, undefined) {
 				delete agent.chrome;
 		}
 	};
-	
+
 	InitClassWithStatics(PaperScope, Base);
 	PaperScope.prototype.version = "0.12.17";
 	PaperScope.prototype.getPaper = function () {
@@ -755,9 +754,9 @@ var paper = function (self, undefined) {
 		this.clear();
 		delete PaperScope._scopes[this._id];
 	};
-	PaperScope._scopes= {};
-	PaperScope._id= 0;
-	PaperScope.get= function (id) {
+	PaperScope._scopes = {};
+	PaperScope._id = 0;
+	PaperScope.get = function (id) {
 		return this._scopes[id] || null;
 	};
 	PaperScope.getAttribute = function (el, attr) {
@@ -1390,9 +1389,9 @@ var paper = function (self, undefined) {
 			this.__read = read;
 		return this;
 	};
-	
+
 	InitClassWithStatics(Point, Base);
-	
+
 	Point.prototype.initialize = Point;
 	Point.prototype._class = 'Point';
 	Point.prototype._readIndex = true;
@@ -1585,7 +1584,7 @@ var paper = function (self, undefined) {
 			point.y * scale
 		);
 	};
-	
+
 	Point.min = function () {
 		var args = arguments,
 			point1 = Point.read(args),
@@ -1685,10 +1684,10 @@ var paper = function (self, undefined) {
 		this._owner = owner;
 		this._setter = setter;
 	};
-	
+
 	InitClassWithStatics(CLinkedPoint, Point);
 	CLinkedPoint.prototype.initialize = CLinkedPoint;
-	
+
 	CLinkedPoint.prototype._set = function (x, y, _dontNotify) {
 		this._x = x;
 		this._y = y;
@@ -1719,6 +1718,368 @@ var paper = function (self, undefined) {
 	CLinkedPoint.prototype._getSelection = function () {
 		return this._setter === 'setPosition' ? 4 : 0;
 	};
+
+	// var Rectangle = function Rectangle(arg0, arg1, arg2, arg3) {
+	// 	Base.call(this);
+	// 	var args = arguments,
+	// 		type = typeof arg0,
+	// 		read;
+	// 	if (type === 'number') {
+	// 		this._set(arg0, arg1, arg2, arg3);
+	// 		read = 4;
+	// 	} else if (type === 'undefined' || arg0 === null) {
+	// 		this._set(0, 0, 0, 0);
+	// 		read = arg0 === null ? 1 : 0;
+	// 	} else if (args.length === 1) {
+	// 		if (Array.isArray(arg0)) {
+	// 			this._set.apply(this, arg0);
+	// 			read = 1;
+	// 		} else if (arg0.x !== undefined || arg0.width !== undefined) {
+	// 			this._set(arg0.x || 0, arg0.y || 0,
+	// 				arg0.width || 0, arg0.height || 0);
+	// 			read = 1;
+	// 		} else if (arg0.from === undefined && arg0.to === undefined) {
+	// 			this._set(0, 0, 0, 0);
+	// 			if (Base.readSupported(args, this)) {
+	// 				read = 1;
+	// 			}
+	// 		}
+	// 	}
+	// 	if (read === undefined) {
+	// 		var frm = Point.readNamed(args, 'from'),
+	// 			next = Base.peek(args),
+	// 			x = frm.x,
+	// 			y = frm.y,
+	// 			width,
+	// 			height;
+	// 		if (next && next.x !== undefined || Base.hasNamed(args, 'to')) {
+	// 			var to = Point.readNamed(args, 'to');
+	// 			width = to.x - x;
+	// 			height = to.y - y;
+	// 			if (width < 0) {
+	// 				x = to.x;
+	// 				width = -width;
+	// 			}
+	// 			if (height < 0) {
+	// 				y = to.y;
+	// 				height = -height;
+	// 			}
+	// 		} else {
+	// 			var size = Size.read(args);
+	// 			width = size.width;
+	// 			height = size.height;
+	// 		}
+	// 		this._set(x, y, width, height);
+	// 		read = args.__index;
+	// 	}
+	// 	var filtered = args.__filtered;
+	// 	if (filtered)
+	// 		this.__filtered = filtered;
+	// 	if (this.__read)
+	// 		this.__read = read;
+	// 	return this;
+	// };
+
+	// InitClassWithStatics(Rectangle, Base);
+
+	// Rectangle.prototype._class = 'Rectangle';
+	// Rectangle.prototype._readIndex = true;
+	// Rectangle.prototype.beans = true;
+	// Rectangle.prototype.initialize = Rectangle;
+	// Rectangle.prototype.set = Rectangle;
+	// Rectangle.prototype._set = function (x, y, width, height) {
+	// 	this.x = x;
+	// 	this.y = y;
+	// 	this.width = width;
+	// 	this.height = height;
+	// 	return this;
+	// };
+	// Rectangle.prototype.clone = function () {
+	// 	return new Rectangle(this.x, this.y, this.width, this.height);
+	// };
+	// Rectangle.prototype.equals = function (rect) {
+	// 	var rt = Base.isPlainValue(rect)
+	// 		? Rectangle.read(arguments)
+	// 		: rect;
+	// 	return rt === this
+	// 		|| rt && this.x === rt.x && this.y === rt.y
+	// 		&& this.width === rt.width && this.height === rt.height
+	// 		|| false;
+	// };
+	// Rectangle.prototype.toString = function () {
+	// 	var f = Formatter.instance;
+	// 	return '{ x: ' + f.number(this.x)
+	// 		+ ', y: ' + f.number(this.y)
+	// 		+ ', width: ' + f.number(this.width)
+	// 		+ ', height: ' + f.number(this.height)
+	// 		+ ' }';
+	// };
+	// Rectangle.prototype._serialize = function (options) {
+	// 	var f = options.formatter;
+	// 	return [f.number(this.x),
+	// 	f.number(this.y),
+	// 	f.number(this.width),
+	// 	f.number(this.height)];
+	// };
+	// Rectangle.prototype.getPoint = function (_dontLink) {
+	// 	var ctor = _dontLink ? Point : LinkedPoint;
+	// 	return new ctor(this.x, this.y, this, 'setPoint');
+	// };
+	// Rectangle.prototype.setPoint = function () {
+	// 	var point = Point.read(arguments);
+	// 	this.x = point.x;
+	// 	this.y = point.y;
+	// };
+	// Rectangle.prototype.getSize = function (_dontLink) {
+	// 	var ctor = _dontLink ? Size : LinkedSize;
+	// 	return new ctor(this.width, this.height, this, 'setSize');
+	// };
+	// Rectangle.prototype._fw = 1;
+	// Rectangle.prototype._fh = 1;
+	// Rectangle.prototype.setSize = function () {
+	// 	var size = Size.read(arguments),
+	// 		sx = this._sx,
+	// 		sy = this._sy,
+	// 		w = size.width,
+	// 		h = size.height;
+	// 	if (sx) {
+	// 		this.x += (this.width - w) * sx;
+	// 	}
+	// 	if (sy) {
+	// 		this.y += (this.height - h) * sy;
+	// 	}
+	// 	this.width = w;
+	// 	this.height = h;
+	// 	this._fw = this._fh = 1;
+	// };
+	// Rectangle.prototype.getLeft = function () {
+	// 	return this.x;
+	// };
+	// Rectangle.prototype.setLeft = function (left) {
+	// 	if (!this._fw) {
+	// 		var amount = left - this.x;
+	// 		this.width -= this._sx === 0.5 ? amount * 2 : amount;
+	// 	}
+	// 	this.x = left;
+	// 	this._sx = this._fw = 0;
+	// };
+	// Rectangle.prototype.getTop = function () {
+	// 	return this.y;
+	// };
+	// Rectangle.prototype.setTop = function (top) {
+	// 	if (!this._fh) {
+	// 		var amount = top - this.y;
+	// 		this.height -= this._sy === 0.5 ? amount * 2 : amount;
+	// 	}
+	// 	this.y = top;
+	// 	this._sy = this._fh = 0;
+	// };
+	// Rectangle.prototype.getRight = function () {
+	// 	return this.x + this.width;
+	// };
+	// Rectangle.prototype.setRight = function (right) {
+	// 	if (!this._fw) {
+	// 		var amount = right - this.x;
+	// 		this.width = this._sx === 0.5 ? amount * 2 : amount;
+	// 	}
+	// 	this.x = right - this.width;
+	// 	this._sx = 1;
+	// 	this._fw = 0;
+	// };
+	// Rectangle.prototype.getBottom = function () {
+	// 	return this.y + this.height;
+	// };
+	// Rectangle.prototype.setBottom = function (bottom) {
+	// 	if (!this._fh) {
+	// 		var amount = bottom - this.y;
+	// 		this.height = this._sy === 0.5 ? amount * 2 : amount;
+	// 	}
+	// 	this.y = bottom - this.height;
+	// 	this._sy = 1;
+	// 	this._fh = 0;
+	// };
+	// Rectangle.prototype.getCenterX = function () {
+	// 	return this.x + this.width / 2;
+	// };
+	// Rectangle.prototype.setCenterX = function (x) {
+	// 	if (this._fw || this._sx === 0.5) {
+	// 		this.x = x - this.width / 2;
+	// 	} else {
+	// 		if (this._sx) {
+	// 			this.x += (x - this.x) * 2 * this._sx;
+	// 		}
+	// 		this.width = (x - this.x) * 2;
+	// 	}
+	// 	this._sx = 0.5;
+	// 	this._fw = 0;
+	// };
+	// Rectangle.prototype.getCenterY = function () {
+	// 	return this.y + this.height / 2;
+	// };
+	// Rectangle.prototype.setCenterY = function (y) {
+	// 	if (this._fh || this._sy === 0.5) {
+	// 		this.y = y - this.height / 2;
+	// 	} else {
+	// 		if (this._sy) {
+	// 			this.y += (y - this.y) * 2 * this._sy;
+	// 		}
+	// 		this.height = (y - this.y) * 2;
+	// 	}
+	// 	this._sy = 0.5;
+	// 	this._fh = 0;
+	// };
+	// Rectangle.prototype.getCenter = function (_dontLink) {
+	// 	var ctor = _dontLink ? Point : LinkedPoint;
+	// 	return new ctor(this.getCenterX(), this.getCenterY(), this, 'setCenter');
+	// };
+	// Rectangle.prototype.setCenter = function () {
+	// 	var point = Point.read(arguments);
+	// 	this.setCenterX(point.x);
+	// 	this.setCenterY(point.y);
+	// 	return this;
+	// };
+	// Rectangle.prototype.getArea = function () {
+	// 	return this.width * this.height;
+	// };
+	// Rectangle.prototype.isEmpty = function () {
+	// 	return this.width === 0 || this.height === 0;
+	// };
+	// Rectangle.prototype.contains = function (arg) {
+	// 	return arg && arg.width !== undefined
+	// 		|| (Array.isArray(arg) ? arg : arguments).length === 4
+	// 		? this._containsRectangle(Rectangle.read(arguments))
+	// 		: this._containsPoint(Point.read(arguments));
+	// };
+	// Rectangle.prototype._containsPoint = function (point) {
+	// 	var x = point.x,
+	// 		y = point.y;
+	// 	return x >= this.x && y >= this.y
+	// 		&& x <= this.x + this.width
+	// 		&& y <= this.y + this.height;
+	// };
+	// Rectangle.prototype._containsRectangle = function (rect) {
+	// 	var x = rect.x,
+	// 		y = rect.y;
+	// 	return x >= this.x && y >= this.y
+	// 		&& x + rect.width <= this.x + this.width
+	// 		&& y + rect.height <= this.y + this.height;
+	// };
+	// Rectangle.prototype.intersects = function () {
+	// 	var rect = Rectangle.read(arguments),
+	// 		epsilon = Base.read(arguments) || 0;
+	// 	return rect.x + rect.width > this.x - epsilon
+	// 		&& rect.y + rect.height > this.y - epsilon
+	// 		&& rect.x < this.x + this.width + epsilon
+	// 		&& rect.y < this.y + this.height + epsilon;
+	// };
+	// Rectangle.prototype.intersect = function () {
+	// 	var rect = Rectangle.read(arguments),
+	// 		x1 = Math.max(this.x, rect.x),
+	// 		y1 = Math.max(this.y, rect.y),
+	// 		x2 = Math.min(this.x + this.width, rect.x + rect.width),
+	// 		y2 = Math.min(this.y + this.height, rect.y + rect.height);
+	// 	return new Rectangle(x1, y1, x2 - x1, y2 - y1);
+	// };
+	// Rectangle.prototype.unite = function () {
+	// 	var rect = Rectangle.read(arguments),
+	// 		x1 = Math.min(this.x, rect.x),
+	// 		y1 = Math.min(this.y, rect.y),
+	// 		x2 = Math.max(this.x + this.width, rect.x + rect.width),
+	// 		y2 = Math.max(this.y + this.height, rect.y + rect.height);
+	// 	return new Rectangle(x1, y1, x2 - x1, y2 - y1);
+	// };
+	// Rectangle.prototype.include = function () {
+	// 	var point = Point.read(arguments);
+	// 	var x1 = Math.min(this.x, point.x),
+	// 		y1 = Math.min(this.y, point.y),
+	// 		x2 = Math.max(this.x + this.width, point.x),
+	// 		y2 = Math.max(this.y + this.height, point.y);
+	// 	return new Rectangle(x1, y1, x2 - x1, y2 - y1);
+	// };
+	// Rectangle.prototype.expand = function () {
+	// 	var amount = Size.read(arguments),
+	// 		hor = amount.width,
+	// 		ver = amount.height;
+	// 	return new Rectangle(this.x - hor / 2, this.y - ver / 2,
+	// 		this.width + hor, this.height + ver);
+	// };
+	// Rectangle.prototype.scale = function (hor, ver) {
+	// 	return this.expand(this.width * hor - this.width,
+	// 		this.height * (ver === undefined ? hor : ver) - this.height);
+	// };
+	// Rectangle.prototype.beans = true;
+	// Rectangle.prototype.getTopLeft = function (_dontLink) {
+	// 	var ctor = _dontLink ? Point : LinkedPoint;
+	// 	return new ctor(this.getLeft(), this.getTop(), this, 'setTopLeft');
+	// };
+	// Rectangle.prototype.setTopLeft = function () {
+	// 	var point = Point.read(arguments);
+	// 	this.setLeft(point.x);
+	// 	this.setTop(point.y);
+	// };
+	// Rectangle.prototype.getTopRight = function (_dontLink) {
+	// 	var ctor = _dontLink ? Point : LinkedPoint;
+	// 	return new ctor(this.getRight(), this.getTop(), this, 'setTopRight');
+	// };
+	// Rectangle.prototype.setTopRight = function () {
+	// 	var point = Point.read(arguments);
+	// 	this.setRight(point.x);
+	// 	this.setTop(point.y);
+	// };
+	// Rectangle.prototype.getBottomLeft = function (_dontLink) {
+	// 	var ctor = _dontLink ? Point : LinkedPoint;
+	// 	return new ctor(this.getLeft(), this.getBottom(), this, 'setBottomLeft');
+	// };
+	// Rectangle.prototype.setBottomLeft = function () {
+	// 	var point = Point.read(arguments);
+	// 	this.setLeft(point.x);
+	// 	this.setBottom(point.y);
+	// };
+	// Rectangle.prototype.getBottomRight = function (_dontLink) {
+	// 	var ctor = _dontLink ? Point : LinkedPoint;
+	// 	return new ctor(this.getRight(), this.getBottom(), this, 'setBottomRight');
+	// };
+	// Rectangle.prototype.setBottomRight = function () {
+	// 	var point = Point.read(arguments);
+	// 	this.setRight(point.x);
+	// 	this.setBottom(point.y);
+	// };
+	// Rectangle.prototype.getLeftCenter = function (_dontLink) {
+	// 	var ctor = _dontLink ? Point : LinkedPoint;
+	// 	return new ctor(this.getLeft(), this.getCenterY(), this, 'setLeftCenter');
+	// };
+	// Rectangle.prototype.setLeftCenter = function () {
+	// 	var point = Point.read(arguments);
+	// 	this.setLeft(point.x);
+	// 	this.setCenterY(point.y);
+	// };
+	// Rectangle.prototype.getTopCenter = function (_dontLink) {
+	// 	var ctor = _dontLink ? Point : LinkedPoint;
+	// 	return new ctor(this.getCenterX(), this.getTop(), this, 'setTopCenter');
+	// };
+	// Rectangle.prototype.setTopCenter = function () {
+	// 	var point = Point.read(arguments);
+	// 	this.setCenterX(point.x);
+	// 	this.setTop(point.y);
+	// };
+	// Rectangle.prototype.getRightCenter = function (_dontLink) {
+	// 	var ctor = _dontLink ? Point : LinkedPoint;
+	// 	return new ctor(this.getRight(), this.getCenterY(), this, 'setRightCenter');
+	// };
+	// Rectangle.prototype.setRightCenter = function () {
+	// 	var point = Point.read(arguments);
+	// 	this.setRight(point.x);
+	// 	this.setCenterY(point.y);
+	// };
+	// Rectangle.prototype.getBottomCenter = function (_dontLink) {
+	// 	var ctor = _dontLink ? Point : LinkedPoint;
+	// 	return new ctor(this.getCenterX(), this.getBottom(), this, 'setBottomCenter');
+	// };
+	// Rectangle.prototype.setBottomCenter = function () {
+	// 	var point = Point.read(arguments);
+	// 	this.setCenterX(point.x);
+	// 	this.setBottom(point.y);
+	// };
 
 	var Rectangle = Base.extend({
 		_class: 'Rectangle',
@@ -2041,38 +2402,42 @@ var paper = function (self, undefined) {
 			return this.expand(this.width * hor - this.width,
 				this.height * (ver === undefined ? hor : ver) - this.height);
 		}
-	}, Base.each([
-		['Top', 'Left'], ['Top', 'Right'],
-		['Bottom', 'Left'], ['Bottom', 'Right'],
-		['Left', 'Center'], ['Top', 'Center'],
-		['Right', 'Center'], ['Bottom', 'Center']
-	],
-		function (parts, index) {
-			var part = parts.join(''),
-				xFirst = /^[RL]/.test(part);
-			if (index >= 4)
-				parts[1] += xFirst ? 'Y' : 'X';
-			var x = parts[xFirst ? 0 : 1],
-				y = parts[xFirst ? 1 : 0],
-				getX = 'get' + x,
-				getY = 'get' + y,
-				setX = 'set' + x,
-				setY = 'set' + y,
-				get = 'get' + part,
-				set = 'set' + part;
-			this[get] = function (_dontLink) {
-				var ctor = _dontLink ? Point : LinkedPoint;
-				return new ctor(this[getX](), this[getY](), this, set);
-			};
-			this[set] = function () {
-				var point = Point.read(arguments);
-				this[setX](point.x);
-				this[setY](point.y);
-			};
-		}, {
-		beans: true
-	}
-	));
+	},
+		Base.each(
+			[
+				['Top', 'Left'], ['Top', 'Right'],
+				['Bottom', 'Left'], ['Bottom', 'Right'],
+				['Left', 'Center'], ['Top', 'Center'],
+				['Right', 'Center'], ['Bottom', 'Center']
+			],
+			function (parts, index) {
+				var part = parts.join(''),
+					xFirst = /^[RL]/.test(part);
+				if (index >= 4)
+					parts[1] += xFirst ? 'Y' : 'X';
+				var x = parts[xFirst ? 0 : 1],
+					y = parts[xFirst ? 1 : 0],
+					getX = 'get' + x,
+					getY = 'get' + y,
+					setX = 'set' + x,
+					setY = 'set' + y,
+					get = 'get' + part,
+					set = 'set' + part;
+				this[get] = function (_dontLink) {
+					var ctor = _dontLink ? Point : LinkedPoint;
+					return new ctor(this[getX](), this[getY](), this, set);
+				};
+				this[set] = function () {
+					var point = Point.read(arguments);
+					this[setX](point.x);
+					this[setY](point.y);
+				};
+			},
+			{
+				beans: true
+			}
+		)
+	);
 
 	var LinkedRectangle = Rectangle.extend({
 		initialize: function Rectangle(x, y, width, height, owner, setter) {
@@ -2133,3239 +2498,2293 @@ var paper = function (self, undefined) {
 			);
 		});
 
-	var Matrix = Base.extend({
-		_class: 'Matrix',
-
-		initialize: function Matrix(arg, _dontNotify) {
-			var args = arguments,
-				count = args.length,
-				ok = true;
-			if (count >= 6) {
-				this._set.apply(this, args);
-			} else if (count === 1 || count === 2) {
-				if (arg instanceof Matrix) {
-					this._set(arg._a, arg._b, arg._c, arg._d, arg._tx, arg._ty,
-						_dontNotify);
-				} else if (Array.isArray(arg)) {
-					this._set.apply(this,
-						_dontNotify ? arg.concat([_dontNotify]) : arg);
-				} else {
-					ok = false;
-				}
-			} else if (!count) {
-				this.reset();
+	var Matrix = function Matrix(arg, _dontNotify) {
+		Base.call(this);
+		var args = arguments,
+			count = args.length,
+			ok = true;
+		if (count >= 6) {
+			this._set.apply(this, args);
+		} else if (count === 1 || count === 2) {
+			if (arg instanceof Matrix) {
+				this._set(arg._a, arg._b, arg._c, arg._d, arg._tx, arg._ty,
+					_dontNotify);
+			} else if (Array.isArray(arg)) {
+				this._set.apply(this,
+					_dontNotify ? arg.concat([_dontNotify]) : arg);
 			} else {
 				ok = false;
 			}
-			if (!ok) {
-				throw new Error('Unsupported matrix parameters');
+		} else if (!count) {
+			this.reset();
+		} else {
+			ok = false;
+		}
+		if (!ok) {
+			throw new Error('Unsupported matrix parameters');
+		}
+		return this;
+	};
+
+	InitClassWithStatics(Matrix, Base);
+	Matrix.prototype._class = 'Matrix';
+	Matrix.prototype.initialize = Matrix;
+	Matrix.prototype.set = Matrix;
+	Matrix.prototype._set = function (a, b, c, d, tx, ty, _dontNotify) {
+		this._a = a;
+		this._b = b;
+		this._c = c;
+		this._d = d;
+		this._tx = tx;
+		this._ty = ty;
+		if (!_dontNotify)
+			this._changed();
+		return this;
+	};
+	Matrix.prototype._serialize = function (options, dictionary) {
+		return Base.serialize(this.getValues(), options, true, dictionary);
+	};
+	Matrix.prototype._changed = function () {
+		var owner = this._owner;
+		if (owner) {
+			if (owner._applyMatrix) {
+				owner.transform(null, true);
+			} else {
+				owner._changed(25);
 			}
-			return this;
-		},
-
-		set: '#initialize',
-
-		_set: function (a, b, c, d, tx, ty, _dontNotify) {
-			this._a = a;
-			this._b = b;
-			this._c = c;
-			this._d = d;
-			this._tx = tx;
-			this._ty = ty;
+		}
+	};
+	Matrix.prototype.clone = function () {
+		return new Matrix(this._a, this._b, this._c, this._d,
+			this._tx, this._ty);
+	};
+	Matrix.prototype.equals = function (mx) {
+		return mx === this || mx && this._a === mx._a && this._b === mx._b
+			&& this._c === mx._c && this._d === mx._d
+			&& this._tx === mx._tx && this._ty === mx._ty;
+	};
+	Matrix.prototype.toString = function () {
+		var f = Formatter.instance;
+		return '[[' + [f.number(this._a), f.number(this._c),
+		f.number(this._tx)].join(', ') + '], ['
+			+ [f.number(this._b), f.number(this._d),
+			f.number(this._ty)].join(', ') + ']]';
+	};
+	Matrix.prototype.reset = function (_dontNotify) {
+		this._a = this._d = 1;
+		this._b = this._c = this._tx = this._ty = 0;
+		if (!_dontNotify)
+			this._changed();
+		return this;
+	};
+	Matrix.prototype.apply = function (recursively, _setApplyMatrix) {
+		var owner = this._owner;
+		if (owner) {
+			owner.transform(null, Base.pick(recursively, true), _setApplyMatrix);
+			return this.isIdentity();
+		}
+		return false;
+	};
+	Matrix.prototype.translate = function () {
+		var point = Point.read(arguments),
+			x = point.x,
+			y = point.y;
+		this._tx += x * this._a + y * this._c;
+		this._ty += x * this._b + y * this._d;
+		this._changed();
+		return this;
+	};
+	Matrix.prototype.scale = function () {
+		var args = arguments,
+			scale = Point.read(args),
+			center = Point.read(args, 0, { readNull: true });
+		if (center)
+			this.translate(center);
+		this._a *= scale.x;
+		this._b *= scale.x;
+		this._c *= scale.y;
+		this._d *= scale.y;
+		if (center)
+			this.translate(center.negate());
+		this._changed();
+		return this;
+	};
+	Matrix.prototype.rotate = function (angle) {
+		angle *= Math.PI / 180;
+		var center = Point.read(arguments, 1),
+			x = center.x,
+			y = center.y,
+			cos = Math.cos(angle),
+			sin = Math.sin(angle),
+			tx = x - x * cos + y * sin,
+			ty = y - x * sin - y * cos,
+			a = this._a,
+			b = this._b,
+			c = this._c,
+			d = this._d;
+		this._a = cos * a + sin * c;
+		this._b = cos * b + sin * d;
+		this._c = -sin * a + cos * c;
+		this._d = -sin * b + cos * d;
+		this._tx += tx * a + ty * c;
+		this._ty += tx * b + ty * d;
+		this._changed();
+		return this;
+	};
+	Matrix.prototype.shear = function () {
+		var args = arguments,
+			shear = Point.read(args),
+			center = Point.read(args, 0, { readNull: true });
+		if (center)
+			this.translate(center);
+		var a = this._a,
+			b = this._b;
+		this._a += shear.y * this._c;
+		this._b += shear.y * this._d;
+		this._c += shear.x * a;
+		this._d += shear.x * b;
+		if (center)
+			this.translate(center.negate());
+		this._changed();
+		return this;
+	};
+	Matrix.prototype.skew = function () {
+		var args = arguments,
+			skew = Point.read(args),
+			center = Point.read(args, 0, { readNull: true }),
+			toRadians = Math.PI / 180,
+			shear = new Point(Math.tan(skew.x * toRadians),
+				Math.tan(skew.y * toRadians));
+		return this.shear(shear, center);
+	};
+	Matrix.prototype.append = function (mx, _dontNotify) {
+		if (mx) {
+			var a1 = this._a,
+				b1 = this._b,
+				c1 = this._c,
+				d1 = this._d,
+				a2 = mx._a,
+				b2 = mx._c,
+				c2 = mx._b,
+				d2 = mx._d,
+				tx2 = mx._tx,
+				ty2 = mx._ty;
+			this._a = a2 * a1 + c2 * c1;
+			this._c = b2 * a1 + d2 * c1;
+			this._b = a2 * b1 + c2 * d1;
+			this._d = b2 * b1 + d2 * d1;
+			this._tx += tx2 * a1 + ty2 * c1;
+			this._ty += tx2 * b1 + ty2 * d1;
 			if (!_dontNotify)
 				this._changed();
-			return this;
-		},
-
-		_serialize: function (options, dictionary) {
-			return Base.serialize(this.getValues(), options, true, dictionary);
-		},
-
-		_changed: function () {
-			var owner = this._owner;
-			if (owner) {
-				if (owner._applyMatrix) {
-					owner.transform(null, true);
-				} else {
-					owner._changed(25);
-				}
-			}
-		},
-
-		clone: function () {
-			return new Matrix(this._a, this._b, this._c, this._d,
-				this._tx, this._ty);
-		},
-
-		equals: function (mx) {
-			return mx === this || mx && this._a === mx._a && this._b === mx._b
-				&& this._c === mx._c && this._d === mx._d
-				&& this._tx === mx._tx && this._ty === mx._ty;
-		},
-
-		toString: function () {
-			var f = Formatter.instance;
-			return '[[' + [f.number(this._a), f.number(this._c),
-			f.number(this._tx)].join(', ') + '], ['
-				+ [f.number(this._b), f.number(this._d),
-				f.number(this._ty)].join(', ') + ']]';
-		},
-
-		reset: function (_dontNotify) {
-			this._a = this._d = 1;
-			this._b = this._c = this._tx = this._ty = 0;
+		}
+		return this;
+	};
+	Matrix.prototype.prepend = function (mx, _dontNotify) {
+		if (mx) {
+			var a1 = this._a,
+				b1 = this._b,
+				c1 = this._c,
+				d1 = this._d,
+				tx1 = this._tx,
+				ty1 = this._ty,
+				a2 = mx._a,
+				b2 = mx._c,
+				c2 = mx._b,
+				d2 = mx._d,
+				tx2 = mx._tx,
+				ty2 = mx._ty;
+			this._a = a2 * a1 + b2 * b1;
+			this._c = a2 * c1 + b2 * d1;
+			this._b = c2 * a1 + d2 * b1;
+			this._d = c2 * c1 + d2 * d1;
+			this._tx = a2 * tx1 + b2 * ty1 + tx2;
+			this._ty = c2 * tx1 + d2 * ty1 + ty2;
 			if (!_dontNotify)
 				this._changed();
-			return this;
-		},
-
-		apply: function (recursively, _setApplyMatrix) {
-			var owner = this._owner;
-			if (owner) {
-				owner.transform(null, Base.pick(recursively, true), _setApplyMatrix);
-				return this.isIdentity();
+		}
+		return this;
+	};
+	Matrix.prototype.appended = function (mx) {
+		return this.clone().append(mx);
+	};
+	Matrix.prototype.prepended = function (mx) {
+		return this.clone().prepend(mx);
+	};
+	Matrix.prototype.invert = function () {
+		var a = this._a,
+			b = this._b,
+			c = this._c,
+			d = this._d,
+			tx = this._tx,
+			ty = this._ty,
+			det = a * d - b * c,
+			res = null;
+		if (det && !isNaN(det) && isFinite(tx) && isFinite(ty)) {
+			this._a = d / det;
+			this._b = -b / det;
+			this._c = -c / det;
+			this._d = a / det;
+			this._tx = (c * ty - d * tx) / det;
+			this._ty = (b * tx - a * ty) / det;
+			res = this;
+		}
+		return res;
+	};
+	Matrix.prototype.inverted = function () {
+		return this.clone().invert();
+	};
+	Matrix.prototype.concatenate = Matrix.prototype.append;
+	Matrix.prototype.preConcatenate = Matrix.prototype.prepend;
+	Matrix.prototype.chain = Matrix.prototype.appended;
+	Matrix.prototype._shiftless = function () {
+		return new Matrix(this._a, this._b, this._c, this._d, 0, 0);
+	};
+	Matrix.prototype._orNullIfIdentity = function () {
+		return this.isIdentity() ? null : this;
+	};
+	Matrix.prototype.isIdentity = function () {
+		return this._a === 1 && this._b === 0 && this._c === 0 && this._d === 1
+			&& this._tx === 0 && this._ty === 0;
+	};
+	Matrix.prototype.isInvertible = function () {
+		var det = this._a * this._d - this._c * this._b;
+		return det && !isNaN(det) && isFinite(this._tx) && isFinite(this._ty);
+	};
+	Matrix.prototype.isSingular = function () {
+		return !this.isInvertible();
+	};
+	Matrix.prototype.transform = function (src, dst, count) {
+		return arguments.length < 3
+			? this._transformPoint(Point.read(arguments))
+			: this._transformCoordinates(src, dst, count);
+	};
+	Matrix.prototype._transformPoint = function (point, dest, _dontNotify) {
+		var x = point.x,
+			y = point.y;
+		if (!dest)
+			dest = new Point();
+		return dest._set(
+			x * this._a + y * this._c + this._tx,
+			x * this._b + y * this._d + this._ty,
+			_dontNotify);
+	};
+	Matrix.prototype._transformCoordinates = function (src, dst, count) {
+		for (var i = 0, max = 2 * count; i < max; i += 2) {
+			var x = src[i],
+				y = src[i + 1];
+			dst[i] = x * this._a + y * this._c + this._tx;
+			dst[i + 1] = x * this._b + y * this._d + this._ty;
+		}
+		return dst;
+	};
+	Matrix.prototype._transformCorners = function (rect) {
+		var x1 = rect.x,
+			y1 = rect.y,
+			x2 = x1 + rect.width,
+			y2 = y1 + rect.height,
+			coords = [x1, y1, x2, y1, x2, y2, x1, y2];
+		return this._transformCoordinates(coords, coords, 4);
+	};
+	Matrix.prototype._transformBounds = function (bounds, dest, _dontNotify) {
+		var coords = this._transformCorners(bounds),
+			min = coords.slice(0, 2),
+			max = min.slice();
+		for (var i = 2; i < 8; i++) {
+			var val = coords[i],
+				j = i & 1;
+			if (val < min[j]) {
+				min[j] = val;
+			} else if (val > max[j]) {
+				max[j] = val;
 			}
-			return false;
-		},
-
-		translate: function () {
-			var point = Point.read(arguments),
-				x = point.x,
-				y = point.y;
-			this._tx += x * this._a + y * this._c;
-			this._ty += x * this._b + y * this._d;
-			this._changed();
-			return this;
-		},
-
-		scale: function () {
-			var args = arguments,
-				scale = Point.read(args),
-				center = Point.read(args, 0, { readNull: true });
-			if (center)
-				this.translate(center);
-			this._a *= scale.x;
-			this._b *= scale.x;
-			this._c *= scale.y;
-			this._d *= scale.y;
-			if (center)
-				this.translate(center.negate());
-			this._changed();
-			return this;
-		},
-
-		rotate: function (angle) {
-			angle *= Math.PI / 180;
-			var center = Point.read(arguments, 1),
-				x = center.x,
-				y = center.y,
-				cos = Math.cos(angle),
-				sin = Math.sin(angle),
-				tx = x - x * cos + y * sin,
-				ty = y - x * sin - y * cos,
-				a = this._a,
-				b = this._b,
-				c = this._c,
-				d = this._d;
-			this._a = cos * a + sin * c;
-			this._b = cos * b + sin * d;
-			this._c = -sin * a + cos * c;
-			this._d = -sin * b + cos * d;
-			this._tx += tx * a + ty * c;
-			this._ty += tx * b + ty * d;
-			this._changed();
-			return this;
-		},
-
-		shear: function () {
-			var args = arguments,
-				shear = Point.read(args),
-				center = Point.read(args, 0, { readNull: true });
-			if (center)
-				this.translate(center);
-			var a = this._a,
-				b = this._b;
-			this._a += shear.y * this._c;
-			this._b += shear.y * this._d;
-			this._c += shear.x * a;
-			this._d += shear.x * b;
-			if (center)
-				this.translate(center.negate());
-			this._changed();
-			return this;
-		},
-
-		skew: function () {
-			var args = arguments,
-				skew = Point.read(args),
-				center = Point.read(args, 0, { readNull: true }),
-				toRadians = Math.PI / 180,
-				shear = new Point(Math.tan(skew.x * toRadians),
-					Math.tan(skew.y * toRadians));
-			return this.shear(shear, center);
-		},
-
-		append: function (mx, _dontNotify) {
-			if (mx) {
-				var a1 = this._a,
-					b1 = this._b,
-					c1 = this._c,
-					d1 = this._d,
-					a2 = mx._a,
-					b2 = mx._c,
-					c2 = mx._b,
-					d2 = mx._d,
-					tx2 = mx._tx,
-					ty2 = mx._ty;
-				this._a = a2 * a1 + c2 * c1;
-				this._c = b2 * a1 + d2 * c1;
-				this._b = a2 * b1 + c2 * d1;
-				this._d = b2 * b1 + d2 * d1;
-				this._tx += tx2 * a1 + ty2 * c1;
-				this._ty += tx2 * b1 + ty2 * d1;
-				if (!_dontNotify)
-					this._changed();
-			}
-			return this;
-		},
-
-		prepend: function (mx, _dontNotify) {
-			if (mx) {
-				var a1 = this._a,
-					b1 = this._b,
-					c1 = this._c,
-					d1 = this._d,
-					tx1 = this._tx,
-					ty1 = this._ty,
-					a2 = mx._a,
-					b2 = mx._c,
-					c2 = mx._b,
-					d2 = mx._d,
-					tx2 = mx._tx,
-					ty2 = mx._ty;
-				this._a = a2 * a1 + b2 * b1;
-				this._c = a2 * c1 + b2 * d1;
-				this._b = c2 * a1 + d2 * b1;
-				this._d = c2 * c1 + d2 * d1;
-				this._tx = a2 * tx1 + b2 * ty1 + tx2;
-				this._ty = c2 * tx1 + d2 * ty1 + ty2;
-				if (!_dontNotify)
-					this._changed();
-			}
-			return this;
-		},
-
-		appended: function (mx) {
-			return this.clone().append(mx);
-		},
-
-		prepended: function (mx) {
-			return this.clone().prepend(mx);
-		},
-
-		invert: function () {
-			var a = this._a,
-				b = this._b,
-				c = this._c,
-				d = this._d,
-				tx = this._tx,
-				ty = this._ty,
-				det = a * d - b * c,
-				res = null;
-			if (det && !isNaN(det) && isFinite(tx) && isFinite(ty)) {
-				this._a = d / det;
-				this._b = -b / det;
-				this._c = -c / det;
-				this._d = a / det;
-				this._tx = (c * ty - d * tx) / det;
-				this._ty = (b * tx - a * ty) / det;
-				res = this;
-			}
-			return res;
-		},
-
-		inverted: function () {
-			return this.clone().invert();
-		},
-
-		concatenate: '#append',
-		preConcatenate: '#prepend',
-		chain: '#appended',
-
-		_shiftless: function () {
-			return new Matrix(this._a, this._b, this._c, this._d, 0, 0);
-		},
-
-		_orNullIfIdentity: function () {
-			return this.isIdentity() ? null : this;
-		},
-
-		isIdentity: function () {
-			return this._a === 1 && this._b === 0 && this._c === 0 && this._d === 1
-				&& this._tx === 0 && this._ty === 0;
-		},
-
-		isInvertible: function () {
-			var det = this._a * this._d - this._c * this._b;
-			return det && !isNaN(det) && isFinite(this._tx) && isFinite(this._ty);
-		},
-
-		isSingular: function () {
-			return !this.isInvertible();
-		},
-
-		transform: function (src, dst, count) {
-			return arguments.length < 3
-				? this._transformPoint(Point.read(arguments))
-				: this._transformCoordinates(src, dst, count);
-		},
-
-		_transformPoint: function (point, dest, _dontNotify) {
-			var x = point.x,
-				y = point.y;
+		}
+		if (!dest)
+			dest = new Rectangle();
+		return dest._set(min[0], min[1], max[0] - min[0], max[1] - min[1],
+			_dontNotify);
+	};
+	Matrix.prototype.inverseTransform = function () {
+		return this._inverseTransform(Point.read(arguments));
+	};
+	Matrix.prototype._inverseTransform = function (point, dest, _dontNotify) {
+		var a = this._a,
+			b = this._b,
+			c = this._c,
+			d = this._d,
+			tx = this._tx,
+			ty = this._ty,
+			det = a * d - b * c,
+			res = null;
+		if (det && !isNaN(det) && isFinite(tx) && isFinite(ty)) {
+			var x = point.x - this._tx,
+				y = point.y - this._ty;
 			if (!dest)
 				dest = new Point();
-			return dest._set(
-				x * this._a + y * this._c + this._tx,
-				x * this._b + y * this._d + this._ty,
+			res = dest._set(
+				(x * d - y * c) / det,
+				(y * a - x * b) / det,
 				_dontNotify);
-		},
+		}
+		return res;
+	};
+	Matrix.prototype.decompose = function () {
+		var a = this._a,
+			b = this._b,
+			c = this._c,
+			d = this._d,
+			det = a * d - b * c,
+			sqrt = Math.sqrt,
+			atan2 = Math.atan2,
+			degrees = 180 / Math.PI,
+			rotate,
+			scale,
+			skew;
+		if (a !== 0 || b !== 0) {
+			var r = sqrt(a * a + b * b);
+			rotate = Math.acos(a / r) * (b > 0 ? 1 : -1);
+			scale = [r, det / r];
+			skew = [atan2(a * c + b * d, r * r), 0];
+		} else if (c !== 0 || d !== 0) {
+			var s = sqrt(c * c + d * d);
+			rotate = Math.asin(c / s) * (d > 0 ? 1 : -1);
+			scale = [det / s, s];
+			skew = [0, atan2(a * c + b * d, s * s)];
+		} else {
+			rotate = 0;
+			skew = scale = [0, 0];
+		}
+		return {
+			translation: this.getTranslation(),
+			rotation: rotate * degrees,
+			scaling: new Point(scale),
+			skewing: new Point(skew[0] * degrees, skew[1] * degrees)
+		};
+	};
+	Matrix.prototype.getValues = function () {
+		return [this._a, this._b, this._c, this._d, this._tx, this._ty];
+	};
+	Matrix.prototype.getTranslation = function () {
+		return new Point(this._tx, this._ty);
+	};
+	Matrix.prototype.getScaling = function () {
+		return this.decompose().scaling;
+	};
+	Matrix.prototype.getRotation = function () {
+		return this.decompose().rotation;
+	};
+	Matrix.prototype.applyToContext = function (ctx) {
+		if (!this.isIdentity()) {
+			ctx.transform(this._a, this._b, this._c, this._d,
+				this._tx, this._ty);
+		}
+	};
 
-		_transformCoordinates: function (src, dst, count) {
-			for (var i = 0, max = 2 * count; i < max; i += 2) {
-				var x = src[i],
-					y = src[i + 1];
-				dst[i] = x * this._a + y * this._c + this._tx;
-				dst[i + 1] = x * this._b + y * this._d + this._ty;
-			}
-			return dst;
-		},
-
-		_transformCorners: function (rect) {
-			var x1 = rect.x,
-				y1 = rect.y,
-				x2 = x1 + rect.width,
-				y2 = y1 + rect.height,
-				coords = [x1, y1, x2, y1, x2, y2, x1, y2];
-			return this._transformCoordinates(coords, coords, 4);
-		},
-
-		_transformBounds: function (bounds, dest, _dontNotify) {
-			var coords = this._transformCorners(bounds),
-				min = coords.slice(0, 2),
-				max = min.slice();
-			for (var i = 2; i < 8; i++) {
-				var val = coords[i],
-					j = i & 1;
-				if (val < min[j]) {
-					min[j] = val;
-				} else if (val > max[j]) {
-					max[j] = val;
+	var Line = function Line(arg0, arg1, arg2, arg3, arg4) {
+		Base.call(this);
+		var asVector = false;
+		if (arguments.length >= 4) {
+			this._px = arg0;
+			this._py = arg1;
+			this._vx = arg2;
+			this._vy = arg3;
+			asVector = arg4;
+		} else {
+			this._px = arg0.x;
+			this._py = arg0.y;
+			this._vx = arg1.x;
+			this._vy = arg1.y;
+			asVector = arg2;
+		}
+		if (!asVector) {
+			this._vx -= this._px;
+			this._vy -= this._py;
+		}
+	};
+	InitClassWithStatics(Line, Base);
+	Line.prototype._class = 'Line';
+	Line.prototype.initialize = Line;
+	Line.prototype.getPoint = function () {
+		return new Point(this._px, this._py);
+	};
+	Line.prototype.getVector = function () {
+		return new Point(this._vx, this._vy);
+	};
+	Line.prototype.getLength = function () {
+		return this.getVector().getLength();
+	};
+	Line.prototype.intersect = function (line, isInfinite) {
+		return Line.intersect(
+			this._px, this._py, this._vx, this._vy,
+			line._px, line._py, line._vx, line._vy,
+			true, isInfinite);
+	};
+	Line.prototype.getSide = function (point, isInfinite) {
+		return Line.getSide(
+			this._px, this._py, this._vx, this._vy,
+			point.x, point.y, true, isInfinite);
+	};
+	Line.prototype.getDistance = function (point) {
+		return Math.abs(this.getSignedDistance(point));
+	};
+	Line.prototype.getSignedDistance = function (point) {
+		return Line.getSignedDistance(this._px, this._py, this._vx, this._vy,
+			point.x, point.y, true);
+	};
+	Line.prototype.isCollinear = function (line) {
+		return Point.isCollinear(this._vx, this._vy, line._vx, line._vy);
+	};
+	Line.prototype.isOrthogonal = function (line) {
+		return Point.isOrthogonal(this._vx, this._vy, line._vx, line._vy);
+	};
+	Line.intersect = function (p1x, p1y, v1x, v1y, p2x, p2y, v2x, v2y, asVector,
+		isInfinite) {
+		if (!asVector) {
+			v1x -= p1x;
+			v1y -= p1y;
+			v2x -= p2x;
+			v2y -= p2y;
+		}
+		var cross = v1x * v2y - v1y * v2x;
+		if (!Numerical.isMachineZero(cross)) {
+			var dx = p1x - p2x,
+				dy = p1y - p2y,
+				u1 = (v2x * dy - v2y * dx) / cross,
+				u2 = (v1x * dy - v1y * dx) / cross,
+				epsilon = 1e-12,
+				uMin = -epsilon,
+				uMax = 1 + epsilon;
+			if (isInfinite
+				|| uMin < u1 && u1 < uMax && uMin < u2 && u2 < uMax) {
+				if (!isInfinite) {
+					u1 = u1 <= 0 ? 0 : u1 >= 1 ? 1 : u1;
 				}
-			}
-			if (!dest)
-				dest = new Rectangle();
-			return dest._set(min[0], min[1], max[0] - min[0], max[1] - min[1],
-				_dontNotify);
-		},
-
-		inverseTransform: function () {
-			return this._inverseTransform(Point.read(arguments));
-		},
-
-		_inverseTransform: function (point, dest, _dontNotify) {
-			var a = this._a,
-				b = this._b,
-				c = this._c,
-				d = this._d,
-				tx = this._tx,
-				ty = this._ty,
-				det = a * d - b * c,
-				res = null;
-			if (det && !isNaN(det) && isFinite(tx) && isFinite(ty)) {
-				var x = point.x - this._tx,
-					y = point.y - this._ty;
-				if (!dest)
-					dest = new Point();
-				res = dest._set(
-					(x * d - y * c) / det,
-					(y * a - x * b) / det,
-					_dontNotify);
-			}
-			return res;
-		},
-
-		decompose: function () {
-			var a = this._a,
-				b = this._b,
-				c = this._c,
-				d = this._d,
-				det = a * d - b * c,
-				sqrt = Math.sqrt,
-				atan2 = Math.atan2,
-				degrees = 180 / Math.PI,
-				rotate,
-				scale,
-				skew;
-			if (a !== 0 || b !== 0) {
-				var r = sqrt(a * a + b * b);
-				rotate = Math.acos(a / r) * (b > 0 ? 1 : -1);
-				scale = [r, det / r];
-				skew = [atan2(a * c + b * d, r * r), 0];
-			} else if (c !== 0 || d !== 0) {
-				var s = sqrt(c * c + d * d);
-				rotate = Math.asin(c / s) * (d > 0 ? 1 : -1);
-				scale = [det / s, s];
-				skew = [0, atan2(a * c + b * d, s * s)];
-			} else {
-				rotate = 0;
-				skew = scale = [0, 0];
-			}
-			return {
-				translation: this.getTranslation(),
-				rotation: rotate * degrees,
-				scaling: new Point(scale),
-				skewing: new Point(skew[0] * degrees, skew[1] * degrees)
-			};
-		},
-
-		getValues: function () {
-			return [this._a, this._b, this._c, this._d, this._tx, this._ty];
-		},
-
-		getTranslation: function () {
-			return new Point(this._tx, this._ty);
-		},
-
-		getScaling: function () {
-			return this.decompose().scaling;
-		},
-
-		getRotation: function () {
-			return this.decompose().rotation;
-		},
-
-		applyToContext: function (ctx) {
-			if (!this.isIdentity()) {
-				ctx.transform(this._a, this._b, this._c, this._d,
-					this._tx, this._ty);
+				return new Point(
+					p1x + u1 * v1x,
+					p1y + u1 * v1y);
 			}
 		}
-	}, Base.each(['a', 'b', 'c', 'd', 'tx', 'ty'], function (key) {
-		var part = Base.capitalize(key),
-			prop = '_' + key;
-		this['get' + part] = function () {
-			return this[prop];
-		};
-		this['set' + part] = function (value) {
-			this[prop] = value;
-			this._changed();
-		};
-	}, {}));
+	};
+	Line.getSide = function (px, py, vx, vy, x, y, asVector, isInfinite) {
+		if (!asVector) {
+			vx -= px;
+			vy -= py;
+		}
+		var v2x = x - px,
+			v2y = y - py,
+			ccw = v2x * vy - v2y * vx;
+		if (!isInfinite && Numerical.isMachineZero(ccw)) {
+			ccw = (v2x * vx + v2x * vx) / (vx * vx + vy * vy);
+			if (ccw >= 0 && ccw <= 1)
+				ccw = 0;
+		}
+		return ccw < 0 ? -1 : ccw > 0 ? 1 : 0;
+	};
+	Line.getSignedDistance = function (px, py, vx, vy, x, y, asVector) {
+		if (!asVector) {
+			vx -= px;
+			vy -= py;
+		}
+		return vx === 0 ? (vy > 0 ? x - px : px - x)
+			: vy === 0 ? (vx < 0 ? y - py : py - y)
+				: ((x - px) * vy - (y - py) * vx) / (
+					vy > vx
+						? vy * Math.sqrt(1 + (vx * vx) / (vy * vy))
+						: vx * Math.sqrt(1 + (vy * vy) / (vx * vx))
+				);
+	};
+	Line.getDistance = function (px, py, vx, vy, x, y, asVector) {
+		return Math.abs(
+			Line.getSignedDistance(px, py, vx, vy, x, y, asVector));
+	};
 
-	var Line = Base.extend({
-		_class: 'Line',
+	var Project = function Project(element) {
+		PaperScopeItem.call(this, true);
+		this._children = [];
+		this._namedChildren = {};
+		this._activeLayer = null;
+		this._selectionItems = {};
+		this._selectionCount = 0;
+		this._updateVersion = 0;
+	};
 
-		initialize: function Line(arg0, arg1, arg2, arg3, arg4) {
-			var asVector = false;
-			if (arguments.length >= 4) {
-				this._px = arg0;
-				this._py = arg1;
-				this._vx = arg2;
-				this._vy = arg3;
-				asVector = arg4;
+	InitClassWithStatics(Project, PaperScopeItem);
+	Project.prototype._class = 'Project';
+	Project.prototype._list = 'projects';
+	Project.prototype._reference = 'project';
+	Project.prototype._compactSerialize = true;
+	Project.prototype.initialize = Project;
+	Project.prototype._serialize = function (options, dictionary) {
+		return Base.serialize(this._children, options, true, dictionary);
+	};
+	Project.prototype._changed = function (flags, item) {
+		var changes = this._changes;
+		if (changes && item) {
+			var changesById = this._changesById,
+				id = item._id,
+				entry = changesById[id];
+			if (entry) {
+				entry.flags |= flags;
 			} else {
-				this._px = arg0.x;
-				this._py = arg0.y;
-				this._vx = arg1.x;
-				this._vy = arg1.y;
-				asVector = arg2;
-			}
-			if (!asVector) {
-				this._vx -= this._px;
-				this._vy -= this._py;
-			}
-		},
-
-		getPoint: function () {
-			return new Point(this._px, this._py);
-		},
-
-		getVector: function () {
-			return new Point(this._vx, this._vy);
-		},
-
-		getLength: function () {
-			return this.getVector().getLength();
-		},
-
-		intersect: function (line, isInfinite) {
-			return Line.intersect(
-				this._px, this._py, this._vx, this._vy,
-				line._px, line._py, line._vx, line._vy,
-				true, isInfinite);
-		},
-
-		getSide: function (point, isInfinite) {
-			return Line.getSide(
-				this._px, this._py, this._vx, this._vy,
-				point.x, point.y, true, isInfinite);
-		},
-
-		getDistance: function (point) {
-			return Math.abs(this.getSignedDistance(point));
-		},
-
-		getSignedDistance: function (point) {
-			return Line.getSignedDistance(this._px, this._py, this._vx, this._vy,
-				point.x, point.y, true);
-		},
-
-		isCollinear: function (line) {
-			return Point.isCollinear(this._vx, this._vy, line._vx, line._vy);
-		},
-
-		isOrthogonal: function (line) {
-			return Point.isOrthogonal(this._vx, this._vy, line._vx, line._vy);
-		},
-
-		statics: {
-			intersect: function (p1x, p1y, v1x, v1y, p2x, p2y, v2x, v2y, asVector,
-				isInfinite) {
-				if (!asVector) {
-					v1x -= p1x;
-					v1y -= p1y;
-					v2x -= p2x;
-					v2y -= p2y;
-				}
-				var cross = v1x * v2y - v1y * v2x;
-				if (!Numerical.isMachineZero(cross)) {
-					var dx = p1x - p2x,
-						dy = p1y - p2y,
-						u1 = (v2x * dy - v2y * dx) / cross,
-						u2 = (v1x * dy - v1y * dx) / cross,
-						epsilon = 1e-12,
-						uMin = -epsilon,
-						uMax = 1 + epsilon;
-					if (isInfinite
-						|| uMin < u1 && u1 < uMax && uMin < u2 && u2 < uMax) {
-						if (!isInfinite) {
-							u1 = u1 <= 0 ? 0 : u1 >= 1 ? 1 : u1;
-						}
-						return new Point(
-							p1x + u1 * v1x,
-							p1y + u1 * v1y);
-					}
-				}
-			},
-
-			getSide: function (px, py, vx, vy, x, y, asVector, isInfinite) {
-				if (!asVector) {
-					vx -= px;
-					vy -= py;
-				}
-				var v2x = x - px,
-					v2y = y - py,
-					ccw = v2x * vy - v2y * vx;
-				if (!isInfinite && Numerical.isMachineZero(ccw)) {
-					ccw = (v2x * vx + v2x * vx) / (vx * vx + vy * vy);
-					if (ccw >= 0 && ccw <= 1)
-						ccw = 0;
-				}
-				return ccw < 0 ? -1 : ccw > 0 ? 1 : 0;
-			},
-
-			getSignedDistance: function (px, py, vx, vy, x, y, asVector) {
-				if (!asVector) {
-					vx -= px;
-					vy -= py;
-				}
-				return vx === 0 ? (vy > 0 ? x - px : px - x)
-					: vy === 0 ? (vx < 0 ? y - py : py - y)
-						: ((x - px) * vy - (y - py) * vx) / (
-							vy > vx
-								? vy * Math.sqrt(1 + (vx * vx) / (vy * vy))
-								: vx * Math.sqrt(1 + (vy * vy) / (vx * vx))
-						);
-			},
-
-			getDistance: function (px, py, vx, vy, x, y, asVector) {
-				return Math.abs(
-					Line.getSignedDistance(px, py, vx, vy, x, y, asVector));
+				changes.push(changesById[id] = { item: item, flags: flags });
 			}
 		}
-	});
-
-	var Project = PaperScopeItem.extend({
-		_class: 'Project',
-		_list: 'projects',
-		_reference: 'project',
-		_compactSerialize: true,
-
-		initialize: function Project(element) {
-			PaperScopeItem.call(this, true);
-			this._children = [];
-			this._namedChildren = {};
-			this._activeLayer = null;
-			this._selectionItems = {};
-			this._selectionCount = 0;
-			this._updateVersion = 0;
-		},
-
-		_serialize: function (options, dictionary) {
-			return Base.serialize(this._children, options, true, dictionary);
-		},
-
-		_changed: function (flags, item) {
-			var changes = this._changes;
-			if (changes && item) {
-				var changesById = this._changesById,
-					id = item._id,
-					entry = changesById[id];
-				if (entry) {
-					entry.flags |= flags;
-				} else {
-					changes.push(changesById[id] = { item: item, flags: flags });
-				}
+	};
+	Project.prototype.clear = function () {
+		var children = this._children;
+		for (var i = children.length - 1; i >= 0; i--)
+			children[i].remove();
+	};
+	Project.prototype.isEmpty = function () {
+		return !this._children.length;
+	};
+	Project.prototype.remove = function remove() {
+		if (!remove.base.call(this))
+			return false;
+		return true;
+	};
+	Project.prototype.getIndex = function () {
+		return this._index;
+	};
+	Project.prototype.getOptions = function () {
+		return this._scope.settings;
+	};
+	Project.prototype.getLayers = function () {
+		return this._children;
+	};
+	Project.prototype.getActiveLayer = function () {
+		return this._activeLayer || new Layer({ project: this, insert: true });
+	};
+	Project.prototype.getSymbolDefinitions = function () {
+		var definitions = [];
+		return definitions;
+	};
+	Project.prototype.getSymbols = 'getSymbolDefinitions';
+	Project.prototype.getSelectedItems = function () {
+		var selectionItems = this._selectionItems,
+			items = [];
+		for (var id in selectionItems) {
+			var item = selectionItems[id],
+				selection = item._selection;
+			if ((selection & 1) && item.isInserted()) {
+				items.push(item);
+			} else if (!selection) {
+				this._updateSelection(item);
 			}
-		},
-
-		clear: function () {
-			var children = this._children;
-			for (var i = children.length - 1; i >= 0; i--)
-				children[i].remove();
-		},
-
-		isEmpty: function () {
-			return !this._children.length;
-		},
-
-		remove: function remove() {
-			if (!remove.base.call(this))
-				return false;
-			return true;
-		},
-
-		getIndex: function () {
-			return this._index;
-		},
-
-		getOptions: function () {
-			return this._scope.settings;
-		},
-
-		getLayers: function () {
-			return this._children;
-		},
-
-		getActiveLayer: function () {
-			return this._activeLayer || new Layer({ project: this, insert: true });
-		},
-
-		getSymbolDefinitions: function () {
-			var definitions = [];
-			return definitions;
-		},
-
-		getSymbols: 'getSymbolDefinitions',
-
-		getSelectedItems: function () {
-			var selectionItems = this._selectionItems,
-				items = [];
-			for (var id in selectionItems) {
-				var item = selectionItems[id],
-					selection = item._selection;
-				if ((selection & 1) && item.isInserted()) {
-					items.push(item);
-				} else if (!selection) {
-					this._updateSelection(item);
-				}
+		}
+		return items;
+	};
+	Project.prototype._updateSelection = function (item) {
+		var id = item._id,
+			selectionItems = this._selectionItems;
+		if (item._selection) {
+			if (selectionItems[id] !== item) {
+				this._selectionCount++;
+				selectionItems[id] = item;
 			}
-			return items;
-		},
-
-		_updateSelection: function (item) {
-			var id = item._id,
-				selectionItems = this._selectionItems;
-			if (item._selection) {
-				if (selectionItems[id] !== item) {
-					this._selectionCount++;
-					selectionItems[id] = item;
-				}
-			} else if (selectionItems[id] === item) {
-				this._selectionCount--;
-				delete selectionItems[id];
-			}
-		},
-
-		selectAll: function () {
-			var children = this._children;
-			for (var i = 0, l = children.length; i < l; i++)
-				children[i].setFullySelected(true);
-		},
-
-		deselectAll: function () {
-			var selectionItems = this._selectionItems;
-			for (var i in selectionItems)
-				selectionItems[i].setFullySelected(false);
-		},
-
-		addLayer: function (layer) {
-			return this.insertLayer(undefined, layer);
-		},
-
-		insertLayer: function (index, layer) {
-			if (layer instanceof Layer) {
-				layer._remove(false, true);
-				Base.splice(this._children, [layer], index, 0);
-				layer._setProject(this, true);
-				var name = layer._name;
-				if (name)
-					layer.setName(name);
-				if (this._changes)
-					layer._changed(5);
-				if (!this._activeLayer)
-					this._activeLayer = layer;
-			} else {
-				layer = null;
-			}
-			return layer;
-		},
-
-		_insertItem: function (index, item, _created) {
-			item = this.insertLayer(index, item)
-				|| (this._activeLayer || this._insertItem(undefined,
-					new Layer(Item.NO_INSERT), true))
-					.insertChild(index, item);
-			if (_created && item.activate)
-				item.activate();
-			return item;
-		},
-
-		getItems: function (options) {
-			return Item._getItems(this, options);
-		},
-
-		getItem: function (options) {
-			return Item._getItems(this, options, null, null, true)[0] || null;
-		},
-
-		importJSON: function (json) {
-			this.activate();
-			var layer = this._activeLayer;
-			return Base.importJSON(json, layer && layer.isEmpty() && layer);
-		},
-
-		removeOn: function (type) {
-			var sets = this._removeSets;
-			if (sets) {
-				if (type === 'mouseup')
-					sets.mousedrag = null;
-				var set = sets[type];
-				if (set) {
-					for (var id in set) {
-						var item = set[id];
-						for (var key in sets) {
-							var other = sets[key];
-							if (other && other != set)
-								delete other[item._id];
-						}
-						item.remove();
+		} else if (selectionItems[id] === item) {
+			this._selectionCount--;
+			delete selectionItems[id];
+		}
+	};
+	Project.prototype.selectAll = function () {
+		var children = this._children;
+		for (var i = 0, l = children.length; i < l; i++)
+			children[i].setFullySelected(true);
+	};
+	Project.prototype.deselectAll = function () {
+		var selectionItems = this._selectionItems;
+		for (var i in selectionItems)
+			selectionItems[i].setFullySelected(false);
+	};
+	Project.prototype.addLayer = function (layer) {
+		return this.insertLayer(undefined, layer);
+	};
+	Project.prototype.insertLayer = function (index, layer) {
+		if (layer instanceof Layer) {
+			layer._remove(false, true);
+			Base.splice(this._children, [layer], index, 0);
+			layer._setProject(this, true);
+			var name = layer._name;
+			if (name)
+				layer.setName(name);
+			if (this._changes)
+				layer._changed(5);
+			if (!this._activeLayer)
+				this._activeLayer = layer;
+		} else {
+			layer = null;
+		}
+		return layer;
+	};
+	Project.prototype._insertItem = function (index, item, _created) {
+		item = this.insertLayer(index, item)
+			|| (this._activeLayer || this._insertItem(undefined,
+				new Layer(Item.NO_INSERT), true))
+				.insertChild(index, item);
+		if (_created && item.activate)
+			item.activate();
+		return item;
+	};
+	Project.prototype.getItems = function (options) {
+		return Item._getItems(this, options);
+	};
+	Project.prototype.getItem = function (options) {
+		return Item._getItems(this, options, null, null, true)[0] || null;
+	};
+	Project.prototype.importJSON = function (json) {
+		this.activate();
+		var layer = this._activeLayer;
+		return Base.importJSON(json, layer && layer.isEmpty() && layer);
+	};
+	Project.prototype.removeOn = function (type) {
+		var sets = this._removeSets;
+		if (sets) {
+			if (type === 'mouseup')
+				sets.mousedrag = null;
+			var set = sets[type];
+			if (set) {
+				for (var id in set) {
+					var item = set[id];
+					for (var key in sets) {
+						var other = sets[key];
+						if (other && other != set)
+							delete other[item._id];
 					}
-					sets[type] = null;
+					item.remove();
 				}
+				sets[type] = null;
 			}
-		},
+		}
+	};
+	Project.prototype.draw = function (ctx, matrix, pixelRatio) {
+		this._updateVersion++;
+		ctx.save();
+		matrix.applyToContext(ctx);
+		var children = this._children,
+			param = new Base({
+				offset: new Point(0, 0),
+				pixelRatio: pixelRatio,
+				viewMatrix: matrix.isIdentity() ? null : matrix,
+				matrices: [new Matrix()],
+				updateMatrix: true
+			});
+		for (var i = 0, l = children.length; i < l; i++) {
+			children[i].draw(ctx, param);
+		}
+		ctx.restore();
 
-		draw: function (ctx, matrix, pixelRatio) {
-			this._updateVersion++;
+		if (this._selectionCount > 0) {
 			ctx.save();
-			matrix.applyToContext(ctx);
-			var children = this._children,
-				param = new Base({
-					offset: new Point(0, 0),
-					pixelRatio: pixelRatio,
-					viewMatrix: matrix.isIdentity() ? null : matrix,
-					matrices: [new Matrix()],
-					updateMatrix: true
-				});
-			for (var i = 0, l = children.length; i < l; i++) {
-				children[i].draw(ctx, param);
+			ctx.strokeWidth = 1;
+			var items = this._selectionItems,
+				size = this._scope.settings.handleSize,
+				version = this._updateVersion;
+			for (var id in items) {
+				items[id]._drawSelection(ctx, matrix, size, items, version);
 			}
 			ctx.restore();
+		}
+	};
 
-			if (this._selectionCount > 0) {
-				ctx.save();
-				ctx.strokeWidth = 1;
-				var items = this._selectionItems,
-					size = this._scope.settings.handleSize,
-					version = this._updateVersion;
-				for (var id in items) {
-					items[id]._drawSelection(ctx, matrix, size, items, version);
-				}
-				ctx.restore();
+	var Item = function () {
+		Base.call();
+	}
+	InitClassWithStatics(Item, Base);
+
+	Item.prototype.on = function (type, func) {
+		if (typeof type !== 'string') {
+			Base.each(type, function (value, key) {
+				this.on(key, value);
+			}, this);
+		} else {
+			var types = this._eventTypes,
+				entry = types && types[type],
+				handlers = this._callbacks = this._callbacks || {};
+			handlers = handlers[type] = handlers[type] || [];
+			if (handlers.indexOf(func) === -1) {
+				handlers.push(func);
+				if (entry && entry.install && handlers.length === 1)
+					entry.install.call(this, type);
 			}
 		}
-	});
-
-	var Item = Base.extend(
-		Emitter,
-		{
-			statics: {
-				extend: function extend(src) {
-					if (src._serializeFields)
-						src._serializeFields = Base.set({},
-							this.prototype._serializeFields, src._serializeFields);
-					return extend.base.apply(this, arguments);
-				},
-
-				INSERT: { insert: true },
-				NO_INSERT: { insert: false }
-			},
-
-			_class: 'Item',
-			_name: null,
-			_applyMatrix: true,
-			_canApplyMatrix: true,
-			_canScaleStroke: false,
-			_pivot: null,
-			_visible: true,
-			_blendMode: 'normal',
-			_opacity: 1,
-			_locked: false,
-			_guide: false,
-			_clipMask: false,
-			_selection: 0,
-			_selectBounds: true,
-			_selectChildren: false,
-			_serializeFields: {
-				name: null,
-				applyMatrix: null,
-				matrix: new Matrix(),
-				pivot: null,
-				visible: true,
-				blendMode: 'normal',
-				opacity: 1,
-				locked: false,
-				guide: false,
-				clipMask: false,
-				selected: false,
-				data: {}
-			},
-			_prioritize: ['applyMatrix']
-		},
-		new function () {
-			var handlers = ['onMouseDown', 'onMouseUp', 'onMouseDrag', 'onClick',
-				'onDoubleClick', 'onMouseMove', 'onMouseEnter', 'onMouseLeave'];
-			return Base.each(handlers,
-				function (name) {
-					this._events[name] = {
-						install: function (type) {
-						},
-
-						uninstall: function (type) {
-						}
-					};
-				}, {
-				_events: {
-					onFrame: {
-						install: function () {
-						},
-
-						uninstall: function () {
-						}
-					},
-
-					onLoad: {},
-					onError: {}
-				},
-				statics: {
-					_itemHandlers: handlers
+		return this;
+	};
+	Item.prototype.off = function (type, func) {
+		if (typeof type !== 'string') {
+			Base.each(type, function (value, key) {
+				this.off(key, value);
+			}, this);
+			return;
+		}
+		var types = this._eventTypes,
+			entry = types && types[type],
+			handlers = this._callbacks && this._callbacks[type],
+			index;
+		if (handlers) {
+			if (!func || (index = handlers.indexOf(func)) !== -1
+				&& handlers.length === 1) {
+				if (entry && entry.uninstall)
+					entry.uninstall.call(this, type);
+				delete this._callbacks[type];
+			} else if (index !== -1) {
+				handlers.splice(index, 1);
+			}
+		}
+		return this;
+	};
+	Item.prototype.once = function (type, func) {
+		return this.on(type, function handler() {
+			func.apply(this, arguments);
+			this.off(type, handler);
+		});
+	};
+	Item.prototype.emit = function (type, event) {
+		var handlers = this._callbacks && this._callbacks[type];
+		if (!handlers)
+			return false;
+		var args = Base.slice(arguments, 1),
+			setTarget = event && event.target && !event.currentTarget;
+		handlers = handlers.slice();
+		if (setTarget)
+			event.currentTarget = this;
+		for (var i = 0, l = handlers.length; i < l; i++) {
+			if (handlers[i].apply(this, args) == false) {
+				if (event && event.stop)
+					event.stop();
+				break;
+			}
+		}
+		if (setTarget)
+			delete event.currentTarget;
+		return true;
+	};
+	Item.prototype.responds = function (type) {
+		return !!(this._callbacks && this._callbacks[type]);
+	};
+	Item.prototype.attach = Item.prototype.on;
+	Item.prototype.detach = Item.prototype.off;
+	Item.prototype.fir = Item.prototype.emit;
+	Item.prototype._installEvents = function (install) {
+		var types = this._eventTypes,
+			handlers = this._callbacks,
+			key = install ? 'install' : 'uninstall';
+		if (types) {
+			for (var type in handlers) {
+				if (handlers[type].length > 0) {
+					var entry = types[type],
+						func = entry && entry[key];
+					if (func)
+						func.call(this, type);
 				}
 			}
-			);
-		},
-		{
-			initialize: function Item() {
-			},
-
-			_initialize: function (props, point) {
-				var hasProps = props && Base.isPlainObject(props),
-					internal = hasProps && props.internal === true,
-					matrix = this._matrix = new Matrix(),
-					project = hasProps && props.project || paper.project,
-					settings = paper.settings;
-				this._id = internal ? null : UID.get();
-				this._parent = this._index = null;
-				this._applyMatrix = this._canApplyMatrix && settings.applyMatrix;
-				if (point)
-					matrix.translate(point);
-				matrix._owner = this;
-				if (internal || hasProps && props.insert == false
-					|| !settings.insertItems && !(hasProps && props.insert == true)) {
-					this._setProject(project);
-				} else {
-					(hasProps && props.parent || project)
-						._insertItem(undefined, this, true);
-				}
-				if (hasProps && props !== Item.NO_INSERT && props !== Item.INSERT) {
-					this.set(props, {
-						internal: true, insert: true, project: true, parent: true
-					});
-				}
-				return hasProps;
-			},
-
-			_serialize: function (options, dictionary) {
-				var props = {},
-					that = this;
-
-				function serialize(fields) {
-					for (var key in fields) {
-						var value = that[key];
-						if (!Base.equals(value, key === 'leading'
-							? fields.fontSize * 1.2 : fields[key])) {
-							props[key] = Base.serialize(value, options,
-								key !== 'data', dictionary);
-						}
-					}
-				}
-
-				serialize(this._serializeFields);
-				if (!(this instanceof Group))
-					serialize({});
-				return [this._class, props];
-			},
-
-			_changed: function (flags) {
-				var symbol = this._symbol,
-					cacheParent = this._parent || symbol,
-					project = this._project;
-				if (flags & 8) {
-					this._bounds = this._position = this._decomposed = undefined;
-				}
-				if (flags & 16) {
-					this._globalMatrix = undefined;
-				}
-				if (cacheParent
-					&& (flags & 72)) {
-					Item._clearBoundsCache(cacheParent);
-				}
-				if (flags & 2) {
-					Item._clearBoundsCache(this);
-				}
-				if (project)
-					project._changed(flags, this);
-				if (symbol)
-					symbol._changed(flags);
-			},
-
-			getId: function () {
-				return this._id;
-			},
-
-			getName: function () {
-				return this._name;
-			},
-
-			setName: function (name) {
-
-				if (this._name)
-					this._removeNamed();
-				if (name === (+name) + '')
-					throw new Error(
-						'Names consisting only of numbers are not supported.');
-				var owner = this._getOwner();
-				if (name && owner) {
-					var children = owner._children,
-						namedChildren = owner._namedChildren;
-					(namedChildren[name] = namedChildren[name] || []).push(this);
-					if (!(name in children))
-						children[name] = this;
-				}
-				this._name = name || undefined;
-				this._changed(256);
-			},
-
-			setStyle: function (style) {
-				
-			}
-		},
-		Base.each(['locked', 'visible', 'blendMode', 'opacity', 'guide'],
-			function (name) {
-				var part = Base.capitalize(name),
-					key = '_' + name,
-					flags = {
-						locked: 256,
-						visible: 265
-					};
-				this['get' + part] = function () {
-					return this[key];
+		}
+	};
+	Item.inject = function inject(src) {
+		var events = src._events;
+		if (events) {
+			var types = {};
+			Base.each(events, function (entry, key) {
+				var isString = typeof entry === 'string',
+					name = isString ? entry : key,
+					part = Base.capitalize(name),
+					type = name.substring(2).toLowerCase();
+				types[type] = isString ? {} : entry;
+				name = '_' + name;
+				src['get' + part] = function () {
+					return this[name];
 				};
-				this['set' + part] = function (value) {
-					if (value != this[key]) {
-						this[key] = value;
-						this._changed(flags[name] || 257);
-					}
+				src['set' + part] = function (func) {
+					var prev = this[name];
+					if (prev)
+						this.off(type, prev);
+					if (func)
+						this.on(type, func);
+					this[name] = func;
 				};
-			},
-			{}
-		),
-		{
-			beans: true,
-
-			getSelection: function () {
-				return this._selection;
-			},
-
-			setSelection: function (selection) {
-				if (selection !== this._selection) {
-					this._selection = selection;
-					var project = this._project;
-					if (project) {
-						project._updateSelection(this);
-						this._changed(257);
-					}
-				}
-			},
-
-			_changeSelection: function (flag, selected) {
-				var selection = this._selection;
-				this.setSelection(selected ? selection | flag : selection & ~flag);
-			},
-
-			isSelected: function () {
-				if (this._selectChildren) {
-					var children = this._children;
-					for (var i = 0, l = children.length; i < l; i++)
-						if (children[i].isSelected())
-							return true;
-				}
-				return !!(this._selection & 1);
-			},
-
-			setSelected: function (selected) {
-				if (this._selectChildren) {
-					var children = this._children;
-					for (var i = 0, l = children.length; i < l; i++)
-						children[i].setSelected(selected);
-				}
-				this._changeSelection(1, selected);
-			},
-
-			isFullySelected: function () {
-				var children = this._children,
-					selected = !!(this._selection & 1);
-				if (children && selected) {
-					for (var i = 0, l = children.length; i < l; i++)
-						if (!children[i].isFullySelected())
-							return false;
-					return true;
-				}
-				return selected;
-			},
-
-			setFullySelected: function (selected) {
-				var children = this._children;
-				if (children) {
-					for (var i = 0, l = children.length; i < l; i++)
-						children[i].setFullySelected(selected);
-				}
-				this._changeSelection(1, selected);
-			},
-
-			isClipMask: function () {
-				return this._clipMask;
-			},
-
-			setClipMask: function (clipMask) {
-				if (this._clipMask != (clipMask = !!clipMask)) {
-					this._clipMask = clipMask;
-					if (clipMask) {
-						this.setFillColor(null);
-						this.setStrokeColor(null);
-					}
-					this._changed(257);
-					if (this._parent)
-						this._parent._changed(2048);
-				}
-			},
-
-			getData: function () {
-				if (!this._data)
-					this._data = {};
-				return this._data;
-			},
-
-			setData: function (data) {
-				this._data = data;
-			},
-
-			getPosition: function (_dontLink) {
-				var ctor = _dontLink ? Point : LinkedPoint;
-				var position = this._position ||
-					(this._position = this._getPositionFromBounds());
-				return new ctor(position.x, position.y, this, 'setPosition');
-			},
-
-			setPosition: function () {
-				this.translate(Point.read(arguments).subtract(this.getPosition(true)));
-			},
-
-			_getPositionFromBounds: function (bounds) {
-				return this._pivot
-					? this._matrix._transformPoint(this._pivot)
-					: (bounds || this.getBounds()).getCenter(true);
-			},
-
-			getPivot: function () {
-				var pivot = this._pivot;
-				return pivot
-					? new LinkedPoint(pivot.x, pivot.y, this, 'setPivot')
-					: null;
-			},
-
-			setPivot: function () {
-				this._pivot = Point.read(arguments, 0, { clone: true, readNull: true });
-				this._position = undefined;
-			}
-		},
-		Base.each(
-			{
-				getStrokeBounds: { stroke: true },
-				getHandleBounds: { handle: true },
-				getInternalBounds: { internal: true }
-			},
-			function (options, key) {
-				this[key] = function (matrix) {
-					return this.getBounds(matrix, options);
-				};
-			},
-			{
-				beans: true,
-
-				getBounds: function (matrix, options) {
-					var hasMatrix = options || matrix instanceof Matrix,
-						opts = Base.set({}, hasMatrix ? options : matrix,
-							this._boundsOptions);
-					if (!opts.stroke || this.getStrokeScaling())
-						opts.cacheItem = this;
-					var rect = this._getCachedBounds(hasMatrix && matrix, opts).rect;
-					return !arguments.length
-						? new LinkedRectangle(rect.x, rect.y, rect.width, rect.height,
-							this, 'setBounds')
-						: rect;
-				},
-
-				setBounds: function () {
-					var rect = Rectangle.read(arguments),
-						bounds = this.getBounds(),
-						_matrix = this._matrix,
-						matrix = new Matrix(),
-						center = rect.getCenter();
-					matrix.translate(center);
-					if (rect.width != bounds.width || rect.height != bounds.height) {
-						if (!_matrix.isInvertible()) {
-							_matrix.set(_matrix._backup
-								|| new Matrix().translate(_matrix.getTranslation()));
-							bounds = this.getBounds();
-						}
-						matrix.scale(
-							bounds.width !== 0 ? rect.width / bounds.width : 0,
-							bounds.height !== 0 ? rect.height / bounds.height : 0);
-					}
-					center = bounds.getCenter();
-					matrix.translate(-center.x, -center.y);
-					this.transform(matrix);
-				},
-
-				_getBounds: function (matrix, options) {
-					var children = this._children;
-					if (!children || !children.length)
-						return new Rectangle();
-					Item._updateBoundsCache(this, options.cacheItem);
-					return Item._getBounds(children, matrix, options);
-				},
-
-				_getBoundsCacheKey: function (options, internal) {
-					return [
-						options.stroke ? 1 : 0,
-						options.handle ? 1 : 0,
-						internal ? 1 : 0
-					].join('');
-				},
-
-				_getCachedBounds: function (matrix, options, noInternal) {
-					matrix = matrix && matrix._orNullIfIdentity();
-					var internal = options.internal && !noInternal,
-						cacheItem = options.cacheItem,
-						_matrix = internal ? null : this._matrix._orNullIfIdentity(),
-						cacheKey = cacheItem && (!matrix || matrix.equals(_matrix))
-							&& this._getBoundsCacheKey(options, internal),
-						bounds = this._bounds;
-					Item._updateBoundsCache(this._parent || this._symbol, cacheItem);
-					if (cacheKey && bounds && cacheKey in bounds) {
-						var cached = bounds[cacheKey];
-						return {
-							rect: cached.rect.clone(),
-							nonscaling: cached.nonscaling
-						};
-					}
-					var res = this._getBounds(matrix || _matrix, options),
-						rect = res.rect || res,
-						nonscaling = res.nonscaling;
-					if (cacheKey) {
-						if (!bounds) {
-							this._bounds = bounds = {};
-						}
-						var cached = bounds[cacheKey] = {
-							rect: rect.clone(),
-							nonscaling: nonscaling,
-							internal: internal
-						};
-					}
-					return {
-						rect: rect,
-						nonscaling: nonscaling
-					};
-				},
-
-				_getStrokeMatrix: function (matrix, options) {
-					var parent = this.getStrokeScaling() ? null
-						: options && options.internal ? this
-							: this._parent || this._symbol && this._symbol._item,
-						mx = matrix;
-					return mx && mx._shiftless();
-				},
-
-				statics: {
-					_updateBoundsCache: function (parent, item) {
-						if (parent && item) {
-							var id = item._id,
-								ref = parent._boundsCache = parent._boundsCache || {
-									ids: {},
-									list: []
-								};
-							if (!ref.ids[id]) {
-								ref.list.push(item);
-								ref.ids[id] = item;
-							}
-						}
-					},
-
-					_clearBoundsCache: function (item) {
-						var cache = item._boundsCache;
-						if (cache) {
-							item._bounds = item._position = item._boundsCache = undefined;
-							for (var i = 0, list = cache.list, l = list.length; i < l; i++) {
-								var other = list[i];
-								if (other !== item) {
-									other._bounds = other._position = undefined;
-									if (other._boundsCache)
-										Item._clearBoundsCache(other);
-								}
-							}
-						}
-					},
-
-					_getBounds: function (items, matrix, options) {
-						var x1 = Infinity,
-							x2 = -x1,
-							y1 = x1,
-							y2 = x2,
-							nonscaling = false;
-						options = options || {};
-						for (var i = 0, l = items.length; i < l; i++) {
-							var item = items[i];
-							if (item._visible && !item.isEmpty(true)) {
-								var bounds = item._getCachedBounds(
-									matrix && matrix.appended(item._matrix), options, true),
-									rect = bounds.rect;
-								x1 = Math.min(rect.x, x1);
-								y1 = Math.min(rect.y, y1);
-								x2 = Math.max(rect.x + rect.width, x2);
-								y2 = Math.max(rect.y + rect.height, y2);
-								if (bounds.nonscaling)
-									nonscaling = true;
-							}
-						}
-						return {
-							rect: isFinite(x1)
-								? new Rectangle(x1, y1, x2 - x1, y2 - y1)
-								: new Rectangle(),
-							nonscaling: nonscaling
-						};
-					}
-				}
-
-			}
-		),
-		{
-			beans: true,
-
-			_decompose: function () {
-				return this._applyMatrix
-					? null
-					: this._decomposed || (this._decomposed = this._matrix.decompose());
-			},
-
-			getRotation: function () {
-				var decomposed = this._decompose();
-				return decomposed ? decomposed.rotation : 0;
-			},
-
-			setRotation: function (rotation) {
-				var current = this.getRotation();
-				if (current != null && rotation != null) {
-					var decomposed = this._decomposed;
-					this.rotate(rotation - current);
-					if (decomposed) {
-						decomposed.rotation = rotation;
-						this._decomposed = decomposed;
-					}
-				}
-			},
-
-			getScaling: function () {
-				var decomposed = this._decompose(),
-					s = decomposed && decomposed.scaling;
-				return new LinkedPoint(s ? s.x : 1, s ? s.y : 1, this, 'setScaling');
-			},
-
-			setScaling: function () {
-				var current = this.getScaling(),
-					scaling = Point.read(arguments, 0, { clone: true, readNull: true });
-				if (current && scaling && !current.equals(scaling)) {
-					var rotation = this.getRotation(),
-						decomposed = this._decomposed,
-						matrix = new Matrix(),
-						isZero = Numerical.isZero;
-					if (isZero(current.x) || isZero(current.y)) {
-						matrix.translate(decomposed.translation);
-						if (rotation) {
-							matrix.rotate(rotation);
-						}
-						matrix.scale(scaling.x, scaling.y);
-						this._matrix.set(matrix);
-					} else {
-						var center = this.getPosition(true);
-						matrix.translate(center);
-						if (rotation)
-							matrix.rotate(rotation);
-						matrix.scale(scaling.x / current.x, scaling.y / current.y);
-						if (rotation)
-							matrix.rotate(-rotation);
-						matrix.translate(center.negate());
-						this.transform(matrix);
-					}
-					if (decomposed) {
-						decomposed.scaling = scaling;
-						this._decomposed = decomposed;
-					}
-				}
-			},
-
-			getMatrix: function () {
-				return this._matrix;
-			},
-
-			setMatrix: function () {
-				var matrix = this._matrix;
-				matrix.set.apply(matrix, arguments);
-			},
-
-			getGlobalMatrix: function (_dontClone) {
-				var matrix = this._globalMatrix;
-				if (matrix) {
-					var parent = this._parent;
-					var parents = [];
-					while (parent) {
-						if (!parent._globalMatrix) {
-							matrix = null;
-							for (var i = 0, l = parents.length; i < l; i++) {
-								parents[i]._globalMatrix = null;
-							}
-							break;
-						}
-						parents.push(parent);
-						parent = parent._parent;
-					}
-				}
-				if (!matrix) {
-					matrix = this._globalMatrix = this._matrix.clone();
-					var parent = this._parent;
-					if (parent)
-						matrix.prepend(parent.getGlobalMatrix(true));
-				}
-				return _dontClone ? matrix : matrix.clone();
-			},
-
-			getApplyMatrix: function () {
-				return this._applyMatrix;
-			},
-
-			setApplyMatrix: function (apply) {
-				if (this._applyMatrix = this._canApplyMatrix && !!apply)
-					this.transform(null, true);
-			},
-
-			getTransformContent: '#getApplyMatrix',
-			setTransformContent: '#setApplyMatrix',
-		},
-		{
-			getProject: function () {
-				return this._project;
-			},
-
-			_setProject: function (project, installEvents) {
-				if (this._project !== project) {
-					if (this._project)
-						this._installEvents(false);
-					this._project = project;
-					var children = this._children;
-					for (var i = 0, l = children && children.length; i < l; i++)
-						children[i]._setProject(project);
-					installEvents = true;
-				}
-				if (installEvents)
-					this._installEvents(true);
-			},
-
-			_installEvents: function _installEvents(install) {
-				_installEvents.base.call(this, install);
-				var children = this._children;
-				for (var i = 0, l = children && children.length; i < l; i++)
-					children[i]._installEvents(install);
-			},
-
-			getLayer: function () {
-				var parent = this;
-				while (parent = parent._parent) {
-					if (parent instanceof Layer)
-						return parent;
-				}
-				return null;
-			},
-
-			getParent: function () {
-				return this._parent;
-			},
-
-			setParent: function (item) {
-				return item.addChild(this);
-			},
-
-			_getOwner: '#getParent',
-
-			getChildren: function () {
-				return this._children;
-			},
-
-			setChildren: function (items) {
-				this.removeChildren();
-				this.addChildren(items);
-			},
-
-			getFirstChild: function () {
-				return this._children && this._children[0] || null;
-			},
-
-			getLastChild: function () {
-				return this._children && this._children[this._children.length - 1]
-					|| null;
-			},
-
-			getNextSibling: function () {
-				var owner = this._getOwner();
-				return owner && owner._children[this._index + 1] || null;
-			},
-
-			getPreviousSibling: function () {
-				var owner = this._getOwner();
-				return owner && owner._children[this._index - 1] || null;
-			},
-
-			getIndex: function () {
-				return this._index;
-			},
-
-			equals: function (item) {
-				return item === this || item && this._class === item._class
-					&& this._matrix.equals(item._matrix)
-					&& this._locked === item._locked
-					&& this._visible === item._visible
-					&& this._blendMode === item._blendMode
-					&& this._opacity === item._opacity
-					&& this._clipMask === item._clipMask
-					&& this._guide === item._guide
-					&& this._equals(item)
-					|| false;
-			},
-
-			_equals: function (item) {
-				return Base.equals(this._children, item._children);
-			},
-
-			clone: function (options) {
-				var copy = new this.constructor(Item.NO_INSERT),
-					children = this._children,
-					insert = Base.pick(options ? options.insert : undefined,
-						options === undefined || options === true),
-					deep = Base.pick(options ? options.deep : undefined, true);
-				if (children)
-					copy.copyAttributes(this);
-				if (!children || deep)
-					copy.copyContent(this);
-				if (!children)
-					copy.copyAttributes(this);
-				if (insert)
-					copy.insertAbove(this);
-				var name = this._name,
-					parent = this._parent;
-				if (name && parent) {
-					var children = parent._children,
-						orig = name,
-						i = 1;
-					while (children[name])
-						name = orig + ' ' + (i++);
-					if (name !== orig)
-						copy.setName(name);
-				}
-				return copy;
-			},
-
-			copyContent: function (source) {
-				var children = source._children;
-				for (var i = 0, l = children && children.length; i < l; i++) {
-					this.addChild(children[i].clone(false), true);
-				}
-			},
-
-			copyAttributes: function (source, excludeMatrix) {
-				this.setStyle({});
-				var keys = ['_locked', '_visible', '_blendMode', '_opacity', '_clipMask', '_guide'];
-				for (var i = 0, l = keys.length; i < l; i++) {
-					var key = keys[i];
-					if (source.hasOwnProperty(key))
-						this[key] = source[key];
-				}
-				if (!excludeMatrix)
-					this._matrix.set(source._matrix, true);
-				this.setApplyMatrix(source._applyMatrix);
-				this.setPivot(source._pivot);
-				this.setSelection(source._selection);
-				var data = source._data,
-					name = source._name;
-				this._data = data ? Base.clone(data) : null;
-				if (name)
-					this.setName(name);
-			},
-
-			rasterize: function (arg0, arg1) {
-				return {};
-			},
-
-			contains: function () {
-				var matrix = this._matrix;
-				return (
-					matrix.isInvertible() &&
-					!!this._contains(matrix._inverseTransform(Point.read(arguments)))
-				);
-			},
-
-			_contains: function (point) {
-				var children = this._children;
-				if (children) {
-					for (var i = children.length - 1; i >= 0; i--) {
-						if (children[i].contains(point))
-							return true;
-					}
-					return false;
-				}
-				return point.isInside(this.getInternalBounds());
-			},
-
-			isInside: function () {
-				return Rectangle.read(arguments).contains(this.getBounds());
-			},
-
-			_asPathItem: function () {
-				return new Path.Rectangle({
-					rectangle: this.getInternalBounds(),
-					matrix: this._matrix,
-					insert: false,
-				});
-			},
-
-			intersects: function (item, _matrix) {
-				if (!(item instanceof Item))
-					return false;
-				return this._asPathItem().getIntersections(item._asPathItem(), null,
-					_matrix, true).length > 0;
-			}
-		},
-		new function () {
-			function hitTest() {
-				var args = arguments;
-				return this._hitTest(
-					Point.read(args),
-					HitResult.getOptions(args));
-			}
-
-			function hitTestAll() {
-				var args = arguments,
-					point = Point.read(args),
-					options = HitResult.getOptions(args),
-					all = [];
-				this._hitTest(point, new Base({ all: all }, options));
-				return all;
-			}
-
-			function hitTestChildren(point, options, viewMatrix, _exclude) {
-				var children = this._children;
-				if (children) {
-					for (var i = children.length - 1; i >= 0; i--) {
-						var child = children[i];
-						var res = child !== _exclude && child._hitTest(point, options,
-							viewMatrix);
-						if (res && !options.all)
-							return res;
-					}
-				}
-				return null;
-			}
-
-			Project.inject({
-				hitTest: hitTest,
-				hitTestAll: hitTestAll,
-				_hitTest: hitTestChildren
 			});
+			src._eventTypes = types;
+		}
+		return Base.inject.apply(this, arguments);
+	};
+	Item.extend = function extend(src) {
+		if (src._serializeFields)
+			src._serializeFields = Base.set({},
+				this.prototype._serializeFields, src._serializeFields);
+		return Base.extend.apply(this, arguments);
+	};
+	Item.INSERT = { insert: true };
+	Item.NO_INSERT = { insert: false };
+	Item.prototype._class = 'Item';
+	Item.prototype._name = null;
+	Item.prototype._applyMatrix = true;
+	Item.prototype._canApplyMatrix = true;
+	Item.prototype._canScaleStroke = false;
+	Item.prototype._pivot = null;
+	Item.prototype._visible = true;
+	Item.prototype._blendMode = 'normal';
+	Item.prototype._opacity = 1;
+	Item.prototype._locked = false;
+	Item.prototype._guide = false;
+	Item.prototype._clipMask = false;
+	Item.prototype._selection = 0;
+	Item.prototype._selectBounds = true;
+	Item.prototype._selectChildren = false;
+	Item.prototype._serializeFields = {
+		name: null,
+		applyMatrix: null,
+		matrix: new Matrix(),
+		pivot: null,
+		visible: true,
+		blendMode: 'normal',
+		opacity: 1,
+		locked: false,
+		guide: false,
+		clipMask: false,
+		selected: false,
+		data: {}
+	};
+	Item.prototype._prioritize = ['applyMatrix'];
+	Item.prototype.initialize = function Item() {
+	};
+	Item.prototype._initialize = function (props, point) {
+		var hasProps = props && Base.isPlainObject(props),
+			internal = hasProps && props.internal === true,
+			matrix = this._matrix = new Matrix(),
+			project = hasProps && props.project || paper.project,
+			settings = paper.settings;
+		this._id = internal ? null : UID.get();
+		this._parent = this._index = null;
+		this._applyMatrix = this._canApplyMatrix && settings.applyMatrix;
+		if (point)
+			matrix.translate(point);
+		matrix._owner = this;
+		if (internal || hasProps && props.insert == false
+			|| !settings.insertItems && !(hasProps && props.insert == true)) {
+			this._setProject(project);
+		} else {
+			(hasProps && props.parent || project)
+				._insertItem(undefined, this, true);
+		}
+		if (hasProps && props !== Item.NO_INSERT && props !== Item.INSERT) {
+			this.set(props, {
+				internal: true, insert: true, project: true, parent: true
+			});
+		}
+		return hasProps;
+	};
+	Item.prototype._serialize = function (options, dictionary) {
+		var props = {},
+			that = this;
 
+		function serialize(fields) {
+			for (var key in fields) {
+				var value = that[key];
+				if (!Base.equals(value, key === 'leading'
+					? fields.fontSize * 1.2 : fields[key])) {
+					props[key] = Base.serialize(value, options,
+						key !== 'data', dictionary);
+				}
+			}
+		}
+
+		serialize(this._serializeFields);
+		if (!(this instanceof Group))
+			serialize({});
+		return [this._class, props];
+	};
+	Item.prototype._changed = function (flags) {
+		var symbol = this._symbol,
+			cacheParent = this._parent || symbol,
+			project = this._project;
+		if (flags & 8) {
+			this._bounds = this._position = this._decomposed = undefined;
+		}
+		if (flags & 16) {
+			this._globalMatrix = undefined;
+		}
+		if (cacheParent
+			&& (flags & 72)) {
+			Item._clearBoundsCache(cacheParent);
+		}
+		if (flags & 2) {
+			Item._clearBoundsCache(this);
+		}
+		if (project)
+			project._changed(flags, this);
+		if (symbol)
+			symbol._changed(flags);
+	};
+	Item.prototype.getId = function () {
+		return this._id;
+	};
+	Item.prototype.getName = function () {
+		return this._name;
+	};
+	Item.prototype.setName = function (name) {
+
+		if (this._name)
+			this._removeNamed();
+		if (name === (+name) + '')
+			throw new Error(
+				'Names consisting only of numbers are not supported.');
+		var owner = this._getOwner();
+		if (name && owner) {
+			var children = owner._children,
+				namedChildren = owner._namedChildren;
+			(namedChildren[name] = namedChildren[name] || []).push(this);
+			if (!(name in children))
+				children[name] = this;
+		}
+		this._name = name || undefined;
+		this._changed(256);
+	};
+	Item.prototype.setStyle = function (style) {
+
+	};
+	Item.prototype.getSelection = function () {
+		return this._selection;
+	};
+	Item.prototype.setSelection = function (selection) {
+		if (selection !== this._selection) {
+			this._selection = selection;
+			var project = this._project;
+			if (project) {
+				project._updateSelection(this);
+				this._changed(257);
+			}
+		}
+	};
+	Item.prototype._changeSelection = function (flag, selected) {
+		var selection = this._selection;
+		this.setSelection(selected ? selection | flag : selection & ~flag);
+	};
+	Item.prototype.isSelected = function () {
+		if (this._selectChildren) {
+			var children = this._children;
+			for (var i = 0, l = children.length; i < l; i++)
+				if (children[i].isSelected())
+					return true;
+		}
+		return !!(this._selection & 1);
+	};
+	Item.prototype.setSelected = function (selected) {
+		if (this._selectChildren) {
+			var children = this._children;
+			for (var i = 0, l = children.length; i < l; i++)
+				children[i].setSelected(selected);
+		}
+		this._changeSelection(1, selected);
+	};
+	Item.prototype.isFullySelected = function () {
+		var children = this._children,
+			selected = !!(this._selection & 1);
+		if (children && selected) {
+			for (var i = 0, l = children.length; i < l; i++)
+				if (!children[i].isFullySelected())
+					return false;
+			return true;
+		}
+		return selected;
+	};
+	Item.prototype.setFullySelected = function (selected) {
+		var children = this._children;
+		if (children) {
+			for (var i = 0, l = children.length; i < l; i++)
+				children[i].setFullySelected(selected);
+		}
+		this._changeSelection(1, selected);
+	};
+	Item.prototype.isClipMask = function () {
+		return this._clipMask;
+	};
+	Item.prototype.setClipMask = function (clipMask) {
+		if (this._clipMask != (clipMask = !!clipMask)) {
+			this._clipMask = clipMask;
+			if (clipMask) {
+				this.setFillColor(null);
+				this.setStrokeColor(null);
+			}
+			this._changed(257);
+			if (this._parent)
+				this._parent._changed(2048);
+		}
+	};
+	Item.prototype.getData = function () {
+		if (!this._data)
+			this._data = {};
+		return this._data;
+	};
+	Item.prototype.setData = function (data) {
+		this._data = data;
+	};
+	Item.prototype.getPosition = function (_dontLink) {
+		var ctor = _dontLink ? Point : LinkedPoint;
+		var position = this._position ||
+			(this._position = this._getPositionFromBounds());
+		return new ctor(position.x, position.y, this, 'setPosition');
+	};
+	Item.prototype.setPosition = function () {
+		this.translate(Point.read(arguments).subtract(this.getPosition(true)));
+	};
+	Item.prototype._getPositionFromBounds = function (bounds) {
+		return this._pivot
+			? this._matrix._transformPoint(this._pivot)
+			: (bounds || this.getBounds()).getCenter(true);
+	};
+	Item.prototype.getPivot = function () {
+		var pivot = this._pivot;
+		return pivot
+			? new LinkedPoint(pivot.x, pivot.y, this, 'setPivot')
+			: null;
+	};
+	Item.prototype.setPivot = function () {
+		this._pivot = Point.read(arguments, 0, { clone: true, readNull: true });
+		this._position = undefined;
+	};
+
+	Item.prototype.getBounds = function (matrix, options) {
+		var hasMatrix = options || matrix instanceof Matrix,
+			opts = Base.set({}, hasMatrix ? options : matrix,
+				this._boundsOptions);
+		if (!opts.stroke || this.getStrokeScaling())
+			opts.cacheItem = this;
+		var rect = this._getCachedBounds(hasMatrix && matrix, opts).rect;
+		return !arguments.length
+			? new LinkedRectangle(rect.x, rect.y, rect.width, rect.height,
+				this, 'setBounds')
+			: rect;
+	};
+	Item.prototype.setBounds = function () {
+		var rect = Rectangle.read(arguments),
+			bounds = this.getBounds(),
+			_matrix = this._matrix,
+			matrix = new Matrix(),
+			center = rect.getCenter();
+		matrix.translate(center);
+		if (rect.width != bounds.width || rect.height != bounds.height) {
+			if (!_matrix.isInvertible()) {
+				_matrix.set(_matrix._backup
+					|| new Matrix().translate(_matrix.getTranslation()));
+				bounds = this.getBounds();
+			}
+			matrix.scale(
+				bounds.width !== 0 ? rect.width / bounds.width : 0,
+				bounds.height !== 0 ? rect.height / bounds.height : 0);
+		}
+		center = bounds.getCenter();
+		matrix.translate(-center.x, -center.y);
+		this.transform(matrix);
+	};
+	Item.prototype._getBounds = function (matrix, options) {
+		var children = this._children;
+		if (!children || !children.length)
+			return new Rectangle();
+		Item._updateBoundsCache(this, options.cacheItem);
+		return Item._getBounds(children, matrix, options);
+	};
+	Item.prototype._getBoundsCacheKey = function (options, internal) {
+		return [
+			options.stroke ? 1 : 0,
+			options.handle ? 1 : 0,
+			internal ? 1 : 0
+		].join('');
+	};
+	Item.prototype._getCachedBounds = function (matrix, options, noInternal) {
+		matrix = matrix && matrix._orNullIfIdentity();
+		var internal = options.internal && !noInternal,
+			cacheItem = options.cacheItem,
+			_matrix = internal ? null : this._matrix._orNullIfIdentity(),
+			cacheKey = cacheItem && (!matrix || matrix.equals(_matrix))
+				&& this._getBoundsCacheKey(options, internal),
+			bounds = this._bounds;
+		Item._updateBoundsCache(this._parent || this._symbol, cacheItem);
+		if (cacheKey && bounds && cacheKey in bounds) {
+			var cached = bounds[cacheKey];
 			return {
-				hitTest: hitTest,
-				hitTestAll: hitTestAll,
-				_hitTestChildren: hitTestChildren,
+				rect: cached.rect.clone(),
+				nonscaling: cached.nonscaling
 			};
-		},
-		{
+		}
+		var res = this._getBounds(matrix || _matrix, options),
+			rect = res.rect || res,
+			nonscaling = res.nonscaling;
+		if (cacheKey) {
+			if (!bounds) {
+				this._bounds = bounds = {};
+			}
+			var cached = bounds[cacheKey] = {
+				rect: rect.clone(),
+				nonscaling: nonscaling,
+				internal: internal
+			};
+		}
+		return {
+			rect: rect,
+			nonscaling: nonscaling
+		};
+	};
+	Item.prototype._getStrokeMatrix = function (matrix, options) {
+		var parent = this.getStrokeScaling() ? null
+			: options && options.internal ? this
+				: this._parent || this._symbol && this._symbol._item,
+			mx = matrix;
+		return mx && mx._shiftless();
+	};
 
-			_hitTest: function (point, options, parentViewMatrix) {
-				if (this._locked || !this._visible || this._guide && !options.guides
-					|| this.isEmpty()) {
-					return null;
-				}
-
-				var matrix = this._matrix,
-					viewMatrix = parentViewMatrix
-						? parentViewMatrix.appended(matrix)
-						: this.getGlobalMatrix(),
-					tolerance = Math.max(options.tolerance, 1e-12),
-					tolerancePadding = options._tolerancePadding = new Size(
-						Path._getStrokePadding(tolerance,
-							matrix._shiftless().invert()));
-				point = matrix._inverseTransform(point);
-				if (!point || !this._children &&
-					!this.getBounds({ internal: true, stroke: true, handle: true })
-						.expand(tolerancePadding.multiply(2))._containsPoint(point)) {
-					return null;
-				}
-
-				var checkSelf = !(options.guides && !this._guide
-					|| options.selected && !this.isSelected()
-					|| options.type && options.type !== Base.hyphenate(this._class)
-					|| options.class && !(this instanceof options.class)),
-					match = options.match,
-					that = this,
-					bounds,
-					res;
-
-				function filter(hit) {
-					if (hit && match && !match(hit))
-						hit = null;
-					if (hit && options.all)
-						options.all.push(hit);
-					return hit;
-				}
-
-				function checkPoint(type, part) {
-					var pt = part ? bounds['get' + part]() : that.getPosition();
-					if (point.subtract(pt).divide(tolerancePadding).length <= 1) {
-						return new HitResult(type, that, {
-							name: part ? Base.hyphenate(part) : type,
-							point: pt
-						});
-					}
-				}
-
-				var checkPosition = options.position,
-					checkCenter = options.center,
-					checkBounds = options.bounds;
-				if (checkSelf && this._parent
-					&& (checkPosition || checkCenter || checkBounds)) {
-					if (checkCenter || checkBounds) {
-						bounds = this.getInternalBounds();
-					}
-					res = checkPosition && checkPoint('position') ||
-						checkCenter && checkPoint('center', 'Center');
-					if (!res && checkBounds) {
-						var points = [
-							'TopLeft', 'TopRight', 'BottomLeft', 'BottomRight',
-							'LeftCenter', 'TopCenter', 'RightCenter', 'BottomCenter'
-						];
-						for (var i = 0; i < 8 && !res; i++) {
-							res = checkPoint('bounds', points[i]);
-						}
-					}
-					res = filter(res);
-				}
-
-				if (!res) {
-					res = this._hitTestChildren(point, options, viewMatrix)
-						|| checkSelf
-						&& filter(this._hitTestSelf(point, options, viewMatrix,
-							this.getStrokeScaling() ? null
-								: viewMatrix._shiftless().invert()))
-						|| null;
-				}
-				if (res && res.point) {
-					res.point = matrix.transform(res.point);
-				}
-				return res;
-			},
-
-			_hitTestSelf: function (point, options) {
-				if (options.fill && this.hasFill() && this._contains(point))
-					return new HitResult('fill', this);
-			},
-
-			matches: function (name, compare) {
-				function matchObject(obj1, obj2) {
-					for (var i in obj1) {
-						if (obj1.hasOwnProperty(i)) {
-							var val1 = obj1[i],
-								val2 = obj2[i];
-							if (Base.isPlainObject(val1) && Base.isPlainObject(val2)) {
-								if (!matchObject(val1, val2))
-									return false;
-							} else if (!Base.equals(val1, val2)) {
-								return false;
-							}
-						}
-					}
-					return true;
-				}
-				var type = typeof name;
-				if (type === 'object') {
-					for (var key in name) {
-						if (name.hasOwnProperty(key) && !this.matches(key, name[key]))
-							return false;
-					}
-					return true;
-				} else if (type === 'function') {
-					return name(this);
-				} else if (name === 'match') {
-					return compare(this);
-				} else {
-					var value = /^(empty|editable)$/.test(name)
-						? this['is' + Base.capitalize(name)]()
-						: name === 'type'
-							? Base.hyphenate(this._class)
-							: this[name];
-					if (name === 'class') {
-						if (typeof compare === 'function')
-							return this instanceof compare;
-						value = this._class;
-					}
-					if (typeof compare === 'function') {
-						return !!compare(value);
-					} else if (compare) {
-						if (compare.test) {
-							return compare.test(value);
-						} else if (Base.isPlainObject(compare)) {
-							return matchObject(compare, value);
-						}
-					}
-					return Base.equals(value, compare);
-				}
-			},
-
-			getItems: function (options) {
-				return Item._getItems(this, options, this._matrix);
-			},
-
-			getItem: function (options) {
-				return Item._getItems(this, options, this._matrix, null, true)[0]
-					|| null;
-			},
-
-			statics: {
-				_getItems: function _getItems(item, options, matrix, param, firstOnly) {
-					if (!param) {
-						var obj = typeof options === 'object' && options,
-							overlapping = obj && obj.overlapping,
-							inside = obj && obj.inside,
-							bounds = overlapping || inside,
-							rect = bounds && Rectangle.read([bounds]);
-						param = {
-							items: [],
-							recursive: obj && obj.recursive !== false,
-							inside: !!inside,
-							overlapping: !!overlapping,
-							rect: rect,
-							path: overlapping && new Path.Rectangle({
-								rectangle: rect,
-								insert: false
-							})
-						};
-						if (obj) {
-							options = Base.filter({}, options, {
-								recursive: true, inside: true, overlapping: true
-							});
-						}
-					}
-					var children = item._children,
-						items = param.items,
-						rect = param.rect;
-					matrix = rect && (matrix || new Matrix());
-					for (var i = 0, l = children && children.length; i < l; i++) {
-						var child = children[i],
-							childMatrix = matrix && matrix.appended(child._matrix),
-							add = true;
-						if (rect) {
-							var bounds = child.getBounds(childMatrix);
-							if (!rect.intersects(bounds))
-								continue;
-							if (!(rect.contains(bounds)
-								|| param.overlapping && (bounds.contains(rect)
-									|| param.path.intersects(child, childMatrix))))
-								add = false;
-						}
-						if (add && child.matches(options)) {
-							items.push(child);
-							if (firstOnly)
-								break;
-						}
-						if (param.recursive !== false) {
-							_getItems(child, options, childMatrix, param, firstOnly);
-						}
-						if (firstOnly && items.length > 0)
-							break;
-					}
-					return items;
+	Item._updateBoundsCache = function (parent, item) {
+		if (parent && item) {
+			var id = item._id,
+				ref = parent._boundsCache = parent._boundsCache || {
+					ids: {},
+					list: []
+				};
+			if (!ref.ids[id]) {
+				ref.list.push(item);
+				ref.ids[id] = item;
+			}
+		}
+	};
+	Item._clearBoundsCache = function (item) {
+		var cache = item._boundsCache;
+		if (cache) {
+			item._bounds = item._position = item._boundsCache = undefined;
+			for (var i = 0, list = cache.list, l = list.length; i < l; i++) {
+				var other = list[i];
+				if (other !== item) {
+					other._bounds = other._position = undefined;
+					if (other._boundsCache)
+						Item._clearBoundsCache(other);
 				}
 			}
-		},
-		{
+		}
+	};
+	Item._getBounds = function (items, matrix, options) {
+		var x1 = Infinity,
+			x2 = -x1,
+			y1 = x1,
+			y2 = x2,
+			nonscaling = false;
+		options = options || {};
+		for (var i = 0, l = items.length; i < l; i++) {
+			var item = items[i];
+			if (item._visible && !item.isEmpty(true)) {
+				var bounds = item._getCachedBounds(
+					matrix && matrix.appended(item._matrix), options, true),
+					rect = bounds.rect;
+				x1 = Math.min(rect.x, x1);
+				y1 = Math.min(rect.y, y1);
+				x2 = Math.max(rect.x + rect.width, x2);
+				y2 = Math.max(rect.y + rect.height, y2);
+				if (bounds.nonscaling)
+					nonscaling = true;
+			}
+		}
+		return {
+			rect: isFinite(x1)
+				? new Rectangle(x1, y1, x2 - x1, y2 - y1)
+				: new Rectangle(),
+			nonscaling: nonscaling
+		};
+	};
 
-			importJSON: function (json) {
-				var res = Base.importJSON(json, this);
-				return res !== this ? this.addChild(res) : res;
-			},
-
-			addChild: function (item) {
-				return this.insertChild(undefined, item);
-			},
-
-			insertChild: function (index, item) {
-				var res = item ? this.insertChildren(index, [item]) : null;
-				return res && res[0];
-			},
-
-			addChildren: function (items) {
-				return this.insertChildren(this._children.length, items);
-			},
-
-			insertChildren: function (index, items) {
-				var children = this._children;
-				if (children && items && items.length > 0) {
-					items = Base.slice(items);
-					var inserted = {};
-					for (var i = items.length - 1; i >= 0; i--) {
-						var item = items[i],
-							id = item && item._id;
-						if (!item || inserted[id]) {
-							items.splice(i, 1);
-						} else {
-							item._remove(false, true);
-							inserted[id] = true;
-						}
+	Item.prototype._decompose = function () {
+		return this._applyMatrix
+			? null
+			: this._decomposed || (this._decomposed = this._matrix.decompose());
+	};
+	Item.prototype.getRotation = function () {
+		var decomposed = this._decompose();
+		return decomposed ? decomposed.rotation : 0;
+	};
+	Item.prototype.setRotation = function (rotation) {
+		var current = this.getRotation();
+		if (current != null && rotation != null) {
+			var decomposed = this._decomposed;
+			this.rotate(rotation - current);
+			if (decomposed) {
+				decomposed.rotation = rotation;
+				this._decomposed = decomposed;
+			}
+		}
+	};
+	Item.prototype.getScaling = function () {
+		var decomposed = this._decompose(),
+			s = decomposed && decomposed.scaling;
+		return new LinkedPoint(s ? s.x : 1, s ? s.y : 1, this, 'setScaling');
+	};
+	Item.prototype.setScaling = function () {
+		var current = this.getScaling(),
+			scaling = Point.read(arguments, 0, { clone: true, readNull: true });
+		if (current && scaling && !current.equals(scaling)) {
+			var rotation = this.getRotation(),
+				decomposed = this._decomposed,
+				matrix = new Matrix(),
+				isZero = Numerical.isZero;
+			if (isZero(current.x) || isZero(current.y)) {
+				matrix.translate(decomposed.translation);
+				if (rotation) {
+					matrix.rotate(rotation);
+				}
+				matrix.scale(scaling.x, scaling.y);
+				this._matrix.set(matrix);
+			} else {
+				var center = this.getPosition(true);
+				matrix.translate(center);
+				if (rotation)
+					matrix.rotate(rotation);
+				matrix.scale(scaling.x / current.x, scaling.y / current.y);
+				if (rotation)
+					matrix.rotate(-rotation);
+				matrix.translate(center.negate());
+				this.transform(matrix);
+			}
+			if (decomposed) {
+				decomposed.scaling = scaling;
+				this._decomposed = decomposed;
+			}
+		}
+	};
+	Item.prototype.getMatrix = function () {
+		return this._matrix;
+	};
+	Item.prototype.setMatrix = function () {
+		var matrix = this._matrix;
+		matrix.set.apply(matrix, arguments);
+	};
+	Item.prototype.getGlobalMatrix = function (_dontClone) {
+		var matrix = this._globalMatrix;
+		if (matrix) {
+			var parent = this._parent;
+			var parents = [];
+			while (parent) {
+				if (!parent._globalMatrix) {
+					matrix = null;
+					for (var i = 0, l = parents.length; i < l; i++) {
+						parents[i]._globalMatrix = null;
 					}
-					Base.splice(children, items, index, 0);
-					var project = this._project,
-						notifySelf = project._changes;
-					for (var i = 0, l = items.length; i < l; i++) {
-						var item = items[i],
-							name = item._name;
-						item._parent = this;
-						item._setProject(project, true);
-						if (name)
-							item.setName(name);
-						if (notifySelf)
-							item._changed(5);
-					}
-					this._changed(11);
+					break;
+				}
+				parents.push(parent);
+				parent = parent._parent;
+			}
+		}
+		if (!matrix) {
+			matrix = this._globalMatrix = this._matrix.clone();
+			var parent = this._parent;
+			if (parent)
+				matrix.prepend(parent.getGlobalMatrix(true));
+		}
+		return _dontClone ? matrix : matrix.clone();
+	};
+	Item.prototype.getApplyMatrix = function () {
+		return this._applyMatrix;
+	};
+	Item.prototype.setApplyMatrix = function (apply) {
+		if (this._applyMatrix = this._canApplyMatrix && !!apply)
+			this.transform(null, true);
+	};
+
+	Item.prototype.getTransformContent = Item.prototype.getApplyMatrix;
+	Item.prototype.setTransformContent = Item.prototype.setApplyMatrix;
+
+	Item.prototype.getProject = function () {
+		return this._project;
+	};
+	Item.prototype._setProject = function (project, installEvents) {
+		if (this._project !== project) {
+			if (this._project)
+				this._installEvents(false);
+			this._project = project;
+			var children = this._children;
+			for (var i = 0, l = children && children.length; i < l; i++)
+				children[i]._setProject(project);
+			installEvents = true;
+		}
+		if (installEvents)
+			this._installEvents(true);
+	};
+
+	tmpItemPrototype_InstallEvents = Item.prototype._installEvents;
+	Item.prototype._installEvents = function _installEvents(install) {
+		tmpItemPrototype_InstallEvents.call(this, install);
+		var children = this._children;
+		for (var i = 0, l = children && children.length; i < l; i++)
+			children[i]._installEvents(install);
+	};
+	Item.prototype.getLayer = function () {
+		var parent = this;
+		while (parent = parent._parent) {
+			if (parent instanceof Layer)
+				return parent;
+		}
+		return null;
+	};
+	Item.prototype.getParent = function () {
+		return this._parent;
+	};
+	Item.prototype.setParent = function (item) {
+		return item.addChild(this);
+	};
+	Item.prototype._getOwner = Item.prototype.getParent;
+	Item.prototype.getChildren = function () {
+		return this._children;
+	};
+	Item.prototype.setChildren = function (items) {
+		this.removeChildren();
+		this.addChildren(items);
+	};
+	Item.prototype.getFirstChild = function () {
+		return this._children && this._children[0] || null;
+	};
+	Item.prototype.getLastChild = function () {
+		return this._children && this._children[this._children.length - 1]
+			|| null;
+	};
+	Item.prototype.getNextSibling = function () {
+		var owner = this._getOwner();
+		return owner && owner._children[this._index + 1] || null;
+	};
+	Item.prototype.getPreviousSibling = function () {
+		var owner = this._getOwner();
+		return owner && owner._children[this._index - 1] || null;
+	};
+	Item.prototype.getIndex = function () {
+		return this._index;
+	};
+	Item.prototype.equals = function (item) {
+		return item === this || item && this._class === item._class
+			&& this._matrix.equals(item._matrix)
+			&& this._locked === item._locked
+			&& this._visible === item._visible
+			&& this._blendMode === item._blendMode
+			&& this._opacity === item._opacity
+			&& this._clipMask === item._clipMask
+			&& this._guide === item._guide
+			&& this._equals(item)
+			|| false;
+	};
+	Item.prototype._equals = function (item) {
+		return Base.equals(this._children, item._children);
+	};
+	Item.prototype.clone = function (options) {
+		var copy = new this.constructor(Item.NO_INSERT),
+			children = this._children,
+			insert = Base.pick(options ? options.insert : undefined,
+				options === undefined || options === true),
+			deep = Base.pick(options ? options.deep : undefined, true);
+		if (children)
+			copy.copyAttributes(this);
+		if (!children || deep)
+			copy.copyContent(this);
+		if (!children)
+			copy.copyAttributes(this);
+		if (insert)
+			copy.insertAbove(this);
+		var name = this._name,
+			parent = this._parent;
+		if (name && parent) {
+			var children = parent._children,
+				orig = name,
+				i = 1;
+			while (children[name])
+				name = orig + ' ' + (i++);
+			if (name !== orig)
+				copy.setName(name);
+		}
+		return copy;
+	};
+	Item.prototype.copyContent = function (source) {
+		var children = source._children;
+		for (var i = 0, l = children && children.length; i < l; i++) {
+			this.addChild(children[i].clone(false), true);
+		}
+	};
+	Item.prototype.copyAttributes = function (source, excludeMatrix) {
+		this.setStyle({});
+		var keys = ['_locked', '_visible', '_blendMode', '_opacity', '_clipMask', '_guide'];
+		for (var i = 0, l = keys.length; i < l; i++) {
+			var key = keys[i];
+			if (source.hasOwnProperty(key))
+				this[key] = source[key];
+		}
+		if (!excludeMatrix)
+			this._matrix.set(source._matrix, true);
+		this.setApplyMatrix(source._applyMatrix);
+		this.setPivot(source._pivot);
+		this.setSelection(source._selection);
+		var data = source._data,
+			name = source._name;
+		this._data = data ? Base.clone(data) : null;
+		if (name)
+			this.setName(name);
+	};
+	Item.prototype.rasterize = function (arg0, arg1) {
+		return {};
+	};
+	Item.prototype.contains = function () {
+		var matrix = this._matrix;
+		return (
+			matrix.isInvertible() &&
+			!!this._contains(matrix._inverseTransform(Point.read(arguments)))
+		);
+	};
+	Item.prototype._contains = function (point) {
+		var children = this._children;
+		if (children) {
+			for (var i = children.length - 1; i >= 0; i--) {
+				if (children[i].contains(point))
+					return true;
+			}
+			return false;
+		}
+		return point.isInside(this.getInternalBounds());
+	};
+	Item.prototype.isInside = function () {
+		return Rectangle.read(arguments).contains(this.getBounds());
+	};
+	Item.prototype._asPathItem = function () {
+		return new Path.Rectangle({
+			rectangle: this.getInternalBounds(),
+			matrix: this._matrix,
+			insert: false,
+		});
+	};
+	Item.prototype.intersects = function (item, _matrix) {
+		if (!(item instanceof Item))
+			return false;
+		return this._asPathItem().getIntersections(item._asPathItem(), null,
+			_matrix, true).length > 0;
+	};
+	Item.prototype.importJSON = function (json) {
+		var res = Base.importJSON(json, this);
+		return res !== this ? this.addChild(res) : res;
+	};
+	Item.prototype.addChild = function (item) {
+		return this.insertChild(undefined, item);
+	};
+	Item.prototype.insertChild = function (index, item) {
+		var res = item ? this.insertChildren(index, [item]) : null;
+		return res && res[0];
+	};
+	Item.prototype.addChildren = function (items) {
+		return this.insertChildren(this._children.length, items);
+	};
+	Item.prototype.insertChildren = function (index, items) {
+		var children = this._children;
+		if (children && items && items.length > 0) {
+			items = Base.slice(items);
+			var inserted = {};
+			for (var i = items.length - 1; i >= 0; i--) {
+				var item = items[i],
+					id = item && item._id;
+				if (!item || inserted[id]) {
+					items.splice(i, 1);
 				} else {
-					items = null;
+					item._remove(false, true);
+					inserted[id] = true;
 				}
-				return items;
-			},
+			}
+			Base.splice(children, items, index, 0);
+			var project = this._project,
+				notifySelf = project._changes;
+			for (var i = 0, l = items.length; i < l; i++) {
+				var item = items[i],
+					name = item._name;
+				item._parent = this;
+				item._setProject(project, true);
+				if (name)
+					item.setName(name);
+				if (notifySelf)
+					item._changed(5);
+			}
+			this._changed(11);
+		} else {
+			items = null;
+		}
+		return items;
+	};
+	Item.prototype._insertItem = Item.prototype.insertChild;
+	Item.prototype._insertAt = function (item, offset) {
+		var owner = item && item._getOwner(),
+			res = item !== this && owner ? this : null;
+		if (res) {
+			res._remove(false, true);
+			owner._insertItem(item._index + offset, res);
+		}
+		return res;
+	};
+	Item.prototype.insertAbove = function (item) {
+		return this._insertAt(item, 1);
+	};
+	Item.prototype.insertBelow = function (item) {
+		return this._insertAt(item, 0);
+	};
+	Item.prototype.sendToBack = function () {
+		var owner = this._getOwner();
+		return owner ? owner._insertItem(0, this) : null;
+	};
+	Item.prototype.bringToFront = function () {
+		var owner = this._getOwner();
+		return owner ? owner._insertItem(undefined, this) : null;
+	};
+	Item.prototype.appendBottom = function (item) {
+		return this.insertChild(0, item);
+	};
 
-			_insertItem: '#insertChild',
+	Item.prototype.appendTop = Item.prototype.addChild;
+	Item.prototype.moveAbove = Item.prototype.insertAbove;
+	Item.prototype.moveBelow = Item.prototype.insertBelow;
 
-			_insertAt: function (item, offset) {
-				var owner = item && item._getOwner(),
-					res = item !== this && owner ? this : null;
-				if (res) {
-					res._remove(false, true);
-					owner._insertItem(item._index + offset, res);
+	Item.prototype.addTo = function (owner) {
+		return owner._insertItem(undefined, this);
+	};
+	Item.prototype.copyTo = function (owner) {
+		return this.clone(false).addTo(owner);
+	};
+	Item.prototype.reduce = function (options) {
+		var children = this._children;
+		if (children && children.length === 1) {
+			var child = children[0].reduce(options);
+			if (this._parent) {
+				child.insertAbove(this);
+				this.remove();
+			} else {
+				child.remove();
+			}
+			return child;
+		}
+		return this;
+	};
+	Item.prototype._removeNamed = function () {
+		var owner = this._getOwner();
+		if (owner) {
+			var children = owner._children,
+				namedChildren = owner._namedChildren,
+				name = this._name,
+				namedArray = namedChildren[name],
+				index = namedArray ? namedArray.indexOf(this) : -1;
+			if (index !== -1) {
+				if (children[name] == this)
+					delete children[name];
+				namedArray.splice(index, 1);
+				if (namedArray.length) {
+					children[name] = namedArray[0];
+				} else {
+					delete namedChildren[name];
 				}
-				return res;
-			},
+			}
+		}
+	};
+	Item.prototype._remove = function (notifySelf, notifyParent) {
+		var owner = this._getOwner(),
+			project = this._project,
+			index = this._index;
+		if (owner) {
+			if (this._name)
+				this._removeNamed();
+			if (index != null) {
+				if (project._activeLayer === this)
+					project._activeLayer = this.getNextSibling()
+						|| this.getPreviousSibling();
+				Base.splice(owner._children, null, index, 1);
+			}
+			this._installEvents(false);
+			if (notifySelf && project._changes)
+				this._changed(5);
+			if (notifyParent)
+				owner._changed(11, this);
+			this._parent = null;
+			return true;
+		}
+		return false;
+	};
+	Item.prototype.remove = function () {
+		return this._remove(true, true);
+	};
+	Item.prototype.replaceWith = function (item) {
+		var ok = item && item.insertBelow(this);
+		if (ok)
+			this.remove();
+		return ok;
+	};
+	Item.prototype.removeChildren = function (start, end) {
+		if (!this._children)
+			return null;
+		start = start || 0;
+		end = Base.pick(end, this._children.length);
+		var removed = Base.splice(this._children, null, start, end - start);
+		for (var i = removed.length - 1; i >= 0; i--) {
+			removed[i]._remove(true, false);
+		}
+		if (removed.length > 0)
+			this._changed(11);
+		return removed;
+	};
 
-			insertAbove: function (item) {
-				return this._insertAt(item, 1);
-			},
+	Item.prototype.clear = Item.prototype.removeChildren;
 
-			insertBelow: function (item) {
-				return this._insertAt(item, 0);
-			},
-
-			sendToBack: function () {
-				var owner = this._getOwner();
-				return owner ? owner._insertItem(0, this) : null;
-			},
-
-			bringToFront: function () {
-				var owner = this._getOwner();
-				return owner ? owner._insertItem(undefined, this) : null;
-			},
-
-			appendTop: '#addChild',
-
-			appendBottom: function (item) {
-				return this.insertChild(0, item);
-			},
-
-			moveAbove: '#insertAbove',
-
-			moveBelow: '#insertBelow',
-
-			addTo: function (owner) {
-				return owner._insertItem(undefined, this);
-			},
-
-			copyTo: function (owner) {
-				return this.clone(false).addTo(owner);
-			},
-
-			reduce: function (options) {
-				var children = this._children;
-				if (children && children.length === 1) {
-					var child = children[0].reduce(options);
-					if (this._parent) {
-						child.insertAbove(this);
-						this.remove();
-					} else {
-						child.remove();
-					}
-					return child;
+	Item.prototype.reverseChildren = function () {
+		if (this._children) {
+			this._children.reverse();
+			for (var i = 0, l = this._children.length; i < l; i++)
+				this._children[i]._index = i;
+			this._changed(11);
+		}
+	};
+	Item.prototype.isEmpty = function (recursively) {
+		var children = this._children;
+		var numChildren = children ? children.length : 0;
+		if (recursively) {
+			for (var i = 0; i < numChildren; i++) {
+				if (!children[i].isEmpty(recursively)) {
+					return false;
 				}
-				return this;
-			},
-
-			_removeNamed: function () {
-				var owner = this._getOwner();
-				if (owner) {
-					var children = owner._children,
-						namedChildren = owner._namedChildren,
-						name = this._name,
-						namedArray = namedChildren[name],
-						index = namedArray ? namedArray.indexOf(this) : -1;
-					if (index !== -1) {
-						if (children[name] == this)
-							delete children[name];
-						namedArray.splice(index, 1);
-						if (namedArray.length) {
-							children[name] = namedArray[0];
-						} else {
-							delete namedChildren[name];
-						}
-					}
-				}
-			},
-
-			_remove: function (notifySelf, notifyParent) {
-				var owner = this._getOwner(),
-					project = this._project,
-					index = this._index;
-				if (owner) {
-					if (this._name)
-						this._removeNamed();
-					if (index != null) {
-						if (project._activeLayer === this)
-							project._activeLayer = this.getNextSibling()
-								|| this.getPreviousSibling();
-						Base.splice(owner._children, null, index, 1);
-					}
-					this._installEvents(false);
-					if (notifySelf && project._changes)
-						this._changed(5);
-					if (notifyParent)
-						owner._changed(11, this);
-					this._parent = null;
-					return true;
-				}
+			}
+			return true;
+		}
+		return !numChildren;
+	};
+	Item.prototype.isEditable = function () {
+		var item = this;
+		while (item) {
+			if (!item._visible || item._locked)
 				return false;
-			},
-
-			remove: function () {
-				return this._remove(true, true);
-			},
-
-			replaceWith: function (item) {
-				var ok = item && item.insertBelow(this);
-				if (ok)
-					this.remove();
-				return ok;
-			},
-
-			removeChildren: function (start, end) {
-				if (!this._children)
-					return null;
-				start = start || 0;
-				end = Base.pick(end, this._children.length);
-				var removed = Base.splice(this._children, null, start, end - start);
-				for (var i = removed.length - 1; i >= 0; i--) {
-					removed[i]._remove(true, false);
-				}
-				if (removed.length > 0)
-					this._changed(11);
-				return removed;
-			},
-
-			clear: '#removeChildren',
-
-			reverseChildren: function () {
-				if (this._children) {
-					this._children.reverse();
-					for (var i = 0, l = this._children.length; i < l; i++)
-						this._children[i]._index = i;
-					this._changed(11);
-				}
-			},
-
-			isEmpty: function (recursively) {
-				var children = this._children;
-				var numChildren = children ? children.length : 0;
-				if (recursively) {
-					for (var i = 0; i < numChildren; i++) {
-						if (!children[i].isEmpty(recursively)) {
-							return false;
-						}
-					}
-					return true;
-				}
-				return !numChildren;
-			},
-
-			isEditable: function () {
-				var item = this;
-				while (item) {
-					if (!item._visible || item._locked)
-						return false;
-					item = item._parent;
-				}
+			item = item._parent;
+		}
+		return true;
+	};
+	Item.prototype.hasFill = function () {
+		return false;
+	};
+	Item.prototype.hasStroke = function () {
+		return false
+	};
+	Item.prototype.hasShadow = function () {
+		return false
+	};
+	Item.prototype._getOrder = function (item) {
+		function getList(item) {
+			var list = [];
+			do {
+				list.unshift(item);
+			} while (item = item._parent);
+			return list;
+		}
+		var list1 = getList(this),
+			list2 = getList(item);
+		for (var i = 0, l = Math.min(list1.length, list2.length); i < l; i++) {
+			if (list1[i] != list2[i]) {
+				return list1[i]._index < list2[i]._index ? 1 : -1;
+			}
+		}
+		return 0;
+	};
+	Item.prototype.hasChildren = function () {
+		return this._children && this._children.length > 0;
+	};
+	Item.prototype.isInserted = function () {
+		return this._parent ? this._parent.isInserted() : false;
+	};
+	Item.prototype.isAbove = function (item) {
+		return this._getOrder(item) === -1;
+	};
+	Item.prototype.isBelow = function (item) {
+		return this._getOrder(item) === 1;
+	};
+	Item.prototype.isParent = function (item) {
+		return this._parent === item;
+	};
+	Item.prototype.isChild = function (item) {
+		return item && item._parent === this;
+	};
+	Item.prototype.isDescendant = function (item) {
+		var parent = this;
+		while (parent = parent._parent) {
+			if (parent === item)
 				return true;
-			},
+		}
+		return false;
+	};
+	Item.prototype.isAncestor = function (item) {
+		return item ? item.isDescendant(this) : false;
+	};
+	Item.prototype.isSibling = function (item) {
+		return this._parent === item._parent;
+	};
+	Item.prototype.isGroupedWith = function (item) {
+		var parent = this._parent;
+		while (parent) {
+			if (parent._parent
+				&& /^(Group|Layer|CompoundPath)$/.test(parent._class)
+				&& item.isDescendant(parent))
+				return true;
+			parent = parent._parent;
+		}
+		return false;
+	};
+	Item.prototype.translate = function () {
+		var mx = new Matrix();
+		return this.transform(mx.translate.apply(mx, arguments));
+	};
+	Item.prototype.transform = function (matrix, _applyRecursively, _setApplyMatrix) {
+		var _matrix = this._matrix,
+			transformMatrix = matrix && !matrix.isIdentity(),
+			applyMatrix = (
+				_setApplyMatrix && this._canApplyMatrix ||
+				this._applyMatrix && (
+					transformMatrix || !_matrix.isIdentity() ||
+					_applyRecursively && this._children
+				)
+			);
+		if (!transformMatrix && !applyMatrix)
+			return this;
+		if (transformMatrix) {
+			if (!matrix.isInvertible() && _matrix.isInvertible())
+				_matrix._backup = _matrix.getValues();
+			_matrix.prepend(matrix, true);
+		}
 
-			hasFill: function () {
-				return false;
-			},
-
-			hasStroke: function () {
-				return false
-			},
-
-			hasShadow: function () {
-				return false
-			},
-
-			_getOrder: function (item) {
-				function getList(item) {
-					var list = [];
-					do {
-						list.unshift(item);
-					} while (item = item._parent);
-					return list;
-				}
-				var list1 = getList(this),
-					list2 = getList(item);
-				for (var i = 0, l = Math.min(list1.length, list2.length); i < l; i++) {
-					if (list1[i] != list2[i]) {
-						return list1[i]._index < list2[i]._index ? 1 : -1;
-					}
-				}
-				return 0;
-			},
-
-			hasChildren: function () {
-				return this._children && this._children.length > 0;
-			},
-
-			isInserted: function () {
-				return this._parent ? this._parent.isInserted() : false;
-			},
-
-			isAbove: function (item) {
-				return this._getOrder(item) === -1;
-			},
-
-			isBelow: function (item) {
-				return this._getOrder(item) === 1;
-			},
-
-			isParent: function (item) {
-				return this._parent === item;
-			},
-
-			isChild: function (item) {
-				return item && item._parent === this;
-			},
-
-			isDescendant: function (item) {
-				var parent = this;
-				while (parent = parent._parent) {
-					if (parent === item)
-						return true;
-				}
-				return false;
-			},
-
-			isAncestor: function (item) {
-				return item ? item.isDescendant(this) : false;
-			},
-
-			isSibling: function (item) {
-				return this._parent === item._parent;
-			},
-
-			isGroupedWith: function (item) {
-				var parent = this._parent;
-				while (parent) {
-					if (parent._parent
-						&& /^(Group|Layer|CompoundPath)$/.test(parent._class)
-						&& item.isDescendant(parent))
-						return true;
-					parent = parent._parent;
-				}
-				return false;
-			},
-
-		},
-		Base.each(
-			['rotate', 'scale', 'shear', 'skew'],
-			function (key) {
-				var rotate = key === 'rotate';
-				this[key] = function () {
-					var args = arguments,
-						value = (rotate ? Base : Point).read(args),
-						center = Point.read(args, 0, { readNull: true });
-					return this.transform(new Matrix()[key](value,
-						center || this.getPosition(true)));
-				};
-			},
-			{
-				translate: function () {
-					var mx = new Matrix();
-					return this.transform(mx.translate.apply(mx, arguments));
-				},
-
-				transform: function (matrix, _applyRecursively, _setApplyMatrix) {
-					var _matrix = this._matrix,
-						transformMatrix = matrix && !matrix.isIdentity(),
-						applyMatrix = (
-							_setApplyMatrix && this._canApplyMatrix ||
-							this._applyMatrix && (
-								transformMatrix || !_matrix.isIdentity() ||
-								_applyRecursively && this._children
-							)
-						);
-					if (!transformMatrix && !applyMatrix)
-						return this;
-					if (transformMatrix) {
-						if (!matrix.isInvertible() && _matrix.isInvertible())
-							_matrix._backup = _matrix.getValues();
-						_matrix.prepend(matrix, true);
-					}
-
-					if (applyMatrix && (applyMatrix = this._transformContent(
-						_matrix, _applyRecursively, _setApplyMatrix))) {
-						var pivot = this._pivot;
-						if (pivot)
-							_matrix._transformPoint(pivot, pivot, true);
-						_matrix.reset(true);
-						if (_setApplyMatrix && this._canApplyMatrix)
-							this._applyMatrix = true;
-					}
-					var bounds = this._bounds,
-						position = this._position;
-					if (transformMatrix || applyMatrix) {
-						this._changed(25);
-					}
-					var decomp = transformMatrix && bounds && matrix.decompose();
-					if (decomp && decomp.skewing.isZero() && decomp.rotation % 90 === 0) {
-						for (var key in bounds) {
-							var cache = bounds[key];
-							if (cache.nonscaling) {
-								delete bounds[key];
-							} else if (applyMatrix || !cache.internal) {
-								var rect = cache.rect;
-								matrix._transformBounds(rect, rect);
-							}
-						}
-						this._bounds = bounds;
-						var cached = bounds[this._getBoundsCacheKey(
-							this._boundsOptions || {})];
-						if (cached) {
-							this._position = this._getPositionFromBounds(cached.rect);
-						}
-					} else if (transformMatrix && position && this._pivot) {
-						this._position = matrix._transformPoint(position, position);
-					}
-					return this;
-				},
-
-				_transformContent: function (matrix, applyRecursively, setApplyMatrix) {
-					var children = this._children;
-					if (children) {
-						for (var i = 0, l = children.length; i < l; i++) {
-							children[i].transform(matrix, applyRecursively, setApplyMatrix);
-						}
-						return true;
-					}
-				},
-
-				globalToLocal: function () {
-					return this.getGlobalMatrix(true)._inverseTransform(
-						Point.read(arguments));
-				},
-
-				localToGlobal: function () {
-					return this.getGlobalMatrix(true)._transformPoint(
-						Point.read(arguments));
-				},
-
-				parentToLocal: function () {
-					return this._matrix._inverseTransform(Point.read(arguments));
-				},
-
-				localToParent: function () {
-					return this._matrix._transformPoint(Point.read(arguments));
-				},
-
-				fitBounds: function (rectangle, fill) {
-					rectangle = Rectangle.read(arguments);
-					var bounds = this.getBounds(),
-						itemRatio = bounds.height / bounds.width,
-						rectRatio = rectangle.height / rectangle.width,
-						scale = (fill ? itemRatio > rectRatio : itemRatio < rectRatio)
-							? rectangle.width / bounds.width
-							: rectangle.height / bounds.height,
-						newBounds = new Rectangle(new Point(),
-							new Size(bounds.width * scale, bounds.height * scale));
-					newBounds.setCenter(rectangle.getCenter());
-					this.setBounds(newBounds);
+		if (applyMatrix && (applyMatrix = this._transformContent(
+			_matrix, _applyRecursively, _setApplyMatrix))) {
+			var pivot = this._pivot;
+			if (pivot)
+				_matrix._transformPoint(pivot, pivot, true);
+			_matrix.reset(true);
+			if (_setApplyMatrix && this._canApplyMatrix)
+				this._applyMatrix = true;
+		}
+		var bounds = this._bounds,
+			position = this._position;
+		if (transformMatrix || applyMatrix) {
+			this._changed(25);
+		}
+		var decomp = transformMatrix && bounds && matrix.decompose();
+		if (decomp && decomp.skewing.isZero() && decomp.rotation % 90 === 0) {
+			for (var key in bounds) {
+				var cache = bounds[key];
+				if (cache.nonscaling) {
+					delete bounds[key];
+				} else if (applyMatrix || !cache.internal) {
+					var rect = cache.rect;
+					matrix._transformBounds(rect, rect);
 				}
 			}
-		),
-		{
-
-			_setStyles: function (ctx, param, viewMatrix) {
-			},
-
-			draw: function (ctx, param, parentStrokeMatrix) {
-			},
-
-			_isUpdated: function (updateVersion) {
-				var parent = this._parent;
-				if (parent instanceof CompoundPath)
-					return parent._isUpdated(updateVersion);
-				var updated = this._updateVersion === updateVersion;
-				if (!updated && parent && parent._visible
-					&& parent._isUpdated(updateVersion)) {
-					this._updateVersion = updateVersion;
-					updated = true;
-				}
-				return updated;
-			},
-
-			_drawSelection: function (ctx, matrix, size, selectionItems, updateVersion) {
-				var selection = this._selection,
-					itemSelected = selection & 1,
-					boundsSelected = selection & 2
-						|| itemSelected && this._selectBounds,
-					positionSelected = selection & 4;
-				if (!this._drawSelected)
-					itemSelected = false;
-				if ((itemSelected || boundsSelected || positionSelected)
-					&& this._isUpdated(updateVersion)) {
-					var layer,
-						color = this.getSelectedColor(true) || (layer = this.getLayer())
-							&& layer.getSelectedColor(true),
-						mx = matrix.appended(this.getGlobalMatrix(true)),
-						half = size / 2;
-					ctx.strokeStyle = ctx.fillStyle = color
-						? color.toCanvasStyle(ctx) : '#009dec';
-					if (itemSelected)
-						this._drawSelected(ctx, mx, selectionItems);
-					if (positionSelected) {
-						var pos = this.getPosition(true),
-							parent = this._parent,
-							point = parent ? parent.localToGlobal(pos) : pos,
-							x = point.x,
-							y = point.y;
-						ctx.beginPath();
-						ctx.arc(x, y, half, 0, Math.PI * 2, true);
-						ctx.stroke();
-						var deltas = [[0, -1], [1, 0], [0, 1], [-1, 0]],
-							start = half,
-							end = size + 1;
-						for (var i = 0; i < 4; i++) {
-							var delta = deltas[i],
-								dx = delta[0],
-								dy = delta[1];
-							ctx.moveTo(x + dx * start, y + dy * start);
-							ctx.lineTo(x + dx * end, y + dy * end);
-							ctx.stroke();
-						}
-					}
-					if (boundsSelected) {
-						var coords = mx._transformCorners(this.getInternalBounds());
-						ctx.beginPath();
-						for (var i = 0; i < 8; i++) {
-							ctx[!i ? 'moveTo' : 'lineTo'](coords[i], coords[++i]);
-						}
-						ctx.closePath();
-						ctx.stroke();
-						for (var i = 0; i < 8; i++) {
-							ctx.fillRect(coords[i] - half, coords[++i] - half,
-								size, size);
-						}
-					}
-				}
-			},
-
-			_canComposite: function () {
-				return false;
+			this._bounds = bounds;
+			var cached = bounds[this._getBoundsCacheKey(
+				this._boundsOptions || {})];
+			if (cached) {
+				this._position = this._getPositionFromBounds(cached.rect);
 			}
-		},
-
-		Base.each(
-			['down', 'drag', 'up', 'move'],
-			function (key) {
-				this['removeOn' + Base.capitalize(key)] = function () {
-					var hash = {};
-					hash[key] = true;
-					return this.removeOn(hash);
-				};
-			},
-			{
-
-				removeOn: function (obj) {
-					for (var name in obj) {
-						if (obj[name]) {
-							var key = 'mouse' + name,
-								project = this._project,
-								sets = project._removeSets = project._removeSets || {};
-							sets[key] = sets[key] || {};
-							sets[key][this._id] = this;
-						}
-					}
-					return this;
-				}
+		} else if (transformMatrix && position && this._pivot) {
+			this._position = matrix._transformPoint(position, position);
+		}
+		return this;
+	};
+	Item.prototype._transformContent = function (matrix, applyRecursively, setApplyMatrix) {
+		var children = this._children;
+		if (children) {
+			for (var i = 0, l = children.length; i < l; i++) {
+				children[i].transform(matrix, applyRecursively, setApplyMatrix);
 			}
-		),
-	);
+			return true;
+		}
+	};
+	Item.prototype.globalToLocal = function () {
+		return this.getGlobalMatrix(true)._inverseTransform(
+			Point.read(arguments));
+	};
+	Item.prototype.localToGlobal = function () {
+		return this.getGlobalMatrix(true)._transformPoint(
+			Point.read(arguments));
+	};
+	Item.prototype.parentToLocal = function () {
+		return this._matrix._inverseTransform(Point.read(arguments));
+	};
+	Item.prototype.localToParent = function () {
+		return this._matrix._transformPoint(Point.read(arguments));
+	};
+	Item.prototype.fitBounds = function (rectangle, fill) {
+		rectangle = Rectangle.read(arguments);
+		var bounds = this.getBounds(),
+			itemRatio = bounds.height / bounds.width,
+			rectRatio = rectangle.height / rectangle.width,
+			scale = (fill ? itemRatio > rectRatio : itemRatio < rectRatio)
+				? rectangle.width / bounds.width
+				: rectangle.height / bounds.height,
+			newBounds = new Rectangle(new Point(),
+				new Size(bounds.width * scale, bounds.height * scale));
+		newBounds.setCenter(rectangle.getCenter());
+		this.setBounds(newBounds);
+	};
 
-	var Group = Item.extend({
-		_class: 'Group',
-		_selectBounds: false,
-		_selectChildren: true,
-		_serializeFields: {
-			children: []
-		},
+	// debugger
 
-		initialize: function Group(arg) {
-			this._children = [];
-			this._namedChildren = {};
-			if (!this._initialize(arg))
-				this.addChildren(Array.isArray(arg) ? arg : arguments);
-		},
-
-		_changed: function _changed(flags) {
-			_changed.base.call(this, flags);
-			if (flags & 2050) {
-				this._clipItem = undefined;
-			}
-		},
-
-		_getClipItem: function () {
-			var clipItem = this._clipItem;
-			if (clipItem === undefined) {
-				clipItem = null;
-				var children = this._children;
-				for (var i = 0, l = children.length; i < l; i++) {
-					if (children[i]._clipMask) {
-						clipItem = children[i];
-						break;
-					}
-				}
-				this._clipItem = clipItem;
-			}
-			return clipItem;
-		},
-
-		isClipped: function () {
-			return !!this._getClipItem();
-		},
-
-		setClipped: function (clipped) {
-			var child = this.getFirstChild();
-			if (child)
-				child.setClipMask(clipped);
-		},
-
-		_getBounds: function _getBounds(matrix, options) {
-			var clipItem = this._getClipItem();
-			return clipItem
-				? clipItem._getCachedBounds(clipItem._matrix.prepended(matrix),
-					Base.set({}, options, { stroke: false }))
-				: _getBounds.base.call(this, matrix, options);
-		},
-
-		_hitTestChildren: function _hitTestChildren(point, options, viewMatrix) {
-			var clipItem = this._getClipItem();
-			return (!clipItem || clipItem.contains(point))
-				&& _hitTestChildren.base.call(this, point, options, viewMatrix,
-					clipItem);
-		},
-
-		_draw: function (ctx, param) {
-			var clip = param.clip,
-				clipItem = !clip && this._getClipItem();
-			param = param.extend({ clipItem: clipItem, clip: false });
-			if (clip) {
-				ctx.beginPath();
-				param.dontStart = param.dontFinish = true;
-			} else if (clipItem) {
-				clipItem.draw(ctx, param.extend({ clip: true }));
-			}
+	var Group = function (arg) {
+		Item.call(this);
+		this._children = [];
+		this._namedChildren = {};
+		if (!this._initialize(arg))
+			this.addChildren(Array.isArray(arg) ? arg : arguments);
+	};
+	InitClassWithStatics(Group, Item)
+	Group.prototype.initialize = Group;
+	Group.prototype._class = 'Group';
+	Group.prototype._selectBounds = false;
+	Group.prototype._selectChildren = true;
+	Group.prototype._serializeFields = {
+		children: []
+	};
+	Group.prototype._changed = function _changed(flags) {
+		Item.prototype._changed.call(this, flags);
+		if (flags & 2050) {
+			this._clipItem = undefined;
+		}
+	};
+	Group.prototype._getClipItem = function () {
+		var clipItem = this._clipItem;
+		if (clipItem === undefined) {
+			clipItem = null;
 			var children = this._children;
 			for (var i = 0, l = children.length; i < l; i++) {
-				var item = children[i];
-				if (item !== clipItem)
-					item.draw(ctx, param);
-			}
-		}
-	});
-
-	var Layer = Group.extend({
-		_class: 'Layer',
-
-		initialize: function Layer() {
-			Group.apply(this, arguments);
-		},
-
-		_getOwner: function () {
-			return this._parent || this._index != null && this._project;
-		},
-
-		isInserted: function isInserted() {
-			return this._parent ? isInserted.base.call(this) : this._index != null;
-		},
-
-		activate: function () {
-			this._project._activeLayer = this;
-		},
-
-		_hitTestSelf: function () {
-		}
-	});
-
-	var Shape = Item.extend({
-		_class: 'Shape',
-		_applyMatrix: false,
-		_canApplyMatrix: false,
-		_canScaleStroke: true,
-		_serializeFields: {
-			type: null,
-			size: null,
-			radius: null
-		},
-
-		initialize: function Shape(props, point) {
-			this._initialize(props, point);
-		},
-
-		_equals: function (item) {
-			return this._type === item._type
-				&& this._size.equals(item._size)
-				&& Base.equals(this._radius, item._radius);
-		},
-
-		copyContent: function (source) {
-			this.setType(source._type);
-			this.setSize(source._size);
-			this.setRadius(source._radius);
-		},
-
-		getType: function () {
-			return this._type;
-		},
-
-		setType: function (type) {
-			this._type = type;
-		},
-
-		getShape: '#getType',
-		setShape: '#setType',
-
-		getSize: function () {
-			var size = this._size;
-			return new LinkedSize(size.width, size.height, this, 'setSize');
-		},
-
-		setSize: function () {
-			var size = Size.read(arguments);
-			if (!this._size) {
-				this._size = size.clone();
-			} else if (!this._size.equals(size)) {
-				var type = this._type,
-					width = size.width,
-					height = size.height;
-				if (type === 'rectangle') {
-					this._radius.set(Size.min(this._radius, size.divide(2).abs()));
-				} else if (type === 'circle') {
-					width = height = (width + height) / 2;
-					this._radius = width / 2;
-				} else if (type === 'ellipse') {
-					this._radius._set(width / 2, height / 2);
+				if (children[i]._clipMask) {
+					clipItem = children[i];
+					break;
 				}
-				this._size._set(width, height);
-				this._changed(9);
 			}
-		},
+			this._clipItem = clipItem;
+		}
+		return clipItem;
+	};
+	Group.prototype.isClipped = function () {
+		return !!this._getClipItem();
+	};
+	Group.prototype.setClipped = function (clipped) {
+		var child = this.getFirstChild();
+		if (child)
+			child.setClipMask(clipped);
+	};
+	Group.prototype._getBounds = function _getBounds(matrix, options) {
+		var clipItem = this._getClipItem();
+		return clipItem
+			? clipItem._getCachedBounds(clipItem._matrix.prepended(matrix),
+				Base.set({}, options, { stroke: false }))
+			: _getBounds.base.call(this, matrix, options);
+	};
+	Group.prototype._hitTestChildren = function _hitTestChildren(point, options, viewMatrix) {
+		var clipItem = this._getClipItem();
+		return (!clipItem || clipItem.contains(point))
+			&& _hitTestChildren.base.call(this, point, options, viewMatrix,
+				clipItem);
+	};
+	Group.prototype._draw = function (ctx, param) {
+		var clip = param.clip,
+			clipItem = !clip && this._getClipItem();
+		param = param.extend({ clipItem: clipItem, clip: false });
+		if (clip) {
+			ctx.beginPath();
+			param.dontStart = param.dontFinish = true;
+		} else if (clipItem) {
+			clipItem.draw(ctx, param.extend({ clip: true }));
+		}
+		var children = this._children;
+		for (var i = 0, l = children.length; i < l; i++) {
+			var item = children[i];
+			if (item !== clipItem)
+				item.draw(ctx, param);
+		}
+	};
 
-		getRadius: function () {
-			var rad = this._radius;
-			return this._type === 'circle'
-				? rad
-				: new LinkedSize(rad.width, rad.height, this, 'setRadius');
-		},
+	var Layer = function Layer() {
+		Group.apply(this, arguments);
+	};
+	InitClassWithStatics(Layer, Group);
+	Layer.prototype.initialize - Layer;
+	Layer.prototype._class = 'Layer';
+	Layer.prototype._getOwner = function () {
+		return this._parent || this._index != null && this._project;
+	};
+	Layer.prototype.isInserted = function isInserted() {
+		return this._parent ? Item.prototype.isInserted.call(this) : this._index != null;
+	};
+	Layer.prototype.activate = function () {
+		this._project._activeLayer = this;
+	};
 
-		setRadius: function (radius) {
-			var type = this._type;
-			if (type === 'circle') {
-				if (radius === this._radius)
-					return;
-				var size = radius * 2;
-				this._radius = radius;
-				this._size._set(size, size);
-			} else {
-				radius = Size.read(arguments);
-				if (!this._radius) {
-					this._radius = radius.clone();
+	var Segment = function (arg0, arg1, arg2, arg3, arg4, arg5) {
+		Base.apply(this, arguments);
+		var count = arguments.length,
+			point, handleIn, handleOut, selection;
+		if (count > 0) {
+			if (arg0 == null || typeof arg0 === 'object') {
+				if (count === 1 && arg0 && 'point' in arg0) {
+					point = arg0.point;
+					handleIn = arg0.handleIn;
+					handleOut = arg0.handleOut;
+					selection = arg0.selection;
 				} else {
-					if (this._radius.equals(radius))
-						return;
-					this._radius.set(radius);
-					if (type === 'rectangle') {
-						var size = Size.max(this._size, radius.multiply(2));
-						this._size.set(size);
-					} else if (type === 'ellipse') {
-						this._size._set(radius.width * 2, radius.height * 2);
-					}
-				}
-			}
-			this._changed(9);
-		},
-
-		isEmpty: function () {
-			return false;
-		},
-
-		toPath: function (insert) {
-			var path = new Path[Base.capitalize(this._type)]({
-				center: new Point(),
-				size: this._size,
-				radius: this._radius,
-				insert: false
-			});
-			path.copyAttributes(this);
-			if (paper.settings.applyMatrix)
-				path.setApplyMatrix(true);
-			if (insert === undefined || insert)
-				path.insertAbove(this);
-			return path;
-		},
-
-		toShape: '#clone',
-
-		_asPathItem: function () {
-			return this.toPath(false);
-		},
-
-		_draw: function (ctx, param, viewMatrix, strokeMatrix) {
-			var hasFill = false,
-				hasStroke = false,
-				dontPaint = param.dontFinish || param.clip,
-				untransformed = !strokeMatrix;
-			if (hasFill || hasStroke || dontPaint) {
-				var type = this._type,
-					radius = this._radius,
-					isCircle = type === 'circle';
-				if (!param.dontStart)
-					ctx.beginPath();
-				if (untransformed && isCircle) {
-					ctx.arc(0, 0, radius, 0, Math.PI * 2, true);
-				} else {
-					var rx = isCircle ? radius : radius.width,
-						ry = isCircle ? radius : radius.height,
-						size = this._size,
-						width = size.width,
-						height = size.height;
-					if (untransformed && type === 'rectangle' && rx === 0 && ry === 0) {
-						ctx.rect(-width / 2, -height / 2, width, height);
-					} else {
-						var x = width / 2,
-							y = height / 2,
-							kappa = 1 - 0.5522847498307936,
-							cx = rx * kappa,
-							cy = ry * kappa,
-							c = [
-								-x, -y + ry,
-								-x, -y + cy,
-								-x + cx, -y,
-								-x + rx, -y,
-								x - rx, -y,
-								x - cx, -y,
-								x, -y + cy,
-								x, -y + ry,
-								x, y - ry,
-								x, y - cy,
-								x - cx, y,
-								x - rx, y,
-								-x + rx, y,
-								-x + cx, y,
-								-x, y - cy,
-								-x, y - ry
-							];
-						if (strokeMatrix)
-							strokeMatrix.transform(c, c, 32);
-						ctx.moveTo(c[0], c[1]);
-						ctx.bezierCurveTo(c[2], c[3], c[4], c[5], c[6], c[7]);
-						if (x !== rx)
-							ctx.lineTo(c[8], c[9]);
-						ctx.bezierCurveTo(c[10], c[11], c[12], c[13], c[14], c[15]);
-						if (y !== ry)
-							ctx.lineTo(c[16], c[17]);
-						ctx.bezierCurveTo(c[18], c[19], c[20], c[21], c[22], c[23]);
-						if (x !== rx)
-							ctx.lineTo(c[24], c[25]);
-						ctx.bezierCurveTo(c[26], c[27], c[28], c[29], c[30], c[31]);
-					}
-				}
-				ctx.closePath();
-			}
-			if (!dontPaint && (hasFill || hasStroke)) {
-				this._setStyles(ctx, param, viewMatrix);
-			}
-		},
-
-		_canComposite: function () {
-			return !(this.hasFill() && this.hasStroke());
-		},
-
-		_getBounds: function (matrix, options) {
-			var rect = new Rectangle(this._size).setCenter(0, 0),
-				strokeWidth = false;
-			if (matrix)
-				rect = matrix._transformBounds(rect);
-			return strokeWidth
-				? rect.expand(Path._getStrokePadding(strokeWidth,
-					this._getStrokeMatrix(matrix, options)))
-				: rect;
-		}
-	},
-		new function () {
-			function getCornerCenter(that, point, expand) {
-				var radius = that._radius;
-				if (!radius.isZero()) {
-					var halfSize = that._size.divide(2);
-					for (var q = 1; q <= 4; q++) {
-						var dir = new Point(q > 1 && q < 4 ? -1 : 1, q > 2 ? -1 : 1),
-							corner = dir.multiply(halfSize),
-							center = corner.subtract(dir.multiply(radius)),
-							rect = new Rectangle(
-								expand ? corner.add(dir.multiply(expand)) : corner,
-								center);
-						if (rect.contains(point))
-							return { point: center, quadrant: q };
-					}
-				}
-			}
-
-			function isOnEllipseStroke(point, radius, padding, quadrant) {
-				var vector = point.divide(radius);
-				return (!quadrant || vector.isInQuadrant(quadrant)) &&
-					vector.subtract(vector.normalize()).multiply(radius)
-						.divide(padding).length <= 1;
-			}
-
-			return {
-				_contains: function _contains(point) {
-					if (this._type === 'rectangle') {
-						var center = getCornerCenter(this, point);
-						return center
-							? point.subtract(center.point).divide(this._radius)
-								.getLength() <= 1
-							: _contains.base.call(this, point);
-					} else {
-						return point.divide(this.size).getLength() <= 0.5;
-					}
-				},
-
-				_hitTestSelf: function _hitTestSelf(point, options, viewMatrix, strokeMatrix) {
-					var hit = false,
-						style = {},
-						hitStroke = false,
-						hitFill = false;
-					if (hitStroke || hitFill) {
-						var type = this._type,
-							radius = this._radius,
-							strokeRadius = 0,
-							strokePadding = options._tolerancePadding.add(
-								Path._getStrokePadding(strokeRadius, false && strokeMatrix));
-						if (type === 'rectangle') {
-							var padding = strokePadding.multiply(2),
-								center = getCornerCenter(this, point, padding);
-							if (center) {
-								hit = isOnEllipseStroke(point.subtract(center.point),
-									radius, strokePadding, center.quadrant);
-							} else {
-								var rect = new Rectangle(this._size).setCenter(0, 0),
-									outer = rect.expand(padding),
-									inner = rect.expand(padding.negate());
-								hit = outer._containsPoint(point)
-									&& !inner._containsPoint(point);
-							}
-						} else {
-							hit = isOnEllipseStroke(point, radius, strokePadding);
-						}
-					}
-					return hit ? new HitResult(hitStroke ? 'stroke' : 'fill', this)
-						: _hitTestSelf.base.apply(this, arguments);
-				}
-			};
-		}, {
-
-		statics: new function () {
-			function createShape(type, point, size, radius, args) {
-				var item = Base.create(Shape.prototype);
-				item._type = type;
-				item._size = size;
-				item._radius = radius;
-				item._initialize(Base.getNamed(args), point);
-				return item;
-			}
-
-			return {
-				Circle: function () {
-					var args = arguments,
-						center = Point.readNamed(args, 'center'),
-						radius = Base.readNamed(args, 'radius');
-					return createShape('circle', center, new Size(radius * 2), radius,
-						args);
-				},
-
-				Rectangle: function () {
-					var args = arguments,
-						rect = Rectangle.readNamed(args, 'rectangle'),
-						radius = Size.min(Size.readNamed(args, 'radius'),
-							rect.getSize(true).divide(2));
-					return createShape('rectangle', rect.getCenter(true),
-						rect.getSize(true), radius, args);
-				},
-
-				Ellipse: function () {
-					var args = arguments,
-						ellipse = Shape._readEllipse(args),
-						radius = ellipse.radius;
-					return createShape('ellipse', ellipse.center, radius.multiply(2),
-						radius, args);
-				},
-
-				_readEllipse: function (args) {
-					var center,
-						radius;
-					if (Base.hasNamed(args, 'radius')) {
-						center = Point.readNamed(args, 'center');
-						radius = Size.readNamed(args, 'radius');
-					} else {
-						var rect = Rectangle.readNamed(args, 'rectangle');
-						center = rect.getCenter(true);
-						radius = rect.getSize(true).divide(2);
-					}
-					return { center: center, radius: radius };
-				}
-			};
-		}
-	});
-
-	var HitResult = Base.extend({
-		_class: 'HitResult',
-
-		initialize: function HitResult(type, item, values) {
-			this.type = type;
-			this.item = item;
-			if (values)
-				this.inject(values);
-		},
-
-		statics: {
-			getOptions: function (args) {
-				var options = args && Base.read(args);
-				return new Base({
-					type: null,
-					tolerance: paper.settings.hitTolerance,
-					fill: !options,
-					stroke: !options,
-					segments: !options,
-					handles: false,
-					ends: false,
-					position: false,
-					center: false,
-					bounds: false,
-					guides: false,
-					selected: false
-				}, options);
-			}
-		}
-	});
-
-	var Segment = Base.extend({
-		_class: 'Segment',
-		beans: true,
-		_selection: 0,
-
-		initialize: function Segment(arg0, arg1, arg2, arg3, arg4, arg5) {
-			var count = arguments.length,
-				point, handleIn, handleOut, selection;
-			if (count > 0) {
-				if (arg0 == null || typeof arg0 === 'object') {
-					if (count === 1 && arg0 && 'point' in arg0) {
-						point = arg0.point;
-						handleIn = arg0.handleIn;
-						handleOut = arg0.handleOut;
-						selection = arg0.selection;
-					} else {
-						point = arg0;
-						handleIn = arg1;
-						handleOut = arg2;
-						selection = arg3;
-					}
-				} else {
-					point = [arg0, arg1];
-					handleIn = arg2 !== undefined ? [arg2, arg3] : null;
-					handleOut = arg4 !== undefined ? [arg4, arg5] : null;
-				}
-			}
-			new SegmentPoint(point, this, '_point');
-			new SegmentPoint(handleIn, this, '_handleIn');
-			new SegmentPoint(handleOut, this, '_handleOut');
-			if (selection)
-				this.setSelection(selection);
-		},
-
-		_serialize: function (options, dictionary) {
-			var point = this._point,
-				selection = this._selection,
-				obj = selection || this.hasHandles()
-					? [point, this._handleIn, this._handleOut]
-					: point;
-			if (selection)
-				obj.push(selection);
-			return Base.serialize(obj, options, true, dictionary);
-		},
-
-		_changed: function (point) {
-			var path = this._path;
-			if (!path)
-				return;
-			var curves = path._curves,
-				index = this._index,
-				curve;
-			if (curves) {
-				if ((!point || point === this._point || point === this._handleIn)
-					&& (curve = index > 0 ? curves[index - 1] : path._closed
-						? curves[curves.length - 1] : null))
-					curve._changed();
-				if ((!point || point === this._point || point === this._handleOut)
-					&& (curve = curves[index]))
-					curve._changed();
-			}
-			path._changed(41);
-		},
-
-		getPoint: function () {
-			return this._point;
-		},
-
-		setPoint: function () {
-			this._point.set(Point.read(arguments));
-		},
-
-		getHandleIn: function () {
-			return this._handleIn;
-		},
-
-		setHandleIn: function () {
-			this._handleIn.set(Point.read(arguments));
-		},
-
-		getHandleOut: function () {
-			return this._handleOut;
-		},
-
-		setHandleOut: function () {
-			this._handleOut.set(Point.read(arguments));
-		},
-
-		hasHandles: function () {
-			return !this._handleIn.isZero() || !this._handleOut.isZero();
-		},
-
-		isSmooth: function () {
-			var handleIn = this._handleIn,
-				handleOut = this._handleOut;
-			return !handleIn.isZero() && !handleOut.isZero()
-				&& handleIn.isCollinear(handleOut);
-		},
-
-		clearHandles: function () {
-			this._handleIn._set(0, 0);
-			this._handleOut._set(0, 0);
-		},
-
-		getSelection: function () {
-			return this._selection;
-		},
-
-		setSelection: function (selection) {
-			var oldSelection = this._selection,
-				path = this._path;
-			this._selection = selection = selection || 0;
-			if (path && selection !== oldSelection) {
-				path._updateSelection(this, oldSelection, selection);
-				path._changed(257);
-			}
-		},
-
-		_changeSelection: function (flag, selected) {
-			var selection = this._selection;
-			this.setSelection(selected ? selection | flag : selection & ~flag);
-		},
-
-		isSelected: function () {
-			return !!(this._selection & 7);
-		},
-
-		setSelected: function (selected) {
-			this._changeSelection(7, selected);
-		},
-
-		getIndex: function () {
-			return this._index !== undefined ? this._index : null;
-		},
-
-		getPath: function () {
-			return this._path || null;
-		},
-
-		getCurve: function () {
-			var path = this._path,
-				index = this._index;
-			if (path) {
-				if (index > 0 && !path._closed
-					&& index === path._segments.length - 1)
-					index--;
-				return path.getCurves()[index] || null;
-			}
-			return null;
-		},
-
-		getLocation: function () {
-			var curve = this.getCurve();
-			return curve
-				? new CurveLocation(curve, this === curve._segment1 ? 0 : 1)
-				: null;
-		},
-
-		getNext: function () {
-			var segments = this._path && this._path._segments;
-			return segments && (segments[this._index + 1]
-				|| this._path._closed && segments[0]) || null;
-		},
-
-		smooth: function (options, _first, _last) {
-			var opts = options || {},
-				type = opts.type,
-				factor = opts.factor,
-				prev = this.getPrevious(),
-				next = this.getNext(),
-				p0 = (prev || this)._point,
-				p1 = this._point,
-				p2 = (next || this)._point,
-				d1 = p0.getDistance(p1),
-				d2 = p1.getDistance(p2);
-			if (!type || type === 'catmull-rom') {
-				var a = factor === undefined ? 0.5 : factor,
-					d1_a = Math.pow(d1, a),
-					d1_2a = d1_a * d1_a,
-					d2_a = Math.pow(d2, a),
-					d2_2a = d2_a * d2_a;
-				if (!_first && prev) {
-					var A = 2 * d2_2a + 3 * d2_a * d1_a + d1_2a,
-						N = 3 * d2_a * (d2_a + d1_a);
-					this.setHandleIn(N !== 0
-						? new Point(
-							(d2_2a * p0._x + A * p1._x - d1_2a * p2._x) / N - p1._x,
-							(d2_2a * p0._y + A * p1._y - d1_2a * p2._y) / N - p1._y)
-						: new Point());
-				}
-				if (!_last && next) {
-					var A = 2 * d1_2a + 3 * d1_a * d2_a + d2_2a,
-						N = 3 * d1_a * (d1_a + d2_a);
-					this.setHandleOut(N !== 0
-						? new Point(
-							(d1_2a * p2._x + A * p1._x - d2_2a * p0._x) / N - p1._x,
-							(d1_2a * p2._y + A * p1._y - d2_2a * p0._y) / N - p1._y)
-						: new Point());
-				}
-			} else if (type === 'geometric') {
-				if (prev && next) {
-					var vector = p0.subtract(p2),
-						t = factor === undefined ? 0.4 : factor,
-						k = t * d1 / (d1 + d2);
-					if (!_first)
-						this.setHandleIn(vector.multiply(k));
-					if (!_last)
-						this.setHandleOut(vector.multiply(k - t));
+					point = arg0;
+					handleIn = arg1;
+					handleOut = arg2;
+					selection = arg3;
 				}
 			} else {
-				throw new Error('Smoothing method \'' + type + '\' not supported.');
+				point = [arg0, arg1];
+				handleIn = arg2 !== undefined ? [arg2, arg3] : null;
+				handleOut = arg4 !== undefined ? [arg4, arg5] : null;
 			}
-		},
-
-		getPrevious: function () {
-			var segments = this._path && this._path._segments;
-			return segments && (segments[this._index - 1]
-				|| this._path._closed && segments[segments.length - 1]) || null;
-		},
-
-		isFirst: function () {
-			return !this._index;
-		},
-
-		isLast: function () {
-			var path = this._path;
-			return path && this._index === path._segments.length - 1 || false;
-		},
-
-		reverse: function () {
-			var handleIn = this._handleIn,
-				handleOut = this._handleOut,
-				tmp = handleIn.clone();
-			handleIn.set(handleOut);
-			handleOut.set(tmp);
-		},
-
-		reversed: function () {
-			return new Segment(this._point, this._handleOut, this._handleIn);
-		},
-
-		remove: function () {
-			return this._path ? !!this._path.removeSegment(this._index) : false;
-		},
-
-		clone: function () {
-			return new Segment(this._point, this._handleIn, this._handleOut);
-		},
-
-		equals: function (segment) {
-			return segment === this || segment && this._class === segment._class
-				&& this._point.equals(segment._point)
-				&& this._handleIn.equals(segment._handleIn)
-				&& this._handleOut.equals(segment._handleOut)
-				|| false;
-		},
-
-		toString: function () {
-			var parts = ['point: ' + this._point];
-			if (!this._handleIn.isZero())
-				parts.push('handleIn: ' + this._handleIn);
-			if (!this._handleOut.isZero())
-				parts.push('handleOut: ' + this._handleOut);
-			return '{ ' + parts.join(', ') + ' }';
-		},
-
-		transform: function (matrix) {
-			this._transformCoordinates(matrix, new Array(6), true);
-			this._changed();
-		},
-
-		interpolate: function (from, to, factor) {
-			var u = 1 - factor,
-				v = factor,
-				point1 = from._point,
-				point2 = to._point,
-				handleIn1 = from._handleIn,
-				handleIn2 = to._handleIn,
-				handleOut2 = to._handleOut,
-				handleOut1 = from._handleOut;
-			this._point._set(
-				u * point1._x + v * point2._x,
-				u * point1._y + v * point2._y, true);
-			this._handleIn._set(
-				u * handleIn1._x + v * handleIn2._x,
-				u * handleIn1._y + v * handleIn2._y, true);
-			this._handleOut._set(
-				u * handleOut1._x + v * handleOut2._x,
-				u * handleOut1._y + v * handleOut2._y, true);
-			this._changed();
-		},
-
-		_transformCoordinates: function (matrix, coords, change) {
-			var point = this._point,
-				handleIn = !change || !this._handleIn.isZero()
-					? this._handleIn : null,
-				handleOut = !change || !this._handleOut.isZero()
-					? this._handleOut : null,
-				x = point._x,
-				y = point._y,
+		}
+		new SegmentPoint(point, this, '_point');
+		new SegmentPoint(handleIn, this, '_handleIn');
+		new SegmentPoint(handleOut, this, '_handleOut');
+		if (selection)
+			this.setSelection(selection);
+	}
+	InitClassWithStatics(Segment, Base);
+	Segment.prototype.initialize = Segment;
+	Segment.prototype._class = 'Segment';
+	Segment.prototype.beans = true;
+	Segment.prototype._selection = 0;
+	Segment.prototype._serialize = function (options, dictionary) {
+		var point = this._point,
+			selection = this._selection,
+			obj = selection || this.hasHandles()
+				? [point, this._handleIn, this._handleOut]
+				: point;
+		if (selection)
+			obj.push(selection);
+		return Base.serialize(obj, options, true, dictionary);
+	};
+	Segment.prototype._changed = function (point) {
+		var path = this._path;
+		if (!path)
+			return;
+		var curves = path._curves,
+			index = this._index,
+			curve;
+		if (curves) {
+			if ((!point || point === this._point || point === this._handleIn)
+				&& (curve = index > 0 ? curves[index - 1] : path._closed
+					? curves[curves.length - 1] : null))
+				curve._changed();
+			if ((!point || point === this._point || point === this._handleOut)
+				&& (curve = curves[index]))
+				curve._changed();
+		}
+		path._changed(41);
+	};
+	Segment.prototype.getPoint = function () {
+		return this._point;
+	};
+	Segment.prototype.setPoint = function () {
+		this._point.set(Point.read(arguments));
+	};
+	Segment.prototype.getHandleIn = function () {
+		return this._handleIn;
+	};
+	Segment.prototype.setHandleIn = function () {
+		this._handleIn.set(Point.read(arguments));
+	};
+	Segment.prototype.getHandleOut = function () {
+		return this._handleOut;
+	};
+	Segment.prototype.setHandleOut = function () {
+		const newPoint = Point.read(arguments)
+		this._handleOut.set(newPoint);
+	};
+	Segment.prototype.hasHandles = function () {
+		return !this._handleIn.isZero() || !this._handleOut.isZero();
+	};
+	Segment.prototype.isSmooth = function () {
+		var handleIn = this._handleIn,
+			handleOut = this._handleOut;
+		return !handleIn.isZero() && !handleOut.isZero()
+			&& handleIn.isCollinear(handleOut);
+	};
+	Segment.prototype.clearHandles = function () {
+		this._handleIn._set(0, 0);
+		this._handleOut._set(0, 0);
+	};
+	Segment.prototype.getSelection = function () {
+		return this._selection;
+	};
+	Segment.prototype.setSelection = function (selection) {
+		var oldSelection = this._selection,
+			path = this._path;
+		this._selection = selection = selection || 0;
+		if (path && selection !== oldSelection) {
+			path._updateSelection(this, oldSelection, selection);
+			path._changed(257);
+		}
+	};
+	Segment.prototype._changeSelection = function (flag, selected) {
+		var selection = this._selection;
+		this.setSelection(selected ? selection | flag : selection & ~flag);
+	};
+	Segment.prototype.isSelected = function () {
+		return !!(this._selection & 7);
+	};
+	Segment.prototype.setSelected = function (selected) {
+		this._changeSelection(7, selected);
+	};
+	Segment.prototype.getIndex = function () {
+		return this._index !== undefined ? this._index : null;
+	};
+	Segment.prototype.getPath = function () {
+		return this._path || null;
+	};
+	Segment.prototype.getCurve = function () {
+		var path = this._path,
+			index = this._index;
+		if (path) {
+			if (index > 0 && !path._closed
+				&& index === path._segments.length - 1)
+				index--;
+			return path.getCurves()[index] || null;
+		}
+		return null;
+	};
+	Segment.prototype.getLocation = function () {
+		var curve = this.getCurve();
+		return curve
+			? new CurveLocation(curve, this === curve._segment1 ? 0 : 1)
+			: null;
+	};
+	Segment.prototype.getNext = function () {
+		var segments = this._path && this._path._segments;
+		return segments && (segments[this._index + 1]
+			|| this._path._closed && segments[0]) || null;
+	};
+	Segment.prototype.smooth = function (options, _first, _last) {
+		var opts = options || {},
+			type = opts.type,
+			factor = opts.factor,
+			prev = this.getPrevious(),
+			next = this.getNext(),
+			p0 = (prev || this)._point,
+			p1 = this._point,
+			p2 = (next || this)._point,
+			d1 = p0.getDistance(p1),
+			d2 = p1.getDistance(p2);
+		if (!type || type === 'catmull-rom') {
+			var a = factor === undefined ? 0.5 : factor,
+				d1_a = Math.pow(d1, a),
+				d1_2a = d1_a * d1_a,
+				d2_a = Math.pow(d2, a),
+				d2_2a = d2_a * d2_a;
+			if (!_first && prev) {
+				var A = 2 * d2_2a + 3 * d2_a * d1_a + d1_2a,
+					N = 3 * d2_a * (d2_a + d1_a);
+				this.setHandleIn(N !== 0
+					? new Point(
+						(d2_2a * p0._x + A * p1._x - d1_2a * p2._x) / N - p1._x,
+						(d2_2a * p0._y + A * p1._y - d1_2a * p2._y) / N - p1._y)
+					: new Point());
+			}
+			if (!_last && next) {
+				var A = 2 * d1_2a + 3 * d1_a * d2_a + d2_2a,
+					N = 3 * d1_a * (d1_a + d2_a);
+				this.setHandleOut(N !== 0
+					? new Point(
+						(d1_2a * p2._x + A * p1._x - d2_2a * p0._x) / N - p1._x,
+						(d1_2a * p2._y + A * p1._y - d2_2a * p0._y) / N - p1._y)
+					: new Point());
+			}
+		} else if (type === 'geometric') {
+			if (prev && next) {
+				var vector = p0.subtract(p2),
+					t = factor === undefined ? 0.4 : factor,
+					k = t * d1 / (d1 + d2);
+				if (!_first)
+					this.setHandleIn(vector.multiply(k));
+				if (!_last)
+					this.setHandleOut(vector.multiply(k - t));
+			}
+		} else {
+			throw new Error('Smoothing method \'' + type + '\' not supported.');
+		}
+	};
+	Segment.prototype.getPrevious = function () {
+		var segments = this._path && this._path._segments;
+		return segments && (segments[this._index - 1]
+			|| this._path._closed && segments[segments.length - 1]) || null;
+	};
+	Segment.prototype.isFirst = function () {
+		return !this._index;
+	};
+	Segment.prototype.isLast = function () {
+		var path = this._path;
+		return path && this._index === path._segments.length - 1 || false;
+	};
+	Segment.prototype.reverse = function () {
+		var handleIn = this._handleIn,
+			handleOut = this._handleOut,
+			tmp = handleIn.clone();
+		handleIn.set(handleOut);
+		handleOut.set(tmp);
+	};
+	Segment.prototype.reversed = function () {
+		return new Segment(this._point, this._handleOut, this._handleIn);
+	};
+	Segment.prototype.remove = function () {
+		return this._path ? !!this._path.removeSegment(this._index) : false;
+	};
+	Segment.prototype.clone = function () {
+		return new Segment(this._point, this._handleIn, this._handleOut);
+	};
+	Segment.prototype.equals = function (segment) {
+		return segment === this || segment && this._class === segment._class
+			&& this._point.equals(segment._point)
+			&& this._handleIn.equals(segment._handleIn)
+			&& this._handleOut.equals(segment._handleOut)
+			|| false;
+	};
+	Segment.prototype.toString = function () {
+		var parts = ['point: ' + this._point];
+		if (!this._handleIn.isZero())
+			parts.push('handleIn: ' + this._handleIn);
+		if (!this._handleOut.isZero())
+			parts.push('handleOut: ' + this._handleOut);
+		return '{ ' + parts.join(', ') + ' }';
+	};
+	Segment.prototype.transform = function (matrix) {
+		this._transformCoordinates(matrix, new Array(6), true);
+		this._changed();
+	};
+	Segment.prototype.interpolate = function (from, to, factor) {
+		var u = 1 - factor,
+			v = factor,
+			point1 = from._point,
+			point2 = to._point,
+			handleIn1 = from._handleIn,
+			handleIn2 = to._handleIn,
+			handleOut2 = to._handleOut,
+			handleOut1 = from._handleOut;
+		this._point._set(
+			u * point1._x + v * point2._x,
+			u * point1._y + v * point2._y, true);
+		this._handleIn._set(
+			u * handleIn1._x + v * handleIn2._x,
+			u * handleIn1._y + v * handleIn2._y, true);
+		this._handleOut._set(
+			u * handleOut1._x + v * handleOut2._x,
+			u * handleOut1._y + v * handleOut2._y, true);
+		this._changed();
+	};
+	Segment.prototype._transformCoordinates = function (matrix, coords, change) {
+		var point = this._point,
+			handleIn = !change || !this._handleIn.isZero()
+				? this._handleIn : null,
+			handleOut = !change || !this._handleOut.isZero()
+				? this._handleOut : null,
+			x = point._x,
+			y = point._y,
+			i = 2;
+		coords[0] = x;
+		coords[1] = y;
+		if (handleIn) {
+			coords[i++] = handleIn._x + x;
+			coords[i++] = handleIn._y + y;
+		}
+		if (handleOut) {
+			coords[i++] = handleOut._x + x;
+			coords[i++] = handleOut._y + y;
+		}
+		if (matrix) {
+			matrix._transformCoordinates(coords, coords, i / 2);
+			x = coords[0];
+			y = coords[1];
+			if (change) {
+				point._x = x;
+				point._y = y;
 				i = 2;
-			coords[0] = x;
-			coords[1] = y;
-			if (handleIn) {
-				coords[i++] = handleIn._x + x;
-				coords[i++] = handleIn._y + y;
-			}
-			if (handleOut) {
-				coords[i++] = handleOut._x + x;
-				coords[i++] = handleOut._y + y;
-			}
-			if (matrix) {
-				matrix._transformCoordinates(coords, coords, i / 2);
-				x = coords[0];
-				y = coords[1];
-				if (change) {
-					point._x = x;
-					point._y = y;
-					i = 2;
-					if (handleIn) {
-						handleIn._x = coords[i++] - x;
-						handleIn._y = coords[i++] - y;
-					}
-					if (handleOut) {
-						handleOut._x = coords[i++] - x;
-						handleOut._y = coords[i++] - y;
-					}
-				} else {
-					if (!handleIn) {
-						coords[i++] = x;
-						coords[i++] = y;
-					}
-					if (!handleOut) {
-						coords[i++] = x;
-						coords[i++] = y;
-					}
+				if (handleIn) {
+					handleIn._x = coords[i++] - x;
+					handleIn._y = coords[i++] - y;
 				}
-			}
-			return coords;
-		}
-	});
-
-	var SegmentPoint = Point.extend({
-		initialize: function SegmentPoint(point, owner, key) {
-			var x, y,
-				selected;
-			if (!point) {
-				x = y = 0;
-			} else if ((x = point[0]) !== undefined) {
-				y = point[1];
+				if (handleOut) {
+					handleOut._x = coords[i++] - x;
+					handleOut._y = coords[i++] - y;
+				}
 			} else {
-				var pt = point;
-				if ((x = pt.x) === undefined) {
-					pt = Point.read(arguments);
-					x = pt.x;
+				if (!handleIn) {
+					coords[i++] = x;
+					coords[i++] = y;
 				}
-				y = pt.y;
-				selected = pt.selected;
+				if (!handleOut) {
+					coords[i++] = x;
+					coords[i++] = y;
+				}
 			}
-			this._x = x;
-			this._y = y;
-			this._owner = owner;
-			owner[key] = this;
-			if (selected)
-				this.setSelected(true);
-		},
+		}
+		return coords;
+	};
 
-		_set: function (x, y) {
-			this._x = x;
-			this._y = y;
-			this._owner._changed(this);
-			return this;
-		},
+	var SegmentPoint = function (point, owner, key) {
+		var x, y,
+			selected;
+		if (!point) {
+			x = y = 0;
+		} else if ((x = point[0]) !== undefined) {
+			y = point[1];
+		} else {
+			var pt = point;
+			if ((x = pt.x) === undefined) {
+				pt = Point.read(arguments);
+				x = pt.x;
+			}
+			y = pt.y;
+			selected = pt.selected;
+		}
+		this._x = x;
+		this._y = y;
+		this._owner = owner;
+		owner[key] = this;
+		if (selected)
+			this.setSelected(true);
+	}
+	InitClassWithStatics(SegmentPoint, Point);
+	SegmentPoint.prototype.initialize = SegmentPoint;
+	SegmentPoint.prototype._set = function (x, y) {
+		this._x = x;
+		this._y = y;
+		this._owner._changed(this);
+		return this;
+	};
+	SegmentPoint.prototype.isZero = function () {
+		var isZero = Numerical.isZero;
+		return isZero(this._x) && isZero(this._y);
+	};
+	SegmentPoint.prototype.getX = function () {
+		return this._x;
+	};
+	SegmentPoint.prototype.getY = function () {
+		return this._y;
+	};
 
-		getX: function () {
-			return this._x;
-		},
-
+	SegmentPoint.inject({
 		setX: function (x) {
 			this._x = x;
 			this._owner._changed(this);
 		},
 
-		getY: function () {
-			return this._y;
-		},
-
 		setY: function (y) {
 			this._y = y;
+			debugger
 			this._owner._changed(this);
 		},
-
-		isZero: function () {
-			var isZero = Numerical.isZero;
-			return isZero(this._x) && isZero(this._y);
-		},
-
-		isSelected: function () {
-			return !!(this._owner._selection & this._getSelection());
-		},
-
-		setSelected: function (selected) {
-			this._owner._changeSelection(this._getSelection(), selected);
-		},
-
-		_getSelection: function () {
-			var owner = this._owner;
-			return this === owner._point ? 1
-				: this === owner._handleIn ? 2
-					: this === owner._handleOut ? 4
-						: 0;
-		}
 	});
+
+	// SegmentPoint.prototype.setX = function (x) {
+	// 	this._x = x;
+	// 	this._owner._changed(this);
+	// };
+	// SegmentPoint.prototype.setY = function (y) {
+	// 	this._y = y;
+	// 	this._owner._changed(this);
+	// };
+
+	debugger
 
 	var Curve = Base.extend({
 		_class: 'Curve',
@@ -8019,102 +7438,6 @@ var paper = function (self, undefined) {
 			}
 		},
 
-		toShape: function (insert) {
-			if (!this._closed)
-				return null;
-
-			var segments = this._segments,
-				type,
-				size,
-				radius,
-				topCenter;
-
-			function isCollinear(i, j) {
-				var seg1 = segments[i],
-					seg2 = seg1.getNext(),
-					seg3 = segments[j],
-					seg4 = seg3.getNext();
-				return seg1._handleOut.isZero() && seg2._handleIn.isZero()
-					&& seg3._handleOut.isZero() && seg4._handleIn.isZero()
-					&& seg2._point.subtract(seg1._point).isCollinear(
-						seg4._point.subtract(seg3._point));
-			}
-
-			function isOrthogonal(i) {
-				var seg2 = segments[i],
-					seg1 = seg2.getPrevious(),
-					seg3 = seg2.getNext();
-				return seg1._handleOut.isZero() && seg2._handleIn.isZero()
-					&& seg2._handleOut.isZero() && seg3._handleIn.isZero()
-					&& seg2._point.subtract(seg1._point).isOrthogonal(
-						seg3._point.subtract(seg2._point));
-			}
-
-			function isArc(i) {
-				var seg1 = segments[i],
-					seg2 = seg1.getNext(),
-					handle1 = seg1._handleOut,
-					handle2 = seg2._handleIn,
-					kappa = 0.5522847498307936;
-				if (handle1.isOrthogonal(handle2)) {
-					var pt1 = seg1._point,
-						pt2 = seg2._point,
-						corner = new Line(pt1, handle1, true).intersect(
-							new Line(pt2, handle2, true), true);
-					return corner && Numerical.isZero(handle1.getLength() /
-						corner.subtract(pt1).getLength() - kappa)
-						&& Numerical.isZero(handle2.getLength() /
-							corner.subtract(pt2).getLength() - kappa);
-				}
-				return false;
-			}
-
-			function getDistance(i, j) {
-				return segments[i]._point.getDistance(segments[j]._point);
-			}
-
-			if (!this.hasHandles() && segments.length === 4
-				&& isCollinear(0, 2) && isCollinear(1, 3) && isOrthogonal(1)) {
-				type = Shape.Rectangle;
-				size = new Size(getDistance(0, 3), getDistance(0, 1));
-				topCenter = segments[1]._point.add(segments[2]._point).divide(2);
-			} else if (segments.length === 8 && isArc(0) && isArc(2) && isArc(4)
-				&& isArc(6) && isCollinear(1, 5) && isCollinear(3, 7)) {
-				type = Shape.Rectangle;
-				size = new Size(getDistance(1, 6), getDistance(0, 3));
-				radius = size.subtract(new Size(getDistance(0, 7),
-					getDistance(1, 2))).divide(2);
-				topCenter = segments[3]._point.add(segments[4]._point).divide(2);
-			} else if (segments.length === 4
-				&& isArc(0) && isArc(1) && isArc(2) && isArc(3)) {
-				if (Numerical.isZero(getDistance(0, 2) - getDistance(1, 3))) {
-					type = Shape.Circle;
-					radius = getDistance(0, 2) / 2;
-				} else {
-					type = Shape.Ellipse;
-					radius = new Size(getDistance(2, 0) / 2, getDistance(3, 1) / 2);
-				}
-				topCenter = segments[1]._point;
-			}
-
-			if (type) {
-				var center = this.getPosition(true),
-					shape = new type({
-						center: center,
-						size: size,
-						radius: radius,
-						insert: false
-					});
-				shape.copyAttributes(this, true);
-				shape._matrix.prepend(this._matrix);
-				shape.rotate(topCenter.subtract(center).getAngle() + 90);
-				if (insert === undefined || insert)
-					shape.insertAbove(this);
-				return shape;
-			}
-			return null;
-		},
-
 		toPath: '#clone',
 
 		compare: function compare(path) {
@@ -8177,129 +7500,6 @@ var paper = function (self, undefined) {
 			}
 			return false;
 		},
-
-		_hitTestSelf: function (point, options, viewMatrix, strokeMatrix) {
-			var that = this,
-				segments = this._segments,
-				numSegments = segments.length,
-				closed = this._closed,
-				tolerancePadding = options._tolerancePadding,
-				strokePadding = tolerancePadding,
-				join, cap, miterLimit,
-				area, loc, res,
-				hitStroke = false,
-				hitFill = false,
-				hitCurves = options.curves,
-				strokeRadius = hitFill && options.tolerance > 0 || hitCurves ? 0 : null;
-			if (strokeRadius !== null) {
-				if (strokeRadius > 0) {
-					join = 'miter';
-					cap = 'butt';
-					miterLimit = 10;
-					strokePadding = strokePadding.add(
-						Path._getStrokePadding(strokeRadius, strokeMatrix));
-				} else {
-					join = cap = 'round';
-				}
-			}
-
-			function isCloseEnough(pt, padding) {
-				return point.subtract(pt).divide(padding).length <= 1;
-			}
-
-			function checkSegmentPoint(seg, pt, name) {
-				if (!options.selected || pt.isSelected()) {
-					var anchor = seg._point;
-					if (pt !== anchor)
-						pt = pt.add(anchor);
-					if (isCloseEnough(pt, strokePadding)) {
-						return new HitResult(name, that, {
-							segment: seg,
-							point: pt
-						});
-					}
-				}
-			}
-
-			function checkSegmentPoints(seg, ends) {
-				return (ends || options.segments)
-					&& checkSegmentPoint(seg, seg._point, 'segment')
-					|| (!ends && options.handles) && (
-						checkSegmentPoint(seg, seg._handleIn, 'handle-in') ||
-						checkSegmentPoint(seg, seg._handleOut, 'handle-out'));
-			}
-
-			function addToArea(point) {
-				area.add(point);
-			}
-
-			function checkSegmentStroke(segment) {
-				var isJoin = closed || segment._index > 0
-					&& segment._index < numSegments - 1;
-				if ((isJoin ? join : cap) === 'round') {
-					return isCloseEnough(segment._point, strokePadding);
-				} else {
-					area = new Path({ internal: true, closed: true });
-					if (isJoin) {
-						if (!segment.isSmooth()) {
-							Path._addBevelJoin(segment, join, strokeRadius,
-								miterLimit, null, strokeMatrix, addToArea, true);
-						}
-					} else if (cap === 'square') {
-						Path._addSquareCap(segment, cap, strokeRadius, null,
-							strokeMatrix, addToArea, true);
-					}
-					if (!area.isEmpty()) {
-						var loc;
-						return area.contains(point)
-							|| (loc = area.getNearestLocation(point))
-							&& isCloseEnough(loc.getPoint(), tolerancePadding);
-					}
-				}
-			}
-
-			if (options.ends && !options.segments && !closed) {
-				if (res = checkSegmentPoints(segments[0], true)
-					|| checkSegmentPoints(segments[numSegments - 1], true))
-					return res;
-			} else if (options.segments || options.handles) {
-				for (var i = 0; i < numSegments; i++)
-					if (res = checkSegmentPoints(segments[i]))
-						return res;
-			}
-			if (strokeRadius !== null) {
-				loc = this.getNearestLocation(point);
-				if (loc) {
-					var time = loc.getTime();
-					if (time === 0 || time === 1 && numSegments > 1) {
-						if (!checkSegmentStroke(loc.getSegment()))
-							loc = null;
-					} else if (!isCloseEnough(loc.getPoint(), strokePadding)) {
-						loc = null;
-					}
-				}
-				if (!loc && join === 'miter' && numSegments > 1) {
-					for (var i = 0; i < numSegments; i++) {
-						var segment = segments[i];
-						if (point.getDistance(segment._point)
-							<= miterLimit * strokeRadius
-							&& checkSegmentStroke(segment)) {
-							loc = segment.getLocation();
-							break;
-						}
-					}
-				}
-			}
-			return !loc && hitFill && this._contains(point)
-				|| loc && !hitStroke && !hitCurves
-				? new HitResult('fill', this)
-				: loc
-					? new HitResult(hitStroke ? 'stroke' : 'curve', this, {
-						location: loc,
-						point: loc.getPoint()
-					})
-					: null;
-		}
 
 	}, Base.each(Curve._evaluateMethods,
 		function (name) {
@@ -8786,7 +7986,7 @@ var paper = function (self, undefined) {
 			},
 
 			getStrokeBounds: function (segments, closed, path, matrix, options) {
-				var	stroke = false,
+				var stroke = false,
 					strokeWidth = 1,
 					strokeMatrix = stroke && path._getStrokeMatrix(matrix, options),
 					strokePadding = stroke && Path._getStrokePadding(strokeWidth,
@@ -9041,9 +8241,9 @@ var paper = function (self, undefined) {
 				RoundRectangle: '#Rectangle',
 
 				Ellipse: function () {
-					var args = arguments,
-						ellipse = Shape._readEllipse(args);
-					return createEllipse(ellipse.center, ellipse.radius, args);
+					// var args = arguments,
+					// 	ellipse = Shape._readEllipse(args);
+					// return createEllipse(ellipse.center, ellipse.radius, args);
 				},
 
 				Oval: '#Ellipse',
@@ -10519,6 +9719,7 @@ var paper = function (self, undefined) {
 
 	var paper = new (PaperScope.inject(Base.exports, {
 		Base: Base,
+		Item: Item,
 		Numerical: Numerical,
 		document: document,
 		window: window,
@@ -10531,7 +9732,7 @@ var paper = function (self, undefined) {
 		Point, LinkedPoint,
 		Rectangle, LinkedRectangle,
 		Matrix, Line, Item, Group,
-		Layer, Shape, HitResult,
+		Layer,
 		Segment, SegmentPoint,
 		Curve, CurveLocation,
 		Path, PathItem,
