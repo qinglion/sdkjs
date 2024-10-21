@@ -17346,10 +17346,23 @@
         var r1 = 0, r2 = this.model.getRowsCount() - 1;
 		var ranges = [];
 		if (null !== col) {
+			//if col contains into selected range
+			let selectionRanges = this.model.selectionRange.ranges;
+			for (let i = 0; i < selectionRanges.length; ++i) {
+				if (!(selectionRanges[i].getType() === c_oAscSelectionType.RangeMax || selectionRanges[i].getType() === c_oAscSelectionType.RangeCol)) {
+					break;
+				}
+				if (selectionRanges[i].containsCol(col)) {
+					col = null;
+					break;
+				}
+			}
+		}
+		if (null !== col) {
 			ranges.push(new Asc.Range(col, r1, col, r2));
 		} else {
-			var selectionRanges = this.model.selectionRange.ranges;
-			for (var i = 0; i < selectionRanges.length; ++i) {
+			let selectionRanges = this.model.selectionRange.ranges;
+			for (let i = 0; i < selectionRanges.length; ++i) {
 				ranges.push(new Asc.Range(selectionRanges[i].c1, r1, selectionRanges[i].c2, r2));
 			}
 		}
