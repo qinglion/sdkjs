@@ -299,6 +299,10 @@ ParaDrawing.prototype.canRotate = function()
 {
 	return AscCommon.isRealObject(this.GraphicObj) && typeof this.GraphicObj.canRotate == "function" && this.GraphicObj.canRotate();
 };
+ParaDrawing.prototype.canResize = function()
+{
+	return AscCommon.isRealObject(this.GraphicObj) && typeof this.GraphicObj.canResize == "function" && this.GraphicObj.canResize();
+};
 ParaDrawing.prototype.GetParagraph = function()
 {
 	return this.Get_ParentParagraph();
@@ -309,6 +313,7 @@ ParaDrawing.prototype.GetRun = function()
 };
 ParaDrawing.prototype.GetDocumentContent = function()
 {
+	// TODO: Check why do we need to skip BlockLevelSdt here. If it's not necessary then merge this method with GetParentDocumentContent
 	const oParagraph = this.GetParagraph();
 	let oDocumentContent = (oParagraph ? oParagraph.GetParent() : null);
 	if (oDocumentContent && oDocumentContent.IsBlockLevelSdtContent())
@@ -316,6 +321,11 @@ ParaDrawing.prototype.GetDocumentContent = function()
 		oDocumentContent = oDocumentContent.Parent.Parent;
 	}
 	return oDocumentContent;
+};
+ParaDrawing.prototype.GetParentDocumentContent = function()
+{
+	let para = this.GetParagraph();
+	return para ? para.GetParent() : null;
 };
 ParaDrawing.prototype.Get_Run = function()
 {
@@ -2453,17 +2463,23 @@ ParaDrawing.prototype.Load_LinkData = function()
 };
 ParaDrawing.prototype.draw = function(graphics, PDSE)
 {
-	if (AscCommon.isRealObject(this.GraphicObj) && typeof this.GraphicObj.draw === "function")
+	let iO = AscCommon.isRealObject;
+	let iN = AscFormat.isRealNumber;
+	if (this.GraphicObj)
 	{
 		graphics.SaveGrState();
-		var bInline = this.Is_Inline();
-		if(bInline && AscCommon.isRealObject(PDSE) && AscFormat.isRealNumber(this.LineTop) && AscFormat.isRealNumber(this.LineBottom) && AscCommon.isRealObject(this.GraphicObj.bounds))
+		let bInline = this.Is_Inline();
+		let oBounds = this.GraphicObj.bounds;
+		let paragraph = this.GetParagraph();
+		let paraPr = paragraph.GetCompiledParaPr();
+		let spacing = paraPr.Spacing;
+		if(bInline && spacing.LineRule !== Asc.linerule_Exact && PDSE && iN(this.LineTop) && iN(this.LineBottom) && iO(oBounds))
 		{
-			var x, y, w, h;
-			var oEffectExtent = this.EffectExtent;
+			let x, y, w, h;
+			let oEffectExtent = this.EffectExtent;
 			x = PDSE.X;
 			y = this.LineTop;
-			w = this.GraphicObj.bounds.r - this.GraphicObj.bounds.l + AscFormat.getValOrDefault(oEffectExtent.R, 0) + AscFormat.getValOrDefault(oEffectExtent.L, 0);
+			w = oBounds.r - oBounds.l + AscFormat.getValOrDefault(oEffectExtent.R, 0) + AscFormat.getValOrDefault(oEffectExtent.L, 0);
 			h = this.LineBottom - this.LineTop;
 			graphics.AddClipRect(x, y, w, h);
 		}
@@ -3173,6 +3189,7 @@ ParaDrawing.prototype.ConvertToMath = function(isUpdatePos)
 
 	// Коректируем формулу после конвертации
 	this.ParaMath.Correct_AfterConvertFromEquation();
+	this.ParaMath.ProcessingOldEquationConvert();
 
 	// Сначала удаляем Drawing из рана
 	oRun.RemoveFromContent(nBotElementPos, 1);

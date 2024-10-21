@@ -1254,7 +1254,7 @@ function (window, undefined) {
 			if (cElementType.cell !== pivot_table_ref.type && cElementType.cell3D !== pivot_table_ref.type && cElementType.cellsRange !== pivot_table_ref.type && cElementType.cellsRange3D !== pivot_table_ref.type) {
 				return refError;
 			}
-			let worksheet = pivot_table_ref.ws;
+			let worksheet = pivot_table_ref.getWS();
 			let bbox = pivot_table_ref.getBBox0();
 
 			let pivotTables = worksheet.getPivotTablesIntersectingRange(bbox);
@@ -3953,7 +3953,7 @@ function (window, undefined) {
 			arg0 = arg0.getElementRowCol(0, 0);
 		}
 
-		if (cElementType.cell === arg0.type) {
+		if (cElementType.cell === arg0.type || cElementType.cell3D === arg0.type) {
 			arg0 = arg0.getValue();
 		}
 		if (cElementType.error === arg0.type) {
@@ -3992,7 +3992,7 @@ function (window, undefined) {
 		// variants check:
 		/* arg1 is not array/area */
 		if ( !(cElementType.cellsRange === arg1.type || cElementType.cellsRange3D === arg1.type || cElementType.array === arg1.type) ) {
-			if (arg1.type === cElementType.cell) {
+			if (arg1.type === cElementType.cell || arg1.type === cElementType.cell3D) {
 				arg1 = arg1.getValue();
 			}
 			if (arg1.type === cElementType.error) {
@@ -4006,7 +4006,7 @@ function (window, undefined) {
 
 				arg2 = arg2.getFirstElement();
 			}
-			if (arg2.type === cElementType.cell) {
+			if (arg2.type === cElementType.cell || arg2.type === cElementType.cell3D) {
 				arg2 = arg2.getValue();
 			}
 			if (arg2.type === cElementType.error) {
@@ -4384,10 +4384,6 @@ function (window, undefined) {
 						_res = _range.isOneCell() ?  new cRef3D(rangeName, arg2.getWS()) : new cArea3D(rangeName, arg2.getWS());
 					}
 
-					if (_res.type === cElementType.cellsRange || _res.type === cElementType.cellsRange3D) {
-						_res = _res.getFullArray();
-					}
-
 					return _res;
 				} else {
 					let _length = !bVertical ? dimensions2.row : dimensions2.col;
@@ -4548,7 +4544,12 @@ function (window, undefined) {
 		if (arg1.type === arg1.empty) {
 			return new cError(cErrorType.wrong_value_type);
 		}
-		arg1 = arg1.toArray();
+
+		if (arg1.type === cElementType.cellsRange3D) {
+			arg1 = arg1.toArray()[0];
+		} else {
+			arg1 = arg1.toArray();
+		}
 
 		//Excel returns a #NUM when array is too large.
 		let elemCount = arg1.length * arg1[0].length;

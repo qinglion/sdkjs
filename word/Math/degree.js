@@ -35,10 +35,10 @@
 // Import
 var g_oTextMeasurer = AscCommon.g_oTextMeasurer;
 
-function CMathDegreePr()
+function CMathDegreePr(ctrPr)
 {
-    this.type = DEGREE_SUPERSCRIPT;
-	this.ctrPr   = new CMathCtrlPr();
+	this.type	= DEGREE_SUPERSCRIPT;
+	this.ctrPr	= new CMathCtrlPr(ctrPr);
 }
 CMathDegreePr.prototype.GetRPr = function ()
 {
@@ -90,18 +90,18 @@ function CDegreeBase(props, bInside)
 {
 	CMathBase.call(this, bInside);
 
-    this.upBase = 0; // отступ сверху для основания
-    this.upIter = 0; // отступ сверху для итератора
+	this.upBase = 0; // отступ сверху для основания
+	this.upIter = 0; // отступ сверху для итератора
 
-    this.Pr = new CMathDegreePr();
+	this.Pr = new CMathDegreePr(this.CtrPrp);
 
-    this.baseContent = null;
-    this.iterContent = null;
+	this.baseContent = null;
+	this.iterContent = null;
 
-    this.bNaryInline = false;
+	this.bNaryInline = false;
 
-    if(props !== null && typeof(props) !== "undefined")
-        this.init(props);
+	if(props !== null && typeof(props) !== "undefined")
+		this.init(props);
 }
 CDegreeBase.prototype = Object.create(CMathBase.prototype);
 CDegreeBase.prototype.constructor = CDegreeBase;
@@ -560,10 +560,13 @@ CDegree.prototype.GetTextOfElement = function(oMathText)
 	let oBase           = this.getBase();
 	let oIterator       = this.getIterator();
 
-	oMathText.Add(oBase, true);
+	if (oMathText.IsLaTeX())
+		oMathText.SetNotWrap();
+
+	oMathText.Add(oBase, true, oMathText.IsLaTeX() ? 1 : undefined);
 	oMathText.AddText(new AscMath.MathText(this.Pr.type === 1 ? "^" : "_", this));
 	oMathText.SetGlobalStyle(this);
-	oMathText.Add(oIterator, true);
+	oMathText.Add(oIterator, true, oMathText.IsLaTeX() ? 1 : undefined);
 
 	return oMathText;
 };
@@ -668,11 +671,11 @@ CIterators.prototype.setPosition = function(pos, PosInfo)
     pos.x += this.size.width;
 };
 
-function CMathDegreeSubSupPr()
+function CMathDegreeSubSupPr(ctrPr)
 {
-    this.type   = DEGREE_SubSup;
-    this.alnScr = false;// не выровнены, итераторы идут в соответствии с наклоном буквы/мат. объекта
-	this.ctrPr   = new CMathCtrlPr();
+	this.type	= DEGREE_SubSup;
+	this.alnScr	= false;// не выровнены, итераторы идут в соответствии с наклоном буквы/мат. объекта
+	this.ctrPr	= new CMathCtrlPr(ctrPr);
 }
 CMathDegreeSubSupPr.prototype.GetRPr = function ()
 {
@@ -736,15 +739,15 @@ function CDegreeSubSupBase(props, bInside)
 {
 	CMathBase.call(this, bInside);
 
-    this.bNaryInline = false;
+	this.bNaryInline = false;
 
-    this.Pr = new CMathDegreeSubSupPr();
+	this.Pr = new CMathDegreeSubSupPr(this.CtrPrp);
 
-    this.baseContent = null;
-    this.iters       = new CIterators(null, null);
+	this.baseContent = null;
+	this.iters       = new CIterators(null, null);
 
-    if(props !== null && typeof(props) !== "undefined")
-        this.init(props);
+	if(props !== null && typeof(props) !== "undefined")
+		this.init(props);
 }
 CDegreeSubSupBase.prototype = Object.create(CMathBase.prototype);
 CDegreeSubSupBase.prototype.constructor = CDegreeSubSupBase;
@@ -1237,34 +1240,46 @@ CDegreeSubSup.prototype.GetTextOfElement = function(oMathText)
 {
 	oMathText = new AscMath.MathTextAndStyles(oMathText);
 
-    let oBase					= this.getBase();
-    let oLowerIterator			= this.getLowerIterator();
-    let oUpperIterator			= this.getUpperIterator();
-    let isPreScript				= this.Pr.type === -1;
+	let oBase					= this.getBase();
+	let oLowerIterator			= this.getLowerIterator();
+	let oUpperIterator			= this.getUpperIterator();
+	let isPreScript				= this.Pr.type === -1;
 
-    if (isPreScript)
-    {
-        let oPosLowerIterator	= oMathText.Add(oLowerIterator, true);
-        let oPosUpperIterator	= oMathText.Add(oUpperIterator, true);
-        let oPosBase			= oMathText.Add(oBase, true, false);
+	if (isPreScript)
+	{
+		let oPosLowerIterator	= oMathText.Add(oLowerIterator, true);
+		let oPosUpperIterator	= oMathText.Add(oUpperIterator, true);
+		let oPosBase			= oMathText.Add(oBase, true, false);
 
-        oMathText.AddBefore(oPosLowerIterator, "(_");
-        oMathText.AddAfter(oPosLowerIterator, "^");
-        oMathText.AddAfter(oPosUpperIterator, ")");
-    }
-    else
-    {
-        oMathText.Add(oBase, true, 1);
-        oMathText.AddText(new AscMath.MathText("_", oLowerIterator));
+		if (oMathText.IsLaTeX())
+		{
+			oMathText.AddBefore(oPosLowerIterator,	new AscMath.MathText( "{_" , oBase));
+			oMathText.AddAfter(oPosLowerIterator,	new AscMath.MathText( "^" , oBase));
+			oMathText.AddAfter(oPosUpperIterator,	new AscMath.MathText( "}" , oBase));
+		}
+		else
+		{
+			oMathText.AddBefore(oPosLowerIterator,	new AscMath.MathText( "(_" , oBase));
+			oMathText.AddAfter(oPosLowerIterator,	new AscMath.MathText( "^" , oBase));
+			oMathText.AddAfter(oPosUpperIterator,	new AscMath.MathText( ")" , oBase));
+		}
+	}
+	else
+	{
+		if (oMathText.IsLaTeX())
+			oMathText.SetNotWrap();
+
+		oMathText.Add(oBase, true, 1);
+		oMathText.AddText(new AscMath.MathText("_", oLowerIterator));
 
 		oMathText.SetGlobalStyle(oLowerIterator);
-        oMathText.Add(oLowerIterator, true);
+		oMathText.Add(oLowerIterator, true, oMathText.IsLaTeX() ? 1 : undefined);
 
-        oMathText.AddText(new AscMath.MathText("^", oUpperIterator));
+		oMathText.AddText(new AscMath.MathText("^", oUpperIterator));
 
-	    oMathText.SetGlobalStyle(oUpperIterator);
-        oMathText.Add(oUpperIterator, true);
-    }
+		oMathText.SetGlobalStyle(oUpperIterator);
+		oMathText.Add(oUpperIterator, true, oMathText.IsLaTeX() ? 1 : undefined);
+	}
 
 	return oMathText;
 };
@@ -1300,3 +1315,6 @@ window['AscCommonWord'].CDegree = CDegree;
 window["CMathMenuScript"] = CMathMenuScript;
 CMathMenuScript.prototype["get_ScriptType"] = CMathMenuScript.prototype.get_ScriptType;
 CMathMenuScript.prototype["put_ScriptType"] = CMathMenuScript.prototype.put_ScriptType;
+
+AscMath.Degree = CDegree;
+AscMath.DegreeSubSup = CDegreeSubSup;

@@ -778,40 +778,36 @@ CRadical.prototype.GetTextOfElement = function(oMathText)
 
 	let oDegree		= this.getDegree();
 	let oBase		= this.getBase();
-	let oStart;
 
 	if (oMathText.IsLaTeX())
 	{
 		oMathText.SetGlobalStyle(this);
+		oMathText.AddText(new AscMath.MathText("\\sqrt", this));
 		let oDegreeText		= oDegree.GetTextOfElement();
 
 		if (!oDegreeText.IsEmpty())
 		{
-			let oIterator = oMathText.Add(oDegree, true);
-			oStart = oMathText.AddBefore(oIterator, new AscMath.MathText("[", this));
+			let oIterator	= oMathText.Add(oDegree, true);
+			oMathText.AddBefore(oIterator, new AscMath.MathText("[", this));
 			oMathText.AddAfter(oIterator, new AscMath.MathText("]", this));
+		}
 
-			let oPosBase		= oMathText.Add(oBase, true);
-			oMathText.AddBefore(oStart, new AscMath.MathText("\\sqrt", oMathText.GetStyleFromFirst(this)));
-		}
-		else
-		{
-			let oPosBase		= oMathText.Add(oBase, true);
-			oMathText.AddBefore(oPosBase, new AscMath.MathText("\\sqrt", oMathText.GetStyleFromFirst(this)));
-		}
+		let oBaseText		= oBase.GetTextOfElement();
+		if (oBaseText.IsHasText())
+			oMathText.Add(oBase, true, 1);
 	}
 	else
 	{
 		let oDegreeText		= oDegree.GetTextOfElement();
-		let oPosSqrt		= oMathText.AddText(new AscMath.MathText("√", this), true);
-		let nLengthOfDegree	= oDegreeText.GetLength();
+		let nLengthOfDegree	= oDegreeText.GetText();
 
-		if (nLengthOfDegree === 0 || !oDegreeText.IsHasText())
+		if (nLengthOfDegree.length === 0 || !oDegreeText.IsHasText())
 		{
+			let oPosSqrt	= oMathText.AddText(new AscMath.MathText("√", this), true);
 			let oBaseText	= oBase.GetTextOfElement();
-			let nMathBase	= oBaseText.GetLength();
+			let nMathBase	= oBaseText.GetText();
 
-			if (nMathBase <= 1 || !oBaseText.IsHasText() || oBaseText.IsBracket)
+			if (nMathBase.length <= 1 || !oBaseText.IsHasText())
 			{
 				oMathText.AddAfter(oPosSqrt, oBaseText);
 			}
@@ -829,16 +825,17 @@ CRadical.prototype.GetTextOfElement = function(oMathText)
 			{
 				if (strDegree === "3")
 				{
-					oMathText.ChangeContent(new AscMath.MathText("∛", this));
+					oMathText.AddText(new AscMath.MathText("∛", this));
 				}
 				else if (strDegree === "4")
 				{
-					oMathText.ChangeContent(new AscMath.MathText("∜", this));
+					oMathText.AddText(new AscMath.MathText("∜", this));
 				}
 				oMathText.Add(oBase, true);
 			}
 			else
 			{
+				oMathText.AddText(new AscMath.MathText("√", this));
 				oMathText.AddText(new AscMath.MathText("(", this));
 				oMathText.AddText(oDegreeText);
 				oMathText.AddText(new AscMath.MathText("&", this));
@@ -888,3 +885,5 @@ window['AscCommonWord'].CRadical = CRadical;
 window["CMathMenuRadical"] = CMathMenuRadical;
 CMathMenuRadical.prototype["get_HideDegree"] = CMathMenuRadical.prototype.get_HideDegree;
 CMathMenuRadical.prototype["put_HideDegree"] = CMathMenuRadical.prototype.put_HideDegree;
+
+AscMath.Radical = CRadical;

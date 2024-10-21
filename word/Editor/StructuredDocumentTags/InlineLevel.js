@@ -848,12 +848,20 @@ CInlineLevelSdt.prototype.Get_RightPos = function(SearchPos, ContentPos, Depth, 
 };
 CInlineLevelSdt.prototype.Remove = function(nDirection, bOnAddText)
 {
+	let logicDocument  = this.GetLogicDocument();
+	let isRemoveOnDrag = logicDocument ? logicDocument.DragAndDropAction : false;
+	
 	if (this.IsPlaceHolder())
 	{
+		if (isRemoveOnDrag && this.CanBeDeleted())
+		{
+			this.RemoveThisFromParent(true);
+			return true;
+		}
+		
 		if (!this.CanBeDeleted() && !bOnAddText)
 			return true;
 
-		let logicDocument = this.GetLogicDocument();
 		if (!bOnAddText && !this.IsSelectionUse())
 		{
 			this.SelectAll(1);
@@ -878,8 +886,14 @@ CInlineLevelSdt.prototype.Remove = function(nDirection, bOnAddText)
 
 	let result = CParagraphContentWithParagraphLikeContent.prototype.Remove.call(this, nDirection, bOnAddText);
 	
-	let logicDocument = this.GetLogicDocument();
-	if (!result
+	if (isRemoveOnDrag
+		&& this.IsEmpty()
+		&& this.CanBeDeleted())
+	{
+		this.RemoveThisFromParent(true);
+		result = true;
+	}
+	else if (!result
 		&& this.IsEmpty()
 		&& !this.IsPlaceHolder()
 		&& logicDocument
@@ -1373,14 +1387,14 @@ CInlineLevelSdt.prototype.Apply_TextPr = function(TextPr, IncFontSize, ApplyToAl
 				oNewTextPr.FontSizeCS = oCompiledTextPr.GetIncDecFontSizeCS(IncFontSize);
 
 				var oTempTextPr = this.Pr.TextPr.Copy();
-				oTempTextPr.Merge(oNewTextPr);
+				oTempTextPr.Apply(oNewTextPr);
 				this.SetDefaultTextPr(oTempTextPr);
 			}
 		}
 		else
 		{
 			var oTempTextPr = this.Pr.TextPr.Copy();
-			oTempTextPr.Merge(TextPr);
+			oTempTextPr.Apply(TextPr);
 			this.SetDefaultTextPr(oTempTextPr);
 		}
 	}
@@ -2212,6 +2226,10 @@ CInlineLevelSdt.prototype.GetPictureFormPr = function()
 {
 	return this.Pr.PictureFormPr;
 };
+CInlineLevelSdt.prototype.IsSignatureForm = function()
+{
+	return (this.IsForm() && this.IsPicture() && undefined !== this.Pr.PictureFormPr && this.Pr.PictureFormPr.IsSignature());
+};
 /**
  * Проверяем является ли данный контейнер специальным для поля со списком
  * @returns {boolean}
@@ -2427,6 +2445,10 @@ CInlineLevelSdt.prototype.private_UpdateDatePickerContent = function()
 {
 	if (!this.Pr.Date)
 		return;
+	
+	let isTemporary = this.Pr.Temporary;
+	if (isTemporary)
+		this.Pr.Temporary = false;
 
 	if (this.IsPlaceHolder())
 		this.ReplacePlaceHolderWithContent();
@@ -2484,6 +2506,12 @@ CInlineLevelSdt.prototype.private_UpdateDatePickerContent = function()
 
 	if (oRun)
 		oRun.AddText(sText);
+	
+	if (isTemporary)
+	{
+		this.Pr.Temporary = true;
+		this.RemoveContentControlWrapper();
+	}
 };
 /**
  * Является ли данный контейнер специальной текстовой формой
@@ -2979,7 +3007,7 @@ CInlineLevelSdt.prototype.IsFormFilled = function()
 			return (sText !== "");
 		}
 	}
-	else if (this.IsComboBox())
+	else if (this.IsComboBox() || this.IsDatePicker())
 	{
 		var sText = this.GetSelectedText(true);
 		return (sText !== "");

@@ -9032,13 +9032,13 @@ function RangeDataManagerElem(bbox, data)
 							//all row
 							//Table1[@]
 
-							//return this.DisplayName + "[" + AscCommon.cStrucTableReservedWords.at + "]";
+							return this.DisplayName + "[" + AscCommon.cStrucTableReservedWords.at + "]";
 						} else {
 							//part of row
 							//Table1[@[Column2]:[Column3]]
 							//Table1[@Column1]
 
-							//return this.DisplayName + "[" + AscCommon.cStrucTableReservedWords.at + getColumnNameRange(startCol, endCol) + "]";
+							return this.DisplayName + "[" + AscCommon.cStrucTableReservedWords.at + getColumnNameRange(startCol, endCol) + "]";
 						}
 					}
 				}
@@ -14585,16 +14585,21 @@ function RangeDataManagerElem(bbox, data)
 		var trueZoom = kF * AscCommon.AscBrowser.retinaPixelRatio;
 		var _height = Math.floor(height * kF);
 		var _width = Math.floor(width * kF);
+		var borderWidth = 1;
 		if (trueZoom !== this.pageZoom) {
 			this.pageZoom = trueZoom;
-			this.ctx.canvas.style.height = _height + 2 + "px";
-			this.ctx.canvas.style.width = _width + 2 + "px";
+			this.ctx.canvas.style.height = _height + "px";
+			this.ctx.canvas.style.width = _width + borderWidth * 2 + "px";
 			this.ctx.canvas.height = AscCommon.AscBrowser.convertToRetinaValue(_height, true);
 			this.ctx.canvas.width = AscCommon.AscBrowser.convertToRetinaValue(_width, true);
 			isChangeForZoom = true;
 		}
-		this.ctx.canvas.style.marginLeft = canvasWidth/2 - _width / 2 + "px";
-		this.ctx.canvas.style.marginTop = canvasHeight/2 - _height / 2 + canvasTopPadding * kF + "px";
+		this.ctx.canvas.style.marginLeft = Math.floor(canvasWidth/2 - _width / 2) + "px";
+		let topMargin = Math.floor(canvasHeight/2 - _height / 2 + canvasTopPadding * kF);
+		if (topMargin + _height > canvasHeight) {
+			topMargin = canvasHeight - _height;
+		}
+		this.ctx.canvas.style.marginTop = topMargin + "px";
 
 
 		kF = trueZoom;
@@ -14846,7 +14851,7 @@ function RangeDataManagerElem(bbox, data)
 		var i;
 		var length = r.GetLong();
 		for (i = 0; i < length; ++i) {
-			var definedName = new ExternalDefinedName();
+			var definedName = new ExternalDefinedName(this);
 			definedName.Read_FromBinary2(r);
 			if(!this.DefinedNames) {
 				this.DefinedNames = [];
@@ -14953,7 +14958,7 @@ function RangeDataManagerElem(bbox, data)
 
 		if (this.DefinedNames) {
 			for (var i = 0; i < this.DefinedNames.length; i++) {
-				newObj.DefinedNames.push(this.DefinedNames[i].clone);
+				newObj.DefinedNames.push(this.DefinedNames[i].clone());
 			}
 		}
 
@@ -14986,6 +14991,34 @@ function RangeDataManagerElem(bbox, data)
 		return newObj;
 	};
 
+	ExternalReference.prototype.initPostOpen = function () {
+		let res = null;
+		if (this.DefinedNames && this.DefinedNames.length) {
+			for (let i = 0; i < this.DefinedNames.length; i++) {
+				this.DefinedNames[i].parent = this;
+			}
+		}
+		this.initWorksheetsFromSheetDataSet();
+		this.initWorkbook();
+
+		return res;
+	};
+
+	ExternalReference.prototype.getDefinedNamesBySheetIndex = function (index) {
+		let res = null;
+		if (this.DefinedNames && this.DefinedNames.length) {
+			for (let i = 0; i < this.DefinedNames.length; i++) {
+				if (this.DefinedNames[i].SheetId === index) {
+					if (!res) {
+						res = [];
+					}
+					res.push(this.DefinedNames[i]);
+				}
+			}
+		}
+		return res;
+	};
+	
 	ExternalReference.prototype.updateData = function (arr, oPortalData) {
 		var t = this;
 		var isChanged = false;
@@ -15004,6 +15037,17 @@ function RangeDataManagerElem(bbox, data)
 				//меняем лист
 				AscFormat.ExecuteNoHistory(function(){
 					AscCommonExcel.executeInR1C1Mode(false, function () {
+
+						let defNames = wsTo.workbook && wsTo.workbook.dependencyFormulas && wsTo.workbook.dependencyFormulas.defNames;
+						wsTo.workbook.dependencyFormulas._foreachDefName(function (defName) {
+							var api_sheet = Asc['editor'];
+							var wb = api_sheet.wbModel;
+							let realWb = defName.wb;
+							defName.wb = wb;
+							defName.onFormulaEvent(AscCommon.c_oNotifyParentType.Change);
+							defName.wb = realWb;
+						});
+
 						var oAllRange = wsTo.getRange3(0, 0, wsTo.getRowsCount(), wsTo.getColsCount());
 						oAllRange.cleanAll();
 						wsTo.copyFrom(arr[i], wsTo.sName);
@@ -15018,6 +15062,14 @@ function RangeDataManagerElem(bbox, data)
 					if (externalSheetDataSet) {
 						if (externalSheetDataSet.updateFromSheet(t.worksheets[sheetName])) {
 							isChanged = true;
+						}
+					}
+					let externalDefName = this.getDefinedNamesBySheetIndex(index);
+					if (externalDefName) {
+						for (let i = 0; i < externalDefName.length; i++) {
+							if (externalDefName[i].updateFromSheet(t.worksheets[sheetName])) {
+								isChanged = true;
+							}
 						}
 					}
 				}
@@ -15195,6 +15247,9 @@ function RangeDataManagerElem(bbox, data)
 
 
 			//клонируем все данные из SheetDataSet в данный темповый Worksheet
+			if (!sheetDataSet || !sheetDataSet.Row) {
+				return;
+			}
 			for (var i = 0; i < sheetDataSet.Row.length; i++) {
 				if (!sheetDataSet.Row[i] || !sheetDataSet.Row[i].Cell) {
 					continue;
@@ -15217,12 +15272,38 @@ function RangeDataManagerElem(bbox, data)
 		}
 	};
 
+	ExternalReference.prototype.initWorkbook = function () {
+		if (this.DefinedNames) {
+			let wb = this.getWb();
+			for (let i = 0; i < this.DefinedNames.length; i++) {
+				let defName = this.DefinedNames[i];
+				let ws = this.getSheetByIndex(defName.SheetId);
+				if (ws != null) {
+					//on parse name3d use g_DefNameWorksheet
+					let RealDefNameWorksheet = AscCommonExcel.g_DefNameWorksheet;
+					AscCommonExcel.g_DefNameWorksheet = ws;
+					let oDefName = new Asc.asc_CDefName(defName.Name, defName.RefersTo);
+					wb.editDefinesNames(null, oDefName);
+					AscCommonExcel.g_DefNameWorksheet = RealDefNameWorksheet;	
+				}
+			}
+		}
+	};
+
 	ExternalReference.prototype.getSheetByName = function (val) {
 		for (var i = 0; i < this.SheetNames.length; i++) {
 			//если есть this.worksheets, если нет - проверить и обработать
 			if (this.SheetNames[i] === val) {
 				return i;
 			}
+		}
+		return null;
+	};
+
+	ExternalReference.prototype.getSheetByIndex = function (val) {
+		let sheetName = this.SheetNames[val];
+		if (sheetName != null) {
+			return this.worksheets && this.worksheets[sheetName];
 		}
 		return null;
 	};
@@ -15274,6 +15355,38 @@ function RangeDataManagerElem(bbox, data)
 				}
 			}
 		}
+	};
+
+	ExternalReference.prototype.initDefinedName = function (val) {
+		if (!val) {
+			return;
+		}
+
+		const index = this.getSheetByName(val.ws.sName);
+		const name = val.value;
+
+		//check on exist
+		if (this.getDefName(name, index)) {
+			return;
+		}
+
+		let defName = new ExternalDefinedName(this);
+		defName.Name = name;
+		defName.SheetId = index;
+		this.addDefName(defName);
+	};
+
+	ExternalReference.prototype.addDefName = function (defName) {
+		this.DefinedNames.push(defName);
+	};
+
+	ExternalReference.prototype.getDefName = function (name, sheetId) {
+		for (let i in this.DefinedNames) {
+			if (this.DefinedNames[i] && this.DefinedNames[i].SheetId === sheetId && this.DefinedNames[i].Name === name) {
+				return this.DefinedNames[i];
+			}
+		}
+		return null;
 	};
 
 	ExternalReference.prototype.removeSheetById = function (sheetId) {
@@ -15342,6 +15455,27 @@ function RangeDataManagerElem(bbox, data)
 
 		return sPath;
 	};
+
+	ExternalReference.prototype.addDataSetFrom = function (eR) {
+		if (!eR.SheetDataSet) {
+			return;
+		}
+		for (let i = 0; i < eR.SheetDataSet.length; i++) {
+			let _sheetId = eR.SheetDataSet[i].SheetId;
+			let sheetName = eR.SheetNames[_sheetId];
+			if (sheetName) {
+				let sheetDataSet = this.getSheetDataSetByName(sheetName);
+				if (sheetDataSet) {
+					//add new from eR to this
+					sheetDataSet.addFrom(eR.SheetDataSet[i])
+				} else {
+					//add new structure
+
+				}
+			}
+		}
+	};
+
 
 
 	function asc_CExternalReference() {
@@ -15554,6 +15688,18 @@ function RangeDataManagerElem(bbox, data)
 		return row;
 	};
 
+	ExternalSheetDataSet.prototype.addFrom = function(oSheetDataSet) {
+		var row = null;
+
+		for (var i = 0; i < oSheetDataSet.Row.length; i++) {
+			if (!this.Row[i]) {
+				this.Row[i] = oSheetDataSet.Row[i].clone();
+			}
+		}
+
+		return row;
+	};
+
 
 
 	function ExternalRow() {
@@ -15748,10 +15894,12 @@ function RangeDataManagerElem(bbox, data)
 		return res;
 	};
 
-	function ExternalDefinedName() {
+	function ExternalDefinedName(parent) {
 		this.Name = null;
 		this.RefersTo = null;
 		this.SheetId = null;
+
+		this.parent = parent;
 	}
 
 	ExternalDefinedName.prototype.Read_FromBinary2 = function(r) {
@@ -15766,21 +15914,21 @@ function RangeDataManagerElem(bbox, data)
 		}
 	};
 	ExternalDefinedName.prototype.Write_ToBinary2 = function(w) {
-		if (null != this.Ref) {
+		if (null != this.Name) {
 			w.WriteBool(true);
 			w.WriteString2(this.Name);
 		} else {
 			w.WriteBool(false);
 		}
 
-		if (null != this.CellType) {
+		if (null != this.RefersTo) {
 			w.WriteBool(true);
 			w.WriteString2(this.RefersTo);
 		} else {
 			w.WriteBool(false);
 		}
 
-		if (null != this.CellValue) {
+		if (null != this.SheetId) {
 			w.WriteBool(true);
 			w.WriteString2(this.SheetId);
 		} else {
@@ -15788,15 +15936,45 @@ function RangeDataManagerElem(bbox, data)
 		}
 	};
 	ExternalDefinedName.prototype.clone = function () {
-		var newObj = new ExternalDefinedName();
+		var newObj = new ExternalDefinedName(this);
 
 		newObj.Name = this.Name;
 		newObj.RefersTo = this.RefersTo;
 		newObj.SheetId = this.SheetId;
 
+		newObj.parent = this.parent;
+
 		return newObj;
 	};
+	ExternalDefinedName.prototype.updateFromSheet = function(sheet) {
+		var isChanged = false;
+		if (sheet) {
+			//sheet.workbook.dependencyFormulas.defNames
+			//check on sheet name and def name
+			let defNames = sheet.workbook && sheet.workbook.dependencyFormulas && sheet.workbook.dependencyFormulas.defNames;
+			let thisSheet = defNames && this.parent.SheetNames[this.SheetId];
+			if (thisSheet) {
+				if (defNames.sheet[thisSheet]) {
+					if (defNames.sheet[thisSheet][this.Name]) {
+						isChanged = true;
+					}
+				}
 
+				if (!isChanged) {
+					if (defNames.wb[this.Name]) {
+						this.RefersTo = defNames.wb[this.Name].getRef();
+						//need init from range + updateFromSheet from data set
+						if (this.RefersTo) {
+							this.parent.updateSheetData(thisSheet, sheet, [AscCommonExcel.g_oRangeCache.getAscRange(this.RefersTo.split("!")[1])]);
+						}
+
+						isChanged = true;
+					}
+				}
+			}
+		}
+		return isChanged;
+	};
 
 	//CellWatch
 	function CCellWatch(ws) {
