@@ -628,8 +628,10 @@
 			let bottomMarginInch = shape.getCellNumberValueWithScale("BottomMargin", drawingPageScale);
 
 
-			// CHECKS SIGN but positive tIns gives bottom inset. Check https://disk.yandex.ru/d/IU1vdjzcF9p3IQ
+			// CHECKS SIGN but positive tIns gives bottom inset.
+			// Check https://disk.yandex.ru/d/IU1vdjzcF9p3IQ , https://disk.yandex.ru/d/0l7elFyX5INcXg
 			// it is may global graphics transform issue so set bottom inset as top and opposite
+			// NO REVERT NOW. TOP IS TOP BOTTOM IS BOTTOM
 			oBodyPr.tIns = topMarginInch * g_dKoef_in_to_mm;
 			oBodyPr.bIns = bottomMarginInch * g_dKoef_in_to_mm;
 			oBodyPr.lIns = leftMarginInch * g_dKoef_in_to_mm;
