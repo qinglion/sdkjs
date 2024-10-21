@@ -5666,7 +5666,7 @@ var paper = function (self, undefined) {
 	};
 
 	Curve.static = {
-		addLocation: function(locations, include, c1, t1, c2, t2, overlap) {
+		addLocation: function (locations, include, c1, t1, c2, t2, overlap) {
 			var excludeStart = !overlap && c1.getPrevious() === c2,
 				excludeEnd = !overlap && c1 !== c2 && c1.getNext() === c2,
 				tMin = 1e-8,
@@ -5685,7 +5685,7 @@ var paper = function (self, undefined) {
 				}
 			}
 		},
-		addCurveIntersections: function(v1, v2, c1, c2, locations, include, flip,
+		addCurveIntersections: function (v1, v2, c1, c2, locations, include, flip,
 			recursion, calls, tMin, tMax, uMin, uMax) {
 			if (++calls >= 4096 || ++recursion >= 40)
 				return calls;
@@ -5757,7 +5757,7 @@ var paper = function (self, undefined) {
 			}
 			return calls;
 		},
-		getConvexHull: function(dq0, dq1, dq2, dq3) {
+		getConvexHull: function (dq0, dq1, dq2, dq3) {
 			var p0 = [0, dq0],
 				p1 = [1 / 3, dq1],
 				p2 = [2 / 3, dq2],
@@ -5778,7 +5778,7 @@ var paper = function (self, undefined) {
 			}
 			return (dist1 || dist2) < 0 ? hull.reverse() : hull;
 		},
-		clipConvexHull: function(hullTop, hullBottom, dMin, dMax) {
+		clipConvexHull: function (hullTop, hullBottom, dMin, dMax) {
 			if (hullTop[0][1] < dMin) {
 				return Curve.static.clipConvexHullPart(hullTop, true, dMin);
 			} else if (hullBottom[0][1] > dMax) {
@@ -5787,7 +5787,7 @@ var paper = function (self, undefined) {
 				return hullTop[0][0];
 			}
 		},
-		clipConvexHullPart: function(part, top, threshold) {
+		clipConvexHullPart: function (part, top, threshold) {
 			var px = part[0][0],
 				py = part[0][1];
 			for (var i = 1, l = part.length; i < l; i++) {
@@ -5802,7 +5802,7 @@ var paper = function (self, undefined) {
 			}
 			return null;
 		},
-		getCurveLineIntersections: function(v, px, py, vx, vy) {
+		getCurveLineIntersections: function (v, px, py, vx, vy) {
 			var isZero = Numerical.isZero;
 			if (isZero(vx) && isZero(vy)) {
 				var t = Curve.getTimeOf(v, new Point(px, py));
@@ -5823,7 +5823,7 @@ var paper = function (self, undefined) {
 			Curve.solveCubic(rv, 1, 0, roots, 0, 1);
 			return roots;
 		},
-		addCurveLineIntersections: function(v1, v2, c1, c2, locations, include,
+		addCurveLineIntersections: function (v1, v2, c1, c2, locations, include,
 			flip) {
 			var x1 = v2[0], y1 = v2[1],
 				x2 = v2[6], y2 = v2[7];
@@ -5839,7 +5839,7 @@ var paper = function (self, undefined) {
 				}
 			}
 		},
-		addLineIntersection: function(v1, v2, c1, c2, locations, include) {
+		addLineIntersection: function (v1, v2, c1, c2, locations, include) {
 			var pt = Line.intersect(
 				v1[0], v1[1], v1[6], v1[7],
 				v2[0], v2[1], v2[6], v2[7]);
@@ -5849,11 +5849,11 @@ var paper = function (self, undefined) {
 					c2, Curve.getTimeOf(v2, pt));
 			}
 		},
-		getCurveIntersections: function(v1, v2, c1, c2, locations, include) {
+		getCurveIntersections: function (v1, v2, c1, c2, locations, include) {
 			var epsilon = 1e-12,
 				min = Math.min,
 				max = Math.max;
-		
+
 			if (max(v1[0], v1[2], v1[4], v1[6]) + epsilon >
 				min(v2[0], v2[2], v2[4], v2[6]) &&
 				min(v1[0], v1[2], v1[4], v1[6]) - epsilon <
@@ -5904,7 +5904,7 @@ var paper = function (self, undefined) {
 			}
 			return locations;
 		},
-		getSelfIntersection: function(v1, c1, locations, include) {
+		getSelfIntersection: function (v1, c1, locations, include) {
 			var info = Curve.classify(v1);
 			if (info.type === 'loop') {
 				var roots = info.roots;
@@ -5914,7 +5914,7 @@ var paper = function (self, undefined) {
 			}
 			return locations;
 		},
-		getIntersections: function(curves1, curves2, include, matrix1, matrix2,
+		getIntersections: function (curves1, curves2, include, matrix1, matrix2,
 			_returnFirst) {
 			var epsilon = 1e-7,
 				self = !curves2;
@@ -5925,7 +5925,7 @@ var paper = function (self, undefined) {
 				values1 = new Array(length1),
 				values2 = self ? values1 : new Array(length2),
 				locations = [];
-		
+
 			for (var i = 0; i < length1; i++) {
 				values1[i] = curves1[i].getValues(matrix1);
 			}
@@ -5951,7 +5951,7 @@ var paper = function (self, undefined) {
 						if (!self || index2 > index1) {
 							var curve2 = curves2[index2],
 								v2 = values2[index2];
-								Curve.static.getCurveIntersections(
+							Curve.static.getCurveIntersections(
 								v1, v2, curve1, curve2, locations, include);
 						}
 					}
@@ -5959,14 +5959,14 @@ var paper = function (self, undefined) {
 			}
 			return locations;
 		},
-		getOverlaps: function(v1, v2) {
-		
+		getOverlaps: function (v1, v2) {
+
 			function getSquaredLineLength(v) {
 				var x = v[6] - v[0],
 					y = v[7] - v[1];
 				return x * x + y * y;
 			}
-		
+
 			var abs = Math.abs,
 				getDistance = Line.getDistance,
 				timeEpsilon = 1e-8,
@@ -5994,7 +5994,7 @@ var paper = function (self, undefined) {
 			if (straight1 ^ straight2) {
 				return null;
 			}
-		
+
 			var v = [v1, v2],
 				pairs = [];
 			for (var i = 0; i < 4 && pairs.length < 2; i++) {
@@ -6028,7 +6028,7 @@ var paper = function (self, undefined) {
 			}
 			return pairs;
 		},
-		getTimesWithTangent: function(v, tangent) {
+		getTimesWithTangent: function (v, tangent) {
 			var x0 = v[0], y0 = v[1],
 				x1 = v[2], y1 = v[3],
 				x2 = v[4], y2 = v[5],
@@ -6080,363 +6080,386 @@ var paper = function (self, undefined) {
 			: Curve.static.getSelfIntersection(v1, this, []);
 	};
 
-	var CurveLocation = Base.extend({
-		_class: 'CurveLocation',
-
-		initialize: function CurveLocation(curve, time, point, _overlap, _distance) {
-			if (time >= 0.99999999) {
-				var next = curve.getNext();
-				if (next) {
-					time = 0;
-					curve = next;
-				}
+	var CurveLocation = function (curve, time, point, _overlap, _distance) {
+		if (time >= 0.99999999) {
+			var next = curve.getNext();
+			if (next) {
+				time = 0;
+				curve = next;
 			}
-			this._setCurve(curve);
-			this._time = time;
-			this._point = point || curve.getPointAtTime(time);
-			this._overlap = _overlap;
-			this._distance = _distance;
-			this._intersection = this._next = this._previous = null;
-		},
-
-		_setPath: function (path) {
-			this._path = path;
-			this._version = path ? path._version : 0;
-		},
-
-		_setCurve: function (curve) {
-			this._setPath(curve._path);
-			this._curve = curve;
-			this._segment = null;
-			this._segment1 = curve._segment1;
-			this._segment2 = curve._segment2;
-		},
-
-		_setSegment: function (segment) {
-			var curve = segment.getCurve();
-			if (curve) {
-				this._setCurve(curve);
-			} else {
-				this._setPath(segment._path);
-				this._segment1 = segment;
-				this._segment2 = null;
-			}
-			this._segment = segment;
-			this._time = segment === this._segment1 ? 0 : 1;
-			this._point = segment._point.clone();
-		},
-
-		getSegment: function () {
-			var segment = this._segment;
-			if (!segment) {
-				var curve = this.getCurve(),
-					time = this.getTime();
-				if (time === 0) {
-					segment = curve._segment1;
-				} else if (time === 1) {
-					segment = curve._segment2;
-				} else if (time != null) {
-					segment = curve.getPartLength(0, time)
-						< curve.getPartLength(time, 1)
-						? curve._segment1
-						: curve._segment2;
-				}
-				this._segment = segment;
-			}
-			return segment;
-		},
-
-		getCurve: function () {
-			var path = this._path,
-				that = this;
-			if (path && path._version !== this._version) {
-				this._time = this._offset = this._curveOffset = this._curve = null;
-			}
-
-			function trySegment(segment) {
-				var curve = segment && segment.getCurve();
-				if (curve && (that._time = curve.getTimeOf(that._point)) != null) {
-					that._setCurve(curve);
-					return curve;
-				}
-			}
-
-			return this._curve
-				|| trySegment(this._segment)
-				|| trySegment(this._segment1)
-				|| trySegment(this._segment2.getPrevious());
-		},
-
-		getPath: function () {
-			var curve = this.getCurve();
-			return curve && curve._path;
-		},
-
-		getIndex: function () {
-			var curve = this.getCurve();
-			return curve && curve.getIndex();
-		},
-
-		getTime: function () {
-			var curve = this.getCurve(),
-				time = this._time;
-			return curve && time == null
-				? this._time = curve.getTimeOf(this._point)
-				: time;
-		},
-
-		getParameter: '#getTime',
-
-		getPoint: function () {
-			return this._point;
-		},
-
-		getOffset: function () {
-			var offset = this._offset;
-			if (offset == null) {
-				offset = 0;
-				var path = this.getPath(),
-					index = this.getIndex();
-				if (path && index != null) {
-					var curves = path.getCurves();
-					for (var i = 0; i < index; i++)
-						offset += curves[i].getLength();
-				}
-				this._offset = offset += this.getCurveOffset();
-			}
-			return offset;
-		},
-
-		getCurveOffset: function () {
-			var offset = this._curveOffset;
-			if (offset == null) {
-				var curve = this.getCurve(),
-					time = this.getTime();
-				this._curveOffset = offset = time != null && curve
-					&& curve.getPartLength(0, time);
-			}
-			return offset;
-		},
-
-		getIntersection: function () {
-			return this._intersection;
-		},
-
-		getDistance: function () {
-			return this._distance;
-		},
-
-		divide: function () {
-			var curve = this.getCurve(),
-				res = curve && curve.divideAtTime(this.getTime());
-			if (res) {
-				this._setSegment(res._segment1);
-			}
-			return res;
-		},
-
-		split: function () {
-			var curve = this.getCurve(),
-				path = curve._path,
-				res = curve && curve.splitAtTime(this.getTime());
-			if (res) {
-				this._setSegment(path.getLastSegment());
-			}
-			return res;
-		},
-
-		equals: function (loc, _ignoreOther) {
-			var res = this === loc;
-			if (!res && loc instanceof CurveLocation) {
-				var c1 = this.getCurve(),
-					c2 = loc.getCurve(),
-					p1 = c1._path,
-					p2 = c2._path;
-				if (p1 === p2) {
-					var abs = Math.abs,
-						epsilon = 1e-7,
-						diff = abs(this.getOffset() - loc.getOffset()),
-						i1 = !_ignoreOther && this._intersection,
-						i2 = !_ignoreOther && loc._intersection;
-					res = (diff < epsilon
-						|| p1 && abs(p1.getLength() - diff) < epsilon)
-						&& (!i1 && !i2 || i1 && i2 && i1.equals(i2, true));
-				}
-			}
-			return res;
-		},
-
-		toString: function () {
-			var parts = [],
-				point = this.getPoint(),
-				f = Formatter.instance;
-			if (point)
-				parts.push('point: ' + point);
-			var index = this.getIndex();
-			if (index != null)
-				parts.push('index: ' + index);
-			var time = this.getTime();
-			if (time != null)
-				parts.push('time: ' + f.number(time));
-			if (this._distance != null)
-				parts.push('distance: ' + f.number(this._distance));
-			return '{ ' + parts.join(', ') + ' }';
-		},
-
-		isTouching: function () {
-			var inter = this._intersection;
-			if (inter && this.getTangent().isCollinear(inter.getTangent())) {
-				var curve1 = this.getCurve(),
-					curve2 = inter.getCurve();
-				return !(curve1.isStraight() && curve2.isStraight()
-					&& curve1.getLine().intersect(curve2.getLine()));
-			}
-			return false;
-		},
-
-		isCrossing: function () {
-			var inter = this._intersection;
-			if (!inter)
-				return false;
-			var t1 = this.getTime(),
-				t2 = inter.getTime(),
-				tMin = 1e-8,
-				tMax = 1 - tMin,
-				t1Inside = t1 >= tMin && t1 <= tMax,
-				t2Inside = t2 >= tMin && t2 <= tMax;
-			if (t1Inside && t2Inside)
-				return !this.isTouching();
-			var c2 = this.getCurve(),
-				c1 = c2 && t1 < tMin ? c2.getPrevious() : c2,
-				c4 = inter.getCurve(),
-				c3 = c4 && t2 < tMin ? c4.getPrevious() : c4;
-			if (t1 > tMax)
-				c2 = c2.getNext();
-			if (t2 > tMax)
-				c4 = c4.getNext();
-			if (!c1 || !c2 || !c3 || !c4)
-				return false;
-
-			var offsets = [];
-
-			function addOffsets(curve, end) {
-				var v = curve.getValues(),
-					roots = Curve.classify(v).roots || Curve.getPeaks(v),
-					count = roots.length,
-					offset = Curve.getLength(v,
-						end && count ? roots[count - 1] : 0,
-						!end && count ? roots[0] : 1);
-				offsets.push(count ? offset : offset / 32);
-			}
-
-			function isInRange(angle, min, max) {
-				return min < max
-					? angle > min && angle < max
-					: angle > min || angle < max;
-			}
-
-			if (!t1Inside) {
-				addOffsets(c1, true);
-				addOffsets(c2, false);
-			}
-			if (!t2Inside) {
-				addOffsets(c3, true);
-				addOffsets(c4, false);
-			}
-			var pt = this.getPoint(),
-				offset = Math.min.apply(Math, offsets),
-				v2 = t1Inside ? c2.getTangentAtTime(t1)
-					: c2.getPointAt(offset).subtract(pt),
-				v1 = t1Inside ? v2.negate()
-					: c1.getPointAt(-offset).subtract(pt),
-				v4 = t2Inside ? c4.getTangentAtTime(t2)
-					: c4.getPointAt(offset).subtract(pt),
-				v3 = t2Inside ? v4.negate()
-					: c3.getPointAt(-offset).subtract(pt),
-				a1 = v1.getAngle(),
-				a2 = v2.getAngle(),
-				a3 = v3.getAngle(),
-				a4 = v4.getAngle();
-			return !!(t1Inside
-				? (isInRange(a1, a3, a4) ^ isInRange(a2, a3, a4)) &&
-				(isInRange(a1, a4, a3) ^ isInRange(a2, a4, a3))
-				: (isInRange(a3, a1, a2) ^ isInRange(a4, a1, a2)) &&
-				(isInRange(a3, a2, a1) ^ isInRange(a4, a2, a1)));
-		},
-
-		hasOverlap: function () {
-			return !!this._overlap;
 		}
-	}, Base.each(Curve._evaluateMethods, function (name) {
-		var get = name + 'At';
-		this[name] = function () {
+		this._setCurve(curve);
+		this._time = time;
+		this._point = point || curve.getPointAtTime(time);
+		this._overlap = _overlap;
+		this._distance = _distance;
+		this._intersection = this._next = this._previous = null;
+	};
+	InitClassWithStatics(CurveLocation, Base);
+	CurveLocation.prototype.initialize = CurveLocation;
+	CurveLocation.prototype._class = 'CurveLocation';
+	CurveLocation.prototype._setPath = function (path) {
+		this._path = path;
+		this._version = path ? path._version : 0;
+	};
+	CurveLocation.prototype._setCurve = function (curve) {
+		this._setPath(curve._path);
+		this._curve = curve;
+		this._segment = null;
+		this._segment1 = curve._segment1;
+		this._segment2 = curve._segment2;
+	};
+	CurveLocation.prototype._setSegment = function (segment) {
+		var curve = segment.getCurve();
+		if (curve) {
+			this._setCurve(curve);
+		} else {
+			this._setPath(segment._path);
+			this._segment1 = segment;
+			this._segment2 = null;
+		}
+		this._segment = segment;
+		this._time = segment === this._segment1 ? 0 : 1;
+		this._point = segment._point.clone();
+	};
+	CurveLocation.prototype.getSegment = function () {
+		var segment = this._segment;
+		if (!segment) {
 			var curve = this.getCurve(),
 				time = this.getTime();
-			return time != null && curve && curve[get](time, true);
-		};
-	}, {
-		preserve: true
-	}),
-		new function () {
-
-			function insert(locations, loc, merge) {
-				var length = locations.length,
-					l = 0,
-					r = length - 1;
-
-				function search(index, dir) {
-					for (var i = index + dir; i >= -1 && i <= length; i += dir) {
-						var loc2 = locations[((i % length) + length) % length];
-						if (!loc.getPoint().isClose(loc2.getPoint(),
-							1e-7))
-							break;
-						if (loc.equals(loc2))
-							return loc2;
-					}
-					return null;
-				}
-
-				while (l <= r) {
-					var m = (l + r) >>> 1,
-						loc2 = locations[m],
-						found;
-					if (merge && (found = loc.equals(loc2) ? loc2
-						: (search(m, -1) || search(m, 1)))) {
-						if (loc._overlap) {
-							found._overlap = found._intersection._overlap = true;
-						}
-						return found;
-					}
-					var path1 = loc.getPath(),
-						path2 = loc2.getPath(),
-						diff = path1 !== path2
-							? path1._id - path2._id
-							: (loc.getIndex() + loc.getTime())
-							- (loc2.getIndex() + loc2.getTime());
-					if (diff < 0) {
-						r = m - 1;
-					} else {
-						l = m + 1;
-					}
-				}
-				locations.splice(l, 0, loc);
-				return loc;
+			if (time === 0) {
+				segment = curve._segment1;
+			} else if (time === 1) {
+				segment = curve._segment2;
+			} else if (time != null) {
+				segment = curve.getPartLength(0, time)
+					< curve.getPartLength(time, 1)
+					? curve._segment1
+					: curve._segment2;
 			}
+			this._segment = segment;
+		}
+		return segment;
+	};
+	CurveLocation.prototype.getCurve = function () {
+		var path = this._path,
+			that = this;
+		if (path && path._version !== this._version) {
+			this._time = this._offset = this._curveOffset = this._curve = null;
+		}
 
-			return {
-				statics: {
-					insert: insert,
+		function trySegment(segment) {
+			var curve = segment && segment.getCurve();
+			if (curve && (that._time = curve.getTimeOf(that._point)) != null) {
+				that._setCurve(curve);
+				return curve;
+			}
+		}
 
-					expand: function (locations) {
-						var expanded = locations.slice();
-						for (var i = locations.length - 1; i >= 0; i--) {
-							insert(expanded, locations[i]._intersection, false);
-						}
-						return expanded;
-					}
+		return this._curve
+			|| trySegment(this._segment)
+			|| trySegment(this._segment1)
+			|| trySegment(this._segment2.getPrevious());
+	};
+	CurveLocation.prototype.getPath = function () {
+		var curve = this.getCurve();
+		return curve && curve._path;
+	};
+	CurveLocation.prototype.getIndex = function () {
+		var curve = this.getCurve();
+		return curve && curve.getIndex();
+	};
+	CurveLocation.prototype.getTime = function () {
+		var curve = this.getCurve(),
+			time = this._time;
+		return curve && time == null
+			? this._time = curve.getTimeOf(this._point)
+			: time;
+	};
+	CurveLocation.prototype.getParameter = CurveLocation.prototype.getTime;
+	CurveLocation.prototype.getPoint = function () {
+		return this._point;
+	};
+	CurveLocation.prototype.getOffset = function () {
+		var offset = this._offset;
+		if (offset == null) {
+			offset = 0;
+			var path = this.getPath(),
+				index = this.getIndex();
+			if (path && index != null) {
+				var curves = path.getCurves();
+				for (var i = 0; i < index; i++)
+					offset += curves[i].getLength();
+			}
+			this._offset = offset += this.getCurveOffset();
+		}
+		return offset;
+	};
+	CurveLocation.prototype.getCurveOffset = function () {
+		var offset = this._curveOffset;
+		if (offset == null) {
+			var curve = this.getCurve(),
+				time = this.getTime();
+			this._curveOffset = offset = time != null && curve
+				&& curve.getPartLength(0, time);
+		}
+		return offset;
+	};
+	CurveLocation.prototype.getIntersection = function () {
+		return this._intersection;
+	};
+	CurveLocation.prototype.getDistance = function () {
+		return this._distance;
+	};
+	CurveLocation.prototype.divide = function () {
+		var curve = this.getCurve(),
+			res = curve && curve.divideAtTime(this.getTime());
+		if (res) {
+			this._setSegment(res._segment1);
+		}
+		return res;
+	};
+	CurveLocation.prototype.split = function () {
+		var curve = this.getCurve(),
+			path = curve._path,
+			res = curve && curve.splitAtTime(this.getTime());
+		if (res) {
+			this._setSegment(path.getLastSegment());
+		}
+		return res;
+	};
+	CurveLocation.prototype.equals = function (loc, _ignoreOther) {
+		var res = this === loc;
+		if (!res && loc instanceof CurveLocation) {
+			var c1 = this.getCurve(),
+				c2 = loc.getCurve(),
+				p1 = c1._path,
+				p2 = c2._path;
+			if (p1 === p2) {
+				var abs = Math.abs,
+					epsilon = 1e-7,
+					diff = abs(this.getOffset() - loc.getOffset()),
+					i1 = !_ignoreOther && this._intersection,
+					i2 = !_ignoreOther && loc._intersection;
+				res = (diff < epsilon
+					|| p1 && abs(p1.getLength() - diff) < epsilon)
+					&& (!i1 && !i2 || i1 && i2 && i1.equals(i2, true));
+			}
+		}
+		return res;
+	};
+	CurveLocation.prototype.toString = function () {
+		var parts = [],
+			point = this.getPoint(),
+			f = Formatter.instance;
+		if (point)
+			parts.push('point: ' + point);
+		var index = this.getIndex();
+		if (index != null)
+			parts.push('index: ' + index);
+		var time = this.getTime();
+		if (time != null)
+			parts.push('time: ' + f.number(time));
+		if (this._distance != null)
+			parts.push('distance: ' + f.number(this._distance));
+		return '{ ' + parts.join(', ') + ' }';
+	};
+	CurveLocation.prototype.isTouching = function () {
+		var inter = this._intersection;
+		if (inter && this.getTangent().isCollinear(inter.getTangent())) {
+			var curve1 = this.getCurve(),
+				curve2 = inter.getCurve();
+			return !(curve1.isStraight() && curve2.isStraight()
+				&& curve1.getLine().intersect(curve2.getLine()));
+		}
+		return false;
+	};
+	CurveLocation.prototype.isCrossing = function () {
+		var inter = this._intersection;
+		if (!inter)
+			return false;
+		var t1 = this.getTime(),
+			t2 = inter.getTime(),
+			tMin = 1e-8,
+			tMax = 1 - tMin,
+			t1Inside = t1 >= tMin && t1 <= tMax,
+			t2Inside = t2 >= tMin && t2 <= tMax;
+		if (t1Inside && t2Inside)
+			return !this.isTouching();
+		var c2 = this.getCurve(),
+			c1 = c2 && t1 < tMin ? c2.getPrevious() : c2,
+			c4 = inter.getCurve(),
+			c3 = c4 && t2 < tMin ? c4.getPrevious() : c4;
+		if (t1 > tMax)
+			c2 = c2.getNext();
+		if (t2 > tMax)
+			c4 = c4.getNext();
+		if (!c1 || !c2 || !c3 || !c4)
+			return false;
+
+		var offsets = [];
+
+		function addOffsets(curve, end) {
+			var v = curve.getValues(),
+				roots = Curve.classify(v).roots || Curve.getPeaks(v),
+				count = roots.length,
+				offset = Curve.getLength(v,
+					end && count ? roots[count - 1] : 0,
+					!end && count ? roots[0] : 1);
+			offsets.push(count ? offset : offset / 32);
+		}
+
+		function isInRange(angle, min, max) {
+			return min < max
+				? angle > min && angle < max
+				: angle > min || angle < max;
+		}
+
+		if (!t1Inside) {
+			addOffsets(c1, true);
+			addOffsets(c2, false);
+		}
+		if (!t2Inside) {
+			addOffsets(c3, true);
+			addOffsets(c4, false);
+		}
+		var pt = this.getPoint(),
+			offset = Math.min.apply(Math, offsets),
+			v2 = t1Inside ? c2.getTangentAtTime(t1)
+				: c2.getPointAt(offset).subtract(pt),
+			v1 = t1Inside ? v2.negate()
+				: c1.getPointAt(-offset).subtract(pt),
+			v4 = t2Inside ? c4.getTangentAtTime(t2)
+				: c4.getPointAt(offset).subtract(pt),
+			v3 = t2Inside ? v4.negate()
+				: c3.getPointAt(-offset).subtract(pt),
+			a1 = v1.getAngle(),
+			a2 = v2.getAngle(),
+			a3 = v3.getAngle(),
+			a4 = v4.getAngle();
+		return !!(t1Inside
+			? (isInRange(a1, a3, a4) ^ isInRange(a2, a3, a4)) &&
+			(isInRange(a1, a4, a3) ^ isInRange(a2, a4, a3))
+			: (isInRange(a3, a1, a2) ^ isInRange(a4, a1, a2)) &&
+			(isInRange(a3, a2, a1) ^ isInRange(a4, a2, a1)));
+	};
+	CurveLocation.prototype.hasOverlap = function () {
+		return !!this._overlap;
+	};
+	CurveLocation.prototype.getTangent = function () {
+		var curve = this.getCurve(),
+			time = this.getTime();
+		return time != null && curve && curve['getTangentAt'](time, true);
+	};
+	CurveLocation.prototype.getNormal = function () {
+		var curve = this.getCurve(),
+			time = this.getTime();
+		return time != null && curve && curve['getNormalAt'](time, true);
+	};
+	CurveLocation.prototype.getWeightedTangent = function () {
+		var curve = this.getCurve(),
+			time = this.getTime();
+		return time != null && curve && curve['getWeightedTangentAt'](time, true);
+	};
+	CurveLocation.prototype.getWeightedNormal = function () {
+		var curve = this.getCurve(),
+			time = this.getTime();
+		return time != null && curve && curve['getWeightedNormalAt'](time, true);
+	};
+	CurveLocation.prototype.getCurvature = function () {
+		var curve = this.getCurve(),
+			time = this.getTime();
+		return time != null && curve && curve['getCurvatureAt'](time, true);
+	};
+
+	Object.defineProperty(CurveLocation.prototype, 'tangent', {
+		get: function () {
+			return this.getTangent();
+		},
+		enumerable: true,
+		configurable: true
+	});
+	Object.defineProperty(CurveLocation.prototype, 'normal', {
+		get: function () {
+			return this.getNormal();
+		},
+		enumerable: true,
+		configurable: true
+	});
+	Object.defineProperty(CurveLocation.prototype, 'weightedTangent', {
+		get: function () {
+			return this.getWeightedTangent();
+		},
+		enumerable: true,
+		configurable: true
+	});
+	Object.defineProperty(CurveLocation.prototype, 'weightedNormal', {
+		get: function () {
+			return this.getWeightedTangent();
+		},
+		enumerable: true,
+		configurable: true
+	});
+	Object.defineProperty(CurveLocation.prototype, 'curvature', {
+		get: function () {
+			return this.getCurvature();
+		},
+		enumerable: true,
+		configurable: true
+	});
+
+	CurveLocation.insert = function (locations, loc, merge) {
+		var length = locations.length,
+			l = 0,
+			r = length - 1;
+
+		function search(index, dir) {
+			for (var i = index + dir; i >= -1 && i <= length; i += dir) {
+				var loc2 = locations[((i % length) + length) % length];
+				if (!loc.getPoint().isClose(loc2.getPoint(),
+					1e-7))
+					break;
+				if (loc.equals(loc2))
+					return loc2;
+			}
+			return null;
+		}
+
+		while (l <= r) {
+			var m = (l + r) >>> 1,
+				loc2 = locations[m],
+				found;
+			if (merge && (found = loc.equals(loc2) ? loc2
+				: (search(m, -1) || search(m, 1)))) {
+				if (loc._overlap) {
+					found._overlap = found._intersection._overlap = true;
 				}
-			};
-		});
+				return found;
+			}
+			var path1 = loc.getPath(),
+				path2 = loc2.getPath(),
+				diff = path1 !== path2
+					? path1._id - path2._id
+					: (loc.getIndex() + loc.getTime())
+					- (loc2.getIndex() + loc2.getTime());
+			if (diff < 0) {
+				r = m - 1;
+			} else {
+				l = m + 1;
+			}
+		}
+		locations.splice(l, 0, loc);
+		return loc;
+	};
+	CurveLocation.expand = function (locations) {
+		var expanded = locations.slice();
+		for (var i = locations.length - 1; i >= 0; i--) {
+			CurveLocation.insert(expanded, locations[i]._intersection, false);
+		}
+		return expanded;
+	};
+
+	debugger
 
 	var PathItem = Item.extend({
 		_class: 'PathItem',
