@@ -99,7 +99,6 @@
 			"common/Drawings/Format/CnxShape.js",
 			"common/Drawings/Format/Path.js",
 			"common/Drawings/Format/Path.Boolean.js",
-			"common/Drawings/Format/MergeShapes.js",
 			"common/Drawings/Format/Image.js",
 			"common/Drawings/Format/GroupShape.js",
 			"common/Drawings/Format/Data.js",
