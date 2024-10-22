@@ -15263,8 +15263,9 @@
 	};
 	Cell.prototype.getAlign=function(){
 		var xfs = this.getCompiledStyle();
-		if(null != xfs && null != xfs.align)
-			return xfs.align;
+		if (xfs) {
+			return xfs.align || g_oDefaultFormat.AlignAbs;
+		}
 		return g_oDefaultFormat.Align;
 	};
 	Cell.prototype._adjustCellFormat = function() {
@@ -18191,8 +18192,8 @@
 		var align = g_oDefaultFormat.Align;
 		this.worksheet._getCellNoEmpty(nRow, nCol, function(cell) {
 			var xfs = cell ? cell.getCompiledStyle() : t.worksheet.getCompiledStyle(nRow, nCol);
-			if (null != xfs && null != xfs.align) {
-				align = xfs.align;
+			if (xfs) {
+				align = xfs.align || g_oDefaultFormat.AlignAbs;
 			}
 		});
 		return align;
