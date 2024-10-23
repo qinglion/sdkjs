@@ -11217,8 +11217,6 @@
 		};
 
 		function convertFormatPathToCompoundPath(path, transform) {
-			paper.setup();
-
 			const convertedPath = AscFormat.ExecuteNoHistory(function (_path) {
 				const _convertedPath = new AscFormat.Path();
 				_path.convertToBezierCurves(_convertedPath, transform, true);

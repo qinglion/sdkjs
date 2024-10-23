@@ -1,4 +1,4 @@
-var paper = function (self, undefined) {
+(function (self, undefined) {
 
 	function InitClassWithStatics(fClass, fBase, nType) {
 		AscFormat.InitClass(fClass, fBase, nType);
@@ -10,8 +10,7 @@ var paper = function (self, undefined) {
 		fClass.base = fBase;
 	}
 
-	var window = self.window,
-		document = self.document;
+	var window = self.window;
 
 	function globalInject(dest, src, enumerable, beans, preserve) {
 		var beansNames = {};
@@ -661,256 +660,6 @@ var paper = function (self, undefined) {
 				return inject.base.apply(this, arguments);
 			}
 		}
-	};
-
-	var PaperScope = function () {
-		Base.call(this);
-		paper = this;
-		this.settings = new Base({
-			applyMatrix: true,
-			insertItems: true,
-			handleSize: 4,
-			hitTolerance: 0
-		});
-		this.project = null;
-		this.projects = [];
-		this.tools = [];
-		this._id = PaperScope._id++;
-		PaperScope._scopes[this._id] = this;
-		var proto = PaperScope.prototype;
-		if (!this.support) {
-			proto.support = {
-				nativeDash: false,
-			};
-		}
-		if (!this.agent) {
-			var user = self.navigator.userAgent.toLowerCase(),
-				os = (/(darwin|win|mac|linux|freebsd|sunos)/.exec(user) || [])[0],
-				platform = os === 'darwin' ? 'mac' : os,
-				agent = proto.agent = proto.browser = { platform: platform };
-			if (platform)
-				agent[platform] = true;
-			user.replace(
-				/(opera|chrome|safari|webkit|firefox|msie|trident|atom|node|jsdom)\/?\s*([.\d]+)(?:.*version\/([.\d]+))?(?:.*rv\:v?([.\d]+))?/g,
-				function (match, n, v1, v2, rv) {
-					if (!agent.chrome) {
-						var v = n === 'opera' ? v2 :
-							/^(node|trident)$/.test(n) ? rv : v1;
-						agent.version = v;
-						agent.versionNumber = parseFloat(v);
-						n = { trident: 'msie', jsdom: 'node' }[n] || n;
-						agent.name = n;
-						agent[n] = true;
-					}
-				}
-			);
-			if (agent.chrome)
-				delete agent.webkit;
-			if (agent.atom)
-				delete agent.chrome;
-		}
-	};
-
-	InitClassWithStatics(PaperScope, Base);
-	PaperScope.prototype.version = "0.12.17";
-	PaperScope.prototype.getPaper = function () {
-		return this;
-	};
-	PaperScope.prototype.execute = function (code, options) {
-	};
-	PaperScope.prototype.install = function (scope) {
-		var that = this;
-		Base.each(['project', 'view', 'tool'], function (key) {
-			Base.define(scope, key, {
-				configurable: true,
-				get: function () {
-					return that[key];
-				}
-			});
-		});
-		for (var key in this)
-			if (!/^_/.test(key) && this[key])
-				scope[key] = this[key];
-	};
-	PaperScope.prototype.setup = function (element) {
-		paper = this;
-		this.project = new Project(element);
-		return this;
-	};
-	PaperScope.prototype.activate = function () {
-		paper = this;
-	};
-	PaperScope.prototype.clear = function () {
-		var projects = this.projects,
-			tools = this.tools;
-		for (var i = projects.length - 1; i >= 0; i--)
-			projects[i].remove();
-		for (var i = tools.length - 1; i >= 0; i--)
-			tools[i].remove();
-	};
-	PaperScope.prototype.remove = function () {
-		this.clear();
-		delete PaperScope._scopes[this._id];
-	};
-	PaperScope._scopes = {};
-	PaperScope._id = 0;
-	PaperScope.get = function (id) {
-		return this._scopes[id] || null;
-	};
-	PaperScope.getAttribute = function (el, attr) {
-		return el['getAttribute'](attr) || el['getAttribute']('data-paper-' + attr);
-	};
-	PaperScope.hasAttribute = function (el, attr) {
-		return el['hasAttribute'](attr) || el['hasAttribute']('data-paper-' + attr);
-	};
-
-	var PaperScopeItem = function (activate) {
-		Base.call();
-		this._scope = paper;
-		this._index = this._scope[this._list].push(this) - 1;
-		if (activate || !this._scope[this._reference])
-			this.activate();
-	};
-
-	InitClassWithStatics(PaperScopeItem, Base);
-
-	PaperScopeItem.prototype.on = function (type, func) {
-		if (typeof type !== 'string') {
-			Base.each(type, function (value, key) {
-				this.on(key, value);
-			}, this);
-		} else {
-			var types = this._eventTypes,
-				entry = types && types[type],
-				handlers = this._callbacks = this._callbacks || {};
-			handlers = handlers[type] = handlers[type] || [];
-			if (handlers.indexOf(func) === -1) {
-				handlers.push(func);
-				if (entry && entry.install && handlers.length === 1)
-					entry.install.call(this, type);
-			}
-		}
-		return this;
-	};
-	PaperScopeItem.prototype.off = function (type, func) {
-		if (typeof type !== 'string') {
-			Base.each(type, function (value, key) {
-				this.off(key, value);
-			}, this);
-			return;
-		}
-		var types = this._eventTypes,
-			entry = types && types[type],
-			handlers = this._callbacks && this._callbacks[type],
-			index;
-		if (handlers) {
-			if (!func || (index = handlers.indexOf(func)) !== -1
-				&& handlers.length === 1) {
-				if (entry && entry.uninstall)
-					entry.uninstall.call(this, type);
-				delete this._callbacks[type];
-			} else if (index !== -1) {
-				handlers.splice(index, 1);
-			}
-		}
-		return this;
-	};
-	PaperScopeItem.prototype.once = function (type, func) {
-		return this.on(type, function handler() {
-			func.apply(this, arguments);
-			this.off(type, handler);
-		});
-	};
-	PaperScopeItem.prototype.emit = function (type, event) {
-		var handlers = this._callbacks && this._callbacks[type];
-		if (!handlers)
-			return false;
-		var args = Base.slice(arguments, 1),
-			setTarget = event && event.target && !event.currentTarget;
-		handlers = handlers.slice();
-		if (setTarget)
-			event.currentTarget = this;
-		for (var i = 0, l = handlers.length; i < l; i++) {
-			if (handlers[i].apply(this, args) == false) {
-				if (event && event.stop)
-					event.stop();
-				break;
-			}
-		}
-		if (setTarget)
-			delete event.currentTarget;
-		return true;
-	};
-	PaperScopeItem.prototype.responds = function (type) {
-		return !!(this._callbacks && this._callbacks[type]);
-	};
-	PaperScopeItem.prototype._installEvents = function (install) {
-		var types = this._eventTypes,
-			handlers = this._callbacks,
-			key = install ? 'install' : 'uninstall';
-		if (types) {
-			for (var type in handlers) {
-				if (handlers[type].length > 0) {
-					var entry = types[type],
-						func = entry && entry[key];
-					if (func)
-						func.call(this, type);
-				}
-			}
-		}
-	};
-	PaperScopeItem.prototype.activate = function () {
-		if (!this._scope)
-			return false;
-		var prev = this._scope[this._reference];
-		if (prev && prev !== this)
-			prev.emit('deactivate');
-		this._scope[this._reference] = this;
-		this.emit('activate', prev);
-		return true;
-	};
-	PaperScopeItem.prototype.isActive = function () {
-		return this._scope[this._reference] === this;
-	};
-	PaperScopeItem.prototype.remove = function () {
-		if (this._index == null)
-			return false;
-		Base.splice(this._scope[this._list], null, this._index, 1);
-		if (this._scope[this._reference] == this)
-			this._scope[this._reference] = null;
-		this._scope = null;
-		return true;
-	};
-	PaperScopeItem.prototype.attach = PaperScopeItem.prototype.on;
-	PaperScopeItem.prototype.detach = PaperScopeItem.prototype.off;
-	PaperScopeItem.prototype.fire = PaperScopeItem.prototype.emit;
-
-	PaperScopeItem.inject = function inject(src) {
-		var events = src._events;
-		if (events) {
-			var types = {};
-			Base.each(events, function (entry, key) {
-				var isString = typeof entry === 'string',
-					name = isString ? entry : key,
-					part = Base.capitalize(name),
-					type = name.substring(2).toLowerCase();
-				types[type] = isString ? {} : entry;
-				name = '_' + name;
-				src['get' + part] = function () {
-					return this[name];
-				};
-				src['set' + part] = function (func) {
-					var prev = this[name];
-					if (prev)
-						this.off(type, prev);
-					if (func)
-						this.on(type, func);
-					this[name] = func;
-				};
-			});
-			src._eventTypes = types;
-		}
-		return Base.inject.apply(this, arguments);
 	};
 
 	var CollisionDetection = {
@@ -2770,194 +2519,7 @@ var paper = function (self, undefined) {
 			Line.getSignedDistance(px, py, vx, vy, x, y, asVector));
 	};
 
-	var Project = function Project(element) {
-		PaperScopeItem.call(this, true);
-		this._children = [];
-		this._namedChildren = {};
-		this._activeLayer = null;
-		this._selectionItems = {};
-		this._selectionCount = 0;
-		this._updateVersion = 0;
-	};
 
-	InitClassWithStatics(Project, PaperScopeItem);
-	Project.prototype._class = 'Project';
-	Project.prototype._list = 'projects';
-	Project.prototype._reference = 'project';
-	Project.prototype._compactSerialize = true;
-	Project.prototype.initialize = Project;
-	Project.prototype._serialize = function (options, dictionary) {
-		return Base.serialize(this._children, options, true, dictionary);
-	};
-	Project.prototype._changed = function (flags, item) {
-		var changes = this._changes;
-		if (changes && item) {
-			var changesById = this._changesById,
-				id = item._id,
-				entry = changesById[id];
-			if (entry) {
-				entry.flags |= flags;
-			} else {
-				changes.push(changesById[id] = { item: item, flags: flags });
-			}
-		}
-	};
-	Project.prototype.clear = function () {
-		var children = this._children;
-		for (var i = children.length - 1; i >= 0; i--)
-			children[i].remove();
-	};
-	Project.prototype.isEmpty = function () {
-		return !this._children.length;
-	};
-	Project.prototype.remove = function remove() {
-		if (!PaperScope.prototype.remove.call(this))
-			return false;
-		return true;
-	};
-	Project.prototype.getIndex = function () {
-		return this._index;
-	};
-	Project.prototype.getOptions = function () {
-		return this._scope.settings;
-	};
-	Project.prototype.getLayers = function () {
-		return this._children;
-	};
-	Project.prototype.getActiveLayer = function () {
-		return this._activeLayer || new Layer({ project: this, insert: true });
-	};
-	Project.prototype.getSymbolDefinitions = function () {
-		var definitions = [];
-		return definitions;
-	};
-	Project.prototype.getSymbols = 'getSymbolDefinitions';
-	Project.prototype.getSelectedItems = function () {
-		var selectionItems = this._selectionItems,
-			items = [];
-		for (var id in selectionItems) {
-			var item = selectionItems[id],
-				selection = item._selection;
-			if ((selection & 1) && item.isInserted()) {
-				items.push(item);
-			} else if (!selection) {
-				this._updateSelection(item);
-			}
-		}
-		return items;
-	};
-	Project.prototype._updateSelection = function (item) {
-		var id = item._id,
-			selectionItems = this._selectionItems;
-		if (item._selection) {
-			if (selectionItems[id] !== item) {
-				this._selectionCount++;
-				selectionItems[id] = item;
-			}
-		} else if (selectionItems[id] === item) {
-			this._selectionCount--;
-			delete selectionItems[id];
-		}
-	};
-	Project.prototype.selectAll = function () {
-		var children = this._children;
-		for (var i = 0, l = children.length; i < l; i++)
-			children[i].setFullySelected(true);
-	};
-	Project.prototype.deselectAll = function () {
-		var selectionItems = this._selectionItems;
-		for (var i in selectionItems)
-			selectionItems[i].setFullySelected(false);
-	};
-	Project.prototype.addLayer = function (layer) {
-		return this.insertLayer(undefined, layer);
-	};
-	Project.prototype.insertLayer = function (index, layer) {
-		if (layer instanceof Layer) {
-			layer._remove(false, true);
-			Base.splice(this._children, [layer], index, 0);
-			layer._setProject(this, true);
-			var name = layer._name;
-			if (name)
-				layer.setName(name);
-			if (this._changes)
-				layer._changed(5);
-			if (!this._activeLayer)
-				this._activeLayer = layer;
-		} else {
-			layer = null;
-		}
-		return layer;
-	};
-	Project.prototype._insertItem = function (index, item, _created) {
-		item = this.insertLayer(index, item)
-			|| (this._activeLayer || this._insertItem(undefined,
-				new Layer(Item.NO_INSERT), true))
-				.insertChild(index, item);
-		if (_created && item.activate)
-			item.activate();
-		return item;
-	};
-	Project.prototype.getItems = function (options) {
-		return Item._getItems(this, options);
-	};
-	Project.prototype.getItem = function (options) {
-		return Item._getItems(this, options, null, null, true)[0] || null;
-	};
-	Project.prototype.importJSON = function (json) {
-		this.activate();
-		var layer = this._activeLayer;
-		return Base.importJSON(json, layer && layer.isEmpty() && layer);
-	};
-	Project.prototype.removeOn = function (type) {
-		var sets = this._removeSets;
-		if (sets) {
-			if (type === 'mouseup')
-				sets.mousedrag = null;
-			var set = sets[type];
-			if (set) {
-				for (var id in set) {
-					var item = set[id];
-					for (var key in sets) {
-						var other = sets[key];
-						if (other && other != set)
-							delete other[item._id];
-					}
-					item.remove();
-				}
-				sets[type] = null;
-			}
-		}
-	};
-	Project.prototype.draw = function (ctx, matrix, pixelRatio) {
-		this._updateVersion++;
-		ctx.save();
-		matrix.applyToContext(ctx);
-		var children = this._children,
-			param = new Base({
-				offset: new Point(0, 0),
-				pixelRatio: pixelRatio,
-				viewMatrix: matrix.isIdentity() ? null : matrix,
-				matrices: [new Matrix()],
-				updateMatrix: true
-			});
-		for (var i = 0, l = children.length; i < l; i++) {
-			children[i].draw(ctx, param);
-		}
-		ctx.restore();
-
-		if (this._selectionCount > 0) {
-			ctx.save();
-			ctx.strokeWidth = 1;
-			var items = this._selectionItems,
-				size = this._scope.settings.handleSize,
-				version = this._updateVersion;
-			for (var id in items) {
-				items[id]._drawSelection(ctx, matrix, size, items, version);
-			}
-			ctx.restore();
-		}
-	};
 
 	var Item = function () {
 		Base.call();
@@ -3123,26 +2685,15 @@ var paper = function (self, undefined) {
 		var hasProps = props && Base.isPlainObject(props),
 			internal = hasProps && props.internal === true,
 			matrix = this._matrix = new Matrix(),
-			project = hasProps && props.project || paper.project,
-			settings = paper.settings;
+			settings = {
+				applyMatrix: true,
+			};
 		this._id = internal ? null : UID.get();
 		this._parent = this._index = null;
 		this._applyMatrix = this._canApplyMatrix && settings.applyMatrix;
 		if (point)
 			matrix.translate(point);
 		matrix._owner = this;
-		if (internal || hasProps && props.insert == false
-			|| !settings.insertItems && !(hasProps && props.insert == true)) {
-			this._setProject(project);
-		} else {
-			(hasProps && props.parent || project)
-				._insertItem(undefined, this, true);
-		}
-		if (hasProps && props !== Item.NO_INSERT && props !== Item.INSERT) {
-			this.set(props, {
-				internal: true, insert: true, project: true, parent: true
-			});
-		}
 		return hasProps;
 	};
 	Item.prototype._serialize = function (options, dictionary) {
@@ -3167,8 +2718,7 @@ var paper = function (self, undefined) {
 	};
 	Item.prototype._changed = function (flags) {
 		var symbol = this._symbol,
-			cacheParent = this._parent || symbol,
-			project = this._project;
+			cacheParent = this._parent || symbol;
 		if (flags & 8) {
 			this._bounds = this._position = this._decomposed = undefined;
 		}
@@ -3182,8 +2732,6 @@ var paper = function (self, undefined) {
 		if (flags & 2) {
 			Item._clearBoundsCache(this);
 		}
-		if (project)
-			project._changed(flags, this);
 		if (symbol)
 			symbol._changed(flags);
 	};
@@ -3220,11 +2768,6 @@ var paper = function (self, undefined) {
 	Item.prototype.setSelection = function (selection) {
 		if (selection !== this._selection) {
 			this._selection = selection;
-			var project = this._project;
-			if (project) {
-				project._updateSelection(this);
-				this._changed(257);
-			}
 		}
 	};
 	Item.prototype._changeSelection = function (flag, selected) {
@@ -3560,23 +3103,6 @@ var paper = function (self, undefined) {
 	Item.prototype.getTransformContent = Item.prototype.getApplyMatrix;
 	Item.prototype.setTransformContent = Item.prototype.setApplyMatrix;
 
-	Item.prototype.getProject = function () {
-		return this._project;
-	};
-	Item.prototype._setProject = function (project, installEvents) {
-		if (this._project !== project) {
-			if (this._project)
-				this._installEvents(false);
-			this._project = project;
-			var children = this._children;
-			for (var i = 0, l = children && children.length; i < l; i++)
-				children[i]._setProject(project);
-			installEvents = true;
-		}
-		if (installEvents)
-			this._installEvents(true);
-	};
-
 	tmpItemPrototype_InstallEvents = Item.prototype._installEvents;
 	Item.prototype._installEvents = function _installEvents(install) {
 		tmpItemPrototype_InstallEvents.call(this, install);
@@ -3758,17 +3284,13 @@ var paper = function (self, undefined) {
 				}
 			}
 			Base.splice(children, items, index, 0);
-			var project = this._project,
-				notifySelf = project._changes;
 			for (var i = 0, l = items.length; i < l; i++) {
 				var item = items[i],
 					name = item._name;
 				item._parent = this;
-				item._setProject(project, true);
 				if (name)
 					item.setName(name);
-				if (notifySelf)
-					item._changed(5);
+
 			}
 			this._changed(11);
 		} else {
@@ -3850,20 +3372,14 @@ var paper = function (self, undefined) {
 	};
 	Item.prototype._remove = function (notifySelf, notifyParent) {
 		var owner = this._getOwner(),
-			project = this._project,
 			index = this._index;
 		if (owner) {
 			if (this._name)
 				this._removeNamed();
 			if (index != null) {
-				if (project._activeLayer === this)
-					project._activeLayer = this.getNextSibling()
-						|| this.getPreviousSibling();
 				Base.splice(owner._children, null, index, 1);
 			}
 			this._installEvents(false);
-			if (notifySelf && project._changes)
-				this._changed(5);
 			if (notifyParent)
 				owner._changed(11, this);
 			this._parent = null;
@@ -7069,112 +6585,6 @@ var paper = function (self, undefined) {
 		this._changed(9);
 	};
 
-	Path.prototype.smooth = function (options) {
-		var that = this,
-			opts = options || {},
-			type = opts.type || 'asymmetric',
-			segments = this._segments,
-			length = segments.length,
-			closed = this._closed;
-
-		function getIndex(value, _default) {
-			var index = value && value.index;
-			if (index != null) {
-				var path = value.path;
-				if (path && path !== that)
-					throw new Error(value._class + ' ' + index + ' of ' + path
-						+ ' is not part of ' + that);
-				if (_default && value instanceof Curve)
-					index++;
-			} else {
-				index = typeof value === 'number' ? value : _default;
-			}
-			return Math.min(index < 0 && closed
-				? index % length
-				: index < 0 ? index + length : index, length - 1);
-		}
-
-		var loop = closed && opts.from === undefined && opts.to === undefined,
-			from = getIndex(opts.from, 0),
-			to = getIndex(opts.to, length - 1);
-
-		if (from > to) {
-			if (closed) {
-				from -= length;
-			} else {
-				var tmp = from;
-				from = to;
-				to = tmp;
-			}
-		}
-		if (/^(?:asymmetric|continuous)$/.test(type)) {
-			var asymmetric = type === 'asymmetric',
-				min = Math.min,
-				amount = to - from + 1,
-				n = amount - 1,
-				padding = loop ? min(amount, 4) : 1,
-				paddingLeft = padding,
-				paddingRight = padding,
-				knots = [];
-			if (!closed) {
-				paddingLeft = min(1, from);
-				paddingRight = min(1, length - to - 1);
-			}
-			n += paddingLeft + paddingRight;
-			if (n <= 1)
-				return;
-			for (var i = 0, j = from - paddingLeft; i <= n; i++, j++) {
-				knots[i] = segments[(j < 0 ? j + length : j) % length]._point;
-			}
-
-			var x = knots[0]._x + 2 * knots[1]._x,
-				y = knots[0]._y + 2 * knots[1]._y,
-				f = 2,
-				n_1 = n - 1,
-				rx = [x],
-				ry = [y],
-				rf = [f],
-				px = [],
-				py = [];
-			for (var i = 1; i < n; i++) {
-				var internal = i < n_1,
-					a = internal ? 1 : asymmetric ? 1 : 2,
-					b = internal ? 4 : asymmetric ? 2 : 7,
-					u = internal ? 4 : asymmetric ? 3 : 8,
-					v = internal ? 2 : asymmetric ? 0 : 1,
-					m = a / f;
-				f = rf[i] = b - m;
-				x = rx[i] = u * knots[i]._x + v * knots[i + 1]._x - m * x;
-				y = ry[i] = u * knots[i]._y + v * knots[i + 1]._y - m * y;
-			}
-
-			px[n_1] = rx[n_1] / rf[n_1];
-			py[n_1] = ry[n_1] / rf[n_1];
-			for (var i = n - 2; i >= 0; i--) {
-				px[i] = (rx[i] - px[i + 1]) / rf[i];
-				py[i] = (ry[i] - py[i + 1]) / rf[i];
-			}
-			px[n] = (3 * knots[n]._x - px[n_1]) / 2;
-			py[n] = (3 * knots[n]._y - py[n_1]) / 2;
-
-			for (var i = paddingLeft, max = n - paddingRight, j = from;
-				i <= max; i++, j++) {
-				var segment = segments[j < 0 ? j + length : j],
-					pt = segment._point,
-					hx = px[i] - pt._x,
-					hy = py[i] - pt._y;
-				if (loop || i < max)
-					segment.setHandleOut(hx, hy);
-				if (loop || i > paddingLeft)
-					segment.setHandleIn(-hx, -hy);
-			}
-		} else {
-			for (var i = from; i <= to; i++) {
-				segments[i < 0 ? i + length : i].smooth(opts,
-					!loop && i === from, !loop && i === to);
-			}
-		}
-	};
 	Path.prototype.toPath = Item.prototype.clone;
 	Path.prototype.compare = function compare(path) {
 		if (!path || path instanceof CompoundPath)
@@ -7980,14 +7390,6 @@ var paper = function (self, undefined) {
 			res;
 		for (var i = 0, l = children.length; i < l; i++) {
 			res = children[i]['reverse'](param) || res;
-		}
-		return res;
-	};
-	CompoundPath.prototype.smooth = function (param) {
-		var children = this._children,
-			res;
-		for (var i = 0, l = children.length; i < l; i++) {
-			res = children[i]['smooth'](param) || res;
 		}
 		return res;
 	};
@@ -8857,10 +8259,8 @@ var paper = function (self, undefined) {
 		return point;
 	};
 
-	var paper = new PaperScope();
-
 	window.PathBoolean = {
-		Base, Project,
+		Base,
 		Emitter, Formatter,
 		CollisionDetection, Numerical, UID,
 		Point, LinkedPoint,
@@ -8872,6 +8272,4 @@ var paper = function (self, undefined) {
 		Path, PathItem,
 		CompoundPath,
 	}
-
-	return paper;
-}.call(this, typeof self === 'object' ? self : null);
+})(window);
