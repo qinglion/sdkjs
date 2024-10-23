@@ -361,7 +361,7 @@
 				return cFontInfo.Name === nameU;
 			});
 			if (fontInfo === undefined || fontInfo === null) {
-				console.log("Unknown font used in visio file");
+				console.log("Unknown font used in visio file: " + nameU);
 			} else {
 				console.log("Font", nameU, "will be loaded");
 				aFonts.push(new AscFonts.CFont(nameU, newFontIndex, "", 0));

@@ -758,7 +758,7 @@
 			// cShape.txBody.compiledBodyPr = null;
 
 			// Set Paragraph (the only one defaultParagraph exist) justify/align text - center
-			// cShape.txBody.content.Content[0].Pr.SetJc(AscCommon.align_Center);
+			// textCShape.txBody.content.Content[0].Pr.SetJc(AscCommon.align_Left);
 
 			// cShape.recalculateTextStyles();
 			// cShape.recalculateTransformText(); // recalculates text position (i. e. transformText objects);

@@ -1452,7 +1452,8 @@
 
 			let textStyleElements = ["TextBkgnd", "TextDirection", "TextBkgndTrans", "LockTextEdit", "HideText",
 					"TheText", "IsTextEditTarget", "KeepTextFlat", "ReplaceLockText", "TextPosAfterBullet",
-					"Character", "Paragraph", "Tabs"];
+					"Character", "Paragraph", "Tabs", "DefaultTabStop", "VerticalAlign",
+					"BottomMargin", "TopMargin", "RightMargin", "LeftMargin"];
 
 			let commonElements = ["ColorSchemeIndex", "EffectSchemeIndex", "ConnectorSchemeIndex", "FontSchemeIndex",
 					"ThemeIndex", "VariationColorIndex", "VariationStyleIndex", "EmbellishmentIndex",
