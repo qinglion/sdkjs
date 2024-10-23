@@ -28,10 +28,6 @@
 		return new this.constructor(this);
 	};
 
-	Base.set = Object.assign;
-	Base.create = Object.create;
-	Base.define = Object.defineProperty;
-	Base.describe = Object.getOwnPropertyDescriptor;
 	Base.each = function (obj, iter, bind) {
 		if (obj) {
 			const descriptor = Object.getOwnPropertyDescriptor(obj, 'length');
@@ -105,7 +101,7 @@
 	};
 	Base.read = function (list, start, options, amount) {
 		if (this === Base) {
-			var value = this.peek(list, start);
+			var value = list[list.__index = start || list.__index || 0];
 			list.__index++;
 			return value;
 		}
@@ -121,7 +117,7 @@
 				list.__index = begin + 1;
 			return obj && options && options.clone ? obj.clone() : obj;
 		}
-		obj = Base.create(proto);
+		obj = Object.create(proto);
 		if (readIndex)
 			obj.__read = true;
 		obj = obj.initialize.apply(obj, begin > 0 || begin + amount < length
@@ -137,9 +133,6 @@
 			obj.__read = undefined;
 		}
 		return obj;
-	};
-	Base.peek = function (list, start) {
-		return list[list.__index = start || list.__index || 0];
 	};
 	Base.remain = function (list) {
 		return list.length - (list.__index || 0);
@@ -163,7 +156,7 @@
 			var filtered = list.__filtered;
 			if (!filtered) {
 				var source = this.getSource(list);
-				filtered = list.__filtered = Base.create(source);
+				filtered = list.__filtered = Object.create(source);
 				filtered.__unfiltered = source;
 			}
 			filtered[name] = undefined;
@@ -235,19 +228,6 @@
 		return Base.isPlainObject(obj) || Array.isArray(obj)
 			|| asString && typeof obj === 'string';
 	};
-	Base.push = function (list, items) {
-		var itemsLength = items.length;
-		if (itemsLength < 4096) {
-			list.push.apply(list, items);
-		} else {
-			var startLength = list.length;
-			list.length += itemsLength;
-			for (var i = 0; i < itemsLength; i++) {
-				list[startLength + i] = items[i];
-			}
-		}
-		return list;
-	};
 	Base.splice = function (list, items, index, remove) {
 		var amount = items && items.length,
 			append = index === undefined;
@@ -257,12 +237,12 @@
 		for (var i = 0; i < amount; i++)
 			items[i]._index = index + i;
 		if (append) {
-			Base.push(list, items);
+			list.push.apply(list, items);
 			return [];
 		} else {
 			var args = [index, remove];
 			if (items)
-				Base.push(args, items);
+				args.push.apply(args, items);
 			var removed = list.splice.apply(list, args);
 			for (var i = 0, l = removed.length; i < l; i++)
 				removed[i]._index = undefined;
@@ -270,116 +250,6 @@
 				list[i]._index = i;
 			return removed;
 		}
-	};
-	Base.capitalize = function (str) {
-		return str.replace(/\b[a-z]/g, function (match) {
-			return match.toUpperCase();
-		});
-	};
-	Base.camelize = function (str) {
-		return str.replace(/-(.)/g, function (match, chr) {
-			return chr.toUpperCase();
-		});
-	};
-	Base.hyphenate = function (str) {
-		return str.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
-	};
-
-	var Emitter = {
-		on: function (type, func) {
-			if (typeof type !== 'string') {
-				Base.each(type, function (value, key) {
-					this.on(key, value);
-				}, this);
-			} else {
-				var types = this._eventTypes,
-					entry = types && types[type],
-					handlers = this._callbacks = this._callbacks || {};
-				handlers = handlers[type] = handlers[type] || [];
-				if (handlers.indexOf(func) === -1) {
-					handlers.push(func);
-					if (entry && entry.install && handlers.length === 1)
-						entry.install.call(this, type);
-				}
-			}
-			return this;
-		},
-
-		off: function (type, func) {
-			if (typeof type !== 'string') {
-				Base.each(type, function (value, key) {
-					this.off(key, value);
-				}, this);
-				return;
-			}
-			var types = this._eventTypes,
-				entry = types && types[type],
-				handlers = this._callbacks && this._callbacks[type],
-				index;
-			if (handlers) {
-				if (!func || (index = handlers.indexOf(func)) !== -1
-					&& handlers.length === 1) {
-					if (entry && entry.uninstall)
-						entry.uninstall.call(this, type);
-					delete this._callbacks[type];
-				} else if (index !== -1) {
-					handlers.splice(index, 1);
-				}
-			}
-			return this;
-		},
-
-		once: function (type, func) {
-			return this.on(type, function handler() {
-				func.apply(this, arguments);
-				this.off(type, handler);
-			});
-		},
-
-		emit: function (type, event) {
-			var handlers = this._callbacks && this._callbacks[type];
-			if (!handlers)
-				return false;
-			var args = Base.slice(arguments, 1),
-				setTarget = event && event.target && !event.currentTarget;
-			handlers = handlers.slice();
-			if (setTarget)
-				event.currentTarget = this;
-			for (var i = 0, l = handlers.length; i < l; i++) {
-				if (handlers[i].apply(this, args) == false) {
-					if (event && event.stop)
-						event.stop();
-					break;
-				}
-			}
-			if (setTarget)
-				delete event.currentTarget;
-			return true;
-		},
-
-		responds: function (type) {
-			return !!(this._callbacks && this._callbacks[type]);
-		},
-
-		attach: '#on',
-		detach: '#off',
-		fire: '#emit',
-
-		_installEvents: function (install) {
-			var types = this._eventTypes,
-				handlers = this._callbacks,
-				key = install ? 'install' : 'uninstall';
-			if (types) {
-				for (var type in handlers) {
-					if (handlers[type].length > 0) {
-						var entry = types[type],
-							func = entry && entry[key];
-						if (func)
-							func.call(this, type);
-					}
-				}
-			}
-		},
 	};
 
 	var CollisionDetection = {
@@ -1179,7 +1049,7 @@
 		}
 		if (read === undefined) {
 			var frm = Point.readNamed(args, 'from'),
-				next = Base.peek(args),
+				next = args[0],
 				x = frm.x,
 				y = frm.y,
 				width,
@@ -2494,7 +2364,7 @@
 
 	Item.prototype.getBounds = function (matrix, options) {
 		var hasMatrix = options || matrix instanceof Matrix,
-			opts = Base.set({}, hasMatrix ? options : matrix,
+			opts = Object.assign({}, hasMatrix ? options : matrix,
 				this._boundsOptions);
 		if (!opts.stroke || this.getStrokeScaling())
 			opts.cacheItem = this;
@@ -5787,7 +5657,7 @@
 				this._updateSelection(segment, 0, segment._selection);
 		}
 		if (append) {
-			Base.push(segments, segs);
+			segments.push.apply(segments, segs);
 		} else {
 			segments.splice.apply(segments, [index, 0].concat(segs));
 			for (var i = index + amount, l = segments.length; i < l; i++)
@@ -6308,7 +6178,7 @@
 			from = current._point,
 			to = Point.read(args),
 			through,
-			peek = Base.peek(args),
+			peek = args[0],
 			clockwise = Base.pick(peek, true),
 			center, extent, vector, matrix;
 		if (typeof clockwise === 'boolean') {
@@ -6456,7 +6326,7 @@
 		var args = arguments,
 			current = Path.getCurrentSegment(this)._point,
 			point = current.add(Point.read(args)),
-			clockwise = Base.pick(Base.peek(args), true);
+			clockwise = Base.pick(args[0], true);
 		if (typeof clockwise === 'boolean') {
 			this.arcTo(point, clockwise);
 		} else {
@@ -6743,7 +6613,7 @@
 		var children = this._children,
 			curves = [];
 		for (var i = 0, l = children.length; i < l; i++) {
-			Base.push(curves, children[i].getCurves());
+			curves.push.apply(curves, children[i].getCurves());
 		}
 		return curves;
 	};
@@ -6920,8 +6790,8 @@
 		function collectPaths(paths) {
 			for (var i = 0, l = paths.length; i < l; i++) {
 				var path = paths[i];
-				Base.push(segments, path._segments);
-				Base.push(curves, path.getCurves());
+				segments.push.apply(segments, path._segments);
+				curves.push.apply(curves, path.getCurves());
 				path._overlapsOnly = true;
 			}
 		}
@@ -7642,7 +7512,7 @@
 			if (clearCurves)
 				PathItem.clearCurveHandles(clearCurves);
 			paths = PathItem.tracePaths(Base.each(paths, function (path) {
-				Base.push(this, path._segments);
+				this.push.apply(this, path._segments);
 			}, []));
 		}
 		var length = paths.length,
@@ -7721,7 +7591,7 @@
 
 	window.PathBoolean = {
 		Base,
-		Emitter, Formatter,
+		Formatter,
 		CollisionDetection, Numerical, UID,
 		Point, LinkedPoint,
 		Rectangle, LinkedRectangle,
