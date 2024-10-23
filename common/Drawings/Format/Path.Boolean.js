@@ -1,4 +1,4 @@
-(function (self, undefined) {
+(function (window) {
 
 	function InitClassWithStatics(fClass, fBase, nType) {
 		AscFormat.InitClass(fClass, fBase, nType);
@@ -8,56 +8,6 @@
 			Object.defineProperty(fClass, prop, Object.getOwnPropertyDescriptor(fBase, prop));
 		});
 		fClass.base = fBase;
-	}
-
-	var window = self.window;
-
-	function globalInject(dest, src, enumerable, beans, preserve) {
-		var beansNames = {};
-
-		function field(name, val) {
-			val = val || (val = Object.getOwnPropertyDescriptor(src, name)) && (val.get ? val : val.value);
-			if (typeof val === 'string' && val[0] === '#')
-				val = dest[val.substring(1)] || val;
-			var isFunc = typeof val === 'function',
-				res = val,
-				prev = preserve || isFunc && !val.base
-					? (val && val.get ? name in dest : dest[name])
-					: null,
-				bean;
-			if (!preserve || !prev) {
-				if (isFunc && prev)
-					val.base = prev;
-				if (isFunc && beans !== false
-					&& (bean = name.match(/^([gs]et|is)(([A-Z])(.*))$/)))
-					beansNames[bean[3].toLowerCase() + bean[4]] = bean[2];
-				if (!res || isFunc || !res.get || typeof res.get !== 'function'
-					|| !Base.isPlainObject(res)) {
-					res = { value: res, writable: true };
-				}
-				if ((Object.getOwnPropertyDescriptor(dest, name)
-					|| { configurable: true }).configurable) {
-					res.configurable = true;
-					res.enumerable = enumerable != null ? enumerable : !bean;
-				}
-				Object.defineProperty(dest, name, res);
-			}
-		}
-		if (src) {
-			var hidden = /^(statics|enumerable|beans|preserve)$/;
-			for (var name in src) {
-				if (src.hasOwnProperty(name) && !hidden.test(name))
-					field(name);
-			}
-			for (var name in beansNames) {
-				var part = beansNames[name],
-					set = dest['set' + part],
-					get = dest['get' + part] || set && dest['is' + part];
-				if (get && (beans === true || get.length === 0))
-					field(name, { get: get, set: set });
-			}
-		}
-		return dest;
 	}
 
 	var Base = function Base() {
@@ -71,19 +21,6 @@
 
 	Base.prototype.initialize = Base;
 	Base.prototype.set = Base;
-	Base.prototype.inject = function () {
-		for (var i = 0, l = arguments.length; i < l; i++) {
-			var src = arguments[i];
-			if (src) {
-				globalInject(this, src, src.enumerable, src.beans, src.preserve);
-			}
-		}
-		return this;
-	};
-	Base.prototype.extend = function () {
-		var res = Object.create(this);
-		return res.inject.apply(res, arguments);
-	};
 	Base.prototype.each = function (iter, bind) {
 		return each(this, iter, bind);
 	};
@@ -123,67 +60,9 @@
 	Base.slice = function (list, begin, end) {
 		return Array.prototype.slice.call(list, begin, end);
 	};
-	Base.inject = function (src) {
-		if (src) {
-			var statics = src.statics === true ? src : src.statics,
-				beans = src.beans,
-				preserve = src.preserve;
-			if (statics !== src)
-				globalInject(this.prototype, src, src.enumerable, beans, preserve);
-			globalInject(this, statics, null, beans, preserve);
-		}
-		for (var i = 1, l = arguments.length; i < l; i++)
-			this.inject(arguments[i]);
-		return this;k
-	};
-	Base.extend = function () {
-		var base = this,
-			ctor,
-			proto;
-		for (var i = 0, obj, l = arguments.length;
-			i < l && !(ctor && proto); i++) {
-			obj = arguments[i];
-			ctor = ctor || obj.initialize;
-			proto = proto || obj.prototype;
-		}
-		ctor = ctor || function () {
-			base.apply(this, arguments);
-		};
-		proto = ctor.prototype = proto || Object.create(this.prototype);
-		Object.defineProperty(proto, 'constructor',
-			{ value: ctor, writable: true, configurable: true });
-		globalInject(ctor, this);
-		if (arguments.length)
-			this.inject.apply(ctor, arguments);
-		ctor.base = base;
-		return ctor;
-	};
 
-	Base.prototype.toString = function () {
-		return this._id != null
-			? (this._class || 'Object') + (this._name
-				? " '" + this._name + "'"
-				: ' @' + this._id)
-			: '{ ' + Base.each(this, function (value, key) {
-				if (!/^_/.test(key)) {
-					var type = typeof value;
-					this.push(key + ': ' + (type === 'number'
-						? Formatter.instance.number(value)
-						: type === 'string' ? "'" + value + "'" : value));
-				}
-			}, []).join(', ') + ' }';
-	};
 	Base.prototype.getClassName = function () {
 		return this._class || '';
-	};
-	Base.prototype.importJSON = function (json) {
-		return Base.importJSON(json, this);
-	};
-	Base.prototype.exportJSON = function (options) {
-		return Base.exportJSON(this, options);
-	};
-	Base.prototype.toJSON = function () {
-		return Base.serialize(this);
 	};
 	Base.prototype.set = function (props, exclude) {
 		if (props)
@@ -191,15 +70,6 @@
 		return this;
 	};
 
-	tmpBaseExtend = Base.extend;
-	Base.exports = {};
-	Base.extend = function extend() {
-		var res = tmpBaseExtend.apply(this, arguments),
-			name = res.prototype._class;
-		if (name && !Base.exports[name])
-			Base.exports[name] = res;
-		return res;
-	};
 	Base.equals = function (obj1, obj2) {
 		if (obj1 === obj2)
 			return true;
@@ -365,126 +235,6 @@
 		return Base.isPlainObject(obj) || Array.isArray(obj)
 			|| asString && typeof obj === 'string';
 	};
-	Base.serialize = function (obj, options, compact, dictionary) {
-		options = options || {};
-
-		var isRoot = !dictionary,
-			res;
-		if (isRoot) {
-			options.formatter = new Formatter(options.precision);
-			dictionary = {
-				length: 0,
-				definitions: {},
-				references: {},
-				add: function (item, create) {
-					var id = '#' + item._id,
-						ref = this.references[id];
-					if (!ref) {
-						this.length++;
-						var res = create.call(item),
-							name = item._class;
-						if (name && res[0] !== name)
-							res.unshift(name);
-						this.definitions[id] = res;
-						ref = this.references[id] = [id];
-					}
-					return ref;
-				}
-			};
-		}
-		if (obj && obj._serialize) {
-			res = obj._serialize(options, dictionary);
-			var name = obj._class;
-			if (name && !obj._compactSerialize && (isRoot || !compact)
-				&& res[0] !== name) {
-				res.unshift(name);
-			}
-		} else if (Array.isArray(obj)) {
-			res = [];
-			for (var i = 0, l = obj.length; i < l; i++)
-				res[i] = Base.serialize(obj[i], options, compact, dictionary);
-		} else if (Base.isPlainObject(obj)) {
-			res = {};
-			var keys = Object.keys(obj);
-			for (var i = 0, l = keys.length; i < l; i++) {
-				var key = keys[i];
-				res[key] = Base.serialize(obj[key], options, compact,
-					dictionary);
-			}
-		} else if (typeof obj === 'number') {
-			res = options.formatter.number(obj, options.precision);
-		} else {
-			res = obj;
-		}
-		return isRoot && dictionary.length > 0
-			? [['dictionary', dictionary.definitions], res]
-			: res;
-	};
-	Base.deserialize = function (json, create, _data, _setDictionary, _isRoot) {
-		var res = json,
-			isFirst = !_data,
-			hasDictionary = isFirst && json && json.length
-				&& json[0][0] === 'dictionary';
-		_data = _data || {};
-		if (Array.isArray(json)) {
-			var type = json[0],
-				isDictionary = type === 'dictionary';
-			if (json.length == 1 && /^#/.test(type)) {
-				return _data.dictionary[type];
-			}
-			type = Base.exports[type];
-			res = [];
-			for (var i = type ? 1 : 0, l = json.length; i < l; i++) {
-				res.push(Base.deserialize(json[i], create, _data,
-					isDictionary, hasDictionary));
-			}
-			if (type) {
-				var args = res;
-				if (create) {
-					res = create(type, args, isFirst || _isRoot);
-				} else {
-					res = new type(args);
-				}
-			}
-		} else if (Base.isPlainObject(json)) {
-			res = {};
-			if (_setDictionary)
-				_data.dictionary = res;
-			for (var key in json)
-				res[key] = Base.deserialize(json[key], create, _data);
-		}
-		return hasDictionary ? res[1] : res;
-	};
-	Base.exportJSON = function (obj, options) {
-		var json = Base.serialize(obj, options);
-		return options && options.asString == false
-			? json
-			: JSON.stringify(json);
-	};
-	Base.importJSON = function (json, target) {
-		return Base.deserialize(
-			typeof json === 'string' ? JSON.parse(json) : json,
-			function (ctor, args, isRoot) {
-				var useTarget = isRoot && target
-					&& target.constructor === ctor,
-					obj = useTarget ? target
-						: Base.create(ctor.prototype);
-				if (args.length === 1 && obj instanceof Item
-					&& (useTarget || !(obj instanceof Layer))) {
-					var arg = args[0];
-					if (Base.isPlainObject(arg)) {
-						arg.insert = false;
-						if (useTarget) {
-							args = args.concat([Item.INSERT]);
-						}
-					}
-				}
-				(useTarget ? obj.set : ctor).apply(obj, args);
-				if (useTarget)
-					target = null;
-				return obj;
-			});
-	};
 	Base.push = function (list, items) {
 		var itemsLength = items.length;
 		if (itemsLength < 4096) {
@@ -630,36 +380,6 @@
 				}
 			}
 		},
-
-		statics: {
-			inject: function inject(src) {
-				var events = src._events;
-				if (events) {
-					var types = {};
-					Base.each(events, function (entry, key) {
-						var isString = typeof entry === 'string',
-							name = isString ? entry : key,
-							part = Base.capitalize(name),
-							type = name.substring(2).toLowerCase();
-						types[type] = isString ? {} : entry;
-						name = '_' + name;
-						src['get' + part] = function () {
-							return this[name];
-						};
-						src['set' + part] = function (func) {
-							var prev = this[name];
-							if (prev)
-								this.off(type, prev);
-							if (func)
-								this.on(type, func);
-							this[name] = func;
-						};
-					});
-					src._eventTypes = types;
-				}
-				return inject.base.apply(this, arguments);
-			}
-		}
 	};
 
 	var CollisionDetection = {
@@ -1158,14 +878,6 @@
 	Point.prototype.clone = function () {
 		return new Point(this.x, this.y);
 	};
-	Point.prototype.toString = function () {
-		var f = Formatter.instance;
-		return '{ x: ' + f.number(this.x) + ', y: ' + f.number(this.y) + ' }';
-	};
-	Point.prototype._serialize = function (options) {
-		var f = options.formatter;
-		return [f.number(this.x), f.number(this.y)];
-	};
 	Point.prototype.getLength = function () {
 		return Math.sqrt(this.x * this.x + this.y * this.y);
 	};
@@ -1524,21 +1236,6 @@
 			|| rt && this.x === rt.x && this.y === rt.y
 			&& this.width === rt.width && this.height === rt.height
 			|| false;
-	};
-	Rectangle.prototype.toString = function () {
-		var f = Formatter.instance;
-		return '{ x: ' + f.number(this.x)
-			+ ', y: ' + f.number(this.y)
-			+ ', width: ' + f.number(this.width)
-			+ ', height: ' + f.number(this.height)
-			+ ' }';
-	};
-	Rectangle.prototype._serialize = function (options) {
-		var f = options.formatter;
-		return [f.number(this.x),
-		f.number(this.y),
-		f.number(this.width),
-		f.number(this.height)];
 	};
 	Rectangle.prototype.getPoint = function (_dontLink) {
 		var ctor = _dontLink ? Point : LinkedPoint;
@@ -2062,9 +1759,6 @@
 			this._changed();
 		return this;
 	};
-	Matrix.prototype._serialize = function (options, dictionary) {
-		return Base.serialize(this.getValues(), options, true, dictionary);
-	};
 	Matrix.prototype._changed = function () {
 		var owner = this._owner;
 		if (owner) {
@@ -2083,13 +1777,6 @@
 		return mx === this || mx && this._a === mx._a && this._b === mx._b
 			&& this._c === mx._c && this._d === mx._d
 			&& this._tx === mx._tx && this._ty === mx._ty;
-	};
-	Matrix.prototype.toString = function () {
-		var f = Formatter.instance;
-		return '[[' + [f.number(this._a), f.number(this._c),
-		f.number(this._tx)].join(', ') + '], ['
-			+ [f.number(this._b), f.number(this._d),
-			f.number(this._ty)].join(', ') + ']]';
 	};
 	Matrix.prototype.reset = function (_dontNotify) {
 		this._a = this._d = 1;
@@ -2614,39 +2301,6 @@
 			}
 		}
 	};
-	Item.inject = function inject(src) {
-		var events = src._events;
-		if (events) {
-			var types = {};
-			Base.each(events, function (entry, key) {
-				var isString = typeof entry === 'string',
-					name = isString ? entry : key,
-					part = Base.capitalize(name),
-					type = name.substring(2).toLowerCase();
-				types[type] = isString ? {} : entry;
-				name = '_' + name;
-				src['get' + part] = function () {
-					return this[name];
-				};
-				src['set' + part] = function (func) {
-					var prev = this[name];
-					if (prev)
-						this.off(type, prev);
-					if (func)
-						this.on(type, func);
-					this[name] = func;
-				};
-			});
-			src._eventTypes = types;
-		}
-		return Base.inject.apply(this, arguments);
-	};
-	Item.extend = function extend(src) {
-		if (src._serializeFields)
-			src._serializeFields = Base.set({},
-				this.prototype._serializeFields, src._serializeFields);
-		return Base.extend.apply(this, arguments);
-	};
 	Item.INSERT = { insert: true };
 	Item.NO_INSERT = { insert: false };
 	Item.prototype._class = 'Item';
@@ -2695,26 +2349,6 @@
 			matrix.translate(point);
 		matrix._owner = this;
 		return hasProps;
-	};
-	Item.prototype._serialize = function (options, dictionary) {
-		var props = {},
-			that = this;
-
-		function serialize(fields) {
-			for (var key in fields) {
-				var value = that[key];
-				if (!Base.equals(value, key === 'leading'
-					? fields.fontSize * 1.2 : fields[key])) {
-					props[key] = Base.serialize(value, options,
-						key !== 'data', dictionary);
-				}
-			}
-		}
-
-		serialize(this._serializeFields);
-		if (!(this instanceof Group))
-			serialize({});
-		return [this._class, props];
 	};
 	Item.prototype._changed = function (flags) {
 		var symbol = this._symbol,
@@ -3110,14 +2744,6 @@
 		for (var i = 0, l = children && children.length; i < l; i++)
 			children[i]._installEvents(install);
 	};
-	Item.prototype.getLayer = function () {
-		var parent = this;
-		while (parent = parent._parent) {
-			if (parent instanceof Layer)
-				return parent;
-		}
-		return null;
-	};
 	Item.prototype.getParent = function () {
 		return this._parent;
 	};
@@ -3253,10 +2879,6 @@
 			return false;
 		return this._asPathItem().getIntersections(item._asPathItem(), null,
 			_matrix, true).length > 0;
-	};
-	Item.prototype.importJSON = function (json) {
-		var res = Base.importJSON(json, this);
-		return res !== this ? this.addChild(res) : res;
 	};
 	Item.prototype.addChild = function (item) {
 		return this.insertChild(undefined, item);
@@ -3606,91 +3228,6 @@
 		this.setBounds(newBounds);
 	};
 
-	var Group = function (arg) {
-		Item.call(this);
-		this._children = [];
-		this._namedChildren = {};
-		if (!this._initialize(arg))
-			this.addChildren(Array.isArray(arg) ? arg : arguments);
-	};
-	InitClassWithStatics(Group, Item)
-	Group.prototype.initialize = Group;
-	Group.prototype._class = 'Group';
-	Group.prototype._selectBounds = false;
-	Group.prototype._selectChildren = true;
-	Group.prototype._serializeFields = {
-		children: []
-	};
-	Group.prototype._changed = function _changed(flags) {
-		Item.prototype._changed.call(this, flags);
-		if (flags & 2050) {
-			this._clipItem = undefined;
-		}
-	};
-	Group.prototype._getClipItem = function () {
-		var clipItem = this._clipItem;
-		if (clipItem === undefined) {
-			clipItem = null;
-			var children = this._children;
-			for (var i = 0, l = children.length; i < l; i++) {
-				if (children[i]._clipMask) {
-					clipItem = children[i];
-					break;
-				}
-			}
-			this._clipItem = clipItem;
-		}
-		return clipItem;
-	};
-	Group.prototype.isClipped = function () {
-		return !!this._getClipItem();
-	};
-	Group.prototype.setClipped = function (clipped) {
-		var child = this.getFirstChild();
-		if (child)
-			child.setClipMask(clipped);
-	};
-	Group.prototype._getBounds = function _getBounds(matrix, options) {
-		var clipItem = this._getClipItem();
-		return clipItem
-			? clipItem._getCachedBounds(clipItem._matrix.prepended(matrix),
-				Base.set({}, options, { stroke: false }))
-			: Item.prototype._getBounds.call(this, matrix, options);
-	};
-	Group.prototype._draw = function (ctx, param) {
-		var clip = param.clip,
-			clipItem = !clip && this._getClipItem();
-		param = param.extend({ clipItem: clipItem, clip: false });
-		if (clip) {
-			ctx.beginPath();
-			param.dontStart = param.dontFinish = true;
-		} else if (clipItem) {
-			clipItem.draw(ctx, param.extend({ clip: true }));
-		}
-		var children = this._children;
-		for (var i = 0, l = children.length; i < l; i++) {
-			var item = children[i];
-			if (item !== clipItem)
-				item.draw(ctx, param);
-		}
-	};
-
-	var Layer = function Layer() {
-		Group.apply(this, arguments);
-	};
-	InitClassWithStatics(Layer, Group);
-	Layer.prototype.initialize - Layer;
-	Layer.prototype._class = 'Layer';
-	Layer.prototype._getOwner = function () {
-		return this._parent || this._index != null && this._project;
-	};
-	Layer.prototype.isInserted = function isInserted() {
-		return this._parent ? Item.prototype.isInserted.call(this) : this._index != null;
-	};
-	Layer.prototype.activate = function () {
-		this._project._activeLayer = this;
-	};
-
 	var Segment = function (arg0, arg1, arg2, arg3, arg4, arg5) {
 		Base.apply(this, arguments);
 		var count = arguments.length,
@@ -3725,16 +3262,6 @@
 	Segment.prototype._class = 'Segment';
 	Segment.prototype.beans = true;
 	Segment.prototype._selection = 0;
-	Segment.prototype._serialize = function (options, dictionary) {
-		var point = this._point,
-			selection = this._selection,
-			obj = selection || this.hasHandles()
-				? [point, this._handleIn, this._handleOut]
-				: point;
-		if (selection)
-			obj.push(selection);
-		return Base.serialize(obj, options, true, dictionary);
-	};
 	Segment.prototype._changed = function (point) {
 		var path = this._path;
 		if (!path)
@@ -3918,14 +3445,6 @@
 			&& this._handleIn.equals(segment._handleIn)
 			&& this._handleOut.equals(segment._handleOut)
 			|| false;
-	};
-	Segment.prototype.toString = function () {
-		var parts = ['point: ' + this._point];
-		if (!this._handleIn.isZero())
-			parts.push('handleIn: ' + this._handleIn);
-		if (!this._handleOut.isZero())
-			parts.push('handleOut: ' + this._handleOut);
-		return '{ ' + parts.join(', ') + ' }';
 	};
 	Segment.prototype.transform = function (matrix) {
 		this._transformCoordinates(matrix, new Array(6), true);
@@ -4118,27 +3637,11 @@
 	InitClassWithStatics(Curve, Base);
 	Curve.prototype.initialize = Curve;
 	Curve.prototype._class = 'Curve';
-	Curve.prototype._serialize = function (options, dictionary) {
-		return Base.serialize(this.hasHandles()
-			? [this.getPoint1(), this.getHandle1(), this.getHandle2(),
-			this.getPoint2()]
-			: [this.getPoint1(), this.getPoint2()],
-			options, true, dictionary);
-	};
 	Curve.prototype._changed = function () {
 		this._length = this._bounds = undefined;
 	};
 	Curve.prototype.clone = function () {
 		return new Curve(this._segment1, this._segment2);
-	};
-	Curve.prototype.toString = function () {
-		var parts = ['point1: ' + this._segment1._point];
-		if (!this._segment1._handleOut.isZero())
-			parts.push('handle1: ' + this._segment1._handleOut);
-		if (!this._segment2._handleIn.isZero())
-			parts.push('handle2: ' + this._segment2._handleIn);
-		parts.push('point2: ' + this._segment2._point);
-		return '{ ' + parts.join(', ') + ' }';
 	};
 	Curve.prototype.classify = function () {
 		return Curve.classify(this.getValues());
@@ -5555,22 +5058,6 @@
 			}
 		}
 		return res;
-	};
-	CurveLocation.prototype.toString = function () {
-		var parts = [],
-			point = this.getPoint(),
-			f = Formatter.instance;
-		if (point)
-			parts.push('point: ' + point);
-		var index = this.getIndex();
-		if (index != null)
-			parts.push('index: ' + index);
-		var time = this.getTime();
-		if (time != null)
-			parts.push('time: ' + f.number(time));
-		if (this._distance != null)
-			parts.push('distance: ' + f.number(this._distance));
-		return '{ ' + parts.join(', ') + ' }';
 	};
 	CurveLocation.prototype.isTouching = function () {
 		var inter = this._intersection;
@@ -7293,33 +6780,6 @@
 		}
 		return paths.join('');
 	};
-	CompoundPath.prototype._draw = function (ctx, param, viewMatrix, strokeMatrix) {
-		var children = this._children;
-		if (!children.length)
-			return;
-
-		param = param.extend({ dontStart: true, dontFinish: true });
-		ctx.beginPath();
-		for (var i = 0, l = children.length; i < l; i++)
-			children[i].draw(ctx, param, strokeMatrix);
-
-		if (!param.clip) {
-			this._setStyles(ctx, param, viewMatrix);
-		}
-	};
-	CompoundPath.prototype._drawSelected = function (ctx, matrix, selectionItems) {
-		var children = this._children;
-		for (var i = 0, l = children.length; i < l; i++) {
-			var child = children[i],
-				mx = child._matrix;
-			if (!selectionItems[child._id]) {
-				child._drawSelected(ctx, mx.isIdentity() ? matrix
-					: matrix.appended(mx));
-			}
-		}
-	};
-
-	// Missed prototype properties: 'closed', 'firstSegment', 'lastSegment', 'curves', 'firstCurve', 'lastCurve', 'area', 'length', 'pathData';
 
 	CompoundPath.getCurrentPath = function (that, check) {
 		var children = that._children;
@@ -8265,8 +7725,7 @@
 		CollisionDetection, Numerical, UID,
 		Point, LinkedPoint,
 		Rectangle, LinkedRectangle,
-		Matrix, Line, Item, Group,
-		Layer,
+		Matrix, Line, Item,
 		Segment, SegmentPoint,
 		Curve, CurveLocation,
 		Path, PathItem,
