@@ -8,6 +8,7 @@
 			Object.defineProperty(fClass, prop, Object.getOwnPropertyDescriptor(fBase, prop));
 		});
 		fClass.base = fBase;
+		fClass.prototype.initialize = fClass;
 	}
 
 	var Base = function Base() {
@@ -19,7 +20,6 @@
 		return this;
 	};
 
-	Base.prototype.initialize = Base;
 	Base.prototype.set = Base;
 	Base.prototype.each = function (iter, bind) {
 		return each(this, iter, bind);
@@ -57,9 +57,6 @@
 		return Array.prototype.slice.call(list, begin, end);
 	};
 
-	Base.prototype.getClassName = function () {
-		return this._class || '';
-	};
 	Base.prototype.set = function (props, exclude) {
 		if (props)
 			Base.filter(this, props, exclude, this._prioritize);
@@ -436,7 +433,6 @@
 		return this.point(val, separator) + (separator || ',')
 			+ this.size(val, separator);
 	};
-	Formatter.instance = new Formatter();
 
 	var Numerical = new function () {
 
@@ -729,8 +725,6 @@
 
 	InitClassWithStatics(Point, Base);
 
-	Point.prototype.initialize = Point;
-	Point.prototype._class = 'Point';
 	Point.prototype._readIndex = true;
 	Point.prototype.set = Point;
 	Point.prototype._set = function (x, y) {
@@ -751,31 +745,12 @@
 	Point.prototype.getLength = function () {
 		return Math.sqrt(this.x * this.x + this.y * this.y);
 	};
-	Point.prototype.setLength = function (length) {
-		if (this.isZero()) {
-			var angle = this._angle || 0;
-			this._set(
-				Math.cos(angle) * length,
-				Math.sin(angle) * length
-			);
-		} else {
-			var scale = length / this.getLength();
-			if (Numerical.isZero(scale))
-				this.getAngle();
-			this._set(
-				this.x * scale,
-				this.y * scale
-			);
-		}
-	};
 	Point.prototype.getAngle = function () {
 		return this.getAngleInRadians.apply(this, arguments) * 180 / Math.PI;
 	};
 	Point.prototype.setAngle = function (angle) {
 		this.setAngleInRadians.call(this, angle * Math.PI / 180);
 	};
-	Point.prototype.getAngleInDegrees = Point.prototype.getAngle;
-	Point.prototype.setAngleInDegrees = Point.prototype.setAngle;
 	Point.prototype.getAngleInRadians = function () {
 		if (!arguments.length) {
 			return this.isZero()
@@ -802,10 +777,6 @@
 			);
 		}
 	};
-	Point.prototype.getQuadrant = function () {
-		return this.x >= 0 ? this.y >= 0 ? 1 : 4 : this.y >= 0 ? 2 : 3;
-	};
-	Point.prototype.beans = false;
 	Point.prototype.getDirectedAngle = function () {
 		var point = Point.read(arguments);
 		return Math.atan2(this.cross(point), this.dot(point)) * 180 / Math.PI;
@@ -861,10 +832,6 @@
 		var point = Point.read(arguments);
 		return new Point(this.x / point.x, this.y / point.y);
 	};
-	Point.prototype.modulo = function () {
-		var point = Point.read(arguments);
-		return new Point(this.x % point.x, this.y % point.y);
-	};
 	Point.prototype.negate = function () {
 		return new Point(-this.x, -this.y);
 	};
@@ -881,7 +848,6 @@
 		var point = Point.read(arguments);
 		return Point.isCollinear(this.x, this.y, point.x, point.y);
 	};
-	Point.prototype.isColinear = Point.prototype.isCollinear;
 	Point.prototype.isOrthogonal = function () {
 		var point = Point.read(arguments);
 		return Point.isOrthogonal(this.x, this.y, point.x, point.y);
@@ -893,10 +859,6 @@
 	Point.prototype.isNaN = function () {
 		return isNaN(this.x) || isNaN(this.y);
 	};
-	Point.prototype.isInQuadrant = function (q) {
-		return this.x * (q > 1 && q < 4 ? -1 : 1) >= 0
-			&& this.y * (q > 2 ? -1 : 1) >= 0;
-	};
 	Point.prototype.dot = function () {
 		var point = Point.read(arguments);
 		return this.x * point.x + this.y * point.y;
@@ -905,36 +867,7 @@
 		var point = Point.read(arguments);
 		return this.x * point.y - this.y * point.x;
 	};
-	Point.prototype.project = function () {
-		var point = Point.read(arguments),
-			scale = point.isZero() ? 0 : this.dot(point) / point.dot(point);
-		return new Point(
-			point.x * scale,
-			point.y * scale
-		);
-	};
 
-	Point.min = function () {
-		var args = arguments,
-			point1 = Point.read(args),
-			point2 = Point.read(args);
-		return new Point(
-			Math.min(point1.x, point2.x),
-			Math.min(point1.y, point2.y)
-		);
-	};
-	Point.max = function () {
-		var args = arguments,
-			point1 = Point.read(args),
-			point2 = Point.read(args);
-		return new Point(
-			Math.max(point1.x, point2.x),
-			Math.max(point1.y, point2.y)
-		);
-	};
-	Point.random = function () {
-		return new Point(Math.random(), Math.random());
-	};
 	Point.isCollinear = function (x1, y1, x2, y2) {
 		return Math.abs(x1 * y2 - y1 * x2)
 			<= Math.sqrt((x1 * x1 + y1 * y1) * (x2 * x2 + y2 * y2))
@@ -946,19 +879,6 @@
 			* 1e-8;
 	};
 
-	Point.prototype.round = function () {
-		return new Point(Math.round(this.x), Math.round(this.y));
-	};
-	Point.prototype.ceil = function () {
-		return new Point(Math.ceil(this.x), Math.ceil(this.y));
-	};
-	Point.prototype.floor = function () {
-		return new Point(Math.floor(this.x), Math.floor(this.y));
-	};
-	Point.prototype.abs = function () {
-		return new Point(Math.abs(this.x), Math.abs(this.y));
-	};
-
 	var LinkedPoint = function (x, y, owner, setter) {
 		// Point.call(this);
 		this._x = x;
@@ -968,7 +888,6 @@
 	};
 
 	InitClassWithStatics(LinkedPoint, Point);
-	LinkedPoint.prototype.initialize = LinkedPoint;
 
 	LinkedPoint.prototype._set = function (x, y, _dontNotify) {
 		this._x = x;
@@ -990,15 +909,6 @@
 	LinkedPoint.prototype.setY = function (y) {
 		this._y = y;
 		this._owner[this._setter](this);
-	};
-	LinkedPoint.prototype.isSelected = function () {
-		return !!(this._owner._selection & this._getSelection());
-	};
-	LinkedPoint.prototype.setSelected = function (selected) {
-		this._owner._changeSelection(this._getSelection(), selected);
-	};
-	LinkedPoint.prototype._getSelection = function () {
-		return this._setter === 'setPosition' ? 4 : 0;
 	};
 
 	Object.defineProperty(LinkedPoint.prototype, 'x', {
@@ -1083,9 +993,7 @@
 	};
 
 	InitClassWithStatics(Rectangle, Base);
-	Rectangle.prototype.initialize = Rectangle;
 	Rectangle.prototype.set = Rectangle;
-	Rectangle.prototype._class = 'Rectangle';
 	Rectangle.prototype._readIndex = true;
 
 	Rectangle.prototype._set = function (x, y, width, height) {
@@ -1116,30 +1024,10 @@
 		this.x = point.x;
 		this.y = point.y;
 	};
-	Rectangle.prototype.getSize = function (_dontLink) {
-		var ctor = _dontLink ? Size : LinkedSize;
-		return new ctor(this.width, this.height, this, 'setSize');
-	};
 
 	Rectangle.prototype._fw = 1;
 	Rectangle.prototype._fh = 1;
 
-	Rectangle.prototype.setSize = function () {
-		var size = Size.read(arguments),
-			sx = this._sx,
-			sy = this._sy,
-			w = size.width,
-			h = size.height;
-		if (sx) {
-			this.x += (this.width - w) * sx;
-		}
-		if (sy) {
-			this.y += (this.height - h) * sy;
-		}
-		this.width = w;
-		this.height = h;
-		this._fw = this._fh = 1;
-	};
 	Rectangle.prototype.getLeft = function () {
 		return this.x;
 	};
@@ -1226,6 +1114,10 @@
 		this.setCenterY(point.y);
 		return this;
 	};
+	Rectangle.prototype.getTopLeft = function (_dontLink) {
+		var ctor = _dontLink ? Point : LinkedPoint;
+		return new ctor(this['getLeft'](), this['getTop'](), this, 'setTopLeft');
+	};
 	Rectangle.prototype.getArea = function () {
 		return this.width * this.height;
 	};
@@ -1284,90 +1176,6 @@
 			y2 = Math.max(this.y + this.height, point.y);
 		return new Rectangle(x1, y1, x2 - x1, y2 - y1);
 	};
-	Rectangle.prototype.expand = function () {
-		var amount = Size.read(arguments),
-			hor = amount.width,
-			ver = amount.height;
-		return new Rectangle(this.x - hor / 2, this.y - ver / 2,
-			this.width + hor, this.height + ver);
-	};
-	Rectangle.prototype.scale = function (hor, ver) {
-		return this.expand(this.width * hor - this.width,
-			this.height * (ver === undefined ? hor : ver) - this.height);
-	};
-
-	Rectangle.prototype.getTopLeft = function (_dontLink) {
-		var ctor = _dontLink ? Point : LinkedPoint;
-		return new ctor(this['getLeft'](), this['getTop'](), this, 'setTopLeft');
-	};
-	Rectangle.prototype.setTopLeft = function () {
-		var point = Point.read(arguments);
-		this['setLeft'](point.x);
-		this['setTop'](point.y);
-	};
-	Rectangle.prototype.getTopRight = function (_dontLink) {
-		var ctor = _dontLink ? Point : LinkedPoint;
-		return new ctor(this['getRight'](), this['getTop'](), this, 'setTopRight');
-	};
-	Rectangle.prototype.setTopRight = function () {
-		var point = Point.read(arguments);
-		this['setRight'](point.x);
-		this['setTop'](point.y);
-	};
-	Rectangle.prototype.getBottomLeft = function (_dontLink) {
-		var ctor = _dontLink ? Point : LinkedPoint;
-		return new ctor(this['getLeft'](), this['getBottom'](), this, 'setBottomLeft');
-	};
-	Rectangle.prototype.setBottomLeft = function () {
-		var point = Point.read(arguments);
-		this['setLeft'](point.x);
-		this['setBottom'](point.y);
-	};
-	Rectangle.prototype.getBottomRight = function (_dontLink) {
-		var ctor = _dontLink ? Point : LinkedPoint;
-		return new ctor(this['getRight'](), this['getBottom'](), this, 'setBottomRight');
-	};
-	Rectangle.prototype.setBottomRight = function () {
-		var point = Point.read(arguments);
-		this['setRight'](point.x);
-		this['setBottom'](point.y);
-	};
-	Rectangle.prototype.getLeftCenter = function (_dontLink) {
-		var ctor = _dontLink ? Point : LinkedPoint;
-		return new ctor(this['getLeft'](), this['getCenterY'](), this, 'setLeftCenter');
-	};
-	Rectangle.prototype.setLeftCenter = function () {
-		var point = Point.read(arguments);
-		this['setLeft'](point.x);
-		this['setCenterY'](point.y);
-	};
-	Rectangle.prototype.getTopCenter = function (_dontLink) {
-		var ctor = _dontLink ? Point : LinkedPoint;
-		return new ctor(this['getCenterX'](), this['getTop'](), this, 'setTopCenter');
-	};
-	Rectangle.prototype.setTopCenter = function () {
-		var point = Point.read(arguments);
-		this['setCenterX'](point.x);
-		this['setTop'](point.y);
-	};
-	Rectangle.prototype.getRightCenter = function (_dontLink) {
-		var ctor = _dontLink ? Point : LinkedPoint;
-		return new ctor(this['getRight'](), this['getCenterY'](), this, 'setRightCenter');
-	};
-	Rectangle.prototype.setRightCenter = function () {
-		var point = Point.read(arguments);
-		this['setRight'](point.x);
-		this['setCenterY'](point.y);
-	};
-	Rectangle.prototype.getBottomCenter = function (_dontLink) {
-		var ctor = _dontLink ? Point : LinkedPoint;
-		return new ctor(this['getCenterX'](), this['getBottom'](), this, 'setBottomCenter');
-	};
-	Rectangle.prototype.setBottomCenter = function () {
-		var point = Point.read(arguments);
-		this['setCenterX'](point.x);
-		this['setBottom'](point.y);
-	};
 
 	var LinkedRectangle = function Rectangle(x, y, width, height, owner, setter) {
 		this._set(x, y, width, height, true);
@@ -1375,7 +1183,6 @@
 		this._setter = setter;
 	};
 	InitClassWithStatics(LinkedRectangle, Rectangle);
-	LinkedRectangle.prototype.initialize = LinkedRectangle;
 	LinkedRectangle.prototype._set = function (x, y, width, height, _dontNotify) {
 		this._x = x;
 		this._y = y;
@@ -1386,24 +1193,9 @@
 		return this;
 	};
 
-	LinkedRectangle.prototype.isSelected = function () {
-		return !!(this._owner._selection & 2);
-	};
-	LinkedRectangle.prototype.setSelected = function (selected) {
-		var owner = this._owner;
-		if (owner._changeSelection) {
-			owner._changeSelection(2, selected);
-		}
-	};
 	LinkedRectangle.prototype.setPoint = function () {
 		this._dontNotify = true;
 		Rectangle.prototype['setPoint'].apply(this, arguments);
-		this._dontNotify = false;
-		this._owner[this._setter](this);
-	};
-	LinkedRectangle.prototype.setSize = function () {
-		this._dontNotify = true;
-		Rectangle.prototype['setSize'].apply(this, arguments);
 		this._dontNotify = false;
 		this._owner[this._setter](this);
 	};
@@ -1449,54 +1241,6 @@
 		this._dontNotify = false;
 		this._owner[this._setter](this);
 	};
-	LinkedRectangle.prototype.setTopLeft = function () {
-		this._dontNotify = true;
-		Rectangle.prototype['setTopLeft'].apply(this, arguments);
-		this._dontNotify = false;
-		this._owner[this._setter](this);
-	};
-	LinkedRectangle.prototype.setTopRight = function () {
-		this._dontNotify = true;
-		Rectangle.prototype['setTopRight'].apply(this, arguments);
-		this._dontNotify = false;
-		this._owner[this._setter](this);
-	};
-	LinkedRectangle.prototype.setBottomLeft = function () {
-		this._dontNotify = true;
-		Rectangle.prototype['setBottomLeft'].apply(this, arguments);
-		this._dontNotify = false;
-		this._owner[this._setter](this);
-	};
-	LinkedRectangle.prototype.setBottomRight = function () {
-		this._dontNotify = true;
-		Rectangle.prototype['setBottomRight'].apply(this, arguments);
-		this._dontNotify = false;
-		this._owner[this._setter](this);
-	};
-	LinkedRectangle.prototype.setLeftCenter = function () {
-		this._dontNotify = true;
-		Rectangle.prototype['setLeftCenter'].apply(this, arguments);
-		this._dontNotify = false;
-		this._owner[this._setter](this);
-	};
-	LinkedRectangle.prototype.setTopCenter = function () {
-		this._dontNotify = true;
-		Rectangle.prototype['setTopCenter'].apply(this, arguments);
-		this._dontNotify = false;
-		this._owner[this._setter](this);
-	};
-	LinkedRectangle.prototype.setRightCenter = function () {
-		this._dontNotify = true;
-		Rectangle.prototype['setRightCenter'].apply(this, arguments);
-		this._dontNotify = false;
-		this._owner[this._setter](this);
-	};
-	LinkedRectangle.prototype.setBottomCenter = function () {
-		this._dontNotify = true;
-		Rectangle.prototype['setBottomCenter'].apply(this, arguments);
-		this._dontNotify = false;
-		this._owner[this._setter](this);
-	};
 	LinkedRectangle.prototype.getX = function () {
 		return this['_x'];
 	};
@@ -1530,11 +1274,6 @@
 			this._owner[this._setter](this);
 	};
 
-	Object.defineProperty(LinkedRectangle.prototype, 'selected', {
-		enumerable: true, configurable: true,
-		get: function () { return this.isSelected(); },
-		set: function (value) { this.setSelected(value); },
-	});
 	Object.defineProperty(LinkedRectangle.prototype, 'left', {
 		enumerable: true, configurable: true,
 		get: function () { return this.x; },
@@ -1578,7 +1317,7 @@
 	Object.defineProperty(LinkedRectangle.prototype, 'width', {
 		enumerable: true, configurable: true,
 		get: function () { return this.getWidth(); },
-		set: function (value) { this.setHeight(value); },
+		set: function (value) { this.setWidth(value); },
 	});
 	Object.defineProperty(LinkedRectangle.prototype, 'height', {
 		enumerable: true, configurable: true,
@@ -1615,8 +1354,6 @@
 	};
 
 	InitClassWithStatics(Matrix, Base);
-	Matrix.prototype._class = 'Matrix';
-	Matrix.prototype.initialize = Matrix;
 	Matrix.prototype.set = Matrix;
 	Matrix.prototype._set = function (a, b, c, d, tx, ty, _dontNotify) {
 		this._a = a;
@@ -1951,12 +1688,6 @@
 	Matrix.prototype.getRotation = function () {
 		return this.decompose().rotation;
 	};
-	Matrix.prototype.applyToContext = function (ctx) {
-		if (!this.isIdentity()) {
-			ctx.transform(this._a, this._b, this._c, this._d,
-				this._tx, this._ty);
-		}
-	};
 
 	var Line = function Line(arg0, arg1, arg2, arg3, arg4) {
 		Base.call(this);
@@ -1980,8 +1711,6 @@
 		}
 	};
 	InitClassWithStatics(Line, Base);
-	Line.prototype._class = 'Line';
-	Line.prototype.initialize = Line;
 	Line.prototype.getPoint = function () {
 		return new Point(this._px, this._py);
 	};
@@ -1989,7 +1718,7 @@
 		return new Point(this._vx, this._vy);
 	};
 	Line.prototype.getLength = function () {
-		return this.getVector().getLength();
+		return new Point(this._vx, this._vy).getLength();
 	};
 	Line.prototype.intersect = function (line, isInfinite) {
 		return Line.intersect(
@@ -2015,6 +1744,7 @@
 	Line.prototype.isOrthogonal = function (line) {
 		return Point.isOrthogonal(this._vx, this._vy, line._vx, line._vy);
 	};
+
 	Line.intersect = function (p1x, p1y, v1x, v1y, p2x, p2y, v2x, v2y, asVector,
 		isInfinite) {
 		if (!asVector) {
@@ -2076,86 +1806,10 @@
 			Line.getSignedDistance(px, py, vx, vy, x, y, asVector));
 	};
 
-
-
 	var Item = function () {
-		Base.call();
 	}
 	InitClassWithStatics(Item, Base);
 
-	Item.prototype.on = function (type, func) {
-		if (typeof type !== 'string') {
-			Base.each(type, function (value, key) {
-				this.on(key, value);
-			}, this);
-		} else {
-			var types = this._eventTypes,
-				entry = types && types[type],
-				handlers = this._callbacks = this._callbacks || {};
-			handlers = handlers[type] = handlers[type] || [];
-			if (handlers.indexOf(func) === -1) {
-				handlers.push(func);
-				if (entry && entry.install && handlers.length === 1)
-					entry.install.call(this, type);
-			}
-		}
-		return this;
-	};
-	Item.prototype.off = function (type, func) {
-		if (typeof type !== 'string') {
-			Base.each(type, function (value, key) {
-				this.off(key, value);
-			}, this);
-			return;
-		}
-		var types = this._eventTypes,
-			entry = types && types[type],
-			handlers = this._callbacks && this._callbacks[type],
-			index;
-		if (handlers) {
-			if (!func || (index = handlers.indexOf(func)) !== -1
-				&& handlers.length === 1) {
-				if (entry && entry.uninstall)
-					entry.uninstall.call(this, type);
-				delete this._callbacks[type];
-			} else if (index !== -1) {
-				handlers.splice(index, 1);
-			}
-		}
-		return this;
-	};
-	Item.prototype.once = function (type, func) {
-		return this.on(type, function handler() {
-			func.apply(this, arguments);
-			this.off(type, handler);
-		});
-	};
-	Item.prototype.emit = function (type, event) {
-		var handlers = this._callbacks && this._callbacks[type];
-		if (!handlers)
-			return false;
-		var args = Base.slice(arguments, 1),
-			setTarget = event && event.target && !event.currentTarget;
-		handlers = handlers.slice();
-		if (setTarget)
-			event.currentTarget = this;
-		for (var i = 0, l = handlers.length; i < l; i++) {
-			if (handlers[i].apply(this, args) == false) {
-				if (event && event.stop)
-					event.stop();
-				break;
-			}
-		}
-		if (setTarget)
-			delete event.currentTarget;
-		return true;
-	};
-	Item.prototype.responds = function (type) {
-		return !!(this._callbacks && this._callbacks[type]);
-	};
-	Item.prototype.attach = Item.prototype.on;
-	Item.prototype.detach = Item.prototype.off;
-	Item.prototype.fir = Item.prototype.emit;
 	Item.prototype._installEvents = function (install) {
 		var types = this._eventTypes,
 			handlers = this._callbacks,
@@ -2173,38 +1827,16 @@
 	};
 	Item.INSERT = { insert: true };
 	Item.NO_INSERT = { insert: false };
-	Item.prototype._class = 'Item';
 	Item.prototype._name = null;
 	Item.prototype._applyMatrix = true;
 	Item.prototype._canApplyMatrix = true;
-	Item.prototype._canScaleStroke = false;
 	Item.prototype._pivot = null;
 	Item.prototype._visible = true;
-	Item.prototype._blendMode = 'normal';
 	Item.prototype._opacity = 1;
 	Item.prototype._locked = false;
 	Item.prototype._guide = false;
 	Item.prototype._clipMask = false;
-	Item.prototype._selection = 0;
-	Item.prototype._selectBounds = true;
-	Item.prototype._selectChildren = false;
-	Item.prototype._serializeFields = {
-		name: null,
-		applyMatrix: null,
-		matrix: new Matrix(),
-		pivot: null,
-		visible: true,
-		blendMode: 'normal',
-		opacity: 1,
-		locked: false,
-		guide: false,
-		clipMask: false,
-		selected: false,
-		data: {}
-	};
 	Item.prototype._prioritize = ['applyMatrix'];
-	Item.prototype.initialize = function Item() {
-	};
 	Item.prototype._initialize = function (props, point) {
 		var hasProps = props && Base.isPlainObject(props),
 			internal = hasProps && props.internal === true,
@@ -2265,54 +1897,6 @@
 	};
 	Item.prototype.setStyle = function (style) {
 
-	};
-	Item.prototype.getSelection = function () {
-		return this._selection;
-	};
-	Item.prototype.setSelection = function (selection) {
-		if (selection !== this._selection) {
-			this._selection = selection;
-		}
-	};
-	Item.prototype._changeSelection = function (flag, selected) {
-		var selection = this._selection;
-		this.setSelection(selected ? selection | flag : selection & ~flag);
-	};
-	Item.prototype.isSelected = function () {
-		if (this._selectChildren) {
-			var children = this._children;
-			for (var i = 0, l = children.length; i < l; i++)
-				if (children[i].isSelected())
-					return true;
-		}
-		return !!(this._selection & 1);
-	};
-	Item.prototype.setSelected = function (selected) {
-		if (this._selectChildren) {
-			var children = this._children;
-			for (var i = 0, l = children.length; i < l; i++)
-				children[i].setSelected(selected);
-		}
-		this._changeSelection(1, selected);
-	};
-	Item.prototype.isFullySelected = function () {
-		var children = this._children,
-			selected = !!(this._selection & 1);
-		if (children && selected) {
-			for (var i = 0, l = children.length; i < l; i++)
-				if (!children[i].isFullySelected())
-					return false;
-			return true;
-		}
-		return selected;
-	};
-	Item.prototype.setFullySelected = function (selected) {
-		var children = this._children;
-		if (children) {
-			for (var i = 0, l = children.length; i < l; i++)
-				children[i].setFullySelected(selected);
-		}
-		this._changeSelection(1, selected);
 	};
 	Item.prototype.isClipMask = function () {
 		return this._clipMask;
@@ -2647,11 +2231,10 @@
 		return this._index;
 	};
 	Item.prototype.equals = function (item) {
-		return item === this || item && this._class === item._class
+		return item === this || item
 			&& this._matrix.equals(item._matrix)
 			&& this._locked === item._locked
 			&& this._visible === item._visible
-			&& this._blendMode === item._blendMode
 			&& this._opacity === item._opacity
 			&& this._clipMask === item._clipMask
 			&& this._guide === item._guide
@@ -2696,7 +2279,7 @@
 	};
 	Item.prototype.copyAttributes = function (source, excludeMatrix) {
 		this.setStyle({});
-		var keys = ['_locked', '_visible', '_blendMode', '_opacity', '_clipMask', '_guide'];
+		var keys = ['_locked', '_visible', '_opacity', '_clipMask', '_guide'];
 		for (var i = 0, l = keys.length; i < l; i++) {
 			var key = keys[i];
 			if (source.hasOwnProperty(key))
@@ -2706,7 +2289,6 @@
 			this._matrix.set(source._matrix, true);
 		this.setApplyMatrix(source._applyMatrix);
 		this.setPivot(source._pivot);
-		this.setSelection(source._selection);
 		var data = source._data,
 			name = source._name;
 		this._data = data ? Base.clone(data) : null;
@@ -2996,7 +2578,7 @@
 		var parent = this._parent;
 		while (parent) {
 			if (parent._parent
-				&& /^(Group|Layer|CompoundPath)$/.test(parent._class)
+				&& parent.initialize === CompoundPath
 				&& item.isDescendant(parent))
 				return true;
 			parent = parent._parent;
@@ -3101,19 +2683,17 @@
 	var Segment = function (arg0, arg1, arg2, arg3, arg4, arg5) {
 		Base.apply(this, arguments);
 		var count = arguments.length,
-			point, handleIn, handleOut, selection;
+			point, handleIn, handleOut;
 		if (count > 0) {
 			if (arg0 == null || typeof arg0 === 'object') {
 				if (count === 1 && arg0 && 'point' in arg0) {
 					point = arg0.point;
 					handleIn = arg0.handleIn;
 					handleOut = arg0.handleOut;
-					selection = arg0.selection;
 				} else {
 					point = arg0;
 					handleIn = arg1;
 					handleOut = arg2;
-					selection = arg3;
 				}
 			} else {
 				point = [arg0, arg1];
@@ -3124,14 +2704,8 @@
 		new SegmentPoint(point, this, '_point');
 		new SegmentPoint(handleIn, this, '_handleIn');
 		new SegmentPoint(handleOut, this, '_handleOut');
-		if (selection)
-			this.setSelection(selection);
 	}
 	InitClassWithStatics(Segment, Base);
-	Segment.prototype.initialize = Segment;
-	Segment.prototype._class = 'Segment';
-	Segment.prototype.beans = true;
-	Segment.prototype._selection = 0;
 	Segment.prototype._changed = function (point) {
 		var path = this._path;
 		if (!path)
@@ -3181,28 +2755,6 @@
 	Segment.prototype.clearHandles = function () {
 		this._handleIn._set(0, 0);
 		this._handleOut._set(0, 0);
-	};
-	Segment.prototype.getSelection = function () {
-		return this._selection;
-	};
-	Segment.prototype.setSelection = function (selection) {
-		var oldSelection = this._selection,
-			path = this._path;
-		this._selection = selection = selection || 0;
-		if (path && selection !== oldSelection) {
-			path._updateSelection(this, oldSelection, selection);
-			path._changed(257);
-		}
-	};
-	Segment.prototype._changeSelection = function (flag, selected) {
-		var selection = this._selection;
-		this.setSelection(selected ? selection | flag : selection & ~flag);
-	};
-	Segment.prototype.isSelected = function () {
-		return !!(this._selection & 7);
-	};
-	Segment.prototype.setSelected = function (selected) {
-		this._changeSelection(7, selected);
 	};
 	Segment.prototype.getIndex = function () {
 		return this._index !== undefined ? this._index : null;
@@ -3310,7 +2862,7 @@
 		return new Segment(this._point, this._handleIn, this._handleOut);
 	};
 	Segment.prototype.equals = function (segment) {
-		return segment === this || segment && this._class === segment._class
+		return segment === this || segment
 			&& this._point.equals(segment._point)
 			&& this._handleIn.equals(segment._handleIn)
 			&& this._handleOut.equals(segment._handleOut)
@@ -3390,8 +2942,7 @@
 	};
 
 	var SegmentPoint = function (point, owner, key) {
-		var x, y,
-			selected;
+		var x, y;
 		if (!point) {
 			x = y = 0;
 		} else if ((x = point[0]) !== undefined) {
@@ -3403,17 +2954,14 @@
 				x = pt.x;
 			}
 			y = pt.y;
-			selected = pt.selected;
 		}
 		this._x = x;
 		this._y = y;
 		this._owner = owner;
 		owner[key] = this;
-		if (selected)
-			this.setSelected(true);
+
 	}
 	InitClassWithStatics(SegmentPoint, Point);
-	SegmentPoint.prototype.initialize = SegmentPoint;
 	SegmentPoint.prototype._set = function (x, y) {
 		this._x = x;
 		this._y = y;
@@ -3505,8 +3053,6 @@
 		this._segment2 = seg2 || new Segment(point2, handle2, null);
 	};
 	InitClassWithStatics(Curve, Base);
-	Curve.prototype.initialize = Curve;
-	Curve.prototype._class = 'Curve';
 	Curve.prototype._changed = function () {
 		this._length = this._bounds = undefined;
 	};
@@ -3580,18 +3126,6 @@
 		var path = this._path;
 		return path && this._segment1._index === path._curves.length - 1
 			|| false;
-	};
-	Curve.prototype.isSelected = function () {
-		return this.getPoint1().isSelected()
-			&& this.getHandle1().isSelected()
-			&& this.getHandle2().isSelected()
-			&& this.getPoint2().isSelected();
-	};
-	Curve.prototype.setSelected = function (selected) {
-		this.getPoint1().setSelected(selected);
-		this.getHandle1().setSelected(selected);
-		this.getHandle2().setSelected(selected);
-		this.getPoint2().setSelected(selected);
 	};
 	Curve.prototype.getValues = function (matrix) {
 		return Curve.getValues(this._segment1, this._segment2, matrix);
@@ -4777,8 +4311,6 @@
 		this._intersection = this._next = this._previous = null;
 	};
 	InitClassWithStatics(CurveLocation, Base);
-	CurveLocation.prototype.initialize = CurveLocation;
-	CurveLocation.prototype._class = 'CurveLocation';
 	CurveLocation.prototype._setPath = function (path) {
 		this._path = path;
 		this._version = path ? path._version : 0;
@@ -5127,11 +4659,6 @@
 	var PathItem = function PathItem() {
 	};
 	InitClassWithStatics(PathItem, Item);
-	PathItem.prototype.initialize = PathItem;
-
-	PathItem.prototype._class = 'PathItem';
-	PathItem.prototype._selectBounds = false;
-	PathItem.prototype._canScaleStroke = true;
 
 	PathItem.create = function (arg) {
 		var data,
@@ -5422,7 +4949,6 @@
 			this.setSegments(segments);
 		} else {
 			this._curves = undefined;
-			this._segmentSelection = 0;
 			if (!segments && typeof arg === 'string') {
 				this.setPathData(arg);
 				arg = null;
@@ -5431,12 +4957,7 @@
 		this._initialize(!segments && arg);
 	};
 	InitClassWithStatics(Path, PathItem);
-	Path.prototype.initialize = Path;
-	Path.prototype._class = 'Path',
-		Path.prototype._serializeFields = {
-			segments: [],
-			closed: false
-		};
+
 	Path.prototype._equals = function (item) {
 		return this._closed === item._closed
 			&& Base.equals(this._segments, item._segments);
@@ -5463,10 +4984,8 @@
 		return this._segments;
 	};
 	Path.prototype.setSegments = function (segments) {
-		var fullySelected = this.isFullySelected(),
-			length = segments && segments.length;
+		var length = segments && segments.length;
 		this._segments.length = 0;
-		this._segmentSelection = 0;
 		this._curves = undefined;
 		if (length) {
 			var last = segments[length - 1];
@@ -5476,8 +4995,6 @@
 			}
 			this._add(Segment.readList(segments, 0, {}, length));
 		}
-		if (fullySelected)
-			this.setFullySelected(true);
 	};
 	Path.prototype.getFirstSegment = function () {
 		return this._segments[0];
@@ -5653,8 +5170,6 @@
 				segment = segs[i] = segment.clone();
 			segment._path = this;
 			segment._index = index + i;
-			if (segment._selection)
-				this._updateSelection(segment, 0, segment._selection);
 		}
 		if (append) {
 			segments.push.apply(segments, segs);
@@ -5744,8 +5259,6 @@
 			return removed;
 		for (var i = 0; i < amount; i++) {
 			var segment = removed[i];
-			if (segment._selection)
-				this._updateSelection(segment, segment._selection, 0);
 			segment._index = segment._path = null;
 		}
 		for (var i = start, l = segments.length; i < l; i++)
@@ -5803,35 +5316,6 @@
 			this._area = area;
 		}
 		return area;
-	};
-	Path.prototype.isFullySelected = function () {
-		var length = this._segments.length;
-		return this.isSelected() && length > 0 && this._segmentSelection
-			=== length * 7;
-	};
-	Path.prototype.setFullySelected = function (selected) {
-		if (selected)
-			this._selectSegments(true);
-		this.setSelected(selected);
-	};
-	Path.prototype.setSelection = function setSelection(selection) {
-		if (!(selection & 1))
-			this._selectSegments(false);
-		Item.prototype.setSelection.call(this, selection);
-	};
-	Path.prototype._selectSegments = function (selected) {
-		var segments = this._segments,
-			length = segments.length,
-			selection = selected ? 7 : 0;
-		this._segmentSelection = selection * length;
-		for (var i = 0; i < length; i++)
-			segments[i]._selection = selection;
-	};
-	Path.prototype._updateSelection = function (segment, oldSelection, newSelection) {
-		segment._selection = newSelection;
-		var selection = this._segmentSelection += newSelection - oldSelection;
-		if (selection > 0)
-			this.setSelected(true);
 	};
 	Path.prototype.divideAt = function (location) {
 		var loc = this.getLocationAt(location),
@@ -6017,20 +5501,6 @@
 	});
 	Object.defineProperty(Path.prototype, 'area', {
 		get: this.getArea,
-		enumerable: true,
-		configurable: true
-	});
-	Object.defineProperty(Path.prototype, 'fullySelected', {
-		get: this.isFullySelected,
-		set: this.setFullySelected,
-		enumerable: true,
-		configurable: true
-	});
-	Object.defineProperty(Path.prototype, 'selection', {
-		get: function () {
-			return this._selection;
-		},
-		set: this.setSelection,
 		enumerable: true,
 		configurable: true
 	});
@@ -6548,11 +6018,7 @@
 	};
 
 	InitClassWithStatics(CompoundPath, PathItem);
-	CompoundPath.prototype.initialize = CompoundPath;
-	CompoundPath.prototype._class = 'CompoundPath';
-	CompoundPath.prototype._serializeFields = {
-		children: []
-	};
+
 	CompoundPath.prototype.insertChildren = function insertChildren(index, items) {
 		var list = items,
 			first = list[0];
