@@ -494,6 +494,8 @@
 					// equal to ApiParagraph.prototype.AddText method
 					let oRun = new ParaRun(paragraph, false);
 					if (typeof textElementPart === "string") {
+						// Replace LineSeparator
+						textElementPart = textElementPart.replace("\u2028", "\n");
 						oRun.AddText(textElementPart);
 					} else if (textElementPart.constructor.name === "fld_Type") {
 						// text field
@@ -507,6 +509,8 @@
 						let fieldValueCell = fieldPropsFinal && fieldPropsFinal.getCell("Value");
 
 						if (fieldValueCell.v || optionalValue) {
+							// Replace LineSeparator
+							textElementPart.replace("\u2028", "\n");
 							oRun.AddText(fieldValueCell.v || optionalValue);
 						} else {
 							console.log("field_Type was not parsed");
