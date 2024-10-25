@@ -654,8 +654,8 @@
 	SmartArtAlgorithm.prototype.applyColorsDef = function (shadowShapes) {
 		const colorsDef = this.smartart.getColorsDef();
 		const stylesDef = this.smartart.getStyleDef();
-		const styleLblsByName = stylesDef.styleLblByName;
-		const colorLblsByName = colorsDef.styleLblByName;
+		const styleLblsByName = stylesDef.styleLbl;
+		const colorLblsByName = colorsDef.styleLbl;
 		const parentObjects = this.getParentObjects();
 		const shapesByStyleLbl = {};
 		for (let i = 0; i < shadowShapes.length; i += 1) {

@@ -546,8 +546,9 @@
 			return undefined;
 
 		var aStyleLbl = [];
-		for (var nStyle = 0; nStyle < oStyleDef.styleLbl.length; nStyle++)
-			aStyleLbl.push(this.SerDefStyleLbl(oStyleDef.styleLbl[nStyle]));
+		for (let name in oStyleDef.styleLbl) {
+			aStyleLbl.push(this.SerColorDefStyleLbl(oStyleDef.styleLbl[name]));
+		}
 
 		return {
 			"catLst":     this.SerCatLst(oStyleDef.catLst),
@@ -1153,8 +1154,9 @@
 			return undefined;
 
 		var aStyleLbl = [];
-		for (var nStyle = 0; nStyle < oColorsDef.styleLbl.length; nStyle++)
-			aStyleLbl.push(this.SerColorDefStyleLbl(oColorsDef.styleLbl[nStyle]));
+		for (let name in oColorsDef.styleLbl) {
+			aStyleLbl.push(this.SerColorDefStyleLbl(oColorsDef.styleLbl[name]));
+		}
 
 		return {
 			"catLst":   this.SerCatLst(oColorsDef.catLst),
@@ -12553,7 +12555,7 @@
 		var oStyleDef = new AscFormat.StyleDef();
 
 		for (var nStyle = 0; nStyle < oParsedStyleDef["styleLbl"].length; nStyle++)
-			oStyleDef.addToLstStyleLbl(oStyleDef.styleLbl.length, this.DefStyleLblFromJSON(oParsedStyleDef["styleLbl"][nStyle]));
+			oStyleDef.addToLstStyleLbl(this.DefStyleLblFromJSON(oParsedStyleDef["styleLbl"][nStyle]));
 
 		oParsedStyleDef["catLst"] && oStyleDef.setCatLst(this.CatLstFromJSON(oParsedStyleDef["catLst"]));
 		oParsedStyleDef["desc"] && oStyleDef.setDesc(this.DescFromJSON(oParsedStyleDef["desc"]));
@@ -12894,7 +12896,7 @@
 		oParsedRule["for"] != undefined && oRule.setFor(From_XML_ST_ConstraintRelationship(oParsedRule["for"]));
 		oParsedRule["forName"] != undefined && oRule.setForName(oParsedRule["forName"]);
 		max != undefined && oRule.setMax(max);
-		oParsedRule["ptType"] != undefined && oRule.setPtType(this.BaseFormatObjFromJSON(oParsedRule["ptType"]));
+		oParsedRule["ptType"] != undefined && oRule.setPtType(From_XML_ST_ElementType(oParsedRule["ptType"]["val"]));
 		oParsedRule["type"] != undefined && oRule.setType(From_XML_ST_ConstraintType(oParsedRule["type"]));
 		oParsedRule["val"] != undefined && oRule.setVal(oParsedRule["val"]);
 
@@ -12953,10 +12955,10 @@
 		oParsedConstr["for"] != undefined && oConstr.setFor(From_XML_ST_ConstraintRelationship(oParsedConstr["for"]));
 		oParsedConstr["forName"] != undefined && oConstr.setForName(oParsedConstr["forName"]);
 		oParsedConstr["op"] != undefined && oConstr.setOp(From_XML_ST_BoolOperator(oParsedConstr["op"]));
-		oParsedConstr["ptType"] != undefined && oConstr.setPtType(this.BaseFormatObjFromJSON(oParsedConstr["ptType"]));
+		oParsedConstr["ptType"] != undefined && oConstr.setPtType(From_XML_ST_ElementType(oParsedConstr["ptType"]["val"]));
 		oParsedConstr["refFor"] != undefined && oConstr.setRefFor(From_XML_ST_ConstraintRelationship(oParsedConstr["refFor"]));
 		oParsedConstr["refForName"] != undefined && oConstr.setRefForName(oParsedConstr["refForName"]);
-		oParsedConstr["refPtType"] != undefined && oConstr.setRefPtType(this.BaseFormatObjFromJSON(oParsedConstr["refPtType"]));
+		oParsedConstr["refPtType"] != undefined && oConstr.setRefPtType(From_XML_ST_ElementType(oParsedConstr["refPtType"]["val"]));
 		oParsedConstr["refType"] != undefined && oConstr.setRefType(From_XML_ST_ConstraintType(oParsedConstr["refType"]));
 		oParsedConstr["type"] != undefined && oConstr.setType(From_XML_ST_ConstraintType(oParsedConstr["type"]));
 		oParsedConstr["val"] != undefined && oConstr.setVal(oParsedConstr["val"]);
@@ -13006,7 +13008,7 @@
 	ReaderFromJSON.prototype.IteratorAttributesFromJSON = function(oParsedIterAttr, oParent)
 	{
 		for (var nAxie = 0; nAxie < oParsedIterAttr["axis"].length; nAxie++)
-			oParent.addToLstAxis(oParent.axis.length, this.BaseFormatObjFromJSON(oParsedIterAttr["axis"][nAxie]));
+			oParent.addToLstAxis(oParent.axis.length, From_XML_ST_AxisType(oParsedIterAttr["axis"][nAxie]["val"]));
 		
 		for (var nCnt = 0; nCnt < oParsedIterAttr["cnt"].length; nCnt++)
 			oParent.addToLstCnt(oParent.cnt.length, oParsedIterAttr["cnt"][nCnt]);
@@ -13015,7 +13017,7 @@
 			oParent.addToLstHideLastTrans(oParent.hideLastTrans.length, oParsedIterAttr["hideLastTrans"][nItem]);
 
 		for (var nPtType = 0; nPtType < oParsedIterAttr["ptType"].length; nPtType++)
-			oParent.addToLstPtType(oParent.ptType.length, this.BaseFormatObjFromJSON(oParsedIterAttr["ptType"][nPtType]));
+			oParent.addToLstPtType(oParent.ptType.length, From_XML_ST_ElementType(oParsedIterAttr["ptType"][nPtType]["val"]));
 
 		for (var nSt = 0; nSt < oParsedIterAttr["st"].length; nSt++)
 			oParent.addToLstSt(oParent.st.length, oParsedIterAttr["st"][nSt]);
@@ -13102,14 +13104,6 @@
 				oBaseFormatObj = new AscFormat.ResizeHandles();
 				oParsedBaseFormatObj["val"] != undefined && oBaseFormatObj.setVal(From_XML_ST_ResizeHandlesStr(oParsedBaseFormatObj["val"]));
 				break;
-			case "element":
-				oBaseFormatObj = new AscFormat.ElementType();
-				oParsedBaseFormatObj["val"] != undefined && oBaseFormatObj.setVal(From_XML_ST_ElementType(oParsedBaseFormatObj["val"]));
-				break;
-			case "axie":
-				oBaseFormatObj = new AscFormat.AxisType();
-				oParsedBaseFormatObj["val"] != undefined && oBaseFormatObj.setVal(From_XML_ST_AxisType(oParsedBaseFormatObj["val"]));
-				break;
 		}
 
 		return oBaseFormatObj;
@@ -13156,7 +13150,7 @@
 		oParsedColorsDef["desc"] && oColorsDef.setDesc(this.DescFromJSON(oParsedColorsDef["desc"]));
 
 		for (var nStyle = 0; nStyle < oParsedColorsDef["styleLbl"].length; nStyle++)
-			oColorsDef.addToLstStyleLbl(oColorsDef.styleLbl.length, this.ColorDefStyleLblFromJSON(oParsedColorsDef["styleLbl"][nStyle]));
+			oColorsDef.addToLstStyleLbl(this.ColorDefStyleLblFromJSON(oParsedColorsDef["styleLbl"][nStyle]));
 
 		oParsedColorsDef["title"] && oColorsDef.setTitle(this.DescFromJSON(oParsedColorsDef["title"]));
 

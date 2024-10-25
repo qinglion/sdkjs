@@ -120,10 +120,10 @@
 	function getPresOf(info) {
 		const presOf = new AscFormat.PresOf();
 		if (info.axis !== undefined) {
-			presOf.addToLstAxis(0, getAxis(info.axis));
+			presOf.addToLstAxis(0, info.axis);
 		}
 		if (info.ptType !== undefined) {
-			presOf.addToLstPtType(0, getPtType(info.ptType));
+			presOf.addToLstPtType(0, info.ptType);
 		}
 		return presOf;
 	}
@@ -190,21 +190,11 @@
 		}
 		return ruleLst;
 	}
-	function getAxis(type) {
-		const axisType = new AscFormat.AxisType();
-		axisType.setVal(type);
-		return axisType;
-	}
-	function getPtType(type) {
-		const ptType = new AscFormat.ElementType();
-		ptType.setVal(type);
-		return ptType;
-	}
 	function getForEach(info) {
 		const forEach = new AscFormat.ForEach();
 		forEach.setName(info.name);
-		forEach.addToLstAxis(0, getAxis(info.axis));
-		forEach.addToLstPtType(0, getPtType(info.ptType));
+		forEach.addToLstAxis(0, info.axis);
+		forEach.addToLstPtType(0, info.ptType);
 		if (info.cnt !== undefined) {
 			forEach.addToLstCnt(0, info.cnt);
 		}
@@ -746,7 +736,7 @@
 			const color = info.clr;
 			const idx = info.idx;
 			for (let j = 0; j < info.names.length; j++) {
-				styleDef.addToLstStyleLbl(styleDef.styleLbl.length, generateStyleStyleLbl(info.names[j], color, idx));
+				styleDef.addToLstStyleLbl(generateStyleStyleLbl(info.names[j], color, idx));
 			}
 		}
 		return styleDef;
@@ -973,7 +963,7 @@
 			const names = infos.names;
 			for (let j = 0; j < names.length; j++) {
 				const styleLbl = createColorsStyleLbl(presetStyleLbl[i].clrsLst, names[j]);
-				colorsDef.addToLstStyleLbl(colorsDef.styleLbl.length, styleLbl);
+				colorsDef.addToLstStyleLbl(styleLbl);
 			}
 		}
 		return colorsDef;
