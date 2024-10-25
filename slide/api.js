@@ -1098,17 +1098,6 @@
 	asc_docs_api.prototype.isMasterMode = function() {
 		return this.presentationViewMode === Asc.c_oAscPresentationViewMode.masterSlide && !this.isSlideShow();
 	};
-	asc_docs_api.prototype.asc_getMasterName = function() {
-		if(!this.isMasterMode()) {
-			return undefined;
-		}
-		let oPresentation = this.getLogicDocument();
-		if(!oPresentation) {
-			return undefined;
-		}
-		return oPresentation.GetMasterName();
-
-	};
 	asc_docs_api.prototype.asc_IsMasterMode = function() {
 		return this.isMasterMode();
 	};
