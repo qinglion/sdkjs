@@ -2106,11 +2106,42 @@ CT_PivotCacheDefinition.prototype.setSharedItems = function(index, sharedItems) 
 	const cacheField = cacheFields[index];
 	cacheField.sharedItems = sharedItems;
 };
+
 /**
- * @param {number} index
+ * @param {
+ * {itemsMapArray: PivotItemFieldsMapArray
+ * addToHistory?: boolean}
+ * } options
  */
-CT_PivotCacheDefinition.prototype.removeCalculatedItem = function(index) {
-	this.calculatedItems.calculatedItem.splice(index, 1);
+CT_PivotCacheDefinition.prototype.removeCalculatedItem = function(options) {
+	const pivotFieldIndex = options.itemsMapArray[0][0];
+	const fieldItemIndex = options.itemsMapArray[0][1];
+	const cacheFields = this.getFields();
+	const fieldName = cacheFields[pivotFieldIndex].asc_getName();
+	let fieldItemName = "";
+	const sharedItem = cacheFields[pivotFieldIndex].getGroupOrSharedItem(fieldItemIndex);
+	if (sharedItem) {
+		fieldItemName = sharedItem.getCellValue().getTextValue();
+	}
+	const calculatedItems = this.getCalculatedItems();
+	for (let i = calculatedItems.length - 1; i >= 0; i--) {
+		const calculatedItem = calculatedItems[i];
+		if (calculatedItem.isSuitable(options.itemsMapArray)) {
+			this.calculatedItems.calculatedItem.splice(i, 1);
+		}
+	}
+	for (let i = 0; i < calculatedItems.length; ++i) {
+		const calculatedItem = calculatedItems[i];
+		calculatedItem.pivotArea.reIndexOnDelete(pivotFieldIndex, fieldItemIndex);
+		//todo maybe parse?
+		//todo escape names
+		if (-1 !== calculatedItem.formula.indexOf(fieldName + "[" + fieldItemName + "]")) {
+			calculatedItem.formula = '#NAME?';
+		}
+	}
+	if (calculatedItems.length === 0) {
+		this.calculatedItems = null;
+	}
 };
 function CT_PivotCacheDefinitionX14() {
 //Attributes
@@ -10021,7 +10052,11 @@ CT_pivotTableDefinition.prototype.asc_addCalculatedItem = function(options) {
 				const change = api._changePivot(pivotTable, confirmation, true, function () {
 					const pivotFields = pivotTable.asc_getPivotFields();
 					const pivotField = pivotFields[options.fieldIndex];
-					pivotField.addCalculatedItem(pivotTable, options.fieldIndex, sharedItemIndex, pivotField.getInsertIndex(), true);
+					let pivotFieldOld = pivotField.clone();
+					pivotField.addCalculatedItem(pivotTable, options.fieldIndex, sharedItemIndex, pivotField.getInsertIndex());
+					History.Add(AscCommonExcel.g_oUndoRedoPivotTables, AscCH.historyitem_PivotTable_PivotField,
+						t.worksheet ? t.worksheet.getId() : null, null,
+						new AscCommonExcel.UndoRedoData_PivotField(t.Get_Id(), options.fieldIndex, pivotFieldOld, pivotField.clone()));
 					pivotTable._updateCacheDataUpdateSlicersPost();
 				});
 				changeRes.merge(change);
@@ -10091,22 +10126,24 @@ CT_pivotTableDefinition.prototype.asc_removeCalculatedItem = function(options) {
 		const oldCacheField = cacheFields[options.fieldIndex].clone();
 		const items = pivotField.getItems();
 		const x = items[options.itemIndex].x;
+		t.removeCalculatedItem({
+			itemsMapArray: [[options.fieldIndex, x]],
+			addToHistory: true
+		});
 		t.removeSharedItem({
 			fieldIndex: options.fieldIndex,
 			sharedItemIndex: x,
 			addToHistory: true
 		});
-		t.removeCalculatedItem({
-			itemsMapArray: [[options.fieldIndex, x]],
-			addToHistory: true
-		});
 		for(let i = 0; i < pivotTables.length; i += 1) {
 			const pivotTable = pivotTables[i];
-			const cacheField = cacheFields[options.fieldIndex];
 			const change = api._changePivot(pivotTable, confirmation, true, function () {
-				t.refreshPivotFieldItem(options.fieldIndex, pivotField, t.cacheDefinition.cacheRecords, cacheField, oldCacheField);
-				// pivotField.removeItem(pivotTable, options.fieldIndex, options.itemIndex, true);
-				// pivotTable._updateCacheDataUpdateSlicersPost();
+				let pivotFieldOld = pivotField.clone();
+				pivotField.removeItem(pivotTable, options.fieldIndex, options.itemIndex, x);
+				History.Add(AscCommonExcel.g_oUndoRedoPivotTables, AscCH.historyitem_PivotTable_PivotField,
+					t.worksheet ? t.worksheet.getId() : null, null,
+					new AscCommonExcel.UndoRedoData_PivotField(t.Get_Id(), options.fieldIndex, pivotFieldOld, pivotField.clone()));
+				pivotTable._updateCacheDataUpdateSlicersPost();
 			});
 			changeRes.merge(change);
 		}
@@ -10184,24 +10221,10 @@ CT_pivotTableDefinition.prototype.modifyCalculatedItem = function(options) {
  * addToHistory?: boolean}
  * } options
  */
-CT_pivotTableDefinition.prototype.removeCalculatedItem = function(options) {
+CT_pivotTableDefinition.prototype.removeCalculatedItem = function (options) {
 	const cacheDefinition = this.cacheDefinition;
 	const oldItems = cacheDefinition.calculatedItems.clone();
-	const calculatedItems = cacheDefinition.getCalculatedItems();
-	const suitableIndexes = [];
-	for (let i = 0; i < calculatedItems.length; i += 1) {
-		const calculatedItem = calculatedItems[i];
-		if (calculatedItem.isSuitable(options.itemsMapArray)) {
-			suitableIndexes.push(i);
-		}
-	}
-	for (let i = 0; i < suitableIndexes.length; i += 1) {
-		const suitableIndex = suitableIndexes[i];
-		cacheDefinition.removeCalculatedItem(suitableIndex);
-	}
-	if (cacheDefinition.calculatedItems.calculatedItem.length === 0) {
-		cacheDefinition.calculatedItems = null;
-	}
+	cacheDefinition.removeCalculatedItem(options);
 	if (options.addToHistory) {
 		History.Add(AscCommonExcel.g_oUndoRedoPivotCache, AscCH.historyitem_PivotCache_SetCalculatedItems,
 			null, null, new AscCommonExcel.UndoRedoData_PivotCache(this.Get_Id(), oldItems, cacheDefinition.calculatedItems));
@@ -17282,21 +17305,16 @@ CT_PivotField.prototype.addCalculatedItem = function(pivot, pivotIndex, x, inser
 	item.x = x;
 	item.f = true;
 	arr.splice(insertIndex, 0, item);
-	if (addToHistory) {
-		History.Add(AscCommonExcel.g_oUndoRedoPivotFields, AscCH.historyitem_PivotTable_PivotFieldAddCalculatedItem,
-			pivot.worksheet ? pivot.worksheet.getId() : null, null,
-			new AscCommonExcel.UndoRedoData_PivotField(pivot.Get_Id(), pivotIndex, x, insertIndex));
-	}
 	pivot.setChanged(true);
 };
-CT_PivotField.prototype.removeItem = function(pivot, pivotIndex, removeIndex, addToHistory) {
+CT_PivotField.prototype.removeItem = function(pivot, pivotIndex, removeIndex, cacheFieldItemIndex) {
 	const arr = this.getItems();
 	const x = arr[removeIndex].x;
 	arr.splice(removeIndex, 1);
-	if (addToHistory) {
-		History.Add(AscCommonExcel.g_oUndoRedoPivotFields, AscCH.historyitem_PivotTable_PivotFieldRemoveItem,
-			pivot.worksheet ? pivot.worksheet.getId() : null, null,
-			new AscCommonExcel.UndoRedoData_PivotField(pivot.Get_Id(), pivotIndex, x, removeIndex));
+	for (let i = 0; i < arr.length; ++i) {
+		if (arr[i].x > cacheFieldItemIndex) {
+			arr[i].x--;
+		}
 	}
 	pivot.setChanged(true);
 };
@@ -19374,6 +19392,23 @@ CT_PivotArea.prototype.setReferencesFromItemsMapArray = function(itemsMapArray) 
 	referencesObj.reference = references;
 	this.references = referencesObj;
 };
+
+CT_PivotArea.prototype.reIndexOnDelete = function(pivotFieldIndex, fieldItemIndex) {
+	const references = this.getReferences();
+	if (references) {
+		for (let i = 0; i < references.length; i += 1) {
+			const reference = references[i];
+			if (reference.field === pivotFieldIndex) {
+				for (let j = 0; j < reference.x.length; j += 1) {
+					if (reference.x[j].v > fieldItemIndex) {
+						reference.x[j].v--;
+					}
+				}
+			}
+		}
+	}
+};
+
 function CT_Tuple() {
 //Attributes
 	this.fld = null;
@@ -21249,6 +21284,7 @@ PivotRecords.prototype.addRecordValue = function (record) {
 	this._add(record.type, val, record.addition);
 };
 PivotRecords.prototype.get = function(index) {
+	//todo bin search
 	this.output.clean();
 	for (var i = 0; i < this.chunks.length; ++i) {
 		var chunk = this.chunks[i];
@@ -21270,11 +21306,11 @@ PivotRecords.prototype.remove = function(index) {
 		if (chunk.from <= index && index < chunk.to) {
 			if (this.addition[index]) {
 				delete this.addition[index];
-				for (let i in this.addition) {
-					if (i > index) {
-						this.addition[i - 1] = this.addition[i];
-						delete this.addition[i];
-					}
+			}
+			for (let i in this.addition) {
+				if (i > index) {
+					this.addition[i - 1] = this.addition[i];
+					delete this.addition[i];
 				}
 			}
 			if (chunk.data) {

@@ -4684,20 +4684,6 @@ function (window, undefined) {
 			case AscCH.historyitem_PivotTable_PivotFieldMoveItem:
 				field.moveItem(pivotTable, index, valueFrom, value);
 				break;
-			case AscCH.historyitem_PivotTable_PivotFieldAddCalculatedItem:
-				if (bUndo) {
-					field.removeItem(pivotTable, index, Data.to)
-				} else {
-					field.addCalculatedItem(pivotTable, index, Data.from, Data.to);
-				}
-				break;
-			case AscCH.historyitem_PivotTable_PivotFieldRemoveItem:
-				if (bUndo) {
-					field.addCalculatedItem(pivotTable, index, Data.from, Data.to);
-				} else {
-					field.removeItem(pivotTable, index, Data.from)
-				}
-				break;
 		}
 	};
 	function UndoRedoPivotFieldItems(wb) {
