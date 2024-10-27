@@ -4746,7 +4746,7 @@ function (window, undefined) {
 			return;
 		}
 
-		var slicer, slicerCache, updateByCacheName = null;
+		var slicer, slicerCache;
 		switch (Type) {
 			case AscCH.historyitem_Slicer_SetCaption: {
 				slicer = oModel.getSlicerByName(Data.name);
@@ -4780,7 +4780,6 @@ function (window, undefined) {
 				slicer = oModel.getSlicerByName(Data.name);
 				if (slicer) {
 					slicer.setCacheName(bUndo ? Data.from : Data.to);
-					updateByCacheName = false;
 				}
 				break;
 			}
@@ -4789,7 +4788,6 @@ function (window, undefined) {
 				if (slicer) {
 					slicer.setName(bUndo ? Data.from : Data.to);
 					this.wb.onSlicerUpdate(bUndo ? Data.from : Data.to);
-					updateByCacheName = false;
 				}
 				break;
 			}
@@ -4846,7 +4844,6 @@ function (window, undefined) {
 				slicerCache = oModel.getSlicerCacheByName(Data.name);
 				if (slicerCache) {
 					slicerCache.setSortOrder(bUndo ? Data.from : Data.to);
-					updateByCacheName = Data.name;
 				}
 				break;
 			}
@@ -4854,7 +4851,6 @@ function (window, undefined) {
 				slicerCache = oModel.getSlicerCacheByName(Data.name);
 				if (slicerCache) {
 					slicerCache.setCustomListSort(bUndo ? Data.from : Data.to);
-					updateByCacheName = Data.name;
 				}
 				break;
 			}
@@ -4862,7 +4858,6 @@ function (window, undefined) {
 				slicerCache = oModel.getSlicerCacheByName(Data.name);
 				if (slicerCache) {
 					slicerCache.setCrossFilter(bUndo ? Data.from : Data.to);
-					updateByCacheName = Data.name;
 				}
 				break;
 			}
@@ -4870,7 +4865,6 @@ function (window, undefined) {
 				slicerCache = oModel.getSlicerCacheByName(Data.name);
 				if (slicerCache) {
 					slicerCache.setHideItemsWithNoData(bUndo ? Data.from : Data.to);
-					updateByCacheName = Data.name;
 				}
 				break;
 			}
@@ -4882,7 +4876,6 @@ function (window, undefined) {
 					wrapper.initObject(cache);
 					cache.initAfterSerialize(this.wb);
 					slicerCache.copyFrom(cache);
-					updateByCacheName = Data.name;
 				}
 				break;
 			}
@@ -4892,7 +4885,6 @@ function (window, undefined) {
 					var from = bUndo ? Data.to : Data.from;
 					var to = bUndo ? Data.from : Data.to;
 					slicerCache.movePivotTable(from.value, from.style, to.value, to.style);
-					updateByCacheName = Data.name;
 				}
 				break;
 			}
@@ -4902,20 +4894,8 @@ function (window, undefined) {
 					var from = bUndo ? Data.to : Data.from;
 					var to = bUndo ? Data.from : Data.to;
 					slicerCache.forCopySheet(from, to);
-					updateByCacheName = Data.name;
 				}
 				break;
-			}
-		}
-
-		if (updateByCacheName === null && slicer) {
-			this.wb.onSlicerUpdate(Data.name);
-		} else if (updateByCacheName) {
-			var slicers = oModel.getSlicersByCacheName(Data.name);
-			if (slicers) {
-				for (var i = 0; i < slicers.length; i++) {
-					this.wb.onSlicerUpdate(slicers[i].name);
-				}
 			}
 		}
 	};

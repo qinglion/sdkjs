@@ -3219,6 +3219,8 @@
 			this.bChangeColorScheme = false;
 			this.bChangeActive = false;
 			this.activeSheet = null;
+			this.onSlicer = {};
+			this.onSlicerCache = {};
 		}
 
 		/** @constructor */
