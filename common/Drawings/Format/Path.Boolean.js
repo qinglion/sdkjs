@@ -11,244 +11,6 @@
 		fClass.prototype.initialize = fClass;
 	}
 
-	var Base = function Base() {
-		for (var i = 0, l = arguments.length; i < l; i++) {
-			var src = arguments[i];
-			if (src)
-				Object.assign(this, src);
-		}
-		return this;
-	};
-
-	Base.prototype.set = Base;
-	Base.prototype.each = function (iter, bind) {
-		return each(this, iter, bind);
-	};
-	Base.prototype.clone = function () {
-		return new this.constructor(this);
-	};
-
-	Base.each = function (obj, iter, bind) {
-		if (obj) {
-			const descriptor = Object.getOwnPropertyDescriptor(obj, 'length');
-			const forIn = function (iter, bind) {
-				for (let i in this) {
-					if (this.hasOwnProperty(i))
-						iter.call(bind, this[i], i, this);
-				}
-			};
-			const iterFunction = descriptor && typeof descriptor.value === 'number' ? Array.prototype.forEach : forIn;
-			iterFunction.call(obj, iter, bind = bind || obj);
-		}
-		return bind;
-	};
-	Base.clone = function (obj) {
-		return Object.assign(new obj.constructor(), obj);
-	};
-	Base.isPlainObject = function (obj) {
-		var ctor = obj != null && obj.constructor;
-		return ctor && (ctor === Object || ctor === Base
-			|| ctor.name === 'Object');
-	};
-	Base.pick = function (a, b) {
-		return a !== undefined ? a : b;
-	};
-	Base.slice = function (list, begin, end) {
-		return Array.prototype.slice.call(list, begin, end);
-	};
-
-	Base.prototype.set = function (props, exclude) {
-		if (props)
-			Base.filter(this, props, exclude, this._prioritize);
-		return this;
-	};
-
-	Base.equals = function (obj1, obj2) {
-		if (obj1 === obj2)
-			return true;
-		if (obj1 && obj1.equals)
-			return obj1.equals(obj2);
-		if (obj2 && obj2.equals)
-			return obj2.equals(obj1);
-		if (obj1 && obj2
-			&& typeof obj1 === 'object' && typeof obj2 === 'object') {
-			if (Array.isArray(obj1) && Array.isArray(obj2)) {
-				var length = obj1.length;
-				if (length !== obj2.length)
-					return false;
-				while (length--) {
-					if (!Base.equals(obj1[length], obj2[length]))
-						return false;
-				}
-			} else {
-				var keys = Object.keys(obj1),
-					length = keys.length;
-				if (length !== Object.keys(obj2).length)
-					return false;
-				while (length--) {
-					var key = keys[length];
-					if (!(obj2.hasOwnProperty(key)
-						&& Base.equals(obj1[key], obj2[key])))
-						return false;
-				}
-			}
-			return true;
-		}
-		return false;
-	};
-	Base.read = function (list, start, options, amount) {
-		if (this === Base) {
-			var value = list[list.__index = start || list.__index || 0];
-			list.__index++;
-			return value;
-		}
-		var proto = this.prototype,
-			readIndex = proto._readIndex,
-			begin = start || readIndex && list.__index || 0,
-			length = list.length,
-			obj = list[begin];
-		amount = amount || length - begin;
-		if (obj instanceof this
-			|| options && options.readNull && obj == null && amount <= 1) {
-			if (readIndex)
-				list.__index = begin + 1;
-			return obj && options && options.clone ? obj.clone() : obj;
-		}
-		obj = Object.create(proto);
-		if (readIndex)
-			obj.__read = true;
-		obj = obj.initialize.apply(obj, begin > 0 || begin + amount < length
-			? Base.slice(list, begin, begin + amount)
-			: list) || obj;
-		if (readIndex) {
-			list.__index = begin + obj.__read;
-			var filtered = obj.__filtered;
-			if (filtered) {
-				list.__filtered = filtered;
-				obj.__filtered = undefined;
-			}
-			obj.__read = undefined;
-		}
-		return obj;
-	};
-	Base.remain = function (list) {
-		return list.length - (list.__index || 0);
-	};
-	Base.readList = function (list, start, options, amount) {
-		var res = [],
-			entry,
-			begin = start || 0,
-			end = amount ? begin + amount : list.length;
-		for (var i = begin; i < end; i++) {
-			res.push(Array.isArray(entry = list[i])
-				? this.read(entry, 0, options)
-				: this.read(list, i, options, 1));
-		}
-		return res;
-	};
-	Base.readNamed = function (list, name, start, options, amount) {
-		var value = this.getNamed(list, name),
-			hasValue = value !== undefined;
-		if (hasValue) {
-			var filtered = list.__filtered;
-			if (!filtered) {
-				var source = this.getSource(list);
-				filtered = list.__filtered = Object.create(source);
-				filtered.__unfiltered = source;
-			}
-			filtered[name] = undefined;
-		}
-		return this.read(hasValue ? [value] : list, start, options, amount);
-	};
-	Base.readSupported = function (list, dest) {
-		var source = this.getSource(list),
-			that = this,
-			read = false;
-		if (source) {
-			Object.keys(source).forEach(function (key) {
-				if (key in dest) {
-					var value = that.readNamed(list, key);
-					if (value !== undefined) {
-						dest[key] = value;
-					}
-					read = true;
-				}
-			});
-		}
-		return read;
-	};
-	Base.getSource = function (list) {
-		var source = list.__source;
-		if (source === undefined) {
-			var arg = list.length === 1 && list[0];
-			source = list.__source = arg && Base.isPlainObject(arg)
-				? arg : null;
-		}
-		return source;
-	};
-	Base.getNamed = function (list, name) {
-		var source = this.getSource(list);
-		if (source) {
-			return name ? source[name] : list.__filtered || source;
-		}
-	};
-	Base.hasNamed = function (list, name) {
-		return !!this.getNamed(list, name);
-	};
-	Base.filter = function (dest, source, exclude, prioritize) {
-		var processed;
-
-		function handleKey(key) {
-			if (!(exclude && key in exclude) &&
-				!(processed && key in processed)) {
-				var value = source[key];
-				if (value !== undefined)
-					dest[key] = value;
-			}
-		}
-
-		if (prioritize) {
-			var keys = {};
-			for (var i = 0, key, l = prioritize.length; i < l; i++) {
-				if ((key = prioritize[i]) in source) {
-					handleKey(key);
-					keys[key] = true;
-				}
-			}
-			processed = keys;
-		}
-
-		Object.keys(source.__unfiltered || source).forEach(handleKey);
-		return dest;
-	};
-	Base.isPlainValue = function (obj, asString) {
-		return Base.isPlainObject(obj) || Array.isArray(obj)
-			|| asString && typeof obj === 'string';
-	};
-	Base.splice = function (list, items, index, remove) {
-		var amount = items && items.length,
-			append = index === undefined;
-		index = append ? list.length : index;
-		if (index > list.length)
-			index = list.length;
-		for (var i = 0; i < amount; i++)
-			items[i]._index = index + i;
-		if (append) {
-			list.push.apply(list, items);
-			return [];
-		} else {
-			var args = [index, remove];
-			if (items)
-				args.push.apply(args, items);
-			var removed = list.splice.apply(list, args);
-			for (var i = 0, l = removed.length; i < l; i++)
-				removed[i]._index = undefined;
-			for (var i = index + amount, l = list.length; i < l; i++)
-				list[i]._index = i;
-			return removed;
-		}
-	};
-
 	var CollisionDetection = {
 		findItemBoundsCollisions: function (items1, items2, tolerance) {
 			function getBounds(items) {
@@ -660,8 +422,212 @@
 		}
 	};
 
+	var Base = function Base() {
+	};
+
+	Base.prototype.clone = function () {
+		return new this.constructor(this);
+	};
+
+	Base.each = function (obj, iter, bind) {
+		if (obj) {
+			const descriptor = Object.getOwnPropertyDescriptor(obj, 'length');
+			const forIn = function (iter, bind) {
+				for (let i in this) {
+					if (this.hasOwnProperty(i))
+						iter.call(bind, this[i], i, this);
+				}
+			};
+			const iterFunction = descriptor && typeof descriptor.value === 'number' ? Array.prototype.forEach : forIn;
+			iterFunction.call(obj, iter, bind = bind || obj);
+		}
+		return bind;
+	};
+	Base.isPlainObject = function (obj) {
+		var ctor = obj != null && obj.constructor;
+		return ctor && (ctor === Object || ctor === Base
+			|| ctor.name === 'Object');
+	};
+	Base.pick = function (a, b) {
+		return a !== undefined ? a : b;
+	};
+	Base.slice = function (list, begin, end) {
+		return Array.prototype.slice.call(list, begin, end);
+	};
+	Base.equals = function (obj1, obj2) {
+		if (obj1 === obj2)
+			return true;
+		if (obj1 && obj1.equals)
+			return obj1.equals(obj2);
+		if (obj2 && obj2.equals)
+			return obj2.equals(obj1);
+		if (obj1 && obj2
+			&& typeof obj1 === 'object' && typeof obj2 === 'object') {
+			if (Array.isArray(obj1) && Array.isArray(obj2)) {
+				var length = obj1.length;
+				if (length !== obj2.length)
+					return false;
+				while (length--) {
+					if (!Base.equals(obj1[length], obj2[length]))
+						return false;
+				}
+			} else {
+				var keys = Object.keys(obj1),
+					length = keys.length;
+				if (length !== Object.keys(obj2).length)
+					return false;
+				while (length--) {
+					var key = keys[length];
+					if (!(obj2.hasOwnProperty(key)
+						&& Base.equals(obj1[key], obj2[key])))
+						return false;
+				}
+			}
+			return true;
+		}
+		return false;
+	};
+	Base.read = function (list, start, options, amount) {
+		if (this === Base) {
+			var value = list[list.__index = start || list.__index || 0];
+			list.__index++;
+			return value;
+		}
+		var proto = this.prototype,
+			readIndex = proto._readIndex,
+			begin = start || readIndex && list.__index || 0,
+			length = list.length,
+			obj = list[begin];
+		amount = amount || length - begin;
+		if (obj instanceof this
+			|| options && options.readNull && obj == null && amount <= 1) {
+			if (readIndex)
+				list.__index = begin + 1;
+			return obj && options && options.clone ? obj.clone() : obj;
+		}
+		obj = Object.create(proto);
+		if (readIndex)
+			obj.__read = true;
+		obj = obj.initialize.apply(obj, begin > 0 || begin + amount < length
+			? Base.slice(list, begin, begin + amount)
+			: list) || obj;
+		if (readIndex) {
+			list.__index = begin + obj.__read;
+			var filtered = obj.__filtered;
+			if (filtered) {
+				list.__filtered = filtered;
+				obj.__filtered = undefined;
+			}
+			obj.__read = undefined;
+		}
+		return obj;
+	};
+	Base.readList = function (list, start, options, amount) {
+		var res = [],
+			entry,
+			begin = start || 0,
+			end = amount ? begin + amount : list.length;
+		for (var i = begin; i < end; i++) {
+			res.push(Array.isArray(entry = list[i])
+				? this.read(entry, 0, options)
+				: this.read(list, i, options, 1));
+		}
+		return res;
+	};
+	Base.readNamed = function (list, name, start, options, amount) {
+		var value = this.getNamed(list, name),
+			hasValue = value !== undefined;
+		if (hasValue) {
+			var filtered = list.__filtered;
+			if (!filtered) {
+				var source = this.getSource(list);
+				filtered = list.__filtered = Object.create(source);
+				filtered.__unfiltered = source;
+			}
+			filtered[name] = undefined;
+		}
+		return this.read(hasValue ? [value] : list, start, options, amount);
+	};
+	Base.readSupported = function (list, dest) {
+		var source = this.getSource(list),
+			that = this,
+			read = false;
+		if (source) {
+			Object.keys(source).forEach(function (key) {
+				if (key in dest) {
+					var value = that.readNamed(list, key);
+					if (value !== undefined) {
+						dest[key] = value;
+					}
+					read = true;
+				}
+			});
+		}
+		return read;
+	};
+	Base.getNamed = function (list, name) {
+		var source = this.getSource(list);
+		if (source) {
+			return name ? source[name] : list.__filtered || source;
+		}
+	};
+	Base.hasNamed = function (list, name) {
+		return !!this.getNamed(list, name);
+	};
+	Base.filter = function (dest, source, exclude, prioritize) {
+		var processed;
+
+		function handleKey(key) {
+			if (!(exclude && key in exclude) &&
+				!(processed && key in processed)) {
+				var value = source[key];
+				if (value !== undefined)
+					dest[key] = value;
+			}
+		}
+
+		if (prioritize) {
+			var keys = {};
+			for (var i = 0, key, l = prioritize.length; i < l; i++) {
+				if ((key = prioritize[i]) in source) {
+					handleKey(key);
+					keys[key] = true;
+				}
+			}
+			processed = keys;
+		}
+
+		Object.keys(source.__unfiltered || source).forEach(handleKey);
+		return dest;
+	};
+	Base.isPlainValue = function (obj, asString) {
+		return Base.isPlainObject(obj) || Array.isArray(obj) || asString && typeof obj === 'string';
+	};
+	Base.splice = function (list, items, index, remove) {
+		var amount = items && items.length,
+			append = index === undefined;
+		index = append ? list.length : index;
+		if (index > list.length)
+			index = list.length;
+		for (var i = 0; i < amount; i++)
+			items[i]._index = index + i;
+		if (append) {
+			list.push.apply(list, items);
+			return [];
+		} else {
+			var args = [index, remove];
+			if (items)
+				args.push.apply(args, items);
+			var removed = list.splice.apply(list, args);
+			for (var i = 0, l = removed.length; i < l; i++)
+				removed[i]._index = undefined;
+			for (var i = index + amount, l = list.length; i < l; i++)
+				list[i]._index = i;
+			return removed;
+		}
+	};
+
 	var Point = function (arg0, arg1) {
-		Base.call(this);
 		var type = typeof arg0,
 			reading = this.__read,
 			read = 0;
@@ -695,7 +661,6 @@
 			this.__read = read;
 		return this;
 	};
-
 	InitClassWithStatics(Point, Base);
 
 	Point.prototype._readIndex = true;
@@ -858,7 +823,6 @@
 		this._owner = owner;
 		this._setter = setter;
 	};
-
 	InitClassWithStatics(LinkedPoint, Point);
 
 	LinkedPoint.prototype._set = function (x, y, _dontNotify) {
@@ -871,16 +835,8 @@
 	LinkedPoint.prototype.getX = function () {
 		return this._x;
 	};
-	LinkedPoint.prototype.setX = function (x) {
-		this._x = this.x = x;
-		this._owner[this._setter](this);
-	};
 	LinkedPoint.prototype.getY = function () {
 		return this._y;
-	};
-	LinkedPoint.prototype.setY = function (y) {
-		this._y = this.y = y;
-		this._owner[this._setter](this);
 	};
 
 	var Rectangle = function (arg0, arg1, arg2, arg3) {
@@ -942,11 +898,9 @@
 			this.__read = read;
 		return this;
 	};
-
 	InitClassWithStatics(Rectangle, Base);
-	Rectangle.prototype.set = Rectangle;
-	Rectangle.prototype._readIndex = true;
 
+	Rectangle.prototype._readIndex = true;
 	Rectangle.prototype._set = function (x, y, width, height) {
 		this.x = x;
 		this.y = y;
@@ -970,60 +924,19 @@
 		var ctor = _dontLink ? Point : LinkedPoint;
 		return new ctor(this.x, this.y, this, 'setPoint');
 	};
-	Rectangle.prototype.setPoint = function () {
-		var point = Point.read(arguments);
-		this.x = point.x;
-		this.y = point.y;
-	};
-
 	Rectangle.prototype._fw = 1;
 	Rectangle.prototype._fh = 1;
-
 	Rectangle.prototype.getLeft = Rectangle.prototype.getX = function () {
 		return this.x;
-	};
-	Rectangle.prototype.setLeft = function (left) {
-		if (!this._fw) {
-			var amount = left - this.x;
-			this.width -= this._sx === 0.5 ? amount * 2 : amount;
-		}
-		this.x = left;
-		this._sx = this._fw = 0;
 	};
 	Rectangle.prototype.getTop = Rectangle.prototype.getY = function () {
 		return this.y;
 	};
-	Rectangle.prototype.setTop = function (top) {
-		if (!this._fh) {
-			var amount = top - this.y;
-			this.height -= this._sy === 0.5 ? amount * 2 : amount;
-		}
-		this.y = top;
-		this._sy = this._fh = 0;
-	};
 	Rectangle.prototype.getRight = function () {
 		return this.x + this.width;
 	};
-	Rectangle.prototype.setRight = function (right) {
-		if (!this._fw) {
-			var amount = right - this.x;
-			this.width = this._sx === 0.5 ? amount * 2 : amount;
-		}
-		this.x = right - this.width;
-		this._sx = 1;
-		this._fw = 0;
-	};
 	Rectangle.prototype.getBottom = function () {
 		return this.y + this.height;
-	};
-	Rectangle.prototype.setBottom = function (bottom) {
-		if (!this._fh) {
-			var amount = bottom - this.y;
-			this.height = this._sy === 0.5 ? amount * 2 : amount;
-		}
-		this.y = bottom - this.height;
-		this._sy = 1;
-		this._fh = 0;
 	};
 	Rectangle.prototype.getWidth = function () {
 		return this.width;
@@ -1140,6 +1053,7 @@
 		this._setter = setter;
 	};
 	InitClassWithStatics(LinkedRectangle, Rectangle);
+
 	LinkedRectangle.prototype._set = function (x, y, width, height, _dontNotify) {
 		this._x = this.x = x;
 		this._y = this.y = y;
@@ -1149,96 +1063,24 @@
 			this._owner[this._setter](this);
 		return this;
 	};
-
-	LinkedRectangle.prototype.setPoint = function () {
-		this._dontNotify = true;
-		Rectangle.prototype['setPoint'].apply(this, arguments);
-		this._dontNotify = false;
-		this._owner[this._setter](this);
-	};
-	LinkedRectangle.prototype.setCenter = function () {
-		this._dontNotify = true;
-		Rectangle.prototype['setCenter'].apply(this, arguments);
-		this._dontNotify = false;
-		this._owner[this._setter](this);
-	};
-	LinkedRectangle.prototype.setLeft = function () {
-		this._dontNotify = true;
-		Rectangle.prototype['setLeft'].apply(this, arguments);
-		this._dontNotify = false;
-		this._owner[this._setter](this);
-	};
-	LinkedRectangle.prototype.setRight = function () {
-		this._dontNotify = true;
-		Rectangle.prototype['setRight'].apply(this, arguments);
-		this._dontNotify = false;
-		this._owner[this._setter](this);
-	};
-	LinkedRectangle.prototype.setTop = function () {
-		this._dontNotify = true;
-		Rectangle.prototype['setTop'].apply(this, arguments);
-		this._dontNotify = false;
-		this._owner[this._setter](this);
-	};
-	LinkedRectangle.prototype.setBottom = function () {
-		this._dontNotify = true;
-		Rectangle.prototype['setBottom'].apply(this, arguments);
-		this._dontNotify = false;
-		this._owner[this._setter](this);
-	};
-	LinkedRectangle.prototype.setCenterX = function () {
-		this._dontNotify = true;
-		Rectangle.prototype['setCenterX'].apply(this, arguments);
-		this._dontNotify = false;
-		this._owner[this._setter](this);
-	};
-	LinkedRectangle.prototype.setCenterY = function () {
-		this._dontNotify = true;
-		Rectangle.prototype['setCenterY'].apply(this, arguments);
-		this._dontNotify = false;
-		this._owner[this._setter](this);
-	};
-
 	LinkedRectangle.prototype.getX = function () {
 		return this._x;
-	};
-	LinkedRectangle.prototype.setX = function (value) {
-		this._x = this.x = value;
-		if (!this._dontNotify)
-			this._owner[this._setter](this);
 	};
 	LinkedRectangle.prototype.getY = function () {
 		return this._y;
 	};
-	LinkedRectangle.prototype.setY = function (value) {
-		thi._y = this.y = value;
-		if (!this._dontNotify)
-			this._owner[this._setter](this);
-	};
 	LinkedRectangle.prototype.getWidth = function () {
 		return this._width;
 	};
-	LinkedRectangle.prototype.setWidth = function (value) {
-		this._width = this.width = value;
-		if (!this._dontNotify)
-			this._owner[this._setter](this);
-	};
 	LinkedRectangle.prototype.getHeight = function () {
 		return this._height;
-	};
-	LinkedRectangle.prototype.setHeight = function (value) {
-		this._height = this.height = value;
-		if (!this._dontNotify)
-			this._owner[this._setter](this);
 	};
 	LinkedRectangle.prototype.getLeft = LinkedRectangle.prototype.getX;
 	LinkedRectangle.prototype.getTop = LinkedRectangle.prototype.getY;
 	LinkedRectangle.prototype.getRight = function () { return this.getLeft() + this.getWidth(); };
 	LinkedRectangle.prototype.getBottom = function () { return this.getTop() + this.getHeight(); };
 
-
 	var Matrix = function Matrix(arg, _dontNotify) {
-		Base.call(this);
 		var args = arguments,
 			count = args.length,
 			ok = true;
@@ -1264,8 +1106,8 @@
 		}
 		return this;
 	};
-
 	InitClassWithStatics(Matrix, Base);
+
 	Matrix.prototype.set = Matrix;
 	Matrix.prototype._set = function (a, b, c, d, tx, ty, _dontNotify) {
 		this._a = a;
@@ -1567,7 +1409,6 @@
 	};
 
 	var Line = function Line(arg0, arg1, arg2, arg3, arg4) {
-		Base.call(this);
 		var asVector = false;
 		if (arguments.length >= 4) {
 			this._px = arg0;
@@ -1588,6 +1429,7 @@
 		}
 	};
 	InitClassWithStatics(Line, Base);
+
 	Line.prototype.getPoint = function () {
 		return new Point(this._px, this._py);
 	};
@@ -1679,25 +1521,17 @@
 				);
 	};
 	Line.getDistance = function (px, py, vx, vy, x, y, asVector) {
-		return Math.abs(
-			Line.getSignedDistance(px, py, vx, vy, x, y, asVector));
+		return Math.abs(Line.getSignedDistance(px, py, vx, vy, x, y, asVector));
 	};
 
 	var Item = function () {
 	}
 	InitClassWithStatics(Item, Base);
 
-	Item.INSERT = { insert: true };
-	Item.NO_INSERT = { insert: false };
 	Item.prototype._name = null;
 	Item.prototype._applyMatrix = true;
 	Item.prototype._canApplyMatrix = true;
 	Item.prototype._pivot = null;
-	Item.prototype._opacity = 1;
-	Item.prototype._locked = false;
-	Item.prototype._guide = false;
-	Item.prototype._clipMask = false;
-	Item.prototype._prioritize = ['applyMatrix'];
 	Item.prototype._initialize = function (props, point) {
 		var hasProps = props && Base.isPlainObject(props),
 			internal = hasProps && props.internal === true,
@@ -1789,8 +1623,7 @@
 		matrix.translate(center);
 		if (rect.width != bounds.width || rect.height != bounds.height) {
 			if (!_matrix.isInvertible()) {
-				_matrix.set(_matrix._backup
-					|| new Matrix().translate(_matrix.getTranslation()));
+				_matrix.set(_matrix._backup || new Matrix().translate(_matrix.getTranslation()));
 				bounds = this.getBounds();
 			}
 			matrix.scale(
@@ -1856,63 +1689,6 @@
 			mx = matrix;
 		return mx && mx._shiftless();
 	};
-
-	Item._updateBoundsCache = function (parent, item) {
-		if (parent && item) {
-			var id = item._id,
-				ref = parent._boundsCache = parent._boundsCache || {
-					ids: {},
-					list: []
-				};
-			if (!ref.ids[id]) {
-				ref.list.push(item);
-				ref.ids[id] = item;
-			}
-		}
-	};
-	Item._clearBoundsCache = function (item) {
-		var cache = item._boundsCache;
-		if (cache) {
-			item._bounds = item._position = item._boundsCache = undefined;
-			for (var i = 0, list = cache.list, l = list.length; i < l; i++) {
-				var other = list[i];
-				if (other !== item) {
-					other._bounds = other._position = undefined;
-					if (other._boundsCache)
-						Item._clearBoundsCache(other);
-				}
-			}
-		}
-	};
-	Item._getBounds = function (items, matrix, options) {
-		var x1 = Infinity,
-			x2 = -x1,
-			y1 = x1,
-			y2 = x2,
-			nonscaling = false;
-		options = options || {};
-		for (var i = 0, l = items.length; i < l; i++) {
-			var item = items[i];
-			if (!item.isEmpty(true)) {
-				var bounds = item._getCachedBounds(
-					matrix && matrix.appended(item._matrix), options, true),
-					rect = bounds.rect;
-				x1 = Math.min(rect.x, x1);
-				y1 = Math.min(rect.y, y1);
-				x2 = Math.max(rect.x + rect.width, x2);
-				y2 = Math.max(rect.y + rect.height, y2);
-				if (bounds.nonscaling)
-					nonscaling = true;
-			}
-		}
-		return {
-			rect: isFinite(x1)
-				? new Rectangle(x1, y1, x2 - x1, y2 - y1)
-				: new Rectangle(),
-			nonscaling: nonscaling
-		};
-	};
-
 	Item.prototype._decompose = function () {
 		return this._applyMatrix
 			? null
@@ -1975,18 +1751,13 @@
 	Item.prototype.equals = function (item) {
 		return item === this || item
 			&& this._matrix.equals(item._matrix)
-			&& this._locked === item._locked
-			&& this._opacity === item._opacity
-			&& this._clipMask === item._clipMask
-			&& this._guide === item._guide
-			&& this._equals(item)
-			|| false;
+			&& this._equals(item);
 	};
 	Item.prototype._equals = function (item) {
 		return Base.equals(this._children, item._children);
 	};
 	Item.prototype.clone = function (options) {
-		var copy = new this.constructor(Item.NO_INSERT),
+		var copy = new this.constructor({ insert: false }),
 			children = this._children,
 			insert = Base.pick(options ? options.insert : undefined,
 				options === undefined || options === true),
@@ -2019,19 +1790,13 @@
 		}
 	};
 	Item.prototype.copyAttributes = function (source, excludeMatrix) {
-		var keys = ['_locked', '_opacity', '_clipMask', '_guide'];
-		for (var i = 0, l = keys.length; i < l; i++) {
-			var key = keys[i];
-			if (source.hasOwnProperty(key))
-				this[key] = source[key];
-		}
 		if (!excludeMatrix)
 			this._matrix.set(source._matrix, true);
 		this.setApplyMatrix(source._applyMatrix);
 		this.setPivot(source._pivot);
 		var data = source._data,
 			name = source._name;
-		this._data = data ? Base.clone(data) : null;
+		this._data = data ? Object.assign(new data.constructor(), data) : null;
 		if (name)
 			this.setName(name);
 	};
@@ -2299,8 +2064,68 @@
 		}
 	};
 
+	Item._updateBoundsCache = function (parent, item) {
+		if (parent && item) {
+			var id = item._id,
+				ref = parent._boundsCache = parent._boundsCache || {
+					ids: {},
+					list: []
+				};
+			if (!ref.ids[id]) {
+				ref.list.push(item);
+				ref.ids[id] = item;
+			}
+		}
+	};
+	Item._clearBoundsCache = function (item) {
+		var cache = item._boundsCache;
+		if (cache) {
+			item._bounds = item._position = item._boundsCache = undefined;
+			for (var i = 0, list = cache.list, l = list.length; i < l; i++) {
+				var other = list[i];
+				if (other !== item) {
+					other._bounds = other._position = undefined;
+					if (other._boundsCache)
+						Item._clearBoundsCache(other);
+				}
+			}
+		}
+	};
+	Item._getBounds = function (items, matrix, options) {
+		var x1 = Infinity,
+			x2 = -x1,
+			y1 = x1,
+			y2 = x2,
+			nonscaling = false;
+		options = options || {};
+		for (var i = 0, l = items.length; i < l; i++) {
+			var item = items[i];
+			if (!item.isEmpty(true)) {
+				var bounds = item._getCachedBounds(
+					matrix && matrix.appended(item._matrix), options, true),
+					rect = bounds.rect;
+				x1 = Math.min(rect.x, x1);
+				y1 = Math.min(rect.y, y1);
+				x2 = Math.max(rect.x + rect.width, x2);
+				y2 = Math.max(rect.y + rect.height, y2);
+				if (bounds.nonscaling)
+					nonscaling = true;
+			}
+		}
+		return {
+			rect: isFinite(x1)
+				? new Rectangle(x1, y1, x2 - x1, y2 - y1)
+				: new Rectangle(),
+			nonscaling: nonscaling
+		};
+	};
+
 	var Segment = function (arg0, arg1, arg2, arg3, arg4, arg5) {
-		Base.apply(this, arguments);
+		for (var i = 0, l = arguments.length; i < l; i++) {
+			var src = arguments[i];
+			if (src)
+				Object.assign(this, src);
+		}
 		var count = arguments.length,
 			point, handleIn, handleOut;
 		if (count > 0) {
@@ -2323,8 +2148,9 @@
 		new SegmentPoint(point, this, '_point');
 		new SegmentPoint(handleIn, this, '_handleIn');
 		new SegmentPoint(handleOut, this, '_handleOut');
-	}
+	};
 	InitClassWithStatics(Segment, Base);
+
 	Segment.prototype._changed = function (point) {
 		var path = this._path;
 		if (!path)
@@ -2345,9 +2171,6 @@
 	};
 	Segment.prototype.getPoint = function () {
 		return this._point;
-	};
-	Segment.prototype.setPoint = function () {
-		this._point.set(Point.read(arguments));
 	};
 	Segment.prototype.getHandleIn = function () {
 		return this._handleIn;
@@ -2402,55 +2225,6 @@
 		var segments = this._path && this._path._segments;
 		return segments && (segments[this._index + 1]
 			|| this._path._closed && segments[0]) || null;
-	};
-	Segment.prototype.smooth = function (options, _first, _last) {
-		var opts = options || {},
-			type = opts.type,
-			factor = opts.factor,
-			prev = this.getPrevious(),
-			next = this.getNext(),
-			p0 = (prev || this)._point,
-			p1 = this._point,
-			p2 = (next || this)._point,
-			d1 = p0.getDistance(p1),
-			d2 = p1.getDistance(p2);
-		if (!type || type === 'catmull-rom') {
-			var a = factor === undefined ? 0.5 : factor,
-				d1_a = Math.pow(d1, a),
-				d1_2a = d1_a * d1_a,
-				d2_a = Math.pow(d2, a),
-				d2_2a = d2_a * d2_a;
-			if (!_first && prev) {
-				var A = 2 * d2_2a + 3 * d2_a * d1_a + d1_2a,
-					N = 3 * d2_a * (d2_a + d1_a);
-				this.setHandleIn(N !== 0
-					? new Point(
-						(d2_2a * p0._x + A * p1._x - d1_2a * p2._x) / N - p1._x,
-						(d2_2a * p0._y + A * p1._y - d1_2a * p2._y) / N - p1._y)
-					: new Point());
-			}
-			if (!_last && next) {
-				var A = 2 * d1_2a + 3 * d1_a * d2_a + d2_2a,
-					N = 3 * d1_a * (d1_a + d2_a);
-				this.setHandleOut(N !== 0
-					? new Point(
-						(d1_2a * p2._x + A * p1._x - d2_2a * p0._x) / N - p1._x,
-						(d1_2a * p2._y + A * p1._y - d2_2a * p0._y) / N - p1._y)
-					: new Point());
-			}
-		} else if (type === 'geometric') {
-			if (prev && next) {
-				var vector = p0.subtract(p2),
-					t = factor === undefined ? 0.4 : factor,
-					k = t * d1 / (d1 + d2);
-				if (!_first)
-					this.setHandleIn(vector.multiply(k));
-				if (!_last)
-					this.setHandleOut(vector.multiply(k - t));
-			}
-		} else {
-			throw new Error('Smoothing method \'' + type + '\' not supported.');
-		}
 	};
 	Segment.prototype.getPrevious = function () {
 		var segments = this._path && this._path._segments;
@@ -2579,8 +2353,9 @@
 		this._owner = owner;
 		owner[key] = this;
 
-	}
+	};
 	InitClassWithStatics(SegmentPoint, Point);
+
 	SegmentPoint.prototype._set = function (x, y) {
 		this._x = this.x = x;
 		this._y = this.y = y;
@@ -2643,6 +2418,7 @@
 		this._segment2 = seg2 || new Segment(point2, handle2, null);
 	};
 	InitClassWithStatics(Curve, Base);
+
 	Curve.prototype._changed = function () {
 		this._length = this._bounds = undefined;
 	};
@@ -2775,6 +2551,127 @@
 	Curve.prototype.clearHandles = function () {
 		this._segment1._handleOut._set(0, 0);
 		this._segment2._handleIn._set(0, 0);
+	};
+	Curve.prototype.hasHandles = function () {
+		return !this._segment1._handleOut.isZero()
+			|| !this._segment2._handleIn.isZero();
+	};
+	Curve.prototype.hasLength = function (epsilon) {
+		return (!this.getPoint1().equals(this.getPoint2()) || this.hasHandles())
+			&& this.getLength() > (epsilon || 0);
+	};
+	Curve.prototype.isCollinear = function (curve) {
+		return curve && this.isStraight() && curve.isStraight()
+			&& this.getLine().isCollinear(curve.getLine());
+	};
+	Curve.prototype.isStraight = function (epsilon) {
+		var seg1 = this._segment1,
+			seg2 = this._segment2;
+		const test = function (p1, h1, h2, p2) {
+			if (h1.isZero() && h2.isZero()) {
+				return true;
+			} else {
+				var v = p2.subtract(p1);
+				if (v.isZero()) {
+					return false;
+				} else if (v.isCollinear(h1) && v.isCollinear(h2)) {
+					var l = new Line(p1, p2),
+						epsilon = 1e-7;
+					if (l.getDistance(p1.add(h1)) < epsilon &&
+						l.getDistance(p2.add(h2)) < epsilon) {
+						var div = v.dot(v),
+							s1 = v.dot(h1) / div,
+							s2 = v.dot(h2) / div;
+						return s1 >= 0 && s1 <= 1 && s2 <= 0 && s2 >= -1;
+					}
+				}
+			}
+			return false;
+		}
+		return test(seg1._point, seg1._handleOut, seg2._handleIn, seg2._point, epsilon);
+	};
+	Curve.prototype.getLocationAt = function (offset, _isTime) {
+		return this.getLocationAtTime(
+			_isTime ? offset : this.getTimeAt(offset));
+	};
+	Curve.prototype.getLocationAtTime = function (t) {
+		return t != null && t >= 0 && t <= 1
+			? new CurveLocation(this, t)
+			: null;
+	};
+	Curve.prototype.getTimeAt = function (offset, start) {
+		return Curve.getTimeAt(this.getValues(), offset, start);
+	};
+	Curve.prototype.getTimesWithTangent = function () {
+		var tangent = Point.read(arguments);
+		return tangent.isZero()
+			? []
+			: Curve.getTimesWithTangent(this.getValues(), tangent);
+	};
+	Curve.prototype.getTimeOf = function () {
+		return Curve.getTimeOf(this.getValues(), Point.read(arguments));
+	};
+	Curve.prototype.getNearestLocation = function () {
+		var point = Point.read(arguments),
+			values = this.getValues(),
+			t = Curve.getNearestTime(values, point),
+			pt = Curve.getPoint(values, t);
+		return new CurveLocation(this, t, pt, null, point.getDistance(pt));
+	};
+	Curve.prototype.getNearestPoint = function () {
+		var loc = this.getNearestLocation.apply(this, arguments);
+		return loc ? loc.getPoint() : loc;
+	};
+	Curve.prototype.getPointAt = function (location, _isTime) {
+		var values = this.getValues();
+		return Curve['getPoint'](values, _isTime
+			? location
+			: Curve.getTimeAt(values, location));
+	};
+	Curve.prototype.getPointAtTime = function (time) {
+		return Curve['getPoint'](this.getValues(), time);
+	};
+	Curve.prototype.getTangentAt = function (location, _isTime) {
+		var values = this.getValues();
+		return Curve['getTangent'](values, _isTime
+			? location
+			: Curve.getTimeAt(values, location));
+	};
+	Curve.prototype.getTangentAtTime = function (time) {
+		return Curve['getTangent'](this.getValues(), time);
+	};
+	Curve.prototype.getNormalAt = function (location, _isTime) {
+		var values = this.getValues();
+		return Curve['getNormal'](values, _isTime
+			? location
+			: Curve.getTimeAt(values, location));
+	};
+	Curve.prototype.getNormalAtTime = function (time) {
+		return Curve['getNormal'](this.getValues(), time);
+	};
+	Curve.prototype.getWeightedTangentAt = function (location, _isTime) {
+		var values = this.getValues();
+		return Curve['getWeightedTangent'](values, _isTime
+			? location
+			: Curve.getTimeAt(values, location));
+	};
+	Curve.prototype.getWeightedNormalAt = function (location, _isTime) {
+		var values = this.getValues();
+		return Curve['getWeightedNormal'](values, _isTime
+			? location
+			: Curve.getTimeAt(values, location));
+	};
+	Curve.prototype.getCurvatureAt = function (location, _isTime) {
+		var values = this.getValues();
+		return Curve['getCurvature'](values, _isTime
+			? location
+			: Curve.getTimeAt(values, location));
+	};
+	Curve.prototype.getIntersections = function (curve) {
+		var v1 = this.getValues(),
+			v2 = curve && curve !== this && curve.getValues();
+		return v2 ? Curve.getCurveIntersections(v1, v2, this, curve, [])
+			: Curve.getSelfIntersection(v1, this, []);
 	};
 
 	Curve.getValues = function (segment1, segment2, matrix, straight) {
@@ -3031,124 +2928,6 @@
 			new Point(v[4] - x3, v[5] - y3),
 			new Point(x3, y3), epsilon);
 	};
-
-	Curve.prototype.hasHandles = function () {
-		return !this._segment1._handleOut.isZero()
-			|| !this._segment2._handleIn.isZero();
-	};
-	Curve.prototype.hasLength = function (epsilon) {
-		return (!this.getPoint1().equals(this.getPoint2()) || this.hasHandles())
-			&& this.getLength() > (epsilon || 0);
-	};
-	Curve.prototype.isCollinear = function (curve) {
-		return curve && this.isStraight() && curve.isStraight()
-			&& this.getLine().isCollinear(curve.getLine());
-	};
-	Curve.prototype.isStraight = function (epsilon) {
-		var seg1 = this._segment1,
-			seg2 = this._segment2;
-		const test = function (p1, h1, h2, p2) {
-			if (h1.isZero() && h2.isZero()) {
-				return true;
-			} else {
-				var v = p2.subtract(p1);
-				if (v.isZero()) {
-					return false;
-				} else if (v.isCollinear(h1) && v.isCollinear(h2)) {
-					var l = new Line(p1, p2),
-						epsilon = 1e-7;
-					if (l.getDistance(p1.add(h1)) < epsilon &&
-						l.getDistance(p2.add(h2)) < epsilon) {
-						var div = v.dot(v),
-							s1 = v.dot(h1) / div,
-							s2 = v.dot(h2) / div;
-						return s1 >= 0 && s1 <= 1 && s2 <= 0 && s2 >= -1;
-					}
-				}
-			}
-			return false;
-		}
-		return test(seg1._point, seg1._handleOut, seg2._handleIn, seg2._point, epsilon);
-	};
-
-	Curve.prototype.getLocationAt = function (offset, _isTime) {
-		return this.getLocationAtTime(
-			_isTime ? offset : this.getTimeAt(offset));
-	};
-	Curve.prototype.getLocationAtTime = function (t) {
-		return t != null && t >= 0 && t <= 1
-			? new CurveLocation(this, t)
-			: null;
-	};
-	Curve.prototype.getTimeAt = function (offset, start) {
-		return Curve.getTimeAt(this.getValues(), offset, start);
-	};
-	Curve.prototype.getTimesWithTangent = function () {
-		var tangent = Point.read(arguments);
-		return tangent.isZero()
-			? []
-			: Curve.getTimesWithTangent(this.getValues(), tangent);
-	};
-	Curve.prototype.getTimeOf = function () {
-		return Curve.getTimeOf(this.getValues(), Point.read(arguments));
-	};
-	Curve.prototype.getNearestLocation = function () {
-		var point = Point.read(arguments),
-			values = this.getValues(),
-			t = Curve.getNearestTime(values, point),
-			pt = Curve.getPoint(values, t);
-		return new CurveLocation(this, t, pt, null, point.getDistance(pt));
-	};
-	Curve.prototype.getNearestPoint = function () {
-		var loc = this.getNearestLocation.apply(this, arguments);
-		return loc ? loc.getPoint() : loc;
-	};
-	Curve.prototype.getPointAt = function (location, _isTime) {
-		var values = this.getValues();
-		return Curve['getPoint'](values, _isTime
-			? location
-			: Curve.getTimeAt(values, location));
-	};
-	Curve.prototype.getPointAtTime = function (time) {
-		return Curve['getPoint'](this.getValues(), time);
-	};
-	Curve.prototype.getTangentAt = function (location, _isTime) {
-		var values = this.getValues();
-		return Curve['getTangent'](values, _isTime
-			? location
-			: Curve.getTimeAt(values, location));
-	};
-	Curve.prototype.getTangentAtTime = function (time) {
-		return Curve['getTangent'](this.getValues(), time);
-	};
-	Curve.prototype.getNormalAt = function (location, _isTime) {
-		var values = this.getValues();
-		return Curve['getNormal'](values, _isTime
-			? location
-			: Curve.getTimeAt(values, location));
-	};
-	Curve.prototype.getNormalAtTime = function (time) {
-		return Curve['getNormal'](this.getValues(), time);
-	};
-	Curve.prototype.getWeightedTangentAt = function (location, _isTime) {
-		var values = this.getValues();
-		return Curve['getWeightedTangent'](values, _isTime
-			? location
-			: Curve.getTimeAt(values, location));
-	};
-	Curve.prototype.getWeightedNormalAt = function (location, _isTime) {
-		var values = this.getValues();
-		return Curve['getWeightedNormal'](values, _isTime
-			? location
-			: Curve.getTimeAt(values, location));
-	};
-	Curve.prototype.getCurvatureAt = function (location, _isTime) {
-		var values = this.getValues();
-		return Curve['getCurvature'](values, _isTime
-			? location
-			: Curve.getTimeAt(values, location));
-	};
-
 	Curve.getLengthIntegrand = function (v) {
 		var x0 = v[0], y0 = v[1],
 			x1 = v[2], y1 = v[3],
@@ -3374,7 +3153,6 @@
 			roots, tMin, tMax);
 		return roots.sort();
 	};
-
 	Curve.addLocation = function (locations, include, c1, t1, c2, t2, overlap) {
 		var excludeStart = !overlap && c1.getPrevious() === c2,
 			excludeEnd = !overlap && c1 !== c2 && c1.getNext() === c2,
@@ -3776,13 +3554,6 @@
 		return times;
 	};
 
-	Curve.prototype.getIntersections = function (curve) {
-		var v1 = this.getValues(),
-			v2 = curve && curve !== this && curve.getValues();
-		return v2 ? Curve.getCurveIntersections(v1, v2, this, curve, [])
-			: Curve.getSelfIntersection(v1, this, []);
-	};
-
 	var CurveLocation = function (curve, time, point, _overlap, _distance) {
 		if (time >= 0.99999999) {
 			var next = curve.getNext();
@@ -3799,6 +3570,7 @@
 		this._intersection = this._next = this._previous = null;
 	};
 	InitClassWithStatics(CurveLocation, Base);
+
 	CurveLocation.prototype._setPath = function (path) {
 		this._path = path;
 		this._version = path ? path._version : 0;
@@ -4249,11 +4021,6 @@
 				matrix1, matrix2, _returnFirst)
 			: [];
 	};
-	PathItem.prototype.getCrossings = function (path) {
-		return this.getIntersections(path, function (inter) {
-			return inter.isCrossing();
-		});
-	};
 	PathItem.prototype.getNearestLocation = function () {
 		var point = Point.read(arguments),
 			curves = this.getCurves(),
@@ -4331,6 +4098,160 @@
 		}
 		return ok;
 	};
+	PathItem.prototype._getWinding = function (point, dir, closed) {
+		return PathItem.getWinding(point, this.getCurves(), dir, closed);
+	};
+	PathItem.prototype.unite = function (path, options) {
+		return PathItem.traceBoolean(this, path, 'unite', options);
+	};
+	PathItem.prototype.intersect = function (path, options) {
+		return PathItem.traceBoolean(this, path, 'intersect', options);
+	};
+	PathItem.prototype.subtract = function (path, options) {
+		return PathItem.traceBoolean(this, path, 'subtract', options);
+	};
+	PathItem.prototype.exclude = function (path, options) {
+		return PathItem.traceBoolean(this, path, 'exclude', options);
+	};
+	PathItem.prototype.divide = function (path, options) {
+		return options && (options.trace == false || options.stroke)
+			? PathItem.splitBoolean(this, path, 'divide')
+			: PathItem.createResult([
+				this.subtract(path, options),
+				this.intersect(path, options)
+			], true, this, path, options);
+	};
+	PathItem.prototype.resolveCrossings = function () {
+		var children = this._children,
+			paths = children || [this];
+
+		function hasOverlap(seg, path) {
+			var inter = seg && seg._intersection;
+			return inter && inter._overlap && inter._path === path;
+		}
+
+		var hasOverlaps = false,
+			hasCrossings = false,
+			intersections = this.getIntersections(null, function (inter) {
+				return inter.hasOverlap() && (hasOverlaps = true) ||
+					inter.isCrossing() && (hasCrossings = true);
+			}),
+			clearCurves = hasOverlaps && hasCrossings && [];
+		intersections = CurveLocation.expand(intersections);
+		if (hasOverlaps) {
+			var overlaps = PathItem.divideLocations(intersections, function (inter) {
+				return inter.hasOverlap();
+			}, clearCurves);
+			for (var i = overlaps.length - 1; i >= 0; i--) {
+				var overlap = overlaps[i],
+					path = overlap._path,
+					seg = overlap._segment,
+					prev = seg.getPrevious(),
+					next = seg.getNext();
+				if (hasOverlap(prev, path) && hasOverlap(next, path)) {
+					seg.remove();
+					prev._handleOut._set(0, 0);
+					next._handleIn._set(0, 0);
+					if (prev !== seg && !prev.getCurve().hasLength()) {
+						next._handleIn.set(prev._handleIn);
+						prev.remove();
+					}
+				}
+			}
+		}
+		if (hasCrossings) {
+			PathItem.divideLocations(intersections, hasOverlaps && function (inter) {
+				var curve1 = inter.getCurve(),
+					seg1 = inter.getSegment(),
+					other = inter._intersection,
+					curve2 = other._curve,
+					seg2 = other._segment;
+				if (curve1 && curve2 && curve1._path && curve2._path)
+					return true;
+				if (seg1)
+					seg1._intersection = null;
+				if (seg2)
+					seg2._intersection = null;
+			}, clearCurves);
+			if (clearCurves)
+				PathItem.clearCurveHandles(clearCurves);
+			paths = PathItem.tracePaths(Base.each(paths, function (path) {
+				this.push.apply(this, path._segments);
+			}, []));
+		}
+		var length = paths.length,
+			item;
+		if (length > 1 && children) {
+			if (paths !== children)
+				this.setChildren(paths);
+			item = this;
+		} else if (length === 1 && !children) {
+			if (paths[0] !== this)
+				this.setSegments(paths[0].removeSegments());
+			item = this;
+		}
+		if (!item) {
+			item = new CompoundPath({ insert: false });
+			item.addChildren(paths);
+			item = item.reduce();
+			item.copyAttributes(this);
+			this.replaceWith(item);
+		}
+		return item;
+	};
+	PathItem.prototype.reorient = function (nonZero, clockwise) {
+		var children = this._children;
+		if (children && children.length) {
+			this.setChildren(PathItem.reorientPaths(this.removeChildren(),
+				function (w) {
+					return !!(nonZero ? w : w & 1);
+				},
+				clockwise));
+		} else if (clockwise !== undefined) {
+			this.setClockwise(clockwise);
+		}
+		return this;
+	};
+	PathItem.prototype.getInteriorPoint = function () {
+		var bounds = this.getBounds(),
+			point = bounds.getCenter(true);
+		if (!this.contains(point)) {
+			var curves = this.getCurves(),
+				y = point.y,
+				intercepts = [],
+				roots = [];
+			for (var i = 0, l = curves.length; i < l; i++) {
+				var v = curves[i].getValues(),
+					o0 = v[1],
+					o1 = v[3],
+					o2 = v[5],
+					o3 = v[7];
+				if (y >= Math.min(o0, o1, o2, o3) && y <= Math.max(o0, o1, o2, o3)) {
+					var monoCurves = Curve.getMonoCurves(v);
+					for (var j = 0, m = monoCurves.length; j < m; j++) {
+						var mv = monoCurves[j],
+							mo0 = mv[1],
+							mo3 = mv[7];
+						if ((mo0 !== mo3) &&
+							(y >= mo0 && y <= mo3 || y >= mo3 && y <= mo0)) {
+							var x = y === mo0 ? mv[0]
+								: y === mo3 ? mv[6]
+									: Curve.solveCubic(mv, 1, y, roots, 0, 1)
+										=== 1
+										? Curve.getPoint(mv, roots[0]).x
+										: (mv[0] + mv[6]) / 2;
+							intercepts.push(x);
+						}
+					}
+				}
+			}
+			if (intercepts.length > 1) {
+				intercepts.sort(function (a, b) { return a - b; });
+				point.x = (intercepts[0] + intercepts[1]) / 2;
+			}
+		}
+		return point;
+	};
 
 	PathItem.getPaths = function (path) {
 		return path._children || [path];
@@ -4357,7 +4278,7 @@
 		return res;
 	};
 	PathItem.createResult = function (paths, simplify, path1, path2, options) {
-		var result = new CompoundPath(Item.NO_INSERT);
+		var result = new CompoundPath({ insert: false });
 		result.addChildren(paths, true);
 		result = result.reduce({ simplify: simplify });
 		if (!(options && options.insert == false)) {
@@ -4976,7 +4897,7 @@
 					finished = !first && (isStart(seg) || isStart(other)),
 					cross = !finished && other;
 				if (first) {
-					path = new Path(Item.NO_INSERT);
+					path = new Path({ insert: false });
 					branch = null;
 				}
 				if (finished) {
@@ -5040,161 +4961,6 @@
 			}
 		}
 		return paths;
-	};
-
-	PathItem.prototype._getWinding = function (point, dir, closed) {
-		return PathItem.getWinding(point, this.getCurves(), dir, closed);
-	};
-	PathItem.prototype.unite = function (path, options) {
-		return PathItem.traceBoolean(this, path, 'unite', options);
-	};
-	PathItem.prototype.intersect = function (path, options) {
-		return PathItem.traceBoolean(this, path, 'intersect', options);
-	};
-	PathItem.prototype.subtract = function (path, options) {
-		return PathItem.traceBoolean(this, path, 'subtract', options);
-	};
-	PathItem.prototype.exclude = function (path, options) {
-		return PathItem.traceBoolean(this, path, 'exclude', options);
-	};
-	PathItem.prototype.divide = function (path, options) {
-		return options && (options.trace == false || options.stroke)
-			? PathItem.splitBoolean(this, path, 'divide')
-			: PathItem.createResult([
-				this.subtract(path, options),
-				this.intersect(path, options)
-			], true, this, path, options);
-	};
-	PathItem.prototype.resolveCrossings = function () {
-		var children = this._children,
-			paths = children || [this];
-
-		function hasOverlap(seg, path) {
-			var inter = seg && seg._intersection;
-			return inter && inter._overlap && inter._path === path;
-		}
-
-		var hasOverlaps = false,
-			hasCrossings = false,
-			intersections = this.getIntersections(null, function (inter) {
-				return inter.hasOverlap() && (hasOverlaps = true) ||
-					inter.isCrossing() && (hasCrossings = true);
-			}),
-			clearCurves = hasOverlaps && hasCrossings && [];
-		intersections = CurveLocation.expand(intersections);
-		if (hasOverlaps) {
-			var overlaps = PathItem.divideLocations(intersections, function (inter) {
-				return inter.hasOverlap();
-			}, clearCurves);
-			for (var i = overlaps.length - 1; i >= 0; i--) {
-				var overlap = overlaps[i],
-					path = overlap._path,
-					seg = overlap._segment,
-					prev = seg.getPrevious(),
-					next = seg.getNext();
-				if (hasOverlap(prev, path) && hasOverlap(next, path)) {
-					seg.remove();
-					prev._handleOut._set(0, 0);
-					next._handleIn._set(0, 0);
-					if (prev !== seg && !prev.getCurve().hasLength()) {
-						next._handleIn.set(prev._handleIn);
-						prev.remove();
-					}
-				}
-			}
-		}
-		if (hasCrossings) {
-			PathItem.divideLocations(intersections, hasOverlaps && function (inter) {
-				var curve1 = inter.getCurve(),
-					seg1 = inter.getSegment(),
-					other = inter._intersection,
-					curve2 = other._curve,
-					seg2 = other._segment;
-				if (curve1 && curve2 && curve1._path && curve2._path)
-					return true;
-				if (seg1)
-					seg1._intersection = null;
-				if (seg2)
-					seg2._intersection = null;
-			}, clearCurves);
-			if (clearCurves)
-				PathItem.clearCurveHandles(clearCurves);
-			paths = PathItem.tracePaths(Base.each(paths, function (path) {
-				this.push.apply(this, path._segments);
-			}, []));
-		}
-		var length = paths.length,
-			item;
-		if (length > 1 && children) {
-			if (paths !== children)
-				this.setChildren(paths);
-			item = this;
-		} else if (length === 1 && !children) {
-			if (paths[0] !== this)
-				this.setSegments(paths[0].removeSegments());
-			item = this;
-		}
-		if (!item) {
-			item = new CompoundPath(Item.NO_INSERT);
-			item.addChildren(paths);
-			item = item.reduce();
-			item.copyAttributes(this);
-			this.replaceWith(item);
-		}
-		return item;
-	};
-	PathItem.prototype.reorient = function (nonZero, clockwise) {
-		var children = this._children;
-		if (children && children.length) {
-			this.setChildren(PathItem.reorientPaths(this.removeChildren(),
-				function (w) {
-					return !!(nonZero ? w : w & 1);
-				},
-				clockwise));
-		} else if (clockwise !== undefined) {
-			this.setClockwise(clockwise);
-		}
-		return this;
-	};
-	PathItem.prototype.getInteriorPoint = function () {
-		var bounds = this.getBounds(),
-			point = bounds.getCenter(true);
-		if (!this.contains(point)) {
-			var curves = this.getCurves(),
-				y = point.y,
-				intercepts = [],
-				roots = [];
-			for (var i = 0, l = curves.length; i < l; i++) {
-				var v = curves[i].getValues(),
-					o0 = v[1],
-					o1 = v[3],
-					o2 = v[5],
-					o3 = v[7];
-				if (y >= Math.min(o0, o1, o2, o3) && y <= Math.max(o0, o1, o2, o3)) {
-					var monoCurves = Curve.getMonoCurves(v);
-					for (var j = 0, m = monoCurves.length; j < m; j++) {
-						var mv = monoCurves[j],
-							mo0 = mv[1],
-							mo3 = mv[7];
-						if ((mo0 !== mo3) &&
-							(y >= mo0 && y <= mo3 || y >= mo3 && y <= mo0)) {
-							var x = y === mo0 ? mv[0]
-								: y === mo3 ? mv[6]
-									: Curve.solveCubic(mv, 1, y, roots, 0, 1)
-										=== 1
-										? Curve.getPoint(mv, roots[0]).x
-										: (mv[0] + mv[6]) / 2;
-							intercepts.push(x);
-						}
-					}
-				}
-			}
-			if (intercepts.length > 1) {
-				intercepts.sort(function (a, b) { return a - b; });
-				point.x = (intercepts[0] + intercepts[1]) / 2;
-			}
-		}
-		return point;
 	};
 
 	var Path = function (arg) {
@@ -5488,7 +5254,7 @@
 				this.setClosed(false);
 				path = this;
 			} else {
-				path = new Path(Item.NO_INSERT);
+				path = new Path({ insert: false });
 				path.insertAbove(this);
 				path.copyAttributes(this);
 			}
@@ -5664,23 +5430,12 @@
 		var loc = this.getLocationAt(offset);
 		return loc && loc['getCurvature']();
 	};
-
-	Path.getCurrentSegment = function (that) {
-		var segments = that._segments;
-		if (!segments.length)
-			throw new Error('Use a moveTo() command first');
-		return segments[segments.length - 1];
-	}
-
 	Path.prototype.moveTo = function () {
 		var segments = this._segments;
 		if (segments.length === 1)
 			this.removeSegment(0);
 		if (!segments.length)
 			this._add([new Segment(Point.read(arguments))]);
-	};
-	Path.prototype.moveBy = function () {
-		throw new Error('moveBy() is unsupported on Path items.');
 	};
 	Path.prototype.lineTo = function () {
 		this._add([new Segment(Point.read(arguments))]);
@@ -5734,7 +5489,7 @@
 			var middle = from.add(to).divide(2),
 				through = middle.add(middle.subtract(from).rotate(
 					clockwise ? -90 : 90));
-		} else if (Base.remain(args) <= 2) {
+		} else if (args.length - (args.__index || 0) <= 2) {
 			through = to;
 			to = Point.read(args);
 		} else if (!from.equals(to)) {
@@ -5895,6 +5650,12 @@
 		return Path[method](this._segments, this._closed, this, matrix, options);
 	};
 
+	Path.getCurrentSegment = function (that) {
+		var segments = that._segments;
+		if (!segments.length)
+			throw new Error('Use a moveTo() command first');
+		return segments[segments.length - 1];
+	}
 	Path.getBounds = function (segments, closed, path, matrix, options, strokePadding) {
 		var first = segments[0];
 		if (!first)
@@ -6123,7 +5884,7 @@
 				path.remove();
 		}
 		if (!children.length) {
-			var path = new Path(Item.NO_INSERT);
+			var path = new Path({ insert: false });
 			path.copyAttributes(this);
 			path.insertAbove(this);
 			this.remove();
@@ -6183,27 +5944,13 @@
 			length += children[i].getLength();
 		return length;
 	};
-
-	CompoundPath.getCurrentPath = function (that, check) {
-		var children = that._children;
-		if (check && !children.length)
-			throw new Error('Use a moveTo() command first');
-		return children[children.length - 1];
-	};
-
 	CompoundPath.prototype.moveTo = function () {
 		var current = CompoundPath.getCurrentPath(this),
 			path = current && current.isEmpty() ? current
-				: new Path(Item.NO_INSERT);
+				: new Path({ insert: false });
 		if (path !== current)
 			this.addChild(path);
 		path.moveTo.apply(path, arguments);
-	};
-	CompoundPath.prototype.moveBy = function () {
-		var current = CompoundPath.getCurrentPath(this, true),
-			last = current && current.getLastSegment(),
-			point = Point.read(arguments);
-		this.moveTo(last ? point.add(last._point) : point);
 	};
 	CompoundPath.prototype.closePath = function (tolerance) {
 		CompoundPath.getCurrentPath(this, true).closePath(tolerance);
@@ -6255,6 +6002,13 @@
 			res = children[i]['reverse'](param) || res;
 		}
 		return res;
+	};
+
+	CompoundPath.getCurrentPath = function (that, check) {
+		var children = that._children;
+		if (check && !children.length)
+			throw new Error('Use a moveTo() command first');
+		return children[children.length - 1];
 	};
 
 	window.PathBoolean = {
