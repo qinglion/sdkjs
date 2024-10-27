@@ -2444,9 +2444,7 @@ CT_PivotCacheRecords.prototype._getDataMapRowToTotal = function(cacheFields, row
  * @param {{
  * dataMap: PivotDataElem,
  * cacheFields: CT_CacheField[],
- * filterMaps: Map,
  * indexes: number[]
- * cacheFieldsWithData: Array,
  * dataFields: CT_DataField[],
  * itemsWithDataMap: Map<number, Map<number, boolean>>
  * }} options
@@ -2454,17 +2452,11 @@ CT_PivotCacheRecords.prototype._getDataMapRowToTotal = function(cacheFields, row
 CT_PivotCacheRecords.prototype._getDataMapSkeleton = function(options) {
 	const dataMap = options.dataMap;
 	const cacheFields = options.cacheFields;
-	const filterMaps = options.filterMaps;
 	const indexes = options.indexes;
-	const cacheFieldsWithData = options.cacheFieldsWithData;
 	const dataFields = options.dataFields;
 	const itemsWithDataMap = options.itemsWithDataMap;
 	for (let row = 0; row < this.getRowsCount(); ++row) {
 		let curr = dataMap;
-		if (this.getDataMapLabelFilters(cacheFields, row, filterMaps)) {
-			continue;
-		}
-		this.fillVisibleFields(cacheFields, row, cacheFieldsWithData);
 		curr = this._getDataMapFromFields(cacheFields,indexes, row, curr, dataFields.length, itemsWithDataMap);
 		this._getDataMapRowToTotal(cacheFields, row, curr, dataFields);
 	}
@@ -2741,9 +2733,7 @@ CT_PivotCacheRecords.prototype.getDataMap = function(options) {
 	dataMap = this._getDataMapSkeleton({
 		dataMap: dataMap,
 		cacheFields: options.cacheFields,
-		filterMaps: options.filterMaps,
 		indexes: indexes,
-		cacheFieldsWithData: options.cacheFieldsWithData,
 		dataFields: options.dataFields,
 		itemsWithDataMap: itemsWithDataMap
 	});
@@ -2769,8 +2759,52 @@ CT_PivotCacheRecords.prototype.getDataMap = function(options) {
 	})
 	this._getDataMapTotal(dataMap, 0, indexes.length);
 	this._getDataMapSubtotal(dataMap, 0, options.rowIndexes);
+	this._getDataMapApplyLabelFilters(dataMap, indexes, options.rowIndexes, options.colIndexes, options.filterMaps, options.dataFields);
+	if (!AscCommon.isEmptyObject(options.cacheFieldsWithData)) {
+		this.fillVisibleFields(dataMap, 0, indexes, options.cacheFieldsWithData);
+	}
 	this._getDataMapApplyValueFilters(dataMap, options.rowIndexes, options.colIndexes, options.filterMaps, options.dataFields);
 	return {dataRow: dataMap, error: null};
+};
+CT_PivotCacheRecords.prototype._getDataMapApplyLabelFilters = function(rowMap, indexes, rowIndexes, colIndexes, filterMaps, dataFields) {
+	if (filterMaps.labelFilters.length === 0) {
+		return;
+	}
+	const labelFiltersMap = new Map();
+	filterMaps.labelFilters.forEach(function (filter) {
+		labelFiltersMap.set(filter.index, filter.map);
+	});
+	let isHide = this._getDataMapConvertLabelFiltersIsHide(rowMap, 0, indexes, labelFiltersMap, dataFields);
+	if (isHide){
+		this._getDataMapTotal(rowMap, 0, rowIndexes.length + colIndexes.length);
+		this._getDataMapSubtotal(rowMap, 0, rowIndexes);
+	}
+};
+CT_PivotCacheRecords.prototype._getDataMapConvertLabelFiltersIsHide = function(rowMap, index, indexes, labelFiltersMap, dataFields) {
+	let res = false;
+	let i;
+	if (index < indexes.length) {
+		let elems = rowMap.vals;
+		let labelMap = labelFiltersMap.get(indexes[index]);
+		if (labelMap) {
+			for (i in elems) {
+				if (elems.hasOwnProperty(i) && !labelMap.get(parseInt(i))) {
+					delete elems[i];
+					res = true;
+				}
+			}
+		}
+		for (i in elems) {
+			if (elems.hasOwnProperty(i)) {
+				let curRes = this._getDataMapConvertLabelFiltersIsHide(elems[i], index + 1, indexes, labelFiltersMap, dataFields);
+				if (curRes && AscCommon.isEmptyObject(elems[i].vals)) {
+					delete elems[i];
+				}
+				res = curRes || res;
+			}
+		}
+	}
+	return res;
 };
 CT_PivotCacheRecords.prototype._getDataMapApplyValueFilters = function(rowMap, rowIndexes, colIndexes, filterMaps, dataFields) {
 	var tmp;
@@ -2841,28 +2875,20 @@ CT_PivotCacheRecords.prototype._getDataMapConvertFilterBySubtotal = function(row
 		this._getDataMapTrimBySubtotal(rowMap, subtotal);
 	}
 };
-CT_PivotCacheRecords.prototype.getDataMapLabelFilters = function(cacheFields, row, filterMaps) {
-	var sharedIndex;
-	for (var i = 0; i < filterMaps.labelFilters.length; ++i) {
-		var filter = filterMaps.labelFilters[i];
-		if (filter.isGroup) {
-			sharedIndex = this._getSharedRow(cacheFields, filter.index, row);
-		} else {
-			sharedIndex = this._getGroupOrSharedRow(cacheFields, filter.index, row);
+CT_PivotCacheRecords.prototype.fillVisibleFields = function(rowMap, index, indexes, cacheFieldsWithData) {
+	if (index < indexes.length) {
+		let elems = rowMap.vals;
+		let visible = cacheFieldsWithData[indexes[index]];
+		if (!visible) {
+			return;
 		}
-		if(sharedIndex >= 0 && !filter.map.has(sharedIndex)) {
-			return true;
-		}
-	}
-	return false;
-};
-CT_PivotCacheRecords.prototype.fillVisibleFields = function(cacheFields, row, cacheFieldsWithData) {
-	for (var index in cacheFieldsWithData) {
-		if (cacheFieldsWithData.hasOwnProperty(index)) {
-			var visible = cacheFieldsWithData[index];
-			var sharedIndex = this._getGroupOrSharedRow(cacheFields, index, row);
-			if(sharedIndex >= 0 && sharedIndex < visible.length) {
-				visible[sharedIndex] = 1;
+		for (let i in elems) {
+			if (elems.hasOwnProperty(i)) {
+				let sharedIndex = parseInt(i);
+				if (0 <= sharedIndex && sharedIndex < visible.length) {
+					visible[sharedIndex] = 1;
+				}
+				this.fillVisibleFields(rowMap, index + 1, indexes, cacheFieldsWithData);
 			}
 		}
 	}
@@ -7079,6 +7105,7 @@ CT_pivotTableDefinition.prototype.filterByFieldIndex = function (api, autoFilter
 };
 CT_pivotTableDefinition.prototype.filterPivotSlicers = function(api, fld, confirmation, changeRes) {
 	var ws = this.worksheet;
+	//todo fix updating cacheFieldsWithData with other filters
 	var slicerCache = ws.workbook.getSlicerCacheByPivotTableFld(ws.getId(), this.name, fld);
 	if (slicerCache) {
 		var pivotField = this.asc_getPivotFields()[fld];
