@@ -11255,8 +11255,8 @@
 			compoundPath.setPosition(position);
 
 			const formatPath = new AscFormat.Path();
-			formatPath.setPathW(compoundPathBounds.width * 36000);
-			formatPath.setPathH(compoundPathBounds.height * 36000);
+			formatPath.setPathW(compoundPathBounds.getWidth() * 36000);
+			formatPath.setPathH(compoundPathBounds.getHeight() * 36000);
 
 			const pathChildren = compoundPath.getChildren();
 			const pathsToHandle = Array.isArray(pathChildren) && pathChildren.length > 0 ? pathChildren : [compoundPath];
@@ -11322,10 +11322,10 @@
 			resultShape.spPr.setParent(resultShape);
 			resultShape.spPr.setXfrm(new AscFormat.CXfrm());
 			resultShape.spPr.xfrm.setParent(resultShape.spPr);
-			resultShape.spPr.xfrm.setOffX(compoundPathBounds.left);
-			resultShape.spPr.xfrm.setOffY(compoundPathBounds.top);
-			resultShape.spPr.xfrm.setExtX(compoundPathBounds.width);
-			resultShape.spPr.xfrm.setExtY(compoundPathBounds.height);
+			resultShape.spPr.xfrm.setOffX(compoundPathBounds.getLeft());
+			resultShape.spPr.xfrm.setOffY(compoundPathBounds.getTop());
+			resultShape.spPr.xfrm.setExtX(compoundPathBounds.getWidth());
+			resultShape.spPr.xfrm.setExtY(compoundPathBounds.getHeight());
 
 			resultGeometry.setParent(resultShape);
 			resultShape.spPr.setGeometry(resultGeometry);

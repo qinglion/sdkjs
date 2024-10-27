@@ -255,7 +255,7 @@
 				var bounds = new Array(items.length);
 				for (var i = 0; i < items.length; i++) {
 					var rect = items[i].getBounds();
-					bounds[i] = [rect.left, rect.top, rect.right, rect.bottom];
+					bounds[i] = [rect.getLeft(), rect.getTop(), rect.getRight(), rect.getBottom()];
 				}
 				return bounds;
 			}
@@ -853,9 +853,8 @@
 	};
 
 	var LinkedPoint = function (x, y, owner, setter) {
-		// Point.call(this);
-		this._x = x;
-		this._y = y;
+		this._x = this.x = x;
+		this._y = this.y = y;
 		this._owner = owner;
 		this._setter = setter;
 	};
@@ -863,8 +862,8 @@
 	InitClassWithStatics(LinkedPoint, Point);
 
 	LinkedPoint.prototype._set = function (x, y, _dontNotify) {
-		this._x = x;
-		this._y = y;
+		this._x = this.x = x;
+		this._y = this.y = y;
 		if (!_dontNotify)
 			this._owner[this._setter](this);
 		return this;
@@ -873,37 +872,16 @@
 		return this._x;
 	};
 	LinkedPoint.prototype.setX = function (x) {
-		this._x = x;
+		this._x = this.x = x;
 		this._owner[this._setter](this);
 	};
 	LinkedPoint.prototype.getY = function () {
 		return this._y;
 	};
 	LinkedPoint.prototype.setY = function (y) {
-		this._y = y;
+		this._y = this.y = y;
 		this._owner[this._setter](this);
 	};
-
-	Object.defineProperty(LinkedPoint.prototype, 'x', {
-		get: function () {
-			return this.getX();
-		},
-		set: function (value) {
-			this.setX(value);
-		},
-		enumerable: true,
-		configurable: true
-	});
-	Object.defineProperty(LinkedPoint.prototype, 'y', {
-		get: function () {
-			return this.getY();
-		},
-		set: function (value) {
-			this.setY(value);
-		},
-		enumerable: true,
-		configurable: true
-	});
 
 	var Rectangle = function (arg0, arg1, arg2, arg3) {
 		var args = arguments,
@@ -1001,7 +979,7 @@
 	Rectangle.prototype._fw = 1;
 	Rectangle.prototype._fh = 1;
 
-	Rectangle.prototype.getLeft = function () {
+	Rectangle.prototype.getLeft = Rectangle.prototype.getX = function () {
 		return this.x;
 	};
 	Rectangle.prototype.setLeft = function (left) {
@@ -1012,7 +990,7 @@
 		this.x = left;
 		this._sx = this._fw = 0;
 	};
-	Rectangle.prototype.getTop = function () {
+	Rectangle.prototype.getTop = Rectangle.prototype.getY = function () {
 		return this.y;
 	};
 	Rectangle.prototype.setTop = function (top) {
@@ -1047,8 +1025,14 @@
 		this._sy = 1;
 		this._fh = 0;
 	};
+	Rectangle.prototype.getWidth = function () {
+		return this.width;
+	};
+	Rectangle.prototype.getHeight = function () {
+		return this.height;
+	};
 	Rectangle.prototype.getCenterX = function () {
-		return this.x + this.width / 2;
+		return this.getLeft() + this.getWidth() / 2;
 	};
 	Rectangle.prototype.setCenterX = function (x) {
 		if (this._fw || this._sx === 0.5) {
@@ -1063,7 +1047,7 @@
 		this._fw = 0;
 	};
 	Rectangle.prototype.getCenterY = function () {
-		return this.y + this.height / 2;
+		return this.getTop() + this.getHeight() / 2;
 	};
 	Rectangle.prototype.setCenterY = function (y) {
 		if (this._fh || this._sy === 0.5) {
@@ -1157,10 +1141,10 @@
 	};
 	InitClassWithStatics(LinkedRectangle, Rectangle);
 	LinkedRectangle.prototype._set = function (x, y, width, height, _dontNotify) {
-		this._x = x;
-		this._y = y;
-		this._width = width;
-		this._height = height;
+		this._x = this.x = x;
+		this._y = this.y = y;
+		this._width = this.width = width;
+		this._height = this.height = height;
 		if (!_dontNotify)
 			this._owner[this._setter](this);
 		return this;
@@ -1214,89 +1198,44 @@
 		this._dontNotify = false;
 		this._owner[this._setter](this);
 	};
+
 	LinkedRectangle.prototype.getX = function () {
-		return this['_x'];
+		return this._x;
 	};
 	LinkedRectangle.prototype.setX = function (value) {
-		this['_x'] = value;
+		this._x = this.x = value;
 		if (!this._dontNotify)
 			this._owner[this._setter](this);
 	};
 	LinkedRectangle.prototype.getY = function () {
-		return this['_y'];
+		return this._y;
 	};
 	LinkedRectangle.prototype.setY = function (value) {
-		this['_y'] = value;
+		thi._y = this.y = value;
 		if (!this._dontNotify)
 			this._owner[this._setter](this);
 	};
 	LinkedRectangle.prototype.getWidth = function () {
-		return this['_width'];
+		return this._width;
 	};
 	LinkedRectangle.prototype.setWidth = function (value) {
-		this['_width'] = value;
+		this._width = this.width = value;
 		if (!this._dontNotify)
 			this._owner[this._setter](this);
 	};
 	LinkedRectangle.prototype.getHeight = function () {
-		return this['_height'];
+		return this._height;
 	};
 	LinkedRectangle.prototype.setHeight = function (value) {
-		this['_height'] = value;
+		this._height = this.height = value;
 		if (!this._dontNotify)
 			this._owner[this._setter](this);
 	};
+	LinkedRectangle.prototype.getLeft = LinkedRectangle.prototype.getX;
+	LinkedRectangle.prototype.getTop = LinkedRectangle.prototype.getY;
+	LinkedRectangle.prototype.getRight = function () { return this.getLeft() + this.getWidth(); };
+	LinkedRectangle.prototype.getBottom = function () { return this.getTop() + this.getHeight(); };
 
-	Object.defineProperty(LinkedRectangle.prototype, 'left', {
-		enumerable: true, configurable: true,
-		get: function () { return this.x; },
-		set: function (value) { this.setLeft(value); },
-	});
-	Object.defineProperty(LinkedRectangle.prototype, 'right', {
-		enumerable: true, configurable: true,
-		get: function () { return this.x + this.width; },
-		set: function (value) { this.setRight(value); },
-	});
-	Object.defineProperty(LinkedRectangle.prototype, 'top', {
-		enumerable: true, configurable: true,
-		get: function () { return this.y; },
-		set: function (value) { this.setTop(value); },
-	});
-	Object.defineProperty(LinkedRectangle.prototype, 'bottom', {
-		enumerable: true, configurable: true,
-		get: function () { return this.y + this.height; },
-		set: function (value) { this.setBottom(value); },
-	});
-	Object.defineProperty(LinkedRectangle.prototype, 'centerX', {
-		enumerable: true, configurable: true,
-		get: function () { return this.x + this.width / 2; },
-		set: function (value) { this.setCenterX(value); },
-	});
-	Object.defineProperty(LinkedRectangle.prototype, 'centerY', {
-		enumerable: true, configurable: true,
-		get: function () { return this.y + this.height / 2; },
-		set: function (value) { this.setCenterY(value); },
-	});
-	Object.defineProperty(LinkedRectangle.prototype, 'x', {
-		enumerable: true, configurable: true,
-		get: function () { return this.getX(); },
-		set: function (value) { this.setX(value); },
-	});
-	Object.defineProperty(LinkedRectangle.prototype, 'y', {
-		enumerable: true, configurable: true,
-		get: function () { return this.getY(); },
-		set: function (value) { this.setY(value); },
-	});
-	Object.defineProperty(LinkedRectangle.prototype, 'width', {
-		enumerable: true, configurable: true,
-		get: function () { return this.getWidth(); },
-		set: function (value) { this.setWidth(value); },
-	});
-	Object.defineProperty(LinkedRectangle.prototype, 'height', {
-		enumerable: true, configurable: true,
-		get: function () { return this.getHeight(); },
-		set: function (value) { this.setHeight(value); },
-	});
 
 	var Matrix = function Matrix(arg, _dontNotify) {
 		Base.call(this);
@@ -2635,16 +2574,16 @@
 			}
 			y = pt.y;
 		}
-		this._x = x;
-		this._y = y;
+		this._x = this.x = x;
+		this._y = this.y = y;
 		this._owner = owner;
 		owner[key] = this;
 
 	}
 	InitClassWithStatics(SegmentPoint, Point);
 	SegmentPoint.prototype._set = function (x, y) {
-		this._x = x;
-		this._y = y;
+		this._x = this.x = x;
+		this._y = this.y = y;
 		this._owner._changed(this);
 		return this;
 	};
@@ -2658,35 +2597,6 @@
 	SegmentPoint.prototype.getY = function () {
 		return this._y;
 	};
-	SegmentPoint.prototype.setX = function (x) {
-		this._x = x;
-		this._owner._changed(this);
-	};
-	SegmentPoint.prototype.setY = function (y) {
-		this._y = y;
-		this._owner._changed(this);
-	};
-
-	Object.defineProperty(SegmentPoint.prototype, 'x', {
-		get: function () {
-			return this.getX();
-		},
-		set: function (value) {
-			this.setX(value);
-		},
-		enumerable: true,
-		configurable: true
-	});
-	Object.defineProperty(SegmentPoint.prototype, 'y', {
-		get: function () {
-			return this.getY();
-		},
-		set: function (value) {
-			this.setY(value);
-		},
-		enumerable: true,
-		configurable: true
-	});
 
 	var Curve = function (arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
 		var count = arguments.length,
