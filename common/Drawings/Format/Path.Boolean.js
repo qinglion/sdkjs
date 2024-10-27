@@ -986,7 +986,7 @@
 	};
 	Rectangle.prototype.getTopLeft = function (_dontLink) {
 		var ctor = _dontLink ? Point : LinkedPoint;
-		return new ctor(this['getLeft'](), this['getTop'](), this, 'setTopLeft');
+		return new ctor(this.getLeft(), this.getTop(), this, 'setTopLeft');
 	};
 	Rectangle.prototype.getArea = function () {
 		return this.width * this.height;
@@ -2624,46 +2624,46 @@
 	};
 	Curve.prototype.getPointAt = function (location, _isTime) {
 		var values = this.getValues();
-		return Curve['getPoint'](values, _isTime
+		return Curve.getPoint(values, _isTime
 			? location
 			: Curve.getTimeAt(values, location));
 	};
 	Curve.prototype.getPointAtTime = function (time) {
-		return Curve['getPoint'](this.getValues(), time);
+		return Curve.getPoint(this.getValues(), time);
 	};
 	Curve.prototype.getTangentAt = function (location, _isTime) {
 		var values = this.getValues();
-		return Curve['getTangent'](values, _isTime
+		return Curve.getTangent(values, _isTime
 			? location
 			: Curve.getTimeAt(values, location));
 	};
 	Curve.prototype.getTangentAtTime = function (time) {
-		return Curve['getTangent'](this.getValues(), time);
+		return Curve.getTangent(this.getValues(), time);
 	};
 	Curve.prototype.getNormalAt = function (location, _isTime) {
 		var values = this.getValues();
-		return Curve['getNormal'](values, _isTime
+		return Curve.getNormal(values, _isTime
 			? location
 			: Curve.getTimeAt(values, location));
 	};
 	Curve.prototype.getNormalAtTime = function (time) {
-		return Curve['getNormal'](this.getValues(), time);
+		return Curve.getNormal(this.getValues(), time);
 	};
 	Curve.prototype.getWeightedTangentAt = function (location, _isTime) {
 		var values = this.getValues();
-		return Curve['getWeightedTangent'](values, _isTime
+		return Curve.getWeightedTangent(values, _isTime
 			? location
 			: Curve.getTimeAt(values, location));
 	};
 	Curve.prototype.getWeightedNormalAt = function (location, _isTime) {
 		var values = this.getValues();
-		return Curve['getWeightedNormal'](values, _isTime
+		return Curve.getWeightedNormal(values, _isTime
 			? location
 			: Curve.getTimeAt(values, location));
 	};
 	Curve.prototype.getCurvatureAt = function (location, _isTime) {
 		var values = this.getValues();
-		return Curve['getCurvature'](values, _isTime
+		return Curve.getCurvature(values, _isTime
 			? location
 			: Curve.getTimeAt(values, location));
 	};
@@ -3805,27 +3805,27 @@
 	CurveLocation.prototype.getTangent = function () {
 		var curve = this.getCurve(),
 			time = this.getTime();
-		return time != null && curve && curve['getTangentAt'](time, true);
+		return time != null && curve && curve.getTangentAt(time, true);
 	};
 	CurveLocation.prototype.getNormal = function () {
 		var curve = this.getCurve(),
 			time = this.getTime();
-		return time != null && curve && curve['getNormalAt'](time, true);
+		return time != null && curve && curve.getNormalAt(time, true);
 	};
 	CurveLocation.prototype.getWeightedTangent = function () {
 		var curve = this.getCurve(),
 			time = this.getTime();
-		return time != null && curve && curve['getWeightedTangentAt'](time, true);
+		return time != null && curve && curve.getWeightedTangentAt(time, true);
 	};
 	CurveLocation.prototype.getWeightedNormal = function () {
 		var curve = this.getCurve(),
 			time = this.getTime();
-		return time != null && curve && curve['getWeightedNormalAt'](time, true);
+		return time != null && curve && curve.getWeightedNormalAt(time, true);
 	};
 	CurveLocation.prototype.getCurvature = function () {
 		var curve = this.getCurve(),
 			time = this.getTime();
-		return time != null && curve && curve['getCurvatureAt'](time, true);
+		return time != null && curve && curve.getCurvatureAt(time, true);
 	};
 
 	CurveLocation.insert = function (locations, loc, merge) {
@@ -5416,19 +5416,19 @@
 	};
 	Path.prototype.getPointAt = function (offset) {
 		var loc = this.getLocationAt(offset);
-		return loc && loc['getPoint']();
+		return loc && loc.getPoint();
 	};
 	Path.prototype.getTangentAt = function (offset) {
 		var loc = this.getLocationAt(offset);
-		return loc && loc['getTangent']();
+		return loc && loc.getTangent();
 	};
 	Path.prototype.getNormalAt = function (offset) {
 		var loc = this.getLocationAt(offset);
-		return loc && loc['getNormal']();
+		return loc && loc.getNormal();
 	};
 	Path.prototype.getCurvatureAt = function (offset) {
 		var loc = this.getLocationAt(offset);
-		return loc && loc['getCurvature']();
+		return loc && loc.getCurvature();
 	};
 	Path.prototype.moveTo = function () {
 		var segments = this._segments;
@@ -5957,49 +5957,49 @@
 	};
 	CompoundPath.prototype.lineTo = function () {
 		var path = CompoundPath.getCurrentPath(this, true);
-		path['lineTo'].apply(path, arguments);
+		path.lineTo.apply(path, arguments);
 	};
 	CompoundPath.prototype.cubicCurveTo = function () {
 		var path = CompoundPath.getCurrentPath(this, true);
-		path['cubicCurveTo'].apply(path, arguments);
+		path.cubicCurveTo.apply(path, arguments);
 	};
 	CompoundPath.prototype.quadraticCurveTo = function () {
 		var path = CompoundPath.getCurrentPath(this, true);
-		path['quadraticCurveTo'].apply(path, arguments);
+		path.quadraticCurveTo.apply(path, arguments);
 	};
 	CompoundPath.prototype.curveTo = function () {
 		var path = CompoundPath.getCurrentPath(this, true);
-		path['curveTo'].apply(path, arguments);
+		path.curveTo.apply(path, arguments);
 	};
 	CompoundPath.prototype.arcTo = function () {
 		var path = CompoundPath.getCurrentPath(this, true);
-		path['arcTo'].apply(path, arguments);
+		path.arcTo.apply(path, arguments);
 	};
 	CompoundPath.prototype.lineBy = function () {
 		var path = CompoundPath.getCurrentPath(this, true);
-		path['lineBy'].apply(path, arguments);
+		path.lineBy.apply(path, arguments);
 	};
 	CompoundPath.prototype.cubicCurveBy = function () {
 		var path = CompoundPath.getCurrentPath(this, true);
-		path['cubicCurveBy'].apply(path, arguments);
+		path.cubicCurveBy.apply(path, arguments);
 	};
 	CompoundPath.prototype.quadraticCurveBy = function () {
 		var path = CompoundPath.getCurrentPath(this, true);
-		path['quadraticCurveBy'].apply(path, arguments);
+		path.quadraticCurveBy.apply(path, arguments);
 	};
 	CompoundPath.prototype.curveBy = function () {
 		var path = CompoundPath.getCurrentPath(this, true);
-		path['curveBy'].apply(path, arguments);
+		path.curveBy.apply(path, arguments);
 	};
 	CompoundPath.prototype.arcBy = function () {
 		var path = CompoundPath.getCurrentPath(this, true);
-		path['arcBy'].apply(path, arguments);
+		path.arcBy.apply(path, arguments);
 	};
 	CompoundPath.prototype.reverse = function (param) {
 		var children = this._children,
 			res;
 		for (var i = 0, l = children.length; i < l; i++) {
-			res = children[i]['reverse'](param) || res;
+			res = children[i].reverse(param) || res;
 		}
 		return res;
 	};
