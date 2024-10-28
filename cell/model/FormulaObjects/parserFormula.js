@@ -3065,13 +3065,11 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 		return this.array;
 	};
 	cArray.prototype.fillFromArray = function (arr) {
-		if (arr && arr.length !== undefined) {
-			this.array = arr;
-			this.rowCount = arr.length;
-			for (var i = 0; i < arr.length; i++) {
-				this.countElementInRow[i] = arr[i].length;
-				this.countElement += arr[i].length;
-			}
+		this.array = arr;
+		this.rowCount = arr.length;
+		for (var i = 0; i < arr.length; i++) {
+			this.countElementInRow[i] = arr[i].length;
+			this.countElement += arr[i].length;
 		}
 	};
 	cArray.prototype.fillEmptyFromRange = function (range) {
@@ -6263,8 +6261,42 @@ function parserFormula( formula, parent, _ws ) {
 	parserFormula.prototype.removeShared = function() {
 		this.shared = null;
 	};
+	/**
+	 * @memberof parserFormula
+	 * @returns {string}
+	 */
+	parserFormula.prototype.getFunctionName = function () {
+		const aOutStack = this.outStack;
+
+		for (let i = aOutStack.length - 1; i >= 0; i--) {
+			if (aOutStack[i].type === cElementType.func) {
+				return aOutStack[i].name;
+			}
+		}
+
+		return "";
+	};
+	/**
+	 * Checks a formula is conditional.
+	 * @memberof parserFormula
+	 * @param {string} sFunctionName
+	 * @returns {boolean}
+	 * @private
+	 */
+	parserFormula.prototype._isConditionalFormula = function (sFunctionName) {
+		const aExcludeCondFormulas = ["IFERROR", "IFNA", "COUNTIF", "BITLSHIFT", "BITRSHIFT", "DATEDIF"];
+		const aCondFormulas = ["SWITCH"];
+
+		return !!sFunctionName && (sFunctionName.includes("IF") || aCondFormulas.includes(sFunctionName)) &&
+			!aExcludeCondFormulas.includes(sFunctionName);
+	};
 	parserFormula.prototype.notify = function(data) {
 		var eventData = {notifyData: data, assemble: null, formula: this};
+		let sFunctionName = this.getFunctionName();
+
+		if (this._isConditionalFormula(sFunctionName) && data.areaData) {
+			this.ca = this.isRecursiveCondFormula(sFunctionName);
+		}
 		if (AscCommon.c_oNotifyType.Dirty === data.type) {
 				if (this.parent && this.parent.onFormulaEvent) {
 					this.parent.onFormulaEvent(AscCommon.c_oNotifyParentType.Change, eventData);
@@ -6425,6 +6457,582 @@ function parserFormula( formula, parent, _ws ) {
 		this.isInDependencies = false;
 	};
 
+	/**
+	 * Returns index the first element that satisfies the provided testing function from outStack array.
+	 * If no elements satisfy the testing function, -1 is returned.
+	 * Searching in reverse order.
+	 * @param {[]} aOutStack
+	 * @param {Function} fAction - Callback function must return truthy method as indicate that operand was found or falsy otherwise
+	 * @returns {number}
+	 * @private
+	 */
+	function _findLastOperandId(aOutStack, fAction) {
+		const nStartIndex = aOutStack.length - 1;
+		const nEndIndex = 0;
+
+		for (let nIndex = nStartIndex; nIndex >= nEndIndex; nIndex--) {
+			if (fAction(aOutStack[nIndex])) {
+				return nIndex;
+			}
+		}
+
+		return -1;
+	}
+
+	/**
+	 * Gets a new stack with the concatenated count of argument and function.
+	 * @param {[]}aOutStack
+	 * @returns {[]}
+	 * @private
+	 */
+	function _getNewOutStack(aOutStack) {
+		const aNewOutStack = [];
+		const nMainFuncIndex = _findLastOperandId(aOutStack, function (oElement) {
+			return oElement.type === cElementType.func || oElement.type === cElementType.operator;
+		});
+
+		for (let i = 0; i < aOutStack.length; i++) {
+			if (!(aOutStack[i] instanceof cBaseOperator) && aOutStack[i].type === cElementType.operator) {
+				continue;
+			}
+			if (typeof aOutStack[i] === 'number') {
+				let nNextIndex = i + 1;
+				let oNextElement = nNextIndex < aOutStack.length ? aOutStack[nNextIndex] : null;
+				if (oNextElement && oNextElement.type === cElementType.func) {
+					const aArgsOfFunc = [];
+					const aFuncData = [oNextElement, aOutStack[i]];
+					if (nMainFuncIndex !== nNextIndex && aOutStack[i] > 0) {
+						let nLastIndexArg = aOutStack[i] - 1;
+						for (let j = nLastIndexArg; j >= 0; j--) {
+							aArgsOfFunc[j] = aNewOutStack.pop();
+						}
+					}
+					aFuncData.push(aArgsOfFunc);
+					aNewOutStack.push(aFuncData);
+					i++;
+					continue;
+				}
+			} else if (aOutStack[i].type === cElementType.operator) {
+				const aArgsOfOperator = [];
+				const aOperatorData = [aOutStack[i], aOutStack[i].argumentsCurrent];
+				let nPrevIndex = i - 1;
+				let nEndIndexArg = i - aOutStack[i].argumentsCurrent;
+				for (let j = nPrevIndex; j >= nEndIndexArg; j--) {
+					aArgsOfOperator.unshift(aNewOutStack.pop());
+				}
+				aOperatorData.push(aArgsOfOperator);
+				aNewOutStack.push(aOperatorData);
+				continue;
+			}
+			aNewOutStack.push(aOutStack[i]);
+		}
+
+		return aNewOutStack;
+	}
+
+	/**
+	 * Gets range from condition functions, who need to calculate.
+	 * @param {[]} aOutStack
+	 * @param {number} nCountArgs
+	 * @param {string} sFunctionName
+	 * @returns {Object}
+	 * @private
+	 */
+	function _getCalcRange(aOutStack, nCountArgs, sFunctionName) {
+		if (sFunctionName.includes('IFS') && sFunctionName !== 'COUNTIFS') {
+			return aOutStack.shift();
+		}
+
+		return  aOutStack[nCountArgs - 1];
+	}
+
+	/**
+	 * Gets args of condition formula working with range.
+	 * @param {string} sFunctionName
+	 * @param {[]} aOutStack
+	 * @param {number} nCountArgs
+	 * @returns {[]}
+	 * @private
+	 */
+	function _getArgsRangeCondFormula(sFunctionName, aOutStack, nCountArgs) {
+		const aConditions = [];
+		const aCriteriaRanges = [];
+		let oCalcRange = null;
+		let aArgs = null;
+
+		if (sFunctionName !== "COUNTIFS") { // COUNTIFS doesn't need to oCalcRange.
+			oCalcRange = _getCalcRange(aOutStack, nCountArgs, sFunctionName);
+		}
+		for (let i = 0; i < nCountArgs; i++) {
+			let bEvenIndex = i % 2 === 0;
+
+			if (oCalcRange && oCalcRange.value === aOutStack[i].value) {
+				continue;
+			}
+			if (bEvenIndex && !Array.isArray(aOutStack[i])) {
+				aCriteriaRanges.push(aOutStack[i]);
+				continue;
+			}
+			if (Array.isArray(aOutStack[i])) {
+				if (aOutStack[i][0].name === sFunctionName) {
+					continue;
+				}
+				aConditions.push(aOutStack[i][0]);
+				aArgs = aOutStack[i][2];
+				continue;
+			}
+			aConditions.push(aOutStack[i]);
+		}
+
+		return [oCalcRange, aCriteriaRanges, aConditions, aArgs];
+	}
+
+	/**
+	 * Gets args of condition formula
+	 * @param {[]} aOutStack
+	 * @param {string} sFunctionName
+	 * @returns {[]}
+	 * @private
+	 */
+	function _getArgsCondFormula(aOutStack, sFunctionName) {
+		const aLogicalTests = [];
+		const aTrueResults = [];
+		let oFalseResult = null;
+		// Uses for SWITCH formula.
+		let oExpressionValue = null;
+		const oEqualOperator = cFormulaOperators["="].prototype;
+		let oDefaultResult = null;
+
+		if (sFunctionName === "IF") {
+			aLogicalTests.push(aOutStack.shift());
+			aTrueResults.push(aOutStack.shift());
+			oFalseResult = aOutStack.shift();
+
+			return [aLogicalTests, aTrueResults, oFalseResult];
+		}
+		if (sFunctionName === "SWITCH") {
+			oExpressionValue = aOutStack.shift();
+		}
+
+		let nMainFunctionIndex = _findLastOperandId(aOutStack, function (oElement) {
+			if (Array.isArray(oElement)) {
+				return oElement[0].type === cElementType.func || oElement[0].type === cElementType.operator;
+			}
+			return false;
+		});
+		aOutStack = aOutStack.slice(0, nMainFunctionIndex);
+		let bEvenLength = aOutStack.length % 2 === 0;
+		if (!bEvenLength) {
+			oDefaultResult = aOutStack.pop();
+		}
+		for (let i = 0, length = aOutStack.length; i < length; i++) {
+			let operand = aOutStack[i];
+			let bEvenIndex = i % 2 === 0;
+			if (bEvenIndex) {
+				// For SWITCH formula converts data to (logical_test, true_res, ...) format like in IFS formula
+				if (sFunctionName === "SWITCH") {
+					const aEqualOpInfo = [oEqualOperator, oEqualOperator.argumentsCurrent];
+					const aArgs = [oExpressionValue];
+					aArgs.push(operand);
+					aEqualOpInfo.push(aArgs);
+					operand = aEqualOpInfo;
+				}
+				aLogicalTests.push(operand);
+				continue;
+			}
+			aTrueResults.push(operand);
+		}
+
+		return [aLogicalTests, aTrueResults, oFalseResult, oDefaultResult];
+	}
+
+	/**
+	 * Checks cell with formula is in area.
+	 * @memberof parserFormula
+	 * @param found_operand operand of formula
+	 * @returns {boolean}
+	 * @private
+	 */
+	parserFormula.prototype._isAreaContainCell = function (found_operand) {
+		const oParentCell = this.getParent();
+		let nOperandType = found_operand.type;
+		let oRange = null;
+
+		if (!(oParentCell instanceof AscCommonExcel.CCellWithFormula)) {
+			return false;
+		}
+		if (nOperandType === cElementType.name || nOperandType === cElementType.name3D) {
+			found_operand = found_operand.getValue();
+			nOperandType = found_operand.type;
+		}
+		if (nOperandType === cElementType.cellsRange) {
+			oRange = found_operand.getRange();
+			return oRange.containCell2(oParentCell);
+		}
+		if (nOperandType === cElementType.cellsRange3D) {
+			const aRanges = found_operand.getRanges().filter(function (oRange) {
+				return oParentCell.ws.getId() === oRange.worksheet.getId();
+			});
+
+			for (let i = 0, length = aRanges.length; i < length; i++) {
+				if (aRanges[i].containCell2(oParentCell)) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		return false;
+	};
+	/**
+	 * Checks if the criteria cell has same formula as parserFormula.
+	 * @memberof parserFormula
+	 * @param {object} oCriteriaRange
+	 * @returns {boolean}
+	 * @private
+	 */
+	parserFormula.prototype._criteriaCellHasFormula = function (oCriteriaRange ) {
+		if (oCriteriaRange.type === cElementType.name || oCriteriaRange.type === cElementType.name3D) {
+			oCriteriaRange = oCriteriaRange.toRef();
+		}
+		const oThis = this;
+		const oRange = oCriteriaRange.getRange();
+		const oBbox = oRange.bbox;
+		const oParentCell = this.getParent();
+		let bHasFormula = false;
+		let bVertical = oBbox.c1 === oBbox.c2;
+		let nRow = bVertical ? oBbox.r1 + (oParentCell.nRow - oBbox.r1) : oBbox.r1;
+		let nCol = bVertical ? oBbox.c1 :  oBbox.c1 + (oParentCell.nCol - oBbox.c1);
+
+		oRange.worksheet._getCellNoEmpty(nRow, nCol, function (oCell) {
+			if (oCell.isFormula()) {
+				let oParsedFormula = oCell.getFormulaParsed();
+				if (oParsedFormula.Formula.replace(/\s+/g, '') === oThis.Formula.replace(/\s+/g, '')) {
+					bHasFormula = true;
+				}
+			}
+		});
+
+		return bHasFormula;
+	};
+	/**
+	 * Checks the cell with formula matches the criteria.
+	 * @memberof parserFormula
+	 * @param {{condition: object, calcRange: object, criteriaRange: object, argsFuncCondition: []}} oFormulaArgs
+	 * @returns {boolean}
+	 * @private
+	 */
+	parserFormula.prototype._calculateMatch = function (oFormulaArgs) {
+		const oParentCell = this.getParent();
+		const oCalcRange = oFormulaArgs.calcRange;
+		let oCriteriaRange = oFormulaArgs.criteriaRange;
+		let oCondition = oFormulaArgs.condition;
+		let bVertical;
+
+		if (oCondition.type === cElementType.name || oCondition.type === cElementType.name3D) {
+			oCondition = oCondition.getValue();
+		}
+		if (oCondition.type === cElementType.func) {
+			const aArgsFuncCondition = oFormulaArgs.argsFuncCondition;
+			let oBbox = oParentCell.onFormulaEvent && oParentCell.onFormulaEvent(AscCommon.c_oNotifyParentType.GetRangeCell);
+			oCondition = oCondition.Calculate(aArgsFuncCondition, oBbox, undefined, this.ws);
+		}
+		if (oCriteriaRange.type === cElementType.name || oCriteriaRange.type === cElementType.name3D) {
+			oCriteriaRange = oCriteriaRange.toRef();
+		}
+		let oBBoxCriteria = oCriteriaRange.getBBox0();
+		if (oCalcRange) {
+			let nCalcRangeCol = oCalcRange.c2 - oCalcRange.c1 + 1;
+			let nCalcRangeRow = oCalcRange.r2 - oCalcRange.r1 + 1;
+			let nCriteriaRangeCol = oBBoxCriteria.c2 - oBBoxCriteria.c1 + 1;
+			let nCriteriaRangeRow = oBBoxCriteria.r2 - oBBoxCriteria.r1 + 1;
+			if (nCalcRangeCol !== nCriteriaRangeCol || nCalcRangeRow !== nCriteriaRangeRow) {
+				return false;
+			}
+			bVertical = oBBoxCriteria.r1 === oCalcRange.r1 && oBBoxCriteria.r2 === oCalcRange.r2;
+		} else {
+			bVertical = oBBoxCriteria.c1 === oBBoxCriteria.c2;
+		}
+
+		let oCriteriaRangeVal = bVertical ? oCriteriaRange.getValueByRowCol(oParentCell.nRow - oBBoxCriteria.r1, 0) : oCriteriaRange.getValueByRowCol(0, oParentCell.nCol - oBBoxCriteria.c1);
+		let oMatchInfo = AscCommonExcel.matchingValue(oCondition.tocString());
+
+		return !!oCriteriaRangeVal && AscCommonExcel.matching(oCriteriaRangeVal, oMatchInfo);
+	};
+	/**
+	 * Checks criteria range by condition.
+	 * @memberof parserFormula
+	 * @param {[]} aRangeArgs
+	 * @param {number} nCountArgs
+	 * @returns {boolean}
+	 * @private
+	 */
+	parserFormula.prototype._checkRangeByCriteria = function (aRangeArgs, nCountArgs) {
+		let oCalcRange = aRangeArgs[0];
+		const aCriteriaRanges = aRangeArgs[1];
+		const aConditions = aRangeArgs[2];
+		const aArgs = aRangeArgs[3];
+
+		if (oCalcRange && (oCalcRange.type === cElementType.name || oCalcRange.type === cElementType.name3D)) {
+			oCalcRange = oCalcRange.toRef();
+		}
+		let nLen = Math.floor(nCountArgs / 2);
+		let oRangeSum = oCalcRange && oCalcRange.getBBox0();
+		let bMatch = false;
+
+		for (let i = 0; i < nLen; i++) {
+			if (this._criteriaCellHasFormula(aCriteriaRanges[i])) {
+				return bMatch;
+			}
+			let oFormulaArgs = {
+				criteriaRange: aCriteriaRanges[i],
+				condition: aConditions[i],
+				calcRange: oRangeSum,
+			};
+			if (aArgs != null) {
+				oFormulaArgs.argsFuncCondition = aArgs;
+			}
+			bMatch = this._calculateMatch(oFormulaArgs);
+			if (!bMatch) {
+				return false;
+			}
+		}
+		return true;
+	};
+	/**
+	 * Calculates logical test of the conditional formula like IF.
+	 * Recursive function
+	 * @memberof parserFormula
+	 * @param {[]} aLogicalTest
+	 * @returns {cBool|null}
+	 * @private
+	 */
+	parserFormula.prototype._calculateLogicalTest = function (aLogicalTest) {
+		if (g_cCalcRecursion.checkRecursionCounter()) {
+			g_cCalcRecursion.resetRecursionCounter();
+			return null;
+		}
+		const aTypesWithRange = [cElementType.cell, cElementType.cell3D, cElementType.cellsRange, cElementType.cellsRange3D];
+		const aNameType = [cElementType.name, cElementType.name3D];
+		const oFormula = aLogicalTest[0];
+		const aArgs =  aLogicalTest[2];
+		const oParentCell = this.getParent();
+
+		for (let i = 0, len = aArgs.length; i < len; i++) {
+			if (aArgs[i] && aNameType.includes(aArgs[i].type)) {
+				aArgs[i] = aArgs[i].toRef();
+			}
+			if (aArgs[i] && Array.isArray(aArgs[i])) {
+				g_cCalcRecursion.incRecursionCounter();
+				aArgs[i] = this._calculateLogicalTest(aArgs[i]);
+				g_cCalcRecursion.resetRecursionCounter();
+				if (aArgs[i] == null) {
+					return null;
+				}
+			}
+			// Check on recursion ref.  Recursion ref means that cell is recursion need to set ca flag to true.
+			if (aArgs[i] && aTypesWithRange.includes(aArgs[i].type) && !this._isConditionalFormula(oFormula.name)) {
+				if (aArgs[i].getBBox0().contains(oParentCell.nCol, oParentCell.nRow)) {
+					return null;
+				}
+			}
+		}
+		const oBbox = oParentCell.onFormulaEvent && oParentCell.onFormulaEvent(AscCommon.c_oNotifyParentType.GetRangeCell);
+
+		return oFormula.Calculate(aArgs, oBbox, undefined, this.ws);
+	};
+	/**
+	 * Finds recursion cell in equation with refs.
+	 * Recursive function
+	 * @memberof parserFormula
+	 * @param {[]} aRef
+	 * @returns {boolean}
+	 * @private
+	 */
+	parserFormula.prototype._findRecursionRef = function ( aRef) {
+		if (g_cCalcRecursion.checkRecursionCounter()) {
+			g_cCalcRecursion.resetRecursionCounter();
+			return false;
+		}
+
+		const oThis = this;
+		const aArg = aRef[2];
+		let bRecursiveCell = false;
+
+		for (let i = 0, len = aArg.length; i < len; i++) {
+			if (aArg[i] && (aArg[i].type === cElementType.name || aArg[i].type === cElementType.name3D)) {
+				aArg[i] = aArg[i].toRef();
+			}
+			if (aArg[i] && (aArg[i].type === cElementType.cell || aArg[i].type === cElementType.cell3D)) {
+				let oRange = aArg[i].getRange();
+				oRange._foreachNoEmpty(function (oCell) {
+					if (!bRecursiveCell) {
+						bRecursiveCell = oCell.checkRecursiveFormula(oThis.getParent());
+					}
+				});
+
+			}
+			if (aArg[i] && (aArg[i].type === cElementType.cellsRange || aArg[i].type === cElementType.cellsRange3D)) {
+				bRecursiveCell = this._isAreaContainCell(aArg[i]);
+
+			}
+			if (aArg[i] && Array.isArray(aArg[i])) {
+				g_cCalcRecursion.incRecursionCounter();
+				bRecursiveCell = this._findRecursionRef(aArg[i]);
+				g_cCalcRecursion.resetRecursionCounter();
+			}
+			if (bRecursiveCell) {
+				break;
+			}
+		}
+
+		return bRecursiveCell;
+	};
+	/**
+	 * Checks operand has a recursion.
+	 * @memberof parserFormula
+	 * @param {cRef|cRef3D|cName|cName3D|cString|cNumber|cBool|cArea|cArea3D} oOperand
+	 * @returns {boolean}
+	 */
+	parserFormula.prototype._isOperandRecursive = function (oOperand) {
+		const oThis = this;
+		const aTypesWithRange = [cElementType.cell, cElementType.cell3D, cElementType.cellsRange, cElementType.cellsRange3D];
+		const aNameType = [cElementType.name, cElementType.name3D];
+		let bRecursiveCell = false;
+
+		if (oOperand && Array.isArray(oOperand)) {
+			return this._findRecursionRef(oOperand);
+		}
+		if (oOperand && aNameType.includes(oOperand.type)) {
+			oOperand = oOperand.toRef();
+		}
+		if (oOperand && aTypesWithRange.includes(oOperand.type)) {
+			if (oOperand.type === cElementType.cell || oOperand.type === cElementType.cell3D) {
+				let oRange = oOperand.getRange();
+				oRange._foreachNoEmpty(function (oCell) {
+					bRecursiveCell = oCell.checkRecursiveFormula(oThis.getParent());
+				});
+				return bRecursiveCell;
+			}
+			return this._isAreaContainCell(oOperand);
+		}
+
+		return false;
+	};
+	/**
+	 * Calculates conditional formulas like IF, IFS, and SWITCH and checks if it has recursion.
+	 * @memberof parserFormula
+	 * @param {[]} aOutStack
+	 * @param {string} sFunctionName
+	 * @param {number} nCountArgs
+	 * @returns {boolean}
+	 * @private
+	 */
+	parserFormula.prototype._evalAndCheckRecursion = function (aOutStack, sFunctionName, nCountArgs) {
+		const aLogicalTestTypes = [cElementType.bool, cElementType.cell, cElementType.cell3D, cElementType.name, cElementType.name3D];
+		const aArgs = _getArgsCondFormula(aOutStack, sFunctionName);
+		let aLogicalTest = aArgs[0];
+		let aTrueValue = aArgs[1];
+		let falseValue = aArgs[2];
+		let defaultValue = aArgs[3]; // For SWITCH formula
+		let bRecursiveCell = false;
+		let bOperandFound = false;
+
+		// For SWITCH exclude expression argument from nCountArgs.
+		let nLen = sFunctionName === "SWITCH" ? Math.floor((nCountArgs - 1) / 2) : Math.floor(nCountArgs / 2);
+		for (let i = 0; i < nLen; i++) {
+			let logicalTest = aLogicalTest[i];
+			if (Array.isArray(logicalTest)) {
+				logicalTest = this._calculateLogicalTest(logicalTest);
+				if (logicalTest == null) {
+					return true;
+				}
+			}
+			if (!aLogicalTestTypes.includes(logicalTest.type)) {
+				return false;
+			}
+			if (logicalTest.type === cElementType.name || logicalTest.type === cElementType.name3D) {
+				logicalTest = logicalTest.toRef();
+			}
+			if (logicalTest.type === cElementType.cell || logicalTest.type === cElementType.cell3D) {
+				logicalTest = logicalTest.getValue();
+			}
+			let value = logicalTest.value ? aTrueValue[i] : falseValue;
+			bOperandFound = !!value;
+			bRecursiveCell = this._isOperandRecursive(value);
+			if (bRecursiveCell) {
+				return bRecursiveCell;
+			}
+		}
+		if (!bOperandFound && defaultValue) {
+			return this._isOperandRecursive(defaultValue);
+		}
+
+		return bRecursiveCell;
+	}
+	/**
+	 * Checks a condition function is recursive or not.
+	 * @param {string} sFunctionName
+	 * @returns {boolean}
+	 */
+	parserFormula.prototype.isRecursiveCondFormula = function (sFunctionName) {
+		const aCellFormulas = ['IF', 'IFS', 'SWITCH'];
+		const aOutStack = _getNewOutStack(this.outStack);
+		const nCountArgs = Number(aOutStack[aOutStack.length - 1][1]);
+		const aNameType = [cElementType.name, cElementType.name3D];
+		let bRecursiveCell = false;
+		let bRange = !aCellFormulas.includes(sFunctionName);
+
+		if (bRange) {
+			const aAreaType = [cElementType.cellsRange, cElementType.cellsRange3D];
+			// For formulas like SUMIF, COUNTIF, etc. with 2 arguments, check the range has the cycle link without criteria.
+			if (nCountArgs === 2) {
+				bRecursiveCell = this._isAreaContainCell(aOutStack[0]);
+				if (!bRecursiveCell && (typeof aOutStack[nCountArgs - 1] !== 'number' && (aAreaType.includes(aOutStack[nCountArgs - 1].type) ||
+					aNameType.includes(aOutStack[nCountArgs - 1].type)))) {
+					bRecursiveCell = this._isAreaContainCell(aOutStack[nCountArgs - 1]);
+				}
+				return bRecursiveCell;
+			}
+
+			const aRangeArgs = _getArgsRangeCondFormula(sFunctionName, aOutStack, nCountArgs);
+			let oCalcRange = aRangeArgs[0];
+			const aCriteriaRanges = aRangeArgs[1];
+			const aConditions = aRangeArgs[2];
+			let bHasRecursiveCriteria = false;
+
+			if (aConditions.length) {
+				for (let i = 0, length = aConditions.length; i < length; i++) {
+					if (this._isAreaContainCell(aConditions[i])) {
+						return true;
+					}
+				}
+			}
+			if (aCriteriaRanges.length && this._isAreaContainCell(aCriteriaRanges[0])) {
+				return true;
+			}
+			if (aCriteriaRanges.length) {
+				for (let i = 1, length = aCriteriaRanges.length; i < length;  i++) {
+					if (this._isAreaContainCell(aCriteriaRanges[i])) {
+						bHasRecursiveCriteria = true;
+						break;
+					}
+				}
+			}
+			let bRecursiveCalcRange = !!oCalcRange && this._isAreaContainCell(oCalcRange);
+			// Checking criteria for the range.
+			if ((bRecursiveCalcRange || bHasRecursiveCriteria) && aCriteriaRanges.length && aConditions.length) {
+				return this._checkRangeByCriteria(aRangeArgs, nCountArgs);
+			}
+		} else {
+			const MIN_COUNT_ARGS = 2;
+			if (isNaN(nCountArgs) && nCountArgs < MIN_COUNT_ARGS) {
+				return false;
+			}
+			return this._evalAndCheckRecursion(aOutStack, sFunctionName, nCountArgs);
+		}
+		return false;
+	};
 	parserFormula.prototype.parse = function (local, digitDelim, parseResult, ignoreErrors, renameSheetMap, tablesMap) {
 		var elemArr = [];
 		var ph = {operand_str: null, pCurrPos: 0};
@@ -6802,6 +7410,7 @@ function parserFormula( formula, parent, _ws ) {
 		var argFuncMap = [];
 		var argPosArrMap = [];
 		var startArrayArg = null;
+		let bConditionalFormula = false;
 
 		var t = this;
 		var _checkReferenceCount = function (weight) {
@@ -7206,35 +7815,29 @@ function parserFormula( formula, parent, _ws ) {
 			const nOperandType = found_operand.type;
 			let oRange = null;
 			let bRecursiveCell = parserFormula.ca;
+			let sFunctionName = "";
 
+
+			if (levelFuncMap.length && levelFuncMap[currentFuncLevel]) {
+				sFunctionName = levelFuncMap[currentFuncLevel].func.name;
+			}
+			if (!bConditionalFormula) {
+				bConditionalFormula = parserFormula._isConditionalFormula(sFunctionName);
+			}
 			if (parserFormula.getParent() == null) {
 				return bRecursiveCell;
 			}
 			if (parserFormula.ca) {
 				return bRecursiveCell;
 			}
-			if (levelFuncMap.length && levelFuncMap[currentFuncLevel] && aExcludeRecursiveFomulas.includes(levelFuncMap[currentFuncLevel].func.name)) {
+			if (sFunctionName && aExcludeRecursiveFomulas.includes(sFunctionName)) {
 				return bRecursiveCell;
 			}
-			if (nOperandType === cElementType.cellsRange) {
-				oRange = found_operand.getRange();
-				return oRange.containCell2(parserFormula.getParent());
+			if (bConditionalFormula) {
+				return bRecursiveCell;
 			}
-			if (nOperandType === cElementType.cellsRange3D) {
-				const oParentCell = parserFormula.getParent();
-				if (!(oParentCell instanceof AscCommonExcel.CCellWithFormula)) {
-					return false;
-				}
-				const aRanges = found_operand.getRanges().filter(function (oRange) {
-					return oParentCell.ws.getId() === oRange.worksheet.getId();
-				});
-
-				for (let i = 0, length = aRanges.length; i < length; i++) {
-					if (aRanges[i].containCell2(oParentCell)) {
-						return true;
-					}
-				}
-				return false;
+			if (nOperandType === cElementType.cellsRange || nOperandType === cElementType.cellsRange3D) {
+				return parserFormula._isAreaContainCell(found_operand);
 			}
 			if (nOperandType === cElementType.name || nOperandType === cElementType.name3D) {
 				const oElemValue = found_operand.getValue();
@@ -7447,6 +8050,9 @@ function parserFormula( formula, parent, _ws ) {
 
 				if (found_operand.type !== cElementType.error) {
 					parseResult.addRefPos(ph.pCurrPos - ph.operand_str.length, ph.pCurrPos, t.outStack.length, found_operand, true);
+				}
+				if (local || (local === false && digitDelim === false)) { // local and digitDelim with value false using only for copypaste mode.
+					t.ca = isRecursiveFormula(found_operand, t);
 				}
 			}
 
@@ -7696,7 +8302,6 @@ function parserFormula( formula, parent, _ws ) {
 		}
 
 		setArgInfo();
-
 		if (parseResult.operand_expected) {
 			this.outStack = [];
 			parseResult.setError(c_oAscError.ID.FrmlOperandExpected);
@@ -7715,6 +8320,17 @@ function parserFormula( formula, parent, _ws ) {
 			} else {
 				this.outStack.push(operand);
 			}
+		}
+		if (bConditionalFormula && t.getParent() instanceof AscCommonExcel.CCellWithFormula && !t.ca) {
+			t.ca = t.isRecursiveCondFormula(levelFuncMap[0].func.name);
+			t.outStack.forEach(function (oOperand) {
+				if (oOperand.type === cElementType.name || oOperand.type === cElementType.name3D) {
+					let oDefName = oOperand.getDefName();
+					if (t.ca && oDefName && oDefName.parsedRef) {
+						oDefName.parsedRef.ca = t.ca;
+					}
+				}
+			});
 		}
 		if (parenthesesNotEnough) {
 			parseResult.setError(c_oAscError.ID.FrmlParenthesesCorrectCount);
@@ -9517,6 +10133,39 @@ function parserFormula( formula, parent, _ws ) {
 		}
 
 		return [];
+	};
+	/**
+	 * Method checks a cell has in array with recursive cells.
+	 * @memberof CalcRecursion
+	 * @param {Cell} oCell
+	 * @returns {boolean}
+	 */
+	CalcRecursion.prototype.hasInRecursiveCells = function (oCell) {
+		const oThis = this;
+		const aRecursiveCell = this.getRecursiveCells(oCell)
+		let bHasListeners = !!oCell.getListeners();
+		let bHasInRecursiveCells = !!aRecursiveCell.length;
+
+		if (!bHasListeners) {
+			const aCellTypes = [cElementType.cell, cElementType.cell3D];
+			let aOutStack = oCell.getFormulaParsed().outStack;
+			for (let i = 0; i < aOutStack.length; i++) {
+				if (aOutStack.type === cElementType.name && aOutStack.type === cElementType.name3D) {
+					aOutStack[i] = aOutStack[i].toRef();
+				}
+				if (aCellTypes.includes(aOutStack[i].type)) {
+					let oRange = aOutStack[i].getRange();
+					oRange._foreachNoEmpty(function (oElem) {
+						if (oElem.isFormula()) {
+							bHasInRecursiveCells = !!oThis.getRecursiveCells(oElem).length;
+							bHasListeners = !!oElem.getListeners();
+						}
+					});
+				}
+			}
+		}
+
+		return bHasInRecursiveCells || bHasListeners;
 	};
 	/**
 	 * Method updates start cell index.

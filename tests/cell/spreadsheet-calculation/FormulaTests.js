@@ -1308,6 +1308,388 @@ $(function () {
 		bCaFromSelectedCell = getCaFromSelectedCell("D1039");
 		assert.strictEqual(bCaFromSelectedCell, false, "Test: Exception formulas that ignores rules of recursion recognition. D1039 - flag ca: false");
 		bCaFromSelectedCell = null;
+		// - Case: SUMIF 2 args recursion range. Recursion formula with disabled Iterative calculation setting.
+		ws.getRange2("A1040").setValue("2");
+		ws.getRange2("B1040").setValue("4");
+		ws.getRange2("C1040").setValue("8");
+		ws.getRange2("D1040").setValue("=SUMIF(A1040:D1040, \">4\")");
+		assert.strictEqual(ws.getRange2("D1040").getValue(), "0", "Test: SUMIF 2 args recursion range. D1040 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("D1040");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: SUMIF 2 args recursion range. D1040 - flag ca: true");
+		bCaFromSelectedCell = null;
+		// - Case: SUMIF 2 args non recursion range with disabled Iterative calculation setting.
+		ws.getRange2("D1040").setValue("=SUMIF(A1040:C1040, \">4\")");
+		assert.strictEqual(ws.getRange2("D1040").getValue(), "8", "Test: SUMIF 2 args non recursion range. D1040 - 8");
+		bCaFromSelectedCell = getCaFromSelectedCell("D1040");
+		assert.strictEqual(bCaFromSelectedCell, false, "Test: SUMIF 2 args non recursion range. D1040 - flag ca: false");
+		bCaFromSelectedCell = null;
+		// - Case: SUMIF. 2 args. Recursion criteria. Recursion formula with disabled Iterative calculation setting.
+		ws.getRange2("A1041").setValue("2");
+		ws.getRange2("B1041").setValue("4");
+		ws.getRange2("C1041").setValue("8");
+		ws.getRange2("A1042").setValue("2");
+		ws.getRange2("B1042").setValue("4");
+		ws.getRange2("C1042").setValue("=SUMIF(A1041:C1041, A1042:C1042)");
+		assert.strictEqual(ws.getRange2("C1042").getValue(), "0", "Test: SUMIF. 2 args. Recursion criteria. C1042 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("C1042");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: SUMIF. 2 args. Recursion criteria. C1042 - flag ca: true");
+		bCaFromSelectedCell = null;
+		// - Case: SUMIF. 2 args. Non recursion criteria with disabled Iterative calculation setting.
+		ws.getRange2("A1043").setValue("2");
+		ws.getRange2("B1043").setValue("4");
+		ws.getRange2("C1043").setValue("8");
+		ws.getRange2("A1044").setValue("2");
+		ws.getRange2("B1044").setValue("4");
+		ws.getRange2("C1044").setValue("=SUMIF(A1043:C1043, A1044:B1044)");
+		bCaFromSelectedCell = getCaFromSelectedCell("C1044");
+		assert.strictEqual(bCaFromSelectedCell, false, "Test: SUMIF. 2 args. Non recursion criteria. C1044 - flag ca: false");
+		bCaFromSelectedCell = null;
+		// - Case: SUMIF. 2 args. Recursion formula. Recursion criteria name with disabled Iterative calculation setting.
+		let oCriteriaRangeName = new Asc.asc_CDefName("Criteria_range", ws.getName() + "!$A$1045:$C$1045");
+		wb.editDefinesNames(null, oCriteriaRangeName);
+		ws.getRange2("A1045").setValue("2");
+		ws.getRange2("B1045").setValue("4");
+		ws.getRange2("C1045").setValue("=SUMIF(A1043:C1043, Criteria_range)");
+		assert.strictEqual(ws.getRange2("C1045").getValue(), "0", "Test: SUMIF. 2 args. Recursion formula. Recursion criteria name. C1045 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("C1045");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: SUMIF. 2 args. Recursion formula. Recursion criteria name. C1045 - flag ca: true");
+		bCaFromSelectedCell = null;
+		wb.delDefinesNames(oCriteriaRangeName);
+		oCriteriaRangeName = null;
+		// - Case: SUMIF. 3 args. Recursion formula. Recursion sum_range, but the cell with formula doesn't match with criteria. With disabled Iterative calculation setting.
+		// range row
+		ws.getRange2("A1046").setValue("1");
+		ws.getRange2("B1046").setValue("0");
+		ws.getRange2("C1046").setValue("1");
+		ws.getRange2("D1046").setValue("0");
+		// criteria row
+		ws.getRange2("A1047").setValue("1");
+		// sum_range row
+		ws.getRange2("A1048").setValue("2");
+		ws.getRange2("B1048").setValue("4");
+		ws.getRange2("C1048").setValue("8");
+		ws.getRange2("D1048").setValue("=SUMIF(A1046:D1046, A1047 ,A1048:D1048)");
+		assert.strictEqual(ws.getRange2("D1048").getValue(), "10", "Test: SUMIF. 3 args. Recursion formula. Recursion sum_range, but the cell with formula doesn't match with criteria. D1048 - 10");
+		bCaFromSelectedCell = getCaFromSelectedCell("D1048");
+		assert.strictEqual(bCaFromSelectedCell, false, "Test: SUMIF. 3 args. Recursion formula. Recursion sum_range, but the cell with formula doesn't match with criteria. D1048 - flag ca: false");
+		bCaFromSelectedCell = null;
+		// - Case: SUMIF. 3 args. Recursion formula. Recursion sum_range, but the cell with formula matches with criteria. With disabled Iterative calculation setting.
+		ws.getRange2("D1046").setValue("1");
+		assert.strictEqual(ws.getRange2("D1048").getValue(), "10", "Test: SUMIF. 3 args. Recursion formula. Recursion sum_range, but the cell with formula matches with criteria. D1048 - 10");
+		bCaFromSelectedCell = getCaFromSelectedCell("D1048");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: SUMIF. 3 args. Recursion formula. Recursion sum_range, but the cell with formula matches with criteria. D1048 - flag ca: true");
+		bCaFromSelectedCell = null;
+		// - Case:  SUMIF. 3 args. Recursion formula. Recursion range. With disabled Iterative calculation setting.
+		// range row
+		ws.getRange2("A1049").setValue("1");
+		ws.getRange2("B1049").setValue("0");
+		ws.getRange2("C1049").setValue("1");
+		// criteria row
+		ws.getRange2("A1050").setValue("1");
+		// sum_range row
+		ws.getRange2("A1051").setValue("2");
+		ws.getRange2("B1051").setValue("4");
+		ws.getRange2("C1051").setValue("8");
+		ws.getRange2("D1051").setValue("16");
+		ws.getRange2("D1049").setValue("=SUMIF(A1049:D1049, A1050, A1051:D1051)");
+		assert.strictEqual(ws.getRange2("D1049").getValue(), "0", "Test: SUMIF. 3 args. Recursion formula. Recursion range. D1049 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("D1049");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: SUMIF. 3 args. Recursion formula. Recursion range. D1049 - flag ca: true");
+		bCaFromSelectedCell = null;
+		// - Case: SUMIF. 3 args. Recursion formula. Recursion criteria. With disabled Iterative calculation setting.
+		// range row
+		ws.getRange2("A1052").setValue("1");
+		ws.getRange2("B1052").setValue("0");
+		ws.getRange2("C1052").setValue("1");
+		ws.getRange2("D1052").setValue("0")
+		// criteria row
+		ws.getRange2("A1053").setValue("1");
+		// sum_range row
+		ws.getRange2("A1054").setValue("2");
+		ws.getRange2("B1054").setValue("4");
+		ws.getRange2("C1054").setValue("8");
+		ws.getRange2("D1054").setValue("16");
+		ws.getRange2("B1053").setValue("=SUMIF(A1052:D1052, A1053:B1053, A1054:D1054)");
+		assert.strictEqual(ws.getRange2("B1053").getValue(), "0", "Test: SUMIF. 3 args. Recursion formula. Recursion criteria. B1053 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("B1053");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: SUMIF. 3 args. Recursion formula. Recursion criteria. B1053 - flag ca: true");
+		bCaFromSelectedCell = null;
+		// - Case: SUMIF. 3 args. Recursion formula. Recursion criteria_range with DefName. With disabled Iterative calculation setting.
+		oCriteriaRangeName = new Asc.asc_CDefName("Criteria_range", ws.getName() + "!$A$1055:$D$1055");
+		let oCriteriaName = new Asc.asc_CDefName("criteria", ws.getName() + "!$A$1056:$B$1056");
+		let oSumRangeName = new Asc.asc_CDefName("sum_range", ws.getName() + "!$A$1057:$D$1057");
+		wb.editDefinesNames(null, oCriteriaRangeName);
+		wb.editDefinesNames(null, oCriteriaName);
+		wb.editDefinesNames(null, oSumRangeName);
+		ws.getRange2("A1055").setValue("1");
+		ws.getRange2("B1055").setValue("0");
+		ws.getRange2("C1055").setValue("1");
+		ws.getRange2("A1056").setValue(">0");
+		ws.getRange2("A1057").setValue("2");
+		ws.getRange2("B1057").setValue("4");
+		ws.getRange2("C1057").setValue("8");
+		ws.getRange2("D1057").setValue("16");
+		ws.getRange2("D1055").setValue("=SUMIF(Criteria_range, A1056, sum_range)");
+		assert.strictEqual(ws.getRange2("D1055").getValue(), "0", "Test: SUMIF. 3 args. Recursion formula. Recursion criteria_range with DefName. D1055 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("D1055");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: SUMIF. 3 args. Recursion formula. Recursion criteria_range with DefName. D1055 - flag ca: true");
+		bCaFromSelectedCell = null;
+		// - Case: SUMIF. 3 args. Recursion formula. Recursion sum_range with DefName. With disabled Iterative calculation setting.
+		ws.getRange2("D1055").setValue("1");
+		ws.getRange2("D1057").setValue("=SUMIF(Criteria_range, A1056, sum_range)");
+		assert.strictEqual(ws.getRange2("D1057").getValue(), "0", "Test: SUMIF. 3 args. Recursion formula. Recursion sum_range with DefName. D1057 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("D1057");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: SUMIF. 3 args. Recursion formula. Recursion sum_range with DefName. D1057 - flag ca: true");
+		bCaFromSelectedCell = null;
+		// - Case: SUMIF. 3 args. Recursion formula. Recursion sum_range with DefName, but the cell with formula doesn't match with criteria. With disabled Iterative calculation setting.
+		ws.getRange2("D1055").setValue("0");
+		ws.getRange2("D1057").setValue("=SUMIF(Criteria_range, A1056, sum_range)");
+		assert.strictEqual(ws.getRange2("D1057").getValue(), "10", "Test: SUMIF. 3 args. Recursion formula. Recursion sum_range with DefName, but the cell with formula doesn't match with criteria. D1057 - 10")
+		bCaFromSelectedCell = getCaFromSelectedCell("D1057");
+		assert.strictEqual(bCaFromSelectedCell, false, "Test: SUMIF. 3 args. Recursion formula. Recursion sum_range with DefName, but the cell with formula doesn't match with criteria. D1057 - flag ca: false");
+		bCaFromSelectedCell = null;
+		// - Case: SUMIF. 3 args. Recursion formula. Recursion criteria with DefName. With disabled Iterative calculation setting.
+		ws.getRange2("D1055").setValue("0");
+		ws.getRange2("D1057").setValue("16");
+		ws.getRange2("A1056").setValue("1");
+		ws.getRange2("B1056").setValue("=SUMIF(Criteria_range, criteria, sum_range)");
+		assert.strictEqual(ws.getRange2("B1056").getValue(), "0", "Test: SUMIF. 3 args. Recursion formula. Recursion criteria with DefName. B1056 - 0")
+		bCaFromSelectedCell = getCaFromSelectedCell("B1056");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: SUMIF. 3 args. Recursion formula. Recursion criteria with DefName. B1056 - flag ca: true");
+		bCaFromSelectedCell = null;
+		wb.delDefinesNames(oCriteriaRangeName);
+		wb.delDefinesNames(oCriteriaName);
+		wb.delDefinesNames(oSumRangeName);
+		oCriteriaRangeName = null;
+		oCriteriaName = null;
+		oSumRangeName = null;
+		// - Case: SUMIFS. 3 args. Recursion formula. Recursion sum_range, but the cell with formula doesn't match with criteria. Criteria with formula. With disabled Iterative calculation setting.
+		ws.getRange2("A1058").setValue("2");
+		ws.getRange2("B1058").setValue("4");
+		ws.getRange2("C1058").setValue("8");
+		ws.getRange2("A1059").setValue("09/15/2024");
+		ws.getRange2("B1059").setValue("09/16/2024");
+		ws.getRange2("C1059").setValue("09/17/2024");
+		ws.getRange2("D1059").setValue("09/18/2024");
+		ws.getRange2("D1058").setValue("=SUMIFS(A1058:D1058, A1059:D1059, DATE(2024, 9, 17))");
+		assert.strictEqual(ws.getRange2("D1058").getValue(), "8", "Test: SUMIFS. 3 args. Recursion formula. Recursion sum_range, but the cell with formula doesn't match with criteria. Criteria with formula. D1058 - 8");
+		bCaFromSelectedCell = getCaFromSelectedCell("D1058");
+		assert.strictEqual(bCaFromSelectedCell, false, "Test: SUMIFS. 3 args. Recursion formula. Recursion sum_range, but the cell with formula doesn't match with criteria. Criteria with formula. D1058 - flag ca: false");
+		bCaFromSelectedCell = null;
+		// - Case: SUMIFS. 3 args. Recursion formula. Recursion sum_range,the cell with formula matches with criteria. Criteria with formula. With disabled Iterative calculation setting.
+		ws.getRange2("D1058").setValue("=SUMIFS(A1058:D1058, A1059:D1059, DATE(2024, 9, 18))");
+		assert.strictEqual(ws.getRange2("D1058").getValue(), "0", "Test: SUMIFS. 3 args. Recursion formula. Recursion sum_range,the cell with formula matches with criteria. Criteria with formula. D1058 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("D1058");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: SUMIFS. 3 args. Recursion formula. Recursion sum_range,the cell with formula matches with criteria. Criteria with formula. D1058 - flag ca: true");
+		bCaFromSelectedCell = null;
+		// - Case: SUMIFS. 5 args. Recursion formula. Recursion sum_range, but the cell with formula doesn't match with criterias. With disabled Iterative calculation setting.
+		// sum_range row
+		ws.getRange2("A1060").setValue("5");
+		ws.getRange2("B1060").setValue("4");
+		ws.getRange2("C1060").setValue("11");
+		ws.getRange2("D1060").setValue("3");
+		// criteria_range row
+		ws.getRange2("A1061").setValue("Apples");
+		ws.getRange2("B1061").setValue("Bananas");
+		ws.getRange2("C1061").setValue("Artichokes");
+		ws.getRange2("D1061").setValue("Apples");
+		ws.getRange2("E1061").setValue("Bananas");
+		// criteria row
+		ws.getRange2("A1062").setValue("<>Bananas");
+		// criteria_range2 row
+		ws.getRange2("A1063").setValue("Sarah");
+		ws.getRange2("B1063").setValue("Tom");
+		ws.getRange2("C1063").setValue("Sarah");
+		ws.getRange2("D1063").setValue("Tom");
+		ws.getRange2("E1063").setValue("Sarah");
+		// criteria2 row
+		ws.getRange2("A1064").setValue("Tom");
+		// formula
+		ws.getRange2("E1060").setValue("=SUMIFS(A1060:E1060, A1061:E1061, A1062, A1063:E1063, A1064)");
+		assert.strictEqual(ws.getRange2("E1060").getValue(), "3", "Test: SUMIFS. 5 args. Recursion formula. Recursion sum_range, but the cell with formula doesn't match with criterias. E1060 - 3");
+		bCaFromSelectedCell = getCaFromSelectedCell("E1060");
+		assert.strictEqual(bCaFromSelectedCell, false, "Test: SUMIFS. 5 args. Recursion formula. Recursion sum_range, but the cell with formula doesn't match with criterias. E1060 - flag ca: false");
+		bCaFromSelectedCell = null;
+		// - Case: SUMIFS. 5 args. Recursion formula. Recursion sum_range,the cell with formula 1 criteria is matches 2 is not. With disabled Iterative calculation setting.
+		ws.getRange2("E1061").setValue("Apples");
+		ws.getRange2("E1060").setValue("=SUMIFS(A1060:E1060, A1061:E1061, A1062, A1063:E1063, A1064)");
+		assert.strictEqual(ws.getRange2("E1060").getValue(), "3", "Test: SUMIFS. 5 args. Recursion formula. Recursion sum_range,the cell with formula 1 criteria is matches 2 is not. E1060 - 3");
+		bCaFromSelectedCell = getCaFromSelectedCell("E1060");
+		assert.strictEqual(bCaFromSelectedCell, false, "Test: SUMIFS. 5 args. Recursion formula. Recursion sum_range,the cell with formula 1 criteria is matches 2 is not. E1060 - flag ca: false");
+		bCaFromSelectedCell = null;
+		// - Case: SUMIFS. 5 args. Recursion formula. Recursion sum_range, the cell with formula - 1 criteria doesn't match 2 is matches. With disabled Iterative calculation setting.
+		ws.getRange2("E1061").setValue("Bananas");
+		ws.getRange2("E1063").setValue("Tom");
+		ws.getRange2("E1060").setValue("=SUMIFS(A1060:E1060, A1061:E1061, A1062, A1063:E1063, A1064)");
+		assert.strictEqual(ws.getRange2("E1060").getValue(), "3", "Test: SUMIFS. 5 args. Recursion formula. Recursion sum_range, the cell with formula - 1 criteria doesn't match 2 is matches. E1060 - 3");
+		bCaFromSelectedCell = getCaFromSelectedCell("E1060");
+		assert.strictEqual(bCaFromSelectedCell, false, "Test: SUMIFS. 5 args. Recursion formula. Recursion sum_range, the cell with formula - 1 criteria doesn't match 2 is matches. E1060 - flag ca: false");
+		bCaFromSelectedCell = null;
+		// - Case: SUMIFS. 5 args. Recursion formula. Recursion sum_range, the cell with formula both criterias match. With disabled Iterative calculation setting.
+		ws.getRange2("E1061").setValue("Apples");
+		ws.getRange2("E1060").setValue("=SUMIFS(A1060:E1060, A1061:E1061, A1062, A1063:E1063, A1064)");
+		assert.strictEqual(ws.getRange2("E1060").getValue(), "0", "Test: SUMIFS. 5 args. Recursion formula. Recursion sum_range, the cell with formula both criterias match. E1060 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("E1060");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: SUMIFS. 5 args. Recursion formula. Recursion sum_range, the cell with formula both criterias match. E1060 - flag ca: true");
+		bCaFromSelectedCell = null;
+		// - Case: SUMIFS. 5 args. Recursion formula. Recursion criteria_range. With disabled Iterative calculation setting.
+		ws.getRange2("E1060").setValue("3");
+		ws.getRange2("E1061").setValue("=SUMIFS(A1060:E1060, A1061:E1061, A1062, A1063:E1063, A1064)");
+		assert.strictEqual(ws.getRange2("E1061").getValue(), "0", "Test: SUMIFS. 5 args. Recursion formula. Recursion criteria_range. E1061 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("E1061");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: SUMIFS. 5 args. Recursion formula. Recursion criteria_range. E1061 - flag ca: true");
+		bCaFromSelectedCell = null;
+		// - Case: SUMIFS. 5 args. Recursion formula. Recursion criteria_range2, but criteria_range is not matches. With disabled Iterative calculation setting.
+		ws.getRange2("E1061").setValue("Bananas");
+		ws.getRange2("E1063").setValue("=SUMIFS(A1060:E1060, A1061:E1061, A1062, A1063:E1063, A1064)");
+		assert.strictEqual(ws.getRange2("E1063").getValue(), "3", "Test: SUMIFS. 5 args. Recursion formula. Recursion criteria_range2, but criteria_range is not matches. E1063 - 3");
+		bCaFromSelectedCell = getCaFromSelectedCell("E1063");
+		assert.strictEqual(bCaFromSelectedCell, false, "Test: SUMIFS. 5 args. Recursion formula. Recursion criteria_range2, but criteria_range is not matches. E1063 - flag ca: false");
+		bCaFromSelectedCell = null;
+		// - Case: SUMIFS. 5 args. Recursion formula. Recursion criteria_range2, but criteria_range is matches. With disabled Iterative calculation setting.
+		ws.getRange2("E1061").setValue("Apples");
+		ws.getRange2("E1063").setValue("=SUMIFS(A1060:E1060, A1061:E1061, A1062, A1063:E1063, A1064)");
+		assert.strictEqual(ws.getRange2("E1063").getValue(), "0", "Test: SUMIFS. 5 args. Recursion formula. Recursion criteria_range2, but criteria_range is matches. E1063 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("E1063");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: SUMIFS. 5 args. Recursion formula. Recursion criteria_range2, but criteria_range is matches. E1063 - flag ca: true");
+		bCaFromSelectedCell = null;
+		// - Case: COUNTIFS. 4 args. Recursion formula. Recursion criteria_range2, but criteria_range isn't matches. With disabled Iterative calculation setting.
+	 	// Criteria range
+		ws.getRange2("A1064").setValue("100");
+		ws.getRange2("B1064").setValue("1000");
+		ws.getRange2("C1064").setValue("10000");
+		ws.getRange2("D1064").setValue("10");
+		ws.getRange2("E1064").setValue("0");
+		// Criteria
+		ws.getRange2("A1065").setValue(">0");
+		// Criteria range 2
+		ws.getRange2("A1066").setValue("Bob");
+		ws.getRange2("B1066").setValue("Tom");
+		ws.getRange2("C1066").setValue("Bob");
+		ws.getRange2("D1066").setValue("Bob");
+		ws.getRange2("E1066").setValue("=COUNTIFS(A1064:E1064, A1065, A1066:E1066, A1067)");
+		// Criteria2
+		ws.getRange2("A1067").setValue("Bob")
+		assert.strictEqual(ws.getRange2("E1066").getValue(), "3", "Test: COUNTIFS. 4 args. Recursion formula. Recursion criteria_range2, but criteria_range isn't matches. E1066 - 3");
+		bCaFromSelectedCell = getCaFromSelectedCell("E1066");
+		assert.strictEqual(bCaFromSelectedCell, false, "Test: COUNTIFS. 4 args. Recursion formula. Recursion criteria_range2, but criteria_range isn't matches. E1066 - flag ca: false");
+		bCaFromSelectedCell = null;
+		// - Case: COUNTIFS. 4 args. Recursion formula. Recursion criteria_range2, but criteria_range is matches. With disabled Iterative calculation setting.
+		ws.getRange2("E1064").setValue("10");
+		ws.getRange2("E1066").setValue("=COUNTIFS(A1064:E1064, A1065, A1066:E1066, A1067)");
+		assert.strictEqual(ws.getRange2("E1066").getValue(), "0", "Test: COUNTIFS. 4 args. Recursion formula. Recursion criteria_range2, but criteria_range is matches. E1066 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("E1066");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: COUNTIFS. 4 args. Recursion formula. Recursion criteria_range2, but criteria_range is matches. E1066 - flag ca: true");
+		// - Case: IF. 3 args. Recursion formula. recursion value_false but it doesn't match. With disabled Iterative calculation setting.
+		ws.getRange2("A1067").setValue("Yes");
+		ws.getRange2("B1067").setValue("23");
+		ws.getRange2("C1067").setValue("=IF(A1067 = \"Yes\", B1067, C1067)");
+		assert.strictEqual(ws.getRange2("C1067").getValue(), "23", "Test: IF. 3 args. Recursion formula. recursion value_false. C1067 - 23");
+		bCaFromSelectedCell = getCaFromSelectedCell("C1067");
+		assert.strictEqual(bCaFromSelectedCell, false, "Test: IF. 3 args. Recursion formula. recursion value_false. C1067 - flag ca: false");
+		bCaFromSelectedCell = null;
+		// - Case: IF. 3 args. Recursion formula. Recursion value_false but it matches. With disabled Iterative calculation setting.
+		ws.getRange2("C1067").setValue("=IF(A1067 = \"No\", B1067, C1067)");
+		assert.strictEqual(ws.getRange2("C1067").getValue(), "0", "Test: IF. 3 args. Recursion formula. Recursion value_false. C1067 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("C1067");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: IF. 3 args. Recursion formula. Recursion value_false. C1067 - flag ca: true");
+		bCaFromSelectedCell = null;
+		// - Case: IF. 3 args. Recursion formula. logical_test is Ref. Recursion value_false, but it doesn't match. With disabled Iterative calculation setting.
+		ws.getRange2("D1067").setValue("TRUE");
+		ws.getRange2("C1067").setValue("=IF(D1067, B1067, C1067");
+		assert.strictEqual(ws.getRange2("C1067").getValue(), "23", "Test: IF. 3 args. Recursion formula. logical_test is Ref. Recursion value_false, but it doesn't match. C1067 - 23");
+		bCaFromSelectedCell = getCaFromSelectedCell("C1067");
+		assert.strictEqual(bCaFromSelectedCell, false, "Test: IF. 3 args. Recursion formula. logical_test is Ref. Recursion value_false, but it doesn't match. C1067 - flag ca: false");
+		bCaFromSelectedCell = null;
+		// - Case: IF. 3 args. Recursion formula. logical_test is Ref. Recursion value_false, but it matches. With disabled Iterative calculation setting.
+		ws.getRange2("D1067").setValue("FALSE");
+		ws.getRange2("C1067").setValue("=IF(D1067, B1067, C1067");
+		assert.strictEqual(ws.getRange2("C1067").getValue(), "0", "Test: IF. 3 args. Recursion formula. logical_test is Ref. Recursion value_false, but it matches. C1067 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("C1067");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: IF. 3 args. Recursion formula. logical_test is Ref. Recursion value_false, but it matches. C1067 - flag ca: true");
+		bCaFromSelectedCell = null;
+		// - Case: IF. 3 args. Recursion formula.logical_test is DefName. Recursion value_false is DefName, but it doesn't match. With disabled Iterative calculation setting.
+		let oLogicalTest = new Asc.asc_CDefName("logical_test", ws.getName() + "!$D$1067");
+		let oTrueValue = new Asc.asc_CDefName("true_value", ws.getName() + "!$B$1067");
+		let oFalseValue = new Asc.asc_CDefName("false_value", ws.getName() + "!$C$1067");
+		wb.editDefinesNames(null, oLogicalTest);
+		wb.editDefinesNames(null, oTrueValue);
+		wb.editDefinesNames(null, oFalseValue);
+		ws.getRange2("D1067").setValue("TRUE");
+		ws.getRange2("C1067").setValue("=IF(logical_test, true_value, C1067)");
+		assert.strictEqual(ws.getRange2("C1067").getValue(), "23", "Case: IF. 3 args. Recursion formula.logical_test is DefName. Recursion value_false is DefName, but it doesn't match. C1067 - 23");
+		bCaFromSelectedCell = getCaFromSelectedCell("C1067");
+		assert.strictEqual(bCaFromSelectedCell, false, "Case: IF. 3 args. Recursion formula.logical_test is DefName. Recursion value_false is DefName, but it doesn't match. C1067 - flag ca: false");
+		bCaFromSelectedCell = null;
+		// - Case: IF. 3 args. Recursion formula.logical_test is DefName. Recursion value_false is DefName, but it matches. With disabled Iterative calculation setting.
+		ws.getRange2("D1067").setValue("FALSE");
+		ws.getRange2("C1067").setValue("=IF(logical_test, true_value, false_value)");
+		assert.strictEqual(ws.getRange2("C1067").getValue(), "0", "Case: IF. 3 args. Recursion formula.logical_test is DefName. Recursion value_false is DefName, but it matches. C1067 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("C1067");
+		assert.strictEqual(bCaFromSelectedCell, true, "Case: IF. 3 args. Recursion formula.logical_test is DefName. Recursion value_false is DefName, but it matches. C1067 - flag ca: true");
+		bCaFromSelectedCell = null;
+		wb.delDefinesNames(oLogicalTest);
+		oLogicalTest = null;
+		wb.delDefinesNames(oTrueValue);
+		oTrueValue = null;
+		wb.delDefinesNames(oFalseValue);
+		oFalseValue = null;
+		// - Case: IFS. 6 args. Recursion formula. One of condition is recursion, but it doesn't match. With disabled Iterative calculation setting.
+		ws.getRange2("A1068").setValue("3");
+		ws.getRange2("B1068").setValue('=IFS(A1068=1, "First", A1068=2, B1068, A1068=3, "Third")');
+		assert.strictEqual(ws.getRange2("B1068").getValue(), "Third", "Test: IFS. 6 args. Recursion formula. One of condition is recursion but it doesn't match. B1068 - Third");
+		bCaFromSelectedCell = getCaFromSelectedCell("B1068");
+		assert.strictEqual(bCaFromSelectedCell, false, "Test: IFS. 6 args. Recursion formula. One of condition is recursion but it doesn't match. B1068 - flag ca: false");
+		bCaFromSelectedCell = null;
+		// - Case: IFS. 6 args. Recursion formula. One of condition is recursion but it matches. With disabled Iterative calculation setting.
+		ws.getRange2("A1068").setValue("2");
+		ws.getRange2("B1068").setValue('=IFS(A1068=1, "First", A1068=2, B1068, A1068=3, "Third")');
+		assert.strictEqual(ws.getRange2("B1068").getValue(), "0", "Test: IFS. 6 args. Recursion formula. One of condition is recursion but it matches. B1068 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("B1068");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: IFS. 6 args. Recursion formula. One of condition is recursion but it matches. B1068 - flag ca: true");
+		bCaFromSelectedCell = null;
+		// Case: SWITCH. Without default_arg. One of result_arg has recursion, but it doesn't match. With disabled Iterative calculation setting.
+		// expression
+		ws.getRange2("A1069").setValue("3");
+		// values
+		ws.getRange2("A1070").setValue("1");
+		ws.getRange2("B1070").setValue("2");
+		ws.getRange2("C1070").setValue("3");
+		ws.getRange2("D1070").setValue("4");
+		ws.getRange2("E1070").setValue("5");
+		// results
+		ws.getRange2("A1071").setValue("Monday");
+		ws.getRange2("B1071").setValue("Wednesday");
+		ws.getRange2("C1071").setValue("Thursday");
+		ws.getRange2("D1071").setValue("Friday");
+		// formula
+		ws.getRange2("A1072").setValue("=SWITCH(A1069,A1070, A1071, B1070, A1072, C1070, B1071, D1070, C1071, E1070, D1071)");
+		assert.strictEqual(ws.getRange2("A1072").getValue(), "Wednesday", "Test: SWITCH. Without default_arg. One of result_arg has recursion but it doesn't matches. A1072 - Wednesday");
+		bCaFromSelectedCell = getCaFromSelectedCell("A1072");
+		assert.strictEqual(bCaFromSelectedCell, false, "Test: SWITCH. Without default_arg. One of result_arg has recursion but it doesn't matches. A1072 - flag ca: false");
+		bCaFromSelectedCell = null;
+		// Case: SWITCH. Without default_arg. One of result_arg has recursion, but it matches. With disabled Iterative calculation setting.
+		ws.getRange2("A1069").setValue("2");
+		ws.getRange2("A1072").setValue("=SWITCH(A1069,A1070, A1071, B1070, A1072, C1070, B1071, D1070, C1071, E1070, D1071)");
+		assert.strictEqual(ws.getRange2("A1072").getValue(), "0", "Test: SWITCH. Without default_arg. One of result_arg has recursion but it matches. A1072 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("A1072");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: SWITCH. Without default_arg. One of result_arg has recursion but it matches. A1072 - flag ca: true");
+		bCaFromSelectedCell = null;
+		// Case: SWITCH. With default_arg. Default_arg has recursion, but it doesn't match. With disabled Iterative calculation setting.
+		ws.getRange2("A1069").setValue("7");
+		// default_arg
+		ws.getRange2("E1071").setValue("Unknown day of week");
+		ws.getRange2("A1072").setValue("=SWITCH(A1069,A1070, A1071, B1070, A1072, C1070, B1071, D1070, C1071, E1070, D1071, E1071)");
+		assert.strictEqual(ws.getRange2("A1072").getValue(), "Unknown day of week", "Test: SWITCH. With default_arg. Default_arg has recursion but it doesn't matches. A1072 - Unknown day of week");
+		bCaFromSelectedCell = getCaFromSelectedCell("A1072");
+		assert.strictEqual(bCaFromSelectedCell, false, "Test: SWITCH. With default_arg. Default_arg has recursion but it doesn't matches. A1072 - flag ca: false");
+		bCaFromSelectedCell = null;
+		// Case: SWITCH. With default_arg. Default_arg has recursion, but it matches. With disabled Iterative calculation setting.
+		ws.getRange2("A1072").setValue("=SWITCH(A1069,A1070, A1071, B1070, A1072, C1070, B1071, D1070, C1071, E1070, D1071, A1072)");
+		assert.strictEqual(ws.getRange2("A1072").getValue(), "0", "Test: SWITCH. With default_arg. Default_arg has recursion but it matches. A1072 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("A1072");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: SWITCH. With default_arg. Default_arg has recursion but it matches. A1072 - flag ca: true");
+		bCaFromSelectedCell = null;
 		// -- Test changeLinkedCell method.
 		oCell = selectCell("A1000");
 		let oCellNeedEnableRecalc = selectCell("B1000");

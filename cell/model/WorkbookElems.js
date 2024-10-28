@@ -17462,7 +17462,8 @@ function RangeDataManagerElem(bbox, data)
 			this.asc_setIterativeCalc(oCalcPr.getIterate());
 		}
 		if (oCalcPr.getIterateCount() != null) {
-			this.asc_setMaxIterations(oCalcPr.getIterateCount());
+			const MAX_ITERATE_COUNT = 32767;
+			this.asc_setMaxIterations(oCalcPr.getIterateCount() <= MAX_ITERATE_COUNT ? oCalcPr.getIterateCount() : MAX_ITERATE_COUNT);
 		}
 		if (oCalcPr.getIterateDelta() != null) {
 			this.asc_setMaxChange(oCalcPr.getIterateDelta());
