@@ -300,11 +300,9 @@
 		this.m_oFactoryClass[AscDFH.historyitem_type_PtLst             ]     = AscFormat.PtLst;
 		this.m_oFactoryClass[AscDFH.historyitem_type_DataModel         ]     = AscFormat.DataModel;
 		this.m_oFactoryClass[AscDFH.historyitem_type_CxnLst            ]     = AscFormat.CxnLst;
-		this.m_oFactoryClass[AscDFH.historyitem_type_ExtLst            ]     = AscFormat.ExtLst;
 		this.m_oFactoryClass[AscDFH.historyitem_type_BgFormat          ]     = AscFormat.BgFormat;
 		this.m_oFactoryClass[AscDFH.historyitem_type_Whole             ]     = AscFormat.Whole;
 		this.m_oFactoryClass[AscDFH.historyitem_type_Cxn               ]     = AscFormat.Cxn;
-		this.m_oFactoryClass[AscDFH.historyitem_type_Ext               ]     = AscFormat.Ext;
 		this.m_oFactoryClass[AscDFH.historyitem_type_LayoutDef         ]     = AscFormat.LayoutDef;
 		this.m_oFactoryClass[AscDFH.historyitem_type_CatLst            ]     = AscFormat.CatLst;
 		this.m_oFactoryClass[AscDFH.historyitem_type_SCat              ]     = AscFormat.SCat;
@@ -314,9 +312,7 @@
 		this.m_oFactoryClass[AscDFH.historyitem_type_Choose            ]     = AscFormat.Choose;
 		this.m_oFactoryClass[AscDFH.historyitem_type_IteratorAttributes]     = AscFormat.IteratorAttributes;
 		this.m_oFactoryClass[AscDFH.historyitem_type_Else              ]     = AscFormat.Else;
-		this.m_oFactoryClass[AscDFH.historyitem_type_AxisType          ]     = AscFormat.AxisType;
 		this.m_oFactoryClass[AscDFH.historyitem_type_If                ]     = AscFormat.If;
-		this.m_oFactoryClass[AscDFH.historyitem_type_ElementType       ]     = AscFormat.ElementType;
 		this.m_oFactoryClass[AscDFH.historyitem_type_ConstrLst         ]     = AscFormat.ConstrLst;
 		this.m_oFactoryClass[AscDFH.historyitem_type_Constr            ]     = AscFormat.Constr;
 		this.m_oFactoryClass[AscDFH.historyitem_type_PresOf            ]     = AscFormat.PresOf;
@@ -325,12 +321,6 @@
 		this.m_oFactoryClass[AscDFH.historyitem_type_SShape            ]     = AscFormat.SShape;
 		this.m_oFactoryClass[AscDFH.historyitem_type_AdjLst            ]     = AscFormat.AdjLst;
 		this.m_oFactoryClass[AscDFH.historyitem_type_Adj               ]     = AscFormat.Adj;
-		this.m_oFactoryClass[AscDFH.historyitem_type_AnimLvl           ]     = AscFormat.AnimLvl;
-		this.m_oFactoryClass[AscDFH.historyitem_type_AnimOne           ]     = AscFormat.AnimOne;
-		this.m_oFactoryClass[AscDFH.historyitem_type_BulletEnabled     ]     = AscFormat.BulletEnabled;
-		this.m_oFactoryClass[AscDFH.historyitem_type_ChMax             ]     = AscFormat.ChMax;
-		this.m_oFactoryClass[AscDFH.historyitem_type_ChPref            ]     = AscFormat.ChPref;
-		this.m_oFactoryClass[AscDFH.historyitem_type_DiagramDirection  ]     = AscFormat.DiagramDirection;
 		this.m_oFactoryClass[AscDFH.historyitem_type_DiagramTitle      ]     = AscFormat.DiagramTitle;
 		this.m_oFactoryClass[AscDFH.historyitem_type_LayoutDefHdrLst   ]     = AscFormat.LayoutDefHdrLst;
 		this.m_oFactoryClass[AscDFH.historyitem_type_LayoutDefHdr      ]     = AscFormat.LayoutDefHdr;
@@ -362,10 +352,6 @@
 		this.m_oFactoryClass[AscDFH.historyitem_type_BackdropAnchor    ]     = AscFormat.BackdropAnchor;
 		this.m_oFactoryClass[AscDFH.historyitem_type_SampData          ]     = AscFormat.SampData;
 		this.m_oFactoryClass[AscDFH.historyitem_type_ForEach           ]     = AscFormat.ForEach;
-		this.m_oFactoryClass[AscDFH.historyitem_type_ResizeHandles     ]     = AscFormat.ResizeHandles;
-		this.m_oFactoryClass[AscDFH.historyitem_type_OrgChart          ]     = AscFormat.OrgChart;
-		this.m_oFactoryClass[AscDFH.historyitem_type_HierBranch        ]     = AscFormat.HierBranch;
-		this.m_oFactoryClass[AscDFH.historyitem_type_ParameterVal      ]     = AscFormat.ParameterVal;
 		this.m_oFactoryClass[AscDFH.historyitem_type_Coordinate        ]     = AscFormat.Coordinate;
 		this.m_oFactoryClass[AscDFH.historyitem_type_ExtrusionClr      ]     = AscFormat.ExtrusionClr;
 		this.m_oFactoryClass[AscDFH.historyitem_type_ContourClr        ]     = AscFormat.ContourClr;
@@ -373,8 +359,6 @@
 		this.m_oFactoryClass[AscDFH.historyitem_type_BuNone            ]     = AscFormat.BuNone;
 		this.m_oFactoryClass[AscDFH.historyitem_type_SmartArtDrawing   ]     = AscFormat.Drawing;
 		this.m_oFactoryClass[AscDFH.historyitem_type_DiagramData       ]     = AscFormat.DiagramData;
-		this.m_oFactoryClass[AscDFH.historyitem_type_FunctionValue     ]     = AscFormat.FunctionValue;
-		this.m_oFactoryClass[AscDFH.historyitem_type_BuBlip            ]     = AscFormat.CBuBlip;
 		this.m_oFactoryClass[AscDFH.historyitem_type_CEffectProperties ]     = AscFormat.CEffectProperties;
 
 		if (window['AscCommonSlide'])

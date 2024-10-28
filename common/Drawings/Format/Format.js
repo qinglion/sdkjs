@@ -1015,6 +1015,22 @@
 			}
 			return null;
 		}
+		function writeObjectNoIdNoType(w, val) {
+			const bIsRealObject = isRealObject(val);
+			w.WriteBool(bIsRealObject);
+			if (bIsRealObject) {
+				val.Write_ToBinary(w);
+			}
+		}
+
+		function readObjectNoIdNoType(r, classConstructor) {
+			if (r.GetBool()) {
+				const val = new classConstructor();
+				val.Read_FromBinary(r);
+				return val;
+			}
+			return null;
+		}
 
 
 		function checkThemeFonts(oFontMap, font_scheme) {
@@ -18543,6 +18559,8 @@
 		window['AscFormat'].readObject = readObject;
 		window['AscFormat'].readObjectNoId = readObjectNoId;
 		window['AscFormat'].writeObjectNoId = writeObjectNoId;
+		window['AscFormat'].readObjectNoIdNoType = readObjectNoIdNoType;
+		window['AscFormat'].writeObjectNoIdNoType = writeObjectNoIdNoType;
 		window['AscFormat'].checkThemeFonts = checkThemeFonts;
 		window['AscFormat'].ExecuteNoHistory = ExecuteNoHistory;
 		window['AscFormat'].CreatePresentationTableStyles = CreatePresentationTableStyles;
