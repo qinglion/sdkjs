@@ -425,10 +425,6 @@
 	var Base = function Base() {
 	};
 
-	Base.prototype.clone = function () {
-		return new this.constructor(this);
-	};
-
 	Base.each = function (obj, iter, bind) {
 		if (obj) {
 			const descriptor = Object.getOwnPropertyDescriptor(obj, 'length');
@@ -924,8 +920,6 @@
 		var ctor = _dontLink ? Point : LinkedPoint;
 		return new ctor(this.x, this.y, this, 'setPoint');
 	};
-	Rectangle.prototype._fw = 1;
-	Rectangle.prototype._fh = 1;
 	Rectangle.prototype.getLeft = Rectangle.prototype.getX = function () {
 		return this.x;
 	};
@@ -947,42 +941,12 @@
 	Rectangle.prototype.getCenterX = function () {
 		return this.getLeft() + this.getWidth() / 2;
 	};
-	Rectangle.prototype.setCenterX = function (x) {
-		if (this._fw || this._sx === 0.5) {
-			this.x = x - this.width / 2;
-		} else {
-			if (this._sx) {
-				this.x += (x - this.x) * 2 * this._sx;
-			}
-			this.width = (x - this.x) * 2;
-		}
-		this._sx = 0.5;
-		this._fw = 0;
-	};
 	Rectangle.prototype.getCenterY = function () {
 		return this.getTop() + this.getHeight() / 2;
-	};
-	Rectangle.prototype.setCenterY = function (y) {
-		if (this._fh || this._sy === 0.5) {
-			this.y = y - this.height / 2;
-		} else {
-			if (this._sy) {
-				this.y += (y - this.y) * 2 * this._sy;
-			}
-			this.height = (y - this.y) * 2;
-		}
-		this._sy = 0.5;
-		this._fh = 0;
 	};
 	Rectangle.prototype.getCenter = function (_dontLink) {
 		var ctor = _dontLink ? Point : LinkedPoint;
 		return new ctor(this.getCenterX(), this.getCenterY(), this, 'setCenter');
-	};
-	Rectangle.prototype.setCenter = function () {
-		var point = Point.read(arguments);
-		this.setCenterX(point.x);
-		this.setCenterY(point.y);
-		return this;
 	};
 	Rectangle.prototype.getTopLeft = function (_dontLink) {
 		var ctor = _dontLink ? Point : LinkedPoint;
@@ -1602,17 +1566,14 @@
 		this._pivot = Point.read(arguments, 0, { clone: true, readNull: true });
 		this._position = undefined;
 	};
-	Item.prototype.getBounds = function (matrix, options) {
-		var hasMatrix = options || matrix instanceof Matrix,
-			opts = Object.assign({}, hasMatrix ? options : matrix,
-				this._boundsOptions);
-		if (!opts.stroke || this.getStrokeScaling())
-			opts.cacheItem = this;
-		var rect = this._getCachedBounds(hasMatrix && matrix, opts).rect;
-		return !arguments.length
-			? new LinkedRectangle(rect.x, rect.y, rect.width, rect.height,
-				this, 'setBounds')
-			: rect;
+	Item.prototype.getBounds = function (matrix) {
+		var opts = Object.assign({}, matrix);
+		opts.cacheItem = this;
+		var rect = this._getCachedBounds(false, opts).rect;
+		return !!arguments.length
+			? rect
+			: new LinkedRectangle(rect.x, rect.y, rect.width, rect.height,
+				this, 'setBounds');
 	};
 	Item.prototype.setBounds = function () {
 		var rect = Rectangle.read(arguments),
@@ -1653,8 +1614,7 @@
 		var internal = options.internal && !noInternal,
 			cacheItem = options.cacheItem,
 			_matrix = internal ? null : this._matrix._orNullIfIdentity(),
-			cacheKey = cacheItem && (!matrix || matrix.equals(_matrix))
-				&& this._getBoundsCacheKey(options, internal),
+			cacheKey = cacheItem && (!matrix || matrix.equals(_matrix)) && this._getBoundsCacheKey(options, internal),
 			bounds = this._bounds;
 		Item._updateBoundsCache(this._parent || this._symbol, cacheItem);
 		if (cacheKey && bounds && cacheKey in bounds) {
@@ -2044,8 +2004,7 @@
 				}
 			}
 			this._bounds = bounds;
-			var cached = bounds[this._getBoundsCacheKey(
-				this._boundsOptions || {})];
+			var cached = bounds['000'];
 			if (cached) {
 				this._position = this._getPositionFromBounds(cached.rect);
 			}
@@ -2101,8 +2060,7 @@
 		for (var i = 0, l = items.length; i < l; i++) {
 			var item = items[i];
 			if (!item.isEmpty(true)) {
-				var bounds = item._getCachedBounds(
-					matrix && matrix.appended(item._matrix), options, true),
+				var bounds = item._getCachedBounds(matrix && matrix.appended(item._matrix), options, true),
 					rect = bounds.rect;
 				x1 = Math.min(rect.x, x1);
 				y1 = Math.min(rect.y, y1);
@@ -5636,9 +5594,7 @@
 	Path.prototype._getBounds = function (matrix, options) {
 		var method = options.handle
 			? 'getHandleBounds'
-			: options.stroke
-				? 'getStrokeBounds'
-				: 'getBounds';
+			: 'getBounds';
 		return Path[method](this._segments, this._closed, this, matrix, options);
 	};
 
@@ -5648,7 +5604,7 @@
 			throw new Error('Use a moveTo() command first');
 		return segments[segments.length - 1];
 	}
-	Path.getBounds = function (segments, closed, path, matrix, options, strokePadding) {
+	Path.getBounds = function (segments, closed, path, matrix, options) {
 		var first = segments[0];
 		if (!first)
 			return new Rectangle();
@@ -5666,7 +5622,7 @@
 					prevCoords[i + 4],
 					coords[i + 2],
 					coords[i],
-					i, strokePadding ? strokePadding[i] : 0, min, max, roots);
+					i, 0, min, max, roots);
 			}
 			var tmp = prevCoords;
 			prevCoords = coords;
@@ -5680,60 +5636,7 @@
 		return new Rectangle(min[0], min[1], max[0] - min[0], max[1] - min[1]);
 	};
 	Path.getStrokeBounds = function (segments, closed, path, matrix, options) {
-		var stroke = false,
-			strokeWidth = 1,
-			strokeMatrix = stroke && path._getStrokeMatrix(matrix, options),
-			strokePadding = stroke && Path._getStrokePadding(strokeWidth,
-				strokeMatrix),
-			bounds = Path.getBounds(segments, closed, path, matrix, options,
-				strokePadding);
-		if (!stroke)
-			return bounds;
-		var strokeRadius = strokeWidth / 2,
-			join = 'miter',
-			cap = 'butt',
-			miterLimit = 10,
-			joinBounds = new Rectangle(new Size(strokePadding));
-
-		function addPoint(point) {
-			bounds = bounds.include(point);
-		}
-
-		function addRound(segment) {
-			bounds = bounds.unite(
-				joinBounds.setCenter(segment._point.transform(matrix)));
-		}
-
-		function addJoin(segment, join) {
-			if (join === 'round' || segment.isSmooth()) {
-				addRound(segment);
-			} else {
-				Path._addBevelJoin(segment, join, strokeRadius, miterLimit,
-					matrix, strokeMatrix, addPoint);
-			}
-		}
-
-		function addCap(segment, cap) {
-			if (cap === 'round') {
-				addRound(segment);
-			} else {
-				Path._addSquareCap(segment, cap, strokeRadius, matrix,
-					strokeMatrix, addPoint);
-			}
-		}
-
-		var length = segments.length - (closed ? 0 : 1);
-		if (length > 0) {
-			for (var i = 1; i < length; i++) {
-				addJoin(segments[i], join);
-			}
-			if (closed) {
-				addJoin(segments[0], join);
-			} else {
-				addCap(segments[0], cap);
-				addCap(segments[segments.length - 1], cap);
-			}
-		}
+		var bounds = Path.getBounds(segments, closed, path, matrix, options);
 		return bounds;
 	};
 	Path._getStrokePadding = function (radius, matrix) {
