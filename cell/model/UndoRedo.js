@@ -496,6 +496,8 @@ function (window, undefined) {
 		this.PivotFieldItem = 181;
 		this.PivotCache = 182;
 		this.CacheFields = 183;
+		this.CacheFieldElem = 184;
+		this.CalculatedItems = 185;
 
 		this.Create = function (nType) {
 			switch (nType) {
@@ -611,6 +613,10 @@ function (window, undefined) {
 					return new CT_PivotCacheRecords();
 				case this.PivotFieldElem:
 					return new CT_PivotField(true);
+				case this.CacheFieldElem:
+					return new CT_CacheField();
+				case this.CalculatedItems:
+					return new CT_CalculatedItems();
 				case this.PivotFilter:
 					return new CT_PivotFilter();
 				case this.BinaryWrapper:
@@ -4573,8 +4579,8 @@ function (window, undefined) {
 	UndoRedoCacheFields.prototype.UndoRedo = function (Type, Data, nSheetId, bUndo) {
 		const cacheDefinition = this.wb.getPivotTableById(Data.pivot).cacheDefinition;
 		switch (Type) {
-			case AscCH.historyitem_CacheFields_SetSharedItems:
-				bUndo ? cacheDefinition.setSharedItems(Data.index, Data.from) : cacheDefinition.setSharedItems(Data.index, Data.to);
+			case AscCH.historyitem_PivotCacheFields_SetCacheField:
+				bUndo ? cacheDefinition.setCacheField(Data.index, Data.from) : cacheDefinition.setCacheField(Data.index, Data.to);
 				break;
 		}
 	};

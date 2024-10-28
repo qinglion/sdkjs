@@ -2099,12 +2099,11 @@ CT_PivotCacheDefinition.prototype.setCalculatedItems = function(calculatedItems)
 };
 /**
  * @param {number} index
- * @param {CT_SharedItems} sharedItems
+ * @param {CT_CacheField} cacheField
  */
-CT_PivotCacheDefinition.prototype.setSharedItems = function(index, sharedItems) {
+CT_PivotCacheDefinition.prototype.setCacheField = function(index, cacheField) {
 	const cacheFields = this.cacheFields.cacheField
-	const cacheField = cacheFields[index];
-	cacheField.sharedItems = sharedItems;
+	cacheFields[index] = cacheField;
 };
 
 /**
@@ -10336,6 +10335,7 @@ CT_pivotTableDefinition.prototype.removeCalculatedItem = function (options) {
 CT_pivotTableDefinition.prototype.addCalculatedSharedItem = function(options) {
 	const cacheFields = this.asc_getCacheFields();
 	const cacheField = cacheFields[options.fieldIndex];
+	const oldField = cacheField.clone();
 	const sharedItems = cacheField.getSharedItems();
 	const sharedItem = new PivotRecordValue();
 	const addition = new CT_StringPivot();
@@ -10344,11 +10344,10 @@ CT_pivotTableDefinition.prototype.addCalculatedSharedItem = function(options) {
 	sharedItem.type = c_oAscPivotRecType.String;
 	sharedItem.val = options.name;
 	sharedItem.addition = addition;
-	const oldItems = sharedItems.clone();
 	sharedItems.addItem(sharedItem);
 	if (options.addToHistory) {
-		History.Add(AscCommonExcel.g_oUndoRedoCacheFields, AscCH.historyitem_CacheFields_SetSharedItems,
-			null, null, new AscCommonExcel.UndoRedoData_CacheFields(this.Get_Id(), options.fieldIndex, oldItems, sharedItems));
+		History.Add(AscCommonExcel.g_oUndoRedoCacheFields, AscCH.historyitem_PivotCacheFields_SetCacheField,
+			null, null, new AscCommonExcel.UndoRedoData_CacheFields(this.Get_Id(), options.fieldIndex, oldField, cacheField));
 	}
 	return sharedItems.getCount() - 1;
 };
@@ -10363,12 +10362,12 @@ CT_pivotTableDefinition.prototype.addCalculatedSharedItem = function(options) {
 CT_pivotTableDefinition.prototype.removeSharedItem = function(options) {
 	const cacheFields = this.asc_getCacheFields();
 	const cacheField = cacheFields[options.fieldIndex];
+	const oldField = cacheField.clone();
 	const sharedItems = cacheField.getSharedItems();
-	const oldItems = sharedItems.clone();
 	sharedItems.removeItem(options.sharedItemIndex);
 	if (options.addToHistory) {
-		History.Add(AscCommonExcel.g_oUndoRedoCacheFields, AscCH.historyitem_CacheFields_SetSharedItems,
-			null, null, new AscCommonExcel.UndoRedoData_CacheFields(this.Get_Id(), options.fieldIndex, oldItems, sharedItems));
+		History.Add(AscCommonExcel.g_oUndoRedoCacheFields, AscCH.historyitem_PivotCacheFields_SetCacheField,
+			null, null, new AscCommonExcel.UndoRedoData_CacheFields(this.Get_Id(), options.fieldIndex, oldField, cacheField));
 	}
 };
 /**
@@ -12260,6 +12259,10 @@ CT_TupleCache.prototype.toXml = function(writer, name) {
 	}
 	writer.WriteXmlNodeEnd(name);
 };
+
+/**
+ * @constructor
+ */
 function CT_CalculatedItems() {
 //Attributes
 //	this.count = null;
@@ -12297,6 +12300,23 @@ CT_CalculatedItems.prototype.toXml = function(writer, name) {
 		elem.toXml(writer, "calculatedItem");
 	}
 	writer.WriteXmlNodeEnd(name);
+};
+CT_CalculatedItems.prototype.getType = function() {
+	return AscCommonExcel.UndoRedoDataTypes.CalculatedItems;
+};
+CT_CalculatedItems.prototype.Write_ToBinary2 = function(writer) {
+	//todo write binary
+	var t = this;
+	AscCommonExcel.executeInR1C1Mode(false, function () {
+		toXmlWithLength(writer, t, "calculatedItems");
+	});
+};
+CT_CalculatedItems.prototype.Read_FromBinary2 = function(reader) {
+	var tmp = new XmlReaderWrapper("calculatedItems", this);
+	var len = reader.GetLong();
+	AscCommonExcel.executeInR1C1Mode(false, function () {
+		new AscCommon.openXml.SaxParserBase().parse(AscCommon.GetStringUtf8(reader, len), tmp);
+	});
 };
 function CT_CalculatedMembers() {
 //Attributes
@@ -14761,6 +14781,9 @@ CT_CacheField.prototype.Read_FromBinary2 = function(reader) {
 		new AscCommon.openXml.SaxParserBase().parse(AscCommon.GetStringUtf8(reader, len), tmp);
 	});
 };
+CT_CacheField.prototype.getType = function () {
+	return AscCommonExcel.UndoRedoDataTypes.CacheFieldElem
+}
 /**
  * @returns {string}
  */

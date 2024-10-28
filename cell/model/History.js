@@ -278,7 +278,7 @@ function (window, undefined) {
 
 	window['AscCH'].historyitem_PivotCache_SetCalculatedItems = 1;
 
-	window['AscCH'].historyitem_CacheFields_SetSharedItems = 1;
+	window['AscCH'].historyitem_PivotCacheFields_SetCacheField = 1;
 
 	window['AscCH'].historyitem_SharedFormula_ChangeFormula = 1;
 	window['AscCH'].historyitem_SharedFormula_ChangeShared = 2;
