@@ -388,20 +388,20 @@
 
 				// handle fontSize (doesn't work - see comment below)
 				let fontSizeCell = characterPropsFinal && characterPropsFinal.getCell("Size");
+				let fontSizePt;
 				if (fontSizeCell && fontSizeCell.constructor.name === "Cell_Type") {
 					// omit calculateCellValue here
 					// let fontColor = calculateCellValue(theme, shape, characterColorCell);
-					let fontSize = Number(fontSizeCell.v);
-					if (!isNaN(fontSize)) {
-						nFontSize = fontSize * 72; // convert from in to pt
+					const fontSizeIn = Number(fontSizeCell.v);
+					if (!isNaN(fontSizeIn)) {
+						fontSizePt = fontSizeIn * 72; // convert from in to pt
 					} else {
 						console.log("font size was not parsed so default is set (9 pt)");
 					}
 				} else {
 					console.log("font size was not found so default is set (9 pt)");
 				}
-				// i dont know why but when i set font size not for overall shape but for runs text shifts to the top
-				// oRun.SetFontSize(nFontSize);
+				oRun.SetFontSize(fontSizePt);
 
 
 				// handle font
@@ -514,8 +514,6 @@
 			let oContent = textCShape.getDocContent();
 			oContent.Content = [];
 
-			let nFontSize = 9;
-
 			// read text
 			textElement.elements.forEach(function(textElementPart, i) {
 				if (typeof textElementPart === "string" || textElementPart.constructor.name === "fld_Type") {
@@ -627,8 +625,7 @@
 			let oTextPr;
 			oTextPr = new CTextPr();
 			// i dont know why but when i set font size not for overall shape but for runs text shifts to the top
-			// oTextPr.FontSize = nFontSize * scale;
-			oTextPr.FontSize = nFontSize;
+			// oTextPr.FontSize = nFontSize;
 			// oTextPr.RFonts.Ascii = {Name: "Calibri", Index: -1};
 			// oTextPr.RFonts.HAnsi = {Name: "Calibri", Index: -1};
 			// oTextPr.RFonts.CS = {Name: "Calibri", Index: -1};
