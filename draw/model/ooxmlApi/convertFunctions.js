@@ -308,13 +308,33 @@
 				}
 
 
+
 				// create new paragraph to hold new properties
 				let oContent = textCShape.getDocContent();
 				let paragraph = new Paragraph(textCShape.getDrawingDocument(), true);
+
+				// https://learn.microsoft.com/en-us/office/client-developer/visio/spline-cell-paragraph-section
+				// const lineSpacingVsdx = paragraphPropsFinal &&
+				// 	paragraphPropsFinal.getCellNumberValue("SpLine");
+				// let lineSpacing;
+				// if (lineSpacingVsdx < 0) {
+				// 	paragraph.Pr.Spacing.LineRule = window['Asc'].linerule_Auto;
+				// 	lineSpacing = -lineSpacingVsdx;
+				// } else if (lineSpacingVsdx === 0) {
+				// 	paragraph.Pr.Spacing.LineRule = window['Asc'].linerule_Auto;
+				// 	lineSpacing = 1;
+				// } else {
+				// 	paragraph.Pr.Spacing.LineRule = window['Asc'].linerule_Exact;
+				// 	lineSpacing = lineSpacingVsdx;
+				// }
+				// paragraph.Pr.Spacing.Line = lineSpacing;
+
+
 				// Set defaultParagraph justify/align text - center
 				paragraph.Pr.SetJc(horizontalAlign);
 				oContent.Content.push(paragraph);
 				paragraph.SetParent(oContent);
+
 
 				// paragraph.Pr.Spacing.Before = 0;
 				// paragraph.Pr.Spacing.After = 0;
@@ -324,8 +344,8 @@
 			/**
 			 * Parses run props and adds run to paragraph
 			 * @param characterRowNum
-			 * @param characterPropsCommon
-			 * @param oRun
+			 * @param {?Section_Type} characterPropsCommon
+			 * @param {ParaRun} oRun
 			 * @param paragraph
 			 * @param lineUniFill
 			 * @param fillUniFill
@@ -333,7 +353,8 @@
 			 * @param shape
 			 * @param visioDocument
 			 */
-			function parseRunAndAddToParagraph(characterRowNum, characterPropsCommon,  oRun, paragraph, lineUniFill, fillUniFill, theme, shape, visioDocument) {
+			function parseRunAndAddToParagraph(characterRowNum, characterPropsCommon,  oRun, paragraph, lineUniFill,
+											   fillUniFill, theme, shape, visioDocument) {
 				let characterPropsFinal = characterRowNum !== null && characterPropsCommon.getRow(characterRowNum);
 
 				/**
@@ -344,6 +365,7 @@
 				let themeValWasUsedFor = {
 					fontColor: false
 				}
+
 
 				// handle Color
 				let characterColorCell = characterPropsFinal && characterPropsFinal.getCell("Color");
@@ -357,10 +379,12 @@
 					themeValWasUsedFor.fontColor = true;
 				}
 
+
 				handleTextQuickStyleVariation(fontColor, lineUniFill, fillUniFill, themeValWasUsedFor);
 				const textColor1 = new CDocumentColor(fontColor.color.RGBA.R, fontColor.color.RGBA.G,
 					fontColor.color.RGBA.B, false);
 				oRun.Set_Color(textColor1);
+
 
 				// handle fontSize (doesn't work - see comment below)
 				let fontSizeCell = characterPropsFinal && characterPropsFinal.getCell("Size");
@@ -378,6 +402,7 @@
 				}
 				// i dont know why but when i set font size not for overall shape but for runs text shifts to the top
 				// oRun.SetFontSize(nFontSize);
+
 
 				// handle font
 				let cRFonts = new CRFonts();
@@ -412,6 +437,18 @@
 					console.log("fontCell was not found so default is set (Calibri). Check mb AsianFont or ScriptFont");
 				}
 				oRun.Set_RFonts(cRFonts);
+
+
+				// handle style (bold italic underline small caps)
+				const styleVsdx = characterPropsFinal && characterPropsFinal.getCellStringValue("Style");
+				if (styleVsdx === "Themed") {
+					console.log("Themed style text is unhandled");
+				} else {
+					oRun.Pr.Bold = Boolean(Number(styleVsdx) & 1);
+					oRun.Pr.Italic = Boolean(Number(styleVsdx) & 2);
+					oRun.Pr.Underline = Boolean(Number(styleVsdx) & 4);
+					oRun.Pr.SmallCaps = Boolean(Number(styleVsdx) & 8);
+				}
 
 				// add run to last paragraph
 				paragraph.Add_ToContent(paragraph.Content.length - 1, oRun);
@@ -495,7 +532,7 @@
 					let oRun = new ParaRun(paragraph, false);
 					if (typeof textElementPart === "string") {
 						// Replace LineSeparator
-						textElementPart = textElementPart.replace("\u2028", "\n");
+						textElementPart = textElementPart.replaceAll("\u2028", "\n");
 						oRun.AddText(textElementPart);
 					} else if (textElementPart.constructor.name === "fld_Type") {
 						// text field
@@ -510,7 +547,8 @@
 
 						if (fieldValueCell.v || optionalValue) {
 							// Replace LineSeparator
-							textElementPart.replace("\u2028", "\n");
+							fieldValueCell.v.replaceAll("\u2028", "\n");
+							optionalValue.replaceAll("\u2028", "\n");
 							oRun.AddText(fieldValueCell.v || optionalValue);
 						} else {
 							console.log("field_Type was not parsed");
@@ -595,6 +633,8 @@
 			// oTextPr.RFonts.HAnsi = {Name: "Calibri", Index: -1};
 			// oTextPr.RFonts.CS = {Name: "Calibri", Index: -1};
 			// oTextPr.RFonts.EastAsia = {Name: "Calibri", Index: -1};
+
+			oTextPr.VertAlign = AscCommon.vertalign_Baseline;
 
 			// apply text properties
 			oContent.SetApplyToAll(true);
