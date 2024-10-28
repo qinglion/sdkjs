@@ -4101,25 +4101,23 @@
 	PathItem.prototype._getWinding = function (point, dir, closed) {
 		return PathItem.getWinding(point, this.getCurves(), dir, closed);
 	};
-	PathItem.prototype.unite = function (path, options) {
-		return PathItem.traceBoolean(this, path, 'unite', options);
+	PathItem.prototype.unite = function (path) {
+		return PathItem.traceBoolean(this, path, 'unite');
 	};
-	PathItem.prototype.intersect = function (path, options) {
-		return PathItem.traceBoolean(this, path, 'intersect', options);
+	PathItem.prototype.intersect = function (path) {
+		return PathItem.traceBoolean(this, path, 'intersect');
 	};
-	PathItem.prototype.subtract = function (path, options) {
-		return PathItem.traceBoolean(this, path, 'subtract', options);
+	PathItem.prototype.subtract = function (path) {
+		return PathItem.traceBoolean(this, path, 'subtract');
 	};
-	PathItem.prototype.exclude = function (path, options) {
-		return PathItem.traceBoolean(this, path, 'exclude', options);
+	PathItem.prototype.exclude = function (path) {
+		return PathItem.traceBoolean(this, path, 'exclude');
 	};
-	PathItem.prototype.divide = function (path, options) {
-		return options && (options.trace == false || options.stroke)
-			? PathItem.splitBoolean(this, path, 'divide')
-			: PathItem.createResult([
-				this.subtract(path, options),
-				this.intersect(path, options)
-			], true, this, path, options);
+	PathItem.prototype.divide = function (path) {
+		return PathItem.createResult([
+			this.subtract(path),
+			this.intersect(path)
+		], true, this, path);
 	};
 	PathItem.prototype.resolveCrossings = function () {
 		var children = this._children,
@@ -4277,24 +4275,18 @@
 		}
 		return res;
 	};
-	PathItem.createResult = function (paths, simplify, path1, path2, options) {
+	PathItem.createResult = function (paths, simplify, path1, path2) {
 		var result = new CompoundPath({ insert: false });
 		result.addChildren(paths, true);
 		result = result.reduce({ simplify: simplify });
-		if (!(options && options.insert == false)) {
-			result.insertAbove(path2 && path1.isSibling(path2)
-				&& path1.getIndex() < path2.getIndex() ? path2 : path1);
-		}
+		result.insertAbove(path2 && path1.isSibling(path2) && path1.getIndex() < path2.getIndex() ? path2 : path1);
 		result.copyAttributes(path1, true);
 		return result;
 	};
 	PathItem.filterIntersection = function (inter) {
 		return inter.hasOverlap() || inter.isCrossing();
 	};
-	PathItem.traceBoolean = function (path1, path2, operation, options) {
-		if (options && (options.trace == false || options.stroke) &&
-			/^(subtract|intersect)$/.test(operation))
-			return PathItem.splitBoolean(path1, path2, operation);
+	PathItem.traceBoolean = function (path1, path2, operation) {
 		var operators = {
 			unite: { '1': true, '2': true },
 			intersect: { '2': true },
@@ -4377,7 +4369,7 @@
 					return !!operator[w];
 				});
 		}
-		return PathItem.createResult(paths, true, path1, path2, options);
+		return PathItem.createResult(paths, true, path1, path2);
 	};
 	PathItem.splitBoolean = function (path1, path2, operation) {
 		var _path1 = PathItem.preparePath(path1),
