@@ -1492,7 +1492,6 @@
 	}
 	InitClassWithStatics(Item, Base);
 
-	Item.prototype._name = null;
 	Item.prototype._applyMatrix = true;
 	Item.prototype._canApplyMatrix = true;
 	Item.prototype._pivot = null;
@@ -1529,24 +1528,6 @@
 		}
 		if (symbol)
 			symbol._changed(flags);
-	};
-	Item.prototype.setName = function (name) {
-
-		if (this._name)
-			this._removeNamed();
-		if (name === (+name) + '')
-			throw new Error(
-				'Names consisting only of numbers are not supported.');
-		var owner = this._getOwner();
-		if (name && owner) {
-			var children = owner._children,
-				namedChildren = owner._namedChildren;
-			(namedChildren[name] = namedChildren[name] || []).push(this);
-			if (!(name in children))
-				children[name] = this;
-		}
-		this._name = name || undefined;
-		this._changed(256);
 	};
 	Item.prototype.getPosition = function (_dontLink) {
 		var ctor = _dontLink ? Point : LinkedPoint;
@@ -1730,17 +1711,6 @@
 			copy.copyAttributes(this);
 		if (insert)
 			copy.insertAbove(this);
-		var name = this._name,
-			parent = this._parent;
-		if (name && parent) {
-			var children = parent._children,
-				orig = name,
-				i = 1;
-			while (children[name])
-				name = orig + ' ' + (i++);
-			if (name !== orig)
-				copy.setName(name);
-		}
 		return copy;
 	};
 	Item.prototype.copyContent = function (source) {
@@ -1754,11 +1724,8 @@
 			this._matrix.set(source._matrix, true);
 		this.setApplyMatrix(source._applyMatrix);
 		this.setPivot(source._pivot);
-		var data = source._data,
-			name = source._name;
+		var data = source._data;
 		this._data = data ? Object.assign(new data.constructor(), data) : null;
-		if (name)
-			this.setName(name);
 	};
 	Item.prototype.contains = function () {
 		var matrix = this._matrix;
@@ -1821,12 +1788,8 @@
 			}
 			Base.splice(children, items, index, 0);
 			for (var i = 0, l = items.length; i < l; i++) {
-				var item = items[i],
-					name = item._name;
+				var item = items[i];
 				item._parent = this;
-				if (name)
-					item.setName(name);
-
 			}
 			this._changed(11);
 		} else {
@@ -1864,32 +1827,10 @@
 		}
 		return this;
 	};
-	Item.prototype._removeNamed = function () {
-		var owner = this._getOwner();
-		if (owner) {
-			var children = owner._children,
-				namedChildren = owner._namedChildren,
-				name = this._name,
-				namedArray = namedChildren[name],
-				index = namedArray ? namedArray.indexOf(this) : -1;
-			if (index !== -1) {
-				if (children[name] == this)
-					delete children[name];
-				namedArray.splice(index, 1);
-				if (namedArray.length) {
-					children[name] = namedArray[0];
-				} else {
-					delete namedChildren[name];
-				}
-			}
-		}
-	};
 	Item.prototype._remove = function (notifySelf, notifyParent) {
 		var owner = this._getOwner(),
 			index = this._index;
 		if (owner) {
-			if (this._name)
-				this._removeNamed();
 			if (index != null) {
 				Base.splice(owner._children, null, index, 1);
 			}
