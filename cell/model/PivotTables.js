@@ -2444,7 +2444,9 @@ CT_PivotCacheRecords.prototype._getDataMapRowToTotal = function(cacheFields, row
  * @param {{
  * dataMap: PivotDataElem,
  * cacheFields: CT_CacheField[],
+ * labelFilters: Array,
  * indexes: number[]
+ * cacheFieldsWithData: Array,
  * dataFields: CT_DataField[],
  * itemsWithDataMap: Map<number, Map<number, boolean>>
  * }} options
@@ -2452,11 +2454,17 @@ CT_PivotCacheRecords.prototype._getDataMapRowToTotal = function(cacheFields, row
 CT_PivotCacheRecords.prototype._getDataMapSkeleton = function(options) {
 	const dataMap = options.dataMap;
 	const cacheFields = options.cacheFields;
+	const labelFilters = options.labelFilters;
 	const indexes = options.indexes;
+	const cacheFieldsWithData = options.cacheFieldsWithData;
 	const dataFields = options.dataFields;
 	const itemsWithDataMap = options.itemsWithDataMap;
 	for (let row = 0; row < this.getRowsCount(); ++row) {
 		let curr = dataMap;
+		if (this.getDataMapLabelFilters(cacheFields, row, labelFilters)) {
+			continue;
+		}
+		this.fillVisibleFields(cacheFields, row, cacheFieldsWithData);
 		curr = this._getDataMapFromFields(cacheFields,indexes, row, curr, dataFields.length, itemsWithDataMap);
 		this._getDataMapRowToTotal(cacheFields, row, curr, dataFields);
 	}
@@ -2683,6 +2691,7 @@ CT_PivotCacheRecords.prototype._fillDataMapCalculated = function(options) {
  * currentDataMap: PivotDataElem
  * cacheFields: CT_CacheField[],
  * indexes: number[],
+ * cacheFieldsWithData: Array,
  * currentIndex: number
  * dataFields: CT_DataField[],
  * itemsWithDataMap: Map<number, Map<number, boolean>>
@@ -2690,8 +2699,10 @@ CT_PivotCacheRecords.prototype._fillDataMapCalculated = function(options) {
  */
 CT_PivotCacheRecords.prototype._addCalculatedInDataMap = function(options) {
 	const currentDataMap = options.currentDataMap;
-	const calculatedIndexes = this._getCalculatedIndexes(options.cacheFields, options.indexes[options.currentIndex]);
-	const itemsMap = options.itemsWithDataMap.get(options.indexes[options.currentIndex]);
+	const fld = options.indexes[options.currentIndex]
+	const cacheFieldsWithData = options.cacheFieldsWithData;
+	const calculatedIndexes = this._getCalculatedIndexes(options.cacheFields, fld);
+	const itemsMap = options.itemsWithDataMap.get(fld);
 	if (currentDataMap.isCalculated && itemsMap) {
 		itemsMap.forEach(function(value, key) {
 			currentDataMap.vals[key] = new PivotDataElem(options.dataFields.length, true)
@@ -2700,12 +2711,21 @@ CT_PivotCacheRecords.prototype._addCalculatedInDataMap = function(options) {
 	calculatedIndexes.forEach(function(itemIndex) {
 		currentDataMap.vals[itemIndex] = new PivotDataElem(options.dataFields.length, true);
 	});
+	let visible = cacheFieldsWithData[fld];
+	if (visible) {
+		calculatedIndexes.forEach(function (itemIndex) {
+			if (0 <= itemIndex && itemIndex < visible.length) {
+				visible[itemIndex] = 1;
+			}
+		});
+	}
 	for (let i in currentDataMap.vals) {
 		if (currentDataMap.vals.hasOwnProperty(i)) {
 			this._addCalculatedInDataMap({
 				currentDataMap: currentDataMap.vals[i],
 				cacheFields: options.cacheFields,
 				indexes: options.indexes,
+				cacheFieldsWithData: options.cacheFieldsWithData,
 				currentIndex: options.currentIndex + 1,
 				dataFields: options.dataFields,
 				itemsWithDataMap: options.itemsWithDataMap,
@@ -2728,12 +2748,15 @@ CT_PivotCacheRecords.prototype._addCalculatedInDataMap = function(options) {
  */
 CT_PivotCacheRecords.prototype.getDataMap = function(options) {
 	const indexes = options.rowIndexes.concat(options.colIndexes);
+	const filters = this._splitLabelFilters(indexes, options.filterMaps.labelFilters, options.cacheFieldsWithData);
 	const itemsWithDataMap = new Map();
 	let dataMap = new PivotDataElem(options.dataFields.length);
 	dataMap = this._getDataMapSkeleton({
 		dataMap: dataMap,
 		cacheFields: options.cacheFields,
+		labelFilters: filters.labelFiltersOther,
 		indexes: indexes,
+		cacheFieldsWithData: filters.cacheFieldsWithDataOther,
 		dataFields: options.dataFields,
 		itemsWithDataMap: itemsWithDataMap
 	});
@@ -2741,6 +2764,7 @@ CT_PivotCacheRecords.prototype.getDataMap = function(options) {
 		currentDataMap: dataMap,
 		cacheFields: options.cacheFields,
 		indexes: indexes,
+		cacheFieldsWithData: options.cacheFieldsWithData,
 		currentIndex: 0,
 		dataFields: options.dataFields,
 		itemsWithDataMap: itemsWithDataMap,
@@ -2759,19 +2783,40 @@ CT_PivotCacheRecords.prototype.getDataMap = function(options) {
 	})
 	this._getDataMapTotal(dataMap, 0, indexes.length);
 	this._getDataMapSubtotal(dataMap, 0, options.rowIndexes);
-	this._getDataMapApplyLabelFilters(dataMap, indexes, options.rowIndexes, options.colIndexes, options.filterMaps, options.dataFields);
-	if (!AscCommon.isEmptyObject(options.cacheFieldsWithData)) {
-		this.fillVisibleFields(dataMap, 0, indexes, options.cacheFieldsWithData);
+	this._getDataMapApplyLabelFilters(dataMap, indexes, options.rowIndexes, options.colIndexes, filters.labelFiltersRowCols, options.dataFields);
+	if (!AscCommon.isEmptyObject(filters.cacheFieldsWithDataRowCols)) {
+		this._fillVisibleFieldsRowCol(dataMap, 0, indexes, filters.cacheFieldsWithDataRowCols);
 	}
 	this._getDataMapApplyValueFilters(dataMap, options.rowIndexes, options.colIndexes, options.filterMaps, options.dataFields);
 	return {dataRow: dataMap, error: null};
 };
-CT_PivotCacheRecords.prototype._getDataMapApplyLabelFilters = function(rowMap, indexes, rowIndexes, colIndexes, filterMaps, dataFields) {
-	if (filterMaps.labelFilters.length === 0) {
+CT_PivotCacheRecords.prototype._splitLabelFilters = function(indexes, labelFilters, cacheFieldsWithData) {
+	let labelFiltersRowCols = [];
+	let labelFiltersOther = [];
+	let cacheFieldsWithDataRowCols = {};
+	let cacheFieldsWithDataOther = {};
+	labelFilters.forEach(function(filter){
+		if (indexes.includes(filter.index)) {
+			labelFiltersRowCols.push(filter);
+		} else {
+			labelFiltersOther.push(filter);
+		}
+	});
+	for (let i in cacheFieldsWithData) {
+		if (indexes.includes(parseInt(i))) {
+			cacheFieldsWithDataRowCols[i] = cacheFieldsWithData[i];
+		} else {
+			cacheFieldsWithDataOther[i] = cacheFieldsWithData[i];
+		}
+	}
+	return {labelFiltersRowCols, labelFiltersOther, cacheFieldsWithDataRowCols, cacheFieldsWithDataOther};
+};
+CT_PivotCacheRecords.prototype._getDataMapApplyLabelFilters = function(rowMap, indexes, rowIndexes, colIndexes, labelFilters, dataFields) {
+	if (labelFilters.length === 0) {
 		return;
 	}
 	const labelFiltersMap = new Map();
-	filterMaps.labelFilters.forEach(function (filter) {
+	labelFilters.forEach(function (filter) {
 		labelFiltersMap.set(filter.index, filter.map);
 	});
 	let isHide = this._getDataMapConvertLabelFiltersIsHide(rowMap, 0, indexes, labelFiltersMap, dataFields);
@@ -2805,6 +2850,21 @@ CT_PivotCacheRecords.prototype._getDataMapConvertLabelFiltersIsHide = function(r
 		}
 	}
 	return res;
+};
+CT_PivotCacheRecords.prototype._fillVisibleFieldsRowCol = function(rowMap, index, indexes, cacheFieldsWithData) {
+	if (index < indexes.length) {
+		let elems = rowMap.vals;
+		let visible = cacheFieldsWithData[indexes[index]];
+		for (let i in elems) {
+			if (elems.hasOwnProperty(i)) {
+				let sharedIndex = parseInt(i);
+				if (visible && 0 <= sharedIndex && sharedIndex < visible.length) {
+					visible[sharedIndex] = 1;
+				}
+				this._fillVisibleFieldsRowCol(elems[i], index + 1, indexes, cacheFieldsWithData);
+			}
+		}
+	}
 };
 CT_PivotCacheRecords.prototype._getDataMapApplyValueFilters = function(rowMap, rowIndexes, colIndexes, filterMaps, dataFields) {
 	var tmp;
@@ -2875,20 +2935,28 @@ CT_PivotCacheRecords.prototype._getDataMapConvertFilterBySubtotal = function(row
 		this._getDataMapTrimBySubtotal(rowMap, subtotal);
 	}
 };
-CT_PivotCacheRecords.prototype.fillVisibleFields = function(rowMap, index, indexes, cacheFieldsWithData) {
-	if (index < indexes.length) {
-		let elems = rowMap.vals;
-		let visible = cacheFieldsWithData[indexes[index]];
-		if (!visible) {
-			return;
+CT_PivotCacheRecords.prototype.getDataMapLabelFilters = function(cacheFields, row, labelFilters) {
+	var sharedIndex;
+	for (var i = 0; i < labelFilters.length; ++i) {
+		var filter = labelFilters[i];
+		if (filter.isGroup) {
+			sharedIndex = this._getSharedRow(cacheFields, filter.index, row);
+		} else {
+			sharedIndex = this._getGroupOrSharedRow(cacheFields, filter.index, row);
 		}
-		for (let i in elems) {
-			if (elems.hasOwnProperty(i)) {
-				let sharedIndex = parseInt(i);
-				if (0 <= sharedIndex && sharedIndex < visible.length) {
-					visible[sharedIndex] = 1;
-				}
-				this.fillVisibleFields(rowMap, index + 1, indexes, cacheFieldsWithData);
+		if(sharedIndex >= 0 && !filter.map.has(sharedIndex)) {
+			return true;
+		}
+	}
+	return false;
+};
+CT_PivotCacheRecords.prototype.fillVisibleFields = function(cacheFields, row, cacheFieldsWithData) {
+	for (var index in cacheFieldsWithData) {
+		if (cacheFieldsWithData.hasOwnProperty(index)) {
+			var visible = cacheFieldsWithData[index];
+			var sharedIndex = this._getGroupOrSharedRow(cacheFields, index, row);
+			if(sharedIndex >= 0 && sharedIndex < visible.length) {
+				visible[sharedIndex] = 1;
 			}
 		}
 	}
