@@ -547,46 +547,6 @@
 		}
 		return res;
 	};
-	Base.readNamed = function (list, name, start, options, amount) {
-		var value = this.getNamed(list, name),
-			hasValue = value !== undefined;
-		if (hasValue) {
-			var filtered = list.__filtered;
-			if (!filtered) {
-				var source = this.getSource(list);
-				filtered = list.__filtered = Object.create(source);
-				filtered.__unfiltered = source;
-			}
-			filtered[name] = undefined;
-		}
-		return this.read(hasValue ? [value] : list, start, options, amount);
-	};
-	Base.readSupported = function (list, dest) {
-		var source = this.getSource(list),
-			that = this,
-			read = false;
-		if (source) {
-			Object.keys(source).forEach(function (key) {
-				if (key in dest) {
-					var value = that.readNamed(list, key);
-					if (value !== undefined) {
-						dest[key] = value;
-					}
-					read = true;
-				}
-			});
-		}
-		return read;
-	};
-	Base.getNamed = function (list, name) {
-		var source = this.getSource(list);
-		if (source) {
-			return name ? source[name] : list.__filtered || source;
-		}
-	};
-	Base.hasNamed = function (list, name) {
-		return !!this.getNamed(list, name);
-	};
 	Base.filter = function (dest, source, exclude, prioritize) {
 		var processed;
 
@@ -855,20 +815,6 @@
 		} else if (type === 'undefined' || arg0 === null) {
 			this._set(0, 0, 0, 0);
 			read = arg0 === null ? 1 : 0;
-		} else if (args.length === 1) {
-			if (Array.isArray(arg0)) {
-				this._set.apply(this, arg0);
-				read = 1;
-			} else if (arg0.x !== undefined || arg0.width !== undefined) {
-				this._set(arg0.x || 0, arg0.y || 0,
-					arg0.width || 0, arg0.height || 0);
-				read = 1;
-			} else if (arg0.from === undefined && arg0.to === undefined) {
-				this._set(0, 0, 0, 0);
-				if (Base.readSupported(args, this)) {
-					read = 1;
-				}
-			}
 		}
 		var filtered = args.__filtered;
 		if (filtered)
@@ -942,8 +888,7 @@
 		return this.width === 0 || this.height === 0;
 	};
 	Rectangle.prototype.contains = function (arg) {
-		return arg && arg.width !== undefined
-			|| (Array.isArray(arg) ? arg : arguments).length === 4
+		return arg && arg.width !== undefined || (Array.isArray(arg) ? arg : arguments).length === 4
 			? this._containsRectangle(Rectangle.read(arguments))
 			: this._containsPoint(Point.read(arguments));
 	};
@@ -994,7 +939,7 @@
 		return new Rectangle(x1, y1, x2 - x1, y2 - y1);
 	};
 
-	var LinkedRectangle = function Rectangle(x, y, width, height, owner) {
+	var LinkedRectangle = function (x, y, width, height, owner) {
 		this._set(x, y, width, height);
 		this._owner = owner;
 	};
@@ -5547,14 +5492,5 @@
 
 	window.PathBoolean = window['PathBoolean'] = {};
 	window.PathBoolean['CompoundPath'] = CompoundPath;
-	window.PathBoolean['Path'] = Path;
-	window.PathBoolean['Segment'] = Segment;
-	window.PathBoolean['Curve'] = Curve;
-	window.PathBoolean['CurveLocation'] = CurveLocation;
-	window.PathBoolean['Point'] = Point;
-	window.PathBoolean['LinkedPoint'] = LinkedPoint;
-	window.PathBoolean['SegmentPoint'] = SegmentPoint;
-	window.PathBoolean['Rectangle'] = Rectangle;
-	window.PathBoolean['LinkedRectangle'] = LinkedRectangle;
 
 })(window);
