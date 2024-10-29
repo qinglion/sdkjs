@@ -322,9 +322,6 @@
 		this.m_oFactoryClass[AscDFH.historyitem_type_AdjLst            ]     = AscFormat.AdjLst;
 		this.m_oFactoryClass[AscDFH.historyitem_type_Adj               ]     = AscFormat.Adj;
 		this.m_oFactoryClass[AscDFH.historyitem_type_DiagramTitle      ]     = AscFormat.DiagramTitle;
-		this.m_oFactoryClass[AscDFH.historyitem_type_LayoutDefHdrLst   ]     = AscFormat.LayoutDefHdrLst;
-		this.m_oFactoryClass[AscDFH.historyitem_type_LayoutDefHdr      ]     = AscFormat.LayoutDefHdr;
-		this.m_oFactoryClass[AscDFH.historyitem_type_RelIds            ]     = AscFormat.RelIds;
 		this.m_oFactoryClass[AscDFH.historyitem_type_VarLst            ]     = AscFormat.VarLst;
 		this.m_oFactoryClass[AscDFH.historyitem_type_ColorsDef         ]     = AscFormat.ColorsDef;
 		this.m_oFactoryClass[AscDFH.historyitem_type_ColorDefStyleLbl  ]     = AscFormat.ColorDefStyleLbl;
@@ -334,7 +331,6 @@
 		this.m_oFactoryClass[AscDFH.historyitem_type_StyleDef          ]     = AscFormat.StyleDef;
 		this.m_oFactoryClass[AscDFH.historyitem_type_Scene3d           ]     = AscFormat.Scene3d;
 		this.m_oFactoryClass[AscDFH.historyitem_type_StyleDefStyleLbl  ]     = AscFormat.StyleDefStyleLbl;
-		this.m_oFactoryClass[AscDFH.historyitem_type_Scene3d           ]     = AscFormat.Scene3d;
 		this.m_oFactoryClass[AscDFH.historyitem_type_Backdrop          ]     = AscFormat.Backdrop;
 		this.m_oFactoryClass[AscDFH.historyitem_type_BackdropNorm      ]     = AscFormat.BackdropNorm;
 		this.m_oFactoryClass[AscDFH.historyitem_type_BackdropUp        ]     = AscFormat.BackdropUp;
@@ -343,8 +339,6 @@
 		this.m_oFactoryClass[AscDFH.historyitem_type_LightRig          ]     = AscFormat.LightRig;
 		this.m_oFactoryClass[AscDFH.historyitem_type_Sp3d              ]     = AscFormat.Sp3d;
 		this.m_oFactoryClass[AscDFH.historyitem_type_Bevel             ]     = AscFormat.Bevel;
-		this.m_oFactoryClass[AscDFH.historyitem_type_BevelB            ]     = AscFormat.BevelB;
-		this.m_oFactoryClass[AscDFH.historyitem_type_BevelT            ]     = AscFormat.BevelT;
 		this.m_oFactoryClass[AscDFH.historyitem_type_TxPr              ]     = AscFormat.TxPr;
 		this.m_oFactoryClass[AscDFH.historyitem_type_FlatTx            ]     = AscFormat.FlatTx;
 		this.m_oFactoryClass[AscDFH.historyitem_type_StyleDefHdrLst    ]     = AscFormat.StyleDefHdrLst;
@@ -356,7 +350,6 @@
 		this.m_oFactoryClass[AscDFH.historyitem_type_ExtrusionClr      ]     = AscFormat.ExtrusionClr;
 		this.m_oFactoryClass[AscDFH.historyitem_type_ContourClr        ]     = AscFormat.ContourClr;
 		this.m_oFactoryClass[AscDFH.historyitem_type_SmartArt          ]     = AscFormat.SmartArt;
-		this.m_oFactoryClass[AscDFH.historyitem_type_BuNone            ]     = AscFormat.BuNone;
 		this.m_oFactoryClass[AscDFH.historyitem_type_SmartArtDrawing   ]     = AscFormat.Drawing;
 		this.m_oFactoryClass[AscDFH.historyitem_type_DiagramData       ]     = AscFormat.DiagramData;
 		this.m_oFactoryClass[AscDFH.historyitem_type_CEffectProperties ]     = AscFormat.CEffectProperties;

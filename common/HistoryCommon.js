@@ -1730,25 +1730,13 @@
 	window['AscDFH'].historyitem_type_AdjLst                 = 2033 << 16;
 	window['AscDFH'].historyitem_type_Adj                    = 2034 << 16;
 	window['AscDFH'].historyitem_type_VarLst                 = 2035 << 16;
-	window['AscDFH'].historyitem_type_AnimLvl                = 2036 << 16;
-	window['AscDFH'].historyitem_type_AnimOne                = 2037 << 16;
-	window['AscDFH'].historyitem_type_BulletEnabled          = 2038 << 16;
-	window['AscDFH'].historyitem_type_ChMax                  = 2039 << 16;
-	window['AscDFH'].historyitem_type_ChPref                 = 2040 << 16;
-	window['AscDFH'].historyitem_type_DiagramDirection       = 2041 << 16;
 	window['AscDFH'].historyitem_type_DiagramTitle           = 2042 << 16;
-	window['AscDFH'].historyitem_type_LayoutDefHdrLst        = 2043 << 16;
-	window['AscDFH'].historyitem_type_LayoutDefHdr           = 2044 << 16;
-	window['AscDFH'].historyitem_type_RelIds                 = 2045 << 16;
 	window['AscDFH'].historyitem_type_ColorsDef              = 2047 << 16;
 	window['AscDFH'].historyitem_type_ColorDefStyleLbl       = 2048 << 16;
 	window['AscDFH'].historyitem_type_ClrLst                 = 2049 << 16;
-	window['AscDFH'].historyitem_type_ColorsDefHdr           = 2057 << 16;
-	window['AscDFH'].historyitem_type_ColorsDefHdrLst        = 2058 << 16;
 	window['AscDFH'].historyitem_type_StyleDef               = 2059 << 16;
 	window['AscDFH'].historyitem_type_Scene3d                = 2060 << 16;
 	window['AscDFH'].historyitem_type_StyleDefStyleLbl       = 2061 << 16;
-	window['AscDFH'].historyitem_type_Scene3d                = 2062 << 16;
 	window['AscDFH'].historyitem_type_Backdrop               = 2063 << 16;
 	window['AscDFH'].historyitem_type_BackdropNorm           = 2064 << 16;
 	window['AscDFH'].historyitem_type_BackdropUp             = 2065 << 16;
@@ -1757,24 +1745,14 @@
 	window['AscDFH'].historyitem_type_LightRig               = 2068 << 16;
 	window['AscDFH'].historyitem_type_Sp3d                   = 2069 << 16;
 	window['AscDFH'].historyitem_type_Bevel                  = 2070 << 16;
-	window['AscDFH'].historyitem_type_BevelB                 = 2071 << 16;
-	window['AscDFH'].historyitem_type_BevelT                 = 2072 << 16;
-	window['AscDFH'].historyitem_type_TxPr                   = 2073 << 16;
-	window['AscDFH'].historyitem_type_FlatTx                 = 2074 << 16;
-	window['AscDFH'].historyitem_type_StyleDefHdrLst         = 2075 << 16;
-	window['AscDFH'].historyitem_type_StyleDefHdr            = 2076 << 16;
 	window['AscDFH'].historyitem_type_BackdropAnchor         = 2077 << 16;
 	window['AscDFH'].historyitem_type_SampData               = 2079 << 16;
 	window['AscDFH'].historyitem_type_ForEach                = 2080 << 16;
-	window['AscDFH'].historyitem_type_ResizeHandles          = 2081 << 16;
-	window['AscDFH'].historyitem_type_OrgChart               = 2082 << 16;
-	window['AscDFH'].historyitem_type_HierBranch             = 2083 << 16;
 	window['AscDFH'].historyitem_type_ParameterVal           = 2084 << 16;
 	window['AscDFH'].historyitem_type_Coordinate             = 2085 << 16;
 	window['AscDFH'].historyitem_type_ExtrusionClr           = 2086 << 16;
 	window['AscDFH'].historyitem_type_ContourClr             = 2087 << 16;
 	window['AscDFH'].historyitem_type_SmartArt               = 2088 << 16;
-	window['AscDFH'].historyitem_type_BuNone                 = 2090 << 16;
 	window['AscDFH'].historyitem_type_SmartArtDrawing        = 2091 << 16;
 	window['AscDFH'].historyitem_type_DiagramData            = 2092 << 16;
 	window['AscDFH'].historyitem_type_CCommonDataListNoId    = 2093 << 16;
@@ -3637,11 +3615,6 @@
 	AscDFH.historyitem_DataModelCxnLst = AscDFH.historyitem_type_DataModel | 2;
 	AscDFH.historyitem_DataModelPtLst  = AscDFH.historyitem_type_DataModel | 4;
 	AscDFH.historyitem_DataModelWhole  = AscDFH.historyitem_type_DataModel | 5;
-
-	AscDFH.historyitem_RelIdsCs = AscDFH.historyitem_type_RelIds | 1;
-	AscDFH.historyitem_RelIdsDm = AscDFH.historyitem_type_RelIds | 2;
-	AscDFH.historyitem_RelIdsLo = AscDFH.historyitem_type_RelIds | 3;
-	AscDFH.historyitem_RelIdsQs = AscDFH.historyitem_type_RelIds | 4;
 
 	AscDFH.historyitem_DiagramDataDataModel = AscDFH.historyitem_type_DiagramData | 1;
 
