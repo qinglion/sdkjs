@@ -10029,7 +10029,7 @@ CT_pivotTableDefinition.prototype.asc_convertNameToFormula = function(name) {
  * @return {string}
  */
 CT_pivotTableDefinition.prototype.convertNameFromFormula = function(name) {
-	let result = name.replace(/\'\'/g,'\'');;
+	let result = name.replace(/\'\'/g,'\'');
 	if (result[0] === '\'') {
 		result = result.slice(1);
 	}
@@ -10117,27 +10117,34 @@ CT_pivotTableDefinition.prototype.asc_canAddNameCalculatedItem = function(fieldI
 	return !namesMap.has(itemName.toLowerCase());
 };
 /**
- * @param {{
- * api: spreadsheet_api,
- * fieldIndex: number,
- * name: string
- * formula: string,
- * }} options
+ * @param {spreadsheet_api} api
+ * @return {boolean}
  */
-CT_pivotTableDefinition.prototype.asc_addCalculatedItem = function(options) {
-	const api = options.api;
+CT_pivotTableDefinition.prototype.asc_canChangeCalculatedItemByActiveCell = function(api) {
+	let ws = api.wbModel.getActiveWs();
+	let activeCell = ws.selectionRange.activeCell;
+	//todo
+	return true;
+};
+/**
+ * @param{spreadsheet_api} api
+ * @param {number} fld pivotFields index
+ * @param {string} name
+ * @param {string} formula
+ */
+CT_pivotTableDefinition.prototype.asc_addCalculatedItem = function(api, fld, name, formula) {
 	const t = this;
 	api._changePivotAndConnectedByPivotCacheWithLock(this, false, function (confirmation, pivotTables) {
 		const changeRes = new AscCommonExcel.PivotChangeResult();
 		try {
-			const formula = t.convertCalculatedFormula(options.formula, options.fieldIndex);
+			const formula = t.convertCalculatedFormula(formula, fld);
 			const sharedItemIndex = t.addCalculatedSharedItem({
-				fieldIndex: options.fieldIndex,
-				name: options.name,
+				fieldIndex: fld,
+				name: name,
 				addToHistory: true
 			});
 			t.addCalculatedItem({
-				itemsMapArray: [[options.fieldIndex, sharedItemIndex]],
+				itemsMapArray: [[fld, sharedItemIndex]],
 				formula: formula,
 				addToHistory: true
 			});
@@ -10145,12 +10152,12 @@ CT_pivotTableDefinition.prototype.asc_addCalculatedItem = function(options) {
 				const pivotTable = pivotTables[i];
 				const change = api._changePivot(pivotTable, confirmation, true, function () {
 					const pivotFields = pivotTable.asc_getPivotFields();
-					const pivotField = pivotFields[options.fieldIndex];
+					const pivotField = pivotFields[fld];
 					let pivotFieldOld = pivotField.clone();
-					pivotField.addCalculatedItem(pivotTable, options.fieldIndex, sharedItemIndex, pivotField.getInsertIndex());
+					pivotField.addCalculatedItem(pivotTable, fld, sharedItemIndex, pivotField.getInsertIndex());
 					History.Add(AscCommonExcel.g_oUndoRedoPivotTables, AscCH.historyitem_PivotTable_PivotField,
 						t.worksheet ? t.worksheet.getId() : null, null,
-						new AscCommonExcel.UndoRedoData_PivotField(t.Get_Id(), options.fieldIndex, pivotFieldOld, pivotField.clone()));
+						new AscCommonExcel.UndoRedoData_PivotField(t.Get_Id(), fld, pivotFieldOld, pivotField.clone()));
 					pivotTable._updateCacheDataUpdateSlicersPost();
 				});
 				changeRes.merge(change);
@@ -10163,6 +10170,13 @@ CT_pivotTableDefinition.prototype.asc_addCalculatedItem = function(options) {
 		}
 	});
 };
+/**
+ * @param{spreadsheet_api} api
+ * @param {number} fld pivotFields index
+ * @param {string} name
+ * @param {string} formula
+ */
+CT_pivotTableDefinition.prototype.asc_modifyCalculatedItem2 = function(api, fld, name, formula) {}
 /**
  * @param {
  * {api: spreadsheet_api,
@@ -10202,6 +10216,12 @@ CT_pivotTableDefinition.prototype.asc_modifyCalculatedItem = function(options) {
 		}
 	});
 };
+/**
+ * @param{spreadsheet_api} api
+ * @param {number} fld pivotFields index
+ * @param {string} name
+ */
+CT_pivotTableDefinition.prototype.asc_removeCalculatedItem2 = function(api, fld, name, formula) {}
 /**
  * @param {
  * {api: spreadsheet_api,
@@ -22236,6 +22256,7 @@ prot["asc_modifyCalculatedItem"] = prot.asc_modifyCalculatedItem;
 prot["asc_convertNameToFormula"] = prot.asc_convertNameToFormula;
 prot["asc_getFieldIndexByCell"] = prot.asc_getFieldIndexByCell;
 prot["asc_canAddNameCalculatedItem"] = prot.asc_canAddNameCalculatedItem;
+prot["asc_canChangeCalculatedItemByActiveCell"] = prot.asc_canChangeCalculatedItemByActiveCell;
 
 window["Asc"]["CT_PivotTableStyle"] = window['Asc'].CT_PivotTableStyle = CT_PivotTableStyle;
 prot = CT_PivotTableStyle.prototype;
@@ -22277,6 +22298,7 @@ prot["asc_setDefaultSubtotal"] = prot.asc_setDefaultSubtotal;
 prot["asc_setSubtotalTop"] = prot.asc_setSubtotalTop;
 prot["asc_setShowAll"] = prot.asc_setShowAll;
 prot["asc_setSubtotals"] = prot.asc_setSubtotals;
+prot["asc_getItemsObject"] = prot.asc_getItemsObject;
 prot["asc_getBaseItemObject"] = prot.asc_getBaseItemObject;
 prot["asc_getNumFormat"] = prot.asc_getNumFormat;
 prot["asc_getNumFormatInfo"] = prot.asc_getNumFormatInfo;
