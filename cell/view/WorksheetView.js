@@ -6513,7 +6513,7 @@
 
 	WorksheetView.prototype.drawTraceDependents = function () {
 		let traceManager = this.traceDependentsManager;
-		if(traceManager && (traceManager.isHaveDependents() || traceManager.isHavePrecedents())) {
+		if(traceManager && (traceManager.isHaveDependents() || traceManager.isHavePrecedents() || traceManager.isHaveExternalPrecedents())) {
 			this._drawElements(this.drawTraceArrows);
 		}
 	};
@@ -6550,11 +6550,14 @@
 		};
 
 		const drawDependentLine = function (from, to, external) {
+			let fromCellIndex = from ? AscCommonExcel.getCellIndex(from.row, from.col) : null,
+				toCellIndex = to ? AscCommonExcel.getCellIndex(to.row, to.col) : null;
+
 			let x1 = t._getColLeft(from.col) - offsetX + t._getColumnWidth(from.col) / 4;
 			let y1 = t._getRowTop(from.row) - offsetY + t._getRowHeight(from.row) / 2;
 			let arrowSize = 7 * zoom * customScale;
 
-			let x2, y2, miniTableCol, miniTableRow, isTableLeft, isTableTop;
+			let x2, y2, miniTableCol, miniTableRow, isTableLeft, isTableTop = true;
 			if (external) {
 				if (from.col < 2 && from.row < 3) {
 					// 1) Right down (+1r, +1c)
@@ -6568,7 +6571,6 @@
 					y2 = t._getRowTop(from.row - 1) - offsetY;
 					miniTableCol = from.col + 2;
 					miniTableRow = from.row - 2;
-					isTableTop = true;
 				} else if (from.col >= 2 && from.row < 3) {
 					// 3) Left down(+1r,-1c)
 					x2 = t._getColLeft(from.col - 1) - offsetX;
@@ -6583,7 +6585,6 @@
 					miniTableCol = from.col - 2;
 					miniTableRow = from.row - 2;
 					isTableLeft = true;
-					isTableTop = true;
 				}
 			} else {
 				x2 = t._getColLeft(to.col) - offsetX + t._getColumnWidth(to.col) / 4;
@@ -6614,6 +6615,8 @@
 					drawArrowHead(x2, y2, arrowSize, angle, externalLineColor);
 					drawDot(x1, y1, externalLineColor);
 					drawMiniTable(x2, y2, miniTableCol, miniTableRow, isTableLeft, isTableTop);
+
+					traceManager.addExternalLineCoordinates(fromCellIndex, x1, y1, newX2, newY2);
 				} else {
 					ctx.beginPath();
 					ctx.setStrokeStyle(!external ? lineColor : externalLineColor);
@@ -6622,6 +6625,9 @@
 					ctx.stroke();
 					drawArrowHead(newX2, newY2, arrowSize, angle, lineColor);
 					drawDot(x1, y1, lineColor);
+
+					// write the coordinates of line to traceManager
+					traceManager.addLineCoordinates(fromCellIndex, toCellIndex, /*{x: x1, y: y1}, {x: newX2, y: newY2}*/x1, y1, newX2, newY2);
 				}
 			}
 		};
@@ -6630,9 +6636,10 @@
 			let x1 = t._getColLeft(from.col) - offsetX + t._getColumnWidth(from.col) / 4;
 			let y1 = t._getRowTop(from.row) - offsetY + t._getRowHeight(from.row) / 2;
 			let arrowSize = 7 * zoom * customScale;
+			let fromCellIndex = AscCommonExcel.getCellIndex(from.row, from.col);
 
-			let x2, y2, miniTableCol, miniTableRow, isTableLeft, isTableTop;
-			// reverse the line
+			let x2, y2, miniTableCol, miniTableRow, isTableLeft, isTableTop = true;
+			// reverse the line and set tableTop flag to true(mini-table is always drawn above the dot)
 			x2 = x1;
 			y2 = y1;
 			if (from.col < 2 && from.row < 3) {
@@ -6647,7 +6654,6 @@
 				y1 = t._getRowTop(from.row - 1) - offsetY;
 				miniTableCol = from.col + 2;
 				miniTableRow = from.row - 2;
-				isTableTop = true;
 			} else if (from.col >= 2 && from.row < 3) {
 				// 3) Left down(+1r,-1c)
 				x1 = t._getColLeft(from.col - 1) - offsetX;
@@ -6662,7 +6668,6 @@
 				miniTableCol = from.col - 2;
 				miniTableRow = from.row - 2;
 				isTableLeft = true;
-				isTableTop = true
 			}
 			
 			// Angle and size for arrowhead
@@ -6682,6 +6687,9 @@
 			drawArrowHead(newX2, newY2, arrowSize, angle, externalLineColor);
 			drawDot(x1, y1, externalLineColor);
 			drawMiniTable(x1, y1, miniTableCol, miniTableRow, isTableLeft, isTableTop);
+
+
+			traceManager.addExternalLineCoordinates(fromCellIndex, x1, y1, newX2, newY2);
 		};
 
 		const drawDottedLine = function (x1, y1, x2, y2) {
@@ -8583,6 +8591,9 @@
 		let searchSpecificRange = this.handlers.trigger('selectSearchingResults') && this.workbook.SearchEngine && this.workbook.SearchEngine.isSpecificRange();
 		if(this.viewPrintLines || this.copyCutRange || (this.isPageBreakPreview(true) && this.pagesModeData) || searchSpecificRange || isTraceDependents) {
 			this.overlayCtx.clear();
+			if (isTraceDependents) {
+				this.traceDependentsManager.clearCoordsData();
+			}
 		}
 
 		let retinaСoef = isRetinaWidth ? 2 : 1;
@@ -11378,7 +11389,7 @@
 		} : null;
 	};
 
-	WorksheetView.prototype.getCursorTypeFromXY = function (x, y) {
+	WorksheetView.prototype.getCursorTypeFromXY = function (x, y, fromDoubleClickCall) {
 		if (this.getRightToLeft()) {
 			x = this.getCtxWidth() - x;
 		}
@@ -11865,6 +11876,52 @@
 				shortIdForeignSelect: shortIdForeignSelect
 			};
 			if(!oHyperlink) {
+				if (t.traceDependentsManager && t.traceDependentsManager.isHaveData) {
+					/* we get the coordinates of all dependence lines and check whether the cursor hits */
+					let coordsArray = t.traceDependentsManager.tracesCoords;
+					if (coordsArray) {
+						const isClickOnLine = function(x, y, lineCoords, tolerance = 7) {
+							const x1 = lineCoords.from.x;
+							const y1 = lineCoords.from.y;
+							const x2 = lineCoords.to.x;
+							const y2 = lineCoords.to.y;
+							// Math.hypot(3,4) = 5 - square root of the sum of the squares of its arguments
+							// calculate distance from click point to line
+							let distToLine = Math.abs((y2 - y1) * x - (x2 - x1) * y + x2 * y1 - y2 * x1) / Math.hypot(y2 - y1, x2 - x1);
+
+							let zoom = t.getZoom();
+							if (!zoom) {
+								zoom = 1;
+							}
+
+							tolerance = (zoom < 1) ? tolerance : tolerance * zoom;
+
+							return distToLine <= tolerance;
+						}
+
+						for (let i = 0; i < coordsArray.length; i++) {
+							let coordLineInfo = coordsArray[i];
+							
+							if (isClickOnLine(x, y, coordLineInfo)) {
+								if (fromDoubleClickCall) {
+									return {
+										cursor: kCurDefault,
+										target: c_oTargetType.TraceDependents,
+										cellCursor: cellCursor,
+										coordLineInfo: coordLineInfo
+									};
+								} else {
+									// set cursor to default and targetType to traceDependents
+									cellCursor.cursor = kCurDefault;
+									cellCursor.target = c_oTargetType.TraceDependents;
+									return cellCursor;
+								}
+							}
+						}
+					}
+				}
+
+
 				this.model.getCell3(r.row, c.col)._foreachNoEmpty(function (cell) {
 					if (cell.isFormula()) {
 						cell.processFormula(function(formulaParsed) {

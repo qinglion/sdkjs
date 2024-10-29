@@ -1991,10 +1991,37 @@
 
   // Double click
   WorkbookView.prototype._onMouseDblClick = function(x, y, event, callback) {
-    var ws = this.getWorksheet();
-    var ct = ws.getCursorTypeFromXY(x, y);
+    const ws = this.getWorksheet();
+    const ct = ws.getCursorTypeFromXY(x, y, true);
 
-    if (ct.target === c_oTargetType.FillHandle) {
+	if (ct.target === c_oTargetType.TraceDependents && ct.coordLineInfo) {
+		let fromCell = ct.coordLineInfo.from;
+		let toCell = ct.coordLineInfo.to;
+
+		/* external ref, open goto window */
+		if (ct.coordLineInfo.external) {
+			// todo create goto window
+			// console.log(ct.coordLineInfo.external);
+			return
+		}
+
+		let fromRange = fromCell.areaRange ? fromCell.areaRange : fromCell.cellRange; 
+		let toRange = toCell.areaRange ? toCell.areaRange : toCell.cellRange;
+		let selectedRange = ws.getSelectedRange();
+
+		if (selectedRange && selectedRange.bbox) {
+			if (selectedRange.bbox.isEqual(fromRange)) {
+				ws.setSelection(toRange);
+			} else {
+				ws.setSelection(fromRange);
+			}
+			return
+		}
+		
+		// if we couldn't get the selected range, change the selection
+		ws.setSelection(fromRange);
+		return
+	} else if (ct.target === c_oTargetType.FillHandle) {
         ws.applyFillHandleDoubleClick();
         asc_applyFunction(callback);
     } else if (ct.target === c_oTargetType.ColumnResize || ct.target === c_oTargetType.RowResize) {
