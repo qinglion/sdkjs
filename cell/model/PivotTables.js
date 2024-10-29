@@ -21695,6 +21695,9 @@ function PivotContextMenu(pivot){
 	this.filterCol = null;
 	this.showDetails = false;
 }
+PivotContextMenu.prototype.asc_getPivotFieldIndex = function () {
+	return this.layout && this.layout.fld || -1
+};
 PivotContextMenu.prototype.asc_getPageFieldIndex = function () {
 	if (this.layout && this.pivot.pageFields) {
 		return this.pivot.pageFields.find(this.layout.fld);
@@ -22348,6 +22351,7 @@ prot["asc_setGroupInterval"] = prot.asc_setGroupInterval;
 
 window["Asc"]["PivotContextMenu"] = window['Asc'].PivotContextMenu = PivotContextMenu;
 prot = PivotContextMenu.prototype;
+prot["asc_getPivotFieldIndex"] = prot.asc_getPivotFieldIndex;
 prot["asc_getPageFieldIndex"] = prot.asc_getPageFieldIndex;
 prot["asc_getColFieldIndex"] = prot.asc_getColFieldIndex;
 prot["asc_getRowFieldIndex"] = prot.asc_getRowFieldIndex;
