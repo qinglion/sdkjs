@@ -10127,9 +10127,9 @@ CT_pivotTableDefinition.prototype.asc_canChangeCalculatedItemByActiveCell = func
 	return true;
 };
 /**
- * @param{spreadsheet_api} api
- * @param {number} fld pivotFields index
- * @param {string} name
+ * @param {spreadsheet_api} api
+ * @param {number} fld pivotField index
+ * @param {string} name item name
  * @param {string} formula
  */
 CT_pivotTableDefinition.prototype.asc_addCalculatedItem = function(api, fld, name, formula) {
@@ -10137,7 +10137,7 @@ CT_pivotTableDefinition.prototype.asc_addCalculatedItem = function(api, fld, nam
 	api._changePivotAndConnectedByPivotCacheWithLock(this, false, function (confirmation, pivotTables) {
 		const changeRes = new AscCommonExcel.PivotChangeResult();
 		try {
-			const formula = t.convertCalculatedFormula(formula, fld);
+			const convertedFormula = t.convertCalculatedFormula(formula, fld);
 			const sharedItemIndex = t.addCalculatedSharedItem({
 				fieldIndex: fld,
 				name: name,
@@ -10145,7 +10145,7 @@ CT_pivotTableDefinition.prototype.asc_addCalculatedItem = function(api, fld, nam
 			});
 			t.addCalculatedItem({
 				itemsMapArray: [[fld, sharedItemIndex]],
-				formula: formula,
+				formula: convertedFormula,
 				addToHistory: true
 			});
 			for(let i = 0; i < pivotTables.length; i += 1) {
@@ -10171,34 +10171,26 @@ CT_pivotTableDefinition.prototype.asc_addCalculatedItem = function(api, fld, nam
 	});
 };
 /**
- * @param{spreadsheet_api} api
- * @param {number} fld pivotFields index
- * @param {string} name
- * @param {string} formula
+ * @param {spreadsheet_api} api api instance
+ * @param {number} fld pivotField index
+ * @param {string} name modifying item name
+ * @param {string} formula new formula for item
  */
-CT_pivotTableDefinition.prototype.asc_modifyCalculatedItem2 = function(api, fld, name, formula) {}
-/**
- * @param {
- * {api: spreadsheet_api,
- * formula: string,
- * fieldIndex: number,
- * itemIndex: number}
- * } options
- */
-CT_pivotTableDefinition.prototype.asc_modifyCalculatedItem = function(options) {
-	const api = options.api;
+CT_pivotTableDefinition.prototype.asc_modifyCalculatedItem = function(api, fld, name, formula) {
 	const t = this;
 	api._changePivotAndConnectedByPivotCacheWithLock(this, false, function (confirmation, pivotTables) {
 		const changeRes = new AscCommonExcel.PivotChangeResult();
 		const pivotFields = t.asc_getPivotFields();
-		const pivotField = pivotFields[options.fieldIndex];
-		const items = pivotField.getItems();
-		const sharedItemIndex = items[options.itemIndex].x;
+		const cacheFields = t.asc_getCacheFields();
+		const pivotField = pivotFields[fld];
+		const cacheField = cacheFields[fld]
+		const item = pivotField.findFieldItemByTextValue(cacheField, name);
+		const sharedItemIndex = item.x;
 		try {
-			const formula = t.convertCalculatedFormula(options.formula, options.fieldIndex);
+			const convertedFormula = t.convertCalculatedFormula(formula, fld);
 			t.modifyCalculatedItem({
-				itemsMapArray: [[options.fieldIndex, sharedItemIndex]],
-				formula: formula,
+				itemsMapArray: [[fld, sharedItemIndex]],
+				formula: convertedFormula,
 				addToHistory: true,
 			});
 			for(let i = 0; i < pivotTables.length; i += 1) {
@@ -10217,35 +10209,27 @@ CT_pivotTableDefinition.prototype.asc_modifyCalculatedItem = function(options) {
 	});
 };
 /**
- * @param{spreadsheet_api} api
- * @param {number} fld pivotFields index
- * @param {string} name
+ * @param {spreadsheet_api} api api instance
+ * @param {number} fld pivotField index
+ * @param {string} name removing item name
  */
-CT_pivotTableDefinition.prototype.asc_removeCalculatedItem2 = function(api, fld, name, formula) {}
-/**
- * @param {
- * {api: spreadsheet_api,
- * fieldIndex: number,
- * itemIndex: number}
- * } options
- */
-CT_pivotTableDefinition.prototype.asc_removeCalculatedItem = function(options) {
-	const api = options.api;
+CT_pivotTableDefinition.prototype.asc_removeCalculatedItem = function(api, fld, name) {
 	const t = this;
 	api._changePivotAndConnectedByPivotCacheWithLock(this, false, function (confirmation, pivotTables) {
 		const changeRes = new AscCommonExcel.PivotChangeResult();
 		const pivotFields = t.asc_getPivotFields();
-		const pivotField = pivotFields[options.fieldIndex];
 		const cacheFields = t.asc_getCacheFields();
-		const oldCacheField = cacheFields[options.fieldIndex].clone();
-		const items = pivotField.getItems();
-		const x = items[options.itemIndex].x;
+		const pivotField = pivotFields[fld];
+		const cacheField = cacheFields[fld];
+		const item = pivotField.findFieldItemByTextValue(cacheField, name);
+		const x = item.x;
+		const itemIndex = pivotField.getItemIndexByValue(x);
 		t.removeCalculatedItem({
-			itemsMapArray: [[options.fieldIndex, x]],
+			itemsMapArray: [[fld, x]],
 			addToHistory: true
 		});
 		t.removeSharedItem({
-			fieldIndex: options.fieldIndex,
+			fieldIndex: fld,
 			sharedItemIndex: x,
 			addToHistory: true
 		});
@@ -10253,10 +10237,10 @@ CT_pivotTableDefinition.prototype.asc_removeCalculatedItem = function(options) {
 			const pivotTable = pivotTables[i];
 			const change = api._changePivot(pivotTable, confirmation, true, function () {
 				let pivotFieldOld = pivotField.clone();
-				pivotField.removeItem(pivotTable, options.fieldIndex, options.itemIndex, x);
+				pivotField.removeItem(pivotTable, fld, itemIndex, x);
 				History.Add(AscCommonExcel.g_oUndoRedoPivotTables, AscCH.historyitem_PivotTable_PivotField,
 					t.worksheet ? t.worksheet.getId() : null, null,
-					new AscCommonExcel.UndoRedoData_PivotField(t.Get_Id(), options.fieldIndex, pivotFieldOld, pivotField.clone()));
+					new AscCommonExcel.UndoRedoData_PivotField(t.Get_Id(), fld, pivotFieldOld, pivotField.clone()));
 				pivotTable._updateCacheDataUpdateSlicersPost();
 			});
 			changeRes.merge(change);
@@ -21455,6 +21439,8 @@ PivotRecords.prototype.remove = function(index) {
 				chunk.data = chunk.data.filter(function(item, itemIndex) {
 					return itemIndex !== index - chunk.from;
 				});
+				chunk.to -= 1;
+				chunk.capacity -= 1;
 				this.size -= 1;
 			}
 			break;
