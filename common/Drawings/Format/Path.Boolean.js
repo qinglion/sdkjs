@@ -664,10 +664,6 @@
 			}
 		}
 	};
-	Point.prototype.getDirectedAngle = function () {
-		var point = Point.read(arguments);
-		return Math.atan2(this.cross(point), this.dot(point)) * 180 / Math.PI;
-	};
 	Point.prototype.getDistance = function () {
 		var args = arguments,
 			point = Point.read(args),
@@ -4889,129 +4885,6 @@
 				'Cannot put a curve through points with parameter = ' + t);
 		this.quadraticCurveTo(handle, to);
 	};
-	Path.prototype.arcTo = function () {
-		var args = arguments,
-			abs = Math.abs,
-			sqrt = Math.sqrt,
-			current = Path.getCurrentSegment(this),
-			from = current._point,
-			to = Point.read(args),
-			through,
-			peek = args[0],
-			clockwise = Base.pick(peek, true),
-			center, extent, vector, matrix;
-		if (typeof clockwise === 'boolean') {
-			var middle = from.add(to).divide(2),
-				through = middle.add(middle.subtract(from).rotate(
-					clockwise ? -90 : 90));
-		} else if (args.length - (args.__index || 0) <= 2) {
-			through = to;
-			to = Point.read(args);
-		} else if (!from.equals(to)) {
-			var radius = Size.read(args),
-				isZero = Numerical.isZero;
-			if (isZero(radius.width) || isZero(radius.height))
-				return this.lineTo(to);
-			var rotation = Base.read(args),
-				clockwise = !!Base.read(args),
-				large = !!Base.read(args),
-				middle = from.add(to).divide(2),
-				pt = from.subtract(middle).rotate(-rotation),
-				x = pt.x,
-				y = pt.y,
-				rx = abs(radius.width),
-				ry = abs(radius.height),
-				rxSq = rx * rx,
-				rySq = ry * ry,
-				xSq = x * x,
-				ySq = y * y;
-			var factor = sqrt(xSq / rxSq + ySq / rySq);
-			if (factor > 1) {
-				rx *= factor;
-				ry *= factor;
-				rxSq = rx * rx;
-				rySq = ry * ry;
-			}
-			factor = (rxSq * rySq - rxSq * ySq - rySq * xSq) /
-				(rxSq * ySq + rySq * xSq);
-			if (abs(factor) < 1e-12)
-				factor = 0;
-			if (factor < 0)
-				throw new Error(
-					'Cannot create an arc with the given arguments');
-			center = new Point(rx * y / ry, -ry * x / rx)
-				.multiply((large === clockwise ? -1 : 1) * sqrt(factor))
-				.rotate(rotation).add(middle);
-			matrix = new Matrix().translate(center).rotate(rotation)
-				.scale(rx, ry);
-			vector = matrix._inverseTransform(from);
-			extent = vector.getDirectedAngle(matrix._inverseTransform(to));
-			if (!clockwise && extent > 0)
-				extent -= 360;
-			else if (clockwise && extent < 0)
-				extent += 360;
-		}
-		if (through) {
-			var l1 = new Line(from.add(through).divide(2),
-				through.subtract(from).rotate(90), true),
-				l2 = new Line(through.add(to).divide(2),
-					to.subtract(through).rotate(90), true),
-				line = new Line(from, to),
-				throughSide = line.getSide(through);
-			center = l1.intersect(l2, true);
-			if (!center) {
-				if (!throughSide)
-					return this.lineTo(to);
-				throw new Error(
-					'Cannot create an arc with the given arguments');
-			}
-			vector = from.subtract(center);
-			extent = vector.getDirectedAngle(to.subtract(center));
-			var centerSide = line.getSide(center, true);
-			if (centerSide === 0) {
-				extent = throughSide * abs(extent);
-			} else if (throughSide === centerSide) {
-				extent += extent < 0 ? 360 : -360;
-			}
-		}
-		if (extent) {
-			var epsilon = 1e-5,
-				ext = abs(extent),
-				count = ext >= 360
-					? 4
-					: Math.ceil((ext - epsilon) / 90),
-				inc = extent / count,
-				half = inc * Math.PI / 360,
-				z = 4 / 3 * Math.sin(half) / (1 + Math.cos(half)),
-				segments = [];
-			for (var i = 0; i <= count; i++) {
-				var pt = to,
-					out = null;
-				if (i < count) {
-					out = vector.rotate(90).multiply(z);
-					if (matrix) {
-						pt = matrix._transformPoint(vector);
-						out = matrix._transformPoint(vector.add(out))
-							.subtract(pt);
-					} else {
-						pt = center.add(vector);
-					}
-				}
-				if (!i) {
-					current.setHandleOut(out);
-				} else {
-					var _in = vector.rotate(-90).multiply(z);
-					if (matrix) {
-						_in = matrix._transformPoint(vector.add(_in))
-							.subtract(pt);
-					}
-					segments.push(new Segment(pt, _in, out));
-				}
-				vector = vector.rotate(inc);
-			}
-			this._add(segments);
-		}
-	};
 	Path.prototype.closePath = function (tolerance) {
 		this.setClosed(true);
 		this.join(this, tolerance);
@@ -5201,10 +5074,6 @@
 	CompoundPath.prototype.curveTo = function () {
 		var path = CompoundPath.getCurrentPath(this, true);
 		path.curveTo.apply(path, arguments);
-	};
-	CompoundPath.prototype.arcTo = function () {
-		var path = CompoundPath.getCurrentPath(this, true);
-		path.arcTo.apply(path, arguments);
 	};
 	CompoundPath.prototype.reverse = function (param) {
 		var children = this._children,
