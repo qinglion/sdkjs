@@ -439,8 +439,7 @@
 		}
 	};
 
-	var Base = function Base() {
-	};
+	var Base = function () { };
 
 	Base.each = function (obj, iter, bind) {
 		if (obj) {
@@ -506,8 +505,7 @@
 			list.__index++;
 			return value;
 		}
-		var proto = this.prototype,
-			readIndex = proto._readIndex,
+		var readIndex = this.prototype._readIndex,
 			begin = start || readIndex && list.__index || 0,
 			length = list.length,
 			obj = list[begin];
@@ -518,7 +516,7 @@
 				list.__index = begin + 1;
 			return obj && options && options.clone ? obj.clone() : obj;
 		}
-		obj = Object.create(proto);
+		obj = Object.create(this.prototype);
 		if (readIndex)
 			obj.__read = true;
 		obj = obj.initialize.apply(obj, begin > 0 || begin + amount < length
@@ -526,11 +524,6 @@
 			: list) || obj;
 		if (readIndex) {
 			list.__index = begin + obj.__read;
-			var filtered = obj.__filtered;
-			if (filtered) {
-				list.__filtered = filtered;
-				obj.__filtered = undefined;
-			}
 			obj.__read = undefined;
 		}
 		return obj;
@@ -816,9 +809,6 @@
 			this._set(0, 0, 0, 0);
 			read = arg0 === null ? 1 : 0;
 		}
-		var filtered = args.__filtered;
-		if (filtered)
-			this.__filtered = filtered;
 		if (this.__read)
 			this.__read = read;
 		return this;
@@ -1168,9 +1158,6 @@
 	Matrix.prototype.prepended = function (mx) {
 		return this.clone().prepend(mx);
 	};
-	Matrix.prototype._shiftless = function () {
-		return new Matrix(this._a, this._b, this._c, this._d, 0, 0);
-	};
 	Matrix.prototype._orNullIfIdentity = function () {
 		return this.isIdentity() ? null : this;
 	};
@@ -1412,8 +1399,7 @@
 		return Math.abs(Line.getSignedDistance(px, py, vx, vy, x, y, asVector));
 	};
 
-	var Item = function () {
-	}
+	var Item = function () { };
 	InitClassWithStatics(Item, Base);
 
 	Item.prototype._applyMatrix = true;
@@ -1545,13 +1531,6 @@
 			rect: rect,
 			nonscaling: nonscaling
 		};
-	};
-	Item.prototype._getStrokeMatrix = function (matrix, options) {
-		var parent = this.getStrokeScaling() ? null
-			: options && options.internal ? this
-				: this._parent || this._symbol && this._symbol._item,
-			mx = matrix;
-		return mx && mx._shiftless();
 	};
 	Item.prototype._decompose = function () {
 		return this._applyMatrix
@@ -5239,7 +5218,7 @@
 		if (!segments.length)
 			throw new Error('Use a moveTo() command first');
 		return segments[segments.length - 1];
-	}
+	};
 	Path.getBounds = function (segments, closed, path, matrix, options) {
 		var first = segments[0];
 		if (!first)
@@ -5271,34 +5250,9 @@
 			processSegment(first);
 		return new Rectangle(min[0], min[1], max[0] - min[0], max[1] - min[1]);
 	};
-	Path._getStrokePadding = function (radius, matrix) {
-		if (!matrix)
-			return [radius, radius];
-		var hor = new Point(radius, 0).transform(matrix),
-			ver = new Point(0, radius).transform(matrix),
-			phi = hor.getAngleInRadians(),
-			a = hor.getLength(),
-			b = ver.getLength();
-		var sin = Math.sin(phi),
-			cos = Math.cos(phi),
-			tan = Math.tan(phi),
-			tx = Math.atan2(b * tan, a),
-			ty = Math.atan2(b, tan * a);
-		return [Math.abs(a * Math.cos(tx) * cos + b * Math.sin(tx) * sin),
-		Math.abs(b * Math.sin(ty) * cos + a * Math.cos(ty) * sin)];
-	};
 	Path.getHandleBounds = function (segments, closed, path, matrix, options) {
-		var stroke = false,
-			strokePadding,
+		var strokePadding,
 			joinPadding;
-		if (stroke) {
-			var strokeMatrix = path._getStrokeMatrix(matrix, options),
-				strokeRadius = 1 / 2,
-				joinRadius = strokeRadius;
-			joinRadius = strokeRadius * 10;
-			strokePadding = Path._getStrokePadding(strokeRadius, strokeMatrix);
-			joinPadding = Path._getStrokePadding(joinRadius, strokeMatrix);
-		}
 		var coords = new Array(6),
 			x1 = Infinity,
 			x2 = -x1,
