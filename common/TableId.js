@@ -347,8 +347,6 @@
 		this.m_oFactoryClass[AscDFH.historyitem_type_SampData          ]     = AscFormat.SampData;
 		this.m_oFactoryClass[AscDFH.historyitem_type_ForEach           ]     = AscFormat.ForEach;
 		this.m_oFactoryClass[AscDFH.historyitem_type_Coordinate        ]     = AscFormat.Coordinate;
-		this.m_oFactoryClass[AscDFH.historyitem_type_ExtrusionClr      ]     = AscFormat.ExtrusionClr;
-		this.m_oFactoryClass[AscDFH.historyitem_type_ContourClr        ]     = AscFormat.ContourClr;
 		this.m_oFactoryClass[AscDFH.historyitem_type_SmartArt          ]     = AscFormat.SmartArt;
 		this.m_oFactoryClass[AscDFH.historyitem_type_SmartArtDrawing   ]     = AscFormat.Drawing;
 		this.m_oFactoryClass[AscDFH.historyitem_type_DiagramData       ]     = AscFormat.DiagramData;

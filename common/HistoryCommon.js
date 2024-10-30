@@ -1750,8 +1750,6 @@
 	window['AscDFH'].historyitem_type_ForEach                = 2080 << 16;
 	window['AscDFH'].historyitem_type_ParameterVal           = 2084 << 16;
 	window['AscDFH'].historyitem_type_Coordinate             = 2085 << 16;
-	window['AscDFH'].historyitem_type_ExtrusionClr           = 2086 << 16;
-	window['AscDFH'].historyitem_type_ContourClr             = 2087 << 16;
 	window['AscDFH'].historyitem_type_SmartArt               = 2088 << 16;
 	window['AscDFH'].historyitem_type_SmartArtDrawing        = 2091 << 16;
 	window['AscDFH'].historyitem_type_DiagramData            = 2092 << 16;
@@ -3675,10 +3673,6 @@
 
 	AscDFH.historyitem_CoordinateCoordinateUnqualified = AscDFH.historyitem_type_Coordinate | 1;
 	AscDFH.historyitem_CoordinateUniversalMeasure      = AscDFH.historyitem_type_Coordinate | 2;
-
-	AscDFH.historyitem_ContourClrColor = AscDFH.historyitem_type_ContourClr | 1;
-
-	AscDFH.historyitem_ExtrusionClrColor = AscDFH.historyitem_type_ExtrusionClr | 1;
 
 	AscDFH.historyitem_ChartStyleAxisTitle          = AscDFH.historyitem_type_ChartStyle | 1;
 	AscDFH.historyitem_ChartStyleCategoryAxis       = AscDFH.historyitem_type_ChartStyle | 2;
