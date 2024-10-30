@@ -7014,7 +7014,13 @@
 		return this.insertColsBefore(index + 1, count);
 	};
 	Worksheet.prototype.getDefaultWidth=function(){
-		return this.oSheetFormatPr.dDefaultColWidth;
+		var dRes = null;
+		if (this.oSheetFormatPr.dDefaultColWidth != null) {
+			dRes = this.oSheetFormatPr.dDefaultColWidth;
+		} else if(null != this.oAllCol && this.oAllCol.CustomWidth) {
+			dRes = this.oAllCol.width;
+		}
+		return dRes;
 	};
 	Worksheet.prototype.getDefaultFontName=function(){
 		return this.workbook.getDefaultFont();

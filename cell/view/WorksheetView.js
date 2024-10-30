@@ -16422,6 +16422,7 @@
 		var functionModelAction = null;
 		var lockRange, arrChangedRanges = [];
 		var isError;
+		let isUpdateDefaultWidth = false;
 
 		var onChangeWorksheetCallback = function (isSuccess) {
 			if (false === isSuccess) {
@@ -16485,6 +16486,9 @@
 					}
 				}
 				Asc.editor.wb.handleChartsOnWorkbookChange(aRanges);
+			}
+			if (isUpdateDefaultWidth) {
+				t._initWorksheetDefaultWidth();
 			}
 			t.scrollType |= AscCommonExcel.c_oAscScrollType.ScrollVertical | AscCommonExcel.c_oAscScrollType.ScrollHorizontal;
 			t.draw(lockDraw);
@@ -16649,6 +16653,9 @@
 					oRecalcType = AscCommonExcel.recalcType.full;
 					reinitRanges = true;
 					updateDrawingObjectsInfo = {target: c_oTargetType.ColumnResize, col: minUpdateIndex};
+					if (checkRange.getType() === c_oAscSelectionType.RangeMax || checkRange.getType() === c_oAscSelectionType.RangeRow) {
+						isUpdateDefaultWidth = true;
+					}
 				};
 				this._isLockedAll(onChangeWorksheetCallback);
 				break;
@@ -16707,6 +16714,9 @@
 					oRecalcType = AscCommonExcel.recalcType.full;
 					reinitRanges = true;
 					updateDrawingObjectsInfo = {target: c_oTargetType.RowResize, row: minUpdateIndex};
+					if (checkRange.getType() === c_oAscSelectionType.RangeMax || checkRange.getType() === c_oAscSelectionType.RangeCol) {
+						isUpdateDefaultWidth = true;
+					}
 				};
 				return this._isLockedAll(onChangeWorksheetCallback);
 			case "showRows":
