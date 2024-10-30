@@ -1818,13 +1818,18 @@
 						if (sheetContainer) {
 							var rangesTop = [];
 							var rangesBottom = [];
+							let counter = 1;
 							for (var name in changedSheet) {
-								var range = changedSheet[name];
-								rangesTop.push(range);
-								rangesBottom.push(range);
+								var elem = {id: counter++, bbox: changedSheet[name]};
+								rangesTop.push(elem);
+								rangesBottom.push(elem);
 							}
-							rangesTop.sort(Asc.Range.prototype.compareByLeftTop);
-							rangesBottom.sort(Asc.Range.prototype.compareByRightBottom);
+							rangesTop.sort(function(a, b) {
+								return Asc.Range.prototype.compareByLeftTop(a.bbox, b.bbox)
+							});
+							rangesBottom.sort(function(a, b) {
+								return Asc.Range.prototype.compareByRightBottom(a.bbox, b.bbox)
+							});
 							this._broadcastCellsByRanges(sheetContainer, rangesTop, rangesBottom, notifyData);
 							this._broadcastRangesByRanges(sheetContainer, rangesTop, rangesBottom, notifyData);
 						}
@@ -2207,6 +2212,7 @@
 			if (0 === sheetContainer.rangesTop.length || 0 === cells.length) {
 				return;
 			}
+			let t = this;
 			var rangesTop = sheetContainer.rangesTop;
 			var rangesBottom = sheetContainer.rangesBottom;
 			var indexTop = 0;
@@ -2215,6 +2221,32 @@
 			let helper = new BroadcastHelper();
 			var affected = [];
 			var curY, curYCell = -1, elem;
+			let processCellsBeforeCurY = function() {
+				while (indexCell < cells.length) {
+					getFromCellIndex(cells[indexCell]);
+					if (g_FCI.row < curY) {
+						if (g_FCI.row > curYCell) {
+							helper.reset();
+							curYCell = g_FCI.row;
+						}
+						if (g_FCI.col < helper.from) {
+							indexCell++;
+						} else if (helper.from <= g_FCI.col && g_FCI.col <= helper.to) {
+							helper.curElems.forEach(function(elem) {
+								t._broadcastShared(elem, helper, affected, null, g_FCI.row, g_FCI.col);
+							});
+							indexCell++;
+						} else {
+							//todo bin search?
+							if (!helper.next()) {
+								break;
+							}
+						}
+					} else {
+						break;
+					}
+				}
+			}
 			//scanline by Y
 			while (indexBottom < rangesBottom.length && indexCell < cells.length) {
 				//next curY
@@ -2223,39 +2255,8 @@
 				} else {
 					curY = rangesBottom[indexBottom].bbox.r2;
 				}
-				function process_cells_before_curY() {
-					if (g_FCI.row > curYCell) {
-						helper.reset();
-						curYCell = g_FCI.row;
-					}
-					if (g_FCI.col < helper.from) {
-						indexCell++;
-					} else if (helper.from <= g_FCI.col && g_FCI.col <= helper.to) {
-						helper.curElems.forEach(function(elem) {
-							elem.isActive = false;
-							helper.addDelete(elem);
-							affected.push(elem);
-						});
-						indexCell++;
-					} else {
-						//todo bin search?
-						if (!helper.next()) {
-							return false;
-						}
-					}
-					return true;
-				}
 				//process cells before curY
-				while (indexCell < cells.length) {
-					getFromCellIndex(cells[indexCell]);
-					if (g_FCI.row < curY) {
-						if(!process_cells_before_curY()) {
-							break;
-						}
-					} else {
-						break;
-					}
-				}
+				processCellsBeforeCurY();
 				helper.finishDelete();
 				//insert new ranges
 				while (indexTop < rangesTop.length && curY === rangesTop[indexTop].bbox.r1) {
@@ -2266,16 +2267,9 @@
 					indexTop++;
 				}
 				helper.finishInsert();
-				while (indexCell < cells.length) {
-					getFromCellIndex(cells[indexCell]);
-					if (g_FCI.row <= curY) {
-						if(!process_cells_before_curY()) {
-							break;
-						}
-					} else {
-						break;
-					}
-				}
+				//process cells
+				processCellsBeforeCurY();
+				//delete ranges before move to new curY
 				while (indexBottom < rangesBottom.length && curY === rangesBottom[indexBottom].bbox.r2) {
 					elem = rangesBottom[indexBottom];
 					if (elem.isActive) {
@@ -2291,139 +2285,178 @@
 			if (0 === sheetContainer.cells.length || 0 === rangesTop.length) {
 				return;
 			}
+			let t = this;
 			var cells = sheetContainer.cells;
 			var indexTop = 0;
 			var indexBottom = 0;
 			var indexCell = 0;
-			var tree = new AscCommon.DataIntervalTree();
-			var curY, bbox;
-			if (indexCell < cells.length) {
-				getFromCellIndex(cells[indexCell].cellIndex);
+			let helper = new BroadcastHelper();
+			var curY, curYCell = -1, elem, bbox;
+			let processCellsBeforeCurY = function() {
+				while (indexCell < cells.length) {
+					getFromCellIndex(cells[indexCell].cellIndex);
+					if (g_FCI.row < curY) {
+						if (g_FCI.row > curYCell) {
+							helper.reset();
+							curYCell = g_FCI.row;
+						}
+						if (g_FCI.col < helper.from) {
+							indexCell++;
+						} else if (helper.from <= g_FCI.col && g_FCI.col <= helper.to) {
+							t._broadcastNotifyListeners(cells[indexCell].listeners, notifyData);
+							indexCell++;
+						} else {
+							//todo bin search?
+							if (!helper.next()) {
+								break;
+							}
+						}
+					} else {
+						break;
+					}
+				}
 			}
 			//scanline by Y
 			while (indexBottom < rangesBottom.length && indexCell < cells.length) {
 				//next curY
 				if (indexTop < rangesTop.length) {
-					curY = Math.min(rangesTop[indexTop].r1, rangesBottom[indexBottom].r2);
+					curY = Math.min(rangesTop[indexTop].bbox.r1, rangesBottom[indexBottom].bbox.r2);
 				} else {
-					curY = rangesBottom[indexBottom].r2;
+					curY = rangesBottom[indexBottom].bbox.r2;
 				}
 				//process cells before curY
-				while (indexCell < cells.length && g_FCI.row < curY) {
-					if (tree.searchAny(g_FCI.col, g_FCI.col)) {
-						this._broadcastNotifyListeners(cells[indexCell].listeners, notifyData);
-					}
-					indexCell++;
-					if (indexCell < cells.length) {
-						getFromCellIndex(cells[indexCell].cellIndex);
-					}
-				}
-				while (indexTop < rangesTop.length && curY === rangesTop[indexTop].r1) {
-					bbox = rangesTop[indexTop];
-					tree.insert(bbox.c1, bbox.c2, bbox);
+				processCellsBeforeCurY();
+				//insert new ranges
+				while (indexTop < rangesTop.length && curY === rangesTop[indexTop].bbox.r1) {
+					helper.addInsert(rangesTop[indexTop]);//bbox id
 					indexTop++;
 				}
-				while (indexCell < cells.length && g_FCI.row <= curY) {
-					if (tree.searchAny(g_FCI.col, g_FCI.col)) {
-						this._broadcastNotifyListeners(cells[indexCell].listeners, notifyData);
-					}
-					indexCell++;
-					if (indexCell < cells.length) {
-						getFromCellIndex(cells[indexCell].cellIndex);
-					}
-				}
-				while (indexBottom < rangesBottom.length && curY === rangesBottom[indexBottom].r2) {
-					bbox = rangesBottom[indexBottom];
-					tree.remove(bbox.c1, bbox.c2, bbox);
+				helper.finishInsert();
+				//process cells curY
+				processCellsBeforeCurY();
+				//delete ranges before move to new curY
+				while (indexBottom < rangesBottom.length && curY === rangesBottom[indexBottom].bbox.r2) {
+					helper.addDelete(rangesBottom[indexBottom]);//bbox id
 					indexBottom++;
 				}
+				helper.finishDelete();
 			}
 		},
 		_broadcastRangesByRanges: function(sheetContainer, rangesTopChanged, rangesBottomChanged, notifyData) {
 			if (0 === sheetContainer.rangesTop.length || 0 === rangesTopChanged.length) {
 				return;
 			}
+			let t = this;
 			var rangesTop = sheetContainer.rangesTop;
 			var rangesBottom = sheetContainer.rangesBottom;
 			var indexTop = 0;
 			var indexBottom = 0;
 			var indexTopChanged = 0;
 			var indexBottomChanged = 0;
-			var tree = new AscCommon.DataIntervalTree();
-			var treeChanged = new AscCommon.DataIntervalTree();
+			let helper = new BroadcastHelper();
+			let helperChanged = new BroadcastHelper();
 			var affected = [];
 			var curY, elem, bbox;
 			//scanline by Y
 			while (indexBottom < rangesBottom.length && indexBottomChanged < rangesBottomChanged.length) {
 				//next curY
-				curY = Math.min(rangesBottomChanged[indexBottomChanged].r2, rangesBottom[indexBottom].bbox.r2);
+				curY = Math.min(rangesBottomChanged[indexBottomChanged].bbox.r2, rangesBottom[indexBottom].bbox.r2);
 				if (indexTop < rangesTop.length) {
 					curY = Math.min(curY, rangesTop[indexTop].bbox.r1);
 				}
 				if (indexTopChanged < rangesTopChanged.length) {
-					curY = Math.min(curY, rangesTopChanged[indexTopChanged].r1);
+					curY = Math.min(curY, rangesTopChanged[indexTopChanged].bbox.r1);
 				}
-
-				while (indexTopChanged < rangesTopChanged.length && curY === rangesTopChanged[indexTopChanged].r1) {
-					bbox = rangesTopChanged[indexTopChanged];
-					treeChanged.insert(bbox.c1, bbox.c2, bbox);
-					this._broadcastRangesByRangesIntersect(bbox, tree, affected);
+				//insert new ranges
+				while (indexTopChanged < rangesTopChanged.length && curY === rangesTopChanged[indexTopChanged].bbox.r1) {
+					helperChanged.addInsert(rangesTopChanged[indexTopChanged]);
 					indexTopChanged++;
 				}
+				helperChanged.finishInsert();
 				while (indexTop < rangesTop.length && curY === rangesTop[indexTop].bbox.r1) {
 					elem = rangesTop[indexTop];
-					if (elem.isActive) {
-						tree.insert(elem.bbox.c1, elem.bbox.c2, elem);
-						if (treeChanged.searchAny(elem.bbox.c1, elem.bbox.c2)) {
-							this._broadcastNotifyListeners(elem.listeners, notifyData);
-						}
-					}
+					helper.addInsert(elem);
 					indexTop++;
 				}
+				helper.finishInsert();
+				//intersect
+				helper.reset();
+				helper.next();
+				helperChanged.reset();
+				helperChanged.next();
+				while (true) {
+					if (!(helperChanged.to < helper.from || helper.to < helperChanged.from)) {
+						helper.curElems.forEach(function (elem) {
+							helperChanged.curElems.forEach(function (elemChanged) {
+								var intersect = elem.bbox.intersectionSimple(elemChanged.bbox);
+								t._broadcastShared(elem, helper, affected, intersect, null, null);
+							});
+						});
+					}
+					if (helper.from < helperChanged.from) {
+						if (!helper.next()) {
+							break;
+						}
+					} else {
+						if (!helperChanged.next()) {
+							break;
+						}
+					}
+				}
 
-				while (indexBottomChanged < rangesBottomChanged.length &&
-				curY === rangesBottomChanged[indexBottomChanged].r2) {
-					bbox = rangesBottomChanged[indexBottomChanged];
-					treeChanged.remove(bbox.c1, bbox.c2, bbox);
+				//delete ranges before move to new curY
+				while (indexBottomChanged < rangesBottomChanged.length && curY === rangesBottomChanged[indexBottomChanged].bbox.r2) {
+					helperChanged.addDelete(rangesBottomChanged[indexBottomChanged]);//bbox id
 					indexBottomChanged++;
 				}
+				helperChanged.finishDelete();
 				while (indexBottom < rangesBottom.length && curY === rangesBottom[indexBottom].bbox.r2) {
-					elem = rangesBottom[indexBottom];
-					if (elem.isActive) {
-						tree.remove(elem.bbox.c1, elem.bbox.c2, elem);
+					if (rangesBottom[indexBottom].isActive) {
+						helper.addDelete(rangesBottom[indexBottom]);//bbox id
 					}
 					indexBottom++;
 				}
+				helper.finishDelete();
 			}
 			this._broadcastNotifyRanges(affected, notifyData);
 		},
-		_broadcastRangesByCellsIntersect: function(tree, row, col, output) {
-			var intervals = tree.searchNodes(col, col);
-			for(var i = 0; i < intervals.length; ++i){
-				var interval = intervals[i];
-				var elem = interval.data;
-				var sharedBroadcast = elem.sharedBroadcast;
-				if (!sharedBroadcast) {
-					output.push(elem);
+		_broadcastShared: function(elem, helper, affected, intersect, row, col) {
+			var sharedBroadcast = elem.sharedBroadcast;
+			if (!sharedBroadcast) {
+				if (elem.isActive) {
+					affected.push(elem);
 					elem.isActive = false;
-					tree.remove(elem.bbox.c1, elem.bbox.c2, elem);
-				} else if (!(sharedBroadcast.changedBBox && sharedBroadcast.changedBBox.contains(col, row))) {
-					if (!sharedBroadcast.changedBBox ||
-						sharedBroadcast.changedBBox.isEqual(sharedBroadcast.prevChangedBBox)) {
-						sharedBroadcast.recursion++;
-						if (sharedBroadcast.recursion >= this.maxSharedRecursion) {
-							sharedBroadcast.changedBBox = elem.bbox.clone();
-						}
-						output.push(elem);
+					helper.addDelete(elem);
+				}
+			} else if (!sharedBroadcast.changedBBox ||
+					!(intersect && sharedBroadcast.changedBBox.containsRange(intersect)) ||
+					!(!intersect && sharedBroadcast.changedBBox.contains(col, row)))
+			{
+				if (!sharedBroadcast.changedBBox ||
+					sharedBroadcast.changedBBox.isEqual(sharedBroadcast.prevChangedBBox)) {
+					sharedBroadcast.recursion++;
+					if (sharedBroadcast.recursion >= this.maxSharedRecursion) {
+						sharedBroadcast.changedBBox = elem.bbox.clone();
 					}
+					affected.push(elem);
+				}
+				if (intersect) {
+					if (sharedBroadcast.changedBBox) {
+						sharedBroadcast.changedBBox.union2(intersect);
+					} else {
+						sharedBroadcast.changedBBox = intersect.clone();
+					}
+				} else {
 					if (sharedBroadcast.changedBBox) {
 						sharedBroadcast.changedBBox.union3(col, row);
 					} else {
 						sharedBroadcast.changedBBox = new Asc.Range(col, row, col, row);
 					}
-					if (sharedBroadcast.changedBBox.isEqual(elem.bbox)) {
+				}
+				if (sharedBroadcast.changedBBox.isEqual(elem.bbox)) {
+					if (elem.isActive) {
 						elem.isActive = false;
-						tree.remove(elem.bbox.c1, elem.bbox.c2, elem);
+						helper.addDelete(elem);
 					}
 				}
 			}
@@ -2517,6 +2550,7 @@
 		this.deleteFromLen = 0;
 		this.deleteTo = [];
 		this.deleteToLen = 0;
+		this.deleteMap = new Set();
 	}
 	BroadcastHelper.prototype.reset = function () {
 		this.curElems.clear();
@@ -2568,13 +2602,35 @@
 		this.insertTo[this.insertToLen] = elem;
 		this.insertToLen++;
 	};
+	BroadcastHelper.prototype.mergeSorted = function (events, eventsLen, ins, insLen, fCmp) {
+		let eventsIndex = eventsLen - 1;
+		let insIndex = insLen - 1;
+		let eventsInsertIndex = eventsIndex + insLen;
+		while (insIndex >= 0) {
+			if (eventsIndex < 0 || fCmp(events[eventsIndex], ins[insIndex])) {
+				events[eventsInsertIndex] = ins[insIndex];
+				insIndex--;
+			} else {
+				events[eventsInsertIndex] = events[eventsIndex];
+				eventsIndex--;
+			}
+			eventsInsertIndex--;
+		}
+		return eventsLen + insLen;
+	};
+	BroadcastHelper.prototype.compareC1 = function (a, b) {
+		return a.bbox.c1 <= b.bbox.c1;
+	};
+	BroadcastHelper.prototype.compareC2 = function (a, b) {
+		return a.bbox.c1 <= b.bbox.c1;
+	};
 	BroadcastHelper.prototype.finishInsert = function () {
 		if (0 === this.insertFromLen && 0 === this.insertToLen) {
 			return
 		}
 		//insertFrom - presorted; need sort insertTo;
 		//do you sort a subset of an array?
-		this.insertTo.sort(function(a, b) {
+		this.insertTo.sort(function (a, b) {
 			if (a && b) {
 				return a.bbox.c2 - b.bbox.c2;
 			} else if (a) {
@@ -2582,99 +2638,85 @@
 			}
 			return -1;
 		});
-		let i = 0, insertFromIndex = 0;
-		while (insertFromIndex < this.insertFromLen && i < this.eventsFromLen) {
-			if (this.eventsFrom[i].bbox.c1 < this.insertFrom[insertFromIndex].bbox.c1) {
-
-			} else {
-				let temp = this.insertFrom[insertFromIndex];
-				this.insertFrom[insertFromIndex] = this.eventsFrom[i];
-				this.eventsFrom[i] = temp;
-			}
-			++i;
-		}
-		for (i = insertFromIndex; i < this.insertFromLen; ++i) {
-			this.eventsFrom[this.eventsFromLen] = this.insertFrom[i];
-			this.eventsFromLen++;
-		}
+		this.eventsFromLen = this.mergeSorted(this.eventsFrom, this.eventsFromLen, this.insertFrom, this.insertFromLen, this.compareC1);
 		this.insertFromLen = 0;
-
-		//todo code duplicate
-		let insertToIndex = 0
-		while (insertToIndex < this.insertToLen && i < this.eventsToLen) {
-			if (this.eventsTo[i].bbox.c2 < this.insertTo[insertToIndex].bbox.c2) {
-
-			} else {
-				let temp = this.insertTo[insertToIndex];
-				this.insertTo[insertToIndex] = this.eventsTo[i];
-				this.eventsTo[i] = temp;
-			}
-			++i;
-		}
-		for (i = insertToIndex; i < this.insertToLen; ++i) {
-			this.eventsTo[this.eventsToLen] = this.insertTo[i];
-			this.eventsToLen++;
-		}
+		this.eventsToLen = this.mergeSorted(this.eventsTo, this.eventsToLen, this.insertTo, this.insertToLen, this.compareC2);
 		this.insertToLen = 0;
-		this.insertTo.fill(undefined);
+
+		this.insertTo.fill(undefined);//to fix sorting tail after insertToLen
 	};
 	BroadcastHelper.prototype.addDelete = function (elem) {
 		//elem.bbox & elem.id
-		this.deleteFrom[this.deleteFromLen] = elem;
-		this.deleteFromLen++;
-		this.deleteTo[this.deleteToLen] = elem;
-		this.deleteToLen++;
+		this.deleteMap.add(elem.id);
+	};
+	BroadcastHelper.prototype.deleteSorted = function (events, eventsLen, deletMap) {
+		let eventsIndex = 0;
+		let eventsCurIndex = 0;
+		while (eventsIndex < eventsLen) {
+			if (!deletMap.has(events[eventsIndex].id)) {
+				events[eventsCurIndex] = events[eventsIndex];
+				eventsCurIndex++;
+			}
+			eventsIndex++;
+		}
+		return eventsCurIndex;
 	};
 	BroadcastHelper.prototype.finishDelete = function () {
-		if (0 === this.deleteFromLen && 0 === this.deleteToLen) {
+		if (this.deleteMap.size === 0) {
 			return
 		}
-		//deleteFrom - presorted; need sort deleteTo;
-		//do you sort a subset of an array?
-		this.deleteTo.sort(function(a, b) {
-			if (a && b) {
-				return a.bbox.c2 - b.bbox.c2;
-			} else if (a) {
-				return 1;
-			}
-			return -1;
-		});
-		let i = 0, deleteFromIndex = 0;
-		while (deleteFromIndex < this.deleteFromLen && i < this.eventsFromLen) {
-			if (this.eventsFrom[i].bbox.c1 < this.deleteFrom[deleteFromIndex].bbox.c1) {
-
-			} else {
-				let temp = this.deleteFrom[deleteFromIndex];
-				this.deleteFrom[deleteFromIndex] = this.eventsFrom[i];
-				this.eventsFrom[i] = temp;
-			}
-			++i;
-		}
-		for (i = deleteFromIndex; i < this.deleteFromLen; ++i) {
-			this.eventsFrom[this.eventsFromLen] = this.deleteFrom[i];
-			this.eventsFromLen++;
-		}
-		this.deleteFromLen = 0;
-
-		//todo code duplicate
-		let deleteToIndex = 0
-		while (deleteToIndex < this.deleteToLen && i < this.eventsToLen) {
-			if (this.eventsTo[i].bbox.c2 < this.deleteTo[deleteToIndex].bbox.c2) {
-
-			} else {
-				let temp = this.deleteTo[deleteToIndex];
-				this.deleteTo[deleteToIndex] = this.eventsTo[i];
-				this.eventsTo[i] = temp;
-			}
-			++i;
-		}
-		for (i = deleteToIndex; i < this.deleteToLen; ++i) {
-			this.eventsTo[this.eventsToLen] = this.deleteTo[i];
-			this.eventsToLen++;
-		}
-		this.deleteToLen = 0;
-		this.deleteTo.fill(undefined);
+		this.eventsFromLen = this.deleteSorted(this.eventsFrom, this.eventsFromLen, this.deleteMap);
+		this.eventsToLen = this.deleteSorted(this.eventsTo, this.eventsToLen, this.deleteMap);
+		this.deleteMap.clear();
 	};
+	// BroadcastHelper.prototype.addDelete = function (elem) {
+	// 	//elem.bbox & elem.id
+	// 	this.deleteFrom[this.deleteFromLen] = elem;
+	// 	this.deleteFromLen++;
+	// 	this.deleteTo[this.deleteToLen] = elem;
+	// 	this.deleteToLen++;
+	// };
+	// BroadcastHelper.prototype.deleteSorted = function (events, eventsLen, del, delLen) {
+	// 	//todo нельзя рассчитывать, что в addDelete будут приходить элементы из curElems и в порядке forEach(есть другие вызовы addDelete)
+	// 	//The forEach() method executes per each pair in insertion order.
+	// 	let eventsIndex = 0;
+	// 	let delIndex = 0;
+	// 	let eventsCurIndex = 0;
+	// 	while (eventsIndex < eventsLen && delIndex < delLen) {
+	// 		if (events[eventsIndex] !== del[delIndex]) {
+	// 			events[eventsCurIndex] = events[eventsIndex];
+	// 			eventsCurIndex++;
+	// 		} else {
+	// 			delIndex++;
+	// 		}
+	// 		eventsIndex++;
+	// 	}
+	// 	while (eventsIndex < eventsLen) {
+	// 		events[eventsCurIndex] = events[eventsIndex];
+	// 		eventsIndex++;
+	// 		eventsCurIndex++;
+	// 	}
+	// 	return eventsCurIndex;
+	// };
+	// BroadcastHelper.prototype.finishDelete = function () {
+	// 	if (0 === this.deleteFromLen && 0 === this.deleteToLen) {
+	// 		return
+	// 	}
+	// 	//deleteFrom - presorted; need sort deleteTo;
+	// 	//do you sort a subset of an array?
+	// 	this.deleteTo.sort(function(a, b) {
+	// 		if (a && b) {
+	// 			return a.bbox.c2 - b.bbox.c2;
+	// 		} else if (a) {
+	// 			return 1;
+	// 		}
+	// 		return -1;
+	// 	});
+	// 	this.eventsFromLen = this.deleteSorted(this.eventsFrom, this.eventsFromLen, this.deleteFrom, this.deleteFromLen);
+	// 	this.deleteFromLen = 0;
+	// 	this.eventsToLen = this.deleteSorted(this.eventsTo, this.eventsToLen, this.deleteTo, this.deleteToLen);
+	// 	this.deleteToLen = 0;
+	// };
 
 	function ForwardTransformationFormula(elem, formula, parsed) {
 		this.elem = elem;
