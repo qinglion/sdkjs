@@ -59,6 +59,7 @@ Because of this, the display is sometimes not correct.
     var InitClass = AscFormat.InitClass;
     var InitClassWithoutType = AscFormat.InitClassWithoutType;
     var CBaseFormatObject = AscFormat.CBaseFormatObject;
+    var CBaseFormatNoIdObject = AscFormat.CBaseFormatNoIdObject;
     var oHistory = AscCommon.History;
     var CChangeBool = AscDFH.CChangesDrawingsBool;
     var CChangeLong = AscDFH.CChangesDrawingsLong;
@@ -1644,21 +1645,22 @@ Because of this, the display is sometimes not correct.
     }
 
     InitClass(Point, CBaseFormatObject, AscDFH.historyitem_type_Point);
+    // These methods are needed to write sampData
     Point.prototype.Write_ToBinary = function (w) {
       AscFormat.writeString(w, this.cxnId);
       AscFormat.writeString(w, this.modelId);
       AscFormat.writeLong(w, this.type);
       AscFormat.writeObjectNoId(w, this.prSet);
-      AscFormat.writeObject(w, this.spPr);
-      AscFormat.writeObject(w, this.t);
+      // AscFormat.writeObject(w, this.spPr);
+      // AscFormat.writeObject(w, this.t);
     };
     Point.prototype.Read_FromBinary = function (r) {
       this.cxnId = AscFormat.readString(r);
       this.modelId = AscFormat.readString(r);
       this.type = AscFormat.readLong(r);
       this.prSet = AscFormat.readObjectNoId(r);
-      this.spPr = AscFormat.readObject(r);
-      this.t = AscFormat.readObject(r);
+      // this.spPr = AscFormat.readObject(r);
+      // this.t = AscFormat.readObject(r);
     }
 	  Point.prototype.getHierBranchValue = function () {
 		  return this.prSet && this.prSet.getHierBranchValue();
@@ -2049,6 +2051,7 @@ Because of this, the display is sometimes not correct.
     drawingsChangesMap[AscDFH.historyitem_PrSetPresLayoutVars] = function (oClass, value) {
       oClass.presLayoutVars = value;
     };
+    drawingConstructorsMap[AscDFH.historyitem_PrSetPresLayoutVars] = VarLst;
 
     function PrSet() {
       CBaseFormatObject.call(this);
@@ -2548,7 +2551,7 @@ Because of this, the display is sometimes not correct.
     };
 
     function LayoutDef() {
-      CBaseFormatObject.call(this);
+      CBaseFormatNoIdObject.call(this);
       this.defStyle = null;
       this.minVer = null;
       this.uniqueId = null;
@@ -2561,7 +2564,7 @@ Because of this, the display is sometimes not correct.
       this.title = null;
     }
 
-    InitClass(LayoutDef, CBaseFormatObject, AscDFH.historyitem_type_LayoutDef);
+    InitClass(LayoutDef, CBaseFormatNoIdObject, AscDFH.historyitem_type_LayoutDef);
 
     LayoutDef.prototype.Write_ToBinary = function (w) {
       AscFormat.writeString(w, this.defStyle);
@@ -2580,11 +2583,11 @@ Because of this, the display is sometimes not correct.
       this.minVer = AscFormat.readString(r);
       this.uniqueId = AscFormat.readString(r);
       this.catLst = AscFormat.readObjectNoId(r);
-      this.clrData = AscFormat.ExecuteNoHistory(AscFormat.readObjectNoId, this, [r]);
+      this.clrData = AscFormat.readObjectNoId(r);
       this.title = AscFormat.readObjectNoId(r);
       this.layoutNode = AscFormat.readObjectNoId(r);
-      this.sampData = AscFormat.ExecuteNoHistory(AscFormat.readObjectNoId, this, [r]);
-      this.styleData = AscFormat.ExecuteNoHistory(AscFormat.readObjectNoId, this, [r]);
+      this.sampData = AscFormat.readObjectNoId(r);
+      this.styleData = AscFormat.readObjectNoId(r);
       this.desc = AscFormat.readObjectNoId(r);
     };
     LayoutDef.prototype.setDefStyle = function (pr) {
@@ -2786,12 +2789,12 @@ Because of this, the display is sometimes not correct.
     };
 
     function SCat() {
-      CBaseFormatObject.call(this);
+      CBaseFormatNoIdObject.call(this);
       this.pri = null;
       this.type = null;
     }
 
-    InitClass(SCat, CBaseFormatObject, AscDFH.historyitem_type_SCat);
+    InitClass(SCat, CBaseFormatNoIdObject, AscDFH.historyitem_type_SCat);
     SCat.prototype.Write_ToBinary = function (w) {
       AscFormat.writeLong(w, this.pri);
       AscFormat.writeString(w, this.type);
@@ -3101,13 +3104,13 @@ Because of this, the display is sometimes not correct.
     };
 
     function Alg() {
-      CBaseFormatObject.call(this);
+      CBaseFormatNoIdObject.call(this);
       this.rev = null;
       this.type = null;
       this.param = [];
     }
 
-    InitClass(Alg, CBaseFormatObject, AscDFH.historyitem_type_Alg);
+    InitClass(Alg, CBaseFormatNoIdObject, AscDFH.historyitem_type_Alg);
     Alg.prototype.Write_ToBinary = function (w) {
       AscFormat.writeLong(w, this.rev);
       AscFormat.writeLong(w, this.type);
@@ -3187,12 +3190,12 @@ Because of this, the display is sometimes not correct.
     };
 
     function Param() {
-      CBaseFormatObject.call(this);
+      CBaseFormatNoIdObject.call(this);
       this.type = null;
       this.val = null;
     }
 
-    InitClass(Param, CBaseFormatObject, AscDFH.historyitem_type_Param);
+    InitClass(Param, CBaseFormatNoIdObject, AscDFH.historyitem_type_Param);
     Param.prototype.Write_ToBinary = function (w) {
       AscFormat.writeLong(w, this.type);
       AscFormat.writeString(w, this.val);
@@ -3608,13 +3611,13 @@ Because of this, the display is sometimes not correct.
     };
 
     function Choose() {
-      CBaseFormatObject.call(this);
+      CBaseFormatNoIdObject.call(this);
       this.name = null;
       this.else = null;
       this.if = [];
     }
 
-    InitClass(Choose, CBaseFormatObject, AscDFH.historyitem_type_Choose);
+    InitClass(Choose, CBaseFormatNoIdObject, AscDFH.historyitem_type_Choose);
     Choose.prototype.Write_ToBinary = function (w) {
       AscFormat.writeString(w, this.name);
       AscFormat.writeObjectNoId(w, this.else);
@@ -4303,7 +4306,7 @@ Because of this, the display is sometimes not correct.
     };
 
     function Constr() {
-      CBaseFormatObject.call(this);
+      CBaseFormatNoIdObject.call(this);
       this.fact = 1;
       this.for = Constr_for_self;
       this.forName = null;
@@ -4317,7 +4320,7 @@ Because of this, the display is sometimes not correct.
       this.val = 0;
     }
 
-    InitClass(Constr, CBaseFormatObject, AscDFH.historyitem_type_Constr);
+    InitClass(Constr, CBaseFormatNoIdObject, AscDFH.historyitem_type_Constr);
 
 		Constr.prototype.Write_ToBinary = function (w) {
 			AscFormat.writeLong(w, this.fact);
@@ -4563,7 +4566,7 @@ Because of this, the display is sometimes not correct.
     };
 
     function Rule() {
-      CBaseFormatObject.call(this);
+      CBaseFormatNoIdObject.call(this);
       this.fact = null;
       this.for = AscFormat.Constr_for_self;
       this.forName = null;
@@ -4573,7 +4576,7 @@ Because of this, the display is sometimes not correct.
 	    this.ptType = ElementType_value_all;
     }
 
-    InitClass(Rule, CBaseFormatObject, AscDFH.historyitem_type_Rule);
+    InitClass(Rule, CBaseFormatNoIdObject, AscDFH.historyitem_type_Rule);
 	  Rule.prototype.Write_ToBinary = function (w) {
 		  AscFormat.writeLong(w, this.fact);
 		  AscFormat.writeLong(w, this.for);
@@ -4684,7 +4687,7 @@ Because of this, the display is sometimes not correct.
 
 
 		function SShape() {
-      CBaseFormatObject.call(this);
+      CBaseFormatNoIdObject.call(this);
       this.blip = null;
       this.blipPhldr = false;
       this.hideGeom = false;
@@ -4695,7 +4698,7 @@ Because of this, the display is sometimes not correct.
       this.adjLst = null;
     }
 
-    InitClass(SShape, CBaseFormatObject, AscDFH.historyitem_type_SShape);
+    InitClass(SShape, CBaseFormatNoIdObject, AscDFH.historyitem_type_SShape);
 
 		SShape.prototype.Write_ToBinary = function (w) {
 			AscFormat.writeString(w, this.blip);
@@ -4850,12 +4853,12 @@ Because of this, the display is sometimes not correct.
     };
 
     function Adj() {
-      CBaseFormatObject.call(this);
+      CBaseFormatNoIdObject.call(this);
       this.idx = null;
       this.val = null;
     }
 
-    InitClass(Adj, CBaseFormatObject, AscDFH.historyitem_type_Adj);
+    InitClass(Adj, CBaseFormatNoIdObject, AscDFH.historyitem_type_Adj);
 
 	  Adj.prototype.Write_ToBinary = function (w) {
 		  AscFormat.writeLong(w, this.idx);
@@ -4901,7 +4904,7 @@ Because of this, the display is sometimes not correct.
     };
 
     function VarLst() {
-      CBaseFormatObject.call(this);
+      CBaseFormatNoIdObject.call(this);
       this.animLvl = null;
       this.animOne = null;
       this.bulletEnabled = null;
@@ -4913,7 +4916,7 @@ Because of this, the display is sometimes not correct.
       this.resizeHandles = null;
     }
 
-    InitClass(VarLst, CBaseFormatObject, AscDFH.historyitem_type_VarLst);
+    InitClass(VarLst, CBaseFormatNoIdObject, AscDFH.historyitem_type_VarLst);
 
 	  VarLst.prototype.Write_ToBinary = function (w) {
 		  AscFormat.writeLong(w, this.animLvl);
@@ -5306,12 +5309,12 @@ Because of this, the display is sometimes not correct.
     };
 
     function SampData() {
-      CBaseFormatObject.call(this);
+      CBaseFormatNoIdObject.call(this);
       this.useDef = null;
       this.dataModel = null;
     }
 
-    InitClass(SampData, CBaseFormatObject, AscDFH.historyitem_type_SampData);
+    InitClass(SampData, CBaseFormatNoIdObject, AscDFH.historyitem_type_SampData);
 
     SampData.prototype.Write_ToBinary = function (w) {
       AscFormat.writeBool(w, this.useDef);
@@ -5373,12 +5376,12 @@ Because of this, the display is sometimes not correct.
     };
 
     function DiagramTitle() {
-      CBaseFormatObject.call(this);
+      CBaseFormatNoIdObject.call(this);
       this.lang = null;
       this.val = "";
     }
 
-    InitClass(DiagramTitle, CBaseFormatObject, AscDFH.historyitem_type_DiagramTitle);
+    InitClass(DiagramTitle, CBaseFormatNoIdObject, AscDFH.historyitem_type_DiagramTitle);
 
     DiagramTitle.prototype.Write_ToBinary = function (w) {
       AscFormat.writeString(w, this.lang);
@@ -5424,7 +5427,7 @@ Because of this, the display is sometimes not correct.
     };
 
     function ColorsDef() {
-      CBaseFormatObject.call(this);
+      CBaseFormatNoIdObject.call(this);
       this.minVer = null;
       this.uniqueId = null;
       this.catLst = null;
@@ -5433,7 +5436,7 @@ Because of this, the display is sometimes not correct.
       this.styleLbl = {};
     }
 
-    InitClass(ColorsDef, CBaseFormatObject, AscDFH.historyitem_type_ColorsDef);
+    InitClass(ColorsDef, CBaseFormatNoIdObject, AscDFH.historyitem_type_ColorsDef);
 	  ColorsDef.prototype.Write_ToBinary = function (w) {
 		  AscFormat.writeString(w, this.minVer);
 		  AscFormat.writeString(w, this.uniqueId);
@@ -5581,7 +5584,7 @@ Because of this, the display is sometimes not correct.
     };
 
     function ColorDefStyleLbl() {
-      CBaseFormatObject.call(this);
+      CBaseFormatNoIdObject.call(this);
       this.name = null;
       this.effectClrLst = null;
       this.fillClrLst = null;
@@ -5591,7 +5594,7 @@ Because of this, the display is sometimes not correct.
       this.txLinClrLst = null;
     }
 
-    InitClass(ColorDefStyleLbl, CBaseFormatObject, AscDFH.historyitem_type_ColorDefStyleLbl);
+    InitClass(ColorDefStyleLbl, CBaseFormatNoIdObject, AscDFH.historyitem_type_ColorDefStyleLbl);
     ColorDefStyleLbl.prototype.Write_ToBinary = function (w) {
       AscFormat.writeString(w, this.name);
       AscFormat.writeObjectNoId(w, this.effectClrLst);
@@ -5816,12 +5819,12 @@ Because of this, the display is sometimes not correct.
 	  };
 
     function ClrLst() {
-	    CBaseFormatObject.call(this);
+	    CBaseFormatNoIdObject.call(this);
 	    this.list = [];
       this.hueDir = ClrLst_hueDir_cw;
       this.meth = ClrLst_meth_span;
     }
-    InitClass(ClrLst, CBaseFormatObject, AscDFH.historyitem_type_ClrLst);
+    InitClass(ClrLst, CBaseFormatNoIdObject, AscDFH.historyitem_type_ClrLst);
       ClrLst.prototype.Write_ToBinary = function (w) {
         w.WriteLong(this.list.length);
         for (let i = 0; i < this.list.length; i++) {
@@ -5999,7 +6002,7 @@ Because of this, the display is sometimes not correct.
 	  };
 
     function StyleDef() {
-      CBaseFormatObject.call(this);
+      CBaseFormatNoIdObject.call(this);
       this.minVer = null;
       this.uniqueId = null;
       this.catLst = null;
@@ -6009,7 +6012,7 @@ Because of this, the display is sometimes not correct.
       this.styleLbl = {};
     }
 
-    InitClass(StyleDef, CBaseFormatObject, AscDFH.historyitem_type_StyleDef);
+    InitClass(StyleDef, CBaseFormatNoIdObject, AscDFH.historyitem_type_StyleDef);
     StyleDef.prototype.Write_ToBinary = function (w) {
       AscFormat.writeString(w, this.minVer);
       AscFormat.writeString(w, this.uniqueId);
@@ -6177,13 +6180,13 @@ Because of this, the display is sometimes not correct.
     };
 
     function Scene3d() {
-      CBaseFormatObject.call(this);
+      CBaseFormatNoIdObject.call(this);
       this.backdrop = null;
       this.camera = null;
       this.lightRig = null;
     }
 
-    InitClass(Scene3d, CBaseFormatObject, AscDFH.historyitem_type_Scene3d);
+    InitClass(Scene3d, CBaseFormatNoIdObject, AscDFH.historyitem_type_Scene3d);
     Scene3d.prototype.Write_ToBinary = function (w) {
       AscFormat.writeObjectNoId(w, this.backdrop);
       AscFormat.writeObjectNoId(w, this.camera);
@@ -6261,7 +6264,7 @@ Because of this, the display is sometimes not correct.
       return [this.camera, this.lightRig, this.backdrop];
     };
     function StyleDefStyleLbl() {
-      CBaseFormatObject.call(this);
+      CBaseFormatNoIdObject.call(this);
       this.name = null;
       this.scene3d = null;
       this.sp3d = null;
@@ -6269,13 +6272,18 @@ Because of this, the display is sometimes not correct.
       this.txPr = null;
     }
 
-    InitClass(StyleDefStyleLbl, CBaseFormatObject, AscDFH.historyitem_type_StyleDefStyleLbl);
-    //todo
+    InitClass(StyleDefStyleLbl, CBaseFormatNoIdObject, AscDFH.historyitem_type_StyleDefStyleLbl);
     StyleDefStyleLbl.prototype.Write_ToBinary = function (w) {
       AscFormat.writeString(w, this.name);
       AscFormat.writeObjectNoId(w, this.scene3d);
       AscFormat.writeObjectNoId(w, this.style);
       AscFormat.writeObjectNoId(w, this.txPr);
+    };
+    StyleDefStyleLbl.prototype.Read_FromBinary = function (r) {
+      this.name = AscFormat.readString(r);
+      this.scene3d = AscFormat.readObjectNoId(r);
+      this.style = AscFormat.readObjectNoId(r);
+      this.txPr = AscFormat.readObjectNoId(r);
     };
 	  StyleDefStyleLbl.prototype.setShapeStyle = function (shapes) {
 		  if (this.style) {
@@ -6348,7 +6356,14 @@ Because of this, the display is sometimes not correct.
       this.writeRecord2(pWriter, 0, this.scene3d);
       this.writeRecord2(pWriter, 1, this.sp3d);
       pWriter.WriteRecord2(2, this.style, pWriter.WriteShapeStyle);
-      pWriter.WriteRecord2(3, this.txPr, pWriter.WriteTxBody);
+      if (this.txPr) {
+        AscFormat.ExecuteNoHistory(function() {
+          const textBody = new AscFormat.CTextBody();
+          textBody.setBodyPr(this.txPr);
+          pWriter.WriteRecord2(3, textBody, pWriter.WriteTxBody);
+        }, this, []);
+      }
+
     };
     StyleDefStyleLbl.prototype.readAttribute = function(nType, pReader) {
       var oStream = pReader.stream;
@@ -6372,7 +6387,8 @@ Because of this, the display is sometimes not correct.
           break;
         }
         case 3: {
-          this.setTxPr(pReader.ReadTextBody());
+          const textBody = pReader.ReadTextBody();
+          this.setTxPr(textBody.bodyPr);
           break;
         }
         default: {
@@ -6433,13 +6449,13 @@ Because of this, the display is sometimes not correct.
       this.dz = pr;
     }
     function Backdrop() {
-      CBaseFormatObject.call(this);
+      CBaseFormatNoIdObject.call(this);
       this.anchor = new Point3D();
       this.norm = new Vector3D();
       this.up = new Vector3D();
     }
 
-    InitClass(Backdrop, CBaseFormatObject, AscDFH.historyitem_type_Backdrop);
+    InitClass(Backdrop, CBaseFormatNoIdObject, AscDFH.historyitem_type_Backdrop);
     Backdrop.prototype.Write_ToBinary = function(w) {
       AscFormat.writeObjectNoIdNoType(w, this.anchor);
       AscFormat.writeObjectNoIdNoType(w, this.norm);
@@ -6661,14 +6677,14 @@ Because of this, the display is sometimes not correct.
     };
 
     function Camera() {
-      CBaseFormatObject.call(this);
+      CBaseFormatNoIdObject.call(this);
       this.fov = null;
       this.prst = null;
       this.zoom = null;
       this.rot = null;
     }
 
-    InitClass(Camera, CBaseFormatObject, AscDFH.historyitem_type_Camera);
+    InitClass(Camera, CBaseFormatNoIdObject, AscDFH.historyitem_type_Camera);
     Camera.prototype.Write_ToBinary = function(w) {
       AscFormat.writeDouble(w, this.fov);
       AscFormat.writeLong(w, this.prst);
@@ -6755,13 +6771,13 @@ Because of this, the display is sometimes not correct.
     };
 
     function Rot() {
-      CBaseFormatObject.call(this);
+      CBaseFormatNoIdObject.call(this);
       this.lat = null;
       this.lon = null;
       this.rev = null;
     }
 
-    InitClass(Rot, CBaseFormatObject, AscDFH.historyitem_type_Rot);
+    InitClass(Rot, CBaseFormatNoIdObject, AscDFH.historyitem_type_Rot);
     Rot.prototype.Write_ToBinary = function(w) {
       AscFormat.writeLong(w, this.lat);
       AscFormat.writeLong(w, this.lon);
@@ -6816,13 +6832,13 @@ Because of this, the display is sometimes not correct.
     };
 
     function LightRig() {
-      CBaseFormatObject.call(this);
+      CBaseFormatNoIdObject.call(this);
       this.dir = null;
       this.rig = null;
       this.rot = null;
     }
 
-    InitClass(LightRig, CBaseFormatObject, AscDFH.historyitem_type_LightRig);
+    InitClass(LightRig, CBaseFormatNoIdObject, AscDFH.historyitem_type_LightRig);
     LightRig.prototype.Write_ToBinary = function(w) {
       AscFormat.writeLong(w, this.dir);
       AscFormat.writeLong(w, this.rig);
@@ -6896,7 +6912,7 @@ Because of this, the display is sometimes not correct.
     };
 
     function Sp3d() {
-      CBaseFormatObject.call(this);
+      CBaseFormatNoIdObject.call(this);
       this.contourW = null;
       this.extrusionH = null;
       this.prstMaterial = null;
@@ -6907,7 +6923,7 @@ Because of this, the display is sometimes not correct.
       this.extrusionClr = null;
     }
 
-    InitClass(Sp3d, CBaseFormatObject, AscDFH.historyitem_type_Sp3d);
+    InitClass(Sp3d, CBaseFormatNoIdObject, AscDFH.historyitem_type_Sp3d);
     Sp3d.prototype.Write_ToBinary = function(w) {
       AscFormat.writeLong(w, this.contourW);
       AscFormat.writeLong(w, this.extrusionH);
@@ -7013,14 +7029,73 @@ Because of this, the display is sometimes not correct.
       }
     }
 
+    Sp3d.prototype.privateWriteAttributes = function(pWriter) {
+      pWriter._WriteInt2(0, this.contourW);
+      pWriter._WriteInt2(1, this.extrusionH);
+      pWriter._WriteLimit2(2, this.prstMaterial);
+      pWriter._WriteInt2(3, this.z);
+    };
+    Sp3d.prototype.writeChildren = function(pWriter) {
+      this.writeRecord2(pWriter, 0, this.bevelT);
+      this.writeRecord2(pWriter, 1, this.bevelB);
+      pWriter.WriteRecord1(2, this.extrusionClr, pWriter.WriteUniColor);
+      pWriter.WriteRecord1(3, this.contourClr, pWriter.WriteUniColor);
+
+    };
+    Sp3d.prototype.readAttribute = function(nType, pReader) {
+      var oStream = pReader.stream;
+      switch (nType) {
+        case 0:
+          this.setContourW(oStream.GetLong());
+          break;
+        case 1:
+          this.setExtrusionH(oStream.GetLong());
+          break;
+        case 2:
+          this.setPrstMaterial(oStream.GetUChar());
+          break;
+        case 3:
+          this.setZ(oStream.GetLong());
+          break;
+        default:
+          break;
+      }
+    };
+    Sp3d.prototype.readChild = function(nType, pReader) {
+      var s = pReader.stream;
+      switch (nType) {
+        case 0: {
+          this.setBevelT(new Bevel());
+          this.bevelT.fromPPTY(pReader);
+          break;
+        }
+        case 1: {
+          this.setBevelB(new Bevel());
+          this.bevelB.fromPPTY(pReader);
+          break;
+        }
+        case 2: {
+          this.setExtrusionClr(pReader.ReadUniColor());
+          break;
+        }
+        case 3: {
+          this.setContourClr(pReader.ReadUniColor());
+          break;
+        }
+        default: {
+          break;
+        }
+      }
+    };
+
     function Bevel() {
-      CBaseFormatObject.call(this);
+      CBaseFormatNoIdObject.call(this);
       this.h = null;
       this.prst = null;
       this.w = null;
     }
 
-    InitClass(Bevel, CBaseFormatObject, AscDFH.historyitem_type_Bevel);
+    InitClass(Bevel, CBaseFormatNoIdObject, AscDFH.historyitem_type_Bevel);
     Bevel.prototype.Write_ToBinary = function(w) {
       AscFormat.writeLong(w, this.h);
       AscFormat.writeLong(w, this.prst);
@@ -7060,6 +7135,28 @@ Because of this, the display is sometimes not correct.
       oCopy.setPrst(this.getPrst());
       oCopy.setW(this.getW());
     }
+
+    Bevel.prototype.privateWriteAttributes = function(pWriter) {
+      pWriter._WriteInt2(0, this.w);
+      pWriter._WriteInt2(1, this.h);
+      pWriter._WriteLimit2(2, this.prst);
+    };
+    Bevel.prototype.readAttribute = function(nType, pReader) {
+      var oStream = pReader.stream;
+      switch (nType) {
+        case 0:
+          this.setW(oStream.GetLong());
+          break;
+        case 1:
+          this.setH(oStream.GetLong());
+          break;
+        case 2:
+          this.setPrst(oStream.GetUChar());
+          break;
+        default:
+          break;
+      }
+    };
 
     function ShapeSmartArtInfo() {
 			this.shape = null;
@@ -7268,18 +7365,17 @@ Because of this, the display is sometimes not correct.
 			return array;
 	  };
 
-    changesFactory[AscDFH.historyitem_SmartArtColorsDef] = CChangeObject;
+    changesFactory[AscDFH.historyitem_SmartArtColorsDef] = CChangeObjectNoId;
     changesFactory[AscDFH.historyitem_SmartArtDrawing] = CChangeObject;
-    changesFactory[AscDFH.historyitem_SmartArtLayoutDef] = CChangeObject;
+    changesFactory[AscDFH.historyitem_SmartArtLayoutDef] = CChangeObjectNoId;
     changesFactory[AscDFH.historyitem_SmartArtDataModel] = CChangeObject;
-    changesFactory[AscDFH.historyitem_SmartArtStyleDef] = CChangeObject;
+    changesFactory[AscDFH.historyitem_SmartArtStyleDef] = CChangeObjectNoId;
     changesFactory[AscDFH.historyitem_SmartArtParent] = CChangeObject;
-    changesFactory[AscDFH.historyitem_SmartArtType] = CChangeString;
+    drawingConstructorsMap[AscDFH.historyitem_SmartArtColorsDef] = ColorsDef;
+    drawingConstructorsMap[AscDFH.historyitem_SmartArtLayoutDef] = LayoutDef;
+    drawingConstructorsMap[AscDFH.historyitem_SmartArtStyleDef] = StyleDef;
     drawingsChangesMap[AscDFH.historyitem_SmartArtColorsDef] = function (oClass, value) {
       oClass.colorsDef = value;
-    };
-    drawingsChangesMap[AscDFH.historyitem_SmartArtType] = function (oClass, value) {
-      oClass.type = value;
     };
     drawingsChangesMap[AscDFH.historyitem_SmartArtDrawing] = function (oClass, value) {
       oClass.drawing = value;
@@ -8553,14 +8649,13 @@ Because of this, the display is sometimes not correct.
       this.parent = parent;
     };
     SmartArt.prototype.setColorsDef = function (oPr) {
-      oHistory.CanAddChanges() && oHistory.Add(new CChangeObject(this, AscDFH.historyitem_SmartArtColorsDef, this.getColorsDef(), oPr));
+      oHistory.CanAddChanges() && oHistory.Add(new CChangeObjectNoId(this, AscDFH.historyitem_SmartArtColorsDef, this.getColorsDef(), oPr));
       this.colorsDef = oPr;
 			if (oPr) {
 				oPr.setParent(this);
 			}
     };
     SmartArt.prototype.setType = function (oPr) {
-      oHistory.CanAddChanges() && oHistory.Add(new CChangeString(this, AscDFH.historyitem_SmartArtType, this.type, oPr));
       this.type = oPr;
     };
     SmartArt.prototype.setDrawing = function (oPr) {
@@ -8571,7 +8666,7 @@ Because of this, the display is sometimes not correct.
 	    }
     };
     SmartArt.prototype.setLayoutDef = function (oPr) {
-      oHistory.CanAddChanges() && oHistory.Add(new CChangeObject(this, AscDFH.historyitem_SmartArtLayoutDef, this.getLayoutDef(), oPr));
+      oHistory.CanAddChanges() && oHistory.Add(new CChangeObjectNoId(this, AscDFH.historyitem_SmartArtLayoutDef, this.getLayoutDef(), oPr));
       this.layoutDef = oPr;
 	    if (oPr) {
 		    oPr.setParent(this);
@@ -8585,7 +8680,7 @@ Because of this, the display is sometimes not correct.
 	    }
     };
     SmartArt.prototype.setStyleDef = function (oPr) {
-      oHistory.CanAddChanges() && oHistory.Add(new CChangeObject(this, AscDFH.historyitem_SmartArtStyleDef, this.getStyleDef(), oPr));
+      oHistory.CanAddChanges() && oHistory.Add(new CChangeObjectNoId(this, AscDFH.historyitem_SmartArtStyleDef, this.getStyleDef(), oPr));
       this.styleDef = oPr;
 	    if (oPr) {
 		    oPr.setParent(this);
@@ -9237,43 +9332,24 @@ Because of this, the display is sometimes not correct.
     window['AscFormat'].AdjLst                 = AdjLst;
     window['AscFormat'].Adj                    = Adj;
     window['AscFormat'].DiagramTitle           = DiagramTitle;
-    window['AscFormat'].LayoutDefHdrLst        = LayoutDefHdrLst;
-    window['AscFormat'].LayoutDefHdr           = LayoutDefHdr;
-    window['AscFormat'].RelIds                 = RelIds;
     window['AscFormat'].VarLst                 = VarLst;
     window['AscFormat'].ColorsDef              = ColorsDef;
     window['AscFormat'].ColorDefStyleLbl       = ColorDefStyleLbl;
     window['AscFormat'].ClrLst                 = ClrLst;
-    window['AscFormat'].ColorsDefHdr           = ColorsDefHdr;
-    window['AscFormat'].ColorsDefHdrLst        = ColorsDefHdrLst;
     window['AscFormat'].StyleDef               = StyleDef;
     window['AscFormat'].Scene3d                = Scene3d;
     window['AscFormat'].StyleDefStyleLbl       = StyleDefStyleLbl;
     window['AscFormat'].Backdrop               = Backdrop;
-    window['AscFormat'].BackdropNorm           = BackdropNorm;
-    window['AscFormat'].BackdropUp             = BackdropUp;
     window['AscFormat'].Camera                 = Camera;
     window['AscFormat'].Rot                    = Rot;
     window['AscFormat'].LightRig               = LightRig;
     window['AscFormat'].Sp3d                   = Sp3d;
     window['AscFormat'].Bevel                  = Bevel;
-    window['AscFormat'].BevelB                 = BevelB;
-    window['AscFormat'].BevelT                 = BevelT;
-    window['AscFormat'].TxPr                   = TxPr;
-    window['AscFormat'].FlatTx                 = FlatTx;
-    window['AscFormat'].StyleDefHdrLst         = StyleDefHdrLst;
-    window['AscFormat'].StyleDefHdr            = StyleDefHdr;
-    window['AscFormat'].BackdropAnchor         = BackdropAnchor;
     window['AscFormat'].SampData               = SampData;
     window['AscFormat'].ForEach                = ForEach;
-    window['AscFormat'].Coordinate             = Coordinate;
-    window['AscFormat'].ExtrusionClr           = ExtrusionClr;
-    window['AscFormat'].ContourClr             = ContourClr;
     window['AscFormat'].SmartArt               = SmartArt;
-    window['AscFormat'].BuNone                 = BuNone;
     window['AscFormat'].Drawing                = Drawing;
     window['AscFormat'].DiagramData            = DiagramData;
-    window['AscFormat'].FunctionValue          = FunctionValue;
     window['AscFormat'].ShapeSmartArtInfo      = ShapeSmartArtInfo;
 
     window['AscFormat'].Point_type_asst = Point_type_asst;
