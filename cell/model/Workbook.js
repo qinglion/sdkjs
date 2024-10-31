@@ -2221,10 +2221,10 @@
 			let helper = new BroadcastHelper();
 			var affected = [];
 			var curY, curYCell = -1, elem;
-			let processCellsBeforeCurY = function() {
+			let processCellsBeforeCurY = function(_curY) {
 				while (indexCell < cells.length) {
 					getFromCellIndex(cells[indexCell]);
-					if (g_FCI.row < curY) {
+					if (g_FCI.row <= _curY) {
 						if (g_FCI.row > curYCell) {
 							helper.reset();
 							curYCell = g_FCI.row;
@@ -2239,7 +2239,16 @@
 						} else {
 							//todo bin search?
 							if (!helper.next()) {
-								break;
+								//skip tail
+								while (curYCell === g_FCI.row) {
+									indexCell++;
+									if (indexCell < cells.length) {
+										getFromCellIndex(cells[indexCell]);
+									} else {
+										break;
+									}
+								}
+								// break;
 							}
 						}
 					} else {
@@ -2256,7 +2265,7 @@
 					curY = rangesBottom[indexBottom].bbox.r2;
 				}
 				//process cells before curY
-				processCellsBeforeCurY();
+				processCellsBeforeCurY(curY-1);
 				helper.finishDelete();
 				//insert new ranges
 				while (indexTop < rangesTop.length && curY === rangesTop[indexTop].bbox.r1) {
@@ -2268,7 +2277,7 @@
 				}
 				helper.finishInsert();
 				//process cells
-				processCellsBeforeCurY();
+				processCellsBeforeCurY(curY);
 				//delete ranges before move to new curY
 				while (indexBottom < rangesBottom.length && curY === rangesBottom[indexBottom].bbox.r2) {
 					elem = rangesBottom[indexBottom];
@@ -2308,7 +2317,16 @@
 						} else {
 							//todo bin search?
 							if (!helper.next()) {
-								break;
+								//skip tail
+								while (curYCell === g_FCI.row) {
+									indexCell++;
+									if (indexCell < cells.length) {
+										getFromCellIndex(cells[indexCell].cellIndex);
+									} else {
+										break;
+									}
+								}
+								//break;
 							}
 						}
 					} else {
@@ -2367,39 +2385,47 @@
 				if (indexTopChanged < rangesTopChanged.length) {
 					curY = Math.min(curY, rangesTopChanged[indexTopChanged].bbox.r1);
 				}
+				let changed = false;
 				//insert new ranges
 				while (indexTopChanged < rangesTopChanged.length && curY === rangesTopChanged[indexTopChanged].bbox.r1) {
 					helperChanged.addInsert(rangesTopChanged[indexTopChanged]);
 					indexTopChanged++;
+					changed = true;
 				}
 				helperChanged.finishInsert();
 				while (indexTop < rangesTop.length && curY === rangesTop[indexTop].bbox.r1) {
 					elem = rangesTop[indexTop];
-					helper.addInsert(elem);
+					if (elem.isActive) {
+						helper.addInsert(elem);
+					}
 					indexTop++;
+					changed = true;
 				}
 				helper.finishInsert();
 				//intersect
-				helper.reset();
-				helper.next();
-				helperChanged.reset();
-				helperChanged.next();
-				while (true) {
-					if (!(helperChanged.to < helper.from || helper.to < helperChanged.from)) {
-						helper.curElems.forEach(function (elem) {
-							helperChanged.curElems.forEach(function (elemChanged) {
-								var intersect = elem.bbox.intersectionSimple(elemChanged.bbox);
-								t._broadcastShared(elem, helper, affected, intersect, null, null);
+				if (changed) {
+					helper.reset();
+					helper.next();
+					helperChanged.reset();
+					helperChanged.next();
+					while (true) {
+						if (!(helperChanged.to < helper.from || helper.to < helperChanged.from)) {
+							helper.curElems.forEach(function (elem) {
+								helperChanged.curElems.forEach(function (elemChanged) {
+									//todo without maxRecursion
+									var intersect = elem.bbox.intersectionSimple(elemChanged.bbox);
+									t._broadcastShared(elem, helper, affected, intersect, null, null, true);
+								});
 							});
-						});
-					}
-					if (helper.from < helperChanged.from) {
-						if (!helper.next()) {
-							break;
 						}
-					} else {
-						if (!helperChanged.next()) {
-							break;
+						if (helper.from < helperChanged.from) {
+							if (!helper.next()) {
+								break;
+							}
+						} else {
+							if (!helperChanged.next()) {
+								break;
+							}
 						}
 					}
 				}
@@ -2420,7 +2446,7 @@
 			}
 			this._broadcastNotifyRanges(affected, notifyData);
 		},
-		_broadcastShared: function(elem, helper, affected, intersect, row, col) {
+		_broadcastShared: function(elem, helper, affected, intersect, row, col, maxRecursion) {
 			var sharedBroadcast = elem.sharedBroadcast;
 			if (!sharedBroadcast) {
 				if (elem.isActive) {
@@ -2435,7 +2461,7 @@
 				if (!sharedBroadcast.changedBBox ||
 					sharedBroadcast.changedBBox.isEqual(sharedBroadcast.prevChangedBBox)) {
 					sharedBroadcast.recursion++;
-					if (sharedBroadcast.recursion >= this.maxSharedRecursion) {
+					if (maxRecursion || sharedBroadcast.recursion >= this.maxSharedRecursion) {
 						sharedBroadcast.changedBBox = elem.bbox.clone();
 					}
 					affected.push(elem);
