@@ -9350,6 +9350,8 @@ Because of this, the display is sometimes not correct.
     window['AscFormat'].Drawing                = Drawing;
     window['AscFormat'].DiagramData            = DiagramData;
     window['AscFormat'].ShapeSmartArtInfo      = ShapeSmartArtInfo;
+    window['AscFormat'].LayoutBaseClass      = LayoutBaseClass;
+    window['AscFormat'].IteratorLayoutBase      = IteratorLayoutBase;
 
     window['AscFormat'].Point_type_asst = Point_type_asst;
     window['AscFormat'].Point_type_doc = Point_type_doc;

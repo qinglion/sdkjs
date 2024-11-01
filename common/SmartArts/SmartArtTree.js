@@ -49,6 +49,8 @@
 	const PresOf = AscFormat.PresOf;
 	const RuleLst = AscFormat.RuleLst;
 	const VarLst = AscFormat.VarLst;
+	const LayoutBaseClass = AscFormat.LayoutBaseClass;
+	const IteratorLayoutBase = AscFormat.IteratorLayoutBase;
 
 	const degToRad = Math.PI / 180;
 	const radToDeg = 1 / degToRad;
@@ -104,6 +106,30 @@
 		this.y = y;
 	}
 
+	LayoutBaseClass.prototype.executeLayoutAlgorithms = function(smartartAlgorithm) {
+		if (this.shape) {
+			this.shape.executeAlgorithm(smartartAlgorithm);
+		}
+		if (this.alg) {
+			this.alg.executeAlgorithm(smartartAlgorithm);
+		}
+		if (this.presOf) {
+			this.presOf.executeAlgorithm(smartartAlgorithm);
+		}
+		if (this.constrLst) {
+			this.constrLst.executeAlgorithm(smartartAlgorithm);
+		}
+		if (this.ruleLst) {
+			this.ruleLst.executeAlgorithm(smartartAlgorithm);
+		}
+		if (this.varLst) {
+			this.varLst.executeAlgorithm(smartartAlgorithm);
+		}
+		for (let i = 0; i < this.list.length; i++) {
+			this.list[i].executeAlgorithm(smartartAlgorithm);
+		}
+	};
+	IteratorLayoutBase.prototype.executeLayoutAlgorithms = LayoutBaseClass.prototype.executeLayoutAlgorithms;
 	CCoordPoint.prototype.getVector = function (point) {
 		return new CVector(point.x - this.x, point.y - this.y);
 	}
@@ -172,10 +198,6 @@
 
 	PresOf.prototype.executeAlgorithm = function (smartartAlgorithm) {
 		const currentPresNode = smartartAlgorithm.getCurrentPresNode();
-		//todo change read/write only one instance of presof
-		if (currentPresNode.contentNodes.length) {
-			return;
-		}
 		const nodes = this.getNodesArray(smartartAlgorithm);
 		for (let i = 0; i < nodes.length; i++) {
 			const node = nodes[i];
@@ -188,15 +210,11 @@
 		}
 	};
 	LayoutNode.prototype.executeAlgorithm = function (smartartAlgorithm) {
-		const list = this.list;
 		const parentPresNode = smartartAlgorithm.getCurrentPresNode();
 		const curPresNode = smartartAlgorithm.getPresNode(this);
 		parentPresNode.addChild(curPresNode);
 		smartartAlgorithm.addCurrentPresNode(curPresNode);
-		for (let i = 0; i < list.length; i += 1) {
-			const element = this.list[i];
-			element.executeAlgorithm(smartartAlgorithm);
-		}
+		this.executeLayoutAlgorithms(smartartAlgorithm);
 		curPresNode.checkMoveWith();
 		curPresNode.initPresShape();
 		smartartAlgorithm.removeCurrentPresNode(curPresNode);
@@ -230,9 +248,7 @@
 
 	If.prototype.executeAlgorithm = function (smartartAlgorithm) {
 		if (this.checkCondition(smartartAlgorithm)) {
-			for (let i = 0; i < this.list.length; i++) {
-				this.list[i].executeAlgorithm(smartartAlgorithm);
-			}
+			this.executeLayoutAlgorithms(smartartAlgorithm);
 			return true;
 		}
 		return false;
@@ -394,9 +410,7 @@
 	}
 
 	Else.prototype.executeAlgorithm = function (smartartAlgorithm) {
-		for (let i = 0; i < this.list.length; i++) {
-			this.list[i].executeAlgorithm(smartartAlgorithm);
-		}
+		this.executeLayoutAlgorithms(smartartAlgorithm);
 	}
 
 	ForEach.prototype.executeAlgorithm = function (smartartAlgorithm) {
@@ -419,9 +433,7 @@
 		for (let i = 0; i < nodes.length; i += 1) {
 			const node = nodes[i];
 			smartartAlgorithm.addCurrentNode(node);
-			for (let j = 0; j < this.list.length; j++) {
-				this.list[j].executeAlgorithm(smartartAlgorithm);
-			}
+			this.executeLayoutAlgorithms(smartartAlgorithm);
 			smartartAlgorithm.removeCurrentNode();
 		}
 	};
@@ -492,11 +504,8 @@
 	}
 	Point.prototype.getDirection = function () {
 		const variables = this.getVariables();
-		if (variables) {
-			const dir = variables.getDir();
-			if (dir) {
-				return dir.getVal();
-			}
+		if (variables && variables.dir !== null) {
+			return variables.dir;
 		}
 		return AscFormat.DiagramDirection_val_norm;
 	}
@@ -6963,7 +6972,7 @@ PresNode.prototype.addChild = function (ch, pos) {
 		this.constr = {};
 	};
 	PresNode.prototype.setRule = function (rule, smartartAlgorithm) {
-		const node = this.getConstraintNode(rule.forName, rule.ptType.getVal());
+		const node = this.getConstraintNode(rule.forName, rule.ptType);
 		if (node) {
 			if (AscFormat.isRealNumber(rule.fact)) {
 				if (rule.val !== rule.val) {
@@ -7045,7 +7054,7 @@ PresNode.prototype.addChild = function (ch, pos) {
 					if (isReturnFirstFindFontSize) {
 						break;
 					}
-				} else if (!(constr.for === constr.refFor && constr.forName === constr.refForName && constr.ptType.getVal() === constr.refPtType.getVal())) {
+				} else if (!(constr.for === constr.refFor && constr.forName === constr.refForName && constr.ptType === constr.refPtType)) {
 					const refNodes = info.refNodes;
 					for (let i = 0; i < refNodes.length; i += 1) {
 						const refNode = refNodes[i];
@@ -7082,13 +7091,13 @@ PresNode.prototype.addChild = function (ch, pos) {
 		const truthRefNodes = [];
 		const truthNodes = [];
 		for (let i = 0; i < nodes.length; i++) {
-			const node = nodes[i].getConstraintNode(constr.forName, constr.ptType.getVal());
+			const node = nodes[i].getConstraintNode(constr.forName, constr.ptType);
 			if (node) {
 				truthNodes.push(node);
 			}
 		}
 		for (let i = 0; i < refNodes.length; i++) {
-			const node = refNodes[i].getConstraintNode(constr.refForName, constr.refPtType.getVal());
+			const node = refNodes[i].getConstraintNode(constr.refForName, constr.refPtType);
 			if (node) {
 				truthRefNodes.push(node);
 			}
@@ -7111,7 +7120,7 @@ PresNode.prototype.addChild = function (ch, pos) {
 				calcConstr.op[constr.op].push({constr: constr, refNodes: truthNodes, nodes: truthRefNodes});
 			}
 		}
-		if (constr.op === AscFormat.Constr_op_lte && !(constr.for === constr.refFor && constr.forName === constr.refForName && constr.ptType.getVal() === constr.refPtType.getVal()) && constr.refType !== AscFormat.Constr_type_none) {
+		if (constr.op === AscFormat.Constr_op_lte && !(constr.for === constr.refFor && constr.forName === constr.refForName && constr.ptType === constr.refPtType) && constr.refType !== AscFormat.Constr_type_none) {
 			for (let i = 0; i < truthRefNodes.length; i += 1) {
 				truthRefNodes[i].textConstraintRelations.push(truthNodes);
 			}
@@ -7207,32 +7216,31 @@ PresNode.prototype.addChild = function (ch, pos) {
 	};
 
 	PresNode.prototype.getCalcRefConstr = function (constr, isAdapt, valueCache) {
-		const refPtType = constr.refPtType.getVal();
 		if (!constr.refForName) {
 			if (!valueCache[constr.refFor]) {
 				valueCache[constr.refFor] = {};
 			}
-			if (!valueCache[constr.refFor][refPtType]) {
-				valueCache[constr.refFor][refPtType] = {};
+			if (!valueCache[constr.refFor][constr.refPtType]) {
+				valueCache[constr.refFor][constr.refPtType] = {};
 			}
-			const cacheValue = valueCache[constr.refFor][refPtType][constr.refType];
+			const cacheValue = valueCache[constr.refFor][constr.refPtType][constr.refType];
 			if (AscFormat.isRealNumber(cacheValue)) {
 				return cacheValue;
 			}
 		}
 
-		const refNode = this.getConstraintNode(constr.refForName, refPtType);
+		const refNode = this.getConstraintNode(constr.refForName, constr.refPtType);
 		if (!refNode) {
 			return;
 		}
 		const calcValue = refNode.getRefConstr(constr, isAdapt);
 		if (constr.refType !== AscFormat.Constr_type_none && !constr.refForName && constr.refFor !== AscFormat.Constr_for_self) {
-			valueCache[constr.refFor][refPtType][constr.refType] = calcValue;
+			valueCache[constr.refFor][constr.refPtType][constr.refType] = calcValue;
 		}
 		return calcValue;
 	};
 	PresNode.prototype.setConstraintByNode = function (constr, refNode, calcValue, isAdapt) {
-		const constrNode = this.getConstraintNode(constr.forName, constr.ptType.getVal());
+		const constrNode = this.getConstraintNode(constr.forName, constr.ptType);
 		if (constrNode) {
 			constrNode.addEqualRelation(refNode, constr, isAdapt);
 			const isSettingConstraint = constrNode.setConstraint(constr, calcValue, isAdapt);
