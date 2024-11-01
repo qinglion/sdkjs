@@ -925,7 +925,7 @@ RotateState.prototype =
                             
                             oTrack.originalObject.SetNeedRecalc(true);
                         }
-                }, AscDFH.historydescription_Document_RotateFlowDrawingNoCtrl, this);
+                }, AscDFH.historydescription_CommonDrawings_EndTrack, this);
 
                 this.drawingObjects.changeCurrentState(new NullState(this.drawingObjects));
                 this.drawingObjects.clearTrackObjects();

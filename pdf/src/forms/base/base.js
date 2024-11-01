@@ -196,6 +196,7 @@
 		this.compositeInput = null;
 		this.compositeReplaceCount = 0;
 
+        this.Lock = new AscCommon.CLock();
         this.SetRect(aRect);
     }
 

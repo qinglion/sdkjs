@@ -53,6 +53,13 @@ var CPresentation = CPresentation || function(){};
 
     let AscPDF = window["AscPDF"];
 
+    /** @enum {number} */
+    let AscLockTypeElemPDF = {
+        Object:     1,
+        Page:       2,
+        Document:   3
+    };
+
     function CCalculateInfo(oDoc) {
         this.ids = [];
         this.document = oDoc;
@@ -2225,7 +2232,7 @@ var CPresentation = CPresentation || function(){};
 
         oViewer.sendEvent("onPagesCount", oFile.pages.length);
 
-        this.History.Add(new CChangesPDFDocumentAddPage(this, nPos, [oPage]));
+        this.History.Add(new CChangesPDFDocumentPagesContent(this, nPos, [oPage], true));
 
         this.History.StartNoHistoryMode();
         for (let nPage = nPos + 1; nPage < oViewer.pagesInfo.pages.length; nPage++) {
@@ -2308,7 +2315,7 @@ var CPresentation = CPresentation || function(){};
         this.GetDrawingDocument().m_lPagesCount = oViewer.file.pages.length;
         oViewer.sendEvent("onPagesCount", oFile.pages.length);
 
-        this.History.Add(new CChangesPDFDocumentRemovePage(this, nPos, aPages));
+        this.History.Add(new CChangesPDFDocumentPagesContent(this, nPos, aPages, false));
 
         this.History.StartNoHistoryMode();
         // проставляем новые номера страниц объектам на остальных страницах
@@ -4245,8 +4252,13 @@ var CPresentation = CPresentation || function(){};
             return;
         }
 
-        Asc.editor.canSave = false;
         this.StartAction(AscDFH.historydescription_Pdf_EditPage);
+        if (this.IsSelectionLocked(AscDFH.historydescription_Pdf_EditPage, [nPage])) {
+            this.FinalizeAction(true);
+            return;
+        }
+
+        Asc.editor.canSave = false;
         let oDrDoc = this.GetDrawingDocument();
 
         oFile.pages[nPage].isConvertedToShapes = true;
@@ -5566,8 +5578,7 @@ var CPresentation = CPresentation || function(){};
             case AscDFH.historyitem_PDF_Document_DrawingsContent:
                 this.drawingsContentChanges.Add(Changes);
                 break;
-			case AscDFH.historyitem_PDF_Document_AddPage:
-			case AscDFH.historyitem_PDF_Document_RemovePage:
+			case AscDFH.historyitem_PDF_Document_PagesContent:
 				this.pagesContentChanges.Add(Changes);
 				break;
         }
@@ -5613,6 +5624,12 @@ var CPresentation = CPresentation || function(){};
     CPDFDoc.prototype.GetCurPage = function() {
         return this.Viewer.currentPage;
     };
+    CPDFDoc.prototype.GetPageInfo = function(nPage) {
+        return this.Viewer.pagesInfo.pages[nPage];
+    };
+    CPDFDoc.prototype.GetThumbnails = function() {
+        return this.Viewer.thumbnails;
+    };
     CPDFDoc.prototype.GetPagesCount = function() {
         return this.Viewer.file.pages.length;
     };
@@ -5639,7 +5656,44 @@ var CPresentation = CPresentation || function(){};
         if (oState.CurPage != -1 && oState.CurPage != this.Viewer.currentPage)
 	        this.Viewer.navigateToPage(oState.CurPage);
     };
-    CPDFDoc.prototype.IsSelectionLocked = function() {};
+    CPDFDoc.prototype.IsSelectionLocked = function (nCheckType, oAdditionalData, isDontLockInFastMode, isIgnoreCanEditFlag) {
+        return this.Document_Is_SelectionLocked(nCheckType, oAdditionalData, isIgnoreCanEditFlag, undefined, isDontLockInFastMode);
+    };
+    CPDFDoc.prototype.Document_Is_SelectionLocked = function (nCheckType, AdditionalData, isIgnoreCanEditFlag, aAdditionaObjects, DontLockInFastMode) {
+        if (Asc.editor.isRestrictionView() || true === this.CollaborativeEditing.Get_GlobalLock()) {
+            return true;
+        }
+
+        AscCommon.CollaborativeEditing.OnStart_CheckLock();
+
+        switch (nCheckType) {
+            case AscDFH.historydescription_Pdf_RemovePage:
+            case AscDFH.historydescription_Pdf_EditPage:
+            case AscDFH.historydescription_Pdf_RotatePage: {
+                let aSelectedPagesIdx = AdditionalData;
+                let aPagesInfo = this.Viewer.pagesInfo.pages;
+
+                aSelectedPagesIdx.forEach(function(pageIdx) {
+                    let oPageInfo = aPagesInfo[pageIdx];
+
+                    if (oPageInfo) {
+                        let oCheckData = {
+                            "type":     AscLockTypeElemPDF.Page,
+                            "pageId":   oPageInfo.GetId(),
+                            "guid":     oPageInfo.GetId()
+                        };
+
+                        oPageInfo.Lock.Check(oCheckData);
+                    }
+                });
+
+                break;
+            }
+        }
+        
+        let isLocked = AscCommon.CollaborativeEditing.OnEnd_CheckLock(DontLockInFastMode);
+        return isLocked;
+    };
     
     CPDFDoc.prototype.Document_UpdateUndoRedoState = function() {};
     CPDFDoc.prototype.SetHighlightRequiredFields = function() {};
@@ -5686,9 +5740,6 @@ var CPresentation = CPresentation || function(){};
         }).length;
     };
     CPDFDoc.prototype.isShapeChild = function() {};
-    CPDFDoc.prototype.Document_Is_SelectionLocked = function() {
-        return false;
-    };
     CPDFDoc.prototype.Recalculate = function(){};
     CPDFDoc.prototype.GetDocPosType = function() {};
     CPDFDoc.prototype.GetSelectedContent = function() {};
@@ -6386,11 +6437,16 @@ var CPresentation = CPresentation || function(){};
 		
 		this.startPoint = -1;
 	};
-	CPDFCompositeInput.prototype.doAction = function(action, description) {
-		this.pdfDocument.DoAction(function() {
-			action.bind(this)();
-		}, description, this);
-	};
+    CPDFDoc.prototype.DoAction = function(fAction, nDescription, oThis, Additional) {
+        if (this.IsSelectionLocked(nDescription, Additional)) {
+            return;
+        }
+    
+        this.StartAction(nDescription);
+        let result = fAction.call(oThis);
+        this.FinalizeAction(true);
+        return result;
+    };
 	CPDFCompositeInput.prototype.checkState = function() {};
 	CPDFCompositeInput.prototype.canSquashChanges = function() {
 		let localHistory = this.pdfDocument.GetHistory();
@@ -6519,6 +6575,7 @@ var CPresentation = CPresentation || function(){};
     window["AscPDF"].CPDFCompositeInput         = CPDFCompositeInput;
     window["AscPDF"].PDFSelectedContent         = PDFSelectedContent;
     window["AscPDF"].DrawingCopyObject          = DrawingCopyObject;
+    window["AscPDF"].AscLockTypeElemPDF         = AscLockTypeElemPDF;
     window["AscPDF"]["GetPageCoordsByGlobalCoords"] = window["AscPDF"].GetPageCoordsByGlobalCoords = GetPageCoordsByGlobalCoords;
     window["AscPDF"]["GetGlobalCoordsByPageCoords"] = window["AscPDF"].GetGlobalCoordsByPageCoords = GetGlobalCoordsByPageCoords;
     window["AscPDF"]["ConvertCoordsToAnotherPage"]  = window["AscPDF"].ConvertCoordsToAnotherPage = ConvertCoordsToAnotherPage;

@@ -117,9 +117,21 @@
 		this.needRedrawForms		= true;
 		this.needRedrawDrawings		= true;
 		this.needRedrawAnnots		= true;
+
+		this.Lock = new AscCommon.CLock();
 	}
 	AscFormat.InitClass(CPageInfo, AscFormat.CBaseNoIdObject, AscDFH.historyitem_type_Pdf_Page);
 	CPageInfo.prototype.constructor = CPageInfo;
+	
+	CPageInfo.prototype.IsLocked = function() {
+		return false == [AscCommon.c_oAscLockTypes.kLockTypeNone, AscCommon.c_oAscLockTypes.kLockTypeMine].includes(this.Lock.Get_Type());
+	};
+	CPageInfo.prototype.GetIndex = function() {
+		let oViewer = Asc.editor.getDocumentRenderer();
+		let oDocPages = oViewer.pagesInfo;
+
+		return oDocPages.pages.indexOf(this);
+    };
 	
 	function CDocumentPagesInfo()
 	{
@@ -3700,9 +3712,6 @@
 				break;
 
 			let aForms = this.pagesInfo.pages[i].fields != null ? this.pagesInfo.pages[i].fields : null;
-			if (this.pagesInfo.pages[i].graphics == null)
-				this.pagesInfo.pages[i].graphics = {};
-			
 			if (aForms.length == 0)
 				continue;
 
@@ -3814,9 +3823,6 @@
 				break;
 
 			let aAnnots = this.pagesInfo.pages[i].annots != null ? this.pagesInfo.pages[i].annots : null;
-			if (this.pagesInfo.pages[i].graphics == null)
-				this.pagesInfo.pages[i].graphics = {};
-			
 			if (aAnnots.length == 0)
 				continue;
 
@@ -3901,9 +3907,6 @@
 				break;
 
 			let aDrawings = this.pagesInfo.pages[i].drawings != null ? this.pagesInfo.pages[i].drawings : null;
-			if (this.pagesInfo.pages[i].graphics == null)
-				this.pagesInfo.pages[i].graphics = {};
-			
 			if (aDrawings.length == 0)
 				continue;
 
