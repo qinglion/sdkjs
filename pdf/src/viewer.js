@@ -1402,7 +1402,8 @@
 						oAnnot.SetDash(oAnnotInfo["dashed"]);
 					if (oAnnotInfo["border"] != null)
 						oAnnot.SetBorder(oAnnotInfo["border"]);
-					
+					if (oAnnotInfo["Icon"] != null)
+						oAnnot.SetIconType(oAnnotInfo["Icon"]);
 					if (oAnnotInfo["noRotate"] != null)
 						oAnnot.SetNoRotate(Boolean(oAnnotInfo["noRotate"]));
 					if (oAnnotInfo["noZoom"] != null)
@@ -1423,9 +1424,12 @@
 					// FreeText
 					if (oAnnotInfo["defaultStyle"] != null)
 						oAnnot.SetDefaultStyle(oAnnotInfo["defaultStyle"]);
+
 					if (oAnnotInfo["Rotate"] != null)
 						oAnnot.SetRotate(oAnnotInfo["Rotate"]);
-
+					if (oAnnotInfo["InRect"] != null)
+						oAnnot.SetInRect(oAnnotInfo["InRect"]);
+					
 					// border effect
 					if (oAnnotInfo["BE"] != null) {
 						if (oAnnotInfo["BE"]["I"] != null)
@@ -3384,6 +3388,9 @@
 			let oDoc		= this.getPDFDoc();
 			let oDrDoc		= oDoc.GetDrawingDocument();
 
+			if (e.KeyCode === 112 && e.CtrlKey == true) {
+				editor.AddStampAnnot();
+			}
 			if (e.KeyCode === 8) // BackSpace
 			{
 				oDoc.DoAction(function() {
