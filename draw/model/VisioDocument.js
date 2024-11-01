@@ -684,7 +684,7 @@
 				let thisContext = this;
 				thumbnailCanvas.onclick = function () {
 					// Zoom = 100;
-					thisContext.draw(Zoom, pGraphics, thumbPageIndex);
+					drawOnCanvas(thumbPageIndex, thisContext, documentCanvas, false);
 					thisContext.pageIndex = thumbPageIndex;
 				}
 				panelThumbnails.appendChild(thumbnailCanvas);
