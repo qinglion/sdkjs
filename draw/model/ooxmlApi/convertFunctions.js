@@ -157,10 +157,12 @@
 		 * @param {CUniFill} lineUniFill
 		 * @param {CUniFill} fillUniFill
 		 * @param {number} drawingPageScale
+		 * @param {number} currentPageIndex
+		 * @param {number} pagesCount
 		 * @return {CShape} textCShape
 		 */
 		function getTextCShape(theme, shape, cShape, lineUniFill,
-							   fillUniFill, drawingPageScale) {
+							   fillUniFill, drawingPageScale, currentPageIndex, pagesCount ) {
 			// see 2.2.8	Text [MS-VSDX]-220215
 			/**
 			 * handle QuickStyleVariation cell which can change color (but only if color is a result of ThemeVal)
@@ -336,6 +338,15 @@
 				paragraph.SetParent(oContent);
 
 
+				// // CPresentationBullet
+				// paragraph.PresentationPr.Bullet.m_nType = AscFormat.numbering_presentationnumfrmt_Blip;
+				//
+				// let Bullet             = new AscFormat.CBullet();
+				// Bullet.bulletType      = new AscFormat.CBulletType();
+				// Bullet.bulletType.type = AscFormat.BULLET_TYPE_BULLET_AUTONUM;
+				// paragraph.Add_PresentationNumbering(Bullet);
+
+
 				// paragraph.Pr.Spacing.Before = 0;
 				// paragraph.Pr.Spacing.After = 0;
 			}
@@ -454,8 +465,28 @@
 				paragraph.Add_ToContent(paragraph.Content.length - 1, oRun);
 			}
 
+			/**
+			 * Get row from section Field and transform it into text usings its cells.
+			 * @param {Row_Type} fieldRow
+			 * @param {string} fldTagText
+			 * @param {number} currentPageIndex
+			 * @param {number} pagesCount
+			 * @return {string} text
+			 */
+			function getTextFromFieldRow(fieldRow, fldTagText, currentPageIndex, pagesCount) {
+				const valueCell = fieldRow.getCell("Value");
+				const valueFunction = valueCell.f;
+				const valueV = valueCell.v;
+				if (valueFunction === "PAGENUMBER()") {
+					return String(currentPageIndex);
+				} else if (valueFunction === "PAGECOUNT()") {
+					return String(pagesCount);
+				}
 
+				return fldTagText ? fldTagText : valueV;
+			}
 
+			
 			let textElement = shape.getTextElement();
 			if (!textElement) {
 				return null;
@@ -541,13 +572,13 @@
 						let fieldPropsFinal = fieldRowNum !== null && fieldPropsCommon.getRow(fieldRowNum);
 
 						// handle Value
-						let fieldValueCell = fieldPropsFinal && fieldPropsFinal.getCell("Value");
+						let fieldValueText = getTextFromFieldRow(fieldPropsFinal, optionalValue,
+							currentPageIndex, pagesCount);
 
-						if (fieldValueCell.v || optionalValue) {
+						if (fieldValueText) {
 							// Replace LineSeparator
-							fieldValueCell.v.replaceAll("\u2028", "\n");
-							optionalValue.replaceAll("\u2028", "\n");
-							oRun.AddText(fieldValueCell.v || optionalValue);
+							fieldValueText.replaceAll("\u2028", "\n");
+							oRun.AddText(fieldValueText);
 						} else {
 							console.log("field_Type was not parsed");
 						}
@@ -1011,12 +1042,12 @@
 		// only if all shape layers are invisible shape is invisible
 		let areShapeLayersInvisible = layerProperties["Visible"] === "0";
 
-		let isShapeDeleted = this.del === "1";
+		let isShapeDeleted = this.del === "1" || this.del === true;
 
 
 		// also check for {}, undefined, NaN, null
 		if (isNaN(pinX_inch) || pinX_inch === null || isNaN(pinY_inch) || pinY_inch === null ||
-			areShapeLayersInvisible || isShapeDeleted) {
+			areShapeLayersInvisible) {
 			// console.log('pinX_inch or pinY_inch is NaN for Shape or areShapeLayersInvisible. Its ok sometimes. ' +
 				// 'Empty CShape is returned. See original shape: ', this);
 			// let's use empty shape
@@ -1033,6 +1064,7 @@
 			emptyCShape.setSpPr(oSpPr);
 			oSpPr.setParent(emptyCShape);
 			emptyCShape.setParent2(visioDocument);
+
 			return {geometryCShape: emptyCShape, textCShape: null};
 		}
 
@@ -1387,15 +1419,25 @@
 			drawingPageScale : drawingPageScale
 		});
 
-		cShape.Id = String(this.iD); // it was string in cShape
+		if (isShapeDeleted) {
+			cShape.setBDeleted(true);
+		}
 
-		// not scaling fontSize
-		let textCShape = getTextCShape(visioDocument.themes[0], this, cShape, lineUniFill, uniFillForegnd, drawingPageScale);
+		cShape.Id = String(this.iD); // it was string in cShape
 
 		cShape.recalculate();
 		cShape.recalculateLocalTransform(cShape.transform);
 
+		// not scaling fontSize
+		let textCShape = getTextCShape(visioDocument.themes[0], this, cShape,
+			lineUniFill, uniFillForegnd, drawingPageScale,
+			visioDocument.pageIndex, visioDocument.pages.page.length);
+
 		if (textCShape !== null) {
+			if (isShapeDeleted) {
+				textCShape.setBDeleted(true);
+			}
+
 			textCShape.recalculate();
 			textCShape.recalculateLocalTransform(textCShape.transform);
 		}
