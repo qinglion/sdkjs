@@ -172,6 +172,8 @@
 
 			CircularReference			: -320,
 			PivotItemNameNotFound       : -321,
+			CalculatedItemInPageField   : -322,
+			NotUniqueFieldWithCalculated: -323,
 
 			ForceSaveButton: -331,
 			ForceSaveTimeout: -332,
@@ -365,6 +367,8 @@
 	prot['PivotFieldNameExists']             = prot.PivotFieldNameExists;
 	prot['FormulaInPivotFieldName']          = prot.FormulaInPivotFieldName;
 	prot['PivotItemNameNotFound']            = prot.PivotItemNameNotFound;
+	prot['CalculatedItemInPageField']        = prot.CalculatedItemInPageField;
+	prot['NotUniqueFieldWithCalculated']     = prot.NotUniqueFieldWithCalculated
 	prot['PasteInPivot']                     = prot.PasteInPivot;
 	prot['PivotLabledColumns']               = prot.PivotLabledColumns;
 	prot['PivotOverlap']                     = prot.PivotOverlap;

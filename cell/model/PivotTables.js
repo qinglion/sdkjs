@@ -5986,8 +5986,13 @@ CT_pivotTableDefinition.prototype.setSubtotalTop = function(newVal, addToHistory
 };
 CT_pivotTableDefinition.prototype.asc_addDataField = function(api, pivotIndex, insertIndex) {
 	var pivotField = this.asc_getPivotFields()[pivotIndex];
+	const cacheDefinition = this.cacheDefinition;
 	if (pivotField && !pivotField.dragToData) {
 		//todo The field you are moving cannot be placed in thet PivotTable area
+		return;
+	}
+	if (pivotField && (pivotField.dataField || pivotField.axis !== null)) {
+		api.sendEvent('asc_onError', c_oAscError.ID.NotUniqueFieldWithCalculated, c_oAscError.Level.NoCritical);
 		return;
 	}
 	api._changePivotWithLock(this, function(ws, pivot) {
@@ -6077,8 +6082,13 @@ CT_pivotTableDefinition.prototype.addDataField = function(options) {
 };
 CT_pivotTableDefinition.prototype.asc_addRowField = function(api, pivotIndex, insertIndex) {
 	var pivotField = this.asc_getPivotFields()[pivotIndex];
+	const cacheDefinition = this.cacheDefinition;
 	if (pivotField && !pivotField.dragToRow) {
 		//todo The field you are moving cannot be placed in thet PivotTable area
+		return;
+	}
+	if (pivotField && cacheDefinition.getCalculatedItems() && pivotField.dataField) {
+		api.sendEvent('asc_onError', c_oAscError.ID.NotUniqueFieldWithCalculated, c_oAscError.Level.NoCritical);
 		return;
 	}
 	api._changePivotWithLock(this, function(ws, pivot) {
@@ -6108,8 +6118,13 @@ CT_pivotTableDefinition.prototype.addRowField = function(pivotIndex, insertIndex
 };
 CT_pivotTableDefinition.prototype.asc_addColField = function(api, pivotIndex, insertIndex) {
 	var pivotField = this.asc_getPivotFields()[pivotIndex];
+	const cacheDefinition = this.cacheDefinition;
 	if (pivotField && !pivotField.dragToCol) {
 		//todo The field you are moving cannot be placed in thet PivotTable area
+		return;
+	}
+	if (pivotField && cacheDefinition.getCalculatedItems() && pivotField.dataField) {
+		api.sendEvent('asc_onError', c_oAscError.ID.NotUniqueFieldWithCalculated, c_oAscError.Level.NoCritical);
 		return;
 	}
 	api._changePivotWithLock(this, function(ws, pivot) {
@@ -6141,6 +6156,10 @@ CT_pivotTableDefinition.prototype.asc_addPageField = function(api, pivotIndex, i
 	var pivotField = this.asc_getPivotFields()[pivotIndex];
 	if (pivotField && !pivotField.dragToPage) {
 		//todo The field you are moving cannot be placed in thet PivotTable area
+		return;
+	}
+	if (pivotField && pivotField.hasCalculated()) {
+		api.sendEvent('asc_onError', c_oAscError.ID.CalculatedItemInPageField, c_oAscError.Level.NoCritical);
 		return;
 	}
 	api._changePivotWithLock(this, function(ws, pivot) {
@@ -6248,6 +6267,10 @@ CT_pivotTableDefinition.prototype.asc_moveToPageField = function(api, pivotIndex
 		//todo The field you are moving cannot be placed in thet PivotTable area
 		return;
 	}
+	if (pivotField && pivotField.hasCalculated()) {
+		api.sendEvent('asc_onError', c_oAscError.ID.CalculatedItemInPageField, c_oAscError.Level.NoCritical);
+		return;
+	}
 	api._changePivotWithLock(this, function(ws, pivot) {
 		var deleteIndex = pivot.removeNoDataField(pivotIndex, true);
 		if (undefined === deleteIndex && undefined !== dataIndex) {
@@ -6313,8 +6336,13 @@ CT_pivotTableDefinition.prototype.asc_moveToDataField = function(api, pivotIndex
 		return;
 	}
 	var pivotField = this.asc_getPivotFields()[pivotIndex];
+	const cacheDefinition = this.cacheDefinition;
 	if (pivotField && !pivotField.dragToData) {
 		//todo The field you are moving cannot be placed in thet PivotTable area
+		return;
+	}
+	if (pivotField && cacheDefinition.getCalculatedItems() && pivotField.dataField) {
+		api.sendEvent('asc_onError', c_oAscError.ID.NotUniqueFieldWithCalculated, c_oAscError.Level.NoCritical);
 		return;
 	}
 	api._changePivotWithLock(this, function(ws, pivot) {
@@ -17439,6 +17467,17 @@ CT_PivotField.prototype.removeItem = function(pivot, pivotIndex, removeIndex, ca
 		}
 	}
 	pivot.setChanged(true);
+};
+CT_PivotField.prototype.hasCalculated = function() {
+	const items = this.getItems();
+	if (items) {
+		for (let i = 0; i < items.length; i += 1) {
+			if (items[i].f) {
+				return true;
+			}
+		}
+	}
+	return false;
 };
 function CT_PivotFieldX14() {
 //Attributes
