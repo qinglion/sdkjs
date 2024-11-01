@@ -9693,7 +9693,12 @@ PivotRangeMapper.prototype.getFieldIndexByCell = function(row, col) {
 		const rowItemIndex = selected.r1 - (range.r1 + location.firstDataRow);
 		const rowItem = rowItems[rowItemIndex];
 		if (rowItem.t !== Asc.c_oAscItemType.Data) {
-			return null;
+			if (rowItem.t === Asc.c_oAscItemType.Grand) {
+				return null;
+			}
+			const rowField = rowFields[rowItem.getR()];
+			const pivotIndex = rowField.asc_getIndex();
+			return pivotIndex;
 		}
 		const labelCol = selected.c1 - range.c1;
 		const xIndex = labelCol - rowFieldsOffset[rowItem.getR()];
@@ -9711,7 +9716,12 @@ PivotRangeMapper.prototype.getFieldIndexByCell = function(row, col) {
 		const colItemIndex = selected.c1 - (range.c1 + location.firstDataCol);
 		const colItem = colItems[colItemIndex];
 		if (colItem.t !== Asc.c_oAscItemType.Data) {
-			return null;
+			if (colItem.t === Asc.c_oAscItemType.Grand) {
+				return null;
+			}
+			const colField = colFields[colItem.getR()];
+			const pivotIndex = colField.asc_getIndex();
+			return pivotIndex;
 		}
 		const xIndex = selected.r1 - (range.r1 + location.firstHeaderRow) - colItem.getR();
 		const colField = colFields[xIndex + colItem.getR()];
@@ -10155,6 +10165,14 @@ CT_pivotTableDefinition.prototype.isValidForCalculatedItems = function() {
 		}
 	}
 	return true;
+};
+/**
+ * @param {number} row
+ * @param {number} col
+ * @reutrn {boolean}
+ */
+CT_pivotTableDefinition.prototype.asc_canChangeCalculatedItemByActiveCell = function(row, col) {
+	return this.asc_getFieldIndexByCell(row, col) !== null;
 };
 /**
  * @return {boolean}
