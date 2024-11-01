@@ -33,20 +33,19 @@
 "use strict";
 
 // Import
-var CShape = AscFormat.CShape;
-var CGroupShape = AscFormat.CGroupShape;
-var CTheme = AscFormat.CTheme;
-var CreateSolidFillRGBA = AscFormat.CreateSolidFillRGBA;
-var CShapeDrawer = AscCommon.CShapeDrawer;
-var DrawLineEnd = AscCommon.DrawLineEnd;
+// var CShape = AscFormat.CShape;
+// var CGroupShape = AscFormat.CGroupShape;
+// var CTheme = AscFormat.CTheme;
+// var CreateSolidFillRGBA = AscFormat.CreateSolidFillRGBA;
+// var CShapeDrawer = AscCommon.CShapeDrawer;
+// var DrawLineEnd = AscCommon.DrawLineEnd;
 // var builder_CreateLine = AscFormat.builder_CreateLine;
-var ParaRun = AscWord.ParaRun;
 
 /**
- * @memberOf CShape
+ * @memberOf AscFormat.CShape
  * @return {{layout: null, slide: null, theme: CTheme, master: null}}
  */
-CShape.prototype.getParentObjects = function ()
+AscFormat.CShape.prototype.getParentObjects = function ()
 {
 	let oTheme = null;
 	if (this.parent) {
@@ -59,17 +58,17 @@ CShape.prototype.getParentObjects = function ()
 };
 
 /**
- * @memberOf CGroupShape
+ * @memberOf AscFormat.CGroupShape
  * @type {function(): {layout: null, slide: null, theme: CTheme, master: null}}
  */
-CGroupShape.prototype.getParentObjects = CShape.prototype.getParentObjects;
+AscFormat.CGroupShape.prototype.getParentObjects = CShape.prototype.getParentObjects;
 
 
 /**
  * Draw editor.
- * @memberof CShape
+ * @memberof AscFormat.CShape
  */
-CShape.prototype.recalculate = function ()
+AscFormat.CShape.prototype.recalculate = function ()
 {
 	if(this.bDeleted || !this.parent) {
 		console.log("no recalculate for bDeleted or no parent");
@@ -141,10 +140,10 @@ CShape.prototype.recalculate = function ()
  * @param idx
  * @param unicolor
  * @param {Boolean} isConnectorShape
- * @memberOf CTheme
+ * @memberOf AscFormat.CTheme
  * @return {CUniFill|*}
  */
-CTheme.prototype.getFillStyle = function (idx, unicolor, isConnectorShape) {
+AscFormat.CTheme.prototype.getFillStyle = function (idx, unicolor, isConnectorShape) {
 	if (idx === 0 || idx === 1000) {
 		return AscFormat.CreateNoFillUniFill();
 	}
@@ -170,7 +169,7 @@ CTheme.prototype.getFillStyle = function (idx, unicolor, isConnectorShape) {
 		}
 	}
 	console.log("getFillStyle has not found fill and returned transparent fill")
-	return CreateSolidFillRGBA(0, 0, 0, 255);
+	return AscFormat.CreateSolidFillRGBA(0, 0, 0, 255);
 };
 
 /**
@@ -178,10 +177,10 @@ CTheme.prototype.getFillStyle = function (idx, unicolor, isConnectorShape) {
  * @param idx
  * @param unicolor
  * @param {Boolean} isConnectorShape
- * @memberOf CTheme
+ * @memberOf AscFormat.CTheme
  * @return {CLn|*}
  */
-CTheme.prototype.getLnStyle = function (idx, unicolor, isConnectorShape) {
+AscFormat.CTheme.prototype.getLnStyle = function (idx, unicolor, isConnectorShape) {
 	if (idx === 0) {
 		return AscFormat.CreateNoFillLine();
 	}
@@ -217,7 +216,10 @@ AscFormat.builder_CreateLine = function(nWidth, oFill) {
 	return oLn;
 }
 
-CShapeDrawer.prototype.ds = function()
+/**
+ * @memberof AscCommon.CShapeDrawer
+ */
+AscCommon.CShapeDrawer.prototype.ds = function()
 {
 	if (this.bIsNoStrokeAttack)
 		return;
@@ -352,7 +354,7 @@ CShapeDrawer.prototype.ds = function()
 			if (_max_delta > _max_delta_eps2)
 			{
 				_graphicsCtx.ArrayPoints = null;
-				DrawLineEnd(_x1, _y1, _x2, _y2, this.Ln.headEnd.type, arrKoef * this.Ln.headEnd.GetWidth(_pen_w, _max_w), arrKoef * this.Ln.headEnd.GetLen(_pen_w, _max_w), this, trans1);
+				AscCommon.DrawLineEnd(_x1, _y1, _x2, _y2, this.Ln.headEnd.type, arrKoef * this.Ln.headEnd.GetWidth(_pen_w, _max_w), arrKoef * this.Ln.headEnd.GetLen(_pen_w, _max_w), this, trans1);
 				_graphicsCtx.ArrayPoints = arr;
 			}
 		}
@@ -389,7 +391,7 @@ CShapeDrawer.prototype.ds = function()
 			if (_max_delta > _max_delta_eps2)
 			{
 				_graphicsCtx.ArrayPoints = null;
-				DrawLineEnd(_x1, _y1, _x2, _y2, this.Ln.tailEnd.type, arrKoef * this.Ln.tailEnd.GetWidth(_pen_w, _max_w), arrKoef * this.Ln.tailEnd.GetLen(_pen_w, _max_w), this, trans1);
+				AscCommon.DrawLineEnd(_x1, _y1, _x2, _y2, this.Ln.tailEnd.type, arrKoef * this.Ln.tailEnd.GetWidth(_pen_w, _max_w), arrKoef * this.Ln.tailEnd.GetLen(_pen_w, _max_w), this, trans1);
 				_graphicsCtx.ArrayPoints = arr;
 			}
 		}
@@ -397,83 +399,3 @@ CShapeDrawer.prototype.ds = function()
 		this.CheckDash();
 	}
 }
-
-// /**
-//  * Добавляем в конец рана заданную строку
-//  * @param {string} sString
-//  * @param {number} [nPos=-1] если позиция не задана (или значение -1), то добавляем в конец
-//  */
-// ParaRun.prototype.AddText = function(sString, nPos)
-// {
-// 	var nCharPos = undefined !== nPos && null !== nPos && -1 !== nPos ? nPos : this.Content.length;
-//
-// 	let oForm     = this.GetParentForm();
-// 	var oTextForm = oForm ? oForm.GetTextFormPr() : null;
-// 	var nMax      = oTextForm ? oTextForm.GetMaxCharacters() : 0;
-//
-// 	if (this.IsMathRun())
-// 	{
-// 		for (var oIterator = sString.getUnicodeIterator(); oIterator.check(); oIterator.next())
-// 		{
-// 			var nCharCode = oIterator.value();
-//
-// 			var oMathText = new CMathText();
-// 			oMathText.add(nCharCode);
-// 			this.AddToContent(nCharPos++, oMathText);
-// 		}
-// 	}
-// 	else if (nMax > 0)
-// 	{
-// 		var arrLetters = [], nLettersCount = 0;
-// 		for (var oIterator = sString.getUnicodeIterator(); oIterator.check(); oIterator.next())
-// 		{
-// 			var nCharCode = oIterator.value();
-//
-// 			if (9 === nCharCode) // \t
-// 				continue;
-// 			else if (10 === nCharCode) // \n
-// 				continue;
-// 			else if (13 === nCharCode) // \r
-// 				continue;
-// 			else if (8232 === nCharCode) // Line Separator
-// 				continue;
-// 			else if (AscCommon.IsSpace(nCharCode)) // space
-// 			{
-// 				nLettersCount++;
-// 				arrLetters.push(new AscWord.CRunSpace(nCharCode));
-// 			}
-// 			else
-// 			{
-// 				nLettersCount++;
-// 				arrLetters.push(new AscWord.CRunText(nCharCode));
-// 			}
-// 		}
-//
-// 		for (var nIndex = 0; nIndex < arrLetters.length; ++nIndex)
-// 		{
-// 			this.AddToContent(nCharPos++, arrLetters[nIndex], true);
-// 		}
-//
-// 		oForm.TrimTextForm();
-// 	}
-// 	else
-// 	{
-// 		for (var oIterator = sString.getUnicodeIterator(); oIterator.check(); oIterator.next())
-// 		{
-// 			var nCharCode = oIterator.value();
-//
-// 			if (9 === nCharCode) // \t
-// 				this.AddToContent(nCharPos++, new AscWord.CRunTab(), true);
-// 			else if (10 === nCharCode) // \n
-// 				this.AddToContent(nCharPos++, new AscWord.CRunBreak(AscWord.break_Line), true);
-// 			else if (8232 === nCharCode) // Line Separator
-// 				this.AddToContent(nCharPos++, new AscWord.CRunBreak(AscWord.break_Line), true);
-// 			else if (13 === nCharCode) // \r
-// 				continue;
-// 			else if (AscCommon.IsSpace(nCharCode)) // space
-// 				this.AddToContent(nCharPos++, new AscWord.CRunSpace(nCharCode), true);
-// 			else
-// 				this.AddToContent(nCharPos++, new AscWord.CRunText(nCharCode), true);
-// 		}
-// 	}
-// };
