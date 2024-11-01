@@ -5991,7 +5991,7 @@ CT_pivotTableDefinition.prototype.asc_addDataField = function(api, pivotIndex, i
 		//todo The field you are moving cannot be placed in thet PivotTable area
 		return;
 	}
-	if (pivotField && (pivotField.dataField || pivotField.axis !== null)) {
+	if (pivotField && cacheDefinition.getCalculatedItems() && (pivotField.dataField || pivotField.axis !== null)) {
 		api.sendEvent('asc_onError', c_oAscError.ID.NotUniqueFieldWithCalculated, c_oAscError.Level.NoCritical);
 		return;
 	}
@@ -10145,13 +10145,27 @@ CT_pivotTableDefinition.prototype.asc_canAddNameCalculatedItem = function(fieldI
 	return !namesMap.has(itemName.toLowerCase());
 };
 /**
- * @param {spreadsheet_api} api
  * @return {boolean}
  */
-CT_pivotTableDefinition.prototype.asc_canChangeCalculatedItemByActiveCell = function(api) {
-	let ws = api.wbModel.getActiveWs();
-	let activeCell = ws.selectionRange.activeCell;
-	//todo
+CT_pivotTableDefinition.prototype.isValidForCalculatedItems = function() {
+	const pivotFields = this.asc_getPivotFields();
+	for (let i = 0; i < pivotFields.length; i += 1) {
+		if (pivotFields[i].dataField && pivotFields[i].axis !== null) {
+			return false;
+		}
+	}
+	return true;
+};
+/**
+ * @return {boolean}
+ */
+CT_pivotTableDefinition.prototype.asc_isTablesValidForCalculatedItems = function() {
+	const pivots = this.getPivotTablesConnectedByPivotCache();
+	for (let i = 0; i < pivots.length; i += 1) {
+		if (!pivots[i].isValidForCalculatedItems()) {
+			return false;
+		}
+	}
 	return true;
 };
 /**
@@ -22284,7 +22298,7 @@ prot["asc_modifyCalculatedItem"] = prot.asc_modifyCalculatedItem;
 prot["asc_convertNameToFormula"] = prot.asc_convertNameToFormula;
 prot["asc_getFieldIndexByCell"] = prot.asc_getFieldIndexByCell;
 prot["asc_canAddNameCalculatedItem"] = prot.asc_canAddNameCalculatedItem;
-prot["asc_canChangeCalculatedItemByActiveCell"] = prot.asc_canChangeCalculatedItemByActiveCell;
+prot["asc_isTablesValidForCalculatedItems"] = prot.asc_isTablesValidForCalculatedItems;
 
 window["Asc"]["CT_PivotTableStyle"] = window['Asc'].CT_PivotTableStyle = CT_PivotTableStyle;
 prot = CT_PivotTableStyle.prototype;
