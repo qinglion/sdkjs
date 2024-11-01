@@ -124,24 +124,6 @@
             oGraphicsPDF.DrawImageXY(originView, X, Y, nRot);
             AscPDF.endMultiplyMode(oGraphicsPDF.GetContext());
         }
-
-        oGraphicsPDF.SetLineWidth(1);
-        let aOringRect  = this.GetRect();
-        let X       = aOringRect[0];
-        let Y       = aOringRect[1];
-        let nWidth  = aOringRect[2] - aOringRect[0];
-        let nHeight = aOringRect[3] - aOringRect[1];
-
-        Y += 1 / 2;
-        X += 1 / 2;
-        nWidth  -= 1;
-        nHeight -= 1;
-
-        oGraphicsPDF.SetStrokeStyle(0, 255, 255);
-        oGraphicsPDF.SetLineDash([]);
-        oGraphicsPDF.BeginPath();
-        oGraphicsPDF.Rect(X, Y, nWidth, nHeight);
-        oGraphicsPDF.Stroke();
     };
     CAnnotationStamp.prototype.GetOriginViewInfo = function(nPageW, nPageH) {
         let oViewer     = editor.getDocumentRenderer();
