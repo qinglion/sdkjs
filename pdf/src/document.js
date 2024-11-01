@@ -2225,7 +2225,7 @@ var CPresentation = CPresentation || function(){};
 
         oViewer.sendEvent("onPagesCount", oFile.pages.length);
 
-        this.History.Add(new CChangesPDFDocumentAddPage(this, nPos, [oPage]));
+        this.History.Add(new CChangesPDFDocumentPagesContent(this, nPos, [oPage], true));
 
         this.History.StartNoHistoryMode();
         for (let nPage = nPos + 1; nPage < oViewer.pagesInfo.pages.length; nPage++) {
@@ -2308,7 +2308,7 @@ var CPresentation = CPresentation || function(){};
         this.GetDrawingDocument().m_lPagesCount = oViewer.file.pages.length;
         oViewer.sendEvent("onPagesCount", oFile.pages.length);
 
-        this.History.Add(new CChangesPDFDocumentRemovePage(this, nPos, aPages));
+        this.History.Add(new CChangesPDFDocumentPagesContent(this, nPos, aPages, false));
 
         this.History.StartNoHistoryMode();
         // проставляем новые номера страниц объектам на остальных страницах
@@ -5566,8 +5566,7 @@ var CPresentation = CPresentation || function(){};
             case AscDFH.historyitem_PDF_Document_DrawingsContent:
                 this.drawingsContentChanges.Add(Changes);
                 break;
-			case AscDFH.historyitem_PDF_Document_AddPage:
-			case AscDFH.historyitem_PDF_Document_RemovePage:
+			case AscDFH.historyitem_PDF_Document_PagesContent:
 				this.pagesContentChanges.Add(Changes);
 				break;
         }
