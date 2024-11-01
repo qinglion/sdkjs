@@ -2658,6 +2658,7 @@
 			}
 			return true;
 		};
+		CUniColor.prototype.isEqual = CUniColor.prototype.IsIdentical;
 		CUniColor.prototype.Calculate = function (theme, slide, layout, masterSlide, RGBA, colorMap) {
 			if (this.color == null)
 				return this.RGBA;

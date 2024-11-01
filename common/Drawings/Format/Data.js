@@ -1033,11 +1033,11 @@ Because of this, the display is sometimes not correct.
     CCommonDataList.prototype.readAttribute = null;
 
     function CCommonDataListNoId() {
-      AscFormat.CBaseNoIdObject.call(this);
+      AscFormat.CBaseFormatNoIdObject.call(this);
       this.list = [];
     }
 
-    InitClass(CCommonDataListNoId, AscFormat.CBaseNoIdObject, AscDFH.historyitem_type_CCommonDataListNoId);
+    InitClass(CCommonDataListNoId, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_CCommonDataListNoId);
     CCommonDataListNoId.prototype.Write_ToBinary = function (w) {
       w.WriteLong(this.list.length);
       for (let i = 0; i < this.list.length; i += 1) {
@@ -2839,7 +2839,7 @@ Because of this, the display is sometimes not correct.
     };
 
 		function LayoutBaseClass() {
-			AscFormat.CBaseNoIdObject.call(this);
+			AscFormat.CBaseFormatNoIdObject.call(this);
 			this.list = [];
 			this.alg = null;
 			this.shape = null;
@@ -2848,7 +2848,7 @@ Because of this, the display is sometimes not correct.
 			this.ruleLst = null;
 			this.varLst = null;
 		}
-		AscFormat.InitClassWithoutType(LayoutBaseClass, AscFormat.CBaseNoIdObject);
+		AscFormat.InitClassWithoutType(LayoutBaseClass, AscFormat.CBaseFormatNoIdObject);
 	  LayoutBaseClass.prototype.addToLst = function (idx , pr) {
 			idx = Math.min(this.list.length, Math.max(idx, 0));
 		  this.list.splice(idx, 0, pr);
@@ -3795,7 +3795,7 @@ Because of this, the display is sometimes not correct.
     };
 
     function IteratorAttributes() {
-      AscFormat.CBaseNoIdObject.call(this);
+      AscFormat.CBaseFormatNoIdObject.call(this);
       this.axis = [];
       this.cnt = [];
       this.hideLastTrans = [];
@@ -3804,7 +3804,7 @@ Because of this, the display is sometimes not correct.
       this.step = [];
     }
 
-    InitClass(IteratorAttributes, AscFormat.CBaseNoIdObject, AscDFH.historyitem_type_IteratorAttributes);
+    InitClass(IteratorAttributes, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_IteratorAttributes);
 		IteratorAttributes.prototype.Write_ToBinary = function (w) {
 			w.WriteLong(this.axis.length);
 			for (let i = 0; i < this.axis.length; i += 1) {
@@ -4034,6 +4034,8 @@ Because of this, the display is sometimes not correct.
 	  IteratorLayoutBase.prototype.setConstrLst = LayoutBaseClass.prototype.setConstrLst;
 	  IteratorLayoutBase.prototype.setRuleLst = LayoutBaseClass.prototype.setRuleLst;
 	  IteratorLayoutBase.prototype.setVarLst = LayoutBaseClass.prototype.setVarLst;
+	  IteratorLayoutBase.prototype.addToLst = LayoutBaseClass.prototype.addToLst;
+	  IteratorLayoutBase.prototype.removeFromLst = LayoutBaseClass.prototype.removeFromLst;
 
     function If() {
       IteratorLayoutBase.call(this);
@@ -4044,7 +4046,6 @@ Because of this, the display is sometimes not correct.
       this.op = null;
       this.val = null;
       this.ref = null;
-      this.list = [];
     }
 
     InitClass(If, IteratorLayoutBase, AscDFH.historyitem_type_If);
@@ -4232,10 +4233,10 @@ Because of this, the display is sometimes not correct.
         pWriter._WriteInt1(4, this.cnt[i]);
       }
       for (i = 0; i < this.axis.length; i += 1) {
-        pWriter._WriteUChar1(5, this.axis[i].getVal());
+        pWriter._WriteUChar1(5, this.axis[i]);
       }
       for (i = 0; i < this.ptType.length; i += 1) {
-        pWriter._WriteUChar1(6, this.ptType[i].getVal());
+        pWriter._WriteUChar1(6, this.ptType[i]);
       }
       pWriter._WriteString2(7, this.ref);
       pWriter._WriteUChar2(8, this.op);
@@ -4453,10 +4454,10 @@ Because of this, the display is sometimes not correct.
       pWriter._WriteUChar2(1, this.for);
       pWriter._WriteString2(2, this.forName);
       pWriter._WriteUChar2(3, this.op);
-      pWriter._WriteUChar2(4, this.ptType.getVal());
+      pWriter._WriteUChar2(4, this.ptType);
       pWriter._WriteUChar2(5, this.refFor);
       pWriter._WriteString2(6, this.refForName);
-      pWriter._WriteUChar2(7, this.refPtType.getVal());
+      pWriter._WriteUChar2(7, this.refPtType);
       pWriter._WriteUChar2(8, this.refType);
       pWriter._WriteUChar2(9, this.type);
       pWriter._WriteDoubleReal2(10, this.val);
@@ -4521,10 +4522,10 @@ Because of this, the display is sometimes not correct.
         pWriter._WriteInt1(4, this.cnt[i]);
       }
       for (i = 0; i < this.axis.length; i += 1) {
-        pWriter._WriteUChar1(5, this.axis[i].getVal());
+        pWriter._WriteUChar1(5, this.axis[i]);
       }
       for (i = 0; i < this.ptType.length; i += 1) {
-        pWriter._WriteUChar1(6, this.ptType[i].getVal());
+        pWriter._WriteUChar1(6, this.ptType[i]);
       }
     };
     PresOf.prototype.writeChildren = function(pWriter) {
@@ -4665,7 +4666,7 @@ Because of this, the display is sometimes not correct.
       pWriter._WriteDoubleReal2(0, this.fact);
       pWriter._WriteUChar2(1, this.for);
       pWriter._WriteString2(2, this.forName);
-      pWriter._WriteUChar2(3, this.ptType.getVal());
+      pWriter._WriteUChar2(3, this.ptType);
       pWriter._WriteUChar2(4, this.type);
       pWriter._WriteDoubleReal2(5, this.val);
       pWriter._WriteDoubleReal2(6, this.max);
@@ -5029,54 +5030,54 @@ Because of this, the display is sometimes not correct.
 
     VarLst.prototype.privateWriteAttributes = null;
     VarLst.prototype.writeChildren = function(pWriter) {
-      if (this.animLvl !== null) this.writeRecord1(0, this.animLvl, pWriter.WriteByteToPPTY.bind(pWriter));
-      if (this.animOne !== null) this.writeRecord1(1, this.animOne, pWriter.WriteByteToPPTY.bind(pWriter));
-      if (this.bulletEnabled !== null) this.writeRecord1(2, this.bulletEnabled, pWriter.WriteByteToPPTY.bind(pWriter));
-      if (this.chMax !== null) this.writeRecord1(3, this.chMax, pWriter.WriteByteToPPTY.bind(pWriter));
-      if (this.chPref !== null) this.writeRecord1(4, this.chPref, pWriter.WriteByteToPPTY.bind(pWriter));
-      if (this.dir !== null) this.writeRecord1(5, this.dir, pWriter.WriteByteToPPTY.bind(pWriter));
-      if (this.hierBranch !== null) this.writeRecord1(6, this.hierBranch, pWriter.WriteByteToPPTY.bind(pWriter));
-      if (this.orgChart !== null) this.writeRecord1(7, this.orgChart, pWriter.WriteByteToPPTY.bind(pWriter));
-      if (this.resizeHandles !== null) this.writeRecord1(8, this.resizeHandles, pWriter.WriteByteToPPTY.bind(pWriter));
+      if (this.animLvl !== null) pWriter.WriteRecord1(0, this.animLvl, pWriter.WriteByteToPPTY.bind(pWriter));
+      if (this.animOne !== null) pWriter.WriteRecord1(1, this.animOne, pWriter.WriteByteToPPTY.bind(pWriter));
+      if (this.bulletEnabled !== null) pWriter.WriteRecord1(2, this.bulletEnabled, pWriter.WriteByteToPPTY.bind(pWriter));
+      if (this.chMax !== null) pWriter.WriteRecord1(3, this.chMax, pWriter.WriteIntToPPTY.bind(pWriter));
+      if (this.chPref !== null) pWriter.WriteRecord1(4, this.chPref, pWriter.WriteIntToPPTY.bind(pWriter));
+      if (this.dir !== null) pWriter.WriteRecord1(5, this.dir, pWriter.WriteByteToPPTY.bind(pWriter));
+      if (this.hierBranch !== null) pWriter.WriteRecord1(6, this.hierBranch, pWriter.WriteByteToPPTY.bind(pWriter));
+      if (this.orgChart !== null) pWriter.WriteRecord1(7, this.orgChart, pWriter.WriteByteToPPTY.bind(pWriter));
+      if (this.resizeHandles !== null) pWriter.WriteRecord1(8, this.resizeHandles, pWriter.WriteByteToPPTY.bind(pWriter));
     };
     VarLst.prototype.readAttribute = null;
     VarLst.prototype.readChild = function(nType, pReader) {
       var s = pReader.stream;
       switch (nType) {
         case 0: {
-          this.setAnimLvl(pReader.ReadByteFromPPTY());
+          this.setAnimLvl(s.ReadByteFromPPTY());
           break;
         }
         case 1: {
-          this.setAnimOne(pReader.ReadByteFromPPTY());
+          this.setAnimOne(s.ReadByteFromPPTY());
           break;
         }
         case 2: {
-          this.setBulletEnabled(pReader.ReadByteFromPPTY());
+          this.setBulletEnabled(s.ReadByteFromPPTY());
           break;
         }
         case 3: {
-          this.setChMax(pReader.ReadByteFromPPTY());
+          this.setChMax(s.ReadIntFromPPTY());
           break;
         }
         case 4: {
-          this.setChPref(pReader.ReadByteFromPPTY());
+          this.setChPref(s.ReadIntFromPPTY());
           break;
         }
         case 5: {
-          this.setDir(pReader.ReadByteFromPPTY());
+          this.setDir(s.ReadByteFromPPTY());
           break;
         }
         case 6: {
-          this.setHierBranch(pReader.ReadByteFromPPTY());
+          this.setHierBranch(s.ReadByteFromPPTY());
           break;
         }
         case 7: {
-          this.setOrgChart(pReader.ReadByteFromPPTY());
+          this.setOrgChart(s.ReadByteFromPPTY());
           break;
         }
         case 8: {
-          this.setResizeHandles(pReader.ReadByteFromPPTY());
+          this.setResizeHandles(s.ReadByteFromPPTY());
           break;
         }
         default: {
@@ -5094,7 +5095,6 @@ Because of this, the display is sometimes not correct.
       IteratorLayoutBase.call(this);
       this.name = null;
       this.ref = null;
-      this.list = [];
     }
 
     InitClass(ForEach, IteratorLayoutBase, AscDFH.historyitem_type_ForEach);
@@ -5243,10 +5243,10 @@ Because of this, the display is sometimes not correct.
         pWriter._WriteInt1(4, this.cnt[i]);
       }
       for (i = 0; i < this.axis.length; i += 1) {
-        pWriter._WriteUChar1(5, this.axis[i].getVal());
+        pWriter._WriteUChar1(5, this.axis[i]);
       }
       for (i = 0; i < this.ptType.length; i += 1) {
-        pWriter._WriteUChar1(6, this.ptType[i].getVal());
+        pWriter._WriteUChar1(6, this.ptType[i]);
       }
       pWriter._WriteString2(7, this.ref);
     };
@@ -7088,6 +7088,10 @@ Because of this, the display is sometimes not correct.
       }
     };
 
+    Sp3d.prototype.getChildren = function() {
+      return [this.contourW, this.extrusionH, this.prstMaterial, this.z, this.bevelB, this.bevelT, this.contourClr, this.extrusionClr];
+    };
+
     function Bevel() {
       CBaseFormatNoIdObject.call(this);
       this.h = null;
@@ -7156,6 +7160,10 @@ Because of this, the display is sometimes not correct.
         default:
           break;
       }
+    };
+
+    Bevel.prototype.getChildren = function() {
+      return [this.h, this.prst, this.w];
     };
 
     function ShapeSmartArtInfo() {
@@ -8651,9 +8659,6 @@ Because of this, the display is sometimes not correct.
     SmartArt.prototype.setColorsDef = function (oPr) {
       oHistory.CanAddChanges() && oHistory.Add(new CChangeObjectNoId(this, AscDFH.historyitem_SmartArtColorsDef, this.getColorsDef(), oPr));
       this.colorsDef = oPr;
-			if (oPr) {
-				oPr.setParent(this);
-			}
     };
     SmartArt.prototype.setType = function (oPr) {
       this.type = oPr;
@@ -8668,9 +8673,6 @@ Because of this, the display is sometimes not correct.
     SmartArt.prototype.setLayoutDef = function (oPr) {
       oHistory.CanAddChanges() && oHistory.Add(new CChangeObjectNoId(this, AscDFH.historyitem_SmartArtLayoutDef, this.getLayoutDef(), oPr));
       this.layoutDef = oPr;
-	    if (oPr) {
-		    oPr.setParent(this);
-	    }
     };
     SmartArt.prototype.setDataModel = function (oPr) {
       oHistory.CanAddChanges() && oHistory.Add(new CChangeObject(this, AscDFH.historyitem_SmartArtDataModel, this.getDataModel(), oPr));
@@ -8682,9 +8684,6 @@ Because of this, the display is sometimes not correct.
     SmartArt.prototype.setStyleDef = function (oPr) {
       oHistory.CanAddChanges() && oHistory.Add(new CChangeObjectNoId(this, AscDFH.historyitem_SmartArtStyleDef, this.getStyleDef(), oPr));
       this.styleDef = oPr;
-	    if (oPr) {
-		    oPr.setParent(this);
-	    }
     };
     SmartArt.prototype.getColorsDef = function () {
       return this.colorsDef;

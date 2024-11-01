@@ -51,44 +51,34 @@
 			if (templateChild.layoutNode) {
 				child = getLayoutNode(templateChild.layoutNode);
 			} else if (templateChild.varLst) {
-				child = getVarLst(templateChild.varLst);
+				parent.setVarLst(getVarLst(templateChild.varLst));
 			} else if (templateChild.alg) {
-				child = getAlgorithm(templateChild.alg);
+				parent.setAlg(getAlgorithm(templateChild.alg));
 			} else if (templateChild.shape) {
-				child = getSmartArtShape(templateChild.shape);
+				parent.setShape(getSmartArtShape(templateChild.shape));
 			} else if (templateChild.presOf) {
-				child = getPresOf(templateChild.presOf);
+				parent.setPresOf(getPresOf(templateChild.presOf));
 			} else if (templateChild.constrLst) {
-				child = getConstrLst(templateChild.constrLst);
+				parent.setConstrLst(getConstrLst(templateChild.constrLst));
 			} else if (templateChild.ruleLst) {
-				child = getRuleLst(templateChild.ruleLst);
+				parent.setRuleLst(getRuleLst(templateChild.ruleLst));
 			} else if (templateChild.forEach) {
 				child = getForEach(templateChild.forEach);
 			} else if (templateChild.choose) {
 				child = getChoose(templateChild.choose);
 			}
 			if (child) {
-				if (parent.addToLst) {
 					parent.addToLst(0, child);
-				} else if (parent.addToLstList) {
-					parent.addToLstList(0, child);
-				}
-
 			}
 		}
 	}
 	function getVarLst(info) {
 		const varLst = new AscFormat.VarLst();
-		if (info.bulletEnabled) {
-			varLst.setBulletEnabled(new AscFormat.BulletEnabled());
-			varLst.bulletEnabled.setVal(info.bulletEnabled.val);
+		if (info.bulletEnabled !== undefined) {
+			varLst.setBulletEnabled(info.bulletEnabled.val);
 		}
-		if (info.dir) {
-			varLst.setDir(new AscFormat.DiagramDirection());
-		}
-		if (info.resizeHandles) {
-			varLst.setResizeHandles(new AscFormat.ResizeHandles());
-			varLst.resizeHandles.setVal(info.resizeHandles.val);
+		if (info.resizeHandles !== undefined) {
+			varLst.setResizeHandles(info.resizeHandles.val);
 		}
 		return varLst;
 	}
