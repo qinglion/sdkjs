@@ -58,8 +58,8 @@
         this._doc                   = undefined;
         this._inReplyTo             = undefined;
         this._intent                = undefined;
-        this._lock                  = undefined;
-        this._lockContent           = undefined;
+        this._lock                  = undefined; // pdf format lock
+        this._lockContent           = undefined; // pdf format lock
         this._modDate               = undefined;
         this._name                  = undefined;
         this._opacity               = 1;
@@ -90,6 +90,7 @@
             rollover:   null
         }
         this._wasChanged = false;
+        this.Lock = new AscCommon.CLock();
 
         this.SetDocument(oDoc);
         this.SetName(sName);

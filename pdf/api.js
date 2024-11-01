@@ -649,10 +649,11 @@
 		nPage = nPage != undefined ? nPage : oViewer.currentPage;
 
 		oDoc.DoAction(function() {
-			oDoc.RemovePage(nPage);
-			oViewer.navigateToPage(nPage - 1 >= 0 ? nPage - 1 : 0);
-			oDoc.FinalizeAction();
-		}, AscDFH.historydescription_Pdf_RemovePage, this);
+			let res = oDoc.RemovePage(nPage);
+            if (res) {
+                oViewer.navigateToPage(nPage - 1 >= 0 ? nPage - 1 : 0);
+            }
+        }, AscDFH.historydescription_Pdf_RemovePage, this, [nPage]);
 	};
 	PDFEditorApi.prototype.asc_GetSelectedText = function(bClearText, select_Pr) {
 		if (!this.DocumentRenderer)
@@ -1815,7 +1816,79 @@
 				t.DocumentRenderer.onUpdateOverlay();
 			}
 			t.sendEvent("asc_onConnectionStateChanged", e);
-		}
+		};
+		this.CoAuthoringApi.onLocksAcquired = function(e)
+        {
+            if (t._coAuthoringCheckEndOpenDocument(t.CoAuthoringApi.onLocksAcquired, e)) {
+                return;
+            }
+            let oDoc = t.getPDFDoc();
+            let oThumbnails = oDoc.GetThumbnails();
+            if (2 != e["state"]) {
+                let Id    = e["block"];
+                let Class = AscCommon.g_oTableId.Get_ById(Id);
+                if (Class && e["blockValue"]["type"] == AscPDF.AscLockTypeElemPDF.Page) {
+                    oThumbnails && oThumbnails._repaintPage(Class.GetIndex());
+                }
+                if (null != Class) {
+                    let Lock = Class.Lock;
+                    // Выставляем ID пользователя, залочившего данный элемент
+                    Lock.Set_UserId(e["user"]);
+                    let OldType = Class.Lock.Get_Type();
+                    if (AscCommon.c_oAscLockTypes.kLockTypeOther2 === OldType || AscCommon.c_oAscLockTypes.kLockTypeOther3 === OldType) {
+                        Lock.Set_Type(AscCommon.c_oAscLockTypes.kLockTypeOther3, true);
+                    }
+                    else {
+                        Lock.Set_Type(AscCommon.c_oAscLockTypes.kLockTypeOther, true);
+                    }
+                    oDoc.UpdateInterface();
+                }
+                else {
+                    AscCommon.CollaborativeEditing.Add_NeedLock(Id, e["user"]);
+                }
+            }
+        };
+		this.CoAuthoringApi.onLocksReleased = function(e, bChanges) {
+			if (t._coAuthoringCheckEndOpenDocument(t.CoAuthoringApi.onLocksReleased, e, bChanges)) {
+				return;
+			}
+		
+			let oDoc = t.getPDFDoc();
+            let oThumbnails = oDoc.GetThumbnails();
+			let Id = e["block"]["guid"];
+			let Class = g_oTableId.Get_ById(Id);
+			if (Class && e["block"]["type"] == AscPDF.AscLockTypeElemPDF.Page) {
+				oThumbnails && oThumbnails._repaintPage(Class.GetIndex());
+			}
+			if (null != Class) {
+				let Lock = Class.Lock;
+				if ("undefined" != typeof(Lock)) {
+					let CurType = Lock.Get_Type();
+		
+					let NewType = AscCommon.c_oAscLockTypes.kLockTypeNone;
+		
+					if (CurType === AscCommon.c_oAscLockTypes.kLockTypeOther) {
+						if (true != bChanges) {
+							NewType = AscCommon.c_oAscLockTypes.kLockTypeNone;
+						} else {
+							NewType = AscCommon.c_oAscLockTypes.kLockTypeOther2;
+							AscCommon.CollaborativeEditing.Add_Unlock(Class);
+						}
+					} else if (CurType === AscCommon.c_oAscLockTypes.kLockTypeMine) {
+						// Такого быть не должно
+						NewType = AscCommon.c_oAscLockTypes.kLockTypeMine;
+					} else if (CurType === AscCommon.c_oAscLockTypes.kLockTypeOther2 || CurType === AscCommon.c_oAscLockTypes.kLockTypeOther3) {
+						NewType = AscCommon.c_oAscLockTypes.kLockTypeOther2;
+					}
+		
+					Lock.Set_Type(NewType, true);
+		
+					oDoc.UpdateInterface();
+				}
+			} else {
+				AscCommon.CollaborativeEditing.Remove_NeedLock(Id);
+			}
+		};
 	};
 	PDFEditorApi.prototype._autoSave = function () {
 
@@ -2068,7 +2141,7 @@
 
 		oDoc.DoAction(function() {
 			oDoc.SetPageRotate(oThumbnails.selectPage, angle % 360);
-		}, AscDFH.historydescription_Pdf_RotatePage);
+		}, AscDFH.historydescription_Pdf_RotatePage, this, [oThumbnails.selectPage]);
 	};
 	PDFEditorApi.prototype.asc_GetPageRotate = function(nPage) {
 		let oViewer = this.getDocumentRenderer();

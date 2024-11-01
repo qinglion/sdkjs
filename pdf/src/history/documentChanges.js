@@ -37,7 +37,7 @@
 AscDFH.changesFactory[AscDFH.historyitem_PDF_Document_AnnotsContent]	= CChangesPDFDocumentAnnotsContent;
 AscDFH.changesFactory[AscDFH.historyitem_PDF_Document_FieldsContent]	= CChangesPDFDocumentFieldsContent;
 AscDFH.changesFactory[AscDFH.historyitem_PDF_Document_DrawingsContent]	= CChangesPDFDocumentDrawingsContent;
-AscDFH.changesFactory[AscDFH.historyitem_PDF_Document_AddPage]			= CChangesPDFDocumentPagesContent;
+AscDFH.changesFactory[AscDFH.historyitem_PDF_Document_PagesContent]		= CChangesPDFDocumentPagesContent;
 AscDFH.changesFactory[AscDFH.historyitem_PDF_Document_RotatePage]		= CChangesPDFDocumentRotatePage;
 AscDFH.changesFactory[AscDFH.historyitem_PDF_Document_RecognizePage]	= CChangesPDFDocumentRecognizePage;
 AscDFH.changesFactory[AscDFH.historyitem_PDF_Document_SetDocument]      = CChangesPDFDocumentSetDocument;
@@ -635,7 +635,7 @@ function CChangesPDFDocumentPagesContent(Class, Pos, Items, bAdd)
 }
 CChangesPDFDocumentPagesContent.prototype = Object.create(AscDFH.CChangesBaseContentChange.prototype);
 CChangesPDFDocumentPagesContent.prototype.constructor = CChangesPDFDocumentPagesContent;
-CChangesPDFDocumentPagesContent.prototype.Type = AscDFH.historyitem_PDF_Document_AddPage;
+CChangesPDFDocumentPagesContent.prototype.Type = AscDFH.historyitem_PDF_Document_PagesContent;
 
 CChangesPDFDocumentPagesContent.prototype.Undo = function() {
 	let oDocument   = this.Class;
@@ -722,6 +722,14 @@ CChangesPDFDocumentPagesContent.prototype.private_ReadItem = function(Reader)
 		W: Reader.GetLong(),
 		H: Reader.GetLong()
 	};
+};
+CChangesPDFDocumentPagesContent.prototype.ReadFromBinary = function (reader) {
+    this.Add = reader.GetBool();
+    AscDFH.CChangesDrawingsContent.prototype.ReadFromBinary.call(this, reader);
+};
+CChangesPDFDocumentPagesContent.prototype.WriteToBinary = function (writer) {
+    writer.WriteBool(this.IsAdd());
+    AscDFH.CChangesDrawingsContent.prototype.WriteToBinary.call(this, writer);
 };
 
 /**
