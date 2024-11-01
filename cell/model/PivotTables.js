@@ -10194,6 +10194,7 @@ CT_pivotTableDefinition.prototype.asc_isTablesValidForCalculatedItems = function
  */
 CT_pivotTableDefinition.prototype.asc_addCalculatedItem = function(api, fld, name, formula) {
 	const t = this;
+	let error = null;
 	api._changePivotAndConnectedByPivotCacheWithLock(this, false, function (confirmation, pivotTables) {
 		const changeRes = new AscCommonExcel.PivotChangeResult();
 		try {
@@ -10224,11 +10225,10 @@ CT_pivotTableDefinition.prototype.asc_addCalculatedItem = function(api, fld, nam
 			}
 			return changeRes;
 		} catch (err) {
-			const changeResult = new AscCommonExcel.PivotChangeResult();
-			changeResult.error = err;
-			return changeResult;
+			error = err;
 		}
 	});
+	return error;
 };
 /**
  * @param {spreadsheet_api} api api instance
@@ -10238,6 +10238,7 @@ CT_pivotTableDefinition.prototype.asc_addCalculatedItem = function(api, fld, nam
  */
 CT_pivotTableDefinition.prototype.asc_modifyCalculatedItem = function(api, fld, name, formula) {
 	const t = this;
+	let error = null;
 	api._changePivotAndConnectedByPivotCacheWithLock(this, false, function (confirmation, pivotTables) {
 		const changeRes = new AscCommonExcel.PivotChangeResult();
 		const pivotFields = t.asc_getPivotFields();
@@ -10262,11 +10263,10 @@ CT_pivotTableDefinition.prototype.asc_modifyCalculatedItem = function(api, fld, 
 			}
 			return changeRes;
 		} catch (err) {
-			const changeResult = new AscCommonExcel.PivotChangeResult();
-			changeResult.error = err;
-			return changeResult;
+			error = err;
 		}
 	});
+	return error;
 };
 /**
  * @param {spreadsheet_api} api api instance

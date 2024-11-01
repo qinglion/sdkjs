@@ -7607,7 +7607,7 @@ var editor;
 			t.wbModel.dependencyFormulas.unlockRecal();
 			History.EndTransaction();
 			let success = t._changePivotEndCheckError(changeRes, onRepeat);
-			if (success) {
+			if (success && changeRes) {
 				//todo pivot
 				t.updateWorksheetByPivotTable(pivot, changeRes, true, updateSelection);
 			}
@@ -7628,9 +7628,6 @@ var editor;
 		var updateRes, reportRanges;
 		if (pivotChanged.data) {
 			updateRes = pivot.updateAfterEdit();
-			if (updateRes.error) {
-				this.sendEvent("asc_onError", updateRes.error, Asc.c_oAscError.Level.NoCritical);
-			}
 			reportRanges = pivot.getReportRanges();
 			error = wsModel.checkPivotReportLocationForError(reportRanges, pivot);
 			if (c_oAscError.ID.No === error) {
