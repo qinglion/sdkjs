@@ -11223,7 +11223,7 @@
 				return _convertedPath;
 			}, this, [path]);
 
-			const compoundPath = new PathBoolean.CompoundPath();
+			const compoundPath = new AscCommon.PathBoolean.CompoundPath();
 
 			convertedPath.ArrPathCommand.forEach(function (pathCommand) {
 				switch (pathCommand.id) {
