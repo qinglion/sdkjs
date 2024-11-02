@@ -473,9 +473,9 @@
 			 * @param {number} pagesCount
 			 * @return {string} text
 			 */
-			function getTextFromFieldRow(fieldRow, fldTagText, currentPageIndex, pagesCount) {
+			function parseTextFromFieldRow(fieldRow, fldTagText, currentPageIndex, pagesCount) {
 				/**
-				 * format inches to feet and inches with decimal fraction
+				 * format inches to feet and inches with decimal fraction.
 				 * @param inchesTotal
 				 * @return {string}
 				 */
@@ -491,6 +491,11 @@
 					return feet + "\' " + formatedInchesStr + "\"";
 				}
 
+				/**
+				 *
+				 * @param number
+				 * @return {string}
+				 */
 				function formatDecimalFraction(number) {
 					// Get the whole inch part and the fractional part
 					const wholePart = Math.floor(number);
@@ -526,6 +531,28 @@
 					return String(wholePartAfterFractionHandle) + fractionStr;
 				}
 
+				/**
+				 *  Example usage:
+				 *  console.log(formatDate("2023-11-23T11:19:36")); // Output: "23.11.2023 11:19:36"
+				 * @param {string} dateString
+				 * @return {string}
+				 */
+				function formatDate(dateString) {
+					// Create a Date object from the input string
+					const date = new Date(dateString);
+
+					// Extract day, month, year, hours, minutes, and seconds
+					const day = String(date.getDate()).padStart(2, '0');
+					const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+					const year = date.getFullYear();
+					const hours = String(date.getHours()).padStart(2, '0');
+					const minutes = String(date.getMinutes()).padStart(2, '0');
+					const seconds = String(date.getSeconds()).padStart(2, '0');
+
+					// Format to "dd.mm.yyyy hh:mm:ss"
+					return day + '.' + month + '.' + year + ' ' + hours + ':' + minutes + ':' + seconds;
+				}
+
 				const valueCell = fieldRow.getCell("Value");
 				// const valueFunction = valueCell.f;
 				const valueV = valueCell.v;
@@ -534,16 +561,19 @@
 				// let's not use formula (valueCell.f) for now
 				// first convert value (valueCell.v) which is inches by default to units set in valueCell.f
 
-				let coef;
+				/**
+				 * @type {(number|string)}
+				 */
+				let valueInProperUnits;
 				if (valueUnits === "CM") {
-					coef = g_dKoef_in_to_mm / 10;
+					valueInProperUnits = valueV *  g_dKoef_in_to_mm / 10;
 				} else if (valueUnits === "MM") {
-					coef = g_dKoef_in_to_mm;
+					valueInProperUnits = valueV * g_dKoef_in_to_mm;
+				} else if (valueUnits === "DATE") {
+					valueInProperUnits = formatDate(valueV);
 				} else {
-					coef = 1;
+					valueInProperUnits = valueV;
 				}
-
-				const valueInProperUnits = valueV * coef;
 
 				// then format it according to Format cell
 				const formatCell = fieldRow.getCell("Format");
@@ -555,6 +585,14 @@
 				} else if (formatValue === "esc(15)") {
 					// take original value despite of units convert fractional part to decimal fraction
 					formatedString = formatDecimalFraction(valueInProperUnits);
+				} else if (formatValue === "T") {
+					// take time only
+					// formatValue === "T" is N='Format' F='FIELDPICTURE(30)'
+					formatedString = valueInProperUnits.split(" ")[1];
+				} else if (formatValue === "ddddd") {
+					// take date only
+					// formatValue === "ddddd" is N='Format' F='FIELDPICTURE(20)'
+					formatedString = valueInProperUnits.split(" ")[0];
 				}
 
 				return formatedString;
@@ -657,7 +695,7 @@
 						let fieldPropsFinal = fieldRowNum !== null && fieldPropsCommon.getRow(fieldRowNum);
 
 						// handle Value
-						let fieldValueText = getTextFromFieldRow(fieldPropsFinal, optionalValue,
+						let fieldValueText = parseTextFromFieldRow(fieldPropsFinal, optionalValue,
 							currentPageIndex, pagesCount);
 
 						if (fieldValueText) {
