@@ -474,16 +474,101 @@
 			 * @return {string} text
 			 */
 			function getTextFromFieldRow(fieldRow, fldTagText, currentPageIndex, pagesCount) {
-				const valueCell = fieldRow.getCell("Value");
-				const valueFunction = valueCell.f;
-				const valueV = valueCell.v;
-				if (valueFunction === "PAGENUMBER()") {
-					return String(currentPageIndex);
-				} else if (valueFunction === "PAGECOUNT()") {
-					return String(pagesCount);
+				/**
+				 * format inches to feet and inches with decimal fraction
+				 * @param inchesTotal
+				 * @return {string}
+				 */
+				function formatInches(inchesTotal) {
+					const feet = Math.floor(inchesTotal / 12); // Calculate whole feet
+					const inches = inchesTotal % 12; // Remaining inches
+
+					// Get the whole inch part and the fractional part
+					const formatedInchesStr = formatDecimalFraction(inches);
+
+					// Combine feet, whole inches, and fractional inches into the final format
+					// return `${feet}' ${wholeInches}${fractionStr}"`;
+					return feet + "\' " + formatedInchesStr + "\"";
 				}
 
-				return fldTagText ? fldTagText : valueV;
+				function formatDecimalFraction(number) {
+					// Get the whole inch part and the fractional part
+					const wholePart = Math.floor(number);
+					const fractionPart = number - wholePart;
+
+					// Find the best fraction with a denominator up to 9
+					let bestNumerator = 0;
+					let bestDenominator = 1;
+					let minDifference = Infinity;
+
+					for (let denominator = 1; denominator <= 9; denominator++) {
+						const numerator = Math.round(fractionPart * denominator);
+						const difference = Math.abs(fractionPart - numerator / denominator);
+						if (difference < minDifference) {
+							bestNumerator = numerator;
+							bestDenominator = denominator;
+							minDifference = difference;
+						}
+					}
+
+					// Format the fraction part if it's not zero
+					let fractionStr;
+					let wholePartAfterFractionHandle = wholePart;
+					if (bestNumerator > 0 && bestNumerator !== bestDenominator) {
+						fractionStr = " " + bestNumerator + "/" + bestDenominator;
+					} else if (bestDenominator === 0) {
+						fractionStr = "";
+					} else if (bestNumerator === bestDenominator) {
+						fractionStr = "";
+						wholePartAfterFractionHandle += 1;
+					}
+
+					return String(wholePartAfterFractionHandle) + fractionStr;
+				}
+
+				const valueCell = fieldRow.getCell("Value");
+				// const valueFunction = valueCell.f;
+				const valueV = valueCell.v;
+				const valueUnits = valueCell.u;
+
+				// let's not use formula (valueCell.f) for now
+				// first convert value (valueCell.v) which is inches by default to units set in valueCell.f
+
+				let coef;
+				if (valueUnits === "CM") {
+					coef = g_dKoef_in_to_mm / 10;
+				} else if (valueUnits === "MM") {
+					coef = g_dKoef_in_to_mm;
+				} else {
+					coef = 1;
+				}
+
+				const valueInProperUnits = valueV * coef;
+
+				// then format it according to Format cell
+				const formatCell = fieldRow.getCell("Format");
+				const formatValue = formatCell.v;
+				let formatedString;
+				if (formatValue === "esc(13)") {
+					// take original value in inches and return feet + inches
+					formatedString = formatInches(valueV);
+				} else if (formatValue === "esc(15)") {
+					// take original value despite of units convert fractional part to decimal fraction
+					formatedString = formatDecimalFraction(valueInProperUnits);
+				}
+
+				return formatedString;
+
+
+
+
+				// if (valueFunction === "PAGENUMBER()") {
+				// 	return String(currentPageIndex);
+				// } else if (valueFunction === "PAGECOUNT()") {
+				// 	return String(pagesCount);
+				// }
+
+				// return valueV ? valueV : fldTagText;
 			}
 
 			
