@@ -346,18 +346,28 @@
 		}
 		return this.check(conditionValue, maxDepth - curDepth);
 	};
-	If.prototype.getFuncVarNode = function (smartArtAlgorithm) {
+	If.prototype.getVarPoint = function (smartArtAlgorithm) {
+		let node;
 		switch (this.arg) {
 			case AscFormat.If_arg_dir: {
-				return smartArtAlgorithm.dataRoot;
+				node = smartArtAlgorithm.getRootPresNode();
+				break;
 			}
 			default:
-				return smartArtAlgorithm.getCurrentNode();
+				node = smartArtAlgorithm.getCurrentPresNode();
+				while (node && node.presPoint && !(node.presPoint.prSet && node.presPoint.prSet.presLayoutVars)) {
+					if (!(node.parent && node.parent.presPoint)) {
+						break;
+					}
+					node = node.parent;
+				}
+				break;
 		}
+		return node && node.presPoint;
 	};
 	If.prototype.funcVar = function (smartArtAlgorithm) {
-		const node = this.getFuncVarNode(smartArtAlgorithm);
-		const nodeVal = node.getFuncVarValue(this.arg);
+		const point = this.getVarPoint(smartArtAlgorithm);
+		const nodeVal = point && point.getFuncVarValue(this.arg);
 		return this.check(this.getConditionValue(), nodeVal);
 	}
 	If.prototype.funcCnt = function (nodes) {
@@ -496,19 +506,24 @@
 		const node = smartartAlgorithm.getCurrentPresNode();
 		node.setAlgorithm(this.getAlgorithm(smartartAlgorithm));
 	}
+	Point.prototype.getFuncVarValue = function(arg) {
+		const varLst = this.prSet && this.prSet.presLayoutVars;
+			switch (arg) {
+				case AscFormat.If_arg_dir:
+					if (varLst && varLst.dir !== null) {
+						return varLst.dir;
+					}
+					return AscFormat.DiagramDirection_val_norm;
+				case AscFormat.If_arg_hierBranch:
+					if (varLst && varLst.hierBranch !== null) {
+						return varLst.hierBranch;
+					}
+					return AscFormat.HierBranch_val_std;
+				default:
+					break;
+			}
+	};
 
-
-	Point.prototype.getVariables = function () {
-		const prSet = this.prSet;
-		return prSet && prSet.getPresLayoutVars();
-	}
-	Point.prototype.getDirection = function () {
-		const variables = this.getVariables();
-		if (variables && variables.dir !== null) {
-			return variables.dir;
-		}
-		return AscFormat.DiagramDirection_val_norm;
-	}
 	SShape.prototype.executeAlgorithm = function (smartartAlgoritm) {
 		const presNode = smartartAlgoritm.getCurrentPresNode();
 		presNode.layoutInfo.shape = this;
@@ -761,6 +776,9 @@
 	SmartArtAlgorithm.prototype.getCurrentPresNode = function () {
 		return this.presNodesStack[this.presNodesStack.length - 1];
 	}
+	SmartArtAlgorithm.prototype.getRootPresNode = function () {
+		return this.presNodesStack[1];
+	}
 	SmartArtAlgorithm.prototype.getShapes = function () {
 
 		const algorithm = this.presRoot.algorithm;
@@ -978,27 +996,8 @@
 		}
 		return this.presOf;
 	};
-	SmartArtDataNodeBase.prototype.getDirection = function () {};
-	SmartArtDataNodeBase.prototype._getHierBranchValue = function () {
-		const presNode = this.getPresNode();
-		if (presNode) {
-			const presPoint = presNode.presPoint;
-			return presPoint && presPoint.getHierBranchValue();
-		}
-	};
 	SmartArtDataNodeBase.prototype.getPositionByParent = function () {
 		return -1;
-	};
-	SmartArtDataNodeBase.prototype.getHierBranch = function () {
-		return this._getHierBranchValue();
-	};
-	SmartArtDataNodeBase.prototype.getFuncVarValue = function (type) {
-		switch (type) {
-			case AscFormat.If_arg_dir:
-				return this.getDirection();
-			case AscFormat.If_arg_hierBranch:
-				return this.getHierBranch();
-		}
 	};
 	SmartArtDataNodeBase.prototype.getPresName = function () {
 		const presNode = this.getPresNode();
@@ -1206,10 +1205,8 @@
 		this.parent = parent;
 	};
 	SmartArtDataNodeBase.prototype.getPresNode = function () {
-		return this.presNode;
-	};
-	SmartArtDataNodeBase.prototype.setPresNode = function (presNode) {
-		this.presNode = presNode;
+		const textNodes = this.getTextNodes();
+		return textNodes.textNode || textNodes.contentNode;
 	};
 	SmartArtDataNodeBase.prototype.getModelId = function () {
 		return this.point.getModelId();
@@ -1264,20 +1261,6 @@
 	SmartArtParDataNode.prototype.getNodeByPtType = function (elementTypeValue) {
 		return this;
 	}
-	SmartArtParDataNode.prototype.getDirection = function () {
-		return this.parent.getDirection();
-	};
-	SmartArtParDataNode.prototype.getHierBranch = function () {
-		let node = this;
-		while (node) {
-			const val = node._getHierBranchValue();
-			if (AscFormat.isRealNumber(val)) {
-				return val;
-			}
-			node = node.parent;
-		}
-		return null;
-	};
 	SmartArtParDataNode.prototype.getParent = function () {
 		return this.parent && this.parent.parent;
 	}
@@ -1304,11 +1287,6 @@
 		}
 		return -1;
 	};
-
-	SmartArtDataNode.prototype.getDirection = function () {
-		const presNode = this.getPresNode();
-		return presNode && presNode.getDirection();
-	}
 
 	SmartArtDataNode.prototype.getChildDepth = function () {
 		if (this.childDepth === null) {
@@ -2006,7 +1984,7 @@
 	BaseAlgorithm.prototype.setConnections = function () {
 		const nodes = this.parentNode.childs;
 		let firstNode;
-		let sibConnNode;
+		let sibConnNode = null;
 		for (let i = 0; i < nodes.length; i++) {
 			const node = nodes[i];
 			const shape = node.shape;
@@ -2015,11 +1993,7 @@
 			}
 			if (shape.type === AscFormat.LayoutShapeType_outputShapeType_conn) {
 				const algorithm = node.algorithm;
-				if (node.isParNode()) {
-					const parConnNode = node.node.parent && node.node.parent.getPresNode();
-					this.setParentConnection(algorithm, parConnNode);
-				} else {
-					if (!sibConnNode) {
+					if (!node.isParNode() && !sibConnNode) {
 						continue;
 					}
 					if (!firstNode) {
@@ -2032,9 +2006,13 @@
 					const lastNode = nodes[nodes.length - 1].node;
 					const nextNode = nextIndex === nodes.length && !lastNode.isHideLastTrans ? firstNode : nodes[nextIndex];
 					if (algorithm && nextNode) {
-						this.setSibConnection(sibConnNode, nextNode, algorithm);
+						if (node.isParNode()) {
+							this.setParentConnection(algorithm, nextNode);
+						} else {
+							this.setSibConnection(sibConnNode, nextNode, algorithm);
+						}
 					}
-				}
+					// sibConnNode = null;
 			}
 		}
 	};
@@ -7700,11 +7678,6 @@ PresNode.prototype.addChild = function (ch, pos) {
 
 		return skipDefaultValue ? result : (result || 0);
 	};
-
-
-	PresNode.prototype.getDirection = function () {
-		return this.presPoint.getDirection();
-	}
 
 	PresNode.prototype.checkName = function (name) {
 		if (this.getPresName() === name) {

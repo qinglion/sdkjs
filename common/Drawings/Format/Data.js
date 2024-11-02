@@ -1662,9 +1662,6 @@ Because of this, the display is sometimes not correct.
       // this.spPr = AscFormat.readObject(r);
       // this.t = AscFormat.readObject(r);
     }
-	  Point.prototype.getHierBranchValue = function () {
-		  return this.prSet && this.prSet.getHierBranchValue();
-	  };
     Point.prototype.getDrawingDocument = function () {
     }
 
@@ -2153,9 +2150,6 @@ Because of this, the display is sometimes not correct.
       this.presLayoutVars = AscFormat.readObjectNoId(r);
       this.style = AscFormat.readObject(r);
     }
-	  PrSet.prototype.getHierBranchValue = function () {
-		  return this.presLayoutVars && this.presLayoutVars.getHierBranchValue();
-	  };
     PrSet.prototype.setCoherent3DOff = function (pr) {
       oHistory.CanAddChanges() && oHistory.Add(new CChangeBool(this, AscDFH.historyitem_PrSetCoherent3DOff, this.getCoherent3DOff(), pr));
       this.coherent3DOff = pr;
@@ -4941,9 +4935,6 @@ Because of this, the display is sometimes not correct.
 		  this.orgChart = AscFormat.readBool(r);
 		  this.resizeHandles = AscFormat.readLong(r);
 	  };
-	  VarLst.prototype.getHierBranchValue = function () {
-		  return this.hierBranch;
-	  }
     VarLst.prototype.setAnimLvl = function (oPr) {
       this.animLvl = oPr;
     }
