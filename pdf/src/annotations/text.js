@@ -243,14 +243,18 @@
         let nHeight     = (aOrigRect[3] - aOrigRect[1]) / oDoc.Viewer.zoom;
         
         let oCtx = oGraphics.GetContext();
+        oCtx.save();
         oGraphics.EnableTransform();
         oCtx.iconFill = "rgb(" + oRGB.r + "," + oRGB.g + "," + oRGB.b + ")";
 
-        let nScale = AscCommon.AscBrowser.retinaPixelRatio / oDoc.Viewer.zoom;
+        let nScale = 1.25 / oDoc.Viewer.zoom;
         let drawFunc = this.GetIconDrawFunc();
         drawFunc(oCtx, nX , nY, nScale, nScale, -nRotAngle * Math.PI / 180);
 
-        ////// draw rect
+        oCtx.restore();
+
+        oGraphics.DrawLockObjectRect(this.Lock.Get_Type(), nX, nY, 20 / oDoc.Viewer.zoom, 20 / oDoc.Viewer.zoom);
+        //// draw rect
         // oGraphics.SetLineWidth(1);
         // oGraphics.SetStrokeStyle(0, 255, 255);
         // oGraphics.SetLineDash([]);
@@ -258,6 +262,47 @@
         // oGraphics.Rect(nX, nY, nWidth, nHeight);
         // oGraphics.Stroke();
     };
+    CAnnotationText.prototype.drawLocks = function (transform, oGraphicsPDF) {
+		if (AscCommon.IsShapeToImageConverter) {
+			return;
+		}
+		var bNotes = !!(this.parent && this.parent.kind === AscFormat.TYPE_KIND.NOTES);
+		if (!this.group && !bNotes) {
+			var oLock;
+			if (this.parent instanceof AscCommonWord.ParaDrawing) {
+				oLock = this.parent.Lock;
+			} else if (this.Lock) {
+				oLock = this.Lock;
+			}
+			if (oLock && AscCommon.c_oAscLockTypes.kLockTypeNone !== oLock.Get_Type()) {
+				var bCoMarksDraw = true;
+				var oApi = editor || Asc['editor'];
+				if (oApi) {
+
+					switch (oApi.getEditorId()) {
+						case AscCommon.c_oEditorId.Word: {
+							bCoMarksDraw = (true === oApi.isCoMarksDraw || AscCommon.c_oAscLockTypes.kLockTypeMine !== oLock.Get_Type());
+							break;
+						}
+						case AscCommon.c_oEditorId.Presentation: {
+							bCoMarksDraw = (!AscCommon.CollaborativeEditing.Is_Fast() || AscCommon.c_oAscLockTypes.kLockTypeMine !== oLock.Get_Type());
+							break;
+						}
+						case AscCommon.c_oEditorId.Spreadsheet: {
+							bCoMarksDraw = (!oApi.collaborativeEditing.getFast() || AscCommon.c_oAscLockTypes.kLockTypeMine !== oLock.Get_Type());
+							break;
+						}
+					}
+				}
+				if (bCoMarksDraw && graphics.DrawLockObjectRect) {
+					graphics.transform3(transform);
+					graphics.DrawLockObjectRect(oLock.Get_Type(), 0, 0, this.extX, this.extY);
+					return true;
+				}
+			}
+		}
+		return false;
+	};
     CAnnotationText.prototype.IsNeedDrawFromStream = function() {
         return false;
     };

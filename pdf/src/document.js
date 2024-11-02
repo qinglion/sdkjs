@@ -1722,7 +1722,8 @@ var CPresentation = CPresentation || function(){};
                     if (this.mouseDownAnnot.IsInTextBox()) {
                         this.SelectionSetEnd(AscCommon.global_mouseEvent.X, AscCommon.global_mouseEvent.Y, e);
                     }
-                    else {
+                    else if (oController.curState instanceof AscFormat.NullState) {
+                        
                         this.mouseDownAnnot.onPreMove(AscCommon.global_mouseEvent.X, AscCommon.global_mouseEvent.Y, e)
                     }
                 }
@@ -2462,14 +2463,16 @@ var CPresentation = CPresentation || function(){};
         let oCurHistory = AscCommon.History;
         AscCommon.History = this.History;
 
+        let oActiveAnnot = this.mouseDownAnnot;
+
         let res = this.DoAction(function() {
             let oViewer     = editor.getDocumentRenderer();
             let pageObject  = oViewer.getPageByCoords(AscCommon.global_mouseEvent.X, AscCommon.global_mouseEvent.Y);
             let nPage       = pageObject ? pageObject.index : this.GetCurPage();
             let posToAdd    = this.anchorPositionToAdd ? this.anchorPositionToAdd : {x: 10, y: 10};
             
-            let X2 = posToAdd.x + 40;
-            let Y2 = posToAdd.y + 40;
+            let X2 = posToAdd.x + 20;
+            let Y2 = posToAdd.y + 20;
 
             let oProps = {
                 rect:           [posToAdd.x, posToAdd.y, X2, Y2],
@@ -2523,7 +2526,7 @@ var CPresentation = CPresentation || function(){};
                 this.UpdateUndoRedo();
             
             return oStickyComm;
-        }, AscDFH.historydescription_Pdf_AddComment, this);
+        }, AscDFH.historydescription_Pdf_AddComment, this, oActiveAnnot && oActiveAnnot.GetId());
 
         AscCommon.History = oCurHistory;
         return res;
@@ -2979,14 +2982,6 @@ var CPresentation = CPresentation || function(){};
         this.ClearSearch();
     };
     
-    CPDFDoc.prototype.DoAction = function(fAction, nDescription, oThis) {
-        if (true /* тут проверяем локи */) {
-            this.StartAction(nDescription);
-            let result = fAction.call(oThis);
-            this.FinalizeAction(true);
-            return result;
-        }
-    };
     /**
 	 * Checks the parent form and deletes if necessary
 	 * @memberof CPDFDoc
@@ -5741,13 +5736,63 @@ var CPresentation = CPresentation || function(){};
         return this.Document_Is_SelectionLocked(nCheckType, oAdditionalData, isIgnoreCanEditFlag, undefined, isDontLockInFastMode);
     };
     CPDFDoc.prototype.Document_Is_SelectionLocked = function (nCheckType, AdditionalData, isIgnoreCanEditFlag, aAdditionaObjects, DontLockInFastMode) {
-        if (Asc.editor.isRestrictionView() || true === this.CollaborativeEditing.Get_GlobalLock()) {
+        let oController         = this.GetController();
+        let oCurPageInfo        = this.GetPageInfo(this.GetCurPage());
+        let isRestrictionView   = Asc.editor.isRestrictionView();
+
+        if (true === this.CollaborativeEditing.Get_GlobalLock()) {
             return true;
         }
 
         AscCommon.CollaborativeEditing.OnStart_CheckLock();
 
+        if (nCheckType === AscCommon.changestype_None && AscCommon.isRealObject(AdditionalData) && AdditionalData.CheckType === AscCommon.changestype_Table_Properties) {
+            nCheckType = AscCommon.changestype_Drawing_Props;
+        }
+
+        if ([AscCommon.changestype_Paragraph_TextProperties, AscCommon.changestype_Paragraph_Content].includes(nCheckType)) {
+            let oTargetTextObject = oController.getTargetDocContent(false, true);
+            if (oTargetTextObject) {
+                nCheckType = AscCommon.changestype_Drawing_Props;
+            }
+            else {
+                return false;
+            }
+        }
+
         switch (nCheckType) {
+            // check selected object lock
+            case AscCommon.changestype_Drawing_Props:
+            case AscCommon.changestype_Delete: {
+                if (false == [AscCommon.c_oAscLockTypes.kLockTypeMine, AscCommon.c_oAscLockTypes.kLockTypeNone].includes(oCurPageInfo.Lock.Type))
+                    return true;
+
+                let selected_objects = oController.selectedObjects;
+                if (oController.selection.groupSelection) {
+                    selected_objects.push(oController.selection.groupSelection);
+                }
+
+                if (isRestrictionView) {
+                    for (let i = 0; i < selected_objects.length; i++) {
+                        if (selected_objects[i].IsDrawing()) {
+                            return true;
+                        }
+                    }
+                }
+
+                for (let i = 0; i < selected_objects.length; ++i) {
+                    let check_obj = {
+                        "type":     AscLockTypeElemPDF.Object,
+                        "pageId":   oCurPageInfo.GetId(),
+                        "objId":    selected_objects[i].GetId(),
+                        "guid":     selected_objects[i].GetId()
+                    };
+
+                    selected_objects[i].Lock.Check(check_obj);
+                }
+
+                break;
+            }
             case AscDFH.historydescription_Pdf_RemovePage:
             case AscDFH.historydescription_Pdf_EditPage:
             case AscDFH.historydescription_Pdf_RotatePage: {
@@ -5767,6 +5812,30 @@ var CPresentation = CPresentation || function(){};
                         oPageInfo.Lock.Check(oCheckData);
                     }
                 });
+
+                break;
+            }
+            case AscCommon.changestype_2_Comment: {
+                let sCommentId = AdditionalData;
+
+                let selected_objects = oController.selectedObjects;
+                if (oController.selection.groupSelection) {
+                    selected_objects.push(oController.selection.groupSelection);
+                }
+
+                for (let i = 0; i < selected_objects.length; ++i) {
+                    if (selected_objects[i].GetId() == sCommentId) {
+                        let check_obj = {
+                            "type":     AscLockTypeElemPDF.Object,
+                            "pageId":   oCurPageInfo.GetId(),
+                            "objId":    selected_objects[i].GetId(),
+                            "guid":     selected_objects[i].GetId()
+                        };
+    
+                        selected_objects[i].Lock.Check(check_obj);
+                        break;
+                    }
+                }
 
                 break;
             }
@@ -6522,7 +6591,26 @@ var CPresentation = CPresentation || function(){};
 		this.startPoint = -1;
 	};
     CPDFDoc.prototype.DoAction = function(fAction, nDescription, oThis, Additional) {
-        if (this.IsSelectionLocked(nDescription, Additional)) {
+        let nChangesType;
+
+        switch (nDescription) {
+            case AscDFH.historydescription_Document_BackSpaceButton:
+            case AscDFH.historydescription_Document_DeleteButton:
+                nChangesType = AscCommon.changestype_Delete;
+                break;
+            case AscDFH.historydescription_Pdf_FreeTextGeom:
+            case AscDFH.historydescription_CommonDrawings_EndTrack:
+            case AscDFH.historydescription_Pdf_FreeTextFitTextBox:
+                nChangesType = AscCommon.changestype_Drawing_Props;
+                break;
+            case AscDFH.historydescription_Document_ChangeComment:
+            case AscDFH.historydescription_Pdf_AddComment:
+            case AscDFH.historydescription_Pdf_RemoveComment:
+                nChangesType = AscCommon.changestype_2_Comment;
+                break;
+        }
+
+        if (this.IsSelectionLocked(nChangesType, Additional)) {
             return;
         }
     
