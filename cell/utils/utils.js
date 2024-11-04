@@ -436,6 +436,12 @@
 		Range.prototype.compareByLeftTop = function (a, b) {
 			return Range.prototype.compareCell(a.c1, a.r1, b.c1, b.r1);
 		};
+		Range.prototype.compareByRightTop = function (a, b) {
+			return Range.prototype.compareCell(a.c2, a.r1, b.c2, b.r1);
+		};
+		Range.prototype.compareByLeftBottom = function (a, b) {
+			return Range.prototype.compareCell(a.c1, a.r2, b.c1, b.r2);
+		};
 		Range.prototype.compareByRightBottom = function (a, b) {
 			return Range.prototype.compareCell(a.c2, a.r2, b.c2, b.r2);
 		};
