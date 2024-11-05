@@ -2875,12 +2875,15 @@ function (window, undefined) {
 
 		//TODO в случае добавляения массива - првоерить - возможно часть нужно вызывать каждый раз после _addChars
 		var tmpCursorPos;
-		// При первом быстром вводе стоит добавить в конце проценты (для процентного формата и только для числа)
+		// The first time we enter quickly, we should add percentages at the end (for percentage format and only for numbers)
 		if (t.options.isAddPersentFormat && AscCommon.isNumber(newChar)) {
 			t.options.isAddPersentFormat = false;
 			tmpCursorPos = t.cursorPos;
 			t.undoMode = true;
-			t._addChars("%");
+			// add the percentage only to the line without a formula
+			if (!t._formula) {
+				t._addChars("%");
+			}
 			t.cursorPos = tmpCursorPos;
 			t.undoMode = false;
 			t._updateCursorPosition();
