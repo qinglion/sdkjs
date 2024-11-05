@@ -413,9 +413,8 @@ $(function () {
 				fillRes(i, helper);
 			}
 
-			insertFromSortedIndex =
-				helper.addInsertByRow(curY, insertFromSorted, insertFromSortedIndex, helper.addInsertFrom);
-			insertToSortedIndex = helper.addInsertByRow(curY, insertToSorted, insertToSortedIndex, helper.addInsertTo);
+			insertFromSortedIndex = helper.addInsertByRow(curY, curY, insertFromSorted, insertFromSortedIndex, helper.addInsertFrom);
+			insertToSortedIndex = helper.addInsertByRow(curY, curY, insertToSorted, insertToSortedIndex, helper.addInsertTo);
 			helper.finishInsert();
 
 			fillRes(curY, helper);
@@ -503,8 +502,8 @@ $(function () {
 		let rows = 3;
 		let cols = 3;
 
-		// let listeningBbox = ["A1:A2","C1:C2"]
-		// let changedBbox = ["A1:B1","A2:B2"]
+		// let listeningBbox = ["A1:A2","A3:B3"]
+		// let changedBbox = ["A2:B2","A2:C2"]
 		// testListeningNames(assert, listeningBbox, changedBbox);
 		// return;
 
@@ -676,7 +675,7 @@ $(function () {
 			assert.deepEqual(resSorted, expected, "testListening");
 			var listeningBboxNames = JSON.stringify(getNames(listeningBbox));
 			var changedBboxNames = JSON.stringify(getNames(changedBbox));
-			throw 1;
+			//throw 1;
 		}
 
 		for (let i = 0; i < listeningBbox.length; ++i) {

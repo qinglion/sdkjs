@@ -626,7 +626,7 @@
 	}
 
 	DependencyGraph.prototype = {
-		maxSharedRecursion: 100,
+		maxSharedRecursion: 50,
 		//listening
 		startListeningRange: function(sheetId, bbox, listener) {
 			//todo bbox clone or bbox immutable
@@ -1367,6 +1367,10 @@
 		},
 		//set dirty
 		addToChangedRange2: function(sheetId, bbox) {
+			if (bbox.isOneCell()) {
+				this.addToChangedCell2(sheetId, bbox.r1, bbox.c1);
+				return;
+			}
 			if (!this.changedRange) {
 				this.changedRange = {};
 			}
@@ -1809,6 +1813,7 @@
 						}
 						cells.sort(AscCommon.fSortAscending);
 						this._broadcastCellsByCells(sheetContainer, cells, notifyData);
+						//todo add changedCellRepeated after _broadcastCellsByCells
 						this._broadcastRangesByCells(sheetContainer, cells, notifyData);
 					}
 				}
@@ -2297,9 +2302,12 @@
 				}
 				//process cells before curY
 				processCellsBeforeCurY(curY-1);
+				if (indexCell < cells.length) {
+					getFromCellIndex(cells[indexCell]);
+				}
 				//insert new ranges
-				rangesTopFromIndex = helper.addInsertByRow(curY, rangesTopFrom, rangesTopFromIndex, helper.addInsertFrom);
-				rangesTopToIndex = helper.addInsertByRow(curY, rangesTopTo, rangesTopToIndex, helper.addInsertTo);
+				rangesTopFromIndex = helper.addInsertByRow(curY, g_FCI.row, rangesTopFrom, rangesTopFromIndex, helper.addInsertFrom);
+				rangesTopToIndex = helper.addInsertByRow(curY, g_FCI.row, rangesTopTo, rangesTopToIndex, helper.addInsertTo);
 				helper.finishInsert();
 				//process cells curY
 				processCellsBeforeCurY(curY);
@@ -2384,9 +2392,12 @@
 				}
 				//process cells before curY
 				processCellsBeforeCurY(curY - 1);
+				if (indexCell < cells.length) {
+					getFromCellIndex(cells[indexCell].cellIndex);
+				}
 				//insert new ranges
-				rangesTopFromIndex = helper.addInsertByRow(curY, rangesTopFrom, rangesTopFromIndex, helper.addInsertFrom);
-				rangesTopToIndex = helper.addInsertByRow(curY, rangesTopTo, rangesTopToIndex, helper.addInsertTo);
+				rangesTopFromIndex = helper.addInsertByRow(curY, g_FCI.row, rangesTopFrom, rangesTopFromIndex, helper.addInsertFrom);
+				rangesTopToIndex = helper.addInsertByRow(curY, g_FCI.row, rangesTopTo, rangesTopToIndex, helper.addInsertTo);
 				helper.finishInsert();
 				//process cells curY
 				processCellsBeforeCurY(curY);
@@ -2422,23 +2433,27 @@
 			while (rangesBottomFromIndex < rangesBottomFrom.length && rangesBottomFromChangedIndex < rangesBottomFromChanged.length) {
 				//next curY
 				curY = Math.min(rangesBottomFromChanged[rangesBottomFromChangedIndex].bbox.r2, rangesBottomFrom[rangesBottomFromIndex].bbox.r2);
+				let curYTop = -1;
 				if (rangesTopFromIndex < rangesTopFrom.length) {
-					curY = Math.min(curY, rangesTopFrom[rangesTopFromIndex].bbox.r1);
+					curYTop = rangesTopFrom[rangesTopFromIndex].bbox.r1;
+					curY = Math.min(curY, curYTop);
 				}
+				let curYTopChanged = -1;
 				if (rangesTopFromChangedIndex < rangesTopFromChanged.length) {
-					curY = Math.min(curY, rangesTopFromChanged[rangesTopFromChangedIndex].bbox.r1);
+					curYTopChanged = rangesTopFromChanged[rangesTopFromChangedIndex].bbox.r1;
+					curY = Math.min(curY, curYTopChanged);
 				}
-				let rangesTopFromIndexOld = rangesTopFromIndex;
-				let rangesTopFromChangedIndexOld = rangesTopFromChangedIndex;
+				let eventsCountOld = helper.getRowEventsCount();
+				let eventsCountOldChanged = helperChanged.getRowEventsCount();
 				//insert new ranges
-				rangesTopFromIndex = helper.addInsertByRow(curY, rangesTopFrom, rangesTopFromIndex, helper.addInsertFrom);
-				rangesTopToIndex = helper.addInsertByRow(curY, rangesTopTo, rangesTopToIndex, helper.addInsertTo);
+				rangesTopFromIndex = helper.addInsertByRow(curY, eventsCountOldChanged ? curY : curYTopChanged, rangesTopFrom, rangesTopFromIndex, helper.addInsertFrom);
+				rangesTopToIndex = helper.addInsertByRow(curY, eventsCountOldChanged ? curY : curYTopChanged, rangesTopTo, rangesTopToIndex, helper.addInsertTo);
 				helper.finishInsert();
-				rangesTopFromChangedIndex = helperChanged.addInsertByRow(curY, rangesTopFromChanged, rangesTopFromChangedIndex, helper.addInsertFrom);
-				rangesTopToChangedIndex = helperChanged.addInsertByRow(curY, rangesTopToChanged, rangesTopToChangedIndex, helper.addInsertTo);
+				rangesTopFromChangedIndex = helperChanged.addInsertByRow(curY, eventsCountOld ? curY : curYTop, rangesTopFromChanged, rangesTopFromChangedIndex, helper.addInsertFrom);
+				rangesTopToChangedIndex = helperChanged.addInsertByRow(curY, eventsCountOld ? curY : curYTop, rangesTopToChanged, rangesTopToChangedIndex, helper.addInsertTo);
 				helperChanged.finishInsert();
 				//intersect
-				if ((rangesTopFromIndexOld !== rangesTopFromIndex || rangesTopFromChangedIndexOld !== rangesTopFromChangedIndex) &&
+				if ((eventsCountOld !== helper.getRowEventsCount() || eventsCountOldChanged !== helperChanged.getRowEventsCount()) &&
 					!(helper.to < helperChanged.from || helperChanged.to < helper.from))
 				{
 					helper.nextRow();
@@ -2453,9 +2468,8 @@
 									for (let j = 0; j < helperChanged.curElemsLen; ++j) {
 										let elemChanged = helperChanged.curElems[j];
 										if (elemChanged) {
-											//todo without maxRecursion
 											var intersect = elem.bbox.intersectionSimple(elemChanged.bbox);
-											t._broadcastShared(elem, helper, affected, intersect, null, null, false);
+											t._broadcastShared(elem, helper, affected, intersect, null, null);
 										}
 									}
 								}
@@ -2483,12 +2497,13 @@
 			}
 			this._broadcastNotifyRanges(affected, notifyData);
 		},
-		_broadcastShared: function(elem, helper, affected, intersect, row, col, maxRecursion) {
+		_broadcastShared: function(elem, helper, affected, intersect, row, col) {
 			var sharedBroadcast = elem.sharedBroadcast;
 			if (!sharedBroadcast) {
 				if (elem.isActive) {
 					affected.push(elem);
 					elem.isActive = false;
+					helper.addDeleteFrom(elem);
 					helper.addDeleteToUnsorted(elem);
 				}
 			} else if (!sharedBroadcast.changedBBox ||
@@ -2498,7 +2513,7 @@
 				if (!sharedBroadcast.changedBBox ||
 					sharedBroadcast.changedBBox.isEqual(sharedBroadcast.prevChangedBBox)) {
 					sharedBroadcast.recursion++;
-					if (maxRecursion || sharedBroadcast.recursion >= this.maxSharedRecursion) {
+					if (sharedBroadcast.recursion >= this.maxSharedRecursion) {
 						sharedBroadcast.changedBBox = elem.bbox.clone();
 					}
 					affected.push(elem);
@@ -2519,6 +2534,7 @@
 				if (sharedBroadcast.changedBBox.isEqual(elem.bbox)) {
 					if (elem.isActive) {
 						elem.isActive = false;
+						helper.addDeleteFrom(elem);
 						helper.addDeleteToUnsorted(elem);
 					}
 				}
@@ -2620,6 +2636,9 @@
 		this.deleteToUnsorted = [];
 		this.deleteToUnsortedLen = 0;
 	}
+	BroadcastHelper.prototype.getRowEventsCount = function () {
+		return this.eventsFromLen;
+	};
 	BroadcastHelper.prototype.nextRow = function () {
 		this.curElemsLen = 0;
 		this.curElemsCount = 0;
@@ -2710,11 +2729,11 @@
 		this.insertTo[this.insertToLen] = elem;
 		this.insertToLen++;
 	};
-	BroadcastHelper.prototype.addInsertByRow = function (row, sorted, sortedIndex, fInsert) {
+	BroadcastHelper.prototype.addInsertByRow = function (row, minRow, sorted, sortedIndex, fInsert) {
 		while (sortedIndex < sorted.length && row === sorted[sortedIndex].bbox.r1) {
 			let elem = sorted[sortedIndex];
 			sortedIndex++;
-			if (false !== elem.isActive) {
+			if (false !== elem.isActive && minRow <= elem.bbox.r2) {
 				fInsert.call(this, elem);
 			}
 		}
