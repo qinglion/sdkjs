@@ -2466,11 +2466,10 @@ var CPresentation = CPresentation || function(){};
             let oViewer     = editor.getDocumentRenderer();
             let pageObject  = oViewer.getPageByCoords(AscCommon.global_mouseEvent.X, AscCommon.global_mouseEvent.Y);
             let nPage       = pageObject ? pageObject.index : this.GetCurPage();
-            let nGrScale    = 1.25 * (96 / oViewer.file.pages[nPage].Dpi);
             let posToAdd    = this.anchorPositionToAdd ? this.anchorPositionToAdd : {x: 10, y: 10};
             
-            let X2 = posToAdd.x + 40 / nGrScale;
-            let Y2 = posToAdd.y + 40 / nGrScale;
+            let X2 = posToAdd.x + 40;
+            let Y2 = posToAdd.y + 40;
 
             let oProps = {
                 rect:           [posToAdd.x, posToAdd.y, X2, Y2],
