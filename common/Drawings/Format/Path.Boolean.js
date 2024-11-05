@@ -1,7 +1,7 @@
 (function (window) {
 
 	function InitClassWithStatics(fClass, fBase, nType) {
-		AscFormat.InitClass(fClass, fBase, nType);
+		window.AscFormat.InitClass(fClass, fBase, nType);
 
 		Object.getOwnPropertyNames(fBase).forEach(function (prop) {
 			if (['prototype', 'name', 'length'].includes(prop) || Function.prototype.hasOwnProperty(prop)) { return; }
@@ -557,7 +557,7 @@
 			readCount = 1;
 			if (Array.isArray(arg0)) {
 				this._set(+arg0[0], +(arg0.length > 1 ? arg0[1] : arg0[0]));
-			} else if (AscFormat.isRealNumber(arg0.x)) {
+			} else if (window.AscFormat.isRealNumber(arg0.x)) {
 				this._set(arg0.x || 0, arg0.y || 0);
 			} else {
 				this._set(0, 0);
@@ -974,7 +974,7 @@
 		const y1 = rect.y;
 		const x2 = x1 + rect.width;
 		const y2 = y1 + rect.height;
-		coords = [x1, y1, x2, y1, x2, y2, x1, y2];
+		const coords = [x1, y1, x2, y1, x2, y2, x1, y2];
 		return this._transformCoordinates(coords, coords, 4);
 	};
 	Matrix.prototype._transformBounds = function (bounds, dest) {
@@ -2875,7 +2875,7 @@
 		return pairs;
 	};
 	Curve.getTimesWithTangent = function (v, tangent) {
-		const x0 = v[0]; y0 = v[1]; x1 = v[2]; y1 = v[3]; x2 = v[4]; y2 = v[5]; x3 = v[6]; y3 = v[7];
+		const x0 = v[0], y0 = v[1], x1 = v[2], y1 = v[3], x2 = v[4], y2 = v[5], x3 = v[6], y3 = v[7];
 
 		const normalized = tangent.normalize();
 		const tx = normalized.x;
@@ -3523,6 +3523,7 @@
 			return list;
 		}
 
+		let paths;
 		if (crossings.length) {
 			collectPaths(paths1);
 			if (paths2) collectPaths(paths2);
