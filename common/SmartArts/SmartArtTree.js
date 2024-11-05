@@ -747,8 +747,12 @@
 		let presNode;
 		if (currentPresNode && currentPresNode.parent) {
 			const children = presParRelations[currentPresNode.getModelId()];
-			const child = children && children[currentPresNode.childs.length];
-			if (child) {
+			let child;
+			if (children && children[layoutNode.name] && children[layoutNode.name].length) {
+				const element = children[layoutNode.name].pop();
+				child = element.point;
+			}
+			if (child && child.getPresName() === layoutNode.name) {
 				presNode = new PresNode(child, currentNode);
 			} else {
 				presNode = createPresNode(layoutNode.name, layoutNode.styleLbl, currentNode);

@@ -1129,13 +1129,13 @@ Because of this, the display is sometimes not correct.
     };
 
     changesFactory[AscDFH.historyitem_CxnDestId] = CChangeString;
-    changesFactory[AscDFH.historyitem_CxnDestOrd] = CChangeString;
+    changesFactory[AscDFH.historyitem_CxnDestOrd] = CChangeLong;
     changesFactory[AscDFH.historyitem_CxnModelId] = CChangeString;
     changesFactory[AscDFH.historyitem_CxnParTransId] = CChangeString;
     changesFactory[AscDFH.historyitem_CxnPresId] = CChangeString;
     changesFactory[AscDFH.historyitem_CxnSibTransId] = CChangeString;
     changesFactory[AscDFH.historyitem_CxnSrcId] = CChangeString;
-    changesFactory[AscDFH.historyitem_CxnSrcOrd] = CChangeString;
+    changesFactory[AscDFH.historyitem_CxnSrcOrd] = CChangeLong;
     changesFactory[AscDFH.historyitem_CxnType] = CChangeLong;
     drawingsChangesMap[AscDFH.historyitem_CxnDestId] = function (oClass, value) {
       oClass.destId = value;
@@ -1231,7 +1231,7 @@ Because of this, the display is sometimes not correct.
     }
 
     Cxn.prototype.setDestOrd = function (pr) {
-      oHistory.CanAddChanges() && oHistory.Add(new CChangeString(this, AscDFH.historyitem_CxnDestOrd, this.getDestOrd(), pr));
+      oHistory.CanAddChanges() && oHistory.Add(new CChangeLong(this, AscDFH.historyitem_CxnDestOrd, this.getDestOrd(), pr));
       this.destOrd = pr;
     }
 
@@ -1261,7 +1261,7 @@ Because of this, the display is sometimes not correct.
     }
 
     Cxn.prototype.setSrcOrd = function (pr) {
-      oHistory.CanAddChanges() && oHistory.Add(new CChangeString(this, AscDFH.historyitem_CxnSrcOrd, this.getSrcOrd(), pr)); // TODO: srcord, type is long maybe
+      oHistory.CanAddChanges() && oHistory.Add(new CChangeLong(this, AscDFH.historyitem_CxnSrcOrd, this.getSrcOrd(), pr));
       this.srcOrd = pr;
     }
 
@@ -1322,9 +1322,9 @@ Because of this, the display is sometimes not correct.
       pWriter._WriteString2(0, this.modelId);
       pWriter._WriteString2(1, Cxn.getTypeString(this.type));
       pWriter._WriteString2(2, this.destId);
-      pWriter._WriteString2(3, this.destOrd);
+      pWriter._WriteString2(3, typeof this.destOrd === "number" ? this.destOrd.toString() : null);
       pWriter._WriteString2(4, this.srcId);
-      pWriter._WriteString2(5, this.srcOrd);
+      pWriter._WriteString2(5, typeof this.srcOrd === "number" ? this.srcOrd.toString() : null);
       pWriter._WriteString2(6, this.parTransId);
       pWriter._WriteString2(7, this.sibTransId);
       pWriter._WriteString2(8, this.presId);
@@ -1336,9 +1336,9 @@ Because of this, the display is sometimes not correct.
       if (0 === nType) this.setModelId(oStream.GetString2());
       else if (1 === nType) this.setType(Cxn.getTypeEnum(oStream.GetString2()));
       else if (2 === nType) this.setDestId(oStream.GetString2());
-      else if (3 === nType) this.setDestOrd(oStream.GetString2());
+      else if (3 === nType) this.setDestOrd(parseInt(oStream.GetString2(), 10));
       else if (4 === nType) this.setSrcId(oStream.GetString2());
-      else if (5 === nType) this.setSrcOrd(oStream.GetString2());
+      else if (5 === nType) this.setSrcOrd(parseInt(oStream.GetString2(), 10));
       else if (6 === nType) this.setParTransId(oStream.GetString2());
       else if (7 === nType) this.setSibTransId(oStream.GetString2());
       else if (8 === nType) this.setPresId(oStream.GetString2());
@@ -8743,7 +8743,7 @@ Because of this, the display is sometimes not correct.
 								point   : ptMap[cxn.destId],
 								sibPoint: ptMap[cxn.sibTransId],
 								parPoint: ptMap[cxn.parTransId],
-								index: parseInt(cxn.srcOrd, 10)
+								index: cxn.srcOrd
 							});
 							break;
 						}
@@ -8751,7 +8751,13 @@ Because of this, the display is sometimes not correct.
 							if (!connections[Cxn_type_presParOf][cxn.srcId]) {
 								connections[Cxn_type_presParOf][cxn.srcId] = {};
 							}
-							connections[Cxn_type_presParOf][cxn.srcId][cxn.srcOrd] = ptMap[cxn.destId];
+              const point = ptMap[cxn.destId];
+              if (point) {
+               if (!connections[Cxn_type_presParOf][cxn.srcId][point.getPresName()]) {
+                 connections[Cxn_type_presParOf][cxn.srcId][point.getPresName()] = [];
+                }
+                connections[Cxn_type_presParOf][cxn.srcId][point.getPresName()].push({point: point, index: cxn.srcOrd});
+              }
 							break;
 						}
 						default:
@@ -8764,6 +8770,14 @@ Because of this, the display is sometimes not correct.
 					  return a.index - b.index;
 				  });
 			  }
+        for (let id in connections[Cxn_type_presParOf]) {
+          const presNameMap = connections[Cxn_type_presParOf][id];
+          for (let presName in presNameMap) {
+            presNameMap[presName].sort(function(a, b) {
+              return b.index - a.index;
+            });
+          }
+        }
 			  return connections;
 		  }
 	  };
@@ -8788,8 +8802,8 @@ Because of this, the display is sometimes not correct.
             if (ptMap[cxn.srcId]) {
               connections[cxn.destId].push({
                 point: ptMap[cxn.srcId],
-                srcOrd: parseInt(cxn.srcOrd, 10),
-                destOrd: parseInt(cxn.destOrd, 10)
+                srcOrd: cxn.srcOrd,
+                destOrd: cxn.destOrd
               });
             }
 
