@@ -1,7 +1,7 @@
 (function (window) {
 
 	function InitClassWithStatics(fClass, fBase, nType) {
-		window.AscFormat.InitClass(fClass, fBase, nType);
+		window['AscFormat']['InitClass'](fClass, fBase, nType);
 
 		Object.getOwnPropertyNames(fBase).forEach(function (prop) {
 			if (['prototype', 'name', 'length'].includes(prop) || Function.prototype.hasOwnProperty(prop)) { return; }
@@ -557,7 +557,7 @@
 			readCount = 1;
 			if (Array.isArray(arg0)) {
 				this._set(+arg0[0], +(arg0.length > 1 ? arg0[1] : arg0[0]));
-			} else if (window.AscFormat.isRealNumber(arg0.x)) {
+			} else if (window['AscFormat']['isRealNumber'](arg0.x)) {
 				this._set(arg0.x || 0, arg0.y || 0);
 			} else {
 				this._set(0, 0);
@@ -3948,11 +3948,11 @@
 		let starts;
 
 		function isValid(seg) {
-			if (!seg || seg._visited) { return false; }
-			const winding = seg._winding || {};
-			const isOperatorValid = !operator || operator[winding.winding];
-			const isUniteInvalid = operator.unite && winding.winding === 2 && winding.windingL && winding.windingR;
-			return isOperatorValid && !isUniteInvalid;
+			var winding;
+			return !!(seg && !seg._visited && (!operator
+				|| operator[(winding = seg._winding || {}).winding]
+				&& !(operator.unite && winding.winding === 2
+					&& winding.windingL && winding.windingR)));
 		}
 
 		function isStart(seg) {
@@ -4706,6 +4706,48 @@
 
 	window['AscCommon'] = window['AscCommon'] || {};
 	window['AscCommon']['PathBoolean'] = {}
-	window['AscCommon']['PathBoolean'].CompoundPath = CompoundPath;
+	window['AscCommon']['PathBoolean']['CompoundPath'] = CompoundPath;
+
+	// CompoundPath.prototype['divide'] = CompoundPath.prototype.divide;
+	CompoundPath.prototype['unite'] = CompoundPath.prototype.unite;
+	CompoundPath.prototype['intersect'] = CompoundPath.prototype.intersect;
+	CompoundPath.prototype['subtract'] = CompoundPath.prototype.subtract;
+	CompoundPath.prototype['exclude'] = CompoundPath.prototype.exclude;
+
+	// Path.prototype['divide'] = Path.prototype.divide;
+	Path.prototype['unite'] = Path.prototype.unite;
+	Path.prototype['intersect'] = Path.prototype.intersect;
+	Path.prototype['subtract'] = Path.prototype.subtract;
+	Path.prototype['exclude'] = Path.prototype.exclude;
+
+	CompoundPath.prototype['moveTo'] = CompoundPath.prototype.moveTo;
+	CompoundPath.prototype['lineTo'] = CompoundPath.prototype.lineTo;
+	CompoundPath.prototype['cubicCurveTo'] = CompoundPath.prototype.cubicCurveTo;
+	CompoundPath.prototype['closePath'] = CompoundPath.prototype.closePath;
+	CompoundPath.prototype['getChildren'] = Item.prototype.getChildren;
+	CompoundPath.prototype['getBounds'] = Item.prototype.getBounds;
+	CompoundPath.prototype['getPosition'] = Item.prototype.getPosition;
+	CompoundPath.prototype['setPosition'] = Item.prototype.setPosition;
+
+	Path.prototype['getSegments'] = Path.prototype.getSegments;
+	Path.prototype['isClosed'] = Path.prototype.isClosed;
+
+	Segment.prototype['isFirst'] = Segment.prototype.isFirst;
+	Segment.prototype['isLast'] = Segment.prototype.isLast;
+	Segment.prototype['getPrevious'] = Segment.prototype.getPrevious;
+	Segment.prototype['getNext'] = Segment.prototype.getNext;
+	Segment.prototype['getPoint'] = Segment.prototype.getPoint;
+	Segment.prototype['getHandleOut'] = Segment.prototype.getHandleOut;
+	Segment.prototype['getHandleIn'] = Segment.prototype.getHandleIn;
+
+	Rectangle.prototype['getTopLeft'] = Rectangle.prototype.getTopLeft;
+	Rectangle.prototype['getWidth'] = Rectangle.prototype.getWidth;
+	Rectangle.prototype['getHeight'] = Rectangle.prototype.getHeight;
+	Rectangle.prototype['getLeft'] = Rectangle.prototype.getLeft;
+	Rectangle.prototype['getTop'] = Rectangle.prototype.getTop;
+
+	Point.prototype['subtract'] = Point.prototype.subtract;
+	SegmentPoint.prototype['getX'] = SegmentPoint.prototype.getX;
+	SegmentPoint.prototype['getY'] = SegmentPoint.prototype.getY;
 
 })(window);
