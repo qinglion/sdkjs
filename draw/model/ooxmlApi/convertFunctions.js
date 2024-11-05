@@ -553,22 +553,46 @@
 					return day + '.' + month + '.' + year + ' ' + hours + ':' + minutes + ':' + seconds;
 				}
 
+				/**
+				 * For example, 41879 corresponds to 8/28/2014.
+				 * @param {string} serial
+				 * @return {string}
+				 */
+				function excelSerialToDate(serial) {
+					// Excel date serials start from 1900-01-01, so calculate the base date
+					const baseDate = new Date(1900, 0, 1); // January 1, 1900
+					const serialNum = Number(serial);
+
+					// Adjust for Excel's incorrect leap year handling (Excel includes 29th February 1900)
+					const adjustedSerial = serialNum - 1;
+
+					// Add the number of days represented by the serial number
+					baseDate.setDate(baseDate.getDate() + adjustedSerial);
+
+					// Format the date as "m/d/yyyy"
+					const month = baseDate.getMonth() + 1;
+					const day = baseDate.getDate();
+					const year = baseDate.getFullYear();
+
+					return month + '/' + day + '/' + year;
+				}
+
 				const valueCell = fieldRow.getCell("Value");
 				// const valueFunction = valueCell.f;
 				const valueV = valueCell.v;
 				const valueUnits = valueCell.u;
 
 				// let's not use formula (valueCell.f) for now
-				// first convert value (valueCell.v) which is inches by default to units set in valueCell.f
+				// first convert value (valueCell.v) which is inches by default to units set in valueCell.u
 
 				/**
 				 * @type {(number|string)}
 				 */
 				let valueInProperUnits;
 				if (valueUnits === "CM") {
-					valueInProperUnits = valueV *  g_dKoef_in_to_mm / 10;
+					valueInProperUnits = Number(valueV) * g_dKoef_in_to_mm / 10;
 				} else if (valueUnits === "MM") {
-					valueInProperUnits = valueV * g_dKoef_in_to_mm;
+					valueInProperUnits = Number(valueV) * g_dKoef_in_to_mm;
 				} else if (valueUnits === "DATE") {
 					valueInProperUnits = formatDate(valueV);
 				} else {
@@ -593,11 +617,13 @@
 					// take date only
 					// formatValue === "ddddd" is N='Format' F='FIELDPICTURE(20)'
 					formatedString = valueInProperUnits.split(" ")[0];
+				} else if (formatValue === "{{M/d/yyyy}}") {
+					formatedString = excelSerialToDate(valueInProperUnits);
+				} else {
+					formatedString = valueInProperUnits;
 				}
 
 				return formatedString;
-
-
 
 
 				// if (valueFunction === "PAGENUMBER()") {
@@ -689,13 +715,13 @@
 					} else if (textElementPart.constructor.name === "fld_Type") {
 						// text field
 
-						let optionalValue = textElementPart.value;
+						let fldTagText = textElementPart.value;
 
 						let fieldRowNum = textElementPart.iX;
 						let fieldPropsFinal = fieldRowNum !== null && fieldPropsCommon.getRow(fieldRowNum);
 
 						// handle Value
-						let fieldValueText = parseTextFromFieldRow(fieldPropsFinal, optionalValue,
+						let fieldValueText = parseTextFromFieldRow(fieldPropsFinal, fldTagText,
 							currentPageIndex, pagesCount);
 
 						if (fieldValueText) {
