@@ -843,10 +843,10 @@
 
 			// oBodyPr.upright = false; // default
 
-			let leftMarginInch = shape.getCellNumberValueWithScale("LeftMargin", drawingPageScale);
-			let topMarginInch = shape.getCellNumberValueWithScale("TopMargin", drawingPageScale);
-			let rightMarginInch = shape.getCellNumberValueWithScale("RightMargin", drawingPageScale);
-			let bottomMarginInch = shape.getCellNumberValueWithScale("BottomMargin", drawingPageScale);
+			let leftMarginInch = shape.getCellNumberValueWithScale("LeftMargin", 1);
+			let topMarginInch = shape.getCellNumberValueWithScale("TopMargin", 1);
+			let rightMarginInch = shape.getCellNumberValueWithScale("RightMargin", 1);
+			let bottomMarginInch = shape.getCellNumberValueWithScale("BottomMargin", 1);
 
 
 			// CHECKS SIGN but positive tIns gives bottom inset.
