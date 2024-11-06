@@ -6004,6 +6004,12 @@ Because of this, the display is sometimes not correct.
     }
 
     InitClass(StyleDef, CBaseFormatNoIdObject, AscDFH.historyitem_type_StyleDef);
+    StyleDef.prototype.isEmptyStyleLbls = function() {
+      for (let name in this.styleLbl) {
+        return false;
+      }
+      return true;
+    };
     StyleDef.prototype.Write_ToBinary = function (w) {
       AscFormat.writeString(w, this.minVer);
       AscFormat.writeString(w, this.uniqueId);
@@ -7416,7 +7422,7 @@ Because of this, the display is sometimes not correct.
 			return !this.colorsDef;
 		};
 	  SmartArt.prototype.isEmptyStyles = function () {
-		  return !(this.styleDef && this.styleDef.uniqueId && this.styleDef.styleLbl.length);
+		  return !(this.styleDef && this.styleDef.uniqueId && !this.styleDef.isEmptyStyleLbls());
 	  };
 	  SmartArt.prototype.isEmptyLayout = function () {
 			return !(this.layoutDef && this.layoutDef.layoutNode && this.layoutDef.uniqueId);
