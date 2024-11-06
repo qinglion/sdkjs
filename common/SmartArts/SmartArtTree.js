@@ -1985,10 +1985,10 @@
 			connectorAlgorithm.setLastConnectorNode(dstNode);
 		}
 	};
-	BaseAlgorithm.prototype.setConnections = function () {
+	BaseAlgorithm.prototype.setConnections = function() {
 		const nodes = this.parentNode.childs;
 		let firstNode;
-		let sibConnNode = null;
+		let sibConnNode;
 		for (let i = 0; i < nodes.length; i++) {
 			const node = nodes[i];
 			const shape = node.shape;
@@ -1997,9 +1997,9 @@
 			}
 			if (shape.type === AscFormat.LayoutShapeType_outputShapeType_conn) {
 				const algorithm = node.algorithm;
-					if (!node.isParNode() && !sibConnNode) {
-						continue;
-					}
+				if (node.isParNode() && this instanceof CompositeAlgorithm && sibConnNode) {
+					this.setParentConnection(algorithm, sibConnNode);
+				} else if (node.isParNode() || sibConnNode) {
 					if (!firstNode) {
 						firstNode = sibConnNode;
 					}
@@ -2009,14 +2009,14 @@
 					}
 					const lastNode = nodes[nodes.length - 1].node;
 					const nextNode = nextIndex === nodes.length && !lastNode.isHideLastTrans ? firstNode : nodes[nextIndex];
-					if (algorithm && nextNode) {
+					if (nextNode) {
 						if (node.isParNode()) {
 							this.setParentConnection(algorithm, nextNode);
 						} else {
 							this.setSibConnection(sibConnNode, nextNode, algorithm);
 						}
 					}
-					// sibConnNode = null;
+				}
 			}
 		}
 	};
