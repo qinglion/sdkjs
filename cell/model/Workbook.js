@@ -627,6 +627,7 @@
 
 	DependencyGraph.prototype = {
 		maxSharedRecursion: 50,
+		maxBroadcastRecursion: 1000,
 		//listening
 		startListeningRange: function(sheetId, bbox, listener) {
 			//todo bbox clone or bbox immutable
@@ -1589,7 +1590,12 @@
 			var notifyData = {type: c_oNotifyType.Dirty, areaData: undefined};
 			this._broadscastVolatile(notifyData);
 			this._broadcastCellsStart();
+			let repeatCount = 0;
 			while (this.changedCellRepeated || this.changedRangeRepeated || this.changedDefNameRepeated) {
+				if (++repeatCount > this.maxBroadcastRecursion) {
+					this.notifyAllFormulasInChangedWs();
+				}
+
 				this._broadcastDefNames(notifyData);
 				this._broadcastCells(notifyData);
 				this._broadcastRanges(notifyData);
@@ -1622,6 +1628,23 @@
 			AscCommonExcel.g_oSUMIFSCache.clean();
 			AscCommonExcel.g_oFormulaRangesCache.clean();
 			AscCommonExcel.g_oCountIfCache.clean();
+		},
+		notifyAllFormulasInChangedWs: function() {
+			let sheetIds = {};
+			for (let sheetId in this.changedCell) {
+				sheetIds[sheetId] = 1;
+			}
+			for (let sheetId in this.changedRangeRepeated) {
+				sheetIds[sheetId] = 1;
+			}
+			let formulas = [];
+			for (let sheetId in sheetIds) {
+				let ws = this.wb.getWorksheetById(sheetId);
+				if (ws) {
+					ws.getAllFormulas(formulas);
+				}
+			}
+			this.notifyChanged(formulas);
 		},
 		initOpen: function() {
 			this._foreachDefName(function(defName) {
