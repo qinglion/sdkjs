@@ -1034,11 +1034,6 @@
 				t.sendEvent("asc_onError", error, Asc.c_oAscError.Level.NoCritical);
 			}
 	
-			if (obj && obj.sendUrlsToFrameEditor && t.isOpenedChartFrame) {
-				t.sendStartUploadImageActionToFrameEditor();
-			}
-	
-			obj && obj.fStartUploadImageCallback && obj.fStartUploadImageCallback();
 			t.sync_StartAction(Asc.c_oAscAsyncActionType.BlockInteraction, Asc.c_oAscAsyncAction.UploadImage);
 		});
 	};

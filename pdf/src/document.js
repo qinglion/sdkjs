@@ -4906,7 +4906,7 @@ var CPresentation = CPresentation || function(){};
         if (oImage) {
             nExtX   = Math.max(1, oImage.Image.width * g_dKoef_pix_to_mm);
             nExtY   = Math.max(1, oImage.Image.height * g_dKoef_pix_to_mm);
-            nKoeff  = Math.min(1.0, 1.0 / Math.max(nExtX / nPageW, nExtY / nPageH));
+            let nKoeff  = Math.min(1.0, 1.0 / Math.max(nExtX / nPageW, nExtY / nPageH));
 
             nExtX = Math.max(5, nExtX * nKoeff); 
             nExtY = Math.max(5, nExtY * nKoeff); 
