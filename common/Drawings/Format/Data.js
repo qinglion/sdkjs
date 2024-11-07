@@ -851,6 +851,11 @@ Because of this, the display is sometimes not correct.
     }
 
     InitClass(DataModel, CBaseFormatObject, AscDFH.historyitem_type_DataModel);
+    DataModel.prototype.getCxnMap = function() {
+      if (this.cxnLst) {
+        return this.cxnLst.getCxnMap();
+      }
+    }
     DataModel.prototype.Write_ToBinary = function (w) {
       AscFormat.writeObjectNoId(w, this.bg);
       AscFormat.writeObjectNoId(w, this.cxnLst);
@@ -1083,6 +1088,21 @@ Because of this, the display is sometimes not correct.
     }
 
     InitClass(PtLst, CCommonDataList, AscDFH.historyitem_type_PtLst);
+    PtLst.prototype.getPtMap = function() {
+      var ptMap = {};
+        this.list.forEach(function (point) {
+          ptMap[point.modelId] = point;
+        });
+        return ptMap;
+    };
+    PtLst.prototype.removeChildrenFromMap = function(pointMap) {
+      for (let i = this.list.length - 1; i >= 0; i -= 1) {
+        const point = this.list[i];
+        if (pointMap[point.getModelId()]) {
+          this.removeFromLst(i);
+        }
+      }
+    }
     PtLst.prototype.privateWriteAttributes = null;
     PtLst.prototype.writeChildren = function(pWriter) {
       for (var i = 0; i < this.list.length; i += 1) {
@@ -1112,6 +1132,34 @@ Because of this, the display is sometimes not correct.
     }
 
     InitClass(CxnLst, CCommonDataList, AscDFH.historyitem_type_CxnLst);
+    CxnLst.prototype.getCxnMap = function() {
+      const cxnMap = {};
+      for (let i = 0; i < this.list.length; i++) {
+        const cxn = this.list[i];
+        if (!cxnMap[cxn.srcId]) {
+          cxnMap[cxn.srcId] = {};
+        }
+        cxnMap[cxn.srcId][cxn.destId] = cxn;
+      }
+      return cxnMap;
+    };
+    CxnLst.prototype.removeChildrenFromMap = function(srcDestCxnMap) {
+      const cxnMap = {};
+      for (let srcId in srcDestCxnMap) {
+        const srcConnections = srcDestCxnMap[srcId];
+        for (let destId in srcConnections) {
+          const cxn = srcConnections[destId];
+          cxnMap[cxn.getModelId()] = cxn;
+        }
+      }
+
+      for (let i = this.list.length - 1; i >= 0; i -= 1) {
+        const cxn = this.list[i];
+        if (cxnMap[cxn.getModelId()]) {
+          this.removeFromLst(i);
+        }
+      }
+    };
     CxnLst.prototype.readChild = function(nType, pReader) {
       var s = pReader.stream;
       switch (nType) {
@@ -7418,6 +7466,11 @@ Because of this, the display is sometimes not correct.
     }
 
     InitClass(SmartArt, CGroupShape, AscDFH.historyitem_type_SmartArt);
+    SmartArt.prototype.getDataModelFromData = function() {
+      if (this.dataModel) {
+        return this.dataModel.getDataModel();
+      }
+    };
 		SmartArt.prototype.isEmptyColors = function () {
 			return !this.colorsDef;
 		};
@@ -7431,13 +7484,20 @@ Because of this, the display is sometimes not correct.
 			if (this.isEmptyColors()) {
 				this.setColorsDef(AscFormat.generateDefaultSmartArtColors());
 			}
-			if (this.isEmptyLayout()) {
-				this.setLayoutDef(AscFormat.generateDefaultSmartArtLayout());
-			}
 			if (this.isEmptyStyles()){
 				this.setStyleDef(AscFormat.generateDefaultSmartArtQuickStyle());
 			}
+      if (this.isEmptyLayout()) {
+        this.setLayoutDef(AscFormat.generateDefaultSmartArtLayout());
+        this.checkDataModel();
+      }
 		};
+    SmartArt.prototype.checkDataModel = function() {
+      if (this.isCanGenerateSmartArt()) {
+        this.smartArtTree = new AscFormat.SmartArtAlgorithm(this);
+        this.smartArtTree.checkDataModel();
+      }
+    }
 	  SmartArt.prototype.recalcFitFontSize = function () {
 		  this.recalcInfo.fitFontSize = true;
 	  };
@@ -7885,25 +7945,12 @@ Because of this, the display is sometimes not correct.
     }
 
     SmartArt.prototype.getPtMap = function () {
-      var ptLst = this.getPtLst();
-      var ptMap = {};
+      const data = this.getDataModelFromData();
+      var ptLst = data && data.getPtLst();
       if (ptLst) {
-        ptLst.forEach(function (point) {
-          ptMap[point.modelId] = point;
-        });
-        return ptMap;
+        return ptLst.getPtMap();
       }
-    }
-
-    SmartArt.prototype.getPtLst = function () {
-      var dataModel = this.getDataModel() && this.getDataModel().getDataModel();
-      return dataModel && dataModel.getPtLst() && dataModel.getPtLst().list;
-    }
-
-    SmartArt.prototype.getCxnLst = function () {
-      var dataModel = this.getDataModel() && this.getDataModel().getDataModel();
-      return dataModel && dataModel.getCxnLst() && dataModel.getCxnLst().list;
-    }
+    };
 
     SmartArt.prototype.getDefColorsByName = function () {
       var colorsDef = this.getColorsDef();
@@ -8780,7 +8827,7 @@ Because of this, the display is sometimes not correct.
           const presNameMap = connections[Cxn_type_presParOf][id];
           for (let presName in presNameMap) {
             presNameMap[presName].sort(function(a, b) {
-              return b.index - a.index;
+              return a.index - b.index;
             });
           }
         }

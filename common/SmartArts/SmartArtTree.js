@@ -536,6 +536,7 @@
 		this.presRoot = null;
 		this.nodesStack = [];
 		this.presNodesStack = [];
+		this.presNodesInfoStack = [];
 		this.connectorAlgorithmStack = [];
 		this.moveShapeSettings = [];
 		this.forEachMap = null;
@@ -544,10 +545,14 @@
 	}
 	SmartArtAlgorithm.prototype.forEachContentNode = function (callback) {
 		const nodes = [this.dataRoot];
+		callback(this.dataRoot, 0);
 		while (nodes.length) {
 			const node = nodes.pop();
-			callback(node);
-			nodes.push.apply(nodes, node.childs);
+			for (let i = 0; i < node.childs.length; i++) {
+				const child = node.childs[i];
+				callback(child, i);
+				nodes.push(child);
+			}
 		}
 	};
 	SmartArtAlgorithm.prototype.getDataPointRelations = function () {
@@ -738,19 +743,161 @@
 			}
 		}
 	}
+	SmartArtAlgorithm.prototype.updateData = function() {
+		const data = this.smartart.getDataModelFromData();
+		const cxnLst = data.getCxnLst();
+		const ptLst = data.getPtLst();
+		const cxnMap = cxnLst.getCxnMap();
+		const ptMap = ptLst.getPtMap();
+		delete ptMap[this.dataRoot.point.getModelId()];
+		delete ptMap[this.presRoot.presPoint.getModelId()];
+		this.updatePresParOfData(cxnMap, ptMap);
+		this.updatePresOfData(cxnMap);
+		this.updateParOfData(cxnMap, ptMap);
+		cxnLst.removeChildrenFromMap(cxnMap);
+		ptLst.removeChildrenFromMap(ptMap);
+		this.relations = this.smartart.getRelationOfContent2();
+	};
+	SmartArtAlgorithm.prototype.updateParOfData = function(cxnMap, ptMap) {
+		const data = this.smartart.getDataModelFromData();
+		const ptLst = data.getPtLst();
+		this.forEachContentNode(function(node, parentIndex) {
+			const parent = node.parent;
+			if (parent) {
+				const parentModelId = parent.point.getModelId();
+				const childModelId = node.point.getModelId();
+				if (ptMap[childModelId]) {
+					delete ptMap[childModelId];
+				} else {
+					ptLst.addToLst(ptLst.list.length, node.point);
+				}
+				let cxn;
+				if (cxnMap[parentModelId][childModelId]) {
+					cxn = cxnMap[parentModelId][childModelId];
+					delete cxnMap[parentModelId][childModelId];
+					if (cxn.srcOrd !== parentIndex) {
+						cxn.setSrcOrd(parentIndex);
+					}
+				} else {
+					cxn = new AscFormat.Cxn();
+					cxn.setDestOrd(0);
+					cxn.setSrcOrd(parentIndex);
+					cxn.setSrcId(parentModelId);
+					cxn.setDestId(childModelId);
+					cxn.setType(AscFormat.Cxn_type_parOf);
+				}
+				const sibNode = node.sibNode;
+				if (sibNode) {
+					const sibModelId = sibNode.point.getModelId();
+					if (ptMap[sibModelId]) {
+						delete ptMap[sibModelId];
+					} else {
+						ptLst.addToLst(ptLst.list.length, sibNode.point);
+					}
+					if (cxn.sibTransId !== sibModelId) {
+						cxn.setSibTransId(sibModelId);
+					}
+				}
+				const parNode = node.parNode;
+				if (parNode) {
+					const parModelId = parNode.point.getModelId();
+					if (ptMap[parModelId]) {
+						delete ptMap[parModelId];
+					} else {
+						ptLst.addToLst(ptLst.list.length, parNode.point);
+					}
+					if (cxn.parTransId !== parModelId) {
+						cxn.setParTransId(parModelId);
+					}
+				}
+			}
+		});
+	};
+	SmartArtAlgorithm.prototype.checkPresOfCxn = function(presOfNode, contentNodeId, cxnMap, cxnLst) {
+		const presPoint = presOfNode.presPoint;
+		const modelId = presPoint.getModelId();
+		if (cxnMap[contentNodeId][modelId]) {
+			delete cxnMap[contentNodeId][modelId];
+		} else {
+			const newCxn = new AscFormat.Cxn();
+			newCxn.setSrcId(contentNodeId);
+			newCxn.setDestId(modelId);
+			newCxn.setDestOrd(0);
+			newCxn.setSrcOrd(0);
+			newCxn.setType(AscFormat.Cxn_type_presOf);
+			cxnLst.addToLst(cxnLst.list.length, newCxn);
+		}
+	};
+	SmartArtAlgorithm.prototype.updatePresOfData = function(cxnMap) {
+		const data = this.smartart.getDataModelFromData();
+		const cxnLst = data.getCxnLst();
+		const oThis = this;
+		this.forEachContentNode(function(node) {
+			const nodeModelId = node.point.getModelId();
+			const textNodes = node.getTextNodes();
+			const textNode = textNodes.textNode;
+			const contentNode = textNodes.contentNode;
+			if (textNode) {
+				oThis.checkPresOfCxn(textNode, nodeModelId, cxnMap, cxnLst);
+			}
+			if (contentNode) {
+				oThis.checkPresOfCxn(contentNode, nodeModelId, cxnMap, cxnLst);
+			}
+		});
+	};
 
+	SmartArtAlgorithm.prototype.updatePresParOfData = function(cxnMap, ptMap) {
+		const data = this.smartart.getDataModelFromData();
+		const cxnLst = data.getCxnLst();
+		const ptLst = data.getPtLst();
+		this.forEachPresFromTop(function(node, parentIndex) {
+			const presPoint = node.presPoint;
+			const modelId = presPoint.getModelId();
+			if (ptMap[modelId] && presPoint === ptMap[modelId]) {
+				delete ptMap[modelId];
+			} else {
+				 ptLst.addToLst(ptLst.list.length, presPoint);
+			}
+			const parentPresPoint = node.parent && node.parent.presPoint;
+			if (!parentPresPoint) {
+				return;
+			}
+
+			const parentModelId = parentPresPoint.getModelId();
+			const cxn = cxnMap[parentModelId] && cxnMap[parentModelId][modelId];
+			if (cxn) {
+				if (cxn.srcOrd !== parentIndex) {
+					cxn.setSrcOrd(parentIndex);
+				}
+				delete cxnMap[parentModelId][modelId];
+			} else {
+				const newCxn = new AscFormat.Cxn();
+				newCxn.setSrcId(parentModelId);
+				newCxn.setDestId(modelId);
+				newCxn.setType(AscFormat.Cxn_type_presParOf);
+				newCxn.setDestOrd(0);
+				newCxn.setSrcOrd(parentIndex);
+				cxnLst.addToLst(cxnLst.list.length, newCxn);
+			}
+		});
+	};
 	SmartArtAlgorithm.prototype.getPresNode = function (layoutNode) {
 		const currentNode = this.getCurrentNode();
 		const currentPresNode = this.getCurrentPresNode();
+		const currentPresNodeInfo = this.getCurrentPresNodeInfo();
 		const presRelations = this.relations[AscFormat.Cxn_type_presOf];
 		const presParRelations = this.relations[AscFormat.Cxn_type_presParOf];
 		let presNode;
 		if (currentPresNode && currentPresNode.parent) {
 			const children = presParRelations[currentPresNode.getModelId()];
 			let child;
-			if (children && children[layoutNode.name] && children[layoutNode.name].length) {
-				const element = children[layoutNode.name].pop();
-				child = element.point;
+			if (children && children[layoutNode.name]) {
+				if (!currentPresNodeInfo.childrenIndexes[layoutNode.name]) {
+					currentPresNodeInfo.childrenIndexes[layoutNode.name] = -1;
+				}
+				currentPresNodeInfo.childrenIndexes[layoutNode.name] += 1;
+				const element = children[layoutNode.name][currentPresNodeInfo.childrenIndexes[layoutNode.name]];
+				child = element && element.point;
 			}
 			if (child && child.getPresName() === layoutNode.name) {
 				presNode = new PresNode(child, currentNode);
@@ -773,12 +920,17 @@
 
 	SmartArtAlgorithm.prototype.addCurrentPresNode = function (presNode) {
 		this.presNodesStack.push(presNode);
+		this.presNodesInfoStack.push({childrenIndexes: {}});
 	}
 	SmartArtAlgorithm.prototype.removeCurrentPresNode = function () {
 		this.presNodesStack.pop();
+		this.presNodesInfoStack.pop();
 	}
 	SmartArtAlgorithm.prototype.getCurrentPresNode = function () {
 		return this.presNodesStack[this.presNodesStack.length - 1];
+	}
+	SmartArtAlgorithm.prototype.getCurrentPresNodeInfo = function () {
+		return this.presNodesInfoStack[this.presNodesStack.length - 1];
 	}
 	SmartArtAlgorithm.prototype.getRootPresNode = function () {
 		return this.presNodesStack[1];
@@ -823,8 +975,11 @@
 			shape.setShapeSmartArtInfo(null);
 		}
 	};
-	SmartArtAlgorithm.prototype.startFromBegin = function () {
-		this.cleanDrawingShapeInfo();
+	SmartArtAlgorithm.prototype.checkDataModel = function() {
+		this.executeLayoutAlgorithms();
+		this.updateData();
+	};
+	SmartArtAlgorithm.prototype.executeLayoutAlgorithms = function() {
 		this.addCurrentNode(this.dataRoot);
 		const mockPresNode = new PresNode();
 		this.addCurrentPresNode(mockPresNode);
@@ -833,12 +988,18 @@
 		const layoutNode = layout.getLayoutNode();
 		this.forEachMap = layoutNode.getForEachMap();
 		layoutNode.executeAlgorithm(this);
-
 		this.presRoot = mockPresNode.childs[0];
 		this.presRoot.parent = null;
-		this.presRoot.initRootConstraints(this.smartart, this);
 		this.removeCurrentPresNode();
 		this.removeCurrentNode();
+	}
+	SmartArtAlgorithm.prototype.startFromBegin = function () {
+		this.cleanDrawingShapeInfo();
+		this.executeLayoutAlgorithms();
+		this.calculateShadowShapes();
+	};
+	SmartArtAlgorithm.prototype.calculateShadowShapes = function() {
+		this.presRoot.initRootConstraints(this.smartart, this);
 		this.calcConstraints();
 		this.cleanRules();
 		this.calcScaleCoefficients();
@@ -848,7 +1009,6 @@
 			this.calcScaleCoefficients();
 		}
 		this.calcAdaptedConstraints();
-
 		this.executeAlgorithms();
 	};
 	SmartArtAlgorithm.prototype.cleanCalcValues = function () {
@@ -933,11 +1093,13 @@
 
 	SmartArtAlgorithm.prototype.forEachPresFromTop = function (callback) {
 		const elements = [this.presRoot];
+		callback(this.presRoot, 0);
 		while (elements.length) {
 			const element = elements.pop();
-			callback(element);
-			for (let i = element.childs.length - 1; i >= 0; i -= 1) {
-				elements.push(element.childs[i]);
+			for (let i = 0; i < element.childs.length; i += 1) {
+				const child = element.childs[i];
+				callback(child, i);
+				elements.push(child);
 			}
 		}
 	};
