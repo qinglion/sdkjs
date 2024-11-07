@@ -1671,6 +1671,8 @@ MoveInGroupState.prototype =
     onMouseUp: function(e, x, y, pageIndex)
     {
         let isPdf = Asc.editor.isPdfEditor();
+        let isAnnot = this.majorObject.IsAnnot && this.majorObject.IsAnnot();
+
         if (false == isPdf) {
             var parent_paragraph = this.group.parent.Get_ParentParagraph();
             var check_paragraphs = [];
@@ -1682,11 +1684,11 @@ MoveInGroupState.prototype =
 
         var tracks = [].concat(this.drawingObjects.arrTrackObjects);
         this.drawingObjects.resetTrackState();
-        if(isPdf || false === this.drawingObjects.document.Document_Is_SelectionLocked(changestype_Drawing_Props, {Type : changestype_2_ElementsArray_and_Type , Elements : check_paragraphs, CheckType : AscCommon.changestype_Paragraph_Content}))
+        if(false === this.drawingObjects.document.Document_Is_SelectionLocked(changestype_Drawing_Props, {Type : changestype_2_ElementsArray_and_Type , Elements : check_paragraphs, CheckType : AscCommon.changestype_Paragraph_Content}))
         {
-			!isPdf && this.drawingObjects.document.StartAction(AscDFH.historydescription_Document_MoveInGroup);
+			this.drawingObjects.document.StartAction(AscDFH.historydescription_Document_MoveInGroup);
             var i;
-            if(this instanceof MoveInGroupState && e.CtrlKey && !this.hasObjectInSmartArt && !isPdf)
+            if(this instanceof MoveInGroupState && e.CtrlKey && !this.hasObjectInSmartArt && !isAnnot)
             {
                 this.group.resetSelection();
                 for(i = 0; i < tracks.length; ++i)
@@ -1707,8 +1709,6 @@ MoveInGroupState.prototype =
             {
                 for(i = 0; i < tracks.length; ++i)
                 {
-                    isPdf && tracks[i].originalObject.group.SetWasChanged(true);
-                    isPdf && tracks[i].originalObject.group.AddToRedraw();
                     tracks[i].trackEnd(true);
                 }
             }
@@ -1748,7 +1748,6 @@ MoveInGroupState.prototype =
             }
             else {
                 let oViewer = Asc.editor.getDocumentRenderer();
-                let oDoc    = oViewer.getPDFDoc();
 
                 let xMin;
                 let yMin;
@@ -1966,16 +1965,14 @@ MoveInGroupState.prototype =
                     ];
                 }
 
-                oDoc.DoAction(function() {
-                    if (aNewCallout.length != 0) {
-                        oFreeText.SetCallout(aNewCallout);
-                    }
-                    
-                    oFreeText.SetRectangleDiff(aNewRD);
-                    oFreeText.SetRect(aNewRect);
-                    oFreeText.onAfterMove();
-                    oViewer.DrawingObjects.drawingObjects.length = 0;
-                }, AscDFH.historydescription_Pdf_FreeTextGeom, this);
+                if (aNewCallout.length != 0) {
+                    oFreeText.SetCallout(aNewCallout);
+                }
+                
+                oFreeText.SetRectangleDiff(aNewRD);
+                oFreeText.SetRect(aNewRect);
+                oFreeText.onAfterMove();
+                oViewer.DrawingObjects.drawingObjects.length = 0;
             }
         }
         if (isPdf) {

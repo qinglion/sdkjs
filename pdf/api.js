@@ -1871,6 +1871,14 @@
                     else {
                         Lock.Set_Type(AscCommon.c_oAscLockTypes.kLockTypeOther, true);
                     }
+
+					if (Class.IsAnnot()) {
+						// если аннотация коммент или аннотация с комментом то блокируем и комментарий тоже
+						if (Class.IsComment() || (Class.IsUseContentAsComment() && Class.GetContents() != undefined) || Class.GetReply(0) != null) {
+							t.sync_LockComment(Class.Get_Id(), e["user"]);
+						}
+					}
+					Class.AddToRedraw();
                     oDoc.UpdateInterface();
                 }
                 else {
@@ -1915,6 +1923,14 @@
 		
 					oDoc.UpdateInterface();
 				}
+
+				if (Class.IsAnnot()) {
+					// если аннотация коммент или аннотация с комментом то блокируем и комментарий тоже
+					if (Class.IsComment() || (Class.IsUseContentAsComment() && Class.GetContents() != undefined) || Class.GetReply(0) != null) {
+						t.sync_UnLockComment(Class.Get_Id());
+					}
+				}
+
 			} else {
 				AscCommon.CollaborativeEditing.Remove_NeedLock(Id);
 			}
@@ -2034,13 +2050,10 @@
 		let oCommentData = new AscCommon.CCommentData();
 		oCommentData.Read_FromAscCommentData(AscCommentData);
 
-		return oDoc.DoAction(function() {
-			let oComment = oDoc.AddComment(AscCommentData);
-		
-			if (oComment) {
-				return oComment.GetId()
-			}
-		}, AscDFH.historydescription_Pdf_AddAnnot, this);
+		let oComment = oDoc.AddComment(AscCommentData);
+		if (oComment) {
+			return oComment.GetId()
+		}
 	};
 	PDFEditorApi.prototype.asc_showComments = function()
 	{
@@ -2190,8 +2203,8 @@
 		let nNativeW		= oViewer.file.pages[nPage].W;
 		let nNativeH		= oViewer.file.pages[nPage].H;
 		let nPageRotate		= oViewer.getPageRotate(nPage);
-		let nCommentWidth	= 40;
-		let nCommentHeight	= 40;
+		let nCommentWidth	= 20;
+		let nCommentHeight	= 20;
 		let oDoc			= oViewer.getPDFDoc();
 
 		let oBasePos = {
@@ -2296,7 +2309,7 @@
 
 		oDoc.DoAction(function() {
 			oDoc.EditComment(Id, CommentData);
-		}, AscDFH.historydescription_Document_ChangeComment);
+		}, AscDFH.historydescription_Document_ChangeComment, null, Id);
 	};
 	PDFEditorApi.prototype.asc_selectComment = function(Id)
 	{
