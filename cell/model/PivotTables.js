@@ -9680,10 +9680,10 @@ PivotRangeMapper.prototype.getRowHeadersRange = function() {
  */
 PivotRangeMapper.prototype.getFieldIndexByCell = function(row, col) {
 	const selected = this.pivot.worksheet.getRange3(row, col, row, col).bbox;
-	const rowRange = this.getRowLabelsRange();
+	const rowLabelsRange = this.getRowLabelsRange();
 	const range = this.pivot.getRange();
 	const location = this.pivot.location;
-	if (rowRange && rowRange.bbox.intersection(selected)) {
+	if (rowLabelsRange && rowLabelsRange.bbox.intersection(selected)) {
 		const rowItems = this.pivot.getRowItems();
 		const rowFields = this.pivot.asc_getRowFields();
 		const rowFieldsOffset = this.getRowFieldsOffset();
@@ -9709,8 +9709,8 @@ PivotRangeMapper.prototype.getFieldIndexByCell = function(row, col) {
 		}
 		return null;
 	}
-	const colRange = this.getColLabelsRange();
-	if (colRange && colRange.bbox.intersection(selected)) {
+	const colLabelsRange = this.getColLabelsRange();
+	if (colLabelsRange && colLabelsRange.bbox.intersection(selected)) {
 		const colItems = this.pivot.getColItems();
 		const colFields = this.pivot.asc_getColumnFields();
 		const colItemIndex = selected.c1 - (range.c1 + location.firstDataCol);
@@ -9728,6 +9728,40 @@ PivotRangeMapper.prototype.getFieldIndexByCell = function(row, col) {
 		const pivotIndex = colField.asc_getIndex();
 		if (pivotIndex !== st_VALUES) {
 			return pivotIndex;
+		}
+		return null;
+	}
+	const rowHeadersRange = this.getRowHeadersRange();
+	if (rowHeadersRange && rowHeadersRange.bbox.intersection(selected)) {
+		const rowFields = this.pivot.asc_getRowFields();
+		const range = this.pivot.getRange();
+		if (this.pivot.compact && selected.c1 === range.c1) {
+			if (rowFields.length === 1 && rowFields[0].asc_getIndex() === AscCommonExcel.st_VALUES) {
+				return null;
+			}
+		}
+		const pivotFields =  this.pivot.asc_getPivotFields();
+		const rowFieldsOffset = this.getRowFieldsOffset();
+		const rowFieldIndex = rowFieldsOffset.findIndex(function(offset) {
+			return offset === selected.c1 - range.c1;
+		});
+		const pivotIndex = rowFields[rowFieldIndex].asc_getIndex();
+		if (pivotIndex !== st_VALUES) {
+			return pivotIndex;
+		}
+		return null;
+	}
+	const colHeadersRange = this.getColHeadersRange();
+	if (colHeadersRange && colHeadersRange.bbox.intersection(selected)) {
+		const colFields = this.pivot.asc_getColumnFields()
+		if (this.pivot.compact) {
+			return colFields[0].asc_getIndex();
+		}
+		const index = colFields.length - (this.getColHeadersRange().bbox.c2 - selected.c1) - 1;
+		const colField = colFields[index];
+		const pivotIndex = colField.asc_getIndex();
+		if (pivotIndex !== st_VALUES) {
+			return pivotIndex
 		}
 		return null;
 	}
@@ -10155,36 +10189,42 @@ CT_pivotTableDefinition.prototype.asc_canAddNameCalculatedItem = function(fieldI
 	return !namesMap.has(itemName.toLowerCase());
 };
 /**
- * @return {boolean}
+ * @param {number} fld
+ * @return {null | c_oAscError.ID}
  */
-CT_pivotTableDefinition.prototype.isValidForCalculatedItems = function() {
+CT_pivotTableDefinition.prototype.hasErrorForCalculatedItems = function(fld) {
 	const pivotFields = this.asc_getPivotFields();
 	for (let i = 0; i < pivotFields.length; i += 1) {
 		if (pivotFields[i].dataField && pivotFields[i].axis !== null) {
-			return false;
+			return c_oAscError.ID.NotUniqueFieldWithCalculated;
+		}
+		if (pivotFields[fld].axis === c_oAscAxis.AxisPage) {
+			return c_oAscError.ID.CalculatedItemInPageField;
 		}
 	}
-	return true;
+	return null;
 };
 /**
  * @param {number} row
  * @param {number} col
  * @reutrn {boolean}
  */
-CT_pivotTableDefinition.prototype.asc_canChangeCalculatedItemByActiveCell = function(row, col) {
+CT_pivotTableDefinition.prototype.asc_canChangeCalculatedItemByCell = function(row, col) {
 	return this.asc_getFieldIndexByCell(row, col) !== null;
 };
 /**
- * @return {boolean}
+ * @param {number} fld
+ * @return {null | c_oAscError.ID}
  */
-CT_pivotTableDefinition.prototype.asc_isTablesValidForCalculatedItems = function() {
+CT_pivotTableDefinition.prototype.asc_hasTablesErrorForCalculatedItems = function(fld) {
 	const pivots = this.getPivotTablesConnectedByPivotCache();
 	for (let i = 0; i < pivots.length; i += 1) {
-		if (!pivots[i].isValidForCalculatedItems()) {
-			return false;
+		const err = pivots[i].hasErrorForCalculatedItems(fld);
+		if (err !== null) {
+			return err;
 		}
 	}
-	return true;
+	return null;
 };
 /**
  * @param {spreadsheet_api} api
@@ -17118,11 +17158,16 @@ CT_PivotField.prototype.asc_set = function (api, pivot, index, newVal) {
 };
 CT_PivotField.prototype.asc_setName = function (newVal, pivot, index, addToHistory) {
 	if (pivot) {
-		if (newVal && newVal.toLowerCase() !== pivot.getPivotFieldName(index) && pivot.checkInvalidNewFieldName(newVal)) {
-			const wbModel = pivot.worksheet.workbook;
-			const api = wbModel.oApi;
-			api.sendEvent('asc_onError', c_oAscError.ID.PivotFieldNameExists, c_oAscError.Level.NoCritical);
-			return;
+		if (newVal) {
+			if (newVal.toLowerCase() ===  pivot.getPivotFieldName(index).toLowerCase()) {
+				return;
+			}
+			if (pivot.checkInvalidNewFieldName(newVal)) {
+				const wbModel = pivot.worksheet.workbook;
+				const api = wbModel.oApi;
+				api.sendEvent('asc_onError', c_oAscError.ID.PivotFieldNameExists, c_oAscError.Level.NoCritical);
+				return;
+			}
 		}
 	}
 	setFieldProperty(pivot, index, this.name, newVal, addToHistory, AscCH.historyitem_PivotTable_PivotFieldSetName, true);
@@ -17890,11 +17935,16 @@ CT_DataField.prototype.asc_set = function (api, pivot, index, newVal) {
 };
 CT_DataField.prototype.asc_setName = function(newVal, pivot, index, addToHistory) {
 	if (pivot) {
-		if (this.name && newVal && this.name.toLowerCase() !== newVal.toLowerCase() && pivot.checkInvalidNewFieldName(newVal)) {
-			const wbModel = pivot.worksheet.workbook;
-			const api = wbModel.oApi;
-			api.sendEvent('asc_onError', c_oAscError.ID.PivotFieldNameExists, c_oAscError.Level.NoCritical);
-			return;
+		if (this.name && newVal) {
+			if (this.name.toLowerCase() === newVal.toLowerCase()) {
+				return;
+			}
+			if (pivot.checkInvalidNewFieldName(newVal)) {
+				const wbModel = pivot.worksheet.workbook;
+				const api = wbModel.oApi;
+				api.sendEvent('asc_onError', c_oAscError.ID.PivotFieldNameExists, c_oAscError.Level.NoCritical);
+				return;
+			}
 		}
 	}
 	setFieldProperty(pivot, index, this.name, newVal, addToHistory, AscCH.historyitem_PivotTable_DataFieldSetName, true);
@@ -22316,8 +22366,8 @@ prot["asc_modifyCalculatedItem"] = prot.asc_modifyCalculatedItem;
 prot["asc_convertNameToFormula"] = prot.asc_convertNameToFormula;
 prot["asc_getFieldIndexByCell"] = prot.asc_getFieldIndexByCell;
 prot["asc_canAddNameCalculatedItem"] = prot.asc_canAddNameCalculatedItem;
-prot["asc_isTablesValidForCalculatedItems"] = prot.asc_isTablesValidForCalculatedItems;
-prot["asc_canChangeCalculatedItemByActiveCell"] = prot.asc_canChangeCalculatedItemByActiveCell;
+prot["asc_hasTablesErrorForCalculatedItems"] = prot.asc_hasTablesErrorForCalculatedItems;
+prot["asc_canChangeCalculatedItemByCell"] = prot.asc_canChangeCalculatedItemByCell;
 
 window["Asc"]["CT_PivotTableStyle"] = window['Asc'].CT_PivotTableStyle = CT_PivotTableStyle;
 prot = CT_PivotTableStyle.prototype;
