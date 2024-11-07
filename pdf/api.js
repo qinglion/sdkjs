@@ -642,18 +642,19 @@
 
 		}, AscDFH.historydescription_Pdf_AddPage, this);
 	};
-	PDFEditorApi.prototype.asc_RemovePage = function(nPage) {
+	PDFEditorApi.prototype.asc_RemovePage = function(aPages) {
 		let oViewer = this.getDocumentRenderer();
 		let oDoc 	= this.getPDFDoc();
 
-		nPage = nPage != undefined ? nPage : oViewer.currentPage;
+		let oThumbnails = oViewer.thumbnails;
+		aPages = aPages != undefined ? aPages : oThumbnails.getSelectedPages();
 
 		oDoc.DoAction(function() {
-			let res = oDoc.RemovePage(nPage);
+			let res = oDoc.RemovePages(aPages);
             if (res) {
                 oViewer.navigateToPage(nPage - 1 >= 0 ? nPage - 1 : 0);
             }
-        }, AscDFH.historydescription_Pdf_RemovePage, this, [nPage]);
+        }, AscDFH.historydescription_Pdf_RemovePage, this, aPages);
 	};
 	PDFEditorApi.prototype.asc_GetSelectedText = function(bClearText, select_Pr) {
 		if (!this.DocumentRenderer)
@@ -2171,20 +2172,15 @@
 			this.sendEvent("asc_onTextColor", color);
 		}
 	};
-	PDFEditorApi.prototype.asc_RotatePage = function(angle) {
-		if (angle % 90 != 0) {
-			return false;
-		}
-		if (angle < 0) {
-			angle = 360 + angle;
-		}
-
+	PDFEditorApi.prototype.asc_RotatePage = function(nAngle) {
 		let oDoc = this.getPDFDoc();
 		let oThumbnails = oDoc.Viewer.Thumbnails;
 
+		let aPages = oThumbnails.getSelectedPages();
 		oDoc.DoAction(function() {
-			oDoc.SetPageRotate(oThumbnails.selectPage, angle % 360);
-		}, AscDFH.historydescription_Pdf_RotatePage, this, [oThumbnails.selectPage]);
+			oDoc.RotatePages(aPages, nAngle);
+			oThumbnails.keepSelectedPages = true;
+		}, AscDFH.historydescription_Pdf_RotatePage, this, aPages);
 	};
 	PDFEditorApi.prototype.asc_GetPageRotate = function(nPage) {
 		let oViewer = this.getDocumentRenderer();
@@ -2761,7 +2757,7 @@
 	PDFEditorApi.prototype['asc_setSkin']                  = PDFEditorApi.prototype.asc_setSkin;
 	PDFEditorApi.prototype['asc_getAnchorPosition']        = PDFEditorApi.prototype.asc_getAnchorPosition;
 	PDFEditorApi.prototype['asc_GetPageRotate']			   = PDFEditorApi.prototype.asc_GetPageRotate;
-	PDFEditorApi.prototype['asc_RotatePage']        	   = PDFEditorApi.prototype.asc_RotatePage;
+	PDFEditorApi.prototype['asc_RotatePage']          	   = PDFEditorApi.prototype.asc_RotatePage;
 	PDFEditorApi.prototype['SetMarkerFormat']              = PDFEditorApi.prototype.SetMarkerFormat;
 	PDFEditorApi.prototype['get_PageWidth']                = PDFEditorApi.prototype.get_PageWidth;
 	PDFEditorApi.prototype['get_PageHeight']               = PDFEditorApi.prototype.get_PageHeight;
