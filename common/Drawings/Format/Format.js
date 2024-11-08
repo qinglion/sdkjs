@@ -7229,6 +7229,9 @@
 		}
 
 		InitClass(FontRef, CBaseNoIdObject, 0);
+		FontRef.prototype.getObjectType = function() {
+			return AscDFH.historyitem_type_FontRef;
+		};
 		FontRef.prototype.setIdx = function (idx) {
 			this.idx = idx;
 		};
@@ -7329,6 +7332,18 @@
 		CShapeStyle.prototype.setEffectRef = function (pr) {
 			AscCommon.History.Add(new CChangesDrawingsObjectNoId(this, AscDFH.historyitem_ShapeStyle_SetEffectRef, this.effectRef, pr));
 			this.effectRef = pr;
+		};
+		CShapeStyle.prototype.Write_ToBinary = function(w) {
+			AscFormat.writeObjectNoId(w, this.lnRef);
+			AscFormat.writeObjectNoId(w, this.fillRef);
+			AscFormat.writeObjectNoId(w, this.fontRef);
+			AscFormat.writeObjectNoId(w, this.effectRef);
+		};
+		CShapeStyle.prototype.Read_FromBinary = function(r) {
+			this.lnRef = AscFormat.readObjectNoId(r);
+			this.fillRef = AscFormat.readObjectNoId(r);
+			this.fontRef = AscFormat.readObjectNoId(r);
+			this.effectRef = AscFormat.readObjectNoId(r);
 		};
 
 		var LINE_PRESETS_MAP = {};

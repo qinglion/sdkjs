@@ -283,7 +283,7 @@
 		styleLbl.setName(name);
 		styleLbl.setScene3d(getScene3D());
 		styleLbl.setSp3d(new AscFormat.Sp3d());
-		styleLbl.setTxPr(new AscFormat.CTextBody());
+		styleLbl.setTxPr(new AscFormat.CBodyPr());
 		styleLbl.setStyle(new AscFormat.CShapeStyle());
 		styleLbl.style.setLnRef(new AscFormat.StyleRef());
 		styleLbl.style.lnRef.setIdx(idx[0]);
@@ -648,19 +648,20 @@
 			}
 		};
 		const layoutDef = new AscFormat.LayoutDef();
-		layoutDef.setUniqueId("urn:microsoft.com/office/officeart/2005/8/layout/default");
-		layoutDef.setTitle(new AscFormat.DiagramTitle());
-		layoutDef.setDesc(new AscFormat.DiagramTitle());
-		layoutDef.setCatLst(new AscFormat.CatLst());
-		const category = new AscFormat.SCat();
-		category.setType("list");
-		category.setPri(400);
-		layoutDef.catLst.addToLst(0, category);
-		layoutDef.setSampData(getSampData(defaultLayoutPreset.sampData));
-		layoutDef.setStyleData(getSampData(defaultLayoutPreset.styleData));
-		layoutDef.setClrData(getSampData(defaultLayoutPreset.clrData));
-		layoutDef.setLayoutNode(getLayoutNode(defaultLayoutPreset.layoutNode));
-
+		AscFormat.ExecuteNoHistory(function() {
+			layoutDef.setUniqueId("urn:microsoft.com/office/officeart/2005/8/layout/default");
+			layoutDef.setTitle(new AscFormat.DiagramTitle());
+			layoutDef.setDesc(new AscFormat.DiagramTitle());
+			layoutDef.setCatLst(new AscFormat.CatLst());
+			const category = new AscFormat.SCat();
+			category.setType("list");
+			category.setPri(400);
+			layoutDef.catLst.addToLst(0, category);
+			layoutDef.setSampData(getSampData(defaultLayoutPreset.sampData));
+			layoutDef.setStyleData(getSampData(defaultLayoutPreset.styleData));
+			layoutDef.setClrData(getSampData(defaultLayoutPreset.clrData));
+			layoutDef.setLayoutNode(getLayoutNode(defaultLayoutPreset.layoutNode));
+		}, this, []);
 		return layoutDef;
 	}
 
@@ -712,23 +713,25 @@
 		];
 
 		const styleDef = new AscFormat.StyleDef();
-		styleDef.setUniqueId("urn:microsoft.com/office/officeart/2005/8/quickstyle/simple1");
-		styleDef.setTitle(new AscFormat.DiagramTitle());
-		styleDef.setDesc(new AscFormat.DiagramTitle());
-		styleDef.setCatLst(new AscFormat.CatLst());
-		const cat = new AscFormat.SCat();
-		cat.setType("simple");
-		cat.setPri(10100);
-		styleDef.catLst.addToLst(0, cat);
-		styleDef.setScene3d(getScene3D());
-		for (let i = 0; i < defaultStylesInfo.length; i++) {
-			const info = defaultStylesInfo[i];
-			const color = info.clr;
-			const idx = info.idx;
-			for (let j = 0; j < info.names.length; j++) {
-				styleDef.addToLstStyleLbl(generateStyleStyleLbl(info.names[j], color, idx));
+		AscFormat.ExecuteNoHistory(function() {
+			styleDef.setUniqueId("urn:microsoft.com/office/officeart/2005/8/quickstyle/simple1");
+			styleDef.setTitle(new AscFormat.DiagramTitle());
+			styleDef.setDesc(new AscFormat.DiagramTitle());
+			styleDef.setCatLst(new AscFormat.CatLst());
+			const cat = new AscFormat.SCat();
+			cat.setType("simple");
+			cat.setPri(10100);
+			styleDef.catLst.addToLst(0, cat);
+			styleDef.setScene3d(getScene3D());
+			for (let i = 0; i < defaultStylesInfo.length; i++) {
+				const info = defaultStylesInfo[i];
+				const color = info.clr;
+				const idx = info.idx;
+				for (let j = 0; j < info.names.length; j++) {
+					styleDef.addToLstStyleLbl(generateStyleStyleLbl(info.names[j], color, idx));
+				}
 			}
-		}
+		}, this, []);
 		return styleDef;
 	}
 
@@ -940,22 +943,24 @@
 		];
 
 		const colorsDef = new AscFormat.ColorsDef();
-		colorsDef.setUniqueId("urn:microsoft.com/office/officeart/2005/8/colors/accent1_2");
-		colorsDef.setTitle(new AscFormat.DiagramTitle());
-		colorsDef.setDesc(new AscFormat.DiagramTitle());
-		colorsDef.setCatLst(new AscFormat.CatLst());
-		const cat = new AscFormat.SCat();
-		colorsDef.catLst.addToLst(0, cat);
-		cat.setType("accent1");
-		cat.setPri(11200);
-		for (let i = 0; i < presetStyleLbl.length; i++) {
-			const infos = presetStyleLbl[i];
-			const names = infos.names;
-			for (let j = 0; j < names.length; j++) {
-				const styleLbl = createColorsStyleLbl(presetStyleLbl[i].clrsLst, names[j]);
-				colorsDef.addToLstStyleLbl(styleLbl);
+		AscFormat.ExecuteNoHistory(function() {
+			colorsDef.setUniqueId("urn:microsoft.com/office/officeart/2005/8/colors/accent1_2");
+			colorsDef.setTitle(new AscFormat.DiagramTitle());
+			colorsDef.setDesc(new AscFormat.DiagramTitle());
+			colorsDef.setCatLst(new AscFormat.CatLst());
+			const cat = new AscFormat.SCat();
+			colorsDef.catLst.addToLst(0, cat);
+			cat.setType("accent1");
+			cat.setPri(11200);
+			for (let i = 0; i < presetStyleLbl.length; i++) {
+				const infos = presetStyleLbl[i];
+				const names = infos.names;
+				for (let j = 0; j < names.length; j++) {
+					const styleLbl = createColorsStyleLbl(presetStyleLbl[i].clrsLst, names[j]);
+					colorsDef.addToLstStyleLbl(styleLbl);
+				}
 			}
-		}
+		}, this, []);
 		return colorsDef;
 	}
 	function createColorsStyleLbl(clrsLst, name) {

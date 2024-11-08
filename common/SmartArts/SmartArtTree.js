@@ -62,6 +62,59 @@
 		enabled: 1,
 		disabled: 2
 	};
+	Math.imul =
+		Math.imul ||
+		function (a, b) {
+			var ah = (a >>> 16) & 0xffff;
+			var al = a & 0xffff;
+			var bh = (b >>> 16) & 0xffff;
+			var bl = b & 0xffff;
+			return (al * bl + (((ah * bl + al * bh) << 16) >>> 0)) | 0;
+		};
+	function cyrb128(str) {
+		let h1 = 1779033703, h2 = 3144134277,
+			h3 = 1013904242, h4 = 2773480762;
+		for (let i = 0, k; i < str.length; i++) {
+			k = str.charCodeAt(i);
+			h1 = h2 ^ Math.imul(h1 ^ k, 597399067);
+			h2 = h3 ^ Math.imul(h2 ^ k, 2869860233);
+			h3 = h4 ^ Math.imul(h3 ^ k, 951274213);
+			h4 = h1 ^ Math.imul(h4 ^ k, 2716044179);
+		}
+		h1 = Math.imul(h3 ^ (h1 >>> 18), 597399067);
+		h2 = Math.imul(h4 ^ (h2 >>> 22), 2869860233);
+		h3 = Math.imul(h1 ^ (h3 >>> 17), 951274213);
+		h4 = Math.imul(h2 ^ (h4 >>> 19), 2716044179);
+		h1 ^= (h2 ^ h3 ^ h4), h2 ^= h1, h3 ^= h1, h4 ^= h1;
+		return [h1>>>0, h2>>>0, h3>>>0, h4>>>0];
+	}
+	function sfc32(a, b, c, d) {
+		return function() {
+			a |= 0; b |= 0; c |= 0; d |= 0;
+			let t = (a + b | 0) + d | 0;
+			d = d + 1 | 0;
+			a = b ^ b >>> 9;
+			b = c + (c << 3) | 0;
+			c = (c << 21 | c >>> 11);
+			c = c + t | 0;
+			return (t >>> 0) / 4294967296;
+		}
+	}
+	function CreateTemplateGUID(randomFunc) {
+		function s4() {
+			return Math.floor((1 + randomFunc()) * 0x10000).toString(16).substring(1);
+		}
+
+		let val = '{' + s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4() + '}';
+		val = val.toUpperCase();
+		return val;
+	}
+	function GUIDGenerator(str) {
+		this.randomFunc = sfc32.apply(sfc32, cyrb128(str));
+	}
+	GUIDGenerator.prototype.getGUID = function() {
+		return CreateTemplateGUID(this.randomFunc);
+	};
 	function getDefaultColorsStyleLbl() {
 		return AscFormat.ExecuteNoHistory(function () {
 			const styleLbl = new AscFormat.ColorDefStyleLbl();
@@ -180,19 +233,6 @@
 			return anotherAngle - currentAngle;
 		}
 	};
-
-	function createPresNode(presName, styleLbl, contentNode) {
-		presName = presName || "";
-		const point = new Point();
-		point.setType(AscFormat.Point_type_pres);
-		const prSet = new AscFormat.PrSet();
-		prSet.setPresName(presName);
-		prSet.setPresStyleLbl(styleLbl || "node1");
-
-		point.setPrSet(prSet);
-		point.setModelId(AscCommon.CreateGUID());
-		return new PresNode(point, contentNode);
-	}
 
 	VarLst.prototype.executeAlgorithm = function (smartartAlgorithm) {};
 
@@ -541,8 +581,31 @@
 		this.moveShapeSettings = [];
 		this.forEachMap = null;
 		this.factRuleState = factRuleState.default;
+		this.guidGenerator = new GUIDGenerator(this.getModelIdStr());
 		this.initDataTree();
 	}
+	SmartArtAlgorithm.prototype.getModelIdStr = function() {
+		const data = this.smartart.getDataModelFromData();
+		if (data) {
+			const ptLst = data.getPtLst();
+			if (ptLst) {
+				return ptLst.getModelIdStr();
+			}
+		}
+		return "";
+	}
+	SmartArtAlgorithm.prototype.createPresNode = 	function (presName, styleLbl, contentNode) {
+		presName = presName || "";
+		const point = new Point();
+		point.setType(AscFormat.Point_type_pres);
+		const prSet = new AscFormat.PrSet();
+		prSet.setPresName(presName);
+		prSet.setPresStyleLbl(styleLbl || "node1");
+
+		point.setPrSet(prSet);
+		point.setModelId(this.getNewGUID());
+		return new PresNode(point, contentNode);
+	};
 	SmartArtAlgorithm.prototype.forEachContentNode = function (callback) {
 		const nodes = [this.dataRoot];
 		callback(this.dataRoot, 0);
@@ -761,9 +824,13 @@
 		ptLst.removeChildrenFromMap(ptMap);
 		this.relations = this.smartart.getRelationOfContent2();
 	};
+	SmartArtAlgorithm.prototype.getNewGUID = function() {
+		return this.guidGenerator.getGUID();
+	};
 	SmartArtAlgorithm.prototype.updateParOfData = function(cxnMap, ptMap) {
 		const data = this.smartart.getDataModelFromData();
 		const ptLst = data.getPtLst();
+		const oThis = this;
 		this.forEachContentNode(function(node, parentIndex) {
 			const parent = node.parent;
 			if (parent) {
@@ -783,7 +850,7 @@
 					}
 				} else {
 					cxn = new AscFormat.Cxn();
-					cxn.setModelId(AscCommon.CreateGUID());
+					cxn.setModelId(oThis.getNewGUID());
 					cxn.setDestOrd(0);
 					cxn.setSrcOrd(parentIndex);
 					cxn.setSrcId(parentModelId);
@@ -824,7 +891,7 @@
 			delete cxnMap[contentNodeId][modelId];
 		} else {
 			const newCxn = new AscFormat.Cxn();
-			newCxn.setModelId(AscCommon.CreateGUID());
+			newCxn.setModelId(this.getNewGUID());
 			newCxn.setSrcId(contentNodeId);
 			newCxn.setDestId(modelId);
 			newCxn.setDestOrd(0);
@@ -855,6 +922,7 @@
 		const data = this.smartart.getDataModelFromData();
 		const cxnLst = data.getCxnLst();
 		const ptLst = data.getPtLst();
+		const oThis = this;
 		this.forEachPresFromTop(function(node, parentIndex) {
 			const presPoint = node.presPoint;
 			const modelId = presPoint.getModelId();
@@ -877,7 +945,7 @@
 				delete cxnMap[parentModelId][modelId];
 			} else {
 				const newCxn = new AscFormat.Cxn();
-				newCxn.setModelId(AscCommon.CreateGUID());
+				newCxn.setModelId(oThis.getNewGUID());
 				newCxn.setSrcId(parentModelId);
 				newCxn.setDestId(modelId);
 				newCxn.setType(AscFormat.Cxn_type_presParOf);
@@ -908,7 +976,7 @@
 			if (child && child.getPresName() === layoutNode.name) {
 				presNode = new PresNode(child, currentNode);
 			} else {
-				presNode = createPresNode(layoutNode.name, layoutNode.styleLbl, currentNode);
+				presNode = this.createPresNode(layoutNode.name, layoutNode.styleLbl, currentNode);
 			}
 		} else {
 			const nodeModelId = currentNode.getModelId();
@@ -917,7 +985,7 @@
 			if (presPoint) {
 				presNode = new PresNode(presPoint, currentNode);
 			} else {
-				presNode = createPresNode(layoutNode.name, layoutNode.styleLbl, currentNode);
+				presNode = this.createPresNode(layoutNode.name, layoutNode.styleLbl, currentNode);
 			}
 		}
 		presNode.moveWith = layoutNode.moveWith;
