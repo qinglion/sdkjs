@@ -1,13 +1,12 @@
 (function (window) {
 
-	function InitClassWithStatics(fClass, fBase, nType) {
-		window['AscFormat']['InitClass'](fClass, fBase, nType);
+	function InitClassWithStatics(fClass, fBase) {
+		window['AscFormat']['InitClassWithoutType'](fClass, fBase);
 
 		Object.getOwnPropertyNames(fBase).forEach(function (prop) {
 			if (['prototype', 'name', 'length'].includes(prop) || Function.prototype.hasOwnProperty(prop)) { return; }
 			Object.defineProperty(fClass, prop, Object.getOwnPropertyDescriptor(fBase, prop));
 		});
-		fClass.base = fBase;
 		fClass.prototype.initialize = fClass;
 	}
 

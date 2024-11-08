@@ -283,9 +283,13 @@
 
 		if (!this.isPdfEditor())
 		{
-			AscCommon.loadChartStyles(function() {}, function(err) {
+			const noop = function () { };
+			AscCommon.loadChartStyles(noop, function (err) {
 				t.sendEvent("asc_onError", Asc.c_oAscError.ID.LoadingScriptError, c_oAscError.Level.NoCritical);
 			});
+			AscCommon.loadPathBoolean(noop, function () {
+				t.sendEvent("asc_onError", Asc.c_oAscError.ID.LoadingScriptError, c_oAscError.Level.NoCritical)
+			})
 		}
 
 		var oldOnError = window.onerror;
