@@ -749,8 +749,11 @@
 		const ptLst = data.getPtLst();
 		const cxnMap = cxnLst.getCxnMap();
 		const ptMap = ptLst.getPtMap();
-		delete ptMap[this.dataRoot.point.getModelId()];
-		delete ptMap[this.presRoot.presPoint.getModelId()];
+		const dataRootId = this.dataRoot.point.getModelId();
+		const presRootId = this.presRoot.presPoint.getModelId();
+		delete ptMap[dataRootId];
+		delete ptMap[presRootId];
+		this.checkPresOfCxn(this.presRoot, dataRootId, cxnMap, cxnLst);
 		this.updatePresParOfData(cxnMap, ptMap);
 		this.updatePresOfData(cxnMap);
 		this.updateParOfData(cxnMap, ptMap);
@@ -780,6 +783,7 @@
 					}
 				} else {
 					cxn = new AscFormat.Cxn();
+					cxn.setModelId(AscCommon.CreateGUID());
 					cxn.setDestOrd(0);
 					cxn.setSrcOrd(parentIndex);
 					cxn.setSrcId(parentModelId);
@@ -820,6 +824,7 @@
 			delete cxnMap[contentNodeId][modelId];
 		} else {
 			const newCxn = new AscFormat.Cxn();
+			newCxn.setModelId(AscCommon.CreateGUID());
 			newCxn.setSrcId(contentNodeId);
 			newCxn.setDestId(modelId);
 			newCxn.setDestOrd(0);
@@ -872,6 +877,7 @@
 				delete cxnMap[parentModelId][modelId];
 			} else {
 				const newCxn = new AscFormat.Cxn();
+				newCxn.setModelId(AscCommon.CreateGUID());
 				newCxn.setSrcId(parentModelId);
 				newCxn.setDestId(modelId);
 				newCxn.setType(AscFormat.Cxn_type_presParOf);
@@ -892,7 +898,7 @@
 			const children = presParRelations[currentPresNode.getModelId()];
 			let child;
 			if (children && children[layoutNode.name]) {
-				if (!currentPresNodeInfo.childrenIndexes[layoutNode.name]) {
+				if (currentPresNodeInfo.childrenIndexes[layoutNode.name] === undefined) {
 					currentPresNodeInfo.childrenIndexes[layoutNode.name] = -1;
 				}
 				currentPresNodeInfo.childrenIndexes[layoutNode.name] += 1;
