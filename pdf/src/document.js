@@ -2222,6 +2222,7 @@ var CPresentation = CPresentation || function(){};
         // can be uninitialized on Apply_Changes
         if (oViewer.thumbnails) {
             oViewer.thumbnails._addPage(nPos);
+            oViewer.thumbnails.resetSelection();
         }
 
         oViewer.resize(true);
@@ -2306,6 +2307,7 @@ var CPresentation = CPresentation || function(){};
         // can be uninitialized on Apply_Changes
         if (oViewer.thumbnails) {
             oViewer.thumbnails._deletePage(nPos);
+            oViewer.thumbnails.resetSelection();
         }
 
         oViewer.checkVisiblePages();
@@ -2341,6 +2343,11 @@ var CPresentation = CPresentation || function(){};
 
         oViewer.paint();
     };
+    CPDFDoc.prototype.RemovePages = function(aIndexes) {
+        for (let i = 0; i < aIndexes.length; i++) {
+            this.RemovePage(aIndexes[i]);
+        }
+    };
     CPDFDoc.prototype.SetPageRotate = function(nPage, nAngle) {
 		let oViewer     = this.Viewer;
 		let oFile       = oViewer.file;
@@ -2358,6 +2365,18 @@ var CPresentation = CPresentation || function(){};
         
 		oViewer.resize(true);
         oViewer.paint();
+    };
+    CPDFDoc.prototype.RotatePages = function(aIndexes, nAngle) {
+        let oViewer = this.Viewer;
+
+        for (let i = 0; i < aIndexes.length; i++) {
+            let nNewPageAngle = (oViewer.getPageRotate(aIndexes[i]) + nAngle) % 360;
+            if (nNewPageAngle < 0) {
+                nNewPageAngle += 360;
+            }
+
+            this.SetPageRotate(aIndexes[i], nNewPageAngle);
+        }
     };
     /**
 	 * Adds an interactive field to document.
