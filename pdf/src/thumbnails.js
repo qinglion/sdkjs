@@ -947,8 +947,8 @@
         if (drPage)
         {
             if (true == e.shiftKey) {
-                let nMinPage = Math.min(this.selectedPages, drPage.num);
-                let nMaxPage = Math.max(this.selectedPages, drPage.num);
+                let nMinPage = Math.min.apply(null, this.selectedPages.concat([drPage.num]))
+                let nMaxPage = Math.max.apply(null, this.selectedPages.concat([drPage.num]))
 
                 this.resetSelection();
                 for (let i = nMinPage; i <= nMaxPage; i++) {
