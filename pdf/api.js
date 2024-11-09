@@ -650,10 +650,7 @@
 		aPages = aPages != undefined ? aPages : oThumbnails.getSelectedPages();
 
 		oDoc.DoAction(function() {
-			let res = oDoc.RemovePages(aPages);
-            if (res) {
-                oViewer.navigateToPage(nPage - 1 >= 0 ? nPage - 1 : 0);
-            }
+			oDoc.RemovePages(aPages);
         }, AscDFH.historydescription_Pdf_RemovePage, this, aPages);
 	};
 	PDFEditorApi.prototype.asc_GetSelectedText = function(bClearText, select_Pr) {

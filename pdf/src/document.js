@@ -2344,8 +2344,12 @@ var CPresentation = CPresentation || function(){};
         oViewer.paint();
     };
     CPDFDoc.prototype.RemovePages = function(aIndexes) {
-        for (let i = 0; i < aIndexes.length; i++) {
-            this.RemovePage(aIndexes[i]);
+        aIndexes.sort(function(a, b) {
+            return a - b;
+        });
+    
+        for (var i = 0; i < aIndexes.length; i++) {
+            this.RemovePage(aIndexes[i] - i);
         }
     };
     CPDFDoc.prototype.SetPageRotate = function(nPage, nAngle) {

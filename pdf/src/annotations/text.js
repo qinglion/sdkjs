@@ -294,9 +294,9 @@
 						}
 					}
 				}
-				if (bCoMarksDraw && graphics.DrawLockObjectRect) {
-					graphics.transform3(transform);
-					graphics.DrawLockObjectRect(oLock.Get_Type(), 0, 0, this.extX, this.extY);
+				if (bCoMarksDraw && oGraphicsPDF.DrawLockObjectRect) {
+					oGraphicsPDF.transform3(transform);
+					oGraphicsPDF.DrawLockObjectRect(oLock.Get_Type(), 0, 0, this.extX, this.extY);
 					return true;
 				}
 			}
