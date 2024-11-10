@@ -539,9 +539,6 @@
 
 	const Point = function (arg0, arg1) {
 		const type = typeof arg0;
-		if (type === 'string') {
-			debugger
-		}
 		const isReading = this.__read;
 		let readCount = 0;
 
@@ -3628,14 +3625,14 @@
 							const entry2 = lookup[path2._id];
 							containerWinding = entry2.winding;
 							entry1.winding += containerWinding;
-							entry1.container = entry2.exclude ? entry2.container : path2;
+							entry1.container = entry2['exclude'] ? entry2.container : path2;
 							break;
 						}
 					}
 				}
 			}
 			if (isInside(entry1.winding) === isInside(containerWinding)) {
-				entry1.exclude = true;
+				entry1['exclude'] = true;
 				paths[entry1.index] = null;
 			} else {
 				path1.setClockwise(entry1.container ? !entry1.container.isClockwise() : clockwise);
@@ -3917,7 +3914,7 @@
 					const dir = Math.abs(curve.getTangentAtTime(t).y) < Math.SQRT1_2;
 
 					let wind = null;
-					if (operator.subtract && path2) {
+					if (operator['subtract'] && path2) {
 						const otherPath = operand === path1 ? path2 : path1;
 						const pathWinding = otherPath._getWinding(pt, dir, true);
 						if (operand === path1 && pathWinding.winding ||
@@ -3950,7 +3947,7 @@
 			var winding;
 			return !!(seg && !seg._visited && (!operator
 				|| operator[(winding = seg._winding || {}).winding]
-				&& !(operator.unite && winding.winding === 2
+				&& !(operator['unite'] && winding.winding === 2
 					&& winding.windingL && winding.windingR)));
 		}
 
@@ -4727,9 +4724,12 @@
 	CompoundPath.prototype['getBounds'] = Item.prototype.getBounds;
 	CompoundPath.prototype['getPosition'] = Item.prototype.getPosition;
 	CompoundPath.prototype['setPosition'] = Item.prototype.setPosition;
-
+	
 	Path.prototype['getSegments'] = Path.prototype.getSegments;
 	Path.prototype['isClosed'] = Path.prototype.isClosed;
+	Path.prototype['getBounds'] = Item.prototype.getBounds;
+	Path.prototype['getPosition'] = Item.prototype.getPosition;
+	Path.prototype['setPosition'] = Item.prototype.setPosition;
 
 	Segment.prototype['isFirst'] = Segment.prototype.isFirst;
 	Segment.prototype['isLast'] = Segment.prototype.isLast;

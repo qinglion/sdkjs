@@ -11339,7 +11339,7 @@
 			formatPath.setPathW(compoundPathBounds.getWidth() * 36000);
 			formatPath.setPathH(compoundPathBounds.getHeight() * 36000);
 
-			const pathChildren = compoundPath.getChildren();
+			const pathChildren = compoundPath instanceof AscCommon.PathBoolean.CompoundPath ? compoundPath.getChildren() : compoundPath;
 			const pathsToHandle = Array.isArray(pathChildren) && pathChildren.length > 0 ? pathChildren : [compoundPath];
 			pathsToHandle.forEach(function (path) {
 				const segments = path.getSegments();
@@ -11387,7 +11387,7 @@
 			return formatPath;
 		}
 
-		function createShapeByCompoundPath(compoundPath /* compoundPath can be either Path or compoundPath */) {
+		function createShapeByCompoundPath(compoundPath /* compoundPath can be either Path or CompoundPath */) {
 			const compoundPathBounds = compoundPath.getBounds();
 			const formatPath = convertCompoundPathToFormatPath(compoundPath);
 			const pathLst = [formatPath];
