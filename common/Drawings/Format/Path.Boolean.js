@@ -4286,7 +4286,8 @@
 			const index = (start > 0 && end === count + (this._closed ? 1 : 0)) ? start - 1 : start;
 			const removedCurves = curves.splice(index, amount);
 			for (let i = removedCurves.length - 1; i >= 0; i--) {
-				removedCurves[i]._path = null;
+				// Есть баг с файлом "shapesMerge - remove curves _path bug" (загрузил к себе в личные документты на nct)
+				// removedCurves[i]._path = null;
 			}
 			if (_includeCurves) {
 				removed._curves = removedCurves.slice(1);
