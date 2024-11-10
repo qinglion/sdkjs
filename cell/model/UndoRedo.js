@@ -748,14 +748,15 @@ function (window, undefined) {
 		}
 	};
 
-	function UndoRedoData_CellValueData(sFormula, oValue, formulaRef) {
+	function UndoRedoData_CellValueData(sFormula, oValue, formulaRef, bCa) {
 		this.formula = sFormula;
 		this.formulaRef = formulaRef;
 		this.value = oValue;
+		this.ca = bCa;
 	}
 
 	UndoRedoData_CellValueData.prototype.Properties = {
-		formula: 0, value: 1, formulaRef: 2
+		formula: 0, value: 1, formulaRef: 2, ca: 3
 	};
 	UndoRedoData_CellValueData.prototype.isEqual = function (val) {
 		if (null == val) {
@@ -784,13 +785,12 @@ function (window, undefined) {
 		switch (nType) {
 			case this.Properties.formula:
 				return this.formula;
-				break;
 			case this.Properties.value:
 				return this.value;
-				break;
 			case this.Properties.formulaRef:
 				return this.formulaRef ? new UndoRedoData_BBox(this.formulaRef) : null;
-				break;
+			case this.Properties.ca:
+				return this.ca;
 		}
 		return null;
 	};
@@ -804,6 +804,9 @@ function (window, undefined) {
 				break;
 			case this.Properties.formulaRef:
 				this.formulaRef = value ? new Asc.Range(value.c1, value.r1, value.c2, value.r2) : null;
+				break;
+			case this.Properties.ca:
+				this.ca = value;
 				break;
 		}
 	};
@@ -2515,7 +2518,7 @@ function (window, undefined) {
 				wb.oApi.asc_RemoveTraceArrows(Asc.c_oAscRemoveArrowsType.all);
 			}
 		} else if (AscCH.historyitem_Workbook_Calculate === Type) {
-			if (!bUndo) {
+			if (!bUndo && wb.bCollaborativeChanges) {
 				wb.calculate(Data.elem, nSheetId);
 			}
 		} else if (bUndo && AscCH.historyitem_Workbook_PivotWorksheetSource === Type) {
@@ -2566,10 +2569,13 @@ function (window, undefined) {
 			}
 		} else if (AscCH.historyitem_Workbook_CalcPr_iterate === Type) {
 			wb.calcPr.setIterate(bUndo ? Data.from : Data.to);
+			AscCommonExcel.g_cCalcRecursion.initCalcProperties(wb.calcPr);
 		} else if (AscCH.historyitem_Workbook_CalcPr_iterateCount === Type) {
 			wb.calcPr.setIterateCount(bUndo ? Data.from : Data.to);
+			AscCommonExcel.g_cCalcRecursion.initCalcProperties(wb.calcPr);
 		} else if (AscCH.historyitem_Workbook_CalcPr_iterateDelta === Type) {
 			wb.calcPr.setIterateDelta(bUndo ? Data.from : Data.to);
+			AscCommonExcel.g_cCalcRecursion.initCalcProperties(wb.calcPr);
 		}
 	};
 	UndoRedoWorkbook.prototype.forwardTransformationIsAffect = function (Type) {
@@ -4116,6 +4122,9 @@ function (window, undefined) {
 			case AscCH.historyitem_PivotTable_SetShowHeaders:
 				pivotTable.asc_setShowHeaders(value);
 				break;
+			case AscCH.historyitem_PivotTable_SetGrandTotalCaption:
+				pivotTable.asc_setGrandTotalCaption(value);
+				break;
 			case AscCH.historyitem_PivotTable_SetCompact:
 				pivotTable.asc_setCompact(value);
 				break;
@@ -4370,6 +4379,9 @@ function (window, undefined) {
 				break;
 			case AscCH.historyitem_PivotTable_PivotFieldSetSubtotalTop:
 				field.asc_setSubtotalTop(value, pivotTable, index);
+				break;
+			case AscCH.historyitem_PivotTable_PivotFieldSetSubtotalCaption:
+				field.asc_setSubtotalCaption(value, pivotTable, index);
 				break;
 			case AscCH.historyitem_PivotTable_PivotFieldSetShowAll:
 				field.asc_setShowAll(value, pivotTable, index);

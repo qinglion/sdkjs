@@ -327,6 +327,9 @@ CSdtBase.prototype.IsFixedForm = function()
  */
 CSdtBase.prototype.IsFormRequired = function()
 {
+	if (this.IsSignatureForm())
+		return true;
+	
 	return (this.Pr.FormPr ? this.Pr.FormPr.GetRequired() : false);
 };
 /**
@@ -624,6 +627,10 @@ CSdtBase.prototype.IsMultiLineForm = function()
  * @returns {boolean}
  */
 CSdtBase.prototype.IsPictureForm = function()
+{
+	return false;
+};
+CSdtBase.prototype.IsSignatureForm = function()
 {
 	return false;
 };
@@ -1125,3 +1132,11 @@ CSdtBase.prototype.IsHideContentControlTrack = function()
 	return Asc.c_oAscSdtAppearance.Hidden === this.GetAppearance();
 };
 
+// TODO: Temporary for building purpose. Remove when actual class is added
+(function()
+{
+	function DataBinding()
+	{
+	}
+	AscWord.DataBinding = DataBinding;
+})();
