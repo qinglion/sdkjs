@@ -441,9 +441,7 @@
 
 				if (changeTextDirection && shapeOrGroup.Id.substring(shapeOrGroup.Id.length - 4) === "Text") {
 					graphics.SetBaseTransform(baseTextMatrix);
-
 					shapeOrGroup.transform.ty = logic_h_mm - shapeOrGroup.transform.ty - shapeOrGroup.spPr.xfrm.extY;
-
 					shapeOrGroup.recalculateTransformText();
 				}
 
@@ -451,12 +449,9 @@
 					shapeOrGroup.draw(graphics, shapeOrGroup.transform, shapeOrGroup.transformText);
 				}
 
-				if (changeTextDirection && shapeOrGroup.Id.substring(shapeOrGroup.Id.length - 4) === "Text") {
-					graphics.SetBaseTransform(baseMatrix);
-				}
-
 				// set shape transform that was before fix for future drawShapeOrGroupRecursively() calls
 				if (changeTextDirection && shapeOrGroup.Id.substring(shapeOrGroup.Id.length - 4) === "Text") {
+					graphics.SetBaseTransform(baseMatrix);
 					shapeOrGroup.transform.ty = logic_h_mm - shapeOrGroup.transform.ty - shapeOrGroup.spPr.xfrm.extY;
 					shapeOrGroup.recalculateTransformText();
 				}

@@ -1262,17 +1262,18 @@
 
 		// to rotate around point we 1) add one more offset 2) rotate around center
 		// could be refactored maybe
-		// https://www.figma.com/file/jr1stjGUa3gKUBWxNAR80T/locPinHandle?type=design&node-id=0%3A1&mode=design&t=raXzFFsssqSexysi-1
+		// https://www.figma.com/design/SJSKMY5dGoAvRg75YnHpdX/newRotateScheme?node-id=0-1&node-type=canvas&t=UTtoZyLRItzaQvS9-0
 		let redVector = {x: -(locPinX_inch - shapeWidth_inch/2), y: -(locPinY_inch - shapeHeight_inch/2)};
 		// rotate antiClockWise by shapeAngle
 		let purpleVector = rotatePointAroundCordsStartClockWise(redVector.x, redVector.y, -shapeAngle);
-		let rotatedCenter = {x: pinX_inch - redVector.x + purpleVector.x, y: pinY_inch - redVector.y + purpleVector.y};
+		let rotatedCenter = {x: pinX_inch + purpleVector.x, y: pinY_inch + purpleVector.y};
 		let turquoiseVector = {x: -shapeWidth_inch/2, y: -shapeHeight_inch/2};
-		let x_inch = rotatedCenter.x + turquoiseVector.x + redVector.x;
-		let y_inch = rotatedCenter.y + turquoiseVector.y + redVector.y;
+		let x_inch = rotatedCenter.x + turquoiseVector.x;
+		let y_inch = rotatedCenter.y + turquoiseVector.y;
 
 		let x_mm = x_inch * g_dKoef_in_to_mm;
 		let y_mm = y_inch * g_dKoef_in_to_mm;
+
 		let shapeWidth_mm = shapeWidth_inch * g_dKoef_in_to_mm;
 		let shapeHeight_mm = shapeHeight_inch * g_dKoef_in_to_mm;
 
