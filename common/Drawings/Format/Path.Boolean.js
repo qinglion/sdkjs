@@ -796,15 +796,15 @@
 			&& rect.y < this.y + this.height + epsilon;
 	};
 
-	const Matrix = function Matrix(arg) {
+	const Matrix = function (arg, _dontNotify) {
 		const count = arguments.length;
 		if (count >= 6) {
 			this._set.apply(this, arguments);
 		} else if (count === 1 || count === 2) {
 			if (arg instanceof Matrix) {
-				this._set(arg._a, arg._b, arg._c, arg._d, arg._tx, arg._ty);
+				this._set(arg._a, arg._b, arg._c, arg._d, arg._tx, arg._ty, _dontNotify);
 			} else if (Array.isArray(arg)) {
-				this._set.apply(this, arg);
+				this._set.apply(this, _dontNotify ? arg.concat([_dontNotify]) : arg);
 			}
 		} else if (!count) {
 			this.reset();
@@ -814,14 +814,26 @@
 	InitClassWithStatics(Matrix, Base);
 
 	Matrix.prototype.set = Matrix;
-	Matrix.prototype._set = function (a, b, c, d, tx, ty) {
+	Matrix.prototype._set = function (a, b, c, d, tx, ty, _dontNotify) {
 		this._a = a;
 		this._b = b;
 		this._c = c;
 		this._d = d;
 		this._tx = tx;
 		this._ty = ty;
+		if (!_dontNotify)
+			this._changed();
 		return this;
+	};
+	Matrix.prototype._changed = function () {
+		var owner = this._owner;
+		if (owner) {
+			if (owner._applyMatrix) {
+				owner.transform(null, true);
+			} else {
+				owner._changed(25);
+			}
+		}
 	};
 	Matrix.prototype.clone = function () {
 		return new Matrix(this._a, this._b, this._c, this._d, this._tx, this._ty);
@@ -835,9 +847,11 @@
 			&& this._tx === mx._tx
 			&& this._ty === mx._ty;
 	};
-	Matrix.prototype.reset = function () {
+	Matrix.prototype.reset = function (_dontNotify) {
 		this._a = this._d = 1;
 		this._b = this._c = this._tx = this._ty = 0;
+		if (!_dontNotify)
+			this._changed();
 		return this;
 	};
 	Matrix.prototype.apply = function (recursively, _setApplyMatrix) {
@@ -849,6 +863,7 @@
 		const point = Point.read(arguments);
 		this._tx += point.x * this._a + point.y * this._c;
 		this._ty += point.x * this._b + point.y * this._d;
+		this._changed();
 		return this;
 	};
 	Matrix.prototype.scale = function () {
@@ -860,6 +875,7 @@
 		this._c *= scale.y;
 		this._d *= scale.y;
 		if (center) { this.translate(center.negate()); }
+		this._changed();
 		return this;
 	};
 	Matrix.prototype.rotate = function (angle) {
@@ -876,6 +892,7 @@
 		this._d = -sin * b + cos * d;
 		this._tx += tx * a + ty * c;
 		this._ty += tx * b + ty * d;
+		this._changed();
 		return this;
 	};
 	Matrix.prototype.shear = function () {
@@ -888,6 +905,7 @@
 		this._c += shear.x * a;
 		this._d += shear.x * b;
 		if (center) { this.translate(center.negate()); }
+		this._changed();
 		return this;
 	};
 	Matrix.prototype.skew = function () {
@@ -897,7 +915,7 @@
 		const shear = new Point(Math.tan(skew.x * toRadians), Math.tan(skew.y * toRadians));
 		return this.shear(shear, center);
 	};
-	Matrix.prototype.append = function (mx) {
+	Matrix.prototype.append = function (mx, _dontNotify) {
 		if (mx) {
 			const a1 = this._a, b1 = this._b, c1 = this._c, d1 = this._d;
 			const a2 = mx._a, b2 = mx._c, c2 = mx._b, d2 = mx._d;
@@ -908,10 +926,12 @@
 			this._d = b2 * b1 + d2 * d1;
 			this._tx += tx2 * a1 + ty2 * c1;
 			this._ty += tx2 * b1 + ty2 * d1;
+			if (!_dontNotify)
+				this._changed();
 		}
 		return this;
 	};
-	Matrix.prototype.prepend = function (mx) {
+	Matrix.prototype.prepend = function (mx, _dontNotify) {
 		if (mx) {
 			const a1 = this._a, b1 = this._b, c1 = this._c, d1 = this._d;
 			const a2 = mx._a, b2 = mx._c, c2 = mx._b, d2 = mx._d;
@@ -923,6 +943,8 @@
 			this._d = c2 * c1 + d2 * d1;
 			this._tx = a2 * tx1 + b2 * ty1 + tx2;
 			this._ty = c2 * tx1 + d2 * ty1 + ty2;
+			if (!_dontNotify)
+				this._changed();
 		}
 		return this;
 	};
@@ -948,12 +970,13 @@
 			? this._transformPoint(Point.read(arguments))
 			: this._transformCoordinates(src, dst, count);
 	};
-	Matrix.prototype._transformPoint = function (point, dest) {
+	Matrix.prototype._transformPoint = function (point, dest, _dontNotify) {
 		if (!dest)
 			dest = new Point();
 		return dest._set(
 			point.x * this._a + point.y * this._c + this._tx,
 			point.x * this._b + point.y * this._d + this._ty,
+			_dontNotify
 		);
 	};
 	Matrix.prototype._transformCoordinates = function (src, dst, count) {
@@ -973,7 +996,7 @@
 		const coords = [x1, y1, x2, y1, x2, y2, x1, y2];
 		return this._transformCoordinates(coords, coords, 4);
 	};
-	Matrix.prototype._transformBounds = function (bounds, dest) {
+	Matrix.prototype._transformBounds = function (bounds, dest, _dontNotify) {
 		const coords = this._transformCorners(bounds);
 		const min = coords.slice(0, 2);
 		const max = min.slice();
@@ -988,9 +1011,9 @@
 		}
 		if (!dest)
 			dest = new Rectangle();
-		return dest._set(min[0], min[1], max[0] - min[0], max[1] - min[1]);
+		return dest._set(min[0], min[1], max[0] - min[0], max[1] - min[1], _dontNotify);
 	};
-	Matrix.prototype._inverseTransform = function (point, dest) {
+	Matrix.prototype._inverseTransform = function (point, dest, _dontNotify) {
 		const a = this._a, b = this._b, c = this._c, d = this._d;
 		const tx = this._tx, ty = this._ty;
 		const det = a * d - b * c;
@@ -1002,7 +1025,8 @@
 				dest = new Point();
 			res = dest._set(
 				(x * d - y * c) / det,
-				(y * a - x * b) / det
+				(y * a - x * b) / det,
+				_dontNotify
 			);
 		}
 		return res;
@@ -1176,6 +1200,25 @@
 			matrix.translate(point);
 		matrix._owner = this;
 		return hasProps;
+	};
+	Item.prototype._changed = function (flags) {
+		var symbol = this._symbol,
+			cacheParent = this._parent || symbol;
+		if (flags & 8) {
+			this._bounds = this._position = this._decomposed = undefined;
+		}
+		if (flags & 16) {
+			this._globalMatrix = undefined;
+		}
+		if (cacheParent
+			&& (flags & 72)) {
+			Item._clearBoundsCache(cacheParent);
+		}
+		if (flags & 2) {
+			Item._clearBoundsCache(this);
+		}
+		if (symbol)
+			symbol._changed(flags);
 	};
 	Item.prototype.getPosition = function (_dontLink) {
 		const position = this._position || (this._position = this._getPositionFromBounds());
@@ -1394,6 +1437,7 @@
 				const item = items[i];
 				item._parent = this;
 			}
+			this._changed(11);
 		} else {
 			items = null;
 		}
@@ -1427,12 +1471,14 @@
 		}
 		return this;
 	};
-	Item.prototype._remove = function () {
+	Item.prototype._remove = function (notifySelf, notifyParent) {
 		const owner = this._getOwner();
 		if (owner) {
 			if (this._index != null) {
 				Base.splice(owner._children, null, this._index, 1);
 			}
+			if (notifyParent)
+				owner._changed(11, this);
 			this._parent = null;
 			return true;
 		}
@@ -1454,6 +1500,8 @@
 		for (let i = removed.length - 1; i >= 0; i--) {
 			removed[i]._remove(true, false);
 		}
+		if (removed.length > 0)
+			this._changed(11);
 		return removed;
 	};
 	Item.prototype.isEmpty = function (recursively) {
@@ -1515,6 +1563,9 @@
 		}
 		const bounds = this._bounds;
 		const position = this._position;
+		if (transformMatrix || applyMatrix) {
+			this._changed(25);
+		}
 		const decomp = transformMatrix && bounds && matrix.decompose();
 		if (decomp && decomp.skewing.isZero() && decomp.rotation % 90 === 0) {
 			for (let key in bounds) {
@@ -1552,6 +1603,20 @@
 			if (!ref.ids[id]) {
 				ref.list.push(item);
 				ref.ids[id] = item;
+			}
+		}
+	};
+	Item._clearBoundsCache = function (item) {
+		var cache = item._boundsCache;
+		if (cache) {
+			item._bounds = item._position = item._boundsCache = undefined;
+			for (var i = 0, list = cache.list, l = list.length; i < l; i++) {
+				var other = list[i];
+				if (other !== item) {
+					other._bounds = other._position = undefined;
+					if (other._boundsCache)
+						Item._clearBoundsCache(other);
+				}
 			}
 		}
 	};
@@ -1607,12 +1672,30 @@
 				handleOut = arg4 !== undefined ? [arg4, arg5] : null;
 			}
 		}
-		this._point = new SegmentPoint(point);
-		this._handleIn = new SegmentPoint(handleIn);
-		this._handleOut = new SegmentPoint(handleOut);
+		this._point = new SegmentPoint(point, this);
+		this._handleIn = new SegmentPoint(handleIn, this);
+		this._handleOut = new SegmentPoint(handleOut, this);
 	};
 	InitClassWithStatics(Segment, Base);
 
+	Segment.prototype._changed = function (point) {
+		var path = this._path;
+		if (!path)
+			return;
+		var curves = path._curves,
+			index = this._index,
+			curve;
+		if (curves) {
+			if ((!point || point === this._point || point === this._handleIn)
+				&& (curve = index > 0 ? curves[index - 1] : path._closed
+					? curves[curves.length - 1] : null))
+				curve._changed();
+			if ((!point || point === this._point || point === this._handleOut)
+				&& (curve = curves[index]))
+				curve._changed();
+		}
+		path._changed(41);
+	};
 	Segment.prototype.getPoint = function () {
 		return this._point;
 	};
@@ -1699,6 +1782,7 @@
 	};
 	Segment.prototype.transform = function (matrix) {
 		this._transformCoordinates(matrix, new Array(6), true);
+		this._changed();
 	};
 	Segment.prototype._transformCoordinates = function (matrix, coords, change) {
 		const handleIn = !change || !this._handleIn.isZero() ? this._handleIn : null;
@@ -1746,7 +1830,7 @@
 		return coords;
 	};
 
-	const SegmentPoint = function (point) {
+	const SegmentPoint = function (point, owner) {
 		let x, y;
 		if (!point) {
 			x = y = 0;
@@ -1763,12 +1847,14 @@
 		}
 		this._x = this.x = x;
 		this._y = this.y = y;
+		this._owner = owner;
 	};
 	InitClassWithStatics(SegmentPoint, Point);
 
 	SegmentPoint.prototype._set = function (x, y) {
 		this._x = this.x = x;
 		this._y = this.y = y;
+		this._owner._changed(this);
 		return this;
 	};
 	SegmentPoint.prototype.isZero = function () {
@@ -1828,6 +1914,9 @@
 	};
 	InitClassWithStatics(Curve, Base);
 
+	Curve.prototype._changed = function () {
+		this._length = this._bounds = undefined;
+	};
 	Curve.prototype.clone = function () {
 		return new Curve(this._segment1, this._segment2);
 	};
@@ -1927,6 +2016,7 @@
 				res = this.getNext();
 			} else {
 				this._segment2 = segment;
+				this._changed();
 				res = new Curve(segment, seg2);
 			}
 		}
@@ -4124,6 +4214,20 @@
 		this.setSegments(source._segments);
 		this._closed = source._closed;
 	};
+	Path.prototype._changed = function _changed(flags) {
+		Item.prototype._changed.call(this, flags);
+		if (flags & 8) {
+			this._length = this._area = undefined;
+			if (flags & 32) {
+				this._version++;
+			} else if (this._curves) {
+				for (var i = 0, l = this._curves.length; i < l; i++)
+					this._curves[i]._changed();
+			}
+		} else if (flags & 64) {
+			this._bounds = undefined;
+		}
+	};
 	Path.prototype.getSegments = function () {
 		return this._segments;
 	};
@@ -4178,6 +4282,7 @@
 					this._curves[length - 1] = new Curve(this,
 						this._segments[length - 1], this._segments[0]);
 			}
+			this._changed(41);
 		}
 	};
 	Path.prototype.isEmpty = function () {
@@ -4227,6 +4332,7 @@
 			}
 			this._adjustCurves(start, end);
 		}
+		this._changed(41);
 		return segs;
 	};
 	Path.prototype._adjustCurves = function (start, end) {
@@ -4238,12 +4344,15 @@
 			curve._path = this;
 			curve._segment1 = segments[i];
 			curve._segment2 = segments[i + 1] || segments[0];
+			curve._changed();
 		}
 		if (curve = curves[this._closed && !start ? segments.length - 1 : start - 1]) {
 			curve._segment2 = segments[start] || segments[0];
+			curve._changed();
 		}
 		if (curve = curves[end]) {
 			curve._segment1 = segments[end];
+			curve._changed();
 		}
 	};
 	Path.prototype._countCurves = function () {
@@ -4286,7 +4395,7 @@
 			const index = (start > 0 && end === count + (this._closed ? 1 : 0)) ? start - 1 : start;
 			const removedCurves = curves.splice(index, amount);
 			for (let i = removedCurves.length - 1; i >= 0; i--) {
-				// Есть баг с файлом "shapesMerge - remove curves _path bug" (загрузил к себе в личные документты на nct)
+				// Есть баг с файлом "shapesMerge - remove curves _path bug" (загрузил к себе в личные документы на nct)
 				// removedCurves[i]._path = null;
 			}
 			if (_includeCurves) {
@@ -4294,6 +4403,7 @@
 			}
 			this._adjustCurves(index, index);
 		}
+		this._changed(41);
 		return removed;
 	};
 	Path.prototype.hasHandles = function () {
@@ -4389,6 +4499,7 @@
 			segment._index = i;
 		}
 		this._curves = null;
+		this._changed(9);
 	};
 	Path.prototype.compare = function (path) {
 		if (!path || path instanceof CompoundPath)
