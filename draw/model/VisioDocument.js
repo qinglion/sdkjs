@@ -604,14 +604,13 @@
 		this.theme = this.themes[0];
 
 		let api = this.api;
-		let apiHtmlElement = api.HtmlElement.querySelector("#id_main");
 		let documentCanvas = api.canvas;
 		let panelThumbnails = api.HtmlElement.querySelector("#id_panel_thumbnails");
-		panelThumbnails.innerHTML = "";
 
 		let drawThumbnails = true;
 
 		if (drawThumbnails) {
+			panelThumbnails.innerHTML = "";
 			for (let thumbPageIndex = 0; thumbPageIndex < this.pages.page.length; thumbPageIndex++) {
 				// var thumbnailCanvas = document.createElement("<canvas id=\"id_thumbnails\" class=\"block_elem\" style=\"user-select: none; z-index: 2; left: 0px; top: 0px; width: 100%; height:100%; cursor: default;\"></canvas>");
 				let thumbnailCanvas = document.createElement("canvas");

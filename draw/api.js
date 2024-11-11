@@ -34,6 +34,8 @@
 
 (function(window, document)
 {
+	const c_oAscFontRenderingModeType = Asc.c_oAscFontRenderingModeType;
+
 	/**
 	 *
 	 * @param config
@@ -58,6 +60,7 @@
 
 		/**		 * @type {HTMLCanvasElement}	*/
 		this.thumbnailsCanvas = null;
+		this.locale = null;
 
 		this._init();
 		return this;
@@ -87,8 +90,22 @@
 
 		this.CreateComponents();
 	};
+	asc_docs_api.prototype.CreateCSS = function()
+	{
+		var _head = document.getElementsByTagName('head')[0];
+
+		var style0       = document.createElement('style');
+		style0.type      = 'text/css';
+		style0.innerHTML = ".block_elem { position:absolute;padding:0;margin:0; }";
+		_head.appendChild(style0);
+	};
 	asc_docs_api.prototype.CreateComponents = function()
 	{
+		this.asc_setSkin(this.skinObject);
+		delete this.skinObject;
+
+		// this.CreateCSS();
+
 		window.editor = this;
 		//for CShapeDrawer.CheckDash
 		window.Asc.editor = this;
@@ -97,18 +114,22 @@
 		window.CLayoutThumbnailDrawer = function () {};
 		window.CMasterThumbnailDrawer = function () {};
 		this.WordControl  = new AscCommonSlide.CEditorPage(this);
-		if (this.HtmlElement != null) {
-			let thumbsHtmlString = 	"<div id=\"id_panel_thumbnails\" class=\"block_elem\" style=\"touch-action: none; background-color: rgb(64, 64, 64); display: block; left: 0px; top: 0px; width: 20%; height:100%; overflow: scroll;\">" +
+		let _innerHTML = 	"<div id=\"id_panel_thumbnails\" class=\"block_elem\" style=\"touch-action: none; background-color: rgb(64, 64, 64); display: block; left: 0px; top: 0px; width: 20%; height:100%; overflow: scroll;\">" +
 											"</div>";
-			this.HtmlElement.innerHTML = ("<div id=\"id_main\" class=\"block_elem\" style=\"width:80%;height:100%;touch-action:none;-ms-touch-action: none;-moz-user-select:none;-khtml-user-select:none;user-select:none;background-color:" + AscCommon.GlobalSkin.BackgroundColor + ";overflow:hidden;\" UNSELECTABLE=\"on\">\
-											<div id=\"id_main_view\" class=\"block_elem\" style=\"width:100%;height:100%;touch-action:none;overflow:hidden\">\
-												<canvas id=\"id_viewer\" class=\"block_elem\" style=\"width:100%;height:100%;touch-action:none;-ms-touch-action: none;-webkit-user-select: none; background-color:" + AscCommon.GlobalSkin.BackgroundColor + ";z-index:1\"></canvas>\
-												<canvas id=\"id_viewer_overlay\" class=\"block_elem\" style=\"touch-action:none;-ms-touch-action: none;-webkit-user-select: none; z-index:2\"></canvas>\
-												<div id=\"id_target_cursor\" class=\"block_elem\" width=\"1\" height=\"1\" style=\"touch-action:none;-ms-touch-action: none;-webkit-user-select: none;width:2px;height:13px;z-index:4;\"></div>\
-											</div>" + this.HtmlElement.innerHTML);
-			this.HtmlElement.innerHTML = thumbsHtmlString + this.HtmlElement.innerHTML;
-		}
+		_innerHTML += "<div id=\"id_main\" class=\"block_elem\" style=\"width:80%;height:100%;touch-action:none;-ms-touch-action: none;-moz-user-select:none;-khtml-user-select:none;user-select:none;background-color:" + AscCommon.GlobalSkin.BackgroundColor + ";overflow:hidden;\" UNSELECTABLE=\"on\">\
+										<div id=\"id_main_view\" class=\"block_elem\" style=\"width:100%;height:100%;touch-action:none;overflow:hidden\">\
+											<canvas id=\"id_viewer\" class=\"block_elem\" style=\"width:100%;height:100%;touch-action:none;-ms-touch-action: none;-webkit-user-select: none; background-color:" + AscCommon.GlobalSkin.BackgroundColor + ";z-index:1\"></canvas>\
+											<canvas id=\"id_viewer_overlay\" class=\"block_elem\" style=\"touch-action:none;-ms-touch-action: none;-webkit-user-select: none; z-index:2\"></canvas>\
+											<div id=\"id_target_cursor\" class=\"block_elem\" width=\"1\" height=\"1\" style=\"touch-action:none;-ms-touch-action: none;-webkit-user-select: none;width:2px;height:13px;z-index:4;\"></div>\
+										</div>";
+		if (this.HtmlElement)
+			_innerHTML += this.HtmlElement.innerHTML;
 
+		if (this.HtmlElement != null)
+		{
+			this.HtmlElement.style.backgroundColor = AscCommon.GlobalSkin.BackgroundColor;
+			this.HtmlElement.innerHTML = _innerHTML;
+		}
 
 		this.canvas = document.getElementById("id_viewer");
 	};
@@ -201,7 +222,9 @@
 
 	asc_docs_api.prototype.OpenDocumentFromZip = function(data)
 	{
-		return this.OpenDocumentFromZipNoInit(data);
+		let res = this.OpenDocumentFromZipNoInit(data);
+		this.Document.loadFonts();
+		return res;
 	};
 	asc_docs_api.prototype.OpenDocumentFromZipNoInit = function(data)
 	{
@@ -382,7 +405,180 @@
 			_printer.EndPage();
 		}
 	};
+	asc_docs_api.prototype.openDocument = function(file)
+	{
+		let perfStart = performance.now();
+		// if (file.changes && this.VersionHistory)
+		// {
+		// 	this.VersionHistory.changes = file.changes;
+		// 	this.VersionHistory.applyChanges(this);
+		// }
+		this.isOpenOOXInBrowser = this["asc_isSupportFeature"]("ooxml") && AscCommon.checkOOXMLSignature(file.data);
+		if (this.isOpenOOXInBrowser) {
+			this.openOOXInBrowserZip = file.data;
+			this.OpenDocumentFromZip(file.data);
+		} else {
+			//this.OpenDocumentFromBin(file.url, file.data);
+		}
+		let perfEnd = performance.now();
+		AscCommon.sendClientLog("debug", AscCommon.getClientInfoString("onOpenDocument", perfEnd - perfStart), this);
+	};
+	asc_docs_api.prototype.isDocumentModified = function()
+	{
+		return false;
+		if (!this.canSave)
+		{
+			// Пока идет сохранение, мы не закрываем документ
+			return true;
+		}
+		return this.isDocumentModify;
+	};
+	asc_docs_api.prototype.SetDrawingFreeze = function(bIsFreeze)
+	{
+		//todo
+	};
+	asc_docs_api.prototype.asc_setSpellCheck = function(isOn)
+	{
+	};
+	asc_docs_api.prototype.asc_setSpellCheckSettings = function(oSettings)
+	{
+	};
+	asc_docs_api.prototype.zoomIn         = function()
+	{
+	};
+	asc_docs_api.prototype.zoomOut        = function()
+	{
+	};
+	asc_docs_api.prototype.zoomFitToPage  = function()
+	{
+	};
+	asc_docs_api.prototype.zoomFitToWidth = function()
+	{
+	};
+	asc_docs_api.prototype.zoomCustomMode = function()
+	{
+	};
+	asc_docs_api.prototype.zoom100        = function()
+	{
+	};
+	asc_docs_api.prototype.zoom           = function(percent)
+	{
+	};
+	asc_docs_api.prototype.SetFontRenderingMode         = function(mode)
+	{
+		if (!this.isLoadFullApi)
+		{
+			this.tmpFontRenderingMode = mode;
+			return;
+		}
 
+		if (c_oAscFontRenderingModeType.noHinting === mode)
+			AscCommon.g_fontManager.SetHintsProps(false, false);
+		else if (c_oAscFontRenderingModeType.hinting === mode)
+			AscCommon.g_fontManager.SetHintsProps(true, false);
+		else if (c_oAscFontRenderingModeType.hintingAndSubpixeling === mode)
+			AscCommon.g_fontManager.SetHintsProps(true, true);
+
+		if (AscCommon.g_fontManager2 !== undefined && AscCommon.g_fontManager2 !== null)
+			AscCommon.g_fontManager2.ClearFontsRasterCache();
+
+		// this.WordControl.m_oDrawingDocument.ClearCachePages();
+		//
+		// if (this.bInit_word_control)
+		// 	this.WordControl.OnScroll();
+	}
+	asc_docs_api.prototype.asc_setLocale = function(val)
+	{
+		this.locale = val;
+	};
+	asc_docs_api.prototype.asc_getLocale = function()
+	{
+		return this.locale;
+	};
+	asc_docs_api.prototype.asc_SetDocumentUnits = function(_units)
+	{
+		//todo
+		this.tmpDocumentUnits = _units;
+	};
+	asc_docs_api.prototype.Resize = function() {
+		//todo
+	};
+	asc_docs_api.prototype.sendEvent = function()
+	{
+		this.sendInternalEvent.apply(this, arguments);
+		var name = arguments[0];
+		if (_callbacks.hasOwnProperty(name))
+		{
+			for (var i = 0; i < _callbacks[name].length; ++i)
+			{
+				_callbacks[name][i].apply(this || window, Array.prototype.slice.call(arguments, 1));
+			}
+			return true;
+		}
+		return false;
+	};
+	var _callbacks = {};
+	asc_docs_api.prototype.asc_registerCallback = function(name, callback)
+	{
+		if (!_callbacks.hasOwnProperty(name))
+			_callbacks[name] = [];
+		_callbacks[name].push(callback);
+	};
+	asc_docs_api.prototype.asc_unregisterCallback = function(name, callback)
+	{
+		if (_callbacks.hasOwnProperty(name))
+		{
+			for (var i = _callbacks[name].length - 1; i >= 0; --i)
+			{
+				if (_callbacks[name][i] == callback)
+					_callbacks[name].splice(i, 1);
+			}
+		}
+	};
+	asc_docs_api.prototype.asc_checkNeedCallback = function(name)
+	{
+		if (_callbacks.hasOwnProperty(name))
+		{
+			return true;
+		}
+		return false;
+	};
+	asc_docs_api.prototype.asc_SetFastCollaborative = function(isOn)
+	{
+	};
+	asc_docs_api.prototype.getCountPages  = function()
+	{
+		return 1;
+	};
+	asc_docs_api.prototype.ShowThumbnails           = function(bIsShow)
+	{
+	}
+	asc_docs_api.prototype["asc_setViewerTargetType"] = asc_docs_api.prototype.asc_setViewerTargetType = function(type) {
+		this.isHandMode = ("hand" === type);
+		// this.WordControl.checkMouseHandMode();
+		// this.WordControl.onMouseMove();
+		this.sendEvent("asc_onChangeViewerTargetType", this.isHandMode);
+	};
+
+	//temp stubs
+	asc_docs_api.prototype.DemonstrationEndShowMessage = function(message)
+	{
+	}
+	asc_docs_api.prototype.asc_setShowGridlines = function(isShow)
+	{
+	}
+	asc_docs_api.prototype.asc_setShowGuides = function(isShow)
+	{
+	};
+	asc_docs_api.prototype.asc_setShowSmartGuides = function(isShow)
+	{
+	};
+	asc_docs_api.prototype.asc_ShowNotes = function(bIsShow)
+	{
+	};
+	asc_docs_api.prototype.SetThemesPath = function(bIsFreeze)
+	{
+	};
 	//-------------------------------------------------------------export---------------------------------------------------
 	window['Asc']                                                       = window['Asc'] || {};
 	window['Asc']['asc_docs_api']                                       = asc_docs_api;

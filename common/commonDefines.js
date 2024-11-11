@@ -507,6 +507,7 @@ window.AscCommon.g_cIsBeta = "false";
 		XLSX_FLAT  : 0x010b,
 		XLSX_PACKAGE  : 0x010c,
 		XLSY : 0x1002,
+		CANVAS_SPREADSHEET : 0x2002,
 
 		// PowerPoint
 		PPTX : 0x0081,
@@ -521,6 +522,15 @@ window.AscCommon.g_cIsBeta = "false";
 		OTP  : 0x008a,
 		PPTX_PACKAGE  : 0x008b,
 		PPTY : 0x1003,
+		CANVAS_PRESENTATION : 0x2003,
+
+		//Draw
+		VSDX : 0x4001,
+		VSSX : 0x4002,
+		VSTX : 0x4003,
+		VSDM : 0x4004,
+		VSSM : 0x4005,
+		VSTM : 0x4006,
 
 		//image
 		IMG  : 0x0400,
