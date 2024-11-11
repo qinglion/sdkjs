@@ -427,23 +427,15 @@ function CTransitionAnimation(htmlpage)
                 _ctx1.fillRect(0, 0, oThis.DemonstrationObject.Canvas.width, oThis.DemonstrationObject.Canvas.height);
             }
 
-            if (!oThis.IsBackward)
+
+            if (null != oThis.CacheImage1.Image)
             {
-                if (null != oThis.CacheImage1.Image)
-                {
-                    _ctx1.drawImage(oThis.CacheImage1.Image, oThis.Rect.x, oThis.Rect.y, oThis.Rect.w, oThis.Rect.h);
-                }
-                else
-                {
-                    var _c = oThis.CacheImage1.Color;
-                    _ctx1.fillStyle = "rgb(" + _c.r + "," + _c.g + "," + _c.b + ")";
-                    _ctx1.fillRect(oThis.Rect.x, oThis.Rect.y, oThis.Rect.w, oThis.Rect.h);
-                    _ctx1.beginPath();
-                }
+                _ctx1.drawImage(oThis.CacheImage1.Image, oThis.Rect.x, oThis.Rect.y, oThis.Rect.w, oThis.Rect.h);
             }
             else
             {
-                _ctx1.fillStyle = "rgb(0,0,0)";
+                var _c = oThis.CacheImage1.Color;
+                _ctx1.fillStyle = "rgb(" + _c.r + "," + _c.g + "," + _c.b + ")";
                 _ctx1.fillRect(oThis.Rect.x, oThis.Rect.y, oThis.Rect.w, oThis.Rect.h);
                 _ctx1.beginPath();
             }
@@ -2803,13 +2795,13 @@ function CDemonstrationManager(htmlpage)
         }
         else if (!is_backward)
         {
-            _slide1 = this.GetPrevVisibleSlide(true);
+            _slide1 = this.GetPrevVisibleSlide();
             _slide2 = this.SlideNum;
         }
         else
         {
             this.Transition.IsBackward = true;
-            _slide1 = this.GetPrevVisibleSlide(true);
+            _slide1 = this.GetPrevVisibleSlide();
             _slide2 = this.SlideNum;
         }
 
@@ -3154,6 +3146,7 @@ function CDemonstrationManager(htmlpage)
         if (oThis.SlideNum == oThis.GetSlidesCount())
         {
             oThis.SlideNum = this.GetPrevVisibleSlide(true);
+
             oThis.StartAnimation(oThis.SlideNum);
             oThis.OnPaintSlide(false);
             if (null != oThis.DivEndPresentation)
@@ -3161,14 +3154,19 @@ function CDemonstrationManager(htmlpage)
                 oThis.DemonstrationDiv.removeChild(oThis.DivEndPresentation);
                 oThis.DivEndPresentation = null;
             }
-
-            return;
+            if(!this.isLoop())
+            {
+                return;
+            }
         }
 
-        if (0 >= this.SlideNum)
+        if (this.GetFirstVisibleSlide() > this.SlideNum)
         {
             this.SlideNum = this.GetFirstVisibleSlide();
-            return;
+            if(!this.isLoop())
+            {
+                return;
+            }
         }
 
         var _slides = oThis.HtmlPage.m_oLogicDocument.Slides;
@@ -3183,7 +3181,7 @@ function CDemonstrationManager(htmlpage)
 
         oThis.StopAnimation(nOldSlideNum);
         if (!_is_transition)
-            oThis.SlideNum = this.GetPrevVisibleSlide(true);
+            oThis.SlideNum = this.GetPrevVisibleSlide();
 
 
         oThis.StartAnimation(oThis.SlideNum);
@@ -3238,7 +3236,7 @@ function CDemonstrationManager(htmlpage)
     {
         if (oThis.Transition.IsBackward)
         {
-            oThis.SlideNum = oThis.GetPrevVisibleSlide(true);
+            oThis.SlideNum = oThis.GetPrevVisibleSlide();
             oThis.HtmlPage.m_oApi.sync_DemonstrationSlideChanged(oThis.SlideNum);
         }
         oThis.OnPaintSlide(true);
@@ -3638,18 +3636,9 @@ function CDemonstrationManager(htmlpage)
 		if (this.HtmlPage.m_oApi.isReporterMode && !isNoSendFormReporter)
 			this.HtmlPage.m_oApi.sendFromReporter("{ \"reporter_command\" : \"prev\" }");
 
-        if (this.GetFirstVisibleSlide() != this.SlideNum)
+        if (this.GetFirstVisibleSlide() !== this.SlideNum || this.isLoop())
         {
             this.CorrectSlideNum();
-
-            // TODO: backward transition
-            this.StartSlideBackward();
-            this.HtmlPage.m_oApi.sync_DemonstrationSlideChanged(this.SlideNum);
-        }
-        else if (this.isLoop())
-        {
-            this.CorrectSlideNum();
-            this.SlideNum = this.GetSlidesCount();
             this.StartSlideBackward();
             this.HtmlPage.m_oApi.sync_DemonstrationSlideChanged(this.SlideNum);
         }
