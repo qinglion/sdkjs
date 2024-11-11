@@ -1224,24 +1224,24 @@ Because of this, the display is sometimes not correct.
     InitClass(Cxn, CBaseFormatObject, AscDFH.historyitem_type_Cxn);
     Cxn.prototype.Write_ToBinary = function (w) {
       AscFormat.writeString(w, this.destId);
-      AscFormat.writeString(w, this.destOrd);
+      AscFormat.writeLong(w, this.destOrd);
       AscFormat.writeString(w, this.modelId);
       AscFormat.writeString(w, this.parTransId);
       AscFormat.writeString(w, this.presId);
       AscFormat.writeString(w, this.sibTransId);
       AscFormat.writeString(w, this.srcId);
-      AscFormat.writeString(w, this.srcOrd);
+      AscFormat.writeLong(w, this.srcOrd);
       AscFormat.writeLong(w, this.type);
     };
     Cxn.prototype.Read_FromBinary = function (r) {
       this.setDestId(AscFormat.readString(r));
-      this.setDestOrd(AscFormat.readString(r));
+      this.setDestOrd(AscFormat.readLong(r));
       this.setModelId(AscFormat.readString(r));
       this.setParTransId(AscFormat.readString(r));
       this.setPresId(AscFormat.readString(r));
       this.setSibTransId(AscFormat.readString(r));
       this.setSrcId(AscFormat.readString(r));
-      this.setSrcOrd(AscFormat.readString(r));
+      this.setSrcOrd(AscFormat.readLong(r));
       this.setType(AscFormat.readLong(r));
     };
 		Cxn.getTypeEnum = function (sType) {
@@ -2568,8 +2568,9 @@ Because of this, the display is sometimes not correct.
       var s = pReader.stream;
       switch (nType) {
         case 0: {
-          this.setPresLayoutVars(new VarLst());
-          this.presLayoutVars.fromPPTY(pReader);
+          const varLst = new VarLst();
+          varLst.fromPPTY(pReader);
+          this.setPresLayoutVars(varLst);
           break;
         }
         case 1: {
@@ -4361,7 +4362,7 @@ Because of this, the display is sometimes not correct.
     InitClass(Constr, CBaseFormatNoIdObject, AscDFH.historyitem_type_Constr);
 
 		Constr.prototype.Write_ToBinary = function (w) {
-			AscFormat.writeDouble(w, this.fact);
+			AscFormat.writeDouble2(w, this.fact);
 			AscFormat.writeLong(w, this.for);
 			AscFormat.writeString(w, this.forName);
 			AscFormat.writeLong(w, this.op);
@@ -4370,10 +4371,11 @@ Because of this, the display is sometimes not correct.
 			AscFormat.writeString(w, this.refForName);
 			AscFormat.writeLong(w, this.refPtType);
 			AscFormat.writeLong(w, this.refType);
-			AscFormat.writeDouble(w, this.val);
+			AscFormat.writeLong(w, this.type);
+			AscFormat.writeDouble2(w, this.val);
 		}
 	  Constr.prototype.Read_FromBinary = function (r) {
-		  this.fact = AscFormat.readDouble(r);
+		  this.fact = AscFormat.readDouble2(r);
 		  this.for = AscFormat.readLong(r);
 		  this.forName = AscFormat.readString(r);
 		  this.op = AscFormat.readLong(r);
@@ -4382,7 +4384,8 @@ Because of this, the display is sometimes not correct.
 		  this.refForName = AscFormat.readString(r);
 		  this.refPtType = AscFormat.readLong(r);
 		  this.refType = AscFormat.readLong(r);
-		  this.val = AscFormat.readDouble(r);
+		  this.type = AscFormat.readLong(r);
+		  this.val = AscFormat.readDouble2(r);
 	  }
     Constr.prototype.setFact = function (pr) {
       this.fact = pr;
@@ -4616,21 +4619,21 @@ Because of this, the display is sometimes not correct.
 
     InitClass(Rule, CBaseFormatNoIdObject, AscDFH.historyitem_type_Rule);
 	  Rule.prototype.Write_ToBinary = function (w) {
-		  AscFormat.writeDouble(w, this.fact);
+		  AscFormat.writeDouble2(w, this.fact);
 		  AscFormat.writeLong(w, this.for);
 			AscFormat.writeString(w, this.forName);
-			AscFormat.writeDouble(w, this.max);
+			AscFormat.writeDouble2(w, this.max);
 			AscFormat.writeLong(w, this.type);
-			AscFormat.writeDouble(w, this.val);
+			AscFormat.writeDouble2(w, this.val);
 			AscFormat.writeLong(w, this.ptType);
 	  }
 	  Rule.prototype.Read_FromBinary = function (r) {
-		  this.setFact(AscFormat.readDouble(r));
+		  this.setFact(AscFormat.readDouble2(r));
 		  this.setFor(AscFormat.readLong(r));
 		  this.setForName(AscFormat.readString(r));
-		  this.setMax(AscFormat.readDouble(r));
+		  this.setMax(AscFormat.readDouble2(r));
 		  this.setType(AscFormat.readLong(r));
-		  this.setVal(AscFormat.readDouble(r));
+		  this.setVal(AscFormat.readDouble2(r));
 		  this.setPtType(AscFormat.readLong(r));
 	  }
     Rule.prototype.setFact = function (pr) {
@@ -4743,7 +4746,7 @@ Because of this, the display is sometimes not correct.
 			AscFormat.writeBool(w, this.blipPhldr);
 			AscFormat.writeBool(w, this.hideGeom);
 			AscFormat.writeBool(w, this.lkTxEntry);
-			AscFormat.writeDouble(w, this.rot);
+			AscFormat.writeDouble2(w, this.rot);
 			AscFormat.writeLong(w, this.type);
 			AscFormat.writeLong(w, this.zOrderOff);
 			AscFormat.writeObjectNoId(w, this.adjLst);
@@ -4753,7 +4756,7 @@ Because of this, the display is sometimes not correct.
 		  this.blipPhldr = AscFormat.readBool(r);
 		  this.hideGeom = AscFormat.readBool(r);
 		  this.lkTxEntry = AscFormat.readBool(r);
-		  this.rot = AscFormat.readDouble(r);
+		  this.rot = AscFormat.readDouble2(r);
 		  this.type = AscFormat.readLong(r);
 		  this.zOrderOff = AscFormat.readLong(r);
 		  this.adjLst = AscFormat.readObjectNoId(r);
@@ -4900,11 +4903,11 @@ Because of this, the display is sometimes not correct.
 
 	  Adj.prototype.Write_ToBinary = function (w) {
 		  AscFormat.writeLong(w, this.idx);
-		  AscFormat.writeDouble(w, this.val);
+		  AscFormat.writeDouble2(w, this.val);
 	  };
 	  Adj.prototype.Read_FromBinary = function (r) {
 		  this.idx = AscFormat.readLong(r);
-		  this.val = AscFormat.readDouble(r);
+		  this.val = AscFormat.readDouble2(r);
 	  };
     Adj.prototype.setIdx = function (pr) {
       this.idx = pr;
@@ -5066,12 +5069,12 @@ Because of this, the display is sometimes not correct.
     VarLst.prototype.writeChildren = function(pWriter) {
       if (this.animLvl !== null) pWriter.WriteRecord1(0, this.animLvl, pWriter.WriteByteToPPTY.bind(pWriter));
       if (this.animOne !== null) pWriter.WriteRecord1(1, this.animOne, pWriter.WriteByteToPPTY.bind(pWriter));
-      if (this.bulletEnabled !== null) pWriter.WriteRecord1(2, this.bulletEnabled, pWriter.WriteByteToPPTY.bind(pWriter));
+      if (this.bulletEnabled !== null) pWriter.WriteRecord1(2, Number(this.bulletEnabled), pWriter.WriteByteToPPTY.bind(pWriter));
       if (this.chMax !== null) pWriter.WriteRecord1(3, this.chMax, pWriter.WriteIntToPPTY.bind(pWriter));
       if (this.chPref !== null) pWriter.WriteRecord1(4, this.chPref, pWriter.WriteIntToPPTY.bind(pWriter));
       if (this.dir !== null) pWriter.WriteRecord1(5, this.dir, pWriter.WriteByteToPPTY.bind(pWriter));
       if (this.hierBranch !== null) pWriter.WriteRecord1(6, this.hierBranch, pWriter.WriteByteToPPTY.bind(pWriter));
-      if (this.orgChart !== null) pWriter.WriteRecord1(7, this.orgChart, pWriter.WriteByteToPPTY.bind(pWriter));
+      if (this.orgChart !== null) pWriter.WriteRecord1(7, Number(this.orgChart), pWriter.WriteByteToPPTY.bind(pWriter));
       if (this.resizeHandles !== null) pWriter.WriteRecord1(8, this.resizeHandles, pWriter.WriteByteToPPTY.bind(pWriter));
     };
     VarLst.prototype.readAttribute = null;
@@ -5087,7 +5090,7 @@ Because of this, the display is sometimes not correct.
           break;
         }
         case 2: {
-          this.setBulletEnabled(s.ReadByteFromPPTY());
+          this.setBulletEnabled(!!s.ReadByteFromPPTY());
           break;
         }
         case 3: {
@@ -5107,7 +5110,7 @@ Because of this, the display is sometimes not correct.
           break;
         }
         case 7: {
-          this.setOrgChart(s.ReadByteFromPPTY());
+          this.setOrgChart(!!s.ReadByteFromPPTY());
           break;
         }
         case 8: {
@@ -6319,13 +6322,15 @@ Because of this, the display is sometimes not correct.
     StyleDefStyleLbl.prototype.Write_ToBinary = function (w) {
       AscFormat.writeString(w, this.name);
       AscFormat.writeObjectNoId(w, this.scene3d);
+      AscFormat.writeObjectNoId(w, this.sp3d);
       AscFormat.writeObjectNoId(w, this.style);
       AscFormat.writeObjectNoId(w, this.txPr);
     };
     StyleDefStyleLbl.prototype.Read_FromBinary = function (r) {
       this.name = AscFormat.readString(r);
       this.scene3d = AscFormat.readObjectNoId(r);
-      this.style = AscFormat.readObjectNoId(r);
+      this.sp3d = AscFormat.readObjectNoId(r);
+      this.style = AscFormat.ExecuteNoHistory(AscFormat.readObjectNoId, this, [r]);
       this.txPr = AscFormat.ExecuteNoHistory(AscFormat.readObjectNoId, this, [r]);
     };
 	  StyleDefStyleLbl.prototype.setShapeStyle = function (shapes) {
@@ -6735,15 +6740,15 @@ Because of this, the display is sometimes not correct.
 
     InitClass(Camera, CBaseFormatNoIdObject, AscDFH.historyitem_type_Camera);
     Camera.prototype.Write_ToBinary = function(w) {
-      AscFormat.writeDouble(w, this.fov);
+      AscFormat.writeDouble2(w, this.fov);
       AscFormat.writeLong(w, this.prst);
-      AscFormat.writeDouble(w, this.zoom);
+      AscFormat.writeDouble2(w, this.zoom);
       AscFormat.writeObjectNoId(w, this.rot);
     };
     Camera.prototype.Read_FromBinary = function(r) {
-      this.fov = AscFormat.readDouble(r);
+      this.fov = AscFormat.readDouble2(r);
       this.prst = AscFormat.readLong(r);
-      this.zoom = AscFormat.readDouble(r);
+      this.zoom = AscFormat.readDouble2(r);
       this.rot = AscFormat.readObjectNoId(r);
     };
     Camera.prototype.setFov = function (pr) {
@@ -7494,11 +7499,15 @@ Because of this, the display is sometimes not correct.
       if (this.isEmptyLayout()) {
         this.setLayoutDef(AscFormat.generateDefaultSmartArtLayout());
       }
-      this.checkDataModel();
 		};
+    SmartArt.prototype.initSmartArtAlgorithm = function() {
+      if (!this.smartArtTree) {
+        this.smartArtTree = new AscFormat.SmartArtAlgorithm(this);
+      }
+    };
     SmartArt.prototype.checkDataModel = function() {
       if (this.isCanGenerateSmartArt()) {
-        this.smartArtTree = new AscFormat.SmartArtAlgorithm(this);
+        this.initSmartArtAlgorithm();
         this.smartArtTree.checkDataModel();
       }
     }
@@ -7656,9 +7665,8 @@ Because of this, the display is sometimes not correct.
 			if (!this.dataModel) {
 				return;
 			}
-		  this.smartArtTree = new AscFormat.SmartArtAlgorithm(this);
+      this.initSmartArtAlgorithm();
 			if (this.isCanGenerateSmartArt()) {
-				this.smartArtTree.startFromBegin();
 				this.smartArtTree.connectShapeSmartArtInfo();
 			} else {
 				this.setConnections2();
@@ -7732,7 +7740,7 @@ Because of this, the display is sometimes not correct.
 			if (!this.isCanGenerateSmartArt()) {
 				return;
 			}
-			this.smartArtTree = new AscFormat.SmartArtAlgorithm(this);
+      this.initSmartArtAlgorithm();
 	    this.smartArtTree.startFromBegin();
       const drawing = this.getDrawing();
       const shapeLength = drawing.spTree.length;
@@ -8964,18 +8972,21 @@ Because of this, the display is sometimes not correct.
           break;
         }
         case 2: {
-          this.setColorsDef(new ColorsDef());
-          this.colorsDef.fromPPTY(pReader);
+          const colorsDef = new ColorsDef();
+          colorsDef.fromPPTY(pReader);
+          this.setColorsDef(colorsDef);
           break;
         }
         case 3: {
-          this.setLayoutDef(new LayoutDef());
-          this.layoutDef.fromPPTY(pReader);
+          const layoutDef = new LayoutDef();
+          layoutDef.fromPPTY(pReader);
+          this.setLayoutDef(layoutDef);
           break;
         }
         case 4: {
-          this.setStyleDef(new StyleDef());
-          this.styleDef.fromPPTY(pReader);
+          const styleDef = new StyleDef();
+          styleDef.fromPPTY(pReader);
+          this.setStyleDef(styleDef);
           break;
         }
         default: {

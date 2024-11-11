@@ -166,6 +166,9 @@
 		if (this.alg) {
 			this.alg.executeAlgorithm(smartartAlgorithm);
 		}
+		for (let i = 0; i < this.list.length; i++) {
+			this.list[i].executeAlgorithm(smartartAlgorithm);
+		}
 		if (this.presOf) {
 			this.presOf.executeAlgorithm(smartartAlgorithm);
 		}
@@ -177,9 +180,6 @@
 		}
 		if (this.varLst) {
 			this.varLst.executeAlgorithm(smartartAlgorithm);
-		}
-		for (let i = 0; i < this.list.length; i++) {
-			this.list[i].executeAlgorithm(smartartAlgorithm);
 		}
 	};
 	IteratorLayoutBase.prototype.executeLayoutAlgorithms = LayoutBaseClass.prototype.executeLayoutAlgorithms;
@@ -242,7 +242,11 @@
 		for (let i = 0; i < nodes.length; i++) {
 			const node = nodes[i];
 			currentPresNode.contentNodes.push(node);
-			node.addPresOf(currentPresNode);
+			if (currentPresNode.algorithm instanceof TextAlgorithm) {
+				node.presOf.textNode = currentPresNode;
+			} else if (currentPresNode.layoutInfo.shape && !currentPresNode.layoutInfo.shape.hideGeom && currentPresNode.layoutInfo.shape.type !== AscFormat.LayoutShapeType_outputShapeType_none) {
+				node.presOf.contentNode = currentPresNode;
+			}
 		}
 
 		if (nodes.length) {
@@ -713,8 +717,17 @@
 			}
 		}
 	};
+	SmartArtAlgorithm.prototype.getForEachMap = function() {
+		if (this.forEachMap === null) {
+			const layout = this.smartart.getLayoutDef();
+			const layoutNode = layout.getLayoutNode();
+			this.forEachMap = layoutNode.getForEachMap();
+		}
+		return this.forEachMap;
+	};
 	SmartArtAlgorithm.prototype.getForEach = function (ref) {
-		return this.forEachMap[ref];
+		const forEachMap = this.getForEachMap();
+		return forEachMap[ref];
 	};
 	SmartArtAlgorithm.prototype.addConnectorAlgorithm = function (algorithm) {
 		this.connectorAlgorithmStack.push(algorithm);
@@ -1015,6 +1028,12 @@
 		return algorithm ? algorithm.getShapes(this) : [];
 	}
 	SmartArtAlgorithm.prototype.connectShapeSmartArtInfo = function () {
+		if (!this.presRoot) {
+			this.startFromBegin();
+		} else {
+			this.cleanDrawingShapeInfo();
+		}
+
 		const spTree = this.smartart.drawing.spTree;
 		const mapEditorShapes = {};
 		for (let i = 0; i < spTree.length; i++) {
@@ -1053,14 +1072,19 @@
 		this.executeLayoutAlgorithms();
 		this.updateData();
 	};
+	SmartArtAlgorithm.prototype.cleanPresOf = function() {
+		this.forEachContentNode(function(node) {
+			node.cleanPresOf();
+		});
+	};
 	SmartArtAlgorithm.prototype.executeLayoutAlgorithms = function() {
+		this.cleanPresOf();
 		this.addCurrentNode(this.dataRoot);
 		const mockPresNode = new PresNode();
 		this.addCurrentPresNode(mockPresNode);
 
 		const layout = this.smartart.getLayoutDef();
 		const layoutNode = layout.getLayoutNode();
-		this.forEachMap = layoutNode.getForEachMap();
 		layoutNode.executeAlgorithm(this);
 		this.presRoot = mockPresNode.childs[0];
 		this.presRoot.parent = null;
@@ -1073,7 +1097,7 @@
 		this.calculateShadowShapes();
 	};
 	SmartArtAlgorithm.prototype.calculateShadowShapes = function() {
-		this.presRoot.initRootConstraints(this.smartart, this);
+		this.cleanCalcValues();
 		this.calcConstraints();
 		this.cleanRules();
 		this.calcScaleCoefficients();
@@ -1203,14 +1227,18 @@
 		this.point = point;
 		this.parent = null;
 		this.childs = [];
-		this.algorithm = null;
 		this.depth = AscFormat.isRealNumber(depth) ? depth : null;
-		this.presOfArray = [];
-		this.presOf = null;
+		this.presOf = {
+			contentNode: null,
+			textNode: null
+		};
 	}
-	SmartArtDataNodeBase.prototype.addPresOf = function (presNode) {
-		this.presOfArray.push(presNode);
-	}
+	SmartArtDataNodeBase.prototype.cleanPresOf = function() {
+		this.presOf = {
+			contentNode: null,
+			textNode: null
+		};
+	};
 	SmartArtDataNodeBase.prototype.getTextNode = function () {
 		const textNodes = this.getTextNodes();
 		return textNodes.textNode || textNodes.contentNode;
@@ -1220,20 +1248,6 @@
 		return textNodes.contentNode || textNodes.textNode;
 	};
 	SmartArtDataNodeBase.prototype.getTextNodes = function () {
-		if (this.presOf === null) {
-			this.presOf = {
-				contentNode: null,
-				textNode: null
-			};
-			while (this.presOfArray.length) {
-				const presNode = this.presOfArray.pop();
-				if (presNode.algorithm instanceof TextAlgorithm) {
-					this.presOf.textNode = presNode;
-				} else if (presNode.layoutInfo.shape && !presNode.layoutInfo.shape.hideGeom && presNode.layoutInfo.shape.type !== AscFormat.LayoutShapeType_outputShapeType_none) {
-					this.presOf.contentNode = presNode;
-				}
-			}
-		}
 		return this.presOf;
 	};
 	SmartArtDataNodeBase.prototype.getPositionByParent = function () {

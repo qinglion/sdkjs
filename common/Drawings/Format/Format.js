@@ -953,6 +953,24 @@
 			return ret;
 		}
 
+		function writeDouble2(w, val) {
+			const isNumber = typeof val === "number";
+			w.WriteBool(isNumber);
+			if (isNumber) {
+				w.WriteDouble2(val);
+			}
+		}
+
+		function readDouble2(r) {
+			var ret;
+			if (r.GetBool()) {
+				ret = r.GetDoubleLE();
+			} else {
+				ret = null;
+			}
+			return ret;
+		}
+
 		function writeBool(w, val) {
 			w.WriteBool(isRealBool(val));
 			if (isRealBool(val)) {
@@ -18573,6 +18591,8 @@
 		window['AscFormat'].readLong = readLong;
 		window['AscFormat'].writeDouble = writeDouble;
 		window['AscFormat'].readDouble = readDouble;
+		window['AscFormat'].writeDouble2 = writeDouble2;
+		window['AscFormat'].readDouble2 = readDouble2;
 		window['AscFormat'].writeBool = writeBool;
 		window['AscFormat'].readBool = readBool;
 		window['AscFormat'].writeString = writeString;
