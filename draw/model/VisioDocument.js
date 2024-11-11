@@ -697,6 +697,9 @@
 		}
 		return mastersJoined;
 	}
+	CVisioDocument.prototype.getCountPages = function() {
+		return this.pages && this.pages.page.length || 0;
+	}
 
 	// CVisioDocument.prototype.getMasterByID = function(ID) {
 	// 	// join Master_Type and MasterContents_Type

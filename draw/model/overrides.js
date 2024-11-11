@@ -399,3 +399,88 @@ AscCommon.CShapeDrawer.prototype.ds = function()
 		this.CheckDash();
 	}
 }
+function parseFieldPictureFormat(vsdxFieldFormat) {
+	let res = "@";
+	if (vsdxFieldFormat.f) {
+		let formatFunction = vsdxFieldFormat.f.toUpperCase();
+		let vFieldPicture = parseInt(formatFunction.substring('FIELDPICTURE('.length));
+		switch (vFieldPicture) {
+			case 0:
+				res = "General";
+				break;
+			case 37:
+				res = "@";
+				break;
+			case 200:
+				res = "M/d/yyyy";
+				break;
+			case 212:
+				res = "M/d/yyyy h:mm:ss am/pm";
+				break;
+		}
+	} else if (vsdxFieldFormat.v) {
+		res = vsdxFieldFormat.v;
+	}
+	return res;
+}
+AscCommonWord.CPresentationField.prototype.private_GetString = function()
+{
+	var sStr = null;
+	var oStylesObject;
+	var oCultureInfo = AscCommon.g_aCultureInfos[this.Get_CompiledPr().Lang.Val];
+	if(!oCultureInfo)
+	{
+		oCultureInfo = AscCommon.g_aCultureInfos[1033];
+	}
+	var oDateTime, oFormat;
+	if(typeof this.FieldType === 'string')
+	{
+		let format;
+		if (this.vsdxFieldFormat) {
+			format = parseFieldPictureFormat(this.vsdxFieldFormat);
+		}
+		let logicDocument = this.Paragraph && this.Paragraph.GetLogicDocument();
+		const sFieldType = this.FieldType.toUpperCase();
+		let val = this.vsdxFieldValue.v;
+		if("PAGECOUNT()" === sFieldType)
+		{
+			if (logicDocument) {
+				val = logicDocument.getCountPages();
+			}
+		}
+		else if("NOW()" === sFieldType)
+		{
+			let oDateTime = new Asc.cDate();
+			val = oDateTime.getExcelDateWithTime(true);
+		}
+		else if("DOCCREATION()" === sFieldType)
+		{
+			let oDateTime
+			if (logicDocument.core && logicDocument.core.created) {
+				oDateTime = new Asc.cDate(logicDocument.core.created);
+			} else {
+				oDateTime = new Asc.cDate(val);
+			}
+			val = oDateTime.getExcelDateWithTime(true);
+		}
+		else if("CREATOR()" === sFieldType)
+		{
+			if (logicDocument.core && logicDocument.core.creator) {
+				val = logicDocument.core.creator;
+			}
+		}
+		else if("WIDTH" === sFieldType)
+		{
+			//todo display units
+			val = this.vsdxFieldValue.getValueInMM();
+		}
+		if (format) {
+			const oFormat = AscCommon.oNumFormatCache.get(format, AscCommon.NumFormatType.Excel);
+			sStr =  oFormat.formatToWord(val, 15, oCultureInfo);
+		} else {
+			sStr = val + "";
+		}
+	}
+	return sStr;
+};
+

@@ -37,6 +37,11 @@
 	// Import
 	let Shape_Type = window['AscCommonDraw'].Shape_Type;
 
+	function convertVsdxTextToPptxText(text){
+		// Replace LineSeparator
+		return text.replaceAll("\u2028", "\n");
+	}
+
 	/**
 	 * calculateShapeParamsAndConvertToCShape
 	 * @memberof Shape_Type
@@ -464,6 +469,14 @@
 				// add run to last paragraph
 				paragraph.Add_ToContent(paragraph.Content.length - 1, oRun);
 			}
+			function initPresentationField(oFld, fieldRow) {
+				const valueCell = fieldRow.getCell("Value");
+				oFld.SetFieldType(valueCell.f);
+				oFld.vsdxFieldValue = valueCell;
+
+				// then format it according to Format cell
+				oFld.vsdxFieldFormat = fieldRow.getCell("Format");
+			}
 
 			/**
 			 * Get row from section Field and transform it into text usings its cells.
@@ -696,7 +709,7 @@
 
 			// read text
 			textElement.elements.forEach(function(textElementPart, i) {
-				if (typeof textElementPart === "string" || textElementPart.constructor.name === "fld_Type") {
+				if (typeof textElementPart === "string") {
 
 					// create defaultParagraph
 					if (oContent.Content.length === 0) {
@@ -742,6 +755,30 @@
 					parseRunAndAddToParagraph(characterRowNum, characterPropsCommon,
 						oRun, paragraph, lineUniFill, fillUniFill, theme, shape,
 						visioDocument);
+				} else if (textElementPart.constructor.name === "fld_Type") {
+					// text field
+					// create defaultParagraph
+					if (oContent.Content.length === 0) {
+						parseParagraphAndAddToShapeContent(0, paragraphPropsCommon, textCShape);
+					}
+					let paragraph = oContent.Content.slice(-1)[0];
+
+					let oFld = new AscCommonWord.CPresentationField(this);
+					let fieldRowNum = textElementPart.iX;
+					let fieldPropsFinal = fieldRowNum !== null && fieldPropsCommon.getRow(fieldRowNum);
+					initPresentationField(oFld, fieldPropsFinal);
+
+					let fldTagText = textElementPart.value;
+					if (fldTagText) {
+						fldTagText = convertVsdxTextToPptxText(fldTagText)
+					}
+					oFld.CanAddToContent = true;
+					oFld.AddText(fldTagText, -1);
+					oFld.CanAddToContent = false;
+
+					paragraph.AddToContent(paragraph.Content.length - 1, new ParaRun(paragraph, false));
+					paragraph.AddToContent(paragraph.Content.length - 1, oFld);
+					paragraph.AddToContent(paragraph.Content.length - 1, new ParaRun(paragraph, false));
 				} else if (textElementPart.constructor.name === "pp_Type") {
 					// setup Paragraph
 

@@ -935,46 +935,46 @@
 	}
 
 
-	// /**
-	//  * @memberOf Cell_Type
-	//  * @return {number}
-	//  */
-	// Cell_Type.prototype.getValueInMM = function () {
-	// 	let res;
-	// 	//todo all units
-	// 	switch (this.u) {
-	// 		case "DL":
-	// 		case "IN":
-	// 		case "IN_F":
-	// 			res = parseFloat(this.v) * g_dKoef_in_to_mm;
-	// 			break;
-	// 		case "FT":
-	// 			res = parseFloat(this.v) * 12 * g_dKoef_in_to_mm;
-	// 			break;
-	// 		case "F_I":
-	// 			res = parseFloat(this.v);
-	// 			let intPart = Math.floor(res);
-	// 			res = (intPart * 12 + (res - intPart)) * g_dKoef_in_to_mm;
-	// 			break;
-	// 		case "KM":
-	// 			res = parseFloat(this.v) * 1000000;
-	// 			break;
-	// 		case "M":
-	// 			res = parseFloat(this.v) * 1000;
-	// 			break;
-	// 		case "CM":
-	// 			res = parseFloat(this.v) * 10;
-	// 			break;
-	// 		case "MM":
-	// 			res = parseFloat(this.v);
-	// 			break;
-	// 		default:
-	// 			res = parseFloat(this.v) * g_dKoef_in_to_mm;
-	// 			break;
-	// 	}
-	// 	return res;
-	// };
-	//
+	/**
+	 * @memberOf Cell_Type
+	 * @return {number}
+	 */
+	Cell_Type.prototype.getValueInMM = function () {
+		let res;
+		//todo all units
+		switch (this.u) {
+			case "DL":
+			case "IN":
+			case "IN_F":
+				res = parseFloat(this.v) * g_dKoef_in_to_mm;
+				break;
+			case "FT":
+				res = parseFloat(this.v) * 12 * g_dKoef_in_to_mm;
+				break;
+			case "F_I":
+				res = parseFloat(this.v);
+				let intPart = Math.floor(res);
+				res = (intPart * 12 + (res - intPart)) * g_dKoef_in_to_mm;
+				break;
+			case "KM":
+				res = parseFloat(this.v) * 1000000;
+				break;
+			case "M":
+				res = parseFloat(this.v) * 1000;
+				break;
+			case "CM":
+				res = parseFloat(this.v) * 10;
+				break;
+			case "MM":
+				res = parseFloat(this.v);
+				break;
+			default:
+				res = parseFloat(this.v) * g_dKoef_in_to_mm;
+				break;
+		}
+		return res;
+	};
+
 	// /**
 	//  * @memberOf Cell_Type
 	//  * @return {number}

@@ -548,7 +548,7 @@
 	};
 	asc_docs_api.prototype.getCountPages  = function()
 	{
-		return 1;
+		return this.WordControl && this.WordControl.m_oLogicDocument && this.WordControl.m_oLogicDocument.getCountPages() || 0
 	};
 	asc_docs_api.prototype.ShowThumbnails           = function(bIsShow)
 	{
@@ -558,6 +558,9 @@
 		// this.WordControl.checkMouseHandMode();
 		// this.WordControl.onMouseMove();
 		this.sendEvent("asc_onChangeViewerTargetType", this.isHandMode);
+	};
+	asc_docs_api.prototype.getLogicDocument = asc_docs_api.prototype.private_GetLogicDocument = function() {
+		return this.WordControl && this.WordControl.m_oLogicDocument || null;
 	};
 
 	//temp stubs
