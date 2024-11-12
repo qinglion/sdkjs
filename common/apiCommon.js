@@ -3659,6 +3659,7 @@ function (window, undefined) {
 
 			this.bSetOriginalSize = obj.bSetOriginalSize;
 			this.transparent = obj.transparent;
+			this.isCrop      = obj.isCrop;
 
 		}
 		else {
@@ -3719,6 +3720,7 @@ function (window, undefined) {
 			this.bSetOriginalSize = undefined;
 
 			this.transparent = undefined;
+			this.isCrop      = undefined;
 		}
 	}
 
@@ -4105,6 +4107,9 @@ function (window, undefined) {
 		this.transparent = v;
 	};
 
+	asc_CImgProperty.prototype.asc_getIsCrop = function () {
+		return this.isCrop;
+	};
 	/** @constructor */
 	function asc_CSelectedObject(type, val) {
 		this.Type = (undefined != type) ? type : null;
@@ -6690,6 +6695,7 @@ function (window, undefined) {
 	prot["put_ProtectionPrint"] = prot["asc_putProtectionPrint"] = prot.asc_putProtectionPrint;
 	prot["get_Transparent"] = prot["asc_getTransparent"] = prot.asc_getTransparent;
 	prot["put_Transparent"] = prot["asc_putTransparent"] = prot.asc_putTransparent;
+	prot["get_IsCrop"] = prot["asc_getIsCrop"] = prot.asc_getIsCrop;
 
 	window["AscCommon"].asc_CSelectedObject = asc_CSelectedObject;
 	prot = asc_CSelectedObject.prototype;

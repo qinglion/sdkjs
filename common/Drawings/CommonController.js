@@ -7330,6 +7330,7 @@
 									{
 										ImageUrl: drawing.getImageUrl(),
 										transparent: drawing.getTransparent(),
+										isCrop: drawing.hasCrop(),
 										w: drawing.extX,
 										h: drawing.extY,
 										rot: drawing.rot,
@@ -7354,6 +7355,8 @@
 										image_props.ImageUrl = null;
 									if (image_props.transparent != null && image_props.transparent !== new_image_props.transparent)
 										image_props.transparent = null;
+									if (image_props.isCrop != null && image_props.isCrop !== new_image_props.isCrop)
+										image_props.isCrop = false;
 									if (image_props.w != null && image_props.w !== new_image_props.w)
 										image_props.w = null;
 									if (image_props.h != null && image_props.h !== new_image_props.h)
@@ -7436,6 +7439,7 @@
 								new_image_props =
 									{
 										ImageUrl: drawing.getImageUrl(),
+										isCrop: drawing.hasCrop(),
 										transparent: null,
 										w: drawing.extX,
 										h: drawing.extY,
@@ -7461,6 +7465,8 @@
 										image_props.w = null;
 									if (image_props.transparent != null && image_props.transparent !== new_image_props.transparent)
 										image_props.transparent = null;
+									if (image_props.isCrop != null && image_props.isCrop !== new_image_props.isCrop)
+										image_props.isCrop = false;
 									if (image_props.h != null && image_props.h !== new_image_props.h)
 										image_props.h = null;
 									if (image_props.x != null && image_props.x !== new_image_props.x)
@@ -7766,6 +7772,8 @@
 											image_props.ImageUrl = null;
 										if (image_props.transparent !== null && image_props.transparent !== group_drawing_props.imageProps.transparent)
 											image_props.transparent = null;
+										if (image_props.isCrop !== null && image_props.isCrop !== group_drawing_props.imageProps.isCrop)
+											image_props.isCrop = null;
 
 										if (image_props.w != null && image_props.w !== group_drawing_props.imageProps.w)
 											image_props.w = null;
@@ -8174,6 +8182,7 @@
 						image_props.flipH = props.imageProps.flipH;
 						image_props.flipV = props.imageProps.flipV;
 						image_props.ImageUrl = props.imageProps.ImageUrl;
+						image_props.isCrop = props.imageProps.isCrop;
 						image_props.transparent = props.imageProps.transparent;
 						image_props.Locked = props.imageProps.locked === true;
 						image_props.lockAspect = props.imageProps.lockAspect;

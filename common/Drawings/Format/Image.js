@@ -682,6 +682,13 @@
 			this.spPr.setFill(fill);
 		};
 
+		CImageShape.prototype.hasCrop = function () {
+			if(this.blipFill && this.blipFill.srcRect) {
+				return true;
+			}
+			return false;
+		};
+
 
 		CImageShape.prototype.drawAdjustments = function (drawingDocument) {
 			if (!this.canChangeAdjustments()) {
