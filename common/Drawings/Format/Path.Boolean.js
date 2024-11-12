@@ -537,7 +537,7 @@
 		}
 	};
 
-	const Point = function (arg0, arg1) {
+	const Point = function (arg0, arg1, owner) {
 		const type = typeof arg0;
 		const isReading = this.__read;
 		let readCount = 0;
@@ -562,6 +562,7 @@
 		}
 
 		if (isReading) { this.__read = readCount; }
+		if (owner) this._owner = owner;
 		return this;
 	};
 	InitClassWithStatics(Point, Base);
@@ -570,7 +571,14 @@
 	Point.prototype._set = function (x, y) {
 		this.x = x;
 		this.y = y;
+		if (this._owner) this._owner._changed(this);
 		return this;
+	};
+	Point.prototype.getX = function () {
+		return this.x;
+	};
+	Point.prototype.getY = function () {
+		return this.y;
 	};
 	Point.prototype.equals = function (point) {
 		return this === point || point && (
@@ -1672,9 +1680,9 @@
 				handleOut = arg4 !== undefined ? [arg4, arg5] : null;
 			}
 		}
-		this._point = new SegmentPoint(point, this);
-		this._handleIn = new SegmentPoint(handleIn, this);
-		this._handleOut = new SegmentPoint(handleOut, this);
+		this._point = new Point(point, this);
+		this._handleIn = new Point(handleIn, this);
+		this._handleOut = new Point(handleOut, this);
 	};
 	InitClassWithStatics(Segment, Base);
 
@@ -1787,34 +1795,34 @@
 	Segment.prototype._transformCoordinates = function (matrix, coords, change) {
 		const handleIn = !change || !this._handleIn.isZero() ? this._handleIn : null;
 		const handleOut = !change || !this._handleOut.isZero() ? this._handleOut : null;
-		let x = this._point._x;
-		let y = this._point._y;
+		let x = this._point.getX();
+		let y = this._point.getY();
 		let i = 2;
 		coords[0] = x;
 		coords[1] = y;
 		if (handleIn) {
-			coords[i++] = handleIn._x + x;
-			coords[i++] = handleIn._y + y;
+			coords[i++] = handleIn.getX() + x;
+			coords[i++] = handleIn.getY() + y;
 		}
 		if (handleOut) {
-			coords[i++] = handleOut._x + x;
-			coords[i++] = handleOut._y + y;
+			coords[i++] = handleOut.getX() + x;
+			coords[i++] = handleOut.getY() + y;
 		}
 		if (matrix) {
 			matrix._transformCoordinates(coords, coords, i / 2);
 			x = coords[0];
 			y = coords[1];
 			if (change) {
-				this._point._x = x;
-				this._point._y = y;
+				this._point.x = x;
+				this._point.y = y;
 				i = 2;
 				if (handleIn) {
-					handleIn._x = coords[i++] - x;
-					handleIn._y = coords[i++] - y;
+					handleIn.x = coords[i++] - x;
+					handleIn.y = coords[i++] - y;
 				}
 				if (handleOut) {
-					handleOut._x = coords[i++] - x;
-					handleOut._y = coords[i++] - y;
+					handleOut.x = coords[i++] - x;
+					handleOut.y = coords[i++] - y;
 				}
 			} else {
 				if (!handleIn) {
@@ -1828,44 +1836,6 @@
 			}
 		}
 		return coords;
-	};
-
-	const SegmentPoint = function (point, owner) {
-		let x, y;
-		if (!point) {
-			x = y = 0;
-		} else if ((x = point[0]) !== undefined) {
-			y = point[1];
-		} else {
-			let pt = point;
-			x = pt.x;
-			if (x === undefined) {
-				pt = Point.read(arguments);
-				x = pt.x;
-			}
-			y = pt.y;
-		}
-		this._x = this.x = x;
-		this._y = this.y = y;
-		this._owner = owner;
-	};
-	InitClassWithStatics(SegmentPoint, Point);
-
-	SegmentPoint.prototype._set = function (x, y) {
-		this._x = this.x = x;
-		this._y = this.y = y;
-		this._owner._changed(this);
-		return this;
-	};
-	SegmentPoint.prototype.isZero = function () {
-		const isZero = Numerical.isZero;
-		return isZero(this._x) && isZero(this._y);
-	};
-	SegmentPoint.prototype.getX = function () {
-		return this._x;
-	};
-	SegmentPoint.prototype.getY = function () {
-		return this._y;
 	};
 
 	const Curve = function (arg0, arg1, arg2, arg3, arg4, arg5, arg6, arg7) {
@@ -2148,7 +2118,7 @@
 		const y2 = p2.y;
 		const values = straight
 			? [x1, y1, x1, y1, x2, y2, x2, y2]
-			: [x1, y1, x1 + h1._x, y1 + h1._y, x2 + h2._x, y2 + h2._y, x2, y2];
+			: [x1, y1, x1 + h1.getX(), y1 + h1.getY(), x2 + h2.getX(), y2 + h2.getY(), x2, y2];
 		if (matrix) { matrix._transformCoordinates(values, values, 4); }
 		return values;
 	};
@@ -4858,7 +4828,7 @@
 	Rectangle.prototype['getTop'] = Rectangle.prototype.getTop;
 
 	Point.prototype['subtract'] = Point.prototype.subtract;
-	SegmentPoint.prototype['getX'] = SegmentPoint.prototype.getX;
-	SegmentPoint.prototype['getY'] = SegmentPoint.prototype.getY;
+	Point.prototype['getX'] = Point.prototype.getX;
+	Point.prototype['getY'] = Point.prototype.getY;
 
 })(window);
