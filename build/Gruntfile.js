@@ -491,29 +491,10 @@ module.exports = function(grunt) {
 		writeScripts(configs.cell['sdk'], 'cell');
 		writeScripts(configs.slide['sdk'], 'slide');
 	});
-	const defaultTasks = ['clean-deploy', 'compile-sdk', 'copy-other', 'minify-path-boolean'];
+	const defaultTasks = ['clean-deploy', 'compile-sdk', 'copy-other'];
 	if (grunt.option('map')) {
 		defaultTasks.push('copy-maps');
 	}
 	grunt.registerTask('default', defaultTasks);
 	grunt.registerTask('develop', ['clean-develop', 'build-develop']);
-
-	grunt.registerTask('minify-path-boolean', 'Minify Path.Boolean.js', function() {
-		grunt.initConfig({
-			'closure-compiler': {
-				pathBoolean: {
-					options: {
-						args: [
-							'--language_out=ECMASCRIPT5',
-							'--compilation_level=ADVANCED',
-							'--warning_level=QUIET',
-							'--js=../common/Drawings/Format/Path.Boolean.js',
-							'--js_output_file=../common/Drawings/Format/Path.Boolean.min.js'
-						]
-					}
-				}
-			}
-		});
-		grunt.task.run('closure-compiler');
-	});
 };
