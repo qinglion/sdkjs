@@ -3658,6 +3658,7 @@ function (window, undefined) {
 			this.protectionPrint = obj.protectionPrint;
 
 			this.bSetOriginalSize = obj.bSetOriginalSize;
+			this.transparent = obj.transparent;
 
 		}
 		else {
@@ -3716,6 +3717,8 @@ function (window, undefined) {
 			this.protectionLocked = undefined;
 			this.protectionPrint = undefined;
 			this.bSetOriginalSize = undefined;
+
+			this.transparent = undefined;
 		}
 	}
 
@@ -4095,6 +4098,12 @@ function (window, undefined) {
 	asc_CImgProperty.prototype.asc_putProtectionPrint = function (v) {
 		this.protectionPrint = v;
 	};
+	asc_CImgProperty.prototype.asc_getTransparent = function () {
+		return this.transparent;
+	};
+	asc_CImgProperty.prototype.asc_putTransparent = function (v) {
+		this.transparent = v;
+	};
 
 	/** @constructor */
 	function asc_CSelectedObject(type, val) {
@@ -4108,6 +4117,8 @@ function (window, undefined) {
 	asc_CSelectedObject.prototype.asc_getObjectValue = function () {
 		return this.Value;
 	};
+
+
 
 	/** @constructor */
 	function asc_CShapeFill() {
@@ -6677,7 +6688,8 @@ function (window, undefined) {
 	prot["put_ProtectionLocked"] = prot["asc_putProtectionLocked"] = prot.asc_putProtectionLocked;
 	prot["get_ProtectionPrint"] = prot["asc_getProtectionPrint"] = prot.asc_getProtectionPrint;
 	prot["put_ProtectionPrint"] = prot["asc_putProtectionPrint"] = prot.asc_putProtectionPrint;
-
+	prot["get_Transparent"] = prot["asc_getTransparent"] = prot.asc_getTransparent;
+	prot["put_Transparent"] = prot["asc_putTransparent"] = prot.asc_putTransparent;
 
 	window["AscCommon"].asc_CSelectedObject = asc_CSelectedObject;
 	prot = asc_CSelectedObject.prototype;

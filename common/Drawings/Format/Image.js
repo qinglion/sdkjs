@@ -173,6 +173,19 @@
 				return this.blipFill.RasterImageId;
 			return null;
 		};
+		CImageShape.prototype.getTransparent = function () {
+			if (isRealObject(this.blipFill)) {
+				return this.blipFill.getTransparent();
+			}
+			return null;
+		};
+		CImageShape.prototype.setTransparent = function (v) {
+			if(this.blipFill) {
+				let oNewBlipFill = this.blipFill.createDuplicate();
+				oNewBlipFill.setTransparent(v);
+				this.setBlipFill(oNewBlipFill);
+			}
+		};
 
 		CImageShape.prototype.getSnapArrays = function (snapX, snapY) {
 			var transform = this.getTransformMatrix();
@@ -882,14 +895,10 @@
 			}
 			var oBrush = new AscFormat.CUniFill();
 			oBrush.fill = oBlipFill;
-			if (Array.isArray(oBlipFill.Effects)) {
-				for (var nEffect = 0; nEffect < oBlipFill.Effects.length; ++nEffect) {
-					var oEffect = oBlipFill.Effects[nEffect];
-					if (oEffect && oEffect instanceof AscFormat.CAlphaModFix && AscFormat.isRealNumber(oEffect.amt)) {
-						oBrush.setTransparent(255 * oEffect.amt / 100000);
-						break;
-					}
-				}
+
+			let nTransparent = oBlipFill.getTransparent();
+			if(AscFormat.isRealNumber(nTransparent)) {
+				oBrush.setTransparent(nTransparent);
 			}
 			return oBrush;
 		}

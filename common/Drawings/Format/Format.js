@@ -3256,7 +3256,30 @@
 		CBlipFill.prototype.getBase64RasterImageId = function (bReduce, bReturnOrigIfCantDraw) {
 			return this.getBase64Data(bReduce, bReturnOrigIfCantDraw).img;
 		};
-
+		CBlipFill.prototype.getTransparent = function() {
+			for (let nEffect = 0; nEffect < this.Effects.length; ++nEffect) {
+				let oEffect = this.Effects[nEffect];
+				if (oEffect && oEffect instanceof AscFormat.CAlphaModFix && AscFormat.isRealNumber(oEffect.amt)) {
+					return 255 * oEffect.amt / 100000;
+				}
+			}
+			return null;
+		};
+		CBlipFill.prototype.setTransparent = function(transparent) {
+			if (transparent != null) {
+				for (let i = 0; i < this.Effects.length; ++i) {
+					if (this.Effects[i].Type === EFFECT_TYPE_ALPHAMODFIX) {
+						this.Effects[i].amt = ((transparent * 100000 / 255) >> 0);
+						break;
+					}
+				}
+				if (i === this.Effects.length) {
+					let oEffect = new CAlphaModFix();
+					oEffect.amt = ((transparent * 100000 / 255) >> 0);
+					this.Effects.push(oEffect);
+				}
+			}
+		};
 
 //-----Effects-----
 		var EFFECT_TYPE_NONE = 0;
@@ -14908,24 +14931,10 @@
 			}
 
 			if (ret.transparent != null) {
-
 				if (ret.fill && ret.fill.type === c_oAscFill.FILL_TYPE_BLIP) {
-
-					for (var i = 0; i < ret.fill.Effects.length; ++i) {
-						if (ret.fill.Effects[i].Type === EFFECT_TYPE_ALPHAMODFIX) {
-							ret.fill.Effects[i].amt = ((ret.transparent * 100000 / 255) >> 0);
-							break;
-						}
-					}
-					if (i === ret.fill.Effects.length) {
-						var oEffect = new CAlphaModFix();
-						oEffect.amt = ((ret.transparent * 100000 / 255) >> 0);
-						ret.fill.Effects.push(oEffect);
-					}
+					ret.fill.setTransparent(ret.transparent);
 				}
 			}
-
-
 			return ret;
 		}
 
