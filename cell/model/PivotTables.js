@@ -10231,6 +10231,7 @@ CT_pivotTableDefinition.prototype.asc_hasTablesErrorForCalculatedItems = functio
  * @param {number} fld pivotField index
  * @param {string} name item name
  * @param {string} formula
+ * @return {c_oAscError.ID | null}
  */
 CT_pivotTableDefinition.prototype.asc_addCalculatedItem = function(api, fld, name, formula) {
 	const t = this;

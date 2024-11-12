@@ -1382,10 +1382,13 @@
 				var cacheDefinition = tabular.pivotCacheDefinition;
 				if (cacheDefinition) {
 					var fieldIndex = cacheDefinition.getFieldIndexByName(this.sourceName);
+					const slicerCachePivotTable = this.pivotTables[0];
+					const pivotTable = slicerCachePivotTable.getPivotTable(wb);
+					const pivotField = pivotTable.asc_getPivotFields()[fieldIndex];
 					if (-1 !== fieldIndex) {
 						var cacheField = cacheDefinition.getFields()[fieldIndex];
 						res = {
-							values: tabular.getFilterObject(cacheField, this.slicerCacheHideItemsWithNoData),
+							values: tabular.getFilterObject(cacheField, this.slicerCacheHideItemsWithNoData, pivotField),
 							automaticRowCount: null,
 							ignoreCustomFilter: null
 						};
@@ -2849,16 +2852,18 @@
 			});
 		}
 	};
-	CT_tabularSlicerCache.prototype.getFilterObject = function (cacheField, slicerCacheHideItemsWithNoData) {
+	CT_tabularSlicerCache.prototype.getFilterObject = function (cacheField, slicerCacheHideItemsWithNoData, pivotField) {
 		var values = [];
+		var pivotItems = pivotField.getItems();
 		for (var i = 0; i < this.items.length; ++i) {
 			var item = this.items[i];
 			var elem = AscCommonExcel.AutoFiltersOptionsElements();
 			var sharedItem = cacheField.getGroupOrSharedItem(item.x);
 			var num = sharedItem.isDateOrNum() && cacheField.getNumFormat();
-			var cellValue = sharedItem.getCellValue();
+			const pivotItem = pivotItems[pivotField.getItemIndexByValue(item.x)];
+			const name = pivotItem.getName(cacheField, num);
 			elem.val = item.x;
-			elem.text = cellValue.getTextValue(num);
+			elem.text = name;
 			elem.visible = item.s;
 			elem.hiddenByOtherColumns = item.nd || undefined;//todo
 			elem.isDateFormat = false;
