@@ -2073,6 +2073,9 @@
 		}
 
 		function getFragmentsText(f) {
+			if (!f) {
+				return "";
+			}
 			return f.reduce(function (pv, cv) {
 				if (null === cv.getFragmentText()) {
 					cv.initText();
@@ -2082,6 +2085,9 @@
 		}
 
 		function getFragmentsLength(f) {
+			if (!f) {
+				return;
+			}
 			return f.length > 0 ? f.reduce(function (pv, cv) {
 				if (null === cv.getFragmentText()) {
 					cv.initText();
@@ -2091,18 +2097,27 @@
 		}
 
 		function getFragmentsCharCodes(f) {
+			if (!f) {
+				return;
+			}
 			return f.reduce(function (pv, cv) {
 				return pv.concat(cv.getCharCodes());
 			}, []);
 		}
 
 		function getFragmentsCharCodesLength(f) {
+			if (!f) {
+				return 0;
+			}
 			return f.length > 0 ? f.reduce(function (pv, cv) {
 				return pv + cv.getCharCodes().length;
 			}, 0) : 0;
 		}
 
 		function getFragmentsTextFromCode(f) {
+			if (!f) {
+				return "";
+			}
 			return f.reduce(function (pv, cv) {
 				if (null === cv.getFragmentText()) {
 					cv.initText();
@@ -3914,8 +3929,8 @@
 			}
 		};
 
-		cDate.prototype.getDateString = function (api) {
-			return api.asc_getLocaleExample(AscCommon.getShortDateFormat(), this.getExcelDate());
+		cDate.prototype.getDateString = function (api, bLocal) {
+			return api.asc_getLocaleExample(AscCommon.getShortDateFormat(), this.getExcelDate(bLocal));
 		};
 		cDate.prototype.getTimeString = function (api) {
 			return api.asc_getLocaleExample(AscCommon.getShortTimeFormat(), this.getExcelDateWithTime() - this.getTimezoneOffset() / (60 * 24));

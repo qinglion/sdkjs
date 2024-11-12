@@ -241,7 +241,9 @@
             var pH = (drPage.page.height * zoom) >> 0;
             if (isLandscape)
             {
-                [pW, pH] = [pH, pW];
+                let tmp = pW;
+                pW = pH;
+                pH = tmp;
             }
 
             var curPageHeight = pH + PageStyle.numberFontOffset + PageStyle.numberFontHeight;

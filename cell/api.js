@@ -485,20 +485,10 @@ var editor;
   };
 
   spreadsheet_api.prototype.asc_Copy = function() {
-    if (window["AscDesktopEditor"])
-    {
-      window["asc_desktop_copypaste"](this, "Copy");
-      return true;
-    }
     return AscCommon.g_clipboardBase.Button_Copy();
   };
 
   spreadsheet_api.prototype.asc_Paste = function() {
-    if (window["AscDesktopEditor"])
-    {
-      window["asc_desktop_copypaste"](this, "Paste");
-      return true;
-    }
     if (!AscCommon.g_clipboardBase.IsWorking()) {
       return AscCommon.g_clipboardBase.Button_Paste();
     }
@@ -931,11 +921,6 @@ var editor;
  };
 
   spreadsheet_api.prototype.asc_Cut = function() {
-    if (window["AscDesktopEditor"])
-    {
-      window["asc_desktop_copypaste"](this, "Cut");
-      return true;
-    }
     return AscCommon.g_clipboardBase.Button_Cut();
   };
 
