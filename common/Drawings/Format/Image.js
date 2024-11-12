@@ -668,6 +668,19 @@
 			}
 			this.spPr.setLn(stroke);
 		};
+		CImageShape.prototype.changeFill = function (unifill) {
+
+			if (this.recalcInfo.recalculateBrush) {
+				this.recalculateBrush();
+			}
+			var unifill2 = AscFormat.CorrectUniFill(unifill, this.brush, this.getEditorType());
+			unifill2.convertToPPTXMods();
+			this.setFill(unifill2);
+		};
+		CImageShape.prototype.setFill = function (fill) {
+
+			this.spPr.setFill(fill);
+		};
 
 
 		CImageShape.prototype.drawAdjustments = function (drawingDocument) {

@@ -3842,6 +3842,9 @@
 						for (i = 0; i < objects_by_type.smartArts.length; ++i) {
 							objects_by_type.smartArts[i].changeFill(props.fill);
 						}
+						for (i = 0; i < objects_by_type.images.length; ++i) {
+							objects_by_type.images[i].changeFill(props.fill);
+						}
 					}
 					if (isRealObject(props.shadow) || props.shadow === null) {
 						for (i = 0; i < objects_by_type.shapes.length; ++i) {
