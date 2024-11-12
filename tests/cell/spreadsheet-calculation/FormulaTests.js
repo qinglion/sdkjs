@@ -1634,6 +1634,20 @@ $(function () {
 		oTrueValue = null;
 		wb.delDefinesNames(oFalseValue);
 		oFalseValue = null;
+		// - Case: IF. 3 args. Recursion formula. With operand function. One of condition is recursion, but it doesn't match. With disabled Iterative calculation setting.
+		ws.getRange2("A1073").setValue("10");
+		ws.getRange2("B1073").setValue("=IF(A1073=10, 10, B1073)+IF(A1073=10, 10, B1073)");
+		assert.strictEqual(ws.getRange2("B1073").getValue(), "20", "Test: IF. 3 args. Recursion formula. With operand function. One of condition is recursion, but it doesn't match. B1073 - 20");
+		bCaFromSelectedCell = getCaFromSelectedCell("B1073");
+		assert.strictEqual(bCaFromSelectedCell, false, "Test: IF. 3 args. Recursion formula. With operand function. One of condition is recursion, but it doesn't match. B1073 - flag ca: false");
+		bCaFromSelectedCell = null;
+		// - Case: IF. 3 args. Recursion formula. With operand function. One of condition is recursion but it matches. With disabled Iterative calculation setting.
+		ws.getRange2("A1073").setValue("1");
+		ws.getRange2("B1073").setValue("=IF(A1073=10, 10, B1073)+IF(A1073=10, 10, B1073)");
+		assert.strictEqual(ws.getRange2("B1073").getValue(), "0", "Test: IF. 3 args. Recursion formula. With operand function. One of condition is recursion but it matches. B1073 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("B1073");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: IF. 3 args. Recursion formula. With operand function. One of condition is recursion but it matches. B1073 - flag ca: true");
+		bCaFromSelectedCell = null;
 		// - Case: IFS. 6 args. Recursion formula. One of condition is recursion, but it doesn't match. With disabled Iterative calculation setting.
 		ws.getRange2("A1068").setValue("3");
 		ws.getRange2("B1068").setValue('=IFS(A1068=1, "First", A1068=2, B1068, A1068=3, "Third")');

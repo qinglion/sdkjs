@@ -6613,6 +6613,9 @@ function parserFormula( formula, parent, _ws ) {
 		for (let i = 0; i < nCountArgs; i++) {
 			let bEvenIndex = i % 2 === 0;
 
+			if (!aOutStack[i]) {
+				continue;
+			}
 			if (oCalcRange && oCalcRange.value === aOutStack[i].value) {
 				continue;
 			}
@@ -6885,6 +6888,9 @@ function parserFormula( formula, parent, _ws ) {
 			}
 		}
 		const oBbox = oParentCell.onFormulaEvent && oParentCell.onFormulaEvent(AscCommon.c_oNotifyParentType.GetRangeCell);
+		if (!oBbox) {
+			return new cError(cErrorType.not_numeric);
+		}
 
 		return oFormula.Calculate(aArgs, oBbox, undefined, this.ws);
 	};
@@ -6896,7 +6902,7 @@ function parserFormula( formula, parent, _ws ) {
 	 * @returns {boolean}
 	 * @private
 	 */
-	parserFormula.prototype._findRecursionRef = function ( aRef) {
+	parserFormula.prototype._findRecursionRef = function (aRef) {
 		if (g_cCalcRecursion.checkRecursionCounter()) {
 			g_cCalcRecursion.resetRecursionCounter();
 			return false;
@@ -7016,16 +7022,42 @@ function parserFormula( formula, parent, _ws ) {
 		}
 
 		return bRecursiveCell;
-	}
+	};
 	/**
 	 * Checks a condition function is recursive or not.
 	 * @param {string} sFunctionName
+	 * @param {[]} [aArgs]
 	 * @returns {boolean}
 	 */
-	parserFormula.prototype.isRecursiveCondFormula = function (sFunctionName) {
+	parserFormula.prototype.isRecursiveCondFormula = function (sFunctionName, aArgs) {
 		const aCellFormulas = ['IF', 'IFS', 'SWITCH'];
-		const aOutStack = _getNewOutStack(this.outStack);
-		const nCountArgs = Number(aOutStack[aOutStack.length - 1][1]);
+		const aOutStack = aArgs && aArgs.length ? aArgs : _getNewOutStack(this.outStack);
+		if (aOutStack.length === 1 && aOutStack[0][0].type === cElementType.operator) {
+			const aArgs = aOutStack[0][2];
+			let bHasRecursion = false;
+			for (let i = 0, length = aArgs.length; i < length; i++) {
+				if (aArgs[i] && Array.isArray(aArgs[i])) {
+					let oFormula = aArgs[i][0];
+					if (oFormula.type === cElementType.operator) {
+						bHasRecursion = this.isRecursiveCondFormula(sFunctionName, [aArgs[i]]);
+					}
+					if (oFormula.type === cElementType.func) {
+						if (!this._isConditionalFormula(oFormula.name)) {
+							continue;
+						}
+						if (sFunctionName !== oFormula.name && this._isConditionalFormula(oFormula.name)) {
+							sFunctionName = oFormula.name;
+						}
+						bHasRecursion = this.isRecursiveCondFormula(sFunctionName, aArgs[i][2]);
+					}
+					if (bHasRecursion) {
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+		const nCountArgs = aArgs && aArgs.length ? aOutStack.length : Number(aOutStack[aOutStack.length - 1][1]);
 		const aNameType = [cElementType.name, cElementType.name3D];
 		let bRecursiveCell = false;
 		let bRange = !aCellFormulas.includes(sFunctionName);
