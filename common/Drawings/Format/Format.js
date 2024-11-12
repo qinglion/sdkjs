@@ -3267,7 +3267,8 @@
 		};
 		CBlipFill.prototype.setTransparent = function(transparent) {
 			if (transparent != null) {
-				for (let i = 0; i < this.Effects.length; ++i) {
+				let i;
+				for (i = 0; i < this.Effects.length; ++i) {
 					if (this.Effects[i].Type === EFFECT_TYPE_ALPHAMODFIX) {
 						this.Effects[i].amt = ((transparent * 100000 / 255) >> 0);
 						break;
