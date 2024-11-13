@@ -826,9 +826,7 @@
 		const cxnMap = cxnLst.getCxnMap();
 		const ptMap = ptLst.getPtMap();
 		const dataRootId = this.dataRoot.point.getModelId();
-		const presRootId = this.presRoot.presPoint.getModelId();
 		delete ptMap[dataRootId];
-		delete ptMap[presRootId];
 		this.checkPresOfCxn(this.presRoot, dataRootId, cxnMap, cxnLst);
 		this.updatePresParOfData(cxnMap, ptMap);
 		this.updatePresOfData(cxnMap);
@@ -913,21 +911,29 @@
 			cxnLst.addToLst(cxnLst.list.length, newCxn);
 		}
 	};
+	SmartArtAlgorithm.prototype.checkPresOfData = function(node, cxnMap, cxnLst) {
+		if (!node) {
+			return;
+		}
+		const nodeModelId = node.point.getModelId();
+		const textNodes = node.getTextNodes();
+		const textNode = textNodes.textNode;
+		const contentNode = textNodes.contentNode;
+		if (textNode) {
+			this.checkPresOfCxn(textNode, nodeModelId, cxnMap, cxnLst);
+		}
+		if (contentNode) {
+			this.checkPresOfCxn(contentNode, nodeModelId, cxnMap, cxnLst);
+		}
+	}
 	SmartArtAlgorithm.prototype.updatePresOfData = function(cxnMap) {
 		const data = this.smartart.getDataModelFromData();
 		const cxnLst = data.getCxnLst();
 		const oThis = this;
 		this.forEachContentNode(function(node) {
-			const nodeModelId = node.point.getModelId();
-			const textNodes = node.getTextNodes();
-			const textNode = textNodes.textNode;
-			const contentNode = textNodes.contentNode;
-			if (textNode) {
-				oThis.checkPresOfCxn(textNode, nodeModelId, cxnMap, cxnLst);
-			}
-			if (contentNode) {
-				oThis.checkPresOfCxn(contentNode, nodeModelId, cxnMap, cxnLst);
-			}
+			oThis.checkPresOfData(node, cxnMap, cxnLst);
+			oThis.checkPresOfData(node.sibNode, cxnMap, cxnLst);
+			oThis.checkPresOfData(node.parNode, cxnMap, cxnLst);
 		});
 	};
 
