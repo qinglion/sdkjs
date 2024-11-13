@@ -3364,7 +3364,7 @@
 	};
 	PathItem.prototype.divide = function (path) {
 		return PathItem.createResult([
-			this.subtract(path),
+			this.exclude(path),
 			this.intersect(path)
 		], true, this, path);
 	};
@@ -4786,13 +4786,13 @@
 	window['AscCommon']['PathBoolean'] = {}
 	window['AscCommon']['PathBoolean']['CompoundPath'] = CompoundPath;
 
-	// CompoundPath.prototype['divide'] = CompoundPath.prototype.divide;
+	CompoundPath.prototype['divide'] = CompoundPath.prototype.divide;
 	CompoundPath.prototype['unite'] = CompoundPath.prototype.unite;
 	CompoundPath.prototype['intersect'] = CompoundPath.prototype.intersect;
 	CompoundPath.prototype['subtract'] = CompoundPath.prototype.subtract;
 	CompoundPath.prototype['exclude'] = CompoundPath.prototype.exclude;
 
-	// Path.prototype['divide'] = Path.prototype.divide;
+	Path.prototype['divide'] = Path.prototype.divide;
 	Path.prototype['unite'] = Path.prototype.unite;
 	Path.prototype['intersect'] = Path.prototype.intersect;
 	Path.prototype['subtract'] = Path.prototype.subtract;

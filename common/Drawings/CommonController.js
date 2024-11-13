@@ -11285,8 +11285,9 @@
 				return resultPath[operation](currentPath);
 			});
 
-			const resultShape = createShapeByCompoundPath(resultPath);
-			const resultShapes = [resultShape];
+			const resultShapes = operation === 'divide'
+				? resultPath.getChildren().map(createShapeByCompoundPath)
+				: [createShapeByCompoundPath(resultPath)];
 
 			switch (Asc.editor.editorId) {
 				case AscCommon.c_oEditorId.Word:
