@@ -7184,9 +7184,6 @@ var editor;
 		let updateRes;
 		if (pivotChanged.data) {
 			updateRes = pivot.updateAfterEdit();
-			if (updateRes.error) {
-				this.sendEvent("asc_onError", updateRes.error, Asc.c_oAscError.Level.NoCritical);
-			}
 		}
 		let dataRow = updateRes && updateRes.dataRow;
 		let ranges = wsModel.updatePivotTable(pivot, pivotChanged, dataRow, false);
