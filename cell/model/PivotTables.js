@@ -10287,6 +10287,9 @@ CT_pivotTableDefinition.prototype.asc_modifyCalculatedItem = function(api, fld, 
 		const pivotField = pivotFields[fld];
 		const cacheField = cacheFields[fld]
 		const item = pivotField.findFieldItemByTextValue(cacheField, name);
+		if (!item || !item.f) {
+			return changeRes;
+		}
 		const sharedItemIndex = item.x;
 		try {
 			const convertedFormula = t.convertCalculatedFormula(formula, fld);
@@ -10323,6 +10326,9 @@ CT_pivotTableDefinition.prototype.asc_removeCalculatedItem = function(api, fld, 
 		const pivotField = pivotFields[fld];
 		const cacheField = cacheFields[fld];
 		const item = pivotField.findFieldItemByTextValue(cacheField, name);
+		if (!item || !item.f) {
+			return changeRes;
+		}
 		const x = item.x;
 		const itemIndex = pivotField.getItemIndexByValue(x);
 		t.removeCalculatedItem({
