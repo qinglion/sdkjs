@@ -347,36 +347,36 @@
 							modelId: "6",
 							srcId: "0",
 							destId: "1",
-							srcOrd: "0",
-							destOrd: "0"
+							srcOrd: 0,
+							destOrd: 0
 						},
 						{
 							modelId: "7",
 							srcId: "0",
 							destId: "2",
-							srcOrd: "1",
-							destOrd: "0"
+							srcOrd: 1,
+							destOrd: 0
 						},
 						{
 							modelId: "8",
 							srcId: "0",
 							destId: "3",
-							srcOrd: "2",
-							destOrd: "0"
+							srcOrd: 2,
+							destOrd: 0
 						},
 						{
 							modelId: "9",
 							srcId: "0",
 							destId: "4",
-							srcOrd: "3",
-							destOrd: "0"
+							srcOrd: 3,
+							destOrd: 0
 						},
 						{
 							modelId: "10",
 							srcId: "0",
 							destId: "5",
-							srcOrd: "4",
-							destOrd: "0"
+							srcOrd: 4,
+							destOrd: 0
 						}
 					],
 					bg: {},
@@ -398,15 +398,15 @@
 							modelId: "3",
 							srcId: "0",
 							destId: "1",
-							srcOrd: "0",
-							destOrd: "0"
+							srcOrd: 0,
+							destOrd: 0
 						},
 						{
 							modelId: "4",
 							srcId: "0",
 							destId: "2",
-							srcOrd: "1",
-							destOrd: "0"
+							srcOrd: 1,
+							destOrd: 0
 						}
 					],
 					bg: {},
@@ -432,43 +432,43 @@
 							modelId: "7",
 							srcId: "0",
 							destId: "1",
-							srcOrd: "0",
-							destOrd: "0"
+							srcOrd: 0,
+							destOrd: 0
 						},
 						{
 							modelId: "8",
 							srcId: "0",
 							destId: "2",
-							srcOrd: "1",
-							destOrd: "0"
+							srcOrd: 1,
+							destOrd: 0
 						},
 						{
 							modelId: "9",
 							srcId: "0",
 							destId: "3",
-							srcOrd: "2",
-							destOrd: "0"
+							srcOrd: 2,
+							destOrd: 0
 						},
 						{
 							modelId: "10",
 							srcId: "0",
 							destId: "4",
-							srcOrd: "3",
-							destOrd: "0"
+							srcOrd: 3,
+							destOrd: 0
 						},
 						{
 							modelId: "11",
 							srcId: "0",
 							destId: "5",
-							srcOrd: "4",
-							destOrd: "0"
+							srcOrd: 4,
+							destOrd: 0
 						},
 						{
 							modelId: "12",
 							srcId: "0",
 							destId: "6",
-							srcOrd: "5",
-							destOrd: "0"
+							srcOrd: 5,
+							destOrd: 0
 						}
 					],
 					bg: {},
