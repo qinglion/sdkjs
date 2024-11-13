@@ -9714,6 +9714,7 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype['AddText']                             = asc_docs_api.prototype.AddText;
 	asc_docs_api.prototype['groupShapes']                         = asc_docs_api.prototype.groupShapes;
 	asc_docs_api.prototype['unGroupShapes']                       = asc_docs_api.prototype.unGroupShapes;
+	asc_docs_api.prototype['asc_mergeSelectedShapes']             = asc_docs_api.prototype.asc_mergeSelectedShapes;
 	asc_docs_api.prototype['setVerticalAlign']                    = asc_docs_api.prototype.setVerticalAlign;
 	asc_docs_api.prototype['setVert']                             = asc_docs_api.prototype.setVert;
 	asc_docs_api.prototype['sync_MouseMoveStartCallback']         = asc_docs_api.prototype.sync_MouseMoveStartCallback;
