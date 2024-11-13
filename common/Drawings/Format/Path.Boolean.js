@@ -834,12 +834,11 @@
 		return this;
 	};
 	Matrix.prototype._changed = function () {
-		var owner = this._owner;
-		if (owner) {
-			if (owner._applyMatrix) {
-				owner.transform(null, true);
+		if (this._owner) {
+			if (this._owner._applyMatrix) {
+				this._owner.transform(null, true);
 			} else {
-				owner._changed(25);
+				this._owner._changed(25);
 			}
 		}
 	};
@@ -1210,23 +1209,18 @@
 		return hasProps;
 	};
 	Item.prototype._changed = function (flags) {
-		var symbol = this._symbol,
-			cacheParent = this._parent || symbol;
 		if (flags & 8) {
 			this._bounds = this._position = this._decomposed = undefined;
 		}
 		if (flags & 16) {
 			this._globalMatrix = undefined;
 		}
-		if (cacheParent
-			&& (flags & 72)) {
-			Item._clearBoundsCache(cacheParent);
+		if (this._parent && (flags & 72)) {
+			Item._clearBoundsCache(this._parent);
 		}
 		if (flags & 2) {
 			Item._clearBoundsCache(this);
 		}
-		if (symbol)
-			symbol._changed(flags);
 	};
 	Item.prototype.getPosition = function (_dontLink) {
 		const position = this._position || (this._position = this._getPositionFromBounds());
@@ -1291,7 +1285,7 @@
 		const cacheItem = options.cacheItem;
 		const _matrix = isInternal ? null : this._matrix._orNullIfIdentity();
 		const cacheKey = cacheItem && (!matrix || matrix.equals(_matrix)) && this._getBoundsCacheKey(options, isInternal);
-		Item._updateBoundsCache(this._parent || this._symbol, cacheItem);
+		Item._updateBoundsCache(this._parent, cacheItem);
 		let cached;
 		if (cacheKey && this._bounds && cacheKey in this._bounds) {
 			cached = this._bounds[cacheKey];
@@ -1615,11 +1609,11 @@
 		}
 	};
 	Item._clearBoundsCache = function (item) {
-		var cache = item._boundsCache;
+		const cache = item._boundsCache;
 		if (cache) {
 			item._bounds = item._position = item._boundsCache = undefined;
-			for (var i = 0, list = cache.list, l = list.length; i < l; i++) {
-				var other = list[i];
+			for (let i = 0, list = cache.list, l = list.length; i < l; i++) {
+				const other = list[i];
 				if (other !== item) {
 					other._bounds = other._position = undefined;
 					if (other._boundsCache)
@@ -1687,22 +1681,18 @@
 	InitClassWithStatics(Segment, Base);
 
 	Segment.prototype._changed = function (point) {
-		var path = this._path;
-		if (!path)
-			return;
-		var curves = path._curves,
-			index = this._index,
-			curve;
+		if (!this._path) { return; }
+
+		const curves = this._path._curves;
+		const index = this._index;
+		let curve;
 		if (curves) {
-			if ((!point || point === this._point || point === this._handleIn)
-				&& (curve = index > 0 ? curves[index - 1] : path._closed
-					? curves[curves.length - 1] : null))
+			if ((!point || point === this._point || point === this._handleIn) && (curve = index > 0 ? curves[index - 1] : this._path._closed ? curves[curves.length - 1] : null))
 				curve._changed();
-			if ((!point || point === this._point || point === this._handleOut)
-				&& (curve = curves[index]))
+			if ((!point || point === this._point || point === this._handleOut) && (curve = curves[index]))
 				curve._changed();
 		}
-		path._changed(41);
+		this._path._changed(41);
 	};
 	Segment.prototype.getPoint = function () {
 		return this._point;
@@ -4004,7 +3994,7 @@
 		let starts;
 
 		function isValid(seg) {
-			var winding;
+			let winding;
 			return !!(seg && !seg._visited && (!operator
 				|| operator[(winding = seg._winding || {}).winding]
 				&& !(operator['unite'] && winding.winding === 2
@@ -4085,7 +4075,7 @@
 				}
 			}
 
-			let visitedSegments = [];
+			let visitedSegments;
 			let branches = [];
 			let currentPath = null;
 			let isFinished = false;
@@ -4115,14 +4105,14 @@
 					branch = {
 						start: currentPath._segments.length,
 						crossings: crossings,
-						visited: visitedSegments,
+						visited: visitedSegments = [],
 						handleIn: handleIn
 					};
 				}
 				if (isCrossing) { segment = otherSegment; }
 				if (!isValid(segment)) {
 					currentPath.removeSegments(branch.start);
-					visitedSegments.forEach(seg => seg._visited = false);
+					visitedSegments.forEach(function (segment) { segment._visited = false; })
 					visitedSegments.length = 0;
 					do {
 						segment = branch && branch.crossings.shift();
@@ -4191,7 +4181,7 @@
 			if (flags & 32) {
 				this._version++;
 			} else if (this._curves) {
-				for (var i = 0, l = this._curves.length; i < l; i++)
+				for (let i = 0, l = this._curves.length; i < l; i++)
 					this._curves[i]._changed();
 			}
 		} else if (flags & 64) {
@@ -4806,7 +4796,7 @@
 	CompoundPath.prototype['getBounds'] = Item.prototype.getBounds;
 	CompoundPath.prototype['getPosition'] = Item.prototype.getPosition;
 	CompoundPath.prototype['setPosition'] = Item.prototype.setPosition;
-	
+
 	Path.prototype['getSegments'] = Path.prototype.getSegments;
 	Path.prototype['isClosed'] = Path.prototype.isClosed;
 	Path.prototype['getBounds'] = Item.prototype.getBounds;
