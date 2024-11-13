@@ -6455,12 +6455,12 @@ Because of this, the display is sometimes not correct.
       return [this.scene3d, this.sp3d, this.style, this.txPr];
     };
     function Point3D() {
-      CBaseNoIdObject.call(this);
+      AscFormat.CBaseNoIdObject.call(this);
       this.x = null;
       this.y = null;
       this.z = null;
     }
-    InitClass(Point3D, CBaseNoIdObject, 0);
+    InitClass(Point3D, AscFormat.CBaseNoIdObject, 0);
     Point3D.prototype.Write_ToBinary = function(w) {
       AscFormat.writeLong(w, this.x);
       AscFormat.writeLong(w, this.y);
@@ -6481,12 +6481,12 @@ Because of this, the display is sometimes not correct.
       this.z = pr;
     }
     function Vector3D() {
-      CBaseNoIdObject.call(this);
+      AscFormat.CBaseNoIdObject.call(this);
       this.dx = null;
       this.dy = null;
       this.dz = null;
     }
-    InitClass(Vector3D, CBaseNoIdObject, 0);
+    InitClass(Vector3D, AscFormat.CBaseNoIdObject, 0);
     Vector3D.prototype.Write_ToBinary = function(w) {
       AscFormat.writeLong(w, this.dx);
       AscFormat.writeLong(w, this.dy);
@@ -6917,7 +6917,6 @@ Because of this, the display is sometimes not correct.
 
     LightRig.prototype.setRot = function (oPr) {
       this.rot = oPr;
-      this.setParentToChild(oPr);
     }
 
     LightRig.prototype.getDir = function () {
@@ -9382,6 +9381,7 @@ Because of this, the display is sometimes not correct.
     window['AscFormat'].kForInsFitFontSize     = kForInsFitFontSize;
     window['AscFormat'].PrSet                  = PrSet;
     window['AscFormat'].CCommonDataList        = CCommonDataList;
+    window['AscFormat'].CCommonDataListNoId    = CCommonDataListNoId;
     window['AscFormat'].Point                  = Point;
     window['AscFormat'].PtLst                  = PtLst;
     window['AscFormat'].DataModel              = DataModel;
