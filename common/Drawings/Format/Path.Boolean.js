@@ -3376,9 +3376,19 @@
 		const bounds = calculateUniversumBounds(paths);
 		const universum = new Path.Rectangle(bounds[0], bounds[1], bounds[2], bounds[3]);
 
-		const fragments = [universum, paths[0], paths[1], paths[2]];
-		for (let option = 0; option < paths.length; option++) {
-			
+		const fragments = [];
+		for (let option = 0, totalCombinations = Math.pow(2, paths.length); option < totalCombinations; option++) {
+			let result = universum;
+			for (let i = 0; i < paths.length; i++) {
+				const path = paths[i];
+				const isBitSet = (option & (1 << i)) !== 0;
+				if (isBitSet) {
+					result = result.intersect(path);
+				} else {
+					result = result.intersect(universum.subtract(path));
+				}
+			}
+			fragments.push(result);
 		}
 		return PathItem.createResult(fragments, true, paths[0]);
 	};
