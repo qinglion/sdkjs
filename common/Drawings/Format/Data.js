@@ -5357,7 +5357,7 @@ Because of this, the display is sometimes not correct.
       return this.title;
     }
 	  ColorsDef.prototype.getStyleLblList = function () {
-		  const keys = Object.keys(this.styleLbl);
+		  const keys = Object.keys(this.styleLbl).sort();
 			return keys.map(function (e) {
 				return this.styleLbl[e];
 			}, this);
