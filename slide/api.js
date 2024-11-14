@@ -2367,9 +2367,15 @@ background-repeat: no-repeat;\
 			_clipboard.pushData(AscCommon.c_oAscClipboardDataFormat.Internal, _data)
 		}
 	};
-
+	asc_docs_api.prototype.getDemoManager = function() {
+		return this.WordControl && this.WordControl.DemonstrationManager || null;
+	};
 	asc_docs_api.prototype.isSlideShow = function() {
-		return !!(this.WordControl && this.WordControl.DemonstrationManager && this.WordControl.DemonstrationManager.Mode);
+		let oManager = this.getDemoManager();
+		if(oManager && oManager.Mode) {
+			return true;
+		}
+		return false;
 	};
 
 	asc_docs_api.prototype.asc_PasteData = function(_format, data1, data2, text_data, null_param, callback)
@@ -7667,7 +7673,17 @@ background-repeat: no-repeat;\
 	{
 		this.sendEvent("asc_onDemonstrationSlideChanged", slideNum);
 	};
-
+	asc_docs_api.prototype.getAnnotations = function ()
+	{
+		if(!this.isSlideShow()) return null;
+		return this.WordControl.DemonstrationManager.SlideAnnotations;
+	};
+	asc_docs_api.prototype.isDrawSlideshowAnnotations = function ()
+	{
+		if(this.isSlideShow() && this.isInkDrawerOn())
+			return true;
+		return false;
+	};
 	asc_docs_api.prototype.StartDemonstration = function(div_id, slidestart_num, reporterStartObject)
 	{
 		if (window.g_asc_plugins)
@@ -7879,6 +7895,15 @@ background-repeat: no-repeat;\
 					_this.WordControl.DemonstrationManager.CheckMouseDown(_obj["x"], _obj["y"], _obj["page"]);
 					break;
 				}
+				case "annotation":
+				{
+					let oAnnotations = _this.getAnnotations();
+					if(oAnnotations)
+					{
+						oAnnotations.handleMessage(_obj["value"]);
+					}
+					break;
+				}
 				default:
 					break;
 			}
@@ -8048,6 +8073,14 @@ background-repeat: no-repeat;\
 			else if(true === _obj["on_mouse_down"])
 			{
 				_this.WordControl.DemonstrationManager.CheckMouseDown(_obj["x"], _obj["y"], _obj["page"]);
+			}
+			else if(undefined !== _obj["annotation"])
+			{
+				let oAnnotations = this.getAnnotations();
+				if(oAnnotations)
+				{
+					oAnnotations.handleMessage(_obj["annotation"])
+				}
 			}
 		}
 		catch (err)
