@@ -715,11 +715,17 @@
 
 		return {
 			"chOrder":  To_XML_ST_ChildOrderType(oLayoutNode.chOrder),
-			"moveWith": oLayoutNode.moveWith,
-			"name":     oLayoutNode.name,
-			"styleLbl": oLayoutNode.styleLbl,
-			"list":     aItems,
-			"objType":  "layoutNode"
+			"moveWith":  oLayoutNode.moveWith,
+			"name":      oLayoutNode.name,
+			"styleLbl":  oLayoutNode.styleLbl,
+			"list":      aItems,
+			"alg":       this.SerNodeItem(oLayoutNode.alg),
+			"shape":     this.SerNodeItem(oLayoutNode.shape),
+			"presOf":    this.SerNodeItem(oLayoutNode.presOf),
+			"constrLst": this.SerNodeItem(oLayoutNode.constrLst),
+			"ruleLst":   this.SerNodeItem(oLayoutNode.ruleLst),
+			"varLst":    this.SerNodeItem(oLayoutNode.varLst),
+			"objType":   "layoutNode"
 		}
 	};
 	WriterToJSON.prototype.SerNodeItem = function(oNodeItem)
@@ -812,10 +818,16 @@
 
 		var oResult = this.SerIteratorAttributes(oForEach);
 
-		oResult["list"]    = aNodeItems;
-		oResult["name"]    = oForEach.name;
-		oResult["ref"]     = oForEach.ref;
-		oResult["objType"] = "forEach";
+		oResult["list"]      = aNodeItems;
+		oResult["alg"]       = this.SerNodeItem(oForEach.alg);
+		oResult["shape"]     = this.SerNodeItem(oForEach.shape);
+		oResult["presOf"]    = this.SerNodeItem(oForEach.presOf);
+		oResult["constrLst"] = this.SerNodeItem(oForEach.constrLst);
+		oResult["ruleLst"]   = this.SerNodeItem(oForEach.ruleLst);
+		oResult["varLst"]    = this.SerNodeItem(oForEach.varLst);
+		oResult["name"]      = oForEach.name;
+		oResult["ref"]       = oForEach.ref;
+		oResult["objType"]   = "forEach";
 
 		return oResult;
 	};
@@ -840,12 +852,18 @@
 
 		var oResult = this.SerIteratorAttributes(oIf);
 
-		oResult["list"] = aNodeItems;
-		oResult["arg"]  = oIf.arg;
-		oResult["func"] = To_XML_ST_FunctionType(oIf.func);
-		oResult["name"] = oIf.name;
-		oResult["op"]   = To_XML_ST_FunctionOperator(oIf.op);
-		oResult["val"]  = oIf.val;
+		oResult["list"]      = aNodeItems;
+		oResult["alg"]       = this.SerNodeItem(oIf.alg);
+		oResult["shape"]     = this.SerNodeItem(oIf.shape);
+		oResult["presOf"]    = this.SerNodeItem(oIf.presOf);
+		oResult["constrLst"] = this.SerNodeItem(oIf.constrLst);
+		oResult["ruleLst"]   = this.SerNodeItem(oIf.ruleLst);
+		oResult["varLst"]    = this.SerNodeItem(oIf.varLst);
+		oResult["arg"]       = oIf.arg;
+		oResult["func"]      = To_XML_ST_FunctionType(oIf.func);
+		oResult["name"]      = oIf.name;
+		oResult["op"]        = To_XML_ST_FunctionOperator(oIf.op);
+		oResult["val"]       = oIf.val;
 
 		return oResult;
 	};
@@ -856,8 +874,14 @@
 			aNodeItems.push(this.SerNodeItem(oElse.list[nItem]));
 
 		return {
-			"list": aNodeItems,
-			"name": oElse.name
+			"list":     aNodeItems,
+			"alg":       this.SerNodeItem(oElse.alg),
+			"shape":     this.SerNodeItem(oElse.shape),
+			"presOf":    this.SerNodeItem(oElse.presOf),
+			"constrLst": this.SerNodeItem(oElse.constrLst),
+			"ruleLst":   this.SerNodeItem(oElse.ruleLst),
+			"varLst":    this.SerNodeItem(oElse.varLst),
+			"name":      oElse.name
 		}
 	};
 	WriterToJSON.prototype.SerIteratorAttributes = function(oIteratorAttributes)
@@ -1069,9 +1093,9 @@
 			"objType":       "varLst"
 		}
 	};
-	WriterToJSON.prototype.SerBaseFormatObj = function(oBaseFormatObj, sType)
+	WriterToJSON.prototype.SerBaseFormatObj = function(value, sType)
 	{
-		if (!oBaseFormatObj)
+		if (value === null)
 			return undefined;
 
 		var oResult = {
@@ -1080,31 +1104,31 @@
 		switch (sType)
 		{
 			case "animLvl":
-				oResult["val"] = To_XML_ST_AnimLvlStr(oBaseFormatObj.val);
+				oResult["val"] = To_XML_ST_AnimLvlStr(value);
 				break;
 			case "animOne":
-				oResult["val"] = To_XML_ST_AnimOneStr(oBaseFormatObj.val);
+				oResult["val"] = To_XML_ST_AnimOneStr(value);
 				break;
 			case "bulletEnabled":
 			case "chMax":
 			case "chPref":
 			case "orgChart":
-				oResult["val"] = oBaseFormatObj.val;
+				oResult["val"] = value;
 				break;
 			case "dir":
-				oResult["val"] = To_XML_ST_Direction(oBaseFormatObj.val)
+				oResult["val"] = To_XML_ST_Direction(value)
 				break;
 			case "hierBranch":
-				oResult["val"] = To_XML_ST_HierBranchStyle(oBaseFormatObj.val);
+				oResult["val"] = To_XML_ST_HierBranchStyle(value);
 				break;
 			case "resizeHandles":
-				oResult["val"] = To_XML_ST_ResizeHandlesStr(oBaseFormatObj.val);
+				oResult["val"] = To_XML_ST_ResizeHandlesStr(value);
 				break;
 			case "element":
-				oResult["val"] = To_XML_ST_ElementType(oBaseFormatObj.val);
+				oResult["val"] = To_XML_ST_ElementType(value);
 				break;
 			case "axie":
-				oResult["val"] = To_XML_ST_AxisType(oBaseFormatObj.val);
+				oResult["val"] = To_XML_ST_AxisType(value);
 				break;
 		} 
 
@@ -12917,6 +12941,13 @@
 		for (var nItem = 0; nItem < oParsedLayoutNode["list"].length; nItem++)
 			oLayoutNode.addToLst(oLayoutNode.list.length, this.NodeItemFromJSON(oParsedLayoutNode["list"][nItem]));
 
+		oParsedLayoutNode["alg"] != undefined && oLayoutNode.setAlg(this.NodeItemFromJSON(oParsedLayoutNode["alg"]));
+		oParsedLayoutNode["shape"] != undefined && oLayoutNode.setShape(this.NodeItemFromJSON(oParsedLayoutNode["shape"]));
+		oParsedLayoutNode["presOf"] != undefined && oLayoutNode.setPresOf(this.NodeItemFromJSON(oParsedLayoutNode["presOf"]));
+		oParsedLayoutNode["constrLst"] != undefined && oLayoutNode.setConstrLst(this.NodeItemFromJSON(oParsedLayoutNode["constrLst"]));
+		oParsedLayoutNode["ruleLst"] != undefined && oLayoutNode.setRuleLst(this.NodeItemFromJSON(oParsedLayoutNode["ruleLst"]));
+		oParsedLayoutNode["varLst"] != undefined && oLayoutNode.setVarLst(this.NodeItemFromJSON(oParsedLayoutNode["varLst"]));
+
 		oParsedLayoutNode["chOrder"] != undefined && oLayoutNode.setChOrder(From_XML_ST_ChildOrderType(oParsedLayoutNode["chOrder"]));
 		oParsedLayoutNode["moveWith"] != undefined && oLayoutNode.setMoveWith(oParsedLayoutNode["moveWith"]);
 		oParsedLayoutNode["name"] != undefined && oLayoutNode.setName(oParsedLayoutNode["name"]);
@@ -12929,7 +12960,14 @@
 		var oForEach = new AscFormat.ForEach();
 
 		for (var nItem = 0; nItem < oParsedForEach["list"].length; nItem++)
-			oForEach.addToLstList(oForEach.list.length, this.NodeItemFromJSON(oParsedForEach["list"][nItem]));
+			oForEach.addToLst(oForEach.list.length, this.NodeItemFromJSON(oParsedForEach["list"][nItem]));
+
+		oParsedForEach["alg"] != undefined && oForEach.setAlg(this.NodeItemFromJSON(oParsedForEach["alg"]));
+		oParsedForEach["shape"] != undefined && oForEach.setShape(this.NodeItemFromJSON(oParsedForEach["shape"]));
+		oParsedForEach["presOf"] != undefined && oForEach.setPresOf(this.NodeItemFromJSON(oParsedForEach["presOf"]));
+		oParsedForEach["constrLst"] != undefined && oForEach.setConstrLst(this.NodeItemFromJSON(oParsedForEach["constrLst"]));
+		oParsedForEach["ruleLst"] != undefined && oForEach.setRuleLst(this.NodeItemFromJSON(oParsedForEach["ruleLst"]));
+		oParsedForEach["varLst"] != undefined && oForEach.setVarLst(this.NodeItemFromJSON(oParsedForEach["varLst"]));
 
 		oParsedForEach["name"] != undefined && oForEach.setName(oParsedForEach["name"]);
 		oParsedForEach["ref"] != undefined && oForEach.setRef(oParsedForEach["ref"]);
@@ -12984,6 +13022,12 @@
 		for (var nItem = 0; nItem < oParsedElse["list"].length; nItem++)
 			oElse.addToLst(oElse.list.length, this.NodeItemFromJSON(oParsedElse["list"][nItem]));
 
+		oParsedElse["alg"] != undefined && oElse.setAlg(this.NodeItemFromJSON(oParsedElse["alg"]));
+		oParsedElse["shape"] != undefined && oElse.setShape(this.NodeItemFromJSON(oParsedElse["shape"]));
+		oParsedElse["presOf"] != undefined && oElse.setPresOf(this.NodeItemFromJSON(oParsedElse["presOf"]));
+		oParsedElse["constrLst"] != undefined && oElse.setConstrLst(this.NodeItemFromJSON(oParsedElse["constrLst"]));
+		oParsedElse["ruleLst"] != undefined && oElse.setRuleLst(this.NodeItemFromJSON(oParsedElse["ruleLst"]));
+		oParsedElse["varLst"] != undefined && oElse.setVarLst(this.NodeItemFromJSON(oParsedElse["varLst"]));
 		oParsedElse["name"] != undefined && oElse.setName(oParsedElse["name"]);
 
 		return oElse;
@@ -12993,7 +13037,14 @@
 		var oIf = new AscFormat.If();
 
 		for (var nItem = 0; nItem < oParsedIf["list"].length; nItem++)
-			oIf.addToLstList(oIf.list.length, this.NodeItemFromJSON(oParsedIf["list"][nItem]));
+			oIf.addToLst(oIf.list.length, this.NodeItemFromJSON(oParsedIf["list"][nItem]));
+
+		oParsedIf["alg"] != undefined && oIf.setAlg(this.NodeItemFromJSON(oParsedIf["alg"]));
+		oParsedIf["shape"] != undefined && oIf.setShape(this.NodeItemFromJSON(oParsedIf["shape"]));
+		oParsedIf["presOf"] != undefined && oIf.setPresOf(this.NodeItemFromJSON(oParsedIf["presOf"]));
+		oParsedIf["constrLst"] != undefined && oIf.setConstrLst(this.NodeItemFromJSON(oParsedIf["constrLst"]));
+		oParsedIf["ruleLst"] != undefined && oIf.setRuleLst(this.NodeItemFromJSON(oParsedIf["ruleLst"]));
+		oParsedIf["varLst"] != undefined && oIf.setVarLst(this.NodeItemFromJSON(oParsedIf["varLst"]));
 
 		oParsedIf["arg"] != undefined && oIf.setArg(oParsedIf["arg"]);
 		oParsedIf["func"] != undefined && oIf.setFunc(From_XML_ST_FunctionType(oParsedIf["func"]));
@@ -13050,63 +13101,17 @@
 	{
 		var oVarLst = new AscFormat.VarLst();
 
-		oParsedVarLst["animLvl"] && oVarLst.setAnimLvl(this.BaseFormatObjFromJSON(oParsedVarLst["animLvl"]));
-		oParsedVarLst["animOne"] && oVarLst.setAnimOne(this.BaseFormatObjFromJSON(oParsedVarLst["animOne"]));
-		oParsedVarLst["bulletEnabled"] && oVarLst.setBulletEnabled(this.BaseFormatObjFromJSON(oParsedVarLst["bulletEnabled"]));
-		oParsedVarLst["chMax"] && oVarLst.setChMax(this.BaseFormatObjFromJSON(oParsedVarLst["chMax"]));
-		oParsedVarLst["chPref"] && oVarLst.setChPref(this.BaseFormatObjFromJSON(oParsedVarLst["chPref"]));
-		oParsedVarLst["dir"] && oVarLst.setDir(this.BaseFormatObjFromJSON(oParsedVarLst["dir"]));
-		oParsedVarLst["hierBranch"] && oVarLst.setHierBranch(this.BaseFormatObjFromJSON(oParsedVarLst["hierBranch"]));
-		oParsedVarLst["orgChart"] && oVarLst.setOrgChart(this.BaseFormatObjFromJSON(oParsedVarLst["orgChart"]));
-		oParsedVarLst["resizeHandles"] && oVarLst.setResizeHandles(this.BaseFormatObjFromJSON(oParsedVarLst["resizeHandles"]));
+		oParsedVarLst["animLvl"] && oVarLst.setAnimLvl(From_XML_ST_AnimLvlStr(oParsedVarLst["animLvl"]["val"]));
+		oParsedVarLst["animOne"] && oVarLst.setAnimOne(From_XML_ST_AnimOneStr(oParsedVarLst["animOne"]["val"]));
+		oParsedVarLst["bulletEnabled"] && oVarLst.setBulletEnabled(oParsedVarLst["bulletEnabled"]["val"]);
+		oParsedVarLst["chMax"] && oVarLst.setChMax(oParsedVarLst["chMax"]["val"]);
+		oParsedVarLst["chPref"] && oVarLst.setChPref(oParsedVarLst["chPref"]["val"]);
+		oParsedVarLst["dir"] && oVarLst.setDir(From_XML_ST_Direction(oParsedVarLst["dir"]["val"]));
+		oParsedVarLst["hierBranch"] && oVarLst.setHierBranch(From_XML_ST_HierBranchStyle(oParsedVarLst["hierBranch"]["val"]));
+		oParsedVarLst["orgChart"] && oVarLst.setOrgChart(oParsedVarLst["orgChart"]["val"]);
+		oParsedVarLst["resizeHandles"] && oVarLst.setResizeHandles(From_XML_ST_ResizeHandlesStr(oParsedVarLst["resizeHandles"]["val"]));
 
 		return oVarLst;
-	};
-	ReaderFromJSON.prototype.BaseFormatObjFromJSON = function(oParsedBaseFormatObj)
-	{
-		var oBaseFormatObj = null;
-
-		switch (oParsedBaseFormatObj["type"])
-		{
-			case "animLvl":
-				oBaseFormatObj = new AscFormat.AnimLvl();
-				oParsedBaseFormatObj["val"] != undefined && oBaseFormatObj.setVal(From_XML_ST_AnimLvlStr(oParsedBaseFormatObj["val"]));
-				break;
-			case "animOne":
-				oBaseFormatObj = new AscFormat.AnimOne();
-				oParsedBaseFormatObj["val"] != undefined && oBaseFormatObj.setVal(From_XML_ST_AnimOneStr(oParsedBaseFormatObj["val"]));
-				break;
-			case "bulletEnabled":
-				oBaseFormatObj = new AscFormat.BulletEnabled();
-				oParsedBaseFormatObj["val"] != undefined && oBaseFormatObj.setVal(oParsedBaseFormatObj["val"]);
-				break;
-			case "chMax":
-				oBaseFormatObj = new AscFormat.ChMax();
-				oParsedBaseFormatObj["val"] != undefined && oBaseFormatObj.setVal(oParsedBaseFormatObj["val"]);
-				break;
-			case "chPref":
-				oBaseFormatObj = new AscFormat.ChPref();
-				oParsedBaseFormatObj["val"] != undefined && oBaseFormatObj.setVal(oParsedBaseFormatObj["val"]);
-				break;
-			case "orgChart":
-				oBaseFormatObj = new AscFormat.OrgChart();
-				oParsedBaseFormatObj["val"] != undefined && oBaseFormatObj.setVal(oParsedBaseFormatObj["val"]);
-				break;
-			case "dir":
-				oBaseFormatObj = new AscFormat.DiagramDirection();
-				oParsedBaseFormatObj["val"] != undefined && oBaseFormatObj.setVal(From_XML_ST_Direction(oParsedBaseFormatObj["val"]));
-				break;
-			case "hierBranch":
-				oBaseFormatObj = new AscFormat.HierBranch();
-				oParsedBaseFormatObj["val"] != undefined && oBaseFormatObj.setVal(From_XML_ST_HierBranchStyle(oParsedBaseFormatObj["val"]));
-				break;
-			case "resizeHandles":
-				oBaseFormatObj = new AscFormat.ResizeHandles();
-				oParsedBaseFormatObj["val"] != undefined && oBaseFormatObj.setVal(From_XML_ST_ResizeHandlesStr(oParsedBaseFormatObj["val"]));
-				break;
-		}
-
-		return oBaseFormatObj;
 	};
 	ReaderFromJSON.prototype.CxnLstFromJSON = function(oParsedCxnLst)
 	{

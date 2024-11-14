@@ -3746,7 +3746,7 @@ Because of this, the display is sometimes not correct.
       }
     };
     Choose.prototype.getChildren = function() {
-      return [this.if, this.else];
+      return [this.else].concat(this.if);
     };
 
     function Else() {
@@ -3774,52 +3774,12 @@ Because of this, the display is sometimes not correct.
       for (var nIdx = 0; nIdx < this.list.length; ++nIdx) {
         oCopy.addToLst(nIdx, this.list[nIdx].createDuplicate(oIdMap));
       }
-    }
-
-    Else.prototype.readElement = function(pReader, nType) {
-      var oElement = null;
-      switch(nType) {
-        case 0xb1: oElement = new Alg(); break;
-        case 0xb2: oElement = new Choose(); break;
-        case 0xb3: oElement = new ConstrLst(); break;
-        case 0xb4: oElement = new ForEach(); break;
-        case 0xb5: oElement = new LayoutNode(); break;
-        case 0xb6: oElement = new PresOf(); break;
-        case 0xb7: oElement = new RuleLst(); break;
-        case 0xb8: oElement = new SShape(); break;
-        case 0xb9: oElement = new VarLst(); break;
-        default: {
-          pReader.stream.SkipRecord();
-          break;
-        }
-      }
-      if(oElement) {
-        oElement.fromPPTY(pReader);
-        this.addToLst(this.list.length, oElement);
-      }
     };
 
     Else.prototype.privateWriteAttributes = function(pWriter) {
       pWriter._WriteString2(0, this.name);
     };
 
-    Else.prototype.writeChildren = function(pWriter) {
-      for(var nIndex = 0; nIndex < this.list.length; ++nIndex) {
-        var oElement = this.list[nIndex];
-        switch (oElement.getObjectType()) {
-          case AscDFH.historyitem_type_Alg: this.writeRecord2(pWriter, 0xb1, oElement); break;
-          case AscDFH.historyitem_type_Choose: this.writeRecord2(pWriter, 0xb2, oElement); break;
-          case AscDFH.historyitem_type_ConstrLst: this.writeRecord2(pWriter, 0xb3, oElement); break;
-          case AscDFH.historyitem_type_ForEach: this.writeRecord2(pWriter, 0xb4, oElement); break;
-          case AscDFH.historyitem_type_LayoutNode: this.writeRecord2(pWriter, 0xb5, oElement); break;
-          case AscDFH.historyitem_type_PresOf: this.writeRecord2(pWriter, 0xb6, oElement); break;
-          case AscDFH.historyitem_type_RuleLst: this.writeRecord2(pWriter, 0xb7, oElement); break;
-          case AscDFH.historyitem_type_SShape: this.writeRecord2(pWriter, 0xb8, oElement); break;
-          case AscDFH.historyitem_type_VarLst: this.writeRecord2(pWriter, 0xb9, oElement); break;
-          default: break;
-        }
-      }
-    };
     Else.prototype.readAttribute = function(nType, pReader) {
       var oStream = pReader.stream;
       if (0 === nType) this.setName(oStream.GetString2());
@@ -3829,7 +3789,7 @@ Because of this, the display is sometimes not correct.
       this.readElement(pReader, nType);
     };
     Else.prototype.getChildren = function() {
-      return [].concat(this.list);
+      return [this.alg, this.shape, this.presOf, this.constrLst, this.ruleLst, this.varLst].concat(this.list);
     };
 
     function IteratorAttributes() {
@@ -4074,6 +4034,8 @@ Because of this, the display is sometimes not correct.
 	  IteratorLayoutBase.prototype.setVarLst = LayoutBaseClass.prototype.setVarLst;
 	  IteratorLayoutBase.prototype.addToLst = LayoutBaseClass.prototype.addToLst;
 	  IteratorLayoutBase.prototype.removeFromLst = LayoutBaseClass.prototype.removeFromLst;
+    IteratorLayoutBase.prototype.readElement = LayoutBaseClass.prototype.readElement;
+    IteratorLayoutBase.prototype.writeChildren = LayoutBaseClass.prototype.writeChildren;
 
     function If() {
       IteratorLayoutBase.call(this);
@@ -4210,50 +4172,7 @@ Because of this, the display is sometimes not correct.
       oCopy.setName(this.getName());
       oCopy.setOp(this.getOp());
       oCopy.setVal(this.getVal());
-      for (var nIdx = 0; nIdx < this.list.length; ++nIdx) {
-        oCopy.addToLst(nIdx, this.list[nIdx].createDuplicate(oIdMap));
-      }
-      for (nIdx = 0; nIdx < this.axis.length; ++nIdx) {
-        oCopy.addToLstAxis(nIdx, this.axis[nIdx].createDuplicate(oIdMap));
-      }
-      for (nIdx = 0; nIdx < this.cnt.length; ++nIdx) {
-        oCopy.addToLstCnt(nIdx, this.cnt[nIdx]);
-      }
-      for (nIdx = 0; nIdx < this.hideLastTrans.length; ++nIdx) {
-        oCopy.addToLstHideLastTrans(nIdx, this.hideLastTrans[nIdx]);
-      }
-      for (nIdx = 0; nIdx < this.ptType.length; ++nIdx) {
-        oCopy.addToLstPtType(nIdx, this.ptType[nIdx].createDuplicate(oIdMap));
-      }
-      for (nIdx = 0; nIdx < this.st.length; ++nIdx) {
-        oCopy.addToLstSt(nIdx, this.st[nIdx]);
-      }
-      for (nIdx = 0; nIdx < this.step.length; ++nIdx) {
-        oCopy.addToLstStep(nIdx, this.step[nIdx]);
-      }
-    };
-
-    If.prototype.readElement = function(pReader, nType) {
-      var oElement = null;
-      switch(nType) {
-        case 0xb1: oElement = new Alg(); break;
-        case 0xb2: oElement = new Choose(); break;
-        case 0xb3: oElement = new ConstrLst(); break;
-        case 0xb4: oElement = new ForEach(); break;
-        case 0xb5: oElement = new LayoutNode(); break;
-        case 0xb6: oElement = new PresOf(); break;
-        case 0xb7: oElement = new RuleLst(); break;
-        case 0xb8: oElement = new SShape(); break;
-        case 0xb9: oElement = new VarLst(); break;
-        default: {
-          pReader.stream.SkipRecord();
-          break;
-        }
-      }
-      if(oElement) {
-        oElement.fromPPTY(pReader);
-        this.addToLst(this.list.length, oElement);
-      }
+      IteratorLayoutBase.prototype.fillObject.call(this, oCopy, oIdMap);
     };
 
     If.prototype.privateWriteAttributes = function(pWriter) {
@@ -4282,23 +4201,6 @@ Because of this, the display is sometimes not correct.
       pWriter._WriteString2(10, this.val);
       pWriter._WriteString2(11, If.getArgString(this.arg));
     };
-    If.prototype.writeChildren = function(pWriter) {
-      for(var nIndex = 0; nIndex < this.list.length; ++nIndex) {
-        var oElement = this.list[nIndex];
-        switch (oElement.getObjectType()) {
-          case AscDFH.historyitem_type_Alg: this.writeRecord2(pWriter, 0xb1, oElement); break;
-          case AscDFH.historyitem_type_Choose: this.writeRecord2(pWriter, 0xb2, oElement); break;
-          case AscDFH.historyitem_type_ConstrLst: this.writeRecord2(pWriter, 0xb3, oElement); break;
-          case AscDFH.historyitem_type_ForEach: this.writeRecord2(pWriter, 0xb4, oElement); break;
-          case AscDFH.historyitem_type_LayoutNode: this.writeRecord2(pWriter, 0xb5, oElement); break;
-          case AscDFH.historyitem_type_PresOf: this.writeRecord2(pWriter, 0xb6, oElement); break;
-          case AscDFH.historyitem_type_RuleLst: this.writeRecord2(pWriter, 0xb7, oElement); break;
-          case AscDFH.historyitem_type_SShape: this.writeRecord2(pWriter, 0xb8, oElement); break;
-          case AscDFH.historyitem_type_VarLst: this.writeRecord2(pWriter, 0xb9, oElement); break;
-          default: break;
-        }
-      }
-    };
     If.prototype.readAttribute = function(nType, pReader) {
       var oStream = pReader.stream;
       if (0 === nType) this.setName(oStream.GetString2());
@@ -4319,7 +4221,7 @@ Because of this, the display is sometimes not correct.
       this.readElement(pReader, nType);
     };
     If.prototype.getChildren = function() {
-      return [].concat(this.list);
+      return [this.alg, this.shape, this.presOf, this.constrLst, this.ruleLst, this.varLst].concat(this.list);
     };
 
     function ConstrLst() {
@@ -5206,65 +5108,6 @@ Because of this, the display is sometimes not correct.
       }
     }
 
-    ForEach.prototype.readElement = function(pReader, nType) {
-      let oListElement = null;
-      switch(nType) {
-        case 0xb1: {
-	        const oElement = new Alg();
-	        oElement.fromPPTY(pReader);
-					this.setAlg(oElement);
-	        break;
-        }
-        case 0xb2:
-					oListElement = new Choose();
-					break;
-        case 0xb3: {
-	        const oElement = new ConstrLst();
-	        oElement.fromPPTY(pReader);
-					this.setConstrLst(oElement);
-	        break;
-        }
-        case 0xb4:
-					oListElement = new ForEach();
-					break;
-        case 0xb5:
-					oListElement = new LayoutNode();
-					break;
-        case 0xb6: {
-	        const oElement = new PresOf();
-	        oElement.fromPPTY(pReader);
-					this.setPresOf(oElement);
-	        break;
-        }
-        case 0xb7: {
-	        const oElement = new RuleLst();
-	        oElement.fromPPTY(pReader);
-					this.setRuleLst(oElement);
-	        break;
-        }
-        case 0xb8: {
-	        const oElement = new SShape();
-	        oElement.fromPPTY(pReader);
-					this.setShape(oElement);
-	        break;
-        }
-	      case 0xb9: {
-		      const oElement = new VarLst();
-		      oElement.fromPPTY(pReader);
-		      this.setVarLst(oElement);
-		      break;
-	      }
-        default: {
-          pReader.stream.SkipRecord();
-          break;
-        }
-      }
-      if(oListElement) {
-        oListElement.fromPPTY(pReader);
-        this.addToLst(this.list.length, oListElement);
-      }
-    };
-
     ForEach.prototype.privateWriteAttributes = function(pWriter) {
       pWriter._WriteString2(0, this.name);
       for (var i = 0; i < this.st.length; i += 1) {
@@ -5286,41 +5129,6 @@ Because of this, the display is sometimes not correct.
         pWriter._WriteUChar1(6, this.ptType[i]);
       }
       pWriter._WriteString2(7, this.ref);
-    };
-    ForEach.prototype.writeChildren = function(pWriter) {
-	    if (this.alg) {
-				this.writeRecord2(pWriter, 0xb1, this.alg);
-	    }
-	    if (this.shape) {
-				this.writeRecord2(pWriter, 0xb8, this.shape);
-	    }
-	    if (this.presOf) {
-				this.writeRecord2(pWriter, 0xb6, this.presOf);
-	    }
-	    if (this.constrLst) {
-				this.writeRecord2(pWriter, 0xb3, this.constrLst);
-	    }
-	    if (this.ruleLst) {
-				this.writeRecord2(pWriter, 0xb7, this.ruleLst);
-	    }
-	    if (this.varLst) {
-				this.writeRecord2(pWriter, 0xb9, this.varLst);
-	    }
-      for(var nIndex = 0; nIndex < this.list.length; ++nIndex) {
-        var oElement = this.list[nIndex];
-        switch (oElement.getObjectType()) {
-          case AscDFH.historyitem_type_Alg: this.writeRecord2(pWriter, 0xb1, oElement); break;
-          case AscDFH.historyitem_type_Choose: this.writeRecord2(pWriter, 0xb2, oElement); break;
-          case AscDFH.historyitem_type_ConstrLst: this.writeRecord2(pWriter, 0xb3, oElement); break;
-          case AscDFH.historyitem_type_ForEach: this.writeRecord2(pWriter, 0xb4, oElement); break;
-          case AscDFH.historyitem_type_LayoutNode: this.writeRecord2(pWriter, 0xb5, oElement); break;
-          case AscDFH.historyitem_type_PresOf: this.writeRecord2(pWriter, 0xb6, oElement); break;
-          case AscDFH.historyitem_type_RuleLst: this.writeRecord2(pWriter, 0xb7, oElement); break;
-          case AscDFH.historyitem_type_SShape: this.writeRecord2(pWriter, 0xb8, oElement); break;
-          case AscDFH.historyitem_type_VarLst: this.writeRecord2(pWriter, 0xb9, oElement); break;
-          default: break;
-        }
-      }
     };
     ForEach.prototype.readAttribute = function(nType, pReader) {
       var oStream = pReader.stream;
@@ -6084,7 +5892,7 @@ Because of this, the display is sometimes not correct.
       }
     };
     StyleDef.prototype.getStyleLblList = function () {
-      const keys = Object.keys(this.styleLbl);
+      const keys = Object.keys(this.styleLbl).sort();
       return keys.map(function (e) {
         return this.styleLbl[e];
       }, this);
@@ -6222,7 +6030,7 @@ Because of this, the display is sometimes not correct.
       }
     };
     StyleDef.prototype.getChildren = function() {
-      return [this.title, this.desc, this.catLst, this.scene3d].concat(this.styleLbl);
+      return [this.title, this.desc, this.catLst, this.scene3d].concat(this.getStyleLblList());
     };
 
     function Scene3d() {
@@ -6480,6 +6288,20 @@ Because of this, the display is sometimes not correct.
     Point3D.prototype.setZ = function(pr) {
       this.z = pr;
     }
+    Point3D.prototype.fillObject = function(oCopy, oIdMap) {
+      if (this.x !== null) {
+        oCopy.x = this.x;
+      }
+      if (this.y !== null) {
+        oCopy.y = this.y;
+      }
+      if (this.z !== null) {
+        oCopy.z = this.z;
+      }
+    }
+    Point3D.prototype.getChildren = function() {
+      return [this.x, this.y, this.z];
+    };
     function Vector3D() {
       AscFormat.CBaseNoIdObject.call(this);
       this.dx = null;
@@ -6505,6 +6327,20 @@ Because of this, the display is sometimes not correct.
     }
     Vector3D.prototype.setDz = function(pr) {
       this.dz = pr;
+    }
+    Vector3D.prototype.fillObject = function(oCopy, oIdMap) {
+      if (this.dx !== null) {
+        oCopy.dx = this.dx;
+      }
+      if (this.dy !== null) {
+        oCopy.dy = this.dy;
+      }
+      if (this.dz !== null) {
+        oCopy.dz = this.dz;
+      }
+    }
+    Vector3D.prototype.getChildren = function() {
+      return [this.dx, this.dy, this.dz];
     }
     function Backdrop() {
       CBaseFormatNoIdObject.call(this);
@@ -9429,8 +9265,8 @@ Because of this, the display is sometimes not correct.
     window['AscFormat'].Drawing                = Drawing;
     window['AscFormat'].DiagramData            = DiagramData;
     window['AscFormat'].ShapeSmartArtInfo      = ShapeSmartArtInfo;
-    window['AscFormat'].LayoutBaseClass      = LayoutBaseClass;
-    window['AscFormat'].IteratorLayoutBase      = IteratorLayoutBase;
+    window['AscFormat'].LayoutBaseClass        = LayoutBaseClass;
+    window['AscFormat'].IteratorLayoutBase     = IteratorLayoutBase;
 
     window['AscFormat'].Point_type_asst = Point_type_asst;
     window['AscFormat'].Point_type_doc = Point_type_doc;
