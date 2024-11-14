@@ -61,6 +61,17 @@
 		/**		 * @type {HTMLCanvasElement}	*/
 		this.thumbnailsCanvas = null;
 		this.locale = null;
+		this.bInit_word_control = false;
+
+		if (window.editor == undefined)
+		{
+			window.editor = this;
+			window['editor'] = window.editor;
+			Asc['editor'] = Asc.editor = this;
+
+			if (window["NATIVE_EDITOR_ENJINE"])
+				editor = window.editor;
+		}
 
 		this._init();
 		return this;
@@ -88,7 +99,12 @@
 
 		this._loadSdkImages();
 
+		this.WordControl      = new AscCommonDraw.CEditorPage(this);
+		this.WordControl.Name = this.HtmlElementName;
 		this.CreateComponents();
+		this.WordControl.Init();
+
+		this.asc_setViewMode(this.isViewMode);
 	};
 	asc_docs_api.prototype.CreateCSS = function()
 	{
@@ -104,24 +120,44 @@
 		this.asc_setSkin(this.skinObject);
 		delete this.skinObject;
 
-		// this.CreateCSS();
-
-		window.editor = this;
-		//for CShapeDrawer.CheckDash
-		window.Asc.editor = this;
+		this.CreateCSS();
 
 		//stubs for html page
 		window.CLayoutThumbnailDrawer = function () {};
 		window.CMasterThumbnailDrawer = function () {};
-		this.WordControl  = new AscCommonSlide.CEditorPage(this);
-		let _innerHTML = 	"<div id=\"id_panel_thumbnails\" class=\"block_elem\" style=\"touch-action: none; background-color: rgb(64, 64, 64); display: block; left: 0px; top: 0px; width: 20%; height:100%; overflow: scroll;\">" +
-											"</div>";
-		_innerHTML += "<div id=\"id_main\" class=\"block_elem\" style=\"width:80%;height:100%;touch-action:none;-ms-touch-action: none;-moz-user-select:none;-khtml-user-select:none;user-select:none;background-color:" + AscCommon.GlobalSkin.BackgroundColor + ";overflow:hidden;\" UNSELECTABLE=\"on\">\
-										<div id=\"id_main_view\" class=\"block_elem\" style=\"width:100%;height:100%;touch-action:none;overflow:hidden\">\
-											<canvas id=\"id_viewer\" class=\"block_elem\" style=\"width:100%;height:100%;touch-action:none;-ms-touch-action: none;-webkit-user-select: none; background-color:" + AscCommon.GlobalSkin.BackgroundColor + ";z-index:1\"></canvas>\
-											<canvas id=\"id_viewer_overlay\" class=\"block_elem\" style=\"touch-action:none;-ms-touch-action: none;-webkit-user-select: none; z-index:2\"></canvas>\
-											<div id=\"id_target_cursor\" class=\"block_elem\" width=\"1\" height=\"1\" style=\"touch-action:none;-ms-touch-action: none;-webkit-user-select: none;width:2px;height:13px;z-index:4;\"></div>\
-										</div>";
+		var _innerHTML = "<div id=\"id_panel_thumbnails\" class=\"block_elem\" style=\"touch-action:none;-webkit-touch-callout:none;background-color:" + AscCommon.GlobalSkin.BackgroundColorThumbnails + ";\">\
+									<div id=\"id_panel_thumbnails_split\" class=\"block_elem\" style=\"pointer-events:none;background-color:" + AscCommon.GlobalSkin.BackgroundColorThumbnails + ";\"></div>\
+		                            <canvas id=\"id_thumbnails_background\" class=\"block_elem\" style=\"-ms-touch-action: none;-webkit-user-select: none;z-index:1\"></canvas>\
+		                            <canvas id=\"id_thumbnails\" class=\"block_elem\" style=\"-ms-touch-action: none;-webkit-user-select: none;z-index:2\"></canvas>\
+		                            <div id=\"id_vertical_scroll_thmbnl\" style=\"left:0;top:0;width:1px;overflow:hidden;position:absolute;\">\
+									</div>\
+		                        </div>\
+		                    <div id=\"id_main_parent\" class=\"block_elem\" style=\"width:100%;height:100%;touch-action:none;-ms-touch-action: none;-moz-user-select:none;-khtml-user-select:none;user-select:none;overflow:hidden;border-left-width: 1px;border-left-color:" + AscCommon.GlobalSkin.BorderSplitterColor + "; border-left-style: solid;\" UNSELECTABLE=\"on\">\
+                            <div id=\"id_main\" class=\"block_elem\" style=\"width:100%;height:100%;z-index:5;-ms-touch-action: none;-moz-user-select:none;-khtml-user-select:none;user-select:none;background-color:" + AscCommon.GlobalSkin.BackgroundColor + ";overflow:hidden;\" UNSELECTABLE=\"on\">\
+								<div id=\"id_panel_left\" class=\"block_elem\">\
+									<canvas id=\"id_buttonTabs\" class=\"block_elem\"></canvas>\
+									<canvas id=\"id_vert_ruler\" class=\"block_elem\"></canvas>\
+								</div>\
+                                <div id=\"id_panel_top\" class=\"block_elem\">\
+									<canvas id=\"id_hor_ruler\" class=\"block_elem\"></canvas>\
+                                </div>\
+                                <div id=\"id_main_view\" class=\"block_elem\" style=\"width:100%;height:100%;overflow:hidden\">\
+                                    <canvas id=\"id_viewer\" class=\"block_elem\" style=\"-ms-touch-action: none;-webkit-user-select: none;background-color:" + AscCommon.GlobalSkin.BackgroundColor + ";z-index:6\"></canvas>\
+                                    <canvas id=\"id_viewer_overlay\" class=\"block_elem\" style=\"-ms-touch-action: none;-webkit-user-select: none;z-index:7\"></canvas>\
+                                    <div id=\"id_target_cursor\" class=\"block_elem\" width=\"1\" height=\"1\" style=\"-ms-touch-action: none;-webkit-user-select: none;width:2px;height:13px;display:none;z-index:9;\"></div>\
+                                </div>\
+							    <div id=\"id_panel_right\" class=\"block_elem\" style=\"margin-right:1px;background-color:" + AscCommon.GlobalSkin.BackgroundColor + ";z-index:0;\">\
+							        <div id=\"id_buttonRulers\" class=\"block_elem buttonRuler\"></div>\
+								    <div id=\"id_vertical_scroll\" style=\"left:0;top:0;width:14px;overflow:hidden;position:absolute;\">\
+								    </div>\
+								    <div id=\"id_buttonPrevPage\" class=\"block_elem buttonPrevPage\"></div>\
+								    <div id=\"id_buttonNextPage\" class=\"block_elem buttonNextPage\"></div>\
+                                </div>\
+                                <div id=\"id_horscrollpanel\" class=\"block_elem\" style=\"margin-bottom:1px;background-color:" + AscCommon.GlobalSkin.BackgroundColor + ";\">\
+                                    <div id=\"id_horizontal_scroll\" style=\"left:0;top:0;height:14px;overflow:hidden;position:absolute;width:100%;\">\
+                                    </div>\
+                                </div>\
+                            </div>";
 		if (this.HtmlElement)
 			_innerHTML += this.HtmlElement.innerHTML;
 
@@ -212,12 +248,13 @@
 		if (this.isViewMode)
 			this.asc_setViewMode(true);
 
+		this.bInit_word_control = true;
 		this.onDocumentContentReady();
 
 		// Меняем тип состояния (на никакое)
 		this.advancedOptionsAction = AscCommon.c_oAscAdvancedOptionsAction.None;
 
-		this.Document.draw(this.Document.zoom, undefined, this.Document.pageIndex);
+		this.WordControl.GoToPage(this.Document.getCurrentPage());
 	};
 
 	asc_docs_api.prototype.OpenDocumentFromZip = function(data)
@@ -445,24 +482,53 @@
 	};
 	asc_docs_api.prototype.zoomIn         = function()
 	{
+		this.WordControl.zoom_In();
 	};
 	asc_docs_api.prototype.zoomOut        = function()
 	{
+		this.WordControl.zoom_Out();
 	};
 	asc_docs_api.prototype.zoomFitToPage  = function()
 	{
+		if (!this.isLoadFullApi)
+		{
+			this.tmpZoomType = AscCommon.c_oZoomType.FitToPage;
+			return;
+		}
+		this.WordControl.zoom_FitToPage();
 	};
 	asc_docs_api.prototype.zoomFitToWidth = function()
 	{
+		if (!this.isLoadFullApi)
+		{
+			this.tmpZoomType = AscCommon.c_oZoomType.FitToWidth;
+			return;
+		}
+		this.WordControl.zoom_FitToWidth();
 	};
 	asc_docs_api.prototype.zoomCustomMode = function()
 	{
+		if (!this.isLoadFullApi)
+		{
+			this.tmpZoomType = AscCommon.c_oZoomType.CustomMode;
+			return;
+		}
+		this.WordControl.m_nZoomType = 0;
+		this.WordControl.zoom_Fire();
 	};
 	asc_docs_api.prototype.zoom100        = function()
 	{
+		this.WordControl.m_nZoomValue = 100;
+		this.WordControl.zoom_Fire();
 	};
 	asc_docs_api.prototype.zoom           = function(percent)
 	{
+		this.WordControl.m_nZoomValue = percent;
+		this.WordControl.zoom_Fire(0);
+	};
+	asc_docs_api.prototype.goToPage       = function(number)
+	{
+		this.WordControl.GoToPage(number);
 	};
 	asc_docs_api.prototype.SetFontRenderingMode         = function(mode)
 	{
@@ -501,7 +567,9 @@
 		this.tmpDocumentUnits = _units;
 	};
 	asc_docs_api.prototype.Resize = function() {
-		//todo
+		if (false === this.bInit_word_control)
+			return;
+		this.WordControl.OnResize(false);
 	};
 	asc_docs_api.prototype.sendEvent = function()
 	{
@@ -552,6 +620,20 @@
 	};
 	asc_docs_api.prototype.ShowThumbnails           = function(bIsShow)
 	{
+		if (bIsShow)
+		{
+			this.WordControl.Splitter1Pos = this.WordControl.OldSplitter1Pos;
+			if (this.WordControl.Splitter1Pos == 0)
+				this.WordControl.Splitter1Pos = 70;
+			this.WordControl.OnResizeSplitter();
+		}
+		else
+		{
+			var old                       = this.WordControl.OldSplitter1Pos;
+			this.WordControl.Splitter1Pos = 0;
+			this.WordControl.OnResizeSplitter();
+			this.WordControl.OldSplitter1Pos = old;
+		}
 	}
 	asc_docs_api.prototype["asc_setViewerTargetType"] = asc_docs_api.prototype.asc_setViewerTargetType = function(type) {
 		this.isHandMode = ("hand" === type);
@@ -563,7 +645,24 @@
 		return this.WordControl && this.WordControl.m_oLogicDocument || null;
 	};
 
+	asc_docs_api.prototype.asc_DownloadAs = function(options)
+	{
+		if (this.isLongAction()) {
+			return;
+		}
+		this.downloadAs(Asc.c_oAscAsyncAction.DownloadAs, options);
+	};
+	/*callbacks*/
+	asc_docs_api.prototype.sync_zoomChangeCallback  = function(percent, type)
+	{	//c_oAscZoomType.Current, c_oAscZoomType.FitWidth, c_oAscZoomType.FitPage
+		this.sendEvent("asc_onZoomChange", percent, type);
+	};
+
 	//temp stubs
+	asc_docs_api.prototype.getCountSlides = function()
+	{
+		return this.Document.getCountPages();
+	};
 	asc_docs_api.prototype.DemonstrationEndShowMessage = function(message)
 	{
 	}

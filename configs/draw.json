@@ -185,7 +185,7 @@
 			"slide/Drawing/MorphTransition.js",
 			"word/Drawing/cachemanager.js",
 			"slide/Drawing/DrawingDocument.js",
-			"slide/Drawing/HtmlPage.js",
+			"draw/Drawing/HtmlPage.js",
 			"word/Editor/StylesChanges.js",
 			"word/Editor/RevisionsChange.js",
 			"word/Editor/Paragraph/RunContent/Types.js",

@@ -76,7 +76,7 @@
                 }
             }
             Zoom = Zoom_;
-            api.Document.zoom = Zoom;
+            api.WordControl.m_nZoomValue = Zoom;
             let droppedTestFileArrayBuffer = AscCommon.Base64.decode(localStorage.droppedTestFile);
             drawFile(droppedTestFileArrayBuffer);
             console.log('draw using Zoom ', Zoom);
@@ -101,12 +101,12 @@
             AscCommon.g_oIdCounter.Set_Load(false);
             firstRun = false;
 
-            api.Document.zoom = Zoom;
+            api.WordControl.m_nZoomValue = Zoom;
             AscCommon.pptx_content_loader.CheckImagesNeeds(api.WordControl.m_oLogicDocument);
             api.Document.loadFonts(); // calls loadImages() and openDocumentEndCallback
             // and api.Document.draw(api.Document.zoom, undefined, api.Document.pageIndex);
         } else {
-            api.Document.draw(api.Document.zoom, undefined, api.Document.pageIndex);
+            api.Document.draw(api.WordControl.m_nZoomValue, undefined, api.Document.pageIndex);
         }
     }
 

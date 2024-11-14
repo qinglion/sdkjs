@@ -390,7 +390,7 @@
 				res = isOpenOoxml ? Asc.c_oAscFileType.CANVAS_SPREADSHEET : Asc.c_oAscFileType.XLSX;
 				break;
 			case c_oEditorId.Presentation:
-				res = isOpenOoxml ? Asc.c_oAscFileType.CANVAS_PRESENTATION : Asc.c_oAscFileType.XLSX;
+				res = isOpenOoxml ? Asc.c_oAscFileType.CANVAS_PRESENTATION : Asc.c_oAscFileType.PPTX;
 				break;
 			case c_oEditorId.Draw:
 				res = Asc.c_oAscFileType.VSDX;

@@ -4583,6 +4583,7 @@ window.AscCommon.g_cIsBeta = "false";
 	prot['XLSX_FLAT']            = prot.XLSX_FLAT;
 	prot['XLSX_PACKAGE']         = prot.XLSX_PACKAGE;
 	prot['XLSY']                 = prot.XLSY;
+	prot['CANVAS_SPREADSHEET']   = prot.CANVAS_SPREADSHEET;
 	prot['PPTX']                 = prot.PPTX;
 	prot['PPT']                  = prot.PPT;
 	prot['ODP']                  = prot.ODP;
@@ -4594,6 +4595,13 @@ window.AscCommon.g_cIsBeta = "false";
 	prot['FODP']                 = prot.FODP;
 	prot['OTP']                  = prot.OTP;
 	prot['PPTX_PACKAGE']         = prot.PPTX_PACKAGE;
+	prot['CANVAS_PRESENTATION']  = prot.CANVAS_PRESENTATION;
+
+	prot['VSDX']        		 = prot.VSDX;
+	prot['VSSX']        		 = prot.VSSX;
+	prot['VSTX']        		 = prot.VSTX;
+	prot['VSDM']        		 = prot.VSDM;
+	prot['VSTM']        		 = prot.VSTM;
 
 	prot['JPG']                  = prot.JPG;
 	prot['TIFF']                 = prot.TIFF;

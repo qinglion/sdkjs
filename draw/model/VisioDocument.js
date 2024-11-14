@@ -121,7 +121,6 @@
 			// 	this.history.Set_LogicDocument(this);
 		}
 		this.mainDocument = false !== isMainLogicDocument;
-		this.zoom = 100;
 		this.pageIndex = 0;
 
 		/**
@@ -329,6 +328,9 @@
 		let logic_w_inch = pageInfo.pageSheet.getCellNumberValueWithScale("PageWidth", drawingScale / pageScale);
 		return logic_w_inch * g_dKoef_in_to_mm;
 	}
+	CVisioDocument.prototype.GetWidthMM = function() {
+		return this.GetWidthScaledMM(this.pageIndex);
+	}
 
 
 	/**
@@ -341,6 +343,9 @@
 		let pageScale = pageInfo.pageSheet.getCellNumberValue("PageScale");
 		let logic_h_inch = pageInfo.pageSheet.getCellNumberValueWithScale("PageHeight", drawingScale / pageScale);
 		return logic_h_inch * g_dKoef_in_to_mm;
+	}
+	CVisioDocument.prototype.GetHeightMM = function() {
+		return this.GetHeightScaledMM(this.pageIndex);
 	}
 
 	/**
@@ -519,6 +524,7 @@
 
 				// Version 2 with correct scroll lines
 				// setup scroll lines
+				//todo remove
 				canvas.style.width  = w_px + "px";
 				canvas.style.height = h_px + "px";
 				// set pixels count for width and height
@@ -614,8 +620,7 @@
 				let thisContext = this;
 				thumbnailCanvas.onclick = function () {
 					// Zoom = 100;
-					drawOnCanvas(thumbPageIndex, thisContext, documentCanvas, false);
-					thisContext.pageIndex = thumbPageIndex;
+					thisContext.api.goToPage(thumbPageIndex);
 				}
 				panelThumbnails.appendChild(thumbnailCanvas);
 
@@ -694,6 +699,20 @@
 	}
 	CVisioDocument.prototype.getCountPages = function() {
 		return this.pages && this.pages.page.length || 0;
+	}
+	CVisioDocument.prototype.getCurrentPage = function() {
+		return this.pageIndex;
+	}
+	CVisioDocument.prototype.setCurrentPage = function(pageIndex) {
+		return this.pageIndex = pageIndex;
+	}
+	CVisioDocument.prototype.getFirstSlideNumber = function() {
+		//todo remove
+		return 0;
+	}
+	CVisioDocument.prototype.GetSlide = function() {
+		//todo remove
+		return {getObjectType: function(){}};
 	}
 
 	// CVisioDocument.prototype.getMasterByID = function(ID) {

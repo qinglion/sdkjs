@@ -1918,7 +1918,24 @@
 			case c_oAscFileType.OTP:
 				return 'otp';
 				break;
-
+			case c_oAscFileType.VSDX:
+				return 'vsdx';
+				break;
+			case c_oAscFileType.VSSX:
+				return 'vssx';
+				break;
+			case c_oAscFileType.VSTX:
+				return 'vstx';
+				break;
+			case c_oAscFileType.VSDM:
+				return 'vsdm';
+				break;
+			case c_oAscFileType.VSSM:
+				return 'vssm';
+				break;
+			case c_oAscFileType.VSTM:
+				return 'vstm';
+				break;
 			case c_oAscFileType.IMG:
 				return 'zip';
 				break;
@@ -2029,7 +2046,18 @@
 				return c_oAscFileType.FODP;
 			case 'otp':
 				return c_oAscFileType.OTP;
-
+			case 'vsdx':
+				return c_oAscFileType.VSDX;
+			case 'vssx':
+				return c_oAscFileType.VSSX;
+			case 'vstx':
+				return c_oAscFileType.VSTX;
+			case 'vsdm':
+				return c_oAscFileType.VSDM;
+			case 'vssm':
+				return c_oAscFileType.VSSM;
+			case 'vstm':
+				return c_oAscFileType.VSTM;
 			case 'xlsx':
 				return c_oAscFileType.XLSX;
 			case 'xls':
