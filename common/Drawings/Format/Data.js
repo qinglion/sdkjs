@@ -3770,10 +3770,8 @@ Because of this, the display is sometimes not correct.
       return this.name;
     }
     Else.prototype.fillObject = function (oCopy, oIdMap) {
+      LayoutBaseClass.prototype.fillObject.call(this, oCopy, oIdMap);
       oCopy.setName(this.getName());
-      for (var nIdx = 0; nIdx < this.list.length; ++nIdx) {
-        oCopy.addToLst(nIdx, this.list[nIdx].createDuplicate(oIdMap));
-      }
     };
 
     Else.prototype.privateWriteAttributes = function(pWriter) {
@@ -3984,7 +3982,7 @@ Because of this, the display is sometimes not correct.
 
     IteratorAttributes.prototype.fillObject = function (oCopy, oIdMap) {
       for (var nIdx = 0; nIdx < this.axis.length; ++nIdx) {
-        oCopy.addToLstAxis(nIdx, this.axis[nIdx].createDuplicate(oIdMap));
+        oCopy.addToLstAxis(nIdx, this.axis[nIdx]);
       }
       for (nIdx = 0; nIdx < this.cnt.length; ++nIdx) {
         oCopy.addToLstCnt(nIdx, this.cnt[nIdx]);
@@ -3993,7 +3991,7 @@ Because of this, the display is sometimes not correct.
         oCopy.addToLstHideLastTrans(nIdx, this.hideLastTrans[nIdx]);
       }
       for (nIdx = 0; nIdx < this.ptType.length; ++nIdx) {
-        oCopy.addToLstPtType(nIdx, this.ptType[nIdx].createDuplicate(oIdMap));
+        oCopy.addToLstPtType(nIdx, this.ptType[nIdx]);
       }
       for (nIdx = 0; nIdx < this.st.length; ++nIdx) {
         oCopy.addToLstSt(nIdx, this.st[nIdx]);
@@ -4430,7 +4428,7 @@ Because of this, the display is sometimes not correct.
 
     PresOf.prototype.fillObject = function (oCopy, oIdMap) {
       for (var nIdx = 0; nIdx < this.axis.length; ++nIdx) {
-        oCopy.addToLstAxis(nIdx, this.axis[nIdx].createDuplicate(oIdMap));
+        oCopy.addToLstAxis(nIdx, this.axis[nIdx]);
       }
       for (nIdx = 0; nIdx < this.cnt.length; ++nIdx) {
         oCopy.addToLstCnt(nIdx, this.cnt[nIdx]);
@@ -4439,7 +4437,7 @@ Because of this, the display is sometimes not correct.
         oCopy.addToLstHideLastTrans(nIdx, this.hideLastTrans[nIdx]);
       }
       for (nIdx = 0; nIdx < this.ptType.length; ++nIdx) {
-        oCopy.addToLstPtType(nIdx, this.ptType[nIdx].createDuplicate(oIdMap));
+        oCopy.addToLstPtType(nIdx, this.ptType[nIdx]);
       }
       for (nIdx = 0; nIdx < this.st.length; ++nIdx) {
         oCopy.addToLstSt(nIdx, this.st[nIdx]);
@@ -5067,45 +5065,7 @@ Because of this, the display is sometimes not correct.
     ForEach.prototype.fillObject = function (oCopy, oIdMap) {
       oCopy.setName(this.getName());
       oCopy.setRef(this.getRef());
-	    if (this.alg) {
-		    oCopy.setAlg(this.alg.createDuplicate());
-	    }
-	    if (this.shape) {
-		    oCopy.setShape(this.shape.createDuplicate());
-	    }
-	    if (this.presOf) {
-		    oCopy.setPresOf(this.presOf.createDuplicate());
-	    }
-	    if (this.constrLst) {
-		    oCopy.setConstrLst(this.constrLst.createDuplicate());
-	    }
-	    if (this.ruleLst) {
-		    oCopy.setRuleLst(this.ruleLst.createDuplicate());
-	    }
-	    if (this.varLst) {
-		    oCopy.setVarLst(this.varLst.createDuplicate());
-	    }
-      for (var nIdx = 0; nIdx < this.list.length; ++nIdx) {
-        oCopy.addToLst(nIdx, this.list[nIdx].createDuplicate(oIdMap));
-      }
-      for (var nIdx = 0; nIdx < this.axis.length; ++nIdx) {
-        oCopy.addToLstAxis(nIdx, this.axis[nIdx].createDuplicate(oIdMap));
-      }
-      for (nIdx = 0; nIdx < this.cnt.length; ++nIdx) {
-        oCopy.addToLstCnt(nIdx, this.cnt[nIdx]);
-      }
-      for (nIdx = 0; nIdx < this.hideLastTrans.length; ++nIdx) {
-        oCopy.addToLstHideLastTrans(nIdx, this.hideLastTrans[nIdx]);
-      }
-      for (nIdx = 0; nIdx < this.ptType.length; ++nIdx) {
-        oCopy.addToLstPtType(nIdx, this.ptType[nIdx].createDuplicate(oIdMap));
-      }
-      for (nIdx = 0; nIdx < this.st.length; ++nIdx) {
-        oCopy.addToLstSt(nIdx, this.st[nIdx]);
-      }
-      for (nIdx = 0; nIdx < this.step.length; ++nIdx) {
-        oCopy.addToLstStep(nIdx, this.step[nIdx]);
-      }
+      IteratorLayoutBase.prototype.fillObject.call(this, oCopy, oIdMap);
     }
 
     ForEach.prototype.privateWriteAttributes = function(pWriter) {
