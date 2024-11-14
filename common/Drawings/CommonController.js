@@ -11281,15 +11281,13 @@
 			});
 
 			// resultPath can be either Path or CompoundPath
-			const fDivide = AscCommon.PathBoolean.CompoundPath.prototype.divide;
-
-			const resultPath = operation === 'divide'
-				? fDivide(compoundPathLst)
+			const resultPath = operation === 'divide' && compoundPathLst.length > 2
+				? AscCommon.PathBoolean.CompoundPath.prototype.divide(compoundPathLst)
 				: compoundPathLst.reduce(function (resultPath, currentPath) {
 					return resultPath[operation](currentPath);
 				});
 
-			const resultShapes = window.TEST // operation === 'divide'
+			const resultShapes = operation === 'divide'
 				? resultPath.getChildren().map(createShapeByCompoundPath)
 				: [createShapeByCompoundPath(resultPath)];
 

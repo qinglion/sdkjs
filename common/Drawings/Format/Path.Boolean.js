@@ -3352,33 +3352,35 @@
 	PathItem.prototype.exclude = function (path) {
 		return PathItem.traceBoolean(this, path, OPERATIONS.exclude);
 	};
-	PathItem.prototype.divide = function (paths) {
-		if (!Array.isArray(paths)) {
-			const path = paths;
+	PathItem.prototype.divide = function (argument) {
+		// Original version with only two paths
+		if (!Array.isArray(argument)) {
+			const path = argument;
 			return PathItem.createResult([
 				this.exclude(path),
 				this.intersect(path)
 			], true, this, path);
 		}
-		debugger
-		const path1 = paths[0];
-		const path2 = paths[1];
-		const path3 = paths[2];
 
-		const exclude1_2 = path1.exclude(path2);
-		const intersect1_2 = path1.intersect(path2);
-		if (!path3) {
-			const res1 = PathItem.createResult([ exclude1_2, intersect1_2 ], true, path1, path2);
-			return res1;
+		// Version for multiple paths
+		const paths = argument;
+
+		function calculateUniversumBounds(paths) {
+			const pathBounds = paths.map(function (path) { return path.getBounds(); });
+			const left = Math.min.apply(null, pathBounds.map(function (bounds) { return bounds.getLeft(); }));
+			const top = Math.min.apply(null, pathBounds.map(function (bounds) { return bounds.getTop(); }));
+			const right = Math.max.apply(null, pathBounds.map(function (bounds) { return bounds.getLeft() + bounds.getWidth(); }));
+			const bottom = Math.max.apply(null, pathBounds.map(function (bounds) { return bounds.getTop() + bounds.getHeight(); }));
+			return [left, top, right, bottom];
 		}
-		
-		const exclude1_2_3 = path1.exclude(path2).exclude(path3);
-		return exclude1_2_3.divide(exclude1_2_3);
-		const exclude1_2_intersect_3 = exclude1_2.intersect(path3);
-		const intersect1_2_subtract_3 = intersect1_2.subtract(path3);
-		const res2 = PathItem.createResult([exclude1_2_3, exclude1_2_intersect_3, intersect1_2_subtract_3], true, path1);
+		const bounds = calculateUniversumBounds(paths);
+		const universum = new Path.Rectangle(bounds[0], bounds[1], bounds[2], bounds[3]);
 
-		return res2;
+		const fragments = [universum, paths[0], paths[1], paths[2]];
+		for (let option = 0; option < paths.length; option++) {
+			
+		}
+		return PathItem.createResult(fragments, true, paths[0]);
 	};
 	PathItem.prototype.resolveCrossings = function () {
 		let paths = this._children || [this];
@@ -3541,7 +3543,7 @@
 		let result = new CompoundPath({ insert: false });
 		result.addChildren(paths, true);
 		result = result.reduce({ simplify: simplify });
-		// result.insertAbove(path2 && path1.isSibling(path2) && path1.getIndex() < path2.getIndex() ? path2 : path1);
+		result.insertAbove(path2 && path1.isSibling(path2) && path1.getIndex() < path2.getIndex() ? path2 : path1);
 		result.copyAttributes(path1, true);
 		return result;
 	};
@@ -4667,6 +4669,15 @@
 		}
 		return new Rectangle(x1, y1, x2 - x1, y2 - y1);
 	};
+	Path.Rectangle = function (left, top, right, bottom) {
+		const path = new Path();
+		path.moveTo(left, top);
+		path.lineTo(right, top);
+		path.lineTo(right, bottom);
+		path.lineTo(left, bottom);
+		path.closePath();
+		return path;
+	};
 
 	const CompoundPath = function (arg) {
 		this._children = [];
@@ -4798,17 +4809,17 @@
 	window['AscCommon']['PathBoolean'] = {}
 	window['AscCommon']['PathBoolean']['CompoundPath'] = CompoundPath;
 
-	CompoundPath.prototype['divide'] = CompoundPath.prototype.divide;
-	CompoundPath.prototype['unite'] = CompoundPath.prototype.unite;
-	CompoundPath.prototype['intersect'] = CompoundPath.prototype.intersect;
-	CompoundPath.prototype['subtract'] = CompoundPath.prototype.subtract;
-	CompoundPath.prototype['exclude'] = CompoundPath.prototype.exclude;
+	CompoundPath.prototype['divide'] = PathItem.prototype.divide;
+	CompoundPath.prototype['unite'] = PathItem.prototype.unite;
+	CompoundPath.prototype['intersect'] = PathItem.prototype.intersect;
+	CompoundPath.prototype['subtract'] = PathItem.prototype.subtract;
+	CompoundPath.prototype['exclude'] = PathItem.prototype.exclude;
 
-	Path.prototype['divide'] = Path.prototype.divide;
-	Path.prototype['unite'] = Path.prototype.unite;
-	Path.prototype['intersect'] = Path.prototype.intersect;
-	Path.prototype['subtract'] = Path.prototype.subtract;
-	Path.prototype['exclude'] = Path.prototype.exclude;
+	Path.prototype['divide'] = PathItem.prototype.divide;
+	Path.prototype['unite'] = PathItem.prototype.unite;
+	Path.prototype['intersect'] = PathItem.prototype.intersect;
+	Path.prototype['subtract'] = PathItem.prototype.subtract;
+	Path.prototype['exclude'] = PathItem.prototype.exclude;
 
 	CompoundPath.prototype['moveTo'] = CompoundPath.prototype.moveTo;
 	CompoundPath.prototype['lineTo'] = CompoundPath.prototype.lineTo;
