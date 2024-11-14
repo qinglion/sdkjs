@@ -10930,12 +10930,28 @@
 			if(this.controller.handleEventMode === HANDLE_EVENT_MODE_HANDLE) {
 				if(e.IsLocked) {
 					this.inkDrawer.startSilentMode();
-					const aDrawings = this.controller.getDrawingObjects(pageIndex);
+					let aDrawings = this.controller.getDrawingObjects(pageIndex);
+					if(Asc.editor.isDrawSlideshowAnnotations()) {
+						let oAnnots = Asc.editor.getAnnotations();
+						if(oAnnots) {
+							aDrawings = Asc.editor.getAnnotations().getInks(this.controller.drawingObjects);
+						}
+						else {
+							aDrawings = [];
+						}
+					}
 					let bDocStartAction = false;
 					for(let nIdx = aDrawings.length - 1; nIdx > -1; --nIdx) {
 						let oDrawing = aDrawings[nIdx];
 						if(oDrawing.isInk())  {
 							if(oDrawing.hit(x, y)) {
+								if(Asc.editor.isDrawSlideshowAnnotations()) {
+									let oAnnots = Asc.editor.getAnnotations();
+									if(oAnnots) {
+										oAnnots.eraseInk(oDrawing.parent, nIdx);
+									}
+									break;
+								}
 								this.controller.resetSelection();
 								this.controller.selectObject(oDrawing, pageIndex);
 								if(this.controller.document) {

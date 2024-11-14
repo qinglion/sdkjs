@@ -8076,7 +8076,7 @@ background-repeat: no-repeat;\
 			}
 			else if(undefined !== _obj["annotation"])
 			{
-				let oAnnotations = this.getAnnotations();
+				let oAnnotations = _this.getAnnotations();
 				if(oAnnotations)
 				{
 					oAnnotations.handleMessage(_obj["annotation"])

@@ -98,6 +98,15 @@ function editorAddToDrawingObjects(oGraphicObject, pos, type)
     function editorDeleteDrawingBase(oGraphicObject, bCheckPlaceholder)
     {
         let oSlide = oGraphicObject.parent;
+        if(Asc.editor.isDrawSlideshowAnnotations())
+        {
+            let oAnnots = Asc.editor.getAnnotations();
+            if(oAnnots)
+            {
+                oAnnots.eraseInk(oGraphicObject);
+            }
+            return;
+        }
         if(AscFormat.isSlideLikeObject(oSlide))
         {
             let pos = oSlide.removeFromSpTreeById(oGraphicObject.Id);

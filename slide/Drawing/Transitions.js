@@ -4055,7 +4055,7 @@ function CDemonstrationManager(htmlpage)
 			return false;
         }
 
-		if (oThis.HtmlPage.m_oApi.reporterWindow)
+		if (oThis.HtmlPage.m_oApi.reporterWindow && !Asc.editor.isDrawSlideshowAnnotations())
 		{
 			var _msg_ = {
 				"main_command"  : true,

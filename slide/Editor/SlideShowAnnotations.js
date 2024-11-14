@@ -81,6 +81,12 @@ function (window, undefined) {
 		this.locked = false;
 		this.binaryWriter.Seek(0);
 	};
+	CSlideShowAnnotations.prototype.getInks = function (oSlide) {
+		if(!this.annotations[oSlide.Id]) {
+			return [];
+		}
+		return this.annotations[oSlide.Id].inks;
+	};
 	CSlideShowAnnotations.prototype.getPresentation = function () {
 		return Asc.editor.getLogicDocument();
 	};
@@ -156,7 +162,10 @@ function (window, undefined) {
 				let oSlide = AscCommon.g_oTableId.Get_ById(aParts[0]);
 				let memoryData = AscCommon.Base64.decode(aParts[1], true, undefined, 0);
 				let r = new AscCommon.FT_Stream2(memoryData, memoryData.length);
+				Asc.editor.getAnnotations = function () {return null;};
 				this.track = new AscFormat.PolyLine(oSlide.graphicObjects, oSlide.getTheme(), null, null, null, oSlide.num);
+
+				delete Asc.editor.getAnnotations;
 				//this.track.pen = new AscFormat.CLn();
 				this.track.pen.Read_FromBinary(r);
 				this.track.pen.Fill.calculate(oSlide.getTheme(), oSlide, null, null,  {R: 0, G: 0, B: 0, A: 255})
@@ -191,6 +200,13 @@ function (window, undefined) {
 				break;
 			}
 			case "erase_ink": {
+				let aParts = sVal.split(";");
+				let nIdx = parseInt(aParts[1]);
+				let oAnnots = this.annotations[aParts[0]];
+				if(!oAnnots) {
+					return;
+				}
+				oAnnots.eraseInk(nIdx);
 				break;
 			}
 		}
