@@ -3377,7 +3377,7 @@
 		const universum = new Path.Rectangle(bounds[0], bounds[1], bounds[2], bounds[3]);
 
 		const fragments = [];
-		for (let option = 0, totalCombinations = Math.pow(2, paths.length); option < totalCombinations; option++) {
+		for (let option = 1, totalCombinations = Math.pow(2, paths.length); option < totalCombinations; option++) {
 			let result = universum;
 			for (let i = 0; i < paths.length; i++) {
 				const path = paths[i];
