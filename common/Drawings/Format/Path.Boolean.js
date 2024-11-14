@@ -3352,11 +3352,33 @@
 	PathItem.prototype.exclude = function (path) {
 		return PathItem.traceBoolean(this, path, OPERATIONS.exclude);
 	};
-	PathItem.prototype.divide = function (path) {
-		return PathItem.createResult([
-			this.exclude(path),
-			this.intersect(path)
-		], true, this, path);
+	PathItem.prototype.divide = function (paths) {
+		if (!Array.isArray(paths)) {
+			const path = paths;
+			return PathItem.createResult([
+				this.exclude(path),
+				this.intersect(path)
+			], true, this, path);
+		}
+		debugger
+		const path1 = paths[0];
+		const path2 = paths[1];
+		const path3 = paths[2];
+
+		const exclude1_2 = path1.exclude(path2);
+		const intersect1_2 = path1.intersect(path2);
+		if (!path3) {
+			const res1 = PathItem.createResult([ exclude1_2, intersect1_2 ], true, path1, path2);
+			return res1;
+		}
+		
+		const exclude1_2_3 = path1.exclude(path2).exclude(path3);
+		return exclude1_2_3.divide(exclude1_2_3);
+		const exclude1_2_intersect_3 = exclude1_2.intersect(path3);
+		const intersect1_2_subtract_3 = intersect1_2.subtract(path3);
+		const res2 = PathItem.createResult([exclude1_2_3, exclude1_2_intersect_3, intersect1_2_subtract_3], true, path1);
+
+		return res2;
 	};
 	PathItem.prototype.resolveCrossings = function () {
 		let paths = this._children || [this];
@@ -3519,7 +3541,7 @@
 		let result = new CompoundPath({ insert: false });
 		result.addChildren(paths, true);
 		result = result.reduce({ simplify: simplify });
-		result.insertAbove(path2 && path1.isSibling(path2) && path1.getIndex() < path2.getIndex() ? path2 : path1);
+		// result.insertAbove(path2 && path1.isSibling(path2) && path1.getIndex() < path2.getIndex() ? path2 : path1);
 		result.copyAttributes(path1, true);
 		return result;
 	};
