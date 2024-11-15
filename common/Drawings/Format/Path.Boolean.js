@@ -3388,9 +3388,12 @@
 					result = result.intersect(universum.subtract(path));
 				}
 			}
-			fragments.push(result);
+			if (result.getArea() > 0) {
+				result._option = option;
+				fragments.push(result);
+			}
 		}
-		return PathItem.createResult(fragments, true, paths[0]);
+		return fragments;
 	};
 	PathItem.prototype.resolveCrossings = function () {
 		let paths = this._children || [this];

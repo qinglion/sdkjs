@@ -11281,15 +11281,16 @@
 			});
 
 			// resultPath can be either Path or CompoundPath
-			const resultPath = operation === 'divide' && compoundPathLst.length > 2
-				? AscCommon.PathBoolean.CompoundPath.prototype.divide(compoundPathLst)
-				: compoundPathLst.reduce(function (resultPath, currentPath) {
+			let resultShapes;
+			if (operation === 'divide') {
+				const resultPathsArray = AscCommon.PathBoolean.CompoundPath.prototype.divide(compoundPathLst);
+				resultShapes = resultPathsArray.map(createShapeByCompoundPath);
+			} else {
+				const resultPath = compoundPathLst.reduce(function (resultPath, currentPath) {
 					return resultPath[operation](currentPath);
 				});
-
-			const resultShapes = operation === 'divide'
-				? resultPath.getChildren().map(createShapeByCompoundPath)
-				: [createShapeByCompoundPath(resultPath)];
+				resultShapes = [createShapeByCompoundPath(resultPath)];
+			}
 
 			switch (Asc.editor.editorId) {
 				case AscCommon.c_oEditorId.Word:
