@@ -6092,14 +6092,14 @@ Because of this, the display is sometimes not correct.
       AscFormat.writeObjectNoId(w, this.scene3d);
       AscFormat.writeObjectNoId(w, this.sp3d);
       AscFormat.writeObjectNoId(w, this.style);
-      AscFormat.writeObjectNoId(w, this.txPr);
+      AscFormat.writeObjectNoIdNoType(w, this.txPr);
     };
     StyleDefStyleLbl.prototype.Read_FromBinary = function (r) {
       this.name = AscFormat.readString(r);
       this.scene3d = AscFormat.readObjectNoId(r);
       this.sp3d = AscFormat.readObjectNoId(r);
       this.style = AscFormat.ExecuteNoHistory(AscFormat.readObjectNoId, this, [r]);
-      this.txPr = AscFormat.ExecuteNoHistory(AscFormat.readObjectNoId, this, [r]);
+      this.txPr = AscFormat.ExecuteNoHistory(AscFormat.readObjectNoIdNoType, this, [r, AscFormat.CBodyPr]);
     };
 	  StyleDefStyleLbl.prototype.setShapeStyle = function (shapes) {
 		  if (this.style) {
