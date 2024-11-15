@@ -47,8 +47,6 @@ function (window, undefined) {
 
 	function StatisticOnlineAlgorithm(isCalculated) {
 		this.isCalculated = !!isCalculated;
-		this.isProcess = false;
-		this.isReady = false;
 		this.reset();
 	}
 

@@ -10236,15 +10236,15 @@ CT_pivotTableDefinition.prototype.asc_hasTablesErrorForCalculatedItems = functio
  * @param {number} fld pivotField index
  * @param {string} name item name
  * @param {string} formula
- * @return {c_oAscError.ID | null}
+ * @return {c_oAscError.ID}
  */
 CT_pivotTableDefinition.prototype.asc_addCalculatedItem = function(api, fld, name, formula) {
 	const t = this;
-	let error = null;
-	api._changePivotAndConnectedByPivotCacheWithLock(this, false, function (confirmation, pivotTables) {
-		const changeRes = new AscCommonExcel.PivotChangeResult();
-		try {
-			const convertedFormula = t.convertCalculatedFormula(formula, fld);
+	let error = Asc.c_oAscError.ID.No;
+	try {
+		const convertedFormula = this.convertCalculatedFormula(formula, fld);
+		api._changePivotAndConnectedByPivotCacheWithLock(this, false, function (confirmation, pivotTables) {
+			const changeRes = new AscCommonExcel.PivotChangeResult();
 			const sharedItemIndex = t.addCalculatedSharedItem({
 				fieldIndex: fld,
 				name: name,
@@ -10270,10 +10270,10 @@ CT_pivotTableDefinition.prototype.asc_addCalculatedItem = function(api, fld, nam
 				changeRes.merge(change);
 			}
 			return changeRes;
-		} catch (err) {
-			error = err;
-		}
-	});
+		});
+	} catch (err) {
+		error = err;
+	}
 	return error;
 };
 /**
@@ -10281,23 +10281,25 @@ CT_pivotTableDefinition.prototype.asc_addCalculatedItem = function(api, fld, nam
  * @param {number} fld pivotField index
  * @param {string} name modifying item name
  * @param {string} formula new formula for item
+ * @reutrn {c_oAscError.ID}
  */
 CT_pivotTableDefinition.prototype.asc_modifyCalculatedItem = function(api, fld, name, formula) {
 	const t = this;
-	let error = null;
-	api._changePivotAndConnectedByPivotCacheWithLock(this, false, function (confirmation, pivotTables) {
-		const changeRes = new AscCommonExcel.PivotChangeResult();
-		const pivotFields = t.asc_getPivotFields();
-		const cacheFields = t.asc_getCacheFields();
-		const pivotField = pivotFields[fld];
-		const cacheField = cacheFields[fld]
-		const item = pivotField.findFieldItemByTextValue(cacheField, name);
-		if (!item || !item.f) {
-			return changeRes;
-		}
-		const sharedItemIndex = item.x;
-		try {
-			const convertedFormula = t.convertCalculatedFormula(formula, fld);
+	let error = Asc.c_oAscError.ID.No;
+	try {
+		const convertedFormula = this.convertCalculatedFormula(formula, fld);
+		api._changePivotAndConnectedByPivotCacheWithLock(this, false, function (confirmation, pivotTables) {
+			const changeRes = new AscCommonExcel.PivotChangeResult();
+			const pivotFields = t.asc_getPivotFields();
+			const cacheFields = t.asc_getCacheFields();
+			const pivotField = pivotFields[fld];
+			const cacheField = cacheFields[fld]
+			const item = pivotField.findFieldItemByTextValue(cacheField, name);
+			if (!item || !item.f) {
+				return changeRes;
+			}
+			const sharedItemIndex = item.x;
+
 			t.modifyCalculatedItem({
 				itemsMapArray: [[fld, sharedItemIndex]],
 				formula: convertedFormula,
@@ -10311,10 +10313,10 @@ CT_pivotTableDefinition.prototype.asc_modifyCalculatedItem = function(api, fld, 
 				changeRes.merge(change);
 			}
 			return changeRes;
-		} catch (err) {
-			error = err;
-		}
-	});
+		});
+	} catch (err) {
+		error = err;
+	}
 	return error;
 };
 /**
