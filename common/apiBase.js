@@ -1517,6 +1517,28 @@
 			this.downloadAs(Asc.c_oAscAsyncAction.DownloadAs, oOptions);
 		}
 	};
+	baseEditorsApi.prototype.getConvertedBinFileFromRtf  = function (document, nOutputFormat, fCallback) {
+		if (this.canEdit()) {
+			this.insertDocumentUrlsData = {
+				imageMap: null, documents: [document], convertCallback: function (_api, url) {
+					_api.insertDocumentUrlsData.imageMap = url;
+					if (url['output.bin']) {
+						fCallback(url['output.bin']);
+					} else {
+						fCallback(null);
+					}
+					//_api.endInsertDocumentUrls();
+				}, endCallback: function (_api) {
+					fCallback(null);
+				}
+			};
+
+			const oOptions = new Asc.asc_CDownloadOptions(nOutputFormat);
+			oOptions.isNaturalDownload = true;
+			oOptions.isGetTextFromUrl = true;
+			this.downloadAs(Asc.c_oAscAsyncAction.DownloadAs, oOptions);
+		}
+	};
 	baseEditorsApi.prototype._onEndPermissions                   = function()
 	{
 		if (this.isOnLoadLicense) {
