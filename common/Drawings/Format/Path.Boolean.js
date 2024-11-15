@@ -3374,7 +3374,8 @@
 			return [left, top, right, bottom];
 		}
 		const bounds = calculateUniversumBounds(paths);
-		const universum = new Path.Rectangle(bounds[0], bounds[1], bounds[2], bounds[3]);
+		const delta = 1; // Expand universum so that it accurately includes all paths
+		const universum = new Path.Rectangle(bounds[0] - delta, bounds[1] - delta, bounds[2] + delta, bounds[3] + delta);
 
 		const fragments = [];
 		for (let option = 1, totalCombinations = Math.pow(2, paths.length); option < totalCombinations; option++) {
