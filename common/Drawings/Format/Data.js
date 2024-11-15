@@ -6865,9 +6865,7 @@ Because of this, the display is sometimes not correct.
       oCopy.setContourW(this.getContourW());
       oCopy.setExtrusionH(this.getExtrusionH());
       oCopy.setPrstMaterial(this.getPrstMaterial());
-      if (this.getZ()) {
-        oCopy.setZ(this.getZ().createDuplicate(oIdMap));
-      }
+      oCopy.setZ(this.getZ());
       if (this.getBevelB()) {
         oCopy.setBevelB(this.getBevelB().createDuplicate(oIdMap));
       }
