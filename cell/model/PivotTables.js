@@ -1871,18 +1871,6 @@ CT_PivotCacheDefinition.prototype.setPivotCacheId = function(val) {
 CT_PivotCacheDefinition.prototype.createNewPivotCacheId = function() {
 	this.setPivotCacheId(AscCommon.CreateDurableId());
 };
-CT_PivotCacheDefinition.prototype.getSlicerCaption = function () {
-	var res = [];
-	var cacheFields = this.getFields();
-	if (cacheFields) {
-		cacheFields.forEach(function (elem) {
-			if (!elem.formula) {
-				res.push(elem.name);
-			}
-		});
-	}
-	return res;
-};
 CT_PivotCacheDefinition.prototype.getFieldGroupType = function (fld) {
 	var cacheField = this.getFields()[fld];
 	if (cacheField) {
@@ -4911,6 +4899,13 @@ CT_pivotTableDefinition.prototype.asc_getDataRef = function() {
 	return this.cacheDefinition && this.cacheDefinition.getDataRef() || '';
 };
 CT_pivotTableDefinition.prototype.asc_getFieldIndexByName = function(name) {
+	const pivotFields = this.asc_getPivotFields();
+	for (let i = 0; i < pivotFields.length; i += 1) {
+		const pivotFieldName = pivotFields[i].asc_getName();
+		if (pivotFieldName && pivotFieldName == name) {
+			return i;
+		}
+	}
 	return this.cacheDefinition && this.cacheDefinition.getFieldIndexByName(name);
 };
 CT_pivotTableDefinition.prototype.getDataLocation = function() {
@@ -7821,7 +7816,17 @@ CT_pivotTableDefinition.prototype.getPivotTablesConnectedByPivotCache = function
 	return this.worksheet.workbook.getPivotTablesByCache(this.cacheDefinition);
 };
 CT_pivotTableDefinition.prototype.getSlicerCaption = function () {
-	return this.cacheDefinition.getSlicerCaption();
+	const res = [];
+	const pivotFields = this.asc_getPivotFields();
+	const cacheFields = this.asc_getCacheFields();
+	for (let i = 0; i < pivotFields.length; i += 1) {
+		const cacheField = cacheFields[i];
+		if (!cacheField.formula) {
+			const pivotField = pivotFields[i];
+			res.push(pivotFields[i].asc_getName() || cacheFields[i].asc_getName())
+		}
+	}
+	return res;
 };
 CT_pivotTableDefinition.prototype.getFieldGroupType = function (fld) {
 	return this.cacheDefinition.getFieldGroupType(fld);
@@ -20763,6 +20768,7 @@ CT_Item.prototype.isData = function() {
 CT_Item.prototype.asc_setName = function(newVal, pivot, pivotIndex, itemIndex, addToHistory) {
 	setFieldItemProperty(pivot, pivotIndex, itemIndex, this.n, newVal, addToHistory, AscCH.historyitem_PivotTable_PivotFieldItemSetName, true);
 	this.n = newVal;
+	pivot._updateCacheDataUpdateSlicersPost();
 };
 CT_Item.prototype.asc_getName = function() {
 	return this.n;

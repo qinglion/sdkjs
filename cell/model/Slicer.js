@@ -1075,10 +1075,10 @@
 			case insertSlicerType.pivotTable: {
 				var cacheDefinition = pivotTable.cacheDefinition;
 				var cacheFields = cacheDefinition.getFields();
-				var fieldIndex = cacheDefinition.getFieldIndexByName(name);
+				var fieldIndex = pivotTable.asc_getFieldIndexByName(name);
 				var cacheField = -1 !== fieldIndex && cacheFields[fieldIndex];
 				if (cacheField) {
-					this.sourceName = name;
+					this.sourceName = cacheField.asc_getName();
 					//TODO для генерации имени нужна отдельная функция
 					this.name = this.generateSlicerCacheName(name);
 					this.data = new CT_slicerCacheData();
