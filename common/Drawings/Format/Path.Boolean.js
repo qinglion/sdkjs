@@ -3388,7 +3388,7 @@
 					result = result.intersect(universum.subtract(path));
 				}
 			}
-			if (result.getArea() > 0) {
+			if (!result.isEmpty()) {
 				result._option = option;
 				fragments.push(result);
 			}
@@ -4774,6 +4774,12 @@
 		for (let i = 0, l = this._children.length; i < l; i++)
 			area += this._children[i].getArea();
 		return area;
+	};
+	CompoundPath.prototype.isEmpty = function () {
+		let empty = true;
+		for (let i = 0, l = this._children.length; i < l; i++)
+			empty *= this._children[i].isEmpty();
+		return empty;
 	};
 	CompoundPath.prototype.getLength = function () {
 		let length = 0;
