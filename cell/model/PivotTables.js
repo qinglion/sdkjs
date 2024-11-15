@@ -10128,7 +10128,6 @@ CT_pivotTableDefinition.prototype.convertNameFromFormula = function(name) {
  */
 CT_pivotTableDefinition.prototype.asc_convertCalculatedFormula = function(formula, fieldIndex) {
 	const t = this;
-	debugger;
 	const cacheFields = this.asc_getCacheFields();
 	const pivotFields = this.asc_getPivotFields();
 	const pivotField = pivotFields[fieldIndex];
