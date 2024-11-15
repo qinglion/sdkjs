@@ -2771,7 +2771,7 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 	 * @constructor
 	 * @extends {cBaseType}
 	 */
-	function cStrucPivotTable(val, callback) {
+	function cStrucPivotTable(val) {
 		cBaseType.call(this, val);
 		if (val) {
 			this.isIndex = false;
@@ -2781,23 +2781,22 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 				this.isIndex = true;
 			}
 		}
-		this.callback = callback;
 	}
 
 	cStrucPivotTable.prototype = Object.create(cBaseType.prototype);
 	cStrucPivotTable.prototype.constructor = cStrucPivotTable;
 
 	cStrucPivotTable.prototype.type = cElementType.pivotTable;
-	cStrucPivotTable.prototype.createFromVal = function (val, callback) {
+	cStrucPivotTable.prototype.createFromVal = function (val) {
 		//TODO check on error
-		let res = new cStrucPivotTable(val, callback);
+		let res = new cStrucPivotTable(val);
 		return res;
 	};
 	cStrucPivotTable.prototype.clone = function () {
 
 	};
-	cStrucPivotTable.prototype.Calculate = function () {
-		return this.callback(this.fieldString, this.itemString, this.isIndex);
+	cStrucPivotTable.prototype.Calculate = function (callback) {
+		return callback(this.fieldString, this.itemString, this.isIndex);
 	};
 	cStrucPivotTable.prototype.toString = function () {
 		return this._toString(false);
@@ -6468,7 +6467,7 @@ function parserFormula( formula, parent, _ws ) {
 		this.isInDependencies = false;
 	};
 
-	parserFormula.prototype.parse = function (local, digitDelim, parseResult, ignoreErrors, renameSheetMap, tablesMap, opt_pivotNamesList, opt_pivotCallback) {
+	parserFormula.prototype.parse = function (local, digitDelim, parseResult, ignoreErrors, renameSheetMap, tablesMap, opt_pivotNamesList) {
 		var elemArr = [];
 		var ph = {operand_str: null, pCurrPos: 0};
 		var needAssemble = false;
@@ -7323,9 +7322,9 @@ function parserFormula( formula, parent, _ws ) {
 			var prevCurrPos = ph.pCurrPos;
 
 			/* Booleans */
-			if (opt_pivotNamesList && (_tableTMP = opt_pivotCallback ? parserHelp.isPivotRaw.call(ph, t.Formula, ph.pCurrPos, local) : parserHelp.isPivot.call(ph, t.Formula, ph.pCurrPos, local, opt_pivotNamesList))) {
+			if (opt_pivotNamesList && (_tableTMP = opt_pivotNamesList.length === 0 ? parserHelp.isPivotRaw.call(ph, t.Formula, ph.pCurrPos, local) : parserHelp.isPivot.call(ph, t.Formula, ph.pCurrPos, local, opt_pivotNamesList))) {
 
-				found_operand = cStrucPivotTable.prototype.createFromVal(_tableTMP, opt_pivotCallback);
+				found_operand = cStrucPivotTable.prototype.createFromVal(_tableTMP);
 
 				//todo undo delete column
 				if (found_operand.type === cElementType.error) {
@@ -7964,7 +7963,7 @@ function parserFormula( formula, parent, _ws ) {
 			return false;
 		}
 	};
-	parserFormula.prototype.calculate = function (opt_defName, opt_bbox, opt_offset, checkMultiSelect, opt_oCalculateResult) {
+	parserFormula.prototype.calculate = function (opt_defName, opt_bbox, opt_offset, checkMultiSelect, opt_oCalculateResult, opt_pivotCallback) {
 		if (this.outStack.length < 1) {
 			this.value = new cError(cErrorType.wrong_name);
 			this._endCalculate();
@@ -8086,7 +8085,7 @@ function parserFormula( formula, parent, _ws ) {
 			} else if (currentElement.type === cElementType.table) {
 				elemArr.push(currentElement.toRef(opt_bbox));
 			} else if (currentElement.type === cElementType.pivotTable) {
-				elemArr.push(currentElement.Calculate());
+				elemArr.push(currentElement.Calculate(opt_pivotCallback));
 			} else if (opt_offset) {
 				elemArr.push(this.applyOffset(currentElement, opt_offset));
 			} else {

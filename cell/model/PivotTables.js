@@ -2045,7 +2045,7 @@ CT_PivotCacheDefinition.prototype.getCalculatedFormula = function(itemMapArray, 
 	for (let i = calculatedItems.length - 1; i >= 0; i -= 1) {
 		const calculatedItem = calculatedItems[i];
 		if(calculatedItem.isSuitable(itemMapArray, dataField)) {
-			return calculatedItem.formula;
+			return calculatedItem.convertedFormula;
 		}
 	}
 };
@@ -2541,13 +2541,12 @@ CT_PivotCacheRecords.prototype._calculateFormula = function(options) {
 		}
 		return result;
 	};
-
+	const formula = options.formula;
 	const t = this;
 	let error = null;
 	for (let dataType in BaseStatisticOnlineAlgorithmFieldType) {
 		if (BaseStatisticOnlineAlgorithmFieldType.hasOwnProperty(dataType)) {
-			const formula = new AscCommonExcel.parserFormula(options.formula, this, AscCommonExcel.g_DefNameWorksheet);
-			formula.parse(undefined, undefined, undefined, undefined, undefined, undefined, true, function(fieldString, itemString, isIndex) {
+			t._setTotalValue(options.resultTotal, formula.calculate(undefined, undefined, undefined, undefined, undefined, function(fieldString, itemString, isIndex) {
 				const fieldIndex = options.cacheDefinition.getFieldIndexByName(convertNameFromFormula(fieldString));
 				const cacheField = options.cacheFields[fieldIndex];
 				const pivotField = options.pivotFields[fieldIndex];
@@ -2598,8 +2597,7 @@ CT_PivotCacheRecords.prototype._calculateFormula = function(options) {
 				}
 				const value = t._getTotalValue(total, BaseStatisticOnlineAlgorithmFieldType[dataType]);
 				return new AscCommonExcel.cNumber(value);
-			});
-			t._setTotalValue(options.resultTotal, formula.calculate(), BaseStatisticOnlineAlgorithmFieldType[dataType]);
+			}), BaseStatisticOnlineAlgorithmFieldType[dataType]);
 		}
 	}
 	return {resultTotal: options.resultTotal, error: error};
@@ -2737,6 +2735,14 @@ CT_PivotCacheRecords.prototype.getDataMap = function(options) {
 	const indexes = options.rowIndexes.concat(options.colIndexes);
 	const filters = this._splitLabelFilters(indexes, options.filterMaps.labelFilters, options.cacheFieldsWithData);
 	const itemsWithDataMap = new Map();
+	const calculatedItems = options.cacheDefinition.getCalculatedItems();
+	if (calculatedItems) {
+		calculatedItems.forEach(function(calculatedItem) {
+			if (!calculatedItem.convertedFormula) {
+				calculatedItem.initConvertedFormula();
+			}
+		});
+	}
 	let dataMap = new PivotDataElem(options.dataFields.length);
 	dataMap = this._getDataMapSkeleton({
 		dataMap: dataMap,
@@ -10118,10 +10124,11 @@ CT_pivotTableDefinition.prototype.convertNameFromFormula = function(name) {
 /**
  * @param {string} formula
  * @param {number} fieldIndex
- * @return {string}
+ * @return {string | c_oAscError.ID}
  */
-CT_pivotTableDefinition.prototype.convertCalculatedFormula = function(formula, fieldIndex) {
+CT_pivotTableDefinition.prototype.asc_convertCalculatedFormula = function(formula, fieldIndex) {
 	const t = this;
+	debugger;
 	const cacheFields = this.asc_getCacheFields();
 	const pivotFields = this.asc_getPivotFields();
 	const pivotField = pivotFields[fieldIndex];
@@ -10141,6 +10148,9 @@ CT_pivotTableDefinition.prototype.convertCalculatedFormula = function(formula, f
 	const parserFormula = new AscCommonExcel.parserFormula(formula, this, AscCommonExcel.g_DefNameWorksheet);
 	parserFormula.parse(undefined, undefined, undefined, undefined, undefined, undefined, pivotNames);
 	const outStack = parserFormula.outStack;
+	if (outStack.length === 0) {
+		return c_oAscError.ID.PivotItemNameNotFound;
+	}
 	const resOutStack = [];
 	for(let i = 0; i < outStack.length; i += 1) {
 		const elem = outStack[i];
@@ -10152,20 +10162,17 @@ CT_pivotTableDefinition.prototype.convertCalculatedFormula = function(formula, f
 				resOutStack.push(struc);
 				continue;
 			}
-			throw c_oAscError.ID.PivotItemNameNotFound;
+			return c_oAscError.ID.PivotItemNameNotFound;
 		}
 		if (elem instanceof AscCommonExcel.cStrucPivotTable) {
 			if (namesMap.has(elem.itemString.toLowerCase())) {
 				const struc = new AscCommonExcel.cStrucPivotTable();
-				if (elem.fieldString !== null && elem.fieldString.toLowerCase() !== this.asc_convertNameToFormula(fieldName)) {
-					throw c_oAscError.ID.PivotItemNameNotFound;
-				}
 				struc.fieldString = this.asc_convertNameToFormula(cacheField.asc_getName());
 				struc.itemString = namesMap.get(elem.itemString.toLowerCase())
 				resOutStack.push(struc);
 				continue;
 			}
-			throw c_oAscError.ID.PivotItemNameNotFound;
+			return c_oAscError.ID.PivotItemNameNotFound;
 		}
 		resOutStack.push(elem);
 	}
@@ -10235,14 +10242,13 @@ CT_pivotTableDefinition.prototype.asc_hasTablesErrorForCalculatedItems = functio
  * @param {spreadsheet_api} api
  * @param {number} fld pivotField index
  * @param {string} name item name
- * @param {string} formula
+ * @param {string} formula - convertedFormula
  * @return {c_oAscError.ID}
  */
 CT_pivotTableDefinition.prototype.asc_addCalculatedItem = function(api, fld, name, formula) {
 	const t = this;
 	let error = Asc.c_oAscError.ID.No;
 	try {
-		const convertedFormula = this.convertCalculatedFormula(formula, fld);
 		api._changePivotAndConnectedByPivotCacheWithLock(this, false, function (confirmation, pivotTables) {
 			const changeRes = new AscCommonExcel.PivotChangeResult();
 			const sharedItemIndex = t.addCalculatedSharedItem({
@@ -10252,7 +10258,7 @@ CT_pivotTableDefinition.prototype.asc_addCalculatedItem = function(api, fld, nam
 			});
 			t.addCalculatedItem({
 				itemsMapArray: [[fld, sharedItemIndex]],
-				formula: convertedFormula,
+				formula: formula,
 				addToHistory: true
 			});
 			for(let i = 0; i < pivotTables.length; i += 1) {
@@ -10287,7 +10293,6 @@ CT_pivotTableDefinition.prototype.asc_modifyCalculatedItem = function(api, fld, 
 	const t = this;
 	let error = Asc.c_oAscError.ID.No;
 	try {
-		const convertedFormula = this.convertCalculatedFormula(formula, fld);
 		api._changePivotAndConnectedByPivotCacheWithLock(this, false, function (confirmation, pivotTables) {
 			const changeRes = new AscCommonExcel.PivotChangeResult();
 			const pivotFields = t.asc_getPivotFields();
@@ -10302,7 +10307,7 @@ CT_pivotTableDefinition.prototype.asc_modifyCalculatedItem = function(api, fld, 
 
 			t.modifyCalculatedItem({
 				itemsMapArray: [[fld, sharedItemIndex]],
-				formula: convertedFormula,
+				formula: formula,
 				addToHistory: true,
 			});
 			for(let i = 0; i < pivotTables.length; i += 1) {
@@ -10408,6 +10413,7 @@ CT_pivotTableDefinition.prototype.modifyCalculatedItem = function(options) {
 	}
 	if (suitableItem !== null) {
 		suitableItem.formula = options.formula;
+		suitableItem.initConvertedFormula();
 		if (options.addToHistory) {
 			History.Add(AscCommonExcel.g_oUndoRedoPivotCache, AscCH.historyitem_PivotCache_SetCalculatedItems,
 				null, null, new AscCommonExcel.UndoRedoData_PivotCache(this.Get_Id(), oldItems, cacheDefinition.calculatedItems));
@@ -15607,6 +15613,7 @@ function CT_CalculatedItem() {
 //Attributes
 	this.field = null;
 	this.formula = null;
+	this.convertedFormula = null;
 //Members
 	/**@type {CT_PivotArea} */
 	this.pivotArea = null;
@@ -15618,7 +15625,12 @@ CT_CalculatedItem.prototype.clone = function() {
 	res.formula = this.formula;
 	res.pivotArea = this.pivotArea ? this.pivotArea.clone() : null;
 	res.extLst = this.extLst;
+	res.initConvertedFormula();
 	return res;
+};
+CT_CalculatedItem.prototype.initConvertedFormula = function() {
+	this.convertedFormula = new AscCommonExcel.parserFormula(this.formula, this, AscCommonExcel.g_DefNameWorksheet);
+	this.convertedFormula.parse(undefined, undefined, undefined, undefined, undefined, undefined, []);
 };
 CT_CalculatedItem.prototype.readAttributes = function(attr, uq) {
 	if (attr()) {
@@ -22379,6 +22391,7 @@ prot["asc_addCalculatedItem"] = prot.asc_addCalculatedItem;
 prot["asc_removeCalculatedItem"] = prot.asc_removeCalculatedItem;
 prot["asc_modifyCalculatedItem"] = prot.asc_modifyCalculatedItem;
 prot["asc_convertNameToFormula"] = prot.asc_convertNameToFormula;
+prot["asc_convertCalculatedFormula"] = prot.asc_convertCalculatedFormula;
 prot["asc_getFieldIndexByCell"] = prot.asc_getFieldIndexByCell;
 prot["asc_canAddNameCalculatedItem"] = prot.asc_canAddNameCalculatedItem;
 prot["asc_hasTablesErrorForCalculatedItems"] = prot.asc_hasTablesErrorForCalculatedItems;

@@ -719,9 +719,9 @@ $(function () {
 			const undo = getReportValues(pivot);
 			const standard = getReportValues(standardPivot);
 			pivot = checkHistoryOperation(assert, pivot, undo, standard, "add items", function () {
-				pivot.asc_addCalculatedItem(api, 0, 'Formula3', "East2-10+'we''s t'");
-				pivot.asc_addCalculatedItem(api, 1, 'Formula2', "Boy-Girl");
-				pivot.asc_addCalculatedItem(api, 2, 'Formula1', "Fancy+Tee");
+				pivot.asc_addCalculatedItem(api, 0, 'Formula3', pivot.asc_convertCalculatedFormula("East2-10+'we''s t'", 0));
+				pivot.asc_addCalculatedItem(api, 1, 'Formula2', pivot.asc_convertCalculatedFormula("Boy-Girl", 1));
+				pivot.asc_addCalculatedItem(api, 2, 'Formula1', pivot.asc_convertCalculatedFormula("Fancy+Tee", 2));
 			}, function (assert, pivot, values, message) {
 				assert.deepEqual(getReportValues(pivot), values, message);
 			});
@@ -740,7 +740,7 @@ $(function () {
 			const standard = getReportValues(standardPivot);
 			pivot = checkHistoryOperation(assert, pivot, undo, standard, "add items", function () {
 				pivot.asc_removeCalculatedItem(api, 0, 'Formula1');
-				pivot.asc_removeCalculatedItem(api, 1, 'Formula2', "Boy-Girl");
+				pivot.asc_removeCalculatedItem(api, 1, 'Formula2');
 			}, function (assert, pivot, values, message) {
 				assert.deepEqual(getReportValues(pivot), values, message);
 			});
@@ -758,8 +758,8 @@ $(function () {
 			const undo = getReportValues(pivot);
 			const standard = getReportValues(standardPivot);
 			pivot = checkHistoryOperation(assert, pivot, undo, standard, "add items", function () {
-				pivot.asc_modifyCalculatedItem(api, 0, 'Formula2', "East2-15");
-				pivot.asc_modifyCalculatedItem(api, 2, 'Formula1', "Fancy+Tee-10");
+				pivot.asc_modifyCalculatedItem(api, 0, 'Formula2', pivot.asc_convertCalculatedFormula("East2-15", 0));
+				pivot.asc_modifyCalculatedItem(api, 2, 'Formula1', pivot.asc_convertCalculatedFormula("Fancy+Tee-10", 2));
 			}, function (assert, pivot, values, message) {
 				assert.deepEqual(getReportValues(pivot), values, message);
 			});
