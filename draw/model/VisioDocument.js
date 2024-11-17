@@ -106,7 +106,7 @@
 		//------------------------------------------------------------------------------------------------------------------
 		//  Сохраняем ссылки на глобальные объекты
 		//------------------------------------------------------------------------------------------------------------------
-		this.history              = History;
+		this.History              = History;
 		this.idCounter            = AscCommon.g_oIdCounter;
 		this.tableId              = AscCommon.g_oTableId;
 		// this.collaborativeEditing = (("undefined" !== typeof(AscCommon.CWordCollaborativeEditing) && AscCommon.CollaborativeEditing instanceof AscCommon.CWordCollaborativeEditing) ? AscCommon.CollaborativeEditing : null);
@@ -117,8 +117,8 @@
 		//------------------------------------------------------------------------------------------------------------------
 		if (false !== isMainLogicDocument)
 		{
-			// if (this.history)
-			// 	this.history.Set_LogicDocument(this);
+			if (this.History)
+				this.History.Set_LogicDocument(this);
 		}
 		this.mainDocument = false !== isMainLogicDocument;
 		this.pageIndex = 0;
@@ -277,6 +277,13 @@
 			solutionsPart.part.setDataXml(this.solutions, memory);
 		}
 		memory.Seek(0);
+	};
+
+	CVisioDocument.prototype.Get_Api = function() {
+		return this.api;
+	};
+	CVisioDocument.prototype.Get_CollaborativeEditing = function() {
+		return this.collaborativeEditing;
 	};
 
 	/**
@@ -531,15 +538,15 @@
 				// Version 2 with correct scroll lines
 				// setup scroll lines
 				//todo remove
-				// canvas.style.width  = w_px + "px";
-				// canvas.style.height = h_px + "px";
-				// // set pixels count for width and height
-				// canvas.width = AscCommon.AscBrowser.convertToRetinaValue(canvas.clientWidth, true);
-				// canvas.height = AscCommon.AscBrowser.convertToRetinaValue(canvas.clientHeight, true);
-				//
-				// // canvas#id_viewer_overlay and div#id_target_cursor creates empty gray space below any drawing
-				//
-				// AscCommon.calculateCanvasSize(canvas);
+				canvas.style.width  = w_px + "px";
+				canvas.style.height = h_px + "px";
+				// set pixels count for width and height
+				canvas.width = AscCommon.AscBrowser.convertToRetinaValue(canvas.clientWidth, true);
+				canvas.height = AscCommon.AscBrowser.convertToRetinaValue(canvas.clientHeight, true);
+
+				// canvas#id_viewer_overlay and div#id_target_cursor creates empty gray space below any drawing
+
+				AscCommon.calculateCanvasSize(canvas);
 
 				let ctx = canvas.getContext('2d');
 
@@ -616,11 +623,9 @@
 
 		let api = this.api;
 		let documentCanvas = api.canvas;
-		let panelThumbnails = api.HtmlElement.querySelector("#id_panel_thumbnails");
-
 		let drawThumbnails = false;
-
 		if (drawThumbnails) {
+			let panelThumbnails = api.HtmlElement.querySelector("#id_panel_thumbnails");
 			panelThumbnails.innerHTML = "";
 			for (let thumbPageIndex = 0; thumbPageIndex < this.pages.page.length; thumbPageIndex++) {
 				// var thumbnailCanvas = document.createElement("<canvas id=\"id_thumbnails\" class=\"block_elem\" style=\"user-select: none; z-index: 2; left: 0px; top: 0px; width: 100%; height:100%; cursor: default;\"></canvas>");
@@ -758,8 +763,8 @@
 	CVisioDocument.prototype.Document_CreateFontMap = function () {
 		return {};
 	};
-
-
+	CVisioDocument.prototype.resetStateCurSlide = function () {
+	};
 	// CVisioDocument.prototype.getMasterByID = function(ID) {
 	// 	// join Master_Type and MasterContents_Type
 	// 	let masterFromMastersArray = this.masters.master;
