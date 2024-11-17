@@ -286,7 +286,7 @@
 		// var context = reader.context;
 		// this.WordControl.m_oLogicDocument.ImageMap = context.loadDataLinks();
 		AscCommon.pptx_content_loader.Reader.ImageMapChecker = AscCommon.pptx_content_loader.ImageMapChecker;
-		this.Document.imageMap = xmlParserContext.loadDataLinks();
+		this.Document.ImageMap = xmlParserContext.loadDataLinks();
 		this.ServerIdWaitComplete = true;
 
 		jsZlib.close();

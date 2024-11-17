@@ -98,7 +98,7 @@
 		 * {index: number, path: string}
 		 * @type {{}}
 		 */
-		this.imageMap = null;
+		this.ImageMap = null;
 
 		// unfinished
 		// this.EmbeddedData = null;
@@ -764,6 +764,9 @@
 		return {};
 	};
 	CVisioDocument.prototype.resetStateCurSlide = function () {
+	};
+	CVisioDocument.prototype.IsStartedPreview = function () {
+		return false;
 	};
 	// CVisioDocument.prototype.getMasterByID = function(ID) {
 	// 	// join Master_Type and MasterContents_Type
