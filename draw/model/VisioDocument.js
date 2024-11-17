@@ -445,7 +445,10 @@
 				}
 
 				if (changeTextDirection && shapeOrGroup.Id.substring(shapeOrGroup.Id.length - 4) === "Text") {
-					graphics.SetBaseTransform(baseTextMatrix);
+					if (graphics.SetBaseTransform) {
+						//todo CSlideBoundsChecker
+						graphics.SetBaseTransform(baseTextMatrix);
+					}
 					shapeOrGroup.transform.ty = logic_h_mm - shapeOrGroup.transform.ty - shapeOrGroup.spPr.xfrm.extY;
 					shapeOrGroup.recalculateTransformText();
 				}
@@ -456,7 +459,10 @@
 
 				// set shape transform that was before fix for future drawShapeOrGroupRecursively() calls
 				if (changeTextDirection && shapeOrGroup.Id.substring(shapeOrGroup.Id.length - 4) === "Text") {
-					graphics.SetBaseTransform(baseMatrix);
+					if (graphics.SetBaseTransform) {
+						//todo CSlideBoundsChecker
+						graphics.SetBaseTransform(baseMatrix);
+					}
 					shapeOrGroup.transform.ty = logic_h_mm - shapeOrGroup.transform.ty - shapeOrGroup.spPr.xfrm.extY;
 					shapeOrGroup.recalculateTransformText();
 				}
@@ -525,15 +531,15 @@
 				// Version 2 with correct scroll lines
 				// setup scroll lines
 				//todo remove
-				canvas.style.width  = w_px + "px";
-				canvas.style.height = h_px + "px";
-				// set pixels count for width and height
-				canvas.width = AscCommon.AscBrowser.convertToRetinaValue(canvas.clientWidth, true);
-				canvas.height = AscCommon.AscBrowser.convertToRetinaValue(canvas.clientHeight, true);
-
-				// canvas#id_viewer_overlay and div#id_target_cursor creates empty gray space below any drawing
-
-				AscCommon.calculateCanvasSize(canvas);
+				// canvas.style.width  = w_px + "px";
+				// canvas.style.height = h_px + "px";
+				// // set pixels count for width and height
+				// canvas.width = AscCommon.AscBrowser.convertToRetinaValue(canvas.clientWidth, true);
+				// canvas.height = AscCommon.AscBrowser.convertToRetinaValue(canvas.clientHeight, true);
+				//
+				// // canvas#id_viewer_overlay and div#id_target_cursor creates empty gray space below any drawing
+				//
+				// AscCommon.calculateCanvasSize(canvas);
 
 				let ctx = canvas.getContext('2d');
 
@@ -551,7 +557,11 @@
 			let baseMatrix = new AscCommon.CMatrix();
 			// baseMatrix.SetValues(1, 0, 0, 1, 0, 0);
 			baseMatrix.SetValues(1, 0, 0, -1, 0, logic_h_mm);
-			graphics.SetBaseTransform(baseMatrix);
+			if (graphics.SetBaseTransform) {
+				//todo CSlideBoundsChecker
+				graphics.SetBaseTransform(baseMatrix);
+			}
+
 
 			let baseTextMatrix = new AscCommon.CMatrix();
 			baseTextMatrix.SetValues(1, 0, 0, 1, 0, 0);
@@ -608,7 +618,7 @@
 		let documentCanvas = api.canvas;
 		let panelThumbnails = api.HtmlElement.querySelector("#id_panel_thumbnails");
 
-		let drawThumbnails = true;
+		let drawThumbnails = false;
 
 		if (drawThumbnails) {
 			panelThumbnails.innerHTML = "";
@@ -712,8 +722,43 @@
 	}
 	CVisioDocument.prototype.GetSlide = function() {
 		//todo remove
-		return {getObjectType: function(){}};
+		return {getObjectType: function(){}, isVisible: function(){return true}};
 	}
+	CVisioDocument.prototype.ContinueSpellCheck = function () {
+		//this.Spelling.ContinueSpellCheck();
+	};
+	CVisioDocument.prototype.GetSlidesCount = function () {
+		return this.getCountPages();
+	};
+	CVisioDocument.prototype.RecalculateCurPos = function () {
+	};
+	CVisioDocument.prototype.Document_UpdateSelectionState = function () {
+	};
+	CVisioDocument.prototype.Document_UpdateInterfaceState = function () {
+	};
+	CVisioDocument.prototype.Document_UpdateRulersState = function () {
+	};
+	CVisioDocument.prototype.OnMouseUp = function (e, X, Y, PageIndex) {
+	};
+	CVisioDocument.prototype.OnMouseDown = function (e, X, Y, PageIndex) {
+	};
+	CVisioDocument.prototype.OnMouseMove = function (e, X, Y, PageIndex) {
+	};
+	CVisioDocument.prototype.DrawPage = function (pageIndex, pGraphics) {
+		this.draw(100, pGraphics, pageIndex);
+	};
+	CVisioDocument.prototype.GetSlideNumber = function (nIdx) {
+		return nIdx + 1;
+	};
+	CVisioDocument.prototype.isSlideAnimated = function () {
+		return false;
+	};
+	CVisioDocument.prototype.CheckTargetUpdate = function () {
+	};
+	CVisioDocument.prototype.Document_CreateFontMap = function () {
+		return {};
+	};
+
 
 	// CVisioDocument.prototype.getMasterByID = function(ID) {
 	// 	// join Master_Type and MasterContents_Type

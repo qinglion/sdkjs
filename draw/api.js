@@ -251,6 +251,11 @@
 		this.bInit_word_control = true;
 		this.onDocumentContentReady();
 
+		this.WordControl.InitControl();
+
+		if (this.isViewMode)
+			this.asc_setViewMode(true);
+
 		// Меняем тип состояния (на никакое)
 		this.advancedOptionsAction = AscCommon.c_oAscAdvancedOptionsAction.None;
 
@@ -472,7 +477,26 @@
 	};
 	asc_docs_api.prototype.SetDrawingFreeze = function(bIsFreeze)
 	{
-		//todo
+		if (!this.WordControl)
+			return;
+
+		this.WordControl.DrawingFreeze = bIsFreeze;
+
+		var elem = document.getElementById("id_main");
+		if (elem)
+		{
+			if (bIsFreeze)
+			{
+				elem.style.display = "none";
+			}
+			else
+			{
+				elem.style.display = "block";
+			}
+		}
+
+		if (!bIsFreeze)
+			this.WordControl.OnScroll();
 	};
 	asc_docs_api.prototype.asc_setSpellCheck = function(isOn)
 	{
@@ -657,29 +681,23 @@
 	{	//c_oAscZoomType.Current, c_oAscZoomType.FitWidth, c_oAscZoomType.FitPage
 		this.sendEvent("asc_onZoomChange", percent, type);
 	};
+	asc_docs_api.prototype.sync_currentPageCallback = function(number)
+	{
+		this.sendEvent("asc_onCurrentPage", number);
+	};
+	asc_docs_api.prototype.syncOnThumbnailsShow = function()
+	{
+		var bIsShow = true;
+		if (0 == this.WordControl.Splitter1Pos)
+			bIsShow = false;
+
+		this.sendEvent("asc_onThumbnailsShow", bIsShow);
+	};
 
 	//temp stubs
 	asc_docs_api.prototype.getCountSlides = function()
 	{
 		return this.Document.getCountPages();
-	};
-	asc_docs_api.prototype.DemonstrationEndShowMessage = function(message)
-	{
-	}
-	asc_docs_api.prototype.asc_setShowGridlines = function(isShow)
-	{
-	}
-	asc_docs_api.prototype.asc_setShowGuides = function(isShow)
-	{
-	};
-	asc_docs_api.prototype.asc_setShowSmartGuides = function(isShow)
-	{
-	};
-	asc_docs_api.prototype.asc_ShowNotes = function(bIsShow)
-	{
-	};
-	asc_docs_api.prototype.SetThemesPath = function(bIsFreeze)
-	{
 	};
 	//-------------------------------------------------------------export---------------------------------------------------
 	window['Asc']                                                       = window['Asc'] || {};

@@ -74,10 +74,7 @@ function CEditorPage(api)
 {
 	// ------------------------------------------------------------------
 	this.Name           = "";
-	this.IsSupportNotes = true;
-	this.IsSupportAnimPane = true;
-
-	this.EditorType = "presentations";
+	this.EditorType = "draw";
 
 	this.X      = 0;
 	this.Y      = 0;
@@ -93,14 +90,6 @@ function CEditorPage(api)
 	this.m_oThumbnailsSplit		= null;
 	this.m_oThumbnails          = null;
 	this.m_oThumbnails_scroll   = null;
-
-	// notes
-	this.m_oNotesContainer = null;
-	this.m_oNotes          = null;
-	this.m_oNotes_scroll   = null;
-	this.m_oNotesOverlay   = null;
-
-	this.m_oNotesApi	   = null;
 
 	// main
 	this.m_oMainParent = null;
@@ -131,16 +120,10 @@ function CEditorPage(api)
 	this.m_oOverlayApi                          = new AscCommon.COverlay();
 	this.m_oOverlayApi.m_bIsAlwaysUpdateOverlay = true;
 
-	// reporter mode
-	this.m_oDemonstrationDivParent = null;
-	this.m_oDemonstrationDivId = null;
-
 	// scrolls api
 	this.m_oScrollHor_   = null;
 	this.m_oScrollVer_   = null;
 	this.m_oScrollThumb_ = null;
-	this.m_oScrollNotes_ = null;
-	this.m_oScrollAnim_  = null;
 	this.m_nVerticalSlideChangeOnScrollInterval = 300; // как часто можно менять слайды при вертикальном скролле
 	this.m_nVerticalSlideChangeOnScrollLast = -1;
     this.m_nVerticalSlideChangeOnScrollEnabled = false;
@@ -148,7 +131,6 @@ function CEditorPage(api)
 	this.m_oScrollHorApi   = null;
 	this.m_oScrollVerApi   = null;
 	this.m_oScrollThumbApi = null;
-	this.m_oScrollNotesApi = null;
 
 	this.StartVerticalScroll     = false;
 	this.VerticalScrollOnMouseUp = {SlideNum : 0, ScrollY : 0, ScrollY_max : 0};
@@ -203,16 +185,6 @@ function CEditorPage(api)
 	// drawing document
 	this.m_oDrawingDocument = new AscCommon.CDrawingDocument();
 	this.m_oLogicDocument   = null;
-
-	// interface (master & layout)
-	// this.m_oLayoutDrawer                 = new CLayoutThumbnailDrawer();
-	// this.m_oLayoutDrawer.DrawingDocument = this.m_oDrawingDocument;
-	//
-	// this.m_oMasterDrawer                 = new CMasterThumbnailDrawer();
-	// this.m_oMasterDrawer.DrawingDocument = this.m_oDrawingDocument;
-
-	this.AllLayouts = [];
-	this.LastMaster = null;
 
 	this.m_oDrawingDocument.m_oWordControl           = this;
 	this.m_oDrawingDocument.TransitionSlide.HtmlPage = this;
@@ -269,18 +241,9 @@ function CEditorPage(api)
 
 	this.retinaScaling = AscCommon.AscBrowser.retinaPixelRatio;
 
-	// demonstrationMode
-	this.DemonstrationManager = new CDemonstrationManager(this);
-
 	// overlay flags
 	this.IsUpdateOverlayOnlyEnd    = false;
 	this.IsUpdateOverlayOnEndCheck = false;
-
-	// reporter
-	this.reporterTimer = -1;
-	this.reporterTimerAdd = 0;
-	this.reporterTimerLastStart = -1;
-	this.reporterPointer = false;
 
 	// mobile
 	this.MobileTouchManager 			= null;
@@ -340,13 +303,6 @@ function CEditorPage(api)
 
 	this.Init = function()
 	{
-		if (this.m_oApi.isReporterMode)
-		{
-			var _elem = document.getElementById(this.Name);
-			if (_elem)
-				_elem.style.overflow = "hidden";
-		}
-
 		this.m_oBody = CreateControlContainer(this.Name);
 		this.m_oBody.HtmlElement.style.touchAction = "none";
 
@@ -359,22 +315,12 @@ function CEditorPage(api)
 
 		this.Splitter1Pos    = 67.5;
 		this.Splitter1PosSetUp = this.Splitter1Pos;
-		this.Splitter2Pos = (this.IsNotesSupported() && !this.m_oApi.isEmbedVersion) ? this.Splitter2PosMin : 0;
+		this.Splitter2Pos = 0;
 		this.Splitter3Pos = 0;
 
 		this.OldSplitter1Pos = this.Splitter1Pos;
 		this.OldSplitter2Pos = this.Splitter2Pos;
 		this.OldSplitter3Pos = this.Splitter3Pos;
-
-		if (this.m_oApi.isReporterMode)
-		{
-			this.Splitter2Pos = window.innerHeight * 0.5 * AscCommon.g_dKoef_pix_to_mm;
-			this.Splitter2PosMax = 200;
-			if (this.Splitter2Pos > this.Splitter2PosMax)
-				this.Splitter2Pos = this.Splitter2PosMax;
-			if (this.Splitter2Pos < this.Splitter2PosMin)
-				this.Splitter2Pos = this.Splitter2PosMin;
-		}
 
 		var ScrollWidthMm  = this.ScrollWidthPx * g_dKoef_pix_to_mm;
 		var ScrollWidthMm9 = 10 * g_dKoef_pix_to_mm;
@@ -501,10 +447,10 @@ function CEditorPage(api)
 		this.m_oScrollHor.Bounds.SetParams(0, 0, ScrollWidthMm, 1000, false, false, true, false, -1, ScrollWidthMm);
 		this.m_oScrollHor.Anchor = (g_anchor_left | g_anchor_right | g_anchor_bottom);
 		this.m_oMainContent.AddControl(this.m_oScrollHor);
-		// -------------
 
+		// ----------
 		this.m_oMainView = CreateControlContainer("id_main_view");
-		var useScrollW = (this.m_oApi.isMobileVersion || this.m_oApi.isReporterMode) ? 0 : ScrollWidthMm;
+		var useScrollW = (this.m_oApi.isMobileVersion) ? 0 : ScrollWidthMm;
 		this.m_oMainView.Bounds.SetParams(5, 7, useScrollW, useScrollW, true, true, true, true, -1, -1);
 		this.m_oMainView.Anchor = (g_anchor_left | g_anchor_right | g_anchor_top | g_anchor_bottom);
 		this.m_oMainContent.AddControl(this.m_oMainView);
@@ -524,321 +470,26 @@ function CEditorPage(api)
 		this.m_oOverlay.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right | g_anchor_bottom);
 		this.m_oMainView.AddControl(this.m_oOverlay);
 
-		if (this.m_oApi.isReporterMode)
+		this.m_oBody.HtmlElement.oncontextmenu = function(e)
 		{
-			var _documentParent = document.createElement("div");
-			_documentParent.setAttribute("id", "id_reporter_dem_parent");
-			_documentParent.setAttribute("class", "block_elem");
-			_documentParent.style.overflow = "hidden";
-			_documentParent.style.zIndex = 11;
-			_documentParent.style.backgroundColor = GlobalSkin.BackgroundColor;
-			this.m_oMainView.HtmlElement.appendChild(_documentParent);
-
-			this.m_oDemonstrationDivParent = CreateControlContainer("id_reporter_dem_parent");
-			this.m_oDemonstrationDivParent.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, -1);
-			this.m_oDemonstrationDivParent.Anchor = (g_anchor_left | g_anchor_right | g_anchor_top | g_anchor_bottom);
-			this.m_oMainView.AddControl(this.m_oDemonstrationDivParent);
-
-			var _documentDem = document.createElement("div");
-			_documentDem.setAttribute("id", "id_reporter_dem");
-			_documentDem.setAttribute("class", "block_elem");
-			_documentDem.style.overflow = "hidden";
-			_documentDem.style.backgroundColor = GlobalSkin.BackgroundColorThumbnails;
-			_documentParent.appendChild(_documentDem);
-
-			this.m_oDemonstrationDivId = CreateControlContainer("id_reporter_dem");
-			this.m_oDemonstrationDivId.Bounds.SetParams(0, 0, 1000, 8, false, false, false, true, -1, -1);
-			this.m_oDemonstrationDivId.Anchor = (g_anchor_left | g_anchor_right | g_anchor_top | g_anchor_bottom);
-			this.m_oDemonstrationDivParent.AddControl(this.m_oDemonstrationDivId);
-			this.m_oDemonstrationDivId.HtmlElement.style.cursor = "default";
-
-			// bottons
-			var demBottonsDiv = document.createElement("div");
-			demBottonsDiv.setAttribute("id", "id_reporter_dem_controller");
-			demBottonsDiv.setAttribute("class", "block_elem");
-			demBottonsDiv.style.overflow = "hidden";
-			demBottonsDiv.style.backgroundColor = GlobalSkin.BackgroundColorThumbnails;
-			demBottonsDiv.style.cursor = "default";
-			_documentParent.appendChild(demBottonsDiv);
-
-			demBottonsDiv.onmousedown = function (e) { AscCommon.stopEvent(e); };
-
-			var _ctrl = CreateControlContainer("id_reporter_dem_controller");
-			_ctrl.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, 8);
-			_ctrl.Anchor = (g_anchor_left | g_anchor_right | g_anchor_bottom);
-			this.m_oDemonstrationDivParent.AddControl(_ctrl);
-
-			var _images_url = "../../../../sdkjs/common/Images/reporter/";
-			var _head = document.getElementsByTagName('head')[0];
-
-			var styleContent = ".block_elem_no_select { -khtml-user-select: none; user-select: none; -moz-user-select: none; -webkit-user-select: none; }";
-			styleContent += ".back_image_buttons { position:absolute; left: 0px; top: 0px; background-image: url('" + _images_url + "buttons.png') }";
-
-			styleContent += "@media (-webkit-min-device-pixel-ratio: 1.25) and (-webkit-max-device-pixel-ratio: 1.4),\
-            						(min-resolution: 1.25dppx) and (max-resolution: 1.4dppx), \
-									(min-resolution: 120dpi) and (max-resolution: 143dpi) {\n\
-				.back_image_buttons { position:absolute; left: 0px; top: 0px; background-image: url('" + _images_url + "buttons@1.25x.png');background-size: 40px 120px; }\
-			}";
-			styleContent += "@media all and (-webkit-min-device-pixel-ratio : 1.5),all and (-o-min-device-pixel-ratio: 3/2),all and (min--moz-device-pixel-ratio: 1.5),all and (min-device-pixel-ratio: 1.5) {\n\
-				.back_image_buttons { position:absolute; left: 0px; top: 0px; background-image: url('" + _images_url + "buttons@1.5x.png');background-size: 40px 120px; }\
-			}";
-			styleContent += "@media (-webkit-min-device-pixel-ratio: 1.75) and (-webkit-max-device-pixel-ratio: 1.9),\
-            						(min-resolution: 1.75dppx) and (max-resolution: 1.9dppx),\
-                					(min-resolution: 168dpi) and (max-resolution: 191dpi) {\n\
-				.back_image_buttons { position:absolute; left: 0px; top: 0px; background-image: url('" + _images_url + "buttons@1.75x.png');background-size: 40px 120px; }\
-			}";
-			styleContent += "@media all and (-webkit-min-device-pixel-ratio : 2),all and (-o-min-device-pixel-ratio: 2),all and (min--moz-device-pixel-ratio: 2),all and (min-device-pixel-ratio: 2) {\n\
-				.back_image_buttons { position:absolute; left: 0px; top: 0px; background-image: url('" + _images_url + "buttons@2x.png');background-size: 40px 120px; }\
-			}";
-
-			styleContent += this.getStylesReporter();
-
-			var style		 = document.createElement('style');
-			style.type 	 = 'text/css';
-			style.innerHTML = styleContent;
-			_head.appendChild(style);
-
-			this.reporterTranslates = ["Reset", "Slide {0} of {1}", "End slideshow"];
-			var _translates = this.m_oApi.reporterTranslates;
-			if (_translates)
+			if (AscCommon.AscBrowser.isVivaldiLinux)
 			{
-				this.reporterTranslates[0] = _translates[0];
-				this.reporterTranslates[1] = _translates[1];
-				this.reporterTranslates[2] = _translates[2];
-
-				if (_translates[3])
-					this.m_oApi.DemonstrationEndShowMessage(_translates[3]);
+				AscCommon.Window_OnMouseUp(e);
 			}
-
-			var _buttonsContent = "";
-			_buttonsContent += "<label class=\"block_elem_no_select dem-text-color\" id=\"dem_id_time\" style=\"text-shadow: none;white-space: nowrap;font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 11px; position:absolute; left:10px; bottom: 7px;\">00:00:00</label>";
-			_buttonsContent += "<button class=\"btn-text-default-img\" id=\"dem_id_play\" style=\"left: 60px; bottom: 3px; width: 20px; height: 20px;\"><span class=\"btn-play back_image_buttons\" id=\"dem_id_play_span\" style=\"width:100%;height:100%;\"></span></button>";
-			_buttonsContent += ("<button class=\"btn-text-default\" id=\"dem_id_reset\" style=\"left: 85px; bottom: 2px; \">" + this.reporterTranslates[0] + "</button>");
-			_buttonsContent += ("<button class=\"btn-text-default\" id=\"dem_id_end\" style=\"right: 10px; bottom: 2px; \">" + this.reporterTranslates[2] + "</button>");
-
-			_buttonsContent += "<button class=\"btn-text-default-img\" id=\"dem_id_prev\"  style=\"left: 150px; bottom: 3px; width: 20px; height: 20px;\"><span class=\"btn-prev back_image_buttons\" style=\"width:100%;height:100%;\"></span></button>";
-			_buttonsContent += "<button class=\"btn-text-default-img\" id=\"dem_id_next\"  style=\"left: 170px; bottom: 3px; width: 20px; height: 20px;\"><span class=\"btn-next back_image_buttons\" style=\"width:100%;height:100%;\"></span></button>";
-
-			_buttonsContent += "<div class=\"separator block_elem_no_select\" id=\"dem_id_sep\" style=\"left: 185px; bottom: 3px;\"></div>";
-
-			_buttonsContent += "<label class=\"block_elem_no_select dem-text-color\" id=\"dem_id_slides\" style=\"text-shadow: none;white-space: nowrap;font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; font-size: 11px; position:absolute; left:207px; bottom: 7px;\"></label>";
-
-			_buttonsContent += "<div class=\"separator block_elem_no_select\" id=\"dem_id_sep2\" style=\"left: 350px; bottom: 3px;\"></div>";
-
-			_buttonsContent += "<button class=\"btn-text-default-img\" id=\"dem_id_pointer\"  style=\"left: 365px; bottom: 3px; width: 20px; height: 20px;\"><span id=\"dem_id_pointer_span\" class=\"btn-pointer back_image_buttons\" style=\"width:100%;height:100%;\"></span></button>";
-
-			demBottonsDiv.innerHTML = _buttonsContent;
-
-			// events
-			this.m_oApi.asc_registerCallback("asc_onDemonstrationSlideChanged", function (slideNum)
-			{
-				var _elem = document.getElementById("dem_id_slides");
-				if (!_elem)
-					return;
-
-				var _count = window.editor.getCountPages();
-				var _first_slide_number = window.editor.WordControl.m_oLogicDocument.getFirstSlideNumber();
-				var _current = slideNum + _first_slide_number;
-				if (_current > _count)
-					_current = _count;
-
-				var _text = "Slide {0} of {1}";
-				if (window.editor.WordControl.reporterTranslates)
-					_text = window.editor.WordControl.reporterTranslates[1];
-				_text = _text.replace("{0}", _current);
-				var _count_string;
-				if(_first_slide_number === 1)
-				{
-					_count_string = "" + _count;
-				}
-				else
-				{
-					_count_string = _first_slide_number + ' .. ' + (_count + _first_slide_number - 1)
-				}
-				_text = _text.replace("{1}", _count_string);
-
-				_elem.innerHTML = _text;
-
-				//window.editor.WordControl.Thumbnails.SelectPage(_current - 1);
-				window.editor.WordControl.GoToPage(slideNum, false, false, false, true);
-
-				window.editor.WordControl.OnResizeReporter();
-			});
-
-			this.m_oApi.asc_registerCallback("asc_onEndDemonstration", function ()
-			{
-				try
-				{
-					window.editor.sendFromReporter("{ \"reporter_command\" : \"end\" }");
-				}
-				catch (err)
-				{
-				}
-			});
-
-			this.m_oApi.asc_registerCallback("asc_onDemonstrationFirstRun", function ()
-			{
-				var _elem = document.getElementById("dem_id_play_span");
-				_elem.classList.remove("btn-play");
-				_elem.classList.add("btn-pause");
-
-				var _wordControl = window.editor.WordControl;
-				_wordControl.reporterTimerLastStart = new Date().getTime();
-				_wordControl.reporterTimer = setInterval(_wordControl.reporterTimerFunc, 1000);
-
-			});
-
-			this.elementReporter1 = document.getElementById("dem_id_end");
-			this.elementReporter1.onclick = function() {
-				window.editor.EndDemonstration();
-			};
-
-			this.elementReporter2 = document.getElementById("dem_id_prev");
-			this.elementReporter2.onclick = function() {
-				window.editor.DemonstrationPrevSlide();
-			};
-
-			this.elementReporter3 = document.getElementById("dem_id_next");
-			this.elementReporter3.onclick = function() {
-				window.editor.DemonstrationNextSlide();
-			};
-
-			this.elementReporter4 = document.getElementById("dem_id_play");
-			this.elementReporter4.onclick = function() {
-
-				var _wordControl = window.editor.WordControl;
-				var _isNowPlaying = _wordControl.DemonstrationManager.IsPlayMode;
-				var _elem = document.getElementById("dem_id_play_span");
-
-				if (_isNowPlaying)
-				{
-					window.editor.DemonstrationPause();
-
-					_elem.classList.remove("btn-pause");
-					_elem.classList.add("btn-play");
-
-					if (-1 != _wordControl.reporterTimer)
-					{
-						clearInterval(_wordControl.reporterTimer);
-						_wordControl.reporterTimer = -1;
-					}
-
-					_wordControl.reporterTimerAdd = _wordControl.reporterTimerFunc(true);
-
-					window.editor.sendFromReporter("{ \"reporter_command\" : \"pause\" }");
-				}
-				else
-				{
-					window.editor.DemonstrationPlay();
-
-					_elem.classList.remove("btn-play");
-					_elem.classList.add("btn-pause");
-
-					_wordControl.reporterTimerLastStart = new Date().getTime();
-
-					_wordControl.reporterTimer = setInterval(_wordControl.reporterTimerFunc, 1000);
-
-					window.editor.sendFromReporter("{ \"reporter_command\" : \"play\" }");
-				}
-			};
-
-			this.elementReporter5 = document.getElementById("dem_id_reset");
-			this.elementReporter5.onclick = function() {
-
-				var _wordControl = window.editor.WordControl;
-				_wordControl.reporterTimerAdd = 0;
-				_wordControl.reporterTimerLastStart = new Date().getTime();
-				_wordControl.reporterTimerFunc();
-
-			};
-
-			this.elementReporter6 = document.getElementById("dem_id_pointer");
-			this.elementReporter6.onclick = function() {
-
-				var _wordControl = window.editor.WordControl;
-				var _elem1 = document.getElementById("dem_id_pointer");
-				var _elem2 = document.getElementById("dem_id_pointer_span");
-
-				if (_wordControl.reporterPointer)
-				{
-					_elem1.classList.remove("btn-text-default-img2");
-					_elem1.classList.add("btn-text-default-img");
-
-					_elem2.classList.remove("btn-pointer-active");
-					_elem2.classList.add("btn-pointer");
-				}
-				else
-				{
-					_elem1.classList.remove("btn-text-default-img");
-					_elem1.classList.add("btn-text-default-img2");
-
-					_elem2.classList.remove("btn-pointer");
-					_elem2.classList.add("btn-pointer-active");
-				}
-
-				_wordControl.reporterPointer = !_wordControl.reporterPointer;
-
-				if (!_wordControl.reporterPointer)
-					_wordControl.DemonstrationManager.PointerRemove();
-			};
-
-			window.onkeydown = this.onKeyDown;
-			window.onkeyup = this.onKeyUp;
-
-			if (!window["AscDesktopEditor"])
-			{
-				if (window.attachEvent)
-					window.attachEvent('onmessage', this.m_oApi.DemonstrationToReporterMessages);
-				else
-					window.addEventListener('message', this.m_oApi.DemonstrationToReporterMessages, false);
-			}
-
-			document.oncontextmenu = function(e)
-			{
-				AscCommon.stopEvent(e);
-				return false;
-			};
-		}
-		else
-		{
-			if (window.addEventListener)
-			{
-				window.addEventListener("beforeunload", function (e)
-				{
-					window.editor.EndDemonstration();
-				});
-			}
-
-			this.m_oBody.HtmlElement.oncontextmenu = function(e)
-			{
-				if (AscCommon.AscBrowser.isVivaldiLinux)
-				{
-					AscCommon.Window_OnMouseUp(e);
-				}
-				AscCommon.stopEvent(e);
-				return false;
-			};
-		}
+			AscCommon.stopEvent(e);
+			return false;
+		};
 		// --------------------------------------------------------------------------
 
-		//this.m_oDrawingDocument.TargetHtmlElement = document.getElementById('id_target_cursor');
-
-		// if (this.IsNotesSupported())
-		// {
-		// 	this.m_oNotes.HtmlElement.style.backgroundColor = GlobalSkin.BackgroundColor;
-		// 	this.m_oNotesContainer.HtmlElement.style.backgroundColor = GlobalSkin.BackgroundColor;
-		// 	this.m_oBottomPanesContainer.HtmlElement.style.borderTop = ("1px solid " + GlobalSkin.BorderSplitterColor);
-		// 	this.m_oBottomPanesContainer.HtmlElement.style.backgroundColor = GlobalSkin.BackgroundColor;
-		// 	this.m_oAnimationPaneContainer.HtmlElement.style.borderTop = ("1px solid " + GlobalSkin.BorderSplitterColor);
-		// }
+		this.m_oDrawingDocument.TargetHtmlElement = document.getElementById('id_target_cursor');
 
 		this.m_oOverlayApi.m_oControl  = this.m_oOverlay;
 		this.m_oOverlayApi.m_oHtmlPage = this;
 		this.m_oOverlayApi.Clear();
 		this.ShowOverlay();
 
-		// this.m_oDrawingDocument.AutoShapesTrack = new AscCommon.CAutoshapeTrack();
-		// this.m_oDrawingDocument.AutoShapesTrack.init2(this.m_oOverlayApi);
+		this.m_oDrawingDocument.AutoShapesTrack = new AscCommon.CAutoshapeTrack();
+		this.m_oDrawingDocument.AutoShapesTrack.init2(this.m_oOverlayApi);
 
 		this.SlideDrawer.m_oWordControl = this;
 
@@ -846,34 +497,22 @@ function CEditorPage(api)
 		this.initEvents();
 		this.OnResize(true);
 
-		// this.m_oNotesApi = new CNotesDrawer(this);
-		// this.m_oNotesApi.Init();
+		if (AscCommon.AscBrowser.isIE && !AscCommon.AscBrowser.isIeEdge)
+		{
+			var ie_hack = [
+				this.m_oThumbnailsBack,
+				this.m_oThumbnails,
+				this.m_oMainContent,
+				this.m_oEditor,
+				this.m_oOverlay
+			];
 
-		// if(this.IsSupportAnimPane)
-		// {
-		// 	this.m_oAnimPaneApi = new CAnimationPaneDrawer(this, this.m_oAnimationPaneContainer.HtmlElement);
-		// 	this.m_oAnimPaneApi.Init();
-		// }
-
-		if (this.m_oApi.isReporterMode)
-			this.m_oApi.StartDemonstration(this.Name, 0);
-
-		// if (AscCommon.AscBrowser.isIE && !AscCommon.AscBrowser.isIeEdge)
-		// {
-		// 	var ie_hack = [
-		// 		this.m_oThumbnailsBack,
-		// 		this.m_oThumbnails,
-		// 		this.m_oMainContent,
-		// 		this.m_oEditor,
-		// 		this.m_oOverlay
-		// 	];
-		//
-		// 	for (var elem in ie_hack)
-		// 	{
-		// 		if (ie_hack[elem] && ie_hack[elem].HtmlElement)
-		// 			ie_hack[elem].HtmlElement.style.zIndex = 0;
-		// 	}
-		// }
+			for (var elem in ie_hack)
+			{
+				if (ie_hack[elem] && ie_hack[elem].HtmlElement)
+					ie_hack[elem].HtmlElement.style.zIndex = 0;
+			}
+		}
 	};
 
 	this.CheckRetinaDisplay = function()
@@ -881,6 +520,9 @@ function CEditorPage(api)
 		if (this.retinaScaling !== AscCommon.AscBrowser.retinaPixelRatio)
 		{
 			this.retinaScaling = AscCommon.AscBrowser.retinaPixelRatio;
+			this.m_oDrawingDocument.ClearCachePages();
+			//todo
+			this.onButtonTabsDraw();
 		}
 	};
 
@@ -893,13 +535,8 @@ function CEditorPage(api)
 			case "id_hor_ruler":
 			case "id_vert_ruler":
 			case "id_buttonTabs":
-			case "id_notes":
-			case "id_notes_overlay":
 			case "id_thumbnails_background":
 			case "id_thumbnails":
-			case "id_anim_header_canvas":
-			case "id_anim_list_canvas":
-			case "id_anim_timeline_canvas":
 				return true;
 			default:
 				break;
@@ -912,8 +549,6 @@ function CEditorPage(api)
 		{
 			case "id_viewer":
 			case "id_viewer_overlay":
-			case "id_notes":
-			case "id_notes_overlay":
 				return true;
 			default:
 				break;
@@ -982,8 +617,6 @@ function CEditorPage(api)
 
 	this.hitToSplitter = function()
 	{
-
-
 		let nResult = 0;
 		let oWordControl = oThis;
 
@@ -1006,18 +639,6 @@ function CEditorPage(api)
 			if(_y >= y1 && _y <= y2)
 			{
 				nResult = 2;
-			}
-			else
-			{
-				if(oThis.IsAnimPaneShown())
-				{
-					y1 = oWordControl.Height - ((oWordControl.Splitter3Pos + GlobalSkin.SplitterWidthMM) * g_dKoef_mm_to_pix);
-					y2 = oWordControl.Height - (oWordControl.Splitter3Pos * g_dKoef_mm_to_pix);
-					if(_y >= y1 && _y <= y2)
-					{
-						nResult = 3;
-					}
-				}
 			}
 		}
 
@@ -1134,8 +755,6 @@ function CEditorPage(api)
 			if (1 == oWordControl.SplitterType)
 			{
 				var isCanUnShowThumbnails = true;
-				if (oWordControl.m_oApi.isReporterMode)
-					isCanUnShowThumbnails = false;
 
 				var _min = parseInt(oWordControl.Splitter1PosMin * g_dKoef_mm_to_pix);
 				var _max = parseInt(oWordControl.Splitter1PosMax * g_dKoef_mm_to_pix);
@@ -1186,27 +805,15 @@ function CEditorPage(api)
 		this.m_oThumbnailsContainer.Bounds.AbsW = this.Splitter1Pos;
 		this.m_oThumbnailsSplit.Bounds.L 		= this.Splitter1Pos;
 
-		if (this.IsSupportAnimPane) {
-			if (this.Splitter3Pos < HIDDEN_PANE_HEIGHT) {
-				this.Splitter3Pos = 0;
-				Asc.editor.sendEvent('asc_onCloseAnimPane');
-			}
-			if (this.Splitter3Pos > this.Splitter3PosMax) this.Splitter3Pos = this.Splitter3PosMax;
-		} else {
-			this.Splitter3Pos = 0;
-		}
+		this.Splitter3Pos = 0;
 
-		this.Splitter2Pos = (this.IsNotesSupported())
-			? Math.min(Math.max(this.Splitter2Pos, this.Splitter3Pos + HIDDEN_PANE_HEIGHT), this.Splitter2PosMax)
-			: 0;
+		this.Splitter2Pos = 0;
 
 		if (this.IsUseNullThumbnailsSplitter || (0 != this.Splitter1Pos))
 		{
 			this.m_oMainParent.Bounds.L = this.Splitter1Pos + GlobalSkin.SplitterWidthMM;
-			this.m_oMainContent.Bounds.B = GlobalSkin.SupportNotes ? this.Splitter2Pos + GlobalSkin.SplitterWidthMM : 1000;
-			this.m_oMainContent.Bounds.isAbsB = GlobalSkin.SupportNotes;
-
-			this.UpdateBottomControlsParams();
+			this.m_oMainContent.Bounds.B = 1000;
+			this.m_oMainContent.Bounds.isAbsB = false;
 
 			this.m_oThumbnailsContainer.HtmlElement.style.display = "block";
 			this.m_oThumbnailsSplit.HtmlElement.style.display = "block";
@@ -1215,41 +822,13 @@ function CEditorPage(api)
 		else
 		{
 			this.m_oMainParent.Bounds.L = 0;
-			this.m_oMainContent.Bounds.B = GlobalSkin.SupportNotes ? this.Splitter2Pos + GlobalSkin.SplitterWidthMM : 1000;
-			this.m_oMainContent.Bounds.isAbsB = GlobalSkin.SupportNotes;
-
-			this.UpdateBottomControlsParams();
+			this.m_oMainContent.Bounds.B = 1000;
+			this.m_oMainContent.Bounds.isAbsB = false;
 
 			this.m_oThumbnailsContainer.HtmlElement.style.display = "none";
 			this.m_oThumbnailsSplit.HtmlElement.style.display = "none";
 			this.m_oMainParent.HtmlElement.style.borderLeft = "none";
 		}
-
-		if (this.IsNotesSupported())
-		{
-			if (this.m_oNotesContainer.Bounds.AbsH < 1)
-				this.m_oNotesContainer.Bounds.AbsH = 1;
-		}
-
-		// if (this.Splitter2Pos <= 1)
-		// {
-		// 	this.m_oNotes.HtmlElement.style.display = "none";
-		// 	this.m_oNotes_scroll.HtmlElement.style.display = "none";
-		// }
-		// else
-		// {
-		// 	this.m_oNotes.HtmlElement.style.display = "block";
-		// 	this.m_oNotes_scroll.HtmlElement.style.display = "block";
-		// }
-
-		// if(this.IsAnimPaneShown())
-		// {
-		// 	this.m_oAnimationPaneContainer.HtmlElement.style.display = "block";
-		// }
-		// else
-		// {
-		// 	this.m_oAnimationPaneContainer.HtmlElement.style.display = "none";
-		// }
 
 		if (true !== isNoNeedResize)
 			this.OnResize2(true);
@@ -1295,11 +874,6 @@ function CEditorPage(api)
 				{
 					oWordControl.SetSplitter2Pos(_posY);
 					oWordControl.OnResizeSplitter();
-					oWordControl.m_oApi.syncOnNotesShow();
-					if(oWordControl.m_oLogicDocument)
-					{
-						oWordControl.m_oLogicDocument.CheckNotesShow();
-					}
 				}
 			}
 			else if(oWordControl.SplitterType == 3)
@@ -1309,11 +883,6 @@ function CEditorPage(api)
 				{
 					oWordControl.SetSplitter3Pos(_posY);
 					oWordControl.OnResizeSplitter();
-					oWordControl.m_oApi.syncOnNotesShow();
-					if(oWordControl.m_oLogicDocument)
-					{
-						oWordControl.m_oLogicDocument.CheckNotesShow();
-					}
 				}
 			}
 
@@ -1337,32 +906,6 @@ function CEditorPage(api)
 	this.SetSplitter2Pos = function(dPos)
 	{
 		this.Splitter2Pos = Math.max(this.Splitter3Pos + HIDDEN_PANE_HEIGHT, dPos);
-	};
-
-	this.UpdateBottomControlsParams = function()
-	{
-		// this.m_oBottomPanesContainer.Bounds.AbsH = this.Splitter2Pos;
-		// this.m_oNotesContainer.Bounds.AbsH = this.GetNotesHeight();
-		// if (!this.IsNotesShown())
-		// {
-		// 	this.m_oNotes.HtmlElement.style.display = "none";
-		// 	this.m_oNotes_scroll.HtmlElement.style.display = "none";
-		// }
-		// else
-		// {
-		// 	this.m_oNotes.HtmlElement.style.display = "block";
-		// 	this.m_oNotes_scroll.HtmlElement.style.display = "block";
-		// }
-
-		// this.m_oAnimationPaneContainer.Bounds.AbsH = this.GetAnimPaneHeight();
-		// if (!this.IsAnimPaneShown())
-		// {
-		// 	this.m_oAnimationPaneContainer.HtmlElement.style.display = "none";
-		// }
-		// else
-		// {
-		// 	this.m_oAnimationPaneContainer.HtmlElement.style.display = "block";
-		// }
 	};
 
 	// events
@@ -1467,11 +1010,12 @@ function CEditorPage(api)
 		}
 		else
 		{
-			this.MobileTouchManager = new AscCommon.CMobileTouchManager( { eventsElement : "slides_mobile_element", desktopMode : true } );
-			this.MobileTouchManager.Init(this.m_oApi);
-
-			this.MobileTouchManagerThumbnails = new AscCommon.CMobileTouchManagerThumbnails( { eventsElement : "slides_mobile_element", desktopMode : true } );
-			this.MobileTouchManagerThumbnails.Init(this.m_oApi);
+			//todo
+			// this.MobileTouchManager = new AscCommon.CMobileTouchManager( { eventsElement : "slides_mobile_element", desktopMode : true } );
+			// this.MobileTouchManager.Init(this.m_oApi);
+			//
+			// this.MobileTouchManagerThumbnails = new AscCommon.CMobileTouchManagerThumbnails( { eventsElement : "slides_mobile_element", desktopMode : true } );
+			// this.MobileTouchManagerThumbnails.Init(this.m_oApi);
 		}
 	};
 
@@ -1565,10 +1109,6 @@ function CEditorPage(api)
 
 		let oWordControl = oThis;
 		let nCurrentSlide = oWordControl.m_oDrawingDocument.SlideCurrent;
-		if (oWordControl.DemonstrationManager.Mode)
-		{
-			nCurrentSlide = oWordControl.DemonstrationManager.SlideNum;
-		}
 		if (0 < nCurrentSlide)
 		{
 			oWordControl.GoToPage(nCurrentSlide - 1);
@@ -1586,11 +1126,6 @@ function CEditorPage(api)
 		let oWordControl = oThis;
 		let nCurrentSlide = oWordControl.m_oDrawingDocument.SlideCurrent;
 		let SlidesCount = this.GetSlidesCount();
-		if (oWordControl.DemonstrationManager.Mode)
-		{
-			nCurrentSlide =  oWordControl.DemonstrationManager.SlideNum;
-			SlidesCount = oWordControl.m_oLogicDocument.Slides.length;
-		}
 		if ((SlidesCount - 1) > nCurrentSlide)
 		{
 			oWordControl.GoToPage(nCurrentSlide + 1);
@@ -1995,6 +1530,7 @@ function CEditorPage(api)
 		oWordControl.CheckZoom();
 		oWordControl.CalculateDocumentSize();
 		var lCurPage = oWordControl.m_oLogicDocument.getCurrentPage();
+		//var lCurPage = oWordControl.m_oDrawingDocument.SlideCurrent;
 
 		this.GoToPage(lCurPage, true);
 		this.ZoomFreePageNum = lCurPage;
@@ -2019,12 +1555,6 @@ function CEditorPage(api)
 
 		if (this.MobileTouchManager)
 			this.MobileTouchManager.Resize_After();
-
-		if (this.IsNotesSupported() && this.m_oNotesApi)
-			this.m_oNotesApi.OnResize();
-
-		if (this.m_oAnimPaneApi)
-			this.m_oAnimPaneApi.OnResize();
 	};
 
 	this.zoom_Out = function()
@@ -2079,8 +1609,11 @@ function CEditorPage(api)
 
 	this.CheckZoom = function()
 	{
-		if (!this.NoneRepaintPages)
-			this.m_oLogicDocument.draw(this.m_nZoomValue, undefined, this.m_oLogicDocument.pageIndex);
+		if (!this.NoneRepaintPages) {
+			// //todo
+			// this.m_oLogicDocument.draw(this.m_nZoomValue, undefined, this.m_oLogicDocument.pageIndex);
+			this.m_oDrawingDocument.ClearCachePages();
+		}
 	};
 
 	// overlay
@@ -2157,15 +1690,6 @@ function CEditorPage(api)
 			oWordControl.Thumbnails.onCheckUpdate();
 		}
 
-		if (!isRepaint && oWordControl.m_oNotesApi.IsRepaint)
-			isRepaint = true;
-
-		if (oWordControl.IsNotesSupported() && oWordControl.m_oNotesApi && oWordControl.IsNotesShown())
-			oWordControl.m_oNotesApi.CheckPaint();
-
-		if (oWordControl.m_oAnimPaneApi && oWordControl.IsAnimPaneShown())
-			oWordControl.m_oAnimPaneApi.CheckPaint();
-
 		if (null != oWordControl.m_oLogicDocument)
 		{
 			oWordControl.m_oDrawingDocument.UpdateTargetFromPaint = true;
@@ -2183,10 +1707,6 @@ function CEditorPage(api)
 		}
 
 		oWordControl.m_oDrawingDocument.Collaborative_TargetsUpdate(isRepaint);
-		if (oThis.DemonstrationManager.Mode && !oThis.m_oApi.isReporterMode)
-		{
-			oThis.DemonstrationManager.CheckHideCursor();
-		}
 	};
 
 	this.onTimerScroll_sync = function(isThUpdateSync)
@@ -2203,7 +1723,7 @@ function CEditorPage(api)
 				oWordControl.Thumbnails.onCheckUpdate();
 			}
 			if (null != oWordControl.m_oLogicDocument && oWordControl.m_oApi.bInit_word_control)
-				;//oWordControl.m_oLogicDocument.Viewer_OnChangePosition();
+				;//oWordControl.m_oLogicDocument.Viewer_OnChangePosition();//todo
 		}
 		else
 		{
@@ -2212,7 +1732,7 @@ function CEditorPage(api)
 		if (null != oWordControl.m_oLogicDocument)
 		{
 			oWordControl.m_oDrawingDocument.UpdateTargetFromPaint = true;
-			// oWordControl.m_oLogicDocument.CheckTargetUpdate();
+			// oWordControl.m_oLogicDocument.CheckTargetUpdate();//todo
 			// oWordControl.m_oDrawingDocument.CheckTargetShow();
 			oWordControl.m_oDrawingDocument.UpdateTargetFromPaint = false;
 
@@ -2248,8 +1768,10 @@ function CEditorPage(api)
 		 }
 		 */
 
-		this.m_oLogicDocument.draw(this.m_nZoomValue, undefined, this.m_oLogicDocument.pageIndex);
-
+		//todo
+		// this.m_oLogicDocument.draw(this.m_nZoomValue, undefined, this.m_oLogicDocument.pageIndex);
+		this.SlideDrawer.DrawSlide(context, this.m_dScrollX, this.m_dScrollX_max,
+			this.m_dScrollY - this.SlideScrollMIN, this.m_dScrollY_max, this.m_oDrawingDocument.SlideCurrent);
 
 		this.OnUpdateOverlay();
 
@@ -2265,6 +1787,7 @@ function CEditorPage(api)
 		}
 		if (this.m_bIsUpdateTargetNoAttack)
 		{
+			//todo
 			//this.m_oDrawingDocument.UpdateTargetNoAttack();
 			this.m_bIsUpdateTargetNoAttack = false;
 		}
@@ -2388,8 +1911,6 @@ function CEditorPage(api)
 
 		this.MainScrollLock();
 
-		this.checkNeedHorScroll();
-
 		this.UpdateScrolls();
 
 		this.MainScrollUnLock();
@@ -2428,13 +1949,11 @@ function CEditorPage(api)
 
 		this.MainScrollLock();
 
-		var bIsResize = this.checkNeedHorScroll();
-
 		this.UpdateScrolls();
 
 		this.MainScrollUnLock();
 
-		return bIsResize;
+		return false;
 	};
 
 	this.OnCalculatePagesPlace = function()
@@ -2506,7 +2025,6 @@ function CEditorPage(api)
 			this.m_oApi.sendEvent("asc_onDocumentPlaceChanged");
 
 		// update media control position
-		this.m_oApi.onUpdateMediaPlayer();
 		AscCommon.g_specialPasteHelper.SpecialPasteButton_Update_Position();
 	};
 
@@ -2580,67 +2098,56 @@ function CEditorPage(api)
 		if (0 != this.MainScrollsEnabledFlag)
 			return;
 
-		if (oThis.m_oApi.isReporterMode)
-			return;
-
-		if (!this.m_oDrawingDocument.IsEmptyPresentation)
+		if (this.StartVerticalScroll)
 		{
-			if (this.StartVerticalScroll)
-			{
-				this.VerticalScrollOnMouseUp.ScrollY     = scrollPositionY;
-				this.VerticalScrollOnMouseUp.ScrollY_max = maxY;
+			this.VerticalScrollOnMouseUp.ScrollY     = scrollPositionY;
+			this.VerticalScrollOnMouseUp.ScrollY_max = maxY;
 
-				this.VerticalScrollOnMouseUp.SlideNum = (scrollPositionY * this.m_oDrawingDocument.GetSlidesCount() / Math.max(1, maxY)) >> 0;
-				if (this.VerticalScrollOnMouseUp.SlideNum >= this.m_oDrawingDocument.GetSlidesCount())
-					this.VerticalScrollOnMouseUp.SlideNum = this.m_oDrawingDocument.GetSlidesCount() - 1;
+			this.VerticalScrollOnMouseUp.SlideNum = (scrollPositionY * this.m_oDrawingDocument.GetSlidesCount() / Math.max(1, maxY)) >> 0;
+			if (this.VerticalScrollOnMouseUp.SlideNum >= this.m_oDrawingDocument.GetSlidesCount())
+				this.VerticalScrollOnMouseUp.SlideNum = this.m_oDrawingDocument.GetSlidesCount() - 1;
 
-				this.m_oApi.sendEvent("asc_onPaintSlideNum", this.VerticalScrollOnMouseUp.SlideNum);
-				return;
-			}
+			this.m_oApi.sendEvent("asc_onPaintSlideNum", this.VerticalScrollOnMouseUp.SlideNum);
+			return;
+		}
 
-			var lNumSlide         = ((scrollPositionY / this.m_dDocumentPageHeight) + 0.01) >> 0; // 0.01 - ошибка округления!!
-			var _can_change_slide = true;
-			if (-1 != this.ZoomFreePageNum && this.ZoomFreePageNum == this.m_oDrawingDocument.SlideCurrent)
-				_can_change_slide = false;
+		var lNumSlide         = ((scrollPositionY / this.m_dDocumentPageHeight) + 0.01) >> 0; // 0.01 - ошибка округления!!
+		var _can_change_slide = true;
+		if (-1 != this.ZoomFreePageNum && this.ZoomFreePageNum == this.m_oDrawingDocument.SlideCurrent)
+			_can_change_slide = false;
 
-			if (_can_change_slide)
-			{
-				if (lNumSlide != this.m_oDrawingDocument.SlideCurrent)
-				{
-					if (!this.verticalScrollCheckChangeSlide())
-						return;
-
-					if (this.IsGoToPageMAXPosition)
-					{
-						if (lNumSlide >= this.m_oDrawingDocument.SlideCurrent)
-							this.IsGoToPageMAXPosition = false;
-					}
-
-					this.GoToPage(lNumSlide, false, true);
-					return;
-				}
-				else if (this.SlideScrollMAX < scrollPositionY)
-				{
-					if (!this.verticalScrollCheckChangeSlide())
-						return;
-
-					this.IsGoToPageMAXPosition = false;
-					this.GoToPage(this.m_oDrawingDocument.SlideCurrent + 1, false, true);
-					return;
-				}
-			}
-			else
+		if (_can_change_slide)
+		{
+			if (lNumSlide != this.m_oDrawingDocument.SlideCurrent)
 			{
 				if (!this.verticalScrollCheckChangeSlide())
 					return;
 
-				this.GoToPage(this.ZoomFreePageNum, false, true);
+				if (this.IsGoToPageMAXPosition)
+				{
+					if (lNumSlide >= this.m_oDrawingDocument.SlideCurrent)
+						this.IsGoToPageMAXPosition = false;
+				}
+
+				this.GoToPage(lNumSlide, false, true);
+				return;
+			}
+			else if (this.SlideScrollMAX < scrollPositionY)
+			{
+				if (!this.verticalScrollCheckChangeSlide())
+					return;
+
+				this.IsGoToPageMAXPosition = false;
+				this.GoToPage(this.m_oDrawingDocument.SlideCurrent + 1, false, true);
+				return;
 			}
 		}
 		else
 		{
-			if (this.StartVerticalScroll)
+			if (!this.verticalScrollCheckChangeSlide())
 				return;
+
+			this.GoToPage(this.ZoomFreePageNum, false, true);
 		}
 
 		var oWordControl                       = oThis;
@@ -2658,13 +2165,6 @@ function CEditorPage(api)
 	{
 		if (0 != this.MainScrollsEnabledFlag || !this.StartVerticalScroll)
 			return;
-
-		if (this.m_oDrawingDocument.IsEmptyPresentation)
-		{
-			this.StartVerticalScroll = false;
-			this.m_oScrollVerApi.scrollByY(0, true);
-			return;
-		}
 
 		if (this.VerticalScrollOnMouseUp.SlideNum != this.m_oDrawingDocument.SlideCurrent)
 			this.GoToPage(this.VerticalScrollOnMouseUp.SlideNum, false, true);
@@ -2780,33 +2280,35 @@ function CEditorPage(api)
 		settings.alwaysVisible = true;
 		settings.isVerticalScroll = false;
 		settings.isHorizontalScroll = true;
-		if (this.m_bIsHorScrollVisible)
+
+		if (this.m_oScrollHor_)
+			this.m_oScrollHor_.Repos(settings, true, undefined);//unbind("scrollhorizontal")
+		else
 		{
-			if (this.m_oScrollHor_)
-				this.m_oScrollHor_.Repos(settings, true, undefined);//unbind("scrollhorizontal")
-			else
+			this.m_oScrollHor_ = new AscCommon.ScrollObject("id_horizontal_scroll", settings);
+			this.m_oScrollHor_.bind("scrollhorizontal", function(evt)
 			{
-				this.m_oScrollHor_ = new AscCommon.ScrollObject("id_horizontal_scroll", settings);
-				this.m_oScrollHor_.bind("scrollhorizontal", function(evt)
-				{
-					oThis.horizontalScroll(this, evt.scrollD, evt.maxScrollX);
-				});
+				oThis.horizontalScroll(this, evt.scrollD, evt.maxScrollX);
+			});
 
-				this.m_oScrollHor_.onLockMouse  = function(evt)
-				{
-					AscCommon.check_MouseDownEvent(evt, true);
-					global_mouseEvent.LockMouse();
-				};
-				this.m_oScrollHor_.offLockMouse = function(evt)
-				{
-					AscCommon.check_MouseUpEvent(evt);
-				};
+			this.m_oScrollHor_.onLockMouse  = function(evt)
+			{
+				AscCommon.check_MouseDownEvent(evt, true);
+				global_mouseEvent.LockMouse();
+			};
+			this.m_oScrollHor_.offLockMouse = function(evt)
+			{
+				AscCommon.check_MouseUpEvent(evt);
+			};
 
-				this.m_oScrollHorApi = this.m_oScrollHor_;
-			}
+			this.m_oScrollHorApi = this.m_oScrollHor_;
 		}
 
 		settings = this.CreateScrollSettings();
+		settings.alwaysVisible = true;
+		settings.isVerticalScroll = true;
+		settings.isHorizontalScroll = false;
+
 		if (this.m_oScrollVer_)
 		{
 			this.m_oScrollVer_.Repos(settings, undefined, true);//unbind("scrollvertical")
@@ -2847,57 +2349,13 @@ function CEditorPage(api)
 
 		this.m_oApi.sendEvent("asc_onUpdateScrolls", this.m_dDocumentWidth, this.m_dDocumentHeight);
 
-		this.m_dScrollX_max = this.m_bIsHorScrollVisible ? this.m_oScrollHorApi.getMaxScrolledX() : 0;
+		this.m_dScrollX_max = this.m_oScrollHorApi.getMaxScrolledX();
 		this.m_dScrollY_max = this.m_oScrollVerApi.getMaxScrolledY();
 
 		if (this.m_dScrollX >= this.m_dScrollX_max)
 			this.m_dScrollX = this.m_dScrollX_max;
 		if (this.m_dScrollY >= this.m_dScrollY_max)
 			this.m_dScrollY = this.m_dScrollY_max;
-	};
-
-	this.checkNeedHorScrollValue = function(_width)
-	{
-		var w = this.m_oEditor.HtmlElement.width;
-		w /= AscCommon.AscBrowser.retinaPixelRatio;
-
-		return (_width <= w) ? false : true;
-	};
-
-	this.checkNeedHorScroll = function()
-	{
-		if (!this.m_oLogicDocument)
-			return false;
-
-		if (this.m_oApi.isReporterMode)
-		{
-			this.m_oEditor.HtmlElement.style.display = 'none';
-			this.m_oOverlay.HtmlElement.style.display = 'none';
-			this.m_oScrollHor.HtmlElement.style.display = 'none';
-			return false;
-		}
-
-		this.m_bIsHorScrollVisible = this.checkNeedHorScrollValue(this.m_dDocumentWidth);
-
-		if (this.m_bIsHorScrollVisible)
-		{
-			if (this.m_oApi.isMobileVersion)
-			{
-				this.m_oPanelRight.Bounds.B = 0;
-				this.m_oMainView.Bounds.B   = 0;
-				this.m_oScrollHor.HtmlElement.style.display = 'none';
-			}
-			else
-			{
-				this.m_oScrollHor.HtmlElement.style.display = 'block';
-			}
-		}
-		else
-		{
-			this.m_oScrollHor.HtmlElement.style.display = 'none';
-		}
-
-		return false;
 	};
 
 	// search
@@ -2973,204 +2431,21 @@ function CEditorPage(api)
 		this.OnUpdateOverlay();
 	};
 
-	// reporter
-	this.getStylesReporter = function()
-	{
-		let styleContent = "";
-
-		let xOffset1 = "0";
-		let xOffset2 = "-20";
-		if (AscCommon.GlobalSkin.Type === "dark")
-		{
-			xOffset1 = "-20";
-			xOffset2 = "0";
-		}
-
-		styleContent += (".btn-play { background-position: "           + xOffset1 + "px -40px; }");
-		styleContent += (".btn-prev { background-position: "           + xOffset1 + "px 0px; }");
-		styleContent += (".btn-next { background-position: "           + xOffset1 + "px -20px; }");
-		styleContent += (".btn-pause { background-position: "          + xOffset1 + "px -80px; }");
-		styleContent += (".btn-pointer { background-position: "        + xOffset1 + "px -100px; }");
-		styleContent += (".btn-pointer-active { background-position: " + xOffset2 + "px -100px; }");
-
-		styleContent += (".btn-text-default { position: absolute; background: " + AscCommon.GlobalSkin.DemButtonBackgroundColor + "; border: 1px solid " + AscCommon.GlobalSkin.DemButtonBorderColor + "; border-radius: 2px; color: " + AscCommon.GlobalSkin.DemButtonTextColor + "; font-size: 11px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; height: 22px; cursor: pointer; }");
-		styleContent += ".btn-text-default-img { background-repeat: no-repeat; position: absolute; background: transparent; border: none; height: 22px; cursor: pointer; }";
-		styleContent += (".btn-text-default-img:focus { outline: 0; outline-offset: 0; } .btn-text-default-img:hover { background-color: " + AscCommon.GlobalSkin.DemButtonBackgroundColorHover + "; }");
-		styleContent += (".btn-text-default-img:active, .btn-text-default.active { background-color: " + AscCommon.GlobalSkin.DemButtonBackgroundColorActive + " !important; -webkit-box-shadow: none; box-shadow: none; }");
-		styleContent += (".btn-text-default:focus { outline: 0; outline-offset: 0; } .btn-text-default:hover { background-color: " + AscCommon.GlobalSkin.DemButtonBackgroundColorHover + "; }");
-		styleContent += (".btn-text-default:active, .btn-text-default.active { background-color: " + AscCommon.GlobalSkin.DemButtonBackgroundColorActive + " !important; color: " + AscCommon.GlobalSkin.DemButtonTextColorActive + "; -webkit-box-shadow: none; box-shadow: none; }");
-		styleContent += (".separator { margin: 0px 10px; height: 19px; display: inline-block; position: absolute; border-left: 1px solid " + AscCommon.GlobalSkin.DemSplitterColor + "; vertical-align: top; padding: 0; width: 0; box-sizing: border-box; }");
-		styleContent += (".btn-text-default-img2 { background-repeat: no-repeat; position: absolute; background-color: " + AscCommon.GlobalSkin.DemButtonBackgroundColorActive + "; border: none; color: #7d858c; font-size: 11px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; height: 22px; cursor: pointer; }");
-		styleContent += ".btn-text-default-img2:focus { outline: 0; outline-offset: 0; }";
-		styleContent += ".btn-text-default::-moz-focus-inner { border: 0; padding: 0; }";
-		styleContent += ".btn-text-default-img::-moz-focus-inner { border: 0; padding: 0; }";
-		styleContent += ".btn-text-default-img2::-moz-focus-inner { border: 0; padding: 0; }";
-		styleContent += (".dem-text-color { color:" + AscCommon.GlobalSkin.DemTextColor + "; }");
-		return styleContent;
-	};
-
-	this.reporterTimerFunc = function(isReturn)
-	{
-		var _curTime = new Date().getTime();
-		_curTime -= oThis.reporterTimerLastStart;
-		_curTime += oThis.reporterTimerAdd;
-
-		if (isReturn)
-			return _curTime;
-
-		_curTime = (_curTime / 1000) >> 0;
-		var _sec = _curTime % 60;
-		_curTime = (_curTime / 60) >> 0;
-		var _min = _curTime % 60;
-		var _hrs = (_curTime / 60) >> 0;
-
-		if (100 >= _hrs)
-			_hrs = 0;
-
-		var _value = (_hrs > 9) ? ("" + _hrs) : ("0" + _hrs);
-		_value += ":";
-		_value += ((_min > 9) ? ("" + _min) : ("0" + _min));
-		_value += ":";
-		_value += ((_sec > 9) ? ("" + _sec) : ("0" + _sec));
-
-		var _elem = document.getElementById("dem_id_time");
-		if (_elem)
-			_elem.innerHTML = _value;
-	};
-
-	this.OnResizeReporter = function()
-	{
-		if (this.m_oApi.isReporterMode)
-		{
-			var _label1 = document.getElementById("dem_id_time");
-			if (!_label1)
-				return;
-
-			var _buttonPlay = document.getElementById("dem_id_play");
-			var _buttonReset = document.getElementById("dem_id_reset");
-			var _buttonPrev = document.getElementById("dem_id_prev");
-			var _buttonNext = document.getElementById("dem_id_next");
-			var _buttonSeparator = document.getElementById("dem_id_sep");
-			var _labelMain = document.getElementById("dem_id_slides");
-			var _buttonSeparator2 = document.getElementById("dem_id_sep2");
-			var _buttonPointer = document.getElementById("dem_id_pointer");
-			var _buttonEnd = document.getElementById("dem_id_end");
-
-			_label1.style.display = "block";
-			_buttonPlay.style.display = "block";
-			_buttonReset.style.display = "block";
-			_buttonEnd.style.display = "block";
-
-			var _label1_width = _label1.offsetWidth;
-			var _main_width = _labelMain.offsetWidth;
-			var _buttonReset_width = _buttonReset.offsetWidth;
-			var _buttonEnd_width = _buttonEnd.offsetWidth;
-
-			if (0 == _label1_width)
-				_label1_width = 45;
-			if (0 == _main_width)
-				_main_width = 55;
-			if (0 == _buttonReset_width)
-				_buttonReset_width = 45;
-			if (0 == _buttonEnd_width)
-				_buttonEnd_width = 60;
-
-			var _width = parseInt(this.m_oMainView.HtmlElement.style.width);
-
-			// test first mode
-			// [10][time][6][play/pause(20)][6][reset]----[10]----[prev(20)][next(20)][15][slide x of x][15][pointer(20)]----[10]----[end][10]
-			var _widthCenter = (20 + 20 + 15 + _main_width + 15 + 20);
-			var _posCenter = (_width - _widthCenter) >> 1;
-
-			var _test_width1 = 10 + _label1_width + 6 + 20 + 6 + _buttonReset_width + 10 + 20 + 20 + 15 + _main_width + 15 + 20 + 10 + _buttonEnd_width + 10;
-			var _is1 = ((10 + _label1_width + 6 + 20 + 6 + _buttonReset_width + 10) <= _posCenter) ? true : false;
-			var _is2 = ((_posCenter + _widthCenter) <= (_width - 20 - _buttonEnd_width)) ? true : false;
-			if (_is2 && (_test_width1 <= _width))
-			{
-				_label1.style.display = "block";
-				_buttonPlay.style.display = "block";
-				_buttonReset.style.display = "block";
-				_buttonEnd.style.display = "block";
-
-				_label1.style.left = "10px";
-				_buttonPlay.style.left = (10 + _label1_width + 6) + "px";
-				_buttonReset.style.left = (10 + _label1_width + 6 + 20 + 6) + "px";
-
-				if (!_is1)
-				{
-					_posCenter = 10 + _label1_width + 6 + 20 + 6 + _buttonReset_width + 10 + ((_width - _test_width1) >> 1);
-				}
-
-				_buttonPrev.style.left = _posCenter + "px";
-				_buttonNext.style.left = (_posCenter + 20) + "px";
-				_buttonSeparator.style.left = (_posCenter + 48 - 10) + "px";
-				_labelMain.style.left = (_posCenter + 55) + "px";
-				_buttonSeparator2.style.left = (_posCenter + 55 + _main_width + 7 - 10) + "px";
-				_buttonPointer.style.left = (_posCenter + 70 + _main_width) + "px";
-
-				return;
-			}
-
-			// test second mode
-			// [10][prev(20)][next(20)][15][slide x of x][15][pointer(20)]----[10]----[end][10]
-			var _test_width2 = 10 + 20 + 20 + 15 + _main_width + 15 + 20 + 10 + _buttonEnd_width + 10;
-			if (_test_width2 <= _width)
-			{
-				_label1.style.display = "none";
-				_buttonPlay.style.display = "none";
-				_buttonReset.style.display = "none";
-				_buttonEnd.style.display = "block";
-
-				_buttonPrev.style.left = "10px";
-				_buttonNext.style.left = "30px";
-				_buttonSeparator.style.left = (58 - 10) + "px";
-				_labelMain.style.left = "65px";
-				_buttonSeparator2.style.left = (65 + _main_width + 7 - 10) + "px";
-				_buttonPointer.style.left = (80 + _main_width) + "px";
-				return;
-			}
-
-			// test third mode
-			// ---------[prev(20)][next(20)][15][slide x of x][15][pointer(20)]---------
-			// var _test_width3 = 20 + 20 + 15 + _main_width + 15 + 20;
-			if (_posCenter < 0)
-				_posCenter = 0;
-
-			_label1.style.display = "none";
-			_buttonPlay.style.display = "none";
-			_buttonReset.style.display = "none";
-			_buttonEnd.style.display = "none";
-
-			_buttonPrev.style.left = _posCenter + "px";
-			_buttonNext.style.left = (_posCenter + 20) + "px";
-			_buttonSeparator.style.left = (_posCenter + 48 - 10) + "px";
-			_labelMain.style.left = (_posCenter + 55) + "px";
-			_buttonSeparator2.style.left = (_posCenter + 55 + _main_width + 7 - 10) + "px";
-			_buttonPointer.style.left = (_posCenter + 70 + _main_width) + "px";
-		}
-	};
-
 	// events
 	this.onMouseDownTarget = function(e)
 	{
 		if (oThis.m_oDrawingDocument.TargetHtmlElementOnSlide)
 			return oThis.onMouseDown(e);
-		else
-			return oThis.m_oNotesApi.onMouseDown(e);
 	};
 	this.onMouseMoveTarget = function(e)
 	{
 		if (oThis.m_oDrawingDocument.TargetHtmlElementOnSlide)
 			return oThis.onMouseMove(e);
-		else
-			return oThis.m_oNotesApi.onMouseMove(e);
 	};
 	this.onMouseUpTarget = function(e)
 	{
 		if (oThis.m_oDrawingDocument.TargetHtmlElementOnSlide)
 			return oThis.onMouseUp(e);
-		else
-			return oThis.m_oNotesApi.onMouseUp(e);
 	};
 
 	this.onMouseDown = function(e)
@@ -3209,8 +2484,6 @@ function CEditorPage(api)
 			return;
 
 		oWordControl.Thumbnails.SetFocusElement(FOCUS_OBJECT_MAIN);
-		if (oWordControl.DemonstrationManager.Mode)
-			return false;
 
 		var _xOffset = oWordControl.X;
 		var _yOffset = oWordControl.Y;
@@ -3231,12 +2504,6 @@ function CEditorPage(api)
 		{
 			global_mouseEvent.Button    = 0;
 			oWordControl.m_bIsMouseLock = true;
-
-			if (oWordControl.m_oDrawingDocument.IsEmptyPresentation && oWordControl.m_oLogicDocument.CanEdit())
-			{
-				oWordControl.m_oLogicDocument.addNextSlide();
-				return;
-			}
 		}
 
 		if ((0 == global_mouseEvent.Button) || (undefined == global_mouseEvent.Button) || (2 == global_mouseEvent.Button))
@@ -3303,12 +2570,6 @@ function CEditorPage(api)
 		else
 			e.returnValue = false;
 
-		if (oWordControl.DemonstrationManager.Mode)
-			return false;
-
-		if (oWordControl.m_oDrawingDocument.IsEmptyPresentation)
-			return;
-
 		AscCommon.check_MouseMoveEvent(e);
 		var pos = oWordControl.m_oDrawingDocument.ConvertCoordsFromCursor2(global_mouseEvent.X, global_mouseEvent.Y);
 		if (pos.Page == -1)
@@ -3316,15 +2577,6 @@ function CEditorPage(api)
 
 		if (oWordControl.m_oDrawingDocument.m_sLockedCursorType != "")
 			oWordControl.m_oDrawingDocument.SetCursorType("default");
-
-		if (oWordControl.m_oDrawingDocument.InlineTextTrackEnabled)
-		{
-			if (oWordControl.m_oLogicDocument.IsFocusOnNotes()) {
-				var pos2 = oWordControl.m_oDrawingDocument.ConvertCoordsToCursorWR(pos.X, pos.Y, pos.Page, undefined, true);
-				if (pos2.Y > oWordControl.m_oNotesContainer.AbsolutePosition.T * g_dKoef_mm_to_pix)
-					return;
-			}
-		}
 
 		if(oThis.m_oApi.isEyedropperStarted())
 		{
@@ -3374,9 +2626,6 @@ function CEditorPage(api)
 		if (pos.Page == -1)
 			return;
 
-		if (oWordControl.m_oDrawingDocument.IsEmptyPresentation)
-			return;
-
 		oWordControl.StartUpdateOverlay();
 
 		var is_drawing = oWordControl.m_oDrawingDocument.checkMouseMove_Drawing(pos);
@@ -3405,19 +2654,7 @@ function CEditorPage(api)
 		if (!global_mouseEvent.IsLocked)
 			return;
 
-		if (oWordControl.DemonstrationManager.Mode)
-		{
-			if (e.preventDefault)
-				e.preventDefault();
-			else
-				e.returnValue = false;
-			return false;
-		}
-
 		AscCommon.check_MouseUpEvent(e);
-
-		if (oWordControl.m_oDrawingDocument.IsEmptyPresentation)
-			return;
 
 		var pos = oWordControl.m_oDrawingDocument.ConvertCoordsFromCursor2(global_mouseEvent.X, global_mouseEvent.Y);
 		if (pos.Page == -1)
@@ -3447,15 +2684,6 @@ function CEditorPage(api)
 		}
 
 		oWordControl.m_bIsMouseUpSend = true;
-
-		if (oWordControl.m_oDrawingDocument.InlineTextTrackEnabled)
-		{
-			if (oWordControl.m_oLogicDocument.IsFocusOnNotes()) {
-				var pos2 = oWordControl.m_oDrawingDocument.ConvertCoordsToCursorWR(pos.X, pos.Y, pos.Page, undefined, true);
-				if (pos2.Y > oWordControl.m_oNotesContainer.AbsolutePosition.T * g_dKoef_mm_to_pix)
-					return;
-			}
-		}
 
 		oWordControl.StartUpdateOverlay();
 
@@ -3506,9 +2734,6 @@ function CEditorPage(api)
 
 		var oWordControl = oThis;
 
-		if (oWordControl.DemonstrationManager.Mode)
-			return oWordControl.DemonstrationManager.onMouseUp({ pageX:0, pageY:0 });
-
 		//---
 		global_mouseEvent.X = x;
 		global_mouseEvent.Y = y;
@@ -3521,9 +2746,6 @@ function CEditorPage(api)
 		global_mouseEvent.UnLockMouse();
 
 		global_mouseEvent.IsPressed = false;
-
-		if (oWordControl.m_oDrawingDocument.IsEmptyPresentation)
-			return;
 
 		//---
 		var pos = oWordControl.m_oDrawingDocument.ConvertCoordsFromCursor2(global_mouseEvent.X, global_mouseEvent.Y);
@@ -3568,15 +2790,6 @@ function CEditorPage(api)
 		if (global_mouseEvent.IsLocked)
 			return;
 
-		if (oThis.DemonstrationManager.Mode)
-		{
-			if (e.preventDefault)
-				e.preventDefault();
-			else
-				e.returnValue = false;
-			return false;
-		}
-
 		var _ctrl = false;
 		if (e.metaKey !== undefined)
 			_ctrl = e.ctrlKey || e.metaKey;
@@ -3611,25 +2824,22 @@ function CEditorPage(api)
 		// New school multidimensional scroll (touchpads) deltas
 		deltaY = delta;
 
-		if (oThis.m_bIsHorScrollVisible)
+		if (e.axis !== undefined && e.axis === e.HORIZONTAL_AXIS)
 		{
-			if (e.axis !== undefined && e.axis === e.HORIZONTAL_AXIS)
-			{
-				deltaY = 0;
-				deltaX = delta;
-			}
+			deltaY = 0;
+			deltaX = delta;
+		}
 
-			// Webkit
-			if (undefined !== e.wheelDeltaY && 0 !== e.wheelDeltaY)
-			{
-				//deltaY = (e.wheelDeltaY > 0) ? -45 : 45;
-				deltaY = -45 * e.wheelDeltaY / 120;
-			}
-			if (undefined !== e.wheelDeltaX && 0 !== e.wheelDeltaX)
-			{
-				//deltaX = (e.wheelDeltaX > 0) ? -45 : 45;
-				deltaX = -45 * e.wheelDeltaX / 120;
-			}
+		// Webkit
+		if (undefined !== e.wheelDeltaY && 0 !== e.wheelDeltaY)
+		{
+			//deltaY = (e.wheelDeltaY > 0) ? -45 : 45;
+			deltaY = -45 * e.wheelDeltaY / 120;
+		}
+		if (undefined !== e.wheelDeltaX && 0 !== e.wheelDeltaX)
+		{
+			//deltaX = (e.wheelDeltaX > 0) ? -45 : 45;
+			deltaX = -45 * e.wheelDeltaX / 120;
 		}
 
 		deltaX >>= 0;
@@ -3657,12 +2867,6 @@ function CEditorPage(api)
 		global_keyboardEvent.CtrlKey  = false;
 		global_keyboardEvent.ShiftKey = false;
 		global_keyboardEvent.AltGr    = false;
-
-		if (oThis.m_oApi.isReporterMode)
-		{
-			AscCommon.stopEvent(e);
-			return false;
-		}
 	};
 
 	this.onKeyDown = function(e)
@@ -3690,12 +2894,6 @@ function CEditorPage(api)
 		{
 			AscCommon.check_KeyboardEvent2(e);
 			e.preventDefault();
-			return;
-		}
-
-		if (oThis.DemonstrationManager.Mode)
-		{
-			oWordControl.DemonstrationManager.onKeyDown(e);
 			return;
 		}
 
@@ -3806,9 +3004,6 @@ function CEditorPage(api)
 
 		oWordControl.IsKeyDownButNoPress = false;
 
-		if (oThis.DemonstrationManager.Mode)
-			return;
-
 		if (false === oWordControl.bIsUseKeyPress)
 			return;
 
@@ -3860,30 +3055,27 @@ function CEditorPage(api)
 		}
 
 		var scrollXVal = 0;
-		if (oWordControl.m_bIsHorScrollVisible)
+		var positionMinX = oWordControl.m_oMainParent.AbsolutePosition.L * g_dKoef_mm_to_pix + oWordControl.X;
+		if (oWordControl.m_bIsRuler)
+			positionMinX += oWordControl.m_oLeftRuler.AbsolutePosition.R * g_dKoef_mm_to_pix;
+
+		var positionMaxX = oWordControl.m_oMainParent.AbsolutePosition.R * g_dKoef_mm_to_pix + oWordControl.X - oWordControl.ScrollWidthPx;
+
+		if (global_mouseEvent.X < positionMinX)
 		{
-			var positionMinX = oWordControl.m_oMainParent.AbsolutePosition.L * g_dKoef_mm_to_pix + oWordControl.X;
-			if (oWordControl.m_bIsRuler)
-				positionMinX += oWordControl.m_oLeftRuler.AbsolutePosition.R * g_dKoef_mm_to_pix;
+			var delta = 30;
+			if (20 > (positionMinX - global_mouseEvent.X))
+				delta = 10;
 
-			var positionMaxX = oWordControl.m_oMainParent.AbsolutePosition.R * g_dKoef_mm_to_pix + oWordControl.X - oWordControl.ScrollWidthPx;
+			scrollXVal = -delta;
+		}
+		else if (global_mouseEvent.X > positionMaxX)
+		{
+			var delta = 30;
+			if (20 > (global_mouseEvent.X - positionMaxX))
+				delta = 10;
 
-			if (global_mouseEvent.X < positionMinX)
-			{
-				var delta = 30;
-				if (20 > (positionMinX - global_mouseEvent.X))
-					delta = 10;
-
-				scrollXVal = -delta;
-			}
-			else if (global_mouseEvent.X > positionMaxX)
-			{
-				var delta = 30;
-				if (20 > (global_mouseEvent.X - positionMaxX))
-					delta = 10;
-
-				scrollXVal = delta;
-			}
+			scrollXVal = delta;
 		}
 
 		if (0 != scrollYVal)
@@ -3913,7 +3105,6 @@ function CEditorPage(api)
 
 	this.OnUpdateOverlay = function()
 	{
-		return;
 		if (this.IsUpdateOverlayOnlyEnd)
 		{
 			this.IsUpdateOverlayOnEndCheck = true;
@@ -3923,18 +3114,6 @@ function CEditorPage(api)
 		this.m_oApi.checkLastWork();
 
 		var overlay = this.m_oOverlayApi;
-		var overlayNotes = null;
-
-		var isDrawNotes = false;
-		if (this.IsNotesSupported() && this.m_oNotesApi)
-		{
-			overlayNotes = this.m_oNotesApi.m_oOverlayApi;
-			overlayNotes.SetBaseTransform();
-			overlayNotes.Clear();
-
-			if (this.m_oLogicDocument.IsFocusOnNotes())
-				isDrawNotes = true;
-		}
 
 		overlay.SetBaseTransform();
 		overlay.Clear();
@@ -4005,29 +3184,10 @@ function CEditorPage(api)
 		{
 			var dGlobalAplpha = ctx.globalAlpha;
 			ctx.globalAlpha = 1.0;
-			drDoc.DrawMathTrack(isDrawNotes ? overlayNotes : overlay);
+			drDoc.DrawMathTrack(overlay);
 			ctx.globalAlpha = dGlobalAplpha;
 		}
 
-
-		if (isDrawNotes && drDoc.m_bIsSelection)
-		{
-			var ctxOverlay = overlayNotes.m_oContext;
-			ctxOverlay.fillStyle   = "rgba(51,102,204,255)";
-			ctxOverlay.strokeStyle = "#9ADBFE";
-			ctxOverlay.lineWidth = Math.round(AscCommon.AscBrowser.retinaPixelRatio);
-
-			ctxOverlay.beginPath();
-
-			if (drDoc.SlideCurrent != -1)
-				this.m_oLogicDocument.Slides[drDoc.SlideCurrent].drawNotesSelect();
-
-			ctxOverlay.globalAlpha = 0.2;
-			ctxOverlay.fill();
-			ctxOverlay.globalAlpha = 1.0;
-			ctxOverlay.stroke();
-			ctxOverlay.beginPath();
-		}
 
 		if (this.MobileTouchManager)
 			this.MobileTouchManager.CheckTableRules(overlay);
@@ -4037,33 +3197,34 @@ function CEditorPage(api)
 
 		if (this.m_oLogicDocument != null && drDoc.SlideCurrent >= 0)
 		{
-			let oSlide = this.m_oLogicDocument.GetCurrentSlide();
-			oSlide.drawSelect(2);
-
-			var elements = oSlide.graphicObjects;
-			if (!elements.canReceiveKeyPress() && -1 != drDoc.SlideCurrent)
-			{
-				var drawPage = drDoc.SlideCurrectRect;
-				drDoc.AutoShapesTrack.init(overlay, drawPage.left, drawPage.top, drawPage.right, drawPage.bottom, this.m_oLogicDocument.GetWidthMM(), this.m_oLogicDocument.GetHeightMM());
-
-				elements.DrawOnOverlay(drDoc.AutoShapesTrack);
-				drDoc.AutoShapesTrack.CorrectOverlayBounds();
-
-				overlay.SetBaseTransform();
-			}
+			//todo
+			// let oSlide = this.m_oLogicDocument.GetCurrentSlide();
+			// oSlide.drawSelect(2);
+			//
+			// var elements = oSlide.graphicObjects;
+			// if (!elements.canReceiveKeyPress() && -1 != drDoc.SlideCurrent)
+			// {
+			// 	var drawPage = drDoc.SlideCurrectRect;
+			// 	drDoc.AutoShapesTrack.init(overlay, drawPage.left, drawPage.top, drawPage.right, drawPage.bottom, this.m_oLogicDocument.GetWidthMM(), this.m_oLogicDocument.GetHeightMM());
+			//
+			// 	elements.DrawOnOverlay(drDoc.AutoShapesTrack);
+			// 	drDoc.AutoShapesTrack.CorrectOverlayBounds();
+			//
+			// 	overlay.SetBaseTransform();
+			// }
 		}
 
-		// if (drDoc.InlineTextTrackEnabled && null != drDoc.InlineTextTrack)
-		// {
-		// 	var _oldPage        = drDoc.AutoShapesTrack.PageIndex;
-		// 	var _oldCurPageInfo = drDoc.AutoShapesTrack.CurrentPageInfo;
-		//
-		// 	drDoc.AutoShapesTrack.PageIndex = drDoc.InlineTextTrackPage;
-		// 	drDoc.AutoShapesTrack.DrawInlineMoveCursor(drDoc.InlineTextTrack.X, drDoc.InlineTextTrack.Y, drDoc.InlineTextTrack.Height, drDoc.InlineTextTrack.transform, drDoc.InlineTextInNotes ? overlayNotes : null);
-		//
-		// 	drDoc.AutoShapesTrack.PageIndex       = _oldPage;
-		// 	drDoc.AutoShapesTrack.CurrentPageInfo = _oldCurPageInfo;
-		// }
+		if (drDoc.InlineTextTrackEnabled && null != drDoc.InlineTextTrack)
+		{
+			var _oldPage        = drDoc.AutoShapesTrack.PageIndex;
+			var _oldCurPageInfo = drDoc.AutoShapesTrack.CurrentPageInfo;
+
+			drDoc.AutoShapesTrack.PageIndex = drDoc.InlineTextTrackPage;
+			drDoc.AutoShapesTrack.DrawInlineMoveCursor(drDoc.InlineTextTrack.X, drDoc.InlineTextTrack.Y, drDoc.InlineTextTrack.Height, drDoc.InlineTextTrack.transform, null);
+
+			drDoc.AutoShapesTrack.PageIndex       = _oldPage;
+			drDoc.AutoShapesTrack.CurrentPageInfo = _oldCurPageInfo;
+		}
 
 		if (drDoc.placeholders.objects.length > 0 && drDoc.SlideCurrent >= 0)
 		{
@@ -4116,27 +3277,45 @@ function CEditorPage(api)
 		AscCommon.AscBrowser.checkZoom();
 
 		var isNewSize = this.checkBodySize();
+		if (!isNewSize && this.retinaScaling === AscCommon.AscBrowser.retinaPixelRatio && false === isAttack)
+		{
+			return;
+		}
 
 		if (this.MobileTouchManager)
 			this.MobileTouchManager.Resize_Before();
 
+		if (this.m_oApi.printPreview)
+			this.m_oApi.printPreview.resize();
 
 		var isDesktopVersion = (undefined !== window["AscDesktopEditor"]) ? true : false;
 
+		if (this.Splitter1Pos > 0.1 && !isDesktopVersion)
+		{
+			var maxSplitterThMax = g_dKoef_pix_to_mm * this.Width / 3;
+			if (maxSplitterThMax > 80)
+				maxSplitterThMax = 80;
+
+			this.Splitter1PosMin = maxSplitterThMax >> 2;
+			this.Splitter1PosMax = maxSplitterThMax >> 0;
+
+			this.Splitter1Pos = this.Splitter1PosSetUp;
+			if (this.Splitter1Pos < this.Splitter1PosMin)
+				this.Splitter1Pos = this.Splitter1PosMin;
+			if (this.Splitter1Pos > this.Splitter1PosMax)
+				this.Splitter1Pos = this.Splitter1PosMax;
+
+			this.OnResizeSplitter(true);
+		}
 
 		//console.log("resize");
 		this.CheckRetinaDisplay();
 
 		this.m_oBody.Resize(this.Width * g_dKoef_pix_to_mm, this.Height * g_dKoef_pix_to_mm, this);
+		this.onButtonTabsDraw();
 
 		if (AscCommon.g_inputContext)
 			AscCommon.g_inputContext.onResize("id_main_parent");
-
-
-		if (this.checkNeedHorScroll())
-		{
-			return;
-		}
 
 		// теперь проверим необходимость перезуммирования
 		if (1 == this.m_nZoomType && 0 != this.m_dDocumentPageWidth && 0 != this.m_dDocumentPageHeight)
@@ -4144,6 +3323,7 @@ function CEditorPage(api)
 			if (true === this.zoom_FitToWidth())
 			{
 				this.m_oBoundsController.ClearNoAttack();
+				this.onTimerScroll_sync();
 
 				this.FullRulersUpdate();
 				return;
@@ -4154,6 +3334,7 @@ function CEditorPage(api)
 			if (true === this.zoom_FitToPage())
 			{
 				this.m_oBoundsController.ClearNoAttack();
+				this.onTimerScroll_sync();
 
 				this.FullRulersUpdate();
 				return;
@@ -4171,11 +3352,10 @@ function CEditorPage(api)
 		this.UpdateScrolls();
 
 		this.OnScroll();
-
+		this.onTimerScroll_sync(true);
 
 		if (this.MobileTouchManager)
 			this.MobileTouchManager.Resize_After();
-
 
 		this.FullRulersUpdate();
 
@@ -4186,16 +3366,7 @@ function CEditorPage(api)
 	this.OnResize2 = function(isAttack)
 	{
 		this.m_oBody.Resize(this.Width * g_dKoef_pix_to_mm, this.Height * g_dKoef_pix_to_mm, this);
-		if (this.m_oApi.isReporterMode)
-			this.OnResizeReporter();
-
 		this.onButtonTabsDraw();
-		this.DemonstrationManager.Resize();
-
-		if (this.checkNeedHorScroll())
-		{
-			return;
-		}
 
 		// теперь проверим необходимость перезуммирования
 		if (1 == this.m_nZoomType)
@@ -4237,115 +3408,7 @@ function CEditorPage(api)
 		this.OnScroll();
 		this.onTimerScroll_sync(true);
 
-		this.DemonstrationManager.Resize();
-
-		if (this.IsNotesSupported() && this.m_oNotesApi)
-			this.m_oNotesApi.OnResize();
-
-		if (this.m_oAnimPaneApi)
-			this.m_oAnimPaneApi.OnResize();
-
 		this.FullRulersUpdate();
-	};
-
-	// interface
-	this.ThemeGenerateThumbnails = function(_master)
-	{
-		var _layouts = _master.sldLayoutLst;
-		var _len     = _layouts.length;
-
-		for (var i = 0; i < _len; i++)
-		{
-			_layouts[i].recalculate();
-
-			_layouts[i].ImageBase64 = this.m_oLayoutDrawer.GetThumbnail(_layouts[i]);
-			_layouts[i].Width64     = this.m_oLayoutDrawer.WidthPx;
-			_layouts[i].Height64    = this.m_oLayoutDrawer.HeightPx;
-		}
-	};
-
-	this.CheckLayouts = function(bIsAttack)
-	{
-		if(window["NATIVE_EDITOR_ENJINE"] === true){
-			return;
-		}
-		if (this.m_oLogicDocument.IsEmpty())
-			return;
-
-
-
-		let aAllLayouts = this.m_oLogicDocument.GetAllLayouts();
-		let oLtDrawer = this.m_oLayoutDrawer;
-		let dWMM = this.m_oLogicDocument.GetWidthMM();
-		let dHMM = this.m_oLogicDocument.GetHeightMM();
-		let bUpdate = false;
-		if(bIsAttack)
-		{
-			bUpdate = true;
-		}
-		else
-		{
-			if(this.AllLayouts.length !== aAllLayouts.length)
-			{
-				bUpdate = true;
-			}
-			else if(Math.abs(oLtDrawer.WidthMM - dWMM) > MOVE_DELTA || Math.abs(oLtDrawer.HeightMM - dHMM) > MOVE_DELTA)
-			{
-				bUpdate = true;
-			}
-			else
-			{
-				for(let nIdx = 0; nIdx < aAllLayouts.length; ++nIdx)
-				{
-					if(this.AllLayouts[nIdx] !== aAllLayouts[nIdx])
-					{
-						bUpdate = true;
-						break;
-					}
-				}
-			}
-		}
-
-		if (bUpdate)
-		{
-			this.AllLayouts = aAllLayouts;
-
-			let _len = this.AllLayouts.length;
-			let arr  = new Array(_len);
-			for (let i = 0; i < _len; i++)
-			{
-				arr[i]       = new CLayoutThumbnail();
-				arr[i].Index = i;
-
-				let oLt = this.AllLayouts[i];
-				arr[i].Type = oLt.getType();
-				arr[i].Name = oLt.getName();
-
-				oLtDrawer.WidthMM       = this.m_oLogicDocument.GetWidthMM();
-				oLtDrawer.HeightMM      = this.m_oLogicDocument.GetHeightMM();
-				oLt.ImageBase64 = oLtDrawer.GetThumbnail(oLt);
-				oLt.Width64     = oLtDrawer.WidthPx;
-				oLt.Height64    = oLtDrawer.HeightPx;
-
-				arr[i].Image  = oLt.ImageBase64;
-				arr[i].Width  = AscCommon.AscBrowser.convertToRetinaValue(oLt.Width64);
-				arr[i].Height =  AscCommon.AscBrowser.convertToRetinaValue(oLt.Height64);
-			}
-
-			this.m_oApi.sendEvent("asc_onUpdateLayout", arr);
-		}
-
-		let oMaster = this.m_oLogicDocument.GetCurrentMaster();
-		if(this.LastMaster !== oMaster)
-		{
-			if(oMaster)
-			{
-				this.m_oApi.sendEvent("asc_onUpdateThemeIndex", oMaster.getThemeIndex());
-				this.m_oApi.sendColorThemes(oMaster.Theme);
-			}
-			this.LastMaster = oMaster;
-		}
-		this.m_oDrawingDocument.CheckGuiControlColors(bIsAttack);
 	};
 
 	// current page
@@ -4367,13 +3430,108 @@ function CEditorPage(api)
 	};
 	this.GetSlidesCount = function()
 	{
+		//todo
 		return this.m_oLogicDocument.getCountPages();
+		//return this.m_oDrawingDocument.GetSlidesCount();
 	};
 
-	this.GoToPage = function(lPageNum, isFromZoom, isScroll, bIsAttack, isReporterUpdateSlide)
+	this.GoToPage = function(lPageNum, isFromZoom, isScroll, bIsAttack)
 	{
-		this.m_oLogicDocument.getCurrentPage(lPageNum);
-		this.m_oLogicDocument.draw(this.m_nZoomValue, undefined, lPageNum);
+		// //todo
+		// this.m_oLogicDocument.setCurrentPage(lPageNum);
+		// this.m_oLogicDocument.draw(this.m_nZoomValue, undefined, lPageNum);
+		// return;
+		var drDoc = this.m_oDrawingDocument;
+
+		if (!this.m_oScrollVerApi)
+		{
+			// сборка файлов
+			return;
+		}
+		if(this.m_oApi.isEyedropperStarted() && drDoc.SlideCurrent !== lPageNum)
+		{
+			this.m_oApi.cancelEyedropper();
+		}
+
+		if (this.m_oDrawingDocument.TransitionSlide.IsPlaying())
+			this.m_oDrawingDocument.TransitionSlide.End(true);
+
+
+		if (lPageNum != -1 && (lPageNum < 0 || lPageNum >= drDoc.GetSlidesCount()))
+			return;
+
+		this.Thumbnails.LockMainObjType = true;
+		this.StartVerticalScroll        = false;
+		this.m_oApi.sendEvent("asc_onEndPaintSlideNum");
+
+		var _bIsUpdate = (drDoc.SlideCurrent != lPageNum);
+
+		this.ZoomFreePageNum = lPageNum;
+		drDoc.SlideCurrent   = lPageNum;
+
+		this.SlideDrawer.CheckSlide(drDoc.SlideCurrent);
+
+		if (true !== isFromZoom)
+		{
+			this.m_oLogicDocument.Document_UpdateInterfaceState();
+		}
+
+		this.CalculateDocumentSize(false);
+
+		this.Thumbnails.SelectPage(lPageNum);
+
+		this.CreateBackgroundHorRuler();
+		this.CreateBackgroundVerRuler();
+
+		this.m_bIsUpdateHorRuler = true;
+		this.m_bIsUpdateVerRuler = true;
+
+		this.OnCalculatePagesPlace();
+
+		//this.m_oScrollVerApi.scrollTo(0, drDoc.SlideCurrent * this.m_dDocumentPageHeight);
+		if (this.IsGoToPageMAXPosition)
+		{
+			if (this.SlideScrollMAX > this.m_dScrollY_max)
+				this.SlideScrollMAX = this.m_dScrollY_max;
+
+			this.m_oScrollVerApi.scrollToY(this.SlideScrollMAX);
+			this.IsGoToPageMAXPosition = false;
+		}
+		else
+		{
+			//this.m_oScrollVerApi.scrollToY(this.SlideScrollMIN);
+			if (this.m_dScrollY_Central > this.m_dScrollY_max)
+				this.m_dScrollY_Central = this.m_dScrollY_max;
+
+			this.m_oScrollVerApi.scrollToY(this.m_dScrollY_Central);
+		}
+
+		if (this.m_dScrollX_Central > this.m_dScrollX_max)
+			this.m_dScrollX_Central = this.m_dScrollX_max;
+
+		this.m_oScrollHorApi.scrollToX(this.m_dScrollX_Central);
+
+		this.ZoomFreePageNum = -1;
+
+		if (this.m_oApi.isViewMode === false && null != this.m_oLogicDocument)
+		{
+			//this.m_oLogicDocument.Set_CurPage( drDoc.SlideCurrent );
+			//this.m_oLogicDocument.MoveCursorToXY(0, 0, false);
+			this.m_oLogicDocument.RecalculateCurPos();
+
+			this.m_oApi.sync_currentPageCallback(drDoc.SlideCurrent);
+		}
+		else
+		{
+			this.m_oApi.sync_currentPageCallback(drDoc.SlideCurrent);
+		}
+
+		this.m_oLogicDocument.Document_UpdateSelectionState();
+
+		this.Thumbnails.LockMainObjType = false;
+
+		if (_bIsUpdate || bIsAttack === true)
+			this.OnScroll();
 	};
 
 	// fonts cache checker
@@ -4386,7 +3544,7 @@ function CEditorPage(api)
 			_c.m_nCurrentTimeClearCache = 0;
 			_c.m_oDrawingDocument.CheckFontCache();
 		}
-        //oThis.m_oLogicDocument.ContinueSpellCheck();
+        oThis.m_oLogicDocument.ContinueSpellCheck();
 	};
 
 	// open/save
@@ -4430,9 +3588,6 @@ function CEditorPage(api)
 				AscCommon.g_inputContext.onResize("id_main_parent");
 
 			this.initEventsMobile();
-
-			if (this.m_oApi.isReporterMode)
-				AscCommon.g_inputContext.HtmlArea.style.display = "none";
 		}
 	};
 
@@ -4448,290 +3603,6 @@ function CEditorPage(api)
 			//console.log(str);
 		}
 	};
-	
-	// animation panel
-	this.GetAnimPaneHeight = function()
-	{
-		return this.Splitter3Pos;
-	};
-
-	this.IsBottomPaneShown = function()
-	{
-		return this.Splitter2Pos > HIDDEN_PANE_HEIGHT;
-	};
-
-	this.IsAnimPaneShown = function()
-	{
-		if(!this.IsBottomPaneShown())
-		{
-			return false;
-		}
-		return this.GetAnimPaneHeight() > 0;
-	};
-
-	this.ShowAnimPane = function (bShow) {
-		if (this.IsAnimPaneShown() === bShow) { return; }
-
-		if (bShow) {
-			this.Splitter3Pos = (this.OldSplitter3Pos > HIDDEN_PANE_HEIGHT) ? this.OldSplitter3Pos : this.Splitter3PosMin;
-			this.Splitter2Pos += this.Splitter3Pos;
-			this.OnResizeSplitter();
-		} else {
-			const old = this.OldSplitter3Pos;
-			this.Splitter2Pos -= this.Splitter3Pos;
-			this.Splitter3Pos = 0;
-			this.OnResizeSplitter();
-			this.OldSplitter3Pos = old;
-			this.m_oLogicDocument.CheckAnimPaneShow();
-		}
-	};
-	this.ChangeTimelineScale = function(bZoomOut) {
-		this.m_oAnimPaneApi.timeline.Control.timeline.changeTimelineScale(bZoomOut);
-	}
-
-	// notes panel
-	this.GetNotesHeight = function()
-	{
-		return this.Splitter2Pos - this.Splitter3Pos;
-	};
-
-	this.IsNotesShown = function()
-	{
-		if(!this.IsBottomPaneShown())
-		{
-			return false;
-		}
-		return this.GetNotesHeight() > HIDDEN_PANE_HEIGHT;
-	};
-
-	this.ShowNotes = function (bShow) {
-		if (this.IsNotesShown() === bShow) { return; }
-
-		if (bShow) {
-			this.Splitter2Pos = (this.OldSplitter2Pos - this.Splitter3Pos <= HIDDEN_PANE_HEIGHT)
-				? this.Splitter3Pos + 11
-				: this.OldSplitter2Pos;
-			this.OnResizeSplitter();
-		} else {
-			const old = this.OldSplitter2Pos;
-			this.Splitter2Pos = 0;
-			this.OnResizeSplitter();
-			this.OldSplitter2Pos = old;
-			if(this.m_oLogicDocument) {
-				this.m_oLogicDocument.CheckNotesShow();
-			}
-		}
-	};
-
-	this.setNotesEnable = function(bEnabled)
-	{
-		if (bEnabled == this.IsSupportNotes)
-			return;
-
-		GlobalSkin.SupportNotes = bEnabled;
-		this.IsSupportNotes = bEnabled;
-		this.ShowNotes(bEnabled);
-	};
-
-	this.setAnimPaneEnable = function(bEnabled)
-	{
-		if (bEnabled == this.IsSupportAnimPane)
-			return;
-		this.IsSupportAnimPane = bEnabled;
-		this.Splitter3Pos = 0;
-		Asc.editor.sendEvent('asc_onCloseAnimPane');
-		this.OnResizeSplitter();
-	};
-
-
-	this.GetMediaPlayerData = function(mediaData)
-	{
-		if(!mediaData || !mediaData.isValid()) return null;
-
-		let oMediaFrameRect = this.GetMediaFrameRect();
-		if(!oMediaFrameRect) return null;
-
-		let oMediaControlRect = this.GetMediaControlRect(oMediaFrameRect);
-		if(!oMediaControlRect) return null;
-
-		return mediaData.getPlayerData(oMediaFrameRect, oMediaControlRect);
-	};
-
-	this.GetMediaFrameRect = function()
-	{
-		let mediaData = this.m_oApi.getMediaData();
-		if(!mediaData) return null;
-		let oDrawing = mediaData.getDrawing();
-		if(!oDrawing) return null;
-
-
-		let oNotRotatedBounds = new AscFormat.CGraphicBounds(
-			oDrawing.x,
-			oDrawing.y,
-			oDrawing.x + oDrawing.extX,
-			oDrawing.y + oDrawing.extY
-		);
-		let oBounds = oNotRotatedBounds;
-		if(!this.DemonstrationManager.Mode)
-		{
-			let nControlX = this.X;
-			let nControlY = this.Y;
-			let oDD = this.m_oDrawingDocument;
-			let nSlide = this.m_oLogicDocument.CurPage;
-			let getCoords = function(x, y)
-			{
-				let oPos = oDD.ConvertCoordsToCursorWR(x, y, nSlide, null, true);
-				oPos.X += nControlX;
-				oPos.Y += nControlY;
-				oPos.X = oPos.X >> 0;
-				oPos.Y = oPos.Y >> 0;
-				return oPos;
-			};
-			let oLeftTop = getCoords(oBounds.x, oBounds.y);
-			let oRightBottom = getCoords(oBounds.x + oBounds.w, oBounds.y + oBounds.h);
-			return new AscFormat.CGraphicBounds(
-				oLeftTop.X,
-				oLeftTop.Y,
-				oRightBottom.X,
-				oRightBottom.Y
-			);
-		}
-		else
-		{
-			let manager = this.DemonstrationManager;
-			let transition = manager.Transition;
-			if ((manager.SlideNum >= 0 && manager.SlideNum < manager.GetSlidesCount()) && (!transition || !transition.IsPlaying()))
-			{
-				let _x = (transition.Rect.x / AscCommon.AscBrowser.retinaPixelRatio) >> 0;
-				let _y = (transition.Rect.y / AscCommon.AscBrowser.retinaPixelRatio) >> 0;
-				let _w = (transition.Rect.w / AscCommon.AscBrowser.retinaPixelRatio) >> 0;
-
-				let _w_mm = this.m_oLogicDocument.GetWidthMM();
-
-				if (this.m_oApi.isReporterMode)
-				{
-					_x += ((this.m_oMainParent.AbsolutePosition.L * AscCommon.g_dKoef_mm_to_pix) >> 0);
-				}
-
-				let zoom = _w / _w_mm;
-
-
-				let getCoords = function(x, y)
-				{
-					return {
-						X: _x + zoom * x + 0.5 >> 0,
-						Y: _y + zoom * y + 0.5 >> 0
-					}
-				};
-				let oLeftTop = getCoords(oBounds.x, oBounds.y);
-				let oRightBottom = getCoords(oBounds.x + oBounds.w, oBounds.y + oBounds.h);
-				return new AscFormat.CGraphicBounds(
-					oLeftTop.X,
-					oLeftTop.Y,
-					oRightBottom.X,
-					oRightBottom.Y
-				);
-			}
-		}
-		return null;
-
-	};
-	this.GetMediaControlRect = function(oMediaFrameRect)
-	{
-
-		if(!oMediaFrameRect) return null;
-
-		let mediaData = this.m_oApi.getMediaData();
-		if(!mediaData) return null;
-
-		let oDrawing = mediaData.getDrawing();
-		if(!oDrawing) return;
-
-		let nWidth, nHeight, nX, nY;
-
-
-
-		nWidth = oMediaFrameRect.w - 2 * MIN_MEDIA_CONTROL_CONTROL_INSET;
-		nWidth = Math.max(nWidth, MIN_MEDIA_CONTROL_WIDTH);
-		nHeight = MEDIA_CONTROL_HEIGHT;
-
-		if(!oThis.DemonstrationManager.Mode)
-		{
-			let dKoef = AscCommon.g_dKoef_mm_to_pix;
-			nX = (oMediaFrameRect.l + oMediaFrameRect.r) / 2.0 - nWidth / 2 + 0.5 >> 0;
-			nY = oMediaFrameRect.b + MEDIA_CONTROL_TOP_MARGIN + 0.5 >> 0;
-
-
-			let nControlX = this.X;
-			let nControlY = this.Y;
-
-			//view rect relative to slide coords
-			let oMainViewRect = this.m_oMainView.AbsolutePosition;
-
-			let dViewL = 0, dViewT = 0, dViewR = 0, dViewB = 0;
-			let oCurControl = this.m_oMainView;
-			while(oCurControl)
-			{
-				let oAbsPos = oCurControl.AbsolutePosition;
-				dViewL += oAbsPos.L;
-				dViewT += oAbsPos.T;
-				oCurControl = oCurControl.Parent;
-			}
- 			let nViewRectL = nControlX + dViewL * dKoef + 0.5 >> 0;
-			let nViewRectT = nControlY + dViewT * dKoef + 0.5 >> 0;
-			let nViewRectR = nViewRectL + (oMainViewRect.R - oMainViewRect.L) * dKoef + 0.5 >> 0;
-			let nViewRectB = nViewRectT + (oMainViewRect.B - oMainViewRect.T) * dKoef + 0.5 >> 0;
-
-
-			if(nX < nViewRectL)
-				nX = nViewRectL;
-			if(nY < nViewRectT)
-				nY = nViewRectT;
-			if(nX + nWidth > nViewRectR)
-				nX = nViewRectR - nWidth;
-			if(nY + nHeight > nViewRectB)
-				nY = nViewRectB - nHeight;
-			return new AscFormat.CGraphicBounds(nX, nY, nX + nWidth, nY + nHeight);
-		}
-		else
-		{
-			let manager = this.DemonstrationManager;
-			let transition = manager.Transition;
-			if ((manager.SlideNum >= 0 && manager.SlideNum < manager.GetSlidesCount()) && (!transition || !transition.IsPlaying()))
-			{
-				let _x = (transition.Rect.x / AscCommon.AscBrowser.retinaPixelRatio) >> 0;
-				let _y = (transition.Rect.y / AscCommon.AscBrowser.retinaPixelRatio) >> 0;
-				let _w = (transition.Rect.w / AscCommon.AscBrowser.retinaPixelRatio) >> 0;
-				let _h = (transition.Rect.h / AscCommon.AscBrowser.retinaPixelRatio) >> 0;
-				if (this.m_oApi.isReporterMode)
-				{
-					_x += ((this.m_oMainParent.AbsolutePosition.L * AscCommon.g_dKoef_mm_to_pix) >> 0);
-				}
-
-				let _r = _x + _w;
-				let _b = _y + _h;
-
-				nX = (oMediaFrameRect.l + oMediaFrameRect.r) / 2.0 - nWidth / 2 + 0.5 >> 0;
-				nY = oMediaFrameRect.b - MEDIA_CONTROL_TOP_MARGIN - MEDIA_CONTROL_HEIGHT + 0.5 >> 0;
-
-				if(nX < _x)
-					nX = _x;
-				if(nY < _y)
-					nY = _y;
-				if(nX + nWidth > _r)
-					nX = _r - nWidth;
-				if(nY + nHeight > _b)
-					nY = _b - nHeight;
-				return new AscFormat.CGraphicBounds(nX, nY, nX + nWidth, nY + nHeight);
-			}
-		}
-		return null;
-	};
-	this.OnUpdateMediaPlayer = function()
-	{
-		let oPlayerData = this.GetMediaPlayerData();
-		console.log(JSON.stringify(oPlayerData))
-	};
 
 	this.UpdateViewMode = function ()
 	{
@@ -4741,30 +3612,8 @@ function CEditorPage(api)
 			case Asc.c_oAscPresentationViewMode.normal:
 			{
 				this.GoToPage(0);
-				this.setNotesEnable(true);
-				this.setAnimPaneEnable(true);
-				this.m_oApi.hideMediaControl();
 				this.m_oApi.asc_hideComments();
 				this.m_oLogicDocument.Recalculate({Drawings:{All:true, Map:{}}});
-				this.m_oLogicDocument.Document_UpdateInterfaceState();
-				break;
-			}
-			case Asc.c_oAscPresentationViewMode.masterSlide:
-			{
-				let oSlide = this.m_oLogicDocument.GetCurrentSlide();
-				let nIdx = 0;
-				if(oSlide) {
-					let nCurIdx = this.m_oLogicDocument.GetSlideIndex(oSlide.Layout);
-					if(nCurIdx !== -1) {
-						nIdx = nCurIdx;
-					}
-				}
-				this.GoToPage(nIdx);
-				this.m_oLogicDocument.Recalculate({Drawings:{All:true, Map:{}}});
-				this.setNotesEnable(false);
-				this.setAnimPaneEnable(false);
-				this.m_oApi.hideMediaControl();
-				this.m_oApi.asc_hideComments();
 				this.m_oLogicDocument.Document_UpdateInterfaceState();
 				break;
 			}
@@ -4774,22 +3623,7 @@ function CEditorPage(api)
 			}
 		}
 	};
-
-	this.IsNotesSupported = function()
-	{
-		return false;
-	};
-	this.IsAnimPaneSupported = function()
-	{
-		return this.IsSupportAnimPane && !this.m_oApi.isMasterMode();
-	};
 }
-
-const MEDIA_CONTROL_HEIGHT = 40;
-const MIN_MEDIA_CONTROL_WIDTH = 560;
-const MIN_MEDIA_CONTROL_CONTROL_INSET = 20;
-const MEDIA_CONTROL_TOP_MARGIN = 10;
-
 //------------------------------------------------------------export----------------------------------------------------
 window['AscCommon']                       = window['AscCommon'] || {};
 window['AscCommonDraw']                  = window['AscCommonDraw'] || {};
