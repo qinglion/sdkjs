@@ -1454,6 +1454,10 @@
 		}
 		return res;
 	};
+	Item.prototype._insertChild = function(index, item) {
+		var res = item ? this.insertChildren(index, [item]) : null;
+		return res && res[0];
+	};
 	Item.prototype.insertAbove = function (item) {
 		return this._insertAt(item, 1);
 	};
@@ -1534,9 +1538,6 @@
 			}
 		}
 		return 0;
-	};
-	Item.prototype.isSibling = function (item) {
-		return this._parent === item._parent;
 	};
 	Item.prototype.translate = function () {
 		const mx = new Matrix();
@@ -3377,7 +3378,7 @@
 		const delta = 1; // Expand universum so that it accurately includes all paths
 		const universum = new Path.Rectangle(bounds[0] - delta, bounds[1] - delta, bounds[2] + delta, bounds[3] + delta);
 
-		const fragments = [];
+		const areas = [];
 		for (let option = 1, totalCombinations = Math.pow(2, paths.length); option < totalCombinations; option++) {
 			let result = universum;
 			for (let i = 0; i < paths.length; i++) {
@@ -3391,9 +3392,35 @@
 			}
 			if (!result.isEmpty()) {
 				result._option = option;
-				fragments.push(result);
+				areas.push(result);
 			}
 		}
+
+		function splitCompoundPath(compoundPath) {
+			const split = [];
+			const paths = compoundPath.getChildren();
+			const hasIntersection = function (p1, p2) { return !p1.intersect(p2).isEmpty(); };
+			paths.forEach(function (path) {
+				const intersects = paths.some(function (p1) {
+					return p1 !== path && hasIntersection(p1, path);
+				});
+				if (!intersects) {
+					split.push(path);
+					path.remove();
+				}
+			});
+
+			if (compoundPath.getChildren().length) {
+				split.push(compoundPath);
+			}
+			return split;
+		}
+
+		const fragments = areas.flatMap(function (area) {
+			if (area instanceof Path) { return [area]; }
+			if (area instanceof CompoundPath) { return splitCompoundPath(area); }
+		});
+
 		return fragments;
 	};
 	PathItem.prototype.resolveCrossings = function () {
@@ -3557,7 +3584,6 @@
 		let result = new CompoundPath({ insert: false });
 		result.addChildren(paths, true);
 		result = result.reduce({ simplify: simplify });
-		result.insertAbove(path2 && path1.isSibling(path2) && path1.getIndex() < path2.getIndex() ? path2 : path1);
 		result.copyAttributes(path1, true);
 		return result;
 	};
