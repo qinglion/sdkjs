@@ -6295,39 +6295,62 @@ background-repeat: no-repeat;\
 
 	asc_docs_api.prototype.asc_AddVideoCallback = function(sImageUrlLocal, sVideoUrl, obj)
 	{
-		var oApi = this;
-		var sImageUrl = AscCommon.g_oDocumentUrls.getImageUrl(sImageUrlLocal);
-		this.ImageLoader.LoadImagesWithCallback([sImageUrl], function(){
-			var _image = oApi.ImageLoader.LoadImage(sImageUrl, 1);
-			if (!_image || !_image.Image)
-				return;
-
-			var oImageObject = {};
-			oImageObject.src = sImageUrl;
-			oImageObject.Image = {};
-			oImageObject.Image.width = _image.Image.width;
-			oImageObject.Image.height = _image.Image.height;
-			oImageObject.videoUrl = sVideoUrl;
-			oApi.WordControl.m_oLogicDocument.addImages([oImageObject], obj);
-		});
+		this.addMediaCallback(sImageUrlLocal, obj, sVideoUrl, "localVideo");
 	};
 	asc_docs_api.prototype.asc_AddAudioCallback = function(sImageUrlLocal, sAudioUrl, obj)
 	{
-		var oApi = this;
-        var sImageUrl = AscCommon.g_oDocumentUrls.getImageUrl(sImageUrlLocal);
-		this.ImageLoader.LoadImagesWithCallback([sImageUrl], function(){
-			var _image = oApi.ImageLoader.LoadImage(sImageUrl, 1);
-            if (!_image || !_image.Image)
-                return;
+		this.addMediaCallback(sImageUrlLocal, obj, sAudioUrl, "localAudio");
+	};
 
-			var oImageObject = {};
+
+
+	asc_docs_api.prototype.asc_AddVideoUrlCallback = function(sImageUrlLocal, sVideoUrl, obj)
+	{
+		this.addMediaCallback(sImageUrlLocal, obj, sVideoUrl, "linkVideo");
+	};
+	asc_docs_api.prototype.asc_AddAudioUrlCallback = function(sImageUrlLocal, sAudioUrl, obj)
+	{
+		this.addMediaCallback(sImageUrlLocal, obj, sAudioUrl, "linkAudio");
+	};
+
+	asc_docs_api.prototype.addMediaCallback = function(sImageUrlLocal, oPlaceholder, sLink, sType)
+	{
+		let oApi = this;
+		let sImageUrl = AscCommon.g_oDocumentUrls.getImageUrl(sImageUrlLocal);
+		this.ImageLoader.LoadImagesWithCallback([sImageUrl], function(){
+			let _image = oApi.ImageLoader.LoadImage(sImageUrl, 1);
+			if (!_image || !_image.Image)
+				return;
+
+			let oImageObject = {};
 			oImageObject.src = sImageUrl;
 			oImageObject.Image = {};
 			oImageObject.Image.width = 50;
 			oImageObject.Image.height = 50;
-			oImageObject.audioUrl = sAudioUrl;
-			oApi.WordControl.m_oLogicDocument.addImages([oImageObject], obj);
+			if(sType === "localVideo") {
+				oImageObject.videoUrl = sLink;
+			}
+			else if(sType === "localAudio") {
+				oImageObject.audioUrl = sLink;
+			}
+			else if(sType === "linkVideo") {
+				oImageObject.videoLink = sLink;
+			}
+			else if(sType === "linkAudio") {
+				oImageObject.audioLink = sLink;
+			}
+			oApi.WordControl.m_oLogicDocument.addImages([oImageObject], oPlaceholder);
 		});
+	};
+
+
+	asc_docs_api.prototype.asc_AddVideoUrl = function(sVideoUrl, obj)
+	{
+		this.addMediaCallback(sImageUrlLocal, obj, sVideoUrl, "linkVideo");
+	};
+	asc_docs_api.prototype.asc_AddAudioUrl = function(sAudioUrl, obj)
+	{
+		this.addMediaCallback(sImageUrlLocal, obj, sAudioUrl, "linkAudio");
 	};
 
 	//----------------------------------------------------------------------------------------------------------------------
