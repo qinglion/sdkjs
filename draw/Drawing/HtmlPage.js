@@ -91,6 +91,9 @@ function CEditorPage(api)
 	this.m_oThumbnails          = null;
 	this.m_oThumbnails_scroll   = null;
 
+	//todo remove
+	this.m_oNotesApi	   = {};
+
 	// main
 	this.m_oMainParent = null;
 	this.m_oMainContent = null;
@@ -205,6 +208,7 @@ function CEditorPage(api)
 
 	// thumbnails
 	this.Thumbnails                 = new CThumbnailsManager();
+	this.Thumbnails.showContextMenu = function(bPosBySelect) {}//todo override CThumbnailsManager
 
 	// сплиттеры (для табнейлов и для заметок)
 	this.Splitter1Pos    = 0;

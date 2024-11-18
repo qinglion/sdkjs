@@ -725,6 +725,10 @@
 		//todo remove
 		return 0;
 	}
+	CVisioDocument.prototype.IsVisibleSlide = function (nIndex) {
+		//todo remove
+		return true;
+	};
 	CVisioDocument.prototype.GetSlide = function() {
 		//todo remove
 		return {getObjectType: function(){}, isVisible: function(){return true}};
@@ -735,6 +739,24 @@
 	CVisioDocument.prototype.GetSlidesCount = function () {
 		return this.getCountPages();
 	};
+	CVisioDocument.prototype.Recalculate = function (RecalcData) {
+		//todo
+		this.DrawingDocument.OnStartRecalculate(this.GetSlidesCount());
+		let _RecalcData = RecalcData ? RecalcData : History.Get_RecalcData();
+		if (_RecalcData.Drawings.All) {
+			for(let pageIndex in this.pageShapesCache) {
+				this.pageShapesCache[pageIndex].forEach(function(shapeOrGroup) {
+					shapeOrGroup.recalcText();
+					shapeOrGroup.recalculate();
+				});
+			}
+		}
+		this.DrawingDocument.OnEndRecalculate();
+		History.Reset_RecalcIndex();
+		this.RecalculateCurPos();
+		this.Document_UpdateSelectionState();
+	};
+
 	CVisioDocument.prototype.RecalculateCurPos = function () {
 	};
 	CVisioDocument.prototype.Document_UpdateSelectionState = function () {
@@ -767,6 +789,9 @@
 	};
 	CVisioDocument.prototype.IsStartedPreview = function () {
 		return false;
+	};
+	CVisioDocument.prototype.Set_FastCollaborativeEditing = function (isOn) {
+		//todo
 	};
 	// CVisioDocument.prototype.getMasterByID = function(ID) {
 	// 	// join Master_Type and MasterContents_Type
