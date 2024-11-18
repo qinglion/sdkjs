@@ -3398,7 +3398,7 @@
 
 		function splitCompoundPath(compoundPath) {
 			const split = [];
-			const paths = compoundPath.getChildren();
+			const paths = compoundPath.getChildren().slice();
 			const hasIntersection = function (p1, p2) { return !p1.intersect(p2).isEmpty(); };
 			paths.forEach(function (path) {
 				const intersects = paths.some(function (p1) {
