@@ -762,6 +762,13 @@
 		}
 		this.downloadAs(Asc.c_oAscAsyncAction.DownloadAs, options);
 	};
+	asc_docs_api.prototype.asc_getPageName = function(index)
+	{
+		if (this.Document && this.Document.pages && index < this.Document.pages.page.length) {
+			return this.Document.pages.page[index].name;
+		}
+		return "";
+	};
 	/*callbacks*/
 	asc_docs_api.prototype.sync_zoomChangeCallback  = function(percent, type)
 	{	//c_oAscZoomType.Current, c_oAscZoomType.FitWidth, c_oAscZoomType.FitPage
@@ -826,6 +833,7 @@
 	asc_docs_api.prototype['asc_checkNeedCallback']             		= asc_docs_api.prototype.asc_checkNeedCallback;
 	asc_docs_api.prototype['asc_SetFastCollaborative']             		= asc_docs_api.prototype.asc_SetFastCollaborative;
 	asc_docs_api.prototype['asc_DownloadAs']             				= asc_docs_api.prototype.asc_DownloadAs;
+	asc_docs_api.prototype['asc_getPageName']             				= asc_docs_api.prototype.asc_getPageName;
 	asc_docs_api.prototype['OnMouseUp']             					= asc_docs_api.prototype.OnMouseUp;
 
 })(window, window.document);
