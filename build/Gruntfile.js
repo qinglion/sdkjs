@@ -196,6 +196,7 @@ module.exports = function(grunt) {
 		{
 			cwd: '../common/',
 			src: [
+				'Drawings/Format/Path.Boolean.min.js',
 				'Charts/ChartStyles.js',
 				'SmartArts/SmartArtData/*',
 				'SmartArts/SmartArtDrawing/*',
