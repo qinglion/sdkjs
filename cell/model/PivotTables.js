@@ -9269,6 +9269,7 @@ PivotRangeMapper.prototype.getEditPageFieldsLabelFunction = function(bbox) {
 					const api = pivot.worksheet.workbook.oApi;
 					api._changePivotWithLock(pivot, function(ws, pivot) {
 						pivotField.asc_setName(text, pivot, pivotIndex, true);
+						pivot._updateCacheDataUpdateSlicersPost();
 					});
 				}
 			}
@@ -9451,6 +9452,7 @@ PivotRangeMapper.prototype.getEditColLabelCellFunction = function(bbox) {
 				const api = t.pivot.worksheet.workbook.oApi;
 				api._changePivotWithLock(t.pivot, function(ws, pivot) {
 					fieldItem.asc_setName(text, pivot, pivotIndex, v, true);
+					pivot._updateCacheDataUpdateSlicersPost();
 				});
 			}
 		}
