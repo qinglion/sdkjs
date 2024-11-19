@@ -10212,7 +10212,7 @@ CT_pivotTableDefinition.prototype.hasErrorForCalculatedItems = function(fld) {
 		if (pivotFields[i].dataField && pivotFields[i].axis !== null) {
 			return c_oAscError.ID.NotUniqueFieldWithCalculated;
 		}
-		if (pivotFields[i].asc_getSubtotals().length > 0) {
+		if (pivotFields[i].asc_getSubtotals(false).length > 0) {
 			return c_oAscError.ID.PivotFieldCustomSubtotalsWithCalculatedItems;
 		}
 	}
@@ -17148,6 +17148,20 @@ CT_PivotField.prototype.getSortDataIndex = function() {
 	}
 	return -1;
 };
+/**
+ * @param {spreadsheet_api} api
+ * @param {CT_pivotTableDefinition} pivot
+ * @param {number} index
+ * @param {CT_PivotField} newVal
+ * @returns {c_oAscError.ID}
+ */
+CT_PivotField.prototype.asc_canSet = function (api, pivot, index, newVal) {
+	const cacheDefinition = pivot.cacheDefinition;
+	if (cacheDefinition && cacheDefinition.getCalculatedItems() && (newVal.asc_getSubtotals(false).length > 0 || newVal.ascSubtotals.length > 0)) {
+		return c_oAscError.ID.PivotFieldCustomSubtotalsWithCalculatedItems;
+	}
+	return c_oAscError.ID.No;
+};
 CT_PivotField.prototype.asc_set = function (api, pivot, index, newVal) {
 	var pivotFields = pivot.asc_getPivotFields();
 	if(pivotFields && index < pivotFields.length) {
@@ -17940,6 +17954,20 @@ CT_DataField.prototype.asc_getBaseField = function () {
 };
 CT_DataField.prototype.asc_getBaseItem = function () {
 	return this.baseItem;
+};
+/**
+ * @param {spreadsheet_api} api
+ * @param {CT_pivotTableDefinition} pivot
+ * @param {number} index
+ * @param {CT_DataField} newVal
+ * @returns {c_oAscError.ID}
+ */
+CT_DataField.prototype.asc_canSet = function (api, pivot, index, newVal) {
+	const cacheDefinition = pivot.cacheDefinition;
+	if (cacheDefinition && cacheDefinition.getCalculatedItems() && !newVal.canWorkWithCalculatedItems()) {
+		return c_oAscError.ID.WrongDataFieldSubtotalForCalculatedItems;
+	}
+	return c_oAscError.ID.No;
 };
 CT_DataField.prototype.asc_set = function (api, pivot, index, newVal) {
 	var dataFields = pivot.asc_getDataFields();
@@ -22466,6 +22494,7 @@ prot["asc_getNumFormatInfo"] = prot.asc_getNumFormatInfo;
 prot["asc_setNumFormat"] = prot.asc_setNumFormat;
 prot["asc_setVisibleItem"] = prot.asc_setVisibleItem;
 prot["asc_setVisible"] = prot.asc_setVisible;
+prot["asc_canSet"] = prot.asc_canSet;
 
 prot = CT_Field.prototype;
 prot["asc_getIndex"] = prot.asc_getIndex;
@@ -22492,6 +22521,7 @@ prot["asc_getNumFormat"] = prot.asc_getNumFormat;
 prot["asc_getNumFormatInfo"] = prot.asc_getNumFormatInfo;
 prot["asc_setNumFormat"] = prot.asc_setNumFormat;
 prot["asc_setShowAs"] = prot.asc_setShowAs;
+prot["asc_canSet"] = prot.asc_canSet;
 
 window["Asc"]["CT_Item"] = window['Asc'].CT_Item = CT_Item;
 prot = CT_Item.prototype;
