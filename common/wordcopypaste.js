@@ -2546,7 +2546,7 @@ function Editor_Paste_Exec(api, _format, data1, data2, text_data, specialPastePr
 				});
 			};
 			reader.onerror = function () {
-				t.sendEvent("asc_onError", Asc.c_oAscError.ID.Unknown, Asc.c_oAscError.Level.NoCritical);
+				api.sendEvent("asc_onError", Asc.c_oAscError.ID.Unknown, Asc.c_oAscError.Level.NoCritical);
 			};
 			reader.readAsArrayBuffer(new Blob([data1]));
 			break;
