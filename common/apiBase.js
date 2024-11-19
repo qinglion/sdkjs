@@ -1535,6 +1535,28 @@
 			this.downloadAs(Asc.c_oAscAsyncAction.DownloadAs, oOptions);
 		}
 	};
+	baseEditorsApi.prototype.getConvertedBinFileFromRtf  = function (document, nOutputFormat, fCallback) {
+		if (this.canEdit()) {
+			this.insertDocumentUrlsData = {
+				imageMap: null, documents: [document], convertCallback: function (_api, url) {
+					_api.insertDocumentUrlsData.imageMap = url;
+					if (url['output.bin']) {
+						fCallback(url['output.bin']);
+					} else {
+						fCallback(null);
+					}
+					//_api.endInsertDocumentUrls();
+				}, endCallback: function (_api) {
+					fCallback(null);
+				}
+			};
+
+			const oOptions = new Asc.asc_CDownloadOptions(nOutputFormat);
+			oOptions.isNaturalDownload = true;
+			oOptions.isGetTextFromUrl = true;
+			this.downloadAs(Asc.c_oAscAsyncAction.DownloadAs, oOptions);
+		}
+	};
 	baseEditorsApi.prototype._onEndPermissions                   = function()
 	{
 		if (this.isOnLoadLicense) {
@@ -1588,6 +1610,8 @@
 	// CoAuthoring
 	baseEditorsApi.prototype._coAuthoringInit                    = function()
 	{
+		this.initCollaborativeEditing();
+		
 		var t = this;
 		//Если User не задан, отключаем коавторинг.
 		if (null == this.User || null == this.User.asc_getId())
@@ -1927,10 +1951,6 @@
 			}
 			// На старте не нужно ничего делать
 			if (isStartEvent) {
-				// TODO: Возможна ситуация, что это событие придет до onEndLoadSdk, и класс совместки еще не создан
-				//       Стоит перенести старт совместки после загрузки sdk, а если sdk не загружено, то тут просто пометить,
-				//       что надо будет начать совместку
-				t.initCollaborativeEditing();
 				t.startCollaborationEditing();
 			} else {
 				t._unlockDocument(isWaitAuth);
@@ -3825,11 +3845,8 @@
 		if (!this.canSave || !this._saveCheck())
 			return 0;
 
-		if (this.isPdfEditor())
-			return 0;
-
 		//viewer
-		if (this.isViewMode)
+		if (this.isViewMode || this.isPdfViewer)
 			return 0;
 
 		return new Date().getTime() - this.lastWorkTime;
@@ -3889,7 +3906,7 @@
 		this.currentPasswordOld = this.currentPassword;
 		this.currentPassword = password;
 		this.asc_Save(false, undefined, true);
-		if (!(this.DocInfo && this.DocInfo.get_OfflineApp()) && !this.isViewMode && !this.isRestrictionView()) {
+		if (!(this.DocInfo && this.DocInfo.get_OfflineApp()) && !this.isViewMode && !this.isPdfViewer) {
 			var rData = {
 				"c": 'setpassword',
 				"id": this.documentId,

@@ -117,7 +117,7 @@
             return;
         }
 
-        AscCommon.History.Add(new CChangesPDFFreeTextRotate(this, this._rotate, nAngle));
+        AscCommon.History.Add(new CChangesPDFAnnotRotate(this, this._rotate, nAngle));
 		
 		AscCommon.ExecuteNoHistory(function() {
 			let oBodyPr = oTxShape.txBody.bodyPr;
@@ -731,7 +731,7 @@
                     oLastUsedPara.Set_Align(AscPDF.getInternalAlignByPdfType(oRCInfo["alignment"]));
                 }
                 else {
-                    oRun.Add(AscPDF.codePointToRunElement(nCharCode));
+                    oRun.AddToContentToEnd(AscPDF.codePointToRunElement(nCharCode));
                 }
             }
         }
@@ -1308,7 +1308,6 @@
         let oViewer         = editor.getDocumentRenderer();
         let oDoc            = this.GetDocument();
         let oDrDoc          = oDoc.GetDrawingDocument();
-        this.isInMove       = false;
 
         this.selectStartPage = this.GetPage();
         
@@ -1330,17 +1329,16 @@
                 let yContent    = oTransform.TransformPointY(0, Y);
 
                 if (this.IsInTextBox() == false) {
-                    this.selectedObjects.length = 0;
-                    oContent.Selection_SetStart(xContent, yContent, 0, e);
-                    oContent.RemoveSelection();
-                    oContent.RecalculateCurPos();
-
-                    oDrDoc.UpdateTargetFromPaint = true;
-                    oDrDoc.TargetStart(true);
-                    this.SetInTextBox(true);
-
                     oDoc.SetGlobalHistory();
                     oDoc.DoAction(function() {
+                        this.selectedObjects.length = 0;
+                        oContent.Selection_SetStart(xContent, yContent, 0, e);
+                        oContent.RemoveSelection();
+                        oContent.RecalculateCurPos();
+
+                        oDrDoc.UpdateTargetFromPaint = true;
+                        oDrDoc.TargetStart(true);
+                        this.SetInTextBox(true);
                         this.FitTextBox();
                     }, AscDFH.historydescription_Pdf_FreeTextFitTextBox, this);
                     oDoc.SetLocalHistory();
@@ -1362,14 +1360,8 @@
     };
     CAnnotationFreeText.prototype.onAfterMove = function() {
         this.onMouseDown();
-        this.isInMove = false;
     };
     CAnnotationFreeText.prototype.onPreMove = function(x, y, e) {
-        if (this.isInMove)
-            return;
-
-        this.isInMove = true; // происходит ли resize/move действие
-
         let oViewer         = editor.getDocumentRenderer();
         let oDrawingObjects = oViewer.DrawingObjects;
 
@@ -1385,7 +1377,6 @@
 
         let oCursorInfo = oDrawingObjects.getGraphicInfoUnderCursor(pageObject.index, X, Y);
         if (oCursorInfo.cursorType == null) {
-            this.isInMove = false;
             return;
         }
 

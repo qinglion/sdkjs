@@ -4794,7 +4794,7 @@ var g_oFontProperties = {
     };
     CellXfs.prototype.getAlign2 = function () {
         // ToDo check this! Rename to getAlign
-        return this.align || g_oDefaultFormat.Align;
+        return this.align || g_oDefaultFormat.AlignAbs;
     };
     CellXfs.prototype.setAlign = function (val) {
         this.align = val;
@@ -5664,7 +5664,7 @@ StyleManager.prototype =
 	_initXfAlign: function(xfs){
 		xfs = xfs.clone();
 		if(null == xfs.align){
-			xfs.align = g_oDefaultFormat.Align;
+			xfs.align = g_oDefaultFormat.AlignAbs;
 		}
 		xfs.align = xfs.align.clone();
 		return xfs;
@@ -5724,7 +5724,8 @@ StyleManager.prototype =
 	_setAlignProperty : function(oItemWithXfs, val, prop, getFunc, setFunc)
 	{
 		var xfs = oItemWithXfs.xfs;
-		var oRes = {newVal: val, oldVal: xfs && xfs.align ? getFunc.call(xfs.align): getFunc.call(g_oDefaultFormat.Align)};
+		let oldAlign = xfs ? (xfs.align || g_oDefaultFormat.AlignAbs) : g_oDefaultFormat.Align;
+		var oRes = {newVal: val, oldVal: getFunc.call(oldAlign)};
 		xfs = this._initXf(oItemWithXfs);
 		var xfsOperationCache = xfs;
 		var newXf = xfs.getOperationCache(prop, val);
@@ -11149,6 +11150,9 @@ function RangeDataManagerElem(bbox, data)
 		} else {
 			var isNumberFilter = this.Operator === c_oAscCustomAutoFilter.isGreaterThan || this.Operator === c_oAscCustomAutoFilter.isGreaterThanOrEqualTo || this.Operator === c_oAscCustomAutoFilter.isLessThan || this.Operator === c_oAscCustomAutoFilter.isLessThanOrEqualTo;
 
+			if (isLabelFilter && !isNumberFilter) {
+				isDigitValue = false;
+			}
 			if (c_oAscCustomAutoFilter.equals === this.Operator || c_oAscCustomAutoFilter.doesNotEqual === this.Operator) {
 				filterVal = isNaN(this.Val) ? this.Val.toLowerCase() : this.Val;
 			} else if (isNumberFilter) {
@@ -15018,11 +15022,24 @@ function RangeDataManagerElem(bbox, data)
 		}
 		return res;
 	};
+
+	ExternalReference.prototype.removeSheetByName = function (sheetName) {
+		if (sheetName != null) {
+			let index = this.getSheetByName(sheetName);
+			if (index != null) {
+				this.SheetNames.splice(index, 1);
+				this.SheetDataSet.splice(index, 1);
+				delete this.worksheets[sheetName];
+			}
+		}
+	};
 	
-	ExternalReference.prototype.updateData = function (arr, oPortalData) {
+	ExternalReference.prototype.updateData = function (arr, oPortalData, noData) {
 		var t = this;
 		var isChanged = false;
 		var cloneER = this.clone();
+		
+		let existedWsArray = [];
 		for (var i = 0; i < arr.length; i++) {
 			//если есть this.worksheets, если нет - проверить и обработать
 			var sheetName = arr[i].sName;
@@ -15060,19 +15077,28 @@ function RangeDataManagerElem(bbox, data)
 				if (index != null) {
 					var externalSheetDataSet = this.SheetDataSet[index];
 					if (externalSheetDataSet) {
-						if (externalSheetDataSet.updateFromSheet(t.worksheets[sheetName])) {
+						if (externalSheetDataSet.updateFromSheet(t.worksheets[sheetName], noData)) {
 							isChanged = true;
 						}
 					}
 					let externalDefName = this.getDefinedNamesBySheetIndex(index);
 					if (externalDefName) {
 						for (let i = 0; i < externalDefName.length; i++) {
-							if (externalDefName[i].updateFromSheet(t.worksheets[sheetName])) {
+							if (externalDefName[i].updateFromSheet(t.worksheets[sheetName], noData)) {
 								isChanged = true;
 							}
 						}
 					}
 				}
+			}
+			existedWsArray.push(sheetName);
+		}
+
+		// delete all non-existent sheets in ExternalReference
+		for (let wsName in this.worksheets) {
+			if (!existedWsArray.includes(wsName)) {
+				// throw an error if we referenced to one of the deleted sheets?
+				this.removeSheetByName(wsName);
 			}
 		}
 
@@ -15409,7 +15435,7 @@ function RangeDataManagerElem(bbox, data)
 			this.referenceData = {};
 		}
 		this.referenceData["instanceId"] = portalName;
-		this.referenceData["fileKey"] = fileId;
+		this.referenceData["fileKey"] = fileId + "";
 	};
 
 	ExternalReference.prototype.setId = function (id) {
@@ -15612,7 +15638,7 @@ function RangeDataManagerElem(bbox, data)
 		}
 	};
 
-	ExternalSheetDataSet.prototype.updateFromSheet = function(sheet) {
+	ExternalSheetDataSet.prototype.updateFromSheet = function(sheet, noData) {
 		var isChanged = false;
 		if (sheet) {
 			var t = this;
@@ -15631,13 +15657,19 @@ function RangeDataManagerElem(bbox, data)
 					var range = sheet.getRange2(externalCell.Ref);
 					range._foreach(function (cell) {
 
-						let changedCell = externalCell.initFromCell(cell, true);
+						let changedCell = externalCell.initFromCell(cell, true, noData);
 						if (!isChanged) {
 							isChanged = changedCell;
 						}
 
 						var api_sheet = Asc['editor'];
 						var wb = api_sheet.wbModel;
+						
+						/* if we haven't received data from an external source, put #REF error for all cells */
+						if (noData) {
+							cell._setValue("#REF!");
+						}
+
 						wb.dependencyFormulas.addToChangedCell(cell);
 					});
 				}
@@ -15823,7 +15855,7 @@ function RangeDataManagerElem(bbox, data)
 
 		return newObj;
 	};
-	ExternalCell.prototype.initFromCell = function(cell, bUpdate) {
+	ExternalCell.prototype.initFromCell = function(cell, bUpdate, noData) {
 		var isChanged = false;
 		if (cell) {
 			var t = this;
@@ -15833,7 +15865,7 @@ function RangeDataManagerElem(bbox, data)
 				});
 			}
 
-			var newVal = cell.getValue();
+			let newVal = noData ? "#REF" : cell.getValue();
 			if (this.CellValue !== newVal) {
 				isChanged = true;
 				this.CellValue = newVal;
@@ -15852,6 +15884,11 @@ function RangeDataManagerElem(bbox, data)
 					cellValueType = Asc.ECellTypeType.celltypeError;
 					break;
 			}
+
+			if (noData) {
+				cellValueType = Asc.ECellTypeType.celltypeError;
+			}
+
 			if (this.CellType !== cellValueType) {
 				this.CellType = cellValueType;
 				isChanged = true;
@@ -17461,7 +17498,8 @@ function RangeDataManagerElem(bbox, data)
 			this.asc_setIterativeCalc(oCalcPr.getIterate());
 		}
 		if (oCalcPr.getIterateCount() != null) {
-			this.asc_setMaxIterations(oCalcPr.getIterateCount());
+			const MAX_ITERATE_COUNT = 32767;
+			this.asc_setMaxIterations(oCalcPr.getIterateCount() <= MAX_ITERATE_COUNT ? oCalcPr.getIterateCount() : MAX_ITERATE_COUNT);
 		}
 		if (oCalcPr.getIterateDelta() != null) {
 			this.asc_setMaxChange(oCalcPr.getIterateDelta());

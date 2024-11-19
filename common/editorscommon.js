@@ -2962,10 +2962,14 @@
 		//var regExpExceptExternalLink = /('?[a-zA-Z0-9\s\[\]\.]{1,99})?'?!?\$?[a-zA-Z]{1,3}\$?[0-9]{1,7}(:\$?[a-zA-Z]{1,3}\$?[0-9]{1,7})?/;
 
 		//'path/[name]Sheet1'!A1
-		var path, name, startLink, i;
+		let path, name, startLink, i, exclamationMarkIndex;
 		if (url && url.indexOf("[") !== -1) {
 			//todo check on other separators, exm -> SUM(A2 '[new.xlsx]Sheet1'!A1 '[new.xlsx]Sheet1'!A2)
 			for (let j = 0; j < url.length; j++) {
+				if (!exclamationMarkIndex && url[j] === "!") {
+					exclamationMarkIndex = j;
+				}
+				
 				if (url[j] === FormulaSeparators.functionArgumentSeparator || url[j] === FormulaSeparators.functionArgumentSeparatorDef || url[j] === ";")  {
 					url = url.substring(0, j);
 					break;
@@ -2974,7 +2978,7 @@
 
 
 			if (url && url[0] === "'"/*url.match(/('[^\[]*\[[^\]]+\]([^'])+'!)/g)*/) {
-				for (i = url.length - 1; i >= 0; i--) {
+				for (i = exclamationMarkIndex ? exclamationMarkIndex : url.length - 1; i >= 0; i--) {
 					if (url[i] === "!" && url[i - 1] === "'") {
 						startLink = true;
 						i--;
@@ -3797,7 +3801,6 @@
 		{
 			this._reset();
 		}
-
 		let subSTR = formula.substring(start_pos),
 		match = XRegExp.exec(subSTR, local ? rx_table_local : rx_table);
 
@@ -3808,6 +3811,62 @@
 			return match;
 		}
 
+		return false;
+	};
+	parserHelper.prototype.isPivot = function (formula, start_pos, local, opt_namesList)
+	{
+		if (this instanceof parserHelper)
+		{
+			this._reset();
+		}
+		// todo если строка подстрока другой
+		const subSTR = formula.substring(start_pos);
+		const fieldName = opt_namesList[0][0];
+		const itemNames = opt_namesList[1];
+		const fullPatterns = itemNames.map(function(name) {
+			return '^' + fieldName + '\\s*\\[\\s*(' + name + ')\\s*\\]'
+		});
+		const fullRegs = fullPatterns.map(function(pattern) {
+			return new RegExp(pattern, 'i');
+		});
+		for (let i = 0; i < fullRegs.length; i += 1) {
+			const match = fullRegs[i].exec(subSTR);
+			if (match !== null) {
+				this.operand_str = match[0];
+				this.pCurrPos += match[0].length;
+				return [fieldName, match[1]];
+			}
+		}
+		const shortPatterns = itemNames.map(function(name) {
+			return '^(' + name + ')(?:\\W|$)'
+		});
+		const shortRegs = shortPatterns.map(function(pattern) {
+			return new RegExp(pattern, 'i');
+		});
+		for (let i = 0; i < shortRegs.length; i += 1) {
+			const match = shortRegs[i].exec(subSTR);
+			if (match !== null) {
+				this.operand_str = match[1];
+				this.pCurrPos += match[1].length;
+				return [null, match[1]];
+			}
+		}
+		return false;
+	};
+	parserHelper.prototype.isPivotRaw = function (formula, start_pos, local)
+	{
+		if (this instanceof parserHelper)
+		{
+			this._reset();
+		}
+		const subSTR = formula.substring(start_pos);
+		const reg = /^(\w+|(?:\'.+?\'(?!\')))\[(\w+|(?:\'.+?\'(?!\')))\]/;
+		const match = reg.exec(subSTR);
+		if (match !== null && match[1] && match[2]) {
+			this.operand_str = match[0];
+			this.pCurrPos += match[0].length;
+			return [match[1], match[2]];
+		}
 		return false;
 	};
 // Парсим ссылку на диапазон в листе
