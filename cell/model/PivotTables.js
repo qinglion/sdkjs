@@ -9389,6 +9389,7 @@ PivotRangeMapper.prototype.getEditRowLabelCellFunction = function(bbox) {
 				const api = t.pivot.worksheet.workbook.oApi;
 				api._changePivotWithLock(t.pivot, function(ws, pivot) {
 					fieldItem.asc_setName(text, pivot, pivotIndex, v, true);
+					pivot._updateCacheDataUpdateSlicersPost();
 				});
 			}
 		}
@@ -20832,7 +20833,6 @@ CT_Item.prototype.isData = function() {
 CT_Item.prototype.asc_setName = function(newVal, pivot, pivotIndex, itemIndex, addToHistory) {
 	setFieldItemProperty(pivot, pivotIndex, itemIndex, this.n, newVal, addToHistory, AscCH.historyitem_PivotTable_PivotFieldItemSetName, true);
 	this.n = newVal;
-	pivot._updateCacheDataUpdateSlicersPost();
 };
 CT_Item.prototype.asc_getName = function() {
 	return this.n;
