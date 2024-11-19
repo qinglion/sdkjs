@@ -10201,19 +10201,28 @@ CT_pivotTableDefinition.prototype.asc_canAddNameCalculatedItem = function(fieldI
 };
 /**
  * @param {number} fld
- * @return {null | c_oAscError.ID}
+ * @return {c_oAscError.ID}
  */
 CT_pivotTableDefinition.prototype.hasErrorForCalculatedItems = function(fld) {
 	const pivotFields = this.asc_getPivotFields();
+	if (pivotFields[fld].axis === c_oAscAxis.AxisPage) {
+		return c_oAscError.ID.CalculatedItemInPageField;
+	}
 	for (let i = 0; i < pivotFields.length; i += 1) {
 		if (pivotFields[i].dataField && pivotFields[i].axis !== null) {
 			return c_oAscError.ID.NotUniqueFieldWithCalculated;
 		}
-		if (pivotFields[fld].axis === c_oAscAxis.AxisPage) {
-			return c_oAscError.ID.CalculatedItemInPageField;
+		if (pivotFields[i].asc_getSubtotals().length > 0) {
+			return c_oAscError.ID.PivotFieldCustomSubtotalsWithCalculatedItems;
 		}
 	}
-	return null;
+	const dataFields = this.asc_getDataFields();
+	for (let i = 0; i < dataFields.length; i += 1) {
+		if (!dataFields[i].canWorkWithCalculatedItems()) {
+			return c_oAscError.ID.WrongDataFieldSubtotalForCalculatedItems
+		}
+	}
+	return c_oAscError.ID.No;
 };
 /**
  * @param {number} row
@@ -10225,17 +10234,17 @@ CT_pivotTableDefinition.prototype.asc_canChangeCalculatedItemByCell = function(r
 };
 /**
  * @param {number} fld
- * @return {null | c_oAscError.ID}
+ * @return {c_oAscError.ID}
  */
 CT_pivotTableDefinition.prototype.asc_hasTablesErrorForCalculatedItems = function(fld) {
 	const pivots = this.getPivotTablesConnectedByPivotCache();
 	for (let i = 0; i < pivots.length; i += 1) {
 		const err = pivots[i].hasErrorForCalculatedItems(fld);
-		if (err !== null) {
+		if (err !== c_oAscError.ID.No) {
 			return err;
 		}
 	}
-	return null;
+	return c_oAscError.ID.No;
 };
 /**
  * @param {spreadsheet_api} api
@@ -18016,6 +18025,20 @@ CT_DataField.prototype.setShowAs = function (showDataAs, baseField, baseItem) {
 	this.asc_setShowDataAs(showDataAs);
 	this.asc_setBaseField(baseField);
 	this.asc_setBaseItem(baseItem);
+};
+/**
+ * @return {boolean}
+ */
+CT_DataField.prototype.canWorkWithCalculatedItems = function () {
+	if (this.subtotal === c_oAscDataConsolidateFunction.Average ||
+		this.subtotal === c_oAscDataConsolidateFunction.StdDev ||
+		this.subtotal === c_oAscDataConsolidateFunction.StdDevp ||
+		this.subtotal === c_oAscDataConsolidateFunction.Var ||
+		this.subtotal === c_oAscDataConsolidateFunction.Varp) {
+
+		return false;
+	}
+	return true;
 };
 
 function CT_DataFieldX14() {

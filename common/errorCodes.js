@@ -174,6 +174,8 @@
 			PivotItemNameNotFound       : -321,
 			CalculatedItemInPageField   : -322,
 			NotUniqueFieldWithCalculated: -323,
+			WrongDataFieldSubtotalForCalculatedItems: -324,
+			PivotFieldCustomSubtotalsWithCalculatedItems: -325,
 
 			ForceSaveButton: -331,
 			ForceSaveTimeout: -332,
@@ -369,6 +371,8 @@
 	prot['PivotItemNameNotFound']            = prot.PivotItemNameNotFound;
 	prot['CalculatedItemInPageField']        = prot.CalculatedItemInPageField;
 	prot['NotUniqueFieldWithCalculated']     = prot.NotUniqueFieldWithCalculated
+	prot['WrongDataFieldSubtotalForCalculatedItems'] = prot.WrongDataFieldSubtotalForCalculatedItems;
+	prot['PivotFieldCustomSubtotalsWithCalculatedItems'] = prot.PivotFieldCustomSubtotalsWithCalculatedItems;
 	prot['PasteInPivot']                     = prot.PasteInPivot;
 	prot['PivotLabledColumns']               = prot.PivotLabledColumns;
 	prot['PivotOverlap']                     = prot.PivotOverlap;
