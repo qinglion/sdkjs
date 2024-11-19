@@ -384,13 +384,13 @@
 		switch (this.editorId)
 		{
 			case c_oEditorId.Word:
-				res = isOpenOoxml ? Asc.c_oAscFileType.CANVAS_WORD : Asc.c_oAscFileType.DOCX;
+				res = isOpenOoxml ? Asc.c_oAscFileType.DOCX : Asc.c_oAscFileType.CANVAS_WORD;
 				break;
 			case c_oEditorId.Spreadsheet:
-				res = isOpenOoxml ? Asc.c_oAscFileType.CANVAS_SPREADSHEET : Asc.c_oAscFileType.XLSX;
+				res = isOpenOoxml ? Asc.c_oAscFileType.XLSX: Asc.c_oAscFileType.CANVAS_SPREADSHEET;
 				break;
 			case c_oEditorId.Presentation:
-				res = isOpenOoxml ? Asc.c_oAscFileType.CANVAS_PRESENTATION : Asc.c_oAscFileType.PPTX;
+				res = isOpenOoxml ? Asc.c_oAscFileType.PPTX : Asc.c_oAscFileType.CANVAS_PRESENTATION;
 				break;
 			case c_oEditorId.Draw:
 				res = Asc.c_oAscFileType.VSDX;
