@@ -818,7 +818,7 @@ $(function () {
 			const pivot3 = wb.getWorksheetByName('Sheet2').getPivotTable(0, 18);
 			assert.equal(pivot1.asc_hasTablesErrorForCalculatedItems(0), c_oAscError.ID.NotUniqueFieldWithCalculated);
 			assert.equal(pivot2.asc_hasTablesErrorForCalculatedItems(0), c_oAscError.ID.CalculatedItemInPageField);
-			assert.equal(pivot3.asc_hasTablesErrorForCalculatedItems(0), null);
+			assert.equal(pivot3.asc_hasTablesErrorForCalculatedItems(0), c_oAscError.ID.No);
 		});
 		QUnit.test('Test: CALCULATED-ITEMS can add calculatedItemsName', function (assert) {
 			const file = Asc.AddCalculatedItemsStandard;
