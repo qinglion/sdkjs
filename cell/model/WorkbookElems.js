@@ -11150,6 +11150,9 @@ function RangeDataManagerElem(bbox, data)
 		} else {
 			var isNumberFilter = this.Operator === c_oAscCustomAutoFilter.isGreaterThan || this.Operator === c_oAscCustomAutoFilter.isGreaterThanOrEqualTo || this.Operator === c_oAscCustomAutoFilter.isLessThan || this.Operator === c_oAscCustomAutoFilter.isLessThanOrEqualTo;
 
+			if (isLabelFilter && !isNumberFilter) {
+				isDigitValue = false;
+			}
 			if (c_oAscCustomAutoFilter.equals === this.Operator || c_oAscCustomAutoFilter.doesNotEqual === this.Operator) {
 				filterVal = isNaN(this.Val) ? this.Val.toLowerCase() : this.Val;
 			} else if (isNumberFilter) {
