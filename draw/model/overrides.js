@@ -476,7 +476,7 @@ AscCommonWord.CPresentationField.prototype.private_GetString = function()
 		}
 		if (format) {
 			const oFormat = AscCommon.oNumFormatCache.get(format, AscCommon.NumFormatType.Excel);
-			sStr =  oFormat.formatToWord(val, 15, oCultureInfo);
+			sStr =  oFormat._formatToText(val, AscCommon.CellValueType.String, 15, oCultureInfo);
 		} else {
 			sStr = val + "";
 		}

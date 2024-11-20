@@ -361,7 +361,7 @@
 			 * Parses run props and adds run to paragraph
 			 * @param characterRowNum
 			 * @param {?Section_Type} characterPropsCommon
-			 * @param {ParaRun} oRun
+			 * @param {ParaRun | AscCommonWord.CPresentationField} oRun
 			 * @param paragraph
 			 * @param lineUniFill
 			 * @param fillUniFill
@@ -467,7 +467,13 @@
 				}
 
 				// add run to last paragraph
-				paragraph.Add_ToContent(paragraph.Content.length - 1, oRun);
+				if (paragraph instanceof AscCommonWord.CPresentationField) {
+					paragraph.AddToContent(paragraph.Content.length - 1, new ParaRun(paragraph, false));
+					paragraph.AddToContent(paragraph.Content.length - 1, oFld);
+					paragraph.AddToContent(paragraph.Content.length - 1, new ParaRun(paragraph, false));
+				} else {
+					paragraph.Add_ToContent(paragraph.Content.length - 1, oRun);
+				}
 			}
 			function initPresentationField(oFld, fieldRow) {
 				const valueCell = fieldRow.getCell("Value");
@@ -722,8 +728,7 @@
 					// equal to ApiParagraph.prototype.AddText method
 					let oRun = new ParaRun(paragraph, false);
 					if (typeof textElementPart === "string") {
-						// Replace LineSeparator
-						textElementPart = textElementPart.replaceAll("\u2028", "\n");
+						textElementPart = convertVsdxTextToPptxText(textElementPart);
 						oRun.AddText(textElementPart);
 					} else if (textElementPart.constructor.name === "fld_Type") {
 						// text field
@@ -770,15 +775,21 @@
 
 					let fldTagText = textElementPart.value;
 					if (fldTagText) {
-						fldTagText = convertVsdxTextToPptxText(fldTagText)
+						fldTagText = convertVsdxTextToPptxText(fldTagText);
 					}
 					oFld.CanAddToContent = true;
 					oFld.AddText(fldTagText, -1);
 					oFld.CanAddToContent = false;
 
-					paragraph.AddToContent(paragraph.Content.length - 1, new ParaRun(paragraph, false));
-					paragraph.AddToContent(paragraph.Content.length - 1, oFld);
-					paragraph.AddToContent(paragraph.Content.length - 1, new ParaRun(paragraph, false));
+					// setup Run
+					// check character properties: get cp_Type object and in characterPropsCommon get needed Row
+					let characterRowNum = propsRunsObjects.cp_Type && propsRunsObjects.cp_Type.iX;
+					if (propsRunsObjects.cp_Type === null) {
+						characterRowNum = 0;
+					}
+					parseRunAndAddToParagraph(characterRowNum, characterPropsCommon,
+						oFld, paragraph, lineUniFill, fillUniFill, theme, shape,
+						visioDocument);
 				} else if (textElementPart.constructor.name === "pp_Type") {
 					// setup Paragraph
 

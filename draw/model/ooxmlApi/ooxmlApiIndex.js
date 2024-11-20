@@ -1014,7 +1014,8 @@
 
 		/**
 		 * Shape_Type.prototype.toGeometryAndTextCShapes creates CShape from Shape_Type but for image as an
-		 * exception we make variable to store CImageShape in advance because convertion needs StaxParser reader object.
+		 * exception we make variable to store CImageShape in advance. We read CImageShape on parsing in
+		 * AscCommonDraw.Shape_Type.prototype.fromXml. Because CImageShape needs StaxParser reader object for init.
 		 * @type {CImageShape}
 		 */
 		this.cImageShape = null;
