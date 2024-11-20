@@ -1053,7 +1053,7 @@
 				// order is important so sort masters using uri
 				let pagesSort = [];
 				for (let i = 0; i < pages.length; i++) {
-					let pageNumber = pages[i].uri.slice(-5)[0]; // for page3.xml we get 3
+					let pageNumber = pages[i].uri.match(/\d+/); // for page3.xml we get 3
 					if (!isNaN(parseFloat(pageNumber)) && !isNaN(pageNumber - 0)) {
 						// if masterNumber is number
 						pagesSort[pageNumber - 1] = pages[i];
