@@ -63,7 +63,6 @@ const degToC = 60000;
 const radToDeg = 180 / Math.PI;
 const cToDeg = cToRad2 * radToDeg;
 
-
 function CChangesDrawingsAddPathCommand(Class, oCommand, nIndex, bReverse){
     this.Type = AscDFH.historyitem_PathAddPathCommand;
     this.Command = oCommand;
@@ -230,17 +229,11 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
             switch (command.id)
             {
                 case moveTo:
-                {
-                    var x = command.X;
-                    var y = command.Y;
-                    p.addPathCommand({id: moveTo, X: x, Y: y});
-                    break;
-                }
                 case lineTo:
                 {
                     var x = command.X;
                     var y = command.Y;
-                    p.addPathCommand({id: lineTo, X: x, Y: y});
+                    p.addPathCommand({id: command.id, X: x, Y: y});
                     break;
                 }
                 case bezier3:
@@ -581,19 +574,11 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
             switch(cmd.id)
             {
                 case moveTo:
-                {
-                    x0 = this.calculateCommandCoord(gdLst, cmd.X, cw, dCustomPathCoeffW);
-                    y0 = this.calculateCommandCoord(gdLst, cmd.Y, ch, dCustomPathCoeffH);
-                    this.ArrPathCommand[i] ={id: moveTo, X:x0, Y:y0};
-                    lastX = x0;
-                    lastY = y0;
-                    break;
-                }
                 case lineTo:
                 {
                     x0 = this.calculateCommandCoord(gdLst, cmd.X, cw, dCustomPathCoeffW);
                     y0 = this.calculateCommandCoord(gdLst, cmd.Y, ch, dCustomPathCoeffH);
-                    this.ArrPathCommand[i] ={id: lineTo, X:x0, Y:y0};
+                    this.ArrPathCommand[i] ={id:cmd.id, X:x0, Y:y0};
                     lastX = x0;
                     lastY = y0;
                     break;
@@ -1043,17 +1028,12 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
             switch(cmd.id)
             {
                 case moveTo:
-                {
-                    lastX=cmd.X*k;
-                    lastY=cmd.Y*k;
-                    this.ArrPathCommand[i] ={id: moveTo, X:lastX, Y:lastY};
-                    break;
-                }
                 case lineTo:
                 {
+
                     lastX=cmd.X*k;
                     lastY=cmd.Y*k;
-                    this.ArrPathCommand[i] ={id: lineTo, X:lastX, Y:lastY};
+                    this.ArrPathCommand[i] ={id:cmd.id, X:lastX, Y:lastY};
                     break;
                 }
                 case bezier3:
@@ -1076,6 +1056,8 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                 }
                 case arcTo:
                 {
+
+
                     var a1 = cmd.stAng;
                     var a2 = cmd.stAng + cmd.swAng;
                     var a3 = cmd.swAng;
@@ -1113,6 +1095,8 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
 
                     lastX = xc + l1 * cos1;
                     lastY = yc + l1 * sin1;
+
+
                     break;
                 }
                 case close:

@@ -34,6 +34,10 @@
 
 (function(window, document)
 {
+	const c_oAscError             = Asc.c_oAscError;
+	const c_oAscFileType          = Asc.c_oAscFileType;
+	const c_oAscAsyncAction       = Asc.c_oAscAsyncAction;
+	const c_oAscAsyncActionType   = Asc.c_oAscAsyncActionType;
 	const c_oAscFontRenderingModeType = Asc.c_oAscFontRenderingModeType;
 
 	/**
@@ -761,6 +765,61 @@
 			return;
 		}
 		this.downloadAs(Asc.c_oAscAsyncAction.DownloadAs, options);
+	};
+	asc_docs_api.prototype._downloadAs = function(actionType, options, oAdditionalData, dataContainer, downloadType)
+	{
+		var t = this;
+		var fileType = options.fileType;
+
+		if (this.isCloudSaveAsLocalToDrawingFormat(actionType, fileType))
+		{
+			this.localSaveToDrawingFormat(this.WordControl.m_oDrawingDocument.ToRendererPart(false, options.isPdfPrint), fileType);
+			return true;
+		}
+
+		if (c_oAscFileType.PDF === fileType || c_oAscFileType.PDFA === fileType)
+		{
+			var isSelection = false;
+			if (options.advancedOptions && options.advancedOptions && (Asc.c_oAscPrintType.Selection === options.advancedOptions.asc_getPrintType()))
+				isSelection = true;
+
+			var dd             = this.WordControl.m_oDrawingDocument;
+			dataContainer.data = dd.ToRendererPart(oAdditionalData["nobase64"], isSelection);
+		}
+		else if(false && this.isOpenOOXInBrowser && this["asc_isSupportFeature"]("ooxml"))
+		{
+			var title = this.documentTitle;
+			this.saveLogicDocumentToZip(undefined, undefined,
+				function(data) {
+					if (data) {
+						if (c_oAscFileType.VSDX === fileType && !window.isCloudCryptoDownloadAs) {
+							AscCommon.DownloadFileFromBytes(data, title, AscCommon.openXml.GetMimeType("vsdx"));
+						} else {
+							dataContainer.data = data;
+							if (window.isCloudCryptoDownloadAs)
+							{
+								window["AscDesktopEditor"]["CryptoDownloadAs"](dataContainer.data, fileType);
+								return true;
+							}
+							t._downloadAsUsingServer(actionType, options, oAdditionalData, dataContainer, downloadType);
+							return;
+						}
+					} else {
+						t.sendEvent("asc_onError", Asc.c_oAscError.ID.Unknown, Asc.c_oAscError.Level.NoCritical);
+					}
+					if (actionType)
+					{
+						t.sync_EndAction(c_oAscAsyncActionType.BlockInteraction, actionType);
+					}
+				});
+			return true;
+		}
+
+		if (window.isCloudCryptoDownloadAs)
+		{
+			window["AscDesktopEditor"]["CryptoDownloadAs"](dataContainer.data, fileType);
+			return true;
+		}
 	};
 	asc_docs_api.prototype.asc_getPageName = function(index)
 	{

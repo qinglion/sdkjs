@@ -2951,7 +2951,7 @@ function CDrawingDocument()
 		var watermark = this.m_oWordControl.m_oApi.watermarkDraw;
 		let oPresentation = this.m_oWordControl.m_oLogicDocument;
 
-		var pagescount = oPresentation.Slides.length;
+		var pagescount = oPresentation.GetSlidesCount();
 
 		if (-1 == this.m_lCurrentRendererPage)
 		{
@@ -2980,13 +2980,11 @@ function CDrawingDocument()
 			if ((true === isSelection && !this.m_oLogicDocument.IsMasterMode()) && !this.m_oWordControl.Thumbnails.isSelectedPage(i))
 				continue;
 
-			let oSlide = this.m_oLogicDocument.Slides[i];
-
-			if (!oSlide.isVisible())
+			if (!this.m_oLogicDocument.IsVisibleSlide(i))
 				continue;
 
 			renderer.BeginPage(this.m_oLogicDocument.GetWidthMM(), this.m_oLogicDocument.GetHeightMM());
-			oSlide.draw(renderer);
+			this.m_oLogicDocument.DrawPage(i, renderer);
 			renderer.EndPage();
 
 			if (watermark)

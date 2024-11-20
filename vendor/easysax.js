@@ -1870,8 +1870,6 @@ function XmlWriterContext(editorId){
             break;
         }
     }
-
-
     //docx
     this.document = null;
     this.oNumIdMap = {};

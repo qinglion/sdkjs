@@ -1899,7 +1899,7 @@ background-repeat: no-repeat;\
 			let oContentCustomPr = oCustomPrPart.getDocumentContent();
 			if(oContentCustomPr) {
 				let oCustomPrReader = new StaxParser(oContentCustomPr, oCustomPrPart, xmlParserContext);
-				this.WordControl.m_oLogicDocument.CustomPr.fromXml(oCustomPrReader, true);
+				this.WordControl.m_oLogicDocument.CustomProperties.fromXml(oCustomPrReader, true);
 			}
 		}
 		var context = reader.context;
