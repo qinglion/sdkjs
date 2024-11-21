@@ -358,18 +358,17 @@
 
 
 			/**
-			 * Parses run props and adds run to paragraph
+			 * Parses run props and set them
 			 * @param characterRowNum
 			 * @param {?Section_Type} characterPropsCommon
 			 * @param {ParaRun | AscCommonWord.CPresentationField} oRun
-			 * @param paragraph
 			 * @param lineUniFill
 			 * @param fillUniFill
 			 * @param theme
 			 * @param shape
 			 * @param visioDocument
 			 */
-			function parseRunAndAddToParagraph(characterRowNum, characterPropsCommon,  oRun, paragraph, lineUniFill,
+			function setRunProps(characterRowNum, characterPropsCommon,  oRun, lineUniFill,
 											   fillUniFill, theme, shape, visioDocument) {
 				let characterPropsFinal = characterRowNum !== null && characterPropsCommon.getRow(characterRowNum);
 
@@ -465,16 +464,8 @@
 					oRun.Pr.Underline = Boolean(Number(styleVsdx) & 4);
 					oRun.Pr.SmallCaps = Boolean(Number(styleVsdx) & 8);
 				}
-
-				// add run to last paragraph
-				if (paragraph instanceof AscCommonWord.CPresentationField) {
-					paragraph.AddToContent(paragraph.Content.length - 1, new ParaRun(paragraph, false));
-					paragraph.AddToContent(paragraph.Content.length - 1, oFld);
-					paragraph.AddToContent(paragraph.Content.length - 1, new ParaRun(paragraph, false));
-				} else {
-					paragraph.Add_ToContent(paragraph.Content.length - 1, oRun);
-				}
 			}
+
 			function initPresentationField(oFld, fieldRow) {
 				const valueCell = fieldRow.getCell("Value");
 				oFld.SetFieldType(valueCell.f);
@@ -757,9 +748,11 @@
 					if (propsRunsObjects.cp_Type === null) {
 						characterRowNum = 0;
 					}
-					parseRunAndAddToParagraph(characterRowNum, characterPropsCommon,
-						oRun, paragraph, lineUniFill, fillUniFill, theme, shape,
+
+					setRunProps(characterRowNum, characterPropsCommon,
+						oRun, lineUniFill, fillUniFill, theme, shape,
 						visioDocument);
+					paragraph.Add_ToContent(paragraph.Content.length - 1, oRun);
 				} else if (textElementPart.constructor.name === "fld_Type") {
 					// text field
 					// create defaultParagraph
@@ -787,9 +780,15 @@
 					if (propsRunsObjects.cp_Type === null) {
 						characterRowNum = 0;
 					}
-					parseRunAndAddToParagraph(characterRowNum, characterPropsCommon,
-						oFld, paragraph, lineUniFill, fillUniFill, theme, shape,
+
+					setRunProps(characterRowNum, characterPropsCommon,
+						oFld, lineUniFill, fillUniFill, theme, shape,
 						visioDocument);
+
+					paragraph.AddToContent(paragraph.Content.length - 1, new ParaRun(paragraph, false));
+					paragraph.AddToContent(paragraph.Content.length - 1, oFld);
+					paragraph.AddToContent(paragraph.Content.length - 1, new ParaRun(paragraph, false));
+
 				} else if (textElementPart.constructor.name === "pp_Type") {
 					// setup Paragraph
 
