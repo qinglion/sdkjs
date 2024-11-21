@@ -32,6 +32,7 @@
 
 (function(window, undefined) {
 
+    /*
     function TextStreamReader(data, size)
     {
         this.data = data;
@@ -110,6 +111,7 @@
             return this.GetShort() / 100;
         };
     }
+    */
 
     function CSpan()
     {
@@ -154,10 +156,12 @@
     	this.Selection = {
             Page1 : 0,
             Line1 : 0,
+            Word1 : 0,
             Glyph1 : 0,
 
             Page2 : 0,
             Line2 : 0,
+            Word2 : 0,
             Glyph2 : 0,
 
             quads: [],
@@ -225,7 +229,6 @@
         if (!width) width = this.pages[pageIndex].W;
         if (!height) height = this.pages[pageIndex].H;
 
-        pageIndex = this.pages[pageIndex].originIndex;
         var requestW = width;
         var requestH = height;
 
@@ -284,7 +287,7 @@
 
     CFile.prototype.getText = function(pageIndex)
     {
-        return this.nativeFile && undefined != pageIndex ? this.nativeFile["getGlyphs"](pageIndex) : [];
+        return this.nativeFile ? this.nativeFile["getGlyphs"](pageIndex) : [];
     };
 
     CFile.prototype.destroyText = function()
@@ -475,6 +478,7 @@ void main() {\n\
     };
 
     // TEXT
+    /*
     CFile.prototype.logTextCommands = function(commands)
     {
         var stream = new TextStreamReader(commands, commands.length);
@@ -555,6 +559,7 @@ void main() {\n\
             }
         }
     };
+    */
 
     CFile.prototype.onMouseDown = function(pageIndex, x, y)
     {
@@ -567,10 +572,12 @@ void main() {\n\
 
         sel.Page1  = pageIndex;
         sel.Line1  = ret.Line;
+        sel.Word1  = ret.Word;
         sel.Glyph1 = ret.Glyph;
 
         sel.Page2  = pageIndex;
         sel.Line2  = ret.Line;
+        sel.Word2  = ret.Word;
         sel.Glyph2 = ret.Glyph;
 
         sel.IsSelection = true;
@@ -583,10 +590,12 @@ void main() {\n\
         this.Selection = {
 			Page1 : 0,
 			Line1 : 0,
+            Word1 : 0,
 			Glyph1 : 0,
 
 			Page2 : 0,
 			Line2 : 0,
+            Word2 : 0,
 			Glyph2 : 0,
             quads: [],
 
@@ -597,7 +606,8 @@ void main() {\n\
         this.viewer.getPDFDoc().TextSelectTrackHandler.Update();
     };
     CFile.prototype.isSelectionUse = function() {
-        return !(this.Selection.Page1 == this.Selection.Page2 && this.Selection.Glyph1 == this.Selection.Glyph2 && this.Selection.Line1 == this.Selection.Line2);
+        return !(this.Selection.Page1  == this.Selection.Page2  && this.Selection.Word1 == this.Selection.Word2 &&
+                 this.Selection.Glyph1 == this.Selection.Glyph2 && this.Selection.Line1 == this.Selection.Line2);
     };
     CFile.prototype.getSelection = function() {
         return this.Selection;
@@ -613,6 +623,7 @@ void main() {\n\
 
         sel.Page2  = pageIndex;
         sel.Line2  = ret.Line;
+        sel.Word2  = ret.Word;
         sel.Glyph2 = ret.Glyph;
 
         this.onUpdateOverlay();
@@ -646,23 +657,160 @@ void main() {\n\
         }
     };
 
-    CFile.prototype.getPageTextStream = function(pageIndex)
+    CFile.prototype.getPageText = function(pageIndex)
     {
-        var textCommands = this.pages[pageIndex].text;
-        if (!textCommands || 0 === textCommands.length)
-            return null;
-
-        return new TextStreamReader(textCommands, textCommands.length);
+        return this.pages[pageIndex].text;
     };
 
     CFile.prototype.getNearestPos = function(pageIndex, x, y, bExcludeSpaces)
     {
-        var stream = this.getPageTextStream(pageIndex);
-        if (!stream)
-            return { Line : -1, Glyph : -1 };
+        var oText = this.getPageText(pageIndex);
+        if (!oText)
+            return { Line : -1, Word : -1, Glyph : -1 };
+
+        let _line  = -1;
+        let _word  = -1;
+        let _glyph = -1;
+
+        for (let iLine = 0; iLine < oText.length; ++iLine)
+        {
+            let oLine = oText[iLine];
+            if (oLine.Ex == 1 && oLine.Ey == 0)
+            {
+                var _distX = x - oLine.X;
+                if (y >= (oLine.Y - oLine.Ascent) && y <= (oLine.Y + oLine.Descent) && _distX >= 0 && _distX <= oLine.Width)
+                {
+                    // попали внутрь линии. Теперь нужно найти глиф
+                    _line = _numLine;
+
+                    _lenGls = _arrayGlyphOffsets.length;
+                    for (_glyph = 0; _glyph < _lenGls; _glyph++)
+                    {
+                        if (_arrayGlyphOffsets[_glyph] > _distX)
+                            break;
+                    }
+
+                    if (_glyph > 0)
+                    {
+                        --_glyph;
+
+                        if (bExcludeSpaces && _arrayGlyphOffsets[_glyph].isSpace)
+                        {
+                            let nToLeft     = Math.abs(_distX - _arrayGlyphOffsets[_glyph].offset);
+                            let nToRight    = Math.abs(_distX - _arrayGlyphOffsets[_glyph + 1]);
+
+                            if (nToRight < nToLeft)
+                                ++_glyph;
+                        }
+                    }
+
+                    return { Line : _line, Glyph : _glyph };
+                }
+
+                tmp = Math.abs(y - _lineY);
+
+                if (tmp < _minDist)
+                {
+                    _minDist = tmp;
+                    _line = _numLine;
+
+                    if (_distX < 0)
+                        _glyph = -2;
+                    else if (_distX > _lineWidth)
+                    {
+                        _glyph = -1;
+                    }
+                    else
+                    {
+                        _lenGls = _arrayGlyphOffsets.length;
+                        for (_glyph = 0; _glyph < _lenGls; _glyph++)
+                        {
+                            if (_arrayGlyphOffsets[_glyph] > _distX)
+                                break;
+                        }
+
+                        if (_glyph > 0)
+                            _glyph--;
+                    }
+                }
+
+                // Ничего не надо делать, уже найдена более "ближняя" линия
+            }
+            else
+            {
+                // определяем точки descent линии
+                var ortX = -_lineEy;
+                var ortY = _lineEx;
+
+                var _dx = _lineX + ortX * _lineDescent;
+                var _dy = _lineY + ortY * _lineDescent;
+
+                // теперь проекции (со знаком) на линию descent
+                var h = -((x - _dx) * ortX + (y - _dy) * ortY);
+                var w = (x - _dx) * _lineEx + (y - _dy) * _lineEy;
+
+                if (w >= 0 && w <= _lineWidth && h >= 0 && h <= (_lineDescent + _lineAscent))
+                {
+                    // попали внутрь линии. Теперь нужно найти глиф
+                    _line = _numLine;
+
+                    _lenGls = _arrayGlyphOffsets.length;
+                    for (_glyph = 0; _glyph < _lenGls; _glyph++)
+                    {
+                        if (_arrayGlyphOffsets[_glyph] > w)
+                            break;
+                    }
+
+                    if (_glyph > 0)
+                        _glyph--;
+
+                    return { Line : _line, Glyph : _glyph };
+                }
+
+                if (w >= 0 && w <= _lineWidth)
+                    tmp = Math.abs(h - _lineDescent);
+                else if (w < 0)
+                {
+                    tmp = Math.sqrt((x - _lineX) * (x - _lineX) + (y - _lineY) * (y - _lineY));
+                }
+                else
+                {
+                    var _tmpX = _lineX + _lineWidth * _lineEx;
+                    var _tmpY = _lineY + _lineWidth * _lineEy;
+                    tmp = Math.sqrt((x - _tmpX) * (x - _tmpX) + (y - _tmpY) * (y - _tmpY));
+                }
+
+                //tmp = Math.abs(h - _lineDescent);
+                if (tmp < _minDist)
+                {
+                    _minDist = tmp;
+                    _line = _numLine;
+
+                    if (w < 0)
+                        _glyph = -2;
+                    else if (w > _lineWidth)
+                        _glyph = -1;
+                    else
+                    {
+                        _lenGls = _arrayGlyphOffsets.length;
+                        for (_glyph = 0; _glyph < _lenGls; _glyph++)
+                        {
+                            if (_arrayGlyphOffsets[_glyph] > w)
+                                break;
+                        }
+
+                        if (_glyph > 0)
+                            _glyph--;
+                    }
+                }
+
+                // Ничего не надо делать, уже найдена более "ближняя" линия
+            }
+        }
 
         // textline parameters
         var _line = -1;
+        var _word = -1;
         var _glyph = -1;
         var _minDist = 0xFFFFFF;
 
@@ -930,14 +1078,14 @@ void main() {\n\
             }
         }
 
-        return { Line : _line, Glyph : _glyph };
+        return { Line : _line, Word : _word, Glyph : _glyph };
     };
     CFile.prototype.selectWholeWord = function(pageIndex, x, y) {
         var oNearesPos  = this.getNearestPos(pageIndex, x, y, true);
         if (oNearesPos.Glyph < 0)
             return;
 
-        var stream = this.getPageTextStream(pageIndex);
+        var stream = this.getPageText(pageIndex);
         var lineCharCount = 0;
         var lineGidExist = false;
         var lineText = "";
@@ -1198,7 +1346,7 @@ void main() {\n\
         }
 
         for (let i = Page1; i <= Page2; i++) {
-            var stream = this.getPageTextStream(i);
+            var stream = this.getPageText(i);
             if (!stream || this.pages[i].isConvertedToShapes)
                 continue;
 
@@ -1437,7 +1585,7 @@ void main() {\n\
             return;
         }
         
-        var stream = this.getPageTextStream(pageIndex);
+        var stream = this.getPageText(pageIndex);
         if (!stream)
             return;
 
@@ -1750,7 +1898,7 @@ void main() {\n\
 
     CFile.prototype.copySelection = function(pageIndex, _text_format)
     {
-        var stream = this.getPageTextStream(pageIndex);
+        var stream = this.getPageText(pageIndex);
         if (!stream)
             return "";
 
@@ -2042,7 +2190,7 @@ void main() {\n\
 
     CFile.prototype.getCountLines = function(pageIndex)
     {
-        var stream = this.getPageTextStream(pageIndex);
+        var stream = this.getPageText(pageIndex);
         if (!stream)
             return -1;
 
@@ -2302,7 +2450,7 @@ void main() {\n\
             pageLines:  []
         };
 
-        let stream = this.getPageTextStream(pageIndex);
+        let stream = this.getPageText(pageIndex);
         if (!stream)
             return oResult;
 
@@ -2827,6 +2975,9 @@ void main() {\n\
             file.nativeFile["onUpdateStatistics"] = function(par, word, symbol, space) {
                 file.onUpdateStatistics && file.onUpdateStatistics(par, word, symbol, space);
             };
+            file.nativeFile["isPunctuation"] = function(unicode) {
+                return AscCommon.g_aPunctuation[unicode];
+            };
             file.pages = file.nativeFile["getPages"]();
 
             for (var i = 0, len = file.pages.length; i < len; i++)
@@ -2864,6 +3015,9 @@ void main() {\n\
             };
             file.nativeFile["onUpdateStatistics"] = function(par, word, symbol, space) {
                 file.onUpdateStatistics && file.onUpdateStatistics(par, word, symbol, space);
+            };
+            file.nativeFile["isPunctuation"] = function(unicode) {
+                return AscCommon.g_aPunctuation[unicode];
             };
             file.pages = file.nativeFile["getPages"]();
 
