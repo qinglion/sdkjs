@@ -3033,6 +3033,12 @@
 
 		g_cCalcRecursion.initCalcProperties(this.calcPr);
 	};
+	Workbook.prototype.Get_Api = function() {
+		return this.oApi;
+	};
+	Workbook.prototype.Get_CollaborativeEditing = function() {
+		return this.oApi.collaborativeEditing
+	};
 	Workbook.prototype.addImages = function (aImages, obj) {
 		const oApi = Asc.editor;
 		if (obj && undefined !== obj.id && aImages.length === 1 && aImages[0].Image) {

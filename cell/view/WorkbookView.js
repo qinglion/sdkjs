@@ -3308,9 +3308,9 @@
       return;
 
     this.Api.sendEvent("asc_onBeforeUndoRedo");
-	  var oFormulaLocaleInfo = AscCommonExcel.oFormulaLocaleInfo;
-	  oFormulaLocaleInfo.Parse = false;
-	  oFormulaLocaleInfo.DigitSep = false;
+    var oFormulaLocaleInfo = AscCommonExcel.oFormulaLocaleInfo;
+    oFormulaLocaleInfo.Parse = false;
+    oFormulaLocaleInfo.DigitSep = false;
 	  if (this.Api.isEditVisibleAreaOleEditor) {
 		  const oOleSize = this.getOleSize();
 		  oOleSize.undo();
@@ -3321,8 +3321,8 @@
     } else {
       this.cellEditor.undo();
     }
-	  oFormulaLocaleInfo.Parse = true;
-	  oFormulaLocaleInfo.DigitSep = true;
+    oFormulaLocaleInfo.Parse = true;
+    oFormulaLocaleInfo.DigitSep = true;
     if (!AscCommon.CollaborativeEditing.Get_GlobalLock()) {
       this.restoreFocus();
     }
@@ -4730,8 +4730,8 @@
 		if (typeof (sheet_data) === "string") {
 			base64 = sheet_data;
 			tempWorkbook = new AscCommonExcel.Workbook(undefined, undefined, false);
-        tempWorkbook.DrawingDocument = Asc.editor.wbModel.DrawingDocument;
-		tempWorkbook.setCommonIndexObjectsFrom(this.model);
+			tempWorkbook.DrawingDocument = Asc.editor.wbModel.DrawingDocument;
+			tempWorkbook.setCommonIndexObjectsFrom(this.model);
 			aPastedImages = pasteProcessor._readExcelBinary(base64.split('xslData;')[1], tempWorkbook, true);
 			pastedWs = tempWorkbook.aWorksheets[0];
 		} else {
@@ -5611,13 +5611,13 @@
 							if (!isLocalDesktop) {
 								//xlst
 								binaryData = null;
-							let jsZlib = new AscCommon.ZLib();
-							if (!jsZlib.open(stream)) {
-								t.model.handlers.trigger("asc_onErrorUpdateExternalReference", eR.Id);
+								let jsZlib = new AscCommon.ZLib();
+								if (!jsZlib.open(stream)) {
+									t.model.handlers.trigger("asc_onErrorUpdateExternalReference", eR.Id);
 									continue;
-							}
+								}
 
-							if (jsZlib.files && jsZlib.files.length) {
+								if (jsZlib.files && jsZlib.files.length) {
 									binaryData = jsZlib.getFile(jsZlib.files[0]);
 								}
 							}
@@ -5711,7 +5711,7 @@
 			const oDataUpdater = new AscCommon.CExternalDataLoader(externalReferences, this.Api, doUpdateData);
 			oDataUpdater.updateExternalData();
 		}
-			};
+	};
 
 	WorkbookView.prototype.updateExternalReferences = function (arr, callback) {
 		this.doUpdateExternalReference(arr, callback);
@@ -6252,7 +6252,7 @@
 					let activeCell =  new AscCommon.CellBase(elem.row, elem.col);
 					ws.setActiveCell(activeCell);
 				} else {
-				ws.setSelection(range);
+					ws.setSelection(range);
 				}
 
 				this.SetCurrent(nId);
