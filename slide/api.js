@@ -6344,13 +6344,39 @@ background-repeat: no-repeat;\
 	};
 
 
-	asc_docs_api.prototype.asc_AddVideoUrl = function(sVideoUrl, obj)
+	asc_docs_api.prototype.asc_AddVideoUrl = function(sImageUrlLocal, sVideoUrl, obj)
 	{
 		this.addMediaCallback(sImageUrlLocal, obj, sVideoUrl, "linkVideo");
 	};
-	asc_docs_api.prototype.asc_AddAudioUrl = function(sAudioUrl, obj)
+	asc_docs_api.prototype.asc_AddAudioUrl = function(sImageUrlLocal, sAudioUrl, obj)
 	{
 		this.addMediaCallback(sImageUrlLocal, obj, sAudioUrl, "linkAudio");
+	};
+
+	asc_docs_api.prototype.closeDemonstration = function(bSaveAnnotations, isNoUseFullScreen)
+	{
+		let oAnnotations = this.getAnnotations();
+		if(oAnnotations)
+		{
+			if(bSaveAnnotations)
+			{
+				oAnnotations.saveAnnotations();
+			}
+			else
+			{
+				oAnnotations.clear();
+			}
+		}
+		this.endDemoMode(isNoUseFullScreen);
+	};
+
+	asc_docs_api.prototype.endDemoMode = function(isNoUseFullScreen)
+	{
+
+		if (this.windowReporter)
+			this.windowReporter.close();
+
+		this.WordControl.DemonstrationManager.End(isNoUseFullScreen);
 	};
 
 	//----------------------------------------------------------------------------------------------------------------------
@@ -7736,10 +7762,17 @@ background-repeat: no-repeat;\
 
 	asc_docs_api.prototype.EndDemonstration = function(isNoUseFullScreen)
 	{
-		if (this.windowReporter)
-			this.windowReporter.close();
-
-		this.WordControl.DemonstrationManager.End(isNoUseFullScreen);
+		let oAnnotations = this.getAnnotations();
+		if(oAnnotations && !oAnnotations.isEmpty())
+		{
+			this.sendEvent("asc_onEndDemoWithAnnotations", function (bKeep) {
+				Asc.editor.closeDemonstration(bKeep, isNoUseFullScreen);
+			});
+		}
+		else
+		{
+			this.closeDemonstration(false, isNoUseFullScreen);
+		}
 	};
 
 	asc_docs_api.prototype.DemonstrationReporterStart = function(startObject)

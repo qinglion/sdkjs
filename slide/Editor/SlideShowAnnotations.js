@@ -67,6 +67,15 @@ function (window, undefined) {
 			}
 		}
 	};
+	CAnnotations.prototype.isEmpty = function() {
+		return this.inks.length === 0;
+	};
+	CAnnotations.prototype.saveAnnotations = function () {
+		for(let nIdx = 0; nIdx < this.inks.length; ++nIdx) {
+			this.slide.addToSpTreeToPos(undefined, this.inks[nIdx].copy());
+		}
+	};
+
 	function CSlideShowAnnotations() {
 		this.annotations = {};
 		this.track = null;
@@ -227,6 +236,34 @@ function (window, undefined) {
 			}
 			oGraphics.RestoreGrState();
 		}
+	};
+	CSlideShowAnnotations.prototype.isEmpty = function() {
+		for(let sKey in this.annotations) {
+			if(this.annotations.hasOwnProperty(sKey)) {
+				if(!this.annotations[sKey].isEmpty()) {
+					return false;
+				}
+			}
+		}
+		return true;
+	};
+	CSlideShowAnnotations.prototype.canSaveAnnotations = function() {
+		return !this.isEmpty();
+	};
+	CSlideShowAnnotations.prototype.saveAnnotations = function () {
+		if(!this.canSaveAnnotations()) {
+			this.clear();
+			return;
+		}
+		let oPresentation = this.getPresentation();
+		oPresentation.StartAction(AscDFH.historydescription_Presentation_SaveAnnotations);
+		for(let sKey in this.annotations) {
+			if(this.annotations.hasOwnProperty(sKey)) {
+				this.annotations[sKey].saveAnnotations();
+			}
+		}
+		oPresentation.FinalizeAction(false);
+		this.clear();
 	};
 
 	window['AscCommonSlide'] = window['AscCommonSlide'] || {};

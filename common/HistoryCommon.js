@@ -4846,6 +4846,9 @@
 	window['AscDFH'].historydescription_CustomProperties_Add                        = 0x01b8;
 	window['AscDFH'].historydescription_CustomProperties_Remove                     = 0x01b9;
 	window['AscDFH'].historydescription_CustomProperties_Modify                     = 0x01c0;
+
+
+	window['AscDFH'].historydescription_Presentation_SaveAnnotations                = 0x01c1;
 	// pdf
 	window['AscDFH'].historydescription_Pdf_AddAnnot			= 0x29a;
 	window['AscDFH'].historydescription_Pdf_FreeTextGeom		= 0x29b;

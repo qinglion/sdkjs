@@ -907,6 +907,10 @@ function CEditorPage(api)
 		}
 		// --------------------------------------------------------------------------
 
+		this.m_oApi.asc_registerCallback("asc_onEndDemoWithAnnotations", function (fCallback)
+		{
+			fCallback(true);
+		});
 		this.m_oDrawingDocument.TargetHtmlElement = document.getElementById('id_target_cursor');
 
 		if (this.IsNotesSupported())
