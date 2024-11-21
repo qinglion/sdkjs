@@ -40,6 +40,7 @@
 	 * @constructor
 	 */
 	function CVisioDocument(Api, DrawingDocument, isMainLogicDocument) {
+		this.isVisioDocument = true;
 		this.start = null;
 		this.key = null;
 		this.metric = null;
@@ -335,8 +336,12 @@
 		let logic_w_inch = pageInfo.pageSheet.getCellNumberValueWithScale("PageWidth", drawingScale / pageScale);
 		return logic_w_inch * g_dKoef_in_to_mm;
 	}
-	CVisioDocument.prototype.GetWidthMM = function() {
-		return this.GetWidthScaledMM(this.pageIndex);
+	CVisioDocument.prototype.GetWidthMM = function(pageIndex) {
+		if (undefined !== pageIndex) {
+			return this.GetWidthScaledMM(pageIndex);
+		} else {
+			return this.GetWidthScaledMM(this.pageIndex);
+		}
 	}
 
 
@@ -351,8 +356,12 @@
 		let logic_h_inch = pageInfo.pageSheet.getCellNumberValueWithScale("PageHeight", drawingScale / pageScale);
 		return logic_h_inch * g_dKoef_in_to_mm;
 	}
-	CVisioDocument.prototype.GetHeightMM = function() {
-		return this.GetHeightScaledMM(this.pageIndex);
+	CVisioDocument.prototype.GetHeightMM = function(pageIndex) {
+		if (undefined !== pageIndex) {
+			return this.GetHeightScaledMM(pageIndex);
+		} else {
+			return this.GetHeightScaledMM(this.pageIndex);
+		}
 	}
 
 	/**

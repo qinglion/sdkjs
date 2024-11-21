@@ -3441,10 +3441,6 @@ function CEditorPage(api)
 
 	this.GoToPage = function(lPageNum, isFromZoom, isScroll, bIsAttack)
 	{
-		// //todo
-		// this.m_oLogicDocument.setCurrentPage(lPageNum);
-		// this.m_oLogicDocument.draw(this.m_nZoomValue, undefined, lPageNum);
-		// return;
 		var drDoc = this.m_oDrawingDocument;
 
 		if (!this.m_oScrollVerApi)
@@ -3472,6 +3468,7 @@ function CEditorPage(api)
 
 		this.ZoomFreePageNum = lPageNum;
 		drDoc.SlideCurrent   = lPageNum;
+		this.m_oLogicDocument.setCurrentPage(lPageNum);
 
 		this.SlideDrawer.CheckSlide(drDoc.SlideCurrent);
 
