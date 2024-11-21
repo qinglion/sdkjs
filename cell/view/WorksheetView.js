@@ -18251,6 +18251,20 @@
 			}
 		};
 
+		let startTransaction = function () {
+			if (!isNotHistory) {
+				History.Create_NewPoint();
+				History.StartTransaction();
+			}
+		};
+		let endTransaction = function () {
+			if (!isNotHistory) {
+				History.EndTransaction();
+			}
+		};
+
+		startTransaction();
+
 		let dynamicSelectionRange = null;
 		let isFormula = this._isFormula(val);
 		let newFP, parseResult;
@@ -18266,12 +18280,6 @@
 					return;
 				}
 			} else {
-
-				if (!isNotHistory) {
-					History.Create_NewPoint();
-					History.StartTransaction();
-				}
-
 				// we check for new links to external data
 				if (parseResult.externalReferenesNeedAdd) {
 					t.model.workbook.addExternalReferencesAfterParseFormulas(parseResult.externalReferenesNeedAdd);
@@ -18279,6 +18287,7 @@
 					newFP = new AscCommonExcel.parserFormula(val[0].getFragmentText().substring(1), cellWithFormula, this.model);
 					if (!newFP.parse(AscCommonExcel.oFormulaLocaleInfo.Parse, AscCommonExcel.oFormulaLocaleInfo.DigitSep, parseResult)) {
 						this.model.workbook.handlers.trigger("asc_onError", parseResult.error, c_oAscError.Level.NoCritical);
+						endTransaction();
 						return;
 					}
 				}
@@ -18319,6 +18328,7 @@
 						if (refInfo.cannotChangeFormulaArray) {
 							t.handlers.trigger("onErrorEvent", c_oAscError.ID.CannotChangeFormulaArray,
 								c_oAscError.Level.NoCritical);
+							endTransaction();
 							return false;
 						}
 	
@@ -18332,20 +18342,18 @@
 				// if calculateResult.error is not empty - return this error
 				if (calculateResult && calculateResult.error != null) {
 					this.model.workbook.handlers.trigger("asc_onError", calculateResult.error, c_oAscError.Level.NoCritical);
+					endTransaction();
 					return false;
 				}
 			}
 		}
 
-		if (!isNotHistory) {
-			History.Create_NewPoint();
-			History.StartTransaction();
-		}
 		const pivotTable = c.worksheet.getPivotTable(c.bbox.c1, c.bbox.r1);
 		// if there is a formula use setValue, otherwise setValue2
 		if (isFormula) {
 			if (pivotTable) {
 				this.workbook.Api.sendEvent('asc_onError', Asc.c_oAscError.ID.FormulaInPivotFieldName, Asc.c_oAscError.Level.NoCritical);
+				endTransaction();
 				return;
 			}
 			// ToDo - при вводе формулы в заголовок автофильтра надо писать "0"
@@ -18400,7 +18408,7 @@
 			}
 
 			if (!ret) {
-				History.EndTransaction();
+				endTransaction();
 				//t.model.workbook.dependencyFormulas.unlockRecal();
 				return false;
 			}
@@ -18467,9 +18475,7 @@
 				}
 			}
 
-		if (!isNotHistory) {
-			History.EndTransaction();
-		}
+		endTransaction();
 
 		if(isFormula && !applyByArray) {
 			c._foreach(function(cell){
