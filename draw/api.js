@@ -191,7 +191,7 @@
 				if (this.DocInfo && this.DocInfo.get_OfflineApp())
 				{
 					var localUrl = _loader_object.ImageMap[i];
-					g_oDocumentUrls.addImageUrl(localUrl, this.documentUrl + 'media/' + localUrl);
+					AscCommon.g_oDocumentUrls.addImageUrl(localUrl, this.documentUrl + 'media/' + localUrl);
 				}
 				++_count;
 			}
@@ -289,8 +289,8 @@
 		if (this.isMobileVersion)
 		{
 			AscCommon.AscBrowser.isSafariMacOs   = false;
-			PasteElementsId.PASTE_ELEMENT_ID     = "wrd_pastebin";
-			PasteElementsId.ELEMENT_DISPAY_STYLE = "none";
+			AscCommon.PasteElementsId.PASTE_ELEMENT_ID     = "wrd_pastebin";
+			AscCommon.PasteElementsId.ELEMENT_DISPAY_STYLE = "none";
 		}
 		if (AscCommon.AscBrowser.isSafariMacOs)
 			setInterval(AscCommon.SafariIntervalFocus, 10);

@@ -325,8 +325,6 @@
 
 			"word/apiBuilder.js",
 			"slide/apiBuilder.js",
-			"word/fromToJSON.js",
-			"slide/fromToJSON.js",
 
 			"common/versionHistory.js",
 			"common/clipboard_base.js",
