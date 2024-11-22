@@ -664,9 +664,11 @@ void main() {\n\
 
     CFile.prototype.getNearestPos = function(pageIndex, x, y, bExcludeSpaces)
     {
-        var oText = this.getPageText(pageIndex);
+        let oText = this.getPageText(pageIndex);
         if (!oText)
             return { Line : -1, Word : -1, Glyph : -1 };
+
+        let _minDist = 0xFFFFFF;
 
         let _line  = -1;
         let _word  = -1;
@@ -677,506 +679,178 @@ void main() {\n\
             let oLine = oText[iLine];
             if (oLine.Ex == 1 && oLine.Ey == 0)
             {
-                var _distX = x - oLine.X;
+                let _distX = x - oLine.X;
                 if (y >= (oLine.Y - oLine.Ascent) && y <= (oLine.Y + oLine.Descent) && _distX >= 0 && _distX <= oLine.Width)
-                {
-                    // попали внутрь линии. Теперь нужно найти глиф
-                    _line = _numLine;
-
-                    _lenGls = _arrayGlyphOffsets.length;
-                    for (_glyph = 0; _glyph < _lenGls; _glyph++)
+                { // попали внутрь линии
+                    _line = iLine;
+                    for (let iWord = 0; iWord < oLine.Words.length; ++iWord)
                     {
-                        if (_arrayGlyphOffsets[_glyph] > _distX)
-                            break;
-                    }
+                        let oWord = oLine.Words[iWord];
+                        let dWordX2 = oWord.X + oWord.Width;
+                        if (_distX >= oWord.X && _distX <= dWordX2)
+                        { // если слова перекрывают друг друга то выделение происходит по порядку следования
+                            _word = iWord;
+                            if (bExcludeSpaces && oWord.IsSpace)
+                            {
+                                _glyph = 0;
+                                let bRightCloser = dWordX2 - x < x - oWord.X;
+                                if (bRightCloser && iWord + 1 < oLine.Words.length)
+                                    _word = iWord + 1;
+                                else if (iWord - 1 > 0)
+                                {
+                                    _word = iWord - 1;
+                                    _glyph = oLine.Words[_word].Chars.length - 1;
+                                }
+                                return { Line : _line, Word : _word, Glyph : _glyph };
+                            }
 
-                    if (_glyph > 0)
-                    {
-                        --_glyph;
-
-                        if (bExcludeSpaces && _arrayGlyphOffsets[_glyph].isSpace)
-                        {
-                            let nToLeft     = Math.abs(_distX - _arrayGlyphOffsets[_glyph].offset);
-                            let nToRight    = Math.abs(_distX - _arrayGlyphOffsets[_glyph + 1]);
-
-                            if (nToRight < nToLeft)
-                                ++_glyph;
+                            for (_glyph = 1; _glyph < oWord.Chars.length; ++_glyph)
+                            { // если символы перекрывают друг друга то текущий выделяется по пересечении начала следующего
+                                let oChar = oWord.Chars[_glyph];
+                                if (oChar.X > _distX)
+                                    break;
+                            }
+                            return { Line : _line, Word : _word, Glyph : --_glyph };
                         }
                     }
-
-                    return { Line : _line, Glyph : _glyph };
                 }
 
-                tmp = Math.abs(y - _lineY);
-
+                let tmp = Math.abs(y - oLine.Y);
                 if (tmp < _minDist)
                 {
                     _minDist = tmp;
-                    _line = _numLine;
+                    _line = iLine;
 
                     if (_distX < 0)
-                        _glyph = -2;
-                    else if (_distX > _lineWidth)
                     {
+                        _word = 0;
+                        _glyph = -2;
+                    }
+                    else if (_distX > oLine.Width)
+                    {
+                        _word = oLine.Words.length - 1;
                         _glyph = -1;
                     }
                     else
                     {
-                        _lenGls = _arrayGlyphOffsets.length;
-                        for (_glyph = 0; _glyph < _lenGls; _glyph++)
+                        for (let iWord = 0; iWord < oLine.Words.length; ++iWord)
                         {
-                            if (_arrayGlyphOffsets[_glyph] > _distX)
+                            let oWord = oLine.Words[iWord];
+                            let dWordX2 = oWord.X + oWord.Width;
+                            if (_distX >= oWord.X && _distX <= dWordX2)
+                            {
+                                _word = iWord;
+                                for (_glyph = 1; _glyph < oWord.Chars.length; ++_glyph)
+                                { // если символы перекрывают друг друга то текущий выделяется по пересечении начала следующего
+                                    let oChar = oWord.Chars[_glyph];
+                                    if (oChar.X > _distX)
+                                        break;
+                                }
+                                --_glyph;
                                 break;
+                            }
                         }
-
-                        if (_glyph > 0)
-                            _glyph--;
                     }
                 }
-
                 // Ничего не надо делать, уже найдена более "ближняя" линия
             }
             else
             {
                 // определяем точки descent линии
-                var ortX = -_lineEy;
-                var ortY = _lineEx;
+                let ortX = -oLine.Ey;
+                let ortY = oLine.Ex;
 
-                var _dx = _lineX + ortX * _lineDescent;
-                var _dy = _lineY + ortY * _lineDescent;
+                let _dx = oLine.X + ortX * oLine.Descent;
+                let _dy = oLine.Y + ortY * oLine.Descent;
 
                 // теперь проекции (со знаком) на линию descent
-                var h = -((x - _dx) * ortX + (y - _dy) * ortY);
-                var w = (x - _dx) * _lineEx + (y - _dy) * _lineEy;
+                let h = -((x - _dx) * ortX + (y - _dy) * ortY);
+                let w = (x - _dx) * oLine.Ex + (y - _dy) * oLine.Ey;
 
-                if (w >= 0 && w <= _lineWidth && h >= 0 && h <= (_lineDescent + _lineAscent))
-                {
-                    // попали внутрь линии. Теперь нужно найти глиф
-                    _line = _numLine;
-
-                    _lenGls = _arrayGlyphOffsets.length;
-                    for (_glyph = 0; _glyph < _lenGls; _glyph++)
+                if (w >= 0 && w <= oLine.Width && h >= 0 && h <= (oLine.Descent + oLine.Ascent))
+                { // попали внутрь линии
+                    _line = iLine;
+                    for (let iWord = 0; iWord < oLine.Words.length; ++iWord)
                     {
-                        if (_arrayGlyphOffsets[_glyph] > w)
-                            break;
+                        let oWord = oLine.Words[iWord];
+                        let dWordX2 = oWord.X + oWord.Width;
+                        if (w >= oWord.X && w <= dWordX2)
+                        {
+                            _word = iWord;
+                            for (_glyph = 1; _glyph < oWord.Chars.length; ++_glyph)
+                            {
+                                let oChar = oWord.Chars[_glyph];
+                                if (oChar.X > w)
+                                    break;
+                            }
+                            return { Line : _line, Word : _word, Glyph : --_glyph };
+                        }
                     }
-
-                    if (_glyph > 0)
-                        _glyph--;
-
-                    return { Line : _line, Glyph : _glyph };
                 }
 
-                if (w >= 0 && w <= _lineWidth)
-                    tmp = Math.abs(h - _lineDescent);
+                let tmp = 0;
+                if (w >= 0 && w <= oLine.Width)
+                    tmp = Math.abs(h - oLine.Descent);
                 else if (w < 0)
-                {
-                    tmp = Math.sqrt((x - _lineX) * (x - _lineX) + (y - _lineY) * (y - _lineY));
-                }
+                    tmp = Math.sqrt((x - oLine.X) * (x - oLine.X) + (y - oLine.Y) * (y - oLine.Y));
                 else
                 {
-                    var _tmpX = _lineX + _lineWidth * _lineEx;
-                    var _tmpY = _lineY + _lineWidth * _lineEy;
+                    let _tmpX = oLine.X + oLine.Width * oLine.Ex;
+                    let _tmpY = oLine.Y + oLine.Width * oLine.Ey;
                     tmp = Math.sqrt((x - _tmpX) * (x - _tmpX) + (y - _tmpY) * (y - _tmpY));
                 }
 
-                //tmp = Math.abs(h - _lineDescent);
                 if (tmp < _minDist)
                 {
                     _minDist = tmp;
-                    _line = _numLine;
+                    _line = iLine;
 
                     if (w < 0)
+                    {
+                        _word = 0;
                         _glyph = -2;
-                    else if (w > _lineWidth)
+                    }
+                    else if (w > oLine.Width)
+                    {
+                        _word = oLine.Words.length - 1;
                         _glyph = -1;
+                    }
                     else
                     {
-                        _lenGls = _arrayGlyphOffsets.length;
-                        for (_glyph = 0; _glyph < _lenGls; _glyph++)
+                        for (let iWord = 0; iWord < oLine.Words.length; ++iWord)
                         {
-                            if (_arrayGlyphOffsets[_glyph] > w)
-                                break;
+                            let oWord = oLine.Words[iWord];
+                            let dWordX2 = oWord.X + oWord.Width;
+                            if (w >= oWord.X && w <= dWordX2)
+                            {
+                                _word = iWord;
+                                for (_glyph = 1; _glyph < oWord.Chars.length; ++_glyph)
+                                {
+                                    let oChar = oWord.Chars[_glyph];
+                                    if (oChar.X > w)
+                                        break;
+                                }
+                                return { Line : _line, Word : _word, Glyph : --_glyph };
+                            }
                         }
-
-                        if (_glyph > 0)
-                            _glyph--;
                     }
                 }
-
                 // Ничего не надо делать, уже найдена более "ближняя" линия
             }
         }
-
-        // textline parameters
-        var _line = -1;
-        var _word = -1;
-        var _glyph = -1;
-        var _minDist = 0xFFFFFF;
-
-        // textline parameters
-        var _lineX = 0;
-        var _lineY = 0;
-        var _lineEx = 0;
-        var _lineEy = 0;
-        var _lineAscent = 0;
-        var _lineDescent = 0;
-        var _lineWidth = 0;
-        var _lineGidExist = false;
-        var _linePrevCharX = 0;
-        var _lineCharCount = 0;
-        var _lineLastGlyphWidth = 0;
-        var _arrayGlyphOffsets = [];
-
-        var _numLine = -1;
-
-        var _lenGls = 0;
-        var tmp = 0;
-
-        while (stream.pos < stream.size)
-        {
-            var command = stream.GetUChar();
-
-            switch (command)
-            {
-                case 41:  // ctFontName
-                {
-                    stream.Skip(12);
-                    break;
-                }
-                case 22: // ctBrushColor1
-                {
-                    stream.Skip(4);
-                    break;
-                }
-                case 80: // ctDrawText
-                {
-                    if (0 != _lineCharCount)
-                        _linePrevCharX += stream.GetDouble2();
-
-                    let char = stream.GetUShort();
-                    if (bExcludeSpaces)
-                    {
-                        if (char !== 0xFFFF)
-                            _arrayGlyphOffsets[_lineCharCount] = _linePrevCharX;
-                        else
-                            _arrayGlyphOffsets[_lineCharCount] = {
-                                offset: _linePrevCharX,
-                                isSpace: true
-                            };
-                    }
-                    else
-                    {
-                        _arrayGlyphOffsets[_lineCharCount] = _linePrevCharX;
-                    }
-
-                    _lineCharCount++;
-                                        
-                    if (_lineGidExist)
-                        stream.Skip(2);
-
-                    if (0 == _lineWidth)
-                        _lineLastGlyphWidth = stream.GetDouble2();
-                    else
-                        stream.Skip(2);
-
-                    break;
-                }
-                case 160:
-                {
-                    // textline
-                    _linePrevCharX = 0;
-                    _lineCharCount = 0;
-                    _lineWidth = 0;
-
-                    _arrayGlyphOffsets.splice(0, _arrayGlyphOffsets.length);
-
-                    ++_numLine;
-
-                    var mask = stream.GetUChar();
-                    _lineX = stream.GetDouble();
-                    _lineY = stream.GetDouble();
-
-                    if ((mask & 0x01) != 0)
-                    {
-                        _lineEx = 1;
-                        _lineEy = 0;
-                    }
-                    else
-                    {
-                        _lineEx = stream.GetDouble();
-                        _lineEy = stream.GetDouble();
-                    }
-
-                    _lineAscent = stream.GetDouble();
-                    _lineDescent = stream.GetDouble();
-
-                    if ((mask & 0x04) != 0)
-                        _lineWidth = stream.GetDouble();
-
-                    if ((mask & 0x02) != 0)
-                        _lineGidExist = true;
-                    else
-                        _lineGidExist = false;
-
-                    break;
-                }
-                case 162:
-                {
-                    // textline end
-
-                    // все подсчитано
-                    if (0 == _lineWidth)
-                        _lineWidth = _linePrevCharX + _lineLastGlyphWidth;
-
-                    // в принципе код один и тот же. Но почти всегда линии горизонтальные.
-                    // а для горизонтальной линии все можно пооптимизировать
-                    if (_lineEx == 1 && _lineEy == 0)
-                    {
-                        var _distX = x - _lineX;
-                        if (y >= (_lineY - _lineAscent) && y <= (_lineY + _lineDescent) && _distX >= 0 && _distX <= _lineWidth)
-                        {
-                            // попали внутрь линии. Теперь нужно найти глиф
-                            _line = _numLine;
-
-                            _lenGls = _arrayGlyphOffsets.length;
-                            for (_glyph = 0; _glyph < _lenGls; _glyph++)
-                            {
-                                if (_arrayGlyphOffsets[_glyph] > _distX)
-                                    break;
-                            }
-
-                            if (_glyph > 0)
-                            {
-                                --_glyph;
-
-                                if (bExcludeSpaces && _arrayGlyphOffsets[_glyph].isSpace)
-                                {
-                                    let nToLeft     = Math.abs(_distX - _arrayGlyphOffsets[_glyph].offset);
-                                    let nToRight    = Math.abs(_distX - _arrayGlyphOffsets[_glyph + 1]);
-
-                                    if (nToRight < nToLeft)
-                                        ++_glyph;
-                                }
-                            }
-
-                            return { Line : _line, Glyph : _glyph };
-                        }
-
-                        tmp = Math.abs(y - _lineY);
-
-                        if (tmp < _minDist)
-                        {
-                            _minDist = tmp;
-                            _line = _numLine;
-
-                            if (_distX < 0)
-                                _glyph = -2;
-                            else if (_distX > _lineWidth)
-                            {
-                                _glyph = -1;
-                            }
-                            else
-                            {
-                                _lenGls = _arrayGlyphOffsets.length;
-                                for (_glyph = 0; _glyph < _lenGls; _glyph++)
-                                {
-                                    if (_arrayGlyphOffsets[_glyph] > _distX)
-                                        break;
-                                }
-
-                                if (_glyph > 0)
-                                    _glyph--;
-                            }
-                        }
-
-                        // Ничего не надо делать, уже найдена более "ближняя" линия
-                    }
-                    else
-                    {
-                        // определяем точки descent линии
-                        var ortX = -_lineEy;
-                        var ortY = _lineEx;
-
-                        var _dx = _lineX + ortX * _lineDescent;
-                        var _dy = _lineY + ortY * _lineDescent;
-
-                        // теперь проекции (со знаком) на линию descent
-                        var h = -((x - _dx) * ortX + (y - _dy) * ortY);
-                        var w = (x - _dx) * _lineEx + (y - _dy) * _lineEy;
-
-                        if (w >= 0 && w <= _lineWidth && h >= 0 && h <= (_lineDescent + _lineAscent))
-                        {
-                            // попали внутрь линии. Теперь нужно найти глиф
-                            _line = _numLine;
-
-                            _lenGls = _arrayGlyphOffsets.length;
-                            for (_glyph = 0; _glyph < _lenGls; _glyph++)
-                            {
-                                if (_arrayGlyphOffsets[_glyph] > w)
-                                    break;
-                            }
-
-                            if (_glyph > 0)
-                                _glyph--;
-
-                            return { Line : _line, Glyph : _glyph };
-                        }
-
-                        if (w >= 0 && w <= _lineWidth)
-                            tmp = Math.abs(h - _lineDescent);
-                        else if (w < 0)
-                        {
-                            tmp = Math.sqrt((x - _lineX) * (x - _lineX) + (y - _lineY) * (y - _lineY));
-                        }
-                        else
-                        {
-                            var _tmpX = _lineX + _lineWidth * _lineEx;
-                            var _tmpY = _lineY + _lineWidth * _lineEy;
-                            tmp = Math.sqrt((x - _tmpX) * (x - _tmpX) + (y - _tmpY) * (y - _tmpY));
-                        }
-
-                        //tmp = Math.abs(h - _lineDescent);
-                        if (tmp < _minDist)
-                        {
-                            _minDist = tmp;
-                            _line = _numLine;
-
-                            if (w < 0)
-                                _glyph = -2;
-                            else if (w > _lineWidth)
-                                _glyph = -1;
-                            else
-                            {
-                                _lenGls = _arrayGlyphOffsets.length;
-                                for (_glyph = 0; _glyph < _lenGls; _glyph++)
-                                {
-                                    if (_arrayGlyphOffsets[_glyph] > w)
-                                        break;
-                                }
-
-                                if (_glyph > 0)
-                                    _glyph--;
-                            }
-                        }
-
-                        // Ничего не надо делать, уже найдена более "ближняя" линия
-                    }
-
-                    break;
-                }
-                case 161:
-                {
-                    // text transform
-                    stream.Skip(16);
-                    break;
-                }
-                default:
-                {
-                    stream.pos = stream.size;
-                }
-            }
-        }
-
         return { Line : _line, Word : _word, Glyph : _glyph };
     };
     CFile.prototype.selectWholeWord = function(pageIndex, x, y) {
-        var oNearesPos  = this.getNearestPos(pageIndex, x, y, true);
+        var oNearesPos = this.getNearestPos(pageIndex, x, y, true);
         if (oNearesPos.Glyph < 0)
             return;
-
-        var stream = this.getPageText(pageIndex);
-        var lineCharCount = 0;
-        var lineGidExist = false;
-        var lineText = "";
-        let nLine = -1;
-
-        while (stream.pos < stream.size)
-        {
-            var command = stream.GetUChar();
-
-            switch (command)
-            {
-                case 41: // ctFontName
-                {
-                    stream.Skip(12);
-                    break;
-                }
-                case 22: // ctBrushColor1
-                {
-                    stream.Skip(4);
-                    break;
-                }
-                case 80: // ctDrawText
-                {
-                    if (0 != lineCharCount)
-                        stream.Skip(2);
-
-                    lineCharCount++;
-
-                    var char = stream.GetUShort();
-                    if (char !== 0xFFFF)
-                        lineText += String.fromCharCode(char);
-                    else
-                        lineText += " ";
-
-                    if (lineGidExist)
-                        stream.Skip(2);
-
-                    stream.Skip(2);
-                    break;
-                }
-                case 160: // ctCommandTextLine
-                {
-                    if (nLine == oNearesPos.Line)
-                    {
-                        stream.pos = stream.size;
-                        break;
-                    }
-                    lineText = "";
-                    lineCharCount = 0;
-                    nLine++;
-                    var mask = stream.GetUChar();
-                    stream.Skip(8);
-
-                    if ((mask & 0x01) == 0)
-                    {
-                        stream.Skip(8);
-                    }
-
-                    stream.Skip(8);
-
-                    if ((mask & 0x04) != 0)
-                        stream.Skip(4);
-
-                    if ((mask & 0x02) != 0)
-                        lineGidExist = true;
-                    else
-                        lineGidExist = false;
-
-                    break;
-                }
-                case 161: // ctCommandTextTransform
-                {
-                    // text transform
-                    stream.Skip(16);
-                    break;
-                }
-                case 162: // ctCommandTextLineEnd
-                {
-                    break;
-                }
-                default:
-                {
-                    stream.pos = stream.size;
-                }
-            }
-        }
 
         let oSelectionInfo = {
             Glyph1: -2,
             Glyph2: -1,
             IsSelection: true,
+            Word1: oNearesPos.Word,
+            Word2: oNearesPos.Word,
             Line1: oNearesPos.Line,
             Line2: oNearesPos.Line,
             Page1: pageIndex,
@@ -1184,70 +858,27 @@ void main() {\n\
             quads: []
         }
 
-        let isOnSpace       = false;
-        let isOnPunctuation = false;
-        if (lineText[oNearesPos.Glyph] == " ")
+        let oText = this.getPageText(pageIndex);
+        let oWord = oText[oNearesPos.Line].Words[oNearesPos.Word];
+        if (oWord.IsSpace && oNearesPos.Word - 1 >= 0)
         {
-            isOnSpace = true;
-        }
-        else if (undefined != AscCommon.g_aPunctuation[lineText[oNearesPos.Glyph].charCodeAt(0)])
-        {
-            isOnPunctuation = true;
-        }
-
-        if (isOnPunctuation)
-        {
-            oSelectionInfo.Glyph1 = oNearesPos.Glyph;
-        }
-        else
-        {
-            for (let i = oNearesPos.Glyph - 1; i >=0; i--)
-            {
-                if (lineText[i] == "")
-                {
-                    oSelectionInfo.Glyph1 = i;
-                    if (isOnSpace)
-                        return;
-                    break;     
-                }
-                else if (lineText[i] == " " || undefined != AscCommon.g_aPunctuation[lineText[i].charCodeAt(0)])
-                {
-                    oSelectionInfo.Glyph1 = i + 1;
-                    break;   
-                }
-            }
-        }
-        
-        if (isOnSpace)
-        {
-            oSelectionInfo.Glyph2 = oNearesPos.Glyph;
-        }
-        else if (isOnPunctuation && lineText[oNearesPos.Glyph + 1])
-        {
-            oSelectionInfo.Glyph2 = oNearesPos.Glyph + 1;
-        }
-        else
-        {
-            for (let i = oNearesPos.Glyph + 1; i < lineText.length; i++)
-            {
-                if (lineText[i] == "" || lineText[i] == " " || undefined != AscCommon.g_aPunctuation[lineText[i].charCodeAt(0)])
-                {
-                    oSelectionInfo.Glyph2 = i;
-                    break;
-                }
-            }
+            oSelectionInfo.Word1 = oNearesPos.Word - 1;
+            oSelectionInfo.Word2 = oNearesPos.Word - 1;
         }
         
         this.Selection = oSelectionInfo;
         this.onUpdateOverlay();
     };
     CFile.prototype.selectWholeRow = function(pageIndex, x, y) {
-        var oNearesPos  = this.getNearestPos(pageIndex, x, y, true);
+        var oNearesPos = this.getNearestPos(pageIndex, x, y, true);
 
+        let oText = this.getPageText(pageIndex);
         let oSelectionInfo = {
             Glyph1: -2,
             Glyph2: -1,
             IsSelection: true,
+            Word1: 0,
+            Word2: oText[oNearesPos.Line].Words.length - 1,
             Line1: oNearesPos.Line,
             Line2: oNearesPos.Line,
             Page1: pageIndex,
@@ -1277,6 +908,8 @@ void main() {\n\
         let Page2 = 0;
         let Line1 = 0;
         let Line2 = 0;
+        let Word1 = 0;
+        let Word2 = 0;
         let Glyph1 = 0;
         let Glyph2 = 0;
 
@@ -1286,6 +919,8 @@ void main() {\n\
             Page2 = sel.Page2;
             Line1 = sel.Line1;
             Line2 = sel.Line2;
+            Word1 = sel.Word1;
+            Word2 = sel.Word2;
             Glyph1 = sel.Glyph1;
             Glyph2 = sel.Glyph2;
         }
@@ -1295,6 +930,8 @@ void main() {\n\
             Page2 = sel.Page1;
             Line1 = sel.Line2;
             Line2 = sel.Line1;
+            Word1 = sel.Word2;
+            Word2 = sel.Word1;
             Glyph1 = sel.Glyph2;
             Glyph2 = sel.Glyph1;
         }
@@ -1307,6 +944,8 @@ void main() {\n\
             {
                 Line1 = sel.Line1;
                 Line2 = sel.Line2;
+                Word1 = sel.Word1;
+                Word2 = sel.Word2;
                 Glyph1 = sel.Glyph1;
                 Glyph2 = sel.Glyph2;
             }
@@ -1314,6 +953,8 @@ void main() {\n\
             {
                 Line1 = sel.Line2;
                 Line2 = sel.Line1;
+                Word1 = sel.Word2;
+                Word2 = sel.Word1;
                 Glyph1 = sel.Glyph2;
                 Glyph2 = sel.Glyph1;
             }
@@ -1322,25 +963,45 @@ void main() {\n\
                 Line1 = sel.Line1;
                 Line2 = sel.Line2;
 
-                if (-1 === sel.Glyph1)
+                if (sel.Word1 < sel.Word2)
                 {
+                    Word1 = sel.Word1;
+                    Word2 = sel.Word2;
+                    Glyph1 = sel.Glyph1;
+                    Glyph2 = sel.Glyph2;
+                }
+                else if (sel.Word2 < sel.Word1)
+                {
+                    Word1 = sel.Word2;
+                    Word2 = sel.Word1;
                     Glyph1 = sel.Glyph2;
                     Glyph2 = sel.Glyph1;
-                }
-                else if (-1 === sel.Glyph2)
-                {
-                    Glyph1 = sel.Glyph1;
-                    Glyph2 = sel.Glyph2;
-                }
-                else if (sel.Glyph1 < sel.Glyph2)
-                {
-                    Glyph1 = sel.Glyph1;
-                    Glyph2 = sel.Glyph2;
                 }
                 else
                 {
-                    Glyph1 = sel.Glyph2;
-                    Glyph2 = sel.Glyph1;
+                    Word1 = sel.Word1;
+                    Word2 = sel.Word2;
+
+                    if (-1 === sel.Glyph1)
+                    {
+                        Glyph1 = sel.Glyph2;
+                        Glyph2 = sel.Glyph1;
+                    }
+                    else if (-1 === sel.Glyph2)
+                    {
+                        Glyph1 = sel.Glyph1;
+                        Glyph2 = sel.Glyph2;
+                    }
+                    else if (sel.Glyph1 < sel.Glyph2)
+                    {
+                        Glyph1 = sel.Glyph1;
+                        Glyph2 = sel.Glyph2;
+                    }
+                    else
+                    {
+                        Glyph1 = sel.Glyph2;
+                        Glyph2 = sel.Glyph1;
+                    }
                 }
             }
         }
