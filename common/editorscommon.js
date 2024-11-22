@@ -14785,8 +14785,13 @@
 	}
 	registerServiceWorker();
 
+	function consoleLog(val) {
+		//console.log(val);
+	}
+
 	//------------------------------------------------------------export---------------------------------------------------
 	window['AscCommon'] = window['AscCommon'] || {};
+	window["AscCommon"].consoleLog = consoleLog;
 	window["AscCommon"].getSockJs = getSockJs;
 	window["AscCommon"].getSocketIO = getSocketIO;
 	window["AscCommon"].getBaseUrl = getBaseUrl;

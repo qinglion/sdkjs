@@ -125,11 +125,15 @@
         while ( fAngle2 >= (2 * Math.PI) )
             fAngle2 -= (2 * Math.PI);
 
+        let rotatePoint;
         // fX = cx, fY = cy, fAngle1 = startAngle, fAngle2 = endAngle
         // rotatePoint added later for ellipse rotation. it is arc start point.
         // it is not used if ellipseRotation not used
-        let rotatePoint = {x : fX + fXRad * Math.cos( AngToEllPrm( fAngle1, fXRad, fYRad ) ),
-            y : fY + fYRad * Math.sin( AngToEllPrm( fAngle1, fXRad, fYRad ) )};
+        if (ellipseRotation !== undefined) {
+            rotatePoint = {x : fX + fXRad * Math.cos( AngToEllPrm( fAngle1, fXRad, fYRad ) ),
+                y : fY + fYRad * Math.sin( AngToEllPrm( fAngle1, fXRad, fYRad ) )};
+        }
+
         // let rotatePoint = {x : fX - fXRad, y : fY};
         if ( !bClockDirection )
         {

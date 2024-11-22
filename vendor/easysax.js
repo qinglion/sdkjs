@@ -1821,7 +1821,7 @@ XmlParserContext.prototype.loadDataLinks = function() {
                         let url = window.URL.createObjectURL(blob);
                         AscCommon.g_oDocumentUrls.addImageUrl(path, url);
                     } catch (e) {
-                        console.log("ERROR: Image blob was not loaded");
+                        AscCommon.consoleLog("ERROR: Image blob was not loaded");
                     }
                 }
                 this.imageMap[path].forEach(function(blipFill) {

@@ -9516,7 +9516,7 @@
 		 */
 		CTheme.prototype.getFontStyle = function (idx, unicolor, getConnectorStyle) {
 			if (idx === 0 || isNaN(idx)) {
-				console.log("idx getFontStyle argument is 0 or isNaN(idx) is true");
+				AscCommon.consoleLog("idx getFontStyle argument is 0 or isNaN(idx) is true");
 				return AscFormat.CreateNoFillLine();
 			}
 			let fontProp;
@@ -9532,7 +9532,7 @@
 				}
 				return ret;
 			}
-			console.log("no fontProp object found for idx. Return empty obj", idx);
+			AscCommon.consoleLog("no fontProp object found for idx. Return empty obj", idx);
 			return new CFontProps();
 		};
 		/**
@@ -9544,7 +9544,7 @@
 		 */
 		CTheme.prototype.getLineEndStyle = function (idx, getConnectorStyle) {
 			if (idx === 0 || isNaN(idx)) {
-				console.log("idx getFontStyle argument is 0 or isNaN(idx) is true");
+				AscCommon.consoleLog("idx getFontStyle argument is 0 or isNaN(idx) is true");
 				return new CLineStyle();
 			}
 			let lineEndProp;
@@ -9558,7 +9558,7 @@
 				var ret = lineEndProp.createDuplicate();
 				return ret;
 			}
-			console.log("no fontProp object found for idx. Its ok sometimes." +
+			AscCommon.consoleLog("no fontProp object found for idx. Its ok sometimes." +
 				" Return new CLineStyle()", idx);
 			return new CLineStyle();
 		};
@@ -9571,7 +9571,7 @@
 		 */
 		CTheme.prototype.getFillProp = function (idx) {
 			if (idx === 0 || isNaN(idx)) {
-				console.log("idx getFillProp argument is 0 or isNaN(idx) is true");
+				AscCommon.consoleLog("idx getFillProp argument is 0 or isNaN(idx) is true");
 				return {pattern: 1}; // solid
 			}
 			let fillProp = this.themeElements.themeExt.fillStyles[idx - 1];
@@ -9579,7 +9579,7 @@
 				var ret = {pattern: fillProp.pattern};
 				return ret;
 			}
-			console.log("no FillProp object found for idx. Its ok sometimes." +
+			AscCommon.consoleLog("no FillProp object found for idx. Its ok sometimes." +
 				" Return default FillProp", idx);
 			return {pattern: 1};
 		};

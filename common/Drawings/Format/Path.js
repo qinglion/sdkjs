@@ -773,7 +773,7 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                     }
                     // let triangleSquare = (x * (b - lastY) + a * (lastY - y) + lastX * (y - b)) / 2;
                     // if ( Math.round(triangleSquare) === 0 || Math.round(triangleSquare) === -0) {
-                    //     console.log("tranform ellipticalArcTo to line. 2 catch:",
+                    //     AscCommon.consoleLog("tranform ellipticalArcTo to line. 2 catch:",
                     //         cmd.x, cmd.y, cmd.a, cmd.b, 0, 1);
                     //     this.ArrPathCommand[i] ={id: lineTo, X:x, Y:y};
                     // } else {
@@ -915,7 +915,7 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                                 try {
                                     newNURBSdata = insertKnot(controlPoints, weights, knots, knotValue);
                                 } catch (e) {
-                                    console.log('Unknown error. unexpected t');
+                                    AscCommon.consoleLog('Unknown error. unexpected t');
                                 }
                                 controlPoints = newNURBSdata.controlPoints;
                                 weights = newNURBSdata.weights;
@@ -979,7 +979,7 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                     }
 
                     if (degree + 1 + controlPoints.length !== knots.length) {
-                        console.log("Wrong arguments format.", "Degree + 1 + controlPoints.length !== knots.length",
+                        AscCommon.consoleLog("Wrong arguments format.", "Degree + 1 + controlPoints.length !== knots.length",
                           degree + 1 + controlPoints.length, "!==", knots.length);
                         break;
                     }
@@ -990,7 +990,7 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                         clampedStart = clampedStart === false ? clampedStart : knots[j] === knots[j + 1];
                     }
                     if (!clampedStart) {
-                        console.log("first degree + 1 knots are not equal. Non clamped start is not yet supported",
+                        AscCommon.consoleLog("first degree + 1 knots are not equal. Non clamped start is not yet supported",
                           "Degree is", degree, "knots:", knots);
                         break;
                     }
