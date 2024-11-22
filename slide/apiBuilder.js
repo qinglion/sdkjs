@@ -380,6 +380,13 @@
      * @returns {ApiPresentation}
      * @see office-js-api/Examples/{Editor}/Api/Methods/GetPresentation.js
 	 */
+
+	/**
+	 * Represents the type of objects in a selection.
+	 * @typedef {("none" | "shapes" | "slides" | "text")} SelectionType - Available selection types.
+	 *
+	 */
+
     Api.prototype.GetPresentation = function(){
         if(this.WordControl && this.WordControl.m_oLogicDocument){
             return new ApiPresentation(this.WordControl.m_oLogicDocument);
@@ -1009,6 +1016,18 @@
 
         oReader.AssignConnectedObjects();
         return oResult;
+	};
+
+
+    /**
+	 * Converts the specified JSON object into the Document Builder object of the corresponding type.
+	 * @memberof Api
+	 * @typeofeditors ["CPE"]
+	 * @returns {ApiSelection}
+	 */
+	Api.prototype.GetSelection = function()
+	{
+		return new ApiSelection();
 	};
 
     /**
@@ -4534,6 +4553,7 @@
     Api.prototype["CreateThemeFontScheme"]                = Api.prototype.CreateThemeFontScheme;
     Api.prototype["CreateWordArt"]                        = Api.prototype.CreateWordArt;
 	Api.prototype["FromJSON"]                             = Api.prototype.FromJSON;
+	Api.prototype["GetSelection"]                         = Api.prototype.GetSelection;
 
 
     ApiPresentation.prototype["GetClassType"]             = ApiPresentation.prototype.GetClassType;
@@ -4747,6 +4767,11 @@
     ApiTableCell.prototype["SetVerticalAlign"]            = ApiTableCell.prototype.SetVerticalAlign;
     ApiTableCell.prototype["SetTextDirection"]            = ApiTableCell.prototype.SetTextDirection;
 
+    ApiSelection.prototype["GetType"]                     = ApiTableCell.prototype.GetType;
+    ApiSelection.prototype["GetShapes"]                   = ApiTableCell.prototype.GetShapes;
+    ApiSelection.prototype["GetSlides"]                   = ApiTableCell.prototype.GetSlides;
+    ApiSelection.prototype["IsEmpty"]                     = ApiTableCell.prototype.IsEmpty;
+
 
     Api.prototype.private_CreateApiSlide = function(oSlide){
         return new ApiSlide(oSlide);
@@ -4760,6 +4785,94 @@
     Api.prototype.private_CreateApiPresentation = function(oPresentation){
         return new ApiPresentation(oPresentation);
     };
+
+	/**
+	 * Class representing the selection in the presentation
+	 * @constructor
+	 */
+	function ApiSelection() {
+	}
+	ApiSelection.prototype.getPresentation = function () {
+		return Asc.editor.getLogicDocument();
+	};
+
+
+	/**
+	 * Returns the type of selection.
+	 * @memberof ApiSelection
+	 * @typeofeditors ["CPE"]
+	 * @returns {SelectionType}
+	 */
+	ApiSelection.prototype.GetType = function() {
+		let oPresentation = this.getPresentation();
+		let nFocusObjectType = oPresentation.GetFocusObjType();
+		if(nFocusObjectType === FOCUS_OBJECT_THUMBNAILS) {
+			return "slides";
+		}
+		else if(nFocusObjectType === FOCUS_OBJECT_MAIN && !oPresentation.IsFocusOnNotes()) {
+			let oController = oPresentation.GetCurrentController();
+			if(!oController || oController.selectedObjects.length === 0) {
+				return "none";
+			}
+			let oContent = oController.getTargetDocContent();
+			if(oContent) {
+				return "text";
+			}
+			return "shapes";
+		}
+		return "none";
+	};
+
+	/**
+	 * Returns selected shapes.
+	 * @memberof ApiSelection
+	 * @typeofeditors ["CPE"]
+	 * @returns {ApiDrawing[]}
+	 */
+	ApiSelection.prototype.GetShapes = function() {
+		let oController = Asc.editor.getGraphicController();
+		if(oController) {
+			let aApiDrawings = [];
+			let aSelectedDrawings = oController.selectedObjects;
+			for(let nIdx = 0; nIdx < aSelectedDrawings.length; ++nIdx) {
+				let oDrawing = private_GetApiDrawing(aSelectedDrawings[nIdx]);
+				if(oDrawing) {
+					aApiDrawings.push(oDrawing);
+				}
+			}
+			return aApiDrawings;
+		}
+		return [];
+	};
+
+	/**
+	 * Returns selected slides.
+	 * @memberof ApiSelection
+	 * @typeofeditors ["CPE"]
+	 * @returns {ApiSlide[]}
+	 */
+	ApiSelection.prototype.GetSlides = function() {
+		let oPresentation = this.getPresentation();
+		if(!oPresentation.IsMasterMode()) {
+			let aSlides = oPresentation.GetSelectedSlideObjects();
+			let aApiSlides = [];
+			for(let nIdx = 0; nIdx < aSlides.length; ++nIdx) {
+				aApiSlides.push(new ApiSlide(aSlides[nIdx]));
+			}
+			return aApiSlides;
+		}
+		return [];
+	};
+
+	/**
+	 * Returns is current selection empty or not
+	 * @memberof ApiSelection
+	 * @typeofeditors ["CPE"]
+	 * @returns {boolean}
+	 */
+	ApiSelection.prototype.IsEmpty = function() {
+		return this.GetType() === "none";
+	};
 
     function private_GetCurrentSlide(){
         var oApiPresentation = editor.GetPresentation();
