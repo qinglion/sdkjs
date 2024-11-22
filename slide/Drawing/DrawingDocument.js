@@ -2951,7 +2951,7 @@ function CDrawingDocument()
 		var watermark = this.m_oWordControl.m_oApi.watermarkDraw;
 		let oPresentation = this.m_oWordControl.m_oLogicDocument;
 
-		var pagescount = oPresentation.GetSlidesCount();
+		var pagescount = oPresentation.isVisioDocument ? oPresentation.GetSlidesCount() : oPresentation.Slides.length;
 
 		if (-1 == this.m_lCurrentRendererPage)
 		{
@@ -2980,12 +2980,24 @@ function CDrawingDocument()
 			if ((true === isSelection && !this.m_oLogicDocument.IsMasterMode()) && !this.m_oWordControl.Thumbnails.isSelectedPage(i))
 				continue;
 
-			if (!this.m_oLogicDocument.IsVisibleSlide(i))
-				continue;
+			if (oPresentation.isVisioDocument)
+			{
+				//todo override
+				renderer.BeginPage(this.m_oLogicDocument.GetWidthMM(), this.m_oLogicDocument.GetHeightMM());
+				this.m_oLogicDocument.DrawPage(i, renderer);
+				renderer.EndPage();
+			}
+			else
+			{
+				let oSlide = this.m_oLogicDocument.Slides[i];
 
-			renderer.BeginPage(this.m_oLogicDocument.GetWidthMM(), this.m_oLogicDocument.GetHeightMM());
-			this.m_oLogicDocument.DrawPage(i, renderer);
-			renderer.EndPage();
+				if (!oSlide.isVisible())
+					continue;
+
+				renderer.BeginPage(this.m_oLogicDocument.GetWidthMM(), this.m_oLogicDocument.GetHeightMM());
+				oSlide.draw(renderer);
+				renderer.EndPage();
+			}
 
 			if (watermark)
 				watermark.DrawOnRenderer(renderer, this.m_oLogicDocument.GetWidthMM(), this.m_oLogicDocument.GetHeightMM());

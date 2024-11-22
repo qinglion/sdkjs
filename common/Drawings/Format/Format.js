@@ -6313,52 +6313,52 @@
 			Square:				9,
 			Slash:				10,
 
-			vsdxNone:						0 + 11,
-			vsdxOpen90Arrow: 				1 + 11,
-			vsdxFilled90Arrow: 				2 + 11,
-			vsdxOpenSharpArrow:				3 + 11,
-			vsdxFilledSharpArrow:			4 + 11,
-			vsdxIndentedFilledArrow:		5 + 11,
-			vsdxOutdentedFilledArrow:		6 + 11,
-			vsdxOpenFletch: 				7 + 11,
-			vsdxFilledFletch: 				8 + 11,
-			vsdxDimensionLine:				9 + 11,
-			vsdxFilledDot:					10 + 11,
-			vsdxFilledSquare:				11 + 11,
-			vsdxOpenASMEArrow:				12 + 11,
-			vsdxFilledASMEArrow:			13 + 11,
-			vsdxClosedASMEArrow:			14 + 11,
-			vsdxClosed90Arrow:				15 + 11,
-			vsdxClosedSharpArrow:			16 + 11,
-			vsdxIndentedClosedArrow:		17 + 11,
-			vsdxOutdentedClosedArrow:		18 + 11,
-			vsdxClosedFletch: 				19 + 11,
-			vsdxClosedDot:	 				20 + 11,
-			vsdxClosedSquare: 				21 + 11,
-			vsdxDiamond:	 				22 + 11,
-			vsdxBackslash:	 				23 + 11,
-			vsdxOpenOneDash: 				24 + 11,
-			vsdxOpenTwoDash:				25 + 11,
-			vsdxOpenThreeDash:				26 + 11,
-			vsdxFork:						27 + 11,
-			vsdxDashFork:					28 + 11,
-			vsdxClosedFork:					29 + 11,
-			vsdxClosedPlus:					30 + 11,
-			vsdxClosedOneDash:				31 + 11,
-			vsdxClosedTwoDash:				32 + 11,
-			vsdxClosedThreeDash:			33 + 11,
-			vsdxClosedDiamond:				34 + 11,
-			vsdxFilledOneDash:				35 + 11,
-			vsdxFilledTwoDash:				36 + 11,
-			vsdxFilledThreeDash:			37 + 11,
-			vsdxFilledDiamond:				38 + 11,
-			vsdxFilledDoubleArrow:			39 + 11,
-			vsdxClosedDoubleArrow:			40 + 11,
-			vsdxClosedNoDash:				41 + 11,
-			vsdxFilledNoDash:				42 + 11,
-			vsdxOpenDoubleArrow:			43 + 11,
-			vsdxOpenArrowSingleDash:		44 + 11,
-			vsdxOpenDoubleArrowSingleDash:	45 + 11
+			vsdxNone: 11,
+			vsdxOpen90Arrow: 12,
+			vsdxFilled90Arrow: 13,
+			vsdxOpenSharpArrow: 14,
+			vsdxFilledSharpArrow: 15,
+			vsdxIndentedFilledArrow: 16,
+			vsdxOutdentedFilledArrow: 17,
+			vsdxOpenFletch: 18,
+			vsdxFilledFletch: 19,
+			vsdxDimensionLine: 20,
+			vsdxFilledDot: 21,
+			vsdxFilledSquare: 22,
+			vsdxOpenASMEArrow: 23,
+			vsdxFilledASMEArrow: 24,
+			vsdxClosedASMEArrow: 25,
+			vsdxClosed90Arrow: 26,
+			vsdxClosedSharpArrow: 27,
+			vsdxIndentedClosedArrow: 28,
+			vsdxOutdentedClosedArrow: 29,
+			vsdxClosedFletch: 30,
+			vsdxClosedDot: 31,
+			vsdxClosedSquare: 32,
+			vsdxDiamond: 33,
+			vsdxBackslash: 34,
+			vsdxOpenOneDash: 35,
+			vsdxOpenTwoDash: 36,
+			vsdxOpenThreeDash: 37,
+			vsdxFork: 38,
+			vsdxDashFork: 39,
+			vsdxClosedFork: 40,
+			vsdxClosedPlus: 41,
+			vsdxClosedOneDash: 42,
+			vsdxClosedTwoDash: 43,
+			vsdxClosedThreeDash: 44,
+			vsdxClosedDiamond: 45,
+			vsdxFilledOneDash: 46,
+			vsdxFilledTwoDash: 47,
+			vsdxFilledThreeDash: 48,
+			vsdxFilledDiamond: 49,
+			vsdxFilledDoubleArrow: 50,
+			vsdxClosedDoubleArrow: 51,
+			vsdxClosedNoDash: 52,
+			vsdxFilledNoDash: 53,
+			vsdxOpenDoubleArrow: 54,
+			vsdxOpenArrowSingleDash: 55,
+			vsdxOpenDoubleArrowSingleDash: 56
 		};
 		var LineEndSize = {
 			Large: 0,
@@ -6380,6 +6380,7 @@
 			Bevel: 2,
 			Miter: 3
 		};
+		let lineWidthInfluenceCoef = 0.028;
 
 		function EndArrow() {
 			CBaseNoIdObject.call(this);
@@ -6420,7 +6421,6 @@
 			var size = Math.max(_size, _max ? _max : 2);
 			var _ret = 3 * size;
 			let startSizeInch;
-			let lineWidthInfluenceCoef = 0.028;
 			let inchSize;
 
 			if (null != this.w) {
@@ -6477,7 +6477,6 @@
 			var size = Math.max(_size, _max ? _max : 2);
 			var _ret = 3 * size;
 			let startSizeInch;
-			let lineWidthInfluenceCoef = 0.028;
 			let inchSize;
 
 			if (null != this.len) {

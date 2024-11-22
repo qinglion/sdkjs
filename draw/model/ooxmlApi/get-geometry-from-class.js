@@ -35,49 +35,7 @@
 	// works with visio class
 	// NOT FINISHED
 
-	var FORMULA_TYPE_MULT_DIV = 0,
-		FORMULA_TYPE_PLUS_MINUS = 1,
-		FORMULA_TYPE_PLUS_DIV = 2,
-		FORMULA_TYPE_IF_ELSE =3,
-		FORMULA_TYPE_ABS = 4,
-		FORMULA_TYPE_AT2 = 5,
-		FORMULA_TYPE_CAT2 = 6,
-		FORMULA_TYPE_COS = 7,
-		FORMULA_TYPE_MAX = 8,
-		FORMULA_TYPE_MOD = 9,
-		FORMULA_TYPE_PIN = 10,
-		FORMULA_TYPE_SAT2 = 11,
-		FORMULA_TYPE_SIN = 12,
-		FORMULA_TYPE_SQRT = 13,
-		FORMULA_TYPE_TAN = 14,
-		FORMULA_TYPE_VALUE = 15,
-		FORMULA_TYPE_MIN = 16;
-
-	var MAP_FMLA_TO_TYPE = {};
-	MAP_FMLA_TO_TYPE["*/"] = FORMULA_TYPE_MULT_DIV;
-	MAP_FMLA_TO_TYPE["+-"] = FORMULA_TYPE_PLUS_MINUS;
-	MAP_FMLA_TO_TYPE["+/"] = FORMULA_TYPE_PLUS_DIV;
-	MAP_FMLA_TO_TYPE["?:"] = FORMULA_TYPE_IF_ELSE;
-	MAP_FMLA_TO_TYPE["abs"] = FORMULA_TYPE_ABS;
-	MAP_FMLA_TO_TYPE["at2"] = FORMULA_TYPE_AT2;
-	MAP_FMLA_TO_TYPE["cat2"] = FORMULA_TYPE_CAT2;
-	MAP_FMLA_TO_TYPE["cos"] = FORMULA_TYPE_COS;
-	MAP_FMLA_TO_TYPE["max"] = FORMULA_TYPE_MAX;
-	MAP_FMLA_TO_TYPE["min"] = FORMULA_TYPE_MIN;
-	MAP_FMLA_TO_TYPE["mod"] = FORMULA_TYPE_MOD;
-	MAP_FMLA_TO_TYPE["pin"] = FORMULA_TYPE_PIN;
-	MAP_FMLA_TO_TYPE["sat2"] = FORMULA_TYPE_SAT2;
-	MAP_FMLA_TO_TYPE["sin"] = FORMULA_TYPE_SIN;
-	MAP_FMLA_TO_TYPE["sqrt"] = FORMULA_TYPE_SQRT;
-	MAP_FMLA_TO_TYPE["tan"] = FORMULA_TYPE_TAN;
-	MAP_FMLA_TO_TYPE["val"] = FORMULA_TYPE_VALUE;
-
-	const degToC = 60000;
-	const radToDeg = 180 / Math.PI;
-	const radToC = radToDeg * degToC;
-
-	const mmToEmuCoef = 36000;
-	const emuToMM = 1/36000;
+	const radToC = AscFormat.radToDeg * AscFormat.degToC;
 
 	function getRandomPrst() {
 		let types = AscCommon.g_oAutoShapesTypes[Math.floor(Math.random()*AscCommon.g_oAutoShapesTypes.length)];
@@ -472,8 +430,8 @@
 						// Check [MS-VSDX]-220215 2.2.3.2.2.Geometry Path
 						// ellipse command implies moveTo
 						path.moveTo(newX + wRhR.wR, newY);
-						path.arcTo(wRhR.wR, wRhR.hR, 0, 180 * degToC);
-						path.arcTo(wRhR.wR, wRhR.hR, 180 * degToC, 180 * degToC);
+						path.arcTo(wRhR.wR, wRhR.hR, 0, 180 * AscFormat.degToC);
+						path.arcTo(wRhR.wR, wRhR.hR, 180 * AscFormat.degToC, 180 * AscFormat.degToC);
 						// If the Row_Type element is of type Ellipse or InfiniteLine, it specifies the only segment of the path.
 						path.moveTo(lastPoint.x, lastPoint.y);
 						// lastPoint.x = newX;

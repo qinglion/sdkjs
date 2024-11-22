@@ -3350,6 +3350,8 @@ function partition_bezier4(x0, y0, x1, y1, x2, y2, x3, y3, epsilon)
     window['AscFormat'].bezier4 = bezier4;
     window['AscFormat'].close = close;
     window['AscFormat'].cToRad2 = cToRad2;
+    window['AscFormat'].degToC = degToC;
+    window['AscFormat'].radToDeg = radToDeg;
     window['AscFormat'].Path = Path;
     window['AscFormat'].Path2 = Path2;
     window['AscFormat'].CPathCmd = CPathCmd;
