@@ -4767,10 +4767,10 @@
     ApiTableCell.prototype["SetVerticalAlign"]            = ApiTableCell.prototype.SetVerticalAlign;
     ApiTableCell.prototype["SetTextDirection"]            = ApiTableCell.prototype.SetTextDirection;
 
-    ApiSelection.prototype["GetType"]                     = ApiTableCell.prototype.GetType;
-    ApiSelection.prototype["GetShapes"]                   = ApiTableCell.prototype.GetShapes;
-    ApiSelection.prototype["GetSlides"]                   = ApiTableCell.prototype.GetSlides;
-    ApiSelection.prototype["IsEmpty"]                     = ApiTableCell.prototype.IsEmpty;
+    ApiSelection.prototype["GetType"]                     = ApiSelection.prototype.GetType;
+    ApiSelection.prototype["GetShapes"]                   = ApiSelection.prototype.GetShapes;
+    ApiSelection.prototype["GetSlides"]                   = ApiSelection.prototype.GetSlides;
+    ApiSelection.prototype["IsEmpty"]                     = ApiSelection.prototype.IsEmpty;
 
 
     Api.prototype.private_CreateApiSlide = function(oSlide){
@@ -4806,10 +4806,10 @@
 	ApiSelection.prototype.GetType = function() {
 		let oPresentation = this.getPresentation();
 		let nFocusObjectType = oPresentation.GetFocusObjType();
-		if(nFocusObjectType === FOCUS_OBJECT_THUMBNAILS) {
+		if(nFocusObjectType === AscCommon.FOCUS_OBJECT_THUMBNAILS) {
 			return "slides";
 		}
-		else if(nFocusObjectType === FOCUS_OBJECT_MAIN && !oPresentation.IsFocusOnNotes()) {
+		else if(nFocusObjectType === AscCommon.FOCUS_OBJECT_MAIN && !oPresentation.IsFocusOnNotes()) {
 			let oController = oPresentation.GetCurrentController();
 			if(!oController || oController.selectedObjects.length === 0) {
 				return "none";
