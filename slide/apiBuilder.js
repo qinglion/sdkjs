@@ -1198,8 +1198,24 @@
 	 */
     ApiPresentation.prototype.GetSlidesCount = function()
     {
-        return this.Presentation.GetSlidesCount();
+        return this.Presentation.Slides.length;
     };
+
+	/**
+	 * Returns an array of all slides in the presentation.
+	 * @typeofeditors ["CPE"]
+	 * @returns {ApiSlide[]}
+	 */
+	ApiPresentation.prototype.GetAllSlides = function()
+	{
+		let oPresentation = Asc.editor.getLogicDocument();
+		let aApiSlides = [];
+		let aSlides = oPresentation.Slides;
+		for(let nIdx = 0; nIdx < aSlides.length; ++nIdx) {
+			aApiSlides.push(new ApiSlide(aSlides[nIdx]));
+		}
+		return aApiSlides;
+	};
 
     /**
      * Returns a number of slide masters.
@@ -1210,6 +1226,21 @@
     ApiPresentation.prototype.GetMastersCount = function()
     {
         return this.Presentation.slideMasters.length;
+    };
+
+    /**
+     * Returns an array of all slide masters in the presentation
+     * @typeofeditors ["CPE"]
+     * @returns {ApiMaster[]}
+	 */
+    ApiPresentation.prototype.GetAllSlideMasters = function()
+    {
+        let aSlideMasters = this.Presentation.slideMasters;
+		let aApiSlideMasters = [];
+		for(let nIdx = 0; nIdx < aSlideMasters.length; ++nIdx) {
+			aApiSlideMasters.push(new ApiMaster(aSlideMasters[nIdx]));
+		}
+		return aApiSlideMasters;
     };
 
     /**
@@ -3316,6 +3347,21 @@
         });
     };
 
+	/**
+	 * Selects the current slide.
+	 * @memberof ApiSlide
+	 * @typeofeditors ["CPE"]
+	 */
+	ApiSlide.prototype.Select = function() {
+		if(!Asc.editor.isNormalMode())
+			return;
+
+		let oThumbnails = Asc.editor.getThumbnailsManager();
+		if(!oThumbnails) return;
+		oThumbnails.SetFocusElement(AscCommon.FOCUS_OBJECT_THUMBNAILS);
+		oThumbnails.SelectSlides([this.GetSlideIndex()], false);
+	};
+
     //------------------------------------------------------------------------------------------------------------------
     //
     // ApiDrawing
@@ -4565,7 +4611,9 @@
     ApiPresentation.prototype["SetSizes"]                 = ApiPresentation.prototype.SetSizes;
     ApiPresentation.prototype["ReplaceCurrentImage"]      = ApiPresentation.prototype.ReplaceCurrentImage;
     ApiPresentation.prototype["GetSlidesCount"]           = ApiPresentation.prototype.GetSlidesCount;
+    ApiPresentation.prototype["GetAllSlides"]             = ApiPresentation.prototype.GetAllSlides;
     ApiPresentation.prototype["GetMastersCount"]          = ApiPresentation.prototype.GetMastersCount;
+    ApiPresentation.prototype["GetAllSlideMasters"]       = ApiPresentation.prototype.GetAllSlideMasters;
     ApiPresentation.prototype["GetMaster"]                = ApiPresentation.prototype.GetMaster;
     ApiPresentation.prototype["AddMaster"]                = ApiPresentation.prototype.AddMaster;
     ApiPresentation.prototype["ApplyTheme"]               = ApiPresentation.prototype.ApplyTheme;
@@ -4685,6 +4733,7 @@
     ApiSlide.prototype["GetAllOleObjects"]                = ApiSlide.prototype.GetAllOleObjects;
     ApiSlide.prototype["ToJSON"]                          = ApiSlide.prototype.ToJSON;
     ApiSlide.prototype["GetDrawingsByPlaceholderType"]    = ApiSlide.prototype.GetDrawingsByPlaceholderType;
+    ApiSlide.prototype["Select"]                          = ApiSlide.prototype.Select;
 
 
     ApiDrawing.prototype["GetClassType"]                  = ApiDrawing.prototype.GetClassType;
@@ -4852,16 +4901,17 @@
 	 * @returns {ApiSlide[]}
 	 */
 	ApiSelection.prototype.GetSlides = function() {
-		let oPresentation = this.getPresentation();
-		if(!oPresentation.IsMasterMode()) {
-			let aSlides = oPresentation.GetSelectedSlideObjects();
-			let aApiSlides = [];
-			for(let nIdx = 0; nIdx < aSlides.length; ++nIdx) {
-				aApiSlides.push(new ApiSlide(aSlides[nIdx]));
-			}
-			return aApiSlides;
+		if(!Asc.editor.isNormalMode()) {
+			return [];
 		}
-		return [];
+
+		let oPresentation = this.getPresentation();
+		let aSlides = oPresentation.GetSelectedSlideObjects();
+		let aApiSlides = [];
+		for(let nIdx = 0; nIdx < aSlides.length; ++nIdx) {
+			aApiSlides.push(new ApiSlide(aSlides[nIdx]));
+		}
+		return aApiSlides;
 	};
 
 	/**

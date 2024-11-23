@@ -1100,6 +1100,9 @@
 	asc_docs_api.prototype.isMasterMode = function() {
 		return this.presentationViewMode === Asc.c_oAscPresentationViewMode.masterSlide && !this.isSlideShow();
 	};
+	asc_docs_api.prototype.isNormalMode = function() {
+		return this.presentationViewMode === Asc.c_oAscPresentationViewMode.normal && !this.isSlideShow();
+	};
 	asc_docs_api.prototype.asc_IsMasterMode = function() {
 		return this.isMasterMode();
 	};
@@ -6623,6 +6626,12 @@ background-repeat: no-repeat;\
 		}
 		this.WordControl.m_oLogicDocument.Document_UpdateInterfaceState();
 		this.WordControl.Thumbnails.OnUpdateOverlay();
+	};
+	asc_docs_api.prototype.getThumbnailsManager = function()
+	{
+		if(!this.WordControl || !this.WordControl.Thumbnails)
+			return null;
+		return this.WordControl.Thumbnails;
 	};
 
 	asc_docs_api.prototype.asc_moveSelectedSlidesToEnd = function()

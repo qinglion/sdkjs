@@ -5082,6 +5082,8 @@ function CThumbnailsManager()
 
 	this.SetFocusElement = function(type)
 	{
+		if(this.FocusObjType === type)
+			return;
 		switch (type)
 		{
 			case FOCUS_OBJECT_MAIN:
@@ -5530,13 +5532,16 @@ function CThumbnailsManager()
 	};
 
 	// select
-	this.SelectSlides = function(aSelectedIdx)
+	this.SelectSlides = function(aSelectedIdx, bReset)
 	{
 		if (aSelectedIdx.length > 0)
 		{
-			for (let i = 0; i < this.m_arrPages.length; i++)
+			if(bReset === undefined || bReset)
 			{
-				this.m_arrPages[i].IsSelected = false;
+				for (let i = 0; i < this.m_arrPages.length; i++)
+				{
+					this.m_arrPages[i].IsSelected = false;
+				}
 			}
 			let nCount = aSelectedIdx.length;
 			let nSlideType = this.GetSlideType(aSelectedIdx[0]);
