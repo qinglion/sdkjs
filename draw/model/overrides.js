@@ -80,7 +80,7 @@ AscFormat.CShape.prototype.recalculate = function ()
 	}
 
 	// var check_slide_placeholder = !this.isPlaceholder() || (this.parent && (this.parent.getObjectType() === AscDFH.historyitem_type_Slide));
-	let check_placeholder = !this.isPlaceholder() || (this.parent && this.parent.constructor.name === "CVisioDocument");
+	let check_placeholder = !this.isPlaceholder() || (this.parent && this.parent.isVisioDocument);
 	AscFormat.ExecuteNoHistory(function(){
 
 		var bRecalcShadow = this.recalcInfo.recalculateBrush ||

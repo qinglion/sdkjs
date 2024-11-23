@@ -455,7 +455,7 @@
 				// shape came to argument
 
 				// flip images
-				if (shapeOrGroup.constructor.name === "CImageShape") {
+				if (shapeOrGroup.getObjectType() === AscDFH.historyitem_type_ImageShape) {
 					shapeOrGroup.transform.sy = -1;
 					shapeOrGroup.transform.ty += shapeOrGroup.spPr.xfrm.extY;
 				}
@@ -482,7 +482,7 @@
 					shapeOrGroup.transform.ty = logic_h_mm - shapeOrGroup.transform.ty - shapeOrGroup.spPr.xfrm.extY;
 					shapeOrGroup.recalculateTransformText();
 				}
-				if (shapeOrGroup.constructor.name === "CImageShape") {
+				if (shapeOrGroup.getObjectType() === AscDFH.historyitem_type_ImageShape) {
 					shapeOrGroup.transform.sy = 1;
 					shapeOrGroup.transform.ty -= shapeOrGroup.spPr.xfrm.extY;
 				}
