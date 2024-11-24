@@ -72,7 +72,10 @@
 		let quickStyleCellName;
 		let quickStyleModifiersCellName;
 		let getModifiersMethod;
-		let variationStyleIndexVariable;
+		let isGetLineEndStyle = false;
+		let isFillIdx = false;
+		let isLineIdx = false;
+		let isFontIdx = false;
 
 		if (themeValue === "LineColor") {
 			cellName = "LineColor";
@@ -95,7 +98,7 @@
 			quickStyleCellName = "QuickStyleLineColor";
 			quickStyleModifiersCellName = "QuickStyleLineMatrix";
 			getModifiersMethod = themes[0].getLnStyle;
-			variationStyleIndexVariable = "lineIdx";
+			isLineIdx = true;
 
 			initialDefaultValue = AscFormat.CreateUnfilFromRGB(0,0,0);
 		} else if (cellName === "Color") {
@@ -103,7 +106,7 @@
 			quickStyleCellName = "QuickStyleFontColor";
 			quickStyleModifiersCellName = "QuickStyleFontMatrix";
 			getModifiersMethod = themes[0].getFontStyle;
-			variationStyleIndexVariable = "fontIdx";
+			isFontIdx = true;
 
 			initialDefaultValue =  AscFormat.CreateUnfilFromRGB(0,0,0).fill.color;
 		} else if (cellName === "FillForegnd" || cellName === "FillBkgnd" ||
@@ -112,7 +115,7 @@
 			quickStyleCellName = "QuickStyleFillColor";
 			quickStyleModifiersCellName = "QuickStyleFillMatrix";
 			getModifiersMethod = themes[0].getFillStyle;
-			variationStyleIndexVariable = "fillIdx";
+			isFillIdx = true;
 
 			if (cellName === "FillForegnd") {
 				initialDefaultValue =  AscFormat.CreateUnfilFromRGB(255,255,255);
@@ -131,7 +134,7 @@
 			quickStyleCellName = "QuickStyleLineColor";
 			quickStyleModifiersCellName = "QuickStyleLineMatrix";
 			getModifiersMethod = themes[0].getLnStyle;
-			variationStyleIndexVariable = "lineIdx";
+			isLineIdx = true;
 
 			initialDefaultValue = 1; // visio solid
 		} else if (cellName === "LineWeight") {
@@ -139,7 +142,7 @@
 			quickStyleCellName = "QuickStyleLineColor";
 			quickStyleModifiersCellName = "QuickStyleLineMatrix";
 			getModifiersMethod = themes[0].getLnStyle;
-			variationStyleIndexVariable = "lineIdx";
+			isLineIdx = true;
 
 			// // 9255 emus = 0.01041666666666667 inches is document.xml StyleSheet ID=0 LineWeight e. g. default value
 			initialDefaultValue = 0.01041666666666667;
@@ -147,14 +150,14 @@
 			quickStyleCellName = "QuickStyleFillColor";
 			quickStyleModifiersCellName = "QuickStyleFillMatrix";
 			getModifiersMethod = themes[0].getFillStyle;
-			variationStyleIndexVariable = "fillIdx";
+			isFillIdx = true;
 
 			initialDefaultValue = false;
 		} else if (cellName === "GradientStopColorTrans") {
 			// quickStyleCellName = "QuickStyleFillColor";
 			// quickStyleModifiersCellName = "QuickStyleFillMatrix";
 			// getModifiersMethod = themes[0].getFillStyle;
-			// variationStyleIndexVariable = "fillIdx";
+			// isFillIdx = true;
 			//
 			// initialDefaultValue = 0;
 			console.log("Themed GradientStopColorTrans is unhandled");
@@ -163,21 +166,23 @@
 			quickStyleCellName = null; // so color will not be calculated
 			quickStyleModifiersCellName = "QuickStyleLineMatrix";
 			getModifiersMethod = themes[0].getLineEndStyle;
-			variationStyleIndexVariable = "lineIdx";
+			isGetLineEndStyle = true;
+			isLineIdx = true;
 
 			initialDefaultValue = "0"; // string is return type in calculateValue
 		} else if (cellName === "EndArrowSize" || cellName === "BeginArrowSize") {
 			quickStyleCellName = null; // so color will not be calculated
 			quickStyleModifiersCellName = "QuickStyleLineMatrix";
 			getModifiersMethod = themes[0].getLineEndStyle;
-			variationStyleIndexVariable = "lineIdx";
+			isGetLineEndStyle = true;
+			isLineIdx = true;
 
 			initialDefaultValue = 2; // number is return type in calculateValue
 		} else if (cellName === "FillPattern") {
 			quickStyleCellName = null; // so color will not be calculated
 			quickStyleModifiersCellName = "QuickStyleFillMatrix";
 			getModifiersMethod = themes[0].getFillProp;
-			variationStyleIndexVariable = "fillIdx";
+			isFillIdx = true;
 
 			initialDefaultValue = 1; // number is return type in calculateValue. Solid fill.
 		} else {
@@ -328,9 +333,18 @@
 					}
 					let varStyle = theme.getVariationStyleScheme(variationStyleIndex,
 						quickStyleMatrix % 100);
-					if (varStyle && null !== varStyle[variationStyleIndexVariable]) {
-						let styleId = varStyle[variationStyleIndexVariable];
-						if (getModifiersMethod.name === "getLineEndStyle") {
+					let styleId = null;
+					if (varStyle) {
+						if (isFillIdx) {
+							styleId = varStyle.fillIdx;
+						} else if (isLineIdx) {
+							styleId = varStyle.lineIdx;
+						} else if (isFontIdx) {
+							styleId = varStyle.fontIdx;
+						}
+					}
+					if (null !== styleId) {
+						if (isGetLineEndStyle) {
 							// getLineEndStyle is method.
 							// When we get lineEnd/lineStart type or its size we don't need
 							// calculatedColor and so arguments are different
@@ -434,10 +448,11 @@
 		 * @param {CTheme} theme
 		 */
 		function calculateOnTheme(color, theme) {
+			let RGBA = {R:0, G:0, B:0, A:255};
 			if (color instanceof AscFormat.CUniColor ) {
-				color.Calculate(theme);
+				color.Calculate(theme, undefined, undefined, undefined, RGBA);
 			} else if (color instanceof AscFormat.CUniFill) {
-				color.calculate(theme);
+				color.calculate(theme, undefined, undefined, undefined, RGBA);
 			}
 
 			// otherwise it is a link to theme color

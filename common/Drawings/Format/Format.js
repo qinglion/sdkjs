@@ -6752,10 +6752,6 @@
 				this.setFill(ln.Fill.createDuplicate());
 			}
 
-			if (ln.Fill != null && ln.Fill.Fill != null && ln.Fill.Fill.fill != null) {
-				this.Fill = ln.Fill.Fill.createDuplicate()
-			}
-
 			if (ln.prstDash != null) {
 				this.setPrstDash(ln.prstDash);
 			}
