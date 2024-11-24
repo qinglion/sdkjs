@@ -34,6 +34,15 @@
 
 (function(window, document)
 {
+	var c_oVsdxSheetStorageKind = {
+		Cell_Type : 0,
+		Trigger_Type : 1,
+		Row_Type : 2,
+		Section_Type : 3,
+		Text_Type : 4,
+		Data_Type : 5,
+		ForeignData_Type : 6
+	};
 	/**
 	 *    // Docs old:
 	 * // Text_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/text_type-complextypevisio-xml
@@ -61,6 +70,7 @@
 		// if you want to see \r\n set proper settings in your editor
 		return this;
 	}
+	Text_Type.prototype.kind = c_oVsdxSheetStorageKind.Text_Type;
 
 	/**
 	 * // Docs old:
@@ -73,6 +83,7 @@
 		this.tagName = null;
 		return this;
 	}
+	Data_Type.prototype.kind = c_oVsdxSheetStorageKind.Data_Type;
 
 	/**
 	 *    // Docs old:
@@ -95,6 +106,7 @@
 		this.rel = null;
 		return this;
 	}
+	ForeignData_Type.prototype.kind = c_oVsdxSheetStorageKind.ForeignData_Type;
 
 	/**
 	 *    // https://learn.microsoft.com/ru-ru/office/client-developer/visio/trigger_type-complextypevisio-xml
@@ -104,7 +116,7 @@
 		this.refBy = [];
 		this.n = null;
 	}
-
+	Trigger_Type.prototype.kind = c_oVsdxSheetStorageKind.Trigger_Type;
 	/**
 	 * Abstract class. For all Cell containers: ShapeSheet_Type (Sheet_Type) descendents and
 	 * sections and rows also.
@@ -193,9 +205,9 @@
 
 	function createKeyFromSheetObject(object) {
 		let key;
-		if (object.constructor.name === "Cell_Type") {
+		if (object.kind === c_oVsdxSheetStorageKind.Cell_Type) {
 			key = object.n;
-		} else if (object.constructor.name === "Row_Type") {
+		} else if (object.kind === c_oVsdxSheetStorageKind.Row_Type) {
 			if (object.n !== null) {
 				key = object.n;
 			} else if (object.iX !== null) {
@@ -203,7 +215,7 @@
 			} else {
 				console.log("Cant calculate key to store object", object);
 			}
-		} else if (object.constructor.name === "Section_Type")	{
+		} else if (object.kind === c_oVsdxSheetStorageKind.Section_Type)	{
 			if (object.n === "Geometry") {
 				key = "Geometry_" + object.iX;
 			} else if (object.iX !== null) {
@@ -213,13 +225,13 @@
 			} else {
 				console.log("Cant calculate key to store object", object);
 			}
-		} else if (object.constructor.name === "Text_Type") {
+		} else if (object.kind === c_oVsdxSheetStorageKind.Text_Type) {
 			key = "Text";
-		} else if (object.constructor.name === "Data_Type") {
+		} else if (object.kind === c_oVsdxSheetStorageKind.Data_Type) {
 			key = object.tagName;
-		} else if (object.constructor.name === "ForeignData_Type") {
+		} else if (object.kind === c_oVsdxSheetStorageKind.ForeignData_Type) {
 			key = "ForeignData";
-		} else if (object.constructor.name === "Trigger_Type") {
+		} else if (object.kind === c_oVsdxSheetStorageKind.Trigger_Type) {
 			key = object.n;
 		} else {
 			console.log("Unknown object in SheetElementsStorage", object);
@@ -368,27 +380,26 @@
 	SheetStorage.prototype.writeInheritedElements = function writeInheritedElements(writer) {
 		for (const key in this.elements) {
 			const elem = this.elements[key];
-			switch (elem.constructor.name) {
-				case "Cell_Type":
+			switch (elem.kind) {
+				case c_oVsdxSheetStorageKind.Cell_Type:
 					writer.WriteXmlNullable(elem, "Cell");
 					break;
-				case "Trigger_Type":
+				case c_oVsdxSheetStorageKind.Trigger_Type:
 					writer.WriteXmlNullable(elem, "Trigger");
 					break;
-				case "Section_Type":
+				case c_oVsdxSheetStorageKind.Section_Type:
 					writer.WriteXmlNullable(elem, "Section");
 					break;
-				case "Row_Type":
+				case c_oVsdxSheetStorageKind.Row_Type:
 					writer.WriteXmlNullable(elem, "Row");
 					break;
-
-				case "Text_Type":
+				case c_oVsdxSheetStorageKind.Text_Type:
 					writer.WriteXmlNullable(elem, "Text");
 					break;
-				case "Data_Type":
+				case c_oVsdxSheetStorageKind.Data_Type:
 					writer.WriteXmlNullable(elem, elem.tagName);
 					break;
-				case "ForeignData_Type":
+				case c_oVsdxSheetStorageKind.ForeignData_Type:
 					writer.WriteXmlNullable(elem, "ForeignData");
 					break;
 			}
@@ -564,7 +575,7 @@
 			let resultArr = [];
 			for (const key in this.elements) {
 				const element = this.elements[key];
-				if (element.constructor.name === "Section_Type" && String(element.iX) === formula) {
+				if (element.kind === c_oVsdxSheetStorageKind.Section_Type && String(element.iX) === formula) {
 					resultArr.push(element);
 				}
 			}
@@ -574,7 +585,7 @@
 		let resultArr = [];
 		for (const key in this.elements) {
 			const element = this.elements[key];
-			if (element.constructor.name === "Section_Type" && element.n === formula) {
+			if (element.kind === c_oVsdxSheetStorageKind.Section_Type && element.n === formula) {
 				resultArr.push(element);
 			}
 		}
@@ -619,6 +630,7 @@
 	// https://developer.mozilla.org/ru/docs/Web/JavaScript/Reference/Global_Objects/Object/create#%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80_%D0%BA%D0%BB%D0%B0%D1%81%D1%81%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%BE%D0%B5_%D0%BD%D0%B0%D1%81%D0%BB%D0%B5%D0%B4%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D0%B5_%D1%81_object.create
 	Section_Type.prototype = Object.create(SheetStorage.prototype);
 	Section_Type.prototype.constructor = Section_Type;
+	Section_Type.prototype.kind = c_oVsdxSheetStorageKind.Section_Type;
 
 
 	/**
@@ -646,6 +658,7 @@
 	// https://developer.mozilla.org/ru/docs/Web/JavaScript/Reference/Global_Objects/Object/create#%D0%BF%D1%80%D0%B8%D0%BC%D0%B5%D1%80_%D0%BA%D0%BB%D0%B0%D1%81%D1%81%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%BE%D0%B5_%D0%BD%D0%B0%D1%81%D0%BB%D0%B5%D0%B4%D0%BE%D0%B2%D0%B0%D0%BD%D0%B8%D0%B5_%D1%81_object.create
 	Row_Type.prototype = Object.create(SheetStorage.prototype);
 	Row_Type.prototype.constructor = Row_Type;
+	Row_Type.prototype.kind = c_oVsdxSheetStorageKind.Row_Type;
 
 
 	/**
@@ -692,7 +705,7 @@
 		// left separate attributes refBy  and textContent and dont replace both by elements
 		return this;
 	}
-
+	Cell_Type.prototype.kind = c_oVsdxSheetStorageKind.Cell_Type;
 	/**
 	 * get String(cell.v)
 	 * @memberOf Cell_Type
@@ -1491,8 +1504,7 @@
 				realizeStyleToSheetObjInheritanceRecursive(styleSheet, styles, stylesWithRealizedInheritance);
 				mergeElementArrays(thisArgument.elements, styleSheet.elements, textStyleElements);
 			}
-
-			if (thisArgument.constructor.name === "StyleSheet_Type") {
+			if (thisArgument.constructor === AscCommonDraw.StyleSheet_Type) {
 				// memorize: that style has realized inheritance
 				stylesWithRealizedInheritance.add(thisArgument);
 			}
@@ -1513,8 +1525,7 @@
 		realizeStyleToSheetObjInheritanceRecursive(styleSheet, styles, stylesWithRealizedInheritance);
 
 		mergeElementArrays(thisArgument.elements, styleSheet.elements)
-
-		if (thisArgument.constructor.name === "StyleSheet_Type") {
+		if (thisArgument.constructor === AscCommonDraw.StyleSheet_Type) {
 			// memorize: that style has realized inheritance
 			stylesWithRealizedInheritance.add(thisArgument);
 		}
@@ -1590,10 +1601,10 @@
 				}
 			} else {
 				// merge inner elements recursive if not cell
-				if (masterElement.constructor.name !== 'Cell_Type') {
+				if (masterElement.kind !== c_oVsdxSheetStorageKind.Cell_Type) {
 					// if Section or Row
 					let shapeElement = overrideObject;
-					if (masterElement.constructor.name === 'Section_Type' || masterElement.constructor.name === 'Row_Type') {
+					if (masterElement.kind === c_oVsdxSheetStorageKind.Section_Type || masterElement.kind === c_oVsdxSheetStorageKind.Row_Type) {
 						// for future checks
 						isParentInList = elementIsInList || isParentInList;
 						// recursive calls
@@ -1793,6 +1804,7 @@
 	window['AscWord'] = window['AscWord'] || {};
 
 
+	window['AscCommonDraw'].c_oVsdxSheetStorageKind = c_oVsdxSheetStorageKind;
 	window['AscCommonDraw'].Text_Type = Text_Type;
 	window['AscCommonDraw'].Data_Type = Data_Type;
 	window['AscCommonDraw'].ForeignData_Type = ForeignData_Type;

@@ -285,7 +285,7 @@
 				let hAlignCell = paragraphPropsFinal && paragraphPropsFinal.getCell("HorzAlign");
 
 				let horizontalAlign = AscCommon.align_Left;
-				if (hAlignCell && hAlignCell.constructor.name === "Cell_Type") {
+				if (hAlignCell && hAlignCell.kind === AscCommonDraw.c_oVsdxSheetStorageKind.Cell_Type) {
 					// omit calculateCellValue here
 					// let fontColor = calculateCellValue(theme, shape, characterColorCell);
 					let horAlignTryParse = Number(hAlignCell.v);
@@ -385,7 +385,7 @@
 				// handle Color
 				let characterColorCell = characterPropsFinal && characterPropsFinal.getCell("Color");
 				let fontColor;
-				if (characterColorCell && characterColorCell.constructor.name === "Cell_Type") {
+				if (characterColorCell && characterColorCell.kind === AscCommonDraw.c_oVsdxSheetStorageKind.Cell_Type) {
 					fontColor = characterColorCell.calculateValue(shape, pageInfo,
 						visioDocument.themes, themeValWasUsedFor);
 				} else {
@@ -404,7 +404,7 @@
 				// handle fontSize (doesn't work - see comment below)
 				let fontSizeCell = characterPropsFinal && characterPropsFinal.getCell("Size");
 				let fontSizePt;
-				if (fontSizeCell && fontSizeCell.constructor.name === "Cell_Type") {
+				if (fontSizeCell && fontSizeCell.kind === AscCommonDraw.c_oVsdxSheetStorageKind.Cell_Type) {
 					// omit calculateCellValue here
 					// let fontColor = calculateCellValue(theme, shape, characterColorCell);
 					const fontSizeIn = Number(fontSizeCell.v);
@@ -426,7 +426,7 @@
 				cRFonts.CS = {Name: "Calibri", Index: 1};
 				cRFonts.EastAsia = {Name: "Calibri", Index: 1};
 				let fontCell = characterPropsFinal && characterPropsFinal.getCell("Font");
-				if (fontCell && fontCell.constructor.name === "Cell_Type") {
+				if (fontCell && fontCell.kind === AscCommonDraw.c_oVsdxSheetStorageKind.Cell_Type) {
 					// TODO support Themed values
 					// let fontColor = calculateCellValue(theme, shape, characterColorCell);
 
@@ -696,10 +696,8 @@
 			//         <tp IX='0'/>
 			// character properties are used until another element specifies new character properties.
 			// TODO tp_Type is not parsed?
-			let propsRunsObjects = {
-				"cp_Type": null,
-				"tp_Type": null
-			};
+			let propsCP = null;
+			let propsTP = null;
 
 			let oContent = textCShape.getDocContent();
 			oContent.Content = [];
@@ -718,34 +716,13 @@
 
 					// equal to ApiParagraph.prototype.AddText method
 					let oRun = new ParaRun(paragraph, false);
-					if (typeof textElementPart === "string") {
-						textElementPart = convertVsdxTextToPptxText(textElementPart);
-						oRun.AddText(textElementPart);
-					} else if (textElementPart.constructor.name === "fld_Type") {
-						// text field
-
-						let fldTagText = textElementPart.value;
-
-						let fieldRowNum = textElementPart.iX;
-						let fieldPropsFinal = fieldRowNum !== null && fieldPropsCommon.getRow(fieldRowNum);
-
-						// handle Value
-						let fieldValueText = parseTextFromFieldRow(fieldPropsFinal, fldTagText,
-							currentPageIndex, pagesCount);
-
-						if (fieldValueText) {
-							// Replace LineSeparator
-							fieldValueText.replaceAll("\u2028", "\n");
-							oRun.AddText(fieldValueText);
-						} else {
-							console.log("field_Type was not parsed");
-						}
-					}
+					textElementPart = convertVsdxTextToPptxText(textElementPart);
+					oRun.AddText(textElementPart);
 
 					// setup Run
 					// check character properties: get cp_Type object and in characterPropsCommon get needed Row
-					let characterRowNum = propsRunsObjects.cp_Type && propsRunsObjects.cp_Type.iX;
-					if (propsRunsObjects.cp_Type === null) {
+					let characterRowNum = propsCP && propsCP.iX;
+					if (propsCP === null) {
 						characterRowNum = 0;
 					}
 
@@ -753,7 +730,7 @@
 						oRun, lineUniFill, fillUniFill, theme, shape,
 						visioDocument);
 					paragraph.Add_ToContent(paragraph.Content.length - 1, oRun);
-				} else if (textElementPart.constructor.name === "fld_Type") {
+				} else if (textElementPart.kind === AscCommonDraw.c_oVsdxTextKind.FLD) {
 					// text field
 					// create defaultParagraph
 					if (oContent.Content.length === 0) {
@@ -761,7 +738,7 @@
 					}
 					let paragraph = oContent.Content.slice(-1)[0];
 
-					let oFld = new AscCommonWord.CPresentationField(this);
+					let oFld = new AscCommonWord.CPresentationField(paragraph);
 					let fieldRowNum = textElementPart.iX;
 					let fieldPropsFinal = fieldRowNum !== null && fieldPropsCommon.getRow(fieldRowNum);
 					initPresentationField(oFld, fieldPropsFinal);
@@ -776,8 +753,8 @@
 
 					// setup Run
 					// check character properties: get cp_Type object and in characterPropsCommon get needed Row
-					let characterRowNum = propsRunsObjects.cp_Type && propsRunsObjects.cp_Type.iX;
-					if (propsRunsObjects.cp_Type === null) {
+					let characterRowNum = propsCP && propsCP.iX;
+					if (propsCP === null) {
 						characterRowNum = 0;
 					}
 
@@ -789,15 +766,17 @@
 					paragraph.AddToContent(paragraph.Content.length - 1, oFld);
 					paragraph.AddToContent(paragraph.Content.length - 1, new ParaRun(paragraph, false));
 
-				} else if (textElementPart.constructor.name === "pp_Type") {
+				} else if (textElementPart.kind === AscCommonDraw.c_oVsdxTextKind.PP) {
 					// setup Paragraph
 
 					// check defaultParagraph properties: get pp_Type object and in paragraphPropsCommon get needed Row
 					let paragraphRowNum = textElementPart.iX;
 					parseParagraphAndAddToShapeContent(paragraphRowNum, paragraphPropsCommon, textCShape);
 
-				} else if (textElementPart.constructor.name === "cp_Type" || textElementPart.constructor.name === "tp_Type") {
-					propsRunsObjects[textElementPart.constructor.name] = textElementPart;
+				} else if (textElementPart.kind === AscCommonDraw.c_oVsdxTextKind.CP) {
+					propsCP = textElementPart;
+				} else if (textElementPart.kind === AscCommonDraw.c_oVsdxTextKind.TP) {
+					propsTP = textElementPart;
 				} else {
 					console.log("undkown type in text tag");
 				}
@@ -1405,7 +1384,7 @@
 				let fillForegndTransValue = this.getCellNumberValue("FillForegndTrans");
 				if (!isNaN(fillForegndTransValue)) {
 					let fillObj = uniFillForegnd.fill;
-					if (fillObj.constructor.name === "CPattFill") {
+					if (fillObj.type === Asc.c_oAscFill.FILL_TYPE_PATT) {
 						// pattern fill
 						fillObj.fgClr.color.RGBA.A = fillObj.fgClr.color.RGBA.A * (1 - fillForegndTransValue);
 					} else {
@@ -1427,7 +1406,7 @@
 			let fillBkgndTransValue = this.getCellNumberValue("FillBkgndTrans");
 			if (!isNaN(fillBkgndTransValue)) {
 				let fillObj = uniFillBkgnd.fill;
-				if (fillObj.constructor.name === "CPattFill") {
+				if (fillObj.type === Asc.c_oAscFill.FILL_TYPE_PATT) {
 					// pattern fill
 					fillObj.bgClr.color.RGBA.A = fillObj.fgClr.color.RGBA.A * (1 - fillBkgndTransValue);
 				} else {
