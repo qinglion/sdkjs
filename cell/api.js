@@ -567,7 +567,10 @@ var editor;
 									cp['codepage'] = bom.encoding;
 									data = dataUint.subarray(bom.size);
 								}
-								cp['data'] = data;
+								const csvDelimiter = AscCommon.getCSVDelimiter(data);
+								cp['delimiter'] = csvDelimiter['delimiter'];
+								cp['delimiterChar'] = csvDelimiter['delimiterChar'];
+								cp['data'] = csvDelimiter['data'];
 								callback(new AscCommon.asc_CAdvancedOptions(cp));
 							} else {
 								t.handlers.trigger("asc_onError", c_oAscError.ID.Unknown, c_oAscError.Level.Critical);
@@ -591,15 +594,17 @@ var editor;
 
 	spreadsheet_api.prototype._getTextFromFile = function (options, callback) {
 		let t = this;
-
 		function wrapper_callback(data) {
 			let bom = AscCommon.getEncodingByBOM(data);
 			let cp = {
 				'codepage': bom.encoding,
-				"delimiter": AscCommon.c_oAscCsvDelimiter.Comma,
 				'encodings': AscCommon.getEncodingParams(),
 				'data': AscCommon.c_oAscCodePageNone !== bom.encoding ? data.subarray(bom.size) : data
 			};
+			const csvDelimiter = AscCommon.getCSVDelimiter(cp['data']);
+			cp['delimiter'] = csvDelimiter['delimiter'];
+			cp['delimiterChar'] = csvDelimiter['delimiterChar'];
+			cp['data'] = csvDelimiter['data'];
 			callback(new AscCommon.asc_CAdvancedOptions(cp));
 		}
 
@@ -1329,7 +1334,10 @@ var editor;
 					} else {
 						cp['data'] = dataUint;
 					}
-					cp['delimiter'] = AscCommon.getCSVDelimiter(cp['data']);
+					const csvDelimiter = AscCommon.getCSVDelimiter(cp['data']);
+					cp['delimiter'] = csvDelimiter['delimiter'];
+					cp['delimiterChar'] = csvDelimiter['delimiterChar'];
+					cp['data'] = csvDelimiter['data'];
 				}
 				if (data.buffer) {
 					applyBuffer(data);

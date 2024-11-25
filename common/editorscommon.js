@@ -251,41 +251,142 @@
 	function getIndex(str, substring, n) {
 		return str.split(substring).slice(0, n).join(substring).length;
 	}
-	function getCSVDelimiter(data) {
-		const slice = data.slice(0, 200);
-		const quote = 34;
-		const delimiters = Object.keys(AscCommon.c_oAscCsvDelimiter);
+	function getCSVDelimiter(data, _count, _delimiters) {
+		const quote = "\"".charCodeAt(0);
+		function getCodesPattern(text, bytesCount) {
+			const result = [];
+			const codes = text.split('').map(function(sym) {
+				return sym.charCodeAt(0);
+			});
+			for (let i = 0; i < codes.length; i += 1) {
+				result.push(codes[i]);
+				for (let j = 1; j < bytesCount; j += 1) {
+					result.push(0);
+				}
+			}
+			return result;
+		}
+		function check(arr1, arr2, byteSize) {
+			const summedArr1 = [];
+			const summedArr2 = [];
+			for (let i = 0; i < arr1.length / byteSize; i += 1) {
+				let sum1 = 0;
+				let sum2 = 0;
+				for (let j = 0; j < byteSize; j += 1) {
+					sum1 += arr1[i * byteSize + j];
+					sum2 += arr2[i * byteSize + j];
+				}
+				if (sum1 !== sum2) {
+					return false;
+				}
+			}
+			return true;
+		}
+		function checkStartPattern(text, bytesCount) {
+			return check(data.slice(0, text.length * bytesCount), getCodesPattern(text, bytesCount), bytesCount)
+		}
+		function checkAllStartPatterns(text) {
+			const bytes = [1, 2, 4];
+			for (let i = 0; i < bytes.length; i  +=1) {
+				if (checkStartPattern(text, bytes[i])) {
+					return bytes[i];
+				}
+			}
+			return 0;
+		}
+		function checkSep() {
+			const textWithoutQuotes = 'sep=';
+			let found = checkAllStartPatterns(textWithoutQuotes);
+			if (found) {
+				let size = textWithoutQuotes.length * found;
+				// CR checking
+				if (data.slice(size + found, found).reduce(function(acc, curr) {
+					return acc + curr;
+				}, 0) === 13) {
+					size += 1;
+				}
+				// LF checking
+				if (data.slice(size + found, found).reduce(function(acc, curr) {
+					return acc + curr;
+				}, 0) === 10) {
+					size += 1;
+				}
+				return {
+					size: size,
+					founded: data[textWithoutQuotes.length * found]
+				};
+			}
+			const text = '"sep=';
+			found = checkAllStartPatterns(text);
+			if (found && data[text.length * found + found] === quote) {
+				let size = text.length * found + found;
+				// CR checking
+				if (data.slice(size + found, size + found * 2).reduce(function(acc, curr) {
+					return acc + curr;
+				}, 0) === 13) {
+					size += found;
+				}
+				// LF checking
+				if (data.slice(size + found, size + found * 2).reduce(function(acc, curr) {
+					return acc + curr;
+				}, 0) === 10) {
+					size += found;
+				}
+				return {
+					size: size,
+					founded: data[text.length * found]
+				};
+			}
+		}
+		const count = _count ? _count : 200;
+		const defaultDelimiters = {
+			",": AscCommon.c_oAscCsvDelimiter.Comma,
+			";": AscCommon.c_oAscCsvDelimiter.Semicolon,
+			"\t": AscCommon.c_oAscCsvDelimiter.Tab,
+			":": AscCommon.c_oAscCsvDelimiter.Colon,
+		};
+		const delimiters = _delimiters ? _delimiters : Object.keys(defaultDelimiters);
 		const delimitersMap = new Map();
-		delimitersMap.set(9, AscCommon.c_oAscCsvDelimiter.Tab);
-		delimitersMap.set(59, AscCommon.c_oAscCsvDelimiter.Semicolon);
-		delimitersMap.set(124, AscCommon.c_oAscCsvDelimiter.Colon);
-		delimitersMap.set(44, AscCommon.c_oAscCsvDelimiter.Comma);
-		const counter = {
-			44: 0,
-			9: 0,
-			59: 0,
-			124: 0
+		const counter = {}
+		for (let i = 0; i < delimiters.length; i += 1) {
+			delimitersMap.set(delimiters[i].charCodeAt(0), delimiters[i]);
+			counter[delimiters[i].charCodeAt(0)] = 0;
+		}
+		const sepCheck = checkSep();
+		if (sepCheck) {
+			const sepDelimiter = sepCheck.founded;
+			const size = sepCheck.size;
+			if (delimitersMap.has(sepDelimiter)) {
+				const delimeter = delimitersMap.get(Number(sepDelimiter));
+				if (defaultDelimiters[delimeter]) {
+					return {'delimiter': defaultDelimiters[delimeter], 'delimiterChar': null, 'data': data.subarray(size + 1)};
+				}
+			}
+			return {'delimiterChar': String.fromCharCode(sepDelimiter), 'delimiter': null, 'data': data.subarray(size + 1)};
 		}
 		let isQuoteOpen = false;
-		slice.forEach(function(sym) {
+		for (let i = 0; i < count; i += 1) {
+			const sym = data[i];
 			if (sym === quote) {
 				isQuoteOpen = !isQuoteOpen;
 			}
 			if (!isQuoteOpen && delimitersMap.has(sym)) {
 				counter[sym] += 1;
 			}
-		});
-
+		}
 		let max = 0;
-		let result = AscCommon.c_oAscCsvDelimiter.Comma;
+		let result = ','.charCodeAt(0);
 		for (let i in counter) {
 			if (counter[i] > max) {
 				max = counter[i];
 				result = i;
 			}
 		}
-
-		return delimitersMap.get(Number(result));
+		const delimeter = delimitersMap.get(Number(result));
+		if (defaultDelimiters[delimeter]) {
+			return {'delimiter': defaultDelimiters[delimeter], 'delimiterChar': null, data: data};
+		}
+		return {'delimiterChar': delimeter, 'delimiter': null, data: data};
 	}
 	function getEncodingParams()
 	{

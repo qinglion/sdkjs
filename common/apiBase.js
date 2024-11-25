@@ -4287,7 +4287,6 @@
 				callback(text.match(/[^\r\n]+/g));
 			}
 		};
-
 		var encoding = "UTF-8";
 		var codePage = options.asc_getCodePage();
 		var encodingsLen = AscCommon.c_oAscEncodings.length;
@@ -4302,7 +4301,6 @@
 
 		reader.readAsText(new Blob([buffer]), encoding);
 	};
-
 	baseEditorsApi.prototype.asc_setVisiblePasteButton = function(val)
 	{
 		if (AscCommon.g_specialPasteHelper)
