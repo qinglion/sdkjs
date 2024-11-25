@@ -51,7 +51,7 @@ AscFormat.CShape.prototype.getParentObjects = function ()
 	if (this.parent) {
 		oTheme = this.parent.theme;
 	} else {
-		console.log("Parent was not set for shape/group. GenerateDefaultTheme is used. shape/group:", this);
+		AscCommon.consoleLog("Parent was not set for shape/group. GenerateDefaultTheme is used. shape/group:", this);
 		oTheme = AscFormat.GenerateDefaultTheme(null, null);
 	}
 	return {slide: null, layout: null, master: null, theme: oTheme};
@@ -71,7 +71,7 @@ AscFormat.CGroupShape.prototype.getParentObjects = CShape.prototype.getParentObj
 AscFormat.CShape.prototype.recalculate = function ()
 {
 	if(this.bDeleted || !this.parent) {
-		console.log("no recalculate for bDeleted or no parent");
+		AscCommon.consoleLog("no recalculate for bDeleted or no parent");
 		return;
 	}
 
@@ -168,7 +168,7 @@ AscFormat.CTheme.prototype.getFillStyle = function (idx, unicolor, isConnectorSh
 			}
 		}
 	}
-	console.log("getFillStyle has not found fill and returned transparent fill")
+	AscCommon.consoleLog("getFillStyle has not found fill and returned transparent fill")
 	return AscFormat.CreateSolidFillRGBA(0, 0, 0, 255);
 };
 
@@ -194,7 +194,7 @@ AscFormat.CTheme.prototype.getLnStyle = function (idx, unicolor, isConnectorShap
 		}
 		return ret;
 	}
-	console.log("getLnStyle has not found lineStyle and returned new CLn()");
+	AscCommon.consoleLog("getLnStyle has not found lineStyle and returned new CLn()");
 	return new AscFormat.CLn();
 };
 

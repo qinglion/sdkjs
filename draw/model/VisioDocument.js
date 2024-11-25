@@ -382,9 +382,9 @@
 				return cFontInfo.Name === nameU;
 			});
 			if (fontInfo === undefined || fontInfo === null) {
-				console.log("Unknown font used in visio file: " + nameU);
+				AscCommon.consoleLog("Unknown font used in visio file: " + nameU);
 			} else {
-				console.log("Font", nameU, "will be loaded");
+				AscCommon.consoleLog("Font" + nameU + "will be loaded");
 				aFonts.push(new AscFonts.CFont(nameU, newFontIndex, "", 0));
 				newFontIndex += 1;
 			}
@@ -1030,7 +1030,7 @@
 						// if masterNumber is number
 						mastersSort[masterNumber - 1] = masters[i];
 					} else {
-						console.log('check sdkjs/draw/model/VisioDocument.js : parseMasters');
+						AscCommon.consoleLog('check sdkjs/draw/model/VisioDocument.js : parseMasters');
 						mastersSort = masters;
 						break;
 					}
@@ -1067,7 +1067,7 @@
 						// if masterNumber is number
 						pagesSort[pageNumber - 1] = pages[i];
 					} else {
-						console.log('check sdkjs/draw/model/VisioDocument.js : parsePages');
+						AscCommon.consoleLog('check sdkjs/draw/model/VisioDocument.js : parsePages');
 						pagesSort = pages;
 						break;
 					}
@@ -1096,7 +1096,7 @@
 					// if themeNumber is number
 					themesSort[themeNumber - 1] = themeParts[i];
 				} else {
-					console.log('check sdkjs/draw/model/VisioDocument.js : parseThemes');
+					AscCommon.consoleLog('check sdkjs/draw/model/VisioDocument.js : parseThemes');
 					themesSort = themeParts;
 					break;
 				}
@@ -1184,7 +1184,7 @@
 						// if masterNumber is number
 						solutionsSort[solutionNumber - 1] = solutions[i];
 					} else {
-						console.log('check sdkjs/draw/model/VisioDocument.js : parseSolutions');
+						AscCommon.consoleLog('check sdkjs/draw/model/VisioDocument.js : parseSolutions');
 						solutionsSort = solutions;
 						break;
 					}

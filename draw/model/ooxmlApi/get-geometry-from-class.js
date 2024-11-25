@@ -186,7 +186,7 @@
 			let noShowCell = geometrySection.getCell("NoShow");
 
 			if (noShowCell === null || noShowCell === undefined) {
-				console.log("noShowCell variable is null or undefined see shape: ", shape);
+				AscCommon.consoleLog("noShowCell variable is null or undefined see shape: ", shape);
 				continue;
 			}
 			if (Number(noShowCell.v) === 1) {
@@ -392,8 +392,8 @@
 							// let a = Math.sqrt(rX1*rX1*b*b/(b*b-rY1*rY1));
 							// it is not useful I guess bcs ellipse is rotated so we need another equation
 
-							// console.log('For ellipse with relative center (', cx, ', ', cy, ')');
-							// console.log('point 1: (', x1, ', ', y1, '), point 2: (', x2, ', ', y2, ')');
+							// AscCommon.consoleLog('For ellipse with relative center (', cx, ', ', cy, ')');
+							// AscCommon.consoleLog('point 1: (', x1, ', ', y1, '), point 2: (', x2, ', ', y2, ')');
 
 							let rx = Math.hypot(x1 - cx, y1 - cy);
 							let ry = Math.hypot(x2 - cx, y2 - cy);
@@ -423,7 +423,7 @@
 
 						let wRhR = transformEllipseParams(newX, newY, newA, newB, newC, newD);
 						if (!wRhR) {
-							console.log('Ellipse command for rotated ellipse is not yet realized');
+							AscCommon.consoleLog('Ellipse command for rotated ellipse is not yet realized');
 						}
 						// start to draw from ellipse right point
 
@@ -466,7 +466,7 @@
 							// ellipticalArcTo could catch cases line these but
 							// there inaccuracy comes
 							path.lnTo(newX, newY);
-							console.log("tranform ellipticalArcTo to line",
+							AscCommon.consoleLog("tranform ellipticalArcTo to line",
 								newX, newY, controlPoint.x, controlPoint.y, 0, 1);
 							// path.ellipticalArcTo(newX, newY, controlPoint.x, controlPoint.y, 0, 1);
 						} else  {
@@ -660,7 +660,7 @@
 							path.lnTo(maxValue, yNew);
 						} else {
 							// visio doesnt draw diagonal infinite lines
-							console.log("visio doesnt draw diagonal infinite lines");
+							AscCommon.consoleLog("visio doesnt draw diagonal infinite lines");
 						}
 						// don't set last point here bcs it is always the only one element in geometry
 						break;

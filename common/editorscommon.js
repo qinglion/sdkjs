@@ -14786,7 +14786,19 @@
 	registerServiceWorker();
 
 	function consoleLog(val) {
-		//console.log(val);
+		// console.log(val);
+		const showMessages = false;
+
+		if (!showMessages) {
+			return;
+		}
+
+		// see v8 arguments leak - performance loss
+		// console.log.apply(console, arguments);
+
+		for (let i = 0; i < arguments.length; i++) {
+			console.log(arguments[i]);
+		}
 	}
 
 	//------------------------------------------------------------export---------------------------------------------------
