@@ -14512,8 +14512,14 @@
 			parser.ca = caProps.ca;
 		}
 		if(formulaRef) {
-			parser.setArrayFormulaRef(formulaRef);
-			this.ws.getRange3(formulaRef.r1, formulaRef.c1, formulaRef.r2, formulaRef.c2)._foreachNoEmpty(function(cell){
+			/* when merging, the formulaRef is taken with the old data, we need to shift ref to topLeftCell */
+			// parser.setArrayFormulaRef(formulaRef);
+			// this.ws.getRange3(formulaRef.r1, formulaRef.c1, formulaRef.r2, formulaRef.c2)._foreachNoEmpty(function(cell){
+			// 	cell.setFormulaParsed(parser, bHistoryUndo);
+			// });
+			let newFormulaRef = formulaRef.isOneCell ? new Asc.Range(this.nCol, this.nRow, this.nCol, this.nRow) : formulaRef;
+			parser.setArrayFormulaRef(newFormulaRef);
+			this.ws.getRange3(newFormulaRef.r1, newFormulaRef.c1, newFormulaRef.r2, newFormulaRef.c2)._foreach2(function(cell){
 				cell.setFormulaParsed(parser, bHistoryUndo);
 			});
 		} else {
@@ -18610,6 +18616,7 @@
 		this.worksheet.mergeManager.add(this.bbox, 1);
 	};
 	Range.prototype.merge=function(type){
+		const t = this;
 		if(null == type)
 			type = Asc.c_oAscMergeOptions.Merge;
 		var oBBox = this.bbox;
@@ -18632,8 +18639,6 @@
 				return;
 			}
 		}
-
-		this.worksheet.workbook.handlers.trigger("changeDocument", AscCommonExcel.docChangedType.mergeRange, true, this.bbox, this.worksheet.getId());
 
 		//пробегаемся по границе диапазона, чтобы посмотреть какие границы нужно оставлять
 		var oLeftBorder = null;
@@ -18715,20 +18720,50 @@
 		var oFirstCellRow = null;
 		var oFirstCellCol = null;
 		var oFirstCellHyperlink = null;
-		this._setPropertyNoEmpty(null,null,
-								 function(cell, nRow0, nCol0, nRowStart, nColStart){
-									 if(bFirst && false == cell.isNullText())
-									 {
-										 bFirst = false;
-										 oFirstCellStyle = cell.getStyle();
-										 oFirstCellValue = cell.getValueData();
-										 oFirstCellRow = cell.nRow;
-										 oFirstCellCol = cell.nCol;
 
-									 }
-									 if(nRow0 == nRowStart && nCol0 == nColStart)
-										 oLeftTopCellStyle = cell.getStyle();									
-								 });
+		let error = false;
+
+		this._setPropertyNoEmpty(null, null,
+			function(cell, nRow0, nCol0, nRowStart, nColStart) {
+				if (!error) {
+					let formulaRef = cell.formulaParsed && cell.formulaParsed.getArrayFormulaRef();
+
+					if (bFirst && false == cell.isNullText()) {
+						if (formulaRef && !formulaRef.isOneCell()) {
+							/* if an array larger than 1x1 cell is encountered, then no value is written in ms */
+							bFirst = false;
+							oFirstCellValue = null;
+						} else {
+							bFirst = false;
+							oFirstCellStyle = cell.getStyle();
+							oFirstCellValue = cell.getValueData();
+							oFirstCellRow = cell.nRow;
+							oFirstCellCol = cell.nCol;
+						}
+					}
+
+					/* checking whether the ref is included in the selected merge area (if not, then we return an error) */
+					if (formulaRef && !t.bbox.containsRange(formulaRef)) {
+						error = c_oAscError.ID.CannotChangeFormulaArray;
+						return false;
+					} else if (nRow0 == nRowStart && nCol0 == nColStart) {
+						if (formulaRef && !formulaRef.isOneCell()) {
+							error = c_oAscError.ID.CannotChangeFormulaArray;
+							return false;
+						} else {
+							oLeftTopCellStyle = cell.getStyle();
+						}
+					}
+				}
+			});
+
+		if (error) {
+			/* Complete the transaction in history before exiting the function merge */
+			AscCommon.History.EndTransaction();
+			return {errorType: error};
+		}
+
+		this.worksheet.workbook.handlers.trigger("changeDocument", AscCommonExcel.docChangedType.mergeRange, true, this.bbox, this.worksheet.getId());
 		//правила работы с гиперссылками во время merge(отличются от Excel в случаем областей, например hyperlink: C3:D3 мержим C2:C3)
 		// 1)оставляем все ссылки, которые не полностью лежат в merge области
 		// 2)оставляем многоклеточные ссылки, top граница которых совпадает с top границей merge области, а высота merge > 1 или совпадает с высотой области merge
