@@ -4837,33 +4837,36 @@ function(window, undefined) {
 		return ret;
 	};
 
+	CChartSpace.prototype.getMultiplier = function (oAxis) {
+		if (!oAxis || !oAxis.dispUnits) {
+			return 1.0;
+		}
+		return oAxis.dispUnits.getMultiplier();
+	}
+
+	CChartSpace.prototype.getNumFmt = function (oAxis) {
+		const sFormatCode = oAxis ? oAxis.getFormatCode() : null;
+		if (typeof sFormatCode === "string") {
+			return oNumFormatCache.get(sFormatCode);
+		}
+		return oNumFormatCache.get("General");
+	}
+
+	CChartSpace.prototype.getFormattedString = function (fValue, oNumFormat, fMultiplier) {
+		const fCalcValue = fValue * fMultiplier;
+		if (oNumFormat) {
+			return oNumFormat.formatToChart(fCalcValue);
+		}
+		return fCalcValue + "";
+	}
 
 	CChartSpace.prototype.getValLabels = function(oAxis) {
 		let aStrings = [];
 		let aVal = [].concat(oAxis.scale);
-		let fMultiplier;
-		if (oAxis.dispUnits) {
-			fMultiplier = oAxis.dispUnits.getMultiplier();
-		} else {
-			fMultiplier = 1.0;
-		}
-		let oNumFormat = null;
-		let sFormatCode = oAxis.getFormatCode();
-		if (typeof sFormatCode === "string") {
-			oNumFormat = oNumFormatCache.get(sFormatCode);
-		}
-		if (!oNumFormat) {
-			oNumFormat = oNumFormatCache.get("General");
-		}
+		const fMultiplier = this.getMultiplier(oAxis);
+		const oNumFormat = this.getNumFmt(oAxis);
 		for (let t = 0; t < aVal.length; ++t) {
-			let fCalcValue = aVal[t] * fMultiplier;
-			let sRichValue;
-			if (oNumFormat) {
-				sRichValue = oNumFormat.formatToChart(fCalcValue);
-			} else {
-				sRichValue = fCalcValue + "";
-			}
-			aStrings.push(sRichValue);
+			aStrings.push(this.getFormattedString(aVal[t], oNumFormat, fMultiplier));
 		}
 		return aStrings;
 	};
@@ -5034,60 +5037,28 @@ function(window, undefined) {
 						return [];
 					}
 
-					if (type === AscFormat.SERIES_LAYOUT_CLUSTERED_COLUMN && cachedData.clusteredColumn && cachedData.clusteredColumn.aggregation) {
-						// if data is aggregated then convert array of integers into chars
-						const strCache = strSeria.getCatLit();
-						if (strCache && strCache.pts) {
-							const mySet = {};
-							for (let i = 0; i < strCache.pts.length; i++) {
-								// If no labels exist, then excel just leaves empty catAxis
-								const key = strCache.pts[i].val;
-								if (!mySet.hasOwnProperty(key)) {
-									mySet[key] = true;
-									aStrings.push(key);
-								}
+					if (type === AscFormat.SERIES_LAYOUT_CLUSTERED_COLUMN) {
+						const isAggregated = cachedData.clusteredColumn.aggregation;
+						const data = isAggregated ? cachedData.clusteredColumn.aggregation : cachedData.clusteredColumn.results;
+						if (isAggregated) {
+							for (let i = 0; i < data.length; i++) {
+								aStrings.push(data[i].lblName);
 							}
 						} else {
-							aStrings.push('');
-						}
-					} else if (type === AscFormat.SERIES_LAYOUT_CLUSTERED_COLUMN && cachedData.clusteredColumn && cachedData.clusteredColumn.binning) {
-						// obtain properly formated array of integers
-						const bStrings = this.getValLabels(oAxis);
-						const binning = cachedData.clusteredColumn.binning;
-
-						//convert array of formated strings into ranges
-						if (bStrings && bStrings.length != 0) {
-							// ranges always start with '[' and end with ']', however between they can have '(' and ')'
-							let start = '[';
-							let end = binning.intervalClosed === AscFormat.INTERVAL_CLOSED_SIDE_L ? ')' : ']';
-							// user can manually set minimum and maximum, therefore alternative start and end needed
-							const alternativeStart = binning.intervalClosed === AscFormat.INTERVAL_CLOSED_SIDE_L ? '<' : '≤';
-							const alternativeEnd = binning.intervalClosed === AscFormat.INTERVAL_CLOSED_SIDE_L ? '≥' : '>';
-
-							const isAlternativeStartExist = binning.underflow === 0 || binning.underflow ? true : false;
-							const isAlternativeEndExist = binning.overflow === 0 || binning.overflow ? true : false;
-							// first check is alternativeStart exist, and append alternativeStartSign with value,
-							// also because start not the first anymore, we can change its value from '[' to '(';
-							if (isAlternativeStartExist) {
-								aStrings.push(alternativeStart + bStrings[0]);
-								start = '(';
-							}
-							// if element not the first one, then change value of start
-							// if element is last one and no alternativeEnd exist, then change value of end
-							for (let i = 0; i < (bStrings.length - 1); i++) {
-								if (i === 1 && start != "(" && binning.intervalClosed !== AscFormat.INTERVAL_CLOSED_SIDE_L) {
-									start = '(';
+							const oNumFmt = this.getNumFmt(oAxis);
+							const FMultiplier = this.getMultiplier(oAxis);
+							const binning = cachedData.clusteredColumn.binning;
+							for (let i = 0; i < data.length; i++) {
+								if (data[i].min === null) {
+									aStrings.push(data[i].subChars[0] + " " + this.getFormattedString(data[i].max, oNumFmt, FMultiplier));
+								} else if (data[i].max === null) {
+									const fVal = binning.length > 1 ? data[i].min : binning.overflow;
+									aStrings.push(data[i].subChars[0] + " " + this.getFormattedString(fVal, oNumFmt, FMultiplier));
+								} else {
+									const sFormattedMin = this.getFormattedString(data[i].min, oNumFmt, FMultiplier);
+									const sFormattedMax = this.getFormattedString(data[i].max, oNumFmt, FMultiplier);
+									aStrings.push(data[i].subChars[0] + sFormattedMin + ", " + sFormattedMax + data[i].subChars[1]);
 								}
-
-								if (i === (bStrings.length - 2) && !isAlternativeEndExist && binning.intervalClosed === AscFormat.INTERVAL_CLOSED_SIDE_L) {
-									end = ']';
-								}
-								aStrings.push(start + bStrings[i] + ", " + bStrings[i + 1] + end)
-							}
-							// add alternativeEnd if exist
-							if (isAlternativeEndExist) {
-								const val = (bStrings.length > 1) ? bStrings[bStrings.length - 1] : binning.overflow;
-								aStrings.push(alternativeEnd +  " " + val);
 							}
 						}
 					} else if (type === AscFormat.SERIES_LAYOUT_WATERFALL) {
