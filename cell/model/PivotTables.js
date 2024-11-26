@@ -10214,6 +10214,11 @@ CT_pivotTableDefinition.prototype.asc_convertCalculatedFormula = function(formul
 	const resOutStack = [];
 	for(let i = 0; i < outStack.length; i += 1) {
 		const elem = outStack[i];
+		if (elem instanceof AscCommonExcel.cError) {
+			if (elem.errorType === AscCommonExcel.cErrorType.wrong_name) {
+				return c_oAscError.ID.PivotItemNameNotFound;
+			}
+		}
 		if (elem instanceof AscCommonExcel.cName) {
 			if (namesMap.has(elem.value.toLowerCase())) {
 				const struc = new AscCommonExcel.cStrucPivotTable();

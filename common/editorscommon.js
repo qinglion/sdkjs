@@ -3826,6 +3826,11 @@
 		const fullPatterns = itemNames.map(function(name) {
 			return '^' + fieldName + '\\s*\\[\\s*(' + name + ')\\s*\\]'
 		});
+		itemNames.forEach(function(name) {
+			fullPatterns.push('^\'' + fieldName + '\'\\s*\\[\\s*(' + name + ')\\s*\\]');
+			fullPatterns.push('^\'' + fieldName + '\'\\s*\\[\\s*\'(' + name + ')\'\\s*\\]');
+			fullPatterns.push('^' + fieldName + '\\s*\\[\\s*\'(' + name + ')\'\\s*\\]');
+		})
 		const fullRegs = fullPatterns.map(function(pattern) {
 			return new RegExp(pattern, 'i');
 		});
@@ -3840,6 +3845,9 @@
 		const shortPatterns = itemNames.map(function(name) {
 			return '^(' + name + ')(?:\\W|$)'
 		});
+		itemNames.forEach(function(name) {
+			shortPatterns.push('^(\'(' + name + ')\')(?:\\W|$)');
+		});
 		const shortRegs = shortPatterns.map(function(pattern) {
 			return new RegExp(pattern, 'i');
 		});
@@ -3848,7 +3856,7 @@
 			if (match !== null) {
 				this.operand_str = match[1];
 				this.pCurrPos += match[1].length;
-				return [null, match[1]];
+				return [null, match[2] ? match[2] : match[1]];
 			}
 		}
 		return false;
