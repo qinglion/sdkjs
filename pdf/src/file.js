@@ -1007,7 +1007,7 @@ void main() {\n\
         else if (this.Selection.quads.length != 0)
             return this.Selection.quads;
         
-        const { Page1, Page2, Line1, Line2, Word1, Word2, Glyph1, Glyph2 } = sortSelection();
+        const { Page1, Page2, Line1, Line2, Word1, Word2, Glyph1, Glyph2 } = this.sortSelection();
 
         for (let iPage = Page1; iPage <= Page2; ++iPage)
         {
@@ -1043,14 +1043,14 @@ void main() {\n\
                 let off2 = 0;
 
                 if (startChar == -2)
-                    off1 = 0;
+                    off1 = words[startWord].X;
                 else if (startChar == -1)
                     off1 = words[startWord].X + words[startWord].Width;
                 else
                     off1 = words[startWord].Chars[startChar].X;
 
                 if (endChar == -2)
-                    off2 = 0;
+                    off2 = words[endWord].X;
                 else if (endChar == -1)
                     off2 = words[endWord].X + words[endWord].Width;
                 else
@@ -1121,7 +1121,7 @@ void main() {\n\
         if (!oText)
             return;
 
-        const { Page1, Page2, Line1, Line2, Word1, Word2, Glyph1, Glyph2 } = sortSelection();
+        const { Page1, Page2, Line1, Line2, Word1, Word2, Glyph1, Glyph2 } = this.sortSelection();
 
         if (Page1 > pageIndex || Page2 < pageIndex)
             return;
@@ -1137,7 +1137,7 @@ void main() {\n\
         let startLine = pageIndex == Page1 ? Line1 : 0;
         let endLine   = pageIndex == Page2 ? Line2 : oText.length - 1;
 
-        for (let iLine = startLine; iLine < endLine; ++iLine)
+        for (let iLine = startLine; iLine <= endLine; ++iLine)
         {
             let oLine = oText[iLine];
             let words = oLine.Words;
@@ -1155,14 +1155,14 @@ void main() {\n\
             let off2 = 0;
 
             if (startChar == -2)
-                off1 = 0;
+                off1 = words[startWord].X;
             else if (startChar == -1)
                 off1 = words[startWord].X + words[startWord].Width;
             else
                 off1 = words[startWord].Chars[startChar].X;
 
             if (endChar == -2)
-                off2 = 0;
+                off2 = words[endWord].X;
             else if (endChar == -1)
                 off2 = words[endWord].X + words[endWord].Width;
             else
@@ -1237,7 +1237,7 @@ void main() {\n\
         if (!oText)
             return "";
 
-        const { Page1, Page2, Line1, Line2, Word1, Word2, Glyph1, Glyph2 } = sortSelection();
+        const { Page1, Page2, Line1, Line2, Word1, Word2, Glyph1, Glyph2 } = this.sortSelection();
 
         if (Page1 > pageIndex || Page2 < pageIndex)
             return "";
@@ -1247,7 +1247,7 @@ void main() {\n\
         let startLine = pageIndex == Page1 ? Line1 : 0;
         let endLine   = pageIndex == Page2 ? Line2 : oText.length - 1;
 
-        for (let iLine = startLine; iLine < endLine; ++iLine)
+        for (let iLine = startLine; iLine <= endLine; ++iLine)
         {
             let oLine = oText[iLine];
             let words = oLine.Words;
