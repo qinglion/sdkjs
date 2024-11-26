@@ -623,7 +623,9 @@
 		let oFile	= oViewer.file;
 		let oDoc 	= this.getPDFDoc();
 
-		let nPos = bBefore ? oViewer.currentPage : oViewer.currentPage + 1;
+		let oThumbnails = oViewer.thumbnails;
+		let aIndexes = oThumbnails.getSelectedPages();
+		let nPos = bBefore ? Math.min.apply(null, aIndexes) : Math.max.apply(null, aIndexes) + 1;
 
 		oDoc.DoAction(function() {
 			let oPageToClone = bBefore ? oFile.pages[oViewer.currentPage] : (oFile.pages[oViewer.currentPage + 1] || oFile.pages[oViewer.currentPage]);
