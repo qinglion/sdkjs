@@ -478,95 +478,11 @@ void main() {\n\
     };
 
     // TEXT
-    /*
-    CFile.prototype.logTextCommands = function(commands)
-    {
-        var stream = new TextStreamReader(commands, commands.length);
-        var lineCharCount = 0;
-        var lineGidExist = false;
-        var lineText = "";
-        while (stream.pos < stream.size)
-        {
-            var command = stream.GetUChar();
-
-            switch (command)
-            {
-                case 41: // ctFontName
-                {
-                    stream.Skip(12);
-                    break;
-                }
-                case 22: // ctBrushColor1
-                {
-                    stream.Skip(4);
-                    break;
-                }
-                case 80: // ctDrawText
-                {
-                    if (0 != lineCharCount)
-                        stream.Skip(2);
-
-                    lineCharCount++;
-
-                    var char = stream.GetUShort();
-                    if (char !== 0xFFFF)
-                        lineText += String.fromCharCode(char);
-                    if (lineGidExist)
-                        stream.Skip(2);
-
-                    stream.Skip(2);
-                    break;
-                }
-                case 160: // ctCommandTextLine
-                {
-                    lineText = "";
-                    lineCharCount = 0;
-                    var mask = stream.GetUChar();
-                    stream.Skip(8);
-
-                    if ((mask & 0x01) == 0)
-                    {
-                        stream.Skip(8);
-                    }
-
-                    stream.Skip(8);
-
-                    if ((mask & 0x04) != 0)
-                        stream.Skip(4);
-
-                    if ((mask & 0x02) != 0)
-                        lineGidExist = true;
-                    else
-                        lineGidExist = false;
-
-                    break;
-                }
-                case 161: // ctCommandTextTransform
-                {
-                    // text transform
-                    stream.Skip(16);
-                    break;
-                }
-                case 162: // ctCommandTextLineEnd
-                {
-                    console.log(lineText);
-                    break;
-                }
-                default:
-                {
-                    stream.pos = stream.size;
-                }
-            }
-        }
-    };
-    */
-
     CFile.prototype.onMouseDown = function(pageIndex, x, y)
     {
         if (this.pages[pageIndex].isConvertedToShapes)
             return;
         
-        let oDoc = this.viewer.getPDFDoc();
         var ret = this.getNearestPos(pageIndex, x, y);
         var sel = this.Selection;
 
@@ -798,7 +714,7 @@ void main() {\n\
                             if (bExcludeSpaces && oWord.IsSpace)
                             {
                                 _glyph = 0;
-                                let bRightCloser = dWordX2 - x < x - oWord.X;
+                                let bRightCloser = dWordX2 - _distX < _distX - oWord.X;
                                 if (bRightCloser && iWord + 1 < oLine.Words.length)
                                     _word = iWord + 1;
                                 else if (iWord - 1 > 0)
@@ -821,6 +737,16 @@ void main() {\n\
                 }
 
                 let tmp = Math.abs(y - oLine.Y);
+                if (_distX >= 0 && _distX <= oLine.Width)
+                    tmp = Math.abs(y - oLine.Y);
+                else if (_distX < 0)
+                    tmp = Math.sqrt((x - oLine.X) * (x - oLine.X) + (y - oLine.Y) * (y - oLine.Y));
+                else
+                {
+                    let _xx1 = oLine.X + oLine.Width;
+                    tmp = Math.sqrt((x - _xx1) * (x - _xx1) + (y - oLine.Y) * (y - oLine.Y));
+                }
+
                 if (tmp < _minDist)
                 {
                     _minDist = tmp;
@@ -935,7 +861,7 @@ void main() {\n\
                                     if (oChar.X > w)
                                         break;
                                 }
-                                return { Line : _line, Word : _word, Glyph : --_glyph };
+                                --_glyph;
                             }
                         }
                     }
@@ -1175,10 +1101,10 @@ void main() {\n\
             // а для горизонтальной линии все можно пооптимизировать
             if (oLine.Ex == 1 && oLine.Ey == 0)
             {
-                let _x = (dKoefX * (oLine.X + off1));
-                let _r = (dKoefX * (oLine.X + off2));
-                let _y = (dKoefY * (oLine.Y - oLine.Ascent));
-                let _b = (dKoefY * (oLine.Y + oLine.Descent));
+                let _x = (x + dKoefX * (oLine.X + off1));
+                let _r = (x + dKoefX * (oLine.X + off2));
+                let _y = (y + dKoefY * (oLine.Y - oLine.Ascent));
+                let _b = (y + dKoefY * (oLine.Y + oLine.Descent));
 
                 overlay.CheckPoint(_x, _y);
                 overlay.CheckPoint(_r, _b);
@@ -1206,15 +1132,15 @@ void main() {\n\
                 let _x4 = _x3 + ortX * (oLine.Ascent + oLine.Descent);
                 let _y4 = _y3 + ortY * (oLine.Ascent + oLine.Descent);
 
-                _x1 = (dKoefX * _x1);
-                _x2 = (dKoefX * _x2);
-                _x3 = (dKoefX * _x3);
-                _x4 = (dKoefX * _x4);
+                _x1 = (x + dKoefX * _x1);
+                _x2 = (x + dKoefX * _x2);
+                _x3 = (x + dKoefX * _x3);
+                _x4 = (x + dKoefX * _x4);
 
-                _y1 = (dKoefY * _y1);
-                _y2 = (dKoefY * _y2);
-                _y3 = (dKoefY * _y3);
-                _y4 = (dKoefY * _y4);
+                _y1 = (y + dKoefY * _y1);
+                _y2 = (y + dKoefY * _y2);
+                _y3 = (y + dKoefY * _y3);
+                _y4 = (y + dKoefY * _y4);
 
                 overlay.CheckPoint(_x1, _y1);
                 overlay.CheckPoint(_x2, _y2);
@@ -1233,6 +1159,8 @@ void main() {\n\
 
     CFile.prototype.copySelection = function(pageIndex, _text_format)
     {
+        if (!this.isSelectionUse())
+            return "";
         let oText = this.getPageText(pageIndex);
         if (!oText)
             return "";
@@ -1263,15 +1191,24 @@ void main() {\n\
 
             let textLine = "<p><span>";
 
-            for (let iWord = startWord; iWord < endWord; ++iWord)
+            for (let iWord = startWord; iWord <= endWord; ++iWord)
             {
                 let oWord = words[iWord];
                 let chars = oWord.Chars;
 
                 let wordStartChar = iWord == startWord ? startChar : -2;
-                let wordEndChar   = iWord == endWord   ? endChar : -1;
+                let wordEndChar   = iWord == endWord   ? endChar   : -1;
 
-                for (let iChar = wordStartChar; iChar <= wordEndChar; ++iChar)
+                if (wordStartChar == -2)
+                    wordStartChar = 0;
+                else if (wordStartChar == -1)
+                    wordStartChar = chars.length - 1;
+                if (wordEndChar == -2)
+                    wordEndChar = 0;
+                if (wordEndChar == -1)
+                    wordEndChar = chars.length;
+
+                for (let iChar = wordStartChar; iChar < wordEndChar; ++iChar)
                 {
                     let _char = chars[iChar].Char;
                     _char = _char == 0xFFFF ? ' ' : String.fromCodePoint(_char);
@@ -1317,15 +1254,6 @@ void main() {\n\
         return ret;
     };
 
-    CFile.prototype.getCountLines = function(pageIndex)
-    {
-        let oText = this.getPageText(pageIndex);
-        if (!oText)
-            return -1;
-
-        return oText.length;
-    };
-
     CFile.prototype.selectAll = function()
     {
         this.removeSelection();
@@ -1338,11 +1266,10 @@ void main() {\n\
             if (!oText)
                 return;
 
-            let lLinesLastPage = oText.length;
             sel.Glyph1 = -2;
             sel.Page2 = pagesCount - 1;
             sel.Line2 = oText.length - 1;
-            sel.Word2 = oText[sel.Line2].Words.length;
+            sel.Word2 = oText[sel.Line2].Words.length - 1;
             sel.Glyph2 = -1;
         }
 
