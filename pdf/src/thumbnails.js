@@ -495,7 +495,7 @@
     {
 		let pdfDoc = this.viewer.getPDFDoc();
 	
-		if (pdfDoc.fontLoader.isWorking())
+		if (pdfDoc.fontLoader.isWorking() || AscCommon.CollaborativeEditing.waitingImagesForLoad)
 			return true;
 		
         var isNeedTasks = false;

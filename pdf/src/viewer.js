@@ -2008,6 +2008,9 @@
 				return res;
 			}
 
+			if (oThis.touchManager)
+				oThis.touchManager.checkMouseFocus(e);
+
 			oThis.isFocusOnThumbnails = false;
 			AscCommon.stopEvent(e);
 

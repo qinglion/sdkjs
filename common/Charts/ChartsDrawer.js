@@ -8678,6 +8678,7 @@ drawLineChart.prototype = {
 	_calculateLines: function () {
 		var xPoints = this.catAx.xPoints;
 		var yPoints = this.valAx.yPoints;
+		let isLog;
 
 		if(!xPoints || !yPoints) {
 			return;
@@ -8688,6 +8689,7 @@ drawLineChart.prototype = {
 
 			seria = this.chart.series[i];
 			numCache = this.cChartDrawer.getNumCache(seria.val);
+			isLog = this.valAx && this.valAx.scaling ? this.valAx.scaling.logBase : false;
 
 			if (!numCache) {
 				continue;
@@ -8721,7 +8723,7 @@ drawLineChart.prototype = {
 				compiledMarkerSize = idxPoint && idxPoint.compiledMarker && idxPoint.compiledMarker.size ? idxPoint.compiledMarker.size : null;
 				compiledMarkerSymbol = idxPoint && idxPoint.compiledMarker && AscFormat.isRealNumber(idxPoint.compiledMarker.symbol) ? idxPoint.compiledMarker.symbol : null;
 
-				if (val != null) {
+				if (val != null && ((isLog && val !== 0) || !isLog)) {
 					this.paths.points[i][n] = this.cChartDrawer.calculatePoint(x, y, compiledMarkerSize, compiledMarkerSymbol);
 					let errBars = this.chart.series[i].errBars[0];
 					if (errBars) {
@@ -9225,11 +9227,13 @@ drawAreaChart.prototype = {
 		var y, x, val, seria, dataSeries, numCache;
 		var pxToMm = this.chartProp.pxToMM;
 		var nullPositionOX = this.catAx.posY;
+		let isLog;
 
 		for (var i = 0; i < this.chart.series.length; i++) {
 
 			seria = this.chart.series[i];
 			numCache = this.cChartDrawer.getNumCache(seria.val);
+			isLog = this.valAx && this.valAx.scaling ? this.valAx.scaling.logBase : false;
 
 			if (!numCache) {
 				continue;
@@ -9241,7 +9245,7 @@ drawAreaChart.prototype = {
 				//рассчитываем значения
 				val = this._getYVal(n, i);
 
-				if(null === val && this.cChartDrawer.nDimensionCount !== 3) {
+				if((null === val && this.cChartDrawer.nDimensionCount !== 3) || (isLog && val === 0)) {
 					continue;
 				}
 
@@ -14241,6 +14245,7 @@ drawScatterChart.prototype = {
 	_recalculateScatter: function () {
 		let seria, yVal, xVal, points, yNumCache, compiledMarkerSize, compiledMarkerSymbol, yPoint, idx, xPoint;
 		let dispBlanksAs =  this.cChartSpace.chart.dispBlanksAs;
+		let isLog;
 
 		let t = this;
 		let _initObjs = function (_index) {
@@ -14261,6 +14266,7 @@ drawScatterChart.prototype = {
 		for (let i = 0; i < this.chart.series.length; i++) {
 			seria = this.chart.series[i];
 			yNumCache = this.cChartDrawer.getNumCache(seria.yVal);
+			isLog = this.valAx && this.valAx.scaling ? this.valAx.scaling.logBase : false;
 
 			if (!yNumCache) {
 				continue;
@@ -14299,7 +14305,7 @@ drawScatterChart.prototype = {
 
 					_initObjs(i);
 
-					if (yVal != null) {
+					if (yVal != null && ((isLog && yVal !== 0) || !isLog)) {
 						let x = this.cChartDrawer.getYPosition(xVal, this.catAx, true);
 						let y = this.cChartDrawer.getYPosition(yVal, this.valAx, true);
 						this.paths.points[i].push(this.cChartDrawer.calculatePoint(x, y, compiledMarkerSize, compiledMarkerSymbol));
