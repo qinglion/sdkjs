@@ -9217,7 +9217,7 @@ CT_pivotTableDefinition.prototype.asc_getItemsObjectWithFormulas = function(fiel
 			const value = {"item": i, "name": item.getName(cacheField)};
 			if (item.f) {
 				const formula = cacheDefinition.getCalculatedFormula([[fieldIndex, item.x]]);
-				const convertedFormula = this.asc_convertFromCalculatedFormula(formula, fieldIndex);
+				const convertedFormula = this.convertFromCalculatedFormula(formula, fieldIndex);
 				value['formula'] = convertedFormula;
 			}
 			result.push(value);
@@ -10147,7 +10147,7 @@ CT_pivotTableDefinition.prototype.convertNameFromFormula = function(name) {
 	}
 	return result;
 };
-CT_pivotTableDefinition.prototype.asc_convertFromCalculatedFormula = function(formula, fieldIndex) {
+CT_pivotTableDefinition.prototype.convertFromCalculatedFormula = function(formula, fieldIndex) {
 	const t = this;
 	const cacheFields = this.asc_getCacheFields();
 	const pivotFields = this.asc_getPivotFields();
@@ -22512,7 +22512,6 @@ prot["asc_removeCalculatedItem"] = prot.asc_removeCalculatedItem;
 prot["asc_modifyCalculatedItem"] = prot.asc_modifyCalculatedItem;
 prot["asc_convertNameToFormula"] = prot.asc_convertNameToFormula;
 prot["asc_getItemsObjectWithFormulas"] = prot.asc_getItemsObjectWithFormulas;
-prot["asc_convertFromCalculatedFormula"] = prot.asc_convertFromCalculatedFormula;
 prot["asc_convertCalculatedFormula"] = prot.asc_convertCalculatedFormula;
 prot["asc_getFieldIndexByCell"] = prot.asc_getFieldIndexByCell;
 prot["asc_canAddNameCalculatedItem"] = prot.asc_canAddNameCalculatedItem;
