@@ -17070,23 +17070,6 @@ CT_PivotField.prototype.findFieldItemBySourceName = function(cacheField, value) 
 	}
 	return this.findFieldItemInSharedItems(cacheField, value);
 };
-CT_PivotField.prototype.asc_getItemsObject = function(cacheField) {
-	const values = [];
-	const items = this.getItems();
-	const valuebleIndexes = this.getValuebleIndexes();
-	if (items) {
-		for (let i = 0; i < valuebleIndexes.length; i += 1) {
-			let index = valuebleIndexes[i];
-			const item = items[index];
-			let elem = '';
-			if (Asc.c_oAscItemType.Data === item.t) {
-				elem = item.getName(cacheField);
-				values.push({"item": i, "name": elem});
-			}
-		}
-	}
-	return values;
-};
 CT_PivotField.prototype.asc_getBaseItemObject = function(cacheField) {
 	const values = [];
 	const items = this.getItems();
@@ -22558,7 +22541,6 @@ prot["asc_setDefaultSubtotal"] = prot.asc_setDefaultSubtotal;
 prot["asc_setSubtotalTop"] = prot.asc_setSubtotalTop;
 prot["asc_setShowAll"] = prot.asc_setShowAll;
 prot["asc_setSubtotals"] = prot.asc_setSubtotals;
-prot["asc_getItemsObject"] = prot.asc_getItemsObject;
 prot["asc_getBaseItemObject"] = prot.asc_getBaseItemObject;
 prot["asc_getNumFormat"] = prot.asc_getNumFormat;
 prot["asc_getNumFormatInfo"] = prot.asc_getNumFormatInfo;
