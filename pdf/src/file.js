@@ -1300,7 +1300,6 @@ void main() {\n\
         var oThis = this;
         this.SearchInfo.Id = setTimeout(function(){oThis.onSearchPage();}, 1);
     };
-
     CFile.prototype.onSearchPage = function()
     {
         this.SearchPage(this.SearchInfo.Page, this.SearchInfo.Text);
@@ -1315,7 +1314,6 @@ void main() {\n\
         var oThis = this;
         this.SearchInfo.Id = setTimeout(function(){oThis.onSearchPage();}, 1);
     };
-
     CFile.prototype.stopSearch = function()
     {
         if (null != this.SearchInfo.Id)
@@ -1368,7 +1366,7 @@ void main() {\n\
             if (!PdfPageMatch.lastPartInfo) {
                 nPosInLine = oSearchEngine.MatchCase ? oLineInfo.text.indexOf(oPart.Text) : oLineInfo.text.toLowerCase().indexOf(oPart.Text.toLowerCase());
                 if (oSearchEngine.Word){
-                    while (!CheckWholeWords(nPosInLine, oPart.Text, oLineInfo.text)){
+                    while (!CheckWholeWords(nPosInLine, oPart.Text, oLineInfo.text)) {
                         nPosInLine = oSearchEngine.MatchCase ? oLineInfo.text.indexOf(oPart.Text, nPosInLine + 1) : oLineInfo.text.toLowerCase().indexOf(oPart.Text.toLowerCase(), nPosInLine + 1);
                     }
                 }
@@ -1438,23 +1436,22 @@ void main() {\n\
             pageLines:  []
         };
 
-        let stream = this.getPageText(pageIndex);
-        if (!stream)
+        let oText = this.getPageText(pageIndex);
+        if (!oText)
             return oResult;
 
-        var glyphsEqualFound = 0;
-        var text = oSearchEngine.Text;
-        var glyphsFindCount = text.length;
-
-        if (!oSearchEngine.MatchCase)
-        {
-            text = text.toLowerCase();
-        }
+        let text = oSearchEngine.Text;
+        let glyphsFindCount = text.length;
 
         if (0 == glyphsFindCount)
             return oResult;
+        
+        if (!oSearchEngine.MatchCase)
+            text = text.toLowerCase();
 
-        var _numLine = -1;
+        oResult.pageLines = oText;
+
+        var _numLine = 0;
         var _lineGidExist = false;
         var _linePrevCharX = 0;
         var _lineCharCount = 0;
@@ -1465,117 +1462,14 @@ void main() {\n\
         var _findLineOffsetR = 0;
         var _findGlyphIndex = 0;
 
+        let nFindLine = 0;
+        let nFindWord = 0;
+        let nFindChar = 0;
+
         var _SeekToNextPoint = 0;
         var _SeekLinePrevCharX = 0;
 
-        var curLine = null;
-
-        while (stream.pos < stream.size)
-        {
-            var command = stream.GetUChar();
-
-            switch (command)
-            {
-                case 41:
-                {
-                    stream.Skip(12);
-                    break;
-                }
-                case 22:
-                {
-                    stream.Skip(4);
-                    break;
-                }
-                case 80:
-                {
-                    if (0 != _lineCharCount)
-                        _linePrevCharX += stream.GetDouble2();
-
-                    _lineCharCount++;
-
-                    var _char = stream.GetUShort();
-                    if (_lineGidExist)
-                        stream.Skip(2);
-
-                    if (0xFFFF == _char)
-                        curLine.text += " ";
-                    else
-                        curLine.text += String.fromCharCode(_char);
-
-                    if (curLine.W != 0)
-                        stream.Skip(2);
-                    else
-                        curLine.W = stream.GetDouble2();
-
-                    break;
-                }
-                case 160:
-                {
-                    _linePrevCharX = 0;
-                    _lineCharCount = 0;
-
-                    oResult.pageLines[oResult.pageLines.length] = new CLineInfo();
-                    curLine = oResult.pageLines[oResult.pageLines.length - 1];
-
-                    var mask = stream.GetUChar();
-                    curLine.X = stream.GetDouble();
-                    curLine.Y = stream.GetDouble();
-
-                    if ((mask & 0x01) == 1)
-                    {
-                        var dAscent = stream.GetDouble();
-                        var dDescent = stream.GetDouble();
-
-                        curLine.Y -= dAscent;
-                        curLine.H = dAscent + dDescent;
-                    }
-                    else
-                    {
-                        curLine.Ex = stream.GetDouble();
-                        curLine.Ey = stream.GetDouble();
-
-                        var dAscent = stream.GetDouble();
-                        var dDescent = stream.GetDouble();
-
-                        curLine.X = curLine.X + dAscent * curLine.Ey;
-                        curLine.Y = curLine.Y - dAscent * curLine.Ex;
-
-                        curLine.H = dAscent + dDescent;
-                    }
-
-                    if ((mask & 0x04) != 0)
-                        curLine.W = stream.GetDouble();
-
-                    if ((mask & 0x02) != 0)
-                        _lineGidExist = true;
-                    else
-                        _lineGidExist = false;
-
-                    break;
-                }
-                case 162:
-                {
-                    break;
-                }
-                case 161:
-                {
-                    // text transform
-                    stream.Skip(16);
-                    break;
-                }
-                default:
-                {
-                    stream.pos = stream.size;
-                }
-            }
-        }
-
-        // текст заполнен. теперь нужно просто пробегаться и смотреть
-        // откуда совпадение началось и где закончилось
-        _linePrevCharX = 0;
-        _lineCharCount = 0;
-        _numLine = 0;
-
+        var glyphsEqualFound = 0;
         // переменные для случаев, когда присутсвует небольшое смещение по y, что мы можем считать строку условно неделимой
         var tmpLineCurCharX = 0;
         var tmpLinePrevCharX = 0;
@@ -1583,14 +1477,98 @@ void main() {\n\
         var tmpLinePrevGlyphWidth = 0;
         var tmpLineCharCount = 0; // всего символов в условно неделимой строке.
 
-        stream.Seek(0);
-
         // если текст, который ищем разбит на строки, то мапим в какой строке какую часть текста нашли,
         // чтобы потом повторно не пробегаться по строкам в поисках текста для aroundtext
         var oEqualStrByLine = {};
 
         // для whole words
         var isStartWhole = false;
+
+        for (let iLine = 0; iLine < oText.length; ++iLine)
+        {
+            if (text.charCodeAt(glyphsEqualFound) === " ".charCodeAt(0))
+            { // пропускает пробелы.. Зачем?
+                glyphsEqualFound++;
+                for (let i = glyphsEqualFound; i < text.length; i++)
+                {
+                    if (text.charCodeAt(i) === " ".charCodeAt(0))
+                        glyphsEqualFound++;
+                    else
+                        break;
+                }
+            }
+
+            let oLine = oText[iLine];
+            let words = oLine["Words"];
+            for (let iWord = 0; iWord < words.length; ++iWord)
+            {
+                let oWord = words[iWord];
+                let chars = oWord["Chars"];
+                let _rects = null;
+
+                if (oSearchEngine.Word)
+                {
+                    let wordText = chars.map(char => char["Char"]).join("");
+                    let processedWordText = oSearchEngine.MatchCase ? wordText : wordText.toLowerCase();
+
+                    if (processedWordText == text)
+                    {
+                        _rects = new PdfPageMatch();
+                        _rects.push({
+                            PageNum : pageIndex,
+                            X : oLine["X"] + oLine["Ascent"] * oLine["Ey"] + oWord["X"] * oLine["Ex"],
+                            Y : oLine["Y"] - oLine["Ascent"] * oLine["Ex"] + oWord["X"] * oLine["Ey"],
+                            W : oWord["Width"],
+                            H : oLine["Ascent"] + oLine["Descent"],
+                            Ex : oLine["Ex"],
+                            Ey : oLine["Ey"],
+                            LineNum: iLine,
+                            Text: processedWordText
+                        });
+                    }
+                    continue;
+                }
+
+                for (let iChar = 0; iChar < chars.length; ++iChar)
+                {
+                    let oChar = chars[iChar];
+                    let _char = oChar["Char"];
+                    let _isFound = false;
+                    if (_char == 0xFFFF)
+                        _char = 32;
+                    if (oSearchEngine.MatchCase)
+                    {
+                        if (_char == text.charCodeAt(glyphsEqualFound))
+                            _isFound = true;
+                    }
+                    else
+                    {
+                        let _strMem = String.fromCodePoint(_char);
+                        _strMem = _strMem.toLowerCase();
+                        if (_strMem.codePointAt(0) == text.codePointAt(glyphsEqualFound))
+                            _isFound = true;
+                    }
+
+                    if (_isFound)
+                    {
+                        if (glyphsEqualFound == 0)
+                        {
+                            nFindLine = iLine;
+                            nFindWord = iWord;
+                            nFindChar = iChar;
+                        }
+                        glyphsEqualFound++;
+                    }
+                    else
+                    {
+                        glyphsEqualFound = 0;
+                    }
+                }
+
+                if (_rects)
+                    oResult.matches.push(_rects);
+            }
+        }
 
         while (stream.pos < stream.size)
         {
@@ -1992,7 +1970,6 @@ void main() {\n\
         file.close();
         return null;
     };
-
     window["AscViewer"].setFilePassword = function(file, password)
     {
         var error = file.nativeFile["loadFromDataWithPassword"](password);
