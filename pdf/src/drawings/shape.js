@@ -44,7 +44,7 @@
     CPdfShape.prototype = Object.create(AscFormat.CShape.prototype);
     Object.assign(CPdfShape.prototype, AscPDF.PdfDrawingPrototype.prototype);
     
-    CPdfShape.prototype.IsTextShape = function() {
+    CPdfShape.prototype.IsShape = function() {
         return true;
     };
     CPdfShape.prototype.ShouldDrawImaginaryBorder = function(graphicsWord) {

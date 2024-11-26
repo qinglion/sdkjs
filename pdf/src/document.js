@@ -4337,6 +4337,19 @@ var CPresentation = CPresentation || function(){};
             
             if (oDrawing) {
                 oDrawing.fromXml(oXmlReader);
+                if (oDrawing.IsShape()) {
+                    let new_body_pr = oDrawing.getBodyPr();
+                    if (new_body_pr) {
+                        new_body_pr = new_body_pr.createDuplicate();
+                        new_body_pr.textFit = new AscFormat.CTextFit();
+                        new_body_pr.textFit.type = AscFormat.text_fit_Auto;
+
+                        if (oDrawing.txBody) {
+                            oDrawing.txBody.setBodyPr(new_body_pr);
+                        }
+                    }
+                }
+                
                 oDrawing.setBDeleted(false);
                 aPageDrawings.push(oDrawing);
                 oDrawing.CheckTextOnOpen();

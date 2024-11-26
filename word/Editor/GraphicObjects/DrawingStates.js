@@ -2176,7 +2176,7 @@ TextAddState.prototype =
                 return {cursorType: "default", objectId: oCheckObject.Get_Id()};
             }
             else if (Asc.editor.isPdfEditor()) {
-                if (oCheckObject.IsTextShape()) {
+                if (oCheckObject.IsShape()) {
                     return {cursorType: "text", objectId: oCheckObject.Get_Id()};
                 }   
             }
