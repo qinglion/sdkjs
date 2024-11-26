@@ -259,7 +259,7 @@ function CEditorPage(api)
 	this.DrawingFreeze = false;
 	this.NoneRepaintPages = false;
 
-	this.paintMessageLoop = new AscCommon.PaintMessageLoop(40);
+	this.paintMessageLoop = new AscCommon.PaintMessageLoop(40, api);
 
 	this.m_oApi = api;
 	var oThis   = this;
