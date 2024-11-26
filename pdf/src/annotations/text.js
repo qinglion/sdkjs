@@ -253,7 +253,14 @@
 
         oCtx.restore();
 
-        oGraphics.DrawLockObjectRect(this.Lock.Get_Type(), nX, nY, 20 / oDoc.Viewer.zoom, 20 / oDoc.Viewer.zoom);
+        let aRegions = [[
+            [nX + nWidth, nY],
+            [nX, nY],
+            [nX, nY + nHeight],
+            [nX + nWidth, nY + nHeight]
+        ]];
+
+        oGraphics.DrawLockObjectRect(this.Lock.Get_Type(), aRegions);
         //// draw rect
         // oGraphics.SetLineWidth(1);
         // oGraphics.SetStrokeStyle(0, 255, 255);

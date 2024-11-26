@@ -5804,9 +5804,12 @@ var CPresentation = CPresentation || function(){};
                 if (false == [AscCommon.c_oAscLockTypes.kLockTypeMine, AscCommon.c_oAscLockTypes.kLockTypeNone].includes(oCurPageInfo.Lock.Type))
                     return true;
 
-                let selected_objects = oController.selectedObjects;
+                let selected_objects = oController.selectedObjects.slice();
                 if (oController.selection.groupSelection) {
                     selected_objects.push(oController.selection.groupSelection);
+                }
+                if (this.mouseDownAnnot) {
+                    selected_objects.push(this.mouseDownAnnot);
                 }
 
                 if (isRestrictionView) {
@@ -5855,9 +5858,12 @@ var CPresentation = CPresentation || function(){};
             case AscCommon.changestype_2_Comment: {
                 let sCommentId = AdditionalData;
 
-                let selected_objects = oController.selectedObjects;
+                let selected_objects = oController.selectedObjects.slice();
                 if (oController.selection.groupSelection) {
                     selected_objects.push(oController.selection.groupSelection);
+                }
+                if (this.mouseDownAnnot) {
+                    selected_objects.push(this.mouseDownAnnot);
                 }
 
                 for (let i = 0; i < selected_objects.length; ++i) {
