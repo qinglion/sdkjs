@@ -567,10 +567,7 @@ var editor;
 									cp['codepage'] = bom.encoding;
 									data = dataUint.subarray(bom.size);
 								}
-								const csvDelimiter = AscCommon.getCSVDelimiter(data);
-								cp['delimiter'] = csvDelimiter['delimiter'];
-								cp['delimiterChar'] = csvDelimiter['delimiterChar'];
-								cp['data'] = csvDelimiter['data'];
+								cp['data'] = data;
 								callback(new AscCommon.asc_CAdvancedOptions(cp));
 							} else {
 								t.handlers.trigger("asc_onError", c_oAscError.ID.Unknown, c_oAscError.Level.Critical);
@@ -601,9 +598,6 @@ var editor;
 				'encodings': AscCommon.getEncodingParams(),
 				'data': AscCommon.c_oAscCodePageNone !== bom.encoding ? data.subarray(bom.size) : data
 			};
-			const csvDelimiter = AscCommon.getCSVDelimiter(cp['data']);
-			cp['delimiter'] = csvDelimiter['delimiter'];
-			cp['delimiterChar'] = csvDelimiter['delimiterChar'];
 			cp['data'] = csvDelimiter['data'];
 			callback(new AscCommon.asc_CAdvancedOptions(cp));
 		}
@@ -1334,10 +1328,6 @@ var editor;
 					} else {
 						cp['data'] = dataUint;
 					}
-					const csvDelimiter = AscCommon.getCSVDelimiter(cp['data']);
-					cp['delimiter'] = csvDelimiter['delimiter'];
-					cp['delimiterChar'] = csvDelimiter['delimiterChar'];
-					cp['data'] = csvDelimiter['data'];
 				}
 				if (data.buffer) {
 					applyBuffer(data);

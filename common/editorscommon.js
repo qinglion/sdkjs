@@ -251,92 +251,43 @@
 	function getIndex(str, substring, n) {
 		return str.split(substring).slice(0, n).join(substring).length;
 	}
+
+	/**
+	 * @param {string} data
+	 * @param {number} _count
+	 * @param {string[]} _delimiters
+	 * @return {{data: string, delimiterChar: string | null, delimiter: string | null}}
+	 */
 	function getCSVDelimiter(data, _count, _delimiters) {
-		const quote = "\"".charCodeAt(0);
-		function getCodesPattern(text, bytesCount) {
-			const result = [];
-			const codes = text.split('').map(function(sym) {
-				return sym.charCodeAt(0);
-			});
-			for (let i = 0; i < codes.length; i += 1) {
-				result.push(codes[i]);
-				for (let j = 1; j < bytesCount; j += 1) {
-					result.push(0);
-				}
-			}
-			return result;
-		}
-		function check(arr1, arr2, byteSize) {
-			const summedArr1 = [];
-			const summedArr2 = [];
-			for (let i = 0; i < arr1.length / byteSize; i += 1) {
-				let sum1 = 0;
-				let sum2 = 0;
-				for (let j = 0; j < byteSize; j += 1) {
-					sum1 += arr1[i * byteSize + j];
-					sum2 += arr2[i * byteSize + j];
-				}
-				if (sum1 !== sum2) {
-					return false;
-				}
-			}
-			return true;
-		}
-		function checkStartPattern(text, bytesCount) {
-			return check(data.slice(0, text.length * bytesCount), getCodesPattern(text, bytesCount), bytesCount)
-		}
-		function checkAllStartPatterns(text) {
-			const bytes = [1, 2, 4];
-			for (let i = 0; i < bytes.length; i  +=1) {
-				if (checkStartPattern(text, bytes[i])) {
-					return bytes[i];
-				}
-			}
-			return 0;
-		}
 		function checkSep() {
 			const textWithoutQuotes = 'sep=';
-			let found = checkAllStartPatterns(textWithoutQuotes);
-			if (found) {
-				let size = textWithoutQuotes.length * found;
-				// CR checking
-				if (data.slice(size + found, found).reduce(function(acc, curr) {
-					return acc + curr;
-				}, 0) === 13) {
-					size += 1;
-				}
-				// LF checking
-				if (data.slice(size + found, found).reduce(function(acc, curr) {
-					return acc + curr;
-				}, 0) === 10) {
-					size += 1;
-				}
-				return {
-					size: size,
-					founded: data[textWithoutQuotes.length * found]
-				};
-			}
 			const text = '"sep=';
-			found = checkAllStartPatterns(text);
-			if (found && data[text.length * found + found] === quote) {
-				let size = text.length * found + found;
-				// CR checking
-				if (data.slice(size + found, size + found * 2).reduce(function(acc, curr) {
-					return acc + curr;
-				}, 0) === 13) {
-					size += found;
-				}
-				// LF checking
-				if (data.slice(size + found, size + found * 2).reduce(function(acc, curr) {
-					return acc + curr;
-				}, 0) === 10) {
-					size += found;
+			if (data.startsWith(textWithoutQuotes)) {
+				let offset = textWithoutQuotes.length + 1;
+				if (data[5] === '\r' || data[5] === '\n') {
+					offset += 1;
+					if (data[6] === '\n') {
+						offset += 1;
+					}
 				}
 				return {
-					size: size,
-					founded: data[text.length * found]
-				};
+					delimiter: data[4],
+					offset: offset
+				}
+			} else if (data.startsWith(text)) {
+				let offset = text.length + 2;
+				if (data[7] === '\r' || data[7] === '\n') {
+					offset += 1;
+					if (data[8] === '\n') {
+						offset += 1;
+					}
+				}
+				return {
+					delimiter: data[5],
+					offset: offset
+				}
 			}
+			return null;
 		}
 		const count = _count ? _count : 200;
 		const defaultDelimiters = {
@@ -346,47 +297,40 @@
 			":": AscCommon.c_oAscCsvDelimiter.Colon,
 		};
 		const delimiters = _delimiters ? _delimiters : Object.keys(defaultDelimiters);
-		const delimitersMap = new Map();
 		const counter = {}
 		for (let i = 0; i < delimiters.length; i += 1) {
-			delimitersMap.set(delimiters[i].charCodeAt(0), delimiters[i]);
-			counter[delimiters[i].charCodeAt(0)] = 0;
+			counter[delimiters[i]] = 0;
 		}
 		const sepCheck = checkSep();
 		if (sepCheck) {
-			const sepDelimiter = sepCheck.founded;
-			const size = sepCheck.size;
-			if (delimitersMap.has(sepDelimiter)) {
-				const delimeter = delimitersMap.get(Number(sepDelimiter));
-				if (defaultDelimiters[delimeter]) {
-					return {'delimiter': defaultDelimiters[delimeter], 'delimiterChar': null, 'data': data.subarray(size + 1)};
-				}
+			const delimeter = sepCheck.delimiter;
+			if (defaultDelimiters[delimeter]) {
+				return {'delimiter': defaultDelimiters[delimeter], 'delimiterChar': null, 'data': data.substring(sepCheck.offset)};
 			}
-			return {'delimiterChar': String.fromCharCode(sepDelimiter), 'delimiter': null, 'data': data.subarray(size + 1)};
+			return {'delimiterChar': delimeter, 'delimiter': null, 'data': data.substring(sepCheck.offset)};
 		}
 		let isQuoteOpen = false;
 		for (let i = 0; i < count; i += 1) {
 			const sym = data[i];
-			if (sym === quote) {
+			if (sym === '"') {
 				isQuoteOpen = !isQuoteOpen;
 			}
-			if (!isQuoteOpen && delimitersMap.has(sym)) {
+			if (!isQuoteOpen && counter[sym] != null) {
 				counter[sym] += 1;
 			}
 		}
 		let max = 0;
-		let result = ','.charCodeAt(0);
+		let result = ',';
 		for (let i in counter) {
 			if (counter[i] > max) {
 				max = counter[i];
 				result = i;
 			}
 		}
-		const delimeter = delimitersMap.get(Number(result));
-		if (defaultDelimiters[delimeter]) {
-			return {'delimiter': defaultDelimiters[delimeter], 'delimiterChar': null, data: data};
+		if (defaultDelimiters[result]) {
+			return {'delimiter': defaultDelimiters[result], 'delimiterChar': null, data: data};
 		}
-		return {'delimiterChar': delimeter, 'delimiter': null, data: data};
+		return {'delimiterChar': result, 'delimiter': null, data: data};
 	}
 	function getEncodingParams()
 	{
