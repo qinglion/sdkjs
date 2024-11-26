@@ -10290,7 +10290,17 @@ CT_pivotTableDefinition.prototype.hasErrorForCalculatedItems = function(fld) {
  * @param {number} col
  * @reutrn {boolean}
  */
-CT_pivotTableDefinition.prototype.asc_canChangeCalculatedItemByCell = function(row, col) {
+CT_pivotTableDefinition.prototype.asc_canChangeCalculatedItemByActiveCell = function() {
+	const ws = this.worksheet
+	const activeCell = ws.selectionRange.activeCell;
+	return this.canChangeCalculatedItemByCell(activeCell.row, activeCell.col);
+};
+/**
+ * @param {number} row
+ * @param {number} col
+ * @reutrn {boolean}
+ */
+CT_pivotTableDefinition.prototype.canChangeCalculatedItemByCell = function(row, col) {
 	return this.asc_getFieldIndexByCell(row, col) !== null;
 };
 /**
@@ -22507,7 +22517,7 @@ prot["asc_convertCalculatedFormula"] = prot.asc_convertCalculatedFormula;
 prot["asc_getFieldIndexByCell"] = prot.asc_getFieldIndexByCell;
 prot["asc_canAddNameCalculatedItem"] = prot.asc_canAddNameCalculatedItem;
 prot["asc_hasTablesErrorForCalculatedItems"] = prot.asc_hasTablesErrorForCalculatedItems;
-prot["asc_canChangeCalculatedItemByCell"] = prot.asc_canChangeCalculatedItemByCell;
+prot["asc_canChangeCalculatedItemByActiveCell"] = prot.asc_canChangeCalculatedItemByActiveCell;
 
 window["Asc"]["CT_PivotTableStyle"] = window['Asc'].CT_PivotTableStyle = CT_PivotTableStyle;
 prot = CT_PivotTableStyle.prototype;
