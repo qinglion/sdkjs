@@ -232,17 +232,13 @@
 			return initialDefaultValue;
 		} else {
 			// find theme by themeIndex
-			// theme = themes.find(function (theme) {
-			// 	let themeEnum = Number(theme.themeElements.themeExt.themeSchemeSchemeEnum);
-			// 	return themeEnum === themeIndex;
-			// });
 			theme = themes.find(function (theme) {
 				// if search by theme index - theme.themeElements.themeExt.themeSchemeSchemeEnum
 				let findThemeByElement = isConnectorShape?
 					theme.themeElements.themeExt.themeSchemeSchemeEnum :
 					theme.themeElements.clrScheme.clrSchemeExtLst.schemeEnum;
-				let clrSchemeThemeEnum = Number(findThemeByElement);
-				return clrSchemeThemeEnum === themeIndex;
+				let themeEnum = Number(findThemeByElement);
+				return themeEnum === themeIndex;
 			});
 			if (theme === undefined) {
 				AscCommon.consoleLog("Theme was not found by theme enum in themes. using themes[0]");
@@ -257,19 +253,46 @@
 		if (!isNaN(quickStyleColor)) {
 			if (100 <= quickStyleColor && quickStyleColor <= 106 ||
 				(200 <= quickStyleColor && quickStyleColor <= 206)) {
-				let variationColorIndex = shape.getCellNumberValue("VariationColorIndex");
-				if (!isNaN(variationColorIndex)) {
-					if (65534 === variationColorIndex) {
-						let pageVariationColorIndexIndex = pageInfo.pageSheet.getCellNumberValue("VariationColorIndex");
-						if (!isNaN(pageVariationColorIndexIndex)) {
-							variationColorIndex = pageVariationColorIndexIndex;
-						} else {
-							variationColorIndex = 0;
-							// AscCommon.consoleLog("pageVariationColorIndexIndex not found");
+				if (theme.isVariationClrSchemeLstExists()) {
+					let variationColorIndex = shape.getCellNumberValue("VariationColorIndex");
+					if (!isNaN(variationColorIndex)) {
+						if (65534 === variationColorIndex) {
+							let pageVariationColorIndexIndex = pageInfo.pageSheet.getCellNumberValue("VariationColorIndex");
+							if (!isNaN(pageVariationColorIndexIndex)) {
+								variationColorIndex = pageVariationColorIndexIndex;
+							} else {
+								variationColorIndex = 0;
+								// AscCommon.consoleLog("pageVariationColorIndexIndex not found");
+							}
 						}
+						calculatedColor = theme.getVariationClrSchemeColor(variationColorIndex,
+							quickStyleColor % 100);
 					}
-					calculatedColor = theme.getVariationClrSchemeColor(variationColorIndex,
-						quickStyleColor % 100);
+				} else {
+					let index = quickStyleColor % 100;
+					switch (index) {
+						case 0:
+							calculatedColor = AscFormat.builder_CreateSchemeColor("accent1");
+							break;
+						case 1:
+							calculatedColor = AscFormat.builder_CreateSchemeColor("accent2");
+							break;
+						case 2:
+							calculatedColor = AscFormat.builder_CreateSchemeColor("accent3");
+							break;
+						case 3:
+							calculatedColor = AscFormat.builder_CreateSchemeColor("accent4");
+							break;
+						case 4:
+							calculatedColor = AscFormat.builder_CreateSchemeColor("accent5");
+							break;
+						case 5:
+							calculatedColor = AscFormat.builder_CreateSchemeColor("accent6");
+							break;
+						case 6:
+							calculatedColor = AscFormat.builder_CreateSchemeColor("dk1");
+							break;
+					}
 				}
 			} else {
 				switch(quickStyleColor) {
