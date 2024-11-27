@@ -10908,6 +10908,36 @@
 			oJSON["styles"] = oWriter.SerWordStylesForWrite();
 		return JSON.stringify(oJSON);
 	};
+	/**
+	 * Sets start page number for specified section.
+	 * @memberof ApiSection
+	 * @typeofeditors ["CDE"]
+	 * @param {number} nStartNumber
+	 * @returns {boolean}
+	 * @see office-js-api/Examples/{Editor}/ApiSection/Methods/SetStartPageNumber.js
+	 */
+	ApiSection.prototype.SetStartPageNumber = function(nStartNumber)
+	{
+		if (typeof(nStartNumber) !== "number" || nStartNumber < 0) {
+			return false;
+		}
+
+		nStartNumber >>= 0;
+
+		this.Section.SetPageNumStart(nStartNumber);
+		return true;
+	};
+	/**
+	 * Gets start page number of specified section.
+	 * @memberof ApiSection
+	 * @typeofeditors ["CDE"]
+	 * @returns {boolean}
+	 * @see office-js-api/Examples/{Editor}/ApiSection/Methods/GetStartPageNumber.js
+	 */
+	ApiSection.prototype.GetStartPageNumber = function()
+	{
+		return this.Section.GetPageNumStart();
+	};
 
 	//------------------------------------------------------------------------------------------------------------------
 	//
@@ -21863,6 +21893,8 @@
 	ApiSection.prototype["GetNext"]                  = ApiSection.prototype.GetNext;
 	ApiSection.prototype["GetPrevious"]              = ApiSection.prototype.GetPrevious;
 	ApiSection.prototype["ToJSON"]                   = ApiSection.prototype.ToJSON;
+	ApiSection.prototype["SetStartPageNumber"]       = ApiSection.prototype.SetStartPageNumber;
+	ApiSection.prototype["GetStartPageNumber"]       = ApiSection.prototype.GetStartPageNumber;
 	
 	ApiTable.prototype["GetClassType"]               = ApiTable.prototype.GetClassType;
 	ApiTable.prototype["SetJc"]                      = ApiTable.prototype.SetJc;
