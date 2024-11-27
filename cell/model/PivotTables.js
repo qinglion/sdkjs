@@ -21963,7 +21963,7 @@ function PivotContextMenu(pivot){
 	this.showDetails = false;
 }
 PivotContextMenu.prototype.asc_getPivotFieldIndex = function () {
-	return this.layout && this.layout.fld || -1
+	return this.layout ? this.layout.fld : -1;
 };
 PivotContextMenu.prototype.asc_getPageFieldIndex = function () {
 	if (this.layout && this.pivot.pageFields) {
