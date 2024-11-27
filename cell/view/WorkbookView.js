@@ -333,6 +333,8 @@
 
 	this.smoothScroll = true;
 
+	this.externalReferenceUpdateTimer = null;
+
 	return this;
   }
 
@@ -1115,6 +1117,9 @@
 	this.Api.asc_registerCallback("EndTransactionCheckSize", function() {
 		self.Api.checkChangesSize();
 	});
+	this.model.handlers.add("changeUpdateLinks", function(val) {
+		self.changeUpdateLinks(val);
+	});
     this.cellCommentator = new AscCommonExcel.CCellCommentator({
       model: new WorkbookCommentsModel(this.handlers, this.model.aComments),
       collaborativeEditing: this.collaborativeEditing,
@@ -1135,7 +1140,10 @@
     this.fReplaceCallback = function() {
       self._replaceCellTextCallback.apply(self, arguments);
     };
-		this.addEventListeners();
+    this.addEventListeners();
+
+    this.initExternalReferenceUpdateTimer();
+
     return this;
   };
 
@@ -5213,6 +5221,38 @@
 		return this.model.getExternalReferences();
 	};
 
+	WorkbookView.prototype.changeUpdateLinks = function () {
+		let val = this.model.workbookPr && this.model.workbookPr.UpdateLinks;
+		if (!val) {
+			this.clearExternalReferenceUpdateTimer();
+		} else {
+			this.initExternalReferenceUpdateTimer();
+		}
+	};
+
+	WorkbookView.prototype.initExternalReferenceUpdateTimer = function (clear) {
+		let val = this.model.workbookPr && this.model.workbookPr.UpdateLinks;
+		let oThis = this;
+		if (clear) {
+			this.clearExternalReferenceUpdateTimer();
+		}
+		if (val) {
+			let timeout = 300000;
+			this.externalReferenceUpdateTimer = setTimeout(function () {
+				oThis.updateExternalReferences(oThis.getExternalReferences());
+				//we are waiting update, after reinit timer
+				oThis.clearExternalReferenceUpdateTimer();
+			}, timeout);
+		}
+	};
+
+	WorkbookView.prototype.clearExternalReferenceUpdateTimer = function () {
+		if (this.externalReferenceUpdateTimer) {
+			clearTimeout(this.externalReferenceUpdateTimer);
+			this.externalReferenceUpdateTimer = null;
+		}
+	};
+
 	WorkbookView.prototype.clearSearchOnRecalculate = function (index) {
 		if (this.SearchEngine) {
 			var isPrevSearch = this.SearchEngine.Count > 0;
@@ -5245,7 +5285,7 @@
 			return;
 		}
 
-		if ((!this.model.WorkbookPr && !val) || (this.model.WorkbookPr && this.model.WorkbookPr.Date1904 === val)) {
+		if ((!this.model.workbookPr && !val) || (this.model.workbookPr && this.model.workbookPr.getDate1904() === val)) {
 			return;
 		}
 
@@ -5570,6 +5610,11 @@
 						let prepared = t.model.dependencyFormulas.prepareChangeSheet(updatedReferences[j].worksheets[n].getId());
 						t.model.dependencyFormulas.dependencyFormulas.changeSheet(prepared);
 					}
+				}
+
+				//if update all, reinit timer
+				if (t.model.externalReferences && t.model.externalReferences.length === updatedReferences.length) {
+					t.changeUpdateLinks();
 				}
 
 				//t.model.dependencyFormulas.calcTree();

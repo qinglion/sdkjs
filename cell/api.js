@@ -8937,6 +8937,37 @@ var editor;
 		this.wb.changeExternalReference(eR, to);
 	};
 
+	/*
+	* set format option wb->externalLinksPr->autoRefresh
+	* start timer if true, clear timer if false
+	* if update from interface all links, timer restart
+	* if part of links - not restart
+	* event from model to view - "changeExternalReferenceAutoUpdate"
+	* @param {bool} val
+	* */
+	spreadsheet_api.prototype.asc_setUpdateLinks  = function(val) {
+		//ms desktop: update automatic(realtime) only if open source file(not depends on workbookPr->UpdateLinks property). if source file changed by another editor - not update links
+		//workbookPr->UpdateLinks only the opening is affected
+		//ms online
+		//timer update depends on workbookPr->UpdateLinks property. update only in "always"
+		if (this.collaborativeEditing.getGlobalLock() || !this.canEdit()) {
+			return;
+		}
+		let wbModel = this.wbModel;
+		if (!wbModel) {
+			return;
+		}
+		wbModel.setUpdateLinks(val, true);
+	};
+
+	spreadsheet_api.prototype.asc_getUpdateLinks = function() {
+		let wbModel = this.wbModel;
+		if (!wbModel) {
+			return;
+		}
+		return wbModel.getUpdateLinks();
+	};
+
 	spreadsheet_api.prototype.asc_fillHandleDone = function(range) {
 		if (this.canEdit()) {
 			let wb = this.wb;
@@ -10088,7 +10119,9 @@ var editor;
   prot["asc_updateExternalReferences"] = prot.asc_updateExternalReferences;
   prot["asc_removeExternalReferences"] = prot.asc_removeExternalReferences;
   prot["asc_openExternalReference"] = prot.asc_openExternalReference;
-  prot["asc_changeExternalReference"] = prot.asc_changeExternalReference;
+  prot["asc_setUpdateLinks"] = prot.asc_setUpdateLinks;
+  prot["asc_getUpdateLinks"] = prot.asc_getUpdateLinks;
+
 
 
   prot["asc_fillHandleDone"] = prot.asc_fillHandleDone;

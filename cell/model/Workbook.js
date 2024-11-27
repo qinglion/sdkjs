@@ -2935,6 +2935,7 @@
 		this.aCollaborativeChangeElements = [];
 		this.externalReferences = [];
 		this.calcPr = new AscCommonExcel.CCalcPr();
+		this.workbookPr = new AscCommonExcel.CWorkbookPr();
 
 		this.connections = null;
 
@@ -5042,10 +5043,7 @@
 		AscCommon.bDate1904 = val;
 		AscCommonExcel.c_DateCorrectConst = AscCommon.bDate1904 ? AscCommonExcel.c_Date1904Const : AscCommonExcel.c_Date1900Const;
 
-		if (!this.WorkbookPr) {
-			this.WorkbookPr = {};
-		}
-		this.WorkbookPr.Date1904 = val;
+		this.workbookPr.setDate1904(val);
 
 		if (addToHistory) {
 			var updateSheet = this.getActiveWs();
@@ -5472,6 +5470,23 @@
 		}
 
 		this.addExternalReferences(newExternalReferences);
+	};
+
+	Workbook.prototype.setUpdateLinks = function (val, addToHistory) {
+		var from = !!(this.workbookPr.UpdateLinks && this.workbookPr.UpdateLinks);
+		if (val !== from) {
+			this.workbookPr.UpdateLinks = val;
+			if (addToHistory) {
+				History.Create_NewPoint();
+				History.Add(AscCommonExcel.g_oUndoRedoWorkbook, AscCH.historyitem_Workbook_UpdateLinks,
+					null, null, new UndoRedoData_FromTo(from, val));
+			}
+			this.handlers && this.handlers.trigger("changeUpdateLinks");
+		}
+	};
+
+	Workbook.prototype.getUpdateLinks = function () {
+		return !!(this.workbookPr && this.workbookPr.workbookPr);
 	};
 
 	Workbook.prototype.unlockUserProtectedRanges = function(){
