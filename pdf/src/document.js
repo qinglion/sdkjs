@@ -2647,7 +2647,36 @@ var CPresentation = CPresentation || function(){};
             }
         }
     };
-
+	
+	CPDFDoc.prototype.DoAction = function(fAction, nDescription, oThis, Additional) {
+		let nChangesType;
+		
+		switch (nDescription) {
+			case AscDFH.historydescription_Document_BackSpaceButton:
+			case AscDFH.historydescription_Document_DeleteButton:
+				nChangesType = AscCommon.changestype_Delete;
+				break;
+			case AscDFH.historydescription_Pdf_FreeTextGeom:
+			case AscDFH.historydescription_CommonDrawings_EndTrack:
+			case AscDFH.historydescription_Pdf_FreeTextFitTextBox:
+				nChangesType = AscCommon.changestype_Drawing_Props;
+				break;
+			case AscDFH.historydescription_Document_ChangeComment:
+			case AscDFH.historydescription_Pdf_AddComment:
+			case AscDFH.historydescription_Pdf_RemoveComment:
+				nChangesType = AscCommon.changestype_2_Comment;
+				break;
+		}
+		
+		if (this.IsSelectionLocked(nChangesType, Additional)) {
+			return;
+		}
+		
+		this.StartAction(nDescription);
+		let result = fAction.call(oThis);
+		this.FinalizeAction(true);
+		return result;
+	};
     /**
      * Начинаем новое действие, связанное с изменением документа
      * @param {number} nDescription - тип изменения, ex.: AscDFH.historydescription_Pdf_FieldCommit
@@ -6612,35 +6641,11 @@ var CPresentation = CPresentation || function(){};
 		
 		this.startPoint = -1;
 	};
-    CPDFDoc.prototype.DoAction = function(fAction, nDescription, oThis, Additional) {
-        let nChangesType;
-
-        switch (nDescription) {
-            case AscDFH.historydescription_Document_BackSpaceButton:
-            case AscDFH.historydescription_Document_DeleteButton:
-                nChangesType = AscCommon.changestype_Delete;
-                break;
-            case AscDFH.historydescription_Pdf_FreeTextGeom:
-            case AscDFH.historydescription_CommonDrawings_EndTrack:
-            case AscDFH.historydescription_Pdf_FreeTextFitTextBox:
-                nChangesType = AscCommon.changestype_Drawing_Props;
-                break;
-            case AscDFH.historydescription_Document_ChangeComment:
-            case AscDFH.historydescription_Pdf_AddComment:
-            case AscDFH.historydescription_Pdf_RemoveComment:
-                nChangesType = AscCommon.changestype_2_Comment;
-                break;
-        }
-
-        if (this.IsSelectionLocked(nChangesType, Additional)) {
-            return;
-        }
-    
-        this.StartAction(nDescription);
-        let result = fAction.call(oThis);
-        this.FinalizeAction(true);
-        return result;
-    };
+	CPDFCompositeInput.prototype.doAction = function(action, description) {
+		this.pdfDocument.DoAction(function() {
+			action.bind(this)();
+		}, description, this);
+	};
 	CPDFCompositeInput.prototype.checkState = function() {};
 	CPDFCompositeInput.prototype.canSquashChanges = function() {
 		let localHistory = this.pdfDocument.GetHistory();
