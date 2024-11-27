@@ -2629,8 +2629,6 @@ CMathContent.prototype.Load_FromMenu = function(Type, Paragraph, TextPr, oSelect
 CMathContent.prototype.private_LoadFromMenuSymbol = function(Type, Pr)
 {
 	var Code = -1;
-	var oRadical;
-
 	switch (Type)
 	{
 		case c_oAscMathType.Symbol_pm				: Code = 0x00B1; break;
@@ -2655,22 +2653,9 @@ CMathContent.prototype.private_LoadFromMenuSymbol = function(Type, Pr)
 		case c_oAscMathType.Symbol_forall			: Code = 0x2200; break;
 		case c_oAscMathType.Symbol_additional		: Code = 0x2201; break;
 		case c_oAscMathType.Symbol_partial			: Code = 0x1D715; break;
-		case c_oAscMathType.Symbol_sqrt:
-			oRadical = this.Add_Radical(Pr, null, null);
-			oRadical.Correct_Content(true);
-			oRadical.Apply_TextPr(Pr.ctrPrp, undefined, true);
-			break;
-		case c_oAscMathType.Symbol_cbrt:
-			oRadical = this.Add_Radical({ctrPrp : Pr.ctrPrp, type : DEGREE_RADICAL}, null, "3");
-			oRadical.Correct_Content(true);
-			oRadical.Apply_TextPr(Pr.ctrPrp, undefined, true);
-			break;
-
-		case c_oAscMathType.Symbol_qdrt:
-			oRadical = this.Add_Radical({ctrPrp : Pr.ctrPrp, type : DEGREE_RADICAL}, null, "4");
-			oRadical.Correct_Content(true);
-			oRadical.Apply_TextPr(Pr.ctrPrp, undefined, true);
-			break;
+		case c_oAscMathType.Symbol_sqrt				: Code = 0x221A; break;
+		case c_oAscMathType.Symbol_cbrt				: Code = 0x221B; break;
+		case c_oAscMathType.Symbol_qdrt				: Code = 0x221C; break;
 		case c_oAscMathType.Symbol_cup				: Code = 0x222A; break;
 		case c_oAscMathType.Symbol_cap				: Code = 0x2229; break;
 		case c_oAscMathType.Symbol_emptyset			: Code = 0x2205; break;
@@ -2756,10 +2741,8 @@ CMathContent.prototype.private_LoadFromMenuSymbol = function(Type, Pr)
 		case c_oAscMathType.Symbol_Chi				: Code = 0x03A7; break;
 		case c_oAscMathType.Symbol_Psi				: Code = 0x03A8; break;
 		case c_oAscMathType.Symbol_Omega			: Code = 0x03A9; break;
+		default: return;
 	}
-	
-	if (-1 === Code)
-		return;
 	
 	if (this.Content.length <= 0)
 		this.Correct_Content();
