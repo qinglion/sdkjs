@@ -10306,7 +10306,7 @@ CT_pivotTableDefinition.prototype.asc_canChangeCalculatedItemByActiveCell = func
  * @reutrn {boolean}
  */
 CT_pivotTableDefinition.prototype.canChangeCalculatedItemByCell = function(row, col) {
-	return this.asc_getFieldIndexByCell(row, col) !== null;
+	return this.getFieldIndexByCell(row, col) !== null;
 };
 /**
  * @param {number} fld
@@ -10584,7 +10584,18 @@ CT_pivotTableDefinition.prototype.removeSharedItem = function(options) {
  * @param {number} col
  * @return {number | null}
  */
-CT_pivotTableDefinition.prototype.asc_getFieldIndexByCell = function(row, col) {
+CT_pivotTableDefinition.prototype.asc_getFieldIndexByActiveCell = function() {
+	const ws = this.worksheet
+	const activeCell = ws.selectionRange.activeCell;
+	return this.getFieldIndexByCell(activeCell.row, activeCell.col);
+};
+/**
+ * Returns the field index by cell.
+ * @param {number} row
+ * @param {number} col
+ * @return {number | null}
+ */
+CT_pivotTableDefinition.prototype.getFieldIndexByCell = function(row, col) {
 	return this.rangeMapper.getFieldIndexByCell(row, col);
 };
 /**
@@ -22501,7 +22512,7 @@ prot["asc_modifyCalculatedItem"] = prot.asc_modifyCalculatedItem;
 prot["asc_convertNameToFormula"] = prot.asc_convertNameToFormula;
 prot["asc_getItemsObjectWithFormulas"] = prot.asc_getItemsObjectWithFormulas;
 prot["asc_convertCalculatedFormula"] = prot.asc_convertCalculatedFormula;
-prot["asc_getFieldIndexByCell"] = prot.asc_getFieldIndexByCell;
+prot["asc_getFieldIndexByActiveCell"] = prot.asc_getFieldIndexByActiveCell;
 prot["asc_canAddNameCalculatedItem"] = prot.asc_canAddNameCalculatedItem;
 prot["asc_hasTablesErrorForCalculatedItems"] = prot.asc_hasTablesErrorForCalculatedItems;
 prot["asc_canChangeCalculatedItemByActiveCell"] = prot.asc_canChangeCalculatedItemByActiveCell;
