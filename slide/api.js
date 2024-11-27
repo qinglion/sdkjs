@@ -6683,6 +6683,9 @@ background-repeat: no-repeat;\
 		this.WordControl.m_oLogicDocument.unGroupShapes();
 	};
 
+	asc_docs_api.prototype.asc_canMergeSelectedShapes = function (operation) {
+		return true;
+	};
 	asc_docs_api.prototype.asc_mergeSelectedShapes = function (operation) {
 		const operations = ['unite', 'intersect', 'subtract', 'exclude', 'divide'];
 		if (operations.indexOf(operation) !== -1)
@@ -9714,6 +9717,7 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype['AddText']                             = asc_docs_api.prototype.AddText;
 	asc_docs_api.prototype['groupShapes']                         = asc_docs_api.prototype.groupShapes;
 	asc_docs_api.prototype['unGroupShapes']                       = asc_docs_api.prototype.unGroupShapes;
+	asc_docs_api.prototype['asc_canMergeSelectedShapes']          = asc_docs_api.prototype.asc_canMergeSelectedShapes;
 	asc_docs_api.prototype['asc_mergeSelectedShapes']             = asc_docs_api.prototype.asc_mergeSelectedShapes;
 	asc_docs_api.prototype['setVerticalAlign']                    = asc_docs_api.prototype.setVerticalAlign;
 	asc_docs_api.prototype['setVert']                             = asc_docs_api.prototype.setVert;

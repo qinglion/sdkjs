@@ -5259,6 +5259,9 @@ var editor;
     ws.objectRender.unGroupGraphicObjects();
   };
 
+  spreadsheet_api.prototype.asc_canMergeSelectedShapes = function (operation) {
+    return true;
+  };
 	spreadsheet_api.prototype.asc_mergeSelectedShapes = function (operation) {
 		const operations = ['unite', 'intersect', 'subtract', 'exclude', 'divide'];
 		if (operations.indexOf(operation) === -1)
@@ -9847,7 +9850,8 @@ var editor;
   prot["asc_groupGraphicsObjects"] = prot.asc_groupGraphicsObjects;
   prot["asc_canUnGroupGraphicsObjects"] = prot.asc_canUnGroupGraphicsObjects;
   prot["asc_unGroupGraphicsObjects"] = prot.asc_unGroupGraphicsObjects;
-  prot['asc_mergeSelectedShapes'] = prot.asc_mergeSelectedShapes;
+  prot["asc_canMergeSelectedShapes"] = prot.asc_canMergeSelectedShapes;
+  prot["asc_mergeSelectedShapes"] = prot.asc_mergeSelectedShapes;
   prot["asc_getGraphicObjectProps"] = prot.asc_getGraphicObjectProps;
   prot["asc_GetSelectedText"] = prot.asc_GetSelectedText;
   prot["asc_setGraphicObjectProps"] = prot.asc_setGraphicObjectProps;
