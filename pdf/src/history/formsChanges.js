@@ -340,6 +340,9 @@ function CChangesPDFPushbuttonImage(Class, sOldRasterId, sNewRasterId, nAPType, 
 CChangesPDFPushbuttonImage.prototype = Object.create(AscDFH.CChangesBaseStringProperty.prototype);
 CChangesPDFPushbuttonImage.prototype.constructor = CChangesPDFPushbuttonImage;
 CChangesPDFPushbuttonImage.prototype.Type = AscDFH.historyitem_Pdf_Pushbutton_Image;
+CChangesPDFPushbuttonImage.prototype.CreateReverseChange = function() {
+	return new this.constructor(this.Class, this.New, this.Old, this.APType, this.Color);
+};
 CChangesPDFPushbuttonImage.prototype.private_SetValue = function(Value)
 {
 	let oButtonField = this.Class;

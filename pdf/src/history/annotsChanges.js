@@ -649,8 +649,8 @@ CChangesPDFFreeTextRC.prototype.ReadFromBinary = function(Reader) {
             rcItem["italic"] = !!(nStyle & (1 << 1));
             rcItem["strikethrough"] = !!(nStyle & (1 << 3));
             rcItem["underlined"] = !!(nStyle & (1 << 4));
-            rcItem["vertical"] = (nStyle & (1 << 5)) ? Reader.GetDouble() : null;
-            rcItem["actual"] = (nStyle & (1 << 6)) ? Reader.GetString2() : null;
+            rcItem["vertical"] = (nStyle & (1 << 5)) ? Reader.GetDouble() : undefined;
+            rcItem["actual"] = (nStyle & (1 << 6)) ? Reader.GetString2() : undefined;
 
             rcItem["size"] = Reader.GetDouble();
 

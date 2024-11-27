@@ -574,6 +574,12 @@
     CAnnotationBase.prototype.GetPopupIdx = function() {
         return this._popupIdx;
     };
+    CAnnotationBase.prototype.SetParentPage = function(oParent) {
+        this.parentPage = oParent;
+    };
+    CAnnotationBase.prototype.GetParentPage = function() {
+        return this.parentPage;
+    };
     CAnnotationBase.prototype.SetPage = function(nPage) {
         let nCurPage = this.GetPage();
         if (nPage == nCurPage)

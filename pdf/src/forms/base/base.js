@@ -1218,7 +1218,12 @@
     CBaseField.prototype.DrawSelected = function() {
         return;
     };
-    
+    CBaseField.prototype.SetParentPage = function(oParent) {
+        this.parentPage = oParent;
+    };
+    CBaseField.prototype.GetParentPage = function() {
+        return this.parentPage;
+    };
     CBaseField.prototype.Get_Id = function() {
         return this._id;
     };

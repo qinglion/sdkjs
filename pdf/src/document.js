@@ -166,9 +166,6 @@ var CPresentation = CPresentation || function(){};
         
 		this.History = new AscPDF.History(this);
         this.History.Set_LogicDocument(this);
-        this.annotsContentChanges = new AscCommon.CContentChanges(); // список изменений(добавление/удаление элементов)
-        this.fieldsContentChanges = new AscCommon.CContentChanges(); // список изменений(добавление/удаление элементов)
-        this.drawingsContentChanges = new AscCommon.CContentChanges(); // список изменений(добавление/удаление элементов)
 		this.pagesContentChanges = new AscCommon.CContentChanges();
 
         if (AscCommon.History)
@@ -1953,6 +1950,13 @@ var CPresentation = CPresentation || function(){};
         if (this.History.Can_Undo() && !this.LocalHistory.Can_Undo())
             this.SetGlobalHistory();
         
+        if (AscCommon.History == this.History && true !== this.History.Can_Undo() && this.Api && this.CollaborativeEditing && true === this.CollaborativeEditing.Is_Fast() && true !== this.CollaborativeEditing.Is_SingleUser()) {
+            if (this.CollaborativeEditing.CanUndo() && true === this.Api.canSave) {
+                this.CollaborativeEditing.Set_GlobalLock(true);
+                this.Api.forceSaveUndoRequest = true;
+            }
+        }
+
         if (AscCommon.History.Can_Undo())
         {
             let oActive = this.GetActiveObject();
@@ -2355,11 +2359,9 @@ var CPresentation = CPresentation || function(){};
     };
     CPDFDoc.prototype.SetPageRotate = function(nPage, nAngle) {
 		let oViewer     = this.Viewer;
-		let oFile       = oViewer.file;
-        let oPageInfo   = oViewer.pagesInfo.pages[nPage]
+        let oPageInfo   = this.GetPageInfo(nPage);
 
-        this.History.Add(new CChangesPDFDocumentRotatePage(this, oPageInfo.Id, oFile.pages[nPage].Rotate, nAngle));
-		oFile.pages[nPage].Rotate = nAngle;
+        oPageInfo.SetRotate(nAngle);
 
         // sticky note всегда неповернуты
         oViewer.pagesInfo.pages[nPage].annots.forEach(function(annot) {
@@ -2457,30 +2459,26 @@ var CPresentation = CPresentation || function(){};
      * @param {object} oProps - Annot props 
 	 * @returns {AscPDF.CAnnotationBase}
 	 */
-    CPDFDoc.prototype.AddAnnot = function(oProps) {
-        let oViewer = editor.getDocumentRenderer();
+    CPDFDoc.prototype.AddAnnotByProps = function(oProps) {
         let nPageNum = oProps.page;
 
-        let oPagesInfo = oViewer.pagesInfo;
-        if (!oPagesInfo.pages[nPageNum])
+        let oPageInfo = this.GetPageInfo(nPageNum);
+        if (!oPageInfo)
             return null;
         
         AscCommon.g_oTableId.TurnOn();
         let oAnnot = AscPDF.CreateAnnotByProps(oProps, this);
-        
-        oAnnot.SetNeedRecalc(true);
-        oAnnot.SetDisplay(this.IsAnnotsHidden() ? window["AscPDF"].Api.Objects.display["hidden"] : window["AscPDF"].Api.Objects.display["visible"]);
-
-        this.annots.push(oAnnot);
-        oPagesInfo.pages[nPageNum].annots.push(oAnnot);
-
         if (oProps.apIdx != undefined) {
             oAnnot.SetApIdx(oProps.apIdx);
         }
 
-        this.History.Add(new CChangesPDFDocumentAnnotsContent(this, oPagesInfo.pages[nPageNum].annots.length - 1, [oAnnot], true));
+        oAnnot.SetNeedRecalc(true);
+        oAnnot.SetDisplay(this.IsAnnotsHidden() ? window["AscPDF"].Api.Objects.display["hidden"] : window["AscPDF"].Api.Objects.display["visible"]);
         
-        oAnnot.AddToRedraw();
+        this.annots.push(oAnnot);
+        oPageInfo.AddAnnot(oAnnot, nPageNum);
+        
+        
         return oAnnot;
     };
     CPDFDoc.prototype.AddComment = function(AscCommentData) {
@@ -2540,7 +2538,7 @@ var CPresentation = CPresentation || function(){};
                 }
             }
             else {
-                oStickyComm = this.AddAnnot(oProps);
+                oStickyComm = this.AddAnnotByProps(oProps);
                 AscCommentData.m_sUserData = oStickyComm.GetId();
                 AscCommentData.m_sQuoteText = "";
                 this.CheckComment(oStickyComm);
@@ -2936,7 +2934,6 @@ var CPresentation = CPresentation || function(){};
         }, AscDFH.historydescription_Pdf_RemoveComment, this);
     };
     CPDFDoc.prototype.RemoveAnnot = function(Id) {
-        let oViewer     = editor.getDocumentRenderer();
         let oController = this.GetController();
 
         let oAnnot = this.annots.find(function(annot) {
@@ -2946,48 +2943,36 @@ var CPresentation = CPresentation || function(){};
         if (!oAnnot)
             return;
 
-        let nPage = oAnnot.GetPage();
-        oAnnot.AddToRedraw();
-
-        let nPos        = this.annots.indexOf(oAnnot);
-        let nPosInPage  = oViewer.pagesInfo.pages[nPage].annots.indexOf(oAnnot);
-
+        let nPos = this.annots.indexOf(oAnnot);
         this.annots.splice(nPos, 1);
-        oViewer.pagesInfo.pages[nPage].annots.splice(nPosInPage, 1);
+        
+        let oPage = oAnnot.GetParentPage();
+        oPage.RemoveAnnot(Id);
         
         if (this.mouseDownAnnot == oAnnot)
             this.mouseDownAnnot = null;
 
-        this.History.Add(new CChangesPDFDocumentAnnotsContent(this, nPosInPage, [oAnnot], false));
-        
-        editor.sync_HideComment();
-        editor.sync_RemoveComment(Id);
+        Asc.editor.sync_HideComment();
+        Asc.editor.sync_RemoveComment(Id);
         oController.resetSelection();
         oController.resetTrackState();
         this.private_UpdateTargetForCollaboration(true);
     };
 
     CPDFDoc.prototype.RemoveDrawing = function(Id) {
-        let oViewer     = editor.getDocumentRenderer();
         let oController = this.GetController();
-
-        let oDrawing  = this.drawings.find(function(drawing) {
+        let oDrawing = this.drawings.find(function(drawing) {
             return drawing.GetId() === Id;
         });
 
         if (!oDrawing)
             return;
 
-        let nPage = oDrawing.GetPage();
-        oDrawing.AddToRedraw();
-
-        let nPos        = this.drawings.indexOf(oDrawing);
-        let nPosInPage  = oViewer.pagesInfo.pages[nPage].drawings.indexOf(oDrawing);
-
+        let nPos = this.drawings.indexOf(oDrawing);
         this.drawings.splice(nPos, 1);
-        oViewer.pagesInfo.pages[nPage].drawings.splice(nPosInPage, 1);
-        
-        this.History.Add(new CChangesPDFDocumentDrawingsContent(this, nPosInPage, [oDrawing], false));
+
+        let oPage = oDrawing.GetParentPage();
+        oPage.RemoveDrawing(Id);
 
         oController.resetSelection(true);
         oController.resetTrackState();
@@ -3001,34 +2986,19 @@ var CPresentation = CPresentation || function(){};
     };
 
     CPDFDoc.prototype.RemoveForm = function(oForm) {
-        let oViewer     = editor.getDocumentRenderer();
         let oController = this.GetController();
-
         this.BlurActiveObject();
 
         if (!oForm.IsWidget())
             return;
 
-        // надо перерисовать страницу
-        let nPage = oForm.GetPage();
-        oForm.AddToRedraw();
-
         // удаляем поле из виджетов и со страницы
-        let nPos        = this.widgets.indexOf(oForm);
-        let nPosInPage  = oViewer.pagesInfo.pages[nPage].fields.indexOf(oForm);
-
+        let nPos = this.widgets.indexOf(oForm);
         this.widgets.splice(nPos, 1);
-        oViewer.pagesInfo.pages[nPage].fields.splice(nPosInPage, 1);
 
-        this.History.Add(new CChangesPDFDocumentFieldsContent(this, nPosInPage, [oForm], false));
-
-        // удаляем из родителя
-        let oParent = oForm.GetParent();
-        if (oParent) {
-            oParent.RemoveKid(oForm);
-            this.CheckParentForm(oParent); // проверяем родителя
-        }
-
+        let oPage = oForm.GetParentPage();
+        oPage.RemoveField(oForm.GetId());
+        
         oController.resetSelection();
         oController.resetTrackState();
 
@@ -3602,8 +3572,14 @@ var CPresentation = CPresentation || function(){};
     //-----------------------------------------------------------------------------------
 
     CPDFDoc.prototype.UpdateUndoRedo = function() {
-		Asc.editor.sync_CanUndoCallback(this.History.Can_Undo() || this.LocalHistory.Can_Undo());
-		Asc.editor.sync_CanRedoCallback(this.History.Can_Redo() || this.LocalHistory.Can_Redo());
+        let bCanUndo = this.History.Can_Undo() || this.LocalHistory.Can_Undo();
+        let bCanRedo = this.History.Can_Redo() || this.LocalHistory.Can_Redo();
+
+        if (true !== bCanUndo && this.Api && this.CollaborativeEditing && true === this.CollaborativeEditing.Is_Fast() && true !== this.CollaborativeEditing.Is_SingleUser())
+			bCanUndo = this.CollaborativeEditing.CanUndo();
+        
+		Asc.editor.sync_CanUndoCallback(bCanUndo);
+		Asc.editor.sync_CanRedoCallback(bCanRedo);
     };
     CPDFDoc.prototype.UpdateCopyCutState = function() {
         let oCanCopyCut = this.CanCopyCut();
@@ -4114,7 +4090,7 @@ var CPresentation = CPresentation || function(){};
                     hidden:         false
                 }
 
-                let oAnnot = this.AddAnnot(oProps);
+                let oAnnot = this.AddAnnotByProps(oProps);
 
                 oAnnot.SetQuads(aQuads);
                 oAnnot.SetStrokeColor([private_correctRGBColorComponent(r)/255, private_correctRGBColorComponent(g)/255, private_correctRGBColorComponent(b)/255]);
@@ -4183,7 +4159,7 @@ var CPresentation = CPresentation || function(){};
                 hidden:         false
             }
 
-            let oAnnot = this.AddAnnot(oProps);
+            let oAnnot = this.AddAnnotByProps(oProps);
 
             oAnnot.SetQuads(aQuads);
             oAnnot.SetStrokeColor([private_correctRGBColorComponent(r)/255, private_correctRGBColorComponent(g)/255, private_correctRGBColorComponent(b)/255]);
@@ -4235,7 +4211,7 @@ var CPresentation = CPresentation || function(){};
                 hidden:         false
             }
 
-            let oAnnot = this.AddAnnot(oProps);
+            let oAnnot = this.AddAnnotByProps(oProps);
 
             oAnnot.SetQuads(aQuads);
             oAnnot.SetStrokeColor([private_correctRGBColorComponent(r)/255, private_correctRGBColorComponent(g)/255, private_correctRGBColorComponent(b)/255]);
@@ -4289,7 +4265,7 @@ var CPresentation = CPresentation || function(){};
 	// For drawings
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     CPDFDoc.prototype.EditPage = function(nPage) {
-        if (null == this.Viewer.pagesInfo.pages[nPage] || this.Viewer.file.pages[nPage].isConvertedToShapes) {
+        if (null == this.Viewer.pagesInfo.pages[nPage] || this.Viewer.file.pages[nPage].isRecognized) {
             return;
         }
 
@@ -4308,11 +4284,9 @@ var CPresentation = CPresentation || function(){};
         Asc.editor.canSave = false;
         let oDrDoc = this.GetDrawingDocument();
 
-        oFile.pages[nPage].isConvertedToShapes = true;
-        delete this.Viewer.drawingPages[nPage].Image;
-
-        this.History.Add(new CChangesPDFDocumentRecognizePage(this, this.Viewer.pagesInfo.pages[nPage].Id, false, true));
-
+        let oPageInfo = this.GetPageInfo(nPage);
+        oPageInfo.SetRecognized(true);
+        
         let aSpsXmls        = oFile.nativeFile["scanPage"](nOriginIndex, 1);
         let oParserContext  = new AscCommon.XmlParserContext();
         let oTableStyles    = this.GetTableStyles();
@@ -4550,35 +4524,26 @@ var CPresentation = CPresentation || function(){};
         return oShape;
     };
     CPDFDoc.prototype.AddDrawing = function(oDrawing, nPage, nPosInTree) {
-        let oPagesInfo = this.Viewer.pagesInfo;
-        if (!oPagesInfo.pages[nPage])
+        let oPagesInfo = this.GetPageInfo(nPage);
+        if (!oPagesInfo)
             return;
 
         this.drawings.push(oDrawing);
-        if (nPosInTree == undefined) {
-            nPosInTree = oPagesInfo.pages[nPage].drawings.length;
-        }
-
-        oPagesInfo.pages[nPage].drawings.splice(nPosInTree, 0, oDrawing);
 
         oDrawing.SetDocument(this);
-        oDrawing.SetPage(nPage);
-        oDrawing.setParent(this);
-
-        this.History.Add(new CChangesPDFDocumentDrawingsContent(this, nPosInTree, [oDrawing], true));
-
-        oDrawing.AddToRedraw();
+        oPagesInfo.AddDrawing(oDrawing, nPosInTree);
         this.ClearSearch();
     };
     CPDFDoc.prototype.AddTextArt = function(nStyle, nPage) {
-        let oPagesInfo = this.Viewer.pagesInfo;
-        if (!oPagesInfo.pages[nPage])
+        let oPagesInfo = this.GetPageInfo(nPage);
+        if (!oPagesInfo)
             return;
 
         let oController = this.GetController();
 
         let oTextArt = this.GetController().createTextArt(nStyle, false);
         oTextArt.SetDocument(this);
+        oTextArt.setParent(oPagesInfo);
         oTextArt.SetPage(nPage);
         oTextArt.Recalculate();
         oTextArt.checkExtentsByDocContent();
@@ -4598,17 +4563,10 @@ var CPresentation = CPresentation || function(){};
         oXfrm.setOffY(oPos.y);
 
         this.drawings.push(oTextArt);
-        if (oPagesInfo.pages[nPage].drawings == null) {
-            oPagesInfo.pages[nPage].drawings = [];
-        }
-        oPagesInfo.pages[nPage].drawings.push(oTextArt);
-
-        this.History.Add(new CChangesPDFDocumentDrawingsContent(this, oPagesInfo.pages[nPage].drawings.length - 1, [oTextArt], true));
-
+        oPagesInfo.AddDrawing(oTextArt);
         oTextArt.SetNeedRecalc(true);
         
         this.SetMouseDownObject(oTextArt);
-
         oTextArt.select(oController, nPage);
         this.SetMouseDownObject(oTextArt);
         oController.selection.textSelection = oTextArt;
@@ -4867,7 +4825,7 @@ var CPresentation = CPresentation || function(){};
             hidden:         false
         }
 
-        let oFreeText = this.AddAnnot(oProps);
+        let oFreeText = this.AddAnnotByProps(oProps);
         oFreeText.SetRotate(nRotAngle);
         
         oFreeText.SetFillColor([1, 1, 1]);
@@ -5015,7 +4973,7 @@ var CPresentation = CPresentation || function(){};
             hidden:         false
         }
 
-        let oStamp = this.AddAnnot(oProps);
+        let oStamp = this.AddAnnotByProps(oProps);
         oStamp.SetRotate(nRotAngle);
         oStamp.SetWidth(1);
 
@@ -5692,43 +5650,32 @@ var CPresentation = CPresentation || function(){};
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     CPDFDoc.prototype.Is_Inline = function() {};
     CPDFDoc.prototype.OnChangeForm = function() {};
+    CPDFDoc.prototype.TurnOffCheckChartSelection = function() {};
+    CPDFDoc.prototype.TurnOnCheckChartSelection = function() {};
+    CPDFDoc.prototype.UpdateRulers = function() {};
+    CPDFDoc.prototype.UpdateSelection = function() {};
     CPDFDoc.prototype.Get_Api = function() {
         return Asc.editor;
+    };
+    CPDFDoc.prototype.sendEvent = function() {
+        if (!this.Api)
+            return;
+        
+        this.Api.sendEvent.apply(this.Api, arguments);
     };
     CPDFDoc.prototype.Get_CollaborativeEditing = function() {
         return this.CollaborativeEditing;
     };
     CPDFDoc.prototype.Clear_ContentChanges = function() {
-        this.annotsContentChanges.Clear();
-        this.fieldsContentChanges.Clear();
-        this.drawingsContentChanges.Clear();
 		this.pagesContentChanges.Clear();
     };
     CPDFDoc.prototype.UpdateMaxApIdx = function(nApIdx) {
         AscCommon.g_oIdCounter.m_nIdCounterEdit = Math.max(nApIdx, AscCommon.g_oIdCounter.m_nIdCounterEdit);
     };
     CPDFDoc.prototype.Add_ContentChanges = function(Changes) {
-        let oChange = Changes.m_pData.Data;
-        
-        switch (oChange.Type) {
-            case AscDFH.historyitem_PDF_Document_AnnotsContent:
-                this.annotsContentChanges.Add(Changes);
-                break;
-            case AscDFH.historyitem_PDF_Document_FieldsContent:
-                this.fieldsContentChanges.Add(Changes);
-                break;
-            case AscDFH.historyitem_PDF_Document_DrawingsContent:
-                this.drawingsContentChanges.Add(Changes);
-                break;
-			case AscDFH.historyitem_PDF_Document_PagesContent:
-				this.pagesContentChanges.Add(Changes);
-				break;
-        }
+        this.pagesContentChanges.Add(Changes);
     };
     CPDFDoc.prototype.Refresh_ContentChanges = function() {
-        this.annotsContentChanges.Refresh();
-        this.fieldsContentChanges.Refresh();
-        this.drawingsContentChanges.Refresh();
 		this.pagesContentChanges.Refresh();
     };
     CPDFDoc.prototype.GetRecalcId = function () {

@@ -105,6 +105,12 @@
 
         return oRecalcData;
     };
+    CPdfDrawingPrototype.prototype.SetParentPage = function(oParent) {
+        this.setParent(oParent);
+    };
+    CPdfDrawingPrototype.prototype.GetParentPage = function() {
+        return this.parent;
+    };
     CPdfDrawingPrototype.prototype.GetSelectionQuads = function() {
         let oDoc        = this.GetDocument();
         let oViewer     = oDoc.Viewer;

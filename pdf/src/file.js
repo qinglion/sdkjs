@@ -559,7 +559,7 @@ void main() {\n\
 
     CFile.prototype.onMouseDown = function(pageIndex, x, y)
     {
-        if (this.pages[pageIndex].isConvertedToShapes)
+        if (this.pages[pageIndex].isRecognized)
             return;
         
         let oDoc = this.viewer.getPDFDoc();
@@ -1217,7 +1217,7 @@ void main() {\n\
 
         for (let i = Page1; i <= Page2; i++) {
             var stream = this.getPageTextStream(i);
-            if (!stream || this.pages[i].isConvertedToShapes)
+            if (!stream || this.pages[i].isRecognized)
                 continue;
 
             let oInfo = {
@@ -1451,7 +1451,7 @@ void main() {\n\
     };
     CFile.prototype.drawSelection = function(pageIndex, overlay, x, y)
     {
-        if (this.pages[pageIndex].isConvertedToShapes) {
+        if (this.pages[pageIndex].isRecognized) {
             return;
         }
         
@@ -2047,7 +2047,7 @@ void main() {\n\
         var ret = "<div>";
         for (var i = page1; i <= page2; i++)
         {
-            if (this.pages[i].isConvertedToShapes)
+            if (this.pages[i].isRecognized)
                 continue;
 
             ret += this.copySelection(i, _text_format);
