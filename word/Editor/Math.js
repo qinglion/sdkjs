@@ -747,13 +747,11 @@ ParaMath.prototype.Add = function(Item)
 			this.Get_ParaContentPos(true, true, ContentPos);
 		else
 			this.Get_ParaContentPos(false, false, ContentPos);
-
+		
 		var TextPr = this.Root.GetMathTextPrForMenu(ContentPos, 0);
 		if (Item.TextPr)
 			TextPr.Merge(Item.TextPr);
 		
-		var bPlh = oContent.IsPlaceholder();
-
 		// Нам нужно разделить данный Run на 2 части
 		var RightRun = Run.Split2(Run.State.ContentPos);
 

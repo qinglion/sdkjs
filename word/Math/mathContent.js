@@ -2757,24 +2757,18 @@ CMathContent.prototype.private_LoadFromMenuSymbol = function(Type, Pr)
 		case c_oAscMathType.Symbol_Psi				: Code = 0x03A8; break;
 		case c_oAscMathType.Symbol_Omega			: Code = 0x03A9; break;
 	}
-
-	if (-1 !== Code)
-	{
-		var TextPr,
-			MathPr;
-
-		if (this.Content.length <= 0)
-			this.Correct_Content();
-
-		if(this.Content.length > 0 && this.Content[this.CurPos].Type == para_Math_Run && this.IsSelectionEmpty() == true) // находимся в Run, селект отсутствует
-		{
-			TextPr = this.Content[this.CurPos].Get_TextPr();
-			TextPr.RFonts.SetAll("Cambria Math", -1);          //  на данный момент добавляются символы исключительно из Cambria Math
-			MathPr = this.Content[this.CurPos].GetMathPr();
-		}
-
-		this.Add_Symbol(Code, TextPr, MathPr);
-	}
+	
+	if (-1 === Code)
+		return;
+	
+	if (this.Content.length <= 0)
+		this.Correct_Content();
+	
+	let mathPr = undefined;
+	if (this.Content.length > 0 && this.Content[this.CurPos].Type == para_Math_Run && this.IsSelectionEmpty() == true) // находимся в Run, селект отсутствует
+		mathPr = this.Content[this.CurPos].GetMathPr();
+	
+	this.Add_Symbol(Code, Pr.ctrPrp, mathPr);
 };
 CMathContent.prototype.private_LoadFromMenuFraction = function(Type, Pr, oSelectedContent)
 {
