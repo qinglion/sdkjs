@@ -448,20 +448,65 @@ AscCommonWord.CPresentationField.prototype.private_GetDateTimeFormat = function(
 		let formatFunction = vsdxFieldFormat.f.toUpperCase();
 		let vFieldPicture = parseInt(formatFunction.substring('FIELDPICTURE('.length));
 			switch (vFieldPicture) {
-			case 0:
-				// res = "General";
-				res = "dd/MM/yyyy";
-				break;
-			case 37:
-				res = "@";
-				break;
-			case 200:
-				res = "M/d/yyyy";
-				break;
-			case 212:
-				res = "M/d/yyyy h:mm:ss am/pm";
-				break;
-		}
+				case 0:
+					// res = "General";
+					res = "dd.MM.yyyy";
+					break;
+				case 37:
+					res = "@";
+					break;
+				case 200:
+					res = "M/d/yyyy";
+					break;
+				case 201:
+					res = "dddd, MMMM d, yyyy"
+					break;
+				case 202:
+					res = "MMMM d, yyyy";
+					break;
+				case 203:
+					res = "M/d/yy";
+					break;
+				case 204:
+					res = "yyyy-MM-dd";
+					break;
+				case 205:
+					res = "d-MMM-yy";
+					break;
+				case 206:
+					res = "M.d.yyyy";
+					break;
+				case 207:
+					res = "MMM. d, yy";
+					break;
+				case 208:
+					res = "d MMMM yyyy";
+					break;
+				case 209:
+					res = "MMMM yy";
+					break;
+				case 210:
+					res = "MMM-yy";
+					break;
+				case 211:
+					res = "M/d/yyyy h:mm am/pm";
+					break;
+				case 212:
+					res = "M/d/yyyy h:mm:ss am/pm";
+					break;
+				case 213:
+					res = "h:mm am/pm";
+					break;
+				case 214:
+					res = "h:mm:ss am/pm";
+					break;
+				case 215:
+					res = "HH:mm";
+					break;
+				case 216:
+					res = "HH:mm:ss";
+					break;
+			}
 	} else if (vsdxFieldFormat.v) {
 		res = vsdxFieldFormat.v;
 	}
@@ -534,6 +579,32 @@ Asc.cDate.prototype.getUTCFullYear = function () {
 
 AscCommonWord.CPresentationField.prototype.private_GetString = function()
 {
+	/**
+	 *
+	 * @param valueV
+	 * @param {string} valueUnits
+	 * @return {number}
+	 */
+	function convertConsiderUnits(valueV, valueUnits) {
+		/**
+		 * @type {(number)}
+		 */
+		let valueInProperUnits;
+		const precision = 4;
+		if (valueUnits === "CM") {
+			valueInProperUnits = Number(valueV) * g_dKoef_in_to_mm / 10;
+		} else if (valueUnits === "MM") {
+			valueInProperUnits = Number(valueV) * g_dKoef_in_to_mm;
+		} else {
+			valueInProperUnits = valueV;
+		}
+
+		if (typeof valueInProperUnits === "number") {
+			valueInProperUnits = Math.round(valueInProperUnits * Math.pow(10, precision)) / Math.pow(10, precision);
+		}
+		return valueInProperUnits;
+	}
+
 	var sStr = null;
 	var oStylesObject;
 	var oCultureInfo = AscCommon.g_aCultureInfos[this.Get_CompiledPr().Lang.Val];
@@ -550,7 +621,13 @@ AscCommonWord.CPresentationField.prototype.private_GetString = function()
 		// }
 		let logicDocument = this.Paragraph && this.Paragraph.GetLogicDocument();
 		const sFieldType = this.FieldType.toUpperCase();
-		let val = this.vsdxFieldValue.v;
+
+		// let's not use formula (valueCell.f) for now
+		// first convert value (valueCell.v) which is inches by default to units set in valueCell.u
+		let val = convertConsiderUnits(this.vsdxFieldValue.v, this.vsdxFieldValue.u);
+
+
+
 		if("PAGECOUNT()" === sFieldType)
 		{
 			if (logicDocument) {
@@ -584,6 +661,7 @@ AscCommonWord.CPresentationField.prototype.private_GetString = function()
 			val = this.vsdxFieldValue.getValueInMM();
 		}
 		if (this.vsdxFieldValue.u === "DATE") {
+			// TODO fix 31.12.1899 visio date
 			const oFormat = this.private_GetDateTimeFormat(this.vsdxFieldValue,
 				this.vsdxFieldFormat);
 			if(oFormat)
