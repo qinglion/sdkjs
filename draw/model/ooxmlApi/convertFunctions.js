@@ -403,15 +403,15 @@
 				// handle lang
 				let oNewLang = new CLang();
 				let languageCell = characterPropsFinal && characterPropsFinal.getCell("LangID");
-				let languageId;
-				switch (languageCell.v) {
-					case "ru-RU":
-						languageId = 1049;
-						break;
-					default:
-						languageId = 1033;
-						break;
-				}
+				let languageId = Asc.g_oLcidNameToIdMap[languageCell.v];
+				// switch (languageCell.v) {
+				// 	case "ru-RU":
+				// 		languageId = 1049;
+				// 		break;
+				// 	default:
+				// 		languageId = 1033;
+				// 		break;
+				// }
 				oNewLang.Val = languageId;
 				oRun.Set_Lang(oNewLang);
 
