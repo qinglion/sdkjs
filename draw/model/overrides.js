@@ -399,11 +399,13 @@ AscCommon.CShapeDrawer.prototype.ds = function()
 		this.CheckDash();
 	}
 }
-function parseFieldPictureFormat(vsdxFieldFormat) {
+
+function parseFieldPictureFormat(vsdxFieldValue, vsdxFieldFormat) {
 	let res = "@";
 	if (vsdxFieldFormat.f) {
 		let formatFunction = vsdxFieldFormat.f.toUpperCase();
 		let vFieldPicture = parseInt(formatFunction.substring('FIELDPICTURE('.length));
+
 		switch (vFieldPicture) {
 			case 0:
 				res = "General";
@@ -423,6 +425,113 @@ function parseFieldPictureFormat(vsdxFieldFormat) {
 	}
 	return res;
 }
+
+AscCommonWord.CPresentationField.prototype.private_GetDateTimeFormat = function(vsdxFieldValue, vsdxFieldFormat)
+{
+	// oDateTimeFormats["datetime1"] = "MM/DD/YYYY";
+	// oDateTimeFormats["datetimeFigureOut"] = oDateTimeFormats["datetime1"];
+	// oDateTimeFormats["datetime2"] = "dddd\\,\\ mmmm\\ dd\\,\\ yyyy";
+	// oDateTimeFormats["datetime3"] = "DD\\ MMMM\\ YYYY";
+	// oDateTimeFormats["datetime4"] = "MMMM\\ DD\\,\\ YYYY";
+	// oDateTimeFormats["datetime5"] = "DD-MMM-YY";
+	// oDateTimeFormats["datetime6"] = "MMMM\\ YY";
+	// oDateTimeFormats["datetime7"] = "MMM-YY";
+	// oDateTimeFormats["datetime8"] = "MM/DD/YYYY\\ hh:mm\\ AM/PM";
+	// oDateTimeFormats["datetime9"] = "MM/DD/YYYY\\ hh:mm:ss\\ AM/PM";
+	// oDateTimeFormats["datetime10"] = "hh:mm";
+	// oDateTimeFormats["datetime11"] = "hh:mm:ss";
+	// oDateTimeFormats["datetime12"] = "hh:mm\\ AM/PM";
+	// oDateTimeFormats["datetime13"] = "hh:mm:ss:\\ AM/PM";
+
+	let res = "@";
+	if (vsdxFieldFormat.f) {
+		let formatFunction = vsdxFieldFormat.f.toUpperCase();
+		let vFieldPicture = parseInt(formatFunction.substring('FIELDPICTURE('.length));
+			switch (vFieldPicture) {
+			case 0:
+				// res = "General";
+				res = "dd/MM/yyyy";
+				break;
+			case 37:
+				res = "@";
+				break;
+			case 200:
+				res = "M/d/yyyy";
+				break;
+			case 212:
+				res = "M/d/yyyy h:mm:ss am/pm";
+				break;
+		}
+	} else if (vsdxFieldFormat.v) {
+		res = vsdxFieldFormat.v;
+	}
+
+	let oFormat = null;
+	const nLang = this.Get_CompiledPr().Lang.Val;
+	let sFormat = res || AscCommonWord.oDefaultDateTimeFormat[nLang];
+	// if(!sFormat)
+	// {
+	// 	sFormat = "MM/DD/YYYY";
+	// }
+	// if(sFormat)
+	// {
+	// 	let aFormat = Asc.c_oAscDateTimeFormat[nLang];
+	// 	if(!Array.isArray(aFormat))
+	// 	{
+	// 		aFormat = Asc.c_oAscDateTimeFormat[lcid_enUS];
+	// 	}
+	// 	if(Array.isArray(aFormat))
+	// 	{
+	// 		let nIdx = 0;
+	// 		//match field type to index in Asc.c_oAscDateTimeFormat[nLang]
+	// 		switch (sResultFiledType)
+	// 		{
+	// 			case "datetimeFigureOut": nIdx = 0; break;//"MM/DD/YYYY";
+	// 			case "datetime1": nIdx = 0; break;//"MM/DD/YYYY";
+	// 			case "datetime2": nIdx = 1; break;//"dddd\\,\\ mmmm\\ dd\\,\\ yyyy";
+	// 			case "datetime3": nIdx = 8; break;//"DD\\ MMMM\\ YYYY";
+	// 			case "datetime4": nIdx = 2; break;//"MMMM\\ DD\\,\\ YYYY";
+	// 			case "datetime5": nIdx = 5; break;//"DD-MMM-YY";
+	// 			case "datetime6": nIdx = 9; break;//"MMMM\\ YY";
+	// 			case "datetime7": nIdx = 10; break;//"MMM-YY";
+	// 			case "datetime8": nIdx = 11; break;//"MM/DD/YYYY\\ hh:mm\\ AM/PM";
+	// 			case "datetime9": nIdx = 12; break;//"MM/DD/YYYY\\ hh:mm:ss\\ AM/PM";
+	// 			case "datetime10": nIdx = 15; break;//"hh:mm";
+	// 			case "datetime11": nIdx = 16; break;//"hh:mm:ss";
+	// 			case "datetime12": nIdx = 13; break;//"hh:mm\\ AM/PM";
+	// 			case "datetime13": nIdx = 14; break;//"hh:mm:ss:\\ AM/PM";
+	// 		}
+	// 		if(aFormat[nIdx])
+	// 		{
+	// 			sFormat = aFormat[nIdx]
+	// 		}
+	// 	}
+	oFormat = AscCommon.oNumFormatCache.get(sFormat, AscCommon.NumFormatType.WordFieldDate);
+	// }
+	return oFormat;
+};
+
+/** @constructor */
+function cDate(date) {
+	var bind = Function.bind;
+	var unbind = bind.bind(bind);
+	var date = new (unbind(Date, null).apply(null, arguments));
+	date.__proto__ = cDate.prototype;
+	return date;
+}
+
+Asc.cDate.prototype.getUTCFullYear = function () {
+	var year = Date.prototype.getUTCFullYear.call(this);
+	var month = Date.prototype.getUTCMonth.call(this);
+	var date = Date.prototype.getUTCDate.call(this);
+
+	if (1899 == year && 11 == month && (30 === date || 31 === date)) {
+		return 1900;
+	} else {
+		return year;
+	}
+};
+
 AscCommonWord.CPresentationField.prototype.private_GetString = function()
 {
 	var sStr = null;
@@ -432,13 +541,13 @@ AscCommonWord.CPresentationField.prototype.private_GetString = function()
 	{
 		oCultureInfo = AscCommon.g_aCultureInfos[1033];
 	}
-	var oDateTime, oFormat;
+	var oDateTime;
 	if(typeof this.FieldType === 'string')
 	{
-		let format;
-		if (this.vsdxFieldFormat) {
-			format = parseFieldPictureFormat(this.vsdxFieldFormat);
-		}
+		// let format;
+		// if (this.vsdxFieldFormat) {
+		// 	format = parseFieldPictureFormat(this.vsdxFieldValue, this.vsdxFieldFormat);
+		// }
 		let logicDocument = this.Paragraph && this.Paragraph.GetLogicDocument();
 		const sFieldType = this.FieldType.toUpperCase();
 		let val = this.vsdxFieldValue.v;
@@ -474,11 +583,27 @@ AscCommonWord.CPresentationField.prototype.private_GetString = function()
 			//todo display units
 			val = this.vsdxFieldValue.getValueInMM();
 		}
-		if (format) {
+		if (this.vsdxFieldValue.u === "DATE") {
+			const oFormat = this.private_GetDateTimeFormat(this.vsdxFieldValue,
+				this.vsdxFieldFormat);
+			if(oFormat)
+			{
+				let dateString = this.vsdxFieldValue.v;
+				dateString = dateString === "" ? dateString : dateString;
+				oDateTime = new Asc.cDate(dateString);
+
+				sStr = oFormat.formatToWord(oDateTime.getExcelDate(false) + 1 + (oDateTime.getHours() * 60 * 60 + oDateTime.getMinutes() * 60 + oDateTime.getSeconds()) / AscCommonExcel.c_sPerDay, 15, oCultureInfo);
+			}
+			// const oFormat = AscCommon.oNumFormatCache.get(format, AscCommon.NumFormatType.Excel);
+			// sStr =  format._formatToText(val, AscCommon.CellValueType.String, 15, oCultureInfo);
+		} else {
+			let format;
+			if (this.vsdxFieldFormat) {
+				format = parseFieldPictureFormat(this.vsdxFieldValue, this.vsdxFieldFormat);
+			}
 			const oFormat = AscCommon.oNumFormatCache.get(format, AscCommon.NumFormatType.Excel);
 			sStr =  oFormat._formatToText(val, AscCommon.CellValueType.String, 15, oCultureInfo);
-		} else {
-			sStr = val + "";
+			// sStr = val + "";
 		}
 	}
 	return sStr;
