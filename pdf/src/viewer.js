@@ -611,7 +611,7 @@
 				if (pages[i] >= this.startVisiblePage && pages[i] <= this.endVisiblePage)
 				{
 					delete this.drawingPages[pages[i]].Image;
-					oThumbnails && oThumbnails._repaintPage(i);
+					oThumbnails && oThumbnails._repaintPage(pages[i]);
 				}
 			}
 
