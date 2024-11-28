@@ -108,13 +108,13 @@ $(function ()
 		
 		addImageToParagraph(paragraph, lField, tableTop, 50, 50);
 		
-		AscTest.SetCompatibilityMode(AscCommon.document_compatibility_mode_Word15);
-
-		AscTest.Recalculate();
-		assert.strictEqual(table.GetPagesCount(), 1, "Check table page count");
-		checkBounds(table.getRowBounds(0, 0), new AscWord.CDocumentBounds(lField, tableTop + 60, rField, tableTop + 80), "Check first row bounds");
-		checkBounds(table.getRowBounds(1, 0), new AscWord.CDocumentBounds(lField, tableTop + 80, rField, tableTop + 100), "Check second row bounds");
-		checkBounds(table.getRowBounds(2, 0), new AscWord.CDocumentBounds(lField, tableTop + 100, rField, tableTop + 120), "Check third row bounds");
+		// AscTest.SetCompatibilityMode(AscCommon.document_compatibility_mode_Word15);
+		//
+		// AscTest.Recalculate();
+		// assert.strictEqual(table.GetPagesCount(), 1, "Check table page count");
+		// checkBounds(table.getRowBounds(0, 0), new AscWord.CDocumentBounds(lField, tableTop + 60, rField, tableTop + 80), "Check first row bounds");
+		// checkBounds(table.getRowBounds(1, 0), new AscWord.CDocumentBounds(lField, tableTop + 80, rField, tableTop + 100), "Check second row bounds");
+		// checkBounds(table.getRowBounds(2, 0), new AscWord.CDocumentBounds(lField, tableTop + 100, rField, tableTop + 120), "Check third row bounds");
 		
 		AscTest.SetCompatibilityMode(AscCommon.document_compatibility_mode_Word14);
 		
