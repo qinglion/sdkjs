@@ -732,6 +732,10 @@
 	{
 		return this.WordControl && this.WordControl.m_oLogicDocument && this.WordControl.m_oLogicDocument.getCountPages() || 0
 	};
+	asc_docs_api.prototype.GetCurrentVisiblePage  = function()
+	{
+		return this.WordControl.m_oDrawingDocument.SlideCurrent;
+	};
 	asc_docs_api.prototype.ShowThumbnails           = function(bIsShow)
 	{
 		if (bIsShow)
@@ -963,6 +967,7 @@
 	prot['Resize']             						= prot.Resize;
 	prot['sendEvent']             					= prot.sendEvent;
 	prot['getCountPages']             				= prot.getCountPages;
+	prot['GetCurrentVisiblePage']             		= prot.GetCurrentVisiblePage;
 	prot['ShowThumbnails']             				= prot.ShowThumbnails;
 	prot['OnMouseUp']             					= prot.OnMouseUp;
 
