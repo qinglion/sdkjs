@@ -11176,11 +11176,17 @@
 	});
 
 	/**
+	 * Underline type.
+	 * @typedef {("xlAnd" | "xlBottom10Items" | "xlBottom10Percent" | "xlFilterCellColor" | "xlFilterDynamic" | "xlFilterFontColor" | "xlFilterIcon" | "xlFilterValues" | "xlOr" | "xlTop10Items" | "xlTop10Percent")} XlAutoFilterOperator
+	 * @see office-js-api/Examples/Enumerations/XlAutoFilterOperator.js
+	 */
+
+	/**
 	 * Returns the ApiCharacters object that represents a range of characters within the object text. Use the ApiCharacters object to format characters within a text string.
 	 * @memberof ApiRange
 	 * @typeofeditors ["CSE"]
 	 * @param {number} Field - The integer offset of the field on which you want to base the filter (from the left of the list; the leftmost field is field one).
-	 * @param {string} Criteria1 - The criteria (a string; for example, "101"). Use "=" to find blank fields, "<>" to find non-blank fields, and "><" to select (No Data) fields in data types.
+	 * @param {string | string[]} Criteria1 - The criteria (a string; for example, "101"). Use "=" to find blank fields, "<>" to find non-blank fields, and "><" to select (No Data) fields in data types.
 	 * If this argument is omitted, the criteria is All. If Operator is xlTop10Items, Criteria1 specifies the number of items (for example, "10").
 	 * @param {XlAutoFilterOperator} Operator - An XlAutoFilterOperator constant specifying the type of filter.
 	 * @param {string} Criteria2 - The second criteria (a string). Used with Criteria1 and Operator to construct compound criteria. Also used as single criteria on date fields filtering by date, month or year. Followed by an Array detailing the filtering Array(Level, Date). Where Level is 0-2 (year,month,date) and Date is one valid Date inside the filtering period.
@@ -11191,7 +11197,60 @@
 	 * @see office-js-api/Examples/{Editor}/ApiRange/Methods/SetAutoFilter.js
 	 */
 	ApiRange.prototype.SetAutoFilter = function (Field, Criteria1, Operator, Criteria2, SubField, VisibleDropDown) {
+		//firstly add filter
+		this.range.worksheet.addAutoFilter(null, this.range);
 
+		//apply filtering
+		if (Criteria1 || Criteria1) {
+			switch (Operator) {
+				case "xlAnd": {
+					this.Shape.setVerticalAlign(4);
+					break;
+				}
+				case "xlBottom10Items": {
+					this.Shape.setVerticalAlign(1);
+					break;
+				}
+				case "xlBottom10Percent": {
+					this.Shape.setVerticalAlign(0);
+					break;
+				}
+				case "xlFilterCellColor": {
+					this.Shape.setVerticalAlign(0);
+					break;
+				}
+				case "xlFilterDynamic": {
+					this.Shape.setVerticalAlign(0);
+					break;
+				}
+				case "xlFilterFontColor": {
+					this.Shape.setVerticalAlign(0);
+					break;
+				}
+				case "xlFilterIcon": {
+					this.Shape.setVerticalAlign(0);
+					break;
+				}
+				case "xlFilterValues": {
+					this.Shape.setVerticalAlign(0);
+					break;
+				}
+				case "xlOr": {
+					this.Shape.setVerticalAlign(0);
+					break;
+				}
+				case "xlTop10Items": {
+					this.Shape.setVerticalAlign(0);
+					break;
+				}
+				case "xlTop10Percent": {
+					this.Shape.setVerticalAlign(0);
+					break;
+				}
+				default:
+					return false;
+			}
+		}
 	};
 
 	Object.defineProperty(ApiRange.prototype, "AutoFilter", {
