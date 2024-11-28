@@ -904,10 +904,6 @@ var editor;
 		}
 	};
 
-	spreadsheet_api.prototype.asc_parseCsvText = function(text, options) {
-		return AscCommon.parseText(text, options, true);
-	}
-
 	/**
 	 * @param {string} text
 	 * @param {number | undefined} opt_count
@@ -9699,6 +9695,7 @@ var editor;
   prot["asc_TextImport"] = prot.asc_TextImport;
   prot["asc_TextToColumns"] = prot.asc_TextToColumns;
   prot["asc_TextFromFileOrUrl"] = prot.asc_TextFromFileOrUrl;
+  prot["asc_getCSVDelimiter"] = prot.asc_getCSVDelimiter;
 
   prot["asc_initPrintPreview"] = prot.asc_initPrintPreview;
   prot["asc_updatePrintPreview"] = prot.asc_updatePrintPreview;

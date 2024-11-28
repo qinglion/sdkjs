@@ -4296,6 +4296,9 @@
 
 		reader.readAsText(new Blob([buffer]), encoding);
 	};
+	baseEditorsApi.prototype.asc_parseText = function(text, options) {
+		return AscCommon.parseText(text, options, true);
+	}
 
 	baseEditorsApi.prototype.asc_setVisiblePasteButton = function(val)
 	{
@@ -5254,6 +5257,7 @@
 	prot['asc_runAutostartMacroses'] = prot.asc_runAutostartMacroses;
 	prot['asc_runMacros'] = prot.asc_runMacros;
 	prot['asc_getAllMacrosNames'] = prot.asc_getAllMacrosNames;
+	prot['asc_parseText'] = prot.asc_parseText;
 	prot['asc_setVisiblePasteButton'] = prot.asc_setVisiblePasteButton;
 	prot['asc_getAutoCorrectMathSymbols'] = prot.asc_getAutoCorrectMathSymbols;
 	prot['asc_getAutoCorrectMathFunctions'] = prot.asc_getAutoCorrectMathFunctions;
