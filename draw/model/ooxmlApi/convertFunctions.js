@@ -400,8 +400,22 @@
 					fontColor.color.RGBA.B, false);
 				oRun.Set_Color(textColor1);
 
+				// handle lang
+				let oNewLang = new CLang();
+				let languageCell = characterPropsFinal && characterPropsFinal.getCell("LangID");
+				let languageId;
+				switch (languageCell.v) {
+					case "ru-RU":
+						languageId = 1049;
+						break;
+					default:
+						languageId = 1033;
+						break;
+				}
+				oNewLang.Val = languageId;
+				oRun.Set_Lang(oNewLang);
 
-				// handle fontSize (doesn't work - see comment below)
+
 				let fontSizeCell = characterPropsFinal && characterPropsFinal.getCell("Size");
 				let fontSizePt;
 				if (fontSizeCell && fontSizeCell.kind === AscCommonDraw.c_oVsdxSheetStorageKind.Cell_Type) {
@@ -704,7 +718,7 @@
 
 			// read text
 			textElement.elements.forEach(function(textElementPart, i) {
-				if (typeof textElementPart === "string") {
+				if (typeof textElementPart === "string" || textElementPart.kind === AscCommonDraw.c_oVsdxTextKind.FLD) {
 
 					// create defaultParagraph
 					if (oContent.Content.length === 0) {
@@ -712,60 +726,56 @@
 					}
 					let paragraph = oContent.Content.slice(-1)[0];
 
-					// create paraRun using propsObjects
+					if (typeof textElementPart === "string") {
+						// create paraRun using propsObjects
 
-					// equal to ApiParagraph.prototype.AddText method
-					let oRun = new ParaRun(paragraph, false);
-					textElementPart = convertVsdxTextToPptxText(textElementPart);
-					oRun.AddText(textElementPart);
+						// equal to ApiParagraph.prototype.AddText method
+						let oRun = new ParaRun(paragraph, false);
+						textElementPart = convertVsdxTextToPptxText(textElementPart);
+						oRun.AddText(textElementPart);
 
-					// setup Run
-					// check character properties: get cp_Type object and in characterPropsCommon get needed Row
-					let characterRowNum = propsCP && propsCP.iX;
-					if (propsCP === null) {
-						characterRowNum = 0;
+						// setup Run
+						// check character properties: get cp_Type object and in characterPropsCommon get needed Row
+						let characterRowNum = propsCP && propsCP.iX;
+						if (propsCP === null) {
+							characterRowNum = 0;
+						}
+
+						setRunProps(characterRowNum, characterPropsCommon,
+							oRun, lineUniFill, fillUniFill, theme, shape,
+							visioDocument);
+						paragraph.Add_ToContent(paragraph.Content.length - 1, oRun);
+					} else if (textElementPart.kind === AscCommonDraw.c_oVsdxTextKind.FLD) {
+						// text field
+
+						let oFld = new AscCommonWord.CPresentationField(paragraph);
+						let fieldRowNum = textElementPart.iX;
+						let fieldPropsFinal = fieldRowNum !== null && fieldPropsCommon.getRow(fieldRowNum);
+						initPresentationField(oFld, fieldPropsFinal);
+
+						let fldTagText = textElementPart.value;
+						if (fldTagText) {
+							fldTagText = convertVsdxTextToPptxText(fldTagText);
+						}
+						oFld.CanAddToContent = true;
+						oFld.AddText(fldTagText, -1);
+						oFld.CanAddToContent = false;
+
+						// setup Run
+						// check character properties: get cp_Type object and in characterPropsCommon get needed Row
+						let characterRowNum = propsCP && propsCP.iX;
+						if (propsCP === null) {
+							characterRowNum = 0;
+						}
+
+						setRunProps(characterRowNum, characterPropsCommon,
+							oFld, lineUniFill, fillUniFill, theme, shape,
+							visioDocument);
+
+						paragraph.AddToContent(paragraph.Content.length - 1, new ParaRun(paragraph, false));
+						paragraph.AddToContent(paragraph.Content.length - 1, oFld);
+						paragraph.AddToContent(paragraph.Content.length - 1, new ParaRun(paragraph, false));
 					}
-
-					setRunProps(characterRowNum, characterPropsCommon,
-						oRun, lineUniFill, fillUniFill, theme, shape,
-						visioDocument);
-					paragraph.Add_ToContent(paragraph.Content.length - 1, oRun);
-				} else if (textElementPart.kind === AscCommonDraw.c_oVsdxTextKind.FLD) {
-					// text field
-					// create defaultParagraph
-					if (oContent.Content.length === 0) {
-						parseParagraphAndAddToShapeContent(0, paragraphPropsCommon, textCShape);
-					}
-					let paragraph = oContent.Content.slice(-1)[0];
-
-					let oFld = new AscCommonWord.CPresentationField(paragraph);
-					let fieldRowNum = textElementPart.iX;
-					let fieldPropsFinal = fieldRowNum !== null && fieldPropsCommon.getRow(fieldRowNum);
-					initPresentationField(oFld, fieldPropsFinal);
-
-					let fldTagText = textElementPart.value;
-					if (fldTagText) {
-						fldTagText = convertVsdxTextToPptxText(fldTagText);
-					}
-					oFld.CanAddToContent = true;
-					oFld.AddText(fldTagText, -1);
-					oFld.CanAddToContent = false;
-
-					// setup Run
-					// check character properties: get cp_Type object and in characterPropsCommon get needed Row
-					let characterRowNum = propsCP && propsCP.iX;
-					if (propsCP === null) {
-						characterRowNum = 0;
-					}
-
-					setRunProps(characterRowNum, characterPropsCommon,
-						oFld, lineUniFill, fillUniFill, theme, shape,
-						visioDocument);
-
-					paragraph.AddToContent(paragraph.Content.length - 1, new ParaRun(paragraph, false));
-					paragraph.AddToContent(paragraph.Content.length - 1, oFld);
-					paragraph.AddToContent(paragraph.Content.length - 1, new ParaRun(paragraph, false));
-
 				} else if (textElementPart.kind === AscCommonDraw.c_oVsdxTextKind.PP) {
 					// setup Paragraph
 
@@ -778,7 +788,7 @@
 				} else if (textElementPart.kind === AscCommonDraw.c_oVsdxTextKind.TP) {
 					propsTP = textElementPart;
 				} else {
-					AscCommon.consoleLog("undkown type in text tag");
+					AscCommon.consoleLog("unknown type in text tag");
 				}
 			});
 

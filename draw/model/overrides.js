@@ -428,129 +428,126 @@ function parseFieldPictureFormat(vsdxFieldValue, vsdxFieldFormat) {
 
 AscCommonWord.CPresentationField.prototype.private_GetDateTimeFormat = function(vsdxFieldValue, vsdxFieldFormat)
 {
-	// oDateTimeFormats["datetime1"] = "MM/DD/YYYY";
-	// oDateTimeFormats["datetimeFigureOut"] = oDateTimeFormats["datetime1"];
-	// oDateTimeFormats["datetime2"] = "dddd\\,\\ mmmm\\ dd\\,\\ yyyy";
-	// oDateTimeFormats["datetime3"] = "DD\\ MMMM\\ YYYY";
-	// oDateTimeFormats["datetime4"] = "MMMM\\ DD\\,\\ YYYY";
-	// oDateTimeFormats["datetime5"] = "DD-MMM-YY";
-	// oDateTimeFormats["datetime6"] = "MMMM\\ YY";
-	// oDateTimeFormats["datetime7"] = "MMM-YY";
-	// oDateTimeFormats["datetime8"] = "MM/DD/YYYY\\ hh:mm\\ AM/PM";
-	// oDateTimeFormats["datetime9"] = "MM/DD/YYYY\\ hh:mm:ss\\ AM/PM";
-	// oDateTimeFormats["datetime10"] = "hh:mm";
-	// oDateTimeFormats["datetime11"] = "hh:mm:ss";
-	// oDateTimeFormats["datetime12"] = "hh:mm\\ AM/PM";
-	// oDateTimeFormats["datetime13"] = "hh:mm:ss:\\ AM/PM";
-
-	let res = "@";
-	if (vsdxFieldFormat.f) {
-		let formatFunction = vsdxFieldFormat.f.toUpperCase();
-		let vFieldPicture = parseInt(formatFunction.substring('FIELDPICTURE('.length));
+	function getLanguageDependantFormat(aFormat, vsdxFieldFormat) {
+		let defaultResult = "@";
+		let aFormatIndex = null;
+		let result;
+		if (vsdxFieldFormat.f) {
+			let formatFunction = vsdxFieldFormat.f.toUpperCase();
+			let vFieldPicture = parseInt(formatFunction.substring('FIELDPICTURE('.length));
 			switch (vFieldPicture) {
 				case 0:
-					// res = "General";
-					res = "dd.MM.yyyy";
+					// defaultResult = "General";
+					defaultResult = "dd.MM.yyyy";
+					// aFormatIndex = 0; // not found for default - english
 					break;
 				case 37:
-					res = "@";
+					// defaultResult = "@";
+					defaultResult = "dd.MM.yyyy";
+					// aFormatIndex = 0;
 					break;
 				case 200:
-					res = "M/d/yyyy";
+					defaultResult = "M/d/yyyy";
+					aFormatIndex = 0;
 					break;
 				case 201:
-					res = "dddd, MMMM d, yyyy"
+					defaultResult = "dddd, MMMM d, yyyy";
+					aFormatIndex = 1;
 					break;
 				case 202:
-					res = "MMMM d, yyyy";
+					defaultResult = "MMMM d, yyyy";
+					aFormatIndex = 2;
 					break;
 				case 203:
-					res = "M/d/yy";
+					defaultResult = "M/d/yy";
+					aFormatIndex = 3;
 					break;
 				case 204:
-					res = "yyyy-MM-dd";
+					defaultResult = "yyyy-MM-dd";
+					aFormatIndex = 4;
 					break;
 				case 205:
-					res = "d-MMM-yy";
+					defaultResult = "d-MMM-yy";
+					aFormatIndex = 5;
 					break;
 				case 206:
-					res = "M.d.yyyy";
+					defaultResult = "M.d.yyyy";
+					aFormatIndex = 6;
 					break;
 				case 207:
-					res = "MMM. d, yy";
+					defaultResult = "MMM. d, yy";
+					aFormatIndex = 7;
 					break;
 				case 208:
-					res = "d MMMM yyyy";
+					defaultResult = "d MMMM yyyy";
+					aFormatIndex = 8;
 					break;
 				case 209:
-					res = "MMMM yy";
+					defaultResult = "MMMM yy";
+					aFormatIndex = 9;
 					break;
 				case 210:
-					res = "MMM-yy";
+					defaultResult = "MMM-yy";
+					aFormatIndex = 10;
 					break;
 				case 211:
-					res = "M/d/yyyy h:mm am/pm";
+					defaultResult = "M/d/yyyy h:mm am/pm";
+					aFormatIndex = 11; // but "M/d/yyyy h:mm AM/PM" in formats
 					break;
 				case 212:
-					res = "M/d/yyyy h:mm:ss am/pm";
+					defaultResult = "M/d/yyyy h:mm:ss am/pm";
+					aFormatIndex = 12; // but "M/d/yyyy h:mm:ss AM/PM" in formats
 					break;
 				case 213:
-					res = "h:mm am/pm";
+					defaultResult = "h:mm am/pm";
+					aFormatIndex = 13; // but "h:mm AM/PM" in formats
 					break;
 				case 214:
-					res = "h:mm:ss am/pm";
+					defaultResult = "h:mm:ss am/pm";
+					aFormatIndex = 14; // but "h:mm:ss AM/PM" in formats
 					break;
 				case 215:
-					res = "HH:mm";
+					defaultResult = "HH:mm";
+					aFormatIndex = 15;
 					break;
 				case 216:
-					res = "HH:mm:ss";
+					defaultResult = "HH:mm:ss";
+					aFormatIndex = 16;
 					break;
 			}
-	} else if (vsdxFieldFormat.v) {
-		res = vsdxFieldFormat.v;
+		} else if (vsdxFieldFormat.v) {
+			defaultResult = vsdxFieldFormat.v;
+		}
+
+		if (Array.isArray(aFormat)) {
+			// get language dependant format string if index is set
+			result = aFormatIndex !== null ? aFormat[aFormatIndex] : defaultResult;
+		} else {
+			// use default value
+			result = defaultResult;
+		}
+
+		return result;
+
 	}
 
 	let oFormat = null;
 	const nLang = this.Get_CompiledPr().Lang.Val;
-	let sFormat = res || AscCommonWord.oDefaultDateTimeFormat[nLang];
+	// let sFormat = AscCommonWord.oDefaultDateTimeFormat[nLang];
 	// if(!sFormat)
 	// {
-	// 	sFormat = "MM/DD/YYYY";
+		// choose pre-defined format
+		// sFormat = oDateTimeFormats[sResultFiledType]
 	// }
-	// if(sFormat)
-	// {
-	// 	let aFormat = Asc.c_oAscDateTimeFormat[nLang];
-	// 	if(!Array.isArray(aFormat))
-	// 	{
-	// 		aFormat = Asc.c_oAscDateTimeFormat[lcid_enUS];
-	// 	}
-	// 	if(Array.isArray(aFormat))
-	// 	{
-	// 		let nIdx = 0;
-	// 		//match field type to index in Asc.c_oAscDateTimeFormat[nLang]
-	// 		switch (sResultFiledType)
-	// 		{
-	// 			case "datetimeFigureOut": nIdx = 0; break;//"MM/DD/YYYY";
-	// 			case "datetime1": nIdx = 0; break;//"MM/DD/YYYY";
-	// 			case "datetime2": nIdx = 1; break;//"dddd\\,\\ mmmm\\ dd\\,\\ yyyy";
-	// 			case "datetime3": nIdx = 8; break;//"DD\\ MMMM\\ YYYY";
-	// 			case "datetime4": nIdx = 2; break;//"MMMM\\ DD\\,\\ YYYY";
-	// 			case "datetime5": nIdx = 5; break;//"DD-MMM-YY";
-	// 			case "datetime6": nIdx = 9; break;//"MMMM\\ YY";
-	// 			case "datetime7": nIdx = 10; break;//"MMM-YY";
-	// 			case "datetime8": nIdx = 11; break;//"MM/DD/YYYY\\ hh:mm\\ AM/PM";
-	// 			case "datetime9": nIdx = 12; break;//"MM/DD/YYYY\\ hh:mm:ss\\ AM/PM";
-	// 			case "datetime10": nIdx = 15; break;//"hh:mm";
-	// 			case "datetime11": nIdx = 16; break;//"hh:mm:ss";
-	// 			case "datetime12": nIdx = 13; break;//"hh:mm\\ AM/PM";
-	// 			case "datetime13": nIdx = 14; break;//"hh:mm:ss:\\ AM/PM";
-	// 		}
-	// 		if(aFormat[nIdx])
-	// 		{
-	// 			sFormat = aFormat[nIdx]
-	// 		}
-	// 	}
+	// if(sFormat) {
+		// get language dependant formats array
+	let sFormat;
+
+	let aFormat = Asc.c_oAscDateTimeFormat[nLang];
+	if (!Array.isArray(aFormat)) {
+		aFormat = Asc.c_oAscDateTimeFormat[lcid_enUS];
+	}
+	sFormat = getLanguageDependantFormat(aFormat, vsdxFieldFormat);
 	oFormat = AscCommon.oNumFormatCache.get(sFormat, AscCommon.NumFormatType.WordFieldDate);
 	// }
 	return oFormat;
