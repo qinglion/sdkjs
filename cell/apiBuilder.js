@@ -11202,54 +11202,73 @@
 
 		//apply filtering
 		if (Criteria1 || Criteria1) {
+			let autoFilterOptions = new window["Asc"].AutoFiltersOptions();
 			switch (Operator) {
 				case "xlAnd": {
-					this.Shape.setVerticalAlign(4);
+
+					/*var newCustomFilter = new Asc.CustomFilters();
+					newCustomFilter.asc_setCustomFilters((item.value == -2 || item.value == -3) ? [new Asc.CustomFilter(), new Asc.CustomFilter()]: [new Asc.CustomFilter()]);
+
+					var newCustomFilters = newCustomFilter.asc_getCustomFilters();
+					newCustomFilters[0].asc_setOperator((item.value == -2) ? Asc.c_oAscCustomAutoFilter.isGreaterThanOrEqualTo : ((item.value == -3) ? Asc.c_oAscCustomAutoFilter.isLessThan : item.value));
+
+					if (item.value == -2) {
+						var isBetween = (cond1 == Asc.c_oAscCustomAutoFilter.isGreaterThanOrEqualTo && cond2 == Asc.c_oAscCustomAutoFilter.isLessThanOrEqualTo);
+						newCustomFilter.asc_setAnd(isBetween ? isAnd : true);
+						newCustomFilters[0].asc_setVal(isBetween ? value1 : '');
+						newCustomFilters[1].asc_setOperator(Asc.c_oAscCustomAutoFilter.isLessThanOrEqualTo);
+						newCustomFilters[1].asc_setVal(isBetween ? value2 : '');
+					} else if (item.value == -3) {
+						var isNotBetween = (cond1 == Asc.c_oAscCustomAutoFilter.isLessThan && cond2 == Asc.c_oAscCustomAutoFilter.isGreaterThan);
+						newCustomFilter.asc_setAnd(isNotBetween ? isAnd : false);
+						newCustomFilters[0].asc_setVal(isNotBetween ? value1 : '');
+						newCustomFilters[1].asc_setOperator(Asc.c_oAscCustomAutoFilter.isGreaterThan);
+						newCustomFilters[1].asc_setVal(isNotBetween ? value2 : '');
+					} else {
+						newCustomFilter.asc_setAnd(true);
+						newCustomFilters[0].asc_setVal((item.value == cond1) ? value1 : '');
+					}
+
+					filterObj.asc_setFilter(newCustomFilter);
+					filterObj.asc_setType(Asc.c_oAscAutoFilterTypes.CustomFilters);*/
+
 					break;
 				}
 				case "xlBottom10Items": {
-					this.Shape.setVerticalAlign(1);
 					break;
 				}
 				case "xlBottom10Percent": {
-					this.Shape.setVerticalAlign(0);
 					break;
 				}
 				case "xlFilterCellColor": {
-					this.Shape.setVerticalAlign(0);
 					break;
 				}
 				case "xlFilterDynamic": {
-					this.Shape.setVerticalAlign(0);
 					break;
 				}
 				case "xlFilterFontColor": {
-					this.Shape.setVerticalAlign(0);
 					break;
 				}
 				case "xlFilterIcon": {
-					this.Shape.setVerticalAlign(0);
 					break;
 				}
 				case "xlFilterValues": {
-					this.Shape.setVerticalAlign(0);
 					break;
 				}
 				case "xlOr": {
-					this.Shape.setVerticalAlign(0);
 					break;
 				}
 				case "xlTop10Items": {
-					this.Shape.setVerticalAlign(0);
 					break;
 				}
 				case "xlTop10Percent": {
-					this.Shape.setVerticalAlign(0);
 					break;
 				}
 				default:
 					return false;
 			}
+
+			this.range.worksheet.applyAutoFilter(autoFilterOptions);
 		}
 	};
 
