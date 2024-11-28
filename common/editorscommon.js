@@ -252,86 +252,6 @@
 		return str.split(substring).slice(0, n).join(substring).length;
 	}
 
-	/**
-	 * @param {string} data
-	 * @param {number} _count
-	 * @param {string[]} _delimiters
-	 * @return {{data: string, delimiterChar: string | null, delimiter: string | null}}
-	 */
-	function getCSVDelimiter(data, _count, _delimiters) {
-		function checkSep() {
-			const textWithoutQuotes = 'sep=';
-			const text = '"sep=';
-			if (data.startsWith(textWithoutQuotes)) {
-				let offset = textWithoutQuotes.length + 1;
-				if (data[5] === '\r' || data[5] === '\n') {
-					offset += 1;
-					if (data[6] === '\n') {
-						offset += 1;
-					}
-				}
-				return {
-					delimiter: data[4],
-					offset: offset
-				}
-			} else if (data.startsWith(text)) {
-				let offset = text.length + 2;
-				if (data[7] === '\r' || data[7] === '\n') {
-					offset += 1;
-					if (data[8] === '\n') {
-						offset += 1;
-					}
-				}
-				return {
-					delimiter: data[5],
-					offset: offset
-				}
-			}
-			return null;
-		}
-		const count = _count ? _count : 200;
-		const defaultDelimiters = {
-			",": AscCommon.c_oAscCsvDelimiter.Comma,
-			";": AscCommon.c_oAscCsvDelimiter.Semicolon,
-			"\t": AscCommon.c_oAscCsvDelimiter.Tab,
-			":": AscCommon.c_oAscCsvDelimiter.Colon,
-		};
-		const delimiters = _delimiters ? _delimiters : Object.keys(defaultDelimiters);
-		const counter = {}
-		for (let i = 0; i < delimiters.length; i += 1) {
-			counter[delimiters[i]] = 0;
-		}
-		const sepCheck = checkSep();
-		if (sepCheck) {
-			const delimeter = sepCheck.delimiter;
-			if (defaultDelimiters[delimeter]) {
-				return {'delimiter': defaultDelimiters[delimeter], 'delimiterChar': null, 'data': data.substring(sepCheck.offset)};
-			}
-			return {'delimiterChar': delimeter, 'delimiter': null, 'data': data.substring(sepCheck.offset)};
-		}
-		let isQuoteOpen = false;
-		for (let i = 0; i < count; i += 1) {
-			const sym = data[i];
-			if (sym === '"') {
-				isQuoteOpen = !isQuoteOpen;
-			}
-			if (!isQuoteOpen && counter[sym] != null) {
-				counter[sym] += 1;
-			}
-		}
-		let max = 0;
-		let result = ',';
-		for (let i in counter) {
-			if (counter[i] > max) {
-				max = counter[i];
-				result = i;
-			}
-		}
-		if (defaultDelimiters[result]) {
-			return {'delimiter': defaultDelimiters[result], 'delimiterChar': null, data: data};
-		}
-		return {'delimiterChar': result, 'delimiter': null, data: data};
-	}
 	function getEncodingParams()
 	{
 		var res = [];
@@ -14878,7 +14798,6 @@
 	window["AscCommon"].getBaseUrlPathname = getBaseUrlPathname;
 	window["AscCommon"].getIndex = getIndex;
 	window["AscCommon"].getEncodingParams = getEncodingParams;
-	window["AscCommon"].getCSVDelimiter = getCSVDelimiter;
 	window["AscCommon"].getEncodingByBOM = getEncodingByBOM;
 	window["AscCommon"].saveWithParts = saveWithParts;
 	window["AscCommon"].loadFileContent = loadFileContent;

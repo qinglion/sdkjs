@@ -79,7 +79,7 @@
 				}
 				return arr;
 			}();
-			this.recommendedSettings = new asc_CTextOptions(opt["codepage"], opt["delimiter"], opt["delimiterChar"]);
+			this.recommendedSettings = new asc_CTextOptions(opt["codepage"], opt["delimiter"]);
 			this.data = opt["data"];
 		}
 		asc_CAdvancedOptions.prototype.asc_getCodePages = function () {return this.codePages;};
