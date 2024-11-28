@@ -31,116 +31,6 @@
  */
 
 (function(window, undefined) {
-
-    /*
-    function TextStreamReader(data, size)
-    {
-        this.data = data;
-        this.size = size;
-        this.pos = 0;
-
-        this.Seek = function(pos)
-        {
-            if (pos > this.size)
-                return 1;
-            this.pos = pos;
-            return 0;
-        };
-        this.Skip = function(skip)
-        {
-            return this.Seek(this.pos + skip);
-        };
-
-        // 1 bytes
-        this.GetUChar = function()
-        {
-            if (this.pos >= this.size)
-                return 0;
-            return this.data[this.pos++];
-        };
-        this.GetChar = function()
-        {
-            if (this.pos >= this.size)
-                return 0;
-            var m = this.data[this.pos++];
-            if (m > 0x7F)
-                m -= 256;
-            return m;
-        };
-
-        // 2 byte
-        this.GetUShort = function()
-        {
-            if (this.pos + 1 >= this.size)
-                return 0;
-            return (this.data[this.pos++] | this.data[this.pos++] << 8);
-        };
-        this.GetShort = function()
-        {
-            if (this.pos + 1 >= this.size)
-                return 0;
-            var _c = (this.data[this.pos++] | this.data[this.pos++] << 8);
-
-            if (_c > 0x7FFF)
-                return _c - 65536;
-            return _c;
-        };
-
-        // 4 byte
-        this.GetULong = function()
-        {
-            if (this.pos + 3 >= this.size)
-                return 0;
-            var s = (this.data[this.pos++] | this.data[this.pos++] << 8 | this.data[this.pos++] << 16 | this.data[this.pos++] << 24);
-            if (s < 0)
-                s += (0xFFFFFFFF + 1);
-            return s;
-        };
-        this.GetLong = function()
-        {
-            return (this.data[this.pos++] | this.data[this.pos++] << 8 | this.data[this.pos++] << 16 | this.data[this.pos++] << 24);
-        };
-
-        // double
-        this.GetDouble = function()
-        {
-            return this.GetLong() / 10000;
-        };
-        this.GetDouble2 = function()
-        {
-            return this.GetShort() / 100;
-        };
-    }
-    */
-
-    function CSpan()
-    {
-        this.fontName = 0;
-        this.fontSize = 0;
-
-        this.colorR = 0;
-        this.colorG = 0;
-        this.colorB = 0;
-
-        this.inner = "";
-
-        this.CreateDublicate = function()
-        {
-            var ret = new CSpan();
-
-            ret.fontName = this.fontName;
-            ret.fontSize = this.fontSize;
-
-            ret.colorR = this.colorR;
-            ret.colorG = this.colorG;
-            ret.colorB = this.colorB;
-
-            ret.inner = this.inner;
-
-            return ret;
-        }
-    }
-
     var supportImageDataConstructor = (AscCommon.AscBrowser.isIE && !AscCommon.AscBrowser.isIeEdge) ? false : true;
 
     function CFile()
@@ -478,29 +368,9 @@ void main() {\n\
     };
 
     // TEXT
-    CFile.prototype.onMouseDown = function(pageIndex, x, y)
+    CFile.prototype.getPageText = function(pageIndex)
     {
-        if (this.pages[pageIndex].isConvertedToShapes)
-            return;
-        
-        var ret = this.getNearestPos(pageIndex, x, y);
-        var sel = this.Selection;
-
-        sel.Page1  = pageIndex;
-        sel.Line1  = ret.Line;
-        sel.Word1  = ret.Word;
-        sel.Glyph1 = ret.Glyph;
-
-        sel.Page2  = pageIndex;
-        sel.Line2  = ret.Line;
-        sel.Word2  = ret.Word;
-        sel.Glyph2 = ret.Glyph;
-
-        sel.IsSelection = true;
-        this.cacheSelectionQuads([]);
-
-        this.onUpdateSelection();
-        this.onUpdateOverlay();
+        return this.pages[pageIndex].text;
     };
     CFile.prototype.removeSelection = function() {
         this.Selection = {
@@ -633,14 +503,37 @@ void main() {\n\
     CFile.prototype.getSelection = function() {
         return this.Selection;
     };
+    CFile.prototype.onMouseDown = function(pageIndex, x, y)
+    {
+        if (this.pages[pageIndex].isConvertedToShapes)
+            return;
+        
+        let ret = this.getNearestPos(pageIndex, x, y);
+        let sel = this.Selection;
 
+        sel.Page1  = pageIndex;
+        sel.Line1  = ret.Line;
+        sel.Word1  = ret.Word;
+        sel.Glyph1 = ret.Glyph;
+
+        sel.Page2  = pageIndex;
+        sel.Line2  = ret.Line;
+        sel.Word2  = ret.Word;
+        sel.Glyph2 = ret.Glyph;
+
+        sel.IsSelection = true;
+        this.cacheSelectionQuads([]);
+
+        this.onUpdateSelection();
+        this.onUpdateOverlay();
+    };
     CFile.prototype.onMouseMove = function(pageIndex, x, y)
     {
         if (false === this.Selection.IsSelection)
             return;
 
-        var ret = this.getNearestPos(pageIndex, x, y);
-        var sel = this.Selection;
+        let ret = this.getNearestPos(pageIndex, x, y);
+        let sel = this.Selection;
 
         sel.Page2  = pageIndex;
         sel.Line2  = ret.Line;
@@ -649,7 +542,6 @@ void main() {\n\
 
         this.onUpdateOverlay();
     };
-
     CFile.prototype.onMouseUp = function()
     {
         this.Selection.IsSelection = false;
@@ -677,23 +569,13 @@ void main() {\n\
             }, AscDFH.historydescription_Pdf_AddHighlightAnnot);
         }
     };
-
-    CFile.prototype.getPageText = function(pageIndex)
-    {
-        return this.pages[pageIndex].text;
-    };
-
     CFile.prototype.getNearestPos = function(pageIndex, x, y, bExcludeSpaces)
     {
         let oText = this.getPageText(pageIndex);
-        if (!oText)
-            return { Line : -1, Word : -1, Glyph : -1 };
+        if (!oText) return { Line : -1, Word : -1, Glyph : -1 };
 
-        let _minDist = 0xFFFFFF;
-
-        let _line  = -1;
-        let _word  = -1;
-        let _glyph = -1;
+        let _minDist = Infinity;
+        let _line  = -1, _word  = -1, _glyph = -1;
 
         for (let iLine = 0; iLine < oText.length; ++iLine)
         {
@@ -735,6 +617,18 @@ void main() {\n\
                         }
                     }
                 }
+
+                /* Нет, начинает выделять нижележащие строки
+                Но чисто учитывать вертикальную составляющую нельзя, должен быть более сложный учёт...
+                const k_x = 1;  // Вес горизонтальной составляющей
+                const k_y = 2;  // Вес вертикальной составляющей
+
+                let centerX = oLine.X + oLine.Width / 2;
+                let centerY = oLine.Y;
+                let distX = Math.abs(x - centerX);
+                let distY = Math.abs(y - centerY);
+                let weightedDist = Math.sqrt(distX * distX * k_x + distY * distY * k_y);
+                */
 
                 let tmp = Math.abs(y - oLine.Y);
                 if (_distX >= 0 && _distX <= oLine.Width)
@@ -788,14 +682,11 @@ void main() {\n\
             else
             {
                 // определяем точки descent линии
-                let ortX = -oLine.Ey;
-                let ortY = oLine.Ex;
-
-                let _dx = oLine.X + ortX * oLine.Descent;
-                let _dy = oLine.Y + ortY * oLine.Descent;
+                let _dx = oLine.X - oLine.Ey * oLine.Descent;
+                let _dy = oLine.Y + oLine.Ex * oLine.Descent;
 
                 // теперь проекции (со знаком) на линию descent
-                let h = -((x - _dx) * ortX + (y - _dy) * ortY);
+                let h = -(-(x - _dx) * oLine.Ey + (y - _dy) * oLine.Ex);
                 let w = (x - _dx) * oLine.Ex + (y - _dy) * oLine.Ey;
 
                 if (w >= 0 && w <= oLine.Width && h >= 0 && h <= (oLine.Descent + oLine.Ascent))
@@ -872,53 +763,72 @@ void main() {\n\
         return { Line : _line, Word : _word, Glyph : _glyph };
     };
     CFile.prototype.selectWholeWord = function(pageIndex, x, y) {
-        var oNearesPos = this.getNearestPos(pageIndex, x, y, true);
-        if (oNearesPos.Glyph < 0)
+        let ret = this.getNearestPos(pageIndex, x, y, true);
+        if (ret.Glyph < 0)
             return;
 
-        let oSelectionInfo = {
-            Glyph1: -2,
-            Glyph2: -1,
-            IsSelection: true,
-            Word1: oNearesPos.Word,
-            Word2: oNearesPos.Word,
-            Line1: oNearesPos.Line,
-            Line2: oNearesPos.Line,
-            Page1: pageIndex,
-            Page2: pageIndex,
-            quads: []
-        }
+        let sel = this.Selection;
+        sel.Glyph1 = -2;
+        sel.Glyph2 = -1;
+        sel.IsSelection = true;
+        sel.Word1 = ret.Word;
+        sel.Word2 = ret.Word;
+        sel.Line1 = ret.Line;
+        sel.Line2 = ret.Line;
+        sel.Page1 = pageIndex;
+        sel.Page2 = pageIndex;
+        sel.quads = [];
 
         let oText = this.getPageText(pageIndex);
-        let oWord = oText[oNearesPos.Line].Words[oNearesPos.Word];
-        if (oWord.IsSpace && oNearesPos.Word - 1 >= 0)
+        let oWord = oText[ret.Line]["Words"][ret.Word];
+        if (oWord["IsSpace"] && ret.Word - 1 >= 0)
         {
-            oSelectionInfo.Word1 = oNearesPos.Word - 1;
-            oSelectionInfo.Word2 = oNearesPos.Word - 1;
+            sel.Word1 = ret.Word - 1;
+            sel.Word2 = ret.Word - 1;
         }
-        
-        this.Selection = oSelectionInfo;
+
         this.onUpdateOverlay();
     };
     CFile.prototype.selectWholeRow = function(pageIndex, x, y) {
-        var oNearesPos = this.getNearestPos(pageIndex, x, y, true);
+        let ret = this.getNearestPos(pageIndex, x, y, true);
 
         let oText = this.getPageText(pageIndex);
-        let oSelectionInfo = {
-            Glyph1: -2,
-            Glyph2: -1,
-            IsSelection: true,
-            Word1: 0,
-            Word2: oText[oNearesPos.Line].Words.length - 1,
-            Line1: oNearesPos.Line,
-            Line2: oNearesPos.Line,
-            Page1: pageIndex,
-            Page2: pageIndex,
-            quads: []
+        let sel = this.Selection;
+        sel.Glyph1 = -2;
+        sel.Glyph2 = -1;
+        sel.IsSelection = true;
+        sel.Word1 = 0;
+        sel.Word2 = oText[ret.Line]["Words"].length - 1;
+        sel.Line1 = ret.Line;
+        sel.Line2 = ret.Line;
+        sel.Page1 = pageIndex;
+        sel.Page2 = pageIndex;
+        sel.quads = [];
+        
+        this.onUpdateOverlay();
+    };
+    CFile.prototype.selectAll = function()
+    {
+        this.removeSelection();
+        let sel = this.Selection;
+        
+        let pagesCount = this.pages.length;
+        if (pagesCount)
+        {
+            let oText = this.getPageText(pagesCount - 1);
+            if (!oText)
+                return;
+
+            sel.Glyph1 = -2;
+            sel.Page2 = pagesCount - 1;
+            sel.Line2 = oText.length - 1;
+            sel.Word2 = oText[sel.Line2]["Words"].length - 1;
+            sel.Glyph2 = -1;
         }
 
-        this.Selection = oSelectionInfo;
+        this.onUpdateSelection();
         this.onUpdateOverlay();
+        this.viewer.getPDFDoc().TextSelectTrackHandler.Update();
     };
     CFile.prototype.cacheSelectionQuads = function(aQuads) {
         this.Selection.quads = aQuads;
@@ -926,11 +836,11 @@ void main() {\n\
     CFile.prototype.getSelectionQuads = function() {
         let aInfo = [];
         
-        if (false == this.isSelectionUse()) {
+        if (!this.isSelectionUse()) {
             this.cacheSelectionQuads(aInfo);
             return aInfo;
         }
-        else if (this.Selection.quads.length != 0)
+        else if (this.Selection.quads.length)
             return this.Selection.quads;
         
         const { Page1, Page2, Line1, Line2, Word1, Word2, Glyph1, Glyph2 } = this.sortSelection();
@@ -1156,7 +1066,6 @@ void main() {\n\
             }
         }
     };
-
     CFile.prototype.copySelection = function(pageIndex, _text_format)
     {
         if (!this.isSelectionUse())
@@ -1228,13 +1137,11 @@ void main() {\n\
         }
         return ret;
     };
-
     CFile.prototype.copy = function(_text_format)
     {
         let sel = this.Selection;
         let page1 = sel.Page1;
         let page2 = sel.Page2;
-
         if (page2 < page1)
         {
             page1 = page2;
@@ -1246,43 +1153,16 @@ void main() {\n\
         {
             if (this.pages[i].isConvertedToShapes)
                 continue;
-
             ret += this.copySelection(i, _text_format);
         }
         ret += "</div>";
 
         return ret;
     };
-
-    CFile.prototype.selectAll = function()
-    {
-        this.removeSelection();
-        let sel = this.Selection;
-        
-        let pagesCount = this.pages.length;
-        if (0 != pagesCount)
-        {
-            let oText = this.getPageText(pagesCount - 1);
-            if (!oText)
-                return;
-
-            sel.Glyph1 = -2;
-            sel.Page2 = pagesCount - 1;
-            sel.Line2 = oText.length - 1;
-            sel.Word2 = oText[sel.Line2].Words.length - 1;
-            sel.Glyph2 = -1;
-        }
-
-        this.onUpdateSelection();
-        this.onUpdateOverlay();
-        this.viewer.getPDFDoc().TextSelectTrackHandler.Update();
-    };
-
     CFile.prototype.onUpdateOverlay = function()
     {
         this.viewer.onUpdateOverlay();
     };
-
     CFile.prototype.onUpdateSelection = function()
     {
         if (this.viewer.Api)
@@ -1323,7 +1203,6 @@ void main() {\n\
         }
         this.viewer.EndSearch(false);
     };
-    
 
     // класс элемента совпадения при поиске на странице
     function PdfPageMatch() {
@@ -1331,8 +1210,6 @@ void main() {\n\
         
         this.pdfPageMatch = true;
     }
-
-
     PdfPageMatch.prototype = Object.create(Array.prototype);
     PdfPageMatch.prototype.constructor = PdfPageMatch;
 
