@@ -42,6 +42,7 @@
     	this.isUse3d = false;
     	this.cacheManager = null;
     	this.logging = true;
+        this.type = -1;
 
     	this.Selection = {
             Page1 : 0,
@@ -574,8 +575,15 @@ void main() {\n\
         let oText = this.getPageText(pageIndex);
         if (!oText) return { Line : -1, Word : -1, Glyph : -1 };
 
-        let _minDist = Infinity;
+        if (this.type === 2)
+        {
+            let k = 72 / 96;
+            x *= k;
+            y *= k;
+        }
+
         let _line  = -1, _word  = -1, _glyph = -1;
+        var _minDist = Infinity;
 
         for (let iLine = 0; iLine < oText.length; ++iLine)
         {
@@ -1507,6 +1515,8 @@ void main() {\n\
         var error = file.nativeFile["loadFromData"](data);
         if (0 === error)
         {
+            file.type = file.nativeFile["getType"]();
+
             file.nativeFile["onRepaintPages"] = function(pages) {
                 file.onRepaintPages && file.onRepaintPages(pages);
             };
@@ -1554,6 +1564,8 @@ void main() {\n\
         var error = file.nativeFile["loadFromDataWithPassword"](password);
         if (0 === error)
         {
+            file.type = file.nativeFile["getType"]();
+
             file.nativeFile["onRepaintPages"] = function(pages) {
                 file.onRepaintPages && file.onRepaintPages(pages);
             };

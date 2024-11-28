@@ -3972,12 +3972,26 @@
 					}
 					if (props.resetCrop) {
 						for (i = 0; i < objects_by_type.images.length; ++i) {
-							if (objects_by_type.images[i].blipFill) {
-								var oBlipFill = objects_by_type.images[i].blipFill.createDuplicate();
-								oBlipFill.tile = null;
-								oBlipFill.stretch = true;
-								oBlipFill.srcRect = null;
-								objects_by_type.images[i].setBlipFill(oBlipFill);
+							let oImg = objects_by_type.images[i];
+							let oBlipFill = oImg.blipFill;
+							if (oBlipFill) {
+								let oBlipFillCopy = oBlipFill.createDuplicate();
+								oBlipFillCopy.tile = null;
+								oBlipFillCopy.stretch = true;
+								oBlipFillCopy.srcRect = null;
+								oImg.setBlipFill(oBlipFillCopy);
+
+								let oImgPr = new Asc.asc_CImgProperty();
+								oImgPr.ImageUrl = oBlipFill.RasterImageId;
+								let oSize = oImgPr.asc_getOriginSize(Asc.editor);
+								if(oSize.asc_getIsCorrect()) {
+									oImgPr.Width = oSize.asc_getImageWidth();
+									oImgPr.Height = oSize.asc_getImageHeight();
+									fApplyDrawingSize(oImg, oImgPr);
+									if(oImg.parent && oImg.parent.CheckWH) {
+										oImg.parent.CheckWH();
+									}
+								}
 							}
 
 						}
@@ -9853,7 +9867,17 @@
 			this.Bounds.CheckPoint(_x1, _y1);
 			this.Bounds.CheckPoint(_x2, _y2);
 		};
-
+		/**
+		 * @param {{x: Number, y: Number, z? :Number}[]} points
+		 */
+		CSlideBoundsChecker.prototype.checkPoints = function (points) {
+			let thisContext = this;
+			points.forEach(function(point) {
+				let x = thisContext.m_oFullTransform.TransformPointX(point.x, point.y);
+				let y = thisContext.m_oFullTransform.TransformPointX(point.x, point.y);
+				thisContext.Bounds.CheckPoint(x, y);
+			})
+		};
 		// images
 		CSlideBoundsChecker.prototype.drawImage2 = function(img, x, y, w, h) {
 			var _x1 = this.m_oFullTransform.TransformPointX(x, y);

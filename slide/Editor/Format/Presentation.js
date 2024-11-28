@@ -7348,6 +7348,10 @@ CPresentation.prototype.Load_DocumentStateAfterLoadChanges = function (oState) {
 
 	this.CollaborativeEditing.UpdateDocumentPositionsByState(oState);
 	let oCurSlide = this.GetCurrentSlide();
+	if(!oCurSlide) {
+		this.DrawingDocument.m_oWordControl.GoToPage(this.GetSlidesCount() - 1);
+		return;
+	}
 	if (oState.Slide) {
 		var oSlide = oState.Slide;
 		if (oSlide !== oCurSlide) {

@@ -54,7 +54,7 @@
     CPdfDrawingPrototype.prototype.IsForm = function() {
         return false;
     };
-    CPdfDrawingPrototype.prototype.IsTextShape = function() {
+    CPdfDrawingPrototype.prototype.IsShape = function() {
         return false;
     };
     CPdfDrawingPrototype.prototype.IsImage = function() {

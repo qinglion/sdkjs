@@ -1556,6 +1556,20 @@
             this.updateResize = false;
 
             this.objectRender.resizeCanvas();
+			if (this.getRightToLeft()) {
+				AscFormat.ExecuteNoHistory(function () {
+					let drawings = this.objectRender.controller.getDrawingObjects();
+					for (var i = 0; i < drawings.length; ++i) {
+						if (!drawings[i].group) {
+							AscFormat.CheckSpPrXfrm3(drawings[i], true);
+						} else {
+							AscFormat.CheckSpPrXfrm(drawings[i], true);
+						}
+					}
+					this.objectRender.controller.recalculate(true);
+				}, this, []);
+			}
+
 			if (editor) {
 				editor.move();
 			}
@@ -15817,7 +15831,12 @@
                         switch (val) {
                             case c_oAscMergeOptions.MergeCenter:
                             case c_oAscMergeOptions.Merge:
-                                range.merge(val);
+                                let mergeRes = range.merge(val);
+								/* call an error if it returns from merge */
+								if (mergeRes && mergeRes.errorType) {
+									t.handlers.trigger("onErrorEvent", mergeRes.errorType, c_oAscError.Level.NoCritical);
+									break;
+								}
                                 t.cellCommentator.mergeComments(range.getBBox0());
                                 break;
                             case c_oAscMergeOptions.None:
@@ -15825,7 +15844,12 @@
                                 break;
                             case c_oAscMergeOptions.MergeAcross:
                                 for (res = range.bbox.r1; res <= range.bbox.r2; ++res) {
-                                    t.model.getRange3(res, range.bbox.c1, res, range.bbox.c2).merge(val);
+									let mergeRes = t.model.getRange3(res, range.bbox.c1, res, range.bbox.c2).merge(val);
+                                    /* call an error if it returns from merge */
+									if (mergeRes && mergeRes.errorType) {
+										t.handlers.trigger("onErrorEvent", mergeRes.errorType, c_oAscError.Level.NoCritical);
+										break;
+									}
                                     cell = new asc_Range(range.bbox.c1, res, range.bbox.c2, res);
                                     t.cellCommentator.mergeComments(cell);
                                 }

@@ -611,7 +611,7 @@
 				if (pages[i] >= this.startVisiblePage && pages[i] <= this.endVisiblePage)
 				{
 					delete this.drawingPages[pages[i]].Image;
-					oThumbnails && oThumbnails._repaintPage(i);
+					oThumbnails && oThumbnails._repaintPage(pages[i]);
 				}
 			}
 
@@ -2008,6 +2008,9 @@
 				return res;
 			}
 
+			if (oThis.touchManager)
+				oThis.touchManager.checkMouseFocus(e);
+
 			oThis.isFocusOnThumbnails = false;
 			AscCommon.stopEvent(e);
 
@@ -2781,7 +2784,7 @@
 			let oDoc = this.getPDFDoc();
 			Asc.editor.checkLastWork();
 			
-			if (oDoc.fontLoader.isWorking() || this.IsOpenFormsInProgress || AscCommon.CollaborativeEditing.waitingImagesForLoad) {
+			if (oDoc.fontLoader.isFontLoadInProgress() || this.IsOpenFormsInProgress || AscCommon.CollaborativeEditing.waitingImagesForLoad) {
 				this.paint();
 				return;
 			}
