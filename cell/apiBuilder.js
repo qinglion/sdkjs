@@ -11200,37 +11200,80 @@
 		//firstly add filter
 		this.range.worksheet.addAutoFilter(null, this.range);
 
+
+
+		var c_oAscCustomAutoFilter = {
+			equals: 1,
+			isGreaterThan: 2,
+			isGreaterThanOrEqualTo: 3,
+			isLessThan: 4,
+			isLessThanOrEqualTo: 5,
+			doesNotEqual: 6,
+			beginsWith: 7,
+			doesNotBeginWith: 8,
+			endsWith: 9,
+			doesNotEndWith: 10,
+			contains: 11,
+			doesNotContain: 12
+		};
+
+		let getOperator = function (val) {
+			let res = null;
+			switch (val) {
+				case "=": {
+					res = Asc.c_oAscCustomAutoFilter.equals;
+					break
+				}
+				case ">": {
+					res = Asc.c_oAscCustomAutoFilter.isGreaterThan;
+					break
+				}
+				case ">=": {
+					res = Asc.c_oAscCustomAutoFilter.isGreaterThanOrEqualTo;
+					break
+				}
+				case "<": {
+					res = Asc.c_oAscCustomAutoFilter.isLessThan;
+					break
+				}
+				case "<=": {
+					res = Asc.c_oAscCustomAutoFilter.isLessThanOrEqualTo;
+					break
+				}
+				case "<>": {
+					res = Asc.c_oAscCustomAutoFilter.doesNotEqual;
+					break
+				}
+			}
+			return res;
+		};
+
 		//apply filtering
 		if (Criteria1 || Criteria1) {
 			let autoFilterOptions = new window["Asc"].AutoFiltersOptions();
 			switch (Operator) {
+				case "xlOr":
 				case "xlAnd": {
-
-					/*var newCustomFilter = new Asc.CustomFilters();
-					newCustomFilter.asc_setCustomFilters((item.value == -2 || item.value == -3) ? [new Asc.CustomFilter(), new Asc.CustomFilter()]: [new Asc.CustomFilter()]);
+					let newCustomFilter = new Asc.CustomFilters();
+					let oCriteria1 = AscCommonExcel.matchingValue(new AscCommonExcel.cString(Criteria1));
+					let oCriteria2 = AscCommonExcel.matchingValue(new AscCommonExcel.cString(Criteria2));
+					let operator1 = getOperator(oCriteria1.op);
+					let operator2 = getOperator(oCriteria2.op);
 
 					var newCustomFilters = newCustomFilter.asc_getCustomFilters();
-					newCustomFilters[0].asc_setOperator((item.value == -2) ? Asc.c_oAscCustomAutoFilter.isGreaterThanOrEqualTo : ((item.value == -3) ? Asc.c_oAscCustomAutoFilter.isLessThan : item.value));
+					if (oCriteria1) {
 
-					if (item.value == -2) {
-						var isBetween = (cond1 == Asc.c_oAscCustomAutoFilter.isGreaterThanOrEqualTo && cond2 == Asc.c_oAscCustomAutoFilter.isLessThanOrEqualTo);
-						newCustomFilter.asc_setAnd(isBetween ? isAnd : true);
-						newCustomFilters[0].asc_setVal(isBetween ? value1 : '');
-						newCustomFilters[1].asc_setOperator(Asc.c_oAscCustomAutoFilter.isLessThanOrEqualTo);
-						newCustomFilters[1].asc_setVal(isBetween ? value2 : '');
-					} else if (item.value == -3) {
-						var isNotBetween = (cond1 == Asc.c_oAscCustomAutoFilter.isLessThan && cond2 == Asc.c_oAscCustomAutoFilter.isGreaterThan);
-						newCustomFilter.asc_setAnd(isNotBetween ? isAnd : false);
-						newCustomFilters[0].asc_setVal(isNotBetween ? value1 : '');
-						newCustomFilters[1].asc_setOperator(Asc.c_oAscCustomAutoFilter.isGreaterThan);
-						newCustomFilters[1].asc_setVal(isNotBetween ? value2 : '');
-					} else {
-						newCustomFilter.asc_setAnd(true);
-						newCustomFilters[0].asc_setVal((item.value == cond1) ? value1 : '');
+						newCustomFilters[0].asc_setVal(oCriteria1.val);
+						newCustomFilters[0].asc_setOperator(operator1);
 					}
+					if (oCriteria2) {
+						newCustomFilters[0].asc_setVal(oCriteria2.val);
+						newCustomFilters[0].asc_setOperator(operator2);
+					}
+					newCustomFilter.asc_setAnd(Operator === "xlAnd");
 
-					filterObj.asc_setFilter(newCustomFilter);
-					filterObj.asc_setType(Asc.c_oAscAutoFilterTypes.CustomFilters);*/
+					autoFilterOptions.asc_setFilter(newCustomFilter);
+					autoFilterOptions.asc_setType(Asc.c_oAscAutoFilterTypes.CustomFilters);
 
 					break;
 				}
@@ -11253,9 +11296,6 @@
 					break;
 				}
 				case "xlFilterValues": {
-					break;
-				}
-				case "xlOr": {
 					break;
 				}
 				case "xlTop10Items": {
