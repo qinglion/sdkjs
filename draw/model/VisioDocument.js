@@ -375,7 +375,8 @@
 		let aFonts = this.loadedFonts;
 		// load Arial by default
 		aFonts.push(new AscFonts.CFont("Arial", 0, "", 0));
-		let newFontIndex = 1;
+		aFonts.push(new AscFonts.CFont("Calibri", 1, "", 0));
+		let newFontStartIndex = 2;
 		this.faceNames.forEach(function (faceName_Type) {
 			let nameU = faceName_Type.nameU;
 			let fontInfo = api.FontLoader.fontInfos.find(function(cFontInfo) {
@@ -385,8 +386,8 @@
 				AscCommon.consoleLog("Unknown font used in visio file: " + nameU);
 			} else {
 				AscCommon.consoleLog("Font" + nameU + "will be loaded");
-				aFonts.push(new AscFonts.CFont(nameU, newFontIndex, "", 0));
-				newFontIndex += 1;
+				aFonts.push(new AscFonts.CFont(nameU, newFontStartIndex, "", 0));
+				newFontStartIndex += 1;
 			}
 		});
 
