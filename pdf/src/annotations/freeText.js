@@ -117,24 +117,29 @@
             return;
         }
 
-        let oBodyPr = oTxShape.txBody.bodyPr;
-        
-        switch (nAngle) {
-            case 0:
-                oBodyPr.setVert();
-                break;
-            case 90:
-                oBodyPr.setVert(AscFormat.nVertTTvert270);
-                break;
-            case 180:
-                oBodyPr.setRot(-nAngle * 60000);
-                oBodyPr.setVert(AscFormat.nVertTTwordArtVert);
-                oBodyPr.anchor = AscFormat.VERTICAL_ANCHOR_TYPE_BOTTOM;
-                break;
-            case 270:
-                oBodyPr.setVert(AscFormat.nVertTTeaVert);
-                break;
-        }
+        AscCommon.History.Add(new CChangesPDFAnnotRotate(this, this._rotate, nAngle));
+		
+		AscCommon.ExecuteNoHistory(function() {
+			let oBodyPr = oTxShape.txBody.bodyPr;
+			
+			switch (nAngle) {
+				case 0:
+					oBodyPr.setVert();
+					break;
+				case 90:
+					oBodyPr.setVert(AscFormat.nVertTTvert270);
+					break;
+				case 180:
+					oBodyPr.setRot(-nAngle * 60000);
+					oBodyPr.setVert(AscFormat.nVertTTwordArtVert);
+					oBodyPr.anchor = AscFormat.VERTICAL_ANCHOR_TYPE_BOTTOM;
+					break;
+				case 270:
+					oBodyPr.setVert(AscFormat.nVertTTeaVert);
+					break;
+			}
+		}, undefined, this);
+		
         this._rotate = nAngle;
         this.SetNeedRecalc(true);
     };
@@ -160,7 +165,7 @@
         if (!aCallout && !aArrowPts)
             return undefined;
 
-        let nLineWidth = this.GetWidth() * g_dKoef_pt_to_mm * g_dKoef_mm_to_pix;
+        let nLineWidth = this.GetWidth();
 
         let oLine = {
             x1: aArrowPts ? aArrowPts[0] : aCallout[1 * 2],
@@ -248,17 +253,20 @@
         this._lineEnd = nType;
         
         this.SetWasChanged(true);
-
-        if (this.spTree.length == 3) {
-            let oTargetSp = this.spTree[1];
-            let oLine = oTargetSp.pen;
-            oLine.setTailEnd(new AscFormat.EndArrow());
-            let nLineEndType = getInnerLineEndType(nType);
-            
-
-            oLine.tailEnd.setType(nLineEndType);
-            oLine.tailEnd.setLen(AscFormat.LineEndSize.Mid);
-        }
+		
+		AscCommon.ExecuteNoHistory(function() {
+			if (3 === this.spTree.length)
+			{
+				let oTargetSp = this.spTree[1];
+				let oLine     = oTargetSp.pen;
+				oLine.setTailEnd(new AscFormat.EndArrow());
+				let nLineEndType = getInnerLineEndType(nType);
+				
+				
+				oLine.tailEnd.setType(nLineEndType);
+				oLine.tailEnd.setLen(AscFormat.LineEndSize.Mid);
+			}
+		}, undefined, this);
     };
     CAnnotationFreeText.prototype.GetLineEnd = function() {
         return this._lineEnd;
@@ -279,76 +287,74 @@
     CAnnotationFreeText.prototype.CheckInnerShapesProps = function() {
         let nOpacity = this.GetOpacity();
 
-        AscCommon.History.StartNoHistoryMode();
-
-        let aStrokeColor = this.GetStrokeColor();
-        if (aStrokeColor.length == 0) {
-            aStrokeColor = [0, 0, 0];
-        }
-        
-        if (aStrokeColor) {
-            let oRGB    = this.GetRGBColor(aStrokeColor);
-            let oFill   = AscFormat.CreateSolidFillRGBA(oRGB.r, oRGB.g, oRGB.b, 255);
-            oFill.transparent = nOpacity * 100 * 2.55;
-            
-            let oTxBoxShape = this.GetTextBoxShape();
-            let oLine = oTxBoxShape.spPr.ln;
-            if (this.GetWidth() == 0) {
-                oLine.setFill(AscFormat.CreateNoFillUniFill());
-            }
-            else {
-                oLine.setFill(oFill);
-            }
-
-            for (let i = 0; i < this.spTree.length; i++) {
-                let oLine = this.spTree[i].spPr.ln;
-                oLine.setFill(oFill);
-            }
-        }
-        
-        let aFillColor = this.GetFillColor();
-        if (aFillColor.length == 0) {
-            aFillColor = [1, 1, 1];
-        }
-
-        if (aFillColor) {
-            let oRGB    = this.GetRGBColor(aFillColor);
-            let oFill   = AscFormat.CreateSolidFillRGBA(oRGB.r, oRGB.g, oRGB.b, 255);
-            oFill.transparent = nOpacity * 100 * 2.55;
-            for (let i = 0; i < this.spTree.length; i++) {
-                this.spTree[i].setFill(oFill);
-            }
-        }
-
-        let nWidthPt = this.GetWidth();
-        for (let i = 0; i < this.spTree.length; i++) {
-            let oLine = this.spTree[i].spPr.ln;
-            if (nWidthPt == 0 && this.GetTextBoxShape() !== this.spTree[i]) {
-                oLine.setW(0.5 * g_dKoef_pt_to_mm * 36000.0);
-            }
-            else {
-                if (nWidthPt == 0) {
-                    oLine.setFill(AscFormat.CreateNoFillUniFill());
-                }
-
-                oLine.setW(nWidthPt * g_dKoef_pt_to_mm * 36000.0);
-            }
-            
-            oLine.Fill.transparent = nOpacity * 100 * 2.55;
-        }
-
-        let nLineEndType = this.GetLineEnd();
-        if (this.spTree[1] && this.spTree[1].getPresetGeom() == "line") {
-            let oTargetSp = this.spTree[1];
-            let oLine = oTargetSp.spPr.ln;
-            oLine.setTailEnd(new AscFormat.EndArrow());
-            let nInnerType = getInnerLineEndType(nLineEndType);
-            
-            oLine.tailEnd.setType(nInnerType);
-            oLine.tailEnd.setLen(AscFormat.LineEndSize.Mid);
-        }
-
-        AscCommon.History.EndNoHistoryMode();
+		AscCommon.ExecuteNoHistory(function() {
+			let aStrokeColor = this.GetStrokeColor();
+			if (!aStrokeColor || aStrokeColor.length == 0) {
+				aStrokeColor = [0, 0, 0];
+			}
+			
+			if (aStrokeColor) {
+				let oRGB    = this.GetRGBColor(aStrokeColor);
+				let oFill   = AscFormat.CreateSolidFillRGBA(oRGB.r, oRGB.g, oRGB.b, 255);
+				oFill.transparent = nOpacity * 100 * 2.55;
+				
+				let oTxBoxShape = this.GetTextBoxShape();
+				let oLine = oTxBoxShape.spPr.ln;
+				if (this.GetWidth() == 0) {
+					oLine.setFill(AscFormat.CreateNoFillUniFill());
+				}
+				else {
+					oLine.setFill(oFill);
+				}
+	
+				for (let i = 0; i < this.spTree.length; i++) {
+					let oLine = this.spTree[i].spPr.ln;
+					oLine.setFill(oFill);
+				}
+			}
+			
+			let aFillColor = this.GetFillColor();
+			if (!aFillColor || aFillColor.length == 0) {
+				aFillColor = [1, 1, 1];
+			}
+	
+			if (aFillColor) {
+				let oRGB    = this.GetRGBColor(aFillColor);
+				let oFill   = AscFormat.CreateSolidFillRGBA(oRGB.r, oRGB.g, oRGB.b, 255);
+				oFill.transparent = nOpacity * 100 * 2.55;
+				for (let i = 0; i < this.spTree.length; i++) {
+					this.spTree[i].setFill(oFill);
+				}
+			}
+	
+			let nWidthPt = this.GetWidth();
+			for (let i = 0; i < this.spTree.length; i++) {
+				let oLine = this.spTree[i].spPr.ln;
+				if (nWidthPt == 0 && this.GetTextBoxShape() !== this.spTree[i]) {
+					oLine.setW(0.5 * g_dKoef_pt_to_mm * 36000.0);
+				}
+				else {
+					if (nWidthPt == 0) {
+						oLine.setFill(AscFormat.CreateNoFillUniFill());
+					}
+	
+					oLine.setW(nWidthPt * g_dKoef_pt_to_mm * 36000.0);
+				}
+				
+				oLine.Fill.transparent = nOpacity * 100 * 2.55;
+			}
+	
+			let nLineEndType = this.GetLineEnd();
+			if (this.spTree[1] && this.spTree[1].getPresetGeom() == "line") {
+				let oTargetSp = this.spTree[1];
+				let oLine = oTargetSp.spPr.ln;
+				oLine.setTailEnd(new AscFormat.EndArrow());
+				let nInnerType = getInnerLineEndType(nLineEndType);
+				
+				oLine.tailEnd.setType(nInnerType);
+				oLine.tailEnd.setLen(AscFormat.LineEndSize.Mid);
+			}
+		}, undefined, this);
     };
     CAnnotationFreeText.prototype.SetCallout = function(aCallout) {
         let oDoc = this.GetDocument();
@@ -360,144 +366,116 @@
         this.SetNeedRecalc(true);
     };
     CAnnotationFreeText.prototype.GetCallout = function(bScaled) {
-        if (bScaled != true || !this._callout)
-            return this._callout;
-
-        let oViewer = Asc.editor.getDocumentRenderer();
-        let nPage   = this.GetPage();
-        let nScaleY = oViewer.drawingPages[nPage].H / oViewer.file.pages[nPage].H / oViewer.zoom;
-        let nScaleX = oViewer.drawingPages[nPage].W / oViewer.file.pages[nPage].W / oViewer.zoom;
-
-        return this._callout.slice().map(function(measure, idx) {
-            return idx % 2 == 0 ? measure * nScaleX : measure * nScaleY;
-        });
+        return this._callout;
     };
-    CAnnotationFreeText.prototype.SetWidth = function(nWidthPt) {
-        AscCommon.History.Add(new CChangesPDFAnnotStrokeWidth(this, this.GetWidth(), nWidthPt));
-
-        this._width = nWidthPt; 
-
-        for (let i = 1; i < this.spTree.length; i++) {
-            let oLine = this.spTree[i].spPr.ln;
-            if (nWidthPt == 0 && this.spTree[i] != this.GetTextBoxShape()) {
-                oLine.setW(0.5 * g_dKoef_pt_to_mm * 36000.0);
-            }
-            else {
-                if (nWidthPt == 0) {
-                    oLine.setFill(AscFormat.CreateNoFillUniFill());
-                }
-                else {
-                    AscCommon.History.StartNoHistoryMode();
-                    this.SetStrokeColor(this.GetStrokeColor());
-                    AscCommon.History.EndNoHistoryMode();
-                }
-
-                oLine.setW(nWidthPt * g_dKoef_pt_to_mm * 36000.0);
-            }
-        }
-    };
-    CAnnotationFreeText.prototype.SetStrokeColor = function(aColor) {
-        AscCommon.History.Add(new CChangesPDFAnnotStroke(this, this.GetStrokeColor() || [], aColor));
-        
-        this._strokeColor = aColor;
-
-        let oRGB    = this.GetRGBColor(aColor);
-        let oFill   = AscFormat.CreateSolidFillRGBA(oRGB.r, oRGB.g, oRGB.b, 255);
-
-        let oTxBoxShape = this.GetTextBoxShape();
-        let oLine = oTxBoxShape.spPr.ln;
-        if (this.GetWidth() == 0) {
-            oLine.setFill(AscFormat.CreateNoFillUniFill());
-        }
-        else {
-            oLine.setFill(oFill);
-        }
-        
-
-        for (let i = 1; i < this.spTree.length; i++) {
-            let oLine = this.spTree[i].spPr.ln;
-            oLine.setFill(oFill);
-        }
-    };
-    CAnnotationFreeText.prototype.SetOpacity = function(value) {
-        this._opacity = value;
-        this.SetWasChanged(true);
-
-        for (let i = 1; i < this.spTree.length; i++) {
-            let oLine = this.spTree[i].spPr.ln;
-            oLine.Fill.transparent = value * 100 * 2.55;
-
-            let oFill = this.spPr.Fill;
-            oFill.transparent = value * 100 * 2.55;
-
-            this.spTree[i].handleUpdateLn();
-            this.spTree[i].handleUpdateFill();
-        }
-    };
-    CAnnotationFreeText.prototype.SetFillColor = function(aColor) {
-        AscCommon.History.Add(new CChangesPDFAnnotFill(this, this.GetFillColor() || [], aColor));
-
-        this._fillColor = aColor;
-
-        let oRGB    = this.GetRGBColor(aColor);
-        let oFill   = AscFormat.CreateSolidFillRGBA(oRGB.r, oRGB.g, oRGB.b, 255);
-        for (let i = 0; i < this.spTree.length; i++) {
-            this.spTree[i].setFill(oFill);
-        }
-    };
-    CAnnotationFreeText.prototype.SetRect = function(aRect) {
-        let oViewer     = editor.getDocumentRenderer();
-        let oDoc        = oViewer.getPDFDoc();
-        let nPage       = this.GetPage();
-
-        oDoc.History.Add(new CChangesPDFAnnotRect(this, this.GetRect(), aRect));
-
-        let nScaleY = oViewer.drawingPages[nPage].H / oViewer.file.pages[nPage].H / oViewer.zoom;
-        let nScaleX = oViewer.drawingPages[nPage].W / oViewer.file.pages[nPage].W / oViewer.zoom;
-
-        this._rect = aRect;
-
-        this._pagePos = {
-            x: aRect[0],
-            y: aRect[1],
-            w: (aRect[2] - aRect[0]),
-            h: (aRect[3] - aRect[1])
-        };
-
-        this._origRect[0] = this._rect[0] / nScaleX;
-        this._origRect[1] = this._rect[1] / nScaleY;
-        this._origRect[2] = this._rect[2] / nScaleX;
-        this._origRect[3] = this._rect[3] / nScaleY;
-
-        oDoc.StartNoHistoryMode();
-
-        this.spPr.xfrm.extX = this._pagePos.w * g_dKoef_pix_to_mm;
-        this.spPr.xfrm.extY = this._pagePos.h * g_dKoef_pix_to_mm;
-        this.spPr.xfrm.offX = aRect[0] * g_dKoef_pix_to_mm;
-        this.spPr.xfrm.offY = aRect[1] * g_dKoef_pix_to_mm;
-        this.updateTransformMatrix();
-
-        oDoc.EndNoHistoryMode();
-
-        this.recalcGeometry();
-        this.SetNeedRecalc(true);
-        this.SetWasChanged(true);
-    };
-    CAnnotationFreeText.prototype.GetTextBoxRect = function(bScale) {
-        let oViewer     = Asc.editor.getDocumentRenderer();
+	CAnnotationFreeText.prototype.SetWidth = function(nWidthPt) {
+		AscCommon.History.Add(new CChangesPDFAnnotStrokeWidth(this, this.GetWidth(), nWidthPt));
+		
+		this._width = nWidthPt;
+		
+		AscCommon.ExecuteNoHistory(function() {
+			for (let i = 1; i < this.spTree.length; i++) {
+				let oLine = this.spTree[i].spPr.ln;
+				if (nWidthPt == 0 && this.spTree[i] != this.GetTextBoxShape()) {
+					oLine.setW(0.5 * g_dKoef_pt_to_mm * 36000.0);
+				}
+				else {
+					if (nWidthPt == 0) {
+						oLine.setFill(AscFormat.CreateNoFillUniFill());
+					}
+					else {
+						this.SetStrokeColor(this.GetStrokeColor());
+					}
+					
+					oLine.setW(nWidthPt * g_dKoef_pt_to_mm * 36000.0);
+				}
+			}
+		}, undefined, this);
+	};
+	CAnnotationFreeText.prototype.SetStrokeColor = function(aColor) {
+		AscCommon.History.Add(new CChangesPDFAnnotStroke(this, this.GetStrokeColor(), aColor));
+		
+		this._strokeColor = aColor;
+		
+		AscCommon.ExecuteNoHistory(function() {
+			let oRGB  = this.GetRGBColor(aColor);
+			let oFill = AscFormat.CreateSolidFillRGBA(oRGB.r, oRGB.g, oRGB.b, 255);
+			
+			let oTxBoxShape = this.GetTextBoxShape();
+			let oLine       = oTxBoxShape.spPr.ln;
+			if (this.GetWidth() == 0) {
+				oLine.setFill(AscFormat.CreateNoFillUniFill());
+			}
+			else {
+				oLine.setFill(oFill);
+			}
+			for (let i = 1; i < this.spTree.length; i++) {
+				let oLine = this.spTree[i].spPr.ln;
+				oLine.setFill(oFill);
+			}
+		}, undefined, this);
+	};
+	CAnnotationFreeText.prototype.SetOpacity = function(value) {
+		this._opacity = value;
+		this.SetWasChanged(true);
+		
+		AscCommon.ExecuteNoHistory(function() {
+			for (let i = 1; i < this.spTree.length; i++) {
+				let oLine = this.spTree[i].spPr.ln;
+				oLine.Fill.transparent = value * 100 * 2.55;
+				
+				let oFill = this.spPr.Fill;
+				oFill.transparent = value * 100 * 2.55;
+				
+				this.spTree[i].handleUpdateLn();
+				this.spTree[i].handleUpdateFill();
+			}
+		}, undefined, this);
+	};
+	CAnnotationFreeText.prototype.SetFillColor = function(aColor) {
+		AscCommon.History.Add(new CChangesPDFAnnotFill(this, this.GetFillColor(), aColor));
+		
+		this._fillColor = aColor;
+		
+		AscCommon.ExecuteNoHistory(function() {
+			let oRGB  = this.GetRGBColor(aColor);
+			let oFill = AscFormat.CreateSolidFillRGBA(oRGB.r, oRGB.g, oRGB.b, 255);
+			for (let i = 0; i < this.spTree.length; i++)
+			{
+				this.spTree[i].setFill(oFill);
+			}
+		}, undefined, this);
+	};
+	CAnnotationFreeText.prototype.SetRect = function(aOrigRect) {
+		AscCommon.History.Add(new CChangesPDFAnnotRect(this, this.GetOrigRect(), aOrigRect));
+		
+		this._origRect = aOrigRect;
+		
+		let oXfrm = this.getXfrm();
+		if (oXfrm) {
+			AscCommon.ExecuteNoHistory(function() {
+				this.spPr.xfrm.extX = (aOrigRect[2] - aOrigRect[0]) * g_dKoef_pt_to_mm;
+				this.spPr.xfrm.extY = (aOrigRect[3] - aOrigRect[1]) * g_dKoef_pt_to_mm;
+				this.spPr.xfrm.offX = aOrigRect[0] * g_dKoef_pt_to_mm;
+				this.spPr.xfrm.offY = aOrigRect[1] * g_dKoef_pt_to_mm;
+				this.updateTransformMatrix();
+				this.recalcGeometry();
+			}, undefined, this);
+		}
+		
+		this.SetNeedRecalc(true);
+		this.SetWasChanged(true);
+	};
+    CAnnotationFreeText.prototype.GetTextBoxRect = function() {
         let aOrigRect   = this.GetOrigRect();
         let aRD         = this.GetRectangleDiff() || [0, 0, 0, 0]; // отступ координат фигуры с текстом от ректа аннотации
-        let nPage       = this.GetPage();
 
-        let nScaleY = oViewer.drawingPages[nPage].H / oViewer.file.pages[nPage].H / oViewer.zoom;
-        let nScaleX = oViewer.drawingPages[nPage].W / oViewer.file.pages[nPage].W / oViewer.zoom;
+        let xMin = (aOrigRect[0] + aRD[0]);
+        let yMin = (aOrigRect[1] + aRD[1]);
+        let xMax = (aOrigRect[2] - aRD[2]);
+        let yMax = (aOrigRect[3] - aRD[3]);
 
-        let xMin = bScale ? nScaleX * (aOrigRect[0] + aRD[0]) : (aOrigRect[0] + aRD[0]);
-        let yMin = bScale ? nScaleY * (aOrigRect[1] + aRD[1]) : (aOrigRect[1] + aRD[1]);
-        let xMax = bScale ? nScaleX * (aOrigRect[2] - aRD[2]) : (aOrigRect[2] - aRD[2]);
-        let yMax = bScale ? nScaleY * (aOrigRect[3] - aRD[3]) : (aOrigRect[3] - aRD[3]);
-
-        return [xMin, yMin, xMax, yMax]
+        return [xMin, yMin, xMax, yMax];
     };
     CAnnotationFreeText.prototype.LazyCopy = function() {
         let oDoc = this.GetDocument();
@@ -507,16 +485,10 @@
 
         oFreeText.lazyCopy = true;
 
-        oFreeText._pagePos = {
-            x: this._pagePos.x,
-            y: this._pagePos.y,
-            w: this._pagePos.w,
-            h: this._pagePos.h
-        }
-        oFreeText._origRect = this._origRect.slice();
-
-        let aStrokeColor = this.GetStrokeColor();
-        let aFillColor = this.GetFillColor();
+        let aStrokeColor    = this.GetStrokeColor();
+        let aFillColor      = this.GetFillColor();
+        let aCallout        = this.GetCallout();
+        let aRD             = this.GetRectangleDiff();
 
         oFreeText._apIdx = this._apIdx;
         oFreeText._originView = this._originView;
@@ -525,14 +497,13 @@
         oFreeText.SetModDate(this.GetModDate());
         oFreeText.SetCreationDate(this.GetCreationDate());
         oFreeText.SetContents(this.GetContents());
-        oFreeText.SetStrokeColor(aStrokeColor.slice());
-        oFreeText.SetFillColor(aFillColor.slice());
+        aStrokeColor && oFreeText.SetStrokeColor(aStrokeColor.slice());
+        aFillColor && oFreeText.SetFillColor(aFillColor.slice());
         oFreeText.SetWidth(this.GetWidth());
         oFreeText.SetLineEnd(this.GetLineEnd());
         oFreeText.SetOpacity(this.GetOpacity());
-        oFreeText.recalcInfo.recalculateGeometry = false;
-        oFreeText.SetCallout(this.GetCallout().slice());
-        oFreeText.SetRectangleDiff(this.GetRectangleDiff());
+        aCallout && oFreeText.SetCallout(aCallout.slice());
+        aRD && oFreeText.SetRectangleDiff(aRD.slice());
         oFreeText.SetWasChanged(oFreeText.IsChanged());
         oFreeText.recalcGeometry();
         
@@ -564,10 +535,6 @@
         let aOrigRect   = this.GetOrigRect();
         let aCallout    = this.GetCallout(); // координаты выходящей стрелки
         let aRD         = this.GetRectangleDiff() || [0, 0, 0, 0]; // отступ координат фигуры с текстом от ректа аннотации
-        let nPage       = this.GetPage();
-
-        let nScaleY = oViewer.drawingPages[nPage].H / oViewer.file.pages[nPage].H / oViewer.zoom * g_dKoef_pix_to_mm;
-        let nScaleX = oViewer.drawingPages[nPage].W / oViewer.file.pages[nPage].W / oViewer.zoom * g_dKoef_pix_to_mm;
 
         let aFreeTextPoints = [];
         let aFreeTextRect   = []; // прямоугольник
@@ -575,34 +542,34 @@
 
         // левый верхний
         aFreeTextRect.push({
-            x: (aOrigRect[0] + aRD[0]) * nScaleX,
-            y: (aOrigRect[1] + aRD[1]) * nScaleY
+            x: (aOrigRect[0] + aRD[0]) * g_dKoef_pt_to_mm,
+            y: (aOrigRect[1] + aRD[1]) * g_dKoef_pt_to_mm
         });
         // правый верхний
         aFreeTextRect.push({
-            x: (aOrigRect[2] - aRD[2]) * nScaleX,
-            y: (aOrigRect[1] + aRD[1]) * nScaleY
+            x: (aOrigRect[2] - aRD[2]) * g_dKoef_pt_to_mm,
+            y: (aOrigRect[1] + aRD[1]) * g_dKoef_pt_to_mm
         });
         // правый нижний
         aFreeTextRect.push({
-            x: (aOrigRect[2] - aRD[2]) * nScaleX,
-            y: (aOrigRect[3] - aRD[3]) * nScaleY
+            x: (aOrigRect[2] - aRD[2]) * g_dKoef_pt_to_mm,
+            y: (aOrigRect[3] - aRD[3]) * g_dKoef_pt_to_mm
         });
         // левый нижний
         aFreeTextRect.push({
-            x: (aOrigRect[0] + aRD[0]) * nScaleX,
-            y: (aOrigRect[3] - aRD[3]) * nScaleY
+            x: (aOrigRect[0] + aRD[0]) * g_dKoef_pt_to_mm,
+            y: (aOrigRect[3] - aRD[3]) * g_dKoef_pt_to_mm
         });
 
         if (aCallout && aCallout.length == 6) {
             // точка выхода callout
             aFreeTextLine90.push({
-                x: (aCallout[2 * 2]) * nScaleX,
-                y: (aCallout[2 * 2 + 1]) * nScaleY
+                x: (aCallout[2 * 2]) * g_dKoef_pt_to_mm,
+                y: (aCallout[2 * 2 + 1]) * g_dKoef_pt_to_mm
             });
             aFreeTextLine90.push({
-                x: (aCallout[2 * 1]) * nScaleX,
-                y: (aCallout[2 * 1 + 1]) * nScaleY
+                x: (aCallout[2 * 1]) * g_dKoef_pt_to_mm,
+                y: (aCallout[2 * 1 + 1]) * g_dKoef_pt_to_mm
             });
         }
         
@@ -610,13 +577,13 @@
         if (aCallout.length != 0) {
             // x2, y2 линии
             aCalloutLine.push({
-                x: aCallout[1 * 2] * nScaleX,
-                y: (aCallout[1 * 2 + 1]) * nScaleY
+                x: aCallout[1 * 2] * g_dKoef_pt_to_mm,
+                y: (aCallout[1 * 2 + 1]) * g_dKoef_pt_to_mm
             });
             // x1, y1 линии
             aCalloutLine.push({
-                x: aCallout[0 * 2] * nScaleX,
-                y: (aCallout[0 * 2 + 1]) * nScaleY
+                x: aCallout[0 * 2] * g_dKoef_pt_to_mm,
+                y: (aCallout[0 * 2 + 1]) * g_dKoef_pt_to_mm
             });
         }
 
@@ -626,8 +593,8 @@
         if (aFreeTextLine90.length != 0)
             aFreeTextPoints.push(aFreeTextLine90);
 
-        let aShapeRectInMM = this.GetRect().map(function(measure) {
-            return measure * g_dKoef_pix_to_mm;
+        let aShapeRectInMM = this.GetOrigRect().map(function(measure) {
+            return measure * g_dKoef_pt_to_mm;
         });
 
         oDoc.StartNoHistoryMode();
@@ -642,7 +609,7 @@
         this.recalcInfo.recalculateGeometry = true;
 	};
     CAnnotationFreeText.prototype.RemoveComment = function() {
-        this.SetReplies([]);
+        this.EditCommentData(undefined);
     };
     CAnnotationFreeText.prototype.SetContents = function(contents) {
         if (this.GetContents() == contents)
@@ -682,7 +649,8 @@
                 return true;
             }
 
-            for (let key of curKeys) {
+            for (let i = 0; i < curKeys.length; i++) {
+                let key = curKeys[i];
                 if (curRC[key] !== calcedRC[key]) {
                     return true;
                 }
@@ -710,7 +678,16 @@
         function setRunPr(oRun, oRCInfo) {
             let oRFonts = new CRFonts();
             let oRGB = AscPDF.CBaseField.prototype.GetRGBColor(oRCInfo["color"]);
-            
+            let nVertAlign = AscCommon.vertalign_Baseline;
+            if (typeof(oRCInfo["vertical"]) == "number") {
+                if (oRCInfo["vertical"] >= 0) {
+                    nVertAlign = AscCommon.vertalign_SuperScript;
+                }
+                else if (oRCInfo["vertical"] < 0) {
+                    nVertAlign = AscCommon.vertalign_SubScript;
+                }
+            }
+
             if (oRCInfo["actual"]) {
                 oRFonts.SetAll(oRCInfo["actual"], -1);
             }
@@ -728,6 +705,7 @@
             oRun.SetUnderline(Boolean(oRCInfo["underlined"]));
             oRun.SetFontSize(oRCInfo["size"]);
             oRun.Set_RFonts2(oRFonts);
+            oRun.SetVertAlign(nVertAlign);
         }
         
         for (let i = 0; i < aRCInfo.length; i++) {
@@ -753,7 +731,7 @@
                     oLastUsedPara.Set_Align(AscPDF.getInternalAlignByPdfType(oRCInfo["alignment"]));
                 }
                 else {
-                    oRun.Add(AscPDF.codePointToRunElement(nCharCode));
+                    oRun.AddToContentToEnd(AscPDF.codePointToRunElement(nCharCode));
                 }
             }
         }
@@ -791,7 +769,8 @@
                 return false;
             }
         
-            for (let key of keys1) {
+            for (let i = 0; i < keys1.length; i++) {
+                let key = keys1[i];
                 if (obj1[key] !== obj2[key]) {
                     return false;
                 }
@@ -814,6 +793,16 @@
                 let isEmbed = false;
                 let prefix  = AscFonts.getEmbeddedFontPrefix();
 
+                let nVertAlign;
+                switch (oRun.GetVertAlign()) {
+                    case AscCommon.vertalign_SuperScript:
+                        nVertAlign = 0;
+                        break;
+                    case AscCommon.vertalign_SubScript:
+                        nVertAlign = -0.01;
+                        break;
+                }
+
                 if (sFont.startsWith(prefix)) {
                     sFont = sFont.substr(prefix.length);
                     isEmbed = true;
@@ -827,7 +816,8 @@
                     "underlined":       oRun.Get_Underline(),
                     "size":             oRun.Get_FontSize(),
                     "color":            aPdfColor,
-                    "text":             sText
+                    "text":             sText,
+                    "vertical":         nVertAlign
                 };
 
                 if (isEmbed) {
@@ -845,25 +835,6 @@
         }
 
         return aRCInfo;
-    };
-    CAnnotationFreeText.prototype.SetReplies = function(aReplies) {
-        let oDoc = this.GetDocument();
-        let oViewer = editor.getDocumentRenderer();
-
-        if (oDoc.History.UndoRedoInProgress == false && oViewer.IsOpenAnnotsInProgress == false) {
-            oDoc.History.Add(new CChangesPDFAnnotReplies(this, this._replies, aReplies));
-        }
-        this._replies = aReplies;
-
-        let oThis = this;
-        aReplies.forEach(function(reply) {
-            reply.SetReplyTo(oThis);
-        });
-
-        if (aReplies.length != 0)
-            oDoc.CheckComment(this);
-        else
-            editor.sync_RemoveComment(this.GetId());
     };
     CAnnotationFreeText.prototype.GetAllFonts = function(fontMap) {
         let aRCInfo = this.GetRichContents();
@@ -914,7 +885,7 @@
     CAnnotationFreeText.prototype.GetAscCommentData = function() {
         let oAscCommData = new Asc.asc_CCommentDataWord(null);
         if (this._replies.length == 0)
-            return oAscCommData;
+            return undefined;
 
         let oMainComm = this._replies[0];
         oAscCommData.asc_putText(oMainComm.GetContents());
@@ -923,7 +894,7 @@
         oAscCommData.asc_putUserName(oMainComm.GetAuthor());
         oAscCommData.asc_putSolved(false);
         oAscCommData.asc_putQuoteText("");
-        oAscCommData.m_sUserData = oMainComm.GetApIdx();
+        oAscCommData.m_sUserData = oMainComm.GetId();
 
         this._replies.forEach(function(reply, index) {
             if (index == 0)
@@ -984,7 +955,7 @@
                 this.selectedObjects.length = 0;
 
                 this.spTree.forEach(function(sp) {
-                    if (!(sp instanceof AscFormat.CConnectionShape)) {
+                    if (!(sp instanceof AscPDF.CPdfConnectionShape)) {
                         sp.selectStartPage = _t.selectStartPage;
                         _t.selectedObjects.push(sp);
                     }
@@ -1046,6 +1017,10 @@
     };
     CAnnotationFreeText.prototype.SetInTextBox = function(isIn) {
         let oDoc = this.GetDocument();
+        if (this.isInTextBox == isIn) {
+            return;
+        }
+        
         if (isIn) {
             this.selection.textSelection = this.GetTextBoxShape();
             this._prevRect = this.GetRect().slice();
@@ -1085,8 +1060,26 @@
 	};
 	CAnnotationFreeText.prototype.EnterText = function(value) {
 		let docContent = this.GetDocContent();
-		
-		let result = docContent.EnterText(value);
+        let codePoints = typeof(value) === "string" ? value.codePointsArray() : value;
+
+        function correctCodePoints(codePoints) {
+            function correctCodePoint(codePoint) {
+                if ([9, 10, 13].includes(codePoint)) {
+                    return 32;
+                }
+                else {
+                    return codePoint;
+                }
+            }
+
+            if (Array.isArray(codePoints)) {
+                return codePoints.map(correctCodePoint);
+            }
+
+            return correctCodePoint(codePoints);
+        };
+
+		let result = docContent.EnterText(correctCodePoints(codePoints));
 		this.OnChangeTextContent();
 		return result;
 	};
@@ -1184,10 +1177,6 @@
         let nLengthToCheck = oDoc.Viewer.isLandscapePage(nPage) ? oTextBoxShape.extX : oTextBoxShape.extY;
     
         if (nContentH > nLengthToCheck) {
-            let oViewer = Asc.editor.getDocumentRenderer();
-            let nScaleY = oViewer.drawingPages[nPage].H / oViewer.file.pages[nPage].H / oViewer.zoom;
-            let nScaleX = oViewer.drawingPages[nPage].W / oViewer.file.pages[nPage].W / oViewer.zoom;
-    
             let aCurTextBoxRect = this.GetTextBoxRect();
             
             let xMin = aCurTextBoxRect[0];
@@ -1198,33 +1187,33 @@
             // Adjusting the text box rect based on rotation angle
             switch (nRotAngle) {
                 case 0:
-                    yMax += (nContentH - nLengthToCheck + 0.5) * g_dKoef_mm_to_pix / nScaleY;
+                    yMax += (nContentH - nLengthToCheck + 0.5) * g_dKoef_mm_to_pt;
                     break;
                 case 90:
-                    xMax += (nContentH - nLengthToCheck + 0.5) * g_dKoef_mm_to_pix / nScaleX;
+                    xMax += (nContentH - nLengthToCheck + 0.5) * g_dKoef_mm_to_pt;
                     break;
                 case 180:
-                    yMin -= (nContentH - nLengthToCheck + 0.5) * g_dKoef_mm_to_pix / nScaleY;
+                    yMin -= (nContentH - nLengthToCheck + 0.5) * g_dKoef_mm_to_pt;
                     break;
                 case 270:
-                    xMin -= (nContentH - nLengthToCheck + 0.5) * g_dKoef_mm_to_pix / nScaleX;
+                    xMin -= (nContentH - nLengthToCheck + 0.5) * g_dKoef_mm_to_pt;
                     break;
             }
     
             let aNewTextBoxRect = [xMin, yMin, xMax, yMax];
     
             // расширяем рект на ширину линии (или на радиус cloud бордера)
-            let nLineWidth = this.GetWidth() * g_dKoef_pt_to_mm * g_dKoef_mm_to_pix;
+            let nLineWidth = this.GetWidth();
             if (this.GetBorderEffectStyle() === AscPDF.BORDER_EFFECT_STYLES.Cloud) {
-                aNewTextBoxRect[0] -= this.GetBorderEffectIntensity() * 1.5 * g_dKoef_mm_to_pix * nScaleX;
-                aNewTextBoxRect[1] -= this.GetBorderEffectIntensity() * 1.5 * g_dKoef_mm_to_pix * nScaleY;
-                aNewTextBoxRect[2] += this.GetBorderEffectIntensity() * 1.5 * g_dKoef_mm_to_pix * nScaleX;
-                aNewTextBoxRect[3] += this.GetBorderEffectIntensity() * 1.5 * g_dKoef_mm_to_pix * nScaleY;
+                aNewTextBoxRect[0] -= this.GetBorderEffectIntensity() * 1.5;
+                aNewTextBoxRect[1] -= this.GetBorderEffectIntensity() * 1.5;
+                aNewTextBoxRect[2] += this.GetBorderEffectIntensity() * 1.5;
+                aNewTextBoxRect[3] += this.GetBorderEffectIntensity() * 1.5;
             } else {
-                aNewTextBoxRect[0] -= nLineWidth * nScaleX;
-                aNewTextBoxRect[1] -= nLineWidth * nScaleY;
-                aNewTextBoxRect[2] += nLineWidth * nScaleX;
-                aNewTextBoxRect[3] += nLineWidth * nScaleY;
+                aNewTextBoxRect[0] -= nLineWidth;
+                aNewTextBoxRect[1] -= nLineWidth;
+                aNewTextBoxRect[2] += nLineWidth;
+                aNewTextBoxRect[3] += nLineWidth;
             }
     
             // находит точку выхода callout для нового ректа textbox
@@ -1291,16 +1280,14 @@
             let aArrowRect = aNewCallout.length != 0 ? this.GetArrowRect([aNewCallout[2], aNewCallout[3], aNewCallout[0], aNewCallout[1]]) : null;
     
             // находим результирующий rect аннотации
-            let aNewRect = AscPDF.unionRectangles([aArrowRect, aNewTextBoxRect, findBoundingRectangle(aNewCallout)]).map(function(measure, idx) {
-                return idx % 2 ? measure * nScaleY : measure * nScaleX;
-            });
+            let aNewRect = AscPDF.unionRectangles([aArrowRect, aNewTextBoxRect, findBoundingRectangle(aNewCallout)]);
             
             // пересчитываем RD.
             let aNewRD = [
-                xMin - aNewRect[0] / nScaleX,
-                yMin - aNewRect[1] / nScaleY,
-                aNewRect[2] / nScaleX - xMax,
-                aNewRect[3] / nScaleY - yMax
+                xMin - aNewRect[0],
+                yMin - aNewRect[1],
+                aNewRect[2] - xMax,
+                aNewRect[3] - yMax
             ];
     
             aNewCallout && this.SetCallout(aNewCallout);
@@ -1321,7 +1308,6 @@
         let oViewer         = editor.getDocumentRenderer();
         let oDoc            = this.GetDocument();
         let oDrDoc          = oDoc.GetDrawingDocument();
-        this.isInMove       = false;
 
         this.selectStartPage = this.GetPage();
         
@@ -1343,18 +1329,16 @@
                 let yContent    = oTransform.TransformPointY(0, Y);
 
                 if (this.IsInTextBox() == false) {
-                    this.selectedObjects.length = 0;
-                    oContent.Selection_SetStart(xContent, yContent, 0, e);
-                    oContent.RemoveSelection();
-                    oContent.RecalculateCurPos();
-
-                    oDrDoc.UpdateTargetFromPaint = true;
-                    oDrDoc.TargetStart();
-                    oDrDoc.showTarget(true);
-                    this.SetInTextBox(true);
-
                     oDoc.SetGlobalHistory();
                     oDoc.DoAction(function() {
+                        this.selectedObjects.length = 0;
+                        oContent.Selection_SetStart(xContent, yContent, 0, e);
+                        oContent.RemoveSelection();
+                        oContent.RecalculateCurPos();
+
+                        oDrDoc.UpdateTargetFromPaint = true;
+                        oDrDoc.TargetStart(true);
+                        this.SetInTextBox(true);
                         this.FitTextBox();
                     }, AscDFH.historydescription_Pdf_FreeTextFitTextBox, this);
                     oDoc.SetLocalHistory();
@@ -1376,14 +1360,8 @@
     };
     CAnnotationFreeText.prototype.onAfterMove = function() {
         this.onMouseDown();
-        this.isInMove = false;
     };
     CAnnotationFreeText.prototype.onPreMove = function(x, y, e) {
-        if (this.isInMove)
-            return;
-
-        this.isInMove = true; // происходит ли resize/move действие
-
         let oViewer         = editor.getDocumentRenderer();
         let oDrawingObjects = oViewer.DrawingObjects;
 
@@ -1399,7 +1377,6 @@
 
         let oCursorInfo = oDrawingObjects.getGraphicInfoUnderCursor(pageObject.index, X, Y);
         if (oCursorInfo.cursorType == null) {
-            this.isInMove = false;
             return;
         }
 
@@ -1511,6 +1488,47 @@
         memory.Seek(nStartPos);
         memory.WriteLong(nEndPos - nStartPos);
         memory.Seek(nEndPos);
+    };
+    CAnnotationFreeText.prototype.SetPosition = function(x, y) {
+        let oDoc        = this.GetDocument();
+        let aCurRect    = this.GetOrigRect();
+
+        let nOldX = aCurRect[0];
+        let nOldY = aCurRect[1];
+
+        let nDeltaX = x - nOldX;
+        let nDeltaY = y - nOldY;
+
+        if (0 == nDeltaX && 0 == nDeltaY) {
+            return;
+        }
+
+        let aCallout = this.GetCallout();
+        if (aCallout) {
+            for (let i = 0; i < aCallout.length; i+=2) {
+                aCallout[i] += nDeltaX;
+                aCallout[i+1] += nDeltaY;
+            }
+        }
+
+        oDoc.History.Add(new CChangesPDFAnnotPos(this, [aCurRect[0], aCurRect[1]], [x, y]));
+
+        let nWidth  = aCurRect[2] - aCurRect[0];
+        let nHeight = aCurRect[3] - aCurRect[1];
+
+        this._origRect[0] = x;
+        this._origRect[1] = y;
+        this._origRect[2] = x + nWidth;
+        this._origRect[3] = y + nHeight;
+	
+		AscCommon.ExecuteNoHistory(function() {
+			let oXfrm = this.getXfrm();
+			oXfrm.setOffX((this._origRect[0]) * g_dKoef_pt_to_mm);
+			oXfrm.setOffY((this._origRect[1]) * g_dKoef_pt_to_mm);
+		}, undefined, this);
+
+        this.SetNeedRecalc(true);
+        this.SetWasChanged(true);
     };
 
     // shape methods
@@ -1700,8 +1718,9 @@
     function initGroupShape(oParentFreeText) {
         AscCommon.History.StartNoHistoryMode();
 
-        let aShapeRectInMM = oParentFreeText.GetRect().map(function(measure) {
-            return measure * g_dKoef_pix_to_mm;
+        let aRect = oParentFreeText.GetOrigRect() || [];
+        let aShapeRectInMM = aRect.map(function(measure) {
+            return measure * g_dKoef_pt_to_mm;
         });
         let xMax = aShapeRectInMM[2];
         let xMin = aShapeRectInMM[0];
@@ -1767,8 +1786,9 @@
             oShape.spPr.xfrm.setParent(oShape.spPr);
         }
         
-        let aAnnotRect = oParentAnnot.GetRect().map(function(measure) {
-            return measure * g_dKoef_pix_to_mm;
+        let aRect = oParentAnnot.GetOrigRect() || [];
+        let aAnnotRect = aRect.map(function(measure) {
+            return measure * g_dKoef_pt_to_mm;
         });
         oShape.setGroup(oParentAnnot);
         oShape.spPr.xfrm.offX = Math.abs(xMin - aAnnotRect[0]);
@@ -1821,7 +1841,7 @@
         }
         
         let aAnnotRect = oParentAnnot.GetRect().map(function(measure) {
-            return measure * g_dKoef_pix_to_mm;
+            return measure * g_dKoef_pt_to_mm;
         });
         
         oShape.setGroup(oParentAnnot);

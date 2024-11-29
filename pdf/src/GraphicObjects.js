@@ -197,8 +197,8 @@
                         sImageId = AscCommon.getFullImageSrc2(sImageId);
                         let _image = oApi.ImageLoader.map_image_index[sImageId];
                         if (_image && _image.Image) {
-                            let __w     = Math.max((_image.Image.width * AscCommon.g_dKoef_pix_to_mm), 1);
-                            let __h     = Math.max((_image.Image.height * AscCommon.g_dKoef_pix_to_mm), 1);
+                            let __w     = Math.max((_image.Image.width * g_dKoef_pix_to_mm), 1);
+                            let __h     = Math.max((_image.Image.height * g_dKoef_pix_to_mm), 1);
                             let fKoeff  = 1.0/Math.max(__w/dWidth, __h/dHeight);
                             let _w      = Math.max(5, __w*fKoeff);
                             let _h      = Math.max(5, __h*fKoeff);
@@ -975,9 +975,10 @@
             if(ret.cursorType !== "text")
             {
                 let oApi = Asc.editor || editor;
+                let oDoc = this.document;
                 let isDrawHandles = oApi ? oApi.isShowShapeAdjustments() : true;
 
-                let oObject     = AscCommon.g_oTableId.Get_ById(ret.objectId);
+                let oObject = AscCommon.g_oTableId.Get_ById(ret.objectId) || oDoc.GetShapeBasedAnnotById(ret.objectId);
                 let isViewerObj = this.document.IsViewerObject(oObject);
 
                 if (!isDrawHandles && isViewerObj) {
@@ -1204,7 +1205,8 @@
                 let oDrawing = this.selectedObjects[i];
                 // if (oDrawing.selectStartPage === pageIndex) {
                 if (oDrawing.selectStartPage === pageIndex && !oDrawing.IsFreeText || (oDrawing.IsFreeText && !oDrawing.IsFreeText())) {
-                    let nType = oDrawing.isForm && oDrawing.isForm() ? AscFormat.TYPE_TRACK.FORM : AscFormat.TYPE_TRACK.SHAPE
+                    let nType = oDrawing.IsAnnot() && oDrawing.IsStamp() ? AscFormat.TYPE_TRACK.ANNOT_STAMP : AscFormat.TYPE_TRACK.SHAPE;
+
                     drawingDocument.DrawTrack(
                         nType,
                         oDrawing.getTransformMatrix(),
@@ -1281,9 +1283,78 @@
         }
         this.applyDocContentFunction(AscWord.CDocumentContent.prototype.SetParagraphIndent, [Indent], AscWord.CTable.prototype.SetParagraphIndent);
     };
+    CGraphicObjects.prototype.endTrackNewShape = function() {
+        this.curState.bStart = this.curState.bStart !== false;
+        let aTracks = this.arrTrackObjects;
+        let bNewShape = false;
+        let bRet = false;
+        if (aTracks.length > 0) {
+            let nT;
+            for (nT = 0; nT < aTracks.length; ++nT) {
+                let oTrack = aTracks[nT];
+                if (!oTrack.getShape) {
+                    break;
+                }
+            }
+            if (nT === aTracks.length) {
+                bNewShape = true;
+            }
+            if (bNewShape) {
+                bRet = AscFormat.StartAddNewShape.prototype.onMouseUp.call(this.curState, {
+                    ClickCount: 1,
+                    X: 0,
+                    Y: 0
+                }, 0, 0, 0);
+            }
+            else {
+                this.curState.onMouseUp({
+                    ClickCount: 1,
+                    X: 0,
+                    Y: 0
+                }, 0, 0, 0);
+                bRet = true;
+            }
+        }
+        else {
+            bRet = AscFormat.StartAddNewShape.prototype.onMouseUp.call(this.curState, {
+                ClickCount: 1,
+                X: 0,
+                Y: 0
+            }, 0, 0, 0);
+        }
+    
+        const oApi = this.getEditorApi();
+        if (oApi.isInkDrawerOn()) {
+            oApi.stopInkDrawer();
+        }
+
+        return bRet;
+    };
 
     CGraphicObjects.prototype.loadDocumentStateAfterLoadChanges = function() {};
     CGraphicObjects.prototype.saveDocumentState = function(){};
+	
+	CGraphicObjects.prototype.getAllRasterImagesOnPage = function(pageIndex) {
+		if (!this.api)
+			return [];
+		
+		let viewer = this.api.getDocumentRenderer();
+		if (!viewer || !viewer.pagesInfo.pages[pageIndex])
+			return [];
+		
+		let page = viewer.pagesInfo.pages[pageIndex];
+		
+		let result = []
+		
+		page.fields.forEach(function(field){
+			field.getAllRasterImages(result);
+		});
+		page.drawings.forEach(function(drawing){
+			drawing.getAllRasterImages(result);
+		});
+		
+		return result;
+	};
 
     // import
     CGraphicObjects.prototype.setEquationTrack          = AscFormat.DrawingObjectsController.prototype.setEquationTrack;
@@ -1300,8 +1371,8 @@
     CGraphicObjects.prototype.changeTextCase            = AscFormat.DrawingObjectsController.prototype.changeTextCase;
     CGraphicObjects.prototype.handleDblClickEmptyShape  = AscFormat.DrawingObjectsController.prototype.handleDblClickEmptyShape;
     CGraphicObjects.prototype.getDrawingsPasteShift     = AscFormat.DrawingObjectsController.prototype.getDrawingsPasteShift;
-    CGraphicObjects.prototype.endTrackNewShape          = AscFormat.DrawingObjectsController.prototype.endTrackNewShape;
     CGraphicObjects.prototype.removeCallback            = AscFormat.DrawingObjectsController.prototype.removeCallback;
+    CGraphicObjects.prototype.getAllSingularDrawings    = AscFormat.DrawingObjectsController.prototype.getAllSingularDrawings;
 
     CGraphicObjects.prototype.startRecalculate = function() {};
 

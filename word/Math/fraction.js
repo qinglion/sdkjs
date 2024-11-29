@@ -35,10 +35,10 @@
 // Import
 var g_oTextMeasurer = AscCommon.g_oTextMeasurer;
 
-function CMathFractionPr()
+function CMathFractionPr(ctrPr)
 {
-	this.type = BAR_FRACTION;
-	this.ctrPr   = new CMathCtrlPr();
+	this.type	= BAR_FRACTION;
+	this.ctrPr	= new CMathCtrlPr(ctrPr);
 }
 CMathFractionPr.prototype.GetRPr = function ()
 {
@@ -53,9 +53,9 @@ CMathFractionPr.prototype.Set_FromObject = function(Obj)
 };
 CMathFractionPr.prototype.Copy = function()
 {
-	var NewPr = new CMathFractionPr();
-	NewPr.type = this.type;
-	NewPr.ctrPr   = this.ctrPr;
+	var NewPr	= new CMathFractionPr();
+	NewPr.type	= this.type;
+	NewPr.ctrPr	= this.ctrPr;
 	return NewPr;
 };
 CMathFractionPr.prototype.Write_ToBinary = function(Writer)
@@ -89,17 +89,13 @@ function CFraction(props)
 
 	this.Id = AscCommon.g_oIdCounter.Get_NewId();
 
-    this.Numerator   = null;
-    this.Denominator = null;
+	this.Numerator   = null;
+	this.Denominator = null;
 
-    this.Pr = new CMathFractionPr();
+	this.Pr = new CMathFractionPr(this.CtrPrp);
 
-    if(props !== null && typeof(props) !== "undefined")
-        this.init(props);
-
-	// согласно формату CtrPrp должен находится в FractionPr, пока оставляем this.CtrPrp, но приравняем к значению из Pr
-	if (this.Pr.ctrPr.rPr)
-		this.CtrPrp = this.Pr.ctrPr.rPr;
+	if(props !== null && typeof(props) !== "undefined")
+		this.init(props);
 
 	AscCommon.g_oTableId.Add( this, this.Id );
 }
@@ -652,6 +648,8 @@ CFraction.prototype.GetTextOfElement = function(oMathText)
 
 	if (oMathText.IsLaTeX())
 	{
+		oMathText.SetGlobalStyle(oNumerator);
+
 		let isOnlyFrac = this.Parent.Content.length === 3
 			&& this.Parent.Content[0].Is_Empty()
 			&& this.Parent.Content[2].Is_Empty()
@@ -678,7 +676,8 @@ CFraction.prototype.GetTextOfElement = function(oMathText)
 				default:				strFracSymbol = '\\sfrac';	break;
 			}
 
-			oFracContent	= new AscMath.MathText(strFracSymbol, oMathText.GetStyleFromFirst());
+			// get style from numerator
+			oFracContent	= new AscMath.MathText(strFracSymbol, oNumerator);
 			oMathText.AddBefore(oPosNumerator, oFracContent);
 		}
 	}
@@ -695,6 +694,14 @@ CFraction.prototype.GetTextOfElement = function(oMathText)
 			default:				strFracSymbol = '/';	break;
 		}
 		oFracContent	= new AscMath.MathText(strFracSymbol, this);
+
+		if (this.Pr.type === LINEAR_FRACTION)
+		{
+			let oAddData	= oFracContent.GetAdditionalData();
+			let oMetaData	= oAddData.GetMathMetaData();
+			oMetaData.setIsLinearFraction(true);
+		}
+
 		oMathText.AddAfter(oPosNumerator, oFracContent);
 	}
 
@@ -900,3 +907,5 @@ CDenominator.prototype.setPosition = function(pos, PosInfo)
 //--------------------------------------------------------export----------------------------------------------------
 window['AscCommonWord'] = window['AscCommonWord'] || {};
 window['AscCommonWord'].CFraction = CFraction;
+
+AscMath.Fraction = CFraction;

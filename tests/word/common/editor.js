@@ -67,7 +67,9 @@
 		SelectClear : function() {},
 		Start_CollaborationEditing : function() {},
 		End_CollaborationEditing : function() {},
-		ConvertCoordsToCursorWR : function() {return {X : 0, Y : 0};}
+		ConvertCoordsToCursorWR : function() {return {X : 0, Y : 0};},
+		Set_RulerState_Table : function() {},
+		scrollToTarget : function() {}
 	};
 
 	drawingDocument.CanvasHit = document.createElement('canvas');

@@ -678,6 +678,9 @@ CShape.prototype.recalcText = function()
     this.recalcInfo.recalculateTransformText = true;
 };
 
+/**
+ * @memberof CShape
+ */
 CShape.prototype.recalculate = function ()
 {
     if(this.bDeleted)
@@ -819,6 +822,11 @@ CShape.prototype.getStyles = function(index)
 CShape.prototype.Get_Worksheet = function()
 {
     return this.worksheet;
+};
+CShape.prototype.checkDrawingPartWithHistory = function () {
+	if (this.isObjectInSmartArt()) {
+		return this.group.group.checkDrawingPartWithHistory(this);
+	}
 };
 
 

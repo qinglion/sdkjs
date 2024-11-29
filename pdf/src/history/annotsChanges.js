@@ -38,15 +38,14 @@ AscDFH.changesFactory[AscDFH.historyitem_Pdf_Annot_Vertices]		= CChangesPDFAnnot
 AscDFH.changesFactory[AscDFH.historyitem_Pdf_Annot_Contents]		= CChangesPDFAnnotContents;
 AscDFH.changesFactory[AscDFH.historyitem_Pdf_Annot_Pos]				= CChangesPDFAnnotPos;
 AscDFH.changesFactory[AscDFH.historyitem_Pdf_Annot_Page]			= CChangesPDFAnnotPage;
-AscDFH.changesFactory[AscDFH.historyitem_Pdf_Annot_Replies]			= CChangesPDFAnnotReplies;
 AscDFH.changesFactory[AscDFH.historyitem_Pdf_Annot_Creation_Date]	= CChangesPDFAnnotCreationDate;
 AscDFH.changesFactory[AscDFH.historyitem_Pdf_Annot_Mod_Date]		= CChangesPDFAnnotModDate;
 AscDFH.changesFactory[AscDFH.historyitem_Pdf_Annot_Author]			= CChangesPDFAnnotAuthor;
 AscDFH.changesFactory[AscDFH.historyitem_Pdf_Annot_Display]			= CChangesPDFAnnotDisplay;
 AscDFH.changesFactory[AscDFH.historyitem_Pdf_Annot_Intent]			= CChangesPDFAnnotIntent;
+AscDFH.changesFactory[AscDFH.historyitem_Pdf_Annot_Rotate]			= CChangesPDFAnnotRotate;
 AscDFH.changesFactory[AscDFH.historyitem_Pdf_Annot_Name]			= CChangesPDFAnnotName;
 AscDFH.changesFactory[AscDFH.historyitem_Pdf_Annot_File_Idx]		= CChangesPDFAnnotApIdx;
-AscDFH.changesFactory[AscDFH.historyitem_Pdf_Annot_Document]		= CChangesAnnotObjectProperty;
 AscDFH.changesFactory[AscDFH.historyitem_Pdf_Annot_Stroke]			= CChangesPDFAnnotStroke;
 AscDFH.changesFactory[AscDFH.historyitem_Pdf_Annot_Fill]			= CChangesPDFAnnotFill;
 AscDFH.changesFactory[AscDFH.historyitem_Pdf_Annot_StrokeWidth]		= CChangesPDFAnnotStrokeWidth;
@@ -60,42 +59,8 @@ AscDFH.changesFactory[AscDFH.historyitem_Pdf_Line_Points]			= CChangesPDFLinePoi
 AscDFH.changesFactory[AscDFH.historyitem_type_Pdf_Annot_FreeText_CL]			= CChangesFreeTextCallout;
 AscDFH.changesFactory[AscDFH.historyitem_type_Pdf_Annot_FreeText_RC]			= CChangesPDFFreeTextRC;
 AscDFH.changesFactory[AscDFH.historyitem_type_Pdf_Annot_FreeText_Align]			= CChangesPDFFreeTextAlign;
-AscDFH.changesFactory[AscDFH.historyitem_type_Pdf_Annot_FreeText_Rotate]		= CChangesPDFFreeTextRotate;
+AscDFH.changesFactory[AscDFH.historyitem_Pdf_Stamp_Type]						= CChangesPDFAnnotStampType;
 
-
-let annotChangesMap = {};
-window['AscDFH'].annotChangesMap = annotChangesMap;
-
-function CChangesAnnotObjectProperty(Class, Type, OldPr, NewPr) {
-	this.Type = Type;
-	var _OldPr = OldPr && OldPr.Get_Id ? OldPr.Get_Id() : undefined;
-	var _NewPr = NewPr && NewPr.Get_Id ? NewPr.Get_Id() : undefined;
-	AscDFH.CChangesBaseStringProperty.call(this, Class, _OldPr, _NewPr);
-}
-CChangesAnnotObjectProperty.prototype = Object.create(AscDFH.CChangesBaseStringProperty.prototype);
-CChangesAnnotObjectProperty.prototype.constructor = CChangesAnnotObjectProperty;
-
-CChangesAnnotObjectProperty.prototype.ReadFromBinary = function (reader) {
-	reader.Seek2(reader.GetCurPos() - 4);
-	this.Type = reader.GetLong();
-	AscDFH.CChangesBaseStringProperty.prototype.ReadFromBinary.call(this, reader);
-};
-CChangesAnnotObjectProperty.prototype.private_SetValue = function (Value) {
-	var oObject = null;
-	if (typeof Value === "string") {
-		oObject = AscCommon.g_oTableId.Get_ById(Value);
-		if (!oObject) {
-			oObject = null;
-		}
-	}
-	if (AscDFH.annotChangesMap[this.Type]) {
-		AscDFH.annotChangesMap[this.Type](this.Class, oObject);
-	}
-};
-CChangesAnnotObjectProperty.prototype.Load = function(){
-	this.Redo();
-	this.RefreshRecalcData();
-};
 
 function CChangesAnnotArrayOfDoubleProperty(Class, Old, New) {
 	AscDFH.CChangesBaseProperty.call(this, Class, Old, New);
@@ -105,15 +70,29 @@ CChangesAnnotArrayOfDoubleProperty.prototype.constructor = CChangesAnnotArrayOfD
 
 CChangesAnnotArrayOfDoubleProperty.prototype.WriteToBinary = function(Writer)
 {
-	var nNewCount = this.New.length;
-	Writer.WriteLong(nNewCount);
-	for (var nIndex = 0; nIndex < nNewCount; ++nIndex)
-		Writer.WriteDouble(this.New[nIndex]);
+	let nFlags = 0;
 
-	var nOldCount = this.Old.length;
-	Writer.WriteLong(nOldCount);
-	for (var nIndex = 0; nIndex < nOldCount; ++nIndex)
-		Writer.WriteDouble(this.Old[nIndex]);
+	if (undefined === this.New)
+		nFlags |= 1;
+
+	if (undefined === this.Old)
+		nFlags |= 2;
+
+	Writer.WriteLong(nFlags);
+
+	if (undefined !== this.New) {
+		var nNewCount = this.New.length;
+		Writer.WriteLong(nNewCount);
+		for (var nIndex = 0; nIndex < nNewCount; ++nIndex)
+			Writer.WriteDouble(this.New[nIndex]);
+	}
+	
+	if (undefined !== this.Old) {
+		var nOldCount = this.Old.length;
+		Writer.WriteLong(nOldCount);
+		for (var nIndex = 0; nIndex < nOldCount; ++nIndex)
+			Writer.WriteDouble(this.Old[nIndex]);
+	}
 };
 CChangesAnnotArrayOfDoubleProperty.prototype.ReadFromBinary = function(Reader)
 {
@@ -122,15 +101,21 @@ CChangesAnnotArrayOfDoubleProperty.prototype.ReadFromBinary = function(Reader)
 	// Long : Count of the columns in the old grid
 	// Array of double : widths of columns in the old grid
 
-	var nCount = Reader.GetLong();
-	this.New = [];
-	for (var nIndex = 0; nIndex < nCount; ++nIndex)
-		this.New[nIndex] = Reader.GetDouble();
+	let nFlags = Reader.GetLong();
+	
+	if (!(nFlags & 1)) {
+		let nCount = Reader.GetLong();
+		this.New = [];
+		for (var nIndex = 0; nIndex < nCount; ++nIndex)
+			this.New[nIndex] = Reader.GetDouble();
+	}
 
-	nCount = Reader.GetLong();
-	this.Old = [];
-	for (var nIndex = 0; nIndex < nCount; ++nIndex)
-		this.Old[nIndex] = Reader.GetDouble();
+	if (!(nFlags & 2)) {
+		let nCount = Reader.GetLong();
+		this.Old = [];
+		for (var nIndex = 0; nIndex < nCount; ++nIndex)
+			this.Old[nIndex] = Reader.GetDouble();
+	} 
 };
 
 CChangesAnnotArrayOfDoubleProperty.prototype.Load = function(){
@@ -138,12 +123,7 @@ CChangesAnnotArrayOfDoubleProperty.prototype.Load = function(){
 	this.RefreshRecalcData();
 };
 
-window['AscDFH'].CChangesAnnotObjectProperty = CChangesAnnotObjectProperty;
 window['AscDFH'].CChangesAnnotArrayOfDoubleProperty = CChangesAnnotArrayOfDoubleProperty;
-
-annotChangesMap[AscDFH.historyitem_Pdf_Annot_Document] = function (oAnnot, value) {
-	oAnnot.SetDocument(value);
-};
 
 /**
  * @constructor
@@ -160,11 +140,6 @@ CChangesPDFCommentData.prototype.private_SetValue = function(Value)
 {
 	let oComment = this.Class;
 	oComment.EditCommentData(Value);
-	let AscCommentData = oComment.GetAscCommentData();
-	let CommentData = new AscCommon.CCommentData();
-	CommentData.Read_FromAscCommentData(AscCommentData);
-
-	editor.sync_ChangeCommentData(oComment.GetId(), CommentData);
 };
 CChangesPDFCommentData.prototype.private_CreateObject = function()
 {
@@ -631,7 +606,7 @@ CChangesPDFFreeTextRC.prototype.WriteToBinary = function(Writer)
 			if (aRC[i]["underlined"]) {
 				nStyle |= (1 << 4);
 			}
-			if (aRC[i]["vertical"]) {
+			if (undefined !== aRC[i]["vertical"]) {
 				nStyle |= (1 << 5);
 				Writer.WriteDouble(aRC[i]["vertical"]);
 			}
@@ -650,8 +625,8 @@ CChangesPDFFreeTextRC.prototype.WriteToBinary = function(Writer)
 				Writer.WriteDouble(component);
 			});
 
-			Writer.WriteString2(aRC[i]["name"]);
-			Writer.WriteString2(aRC[i]["text"]);
+			Writer.WriteString2(aRC[i]["name"] || "");
+			Writer.WriteString2(aRC[i]["text"] || "");
 		}
 	}
 	
@@ -711,24 +686,7 @@ CChangesPDFFreeTextAlign.prototype.Type = AscDFH.historyitem_type_Pdf_Annot_Free
 CChangesPDFFreeTextAlign.prototype.private_SetValue = function(Value)
 {
 	let oAnnot = this.Class;
-	oAnnot.SetDisplay(Value);
-};
-
-/**
- * @constructor
- * @extends {AscDFH.CChangesBaseLongProperty}
- */
-function CChangesPDFFreeTextRotate(Class, Old, New, Color)
-{
-	AscDFH.CChangesBaseLongProperty.call(this, Class, Old, New, Color);
-}
-CChangesPDFFreeTextRotate.prototype = Object.create(AscDFH.CChangesBaseLongProperty.prototype);
-CChangesPDFFreeTextRotate.prototype.constructor = CChangesPDFFreeTextRotate;
-CChangesPDFFreeTextRotate.prototype.Type = AscDFH.historyitem_type_Pdf_Annot_FreeText_Rotate;
-CChangesPDFFreeTextRotate.prototype.private_SetValue = function(Value)
-{
-	let oAnnot = this.Class;
-	oAnnot.SetRotate(Value);
+	oAnnot.SetAlign(Value);
 };
 
 /**
@@ -780,23 +738,6 @@ CChangesPDFAnnotContents.prototype.private_SetValue = function(Value)
 {
 	let oAnnot = this.Class;
 	oAnnot.SetContents(Value);
-};
-
-/**
- * @constructor
- * @extends {AscDFH.CChangesBaseProperty}
- */
-function CChangesPDFAnnotReplies(Class, Old, New, Color)
-{
-	AscDFH.CChangesBaseProperty.call(this, Class, Old, New, Color);
-}
-CChangesPDFAnnotReplies.prototype = Object.create(AscDFH.CChangesBaseProperty.prototype);
-CChangesPDFAnnotReplies.prototype.constructor = CChangesPDFAnnotReplies;
-CChangesPDFAnnotReplies.prototype.Type = AscDFH.historyitem_Pdf_Annot_Replies;
-CChangesPDFAnnotReplies.prototype.private_SetValue = function(Value)
-{
-	let oAnnot = this.Class;
-	oAnnot.SetReplies(Value);
 };
 
 /**
@@ -886,6 +827,23 @@ CChangesPDFAnnotIntent.prototype.private_SetValue = function(Value)
 
 /**
  * @constructor
+ * @extends {AscDFH.CChangesBaseLongProperty}
+ */
+function CChangesPDFAnnotRotate(Class, Old, New, Color)
+{
+	AscDFH.CChangesBaseLongProperty.call(this, Class, Old, New, Color);
+}
+CChangesPDFAnnotRotate.prototype = Object.create(AscDFH.CChangesBaseLongProperty.prototype);
+CChangesPDFAnnotRotate.prototype.constructor = CChangesPDFAnnotRotate;
+CChangesPDFAnnotRotate.prototype.Type = AscDFH.historyitem_Pdf_Annot_Rotate;
+CChangesPDFAnnotRotate.prototype.private_SetValue = function(Value)
+{
+	let oAnnot = this.Class;
+	oAnnot.SetRotate(Value);
+};
+
+/**
+ * @constructor
  * @extends {AscDFH.CChangesBaseStringProperty}
  */
 function CChangesPDFAnnotName(Class, Old, New, Color)
@@ -899,6 +857,23 @@ CChangesPDFAnnotName.prototype.private_SetValue = function(Value)
 {
 	let oAnnot = this.Class;
 	oAnnot.SetName(Value);
+};
+
+/**
+ * @constructor
+ * @extends {AscDFH.CChangesBaseStringProperty}
+ */
+function CChangesPDFAnnotStampType(Class, Old, New, Color)
+{
+	AscDFH.CChangesBaseStringProperty.call(this, Class, Old, New, Color);
+}
+CChangesPDFAnnotStampType.prototype = Object.create(AscDFH.CChangesBaseStringProperty.prototype);
+CChangesPDFAnnotStampType.prototype.constructor = CChangesPDFAnnotStampType;
+CChangesPDFAnnotStampType.prototype.Type = AscDFH.historyitem_Pdf_Stamp_Type;
+CChangesPDFAnnotStampType.prototype.private_SetValue = function(Value)
+{
+	let oAnnot = this.Class;
+	oAnnot.SetIconType(Value);
 };
 
 /**

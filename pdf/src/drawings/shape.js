@@ -44,7 +44,7 @@
     CPdfShape.prototype = Object.create(AscFormat.CShape.prototype);
     Object.assign(CPdfShape.prototype, AscPDF.PdfDrawingPrototype.prototype);
     
-    CPdfShape.prototype.IsTextShape = function() {
+    CPdfShape.prototype.IsShape = function() {
         return true;
     };
     CPdfShape.prototype.ShouldDrawImaginaryBorder = function(graphicsWord) {
@@ -63,25 +63,39 @@
             oContent.SetApplyToAll(false);
         }
     };
+    CPdfShape.prototype.canRotate = function () {
+        if (this.cropObject) {
+            return false;
+        }
+        
+        if (this.signatureLine) {
+            return false;
+        }
+
+        if (!this.canEdit()) {
+			return false;
+		}
+
+        if (this.group && this.group.IsAnnot()) {
+            return false;
+        }
+
+		return this.getNoRot() === false;
+    };
     CPdfShape.prototype.Recalculate = function() {
         if (this.IsNeedRecalc() == false)
             return;
 
-        if (this.txBody && this.txBody.recalcInfo.recalculateBodyPr) {
-            this.recalcTransformText();
-        }
-        
-        this.recalcGeometry();
-        this.recalculateContent();
         this.recalculateTransform();
         this.updateTransformMatrix();
         this.recalculate();
-        this.checkExtentsByDocContent();
         this.recalculateShdw();
         this.SetNeedRecalc(false);
     };
     CPdfShape.prototype.recalculateBounds = function() {
         let boundsChecker = new AscFormat.CSlideBoundsChecker();
+        
+        // boundsChecker.CheckLineWidth(this);
         boundsChecker.DO_NOT_DRAW_ANIM_LABEL = true;
         this.draw(boundsChecker);
         boundsChecker.CorrectBounds();
@@ -168,35 +182,40 @@
 			oContent.RecalculateCurPos();
 		}
     };
-    CPdfShape.prototype.GetAllFonts = function(fontMap) {
-        let oContent = this.GetDocContent();
-
-        fontMap = fontMap || {};
-
-        if (!oContent)
-            return fontMap;
-
-        let oPara;
-        for (let nPara = 0, nCount = oContent.GetElementsCount(); nPara < nCount; nPara++) {
-            oPara = oContent.GetElement(nPara);
-            oPara.Get_CompiledPr().TextPr.Document_Get_AllFontNames(fontMap);
-
-            let oRun;
-            for (let nRun = 0, nRunCount = oPara.GetElementsCount(); nRun < nRunCount; nRun++) {
-                oRun = oPara.GetElement(nRun);
-                oRun.Get_CompiledTextPr().Document_Get_AllFontNames(fontMap);
-            }
-        }
-        
-        delete fontMap["+mj-lt"];
-        delete fontMap["+mn-lt"];
-        delete fontMap["+mj-ea"];
-        delete fontMap["+mn-ea"];
-        delete fontMap["+mj-cs"];
-        delete fontMap["+mn-cs"];
-        
-        return fontMap;
-    };
+	CPdfShape.prototype.GetAllFonts = function(fontMap) {
+		fontMap = fontMap || {};
+		
+		let docContent = this.GetDocContent();
+		if (!docContent)
+			return fontMap;
+		
+		for (let i = 0, count = docContent.GetElementsCount(); i < count; ++i) {
+			let para = docContent.GetElement(i);
+			if (!para || !para.IsParagraph())
+				continue;
+			
+			para.Get_CompiledPr2(false).TextPr.Document_Get_AllFontNames(fontMap);
+			
+			if (para.Pr.Bullet)
+				para.Pr.Bullet.Get_AllFontNames(fontMap);
+			
+			if (para.Pr.DefaultRunPr)
+				para.Pr.DefaultRunPr.Document_Get_AllFontNames(fontMap);
+			
+			para.CheckRunContent(function(run) {
+				run.Get_CompiledPr(false).Document_Get_AllFontNames(fontMap);
+			});
+		}
+		
+		delete fontMap["+mj-lt"];
+		delete fontMap["+mn-lt"];
+		delete fontMap["+mj-ea"];
+		delete fontMap["+mn-ea"];
+		delete fontMap["+mj-cs"];
+		delete fontMap["+mn-cs"];
+		
+		return fontMap;
+	};
 
     CPdfShape.prototype.hitToAdjustment = function (x, y) {
         if (!AscFormat.canSelectDrawing(this)) {
@@ -295,15 +314,13 @@
                             }
                             content.RecalculateCurPos();
 
-                            drawing_document.TargetStart();
-                            drawing_document.TargetShow();
+                            drawing_document.TargetStart(true);
                         }
                     }
                 } else {
                     content.RecalculateCurPos();
 
-                    drawing_document.TargetStart();
-                    drawing_document.TargetShow();
+                    drawing_document.TargetStart(true);
                 }
             } else {
                 drawing_document.UpdateTargetTransform(new AscCommon.CMatrix());

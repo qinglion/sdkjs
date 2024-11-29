@@ -1109,7 +1109,12 @@ AscFormat.InitClass(Slide, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_
         if(!aImages) {
             aImages = [];
         }
-        this.recalculate();
+
+        if(this.recalcInfo.recalculateBackground)
+        {
+            this.recalculateBackground();
+            this.recalcInfo.recalculateBackground = false;
+        }
         if(this.backgroundFill) {
             let sImageId = this.backgroundFill.checkRasterImageId();
             if(sImageId) {
@@ -1119,6 +1124,16 @@ AscFormat.InitClass(Slide, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_
         this.cSld.forEachSp(function(oSp) {
             oSp.getAllRasterImages(aImages);
         });
+        if(this.Layout) {
+            if(this.needLayoutSpDraw()) {
+                this.Layout.getAllRasterImagesForDraw(aImages);
+            }
+            if(this.Layout.Master) {
+                if(this.needMasterSpDraw()) {
+                    this.Layout.Master.getAllRasterImagesForDraw(aImages);
+                }
+            }
+        }
         return aImages;
     };
     Slide.prototype.checkImageDraw = function(sImageSrc) {

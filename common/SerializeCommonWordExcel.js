@@ -1288,6 +1288,13 @@ function isRealObject(obj)
         return 0;
       return this.data[this.cur++];
     }
+	  this.GetUChar_TypeNode = function()
+	  {
+		  if (this.cur >= this.size)
+			  return c_nodeAttribute.nodeAttributeEnd;
+		  return this.data[this.cur++];
+	  }
+
     this.GetBool = function()
     {
       if (this.cur >= this.size)
@@ -1337,12 +1344,12 @@ function isRealObject(obj)
     
     this.ReadByteFromPPTY = function ()
     {
-      var value = 0;
+      var value = null;
       var end = this.cur + this.GetULong() + 4;
       this.Skip2(1);
       while (true)
       {
-        var _at = this.GetUChar();
+        var _at = this.GetUChar_TypeNode();
         if (_at === c_nodeAttribute.nodeAttributeEnd)
         {
           break;

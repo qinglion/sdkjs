@@ -68,6 +68,9 @@
 
         this.check_loaded_timer_id = -1;
         this.endLoadingCallback = null;
+		
+		// Счетчик загрузки шрифтов через метод LoadFonts
+		this.loadFontsCounter = 0;
 
         this.perfStart = 0;
 
@@ -330,6 +333,60 @@
                 info && info.LoadFontsFromServer(this);
             }
         };
+		
+		this.isFontLoadInProgress = function()
+		{
+			return (this.isWorking() || this.loadFontsCounter > 0);
+		};
+		
+		this.LoadFonts = function(fonts, callback)
+		{
+			++this.loadFontsCounter;
+			
+			let fontMap = {}
+			
+			if (fonts && Array.isArray(fonts))
+			{
+				for (let i = 0; i < fonts.length; ++i)
+				{
+					let name = fonts[i];
+					fontMap[name] = AscFonts.g_fontApplication.GetFontInfo(name);
+					fontMap[name].NeedStyles = 15;
+				}
+			}
+			else
+			{
+				for (let name in fonts)
+				{
+					fontMap[name] = AscFonts.g_fontApplication.GetFontInfo(name);
+					fontMap[name].NeedStyles = 15;
+				}
+			}
+			
+			
+			let globalLoader = this;
+			
+			let checkLoaded = function()
+			{
+				let needLoad = 0;
+				for (let name in fontMap)
+				{
+					if (!fontMap[name].CheckFontLoadStyles(globalLoader))
+						delete fontMap[name];
+					else
+						++needLoad;
+				}
+				
+				if (needLoad)
+					return setTimeout(checkLoaded, 50);
+				
+				if (callback)
+					callback();
+				
+				--globalLoader.loadFontsCounter;
+			};
+			checkLoaded();
+		}
     }
 
     function CGlobalImageLoader()

@@ -422,6 +422,9 @@ CShape.prototype.recalcText = function()
     this.recalcInfo.recalculateTransformText = true;
 };
 
+/**
+ * @memberof CShape
+ */
 CShape.prototype.recalculate = function ()
 {
     if(this.bDeleted || !this.parent)
@@ -648,6 +651,10 @@ CShape.prototype.Set_CurrentElement = function(bUpdate, pageIndex, bNoTextSelect
                 editor.WordControl.m_oLogicDocument.FocusOnNotes = true;
             }
         }
+		if (bUpdate && editor.WordControl.m_oLogicDocument) {
+			editor.WordControl.m_oLogicDocument.Document_UpdateSelectionState();
+			editor.WordControl.m_oLogicDocument.Document_UpdateInterfaceState();
+		}
     }
 };
 
