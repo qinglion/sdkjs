@@ -2728,7 +2728,7 @@
 					t.sendEvent("asc_onError", c_oAscError.ID.Unknown, c_oAscError.Level.NoCritical);
 				}
 			};
-			if (!this.CoAuthoringApi.callPRC({'type': 'wopi_RefreshFile', 'name': name}, Asc.c_nCommonRequestTime, callback)) {
+			if (!this.CoAuthoringApi.callPRC({'type': 'wopi_RefreshFile'}, Asc.c_nCommonRequestTime, callback)) {
 				callback(false, undefined);
 			}
 		} else {
