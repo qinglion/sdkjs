@@ -5076,7 +5076,7 @@ CMathContent.prototype.Recalculate_Range = function(PRS, ParaPr, Depth)
                     else
                         NumberingAdd = PrevRecalcInfo.NumberingAdd;
 
-                    if(NumberingAdd)
+                    if(NumberingAdd && PRS.RunRecalcInfoLast)
                     {
                         PRS.X = PRS.Recalculate_Numbering(Item, this, ParaPr, PRS.X);
                         PRS.RunRecalcInfoLast.NumberingAdd = false;

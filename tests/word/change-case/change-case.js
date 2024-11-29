@@ -251,7 +251,7 @@ $(function () {
 			m.Add(oElement);
 			one.next();
 		}
-	};
+	}
 
 	QUnit.test("Sentence case math", function (assert)
 	{
@@ -272,7 +272,7 @@ $(function () {
 
 		assert.strictEqual(
 			m.Root.GetTextOfElement().GetText(),
-			"Abc. aaaaa/2",
+			"(abc. aaaaa)/2",
 			"Check sentence case"
 		);
 	});
@@ -293,7 +293,7 @@ $(function () {
 
 		assert.strictEqual(
 			m.Root.GetTextOfElement().GetText(),
-			'ABC/DEF+2_(XYZ.RTΔAAA+2)',
+			'abc/def+2_(xyz.rtδaaa+2)',
 			"Check upper case"
 		);
 	});
@@ -314,7 +314,7 @@ $(function () {
 
 		assert.strictEqual(
 			m.Root.GetTextOfElement().GetText(),
-			'abc/def+2_(xyz.rtδaaa+2)',
+			'ABC/DEF+2_(XYZ.RTΔAAA+2)',
 			"Check upper case"
 		);
 	});
@@ -335,7 +335,7 @@ $(function () {
 
 		assert.strictEqual(
 			m.Root.GetTextOfElement().GetText(),
-			'Abc/dEF+2_(xYz.rTδaAa+2)',
+			'aBC/Def+2_(XyZ.RtΔAaA+2)',
 			"Check ToggleCase case"
 		);
 	});
@@ -356,7 +356,7 @@ $(function () {
 
 		assert.strictEqual(
 			m.Root.GetTextOfElement().GetText(),
-			'Abc/Def+2_(Xyz.rtΔAaa+2)',
+			'aBC/Def+2_(XyZ.RtΔAaA+2)',
 			"Check CapitalizeWords case"
 		);
 	});

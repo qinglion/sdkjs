@@ -2337,6 +2337,9 @@ CMathBase.prototype.Recalculate_LineMetrics = function(PRS, ParaPr, _CurLine, _C
         }
     }
 };
+CMathBase.prototype.Math_UpdateLineMetrics = function(PRS, paraPr)
+{
+};
 CMathBase.prototype.IsEmptyRange = function(nCurLine, nCurRange)
 {
 	if (!this.bOneLine)
