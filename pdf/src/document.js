@@ -120,6 +120,7 @@ var CPresentation = CPresentation || function(){};
         this.MathTrackHandler       = new AscWord.CMathTrackHandler(this.GetDrawingDocument(), Asc.editor);
         this.AnnotTextPrTrackHandler= new AscPDF.CAnnotTextPrTrackHandler(this.GetDrawingDocument(), Asc.editor);
         this.TextSelectTrackHandler = new AscPDF.CTextSelectTrackHandler(this.GetDrawingDocument(), Asc.editor);
+        this.AnnotSelectTrackHandler= new AscPDF.CAnnotSelectTrackHandler(this, Asc.editor);
         this.SearchEngine           = new AscPDF.CPdfSearch(this);
 
         this.theme                  = AscFormat.GenerateDefaultTheme(this);
@@ -1929,6 +1930,7 @@ var CPresentation = CPresentation || function(){};
         }
         
         this.UpdateInterface();
+        this.AnnotSelectTrackHandler.Update(true);
         oViewer.onUpdateOverlay();
         oViewer.file.onUpdateSelection();
     };
@@ -2615,6 +2617,7 @@ var CPresentation = CPresentation || function(){};
     };
     CPDFDoc.prototype.UpdateAnnotTrackPos = function() {
         this.AnnotTextPrTrackHandler.OnChangePosition();
+        this.AnnotSelectTrackHandler.OnChangePosition();
     };
     CPDFDoc.prototype.UpdateSelectionTrackPos = function() {
         this.TextSelectTrackHandler.OnChangePosition();
