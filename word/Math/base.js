@@ -1805,6 +1805,14 @@ CMathBase.prototype.drawSelectionInRange = function(line, range, drawSelectionSt
 		drawSelectionState.handleMathElement(this, isSelected);
 	}
 };
+/**
+ * Get first find parent typeof CMathContent or MathBase
+ * @return {*}
+ */
+CMathBase.prototype.GetMathBaseFirst = function()
+{
+	return this;
+};
 CMathBase.prototype.IsSelectionEmpty = function()
 {
     if (true !== this.Selection.Use)
@@ -2329,6 +2337,9 @@ CMathBase.prototype.Recalculate_LineMetrics = function(PRS, ParaPr, _CurLine, _C
         }
     }
 };
+CMathBase.prototype.Math_UpdateLineMetrics = function(PRS, paraPr)
+{
+};
 CMathBase.prototype.IsEmptyRange = function(nCurLine, nCurRange)
 {
 	if (!this.bOneLine)
@@ -2848,6 +2859,43 @@ CMathBase.prototype.Set_RFont_ForMath = function()
 	this.SetRFontsCS({Name : "Cambria Math", Index : -1});
 	this.SetRFontsEastAsia({Name : "Cambria Math", Index : -1});
 	this.SetRFontsHAnsi({Name : "Cambria Math", Index : -1});
+};
+CMathBase.prototype.CheckRunContent = function (fCheck, oStartPos, oEndPos, nDepth, oCurrentPos, isForward)
+{
+	if (undefined === isForward)
+		isForward = true;
+
+	let nStartPos = oStartPos && oStartPos.GetDepth() >= nDepth ? oStartPos.Get(nDepth) : 0;
+	let nEndPos   = oEndPos && oEndPos.GetDepth() >= nDepth ? oEndPos.Get(nDepth) : this.Content.length - 1;
+
+	if (isForward)
+	{
+		for (var nPos = nStartPos; nPos <= nEndPos; ++nPos)
+		{
+			let _s = oStartPos && nPos === nStartPos ? oStartPos : null;
+			let _e = oEndPos && nPos === nEndPos ? oEndPos : null;
+
+			if (oCurrentPos)
+				oCurrentPos.Update(nPos, nDepth);
+
+			if (this.Content[nPos].CheckRunContent(fCheck, _s, _e, nDepth + 1, oCurrentPos, isForward))
+				return true;
+		}
+	}
+	else
+	{
+		for (var nPos = nEndPos; nPos >= nStartPos; --nPos)
+		{
+			let _s = oStartPos && nPos === nStartPos ? oStartPos : null;
+			let _e = oEndPos && nPos === nEndPos ? oEndPos : null;
+
+			if (oCurrentPos)
+				oCurrentPos.Update(nPos, nDepth);
+
+			if (this.Content[nPos].CheckRunContent(fCheck, _s, _e, nDepth + 1, oCurrentPos, isForward))
+				return true;
+		}
+	}
 };
 
 function CMathBasePr()

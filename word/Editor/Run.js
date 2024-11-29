@@ -12503,7 +12503,8 @@ ParaRun.prototype.GetFontSlotInRange = function(nStartPos, nEndPos)
 {
 	if (nStartPos >= nEndPos
 		|| nStartPos >= this.Content.length
-		|| nEndPos <= 0)
+		|| nEndPos <= 0
+		|| this.IsMathRun())
 		return AscWord.fontslot_None;
 
 	let oTextPr = this.Get_CompiledPr(false);
@@ -12523,6 +12524,17 @@ ParaRun.prototype.GetFontSlotInRange = function(nStartPos, nEndPos)
 
 	return nFontSlot;
 };
+/**
+ * Get first find parent typeof CMathContent or MathBase
+ * @return {*}
+ */
+ParaRun.prototype.GetMathBaseFirst = function()
+{
+	if (!this.IsMathRun())
+		return false;
+
+	return this.Parent.GetMathBaseFirst();
+}
 ParaRun.prototype.GetFontSlotByPosition = function(nPos)
 {
 	if (nPos > this.Content.length
