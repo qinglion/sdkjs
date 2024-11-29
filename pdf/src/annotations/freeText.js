@@ -652,7 +652,7 @@
             for (let i = 0; i < curKeys.length; i++) {
                 let key = curKeys[i];
                 if (Array.isArray(curRC[key] && Array.isArray(calcedRC[key]))) {
-                    for (let nComp = 0; nCount = Math.max(curRC[key].length, calcedRC[key].length), nComp < nCount; nComp++) {
+                    for (let nComp = 0, nCount = Math.max(curRC[key].length, calcedRC[key].length); nComp < nCount; nComp++) {
                         if (curRC[key][nComp] !== calcedRC[key][nComp]) {
                             return true;
                         }
