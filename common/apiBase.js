@@ -382,6 +382,26 @@
 		}
 		return res;
 	};
+	baseEditorsApi.prototype._getOpenFormatByEditorId                 = function(editorId, isOpenOoxml)
+	{
+		let res = Asc.c_oAscFileType.UNKNOWN;
+		switch (this.editorId)
+		{
+			case c_oEditorId.Word:
+				res = isOpenOoxml ? Asc.c_oAscFileType.DOCX : Asc.c_oAscFileType.CANVAS_WORD;
+				break;
+			case c_oEditorId.Spreadsheet:
+				res = isOpenOoxml ? Asc.c_oAscFileType.XLSX: Asc.c_oAscFileType.CANVAS_SPREADSHEET;
+				break;
+			case c_oEditorId.Presentation:
+				res = isOpenOoxml ? Asc.c_oAscFileType.PPTX : Asc.c_oAscFileType.CANVAS_PRESENTATION;
+				break;
+			case c_oEditorId.Draw:
+				res = Asc.c_oAscFileType.VSDX;
+				break;
+		}
+		return res;
+	};
 	baseEditorsApi.prototype.getEditorId                     = function()
 	{
 		return this.editorId;
@@ -1057,11 +1077,8 @@
 					locale = undefined;
 				}
 			}
-			let convertToOrigin = '';
-			if (!!(this.DocInfo && this.DocInfo.get_DirectUrl()) && this["asc_isSupportFeature"]("ooxml")) {
-				convertToOrigin = '.docx.xlsx.pptx';
-			}
-
+			let isOpenOoxml = !!(this.DocInfo && this.DocInfo.get_DirectUrl()) && this["asc_isSupportFeature"]("ooxml");
+			let outputformat = this._getOpenFormatByEditorId(this.editorId, isOpenOoxml);
 			rData = {
 				"c"             : 'open',
 				"id"            : this.documentId,
@@ -1071,7 +1088,8 @@
 				"title"         : this.documentTitle,
 				"lcid"          : locale,
 				"nobase64"      : true,
-				"convertToOrigin" : convertToOrigin
+				"outputformat"  : outputformat,
+				"convertToOrigin" : ""
 			};
 
 			if (this.isUseNativeViewer)
@@ -1521,6 +1539,28 @@
 			this.downloadAs(Asc.c_oAscAsyncAction.DownloadAs, oOptions);
 		}
 	};
+	baseEditorsApi.prototype.getConvertedBinFileFromRtf  = function (document, nOutputFormat, fCallback) {
+		if (this.canEdit()) {
+			this.insertDocumentUrlsData = {
+				imageMap: null, documents: [document], convertCallback: function (_api, url) {
+					_api.insertDocumentUrlsData.imageMap = url;
+					if (url['output.bin']) {
+						fCallback(url['output.bin']);
+					} else {
+						fCallback(null);
+					}
+					//_api.endInsertDocumentUrls();
+				}, endCallback: function (_api) {
+					fCallback(null);
+				}
+			};
+
+			const oOptions = new Asc.asc_CDownloadOptions(nOutputFormat);
+			oOptions.isNaturalDownload = true;
+			oOptions.isGetTextFromUrl = true;
+			this.downloadAs(Asc.c_oAscAsyncAction.DownloadAs, oOptions);
+		}
+	};
 	baseEditorsApi.prototype._onEndPermissions                   = function()
 	{
 		if (this.isOnLoadLicense) {
@@ -1574,6 +1614,8 @@
 	// CoAuthoring
 	baseEditorsApi.prototype._coAuthoringInit                    = function()
 	{
+		this.initCollaborativeEditing();
+		
 		var t = this;
 		//Если User не задан, отключаем коавторинг.
 		if (null == this.User || null == this.User.asc_getId())
@@ -1913,10 +1955,6 @@
 			}
 			// На старте не нужно ничего делать
 			if (isStartEvent) {
-				// TODO: Возможна ситуация, что это событие придет до onEndLoadSdk, и класс совместки еще не создан
-				//       Стоит перенести старт совместки после загрузки sdk, а если sdk не загружено, то тут просто пометить,
-				//       что надо будет начать совместку
-				t.initCollaborativeEditing();
 				t.startCollaborationEditing();
 			} else {
 				t._unlockDocument(isWaitAuth);
@@ -2337,6 +2375,13 @@
 	baseEditorsApi.prototype.asc_getPropertyEditorTextArts       = function()
 	{
 		return this.textArtPreviewManager.getWordArtPreviews();
+	};
+	baseEditorsApi.prototype.isUseOldMobileVersion       = function()
+	{
+		if (!this.isMobileVersion)
+			return false;
+		// return true for old scheme
+		return false;
 	};
 	// Add image
 	baseEditorsApi.prototype.AddImageUrl       = function(urls, imgProp, token, obj)
@@ -2811,6 +2856,7 @@
 					case AscCommon.c_oEditorId.Word: errorData = 'docx';break;
 					case AscCommon.c_oEditorId.Spreadsheet: errorData = 'xlsx';break;
 					case AscCommon.c_oEditorId.Presentation: errorData = 'pptx';break;
+					case AscCommon.c_oEditorId.Draw: errorData = 'vsdx';break;
 					default:
 						if (isNativeFormat) {
 							errorData = 'pdf'
@@ -3810,11 +3856,8 @@
 		if (!this.canSave || !this._saveCheck())
 			return 0;
 
-		if (this.isPdfEditor())
-			return 0;
-
 		//viewer
-		if (this.isViewMode)
+		if (this.isViewMode || this.isPdfViewer)
 			return 0;
 
 		return new Date().getTime() - this.lastWorkTime;
@@ -3874,7 +3917,7 @@
 		this.currentPasswordOld = this.currentPassword;
 		this.currentPassword = password;
 		this.asc_Save(false, undefined, true);
-		if (!(this.DocInfo && this.DocInfo.get_OfflineApp()) && !this.isViewMode && !this.isRestrictionView()) {
+		if (!(this.DocInfo && this.DocInfo.get_OfflineApp()) && !this.isViewMode && !this.isPdfViewer) {
 			var rData = {
 				"c": 'setpassword',
 				"id": this.documentId,
@@ -4565,6 +4608,10 @@
 		this.isDarkMode = isDarkMode;
 
 		this.updateDarkMode();
+	};
+	baseEditorsApi.prototype.canEnterText = function()
+	{
+		return this.canEdit();
 	};
 	baseEditorsApi.prototype.updateDarkMode = function()
 	{

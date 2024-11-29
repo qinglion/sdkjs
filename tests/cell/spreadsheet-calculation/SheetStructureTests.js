@@ -3024,6 +3024,149 @@ $(function () {
 		clearData(0, 99, 0, 105);
 	});
 
+	/* for bug 61856 */
+	QUnit.test('Array of arguments check after calling the wizard for the function', function (assert) { 
+		let resArray;
+
+		ws.getRange2("D1").setValue("11");
+		ws.getRange2("D2").setValue("22");
+		ws.getRange2("D3").setValue("33");
+
+		api.wb.cellEditor =  {
+			data : {},
+			changeCellText: function () {},
+			getText: function () {
+				return "";
+			}
+		};
+
+		api.wb.wsActive = ws.getIndex();
+		api.wb.setCellEditMode(true);
+
+		wb.dependencyFormulas.addDefName("def", "Sheet1!$A$100:$A$102");
+
+		// api.asc_startWizard();
+		let formula = "SUM(D1"
+		let parser = new AscCommonExcel.parserFormula(formula, /*formulaParsed.parent*/null, ws);
+		let _parseResult = new AscCommonExcel.ParseResult([], []);
+
+		parser.parse(true, true, _parseResult, true);
+
+		resArray = _parseResult.getArgumentsValue(formula);
+		assert.strictEqual(resArray[0], "D1", 'First argument in "SUM(D1"');
+		assert.strictEqual(_parseResult.error, c_oAscError.ID.FrmlParenthesesCorrectCount, 'Error in parseResult for "SUM(D1" formula');
+
+
+		formula = "SUM(D1,"
+		parser = new AscCommonExcel.parserFormula(formula, null, ws);
+		_parseResult = new AscCommonExcel.ParseResult([], []);
+
+		parser.parse(true, true, _parseResult, true);
+
+		resArray = _parseResult.getArgumentsValue(formula);
+		assert.strictEqual(resArray[0], "D1", 'First argument in "SUM(D1,"');
+		assert.strictEqual(_parseResult.error, c_oAscError.ID.FrmlOperandExpected, 'Error in parseResult for "SUM(D1," formula');
+
+
+		formula = "SUM(D1,D2"
+		parser = new AscCommonExcel.parserFormula(formula, null, ws);
+		_parseResult = new AscCommonExcel.ParseResult([], []);
+
+		parser.parse(true, true, _parseResult, true);
+
+		resArray = _parseResult.getArgumentsValue(formula);
+		assert.strictEqual(resArray[0], "D1", 'First argument in "SUM(D1,D2"');
+		assert.strictEqual(resArray[1], "D2", 'Second argument in "SUM(D1,D2"');
+		assert.strictEqual(_parseResult.error, c_oAscError.ID.FrmlParenthesesCorrectCount, 'Error in parseResult for "SUM(D1,D2" formula');
+
+
+		formula = "SUM(D1,D2)"
+		parser = new AscCommonExcel.parserFormula(formula, null, ws);
+		_parseResult = new AscCommonExcel.ParseResult([], []);
+
+		parser.parse(true, true, _parseResult, true);
+
+		resArray = _parseResult.getArgumentsValue(formula);
+		assert.strictEqual(resArray[0], "D1", 'First argument in "SUM(D1,D2)"');
+		assert.strictEqual(resArray[1], "D2", 'Second argument in "SUM(D1,D2)"');
+		assert.strictEqual(_parseResult.error, undefined, 'Error in parseResult for "SUM(D1,D2)" formula');
+
+		
+		formula = "SUM(D1:D2)"
+		parser = new AscCommonExcel.parserFormula(formula, null, ws);
+		_parseResult = new AscCommonExcel.ParseResult([], []);
+
+		parser.parse(true, true, _parseResult, true);
+
+		resArray = _parseResult.getArgumentsValue(formula);
+		assert.strictEqual(resArray[0], "D1:D2", 'First argument in "SUM(D1:D2)"');
+		assert.strictEqual(_parseResult.error, undefined, 'Error in parseResult for "SUM(D1:D2)" formula');
+
+
+		formula = "SUM(D1:D2,)"
+		parser = new AscCommonExcel.parserFormula(formula, null, ws);
+		_parseResult = new AscCommonExcel.ParseResult([], []);
+
+		parser.parse(true, true, _parseResult, true);
+
+		resArray = _parseResult.getArgumentsValue(formula);
+		assert.strictEqual(resArray[0], "D1:D2", 'First argument in "SUM(D1:D2,)"');
+		assert.strictEqual(_parseResult.error, undefined, 'Error in parseResult for "SUM(D1:D2,)" formula');
+
+
+		formula = "SUM("
+		parser = new AscCommonExcel.parserFormula(formula, null, ws);
+		_parseResult = new AscCommonExcel.ParseResult([], []);
+
+		parser.parse(true, true, _parseResult, true);
+
+		resArray = _parseResult.getArgumentsValue(formula);
+		assert.strictEqual(resArray[0], "", 'First argument in "SUM("');
+		assert.strictEqual(_parseResult.error, c_oAscError.ID.FrmlOperandExpected, 'Error in parseResult for "SUM(" formula');
+
+
+		formula = "SUM(1"
+		parser = new AscCommonExcel.parserFormula(formula, null, ws);
+		_parseResult = new AscCommonExcel.ParseResult([], []);
+
+		parser.parse(true, true, _parseResult, true);
+
+		resArray = _parseResult.getArgumentsValue(formula);
+		assert.strictEqual(resArray[0], "1", 'First argument in "SUM(1"');
+		assert.strictEqual(_parseResult.error, c_oAscError.ID.FrmlParenthesesCorrectCount, 'Error in parseResult for "SUM(1" formula');
+
+		formula = "SUM(1,D1"
+		parser = new AscCommonExcel.parserFormula(formula, null, ws);
+		_parseResult = new AscCommonExcel.ParseResult([], []);
+
+		parser.parse(true, true, _parseResult, true);
+
+		resArray = _parseResult.getArgumentsValue(formula);
+		assert.strictEqual(resArray[0], "1", 'First argument in "SUM(1,D1"');
+		assert.strictEqual(resArray[1], "D1", 'Second argument in "SUM(1,D1"');
+		assert.strictEqual(_parseResult.error, c_oAscError.ID.FrmlParenthesesCorrectCount, 'Error in parseResult for "SUM(1,D1" formula');
+
+
+		formula = 'SUM(1,D1,"str",TRUE,def'
+		parser = new AscCommonExcel.parserFormula(formula, null, ws);
+		_parseResult = new AscCommonExcel.ParseResult([], []);
+
+		parser.parse(true, true, _parseResult, true);
+
+		resArray = _parseResult.getArgumentsValue(formula);
+		assert.strictEqual(resArray[0], "1", 'First argument in "SUM(1,D1,"str",TRUE,def"');
+		assert.strictEqual(resArray[1], "D1", 'Second argument in "SUM(1,D1,"str",TRUE,def"');
+		assert.strictEqual(resArray[2], "\"str\"", 'Third argument in "SUM(1,D1,"str",TRUE,def"');
+		assert.strictEqual(resArray[3], "TRUE", 'Fourth argument in "SUM(1,D1,"str",TRUE,def"');
+		assert.strictEqual(resArray[4], "def", 'Fifth argument in "SUM(1,D1,"str",TRUE,def"');
+		assert.strictEqual(_parseResult.error, c_oAscError.ID.FrmlParenthesesCorrectCount, 'Error in parseResult for "SUM(1,D1,"str",TRUE,def" formula');
+
+		// remove all created earlier defNames
+		wb.dependencyFormulas._foreachDefName(function(defName) {
+			wb.dependencyFormulas.removeDefName(undefined, defName.name);
+		});
+	});
+
 	QUnit.test('autoCompleteFormula', function (assert) {
 		let resCell, range, fillRange, autoCompleteRes;
 
@@ -3582,6 +3725,103 @@ $(function () {
 		assert.strictEqual(activeCell.col === supposedActiveCell.bbox.c1 && activeCell.row === supposedActiveCell.bbox.r1, true, "Active cell test. B20:B22(only text in range) autosum");
 
 		
+		ws.getRange2("A1:Z100").cleanAll();
+	});
+
+	/* for bug 69708 */
+	QUnit.test('Array formula ', function (assert) {
+		let array, cellWithFormula, fillRange;
+
+		ws.getRange2("A11").setNumFormat("@");
+		ws.getRange2("B12").setNumFormat("@");
+
+		ws.getRange2("A2").setValue("Jeans");
+		ws.getRange2("A3").setValue("Sweater");
+		ws.getRange2("A4").setValue("Shirt");
+
+		// set flags for CSE formula call
+		let flags = wsView._getCellFlags(9, 0);
+		flags.ctrlKey = true;
+		flags.shiftKey = true;
+
+		// set selection A10:B13
+		fillRange = ws.getRange2("A10:B12");
+		wsView.setSelection(fillRange.bbox);
+		wsView._initRowsCount();
+		wsView._initColsCount();
+		
+
+		let fragment = ws.getRange2("A10").getValueForEdit2();
+		fragment[0].setFragmentText("=SIN({1,2})");
+
+		wsView._saveCellValueAfterEdit(fillRange, fragment, flags, null, null);		// calculate
+		resCell = ws.getRange2("A10");
+		assert.strictEqual(wsView.model.selectionRange.getLast().getName(), "A10:B12", "Selection after =SIN({1,2}) cse formula call");
+		assert.strictEqual(resCell.getValueWithFormat(), "0.841470985", "Value in A10 after =SIN({1,2}) calculate");
+		assert.strictEqual(resCell.getValueForEdit(), "=SIN({1,2})", "Formula in A10 after =SIN({1,2}) calculate");
+		assert.strictEqual(resCell.getNumFormatStr(), "General", "A10 cellFormat after =SIN({1,2}) calculate");
+
+		resCell = ws.getRange2("A11");
+		assert.strictEqual(resCell.getValueWithFormat(), "0.841470985", "Value in A11 after =SIN({1,2}) calculate");
+		assert.strictEqual(resCell.getValueForEdit(), "=SIN({1,2})", "Formula in A11 after =SIN({1,2}) calculate");
+		assert.strictEqual(resCell.getNumFormatStr(), "@", "A11 cellFormat after =SIN({1,2}) calculate");
+
+		resCell = ws.getRange2("A12");
+		assert.strictEqual(resCell.getValueWithFormat(), "0.841470985", "Value in A12 after =SIN({1,2}) calculate");
+		assert.strictEqual(resCell.getValueForEdit(), "=SIN({1,2})", "Formula in A12 after =SIN({1,2}) calculate");
+		assert.strictEqual(resCell.getNumFormatStr(), "General", "A12 cellFormat after =SIN({1,2}) calculate");
+
+		resCell = ws.getRange2("B10");
+		assert.strictEqual(resCell.getValueWithFormat(), "0.909297427", "Value in B10 after =SIN({1,2}) calculate");
+		assert.strictEqual(resCell.getValueForEdit(), "=SIN({1,2})", "Formula in B10 after =SIN({1,2}) calculate");
+		assert.strictEqual(resCell.getNumFormatStr(), "General", "B10 cellFormat after =SIN({1,2}) calculate");
+
+		resCell = ws.getRange2("B11");
+		assert.strictEqual(resCell.getValueWithFormat(), "0.909297427", "Value in B11 after =SIN({1,2}) calculate");
+		assert.strictEqual(resCell.getValueForEdit(), "=SIN({1,2})", "Formula in B11 after =SIN({1,2}) calculate");
+		assert.strictEqual(resCell.getNumFormatStr(), "General", "B11 cellFormat after =SIN({1,2}) calculate");
+
+		resCell = ws.getRange2("B12");
+		assert.strictEqual(resCell.getValueWithFormat(), "0.909297427", "Value in B12 after =SIN({1,2}) calculate");
+		assert.strictEqual(resCell.getValueForEdit(), "=SIN({1,2})", "Formula in B12 after =SIN({1,2}) calculate");
+		assert.strictEqual(resCell.getNumFormatStr(), "@", "B12 cellFormat after =SIN({1,2}) calculate");
+
+
+		fragment[0].setFragmentText('=HSTACK({"Red";"Blue";"Green"},A2:A4)');
+
+		wsView._saveCellValueAfterEdit(fillRange, fragment, flags, null, null);		// calculate
+		resCell = ws.getRange2("A10");
+		assert.strictEqual(wsView.model.selectionRange.getLast().getName(), "A10:B12", 'Selection after =HSTACK({"Red";"Blue";"Green"},A2:A4) cse formula call');
+		assert.strictEqual(resCell.getValueWithFormat(), "Red", 'Value in A10 after =HSTACK({"Red";"Blue";"Green"},A2:A4) calculate');
+		assert.strictEqual(resCell.getValueForEdit(), '=HSTACK({\"Red\";\"Blue\";\"Green\"},A2:A4)', 'Formula in A10 after =HSTACK({"Red";"Blue";"Green"},A2:A4) calculate');
+		assert.strictEqual(resCell.getNumFormatStr(), "General", 'A10 cellFormat after =HSTACK({"Red";"Blue";"Green"},A2:A4) calculate');
+
+		resCell = ws.getRange2("A11");
+		assert.strictEqual(resCell.getValueWithFormat(), "Blue", 'Value in A11 after =HSTACK({"Red";"Blue";"Green"},A2:A4) calculate');
+		assert.strictEqual(resCell.getValueForEdit(), '=HSTACK({\"Red\";\"Blue\";\"Green\"},A2:A4)', 'Formula in A11 after =HSTACK({"Red";"Blue";"Green"},A2:A4) calculate');
+		assert.strictEqual(resCell.getNumFormatStr(), "@", 'A11 cellFormat after =HSTACK({"Red";"Blue";"Green"},A2:A4) calculate');
+
+		resCell = ws.getRange2("A12");
+		assert.strictEqual(resCell.getValueWithFormat(), "Green", 'Value in A12 after =HSTACK({"Red";"Blue";"Green"},A2:A4) calculate');
+		assert.strictEqual(resCell.getValueForEdit(), '=HSTACK({\"Red\";\"Blue\";\"Green\"},A2:A4)', 'Formula in A12 after =HSTACK({"Red";"Blue";"Green"},A2:A4) calculate');
+		assert.strictEqual(resCell.getNumFormatStr(), "General", 'A12 cellFormat after =HSTACK({"Red";"Blue";"Green"},A2:A4) calculate');
+
+		resCell = ws.getRange2("B10");
+		assert.strictEqual(resCell.getValueWithFormat(), "Jeans", 'Value in B10 after =HSTACK({"Red";"Blue";"Green"},A2:A4) calculate');
+		assert.strictEqual(resCell.getValueForEdit(), '=HSTACK({\"Red\";\"Blue\";\"Green\"},A2:A4)', 'Formula in B10 after =HSTACK({"Red";"Blue";"Green"},A2:A4) calculate');
+		assert.strictEqual(resCell.getNumFormatStr(), "General", 'B10 cellFormat after =HSTACK({"Red";"Blue";"Green"},A2:A4) calculate');
+
+		resCell = ws.getRange2("B11");
+		assert.strictEqual(resCell.getValueWithFormat(), "Sweater", 'Value in B11 after =HSTACK({"Red";"Blue";"Green"},A2:A4) calculate');
+		assert.strictEqual(resCell.getValueForEdit(), '=HSTACK({\"Red\";\"Blue\";\"Green\"},A2:A4)', 'Formula in B11 after =HSTACK({"Red";"Blue";"Green"},A2:A4) calculate');
+		assert.strictEqual(resCell.getNumFormatStr(), "General", 'B11 cellFormat after =HSTACK({"Red";"Blue";"Green"},A2:A4) calculate');
+
+		resCell = ws.getRange2("B12");
+		assert.strictEqual(resCell.getValueWithFormat(), "Shirt", 'Value in B12 after =HSTACK({"Red";"Blue";"Green"},A2:A4) calculate');
+		assert.strictEqual(resCell.getValueForEdit(), '=HSTACK({\"Red\";\"Blue\";\"Green\"},A2:A4)', 'Formula in B12 after =HSTACK({"Red";"Blue";"Green"},A2:A4) calculate');
+		assert.strictEqual(resCell.getNumFormatStr(), "@", 'B12 cellFormat after =HSTACK({"Red";"Blue";"Green"},A2:A4) calculate');
+
+
 		ws.getRange2("A1:Z100").cleanAll();
 	});
 
@@ -4520,6 +4760,275 @@ $(function () {
 
 		getAutofillCase([0, 0, 13, 14], [0, 0, 12, 0], 1, 'Time format. Reverse sequence. Vertical. Multiple selected cells. Start from 36872.5.', expectedData);
 		ws.getRange2('A1:A20').cleanAll();
+	});
+
+	QUnit.test('Cells merge test', function (assert) {
+		
+		ws.getRange2("A1:Z100").cleanAll();
+		ws.getRange2("A10").setValue("1");
+		ws.getRange2("A11").setValue("2");
+		ws.getRange2("B10").setValue("3");
+		ws.getRange2("B11").setValue("4");
+
+		// If the range is not merged, null is returned, otherwise a Range.bbox object
+		assert.ok(ws.getRange2("A10:B11").hasMerged() === null, 'Range A10:B11 is not merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "1", 'Value in A10 before merge in A10:B11');
+		assert.strictEqual(ws.getRange2("A11").getValueWithoutFormat(), "2", 'Value in A11 before merge in A10:B11');
+		assert.strictEqual(ws.getRange2("B10").getValueWithoutFormat(), "3", 'Value in B10 before merge in A10:B11');
+		assert.strictEqual(ws.getRange2("B11").getValueWithoutFormat(), "4", 'Value in B11 before merge in A10:B11');
+
+		// A10:B11 merge & center
+		ws.getRange2("A10:B11").merge(Asc.c_oAscMergeOptions.MergeCenter);
+
+		assert.ok(ws.getRange2("A10:B11").hasMerged(), 'Range A10:B11 is merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "1", 'Value in A10 after merge in A10:B11');
+		assert.strictEqual(ws.getRange2("A11").getValueWithoutFormat(), "", 'Value in A11 after merge in A10:B11');
+		assert.strictEqual(ws.getRange2("B10").getValueWithoutFormat(), "", 'Value in B10 after merge in A10:B11');
+		assert.strictEqual(ws.getRange2("B11").getValueWithoutFormat(), "", 'Value in B11 after merge in A10:B11');
+
+		// A10:B11 unmerge
+		ws.getRange2("A10:B11").merge(Asc.c_oAscMergeOptions.MergeCenter);
+
+		ws.getRange2("A10:B11").cleanAll();
+		ws.getRange2("A10").setValue("1");
+		ws.getRange2("A11").setValue("2");
+		ws.getRange2("B10").setValue("3");
+		ws.getRange2("B11").setValue("4");
+
+		assert.ok(ws.getRange2("A9:B11").hasMerged() === null, 'Range A9:B11 is not merged');
+		ws.getRange2("A9:B11").merge(Asc.c_oAscMergeOptions.MergeCenter);
+		assert.ok(ws.getRange2("A9:B11").hasMerged(), 'Range A9:B11 is merged');
+		assert.strictEqual(ws.getRange2("A9").getValueWithoutFormat(), "1", 'Value in A9 after merge in A9:B11');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "", 'Value in A10 after merge in A9:B11');
+		assert.strictEqual(ws.getRange2("A11").getValueWithoutFormat(), "", 'Value in A11 after merge in A9:B11');
+		assert.strictEqual(ws.getRange2("B9").getValueWithoutFormat(), "", 'Value in B9 after merge in A9:B11');
+		assert.strictEqual(ws.getRange2("B10").getValueWithoutFormat(), "", 'Value in B10 after merge in A9:B11');
+		assert.strictEqual(ws.getRange2("B11").getValueWithoutFormat(), "", 'Value in B11 after merge in A9:B11');
+
+		// A9:B11 unmerge
+		ws.getRange2("A9:B11").merge(Asc.c_oAscMergeOptions.MergeCenter);
+		ws.getRange2("A9:B11").cleanAll();
+
+		let bbox = ws.getRange2("A11").bbox;
+		ws.getRange2("A11").setValue("={2,4}", undefined, undefined, bbox);
+		// cellWithFormula = new window['AscCommonExcel'].CCellWithFormula(ws, bbox.r1, bbox.c1);
+		assert.ok(ws.getRange2("A10:A11").hasMerged() === null, 'Range A10:A11 is not merged');
+		ws.getRange2("A10:A11").merge(Asc.c_oAscMergeOptions.MergeCenter);
+		assert.ok(ws.getRange2("A10:A11").hasMerged(), 'Range A10:A11 is merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "2", 'Value in A10 after merge in A10:A11 with one cell array');
+
+		// A10:A11 unmerge
+		ws.getRange2("A10:A11").merge(Asc.c_oAscMergeOptions.MergeCenter);
+		ws.getRange2("A10:A12").cleanAll();
+
+		bbox = ws.getRange2("A11:A12").bbox;
+		ws.getRange2("A11").setValue("={2,4}", undefined, undefined, bbox);
+		assert.ok(ws.getRange2("A10:A12").hasMerged() === null, 'Range A10:A12 is not merged');
+		ws.getRange2("A10:A12").merge(Asc.c_oAscMergeOptions.MergeCenter);
+		assert.ok(ws.getRange2("A10:A12").hasMerged(), 'Range A10:A12 is merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "", 'Value in A10 after merge in A10:A12 with two cells array');
+		assert.strictEqual(ws.getRange2("A11").getValueWithoutFormat(), "", 'Value in A11 after merge in A10:A12 with two cells array');
+		assert.strictEqual(ws.getRange2("A12").getValueWithoutFormat(), "", 'Value in A12 after merge in A10:A12 with two cells array');
+
+		// A10:A12 unmerge
+		ws.getRange2("A10:A12").merge(Asc.c_oAscMergeOptions.MergeCenter);
+		ws.getRange2("A10:A12").cleanAll();
+
+		ws.getRange2("A10").setValue("1");
+
+		bbox = ws.getRange2("A11").bbox;
+		ws.getRange2("A11").setValue("={2,4}", undefined, undefined, bbox);
+		assert.ok(ws.getRange2("A10:A12").hasMerged() === null, 'Range A10:A12 is not merged');
+		ws.getRange2("A10:A12").merge(Asc.c_oAscMergeOptions.MergeCenter);
+		assert.ok(ws.getRange2("A10:A12").hasMerged(), 'Range A10:A12 is merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "1", 'Value in A10 after merge in A10:A12 with one cell value before one cell array');
+		assert.strictEqual(ws.getRange2("A11").getValueWithoutFormat(), "", 'Value in A11 after merge in A10:A12 with one cell value before one cell array');
+		assert.strictEqual(ws.getRange2("A12").getValueWithoutFormat(), "", 'Value in A12 after merge in A10:A12 with one cell value before one cell array');
+
+		// A10:A12 unmerge
+		ws.getRange2("A10:A12").merge(Asc.c_oAscMergeOptions.MergeCenter);
+		ws.getRange2("A10:B12").cleanAll();
+
+		ws.getRange2("A10").setValue("1");
+		ws.getRange2("B10").setValue("1");
+
+		bbox = ws.getRange2("A11:B11").bbox;
+		ws.getRange2("A11:B11").setValue("={2,4}", undefined, undefined, bbox);
+		assert.ok(ws.getRange2("A10:B12").hasMerged() === null, 'Range A10:B12 is not merged');
+		ws.getRange2("A10:B12").merge(Asc.c_oAscMergeOptions.MergeCenter);
+		assert.ok(ws.getRange2("A10:B12").hasMerged(), 'Range A10:B12 is merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "1", 'Value in A10 after merge in A10:B12 with two cells value before two cells array');
+		assert.strictEqual(ws.getRange2("A11").getValueWithoutFormat(), "", 'Value in A11 after merge in A10:B12 with two cells value before two cells array');
+		assert.strictEqual(ws.getRange2("A12").getValueWithoutFormat(), "", 'Value in A12 after merge in A10:B12 with two cells value before two cells array');
+		assert.strictEqual(ws.getRange2("B10").getValueWithoutFormat(), "", 'Value in B10 after merge in A10:B12 with two cells value before two cells array');
+		assert.strictEqual(ws.getRange2("B11").getValueWithoutFormat(), "", 'Value in B11 after merge in A10:B12 with two cells value before two cells array');
+		assert.strictEqual(ws.getRange2("B12").getValueWithoutFormat(), "", 'Value in B12 after merge in A10:B12 with two cells value before two cells array');
+
+		// A10:B12 unmerge
+		ws.getRange2("A10:B12").merge(Asc.c_oAscMergeOptions.MergeCenter);
+		ws.getRange2("A10:B12").cleanAll();
+
+		/* merge across tests */
+		let mergeRes;
+		ws.getRange2("A1:Z100").cleanAll();
+		ws.getRange2("A10").setValue("1");
+		ws.getRange2("B10").setValue("2");
+		ws.getRange2("C10").setValue("3");
+
+		assert.ok(ws.getRange2("A10:C10").hasMerged() === null, 'Range A10:C10 is not merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "1", 'Value in A10 before across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("B10").getValueWithoutFormat(), "2", 'Value in B10 before across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("C10").getValueWithoutFormat(), "3", 'Value in C10 before across merge in A10:C10');
+
+		// A10:C10 merge across
+		ws.getRange2("A10:C10").merge(Asc.c_oAscMergeOptions.MergeAcross);
+
+		assert.ok(ws.getRange2("A10:C10").hasMerged(), 'Range A10:C10 is merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "1", 'Value in A10 after across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("B10").getValueWithoutFormat(), "", 'Value in B10 after across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("C10").getValueWithoutFormat(), "", 'Value in C10 after across merge in A10:C10');
+
+		// A10:C10 unmerge
+		ws.getRange2("A10:C10").merge(Asc.c_oAscMergeOptions.MergeAcross);
+		ws.getRange2("A10:C10").cleanAll();
+
+
+		ws.getRange2("A10").setValue("");
+		ws.getRange2("B10").setValue("2");
+		ws.getRange2("C10").setValue("3");
+
+		assert.ok(ws.getRange2("A10:C10").hasMerged() === null, 'Range A10:C10 is not merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "", 'Value in A10 before across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("B10").getValueWithoutFormat(), "2", 'Value in B10 before across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("C10").getValueWithoutFormat(), "3", 'Value in C10 before across merge in A10:C10');
+
+		// A10:C10 merge across
+		ws.getRange2("A10:C10").merge(Asc.c_oAscMergeOptions.MergeAcross);
+
+		assert.ok(ws.getRange2("A10:C10").hasMerged(), 'Range A10:C10 is merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "2", 'Value in A10 after across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("B10").getValueWithoutFormat(), "", 'Value in B10 after across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("C10").getValueWithoutFormat(), "", 'Value in C10 after across merge in A10:C10');
+
+		// A10:C10 unmerge
+		ws.getRange2("A10:C10").merge(Asc.c_oAscMergeOptions.MergeAcross);
+		ws.getRange2("A10:C10").cleanAll();
+
+
+		bbox = ws.getRange2("A10").bbox;
+		ws.getRange2("A10").setValue("={4,6}", undefined, undefined, bbox);
+		ws.getRange2("B10").setValue("2");
+		ws.getRange2("C10").setValue("3");
+
+		assert.ok(ws.getRange2("A10:C10").hasMerged() === null, 'Range A10:C10 is not merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "4", 'Value in A10 before across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("B10").getValueWithoutFormat(), "2", 'Value in B10 before across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("C10").getValueWithoutFormat(), "3", 'Value in C10 before across merge in A10:C10');
+
+		// A10:C10 merge across
+		ws.getRange2("A10:C10").merge(Asc.c_oAscMergeOptions.MergeAcross);
+
+		assert.ok(ws.getRange2("A10:C10").hasMerged(), 'Range A10:C10 is merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "4", 'Value in A10 after across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("B10").getValueWithoutFormat(), "", 'Value in B10 after across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("C10").getValueWithoutFormat(), "", 'Value in C10 after across merge in A10:C10');
+
+		// A10:C10 unmerge
+		ws.getRange2("A10:C10").merge(Asc.c_oAscMergeOptions.MergeAcross);
+		ws.getRange2("A10:C10").cleanAll();
+
+
+		bbox = ws.getRange2("B10").bbox;
+		ws.getRange2("A10").setValue("2");
+		ws.getRange2("B10").setValue("={4,6}", undefined, undefined, bbox);
+		ws.getRange2("C10").setValue("3");
+
+		assert.ok(ws.getRange2("A10:C10").hasMerged() === null, 'Range A10:C10 is not merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "2", 'Value in A10 before across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("B10").getValueWithoutFormat(), "4", 'Value in B10 before across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("C10").getValueWithoutFormat(), "3", 'Value in C10 before across merge in A10:C10');
+
+		// A10:C10 merge across
+		ws.getRange2("A10:C10").merge(Asc.c_oAscMergeOptions.MergeAcross);
+
+		assert.ok(ws.getRange2("A10:C10").hasMerged(), 'Range A10:C10 is merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "2", 'Value in A10 after across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("B10").getValueWithoutFormat(), "", 'Value in B10 after across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("C10").getValueWithoutFormat(), "", 'Value in C10 after across merge in A10:C10');
+
+		// A10:C10 unmerge
+		ws.getRange2("A10:C10").merge(Asc.c_oAscMergeOptions.MergeAcross);
+		ws.getRange2("A10:C10").cleanAll();
+
+
+		bbox = ws.getRange2("A10:B10").bbox;
+		ws.getRange2("A10:B10").setValue("={4,6}", undefined, undefined, bbox);
+		ws.getRange2("C10").setValue("3");
+
+		assert.ok(ws.getRange2("A10:C10").hasMerged() === null, 'Range A10:C10 is not merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "4", 'Value in A10 before across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("B10").getValueWithoutFormat(), "6", 'Value in B10 before across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("C10").getValueWithoutFormat(), "3", 'Value in C10 before across merge in A10:C10');
+
+		// A10:C10 merge across with expected error
+		mergeRes = ws.getRange2("A10:C10").merge(Asc.c_oAscMergeOptions.MergeAcross);
+
+		assert.strictEqual(mergeRes && mergeRes.errorType, Asc.c_oAscError.ID.CannotChangeFormulaArray);
+		assert.ok(ws.getRange2("A10:C10").hasMerged() === null, 'Range A10:C10 is not merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "4", 'Value in A10 after across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("B10").getValueWithoutFormat(), "6", 'Value in B10 after across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("C10").getValueWithoutFormat(), "3", 'Value in C10 after across merge in A10:C10');
+
+		// A10:C10 unmerge
+		ws.getRange2("A10:C10").merge(Asc.c_oAscMergeOptions.MergeAcross);
+		ws.getRange2("A10:C10").cleanAll();
+
+
+		bbox = ws.getRange2("B10:C10").bbox;
+		ws.getRange2("A10").setValue("3");
+		ws.getRange2("B10:C10").setValue("={4,6}", undefined, undefined, bbox);
+
+		assert.ok(ws.getRange2("A10:C10").hasMerged() === null, 'Range A10:C10 is not merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "3", 'Value in A10 before across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("B10").getValueWithoutFormat(), "4", 'Value in B10 before across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("C10").getValueWithoutFormat(), "6", 'Value in C10 before across merge in A10:C10');
+		
+		// A10:C10 merge across
+		mergeRes = ws.getRange2("A10:C10").merge(Asc.c_oAscMergeOptions.MergeAcross);
+
+		assert.strictEqual(mergeRes, undefined);
+		assert.ok(ws.getRange2("A10:C10").hasMerged(), 'Range A10:C10 is merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "3", 'Value in A10 after across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("B10").getValueWithoutFormat(), "", 'Value in B10 after across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("C10").getValueWithoutFormat(), "", 'Value in C10 after across merge in A10:C10');
+
+		// A10:C10 unmerge
+		ws.getRange2("A10:C10").merge(Asc.c_oAscMergeOptions.MergeAcross);
+		ws.getRange2("A10:C10").cleanAll();
+
+
+		bbox = ws.getRange2("B10:C10").bbox;
+		ws.getRange2("A10").setValue("");
+		ws.getRange2("B10:C10").setValue("={4,6}", undefined, undefined, bbox);
+
+		assert.ok(ws.getRange2("A10:C10").hasMerged() === null, 'Range A10:C10 is not merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "", 'Value in A10 before across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("B10").getValueWithoutFormat(), "4", 'Value in B10 before across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("C10").getValueWithoutFormat(), "6", 'Value in C10 before across merge in A10:C10');
+		
+		// A10:C10 merge across
+		mergeRes = ws.getRange2("A10:C10").merge(Asc.c_oAscMergeOptions.MergeAcross);
+
+		assert.strictEqual(mergeRes, undefined);
+		assert.ok(ws.getRange2("A10:C10").hasMerged(), 'Range A10:C10 is merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "", 'Value in A10 after across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("B10").getValueWithoutFormat(), "", 'Value in B10 after across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("C10").getValueWithoutFormat(), "", 'Value in C10 after across merge in A10:C10');
+
+		// A10:C10 unmerge
+		ws.getRange2("A10:C10").merge(Asc.c_oAscMergeOptions.MergeAcross);
+		ws.getRange2("A10:C10").cleanAll();
+
 	});
 
 	QUnit.module("Sheet structure");

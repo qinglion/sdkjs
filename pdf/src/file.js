@@ -150,6 +150,7 @@
     	this.isUse3d = false;
     	this.cacheManager = null;
     	this.logging = true;
+        this.type = -1;
 
     	this.Selection = {
             Page1 : 0,
@@ -621,7 +622,7 @@ void main() {\n\
     CFile.prototype.onMouseUp = function()
     {
         this.Selection.IsSelection = false;
-        this.viewer.getPDFDoc().TextSelectTrackHandler.Update();
+        this.viewer.getPDFDoc().TextSelectTrackHandler.Update(true);
         this.onUpdateSelection();
         this.onUpdateOverlay();
 
@@ -660,6 +661,13 @@ void main() {\n\
         var stream = this.getPageTextStream(pageIndex);
         if (!stream)
             return { Line : -1, Glyph : -1 };
+
+        if (this.type === 2)
+        {
+            let k = 72 / 96;
+            x *= k;
+            y *= k;
+        }
 
         // textline parameters
         var _line = -1;
@@ -2824,6 +2832,8 @@ void main() {\n\
         var error = file.nativeFile["loadFromData"](data);
         if (0 === error)
         {
+            file.type = file.nativeFile["getType"]();
+
             file.nativeFile["onRepaintPages"] = function(pages) {
                 file.onRepaintPages && file.onRepaintPages(pages);
             };
@@ -2869,6 +2879,8 @@ void main() {\n\
         var error = file.nativeFile["loadFromDataWithPassword"](password);
         if (0 === error)
         {
+            file.type = file.nativeFile["getType"]();
+
             file.nativeFile["onRepaintPages"] = function(pages) {
                 file.onRepaintPages && file.onRepaintPages(pages);
             };
@@ -2887,7 +2899,8 @@ void main() {\n\
                 page.originRotate   = page["Rotate"];
                 page.Rotate         = page["Rotate"];
             }
-
+            file.originalPagesCount = file.pages.length;
+            
             //file.cacheManager = new AscCommon.CCacheManager();
         }
     };
