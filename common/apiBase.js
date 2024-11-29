@@ -529,7 +529,7 @@
 					window["Asc"]["Addons"]["forms"] = false;
 					AscCommon.g_oTableId.InitOFormClasses();
 				}
-				}
+			}
 			if (!this.documentWopiSrc) {
 				//todo add tenant in origin?
 				this.documentShardKey = this.DocInfo.get_Shardkey() || this.documentId;
@@ -1725,9 +1725,9 @@
 				extendSession = false;
 			}
 			if (!extendSession) {
-					t.CoAuthoringApi.sendClientLog('debug', 'disconnect code:' + code + ';reason:' + reason);
-					t.CoAuthoringApi.disconnect(code, reason);
-				}
+				t.CoAuthoringApi.sendClientLog('debug', 'disconnect code:' + code + ';reason:' + reason);
+				t.CoAuthoringApi.disconnect(code, reason);
+			}
 		};
         this.CoAuthoringApi.onForceSave = function(data) {
             if (AscCommon.c_oAscForceSaveTypes.Button === data.type) {
@@ -1861,7 +1861,7 @@
 					t.waitNotIdle(undefined, function () {
 						t.CoAuthoringApi.connect();
 					});
-			}
+				}
 			}
 		};
 		this.CoAuthoringApi.onDocumentOpen = function (inputWrap) {
@@ -2254,7 +2254,7 @@
 			jsonparams["documentLayout"] = { "openedAt" : this.openedAt};
 			if (this.watermarkDraw && this.watermarkDraw.inputContentSrc) {
 				jsonparams["watermark"] = JSON.parse(this.watermarkDraw.inputContentSrc);
-		}
+			}
 			oAdditionalData["jsonparams"] = jsonparams;
 		} else if ((Asc.c_oAscFileType.PDF === options.fileType || Asc.c_oAscFileType.PDFA === options.fileType) &&
 			this.watermarkDraw && this.watermarkDraw.inputContentSrc) {
