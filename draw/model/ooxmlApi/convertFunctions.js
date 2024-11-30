@@ -218,7 +218,7 @@
 
 							// let fillPattern = shape.getCellNumberValue("FillPattern");
 							// if (fillPattern !== 0) {
-							// 	console.log("TextQuickStyleVariation for shapes with FillPattern !== 0 is disabled");
+							// 	AscCommon.consoleLog("TextQuickStyleVariation for shapes with FillPattern !== 0 is disabled");
 							// 	// consider example https://disk.yandex.ru/d/2fbgXRrCBThlCw
 							// 	return;
 							// }
@@ -263,7 +263,7 @@
 			 */
 			function parseParagraphAndAddToShapeContent(propsRowNum, paragraphPropsCommon, textCShape) {
 				if (paragraphPropsCommon === null) {
-					console.log("paragraphPropsCommon is null. Creating default paragraph");
+					AscCommon.consoleLog("paragraphPropsCommon is null. Creating default paragraph");
 					// create new paragraph to hold new properties
 					let oContent = textCShape.getDocContent();
 					let paragraph = new Paragraph(textCShape.getDrawingDocument(), true);
@@ -308,10 +308,10 @@
 								break;
 						}
 					} else {
-						console.log("horizontal align was not parsed so default is set (left)");
+						AscCommon.consoleLog("horizontal align was not parsed so default is set (left)");
 					}
 				} else {
-					console.log("horizontal align cell was not found so default is set (left)");
+					AscCommon.consoleLog("horizontal align cell was not found so default is set (left)");
 				}
 
 
@@ -389,7 +389,7 @@
 					fontColor = characterColorCell.calculateValue(shape, pageInfo,
 						visioDocument.themes, themeValWasUsedFor);
 				} else {
-					console.log("text color cell not found! set text color as themed");
+					AscCommon.consoleLog.log("text color cell not found! set text color as themed");
 					fontColor = AscCommonDraw.themeval(null, shape, pageInfo, visioDocument.themes, "TextColor");
 					themeValWasUsedFor.fontColor = true;
 				}
@@ -411,10 +411,10 @@
 					if (!isNaN(fontSizeIn)) {
 						fontSizePt = fontSizeIn * 72; // convert from in to pt
 					} else {
-						console.log("font size was not parsed so default is set (9 pt)");
+						AscCommon.consoleLog("font size was not parsed so default is set (9 pt)");
 					}
 				} else {
-					console.log("font size was not found so default is set (9 pt)");
+					AscCommon.consoleLog("font size was not found so default is set (9 pt)");
 				}
 				oRun.SetFontSize(fontSizePt);
 
@@ -443,13 +443,13 @@
 							cRFonts.CS = {Name: fontName, Index: -1};
 							cRFonts.EastAsia = {Name: fontName, Index: -1};
 						} else {
-							console.log("Font was not found for Run. So default is set (Calibri).");
+							AscCommon.consoleLog("Font was not found for Run. So default is set (Calibri).");
 						}
 					} else {
-						console.log("Font themed is unhandeled, Calibri is used.");
+						AscCommon.consoleLog("Font themed is unhandeled, Calibri is used.");
 					}
 				} else {
-					console.log("fontCell was not found so default is set (Calibri). Check mb AsianFont or ScriptFont");
+					AscCommon.consoleLog("fontCell was not found so default is set (Calibri). Check mb AsianFont or ScriptFont");
 				}
 				oRun.Set_RFonts(cRFonts);
 
@@ -457,7 +457,7 @@
 				// handle style (bold italic underline small caps)
 				const styleVsdx = characterPropsFinal && characterPropsFinal.getCellStringValue("Style");
 				if (styleVsdx === "Themed") {
-					console.log("Themed style text is unhandled");
+					AscCommon.consoleLog("Themed style text is unhandled");
 				} else {
 					oRun.Pr.Bold = Boolean(Number(styleVsdx) & 1);
 					oRun.Pr.Italic = Boolean(Number(styleVsdx) & 2);
@@ -778,7 +778,7 @@
 				} else if (textElementPart.kind === AscCommonDraw.c_oVsdxTextKind.TP) {
 					propsTP = textElementPart;
 				} else {
-					console.log("undkown type in text tag");
+					AscCommon.consoleLog("undkown type in text tag");
 				}
 			});
 
@@ -820,10 +820,10 @@
 					}
 					// else leave center align
 				} else {
-					console.log("vertical align cell was not parsed for shape. align set to center. Shape:", shape);
+					AscCommon.consoleLog("vertical align cell was not parsed for shape. align set to center. Shape:", shape);
 				}
 			} else {
-				console.log("vertical align cell was not found for shape. align set to center. Shape:", shape);
+				AscCommon.consoleLog("vertical align cell was not found for shape. align set to center. Shape:", shape);
 			}
 
 
@@ -1186,7 +1186,7 @@
 				endArrow.len = arrowSize + sizeEnumVsdxShift;
 				endArrow.w = arrowSize + sizeEnumVsdxShift;
 			} else {
-				console.log("arrowSize unknown:", arrowSize);
+				AscCommon.consoleLog("arrowSize unknown:", arrowSize);
 				endArrow.len = AscFormat.LineEndSize.vsdxMedium;
 				endArrow.w = AscFormat.LineEndSize.vsdxMedium;
 			}
@@ -1223,7 +1223,7 @@
 		// also check for {}, undefined, NaN, null
 		if (isNaN(pinX_inch) || pinX_inch === null || isNaN(pinY_inch) || pinY_inch === null ||
 			areShapeLayersInvisible) {
-			// console.log('pinX_inch or pinY_inch is NaN for Shape or areShapeLayersInvisible. Its ok sometimes. ' +
+			// AscCommon.consoleLog('pinX_inch or pinY_inch is NaN for Shape or areShapeLayersInvisible. Its ok sometimes. ' +
 				// 'Empty CShape is returned. See original shape: ', this);
 			// let's use empty shape
 			let emptyCShape = new AscFormat.CShape();
@@ -1377,7 +1377,7 @@
 		} else {
 			let fillForegndCell = this.getCell("FillForegnd");
 			if (fillForegndCell) {
-				// console.log("FillForegnd was found:", fillForegndCell);
+				// AscCommon.consoleLog("FillForegnd was found:", fillForegndCell);
 				uniFillForegnd = fillForegndCell.calculateValue(this, pageInfo,
 					visioDocument.themes, themeValWasUsedFor, gradientEnabled);
 
@@ -1391,7 +1391,7 @@
 						fillObj.color.color.RGBA.A = fillObj.color.color.RGBA.A * (1 - fillForegndTransValue);
 					}
 				} else {
-					console.log("fillForegndTrans value is themed or something. Not calculated for", this);
+					AscCommon.consoleLog("fillForegndTrans value is themed or something. Not calculated for", this);
 				}
 			}
 		}
@@ -1399,7 +1399,7 @@
 
 		let fillBkgndCell = this.getCell("FillBkgnd");
 		if (fillBkgndCell) {
-			// console.log("FillBkgnd was found:", fillBkgndCell);
+			// AscCommon.consoleLog("FillBkgnd was found:", fillBkgndCell);
 			uniFillBkgnd = fillBkgndCell.calculateValue(this, pageInfo,
 				visioDocument.themes, themeValWasUsedFor);
 
@@ -1413,17 +1413,17 @@
 					fillObj.color.color.RGBA.A = fillObj.color.color.RGBA.A * (1 - fillBkgndTransValue);
 				}
 			} else {
-				// console.log("fillBkgndTrans value is themed or something. Not calculated for", this);
+				// AscCommon.consoleLog("fillBkgndTrans value is themed or something. Not calculated for", this);
 			}
 		}
 
 		let lineColorCell = this.getCell("LineColor");
 		if (lineColorCell) {
-			// console.log("LineColor was found for shape", lineColorCell);
+			// AscCommon.consoleLog("LineColor was found for shape", lineColorCell);
 			lineUniFill = lineColorCell.calculateValue(this, pageInfo,
 				visioDocument.themes, themeValWasUsedFor);
 		} else {
-			console.log("LineColor cell for line stroke (border) was not found painting red");
+			AscCommon.consoleLog("LineColor cell for line stroke (border) was not found painting red");
 			lineUniFill = AscFormat.CreateUnfilFromRGB(255,0,0);
 		}
 
@@ -1440,12 +1440,12 @@
 			if (!isNaN(lineWeightInches)) {
 				lineWidthEmu = lineWeightInches * AscCommonWord.g_dKoef_in_to_mm * AscCommonWord.g_dKoef_mm_to_emu;
 			} else {
-				console.log("caught unknown error. line will be painted 9525 emus");
+				AscCommon.consoleLog("caught unknown error. line will be painted 9525 emus");
 				// 9255 emus = 0.01041666666666667 inches is document.xml StyleSheet ID=0 LineWeight e. g. default value
 				lineWidthEmu = 9525;
 			}
 		} else {
-			console.log("LineWeight cell was not calculated. line will be painted 9525 emus");
+			AscCommon.consoleLog("LineWeight cell was not calculated. line will be painted 9525 emus");
 			lineWidthEmu = 9525;
 		}
 
@@ -1559,7 +1559,7 @@
 						case 24:
 							return AscCommon.global_hatch_offsets.pct50;
 						default:
-							console.log("patten fill unhandled");
+							AscCommon.consoleLog("patten fill unhandled");
 							return AscCommon.global_hatch_offsets.cross;
 					}
 				}
@@ -1576,7 +1576,7 @@
 		} else if (uniFillForegnd) {
 			uniFillForegndWithPattern = uniFillForegnd;
 		} else {
-			console.log("FillForegnd not found for shape", this);
+			AscCommon.consoleLog("FillForegnd not found for shape", this);
 			uniFillForegndWithPattern = AscFormat.CreateNoFillUniFill();
 		}
 
@@ -1619,7 +1619,7 @@
 		}
 
 		if (this.type === "Foreign") {
-			// console.log("Shape has type Foreign and may not be displayed. " +
+			// AscCommon.consoleLog("Shape has type Foreign and may not be displayed. " +
 			// 	"Check shape.elements --> ForeignData_Type obj. See shape:", this);
 
 			let foreignDataObject = this.getForeignDataObject();
@@ -1643,7 +1643,7 @@
 
 					cShape = this.cImageShape;
 				} else {
-					console.log("Unknown error: cImageShape was not initialized on ooxml parse");
+					AscCommon.consoleLog("Unknown error: cImageShape was not initialized on ooxml parse");
 				}
 			}
 		}

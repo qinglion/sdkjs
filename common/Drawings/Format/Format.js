@@ -588,6 +588,9 @@
 			CBaseNoIdObject.call(this);
 
 			this.embellishment = null;
+			/**
+			 * @type {CVarStyle[]}
+			 */
 			this.varStyle = [];
 		}
 		InitClass(CVariationStyleScheme, CBaseNoIdObject, 0);
@@ -9801,6 +9804,18 @@
 		CTheme.prototype.Read_FromBinary2 = function (r) {
 			this.Id = r.GetString2();
 		};
+
+		/**
+		 * @memberOf CTheme
+		 * @return {boolean}
+		 */
+		CTheme.prototype.isVariationClrSchemeLstExists = function() {
+			let clrScheme = this.themeElements.clrScheme;
+			let variationClrSchemeLst = clrScheme && clrScheme.clrSchemeExtLst
+				&& clrScheme.clrSchemeExtLst.variationClrSchemeLst;
+			return variationClrSchemeLst.length > 0;
+		}
+
 		/**
 		 * @memberOf CTheme
 		 * @param variationIndex
@@ -9823,6 +9838,11 @@
 			}
 			return null;
 		};
+		/**
+		 * @param variationIndex
+		 * @param styleIndex
+		 * @return {CVarStyle|null}
+		 */
 		CTheme.prototype.getVariationStyleScheme = function (variationIndex, styleIndex) {
 			let themeExt = this.themeElements.themeExt;
 			if (themeExt && themeExt.variationStyleSchemeLst[variationIndex]) {

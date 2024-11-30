@@ -160,7 +160,7 @@
 			// isFillIdx = true;
 			//
 			// initialDefaultValue = 0;
-			console.log("Themed GradientStopColorTrans is unhandled");
+			AscCommon.consoleLog("Themed GradientStopColorTrans is unhandled");
 			return 0;
 		} else if (cellName === "EndArrow" || cellName === "BeginArrow") {
 			quickStyleCellName = null; // so color will not be calculated
@@ -186,7 +186,7 @@
 
 			initialDefaultValue = 1; // number is return type in calculateValue. Solid fill.
 		} else {
-			console.log("themeval argument error. cell name: " + cellName + " is unknown. return undefined.");
+			AscCommon.consoleLog("themeval argument error. cell name: " + cellName + " is unknown. return undefined.");
 			return undefined;
 		}
 
@@ -215,7 +215,7 @@
 				themeIndex = pageThemeIndex;
 			} else {
 				// it's ok sometimes
-				// console.log("pageThemeIndexCell not found");
+				// AscCommon.consoleLog("pageThemeIndexCell not found");
 				themeIndex = 0;
 			}
 		} else {
@@ -232,20 +232,16 @@
 			return initialDefaultValue;
 		} else {
 			// find theme by themeIndex
-			// theme = themes.find(function (theme) {
-			// 	let themeEnum = Number(theme.themeElements.themeExt.themeSchemeSchemeEnum);
-			// 	return themeEnum === themeIndex;
-			// });
 			theme = themes.find(function (theme) {
 				// if search by theme index - theme.themeElements.themeExt.themeSchemeSchemeEnum
 				let findThemeByElement = isConnectorShape?
 					theme.themeElements.themeExt.themeSchemeSchemeEnum :
 					theme.themeElements.clrScheme.clrSchemeExtLst.schemeEnum;
-				let clrSchemeThemeEnum = Number(findThemeByElement);
-				return clrSchemeThemeEnum === themeIndex;
+				let themeEnum = Number(findThemeByElement);
+				return themeEnum === themeIndex;
 			});
 			if (theme === undefined) {
-				console.log("Theme was not found by theme enum in themes. using themes[0]");
+				AscCommon.consoleLog("Theme was not found by theme enum in themes. using themes[0]");
 				theme = themes[0];
 			}
 		}
@@ -257,19 +253,46 @@
 		if (!isNaN(quickStyleColor)) {
 			if (100 <= quickStyleColor && quickStyleColor <= 106 ||
 				(200 <= quickStyleColor && quickStyleColor <= 206)) {
-				let variationColorIndex = shape.getCellNumberValue("VariationColorIndex");
-				if (!isNaN(variationColorIndex)) {
-					if (65534 === variationColorIndex) {
-						let pageVariationColorIndexIndex = pageInfo.pageSheet.getCellNumberValue("VariationColorIndex");
-						if (!isNaN(pageVariationColorIndexIndex)) {
-							variationColorIndex = pageVariationColorIndexIndex;
-						} else {
-							variationColorIndex = 0;
-							// console.log("pageVariationColorIndexIndex not found");
+				if (theme.isVariationClrSchemeLstExists()) {
+					let variationColorIndex = shape.getCellNumberValue("VariationColorIndex");
+					if (!isNaN(variationColorIndex)) {
+						if (65534 === variationColorIndex) {
+							let pageVariationColorIndexIndex = pageInfo.pageSheet.getCellNumberValue("VariationColorIndex");
+							if (!isNaN(pageVariationColorIndexIndex)) {
+								variationColorIndex = pageVariationColorIndexIndex;
+							} else {
+								variationColorIndex = 0;
+								// AscCommon.consoleLog("pageVariationColorIndexIndex not found");
+							}
 						}
+						calculatedColor = theme.getVariationClrSchemeColor(variationColorIndex,
+							quickStyleColor % 100);
 					}
-					calculatedColor = theme.getVariationClrSchemeColor(variationColorIndex,
-						quickStyleColor % 100);
+				} else {
+					let index = quickStyleColor % 100;
+					switch (index) {
+						case 0:
+							calculatedColor = AscFormat.builder_CreateSchemeColor("accent1");
+							break;
+						case 1:
+							calculatedColor = AscFormat.builder_CreateSchemeColor("accent2");
+							break;
+						case 2:
+							calculatedColor = AscFormat.builder_CreateSchemeColor("accent3");
+							break;
+						case 3:
+							calculatedColor = AscFormat.builder_CreateSchemeColor("accent4");
+							break;
+						case 4:
+							calculatedColor = AscFormat.builder_CreateSchemeColor("accent5");
+							break;
+						case 5:
+							calculatedColor = AscFormat.builder_CreateSchemeColor("accent6");
+							break;
+						case 6:
+							calculatedColor = AscFormat.builder_CreateSchemeColor("dk1");
+							break;
+					}
 				}
 			} else {
 				switch(quickStyleColor) {
@@ -328,7 +351,7 @@
 							variationStyleIndex = pageVariationStyleIndexIndex;
 						} else {
 							variationStyleIndex = 0;
-							// console.log("pageVariationStyleIndexIndex not found");
+							// AscCommon.consoleLog("pageVariationStyleIndexIndex not found");
 						}
 					}
 					let varStyle = theme.getVariationStyleScheme(variationStyleIndex,
@@ -385,7 +408,7 @@
 				};
 				result = toVisioDashMap[originalDashType];
 				if (result === undefined) {
-					console.log("Dash map was not realized. Unknown dash type in theme");
+					AscCommon.consoleLog("Dash map was not realized. Unknown dash type in theme");
 					result = 1; // visio solid
 				}
 			} else if (cellName === "Color") {
@@ -438,7 +461,7 @@
 				let fillPattern = getMedifiersResult && getMedifiersResult.pattern;
 				result = Number(fillPattern);
 			} else {
-				console.log("Error in themeval. result is not changed to appropriate type or quickStyleCellName is not set.");
+				AscCommon.consoleLog("Error in themeval. result is not changed to appropriate type or quickStyleCellName is not set.");
 			}
 		}
 
@@ -470,7 +493,7 @@
 				return result;
 			}
 		} else {
-			console.log("Unknown themeval error. Return initialDefaultValue");
+			AscCommon.consoleLog("Unknown themeval error. Return initialDefaultValue");
 			return initialDefaultValue;
 		}
 		// code below never calls. result is always calculated. Default values are set above are returned if
@@ -486,11 +509,11 @@
 		// 	return calculateOnTheme(result, theme);
 		// } else {
 		// 	if (cellName === "LineColor" || cellName === "FillForegnd" || cellName === "FillBkgnd") {
-		// 		console.log("no color found. so painting lt1.");
+		// 		AscCommon.consoleLog("no color found. so painting lt1.");
 		// 		calculatedColor = AscFormat.CreateUniFillByUniColor(AscFormat.builder_CreateSchemeColor("lt1"));
 		// 	} else if (cellName === "Color") {
 		// 		// for text color
-		// 		console.log("no text color found. so painting dk1.");
+		// 		AscCommon.consoleLog("no text color found. so painting dk1.");
 		// 		calculatedColor = AscFormat.builder_CreateSchemeColor("dk1");
 		// 	}
 		//

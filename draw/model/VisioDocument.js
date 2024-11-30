@@ -375,18 +375,19 @@
 		let aFonts = this.loadedFonts;
 		// load Arial by default
 		aFonts.push(new AscFonts.CFont("Arial", 0, "", 0));
-		let newFontIndex = 1;
+		aFonts.push(new AscFonts.CFont("Calibri", 1, "", 0));
+		let newFontStartIndex = 2;
 		this.faceNames.forEach(function (faceName_Type) {
 			let nameU = faceName_Type.nameU;
+			aFonts.push(new AscFonts.CFont(nameU, newFontStartIndex, "", 0));
+			newFontStartIndex += 1;
 			let fontInfo = api.FontLoader.fontInfos.find(function(cFontInfo) {
 				return cFontInfo.Name === nameU;
 			});
 			if (fontInfo === undefined || fontInfo === null) {
-				console.log("Unknown font used in visio file: " + nameU);
+				AscCommon.consoleLog("Unknown font used in visio file: " + nameU);
 			} else {
-				console.log("Font", nameU, "will be loaded");
-				aFonts.push(new AscFonts.CFont(nameU, newFontIndex, "", 0));
-				newFontIndex += 1;
+				AscCommon.consoleLog("Font" + nameU + "will be loaded");
 			}
 		});
 
@@ -1030,7 +1031,7 @@
 						// if masterNumber is number
 						mastersSort[masterNumber - 1] = masters[i];
 					} else {
-						console.log('check sdkjs/draw/model/VisioDocument.js : parseMasters');
+						AscCommon.consoleLog('check sdkjs/draw/model/VisioDocument.js : parseMasters');
 						mastersSort = masters;
 						break;
 					}
@@ -1067,7 +1068,7 @@
 						// if masterNumber is number
 						pagesSort[pageNumber - 1] = pages[i];
 					} else {
-						console.log('check sdkjs/draw/model/VisioDocument.js : parsePages');
+						AscCommon.consoleLog('check sdkjs/draw/model/VisioDocument.js : parsePages');
 						pagesSort = pages;
 						break;
 					}
@@ -1096,7 +1097,7 @@
 					// if themeNumber is number
 					themesSort[themeNumber - 1] = themeParts[i];
 				} else {
-					console.log('check sdkjs/draw/model/VisioDocument.js : parseThemes');
+					AscCommon.consoleLog('check sdkjs/draw/model/VisioDocument.js : parseThemes');
 					themesSort = themeParts;
 					break;
 				}
@@ -1184,7 +1185,7 @@
 						// if masterNumber is number
 						solutionsSort[solutionNumber - 1] = solutions[i];
 					} else {
-						console.log('check sdkjs/draw/model/VisioDocument.js : parseSolutions');
+						AscCommon.consoleLog('check sdkjs/draw/model/VisioDocument.js : parseSolutions');
 						solutionsSort = solutions;
 						break;
 					}

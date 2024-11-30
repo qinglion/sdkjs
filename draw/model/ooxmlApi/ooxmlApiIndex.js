@@ -213,7 +213,7 @@
 			} else if (object.iX !== null) {
 				key = object.iX;
 			} else {
-				console.log("Cant calculate key to store object", object);
+				AscCommon.consoleLog("Cant calculate key to store object", object);
 			}
 		} else if (object.kind === c_oVsdxSheetStorageKind.Section_Type)	{
 			if (object.n === "Geometry") {
@@ -223,7 +223,7 @@
 			} else if (object.n !== null) {
 				key = object.n;
 			} else {
-				console.log("Cant calculate key to store object", object);
+				AscCommon.consoleLog("Cant calculate key to store object", object);
 			}
 		} else if (object.kind === c_oVsdxSheetStorageKind.Text_Type) {
 			key = "Text";
@@ -234,7 +234,7 @@
 		} else if (object.kind === c_oVsdxSheetStorageKind.Trigger_Type) {
 			key = object.n;
 		} else {
-			console.log("Unknown object in SheetElementsStorage", object);
+			AscCommon.consoleLog("Unknown object in SheetElementsStorage", object);
 		}
 
 		return key;
@@ -512,7 +512,7 @@
 		// Cells can have N only no IX
 		let cell = this.elements[formula];
 		if (cell !== undefined && !(cell instanceof Cell_Type)) {
-			console.log("ERR: Tried to get cell but got other object!");
+			AscCommon.consoleLog("ERR: Tried to get cell but got other object!");
 		}
 		return cell;
 	}
@@ -571,7 +571,7 @@
 		// TODO check may be optimized. maybe use getGeometrySections
 		if (/^\d+$/.test(formula)) {
 			// if number
-			console.log('strange findSections use (with number)');
+			AscCommon.consoleLog('strange findSections use (with number)');
 			let resultArr = [];
 			for (const key in this.elements) {
 				const element = this.elements[key];
@@ -892,7 +892,7 @@
 				// for text color
 				returnValue = AscFormat.CreateUnfilFromRGB(rgba.R, rgba.G, rgba.B).fill.color;
 			} else {
-				console.log("wrong calculateCellValue argument cell. Cell unsupported. return null");
+				AscCommon.consoleLog("wrong calculateCellValue argument cell. Cell unsupported. return null");
 				return null;
 			}
 		} else if (numberResultCells.includes(cellName)) {
@@ -924,24 +924,24 @@
 			let cellStringValue = this.getStringValue();
 			return cellStringValue;
 		} else {
-			console.log("Cell was not calculated in calculate cell value");
+			AscCommon.consoleLog("Cell was not calculated in calculate cell value");
 		}
 
 		// code below is unused because we dont need default values here. Cell value is either parsed well or
 		// default value is used in themeval function.
 		// if (returnValue === null || returnValue === undefined) {
 		// 	if (cellName === "LineColor" || cellName === "FillForegnd" || cellName === "FillBkgnd") {
-		// 		console.log("no color found. so painting lt1.");
+		// 		AscCommon.consoleLog("no color found. so painting lt1.");
 		// 		returnValue = AscFormat.CreateUniFillByUniColor(AscFormat.builder_CreateSchemeColor("lt1"));
 		// 	} else if (cellName === "Color") {
 		// 		// cellName === "Color" for text color
-		// 		console.log("no text color found. so painting dk1.");
+		// 		AscCommon.consoleLog("no text color found. so painting dk1.");
 		// 		returnValue = AscFormat.builder_CreateSchemeColor("dk1");
 		// 	} else if (cellName === "GradientStopColor") {
-		// 		console.log("no GradientStopColor color found. so painting lk1.");
+		// 		AscCommon.consoleLog("no GradientStopColor color found. so painting lk1.");
 		// 		returnValue = AscFormat.builder_CreateSchemeColor("lt1");
 		// 	} else {
-		// 		console.log("no calculateCellValue result return undefined");
+		// 		AscCommon.consoleLog("no calculateCellValue result return undefined");
 		// 	}
 		// }
 		return returnValue;
@@ -1283,7 +1283,7 @@
 		let masterShapeId = this.masterShape;
 		if (masterShapeId !== null && masterShapeId !== undefined) {
 			if (ancestorMasterShapes === null || ancestorMasterShapes === undefined) {
-				console.log("MasterShape attribute is set but Master is not set for ", this);
+				AscCommon.consoleLog("MasterShape attribute is set but Master is not set for ", this);
 			} else {
 				let masterIndex = -1;
 				if (ancestorMasterShapes.length === 1) {
@@ -1308,7 +1308,7 @@
 				}
 
 				if (masterIndex === -1) {
-					console.log('For MasterShape = ', masterShapeId, 'shape not found in master. Check shape: ', this);
+					AscCommon.consoleLog('For MasterShape = ', masterShapeId, 'shape not found in master. Check shape: ', this);
 				}
 			}
 		}
@@ -1420,7 +1420,7 @@
 	 */
 	function realizeStyleToSheetObjInheritanceRecursive(thisArgument, styles, stylesWithRealizedInheritance) {
 		if (stylesWithRealizedInheritance.has(thisArgument)) {
-			// console.log("style has realized inheritance already. return");
+			// AscCommon.consoleLog("style has realized inheritance already. return");
 			return;
 		}
 
@@ -1513,7 +1513,7 @@
 		}
 
 		if (thisArgument.lineStyle === null && thisArgument.fillStyle === null && thisArgument.textStyle === null) {
-			// console.log('Top parent style');
+			// AscCommon.consoleLog('Top parent style');
 			return;
 		}
 
@@ -1653,7 +1653,7 @@
 		let copy = Object.create(Object.getPrototypeOf(object));
 		// let copy = JSON.parse(JSON.stringify(object));
 		cloneWithPrototypesRecursive(copy, object);
-		// console.log("Clone function test.\nObject before: ", object, "\nAfter: ", copy);
+		// AscCommon.consoleLog("Clone function test.\nObject before: ", object, "\nAfter: ", copy);
 		return copy;
 	}
 
