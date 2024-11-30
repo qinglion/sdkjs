@@ -379,6 +379,8 @@
 		let newFontStartIndex = 2;
 		this.faceNames.forEach(function (faceName_Type) {
 			let nameU = faceName_Type.nameU;
+			aFonts.push(new AscFonts.CFont(nameU, newFontStartIndex, "", 0));
+			newFontStartIndex += 1;
 			let fontInfo = api.FontLoader.fontInfos.find(function(cFontInfo) {
 				return cFontInfo.Name === nameU;
 			});
@@ -386,8 +388,6 @@
 				AscCommon.consoleLog("Unknown font used in visio file: " + nameU);
 			} else {
 				AscCommon.consoleLog("Font" + nameU + "will be loaded");
-				aFonts.push(new AscFonts.CFont(nameU, newFontStartIndex, "", 0));
-				newFontStartIndex += 1;
 			}
 		});
 
