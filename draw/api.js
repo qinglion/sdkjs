@@ -50,6 +50,14 @@
 	{
 		AscCommon.baseEditorsApi.call(this, config, AscCommon.c_oEditorId.Draw);
 
+		this.WordControl = null;
+
+		this.documentFormatSave = c_oAscFileType.VSDX;
+
+		this.tmpIsFreeze   = null;
+		this.tmpZoomType   = null;
+		this.tmpDocumentUnits = null;
+		this.tmpFontRenderingMode = null;
 		/**
 		 *
 		 * @type {CVisioDocument}
@@ -107,6 +115,41 @@
 		this.WordControl.Name = this.HtmlElementName;
 		this.CreateComponents();
 		this.WordControl.Init();
+
+
+		if (AscCommon.g_oTextMeasurer.SetParams)
+		{
+			AscCommon.g_oTextMeasurer.SetParams({ mode : "slide" });
+		}
+
+		if (this.tmpFontRenderingMode)
+		{
+			this.SetFontRenderingMode(this.tmpFontRenderingMode);
+		}
+		if (null !== this.tmpIsFreeze)
+		{
+			this.SetDrawingFreeze(this.tmpIsFreeze);
+		}
+		if (null !== this.tmpZoomType)
+		{
+			switch (this.tmpZoomType)
+			{
+				case AscCommon.c_oZoomType.FitToPage:
+					this.zoomFitToPage();
+					break;
+				case AscCommon.c_oZoomType.FitToWidth:
+					this.zoomFitToWidth();
+					break;
+				case AscCommon.c_oZoomType.CustomMode:
+					this.zoomCustomMode();
+					break;
+			}
+		}
+		if (null != this.tmpDocumentUnits)
+		{
+			this.asc_SetDocumentUnits(this.tmpDocumentUnits);
+			this.tmpDocumentUnits = null;
+		}
 
 		this.asc_setViewMode(this.isViewMode);
 	};
@@ -546,8 +589,11 @@
 	};
 	asc_docs_api.prototype.SetDrawingFreeze = function(bIsFreeze)
 	{
-		if (!this.WordControl)
+		if (!this.isLoadFullApi)
+		{
+			this.tmpIsFreeze = bIsFreeze;
 			return;
+		}
 
 		this.WordControl.DrawingFreeze = bIsFreeze;
 
