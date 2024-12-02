@@ -406,19 +406,86 @@ function parseFieldPictureFormat(vsdxFieldValue, vsdxFieldFormat) {
 		let formatFunction = vsdxFieldFormat.f.toUpperCase();
 		let vFieldPicture = parseInt(formatFunction.substring('FIELDPICTURE('.length));
 
-		switch (vFieldPicture) {
-			case 0:
-				res = "General";
-				break;
-			case 37:
-				res = "@";
-				break;
-			case 200:
-				res = "M/d/yyyy";
-				break;
-			case 212:
-				res = "M/d/yyyy h:mm:ss am/pm";
-				break;
+		if (0 === vFieldPicture) {
+			res = "General";
+		} else if (1 === vFieldPicture) {
+			res = "General u";//"General";
+		} else if (2 === vFieldPicture) {
+			res = "0";
+		} else if (3 === vFieldPicture) {
+			res = "0 u";
+		} else if (4 === vFieldPicture) {
+			res = "0.0";
+		} else if (5 === vFieldPicture) {
+			res = "0.0 u";
+		} else if (6 === vFieldPicture) {
+			res = "0.00";
+		} else if (7 === vFieldPicture) {
+			res = "0.00 u";
+		} else if (8 === vFieldPicture) {
+			res = "0.000";
+		} else if (9 === vFieldPicture) {
+			res = "0.000 u";
+		} else if (9 === vFieldPicture) {
+			res = "0.000 u";
+		} else if (10 === vFieldPicture) {
+			res = "<,FEET/INCH>0.000 u";
+		} else if (11 === vFieldPicture) {
+			res = "<,rad>0.#### u";
+		} else if (12 === vFieldPicture) {
+			res = "<,deg>0.# u";
+		} else if (13 === vFieldPicture) {
+			res = "<,FEET/INCH># #/# u";
+		} else if (14 === vFieldPicture) {
+			res = "<,FEET/INCH># #/## u";
+		} else if (15 === vFieldPicture) {
+			res = "0 #/#";
+		} else if (16 === vFieldPicture) {
+			res = "0 #/# u";
+		} else if (17 === vFieldPicture) {
+			res = "0 #/##";
+		} else if (18 === vFieldPicture) {
+			res = "0 #/## u";
+		} else if (20 === vFieldPicture) {
+			res = "ddddd";
+		} else if (21 === vFieldPicture) {
+			res = "dddddd";
+		} else if (23 === vFieldPicture) {
+			res = "MM/dd/yy";
+		} else if (24 === vFieldPicture) {
+			res = "MMM d, yyyy";
+		} else if (25 === vFieldPicture) {
+			res = "MMMM d, yyyy";
+		} else if (26 === vFieldPicture) {
+			res = "d/M/YY";
+		} else if (27 === vFieldPicture) {
+			res = "dd/MM/yy";
+		} else if (28 === vFieldPicture) {
+			res = "d MMM, yyyy";
+		} else if (29 === vFieldPicture) {
+			res = "d MMMM, yyyy";
+		} else if (30 === vFieldPicture) {
+			res = "T";
+		} else if (31 === vFieldPicture) {
+			res = "h:mm";
+		} else if (32 === vFieldPicture) {
+			res = "hh:mm";
+		} else if (33 === vFieldPicture) {
+			res = "H:mm";
+		} else if (34 === vFieldPicture) {
+			res = "HH:mm";
+		} else if (35 === vFieldPicture) {
+			res = "h:mm tt";
+		} else if (36 === vFieldPicture) {
+			res = "Hh:mm tt";
+		} else if (37 === vFieldPicture) {
+			res = "@";
+		} else if (38 === vFieldPicture) {
+			res = "@-";
+		} else if (39 === vFieldPicture) {
+			res = "@+";
+		} else if (40 <= vFieldPicture && vFieldPicture <= 81) {
+			res = "M/d/yyyy";
 		}
 	} else if (vsdxFieldFormat.v) {
 		res = vsdxFieldFormat.v;
@@ -576,6 +643,8 @@ Asc.cDate.prototype.getUTCFullYear = function () {
 
 AscCommonWord.CPresentationField.prototype.private_GetString = function()
 {
+	//todo add num formats with units in editor
+	return;
 	/**
 	 *
 	 * @param valueV
