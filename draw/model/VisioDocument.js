@@ -382,7 +382,8 @@
 			}) !== -1) {
 				return;
 			}
-
+			aFonts.push(new AscFonts.CFont(fontName, newFontIndex, "", 0));
+			newFontIndex++;
 			let fontInfo = api.FontLoader.fontInfos.find(function(cFontInfo) {
 				return cFontInfo.Name === fontName;
 			});
@@ -390,8 +391,6 @@
 				AscCommon.consoleLog("Unknown font used in visio file: " + fontName);
 			} else {
 				AscCommon.consoleLog("Font: " + fontName + " will be loaded");
-				aFonts.push(new AscFonts.CFont(fontName, newFontIndex, "", 0));
-				newFontIndex++;
 			}
 		}
 
