@@ -9459,11 +9459,11 @@
 			var major_font = font_scheme.majorFont;
 			typeof major_font.latin === "string" && major_font.latin.length > 0 && (AllFonts[major_font.latin] = 1);
 			typeof major_font.ea === "string" && major_font.ea.length > 0 && (AllFonts[major_font.ea] = 1);
-			typeof major_font.cs === "string" && major_font.latin.length > 0 && (AllFonts[major_font.cs] = 1);
+			typeof major_font.cs === "string" && major_font.cs.length > 0 && (AllFonts[major_font.cs] = 1);
 			var minor_font = font_scheme.minorFont;
 			typeof minor_font.latin === "string" && minor_font.latin.length > 0 && (AllFonts[minor_font.latin] = 1);
 			typeof minor_font.ea === "string" && minor_font.ea.length > 0 && (AllFonts[minor_font.ea] = 1);
-			typeof minor_font.cs === "string" && minor_font.latin.length > 0 && (AllFonts[minor_font.cs] = 1);
+			typeof minor_font.cs === "string" && minor_font.cs.length > 0 && (AllFonts[minor_font.cs] = 1);
 		};
 		CTheme.prototype.getOuterShdw = function (idx) {
 			return this.themeElements.fmtScheme.GetOuterShdw(idx);
