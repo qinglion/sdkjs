@@ -11198,24 +11198,12 @@
 	 */
 	ApiRange.prototype.SetAutoFilter = function (Field, Criteria1, Operator, Criteria2, SubField, VisibleDropDown) {
 		//firstly add filter
-		this.range.worksheet.addAutoFilter(null, this.range);
+		this.range.worksheet.addAutoFilter(null, this.range.bbox);
 
-
-
-		var c_oAscCustomAutoFilter = {
-			equals: 1,
-			isGreaterThan: 2,
-			isGreaterThanOrEqualTo: 3,
-			isLessThan: 4,
-			isLessThanOrEqualTo: 5,
-			doesNotEqual: 6,
-			beginsWith: 7,
-			doesNotBeginWith: 8,
-			endsWith: 9,
-			doesNotEndWith: 10,
-			contains: 11,
-			doesNotContain: 12
-		};
+		if (Criteria2 && Array.isArray(Criteria2)) {
+			private_MakeError('Error! Criteria2 must be string!');
+			return;
+		}
 
 		let getOperator = function (val) {
 			let res = null;
@@ -11248,33 +11236,39 @@
 			return res;
 		};
 
+		let createCustomFilter = function () {
+			if (Criteria1 || Criteria1) {
+				let newCustomFilter = new Asc.CustomFilters();
+				let oCriteria1 = Criteria1 && AscCommonExcel.matchingValue(new AscCommonExcel.cString(Criteria1));
+				let oCriteria2 = Criteria2 && AscCommonExcel.matchingValue(new AscCommonExcel.cString(Criteria2));
+				let operator1 = getOperator(oCriteria1.op);
+				let operator2 = getOperator(oCriteria2.op);
+
+				var newCustomFilters = newCustomFilter.asc_getCustomFilters();
+				if (oCriteria1) {
+					newCustomFilters[0].asc_setVal(oCriteria1.val);
+					newCustomFilters[0].asc_setOperator(operator1);
+				}
+				if (oCriteria2) {
+					newCustomFilters[1].asc_setVal(oCriteria2.val);
+					newCustomFilters[1].asc_setOperator(operator2);
+				}
+				newCustomFilter.asc_setAnd(Operator === "xlAnd");
+
+				autoFilterOptions = new window["Asc"].AutoFiltersOptions();
+				autoFilterOptions.asc_setFilter(newCustomFilter);
+				autoFilterOptions.asc_setType(Asc.c_oAscAutoFilterTypes.CustomFilters);
+			}
+		};
+
 		//apply filtering
-		if (Criteria1 || Criteria1) {
-			let autoFilterOptions = new window["Asc"].AutoFiltersOptions();
+		let isAutoFilter = this.range.worksheet && this.range.worksheet.model.AutoFilter && this.range.worksheet.model.AutoFilter.Ref.intersection(this.range.bbox);
+		let autoFilterOptions;
+		if (isAutoFilter) {
 			switch (Operator) {
 				case "xlOr":
 				case "xlAnd": {
-					let newCustomFilter = new Asc.CustomFilters();
-					let oCriteria1 = AscCommonExcel.matchingValue(new AscCommonExcel.cString(Criteria1));
-					let oCriteria2 = AscCommonExcel.matchingValue(new AscCommonExcel.cString(Criteria2));
-					let operator1 = getOperator(oCriteria1.op);
-					let operator2 = getOperator(oCriteria2.op);
-
-					var newCustomFilters = newCustomFilter.asc_getCustomFilters();
-					if (oCriteria1) {
-
-						newCustomFilters[0].asc_setVal(oCriteria1.val);
-						newCustomFilters[0].asc_setOperator(operator1);
-					}
-					if (oCriteria2) {
-						newCustomFilters[0].asc_setVal(oCriteria2.val);
-						newCustomFilters[0].asc_setOperator(operator2);
-					}
-					newCustomFilter.asc_setAnd(Operator === "xlAnd");
-
-					autoFilterOptions.asc_setFilter(newCustomFilter);
-					autoFilterOptions.asc_setType(Asc.c_oAscAutoFilterTypes.CustomFilters);
-
+					createCustomFilter();
 					break;
 				}
 				case "xlBottom10Items": {
@@ -11296,6 +11290,37 @@
 					break;
 				}
 				case "xlFilterValues": {
+					if (Criteria1 && Array.isArray(Criteria1)) {
+						let arrVals = [];
+						for (let i in Criteria1) {
+							let elem = new AscCommonExcel.AutoFiltersOptionsElements();
+							elem.asc_setVisible(true);
+							elem.asc_setVal(Criteria1[i]);
+
+							//res.asc_setText(text);
+							/*res.asc_setIsDateFormat(isDateTimeFormat);
+							if (isDateTimeFormat) {
+								res.asc_setYear(dataValue.year);
+								res.asc_setMonth(dataValue.month);
+								res.asc_setDay(dataValue.d);
+								if (dataValue.hour !== 0 || dataValue.min !== 0 || dataValue.sec !== 0) {
+									isTimeFormat = true;
+								}
+								res.asc_setHour(dataValue.hour);
+								res.asc_setMinute(dataValue.min);
+								res.asc_setSecond(dataValue.sec);
+								res.asc_setDateTimeGrouping(Asc.EDateTimeGroup.datetimegroupYear);
+							}*/
+
+							arrVals.push(elem);
+						}
+
+						autoFilterOptions = new window["Asc"].AutoFiltersOptions();
+						autoFilterOptions.asc_setType(Asc.c_oAscAutoFilterTypes.Filters);
+						autoFilterOptions.asc_getValues(arrVals);
+					} else {
+						createCustomFilter();
+					}
 					break;
 				}
 				case "xlTop10Items": {
@@ -11307,8 +11332,9 @@
 				default:
 					return false;
 			}
-
-			this.range.worksheet.applyAutoFilter(autoFilterOptions);
+			if (autoFilterOptions) {
+				this.range.worksheet.applyAutoFilter(autoFilterOptions);
+			}
 		}
 	};
 
