@@ -11261,6 +11261,42 @@
 			}
 		};
 
+		let createSimpleFilter = function () {
+			if (Criteria1 && Array.isArray(Criteria1)) {
+				let arrVals = [];
+				for (let i in Criteria1) {
+					let elem = new AscCommonExcel.AutoFiltersOptionsElements();
+					elem.asc_setVisible(true);
+					elem.asc_setVal(Criteria1[i]);
+
+					//res.asc_setText(text);
+					/*res.asc_setIsDateFormat(isDateTimeFormat);
+					if (isDateTimeFormat) {
+						res.asc_setYear(dataValue.year);
+						res.asc_setMonth(dataValue.month);
+						res.asc_setDay(dataValue.d);
+						if (dataValue.hour !== 0 || dataValue.min !== 0 || dataValue.sec !== 0) {
+							isTimeFormat = true;
+						}
+						res.asc_setHour(dataValue.hour);
+						res.asc_setMinute(dataValue.min);
+						res.asc_setSecond(dataValue.sec);
+						res.asc_setDateTimeGrouping(Asc.EDateTimeGroup.datetimegroupYear);
+					}*/
+
+					arrVals.push(elem);
+				}
+
+				autoFilterOptions = new window["Asc"].AutoFiltersOptions();
+				autoFilterOptions.asc_setType(Asc.c_oAscAutoFilterTypes.Filters);
+				autoFilterOptions.asc_getValues(arrVals);
+			}
+		};
+
+		let createTop10Filter = function () {
+
+		};
+
 		//apply filtering
 		let isAutoFilter = this.range.worksheet && this.range.worksheet.model.AutoFilter && this.range.worksheet.model.AutoFilter.Ref.intersection(this.range.bbox);
 		let autoFilterOptions;
@@ -11291,46 +11327,37 @@
 				}
 				case "xlFilterValues": {
 					if (Criteria1 && Array.isArray(Criteria1)) {
-						let arrVals = [];
-						for (let i in Criteria1) {
-							let elem = new AscCommonExcel.AutoFiltersOptionsElements();
-							elem.asc_setVisible(true);
-							elem.asc_setVal(Criteria1[i]);
-
-							//res.asc_setText(text);
-							/*res.asc_setIsDateFormat(isDateTimeFormat);
-							if (isDateTimeFormat) {
-								res.asc_setYear(dataValue.year);
-								res.asc_setMonth(dataValue.month);
-								res.asc_setDay(dataValue.d);
-								if (dataValue.hour !== 0 || dataValue.min !== 0 || dataValue.sec !== 0) {
-									isTimeFormat = true;
-								}
-								res.asc_setHour(dataValue.hour);
-								res.asc_setMinute(dataValue.min);
-								res.asc_setSecond(dataValue.sec);
-								res.asc_setDateTimeGrouping(Asc.EDateTimeGroup.datetimegroupYear);
-							}*/
-
-							arrVals.push(elem);
-						}
-
-						autoFilterOptions = new window["Asc"].AutoFiltersOptions();
-						autoFilterOptions.asc_setType(Asc.c_oAscAutoFilterTypes.Filters);
-						autoFilterOptions.asc_getValues(arrVals);
+						createSimpleFilter();
 					} else {
 						createCustomFilter();
 					}
 					break;
 				}
 				case "xlTop10Items": {
+					//only criteria1, 1 to 500 number value
+					let top10Num = Criteria1 ? Criteria1 - 0 : 10;
+					if (isNaN(top10Num)) {
+						private_MakeError('Error! Criteria1 must be number!');
+						return false;
+					}
+					if (top10Num > 0 && top10Num <= 500) {
+						createTop10Filter(top10Num);
+					} else {
+						private_MakeError('Error! Criteria1 must be between 1 and 500!');
+						return false;
+					}
 					break;
 				}
 				case "xlTop10Percent": {
 					break;
 				}
 				default:
-					return false;
+					if (Criteria1 && Array.isArray(Criteria1)) {
+						createSimpleFilter();
+					} else {
+						createCustomFilter();
+					}
+					break;
 			}
 			if (autoFilterOptions) {
 				this.range.worksheet.applyAutoFilter(autoFilterOptions);
