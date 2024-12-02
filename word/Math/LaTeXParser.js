@@ -1386,23 +1386,23 @@
 	};
 	CLaTeXParser.prototype.GetElementOfMatrix = function (oStyle)
 	{
-		let arrRow = [];
-		let intLength = 0;
-		let intCount = 0;
-		let isAlredyGetContent = false;
+		let arrRow				= [];
+		let intLength			= 0;
+		let intCount			= 0;
+		let isAlreadyGetContent	= false;
 
 		while (this.IsElementLiteral() || this.oLookahead.data === "&" )
 		{
 			let intCopyOfLength = intLength;
 
-			if (this.oLookahead.data === "\\\\")
+			if (this.oLookahead.data === "\\\\" || this.IsEndMatrixLiteral())
 				break;
 
 			if (this.oLookahead.data !== "&")
 			{
 				arrRow.push(this.GetExpressionLiteral(["&", "\\\\"]));
 				intLength++;
-				isAlredyGetContent = true;
+				isAlreadyGetContent = true;
 				this.SkipFreeSpace();
 			}
 			else
@@ -1410,7 +1410,7 @@
 				oStyle[intCount] = this.oLookahead.style;
 				this.EatToken(this.oLookahead.class);
 
-				if (isAlredyGetContent === false)
+				if (isAlreadyGetContent === false)
 				{
 					arrRow.push({});
 					intCount++;
