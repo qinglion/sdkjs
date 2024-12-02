@@ -752,4 +752,3 @@ AscCommonWord.CPresentationField.prototype.private_GetString = function()
 	}
 	return sStr;
 };
-

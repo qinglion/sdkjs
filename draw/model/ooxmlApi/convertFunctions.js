@@ -434,33 +434,63 @@
 
 
 				// handle font
-				let cRFonts = new CRFonts();
-				cRFonts.Ascii = {Name: "Calibri", Index: 1};
-				cRFonts.HAnsi = {Name: "Calibri", Index: 1};
-				cRFonts.CS = {Name: "Calibri", Index: 1};
-				cRFonts.EastAsia = {Name: "Calibri", Index: 1};
+
+				/**
+				 * returns CRFont object for fontName. Also checks if font is loaded and if it is not
+				 * uses default font from stylesheet "NoStyle". If stylesheet "NoStyle" font is not available uses Calibri.
+				 * @param fontName
+				 * @param {CVisioDocument} visioDocument
+				 * @return {CRFonts}
+				 */
+				function getRFonts(fontName, visioDocument) {
+					let cRFonts = new CRFonts();
+
+					// see file https://disk.yandex.ru/d/AjpLrcamAzDeKg
+					// if themed font is not available in user PC visio sets default font from stylesheets
+
+					let loadedFonts = visioDocument.loadedFonts;
+					if (!fontName || loadedFonts.findIndex(function (cFont) {
+						return cFont.name === fontName;
+					}) === -1) {
+						AscCommon.consoleLog("Tried to use font that is not loaded: " + fontName + ". Loading Stylesheets font.");
+						let styleSheetsFont = visioDocument.styleSheets[0].getSection("Character").getRow(0).getCellStringValue("Font")
+						if (!styleSheetsFont || loadedFonts.findIndex(function (cFont) {
+							return cFont.name === styleSheetsFont;
+						}) === -1) {
+							AscCommon.consoleLog("Failed to use styleSheetsFont. Loading Calibri.");
+							cRFonts.Ascii = {Name: "Calibri", Index: 1};
+							cRFonts.HAnsi = {Name: "Calibri", Index: 1};
+							cRFonts.CS = {Name: "Calibri", Index: 1};
+							cRFonts.EastAsia = {Name: "Calibri", Index: 1};
+						} else {
+							AscCommon.consoleLog("Loaded styleSheetsFont: " + styleSheetsFont);
+							cRFonts.Ascii = {Name: styleSheetsFont, Index: 1};
+							cRFonts.HAnsi = {Name: styleSheetsFont, Index: 1};
+							cRFonts.CS = {Name: styleSheetsFont, Index: 1};
+							cRFonts.EastAsia = {Name: styleSheetsFont, Index: 1};
+						}
+					} else {
+						cRFonts.Ascii = {Name: fontName, Index: 1};
+						cRFonts.HAnsi = {Name: fontName, Index: 1};
+						cRFonts.CS = {Name: fontName, Index: 1};
+						cRFonts.EastAsia = {Name: fontName, Index: 1};
+					}
+
+					return cRFonts;
+				}
+
 				let fontCell = characterPropsFinal && characterPropsFinal.getCell("Font");
+				let cRFonts = new CRFonts();
 				if (fontCell && fontCell.kind === AscCommonDraw.c_oVsdxSheetStorageKind.Cell_Type) {
-					// TODO support Themed values
 					// let fontColor = calculateCellValue(theme, shape, characterColorCell);
 
 					// all document fonts all loaded already in CVisioDocument.prototype.loadFonts
-
 					let fontName = fontCell.v;
 					if (fontName !== "Themed") {
-						let loadedCFont = visioDocument.loadedFonts.find(function (cFont) {
-							return cFont.name === fontName;
-						});
-						if (loadedCFont !== undefined) {
-							cRFonts.Ascii = {Name: fontName, Index: -1};
-							cRFonts.HAnsi = {Name: fontName, Index: -1};
-							cRFonts.CS = {Name: fontName, Index: -1};
-							cRFonts.EastAsia = {Name: fontName, Index: -1};
-						} else {
-							AscCommon.consoleLog("Font was not found for Run. So default is set (Calibri).");
-						}
+						cRFonts = getRFonts(fontName, visioDocument);
 					} else {
-						AscCommon.consoleLog("Font themed is unhandeled, Calibri is used.");
+						let themeFontName = theme.getFontScheme().majorFont.latin;
+						cRFonts = getRFonts(themeFontName, visioDocument);
 					}
 				} else {
 					AscCommon.consoleLog("fontCell was not found so default is set (Calibri). Check mb AsianFont or ScriptFont");
