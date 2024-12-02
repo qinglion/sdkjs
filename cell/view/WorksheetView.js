@@ -26577,7 +26577,7 @@
 	};
 	/**
 	 * Method applies series settings when user confirms "Series" settings in dialog window or context menu.
-	 * @param {c_oAscFillType} type
+	 * @param {Asc.c_oAscFillType} type
 	 * @param {asc_CSeriesSettings} [settings]
 	 */
 	WorksheetView.prototype.applySeriesSettings = function (type, settings) {
@@ -26682,6 +26682,9 @@
 				break;
 			case c_oAscFillType.fillSeries:
 			case c_oAscFillType.fillDays:
+			case c_oAscFillType.fillWeekdays:
+			case c_oAscFillType.fillMonths:
+			case c_oAscFillType.fillYears:
 				if (!this.activeFillHandle) {
 					return;
 				}
@@ -26690,16 +26693,14 @@
 					this.applyFillHandle(null, null, true, null);
 				} else {
 					this.model.setFillHandleRightClick(true);
+					this.model.setFillMenuChosenProp(type);
 					this.applyFillHandle(null, null, false, null);
 					this.model.setFillHandleRightClick(false);
+					this.model.setFillMenuChosenProp(null);
 				}
 				break;
 			case c_oAscFillType.linearTrend:
 			case c_oAscFillType.growthTrend:
-			//case c_oAscFillType.fillDays:
-			//case c_oAscFillType.fillWeekdays:
-			//case c_oAscFillType.fillMonths:
-			//case c_oAscFillType.fillYears:
 				if (!cSerial) {
 					return;
 				}
