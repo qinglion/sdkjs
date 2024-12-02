@@ -21879,8 +21879,8 @@
 			const SECOND_VALUE_INDEX = 1;
 			const oFillType = Asc.c_oAscFillType;
 			const nSecondValue = aDigits[SECOND_VALUE_INDEX].y;
-			const dtFirstValue = new cDate().getDateFromExcel(nFirstValue < 60 ? nFirstValue + 1 : nFirstValue);
-			const dtSecondValue = new cDate().getDateFromExcel(nSecondValue < 60 ? nSecondValue + 1 : nSecondValue);
+			const dtFirstValue = new Asc.cDate().getDateFromExcel(nFirstValue < 60 ? nFirstValue + 1 : nFirstValue);
+			const dtSecondValue = new Asc.cDate().getDateFromExcel(nSecondValue < 60 ? nSecondValue + 1 : nSecondValue);
 
 			let nDayFirstValue = dtFirstValue.getDate();
 			let nMonthFirstValue = dtFirstValue.getMonth();
