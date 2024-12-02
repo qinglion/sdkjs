@@ -1493,9 +1493,9 @@
 
 				if (oAnnotInfo["RefTo"] == null || oAnnotInfo["Type"] != AscPDF.ANNOTATIONS_TYPES.Text) {
 					let creationDate	= oAnnotInfo["CreationDate"] ? AscPDF.ParsePDFDate(oAnnotInfo["CreationDate"]) : null;
-					let creationStamp	= creationDate ? creationDate.getTime() : undefined;
+					let creationStamp	= creationDate ? String(creationDate.getTime()) : undefined;
 					let modDate			= oAnnotInfo["LastModified"] ? AscPDF.ParsePDFDate(oAnnotInfo["LastModified"]) : null;
-					let modStamp		= modDate ? modDate.getTime() : undefined;
+					let modStamp		= modDate ? String(modDate.getTime()) : undefined;
 
 					oAnnot = oDoc.AddAnnotByProps({
 						page:			oAnnotInfo["page"],
@@ -1506,7 +1506,8 @@
 						author:			oAnnotInfo["User"],
 						rect:			aRect,
 						type:			oAnnotInfo["Type"],
-						apIdx:			oAnnotInfo["AP"]["i"]
+						apIdx:			oAnnotInfo["AP"]["i"],
+						uid:			oAnnotInfo["OUserID"]
 					});
 	
 					oAnnot.SetDrawFromStream(Boolean(oAnnotInfo["AP"]["have"]));

@@ -2514,6 +2514,9 @@ var CPresentation = CPresentation || function(){};
             if (this.mouseDownAnnot) {
                 if (this.mouseDownAnnot.IsUseContentAsComment() && !this.mouseDownAnnot.GetContents()) {
                     // If the annotation uses content as comment and there's no content, set the content
+                    this.mouseDownAnnot.SetModDate(AscCommentData.m_sOOTime);
+                    this.mouseDownAnnot.SetAuthor(AscCommentData.m_sUserName);
+                    this.mouseDownAnnot.SetUserId(AscCommentData.m_sUserId);
                     this.mouseDownAnnot.SetContents(AscCommentData.m_sText);
                 }
                 else {
@@ -6326,7 +6329,7 @@ var CPresentation = CPresentation || function(){};
         let sModDate    = oProps.modDate;
         let sText       = oProps.contents;
         let isHidden    = !!oProps.hidden;
-        
+        let sUserId     = oPdfDoc.Viewer.IsOpenAnnotsInProgress ? oProps.uid : Asc.editor.documentUserId; 
         let oAnnot;
 
         switch (nAnnotType) {
@@ -6382,6 +6385,7 @@ var CPresentation = CPresentation || function(){};
         oAnnot.SetAuthor(sAuthor);
         oAnnot.SetDisplay(isHidden ? window["AscPDF"].Api.Objects.display["hidden"] : window["AscPDF"].Api.Objects.display["visible"]);
         oAnnot.SetContents(sText);
+        oAnnot.SetUserId(sUserId);
 
         return oAnnot;
     }
