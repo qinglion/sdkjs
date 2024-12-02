@@ -9633,6 +9633,15 @@
 			AscCommon.History.Add(new CChangesDrawingsObjectNoId(this, AscDFH.historyitem_ThemeSetFontScheme, this.themeElements.fontScheme, fontScheme));
 			this.themeElements.fontScheme = fontScheme;
 		};
+
+		/**
+		 * made for Visio editor
+		 * @return {FontScheme}
+		 */
+		CTheme.prototype.getFontScheme = function () {
+			return this.themeElements.fontScheme;
+		};
+
 		CTheme.prototype.setThemeExt = function (themeExt) {
 			this.themeElements.themeExt = themeExt;
 		};

@@ -370,25 +370,55 @@
 	 * @memberOf CVisioDocument
 	 */
 	CVisioDocument.prototype.loadFonts = function() {
-		let api = this.api;
+		/**
+		 * load font to aFonts
+		 * @param fontName
+		 * @param {AscFonts.CFont[]} aFonts
+		 * @param api
+		 */
+		function loadFontByName(fontName, aFonts, api) {
+			if (aFonts.findIndex(function (cFont) {
+				return cFont.name === fontName;
+			}) !== -1) {
+				return;
+			}
 
-		let aFonts = this.loadedFonts;
-		// load Arial by default
-		aFonts.push(new AscFonts.CFont("Arial", 0, "", 0));
-		aFonts.push(new AscFonts.CFont("Calibri", 1, "", 0));
-		let newFontStartIndex = 2;
-		this.faceNames.forEach(function (faceName_Type) {
-			let nameU = faceName_Type.nameU;
-			aFonts.push(new AscFonts.CFont(nameU, newFontStartIndex, "", 0));
-			newFontStartIndex += 1;
 			let fontInfo = api.FontLoader.fontInfos.find(function(cFontInfo) {
-				return cFontInfo.Name === nameU;
+				return cFontInfo.Name === fontName;
 			});
 			if (fontInfo === undefined || fontInfo === null) {
-				AscCommon.consoleLog("Unknown font used in visio file: " + nameU);
+				AscCommon.consoleLog("Unknown font used in visio file: " + fontName);
 			} else {
-				AscCommon.consoleLog("Font" + nameU + "will be loaded");
+				AscCommon.consoleLog("Font: " + fontName + " will be loaded");
+				aFonts.push(new AscFonts.CFont(fontName, newFontIndex, "", 0));
+				newFontIndex++;
 			}
+		}
+
+		let api = this.api;
+		let aFonts = this.loadedFonts;
+
+		let newFontIndex = 0;
+
+		// load Arial and Calibri by default
+		loadFontByName("Arial", aFonts, api);
+		loadFontByName("Calibri", aFonts, api);
+
+		// read theme.xml fonts
+		var oFontMap = {};
+		this.themes.forEach(function (theme) {
+			theme.Document_Get_AllFontNames(oFontMap);
+		});
+		for (const fontName in oFontMap) {
+			if (oFontMap.hasOwnProperty(fontName)) {
+				loadFontByName(fontName, aFonts, api);
+			}
+		}
+
+		// read document.xml FaceNames tag
+		this.faceNames.forEach(function (faceName_Type) {
+			let nameU = faceName_Type.nameU;
+			loadFontByName(nameU, aFonts, api);
 		});
 
 		// may immediately call callback
