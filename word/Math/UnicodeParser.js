@@ -372,11 +372,20 @@
 			this.EatToken(this.oLookahead.class)
 		}
 
+		if (strExp === "" && this.oLookahead.data !== "\"" && this.oLookahead.data !== "\'")
+		{
+			return {
+				type: Struc.char,
+				value: strSymbol.data,
+				style: strSymbol.style,
+			}
+		}
+
 		if (this.oLookahead.data === "\"" || this.oLookahead.data === "\'")
 			this.EatToken(this.oLookahead.class);
 
 		return {
-			type: Struc.char, // Struc.plain,
+			type: Struc.char,
 			value: strExp,
 			style: arrStyles,
 		}
