@@ -1757,11 +1757,12 @@ $(function () {
 				assert.strictEqual(strBinomial, '\\frac{\\substack{1\\\\\\substack{\\\\\\substack{\\\\\\substack{\\\\}}}}}{2}', 'Check');
 			})
 
-			QUnit.module( "Check bug #61007", function ()
+			QUnit.module( "Check LaTeX matrix", function ()
 			{
 				Test("\\begin{matrix}1&2\\\\3&4\\\\\\end{matrix}", [["ParaRun", ""], ["CMathMatrix", "\\begin{matrix}1&2\\\\3&4\\\\\\end{matrix}"]], true, "Check bug #61007 default matrix");
 				Test("\\begin{pmatrix}1&2\\\\3&4\\\\\\end{pmatrix}", [["ParaRun", ""], ["CDelimiter", "\\left(\\begin{matrix}1&2\\\\3&4\\\\\\end{matrix}\\right)"]], true, "Check bug #61007 pmatrix");
 				Test("\\left[\\begin{matrix}1&2\\\\3&4\\\\\\end{matrix}\\right]", [["ParaRun", ""], ["CDelimiter", "\\left[\\begin{matrix}1&2\\\\3&4\\\\\\end{matrix}\\right]"]], true, "Check bug #61007 pmatrix");
+				Test("\\begin{matrix}&&\\\\&&\\\\&&\\\\&&\\end{matrix}", [["ParaRun", ""], ["CMathMatrix", "\\begin{matrix}&&\\\\&&\\\\&&\\\\&&\\\\\\end{matrix}"]], true, "Check matrix bug #71892");
 			})
 
 			QUnit.module( "Check bug #67181", function ()
