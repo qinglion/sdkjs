@@ -510,10 +510,11 @@
 				}
 			}
 
-			function initPresentationField(oFld, fieldRow) {
+			function initPresentationField(oFld, fieldRow, isTextInherited) {
 				const valueCell = fieldRow.getCell("Value");
 				oFld.SetFieldType(valueCell.f);
 				oFld.vsdxFieldValue = valueCell;
+				oFld.isTextInherited = isTextInherited;
 
 				// then format it according to Format cell
 				oFld.vsdxFieldFormat = fieldRow.getCell("Format");
@@ -746,6 +747,12 @@
 			let oContent = textCShape.getDocContent();
 			oContent.Content = [];
 
+			/**
+			 * if text is inherited so we consider that text fields in it have wrong values
+			 * and we recalculate values them
+			 */
+			const isTextInherited = textElement.isInherited;
+
 			// read text
 			textElement.elements.forEach(function(textElementPart, i) {
 				if (typeof textElementPart === "string" || textElementPart.kind === AscVisio.c_oVsdxTextKind.FLD) {
@@ -781,7 +788,7 @@
 						let oFld = new AscCommonWord.CPresentationField(paragraph);
 						let fieldRowNum = textElementPart.iX;
 						let fieldPropsFinal = fieldRowNum !== null && fieldPropsCommon.getRow(fieldRowNum);
-						initPresentationField(oFld, fieldPropsFinal);
+						initPresentationField(oFld, fieldPropsFinal, isTextInherited);
 
 						let fldTagText = textElementPart.value;
 						if (fldTagText) {

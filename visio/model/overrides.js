@@ -644,7 +644,15 @@ Asc.cDate.prototype.getUTCFullYear = function () {
 AscCommonWord.CPresentationField.prototype.private_GetString = function()
 {
 	//todo add num formats with units in editor
-	return;
+
+	// 		/**
+	// 		 * if text is inherited so we consider that text fields in it have wrong values
+	// 		 * and we recalculate values them
+	// 		 */
+	if (!this.isTextInherited) {
+		return;
+	}
+
 	/**
 	 *
 	 * @param valueV
