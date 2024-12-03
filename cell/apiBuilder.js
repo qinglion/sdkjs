@@ -11176,9 +11176,22 @@
 	});
 
 	/**
-	 * Underline type.
+	 * Filter type.
 	 * @typedef {("xlAnd" | "xlBottom10Items" | "xlBottom10Percent" | "xlFilterCellColor" | "xlFilterDynamic" | "xlFilterFontColor" | "xlFilterIcon" | "xlFilterValues" | "xlOr" | "xlTop10Items" | "xlTop10Percent")} XlAutoFilterOperator
 	 * @see office-js-api/Examples/Enumerations/XlAutoFilterOperator.js
+	 */
+
+	/**
+	 * Specifies the filter criterion.
+	 * @typedef {("xlFilterAboveAverage" | "xlFilterAllDatesInPeriodApril" | "xlFilterAllDatesInPeriodAugust" | "xlFilterAllDatesInPeriodDecember"
+	 * | "xlFilterAllDatesInPeriodFebruary" | "xlFilterAllDatesInPeriodJanuary" | "xlFilterAllDatesInPeriodJuly" | "xlFilterAllDatesInPeriodJune"
+	 * | "xlFilterAllDatesInPeriodMarch" | "xlFilterAllDatesInPeriodMay" | "xlFilterAllDatesInPeriodNovember" | "xlFilterAllDatesInPeriodOctober"
+	 * | "xlFilterAllDatesInPeriodQuarter1" | "xlFilterAllDatesInPeriodQuarter2" | "xlFilterAllDatesInPeriodQuarter3" | "xlFilterAllDatesInPeriodQuarter4"
+	 * | "xlFilterBelowAverage" | "xlFilterLastMonth" | "xlFilterLastQuarter" | "xlFilterLastWeek"
+	 * | "xlFilterLastYear" | "xlFilterNextMonth" | "xlFilterNextQuarter" | "xlFilterNextWeek"
+	 * | "xlFilterNextYear" | "xlFilterThisMonth" | "xlFilterThisQuarter" | "xlFilterThisWeek"
+	 * | "xlFilterThisYear" | "xlFilterToday" | "xlFilterTomorrow" | "xlFilterYearToDate" | "xlFilterYesterday")} XlDynamicFilterCriteria
+	 * @see office-js-api/Examples/Enumerations/XlDynamicFilterCriteria.js
 	 */
 
 	/**
@@ -11186,7 +11199,7 @@
 	 * @memberof ApiRange
 	 * @typeofeditors ["CSE"]
 	 * @param {number} Field - The integer offset of the field on which you want to base the filter (from the left of the list; the leftmost field is field one).
-	 * @param {string | string[]} Criteria1 - The criteria (a string; for example, "101"). Use "=" to find blank fields, "<>" to find non-blank fields, and "><" to select (No Data) fields in data types.
+	 * @param {string | string[] | ApiColor | XlDynamicFilterCriteria} Criteria1 - The criteria (a string; for example, "101"). Use "=" to find blank fields, "<>" to find non-blank fields, and "><" to select (No Data) fields in data types.
 	 * If this argument is omitted, the criteria is All. If Operator is xlTop10Items, Criteria1 specifies the number of items (for example, "10").
 	 * @param {XlAutoFilterOperator} Operator - An XlAutoFilterOperator constant specifying the type of filter.
 	 * @param {string} Criteria2 - The second criteria (a string). Used with Criteria1 and Operator to construct compound criteria. Also used as single criteria on date fields filtering by date, month or year. Followed by an Array detailing the filtering Array(Level, Date). Where Level is 0-2 (year,month,date) and Date is one valid Date inside the filtering period.
@@ -11307,6 +11320,159 @@
 			autoFilterOptions.asc_setFilter(_topFilter);
 		};
 
+		let createColorFilter = function (color, isCellColor) {
+			autoFilterOptions = new window["Asc"].AutoFiltersOptions();
+
+			let filterObj = autoFilterOptions.asc_getFilterObj();
+			filterObj.asc_setFilter(new Asc.ColorFilter());
+			filterObj.asc_setType(Asc.c_oAscAutoFilterTypes.ColorFilter);
+
+			let colorFilter = filterObj.asc_getFilter();
+			colorFilter.asc_setCellColor(isCellColor ? null : false);
+			colorFilter.asc_setCColor((isCellColor && color == 'transparent' || !isCellColor && color == '#000000') ? null : Common.Utils.ThemeColor.getRgbColor(color));
+		};
+
+		//Asc.c_oAscDynamicAutoFilter.q4
+
+		let toDynamicConst = function (val) {
+			let res = null;
+			switch (val) {
+				case "xlFilterAboveAverage": {
+					res = Asc.c_oAscCustomAutoFilter.equals;
+					break
+				}
+				case "xlFilterAllDatesInPeriodApril": {
+					res = Asc.c_oAscCustomAutoFilter.isGreaterThan;
+					break
+				}
+				case "xlFilterAllDatesInPeriodAugust": {
+					res = Asc.c_oAscCustomAutoFilter.isGreaterThanOrEqualTo;
+					break
+				}
+				case "xlFilterAllDatesInPeriodDecember": {
+					res = Asc.c_oAscCustomAutoFilter.isLessThan;
+					break
+				}
+				case "xlFilterAllDatesInPeriodFebruary": {
+					res = Asc.c_oAscCustomAutoFilter.isLessThanOrEqualTo;
+					break
+				}
+				case "xlFilterAllDatesInPeriodJanuary": {
+					res = Asc.c_oAscCustomAutoFilter.doesNotEqual;
+					break
+				}
+				case "xlFilterAllDatesInPeriodJuly": {
+					res = Asc.c_oAscCustomAutoFilter.equals;
+					break
+				}
+				case "xlFilterAllDatesInPeriodJune": {
+					res = Asc.c_oAscCustomAutoFilter.equals;
+					break
+				}
+				case "xlFilterAllDatesInPeriodNovember": {
+					res = Asc.c_oAscCustomAutoFilter.equals;
+					break
+				}
+				case "xlFilterAllDatesInPeriodOctober": {
+					res = Asc.c_oAscCustomAutoFilter.equals;
+					break
+				}
+				case "xlFilterAllDatesInPeriodQuarter1": {
+					res = Asc.c_oAscCustomAutoFilter.equals;
+					break
+				}
+				case "xlFilterAllDatesInPeriodQuarter2": {
+					res = Asc.c_oAscCustomAutoFilter.equals;
+					break
+				}
+				case "xlFilterAllDatesInPeriodQuarter3": {
+					res = Asc.c_oAscCustomAutoFilter.equals;
+					break
+				}
+				case "xlFilterAllDatesInPeriodQuarter4": {
+					res = Asc.c_oAscCustomAutoFilter.equals;
+					break
+				}
+				case "xlFilterBelowAverage": {
+					res = Asc.c_oAscCustomAutoFilter.equals;
+					break
+				}
+				case "xlFilterLastMonth": {
+					res = Asc.c_oAscCustomAutoFilter.equals;
+					break
+				}
+				case "xlFilterLastQuarter": {
+					res = Asc.c_oAscCustomAutoFilter.equals;
+					break
+				}
+				case "xlFilterLastWeek": {
+					res = Asc.c_oAscCustomAutoFilter.equals;
+					break
+				}
+				case "xlFilterLastYear": {
+					res = Asc.c_oAscCustomAutoFilter.equals;
+					break
+				}
+				case "xlFilterNextMonth": {
+					res = Asc.c_oAscCustomAutoFilter.equals;
+					break
+				}
+				case "xlFilterNextQuarter": {
+					res = Asc.c_oAscCustomAutoFilter.equals;
+					break
+				}
+				case "xlFilterNextWeek": {
+					res = Asc.c_oAscCustomAutoFilter.equals;
+					break
+				}
+				case "xlFilterNextYear": {
+					res = Asc.c_oAscCustomAutoFilter.equals;
+					break
+				}
+				case "xlFilterThisMonth": {
+					res = Asc.c_oAscCustomAutoFilter.equals;
+					break
+				}
+				case "xlFilterThisQuarter": {
+					res = Asc.c_oAscCustomAutoFilter.equals;
+					break
+				}
+				case "xlFilterThisWeek": {
+					res = Asc.c_oAscCustomAutoFilter.equals;
+					break
+				}
+				case "xlFilterThisYear": {
+					res = Asc.c_oAscCustomAutoFilter.equals;
+					break
+				}
+				case "xlFilterToday": {
+					res = Asc.c_oAscCustomAutoFilter.equals;
+					break
+				}
+				case "xlFilterTomorrow": {
+					res = Asc.c_oAscCustomAutoFilter.equals;
+					break
+				}
+				case "xlFilterYearToDate": {
+					res = Asc.c_oAscCustomAutoFilter.equals;
+					break
+				}
+				case "xlFilterYesterday": {
+					res = Asc.c_oAscCustomAutoFilter.equals;
+					break
+				}
+
+			}
+			return res;
+		};
+
+		let createDynamicFilter = function (val) {
+			let _dynamicFilter = new AscCommonExcel.DynamicFilter();
+			autoFilterOptions = new window["Asc"].AutoFiltersOptions();
+			_dynamicFilter.asc_setType(val);
+			autoFilterOptions.asc_setFilter(_dynamicFilter);
+		};
+
 		//apply filtering
 		let isAutoFilter = this.range.worksheet && this.range.worksheet.model.AutoFilter && this.range.worksheet.model.AutoFilter.Ref.intersection(this.range.bbox);
 		let autoFilterOptions;
@@ -11317,18 +11483,24 @@
 					createCustomFilter();
 					break;
 				}
+				case "xlFilterFontColor":
 				case "xlFilterCellColor": {
+					let _color;
+					if (Criteria1 instanceof ApiColor) {
+						_color = ApiColor.GetRgb();
+					}
+
+					createColorFilter(_color, "xlFilterCellColor" === Operator);
 					break;
 				}
 				case "xlFilterDynamic": {
+					let _type = toDynamicConst(Criteria1);
+					createDynamicFilter(_type);
 					break;
 				}
-				case "xlFilterFontColor": {
+				/*case "xlFilterIcon": {
 					break;
-				}
-				case "xlFilterIcon": {
-					break;
-				}
+				}*/
 				case "xlBottom10Percent":
 				case "xlBottom10Items":
 				case "xlTop10Percent":
