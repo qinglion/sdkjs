@@ -154,6 +154,10 @@
 			this.PrevInfo = null;
 		}
 	};
+	ReviewInfo.prototype.toBinary = function(writer)
+	{
+		this.Write_ToBinary(writer);
+	};
 	ReviewInfo.prototype.Get_Color       = function()
 	{
 		if (!this.UserId && !this.UserName)
@@ -303,6 +307,10 @@
 	ReviewInfo.prototype.GetMoveType = function()
 	{
 		return this.MoveType;
+	};
+	ReviewInfo.prototype.SetMoveType = function(type)
+	{
+		this.MoveType = type;
 	};
 	//--------------------------------------------------------export----------------------------------------------------
 	AscWord.ReviewInfo = ReviewInfo;

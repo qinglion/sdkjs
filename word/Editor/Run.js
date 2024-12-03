@@ -10571,25 +10571,19 @@ ParaRun.prototype.GetReviewType = function()
 };
 ParaRun.prototype.GetReviewMoveType = function()
 {
-	return this.ReviewInfo ? this.ReviewInfo.MoveType : Asc.c_oAscRevisionsMove.NoMove;
+	return this.ReviewInfo ? this.ReviewInfo.GetMoveType() : Asc.c_oAscRevisionsMove.NoMove;
 };
 ParaRun.prototype.RemoveReviewMoveType = function()
 {
-	if (!this.ReviewInfo || Asc.c_oAscRevisionsMove.NoMove === this.ReviewInfo.MoveType)
+	if (!this.ReviewInfo || Asc.c_oAscRevisionsMove.NoMove === this.ReviewInfo.GetMoveType())
 		return;
 
-	var oInfo = this.ReviewInfo.Copy();
-	oInfo.MoveType = Asc.c_oAscRevisionsMove.NoMove;
-
-	AscCommon.History.Add(new CChangesRunReviewType(this, {
-		ReviewType : this.GetReviewType(),
-		ReviewInfo : this.ReviewInfo.Copy()
-	}, {
-		ReviewType : this.GetReviewType(),
-		ReviewInfo : oInfo.Copy()
-	}));
-
-	this.ReviewInfo = oInfo;
+	let newInfo = this.ReviewInfo.Copy();
+	newInfo.SetMoveType(Asc.c_oAscRevisionsMove.NoMove);
+	
+	AscCommon.History.Add(new CChangesRunContentReviewInfo(this, this.ReviewInfo, newInfo.Copy()));
+	
+	this.ReviewInfo = newInfo;
 	this.updateTrackRevisions();
 };
 ParaRun.prototype.GetReviewInfo = function()
@@ -10628,49 +10622,38 @@ ParaRun.prototype.SetReviewType = function(nType, isCheckDeleteAdded)
 
     if (nType !== this.GetReviewType())
 	{
-		var OldReviewType = this.GetReviewType();
-		var OldReviewInfo = this.ReviewInfo ? this.ReviewInfo.Copy() : undefined;
-
-		if (reviewtype_Add === OldReviewType
-			&& reviewtype_Remove === nType
-			&& true === isCheckDeleteAdded)
-		{
+		let prevType = this.GetReviewType();
+		let prevInfo = this.ReviewInfo ? this.ReviewInfo.Copy() : undefined;
+		
+		if (reviewtype_Add === prevType && reviewtype_Remove === nType && isCheckDeleteAdded)
 			this.ReviewInfo.SavePrev(OldReviewType);
-		}
-
+		
 		if (!this.ReviewInfo)
 			this.ReviewInfo = new AscWord.ReviewInfo();
 		
-		//this.ReviewType = nType;
 		this.ReviewInfo.setType(nType);
 		this.ReviewInfo.Update();
 
 		if (this.GetLogicDocument() && null !== this.GetLogicDocument().TrackMoveId)
 			this.ReviewInfo.SetMove(Asc.c_oAscRevisionsMove.MoveFrom);
 
-		AscCommon.History.Add(new CChangesRunReviewType(this, {
-			ReviewType : OldReviewType,
-			ReviewInfo : OldReviewInfo
-		}, {
-			ReviewType : nType,
-			ReviewInfo : this.ReviewInfo.Copy()
-		}));
+		AscCommon.History.Add(new CChangesRunContentReviewInfo(this, prevInfo, this.ReviewInfo.Copy()));
 		this.updateTrackRevisions();
 	}
 };
 /**
  * Меняем тип рецензирования вместе с информацией о рецензента
- * @param {number} nType
- * @param {AscWord.ReviewInfo} oInfo
+ * @param {number} reviewType
+ * @param {AscWord.ReviewInfo} reviewInfo
  * @param {boolean} [isCheckLastParagraph=true] Нужно ли проверять последний параграф в документе или в ячейке таблицы
  */
-ParaRun.prototype.SetReviewTypeWithInfo = function(nType, oInfo, isCheckLastParagraph)
+ParaRun.prototype.SetReviewTypeWithInfo = function(reviewType, reviewInfo, isCheckLastParagraph)
 {
 	var oParagraph = this.GetParagraph();
 	if (false !== isCheckLastParagraph && this.IsParaEndRun() && oParagraph)
 	{
 		var oParent = oParagraph.GetParent();
-		if (reviewtype_Common !== nType
+		if (reviewtype_Common !== reviewType
 			&& !oParagraph.Get_DocumentNext()
 			&& oParent
 			&& (oParent instanceof CDocument
@@ -10680,20 +10663,18 @@ ParaRun.prototype.SetReviewTypeWithInfo = function(nType, oInfo, isCheckLastPara
 			return;
 		}
 	}
-
-	AscCommon.History.Add(new CChangesRunReviewType(this, {
-		ReviewType : this.GetReviewType(),
-		ReviewInfo : this.ReviewInfo ? this.ReviewInfo.Copy() : undefined
-	}, {
-		ReviewType : nType,
-		ReviewInfo : oInfo ? oInfo.Copy() : undefined
-	}));
-
-	//this.ReviewType = nType;
-	this.ReviewInfo = oInfo;
-	if (this.ReviewInfo)
-		this.ReviewInfo.setType(nType);
-
+	
+	if (reviewtype_Common === reviewType)
+		reviewInfo = undefined;
+	else if (!reviewInfo)
+		reviewInfo = new AscWord.ReviewInfo();
+	
+	if (reviewInfo)
+		reviewInfo.setType(reviewType);
+	
+	AscCommon.History.Add(new CChangesRunContentReviewInfo(this, this.ReviewInfo ? this.ReviewInfo.Copy() : undefined, reviewInfo));
+	
+	this.ReviewInfo = reviewInfo;
 	this.updateTrackRevisions();
 };
 ParaRun.prototype.Get_Parent = function()
@@ -10841,17 +10822,17 @@ ParaRun.prototype.CheckRevisionsChanges = function(Checker, ContentPos, Depth)
 };
 ParaRun.prototype.private_UpdateTrackRevisionOnChangeContent = function(bUpdateInfo)
 {
-    if (reviewtype_Common !== this.GetReviewType())
-    {
-        this.updateTrackRevisions();
-
-        if (true === bUpdateInfo && this.Paragraph && this.Paragraph.LogicDocument && this.Paragraph.bFromDocument && true === this.Paragraph.LogicDocument.IsTrackRevisions() && this.ReviewInfo && true === this.ReviewInfo.IsCurrentUser())
-        {
-            var OldReviewInfo = this.ReviewInfo.Copy();
-            this.ReviewInfo.Update();
-           AscCommon.History.Add(new CChangesRunContentReviewInfo(this, OldReviewInfo, this.ReviewInfo.Copy()));
-        }
-    }
+	if (reviewtype_Common !== this.GetReviewType())
+	{
+		this.updateTrackRevisions();
+		
+		if (true === bUpdateInfo && this.Paragraph && this.Paragraph.LogicDocument && this.Paragraph.bFromDocument && true === this.Paragraph.LogicDocument.IsTrackRevisions() && this.ReviewInfo && true === this.ReviewInfo.IsCurrentUser())
+		{
+			var OldReviewInfo = this.ReviewInfo.Copy();
+			this.ReviewInfo.Update();
+			AscCommon.History.Add(new CChangesRunContentReviewInfo(this, OldReviewInfo, this.ReviewInfo.Copy()));
+		}
+	}
 };
 ParaRun.prototype.private_UpdateTrackRevisionOnChangeTextPr = function(bUpdateInfo)
 {
