@@ -33,7 +33,7 @@
 //for zlib async loading
 QUnit.config.autostart = false;
 $(function() {
-	const api = new Asc.asc_docs_api({
+	const api = new Asc.VisioEditorApi({
 		'id-view': 'editor_sdk'
 	});
 	AscCommon.g_oTableId.init();
@@ -61,7 +61,7 @@ $(function() {
 
 		QUnit.test("Test api.OpenDocumentFromZip", function (assert)
 		{
-			const api = new Asc.asc_docs_api({'id-view': 'editor_sdk'});
+			const api = new Asc.VisioEditorApi({'id-view': 'editor_sdk'});
 			api.InitEditor();
 			// get Uint8Array
 			let vsdx = AscCommon.Base64.decode(Asc.exampleVsdx);
@@ -72,7 +72,7 @@ $(function() {
 		QUnit.test("Check api.saveDocumentToZip", function (assert)
 		{
 			// Read and parse vsdx file
-			const api = new Asc.asc_docs_api({'id-view': 'editor_sdk'});
+			const api = new Asc.VisioEditorApi({'id-view': 'editor_sdk'});
 			api.InitEditor();
 			let vsdx = AscCommon.Base64.decode(Asc.exampleVsdx);
 			const openRes = api.OpenDocumentFromZip(vsdx);
@@ -88,7 +88,7 @@ $(function() {
 		QUnit.test("Compare files count", function (assert)
 		{
 			// Read and parse vsdx file
-			const api = new Asc.asc_docs_api({'id-view': 'editor_sdk'});
+			const api = new Asc.VisioEditorApi({'id-view': 'editor_sdk'});
 			api.InitEditor();
 			let vsdx = AscCommon.Base64.decode(Asc.exampleVsdx);
 			const openRes = api.OpenDocumentFromZip(vsdx);
@@ -97,7 +97,7 @@ $(function() {
 			api.saveDocumentToZip(api.Document, AscCommon.c_oEditorId.Draw, function (data) {
 				if (data) {
 					// Read and parse vsdx file
-					const api2 = new Asc.asc_docs_api({'id-view': 'editor_sdk'});
+					const api2 = new Asc.VisioEditorApi({'id-view': 'editor_sdk'});
 					api2.InitEditor();
 
 					let jsZlib = new AscCommon.ZLib();
@@ -218,7 +218,7 @@ $(function() {
 					let rootTagName = rootTagNameMatchResult[2];
 					let rootTagNameCapitalized = rootTagName.charAt(0).toUpperCase() + rootTagName.slice(1);
 					let componentClassName = "C" + rootTagNameCapitalized;
-					let componentClass = AscCommonDraw[componentClassName];
+					let componentClass = AscVisio[componentClassName];
 					if (componentClass) {
 						let componentObject = new componentClass(api);
 						QUnit.test(testName, function (assert) {
@@ -250,7 +250,7 @@ $(function() {
 		testFunction('File ' + fileName, function (assert)
 		{
 			// Read and parse vsdx file
-			const api = new Asc.asc_docs_api({'id-view': 'editor_sdk'});
+			const api = new Asc.VisioEditorApi({'id-view': 'editor_sdk'});
 			api.InitEditor();
 			let vsdxOriginal = AscCommon.Base64.decode(base64);
 			// parse
@@ -269,7 +269,7 @@ $(function() {
 
 					// Read and parse custom vsdx file
 					// TODO try to parse again custom file
-					// const api2 = new Asc.asc_docs_api({'id-view': 'editor_sdk'});
+					// const api2 = new Asc.VisioEditorApi({'id-view': 'editor_sdk'});
 					// api2.InitEditor();
 					// const openResCustom = api2.OpenDocumentFromZip(data);
 

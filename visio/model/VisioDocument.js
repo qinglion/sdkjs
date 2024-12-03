@@ -157,7 +157,7 @@
 			reader = new StaxParser(contentDocument, documentPart, context);
 			this.fromXml(reader);
 			// TODO mb consider 'this' contains parts(.xml files) only but not XML like document.xml and windows.xml
-			// this.visioDocument_Type = new AscCommonDraw.VisioDocument_Type();
+			// this.visioDocument_Type = new AscVisio.VisioDocument_Type();
 			// this.visioDocument_Type.fromXml(reader);
 
 			parseWindows.call(this, documentPart, reader, context);
@@ -1264,22 +1264,22 @@
 	window['AscCommonWord']  = window['AscCommonWord'] || {};
 	window['AscCommonSlide'] = window['AscCommonSlide'] || {};
 	window['AscCommonExcel'] = window['AscCommonExcel'] || {};
-	window['AscCommonDraw']  = window['AscCommonDraw'] || {};
+	window['AscVisio']  = window['AscVisio'] || {};
 	window['AscFormat']  = window['AscFormat'] || {};
 	window['AscWord'] = window['AscWord'] || {};
 
-	window['AscCommonDraw'].CVisioDocument = CVisioDocument;
-	window['AscCommonDraw'].CWindows = CWindows;
-	window['AscCommonDraw'].CMasters = CMasters;
-	window['AscCommonDraw'].CMasterContents = CMasterContents;
-	window['AscCommonDraw'].CPages = CPages;
-	window['AscCommonDraw'].CPageContents = CPageContents;
-	window['AscCommonDraw'].CComments = CComments;
-	window['AscCommonDraw'].CExtensions = CExtensions;
-	window['AscCommonDraw'].CDataConnections = CDataConnections;
-	window['AscCommonDraw'].CDataRecordSets = CDataRecordSets;
-	window['AscCommonDraw'].CValidation = CValidation;
+	window['AscVisio'].CVisioDocument = CVisioDocument;
+	window['AscVisio'].CWindows = CWindows;
+	window['AscVisio'].CMasters = CMasters;
+	window['AscVisio'].CMasterContents = CMasterContents;
+	window['AscVisio'].CPages = CPages;
+	window['AscVisio'].CPageContents = CPageContents;
+	window['AscVisio'].CComments = CComments;
+	window['AscVisio'].CExtensions = CExtensions;
+	window['AscVisio'].CDataConnections = CDataConnections;
+	window['AscVisio'].CDataRecordSets = CDataRecordSets;
+	window['AscVisio'].CValidation = CValidation;
 	// Not realized, file defines schema and data of that schema
-	window['AscCommonDraw'].CSolutions = CSolutions;
-	window['AscCommonDraw'].CSolutionXML = CSolutionXML;
+	window['AscVisio'].CSolutions = CSolutions;
+	window['AscVisio'].CSolutionXML = CSolutionXML;
 })(window, window.document);

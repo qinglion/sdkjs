@@ -790,7 +790,7 @@
 		if (cellValue === "Themed") {
 			// equal to THEMEVAL() call
 			// add themeval support for every supported cell
-			returnValue = AscCommonDraw.themeval(this, shape, pageInfo, themes, undefined,
+			returnValue = AscVisio.themeval(this, shape, pageInfo, themes, undefined,
 				undefined, gradientEnabled, themedColorsRow);
 
 			if (cellName === "LineColor") {
@@ -1028,7 +1028,7 @@
 		/**
 		 * Shape_Type.prototype.toGeometryAndTextCShapes creates CShape from Shape_Type but for image as an
 		 * exception we make variable to store CImageShape in advance. We read CImageShape on parsing in
-		 * AscCommonDraw.Shape_Type.prototype.fromXml. Because CImageShape needs StaxParser reader object for init.
+		 * AscVisio.Shape_Type.prototype.fromXml. Because CImageShape needs StaxParser reader object for init.
 		 * @type {CImageShape}
 		 */
 		this.cImageShape = null;
@@ -1504,7 +1504,7 @@
 				realizeStyleToSheetObjInheritanceRecursive(styleSheet, styles, stylesWithRealizedInheritance);
 				mergeElementArrays(thisArgument.elements, styleSheet.elements, textStyleElements);
 			}
-			if (thisArgument.constructor === AscCommonDraw.StyleSheet_Type) {
+			if (thisArgument.constructor === AscVisio.StyleSheet_Type) {
 				// memorize: that style has realized inheritance
 				stylesWithRealizedInheritance.add(thisArgument);
 			}
@@ -1525,7 +1525,7 @@
 		realizeStyleToSheetObjInheritanceRecursive(styleSheet, styles, stylesWithRealizedInheritance);
 
 		mergeElementArrays(thisArgument.elements, styleSheet.elements)
-		if (thisArgument.constructor === AscCommonDraw.StyleSheet_Type) {
+		if (thisArgument.constructor === AscVisio.StyleSheet_Type) {
 			// memorize: that style has realized inheritance
 			stylesWithRealizedInheritance.add(thisArgument);
 		}
@@ -1569,7 +1569,7 @@
 		 * @returns {*}
 		 */
 		function findObjectIn(elementsObject, elementToFind) {
-			let objKey = AscCommonDraw.createKeyFromSheetObject(elementToFind);
+			let objKey = AscVisio.createKeyFromSheetObject(elementToFind);
 			return elementsObject[objKey];
 		}
 
@@ -1799,25 +1799,25 @@
 	window['AscCommonWord']  = window['AscCommonWord'] || {};
 	window['AscCommonSlide'] = window['AscCommonSlide'] || {};
 	window['AscCommonExcel'] = window['AscCommonExcel'] || {};
-	window['AscCommonDraw']  = window['AscCommonDraw'] || {};
+	window['AscVisio']  = window['AscVisio'] || {};
 	window['AscFormat']  = window['AscFormat'] || {};
 	window['AscWord'] = window['AscWord'] || {};
 
 
-	window['AscCommonDraw'].c_oVsdxSheetStorageKind = c_oVsdxSheetStorageKind;
-	window['AscCommonDraw'].Text_Type = Text_Type;
-	window['AscCommonDraw'].Data_Type = Data_Type;
-	window['AscCommonDraw'].ForeignData_Type = ForeignData_Type;
-	window['AscCommonDraw'].Trigger_Type = Trigger_Type;
-	window['AscCommonDraw'].Row_Type = Row_Type;
-	window['AscCommonDraw'].Cell_Type = Cell_Type;
-	window['AscCommonDraw'].Shape_Type = Shape_Type;
-	window['AscCommonDraw'].Section_Type = Section_Type;
-	window['AscCommonDraw'].Page_Type = Page_Type;
-	window['AscCommonDraw'].PageSheet_Type = PageSheet_Type;
-	window['AscCommonDraw'].DocumentSheet_Type = DocumentSheet_Type;
-	window['AscCommonDraw'].StyleSheet_Type = StyleSheet_Type;
-	window['AscCommonDraw'].ShapeSheet_Type = ShapeSheet_Type;
-	window['AscCommonDraw'].createKeyFromSheetObject = createKeyFromSheetObject;
+	window['AscVisio'].c_oVsdxSheetStorageKind = c_oVsdxSheetStorageKind;
+	window['AscVisio'].Text_Type = Text_Type;
+	window['AscVisio'].Data_Type = Data_Type;
+	window['AscVisio'].ForeignData_Type = ForeignData_Type;
+	window['AscVisio'].Trigger_Type = Trigger_Type;
+	window['AscVisio'].Row_Type = Row_Type;
+	window['AscVisio'].Cell_Type = Cell_Type;
+	window['AscVisio'].Shape_Type = Shape_Type;
+	window['AscVisio'].Section_Type = Section_Type;
+	window['AscVisio'].Page_Type = Page_Type;
+	window['AscVisio'].PageSheet_Type = PageSheet_Type;
+	window['AscVisio'].DocumentSheet_Type = DocumentSheet_Type;
+	window['AscVisio'].StyleSheet_Type = StyleSheet_Type;
+	window['AscVisio'].ShapeSheet_Type = ShapeSheet_Type;
+	window['AscVisio'].createKeyFromSheetObject = createKeyFromSheetObject;
 
 })(window, window.document);

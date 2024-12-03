@@ -3627,8 +3627,8 @@ function CEditorPage(api)
 }
 //------------------------------------------------------------export----------------------------------------------------
 window['AscCommon']                       = window['AscCommon'] || {};
-window['AscCommonDraw']                  = window['AscCommonDraw'] || {};
-window['AscCommonDraw'].CEditorPage      = CEditorPage;
+window['AscVisio']                  = window['AscVisio'] || {};
+window['AscVisio'].CEditorPage      = CEditorPage;
 
 window['AscCommon'].Page_Width      = Page_Width;
 window['AscCommon'].Page_Height     = Page_Height;
