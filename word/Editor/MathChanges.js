@@ -1223,9 +1223,9 @@ CChangesMathBaseReviewType.prototype.WriteToBinary = function(Writer)
 	// 1-bit : New.Info is undefined?
 	// 2-bit : Old.Info is undefined?
 	// Long : New.Type
-	// CReviewInfo: New.Info (1-bit is zero)
+	// AscWord.ReviewInfo: New.Info (1-bit is zero)
 	// Long : Old.Type
-	// CReviewInfo: Old.Info (1-bit is zero)
+	// AscWord.ReviewInfo: Old.Info (1-bit is zero)
 
 	var nFlags = 0;
 	if (undefined === this.New.Info)
@@ -1247,9 +1247,9 @@ CChangesMathBaseReviewType.prototype.ReadFromBinary = function(Reader)
 	// 1-bit : New.Info is undefined?
 	// 2-bit : Old.Info is undefined?
 	// Long : New.Type
-	// CReviewInfo: New.Info (1-bit is zero)
+	// AscWord.ReviewInfo: New.Info (1-bit is zero)
 	// Long : Old.Type
-	// CReviewInfo: Old.Info (1-bit is zero)
+	// AscWord.ReviewInfo: Old.Info (1-bit is zero)
 
 	var nFlags = Reader.GetLong();
 
@@ -1260,7 +1260,7 @@ CChangesMathBaseReviewType.prototype.ReadFromBinary = function(Reader)
 
 	if (!(nFlags & 1))
 	{
-		this.New.Info = new CReviewInfo();
+		this.New.Info = new AscWord.ReviewInfo();
 		this.New.Info.Read_FromBinary(Reader);
 	}
 
@@ -1271,7 +1271,7 @@ CChangesMathBaseReviewType.prototype.ReadFromBinary = function(Reader)
 
 	if (!(nFlags & 2))
 	{
-		this.Old.Info = new CReviewInfo();
+		this.Old.Info = new AscWord.ReviewInfo();
 		this.Old.Info.Read_FromBinary(Reader);
 	}
 };

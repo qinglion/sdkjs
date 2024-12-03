@@ -681,7 +681,7 @@ function createShapeInfo()
 function createReviewInfoFromOptions(oOptions)
 {
 	oOptions = oOptions || {};
-	const oReviewInfo = new CReviewInfo();
+	const oReviewInfo = new AscWord.ReviewInfo();
 
 	oReviewInfo.Editor = mockEditor;
 	oReviewInfo.UserId = "";

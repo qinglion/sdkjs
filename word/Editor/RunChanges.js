@@ -2019,9 +2019,9 @@ CChangesRunReviewType.prototype.Type = AscDFH.historyitem_ParaRun_ReviewType;
 CChangesRunReviewType.prototype.WriteToBinary = function(Writer)
 {
 	// Long        : New ReviewType
-	// CReviewInfo : New ReviewInfo
+	// AscWord.ReviewInfo : New ReviewInfo
 	// Long        : Old ReviewType
-	// CReviewInfo : Old ReviewInfo
+	// AscWord.ReviewInfo : Old ReviewInfo
 	Writer.WriteLong(this.New.ReviewType);
 	this.New.ReviewInfo.Write_ToBinary(Writer);
 	Writer.WriteLong(this.Old.ReviewType);
@@ -2030,18 +2030,18 @@ CChangesRunReviewType.prototype.WriteToBinary = function(Writer)
 CChangesRunReviewType.prototype.ReadFromBinary = function(Reader)
 {
 	// Long        : New ReviewType
-	// CReviewInfo : New ReviewInfo
+	// AscWord.ReviewInfo : New ReviewInfo
 	// Long        : Old ReviewType
-	// CReviewInfo : Old ReviewInfo
+	// AscWord.ReviewInfo : Old ReviewInfo
 
 	this.New = {
 		ReviewType : reviewtype_Common,
-		ReviewInfo : new CReviewInfo()
+		ReviewInfo : new AscWord.ReviewInfo()
 	};
 
 	this.Old = {
 		ReviewType : reviewtype_Common,
-		ReviewInfo : new CReviewInfo()
+		ReviewInfo : new AscWord.ReviewInfo()
 	};
 
 	this.New.ReviewType = Reader.GetLong();
@@ -2089,9 +2089,9 @@ CChangesRunPrChange.prototype.WriteToBinary = function(Writer)
 	// 3-bit : is Old.PrChange undefined ?
 	// 4-bit : is Old.ReviewInfo undefined ?
 	// Variable(CTextPr)     : New.PrChange   (1bit = 0)
-	// Variable(CReviewInfo) : New.ReviewInfo (2bit = 0)
+	// Variable(AscWord.ReviewInfo) : New.ReviewInfo (2bit = 0)
 	// Variable(CTextPr)     : Old.PrChange   (3bit = 0)
-	// Variable(CReviewInfo) : Old.ReviewInfo (4bit = 0)
+	// Variable(AscWord.ReviewInfo) : Old.ReviewInfo (4bit = 0)
 	var nFlags = 0;
 	if (undefined === this.New.PrChange)
 		nFlags |= 1;
@@ -2127,9 +2127,9 @@ CChangesRunPrChange.prototype.ReadFromBinary = function(Reader)
 	// 3-bit : is Old.PrChange undefined ?
 	// 4-bit : is Old.ReviewInfo undefined ?
 	// Variable(CTextPr)     : New.PrChange   (1bit = 0)
-	// Variable(CReviewInfo) : New.ReviewInfo (2bit = 0)
+	// Variable(AscWord.ReviewInfo) : New.ReviewInfo (2bit = 0)
 	// Variable(CTextPr)     : Old.PrChange   (3bit = 0)
-	// Variable(CReviewInfo) : Old.ReviewInfo (4bit = 0)
+	// Variable(AscWord.ReviewInfo) : Old.ReviewInfo (4bit = 0)
 	var nFlags = Reader.GetLong();
 
 	this.New = {
@@ -2158,7 +2158,7 @@ CChangesRunPrChange.prototype.ReadFromBinary = function(Reader)
 	}
 	else
 	{
-		this.New.ReviewInfo = new CReviewInfo();
+		this.New.ReviewInfo = new AscWord.ReviewInfo();
 		this.New.ReviewInfo.Read_FromBinary(Reader);
 	}
 
@@ -2178,7 +2178,7 @@ CChangesRunPrChange.prototype.ReadFromBinary = function(Reader)
 	}
 	else
 	{
-		this.Old.ReviewInfo = new CReviewInfo();
+		this.Old.ReviewInfo = new AscWord.ReviewInfo();
 		this.Old.ReviewInfo.Read_FromBinary(Reader);
 	}
 };
@@ -2268,7 +2268,7 @@ CChangesRunPrReviewInfo.prototype.constructor = CChangesRunPrReviewInfo;
 CChangesRunPrReviewInfo.prototype.Type = AscDFH.historyitem_ParaRun_PrReviewInfo;
 CChangesRunPrReviewInfo.prototype.private_CreateObject = function()
 {
-	return new CReviewInfo();
+	return new AscWord.ReviewInfo();
 };
 CChangesRunPrReviewInfo.prototype.private_SetValue = function(Value)
 {
@@ -2298,7 +2298,7 @@ CChangesRunContentReviewInfo.prototype.constructor = CChangesRunContentReviewInf
 CChangesRunContentReviewInfo.prototype.Type = AscDFH.historyitem_ParaRun_ContentReviewInfo;
 CChangesRunContentReviewInfo.prototype.private_CreateObject = function()
 {
-	return new CReviewInfo();
+	return new AscWord.ReviewInfo();
 };
 CChangesRunContentReviewInfo.prototype.private_IsCreateEmptyObject = function()
 {

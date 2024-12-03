@@ -173,7 +173,7 @@ function CMathBase(bInside)
     this.NearPosArray = [];
 
     this.ReviewType = reviewtype_Common;
-    this.ReviewInfo = new CReviewInfo();
+    this.ReviewInfo = new AscWord.ReviewInfo();
 
     var Api = editor;
     if (Api && !Api.isPresentationEditor && Api.WordControl && Api.WordControl.m_oLogicDocument && true === Api.WordControl.m_oLogicDocument.IsTrackRevisions())
@@ -1675,7 +1675,7 @@ CMathBase.prototype.Read_FromBinary2 = function( Reader )
     }
     else
     {
-        this.ReviewInfo = new CReviewInfo();
+        this.ReviewInfo = new AscWord.ReviewInfo();
         this.ReviewInfo.Read_FromBinary(Reader);
     }
 
@@ -2489,7 +2489,7 @@ CMathBase.prototype.GetReviewInfo = function()
 	else if (this.Parent && this.Parent.GetReviewInfo)
 		return this.Parent.GetReviewInfo();
 
-	return new CReviewInfo();
+	return new AscWord.ReviewInfo();
 };
 CMathBase.prototype.GetReviewMoveType = function()
 {
@@ -2521,7 +2521,7 @@ CMathBase.prototype.SetReviewType = function(Type, isSetToContent)
 
 	if (Type !== this.ReviewType)
 	{
-		var NewInfo = new CReviewInfo();
+		var NewInfo = new AscWord.ReviewInfo();
 		NewInfo.Update();
 
 		AscCommon.History.Add(new CChangesMathBaseReviewType(this, {Type : this.ReviewType, Info : this.ReviewInfo}, {Type : Type, Info : NewInfo}));

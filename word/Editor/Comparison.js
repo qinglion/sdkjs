@@ -516,7 +516,7 @@
 			const oRun = arrRuns[i];
 			const oCopyTextPr = oNewTextPr.Copy();
 			const oOldTextPr = oRun.GetTextPr();
-			const oReviewInfo = new CReviewInfo();
+			const oReviewInfo = new AscWord.ReviewInfo();
 			oComparison.setReviewInfo(oReviewInfo);
 			oCopyTextPr.SetPrChange(oOldTextPr, oReviewInfo);
 			oRun.SetPr(oCopyTextPr);
@@ -2661,7 +2661,7 @@
 			return null;
 		}
 		oNewParaPr.PrChange = oOldParaPr;
-		oNewParaPr.ReviewInfo = new CReviewInfo();
+		oNewParaPr.ReviewInfo = new AscWord.ReviewInfo();
 		this.setReviewInfo(oNewParaPr.ReviewInfo);
 		return oNewParaPr;
 	};
@@ -2927,7 +2927,7 @@
 			}
 			const oNewPr = oRevisedPr.Copy();
 			oNewPr.PrChange = oMainPr.Copy();
-			oNewPr.ReviewInfo = new CReviewInfo();
+			oNewPr.ReviewInfo = new AscWord.ReviewInfo();
 			this.setReviewInfo(oNewPr.ReviewInfo);
 			oMainTable.Set_Pr(oNewPr);
 		}
@@ -2971,7 +2971,7 @@
     CDocumentComparison.prototype.checkRowReview = function(oRowNode) {};
 	CDocumentComparison.prototype.addTablePrChange = function (oTablePr) {
 		oTablePr.PrChange = oTablePr.Copy(false);
-		oTablePr.ReviewInfo = new CReviewInfo();
+		oTablePr.ReviewInfo = new AscWord.ReviewInfo();
 		this.setReviewInfo(oTablePr.ReviewInfo);
 	};
 		CDocumentComparison.prototype.applyChangesToTableCellPr = function (oNode) {
@@ -2997,7 +2997,7 @@
 		}
 		const oNewPr = oRevisedPr.Copy();
 		oNewPr.PrChange = oMainPr.Copy();
-		oNewPr.ReviewInfo = new CReviewInfo();
+		oNewPr.ReviewInfo = new AscWord.ReviewInfo();
 		this.setReviewInfo(oNewPr.ReviewInfo);
 		oMainElement.Set_Pr(oNewPr);
 		const oTable = oMainElement.GetTable();

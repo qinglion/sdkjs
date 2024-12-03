@@ -107,7 +107,7 @@ function ParaRun(Paragraph, bMathRun)
 		&& !editor.WordControl.m_oLogicDocument.MoveDrawing
 		&& !(this.Paragraph && !this.Paragraph.bFromDocument))
 	{
-		this.ReviewInfo = CReviewInfo.createAdd();
+		this.ReviewInfo = AscWord.ReviewInfo.createAdd();
 		this.ReviewInfo.Update();
 	}
 
@@ -9358,7 +9358,7 @@ ParaRun.prototype.Read_FromBinary2 = function(Reader)
     this.Pr.Read_FromBinary( Reader );
 	
     if (!Reader.GetBool())
-		this.ReviewInfo = CReviewInfo.fromBinary(Reader);
+		this.ReviewInfo = AscWord.ReviewInfo.fromBinary(Reader);
 
     if (para_Math_Run == this.Type)
 	{
@@ -10639,7 +10639,7 @@ ParaRun.prototype.SetReviewType = function(nType, isCheckDeleteAdded)
 		}
 
 		if (!this.ReviewInfo)
-			this.ReviewInfo = new CReviewInfo();
+			this.ReviewInfo = new AscWord.ReviewInfo();
 		
 		//this.ReviewType = nType;
 		this.ReviewInfo.setType(nType);
@@ -10661,7 +10661,7 @@ ParaRun.prototype.SetReviewType = function(nType, isCheckDeleteAdded)
 /**
  * Меняем тип рецензирования вместе с информацией о рецензента
  * @param {number} nType
- * @param {CReviewInfo} oInfo
+ * @param {AscWord.ReviewInfo} oInfo
  * @param {boolean} [isCheckLastParagraph=true] Нужно ли проверять последний параграф в документе или в ячейке таблицы
  */
 ParaRun.prototype.SetReviewTypeWithInfo = function(nType, oInfo, isCheckLastParagraph)
@@ -12580,269 +12580,6 @@ function CParaRunStartState(Run)
         this.Content.push(Run.Content[i]);
     }
 }
-
-function CReviewInfo()
-{
-	this.Type     = reviewtype_Common;
-    this.Editor   = editor;
-    this.UserId   = "";
-    this.UserName = "";
-    this.DateTime = "";
-
-    this.MoveType = Asc.c_oAscRevisionsMove.NoMove;
-
-    this.PrevType = -1;
-    this.PrevInfo = null;
-}
-CReviewInfo.createAdd = function()
-{
-	let info = new CReviewInfo();
-	info.Type = reviewtype_Add;
-	return info;
-};
-CReviewInfo.createRemove = function()
-{
-	let info = new CReviewInfo();
-	info.Type = reviewtype_Remove;
-	return info;
-};
-CReviewInfo.fromBinary = function(reader)
-{
-	let info = new CReviewInfo();
-	info.ReadFromBinary(reader);
-	return info;
-};
-CReviewInfo.prototype.setType = function(type)
-{
-	this.Type = type;
-};
-CReviewInfo.prototype.getType = function()
-{
-	return this.Type;
-};
-CReviewInfo.prototype.Update = function()
-{
-    if (this.Editor && this.Editor.DocInfo)
-    {
-        this.UserId   = this.Editor.DocInfo.get_UserId();
-        this.UserName = this.Editor.DocInfo.get_UserName();
-        this.DateTime = (new Date()).getTime();
-    }
-};
-CReviewInfo.prototype.Copy = function()
-{
-    var Info = new CReviewInfo();
-    Info.UserId   = this.UserId;
-    Info.UserName = this.UserName;
-    Info.DateTime = this.DateTime;
-    Info.MoveType = this.MoveType;
-    Info.PrevType = this.PrevType;
-    Info.PrevInfo = this.PrevInfo ? this.PrevInfo.Copy() : null;
-    return Info;
-};
-/**
- * Получаем имя пользователя
- * @returns {string}
- */
-CReviewInfo.prototype.GetUserName = function()
-{
-	return this.UserName;
-};
-/**
- * Получаем дату-время изменения
- * @returns {number}
- */
-CReviewInfo.prototype.GetDateTime = function()
-{
-	return this.DateTime;
-};
-CReviewInfo.prototype.Write_ToBinary = function(oWriter)
-{
-	oWriter.WriteString2(this.UserId);
-	oWriter.WriteString2(this.UserName);
-	oWriter.WriteString2(this.DateTime);
-	oWriter.WriteLong(this.MoveType);
-
-    if (-1 !== this.PrevType && null !== this.PrevInfo)
-	{
-		oWriter.WriteBool(true);
-		oWriter.WriteLong(this.PrevType);
-		this.PrevInfo.Write_ToBinary(oWriter);
-	}
-	else
-	{
-		oWriter.WriteBool(false);
-	}
-};
-CReviewInfo.prototype.Read_FromBinary = function(oReader)
-{
-    this.UserId   = oReader.GetString2();
-    this.UserName = oReader.GetString2();
-    this.DateTime = parseInt(oReader.GetString2());
-    this.MoveType = oReader.GetLong();
-
-	if (oReader.GetBool())
-	{
-		this.PrevType = oReader.GetLong();
-		this.PrevInfo = new CReviewInfo();
-		this.PrevInfo.Read_FromBinary(oReader);
-	}
-	else
-	{
-		this.PrevType = -1;
-		this.PrevInfo = null;
-	}
-};
-CReviewInfo.prototype.Get_Color = function()
-{
-    if (!this.UserId && !this.UserName)
-        return REVIEW_COLOR;
-
-    return AscCommon.getUserColorById(this.UserId, this.UserName, true, false);
-};
-CReviewInfo.prototype.IsCurrentUser = function()
-{
-    if (this.Editor && this.Editor.DocInfo)
-    {
-        var UserId = this.Editor.DocInfo.get_UserId();
-        return (UserId === this.UserId);
-    }
-
-    return true;
-};
-/**
- * Получаем идентификатор пользователя
- * @returns {string}
- */
-CReviewInfo.prototype.GetUserId = function()
-{
-	return this.UserId;
-};
-CReviewInfo.prototype.WriteToBinary = function(oWriter)
-{
-	this.Write_ToBinary(oWriter);
-};
-CReviewInfo.prototype.ReadFromBinary = function(oReader)
-{
-	this.Read_FromBinary(oReader);
-};
-/**
- * Сохраняем предыдущее действие (обычно это добавление, а новое - удаление)
- * @param {number} nType
- */
-CReviewInfo.prototype.SavePrev = function(nType)
-{
-	this.PrevType = nType;
-	this.PrevInfo = this.Copy();
-};
-CReviewInfo.prototype.SetPrevReviewTypeWithInfoRecursively = function(nType, oInfo)
-{
-	var last = this;
-	while (last.PrevInfo)
-	{
-		last = last.PrevInfo;
-	}
-	last.PrevType = nType;
-	last.PrevInfo = oInfo;
-};
-/**
- * Данная функция запрашивает было ли ранее произведено добавление
- * @returns {?CReviewInfo}
- */
-CReviewInfo.prototype.GetPrevAdded = function()
-{
-	var nPrevType = this.PrevType;
-	var oPrevInfo = this.PrevInfo;
-	while (oPrevInfo)
-	{
-		if (reviewtype_Add === this.PrevType)
-		{
-			return oPrevInfo;
-		}
-
-		nPrevType = oPrevInfo.PrevType;
-		oPrevInfo = oPrevInfo.PrevInfo;
-	}
-
-	return null;
-};
-/**
- * Данная функция запрашивает было ли ранее произведено добавление текущим пользователем
- * @returns {?CReviewInfo}
- */
-CReviewInfo.prototype.IsPrevAddedByCurrentUser = function()
-{
-	var oPrevInfo = this.GetPrevAdded();
-	if (!oPrevInfo)
-		return false;
-
-	return oPrevInfo.IsCurrentUser();
-};
-CReviewInfo.prototype.GetColor = function()
-{
-	return this.Get_Color();
-};
-/**
- * Выставляем тип переноса
- * @param {Asc.c_oAscRevisionsMove} nType
- */
-CReviewInfo.prototype.SetMove = function(nType)
-{
-	this.MoveType = nType;
-};
-/**
- * Добавленный текст во время переноса?
- * @returns {boolean}
- */
-CReviewInfo.prototype.IsMovedTo = function()
-{
-	return this.MoveType === Asc.c_oAscRevisionsMove.MoveTo;
-};
-/**
- * Удаленный текст во время переноса?
- * @returns {boolean}
- */
-CReviewInfo.prototype.IsMovedFrom = function()
-{
-	return this.MoveType === Asc.c_oAscRevisionsMove.MoveFrom;
-};
-/**
- * Сравнение информации об изменениях
- * @returns {boolean}
- */
-CReviewInfo.prototype.IsEqual = function(oAnotherReviewInfo, bIsMergingDocuments)
-{
-	let oThisReviewInfo = this;
-	let oCompareReviewInfo = oAnotherReviewInfo;
-	let bEquals = true;
-	while (bEquals && oThisReviewInfo && oCompareReviewInfo)
-	{
-		bEquals = oThisReviewInfo.UserName === oCompareReviewInfo.UserName &&
-		oThisReviewInfo.DateTime === oCompareReviewInfo.DateTime &&
-		oThisReviewInfo.MoveType === oCompareReviewInfo.MoveType &&
-		oThisReviewInfo.PrevType === oCompareReviewInfo.PrevType;
-
-		if (!bIsMergingDocuments)
-		{
-			bEquals = bEquals && oThisReviewInfo.UserId === oCompareReviewInfo.UserId;
-		}
-
-		oThisReviewInfo = oThisReviewInfo.PrevInfo;
-		oCompareReviewInfo = oCompareReviewInfo.PrevInfo;
-	}
-	if (!oThisReviewInfo && oCompareReviewInfo || oThisReviewInfo && !oCompareReviewInfo)
-	{
-		return false;
-	}
-	return bEquals;
-};
-/**
- * @returns {Asc.c_oAscRevisionsMove}
- */
-CReviewInfo.prototype.GetMoveType = function()
-{
-	return this.MoveType;
-};
 
 /**
  * @constructor

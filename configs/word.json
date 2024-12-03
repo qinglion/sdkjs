@@ -322,6 +322,7 @@
 			"word/Editor/DocumentProtection.js",
 			"word/Editor/Comparison.js",
 			"word/Editor/InsertDocumentFile.js",
+			"word/Editor/revisions/review-info.js",
 			"word/Editor/revisions/track-revisions-manager.js",
 			"word/Editor/Merge.js",
 

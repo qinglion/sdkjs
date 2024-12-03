@@ -5426,7 +5426,7 @@
 		this.style		= undefined;
 		this.reviewData	= {
 			reviewType : reviewtype_Common,
-			reviewInfo : new CReviewInfo()
+			reviewInfo : new AscWord.ReviewInfo()
 		}
 		this.mathPrp	= new CMPrp();
 		this.metaData	= new MathMetaData();
