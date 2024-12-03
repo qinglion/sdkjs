@@ -776,6 +776,8 @@ $(function () {
 			QUnit.module( "autocorrect");
 			Test("^ ", [["ParaRun", ""], ["CDegree", "^"]], false, "Check index");
 			Test("x^y ", [["ParaRun", ""], ["CDegree", "x^y"], ["ParaRun", ""]], false, "Check index");
+			Test("x^' ", [["ParaRun", ""], ["CDegree", "x^'"], ["ParaRun", ""]], false, "Check index");
+			Test("x^\" ", [["ParaRun", ""], ["CDegree", "x^\""], ["ParaRun", ""]], false, "Check index");
 			Test("x^1 ", [["ParaRun", ""], ["CDegree", "x^1"], ["ParaRun", ""]], false, "Check index");
 			Test("1^x ", [["ParaRun", ""], ["CDegree", "1^x"], ["ParaRun", ""]], false, "Check index");
 			Test("x^(1+2) ", [["ParaRun", ""], ["CDegree", "x^(1+2)"], ["ParaRun", ""]], false, "Check index");
