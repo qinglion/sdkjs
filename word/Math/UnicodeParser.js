@@ -2246,7 +2246,7 @@
 		{
 			this.EatToken(this.oLookahead.class);
 		}
-debugger
+
 		let arrMatrixContent			= this.GetRowsLiteral(oStyles.cols, oStyles.rows);
 		let intMaxLengthOfMatrixRow		= -Infinity;
 		let intIndexOfMaxMatrixRow		= -1;
