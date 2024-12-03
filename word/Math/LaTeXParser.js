@@ -776,8 +776,14 @@
 	};
 	CLaTeXParser.prototype.GetFuncLiteral = function ()
 	{
-		let oFuncContent = this.EatToken(this.oLookahead.class);
-		let oPr = oFuncContent.style;
+		let oFuncContent			= this.EatToken(this.oLookahead.class);
+		let oPr						= oFuncContent.style;
+		let oThirdStyle;
+		let SetStyleAndGetArgument	= function (oThis)
+		{
+			oThirdStyle = oThis.oLookahead.style;
+			return oThis.GetArguments(1);
+		}
 
 		if (this.oLookahead.class === "\\limits")
 			this.EatToken("\\limits");
@@ -786,7 +792,7 @@
 			this.EatToken(this.oLookahead.class);
 
 		let oThirdContent = !this.IsSubSup() && !this.IsGetBelowAboveLiteral()
-			? this.GetArguments(1)
+			? SetStyleAndGetArgument(this)
 			: undefined;
 
 		let name = oFuncContent.data;
@@ -797,7 +803,8 @@
 				type: Struc.nary,
 				value: Literals.nary.LaTeX[oFuncContent.data],
 				style: oPr,
-				third: oThirdContent
+				third: oThirdContent,
+				thirdStyle: oThirdStyle,
 			}
 		}
 		else if (!oThirdContent)
