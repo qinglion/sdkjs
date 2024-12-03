@@ -2254,7 +2254,7 @@ CTable.prototype.GetPageBounds = function(nCurPage)
 {
 	return this.Get_PageBounds(nCurPage);
 };
-CTable.prototype.getRowBounds = function(iRow, relPage, offsetCorrection)
+CTable.prototype.getRowBounds = function(iRow, relPage)
 {
 	let page = this.Pages[relPage];
 	let rowInfo = this.RowsInfo[iRow];
@@ -2264,23 +2264,12 @@ CTable.prototype.getRowBounds = function(iRow, relPage, offsetCorrection)
 		|| undefined === rowInfo.Y[relPage])
 		return new CDocumentBounds(0, 0, 0, 0);
 	
-	let lCorrection = this.GetTableOffsetCorrection();
-	let rCorrection = this.GetRightTableOffsetCorrection();
-	
-	if (offsetCorrection)
-	{
-		return new CDocumentBounds(
-			rowInfo.X0 + page.X_origin + lCorrection,
-			rowInfo.Y[relPage],
-			rowInfo.X1 + page.X_origin,
-			rowInfo.Y[relPage] + rowInfo.H[relPage]
-		);
-	}
-	
+	// Возвращаем границы, по которым реально происходит отрисовка
+	let leftCorrection = this.GetTableOffsetCorrection();
 	return new CDocumentBounds(
-		rowInfo.X0 + page.X_origin,
+		rowInfo.X0 + page.X_origin + leftCorrection,
 		rowInfo.Y[relPage],
-		rowInfo.X1 + page.X_origin + lCorrection - rCorrection,
+		rowInfo.X1 + page.X_origin + leftCorrection,
 		rowInfo.Y[relPage] + rowInfo.H[relPage]
 	);
 };

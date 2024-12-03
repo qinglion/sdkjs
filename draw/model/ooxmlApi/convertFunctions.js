@@ -400,8 +400,22 @@
 					fontColor.color.RGBA.B, false);
 				oRun.Set_Color(textColor1);
 
+				// handle lang
+				let oNewLang = new CLang();
+				let languageCell = characterPropsFinal && characterPropsFinal.getCell("LangID");
+				let languageId = Asc.g_oLcidNameToIdMap[languageCell.v];
+				// switch (languageCell.v) {
+				// 	case "ru-RU":
+				// 		languageId = 1049;
+				// 		break;
+				// 	default:
+				// 		languageId = 1033;
+				// 		break;
+				// }
+				oNewLang.Val = languageId;
+				oRun.Set_Lang(oNewLang);
 
-				// handle fontSize (doesn't work - see comment below)
+
 				let fontSizeCell = characterPropsFinal && characterPropsFinal.getCell("Size");
 				let fontSizePt;
 				if (fontSizeCell && fontSizeCell.kind === AscCommonDraw.c_oVsdxSheetStorageKind.Cell_Type) {
@@ -420,33 +434,63 @@
 
 
 				// handle font
-				let cRFonts = new CRFonts();
-				cRFonts.Ascii = {Name: "Calibri", Index: 1};
-				cRFonts.HAnsi = {Name: "Calibri", Index: 1};
-				cRFonts.CS = {Name: "Calibri", Index: 1};
-				cRFonts.EastAsia = {Name: "Calibri", Index: 1};
+
+				/**
+				 * returns CRFont object for fontName. Also checks if font is loaded and if it is not
+				 * uses default font from stylesheet "NoStyle". If stylesheet "NoStyle" font is not available uses Calibri.
+				 * @param fontName
+				 * @param {CVisioDocument} visioDocument
+				 * @return {CRFonts}
+				 */
+				function getRFonts(fontName, visioDocument) {
+					let cRFonts = new CRFonts();
+
+					// see file https://disk.yandex.ru/d/AjpLrcamAzDeKg
+					// if themed font is not available in user PC visio sets default font from stylesheets
+
+					let loadedFonts = visioDocument.loadedFonts;
+					if (!fontName || loadedFonts.findIndex(function (cFont) {
+						return cFont.name === fontName;
+					}) === -1) {
+						AscCommon.consoleLog("Tried to use font that is not loaded: " + fontName + ". Loading Stylesheets font.");
+						let styleSheetsFont = visioDocument.styleSheets[0].getSection("Character").getRow(0).getCellStringValue("Font")
+						if (!styleSheetsFont || loadedFonts.findIndex(function (cFont) {
+							return cFont.name === styleSheetsFont;
+						}) === -1) {
+							AscCommon.consoleLog("Failed to use styleSheetsFont. Loading Calibri.");
+							cRFonts.Ascii = {Name: "Calibri", Index: 1};
+							cRFonts.HAnsi = {Name: "Calibri", Index: 1};
+							cRFonts.CS = {Name: "Calibri", Index: 1};
+							cRFonts.EastAsia = {Name: "Calibri", Index: 1};
+						} else {
+							AscCommon.consoleLog("Loaded styleSheetsFont: " + styleSheetsFont);
+							cRFonts.Ascii = {Name: styleSheetsFont, Index: 1};
+							cRFonts.HAnsi = {Name: styleSheetsFont, Index: 1};
+							cRFonts.CS = {Name: styleSheetsFont, Index: 1};
+							cRFonts.EastAsia = {Name: styleSheetsFont, Index: 1};
+						}
+					} else {
+						cRFonts.Ascii = {Name: fontName, Index: 1};
+						cRFonts.HAnsi = {Name: fontName, Index: 1};
+						cRFonts.CS = {Name: fontName, Index: 1};
+						cRFonts.EastAsia = {Name: fontName, Index: 1};
+					}
+
+					return cRFonts;
+				}
+
 				let fontCell = characterPropsFinal && characterPropsFinal.getCell("Font");
+				let cRFonts = new CRFonts();
 				if (fontCell && fontCell.kind === AscCommonDraw.c_oVsdxSheetStorageKind.Cell_Type) {
-					// TODO support Themed values
 					// let fontColor = calculateCellValue(theme, shape, characterColorCell);
 
 					// all document fonts all loaded already in CVisioDocument.prototype.loadFonts
-
 					let fontName = fontCell.v;
 					if (fontName !== "Themed") {
-						let loadedCFont = visioDocument.loadedFonts.find(function (cFont) {
-							return cFont.name === fontName;
-						});
-						if (loadedCFont !== undefined) {
-							cRFonts.Ascii = {Name: fontName, Index: -1};
-							cRFonts.HAnsi = {Name: fontName, Index: -1};
-							cRFonts.CS = {Name: fontName, Index: -1};
-							cRFonts.EastAsia = {Name: fontName, Index: -1};
-						} else {
-							AscCommon.consoleLog("Font was not found for Run. So default is set (Calibri).");
-						}
+						cRFonts = getRFonts(fontName, visioDocument);
 					} else {
-						AscCommon.consoleLog("Font themed is unhandeled, Calibri is used.");
+						let themeFontName = theme.getFontScheme().majorFont.latin;
+						cRFonts = getRFonts(themeFontName, visioDocument);
 					}
 				} else {
 					AscCommon.consoleLog("fontCell was not found so default is set (Calibri). Check mb AsianFont or ScriptFont");
@@ -704,7 +748,7 @@
 
 			// read text
 			textElement.elements.forEach(function(textElementPart, i) {
-				if (typeof textElementPart === "string") {
+				if (typeof textElementPart === "string" || textElementPart.kind === AscCommonDraw.c_oVsdxTextKind.FLD) {
 
 					// create defaultParagraph
 					if (oContent.Content.length === 0) {
@@ -712,60 +756,56 @@
 					}
 					let paragraph = oContent.Content.slice(-1)[0];
 
-					// create paraRun using propsObjects
+					if (typeof textElementPart === "string") {
+						// create paraRun using propsObjects
 
-					// equal to ApiParagraph.prototype.AddText method
-					let oRun = new ParaRun(paragraph, false);
-					textElementPart = convertVsdxTextToPptxText(textElementPart);
-					oRun.AddText(textElementPart);
+						// equal to ApiParagraph.prototype.AddText method
+						let oRun = new ParaRun(paragraph, false);
+						textElementPart = convertVsdxTextToPptxText(textElementPart);
+						oRun.AddText(textElementPart);
 
-					// setup Run
-					// check character properties: get cp_Type object and in characterPropsCommon get needed Row
-					let characterRowNum = propsCP && propsCP.iX;
-					if (propsCP === null) {
-						characterRowNum = 0;
+						// setup Run
+						// check character properties: get cp_Type object and in characterPropsCommon get needed Row
+						let characterRowNum = propsCP && propsCP.iX;
+						if (propsCP === null) {
+							characterRowNum = 0;
+						}
+
+						setRunProps(characterRowNum, characterPropsCommon,
+							oRun, lineUniFill, fillUniFill, theme, shape,
+							visioDocument);
+						paragraph.Add_ToContent(paragraph.Content.length - 1, oRun);
+					} else if (textElementPart.kind === AscCommonDraw.c_oVsdxTextKind.FLD) {
+						// text field
+
+						let oFld = new AscCommonWord.CPresentationField(paragraph);
+						let fieldRowNum = textElementPart.iX;
+						let fieldPropsFinal = fieldRowNum !== null && fieldPropsCommon.getRow(fieldRowNum);
+						initPresentationField(oFld, fieldPropsFinal);
+
+						let fldTagText = textElementPart.value;
+						if (fldTagText) {
+							fldTagText = convertVsdxTextToPptxText(fldTagText);
+						}
+						oFld.CanAddToContent = true;
+						oFld.AddText(fldTagText, -1);
+						oFld.CanAddToContent = false;
+
+						// setup Run
+						// check character properties: get cp_Type object and in characterPropsCommon get needed Row
+						let characterRowNum = propsCP && propsCP.iX;
+						if (propsCP === null) {
+							characterRowNum = 0;
+						}
+
+						setRunProps(characterRowNum, characterPropsCommon,
+							oFld, lineUniFill, fillUniFill, theme, shape,
+							visioDocument);
+
+						paragraph.AddToContent(paragraph.Content.length - 1, new ParaRun(paragraph, false));
+						paragraph.AddToContent(paragraph.Content.length - 1, oFld);
+						paragraph.AddToContent(paragraph.Content.length - 1, new ParaRun(paragraph, false));
 					}
-
-					setRunProps(characterRowNum, characterPropsCommon,
-						oRun, lineUniFill, fillUniFill, theme, shape,
-						visioDocument);
-					paragraph.Add_ToContent(paragraph.Content.length - 1, oRun);
-				} else if (textElementPart.kind === AscCommonDraw.c_oVsdxTextKind.FLD) {
-					// text field
-					// create defaultParagraph
-					if (oContent.Content.length === 0) {
-						parseParagraphAndAddToShapeContent(0, paragraphPropsCommon, textCShape);
-					}
-					let paragraph = oContent.Content.slice(-1)[0];
-
-					let oFld = new AscCommonWord.CPresentationField(paragraph);
-					let fieldRowNum = textElementPart.iX;
-					let fieldPropsFinal = fieldRowNum !== null && fieldPropsCommon.getRow(fieldRowNum);
-					initPresentationField(oFld, fieldPropsFinal);
-
-					let fldTagText = textElementPart.value;
-					if (fldTagText) {
-						fldTagText = convertVsdxTextToPptxText(fldTagText);
-					}
-					oFld.CanAddToContent = true;
-					oFld.AddText(fldTagText, -1);
-					oFld.CanAddToContent = false;
-
-					// setup Run
-					// check character properties: get cp_Type object and in characterPropsCommon get needed Row
-					let characterRowNum = propsCP && propsCP.iX;
-					if (propsCP === null) {
-						characterRowNum = 0;
-					}
-
-					setRunProps(characterRowNum, characterPropsCommon,
-						oFld, lineUniFill, fillUniFill, theme, shape,
-						visioDocument);
-
-					paragraph.AddToContent(paragraph.Content.length - 1, new ParaRun(paragraph, false));
-					paragraph.AddToContent(paragraph.Content.length - 1, oFld);
-					paragraph.AddToContent(paragraph.Content.length - 1, new ParaRun(paragraph, false));
-
 				} else if (textElementPart.kind === AscCommonDraw.c_oVsdxTextKind.PP) {
 					// setup Paragraph
 
@@ -778,7 +818,7 @@
 				} else if (textElementPart.kind === AscCommonDraw.c_oVsdxTextKind.TP) {
 					propsTP = textElementPart;
 				} else {
-					AscCommon.consoleLog("undkown type in text tag");
+					AscCommon.consoleLog("unknown type in text tag");
 				}
 			});
 
