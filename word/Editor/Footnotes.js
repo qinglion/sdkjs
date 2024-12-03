@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -311,9 +311,7 @@ CFootnotesController.prototype.ContinueElementsFromPreviousColumn = function(nPa
 				oFootnote.Reset(X, _Y, XLimit, _YLimit);
 				oFootnote.Set_StartPage(nPageAbs, nColumnAbs, nColumnsCount);
 			}
-
-			oColumn.Elements.push(oFootnote);
-
+			
 			var nRelativePage = oFootnote.GetElementPageIndex(nPageAbs, nColumnAbs);
 			var nRecalcResult = oFootnote.Recalculate_Page(nRelativePage, true);
 
@@ -327,7 +325,9 @@ CFootnotesController.prototype.ContinueElementsFromPreviousColumn = function(nPa
 			{
 				// Такого не должно быть при расчете сносок
 			}
-
+			
+			oColumn.Elements.push(oFootnote);
+			
 			var oBounds = oFootnote.Get_PageBounds(nRelativePage);
 			_Y += oBounds.Bottom - oBounds.Top;
 			oColumn.Height = _Y;
@@ -442,7 +442,7 @@ CFootnotesController.prototype.RecalculateFootnotes = function(nPageAbs, nColumn
 			break;
 	}
 
-	oColumn.Height = Math.min(_YLimit, oColumn.Height);
+	oColumn.Height = Math.max(0, Math.min(_YLimit, oColumn.Height));
 
 	if (!isLowerY)
 		oColumn.ReferenceY = Y;
@@ -1453,12 +1453,12 @@ CFootnotesController.prototype.AddNewParagraph = function(bRecalculate, bForceAd
 
 	return this.CurFootnote.AddNewParagraph(bRecalculate, bForceAdd);
 };
-CFootnotesController.prototype.AddInlineImage = function(nW, nH, oImage, oChart, bFlow)
+CFootnotesController.prototype.AddInlineImage = function(nW, nH, oImage, oGraphicObject, bFlow)
 {
 	if (false === this.private_CheckFootnotesSelectionBeforeAction())
 		return false;
 
-	return this.CurFootnote.AddInlineImage(nW, nH, oImage, oChart, bFlow);
+	return this.CurFootnote.AddInlineImage(nW, nH, oImage, oGraphicObject, bFlow);
 };
 CFootnotesController.prototype.AddImages = function(aImages)
 {
@@ -2478,13 +2478,13 @@ CFootnotesController.prototype.GetCalculatedParaPr = function()
 };
 CFootnotesController.prototype.GetCalculatedTextPr = function()
 {
-	var StartPr = this.CurFootnote.GetCalculatedTextPr();
+	var StartPr = this.CurFootnote.GetCalculatedTextPr(true);
 	var Pr = StartPr.Copy();
 
 	for (var sId in this.Selection.Footnotes)
 	{
 		var oFootnote = this.Selection.Footnotes[sId];
-		var TempPr = oFootnote.GetCalculatedTextPr();
+		var TempPr = oFootnote.GetCalculatedTextPr(true);
 		Pr = Pr.Compare(TempPr);
 	}
 

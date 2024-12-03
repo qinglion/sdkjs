@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -92,6 +92,10 @@ var tab_Symbol = 0x0022;//0x2192;
 				Context.FillTextCode(_X, Y, this.LeaderCode);
 		}
 
+		if(Context.m_bIsTextDrawer)
+		{
+			Context.CheckSpaceDraw();
+		}
 		if (editor && editor.ShowParaMarks)
 		{
 			Context.p_color(0, 0, 0, 255);
