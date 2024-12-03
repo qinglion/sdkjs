@@ -11290,11 +11290,21 @@
 				autoFilterOptions = new window["Asc"].AutoFiltersOptions();
 				autoFilterOptions.asc_setType(Asc.c_oAscAutoFilterTypes.Filters);
 				autoFilterOptions.asc_getValues(arrVals);
+				autoFilterOptions.asc_setType(Asc.c_oAscAutoFilterTypes.Top10);
 			}
 		};
 
-		let createTop10Filter = function () {
-
+		let createTop10Filter = function (val, isPercent, isBottom) {
+			let _topFilter = new AscCommonExcel.Top10();
+			autoFilterOptions = new window["Asc"].AutoFiltersOptions();
+			_topFilter.asc_setVal(val);
+			if (isPercent) {
+				_topFilter.asc_setPercent(isPercent);
+			}
+			if (isBottom) {
+				_topFilter.asc_setTop(!isBottom);
+			}
+			autoFilterOptions.asc_setFilter(_topFilter);
 		};
 
 		//apply filtering
@@ -11305,12 +11315,6 @@
 				case "xlOr":
 				case "xlAnd": {
 					createCustomFilter();
-					break;
-				}
-				case "xlBottom10Items": {
-					break;
-				}
-				case "xlBottom10Percent": {
 					break;
 				}
 				case "xlFilterCellColor": {
@@ -11325,14 +11329,9 @@
 				case "xlFilterIcon": {
 					break;
 				}
-				case "xlFilterValues": {
-					if (Criteria1 && Array.isArray(Criteria1)) {
-						createSimpleFilter();
-					} else {
-						createCustomFilter();
-					}
-					break;
-				}
+				case "xlBottom10Percent":
+				case "xlBottom10Items":
+				case "xlTop10Percent":
 				case "xlTop10Items": {
 					//only criteria1, 1 to 500 number value
 					let top10Num = Criteria1 ? Criteria1 - 0 : 10;
@@ -11341,16 +11340,15 @@
 						return false;
 					}
 					if (top10Num > 0 && top10Num <= 500) {
-						createTop10Filter(top10Num);
+						createTop10Filter(top10Num, "xlTop10Percent" === Operator || "xlBottom10Percent" === Operator,
+							"xlBottom10Items" === Operator || "xlBottom10Percent" === Operator);
 					} else {
 						private_MakeError('Error! Criteria1 must be between 1 and 500!');
 						return false;
 					}
 					break;
 				}
-				case "xlTop10Percent": {
-					break;
-				}
+				case "xlFilterValues":
 				default:
 					if (Criteria1 && Array.isArray(Criteria1)) {
 						createSimpleFilter();
