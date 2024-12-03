@@ -1025,6 +1025,7 @@ $(function () {
 			Test("■(1&2@3&4) ", [["ParaRun", ""], ["CMathMatrix", "■(1&2@3&4)"], ["ParaRun", ""]], false, "Check matrix");
 			Test("■(1&2) ", [["ParaRun", ""], ["CMathMatrix", "■(1&2)"], ["ParaRun", ""]], false, "Check matrix");
 			Test("■(&2&3@4&5) ", [["ParaRun", ""], ["CMathMatrix", "■(&2&3@4&5&)"], ["ParaRun", ""]], false, "Check matrix");
+			Test("■(&&&@@@) ", [["ParaRun", ""], ["CMathMatrix", "■(&&&@&&&@&&&@&&&)"], ["ParaRun", ""]], false, "Check matrix");
 		})
 
 		QUnit.module( "Accents", function ()

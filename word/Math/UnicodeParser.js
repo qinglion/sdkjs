@@ -2177,9 +2177,9 @@
 	};
 	CUnicodeParser.prototype.GetRowsLiteral = function (cols, rows)
 	{
-		let arrRows = [];
-		let nRow = 0;
-		let isHasContent = false;
+		let arrRows			= [];
+		let nRow			= 0;
+		let isHasContent	= false;
 
 		while (this.IsRowLiteral() || this.oLookahead.data === "@")
 		{
@@ -2188,11 +2188,15 @@
 				cols[nRow] = this.oLookahead.style;
 				this.EatToken("@");
 
-				if (arrRows.length === 0 && this.oLookahead.data !== "&")
+				if (!rows[nRow])
+				{
 					arrRows.push([]);
 
-				nRow++;
+					if (!this.IsRowLiteral() && this.oLookahead.class === Literals.rBrackets.id)
+						arrRows.push([]);
+				}
 
+				nRow++;
 				isHasContent = true;
 			}
 			else
