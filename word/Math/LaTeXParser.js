@@ -776,8 +776,14 @@
 	};
 	CLaTeXParser.prototype.GetFuncLiteral = function ()
 	{
-		let oFuncContent = this.EatToken(this.oLookahead.class);
-		let oPr = oFuncContent.style;
+		let oFuncContent			= this.EatToken(this.oLookahead.class);
+		let oPr						= oFuncContent.style;
+		let oThirdStyle;
+		let SetStyleAndGetArgument	= function (oThis)
+		{
+			oThirdStyle = oThis.oLookahead.style;
+			return oThis.GetArguments(1);
+		}
 
 		if (this.oLookahead.class === "\\limits")
 			this.EatToken("\\limits");
@@ -786,7 +792,7 @@
 			this.EatToken(this.oLookahead.class);
 
 		let oThirdContent = !this.IsSubSup() && !this.IsGetBelowAboveLiteral()
-			? this.GetArguments(1)
+			? SetStyleAndGetArgument(this)
 			: undefined;
 
 		let name = oFuncContent.data;
@@ -797,7 +803,8 @@
 				type: Struc.nary,
 				value: Literals.nary.LaTeX[oFuncContent.data],
 				style: oPr,
-				third: oThirdContent
+				third: oThirdContent,
+				thirdStyle: oThirdStyle,
 			}
 		}
 		else if (!oThirdContent)
@@ -1386,23 +1393,23 @@
 	};
 	CLaTeXParser.prototype.GetElementOfMatrix = function (oStyle)
 	{
-		let arrRow = [];
-		let intLength = 0;
-		let intCount = 0;
-		let isAlredyGetContent = false;
+		let arrRow				= [];
+		let intLength			= 0;
+		let intCount			= 0;
+		let isAlreadyGetContent	= false;
 
 		while (this.IsElementLiteral() || this.oLookahead.data === "&" )
 		{
 			let intCopyOfLength = intLength;
 
-			if (this.oLookahead.data === "\\\\")
+			if (this.oLookahead.data === "\\\\" || this.IsEndMatrixLiteral())
 				break;
 
 			if (this.oLookahead.data !== "&")
 			{
 				arrRow.push(this.GetExpressionLiteral(["&", "\\\\"]));
 				intLength++;
-				isAlredyGetContent = true;
+				isAlreadyGetContent = true;
 				this.SkipFreeSpace();
 			}
 			else
@@ -1410,7 +1417,7 @@
 				oStyle[intCount] = this.oLookahead.style;
 				this.EatToken(this.oLookahead.class);
 
-				if (isAlredyGetContent === false)
+				if (isAlreadyGetContent === false)
 				{
 					arrRow.push({});
 					intCount++;
