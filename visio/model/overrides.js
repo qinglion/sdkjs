@@ -622,6 +622,7 @@ AscCommonWord.CPresentationField.prototype.private_GetDateTimeFormat = function(
 
 /** @constructor */
 function cDate(date) {
+	// original
 	var bind = Function.bind;
 	var unbind = bind.bind(bind);
 	var date = new (unbind(Date, null).apply(null, arguments));
@@ -630,6 +631,7 @@ function cDate(date) {
 }
 
 Asc.cDate.prototype.getUTCFullYear = function () {
+	// original
 	var year = Date.prototype.getUTCFullYear.call(this);
 	var month = Date.prototype.getUTCMonth.call(this);
 	var date = Date.prototype.getUTCDate.call(this);

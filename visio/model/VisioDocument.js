@@ -377,6 +377,7 @@
 		 * @param api
 		 */
 		function loadFontByName(fontName, aFonts, api) {
+			// if font is not loaded already
 			if (aFonts.findIndex(function (cFont) {
 				return cFont.name === fontName;
 			}) !== -1) {
@@ -384,6 +385,7 @@
 			}
 			aFonts.push(new AscFonts.CFont(fontName, newFontIndex, "", 0));
 			newFontIndex++;
+
 			let fontInfo = api.FontLoader.fontInfos.find(function(cFontInfo) {
 				return cFontInfo.Name === fontName;
 			});
