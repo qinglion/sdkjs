@@ -11346,7 +11346,12 @@
 
 			switch (Asc.editor.editorId) {
 				case AscCommon.c_oEditorId.Word:
-					de_replaceShapes(selectedShapes, resultShapes);
+					if (Asc.editor.isPdfEditor()) {
+						pdf_replaceShapes(selectedShapes, resultShapes);
+					}
+					else {
+						de_replaceShapes(selectedShapes, resultShapes);
+					}
 					break;
 				default:
 					replaceShapes(selectedShapes, resultShapes);
@@ -11511,6 +11516,47 @@
 
 			// Finalize changes
 			graphicController.startRecalculate();
+		}
+
+		function pdf_replaceShapes(oldShapes, newShapes) {
+			const aOldShapes = oldShapes.slice();
+			const referenceShape = aOldShapes[0];
+			const shapeFill = referenceShape.getFill();
+			const shapeStroke = referenceShape.getStroke();
+
+			// Copy Fill and Stroke properties from referenceShape
+			newShapes.forEach(function (newShape) {
+				newShape.getGeometry().pathLst.forEach(function (path) {
+					path.setFill('norm');
+					path.setStroke(true);
+					path.setExtrusionOk(false);
+				});
+				newShape.spPr.setFill(shapeFill.createDuplicate());
+				newShape.spPr.setLn(shapeStroke.createDuplicate());
+			});
+
+			let oDoc = Asc.editor.getPDFDoc();
+			let nPage = aOldShapes[0].GetPage();
+
+			// Remove old shapes
+			aOldShapes.forEach(function (shape) {
+				oDoc.RemoveDrawing(shape.GetId());
+			});
+
+			const graphicController = Asc.editor.getGraphicController();
+			graphicController.resetSelection();
+
+			// Add new shapes to document
+			newShapes.forEach(function (newShape, idx) {
+				let oPdfShape = newShape.convertToPdf();
+				oDoc.AddDrawing(oPdfShape, nPage);
+				oPdfShape.checkDrawingBaseCoords();
+				if (idx == 0) {
+					oDoc.SetMouseDownObject(oPdfShape);
+				}
+				graphicController.selectObject(oPdfShape, nPage);
+				oPdfShape.addToRecalculate();
+			});
 		}
 
 		function de_replaceShapes(oldShapes, newShapes) {
