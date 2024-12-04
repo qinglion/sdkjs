@@ -2757,11 +2757,9 @@ ParaRun.prototype.SplitForSpreadCollaborativeMark = function(CurPos) // пере
 	AscCommon.History.Add(new CChangesRunOnStartSplit(this, CurPos));
 	AscCommon.CollaborativeEditing.OnStart_SplitRun(this, CurPos);
 
-	let oParent		= this.GetParent();
-
 	var bMathRun = this.Type == para_Math_Run;
 	var NewRun = new ParaRun(this.Paragraph, false);
-	NewRun.SetReviewTypeWithInfo(this.ReviewType, this.ReviewInfo ? this.ReviewInfo.Copy() : undefined);
+	NewRun.SetReviewTypeWithInfo(this.GetReviewType(), this.ReviewInfo ? this.ReviewInfo.Copy() : undefined);
 	if(bMathRun)
 		NewRun.Set_MathPr(this.MathPrp.Copy());
 
