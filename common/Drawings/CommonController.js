@@ -11344,18 +11344,9 @@
 				resultShapes = [createShapeByCompoundPath(resultPath)];
 			}
 
-			switch (Asc.editor.editorId) {
-				case AscCommon.c_oEditorId.Word:
-					if (Asc.editor.isPdfEditor()) {
-						pdf_replaceShapes(selectedShapes, resultShapes);
-					}
-					else {
-						de_replaceShapes(selectedShapes, resultShapes);
-					}
-					break;
-				default:
-					replaceShapes(selectedShapes, resultShapes);
-			}
+			if (Asc.editor.isDocumentEditor) return de_replaceShapes(selectedShapes, resultShapes);
+			if (Asc.editor.isPdfEditor()) return pdf_replaceShapes(selectedShapes, resultShapes);
+			return replaceShapes(selectedShapes, resultShapes);
 		};
 
 		function convertFormatPathToCompoundPath(path, transform) {
@@ -11565,6 +11556,8 @@
 			const referenceShape = oldShapes[0];
 			const shapeFill = referenceShape.getFill();
 			const shapeStroke = referenceShape.getStroke();
+			const pageIndex = referenceShape.parent.pageIndex;
+			const firstParagraph = referenceShape.parent.Get_ParentParagraph();
 
 			// Copy Fill and Stroke properties from referenceShape
 			newShapes.forEach(function (newShape) {
@@ -11584,44 +11577,44 @@
 				graphicController.document.SetLocalTrackRevisions(false);
 			}
 
-			// Create drawing paragraph
-			const newShape = newShapes[0];
-			const dOffX = newShape.spPr.xfrm.offX;
-			const dOffY = newShape.spPr.xfrm.offY;
-			newShape.spPr.xfrm.setOffX(0);
-			newShape.spPr.xfrm.setOffY(0);
+			// Create drawing paragraphs
+			newShapes.forEach(function (newShape) {
+				const dOffX = newShape.spPr.xfrm.offX;
+				const dOffY = newShape.spPr.xfrm.offY;
+				newShape.spPr.xfrm.setOffX(0);
+				newShape.spPr.xfrm.setOffY(0);
 
-			const para_drawing = new ParaDrawing(5, 5, null, graphicController.drawingDocument, null, null);
-			para_drawing.Set_GraphicObject(newShape);
-			para_drawing.Set_DrawingType(drawing_Anchor);
-			para_drawing.Set_WrappingType(WRAPPING_TYPE_NONE);
-			para_drawing.setExtent(newShape.spPr.xfrm.extX, newShape.spPr.xfrm.extY);
+				const paraDrawing = new ParaDrawing(5, 5, null, graphicController.drawingDocument, null, null);
+				paraDrawing.Set_GraphicObject(newShape);
+				paraDrawing.Set_DrawingType(drawing_Anchor);
+				paraDrawing.Set_WrappingType(WRAPPING_TYPE_NONE);
+				paraDrawing.setExtent(newShape.spPr.xfrm.extX, newShape.spPr.xfrm.extY);
 
-			const page_index = referenceShape.parent.pageIndex;
-			const nearest_pos = graphicController.document.Get_NearestPos(page_index, dOffX, dOffY, true, para_drawing);
-			nearest_pos.Paragraph.Check_NearestPos(nearest_pos);
-			para_drawing.Set_XYForAdd(dOffX, dOffY, nearest_pos, page_index);
+				const nearestPos = graphicController.document.Get_NearestPos(pageIndex, dOffX, dOffY, true, paraDrawing);
+				nearestPos.Paragraph.Check_NearestPos(nearestPos);
+				paraDrawing.Set_XYForAdd(dOffX, dOffY, nearestPos, pageIndex);
 
-			const first_paragraph = referenceShape.parent.Get_ParentParagraph();
-			para_drawing.AddToParagraph(first_paragraph);
-			para_drawing.Set_Parent(first_paragraph);
+				paraDrawing.AddToParagraph(firstParagraph);
+				paraDrawing.Set_Parent(firstParagraph);
 
-			para_drawing.Set_Props(new asc_CImgProperty({
-				PositionH: {
-					RelativeFrom: Asc.c_oAscRelativeFromH.Page,
-					UseAlign: false,
-					Align: undefined,
-					Value: dOffX
-				},
-				PositionV: {
-					RelativeFrom: Asc.c_oAscRelativeFromV.Page,
-					UseAlign: false,
-					Align: undefined,
-					Value: dOffY
-				}
-			}));
+				paraDrawing.Set_Props(new asc_CImgProperty({
+					PositionH: {
+						RelativeFrom: Asc.c_oAscRelativeFromH.Page,
+						UseAlign: false,
+						Align: undefined,
+						Value: dOffX
+					},
+					PositionV: {
+						RelativeFrom: Asc.c_oAscRelativeFromV.Page,
+						UseAlign: false,
+						Align: undefined,
+						Value: dOffY
+					}
+				}));
 
-			newShape.setParent(para_drawing);
+				newShape.setParent(paraDrawing);
+				graphicController.addGraphicObject(paraDrawing);
+			})
 
 			// Remove old shapes
 			oldShapes.forEach(function (shape) {
@@ -11632,9 +11625,8 @@
 			});
 
 			// Finalize changes
-			graphicController.addGraphicObject(para_drawing);
 			graphicController.resetSelection();
-			graphicController.selectObject(newShape, page_index);
+			newShapes.forEach(function (shape) { graphicController.selectObject(shape, pageIndex); });
 			graphicController.document.Recalculate();
 			graphicController.document.UpdateInterface();
 			graphicController.document.UpdateSelection();
