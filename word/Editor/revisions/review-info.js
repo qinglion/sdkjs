@@ -34,15 +34,15 @@
 
 (function()
 {
-	
 	/**
+	 * @param {undefined | reviewtype_Add | reviewtype_Common | reviewtype_Remove} reviewType
 	 * @constructor
 	 */
-	function ReviewInfo()
+	function ReviewInfo(reviewType)
 	{
 		this.Editor = editor;
 		
-		this.Type     = reviewtype_Common;
+		this.Type     = undefined !== reviewType && null !== reviewType ? reviewType : reviewtype_Common;
 		this.UserId   = "";
 		this.UserName = "";
 		this.DateTime = "";
@@ -285,7 +285,8 @@
 		let bEquals            = true;
 		while (bEquals && oThisReviewInfo && oCompareReviewInfo)
 		{
-			bEquals = oThisReviewInfo.UserName === oCompareReviewInfo.UserName &&
+			bEquals = oThisReviewInfo.Type === oCompareReviewInfo.Type &&
+				oThisReviewInfo.UserName === oCompareReviewInfo.UserName &&
 				oThisReviewInfo.DateTime === oCompareReviewInfo.DateTime &&
 				oThisReviewInfo.MoveType === oCompareReviewInfo.MoveType &&
 				oThisReviewInfo.PrevType === oCompareReviewInfo.PrevType;
