@@ -35,7 +35,7 @@
 (function(window, document)
 {
 	// Import
-	let Shape_Type = window['AscCommonDraw'].Shape_Type;
+	let Shape_Type = window['AscVisio'].Shape_Type;
 
 	function convertVsdxTextToPptxText(text){
 		// Replace LineSeparator
@@ -97,14 +97,14 @@
 									// evaluation = THEMEVAL("FillColor")
 									// get theme shape fill color despite cell
 									// line below will give unifill with pattern maybe or gradient
-									// lineUniFill = AscCommonDraw.themeval(this.theme, shape, null, "FillColor");
+									// lineUniFill = AscVisio.themeval(this.theme, shape, null, "FillColor");
 									lineColor.R = fillColor.R;
 									lineColor.G = fillColor.G;
 									lineColor.B = fillColor.B;
 								} else {
 									// evaluation = THEMEVAL("LineColor") or not affected I guess
 									// get theme line color despite cell
-									// lineUniFill = AscCommonDraw.themeval(this.theme, shape, null, "LineColor");
+									// lineUniFill = AscVisio.themeval(this.theme, shape, null, "LineColor");
 								}
 							}
 						}
@@ -124,7 +124,7 @@
 									// evaluation = THEMEVAL("FillColor")
 									// get theme shape fill color despite cell
 									// line below will give unifill with pattern maybe or gradient
-									// lineUniFill = AscCommonDraw.themeval(this.theme, shape, null, "FillColor");
+									// lineUniFill = AscVisio.themeval(this.theme, shape, null, "FillColor");
 									fillColor.R = lineColor.R;
 									fillColor.G = lineColor.G;
 									fillColor.B = lineColor.B;
@@ -285,7 +285,7 @@
 				let hAlignCell = paragraphPropsFinal && paragraphPropsFinal.getCell("HorzAlign");
 
 				let horizontalAlign = AscCommon.align_Left;
-				if (hAlignCell && hAlignCell.kind === AscCommonDraw.c_oVsdxSheetStorageKind.Cell_Type) {
+				if (hAlignCell && hAlignCell.kind === AscVisio.c_oVsdxSheetStorageKind.Cell_Type) {
 					// omit calculateCellValue here
 					// let fontColor = calculateCellValue(theme, shape, characterColorCell);
 					let horAlignTryParse = Number(hAlignCell.v);
@@ -385,12 +385,12 @@
 				// handle Color
 				let characterColorCell = characterPropsFinal && characterPropsFinal.getCell("Color");
 				let fontColor;
-				if (characterColorCell && characterColorCell.kind === AscCommonDraw.c_oVsdxSheetStorageKind.Cell_Type) {
+				if (characterColorCell && characterColorCell.kind === AscVisio.c_oVsdxSheetStorageKind.Cell_Type) {
 					fontColor = characterColorCell.calculateValue(shape, pageInfo,
 						visioDocument.themes, themeValWasUsedFor);
 				} else {
 					AscCommon.consoleLog.log("text color cell not found! set text color as themed");
-					fontColor = AscCommonDraw.themeval(null, shape, pageInfo, visioDocument.themes, "TextColor");
+					fontColor = AscVisio.themeval(null, shape, pageInfo, visioDocument.themes, "TextColor");
 					themeValWasUsedFor.fontColor = true;
 				}
 
@@ -418,7 +418,7 @@
 
 				let fontSizeCell = characterPropsFinal && characterPropsFinal.getCell("Size");
 				let fontSizePt;
-				if (fontSizeCell && fontSizeCell.kind === AscCommonDraw.c_oVsdxSheetStorageKind.Cell_Type) {
+				if (fontSizeCell && fontSizeCell.kind === AscVisio.c_oVsdxSheetStorageKind.Cell_Type) {
 					// omit calculateCellValue here
 					// let fontColor = calculateCellValue(theme, shape, characterColorCell);
 					const fontSizeIn = Number(fontSizeCell.v);
@@ -481,7 +481,7 @@
 
 				let fontCell = characterPropsFinal && characterPropsFinal.getCell("Font");
 				let cRFonts = new CRFonts();
-				if (fontCell && fontCell.kind === AscCommonDraw.c_oVsdxSheetStorageKind.Cell_Type) {
+				if (fontCell && fontCell.kind === AscVisio.c_oVsdxSheetStorageKind.Cell_Type) {
 					// let fontColor = calculateCellValue(theme, shape, characterColorCell);
 
 					// all document fonts all loaded already in CVisioDocument.prototype.loadFonts
@@ -748,7 +748,7 @@
 
 			// read text
 			textElement.elements.forEach(function(textElementPart, i) {
-				if (typeof textElementPart === "string" || textElementPart.kind === AscCommonDraw.c_oVsdxTextKind.FLD) {
+				if (typeof textElementPart === "string" || textElementPart.kind === AscVisio.c_oVsdxTextKind.FLD) {
 
 					// create defaultParagraph
 					if (oContent.Content.length === 0) {
@@ -775,7 +775,7 @@
 							oRun, lineUniFill, fillUniFill, theme, shape,
 							visioDocument);
 						paragraph.Add_ToContent(paragraph.Content.length - 1, oRun);
-					} else if (textElementPart.kind === AscCommonDraw.c_oVsdxTextKind.FLD) {
+					} else if (textElementPart.kind === AscVisio.c_oVsdxTextKind.FLD) {
 						// text field
 
 						let oFld = new AscCommonWord.CPresentationField(paragraph);
@@ -806,16 +806,16 @@
 						paragraph.AddToContent(paragraph.Content.length - 1, oFld);
 						paragraph.AddToContent(paragraph.Content.length - 1, new ParaRun(paragraph, false));
 					}
-				} else if (textElementPart.kind === AscCommonDraw.c_oVsdxTextKind.PP) {
+				} else if (textElementPart.kind === AscVisio.c_oVsdxTextKind.PP) {
 					// setup Paragraph
 
 					// check defaultParagraph properties: get pp_Type object and in paragraphPropsCommon get needed Row
 					let paragraphRowNum = textElementPart.iX;
 					parseParagraphAndAddToShapeContent(paragraphRowNum, paragraphPropsCommon, textCShape);
 
-				} else if (textElementPart.kind === AscCommonDraw.c_oVsdxTextKind.CP) {
+				} else if (textElementPart.kind === AscVisio.c_oVsdxTextKind.CP) {
 					propsCP = textElementPart;
-				} else if (textElementPart.kind === AscCommonDraw.c_oVsdxTextKind.TP) {
+				} else if (textElementPart.kind === AscVisio.c_oVsdxTextKind.TP) {
 					propsTP = textElementPart;
 				} else {
 					AscCommon.consoleLog("unknown type in text tag");
@@ -1030,7 +1030,7 @@
 			//
 			// // placeholder
 			// let oUniNvPr = new AscFormat.UniNvPr();
-			// oUniNvPr.nvPr.ph = Asc.asc_docs_api.prototype.CreatePlaceholder("object");
+			// oUniNvPr.nvPr.ph = Asc.VisioEditorApi.prototype.CreatePlaceholder("object");
 			//
 			// // cShape.txBody.content2 = cShape.txBody.content;
 			//
@@ -1842,7 +1842,7 @@
 		let flipVertically = paramsObj.flipVertically;
 		let drawingPageScale = paramsObj.drawingPageScale;
 
-		let shapeGeom = AscCommonDraw.getGeometryFromShape(this, drawingPageScale);
+		let shapeGeom = AscVisio.getGeometryFromShape(this, drawingPageScale);
 
 		let sType   = "rect";
 		let nWidth_mm  = Math.round(w_mm);
@@ -1868,7 +1868,7 @@
 	window['AscCommonWord']  = window['AscCommonWord'] || {};
 	window['AscCommonSlide'] = window['AscCommonSlide'] || {};
 	window['AscCommonExcel'] = window['AscCommonExcel'] || {};
-	window['AscCommonDraw']  = window['AscCommonDraw'] || {};
+	window['AscVisio']  = window['AscVisio'] || {};
 	window['AscFormat']  = window['AscFormat'] || {};
 	window['AscWord'] = window['AscWord'] || {};
 

@@ -65,7 +65,7 @@
 	// }
 
 	function createCell(n, v, u, e, f) {
-		let cell = new AscCommonDraw.Cell_Type();
+		let cell = new AscVisio.Cell_Type();
 		cell.n = getValueSafe(n, null);
 		cell.v = getValueSafe(v, null);
 		cell.u = getValueSafe(u, null);
@@ -88,7 +88,7 @@
 
 		let pointsArray = getValueSafe(argumentsObject.points, []);
 
-		let shape = new AscCommonDraw.ShapeSheet_Type();
+		let shape = new AscVisio.ShapeSheet_Type();
 		shape.type = "Shape";
 		shape.lineStyle = 0;
 		shape.fillStyle = 0;
@@ -101,18 +101,18 @@
 		elements.push(createCell("Angle", angle));
 		elements.push(createCell("FillForegnd", fillForegroundColor));
 
-		let section = new AscCommonDraw.Section_Type();
+		let section = new AscVisio.Section_Type();
 		section.n = "Geometry";
 		section.iX = 0;
 
 		for (let i = 0; i < pointsArray.length; i++) {
 			let row;
 			if (i === 0) {
-				row = new AscCommonDraw.Row_Type();
+				row = new AscVisio.Row_Type();
 				row.t = "RelMoveTo";
 				row.iX = 1;
 			} else {
-				row = new AscCommonDraw.Row_Type();
+				row = new AscVisio.Row_Type();
 				row.t = "RelLineTo";
 				row.iX = i + 1;
 			}
@@ -124,22 +124,22 @@
 		return shape;
 	}
 
-	AscCommonDraw.CPageContents.prototype.addShape = function (shape, pinX, pinY) {
+	AscVisio.CPageContents.prototype.addShape = function (shape, pinX, pinY) {
 		shape.iD = this.shapes.length + 1;
 		shape.elements.push(createCell("PinX", pinX));
 		shape.elements.push(createCell("PinY", pinY));
 		this.shapes.push(shape);
 	}
 
-	AscCommonDraw.CVisioDocument.prototype.getPages = function () {
+	AscVisio.CVisioDocument.prototype.getPages = function () {
 		let pagesArray = this.pages.page;
 		return pagesArray;
 	}
 
-	AscCommonDraw.CVisioDocument.prototype.getPageContents = function (i) {
+	AscVisio.CVisioDocument.prototype.getPageContents = function (i) {
 		let pageContents = this.pageContents[i];
 		return pageContents;
 	}
 
-	window['AscCommonDraw'].createShape = createShape;
+	window['AscVisio'].createShape = createShape;
 })(window, window.document);

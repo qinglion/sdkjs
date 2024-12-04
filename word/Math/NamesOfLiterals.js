@@ -7194,8 +7194,8 @@
 				{
 					let oFirstPos	= oMath.Positions[0];
 					let oLastPos	= oMath.Positions[oMath.Positions.length - 1];
-					oMath.AddBefore(oFirstPos, new MathText("〖"));
-					oMath.AddAfter(oLastPos, new MathText("〗"));
+					oMath.AddBefore(oFirstPos, new MathText("〖", oContent));
+					oMath.AddAfter(oLastPos, new MathText("〗", oContent));
 				}
 
 				oContent.Remove_FromContent(nPosCMathContent, 1);

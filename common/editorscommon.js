@@ -2167,7 +2167,7 @@
 
 							if (data["subType"] === "connector")
 							{
-								window.g_asc_plugins.externalConnectorMessage(data["data"]);
+								window.g_asc_plugins.externalConnectorMessage(data["data"], event.origin);
 								return;
 							}
 

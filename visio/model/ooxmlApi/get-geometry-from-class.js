@@ -804,6 +804,6 @@
 		return master1shape1Geometry;
 	}
 
-	window['AscCommonDraw'].getGeometryFromShape = getGeometryFromShape;
-	window['AscCommonDraw'].getGeometryFromClass = getGeometryFromClass;
+	window['AscVisio'].getGeometryFromShape = getGeometryFromShape;
+	window['AscVisio'].getGeometryFromClass = getGeometryFromClass;
 })(window, window.document);

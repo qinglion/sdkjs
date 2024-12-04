@@ -31,7 +31,7 @@
  */
 +function ($) {
 	"use strict";
-	let api = new Asc.asc_docs_api({'id-view'  : 'editor_sdk'});
+	let api = new Asc.VisioEditorApi({'id-view'  : 'editor_sdk'});
 
 	var holder = document.getElementById("editor_sdk");
 	holder.ondragover = holderOnDradOver;

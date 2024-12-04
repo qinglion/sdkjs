@@ -1241,7 +1241,7 @@
 		},
 
 		// external
-		externalConnectorMessage : function(data)
+		externalConnectorMessage : function(data, origin)
 		{
 			switch (data["type"])
 			{
@@ -1251,7 +1251,7 @@
 					this.loadExtensionPlugins([{
 						"name" : "connector",
 						"guid" : data["guid"],
-						"baseUrl" : "",
+						"baseUrl" : (origin !== undefined) ? origin : "",
 						"isConnector" : true,
 
 						"variations" : [
