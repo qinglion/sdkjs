@@ -11203,13 +11203,12 @@
 	 * If this argument is omitted, the criteria is All. If Operator is xlTop10Items, Criteria1 specifies the number of items (for example, "10").
 	 * @param {XlAutoFilterOperator} Operator - An XlAutoFilterOperator constant specifying the type of filter.
 	 * @param {string} Criteria2 - The second criteria (a string). Used with Criteria1 and Operator to construct compound criteria. Also used as single criteria on date fields filtering by date, month or year. Followed by an Array detailing the filtering Array(Level, Date). Where Level is 0-2 (year,month,date) and Date is one valid Date inside the filtering period.
-	 * @param {string} SubField - The field from a data type on which to apply the criteria (for example, the "Population" field from Geography or "Volume" field from Stocks). Omitting this value targets the "(Display Value)".
 	 * @param {boolean} VisibleDropDown - True to display the AutoFilter drop-down arrow for the filtered field. False to hide the AutoFilter drop-down arrow for the filtered field. True by default.
 	 * @returns {ApiCharacters}
 	 * @since 8.3.0
 	 * @see office-js-api/Examples/{Editor}/ApiRange/Methods/SetAutoFilter.js
 	 */
-	ApiRange.prototype.SetAutoFilter = function (Field, Criteria1, Operator, Criteria2, SubField, VisibleDropDown) {
+	ApiRange.prototype.SetAutoFilter = function (Field, Criteria1, Operator, Criteria2, VisibleDropDown) {
 		//firstly add filter
 		this.range.worksheet.addAutoFilter(null, this.range.bbox);
 
@@ -11338,127 +11337,139 @@
 			let res = null;
 			switch (val) {
 				case "xlFilterAboveAverage": {
-					res = Asc.c_oAscCustomAutoFilter.equals;
+					res = Asc.c_oAscDynamicAutoFilter.aboveAverage;
 					break
 				}
 				case "xlFilterAllDatesInPeriodApril": {
-					res = Asc.c_oAscCustomAutoFilter.isGreaterThan;
+					res = Asc.c_oAscDynamicAutoFilter.m4;
+					break
+				}
+				case "xlFilterAllDatesInPeriodSeptember": {
+					res = Asc.c_oAscDynamicAutoFilter.m9;
+					break
+				}
+				case "xlFilterAllDatesInPeriodMay": {
+					res = Asc.c_oAscDynamicAutoFilter.m5;
 					break
 				}
 				case "xlFilterAllDatesInPeriodAugust": {
-					res = Asc.c_oAscCustomAutoFilter.isGreaterThanOrEqualTo;
+					res = Asc.c_oAscDynamicAutoFilter.m8;
 					break
 				}
 				case "xlFilterAllDatesInPeriodDecember": {
-					res = Asc.c_oAscCustomAutoFilter.isLessThan;
+					res = Asc.c_oAscDynamicAutoFilter.m12;
 					break
 				}
 				case "xlFilterAllDatesInPeriodFebruary": {
-					res = Asc.c_oAscCustomAutoFilter.isLessThanOrEqualTo;
+					res = Asc.c_oAscDynamicAutoFilter.m2;
+					break
+				}
+				case "xlFilterAllDatesInPeriodMarch": {
+					res = Asc.c_oAscDynamicAutoFilter.m3;
 					break
 				}
 				case "xlFilterAllDatesInPeriodJanuary": {
-					res = Asc.c_oAscCustomAutoFilter.doesNotEqual;
+					res = Asc.c_oAscDynamicAutoFilter.m1;
 					break
 				}
 				case "xlFilterAllDatesInPeriodJuly": {
-					res = Asc.c_oAscCustomAutoFilter.equals;
+					res = Asc.c_oAscDynamicAutoFilter.m7;
 					break
 				}
 				case "xlFilterAllDatesInPeriodJune": {
-					res = Asc.c_oAscCustomAutoFilter.equals;
+					res = Asc.c_oAscDynamicAutoFilter.m6;
 					break
 				}
 				case "xlFilterAllDatesInPeriodNovember": {
-					res = Asc.c_oAscCustomAutoFilter.equals;
+					res = Asc.c_oAscDynamicAutoFilter.m11;
 					break
 				}
 				case "xlFilterAllDatesInPeriodOctober": {
-					res = Asc.c_oAscCustomAutoFilter.equals;
+					res = Asc.c_oAscDynamicAutoFilter.m10;
 					break
 				}
 				case "xlFilterAllDatesInPeriodQuarter1": {
-					res = Asc.c_oAscCustomAutoFilter.equals;
+					res = Asc.c_oAscDynamicAutoFilter.q1;
 					break
 				}
 				case "xlFilterAllDatesInPeriodQuarter2": {
-					res = Asc.c_oAscCustomAutoFilter.equals;
+					res = Asc.c_oAscDynamicAutoFilter.q2;
 					break
 				}
 				case "xlFilterAllDatesInPeriodQuarter3": {
-					res = Asc.c_oAscCustomAutoFilter.equals;
+					res = Asc.c_oAscDynamicAutoFilter.q3;
 					break
 				}
 				case "xlFilterAllDatesInPeriodQuarter4": {
-					res = Asc.c_oAscCustomAutoFilter.equals;
+					res = Asc.c_oAscDynamicAutoFilter.q4;
 					break
 				}
 				case "xlFilterBelowAverage": {
-					res = Asc.c_oAscCustomAutoFilter.equals;
+					res = Asc.c_oAscDynamicAutoFilter.belowAverage;
 					break
 				}
 				case "xlFilterLastMonth": {
-					res = Asc.c_oAscCustomAutoFilter.equals;
+					res = Asc.c_oAscDynamicAutoFilter.lastMonth;
 					break
 				}
 				case "xlFilterLastQuarter": {
-					res = Asc.c_oAscCustomAutoFilter.equals;
+					res = Asc.c_oAscDynamicAutoFilter.lastQuarter;
 					break
 				}
 				case "xlFilterLastWeek": {
-					res = Asc.c_oAscCustomAutoFilter.equals;
+					res = Asc.c_oAscDynamicAutoFilter.lastWeek;
 					break
 				}
 				case "xlFilterLastYear": {
-					res = Asc.c_oAscCustomAutoFilter.equals;
+					res = Asc.c_oAscDynamicAutoFilter.lastYear;
 					break
 				}
 				case "xlFilterNextMonth": {
-					res = Asc.c_oAscCustomAutoFilter.equals;
+					res = Asc.c_oAscDynamicAutoFilter.nextMonth;
 					break
 				}
 				case "xlFilterNextQuarter": {
-					res = Asc.c_oAscCustomAutoFilter.equals;
+					res = Asc.c_oAscDynamicAutoFilter.nextQuarter;
 					break
 				}
 				case "xlFilterNextWeek": {
-					res = Asc.c_oAscCustomAutoFilter.equals;
+					res = Asc.c_oAscDynamicAutoFilter.nextWeek;
 					break
 				}
 				case "xlFilterNextYear": {
-					res = Asc.c_oAscCustomAutoFilter.equals;
+					res = Asc.c_oAscDynamicAutoFilter.nextYear;
 					break
 				}
 				case "xlFilterThisMonth": {
-					res = Asc.c_oAscCustomAutoFilter.equals;
+					res = Asc.c_oAscDynamicAutoFilter.thisMonth;
 					break
 				}
 				case "xlFilterThisQuarter": {
-					res = Asc.c_oAscCustomAutoFilter.equals;
+					res = Asc.c_oAscDynamicAutoFilter.thisQuarter;
 					break
 				}
 				case "xlFilterThisWeek": {
-					res = Asc.c_oAscCustomAutoFilter.equals;
+					res = Asc.c_oAscDynamicAutoFilter.thisWeek;
 					break
 				}
 				case "xlFilterThisYear": {
-					res = Asc.c_oAscCustomAutoFilter.equals;
+					res = Asc.c_oAscDynamicAutoFilter.thisYear;
 					break
 				}
 				case "xlFilterToday": {
-					res = Asc.c_oAscCustomAutoFilter.equals;
+					res = Asc.c_oAscDynamicAutoFilter.today;
 					break
 				}
 				case "xlFilterTomorrow": {
-					res = Asc.c_oAscCustomAutoFilter.equals;
+					res = Asc.c_oAscDynamicAutoFilter.tomorrow;
 					break
 				}
 				case "xlFilterYearToDate": {
-					res = Asc.c_oAscCustomAutoFilter.equals;
+					res = Asc.c_oAscDynamicAutoFilter.yearToDate;
 					break
 				}
 				case "xlFilterYesterday": {
-					res = Asc.c_oAscCustomAutoFilter.equals;
+					res = Asc.c_oAscDynamicAutoFilter.yesterday;
 					break
 				}
 
