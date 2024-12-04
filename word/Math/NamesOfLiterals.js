@@ -5582,8 +5582,8 @@
 		}
 
 		this.SetAdditionalStyleData(oPr);
-		this.SetAdditionalReviewType(oContent.ReviewType);
-		this.SetAdditionalReviewInfo(oContent.ReviewInfo);
+		this.SetAdditionalReviewType(oContent.GetReviewType());
+		this.SetAdditionalReviewInfo(oContent.GetReviewInfo());
 
 		if (oContent instanceof ParaRun)
 			this.SetMathPrp(oContent.MathPrp);

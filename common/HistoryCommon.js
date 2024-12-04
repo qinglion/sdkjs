@@ -2124,7 +2124,7 @@
 	window['AscDFH'].historyitem_MathBase_RFontsEastAsia  = window['AscDFH'].historyitem_type_Math | 315;
 	window['AscDFH'].historyitem_MathBase_RFontsHint      = window['AscDFH'].historyitem_type_Math | 316;
 	window['AscDFH'].historyitem_MathBase_HighLight       = window['AscDFH'].historyitem_type_Math | 317;
-	window['AscDFH'].historyitem_MathBase_ReviewType      = window['AscDFH'].historyitem_type_Math | 318;
+	window['AscDFH'].historyitem_MathBase_ReviewInfo      = window['AscDFH'].historyitem_type_Math | 318;
 	window['AscDFH'].historyitem_MathBase_TextFill        = window['AscDFH'].historyitem_type_Math | 319;
 	window['AscDFH'].historyitem_MathBase_TextOutline     = window['AscDFH'].historyitem_type_Math | 320;
 	window['AscDFH'].historyitem_MathBase_HighlightColor  = window['AscDFH'].historyitem_type_Math | 321;

@@ -96,7 +96,7 @@ function ParaRun(Paragraph, bMathRun)
 	this.SearchMarks   = [];
 	this.SpellingMarks = [];
 
-	this.ReviewInfo = null;
+	this.ReviewInfo = undefined;
 
 	if (editor
 		&& !editor.isPresentationEditor
