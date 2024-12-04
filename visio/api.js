@@ -48,7 +48,7 @@
 	 */
 	function VisioEditorApi(config)
 	{
-		AscCommon.baseEditorsApi.call(this, config, AscCommon.c_oEditorId.Draw);
+		AscCommon.baseEditorsApi.call(this, config, AscCommon.c_oEditorId.Visio);
 
 		this.WordControl = null;
 

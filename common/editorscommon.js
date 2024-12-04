@@ -832,7 +832,7 @@
 			-1 !== contentTypes.indexOf("application/vnd.ms-powerpoint.presentation.macroEnabled.main+xml") ||
 			-1 !== contentTypes.indexOf("application/vnd.ms-powerpoint.slideshow.macroEnabled.main+xml") ||
 			-1 !== contentTypes.indexOf("application/vnd.ms-powerpoint.template.macroEnabled.main+xml");
-		let isDraw = -1 !== contentTypes.indexOf("application/vnd.ms-visio.drawing.main+xml") ||
+		let isVisio = -1 !== contentTypes.indexOf("application/vnd.ms-visio.drawing.main+xml") ||
 			-1 !== contentTypes.indexOf("application/vnd.ms-visio.stencil.main+xml") ||
 			-1 !== contentTypes.indexOf("application/vnd.ms-visio.template.main+xml") ||
 			-1 !== contentTypes.indexOf("application/vnd.ms-visio.drawing.macroEnabled.main+xml") ||
@@ -844,8 +844,8 @@
 			return AscCommon.c_oEditorId.Spreadsheet;
 		} else if (isSlide) {
 			return AscCommon.c_oEditorId.Presentation;
-		} else if (isDraw) {
-			return AscCommon.c_oEditorId.Draw;
+		} else if (isVisio) {
+			return AscCommon.c_oEditorId.Visio;
 		} else {
 			return null;
 		}

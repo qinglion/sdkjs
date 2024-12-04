@@ -392,7 +392,7 @@
 			case c_oEditorId.Presentation:
 				res = isOpenOoxml ? Asc.c_oAscFileType.PPTX : Asc.c_oAscFileType.CANVAS_PRESENTATION;
 				break;
-			case c_oEditorId.Draw:
+			case c_oEditorId.Visio:
 				res = Asc.c_oAscFileType.VSDX;
 				break;
 		}
@@ -2908,7 +2908,7 @@
 					case AscCommon.c_oEditorId.Word: errorData = 'docx';break;
 					case AscCommon.c_oEditorId.Spreadsheet: errorData = 'xlsx';break;
 					case AscCommon.c_oEditorId.Presentation: errorData = 'pptx';break;
-					case AscCommon.c_oEditorId.Draw: errorData = 'vsdx';break;
+					case AscCommon.c_oEditorId.Visio: errorData = 'vsdx';break;
 					default:
 						if (isNativeFormat) {
 							errorData = 'pdf'
