@@ -2123,10 +2123,9 @@ CT_PivotCacheDefinition.prototype.removeCalculatedItem = function(options) {
 	for (let i = 0; i < calculatedItems.length; ++i) {
 		const calculatedItem = calculatedItems[i];
 		calculatedItem.pivotArea.reIndexOnDelete(pivotFieldIndex, fieldItemIndex);
-		//todo maybe parse?
-		//todo escape names
 		if (-1 !== calculatedItem.formula.indexOf(fieldName + "[" + fieldItemName + "]")) {
 			calculatedItem.formula = '#NAME?';
+			calculatedItem.initConvertedFormula();
 		}
 	}
 	if (calculatedItems.length === 0) {
