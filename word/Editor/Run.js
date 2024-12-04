@@ -203,12 +203,12 @@ ParaRun.prototype.Copy = function(Selected, oPr)
 	}
     else if (true === isCopyReviewPr || (oLogicDocument && (oLogicDocument.RecalcTableHeader || oLogicDocument.MoveDrawing)))
 	{
-		var nReviewType = this.GetReviewType();
-		var oReviewInfo = this.GetReviewInfo().Copy();
-		if (!(oLogicDocument && (oLogicDocument.RecalcTableHeader || oLogicDocument.MoveDrawing)))
-			oReviewInfo.SetMove(Asc.c_oAscRevisionsMove.NoMove);
-
-		NewRun.SetReviewTypeWithInfo(nReviewType, oReviewInfo);
+		let reviewType = this.GetReviewType();
+		let reviewInfo = this.GetReviewInfo();
+		if (reviewInfo && !(oLogicDocument && (oLogicDocument.RecalcTableHeader || oLogicDocument.MoveDrawing)))
+			reviewInfo.SetMove(Asc.c_oAscRevisionsMove.NoMove);
+		
+		NewRun.SetReviewTypeWithInfo(reviewType, reviewInfo ? reviewInfo.Copy() : undefined);
 	}
     else if (oLogicDocument && true === oLogicDocument.IsTrackRevisions())
 	{
@@ -10619,27 +10619,27 @@ ParaRun.prototype.SetReviewType = function(nType, isCheckDeleteAdded)
 			return;
 		}
 	}
+	
+	if (nType === this.GetReviewType())
+		return;
+	
+	let prevType = this.GetReviewType();
+	let prevInfo = this.ReviewInfo ? this.ReviewInfo.Copy() : undefined;
+	
+	if (reviewtype_Add === prevType && reviewtype_Remove === nType && isCheckDeleteAdded)
+		this.ReviewInfo.SavePrev(prevType);
+	
+	if (!this.ReviewInfo)
+		this.ReviewInfo = new AscWord.ReviewInfo();
+	
+	this.ReviewInfo.setType(nType);
+	this.ReviewInfo.Update();
 
-    if (nType !== this.GetReviewType())
-	{
-		let prevType = this.GetReviewType();
-		let prevInfo = this.ReviewInfo ? this.ReviewInfo.Copy() : undefined;
-		
-		if (reviewtype_Add === prevType && reviewtype_Remove === nType && isCheckDeleteAdded)
-			this.ReviewInfo.SavePrev(OldReviewType);
-		
-		if (!this.ReviewInfo)
-			this.ReviewInfo = new AscWord.ReviewInfo();
-		
-		this.ReviewInfo.setType(nType);
-		this.ReviewInfo.Update();
+	if (this.GetLogicDocument() && null !== this.GetLogicDocument().TrackMoveId)
+		this.ReviewInfo.SetMove(Asc.c_oAscRevisionsMove.MoveFrom);
 
-		if (this.GetLogicDocument() && null !== this.GetLogicDocument().TrackMoveId)
-			this.ReviewInfo.SetMove(Asc.c_oAscRevisionsMove.MoveFrom);
-
-		AscCommon.History.Add(new CChangesRunContentReviewInfo(this, prevInfo, this.ReviewInfo.Copy()));
-		this.updateTrackRevisions();
-	}
+	AscCommon.History.Add(new CChangesRunContentReviewInfo(this, prevInfo, this.ReviewInfo.Copy()));
+	this.updateTrackRevisions();
 };
 /**
  * Меняем тип рецензирования вместе с информацией о рецензента

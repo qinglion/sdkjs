@@ -40,8 +40,9 @@
 	 */
 	function ReviewInfo()
 	{
+		this.Editor = editor;
+		
 		this.Type     = reviewtype_Common;
-		this.Editor   = editor;
 		this.UserId   = "";
 		this.UserName = "";
 		this.DateTime = "";
@@ -119,6 +120,7 @@
 	};
 	ReviewInfo.prototype.Write_ToBinary  = function(oWriter)
 	{
+		oWriter.WriteLong(this.Type);
 		oWriter.WriteString2(this.UserId);
 		oWriter.WriteString2(this.UserName);
 		oWriter.WriteString2(this.DateTime);
@@ -137,6 +139,7 @@
 	};
 	ReviewInfo.prototype.Read_FromBinary = function(oReader)
 	{
+		this.Type     = oReader.GetLong();
 		this.UserId   = oReader.GetString2();
 		this.UserName = oReader.GetString2();
 		this.DateTime = parseInt(oReader.GetString2());
