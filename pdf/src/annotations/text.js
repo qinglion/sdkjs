@@ -111,13 +111,14 @@
     CAnnotationText.prototype.AddReply = function(CommentData, nPos) {
         let oReply = new CAnnotationText(AscCommon.CreateGUID(), this.GetPage(), this.GetOrigRect().slice(), this.GetDocument());
 
-        oReply.SetContents(CommentData.m_sText);
         oReply.SetCreationDate(CommentData.m_sOOTime);
         oReply.SetModDate(CommentData.m_sOOTime);
         oReply.SetAuthor(CommentData.m_sUserName);
+        oReply.SetUserId(CommentData.m_sUserId);
         oReply.SetDisplay(window["AscPDF"].Api.Objects.display["visible"]);
         oReply.SetReplyTo(this.GetReplyTo() || this);
         CommentData.SetUserData(oReply.GetId());
+        oReply.SetContents(CommentData.m_sText);
 
         if (!nPos) {
             nPos = this._replies.length;
@@ -135,7 +136,7 @@
         let sModDate = this.GetModDate();
         if (sModDate)
             oAscCommData.asc_putOnlyOfficeTime(sModDate.toString());
-        oAscCommData.asc_putUserId(editor.documentUserId);
+        oAscCommData.asc_putUserId(this.GetUserId());
         oAscCommData.asc_putUserName(this.GetAuthor());
         
         let nState = this.GetState();
