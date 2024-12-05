@@ -31,6 +31,38 @@
  */
 
 (function(window, undefined) {
+    function TextStreamReader(data, size)
+    {
+        this.data = data;
+        this.size = size;
+        this.pos = 0;
+
+        this.Seek = function(pos)
+        {
+            if (pos > this.size)
+                return 1;
+            this.pos = pos;
+            return 0;
+        };
+        this.Skip = function(skip)
+        {
+            return this.Seek(this.pos + skip);
+        };
+        // 1 bytes
+        this.GetChar = function()
+        {
+            return this.data[this.pos++];
+        };
+        // 4 byte
+        this.GetLong = function()
+        {
+            return (this.data[this.pos++] | this.data[this.pos++] << 8 | this.data[this.pos++] << 16 | this.data[this.pos++] << 24);
+        };
+        this.GetDouble = function()
+        {
+            return this.GetLong() / 10000;
+        };
+    }
     var supportImageDataConstructor = (AscCommon.AscBrowser.isIE && !AscCommon.AscBrowser.isIeEdge) ? false : true;
 
     function CFile()
@@ -47,12 +79,10 @@
     	this.Selection = {
             Page1 : 0,
             Line1 : 0,
-            Word1 : 0,
             Glyph1 : 0,
 
             Page2 : 0,
             Line2 : 0,
-            Word2 : 0,
             Glyph2 : 0,
 
             quads: [],
@@ -369,20 +399,21 @@ void main() {\n\
     };
 
     // TEXT
-    CFile.prototype.getPageText = function(pageIndex)
-    {
-        return this.pages[pageIndex].text;
+    CFile.prototype.getPageTextStream = function(pageIndex) {
+        let textCommands = this.pages[pageIndex].text;
+        if (!textCommands || 0 === textCommands.length)
+            return null;
+
+        return new TextStreamReader(textCommands, textCommands.length);
     };
     CFile.prototype.removeSelection = function() {
         this.Selection = {
 			Page1 : 0,
 			Line1 : 0,
-            Word1 : 0,
 			Glyph1 : 0,
 
 			Page2 : 0,
 			Line2 : 0,
-            Word2 : 0,
 			Glyph2 : 0,
             quads: [],
 
@@ -393,8 +424,7 @@ void main() {\n\
         this.viewer.getPDFDoc().TextSelectTrackHandler.Update();
     };
     CFile.prototype.isSelectionUse = function() {
-        return !(this.Selection.Page1  == this.Selection.Page2  && this.Selection.Word1 == this.Selection.Word2 &&
-                 this.Selection.Glyph1 == this.Selection.Glyph2 && this.Selection.Line1 == this.Selection.Line2);
+        return !(this.Selection.Page1  == this.Selection.Page2 && this.Selection.Glyph1 == this.Selection.Glyph2 && this.Selection.Line1 == this.Selection.Line2);
     };
     CFile.prototype.sortSelection = function() {
         let sel = this.Selection;
@@ -402,8 +432,6 @@ void main() {\n\
         let Page2 = 0;
         let Line1 = 0;
         let Line2 = 0;
-        let Word1 = 0;
-        let Word2 = 0;
         let Glyph1 = 0;
         let Glyph2 = 0;
 
@@ -413,8 +441,6 @@ void main() {\n\
             Page2 = sel.Page2;
             Line1 = sel.Line1;
             Line2 = sel.Line2;
-            Word1 = sel.Word1;
-            Word2 = sel.Word2;
             Glyph1 = sel.Glyph1;
             Glyph2 = sel.Glyph2;
         }
@@ -424,8 +450,6 @@ void main() {\n\
             Page2 = sel.Page1;
             Line1 = sel.Line2;
             Line2 = sel.Line1;
-            Word1 = sel.Word2;
-            Word2 = sel.Word1;
             Glyph1 = sel.Glyph2;
             Glyph2 = sel.Glyph1;
         }
@@ -438,8 +462,6 @@ void main() {\n\
             {
                 Line1 = sel.Line1;
                 Line2 = sel.Line2;
-                Word1 = sel.Word1;
-                Word2 = sel.Word2;
                 Glyph1 = sel.Glyph1;
                 Glyph2 = sel.Glyph2;
             }
@@ -447,8 +469,6 @@ void main() {\n\
             {
                 Line1 = sel.Line2;
                 Line2 = sel.Line1;
-                Word1 = sel.Word2;
-                Word2 = sel.Word1;
                 Glyph1 = sel.Glyph2;
                 Glyph2 = sel.Glyph1;
             }
@@ -457,55 +477,34 @@ void main() {\n\
                 Line1 = sel.Line1;
                 Line2 = sel.Line2;
 
-                if (sel.Word1 < sel.Word2)
+                if (-1 === sel.Glyph1)
                 {
-                    Word1 = sel.Word1;
-                    Word2 = sel.Word2;
-                    Glyph1 = sel.Glyph1;
-                    Glyph2 = sel.Glyph2;
-                }
-                else if (sel.Word2 < sel.Word1)
-                {
-                    Word1 = sel.Word2;
-                    Word2 = sel.Word1;
                     Glyph1 = sel.Glyph2;
                     Glyph2 = sel.Glyph1;
                 }
+                else if (-1 === sel.Glyph2)
+                {
+                    Glyph1 = sel.Glyph1;
+                    Glyph2 = sel.Glyph2;
+                }
+                else if (sel.Glyph1 < sel.Glyph2)
+                {
+                    Glyph1 = sel.Glyph1;
+                    Glyph2 = sel.Glyph2;
+                }
                 else
                 {
-                    Word1 = sel.Word1;
-                    Word2 = sel.Word2;
-
-                    if (-1 === sel.Glyph1)
-                    {
-                        Glyph1 = sel.Glyph2;
-                        Glyph2 = sel.Glyph1;
-                    }
-                    else if (-1 === sel.Glyph2)
-                    {
-                        Glyph1 = sel.Glyph1;
-                        Glyph2 = sel.Glyph2;
-                    }
-                    else if (sel.Glyph1 < sel.Glyph2)
-                    {
-                        Glyph1 = sel.Glyph1;
-                        Glyph2 = sel.Glyph2;
-                    }
-                    else
-                    {
-                        Glyph1 = sel.Glyph2;
-                        Glyph2 = sel.Glyph1;
-                    }
+                    Glyph1 = sel.Glyph2;
+                    Glyph2 = sel.Glyph1;
                 }
             }
         }
-        return { Page1, Page2, Line1, Line2, Word1, Word2, Glyph1, Glyph2 };
+        return { Page1, Page2, Line1, Line2, Glyph1, Glyph2 };
     };
     CFile.prototype.getSelection = function() {
         return this.Selection;
     };
-    CFile.prototype.onMouseDown = function(pageIndex, x, y)
-    {
+    CFile.prototype.onMouseDown = function(pageIndex, x, y) {
         if (this.pages[pageIndex].isConvertedToShapes)
             return;
         
@@ -514,12 +513,10 @@ void main() {\n\
 
         sel.Page1  = pageIndex;
         sel.Line1  = ret.Line;
-        sel.Word1  = ret.Word;
         sel.Glyph1 = ret.Glyph;
 
         sel.Page2  = pageIndex;
         sel.Line2  = ret.Line;
-        sel.Word2  = ret.Word;
         sel.Glyph2 = ret.Glyph;
 
         sel.IsSelection = true;
@@ -528,8 +525,7 @@ void main() {\n\
         this.onUpdateSelection();
         this.onUpdateOverlay();
     };
-    CFile.prototype.onMouseMove = function(pageIndex, x, y)
-    {
+    CFile.prototype.onMouseMove = function(pageIndex, x, y) {
         if (false === this.Selection.IsSelection)
             return;
 
@@ -538,13 +534,11 @@ void main() {\n\
 
         sel.Page2  = pageIndex;
         sel.Line2  = ret.Line;
-        sel.Word2  = ret.Word;
         sel.Glyph2 = ret.Glyph;
 
         this.onUpdateOverlay();
     };
-    CFile.prototype.onMouseUp = function()
-    {
+    CFile.prototype.onMouseUp = function() {
         this.Selection.IsSelection = false;
         this.viewer.getPDFDoc().TextSelectTrackHandler.Update(true);
         this.onUpdateSelection();
@@ -570,10 +564,9 @@ void main() {\n\
             }, AscDFH.historydescription_Pdf_AddHighlightAnnot);
         }
     };
-    CFile.prototype.getNearestPos = function(pageIndex, x, y, bExcludeSpaces)
-    {
-        let oText = this.getPageText(pageIndex);
-        if (!oText) return { Line : -1, Word : -1, Glyph : -1 };
+    CFile.prototype.getNearestPos = function(pageIndex, x, y, bNeedLinePos) {
+        let stream = this.getPageTextStream(pageIndex);
+        if (!stream) return { Line : -1, Glyph : -1 };
 
         if (this.type === 2)
         {
@@ -582,107 +575,96 @@ void main() {\n\
             y *= k;
         }
 
-        let _line  = -1, _word  = -1, _glyph = -1;
-        var _minDist = Infinity;
+        let _line  = -1;
+        let _glyph = -1;
+        let _minDist = Infinity;
 
-        for (let iLine = 0; iLine < oText.length; ++iLine)
+        // textline parameters
+        let _lineX  = 0;
+        let _lineY  = 0;
+        let _lineEx = 1;
+        let _lineEy = 0;
+        let _lineAscent  = 0;
+        let _lineDescent = 0;
+        let _lineWidth   = 0;
+        let _linePrevCharX = 0;
+        let _arrayGlyphOffsets = [];
+        let _numLine = 0;
+        let _linePos = 0;
+        let _minLinePos = 0;
+        let tmp = 0;
+
+        while (stream.pos < stream.size)
         {
-            let oLine = oText[iLine];
-            if (oLine.Ex == 1 && oLine.Ey == 0)
-            {
-                let _distX = x - oLine.X;
-                if (y >= (oLine.Y - oLine.Ascent) && y <= (oLine.Y + oLine.Descent) && _distX >= 0 && _distX <= oLine.Width)
-                { // попали внутрь линии
-                    _line = iLine;
-                    for (let iWord = 0; iWord < oLine.Words.length; ++iWord)
-                    {
-                        let oWord = oLine.Words[iWord];
-                        let dWordX2 = oWord.X + oWord.Width;
-                        if (_distX >= oWord.X && _distX <= dWordX2)
-                        { // если слова перекрывают друг друга то выделение происходит по порядку следования
-                            _word = iWord;
-                            if (bExcludeSpaces && oWord.IsSpace)
-                            {
-                                _glyph = 0;
-                                let bRightCloser = dWordX2 - _distX < _distX - oWord.X;
-                                if (bRightCloser && iWord + 1 < oLine.Words.length)
-                                    _word = iWord + 1;
-                                else if (iWord - 1 > 0)
-                                {
-                                    _word = iWord - 1;
-                                    _glyph = oLine.Words[_word].Chars.length - 1;
-                                }
-                                return { Line : _line, Word : _word, Glyph : _glyph };
-                            }
+            _lineEx = 1;
+            _lineEy = 0;
+            _linePrevCharX = 0;
+            _arrayGlyphOffsets.splice(0, _arrayGlyphOffsets.length);
 
-                            for (_glyph = 1; _glyph < oWord.Chars.length; ++_glyph)
-                            { // если символы перекрывают друг друга то текущий выделяется по пересечении начала следующего
-                                let oChar = oWord.Chars[_glyph];
-                                if (oChar.X > _distX)
-                                    break;
-                            }
-                            return { Line : _line, Word : _word, Glyph : --_glyph };
-                        }
+            _lineX = stream.GetDouble();
+            _lineY = stream.GetDouble();
+            if (stream.GetChar())
+            {
+                _lineEx = stream.GetDouble();
+                _lineEy = stream.GetDouble();
+            }
+            _lineAscent  = stream.GetDouble();
+            _lineDescent = stream.GetDouble();
+            _lineWidth   = stream.GetDouble();
+
+            if (bNeedLinePos)
+                _linePos = stream.pos;
+
+            let nChars = stream.GetLong();
+            for (let i = 0; i < nChars; ++i)
+            {
+                if (i)
+                    _linePrevCharX += stream.GetDouble();
+                _arrayGlyphOffsets[i] = _linePrevCharX;
+                stream.Skip(8);
+            }
+
+            if (_lineEx == 1 && _lineEy == 0)
+            {
+                let _distX = x - _lineX;
+                if (y >= (_lineY - _lineAscent) && y <= (_lineY + _lineDescent) && _distX >= 0 && _distX <= _lineWidth)
+                { // попали внутрь линии
+                    for (_glyph = 1; _glyph < nChars; ++_glyph)
+                    { // если символы перекрывают друг друга то текущий выделяется по пересечении начала следующего
+                        if (_arrayGlyphOffsets[_glyph] > _distX)
+                            break;
                     }
+                    return { Line : _numLine, Glyph : --_glyph, ...(bNeedLinePos ? { LinePos: _linePos } : {}) };
                 }
 
-                /* Нет, начинает выделять нижележащие строки
-                Но чисто учитывать вертикальную составляющую нельзя, должен быть более сложный учёт...
-                const k_x = 1;  // Вес горизонтальной составляющей
-                const k_y = 2;  // Вес вертикальной составляющей
-
-                let centerX = oLine.X + oLine.Width / 2;
-                let centerY = oLine.Y;
-                let distX = Math.abs(x - centerX);
-                let distY = Math.abs(y - centerY);
-                let weightedDist = Math.sqrt(distX * distX * k_x + distY * distY * k_y);
-                */
-
-                let tmp = Math.abs(y - oLine.Y);
-                if (_distX >= 0 && _distX <= oLine.Width)
-                    tmp = Math.abs(y - oLine.Y);
+                if (_distX >= 0 && _distX <= _lineWidth)
+                    tmp = Math.abs(y - _lineY);
                 else if (_distX < 0)
-                    tmp = Math.sqrt((x - oLine.X) * (x - oLine.X) + (y - oLine.Y) * (y - oLine.Y));
+                    tmp = Math.sqrt((x - _lineX) * (x - _lineX) + (y - _lineY) * (y - _lineY));
                 else
                 {
-                    let _xx1 = oLine.X + oLine.Width;
-                    tmp = Math.sqrt((x - _xx1) * (x - _xx1) + (y - oLine.Y) * (y - oLine.Y));
+                    let _xx1 = _lineX + _lineWidth;
+                    tmp = Math.sqrt((x - _xx1) * (x - _xx1) + (y - _lineY) * (y - _lineY));
                 }
 
                 if (tmp < _minDist)
                 {
                     _minDist = tmp;
-                    _line = iLine;
+                    _line = _numLine;
+                    _minLinePos = _linePos;
 
                     if (_distX < 0)
-                    {
-                        _word = 0;
                         _glyph = -2;
-                    }
-                    else if (_distX > oLine.Width)
-                    {
-                        _word = oLine.Words.length - 1;
+                    else if (_distX > _lineWidth)
                         _glyph = -1;
-                    }
                     else
                     {
-                        for (let iWord = 0; iWord < oLine.Words.length; ++iWord)
+                        for (_glyph = 1; _glyph < nChars; ++_glyph)
                         {
-                            let oWord = oLine.Words[iWord];
-                            let dWordX2 = oWord.X + oWord.Width;
-                            if (_distX >= oWord.X && _distX <= dWordX2)
-                            {
-                                _word = iWord;
-                                for (_glyph = 1; _glyph < oWord.Chars.length; ++_glyph)
-                                { // если символы перекрывают друг друга то текущий выделяется по пересечении начала следующего
-                                    let oChar = oWord.Chars[_glyph];
-                                    if (oChar.X > _distX)
-                                        break;
-                                }
-                                --_glyph;
+                            if (_arrayGlyphOffsets[_glyph] > _distX)
                                 break;
-                            }
                         }
+                        --_glyph;
                     }
                 }
                 // Ничего не надо делать, уже найдена более "ближняя" линия
@@ -690,123 +672,134 @@ void main() {\n\
             else
             {
                 // определяем точки descent линии
-                let _dx = oLine.X - oLine.Ey * oLine.Descent;
-                let _dy = oLine.Y + oLine.Ex * oLine.Descent;
+                let _dx = _lineX - _lineEy * _lineDescent;
+                let _dy = _lineY + _lineEx * _lineDescent;
 
                 // теперь проекции (со знаком) на линию descent
-                let h = -(-(x - _dx) * oLine.Ey + (y - _dy) * oLine.Ex);
-                let w = (x - _dx) * oLine.Ex + (y - _dy) * oLine.Ey;
+                let h = (x - _dx) * _lineEy - (y - _dy) * _lineEx;
+                let w = (x - _dx) * _lineEx + (y - _dy) * _lineEy;
 
-                if (w >= 0 && w <= oLine.Width && h >= 0 && h <= (oLine.Descent + oLine.Ascent))
+                if (w >= 0 && w <= _lineWidth && h >= 0 && h <= (_lineDescent + _lineAscent))
                 { // попали внутрь линии
-                    _line = iLine;
-                    for (let iWord = 0; iWord < oLine.Words.length; ++iWord)
+                    for (_glyph = 1; _glyph < nChars; ++_glyph)
                     {
-                        let oWord = oLine.Words[iWord];
-                        let dWordX2 = oWord.X + oWord.Width;
-                        if (w >= oWord.X && w <= dWordX2)
-                        {
-                            _word = iWord;
-                            for (_glyph = 1; _glyph < oWord.Chars.length; ++_glyph)
-                            {
-                                let oChar = oWord.Chars[_glyph];
-                                if (oChar.X > w)
-                                    break;
-                            }
-                            return { Line : _line, Word : _word, Glyph : --_glyph };
-                        }
+                        if (_arrayGlyphOffsets[_glyph] > w)
+                            break;
                     }
+                    return { Line : _numLine, Glyph : --_glyph, ...(bNeedLinePos ? { LinePos: _linePos } : {}) };
                 }
 
-                let tmp = 0;
-                if (w >= 0 && w <= oLine.Width)
-                    tmp = Math.abs(h - oLine.Descent);
+                if (w >= 0 && w <= _lineWidth)
+                    tmp = Math.abs(h - _lineDescent);
                 else if (w < 0)
-                    tmp = Math.sqrt((x - oLine.X) * (x - oLine.X) + (y - oLine.Y) * (y - oLine.Y));
+                    tmp = Math.sqrt((x - _lineX) * (x - _lineX) + (y - _lineY) * (y - _lineY));
                 else
                 {
-                    let _tmpX = oLine.X + oLine.Width * oLine.Ex;
-                    let _tmpY = oLine.Y + oLine.Width * oLine.Ey;
+                    let _tmpX = _lineX + _lineWidth * _lineEx;
+                    let _tmpY = _lineY + _lineWidth * _lineEy;
                     tmp = Math.sqrt((x - _tmpX) * (x - _tmpX) + (y - _tmpY) * (y - _tmpY));
                 }
 
                 if (tmp < _minDist)
                 {
                     _minDist = tmp;
-                    _line = iLine;
+                    _line = _numLine;
+                    _minLinePos = _linePos;
 
                     if (w < 0)
-                    {
-                        _word = 0;
                         _glyph = -2;
-                    }
-                    else if (w > oLine.Width)
-                    {
-                        _word = oLine.Words.length - 1;
+                    else if (w > _lineWidth)
                         _glyph = -1;
-                    }
                     else
                     {
-                        for (let iWord = 0; iWord < oLine.Words.length; ++iWord)
+                        for (_glyph = 1; _glyph < nChars; ++_glyph)
                         {
-                            let oWord = oLine.Words[iWord];
-                            let dWordX2 = oWord.X + oWord.Width;
-                            if (w >= oWord.X && w <= dWordX2)
-                            {
-                                _word = iWord;
-                                for (_glyph = 1; _glyph < oWord.Chars.length; ++_glyph)
-                                {
-                                    let oChar = oWord.Chars[_glyph];
-                                    if (oChar.X > w)
-                                        break;
-                                }
-                                --_glyph;
-                            }
+                            if (_arrayGlyphOffsets[_glyph] > w)
+                                break;
                         }
+                        --_glyph;
                     }
                 }
-                // Ничего не надо делать, уже найдена более "ближняя" линия
             }
+            _numLine++;
         }
-        return { Line : _line, Word : _word, Glyph : _glyph };
+        return { Line : _line, Glyph : _glyph, ...(bNeedLinePos ? { LinePos: _minLinePos } : {}) };
     };
     CFile.prototype.selectWholeWord = function(pageIndex, x, y) {
         let ret = this.getNearestPos(pageIndex, x, y, true);
         if (ret.Glyph < 0)
             return;
 
+        let stream = this.getPageTextStream(pageIndex);
+        stream.pos = ret.LinePos;
+
+        let _lineText = "";
+        let nChars = stream.GetLong();
+        for (let i = 0; i < nChars; ++i)
+        {
+            if (i)
+                stream.Skip(4);
+            let nChar = stream.GetLong();
+            _lineText += (nChar == 0xFFFF ? " " : String.fromCodePoint(nChar));
+            stream.Skip(4);
+        }
+
         let sel = this.Selection;
         sel.Glyph1 = -2;
         sel.Glyph2 = -1;
         sel.IsSelection = true;
-        sel.Word1 = ret.Word;
-        sel.Word2 = ret.Word;
         sel.Line1 = ret.Line;
         sel.Line2 = ret.Line;
         sel.Page1 = pageIndex;
         sel.Page2 = pageIndex;
         sel.quads = [];
 
-        let oText = this.getPageText(pageIndex);
-        let oWord = oText[ret.Line]["Words"][ret.Word];
-        if (oWord["IsSpace"] && ret.Word - 1 >= 0)
+        let isOnSpace       = false;
+        let isOnPunctuation = false;
+        if (_lineText[ret.Glyph] == ' ')
+            isOnSpace = true;
+        else if (undefined != AscCommon.g_aPunctuation[_lineText[ret.Glyph].charCodeAt(0)])
+            isOnPunctuation = true;
+
+        if (isOnPunctuation)
+            sel.Glyph1 = ret.Glyph;
+        else
         {
-            sel.Word1 = ret.Word - 1;
-            sel.Word2 = ret.Word - 1;
+            for (let i = ret.Glyph - 1; i >=0; --i)
+            {
+                if (_lineText[i] == ' ' || undefined != AscCommon.g_aPunctuation[_lineText[i].charCodeAt(0)])
+                {
+                    sel.Glyph1 = i + 1;
+                    break;   
+                }
+            }
+        }
+        
+        if (isOnSpace)
+            sel.Glyph2 = ret.Glyph;
+        else if (isOnPunctuation && _lineText[ret.Glyph + 1])
+            sel.Glyph2 = ret.Glyph + 1;
+        else
+        {
+            for (let i = ret.Glyph + 1; i < _lineText.length; ++i)
+            {
+                if (_lineText[i] == " " || undefined != AscCommon.g_aPunctuation[_lineText[i].charCodeAt(0)])
+                {
+                    sel.Glyph2 = i;
+                    break;
+                }
+            }
         }
 
         this.onUpdateOverlay();
     };
     CFile.prototype.selectWholeRow = function(pageIndex, x, y) {
-        let ret = this.getNearestPos(pageIndex, x, y, true);
+        let ret = this.getNearestPos(pageIndex, x, y);
 
-        let oText = this.getPageText(pageIndex);
         let sel = this.Selection;
         sel.Glyph1 = -2;
         sel.Glyph2 = -1;
         sel.IsSelection = true;
-        sel.Word1 = 0;
-        sel.Word2 = oText[ret.Line]["Words"].length - 1;
         sel.Line1 = ret.Line;
         sel.Line2 = ret.Line;
         sel.Page1 = pageIndex;
@@ -815,22 +808,29 @@ void main() {\n\
         
         this.onUpdateOverlay();
     };
-    CFile.prototype.selectAll = function()
-    {
+    CFile.prototype.selectAll = function() {
         this.removeSelection();
         let sel = this.Selection;
         
         let pagesCount = this.pages.length;
         if (pagesCount)
         {
-            let oText = this.getPageText(pagesCount - 1);
-            if (!oText)
-                return;
+            let _numLine = -1;
+            let stream = this.getPageTextStream(pagesCount - 1);
+            while (stream.pos < stream.size)
+            {
+                _numLine++;
+                stream.Skip(8);
+                if (stream.GetChar())
+                    stream.Skip(8);
+                stream.Skip(12);
+                // Не объединять - GetLong прочитает нужное только после skip 12
+                stream.Skip(12 * stream.GetLong() - 4);
+            }
 
             sel.Glyph1 = -2;
             sel.Page2 = pagesCount - 1;
-            sel.Line2 = oText.length - 1;
-            sel.Word2 = oText[sel.Line2]["Words"].length - 1;
+            sel.Line2 = _numLine;
             sel.Glyph2 = -1;
         }
 
@@ -844,96 +844,135 @@ void main() {\n\
     CFile.prototype.getSelectionQuads = function() {
         let aInfo = [];
         
-        if (!this.isSelectionUse()) {
+        if (!this.isSelectionUse())
+        {
             this.cacheSelectionQuads(aInfo);
             return aInfo;
         }
         else if (this.Selection.quads.length)
             return this.Selection.quads;
         
-        const { Page1, Page2, Line1, Line2, Word1, Word2, Glyph1, Glyph2 } = this.sortSelection();
+        const { Page1, Page2, Line1, Line2, Glyph1, Glyph2 } = this.sortSelection();
 
         for (let iPage = Page1; iPage <= Page2; ++iPage)
         {
-            if (this.pages[iPage].isConvertedToShapes)
-                continue;
-
-            let oText = this.getPageText(iPage);
-            if (!oText)
+            let stream = this.getPageTextStream(iPage);
+            if (!stream || this.pages[iPage].isConvertedToShapes)
                 continue;
 
             let oInfo = { page: iPage, quads: [] };
-            let dKoefX = (this.pages[iPage].Dpi / 25.4);
-            let dKoefY = (this.pages[iPage].Dpi / 25.4);
+            let dKoefX = this.pages[iPage].Dpi / 25.4;
+            let dKoefY = this.pages[iPage].Dpi / 25.4;
 
             let startLine = iPage == Page1 ? Line1 : 0;
-            let endLine   = iPage == Page2 ? Line2 : oText.length - 1;
-            
-            for (let iLine = startLine; iLine <= endLine; ++iLine)
+            let endLine   = iPage == Page2 ? Line2 : Infinity;
+
+            // textline parameters
+            let _lineX  = 0;
+            let _lineY  = 0;
+            let _lineEx = 1;
+            let _lineEy = 0;
+            let _lineAscent  = 0;
+            let _lineDescent = 0;
+            let _lineWidth   = 0;
+            let _linePrevCharX = 0;
+            let _arrayGlyphOffsets = [];
+            let iLine = -1;
+
+            while (stream.pos < stream.size)
             {
-                let oLine = oText[iLine];
-                let words = oLine.Words;
+                iLine++;
+                if (iLine < startLine)
+                {
+                    stream.Skip(8);
+                    if (stream.GetChar())
+                        stream.Skip(8);
+                    stream.Skip(12);
+                    stream.Skip(12 * stream.GetLong() - 4);
+                    continue;
+                }
+                if (iLine > endLine)
+                    break;
 
-                let isStartLine = iPage == Page1 && iLine == Line1;
-                let isEndLine   = iPage == Page2 && iLine == Line2;
+                _lineEx = 1;
+                _lineEy = 0;
+                _linePrevCharX = 0;
+                _arrayGlyphOffsets.splice(0, _arrayGlyphOffsets.length);
 
-                let startWord = isStartLine ? Word1 : 0;
-                let endWord   = isEndLine   ? Word2 : words.length - 1;
+                _lineX = stream.GetDouble();
+                _lineY = stream.GetDouble();
+                if (stream.GetChar())
+                {
+                    _lineEx = stream.GetDouble();
+                    _lineEy = stream.GetDouble();
+                }
+                _lineAscent  = stream.GetDouble();
+                _lineDescent = stream.GetDouble();
+                _lineWidth   = stream.GetDouble();
 
-                let startChar = isStartLine ? Glyph1 : -2;
-                let endChar   = isEndLine   ? Glyph2 : -1;
+                let nChars = stream.GetLong();
+                for (let i = 0; i < nChars; ++i)
+                {
+                    if (i)
+                        _linePrevCharX += stream.GetDouble();
+                    _arrayGlyphOffsets[i] = _linePrevCharX;
+                    stream.Skip(8);
+                }
+
+                let startChar = iPage == Page1 && iLine == Line1 ? Glyph1 : -2;
+                let endChar   = iPage == Page2 && iLine == Line2 ? Glyph2 : -1;
 
                 let off1 = 0;
                 let off2 = 0;
 
                 if (startChar == -2)
-                    off1 = words[startWord].X;
+                    off1 = 0;
                 else if (startChar == -1)
-                    off1 = words[startWord].X + words[startWord].Width;
+                    off1 = _lineWidth;
                 else
-                    off1 = words[startWord].Chars[startChar].X;
+                    off1 = _arrayGlyphOffsets[startChar];
 
                 if (endChar == -2)
-                    off2 = words[endWord].X;
+                    off2 = 0;
                 else if (endChar == -1)
-                    off2 = words[endWord].X + words[endWord].Width;
+                    off2 = _lineWidth;
                 else
-                    off2 = words[endWord].Chars[endChar].X;
+                    off2 = _arrayGlyphOffsets[endChar];
 
                 if (off2 <= off1)
                     continue;
 
                 // в принципе код один и тот же. Но почти всегда линии горизонтальные.
                 // а для горизонтальной линии все можно пооптимизировать
-                if (oLine.Ex == 1 && oLine.Ey == 0)
+                if (_lineEx == 1 && _lineEy == 0)
                 {
-                    let _x = (dKoefX * (oLine.X + off1));
-                    let _r = (dKoefX * (oLine.X + off2));
-                    let _y = (dKoefY * (oLine.Y - oLine.Ascent));
-                    let _b = (dKoefY * (oLine.Y + oLine.Descent));
+                    let _x = (dKoefX * (_lineX + off1));
+                    let _r = (dKoefX * (_lineX + off2));
+                    let _y = (dKoefY * (_lineY - _lineAscent));
+                    let _b = (dKoefY * (_lineY + _lineDescent));
 
                     oInfo.quads.push([_x,_y,_r,_y,_x,_b,_r,_b]);
                 }
                 else
                 {
                     // определяем точки descent линии
-                    let ortX = -oLine.Ey;
-                    let ortY = oLine.Ex;
+                    let ortX = -_lineEy;
+                    let ortY = _lineEx;
 
-                    let _dx = oLine.X + ortX * oLine.Descent;
-                    let _dy = oLine.Y + ortY * oLine.Descent;
+                    let _dx = _lineX + ortX * _lineDescent;
+                    let _dy = _lineY + ortY * _lineDescent;
 
-                    let _x1 = _dx + off1 * oLine.Ex;
-                    let _y1 = _dy + off1 * oLine.Ey;
+                    let _x1 = _dx + off1 * _lineEx;
+                    let _y1 = _dy + off1 * _lineEy;
 
-                    let _x2 = _x1 - ortX * (oLine.Ascent + oLine.Descent);
-                    let _y2 = _y1 - ortY * (oLine.Ascent + oLine.Descent);
+                    let _x2 = _x1 - ortX * (_lineAscent + _lineDescent);
+                    let _y2 = _y1 - ortY * (_lineAscent + _lineDescent);
 
-                    let _x3 = _x2 + (off2 - off1) * oLine.Ex;
-                    let _y3 = _y2 + (off2 - off1) * oLine.Ey;
+                    let _x3 = _x2 + (off2 - off1) * _lineEx;
+                    let _y3 = _y2 + (off2 - off1) * _lineEy;
 
-                    let _x4 = _x3 + ortX * (oLine.Ascent + oLine.Descent);
-                    let _y4 = _y3 + ortY * (oLine.Ascent + oLine.Descent);
+                    let _x4 = _x3 + ortX * (_lineAscent + _lineDescent);
+                    let _y4 = _y3 + ortY * (_lineAscent + _lineDescent);
 
                     _x1 = (dKoefX * _x1);
                     _x2 = (dKoefX * _x2);
@@ -948,7 +987,6 @@ void main() {\n\
                     oInfo.quads.push([_x2,_y2, _x3,_y3, _x1,_y1, _x4,_y4]);
                 }
             }
-
             if (oInfo.quads.length > 0)
                 aInfo.push(oInfo);
         }
@@ -961,14 +999,26 @@ void main() {\n\
         if (this.pages[pageIndex].isConvertedToShapes)
             return;
         
-        let oText = this.getPageText(pageIndex);
-        if (!oText)
+        let stream = this.getPageTextStream(pageIndex);
+        if (!stream)
             return;
 
-        const { Page1, Page2, Line1, Line2, Word1, Word2, Glyph1, Glyph2 } = this.sortSelection();
+        const { Page1, Page2, Line1, Line2, Glyph1, Glyph2 } = this.sortSelection();
 
         if (Page1 > pageIndex || Page2 < pageIndex)
             return;
+
+        // textline parameters
+        let _lineX  = 0;
+        let _lineY  = 0;
+        let _lineEx = 1;
+        let _lineEy = 0;
+        let _lineAscent  = 0;
+        let _lineDescent = 0;
+        let _lineWidth   = 0;
+        let _linePrevCharX = 0;
+        let _arrayGlyphOffsets = [];
+        let iLine = -1;
 
         let width = AscCommon.AscBrowser.convertToRetinaValue(this.viewer.drawingPages[pageIndex].W, true) >> 0;
         let height = AscCommon.AscBrowser.convertToRetinaValue(this.viewer.drawingPages[pageIndex].H, true) >> 0;
@@ -979,50 +1029,79 @@ void main() {\n\
         dKoefY *= (this.pages[pageIndex].Dpi / 25.4);
 
         let startLine = pageIndex == Page1 ? Line1 : 0;
-        let endLine   = pageIndex == Page2 ? Line2 : oText.length - 1;
+        let endLine   = pageIndex == Page2 ? Line2 : Infinity;
 
-        for (let iLine = startLine; iLine <= endLine; ++iLine)
+        while (stream.pos < stream.size)
         {
-            let oLine = oText[iLine];
-            let words = oLine.Words;
+            iLine++;
+            if (iLine < startLine)
+            {
+                stream.Skip(8);
+                if (stream.GetChar())
+                    stream.Skip(8);
+                stream.Skip(12);
+                stream.Skip(12 * stream.GetLong() - 4);
+                continue;
+            }
+            if (iLine > endLine)
+                break;
 
-            let isStartLine = pageIndex == Page1 && iLine == Line1;
-            let isEndLine   = pageIndex == Page2 && iLine == Line2;
+            _lineEx = 1;
+            _lineEy = 0;
+            _linePrevCharX = 0;
+            _arrayGlyphOffsets.splice(0, _arrayGlyphOffsets.length);
 
-            let startWord = isStartLine ? Word1 : 0;
-            let endWord   = isEndLine   ? Word2 : words.length - 1;
+            _lineX = stream.GetDouble();
+            _lineY = stream.GetDouble();
+            if (stream.GetChar())
+            {
+                _lineEx = stream.GetDouble();
+                _lineEy = stream.GetDouble();
+            }
+            _lineAscent  = stream.GetDouble();
+            _lineDescent = stream.GetDouble();
+            _lineWidth   = stream.GetDouble();
 
-            let startChar = isStartLine ? Glyph1 : -2;
-            let endChar   = isEndLine   ? Glyph2 : -1;
+            let nChars = stream.GetLong();
+            for (let i = 0; i < nChars; ++i)
+            {
+                if (i)
+                    _linePrevCharX += stream.GetDouble();
+                _arrayGlyphOffsets[i] = _linePrevCharX;
+                stream.Skip(8);
+            }
+
+            let startChar = pageIndex == Page1 && iLine == Line1 ? Glyph1 : -2;
+            let endChar   = pageIndex == Page2 && iLine == Line2 ? Glyph2 : -1;
 
             let off1 = 0;
             let off2 = 0;
 
             if (startChar == -2)
-                off1 = words[startWord].X;
+                off1 = 0;
             else if (startChar == -1)
-                off1 = words[startWord].X + words[startWord].Width;
+                off1 = _lineWidth;
             else
-                off1 = words[startWord].Chars[startChar].X;
+                off1 = _arrayGlyphOffsets[startChar];
 
             if (endChar == -2)
-                off2 = words[endWord].X;
+                off2 = 0;
             else if (endChar == -1)
-                off2 = words[endWord].X + words[endWord].Width;
+                off2 = _lineWidth;
             else
-                off2 = words[endWord].Chars[endChar].X;
+                off2 = _arrayGlyphOffsets[endChar];
 
             if (off2 <= off1)
                 continue;
 
             // в принципе код один и тот же. Но почти всегда линии горизонтальные.
             // а для горизонтальной линии все можно пооптимизировать
-            if (oLine.Ex == 1 && oLine.Ey == 0)
+            if (_lineEx == 1 && _lineEy == 0)
             {
-                let _x = (x + dKoefX * (oLine.X + off1));
-                let _r = (x + dKoefX * (oLine.X + off2));
-                let _y = (y + dKoefY * (oLine.Y - oLine.Ascent));
-                let _b = (y + dKoefY * (oLine.Y + oLine.Descent));
+                let _x = (x + dKoefX * (_lineX + off1));
+                let _r = (x + dKoefX * (_lineX + off2));
+                let _y = (y + dKoefY * (_lineY - _lineAscent));
+                let _b = (y + dKoefY * (_lineY + _lineDescent));
 
                 overlay.CheckPoint(_x, _y);
                 overlay.CheckPoint(_r, _b);
@@ -1032,23 +1111,23 @@ void main() {\n\
             else
             {
                 // определяем точки descent линии
-                let ortX = -oLine.Ey;
-                let ortY = oLine.Ex;
+                let ortX = -_lineEy;
+                let ortY = _lineEx;
 
-                let _dx = oLine.X + ortX * oLine.Descent;
-                let _dy = oLine.Y + ortY * oLine.Descent;
+                let _dx = _lineX + ortX * _lineDescent;
+                let _dy = _lineY + ortY * _lineDescent;
 
-                let _x1 = _dx + off1 * oLine.Ex;
-                let _y1 = _dy + off1 * oLine.Ey;
+                let _x1 = _dx + off1 * _lineEx;
+                let _y1 = _dy + off1 * _lineEy;
 
-                let _x2 = _x1 - ortX * (oLine.Ascent + oLine.Descent);
-                let _y2 = _y1 - ortY * (oLine.Ascent + oLine.Descent);
+                let _x2 = _x1 - ortX * (_lineAscent + _lineDescent);
+                let _y2 = _y1 - ortY * (_lineAscent + _lineDescent);
 
-                let _x3 = _x2 + (off2 - off1) * oLine.Ex;
-                let _y3 = _y2 + (off2 - off1) * oLine.Ey;
+                let _x3 = _x2 + (off2 - off1) * _lineEx;
+                let _y3 = _y2 + (off2 - off1) * _lineEy;
 
-                let _x4 = _x3 + ortX * (oLine.Ascent + oLine.Descent);
-                let _y4 = _y3 + ortY * (oLine.Ascent + oLine.Descent);
+                let _x4 = _x3 + ortX * (_lineAscent + _lineDescent);
+                let _y4 = _y3 + ortY * (_lineAscent + _lineDescent);
 
                 _x1 = (x + dKoefX * _x1);
                 _x2 = (x + dKoefX * _x2);
@@ -1076,64 +1155,62 @@ void main() {\n\
     };
     CFile.prototype.copySelection = function(pageIndex, _text_format)
     {
-        if (!this.isSelectionUse())
-            return "";
-        let oText = this.getPageText(pageIndex);
-        if (!oText)
+        let stream = this.getPageTextStream(pageIndex);
+        if (!stream || !this.isSelectionUse())
             return "";
 
-        const { Page1, Page2, Line1, Line2, Word1, Word2, Glyph1, Glyph2 } = this.sortSelection();
+        const { Page1, Page2, Line1, Line2, Glyph1, Glyph2 } = this.sortSelection();
 
         if (Page1 > pageIndex || Page2 < pageIndex)
             return "";
 
         let ret = "";
+        let iLine = -1;
 
         let startLine = pageIndex == Page1 ? Line1 : 0;
-        let endLine   = pageIndex == Page2 ? Line2 : oText.length - 1;
+        let endLine   = pageIndex == Page2 ? Line2 : Infinity;
 
-        for (let iLine = startLine; iLine <= endLine; ++iLine)
+        while (stream.pos < stream.size)
         {
-            let oLine = oText[iLine];
-            let words = oLine.Words;
+            iLine++;
+            if (iLine < startLine)
+            {
+                stream.Skip(8);
+                if (stream.GetChar())
+                    stream.Skip(8);
+                stream.Skip(12);
+                stream.Skip(12 * stream.GetLong() - 4);
+                continue;
+            }
+            if (iLine > endLine)
+                break;
 
-            let isStartLine = pageIndex == Page1 && iLine == Line1;
-            let isEndLine   = pageIndex == Page2 && iLine == Line2;
-
-            let startWord = isStartLine ? Word1 : 0;
-            let endWord   = isEndLine   ? Word2 : words.length - 1;
-
-            let startChar = isStartLine ? Glyph1 : -2;
-            let endChar   = isEndLine   ? Glyph2 : -1;
+            let startChar = pageIndex == Page1 && iLine == Line1 ? Glyph1 : 0;
+            let endChar   = pageIndex == Page2 && iLine == Line2 ? Glyph2 : Infinity;
 
             let textLine = "<p><span>";
 
-            for (let iWord = startWord; iWord <= endWord; ++iWord)
+            stream.Skip(8);
+            if (stream.GetChar())
+                stream.Skip(8);
+            stream.Skip(12);
+
+            let nChars = stream.GetLong();
+            for (let i = 0; i < nChars; ++i)
             {
-                let oWord = words[iWord];
-                let chars = oWord.Chars;
+                if (i)
+                    stream.Skip(4);
+                let nChar = stream.GetLong();
+                stream.Skip(4);
 
-                let wordStartChar = iWord == startWord ? startChar : -2;
-                let wordEndChar   = iWord == endWord   ? endChar   : -1;
-
-                if (wordStartChar == -2)
-                    wordStartChar = 0;
-                else if (wordStartChar == -1)
+                if (i < startChar || i >= endChar)
                     continue;
-                if (wordEndChar == -2)
-                    wordEndChar = 0;
-                if (wordEndChar == -1)
-                    wordEndChar = chars.length;
 
-                for (let iChar = wordStartChar; iChar < wordEndChar; ++iChar)
-                {
-                    let _char = chars[iChar].Char;
-                    _char = _char == 0xFFFF ? ' ' : String.fromCodePoint(_char);
-                    textLine += _char;
+                let _char = nChar == 0xFFFF ? ' ' : String.fromCodePoint(nChar);
+                textLine += _char;
 
-                    if (_text_format)
-                        _text_format.Text += _char;
-                }
+                if (_text_format)
+                    _text_format.Text += _char;
             }
 
             textLine += "</span></p>";
@@ -1311,7 +1388,7 @@ void main() {\n\
         if (0 == textLength)
             return oResult;
 
-        let oText = this.getPageText(pageIndex);
+        let oText = this.getPageTextStream(pageIndex);
         if (!oText)
             return oResult;
         
