@@ -130,8 +130,10 @@
             let oStructure = this.GetRenderStructure();
             let nScale = this.GetOriginViewScale();
             let oTr = new AscCommon.CMatrix();
-            this.getTransformMatrix().CopyTo(oTr);
             oTr.Scale(nScale, nScale);
+
+            let oOwnTr = this.getTransformMatrix();
+            AscCommon.global_MatrixTransformer.MultiplyAppend(oTr, oOwnTr);
 
             oStructure.draw(oGraphicsWord, oTr);
         }
