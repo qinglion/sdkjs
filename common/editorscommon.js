@@ -4204,6 +4204,19 @@
 		}
 		return null;
 	};
+	parserHelper.prototype.escapeTableCharacters = function (string, doEscape) {
+		if (!string) {
+			return "";
+		}
+		
+		// make escape for the special character inside the string
+		if (doEscape) {
+			return string.replace(/(['#@\[\]])/g, "'$1");
+		}
+
+		// return only the character from the capture group(without escaping)
+		return string.replace(/'(['#@\[\]])/g, "$1");
+	};
 
 	var parserHelp = new parserHelper();
 

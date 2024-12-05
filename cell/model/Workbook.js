@@ -8940,6 +8940,9 @@
 		{
 			if(this.TableParts[i].DisplayName.toLowerCase() === tableName.toLowerCase())
 			{
+				/* if there is a quote before a special character (i.e. escaping was used), remove it, while the quote itself is also a special character */
+				columnName = parserHelp.escapeTableCharacters(columnName, false);
+
 				res = this.TableParts[i].getTableIndexColumnByName(columnName);
 				break;
 			}
