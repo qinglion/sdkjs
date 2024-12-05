@@ -148,7 +148,7 @@ AscFormat.CTheme.prototype.getFillStyle = function (idx, unicolor, isConnectorSh
 		return AscFormat.CreateNoFillUniFill();
 	}
 	var ret;
-	let fmtScheme = isConnectorShape ?
+	let fmtScheme = (isConnectorShape && this.themeElements.themeExt) ?
 		this.themeElements.themeExt.fmtConnectorScheme :
 		this.themeElements.fmtScheme;
 	if (idx >= 1 && idx <= 999) {
@@ -184,7 +184,7 @@ AscFormat.CTheme.prototype.getLnStyle = function (idx, unicolor, isConnectorShap
 	if (idx === 0) {
 		return AscFormat.CreateNoFillLine();
 	}
-	let fmtScheme = isConnectorShape ?
+	let fmtScheme = (isConnectorShape && this.themeElements.themeExt) ?
 		this.themeElements.themeExt.fmtConnectorScheme :
 		this.themeElements.fmtScheme;
 	if (fmtScheme.lnStyleLst[idx - 1]) {
