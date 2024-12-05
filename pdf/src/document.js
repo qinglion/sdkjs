@@ -188,6 +188,8 @@ var CPresentation = CPresentation || function(){};
 		this.defaultFontsLoaded     = -1; // -1 не загружены и не грузим, 0 - грузим, 1 - загружены
         this.loadedFonts            = [];
         this.Action                 = {};
+        
+        this.checkDefaultFonts();
     }
 
 	CPDFDoc.prototype.RecalculateAll = function() {
@@ -4435,7 +4437,30 @@ var CPresentation = CPresentation || function(){};
         let oController = this.GetController();
         oController.checkSelectedObjectsAndCallback(oController.paragraphClearFormatting, [isClearParaPr, isClearTextPr], false, AscDFH.historydescription_Presentation_ParagraphClearFormatting);
     };
-        
+    
+    CPDFDoc.prototype.CreateStampRender = function(sType) {
+        this.History.StartNoHistoryMode();
+
+        let oParserContext  = new AscCommon.XmlParserContext();
+        let oXmlReader = new AscCommon.StaxParser(AscPDF.STAMP_XML[sType], undefined, oParserContext);
+        oXmlReader.parseNode(0);
+
+        let oShape = new AscFormat.CShape();
+        oShape.fromXml(oXmlReader);
+        oShape.bDeleted = false;
+        oShape.recalculate();
+
+        let oTextDrawer = new AscFormat.CTextDrawer(oShape.getXfrmExtX(), oShape.getXfrmExtY(), true, this.GetTheme());
+        oTextDrawer.m_oLine = oShape.pen;
+        oTextDrawer.m_oFill = oShape.brush;
+
+        oTextDrawer.Start_Command(AscFormat.DRAW_COMMAND_SHAPE);
+        oShape.draw(oTextDrawer);
+
+        this.History.EndNoHistoryMode();
+
+        return oTextDrawer;
+    }
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// For drawings
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -5086,7 +5111,7 @@ var CPresentation = CPresentation || function(){};
 
         oFreeText.SetInTextBox(true);
     };
-    CPDFDoc.prototype.AddStampAnnot = function(nType, nPage, oImage) {
+    CPDFDoc.prototype.AddStampAnnot = function(sType, nPage, oImage) {
         let oController = this.GetController();
         let nRotAngle   = this.Viewer.getPageRotate(nPage);
         let oFile       = this.Viewer.file;
@@ -5096,18 +5121,26 @@ var CPresentation = CPresentation || function(){};
         let nPageH      = oNativePage.H;
         let oUser       = Asc.editor.User;
 
-        let nExtX = 200;
-        let nExtY = 40;
+        let nExtX;
+        let nExtY;
+        let oStampRender;
 
-        if (oImage) {
-            nExtX   = Math.max(1, oImage.Image.width * g_dKoef_pix_to_mm);
-            nExtY   = Math.max(1, oImage.Image.height * g_dKoef_pix_to_mm);
-            let nKoeff  = Math.min(1.0, 1.0 / Math.max(nExtX / nPageW, nExtY / nPageH));
-
-            nExtX = Math.max(5, nExtX * nKoeff); 
-            nExtY = Math.max(5, nExtY * nKoeff); 
+        if (sType == AscPDF.STAMP_TYPES.Image) {
+            if (oImage) {
+                nExtX   = Math.max(1, oImage.Image.width * g_dKoef_pix_to_mm);
+                nExtY   = Math.max(1, oImage.Image.height * g_dKoef_pix_to_mm);
+                let nKoeff  = Math.min(1.0, 1.0 / Math.max(nExtX / nPageW, nExtY / nPageH));
+    
+                nExtX = Math.max(5, nExtX * nKoeff); 
+                nExtY = Math.max(5, nExtY * nKoeff); 
+            }
         }
-
+        else {
+            oStampRender = this.CreateStampRender(sType);
+            nExtX = oStampRender.Width * g_dKoef_mm_to_pt;
+            nExtY = oStampRender.Height * g_dKoef_mm_to_pt;
+        }
+        
         let X1, Y1, X2, Y2;
         switch (nRotAngle) {
             case 0:
@@ -5153,17 +5186,22 @@ var CPresentation = CPresentation || function(){};
         let oStamp = this.AddAnnotByProps(oProps);
         oStamp.SetRotate(nRotAngle);
         oStamp.SetWidth(1);
-
-        if (oImage) {
-            let oUniFill = new AscFormat.CUniFill();
-            let oBlipFill = new AscFormat.CBlipFill();
-            oUniFill.setFill(oBlipFill);
-			oBlipFill.setRasterImageId(AscFormat.checkRasterImageId(oImage.src));
-			oBlipFill.setStretch(true);
-			oStamp.setFill(oUniFill);
+        oStamp.SetIconType(sType);
+        if (oStampRender) {
+            oStamp.SetRenderStructure(oStampRender.m_aStack[0]);
+            oStamp.SetInRect([X1, Y2, X1, Y1, X2, Y1, X2, Y2]);
         }
-        // oStamp.SetSubject('Text box');
-        // oStamp.SetIntent(nType);
+
+        if (sType == AscPDF.STAMP_TYPES.Image) {
+            if (oImage) {
+                let oUniFill = new AscFormat.CUniFill();
+                let oBlipFill = new AscFormat.CBlipFill();
+                oUniFill.setFill(oBlipFill);
+                oBlipFill.setRasterImageId(AscFormat.checkRasterImageId(oImage.src));
+                oBlipFill.setStretch(true);
+                oStamp.setFill(oUniFill);
+            }
+        }
         
         this.SetMouseDownObject(oStamp);
         oStamp.selectStartPage = nPage;
@@ -5838,7 +5876,12 @@ var CPresentation = CPresentation || function(){};
     CPDFDoc.prototype.UpdateRulers = function() {};
     CPDFDoc.prototype.UpdateSelection = function() {};
     CPDFDoc.prototype.StopRecalculate = function() {};
-    CPDFDoc.prototype.StopSpellCheck = function() {};
+    CPDFDoc.prototype.StopSpellCheck = function() {};    CPDFDoc.prototype.Get_TableStyleForPara = function() {
+        return null;
+    };
+    CPDFDoc.prototype.Get_ShapeStyleForPara = function() {
+        return null;
+    };
     CPDFDoc.prototype.Get_Api = function() {
         return Asc.editor;
     };

@@ -1019,29 +1019,44 @@
 		}
 	};
 
-	PDFEditorApi.prototype.AddStampAnnot = function(nType) {
+	PDFEditorApi.prototype.AddStampAnnot = function(sType) {
 		let oDoc = this.getPDFDoc();
+
 		oDoc.BlurActiveObject();
 
-		let t = this;
-		AscCommon.ShowImageFileDialog(this.documentId, this.documentUserId, this.CoAuthoringApi.get_jwt(), this.documentShardKey, this.documentWopiSrc, this.documentUserSessionId, function(error, files) {
-			// ошибка может быть объектом в случае отмены добавления картинки в форму
-			if (typeof(error) == "object")
-				return;
-	
-			t._uploadCallback(error, files, {
-				isStamp: true
+		if (sType == AscPDF.STAMP_TYPES.Image) {
+			let t = this;
+			AscCommon.ShowImageFileDialog(this.documentId, this.documentUserId, this.CoAuthoringApi.get_jwt(), this.documentShardKey, this.documentWopiSrc, this.documentUserSessionId, function(error, files) {
+				// ошибка может быть объектом в случае отмены добавления картинки в форму
+				if (typeof(error) == "object")
+					return;
+		
+				t._uploadCallback(error, files, {
+					isStamp: true
+				});
+			},
+			function(error) {
+				if (Asc.c_oAscError.ID.No !== error) {
+					t.sendEvent("asc_onError", error, Asc.c_oAscError.Level.NoCritical);
+				}
+		
+				t.sync_StartAction(Asc.c_oAscAsyncActionType.BlockInteraction, Asc.c_oAscAsyncAction.UploadImage);
 			});
-		},
-		function(error) {
-			if (Asc.c_oAscError.ID.No !== error) {
-				t.sendEvent("asc_onError", error, Asc.c_oAscError.Level.NoCritical);
+		}
+		else {
+			function addStamp() {
+				oDoc.DoAction(function() {
+					oDoc.AddStampAnnot(sType, oDoc.Viewer.currentPage);
+				}, AscDFH.historydescription_Pdf_AddAnnot, this);
 			}
 	
-			t.sync_StartAction(Asc.c_oAscAsyncActionType.BlockInteraction, Asc.c_oAscAsyncAction.UploadImage);
-		});
+			if (oDoc.checkFonts(["Arial"], addStamp)) {
+				addStamp();
+			}
+		}
+		
 	};
-	
+
 	/////////////////////////////////////////////////////////////
 	///////// For drawings
 	////////////////////////////////////////////////////////////
@@ -1796,7 +1811,7 @@
 						oOptionObject.AddImage(oImage);
 					}
 					else if (oOptionObject.isStamp) {
-						oDoc.AddStampAnnot(undefined, oDoc.Viewer.currentPage, oImage);
+						oDoc.AddStampAnnot(AscPDF.STAMP_TYPES.Image, oDoc.Viewer.currentPage, oImage);
 					}
 				}
 				else {

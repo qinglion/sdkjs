@@ -651,6 +651,27 @@ CParagraphStructure.prototype.checkWord = function() {
     }
 };
 
+function CShapeStructure()
+{
+    CTableStructure.call(this);
+    this.m_nType = DRAW_COMMAND_SHAPE;
+}
+
+CShapeStructure.prototype = Object.create(CTableStructure.prototype);
+CShapeStructure.prototype.constructor = CShapeStructure;
+
+CShapeStructure.prototype.draw = function(graphics, transform, oTheme, oColorMap)
+{
+    for(let i = 0; i < this.m_aBorders.length; ++i)
+    {
+        this.m_aBorders[i].draw(graphics, undefined, transform, oTheme, oColorMap);
+    }
+    for(let i = 0; i < this.m_aContent.length; ++i)
+    {
+        this.m_aContent[i].draw(graphics, transform, oTheme, oColorMap);
+    }
+}
+
 function CTableStructure()
 {
     this.m_nType = DRAW_COMMAND_TABLE;
@@ -844,6 +865,7 @@ var DRAW_COMMAND_DRAWING = 0x05;
 var DRAW_COMMAND_HIDDEN_ELEM = 0x06;
 var DRAW_COMMAND_NO_CREATE_GEOM = 0x07;
 var DRAW_COMMAND_TABLE_ROW = 0x08;
+var DRAW_COMMAND_SHAPE = 0x09;
 
 function GetConstDescription(nConst)
 {
@@ -1261,6 +1283,11 @@ CTextDrawer.prototype.Start_Command = function(commandId, param, index, nType)
             this.m_aStackCurRowMaxIndex[this.m_aStackCurRowMaxIndex.length] = -1;
             break;
         }
+        case DRAW_COMMAND_SHAPE:
+        {
+            oNewStructure = new CShapeStructure();
+            break;
+        }
     }
     if(oNewStructure)
     {
@@ -1327,6 +1354,11 @@ CTextDrawer.prototype.End_Command = function()
         case DRAW_COMMAND_TABLE_ROW:
         {
             this.m_nCurLineIndex = this.m_aStackCurRowMaxIndex.pop();
+            break;
+        }
+        case DRAW_COMMAND_SHAPE:
+        {
+            this.m_aStack.pop();
             break;
         }
     }
@@ -1483,6 +1515,30 @@ CTextDrawer.prototype.Get_PathToDraw = function(bStart, bStart2, x, y, Code)
                     }
                 }
                 oLastObjectToDraw.geometry.bDrawSmart = true;
+                break;
+            }
+            case DRAW_COMMAND_SHAPE:
+            {
+                if(oLastCommand.m_aBorders.length === 0 || bStart2)
+                {
+                    oBrushColor = this.m_oBrush.Color1;
+                    oPenColor = this.m_oPen.Color;
+                    oLastCommand.m_aBorders.push(new ObjectToDraw(this.m_oFill, this.m_oLine, this.Width, this.Height, new Geometry(), this.m_oTransform, x, y));
+                }
+                oLastObjectToDraw = oLastCommand.m_aBorders[oLastCommand.m_aBorders.length - 1];
+
+                if(bStart2)
+                {
+                    if(oLastObjectToDraw.geometry.isEmpty())
+                    {
+                        oLastObjectToDraw.resetBrushPen(this.m_oFill, this.m_oLine, x, y);
+                    }
+                    else
+                    {
+                        oLastCommand.m_aBorders.push(new ObjectToDraw(this.m_oFill, this.m_oLine, this.Width, this.Height, new Geometry(), this.m_oTransform, x, y));
+                        oLastObjectToDraw = oLastCommand.m_aBorders[oLastCommand.m_aBorders.length - 1];
+                    }
+                }
                 break;
             }
             case DRAW_COMMAND_PARAGRAPH:
@@ -2362,6 +2418,7 @@ function GetRectContentWidth(oContent, dMaxWidth)
     window['AscFormat'].DRAW_COMMAND_HIDDEN_ELEM = DRAW_COMMAND_HIDDEN_ELEM;
     window['AscFormat'].DRAW_COMMAND_NO_CREATE_GEOM = DRAW_COMMAND_NO_CREATE_GEOM;
     window['AscFormat'].DRAW_COMMAND_TABLE_ROW = DRAW_COMMAND_TABLE_ROW;
+    window['AscFormat'].DRAW_COMMAND_SHAPE = DRAW_COMMAND_SHAPE;
     window['AscFormat'].CreatePenFromParams = CreatePenFromParams;
     window['AscFormat'].CTextDrawer = CTextDrawer;
     window['AscFormat'].PolygonWrapper = PolygonWrapper;
