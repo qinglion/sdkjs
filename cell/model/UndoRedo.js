@@ -71,7 +71,9 @@ function (window, undefined) {
 	}
 	UndoRedoItemSerializable.prototype = Object.create(AscDFH.CChangesBase.prototype);
 	UndoRedoItemSerializable.prototype.CreateReverseChange = function () {
-
+		if (this.oClass && this.oClass.CreateReverseChange) {
+			return this.oClass.CreateReverseChange();
+		}
 	};
 	UndoRedoItemSerializable.prototype.Serialize = function (oBinaryWriter, collaborativeEditing) {
 		if ((this.oData && this.oData.getType) || (this.oClass && (this.oClass.Save_Changes || this.oClass.WriteToBinary))) {

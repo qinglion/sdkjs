@@ -695,10 +695,6 @@
 			this.decrementCounterLongAction();
 		}
 	};
-	baseEditorsApi.prototype.sync_TryUndoInFastCollaborative = function()
-	{
-		this.sendEvent("asc_OnTryUndoInFastCollaborative");
-	};
 	baseEditorsApi.prototype.asc_setViewMode                 = function()
 	{
 	};

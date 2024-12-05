@@ -951,9 +951,10 @@ var editor;
     return result;
   };
 
-	spreadsheet_api.prototype.sync_CanUndoCallback = function(bCanUndo) {
-		this.handlers.trigger("asc_onCanUndoChanged", bCanUndo);
-
+	spreadsheet_api.prototype.sync_CanUndoCallback = function(canUndo) {
+		if (!this.canUndoRedoByRestrictions())
+			canUndo = false;
+		this.handlers.trigger("asc_onCanUndoChanged", canUndo);
 	};
 	spreadsheet_api.prototype.sync_CanRedoCallback = function(bCanRedo) {
 		this.handlers.trigger("asc_onCanRedoChanged", bCanRedo);
@@ -972,19 +973,20 @@ var editor;
 
 		this._onUpdateDocumentCanSave();
 	};
-  spreadsheet_api.prototype.asc_Undo = function() {
-    if (!this.canUndoRedoByRestrictions())
-      return;
-    this.wb.undo();
-    this.wb.restoreFocus();
-  };
-
-  spreadsheet_api.prototype.asc_Redo = function() {
-    if (!this.canUndoRedoByRestrictions())
-      return;
-    this.wb.redo();
-    this.wb.restoreFocus();
-  };
+	spreadsheet_api.prototype.Undo = spreadsheet_api.prototype.asc_Undo = function () {
+		if (!this.canUndoRedoByRestrictions()) {
+			return;
+		}
+		this.wb.undo();
+		this.wb.restoreFocus();
+	};
+	spreadsheet_api.prototype.Undo = spreadsheet_api.prototype.asc_Redo = function () {
+		if (!this.canUndoRedoByRestrictions()) {
+			return;
+		}
+		this.wb.redo();
+		this.wb.restoreFocus();
+	};
 
   spreadsheet_api.prototype.asc_Resize = function () {
     var oldScale = AscCommon.AscBrowser.retinaPixelRatio;
@@ -3276,6 +3278,7 @@ var editor;
 
 		this.wb = new AscCommonExcel.WorkbookView(this.wbModel, this.controller, this.handlers, this.HtmlElement,
 			this.topLineEditorElement, this, this.collaborativeEditing, this.fontRenderingMode);
+		this.WordControl = {m_oLogicDocument: this.wb};
 
 		this.registerCustomFunctionsLibrary();
 
@@ -3444,8 +3447,6 @@ var editor;
 		// Пересылаем свои изменения
 		if (this.forceSaveUndoRequest)
 		{
-			// AscCommon.CollaborativeEditing.Set_GlobalLock(false);
-			// AscCommon.CollaborativeEditing.Undo();
 			this.collaborativeEditing.Set_GlobalLock(false);
 			this.collaborativeEditing.Undo();
 			this.forceSaveUndoRequest = false;

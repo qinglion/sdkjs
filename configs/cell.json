@@ -75,7 +75,8 @@
 			"common/Drawings/Metafile.js",
 			"common/libfont/textmeasurer.js",
 			"common/Drawings/WorkEvents.js",
-			
+
+			"word/Editor/History.js",
 			"cell/model/History.js",
 
 			"common/Shapes/EditorSettings.js",

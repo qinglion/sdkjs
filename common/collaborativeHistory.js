@@ -381,7 +381,7 @@
 		AscCommon.History.Remove_LastPoint();
 		this.CoEditing.Clear_DCChanges();
 
-		editor.CoAuthoringApi.saveChanges(changesToSend, null, null, false, this.CoEditing.getCollaborativeEditing());
+		(Asc.editor || editor).CoAuthoringApi.saveChanges(changesToSend, null, null, false, this.CoEditing.getCollaborativeEditing());
 
 		return changesToRecalc;
 	};

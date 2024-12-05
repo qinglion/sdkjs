@@ -401,8 +401,11 @@ function (window, undefined) {
 
 	window['AscCH'].historyitem_UserProtectedRange_Ref = 1;
 
+	let CHistoryWord = AscCommon.CHistory;
 function CHistory(Document)
 {
+	CHistoryWord.call(this, Document);
+
 	this.Index    = -1;
 	this.SavedIndex = null;			// Номер точки отката, на которой произошло последнее сохранение
 	this.ForceSave  = false;       // Нужно сохранение, случается, когда у нас точка SavedIndex смещается из-за объединения точек, и мы делаем Undo
@@ -465,6 +468,7 @@ function CHistory(Document)
 
 	this.oRedoObjectParam = null;
 }
+	CHistory.prototype = Object.create(CHistoryWord.prototype);
 CHistory.prototype.init = function(workbook) {
 	this.workbook = workbook;
 };
@@ -850,7 +854,7 @@ CHistory.prototype.UndoRedoEnd = function (Point, oRedoObjectParam, bUndo) {
         }
     }
 
-	if (oRedoObjectParam.bIsOn)
+	if (oRedoObjectParam && oRedoObjectParam.bIsOn)
 		this.TurnOn();
 
 	if (!bUndo) {
@@ -1521,6 +1525,15 @@ CHistory.prototype.GetSerializeArray = function()
 		let wb = this.workbook && this.workbook.oApi && this.workbook.oApi.wb;
 		if (wb && !wb.canEdit()) {
 			return true;
+		}
+		return false;
+	};
+	CHistory.prototype.Get_DocumentPositionBinary = function()
+	{
+		let wb = this.workbook && this.workbook.oApi && this.workbook.oApi.wb;
+		if (wb) {
+			var PosInfo = wb.Get_DocumentPositionInfoForCollaborative();
+			return AscCommon.CollaborativeEditing.GetDocumentPositionBinary(this.BinaryWriter, PosInfo);
 		}
 		return false;
 	};
