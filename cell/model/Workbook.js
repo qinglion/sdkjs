@@ -18773,6 +18773,7 @@
 		var oFirstCellHyperlink = null;
 
 		let error = false;
+		let firstMergeCellIndex;
 
 		this._setPropertyNoEmpty(null, null,
 			function(cell, nRow0, nCol0, nRowStart, nColStart) {
@@ -18790,6 +18791,9 @@
 							oFirstCellValue = cell.getValueData();
 							oFirstCellRow = cell.nRow;
 							oFirstCellCol = cell.nCol;
+
+							/* we write down the coordinates of the first cell with data, that we will skip when clearing dependencies */
+							firstMergeCellIndex = AscCommonExcel.getCellIndex(oFirstCellRow, oFirstCellCol);
 						}
 					}
 
@@ -18814,7 +18818,14 @@
 			return {errorType: error};
 		}
 
-		this.worksheet.workbook.handlers.trigger("changeDocument", AscCommonExcel.docChangedType.mergeRange, true, this.bbox, this.worksheet.getId());
+		this.worksheet.workbook.handlers.trigger(
+			"changeDocument", 
+			AscCommonExcel.docChangedType.mergeRange, 
+			true, /* arg1 */
+			this.bbox, /* arg2 */
+			this.worksheet.getId(), 
+			firstMergeCellIndex
+		);
 		//правила работы с гиперссылками во время merge(отличются от Excel в случаем областей, например hyperlink: C3:D3 мержим C2:C3)
 		// 1)оставляем все ссылки, которые не полностью лежат в merge области
 		// 2)оставляем многоклеточные ссылки, top граница которых совпадает с top границей merge области, а высота merge > 1 или совпадает с высотой области merge
@@ -19025,7 +19036,14 @@
 		if (dataValidationRanges) {
 			this.worksheet.clearDataValidation(dataValidationRanges, true);
 		}
-		this.worksheet.workbook.handlers.trigger("changeDocument", AscCommonExcel.docChangedType.mergeRange, null, this.bbox, this.worksheet.getId());
+		this.worksheet.workbook.handlers.trigger(
+			"changeDocument", 
+			AscCommonExcel.docChangedType.mergeRange, 
+			null, /* arg1 */
+			this.bbox, /* arg2 */
+			this.worksheet.getId(), 
+			firstMergeCellIndex
+		);
 
 		AscCommon.History.EndTransaction();
 	};

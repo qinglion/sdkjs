@@ -954,11 +954,11 @@
         ws.changeWorksheet("update", val);
       }
     });
-    this.model.handlers.add("changeDocument", function(prop, arg1, arg2, wsId) {
+    this.model.handlers.add("changeDocument", function(prop, arg1, arg2, wsId, fMergeCellIndex) {
       self.SearchEngine && self.SearchEngine.changeDocument(prop, arg1, arg2);
       let ws = wsId && self.getWorksheetById(wsId, true);
       if (ws) {
-        ws.traceDependentsManager.changeDocument(prop, arg1, arg2);
+        ws.traceDependentsManager.changeDocument(prop, arg1, arg2, fMergeCellIndex);
       }
     });
     this.model.handlers.add("showWorksheet", function(wsId) {
