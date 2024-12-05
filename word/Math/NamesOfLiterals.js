@@ -2398,7 +2398,7 @@
 							null
 						);
 						oFraction.SetReviewTypeWithInfo(oTokens.style.reviewData.reviewType, oTokens.style.reviewData.reviewInfo);
-						if (oTokens.style.reviewData.reviewInfo)
+						if (oTokens.style.reviewData.reviewInfo && oFraction.ReviewInfo)
 							oFraction.ReviewInfo.Update();
 
 						UnicodeArgument(
@@ -5426,7 +5426,7 @@
 		this.style		= undefined;
 		this.reviewData	= {
 			reviewType : reviewtype_Common,
-			reviewInfo : new CReviewInfo()
+			reviewInfo : new AscWord.ReviewInfo()
 		}
 		this.mathPrp	= new CMPrp();
 		this.metaData	= new MathMetaData();
@@ -5538,21 +5538,31 @@
 	};
 	MathTextAdditionalData.prototype.IsReviewDataEqual = function (oContent)
 	{
+		let reviewType = undefined;
+		let reviewInfo = undefined;
+		
 		if (oContent instanceof MathTextAdditionalData)
 		{
-			if (this.reviewData.reviewType === undefined || oContent.reviewData.reviewInfo === undefined)
-				return true;
-			return this.reviewData.reviewType === oContent.reviewData.reviewType
-				&& this.reviewData.reviewInfo.IsEqual(oContent.reviewData.reviewInfo, false)
+			reviewType = oContent.reviewData.reviewType;
+			reviewInfo = oContent.reviewData.reviewInfo;
 		}
-		else
+		else if (oContent.GetReviewType)
 		{
-			if (oContent.ReviewInfo === undefined)
-				return false;
-
-			return this.reviewData.reviewType === oContent.ReviewType
-				&& this.reviewData.reviewInfo.IsEqual(oContent.ReviewInfo, false)
+			reviewType = oContent.GetReviewType();
+			reviewInfo = oContent.GetReviewInfo();
 		}
+		
+		if (this.reviewData.reviewType !== reviewType)
+			return false;
+		
+		if (!this.reviewData.reviewInfo && !reviewInfo)
+			return true;
+		
+		if (!this.reviewData.reviewInfo || !reviewInfo)
+			return false;
+		
+		return this.reviewData.reviewInfo.IsEqual(reviewInfo, false)
+		
 	}
 	MathTextAdditionalData.prototype.SetAdditionalDataFromContent = function (oContent, isCtrPrp)
 	{
@@ -5582,8 +5592,17 @@
 		}
 
 		this.SetAdditionalStyleData(oPr);
-		this.SetAdditionalReviewType(oContent.ReviewType);
-		this.SetAdditionalReviewInfo(oContent.ReviewInfo);
+		
+		if (oContent.GetReviewType)
+		{
+			this.SetAdditionalReviewType(oContent.GetReviewType());
+			this.SetAdditionalReviewInfo(oContent.GetReviewInfo());
+		}
+		else
+		{
+			this.SetAdditionalReviewType(undefined);
+			this.SetAdditionalReviewInfo(undefined);
+		}
 
 		if (oContent instanceof ParaRun)
 			this.SetMathPrp(oContent.MathPrp);
