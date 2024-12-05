@@ -11209,11 +11209,58 @@
 	 * @see office-js-api/Examples/{Editor}/ApiRange/Methods/SetAutoFilter.js
 	 */
 	ApiRange.prototype.SetAutoFilter = function (Field, Criteria1, Operator, Criteria2, VisibleDropDown) {
-		//firstly add filter
-		this.range.worksheet.addAutoFilter(null, this.range.bbox);
 
 		if (Criteria2 && Array.isArray(Criteria2)) {
 			private_MakeError('Error! Criteria2 must be string!');
+			return;
+		}
+
+		//check on number
+		if (Field) {
+			Field = Field - 0;
+			if (isNaN(Field)) {
+				private_MakeError('Error! Field range error!');
+				return;
+			}
+		}
+		//field must be more than 0
+		if (Field && Field < 1) {
+			private_MakeError('Error! Field range error!');
+			return;
+		}
+
+		let ws = this.range.worksheet;
+		let selectionRange = ws.selectionRange.getLast();
+
+		let _range;
+		if (ws.AutoFilter) {
+			_range = ws.AutoFilter.Ref;
+		} else {
+			let filterProps = ws.autoFilters.getAddFormatTableOptions(selectionRange);
+			_range = filterProps && filterProps.range && AscCommonExcel.g_oRangeCache.getAscRange(filterProps.range);
+		}
+
+		//field must be between c1/c2 of range
+		if (Field && _range && Field > (_range.c2 - _range.c1 + 1)) {
+			private_MakeError('Error! Field range error!');
+			return;
+		}
+
+		//firstly add filter or remove filter
+		if (Field == null && ws.AutoFilter) {
+			ws.changeAutoFilter(null, Asc.c_oAscChangeFilterOptions.filter, false);
+			return;
+		} else if (!ws.AutoFilter) {
+			ws.addAutoFilter(null, this.range.bbox);
+		}
+
+		if (Field == null) {
+			return;
+		}
+
+		if (Criteria1 == null) {
+			//clean current filter
+			ws.clearFilterColumn(Asc.range(_range.c1 + Field, _range.r1, _range.c1 + Field, _range.r1).getName());
 			return;
 		}
 
@@ -11330,8 +11377,6 @@
 			colorFilter.asc_setCellColor(isCellColor ? null : false);
 			colorFilter.asc_setCColor((isCellColor && color == 'transparent' || !isCellColor && color == '#000000') ? null : Common.Utils.ThemeColor.getRgbColor(color));
 		};
-
-		//Asc.c_oAscDynamicAutoFilter.q4
 
 		let toDynamicConst = function (val) {
 			let res = null;
