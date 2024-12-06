@@ -1151,8 +1151,8 @@
 
         let aOrigRect = this.GetOrigRect();
 
-        let origX   = aOrigRect[0] >> 0;
-        let origY   = aOrigRect[1] >> 0;
+        let origX   = aOrigRect[0];
+        let origY   = aOrigRect[1];
         let X       = originView.x;
         let Y       = originView.y;
 
@@ -1168,7 +1168,7 @@
         croppedCanvas.height    = nHeight;
 
         if (this.IsPressed() == false) {
-            oGraphicsPDF.DrawImageXY(originView, origX, origY);
+            oGraphicsPDF.DrawImageXY(originView, origX, origY, undefined, true);
             return;
         }
 
@@ -1176,7 +1176,7 @@
             switch (highlightType) {
                 case AscPDF.BUTTON_HIGHLIGHT_TYPES.none:
                 case AscPDF.BUTTON_HIGHLIGHT_TYPES.push:
-                    oGraphicsPDF.DrawImageXY(originView, origX, origY);
+                    oGraphicsPDF.DrawImageXY(originView, origX, origY, undefined, true);
                     break;
                 case AscPDF.BUTTON_HIGHLIGHT_TYPES.invert: {
                     let xCenter = oViewer.width >> 1;
@@ -1221,7 +1221,7 @@
                     oCroppedCtx.globalCompositeOperation='difference';
                     oCroppedCtx.fillStyle='white';
                     oCroppedCtx.fillRect(0, 0, croppedCanvas.width,croppedCanvas.height);
-                    oGraphicsPDF.DrawImageXY(oCroppedCtx.canvas, origX, origY);
+                    oGraphicsPDF.DrawImageXY(oCroppedCtx.canvas, origX, origY, undefined, true);
                     break;
                 }
                 case AscPDF.BUTTON_HIGHLIGHT_TYPES.outline: {
@@ -1240,7 +1240,7 @@
                     oCroppedCtx.globalCompositeOperation='source-over';
                     oCroppedCtx.drawImage(originView, nLineWidth * oTr.sy, nLineWidth * oTr.sy, nWidth - 2 * nLineWidth * oTr.sy, nHeight - 2 * nLineWidth * oTr.sy, nLineWidth * oTr.sy, nLineWidth * oTr.sy, nWidth -  2 * nLineWidth * oTr.sy, nHeight - 2 * nLineWidth * oTr.sy);
     
-                    oGraphicsPDF.DrawImageXY(oCroppedCtx.canvas, origX, origY);
+                    oGraphicsPDF.DrawImageXY(oCroppedCtx.canvas, origX, origY, undefined, true);
                     break;
                 }
             }
