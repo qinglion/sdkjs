@@ -31,7 +31,7 @@
  */
 
 $(function() {
-	var api = new Asc.asc_docs_api({
+	var api = new Asc.VisioEditorApi({
 		'id-view': 'editor_sdk'
 	});
 	AscCommon.g_oTableId.init();
@@ -46,7 +46,7 @@ $(function() {
 		// Read and parse vsdx file
 		const fileBase64 = emptyVsdxFileBase64;
 
-		const api = new Asc.asc_docs_api({'id-view': 'editor_sdk'});
+		const api = new Asc.VisioEditorApi({'id-view': 'editor_sdk'});
 		api.InitEditor();
 		let vsdxUint8Array = AscCommon.Base64.decode(fileBase64);
 		const openResOriginal = api.OpenDocumentFromZip(vsdxUint8Array);
@@ -56,7 +56,7 @@ $(function() {
 		addSquarePolygon(doc, 4, 6);
 
 		// serialize
-		api.saveDocumentToZip(api.Document, AscCommon.c_oEditorId.Draw, function (data) {
+		api.saveDocumentToZip(api.Document, AscCommon.c_oEditorId.Visio, function (data) {
 			if (data) {
 				AscCommon.DownloadFileFromBytes(data, "fileName", AscCommon.openXml.GetMimeType("vsdx"));
 			}
@@ -67,7 +67,7 @@ $(function() {
 		let pages = doc.getPages();
 		if (pages.length) {
 			let firstPage = doc.getPageContents(0);
-			let shape = AscCommonDraw.createShape({
+			let shape = AscVisio.createShape({
 				width: 2,
 				height: 1,
 				fillForegroundColor: "#ffffff",
@@ -92,7 +92,7 @@ $(function() {
 			let firstPageShapes = firstPage.shapes;
 			if (firstPageShapes.length) {
 				let rectangle = firstPageShapes.find(function(shape) { return shape.name === "Rectangle"; });
-				let colorCell = new AscCommonDraw.Cell_Type();
+				let colorCell = new AscVisio.Cell_Type();
 				colorCell.n = "FillForegnd";
 				colorCell.v = colorHex;
 

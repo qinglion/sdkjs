@@ -5175,8 +5175,9 @@
 				prefixFile = checkPrefix;
 				lastSlash = "\\";
 			}
-			for (var i = res.length - 1; i >= 0; i--) {
-				if (res[i] === lastSlash || res[i] === ":") {
+
+			for (let i = res.length - 1; i >= 0; i--) {
+				if (res[i] === lastSlash || res[i] === ":" || (res[i] === "\\" && res.indexOf(":") !== -1)) {
 					return {path: prefixFile + res.substring(0, i + 1), name: res.substring(i + 1, res.length)};
 				}
 			}
@@ -5937,6 +5938,7 @@
 		this.userProtectedRanges = [];
 
 		this.bFillHandleRightClick = false;
+		this.nFillMenuChosenProp = null;
 		this.activeFillType = null;
 		this.timelines = [];
 		this.changedArrays = null;
@@ -8939,6 +8941,9 @@
 		{
 			if(this.TableParts[i].DisplayName.toLowerCase() === tableName.toLowerCase())
 			{
+				/* if there is a quote before a special character (i.e. escaping was used), remove it, while the quote itself is also a special character */
+				columnName = parserHelp.escapeTableCharacters(columnName, false);
+
 				res = this.TableParts[i].getTableIndexColumnByName(columnName);
 				break;
 			}
@@ -13626,6 +13631,22 @@
 	Worksheet.prototype.setFillHandleRightClick = function (bFillHandleRightClick) {
 		this.bFillHandleRightClick = bFillHandleRightClick;
 	};
+	/**
+	 * The method returns the value of chosen property from context menu for autofill.
+	 * @memberof Worksheet
+	 * @returns {Asc.c_oAscFillType}
+	 */
+	Worksheet.prototype.getFillMenuChosenProp = function () {
+		return this.nFillMenuChosenProp;
+	};
+	/**
+	 * The method sets the value of chosen property from context menu for autofill.
+	 * @memberof Worksheet
+	 * @param {Asc.c_oAscFillType} nFillMenuChosenProp
+	 */
+	Worksheet.prototype.setFillMenuChosenProp = function (nFillMenuChosenProp) {
+		this.nFillMenuChosenProp = nFillMenuChosenProp;
+	}
 	Worksheet.prototype.getActiveFillType = function () {
 		return this.activeFillType;
 	};
@@ -20627,7 +20648,7 @@
 			var bReverse = false;
 			if(nIndex < 0)
 				bReverse = true;
-			var oPromoteHelper = new PromoteHelper(bVertical, bReverse, from);
+			let oPromoteHelper = new PromoteHelper(bVertical, bReverse, from);
 			oPromoteHelper.setFillHandleRightClick(wsFrom.getFillHandleRightClick());
 			let aInputDaysOfWeek = _addAInputTimePeriod(oDefaultCultureInfo.DayNames, false);
 			let aInputShortDaysOfWeek = _addAInputTimePeriod(oDefaultCultureInfo.AbbreviatedDayNames, false);
@@ -20731,8 +20752,8 @@
 					bCopy = !bCopy;
 				}
 			}
+			oPromoteHelper.setFillMenuChosenProp(wsFrom.getFillMenuChosenProp());
 			oPromoteHelper.finishAdd(bCopy);
-			oPromoteHelper.setFillHandleRightClick(false);
 			//заполняем ячейки данными
 			var nStartRow, nEndRow, nStartCol, nEndCol, nColDx, bRowFirst;
 			if(bVertical)
@@ -21330,7 +21351,14 @@
 			this.nRowLength = this.bbox.r2 - this.bbox.r1 + 1;
 			this.nColLength = this.bbox.c2 - this.bbox.c1 + 1;
 		}
+		// Attributes for work with context menu of autofill.
 		this.bFillHandleRightClick = false;
+		this.nFillMenuChosenProp = null;
+		this.nLastDayInMonth = null;
+		this.nDaysInYear = null;
+		this.nPrevDateValue = null;
+		this.nPrevIntDateValue = null;
+
 		this.bOneSelectedCell = false;
 	}
 	PromoteHelper.prototype = {
@@ -21547,9 +21575,23 @@
 					if(aDigits.length > 0) {
 						let bMixedDateFormat = oFirstData.getIsMixedDateFormat();
 						let bTime = oFirstData.getIsTime();
+						let bDate = oFirstData.getIsDate();
+						let bDateTime = oFirstData.getIsDateTime();
 						let oSequence = null;
+						const aMenuPropsForDate = [oFillType.fillMonths, oFillType.fillYears];
 
-						if (bMixedDateFormat) {
+						// For activating month or year calculate mode in default autofill. Using for data of date format.
+						if (this.getFillMenuChosenProp() == null && bDate && aDigits.length > 1) {
+							this.initFillMenuChosenProp(aDigits, oFirstData.getVal());
+						}
+						let nMenuChosenProp = this.getFillMenuChosenProp();
+						let bIsCalcDateMode = bDate && nMenuChosenProp != null && aMenuPropsForDate.includes(nMenuChosenProp);
+						if (bDate && nMenuChosenProp != null) {
+							let nLastValFromRange = aDigits[aDigits.length - 1].y;
+							this.setPrevDateValue(nLastValFromRange);
+							this.setPrevIntDateValue(nLastValFromRange);
+						}
+						if (bMixedDateFormat || (bIsCalcDateMode && bDateTime && aDigits.length > 2)) {
 							/* In a mixed date format, the promotion sequence should be calculated similarly to the Date format.
 							But, the original array should be saved to use the time portion of the cell with the Date & Time format
 							 as a constant value for the correct sequence. */
@@ -21576,10 +21618,10 @@
 							}
 						}
 						//для дат и чисел с префиксом автозаполняются только целочисленные последовательности
+						let nFirstVal = oFirstData.getVal();
 						let bIsNotIntegerSequence = oSequence.a1 !== parseInt(oSequence.a1);
+						let bDateCalcModeCorrectSeq = bIsCalcDateMode && parseInt(nFirstVal) === Math.round(oSequence.a0);
 						let sPrefix = oFirstData.getPrefix();
-						let bDate = oFirstData.getIsDate();
-						let bDateTime = oFirstData.getIsDateTime();
 						let bDelimiter = oFirstData.getDelimiter();
 						// For Date format
 						let bStepForDateIsZero = bDate && oSequence.a1 === 0;
@@ -21593,7 +21635,7 @@
 							oSequence.a0 = this.bReverse ? aDigits[aDigits.length - 1].y : aDigits[0].y;
 							oSequence.a1 = parseInt(oSequence.a1);
 						}
-						if (bMixedDateFormat) {
+						if (bMixedDateFormat || (bIsCalcDateMode && bDateTime && aDigits.length > 2)) {
 							// The start element needs to add part of the time from the first (or last for reverse sequences) cell
 							// with Date & Time format from the selected range.
 							let aDigitsWithDateTime = aDigits.filter(function(item) {
@@ -21610,16 +21652,16 @@
 							}
 							oSequence.a1 = oSequence.a1 - parseInt(oSequence.a1);
 						}
-						if(!((sPrefix != null || (bDate && !bDateTime && !bMixedDateFormat && !bTime)) && bIsNotIntegerSequence)) {
+						if(!((sPrefix != null || (bDate && !bDateTime && !bMixedDateFormat && !bTime)) && bIsNotIntegerSequence && !bDateCalcModeCorrectSeq)) {
 							// If for Date or Date & Time format the sequence is not correct or sequence step is 0, skip work with oSequence
 							if (bDate) {
 								if (bStepForDateIsZero && !bDateTime && !bMixedDateFormat) {
 									return;
 								}
-								if (!bIntStartValue && !bDateTime && !bTime) {
+								if (!bIntStartValue && !bDateCalcModeCorrectSeq && !bDateTime && !bTime) {
 									return;
 								}
-								if (bDateTime && bDayOfDateDiff && !bDateTimeSeqIsCorrect) {
+								if (bDateTime && bDayOfDateDiff && !bDateTimeSeqIsCorrect && !bDateCalcModeCorrectSeq) {
 									return;
 								}
 							}
@@ -21674,6 +21716,10 @@
 							let oFirstRowData = row[nFirstColIndex];
 							oFirstRowData.setIsMixedDateFormat(true);
 							oFirstRowData.setIsDateTime(false);
+							if (rowDataNext) {
+								rowDataNext.setIsMixedDateFormat(true);
+								rowDataNext.setIsDateTime(false);
+							}
 						}
 						var bAddToSequence = false;
 						let nVal = rowData.getVal();
@@ -21713,11 +21759,19 @@
 					oRes.setCurValue(null);
 					if(oRes.getSequence() != null) {
 						let sequence = oRes.getSequence();
+						// Define modes fill: "By Month", " By Week" or "By Years" for values in Date format.
+						let nFillMenuChosenProp = this.getFillMenuChosenProp();
+						const aMenuPropsForDate = [oFillType.fillWeekdays, oFillType.fillMonths, oFillType.fillYears];
 						if(oRes.getPrefix() != null) {
 							oRes.setCurValue(Math.abs(sequence.a1 * sequence.nX + sequence.a0));
 						} else if (oRes.getIsDate() && !oRes.getTimePeriods()) {
-							let nCurValue = sequence.a1 * sequence.nX + sequence.a0;
-							if (nCurValue >= 0 || (oRes.getIsDateTime() && parseInt(sequence.a1) !== sequence.a1)) {
+							let nCurValue;
+							if (nFillMenuChosenProp && aMenuPropsForDate.includes(nFillMenuChosenProp)) {
+								nCurValue = this.calculateDate(oRes);
+							} else {
+								nCurValue = sequence.a1 * sequence.nX + sequence.a0;
+							}
+							if (nCurValue >= 0 || (oRes.getIsDateTime() && parseInt(sequence.a1) !== sequence.a1 && sequence.a1 > -1)) {
 								oRes.setCurValue(nCurValue);
 							} else if (oRes.getIsTime() && nCurValue < 0) {
 								// Reset nX and start from beginning
@@ -21742,9 +21796,182 @@
 		setFillHandleRightClick: function (bFillHandleRightClick) {
 			this.bFillHandleRightClick = bFillHandleRightClick;
 		},
+		/**
+		 * Returns chosen property from context menu.
+		 * @returns {Asc.c_oAscFillType}
+		 */
+		getFillMenuChosenProp: function () {
+			return this.nFillMenuChosenProp;
+		},
+		/**
+		 * Sets chosen property from context menu.
+		 * @param {Asc.c_oAscFillType} nFillMenuChosenProp
+		 */
+		setFillMenuChosenProp: function (nFillMenuChosenProp) {
+			this.nFillMenuChosenProp = nFillMenuChosenProp;
+		},
+		/**
+		 * Returns the last day of a month.
+		 * @returns {number}
+		 */
+		getLastDayOfMonth: function () {
+			return this.nLastDayInMonth;
+		},
+		/**
+		 * Sets the last day of a month taken from ExcelDateValue.
+		 * @param {number} nExcelDateValue
+		 */
+		setLastDayOfMonth: function (nExcelDateValue) {
+			const CURRENT_MONTH = 0;
+			let dtLastDayInMonth = AscCommonExcel.getLastDayInMonth(nExcelDateValue, CURRENT_MONTH);
+
+			this.nLastDayInMonth = dtLastDayInMonth.getDate();
+		},
+		/**
+		 * Returns days in year.
+		 * @returns {number}
+		 */
+		getDaysInYear: function () {
+			return this.nDaysInYear;
+		},
+		/**
+		 * Sets days in year taken from ExcelDateValue.
+		 * @param {number} nExcelDateValue
+		 */
+		setDaysInYear: function (nExcelDateValue) {
+			const oDayCountBasis = AscCommonExcel.DayCountBasis;
+
+			this.nDaysInYear = AscCommonExcel.daysInYear(nExcelDateValue, oDayCountBasis.ActualActual).getValue();
+		},
+		/**
+		 * Returns previous date value while calculating for modes: "Fill months", "Fill years" and "Fill weekdays".
+		 * @returns {number}
+		 */
+		getPrevDateValue: function () {
+			return this.nPrevDateValue;
+		},
+		/**
+		 * Sets previous date value while calculating for modes: "Fill months", "Fill years" and "Fill weekdays".
+		 * @param {number} nPrevDateValue
+		 */
+		setPrevDateValue: function (nPrevDateValue) {
+			this.nPrevDateValue = nPrevDateValue;
+		},
+		/**
+		 * Returns previous integer date value while calculating for modes: "Fill months", "Fill years".
+		 * Using when step is fractional number.
+		 * @returns {number}
+		 */
+		getPrevIntDateValue: function () {
+			return this.nPrevIntDateValue;
+		},
+		/**
+		 * Sets previous integer date value while calculating for modes: "Fill months", "Fill years".
+		 * Using when step is fractional number.
+		 * @param {number} nPrevIntDateValue
+		 */
+		setPrevIntDateValue: function (nPrevIntDateValue) {
+			this.nPrevIntDateValue = nPrevIntDateValue;
+		},
+		/**
+		 * Initializes property of autofill context menu if in default autofill, has the required step to needed mode.
+		 * Modes: "Fill months", "Fill years".
+		 * @param {{x:number, y:number}[]} aDigits
+		 * @param {number} nFirstValue
+		 */
+		initFillMenuChosenProp: function (aDigits, nFirstValue) {
+			const SECOND_VALUE_INDEX = 1;
+			const oFillType = Asc.c_oAscFillType;
+			const nSecondValue = aDigits[SECOND_VALUE_INDEX].y;
+			const dtFirstValue = new Asc.cDate().getDateFromExcel(nFirstValue < 60 ? nFirstValue + 1 : nFirstValue);
+			const dtSecondValue = new Asc.cDate().getDateFromExcel(nSecondValue < 60 ? nSecondValue + 1 : nSecondValue);
+
+			let nDayFirstValue = dtFirstValue.getDate();
+			let nMonthFirstValue = dtFirstValue.getMonth();
+			let nYearFirstValue = dtFirstValue.getFullYear();
+
+			let nDaySecondValue = dtSecondValue.getDate();
+			let nMonthSecondValue = dtSecondValue.getMonth();
+			let nYearSecondValue = dtSecondValue.getFullYear();
+
+			if (nDayFirstValue === nDaySecondValue && nMonthFirstValue !== nMonthSecondValue && nYearFirstValue === nYearSecondValue) {
+				this.setFillMenuChosenProp(oFillType.fillMonths);
+			} else if (nDayFirstValue === nDaySecondValue && nMonthFirstValue === nMonthSecondValue && nYearFirstValue !== nYearSecondValue) {
+				this.setFillMenuChosenProp(oFillType.fillYears);
+			}
+		},
+		/**
+		 * Calculates date based on step and modes: "Fill months", "Fill years" or "Fill weekdays".
+		 * @param {cDataRow} oDataRow
+		 * @returns {number}
+		 */
+		calculateDate: function (oDataRow) {
+			const oSequence = oDataRow.getSequence();
+			const nChosenMenuItem = this.getFillMenuChosenProp();
+			let nStep =  null;
+			let nStepDivider = null;
+			let nUnitDate = null;
+
+			// Find last day of month and days in year for correct work with month and year mode.
+			if (this.getLastDayOfMonth() == null && this.getDaysInYear() == null) {
+				let nFirstVal = oDataRow.getVal();
+				this.setLastDayOfMonth(nFirstVal);
+				this.setDaysInYear(nFirstVal);
+			}
+			switch (nChosenMenuItem) {
+				case Asc.c_oAscFillType.fillWeekdays:
+					nUnitDate = oSeriesDateUnitType.weekday;
+					nStepDivider = 1;
+					break;
+				case Asc.c_oAscFillType.fillMonths:
+					nUnitDate = oSeriesDateUnitType.month
+					nStepDivider = this.getLastDayOfMonth();
+					break;
+				case Asc.c_oAscFillType.fillYears:
+					nUnitDate = oSeriesDateUnitType.year
+					nStepDivider = this.getDaysInYear();
+					break;
+			}
+			nStep = this.getIsOneSelectedCell() ? oSequence.a1 : Math.round(oSequence.a1 / nStepDivider);
+			const oCellInfo = {
+				step: nStep,
+				dateUnit: nUnitDate,
+				previousValue: this.getPrevDateValue(),
+				previousIntValue: this.getPrevIntDateValue()
+			};
+			const oResult = _calculateDate(oCellInfo, true);
+			let bFloatDate = oDataRow.getIsDateTime() || oDataRow.getIsMixedDateFormat();
+			// Logic for time.
+			if (bFloatDate && !this.getFillHandleRightClick()) {
+				let nTimePart = oSequence.a0 - parseInt(oSequence.a0);
+				if (oDataRow.getIsDateTime() && this.nColLength === 2) {
+					nTimePart = oCellInfo.previousValue - parseInt(oCellInfo.previousValue);
+					nTimePart += (oSequence.a1 - parseInt(oSequence.a1));
+				}
+				oResult.previousValue += nTimePart;
+				if (oResult.previousIntValue) {
+					oResult.previousIntValue += nTimePart;
+				}
+				oResult.currentValue += nTimePart;
+			}
+			this.setPrevDateValue(oResult.previousValue);
+			if (oResult.previousIntValue) {
+				this.setPrevIntDateValue(oResult.previousIntValue);
+			}
+
+			return oResult.currentValue;
+		},
+		/**
+		 * Returns flag that recognizes it as one selected cell.
+		 * @returns {boolean}
+		 */
 		getIsOneSelectedCell: function () {
 			return this.bOneSelectedCell;
 		},
+		/**
+		 * Sets flag that recognizes it as one selected cell.
+		 * @param {boolean} bOneSelectedCell
+		 */
 		setIsOneSelectedCell: function (bOneSelectedCell) {
 			this.bOneSelectedCell = bOneSelectedCell;
 		}
@@ -22023,7 +22250,7 @@
 	/**
 	 * Method returns sequence of calculated step and start cell. For fill next cells in autofill.
 	 * @memberof cDataRow
-	 * @returns {null|object}
+	 * @returns {null|{a0:number, a1:number, nX:number}}
 	 */
 	cDataRow.prototype.getSequence = function() {
 		return this.oSequence;
@@ -22031,7 +22258,7 @@
 	/**
 	 * Method sets sequence of calculated step and start cell. For fill next cells in autofill.
 	 * @memberof cDataRow
-	 * @param {object} oSequence
+	 * @param {{a0:number, a1:number, nX:number}} oSequence
 	 */
 	cDataRow.prototype.setSequence = function (oSequence) {
 		this.oSequence = oSequence;
@@ -22573,22 +22800,20 @@
 
 		return nValue;
 	}
+
 	/**
-	 * Fills current value for Date type
-	 * @memberof CSerial
-	 * @param {object} oFilledLine - Value of first cell in line
-	 * @param {number} oFilledLine.nValue - Value of first cell in line
-	 * @param {Range} oFilledLine.oToRange - Range of cells which will be fill
-	 * @param {Cell} oFilledLine.oCell - First cell of line
-	 * @param {Range} oFilledLine.oFilledRange - Range with filled cells
-	 * @param {number} oFilledLine.nIndex - Index of shift
-	 * @returns {number} Current value in ExcelDate format
+	 * Calculates date for autofill and Series.
+	 * @param {{step:number, dateUnit:c_oAscDateUnitType, previousValue:number, previousIntValue:number}} oCellInfo
+	 * @param {boolean} bAutofill
+	 * @returns {{previousValue:number, currentValue:number, previousIntValue:number}}
 	 * @private
 	 */
-	CSerial.prototype._fillExcelDate = function (oFilledLine) {
-		const nStep = this.getStep();
-		const nDateUnit = this.getDateUnit();
-		let nPrevVal = this.getPrevValue();
+	function _calculateDate(oCellInfo, bAutofill) {
+		const nStep = oCellInfo.step;
+		const nDateUnit = oCellInfo.dateUnit;
+		let nPrevValue = oCellInfo.previousValue;
+		let nPrevIntValue = oCellInfo.previousIntValue;
+		let oReturn = {};
 
 		// Condition: nPrevVal < 60 is temporary solution for "01/01/1900 - 01/03/1900" dates
 		/* TODO Need make system solution for cDate class for case when excelDate is 1 (01/01/1900).
@@ -22601,7 +22826,7 @@
 			const aWeekdays = [1, 2, 3, 4, 5];
 			const MAX_LIMIT_STEP = 2147483647;
 			let oCurrentValDate = null;
-			let nCurrentVal = nPrevVal;//_smartRound(nPrevVal + nStep, nStep);
+			let nCurrentVal = nPrevValue;
 			let i = 0;
 			let nIntStep = Math.floor(nStep);
 			let nFinalStep = Math.sign(nIntStep) + _smartRound(nStep - nIntStep, nStep);
@@ -22610,8 +22835,8 @@
 					nCurrentVal = _smartRound(nCurrentVal + nFinalStep, nStep);
 				}
 				// Convert number to cDate object
-				oCurrentValDate = new Asc.cDate().getDateFromExcel(nPrevVal < 60 ? nCurrentVal + 1 : nCurrentVal);
-				let nDayOfWeek = nPrevVal < 60 ? oCurrentValDate.getDay() - 1 : oCurrentValDate.getDay();
+				oCurrentValDate = new Asc.cDate().getDateFromExcel(nPrevValue < 60 ? nCurrentVal + 1 : nCurrentVal);
+				let nDayOfWeek = nPrevValue < 60 ? oCurrentValDate.getDay() - 1 : oCurrentValDate.getDay();
 				if (!aWeekdays.includes(nDayOfWeek)) {
 					while (true) {
 						nCurrentVal += Math.sign(nStep);
@@ -22626,52 +22851,83 @@
 					i++;
 				}
 			} while (i < Math.abs(nIntStep) && Math.abs(nIntStep) <= MAX_LIMIT_STEP);
-			this.setPrevValue(nCurrentVal);
-			return nCurrentVal < 0 ? nCurrentVal : oCurrentValDate.getExcelDate();
+
+			oReturn.previousValue = nCurrentVal;
+			oReturn.currentValue = nCurrentVal < 0 ? nCurrentVal : oCurrentValDate.getExcelDate();
+			return oReturn;
 		}
 
-		let nCurrentVal = _smartRound(nPrevVal + nStep, nStep);
-		this.setPrevValue(nCurrentVal);
-
+		let nCurrentVal = _smartRound(nPrevValue + nStep, nStep);
+		oReturn.previousValue = nCurrentVal;
 		if (nDateUnit === oSeriesDateUnitType.day) {
 			if (nStep > -1 && nStep < 0 && nCurrentVal < 0)  {
-				this.setPrevValue(1 + nCurrentVal);
-				return 1 + nCurrentVal;
+				oReturn.previousValue = nCurrentVal + 1;
+				oReturn.currentValue = nCurrentVal + 1;
+				return oReturn;
 			}
-			return nCurrentVal;
+			oReturn.currentValue = nCurrentVal;
+			return oReturn;
 		}
-
-		let nIntegerVal = oFilledLine.nValue;
+		let nIntegerVal = nPrevIntValue;
+		let oCurrentValDate = new Asc.cDate().getDateFromExcel(nIntegerVal < 60 ? nIntegerVal + 1 : nIntegerVal);
+		let nFinalStep = _smartRound(nCurrentVal - nIntegerVal, nStep);
+		if (nFinalStep < 0 && !bAutofill) {
+			oReturn.currentValue = NaN;
+			return oReturn;
+		}
 		if (nDateUnit === oSeriesDateUnitType.month) {
-			let oCurrentValDate = new Asc.cDate().getDateFromExcel(nIntegerVal < 60 ? nIntegerVal + 1 : nIntegerVal);
-			let nFinalStep = _smartRound(nCurrentVal - nIntegerVal, nStep);
-			if (nFinalStep < 0) {
-				return NaN;
-			}
 			if (Number.isInteger(nFinalStep)) {
 				oCurrentValDate.addMonths(nFinalStep);
-				oFilledLine.nValue = oCurrentValDate.getExcelDate();
-				this.setPrevValue(oFilledLine.nValue);
-				return oFilledLine.nValue;
+				oReturn.currentValue = oCurrentValDate.getExcelDate();
+				oReturn.previousIntValue = oReturn.currentValue;
+				oReturn.previousValue = oReturn.currentValue;
+				return oReturn;
 			}
 			oCurrentValDate.addMonths(nFinalStep);
-			return oCurrentValDate.getExcelDate();
+			oReturn.currentValue = oCurrentValDate.getExcelDate();
+			return oReturn;
 		}
 		if (nDateUnit === oSeriesDateUnitType.year) {
-			let oCurrentValDate = new Asc.cDate().getDateFromExcel(nIntegerVal < 60 ? nIntegerVal + 1 : nIntegerVal);
-			let nFinalStep = _smartRound(nCurrentVal - nIntegerVal, nStep);
-			if (nFinalStep < 0) {
-				return NaN;
-			}
 			if (Number.isInteger(nFinalStep)) {
 				oCurrentValDate.addYears(nFinalStep);
-				oFilledLine.nValue = oCurrentValDate.getExcelDate();
-				this.setPrevValue(oFilledLine.nValue);
-				return oFilledLine.nValue;
+				oReturn.currentValue = oCurrentValDate.getExcelDate();
+				oReturn.previousIntValue = oReturn.currentValue;
+				oReturn.previousValue = oReturn.currentValue;
+				return oReturn;
 			}
 			oCurrentValDate.addYears(nFinalStep);
-			return oCurrentValDate.getExcelDate();
+			oReturn.currentValue = oCurrentValDate.getExcelDate();
+			return oReturn;
 		}
+	}
+
+	/**
+	 * Fills current value for Date type
+	 * @memberof CSerial
+	 * @param {object} oFilledLine - Value of first cell in line
+	 * @param {number} oFilledLine.nValue - Value of first cell in line
+	 * @param {Range} oFilledLine.oToRange - Range of cells which will be fill
+	 * @param {Cell} oFilledLine.oCell - First cell of line
+	 * @param {Range} oFilledLine.oFilledRange - Range with filled cells
+	 * @param {number} oFilledLine.nIndex - Index of shift
+	 * @returns {number} Current value in ExcelDate format
+	 * @private
+	 */
+	CSerial.prototype._fillExcelDate = function (oFilledLine) {
+		const oCellInfo = {
+			step: this.getStep(),
+			dateUnit: this.getDateUnit(),
+			previousValue: this.getPrevValue(),
+			previousIntValue: oFilledLine.nValue
+		}
+
+		const oResult = _calculateDate(oCellInfo, false);
+		this.setPrevValue(oResult.previousValue);
+		if (oResult.previousIntValue) {
+			oFilledLine.nValue = oResult.previousIntValue;
+		}
+
+		return oResult.currentValue;
 	};
 	/**
 	 * Fills cells in Linear and Growth regression except Trend mode. Works with:

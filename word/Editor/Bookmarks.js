@@ -123,6 +123,9 @@ CParagraphBookmark.prototype.GetXY = function()
 };
 CParagraphBookmark.prototype.GoToBookmark = function()
 {
+	// Данный метод широко используется в макросах, если будет переделываться, то надо иметь ввиду, что сейчас
+	// мы считаем, что курсор ставится ПЕРЕД меткой закладки
+	
 	var oParagraph = this.Paragraph;
 	if (!oParagraph)
 		return;
@@ -168,17 +171,17 @@ CParagraphBookmark.prototype.ChangeBookmarkName = function(sNewName)
 {
 	var oParagraph = this.Paragraph;
 	if (!oParagraph)
-		return;
+		return null;
 
 	var oCurPos = oParagraph.Get_PosByElement(this);
 	if (!oCurPos)
-		return;
+		return null;
 
 	var oParent      = this.GetParent();
 	var nPosInParent = this.GetPosInParent(oParent);
 
 	if (!oParent || -1 === nPosInParent)
-		return;
+		return null;
 
 	var oNewMark = new CParagraphBookmark(this.IsStart(), this.GetBookmarkId(), sNewName);
 	oParent.RemoveFromContent(nPosInParent, 1);

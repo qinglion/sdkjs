@@ -1879,13 +1879,13 @@
                         Lock.Set_Type(AscCommon.c_oAscLockTypes.kLockTypeOther, true);
                     }
 
-					if (Class.IsAnnot()) {
+					if (Class.IsAnnot && Class.IsAnnot()) {
 						// если аннотация коммент или аннотация с комментом то блокируем и комментарий тоже
 						if (Class.IsComment() || (Class.IsUseContentAsComment() && Class.GetContents() != undefined) || Class.GetReply(0) != null) {
 							t.sync_LockComment(Class.Get_Id(), e["user"]);
 						}
 					}
-					Class.AddToRedraw();
+					Class.AddToRedraw && Class.AddToRedraw();
                     oDoc.UpdateInterface();
                 }
                 else {
@@ -1931,7 +1931,7 @@
 					oDoc.UpdateInterface();
 				}
 
-				if (Class.IsAnnot()) {
+				if (Class.IsAnnot && Class.IsAnnot()) {
 					// если аннотация коммент или аннотация с комментом то блокируем и комментарий тоже
 					if (Class.IsComment() || (Class.IsUseContentAsComment() && Class.GetContents() != undefined) || Class.GetReply(0) != null) {
 						t.sync_UnLockComment(Class.Get_Id());

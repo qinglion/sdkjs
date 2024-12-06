@@ -505,7 +505,7 @@ void main() {\n\
         return this.Selection;
     };
     CFile.prototype.onMouseDown = function(pageIndex, x, y) {
-        if (this.pages[pageIndex].isConvertedToShapes)
+        if (this.pages[pageIndex].isRecognized)
             return;
         
         let ret = this.getNearestPos(pageIndex, x, y);
@@ -857,7 +857,7 @@ void main() {\n\
         for (let iPage = Page1; iPage <= Page2; ++iPage)
         {
             let stream = this.getPageTextStream(iPage);
-            if (!stream || this.pages[iPage].isConvertedToShapes)
+            if (!stream || this.pages[iPage].isRecognized)
                 continue;
 
             let oInfo = { page: iPage, quads: [] };
@@ -996,7 +996,7 @@ void main() {\n\
     };
     CFile.prototype.drawSelection = function(pageIndex, overlay, x, y)
     {
-        if (this.pages[pageIndex].isConvertedToShapes)
+        if (this.pages[pageIndex].isRecognized)
             return;
         
         let stream = this.getPageTextStream(pageIndex);
@@ -1249,7 +1249,7 @@ void main() {\n\
         let ret = "<div>";
         for (let i = page1; i <= page2; ++i)
         {
-            if (this.pages[i].isConvertedToShapes)
+            if (this.pages[i].isRecognized)
                 continue;
             ret += this.copySelection(i, _text_format);
         }

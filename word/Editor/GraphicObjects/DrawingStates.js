@@ -209,7 +209,7 @@ StartAddNewShape.prototype =
                         let nLineW  = oTrack.pen.w / 36000 * g_dKoef_mm_to_pt;
                         let aRect   = [(bounds.min_x * g_dKoef_mm_to_pt - nLineW), (bounds.min_y * g_dKoef_mm_to_pt - nLineW), (bounds.max_x * g_dKoef_mm_to_pt + nLineW), (bounds.max_y * g_dKoef_mm_to_pt + nLineW)];
     
-                        let oInkAnnot = oLogicDocument.AddAnnot({
+                        let oInkAnnot = oLogicDocument.AddAnnotByProps({
                             rect:       aRect,
                             page:       this.pageIndex,
                             contents:   null,

@@ -157,7 +157,7 @@
 			reader = new StaxParser(contentDocument, documentPart, context);
 			this.fromXml(reader);
 			// TODO mb consider 'this' contains parts(.xml files) only but not XML like document.xml and windows.xml
-			// this.visioDocument_Type = new AscCommonDraw.VisioDocument_Type();
+			// this.visioDocument_Type = new AscVisio.VisioDocument_Type();
 			// this.visioDocument_Type.fromXml(reader);
 
 			parseWindows.call(this, documentPart, reader, context);
@@ -370,24 +370,54 @@
 	 * @memberOf CVisioDocument
 	 */
 	CVisioDocument.prototype.loadFonts = function() {
-		let api = this.api;
-
-		let aFonts = this.loadedFonts;
-		// load Arial by default
-		aFonts.push(new AscFonts.CFont("Arial", 0, "", 0));
-		let newFontIndex = 1;
-		this.faceNames.forEach(function (faceName_Type) {
-			let nameU = faceName_Type.nameU;
+		/**
+		 * load font to aFonts
+		 * @param fontName
+		 * @param {AscFonts.CFont[]} aFonts
+		 * @param api
+		 */
+		function loadFontByName(fontName, aFonts, api) {
+			if (aFonts.findIndex(function (cFont) {
+				return cFont.name === fontName;
+			}) !== -1) {
+				return;
+			}
+			aFonts.push(new AscFonts.CFont(fontName, newFontIndex, "", 0));
+			newFontIndex++;
 			let fontInfo = api.FontLoader.fontInfos.find(function(cFontInfo) {
-				return cFontInfo.Name === nameU;
+				return cFontInfo.Name === fontName;
 			});
 			if (fontInfo === undefined || fontInfo === null) {
-				console.log("Unknown font used in visio file: " + nameU);
+				AscCommon.consoleLog("Unknown font used in visio file: " + fontName);
 			} else {
-				console.log("Font", nameU, "will be loaded");
-				aFonts.push(new AscFonts.CFont(nameU, newFontIndex, "", 0));
-				newFontIndex += 1;
+				AscCommon.consoleLog("Font: " + fontName + " will be loaded");
 			}
+		}
+
+		let api = this.api;
+		let aFonts = this.loadedFonts;
+
+		let newFontIndex = 0;
+
+		// load Arial and Calibri by default
+		loadFontByName("Arial", aFonts, api);
+		loadFontByName("Calibri", aFonts, api);
+
+		// read theme.xml fonts
+		var oFontMap = {};
+		this.themes.forEach(function (theme) {
+			theme.Document_Get_AllFontNames(oFontMap);
+		});
+		for (const fontName in oFontMap) {
+			if (oFontMap.hasOwnProperty(fontName)) {
+				loadFontByName(fontName, aFonts, api);
+			}
+		}
+
+		// read document.xml FaceNames tag
+		this.faceNames.forEach(function (faceName_Type) {
+			let nameU = faceName_Type.nameU;
+			loadFontByName(nameU, aFonts, api);
 		});
 
 		// may immediately call callback
@@ -1030,7 +1060,7 @@
 						// if masterNumber is number
 						mastersSort[masterNumber - 1] = masters[i];
 					} else {
-						console.log('check sdkjs/draw/model/VisioDocument.js : parseMasters');
+						AscCommon.consoleLog('check sdkjs/draw/model/VisioDocument.js : parseMasters');
 						mastersSort = masters;
 						break;
 					}
@@ -1067,7 +1097,7 @@
 						// if masterNumber is number
 						pagesSort[pageNumber - 1] = pages[i];
 					} else {
-						console.log('check sdkjs/draw/model/VisioDocument.js : parsePages');
+						AscCommon.consoleLog('check sdkjs/draw/model/VisioDocument.js : parsePages');
 						pagesSort = pages;
 						break;
 					}
@@ -1096,7 +1126,7 @@
 					// if themeNumber is number
 					themesSort[themeNumber - 1] = themeParts[i];
 				} else {
-					console.log('check sdkjs/draw/model/VisioDocument.js : parseThemes');
+					AscCommon.consoleLog('check sdkjs/draw/model/VisioDocument.js : parseThemes');
 					themesSort = themeParts;
 					break;
 				}
@@ -1184,7 +1214,7 @@
 						// if masterNumber is number
 						solutionsSort[solutionNumber - 1] = solutions[i];
 					} else {
-						console.log('check sdkjs/draw/model/VisioDocument.js : parseSolutions');
+						AscCommon.consoleLog('check sdkjs/draw/model/VisioDocument.js : parseSolutions');
 						solutionsSort = solutions;
 						break;
 					}
@@ -1234,22 +1264,22 @@
 	window['AscCommonWord']  = window['AscCommonWord'] || {};
 	window['AscCommonSlide'] = window['AscCommonSlide'] || {};
 	window['AscCommonExcel'] = window['AscCommonExcel'] || {};
-	window['AscCommonDraw']  = window['AscCommonDraw'] || {};
+	window['AscVisio']  = window['AscVisio'] || {};
 	window['AscFormat']  = window['AscFormat'] || {};
 	window['AscWord'] = window['AscWord'] || {};
 
-	window['AscCommonDraw'].CVisioDocument = CVisioDocument;
-	window['AscCommonDraw'].CWindows = CWindows;
-	window['AscCommonDraw'].CMasters = CMasters;
-	window['AscCommonDraw'].CMasterContents = CMasterContents;
-	window['AscCommonDraw'].CPages = CPages;
-	window['AscCommonDraw'].CPageContents = CPageContents;
-	window['AscCommonDraw'].CComments = CComments;
-	window['AscCommonDraw'].CExtensions = CExtensions;
-	window['AscCommonDraw'].CDataConnections = CDataConnections;
-	window['AscCommonDraw'].CDataRecordSets = CDataRecordSets;
-	window['AscCommonDraw'].CValidation = CValidation;
+	window['AscVisio'].CVisioDocument = CVisioDocument;
+	window['AscVisio'].CWindows = CWindows;
+	window['AscVisio'].CMasters = CMasters;
+	window['AscVisio'].CMasterContents = CMasterContents;
+	window['AscVisio'].CPages = CPages;
+	window['AscVisio'].CPageContents = CPageContents;
+	window['AscVisio'].CComments = CComments;
+	window['AscVisio'].CExtensions = CExtensions;
+	window['AscVisio'].CDataConnections = CDataConnections;
+	window['AscVisio'].CDataRecordSets = CDataRecordSets;
+	window['AscVisio'].CValidation = CValidation;
 	// Not realized, file defines schema and data of that schema
-	window['AscCommonDraw'].CSolutions = CSolutions;
-	window['AscCommonDraw'].CSolutionXML = CSolutionXML;
+	window['AscVisio'].CSolutions = CSolutions;
+	window['AscVisio'].CSolutionXML = CSolutionXML;
 })(window, window.document);

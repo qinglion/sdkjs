@@ -2013,7 +2013,10 @@ function (window, undefined) {
 
 	CellEditor.prototype._addNewLine = function () {
 		this._wrapText();
-		this._addChars( /*codeNewLine*/"\n");
+		let sNewLine = "\n";
+		AscFonts.FontPickerByCharacter.checkText(sNewLine, this, function () {
+			this._addChars( /*codeNewLine*/sNewLine);
+		});
 	};
 
 	CellEditor.prototype._removeChars = function (pos, length, isRange) {

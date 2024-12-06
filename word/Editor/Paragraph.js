@@ -336,7 +336,11 @@ Paragraph.prototype.Copy = function(Parent, DrawingDocument, oPr)
 	EndRun.Set_Pr(this.TextPr.Value.Copy(undefined, oPr));
 
 	if (oPr && oPr.CopyReviewPr)
-		EndRun.SetReviewTypeWithInfo(this.GetReviewType(), this.GetReviewInfo().Copy(), false);
+	{
+		let reviewType = this.GetReviewType();
+		let reviewInfo = this.GetReviewInfo();
+		EndRun.SetReviewTypeWithInfo(reviewType, reviewInfo ? reviewInfo.Copy() : undefined, false);
+	}
 
 	if(oPr && oPr.Comparison)
 	{

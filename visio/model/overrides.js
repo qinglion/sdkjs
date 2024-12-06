@@ -51,7 +51,7 @@ AscFormat.CShape.prototype.getParentObjects = function ()
 	if (this.parent) {
 		oTheme = this.parent.theme;
 	} else {
-		console.log("Parent was not set for shape/group. GenerateDefaultTheme is used. shape/group:", this);
+		AscCommon.consoleLog("Parent was not set for shape/group. GenerateDefaultTheme is used. shape/group:", this);
 		oTheme = AscFormat.GenerateDefaultTheme(null, null);
 	}
 	return {slide: null, layout: null, master: null, theme: oTheme};
@@ -71,7 +71,7 @@ AscFormat.CGroupShape.prototype.getParentObjects = CShape.prototype.getParentObj
 AscFormat.CShape.prototype.recalculate = function ()
 {
 	if(this.bDeleted || !this.parent) {
-		console.log("no recalculate for bDeleted or no parent");
+		AscCommon.consoleLog("no recalculate for bDeleted or no parent");
 		return;
 	}
 
@@ -168,7 +168,7 @@ AscFormat.CTheme.prototype.getFillStyle = function (idx, unicolor, isConnectorSh
 			}
 		}
 	}
-	console.log("getFillStyle has not found fill and returned transparent fill")
+	AscCommon.consoleLog("getFillStyle has not found fill and returned transparent fill")
 	return AscFormat.CreateSolidFillRGBA(0, 0, 0, 255);
 };
 
@@ -194,7 +194,7 @@ AscFormat.CTheme.prototype.getLnStyle = function (idx, unicolor, isConnectorShap
 		}
 		return ret;
 	}
-	console.log("getLnStyle has not found lineStyle and returned new CLn()");
+	AscCommon.consoleLog("getLnStyle has not found lineStyle and returned new CLn()");
 	return new AscFormat.CLn();
 };
 
@@ -399,32 +399,278 @@ AscCommon.CShapeDrawer.prototype.ds = function()
 		this.CheckDash();
 	}
 }
-function parseFieldPictureFormat(vsdxFieldFormat) {
+
+function parseFieldPictureFormat(vsdxFieldValue, vsdxFieldFormat) {
 	let res = "@";
 	if (vsdxFieldFormat.f) {
 		let formatFunction = vsdxFieldFormat.f.toUpperCase();
 		let vFieldPicture = parseInt(formatFunction.substring('FIELDPICTURE('.length));
-		switch (vFieldPicture) {
-			case 0:
-				res = "General";
-				break;
-			case 37:
-				res = "@";
-				break;
-			case 200:
-				res = "M/d/yyyy";
-				break;
-			case 212:
-				res = "M/d/yyyy h:mm:ss am/pm";
-				break;
+
+		if (0 === vFieldPicture) {
+			res = "General";
+		} else if (1 === vFieldPicture) {
+			res = "General u";//"General";
+		} else if (2 === vFieldPicture) {
+			res = "0";
+		} else if (3 === vFieldPicture) {
+			res = "0 u";
+		} else if (4 === vFieldPicture) {
+			res = "0.0";
+		} else if (5 === vFieldPicture) {
+			res = "0.0 u";
+		} else if (6 === vFieldPicture) {
+			res = "0.00";
+		} else if (7 === vFieldPicture) {
+			res = "0.00 u";
+		} else if (8 === vFieldPicture) {
+			res = "0.000";
+		} else if (9 === vFieldPicture) {
+			res = "0.000 u";
+		} else if (9 === vFieldPicture) {
+			res = "0.000 u";
+		} else if (10 === vFieldPicture) {
+			res = "<,FEET/INCH>0.000 u";
+		} else if (11 === vFieldPicture) {
+			res = "<,rad>0.#### u";
+		} else if (12 === vFieldPicture) {
+			res = "<,deg>0.# u";
+		} else if (13 === vFieldPicture) {
+			res = "<,FEET/INCH># #/# u";
+		} else if (14 === vFieldPicture) {
+			res = "<,FEET/INCH># #/## u";
+		} else if (15 === vFieldPicture) {
+			res = "0 #/#";
+		} else if (16 === vFieldPicture) {
+			res = "0 #/# u";
+		} else if (17 === vFieldPicture) {
+			res = "0 #/##";
+		} else if (18 === vFieldPicture) {
+			res = "0 #/## u";
+		} else if (20 === vFieldPicture) {
+			res = "ddddd";
+		} else if (21 === vFieldPicture) {
+			res = "dddddd";
+		} else if (23 === vFieldPicture) {
+			res = "MM/dd/yy";
+		} else if (24 === vFieldPicture) {
+			res = "MMM d, yyyy";
+		} else if (25 === vFieldPicture) {
+			res = "MMMM d, yyyy";
+		} else if (26 === vFieldPicture) {
+			res = "d/M/YY";
+		} else if (27 === vFieldPicture) {
+			res = "dd/MM/yy";
+		} else if (28 === vFieldPicture) {
+			res = "d MMM, yyyy";
+		} else if (29 === vFieldPicture) {
+			res = "d MMMM, yyyy";
+		} else if (30 === vFieldPicture) {
+			res = "T";
+		} else if (31 === vFieldPicture) {
+			res = "h:mm";
+		} else if (32 === vFieldPicture) {
+			res = "hh:mm";
+		} else if (33 === vFieldPicture) {
+			res = "H:mm";
+		} else if (34 === vFieldPicture) {
+			res = "HH:mm";
+		} else if (35 === vFieldPicture) {
+			res = "h:mm tt";
+		} else if (36 === vFieldPicture) {
+			res = "Hh:mm tt";
+		} else if (37 === vFieldPicture) {
+			res = "@";
+		} else if (38 === vFieldPicture) {
+			res = "@-";
+		} else if (39 === vFieldPicture) {
+			res = "@+";
+		} else if (40 <= vFieldPicture && vFieldPicture <= 81) {
+			res = "M/d/yyyy";
 		}
 	} else if (vsdxFieldFormat.v) {
 		res = vsdxFieldFormat.v;
 	}
 	return res;
 }
+
+AscCommonWord.CPresentationField.prototype.private_GetDateTimeFormat = function(vsdxFieldValue, vsdxFieldFormat)
+{
+	function getLanguageDependantFormat(aFormat, vsdxFieldFormat) {
+		let defaultResult = "@";
+		let aFormatIndex = null;
+		let result;
+		if (vsdxFieldFormat.f) {
+			let formatFunction = vsdxFieldFormat.f.toUpperCase();
+			let vFieldPicture = parseInt(formatFunction.substring('FIELDPICTURE('.length));
+			switch (vFieldPicture) {
+				case 0:
+					// defaultResult = "General";
+					defaultResult = "dd.MM.yyyy";
+					// aFormatIndex = 0; // not found for default - english
+					break;
+				case 37:
+					// defaultResult = "@";
+					defaultResult = "dd.MM.yyyy";
+					// aFormatIndex = 0;
+					break;
+				case 200:
+					defaultResult = "M/d/yyyy";
+					aFormatIndex = 0;
+					break;
+				case 201:
+					defaultResult = "dddd, MMMM d, yyyy";
+					aFormatIndex = 1;
+					break;
+				case 202:
+					defaultResult = "MMMM d, yyyy";
+					aFormatIndex = 2;
+					break;
+				case 203:
+					defaultResult = "M/d/yy";
+					aFormatIndex = 3;
+					break;
+				case 204:
+					defaultResult = "yyyy-MM-dd";
+					aFormatIndex = 4;
+					break;
+				case 205:
+					defaultResult = "d-MMM-yy";
+					aFormatIndex = 5;
+					break;
+				case 206:
+					defaultResult = "M.d.yyyy";
+					aFormatIndex = 6;
+					break;
+				case 207:
+					defaultResult = "MMM. d, yy";
+					aFormatIndex = 7;
+					break;
+				case 208:
+					defaultResult = "d MMMM yyyy";
+					aFormatIndex = 8;
+					break;
+				case 209:
+					defaultResult = "MMMM yy";
+					aFormatIndex = 9;
+					break;
+				case 210:
+					defaultResult = "MMM-yy";
+					aFormatIndex = 10;
+					break;
+				case 211:
+					defaultResult = "M/d/yyyy h:mm am/pm";
+					aFormatIndex = 11; // but "M/d/yyyy h:mm AM/PM" in formats
+					break;
+				case 212:
+					defaultResult = "M/d/yyyy h:mm:ss am/pm";
+					aFormatIndex = 12; // but "M/d/yyyy h:mm:ss AM/PM" in formats
+					break;
+				case 213:
+					defaultResult = "h:mm am/pm";
+					aFormatIndex = 13; // but "h:mm AM/PM" in formats
+					break;
+				case 214:
+					defaultResult = "h:mm:ss am/pm";
+					aFormatIndex = 14; // but "h:mm:ss AM/PM" in formats
+					break;
+				case 215:
+					defaultResult = "HH:mm";
+					aFormatIndex = 15;
+					break;
+				case 216:
+					defaultResult = "HH:mm:ss";
+					aFormatIndex = 16;
+					break;
+			}
+		} else if (vsdxFieldFormat.v) {
+			defaultResult = vsdxFieldFormat.v;
+		}
+
+		if (Array.isArray(aFormat)) {
+			// get language dependant format string if index is set
+			result = aFormatIndex !== null ? aFormat[aFormatIndex] : defaultResult;
+		} else {
+			// use default value
+			result = defaultResult;
+		}
+
+		return result;
+
+	}
+
+	let oFormat = null;
+	const nLang = this.Get_CompiledPr().Lang.Val;
+	// let sFormat = AscCommonWord.oDefaultDateTimeFormat[nLang];
+	// if(!sFormat)
+	// {
+		// choose pre-defined format
+		// sFormat = oDateTimeFormats[sResultFiledType]
+	// }
+	// if(sFormat) {
+		// get language dependant formats array
+	let sFormat;
+
+	let aFormat = Asc.c_oAscDateTimeFormat[nLang];
+	if (!Array.isArray(aFormat)) {
+		aFormat = Asc.c_oAscDateTimeFormat[lcid_enUS];
+	}
+	sFormat = getLanguageDependantFormat(aFormat, vsdxFieldFormat);
+	oFormat = AscCommon.oNumFormatCache.get(sFormat, AscCommon.NumFormatType.WordFieldDate);
+	// }
+	return oFormat;
+};
+
+/** @constructor */
+function cDate(date) {
+	var bind = Function.bind;
+	var unbind = bind.bind(bind);
+	var date = new (unbind(Date, null).apply(null, arguments));
+	date.__proto__ = cDate.prototype;
+	return date;
+}
+
+Asc.cDate.prototype.getUTCFullYear = function () {
+	var year = Date.prototype.getUTCFullYear.call(this);
+	var month = Date.prototype.getUTCMonth.call(this);
+	var date = Date.prototype.getUTCDate.call(this);
+
+	if (1899 == year && 11 == month && (30 === date || 31 === date)) {
+		return 1900;
+	} else {
+		return year;
+	}
+};
+
 AscCommonWord.CPresentationField.prototype.private_GetString = function()
 {
+	//todo add num formats with units in editor
+	return;
+	/**
+	 *
+	 * @param valueV
+	 * @param {string} valueUnits
+	 * @return {number}
+	 */
+	function convertConsiderUnits(valueV, valueUnits) {
+		/**
+		 * @type {(number)}
+		 */
+		let valueInProperUnits;
+		const precision = 4;
+		if (valueUnits === "CM") {
+			valueInProperUnits = Number(valueV) * g_dKoef_in_to_mm / 10;
+		} else if (valueUnits === "MM") {
+			valueInProperUnits = Number(valueV) * g_dKoef_in_to_mm;
+		} else {
+			valueInProperUnits = valueV;
+		}
+
+		if (typeof valueInProperUnits === "number") {
+			valueInProperUnits = Math.round(valueInProperUnits * Math.pow(10, precision)) / Math.pow(10, precision);
+		}
+		return valueInProperUnits;
+	}
+
 	var sStr = null;
 	var oStylesObject;
 	var oCultureInfo = AscCommon.g_aCultureInfos[this.Get_CompiledPr().Lang.Val];
@@ -432,16 +678,22 @@ AscCommonWord.CPresentationField.prototype.private_GetString = function()
 	{
 		oCultureInfo = AscCommon.g_aCultureInfos[1033];
 	}
-	var oDateTime, oFormat;
+	var oDateTime;
 	if(typeof this.FieldType === 'string')
 	{
-		let format;
-		if (this.vsdxFieldFormat) {
-			format = parseFieldPictureFormat(this.vsdxFieldFormat);
-		}
+		// let format;
+		// if (this.vsdxFieldFormat) {
+		// 	format = parseFieldPictureFormat(this.vsdxFieldValue, this.vsdxFieldFormat);
+		// }
 		let logicDocument = this.Paragraph && this.Paragraph.GetLogicDocument();
 		const sFieldType = this.FieldType.toUpperCase();
-		let val = this.vsdxFieldValue.v;
+
+		// let's not use formula (valueCell.f) for now
+		// first convert value (valueCell.v) which is inches by default to units set in valueCell.u
+		let val = convertConsiderUnits(this.vsdxFieldValue.v, this.vsdxFieldValue.u);
+
+
+
 		if("PAGECOUNT()" === sFieldType)
 		{
 			if (logicDocument) {
@@ -474,13 +726,29 @@ AscCommonWord.CPresentationField.prototype.private_GetString = function()
 			//todo display units
 			val = this.vsdxFieldValue.getValueInMM();
 		}
-		if (format) {
+		if (this.vsdxFieldValue.u === "DATE") {
+			// TODO fix 31.12.1899 visio date
+			const oFormat = this.private_GetDateTimeFormat(this.vsdxFieldValue,
+				this.vsdxFieldFormat);
+			if(oFormat)
+			{
+				let dateString = this.vsdxFieldValue.v;
+				dateString = dateString === "" ? dateString : dateString;
+				oDateTime = new Asc.cDate(dateString);
+
+				sStr = oFormat.formatToWord(oDateTime.getExcelDate(false) + 1 + (oDateTime.getHours() * 60 * 60 + oDateTime.getMinutes() * 60 + oDateTime.getSeconds()) / AscCommonExcel.c_sPerDay, 15, oCultureInfo);
+			}
+			// const oFormat = AscCommon.oNumFormatCache.get(format, AscCommon.NumFormatType.Excel);
+			// sStr =  format._formatToText(val, AscCommon.CellValueType.String, 15, oCultureInfo);
+		} else {
+			let format;
+			if (this.vsdxFieldFormat) {
+				format = parseFieldPictureFormat(this.vsdxFieldValue, this.vsdxFieldFormat);
+			}
 			const oFormat = AscCommon.oNumFormatCache.get(format, AscCommon.NumFormatType.Excel);
 			sStr =  oFormat._formatToText(val, AscCommon.CellValueType.String, 15, oCultureInfo);
-		} else {
-			sStr = val + "";
+			// sStr = val + "";
 		}
 	}
 	return sStr;
 };
-

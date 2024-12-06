@@ -588,6 +588,9 @@
 			CBaseNoIdObject.call(this);
 
 			this.embellishment = null;
+			/**
+			 * @type {CVarStyle[]}
+			 */
 			this.varStyle = [];
 		}
 		InitClass(CVariationStyleScheme, CBaseNoIdObject, 0);
@@ -9456,11 +9459,11 @@
 			var major_font = font_scheme.majorFont;
 			typeof major_font.latin === "string" && major_font.latin.length > 0 && (AllFonts[major_font.latin] = 1);
 			typeof major_font.ea === "string" && major_font.ea.length > 0 && (AllFonts[major_font.ea] = 1);
-			typeof major_font.cs === "string" && major_font.latin.length > 0 && (AllFonts[major_font.cs] = 1);
+			typeof major_font.cs === "string" && major_font.cs.length > 0 && (AllFonts[major_font.cs] = 1);
 			var minor_font = font_scheme.minorFont;
 			typeof minor_font.latin === "string" && minor_font.latin.length > 0 && (AllFonts[minor_font.latin] = 1);
 			typeof minor_font.ea === "string" && minor_font.ea.length > 0 && (AllFonts[minor_font.ea] = 1);
-			typeof minor_font.cs === "string" && minor_font.latin.length > 0 && (AllFonts[minor_font.cs] = 1);
+			typeof minor_font.cs === "string" && minor_font.cs.length > 0 && (AllFonts[minor_font.cs] = 1);
 		};
 		CTheme.prototype.getOuterShdw = function (idx) {
 			return this.themeElements.fmtScheme.GetOuterShdw(idx);
@@ -9630,6 +9633,15 @@
 			AscCommon.History.Add(new CChangesDrawingsObjectNoId(this, AscDFH.historyitem_ThemeSetFontScheme, this.themeElements.fontScheme, fontScheme));
 			this.themeElements.fontScheme = fontScheme;
 		};
+
+		/**
+		 * made for Visio editor
+		 * @return {FontScheme}
+		 */
+		CTheme.prototype.getFontScheme = function () {
+			return this.themeElements.fontScheme;
+		};
+
 		CTheme.prototype.setThemeExt = function (themeExt) {
 			this.themeElements.themeExt = themeExt;
 		};
@@ -9801,6 +9813,18 @@
 		CTheme.prototype.Read_FromBinary2 = function (r) {
 			this.Id = r.GetString2();
 		};
+
+		/**
+		 * @memberOf CTheme
+		 * @return {boolean}
+		 */
+		CTheme.prototype.isVariationClrSchemeLstExists = function() {
+			let clrScheme = this.themeElements.clrScheme;
+			let variationClrSchemeLst = clrScheme && clrScheme.clrSchemeExtLst
+				&& clrScheme.clrSchemeExtLst.variationClrSchemeLst;
+			return variationClrSchemeLst.length > 0;
+		}
+
 		/**
 		 * @memberOf CTheme
 		 * @param variationIndex
@@ -9823,6 +9847,11 @@
 			}
 			return null;
 		};
+		/**
+		 * @param variationIndex
+		 * @param styleIndex
+		 * @return {CVarStyle|null}
+		 */
 		CTheme.prototype.getVariationStyleScheme = function (variationIndex, styleIndex) {
 			let themeExt = this.themeElements.themeExt;
 			if (themeExt && themeExt.variationStyleSchemeLst[variationIndex]) {

@@ -147,7 +147,8 @@
 	drop: 4007,
 	updateVersion: 4008,
 	noCache: 4009,
-	restore: 4010
+	restore: 4010,
+	quiet: 4011
   };
   
 	var c_oAscServerCommandErrors = {
