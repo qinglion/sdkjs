@@ -1036,7 +1036,7 @@ CTextDrawer.prototype.p_color = function(r,g,b,a)
                 {
                     oTextPr.TextOutline = new AscFormat.CLn();
                 }
-                oTextPr.TextOutline.Fill = AscFormat.CreateUnfilFromRGB(r, g, b);
+                oTextPr.TextOutline.Fill = this.CreateUnfilFromRGB(r, g, b);
                 this.SetTextPr(oTextPr, this.m_oTheme);
                 return;
             }
@@ -1134,7 +1134,7 @@ CTextDrawer.prototype.SetShd = function(oShd)
             {
                 if(oShd.Color)
                 {
-                    this.m_oFill = AscFormat.CreateUnfilFromRGB(oShd.Color.r, oShd.Color.g, oShd.Color.b);
+                    this.m_oFill = this.CreateUnfilFromRGB(oShd.Color.r, oShd.Color.g, oShd.Color.b);
                 }
                 else
                 {
@@ -1158,7 +1158,7 @@ CTextDrawer.prototype.SetBorder = function(oBorder)
 {
     if(oBorder && oBorder.Value !== border_None)
     {
-        this.m_oLine = CreatePenFromParams(oBorder.Unifill ? oBorder.Unifill : AscFormat.CreateUnfilFromRGB(oBorder.Color.r, oBorder.Color.g, oBorder.Color.b), this.m_oPen.Style, this.m_oPen.LineCap, this.m_oPen.LineJoin, this.m_oPen.LineWidth, this.m_oPen.Size);
+        this.m_oLine = CreatePenFromParams(oBorder.Unifill ? oBorder.Unifill : this.CreateUnfilFromRGB(oBorder.Color.r, oBorder.Color.g, oBorder.Color.b), this.m_oPen.Style, this.m_oPen.LineCap, this.m_oPen.LineJoin, this.m_oPen.LineWidth, this.m_oPen.Size);
     }
     else
     {
@@ -2234,7 +2234,7 @@ CTextDrawer.prototype.GetFillFromTextPr = function(oTextPr)
                 var RGBA = oTextPr.FontRef.Color.RGBA;
                 oColor = new CDocumentColor( RGBA.R, RGBA.G, RGBA.B, RGBA.A );
             }
-            return AscFormat.CreateUnfilFromRGB(oColor.r, oColor.g, oColor.b);
+            return this.CreateUnfilFromRGB(oColor.r, oColor.g, oColor.b);
         }
         return null;
     }
@@ -2243,14 +2243,20 @@ CTextDrawer.prototype.GetFillFromTextPr = function(oTextPr)
         if(this.m_oBrush.Color1.R !== -1)
         {
             var Color = this.m_oBrush.Color1;
-            return AscFormat.CreateUnfilFromRGB(Color.R, Color.G, Color.B);
+            return this.CreateUnfilFromRGB(Color.R, Color.G, Color.B);
         }
         else
         {
-            return AscFormat.CreateUnfilFromRGB(0, 0, 0);
+            return this.CreateUnfilFromRGB(0, 0, 0);
         }
     }
 };
+
+    CTextDrawer.prototype.CreateUnfilFromRGB = function (r, g, b) {
+        let oFill = AscFormat.CreateUnfilFromRGB(r, g, b);
+        oFill.check(this.m_oTheme, AscFormat.DEFAULT_COLOR_MAP);
+        return oFill;
+    };
 
 CTextDrawer.prototype.GetPenFromTextPr = function(oTextPr)
 {
