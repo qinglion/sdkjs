@@ -330,14 +330,6 @@
     //-----------------------------------------------------------------------------------
     // Функции для работы с новыми объектами, созданными на других клиентах
     //-----------------------------------------------------------------------------------
-    CCollaborativeEditing.prototype.Clear_NewObjects = function()
-    {
-    };
-
-    CCollaborativeEditing.prototype.Add_NewObject = function(Class)
-    {
-    };
-
     CCollaborativeEditing.prototype.OnEnd_ReadForeignChanges = function()
     {
     };

@@ -7733,11 +7733,18 @@ CDocumentContent.prototype.Read_FromBinary2 = function(Reader)
 	this.Id               = Reader.GetString2();
 	this.StartPage        = Reader.GetLong();
 
-	var oParent = g_oTableId.Get_ById(Reader.GetString2());
-	if (oParent && oParent.SetDocumentContent)
-		oParent.SetDocumentContent(this);
-
-
+	
+	// Сам класс не должен проставлять себе родительский класс. Он должен проставляться ТОЛЬКО родительским классом при
+	// при добавлении в своего содержимое. Пока оставляю тут эту заглушку, чтобы в таблицах работало
+	let parent = g_oTableId.Get_ById(Reader.GetString2());
+	if (parent)
+	{
+		if (parent.SetDocumentContent)
+			parent.SetDocumentContent(this);
+		else
+			this.Parent = parent;
+	}
+	
 	this.TurnOffInnerWrap = Reader.GetBool();
 	this.Split            = Reader.GetBool();
 	this.bPresentation    = AscFormat.readBool(Reader);
@@ -7757,7 +7764,6 @@ CDocumentContent.prototype.Read_FromBinary2 = function(Reader)
 	var oCellApi = window["Asc"] && window["Asc"]["editor"];
 	if (oCellApi && oCellApi.wbModel)
 	{
-		this.Parent        = g_oTableId.Get_ById(LinkData.Parent);
 		this.DrawingDocument = oCellApi.wbModel.DrawingDocument;
 	}
 	else
@@ -7776,9 +7782,6 @@ CDocumentContent.prototype.Read_FromBinary2 = function(Reader)
 			}
 		}
 	}
-};
-CDocumentContent.prototype.Load_LinkData = function(LinkData)
-{
 };
 CDocumentContent.prototype.Get_SelectionState2 = function()
 {

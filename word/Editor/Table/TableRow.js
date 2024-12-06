@@ -787,13 +787,7 @@ CTableRow.prototype =
 		this.ReviewInfo.ReadFromBinary(Reader);
 
 		this.Internal_ReIndexing();
-
-		AscCommon.CollaborativeEditing.Add_NewObject(this);
-	},
-
-    Load_LinkData : function(LinkData)
-    {
-    }
+	}
 };
 /**
  * Доступ к родительской таблице

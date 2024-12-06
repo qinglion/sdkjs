@@ -192,7 +192,6 @@
         this.m_aCheckLocks         = []; // Массив для проверки залоченности объектов, которые мы собираемся изменять
         this.m_aCheckLocksInstance = []; // Массив для проверки залоченности объектов в случае сложного действия
 
-        this.m_aNewObjects  = []; // Массив со списком чужих новых объектов
         this.m_aNewImages   = []; // Массив со списком картинок, которые нужно будет загрузить на сервере
         this.m_aDC          = {}; // Массив(ассоциативный) классов DocumentContent
         this.m_aChangedClasses = {}; // Массив(ассоциативный) классов, в которых есть изменения выделенные цветом
@@ -270,7 +269,6 @@
         this.m_aEndActions = [];
         this.m_aCheckLocks = [];
         this.m_aCheckLocksInstance = [];
-        this.m_aNewObjects = [];
         this.m_aNewImages = [];
 
 		this.CoHistory.clear();
@@ -791,15 +789,6 @@
     //-----------------------------------------------------------------------------------
     // Функции для работы с новыми объектами, созданными на других клиентах
     //-----------------------------------------------------------------------------------
-    CCollaborativeEditingBase.prototype.Clear_NewObjects = function()
-    {
-        this.m_aNewObjects.length = 0;
-    };
-    CCollaborativeEditingBase.prototype.Add_NewObject = function(Class)
-    {
-        this.m_aNewObjects.push(Class);
-        Class.FromBinary = true;
-    };
     CCollaborativeEditingBase.prototype.Clear_EndActions = function()
     {
         this.m_aEndActions.length = 0;
@@ -810,15 +799,7 @@
     };
     CCollaborativeEditingBase.prototype.OnEnd_ReadForeignChanges = function()
     {
-        var Count = this.m_aNewObjects.length;
-
-        for (var Index = 0; Index < Count; Index++)
-        {
-            var Class = this.m_aNewObjects[Index];
-            Class.FromBinary = false;
-        }
-
-        Count = this.m_aEndActions.length;
+        let Count = this.m_aEndActions.length;
         for (var Index = 0; Index < Count; Index++)
         {
             var Item = this.m_aEndActions[Index];
@@ -826,7 +807,6 @@
         }
 
         this.Clear_EndActions();
-        this.Clear_NewObjects();
     };
     //-----------------------------------------------------------------------------------
     // Функции для работы с новыми объектами, созданными на других клиентах
