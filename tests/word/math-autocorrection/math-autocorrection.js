@@ -163,7 +163,6 @@ $(function () {
 		})
 	};
 
-
 	QUnit.testStart(function (){
 		AscTest.ClearDocument();
 		AscCommon.History.Clear();
@@ -776,6 +775,8 @@ $(function () {
 			QUnit.module( "autocorrect");
 			Test("^ ", [["ParaRun", ""], ["CDegree", "^"]], false, "Check index");
 			Test("x^y ", [["ParaRun", ""], ["CDegree", "x^y"], ["ParaRun", ""]], false, "Check index");
+			Test("x^' ", [["ParaRun", ""], ["CDegree", "x^'"], ["ParaRun", ""]], false, "Check index");
+			Test("x^\" ", [["ParaRun", ""], ["CDegree", "x^\""], ["ParaRun", ""]], false, "Check index");
 			Test("x^1 ", [["ParaRun", ""], ["CDegree", "x^1"], ["ParaRun", ""]], false, "Check index");
 			Test("1^x ", [["ParaRun", ""], ["CDegree", "1^x"], ["ParaRun", ""]], false, "Check index");
 			Test("x^(1+2) ", [["ParaRun", ""], ["CDegree", "x^(1+2)"], ["ParaRun", ""]], false, "Check index");
@@ -1025,6 +1026,7 @@ $(function () {
 			Test("■(1&2@3&4) ", [["ParaRun", ""], ["CMathMatrix", "■(1&2@3&4)"], ["ParaRun", ""]], false, "Check matrix");
 			Test("■(1&2) ", [["ParaRun", ""], ["CMathMatrix", "■(1&2)"], ["ParaRun", ""]], false, "Check matrix");
 			Test("■(&2&3@4&5) ", [["ParaRun", ""], ["CMathMatrix", "■(&2&3@4&5&)"], ["ParaRun", ""]], false, "Check matrix");
+			Test("■(&&&@@@) ", [["ParaRun", ""], ["CMathMatrix", "■(&&&@&&&@&&&@&&&)"], ["ParaRun", ""]], false, "Check matrix");
 		})
 
 		QUnit.module( "Accents", function ()
@@ -1053,7 +1055,7 @@ $(function () {
 			logicDocument.SetMathInputType(0);
 			AddText('\\binomial ');
 			assert.ok(true, "Add text '\\binomial'");
-
+			
 			let strBinomial = MathContent.GetTextOfElement(0).GetText();
 			assert.strictEqual(strBinomial, '(a+b)^n=∑_(k=0)^n ▒(n¦k)a^k b^(n-k)', 'Check text of binomial');
 
@@ -1191,12 +1193,11 @@ $(function () {
 				let r2 = r.Split2(2, MathContent.Root, 0);					//	+
 				let r3 = r2.Split2(1, MathContent.Root, 1);					//	2)
 
-				let reviewInfo = r2.ReviewInfo;
-
+				let reviewInfo = new AscWord.ReviewInfo();
 				reviewInfo.UserId   = "this.UserId";
 				reviewInfo.UserName = "this.UserName";
 				reviewInfo.DateTime = new Date().toDateString();
-				r2.SetReviewType(reviewtype_Add);
+				r2.SetReviewTypeWithInfo(reviewtype_Add, reviewInfo);
 
 				assert.ok(true, "Split run and set ReviewType for '+' === reviewtype_Add");
 
@@ -1204,18 +1205,18 @@ $(function () {
 				assert.ok(true, "Convert to professional view");
 
 				let rOne = MathContent.Root.Content[1].Content[0].Content[0];
-				assert.strictEqual(rOne.ReviewType, 0, 'Is "1" is reviewtype_Common');
+				assert.strictEqual(rOne.GetReviewType(), reviewtype_Common, 'Is "1" is reviewtype_Common');
 
 				let rPlus = MathContent.Root.Content[1].Content[0].Content[1];
-				assert.strictEqual(rPlus.ReviewType, 2, 'Is "+" is reviewtype_Add');
-				assert.strictEqual(rPlus.ReviewInfo, reviewInfo, 'reviewInfo');
+				assert.strictEqual(rPlus.GetReviewType(), reviewtype_Add, 'Is "+" is reviewtype_Add');
+				assert.strictEqual(rPlus.GetReviewInfo(), reviewInfo, 'reviewInfo');
 
 				MathContent.ConvertView(true, Asc.c_oAscMathInputType.Unicode);
 				assert.ok(true, "Convert to linear view");
 
 				let nRPlus = MathContent.Root.Content[1];
-				assert.strictEqual(nRPlus.ReviewType, 2, 'Is "+" is reviewtype_Add');
-				assert.strictEqual(nRPlus.ReviewInfo, reviewInfo, 'Check reviewInfo');
+				assert.strictEqual(nRPlus.GetReviewType(), reviewtype_Add, 'Is "+" is reviewtype_Add');
+				assert.strictEqual(nRPlus.GetReviewInfo(), reviewInfo, 'Check reviewInfo');
 			})
 
 			QUnit.test('Bug 64357', function (assert)
@@ -1757,11 +1758,12 @@ $(function () {
 				assert.strictEqual(strBinomial, '\\frac{\\substack{1\\\\\\substack{\\\\\\substack{\\\\\\substack{\\\\}}}}}{2}', 'Check');
 			})
 
-			QUnit.module( "Check bug #61007", function ()
+			QUnit.module( "Check LaTeX matrix", function ()
 			{
 				Test("\\begin{matrix}1&2\\\\3&4\\\\\\end{matrix}", [["ParaRun", ""], ["CMathMatrix", "\\begin{matrix}1&2\\\\3&4\\\\\\end{matrix}"]], true, "Check bug #61007 default matrix");
 				Test("\\begin{pmatrix}1&2\\\\3&4\\\\\\end{pmatrix}", [["ParaRun", ""], ["CDelimiter", "\\left(\\begin{matrix}1&2\\\\3&4\\\\\\end{matrix}\\right)"]], true, "Check bug #61007 pmatrix");
 				Test("\\left[\\begin{matrix}1&2\\\\3&4\\\\\\end{matrix}\\right]", [["ParaRun", ""], ["CDelimiter", "\\left[\\begin{matrix}1&2\\\\3&4\\\\\\end{matrix}\\right]"]], true, "Check bug #61007 pmatrix");
+				Test("\\begin{matrix}&&\\\\&&\\\\&&\\\\&&\\end{matrix}", [["ParaRun", ""], ["CMathMatrix", "\\begin{matrix}&&\\\\&&\\\\&&\\\\&&\\\\\\end{matrix}"]], true, "Check matrix bug #71892");
 			})
 
 			QUnit.module( "Check bug #67181", function ()

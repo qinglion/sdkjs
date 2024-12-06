@@ -392,7 +392,7 @@
 			case c_oEditorId.Presentation:
 				res = isOpenOoxml ? Asc.c_oAscFileType.PPTX : Asc.c_oAscFileType.CANVAS_PRESENTATION;
 				break;
-			case c_oEditorId.Draw:
+			case c_oEditorId.Visio:
 				res = Asc.c_oAscFileType.VSDX;
 				break;
 		}
@@ -2908,7 +2908,7 @@
 					case AscCommon.c_oEditorId.Word: errorData = 'docx';break;
 					case AscCommon.c_oEditorId.Spreadsheet: errorData = 'xlsx';break;
 					case AscCommon.c_oEditorId.Presentation: errorData = 'pptx';break;
-					case AscCommon.c_oEditorId.Draw: errorData = 'vsdx';break;
+					case AscCommon.c_oEditorId.Visio: errorData = 'vsdx';break;
 					default:
 						if (isNativeFormat) {
 							errorData = 'pdf'
@@ -5294,7 +5294,38 @@
 	
 	baseEditorsApi.prototype.asc_setPdfViewer = function(isPdfViewer) {
 	};
-	
+
+	// internal analog for plugins
+	baseEditorsApi.prototype.callCommand = function(value, isRecalculate, callback) {
+		let plugins = window.g_asc_plugins;
+		if (!plugins)
+			return;
+
+		let isRecalc = isRecalculate !== false;
+		if (typeof value === "string")
+		{
+			plugins.internalCallbacks.push(callback);
+			plugins.callCommand(plugins.internalGuid, value, false, false, isRecalc, false);
+		}
+		else
+		{
+			let scope = {};
+			if (window["Asc"] && window["Asc"]["scope"])
+				scope = window["Asc"]["scope"];
+			let txtValue = "var Asc = {}; Asc.scope = " + JSON.stringify(scope) + "; var scope = Asc.scope; (" + value.toString() + ")();";
+			plugins.internalCallbacks.push(callback);
+			plugins.callCommand(plugins.internalGuid, txtValue, false, false, isRecalc, false);
+		}
+	};
+
+	baseEditorsApi.prototype.callMethod = function(name, params, callback) {
+		let plugins = window.g_asc_plugins;
+		if (!plugins)
+			return
+
+		plugins.internalCallbacks.push(callback);
+		plugins.callMethod(plugins.internalGuid, name, params);
+	};
 
 	//----------------------------------------------------------export----------------------------------------------------
 	window['AscCommon']                = window['AscCommon'] || {};
@@ -5401,5 +5432,8 @@
 	prot["asc_removeCustomProperty"] = prot.asc_removeCustomProperty;
 	
 	prot["asc_setPdfViewer"] = prot.asc_setPdfViewer;
+
+	prot["callCommand"] = prot.callCommand;
+	prot["callMethod"] = prot.callMethod;
 
 })(window);

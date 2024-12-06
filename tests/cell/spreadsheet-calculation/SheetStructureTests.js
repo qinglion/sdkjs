@@ -3024,6 +3024,145 @@ $(function () {
 		clearData(0, 99, 0, 105);
 	});
 
+	QUnit.test('Table special characters tests', function (assert) {
+		/* This test checks for special characters inside a table, namely column names with escaped characters */
+		let array;
+		ws.getRange2("A100:C103").setValue("1");
+		ws.getRange2("A100").setValue("With a single ' quote");
+		ws.getRange2("B100").setValue("With a double '' quote");
+		ws.getRange2("C100").setValue("With a special ' @ & ? * / | \ # '' [ ] characters");
+
+		let tableOptions = new AscCommonExcel.AddFormatTableOptions();
+		tableOptions.range = "A100:C103";
+		tableOptions.isTitle = true;
+		api.asc_addAutoFilter("TableStyleMedium2", tableOptions);	// create table in A100:C103 range
+
+		let tables = wsView.model.autoFilters.getTablesIntersectionRange(new Asc.Range(0, 100, 0, 100));
+		assert.strictEqual(tables.length, 1, "compare tables length");
+
+		debugger
+		let table = tables[0];
+		let tableName = table.DisplayName;	// due to the fact that other tables are used in file, get the name of the one we need by this way
+		wsView.af_changeFormatTableInfo(tableName, Asc.c_oAscChangeTableStyleInfo.rowTotal, true);
+
+		// calc res check
+		cellWithFormula = new AscCommonExcel.CCellWithFormula(ws, 101, 70);
+		oParser = new AscCommonExcel.parserFormula(tableName + "[#All]", cellWithFormula, ws);
+		assert.ok(oParser.parse());
+		array = oParser.calculate();
+		assert.strictEqual(array.getValueByRowCol(0, 0).getValue(), "With a single ' quote", 'Result of Table[#All][0,0]');
+		assert.strictEqual(array.getValueByRowCol(0, 1).getValue(), "With a double '' quote", 'Result of Table[#All][0,1]');
+		assert.strictEqual(array.getValueByRowCol(0, 2).getValue(), "With a special ' @ & ? * / |  # '' [ ] characters", 'Result of Table[#All][0,2]');
+		assert.strictEqual(array.getValueByRowCol(1, 0).getValue(), 1, 'Result of Table[#All][1,0]');
+		assert.strictEqual(array.getValueByRowCol(1, 1).getValue(), 1, 'Result of Table[#All][1,1]');
+		assert.strictEqual(array.getValueByRowCol(3, 0).getValue(), 1, 'Result of Table[#All][3,0]');
+		assert.strictEqual(array.getValueByRowCol(3, 1).getValue(), 1, 'Result of Table[#All][3,1]');
+
+		// value for edit and formula in cell check
+		resCell = ws.getRange4(101, 70);
+		resCell.setValue("=" + tableName +"[#All]");
+		
+		assert.strictEqual(resCell.getValueForEdit(), "=" + tableName, "Value for edit in cell after Table[#All] is typed");
+		assert.strictEqual(resCell.getFormula(), tableName, "Formula in cell after Table[#All] is typed");
+
+
+		/* column header check */
+		// this pattern is looking for special characters in the string that need to be escaped
+		let specialSymbolsPattern = /(['#@\[\]])/g;
+		// set selection to the first column header
+		let selectedRange = ws.getRange2("A100");
+		wsView.setSelection(selectedRange.bbox);
+
+		let ranges = wsView.model.selectionRange.ranges;
+		let valueInCellEditMode = tables[0].getSelectionString(wsView.model.getSelection().activeCell, ranges[0]);
+		let expectedValue = tableName + "[[#Headers],[" + ws.getRange2("A100").getValueForEdit().replace(specialSymbolsPattern, "'$1") + "]]";
+
+		assert.strictEqual(valueInCellEditMode, expectedValue, "Header value in first column. Simulation value for edit in cellEditMode");
+
+
+		// set selection to the second column header
+		selectedRange = ws.getRange2("B100");
+		wsView.setSelection(selectedRange.bbox);
+
+		ranges = wsView.model.selectionRange.ranges;
+		valueInCellEditMode = tables[0].getSelectionString(wsView.model.getSelection().activeCell, ranges[0]);
+		expectedValue = tableName + "[[#Headers],[" + ws.getRange2("B100").getValueForEdit().replace(specialSymbolsPattern, "'$1") + "]]";
+
+		assert.strictEqual(valueInCellEditMode, expectedValue, "Header value in second column. Simulation value for edit in cellEditMode");
+
+
+		// set selection to the third column header
+		selectedRange = ws.getRange2("C100");
+		wsView.setSelection(selectedRange.bbox);
+
+		ranges = wsView.model.selectionRange.ranges;
+		valueInCellEditMode = tables[0].getSelectionString(wsView.model.getSelection().activeCell, ranges[0]);
+		expectedValue = tableName + "[[#Headers],[" + ws.getRange2("C100").getValueForEdit().replace(specialSymbolsPattern, "'$1") + "]]";
+
+		assert.strictEqual(valueInCellEditMode, expectedValue, "Header value in third column. Simulation value for edit in cellEditMode");
+
+		/* full column check */
+		// first column select
+		selectedRange = ws.getRange2("A101:A103");
+		wsView.setSelection(selectedRange.bbox);
+
+		ranges = wsView.model.selectionRange.ranges;
+		valueInCellEditMode = tables[0].getSelectionString(wsView.model.getSelection().activeCell, ranges[0]);
+		expectedValue = tableName + "[" + ws.getRange2("A100:A103").getValueForEdit().replace(specialSymbolsPattern, "'$1") + "]";
+
+		assert.strictEqual(valueInCellEditMode, expectedValue, "First column without header select. Simulation value for edit in cellEditMode");
+
+		// second column select
+		selectedRange = ws.getRange2("B101:B103");
+		wsView.setSelection(selectedRange.bbox);
+
+		ranges = wsView.model.selectionRange.ranges;
+		valueInCellEditMode = tables[0].getSelectionString(wsView.model.getSelection().activeCell, ranges[0]);
+		expectedValue = tableName + "[" + ws.getRange2("B100:B103").getValueForEdit().replace(specialSymbolsPattern, "'$1") + "]";
+
+		assert.strictEqual(valueInCellEditMode, expectedValue, "Second column without header select. Simulation value for edit in cellEditMode");
+
+		// third column select
+		selectedRange = ws.getRange2("C101:C103");
+		wsView.setSelection(selectedRange.bbox);
+
+		ranges = wsView.model.selectionRange.ranges;
+		valueInCellEditMode = tables[0].getSelectionString(wsView.model.getSelection().activeCell, ranges[0]);
+		expectedValue = tableName + "[" + ws.getRange2("C100:C103").getValueForEdit().replace(specialSymbolsPattern, "'$1") + "]";
+
+		assert.strictEqual(valueInCellEditMode, expectedValue, "Third column without header select. Simulation value for edit in cellEditMode");
+
+		/* two columns check */
+		// first and second column
+		selectedRange = ws.getRange2("A101:B103");
+		wsView.setSelection(selectedRange.bbox);
+
+		ranges = wsView.model.selectionRange.ranges;
+		valueInCellEditMode = tables[0].getSelectionString(wsView.model.getSelection().activeCell, ranges[0]);
+		expectedValue = tableName + "[" 
+						+ "[" + ws.getRange2("A100:A103").getValueForEdit().replace(specialSymbolsPattern, "'$1") + "]:" 
+						+ "[" + ws.getRange2("B100:B103").getValueForEdit().replace(specialSymbolsPattern, "'$1") + "]"
+						+ "]";
+
+		assert.strictEqual(valueInCellEditMode, expectedValue, "First and second column without header select. Simulation value for edit in cellEditMode");
+
+		// second and third column
+		selectedRange = ws.getRange2("B101:C103");
+		wsView.setSelection(selectedRange.bbox);
+
+		ranges = wsView.model.selectionRange.ranges;
+		valueInCellEditMode = tables[0].getSelectionString(wsView.model.getSelection().activeCell, ranges[0]);
+		expectedValue = tableName + "[" 
+						+ "[" + ws.getRange2("B100:B103").getValueForEdit().replace(specialSymbolsPattern, "'$1") + "]:" 
+						+ "[" + ws.getRange2("C100:C103").getValueForEdit().replace(specialSymbolsPattern, "'$1") + "]"
+						+ "]";
+
+		assert.strictEqual(valueInCellEditMode, expectedValue, "Second and third column without header select. Simulation value for edit in cellEditMode");
+
+
+		clearData(0, 99, 0, 105);
+	});
+
 	/* for bug 61856 */
 	QUnit.test('Array of arguments check after calling the wizard for the function', function (assert) { 
 		let resArray;

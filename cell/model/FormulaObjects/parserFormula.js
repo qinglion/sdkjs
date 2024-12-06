@@ -2338,9 +2338,10 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 			tblStr = table.name;
 		}
 
+		/* escapeTableCharacters - add special character escaping for string inside the table (escaping with single quote) */
 		if (this.oneColumnIndex) {
 			// TODO add this.isCrossSign to use?
-			columns_1 = this.oneColumnIndex.name.replace(/([#[\]])/g, "'$1");
+			columns_1 = parserHelp.escapeTableCharacters(this.oneColumnIndex.name, true/*doEscape*/);
 
 			if (this.isDynamic && isLocal) {
 				columns_1 = "@" + columns_1;
@@ -2351,8 +2352,9 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 
 			tblStr += "[" + columns_1 + "]";
 		} else if (this.colStartIndex && this.colEndIndex) {
-			columns_1 = this.colStartIndex.name.replace(/([#[\]])/g, "'$1");
-			columns_2 = this.colEndIndex.name.replace(/([#[\]])/g, "'$1");
+			columns_1 = parserHelp.escapeTableCharacters(this.colStartIndex.name, true/*doEscape*/);
+			columns_2 = parserHelp.escapeTableCharacters(this.colEndIndex.name, true/*doEscape*/);
+
 			tblStr += "[[" + columns_1 + "]:[" + columns_2 + "]]";
 		} else if (null != this.reservedColumnIndex) {
 			if (this.isDynamic && isLocal && this.reservedColumnIndex === AscCommon.FormulaTablePartInfo.thisRow) {
@@ -2365,8 +2367,8 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 			let i;
 
 			if (this.hdtIndexes.length > 0 && this.isDynamic && isLocal && this.hdtIndexes[0] === AscCommon.FormulaTablePartInfo.thisRow) {
-				let hdtcstart = this.hdtcstartIndex ? this.hdtcstartIndex.name.replace(/([#[\]])/g, "'$1") : null;
-				let hdtcend = this.hdtcendIndex ? this.hdtcendIndex.name.replace(/([#[\]])/g, "'$1") : null;
+				let hdtcstart = this.hdtcstartIndex ? parserHelp.escapeTableCharacters(this.hdtcstartIndex.name, true) : null;
+				let hdtcend = this.hdtcendIndex ? parserHelp.escapeTableCharacters(this.hdtcendIndex.name, true) : null;
 				
 				tblStr += "@";
 				if (hdtcstart && !hdtcend) {
@@ -2404,10 +2406,12 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 							tblStr += FormulaSeparators.functionArgumentSeparatorDef;
 						}
 					}
-					let hdtcstart = this.hdtcstartIndex.name.replace(/([#[\]])/g, "'$1");
+					let hdtcstart = parserHelp.escapeTableCharacters(this.hdtcstartIndex.name, true);
+
 					tblStr += "[" + hdtcstart + "]";
 					if (this.hdtcendIndex) {
-						let hdtcend = this.hdtcendIndex.name.replace(/([#[\]])/g, "'$1");
+						let hdtcend = parserHelp.escapeTableCharacters(this.hdtcendIndex.name, true);
+
 						tblStr += ":[" + hdtcend + "]";
 					}
 				}
@@ -2422,8 +2426,10 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 	cStrucTable.prototype._parseVal = function (val) {
 		let bRes = true, startCol, endCol;
 		this.tableName = val['tableName'];
+
+		// inside .getTableIndexColumnByName() we perform .replace for the column name we are looking for
 		if (val['oneColumn']) {
-			startCol = val['oneColumn'].replace(/'([#[\]])/g, '$1');
+			startCol = val['oneColumn']
 			if (startCol[0] === "@") {
 				this.isDynamic = true;
 			}
@@ -2431,8 +2437,9 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 			this.oneColumnIndex = this.wb.getTableIndexColumnByName(this.tableName, this.isDynamic ? startCol.slice(1) : startCol);
 			bRes = !!this.oneColumnIndex;
 		} else if (val['columnRange']) {
-			startCol = val['colStart'].replace(/'([#[\]])/g, '$1');
-			endCol = val['colEnd'].replace(/'([#[\]])/g, '$1');
+			startCol = val['colStart'];
+			endCol = val['colEnd'];
+
 			if (!endCol) {
 				endCol = startCol;
 			}
@@ -2467,11 +2474,11 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 			}
 
 			if (hdtcstart) {
-				startCol = hdtcstart.replace(/'([#[\]])/g, '$1');
+				startCol = hdtcstart;
 				this.hdtcstartIndex = this.wb.getTableIndexColumnByName(this.tableName, startCol);
 				bRes = !!this.hdtcstartIndex;
 				if (bRes && hdtcend) {
-					endCol = hdtcend.replace(/'([#[\]])/g, '$1');
+					endCol = hdtcend;
 					this.hdtcendIndex = this.wb.getTableIndexColumnByName(this.tableName, endCol);
 					bRes = !!this.hdtcendIndex;
 				}

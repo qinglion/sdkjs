@@ -9015,6 +9015,10 @@ function RangeDataManagerElem(bbox, data)
 			let startCol = this.getTableNameColumnByIndex(handleSelectionRange.c1 - this.Ref.c1);
 			let endCol = this.getTableNameColumnByIndex(handleSelectionRange.c2 - this.Ref.c1);
 
+			/* add special character escaping for string inside the table (escaping with single quote) */
+			startCol = parserHelp.escapeTableCharacters(startCol, true);
+			endCol = parserHelp.escapeTableCharacters(endCol, true);
+
 			if (this.Ref.isEqual(handleSelectionRange)) {
 				//Table1[#All]
 				return this.DisplayName + "[" + AscCommon.cStrucTableReservedWords.all + "]";
