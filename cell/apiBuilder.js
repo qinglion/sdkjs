@@ -11231,6 +11231,8 @@
 
 		let ws = this.range.worksheet;
 		let selectionRange = ws.selectionRange.getLast();
+		let api = ws.workbook.oApi;
+
 
 		let _range;
 		if (ws.AutoFilter) {
@@ -11248,10 +11250,10 @@
 
 		//firstly add filter or remove filter
 		if (Field == null && ws.AutoFilter) {
-			this.asc_changeAutoFilter(null, Asc.c_oAscChangeFilterOptions.filter, false);
+			api.asc_changeAutoFilter(null, Asc.c_oAscChangeFilterOptions.filter, false);
 			return;
 		} else if (!ws.AutoFilter) {
-			this.asc_addAutoFilter(null, null, this.range.bbox);
+			api.asc_addAutoFilter(null, null, this.range.bbox);
 		}
 
 		if (Field == null) {
@@ -11260,9 +11262,11 @@
 
 		if (Criteria1 == null) {
 			//clean current filter
-			this.asc_clearFilterColumn(Asc.range(_range.c1 + Field, _range.r1, _range.c1 + Field, _range.r1).getName());
+			api.asc_clearFilterColumn(Asc.range(_range.c1 + Field, _range.r1, _range.c1 + Field, _range.r1).getName());
 			return;
 		}
+
+		let cellId = Asc.Range(_range.c1 + Field - 1, _range.r1, _range.c1 + Field - 1, _range.r1).getName();
 
 		let getOperator = function (val) {
 			let res = null;
@@ -11322,34 +11326,46 @@
 
 		let createSimpleFilter = function () {
 			if (Criteria1 && Array.isArray(Criteria1)) {
-				let arrVals = [];
+				let autoFiltersOptionsElements = ws.autoFilters.getOpenAndClosedValues(ws.AutoFilter, Field - 1);
+
+				let criteriaMap = {};
 				for (let i in Criteria1) {
-					let elem = new AscCommonExcel.AutoFiltersOptionsElements();
-					elem.asc_setVisible(true);
-					elem.asc_setVal(Criteria1[i]);
-
-					//res.asc_setText(text);
-					/*res.asc_setIsDateFormat(isDateTimeFormat);
-					if (isDateTimeFormat) {
-						res.asc_setYear(dataValue.year);
-						res.asc_setMonth(dataValue.month);
-						res.asc_setDay(dataValue.d);
-						if (dataValue.hour !== 0 || dataValue.min !== 0 || dataValue.sec !== 0) {
-							isTimeFormat = true;
-						}
-						res.asc_setHour(dataValue.hour);
-						res.asc_setMinute(dataValue.min);
-						res.asc_setSecond(dataValue.sec);
-						res.asc_setDateTimeGrouping(Asc.EDateTimeGroup.datetimegroupYear);
-					}*/
-
-					arrVals.push(elem);
+					criteriaMap[Criteria1[i]] = 1;
 				}
 
+				for (let i = 0; i < autoFiltersOptionsElements.values.length; i++) {
+					autoFiltersOptionsElements.values[i].asc_setVisible(!!criteriaMap[autoFiltersOptionsElements.values[i].text]);
+				}
+				// for (let i in Criteria1) {
+				// 	let elem = new AscCommonExcel.AutoFiltersOptionsElements();
+				// 	elem.asc_setVisible(true);
+				// 	elem.asc_setVal(Criteria1[i]);
+				// 	elem.asc_setText(Criteria1[i]);
+				//
+				// 	//res.asc_setText(text);
+				// 	/*res.asc_setIsDateFormat(isDateTimeFormat);
+				// 	if (isDateTimeFormat) {
+				// 		res.asc_setYear(dataValue.year);
+				// 		res.asc_setMonth(dataValue.month);
+				// 		res.asc_setDay(dataValue.d);
+				// 		if (dataValue.hour !== 0 || dataValue.min !== 0 || dataValue.sec !== 0) {
+				// 			isTimeFormat = true;
+				// 		}
+				// 		res.asc_setHour(dataValue.hour);
+				// 		res.asc_setMinute(dataValue.min);
+				// 		res.asc_setSecond(dataValue.sec);
+				// 		res.asc_setDateTimeGrouping(Asc.EDateTimeGroup.datetimegroupYear);
+				// 	}*/
+				//
+				// 	arrVals.push(elem);
+				// }
+
 				autoFilterOptions = new window["Asc"].AutoFiltersOptions();
-				autoFilterOptions.asc_setType(Asc.c_oAscAutoFilterTypes.Filters);
-				autoFilterOptions.asc_getValues(arrVals);
-				autoFilterOptions.asc_setType(Asc.c_oAscAutoFilterTypes.Top10);
+				let oFilter = new window["Asc"].AutoFilterObj();
+				oFilter.asc_setType(Asc.c_oAscAutoFilterTypes.Filters);
+				autoFilterOptions.asc_setFilterObj(oFilter);
+				autoFilterOptions.asc_setCellId(cellId);
+				autoFilterOptions.asc_setValues(autoFiltersOptionsElements.values);
 			}
 		};
 
@@ -11530,7 +11546,7 @@
 		};
 
 		//apply filtering
-		let isAutoFilter = this.range.worksheet && this.range.worksheet.model.AutoFilter && this.range.worksheet.model.AutoFilter.Ref.intersection(this.range.bbox);
+		let isAutoFilter = this.range.worksheet && this.range.worksheet.AutoFilter && this.range.worksheet.AutoFilter.Ref.intersection(this.range.bbox);
 		let autoFilterOptions;
 		if (isAutoFilter) {
 			switch (Operator) {
@@ -11586,7 +11602,7 @@
 					break;
 			}
 			if (autoFilterOptions) {
-				this.range.worksheet.applyAutoFilter(autoFilterOptions);
+				api.asc_applyAutoFilter(autoFilterOptions);
 			}
 		}
 	};
