@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -66,12 +66,12 @@ CMathSize.prototype.Set = function(size)
 };
 
 /**
- * @extends {CRunElementBase}
+ * @extends {AscWord.CRunElementBase}
  * @constructor
  */
 function CMathBaseText()
 {
-    CRunElementBase.call(this);
+	AscWord.CRunElementBase.call(this);
 
     this.Type           = null;
     this.bJDraw         = false;
@@ -86,16 +86,16 @@ function CMathBaseText()
     this.Flags          = 0;
     this.size           = new CMathSize();
     this.Width          = 0; // special for Run размер буквы без Gaps
-                             // в действительности это поле не должно использоваться, нужно использовать функциии Get_Width, Get_Width_2 ,Get_WidthVisible
+                             // в действительности это поле не должно использоваться, нужно использовать функциии GetWidth, Get_Width_2 ,GetWidthVisible
 
     this.pos = new CMathPosition();
 
     this.GapLeft        = 0;
     this.GapRight       = 0;
 }
-CMathBaseText.prototype = Object.create(CRunElementBase.prototype);
+CMathBaseText.prototype = Object.create(AscWord.CRunElementBase.prototype);
 CMathBaseText.prototype.constructor = CMathBaseText;
-CMathBaseText.prototype.Get_Width = function() // работаем через функцию, т.к. поля  GapLeft и GapRight могут измениться из-за изменения переноса, а пересчет (Measure) в этом случае не прийдет
+CMathBaseText.prototype.GetWidth = function() // работаем через функцию, т.к. поля  GapLeft и GapRight могут измениться из-за изменения переноса, а пересчет (Measure) в этом случае не прийдет
 {
     var Width = this.size.width;
 
@@ -105,13 +105,13 @@ CMathBaseText.prototype.Get_Width = function() // работаем через ф
     if(this.bEmptyGapRight == false)
         Width += this.GapRight;
 
-    return (Width*TEXTWIDTH_DIVIDER) | 0;
+    return (Width * AscWord.TEXTWIDTH_DIVIDER) | 0;
 };
 CMathBaseText.prototype.Get_Width2 = function() // работаем через функцию, т.к. поля  GapLeft и GapRight могут измениться из-за изменения переноса, а пересчет (Measure) в этом случае не прийдет
 {
-    return ( (this.size.width + this.GapLeft + this.GapRight)* TEXTWIDTH_DIVIDER ) | 0;
+    return ( (this.size.width + this.GapLeft + this.GapRight)* AscWord.TEXTWIDTH_DIVIDER ) | 0;
 };
-CMathBaseText.prototype.Get_WidthVisible = function()
+CMathBaseText.prototype.GetWidthVisible = function()
 {
     var Width = this.size.width;
 
@@ -160,7 +160,7 @@ CMathBaseText.prototype.IsNBSP = function()
 {
     return false;
 };
-CMathBaseText.prototype.Can_AddNumbering = function()
+CMathBaseText.prototype.CanAddNumbering = function()
 {
     return true;
 };
@@ -208,7 +208,7 @@ function CMathText(bJDraw)
     this.rasterOffsetX  = 0;
     this.rasterOffsetY  = 0;
 
-    this.FontSlot       = fontslot_ASCII;
+    this.FontSlot       = AscWord.fontslot_ASCII;
 
 
     // TO DO
@@ -269,7 +269,9 @@ CMathText.prototype.private_getCode = function()
     // Mathematical Alphanumeric Characters
     // http://www.w3.org/TR/2014/REC-xml-entity-names-20140410/Overview.html#alphabets
 
-    if(code == 0x2A)      // "*"
+	if (code == 0x2061) // \funcapply ⁡
+        code = 8196;
+    else if(code == 0x2A)      // "*"
         code = 0x2217;
     else if(code == 0x2D) // "-"
         code = 0x2212;
@@ -696,49 +698,73 @@ CMathText.prototype.SetPlaceholder = function()
     this.Type = para_Math_Placeholder;
     this.value = StartTextElement;
 };
+CMathText.prototype.IsAccent = function ()
+{
+	return AscMath.MathLiterals.accent.SearchU[String.fromCharCode(this.value)] != undefined;
+}
 CMathText.prototype.Measure = function(oMeasure, TextPr, InfoMathText)
 {
-    /*
-     var metricsTxt = g_oTextMeasurer.Measure2Code(letter);
-     var _width = metricsTxt.Width;
-     height = g_oTextMeasurer.GetHeight();
-    */
+	/*
+	 var metricsTxt = g_oTextMeasurer.Measure2Code(letter);
+	 var _width = metricsTxt.Width;
+	 height = g_oTextMeasurer.GetHeight();
+	*/
 
-    var metricsTxt;
+	var metricsTxt;
 
-    // measure
-    if(this.bJDraw)
-    {
-        // Font выставляется на соответствующей функции SetFont в родительском классе (в общем случае в CMathBase)
+	// measure
+	if(this.bJDraw)
+	{
+		// Font выставляется на соответствующей функции SetFont в родительском классе (в общем случае в CMathBase)
 
-        this.RecalcInfo.StyleCode = this.value;
-        metricsTxt = oMeasure.Measure2Code(this.value);
-    }
-    else
-    {
-        var ascent, width, height, descent;
+		this.RecalcInfo.StyleCode = this.value;
+		metricsTxt = oMeasure.Measure2Code(this.value);
+	}
+	else
+	{
+		var ascent, width, height, descent;
 
-        var letter = this.private_getCode();
+		var letter = this.private_getCode();
 
-        this.FontSlot = InfoMathText.GetFontSlot(letter); // возвращает fontslot_ASCII || fontslot_EastAsia || fontslot_CS || fontslot_HAnsi
+		this.FontSlot = InfoMathText.GetFontSlot(letter); // возвращает AscWord.fontslot_ASCII || AscWord.fontslot_EastAsia || AscWord.fontslot_CS || AscWord.fontslot_HAnsi
 
-        // в не математическом тексте i и j не подменяются на i и j без точек
-        var bAccentIJ = !InfoMathText.bNormalText && this.Parent.IsAccent() && (this.value == 0x69 || this.value == 0x6A);
+		// в не математическом тексте i и j не подменяются на i и j без точек
+		var bAccentIJ = !InfoMathText.bNormalText && this.Parent.IsAccent() && (this.value == 0x69 || this.value == 0x6A);
 
-        this.RecalcInfo.StyleCode   = letter;
-        this.RecalcInfo.bAccentIJ   = bAccentIJ;
+		this.RecalcInfo.StyleCode   = letter;
+		this.RecalcInfo.bAccentIJ   = bAccentIJ;
 
-        var bApostrophe = 1 == q_Math_Apostrophe[letter] && this.bJDraw == false;
+		var bApostrophe = 1 == q_Math_Apostrophe[letter] && this.bJDraw == false;
 
-        if(bAccentIJ)
-            oMeasure.SetStringGid(true);
+		if(bAccentIJ)
+			oMeasure.SetStringGid(true);
 
-        if( InfoMathText.NeedUpdateFont(letter, this.FontSlot, this.IsPlaceholder(), bApostrophe) )
-        {
-            g_oTextMeasurer.SetFont(InfoMathText.Font);
-            //g_oTextMeasurer.SetTextPr(InfoTextPr.CurrentTextPr, InfoTextPr.Theme);
-        }
-        else if(InfoMathText.CurrType == MathTextInfo_NormalText)
+		else if( InfoMathText.NeedUpdateFont(letter, this.FontSlot, this.IsPlaceholder(), bApostrophe) )
+		{
+			if (this.Parent.Pr.SmallCaps || this.Parent.Pr.Caps)
+			{
+				let symbol;
+
+				if (this.Parent.Pr.SmallCaps || this.Parent.Pr.Caps)
+				{
+					symbol = String.fromCharCode(this.value).toUpperCase();
+				}
+
+				letter						= symbol.charCodeAt(0);
+				this.RecalcInfo.StyleCode	= letter;
+				InfoMathText.bApostrophe	= false;
+
+				var FontKoef = InfoMathText.GetFontKoef(this.FontSlot);
+
+				g_oTextMeasurer.SetFontSlot(this.FontSlot, FontKoef);
+			}
+			else
+			{
+				g_oTextMeasurer.SetFont(InfoMathText.Font);
+			}
+			//g_oTextMeasurer.SetTextPr(InfoTextPr.CurrentTextPr, InfoTextPr.Theme);
+		}
+		else if(InfoMathText.CurrType == MathTextInfo_NormalText)
 		{
 			letter                    = this.value;
 			this.RecalcInfo.StyleCode = letter;
@@ -749,56 +775,56 @@ CMathText.prototype.Measure = function(oMeasure, TextPr, InfoMathText)
 			g_oTextMeasurer.SetFontSlot(this.FontSlot, FontKoef);
 		}
 
-        this.RecalcInfo.bApostrophe   = InfoMathText.bApostrophe;
-        this.RecalcInfo.bSpaceSpecial = letter == 0x2061;
+		this.RecalcInfo.bApostrophe   = InfoMathText.bApostrophe;
+		this.RecalcInfo.bSpaceSpecial = letter == 0x2061;
 
-        metricsTxt = oMeasure.MeasureCode(letter);
+		metricsTxt = oMeasure.MeasureCode(letter);
 
-        if(bAccentIJ)
-            oMeasure.SetStringGid(false);
-    }
+		if(bAccentIJ)
+			oMeasure.SetStringGid(false);
+	}
 
-    if(this.RecalcInfo.bApostrophe)
-    {
-        width   =  metricsTxt.Width;
-        height  = metricsTxt.Height;
+	if(this.RecalcInfo.bApostrophe)
+	{
+		width   =  metricsTxt.Width;
+		height  = metricsTxt.Height;
 
-        InfoMathText.NeedUpdateFont(0x1D44E, this.FontSlot, false, false);  // a
-        g_oTextMeasurer.SetFont(InfoMathText.Font);
+		InfoMathText.NeedUpdateFont(0x1D44E, this.FontSlot, false, false);  // a
+		g_oTextMeasurer.SetFont(InfoMathText.Font);
 
-        var metricsA = oMeasure.MeasureCode(0x1D44E);   // a
-        this.rasterOffsetY = metricsA.Height - metricsTxt.Ascent; // смещение для позиции
+		var metricsA = oMeasure.MeasureCode(0x1D44E);   // a
+		this.rasterOffsetY = metricsA.Height - metricsTxt.Ascent; // смещение для позиции
 
-        ascent  =  metricsA.Height;
-    }
-    else if(this.RecalcInfo.bSpaceSpecial)
-    {
-        width = 0;
-        height = 0;
-        ascent = 0;
-    }
-    else
-    {
-        //  смещения
-        this.rasterOffsetX = metricsTxt.rasterOffsetX;
-        this.rasterOffsetY = metricsTxt.rasterOffsetY;
+		ascent  =  metricsA.Height;
+	}
+	// else if(this.RecalcInfo.bSpaceSpecial) // show funcapply
+	// {
+	//     width = 0;
+	//     height = 0;
+	//     ascent = 0;
+	// }
+	else
+	{
+		//  смещения
+		this.rasterOffsetX = metricsTxt.rasterOffsetX;
+		this.rasterOffsetY = metricsTxt.rasterOffsetY;
 
-        ascent  =  metricsTxt.Ascent;
-        descent = (metricsTxt.Height - metricsTxt.Ascent);
-        height  =  ascent + descent;
+		ascent  =  metricsTxt.Ascent;
+		descent = (metricsTxt.Height - metricsTxt.Ascent);
+		height  =  ascent + descent;
 
 
-        if(this.bJDraw)
-            width = metricsTxt.WidthG;
-        else
-            width = metricsTxt.Width;
-    }
+		if(this.bJDraw)
+			width = metricsTxt.WidthG;
+		else
+			width = metricsTxt.Width;
+	}
 
-    this.size.width  = width;
-    this.size.height = height;
-    this.size.ascent = ascent;
+	this.size.width  = width;
+	this.size.height = height;
+	this.size.ascent = ascent;
 
-    this.Width = (this.size.width * TEXTWIDTH_DIVIDER) | 0;
+	this.Width = (this.size.width * AscWord.TEXTWIDTH_DIVIDER) | 0;
 
 };
 CMathText.prototype.PreRecalc = function(Parent, ParaMath)
@@ -813,58 +839,120 @@ CMathText.prototype.PreRecalc = function(Parent, ParaMath)
 };
 CMathText.prototype.Draw = function(x, y, pGraphics, InfoTextPr)
 {
-    var X = this.pos.x + x,
-        Y = this.pos.y + y;
+	// bug 46069
+	// 0x200C has a non-empty glyph in CambriaMath
+	if (this.value === 0x200C)
+		return;
 
-    if(this.bEmptyGapLeft == false)
-        X += this.GapLeft;
+	// CMathText may not always have a parent (base of CNary etc.)
+	if (this.Parent && this.Parent.getYOffset)
+		y -= this.Parent.getYOffset();
 
-    /*var tx = 0;
-     var ty = 0;
+	var X = this.pos.x + x,
+		Y = this.pos.y + y;
 
-     var x = (X*sy  - Y*shx - tx*sy)/(sx*sy- shy*shx);
-     var y = (Y - x*shy - ty*shx)/sy;*/
+	if(this.bEmptyGapLeft == false)
+		X += this.GapLeft;
 
-    /*var invert = new CMatrix();
-    invert.sx = this.transform.sx;
-    invert.sy = this.transform.sy;
-    invert.shx = this.transform.shx;
-    invert.shy = this.transform.shy;
-    invert.tx = 0;
-    invert.ty = 0;
-    invert.Invert();
+	/*var tx = 0;
+	 var ty = 0;
 
-    var xx = invert.TransformPointX(X, Y);
-    var yy = invert.TransformPointY(X, Y);
+	 var x = (X*sy  - Y*shx - tx*sy)/(sx*sy- shy*shx);
+	 var y = (Y - x*shy - ty*shx)/sy;*/
+
+	/*var invert = new CMatrix();
+	invert.sx = this.transform.sx;
+	invert.sy = this.transform.sy;
+	invert.shx = this.transform.shx;
+	invert.shy = this.transform.shy;
+	invert.tx = 0;
+	invert.ty = 0;
+	invert.Invert();
+
+	var xx = invert.TransformPointX(X, Y);
+	var yy = invert.TransformPointY(X, Y);
 
 
-    var sx = this.transform.sx, shx = this.transform.shx,
-        shy = this.transform.shy, sy = this.transform.sy;
+	var sx = this.transform.sx, shx = this.transform.shx,
+		shy = this.transform.shy, sy = this.transform.sy;
 
-    pGraphics.transform(sx, shy, shx, sy, 0, 0);*/
+	pGraphics.transform(sx, shy, shx, sy, 0, 0);*/
 
-    if(this.bJDraw)
-    {
-        pGraphics.FillTextCode(X, Y, this.RecalcInfo.StyleCode);    //на отрисовку символа отправляем положение baseLine
-    }
-    else if(this.RecalcInfo.bSpaceSpecial == false)
-    {
-        if( InfoTextPr.NeedUpdateFont(this.RecalcInfo.StyleCode, this.FontSlot, this.IsPlaceholder(), this.RecalcInfo.bApostrophe) )
-        {
-            pGraphics.SetFont(InfoTextPr.Font);
-            //pGraphics.SetTextPr(InfoTextPr.CurrentTextPr, InfoTextPr.Theme);
-        }
-        else if(InfoTextPr.CurrType == MathTextInfo_NormalText)
-        {
-            var FontKoef = InfoTextPr.GetFontKoef(this.FontSlot);
-            pGraphics.SetFontSlot(this.FontSlot, FontKoef);
-        }
+	if(this.bJDraw)
+	{
+		pGraphics.FillTextCode(X, Y, this.RecalcInfo.StyleCode);    //на отрисовку символа отправляем положение baseLine
+	}
+	else if(this.RecalcInfo.bSpaceSpecial == false)
+	{
+		if( InfoTextPr.NeedUpdateFont(this.RecalcInfo.StyleCode, this.FontSlot, this.IsPlaceholder(), this.RecalcInfo.bApostrophe) )
+		{
+			pGraphics.SetFont(InfoTextPr.Font);
+			//pGraphics.SetTextPr(InfoTextPr.CurrentTextPr, InfoTextPr.Theme);
+		}
+		else if(InfoTextPr.CurrType == MathTextInfo_NormalText)
+		{
+			var FontKoef = InfoTextPr.GetFontKoef(this.FontSlot);
+			pGraphics.SetFontSlot(this.FontSlot, FontKoef);
+		}
 
-        if(this.RecalcInfo.bAccentIJ)
-            pGraphics.tg(this.RecalcInfo.StyleCode, X, Y);
-        else
-            pGraphics.FillTextCode(X, Y, this.RecalcInfo.StyleCode);    //на отрисовку символа отправляем положение baseLine
-    }
+		if (this.RecalcInfo.bAccentIJ)
+		{
+			pGraphics.tg(this.RecalcInfo.StyleCode, X, Y);
+		}
+		else if (Asc.editor.ShowParaMarks && (this.value === 8195 || this.value === 8194 || this.value === 160))
+		{
+			let widthOfCircle = g_oTextMeasurer.MeasureCode(176).Width / 2;
+			pGraphics.FillTextCode(X + this.size.width / 2 - widthOfCircle, Y, 176);
+			pGraphics.FillTextCode(X, Y, this.value);
+		}
+		else if (Asc.editor.ShowParaMarks && this.value === 8197) //draw \thicksp
+		{
+			// for some reason, word does not use a Unicode character for "Four-Per-Em Space", but a drawn rectangle
+			pGraphics.FillTextCode(X + this.size.width, Y, this.value)
+			let heightOfRect = this.size.width * 3;
+
+			let penW = 0.02;
+
+			let nWidth = this.size.width;
+			let nShrinkWidth = nWidth * 0.9;
+			let nPadding = (nWidth - nShrinkWidth) / 2;
+
+			let x1 = X + nPadding;
+			let x2 = X + nShrinkWidth + nPadding;
+			let y1 = Y;
+			let y2 = y - heightOfRect;
+
+			pGraphics.drawHorLine(0, y1, x1, x2, penW);
+			pGraphics.drawHorLine(0, y2, x1, x2, penW);
+			pGraphics.drawVerLine(0, x1, y1, y2, penW);
+			pGraphics.drawVerLine(0, x2, y1, y2, penW);
+		}
+		else
+		{
+			let strOriginal		= String.fromCharCode(this.value);
+			let strUpper		= strOriginal.toUpperCase();
+			let strLower		= strOriginal.toLowerCase();
+			let nUpperStr		= strUpper.charCodeAt(0);
+			let nLowerStr		= strLower.charCodeAt(0);
+
+			if (InfoTextPr.TextPr.Caps && nUpperStr !== this.value)
+			{
+				pGraphics.FillTextCode(X, Y, nUpperStr);
+			}
+			else if (InfoTextPr.TextPr.SmallCaps
+				&& this.value !== nUpperStr
+				&& this.value === nLowerStr)
+			{
+				pGraphics.SetFontSlot(this.FontSlot, smallcaps_Koef);
+				pGraphics.FillTextCode(X, Y, nUpperStr);
+			}
+			else
+			{
+				// на отрисовку символа отправляем положение baseLine
+				pGraphics.FillTextCode(X, Y, this.RecalcInfo.StyleCode);
+			}
+		}
+	}
 };
 CMathText.prototype.setPosition = function(pos)
 {
@@ -901,6 +989,14 @@ CMathText.prototype.GetLocationOfLetter = function()
 
     return pos;
 };
+/**
+ * Get first find parent typeof CMathContent or MathBase
+ * @return {*}
+ */
+CMathText.prototype.GetMathBaseFirst = function()
+{
+	return this.Parent.GetMathBaseFirst();
+};
 CMathText.prototype.Is_InclineLetter = function()
 {
     var code = this.value;
@@ -932,9 +1028,17 @@ CMathText.prototype.IsAlignPoint = function()
 {
     return false;
 };
-CMathText.prototype.IsText = function()
+CMathText.prototype.IsMathText = function()
 {
     return true;
+};
+CMathText.prototype.IsCombiningMark = function()
+{
+	return AscWord.isCombiningMark(this.value);
+};
+CMathText.prototype.IsBreakOperator = function ()
+{
+	return this.private_Is_BreakOperator(this.value);
 };
 CMathText.prototype.private_Is_BreakOperator = function(val)
 {
@@ -954,6 +1058,18 @@ CMathText.prototype.Is_RightBracket = function()
 {
     return this.value == 0x29 || this.value == 0x7D || this.value == 0x5D || this.value == 0x27E9 || this.value == 0x230B || this.value == 0x2309 || this.value == 0x27E7 || this.value == 0x232A;
 };
+CMathText.prototype.IsNBSP = function()
+{
+    let strValue = String.fromCharCode(this.value);
+    return AscMath.MathLiterals.space.SearchU(strValue);
+};
+CMathText.prototype.SetParent = function (oParent)
+{
+	if (!oParent)
+		return;
+
+	this.Parent = oParent;
+}
 ////
 CMathText.prototype.setCoeffTransform = function(sx, shx, shy, sy)
 {
@@ -1004,16 +1120,45 @@ CMathText.prototype.Read_FromBinary = function(Reader)
 	if (AscFonts.IsCheckSymbols)
 		AscFonts.FontPickerByCharacter.getFontBySymbol(this.value);
 };
-CMathText.prototype.Is_LetterCS = function()
+CMathText.prototype.GetFontSlot = function()
 {
-    return this.FontSlot == fontslot_CS;
+	return this.FontSlot;
 };
 CMathText.prototype.ToSearchElement = function(oProps)
 {
-	if (oProps.MatchCase)
-		return new CSearchTextItemChar(String.fromCodePoint(this.Value).toLowerCase().codePointAt(0));
+	var nCodePoint = this.value;
+	if (undefined === nCodePoint || null === nCodePoint)
+		return null;
 
-	return new CSearchTextItemChar(this.Value);
+	if (oProps.IsMatchCase())
+		return new AscCommonWord.CSearchTextItemChar(String.fromCodePoint(nCodePoint).toLowerCase().codePointAt(0));
+
+	return new AscCommonWord.CSearchTextItemChar(nCodePoint);
+};
+CMathText.prototype.GetTextOfElement = function(oMathText)
+{
+	oMathText = new AscMath.MathTextAndStyles(oMathText);
+
+	if (this.value && this.value !== 11034)
+	{
+		let strValue = AscCommon.encodeSurrogateChar(this.value);
+
+		if (oMathText.IsLaTeX())
+		{
+			let strMath = AscMath.SymbolsToLaTeX[strValue];
+			if (strMath)
+				strValue = strMath;
+		}
+
+		let oText = new AscMath.MathText(strValue, this.Parent)
+		oMathText.AddText(oText);
+	}
+
+    return oMathText;
+};
+CMathText.prototype.GetCodePoint = function()
+{
+    return this.value;
 };
 /*CMathText.prototype.Recalculate_Reset = function(StartRange, StartLine, PRS)
 {
@@ -1074,7 +1219,7 @@ CMathAmp.prototype.Measure = function(oMeasure, TextPr, InfoMathText)
         this.size.ascent  = this.AmpText.size.ascent;
     }
 
-    this.Width = (this.size.width * TEXTWIDTH_DIVIDER) | 0;
+    this.Width = (this.size.width * AscWord.TEXTWIDTH_DIVIDER) | 0;
 };
 CMathAmp.prototype.PreRecalc = function(Parent, ParaMath, ArgSize, RPI)
 {
@@ -1091,7 +1236,7 @@ CMathAmp.prototype.getCodeChr = function()
 
     return code;
 };
-CMathAmp.prototype.IsText = function()
+CMathAmp.prototype.IsMathText = function()
 {
     return !this.bAlignPoint;
 };
@@ -1112,9 +1257,9 @@ CMathAmp.prototype.Draw = function(x, y, pGraphics, InfoTextPr)
 {
     if(this.bAlignPoint == false)
         this.AmpText.Draw(x + this.GapLeft, y, pGraphics, InfoTextPr);
-    else if(editor.ShowParaMarks) // показать метки выравнивания, если включена отметка о знаках параграфа
+    else if(Asc.editor.ShowParaMarks) // показать метки выравнивания, если включена отметка о знаках параграфа
     {
-        var X  = x + this.pos.x + this.Get_WidthVisible(),
+        var X  = x + this.pos.x + this.GetWidthVisible(),
             Y  = y + this.pos.y,
             Y2 = y + this.pos.y - this.AmpText.size.height;
 
@@ -1133,6 +1278,13 @@ CMathAmp.prototype.Copy = function()
 {
     return new CMathAmp();
 };
+CMathAmp.prototype.SetParent = function (oParent)
+{
+	if (!oParent)
+		return;
+
+	this.Parent = oParent;
+}
 CMathAmp.prototype.Write_ToBinary = function(Writer)
 {
     // Long : Type
@@ -1140,6 +1292,17 @@ CMathAmp.prototype.Write_ToBinary = function(Writer)
 };
 CMathAmp.prototype.Read_FromBinary = function(Reader)
 {
+};
+CMathAmp.prototype.GetTextOfElement = function(oMathText)
+{
+	oMathText		= new AscMath.MathTextAndStyles(oMathText);
+
+	let strAmp		= this.bAlignPoint ? "" : "&";
+	let oAmpText	= new AscMath.MathText(strAmp, this.Parent ? this.Parent : oMathText.GetFirstStyle());
+
+	oMathText.AddText(oAmpText);
+
+	return oMathText;
 };
 
 function CMathInfoTextPr(InfoTextPr)
@@ -1165,10 +1328,10 @@ function CMathInfoTextPr(InfoTextPr)
     // скопируем эти свойства для SetFontSlot
     // для SpecialOperator нужны уже скомпилированные для мат текста текстовые настройки, поэтому важно эи свойства скопировать именно здесь, а не передавать в MathText обычные текст. настройки
 
-    this.RFontsCompare[fontslot_ASCII]    = undefined !== this.TextPr.RFonts.Ascii && this.TextPr.RFonts.Ascii.Name == "Cambria Math";
-    this.RFontsCompare[fontslot_HAnsi]    = undefined !== this.TextPr.RFonts.HAnsi && this.TextPr.RFonts.HAnsi.Name == "Cambria Math";
-    this.RFontsCompare[fontslot_CS]       = undefined !== this.TextPr.RFonts.CS && this.TextPr.RFonts.CS.Name == "Cambria Math";
-    this.RFontsCompare[fontslot_EastAsia] = undefined !== this.TextPr.RFonts.EastAsia && this.TextPr.RFonts.EastAsia.Name == "Cambria Math";
+    this.RFontsCompare[AscWord.fontslot_ASCII]    = undefined !== this.TextPr.RFonts.Ascii && this.TextPr.RFonts.Ascii.Name == "Cambria Math";
+    this.RFontsCompare[AscWord.fontslot_HAnsi]    = undefined !== this.TextPr.RFonts.HAnsi && this.TextPr.RFonts.HAnsi.Name == "Cambria Math";
+    this.RFontsCompare[AscWord.fontslot_CS]       = undefined !== this.TextPr.RFonts.CS && this.TextPr.RFonts.CS.Name == "Cambria Math";
+    this.RFontsCompare[AscWord.fontslot_EastAsia] = undefined !== this.TextPr.RFonts.EastAsia && this.TextPr.RFonts.EastAsia.Name == "Cambria Math";
 }
 CMathInfoTextPr.prototype.NeedUpdateFont = function(code, fontSlot, IsPlaceholder, IsApostrophe)
 {
@@ -1213,7 +1376,7 @@ CMathInfoTextPr.prototype.NeedUpdateFont = function(code, fontSlot, IsPlaceholde
 };
 CMathInfoTextPr.prototype.private_GetFontSize = function(fontSlot)
 {
-    return fontSlot == fontslot_CS ? this.TextPr.FontSizeCS : this.TextPr.FontSize;
+    return fontSlot == AscWord.fontslot_CS ? this.TextPr.FontSizeCS : this.TextPr.FontSize;
 };
 CMathInfoTextPr.prototype.GetFontKoef = function(fontSlot)
 {
@@ -1222,12 +1385,7 @@ CMathInfoTextPr.prototype.GetFontKoef = function(fontSlot)
 };
 CMathInfoTextPr.prototype.GetFontSlot = function(code)
 {
-    var Hint = this.TextPr.RFonts.Hint;
-    var bCS  = this.TextPr.CS;
-    var bRTL = this.TextPr.RTL;
-    var lcid = this.TextPr.Lang.EastAsia;
-
-    return g_font_detector.Get_FontClass(code, Hint, lcid, bCS, bRTL);
+    return AscWord.GetFontSlotByTextPr(code, this.TextPr);
 };
 CMathInfoTextPr.prototype.IsSpecilalOperator = function(val)
 {
@@ -1401,4 +1559,7 @@ var q_Math_BreakOperators =
     0x00D7: 1, 0x00F7:  1
 };
 
-
+//--------------------------------------------------------export----------------------------------------------------
+window['AscWord'] = window['AscWord'] || {};
+window['AscWord'].CMathText = CMathText;
+window['AscWord'].CMathAmp = CMathAmp;

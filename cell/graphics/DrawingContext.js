@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -383,34 +383,25 @@
 	NativeContext.prototype.clearRect = function (x, y, w, h) {};
 	NativeContext.prototype.getImageData = function (sx,sy,sw,sh) {};
 	NativeContext.prototype.putImageData = function (image_data,dx,dy,dirtyX,dirtyY,dirtyWidth,dirtyHeight) {};
-
-	function NativeFontManager() {
-		this.m_lUnits_Per_Em = 0;
-		this.m_lAscender = 0;
-		this.m_lDescender = 0;
-		this.m_lLineHeight = 0;
+	
+	// В текущей реализации используется несколько разных DrawingContext, но ссылающихся на одни и те же
+	// FontManager, чтобы разрулить правильное выставление шрифта используем здесь локальные переменные
+	let setupFontSize  = -1;
+	let setupFontName  = "";
+	let setupFontStyle = -1;
+	let setupRotated   = false;
+	let setupPpiX      = -1;
+	let setupPpiY      = -1;
+	
+	function resetDrawingContextFonts() {
+		setupFontSize  = -1;
+		setupFontName  = "";
+		setupFontStyle = -1;
+		setupRotated   = false;
+		setupPpiX      = -1;
+		setupPpiY      = -1;
 	}
-
-	NativeFontManager.prototype.init = function (fontInfo) {
-		this.m_lUnits_Per_Em = fontInfo[3];
-		this.m_lAscender = fontInfo[0];
-		this.m_lDescender = fontInfo[2];
-		this.m_lLineHeight = fontInfo[2];
-	};
-	NativeFontManager.prototype.MeasureChar = function (lUnicode) {
-		var bounds = g_oTextMeasurer.Measurer["GetDrawingBox"](lUnicode);
-		return {
-			fAdvanceX: bounds[0], oBBox: {
-				fMinX: bounds[1], fMaxX: bounds[2], fMinY: bounds[3], fMaxY: bounds[4]
-			}
-		};
-	};
-	NativeFontManager.prototype.SetTextMatrix = function (fA, fB, fC, fD, fE, fF) {
-		window["native"]["PD_transform"](fA, fB, fC, fD, fE, fF);
-	};
-
-
-
+	
 	/**
 	 * Emulates scalable canvas context
 	 * -----------------------------------------------------------------------------
@@ -429,6 +420,7 @@
 
 		this.setCanvas(settings.canvas);
 
+		this.textRotated = false;
 		this.ppiX = 96;
 		this.ppiY = 96;
 		this.scaleFactor = 1;
@@ -447,9 +439,6 @@
 		this.changeUnits(undefined !== settings.units ? settings.units : this.units);
 
 		this.fmgrGraphics = undefined !== settings.fmgrGraphics ? settings.fmgrGraphics : null;
-		if (window["IS_NATIVE_EDITOR"]) {
-			this.fmgrGraphics = [new NativeFontManager(), new NativeFontManager(), new NativeFontManager(), new NativeFontManager()];
-		}
 
 		if (null === this.fmgrGraphics) {
 			throw "Can not set graphics in DrawingContext";
@@ -476,6 +465,12 @@
             this.ppiX = AscCommon.AscBrowser.convertToRetinaValue(96, true);
             this.ppiY = AscCommon.AscBrowser.convertToRetinaValue(96, true);
 		}
+	};
+	
+	DrawingContext.prototype.toDataURL = function (type) {
+		type = type || 'image/png';
+		var canvas = this.getCanvas();
+		return canvas.toDataURL(type);
 	};
 
 	/**
@@ -761,6 +756,7 @@
 		var _g = val.getG();
 		var _b = val.getB();
 		var _a = val.getA();
+		
 		this.fillColor = new AscCommon.CColor(_r, _g, _b, _a);
 		if (this.ctx.fillStyle) {
 			this.ctx.fillStyle = "rgba(" + _r + "," + _g + "," + _b + "," + _a + ")";
@@ -870,22 +866,23 @@
 		res.descender = factor * d;
 		res.lineGap = factor * (fm.m_lLineHeight - fm.m_lAscender - d);
 
-		var face;
-		if (window["IS_NATIVE_EDITOR"]) {
-			face = g_oTextMeasurer.Measurer['GetFace']();
-			res.nat_scale = face[0];
-			res.nat_y1 = face[1];
-			res.nat_y2 = face[2];
-		} else {
-			var faceMetrics = fm.m_pFont.cellGetMetrics();
-            res.nat_scale = faceMetrics[0];
-            res.nat_y1 = faceMetrics[1];
-            res.nat_y2 = faceMetrics[2];
-		}
+		var faceMetrics = fm.m_pFont.cellGetMetrics();
+		res.nat_scale = faceMetrics[0];
+		res.nat_y1 = faceMetrics[1];
+		res.nat_y2 = faceMetrics[2];
 
 		res.nat_y1 *= r2;
 		res.nat_y2 *= r2;
 		return res;
+	};
+
+	DrawingContext.prototype.nativeTextDecorationTransform = function(isStart)
+	{
+		// текст рисуется с трансформом, а strikeout/underline - без (матрица применяется ДО отрисовщика)
+		if (isStart)
+			window["native"]["PD_transform"](this._im.sx, this._im.shy, this._im.shx, this._im.sy, this._im.tx, this._im.ty);
+		else
+			window["native"]["PD_transform"](this._mt.sx, this._mt.shy, this._mt.shx, this._mt.sy, this._mt.tx, this._mt.ty);
 	};
 
 	/**
@@ -896,16 +893,7 @@
 	 */
 	DrawingContext.prototype.setFont = function (font, angle) {
 
-		var r;
 		this.font.assign(font);
-
-		if (window["IS_NATIVE_EDITOR"]) {
-			this.font.fs = this.font.getSize() * this.scaleFactor * 96.0 / 25.4;
-			// this.font.fs = this.font.getSize() * 2.54 * this.scaleFactor * this.deviceDPI / 72.0;
-
-			// this.font.fs = this.font.getSize() * 2.54 * this.scaleFactor *
-			//     this.deviceScale * this.deviceDPI / 96.0 * (96.0 / (this.deviceDPI * this.deviceScale));
-		}
 
 		var italic = this.font.getItalic();
 		var bold = this.font.getBold();
@@ -919,11 +907,44 @@
 		} else {
 			fontStyle = FontStyle.FontStyleRegular;
 		}
-
+		
+		this.setTextRotated(!!angle);
+		this._setFont(this.font.getName(), this.font.getSize(), fontStyle);
+		return this;
+	};
+	
+	
+	DrawingContext.prototype._setFont = function(fontName, fontSize, fontStyle) {
+		let isRotated = this.textRotated;
+		
+		if (setupFontName === fontName
+			&& setupFontSize === fontSize
+			&& setupFontStyle === fontStyle
+			&& setupPpiX === this.ppiX
+			&& setupPpiY === this.ppiY
+			&& setupRotated === isRotated) {
+			if (!window["IS_NATIVE_EDITOR"]) {
+				// disable this optimization (see m_isPassCommands (core-ext))
+				return;
+			}
+		}
+		
+		setupFontSize  = fontSize;
+		setupFontName  = fontName;
+		setupFontStyle = fontStyle;
+		setupRotated   = isRotated;
+		setupPpiX      = this.ppiX;
+		setupPpiY      = this.ppiY;
+		
+		this.font.setName(fontName);
+		this.font.setSize(fontSize);
+		this.font.setBold(fontStyle & FontStyle.FontStyleBold);
+		this.font.setItalic(fontStyle & FontStyle.FontStyleItalic);
+		
 		if (window["IS_NATIVE_EDITOR"]) {
-			var fontInfo = AscFonts.g_fontApplication.GetFontInfo(this.font.getName(), fontStyle, this.LastFontOriginInfo);
-			fontInfo = GetLoadInfoForMeasurer(fontInfo, fontStyle);
-
+			var fontInfo = AscFonts.g_fontApplication.GetFontInfo(fontName, fontStyle, this.LastFontOriginInfo);
+			fontInfo = AscCommon.GetLoadInfoForMeasurer(fontInfo, fontStyle);
+			
 			var flag = 0;
 			if (fontInfo.NeedBold) {
 				flag |= 0x01;
@@ -937,40 +958,43 @@
 			if (fontInfo.SrcItalic) {
 				flag |= 0x08;
 			}
-
-			if (!angle) {
-				window["native"]["PD_LoadFont"](fontInfo.Path, fontInfo.FaceIndex, this.font.getSize(), flag);
-			}
-			AscCommon.g_oTextMeasurer.Flush();
-			fontInfo = g_oTextMeasurer.Measurer["LoadFont"](fontInfo.Path, fontInfo.FaceIndex, this.font.getSize(), flag);
-			if (angle) {
-				this.fmgrGraphics[1].init(fontInfo);
-			} else {
-				this.fmgrGraphics[0].init(fontInfo);
-				this.fmgrGraphics[3].init(fontInfo);
-			}
-			r = true;
+			
+			// выставляем шрифт и отрисовщику...
+			var drawFontSize = fontSize * this.scaleFactor * 96.0 / 25.4;
+			window["native"]["PD_LoadFont"](fontInfo.Path, fontInfo.FaceIndex, drawFontSize, flag);
+			
+			// на отрисовке ячейки трансформ выставляется/сбрасывается. так что тут - только если есть angle
+			if (isRotated)
+				window["native"]["PD_transform"](this._mt.sx, this._mt.shy, this._mt.shx, this._mt.sy, this._mt.tx, this._mt.ty);
+			
+			// ...и измерятелю
+			AscFonts.g_fontApplication.LoadFont(fontName, AscCommon.g_font_loader, this.fmgrGraphics[3], fontSize, fontStyle, this.ppiX, this.ppiY);
 		} else {
-			if (angle) {
-				r = AscFonts.g_fontApplication.LoadFont(this.font.getName(), AscCommon.g_font_loader, this.fmgrGraphics[1],
-					this.font.getSize(), fontStyle, this.ppiX, this.ppiY);
+			let r;
+			if (isRotated) {
+				r = AscFonts.g_fontApplication.LoadFont(fontName, AscCommon.g_font_loader, this.fmgrGraphics[1], fontSize, fontStyle, this.ppiX, this.ppiY);
 			} else {
-				r = AscFonts.g_fontApplication.LoadFont(this.font.getName(), AscCommon.g_font_loader, this.fmgrGraphics[0],
-					this.font.getSize(), fontStyle, this.ppiX, this.ppiY);
-				AscFonts.g_fontApplication.LoadFont(this.font.getName(), AscCommon.g_font_loader, this.fmgrGraphics[3],
-					this.font.getSize(), fontStyle, this.ppiX, this.ppiY);
+				r = AscFonts.g_fontApplication.LoadFont(fontName, AscCommon.g_font_loader, this.fmgrGraphics[0], fontSize, fontStyle, this.ppiX, this.ppiY);
+				AscFonts.g_fontApplication.LoadFont(fontName, AscCommon.g_font_loader, this.fmgrGraphics[3], fontSize, fontStyle, this.ppiX, this.ppiY);
+			}
+			
+			if (isRotated) {
+				this.fmgrGraphics[1].SetTextMatrix(this._mt.sx, this._mt.shy, this._mt.shx, this._mt.sy, this._mt.tx, this._mt.ty);
+			}
+			
+			if (r === false) {
+				throw "Can not use " + fontName + " font. (Check whether font file is loaded)";
 			}
 		}
-
-		if (angle) {
-			this.fmgrGraphics[1].SetTextMatrix(this._mt.sx, this._mt.shy, this._mt.shx, this._mt.sy, this._mt.tx, this._mt.ty);
-		}
-
-		if (r === false) {
-			throw "Can not use " + this.font.getName() + " font. (Check whether font file is loaded)";
-		}
-
-		return this;
+		
+	};
+	
+	DrawingContext.prototype.SetFontInternal = function(name, size, style) {
+		this._setFont(name, size, style);
+	};
+	
+	DrawingContext.prototype.setTextRotated = function(isRotated) {
+		this.textRotated = isRotated;
 	};
 
 	/**
@@ -1036,12 +1060,9 @@
 			// Replace Non-breaking space(0xA0) with White-space(0x20)
 			code = 0xA0 === code ? 0x20 : code;
 			if (window["IS_NATIVE_EDITOR"]) {
-				//TODO: cache
-				// if (null != this.LastFontOriginInfo.Replace)
-				//   code = g_fontApplication.GetReplaceGlyph(code, this.LastFontOriginInfo.Replace);
-
 				window["native"]["PD_FillText"](_x, _y, code);
-				_x += Asc.round(g_oTextMeasurer.Measurer["MeasureChar"](code));
+				// убрать это!!! все сдвиги ДОЛЖНЫ быть вщять из измерятеля/шейпера
+				_x += asc_round((this.measureChar(undefined, 3, code).width) * this.scaleFactor * 96.0 / 25.4);
 			} else {
 				_x = asc_round(manager.LoadString4C(code, _x, _y));
 				pGlyph = manager.m_oGlyphString.m_pGlyphsBuffer[0];
@@ -1059,7 +1080,29 @@
 	DrawingContext.prototype.fillTextCode = function (text, x, y, maxWidth, charWidths, angle) {
 		return this.fillText(text, x, y, maxWidth, charWidths, angle);
 	};
-
+	
+	DrawingContext.prototype.tg = function(gid, x, y, codePoints) {
+		
+		var _x = this._mift.transformPointX(x, y);
+		var _y = this._mift.transformPointY(x, y);
+		
+		if (window["IS_NATIVE_EDITOR"]) {
+			window["native"]["PD_FillTextG"](_x, _y, gid);
+		} else {
+			let fontManager = this.textRotated ? this.fmgrGraphics[1] : this.fmgrGraphics[0];
+			try {
+				fontManager.LoadString3C(gid, _x, _y, codePoints);
+			}
+			catch(err){}
+			
+			let glyph = fontManager.m_oGlyphString.m_pGlyphsBuffer[0];
+			if (!glyph || !glyph.oBitmap)
+				return this;
+			
+			this.fillGlyph(glyph, fontManager);
+		}
+		return this;
+	};
 
 	// Path methods
 
@@ -1352,4 +1395,8 @@
 	window["Asc"].FontMetrics = FontMetrics;
 	window["Asc"].DrawingContext = DrawingContext;
 	window["Asc"].Matrix = Matrix;
+	
+	window['AscCommonExcel'] = window['AscCommonExcel'] || {};
+	window["AscCommonExcel"].resetDrawingContextFonts = resetDrawingContextFonts;
+	
 })(window);

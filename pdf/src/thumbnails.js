@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -80,9 +80,14 @@
         var pixels = ctx.getImageData(0, 0, w, h).data;
         var index = 0;
         var indexLast = 4 * w * h;
+
+        let whiteLimit = 255;
+        if (AscCommon.AscBrowser.isSafariMacOs)
+            whiteLimit = 250; // BUG 67674
+
         while (index < indexLast)
         {
-            if (pixels[index] !== 255 || pixels[index + 1] !== 255 || pixels[index + 2] !== 255)
+            if (pixels[index] < whiteLimit || pixels[index + 1] < whiteLimit || pixels[index + 2] < whiteLimit)
                 break;
             index += 4;
         }
@@ -140,7 +145,13 @@
         this.page.draw(ctx, this.pageRect.x, this.pageRect.y - offsetV, this.pageRect.w, this.pageRect.h);
 
         var lineW, offsetW, color = undefined;
-        if (this.num === doc.selectPage)
+        if (doc.checkPageLocked(this.num))
+        {
+            lineW = Math.max(1, (PageStyle.hoverColorWidth * AscCommon.AscBrowser.retinaPixelRatio) >> 0);
+            offsetW = PageStyle.hoverColorOffset + 0.5 * lineW;
+            color = PageStyle.lockedColor;
+        }
+        else if (doc.selectedPages.includes(this.num))
         {
             lineW = Math.max(1, (PageStyle.selectColorWidth * AscCommon.AscBrowser.retinaPixelRatio) >> 0);
             offsetW = PageStyle.selectColorOffset + 0.5 * lineW;
@@ -162,7 +173,7 @@
 
         // currentRect
         var currentRect = null;
-        if (PageStyle.isDrawCurrentRect && doc.selectPage === this.num)
+        if (PageStyle.isDrawCurrentRect && doc.selectPageRect.num === this.num)
             currentRect = doc.selectPageRect;
         if (currentRect)
         {
@@ -204,11 +215,15 @@
 
     CBlock.prototype.getHeight = function(columnW, startOffset, betweenPages, zoom)
     {
+        let oViewer = Asc.editor.getDocumentRenderer();
+
         var maxPageHeight = 0;
         for (var i = 0, len = this.pages.length; i < len; i++)
         {
+            let isLandscape = oViewer.isLandscapePage(this.pages[i].num);
+
             if (this.pages[i].page.height > maxPageHeight)
-                maxPageHeight = this.pages[i].page.height;
+                maxPageHeight = false == isLandscape ? this.pages[i].page.height : this.pages[i].page.width;
         }
 
         var blockHeight = (maxPageHeight * zoom) >> 0;
@@ -218,9 +233,19 @@
         var currentPosX = startOffset;
         for (var i = 0, len = this.pages.length; i < len; i++)
         {
+            let oViewer = Asc.editor.getDocumentRenderer();
+            let isLandscape = oViewer.isLandscapePage(this.pages[i].num);
+
             var drPage = this.pages[i];
             var pW = (drPage.page.width * zoom) >> 0;
             var pH = (drPage.page.height * zoom) >> 0;
+            if (isLandscape)
+            {
+                let tmp = pW;
+                pW = pH;
+                pH = tmp;
+            }
+
             var curPageHeight = pH + PageStyle.numberFontOffset + PageStyle.numberFontHeight;
 
             drPage.pageRect.y = this.top + ((blockHeight - curPageHeight) >> 1);
@@ -299,14 +324,21 @@
         this.scrollWidth = 10;
         this.m_oScrollVerApi = null;
 
-        this.selectPage = -1;
         this.selectPageRect = null;
+        this.selectedPages = [];
         this.hoverPage = -1;
 
+        this.keepSelectedPages = false; // сохраняет селект при updateCurrentPage, например после ворота страниц
         this.handlers = {};
 
         this.createComponents();
     }
+
+    // COLLABORATION
+    CDocument.prototype.checkPageLocked = function(nIdx)
+    {
+        return this.viewer.pagesInfo.pages[nIdx].IsLocked();
+    };
 
     // INTERFACE
     CDocument.prototype.repaint = function()
@@ -428,42 +460,44 @@
 
     CDocument.prototype.updateScroll = function(scrollV)
     {
-        if (this.documentHeight > this.panelHeight)
+        scrollV.style.display = (this.documentHeight > this.panelHeight) ? "block" : "none";
+
+        var settings = this.CreateScrollSettings();
+        settings.isHorizontalScroll = false;
+        settings.isVerticalScroll = true;
+        settings.contentH = this.documentHeight;
+        if (this.m_oScrollVerApi)
+            this.m_oScrollVerApi.Repos(settings, undefined, true);
+        else
         {
-            scrollV.style.display = "block";
+            this.m_oScrollVerApi = new AscCommon.ScrollObject("id_vertical_scroll_th", settings);
 
-            var settings = this.CreateScrollSettings();
-			settings.isHorizontalScroll = false;
-			settings.isVerticalScroll = true;
-			settings.contentH = this.documentHeight;
-			if (this.m_oScrollVerApi)
-				this.m_oScrollVerApi.Repos(settings, undefined, true);
-			else
-			{
-				this.m_oScrollVerApi = new AscCommon.ScrollObject("id_vertical_scroll_th", settings);
-
-				this.m_oScrollVerApi.onLockMouse  = function(evt) {
-					AscCommon.check_MouseDownEvent(evt, true);
-					AscCommon.global_mouseEvent.LockMouse();
-				};
-				this.m_oScrollVerApi.offLockMouse = function(evt) {
-					AscCommon.check_MouseUpEvent(evt);
-                };
-                var _t = this;
-				this.m_oScrollVerApi.bind("scrollvertical", function(evt) {
-					_t.scrollVertical(evt.scrollD, evt.maxScrollY);
-				});
-			}
-
-			this.scrollMaxY = this.m_oScrollVerApi.getMaxScrolledY();
-			if (this.scrollY >= this.scrollMaxY)
-				this.scrollY = this.scrollMaxY;
+            this.m_oScrollVerApi.onLockMouse  = function(evt) {
+                AscCommon.check_MouseDownEvent(evt, true);
+                AscCommon.global_mouseEvent.LockMouse();
+            };
+            this.m_oScrollVerApi.offLockMouse = function(evt) {
+                AscCommon.check_MouseUpEvent(evt);
+            };
+            var _t = this;
+            this.m_oScrollVerApi.bind("scrollvertical", function(evt) {
+                _t.scrollVertical(evt.scrollD, evt.maxScrollY);
+            });
         }
+
+        this.scrollMaxY = this.m_oScrollVerApi.getMaxScrolledY();
+        if (this.scrollY >= this.scrollMaxY)
+            this.scrollY = this.scrollMaxY;
     };
 
     // очередь задач - нужно ли перерисоваться и/или перерисовать страницу
     CDocument.prototype.checkTasks = function(isViewerTask)
     {
+		let pdfDoc = this.viewer.getPDFDoc();
+	
+		if (pdfDoc.fontLoader.isWorking() || AscCommon.CollaborativeEditing.waitingImagesForLoad)
+			return true;
+		
         var isNeedTasks = false;
         if (!this.isEnabled)
             return isNeedTasks;
@@ -481,7 +515,7 @@
                 for (var pageNum = 0, pagesCount = block.pages.length; pageNum < pagesCount; pageNum++)
                 {
                     drPage = block.pages[pageNum];
-                    if (drPage.page.image === null ||
+                    if (drPage.page.image === null || drPage.page.needRedraw ||
                         (drPage.page.image.requestWidth != drPage.pageRect.w || drPage.page.image.requestHeight != drPage.pageRect.h))
                     {
                         needPage = drPage;
@@ -492,9 +526,42 @@
 
             if (needPage)
             {
+				if (!this.viewer._checkFontsOnPages(needPage.num, needPage.num))
+					return true;
+				
                 isNeedTasks = true;
-                needPage.page.image = this.viewer.file.getPage(needPage.num, needPage.pageRect.w, needPage.pageRect.h, true);
+                let isLandscape = this.viewer.isLandscapePage(needPage.num);
+                let angle       = this.viewer.getPageRotate(needPage.num);
+                
+                let oImage;
+                if (isLandscape) {
+                    oImage = this.viewer.GetPageForThumbnails(needPage.num, needPage.pageRect.h, needPage.pageRect.w);
+                }
+                else {
+                    oImage = this.viewer.GetPageForThumbnails(needPage.num, needPage.pageRect.w, needPage.pageRect.h);
+                }
+
+                // Создание нового canvas с изменёнными размерами
+                const rotatedCanvas = document.createElement('canvas');
+                rotatedCanvas.width = needPage.pageRect.w;
+                rotatedCanvas.height = needPage.pageRect.h;
+                const rotatedContext = rotatedCanvas.getContext('2d');
+                
+                // Поворот canvas
+                rotatedContext.save();
+                rotatedContext.translate(rotatedCanvas.width / 2 >> 0, rotatedCanvas.height / 2 >> 0);
+                rotatedContext.rotate(angle * Math.PI / 180);
+                rotatedContext.drawImage(oImage, -oImage.width / 2 >> 0, -oImage.height / 2 >> 0);
+                rotatedContext.restore();
+
+                rotatedCanvas.requestWidth = rotatedCanvas.width;
+                rotatedCanvas.requestHeight = rotatedCanvas.height;
+
+                needPage.page.image = rotatedCanvas;
+
+                needPage.page.needRedraw = false;
                 this.isRepaint = true;
+                
             }
         }
 
@@ -511,10 +578,10 @@
     CDocument.prototype.updateCurrentPage = function(pageObject)
     {
         this.selectPageRect = pageObject;
-        if (this.selectPage != pageObject.num)
+        if (true !== this.keepSelectedPages && false == this.selectedPages.includes(pageObject.num))
         {
-            this.selectPage = pageObject.num;
-            var drPage = this.getDrawingPage(this.selectPage);
+            this.selectedPages = [pageObject.num];
+            var drPage = this.getDrawingPage(pageObject.num);
             if (!drPage)
                 return;
 
@@ -532,6 +599,11 @@
         }
         else if (PageStyle.isDrawCurrentRect)
             this.repaint();
+
+        this.keepSelectedPages = false;
+    };
+    CDocument.prototype.getSelectedPages = function() {
+        return this.selectedPages;
     };
 
     // сама отрисовка
@@ -556,12 +628,16 @@
     CDocument.prototype.init = function()
     {
         this.pages = [];
-        if (this.viewer.file && this.viewer.file.isValid)
+        if (this.viewer.file && this.viewer.file.isValid())
         {
             var pages = this.viewer.file.pages;
+            let koef = 1;
             for (let i = 0, len = pages.length; i < len; i++)
-            {            
-                this.pages.push(new CPage(pages[i].W, pages[i].H));
+            {
+                koef = 1;
+                if (pages[i].Dpi > 1)
+                    koef = 100 / pages[i].Dpi;
+                this.pages.push(new CPage(koef * pages[i].W, koef * pages[i].H));
             }
         }
         
@@ -572,7 +648,7 @@
     {
         var element = document.getElementById(this.id);
 
-        if (0 === element.offsetWidth)
+        if (0 === element.offsetWidth || !this.canvas)
             return;
 
         // размер панели
@@ -621,7 +697,7 @@
         if (this.defaultPageW != 0)
         {
             // зум "по умолчанию"
-            this.zoom = this.defaultPageW / pageWidthMax;
+            this.zoom = AscCommon.AscBrowser.convertToRetinaValue(this.defaultPageW, true) / pageWidthMax;
 
             if (0 != this.panelWidth)
                 this.defaultPageW = 0;
@@ -637,7 +713,7 @@
 
         if (isZoomUpdated !== false)
         {
-            var interfaceZoom = (this.zoomMax - this.zoomMin) < 0.001 ? 0 : this.zoom / (this.zoomMax - this.zoomMin);
+            var interfaceZoom = (this.zoomMax - this.zoomMin) < 0.001 ? 0 : (this.zoom - this.zoomMin) / (this.zoomMax - this.zoomMin);
             this.sendEvent("onZoomChanged", interfaceZoom);
         }
 
@@ -686,6 +762,24 @@
         this.updateScroll(scrollV);
         this.calculateVisibleBlocks();
         this.repaint();
+    };
+    CDocument.prototype._repaintPage = function(nPage) {
+        this.pages[nPage].needRedraw = true;
+    };
+    CDocument.prototype._deletePage = function(nPage) {
+        this.pages.splice(nPage, 1);
+        this._resize();
+    };
+    CDocument.prototype._addPage = function(nPos) {
+        let pages = this.viewer.file.pages;
+        let koef = 1;
+        let filePage = pages[nPos];
+
+        if (filePage.Dpi > 1)
+            koef = 100 / filePage.Dpi;
+
+        this.pages.splice(nPos, 0, new CPage(koef * filePage.W, koef * filePage.H));
+        this._resize();
     };
 
     CDocument.prototype.calculateVisibleBlocks = function()
@@ -744,23 +838,48 @@
 
     CDocument.prototype.getMaxPageWidth = function()
     {
+        let oViewer = Asc.editor.getDocumentRenderer();
+
         var size = 0, page = null;
         for (var i = 0, count = this.pages.length; i < count; i++)
         {
+            let isLandscape = oViewer.isLandscapePage(i);
+
             page = this.pages[i];
-            if (size < page.width)
-                size = page.width;
+            if (isLandscape)
+            {
+                if (size < page.height)
+                    size = page.height;
+            }
+            else
+            {
+                if (size < page.width)
+                    size = page.width;
+            }
+            
         }
         return size;
     };
     CDocument.prototype.getMaxPageHeight = function()
     {
+        let oViewer = Asc.editor.getDocumentRenderer();
+
         var size = 0, page = null;
         for (var i = 0, count = this.pages.length; i < count; i++)
         {
+            let isLandscape = oViewer.isLandscapePage(i);
+
             page = this.pages[i];
-            if (size < page.height)
-                size = page.height;
+            if (isLandscape)
+            {
+                if (size < page.width)
+                    size = page.width;
+            }
+            else
+            {
+                if (size < page.height)
+                    size = page.height;
+            }
         }
         return size;
     };
@@ -824,21 +943,65 @@
     {
         AscCommon.check_MouseDownEvent(e, true);
         AscCommon.global_mouseEvent.LockMouse();
-
-        var drPage = this.getPageByCoords(AscCommon.global_mouseEvent.X, AscCommon.global_mouseEvent.Y);
-        if (drPage && drPage.num !== this.selectPage)
+        this.viewer.isFocusOnThumbnails = true;
+        
+        let drPage = this.getPageByCoords(AscCommon.global_mouseEvent.X, AscCommon.global_mouseEvent.Y);
+        if (drPage)
         {
-            this.viewer.navigateToPage(drPage.num);
+            if (true == e.shiftKey) {
+                let nMinPage = Math.min.apply(null, this.selectedPages.concat([drPage.num]))
+                let nMaxPage = Math.max.apply(null, this.selectedPages.concat([drPage.num]))
+
+                this.resetSelection();
+                for (let i = nMinPage; i <= nMaxPage; i++) {
+                    this.selectedPages.push(i);
+                }
+                this._paint();
+            }
+            else if (true == e.ctrlKey) {
+                if (!this.selectedPages.includes(drPage.num)) {
+                    this.selectedPages.push(drPage.num);
+                    this._paint();
+                }
+                else {
+                    this.selectedPages.splice(this.selectedPages.indexOf(drPage.num), 1);
+                    this._paint();
+                }
+            }
+            else {
+                if (!this.selectedPages.includes(drPage.num) || (this.selectedPages.length > 1 && e.button != 2)) {
+                    this.resetSelection();
+                    this.viewer.navigateToPage(drPage.num);
+
+                    if (this.selectedPages.length == 0) {
+                        this.selectedPages.push(drPage.num);
+                        this._paint();
+                    }
+                }
+            }
         }
 
         AscCommon.stopEvent(e);
         return false;
     };
-    
+    CDocument.prototype.resetSelection = function() {
+        this.selectedPages.length = 0;
+    };
     CDocument.prototype.onMouseUp = function(e)
     {
         AscCommon.check_MouseUpEvent(e);
-        AscCommon.stopEvent(e);
+        if (e && e.preventDefault)
+            e.preventDefault();
+
+        if (global_mouseEvent.Button == 2) {
+            this.viewer.Api.sync_ContextMenuCallback({
+                X_abs   : AscCommon.global_mouseEvent.X - this.viewer.x,
+                Y_abs   : AscCommon.global_mouseEvent.Y - this.viewer.y,
+                Type    : Asc.c_oAscPdfContextMenuTypes.Thumbnails,
+                PageNum : this.getHoverPage()
+            });
+        }
+
         return false;
     };
 
@@ -856,17 +1019,29 @@
         {
             var drPage = this.getPageByCoords(AscCommon.global_mouseEvent.X, AscCommon.global_mouseEvent.Y);
             var hoverNum = drPage ? drPage.num : -1;
+            
             if (hoverNum !== this.hoverPage)
             {
                 this.hoverPage = hoverNum;
                 this._paint();
             }
+
+            if (hoverNum != -1) {
+                this.canvas.style.cursor = 'pointer';
+            }
+            else {
+                this.canvas.style.cursor = 'default';
+            }
         }
 
-        AscCommon.stopEvent(e);
+        if (e && e.preventDefault)
+            e.preventDefault();
         return false;
     };
-
+    CDocument.prototype.getHoverPage = function()
+    {
+        return this.hoverPage;
+    };
     CDocument.prototype.onMouseWhell = function(e)
     {
         AscCommon.stopEvent(e);
@@ -921,6 +1096,7 @@
     CDocument.prototype.updateSkin = function()
     {
         ThumbnailsStyle.backgroundColor = AscCommon.GlobalSkin.BackgroundColorThumbnails;
+        PageStyle.lockedColor = AscCommon.GlobalSkin.ThumbnailsLockColor;
         PageStyle.hoverColor = AscCommon.GlobalSkin.ThumbnailsPageOutlineHover;
         PageStyle.selectColor = AscCommon.GlobalSkin.ThumbnailsPageOutlineActive;
         PageStyle.numberColor = AscCommon.GlobalSkin.ThumbnailsPageNumberText;
@@ -931,6 +1107,35 @@
         this.resize();
     };
 
+    CDocument.prototype.checkPageEmptyStyle = function()
+    {
+        PageStyle.emptyColor = "#FFFFFF";
+        if (this.viewer)
+        {
+            var backColor = this.viewer.Api.getPageBackgroundColor();
+            PageStyle.emptyColor = "#" + backColor.R.toString(16) + backColor.G.toString(16) + backColor.B.toString(16);
+        }
+    }
+
+    CDocument.prototype.clearCachePages = function()
+    {
+        this.checkPageEmptyStyle();
+
+        for (var blockNum = 0, blocksCount = this.blocks.length; blockNum < blocksCount; blockNum++)
+        {
+            var block = this.blocks[blockNum];
+
+            for (var pageNum = 0, pagesCount = block.pages.length; pageNum < pagesCount; pageNum++)
+            {
+                var drPage = block.pages[pageNum];
+                if (drPage.page.image)
+                {
+                    drPage.page.image = null;
+                }
+            }
+        }
+    };
+
     // export
     AscCommon.ThumbnailsControl = CDocument;
     AscCommon["ThumbnailsControl"] = AscCommon.ThumbnailsControl;
@@ -939,4 +1144,6 @@
     prot["setZoom"] = prot.setZoom;
     prot["resize"] = prot.resize;
     prot["setEnabled"] = prot.setEnabled;
+    prot["registerEvent"] = prot.registerEvent;
+    prot["getHoverPage"] = prot.getHoverPage;
 })();

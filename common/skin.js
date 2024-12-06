@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -116,6 +116,35 @@ var EditorSkins = {
 		SplitterWidthMM                 : 1,
 		ThumbnailScrollWidthNullIfNoScrolling : false,
 
+		AnimPaneBackground                  : "#F7F7F7",
+		AnimPaneItemFillSelected            : "#ADADAD",
+		AnimPaneItemFillHovered             : "#999999",
+		AnimPaneButtonFill                  : "#F7F7F7",
+		AnimPaneButtonFillHovered           : "#DDDDDD",
+		AnimPaneButtonFillDisabled          : "#F7F7F7",
+		AnimPanePlayButtonFill              : "#FFFFFF",
+		AnimPanePlayButtonOutline           : "#CBCBCB",
+		AnimPaneEffectBarFillEntrance       : "#77B583",
+		AnimPaneEffectBarOutlineEntrance    : "#0E8A26",
+		AnimPaneEffectBarFillEmphasis       : "#FBC37C",
+		AnimPaneEffectBarOutlineEmphasis    : "#FF8E00",
+		AnimPaneEffectBarFillExit           : "#F59A9A",
+		AnimPaneEffectBarOutlineExit        : "#F23D3D",
+		AnimPaneEffectBarFillPath           : "#A1CEE3",
+		AnimPaneEffectBarOutlinePath        : "#254662",
+		AnimPaneTimelineRulerOutline        : "#CBCBCB",
+		AnimPaneTimelineRulerTick           : "#DFDFDF",
+
+		AnimPaneTimelineScrollerFill           : "#000000",
+		AnimPaneTimelineScrollerOutline        : "#444444",
+		AnimPaneTimelineScrollerOpacity        : 0x0,
+		AnimPaneTimelineScrollerOpacityHovered : 0x40,
+		AnimPaneTimelineScrollerOpacityActive  : 0x80,
+
+		AnimPaneText        : "#000000",
+		AnimPaneTextActive  : "#000000",
+		AnimPaneTextHover   : "#000000",
+
 		// demonstration
 		DemBackgroundColor              : "#F0F0F0",
 		DemButtonBackgroundColor        : "#FFFFFF",
@@ -129,7 +158,7 @@ var EditorSkins = {
 
 		/* spreadsheets */
 		//TODO названия не менял. использую такие же как и были ранее. пересмотреть!
-		Background               : "#F0F0F0",
+		Background               : "#F7F7F7",
 		BackgroundActive         : "#c1c1c1",
 		BackgroundHighlighted    : "#dfdfdf",
 
@@ -139,19 +168,24 @@ var EditorSkins = {
 
 		Color                    : "#363636",
 		ColorActive              : "#363636",
-		ColorHighlighted         : "#6a6a70",
+		ColorHighlighted         : "#363636",
+		ColorFiltering           : "#008636",
 
-		BackgroundDark           : "#444444",
-		BackgroundDarkActive     : "#111111",
-		BackgroundDarkHighlighted: "#666666",
+		SheetViewCellBackground        : "#73bf91",
+		SheetViewCellBackgroundPressed : "#aaffcc",
+		SheetViewCellBackgroundHover   : "#97e3b6",
+		SheetViewCellTitleLabel        : "#121212",
 
 		ColorDark                : "#ffffff",
 		ColorDarkActive          : "#ffffff",
 		ColorDarkHighlighted     : "#c1c1c1",
+		ColorDarkFiltering       : "#7AFFAF",
 
 		GroupDataBorder          : "#000000",
-		EditorBorder             : "#cbcbcb"
+		EditorBorder             : "#cbcbcb",
 
+		SelectAllIcon            : "#999999",
+		SheetViewSelectAllIcon   : "#3D664E"
 	},
 	"theme-dark" : {
 		Name                      : "theme-dark",
@@ -213,9 +247,9 @@ var EditorSkins = {
 		FormsContentControlsOutlineMoverActive : "#444444",
 
 		/* presentations */
-		BackgroundColorThumbnails       : "#666666",
-		BackgroundColorThumbnailsActive : "#666666",
-		BackgroundColorThumbnailsHover  : "#666666",
+		BackgroundColorThumbnails       : "#404040",
+		BackgroundColorThumbnailsActive : "#404040",
+		BackgroundColorThumbnailsHover  : "#404040",
 		ThumbnailsPageOutlineActive     : "#848484",
 		ThumbnailsPageOutlineHover      : "#CFCFCF",
 		ThumbnailsPageNumberText        : "#FFFFFF",
@@ -227,10 +261,39 @@ var EditorSkins = {
 		THEMES_THUMBNAIL_WIDTH  : 88,
 		THEMES_THUMBNAIL_HEIGHT : 40,
 
-		BorderSplitterColor                   : "#CBCBCB",
+		BorderSplitterColor                   : "#616161",
 		SupportNotes                          : true,
 		SplitterWidthMM                       : 1,
 		ThumbnailScrollWidthNullIfNoScrolling : false,
+
+		AnimPaneBackground                  : "#F7F7F7",
+		AnimPaneItemFillSelected            : "#ADADAD",
+		AnimPaneItemFillHovered             : "#999999",
+		AnimPaneButtonFill                  : "#F7F7F7",
+		AnimPaneButtonFillHovered           : "#DDDDDD",
+		AnimPaneButtonFillDisabled          : "#F7F7F7",
+		AnimPanePlayButtonFill              : "#FFFFFF",
+		AnimPanePlayButtonOutline           : "#CBCBCB",
+		AnimPaneEffectBarFillEntrance       : "#77B583",
+		AnimPaneEffectBarOutlineEntrance    : "#0E8A26",
+		AnimPaneEffectBarFillEmphasis       : "#FBC37C",
+		AnimPaneEffectBarOutlineEmphasis    : "#FF8E00",
+		AnimPaneEffectBarFillExit           : "#F59A9A",
+		AnimPaneEffectBarOutlineExit        : "#F23D3D",
+		AnimPaneEffectBarFillPath           : "#A1CEE3",
+		AnimPaneEffectBarOutlinePath        : "#254662",
+		AnimPaneTimelineRulerOutline        : "#CBCBCB",
+		AnimPaneTimelineRulerTick           : "#DFDFDF",
+
+		AnimPaneText        : "#FFFFFF",
+		AnimPaneTextActive  : "#FFFFFF",
+		AnimPaneTextHover   : "#FFFFFF",
+
+		AnimPaneTimelineScrollerFill           : "#000000",
+		AnimPaneTimelineScrollerOutline        : "#444444",
+		AnimPaneTimelineScrollerOpacity        : 0x0,
+		AnimPaneTimelineScrollerOpacityHovered : 0x40,
+		AnimPaneTimelineScrollerOpacityActive  : 0x80,
 
 		// demonstration
 		DemBackgroundColor              : "#666666",
@@ -255,17 +318,23 @@ var EditorSkins = {
 		Color                    : "#d9d9d9",
 		ColorActive              : "#d9d9d9",
 		ColorHighlighted         : "#d9d9d9",
+		ColorFiltering           : "#6BEC9F",
 
-		BackgroundDark           : "#111111",
-		BackgroundDarkActive     : "#333333",
-		BackgroundDarkHighlighted: "#000000",
+		SheetViewCellBackground        : "#73bf91",
+		SheetViewCellBackgroundPressed : "#aaffcc",
+		SheetViewCellBackgroundHover   : "#97e3b6",
+		SheetViewCellTitleLabel        : "#121212",
 
-		ColorDark                : "#ffffff",
-		ColorDarkActive          : "#ffffff",
-		ColorDarkHighlighted     : "#ffffff",
+		ColorDark                : "#333",
+		ColorDarkActive          : "#333",
+		ColorDarkHighlighted     : "#333",
+		ColorDarkFiltering       : "#ffffff",
 
 		GroupDataBorder          : "#ffffff",
-		EditorBorder             : "#2a2a2a"
+		EditorBorder             : "#2a2a2a",
+
+		SelectAllIcon            : "#888888",
+		SheetViewSelectAllIcon   : "#3D664E"
 	}
 };
 
@@ -297,7 +366,7 @@ function updateGlobalSkinColors(theme)
 
 		RulerDark                      : "canvas-ruler-margins-background",
 		RulerLight                     : "canvas-ruler-background",
-		RulerOutline                   : "border-toolbar",
+		RulerOutline                   : "canvas-ruler-border",
 		RulerMarkersOutlineColor       : "canvas-ruler-handle-border",
 		RulerMarkersOutlineColorOld    : "canvas-ruler-handle-border-disabled",
 		RulerMarkersFillColor          : "background-normal",
@@ -335,10 +404,39 @@ function updateGlobalSkinColors(theme)
 
 		BorderSplitterColor             : "border-toolbar",
 
+		AnimPaneBackground                  : "canvas-anim-pane-background",
+		AnimPaneItemFillSelected            : "canvas-anim-pane-item-fill-selected",
+		AnimPaneItemFillHovered             : "canvas-anim-pane-item-fill-hovered",
+		AnimPaneButtonFill                  : "canvas-anim-pane-button-fill",
+		AnimPaneButtonFillHovered           : "canvas-anim-pane-button-fill-hovered",
+		AnimPaneButtonFillDisabled          : "canvas-anim-pane-button-fill-disabled",
+		AnimPanePlayButtonFill              : "canvas-anim-pane-play-button-fill",
+		AnimPanePlayButtonOutline           : "canvas-anim-pane-play-button-outline",
+		AnimPaneEffectBarFillEntrance       : "canvas-anim-pane-effect-bar-entrance-fill",
+		AnimPaneEffectBarOutlineEntrance    : "canvas-anim-pane-effect-bar-entrance-outline",
+		AnimPaneEffectBarFillEmphasis       : "canvas-anim-pane-effect-bar-emphasis-fill",
+		AnimPaneEffectBarOutlineEmphasis    : "canvas-anim-pane-effect-bar-emphasis-outline",
+		AnimPaneEffectBarFillExit           : "canvas-anim-pane-effect-bar-exit-fill",
+		AnimPaneEffectBarOutlineExit        : "canvas-anim-pane-effect-bar-exit-outline",
+		AnimPaneEffectBarFillPath           : "canvas-anim-pane-effect-bar-path-fill",
+		AnimPaneEffectBarOutlinePath        : "canvas-anim-pane-effect-bar-path-outline",
+		AnimPaneTimelineRulerOutline        : "canvas-anim-pane-timeline-ruler-outline",
+		AnimPaneTimelineRulerTick           : "canvas-anim-pane-timeline-ruler-tick",
+
+		AnimPaneText                         : "text-normal",
+		AnimPaneTextActive                   : "text-normal",
+		AnimPaneTextHover                    : "text-normal",
+
+		AnimPaneTimelineScrollerFill           : "canvas-anim-pane-timeline-scroller-fill",
+		AnimPaneTimelineScrollerOutline        : "canvas-anim-pane-timeline-scroller-outline",
+		AnimPaneTimelineScrollerOpacity        : "canvas-anim-pane-timeline-scroller-opacity",
+		AnimPaneTimelineScrollerOpacityHovered : "canvas-anim-pane-timeline-scroller-opacity-hovered",
+		AnimPaneTimelineScrollerOpacityActive  : "canvas-anim-pane-timeline-scroller-opacity-active",
+
 		// demonstration
 		DemBackgroundColor              : "background-toolbar",
 		DemButtonBackgroundColor        : "background-normal",
-		DemButtonBackgroundColorHover   : "highlight-buttin-hover",
+		DemButtonBackgroundColorHover   : "highlight-button-hover",
 		DemButtonBackgroundColorActive  : "highlight-button-pressed",
 		DemButtonBorderColor            : "border-regular-control",
 		DemButtonTextColor              : "text-normal",
@@ -347,28 +445,34 @@ function updateGlobalSkinColors(theme)
 		DemTextColor                    : "text-normal",
 
 		/* spreadsheets */
-		Background                      : "canvas-background",
-		BackgroundActive                : "canvas-cell-title-selected",
-		BackgroundHighlighted           : "canvas-cell-title-hover",
+		Background                      : "canvas-cell-title-background",
+		BackgroundActive                : "canvas-cell-title-background-selected",
+		BackgroundHighlighted           : "canvas-cell-title-background-hover",
 
 		Border                          : "canvas-cell-title-border",
 		BorderActive                    : "canvas-cell-title-border-selected",
 		BorderHighlighted               : "canvas-cell-title-border-hover",
 
-		Color                           : "text-normal",
-		ColorActive                     : "text-normal",
-		ColorHighlighted                : "text-normal",
+		Color                           : "canvas-cell-title-text",
+		ColorActive                     : "canvas-cell-title-text",
+		ColorHighlighted                : "canvas-cell-title-text",
 
-		BackgroundDark                  : "canvas-dark-cell-title",
-		BackgroundDarkActive            : "canvas-dark-cell-title-selected",
-		BackgroundDarkHighlighted       : "canvas-dark-cell-title-hover",
+		SheetViewCellBackground         : "canvas-sheet-view-cell-background",
+		SheetViewCellBackgroundPressed  : "canvas-sheet-view-cell-background-pressed",
+		SheetViewCellBackgroundHover    : "canvas-sheet-view-cell-background-hover",
+		SheetViewCellTitleLabel         : "canvas-sheet-view-cell-title-label",
 
-		ColorDark                       : "text-contrast-background",
-		ColorDarkActive                 : "text-contrast-background",
-		ColorDarkHighlighted            : "text-contrast-background",
+		ColorDark                       : "canvas-dark-cell-title-text",
+		ColorDarkActive                 : "canvas-dark-cell-title-text",
+		ColorDarkHighlighted            : "canvas-dark-cell-title-text",
+
+		ColorDarkFiltering              : "canvas-dark-cell-title-text-filtered",
 
 		GroupDataBorder                 : "canvas-high-contrast",
-		EditorBorder                    : "border-toolbar"
+		EditorBorder                    : "border-toolbar",
+
+		SelectAllIcon                   : "canvas-select-all-icon",
+		SheetViewSelectAllIcon          : "canvas-sheet-view-select-all-icon"
 	};
 
 	// корректируем цвета для старого хрома:
@@ -397,7 +501,9 @@ function updateGlobalSkinColors(theme)
 		if (undefined === theme[colorMap[color]])
 			continue;
 
-		if (0 === GlobalSkin[color].indexOf("rgb"))
+		if(typeof GlobalSkin[color] === "number")
+			GlobalSkin[color] = parseFloat(theme[colorMap[color]]);
+		else if (0 === GlobalSkin[color].indexOf("rgb"))
 			GlobalSkin[color] = theme[colorMap[color]];
 		else
 			GlobalSkin[color] = correctColor(theme[colorMap[color]]);

@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -32,21 +32,30 @@
 
 "use strict";
 
-function CMathLimitPr()
+function CMathLimitPr(ctrPr)
 {
-    this.type = LIMIT_LOW;
+	this.type	= LIMIT_LOW;
+	this.ctrPr	= new CMathCtrlPr(ctrPr);
+}
+
+CMathLimitPr.prototype.GetRPr = function ()
+{
+	return this.ctrPr.GetRPr();
 }
 
 CMathLimitPr.prototype.Set_FromObject = function(Obj)
 {
     if (undefined !== Obj.type && null !== Obj.type)
         this.type = Obj.type;
+
+	this.ctrPr.SetRPr(Obj.ctrPrp);
 };
 
 CMathLimitPr.prototype.Copy = function()
 {
     var NewPr = new CMathLimitPr();
     NewPr.type = this.type;
+	NewPr.ctrPr   = this.ctrPr;
     return NewPr;
 };
 
@@ -54,12 +63,18 @@ CMathLimitPr.prototype.Write_ToBinary = function(Writer)
 {
     // Long : type
     Writer.WriteLong(this.type);
+	Writer.WriteBool(true);
+	this.ctrPr.Write_ToBinary(Writer);
 };
 
 CMathLimitPr.prototype.Read_FromBinary = function(Reader)
 {
     // Long : type
     this.type = Reader.GetLong();
+	if (Reader.GetBool())
+	{
+		this.ctrPr.Read_FromBinary(Reader);
+	}
 };
 
 /**
@@ -210,12 +225,12 @@ function CLimit(props)
 
 	this.Id = AscCommon.g_oIdCounter.Get_NewId();
 
-    this.Pr = new CMathLimitPr();
+	this.Pr = new CMathLimitPr(this.CtrPrp);
 
-    if(props !== null && typeof(props) !== "undefined")
-        this.init(props);
+	if(props !== null && typeof(props) !== "undefined")
+		this.init(props);
 
-    AscCommon.g_oTableId.Add( this, this.Id );
+	AscCommon.g_oTableId.Add( this, this.Id );
 }
 CLimit.prototype = Object.create(CMathBase.prototype);
 CLimit.prototype.constructor = CLimit;
@@ -225,7 +240,7 @@ CLimit.prototype.kind      = MATH_LIMIT;
 
 CLimit.prototype.init = function(props)
 {
-    this.Fill_LogicalContent(2);
+    this.Fill_LogicalContent(2, props.content);
 
     // посмотреть GetAllFonts
     this.setProperties(props);
@@ -315,6 +330,47 @@ CLimit.prototype.Can_ModifyArgSize = function()
 {
     return this.CurPos == 1 && false === this.Is_SelectInside();
 };
+/**
+ *
+ * @param {MathTextAndStyles | boolean} oMathText
+ * @constructor
+ */
+CLimit.prototype.GetTextOfElement = function(oMathText)
+{
+	oMathText = new AscMath.MathTextAndStyles(oMathText);
+
+	let strLimitSymbol	= "";
+	let oFuncName		= this.getFName();
+	let oArgument		= this.getIterator();
+
+	if (oMathText.IsLaTeX())
+	{
+		oMathText.ResetGlobalStyle();
+		oMathText.Add(oFuncName, false);
+		oMathText.AddText(new AscMath.MathText((this.Pr.type == 1) ? "\\above" : "\\below", oMathText.GetStyleFromFirst()));
+		oMathText.SetNotGetStyleFromFirst();
+		// check when word fix bug, for now always wrap
+		oMathText.Add(oArgument, true, 2);
+	}
+	else
+	{
+		if (Number.isInteger(this.Pr.type))
+		{
+			strLimitSymbol = (this.Pr.type === 1) ? "┴" : "┬";
+		}
+		else
+		{
+			strLimitSymbol = (this.Pr.type.type === 2) ? "┴" : "┬";
+		}
+
+		let oNamePos = oMathText.Add(oFuncName, true);
+
+		oMathText.AddAfter(oNamePos, new AscMath.MathText(strLimitSymbol, this));
+		oMathText.Add(oArgument, true);
+	}
+
+	return oMathText;
+};
 
 /**
  *
@@ -347,6 +403,37 @@ window["CMathMenuLimit"] = CMathMenuLimit;
 CMathMenuLimit.prototype["get_Pos"] = CMathMenuLimit.prototype.get_Pos;
 CMathMenuLimit.prototype["put_Pos"] = CMathMenuLimit.prototype.put_Pos;
 
+function CMathFuncPr(ctrPr)
+{
+	this.ctrPr	= new CMathCtrlPr(ctrPr);
+}
+CMathFuncPr.prototype.GetRPr = function ()
+{
+	return this.ctrPr.GetRPr();
+};
+CMathFuncPr.prototype.Set_FromObject = function(Obj)
+{
+	this.ctrPr.SetRPr(Obj.ctrPrp);
+};
+CMathFuncPr.prototype.Copy = function()
+{
+	let NewPr = new CMathFuncPr();
+	NewPr.ctrPr = this.ctrPr;
+	return NewPr;
+};
+CMathFuncPr.prototype.Write_ToBinary = function(Writer)
+{
+	Writer.WriteBool(true);
+	this.ctrPr.Write_ToBinary(Writer);
+};
+CMathFuncPr.prototype.Read_FromBinary = function(Reader)
+{
+	if (Reader.GetBool())
+	{
+		this.ctrPr.Read_FromBinary(Reader);
+	}
+};
+
 /**
  *
  * @param props
@@ -359,12 +446,12 @@ function CMathFunc(props)
 
 	this.Id = AscCommon.g_oIdCounter.Get_NewId();
 
-    this.Pr = new CMathBasePr();
+	this.Pr = new CMathFuncPr(this.CtrPrp);
 
-    if(props !== null && typeof(props) !== "undefined")
-        this.init(props);
+	if(props !== null && typeof(props) !== "undefined")
+		this.init(props);
 
-    AscCommon.g_oTableId.Add( this, this.Id );
+	AscCommon.g_oTableId.Add( this, this.Id );
 }
 CMathFunc.prototype = Object.create(CMathBase.prototype);
 CMathFunc.prototype.constructor = CMathFunc;
@@ -374,7 +461,7 @@ CMathFunc.prototype.kind      = MATH_FUNCTION;
 
 CMathFunc.prototype.init = function(props)
 {
-    this.Fill_LogicalContent(2);
+    this.Fill_LogicalContent(2, props.content);
 
     this.setProperties(props);
     this.fillContent();
@@ -416,8 +503,47 @@ CMathFunc.prototype.fillContent = function()
     this.elements[0][0] = this.getFName();
     this.elements[0][1] = this.getArgument();
 };
+CMathFunc.prototype.GetTextOfElement = function(oMathText)
+{
+	oMathText		= new AscMath.MathTextAndStyles(oMathText);
+	let oFuncName	= this.getFName();
+	let oArgument	= this.getArgument();
+	oMathText.SetGlobalStyle(this);
+
+	if (oMathText.IsLaTeX())
+	{
+		let oArgPos					= oMathText.Add(oArgument, true, 2);
+
+		let oFuncNameContent		= oFuncName.GetTextOfElement(true);
+		let strFunc					= oFuncNameContent.GetText();
+
+		//find content before "_", "^", "below" and "above";
+		strFunc = strFunc.split("_")[0].split('^')[0].split('\\below')[0].split('\\above')[0];
+
+		let oSlashesTextForName		= new AscMath.MathText("\\", oMathText.GetStyleFromFirst());
+		let oFirstPosInNameContent	= oFuncNameContent.GetFirstPos();
+
+		if (AscMath.functionNames.includes(strFunc) || AscMath.LimitFunctions.includes(strFunc))
+			oFuncNameContent.AddBefore(oFirstPosInNameContent, oSlashesTextForName);
+
+		oMathText.AddBefore(oArgPos, oFuncNameContent);
+	}
+	else
+	{
+		let oNamePos		= oMathText.Add(oFuncName, true, 0);
+		let oArgumentPos	= oMathText.Add(oArgument, true, 1);
+		let oArgumentToken	= oMathText.GetExact(oArgumentPos);
+
+		oMathText.AddAfter(oNamePos, new AscMath.MathText("⁡", this.Pr.GetRPr()));
+	}
+
+	return oMathText;
+};
 
 //--------------------------------------------------------export----------------------------------------------------
 window['AscCommonWord'] = window['AscCommonWord'] || {};
 window['AscCommonWord'].CMathFunc = CMathFunc;
 window['AscCommonWord'].CLimit = CLimit;
+
+AscMath.Limit = CLimit;
+AscMath.Func  = CMathFunc;

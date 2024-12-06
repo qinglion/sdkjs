@@ -320,7 +320,9 @@ function IScroll (el, options) {
 		HWCompositing: true,
 		useTransition: true,
 		useTransform: true,
-		bindToWrapper: typeof window.onmousedown === "undefined"
+		bindToWrapper: typeof window.onmousedown === "undefined",
+
+		transparentIndicators: false
 	};
 
 	for ( var i in options ) {
@@ -1084,6 +1086,11 @@ IScroll.prototype = {
 			indicators = indicators.concat(this.options.indicators);
 		}
 
+		if (this.options.transparentIndicators) {
+			for (var i = 0; i < indicators.length; i++)
+				indicators[i].transparent = true;
+		}
+
 		for ( var i = indicators.length; i--; ) {
 			this.indicators.push( new Indicator(this, indicators[i]) );
 		}
@@ -1783,8 +1790,16 @@ IScroll.prototype = {
 		this.manager.mainOnTouchEnd(e);
 		this.manager.mainOnTouchStart(e);
 		this.manager.mainOnTouchEnd(e);
-	}
+	},
 
+	setOffsetTop : function(offset) {
+		for (let i = 0, len = this.indicators.length; i < len; i++) {
+			if (this.indicators[i].options.listenY) {
+				this.indicators[i].offsetStart = offset;
+				this.indicators[i].updatePosition();
+			}
+		}
+	}
 };
 function createDefaultScrollbar (direction, interactive, type) {
 	var scrollbar = document.createElement('div'),
@@ -1838,17 +1853,31 @@ function Indicator (scroller, options) {
 		shrink: false,
 		fade: false,
 		speedRatioX: 0,
-		speedRatioY: 0
+		speedRatioY: 0,
+		transparent: false
 	};
 
 	for ( var i in options ) {
 		this.options[i] = options[i];
 	}
 
+	if (this.options.transparent) {
+		this.options.interactive = false;
+		this.options.fade = false;
+		this.options.disableTouch = true;
+		this.options.disablePointer = true;
+		this.options.disableMouse = true;
+
+		this.wrapperStyle.display = "none";
+		this.indicatorStyle.display = "none";
+	}
+
 	this.sizeRatioX = 1;
 	this.sizeRatioY = 1;
 	this.maxPosX = 0;
 	this.maxPosY = 0;
+
+	this.offsetStart = 0;
 
 	if ( this.options.interactive ) {
 		if ( !this.options.disableTouch ) {
@@ -2058,12 +2087,14 @@ Indicator.prototype = {
 	refresh: function () {
 		this.transitionTime();
 
-		if ( this.options.listenX && !this.options.listenY ) {
-			this.indicatorStyle.display = this.scroller.hasHorizontalScroll ? 'block' : 'none';
-		} else if ( this.options.listenY && !this.options.listenX ) {
-			this.indicatorStyle.display = this.scroller.hasVerticalScroll ? 'block' : 'none';
-		} else {
-			this.indicatorStyle.display = this.scroller.hasHorizontalScroll || this.scroller.hasVerticalScroll ? 'block' : 'none';
+		if (!this.options.transparent) {
+			if (this.options.listenX && !this.options.listenY) {
+				this.indicatorStyle.display = this.scroller.hasHorizontalScroll ? 'block' : 'none';
+			} else if (this.options.listenY && !this.options.listenX) {
+				this.indicatorStyle.display = this.scroller.hasVerticalScroll ? 'block' : 'none';
+			} else {
+				this.indicatorStyle.display = this.scroller.hasHorizontalScroll || this.scroller.hasVerticalScroll ? 'block' : 'none';
+			}
 		}
 
 		if ( this.scroller.hasHorizontalScroll && this.scroller.hasVerticalScroll ) {
@@ -2186,6 +2217,12 @@ Indicator.prototype = {
 
 		this.x = x;
 		this.y = y;
+
+		if (0 !== this.offsetStart)
+		{
+			x = this.offsetStart + (0.5 + x * (this.maxPosX  - this.offsetStart) / this.maxPosX) >> 0;
+			y = this.offsetStart + (0.5 + y * (this.maxPosY  - this.offsetStart) / this.maxPosY) >> 0;
+		}
 
 		if ( this.scroller.options.useTransform ) {
 			this.indicatorStyle[utils.style.transform] = 'translate(' + x + 'px,' + y + 'px)' + this.scroller.translateZ;

@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -150,6 +150,76 @@
 			res.aRuleElements.push(this.aRuleElements[i].clone());
 		}
 		return res;
+	};
+	CConditionalFormattingRule.prototype.merge = function (oRule) {
+		if (this.aboveAverage === true) {
+			this.aboveAverage = oRule.aboveAverage;
+		}
+		if (this.activePresent === false) {
+			this.activePresent = oRule.activePresent;
+		}
+		if (this.bottom === false) {
+			this.bottom = oRule.bottom;
+		}
+		//TODO merge
+		if (this.dxf === null) {
+			this.dxf = oRule.dxf;
+		}
+		if (this.equalAverage === false) {
+			this.equalAverage = oRule.equalAverage;
+		}
+		if (this.operator === null) {
+			this.operator = oRule.operator;
+		}
+		if (this.percent === false) {
+			this.percent = oRule.percent;
+		}
+		if (this.priority === null) {
+			this.priority = oRule.priority;
+		}
+		if (this.rank === null) {
+			this.rank = oRule.rank;
+		}
+		if (this.stdDev === null) {
+			this.stdDev = oRule.stdDev;
+		}
+		if (this.stopIfTrue === false) {
+			this.stopIfTrue = oRule.stopIfTrue;
+		}
+		if (this.text === null) {
+			this.text = oRule.text;
+		}
+		if (this.timePeriod === null) {
+			this.timePeriod = oRule.timePeriod;
+		}
+		if (this.type === null) {
+			this.type = oRule.type;
+		}
+
+		if (this.aRuleElements && this.aRuleElements.length === 0) {
+			this.aRuleElements = oRule.aRuleElements;
+		} else if (this.aRuleElements && oRule.aRuleElements && this.aRuleElements.length === oRule.aRuleElements.length) {
+			for (var i = 0; i < this.aRuleElements.length; i++) {
+				this.aRuleElements[i].merge(oRule.aRuleElements[i]);
+			}
+		}
+
+		//this.aRuleElements = [];
+
+		if (this.pivot === false) {
+			this.pivot = oRule.pivot;
+		}
+		if (this.ranges === null) {
+			this.ranges = oRule.ranges;
+		}
+		if (this.isLock === null) {
+			this.isLock = oRule.isLock;
+		}
+	};
+	CConditionalFormattingRule.prototype.recalcInterfaceFormula = function (ws, toInterface) {
+		for (var i = 0; i < this.aRuleElements.length; i++) {
+			this.aRuleElements[i].recalcFormula && this.aRuleElements[i].recalcFormula(ws, toInterface);
+		}
 	};
 	CConditionalFormattingRule.prototype.Write_ToBinary2 = function (writer) {
 		//for wrapper
@@ -409,7 +479,7 @@
 	};
 
 	CConditionalFormattingRule.prototype.setLocation = function (location, ws, addToHistory) {
-		if (addToHistory) {
+		if (addToHistory && !History.TurnOffHistory) {
 			var getUndoRedoRange = function (_ranges) {
 				var needRanges = [];
 				for (var i = 0; i < _ranges.length; i++) {
@@ -438,7 +508,7 @@
 		return propOld;
 	};
 
-	CConditionalFormattingRule.prototype.setOffset = function(offset, range, ws, addToHistory) {
+	CConditionalFormattingRule.prototype.setOffset = function (offset, range, ws, addToHistory) {
 		var newRanges = [];
 		var isChange = false;
 
@@ -1030,11 +1100,11 @@
 	};
 	CConditionalFormattingRule.prototype.asc_getValue1 = function () {
 		var ruleElement = this.aRuleElements[0];
-		return ruleElement && ruleElement.getFormula ? "=" + ruleElement.Text : null;
+		return ruleElement && ruleElement.getFormula ? "=" + ruleElement.getFormulaStr(true) : null;
 	};
 	CConditionalFormattingRule.prototype.asc_getValue2 = function () {
 		var ruleElement = this.aRuleElements[1];
-		return ruleElement && ruleElement.getFormula ? "=" + ruleElement.Text : null;
+		return ruleElement && ruleElement.getFormula ? "=" + ruleElement.getFormulaStr(true) : null;
 	};
 	CConditionalFormattingRule.prototype.asc_getColorScaleOrDataBarOrIconSetRule = function () {
 		if ((Asc.ECfType.dataBar === this.type || Asc.ECfType.iconSet === this.type ||
@@ -1106,25 +1176,30 @@
 		this.dxf = val;
 	};
 	CConditionalFormattingRule.prototype.asc_setLocation = function (val) {
-		var t = this;
+		let t = this;
 		if (val) {
 			if (val[0] === "=") {
 				val = val.slice(1);
 			}
-			val = val.split(",");
 			this.ranges = [];
-			val.forEach(function (item) {
-				if (-1 !== item.indexOf("!")) {
-					var is3DRef = AscCommon.parserHelp.parse3DRef(item);
-					if (is3DRef) {
-						item = is3DRef.range;
+
+			let wb = Asc.editor && Asc.editor.wbModel;
+			let _ranges;
+			if (wb) {
+				let ws = wb.getActiveWs();
+				_ranges = AscCommonExcel.getRangeByRef(val, ws, true);
+			}
+
+			if (_ranges) {
+				for (let i = 0; i < _ranges.length; i++) {
+					if (_ranges[i].bbox) {
+						t.ranges.push(_ranges[i].bbox);
 					}
 				}
-				t.ranges.push(AscCommonExcel.g_oRangeCache.getAscRange(item));
-			});
+			}
 		}
 	};
-	
+
 	CConditionalFormattingRule.prototype.asc_setContainsText = function (val) {
 		if (val[0] === "=") {
 			val = val.slice(1);
@@ -1169,7 +1244,7 @@
 					res = "AND(ROUNDDOWN(" + firstCellInRange + ",0)-TODAY()>(7-WEEKDAY(TODAY())),ROUNDDOWN(" + firstCellInRange + ",0)-TODAY()<(15-WEEKDAY(TODAY())))";
 					break;
 				case AscCommonExcel.ST_TimePeriod.lastMonth:
-					res = "AND(MONTH(" +firstCellInRange + ")=MONTH(EDATE(TODAY(),0-1)),YEAR(" + firstCellInRange + ")=YEAR(EDATE(TODAY(),0-1)))";
+					res = "AND(MONTH(" + firstCellInRange + ")=MONTH(EDATE(TODAY(),0-1)),YEAR(" + firstCellInRange + ")=YEAR(EDATE(TODAY(),0-1)))";
 					break;
 				case AscCommonExcel.ST_TimePeriod.thisMonth:
 					res = "AND(MONTH(" + firstCellInRange + ")=MONTH(TODAY()),YEAR(" + firstCellInRange + ")=YEAR(TODAY()))";
@@ -1286,6 +1361,7 @@
 		this.aRuleElements = [];
 		val = correctFromInterface(val);
 
+
 		this.aRuleElements[0] = new CFormulaCF();
 		this.aRuleElements[0].Text = val;
 	};
@@ -1380,6 +1456,24 @@
 			res.aColors.push(this.aColors[i].clone());
 		}
 		return res;
+	};
+	CColorScale.prototype.merge = function (obj) {
+		if (this.aCFVOs.length === 0) {
+			this.aCFVOs = obj.aCFVOs;
+		} else if (this.aCFVOs.length === obj.aCFVOs.length) {
+			for (var i = 0; i < this.aCFVOs.length; i++) {
+				this.aCFVOs[i].merge(obj.aCFVOs[i]);
+			}
+		}
+
+		if (this.aColors && this.aColors.length === 0) {
+			this.aColors = obj.aColors;
+		} else if (this.aColors && obj.aColors && this.aColors.length === obj.aColors.length) {
+			for (var i = 0; i < this.aColors.length; i++) {
+				//TODO
+				//this.aCFVOs[i].merge(obj.aCFVOs[i]);
+			}
+		}
 	};
 	CColorScale.prototype.applyPreset = function (styleIndex) {
 		var presetStyles = conditionalFormattingPresets[Asc.c_oAscCFRuleTypeSettings.colorScale][styleIndex];
@@ -1559,6 +1653,57 @@
 			res.AxisColor = this.AxisColor.clone();
 		}
 		return res;
+	};
+	CDataBar.prototype.merge = function (obj) {
+		//сравниваю по дефолтовым величинам
+		if (this.MaxLength === 90) {
+			this.MaxLength = obj.MaxLength;
+		}
+		if (this.MinLength === 10) {
+			this.MinLength = obj.MinLength;
+		}
+		if (this.ShowValue === true) {
+			this.ShowValue = obj.ShowValue;
+		}
+		if (this.AxisPosition === AscCommonExcel.EDataBarAxisPosition.automatic) {
+			this.AxisPosition = obj.AxisPosition;
+		}
+		if (this.Gradient === true) {
+			this.Gradient = obj.Gradient;
+		}
+		if (this.Direction === AscCommonExcel.EDataBarDirection.context) {
+			this.Direction = obj.Direction;
+		}
+		if (this.NegativeBarColorSameAsPositive === false) {
+			this.NegativeBarColorSameAsPositive = obj.NegativeBarColorSameAsPositive;
+		}
+		if (this.NegativeBarBorderColorSameAsPositive === true) {
+			this.NegativeBarBorderColorSameAsPositive = obj.NegativeBarBorderColorSameAsPositive;
+		}
+
+		if (this.aCFVOs.length === 0) {
+			this.aCFVOs = obj.aCFVOs;
+		} else if (this.aCFVOs.length === obj.aCFVOs.length) {
+			for (var i = 0; i < this.aCFVOs.length; i++) {
+				this.aCFVOs[i].merge(obj.aCFVOs[i]);
+			}
+		}
+
+		if (this.Color === null) {
+			this.Color = obj.Color;
+		}
+		if (this.NegativeColor === null) {
+			this.NegativeColor = obj.NegativeColor;
+		}
+		if (this.BorderColor === null) {
+			this.BorderColor = obj.BorderColor;
+		}
+		if (this.NegativeBorderColor === null) {
+			this.NegativeBorderColor = obj.NegativeBorderColor;
+		}
+		if (this.AxisColor === null) {
+			this.AxisColor = obj.AxisColor;
+		}
 	};
 	CDataBar.prototype.isEqual = function (elem) {
 		var _compareColors = function (_color1, _color2) {
@@ -1821,7 +1966,7 @@
 			}
 		}
 
-		AscCommonExcel.drawGradientPreview(id, api.wb, aColors, new AscCommon.CColor(202, 202, 202)/*this.settings.cells.defaultState.border*/, this.BorderColor, isReverse ? - 0.75 : 0.75, 2);
+		AscCommonExcel.drawGradientPreview(id, api.wb, aColors, new AscCommon.CColor(202, 202, 202)/*this.settings.cells.defaultState.border*/, this.BorderColor, isReverse ? -0.75 : 0.75, 2);
 	};
 	CDataBar.prototype.asc_getShowValue = function () {
 		return this.ShowValue;
@@ -1955,6 +2100,12 @@
 			}
 		}
 	};
+	CFormulaCF.prototype.recalcFormula = function (ws, toInterface) {
+		var f = new AscCommonExcel.parserFormula(this.Text, null, ws);
+		if (f.parse(!toInterface)) {
+			this.Text = toInterface ? f.assembleLocale(AscCommonExcel.cFormulaFunctionToLocale, true) : f.assemble();
+		}
+	};
 	CFormulaCF.prototype.getFormula = function (ws, opt_parent) {
 		this.init(ws, opt_parent);
 		return this._f;
@@ -1973,6 +2124,30 @@
 	CFormulaCF.prototype.asc_setText = function (val) {
 		this.Text = val;
 	};
+	CFormulaCF.prototype.isExtended = function () {
+		//if ((m_arrFormula[i].IsInit()) && m_arrFormula[i]->isExtended())
+		//TODO в x2t условие, которое  в нашем случае не получится использовать, мы не храним этот флаг
+		//m_arrFormula[i]->isExtended() -> return (m_sNodeName == L"xm:f");
+		return true;
+	};
+	CFormulaCF.prototype.getFormulaStr = function (needBuild) {
+		var res = null;
+		if (this._f) {
+			res = this._f.assembleLocale(AscCommonExcel.cFormulaFunctionToLocale, true);
+		} else if (needBuild) {
+			var oWB = Asc.editor && Asc.editor.wbModel;
+			if (oWB) {
+				var ws = oWB.getActiveWs();
+				if (ws) {
+					var _f = new AscCommonExcel.parserFormula(this.Text, null, ws);
+					_f.parse(true, true);
+					res = _f.assembleLocale(AscCommonExcel.cFormulaFunctionToLocale, true);
+				}
+			}
+		}
+		return res ? res : this.Text;
+	};
+
 
 	function CIconSet() {
 		this.IconSet = EIconSetType.Traffic3Lights1;
@@ -2004,6 +2179,38 @@
 			}
 		}
 		return res;
+	};
+	CIconSet.prototype.merge = function (obj) {
+		//сравниваю по дефолтовым величинам
+		if (this.IconSet === EIconSetType.Traffic3Lights1) {
+			this.IconSet = obj.IconSet;
+		}
+		if (this.Percent === true) {
+			this.Percent = obj.Percent;
+		}
+		if (this.Reverse === false) {
+			this.Reverse = obj.Reverse;
+		}
+		if (this.ShowValue === true) {
+			this.ShowValue = obj.ShowValue;
+		}
+
+		if (this.aCFVOs && this.aCFVOs.length === 0) {
+			this.aCFVOs = obj.aCFVOs;
+		} else if (this.aCFVOs && obj.aCFVOs && this.aCFVOs.length === obj.aCFVOs.length) {
+			for (var i = 0; i < this.aCFVOs.length; i++) {
+				this.aCFVOs[i].merge(obj.aCFVOs[i]);
+			}
+		}
+
+		if (this.aIconSets.length === 0) {
+			this.aIconSets = obj.aIconSets;
+		} else if (this.aIconSets.length === obj.aIconSets.length) {
+			for (var i = 0; i < this.aIconSets.length; i++) {
+				this.aIconSets[i].merge(obj.aIconSets[i]);
+			}
+		}
+
 	};
 	CIconSet.prototype.isEqual = function (elem) {
 		if (this.IconSet === elem.IconSet && this.Percent === elem.Percent && this.Reverse === elem.Reverse &&
@@ -2203,6 +2410,24 @@
 		res.formula = this.formula ? this.formula.clone() : null;
 		return res;
 	};
+	CConditionalFormatValueObject.prototype.merge = function (obj) {
+		//сравниваю по дефолтовым величинам
+		if (this.Gte === true) {
+			this.Gte = obj.Gte;
+		}
+		if (obj.Type !== null) {
+			this.Type = obj.Type;
+		}
+		if (this.Val === null) {
+			this.Val = obj.Val;
+		}
+		if (this.formulaParent === null) {
+			this.formulaParent = obj.formulaParent;
+		}
+		if (this.formula === null) {
+			this.formula = obj.formula;
+		}
+	};
 	CConditionalFormatValueObject.prototype.Write_ToBinary2 = function (writer) {
 		if (null != this.Gte) {
 			writer.WriteBool(true);
@@ -2273,6 +2498,15 @@
 		res.IconId = this.IconId;
 		return res;
 	};
+	CConditionalFormatIconSet.prototype.merge = function (obj) {
+		//сравниваю по дефолтовым величинам
+		if (this.IconSet === null) {
+			this.IconSet = obj.IconSet;
+		}
+		if (this.IconId === null) {
+			this.IconId = obj.IconId;
+		}
+	};
 	CConditionalFormatIconSet.prototype.isEqual = function (val) {
 		return this.IconSet === val.IconSet && this.IconId === val.IconId;
 	};
@@ -2305,7 +2539,7 @@
 		return this.IconId;
 	};
 	CConditionalFormatIconSet.prototype.asc_getIndex = function () {
-		this.IconId = val;
+		return this.IconId;
 	};
 	CConditionalFormatIconSet.prototype.asc_setIconSet = function (val) {
 		this.IconSet = val;
@@ -2408,31 +2642,33 @@
 			return null;
 		};
 
+		var _parseResultArg;
 		var _doParseFormula = function (sFormula) {
-			if(!(typeof sFormula === "string" && sFormula.length > 0)) {
+			_parseResultArg = null;
+			if (!(typeof sFormula === "string" && sFormula.length > 0)) {
 				return;
 			}
 			if (!ws) {
 				var oWB = Asc.editor && Asc.editor.wbModel;
-				if(!oWB) {
+				if (!oWB) {
 					return;
 				}
 				ws = oWB.getWorksheet(0);
 			}
 
-			if(sFormula.charAt(0) === '=') {
+			if (sFormula.charAt(0) === '=') {
 				sFormula = sFormula.slice(1);
 			}
 
 			var _formulaParsed = new AscCommonExcel.parserFormula(sFormula, null, ws);
-			var _parseResultArg = new AscCommonExcel.ParseResult([], []);
+			_parseResultArg = new AscCommonExcel.ParseResult([], []);
 			_formulaParsed.parse(true, true, _parseResultArg, true);
 
 			return _formulaParsed;
 		};
 
 
-		var _checkValue = function(_val, _type, _isNumeric) {
+		var _checkValue = function (_val, _type, _isNumeric) {
 			var fParser, _error;
 			switch (_type) {
 				case AscCommonExcel.ECfvoType.Formula:
@@ -2442,6 +2678,10 @@
 						_val = '"' + _val + '"';
 					} else {
 						fParser = _doParseFormula(_val);
+						if (_parseResultArg && _parseResultArg.error) {
+							return _parseResultArg.error;
+						}
+
 						//если внутри диапазон - проверяем его
 						_error = fParser && checkFormulaStack(fParser);
 						if (_error !== null) {
@@ -2456,6 +2696,10 @@
 						_val = '"' + _val + '"';
 					} else {
 						fParser = _doParseFormula(_val);
+						if (_parseResultArg && _parseResultArg.error) {
+							return _parseResultArg.error;
+						}
+
 						//если внутри диапазон - проверяем его
 						_error = fParser && checkFormulaStack(fParser);
 						if (_error !== null) {
@@ -2473,6 +2717,10 @@
 						_val = '"' + _val + '"';
 					} else {
 						fParser = _doParseFormula(_val);
+						if (_parseResultArg && _parseResultArg.error) {
+							return _parseResultArg.error;
+						}
+
 						//если внутри диапазон - проверяем его
 						_error = fParser && checkFormulaStack(fParser);
 						if (_error !== null) {
@@ -2502,6 +2750,10 @@
 			//для iconSet сравниваем числа для типов Number/Percent/Percentile - должны идти по убыванию, сраниваем только соседние
 
 			if (_prevNum && _isNum) {
+				if (_isNum && _prevNum) {
+					_val = parseFloat(_val);
+					_prevVal = parseFloat(_prevVal);
+				}
 				if (type === Asc.ECfType.colorScale) {
 					if (_prevType === _type && type !== AscCommonExcel.ECfvoType.Formula && _prevVal > _val) {
 						return asc_error.ValueMustBeGreaterThen;
@@ -2534,7 +2786,10 @@
 					prevVal = props[i][0];
 					prevNum = _isNumeric;
 				} else {
-					nError = compareRefs(prevVal, prevType, prevNum, props[i][0], props[i][1], _isNumeric);
+					if (!(i === 1 && type === Asc.ECfType.iconSet)) {
+						nError = compareRefs(prevVal, prevType, prevNum, props[i][0], props[i][1], _isNumeric);
+					}
+
 					if (nError !== null) {
 						return [nError, i];
 					}
@@ -2577,10 +2832,10 @@
 	}
 
 	function correctFromInterface(val) {
-		var _isNumeric = isNumeric(val);
+		let _isNumeric = isNumeric(val);
 		if (!_isNumeric) {
-			var isDate;
-			var isFormula;
+			let isDate;
+			let isFormula;
 
 			if (val[0] === "=") {
 				val = val.slice(1);
@@ -2597,13 +2852,23 @@
 
 			if (!isFormula) {
 				val = addQuotes(val);
+			} else {
+				let oWB = Asc.editor && Asc.editor.wbModel;
+				if (oWB) {
+					let ws = oWB.getActiveWs();
+					if (ws) {
+						let _f = new AscCommonExcel.parserFormula(val, null, ws);
+						_f.parse(true, true);
+						val = _f.assembleLocale(AscCommonExcel.cFormulaFunctionToLocale, true);
+					}
+				}
 			}
 		}
 
 		return val;
 	}
 
-	function addQuotes (val) {
+	function addQuotes(val) {
 		var _res;
 		if (val[0] === '"') {
 			_res = val.replace(/\"/g, "\"\"");
@@ -2624,7 +2889,7 @@
 	var fullIconArray = ["data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik03LjUgMTVMMC41IDhINVYxSDEwVjhIMTQuNUw3LjUgMTVaIiBmaWxsPSIjRkYxMTExIi8+CjxwYXRoIGQ9Ik0xMCA4LjVIMTMuMjkyOUw3LjUgMTQuMjkyOUwxLjcwNzExIDguNUg1SDUuNVY4VjEuNUg5LjVWOFY4LjVIMTBaIiBzdHJva2U9ImJsYWNrIiBzdHJva2Utb3BhY2l0eT0iMC4yIi8+Cjwvc3ZnPgo=",
 		"data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xNSA4LjVMOCAxNS41TDggMTFMMSAxMUwxIDZMOCA2TDggMS41TDE1IDguNVoiIGZpbGw9IiNGRkNGMzMiLz4KPHBhdGggZD0iTTguNSA2TDguNSAyLjcwNzExTDE0LjI5MjkgOC41TDguNSAxNC4yOTI5TDguNSAxMUw4LjUgMTAuNUw4IDEwLjVMMS41IDEwLjVMMS41IDYuNUw4IDYuNUw4LjUgNi41TDguNSA2WiIgc3Ryb2tlPSJibGFjayIgc3Ryb2tlLW9wYWNpdHk9IjAuMiIvPgo8L3N2Zz4K",
 		"data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik03LjUgMUwxNC41IDhMMTAgOFYxNUw1IDE1TDUgOEwwLjUgOEw3LjUgMVoiIGZpbGw9IiMyRTk5NUYiLz4KPHBhdGggZD0iTTUgNy41TDEuNzA3MTEgNy41TDcuNSAxLjcwNzExTDEzLjI5MjkgNy41TDEwIDcuNUg5LjVWOFYxNC41TDUuNSAxNC41TDUuNSA4VjcuNUg1WiIgc3Ryb2tlPSJibGFjayIgc3Ryb2tlLW9wYWNpdHk9IjAuMiIvPgo8L3N2Zz4K",
-		"data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGcgY2xpcC1wYXRoPSJ1cmwoI2NsaXAwKSI+CjxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgY2xpcC1ydWxlPSJldmVub2RkIiBkPSJNMTQgMTRMNC4xMDA1MSAxNEw3LjI4MjQ5IDEwLjgxOEwyLjMzMjc0IDUuODY4MjdMNS44NjgyNyAyLjMzMjc0TDEwLjgxOCA3LjI4MjQ5TDE0IDQuMTAwNTFMMTQgMTRaIiBmaWxsPSIjNTA1MDUwIi8+CjxwYXRoIGQ9Ik0xMS4xNzE2IDcuNjM2MDRMMTMuNSA1LjMwNzYxTDEzLjUgMTMuNUw1LjMwNzYxIDEzLjVMNy42MzYwNCAxMS4xNzE2TDcuOTg5NTkgMTAuODE4TDcuNjM2MDQgMTAuNDY0NUwzLjAzOTg0IDUuODY4MjdMNS44NjgyNyAzLjAzOTg0TDEwLjQ2NDUgNy42MzYwNEwxMC44MTggNy45ODk1OUwxMS4xNzE2IDcuNjM2MDRaIiBzdHJva2U9ImJsYWNrIiBzdHJva2Utb3BhY2l0eT0iMC4yIi8+CjwvZz4KPGRlZnM+CjxjbGlwUGF0aCBpZD0iY2xpcDAiPgo8cmVjdCB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIGZpbGw9IndoaXRlIi8+CjwvY2xpcFBhdGg+CjwvZGVmcz4KPC9zdmc+Cg==",
+		'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGNsaXAtcnVsZT0iZXZlbm9kZCIgZD0iTTcuNSAxNUwwLjUgOEg1VjFIMTBWOEgxNC41TDcuNSAxNVoiIGZpbGw9IiM1MDUwNTAiLz48L3N2Zz4=',
 		"data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xNSA4LjVMOCAxNS41TDggMTFMMSAxMUwxIDZMOCA2TDggMS41TDE1IDguNVoiIGZpbGw9IiM1MDUwNTAiLz4KPHBhdGggZD0iTTguNSA2TDguNSAyLjcwNzExTDE0LjI5MjkgOC41TDguNSAxNC4yOTI5TDguNSAxMUw4LjUgMTAuNUw4IDEwLjVMMS41IDEwLjVMMS41IDYuNUw4IDYuNUw4LjUgNi41TDguNSA2WiIgc3Ryb2tlPSJibGFjayIgc3Ryb2tlLW9wYWNpdHk9IjAuMiIvPgo8L3N2Zz4K",
 		"data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik03LjUgMUwxNC41IDhMMTAgOFYxNUw1IDE1TDUgOEwwLjUgOEw3LjUgMVoiIGZpbGw9IiM1MDUwNTAiLz4KPHBhdGggZD0iTTUgNy41TDEuNzA3MTEgNy41TDcuNSAxLjcwNzExTDEzLjI5MjkgNy41TDEwIDcuNUg5LjVWOFYxNC41TDUuNSAxNC41TDUuNSA4VjcuNUg1WiIgc3Ryb2tlPSJibGFjayIgc3Ryb2tlLW9wYWNpdHk9IjAuMiIvPgo8L3N2Zz4K",
 		"data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTUgMUw1IDEwTDE0IDUuNUw1IDFaIiBmaWxsPSIjRkYxMTExIi8+CjxwYXRoIGQ9Ik0xMi44ODIgNS41TDUuNSA5LjE5MDk4TDUuNSAxLjgwOTAyTDEyLjg4MiA1LjVaIiBzdHJva2U9ImJsYWNrIiBzdHJva2Utb3BhY2l0eT0iMC4yIi8+CjxyZWN0IHg9IjIiIHk9IjAuOTk5OTk2IiB3aWR0aD0iMiIgaGVpZ2h0PSIxNCIgZmlsbD0iIzcyNzI3MiIvPgo8L3N2Zz4K",
@@ -2689,7 +2954,8 @@
 	var iZeroFilledBars = 39;
 	var iTriangleRed = 40, iDashYellow = 41, iTriangleGreen = 42;
 	var iStarSilver = 43, iStarHalf = 44, iStarGold = 45;
-	var iZeroFilledBoxes = 46, iOneFilledBoxes = 47, iTwoFilledBoxes = 48, iThreeFilledBoxes = 49, iFourFilledBoxes = 50;
+	var iZeroFilledBoxes = 46, iOneFilledBoxes = 47, iTwoFilledBoxes = 48, iThreeFilledBoxes = 49,
+		iFourFilledBoxes = 50;
 
 	var c_arrIcons = [20];
 	c_arrIcons[EIconSetType.Arrows3] = [iDown, iSide, iUp];
@@ -2742,9 +3008,11 @@
 	function getFullCFIcons() {
 		return fullIconArray;
 	}
+
 	function getCFIconsByType() {
 		return c_arrIcons;
 	}
+
 	function getFullCFPresets() {
 		return conditionalFormattingPresets;
 	}

@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -78,9 +78,10 @@
         return editor.WordControl.m_oDrawingDocument.Notes_GetWidth();
     }
 
-    function CNotes(){
+    function CNotes() {
+        AscFormat.CBaseFormatObject.call(this);
         this.clrMap = null;
-        this.cSld = new AscFormat.CSld();
+        this.cSld = new AscFormat.CSld(this);
         this.showMasterPhAnim = null;
         this.showMasterSp     = null;
         this.slide            = null;
@@ -90,15 +91,11 @@
 
         this.m_oContentChanges = new AscCommon.CContentChanges(); // список изменений(добавление/удаление элементов)
         this.kind = AscFormat.TYPE_KIND.NOTES;
-        this.Id = AscCommon.g_oIdCounter.Get_NewId();
 
         this.Lock = new AscCommon.CLock();
-        AscCommon.g_oTableId.Add(this, this.Id);
-
-
         this.graphicObjects = new AscFormat.DrawingObjectsController(this);
     }
-
+    AscFormat.InitClass(CNotes, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_Notes);
 
     CNotes.prototype.Clear_ContentChanges = function()
     {
@@ -114,25 +111,6 @@
     {
         this.m_oContentChanges.Refresh();
     };
-
-
-    CNotes.prototype.getObjectType = function(){
-        return AscDFH.historyitem_type_Notes;
-    };
-
-    CNotes.prototype.Get_Id = function () {
-        return this.Id;
-    };
-
-    CNotes.prototype.Write_ToBinary2 = function(w){
-        w.WriteLong(this.getObjectType());
-        w.WriteString2(this.Id);
-    };
-
-    CNotes.prototype.Read_FromBinary2 = function(r){
-        this.Id = r.GetString();
-    };
-
     CNotes.prototype.setClMapOverride = function(pr){
         History.Add(new AscDFH.CChangesDrawingsObject(this, AscDFH.historyitem_NotesSetClrMap, this.clrMap, pr));
         this.clrMap = pr;
@@ -340,10 +318,6 @@
         return editor.WordControl.m_oDrawingDocument.GetMMPerDot(pix);
     };
 
-    CNotes.prototype.checkGraphicObjectPosition = function()
-    {
-        return {x: 0, y: 0};
-    };
 
     CNotes.prototype.Clear_ContentChanges = function()
     {
@@ -355,6 +329,23 @@
 
     CNotes.prototype.Refresh_ContentChanges = function()
     {
+    };
+    CNotes.prototype.getColorMap = function()
+    {
+        if(this.Master)
+        {
+            if(this.Master.clrMap)
+            {
+                return this.Master.clrMap;
+            }
+        }
+        return AscFormat.GetDefaultColorMap();
+    };
+    CNotes.prototype.IsUseInDocument = function() {
+        if(this.slide){
+            return this.slide.IsUseInDocument();
+        }
+        return false;
     };
 
     function CreateNotes(){
@@ -419,6 +410,15 @@
         oSp.txBody.setBodyPr(oBodyPr);
         oTxLstStyle = new AscFormat.TextListStyle();
         oSp.txBody.setLstStyle(oTxLstStyle);
+        const oContent = oSp.getDocContent();
+        if(oContent) {
+            oContent.ClearContent(true);
+            const oParagraph = oContent.Content[0];
+            const oFld = new AscCommonWord.CPresentationField(oParagraph);
+            oFld.SetGuid(AscCommon.CreateGUID());
+            oFld.SetFieldType("slidenum");
+            oParagraph.Internal_Content_Add(0, oFld);
+        }
         oSp.setParent(oN);
         oN.addToSpTreeToPos(2, oSp);
         return oN;

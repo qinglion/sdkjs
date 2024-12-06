@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -101,12 +101,12 @@ function (window, undefined)
 				if (true !== obj["macrosArray"][i]["autostart"])
 					continue;
 
-                var script = "(function(){ var Api = window.g_asc_plugins.api;\n" + obj["macrosArray"][i]["value"] + "\n})();";
-                eval(script);
+				AscCommon.safePluginEval(obj["macrosArray"][i]["value"]);
 			}
 		}
 		catch (err)
 		{
+			console.error(err);
 		}
 	};
 	CDocumentMacros.prototype.run = function(sGuid)
@@ -120,14 +120,14 @@ function (window, undefined)
 			{
 				if (sGuid === obj["macrosArray"][i]["guid"])
 				{
-					var script = "(function(){ var Api = window.g_asc_plugins.api;\n" + obj["macrosArray"][i]["value"] + "\n})();";
-					eval(script);
+					AscCommon.safePluginEval(obj["macrosArray"][i]["value"]);
 					break;
 				}
 			}
 		}
 		catch (err)
 		{
+			console.error(err);
 		}
 	};
 	CDocumentMacros.prototype.getGuidByName = function(sName)
@@ -214,6 +214,77 @@ function (window, undefined)
         return false;
     };
 
+	function VbaProject() {
+		this.filename = null;
+		this.vbaXml = null;
+		this.vbaDataXml = null;
+	}
+	VbaProject.prototype.toStream = function (s) {
+		s.WriteUChar(AscCommon.g_nodeAttributeStart);
+		s._WriteString2(0, this.filename);
+		s.WriteUChar(AscCommon.g_nodeAttributeEnd);
+
+		s.WriteRecord2(0, this.vbaXml, function(val){
+			s.WriteString2(val);
+		});
+		s.WriteRecord2(1, this.vbaDataXml, function(val){
+			s.WriteString2(val);
+		});
+	};
+	VbaProject.prototype.fromStream = function (s) {
+		var _len = s.GetULong();
+		var _start_pos = s.cur;
+		var _end_pos = _len + _start_pos;
+		var _at;
+// attributes
+		s.GetUChar();
+		while (true)
+		{
+			_at = s.GetUChar();
+			if (_at === AscCommon.g_nodeAttributeEnd)
+				break;
+			switch (_at)
+			{
+				case 0: {
+					this.filename = s.GetString2();
+					break;
+				}
+				default:
+					s.Seek2(_end_pos);
+					return;
+			}
+		}
+//members
+		var _type;
+		while (true)
+		{
+			if (s.cur >= _end_pos)
+				break;
+			_type = s.GetUChar();
+			switch (_type)
+			{
+				case 0:
+				{
+					s.GetULong();//len
+					this.vbaXml = s.GetString2();
+					break;
+				}
+				case 1:
+				{
+					s.GetULong();//len
+					this.vbaDataXml = s.GetString2();
+					break;
+				}
+				default:
+				{
+					s.SkipRecord();
+					break;
+				}
+			}
+		}
+		s.Seek2(_end_pos);
+	};
+
 	AscDFH.changesFactory[AscDFH.historyitem_DocumentMacros_Data]     = CChangesDocumentMacrosData;
 	AscDFH.changesRelationMap[AscDFH.historyitem_DocumentMacros_Data] = [AscDFH.historyitem_DocumentMacros_Data];
 
@@ -233,6 +304,186 @@ function (window, undefined)
 		this.Class.Data = Value;
 	};
 
+	function customXMLHttpRequest() {
+		this._headers = [];
+		var t = this;
+
+		this.open = function(method, url, async, user, password) {
+			this._url = url;
+			this._method = method;
+			this._async = async;
+			this._user = user;
+			this._password = password;
+		};
+
+		this.setRequestHeader = function(name, value) {
+			this._headers.push({name: name, value: value});
+		};
+
+		this.send = function(body) {
+			setTimeout(function() {
+				window.g_asc_plugins.api.asc_getUserPermissionToMakeRequestFromMacros(t._url, sendRequest);		
+				function sendRequest (permission) {
+					if (permission) {
+						var xhr = new XMLHttpRequest();
+
+						if (t.timeout)
+							xhr.timeout = t.timeout;
+
+						if (t.responseType)
+							xhr.responseType = t.responseType;
+
+						if ( t.hasOwnProperty('withCredentials') )
+							xhr.withCredentials = t.withCredentials;
+
+						xhr.open(t._method, t._url, t._async, t._user, t._password);
+
+						t._headers.forEach(function(el) {
+							xhr.setRequestHeader(el.name, el.value);
+						});
+
+						xhr.onload = function() {
+							t.status = xhr.status;
+							t.statusText = xhr.statusText;
+							t.response = xhr.response;
+							t.responseText = xhr.responseText;
+							t.responseURL = xhr.responseURL;
+							t.responseXML = xhr.responseXML;
+							t.onload &&	t.onload();
+						};
+
+						xhr.onprogress = function(event) {
+							t.onprogress && t.onprogress(event);
+						};
+
+						xhr.onreadystatechange = function() {
+							t.readyState = this.readyState;
+							t.onreadystatechange && t.onreadystatechange();
+						};
+
+						xhr.onerror = function(error) {
+							t.onerror && t.onerror(error || "User doesn't allow this request.");
+						};
+
+						xhr.ontimeout = function(event) {
+							t.ontimeout && t.ontimeout(event);
+						};
+
+						xhr.onloadstart = function(event) {
+							t.onloadstart && t.onloadstart(event);
+						};
+
+						xhr.onloadend = function(event) {
+							t.onloadend && t.onloadend(event);
+						};
+
+						xhr.onabort = function(event) {
+							t.onabort && t.onabort(event);
+						};
+
+						if (typeof t.upload == 'object') {
+							xhr.upload.onabort = function(event) {
+								t.upload.onabort && t.upload.onabort(event);
+							};
+
+							xhr.upload.onerror = function(event) {
+								t.upload.onerror && t.upload.onerror(event);
+							};
+
+							xhr.upload.onload = function(event) {
+								t.upload.onload && t.upload.onload(event);
+							};
+
+							xhr.upload.onloadend = function(event) {
+								t.upload.onloadend && t.upload.onloadend(event);
+							};
+
+							xhr.upload.onloadstart = function(event) {
+								t.upload.onloadstart && t.upload.onloadstart(event);
+							};
+
+							xhr.upload.onprogress = function(event) {
+								t.upload.onprogress && t.upload.onprogress(event);
+							};
+
+							xhr.upload.ontimeout = function(event) {
+								t.upload.ontimeout && t.upload.ontimeout(event);
+							};
+						}
+
+						t.getResponseHeader = function(name) {
+							return xhr.getResponseHeader(name);
+						};
+
+						t.getAllResponseHeaders = function() {
+							return xhr.getAllResponseHeaders();
+						};
+
+						t.abort = function() {
+							xhr.abort();
+						}
+
+						xhr.send(body || null);
+
+					} else if (t.onerror)  {
+						t.onerror("User doesn't allow this request.");
+					}
+				}
+			});
+		};
+	}
+
 	window['AscCommon'] = window['AscCommon'] || {};
 	window["AscCommon"].CDocumentMacros = CDocumentMacros;
+	window['AscCommon'].VbaProject = VbaProject;
+
+	var _safe_eval_closure = new Function("Function", "Api", "window", "alert", "document", "XMLHttpRequest", "self", "globalThis", "setTimeout", "setInterval", "value", "return eval(\"\\\"use strict\\\";\\r\\n\" + value)");
+	window['AscCommon'].safePluginEval = function(value) {
+		let protoFunc = Object.getPrototypeOf(function(){});
+		// for minimization we use eval!!!
+		let protoFuncGen = null;
+		try {
+			protoFuncGen = eval("Object.getPrototypeOf(function*(){})");
+		} catch (err) {
+			protoFuncGen = null;
+		}
+		const normalConstructor = protoFunc.constructor;
+		const generatorNext = protoFuncGen ? protoFuncGen.prototype.next : null;
+		protoFunc.constructor = function(){};
+		if (protoFuncGen)
+			protoFuncGen.prototype.next = function(){};
+
+		const timeout = function(cb, delay) {
+			var args = Array.prototype.slice.call(arguments, 2);
+			return setTimeout(function() {
+				cb.apply({}, args);
+			}, delay);
+		};
+		const interval = function(cb, delay) {
+			var args = Array.prototype.slice.call(arguments, 2);
+			return setInterval(function() {
+				cb.apply({}, args);
+			}, delay);
+		};
+		const Api = window.g_asc_plugins.api;
+		// clear this field on each run
+		delete Api.parsedJSDoc;
+		// check if we add a custom function into this macros we will parse a jsdoc
+		if (value.includes('AddCustomFunction') && value.includes('@customfunction')) {
+			// calculate how any times the function of adding will be called
+			const countOfAdding = (value.match(/\.AddCustomFunction\(/g) || []).length;
+			// parse JSDOC and put it to Api
+			Api.parsedJSDoc = AscCommon.parseJSDoc(value);
+			// remove extra parsed JSDOC
+			if (Api.parsedJSDoc.length > countOfAdding)
+				Api.parsedJSDoc.length = countOfAdding;
+		}
+		const result = _safe_eval_closure.call(null, {}, Api, {}, function(){}, {}, customXMLHttpRequest, {}, {}, timeout, interval, value);
+		protoFunc.constructor = normalConstructor;
+		if (protoFuncGen)
+			protoFuncGen.prototype.next = generatorNext;
+		return result;
+	};
+
+
 })(window);

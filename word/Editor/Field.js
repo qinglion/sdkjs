@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -52,7 +52,7 @@ function ParaField(FieldType, Arguments, Switches)
     this.Type    = para_Field;
 
     this.Istruction = null;
-    this.FieldType = (undefined === FieldType ? fieldtype_UNKNOWN : FieldType);
+    this.FieldType = (undefined === FieldType ? AscWord.fieldtype_UNKNOWN : FieldType);
     this.Arguments = (undefined === Arguments ? []                : Arguments);
     this.Switches  = (undefined === Switches  ? []                : Switches);
 
@@ -76,17 +76,26 @@ ParaField.prototype.Get_Id = function()
 };
 ParaField.prototype.Copy = function(Selected, oPr)
 {
-    var NewField = CParagraphContentWithParagraphLikeContent.prototype.Copy.apply(this, arguments);
+	let newField = CParagraphContentWithParagraphLikeContent.prototype.Copy.apply(this, arguments);
 
-    // TODO: Сделать функциями с иторией
-    NewField.FieldType = this.FieldType;
-    NewField.Arguments = this.Arguments;
-    NewField.Switches  = this.Switches;
+	if (oPr && oPr.SkipFldSimple)
+	{
+		let newItems = this.Content.slice();
+		this.RemoveAll();
+		return newItems;
+	}
+	else
+	{
+		// TODO: Сделать функциями с иторией
+		newField.FieldType = this.FieldType;
+		newField.Arguments = this.Arguments;
+		newField.Switches  = this.Switches;
 
-    if (editor)
-        editor.WordControl.m_oLogicDocument.Register_Field(NewField);
+		if (editor)
+			editor.WordControl.m_oLogicDocument.Register_Field(newField);
 
-    return NewField;
+		return newField;
+	}
 };
 ParaField.prototype.GetSelectedElementsInfo = function(Info, ContentPos, Depth)
 {
@@ -115,6 +124,9 @@ ParaField.prototype.Add_ToContent = function(Pos, Item, UpdatePosition)
 };
 ParaField.prototype.Remove_FromContent = function(Pos, Count, UpdatePosition)
 {
+	if (Count <= 0)
+		return;
+
 	// Получим массив удаляемых элементов
 	var DeletedItems = this.Content.slice(Pos, Pos + Count);
 	History.Add(new CChangesParaFieldRemoveItem(this, Pos, DeletedItems));
@@ -133,7 +145,7 @@ ParaField.prototype.Add = function(Item)
 			var CurPos  = this.State.ContentPos;
 			var CurItem = this.Content[CurPos];
 
-			var CurContentPos = new CParagraphContentPos();
+			var CurContentPos = new AscWord.CParagraphContentPos();
 			CurItem.Get_ParaContentPos(false, false, CurContentPos);
 
 			var NewItem = CurItem.Split(CurContentPos, 0);
@@ -195,25 +207,10 @@ ParaField.prototype.Draw_HighLights = function(PDSH)
 
     var X1 = PDSH.X;
 
-    if (Math.abs(X0 - X1) > 0.001 && (true === PDSH.DrawMMFields || fieldtype_FORMTEXT === this.Get_FieldType()))
+    if (Math.abs(X0 - X1) > 0.001 && (true === PDSH.DrawMMFields || AscWord.fieldtype_FORMTEXT === this.Get_FieldType()))
     {
         PDSH.MMFields.Add(Y0, Y1, X0, X1, 0, 0, 0, 0  );
     }
-};
-ParaField.prototype.Is_UseInDocument = function()
-{
-	return (this.Paragraph && true === this.Paragraph.Is_UseInDocument() && true === this.Is_UseInParagraph() ? true : false);
-};
-ParaField.prototype.Is_UseInParagraph = function()
-{
-	if (!this.Paragraph)
-		return false;
-
-	var ContentPos = this.Paragraph.Get_PosByElement(this);
-	if (!ContentPos)
-		return false;
-
-	return true;
 };
 ParaField.prototype.Get_LeftPos = function(SearchPos, ContentPos, Depth, UseContentPos)
 {
@@ -246,7 +243,7 @@ ParaField.prototype.Remove = function(nDirection, bOnAddText)
 {
 	CParagraphContentWithParagraphLikeContent.prototype.Remove.call(this, nDirection, bOnAddText);
 
-	if (this.Is_Empty() && !bOnAddText && fieldtype_FORMTEXT === this.Get_FieldType() && this.Paragraph && this.Paragraph.LogicDocument && true === this.Paragraph.LogicDocument.IsFillingFormMode())
+	if (this.Is_Empty() && !bOnAddText && AscWord.fieldtype_FORMTEXT === this.Get_FieldType() && this.Paragraph && this.Paragraph.LogicDocument && true === this.Paragraph.LogicDocument.IsFillingFormMode())
 	{
 		var sDefaultText = this.FormFieldDefaultText == "" ? "     " : this.FormFieldDefaultText;
 		this.SetValue(sDefaultText);
@@ -316,6 +313,17 @@ ParaField.prototype.Get_WordEndPos = function(SearchPos, ContentPos, Depth, UseC
 		SearchPos.Found     = true;
 	}
 };
+ParaField.prototype.SetCurrent = function(isCurrent)
+{
+};
+ParaField.prototype.IsCurrent = function()
+{
+	return false;
+};
+ParaField.prototype.SelectField = function()
+{
+	this.SelectThisElement();
+};
 ParaField.prototype.GetAllFields = function(isUseSelection, arrFields)
 {
 	arrFields.push(this);
@@ -323,12 +331,13 @@ ParaField.prototype.GetAllFields = function(isUseSelection, arrFields)
 };
 ParaField.prototype.GetAllSeqFieldsByType = function(sType, aFields)
 {
-	if(this.FieldType === fieldtype_SEQ)
+	if (this.FieldType === AscWord.fieldtype_SEQ
+		&& this.Arguments.length
+		&& this.Arguments[0].toLowerCase
+		&& sType.toLowerCase
+		&& this.Arguments[0].toLowerCase() === sType.toLowerCase())
 	{
-		if(this.Arguments[0] === sType)
-		{
-			aFields.push(this);
-		}
+		aFields.push(this);
 	}
 };
 //----------------------------------------------------------------------------------------------------------------------
@@ -341,6 +350,10 @@ ParaField.prototype.Get_Argument = function(Index)
 ParaField.prototype.Get_FieldType = function()
 {
     return this.FieldType;
+};
+ParaField.prototype.GetFieldType = function()
+{
+	return this.FieldType;
 };
 ParaField.prototype.Map_MailMerge = function(_Value)
 {
@@ -366,7 +379,7 @@ ParaField.prototype.Restore_StandardTemplate = function()
     // В любом случае сначала восстанавливаем исходное содержимое.
     this.Restore_Template();
 
-    if (fieldtype_MERGEFIELD === this.FieldType && true === AscCommon.CollaborativeEditing.Is_SingleUser() && 1 === this.Arguments.length)
+    if (AscWord.fieldtype_MERGEFIELD === this.FieldType && true === AscCommon.CollaborativeEditing.Is_SingleUser() && 1 === this.Arguments.length)
     {
         var oRun = this.private_GetMappedRun("«" + this.Arguments[0] + "»");
         this.Remove_FromContent(0, this.Content.length);
@@ -388,7 +401,7 @@ ParaField.prototype.Is_NeedRestoreTemplate = function()
         return true;
 
     var oRun = this.TemplateContent[0];
-    if (fieldtype_MERGEFIELD === this.FieldType)
+    if (AscWord.fieldtype_MERGEFIELD === this.FieldType)
     {
         var sStandardText = "«" + this.Arguments[0] + "»";
 
@@ -424,13 +437,13 @@ ParaField.prototype.Replace_MailMerge = function(_Value)
     if (null === ParaContentPos)
         return false;
 
-    var Depth    = ParaContentPos.Get_Depth();
+    var Depth    = ParaContentPos.GetDepth();
     var FieldPos = ParaContentPos.Get(Depth);
 
     if (Depth < 0)
         return false;
 
-    ParaContentPos.Decrease_Depth(1);
+    ParaContentPos.DecreaseDepth(1);
     var FieldContainer = Paragraph.Get_ElementByPos(ParaContentPos);
     if (!FieldContainer || !FieldContainer.Content || FieldContainer.Content[FieldPos] !== this)
         return false;
@@ -474,7 +487,7 @@ ParaField.prototype.SetValue = function(sValue)
 };
 ParaField.prototype.IsFillingForm = function()
 {
-	if (fieldtype_FORMTEXT === this.Get_FieldType())
+	if (AscWord.fieldtype_FORMTEXT === this.Get_FieldType())
 		return true;
 
 	return false;
@@ -515,7 +528,7 @@ ParaField.prototype.Update = function(isCreateHistoryPoint, isRecalculate)
 		return;
 
 	var sReplaceString = null;
-	if (this.FieldType === fieldtype_SEQ)
+	if (this.FieldType === AscWord.fieldtype_SEQ)
 	{
 		var oInstruction           = new CFieldInstructionSEQ();
 		oInstruction.ComplexField  = this;
@@ -523,7 +536,7 @@ ParaField.prototype.Update = function(isCreateHistoryPoint, isRecalculate)
 		oInstruction.Id            = this.Arguments[0];
 		sReplaceString             = oInstruction.GetText();
 	}
-	else if (this.FieldType === fieldtype_STYLEREF)
+	else if (this.FieldType === AscWord.fieldtype_STYLEREF)
 	{
 		var oInstruction             = new CFieldInstructionSTYLEREF();
 		oInstruction.ComplexField    = this;
@@ -539,6 +552,184 @@ ParaField.prototype.Update = function(isCreateHistoryPoint, isRecalculate)
 		this.Remove_FromContent(0, this.Content.length);
 		this.Add_ToContent(0, oRun);
 	}
+};
+ParaField.prototype.GetInstructionLine = function()
+{
+	let Instr = "";
+	let name;
+	switch (this.FieldType)
+	{
+		case AscWord.fieldtype_MERGEFIELD :
+		{
+			name = "MERGEFIELD";
+			break;
+		}
+		case AscWord.fieldtype_PAGE :
+		{
+			name = "PAGE";
+			break;
+		}
+		case AscWord.fieldtype_NUMPAGES :
+		{
+			name = "NUMPAGES";
+			break;
+		}
+		case AscWord.fieldtype_FORMTEXT :
+		{
+			name = "FORMTEXT";
+			break;
+		}
+		case AscWord.fieldtype_TOC :
+		{
+			name = "TOC";
+			break;
+		}
+		case AscWord.fieldtype_PAGEREF :
+		{
+			name = "PAGEREF";
+			break;
+		}
+		case AscWord.fieldtype_ASK :
+		{
+			name = "ASK";
+			break;
+		}
+		case AscWord.fieldtype_REF :
+		{
+			name = "REF";
+			break;
+		}
+		case AscWord.fieldtype_HYPERLINK :
+		{
+			name = "HYPERLINK";
+			break;
+		}
+		case AscWord.fieldtype_TIME :
+		{
+			name = "TIME";
+			break;
+		}
+		case AscWord.fieldtype_DATE :
+		{
+			name = "DATE";
+			break;
+		}
+		case AscWord.fieldtype_FORMULA :
+		{
+			name = "FORMULA";
+			break;
+		}
+		case AscWord.fieldtype_SEQ :
+		{
+			name = "SEQ";
+			break;
+		}
+		case AscWord.fieldtype_STYLEREF :
+		{
+			name = "STYLEREF";
+			break;
+		}
+		case AscWord.fieldtype_NOTEREF :
+		{
+			name = "NOTEREF";
+			break;
+		}
+	}
+	if (name)
+	{
+		Instr += name;
+		for (let i = 0; i < this.Arguments.length; ++i)
+		{
+			let argument = this.Arguments[i];
+			argument     = argument.replace(/(\\|")/g, "\\$1");
+			if (-1 != argument.indexOf(' '))
+			{
+				argument = "\"" + argument + "\"";
+			}
+			Instr += " " + argument;
+		}
+		Instr += this.Switches.join(" ")
+	}
+	return Instr;
+};
+ParaField.prototype.GetInstruction = function()
+{
+	let instructionLine = this.GetInstructionLine();
+	let parser = new CFieldInstructionParser();
+	let instruction = parser.GetInstructionClass(instructionLine);
+	instruction.SetInstructionLine(instructionLine);
+	return instruction;
+};
+ParaField.prototype.ReplaceWithComplexField = function()
+{
+	let oParent        = this.GetParent();
+	let nPosInParent   = this.GetPosInParent(oParent);
+	let oParagraph     = this.GetParagraph();
+	let oLogicDocument = oParagraph ? oParagraph.GetLogicDocument() : null;
+	if (!oLogicDocument || !oParent  || -1 === nPosInParent)
+		return null;
+
+	let oBeginChar    = new ParaFieldChar(fldchartype_Begin, oLogicDocument);
+	let oSeparateChar = new ParaFieldChar(fldchartype_Separate, oLogicDocument);
+	let oEndChar      = new ParaFieldChar(fldchartype_End, oLogicDocument);
+
+	let sInstruction = this.GetInstructionLine();
+
+	let oRun = this.CreateRunWithText("");
+	oRun.AddToContent(-1, oBeginChar);
+	oRun.AddInstrText(sInstruction);
+	oRun.AddToContent(-1, oSeparateChar);
+	oRun.AddToContent(-1, oEndChar);
+
+	oParent.RemoveFromContent(nPosInParent, 1);
+	oParent.AddToContent(nPosInParent, oRun);
+
+	oBeginChar.SetRun(oRun);
+	oSeparateChar.SetRun(oRun);
+	oEndChar.SetRun(oRun);
+
+	var oComplexField = oBeginChar.GetComplexField();
+	oComplexField.SetBeginChar(oBeginChar);
+	oComplexField.SetInstructionLine(sInstruction);
+	oComplexField.SetSeparateChar(oSeparateChar);
+	oComplexField.SetEndChar(oEndChar);
+	oComplexField.Update(false);
+	return oComplexField;
+};
+ParaField.prototype.GetRunWithPageField = function(paragraph)
+{
+	let res = null;
+	if (AscWord.fieldtype_PAGENUM == this.FieldType || AscWord.fieldtype_PAGECOUNT == this.FieldType) {
+		res = new ParaRun(paragraph);
+		let run = this.GetFirstRunNonEmpty();
+		let rPr = run && run.Get_FirstTextPr();
+		if (rPr) {
+			res.Set_Pr(rPr);
+		}
+		if (AscWord.fieldtype_PAGENUM == this.FieldType) {
+			res.AddToContentToEnd(new AscWord.CRunPageNum());
+		} else {
+			var pageCount = parseInt(this.GetSelectedText(true));
+			res.AddToContentToEnd(new AscWord.CRunPagesCount(isNaN(pageCount) ? undefined : pageCount));
+		}
+	}
+	return res;
+}
+ParaField.prototype.IsValid = function()
+{
+	return true;
+};
+ParaField.prototype.CheckType = function(type)
+{
+	return this.FieldType === type;
+};
+ParaField.prototype.IsAddin = function()
+{
+	return this.CheckType(AscWord.fieldtype_ADDIN);
+};
+ParaField.prototype.IsFormCheckBox = function()
+{
+	return this.CheckType(AscWord.fieldtype_FORMCHECKBOX);
 };
 //----------------------------------------------------------------------------------------------------------------------
 // Функции совместного редактирования
@@ -617,6 +808,15 @@ ParaField.prototype.IsStopCursorOnEntryExit = function()
 {
 	return true;
 };
+ParaField.prototype.CheckSpelling = function(oCollector, nDepth)
+{
+	if (oCollector.IsExceedLimit())
+		return;
+
+	oCollector.FlushWord();
+};
 //--------------------------------------------------------export----------------------------------------------------
 window['AscCommonWord'] = window['AscCommonWord'] || {};
 window['AscCommonWord'].ParaField = ParaField;
+
+window['AscWord'].CSimpleField = ParaField;

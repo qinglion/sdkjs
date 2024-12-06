@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -38,10 +38,6 @@
 var CShape = AscFormat.CShape;
 var CChartSpace = AscFormat.CChartSpace;
 
-CChartSpace.prototype.addToDrawingObjects =  CShape.prototype.addToDrawingObjects;
-CChartSpace.prototype.deleteDrawingBase = CShape.prototype.deleteDrawingBase;
-CChartSpace.prototype.getDrawingObjectsController = CShape.prototype.getDrawingObjectsController;
-CChartSpace.prototype.Is_UseInDocument = CShape.prototype.Is_UseInDocument;
     CChartSpace.prototype.getEditorType = function()
     {
         return 0;
@@ -65,7 +61,6 @@ CChartSpace.prototype.hit = CShape.prototype.hit;
 CChartSpace.prototype.hitInInnerArea = CShape.prototype.hitInInnerArea;
 CChartSpace.prototype.hitInPath = CShape.prototype.hitInPath;
 CChartSpace.prototype.check_bounds = CShape.prototype.check_bounds;
-CChartSpace.prototype.setWorksheet = CShape.prototype.setWorksheet;
 CChartSpace.prototype.handleUpdateLn = function()
 {
     this.recalcInfo.recalculatePenBrush = true;
@@ -216,7 +211,6 @@ CChartSpace.prototype.recalculateTransform = CShape.prototype.recalculateTransfo
 
 CChartSpace.prototype.createResizeTrack = CShape.prototype.createResizeTrack;
 CChartSpace.prototype.createMoveTrack = CShape.prototype.createMoveTrack;
-CChartSpace.prototype.getRectBounds = CShape.prototype.getRectBounds;
 
 CChartSpace.prototype.recalculateBounds = function()
 {
@@ -365,13 +359,7 @@ CChartSpace.prototype.recalculate = function()
 
         if(this.recalcInfo.recalculateAxisVal)
         {
-            if(AscFormat.CChartsDrawer.prototype._isSwitchCurrent3DChart(this)){
-                //old variant
-                this.recalculateAxis();
-            }
-            else{
-                this.recalculateAxes();
-            }
+            this.recalculateAxes();
             this.recalcInfo.recalculateAxisVal = false;
             bCheckLabels = true;
         }

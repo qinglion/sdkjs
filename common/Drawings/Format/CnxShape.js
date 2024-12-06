@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -521,7 +521,12 @@
 
     CConnectionShape.prototype.copy = function (oPr) {
         var copy = new CConnectionShape();
-        this.fillObject(copy);
+        this.fillObject(copy, oPr);
+        return copy;
+    };
+    CConnectionShape.prototype.convertToPdf = function(oPr) {
+        let copy = new AscPDF.CPdfConnectionShape();
+        this.fillObject(copy, oPr);
         return copy;
     };
 
@@ -565,7 +570,7 @@
         if(AscFormat.isRealNumber(oPr.stCnxId)){
             oStartSp = oObjectsMap[oPr.stCnxId];
             if(AscCommon.isRealObject(oStartSp)){
-                aCnx = oStartSp.getGeom().cnxLstInfo;
+                aCnx = oStartSp.getTrackGeometry().cnxLstInfo;
                 if(aCnx) {
                     oCnx = aCnx[oPr.stCnxIdx];
                 }
@@ -585,7 +590,7 @@
         if(AscFormat.isRealNumber(oPr.endCnxId)){
             oEndSp = oObjectsMap[oPr.endCnxId];
             if(AscCommon.isRealObject(oEndSp)){
-                aCnx = oEndSp.getGeom().cnxLstInfo;
+                aCnx = oEndSp.getTrackGeometry().cnxLstInfo;
                 if(aCnx) {
                     oCnx = aCnx[oPr.endCnxIdx];
                 }
@@ -647,32 +652,34 @@
         if(oBeginDrawing && oEndDrawing){
             _startConnectionParams = oBeginDrawing.getConnectionParams(this.getStCxnIdx(), null);
             _endConnectionParams = oEndDrawing.getConnectionParams(this.getEndCxnIdx(), null);
-            _spPr = AscFormat.fCalculateSpPr(_startConnectionParams, _endConnectionParams, this.spPr.geometry.preset, this.pen.w);
-            _xfrm2 = _spPr.xfrm;
-            _xfrm.setExtX(_xfrm2.extX);
-            _xfrm.setExtY(_xfrm2.extY);
-            if(!this.group){
-                _xfrm.setOffX(_xfrm2.offX);
-                _xfrm.setOffY(_xfrm2.offY);
-                _xfrm.setFlipH(_xfrm2.flipH);
-                _xfrm.setFlipV(_xfrm2.flipV);
-                _xfrm.setRot(_xfrm2.rot);
-            }
-            else{
+            if(_startConnectionParams && _endConnectionParams) {
+                _spPr = AscFormat.fCalculateSpPr(_startConnectionParams, _endConnectionParams, this.spPr.geometry.preset, this.pen.w);
+                _xfrm2 = _spPr.xfrm;
+                _xfrm.setExtX(_xfrm2.extX);
+                _xfrm.setExtY(_xfrm2.extY);
+                if(!this.group){
+                    _xfrm.setOffX(_xfrm2.offX);
+                    _xfrm.setOffY(_xfrm2.offY);
+                    _xfrm.setFlipH(_xfrm2.flipH);
+                    _xfrm.setFlipV(_xfrm2.flipV);
+                    _xfrm.setRot(_xfrm2.rot);
+                }
+                else{
 
-                var _xc = _xfrm2.offX + _xfrm2.extX / 2.0;
-                var _yc = _xfrm2.offY + _xfrm2.extY / 2.0;
-                var xc = this.group.invertTransform.TransformPointX(_xc, _yc);
-                var yc = this.group.invertTransform.TransformPointY(_xc, _yc);
-                _xfrm.setOffX(xc - _xfrm2.extX / 2.0);
-                _xfrm.setOffY(yc - _xfrm2.extY / 2.0);
-                _xfrm.setFlipH(this.group.getFullFlipH() ? !_xfrm2.flipH : _xfrm2.flipH);
-                _xfrm.setFlipV(this.group.getFullFlipV() ? !_xfrm2.flipV : _xfrm2.flipV);
-                _xfrm.setRot(AscFormat.normalizeRotate(_xfrm2.rot - this.group.getFullRotate()));
+                    var _xc = _xfrm2.offX + _xfrm2.extX / 2.0;
+                    var _yc = _xfrm2.offY + _xfrm2.extY / 2.0;
+                    var xc = this.group.invertTransform.TransformPointX(_xc, _yc);
+                    var yc = this.group.invertTransform.TransformPointY(_xc, _yc);
+                    _xfrm.setOffX(xc - _xfrm2.extX / 2.0);
+                    _xfrm.setOffY(yc - _xfrm2.extY / 2.0);
+                    _xfrm.setFlipH(this.group.getFullFlipH() ? !_xfrm2.flipH : _xfrm2.flipH);
+                    _xfrm.setFlipV(this.group.getFullFlipV() ? !_xfrm2.flipV : _xfrm2.flipV);
+                    _xfrm.setRot(AscFormat.normalizeRotate(_xfrm2.rot - this.group.getFullRotate()));
+                }
+                this.spPr.setGeometry(_spPr.geometry.createDuplicate());
+                this.checkDrawingBaseCoords();
+                this.recalculate();
             }
-            this.spPr.setGeometry(_spPr.geometry.createDuplicate());
-            this.checkDrawingBaseCoords();
-            this.recalculate();
         }
         else if(oBeginDrawing || oEndDrawing){
             if(bMove){
@@ -681,7 +688,7 @@
                 var _oCnxInfo;
                 var _groupTransform;
                 if(oBeginDrawing){
-                    _oCnxInfo = oBeginDrawing.getGeom().cnxLst[this.getStCxnIdx()];
+                    _oCnxInfo = oBeginDrawing.getTrackGeometry().cnxLst[this.getStCxnIdx()];
                     if(_oCnxInfo){
                         _spX = oBeginDrawing.transform.TransformPointX(_oCnxInfo.x, _oCnxInfo.y);
                         _spY = oBeginDrawing.transform.TransformPointY(_oCnxInfo.x, _oCnxInfo.y);
@@ -691,7 +698,7 @@
                     }
                 }
                 else {
-                    _oCnxInfo = oEndDrawing.getGeom().cnxLst[this.getEndCxnIdx()];
+                    _oCnxInfo = oEndDrawing.getTrackGeometry().cnxLst[this.getEndCxnIdx()];
                     if(_oCnxInfo){
                         _spX = oEndDrawing.transform.TransformPointX(_oCnxInfo.x, _oCnxInfo.y);
                         _spY = oEndDrawing.transform.TransformPointY(_oCnxInfo.x, _oCnxInfo.y);

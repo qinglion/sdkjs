@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -31,11 +31,6 @@
  */
 
 "use strict";
-/**
- * User: Ilja.Kirillov
- * Date: 05.04.2017
- * Time: 14:41
- */
 
 /**
  * Класс для отображения изменения сделанного в режиме рецензирования
@@ -103,7 +98,7 @@ CRevisionsChange.prototype.get_LockUserId = function()
 		var Lock = this.Element.GetLock();
 		var LockType = Lock.Get_Type();
 
-		if (AscCommon.locktype_Mine !== LockType && AscCommon.locktype_None !== LockType)
+		if (AscCommon.c_oAscLockTypes.kLockTypeMine !== LockType && AscCommon.c_oAscLockTypes.kLockTypeNone !== LockType)
 			return Lock.Get_UserId();
 	}
 
@@ -310,7 +305,8 @@ CRevisionsChange.prototype.IsTextChange = function()
 CRevisionsChange.prototype.IsTableRowChange = function()
 {
 	return (c_oAscRevisionsChangeType.RowsAdd === this.Type
-		|| c_oAscRevisionsChangeType.RowsRem === this.Type);
+		|| c_oAscRevisionsChangeType.RowsRem === this.Type
+		|| c_oAscRevisionsChangeType.TableRowPr === this.Type);
 };
 CRevisionsChange.prototype.IsTablePrChange = function()
 {
@@ -324,6 +320,55 @@ CRevisionsChange.prototype.IsParagraphContentChange = function()
 CRevisionsChange.prototype.IsParaPrChange = function()
 {
 	return (c_oAscRevisionsChangeType.ParaPr === this.Type);
+};
+CRevisionsChange.prototype.CheckHitByParagraphContentPos = function(oParagraph, oContentPos)
+{
+	if (this.IsComplexChange())
+	{
+		for (let nIndex = 0, nCount = this.SimpleChanges.length; nIndex < nCount; ++nIndex)
+		{
+			let oChange = this.SimpleChanges[nIndex];
+			if (oChange.GetElement() === oParagraph
+				&& oContentPos.Compare(oChange.StartPos) >= 0
+				&& oContentPos.Compare(oChange.EndPos) <= 0)
+				return true;
+		}
+		return false;
+	}
+	else
+	{
+		return (this.GetElement() === oParagraph
+			&& oContentPos.Compare(this.StartPos) >= 0
+			&& oContentPos.Compare(this.EndPos) <= 0);
+	}
+};
+/**
+ * Данная функция возвращает вес изменения. Если в текущей позиции у нас есть несколько изменений, чтобы мы использовали
+ * изменения в соответствии с их весом
+ * @returns {number}
+ */
+CRevisionsChange.prototype.GetWeight = function()
+{
+	switch (this.Type)
+	{
+		case Asc.c_oAscRevisionsChangeType.MoveMark:
+		case Asc.c_oAscRevisionsChangeType.MoveMarkRemove: return 100;
+		case Asc.c_oAscRevisionsChangeType.TextAdd:
+		case Asc.c_oAscRevisionsChangeType.TextRem: return 90;
+		case Asc.c_oAscRevisionsChangeType.TextPr: return 80;
+		case Asc.c_oAscRevisionsChangeType.ParaPr: return 70;
+		case Asc.c_oAscRevisionsChangeType.ParaAdd:
+		case Asc.c_oAscRevisionsChangeType.ParaRem: return 60;
+		case Asc.c_oAscRevisionsChangeType.RowsAdd:
+		case Asc.c_oAscRevisionsChangeType.RowsRem: return 50;
+		case Asc.c_oAscRevisionsChangeType.TablePr: return 40;
+	}
+
+	return 0;
+};
+CRevisionsChange.prototype.IsValid = function()
+{
+	return !!(this.Element && this.Element.IsUseInDocument());
 };
 
 //--------------------------------------------------------export--------------------------------------------------------

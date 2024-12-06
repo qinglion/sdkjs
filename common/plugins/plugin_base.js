@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -51,7 +51,7 @@
 			return;
 
 		var _style = document.createElement('style');
-		_style.type      = 'text/css';
+		_style.type	  = 'text/css';
 
 		var _style_body = ".ih_main { margin: 0px; padding: 0px; width: 100%; height: 100%; display: inline-block; overflow: hidden; box-sizing: border-box; user-select: none; position: fixed; border: 1px solid #cfcfcf; } ";
 		_style_body += "ul { margin: 0px; padding: 0px; width: 100%; height: 100%; list-style-type: none; outline:none; } ";
@@ -403,8 +403,105 @@
 		return _size;
 	};
 
+	function CPluginWindow()
+	{
+		this.id = window.Asc.generateGuid();
+		this.id = this.id.replace(/-/g, '');
+		this._events = {};
+
+		this._register();
+	}
+
+	CPluginWindow.prototype._register = function()
+	{
+		var plugin = window.Asc.plugin;
+		if (!plugin._windows)
+			plugin._windows = {};
+
+		plugin._windows[this.id] = this;
+	};
+	CPluginWindow.prototype._unregister = function()
+	{
+		var plugin = window.Asc.plugin;
+		if (!plugin._windows || !plugin._windows[this.id])
+			return;
+
+		delete plugin._windows[this.id];
+	};
+	CPluginWindow.prototype.show = function(settings)
+	{
+		var url = settings.url;
+
+		if ((0 !== url.indexOf("http://")) &&
+			(0 !== url.indexOf("https://")) &&
+			(0 !== url.indexOf("file://")) &&
+			(0 !== url.indexOf("www.")))
+		{
+			let location  = window.location;
+			let start = location.pathname.lastIndexOf('/') + 1;
+			let file = location.pathname.substring(start);
+			url = location.href.replace(file, url);
+		}
+
+		if (-1 === url.indexOf(".html?"))
+			url += "?windowID=";
+		else
+			url += "&windowID=";
+		settings.url = url + this.id;
+		window.Asc.plugin.executeMethod("ShowWindow", [this.id, settings]);
+	};
+	CPluginWindow.prototype.activate = function()
+	{
+		window.Asc.plugin.executeMethod("ActivateWindow", [this.id]);
+	};
+	CPluginWindow.prototype.close = function()
+	{
+		window.Asc.plugin.executeMethod("CloseWindow", [this.id]);
+		this._unregister();
+	};
+	CPluginWindow.prototype.command = function(name, data)
+	{
+		window.Asc.plugin.executeMethod("SendToWindow", [this.id, name, data]);
+	};
+	CPluginWindow.prototype.attachEvent = function(id, action)
+	{
+		this._events[id] = action;
+	};
+	CPluginWindow.prototype.detachEvent = function(id)
+	{
+		if (this._events && this._events[id])
+			delete this._events[id];
+	};
+	CPluginWindow.prototype._oncommand = function(id, data)
+	{
+		if (this._events && this._events[id])
+			this._events[id].call(window.Asc.plugin, data);
+	};
+
 	window.Asc = window.Asc || {};
+
+	window.Asc.generateGuid = function() {
+		if (!window.crypto || !window.crypto.getRandomValues) {
+			function s4() {
+				return Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
+			}
+
+			return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
+		} else {
+			var array = new Uint16Array(8);
+			window.crypto.getRandomValues(array);
+			var index = 0;
+
+			function s4() {
+				var value = 0x10000 + array[index++];
+				return value.toString(16).substring(1);
+			}
+
+			return s4() + s4() + '-' + s4() + '-' + s4() + '-' + s4() + '-' + s4() + s4() + s4();
+		}
+	};
 	window.Asc.inputHelper = CIHelper;
+	window.Asc.PluginWindow = CPluginWindow;
 
 })(window, undefined);
 
@@ -452,7 +549,8 @@
 		".form-control[disabled]" : { "color" : "text-invers" },
 		".btn-text-default" : { "background-color" : "background-normal", "border-color" : "border-regular-control", "color" : "text-normal" },
 		".btn-text-default:hover" : { "background-color" : "highlight-button-hover" },
-		".btn-text-default:active" : { "background-color" : "highlight-button-pressed !important" },
+		".btn-text-default.active,\
+		.btn-text-default:active" : { "background-color" : "highlight-button-pressed !important", "color" : "text-normal-pressed" },
 		".btn-text-default[disabled]:hover,\
 		.btn-text-default.disabled:hover,\
 		.btn-text-default[disabled]:active,\
@@ -462,8 +560,8 @@
 		".select2-container--default .select2-selection--single" : { "color" : "text-normal", "background-color" : "background-normal" },
 		".select2-container--default .select2-selection--single .select2-selection__rendered" : { "color" : "text-normal" },
 		".select2-results" : { "background-color" : "background-normal" },
-		".select2-container--default .select2-results__option--highlighted[aria-selected]" : { "background-color" : "border-regular-control !important"},
-		".select2-container--default .select2-results__option[aria-selected=true]" : { "background-color" : "border-regular-control !important"},
+		".select2-container--default .select2-results__option--highlighted[aria-selected]" : { "background-color" : "highlight-button-hover !important"},
+		".select2-container--default .select2-results__option[aria-selected=true]" : { "background-color" : "highlight-button-pressed !important"},
 		".select2-dropdown, .select2-container--default .select2-selection--single" : { "border-color" : "border-regular-control !important"},
 		".select2-container--default.select2-container--open .select2-selection--single" : { "border-color" : "border-control-focus !important"},
 		".select2-container--default.select2-container--focus:not(.select2-container--open) .select2-selection--single" : { "border-color" : "border-regular-control !important"},
@@ -472,6 +570,7 @@
 		".select2-container--default .select2-search--dropdown .select2-search__field" : { "color" : "text-normal", "background-color" : "background-normal", "border-color" : "border-regular-control"},
 		".select2-container--default.select2-container--disabled .select2-selection--single" : { "background-color" : "background-normal" },
 		".select2-container--default .select2-selection--single .select2-selection__arrow b" : { "border-color" : "text-normal !important" },
+		".select2-container--default.select2-container--open .select2-selection__arrow b" : {"border-color" : "text-normal !important"},
 		".ps .ps__rail-y:hover" : {"background-color" : "background-toolbar" },
 		".ps .ps__rail-y.ps--clicking" : {"background-color" : "background-toolbar" },
 		".ps__thumb-y" : { "background-color" : "background-normal", "border-color" : "Border !important" },
@@ -487,57 +586,61 @@
 		"*::-webkit-scrollbar-track" : { "background" : "background-normal" },
 		"*::-webkit-scrollbar-track:hover" : { "background" : "background-toolbar-additional" },
 		"*::-webkit-scrollbar-thumb" : { "background-color" : "background-toolbar", "border-color" : "border-regular-control" },
-		"*::-webkit-scrollbar-thumb:hover" : { "background-color" : "canvas-scroll-thumb-hover" }
+		"*::-webkit-scrollbar-thumb:hover" : { "background-color" : "canvas-scroll-thumb-hover" },
+		".asc-plugin-loader" : { "color" : "text-normal" }
 	};
 
-    var g_isMouseSendEnabled = false;
-    var g_language = "";
+	var g_isMouseSendEnabled = false;
+	var g_language = "";
 
-    window.plugin_sendMessage = function sendMessage(data)
-    {
-        if (window.Asc.plugin.ie_channel)
-            window.Asc.plugin.ie_channel.postMessage(data);
-        else
-            window.parent.postMessage(data, "*");
-    };
+	window.plugin_sendMessage = function sendMessage(data)
+	{
+		if (window.Asc.plugin.ie_channel)
+			window.Asc.plugin.ie_channel.postMessage(data);
+		else
+			window.parent.postMessage(data, "*");
+	};
 
-    window.plugin_onMessage = function(event)
-    {
-        if (!window.Asc.plugin)
-            return;
+	window.plugin_onMessage = function(event)
+	{
+		if (!window.Asc.plugin)
+			return;
 
-        if (typeof(event.data) == "string")
-        {
-            var pluginData = {};
-            try
-            {
-                pluginData = JSON.parse(event.data);
-            }
-            catch(err)
-            {
-                pluginData = {};
-            }
+		if (typeof(event.data) == "string")
+		{
+			var pluginData = {};
+			try
+			{
+				pluginData = JSON.parse(event.data);
+			}
+			catch(err)
+			{
+				pluginData = {};
+			}
 
-            var type = pluginData.type;
+			var type = pluginData.type;
 
-            if (pluginData.guid != window.Asc.plugin.guid)
-            {
-                if (undefined !== pluginData.guid)
-                    return;
+			if (pluginData.guid != window.Asc.plugin.guid)
+			{
+				if (undefined !== pluginData.guid)
+					return;
 
-                switch (type)
-                {
-                    case "onExternalPluginMessage":
-                        break;
-                    default:
-                        return;
-                }
-            }
+				switch (type)
+				{
+					case "onExternalPluginMessage":
+						break;
+					default:
+						return;
+				}
+			}
 
-            if (type == "init")
-                window.Asc.plugin.info = pluginData;
+			if (type === "init")
+				window.Asc.plugin.info = pluginData;
 
-            if (undefined !== pluginData.theme)
+			if (type === "updateOptions" && pluginData.options)
+				window.Asc.plugin.info.options = pluginData.options;
+
+			if (undefined !== pluginData.theme)
 			{
 				if (!window.Asc.plugin.theme || type === "onThemeChanged")
 				{
@@ -582,102 +685,126 @@
 				}
 			}
 
-            if (!window.Asc.plugin.tr || !window.Asc.plugin.tr_init)
-            {
+			if (!window.Asc.plugin.tr || !window.Asc.plugin.tr_init)
+			{
 				window.Asc.plugin.tr_init = true;
-                window.Asc.plugin.tr = function(val) {
-                    if (!window.Asc.plugin.translateManager || !window.Asc.plugin.translateManager[val])
-                        return val;
-                    return window.Asc.plugin.translateManager[val];
-                };
-            }
+				window.Asc.plugin.tr = function(val) {
+					if (!window.Asc.plugin.translateManager || !window.Asc.plugin.translateManager[val])
+						return val;
+					return window.Asc.plugin.translateManager[val];
+				};
+			}
 
-            var newLang = "";
-            if (window.Asc.plugin.info)
-                newLang = window.Asc.plugin.info.lang;
-            if (newLang == "" || newLang != g_language)
-            {
-                g_language = newLang;
-                if (g_language == "en-EN" || g_language == "")
+			var newLang = "";
+			if (window.Asc.plugin.info)
+				newLang = window.Asc.plugin.info.lang;
+			if (newLang == "" || newLang != g_language)
+			{
+				g_language = newLang;
+				if (g_language == "en-EN" || g_language == "")
 				{
-					window.Asc.plugin.translateManager = {};
-					if (window.Asc.plugin.onTranslate)
-						window.Asc.plugin.onTranslate();
+					pluginInitTranslateManager();
 				}
 				else
 				{
 					var _client = new XMLHttpRequest();
-					_client.open("GET", "./translations/" + g_language + ".json");
+					_client.open("GET", "./translations/langs.json");
 
 					_client.onreadystatechange = function ()
 					{
 						if (_client.readyState == 4)
 						{
-						    if (_client.status == 200 || location.href.indexOf("file:") == 0)
-						    {
-                                try
-                                {
-                                    window.Asc.plugin.translateManager = JSON.parse(_client.responseText);
-                                }
-                                catch (err)
-                                {
-                                    window.Asc.plugin.translateManager = {};
-                                }
-                            }
-                            else
-                            {
-                                window.Asc.plugin.translateManager = {};
-                            }
+							if (_client.status == 200 || location.href.indexOf("file:") == 0)
+							{
+								try
+								{
+									var arr = JSON.parse(_client.responseText);
+									var fullName, shortName;
+									for (var i = 0; i < arr.length; i++)
+									{
+										var file = arr[i];
+										if (file == g_language) 
+										{
+											fullName = file;
+											break;
+										} 
+										else if (file.split('-')[0] == g_language.split('-')[0])
+										{
+											shortName = file;
+										}
+									}
 
-
-                            if (window.Asc.plugin.onTranslate)
-                                window.Asc.plugin.onTranslate();
+									if (fullName || shortName)
+									{
+										pluginGetTranslateFile( (fullName || shortName) );
+									}
+									else
+									{
+										pluginInitTranslateManager();
+									}
+								}
+								catch (error)
+								{
+									pluginGetTranslateFile(g_language);
+								}
+							}
+							else if (_client.status == 404)
+							{
+								pluginGetTranslateFile(g_language);
+							}
+							else
+							{
+								pluginInitTranslateManager();
+							}
 						}
 					};
 					_client.send();
 				}
-            }
+			}
 
-            switch (type)
-            {
-                case "init":
-                {
-                    pluginStart();
-                    window.Asc.plugin.init(window.Asc.plugin.info.data);
-                    break;
-                }
-                case "button":
-                {
-                    var _buttonId = parseInt(pluginData.button);
-                    if (!window.Asc.plugin.button && -1 == _buttonId)
+			switch (type)
+			{
+				case "init":
+				{
+					pluginStart();
+					window.Asc.plugin.init(window.Asc.plugin.info.data);
+					break;
+				}
+				case "button":
+				{
+					var _buttonId = parseInt(pluginData.button);
+					if (isNaN(_buttonId))
+						_buttonId = pluginData.button;
+
+					if (!window.Asc.plugin.button && -1 === _buttonId && undefined === pluginData.buttonWindowId)
 						window.Asc.plugin.executeCommand("close", "");
-                    else
-                        window.Asc.plugin.button(_buttonId);
-                    break;
-                }
-                case "enableMouseEvent":
-                {
-                    g_isMouseSendEnabled = pluginData.isEnabled;
+					else
+						window.Asc.plugin.button(_buttonId, pluginData.buttonWindowId);
+					break;
+				}
+				case "enableMouseEvent":
+				{
+					g_isMouseSendEnabled = pluginData.isEnabled;
 					if (window.Asc.plugin.onEnableMouseEvent)
 						window.Asc.plugin.onEnableMouseEvent(g_isMouseSendEnabled);
-                    break;
-                }
-                case "onExternalMouseUp":
-                {
-                    if (window.Asc.plugin.onExternalMouseUp)
-                        window.Asc.plugin.onExternalMouseUp();
-                    break;
-                }
-                case "onMethodReturn":
-                {
+					break;
+				}
+				case "onExternalMouseUp":
+				{
+					if (window.Asc.plugin.onExternalMouseUp)
+						window.Asc.plugin.onExternalMouseUp();
+					break;
+				}
+				case "onMethodReturn":
+				{
 					window.Asc.plugin.isWaitMethod = false;
 
 					if (window.Asc.plugin.methodCallback)
 					{
-					    var methodCallback = window.Asc.plugin.methodCallback;
-                        window.Asc.plugin.methodCallback = null;
-                        methodCallback(pluginData.methodReturnData);
-                        methodCallback = null;
+						var methodCallback = window.Asc.plugin.methodCallback;
+						window.Asc.plugin.methodCallback = null;
+						methodCallback(pluginData.methodReturnData);
+						methodCallback = null;
 					}
 					else if (window.Asc.plugin.onMethodReturn)
 					{
@@ -685,49 +812,117 @@
 					}
 
 					if (window.Asc.plugin.executeMethodStack && window.Asc.plugin.executeMethodStack.length > 0)
-                    {
-                        var obj = window.Asc.plugin.executeMethodStack.shift();
-                        window.Asc.plugin.executeMethod(obj.name, obj.params, obj.callback);
-                    }
+					{
+						var obj = window.Asc.plugin.executeMethodStack.shift();
+						window.Asc.plugin.executeMethod(obj.name, obj.params, obj.callback);
+					}
 
-                    break;
-                }
-				case "onCommandCallback":
-				{
-                    if (window.Asc.plugin.onCallCommandCallback)
-                    {
-                        window.Asc.plugin.onCallCommandCallback();
-                        window.Asc.plugin.onCallCommandCallback = null;
-                    }
-                    else if (window.Asc.plugin.onCommandCallback)
-						window.Asc.plugin.onCommandCallback();
 					break;
 				}
-                case "onExternalPluginMessage":
-                {
+				case "onCommandCallback":
+				{
+					if (window.Asc.plugin.onCallCommandCallback)
+					{
+						window.Asc.plugin.onCallCommandCallback(pluginData.commandReturnData);
+						window.Asc.plugin.onCallCommandCallback = null;
+					}
+					else if (window.Asc.plugin.onCommandCallback)
+						window.Asc.plugin.onCommandCallback(pluginData.commandReturnData);
+					break;
+				}
+				case "onExternalPluginMessage":
+				{
 					if (window.Asc.plugin.onExternalPluginMessage && pluginData.data && pluginData.data.type)
 						window.Asc.plugin.onExternalPluginMessage(pluginData.data);
 					break;
-                }
-                case "onEvent":
-                {
-                    if (window.Asc.plugin["event_" + pluginData.eventName])
-                        window.Asc.plugin["event_" + pluginData.eventName](pluginData.eventData);
-                    break;
-                }
-                default:
-                    break;
-            }
-        }
-    };
+				}
+				case "onEvent":
+				{
+					if (window.Asc.plugin["event_" + pluginData.eventName])
+						window.Asc.plugin["event_" + pluginData.eventName](pluginData.eventData);
+					else if (window.Asc.plugin.onEvent)
+						window.Asc.plugin.onEvent(pluginData.eventName, pluginData.eventData);
+					break;
+				}
+				case "onWindowEvent":
+				{
+					if (window.Asc.plugin._windows && pluginData.windowID && window.Asc.plugin._windows[pluginData.windowID])
+					{
+						if ("private_window_method" === pluginData.eventName)
+						{
+							var _windowID = pluginData.windowID;
+							window.Asc.plugin.executeMethod(pluginData.eventData.name, pluginData.eventData.params, function(retValue){
+								if (window.Asc.plugin._windows && window.Asc.plugin._windows[_windowID])
+									window.Asc.plugin._windows[_windowID].command("on_private_window_method", retValue);
+							});
+						}
+						else if ("private_window_command" === pluginData.eventName)
+						{
+							var _windowID = pluginData.windowID;
+							window.Asc.plugin.info.recalculate = (false === pluginData.eventData.isCalc) ? false : true;
+							window.Asc.plugin.executeCommand("command", pluginData.eventData.code, function(retValue){
+								if (window.Asc.plugin._windows && window.Asc.plugin._windows[_windowID])
+									window.Asc.plugin._windows[_windowID].command("on_private_window_command", retValue);
+							});
+						}
+						else
+						{
+							window.Asc.plugin._windows[pluginData.windowID]._oncommand(pluginData.eventName, pluginData.eventData);
+						}
+					}
+					break;
+				}
+				case "updateOptions":
+				{
+					if (window.Asc.plugin.onUpdateOptions)
+						window.Asc.plugin.onUpdateOptions();
+				}
+				default:
+					break;
+			}
+		}
+	};
 
-    function pluginStart()
-    {
-        if (window.Asc.plugin.isStarted)
-            return;
+	function pluginGetTranslateFile (fileName) {
+		var _client = new XMLHttpRequest();
+		_client.open("GET", "./translations/" + fileName + ".json");
+		_client.onreadystatechange = function ()
+		{
+			if (_client.readyState == 4)
+			{
+				if (_client.status == 200 || location.href.indexOf("file:") == 0)
+				{
+					try
+					{
+						pluginInitTranslateManager( JSON.parse(_client.responseText) );
+					}
+					catch (err)
+					{
+						pluginInitTranslateManager();
+					}
+				}
 
-        window.Asc.plugin.isStarted = true;
-        window.startPluginApi();
+				if (_client.status == 404)
+					pluginInitTranslateManager();
+			}
+		};
+		_client.send();
+	}
+
+	function pluginInitTranslateManager (data)
+	{
+		window.Asc.plugin.translateManager = data || {};
+		if (window.Asc.plugin.onTranslate)
+			window.Asc.plugin.onTranslate();
+	}
+
+	function pluginStart()
+	{
+		if (window.Asc.plugin.isStarted)
+			return;
+
+		window.Asc.plugin.isStarted = true;
+		window.startPluginApi();
 
 		var zoomValue = AscCommon.checkDeviceScale();
 		AscCommon.retinaPixelRatio = zoomValue.applicationPixelRatio;
@@ -742,30 +937,34 @@
 				_frames[0].style.pointerEvents = isEnabled ? "none" : "";
 			}
 		};
-    }
+	}
 
-    window.onmousemove = function(e)
-    {
-        if (!g_isMouseSendEnabled || !window.Asc.plugin || !window.Asc.plugin.executeCommand)
-            return;
+	window.onmousemove = function(e)
+	{
+		if (!g_isMouseSendEnabled || !window.Asc.plugin || !window.Asc.plugin.executeCommand)
+			return;
 
-        var _x = (undefined === e.clientX) ? e.pageX : e.clientX;
-        var _y = (undefined === e.clientY) ? e.pageY : e.clientY;
+		var _x = (undefined === e.clientX) ? e.pageX : e.clientX;
+		var _y = (undefined === e.clientY) ? e.pageY : e.clientY;
 
-        window.Asc.plugin.executeCommand("onmousemove", JSON.stringify({ x : _x, y : _y }));
+		window.Asc.plugin.executeCommand("onmousemove", JSON.stringify({ x : _x, y : _y }));
 
-    };
-    window.onmouseup   = function(e)
-    {
-        if (!g_isMouseSendEnabled || !window.Asc.plugin || !window.Asc.plugin.executeCommand)
-            return;
+	};
+	window.onmouseup   = function(e)
+	{
+		if (!g_isMouseSendEnabled || !window.Asc.plugin || !window.Asc.plugin.executeCommand)
+			return;
 
-        var _x = (undefined === e.clientX) ? e.pageX : e.clientX;
-        var _y = (undefined === e.clientY) ? e.pageY : e.clientY;
+		var _x = (undefined === e.clientX) ? e.pageX : e.clientX;
+		var _y = (undefined === e.clientY) ? e.pageY : e.clientY;
 
-        window.Asc.plugin.executeCommand("onmouseup", JSON.stringify({ x : _x, y : _y }));
-    };
+		window.Asc.plugin.executeCommand("onmouseup", JSON.stringify({ x : _x, y : _y }));
+	};
 
-    window.plugin_sendMessage(JSON.stringify({ guid : window.Asc.plugin.guid, type : "initialize_internal" }));
+	var objectInternalInit = { guid : window.Asc.plugin.guid, type : "initialize_internal" };
+	if (window.Asc.plugin.windowID)
+		objectInternalInit.windowID = window.Asc.plugin.windowID;
+
+	window.plugin_sendMessage(JSON.stringify(objectInternalInit));
 
 })(window, undefined);

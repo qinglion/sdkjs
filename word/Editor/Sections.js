@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -89,7 +89,7 @@ function CSectionPr(LogicDocument)
 	this.LnNumType     = undefined;
 
     // Добавляем данный класс в таблицу Id (обязательно в конце конструктора)
-    g_oTableId.Add( this, this.Id );
+    AscCommon.g_oTableId.Add( this, this.Id );
 }
 
 CSectionPr.prototype =
@@ -168,8 +168,11 @@ CSectionPr.prototype =
             this.Set_Footer_Even(Other.FooterEven);
             this.Set_Footer_Default(Other.FooterDefault);
         }
-
-        this.Set_PageNum_Start( Other.PageNumType.Start );
+	
+		this.SetPageNumStart(Other.PageNumType.Start);
+		this.SetPageNumFormat(Other.PageNumType.Format);
+		this.SetPageNumChapStyle(Other.PageNumType.ChapStyle);
+		this.SetPageNumChapSep(Other.PageNumType.ChapSep);
 
         this.Set_Columns_EqualWidth(Other.Columns.EqualWidth);
         this.Set_Columns_Num(Other.Columns.Num);
@@ -215,6 +218,32 @@ CSectionPr.prototype =
 
         return HdrFtrs;
     },
+
+	RemoveEmptyHdrFtrs : function()
+	{
+		function IsEmpty(oHeader)
+		{
+			return (oHeader && oHeader.GetContent().GetElementsCount() <= 0);
+		}
+
+		if (IsEmpty(this.HeaderFirst))
+			this.Set_Header_First(null);
+
+		if (IsEmpty(this.HeaderEven))
+			this.Set_Header_Even(null);
+
+		if (IsEmpty(this.HeaderDefault))
+			this.Set_Header_Default(null);
+
+		if (IsEmpty(this.FooterFirst))
+			this.Set_Footer_First(null);
+
+		if (IsEmpty(this.FooterEven))
+			this.Set_Footer_Even(null);
+
+		if (IsEmpty(this.FooterDefault))
+			this.Set_Footer_Default(null);
+	},
 
     Compare_PageSize : function(OtherSectionPr)
     {
@@ -422,6 +451,16 @@ CSectionPr.prototype =
     {
         return this.TitlePage;
     },
+
+	IsTitlePage : function()
+	{
+		return this.TitlePage;
+	},
+
+	IsEvenAndOdd : function()
+	{
+		return EvenAndOddHeaders;
+	},
     
     GetHdrFtr : function(bHeader, bFirst, bEven)
     {
@@ -484,8 +523,16 @@ CSectionPr.prototype =
 
         return null;
     },
-
-	Set_PageNum_Start : function(Start)
+	
+	IsDefaultPageNum : function()
+	{
+		return (-1 === this.PageNumType.Start
+			&& Asc.c_oAscNumberingFormat.Decimal === this.PageNumType.Format
+			&& undefined === this.PageNumType.ChapStyle
+			&& undefined === this.PageNumType.ChapSep);
+	},
+	
+	SetPageNumStart : function(Start)
 	{
 		if (Start !== this.PageNumType.Start)
 		{
@@ -493,11 +540,53 @@ CSectionPr.prototype =
 			this.PageNumType.Start = Start;
 		}
 	},
-    
-    Get_PageNum_Start : function()
-    {
-        return this.PageNumType.Start;
-    },
+	
+	GetPageNumStart : function()
+	{
+		return this.PageNumType.Start;
+	},
+	
+	SetPageNumFormat : function(format)
+	{
+		if (format === this.PageNumType.Format)
+			return;
+		
+		AscCommon.History.Add(new CChangesSectionPageNumTypeFormat(this, this.PageNumType.Format, format));
+		this.PageNumType.Format = format;
+	},
+	
+	GetPageNumFormat : function()
+	{
+		return this.PageNumType.Format;
+	},
+	
+	SetPageNumChapStyle : function(chapStyle)
+	{
+		if (chapStyle === this.PageNumType.ChapStyle)
+			return;
+		
+		AscCommon.History.Add(new CChangesSectionPageNumTypeChapStyle(this, this.PageNumType.ChapStyle, chapStyle));
+		this.PageNumType.ChapStyle = chapStyle;
+	},
+	
+	GetPageNumChapStyle : function()
+	{
+		return this.PageNumType.ChapStyle;
+	},
+	
+	SetPageNumChapSep : function(chapSep)
+	{
+		if (chapSep === this.PageNumType.ChapSep)
+			return;
+		
+		AscCommon.History.Add(new CChangesSectionPageNumTypeChapSep(this, this.PageNumType.ChapSep, chapSep));
+		this.PageNumType.ChapSep = chapSep;
+	},
+	
+	GetPageNumChapSep : function()
+	{
+		return this.PageNumType.ChapSep;
+	},
 
     Get_ColumnsCount : function()
     {
@@ -546,6 +635,11 @@ CSectionPr.prototype =
 			History.Add(new CChangesSectionColumnsNum(this, this.Columns.Num, Num));
 			this.Columns.Num = Num;
 		}
+	},
+	
+	SetColumnsNum : function(num)
+	{
+		return this.Set_Columns_Num(num);
 	},
 
 	Set_Columns_Sep : function(Sep)
@@ -790,6 +884,14 @@ CSectionPr.prototype =
 CSectionPr.prototype.GetId = function()
 {
 	return this.Id;
+};
+CSectionPr.prototype.SetType = function(type)
+{
+	return this.Set_Type(type);
+};
+CSectionPr.prototype.GetType = function()
+{
+	return this.Get_Type();
 };
 /**
  * Проверяем, есть ли хоть один колонтитул в данной секции
@@ -1152,6 +1254,10 @@ CSectionPr.prototype.GetColumnWidth = function(nColIndex)
 {
 	return this.Columns.Get_ColumnWidth(nColIndex);
 };
+CSectionPr.prototype.GetMinColumnWidth = function()
+{
+	return this.Columns.GetMinColumnWidth();
+};
 CSectionPr.prototype.GetColumnSpace = function(nColIndex)
 {
 	return this.Columns.Get_ColumnSpace(nColIndex);
@@ -1335,7 +1441,7 @@ CSectionPr.prototype.RemoveLineNumbers = function()
 };
 CSectionPr.prototype.GetLineNumbersCountBy = function()
 {
-	return (this.LnNumType && undefined !== this.LnNumType.CountBy ? this.LnNumType.CountBy : 1);
+	return (this.LnNumType && undefined !== this.LnNumType.CountBy ? this.LnNumType.CountBy : 0);
 };
 CSectionPr.prototype.GetLineNumbersStart = function()
 {
@@ -1348,6 +1454,24 @@ CSectionPr.prototype.GetLineNumbersRestart = function()
 CSectionPr.prototype.GetLineNumbersDistance = function()
 {
 	return (this.LnNumType ? this.LnNumType.Distance : undefined);
+};
+CSectionPr.prototype.RemoveHeader = function(oHeader)
+{
+	if (!oHeader)
+		return;
+
+	if (this.HeaderDefault === oHeader)
+		this.Set_Header_Default(null);
+	else if (this.HeaderEven === oHeader)
+		this.Set_Header_Even(null);
+	else if (this.HeaderFirst === oHeader)
+		this.Set_Header_First(null);
+	else if (this.FooterDefault === oHeader)
+		this.Set_Footer_Default(null);
+	else if (this.FooterEven === oHeader)
+		this.Set_Footer_Even(null);
+	else if (this.FooterFirst === oHeader)
+		this.Set_Footer_First(null);
 };
 
 
@@ -1494,24 +1618,47 @@ CSectionBorders.prototype.IsEmptyBorders = function()
 
 function CSectionPageNumType()
 {
-    this.Start = -1;
+	this.Start     = -1;
+	this.Format    = Asc.c_oAscNumberingFormat.Decimal;
+	this.ChapStyle = undefined;
+	this.ChapSep   = undefined;
 }
-
-CSectionPageNumType.prototype = 
+CSectionPageNumType.prototype.Write_ToBinary = function(writer)
 {
-    Write_ToBinary : function(Writer)
-    {
-        // Long : Start
-        
-        Writer.WriteLong( this.Start );
-    },
-    
-    Read_FromBinary : function(Reader)
-    {
-        // Long : Start
-
-        this.Start = Reader.GetLong();
-    }    
+	writer.WriteLong(this.Start);
+	writer.WriteLong(this.Format);
+	
+	let startPos = writer.GetCurPosition();
+	writer.Skip(4);
+	let flags = 0;
+	
+	if (undefined !== this.ChapStyle)
+	{
+		writer.WriteLong(this.ChapStyle);
+		flags |= 1;
+	}
+	if (undefined !== this.ChapSep)
+	{
+		writer.WriteByte(this.ChapSep);
+		flags |= 2;
+	}
+	
+	let endPos = writer.GetCurPosition();
+	writer.Seek(startPos);
+	writer.WriteLong(flags);
+	writer.Seek(endPos);
+};
+CSectionPageNumType.prototype.Read_FromBinary = function(reader)
+{
+	this.Start  = reader.GetLong();
+	this.Format = reader.GetLong();
+	
+	let flags = reader.GetLong();
+	if (flags & 1)
+		this.ChapStyle = reader.GetLong();
+	
+	if (flags & 2)
+		this.ChapSep = reader.GetByte();
 };
 
 
@@ -1635,8 +1782,7 @@ CSectionColumns.prototype.Get_ColumnWidth = function(ColIndex)
 {
 	if (true === this.EqualWidth)
 	{
-		var nFrameW = this.SectPr.GetContentFrameWidth();
-		return this.Num > 0 ? (nFrameW - this.Space * (this.Num - 1)) / this.Num : nFrameW;
+		return this.private_GetEqualColumnWidth();
 	}
 	else
 	{
@@ -1667,6 +1813,32 @@ CSectionColumns.prototype.Get_ColumnSpace = function(ColIndex)
 
 		return this.Cols[ColIndex].Space;
 	}
+};
+CSectionColumns.prototype.GetMinColumnWidth = function()
+{
+	if (true === this.EqualWidth)
+	{
+		return this.private_GetEqualColumnWidth();
+	}
+	else
+	{
+		if (this.Cols.length <= 0)
+			return 0;
+
+		let nWidth = this.Cols[0].W;
+		for (let nColumn = 1, nColumnsCount = this.Cols.length; nColumn < nColumnsCount; ++nColumn)
+		{
+			if (this.Cols[nColumn].W < nWidth)
+				nWidth = this.Cols[nColumn].W;
+		}
+
+		return nWidth;
+	}
+};
+CSectionColumns.prototype.private_GetEqualColumnWidth = function()
+{
+	let nFrameW = this.SectPr.GetContentFrameWidth();
+	return this.Num > 0 ? (nFrameW - this.Space * (this.Num - 1)) / this.Num : nFrameW;
 };
 
 function CSectionLayoutColumnInfo(X, XLimit)
@@ -1771,9 +1943,9 @@ CFootnotePr.prototype.ReadFromBinary = function(Reader)
 function CSectionLnNumType(nCountBy, nDistance, nStart, nRestartType)
 {
 	// Если задан сам класс, но в нем не задан CountBy, считаем, что нумерация строк не задана. Поэтому
-	// по умолчанию задаем CountBy=1
+	// по умолчанию задаем CountBy=0
 
-	this.CountBy  = undefined !== nCountBy ? nCountBy : 1;
+	this.CountBy  = undefined !== nCountBy ? nCountBy : 0;
 	this.Distance = undefined !== nDistance && null !== nDistance ? nDistance : undefined; // В твипсах
 	this.Start    = undefined !== nStart && 0 !== nStart ? nStart : undefined;
 	this.Restart  = undefined !== nRestartType && Asc.c_oAscLineNumberRestartType.NewPage !== nRestartType ? nRestartType : undefined;
@@ -1885,6 +2057,7 @@ CSectionLnNumType.prototype.GetRestart = function()
 //--------------------------------------------------------export----------------------------------------------------
 window['AscCommonWord'] = window['AscCommonWord'] || {};
 window['AscCommonWord'].CSectionPr = CSectionPr;
+window['AscWord'].CSectionPr = CSectionPr;
 
 window['Asc']['CSectionLnNumType'] = window['Asc'].CSectionLnNumType = CSectionLnNumType;
 CSectionLnNumType.prototype["get_CountBy"]  = CSectionLnNumType.prototype.GetCountBy;

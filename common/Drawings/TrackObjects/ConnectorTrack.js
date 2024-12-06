@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -111,8 +111,10 @@
             //    AscCommon.global_MatrixTransformer.MultiplyAppend(_transform, _group.invertTransform);
             //}
             oConnectionObject = this.beginTrack.overlayObject.geometry.cnxLst[oConnectorInfo.stCnxIdx];
-            g_conn_info =  {idx: oConnectorInfo.stCnxIdx, ang: oConnectionObject.ang, x: oConnectionObject.x, y: oConnectionObject.y};
-            _startConnectionParams = this.originalObject.convertToConnectionParams(_rot, _flipH, _flipV, _transform, _bounds, g_conn_info);
+            if(oConnectionObject) {
+                g_conn_info =  {idx: oConnectorInfo.stCnxIdx, ang: oConnectionObject.ang, x: oConnectionObject.x, y: oConnectionObject.y};
+                _startConnectionParams = this.originalObject.convertToConnectionParams(_rot, _flipH, _flipV, _transform, _bounds, g_conn_info);
+            }
         }
         if(this.endTrack){
             track_bounds = this.convertTrackBounds(this.endTrack.getBounds());
@@ -144,14 +146,16 @@
             //    AscCommon.global_MatrixTransformer.MultiplyAppend(_transform, _group.invertTransform);
             //}
             oConnectionObject = this.endTrack.overlayObject.geometry.cnxLst[oConnectorInfo.endCnxIdx];
-            g_conn_info =  {idx: oConnectorInfo.endCnxIdx, ang: oConnectionObject.ang, x: oConnectionObject.x, y: oConnectionObject.y};
-            _endConnectionParams = this.originalObject.convertToConnectionParams(_rot, _flipH, _flipV, _transform, _bounds, g_conn_info);
+            if(oConnectionObject) {
+                g_conn_info =  {idx: oConnectorInfo.endCnxIdx, ang: oConnectionObject.ang, x: oConnectionObject.x, y: oConnectionObject.y};
+                _endConnectionParams = this.originalObject.convertToConnectionParams(_rot, _flipH, _flipV, _transform, _bounds, g_conn_info);
+            }
         }
         if(_startConnectionParams || _endConnectionParams){
             var bMoveInGroup = false;
 
             if(!_startConnectionParams){
-                if(this.beginShape && oConnectorInfo.stCnxIdx !== null){
+                if(this.beginShape && oConnectorInfo.stCnxIdx !== null || Asc.editor.isPdfEditor()){
                     _startConnectionParams = this.beginShape.getConnectionParams(oConnectorInfo.stCnxIdx, null);
                 }
                 else{
@@ -188,7 +192,7 @@
                     _endConnectionParams = this.endShape.getConnectionParams(oConnectorInfo.endCnxIdx, null);
                 }
                 else{
-                    if((this.beginTrack instanceof AscFormat.MoveShapeImageTrack)){
+                    if((this.beginTrack instanceof AscFormat.MoveShapeImageTrack) && Asc.editor.isPdfEditor() == false){
                         var _dx,_dy;
                         if(this.originalObject.group){
                             bMoveInGroup = true;
@@ -233,33 +237,43 @@
                     }
                 }
                 if(!_endConnectionParams){
-                    _endConnectionParams = AscFormat.fCalculateConnectionInfo(_startConnectionParams, this.endX, this.endY);
+                    if (Asc.editor.isPdfEditor() == true) {
+                        let oTranform   = this.originalObject.transform;
+                        let oGeom       = this.originalObject.getGeometry();
+                        let aPaths      = oGeom.pathLst[0].ArrPathCommand;
+
+                        _endConnectionParams = AscFormat.fCalculateConnectionInfo(_startConnectionParams, oTranform.TransformPointX(aPaths[1].X, 0), oTranform.TransformPointY(0, aPaths[1].Y));
+                    }
+                    else
+                        _endConnectionParams = AscFormat.fCalculateConnectionInfo(_startConnectionParams, this.endX, this.endY);
                 }
             }
-            this.oSpPr = AscFormat.fCalculateSpPr(_startConnectionParams, _endConnectionParams, this.originalObject.spPr.geometry.preset, this.overlayObject.pen.w);
-            if(!this.originalObject.group){
-                this.oSpPr.xfrm.setOffX(this.oSpPr.xfrm.offX);
-                this.oSpPr.xfrm.setOffY(this.oSpPr.xfrm.offY);
-                this.oSpPr.xfrm.setFlipH(this.oSpPr.xfrm.flipH);
-                this.oSpPr.xfrm.setFlipV(this.oSpPr.xfrm.flipV);
-                this.oSpPr.xfrm.setRot(this.oSpPr.xfrm.rot);
-            }
-            else{
+            if(_startConnectionParams && _endConnectionParams) {
+                this.oSpPr = AscFormat.fCalculateSpPr(_startConnectionParams, _endConnectionParams, this.originalObject.spPr.geometry.preset, this.overlayObject.pen.w);
+                if(!this.originalObject.group){
+                    this.oSpPr.xfrm.setOffX(this.oSpPr.xfrm.offX);
+                    this.oSpPr.xfrm.setOffY(this.oSpPr.xfrm.offY);
+                    this.oSpPr.xfrm.setFlipH(this.oSpPr.xfrm.flipH);
+                    this.oSpPr.xfrm.setFlipV(this.oSpPr.xfrm.flipV);
+                    this.oSpPr.xfrm.setRot(this.oSpPr.xfrm.rot);
+                }
+                else{
 
-                var _xc = this.oSpPr.xfrm.offX + this.oSpPr.xfrm.extX / 2.0;
-                var _yc = this.oSpPr.xfrm.offY + this.oSpPr.xfrm.extY / 2.0;
-                var xc = this.originalObject.group.invertTransform.TransformPointX(_xc, _yc);
-                var yc = this.originalObject.group.invertTransform.TransformPointY(_xc, _yc);
-                this.oSpPr.xfrm.setOffX(xc - this.oSpPr.xfrm.extX / 2.0);
-                this.oSpPr.xfrm.setOffY(yc - this.oSpPr.xfrm.extY / 2.0);
-                this.oSpPr.xfrm.setFlipH(this.originalObject.group.getFullFlipH() ? !this.oSpPr.xfrm.flipH : this.oSpPr.xfrm.flipH);
-                this.oSpPr.xfrm.setFlipV(this.originalObject.group.getFullFlipV() ? !this.oSpPr.xfrm.flipV : this.oSpPr.xfrm.flipV);
-                this.oSpPr.xfrm.setRot(AscFormat.normalizeRotate(this.oSpPr.xfrm.rot - this.originalObject.group.getFullRotate()));
-            }
+                    var _xc = this.oSpPr.xfrm.offX + this.oSpPr.xfrm.extX / 2.0;
+                    var _yc = this.oSpPr.xfrm.offY + this.oSpPr.xfrm.extY / 2.0;
+                    var xc = this.originalObject.group.invertTransform.TransformPointX(_xc, _yc);
+                    var yc = this.originalObject.group.invertTransform.TransformPointY(_xc, _yc);
+                    this.oSpPr.xfrm.setOffX(xc - this.oSpPr.xfrm.extX / 2.0);
+                    this.oSpPr.xfrm.setOffY(yc - this.oSpPr.xfrm.extY / 2.0);
+                    this.oSpPr.xfrm.setFlipH(this.originalObject.group.getFullFlipH() ? !this.oSpPr.xfrm.flipH : this.oSpPr.xfrm.flipH);
+                    this.oSpPr.xfrm.setFlipV(this.originalObject.group.getFullFlipV() ? !this.oSpPr.xfrm.flipV : this.oSpPr.xfrm.flipV);
+                    this.oSpPr.xfrm.setRot(AscFormat.normalizeRotate(this.oSpPr.xfrm.rot - this.originalObject.group.getFullRotate()));
+                }
 
-            this.geometry = this.oSpPr.geometry;
-            this.overlayObject.geometry = this.geometry;
-            this.calculateTransform();
+                this.geometry = this.oSpPr.geometry;
+                this.overlayObject.geometry = this.geometry;
+                this.calculateTransform();
+            }
         }
 
 
