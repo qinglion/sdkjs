@@ -4448,7 +4448,9 @@ var CPresentation = CPresentation || function(){};
         let oShape = new AscFormat.CShape();
         oShape.fromXml(oXmlReader);
         oShape.bDeleted = false;
+        oShape.setWordShape(true);
         oShape.recalculate();
+        oShape.recalculateText();
 
         let oTextDrawer = new AscFormat.CTextDrawer(oShape.getXfrmExtX(), oShape.getXfrmExtY(), true, this.GetTheme());
         oTextDrawer.m_oLine = oShape.pen;
