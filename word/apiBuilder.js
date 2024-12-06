@@ -211,6 +211,17 @@
 	}
 
 	/**
+	 * Class representing a bookmark in the document.
+	 * @constructor
+	 */
+	function ApiBookmark(startMark, endMark)
+	{
+		this.Start    = startMark;
+		this.End      = endMark;
+		this.Document = Asc.editor.getLogicDocument();
+	}
+
+	/**
 	 * Class representing a container for paragraphs and tables.
 	 * @param Document
 	 * @constructor
@@ -1554,8 +1565,7 @@
 		}
 		private_TrackRangesPositions();
 
-		Document.RemoveBookmark(sName);
-		Document.AddBookmark(sName);
+		Document.GetBookmarksManager().AddBookmark(sName);
 
 		Document.LoadDocumentState(oldSelectionInfo);
 		Document.UpdateSelection();
@@ -7129,6 +7139,23 @@
 		}
 
 		return aNames;
+	};
+
+	/**
+	 * Gets bookmark by name
+	 * @memberof ApiDocument
+	 * @typeofeditors ["CDE"]
+	 * @returns {?ApiBookmark}
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/GetBookmark.js
+	 */
+	ApiDocument.prototype.GetBookmark = function(sBookmarkName) 
+	{
+		let oManager = this.Document.GetBookmarksManager();
+		let bookmarkMarks = oManager.GetBookmarkByName(sBookmarkName);
+		if (!bookmarkMarks ||oManager.IsInternalUseBookmark(sBookmarkName) || oManager.IsHiddenBookmark(sBookmarkName))
+			return null;
+		
+		return new ApiBookmark(bookmarkMarks[0], bookmarkMarks[1]);
 	};
 
 	/**
@@ -21554,6 +21581,182 @@
 		this.Settings.put_ImageSize(nWidth, nHeight);
 	};
 
+	/**
+	 * Move cursor to this bookmark
+	 * @memberof ApiBookmark
+	 * @returns {boolean}
+	 * @see office-js-api/Examples/{Editor}/ApiBookmark/Methods/GoTo.js
+	 */
+	ApiBookmark.prototype.GoTo = function()
+	{
+		if (!this.IsUseInDocument())
+			return false;
+		
+		this.Start.GoToBookmark();
+		return true;
+	};
+	
+	/**
+	 * Select current bookmark
+	 * @memberof ApiBookmark
+	 * @returns {boolean}
+	 * @see office-js-api/Examples/{Editor}/ApiBookmark/Methods/Select.js
+	 */
+	ApiBookmark.prototype.Select = function()
+	{
+		if (!this.IsUseInDocument())
+			return false;
+		
+		this.Document.GetBookmarksManager().SelectBookmark(this.GetName());
+		return false;
+	};
+
+	/**
+	 * Changes bookmark name
+	 * @memberof ApiBookmark
+	 * @param {string} sNewName - new bookmark name
+	 * @returns {boolean}
+	 * @see office-js-api/Examples/{Editor}/ApiBookmark/Methods/SetName.js
+	 */
+	ApiBookmark.prototype.SetName = function(sNewName)
+	{
+		if (sNewName === this.GetName())
+			return true;
+		
+		if (typeof (sNewName) !== "string" || sNewName === "")
+			return false;
+		
+		let bookmarkManager = this.Document.GetBookmarksManager();
+		if (bookmarkManager.GetBookmarkByName(sNewName))
+			return false;
+		
+		this.Start = this.Start.ChangeBookmarkName(sNewName);
+		this.End   = this.End.ChangeBookmarkName(sNewName);
+		return true;
+	};
+
+	/**
+	 * Gets bookmark name
+	 * @memberof ApiBookmark
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiBookmark/Methods/GetName.js
+	 */
+	ApiBookmark.prototype.GetName = function()
+	{
+		return this.Start.GetBookmarkName();
+	};
+
+	/**
+	 * Sets bookmark text
+	 * @memberof ApiBookmark
+	 * @returns {boolean}
+	 * @see office-js-api/Examples/{Editor}/ApiBookmark/Methods/SetText.js
+	 */
+	ApiBookmark.prototype.SetText = function(sText)
+	{
+		if (typeof(sText) !== "string" || sText === "" || !this.IsUseInDocument())
+			return false;
+		
+		let docState = this.Document.SaveDocumentState();
+
+		let bookmarkName = this.GetName();
+		
+		this.Select();
+		this.Document.RemoveBeforePaste();
+		this.Delete();
+		this.Document.AddBookmark(bookmarkName);
+		
+		let bookmarkManager = this.Document.GetBookmarksManager();
+		let bookmark = bookmarkManager.GetBookmarkByName(bookmarkName);
+		if (!bookmark)
+			return false;
+		
+		this.Start = bookmark[0];
+		this.End   = bookmark[1];
+		
+		this.End.GoToBookmark();
+		this.Document.EnterText(sText);
+		
+		this.Document.LoadDocumentState(docState);
+		return true;
+	};
+
+	/**
+	 * Gets bookmark text
+	 * @memberof ApiBookmark
+	 * @param {object} oPr - The resulting string display properties.
+     * @param {boolean} [oPr.NewLineParagraph=false] - Defines if the resulting string will include paragraph line boundaries or not.
+     * @param {boolean} [oPr.Numbering=false] - Defines if the resulting string will include numbering or not.
+     * @param {boolean} [oPr.Math=false] - Defines if the resulting string will include mathematical expressions or not.
+	 * @param {string} [oPr.NewLineSeparator='\r'] - Defines how the line separator will be specified in the resulting string.
+     * @param {string} [oPr.TableCellSeparator='\t'] - Defines how the table cell separator will be specified in the resulting string.
+     * @param {string} [oPr.TableRowSeparator='\r\n'] - Defines how the table row separator will be specified in the resulting string.
+     * @param {string} [oPr.ParaSeparator='\r\n'] - Defines how the paragraph separator will be specified in the resulting string.
+	 * @param {string} [oPr.TabSymbol='\t'] - Defines how the tab will be specified in the resulting string (does not apply to numbering)
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiBookmark/Methods/GetText.js
+	 */
+	ApiBookmark.prototype.GetText = function(oPr)
+	{
+		if (!this.IsUseInDocument())
+			return "";
+
+		if (!oPr)
+			oPr = {};
+		
+		let oProp = {
+			NewLineSeparator:	(oPr.hasOwnProperty("NewLineSeparator")) ? oPr["NewLineSeparator"] : "\r",
+			NewLineParagraph:	(oPr.hasOwnProperty("NewLineParagraph")) ? oPr["NewLineParagraph"] : true,
+			Numbering:			(oPr.hasOwnProperty("Numbering")) ? oPr["Numbering"] : true,
+			Math:				(oPr.hasOwnProperty("Math")) ? oPr["Math"] : true,
+			TableCellSeparator:	oPr["TableCellSeparator"],
+			TableRowSeparator:	oPr["TableRowSeparator"],
+			ParaSeparator:		oPr["ParaSeparator"],
+			TabSymbol:			oPr["TabSymbol"]
+		};
+		
+		let docState = this.Document.SaveDocumentState();
+		this.Select();
+		let result = this.Document.GetSelectedText(false, oProp);
+		this.Document.LoadDocumentState(docState);
+		return result ? result : "";
+	};
+
+	/**
+	 * Gets bookmark range
+	 * @memberof ApiBookmark
+	 * @returns {ApiRange}
+	 * @see office-js-api/Examples/{Editor}/ApiBookmark/Methods/GetRange.js
+	 */
+	ApiBookmark.prototype.GetRange = function()
+	{
+		if (!this.IsUseInDocument())
+			return null;
+		
+		let oApiDoc				= Asc.editor.GetDocument();
+		let oOldSelectionInfo	= this.Document.SaveDocumentState();
+
+		this.Select(true);
+		let oRange = oApiDoc.GetRangeBySelect();
+		this.Document.LoadDocumentState(oOldSelectionInfo);
+
+		return oRange;
+	};
+
+	/**
+	 * Deletes bookmark from document;
+	 * @memberof ApiBookmark
+	 * @returns {boolean}
+	 * @see office-js-api/Examples/{Editor}/ApiBookmark/Methods/Delete.js
+	 */
+	ApiBookmark.prototype.Delete = function()
+	{
+		if (!this.IsUseInDocument())
+			return false;
+		
+		this.Document.RemoveBookmark(this.GetName());
+		return true;
+	};
 
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -21709,6 +21912,7 @@
 	ApiDocument.prototype["GetEndNotesFirstParagraphs"]  = ApiDocument.prototype.GetEndNotesFirstParagraphs;
 	ApiDocument.prototype["GetAllCaptionParagraphs"]     = ApiDocument.prototype.GetAllCaptionParagraphs;
 	ApiDocument.prototype["GetAllBookmarksNames"]        = ApiDocument.prototype.GetAllBookmarksNames;
+	ApiDocument.prototype["GetBookmark"]        		 = ApiDocument.prototype.GetBookmark;
 	ApiDocument.prototype["AddFootnote"]                 = ApiDocument.prototype.AddFootnote;
 	ApiDocument.prototype["AddEndnote"]                  = ApiDocument.prototype.AddEndnote;
 	ApiDocument.prototype["SetControlsHighlight"]        = ApiDocument.prototype.SetControlsHighlight;
@@ -22472,6 +22676,15 @@
 	ApiWatermarkSettings.prototype["GetImageWidth"]  =  ApiWatermarkSettings.prototype.GetImageWidth;
 	ApiWatermarkSettings.prototype["GetImageHeight"] =  ApiWatermarkSettings.prototype.GetImageHeight;
 	ApiWatermarkSettings.prototype["SetImageSize"]   =  ApiWatermarkSettings.prototype.SetImageSize;
+	
+	ApiBookmark.prototype["GoTo"]     = ApiBookmark.prototype.GoTo;
+	ApiBookmark.prototype["Select"]   = ApiBookmark.prototype.Select;
+	ApiBookmark.prototype["SetName"]  = ApiBookmark.prototype.SetName;
+	ApiBookmark.prototype["GetName"]  = ApiBookmark.prototype.GetName;
+	ApiBookmark.prototype["SetText"]  = ApiBookmark.prototype.SetText;
+	ApiBookmark.prototype["GetText"]  = ApiBookmark.prototype.GetText;
+	ApiBookmark.prototype["GetRange"] = ApiBookmark.prototype.GetRange;
+	ApiBookmark.prototype["Delete"]   = ApiBookmark.prototype.Delete;
 
 	ApiChartSeries.prototype["GetClassType"]      =  ApiChartSeries.prototype.GetClassType;
 	ApiChartSeries.prototype["ChangeChartType"]   =  ApiChartSeries.prototype.ChangeChartType;
@@ -23703,6 +23916,12 @@
 	ApiRange.prototype.OnChangeTextPr = function(oApiTextPr)
 	{
 		this.SetTextPr(oApiTextPr);
+	};
+	ApiBookmark.prototype.IsUseInDocument = function()
+	{
+		let manager = this.Document.GetBookmarksManager();
+		let bookmarkMarks = manager.GetBookmarkByName(this.GetName());
+		return (bookmarkMarks && bookmarkMarks[0].IsUseInDocument() && bookmarkMarks[1].IsUseInDocument());
 	};
 
 	Api.prototype.private_CreateApiParagraph = function(oParagraph){
