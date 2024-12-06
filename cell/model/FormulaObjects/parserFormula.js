@@ -6916,10 +6916,17 @@ function parserFormula( formula, parent, _ws ) {
 		const oFormula = aLogicalTest[0];
 		const aArgs =  aLogicalTest[2];
 		const oParentCell = this.getParent();
+		const oBbox = oParentCell.onFormulaEvent && oParentCell.onFormulaEvent(AscCommon.c_oNotifyParentType.GetRangeCell);
+		if (!oBbox) {
+			return new cError(cErrorType.not_numeric);
+		}
 
 		for (let i = 0, len = aArgs.length; i < len; i++) {
 			if (aArgs[i] && aNameType.includes(aArgs[i].type)) {
 				aArgs[i] = aArgs[i].toRef();
+			}
+			if (aArgs[i] && aArgs[i].type === cElementType.table) {
+				aArgs[i] = aArgs[i].toRef(oBbox);
 			}
 			if (aArgs[i] && Array.isArray(aArgs[i])) {
 				g_cCalcRecursion.incRecursionCounter();
@@ -6935,10 +6942,6 @@ function parserFormula( formula, parent, _ws ) {
 					return null;
 				}
 			}
-		}
-		const oBbox = oParentCell.onFormulaEvent && oParentCell.onFormulaEvent(AscCommon.c_oNotifyParentType.GetRangeCell);
-		if (!oBbox) {
-			return new cError(cErrorType.not_numeric);
 		}
 
 		return oFormula.Calculate(aArgs, oBbox, undefined, this.ws);
