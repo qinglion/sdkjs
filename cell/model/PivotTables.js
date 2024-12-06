@@ -17643,7 +17643,7 @@ CT_PivotField.prototype.asc_moveItem = function(api, pivot, pivotIndex, from, to
 	api._changePivotWithLock(pivot, function(ws, pivot) {
 		const pivotField = pivot.asc_getPivotFields()[pivotIndex];
 		pivotField.moveItem(pivot, pivotIndex, from, to, true);
-		pivot.sortPivotItems(pivotIndex, c_oAscFieldSortType.Manual);
+		pivot.sortPivotItems(pivotIndex, c_oAscFieldSortType.Manual, -1);
 	});
 };
 CT_PivotField.prototype.getInsertIndex = function() {
