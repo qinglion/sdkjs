@@ -1188,6 +1188,19 @@ void main() {\n\
             let startChar = pageIndex == Page1 && iLine == Line1 ? Glyph1 : 0;
             let endChar   = pageIndex == Page2 && iLine == Line2 ? Glyph2 : Infinity;
 
+            if (startChar == -2)
+                startChar = 0;
+            else if (startChar == -1)
+                startChar = Infinity;
+
+            if (endChar == -2)
+                endChar = 0;
+            else if (endChar == -1)
+                endChar = Infinity;
+
+            if (endChar <= startChar)
+                continue;
+
             let textLine = "<p><span>";
 
             stream.Skip(8);
@@ -1303,68 +1316,29 @@ void main() {\n\
             return this[0].PageNum;
         return -1;
     };
-    PdfPageMatch.prototype.GetTextFromLine = function(oText, Line, Word1, Word2, Char1, Char2)
-    {
-        let textLine = "";
-        if (Word1 == Word2 && Char1 == Char2)
-            return textLine;
-
-        let words = oText[Line]["Words"];
-        for (let iWord = Word1; iWord <= Word2; ++iWord)
-        {
-            let oWord = words[iWord];
-            let chars = oWord.Chars;
-
-            let wordStartChar = iWord == Word1 ? Char1 : -2;
-            let wordEndChar   = iWord == Word2 ? Char2 : -1;
-
-            if (wordStartChar == -2)
-                wordStartChar = 0;
-            else if (wordStartChar == -1)
-                continue;
-            if (wordEndChar == -2)
-                wordEndChar = 0;
-            if (wordEndChar == -1)
-                wordEndChar = chars.length;
-
-            for (let iChar = wordStartChar; iChar < wordEndChar; ++iChar)
-            {
-                let _char = chars[iChar]["Char"];
-                _char = _char == 0xFFFF ? ' ' : String.fromCodePoint(_char);
-                textLine += _char;
-            }
-        }
-        return textLine;
-    };
     PdfPageMatch.prototype.GetTextAroundSearchResult = function(nId) {
-        let oDoc            = Asc.editor.getPDFDoc();
-        let oSearchEngine   = oDoc.SearchEngine;
-
+        let oSearchEngine = Asc.editor.getPDFDoc().SearchEngine;
         let aMatches = oSearchEngine.Elements[nId];
-
+        let oPart, oLine;
         let aResult = ["", "", ""];
         // найденный текст может быть разбит на части (строки)
         for (let nPart = 0; nPart < aMatches.length; nPart++) {
-            let oPart = aMatches[nPart];
+            oPart = aMatches[nPart];
             // знаем в какой строке было найдено совпадение
-            let oLine = oSearchEngine.PagesLines[oPart.PageNum][oPart.LineNum];
+            oLine = oSearchEngine.PagesLines[oPart.PageNum][oPart.LineNum];
 
             if (nPart == 0 && aMatches.length == 1) {
-                aResult[0] = this.GetTextFromLine(oSearchEngine.PagesLines[oPart.PageNum],
-                    oPart.LineNum, 0, oPart.Word1, 0, oPart.Char1);
+                aResult[0] = oLine.slice(0, oPart.Char1);
                 aResult[1] = oPart.Text;
-                aResult[2] = this.GetTextFromLine(oSearchEngine.PagesLines[oPart.PageNum],
-                    oPart.LineNum, oPart.Word2, oLine["Words"].length - 1, oPart.Char2, -1);
+                aResult[2] = oLine.slice(oPart.Char2);
             }
             else if (nPart == 0) {
-                aResult[0] = this.GetTextFromLine(oSearchEngine.PagesLines[oPart.PageNum],
-                    oPart.LineNum, 0, oPart.Word1, 0, oPart.Char1);
+                aResult[0] = oLine.slice(0, oPart.Char1);
                 aResult[1] = oPart.Text;
             }
             else if (nPart == aMatches.length - 1) {
                 aResult[1] += oPart.Text;
-                aResult[2] = this.GetTextFromLine(oSearchEngine.PagesLines[oPart.PageNum],
-                    oPart.LineNum, oPart.Word2, oLine["Words"].length - 1, oPart.Char2, -1);
+                aResult[2] = oLine.slice(oPart.Char2);
             }
             else {
                 aResult[1] += oPart.Text;
@@ -1383,8 +1357,7 @@ void main() {\n\
         };
 
         let searchText = oSearchEngine.Text;
-        let textLength = searchText.length;
-        if (0 == textLength)
+        if (0 == searchText.length)
             return oResult;
 
         let stream = this.getPageTextStream(pageIndex);
@@ -1394,9 +1367,66 @@ void main() {\n\
         if (!oSearchEngine.MatchCase)
             searchText = searchText.toLowerCase();
 
-        oResult.pageLines = stream;
+        // textline parameters
+        let _lineEx = 1;
+        let _lineEy = 0;
+        let _lineAscent  = 0;
+        let _lineDescent = 0;
+        
+        let curLine = "";
 
+        while (stream.pos < stream.size)
+        {
+            _lineEx = 1;
+            _lineEy = 0;
+            curLine = "";
+
+            //curLine.X = stream.GetDouble();
+            //curLine.Y = stream.GetDouble();
+            stream.Skip(8);
+            if (stream.GetChar())
+            {
+                stream.Skip(8);
+                //_lineEx = stream.GetDouble();
+                //_lineEy = stream.GetDouble();
+                //curLine.Ex = _lineEx;
+                //curLine.Ey = _lineEy;
+            }
+            stream.Skip(12);
+            //_lineAscent  = stream.GetDouble();
+            //_lineDescent = stream.GetDouble();
+            //curLine.X += _lineAscent * _lineEy;
+            //curLine.Y -= _lineAscent * _lineEx;
+            //curLine.H = _lineAscent + _lineDescent;
+            //curLine.W = stream.GetDouble();
+
+            let nChars = stream.GetLong();
+            for (let i = 0; i < nChars; ++i)
+            {
+                if (i)
+                    stream.Skip(4);
+                let nChar = stream.GetLong();
+                curLine += (nChar == 0xFFFF ? " " : String.fromCharCode(nChar));
+                stream.Skip(4);
+            }
+
+            oResult.pageLines[oResult.pageLines.length] = curLine;
+        }
+
+        stream.pos = 0;
         let oMatch = {};
+        let _lineX = 0;
+        let _lineY = 0;
+        let _numLine = 0;
+        let _linePos = 0;
+        let _startChar = 0;
+        let _predChar = 0;
+        let _lineWidth = 0;
+        let _linePrevCharX = 0;
+        let _ignoreFirstSpace = true;
+        let _arrayGlyphOffsets = [];
+        let _skip = false;
+
         let posInText = 0;
         if (searchText[posInText] == ' ')
         {
@@ -1410,55 +1440,7 @@ void main() {\n\
         }
         let PosStartText = posInText;
 
-        // textline parameters
-        let _lineX  = 0;
-        let _lineY  = 0;
-        let _lineEx = 1;
-        let _lineEy = 0;
-        let _lineAscent  = 0;
-        let _lineDescent = 0;
-        let _lineWidth   = 0;
-        let _linePrevCharX = 0;
-        let _arrayGlyphOffsets = [];
-        let _numLine = -1;
-        let _linePos = 0;
-
         while (stream.pos < stream.size)
-        {
-            _numLine++;
-            _lineEx = 1;
-            _lineEy = 0;
-            _linePrevCharX = 0;
-            _arrayGlyphOffsets.splice(0, _arrayGlyphOffsets.length);
-
-            oResult.pageLines[oResult.pageLines.length] = new CLineInfo();
-            curLine = oResult.pageLines[oResult.pageLines.length - 1];
-
-            _lineX = stream.GetDouble();
-            _lineY = stream.GetDouble();
-            if (stream.GetChar())
-            {
-                _lineEx = stream.GetDouble();
-                _lineEy = stream.GetDouble();
-            }
-            _lineAscent  = stream.GetDouble();
-            _lineDescent = stream.GetDouble();
-            _lineWidth   = stream.GetDouble();
-
-            if (bNeedLinePos)
-                _linePos = stream.pos;
-
-            let nChars = stream.GetLong();
-            for (let i = 0; i < nChars; ++i)
-            {
-                if (i)
-                    _linePrevCharX += stream.GetDouble();
-                _arrayGlyphOffsets[i] = _linePrevCharX;
-                stream.Skip(8);
-            }
-        }
-
-        for (let iLine = 0; iLine < oText.length; ++iLine)
         {
             if (searchText[posInText] == ' ')
             {
@@ -1471,156 +1453,177 @@ void main() {\n\
                 }
             }
 
-            let oLine = oText[iLine];
-            let words = oLine["Words"];
-            let ignoreFirstSpace = true;
+            _ignoreFirstSpace = true;
+            _linePos = stream.pos;
+            stream.Skip(8);
+            if (stream.GetChar())
+                stream.Skip(8);
+            stream.Skip(12);
 
-            for (let iWord = 0; iWord < words.length; ++iWord)
+            let nChars = stream.GetLong();
+            for (let i = 0; i < nChars; ++i)
             {
-                let oWord = words[iWord];
-                if (ignoreFirstSpace && oWord["IsSpace"])
-                    continue;
-                ignoreFirstSpace = false;
-                let chars = oWord["Chars"];
+                if (i)
+                    stream.Skip(4);
+                let nChar = stream.GetLong();
+                stream.Skip(4);
 
-                if (oSearchEngine.Word)
+                if (i < _startChar || (_ignoreFirstSpace && (nChar == 0xFFFF || nChar == 32)))
                 {
-                    let wordText = chars.map(char => String.fromCodePoint(char["Char"])).join("");
-                    let processedWordText = oSearchEngine.MatchCase ? wordText : wordText.toLowerCase();
+                    _predChar = nChar;
+                    continue;
+                }
+                _ignoreFirstSpace = false;
 
-                    if (processedWordText == searchText)
+                if (nChar == 0xFFFF)
+                    nChar = 32;
+
+                let cChar = String.fromCodePoint(nChar);
+                if (!oSearchEngine.MatchCase)
+                    cChar = cChar.toLowerCase();
+
+                if (searchText[posInText] != cChar)
+                {
+                    if (oMatch.Line != undefined)
                     {
-                        let rects = new PdfPageMatch();
-                        rects.push({
-                            PageNum : pageIndex,
-                            LineNum: iLine,
-                            Word1: iWord,
-                            Word2: iWord,
-                            Char1: -2,
-                            Char2: -1,
-                            X : oLine["X"] + oLine["Ascent"] * oLine["Ey"] + oWord["X"] * oLine["Ex"],
-                            Y : oLine["Y"] - oLine["Ascent"] * oLine["Ex"] + oWord["X"] * oLine["Ey"],
-                            W : oWord["Width"],
-                            H : oLine["Ascent"] + oLine["Descent"],
-                            Ex : oLine["Ex"],
-                            Ey : oLine["Ey"],
-                            Text: processedWordText
-                        });
-                        oResult.matches.push(rects);
+                        _skip = true;
+                        break;
                     }
+                    _predChar = nChar;
                     continue;
                 }
 
-                for (let iChar = 0; iChar < chars.length; ++iChar)
-                {
-                    let nChar = chars[iChar]["Char"];
-                    if (nChar == 0xFFFF)
-                        nChar = 32;
+                if (posInText == PosStartText)
+                { // Начало совпадения
+                    oMatch.Line = _numLine;
+                    oMatch.Char = i;
+                    oMatch.StreamPos = _linePos;
+                    oMatch.StartWhole = (i == 0 || _predChar == 0xFFFF || _predChar == 32 || undefined != AscCommon.g_aPunctuation[_predChar]);
+                }
+                _predChar = nChar;
 
-                    let cChar = String.fromCodePoint(nChar);
-                    if (!oSearchEngine.MatchCase)
-                        cChar = cChar.toLowerCase();
-
-                    if (searchText[posInText] != cChar)
+                if (++posInText == searchText.length)
+                { // Полное совпадение
+                    if (oSearchEngine.Word)
                     {
-                        if (oMatch.Line != undefined)
-                        { // Возвращаемся к началу совпадения
-                            iLine = oMatch.Line;
-                            iWord = oMatch.Word;
-                            iChar = oMatch.Char;
-                            oMatch = {};
-                            posInText = PosStartText;
-
-                            oLine = oText[iLine];
-                            words = oLine["Words"];
-                            oWord = words[iWord];
-                            chars = oWord["Chars"];
+                        _skip = true;
+                        if (oMatch.StartWhole)
+                        {
+                            if (i + 1 == nChars)
+                                _skip = false;
+                            else
+                            {
+                                stream.Skip(4);
+                                nChar = stream.GetLong();
+                                stream.Skip(4);
+    
+                                if (nChar == 0xFFFF || nChar == 32 || undefined != AscCommon.g_aPunctuation[nChar])
+                                    _skip = false;
+                            }
                         }
-                        continue;
+                        if (_skip)
+                            break;
                     }
-
-                    if (posInText == PosStartText)
-                    { // Начало совпадения
-                        oMatch.Line = iLine;
-                        oMatch.Word = iWord;
-                        oMatch.Char = iChar;
-                    }
-
-                    if (++posInText == searchText.length)
-                    { // Полное совпадение
-                        let rects = new PdfPageMatch();
-                        // Добавление всех областей совпадения от oMatch до текущего
-                        if (++iChar == chars.length)
-                            iChar = -1;
-                        GetMatches(rects, oMatch, iLine, iWord, iChar);
-                        oResult.matches.push(rects);
-                        // Возвращаемся к началу совпадения
-                        iLine = oMatch.Line;
-                        iWord = oMatch.Word;
-                        iChar = oMatch.Char;
-                        oMatch = {};
-                        posInText = PosStartText;
-
-                        oLine = oText[iLine];
-                        words = oLine["Words"];
-                        oWord = words[iWord];
-                        chars = oWord["Chars"];
-                    }
+                    let rects = new PdfPageMatch();
+                    // Добавление всех областей совпадения от oMatch до текущего
+                    let _endChar = i + 1;
+                    if (_endChar == nChars)
+                        _endChar = -1;
+                    GetMatches(rects, stream, oMatch, _numLine, _endChar, stream.pos);
+                    oResult.matches.push(rects);
+                    _skip = true;
+                    break;
                 }
+            }
+            _startChar = 0;
+            _numLine++;
+            _predChar = 0;
+            if (_skip)
+            { // Возвращаемся к началу совпадения
+                _numLine = oMatch.Line;
+                _startChar = oMatch.Char + 1;
+                stream.pos = oMatch.StreamPos;
+                oMatch = {};
+                posInText = PosStartText;
+                _skip = false;
             }
         }
 
-        function GetMatches(rects, oMatch, curLine, curWord, curChar)
+        function GetMatches(rects, stream, oMatch, curLine, curChar, curStreamPos)
         {
-            for (let iLine = oMatch.Line; iLine <= curLine; ++iLine)
+            _numLine = oMatch.Line;
+            stream.pos = oMatch.StreamPos;
+            let _text = "";
+            while (stream.pos < curStreamPos)
             {
-                let oLine = oText[iLine];
-                let words = oLine["Words"];
-
-                let isStartLine = iLine == oMatch.Line;
-                let isEndLine   = iLine == curLine;
-
-                let startWord = isStartLine ? oMatch.Word : 0;
-                let endWord   = isEndLine   ? curWord : words.length - 1;
-
-                let startChar = isStartLine ? oMatch.Char : -2;
-                let endChar   = isEndLine   ? curChar : -1;
-
-                let off1 = 0;
-                let off2 = 0;
+                let startChar = _numLine == oMatch.Line ? oMatch.Char : -2;
+                let endChar   = _numLine == curLine     ? curChar     : -1;
 
                 if (startChar == -2)
-                    off1 = words[startWord].X;
+                    startChar = 0;
                 else if (startChar == -1)
-                    off1 = words[startWord].X + words[startWord].Width;
-                else
-                    off1 = words[startWord].Chars[startChar].X;
+                    startChar = Infinity;
 
                 if (endChar == -2)
-                    off2 = words[endWord].X;
+                    endChar = 0;
                 else if (endChar == -1)
-                    off2 = words[endWord].X + words[endWord].Width;
-                else
-                    off2 = words[endWord].Chars[endChar].X;
+                    endChar = Infinity;
+
+                _text = "";
+                _lineEx = 1;
+                _lineEy = 0;
+                _linePrevCharX = 0;
+                _arrayGlyphOffsets.splice(0, _arrayGlyphOffsets.length);
+
+                _lineX = stream.GetDouble();
+                _lineY = stream.GetDouble();
+                if (stream.GetChar())
+                {
+                    _lineEx = stream.GetDouble();
+                    _lineEy = stream.GetDouble();
+                }
+                _lineAscent  = stream.GetDouble();
+                _lineDescent = stream.GetDouble();
+                _lineWidth   = stream.GetDouble();
+                let nChars = stream.GetLong();
+                for (let i = 0; i < nChars; ++i)
+                {
+                    if (i)
+                        _linePrevCharX += stream.GetDouble();
+                    _arrayGlyphOffsets[i] = _linePrevCharX;
+                    let nChar = stream.GetLong();
+                    stream.Skip(4);
+                    if (i >= endChar)
+                        break;
+                    if (i >= startChar)
+                        _text += (nChar == 0xFFFF ? " " : String.fromCharCode(nChar));
+                }
+
+                let off1 = _arrayGlyphOffsets[startChar];
+                let off2 = _arrayGlyphOffsets[endChar];
+                if (startChar == Infinity)
+                    off1 = _lineWidth;
+                if (endChar == Infinity)
+                    off2 = _lineWidth;
 
                 if (off2 <= off1)
                     continue;
 
                 rects.push({
                     PageNum : pageIndex,
-                    LineNum: iLine,
-                    Word1: startWord,
-                    Word2: endWord,
+                    LineNum: _numLine,
                     Char1: startChar,
                     Char2: endChar,
-                    X : oLine["X"] + oLine["Ascent"] * oLine["Ey"] + off1 * oLine["Ex"],
-                    Y : oLine["Y"] - oLine["Ascent"] * oLine["Ex"] + off1 * oLine["Ey"],
+                    X : _lineX + _lineAscent * _lineEy + off1 * _lineEx,
+                    Y : _lineY - _lineAscent * _lineEx + off1 * _lineEy,
                     W : off2 - off1,
-                    H : oLine["Ascent"] + oLine["Descent"],
-                    Ex : oLine["Ex"],
-                    Ey : oLine["Ey"],
-                    Text: rects.GetTextFromLine(oText, iLine, startWord, endWord, startChar, endChar)
+                    H : _lineAscent + _lineDescent,
+                    Ex : _lineEx,
+                    Ey : _lineEy,
+                    Text: _text
                 });
+
+                _numLine++;
             }
         }
 
