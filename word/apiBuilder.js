@@ -211,14 +211,14 @@
 	}
 
 	/**
-	 * Class representing the bookmart in document.
+	 * Class representing a bookmark in the document.
 	 * @constructor
 	 */
-	function ApiBookmark(oBmStart, oBmEnd)
+	function ApiBookmark(startMark, endMark)
 	{
-		this.Start		= oBmStart;
-		this.End		= oBmEnd;
-		this.Document	= Asc.editor.getLogicDocument();
+		this.Start    = startMark;
+		this.End      = endMark;
+		this.Document = Asc.editor.getLogicDocument();
 	}
 
 	/**
@@ -7145,21 +7145,17 @@
 	 * Gets bookmark by name
 	 * @memberof ApiDocument
 	 * @typeofeditors ["CDE"]
-	 * @returns {ApiBookmark}
+	 * @returns {?ApiBookmark}
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/GetBookmark.js
 	 */
 	ApiDocument.prototype.GetBookmark = function(sBookmarkName) 
 	{
 		let oManager = this.Document.GetBookmarksManager();
-		oManager.Update();
-
-		if (!oManager.IsInternalUseBookmark(sBookmarkName) && !oManager.IsHiddenBookmark(sBookmarkName))
-		{
-			let aBookmark = oManager.GetBookmarkByName(sBookmarkName);
-			return new ApiBookmark(aBookmark[0], aBookmark[1]);
-		}
-
-		return null;
+		let bookmarkMarks = oManager.GetBookmarkByName(sBookmarkName);
+		if (!bookmarkMarks ||oManager.IsInternalUseBookmark(sBookmarkName) || oManager.IsHiddenBookmark(sBookmarkName))
+			return null;
+		
+		return new ApiBookmark(bookmarkMarks[0], bookmarkMarks[1]);
 	};
 
 	/**
@@ -21586,36 +21582,32 @@
 	};
 
 	/**
-	 * Checks if a bookmark is active
+	 * Move cursor to this bookmark
 	 * @memberof ApiBookmark
-	 * @returns {boolean}
-	 * @see office-js-api/Examples/{Editor}/ApiBookmark/Methods/IsActive.js
-	 */
-	ApiBookmark.prototype.IsActive = function()
-	{
-		let oApiDoc = Asc.editor.GetDocument();
-		let aBookmarksNames = oApiDoc.GetAllBookmarksNames();
-
-		if (aBookmarksNames.includes(this.GetName()))
-			return true;
-
-		return false;
-	};
-
-	/**
-	 * Goes to bookmark and selects it.
-	 * @memberof ApiBookmark
-	 * @param {boolean} bSelect - specifies whether to select the bookmark
 	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiBookmark/Methods/GoTo.js
 	 */
-	ApiBookmark.prototype.GoTo = function(bSelect)
+	ApiBookmark.prototype.GoTo = function()
 	{
-		if (this.IsActive()) {
-			this.Document.GoToBookmark(this.Start.GetBookmarkName(), bSelect);
-			return true;
-		}
+		if (!this.IsUseInDocument())
+			return false;
 		
+		this.Start.GoToBookmark();
+		return true;
+	};
+	
+	/**
+	 * Select current bookmark
+	 * @memberof ApiBookmark
+	 * @returns {boolean}
+	 * @see office-js-api/Examples/{Editor}/ApiBookmark/Methods/Select.js
+	 */
+	ApiBookmark.prototype.Select = function()
+	{
+		if (!this.IsUseInDocument())
+			return false;
+		
+		this.Document.GetBookmarksManager().SelectBookmark(this.GetName());
 		return false;
 	};
 
@@ -21628,11 +21620,18 @@
 	 */
 	ApiBookmark.prototype.SetName = function(sNewName)
 	{
-		if (typeof(sNewName) !== "string" || sNewName === "" || !this.IsActive())
+		if (sNewName === this.GetName())
+			return true;
+		
+		if (typeof (sNewName) !== "string" || sNewName === "")
 			return false;
-
+		
+		let bookmarkManager = this.Document.GetBookmarksManager();
+		if (bookmarkManager.GetBookmarkByName(sNewName))
+			return false;
+		
 		this.Start = this.Start.ChangeBookmarkName(sNewName);
-		this.End = this.End.ChangeBookmarkName(sNewName);
+		this.End   = this.End.ChangeBookmarkName(sNewName);
 		return true;
 	};
 
@@ -21655,31 +21654,30 @@
 	 */
 	ApiBookmark.prototype.SetText = function(sText)
 	{
-		if (typeof(sText) !== "string" || sText === "" || !this.IsActive())
+		if (typeof(sText) !== "string" || sText === "" || !this.IsUseInDocument())
 			return false;
 		
-		let oOldSelectionInfo = this.Document.SaveDocumentState();
+		let docState = this.Document.SaveDocumentState();
 
-		this.GoTo(true);
-
-		let oPara = this.Start.GetParagraph();
-		let oRun = new ParaRun(oPara, false);
-		oRun.AddText(sText);
-		oPara.Remove(-1);
-		oPara.Add(oRun);
-
-		let oApiRun = new ApiRun(oRun);
-		let oApiRange = oApiRun.GetRange();
-		oApiRange.AddBookmark(this.GetName());
-
-		let oApiDoc = Asc.editor.GetDocument();
-		let oApiBookmark = oApiDoc.GetBookmark(this.GetName());
-
-		this.Start = oApiBookmark.Start;
-		this.End = oApiBookmark.End;
-
-		this.Document.LoadDocumentState(oOldSelectionInfo);
-
+		let bookmarkName = this.GetName();
+		
+		this.Select();
+		this.Document.RemoveBeforePaste();
+		this.Delete();
+		this.Document.AddBookmark(bookmarkName);
+		
+		let bookmarkManager = this.Document.GetBookmarksManager();
+		let bookmark = bookmarkManager.GetBookmarkByName(bookmarkName);
+		if (!bookmark)
+			return false;
+		
+		this.Start = bookmark[0];
+		this.End   = bookmark[1];
+		
+		this.End.GoToBookmark();
+		this.Document.EnterText(sText);
+		
+		this.Document.LoadDocumentState(docState);
 		return true;
 	};
 
@@ -21700,12 +21698,12 @@
 	 */
 	ApiBookmark.prototype.GetText = function(oPr)
 	{
-		if (!this.IsActive())
+		if (!this.IsUseInDocument())
 			return "";
 
 		if (!oPr)
 			oPr = {};
-
+		
 		let oProp = {
 			NewLineSeparator:	(oPr.hasOwnProperty("NewLineSeparator")) ? oPr["NewLineSeparator"] : "\r",
 			NewLineParagraph:	(oPr.hasOwnProperty("NewLineParagraph")) ? oPr["NewLineParagraph"] : true,
@@ -21715,16 +21713,13 @@
 			TableRowSeparator:	oPr["TableRowSeparator"],
 			ParaSeparator:		oPr["ParaSeparator"],
 			TabSymbol:			oPr["TabSymbol"]
-		}
-
-		let oOldSelectionInfo = this.Document.SaveDocumentState();
-		this.GoTo(true);
-
-		let oPara = this.Start.GetParagraph();
-		let sText = oPara.GetSelectedText(false, oProp);
-
-		this.Document.LoadDocumentState(oOldSelectionInfo);
-		return sText;
+		};
+		
+		let docState = this.Document.SaveDocumentState();
+		this.Select();
+		let result = this.Document.GetSelectedText(false, oProp);
+		this.Document.LoadDocumentState(docState);
+		return result ? result : "";
 	};
 
 	/**
@@ -21733,15 +21728,15 @@
 	 * @returns {ApiRange}
 	 * @see office-js-api/Examples/{Editor}/ApiBookmark/Methods/GetRange.js
 	 */
-	ApiBookmark.prototype.GetRange = function() {
-		if (!this.IsActive()) {
+	ApiBookmark.prototype.GetRange = function()
+	{
+		if (!this.IsUseInDocument())
 			return null;
-		}
 		
 		let oApiDoc				= Asc.editor.GetDocument();
 		let oOldSelectionInfo	= this.Document.SaveDocumentState();
 
-		this.GoTo(true);
+		this.Select(true);
 		let oRange = oApiDoc.GetRangeBySelect();
 		this.Document.LoadDocumentState(oOldSelectionInfo);
 
@@ -21756,9 +21751,9 @@
 	 */
 	ApiBookmark.prototype.Delete = function()
 	{
-		if (!this.IsActive())
+		if (!this.IsUseInDocument())
 			return false;
-
+		
 		this.Document.RemoveBookmark(this.GetName());
 		return true;
 	};
@@ -22682,14 +22677,14 @@
 	ApiWatermarkSettings.prototype["GetImageHeight"] =  ApiWatermarkSettings.prototype.GetImageHeight;
 	ApiWatermarkSettings.prototype["SetImageSize"]   =  ApiWatermarkSettings.prototype.SetImageSize;
 	
-	ApiBookmark.prototype["IsActive"]				= ApiBookmark.prototype.IsActive;
-	ApiBookmark.prototype["GoTo"]					= ApiBookmark.prototype.GoTo;
-	ApiBookmark.prototype["SetName"]				= ApiBookmark.prototype.SetName;
-	ApiBookmark.prototype["GetName"]				= ApiBookmark.prototype.GetName;
-	ApiBookmark.prototype["SetText"]				= ApiBookmark.prototype.SetText;
-	ApiBookmark.prototype["GetText"]				= ApiBookmark.prototype.GetText;
-	ApiBookmark.prototype["GetRange"]				= ApiBookmark.prototype.GetRange;
-	ApiBookmark.prototype["Delete"]					= ApiBookmark.prototype.Delete;
+	ApiBookmark.prototype["GoTo"]     = ApiBookmark.prototype.GoTo;
+	ApiBookmark.prototype["Select"]   = ApiBookmark.prototype.Select;
+	ApiBookmark.prototype["SetName"]  = ApiBookmark.prototype.SetName;
+	ApiBookmark.prototype["GetName"]  = ApiBookmark.prototype.GetName;
+	ApiBookmark.prototype["SetText"]  = ApiBookmark.prototype.SetText;
+	ApiBookmark.prototype["GetText"]  = ApiBookmark.prototype.GetText;
+	ApiBookmark.prototype["GetRange"] = ApiBookmark.prototype.GetRange;
+	ApiBookmark.prototype["Delete"]   = ApiBookmark.prototype.Delete;
 
 	ApiChartSeries.prototype["GetClassType"]      =  ApiChartSeries.prototype.GetClassType;
 	ApiChartSeries.prototype["ChangeChartType"]   =  ApiChartSeries.prototype.ChangeChartType;
@@ -23921,6 +23916,12 @@
 	ApiRange.prototype.OnChangeTextPr = function(oApiTextPr)
 	{
 		this.SetTextPr(oApiTextPr);
+	};
+	ApiBookmark.prototype.IsUseInDocument = function()
+	{
+		let manager = this.Document.GetBookmarksManager();
+		let bookmarkMarks = manager.GetBookmarkByName(this.GetName());
+		return (bookmarkMarks && bookmarkMarks[0].IsUseInDocument() && bookmarkMarks[1].IsUseInDocument());
 	};
 
 	Api.prototype.private_CreateApiParagraph = function(oParagraph){
