@@ -17639,10 +17639,20 @@ CT_PivotField.prototype.moveItem = function(pivot, pivotIndex, from, to, addToHi
 	}
 	return false;
 };
+CT_PivotField.prototype.removeFilterFromItem = function(pivot, pivotIndex, itemIndex) {
+	const oldPivotField = this.clone();
+	const items = this.getItems();
+	items[itemIndex].h = false;
+	History.Add(AscCommonExcel.g_oUndoRedoPivotTables, AscCH.historyitem_PivotTable_PivotField,
+		pivot.worksheet ? pivot.worksheet.getId() : null, null,
+		new AscCommonExcel.UndoRedoData_PivotField(pivot.Get_Id(), pivotIndex, oldPivotField, this.clone()));
+	pivot.setChanged(true);
+}
 CT_PivotField.prototype.asc_moveItem = function(api, pivot, pivotIndex, from, to) {
 	api._changePivotWithLock(pivot, function(ws, pivot) {
 		const pivotField = pivot.asc_getPivotFields()[pivotIndex];
 		pivotField.moveItem(pivot, pivotIndex, from, to, true);
+		pivotField.removeFilterFromItem(pivot, pivotIndex, to);
 		pivot.sortPivotItems(pivotIndex, c_oAscFieldSortType.Manual, -1);
 	});
 };
