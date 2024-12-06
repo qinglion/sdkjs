@@ -1376,8 +1376,7 @@ void main() {\n\
 
     CFile.prototype.searchPage = function(pageIndex)
     {
-        let oDoc          = Asc.editor.getPDFDoc();
-        let oSearchEngine = oDoc.SearchEngine;
+        let oSearchEngine = Asc.editor.getPDFDoc().SearchEngine;
         let oResult = {
             matches:    [],
             pageLines:  []
@@ -1388,14 +1387,14 @@ void main() {\n\
         if (0 == textLength)
             return oResult;
 
-        let oText = this.getPageTextStream(pageIndex);
-        if (!oText)
+        let stream = this.getPageTextStream(pageIndex);
+        if (!stream)
             return oResult;
         
         if (!oSearchEngine.MatchCase)
             searchText = searchText.toLowerCase();
 
-        oResult.pageLines = oText;
+        oResult.pageLines = stream;
 
         let oMatch = {};
         let posInText = 0;
@@ -1410,6 +1409,54 @@ void main() {\n\
             }
         }
         let PosStartText = posInText;
+
+        // textline parameters
+        let _lineX  = 0;
+        let _lineY  = 0;
+        let _lineEx = 1;
+        let _lineEy = 0;
+        let _lineAscent  = 0;
+        let _lineDescent = 0;
+        let _lineWidth   = 0;
+        let _linePrevCharX = 0;
+        let _arrayGlyphOffsets = [];
+        let _numLine = -1;
+        let _linePos = 0;
+
+        while (stream.pos < stream.size)
+        {
+            _numLine++;
+            _lineEx = 1;
+            _lineEy = 0;
+            _linePrevCharX = 0;
+            _arrayGlyphOffsets.splice(0, _arrayGlyphOffsets.length);
+
+            oResult.pageLines[oResult.pageLines.length] = new CLineInfo();
+            curLine = oResult.pageLines[oResult.pageLines.length - 1];
+
+            _lineX = stream.GetDouble();
+            _lineY = stream.GetDouble();
+            if (stream.GetChar())
+            {
+                _lineEx = stream.GetDouble();
+                _lineEy = stream.GetDouble();
+            }
+            _lineAscent  = stream.GetDouble();
+            _lineDescent = stream.GetDouble();
+            _lineWidth   = stream.GetDouble();
+
+            if (bNeedLinePos)
+                _linePos = stream.pos;
+
+            let nChars = stream.GetLong();
+            for (let i = 0; i < nChars; ++i)
+            {
+                if (i)
+                    _linePrevCharX += stream.GetDouble();
+                _arrayGlyphOffsets[i] = _linePrevCharX;
+                stream.Skip(8);
+            }
+        }
 
         for (let iLine = 0; iLine < oText.length; ++iLine)
         {
