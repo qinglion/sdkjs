@@ -10192,14 +10192,28 @@ CT_pivotTableDefinition.prototype.asc_convertCalculatedFormula = function(formul
 	const items = pivotField.getItems().filter(function(item) {
 		return item.t === Asc.c_oAscItemType.Data
 	});
+	const fieldName = pivotField.asc_getName() || cacheField.asc_getName();
+	const pivotNames = [[this.asc_convertNameToFormula(fieldName)], []]
+	if (this.asc_convertNameToFormula(fieldName) !== fieldName) {
+		pivotNames[0].push(fieldName)
+	} else {
+		pivotNames[0].push('\'' + fieldName + '\'');
+	}
 	for (let i = 0; i < items.length; i += 1){
 		const item = items[i];
-		namesMap.set(this.asc_convertNameToFormula(item.getName(cacheField)).toLowerCase(), this.asc_convertNameToFormula(item.getSourceName(cacheField)));
+		const itemName = item.getName(cacheField);
+		const itemSourceName = item.getSourceName(cacheField);
+		namesMap.set(this.asc_convertNameToFormula(itemName).toLowerCase(), this.asc_convertNameToFormula(itemSourceName));
+		pivotNames[1].push(this.asc_convertNameToFormula(itemName));
+
+		if (this.asc_convertNameToFormula(itemName).toLowerCase() === itemName.toLowerCase()) {
+			namesMap.set('\'' + itemName.toLowerCase() + '\'');
+			pivotNames[1].push('\'' + itemName + '\'');
+		} else {
+			namesMap.set(itemName.toLowerCase(), this.asc_convertNameToFormula(itemSourceName));
+			pivotNames[1].push(itemName);
+		}
 	}
-	const fieldName = pivotField.asc_getName() || cacheField.asc_getName();
-	const pivotNames = [[fieldName], items.map(function(item) {
-		return t.asc_convertNameToFormula(item.getName(cacheField));
-	})];
 	const parserFormula = new AscCommonExcel.parserFormula(formula, this, AscCommonExcel.g_DefNameWorksheet);
 	parserFormula.parse(undefined, undefined, undefined, undefined, undefined, undefined, pivotNames);
 	const outStack = parserFormula.outStack;

@@ -3819,18 +3819,13 @@
 		{
 			this._reset();
 		}
-		// todo если строка подстрока другой
 		const subSTR = formula.substring(start_pos);
-		const fieldName = opt_namesList[0][0];
-		const itemNames = opt_namesList[1];
-		const fullPatterns = itemNames.map(function(name) {
-			return '^' + fieldName + '\\s*\\[\\s*(' + name + ')\\s*\\]'
-		});
-		itemNames.forEach(function(name) {
-			fullPatterns.push('^\'' + fieldName + '\'\\s*\\[\\s*(' + name + ')\\s*\\]');
-			fullPatterns.push('^\'' + fieldName + '\'\\s*\\[\\s*\'(' + name + ')\'\\s*\\]');
-			fullPatterns.push('^' + fieldName + '\\s*\\[\\s*\'(' + name + ')\'\\s*\\]');
-		})
+		const fullPatterns = [];
+		for (let i = 0; i < opt_namesList[0].length; i += 1) {
+			for (let j = 0; j < opt_namesList[1].length; j += 1) {
+				fullPatterns.push('^(' + opt_namesList[0][i] + ')\\s*\\[\\s*(' + opt_namesList[1][j] + ')\\s*\\]');
+			}
+		}
 		const fullRegs = fullPatterns.map(function(pattern) {
 			return new RegExp(pattern, 'i');
 		});
@@ -3839,14 +3834,11 @@
 			if (match !== null) {
 				this.operand_str = match[0];
 				this.pCurrPos += match[0].length;
-				return [fieldName, match[1]];
+				return [match[1], match[2]];
 			}
 		}
-		const shortPatterns = itemNames.map(function(name) {
+		const shortPatterns = opt_namesList[1].map(function(name) {
 			return '^(' + name + ')(?:\\W|$)'
-		});
-		itemNames.forEach(function(name) {
-			shortPatterns.push('^(\'(' + name + ')\')(?:\\W|$)');
 		});
 		const shortRegs = shortPatterns.map(function(pattern) {
 			return new RegExp(pattern, 'i');
