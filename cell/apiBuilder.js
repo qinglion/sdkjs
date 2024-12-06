@@ -11248,10 +11248,10 @@
 
 		//firstly add filter or remove filter
 		if (Field == null && ws.AutoFilter) {
-			ws.changeAutoFilter(null, Asc.c_oAscChangeFilterOptions.filter, false);
+			this.asc_changeAutoFilter(null, Asc.c_oAscChangeFilterOptions.filter, false);
 			return;
 		} else if (!ws.AutoFilter) {
-			ws.addAutoFilter(null, this.range.bbox);
+			this.asc_addAutoFilter(null, null, this.range.bbox);
 		}
 
 		if (Field == null) {
@@ -11260,7 +11260,7 @@
 
 		if (Criteria1 == null) {
 			//clean current filter
-			ws.clearFilterColumn(Asc.range(_range.c1 + Field, _range.r1, _range.c1 + Field, _range.r1).getName());
+			this.asc_clearFilterColumn(Asc.range(_range.c1 + Field, _range.r1, _range.c1 + Field, _range.r1).getName());
 			return;
 		}
 
