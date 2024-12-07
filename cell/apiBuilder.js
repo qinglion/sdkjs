@@ -11248,6 +11248,22 @@
 			return;
 		}
 
+		var columnRange = new Asc.Range(Field - 1 + _range.c1, _range.r1 + 1, Field -1 + _range.c1, _range.r2);
+		var filterTypes = ws.getRowColColors(columnRange);
+		if (Field && (Operator === "xlBottom10Percent" || Operator === "xlBottom10Items" || Operator === "xlTop10Percent" || Operator === "xlTop10Items")) {
+			if (filterTypes.text) {
+				//need number filter!
+				private_MakeError('Error! Range error!');
+				return;
+			}
+			let top10Num = Criteria1 ? Criteria1 - 0 : 10;
+			if (isNaN(top10Num)) {
+				//need number filter!
+				private_MakeError('Error! Range error!');
+				return;
+			}
+		}
+
 		//firstly add filter or remove filter
 		if (Field == null && ws.AutoFilter) {
 			api.asc_changeAutoFilter(null, Asc.c_oAscChangeFilterOptions.filter, false);
@@ -11269,7 +11285,7 @@
 		let cellId = Asc.Range(_range.c1 + Field - 1, _range.r1, _range.c1 + Field - 1, _range.r1).getName();
 
 		let getOperator = function (val) {
-			let res = null;
+			let res = Asc.c_oAscCustomAutoFilter.equals;
 			switch (val) {
 				case "=": {
 					res = Asc.c_oAscCustomAutoFilter.equals;
@@ -11301,26 +11317,35 @@
 
 		let createCustomFilter = function () {
 			if (Criteria1 || Criteria1) {
-				let newCustomFilter = new Asc.CustomFilters();
+				let filterObj = new Asc.AutoFilterObj();
+				filterObj.asc_setFilter(new Asc.CustomFilters());
+				filterObj.asc_setType(Asc.c_oAscAutoFilterTypes.CustomFilters);
+				let newCustomFilter = filterObj.asc_getFilter();
+
 				let oCriteria1 = Criteria1 && AscCommonExcel.matchingValue(new AscCommonExcel.cString(Criteria1));
 				let oCriteria2 = Criteria2 && AscCommonExcel.matchingValue(new AscCommonExcel.cString(Criteria2));
-				let operator1 = getOperator(oCriteria1.op);
-				let operator2 = getOperator(oCriteria2.op);
+				let operator1 = oCriteria1 && getOperator(oCriteria1.op);
+				let operator2 = oCriteria2 && getOperator(oCriteria2.op);
 
-				var newCustomFilters = newCustomFilter.asc_getCustomFilters();
+
+				let customFiltersArr = [];
 				if (oCriteria1) {
-					newCustomFilters[0].asc_setVal(oCriteria1.val);
-					newCustomFilters[0].asc_setOperator(operator1);
+					customFiltersArr[0] = new Asc.CustomFilter();
+					customFiltersArr[0].asc_setVal(oCriteria1.val.getValue() + "");
+					customFiltersArr[0].asc_setOperator(operator1);
 				}
 				if (oCriteria2) {
-					newCustomFilters[1].asc_setVal(oCriteria2.val);
-					newCustomFilters[1].asc_setOperator(operator2);
+					customFiltersArr[1] = new Asc.CustomFilter();
+					customFiltersArr[1].asc_setVal(oCriteria2.val.getValue() + "");
+					customFiltersArr[1].asc_setOperator(operator2);
 				}
+
+				newCustomFilter.asc_setCustomFilters(customFiltersArr);
 				newCustomFilter.asc_setAnd(Operator === "xlAnd");
 
 				autoFilterOptions = new window["Asc"].AutoFiltersOptions();
-				autoFilterOptions.asc_setFilter(newCustomFilter);
-				autoFilterOptions.asc_setType(Asc.c_oAscAutoFilterTypes.CustomFilters);
+				autoFilterOptions.asc_setFilterObj(filterObj);
+				autoFilterOptions.asc_setCellId(cellId);
 			}
 		};
 
@@ -11370,8 +11395,7 @@
 		};
 
 		let createTop10Filter = function (val, isPercent, isBottom) {
-			let _topFilter = new AscCommonExcel.Top10();
-			autoFilterOptions = new window["Asc"].AutoFiltersOptions();
+			let _topFilter = new Asc.Top10();
 			_topFilter.asc_setVal(val);
 			if (isPercent) {
 				_topFilter.asc_setPercent(isPercent);
@@ -11379,11 +11403,17 @@
 			if (isBottom) {
 				_topFilter.asc_setTop(!isBottom);
 			}
-			autoFilterOptions.asc_setFilter(_topFilter);
+
+			autoFilterOptions = new window["Asc"].AutoFiltersOptions();
+			let oFilter = new window["Asc"].AutoFilterObj();
+			oFilter.asc_setFilter(_topFilter);
+			oFilter.asc_setType(Asc.c_oAscAutoFilterTypes.Top10);
+			autoFilterOptions.asc_setFilterObj(oFilter);
+			autoFilterOptions.asc_setCellId(cellId);
 		};
 
 		let createColorFilter = function (color, isCellColor) {
-			autoFilterOptions = new window["Asc"].AutoFiltersOptions();
+			autoFilterOptions = new Asc.AutoFiltersOptions();
 
 			let filterObj = autoFilterOptions.asc_getFilterObj();
 			filterObj.asc_setFilter(new Asc.ColorFilter());
@@ -11579,10 +11609,6 @@
 				case "xlTop10Items": {
 					//only criteria1, 1 to 500 number value
 					let top10Num = Criteria1 ? Criteria1 - 0 : 10;
-					if (isNaN(top10Num)) {
-						private_MakeError('Error! Criteria1 must be number!');
-						return false;
-					}
 					if (top10Num > 0 && top10Num <= 500) {
 						createTop10Filter(top10Num, "xlTop10Percent" === Operator || "xlBottom10Percent" === Operator,
 							"xlBottom10Items" === Operator || "xlBottom10Percent" === Operator);
