@@ -8855,17 +8855,17 @@ background-repeat: no-repeat;\
 
 		if (operation) {
 			const operations = ['unite', 'intersect', 'subtract', 'exclude', 'divide'];
-			if (operations.indexOf(operation) !== -1) return false;
+			if (operations.indexOf(operation) === -1) return false;
 
 			if (operation === 'intersect') {
 				const rects = selectedArray.map(item => item.getRectBounds());
 				const hasIntersection = rects.every(function (rectA, indexA) {
-					rects.some(function (rectB, indexB) {
+					return rects.some(function (rectB, indexB) {
 						return indexA !== indexB
-							&& rectA.left < rectB.right
-							&& rectA.right > rectB.left
-							&& rectA.top < rectB.bottom
-							&& rectA.bottom > rectB.top;
+							&& rectA.l < rectB.r
+							&& rectA.r > rectB.l
+							&& rectA.t < rectB.b
+							&& rectA.b > rectB.t;
 					});
 				});
 				if (!hasIntersection) return false;
