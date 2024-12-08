@@ -6720,12 +6720,48 @@ background-repeat: no-repeat;\
 	};
 
 	asc_docs_api.prototype.asc_canMergeSelectedShapes = function (operation) {
+		const graphicController = Asc.editor.getGraphicController();
+		if (!graphicController) return false;
+
+		const selectedArray = graphicController.getSelectedArray();
+		if (selectedArray.length < 2) return false;
+
+		const hasInvalidGeometry = selectedArray.some(function (item) {
+			return !item.getGeometry || !AscCommon.isRealObject(item.getGeometry());
+		});
+		if (hasInvalidGeometry) return false;
+
+		const hasForbiddenTypesInSelection = selectedArray.some(function (item) {
+			return item instanceof AscFormat.CGraphicFrame || item instanceof AscFormat.CChartSpace;
+		});
+		if (hasForbiddenTypesInSelection) return false;
+
+		if (operation) {
+			const operations = ['unite', 'intersect', 'subtract', 'exclude', 'divide'];
+			if (operations.indexOf(operation) !== -1) return false;
+
+			if (operation === 'intersect') {
+				const rects = selectedArray.map(item => item.getRectBounds());
+				const hasIntersection = rects.every(function (rectA, indexA) {
+					rects.some(function (rectB, indexB) {
+						return indexA !== indexB
+							&& rectA.left < rectB.right
+							&& rectA.right > rectB.left
+							&& rectA.top < rectB.bottom
+							&& rectA.bottom > rectB.top;
+					});
+				});
+				if (!hasIntersection) return false;
+			}
+		}
+
 		return true;
 	};
 	asc_docs_api.prototype.asc_mergeSelectedShapes = function (operation) {
-		const operations = ['unite', 'intersect', 'subtract', 'exclude', 'divide'];
-		if (operations.indexOf(operation) !== -1)
-			this.WordControl.m_oLogicDocument.mergeSelectedShapes(operation);
+		if (!this.asc_canMergeSelectedShapes(operation))
+			return;
+
+		this.WordControl.m_oLogicDocument.mergeSelectedShapes(operation);
 	};
 
 	asc_docs_api.prototype.setVerticalAlign = function(align)

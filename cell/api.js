@@ -5250,23 +5250,55 @@ var editor;
     ws.objectRender.unGroupGraphicObjects();
   };
 
-  spreadsheet_api.prototype.asc_canMergeSelectedShapes = function (operation) {
-    return true;
-  };
-	spreadsheet_api.prototype.asc_mergeSelectedShapes = function (operation) {
-		const operations = ['unite', 'intersect', 'subtract', 'exclude', 'divide'];
-		if (operations.indexOf(operation) === -1)
-			return;
+    spreadsheet_api.prototype.asc_canMergeSelectedShapes = function (operation) {
+      const graphicController = Asc.editor.getGraphicController();
+      if (!graphicController) return false;
 
-		const controller = this.wb.getWorksheet().objectRender.controller;
-		if (controller.checkSelectedObjectsProtection())
-			return;
+      if (graphicController.checkSelectedObjectsProtection()) return false;
 
-		controller.checkSelectedObjectsAndCallback(
-			AscFormat.mergeSelectedShapes, [operation], false,
-			AscDFH.historydescription_Presentation_MergeSelectedShapes
-		);
-	};
+      const selectedArray = graphicController.getSelectedArray();
+      if (selectedArray.length < 2) return false;
+
+      const hasInvalidGeometry = selectedArray.some(function (item) {
+        return !item.getGeometry || !AscCommon.isRealObject(item.getGeometry());
+      });
+      if (hasInvalidGeometry) return false;
+
+      const hasForbiddenTypesInSelection = selectedArray.some(function (item) {
+        return item instanceof AscFormat.CGraphicFrame || item instanceof AscFormat.CChartSpace;
+      });
+      if (hasForbiddenTypesInSelection) return false;
+
+      if (operation) {
+        const operations = ['unite', 'intersect', 'subtract', 'exclude', 'divide'];
+        if (operations.indexOf(operation) !== -1) return false;
+
+        if (operation === 'intersect') {
+          const rects = selectedArray.map(item => item.getRectBounds());
+          const hasIntersection = rects.every(function (rectA, indexA) {
+            rects.some(function (rectB, indexB) {
+              return indexA !== indexB
+                && rectA.left < rectB.right
+                && rectA.right > rectB.left
+                && rectA.top < rectB.bottom
+                && rectA.bottom > rectB.top;
+            });
+          });
+          if (!hasIntersection) return false;
+        }
+      }
+
+      return true;
+    };
+    spreadsheet_api.prototype.asc_mergeSelectedShapes = function (operation) {
+      if (!this.asc_canMergeSelectedShapes(operation))
+        return;
+
+      controller.checkSelectedObjectsAndCallback(
+        AscFormat.mergeSelectedShapes, [operation], false,
+        AscDFH.historydescription_Presentation_MergeSelectedShapes
+      );
+    };
 
   spreadsheet_api.prototype.asc_changeShapeType = function(value) {
     this.asc_setGraphicObjectProps(new Asc.asc_CImgProperty({ShapeProperties: {type: value}}));
