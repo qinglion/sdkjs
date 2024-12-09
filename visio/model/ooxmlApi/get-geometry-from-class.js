@@ -732,7 +732,7 @@
 					}
 				}
 				if (prevCommandName === "SplineKnot" &&
-					(commandName !== "SplineKnot" || j === geometrySection.rows.length - 1) &&
+					(commandName !== "SplineKnot" || j === geometrySection.getElements().length - 1) &&
 					splineStartCommandData !== undefined) {
 					// draw spline
 

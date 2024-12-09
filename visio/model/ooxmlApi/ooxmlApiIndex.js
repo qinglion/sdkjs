@@ -548,6 +548,28 @@
 
 	/**
 	 * Always use it see Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive js docs for explanation.
+	 * Used with no argument to get all rows
+	 * @memberof SheetStorage
+	 * @returns {Row_Type[]}
+	 */
+	SheetStorage.prototype.getRows = function() {
+		// TODO check may be optimized. maybe use binary search for elements with maximum number as index bcs geometry
+		// rows have Row.ix as index and it is number.
+		let resultArr = [];
+		for (const key in this.elements) {
+			const element = this.elements[key];
+			if (element.kind === c_oVsdxSheetStorageKind.Row_Type) {
+				resultArr.push(element);
+			}
+		}
+		resultArr.sort(function (a, b) {
+			return a.iX - b.iX;
+		});
+		return resultArr;
+	}
+
+	/**
+	 * Always use it see Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive js docs for explanation.
 	 * get elements inherited from shape sheet type
 	 * @memberOf SheetStorage
 	 * @return {{*}}
