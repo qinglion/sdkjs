@@ -37,6 +37,9 @@
 	// Import
 	let Shape_Type = window['AscVisio'].Shape_Type;
 
+	let isInvertCoords = true;
+	let angleInvertCoef = isInvertCoords ? -1 : 1;
+
 	function convertVsdxTextToPptxText(text){
 		// Replace LineSeparator
 		return text.replaceAll("\u2028", "\n");
@@ -48,9 +51,10 @@
 	 * @param {CVisioDocument} visioDocument
 	 * @param {Page_Type} pageInfo
 	 * @param {Number} drawingPageScale
+	 * @param {CGroupShape?} currentGroupHandling
 	 * @return {{geometryCShape: CShape | CImageShape, textCShape: ?CShape}} cShapesObjects
 	 */
-	Shape_Type.prototype.toGeometryAndTextCShapes = function (visioDocument, pageInfo, drawingPageScale) {
+	Shape_Type.prototype.toGeometryAndTextCShapes = function (visioDocument, pageInfo, drawingPageScale, currentGroupHandling) {
 
 		/**
 		 * handle QuickStyleVariation cell which can change color (but only if color is a result of ThemeVal)
@@ -940,6 +944,15 @@
 
 			// handle cords
 
+			let shapeAngle = shape.getCellNumberValue("Angle");
+			let textAngle = shape.getCellNumberValue("TxtAngle");
+
+			if (isInvertCoords) {
+				shapeAngle = -shapeAngle;
+				textAngle = -textAngle;
+			}
+
+
 			// to rotate around point we 1) add one more offset 2) rotate around center
 			// could be refactored maybe
 			// https://www.figma.com/file/jr1stjGUa3gKUBWxNAR80T/locPinHandle?type=design&node-id=0%3A1&mode=design&t=raXzFFsssqSexysi-1
@@ -963,8 +976,6 @@
 				let txtHeight_inch = shape.getCellNumberValueWithScale("TxtHeight", drawingPageScale);
 				let txtLocPinX_inch = shape.getCellNumberValueWithScale("TxtLocPinX", drawingPageScale);
 				let txtLocPinY_inch = shape.getCellNumberValueWithScale("TxtLocPinY", drawingPageScale);
-
-				let textAngle = shape.getCellNumberValue("TxtAngle");
 
 				// defaultParagraph.Pr.SetJc(AscCommon.align_Left);
 				let oBodyPr = textCShape.getBodyPr().createDuplicate();
@@ -1014,7 +1025,7 @@
 
 				oXfrm.setExtX(txtWidth_inch * g_dKoef_in_to_mm);
 				oXfrm.setExtY(txtHeight_inch * g_dKoef_in_to_mm);
-				oXfrm.setRot( 0);
+				oXfrm.setRot( shapeAngle + textAngle);
 			} else {
 				// create text block with shape sizes
 				let globalXmm = cShape.spPr.xfrm.offX;
@@ -1023,7 +1034,7 @@
 				oXfrm.setOffY(globalYmm);
 				oXfrm.setExtX(shapeWidth_inch * g_dKoef_in_to_mm);
 				oXfrm.setExtY(shapeHeight_inch * g_dKoef_in_to_mm);
-				oXfrm.setRot(0);
+				oXfrm.setRot(shapeAngle + textAngle);
 			}
 			oSpPr.setXfrm(oXfrm);
 			oXfrm.setParent(oSpPr);
@@ -1255,6 +1266,15 @@
 		// 3) May be bind arguments to calculateValue function
 		// 4) May be move getTextCShape to other file
 
+		let maxHeightScaledIn;
+		if (currentGroupHandling) {
+			let heightMM = currentGroupHandling.spPr.xfrm.extY;
+			maxHeightScaledIn = heightMM / g_dKoef_in_to_mm;
+		} else {
+			let pageIndex = visioDocument.pages.page.indexOf(pageInfo);
+			maxHeightScaledIn = visioDocument.GetHeightScaledMM(pageIndex) / g_dKoef_in_to_mm;
+		}
+
 		// there was case with shape type group with no PinX and PinY
 		// https://disk.yandex.ru/d/tl877cuzcRcZYg
 		let pinX_inch = this.getCellNumberValueWithScale("PinX", drawingPageScale);
@@ -1295,6 +1315,12 @@
 		let locPinY_inch = this.getCellNumberValueWithScale("LocPinY", drawingPageScale);
 		let shapeWidth_inch = this.getCellNumberValueWithScale("Width", drawingPageScale);
 		let shapeHeight_inch = this.getCellNumberValueWithScale("Height", drawingPageScale);
+
+		if (isInvertCoords) {
+			pinY_inch = maxHeightScaledIn - pinY_inch;
+			shapeAngle *= -1;
+			locPinY_inch = shapeHeight_inch - locPinY_inch;
+		}
 
 		// to rotate around point we 1) add one more offset 2) rotate around center
 		// could be refactored maybe
@@ -1639,7 +1665,8 @@
 			flipHorizontally: flipHorizontally, flipVertically: flipVertically,
 			pageInfo: pageInfo,
 			cVisioDocument: visioDocument,
-			drawingPageScale : drawingPageScale
+			drawingPageScale : drawingPageScale,
+			isInvertCoords: isInvertCoords
 		});
 
 		if (isShapeDeleted) {
@@ -1712,7 +1739,7 @@
 															  drawingPageScale, currentGroupHandling) {
 		// if we need to create CGroupShape create CShape first then copy its properties to CGroupShape object
 		// so anyway create CShapes
-		let cShapes = this.toGeometryAndTextCShapes(visioDocument, pageInfo, drawingPageScale);
+		let cShapes = this.toGeometryAndTextCShapes(visioDocument, pageInfo, drawingPageScale, currentGroupHandling);
 
 		if (this.type === "Group") {
 			// CGroupShape cant support text. So cShape will represent everything related to Shape Type="Group".
@@ -1833,7 +1860,7 @@
 
 	/**
 	 * @memberOf Shape_Type
-	 * @param {{x_mm, y_mm, w_mm, h_mm, rot, oFill, oStroke, flipHorizontally, flipVertically, cVisioDocument, drawingPageScale}} paramsObj
+	 * @param {{x_mm, y_mm, w_mm, h_mm, rot, oFill, oStroke, flipHorizontally, flipVertically, cVisioDocument, drawingPageScale, isInvertCoords}} paramsObj
 	 * @return {CShape} CShape
 	 */
 	Shape_Type.prototype.convertToCShapeUsingParamsObj = function(paramsObj) {
@@ -1848,8 +1875,9 @@
 		let flipHorizontally = paramsObj.flipHorizontally;
 		let flipVertically = paramsObj.flipVertically;
 		let drawingPageScale = paramsObj.drawingPageScale;
+		let isInvertCoords = paramsObj.isInvertCoords;
 
-		let shapeGeom = AscVisio.getGeometryFromShape(this, drawingPageScale);
+		let shapeGeom = AscVisio.getGeometryFromShape(this, drawingPageScale, isInvertCoords);
 
 		let sType   = "rect";
 		let nWidth_mm  = Math.round(w_mm);

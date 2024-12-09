@@ -436,7 +436,7 @@
 	 */
 	CVisioDocument.prototype.draw = function(Zoom, pGraphics, pageIndex) {
 		function drawShapeOrGroupRecursively(graphics, shapeOrGroup, baseMatrix, baseTextMatrix,
-											 changeTextDirection, logic_h_mm, currentGroupHandling) {
+											 isRecalculateTextY, isFlipImages, logic_h_mm, currentGroupHandling) {
 			// see sdkjs/common/Shapes/Serialize.js this.ReadGroupShape = function(type) to
 			// learn how to work with shape groups
 
@@ -480,19 +480,19 @@
 
 				// handle group children
 				group.spTree.forEach(function(shapeOrGroup) {
-					drawShapeOrGroupRecursively(graphics, shapeOrGroup, baseMatrix, baseTextMatrix, changeTextDirection,
-						logic_h_mm, group);
+					drawShapeOrGroupRecursively(graphics, shapeOrGroup, baseMatrix, baseTextMatrix, isRecalculateTextY,
+						isFlipImages, logic_h_mm, group);
 				});
 			} else {
 				// shape came to argument
 
 				// flip images
-				if (shapeOrGroup.getObjectType() === AscDFH.historyitem_type_ImageShape) {
+				if (isFlipImages && shapeOrGroup.getObjectType() === AscDFH.historyitem_type_ImageShape) {
 					shapeOrGroup.transform.sy = -1;
 					shapeOrGroup.transform.ty += shapeOrGroup.spPr.xfrm.extY;
 				}
 
-				if (changeTextDirection && shapeOrGroup.Id.substring(shapeOrGroup.Id.length - 4) === "Text") {
+				if (isRecalculateTextY && shapeOrGroup.Id.substring(shapeOrGroup.Id.length - 4) === "Text") {
 					if (graphics.SetBaseTransform) {
 						//todo CSlideBoundsChecker
 						graphics.SetBaseTransform(baseTextMatrix);
@@ -506,7 +506,7 @@
 				}
 
 				// set shape transform that was before fix for future drawShapeOrGroupRecursively() calls
-				if (changeTextDirection && shapeOrGroup.Id.substring(shapeOrGroup.Id.length - 4) === "Text") {
+				if (isRecalculateTextY && shapeOrGroup.Id.substring(shapeOrGroup.Id.length - 4) === "Text") {
 					if (graphics.SetBaseTransform) {
 						//todo CSlideBoundsChecker
 						graphics.SetBaseTransform(baseMatrix);
@@ -514,7 +514,7 @@
 					shapeOrGroup.transform.ty = logic_h_mm - shapeOrGroup.transform.ty - shapeOrGroup.spPr.xfrm.extY;
 					shapeOrGroup.recalculateTransformText();
 				}
-				if (shapeOrGroup.getObjectType() === AscDFH.historyitem_type_ImageShape) {
+				if (isFlipImages && shapeOrGroup.getObjectType() === AscDFH.historyitem_type_ImageShape) {
 					shapeOrGroup.transform.sy = 1;
 					shapeOrGroup.transform.ty -= shapeOrGroup.spPr.xfrm.extY;
 				}
@@ -522,6 +522,11 @@
 		}
 
 		function drawOnCanvas(pageIndex, visioDocument, canvas, isThumbnail) {
+			let isRecalculateTextY = false;
+			let isFlipYMatrix = false;
+			let isFlipImages = false;
+
+
 			// let pageInfo = visioDocument.pages.page[pageIndex];
 			// let pageContent = visioDocument.pageContents[pageIndex];
 			// let topLevelShapesAndGroups = visioDocument.convertToCShapesAndGroups(pageInfo, pageContent);
@@ -603,8 +608,11 @@
 			//visio y coordinate goes up while
 			//ECMA-376-11_5th_edition and Geometry.js y coordinate goes down
 			let baseMatrix = new AscCommon.CMatrix();
-			// baseMatrix.SetValues(1, 0, 0, 1, 0, 0);
-			baseMatrix.SetValues(1, 0, 0, -1, 0, logic_h_mm);
+			if (isFlipYMatrix) {
+				baseMatrix.SetValues(1, 0, 0, -1, 0, logic_h_mm);
+			} else {
+				baseMatrix.SetValues(1, 0, 0, 1, 0, 0);
+			}
 			if (graphics.SetBaseTransform) {
 				//todo CSlideBoundsChecker
 				graphics.SetBaseTransform(baseMatrix);
@@ -613,12 +621,6 @@
 
 			let baseTextMatrix = new AscCommon.CMatrix();
 			baseTextMatrix.SetValues(1, 0, 0, 1, 0, 0);
-			// baseTextMatrix.SetValues(1, 0, 0, -1, 0, logic_h_mm);
-
-			/**
-			 * @type {boolean}
-			 */
-			let changeTextDirection = true;
 
 
 			graphics.SaveGrState();
@@ -630,8 +632,8 @@
 			graphics.RestoreGrState();
 
 			topLevelShapesAndGroups.forEach(function(shapeOrGroup) {
-				drawShapeOrGroupRecursively(graphics, shapeOrGroup, baseMatrix, baseTextMatrix, changeTextDirection,
-					logic_h_mm);
+				drawShapeOrGroupRecursively(graphics, shapeOrGroup, baseMatrix, baseTextMatrix, isRecalculateTextY,
+					isFlipImages, logic_h_mm);
 			});
 		}
 
