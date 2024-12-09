@@ -1025,7 +1025,7 @@
 
 				oXfrm.setExtX(txtWidth_inch * g_dKoef_in_to_mm);
 				oXfrm.setExtY(txtHeight_inch * g_dKoef_in_to_mm);
-				oXfrm.setRot( shapeAngle + textAngle);
+				oXfrm.setRot( shapeAngle);
 			} else {
 				// create text block with shape sizes
 				let globalXmm = cShape.spPr.xfrm.offX;
@@ -1034,7 +1034,7 @@
 				oXfrm.setOffY(globalYmm);
 				oXfrm.setExtX(shapeWidth_inch * g_dKoef_in_to_mm);
 				oXfrm.setExtY(shapeHeight_inch * g_dKoef_in_to_mm);
-				oXfrm.setRot(shapeAngle + textAngle);
+				oXfrm.setRot(shapeAngle);
 			}
 			oSpPr.setXfrm(oXfrm);
 			oXfrm.setParent(oSpPr);
