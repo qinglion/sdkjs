@@ -2254,7 +2254,7 @@ CTextDrawer.prototype.GetFillFromTextPr = function(oTextPr)
 
     CTextDrawer.prototype.CreateUnfilFromRGB = function (r, g, b) {
         let oFill = AscFormat.CreateUnfilFromRGB(r, g, b);
-        oFill.check(this.m_oTheme, AscFormat.DEFAULT_COLOR_MAP);
+        oFill.check(this.m_oTheme, AscFormat.GetDefaultColorMap());
         return oFill;
     };
 
