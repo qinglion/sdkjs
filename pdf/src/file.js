@@ -808,6 +808,31 @@ void main() {\n\
         
         this.onUpdateOverlay();
     };
+    CFile.prototype.selectWholePage = function(pageIndex) {
+        let _numLine = -1;
+        let stream = this.getPageTextStream(pageIndex);
+        while (stream.pos < stream.size)
+        {
+            _numLine++;
+            stream.Skip(8);
+            if (stream.GetChar())
+                stream.Skip(8);
+            stream.Skip(12);
+            stream.Skip(12 * stream.GetLong() - 4);
+        }
+
+        let sel = this.Selection;
+        sel.Glyph1 = -2;
+        sel.Glyph2 = -1;
+        sel.IsSelection = true;
+        sel.Line1 = 0;
+        sel.Line2 = _numLine + 1;
+        sel.Page1 = pageIndex;
+        sel.Page2 = pageIndex;
+        sel.quads = [];
+        
+        this.onUpdateOverlay();
+    };
     CFile.prototype.selectAll = function() {
         this.removeSelection();
         let sel = this.Selection;
