@@ -2672,7 +2672,7 @@ var CPresentation = CPresentation || function(){};
 		}
 		
 		if (this.IsSelectionLocked(nChangesType, Additional)) {
-			return;
+			return false;
 		}
 		
 		this.StartAction(nDescription);

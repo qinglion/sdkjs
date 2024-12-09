@@ -157,6 +157,9 @@
             let oFill   = AscFormat.CreateSolidFillRGBA(oRGB.r, oRGB.g, oRGB.b, 255);
             this.setFill(oFill);
         }
+        else {
+            this.AddToRedraw();
+        }
     };
     CAnnotationBase.prototype.GetFillColor = function() {
         return this._fillColor;
@@ -252,6 +255,9 @@
 
             this.handleUpdateLn();
             this.handleUpdateFill();
+        }
+        else {
+            this.AddToRedraw();
         }
     };
     CAnnotationBase.prototype.GetOpacity = function() {
@@ -1064,6 +1070,9 @@
             let oLine   = this.spPr.ln;
             oLine.setFill(oFill);
             this.handleUpdateLn();
+        }
+        else {
+            this.AddToRedraw();
         }
     };
     CAnnotationBase.prototype.GetStrokeColor = function() {
