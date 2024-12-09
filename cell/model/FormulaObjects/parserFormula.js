@@ -666,7 +666,7 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 		return res;
 	};
 
-	cBaseType.prototype.toArray = function (putValue, checkOnError, fPrepareElem) {
+	cBaseType.prototype.toArray = function (putValue, checkOnError, fPrepareElem, bSaveBoolean) {
 		let arr = [];
 		if (this.getMatrix) {
 			arr = this.getMatrix();
@@ -690,7 +690,11 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 								}
 							}
 							if (putValue) {
-								arr[i][j] = arr[i][j].getValue();
+								if (bSaveBoolean && arr[i][j].type === cElementType.bool) {
+									arr[i][j] = arr[i][j].toBool();
+								} else {
+									arr[i][j] = arr[i][j].getValue();
+								}
 							}
 						}
 					}
