@@ -81,11 +81,16 @@ CChangesPDFDocumentAnnotsContent.prototype.Undo = function()
         for (let nIndex = 0, nCount = this.Items.length; nIndex < nCount; ++nIndex)
         {
             let oItem = this.Items[nIndex];
+            oItem.AddToRedraw();
             oDocument.annots.splice(oDocument.annots.indexOf(oItem), 1);
             oPage.annots.splice(this.Pos, 1);
-            oItem.SetParentPage(null);
-            oViewer.DrawingObjects.resetSelection();
 
+            oItem.parentPage = null;
+            oItem._page = -1;
+            oItem.selectStartPage = -1;
+
+            oViewer.DrawingObjects.resetSelection();
+            oItem.AddToRedraw();
             if (oItem.IsComment()) {
                 Asc.editor.sync_RemoveComment(oItem.GetId());
             }
@@ -95,11 +100,17 @@ CChangesPDFDocumentAnnotsContent.prototype.Undo = function()
         for (let nIndex = 0, nCount = this.Items.length; nIndex < nCount; ++nIndex)
         {
             let oItem = this.Items[nIndex];
+            oItem.AddToRedraw();
             oDocument.annots.push(oItem);
             oPage.annots.splice(this.Pos, 0, oItem);
-            oItem.SetParentPage(oPage);
+
+            oItem.parentPage = oPage;
+            oItem._page = oPage.GetIndex();
+            oItem.selectStartPage = oItem._page;
+
             oItem.SetDisplay(oDocument.IsAnnotsHidden() ? window["AscPDF"].Api.Objects.display["hidden"] : window["AscPDF"].Api.Objects.display["visible"]);
             oViewer.DrawingObjects.resetSelection();
+            oItem.AddToRedraw();
             if (oItem.IsComment()) {
                 Asc.editor.sendEvent("asc_onAddComment", oItem.GetId(), oItem.GetAscCommentData());
             }
@@ -127,7 +138,11 @@ CChangesPDFDocumentAnnotsContent.prototype.Redo = function()
             oItem.AddToRedraw();
             oDocument.annots.push(oItem);
             oPage.annots.splice(nPos, 0, oItem);
-            oItem.SetParentPage(oPage);
+
+            oItem.parentPage = oPage;
+            oItem._page = oPage.GetIndex();
+            oItem.selectStartPage = oItem._page;
+
             oItem.SetDisplay(oDocument.IsAnnotsHidden() ? window["AscPDF"].Api.Objects.display["hidden"] : window["AscPDF"].Api.Objects.display["visible"]);
             oViewer.DrawingObjects.resetSelection();
             oItem.AddToRedraw();
@@ -146,7 +161,11 @@ CChangesPDFDocumentAnnotsContent.prototype.Redo = function()
             oItem.AddToRedraw();
             oDocument.annots.splice(oDocument.annots.indexOf(oItem), 1);
             oPage.annots.splice(nPos, 1);
-            oItem.SetParentPage(null);
+
+            oItem.parentPage = null;
+            oItem._page = -1;
+            oItem.selectStartPage = -1;
+
             oItem.AddToRedraw();
             if (oItem.IsComment()) {
                 Asc.editor.sync_RemoveComment(oItem.GetId());
@@ -184,7 +203,10 @@ CChangesPDFDocumentAnnotsContent.prototype.private_InsertInArrayLoad = function(
         let annotsArray = oPage.annots;
         nPos = Math.min(nPos, annotsArray.length);
         annotsArray.splice(nPos, 0, oItem);
-        oItem.SetParentPage(oPage);
+
+        oItem.parentPage = oPage;
+        oItem._page = oPage.GetIndex();
+        oItem.selectStartPage = oItem._page;
 
         if (oItem.IsComment())
             editor.sendEvent("asc_onAddComment", oItem.GetId(), oItem.GetAscCommentData());
@@ -226,7 +248,10 @@ CChangesPDFDocumentAnnotsContent.prototype.private_RemoveInArrayLoad = function(
         let indexInPageAnnots = annotsArray.indexOf(oItem);
         if (indexInPageAnnots !== -1)
             annotsArray.splice(indexInPageAnnots, 1);
-        oItem.SetParentPage(null);
+
+        oItem.parentPage = null;
+        oItem._page = -1;
+        oItem.selectStartPage = -1;
 
         if (oItem.IsComment())
             editor.sync_RemoveComment(oItem.GetId());
@@ -303,18 +328,30 @@ CChangesPDFDocumentFieldsContent.prototype.Undo = function()
         // Undo addition by removing items
         for (let nIndex = 0, nCount = this.Items.length; nIndex < nCount; ++nIndex) {
             let oItem = this.Items[nIndex];
+            oItem.AddToRedraw();
             oDocument.widgets.splice(oDocument.widgets.indexOf(oItem), 1);
             oPage.fields.splice(this.Pos, 1);
-            oItem.SetParentPage(null);
+
+            oItem.parentPage = null;
+            oItem._page = -1;
+            oItem.selectStartPage = -1;
+
+            oItem.AddToRedraw();
         }
     }
     else {
         // Undo removal by adding items back
         for (let nIndex = 0, nCount = this.Items.length; nIndex < nCount; ++nIndex) {
             let oItem = this.Items[nIndex];
+            oItem.AddToRedraw();
             oPage.fields.splice(this.Pos, 0, oItem);
             oDocument.widgets.push(oItem);
-            oItem.SetParentPage(oPage);
+
+            oItem.parentPage = oPage;
+            oItem._page = oPage.GetIndex();
+            oItem.selectStartPage = oItem._page;
+
+            oItem.AddToRedraw();
         }
     }
 
@@ -338,7 +375,11 @@ CChangesPDFDocumentFieldsContent.prototype.Redo = function()
                 oItem.AddToRedraw();
                 oDocument.widgets.push(oItem);
                 oPage.fields.splice(nPos, 0, oItem);
-                oItem.SetParentPage(oPage);
+
+                oItem.parentPage = oPage;
+                oItem._page = oPage.GetIndex();
+                oItem.selectStartPage = oItem._page;
+                
                 oItem.AddToRedraw();
             }
             else {
@@ -358,7 +399,11 @@ CChangesPDFDocumentFieldsContent.prototype.Redo = function()
                 oItem.AddToRedraw();
                 oDocument.widgets.splice(oDocument.widgets.indexOf(oItem), 1);
                 oPage.fields.splice(nPos, 1);
-                oItem.SetParentPage(null);
+
+                oItem.parentPage = null;
+                oItem._page = -1;
+                oItem.selectStartPage = -1;
+
                 oItem.AddToRedraw();
             }
             else {
@@ -393,7 +438,11 @@ CChangesPDFDocumentFieldsContent.prototype.private_InsertInArrayLoad = function(
         let fieldsArray = oPage.fields;
         nPos = Math.min(nPos, fieldsArray.length);
         fieldsArray.splice(nPos, 0, oItem);
-        oItem.SetParentPage(oPage);
+
+        oItem.parentPage = oPage;
+        oItem._page = oPage.GetIndex();
+        oItem.selectStartPage = oItem._page;
+
         oItem.AddToRedraw();
     }
 
@@ -429,7 +478,9 @@ CChangesPDFDocumentFieldsContent.prototype.private_RemoveInArrayLoad = function(
         if (indexInFields !== -1)
             fieldsArray.splice(indexInFields, 1);
 
-        oItem.SetParentPage(null);
+        oItem.parentPage = null;
+        oItem._page = -1;
+        oItem.selectStartPage = -1;
     }
 
     oDocument.private_UpdateTargetForCollaboration(true);
@@ -502,7 +553,11 @@ CChangesPDFDocumentDrawingsContent.prototype.Undo = function()
             oItem.AddToRedraw();
             oDocument.drawings.splice(oDocument.drawings.indexOf(oItem), 1);
             oPage.drawings.splice(this.Pos, 1);
-            oItem.SetParentPage(null);
+
+            oItem.parentPage = oPage;
+            oItem._page = -1;
+            oItem.selectStartPage = -1;
+
             oViewer.DrawingObjects.resetSelection();
             oItem.AddToRedraw();
         }
@@ -514,7 +569,11 @@ CChangesPDFDocumentDrawingsContent.prototype.Undo = function()
             oItem.AddToRedraw();
             oDocument.drawings.push(oItem);
             oPage.drawings.splice(this.Pos, 0, oItem);
-            oItem.SetParentPage(oPage);
+
+            oItem.parentPage = oPage;
+            oItem._page = oPage.GetIndex();
+            oItem.selectStartPage = oItem._page;
+
             oViewer.DrawingObjects.resetSelection();
             oItem.AddToRedraw();
         }
@@ -541,7 +600,11 @@ CChangesPDFDocumentDrawingsContent.prototype.Redo = function()
             oItem.AddToRedraw();
             oDocument.drawings.push(oItem);
             oPage.drawings.splice(nPos, 0, oItem);
-            oItem.SetParentPage(oPage);
+
+            oItem.parentPage = oPage;
+            oItem._page = oPage.GetIndex();
+            oItem.selectStartPage = oItem._page;
+
             oViewer.DrawingObjects.resetSelection();
             oItem.AddToRedraw();
         }
@@ -556,7 +619,11 @@ CChangesPDFDocumentDrawingsContent.prototype.Redo = function()
             oItem.AddToRedraw();
             oDocument.drawings.splice(oDocument.drawings.indexOf(oItem), 1);
             oPage.drawings.splice(nPos, 1);
-            oItem.SetParentPage(null);
+
+            oItem.parentPage = null;
+            oItem._page = -1;
+            oItem.selectStartPage = -1;
+            
             oViewer.DrawingObjects.resetSelection();
             oItem.AddToRedraw();
         }
@@ -592,7 +659,9 @@ CChangesPDFDocumentDrawingsContent.prototype.private_InsertInArrayLoad = functio
         let drawingsArray = oPage.drawings;
         nPos = Math.min(nPos, drawingsArray.length);
         drawingsArray.splice(nPos, 0, oItem);
-        oItem.SetParentPage(oPage);
+        oItem.parentPage = oPage;
+        oItem._page = oPage.GetIndex();
+        oItem.selectStartPage = oItem._page;
 
         oViewer.DrawingObjects.resetSelection();
         oItem.AddToRedraw();
@@ -631,7 +700,9 @@ CChangesPDFDocumentDrawingsContent.prototype.private_RemoveInArrayLoad = functio
         if (indexInDrawingsArray !== -1)
             drawingsArray.splice(indexInDrawingsArray, 1);
 
-        oItem.SetParentPage(null);
+        oItem.parentPage = null;
+        oItem._page = -1;
+        oItem.selectStartPage = -1;
 
         oViewer.DrawingObjects.resetSelection();
     }

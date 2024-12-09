@@ -2476,8 +2476,7 @@ var CPresentation = CPresentation || function(){};
         oAnnot.SetDisplay(this.IsAnnotsHidden() ? window["AscPDF"].Api.Objects.display["hidden"] : window["AscPDF"].Api.Objects.display["visible"]);
         
         this.annots.push(oAnnot);
-        oPageInfo.AddAnnot(oAnnot, nPageNum);
-        
+        oPageInfo.AddAnnot(oAnnot);
         
         return oAnnot;
     };
