@@ -114,6 +114,15 @@ CBlockLevelSdt.prototype.GetContent = function()
 {
 	return this.Content;
 };
+/**
+ * Функция для выставления класса содержимого колонтитула (используется в совместке)
+ * @param {CDocumentContent} oDocumentContent
+ */
+CBlockLevelSdt.prototype.SetDocumentContent = function(oDocumentContent)
+{
+	this.Content = oDocumentContent;
+	oDocumentContent.SetParent(this);
+};
 CBlockLevelSdt.prototype.Is_Inline = function()
 {
 	return true;

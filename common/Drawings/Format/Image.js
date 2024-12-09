@@ -755,9 +755,6 @@
 			return true;
 		};
 
-		CImageShape.prototype.Load_LinkData = function (linkData) {
-		};
-
 		CImageShape.prototype.getTypeName = function () {
 			return AscCommon.translateManager.getValue("Picture");
 		};

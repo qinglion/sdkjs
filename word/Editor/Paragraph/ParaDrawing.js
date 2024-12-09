@@ -2464,9 +2464,6 @@ ParaDrawing.prototype.Read_FromBinary2 = function(Reader)
 	this.graphicObjects.addGraphicObject(this);
 	g_oTableId.Add(this, this.Id);
 };
-ParaDrawing.prototype.Load_LinkData = function()
-{
-};
 ParaDrawing.prototype.draw = function(graphics, PDSE)
 {
 	let iO = AscCommon.isRealObject;

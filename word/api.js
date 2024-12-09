@@ -12926,9 +12926,6 @@ background-repeat: no-repeat;\
 		{
 			AscCommon.CollaborativeEditing.m_aChanges = [];
 
-			// У новых элементов выставляем указатели на другие классы
-			AscCommon.CollaborativeEditing.Apply_LinkData();
-
 			// Делаем проверки корректности новых изменений
 			AscCommon.CollaborativeEditing.Check_MergeData();
 

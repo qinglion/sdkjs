@@ -6294,8 +6294,8 @@ CStyle.prototype =
 			this.TableWholeTable.Read_FromBinary(Reader);
 		}
     },
-
-    Load_LinkData : function(LinkData)
+	
+	Process_EndLoad : function(LinkData)
     {
         if (true === LinkData.StyleUpdate)
         {
@@ -8520,7 +8520,7 @@ CStyles.prototype =
 //-----------------------------------------------------------------------------------
 // Функции для совместного редактирования
 //-----------------------------------------------------------------------------------
-    Load_LinkData : function(LinkData)
+	Process_EndLoad : function(LinkData)
     {
         if (undefined !== LinkData.UpdateStyleId)
         {

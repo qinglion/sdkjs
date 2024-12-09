@@ -14161,8 +14161,6 @@ Paragraph.prototype.Read_FromBinary2 = function(Reader)
 		}
 	}
 
-	AscCommon.CollaborativeEditing.Add_NewObject(this);
-
 	this.bFromDocument = Reader.GetBool();
 	if (!this.bFromDocument)
 	{
@@ -14170,9 +14168,6 @@ Paragraph.prototype.Read_FromBinary2 = function(Reader)
 	}
 	
 	this.PageNum = 0;
-};
-Paragraph.prototype.Load_LinkData = function(LinkData)
-{
 };
 Paragraph.prototype.Get_SelectionState2 = function()
 {
