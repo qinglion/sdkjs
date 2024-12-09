@@ -5251,53 +5251,15 @@ var editor;
   };
 
     spreadsheet_api.prototype.asc_canMergeSelectedShapes = function (operation) {
-      const graphicController = Asc.editor.getGraphicController();
-      if (!graphicController) return false;
-
-      if (graphicController.checkSelectedObjectsProtection()) return false;
-
-      const selectedArray = graphicController.getSelectedArray();
-      if (selectedArray.length < 2) return false;
-
-      const hasInvalidGeometry = selectedArray.some(function (item) {
-        return !item.getGeometry || !AscCommon.isRealObject(item.getGeometry());
-      });
-      if (hasInvalidGeometry) return false;
-
-      const hasForbiddenTypesInSelection = selectedArray.some(function (item) {
-        return item instanceof AscFormat.CGraphicFrame || item instanceof AscFormat.CChartSpace;
-      });
-      if (hasForbiddenTypesInSelection) return false;
-
-      if (operation) {
-        const operations = ['unite', 'intersect', 'subtract', 'exclude', 'divide'];
-        if (operations.indexOf(operation) === -1) return false;
-
-        if (operation === 'intersect') {
-          const rects = selectedArray.map(item => item.getRectBounds());
-          const hasIntersection = rects.every(function (rectA, indexA) {
-            return rects.some(function (rectB, indexB) {
-              return indexA !== indexB
-                && rectA.l < rectB.r
-                && rectA.r > rectB.l
-                && rectA.t < rectB.b
-                && rectA.b > rectB.t;
-            });
-          });
-          if (!hasIntersection) return false;
-        }
-      }
-
-      return true;
+      return AscFormat.canMergeSelectedShapes(operation);
     };
     spreadsheet_api.prototype.asc_mergeSelectedShapes = function (operation) {
-      if (!this.asc_canMergeSelectedShapes(operation))
-        return;
-
-      controller.checkSelectedObjectsAndCallback(
-        AscFormat.mergeSelectedShapes, [operation], false,
-        AscDFH.historydescription_Presentation_MergeSelectedShapes
-      );
+      if (this.asc_canMergeSelectedShapes(operation)) {
+        controller.checkSelectedObjectsAndCallback(
+          AscFormat.mergeSelectedShapes, [operation], false,
+          AscDFH.historydescription_Presentation_MergeSelectedShapes
+        );
+      }
     };
 
   spreadsheet_api.prototype.asc_changeShapeType = function(value) {

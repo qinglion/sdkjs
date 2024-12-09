@@ -8834,54 +8834,17 @@ background-repeat: no-repeat;\
 	};
 
 	asc_docs_api.prototype.asc_canMergeSelectedShapes = function (operation) {
-		const graphicController = Asc.editor.getGraphicController();
-		if (!graphicController) return false;
-
-		if (this.WordControl.m_oLogicDocument.Document_Is_SelectionLocked(AscCommon.changestype_Drawing_Props))
-			return false;
-
-		const selectedArray = graphicController.getSelectedArray();
-		if (selectedArray.length < 2) return false;
-
-		const hasInvalidGeometry = selectedArray.some(function (item) {
-			return !item.getGeometry || !AscCommon.isRealObject(item.getGeometry());
-		});
-		if (hasInvalidGeometry) return false;
-
-		const hasForbiddenTypesInSelection = selectedArray.some(function (item) {
-			return item instanceof AscFormat.CGraphicFrame || item instanceof AscFormat.CChartSpace;
-		});
-		if (hasForbiddenTypesInSelection) return false;
-
-		if (operation) {
-			const operations = ['unite', 'intersect', 'subtract', 'exclude', 'divide'];
-			if (operations.indexOf(operation) === -1) return false;
-
-			if (operation === 'intersect') {
-				const rects = selectedArray.map(item => item.getRectBounds());
-				const hasIntersection = rects.every(function (rectA, indexA) {
-					return rects.some(function (rectB, indexB) {
-						return indexA !== indexB
-							&& rectA.l < rectB.r
-							&& rectA.r > rectB.l
-							&& rectA.t < rectB.b
-							&& rectA.b > rectB.t;
-					});
-				});
-				if (!hasIntersection) return false;
-			}
-		}
-
-		return true;
+		return AscFormat.canMergeSelectedShapes(operation);
 	};
 	asc_docs_api.prototype.asc_mergeSelectedShapes = function (operation) {
-		if (!this.asc_canMergeSelectedShapes(operation))
-			return;
-
-		// Should rename to "AscDFH.historydescription_Common_ShapesMerge"?
-		this.WordControl.m_oLogicDocument.StartAction(AscDFH.historydescription_Presentation_ShapesMerge);
-		AscFormat.mergeSelectedShapes(operation);
-		this.WordControl.m_oLogicDocument.FinalizeAction();
+		const isSelectionLocked = this.WordControl.m_oLogicDocument.Document_Is_SelectionLocked(AscCommon.changestype_Drawing_Props);
+		const canMerge = this.asc_canMergeSelectedShapes(operation);
+		if (!isSelectionLocked && canMerge) {
+			// Should rename to "AscDFH.historydescription_Common_ShapesMerge"?
+			this.WordControl.m_oLogicDocument.StartAction(AscDFH.historydescription_Presentation_ShapesMerge);
+			AscFormat.mergeSelectedShapes(operation);
+			this.WordControl.m_oLogicDocument.FinalizeAction();
+		}
 	};
 
 	asc_docs_api.prototype.CanChangeWrapPolygon = function()

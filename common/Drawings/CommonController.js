@@ -11313,13 +11313,54 @@
 		}
 
 		// Shapes merge
-		const mergeSelectedShapes = function (operation) {
+		const canMergeSelectedShapes = function (operation) {
 			const graphicController = Asc.editor.getGraphicController();
-			if (!graphicController) return;
+			if (!graphicController) return false;
 
-			const selectedShapes = graphicController.getSelectedArray();
-			if (selectedShapes.length < 2) return;
+			const selectedArray = graphicController.getSelectedArray();
+			if (selectedArray.length < 2) return false;
 
+			const hasLocked = selectedArray.some(function(item) {
+				return item.Lock &&
+					item.Lock.Type !== AscCommon.c_oAscLockTypes.kLockTypeNone &&
+					item.Lock.Type !== AscCommon.c_oAscLockTypes.kLockTypeMine;
+			});
+			if (hasLocked) return false;
+
+			const hasInvalidGeometry = selectedArray.some(function (item) {
+				return !item.getGeometry || !AscCommon.isRealObject(item.getGeometry());
+			});
+			if (hasInvalidGeometry) return false;
+
+			const hasForbiddenTypesInSelection = selectedArray.some(function (item) {
+				return item instanceof AscFormat.CGraphicFrame || item instanceof AscFormat.CChartSpace;
+			});
+			if (hasForbiddenTypesInSelection) return false;
+
+			if (operation) {
+				const operations = ['unite', 'intersect', 'subtract', 'exclude', 'divide'];
+				if (operations.indexOf(operation) === -1) return false;
+
+				if (operation === 'intersect') {
+					const rects = selectedArray.map(item => item.getRectBounds());
+					const hasIntersection = rects.every(function (rectA, indexA) {
+						return rects.some(function (rectB, indexB) {
+							return indexA !== indexB && rectA.isIntersectOther(rectB);
+						});
+					});
+					if (!hasIntersection) return false;
+				}
+			}
+
+			return true;
+		};
+
+		const mergeSelectedShapes = function (operation) {
+			const operations = ['unite', 'intersect', 'subtract', 'exclude', 'divide'];
+			if (operations.indexOf(operation) === -1) return false;
+			if (!canMergeSelectedShapes(operation)) return false;
+
+			const selectedShapes = Asc.editor.getGraphicController().getSelectedArray();
 			const compoundPathLst = selectedShapes.map(function (shape) {
 				const shapeGeometry = shape.getGeometry();
 				const pathLst = shapeGeometry.pathLst;
@@ -11732,5 +11773,6 @@
 		window["AscCommon"].getArrayElementsDiff = getArrayElementsDiff;
 		window["AscCommon"].GetSelectedDrawings = GetSelectedDrawings;
 
+		window['AscFormat'].canMergeSelectedShapes = canMergeSelectedShapes;
 		window['AscFormat'].mergeSelectedShapes = mergeSelectedShapes;
 	})(window);
