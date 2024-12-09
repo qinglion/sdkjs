@@ -766,6 +766,10 @@ AscCommonWord.CPresentationField.prototype.private_GetString = function()
 			//todo display units
 			val = this.vsdxFieldValue.getValueInMM();
 		}
+		else if ((this.vsdxFieldValue.u === "STR" || !this.vsdxFieldValue.u) && (sFieldType === "INH" || !sFieldType)) {
+			// handle simple values. consider is function is INH value is calculated correctly already
+			val = this.vsdxFieldValue.v;
+		}
 		else
 		{
 			return;
