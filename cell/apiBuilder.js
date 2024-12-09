@@ -11412,16 +11412,37 @@
 			autoFilterOptions.asc_setCellId(cellId);
 		};
 
+		let toAscColor = function (_color) {
+			let res;
+			if (_color instanceof AscCommonExcel.RgbColor) {
+				res = new Asc.asc_CColor(_color.getR(), _color.getB(), _color.getG());
+			} else if (_color - 0) {
+				_color = _color - 0;
+				if (!isNaN(_color)) {
+					if (_color === 0) {
+						res = new Asc.asc_CColor(0,0,0);
+					} else {
+						res = new Asc.asc_CColor(1,1,1);
+					}
+				} else {
+					res = new Asc.asc_CColor(1,1,1);
+				}
+			}
+			return res;
+		};
+
 		let createColorFilter = function (color, isCellColor) {
+
+			let _colorFilter = new Asc.ColorFilter();
+			_colorFilter.asc_setCellColor(isCellColor ? null : false);
+			_colorFilter.asc_setCColor(color/*(isCellColor && color == 'transparent' || !isCellColor && color == '#000000') ? null : Common.Utils.ThemeColor.getRgbColor(color)*/);
+
 			autoFilterOptions = new Asc.AutoFiltersOptions();
-
-			let filterObj = autoFilterOptions.asc_getFilterObj();
-			filterObj.asc_setFilter(new Asc.ColorFilter());
-			filterObj.asc_setType(Asc.c_oAscAutoFilterTypes.ColorFilter);
-
-			let colorFilter = filterObj.asc_getFilter();
-			colorFilter.asc_setCellColor(isCellColor ? null : false);
-			colorFilter.asc_setCColor((isCellColor && color == 'transparent' || !isCellColor && color == '#000000') ? null : Common.Utils.ThemeColor.getRgbColor(color));
+			let oFilter = new Asc.AutoFilterObj();
+			oFilter.asc_setFilter(_colorFilter);
+			oFilter.asc_setType(Asc.c_oAscAutoFilterTypes.ColorFilter);
+			autoFilterOptions.asc_setFilterObj(oFilter);
+			autoFilterOptions.asc_setCellId(cellId);
 		};
 
 		let toDynamicConst = function (val) {
@@ -11589,10 +11610,10 @@
 				case "xlFilterCellColor": {
 					let _color;
 					if (Criteria1 instanceof ApiColor) {
-						_color = ApiColor.GetRgb();
+						_color = Criteria1.color;
 					}
 
-					createColorFilter(_color, "xlFilterCellColor" === Operator);
+					createColorFilter(toAscColor(_color), "xlFilterCellColor" === Operator);
 					break;
 				}
 				case "xlFilterDynamic": {
