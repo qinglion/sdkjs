@@ -3707,7 +3707,12 @@
 
 		return result;
 	};
-
+	WorksheetView.prototype.getPrintOleRangePosition = function (oRange) {
+		const oRangeSizes = this.getRangePosition(oRange);
+		oRangeSizes.width += 3;
+		oRangeSizes.height += 3;
+		return oRangeSizes;
+	};
 	WorksheetView.prototype.drawForPrint = function (drawingCtx, printPagesData, indexPrintPage, pages) {
 		let t = this;
 		let countPrintPages = pages && pages.length;
@@ -5415,9 +5420,6 @@
 			.setLineWidth(1).beginPath();
 
 		let i, d, l;
-		if (ctx.isPreviewOleObjectContext) {
-			ctx.lineVerPrevPx(1, y1, y2);
-		}
 		if (needDrawFirstVLine) {
 			ctx.lineVerPrevPx(x1, y1, y2);
 		}
@@ -5427,9 +5429,6 @@
 			if (0 < l) {
 				ctx.lineVerPrevPx(d, y1, y2);
 			}
-		}
-		if (ctx.isPreviewOleObjectContext) {
-			ctx.lineHorPrevPx(x1, 1, x2);
 		}
 		if (needDrawFirstHLine) {
 			ctx.lineHorPrevPx(x1, y1, x2);

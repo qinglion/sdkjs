@@ -4620,7 +4620,7 @@ var editor;
         } else {
           const oOleSize = oThis.wbModel.getOleSize().getLast();
           if (oOleSize) {
-            oRangeSizes = oWorksheet.getRangePosition(oOleSize);
+            oRangeSizes = oWorksheet.getPrintOleRangePosition(oOleSize);
           }
         }
         if (oRangeSizes.width && oRangeSizes.height) {

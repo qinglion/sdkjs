@@ -3804,26 +3804,28 @@
 		}
 	};
 
-  WorkbookView.prototype.getSimulatePageForOleObject = function (sizes, oRange) {
+  WorkbookView.prototype.getSimulatePageForOleObject = function (rangeSizes, range) {
     var page = new AscCommonExcel.CPagePrint();
     page.indexWorksheet = 0;
-    page.pageClipRectHeight = sizes.height;
-    page.pageClipRectWidth = sizes.width;
-    page.pageGridLines = true;
-    page.pageHeight = sizes.height;
+    page.pageClipRectHeight = rangeSizes.height;
+    page.pageClipRectWidth = rangeSizes.width;
+	  page.topFieldInPx = 2;
+	  page.leftFieldInPx = 2;
 
-    page.pageRange =  oRange.clone();
-    page.pageWidth = sizes.width;
+    page.pageGridLines = true;
+    page.pageHeight = rangeSizes.height;
+	  page.pageWidth = rangeSizes.width;
+
+    page.pageRange =  range.clone();
     page.scale = 1;
     return page;
   };
 
   WorkbookView.prototype.printForOleObject = function (ws, oRange) {
-    var sizes = ws.getRangePosition(oRange);
+    var sizes = ws.getPrintOleRangePosition(oRange);
     var page = this.getSimulatePageForOleObject(sizes, oRange);
     var previewOleObjectContext = AscCommonExcel.getContext(sizes.width, sizes.height, this);
     previewOleObjectContext.DocumentRenderer = AscCommonExcel.getGraphics(previewOleObjectContext);
-    previewOleObjectContext.isPreviewOleObjectContext = true;
 		previewOleObjectContext.isNotDrawBackground = !this.Api.isFromSheetEditor;
     ws.drawForPrint(previewOleObjectContext, page, 0, 1);
     return previewOleObjectContext;
