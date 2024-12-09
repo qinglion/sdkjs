@@ -649,7 +649,7 @@
 		let oDoc 	= this.getPDFDoc();
 
 		let oThumbnails = oViewer.thumbnails;
-		aPages = aPages != undefined ? aPages : oThumbnails.getSelectedPages();
+		aPages = aPages != undefined ? aPages : oThumbnails.getSelectedPages().slice();
 
 		oDoc.DoAction(function() {
 			oDoc.RemovePages(aPages);
