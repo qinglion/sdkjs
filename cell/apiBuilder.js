@@ -11210,6 +11210,53 @@
 	 */
 	ApiRange.prototype.SetAutoFilter = function (Field, Criteria1, Operator, Criteria2, VisibleDropDown) {
 
+
+		// 1) add/remove autofilter
+		// (function()
+		// {
+		// 	let range = Api.ActiveSheet.GetRange("A1");
+		// 	range.SetAutoFilter();
+		// })();
+		//
+		// 2) add(if not added) + apply vlues filter
+		//
+		// (function()
+		// {
+		// 	let test = Api.ActiveSheet.GetRange("A1");
+		// 	test.SetAutoFilter(1, [2,5], "xlFilterValues");
+		// })();
+		//
+		// 3) custom filter xlOr/xlAnd
+		// (function()
+		// {
+		// 	let test = Api.ActiveSheet.GetRange("A1");
+		// 	test.SetAutoFilter(1, ">1", "xlOr","=1");
+		// })();
+		// 4) top filter
+		// (function()
+		// {
+		// 	let test = Api.ActiveSheet.GetRange("A1");
+		// 	test.SetAutoFilter(1, "10", "xlTop10Items");
+		// })();
+		// 5) color filter
+		// (function()
+		// {
+		// 	let test = Api.ActiveSheet.GetRange("A1");
+		// 	test.SetAutoFilter(1, Api.CreateColorFromRGB(255,255,0), "xlFilterCellColor");
+		// })();
+		// (function()
+		// {
+		// 	let test = Api.ActiveSheet.GetRange("A1");
+		// 	test.SetAutoFilter(1, Api.CreateColorFromRGB(255,0,0), "xlFilterFontColor");
+		// })();
+		// 6) dynamic filter
+		// (function()
+		// {
+		// 	let test = Api.ActiveSheet.GetRange("A1");
+		// 	test.SetAutoFilter(1, "xlFilterAboveAverage", "xlFilterDynamic");
+		// })();
+		
+
 		if (Criteria2 && Array.isArray(Criteria2)) {
 			private_MakeError('Error! Criteria2 must be string!');
 			return;
@@ -11415,7 +11462,7 @@
 		let toAscColor = function (_color) {
 			let res;
 			if (_color instanceof AscCommonExcel.RgbColor) {
-				res = new Asc.asc_CColor(_color.getR(), _color.getB(), _color.getG());
+				res = new Asc.asc_CColor(_color.getR(), _color.getG(), _color.getB());
 			} else if (_color - 0) {
 				_color = _color - 0;
 				if (!isNaN(_color)) {
@@ -11590,10 +11637,15 @@
 		};
 
 		let createDynamicFilter = function (val) {
-			let _dynamicFilter = new AscCommonExcel.DynamicFilter();
-			autoFilterOptions = new window["Asc"].AutoFiltersOptions();
+			let _dynamicFilter = new Asc.DynamicFilter();
 			_dynamicFilter.asc_setType(val);
-			autoFilterOptions.asc_setFilter(_dynamicFilter);
+
+			autoFilterOptions = new Asc.AutoFiltersOptions();
+			let oFilter = new Asc.AutoFilterObj();
+			oFilter.asc_setFilter(_dynamicFilter);
+			oFilter.asc_setType(Asc.c_oAscAutoFilterTypes.DynamicFilter);
+			autoFilterOptions.asc_setFilterObj(oFilter);
+			autoFilterOptions.asc_setCellId(cellId);
 		};
 
 		//apply filtering
