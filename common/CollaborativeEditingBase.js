@@ -182,7 +182,6 @@
         this.m_aNeedUnlock2 = []; // Массив со списком залоченных объектов(которые были залочены на данном клиенте)
         this.m_aNeedLock    = []; // Массив со списком залоченных объектов(которые были залочены, но еще не были добавлены на данном клиенте)
 
-        this.m_aLinkData    = []; // Массив, указателей, которые нам надо выставить при загрузке чужих изменений
         this.m_aEndActions  = []; // Массив действий, которые надо выполнить после принятия чужих изменений
 
 
@@ -265,7 +264,6 @@
         this.m_aNeedUnlock = [];
         this.m_aNeedUnlock2 = [];
         this.m_aNeedLock = [];
-        this.m_aLinkData = [];
         this.m_aEndActions = [];
         this.m_aCheckLocks = [];
         this.m_aCheckLocksInstance = [];
@@ -412,9 +410,6 @@
         this.private_SaveRecalcChangeIndex(false);
         this.private_ClearChanges();
 
-        // У новых элементов выставляем указатели на другие классы
-        this.Apply_LinkData();
-
         // Делаем проверки корректности новых изменений
         this.Check_MergeData();
 
@@ -521,9 +516,6 @@
 
 		this.private_SaveRecalcChangeIndex(false);
 		this.private_ClearChanges();
-
-		// У новых элементов выставляем указатели на другие классы
-		this.Apply_LinkData();
 
 		// Делаем проверки корректности новых изменений
 		this.Check_MergeData();
@@ -657,28 +649,6 @@
 			this.m_fEndLoadCallBack = null;
 		}
 	};
-    //-----------------------------------------------------------------------------------
-    // Функции для работы с ссылками, у новых объектов
-    //-----------------------------------------------------------------------------------
-    CCollaborativeEditingBase.prototype.Clear_LinkData = function()
-    {
-        this.m_aLinkData.length = 0;
-    };
-    CCollaborativeEditingBase.prototype.Add_LinkData = function(Class, LinkData)
-    {
-        this.m_aLinkData.push( { Class : Class, LinkData : LinkData } );
-    };
-    CCollaborativeEditingBase.prototype.Apply_LinkData = function()
-    {
-        var Count = this.m_aLinkData.length;
-        for ( var Index = 0; Index < Count; Index++ )
-        {
-            var Item = this.m_aLinkData[Index];
-            Item.Class.Load_LinkData( Item.LinkData );
-        }
-
-        this.Clear_LinkData();
-    };
     //-----------------------------------------------------------------------------------
     // Функции для проверки корректности новых изменений
     //-----------------------------------------------------------------------------------
