@@ -4794,7 +4794,7 @@ var g_oFontProperties = {
     };
     CellXfs.prototype.getAlign2 = function () {
         // ToDo check this! Rename to getAlign
-        return this.align || g_oDefaultFormat.Align;
+        return this.align || g_oDefaultFormat.AlignAbs;
     };
     CellXfs.prototype.setAlign = function (val) {
         this.align = val;
@@ -5664,7 +5664,7 @@ StyleManager.prototype =
 	_initXfAlign: function(xfs){
 		xfs = xfs.clone();
 		if(null == xfs.align){
-			xfs.align = g_oDefaultFormat.Align;
+			xfs.align = g_oDefaultFormat.AlignAbs;
 		}
 		xfs.align = xfs.align.clone();
 		return xfs;
@@ -5724,7 +5724,8 @@ StyleManager.prototype =
 	_setAlignProperty : function(oItemWithXfs, val, prop, getFunc, setFunc)
 	{
 		var xfs = oItemWithXfs.xfs;
-		var oRes = {newVal: val, oldVal: xfs && xfs.align ? getFunc.call(xfs.align): getFunc.call(g_oDefaultFormat.Align)};
+		let oldAlign = xfs ? (xfs.align || g_oDefaultFormat.AlignAbs) : g_oDefaultFormat.Align;
+		var oRes = {newVal: val, oldVal: getFunc.call(oldAlign)};
 		xfs = this._initXf(oItemWithXfs);
 		var xfsOperationCache = xfs;
 		var newXf = xfs.getOperationCache(prop, val);
@@ -9014,6 +9015,10 @@ function RangeDataManagerElem(bbox, data)
 			let startCol = this.getTableNameColumnByIndex(handleSelectionRange.c1 - this.Ref.c1);
 			let endCol = this.getTableNameColumnByIndex(handleSelectionRange.c2 - this.Ref.c1);
 
+			/* add special character escaping for string inside the table (escaping with single quote) */
+			startCol = parserHelp.escapeTableCharacters(startCol, true);
+			endCol = parserHelp.escapeTableCharacters(endCol, true);
+
 			if (this.Ref.isEqual(handleSelectionRange)) {
 				//Table1[#All]
 				return this.DisplayName + "[" + AscCommon.cStrucTableReservedWords.all + "]";
@@ -11149,6 +11154,9 @@ function RangeDataManagerElem(bbox, data)
 		} else {
 			var isNumberFilter = this.Operator === c_oAscCustomAutoFilter.isGreaterThan || this.Operator === c_oAscCustomAutoFilter.isGreaterThanOrEqualTo || this.Operator === c_oAscCustomAutoFilter.isLessThan || this.Operator === c_oAscCustomAutoFilter.isLessThanOrEqualTo;
 
+			if (isLabelFilter && !isNumberFilter) {
+				isDigitValue = false;
+			}
 			if (c_oAscCustomAutoFilter.equals === this.Operator || c_oAscCustomAutoFilter.doesNotEqual === this.Operator) {
 				filterVal = isNaN(this.Val) ? this.Val.toLowerCase() : this.Val;
 			} else if (isNumberFilter) {
@@ -14585,16 +14593,21 @@ function RangeDataManagerElem(bbox, data)
 		var trueZoom = kF * AscCommon.AscBrowser.retinaPixelRatio;
 		var _height = Math.floor(height * kF);
 		var _width = Math.floor(width * kF);
+		var borderWidth = 1;
 		if (trueZoom !== this.pageZoom) {
 			this.pageZoom = trueZoom;
-			this.ctx.canvas.style.height = _height + 2 + "px";
-			this.ctx.canvas.style.width = _width + 2 + "px";
+			this.ctx.canvas.style.height = _height + "px";
+			this.ctx.canvas.style.width = _width + borderWidth * 2 + "px";
 			this.ctx.canvas.height = AscCommon.AscBrowser.convertToRetinaValue(_height, true);
 			this.ctx.canvas.width = AscCommon.AscBrowser.convertToRetinaValue(_width, true);
 			isChangeForZoom = true;
 		}
-		this.ctx.canvas.style.marginLeft = canvasWidth/2 - _width / 2 + "px";
-		this.ctx.canvas.style.marginTop = canvasHeight/2 - _height / 2 + canvasTopPadding * kF + "px";
+		this.ctx.canvas.style.marginLeft = Math.floor(canvasWidth/2 - _width / 2) + "px";
+		let topMargin = Math.floor(canvasHeight/2 - _height / 2 + canvasTopPadding * kF);
+		if (topMargin + _height > canvasHeight) {
+			topMargin = canvasHeight - _height;
+		}
+		this.ctx.canvas.style.marginTop = topMargin + "px";
 
 
 		kF = trueZoom;
@@ -15013,11 +15026,24 @@ function RangeDataManagerElem(bbox, data)
 		}
 		return res;
 	};
+
+	ExternalReference.prototype.removeSheetByName = function (sheetName) {
+		if (sheetName != null) {
+			let index = this.getSheetByName(sheetName);
+			if (index != null) {
+				this.SheetNames.splice(index, 1);
+				this.SheetDataSet.splice(index, 1);
+				delete this.worksheets[sheetName];
+			}
+		}
+	};
 	
-	ExternalReference.prototype.updateData = function (arr, oPortalData) {
+	ExternalReference.prototype.updateData = function (arr, oPortalData, noData) {
 		var t = this;
 		var isChanged = false;
 		var cloneER = this.clone();
+		
+		let existedWsArray = [];
 		for (var i = 0; i < arr.length; i++) {
 			//если есть this.worksheets, если нет - проверить и обработать
 			var sheetName = arr[i].sName;
@@ -15055,19 +15081,28 @@ function RangeDataManagerElem(bbox, data)
 				if (index != null) {
 					var externalSheetDataSet = this.SheetDataSet[index];
 					if (externalSheetDataSet) {
-						if (externalSheetDataSet.updateFromSheet(t.worksheets[sheetName])) {
+						if (externalSheetDataSet.updateFromSheet(t.worksheets[sheetName], noData)) {
 							isChanged = true;
 						}
 					}
 					let externalDefName = this.getDefinedNamesBySheetIndex(index);
 					if (externalDefName) {
 						for (let i = 0; i < externalDefName.length; i++) {
-							if (externalDefName[i].updateFromSheet(t.worksheets[sheetName])) {
+							if (externalDefName[i].updateFromSheet(t.worksheets[sheetName], noData)) {
 								isChanged = true;
 							}
 						}
 					}
 				}
+			}
+			existedWsArray.push(sheetName);
+		}
+
+		// delete all non-existent sheets in ExternalReference
+		for (let wsName in this.worksheets) {
+			if (!existedWsArray.includes(wsName)) {
+				// throw an error if we referenced to one of the deleted sheets?
+				this.removeSheetByName(wsName);
 			}
 		}
 
@@ -15404,7 +15439,7 @@ function RangeDataManagerElem(bbox, data)
 			this.referenceData = {};
 		}
 		this.referenceData["instanceId"] = portalName;
-		this.referenceData["fileKey"] = fileId;
+		this.referenceData["fileKey"] = fileId + "";
 	};
 
 	ExternalReference.prototype.setId = function (id) {
@@ -15451,6 +15486,27 @@ function RangeDataManagerElem(bbox, data)
 		return sPath;
 	};
 
+	ExternalReference.prototype.addDataSetFrom = function (eR) {
+		if (!eR.SheetDataSet) {
+			return;
+		}
+		for (let i = 0; i < eR.SheetDataSet.length; i++) {
+			let _sheetId = eR.SheetDataSet[i].SheetId;
+			let sheetName = eR.SheetNames[_sheetId];
+			if (sheetName) {
+				let sheetDataSet = this.getSheetDataSetByName(sheetName);
+				if (sheetDataSet) {
+					//add new from eR to this
+					sheetDataSet.addFrom(eR.SheetDataSet[i])
+				} else {
+					//add new structure
+
+				}
+			}
+		}
+	};
+
+
 
 	function asc_CExternalReference() {
 		this.type = null;
@@ -15475,7 +15531,9 @@ function RangeDataManagerElem(bbox, data)
 	asc_CExternalReference.prototype.asc_getSource = function () {
 		let id = this.externalReference && this.externalReference.Id;
 		if (id) {
-			let lastIndex =0 === id.indexOf("file:///") ? id.lastIndexOf('\\') : id.lastIndexOf('/');
+			let diskRegex = /^[a-zA-Z]\:/gi; 
+			let lastIndex = 0 === id.indexOf("file:///") || id.match(diskRegex) ? id.lastIndexOf('\\') : id.lastIndexOf('/');
+
 			if (lastIndex === -1) {
 				lastIndex = id.lastIndexOf('/\/');
 			}
@@ -15586,7 +15644,7 @@ function RangeDataManagerElem(bbox, data)
 		}
 	};
 
-	ExternalSheetDataSet.prototype.updateFromSheet = function(sheet) {
+	ExternalSheetDataSet.prototype.updateFromSheet = function(sheet, noData) {
 		var isChanged = false;
 		if (sheet) {
 			var t = this;
@@ -15605,13 +15663,19 @@ function RangeDataManagerElem(bbox, data)
 					var range = sheet.getRange2(externalCell.Ref);
 					range._foreach(function (cell) {
 
-						let changedCell = externalCell.initFromCell(cell, true);
+						let changedCell = externalCell.initFromCell(cell, true, noData);
 						if (!isChanged) {
 							isChanged = changedCell;
 						}
 
 						var api_sheet = Asc['editor'];
 						var wb = api_sheet.wbModel;
+						
+						/* if we haven't received data from an external source, put #REF error for all cells */
+						if (noData) {
+							cell._setValue("#REF!");
+						}
+
 						wb.dependencyFormulas.addToChangedCell(cell);
 					});
 				}
@@ -15657,6 +15721,18 @@ function RangeDataManagerElem(bbox, data)
 			row = new ExternalRow();
 			row.R = index;
 			this.Row.push(row);
+		}
+
+		return row;
+	};
+
+	ExternalSheetDataSet.prototype.addFrom = function(oSheetDataSet) {
+		var row = null;
+
+		for (var i = 0; i < oSheetDataSet.Row.length; i++) {
+			if (!this.Row[i]) {
+				this.Row[i] = oSheetDataSet.Row[i].clone();
+			}
 		}
 
 		return row;
@@ -15785,7 +15861,7 @@ function RangeDataManagerElem(bbox, data)
 
 		return newObj;
 	};
-	ExternalCell.prototype.initFromCell = function(cell, bUpdate) {
+	ExternalCell.prototype.initFromCell = function(cell, bUpdate, noData) {
 		var isChanged = false;
 		if (cell) {
 			var t = this;
@@ -15795,7 +15871,7 @@ function RangeDataManagerElem(bbox, data)
 				});
 			}
 
-			var newVal = cell.getValue();
+			let newVal = noData ? "#REF" : cell.getValue();
 			if (this.CellValue !== newVal) {
 				isChanged = true;
 				this.CellValue = newVal;
@@ -15814,6 +15890,11 @@ function RangeDataManagerElem(bbox, data)
 					cellValueType = Asc.ECellTypeType.celltypeError;
 					break;
 			}
+
+			if (noData) {
+				cellValueType = Asc.ECellTypeType.celltypeError;
+			}
+
 			if (this.CellType !== cellValueType) {
 				this.CellType = cellValueType;
 				isChanged = true;
@@ -16273,6 +16354,7 @@ function RangeDataManagerElem(bbox, data)
 		return isChanged ? this : null;
 	};
 
+
 	/**
 	 * Class representing a Series settings for fills data of context menu and dialog window - "Series"
 	 * @property {c_oAscSeriesInType} seriesIn - Series in. Contains: Rows, Columns
@@ -16458,9 +16540,9 @@ function RangeDataManagerElem(bbox, data)
 							seriesSettings.asc_setType(Asc.c_oAscSeriesType.date);
 
 							contextMenuAllowedProps[Asc.c_oAscFillType.fillDays] = true;
-							//contextMenuAllowedProps[Asc.c_oAscFillType.fillWeekdays] = true;
-							//contextMenuAllowedProps[Asc.c_oAscFillType.fillMonths] = true;
-							//contextMenuAllowedProps[Asc.c_oAscFillType.fillYears] = true;
+							contextMenuAllowedProps[Asc.c_oAscFillType.fillWeekdays] = true;
+							contextMenuAllowedProps[Asc.c_oAscFillType.fillMonths] = true;
+							contextMenuAllowedProps[Asc.c_oAscFillType.fillYears] = true;
 						}
 					}
 				}
@@ -16552,9 +16634,9 @@ function RangeDataManagerElem(bbox, data)
 		contextMenuAllowedProps[Asc.c_oAscFillType.fillFormattingOnly] = null;
 		contextMenuAllowedProps[Asc.c_oAscFillType.fillWithoutFormatting] = null;
 		contextMenuAllowedProps[Asc.c_oAscFillType.fillDays] = false;
-		contextMenuAllowedProps[Asc.c_oAscFillType.fillWeekdays] = null;
-		contextMenuAllowedProps[Asc.c_oAscFillType.fillMonths] = null;
-		contextMenuAllowedProps[Asc.c_oAscFillType.fillYears] = null;
+		contextMenuAllowedProps[Asc.c_oAscFillType.fillWeekdays] = false;
+		contextMenuAllowedProps[Asc.c_oAscFillType.fillMonths] = false;
+		contextMenuAllowedProps[Asc.c_oAscFillType.fillYears] = false;
 		contextMenuAllowedProps[Asc.c_oAscFillType.linearTrend] = false;
 		contextMenuAllowedProps[Asc.c_oAscFillType.growthTrend] = false;
 		contextMenuAllowedProps[Asc.c_oAscFillType.flashFill] = null;
@@ -17354,6 +17436,115 @@ function RangeDataManagerElem(bbox, data)
 	};
 
 	/**
+	 * This element defines a collection of workbook properties
+	 * @constructor
+	 */
+	function CWorkbookPr() {
+		this.Date1904 = null;
+		this.DateCompatibility = null;
+		this.HidePivotFieldList = null;
+		this.ShowPivotChartFilter = null;
+		this.UpdateLinks = null;
+	}
+	/**
+	 * Method clones calculation options
+	 * @memberof CWorkbookPr
+	 * @returns {CWorkbookPr}
+	 */
+	CWorkbookPr.prototype.clone = function () {
+		let res = new CWorkbookPr();
+
+		res.Date1904 = this.Date1904;
+		res.DateCompatibility = this.DateCompatibility;
+		res.HidePivotFieldList = this.HidePivotFieldList;
+		res.ShowPivotChartFilter = this.ShowPivotChartFilter;
+		res.UpdateLinks = this.UpdateLinks;
+
+		return res;
+	};
+	/**
+	 * Method returns "1904" flag
+	 * @memberof CWorkbookPr
+	 * @returns {boolean}
+	 */
+	CWorkbookPr.prototype.getDate1904 = function () {
+		return this.Date1904;
+	};
+	/**
+	 * Method set "1904" flag
+	 * @memberof CWorkbookPr
+	 * @returns {boolean}
+	 */
+	CWorkbookPr.prototype.setDate1904 = function (val) {
+		this.Date1904 = val;
+	};
+	/**
+	 * Method returns "DateCompatibility" flag
+	 * @memberof CWorkbookPr
+	 * @returns {boolean}
+	 */
+	CWorkbookPr.prototype.getDateCompatibility = function () {
+		return this.DateCompatibility;
+	};
+	/**
+	 * Method set "DateCompatibility" flag
+	 * @memberof CWorkbookPr
+	 * @returns {boolean}
+	 */
+	CWorkbookPr.prototype.setDateCompatibility = function (val) {
+		this.DateCompatibility = val;
+	};
+	/**
+	 * Method returns "HidePivotFieldList" flag
+	 * @memberof CWorkbookPr
+	 * @returns {boolean}
+	 */
+	CWorkbookPr.prototype.getHidePivotFieldList = function () {
+		return this.HidePivotFieldList;
+	};
+	/**
+	 * Method set "HidePivotFieldList" flag
+	 * @memberof CWorkbookPr
+	 * @returns {boolean}
+	 */
+	CWorkbookPr.prototype.setHidePivotFieldList = function (val) {
+		this.HidePivotFieldList = val;
+	};
+	/**
+	 * Method returns "ShowPivotChartFilter" flag
+	 * @memberof CWorkbookPr
+	 * @returns {boolean}
+	 */
+	CWorkbookPr.prototype.getShowPivotChartFilter = function () {
+		return this.ShowPivotChartFilter;
+	};
+	/**
+	 * Method set "ShowPivotChartFilter" flag
+	 * @memberof CWorkbookPr
+	 * @returns {boolean}
+	 */
+	CWorkbookPr.prototype.setShowPivotChartFilter = function (val) {
+		this.ShowPivotChartFilter = val;
+	};
+	/**
+	 * Method returns "UpdateLinks" flag
+	 * @memberof CWorkbookPr
+	 * @returns {boolean}
+	 */
+	CWorkbookPr.prototype.getUpdateLinks = function () {
+		return this.UpdateLinks;
+	};
+	/**
+	 * Method set "UpdateLinks" flag
+	 * @memberof CWorkbookPr
+	 * @returns {boolean}
+	 */
+	CWorkbookPr.prototype.setUpdateLinks = function (val) {
+		this.UpdateLinks = val;
+	};
+
+
+	/**
 	 * Class representing calculation settings for UI interface
 	 * @constructor
 	 */
@@ -17423,7 +17614,8 @@ function RangeDataManagerElem(bbox, data)
 			this.asc_setIterativeCalc(oCalcPr.getIterate());
 		}
 		if (oCalcPr.getIterateCount() != null) {
-			this.asc_setMaxIterations(oCalcPr.getIterateCount());
+			const MAX_ITERATE_COUNT = 32767;
+			this.asc_setMaxIterations(oCalcPr.getIterateCount() <= MAX_ITERATE_COUNT ? oCalcPr.getIterateCount() : MAX_ITERATE_COUNT);
 		}
 		if (oCalcPr.getIterateDelta() != null) {
 			this.asc_setMaxChange(oCalcPr.getIterateDelta());
@@ -19031,6 +19223,8 @@ function RangeDataManagerElem(bbox, data)
 	prot["asc_setMaxChange"] = prot.asc_setMaxChange;
 	prot["asc_initSettings"] = prot.asc_initSettings;
 
+	window["AscCommonExcel"].CWorkbookPr = CWorkbookPr;
+	
 	window["AscCommonExcel"].CMetadata = CMetadata;
 	window["AscCommonExcel"].CMetadataType = CMetadataType;
 	window["AscCommonExcel"].CMetadataString = CMetadataString;
@@ -19070,6 +19264,7 @@ function RangeDataManagerElem(bbox, data)
 	prot = CWorksheetInfo.prototype;
 	prot["asc_getName"] = prot.asc_getName;
 	prot["asc_getIndex"] = prot.asc_getIndex;
+
 
 
 

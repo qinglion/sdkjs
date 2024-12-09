@@ -87,7 +87,7 @@ function CTableRow(Table, Cols, TableGrid)
     this.Index = 0;
 
 	this.ReviewType = reviewtype_Common;
-	this.ReviewInfo = new CReviewInfo();
+	this.ReviewInfo = new AscWord.ReviewInfo();
 
 	if (editor
 		&& !editor.isPresentationEditor
@@ -225,18 +225,10 @@ CTableRow.prototype =
 
     PreDelete : function()
     {
-        var CellsCount = this.Get_CellsCount();
-        for ( var CurCell = 0; CurCell < CellsCount; CurCell++ )
-        {
-            var Cell = this.Get_Cell( CurCell );
-
-            var CellContent = Cell.Content.Content;
-            var ContentCount = CellContent.length;
-            for ( var Pos = 0; Pos < ContentCount; Pos++ )
-            {
-                CellContent[Pos].PreDelete();
-            }
-        }
+		for (let iCell = 0, cellCount = this.GetCellsCount(); iCell < cellCount; ++iCell)
+		{
+			this.GetCell(iCell).PreDelete();
+		}
     },
     //-----------------------------------------------------------------------------------
     // Работаем с стилем строки
@@ -608,6 +600,8 @@ CTableRow.prototype =
 
 	Remove_Cell : function(Index)
 	{
+		this.Content[Index].PreDelete();
+		
 		AscCommon.History.Add(new CChangesTableRowRemoveCell(this, Index, [this.Content[Index]]));
 
 		this.Content.splice(Index, 1);
@@ -749,7 +743,7 @@ CTableRow.prototype =
 		// Long          : количество ячеек
 		// Array strings : Id ячеек
 		// Long          : ReviewType
-		// CReviewInfo   : ReviewType
+		// AscWord.ReviewInfo   : ReviewType
 
 		Writer.WriteString2(this.Id);
 		this.Pr.Write_ToBinary(Writer);
@@ -759,8 +753,8 @@ CTableRow.prototype =
 		for (var Index = 0; Index < Count; Index++)
 			Writer.WriteString2(this.Content[Index].Get_Id());
 
-		if (!(this.ReviewInfo instanceof CReviewInfo))
-			this.ReviewInfo = new CReviewInfo();
+		if (!(this.ReviewInfo instanceof AscWord.ReviewInfo))
+			this.ReviewInfo = new AscWord.ReviewInfo();
 
 		Writer.WriteLong(this.ReviewType);
 		this.ReviewInfo.WriteToBinary(Writer);
@@ -773,7 +767,7 @@ CTableRow.prototype =
 		// Long            : количество ячеек
 		// Array variables : сами ячейки
 		// Long            : ReviewType
-		// CReviewInfo     : ReviewType
+		// AscWord.ReviewInfo     : ReviewType
 
 		this.Id = Reader.GetString2();
 		this.Pr = new CTableRowPr();
@@ -789,17 +783,11 @@ CTableRow.prototype =
 		}
 
 		this.ReviewType = Reader.GetLong();
-		this.ReviewInfo = new CReviewInfo();
+		this.ReviewInfo = new AscWord.ReviewInfo();
 		this.ReviewInfo.ReadFromBinary(Reader);
 
 		this.Internal_ReIndexing();
-
-		AscCommon.CollaborativeEditing.Add_NewObject(this);
-	},
-
-    Load_LinkData : function(LinkData)
-    {
-    }
+	}
 };
 /**
  * Доступ к родительской таблице
@@ -1048,7 +1036,7 @@ CTableRow.prototype.GetReviewType = function()
 };
 /**
  * Возвращаем информацию о рецензенте
- * @returns {CReviewInfo}
+ * @returns {AscWord.ReviewInfo}
  */
 CTableRow.prototype.GetReviewInfo = function()
 {
@@ -1089,7 +1077,7 @@ CTableRow.prototype.SetReviewType = function(nType, isCheckDeleteAdded)
 /**
  * Меняем тип рецензирования вместе с информацией о рецензента
  * @param {number} nType
- * @param {CReviewInfo} oInfo
+ * @param {AscWord.ReviewInfo} oInfo
  */
 CTableRow.prototype.SetReviewTypeWithInfo = function(nType, oInfo)
 {

@@ -524,6 +524,9 @@ CContentControlPr.prototype.FillFromContentControl = function(oContentControl)
 			this.FormPr.SetAscBorder(subFormPr.GetAscBorder());
 			this.FormPr.SetShd(subFormPr.GetShd());
 		}
+		
+		if (oContentControl.IsSignatureForm())
+			this.FormPr.SetRequired(true);
 	}
 };
 CContentControlPr.prototype.SetToContentControl = function(oContentControl)

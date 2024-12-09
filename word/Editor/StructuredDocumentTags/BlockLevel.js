@@ -114,6 +114,15 @@ CBlockLevelSdt.prototype.GetContent = function()
 {
 	return this.Content;
 };
+/**
+ * Функция для выставления класса содержимого колонтитула (используется в совместке)
+ * @param {CDocumentContent} oDocumentContent
+ */
+CBlockLevelSdt.prototype.SetDocumentContent = function(oDocumentContent)
+{
+	this.Content = oDocumentContent;
+	oDocumentContent.SetParent(this);
+};
 CBlockLevelSdt.prototype.Is_Inline = function()
 {
 	return true;
@@ -333,9 +342,9 @@ CBlockLevelSdt.prototype.GetDirectTextPr = function()
 {
 	return this.Content.GetDirectTextPr();
 };
-CBlockLevelSdt.prototype.DrawSelectionOnPage = function(CurPage)
+CBlockLevelSdt.prototype.DrawSelectionOnPage = function(CurPage, clipInfo)
 {
-	this.Content.DrawSelectionOnPage(CurPage);
+	this.Content.DrawSelectionOnPage(CurPage, clipInfo);
 };
 CBlockLevelSdt.prototype.GetSelectionBounds = function()
 {
@@ -536,13 +545,17 @@ CBlockLevelSdt.prototype.Remove = function(nCount, isRemoveWholeElement, bRemove
 {
 	if (this.IsPlaceHolder())
 	{
-		let logicDocument = this.GetLogicDocument();
+		let logicDocument  = this.GetLogicDocument();
+		let isRemoveOnDrag = logicDocument ? logicDocument.DragAndDropAction : false;
 		
-		if (!this.CanBeDeleted() && !bOnAddText)
+		if (!this.CanBeDeleted() && (!bOnAddText || isRemoveOnDrag))
 			return true;
 		
 		if (bOnAddText || !(logicDocument && logicDocument.IsDocumentEditor() && logicDocument.IsFillingFormMode()))
 			this.private_ReplacePlaceHolderWithContent();
+		
+		if (isRemoveOnDrag)
+			return false;
 		
 		return !!bOnAddText;
 	}
@@ -2513,8 +2526,9 @@ CBlockLevelSdt.prototype.Document_Is_SelectionLocked = function(CheckType, bChec
 	{
 		return AscCommon.CollaborativeEditing.Add_CheckLock(false);
 	}
-
-	var isCheckContentControlLock = this.LogicDocument ? this.LogicDocument.IsCheckContentControlsLock() : true;
+	
+	let logicDocument = this.GetLogicDocument();
+	var isCheckContentControlLock = logicDocument ? logicDocument.IsCheckContentControlsLock() : true;
 
 	if (AscCommon.changestype_Paragraph_TextProperties === CheckType
 		|| ((AscCommon.changestype_Drawing_Props === CheckType || AscCommon.changestype_Image_Properties === CheckType)
@@ -2555,9 +2569,9 @@ CBlockLevelSdt.prototype.Document_Is_SelectionLocked = function(CheckType, bChec
 		var bSelectedOnlyThis = false;
 		// Если это происходит на добавлении текста, тогда проверяем, что выделен только данный элемент
 
-		if (AscCommon.changestype_Remove !== CheckType && AscCommon.changestype_Delete !== CheckType)
+		if (logicDocument && AscCommon.changestype_Remove !== CheckType && AscCommon.changestype_Delete !== CheckType)
 		{
-			var oInfo = this.LogicDocument.GetSelectedElementsInfo();
+			var oInfo = logicDocument.GetSelectedElementsInfo();
 			bSelectedOnlyThis = oInfo.GetBlockLevelSdt() === this ? true : false;
 		}
 
@@ -2804,3 +2818,4 @@ window['AscCommonWord'] = window['AscCommonWord'] || {};
 window['AscCommonWord'].CBlockLevelSdt = CBlockLevelSdt;
 window['AscCommonWord'].type_BlockLevelSdt = type_BlockLevelSdt;
 window["AscWord"].CBlockLevelSdt = CBlockLevelSdt;
+window["AscWord"].BlockLevelSdt = CBlockLevelSdt;

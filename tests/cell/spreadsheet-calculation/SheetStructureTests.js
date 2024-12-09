@@ -3024,6 +3024,288 @@ $(function () {
 		clearData(0, 99, 0, 105);
 	});
 
+	QUnit.test('Table special characters tests', function (assert) {
+		/* This test checks for special characters inside a table, namely column names with escaped characters */
+		let array;
+		ws.getRange2("A100:C103").setValue("1");
+		ws.getRange2("A100").setValue("With a single ' quote");
+		ws.getRange2("B100").setValue("With a double '' quote");
+		ws.getRange2("C100").setValue("With a special ' @ & ? * / | \ # '' [ ] characters");
+
+		let tableOptions = new AscCommonExcel.AddFormatTableOptions();
+		tableOptions.range = "A100:C103";
+		tableOptions.isTitle = true;
+		api.asc_addAutoFilter("TableStyleMedium2", tableOptions);	// create table in A100:C103 range
+
+		let tables = wsView.model.autoFilters.getTablesIntersectionRange(new Asc.Range(0, 100, 0, 100));
+		assert.strictEqual(tables.length, 1, "compare tables length");
+
+		debugger
+		let table = tables[0];
+		let tableName = table.DisplayName;	// due to the fact that other tables are used in file, get the name of the one we need by this way
+		wsView.af_changeFormatTableInfo(tableName, Asc.c_oAscChangeTableStyleInfo.rowTotal, true);
+
+		// calc res check
+		cellWithFormula = new AscCommonExcel.CCellWithFormula(ws, 101, 70);
+		oParser = new AscCommonExcel.parserFormula(tableName + "[#All]", cellWithFormula, ws);
+		assert.ok(oParser.parse());
+		array = oParser.calculate();
+		assert.strictEqual(array.getValueByRowCol(0, 0).getValue(), "With a single ' quote", 'Result of Table[#All][0,0]');
+		assert.strictEqual(array.getValueByRowCol(0, 1).getValue(), "With a double '' quote", 'Result of Table[#All][0,1]');
+		assert.strictEqual(array.getValueByRowCol(0, 2).getValue(), "With a special ' @ & ? * / |  # '' [ ] characters", 'Result of Table[#All][0,2]');
+		assert.strictEqual(array.getValueByRowCol(1, 0).getValue(), 1, 'Result of Table[#All][1,0]');
+		assert.strictEqual(array.getValueByRowCol(1, 1).getValue(), 1, 'Result of Table[#All][1,1]');
+		assert.strictEqual(array.getValueByRowCol(3, 0).getValue(), 1, 'Result of Table[#All][3,0]');
+		assert.strictEqual(array.getValueByRowCol(3, 1).getValue(), 1, 'Result of Table[#All][3,1]');
+
+		// value for edit and formula in cell check
+		resCell = ws.getRange4(101, 70);
+		resCell.setValue("=" + tableName +"[#All]");
+		
+		assert.strictEqual(resCell.getValueForEdit(), "=" + tableName, "Value for edit in cell after Table[#All] is typed");
+		assert.strictEqual(resCell.getFormula(), tableName, "Formula in cell after Table[#All] is typed");
+
+
+		/* column header check */
+		// this pattern is looking for special characters in the string that need to be escaped
+		let specialSymbolsPattern = /(['#@\[\]])/g;
+		// set selection to the first column header
+		let selectedRange = ws.getRange2("A100");
+		wsView.setSelection(selectedRange.bbox);
+
+		let ranges = wsView.model.selectionRange.ranges;
+		let valueInCellEditMode = tables[0].getSelectionString(wsView.model.getSelection().activeCell, ranges[0]);
+		let expectedValue = tableName + "[[#Headers],[" + ws.getRange2("A100").getValueForEdit().replace(specialSymbolsPattern, "'$1") + "]]";
+
+		assert.strictEqual(valueInCellEditMode, expectedValue, "Header value in first column. Simulation value for edit in cellEditMode");
+
+
+		// set selection to the second column header
+		selectedRange = ws.getRange2("B100");
+		wsView.setSelection(selectedRange.bbox);
+
+		ranges = wsView.model.selectionRange.ranges;
+		valueInCellEditMode = tables[0].getSelectionString(wsView.model.getSelection().activeCell, ranges[0]);
+		expectedValue = tableName + "[[#Headers],[" + ws.getRange2("B100").getValueForEdit().replace(specialSymbolsPattern, "'$1") + "]]";
+
+		assert.strictEqual(valueInCellEditMode, expectedValue, "Header value in second column. Simulation value for edit in cellEditMode");
+
+
+		// set selection to the third column header
+		selectedRange = ws.getRange2("C100");
+		wsView.setSelection(selectedRange.bbox);
+
+		ranges = wsView.model.selectionRange.ranges;
+		valueInCellEditMode = tables[0].getSelectionString(wsView.model.getSelection().activeCell, ranges[0]);
+		expectedValue = tableName + "[[#Headers],[" + ws.getRange2("C100").getValueForEdit().replace(specialSymbolsPattern, "'$1") + "]]";
+
+		assert.strictEqual(valueInCellEditMode, expectedValue, "Header value in third column. Simulation value for edit in cellEditMode");
+
+		/* full column check */
+		// first column select
+		selectedRange = ws.getRange2("A101:A103");
+		wsView.setSelection(selectedRange.bbox);
+
+		ranges = wsView.model.selectionRange.ranges;
+		valueInCellEditMode = tables[0].getSelectionString(wsView.model.getSelection().activeCell, ranges[0]);
+		expectedValue = tableName + "[" + ws.getRange2("A100:A103").getValueForEdit().replace(specialSymbolsPattern, "'$1") + "]";
+
+		assert.strictEqual(valueInCellEditMode, expectedValue, "First column without header select. Simulation value for edit in cellEditMode");
+
+		// second column select
+		selectedRange = ws.getRange2("B101:B103");
+		wsView.setSelection(selectedRange.bbox);
+
+		ranges = wsView.model.selectionRange.ranges;
+		valueInCellEditMode = tables[0].getSelectionString(wsView.model.getSelection().activeCell, ranges[0]);
+		expectedValue = tableName + "[" + ws.getRange2("B100:B103").getValueForEdit().replace(specialSymbolsPattern, "'$1") + "]";
+
+		assert.strictEqual(valueInCellEditMode, expectedValue, "Second column without header select. Simulation value for edit in cellEditMode");
+
+		// third column select
+		selectedRange = ws.getRange2("C101:C103");
+		wsView.setSelection(selectedRange.bbox);
+
+		ranges = wsView.model.selectionRange.ranges;
+		valueInCellEditMode = tables[0].getSelectionString(wsView.model.getSelection().activeCell, ranges[0]);
+		expectedValue = tableName + "[" + ws.getRange2("C100:C103").getValueForEdit().replace(specialSymbolsPattern, "'$1") + "]";
+
+		assert.strictEqual(valueInCellEditMode, expectedValue, "Third column without header select. Simulation value for edit in cellEditMode");
+
+		/* two columns check */
+		// first and second column
+		selectedRange = ws.getRange2("A101:B103");
+		wsView.setSelection(selectedRange.bbox);
+
+		ranges = wsView.model.selectionRange.ranges;
+		valueInCellEditMode = tables[0].getSelectionString(wsView.model.getSelection().activeCell, ranges[0]);
+		expectedValue = tableName + "[" 
+						+ "[" + ws.getRange2("A100:A103").getValueForEdit().replace(specialSymbolsPattern, "'$1") + "]:" 
+						+ "[" + ws.getRange2("B100:B103").getValueForEdit().replace(specialSymbolsPattern, "'$1") + "]"
+						+ "]";
+
+		assert.strictEqual(valueInCellEditMode, expectedValue, "First and second column without header select. Simulation value for edit in cellEditMode");
+
+		// second and third column
+		selectedRange = ws.getRange2("B101:C103");
+		wsView.setSelection(selectedRange.bbox);
+
+		ranges = wsView.model.selectionRange.ranges;
+		valueInCellEditMode = tables[0].getSelectionString(wsView.model.getSelection().activeCell, ranges[0]);
+		expectedValue = tableName + "[" 
+						+ "[" + ws.getRange2("B100:B103").getValueForEdit().replace(specialSymbolsPattern, "'$1") + "]:" 
+						+ "[" + ws.getRange2("C100:C103").getValueForEdit().replace(specialSymbolsPattern, "'$1") + "]"
+						+ "]";
+
+		assert.strictEqual(valueInCellEditMode, expectedValue, "Second and third column without header select. Simulation value for edit in cellEditMode");
+
+
+		clearData(0, 99, 0, 105);
+	});
+
+	/* for bug 61856 */
+	QUnit.test('Array of arguments check after calling the wizard for the function', function (assert) { 
+		let resArray;
+
+		ws.getRange2("D1").setValue("11");
+		ws.getRange2("D2").setValue("22");
+		ws.getRange2("D3").setValue("33");
+
+		api.wb.cellEditor =  {
+			data : {},
+			changeCellText: function () {},
+			getText: function () {
+				return "";
+			}
+		};
+
+		api.wb.wsActive = ws.getIndex();
+		api.wb.setCellEditMode(true);
+
+		wb.dependencyFormulas.addDefName("def", "Sheet1!$A$100:$A$102");
+
+		// api.asc_startWizard();
+		let formula = "SUM(D1"
+		let parser = new AscCommonExcel.parserFormula(formula, /*formulaParsed.parent*/null, ws);
+		let _parseResult = new AscCommonExcel.ParseResult([], []);
+
+		parser.parse(true, true, _parseResult, true);
+
+		resArray = _parseResult.getArgumentsValue(formula);
+		assert.strictEqual(resArray[0], "D1", 'First argument in "SUM(D1"');
+		assert.strictEqual(_parseResult.error, c_oAscError.ID.FrmlParenthesesCorrectCount, 'Error in parseResult for "SUM(D1" formula');
+
+
+		formula = "SUM(D1,"
+		parser = new AscCommonExcel.parserFormula(formula, null, ws);
+		_parseResult = new AscCommonExcel.ParseResult([], []);
+
+		parser.parse(true, true, _parseResult, true);
+
+		resArray = _parseResult.getArgumentsValue(formula);
+		assert.strictEqual(resArray[0], "D1", 'First argument in "SUM(D1,"');
+		assert.strictEqual(_parseResult.error, c_oAscError.ID.FrmlOperandExpected, 'Error in parseResult for "SUM(D1," formula');
+
+
+		formula = "SUM(D1,D2"
+		parser = new AscCommonExcel.parserFormula(formula, null, ws);
+		_parseResult = new AscCommonExcel.ParseResult([], []);
+
+		parser.parse(true, true, _parseResult, true);
+
+		resArray = _parseResult.getArgumentsValue(formula);
+		assert.strictEqual(resArray[0], "D1", 'First argument in "SUM(D1,D2"');
+		assert.strictEqual(resArray[1], "D2", 'Second argument in "SUM(D1,D2"');
+		assert.strictEqual(_parseResult.error, c_oAscError.ID.FrmlParenthesesCorrectCount, 'Error in parseResult for "SUM(D1,D2" formula');
+
+
+		formula = "SUM(D1,D2)"
+		parser = new AscCommonExcel.parserFormula(formula, null, ws);
+		_parseResult = new AscCommonExcel.ParseResult([], []);
+
+		parser.parse(true, true, _parseResult, true);
+
+		resArray = _parseResult.getArgumentsValue(formula);
+		assert.strictEqual(resArray[0], "D1", 'First argument in "SUM(D1,D2)"');
+		assert.strictEqual(resArray[1], "D2", 'Second argument in "SUM(D1,D2)"');
+		assert.strictEqual(_parseResult.error, undefined, 'Error in parseResult for "SUM(D1,D2)" formula');
+
+		
+		formula = "SUM(D1:D2)"
+		parser = new AscCommonExcel.parserFormula(formula, null, ws);
+		_parseResult = new AscCommonExcel.ParseResult([], []);
+
+		parser.parse(true, true, _parseResult, true);
+
+		resArray = _parseResult.getArgumentsValue(formula);
+		assert.strictEqual(resArray[0], "D1:D2", 'First argument in "SUM(D1:D2)"');
+		assert.strictEqual(_parseResult.error, undefined, 'Error in parseResult for "SUM(D1:D2)" formula');
+
+
+		formula = "SUM(D1:D2,)"
+		parser = new AscCommonExcel.parserFormula(formula, null, ws);
+		_parseResult = new AscCommonExcel.ParseResult([], []);
+
+		parser.parse(true, true, _parseResult, true);
+
+		resArray = _parseResult.getArgumentsValue(formula);
+		assert.strictEqual(resArray[0], "D1:D2", 'First argument in "SUM(D1:D2,)"');
+		assert.strictEqual(_parseResult.error, undefined, 'Error in parseResult for "SUM(D1:D2,)" formula');
+
+
+		formula = "SUM("
+		parser = new AscCommonExcel.parserFormula(formula, null, ws);
+		_parseResult = new AscCommonExcel.ParseResult([], []);
+
+		parser.parse(true, true, _parseResult, true);
+
+		resArray = _parseResult.getArgumentsValue(formula);
+		assert.strictEqual(resArray[0], "", 'First argument in "SUM("');
+		assert.strictEqual(_parseResult.error, c_oAscError.ID.FrmlOperandExpected, 'Error in parseResult for "SUM(" formula');
+
+
+		formula = "SUM(1"
+		parser = new AscCommonExcel.parserFormula(formula, null, ws);
+		_parseResult = new AscCommonExcel.ParseResult([], []);
+
+		parser.parse(true, true, _parseResult, true);
+
+		resArray = _parseResult.getArgumentsValue(formula);
+		assert.strictEqual(resArray[0], "1", 'First argument in "SUM(1"');
+		assert.strictEqual(_parseResult.error, c_oAscError.ID.FrmlParenthesesCorrectCount, 'Error in parseResult for "SUM(1" formula');
+
+		formula = "SUM(1,D1"
+		parser = new AscCommonExcel.parserFormula(formula, null, ws);
+		_parseResult = new AscCommonExcel.ParseResult([], []);
+
+		parser.parse(true, true, _parseResult, true);
+
+		resArray = _parseResult.getArgumentsValue(formula);
+		assert.strictEqual(resArray[0], "1", 'First argument in "SUM(1,D1"');
+		assert.strictEqual(resArray[1], "D1", 'Second argument in "SUM(1,D1"');
+		assert.strictEqual(_parseResult.error, c_oAscError.ID.FrmlParenthesesCorrectCount, 'Error in parseResult for "SUM(1,D1" formula');
+
+
+		formula = 'SUM(1,D1,"str",TRUE,def'
+		parser = new AscCommonExcel.parserFormula(formula, null, ws);
+		_parseResult = new AscCommonExcel.ParseResult([], []);
+
+		parser.parse(true, true, _parseResult, true);
+
+		resArray = _parseResult.getArgumentsValue(formula);
+		assert.strictEqual(resArray[0], "1", 'First argument in "SUM(1,D1,"str",TRUE,def"');
+		assert.strictEqual(resArray[1], "D1", 'Second argument in "SUM(1,D1,"str",TRUE,def"');
+		assert.strictEqual(resArray[2], "\"str\"", 'Third argument in "SUM(1,D1,"str",TRUE,def"');
+		assert.strictEqual(resArray[3], "TRUE", 'Fourth argument in "SUM(1,D1,"str",TRUE,def"');
+		assert.strictEqual(resArray[4], "def", 'Fifth argument in "SUM(1,D1,"str",TRUE,def"');
+		assert.strictEqual(_parseResult.error, c_oAscError.ID.FrmlParenthesesCorrectCount, 'Error in parseResult for "SUM(1,D1,"str",TRUE,def" formula');
+
+		// remove all created earlier defNames
+		wb.dependencyFormulas._foreachDefName(function(defName) {
+			wb.dependencyFormulas.removeDefName(undefined, defName.name);
+		});
+	});
+
 	QUnit.test('autoCompleteFormula', function (assert) {
 		let resCell, range, fillRange, autoCompleteRes;
 
@@ -3582,6 +3864,103 @@ $(function () {
 		assert.strictEqual(activeCell.col === supposedActiveCell.bbox.c1 && activeCell.row === supposedActiveCell.bbox.r1, true, "Active cell test. B20:B22(only text in range) autosum");
 
 		
+		ws.getRange2("A1:Z100").cleanAll();
+	});
+
+	/* for bug 69708 */
+	QUnit.test('Array formula ', function (assert) {
+		let array, cellWithFormula, fillRange;
+
+		ws.getRange2("A11").setNumFormat("@");
+		ws.getRange2("B12").setNumFormat("@");
+
+		ws.getRange2("A2").setValue("Jeans");
+		ws.getRange2("A3").setValue("Sweater");
+		ws.getRange2("A4").setValue("Shirt");
+
+		// set flags for CSE formula call
+		let flags = wsView._getCellFlags(9, 0);
+		flags.ctrlKey = true;
+		flags.shiftKey = true;
+
+		// set selection A10:B13
+		fillRange = ws.getRange2("A10:B12");
+		wsView.setSelection(fillRange.bbox);
+		wsView._initRowsCount();
+		wsView._initColsCount();
+		
+
+		let fragment = ws.getRange2("A10").getValueForEdit2();
+		fragment[0].setFragmentText("=SIN({1,2})");
+
+		wsView._saveCellValueAfterEdit(fillRange, fragment, flags, null, null);		// calculate
+		resCell = ws.getRange2("A10");
+		assert.strictEqual(wsView.model.selectionRange.getLast().getName(), "A10:B12", "Selection after =SIN({1,2}) cse formula call");
+		assert.strictEqual(resCell.getValueWithFormat(), "0.841470985", "Value in A10 after =SIN({1,2}) calculate");
+		assert.strictEqual(resCell.getValueForEdit(), "=SIN({1,2})", "Formula in A10 after =SIN({1,2}) calculate");
+		assert.strictEqual(resCell.getNumFormatStr(), "General", "A10 cellFormat after =SIN({1,2}) calculate");
+
+		resCell = ws.getRange2("A11");
+		assert.strictEqual(resCell.getValueWithFormat(), "0.841470985", "Value in A11 after =SIN({1,2}) calculate");
+		assert.strictEqual(resCell.getValueForEdit(), "=SIN({1,2})", "Formula in A11 after =SIN({1,2}) calculate");
+		assert.strictEqual(resCell.getNumFormatStr(), "@", "A11 cellFormat after =SIN({1,2}) calculate");
+
+		resCell = ws.getRange2("A12");
+		assert.strictEqual(resCell.getValueWithFormat(), "0.841470985", "Value in A12 after =SIN({1,2}) calculate");
+		assert.strictEqual(resCell.getValueForEdit(), "=SIN({1,2})", "Formula in A12 after =SIN({1,2}) calculate");
+		assert.strictEqual(resCell.getNumFormatStr(), "General", "A12 cellFormat after =SIN({1,2}) calculate");
+
+		resCell = ws.getRange2("B10");
+		assert.strictEqual(resCell.getValueWithFormat(), "0.909297427", "Value in B10 after =SIN({1,2}) calculate");
+		assert.strictEqual(resCell.getValueForEdit(), "=SIN({1,2})", "Formula in B10 after =SIN({1,2}) calculate");
+		assert.strictEqual(resCell.getNumFormatStr(), "General", "B10 cellFormat after =SIN({1,2}) calculate");
+
+		resCell = ws.getRange2("B11");
+		assert.strictEqual(resCell.getValueWithFormat(), "0.909297427", "Value in B11 after =SIN({1,2}) calculate");
+		assert.strictEqual(resCell.getValueForEdit(), "=SIN({1,2})", "Formula in B11 after =SIN({1,2}) calculate");
+		assert.strictEqual(resCell.getNumFormatStr(), "General", "B11 cellFormat after =SIN({1,2}) calculate");
+
+		resCell = ws.getRange2("B12");
+		assert.strictEqual(resCell.getValueWithFormat(), "0.909297427", "Value in B12 after =SIN({1,2}) calculate");
+		assert.strictEqual(resCell.getValueForEdit(), "=SIN({1,2})", "Formula in B12 after =SIN({1,2}) calculate");
+		assert.strictEqual(resCell.getNumFormatStr(), "@", "B12 cellFormat after =SIN({1,2}) calculate");
+
+
+		fragment[0].setFragmentText('=HSTACK({"Red";"Blue";"Green"},A2:A4)');
+
+		wsView._saveCellValueAfterEdit(fillRange, fragment, flags, null, null);		// calculate
+		resCell = ws.getRange2("A10");
+		assert.strictEqual(wsView.model.selectionRange.getLast().getName(), "A10:B12", 'Selection after =HSTACK({"Red";"Blue";"Green"},A2:A4) cse formula call');
+		assert.strictEqual(resCell.getValueWithFormat(), "Red", 'Value in A10 after =HSTACK({"Red";"Blue";"Green"},A2:A4) calculate');
+		assert.strictEqual(resCell.getValueForEdit(), '=HSTACK({\"Red\";\"Blue\";\"Green\"},A2:A4)', 'Formula in A10 after =HSTACK({"Red";"Blue";"Green"},A2:A4) calculate');
+		assert.strictEqual(resCell.getNumFormatStr(), "General", 'A10 cellFormat after =HSTACK({"Red";"Blue";"Green"},A2:A4) calculate');
+
+		resCell = ws.getRange2("A11");
+		assert.strictEqual(resCell.getValueWithFormat(), "Blue", 'Value in A11 after =HSTACK({"Red";"Blue";"Green"},A2:A4) calculate');
+		assert.strictEqual(resCell.getValueForEdit(), '=HSTACK({\"Red\";\"Blue\";\"Green\"},A2:A4)', 'Formula in A11 after =HSTACK({"Red";"Blue";"Green"},A2:A4) calculate');
+		assert.strictEqual(resCell.getNumFormatStr(), "@", 'A11 cellFormat after =HSTACK({"Red";"Blue";"Green"},A2:A4) calculate');
+
+		resCell = ws.getRange2("A12");
+		assert.strictEqual(resCell.getValueWithFormat(), "Green", 'Value in A12 after =HSTACK({"Red";"Blue";"Green"},A2:A4) calculate');
+		assert.strictEqual(resCell.getValueForEdit(), '=HSTACK({\"Red\";\"Blue\";\"Green\"},A2:A4)', 'Formula in A12 after =HSTACK({"Red";"Blue";"Green"},A2:A4) calculate');
+		assert.strictEqual(resCell.getNumFormatStr(), "General", 'A12 cellFormat after =HSTACK({"Red";"Blue";"Green"},A2:A4) calculate');
+
+		resCell = ws.getRange2("B10");
+		assert.strictEqual(resCell.getValueWithFormat(), "Jeans", 'Value in B10 after =HSTACK({"Red";"Blue";"Green"},A2:A4) calculate');
+		assert.strictEqual(resCell.getValueForEdit(), '=HSTACK({\"Red\";\"Blue\";\"Green\"},A2:A4)', 'Formula in B10 after =HSTACK({"Red";"Blue";"Green"},A2:A4) calculate');
+		assert.strictEqual(resCell.getNumFormatStr(), "General", 'B10 cellFormat after =HSTACK({"Red";"Blue";"Green"},A2:A4) calculate');
+
+		resCell = ws.getRange2("B11");
+		assert.strictEqual(resCell.getValueWithFormat(), "Sweater", 'Value in B11 after =HSTACK({"Red";"Blue";"Green"},A2:A4) calculate');
+		assert.strictEqual(resCell.getValueForEdit(), '=HSTACK({\"Red\";\"Blue\";\"Green\"},A2:A4)', 'Formula in B11 after =HSTACK({"Red";"Blue";"Green"},A2:A4) calculate');
+		assert.strictEqual(resCell.getNumFormatStr(), "General", 'B11 cellFormat after =HSTACK({"Red";"Blue";"Green"},A2:A4) calculate');
+
+		resCell = ws.getRange2("B12");
+		assert.strictEqual(resCell.getValueWithFormat(), "Shirt", 'Value in B12 after =HSTACK({"Red";"Blue";"Green"},A2:A4) calculate');
+		assert.strictEqual(resCell.getValueForEdit(), '=HSTACK({\"Red\";\"Blue\";\"Green\"},A2:A4)', 'Formula in B12 after =HSTACK({"Red";"Blue";"Green"},A2:A4) calculate');
+		assert.strictEqual(resCell.getNumFormatStr(), "@", 'B12 cellFormat after =HSTACK({"Red";"Blue";"Green"},A2:A4) calculate');
+
+
 		ws.getRange2("A1:Z100").cleanAll();
 	});
 
@@ -4520,6 +4899,643 @@ $(function () {
 
 		getAutofillCase([0, 0, 13, 14], [0, 0, 12, 0], 1, 'Time format. Reverse sequence. Vertical. Multiple selected cells. Start from 36872.5.', expectedData);
 		ws.getRange2('A1:A20').cleanAll();
+		// Case #58: Date format. Asc sequence. Horizontal. Two selected cells. Step - month.
+		testData = [
+			['01/01/2000', '02/01/2000']
+		];
+		range = ws.getRange4(0, 0);
+		range.fillData(testData);
+		undoData = ['', '', '', '', '', ''];
+		expectedData = ['36586', '36617', '36647', '36678', '36708', '36739'];
+		getAutofillCase([0, 1, 0, 0], [2, 7, 0, 0], 3, 'Date format. Asc sequence. Horizontal. Two selected cells. Step - month.', expectedData);
+		// Case #59: Date format. Reverse sequence. Horizontal. Two selected cells. Step - month.
+		range = ws.getRange4(0, 6);
+		range.fillData(testData);
+		undoData = ['', '', '', '', '36557', '36526'];
+		expectedData = ['36495', '36465', '36434', '36404', '36373', '36342'];
+		getAutofillCase([6, 7, 0, 0], [5, 0, 0, 0], 1, 'Date format. Reverse sequence. Horizontal. Two selected cells. Step - month.', expectedData);
+		ws.getRange2('A1:Z20').cleanAll();
+		// Case #60: Date format. Asc sequence. Vertical. Three selected cells. Step - month.
+		testData = [
+			['01/01/2000'],
+			['03/01/2000'],
+			['05/01/2000']
+		];
+		range = ws.getRange4(0, 0);
+		range.fillData(testData);
+		undoData = [[''], [''], [''], [''], [''], [''], [''], ['']];
+		expectedData = [['36708'], ['36770'], ['36831'], ['36892'], ['36951']];
+		getAutofillCase([0, 0, 0, 2], [0, 0, 3, 7], 3, 'Date format. Asc sequence. Vertical. Three selected cells. Step - month.', expectedData);
+		// Case #61: Date format. Reverse sequence. Vertical. Three selected cells. Step - month.
+		range = ws.getRange4(5, 0);
+		range.fillData(testData);
+		undoData = [[''], [''], ['36647'], ['36586'], ['36526']];
+		expectedData = [['36465'], ['36404'], ['36342'], ['36281'], ['36220']];
+		getAutofillCase([0, 0, 5, 7], [0, 0, 4, 0], 1, 'Date format. Reverse sequence. Vertical. Three selected cells. Step - month.', expectedData);
+		ws.getRange2('A1:A20').cleanAll();
+		// Case #62: Date format. Asc sequence. Horizontal. Three selected cells. Step - month. Negative case - incorrect sequence.
+		testData = [
+			['01/01/2000', '03/01/2000', '04/01/2000']
+		];
+		range = ws.getRange4(0, 0);
+		range.fillData(testData);
+		undoData = ['', '', '', '', ''];
+		expectedData = ['36526', '36586', '36617', '36526', '36586'];
+		getAutofillCase([0, 2, 0, 0], [3, 7, 0, 0], 3, 'Date format. Asc sequence. Horizontal. Three selected cells. Step - month. Negative case - incorrect sequence.', expectedData);
+		// Case #63: Date format. Reverse sequence. Horizontal. Three selected cells. Step - month. Negative case - incorrect sequence.
+		range = ws.getRange4(0, 5);
+		range.fillData(testData);
+		undoData = ['', '', '36617', '36586', '36526'];
+		expectedData = ['36617', '36586', '36526', '36617', '36586'];
+		getAutofillCase([5, 7, 0, 0], [4, 0, 0, 0], 1, 'Date format. Reverse sequence. Horizontal. Three selected cells. Step - month. Negative case - incorrect sequence.', expectedData);
+		ws.getRange2('A1:Z20').cleanAll();
+		// Case #64: Date format. Asc sequence. Vertical. Two selected cells. Step - month. 1900 year.
+		testData = [
+			['01/01/1900'],
+			['02/01/1900']
+		];
+		range = ws.getRange4(0, 0);
+		range.fillData(testData);
+		undoData = [[''], [''], [''], [''], [''], ['']];
+		expectedData = [['61'], ['92'], ['122'], ['153'], ['183'], ['214']];
+		getAutofillCase([0, 0, 0, 1], [0, 0, 2, 7], 3, 'Date format. Asc sequence. Vertical. Two selected cells. Step - month. 1900 year.', expectedData);
+		// Case #65: Date format. Reverse sequence. Vertical. Two selected cells. Step - month. 1900 year.
+		testData = [
+			['04/01/1900'],
+			['06/01/1900']
+		];
+		range = ws.getRange4(6, 0);
+		range.fillData(testData);
+		undoData = [[''], [''], [''], [''], ['32'], ['1']];
+		expectedData = [['32'], ['92'], ['153'], ['92'], ['153'], ['92']];
+		getAutofillCase([0, 0, 6, 7], [0, 0, 5, 0], 1, 'Date format. Reverse sequence. Vertical. Two selected cells. Step - month. 1900 year.', expectedData);
+		ws.getRange2('A1:A20').cleanAll();
+		// Case #66: Date & Time format. Asc sequence. Horizontal. Two selected cells. Step - month.
+		testData = [
+			['01/01/2000 12:00', '02/01/2000 13:00']
+		];
+		range = ws.getRange4(0, 0);
+		range.fillData(testData);
+		undoData = ['', '', '', '', '', '', '', '', '', '', '', ''];
+		expectedData = ['36586.583333333336', '36617.62500000001', '36647.66666666668', '36678.70833333335', '36708.75000000002', '36739.79166666669', '36770.833333333365', '36800.87500000004', '36831.91666666671', '36861.95833333338', '36893.00000000005', '36924.04166666672'];
+		getAutofillCase([0, 1, 0, 0], [2, 13, 0, 0], 3, 'Date & Time format. Asc sequence. Horizontal. Two selected cells. Step - month.', expectedData);
+		// Case #67: Date & Time format. Reverse sequence. Horizontal. Two selected cells. Step - month.
+		range = ws.getRange4(0, 12);
+		range.fillData(testData);
+		undoData = ['', '', '', '', '', '', '', '', '', '', '36557.541666666664', '36526.5'];
+		expectedData = ['36495.45833333334', '36465.416666666686', '36434.37500000003', '36404.33333333337', '36373.291666666715', '36342.25000000006', '36312.2083333334', '36281.166666666744', '36251.12500000009', '36220.08333333343', '36192.04166666677', '36161.00000000012'];
+		getAutofillCase([12, 13, 0, 0], [11, 0, 0, 0], 1, 'Date & Time format. Reverse sequence. Horizontal. Two selected cells. Step - month.', expectedData);
+		ws.getRange2('A1:Z20').cleanAll();
+		// Case #68: Date & Time format. Asc sequence. Vertical. Three selected cells. Step - month.
+		testData = [
+			['02/01/2000 12:00'],
+			['04/01/2000 14:00'],
+			['06/01/2000 16:00']
+		];
+		range = ws.getRange4(0, 0);
+		range.fillData(testData);
+		undoData = [[''], [''], [''], [''], ['']];
+		expectedData = [['36739.5'], ['36800.5'], ['36861.5'], ['36923.5'], ['36982.5']];
+		getAutofillCase([0, 0, 0, 2], [0, 0, 3, 7], 3, 'Date & Time format. Asc sequence. Vertical. Three selected cells. Step - month.', expectedData);
+		// Case #69: Date & Time format. Reverse sequence. Vertical. Three selected cells. Step - month.
+		range = ws.getRange4(5, 0);
+		range.fillData(testData);
+		undoData = [[''], [''], ['36678.666666666664'], ['36617.583333333336'], ['36557.5']];
+		expectedData = [['36495.5'], ['36434.5'], ['36373.5'], ['36312.5'], ['36251.5']];
+		getAutofillCase([0, 0, 5, 7], [0, 0, 4, 0], 1, 'Date & Time format. Reverse sequence. Vertical. Three selected cells. Step - month.', expectedData);
+		ws.getRange2('A1:A20').cleanAll();
+		// Case #70: Date & Time format. Asc sequence. Horizontal. Three selected cells. Step - month. Negative case - incorrect sequence.
+		testData = [
+			['02/01/2000 12:00', '04/01/2000 14:00', '07/01/2000 16:00']
+		];
+		range = ws.getRange4(0, 0);
+		range.fillData(testData);
+		undoData = ['', '', '', '', ''];
+		expectedData = ['36557.5', '36617.583333333336', '36708.666666666664', '36557.5', '36617.583333333336'];
+		getAutofillCase([0, 2, 0, 0], [3, 7, 0, 0], 3, 'Date & Time format. Asc sequence. Horizontal. Three selected cells. Step - month. Negative case - incorrect sequence.', expectedData);
+		// Case #71: Date & Time format. Reverse sequence. Horizontal. Three selected cells. Step - month. Negative case - incorrect sequence.
+		range = ws.getRange4(0, 5);
+		range.fillData(testData);
+		undoData = ['', '', '36708.666666666664', '36617.583333333336', '36557.5'];
+		expectedData = ['36708.666666666664', '36617.583333333336', '36557.5', '36708.666666666664', '36617.583333333336'];
+		getAutofillCase([5, 7, 0, 0], [4, 0, 0, 0], 1, 'Date & Time format. Reverse sequence. Horizontal. Three selected cells. Step - month. Negative case - incorrect sequence.', expectedData);
+		ws.getRange2('A1:Z20').cleanAll();
+		// Case #72: Date & Time format. Asc sequence. Vertical. Two selected cells. Step - month. 1900 year.
+		testData = [
+			['02/01/1900 12:00'],
+			['04/01/1900 14:00']
+		];
+		range = ws.getRange4(0, 0);
+		range.fillData(testData);
+		undoData = [[''], [''], [''], [''], [''], ['']];
+		expectedData = [['153.66666666666666'], ['214.75'], ['275.8333333333333'], ['336.91666666666663'], ['398.99999999999994'], ['458.08333333333326']];
+		getAutofillCase([0, 0, 0, 1], [0, 0, 2, 7], 3, 'Date & Time format. Asc sequence. Vertical. Two selected cells. Step - month. 1900 year.', expectedData);
+		// Case #73: Date & Time format. Reverse sequence. Vertical. Two selected cells. Step - month. 1900 year.
+		range = ws.getRange4(6, 0);
+		range.fillData(testData);
+		undoData = [[''], [''], [''], [''], ['92.58333333333333'], ['32.5']];
+		expectedData = [['92.58333333333333'], ['32.5'], ['92.58333333333333'], ['32.5'], ['92.58333333333333'], ['32.5']];
+		getAutofillCase([0, 0, 6, 7], [0, 0, 5, 0], 1, 'Date & Time format. Reverse sequence. Vertical. Two selected cells. Step - month. 1900 year.', expectedData);
+		ws.getRange2('A1:A20').cleanAll();
+		// Case #74: Date & Time format. Asc sequence. Horizontal. Two selected cells. Step - month. Asc month seq, but time sequence is reverse.
+		// TODO Need to fix bug.
+		/*testData = [
+			['02/01/2000 12:00', '04/01/2000 5:00']
+		];
+		range = ws.getRange4(0, 0);
+		range.fillData(testData);
+		undoData = ['', '', '', '', '', ''];
+		expectedData = ['36677.91667', '36738.625', '36799.33333', '36860.04167', '36921.75', '36980.45833'];
+		getAutofillCase([0, 1, 0, 0], [2, 7, 0, 0], 3, 'Date & Time format. Asc sequence. Horizontal. Two selected cells. Step - month. Asc month seq, but time sequence is reverse.', expectedData);
+		ws.getRange2('A1:Z20').cleanAll();*/
+		// Case #75: Mixed date format. Asc sequence. Vertical. Two selected cells. Step - month.
+		testData = [
+			['01/01/2000 12:00'],
+			['02/01/2000']
+		];
+		range = ws.getRange4(0, 0);
+		range.fillData(testData);
+		undoData = [[''], [''], [''], [''], [''], ['']];
+		expectedData = [['36586.5'], ['36617.5'], ['36647.5'], ['36678.5'], ['36708.5'], ['36739.5']];
+		getAutofillCase([0, 0, 0, 1], [0, 0, 2, 7], 3, 'Mixed date format. Asc sequence. Vertical. Two selected cells. Step - month.', expectedData);
+		// Case #76: Mixed date format. Reverse sequence. Vertical. Two selected cells. Step - month.
+		range = ws.getRange4(6, 0);
+		range.fillData(testData);
+		undoData = [[''], [''], [''], [''], ['36557'], ['36526.5']];
+		expectedData = [['36495.5'], ['36465.5'], ['36434.5'], ['36404.5'], ['36373.5'], ['36342.5']];
+		getAutofillCase([0, 0, 6, 7], [0, 0, 5, 0], 1, 'Mixed date format. Reverse sequence. Vertical. Two selected cells. Step - month.', expectedData);
+		ws.getRange2('A1:A20').cleanAll();
+		// Case #77: Mixed date format. Asc sequence. Horizontal. Three selected cells. Step - month.
+		testData = [
+			['01/01/2000 12:00', '04/01/2000', '07/01/2000 14:00']
+		];
+		range = ws.getRange4(0, 0);
+		range.fillData(testData);
+		undoData = ['', '', '', '', ''];
+		expectedData = ['36800.5', '36892.5', '36982.5', '37073.5', '37165.5'];
+		getAutofillCase([0, 2, 0, 0], [3, 7, 0, 0], 3, 'Mixed date format. Asc sequence. Horizontal. Three selected cells. Step - month.', expectedData);
+		// Case #78: Mixed date format. Reverse sequence. Horizontal. Three selected cells. Step - month.
+		range = ws.getRange4(0, 5);
+		range.fillData(testData);
+		undoData = ['', '', '36708.583333333336', '36617', '36526.5'];
+		expectedData = ['36434.5', '36342.5', '36251.5', '36161.5', '36069.5'];
+		getAutofillCase([5, 7, 0, 0], [4, 0, 0, 0], 1, 'Mixed date format. Reverse sequence. Horizontal. Three selected cells. Step - month.', expectedData);
+		ws.getRange2('A1:Z20').cleanAll();
+		// Case #79: Mixed date format. Asc sequence. Vertical. Three selected cells. Step - month. Negative case - incorrect sequence.
+		testData = [
+			['01/01/2000 12:00'],
+			['03/01/2000'],
+			['04/01/2000 14:00']
+		];
+		range = ws.getRange4(0, 0);
+		range.fillData(testData);
+		undoData = [[''], [''], [''], [''], ['']];
+		expectedData = [['36526.5'], ['36586'], ['36617.583333333336'], ['36526.5'], ['36586']];
+		getAutofillCase([0, 0, 0, 2], [0, 0, 3, 7], 3, 'Mixed date format. Asc sequence. Vertical. Three selected cells. Step - month. Negative case - incorrect sequence.', expectedData);
+		// Case #80: Mixed date format. Reverse sequence. Vertical. Three selected cells. Step - month. Negative case - incorrect sequence.
+		range = ws.getRange4(5, 0);
+		range.fillData(testData);
+		undoData = [[''], [''], ['36617.583333333336'], ['36586'], ['36526.5']];
+		expectedData = [['36617.583333333336'], ['36586'], ['36526.5'], ['36617.583333333336'], ['36586']];
+		getAutofillCase([0, 0, 5, 7], [0, 0, 4, 0], 1, 'Mixed date format. Reverse sequence. Vertical. Three selected cells. Step - month. Negative case - incorrect sequence.', expectedData);
+		ws.getRange2('A1:A20').cleanAll();
+		// Case #81: Mixed date format. Asc sequence. Horizontal. Two selected cells. Step - month. 1900 year.
+		testData = [
+			['01/01/1900', '02/01/1900 12:00']
+		];
+		range = ws.getRange4(0, 0);
+		range.fillData(testData);
+		undoData = ['', '', '', '', '', ''];
+		expectedData = ['61.5', '92.5', '122.5', '153.5', '183.5', '214.5'];
+		getAutofillCase([0, 1, 0, 0], [2, 7, 0, 0], 3, 'Mixed date format. Asc sequence. Horizontal. Two selected cells. Step - month. 1900 year.', expectedData);
+		// Case #82: Mixed date format. Reverse sequence. Horizontal. Two selected cells. Step - month. 1900 year.
+		range = ws.getRange4(0, 6);
+		range.fillData(testData);
+		undoData = ['', '', '', '', '32.5', '1'];
+		expectedData = ['32.5', '1', '32.5', '1', '32.5', '1'];
+		getAutofillCase([6, 7, 0, 0], [5, 0, 0, 0], 1, 'Mixed date format. Reverse sequence. Horizontal. Two selected cells. Step - month. 1900 year.', expectedData);
+		ws.getRange2('A1:Z20').cleanAll();
+		// Case #83: Date format. Asc sequence. Vertical. Two selected cells. Step - year.
+		testData = [
+			['01/01/2000'],
+			['01/01/2001']
+		];
+		range = ws.getRange4(0, 0);
+		range.fillData(testData);
+		undoData = [[''], [''], [''], [''], [''], ['']];
+		expectedData = [['37257'], ['37622'], ['37987'], ['38353'], ['38718'], ['39083']];
+		getAutofillCase([0, 0, 0, 1], [0, 0, 2, 7], 3, 'Date format. Asc sequence. Vertical. Two selected cells. Step - year.', expectedData);
+		// Case #84: Date format. Reverse sequence. Vertical. Two selected cells. Step - year.
+		range = ws.getRange4(6, 0);
+		range.fillData(testData);
+		undoData = [[''], [''], [''], [''], ['36892'], ['36526']];
+		expectedData = [['36161'], ['35796'], ['35431'], ['35065'], ['34700'], ['34335']];
+		getAutofillCase([0, 0, 6, 7], [0, 0, 5, 0], 1, 'Date format. Reverse sequence. Vertical. Two selected cells. Step - year.', expectedData);
+		ws.getRange2('A1:A20').cleanAll();
+		// Case #85: Date format. Asc sequence. Horizontal. Three selected cells. Step - year.
+		testData = [
+			['01/01/2000', '01/01/2025', '01/01/2050']
+		];
+		range = ws.getRange4(0, 0);
+		range.fillData(testData);
+		undoData = ['', '', '', '', ''];
+		expectedData = ['63920', '73051', '82182', '91313', '100444'];
+		getAutofillCase([0, 2, 0, 0], [3, 7, 0, 0], 3, 'Date format. Asc sequence. Horizontal. Three selected cells. Step - year.', expectedData);
+		// Case #86: Date format. Reverse sequence. Horizontal. Three selected cells. Step - year.
+		range = ws.getRange4(0, 5);
+		range.fillData(testData);
+		undoData = ['', '',  '54789', '45658', '36526'];
+		expectedData = ['27395', '18264', '9133', '1', '45658'];
+		getAutofillCase([5, 7, 0, 0], [4, 0, 0, 0], 1, 'Date format. Reverse sequence. Horizontal. Three selected cells. Step - year.', expectedData);
+		ws.getRange2('A1:Z20').cleanAll();
+		// Case #87: Date format. Asc sequence. Vertical. Three selected cells. Step - year. Negative case - incorrect sequence.
+		testData = [
+			['01/01/2000'],
+			['01/01/2002'],
+			['01/01/2005']
+		];
+		range = ws.getRange4(0, 0);
+		range.fillData(testData);
+		undoData = [[''], [''], [''], [''], ['']];
+		expectedData = [['36526'], ['37257'], ['38353'], ['36526'], ['37257']];
+		getAutofillCase([0, 0, 0, 2], [0, 0, 3, 7], 3, 'Date format. Asc sequence. Vertical. Three selected cells. Step - year. Negative case - incorrect sequence.', expectedData);
+		// Case #88: Date format. Reverse sequence. Vertical. Three selected cells. Step - year. Negative case - incorrect sequence.
+		range = ws.getRange4(5, 0);
+		range.fillData(testData);
+		undoData = [[''], [''], ['38353'], ['37257'], ['36526']];
+		expectedData = [['38353'], ['37257'], ['36526'], ['38353'], ['37257']];
+		getAutofillCase([0, 0, 5, 7], [0, 0, 4, 0], 1, 'Date format. Reverse sequence. Vertical. Three selected cells. Step - year. Negative case - incorrect sequence.', expectedData);
+		ws.getRange2('A1:A20').cleanAll();
+		// Case #89: Date format. Asc sequence. Horizontal. Two selected cells. Step - year. 1900 year.
+		testData = [
+			['01/01/1900', '01/01/1910']
+		];
+		range = ws.getRange4(0, 0);
+		range.fillData(testData);
+		undoData = ['', '', '', '', '', ''];
+		expectedData = ['7306', '10959', '14611', '18264', '21916', '25569'];
+		getAutofillCase([0, 1, 0, 0], [2, 7, 0, 0], 3, 'Date format. Asc sequence. Horizontal. Two selected cells. Step - year. 1900 year.', expectedData);
+		// Case #90: Date format. Reverse sequence. Horizontal. Two selected cells. Step - year. 1900 year.
+		range = ws.getRange4(0, 6);
+		range.fillData(testData);
+		undoData = ['', '', '', '', '3654', '1'];
+		expectedData = ['3654', '1', '3654', '1', '3654', '1'];
+		getAutofillCase([6, 7, 0, 0], [5, 0, 0, 0], 1, 'Date format. Reverse sequence. Horizontal. Two selected cells. Step - year. 1900 year.', expectedData);
+		ws.getRange2('A1:Z20').cleanAll();
+		// Case #91: Date & Time format. Asc sequence. Vertical. Two selected cells. Step - year.
+		testData = [
+			['01/01/2000 12:00'],
+			['01/01/2100 14:00']
+		];
+		range = ws.getRange4(0, 0);
+		range.fillData(testData);
+		undoData = [[''], [''], [''], [''], [''], ['']];
+		expectedData = [['109575.66666666666'], ['146099.75'], ['182623.8333333333'], ['219148.91666666663'], ['255672.99999999994'], ['292197.08333333326']];
+		getAutofillCase([0, 0, 0, 1], [0, 0, 2, 7], 3, 'Date & Time format. Asc sequence. Vertical. Two selected cells. Step - year.', expectedData);
+		// Case #92: Date & Time format. Reverse sequence. Vertical. Two selected cells. Step - year.
+		range = ws.getRange4(6, 0);
+		range.fillData(testData);
+		undoData = [[''], [''], [''], [''], ['73051.58333333333'], ['36526.5']];
+		expectedData = [['1.4166666666715173'], ['36526.5'], ['73051.58333333333'], ['36526.5'], ['73051.58333333333'], ['36526.5']];
+		getAutofillCase([0, 0, 6, 7], [0, 0, 5, 0], 1, 'Date & Time format. Reverse sequence. Vertical. Two selected cells. Step - year.', expectedData);
+		ws.getRange2('A1:A20').cleanAll();
+		// Case #93: Date & Time format. Asc sequence. Horizontal. Three selected cells. Step - year.
+		testData = [
+			['01/01/2000 12:00', '01/01/2005 13:00', '01/01/2010 14:00']
+		];
+		range = ws.getRange4(0, 0);
+		range.fillData(testData);
+		undoData = ['', '', '', '', '', ''];
+		expectedData = ['42005.5', '43831.5', '45658.5', '47484.5', '49310.5'];
+		getAutofillCase([0, 2, 0, 0], [3, 7, 0, 0], 3, 'Date & Time format. Asc sequence. Horizontal. Three selected cells. Step - year.', expectedData);
+		// Case #94: Date & Time format. Reverse sequence. Horizontal. Three selected cells. Step - year.
+		range = ws.getRange4(0, 5);
+		range.fillData(testData);
+		undoData = ['', '', '40179.583333333336', '38353.541666666664', '36526.5'];
+		expectedData = ['34700.5', '32874.5', '31048.5', '29221.5', '27395.5'];
+		getAutofillCase([5, 7, 0, 0], [4, 0, 0, 0], 1, 'Date & Time format. Reverse sequence. Horizontal. Three selected cells. Step - year.', expectedData);
+		ws.getRange2('A1:Z20').cleanAll();
+		// Case #95: Date & Time format. Asc sequence. Vertical. Three selected cells. Step - year. Negative case - incorrect sequence.
+		testData = [
+			['01/01/2000 12:00'],
+			['01/01/2002 12:00'],
+			['01/01/2005 12:00']
+		];
+		range = ws.getRange4(0, 0);
+		range.fillData(testData);
+		undoData = [[''], [''], [''], [''], ['']];
+		expectedData =[['36526.5'], ['37257.5'], ['38353.5'], ['36526.5'], ['37257.5']];
+		getAutofillCase([0, 0, 0, 2], [0, 0, 3, 7], 3, 'Date & Time format. Asc sequence. Vertical. Three selected cells. Step - year. Negative case - incorrect sequence.', expectedData);
+		// Case #96: Date & Time format. Reverse sequence. Vertical. Three selected cells. Step - year. Negative case - incorrect sequence.
+		range = ws.getRange4(5, 0);
+		range.fillData(testData);
+		undoData = [[''], [''], ['38353.5'], ['37257.5'], ['36526.5']];
+		expectedData = [['38353.5'], ['37257.5'], ['36526.5'], ['38353.5'], ['37257.5']];
+		getAutofillCase([0, 0, 5, 7], [0, 0, 4, 0], 1, 'Date & Time format. Reverse sequence. Vertical. Three selected cells. Step - year. Negative case - incorrect sequence.', expectedData);
+		ws.getRange2('A1:A20').cleanAll();
+		// Case #97: Mixed date format. Asc sequence. Horizontal. Two selected cells. Step - year.
+		testData = [
+			['01/01/2000', '01/01/2001 12:00']
+		];
+		range = ws.getRange4(0, 0);
+		range.fillData(testData);
+		undoData = ['', '', '', '', '', ''];
+		expectedData = ['37257.5', '37622.5', '37987.5', '38353.5', '38718.5', '39083.5'];
+		getAutofillCase([0, 1, 0, 0], [2, 7, 0, 0], 3, 'Mixed date format. Asc sequence. Horizontal. Two selected cells. Step - year.', expectedData);
+		// Case #98: Mixed date format. Reverse sequence. Horizontal. Two selected cells. Step - year.
+		range = ws.getRange4(0, 6);
+		range.fillData(testData);
+		undoData = ['', '', '', '', '36892.5', '36526'];
+		expectedData = ['36161.5', '35796.5', '35431.5', '35065.5', '34700.5', '34335.5'];
+		getAutofillCase([6, 7, 0, 0], [5, 0, 0, 0], 1, 'Mixed date format. Reverse sequence. Horizontal. Two selected cells. Step - year.', expectedData);
+		ws.getRange2('A1:Z20').cleanAll();
+		// Case #99: Mixed date format. Asc sequence. Vertical. Three selected cells. Step - year.
+		testData = [
+			['01/01/2000 12:00'],
+			['01/01/2002 12:00'],
+			['01/01/2004']
+		];
+		range = ws.getRange4(0, 0);
+		range.fillData(testData);
+		undoData = [[''], [''], [''], [''], ['']];
+		expectedData = [['38718.5'], ['39448.5'], ['40179.5'], ['40909.5'], ['41640.5']];
+		getAutofillCase([0, 0, 0, 2], [0, 0, 3, 7], 3, 'Mixed date format. Asc sequence. Vertical. Three selected cells. Step - year.', expectedData);
+		// Case #100: Mixed date format. Reverse sequence. Vertical. Three selected cells. Step - year.
+		range = ws.getRange4(5, 0);
+		range.fillData(testData);
+		undoData = [[''], [''], ['37987'], ['37257.5'], ['36526.5']];
+		expectedData = [['35796.5'], ['35065.5'], ['34335.5'], ['33604.5'], ['32874.5']];
+		getAutofillCase([0, 0, 5, 7], [0, 0, 4, 0], 1, 'Mixed date format. Reverse sequence. Vertical. Three selected cells. Step - year.', expectedData);
+		ws.getRange2('A1:A20').cleanAll();
+	});
+
+	QUnit.test('Cells merge test', function (assert) {
+		
+		ws.getRange2("A1:Z100").cleanAll();
+		ws.getRange2("A10").setValue("1");
+		ws.getRange2("A11").setValue("2");
+		ws.getRange2("B10").setValue("3");
+		ws.getRange2("B11").setValue("4");
+
+		// If the range is not merged, null is returned, otherwise a Range.bbox object
+		assert.ok(ws.getRange2("A10:B11").hasMerged() === null, 'Range A10:B11 is not merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "1", 'Value in A10 before merge in A10:B11');
+		assert.strictEqual(ws.getRange2("A11").getValueWithoutFormat(), "2", 'Value in A11 before merge in A10:B11');
+		assert.strictEqual(ws.getRange2("B10").getValueWithoutFormat(), "3", 'Value in B10 before merge in A10:B11');
+		assert.strictEqual(ws.getRange2("B11").getValueWithoutFormat(), "4", 'Value in B11 before merge in A10:B11');
+
+		// A10:B11 merge & center
+		ws.getRange2("A10:B11").merge(Asc.c_oAscMergeOptions.MergeCenter);
+
+		assert.ok(ws.getRange2("A10:B11").hasMerged(), 'Range A10:B11 is merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "1", 'Value in A10 after merge in A10:B11');
+		assert.strictEqual(ws.getRange2("A11").getValueWithoutFormat(), "", 'Value in A11 after merge in A10:B11');
+		assert.strictEqual(ws.getRange2("B10").getValueWithoutFormat(), "", 'Value in B10 after merge in A10:B11');
+		assert.strictEqual(ws.getRange2("B11").getValueWithoutFormat(), "", 'Value in B11 after merge in A10:B11');
+
+		// A10:B11 unmerge
+		ws.getRange2("A10:B11").merge(Asc.c_oAscMergeOptions.MergeCenter);
+
+		ws.getRange2("A10:B11").cleanAll();
+		ws.getRange2("A10").setValue("1");
+		ws.getRange2("A11").setValue("2");
+		ws.getRange2("B10").setValue("3");
+		ws.getRange2("B11").setValue("4");
+
+		assert.ok(ws.getRange2("A9:B11").hasMerged() === null, 'Range A9:B11 is not merged');
+		ws.getRange2("A9:B11").merge(Asc.c_oAscMergeOptions.MergeCenter);
+		assert.ok(ws.getRange2("A9:B11").hasMerged(), 'Range A9:B11 is merged');
+		assert.strictEqual(ws.getRange2("A9").getValueWithoutFormat(), "1", 'Value in A9 after merge in A9:B11');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "", 'Value in A10 after merge in A9:B11');
+		assert.strictEqual(ws.getRange2("A11").getValueWithoutFormat(), "", 'Value in A11 after merge in A9:B11');
+		assert.strictEqual(ws.getRange2("B9").getValueWithoutFormat(), "", 'Value in B9 after merge in A9:B11');
+		assert.strictEqual(ws.getRange2("B10").getValueWithoutFormat(), "", 'Value in B10 after merge in A9:B11');
+		assert.strictEqual(ws.getRange2("B11").getValueWithoutFormat(), "", 'Value in B11 after merge in A9:B11');
+
+		// A9:B11 unmerge
+		ws.getRange2("A9:B11").merge(Asc.c_oAscMergeOptions.MergeCenter);
+		ws.getRange2("A9:B11").cleanAll();
+
+		let bbox = ws.getRange2("A11").bbox;
+		ws.getRange2("A11").setValue("={2,4}", undefined, undefined, bbox);
+		// cellWithFormula = new window['AscCommonExcel'].CCellWithFormula(ws, bbox.r1, bbox.c1);
+		assert.ok(ws.getRange2("A10:A11").hasMerged() === null, 'Range A10:A11 is not merged');
+		ws.getRange2("A10:A11").merge(Asc.c_oAscMergeOptions.MergeCenter);
+		assert.ok(ws.getRange2("A10:A11").hasMerged(), 'Range A10:A11 is merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "2", 'Value in A10 after merge in A10:A11 with one cell array');
+
+		// A10:A11 unmerge
+		ws.getRange2("A10:A11").merge(Asc.c_oAscMergeOptions.MergeCenter);
+		ws.getRange2("A10:A12").cleanAll();
+
+		bbox = ws.getRange2("A11:A12").bbox;
+		ws.getRange2("A11").setValue("={2,4}", undefined, undefined, bbox);
+		assert.ok(ws.getRange2("A10:A12").hasMerged() === null, 'Range A10:A12 is not merged');
+		ws.getRange2("A10:A12").merge(Asc.c_oAscMergeOptions.MergeCenter);
+		assert.ok(ws.getRange2("A10:A12").hasMerged(), 'Range A10:A12 is merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "", 'Value in A10 after merge in A10:A12 with two cells array');
+		assert.strictEqual(ws.getRange2("A11").getValueWithoutFormat(), "", 'Value in A11 after merge in A10:A12 with two cells array');
+		assert.strictEqual(ws.getRange2("A12").getValueWithoutFormat(), "", 'Value in A12 after merge in A10:A12 with two cells array');
+
+		// A10:A12 unmerge
+		ws.getRange2("A10:A12").merge(Asc.c_oAscMergeOptions.MergeCenter);
+		ws.getRange2("A10:A12").cleanAll();
+
+		ws.getRange2("A10").setValue("1");
+
+		bbox = ws.getRange2("A11").bbox;
+		ws.getRange2("A11").setValue("={2,4}", undefined, undefined, bbox);
+		assert.ok(ws.getRange2("A10:A12").hasMerged() === null, 'Range A10:A12 is not merged');
+		ws.getRange2("A10:A12").merge(Asc.c_oAscMergeOptions.MergeCenter);
+		assert.ok(ws.getRange2("A10:A12").hasMerged(), 'Range A10:A12 is merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "1", 'Value in A10 after merge in A10:A12 with one cell value before one cell array');
+		assert.strictEqual(ws.getRange2("A11").getValueWithoutFormat(), "", 'Value in A11 after merge in A10:A12 with one cell value before one cell array');
+		assert.strictEqual(ws.getRange2("A12").getValueWithoutFormat(), "", 'Value in A12 after merge in A10:A12 with one cell value before one cell array');
+
+		// A10:A12 unmerge
+		ws.getRange2("A10:A12").merge(Asc.c_oAscMergeOptions.MergeCenter);
+		ws.getRange2("A10:B12").cleanAll();
+
+		ws.getRange2("A10").setValue("1");
+		ws.getRange2("B10").setValue("1");
+
+		bbox = ws.getRange2("A11:B11").bbox;
+		ws.getRange2("A11:B11").setValue("={2,4}", undefined, undefined, bbox);
+		assert.ok(ws.getRange2("A10:B12").hasMerged() === null, 'Range A10:B12 is not merged');
+		ws.getRange2("A10:B12").merge(Asc.c_oAscMergeOptions.MergeCenter);
+		assert.ok(ws.getRange2("A10:B12").hasMerged(), 'Range A10:B12 is merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "1", 'Value in A10 after merge in A10:B12 with two cells value before two cells array');
+		assert.strictEqual(ws.getRange2("A11").getValueWithoutFormat(), "", 'Value in A11 after merge in A10:B12 with two cells value before two cells array');
+		assert.strictEqual(ws.getRange2("A12").getValueWithoutFormat(), "", 'Value in A12 after merge in A10:B12 with two cells value before two cells array');
+		assert.strictEqual(ws.getRange2("B10").getValueWithoutFormat(), "", 'Value in B10 after merge in A10:B12 with two cells value before two cells array');
+		assert.strictEqual(ws.getRange2("B11").getValueWithoutFormat(), "", 'Value in B11 after merge in A10:B12 with two cells value before two cells array');
+		assert.strictEqual(ws.getRange2("B12").getValueWithoutFormat(), "", 'Value in B12 after merge in A10:B12 with two cells value before two cells array');
+
+		// A10:B12 unmerge
+		ws.getRange2("A10:B12").merge(Asc.c_oAscMergeOptions.MergeCenter);
+		ws.getRange2("A10:B12").cleanAll();
+
+		/* merge across tests */
+		let mergeRes;
+		ws.getRange2("A1:Z100").cleanAll();
+		ws.getRange2("A10").setValue("1");
+		ws.getRange2("B10").setValue("2");
+		ws.getRange2("C10").setValue("3");
+
+		assert.ok(ws.getRange2("A10:C10").hasMerged() === null, 'Range A10:C10 is not merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "1", 'Value in A10 before across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("B10").getValueWithoutFormat(), "2", 'Value in B10 before across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("C10").getValueWithoutFormat(), "3", 'Value in C10 before across merge in A10:C10');
+
+		// A10:C10 merge across
+		ws.getRange2("A10:C10").merge(Asc.c_oAscMergeOptions.MergeAcross);
+
+		assert.ok(ws.getRange2("A10:C10").hasMerged(), 'Range A10:C10 is merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "1", 'Value in A10 after across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("B10").getValueWithoutFormat(), "", 'Value in B10 after across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("C10").getValueWithoutFormat(), "", 'Value in C10 after across merge in A10:C10');
+
+		// A10:C10 unmerge
+		ws.getRange2("A10:C10").merge(Asc.c_oAscMergeOptions.MergeAcross);
+		ws.getRange2("A10:C10").cleanAll();
+
+
+		ws.getRange2("A10").setValue("");
+		ws.getRange2("B10").setValue("2");
+		ws.getRange2("C10").setValue("3");
+
+		assert.ok(ws.getRange2("A10:C10").hasMerged() === null, 'Range A10:C10 is not merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "", 'Value in A10 before across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("B10").getValueWithoutFormat(), "2", 'Value in B10 before across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("C10").getValueWithoutFormat(), "3", 'Value in C10 before across merge in A10:C10');
+
+		// A10:C10 merge across
+		ws.getRange2("A10:C10").merge(Asc.c_oAscMergeOptions.MergeAcross);
+
+		assert.ok(ws.getRange2("A10:C10").hasMerged(), 'Range A10:C10 is merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "2", 'Value in A10 after across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("B10").getValueWithoutFormat(), "", 'Value in B10 after across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("C10").getValueWithoutFormat(), "", 'Value in C10 after across merge in A10:C10');
+
+		// A10:C10 unmerge
+		ws.getRange2("A10:C10").merge(Asc.c_oAscMergeOptions.MergeAcross);
+		ws.getRange2("A10:C10").cleanAll();
+
+
+		bbox = ws.getRange2("A10").bbox;
+		ws.getRange2("A10").setValue("={4,6}", undefined, undefined, bbox);
+		ws.getRange2("B10").setValue("2");
+		ws.getRange2("C10").setValue("3");
+
+		assert.ok(ws.getRange2("A10:C10").hasMerged() === null, 'Range A10:C10 is not merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "4", 'Value in A10 before across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("B10").getValueWithoutFormat(), "2", 'Value in B10 before across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("C10").getValueWithoutFormat(), "3", 'Value in C10 before across merge in A10:C10');
+
+		// A10:C10 merge across
+		ws.getRange2("A10:C10").merge(Asc.c_oAscMergeOptions.MergeAcross);
+
+		assert.ok(ws.getRange2("A10:C10").hasMerged(), 'Range A10:C10 is merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "4", 'Value in A10 after across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("B10").getValueWithoutFormat(), "", 'Value in B10 after across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("C10").getValueWithoutFormat(), "", 'Value in C10 after across merge in A10:C10');
+
+		// A10:C10 unmerge
+		ws.getRange2("A10:C10").merge(Asc.c_oAscMergeOptions.MergeAcross);
+		ws.getRange2("A10:C10").cleanAll();
+
+
+		bbox = ws.getRange2("B10").bbox;
+		ws.getRange2("A10").setValue("2");
+		ws.getRange2("B10").setValue("={4,6}", undefined, undefined, bbox);
+		ws.getRange2("C10").setValue("3");
+
+		assert.ok(ws.getRange2("A10:C10").hasMerged() === null, 'Range A10:C10 is not merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "2", 'Value in A10 before across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("B10").getValueWithoutFormat(), "4", 'Value in B10 before across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("C10").getValueWithoutFormat(), "3", 'Value in C10 before across merge in A10:C10');
+
+		// A10:C10 merge across
+		ws.getRange2("A10:C10").merge(Asc.c_oAscMergeOptions.MergeAcross);
+
+		assert.ok(ws.getRange2("A10:C10").hasMerged(), 'Range A10:C10 is merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "2", 'Value in A10 after across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("B10").getValueWithoutFormat(), "", 'Value in B10 after across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("C10").getValueWithoutFormat(), "", 'Value in C10 after across merge in A10:C10');
+
+		// A10:C10 unmerge
+		ws.getRange2("A10:C10").merge(Asc.c_oAscMergeOptions.MergeAcross);
+		ws.getRange2("A10:C10").cleanAll();
+
+
+		bbox = ws.getRange2("A10:B10").bbox;
+		ws.getRange2("A10:B10").setValue("={4,6}", undefined, undefined, bbox);
+		ws.getRange2("C10").setValue("3");
+
+		assert.ok(ws.getRange2("A10:C10").hasMerged() === null, 'Range A10:C10 is not merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "4", 'Value in A10 before across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("B10").getValueWithoutFormat(), "6", 'Value in B10 before across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("C10").getValueWithoutFormat(), "3", 'Value in C10 before across merge in A10:C10');
+
+		// A10:C10 merge across with expected error
+		mergeRes = ws.getRange2("A10:C10").merge(Asc.c_oAscMergeOptions.MergeAcross);
+
+		assert.strictEqual(mergeRes && mergeRes.errorType, Asc.c_oAscError.ID.CannotChangeFormulaArray);
+		assert.ok(ws.getRange2("A10:C10").hasMerged() === null, 'Range A10:C10 is not merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "4", 'Value in A10 after across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("B10").getValueWithoutFormat(), "6", 'Value in B10 after across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("C10").getValueWithoutFormat(), "3", 'Value in C10 after across merge in A10:C10');
+
+		// A10:C10 unmerge
+		ws.getRange2("A10:C10").merge(Asc.c_oAscMergeOptions.MergeAcross);
+		ws.getRange2("A10:C10").cleanAll();
+
+
+		bbox = ws.getRange2("B10:C10").bbox;
+		ws.getRange2("A10").setValue("3");
+		ws.getRange2("B10:C10").setValue("={4,6}", undefined, undefined, bbox);
+
+		assert.ok(ws.getRange2("A10:C10").hasMerged() === null, 'Range A10:C10 is not merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "3", 'Value in A10 before across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("B10").getValueWithoutFormat(), "4", 'Value in B10 before across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("C10").getValueWithoutFormat(), "6", 'Value in C10 before across merge in A10:C10');
+		
+		// A10:C10 merge across
+		mergeRes = ws.getRange2("A10:C10").merge(Asc.c_oAscMergeOptions.MergeAcross);
+
+		assert.strictEqual(mergeRes, undefined);
+		assert.ok(ws.getRange2("A10:C10").hasMerged(), 'Range A10:C10 is merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "3", 'Value in A10 after across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("B10").getValueWithoutFormat(), "", 'Value in B10 after across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("C10").getValueWithoutFormat(), "", 'Value in C10 after across merge in A10:C10');
+
+		// A10:C10 unmerge
+		ws.getRange2("A10:C10").merge(Asc.c_oAscMergeOptions.MergeAcross);
+		ws.getRange2("A10:C10").cleanAll();
+
+
+		bbox = ws.getRange2("B10:C10").bbox;
+		ws.getRange2("A10").setValue("");
+		ws.getRange2("B10:C10").setValue("={4,6}", undefined, undefined, bbox);
+
+		assert.ok(ws.getRange2("A10:C10").hasMerged() === null, 'Range A10:C10 is not merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "", 'Value in A10 before across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("B10").getValueWithoutFormat(), "4", 'Value in B10 before across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("C10").getValueWithoutFormat(), "6", 'Value in C10 before across merge in A10:C10');
+		
+		// A10:C10 merge across
+		mergeRes = ws.getRange2("A10:C10").merge(Asc.c_oAscMergeOptions.MergeAcross);
+
+		assert.strictEqual(mergeRes, undefined);
+		assert.ok(ws.getRange2("A10:C10").hasMerged(), 'Range A10:C10 is merged');
+		assert.strictEqual(ws.getRange2("A10").getValueWithoutFormat(), "", 'Value in A10 after across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("B10").getValueWithoutFormat(), "", 'Value in B10 after across merge in A10:C10');
+		assert.strictEqual(ws.getRange2("C10").getValueWithoutFormat(), "", 'Value in C10 after across merge in A10:C10');
+
+		// A10:C10 unmerge
+		ws.getRange2("A10:C10").merge(Asc.c_oAscMergeOptions.MergeAcross);
+		ws.getRange2("A10:C10").cleanAll();
+
 	});
 
 	QUnit.module("Sheet structure");

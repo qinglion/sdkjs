@@ -102,6 +102,10 @@ function CTableCell(Row, ColW)
         X_cell_end   : 0,
         Y_cell_start : 0,
         Y_cell_end   : 0,
+		
+		UseClip : false,
+		ClipTop : 0,
+		ClipBottom : 0,
 
         Y_VAlign_offset : [] // Сдвиг, который нужно сделать из-за VAlign (массив по страницам)
     };
@@ -1070,6 +1074,9 @@ CTableCell.prototype =
 
 	ShiftCell : function(CurPage, dX, dY)
     {
+		// TODO: По логике нужно тут двигать this.Temp.ClipTop/ClipBottom, но при пересчете мы их проставляем заново,
+		//       возможно сделать через флаг
+		
         if (true === this.IsVerticalText())
         {
             this.Temp.X_start += dX;
@@ -1090,9 +1097,9 @@ CTableCell.prototype =
         }
     },
 
-	ShiftCellContent : function(nCurPage, nShiftX, nShiftY)
+	ShiftCellContent : function(nCurPage, nShiftX, nShiftY, keepClip)
 	{
-		this.Content.Shift(nCurPage, nShiftX, nShiftY);
+		this.Content.Shift(nCurPage, nShiftX, nShiftY, keepClip);
 
 		var arrDrawings = this.Content.GetAllDrawingObjects();
 		for (var nIndex = 0, nCount = arrDrawings.length; nIndex < nCount; ++nIndex)
@@ -2033,14 +2040,8 @@ CTableCell.prototype =
 		this.Content = AscCommon.g_oTableId.Get_ById(Reader.GetString2());
 
 		if (this.Content)
-			this.Content.Parent = this;
-
-		AscCommon.CollaborativeEditing.Add_NewObject(this);
-	},
-
-    Load_LinkData : function(LinkData)
-    {
-    }
+			this.Content.SetParent(this);
+	}
 };
 /**
  * Доступ к содержимому ячейки
@@ -2049,6 +2050,15 @@ CTableCell.prototype =
 CTableCell.prototype.GetContent = function()
 {
 	return this.Content;
+};
+/**
+ * Функция для выставления класса содержимого ячейки (используется в совместке)
+ * @param {CDocumentContent} oDocumentContent
+ */
+CTableCell.prototype.SetDocumentContent = function(oDocumentContent)
+{
+	this.Content = oDocumentContent;
+	oDocumentContent.SetParent(this);
 };
 /**
  * Доступ к родительской строке
@@ -2763,6 +2773,10 @@ CTableCell.prototype.OnContentChange = function()
 	let table = this.GetTable();
 	if (table)
 		table.OnContentChange();
+};
+CTableCell.prototype.PreDelete = function()
+{
+	this.Content.PreDelete();
 };
 
 

@@ -359,7 +359,8 @@
 		if (!oReviewInfoParent === undefined)
 			return;
 
-		if (!oReviewInfoParent || !oReviewInfoParent.ReviewInfo)
+		// TODO: Проверку по каким классам нужно проходить лучше переделать
+		if (!oReviewInfoParent || !oReviewInfoParent.GetReviewInfo)
 		{
 			if (oReviewInfoParent instanceof ParaMath)
 			{
@@ -381,14 +382,19 @@
 			return;
 		}
 
-		if (oReviewInfoParent.ReviewType !== 1)
+		if (oReviewInfoParent.GetReviewType() !== reviewtype_Remove)
 		{
-			let oCurrentReviewType			= oReviewInfoParent.GetReviewInfo().Copy();
-			oCurrentReviewType.UserId		= this.userId;
-			oCurrentReviewType.UserName		= this.userName;
-			oCurrentReviewType.DateTime		= this.userTime;
+			let reviewInfo = oReviewInfoParent.GetReviewInfo();
+			if (!reviewInfo)
+				reviewInfo = new AscWord.ReviewInfo();
+			else
+				reviewInfo = reviewInfo.Copy();
+			
+			reviewInfo.UserId		= this.userId;
+			reviewInfo.UserName		= this.userName;
+			reviewInfo.DateTime		= this.userTime;
 
-			oReviewInfoParent.SetReviewTypeWithInfo(1, oCurrentReviewType, false);
+			oReviewInfoParent.SetReviewTypeWithInfo(reviewtype_Remove, reviewInfo, false);
 		}
 	};
 	DeletedTextRecovery.prototype.FindPosInParent = function(oClass)
@@ -607,7 +613,7 @@
 				}
 				this.data[strCurrentKey] = newArrCurrentRunData;
 			}
-			const transformedObject = CollapsePositions(this.data);
+			let transformedObject = CollapsePositions(this.data);
 			return transformedObject
 		}
 		this.ResetData = function ()
@@ -617,20 +623,20 @@
 	}
 	function CollapsePositions (oInput)
 	{
-		const transformedObject = {};
-		for (const key in oInput)
+		let transformedObject = {};
+		for (let key in oInput)
 		{
 			if (oInput.hasOwnProperty(key))
 			{
-				const values = oInput[key];
-				const pairs = [];
+				let values = oInput[key];
+				let pairs = [];
 				let nStart = null;
 				let nEnd = null;
 				let decreasingSequence = false;
 
 				for (let i = 0; i < values.length; i++)
 				{
-					const value = values[i];
+					let value = values[i];
 
 					if (nStart === null)
 					{
@@ -649,7 +655,7 @@
 					}
 					else
 					{
-						pairs.push({ nStart, nEnd });
+						pairs.push({ nStart : nStart, nEnd: nEnd });
 						nStart = value;
 						nEnd = value;
 						decreasingSequence = false;
@@ -657,7 +663,7 @@
 				}
 
 				if (nStart !== null && nEnd !== null)
-					pairs.push({ nStart, nEnd });
+					pairs.push({ nStart : nStart, nEnd: nEnd });
 
 				transformedObject[key] = pairs;
 			}

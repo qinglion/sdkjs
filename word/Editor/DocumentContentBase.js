@@ -441,6 +441,8 @@ CDocumentContentBase.prototype.MoveCursorToNearestPos = function(oNearestPos)
 		var oTopDocument = oParent.Is_TopDocument(true);
 		if (oTopDocument)
 			oTopDocument.RemoveSelection();
+		else
+			this.RemoveSelection();
 	}
 
 	oPara.Set_ParaContentPos(oNearestPos.ContentPos, true, -1, -1);
@@ -541,7 +543,7 @@ CDocumentContentBase.prototype.private_Remove = function(Count, isRemoveWholeEle
 					if (oElement && oElement.IsParagraph() && (nIndex < EndPos || this.Content[nIndex].IsSelectionToEnd()))
 					{
 						var oPrChange   = oElement.GetDirectParaPr();
-						var oReviewInfo = new CReviewInfo();
+						var oReviewInfo = new AscWord.ReviewInfo();
 						oReviewInfo.Update();
 
 						oElement.SetDirectParaPr(oDirectParaPr);
@@ -813,13 +815,15 @@ CDocumentContentBase.prototype.private_Remove = function(Count, isRemoveWholeEle
 				let isParagraphMarkRemove = this.Content[StartPos].IsParagraph() && this.Content[StartPos].IsSelectedOnlyParagraphMark();
 
 				this.CurPos.ContentPos = StartPos;
-				if (Count < 0 && this.Content[StartPos].IsTable() && true === this.Content[StartPos].IsCellSelection() && true !== bOnTextAdd)
+				if (this.Content[StartPos].IsTable()
+					&& true === this.Content[StartPos].IsCellSelection()
+					&& ((!bOnTextAdd && Count < 0) || isRemoveOnDrag))
 				{
 					this.RemoveTableCells();
 				}
 				else if (false === this.Content[StartPos].Remove(Count, isRemoveWholeElement, bRemoveOnlySelection, bOnTextAdd))
 				{
-					if (!bOnTextAdd && (isParagraphMarkRemove || ((isRemoveOnDrag || Count > 0 || StartPos < this.Content.length - 1) && this.Content[StartPos].IsEmpty())))
+					if ((!bOnTextAdd || isRemoveOnDrag) && (isParagraphMarkRemove || ((isRemoveOnDrag || Count > 0 || StartPos < this.Content.length - 1) && this.Content[StartPos].IsEmpty())))
 					{
 						// В ворде параграфы объединяются только когда у них все настройки совпадают.
 						// (почему то при изменении и обратном изменении настроек параграфы перестают объединятся)
@@ -921,7 +925,7 @@ CDocumentContentBase.prototype.private_Remove = function(Count, isRemoveWholeEle
 								{
 									var oParaPr   = this.Content[nCurContentPos].GetDirectParaPr();
 									var oPrChange = this.Content[nCurContentPos + 1].GetDirectParaPr();
-									var oReviewInfo = new CReviewInfo();
+									var oReviewInfo = new AscWord.ReviewInfo();
 									oReviewInfo.Update();
 
 									this.Content[nCurContentPos + 1].SetDirectParaPr(oParaPr);
@@ -1016,7 +1020,7 @@ CDocumentContentBase.prototype.private_Remove = function(Count, isRemoveWholeEle
 								{
 									var oParaPr   = this.Content[nCurContentPos - 1].GetDirectParaPr();
 									var oPrChange = this.Content[nCurContentPos].GetDirectParaPr();
-									var oReviewInfo = new CReviewInfo();
+									var oReviewInfo = new AscWord.ReviewInfo();
 									oReviewInfo.Update();
 
 									this.Content[nCurContentPos].SetDirectParaPr(oParaPr);
@@ -1941,9 +1945,10 @@ CDocumentContentBase.prototype.RemoveParagraphForReview = function(nPosition)
 			if (parent && parent instanceof AscWord.CBlockLevelSdt)
 			{
 				// Если после принятия других изменений контент не пустой, то не удаляем ничего,
-				// но если он пустой и нужно было удалить последний параграф в нем, то удаляем его целиком
+				// но если он пустой и нужно было удалить последний параграф в нем, то удаляем его,
+				// чтобы при проверке выше удалялись блочные контролы с пустым содержимым
 				if (parent.IsEmpty())
-					parent.RemoveThisFromParent();
+					this.RemoveFromContent(0, 1, false);
 			}
 			else
 				this.RemoveFromContent(0, 1, true);
@@ -2101,6 +2106,11 @@ CDocumentContentBase.prototype.private_AcceptRevisionChanges = function(nType, b
 						this.RemoveFromContent(nCurPos, 1, false);
 					}
 				}
+				else if (oElement.IsBlockLevelSdt())
+				{
+					if (oElement.GetElementsCount() <= 0)
+						this.RemoveFromContent(nCurPos, 1, false);
+				}
 			}
 		}
 	}
@@ -2210,6 +2220,11 @@ CDocumentContentBase.prototype.private_RejectRevisionChanges = function(nType, b
 					{
 						this.RemoveFromContent(nCurPos, 1, false);
 					}
+				}
+				else if (oElement.IsBlockLevelSdt())
+				{
+					if (oElement.GetElementsCount() <= 0)
+						this.RemoveFromContent(nCurPos, 1, false);
 				}
 			}
 		}
@@ -2526,6 +2541,25 @@ CDocumentContentBase.prototype.OnContentChange = function()
 		&& this.GetLogicDocument().IsDocumentEditor())
 	{
 		this.GetLogicDocument().CheckShapeAutoFit(shape);
+	}
+	else if (shape && shape.OnContentChange) {
+		shape.OnContentChange();
+	}
+};
+CDocumentContentBase.prototype.OnTextPrChange = function()
+{
+	if (this.Parent && this.Parent.OnTextPrChange)
+		this.Parent.OnTextPrChange();
+	
+	let shape = this.Is_DrawingShape(true);
+	if (shape
+		&& this.GetLogicDocument()
+		&& this.GetLogicDocument().IsDocumentEditor())
+	{
+		this.GetLogicDocument().CheckShapeAutoFit(shape);
+	}
+	else if (shape && shape.OnTextPrChange) {
+		shape.OnTextPrChange();
 	}
 };
 

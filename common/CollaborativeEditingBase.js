@@ -123,9 +123,9 @@
     };
     CCollaborativeChanges.prototype.private_SaveData = function(Binary)
     {
-        var Writer = AscCommon.History.BinaryWriter;
-        var Pos    = Binary.Pos;
-        var Len    = Binary.Len;
+        let Writer = AscCommon.History.BinaryWriter;
+        let Pos    = Binary.Pos;
+        let Len    = Binary.Len;
         if ((Asc.editor || editor).binaryChanges) {
             return Writer.GetDataUint8(Pos, Len);
         } else {
@@ -182,7 +182,6 @@
         this.m_aNeedUnlock2 = []; // Массив со списком залоченных объектов(которые были залочены на данном клиенте)
         this.m_aNeedLock    = []; // Массив со списком залоченных объектов(которые были залочены, но еще не были добавлены на данном клиенте)
 
-        this.m_aLinkData    = []; // Массив, указателей, которые нам надо выставить при загрузке чужих изменений
         this.m_aEndActions  = []; // Массив действий, которые надо выполнить после принятия чужих изменений
 
 
@@ -192,7 +191,6 @@
         this.m_aCheckLocks         = []; // Массив для проверки залоченности объектов, которые мы собираемся изменять
         this.m_aCheckLocksInstance = []; // Массив для проверки залоченности объектов в случае сложного действия
 
-        this.m_aNewObjects  = []; // Массив со списком чужих новых объектов
         this.m_aNewImages   = []; // Массив со списком картинок, которые нужно будет загрузить на сервере
         this.m_aDC          = {}; // Массив(ассоциативный) классов DocumentContent
         this.m_aChangedClasses = {}; // Массив(ассоциативный) классов, в которых есть изменения выделенные цветом
@@ -253,7 +251,11 @@
 	{
 		return this.CoHistory;
 	};
-    CCollaborativeEditingBase.prototype.Clear = function()
+	CCollaborativeEditingBase.prototype.SetLogicDocument = function(doc)
+	{
+		this.m_oLogicDocument = doc;
+	};
+	CCollaborativeEditingBase.prototype.Clear = function()
     {
         this.m_nUseType = 1;
 
@@ -262,11 +264,9 @@
         this.m_aNeedUnlock = [];
         this.m_aNeedUnlock2 = [];
         this.m_aNeedLock = [];
-        this.m_aLinkData = [];
         this.m_aEndActions = [];
         this.m_aCheckLocks = [];
         this.m_aCheckLocksInstance = [];
-        this.m_aNewObjects = [];
         this.m_aNewImages = [];
 
 		this.CoHistory.clear();
@@ -289,14 +289,14 @@
     {
         return (1 === this.m_nUseType);
     };
+	CCollaborativeEditingBase.prototype.isCollaboration = function()
+	{
+		return (-1 === this.m_nUseType);
+	};
 	CCollaborativeEditingBase.prototype.canSendChanges = function()
 	{
 		let api = this.GetEditorApi();
 		return api && api.canSendChanges();
-	};
-	CCollaborativeEditingBase.prototype.getCoHistory = function()
-	{
-		return this.CoHistory;
 	};
     CCollaborativeEditingBase.prototype.getCollaborativeEditing = function()
     {
@@ -410,9 +410,6 @@
         this.private_SaveRecalcChangeIndex(false);
         this.private_ClearChanges();
 
-        // У новых элементов выставляем указатели на другие классы
-        this.Apply_LinkData();
-
         // Делаем проверки корректности новых изменений
         this.Check_MergeData();
 
@@ -519,9 +516,6 @@
 
 		this.private_SaveRecalcChangeIndex(false);
 		this.private_ClearChanges();
-
-		// У новых элементов выставляем указатели на другие классы
-		this.Apply_LinkData();
 
 		// Делаем проверки корректности новых изменений
 		this.Check_MergeData();
@@ -656,28 +650,6 @@
 		}
 	};
     //-----------------------------------------------------------------------------------
-    // Функции для работы с ссылками, у новых объектов
-    //-----------------------------------------------------------------------------------
-    CCollaborativeEditingBase.prototype.Clear_LinkData = function()
-    {
-        this.m_aLinkData.length = 0;
-    };
-    CCollaborativeEditingBase.prototype.Add_LinkData = function(Class, LinkData)
-    {
-        this.m_aLinkData.push( { Class : Class, LinkData : LinkData } );
-    };
-    CCollaborativeEditingBase.prototype.Apply_LinkData = function()
-    {
-        var Count = this.m_aLinkData.length;
-        for ( var Index = 0; Index < Count; Index++ )
-        {
-            var Item = this.m_aLinkData[Index];
-            Item.Class.Load_LinkData( Item.LinkData );
-        }
-
-        this.Clear_LinkData();
-    };
-    //-----------------------------------------------------------------------------------
     // Функции для проверки корректности новых изменений
     //-----------------------------------------------------------------------------------
     CCollaborativeEditingBase.prototype.Check_MergeData = function()
@@ -787,15 +759,6 @@
     //-----------------------------------------------------------------------------------
     // Функции для работы с новыми объектами, созданными на других клиентах
     //-----------------------------------------------------------------------------------
-    CCollaborativeEditingBase.prototype.Clear_NewObjects = function()
-    {
-        this.m_aNewObjects.length = 0;
-    };
-    CCollaborativeEditingBase.prototype.Add_NewObject = function(Class)
-    {
-        this.m_aNewObjects.push(Class);
-        Class.FromBinary = true;
-    };
     CCollaborativeEditingBase.prototype.Clear_EndActions = function()
     {
         this.m_aEndActions.length = 0;
@@ -806,15 +769,7 @@
     };
     CCollaborativeEditingBase.prototype.OnEnd_ReadForeignChanges = function()
     {
-        var Count = this.m_aNewObjects.length;
-
-        for (var Index = 0; Index < Count; Index++)
-        {
-            var Class = this.m_aNewObjects[Index];
-            Class.FromBinary = false;
-        }
-
-        Count = this.m_aEndActions.length;
+        let Count = this.m_aEndActions.length;
         for (var Index = 0; Index < Count; Index++)
         {
             var Item = this.m_aEndActions[Index];
@@ -822,7 +777,6 @@
         }
 
         this.Clear_EndActions();
-        this.Clear_NewObjects();
     };
     //-----------------------------------------------------------------------------------
     // Функции для работы с новыми объектами, созданными на других клиентах
@@ -959,6 +913,10 @@
     CCollaborativeEditingBase.prototype.Add_DocumentPosition = function(DocumentPos){
         this.m_aDocumentPositions.Add_DocumentPosition(DocumentPos);
     };
+	CCollaborativeEditingBase.prototype.Remove_DocumentPosition = function(docPos)
+	{
+		this.m_aDocumentPositions.Remove_DocumentPosition(docPos);
+	};
     CCollaborativeEditingBase.prototype.Add_ForeignCursor = function(UserId, DocumentPos, UserShortId){
         this.m_aForeignCursorsPos.Remove_DocumentPosition(this.m_aCursorsToUpdate[UserId]);
         this.m_aForeignCursors[UserId] = DocumentPos;

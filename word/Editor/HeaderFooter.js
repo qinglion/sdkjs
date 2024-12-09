@@ -1017,14 +1017,14 @@ CHeaderFooter.prototype =
 	{
 		return this.Content.RemoveSelection(bNoCheckDrawing);
 	},
-
+	
 	DrawSelectionOnPage : function(CurPage)
-    {
-    	if (CurPage !== this.GetPage())
-    		return;
-
-        return this.Content.DrawSelectionOnPage(0, true, true);
-    },
+	{
+		if (CurPage !== this.GetPage())
+			return;
+		
+		return this.Content.DrawSelectionOnPage(0);
+	},
 
     Selection_SetStart : function(X,Y, PageIndex, MouseEvent)
     {
@@ -1415,7 +1415,15 @@ CHeaderFooter.prototype.GetContent = function()
 {
 	return this.Content;
 };
-
+/**
+ * Функция для выставления класса содержимого колонтитула (используется в совместке)
+ * @param {CDocumentContent} oDocumentContent
+ */
+CHeaderFooter.prototype.SetDocumentContent = function(oDocumentContent)
+{
+	this.Content = oDocumentContent;
+	oDocumentContent.SetParent(this);
+};
 CHeaderFooter.prototype.FindWatermark = function()
 {
     var aAllDrawings = this.Content.GetAllDrawingObjects();
