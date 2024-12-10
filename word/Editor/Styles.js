@@ -9483,7 +9483,7 @@ CDocumentColor.prototype.ToHexColor = function() {
 CDocumentColor.prototype.ToHighlightColor = function()
 {
 	// 17.18.40 ST_HighlightColor
-	let val = (((this.r & 0xFF) << 16) | ((this.b & 0xFF) << 8) | (this.r & 0xFF));
+	let val = (((this.r & 0xFF) << 16) | ((this.g & 0xFF) << 8) | (this.b & 0xFF));
 	
 	switch (val)
 	{
