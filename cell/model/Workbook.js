@@ -5398,6 +5398,31 @@
 		return null;
 	};
 
+	Workbook.prototype.getExternalReferenceByReferenceData = function (referenceData, returnIndex) {
+		if (!referenceData) {
+			return null;
+		}
+
+		for (let i = 0; i < this.externalReferences.length; i++) {
+			if (this.externalReferences[i].referenceData) {
+				if (this.externalReferences[i].referenceData["fileKey"] === referenceData["fileKey"] && this.externalReferences[i].referenceData["instanceId"] === referenceData["instanceId"]) {
+					return returnIndex ? i + 1 : this.externalReferences[i];
+				}
+			}
+		}
+		return null;
+	};
+
+	Workbook.prototype.getExternalReferenceWithoutRefData = function (id, returnIndex) {
+		/* Receive an external link only by name(id) and without reference data */
+		for (let i = 0; i < this.externalReferences.length; i++) {
+			if (this.externalReferences[i].Id === id && !this.externalReferences[i].referenceData) {
+				return returnIndex ? i + 1 : this.externalReferences[i];
+			}
+		}
+		return null;
+	};
+
 	Workbook.prototype.getExternalReferences = function () {
 		var res = null;
 		for (var i = 0; i < this.externalReferences.length; i++) {

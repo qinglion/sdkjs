@@ -2071,6 +2071,20 @@
 	{
 		this.sendEvent("asc_onPluginWindowMouseMove", frameId, x, y);
 	};
+
+	/**
+	 * Show an error/warning message.
+	 * @memberof Api
+	 * @typeofeditors ["CDE", "CSE", "CPE", "PDF"]
+	 * @param {string} error - error text.
+	 * @param {number} level - -1 or 0 for error or warning
+	 * @alias ShowError
+	 * @since 8.3.0
+	 */
+	Api.prototype["pluginMethod_ShowError"] = function(error, level)
+	{
+		this.sendEvent("asc_onError", error, level);
+	};
 })(window);
 
 

@@ -9480,6 +9480,33 @@ CDocumentColor.prototype.ToHexColor = function() {
 		return AscCommon.ByteToHex(this.r) + AscCommon.ByteToHex(this.g) + AscCommon.ByteToHex(this.b);
 	}
 };
+CDocumentColor.prototype.ToHighlightColor = function()
+{
+	// 17.18.40 ST_HighlightColor
+	let val = (((this.r & 0xFF) << 16) | ((this.b & 0xFF) << 8) | (this.r & 0xFF));
+	
+	switch (val)
+	{
+		case 0x000000: return "black";
+		case 0x0000FF: return "blue";
+		case 0x00FFFF: return "cyan";
+		case 0x00008B: return "darkBlue";
+		case 0x008B8B: return "darkCyan";
+		case 0xA9A9A9: return "darkGray";
+		case 0x006400: return "darkGreen";
+		case 0x800080: return "darkMagenta";
+		case 0x8B0000: return "darkRed";
+		case 0x808000: return "darkYellow";
+		case 0x00FF00: return "green";
+		case 0xD3D3D3: return "lightGray";
+		case 0xFF00FF: return "magenta";
+		case 0xFF0000: return "red";
+		case 0xFFFFFF: return "white";
+		case 0xFFFF00: return "yellow";
+	}
+	
+	return "";
+};
 
 CDocumentColor.prototype.ConvertToUniColor = function()
 {

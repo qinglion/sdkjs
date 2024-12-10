@@ -1448,31 +1448,11 @@ background-repeat: no-repeat;\
 		}
 	};
 
-	asc_docs_api.prototype.InitViewer = function()
-	{
-		this.WordControl.m_oDrawingDocument.m_oDocumentRenderer = new AscCommonWord.CDocMeta();
-        this.WordControl.m_oDrawingDocument.m_oDocumentRenderer.Init();
-		this.WordControl.m_oDrawingDocument.showTarget(false);
-		this.WordControl.HideRulers();
-	};
-
 	asc_docs_api.prototype.isDocumentRenderer = function()
 	{
 		return !!this.WordControl.m_oDrawingDocument.m_oDocumentRenderer;
 	};
 
-	asc_docs_api.prototype.OpenDocument = function(url, gObject)
-	{
-		this.isOnlyReaderMode = false;
-		this.InitViewer();
-		this.LoadedObject         = null;
-		this.DocumentType         = 1;
-		this.ServerIdWaitComplete = true;
-
-		this.WordControl.m_oDrawingDocument.m_oDocumentRenderer.Load(url, gObject);
-		this.FontLoader.LoadDocumentFonts(this.WordControl.m_oDrawingDocument.m_oDocumentRenderer.Fonts, true);
-	};
-	
 	asc_docs_api.prototype["asc_setViewerThumbnailsZoom"] = function(value) {
 		if (this.WordControl.m_oDrawingDocument.m_oDocumentRenderer &&
 			this.WordControl.m_oDrawingDocument.m_oDocumentRenderer.Thumbnails)
@@ -14188,7 +14168,6 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype['GetCopyPasteDivId']                         = asc_docs_api.prototype.GetCopyPasteDivId;
 	asc_docs_api.prototype['ContentToHTML']                             = asc_docs_api.prototype.ContentToHTML;
 	asc_docs_api.prototype['InitEditor']                                = asc_docs_api.prototype.InitEditor;
-	asc_docs_api.prototype['InitViewer']                                = asc_docs_api.prototype.InitViewer;
 	asc_docs_api.prototype['OpenDocument']                              = asc_docs_api.prototype.OpenDocument;
 	asc_docs_api.prototype['OpenDocumentFromBin']                       = asc_docs_api.prototype.OpenDocumentFromBin;
 	asc_docs_api.prototype['OpenDocumentFromZip']                       = asc_docs_api.prototype.OpenDocumentFromZip;
