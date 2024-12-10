@@ -1285,6 +1285,9 @@
 		let areShapeLayersInvisible = layerProperties["Visible"] === "0";
 
 		let isShapeDeleted = this.del === "1" || this.del === true;
+		if (isShapeDeleted) {
+			return {geometryCShape: null, textCShape: null};
+		}
 
 
 		// also check for {}, undefined, NaN, null
@@ -1744,78 +1747,79 @@
 		if (this.type === "Group") {
 			// CGroupShape cant support text. So cShape will represent everything related to Shape Type="Group".
 			// Let's push cShape into CGroupShape object.
+			if (cShapes.geometryCShape) {
+				let groupShape = new AscFormat.CGroupShape();
+				// this.graphicObjectsController = new AscFormat.DrawingObjectsController();
+				// let groupShape = AscFormat.builder_CreateGroup();
 
-			let groupShape = new AscFormat.CGroupShape();
-			// this.graphicObjectsController = new AscFormat.DrawingObjectsController();
-			// let groupShape = AscFormat.builder_CreateGroup();
+				groupShape.setLocks(0);
 
-			groupShape.setLocks(0);
+				groupShape.setBDeleted(false);
 
-			groupShape.setBDeleted(false);
+				// Create CGroupShape with SpPr from cShape but with no fill and line
+				let noLineFillSpPr = cShapes.geometryCShape.spPr.createDuplicate();
+				noLineFillSpPr.setFill(AscFormat.CreateNoFillUniFill());
+				noLineFillSpPr.setLn(AscFormat.CreateNoFillLine());
 
-			// Create CGroupShape with SpPr from cShape but with no fill and line
-			let noLineFillSpPr = cShapes.geometryCShape.spPr.createDuplicate();
-			noLineFillSpPr.setFill(AscFormat.CreateNoFillUniFill());
-			noLineFillSpPr.setLn(AscFormat.CreateNoFillLine());
+				groupShape.setSpPr(noLineFillSpPr);
+				groupShape.spPr.setParent(groupShape);
+				groupShape.rot = cShapes.geometryCShape.rot;
+				groupShape.brush = cShapes.geometryCShape.brush;
+				groupShape.bounds = cShapes.geometryCShape.bounds;
+				groupShape.flipH = cShapes.geometryCShape.flipH;
+				groupShape.flipV = cShapes.geometryCShape.flipV;
+				groupShape.localTransform = cShapes.geometryCShape.localTransform;
+				groupShape.pen = cShapes.geometryCShape.pen;
+				groupShape.Id = cShapes.geometryCShape.Id + "Group";
 
-			groupShape.setSpPr(noLineFillSpPr);
-			groupShape.spPr.setParent(groupShape);
-			groupShape.rot = cShapes.geometryCShape.rot;
-			groupShape.brush = cShapes.geometryCShape.brush;
-			groupShape.bounds = cShapes.geometryCShape.bounds;
-			groupShape.flipH = cShapes.geometryCShape.flipH;
-			groupShape.flipV = cShapes.geometryCShape.flipV;
-			groupShape.localTransform = cShapes.geometryCShape.localTransform;
-			groupShape.pen = cShapes.geometryCShape.pen;
-			groupShape.Id = cShapes.geometryCShape.Id + "Group";
+				groupShape.addToSpTree(groupShape.spTree.length, cShapes.geometryCShape);
+				groupShape.spTree[groupShape.spTree.length - 1].setGroup(groupShape);
 
-			groupShape.addToSpTree(groupShape.spTree.length, cShapes.geometryCShape);
-			groupShape.spTree[groupShape.spTree.length-1].setGroup(groupShape);
+				cShapes.geometryCShape.spPr.xfrm.setOffX(0);
+				cShapes.geometryCShape.spPr.xfrm.setOffY(0);
+				
+				// cShape.setLocks(1)?;
 
-			cShapes.geometryCShape.spPr.xfrm.setOffX(0);
-			cShapes.geometryCShape.spPr.xfrm.setOffY(0);
-			
-			// cShape.setLocks(1)?;
+				groupShape.setParent2(visioDocument);
 
-			groupShape.setParent2(visioDocument);
+				if (!currentGroupHandling) {
 
-			if (!currentGroupHandling) {
+					currentGroupHandling = groupShape;
+					let subShapes = this.getSubshapes();
+					for (let i = 0; i < subShapes.length; i++) {
+						const subShape = subShapes[i];
+						subShape.toCGroupShapeRecursively(visioDocument, pageInfo, drawingPageScale, currentGroupHandling);
+					}
 
-				currentGroupHandling = groupShape;
-				let subShapes = this.getSubshapes();
-				for (let i = 0; i < subShapes.length; i++) {
-					const subShape = subShapes[i];
-					subShape.toCGroupShapeRecursively(visioDocument, pageInfo, drawingPageScale, currentGroupHandling);
+					// textCShape is returned from this function
+
+				} else {
+
+					// if currentGroupHandling add groupShape (withShape in it) and textCShape to it
+
+					currentGroupHandling.addToSpTree(currentGroupHandling.spTree.length, groupShape);
+					currentGroupHandling.spTree[currentGroupHandling.spTree.length - 1].setGroup(currentGroupHandling);
+					groupShape.recalculateLocalTransform(groupShape.transform);
+
+					if (cShapes.textCShape !== null) {
+						currentGroupHandling.addToSpTree(currentGroupHandling.spTree.length, cShapes.textCShape);
+						currentGroupHandling.spTree[currentGroupHandling.spTree.length - 1].setGroup(currentGroupHandling);
+						// cShapes.textCShape.recalculateLocalTransform(cShapes.textCShape.transform); // exists below
+					}
+
+					currentGroupHandling = groupShape;
+					let subShapes = this.getSubshapes();
+					for (let i = 0; i < subShapes.length; i++) {
+						const subShape = subShapes[i];
+						subShape.toCGroupShapeRecursively(visioDocument, pageInfo, drawingPageScale, currentGroupHandling);
+					}
 				}
-
-				// textCShape is returned from this function
-
-			} else {
-
-				// if currentGroupHandling add groupShape (withShape in it) and textCShape to it
-
-				currentGroupHandling.addToSpTree(currentGroupHandling.spTree.length, groupShape);
-				currentGroupHandling.spTree[currentGroupHandling.spTree.length-1].setGroup(currentGroupHandling);
-				groupShape.recalculateLocalTransform(groupShape.transform);
-
-				if (cShapes.textCShape !== null) {
-					currentGroupHandling.addToSpTree(currentGroupHandling.spTree.length, cShapes.textCShape);
-					currentGroupHandling.spTree[currentGroupHandling.spTree.length-1].setGroup(currentGroupHandling);
-					// cShapes.textCShape.recalculateLocalTransform(cShapes.textCShape.transform); // exists below
-				}
-
-				currentGroupHandling = groupShape;
-				let subShapes = this.getSubshapes();
-				for (let i = 0; i < subShapes.length; i++) {
-					const subShape = subShapes[i];
-					subShape.toCGroupShapeRecursively(visioDocument, pageInfo, drawingPageScale, currentGroupHandling);
-				}
+				// recalculate positions to local (group) coordinates
+				cShapes.geometryCShape.recalculateLocalTransform(cShapes.geometryCShape.transform);
+				// cShapes.geometryCShape.recalculateTransformText();
+				// cShapes.geometryCShape.recalculateContent();
+				// cShape.recalculate(); // doesnt work here
 			}
-			// recalculate positions to local (group) coordinates
-			cShapes.geometryCShape.recalculateLocalTransform(cShapes.geometryCShape.transform);
-			// cShapes.geometryCShape.recalculateTransformText();
-			// cShapes.geometryCShape.recalculateContent();
-			// cShape.recalculate(); // doesnt work here
 
 			if (cShapes.textCShape !== null) {
 				// even if not add textCShape to currentGroupHandling above do recalculate just in case
@@ -1831,14 +1835,16 @@
 			} else {
 				// add shape and text to currentGroupHandling
 
-				currentGroupHandling.addToSpTree(currentGroupHandling.spTree.length, cShapes.geometryCShape);
-				currentGroupHandling.spTree[currentGroupHandling.spTree.length-1].setGroup(currentGroupHandling);
+				if (cShapes.geometryCShape) {
+					currentGroupHandling.addToSpTree(currentGroupHandling.spTree.length, cShapes.geometryCShape);
+					currentGroupHandling.spTree[currentGroupHandling.spTree.length-1].setGroup(currentGroupHandling);
 
-				// recalculate positions to local (group) coordinates
-				cShapes.geometryCShape.recalculateLocalTransform(cShapes.geometryCShape.transform);
-				// cShapes.geometryCShape.recalculateTransformText();
-				// cShapes.geometryCShape.recalculateContent();
-				// cShape.recalculate(); // doesnt work here
+					// recalculate positions to local (group) coordinates
+					cShapes.geometryCShape.recalculateLocalTransform(cShapes.geometryCShape.transform);
+					// cShapes.geometryCShape.recalculateTransformText();
+					// cShapes.geometryCShape.recalculateContent();
+					// cShape.recalculate(); // doesnt work here
+				}
 
 				if (cShapes.textCShape !== null) {
 					currentGroupHandling.addToSpTree(currentGroupHandling.spTree.length, cShapes.textCShape);

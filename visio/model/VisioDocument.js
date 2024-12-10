@@ -622,7 +622,6 @@
 			let baseTextMatrix = new AscCommon.CMatrix();
 			baseTextMatrix.SetValues(1, 0, 0, 1, 0, 0);
 
-
 			graphics.SaveGrState();
 			graphics.SetIntegerGrid(false);
 			graphics.transform3(new AscCommon.CMatrix());
@@ -632,8 +631,12 @@
 			graphics.RestoreGrState();
 
 			topLevelShapesAndGroups.forEach(function(shapeOrGroup) {
-				drawShapeOrGroupRecursively(graphics, shapeOrGroup, baseMatrix, baseTextMatrix, isRecalculateTextY,
-					isFlipImages, logic_h_mm);
+				if (isFlipYMatrix) {
+					drawShapeOrGroupRecursively(graphics, shapeOrGroup, baseMatrix, baseTextMatrix, isRecalculateTextY,
+						isFlipImages, logic_h_mm);
+				} else {
+					shapeOrGroup.draw(graphics);
+				}
 			});
 		}
 
@@ -714,13 +717,17 @@
 
 			if (shape.type === "Group") {
 				let cGroupShapeAndText = shape.toCGroupShapeRecursively(this, pageInfo, drawingPageScale);
-				topLevelShapesAndGroups.push(cGroupShapeAndText.cGroupShape);
+				if (cGroupShapeAndText.cGroupShape) {
+					topLevelShapesAndGroups.push(cGroupShapeAndText.cGroupShape);
+				}
 				if (cGroupShapeAndText.textCShape) {
 					topLevelShapesAndGroups.push(cGroupShapeAndText.textCShape);
 				}
 			} else {
 				let cShapes = shape.toGeometryAndTextCShapes(this, pageInfo, drawingPageScale);
-				topLevelShapesAndGroups.push(cShapes.geometryCShape);
+				if (cShapes.geometryCShape !== null) {
+					topLevelShapesAndGroups.push(cShapes.geometryCShape);
+				}
 				if (cShapes.textCShape !== null) {
 					topLevelShapesAndGroups.push(cShapes.textCShape);
 				}
