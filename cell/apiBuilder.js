@@ -11287,6 +11287,543 @@
 		}
 	});
 
+	/**
+	 * Filter type.
+	 * @typedef {("xlAnd" | "xlBottom10Items" | "xlBottom10Percent" | "xlFilterCellColor" | "xlFilterDynamic" | "xlFilterFontColor" | "xlFilterValues" | "xlOr" | "xlTop10Items" | "xlTop10Percent")} XlAutoFilterOperator
+	 * @see office-js-api/Examples/Enumerations/XlAutoFilterOperator.js
+	 */
+
+	/**
+	 * Specifies the filter criterion.
+	 * @typedef {("xlFilterAboveAverage" | "xlFilterAllDatesInPeriodApril" | "xlFilterAllDatesInPeriodAugust" | "xlFilterAllDatesInPeriodDecember"
+	 * | "xlFilterAllDatesInPeriodFebruary" | "xlFilterAllDatesInPeriodJanuary" | "xlFilterAllDatesInPeriodJuly" | "xlFilterAllDatesInPeriodJune"
+	 * | "xlFilterAllDatesInPeriodMarch" | "xlFilterAllDatesInPeriodMay" | "xlFilterAllDatesInPeriodNovember" | "xlFilterAllDatesInPeriodOctober"
+	 * | "xlFilterAllDatesInPeriodQuarter1" | "xlFilterAllDatesInPeriodQuarter2" | "xlFilterAllDatesInPeriodQuarter3" | "xlFilterAllDatesInPeriodQuarter4"
+	 * | "xlFilterBelowAverage" | "xlFilterLastMonth" | "xlFilterLastQuarter" | "xlFilterLastWeek"
+	 * | "xlFilterLastYear" | "xlFilterNextMonth" | "xlFilterNextQuarter" | "xlFilterNextWeek"
+	 * | "xlFilterNextYear" | "xlFilterThisMonth" | "xlFilterThisQuarter" | "xlFilterThisWeek"
+	 * | "xlFilterThisYear" | "xlFilterToday" | "xlFilterTomorrow" | "xlFilterYearToDate" | "xlFilterYesterday")} XlDynamicFilterCriteria
+	 * @see office-js-api/Examples/Enumerations/XlDynamicFilterCriteria.js
+	 */
+
+	/**
+	 * Adds a AutoFilter to the current worksheet.
+	 * @memberof ApiRange
+	 * @typeofeditors ["CSE"]
+	 * @param {?number} Field - The integer offset of the field on which you want to base the filter (from the left of the list; the leftmost field is field one).
+	 * @param {?string | string[] | ApiColor | XlDynamicFilterCriteria} Criteria1 - The criteria (a string; for example, "101"). Use "=" to find blank fields, "<>" to find non-blank fields, and "><" to select (No Data) fields in data types.
+	 * If this argument is omitted, the criteria is All. If Operator is xlTop10Items, Criteria1 specifies the number of items (for example, "10").
+	 * @param {?XlAutoFilterOperator} Operator - An XlAutoFilterOperator constant specifying the type of filter.
+	 * @param {?string} Criteria2 - The second criteria (a string). Used with Criteria1 and Operator to construct compound criteria.
+	 * @param {?boolean} VisibleDropDown - True to display the AutoFilter drop-down arrow for the filtered field. False to hide the AutoFilter drop-down arrow for the filtered field. True by default.
+	 * @since 8.3.0
+	 * @see office-js-api/Examples/{Editor}/ApiRange/Methods/SetAutoFilter.js
+	 */
+	ApiRange.prototype.SetAutoFilter = function (Field, Criteria1, Operator, Criteria2, VisibleDropDown) {
+		//TODO filtering date!
+
+		// 1) add/remove autofilter
+		// (function()
+		// {
+		// 	let range = Api.ActiveSheet.GetRange("A1");
+		// 	range.SetAutoFilter();
+		// })();
+		//
+		// 2) add(if not added) + apply vlues filter
+		//
+		// (function()
+		// {
+		// 	let test = Api.ActiveSheet.GetRange("A1");
+		// 	test.SetAutoFilter(1, [2,5], "xlFilterValues");
+		// })();
+		//
+		// 3) custom filter xlOr/xlAnd
+		// (function()
+		// {
+		// 	let test = Api.ActiveSheet.GetRange("A1");
+		// 	test.SetAutoFilter(1, ">1", "xlOr","=1");
+		// })();
+		// 4) top filter
+		// (function()
+		// {
+		// 	let test = Api.ActiveSheet.GetRange("A1");
+		// 	test.SetAutoFilter(1, "10", "xlTop10Items");
+		// })();
+		// 5) color filter
+		// (function()
+		// {
+		// 	let test = Api.ActiveSheet.GetRange("A1");
+		// 	test.SetAutoFilter(1, Api.CreateColorFromRGB(255,255,0), "xlFilterCellColor");
+		// })();
+		// (function()
+		// {
+		// 	let test = Api.ActiveSheet.GetRange("A1");
+		// 	test.SetAutoFilter(1, Api.CreateColorFromRGB(255,0,0), "xlFilterFontColor");
+		// })();
+		// 6) dynamic filter
+		// (function()
+		// {
+		// 	let test = Api.ActiveSheet.GetRange("A1");
+		// 	test.SetAutoFilter(1, "xlFilterAboveAverage", "xlFilterDynamic");
+		// })();
+
+
+		if (Criteria2 && Array.isArray(Criteria2)) {
+			private_MakeError('Error! Criteria2 must be string!');
+			return;
+		}
+
+		//check on number
+		if (Field) {
+			Field = Field - 0;
+			if (isNaN(Field)) {
+				private_MakeError('Error! Field range error!');
+				return;
+			}
+		}
+		//field must be more than 0
+		if (Field && Field < 1) {
+			private_MakeError('Error! Field range error!');
+			return;
+		}
+
+		let ws = this.range.worksheet;
+		let selectionRange = ws.selectionRange.getLast();
+		let api = ws.workbook.oApi;
+
+
+		let _range;
+		if (ws.AutoFilter) {
+			_range = ws.AutoFilter.Ref;
+		} else {
+			let filterProps = ws.autoFilters.getAddFormatTableOptions(selectionRange);
+			_range = filterProps && filterProps.range && AscCommonExcel.g_oRangeCache.getAscRange(filterProps.range);
+		}
+
+		//field must be between c1/c2 of range
+		if (Field && _range && Field > (_range.c2 - _range.c1 + 1)) {
+			private_MakeError('Error! Field range error!');
+			return;
+		}
+
+		var columnRange = new Asc.Range(Field - 1 + _range.c1, _range.r1 + 1, Field -1 + _range.c1, _range.r2);
+		var filterTypes = ws.getRowColColors(columnRange);
+		if (Field && (Operator === "xlBottom10Percent" || Operator === "xlBottom10Items" || Operator === "xlTop10Percent" || Operator === "xlTop10Items")) {
+			if (filterTypes.text) {
+				//need number filter!
+				private_MakeError('Error! Range error!');
+				return;
+			}
+			let top10Num = Criteria1 ? Criteria1 - 0 : 10;
+			if (isNaN(top10Num)) {
+				//need number filter!
+				private_MakeError('Error! Range error!');
+				return;
+			}
+		}
+
+		//firstly add filter or remove filter
+		if (Field == null && ws.AutoFilter) {
+			ws.autoFilters.deleteAutoFilter(ws.AutoFilter.Ref);
+			//api.asc_changeAutoFilter(null, Asc.c_oAscChangeFilterOptions.filter, false);
+			return;
+		} else if (!ws.AutoFilter) {
+			ws.autoFilters.addAutoFilter(null, this.range.bbox);
+			//api.asc_addAutoFilter(null, null, this.range.bbox);
+		}
+
+		if (Field == null) {
+			return;
+		}
+
+		if (Criteria1 == null) {
+			//clean current filter
+			ws.autoFilters.clearFilterColumn(Asc.range(_range.c1 + Field, _range.r1, _range.c1 + Field, _range.r1).getName());
+			//api.asc_clearFilterColumn(Asc.range(_range.c1 + Field, _range.r1, _range.c1 + Field, _range.r1).getName());
+			return;
+		}
+
+		let cellId = Asc.Range(_range.c1 + Field - 1, _range.r1, _range.c1 + Field - 1, _range.r1).getName();
+
+		let getOperator = function (val) {
+			let res = Asc.c_oAscCustomAutoFilter.equals;
+			switch (val) {
+				case "=": {
+					res = Asc.c_oAscCustomAutoFilter.equals;
+					break
+				}
+				case ">": {
+					res = Asc.c_oAscCustomAutoFilter.isGreaterThan;
+					break
+				}
+				case ">=": {
+					res = Asc.c_oAscCustomAutoFilter.isGreaterThanOrEqualTo;
+					break
+				}
+				case "<": {
+					res = Asc.c_oAscCustomAutoFilter.isLessThan;
+					break
+				}
+				case "<=": {
+					res = Asc.c_oAscCustomAutoFilter.isLessThanOrEqualTo;
+					break
+				}
+				case "<>": {
+					res = Asc.c_oAscCustomAutoFilter.doesNotEqual;
+					break
+				}
+			}
+			return res;
+		};
+
+		let createCustomFilter = function () {
+			if (Criteria1 || Criteria1) {
+				let filterObj = new Asc.AutoFilterObj();
+				filterObj.asc_setFilter(new Asc.CustomFilters());
+				filterObj.asc_setType(Asc.c_oAscAutoFilterTypes.CustomFilters);
+				let newCustomFilter = filterObj.asc_getFilter();
+
+				let oCriteria1 = Criteria1 && AscCommonExcel.matchingValue(new AscCommonExcel.cString(Criteria1));
+				let oCriteria2 = Criteria2 && AscCommonExcel.matchingValue(new AscCommonExcel.cString(Criteria2));
+				let operator1 = oCriteria1 && getOperator(oCriteria1.op);
+				let operator2 = oCriteria2 && getOperator(oCriteria2.op);
+
+
+				let customFiltersArr = [];
+				if (oCriteria1) {
+					customFiltersArr[0] = new Asc.CustomFilter();
+					customFiltersArr[0].asc_setVal(oCriteria1.val.getValue() + "");
+					customFiltersArr[0].asc_setOperator(operator1);
+				}
+				if (oCriteria2) {
+					customFiltersArr[1] = new Asc.CustomFilter();
+					customFiltersArr[1].asc_setVal(oCriteria2.val.getValue() + "");
+					customFiltersArr[1].asc_setOperator(operator2);
+				}
+
+				newCustomFilter.asc_setCustomFilters(customFiltersArr);
+				newCustomFilter.asc_setAnd(Operator === "xlAnd");
+
+				autoFilterOptions = new window["Asc"].AutoFiltersOptions();
+				autoFilterOptions.asc_setFilterObj(filterObj);
+				autoFilterOptions.asc_setCellId(cellId);
+			}
+		};
+
+		let createSimpleFilter = function () {
+			if (Criteria1 && Array.isArray(Criteria1)) {
+				let autoFiltersOptionsElements = ws.autoFilters.getOpenAndClosedValues(ws.AutoFilter, Field - 1);
+
+				let criteriaMap = {};
+				for (let i in Criteria1) {
+					criteriaMap[Criteria1[i]] = 1;
+				}
+
+				for (let i = 0; i < autoFiltersOptionsElements.values.length; i++) {
+					autoFiltersOptionsElements.values[i].asc_setVisible(!!criteriaMap[autoFiltersOptionsElements.values[i].text]);
+				}
+				// for (let i in Criteria1) {
+				// 	let elem = new AscCommonExcel.AutoFiltersOptionsElements();
+				// 	elem.asc_setVisible(true);
+				// 	elem.asc_setVal(Criteria1[i]);
+				// 	elem.asc_setText(Criteria1[i]);
+				//
+				// 	//res.asc_setText(text);
+				// 	/*res.asc_setIsDateFormat(isDateTimeFormat);
+				// 	if (isDateTimeFormat) {
+				// 		res.asc_setYear(dataValue.year);
+				// 		res.asc_setMonth(dataValue.month);
+				// 		res.asc_setDay(dataValue.d);
+				// 		if (dataValue.hour !== 0 || dataValue.min !== 0 || dataValue.sec !== 0) {
+				// 			isTimeFormat = true;
+				// 		}
+				// 		res.asc_setHour(dataValue.hour);
+				// 		res.asc_setMinute(dataValue.min);
+				// 		res.asc_setSecond(dataValue.sec);
+				// 		res.asc_setDateTimeGrouping(Asc.EDateTimeGroup.datetimegroupYear);
+				// 	}*/
+				//
+				// 	arrVals.push(elem);
+				// }
+
+				autoFilterOptions = new window["Asc"].AutoFiltersOptions();
+				let oFilter = new window["Asc"].AutoFilterObj();
+				oFilter.asc_setType(Asc.c_oAscAutoFilterTypes.Filters);
+				autoFilterOptions.asc_setFilterObj(oFilter);
+				autoFilterOptions.asc_setCellId(cellId);
+				autoFilterOptions.asc_setValues(autoFiltersOptionsElements.values);
+			}
+		};
+
+		let createTop10Filter = function (val, isPercent, isBottom) {
+			let _topFilter = new Asc.Top10();
+			_topFilter.asc_setVal(val);
+			if (isPercent) {
+				_topFilter.asc_setPercent(isPercent);
+			}
+			if (isBottom) {
+				_topFilter.asc_setTop(!isBottom);
+			}
+
+			autoFilterOptions = new window["Asc"].AutoFiltersOptions();
+			let oFilter = new window["Asc"].AutoFilterObj();
+			oFilter.asc_setFilter(_topFilter);
+			oFilter.asc_setType(Asc.c_oAscAutoFilterTypes.Top10);
+			autoFilterOptions.asc_setFilterObj(oFilter);
+			autoFilterOptions.asc_setCellId(cellId);
+		};
+
+		let toAscColor = function (_color) {
+			let res;
+			if (_color instanceof AscCommonExcel.RgbColor) {
+				res = new Asc.asc_CColor(_color.getR(), _color.getG(), _color.getB());
+			} else if (_color - 0) {
+				_color = _color - 0;
+				if (!isNaN(_color)) {
+					if (_color === 0) {
+						res = new Asc.asc_CColor(0,0,0);
+					} else {
+						res = new Asc.asc_CColor(1,1,1);
+					}
+				} else {
+					res = new Asc.asc_CColor(1,1,1);
+				}
+			}
+			return res;
+		};
+
+		let createColorFilter = function (color, isCellColor) {
+
+			let _colorFilter = new Asc.ColorFilter();
+			_colorFilter.asc_setCellColor(isCellColor ? null : false);
+			_colorFilter.asc_setCColor(color/*(isCellColor && color == 'transparent' || !isCellColor && color == '#000000') ? null : Common.Utils.ThemeColor.getRgbColor(color)*/);
+
+			autoFilterOptions = new Asc.AutoFiltersOptions();
+			let oFilter = new Asc.AutoFilterObj();
+			oFilter.asc_setFilter(_colorFilter);
+			oFilter.asc_setType(Asc.c_oAscAutoFilterTypes.ColorFilter);
+			autoFilterOptions.asc_setFilterObj(oFilter);
+			autoFilterOptions.asc_setCellId(cellId);
+		};
+
+		let toDynamicConst = function (val) {
+			let res = null;
+			switch (val) {
+				case "xlFilterAboveAverage": {
+					res = Asc.c_oAscDynamicAutoFilter.aboveAverage;
+					break
+				}
+				case "xlFilterAllDatesInPeriodApril": {
+					res = Asc.c_oAscDynamicAutoFilter.m4;
+					break
+				}
+				case "xlFilterAllDatesInPeriodSeptember": {
+					res = Asc.c_oAscDynamicAutoFilter.m9;
+					break
+				}
+				case "xlFilterAllDatesInPeriodMay": {
+					res = Asc.c_oAscDynamicAutoFilter.m5;
+					break
+				}
+				case "xlFilterAllDatesInPeriodAugust": {
+					res = Asc.c_oAscDynamicAutoFilter.m8;
+					break
+				}
+				case "xlFilterAllDatesInPeriodDecember": {
+					res = Asc.c_oAscDynamicAutoFilter.m12;
+					break
+				}
+				case "xlFilterAllDatesInPeriodFebruary": {
+					res = Asc.c_oAscDynamicAutoFilter.m2;
+					break
+				}
+				case "xlFilterAllDatesInPeriodMarch": {
+					res = Asc.c_oAscDynamicAutoFilter.m3;
+					break
+				}
+				case "xlFilterAllDatesInPeriodJanuary": {
+					res = Asc.c_oAscDynamicAutoFilter.m1;
+					break
+				}
+				case "xlFilterAllDatesInPeriodJuly": {
+					res = Asc.c_oAscDynamicAutoFilter.m7;
+					break
+				}
+				case "xlFilterAllDatesInPeriodJune": {
+					res = Asc.c_oAscDynamicAutoFilter.m6;
+					break
+				}
+				case "xlFilterAllDatesInPeriodNovember": {
+					res = Asc.c_oAscDynamicAutoFilter.m11;
+					break
+				}
+				case "xlFilterAllDatesInPeriodOctober": {
+					res = Asc.c_oAscDynamicAutoFilter.m10;
+					break
+				}
+				case "xlFilterAllDatesInPeriodQuarter1": {
+					res = Asc.c_oAscDynamicAutoFilter.q1;
+					break
+				}
+				case "xlFilterAllDatesInPeriodQuarter2": {
+					res = Asc.c_oAscDynamicAutoFilter.q2;
+					break
+				}
+				case "xlFilterAllDatesInPeriodQuarter3": {
+					res = Asc.c_oAscDynamicAutoFilter.q3;
+					break
+				}
+				case "xlFilterAllDatesInPeriodQuarter4": {
+					res = Asc.c_oAscDynamicAutoFilter.q4;
+					break
+				}
+				case "xlFilterBelowAverage": {
+					res = Asc.c_oAscDynamicAutoFilter.belowAverage;
+					break
+				}
+				case "xlFilterLastMonth": {
+					res = Asc.c_oAscDynamicAutoFilter.lastMonth;
+					break
+				}
+				case "xlFilterLastQuarter": {
+					res = Asc.c_oAscDynamicAutoFilter.lastQuarter;
+					break
+				}
+				case "xlFilterLastWeek": {
+					res = Asc.c_oAscDynamicAutoFilter.lastWeek;
+					break
+				}
+				case "xlFilterLastYear": {
+					res = Asc.c_oAscDynamicAutoFilter.lastYear;
+					break
+				}
+				case "xlFilterNextMonth": {
+					res = Asc.c_oAscDynamicAutoFilter.nextMonth;
+					break
+				}
+				case "xlFilterNextQuarter": {
+					res = Asc.c_oAscDynamicAutoFilter.nextQuarter;
+					break
+				}
+				case "xlFilterNextWeek": {
+					res = Asc.c_oAscDynamicAutoFilter.nextWeek;
+					break
+				}
+				case "xlFilterNextYear": {
+					res = Asc.c_oAscDynamicAutoFilter.nextYear;
+					break
+				}
+				case "xlFilterThisMonth": {
+					res = Asc.c_oAscDynamicAutoFilter.thisMonth;
+					break
+				}
+				case "xlFilterThisQuarter": {
+					res = Asc.c_oAscDynamicAutoFilter.thisQuarter;
+					break
+				}
+				case "xlFilterThisWeek": {
+					res = Asc.c_oAscDynamicAutoFilter.thisWeek;
+					break
+				}
+				case "xlFilterThisYear": {
+					res = Asc.c_oAscDynamicAutoFilter.thisYear;
+					break
+				}
+				case "xlFilterToday": {
+					res = Asc.c_oAscDynamicAutoFilter.today;
+					break
+				}
+				case "xlFilterTomorrow": {
+					res = Asc.c_oAscDynamicAutoFilter.tomorrow;
+					break
+				}
+				case "xlFilterYearToDate": {
+					res = Asc.c_oAscDynamicAutoFilter.yearToDate;
+					break
+				}
+				case "xlFilterYesterday": {
+					res = Asc.c_oAscDynamicAutoFilter.yesterday;
+					break
+				}
+
+			}
+			return res;
+		};
+
+		let createDynamicFilter = function (val) {
+			let _dynamicFilter = new Asc.DynamicFilter();
+			_dynamicFilter.asc_setType(val);
+
+			autoFilterOptions = new Asc.AutoFiltersOptions();
+			let oFilter = new Asc.AutoFilterObj();
+			oFilter.asc_setFilter(_dynamicFilter);
+			oFilter.asc_setType(Asc.c_oAscAutoFilterTypes.DynamicFilter);
+			autoFilterOptions.asc_setFilterObj(oFilter);
+			autoFilterOptions.asc_setCellId(cellId);
+		};
+
+		//apply filtering
+		let isAutoFilter = this.range.worksheet && this.range.worksheet.AutoFilter && this.range.worksheet.AutoFilter.Ref.intersection(this.range.bbox);
+		let autoFilterOptions;
+		if (isAutoFilter) {
+			switch (Operator) {
+				case "xlOr":
+				case "xlAnd": {
+					createCustomFilter();
+					break;
+				}
+				case "xlFilterFontColor":
+				case "xlFilterCellColor": {
+					let _color;
+					if (Criteria1 instanceof ApiColor) {
+						_color = Criteria1.color;
+					}
+
+					createColorFilter(toAscColor(_color), "xlFilterCellColor" === Operator);
+					break;
+				}
+				case "xlFilterDynamic": {
+					let _type = toDynamicConst(Criteria1);
+					createDynamicFilter(_type);
+					break;
+				}
+				/*case "xlFilterIcon": {
+					break;
+				}*/
+				case "xlBottom10Percent":
+				case "xlBottom10Items":
+				case "xlTop10Percent":
+				case "xlTop10Items": {
+					//only criteria1, 1 to 500 number value
+					let top10Num = Criteria1 ? Criteria1 - 0 : 10;
+					if (top10Num > 0 && top10Num <= 500) {
+						createTop10Filter(top10Num, "xlTop10Percent" === Operator || "xlBottom10Percent" === Operator,
+							"xlBottom10Items" === Operator || "xlBottom10Percent" === Operator);
+					} else {
+						private_MakeError('Error! Criteria1 must be between 1 and 500!');
+						return false;
+					}
+					break;
+				}
+				case "xlFilterValues":
+				default:
+					if (Criteria1 && Array.isArray(Criteria1)) {
+						createSimpleFilter();
+					} else {
+						createCustomFilter();
+					}
+					break;
+			}
+			if (autoFilterOptions) {
+				if (VisibleDropDown === false) {
+					autoFilterOptions.asc_setVisibleDropDown(VisibleDropDown);
+				}
+				ws.autoFilters.applyAutoFilter(autoFilterOptions, ws.selectionRange.getLast().clone());
+				//api.asc_applyAutoFilter(autoFilterOptions);
+			}
+		}
+	};
+
 	//------------------------------------------------------------------------------------------------------------------
 	//
 	// ApiDrawing
@@ -17165,6 +17702,8 @@
 	ApiRange.prototype["GetCharacters"] = ApiRange.prototype.GetCharacters;
 	ApiRange.prototype["PasteSpecial"] = ApiRange.prototype.PasteSpecial;
 	ApiRange.prototype["GetPivotTable"] = ApiRange.prototype.GetPivotTable;
+	ApiRange.prototype["SetAutoFilter"] = ApiRange.prototype.SetAutoFilter;
+
 
 
 	ApiDrawing.prototype["GetClassType"]               =  ApiDrawing.prototype.GetClassType;

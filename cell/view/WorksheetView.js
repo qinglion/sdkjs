@@ -19021,7 +19021,7 @@
         this.oOtherRanges = null;
     };
 
-	WorksheetView.prototype.addAutoFilter = function (styleName, addFormatTableOptionsObj) {
+	WorksheetView.prototype.addAutoFilter = function (styleName, addFormatTableOptionsObj, range) {
 		// Проверка глобального лока
 		if (this.collaborativeEditing.getGlobalLock() || !window["Asc"]["editor"].canEdit()) {
 			return;
@@ -19037,7 +19037,7 @@
 		}
 
 		var t = this;
-		var ar = this.model.selectionRange.getLast().clone();
+		var ar = range ? range : this.model.selectionRange.getLast().clone();
 
 		var isChangeAutoFilterToTablePart = function (addFormatTableOptionsObj) {
 			var res = false;

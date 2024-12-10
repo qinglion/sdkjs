@@ -10344,6 +10344,10 @@ function RangeDataManagerElem(bbox, data)
 			}
 		}
 
+		let visibleDropDown = obj.asc_getVisibleDropDown();
+		this.ShowButton = visibleDropDown === false ? false : null;
+
+
 		return allFilterOpenElements;
 	};
 
@@ -11329,9 +11333,6 @@ function RangeDataManagerElem(bbox, data)
 
 	CustomFilter.prototype.asc_setOperator = function (val) { this.Operator = val; };
 	CustomFilter.prototype.asc_setVal = function (val) {
-
-
-
 		this.Val = val;
 	};
 
