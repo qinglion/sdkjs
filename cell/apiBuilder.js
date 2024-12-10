@@ -11198,13 +11198,12 @@
 	 * Adds a AutoFilter to the current worksheet.
 	 * @memberof ApiRange
 	 * @typeofeditors ["CSE"]
-	 * @param {number} Field - The integer offset of the field on which you want to base the filter (from the left of the list; the leftmost field is field one).
-	 * @param {string | string[] | ApiColor | XlDynamicFilterCriteria} Criteria1 - The criteria (a string; for example, "101"). Use "=" to find blank fields, "<>" to find non-blank fields, and "><" to select (No Data) fields in data types.
+	 * @param {?number} Field - The integer offset of the field on which you want to base the filter (from the left of the list; the leftmost field is field one).
+	 * @param {?string | string[] | ApiColor | XlDynamicFilterCriteria} Criteria1 - The criteria (a string; for example, "101"). Use "=" to find blank fields, "<>" to find non-blank fields, and "><" to select (No Data) fields in data types.
 	 * If this argument is omitted, the criteria is All. If Operator is xlTop10Items, Criteria1 specifies the number of items (for example, "10").
-	 * @param {XlAutoFilterOperator} Operator - An XlAutoFilterOperator constant specifying the type of filter.
-	 * @param {string} Criteria2 - The second criteria (a string). Used with Criteria1 and Operator to construct compound criteria.
-	 * @param {boolean} VisibleDropDown - True to display the AutoFilter drop-down arrow for the filtered field. False to hide the AutoFilter drop-down arrow for the filtered field. True by default.
-	 * @returns {ApiCharacters}
+	 * @param {?XlAutoFilterOperator} Operator - An XlAutoFilterOperator constant specifying the type of filter.
+	 * @param {?string} Criteria2 - The second criteria (a string). Used with Criteria1 and Operator to construct compound criteria.
+	 * @param {?boolean} VisibleDropDown - True to display the AutoFilter drop-down arrow for the filtered field. False to hide the AutoFilter drop-down arrow for the filtered field. True by default.
 	 * @since 8.3.0
 	 * @see office-js-api/Examples/{Editor}/ApiRange/Methods/SetAutoFilter.js
 	 */
@@ -11313,8 +11312,8 @@
 
 		//firstly add filter or remove filter
 		if (Field == null && ws.AutoFilter) {
-			//ws.autoFilters.deleteAutoFilter(ws.AutoFilter.Ref)
-			api.asc_changeAutoFilter(null, Asc.c_oAscChangeFilterOptions.filter, false);
+			ws.autoFilters.deleteAutoFilter(ws.AutoFilter.Ref);
+			//api.asc_changeAutoFilter(null, Asc.c_oAscChangeFilterOptions.filter, false);
 			return;
 		} else if (!ws.AutoFilter) {
 			ws.autoFilters.addAutoFilter(null, this.range.bbox);
@@ -11327,7 +11326,8 @@
 
 		if (Criteria1 == null) {
 			//clean current filter
-			api.asc_clearFilterColumn(Asc.range(_range.c1 + Field, _range.r1, _range.c1 + Field, _range.r1).getName());
+			ws.autoFilters.clearFilterColumn(Asc.range(_range.c1 + Field, _range.r1, _range.c1 + Field, _range.r1).getName());
+			//api.asc_clearFilterColumn(Asc.range(_range.c1 + Field, _range.r1, _range.c1 + Field, _range.r1).getName());
 			return;
 		}
 
@@ -11706,7 +11706,8 @@
 				if (VisibleDropDown === false) {
 					autoFilterOptions.asc_setVisibleDropDown(VisibleDropDown);
 				}
-				api.asc_applyAutoFilter(autoFilterOptions);
+				ws.autoFilters.applyAutoFilter(autoFilterOptions, ws.selectionRange.getLast().clone());
+				//api.asc_applyAutoFilter(autoFilterOptions);
 			}
 		}
 	};
