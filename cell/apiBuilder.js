@@ -11255,7 +11255,7 @@
 		// 	let test = Api.ActiveSheet.GetRange("A1");
 		// 	test.SetAutoFilter(1, "xlFilterAboveAverage", "xlFilterDynamic");
 		// })();
-		
+
 
 		if (Criteria2 && Array.isArray(Criteria2)) {
 			private_MakeError('Error! Criteria2 must be string!');
@@ -11701,16 +11701,13 @@
 					break;
 			}
 			if (autoFilterOptions) {
+				if (VisibleDropDown === false) {
+					autoFilterOptions.asc_setVisibleDropDown(VisibleDropDown);
+				}
 				api.asc_applyAutoFilter(autoFilterOptions);
 			}
 		}
 	};
-
-	Object.defineProperty(ApiRange.prototype, "AutoFilter", {
-		set: function (field, criteria1, operator, criteria2, subField, visibleDropDown) {
-			return this.GetCharacters();
-		}
-	});
 
 	//------------------------------------------------------------------------------------------------------------------
 	//

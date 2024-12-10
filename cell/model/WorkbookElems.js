@@ -10340,6 +10340,10 @@ function RangeDataManagerElem(bbox, data)
 			}
 		}
 
+		let visibleDropDown = obj.asc_getVisibleDropDown();
+		this.ShowButton = visibleDropDown === false ? false : null;
+
+
 		return allFilterOpenElements;
 	};
 
