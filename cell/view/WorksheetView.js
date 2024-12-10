@@ -1778,7 +1778,7 @@
             if(t.objectRender) {
                 t.objectRender.bUpdateMetrics = false;
             }
-			t.changeWorksheet("update", {reinitRanges: true});
+			t.changeWorksheet("update", {reinitRanges: true, viewModeUpdate: viewMode});
 			t._updateGroups(true, undefined, undefined, true);
 			t._updateVisibleColsCount();
 			t.cellCommentator.updateActiveComment();
@@ -1923,7 +1923,7 @@
             if(t.objectRender) {
                 t.objectRender.bUpdateMetrics = false;
             }
-			t.changeWorksheet("update", {reinitRanges: true});
+			t.changeWorksheet("update", {reinitRanges: true, viewModeUpdate: viewMode});
 			t._updateGroups(false, undefined, undefined, true);
 			t._updateVisibleRowsCount();
 			t.cellCommentator.updateActiveComment();
@@ -16619,7 +16619,8 @@
 
 	WorksheetView.prototype.changeWorksheet = function (prop, val, callback, lockDraw) {
 		// Проверка глобального лока
-		if (this.collaborativeEditing.getGlobalLock() || (!window["Asc"]["editor"].canEdit() && !this.workbook.Api.VersionHistory)) {
+		let isViewModeUpdate = val && val.viewModeUpdate;
+		if (this.collaborativeEditing.getGlobalLock() || (!window["Asc"]["editor"].canEdit() && !this.workbook.Api.VersionHistory && !isViewModeUpdate)) {
 			return;
 		}
 
