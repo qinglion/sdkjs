@@ -1612,9 +1612,14 @@ CTextDrawer.prototype._m = function(x,y)
     if(this.m_bTurnOff)
         return;
     var oPathToDraw = this.Get_PathToDraw();
+
+    let tr = this.GetTransform();
+    let _x = tr.TransformPointX(x, y);
+    let _y = tr.TransformPointY(x, y);
+
     if(oPathToDraw)
     {
-        oPathToDraw.moveTo(this.xKoeff*x, this.yKoeff*y);
+        oPathToDraw.moveTo(this.xKoeff*_x, this.yKoeff*_y);
     }
     this.lastX = x;
     this.lastY = y;
@@ -1623,6 +1628,11 @@ CTextDrawer.prototype._l = function(x,y)
 {
     if(this.m_bTurnOff)
         return;
+    
+    let tr = this.GetTransform();
+    let _x = tr.TransformPointX(x, y);
+    let _y = tr.TransformPointY(x, y);
+
     if(this.bCheckLines)
     {
         if(Math.abs(x - this.lastX) < EPSILON_TEXT_AUTOFIT && Math.abs(x - this.lastX) < Math.abs(y - this.lastY))
@@ -1643,27 +1653,41 @@ CTextDrawer.prototype._l = function(x,y)
     var oPathToDraw = this.Get_PathToDraw();
     if(oPathToDraw)
     {
-        oPathToDraw.lnTo(this.xKoeff*x, this.yKoeff*y);
+        oPathToDraw.lnTo(this.xKoeff*_x, this.yKoeff*_y);
     }
     this.lastX = x;
     this.lastY = y;
 };
 CTextDrawer.prototype._c = function(x1,y1,x2,y2,x3,y3)
 {
+    let tr = this.GetTransform();
+    let _x1 = tr.TransformPointX(x1, y1);
+    let _y1 = tr.TransformPointY(x1, y1);
+    let _x2 = tr.TransformPointX(x2, y2);
+    let _y2 = tr.TransformPointY(x2, y2);
+    let _x3 = tr.TransformPointX(x3, y3);
+    let _y3 = tr.TransformPointY(x3, y3);
+
     var oPathToDraw = this.Get_PathToDraw();
     if(oPathToDraw)
     {
-        oPathToDraw.cubicBezTo(this.xKoeff*x1, this.yKoeff*y1, this.xKoeff*x2, this.yKoeff*y2, this.xKoeff*x3, this.yKoeff*y3);
+        oPathToDraw.cubicBezTo(this.xKoeff*_x1, this.yKoeff*_y1, this.xKoeff*_x2, this.yKoeff*_y2, this.xKoeff*_x3, this.yKoeff*_y3);
     }
     this.lastX = x3;
     this.lastY = y3;
 };
 CTextDrawer.prototype._c2 = function(x1,y1,x2,y2)
 {
+    let tr = this.GetTransform();
+    let _x1 = tr.TransformPointX(x1, y1);
+    let _y1 = tr.TransformPointY(x1, y1);
+    let _x2 = tr.TransformPointX(x2, y2);
+    let _y2 = tr.TransformPointY(x2, y2);
+
     var oPathToDraw = this.Get_PathToDraw();
     if(oPathToDraw)
     {
-        oPathToDraw.quadBezTo(this.xKoeff*x1, this.yKoeff*y1, this.xKoeff*x2, this.yKoeff*y2);
+        oPathToDraw.quadBezTo(this.xKoeff*_x1, this.yKoeff*_y1, this.xKoeff*_x2, this.yKoeff*_y2);
     }
     this.lastX = x2;
     this.lastY = y2;

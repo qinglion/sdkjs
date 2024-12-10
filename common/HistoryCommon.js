@@ -1808,7 +1808,7 @@
 	window['AscDFH'].historyitem_type_Pdf_List_Form			= 2228 << 16;
 	window['AscDFH'].historyitem_type_Pdf_Drawing			= 2229 << 16;
 	window['AscDFH'].historyitem_type_Pdf_Page				= 2230 << 16;
-	window['AscDFH'].historyitem_type_Pdf_Annot_Stamp		= 2230 << 16;
+	window['AscDFH'].historyitem_type_Pdf_Annot_Stamp		= 2231 << 16;
 	
 	window['AscDFH'].historyitem_type_CustomProperties      = 2301 << 16;
 

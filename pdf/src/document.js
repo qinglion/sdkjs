@@ -4449,6 +4449,31 @@ var CPresentation = CPresentation || function(){};
         oShape.fromXml(oXmlReader);
         oShape.bDeleted = false;
         oShape.setWordShape(true);
+        
+        let oContent = oShape.getDocContent();
+        let sUserName = Asc.editor.User.asc_getUserName();
+
+        switch (sType) {
+            case AscPDF.STAMP_TYPES.D_Approved:
+            case AscPDF.STAMP_TYPES.D_Revised:
+            case AscPDF.STAMP_TYPES.D_Reviewed:
+            case AscPDF.STAMP_TYPES.D_Received: {
+                let oDinamicPara = oContent.GetElement(1);
+                let oRun = oDinamicPara.GetElement(0);
+                oRun.RemoveFromContent(0, oRun.Content.length);
+                let sText = "by " + sUserName + " at " + (new Date().toDateString()).split(" ").join(", ");
+                oRun.AddText(sText);
+                break;
+            }
+        }
+
+        let nOldExtY = oShape.getXfrmExtY();
+        oShape.bodyPr.wrap = WRAPPING_TYPE_NONE;
+        oShape.bodyPr.textFit = new AscFormat.CTextFit();
+        oShape.bodyPr.textFit.type = AscFormat.text_fit_Auto;
+        oShape.checkExtentsByDocContent(true);
+        oShape.bodyPr.textFit = null;
+        oShape.getXfrm().setExtY(nOldExtY);
         oShape.recalculate();
         oShape.recalculateText();
 
