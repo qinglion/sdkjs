@@ -391,6 +391,30 @@ CSdtBase.prototype.IsRadioButton = function()
 	return !!(this.IsCheckBox() && this.Pr.CheckBox && this.Pr.CheckBox.GroupKey);
 };
 /**
+ * Проверяем является ли данный контейнер специальным для поля со списком
+ * @returns {boolean}
+ */
+CSdtBase.prototype.IsComboBox = function()
+{
+	return (undefined !== this.Pr.ComboBox);
+};
+/**
+ * Проверяем является ли данный контейнер специальным для выпадающего списка
+ * @returns {boolean}
+ */
+CSdtBase.prototype.IsDropDownList = function()
+{
+	return (undefined !== this.Pr.DropDown);
+};
+/**
+ * Проверяем является ли данный контейнер специальным для даты
+ * @returns {boolean}
+ */
+CSdtBase.prototype.IsDatePicker = function()
+{
+	return (undefined !== this.Pr.Date);
+};
+/**
  * Является ли данный контейнер специальной текстовой формой
  * @returns {boolean}
  */
@@ -1179,12 +1203,13 @@ CSdtBase.prototype.checkDataBinding = function()
 CSdtBase.prototype.fillContentWithDataBinding = function(content)
 {
 };
-
-// TODO: Temporary for building purpose. Remove when actual class is added
-(function()
+CSdtBase.prototype.updateDataBinding = function()
 {
-	function DataBinding()
-	{
-	}
-	AscWord.DataBinding = DataBinding;
-})();
+	let logicDocument = this.GetLogicDocument();
+	let dataBinding = this.Pr.DataBinding;
+	if (!dataBinding || !logicDocument || !logicDocument.IsDocumentEditor())
+		return;
+	
+	let customXmlManager = logicDocument.getCustomXmlManager();
+	customXmlManager.updateDataBinding(this);
+};

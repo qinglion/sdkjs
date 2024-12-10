@@ -150,8 +150,6 @@ CInlineLevelSdt.prototype.Add = function(Item)
 		oNextForm.SetThisElementCurrentInParagraph();
 		oNextForm.MoveCursorToStartPos();
 	}
-
-	this.SetContentByDataBinding(this.Pr.Text ? this.Content[0].GetText() : this);
 	
 	if (!this.IsForm() && this.IsContentControlTemporary())
 		this.RemoveContentControlWrapper();
@@ -923,9 +921,7 @@ CInlineLevelSdt.prototype.Remove = function(nDirection, bOnAddText)
 		this.private_ReplaceContentWithPlaceHolder();
 		result = true;
 	}
-
-	this.SetContentByDataBinding(this.Content[0].GetText());
-
+	
 	return result;
 };
 CInlineLevelSdt.prototype.Shift_Range = function(Dx, Dy, _CurLine, _CurRange, _CurPage)
@@ -2025,7 +2021,6 @@ CInlineLevelSdt.prototype.ToggleCheckBox = function(isChecked)
 		return;
 
 	this.SetCheckBoxChecked(!this.Pr.CheckBox.Checked);
-	this.SetContentByDataBinding(this.Pr.CheckBox.Checked ? "true" : "false");
 };
 CInlineLevelSdt.prototype.SetCheckBoxChecked = function(isChecked)
 {
@@ -2124,8 +2119,6 @@ CInlineLevelSdt.prototype.private_UpdateCheckBoxContent = function()
 		oRun.SetRFontsCS({Index : -1, Name : this.Pr.CheckBox.UncheckedFont});
 		oRun.SetRFontsEastAsia({Index : -1, Name : this.Pr.CheckBox.UncheckedFont});
 	}
-
-	this.SetContentByDataBinding(isChecked ? "true" : "false");
 };
 /**
  * Проверяем, является ли данный класс специальным контейнером для картинки
@@ -2255,14 +2248,6 @@ CInlineLevelSdt.prototype.IsSignatureForm = function()
 	return (this.IsForm() && this.IsPicture() && undefined !== this.Pr.PictureFormPr && this.Pr.PictureFormPr.IsSignature());
 };
 /**
- * Проверяем является ли данный контейнер специальным для поля со списком
- * @returns {boolean}
- */
-CInlineLevelSdt.prototype.IsComboBox = function()
-{
-	return (undefined !== this.Pr.ComboBox);
-};
-/**
  * @param oPr {AscWord.CSdtComboBoxPr}
  */
 CInlineLevelSdt.prototype.SetComboBoxPr = function(oPr)
@@ -2280,14 +2265,6 @@ CInlineLevelSdt.prototype.SetComboBoxPr = function(oPr)
 CInlineLevelSdt.prototype.GetComboBoxPr = function()
 {
 	return this.Pr.ComboBox;
-};
-/**
- * Проверяем является ли данный контейнер специальным для выпадающего списка
- * @returns {boolean}
- */
-CInlineLevelSdt.prototype.IsDropDownList = function()
-{
-	return (undefined !== this.Pr.DropDown);
 };
 /**
  * @param oPr {AscWord.CSdtComboBoxPr}
@@ -2413,8 +2390,6 @@ CInlineLevelSdt.prototype.SelectListItem = function(sValue)
 				oRun.AddText(sText);
 		}
 	}
-
-	this.SetContentByDataBinding(sText);
 };
 CInlineLevelSdt.prototype.private_UpdateListContent = function()
 {
@@ -2422,14 +2397,6 @@ CInlineLevelSdt.prototype.private_UpdateListContent = function()
 		return null;
 
 	return this.MakeSingleRunElement();
-};
-/**
- * Проверяем является ли данный контейнер специальным для даты
- * @returns {boolean}
- */
-CInlineLevelSdt.prototype.IsDatePicker = function()
-{
-	return (undefined !== this.Pr.Date);
 };
 /**
  * @param oPr {AscWord.CSdtDatePickerPr}
@@ -2532,25 +2499,11 @@ CInlineLevelSdt.prototype.private_UpdateDatePickerContent = function()
 
 	if (oRun)
 		oRun.AddText(sText);
-
-	this.SetContentByDataBinding(sText);
-
+	
 	if (isTemporary)
 	{
 		this.Pr.Temporary = true;
 		this.RemoveContentControlWrapper();
-	}
-};
-CInlineLevelSdt.prototype.SetContentByDataBinding = function (inputData)
-{
-	if (this.Pr.DataBinding)
-	{
-		let oLogicDocument = this.GetParagraph().GetLogicDocument();
-		if (oLogicDocument)
-		{
-			let CustomManager = oLogicDocument.getCustomXmlManager();
-			CustomManager.setContentByDataBinding(this.Pr.DataBinding, inputData);
-		}
 	}
 };
 /**

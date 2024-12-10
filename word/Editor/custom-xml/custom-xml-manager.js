@@ -32,7 +32,7 @@
 
 "use strict";
 
-(function(window)
+(function()
 {
 	/**
 	 * Класс представляющий менеджер CustomXMLs
@@ -43,7 +43,6 @@
 	{
 		this.document	= document;
 		this.xml		= [];
-		this.saveCCs	= [];
 	}
 	CustomXmlManager.prototype.add = function(customXml)
 	{
@@ -62,9 +61,9 @@
 
 	/**
 	 * Find element/attribute of CustomXMl by xpath string
-	 * @param root {CustomXMLContent}
+	 * @param root {AscWord.CustomXmlContent}
 	 * @param xpath {string}
-	 * @return {{attribute: string, content: CustomXMLContent}}
+	 * @return {{attribute: string, content: AscWord.CustomXmlContent}}
 	 */
 	CustomXmlManager.prototype.findElementByXPath = function (root, xpath)
 	{
@@ -153,7 +152,7 @@
 	/**
 	 * Set custom xml data of content control by data binding property
 	 * @param {window.AscWord.DataBinding} dataBinding
-	 * @param data {string | CBlockLevelSdt}
+	 * @param data {string}
 	 */
 	CustomXmlManager.prototype.setContentByDataBinding = function (dataBinding, data)
 	{
@@ -167,23 +166,32 @@
 				let oFindEl			= this.findElementByXPath(customXml.content, xPath);
 				let oContent		= oFindEl.content;
 				let strAttribute	= oFindEl.attribute;
-
-				if (data instanceof AscCommonWord.CBlockLevelSdt)
-				{
-					// recording changes every time a control with formatted text changes is not efficient
-					// save which control needs to be processed, and update CustomXML field for rich text when save document
-					if (!this.saveCCs.includes(data))
-						this.saveCCs.push(data);
-
-					return;
-				}
-
+				
 				if (strAttribute)
 					oContent.setAttribute(strAttribute, data);
 				else
 					oContent.setTextContent(data);
 			}
 		}
+	};
+	/**
+	 * Set custom xml data of content control by data binding property
+	 * @param {AscWord.CBlockLevelSdt | AscWord.CInlineLevelSdt} contentControl
+	 */
+	CustomXmlManager.prototype.updateDataBinding = function(contentControl)
+	{
+		let dataBinding = contentControl.getDataBinding();
+		if (!dataBinding)
+			return;
+		
+		if (contentControl.Pr.Text || contentControl.IsComboBox() || contentControl.IsDropDownList() || contentControl.IsDatePicker())
+			this.setContentByDataBinding(dataBinding, contentControl.GetInnerText());
+		else if (contentControl.IsCheckBox())
+			this.setContentByDataBinding(dataBinding, contentControl.IsCheckBoxChecked() ? "true" : "false");
+		else if (contentControl instanceof AscWord.CBlockLevelSdt)
+			this.updateRichTextCustomXML(contentControl);
+		else
+			this.setContentByDataBinding(dataBinding, contentControl.GetInnerText());
 	};
 	/**
 	 * Write linear xml data of content control in CustomXML
@@ -202,11 +210,11 @@
 			return prefix + insertionString + suffix;
 		}
 
-		AscFormat.ExecuteNoHistory(function() {
+		AscCommon.ExecuteNoHistory(function() {
 			let doc 						= new AscWord.CDocument(null, false);
 			let oSdtContent					= oCC.GetContent().Copy();
 			let jsZlib						= new AscCommon.ZLib();
-
+			
 			doc.ReplaceContent(oSdtContent.Content);
 			jsZlib.create();
 			doc.toZip(jsZlib, new AscCommon.XmlWriterContext(AscCommon.c_oEditorId.Word));
@@ -260,7 +268,7 @@
 			outputUString	= outputUString.replaceAll("<", "&lt;");
 			outputUString	= outputUString.replaceAll(">", "&gt;");
 			this.setContentByDataBinding(oCC.Pr.DataBinding, outputUString);
-		}, this, []);
+		}, this.document, this, []);
 	};
 	/**
 	 * Proceed linear xml from CustomXMl attribute or element for fill content control
@@ -392,22 +400,9 @@
 	 */
 	CustomXmlManager.prototype.getCustomXMLString = function(oCustomXMl)
 	{
-		this.updateCustomXMlFromRichTextCCs();
 		return oCustomXMl.getText();
 	};
-	/**
-	 * Go through all edited rich text content controls and save it's content in CustomXML
-	 */
-	CustomXmlManager.prototype.updateCustomXMlFromRichTextCCs = function ()
-	{
-		for (let i = 0; i < this.saveCCs.length; i++)
-		{
-			this.updateRichTextCustomXML(this.saveCCs[i]);
-		}
-	};
-
 	//--------------------------------------------------------export----------------------------------------------------
-	window['AscWord'] = window['AscWord'] || {};
-	window['AscWord'].CustomXmlManager = CustomXmlManager;
+	AscWord.CustomXmlManager = CustomXmlManager;
 	
-})(window);
+})();

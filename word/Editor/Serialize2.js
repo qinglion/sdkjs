@@ -6652,6 +6652,8 @@ function BinaryDocumentTableWriter(memory, doc, oMapCommentId, oNumIdMap, copyPa
 	};
 	this.WriteSdt = function (oSdt, type)
 	{
+		oSdt.updateDataBinding();
+		
 		var oThis = this;
 		if (oSdt.Pr) {
 			oThis.bs.WriteItem(c_oSerSdt.Pr, function () { oThis.WriteSdtPr(oSdt.Pr, oSdt); });

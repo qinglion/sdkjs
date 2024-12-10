@@ -429,6 +429,7 @@ $(function () {
 		);
 
 		c1.SetCheckBoxChecked(true);
+		c1.updateDataBinding();
 		assert.strictEqual(
 			oXMLManager.getCustomXMLString(oXMLManager.getCustomXml(0)),
 			getCheck('true'),
@@ -436,6 +437,7 @@ $(function () {
 		);
 
 		c1.SetCheckBoxChecked(false);
+		c1.updateDataBinding();
 		assert.strictEqual(
 			oXMLManager.getCustomXMLString(oXMLManager.getCustomXml(0)),
 			getCheck('false'),
@@ -685,6 +687,7 @@ $(function () {
 		);
 
 		c1.SetCheckBoxChecked(true);
+		c1.updateDataBinding();
 		assert.strictEqual(
 			oXMLManager.getCustomXMLString(oXMLManager.getCustomXml(0)),
 			getCheck('true'),
@@ -692,6 +695,7 @@ $(function () {
 		);
 
 		c1.SetCheckBoxChecked(false);
+		c1.updateDataBinding();
 		assert.strictEqual(
 			oXMLManager.getCustomXMLString(oXMLManager.getCustomXml(0)),
 			getCheck('false'),

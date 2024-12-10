@@ -575,8 +575,6 @@ CBlockLevelSdt.prototype.Remove = function(nCount, isRemoveWholeElement, bRemove
 		return true;
 	}
 
-	this.SetContentByDataBinding(this);
-
 	return bResult;
 };
 CBlockLevelSdt.prototype.Is_Empty = function()
@@ -608,18 +606,7 @@ CBlockLevelSdt.prototype.Add = function(oParaItem)
 	{
 		this.Content.AddToParagraph(oParaItem);
 	}
-
-	if (this.Pr.DataBinding)
-	{
-		var nContentPos = this.Content.CurPos.ContentPos;
-		var Item     = this.Content.Content[nContentPos];
-
-		if (this.Pr.Text)
-			this.SetContentByDataBinding(Item.GetText());
-		else
-			this.SetContentByDataBinding(this)
-	}
-
+	
 	if (isRemoveWrapper)
 		this.RemoveContentControlWrapper();
 };
@@ -2094,8 +2081,6 @@ CBlockLevelSdt.prototype.private_UpdateCheckBoxContent = function()
 		oRun.SetRFontsCS({Index : -1, Name : this.Pr.CheckBox.UncheckedFont});
 		oRun.SetRFontsEastAsia({Index : -1, Name : this.Pr.CheckBox.UncheckedFont});
 	}
-
-	this.SetContentByDataBinding(isChecked ? "true" : "false");
 };
 /**
  * Проверяем, является ли данный класс специальным контейнером для картинки
@@ -2189,14 +2174,6 @@ CBlockLevelSdt.prototype.SelectPicture = function()
 	return true;
 };
 /**
- * Проверяем является ли данный контейнер специальным для поля со списком
- * @returns {boolean}
- */
-CBlockLevelSdt.prototype.IsComboBox = function()
-{
-	return (undefined !== this.Pr.ComboBox);
-};
-/**
  * @param oPr {AscWord.CSdtComboBoxPr}
  */
 CBlockLevelSdt.prototype.SetComboBoxPr = function(oPr)
@@ -2213,14 +2190,6 @@ CBlockLevelSdt.prototype.SetComboBoxPr = function(oPr)
 CBlockLevelSdt.prototype.GetComboBoxPr = function()
 {
 	return this.Pr.ComboBox;
-};
-/**
- * Проверяем является ли данный контейнер специальным для выпадающего списка
- * @returns {boolean}
- */
-CBlockLevelSdt.prototype.IsDropDownList = function()
-{
-	return (undefined !== this.Pr.DropDown);
 };
 /**
  * @param oPr {AscWord.CSdtComboBoxPr}
@@ -2361,8 +2330,6 @@ CBlockLevelSdt.prototype.SelectListItem = function(sValue)
 				oRun.AddText(sText);
 		}
 	}
-
-	this.SetContentByDataBinding(sText);
 };
 CBlockLevelSdt.prototype.private_UpdateListContent = function()
 {
@@ -2378,14 +2345,6 @@ CBlockLevelSdt.prototype.private_UpdateListContent = function()
 		return null;
 
 	return oRun;
-};
-/**
- * Проверяем является ли данный контейнер специальным для даты
- * @returns {boolean}
- */
-CBlockLevelSdt.prototype.IsDatePicker = function()
-{
-	return (undefined !== this.Pr.Date);
 };
 /**
  * @param oPr {AscWord.CSdtDatePickerPr}
@@ -2507,16 +2466,6 @@ CBlockLevelSdt.prototype.private_UpdateDatePickerContent = function()
 
 	if (oRun)
 		oRun.AddText(sText);
-
-	this.SetContentByDataBinding(sText);
-};
-CBlockLevelSdt.prototype.SetContentByDataBinding = function (inputData)
-{
-	if (this.Pr.DataBinding)
-	{
-		let CustomManager = this.LogicDocument.getCustomXmlManager();
-		CustomManager.setContentByDataBinding(this.Pr.DataBinding, inputData);
-	}
 };
 CBlockLevelSdt.prototype.Document_Is_SelectionLocked = function(CheckType, bCheckInner)
 {
