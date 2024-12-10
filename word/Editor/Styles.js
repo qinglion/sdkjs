@@ -9480,6 +9480,44 @@ CDocumentColor.prototype.ToHexColor = function() {
 		return AscCommon.ByteToHex(this.r) + AscCommon.ByteToHex(this.g) + AscCommon.ByteToHex(this.b);
 	}
 };
+CDocumentColor.prototype.ToHighlightColor = function()
+{
+	// 17.18.40 ST_HighlightColor
+	if (0x00 === this.r && 0x00 === this.g && 0x00 === this.b)
+		return "black";
+	else if (0x00 === this.r && 0x00 === this.g && 0xFF === this.b)
+		return "blue";
+	else if (0x00 === this.r && 0xFF === this.g && 0xFF === this.b)
+		return "cyan";
+	else if (0x00 === this.r && 0x00 === this.g && 0x8B === this.b)
+		return "darkBlue";
+	else if (0x00 === this.r && 0x8B === this.g && 0x8B === this.b)
+		return "darkCyan";
+	else if (0xA9 === this.r && 0xA9 === this.g && 0xA9 === this.b)
+		return "darkGray";
+	else if (0x00 === this.r && 0x64 === this.g && 0x00 === this.b)
+		return "darkGreen";
+	else if (0x80 === this.r && 0x00 === this.g && 0x80 === this.b)
+		return "darkMagenta";
+	else if (0x8B === this.r && 0x00 === this.g && 0x00 === this.b)
+		return "darkRed";
+	else if (0x80 === this.r && 0x80 === this.g && 0x00 === this.b)
+		return "darkYellow";
+	else if (0x00 === this.r && 0xFF === this.g && 0x00 === this.b)
+		return "green";
+	else if (0xD3 === this.r && 0xD3 === this.g && 0xD3 === this.b)
+		return "lightGray";
+	else if (0xFF === this.r && 0x00 === this.g && 0xFF === this.b)
+		return "magenta";
+	else if (0xFF === this.r && 0x00 === this.g && 0x00 === this.b)
+		return "red";
+	else if (0xFF === this.r && 0xFF === this.g && 0xFF === this.b)
+		return "white";
+	else if (0xFF === this.r && 0xFF === this.g && 0x00 === this.b)
+		return "yellow";
+	
+	return "";
+};
 
 CDocumentColor.prototype.ConvertToUniColor = function()
 {
