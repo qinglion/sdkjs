@@ -4062,6 +4062,7 @@
 	
 	// annot stamp
 	AscDFH.historyitem_Pdf_Stamp_Type			= AscDFH.historyitem_type_Pdf_Annot_Stamp | 1;
+	AscDFH.historyitem_Pdf_Stamp_InRect			= AscDFH.historyitem_type_Pdf_Annot_Stamp | 2;
 	
 	//------------------------------------------------------------------------------------------------------------------
 	// Типы изменений в PDF drawing prototype

@@ -4478,6 +4478,7 @@ var CPresentation = CPresentation || function(){};
         oShape.recalculateText();
 
         let oTextDrawer = new AscFormat.CTextDrawer(oShape.getXfrmExtX(), oShape.getXfrmExtY(), true, this.GetTheme());
+        oTextDrawer.isStampAnnot = true;
         oTextDrawer.m_oLine = oShape.pen;
         oTextDrawer.m_oFill = oShape.brush;
 

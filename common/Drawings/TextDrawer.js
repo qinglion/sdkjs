@@ -653,23 +653,41 @@ CParagraphStructure.prototype.checkWord = function() {
 
 function CShapeStructure()
 {
-    CTableStructure.call(this);
+    this.m_aContent = [];
+    this.m_aBorders = [];
     this.m_nType = DRAW_COMMAND_SHAPE;
 }
 
-CShapeStructure.prototype = Object.create(CTableStructure.prototype);
-CShapeStructure.prototype.constructor = CShapeStructure;
+CShapeStructure.prototype.Recalculate = function(oTheme, oColorMap, dWidth, dHeight, oShape)
+{
+    for (let i = 0; i < this.m_aContent.length; ++i)
+        this.m_aContent[i].Recalculate(oTheme, oColorMap, dWidth, dHeight, oShape, true);
+
+    for (let i = 0; i < this.m_aBorders.length; ++i)
+        this.m_aBorders[i].Recalculate(oTheme, oColorMap, dWidth, dHeight, oShape, true);
+};
+CShapeStructure.prototype.CheckContentStructs = function(aContentStructs)
+{
+    for (let i = 0; i < this.m_aContent.length; ++i)
+        this.m_aContent[i].CheckContentStructs(aContentStructs);
+};
+
+CShapeStructure.prototype.getAllBackgroundsBorders = function(aParaBackgrounds, aBackgrounds, aBorders, aComments)
+{
+    for (let i = 0; i < this.m_aBorders.length; ++i)
+        aBorders.push(this.m_aBorders[i]);
+
+    for (let i = 0; i < this.m_aContent.length; ++i)
+        this.m_aContent[i].getAllBackgroundsBorders(aParaBackgrounds, aBackgrounds, aBorders, aComments);
+};
 
 CShapeStructure.prototype.draw = function(graphics, transform, oTheme, oColorMap)
 {
     for(let i = 0; i < this.m_aBorders.length; ++i)
-    {
         this.m_aBorders[i].draw(graphics, undefined, transform, oTheme, oColorMap);
-    }
+    
     for(let i = 0; i < this.m_aContent.length; ++i)
-    {
         this.m_aContent[i].draw(graphics, transform, oTheme, oColorMap);
-    }
 }
 
 function CTableStructure()
@@ -1614,8 +1632,10 @@ CTextDrawer.prototype._m = function(x,y)
     var oPathToDraw = this.Get_PathToDraw();
 
     let tr = this.GetTransform();
-    let _x = tr.TransformPointX(x, y);
-    let _y = tr.TransformPointY(x, y);
+    let bUseTr = this.isStampAnnot;
+
+    let _x = bUseTr ? tr.TransformPointX(x, y) : x;
+    let _y = bUseTr ? tr.TransformPointY(x, y) : y;
 
     if(oPathToDraw)
     {
@@ -1630,8 +1650,10 @@ CTextDrawer.prototype._l = function(x,y)
         return;
     
     let tr = this.GetTransform();
-    let _x = tr.TransformPointX(x, y);
-    let _y = tr.TransformPointY(x, y);
+    let bUseTr = this.isStampAnnot;
+
+    let _x = bUseTr ? tr.TransformPointX(x, y) : x;
+    let _y = bUseTr ? tr.TransformPointY(x, y) : y;
 
     if(this.bCheckLines)
     {
@@ -1661,12 +1683,14 @@ CTextDrawer.prototype._l = function(x,y)
 CTextDrawer.prototype._c = function(x1,y1,x2,y2,x3,y3)
 {
     let tr = this.GetTransform();
-    let _x1 = tr.TransformPointX(x1, y1);
-    let _y1 = tr.TransformPointY(x1, y1);
-    let _x2 = tr.TransformPointX(x2, y2);
-    let _y2 = tr.TransformPointY(x2, y2);
-    let _x3 = tr.TransformPointX(x3, y3);
-    let _y3 = tr.TransformPointY(x3, y3);
+    let bUseTr = this.isStampAnnot;
+
+    let _x1 = bUseTr ? tr.TransformPointX(x1, y1) : x1;
+    let _y1 = bUseTr ? tr.TransformPointY(x1, y1) : y1;
+    let _x2 = bUseTr ? tr.TransformPointX(x2, y2) : x2;
+    let _y2 = bUseTr ? tr.TransformPointY(x2, y2) : y2;
+    let _x3 = bUseTr ? tr.TransformPointX(x3, y3) : x3;
+    let _y3 = bUseTr ? tr.TransformPointY(x3, y3) : y3;
 
     var oPathToDraw = this.Get_PathToDraw();
     if(oPathToDraw)
@@ -1679,10 +1703,12 @@ CTextDrawer.prototype._c = function(x1,y1,x2,y2,x3,y3)
 CTextDrawer.prototype._c2 = function(x1,y1,x2,y2)
 {
     let tr = this.GetTransform();
-    let _x1 = tr.TransformPointX(x1, y1);
-    let _y1 = tr.TransformPointY(x1, y1);
-    let _x2 = tr.TransformPointX(x2, y2);
-    let _y2 = tr.TransformPointY(x2, y2);
+    let bUseTr = this.isStampAnnot;
+
+    let _x1 = bUseTr ? tr.TransformPointX(x1, y1) : x1;
+    let _y1 = bUseTr ? tr.TransformPointY(x1, y1) : y1;
+    let _x2 = bUseTr ? tr.TransformPointX(x2, y2) : x2;
+    let _y2 = bUseTr ? tr.TransformPointY(x2, y2) : y2;
 
     var oPathToDraw = this.Get_PathToDraw();
     if(oPathToDraw)

@@ -121,6 +121,9 @@
     };
     CAnnotationStamp.prototype.Draw = function(oGraphicsPDF, oGraphicsWord) {
         let sType = this.GetIconType();
+        if (sType == undefined) {
+            return;
+        }
 
         this.Recalculate();
         if (AscPDF.STAMP_TYPES.Image == sType) {
@@ -142,9 +145,19 @@
         this.renderStructure = oStructure;
     };
     CAnnotationStamp.prototype.GetRenderStructure = function() {
-        return this.renderStructure;
+        if (this.renderStructure) {
+            return this.renderStructure;
+        }
+        else {
+            let oDoc = this.GetDocument();
+            let oTextDrawer = oDoc.CreateStampRender(this.GetIconType());
+            this.SetRenderStructure(oTextDrawer.m_aStack[0]);
+            return this.renderStructure;
+        }
     };
     CAnnotationStamp.prototype.SetInRect = function(aInRect) {
+        AscCommon.History.Add(new CChangesPDFAnnotStampInRect(this, this.inRect, aInRect));
+
         this.inRect = aInRect;
         
         function getDistance(x1, y1, x2, y2) {
@@ -280,8 +293,9 @@
         let oDoc        = oViewer.getPDFDoc();
         let aCurRect    = this.GetRect();
 
-        let bCalcRect = this._origRect.length != 0 && false == AscCommon.History.UndoRedoInProgress;
+        let bCalcRect = aCurRect && aCurRect.length != 0 && false == AscCommon.History.UndoRedoInProgress;
 
+        oDoc.History.Add(new CChangesPDFAnnotRect(this, aCurRect, aRect));
         this._origRect = aRect;
 
         if (bCalcRect) {
@@ -304,8 +318,6 @@
             this._origRect[1] = Math.round(oGrBounds.t) * g_dKoef_mm_to_pt;
             this._origRect[2] = Math.round(oGrBounds.r) * g_dKoef_mm_to_pt;
             this._origRect[3] = Math.round(oGrBounds.b) * g_dKoef_mm_to_pt;
-
-            oDoc.History.Add(new CChangesPDFAnnotRect(this, aCurRect, aRect));
         }
 
         this.SetWasChanged(true);
@@ -353,7 +365,7 @@
         oNewStamp.SetOpacity(this.GetOpacity());
         oNewStamp.recalcGeometry()
         oNewStamp.Recalculate(true);
-
+        oNewStamp.SetIconType(this.GetIconType());
         oNewStamp.SetRenderStructure(this.GetRenderStructure());
 
         oDoc.EndNoHistoryMode();
@@ -371,7 +383,7 @@
             return;
         }
 
-        AscCommon.History.Add(new CChangesPDFAnnotName(this, this._stampType, sType));
+        AscCommon.History.Add(new CChangesPDFAnnotStampType(this, this._stampType, sType));
         this._stampType = sType;
         this.SetWasChanged(true);
     };
