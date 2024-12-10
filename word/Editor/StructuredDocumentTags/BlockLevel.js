@@ -1575,6 +1575,21 @@ CBlockLevelSdt.prototype.SetColor = function(oColor)
 		this.Pr.Color = oColor;
 	}
 };
+CBlockLevelSdt.prototype.GetInnerText = function()
+{
+	return this.Content.GetText({ParaSeparator : '\r\n'});
+};
+CBlockLevelSdt.prototype.SetInnerText = function(text)
+{
+	let textPr = this.GetFirstParagraph().GetFirstRunPr();
+	this.Content.ClearContent(false);
+	let para = new AscWord.Paragraph();
+	let run  = new AscWord.Run();
+	run.AddText(text);
+	run.SetPr(textPr.Copy());
+	para.AddToContent(0, run);
+	this.Content.AddToContent(0, para);
+};
 CBlockLevelSdt.prototype.fillContentWithDataBinding = function(content)
 {
 	let logicDocument = this.GetLogicDocument();
