@@ -180,6 +180,9 @@
 	 */
 	CustomXmlManager.prototype.updateDataBinding = function(contentControl)
 	{
+		if (!this.isSupported())
+			return;
+		
 		let dataBinding = contentControl.getDataBinding();
 		if (!dataBinding)
 			return;
@@ -215,7 +218,13 @@
 			let oSdtContent					= oCC.GetContent().Copy();
 			let jsZlib						= new AscCommon.ZLib();
 			
-			doc.ReplaceContent(oSdtContent.Content);
+			let copyContent = [];
+			for (let i = 0, count = oSdtContent.GetElementsCount(); i < count; ++i)
+			{
+				copyContent.push(oSdtContent.GetElement(i).Copy());
+			}
+			
+			doc.ReplaceContent(copyContent);
 			jsZlib.create();
 			doc.toZip(jsZlib, new AscCommon.XmlWriterContext(AscCommon.c_oEditorId.Word));
 
@@ -401,6 +410,10 @@
 	CustomXmlManager.prototype.getCustomXMLString = function(oCustomXMl)
 	{
 		return oCustomXMl.getText();
+	};
+	CustomXmlManager.prototype.isSupported = function()
+	{
+		return window['Asc'] && window['Asc']['Addons'] && true === window['Asc']['Addons']['ooxml'];
 	};
 	//--------------------------------------------------------export----------------------------------------------------
 	AscWord.CustomXmlManager = CustomXmlManager;

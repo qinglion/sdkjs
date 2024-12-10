@@ -1173,7 +1173,11 @@ CSdtBase.prototype.checkDataBinding = function()
 	if (!logicDocument || !this.Pr.DataBinding)
 		return;
 	
-	let content = logicDocument.getCustomXmlManager().getContentByDataBinding(this.Pr.DataBinding, this);
+	let customXmlManager = logicDocument.getCustomXmlManager();
+	if (!customXmlManager || !customXmlManager.isSupported())
+		return;
+	
+	let content = customXmlManager.getContentByDataBinding(this.Pr.DataBinding, this);
 	if (!content)
 		return;
 	
@@ -1195,13 +1199,47 @@ CSdtBase.prototype.checkDataBinding = function()
 		imageShape.setParent(drawing);
 		drawing.Set_GraphicObject(imageShape);
 	}
-	else
+	else if (this.IsCheckBox())
 	{
-		this.fillContentWithDataBinding(content);
+		if (content === "true" || content === "1")
+		{
+			let checkBoxPr = this.Pr.CheckBox.Copy();
+			checkBoxPr.SetChecked(true);
+			this.SetCheckBoxPr(checkBoxPr)
+		}
+		else if (content === "false" || content === "0")
+		{
+			let checkBoxPr = this.Pr.CheckBox.Copy();
+			checkBoxPr.SetChecked(false);
+			this.SetCheckBoxPr(checkBoxPr)
+		}
 	}
+	else if (this.IsDatePicker())
+	{
+		let datePr = this.Pr.Date.Copy();
+		datePr.SetFullDate(content);
+		this.SetDatePickerPr(datePr);
+		this.private_UpdateDatePickerContent();
+	}
+	else if (this.IsDropDownList() || this.IsComboBox() || this.Pr.Text === true)
+	{
+		if (typeof content === "string")
+			this.SetInnerText(content);
+	}
+	else if (this.canFillWithComplexDataBindingContent())
+	{
+		let customXmlManager = logicDocument.getCustomXmlManager();
+		let arrContent       = customXmlManager.proceedLinearXMl(content);
+		this.fillContentWithDataBinding(arrContent);
+	}
+};
+CSdtBase.prototype.canFillWithComplexDataBindingContent = function()
+{
+	return false;
 };
 CSdtBase.prototype.fillContentWithDataBinding = function(content)
 {
+
 };
 CSdtBase.prototype.updateDataBinding = function()
 {

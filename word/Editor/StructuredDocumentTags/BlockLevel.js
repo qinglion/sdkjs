@@ -1590,55 +1590,19 @@ CBlockLevelSdt.prototype.SetInnerText = function(text)
 	para.AddToContent(0, run);
 	this.Content.AddToContent(0, para);
 };
+CBlockLevelSdt.prototype.canFillWithComplexDataBindingContent = function()
+{
+	let oParent = this.Parent;
+	if (oParent instanceof CDocumentContent)
+		oParent = oParent.Parent
+	
+	// if parent element is rich text content control - skip
+	return !(oParent instanceof CBlockLevelSdt && oParent.GetSpecificType() === Asc.c_oAscContentControlSpecificType.None);
+};
 CBlockLevelSdt.prototype.fillContentWithDataBinding = function(content)
 {
-	let logicDocument = this.GetLogicDocument();
-
-	if (this.IsCheckBox())
-	{
-		let checkBoxPr = new AscWord.CSdtCheckBoxPr();
-
-		if (content === "true" || content === "1")
-			checkBoxPr.SetChecked(true);
-		else if (content === "false" || content === "0")
-			checkBoxPr.SetChecked(false);
-
-		this.SetCheckBoxPr(checkBoxPr)
-	}
-	else if (this.IsDatePicker())
-	{
-		let datePr = new AscWord.CSdtDatePickerPr();
-		datePr.SetFullDate(content);
-		this.SetDatePickerPr(datePr);
-		this.private_UpdateDatePickerContent();
-	}
-	else if (this.IsDropDownList() || this.IsComboBox() || this.Pr.Text === true)
-	{
-		let oRun = new ParaRun();
-		oRun.AddText(content);
-
-		// now style reset todo
-		this.Content.Remove_FromContent(0, this.Content.Content.length);
-		this.AddNewParagraph();
-		this.Content.AddText(content);
-	}
-	else
-	{
-		let oParent = this.Parent;
-		if (oParent instanceof CDocumentContent)
-		 oParent = oParent.Parent
-
-		// if parent element is rich text content control - skip
-		if (oParent instanceof CBlockLevelSdt && oParent.GetSpecificType() === Asc.c_oAscContentControlSpecificType.None)
-			return;
-
-		let customXmlManager	= logicDocument.getCustomXmlManager();
-		let arrContent			= customXmlManager.proceedLinearXMl(content);
-
-		this.Content.RemoveFromContent(0, this.Content.Content.length);
-		this.Content.AddContent(arrContent);
-		this.Content.Recalculate(true);
-	}
+	this.Content.RemoveFromContent(0, this.Content.Content.length);
+	this.Content.AddContent(content);
 };
 CBlockLevelSdt.prototype.GetDataBinding = function ()
 {
