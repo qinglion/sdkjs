@@ -125,19 +125,15 @@ CChangesPDFDocumentAnnotsContent.prototype.Redo = function()
     let oPage = this.Class;
     let oDocument = this.Class.GetDocument();
     let oViewer = Asc.editor.getDocumentRenderer();
-    let oContentChanges = this.private_GetContentChanges();
 
     if (this.IsAdd()) {
         // Redo addition by adding items
         for (let nIndex = 0, nCount = this.Items.length; nIndex < nCount; ++nIndex)
         {
             let oItem = this.Items[nIndex];
-            let nPos = oContentChanges.Check(AscCommon.contentchanges_Add, true !== this.UseArray ? this.Pos + nIndex : this.PosArray[nIndex]);
-            if (nPos === false) continue;
-
             oItem.AddToRedraw();
             oDocument.annots.push(oItem);
-            oPage.annots.splice(nPos, 0, oItem);
+            oPage.annots.splice(this.Pos, 0, oItem);
 
             oItem.parentPage = oPage;
             oItem._page = oPage.GetIndex();
@@ -155,12 +151,9 @@ CChangesPDFDocumentAnnotsContent.prototype.Redo = function()
         for (let nIndex = 0, nCount = this.Items.length; nIndex < nCount; ++nIndex)
         {
             let oItem = this.Items[nIndex];
-            let nPos = oContentChanges.Check(AscCommon.contentchanges_Remove, true !== this.UseArray ? this.Pos + nIndex : this.PosArray[nIndex]);
-            if (nPos === false) continue;
-
             oItem.AddToRedraw();
             oDocument.annots.splice(oDocument.annots.indexOf(oItem), 1);
-            oPage.annots.splice(nPos, 1);
+            oPage.annots.splice(this.Pos, 1);
 
             oItem.parentPage = null;
             oItem._page = -1;
@@ -175,6 +168,14 @@ CChangesPDFDocumentAnnotsContent.prototype.Redo = function()
 
     oDocument.SetMouseDownObject(null);
     oDocument.private_UpdateTargetForCollaboration(true);
+};
+CChangesPDFDocumentAnnotsContent.prototype.Load = function() {
+    if (this.IsAdd()) {
+        this.private_InsertInArrayLoad();
+    }
+    else {
+        this.private_RemoveInArrayLoad();
+    }
 };
 CChangesPDFDocumentAnnotsContent.prototype.private_InsertInArrayLoad = function()
 {
@@ -361,7 +362,6 @@ CChangesPDFDocumentFieldsContent.prototype.Redo = function()
 {
     let oPage = this.Class;
     let oDocument = this.Class.GetDocument();
-    let oContentChanges = this.private_GetContentChanges();
 
     if (this.IsAdd()) {
         // Redo addition by adding items
@@ -369,12 +369,9 @@ CChangesPDFDocumentFieldsContent.prototype.Redo = function()
         {
             let oItem = this.Items[nIndex];
             if (oItem.IsWidget()) {
-                let nPos = oContentChanges.Check(AscCommon.contentchanges_Add, true !== this.UseArray ? this.Pos + nIndex : this.PosArray[nIndex]);
-                if (nPos === false) continue;
-
                 oItem.AddToRedraw();
                 oDocument.widgets.push(oItem);
-                oPage.fields.splice(nPos, 0, oItem);
+                oPage.fields.splice(this.Pos, 0, oItem);
 
                 oItem.parentPage = oPage;
                 oItem._page = oPage.GetIndex();
@@ -393,12 +390,9 @@ CChangesPDFDocumentFieldsContent.prototype.Redo = function()
         {
             let oItem = this.Items[nIndex];
             if (oItem.IsWidget()) {
-                let nPos = oContentChanges.Check(AscCommon.contentchanges_Add, true !== this.UseArray ? this.Pos + nIndex : this.PosArray[nIndex]);
-                if (nPos === false) continue;
-
                 oItem.AddToRedraw();
                 oDocument.widgets.splice(oDocument.widgets.indexOf(oItem), 1);
-                oPage.fields.splice(nPos, 1);
+                oPage.fields.splice(this.Pos, 1);
 
                 oItem.parentPage = null;
                 oItem._page = -1;
@@ -413,6 +407,14 @@ CChangesPDFDocumentFieldsContent.prototype.Redo = function()
     }
 
     oDocument.private_UpdateTargetForCollaboration(true);
+};
+CChangesPDFDocumentFieldsContent.prototype.Load = function() {
+    if (this.IsAdd()) {
+        this.private_InsertInArrayLoad();
+    }
+    else {
+        this.private_RemoveInArrayLoad();
+    }
 };
 CChangesPDFDocumentFieldsContent.prototype.private_InsertInArrayLoad = function()
 {
@@ -587,19 +589,16 @@ CChangesPDFDocumentDrawingsContent.prototype.Redo = function()
     let oPage = this.Class;
     let oDocument = this.Class.GetDocument();
     let oViewer = Asc.editor.getDocumentRenderer();
-    let oContentChanges = this.private_GetContentChanges();
 
     if (this.IsAdd()) {
         // Redo addition by adding items
         for (let nIndex = 0, nCount = this.Items.length; nIndex < nCount; ++nIndex)
         {
             let oItem = this.Items[nIndex];
-            let nPos = oContentChanges.Check(AscCommon.contentchanges_Add, true !== this.UseArray ? this.Pos + nIndex : this.PosArray[nIndex]);
-            if (nPos === false) continue;
 
             oItem.AddToRedraw();
             oDocument.drawings.push(oItem);
-            oPage.drawings.splice(nPos, 0, oItem);
+            oPage.drawings.splice(this.Pos, 0, oItem);
 
             oItem.parentPage = oPage;
             oItem._page = oPage.GetIndex();
@@ -613,12 +612,10 @@ CChangesPDFDocumentDrawingsContent.prototype.Redo = function()
         for (let nIndex = 0, nCount = this.Items.length; nIndex < nCount; ++nIndex)
         {
             let oItem = this.Items[nIndex];
-            let nPos = oContentChanges.Check(AscCommon.contentchanges_Remove, true !== this.UseArray ? this.Pos + nIndex : this.PosArray[nIndex]);
-            if (nPos === false) continue;
-
+            
             oItem.AddToRedraw();
             oDocument.drawings.splice(oDocument.drawings.indexOf(oItem), 1);
-            oPage.drawings.splice(nPos, 1);
+            oPage.drawings.splice(this.Pos, 1);
 
             oItem.parentPage = null;
             oItem._page = -1;
@@ -631,6 +628,14 @@ CChangesPDFDocumentDrawingsContent.prototype.Redo = function()
 
     oDocument.SetMouseDownObject(null);
     oDocument.private_UpdateTargetForCollaboration(true);
+};
+CChangesPDFDocumentDrawingsContent.prototype.Load = function() {
+    if (this.IsAdd()) {
+        this.private_InsertInArrayLoad();
+    }
+    else {
+        this.private_RemoveInArrayLoad();
+    }
 };
 CChangesPDFDocumentDrawingsContent.prototype.private_InsertInArrayLoad = function()
 {

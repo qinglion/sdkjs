@@ -126,7 +126,44 @@
 	}
 	AscFormat.InitClass(CPageInfo, AscFormat.CBaseNoIdObject, AscDFH.historyitem_type_Pdf_Page);
 	CPageInfo.prototype.constructor = CPageInfo;
-	
+
+	CPageInfo.prototype.RedrawDrawings = function() {
+		let oViewer = Asc.editor.getDocumentRenderer();
+		let _t = this;
+
+		let nIdx = _t.GetIndex();
+		function setRedrawPageOnRepaint() {
+            _t.needRedrawDrawings = true;
+			nIdx != -1 && oViewer.thumbnails && oViewer.thumbnails._repaintPage(nIdx);
+        }
+
+        oViewer.paint(setRedrawPageOnRepaint);
+	};
+	CPageInfo.prototype.RedrawForms = function() {
+		let oViewer = Asc.editor.getDocumentRenderer();
+		let _t = this;
+
+		let nIdx = _t.GetIndex();
+		function setRedrawPageOnRepaint() {
+            _t.needRedrawForms = true;
+			nIdx != -1 && oViewer.thumbnails && oViewer.thumbnails._repaintPage(nIdx);
+        }
+
+        oViewer.paint(setRedrawPageOnRepaint);
+	};
+	CPageInfo.prototype.RedrawAnnots = function() {
+		let oViewer = Asc.editor.getDocumentRenderer();
+		let _t = this;
+
+		let nIdx = _t.GetIndex();
+		function setRedrawPageOnRepaint() {
+            _t.needRedrawAnnots = true;
+			nIdx != -1 && oViewer.thumbnails && oViewer.thumbnails._repaintPage(nIdx);
+        }
+
+        oViewer.paint(setRedrawPageOnRepaint);
+	};
+
 	CPageInfo.prototype.GetDocument = function() {
 		return Asc.editor.getPDFDoc();
 	};
@@ -165,7 +202,7 @@
 
 		oDrawing.SetPage(this.GetIndex());
         oDrawing.SetParentPage(this);
-        oDrawing.AddToRedraw();
+		this.RedrawDrawings();
 	};
 	CPageInfo.prototype.RemoveDrawing = function(sId) {
         let oDrawing = this.drawings.find(function(drawing) {
@@ -179,7 +216,7 @@
         this.drawings.splice(nPos, 1);
         
         AscCommon.History.Add(new CChangesPDFDocumentDrawingsContent(this, nPos, [oDrawing], false));
-		oDrawing.AddToRedraw();
+		this.RedrawDrawings();
 	};
 	CPageInfo.prototype.AddAnnot = function(oAnnot, nPos) {
 		if (nPos == undefined) {
@@ -190,7 +227,7 @@
 
         AscCommon.History.Add(new CChangesPDFDocumentAnnotsContent(this, nPos, [oAnnot], true));
 		oAnnot.SetParentPage(this);
-        oAnnot.AddToRedraw();
+		this.RedrawAnnots();
 	};
 	CPageInfo.prototype.RemoveAnnot = function(sId) {
 		let oAnnot = this.annots.find(function(annot) {
@@ -204,7 +241,7 @@
         this.annots.splice(nPos, 1);
         
         AscCommon.History.Add(new CChangesPDFDocumentAnnotsContent(this, nPos, [oAnnot], false));
-		oAnnot.AddToRedraw();
+		this.RedrawAnnots();
 	};
 	CPageInfo.prototype.AddField = function(oField, nPos) {
 		if (nPos == undefined) {
@@ -215,7 +252,7 @@
 
         AscCommon.History.Add(new CChangesPDFDocumentFieldsContent(this, nPos, [oField], true));
 		oField.SetParentPage(this);
-        oField.AddToRedraw();
+		this.RedrawForms();
 	};
 	CPageInfo.prototype.RemoveField = function(sId) {
 		let oDoc = this.GetDocument();
@@ -238,7 +275,7 @@
             oDoc.CheckParentForm(oParent); // проверяем родителя
         }
 
-		oField.AddToRedraw();
+		this.RedrawForms();
 	};
 	CPageInfo.prototype.IsLocked = function() {
 		return false == [AscCommon.c_oAscLockTypes.kLockTypeNone, AscCommon.c_oAscLockTypes.kLockTypeMine].includes(this.Lock.Get_Type());

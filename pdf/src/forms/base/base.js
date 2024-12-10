@@ -737,7 +737,13 @@
         
         oActionsQueue.Start();
     };
+    CBaseField.prototype.IsUseInDocument = function() {
+        let oDoc = Asc.editor.getPDFDoc();
+        if (oDoc.forms.indexOf(this) == -1)
+            return false;
 
+        return true;
+    };
     CBaseField.prototype.DrawHighlight = function(oCtx) {
         if (this.IsHidden() == true)
             return;
@@ -1297,6 +1303,10 @@
     CBaseField.prototype.AddToRedraw = function() {
         let oViewer = editor.getDocumentRenderer();
         let nPage   = this.GetPage();
+        
+        if (false == this.IsUseInDocument()) {
+            return;
+        }
         
         function setRedrawPageOnRepaint() {
             if (oViewer.pagesInfo.pages[nPage]) {
