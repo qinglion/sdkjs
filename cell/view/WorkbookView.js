@@ -5442,29 +5442,41 @@
 				History.Create_NewPoint();
 				History.StartTransaction();
 
-				var updatedReferences = [];
-				for (var i = 0; i < _arrAfterPromise.length; i++) {
+				let updatedReferences = [];
+				for (let i = 0; i < _arrAfterPromise.length; i++) {
 					// eR - current External Reference
 					let eRId = _arrAfterPromise[i].externalReferenceId;
 					let stream = _arrAfterPromise[i].stream;
 
 					let oPortalData = _arrAfterPromise[i].data;
 					let path = oPortalData && oPortalData["path"];
+					let referenceData = oPortalData.referenceData;
+
 					//if after update get short path, check on added such link
-					let eR = t.model.getExternalReferenceById(eRId);
+					let eR = t.model.getExternalReferenceByReferenceData(referenceData);
+					let noRefDataER = t.model.getExternalReferenceById(eRId);
+
+					if (!eR && noRefDataER) {
+						eR = noRefDataER;
+					}
 
 					let externalReferenceId = eRId;
 					if (path && externalReferenceId !== path) {
 						let isNotUpdate = (AscCommonExcel.importRangeLinksState && AscCommonExcel.importRangeLinksState.notUpdateIdMap && AscCommonExcel.importRangeLinksState.notUpdateIdMap[this.Id]) || this.notUpdateId;
 						if (!isNotUpdate) {
-							eR = t.model.getExternalReferenceById(path);
-							//need remove added new link with externalReferenceId id
-							if (eR) {
-								let eRAdded = t.model.getExternalReferenceById(externalReferenceId);
-								if (eRAdded) {
-									let indexFrom = t.model.getExternalReferenceById(externalReferenceId, true);
-									let indexTo = t.model.getExternalReferenceById(path, true);
+							// eR = t.model.getExternalReferenceById(path);
+							/* 
+								next we need to remove the added new link with the same identifier externalReferenceId
+								change the index of an already added link for which a promise has not yet been received
+								we get the link that we wrote down before receiving the promise
+								so we are looking for a link without referenceData, but with the same name 
+							*/
+							let eRAdded = t.model.getExternalReferenceWithoutRefData(externalReferenceId);
+							if (eR && eRAdded) {
+								let indexFrom = t.model.getExternalReferenceById(externalReferenceId, true);
+								let indexTo = t.model.getExternalReferenceById(path, true);
 
+								if (indexFrom !== null && indexTo !== null) {
 									for (let wsName in eRAdded.worksheets) {
 										let existedWs = eR.worksheets[wsName];
 										let prepared = t.model.dependencyFormulas.prepareChangeSheet(eRAdded.worksheets[wsName].getId(), {from: indexFrom + 1, to: indexTo + 1});
@@ -5490,16 +5502,13 @@
 											}
 										}
 									}
-									eR.addDataSetFrom(eRAdded);
-									t.model.removeExternalReferences([eRAdded.getAscLink()]);
 								}
+								eR.addDataSetFrom(eRAdded);
+								t.model.removeExternalReferences([eRAdded.getAscLink()]);
 							}
 						}
 					}
-					
-					if (!eR) {
-						eR = t.model.getExternalReferenceById(externalReferenceId);
-					}
+
 
 					if (stream && eR) {
 						updatedReferences.push(eR);
