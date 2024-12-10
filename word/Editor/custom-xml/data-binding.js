@@ -32,7 +32,7 @@
 
 "use strict";
 
-(function(window)
+(function()
 {
 	/**
 	 * @constructor
@@ -102,7 +102,6 @@
 	};
 	
 	//--------------------------------------------------------export----------------------------------------------------
-	window['AscWord'] = window['AscWord'] || {};
-	window['AscWord'].DataBinding = DataBinding;
+	AscWord.DataBinding = DataBinding;
 	
-})(window);
+})();

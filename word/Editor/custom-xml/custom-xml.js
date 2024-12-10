@@ -32,12 +32,12 @@
 
 "use strict";
 
-(function(window)
+(function()
 {
 	/**
 	 * @param {array} [uri]
 	 * @param {string} [itemId]
-	 * @param {CustomXMLContent} [content]
+	 * @param {CustomXmlContent} [content]
 	 * @param [oContentLink]
 	 *
 	 * Класс представляющий CustomXML
@@ -50,7 +50,6 @@
 		this.content			= content ? content : null;
 		this.oContentLink		= oContentLink ? oContentLink : null;
 	}
-
 	/**
 	 * Get CustomXML data by string
 	 * @return {string}
@@ -89,7 +88,7 @@
 	CustomXml.prototype.addContentByXMLString = function (strCustomXml)
 	{
 		let oStax			= new StaxParser(strCustomXml),
-			rootContent		= new CustomXMLContent(null);
+			rootContent		= new CustomXmlContent(null);
 
 		while (oStax.Read())
 		{
@@ -118,8 +117,11 @@
 
 		this.content = rootContent;
 	}
-
-	function CustomXMLContent(parent, name)
+	
+	/**
+	 * @constructor
+	 */
+	function CustomXmlContent(parent, name)
 	{
 		this.parent			= parent;
 		this.name			= name ? name : "";
@@ -133,7 +135,7 @@
 		};
 		this.addContent = function (name)
 		{
-			let newItem = new CustomXMLContent(this, name);
+			let newItem = new CustomXmlContent(this, name);
 
 			this.content.push(newItem);
 			return newItem;
@@ -225,7 +227,6 @@
 	}
 
 	//--------------------------------------------------------export----------------------------------------------------
-	window['AscWord'] = window['AscWord'] || {};
-	window['AscWord'].CustomXml = CustomXml;
-
-})(window);
+	AscWord.CustomXml        = CustomXml;
+	AscWord.CustomXmlContent = CustomXmlContent;
+})();
