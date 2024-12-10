@@ -85,9 +85,11 @@
 	/**
 	 * get Geometry object from shape object reading shape elements
 	 * @param {Shape_Type} shape
+	 * @param {number} pageScale
+	 * @param {number} isInvertCoords
 	 * @returns {Geometry} geometry
 	 */
-	function getGeometryFromShape(shape, pageScale) {
+	function getGeometryFromShape(shape, pageScale, isInvertCoords) {
 		// init geometry
 		let geometry = new AscFormat.Geometry();
 
@@ -288,11 +290,15 @@
 				switch (commandName) {
 					case "MoveTo":
 					{
-						let moveToXTextValue = Number(commandRow.getCell("X").v);
-						let moveToYTextValue = Number(commandRow.getCell("Y").v);
+						let moveToXValue = Number(commandRow.getCell("X").v);
+						let moveToYValue = Number(commandRow.getCell("Y").v);
 
-						let newX = convertUnits(moveToXTextValue, additionalUnitCoefficient);
-						let newY = convertUnits(moveToYTextValue, additionalUnitCoefficient);
+						if (isInvertCoords) {
+							moveToYValue = shapeHeight - moveToYValue;
+						}
+
+						let newX = convertUnits(moveToXValue, additionalUnitCoefficient);
+						let newY = convertUnits(moveToYValue, additionalUnitCoefficient);
 
 						path.moveTo(newX, newY);
 						lastPoint.x = newX;
@@ -301,11 +307,15 @@
 					}
 					case "RelMoveTo":
 					{
-						let relMoveToXTextValue = Number(commandRow.getCell("X").v);
-						let relMoveToYTextValue = Number(commandRow.getCell("Y").v);
+						let relMoveToXValue = Number(commandRow.getCell("X").v);
+						let relMoveToYValue = Number(commandRow.getCell("Y").v);
 
-						let newX = convertUnits(relMoveToXTextValue, additionalUnitCoefficient);
-						let newY = convertUnits(relMoveToYTextValue, additionalUnitCoefficient);
+						if (isInvertCoords) {
+							relMoveToYValue = 1 - relMoveToYValue;
+						}
+
+						let newX = convertUnits(relMoveToXValue, additionalUnitCoefficient);
+						let newY = convertUnits(relMoveToYValue, additionalUnitCoefficient);
 
 						let relX = newX * shapeWidth;
 						let relY = newY * shapeHeight;
@@ -316,11 +326,15 @@
 					}
 					case "LineTo":
 					{
-						let lineToXTextValue = Number(commandRow.getCell("X").v);
-						let lineToYTextValue = Number(commandRow.getCell("Y").v);
+						let lineToXValue = Number(commandRow.getCell("X").v);
+						let lineToYValue = Number(commandRow.getCell("Y").v);
 
-						let newX = convertUnits(lineToXTextValue, additionalUnitCoefficient);
-						let newY = convertUnits(lineToYTextValue, additionalUnitCoefficient);
+						if (isInvertCoords) {
+							lineToYValue = shapeHeight - lineToYValue;
+						}
+
+						let newX = convertUnits(lineToXValue, additionalUnitCoefficient);
+						let newY = convertUnits(lineToYValue, additionalUnitCoefficient);
 
 						path.lnTo(newX, newY);
 						lastPoint.x = newX;
@@ -331,6 +345,10 @@
 					{
 						let relLineToXTextValue = Number(commandRow.getCell("X").v);
 						let relLineToYTextValue = Number(commandRow.getCell("Y").v);
+
+						if (isInvertCoords) {
+							relLineToYTextValue = 1 - relLineToYTextValue;
+						}
 
 						let newX = convertUnits(relLineToXTextValue, additionalUnitCoefficient);
 						let newY = convertUnits(relLineToYTextValue, additionalUnitCoefficient);
@@ -351,6 +369,12 @@
 						let b = Number(commandRow.getCell("B").v);
 						let c = Number(commandRow.getCell("C").v);
 						let d = Number(commandRow.getCell("D").v);
+
+						if (isInvertCoords) {
+							y = shapeHeight - y;
+							b = shapeHeight - b;
+							c = -c;
+						}
 
 						let newX = convertUnits(x, additionalUnitCoefficient);
 						let newY = convertUnits(y, additionalUnitCoefficient);
@@ -407,19 +431,25 @@
 							return {wR: rx, hR: ry};
 						}
 
-						let centerPointXTextValue = Number(commandRow.getCell("X").v);
-						let centerPointYTextValue = Number(commandRow.getCell("Y").v);
-						let somePointXTextValue = Number(commandRow.getCell("A").v);
-						let somePointYTextValue = Number(commandRow.getCell("B").v);
-						let anotherPointXTextValue = Number(commandRow.getCell("C").v);
-						let anotherPointYTextValue = Number(commandRow.getCell("D").v);
+						let centerPointXValue = Number(commandRow.getCell("X").v);
+						let centerPointYValue = Number(commandRow.getCell("Y").v);
+						let somePointXValue = Number(commandRow.getCell("A").v);
+						let somePointYValue = Number(commandRow.getCell("B").v);
+						let anotherPointXValue = Number(commandRow.getCell("C").v);
+						let anotherPointYValue = Number(commandRow.getCell("D").v);
 
-						let newX = convertUnits(centerPointXTextValue, additionalUnitCoefficient);
-						let newY = convertUnits(centerPointYTextValue, additionalUnitCoefficient);
-						let newA = convertUnits(somePointXTextValue, additionalUnitCoefficient);
-						let newB = convertUnits(somePointYTextValue, additionalUnitCoefficient);
-						let newC = convertUnits(anotherPointXTextValue, additionalUnitCoefficient);
-						let newD = convertUnits(anotherPointYTextValue, additionalUnitCoefficient);
+						if (isInvertCoords) {
+							centerPointYValue = shapeHeight - centerPointYValue;
+							somePointYValue = shapeHeight - somePointYValue;
+							anotherPointYValue = shapeHeight - anotherPointYValue;
+						}
+
+						let newX = convertUnits(centerPointXValue, additionalUnitCoefficient);
+						let newY = convertUnits(centerPointYValue, additionalUnitCoefficient);
+						let newA = convertUnits(somePointXValue, additionalUnitCoefficient);
+						let newB = convertUnits(somePointYValue, additionalUnitCoefficient);
+						let newC = convertUnits(anotherPointXValue, additionalUnitCoefficient);
+						let newD = convertUnits(anotherPointYValue, additionalUnitCoefficient);
 
 						let wRhR = transformEllipseParams(newX, newY, newA, newB, newC, newD);
 						if (!wRhR) {
@@ -448,6 +478,11 @@
 						let x = Number(commandRow.getCell("X").v);					// xEnd
 						let y = Number(commandRow.getCell("Y").v);					// yEnd
 						let a = Number(commandRow.getCell("A").v);					// middleGap
+
+						if (isInvertCoords) {
+							y = shapeHeight - y;
+							a = -a;
+						}
 
 						let newX = convertUnits(x, additionalUnitCoefficient);
 						let newY = convertUnits(y, additionalUnitCoefficient);
@@ -482,20 +517,31 @@
 						// https://learn.microsoft.com/en-us/office/client-developer/visio/polylineto-row-geometry-section
 						let x = Number(commandRow.getCell("X").v);
 						let y = Number(commandRow.getCell("Y").v);
+
+						if (isInvertCoords) {
+							y = shapeHeight - y;
+						}
+
 						// formula: knotLast, degree, xType, yType, x1, y1, x2, y2, ...
 						let formula = String(commandRow.getCell("A").v).trim();
 						let formulaValues = formula.substring(9, formula.length - 1).split(",");
+
+						let xType = parseInt(formulaValues[0]);
+						let yType = parseInt(formulaValues[1]);
 
 						//Convert units to EMUs
 						let xEndPointNew = convertUnits(x, additionalUnitCoefficient);
 						let yEndPointNew = convertUnits(y, additionalUnitCoefficient);
 						for (let k = 2; k < formulaValues.length; k++) {
 							// convert x and y
+
+							if (isInvertCoords && (k + 1) % 2 === 0) {
+								let maxY = yType === 0 ? 1 : shapeHeight;
+								formulaValues[k] = maxY - Number(formulaValues[k]);
+							}
+
 							formulaValues[k] = convertUnits(Number(formulaValues[k]), additionalUnitCoefficient);
 						}
-
-						let xType = parseInt(formulaValues[0]);
-						let yType = parseInt(formulaValues[1]);
 
 						let xScale = 1;
 						let yScale = 1;
@@ -538,24 +584,34 @@
 						let formula = String(commandRow.getCell("E").v).trim();
 						let formulaValues = formula.substring(6, formula.length - 1).split(",");
 
-						//Convert units to EMUs
-						let xEndPointNew = convertUnits(xEndPoint, additionalUnitCoefficient);
-						let yEndPointNew = convertUnits(yEndPoint, additionalUnitCoefficient);
-						for (let k = 4; k < formulaValues.length; k++) {
-							if (k % 4 == 0 || k % 4 == 1) {
-								// convert x and y
-								formulaValues[k] = convertUnits(Number(formulaValues[k]), additionalUnitCoefficient);
-							}
+						if (isInvertCoords) {
+							yEndPoint = shapeHeight - yEndPoint;
 						}
-
-						let prevLastX = lastPoint.x;
-						let prevLastY = lastPoint.y;
 
 						//Parse arguments
 						let lastKnot = Number(formulaValues[0]);
 						let degree = Number(formulaValues[1]);
 						let xType =	parseInt(formulaValues[2]);
 						let yType = parseInt(formulaValues[3]);
+
+						//Convert units to EMUs
+						let xEndPointNew = convertUnits(xEndPoint, additionalUnitCoefficient);
+						let yEndPointNew = convertUnits(yEndPoint, additionalUnitCoefficient);
+						for (let k = 4; k < formulaValues.length; k++) {
+							if (k % 4 === 0 || k % 4 === 1) {
+								// convert x and y
+
+								if (isInvertCoords && (k % 4 === 1)) {
+									let maxY = yType === 0 ? 1 : shapeHeight;
+									formulaValues[k] = maxY - Number(formulaValues[k]);
+								}
+
+								formulaValues[k] = convertUnits(Number(formulaValues[k]), additionalUnitCoefficient);
+							}
+						}
+
+						let prevLastX = lastPoint.x;
+						let prevLastY = lastPoint.y;
 
 						let xScale = 1;
 						let yScale = 1;
@@ -612,28 +668,38 @@
 					case "SplineStart":
 					{
 						// https://learn.microsoft.com/en-us/office/client-developer/visio/splinestart-row-geometry-section
+
+						let secondControlPointY = Number(commandRow.getCell("Y").v);
+						let degree = Number(commandRow.getCell("D").v); // not angle
+
+						if (isInvertCoords) {
+							secondControlPointY = shapeHeight - secondControlPointY;
+						}
 						splineStartCommandData = {
 							firstControlPointX : lastPoint.x,
 							firstControlPointY: lastPoint.y,
 							secondControlPointX: convertUnits(Number(commandRow.getCell("X").v),
 								additionalUnitCoefficient),
-							secondControlPointY: convertUnits(Number(commandRow.getCell("Y").v),
-								additionalUnitCoefficient),
+							secondControlPointY: convertUnits(secondControlPointY,additionalUnitCoefficient),
 							secondKnot: Number(commandRow.getCell("A").v),
 							firstKnot: Number(commandRow.getCell("B").v),
 							lastKnot: Number(commandRow.getCell("C").v),
-							degree: Number(commandRow.getCell("D").v)
+							degree: degree
 						};
 						break;
 					}
 					case "SplineKnot":
 					{
 						// https://learn.microsoft.com/en-us/office/client-developer/visio/splineknot-row-geometry-section
+						let controlPointY = Number(commandRow.getCell("Y").v);
+
+						if (isInvertCoords) {
+							controlPointY = shapeHeight - controlPointY;
+						}
 						splineKnotCommandsData.push({
 							controlPointX: convertUnits(Number(commandRow.getCell("X").v),
 								additionalUnitCoefficient),
-							controlPointY: convertUnits(Number(commandRow.getCell("Y").v),
-								additionalUnitCoefficient),
+							controlPointY: convertUnits(controlPointY,additionalUnitCoefficient),
 							knot: Number(commandRow.getCell("A").v)
 						});
 						break;
@@ -645,6 +711,11 @@
 						let y = Number(commandRow.getCell("Y").v);
 						let a = Number(commandRow.getCell("A").v);
 						let b = Number(commandRow.getCell("B").v);
+
+						if (isInvertCoords) {
+							y = shapeHeight - y;
+							b = shapeHeight - b;
+						}
 
 						let xNew = convertUnits(x, additionalUnitCoefficient);
 						let yNew = convertUnits(y, additionalUnitCoefficient);
@@ -675,6 +746,12 @@
 						let c = Number(commandRow.getCell("C").v);
 						let d = Number(commandRow.getCell("D").v);
 
+						if (isInvertCoords) {
+							y = 1 - y;
+							b = 1 - b;
+							d = 1 - d;
+						}
+
 						let xNew = convertUnits(x, additionalUnitCoefficient) * shapeWidth;
 						let yNew = convertUnits(y, additionalUnitCoefficient) * shapeHeight;
 						let aNew = convertUnits(a, additionalUnitCoefficient) * shapeWidth;
@@ -696,6 +773,12 @@
 						let b = Number(commandRow.getCell("B").v);
 						let c = Number(commandRow.getCell("C").v);
 						let d = Number(commandRow.getCell("D").v);
+
+						if (isInvertCoords) {
+							y = 1 - y;
+							b = 1 - b;
+							c = -c;
+						}
 
 						let newX = convertUnits(x, additionalUnitCoefficient) * shapeWidth;
 						let newY = convertUnits(y, additionalUnitCoefficient) * shapeHeight;
@@ -719,6 +802,11 @@
 						let a = Number(commandRow.getCell("A").v);
 						let b = Number(commandRow.getCell("B").v);
 
+						if (isInvertCoords) {
+							y = 1 - y;
+							b = 1 - b;
+						}
+
 						let xNew = convertUnits(x, additionalUnitCoefficient) * shapeWidth;
 						let yNew = convertUnits(y, additionalUnitCoefficient) * shapeHeight;
 						let aNew = convertUnits(a, additionalUnitCoefficient) * shapeWidth;
@@ -732,7 +820,7 @@
 					}
 				}
 				if (prevCommandName === "SplineKnot" &&
-					(commandName !== "SplineKnot" || j === geometrySection.rows.length - 1) &&
+					(commandName !== "SplineKnot" || j === geometrySection.getElements().length - 1) &&
 					splineStartCommandData !== undefined) {
 					// draw spline
 
