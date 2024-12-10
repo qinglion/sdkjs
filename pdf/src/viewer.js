@@ -2325,18 +2325,15 @@
 			let oDoc = oThis.getPDFDoc();
 			oDoc.OnMouseUp(AscCommon.global_mouseEvent.X, AscCommon.global_mouseEvent.Y, AscCommon.global_mouseEvent);
 
-			if (oThis.canSelectPageText())
+			if (oThis.canSelectPageText() && !oThis.MouseHandObject && !oDoc.mouseDownAnnot && !oDoc.mouseDownField)
 			{
-				if (!oThis.MouseHandObject && global_mouseEvent.ClickCount == 2 && !oDoc.mouseDownAnnot && !oDoc.mouseDownField)
-				{
-					var pageObjectLogic = oThis.getPageByCoords2(oThis.mouseDownCoords.X, oThis.mouseDownCoords.Y);
+				var pageObjectLogic = oThis.getPageByCoords2(oThis.mouseDownCoords.X, oThis.mouseDownCoords.Y);
+				if (global_mouseEvent.ClickCount == 2)
 					oThis.file.selectWholeWord(pageObjectLogic.index, pageObjectLogic.x, pageObjectLogic.y);
-				}
-				else if (!oThis.MouseHandObject && global_mouseEvent.ClickCount == 3 && !oDoc.mouseDownAnnot && !oDoc.mouseDownField)
-				{
-					var pageObjectLogic = oThis.getPageByCoords2(oThis.mouseDownCoords.X, oThis.mouseDownCoords.Y);
+				else if (global_mouseEvent.ClickCount == 3)
 					oThis.file.selectWholeRow(pageObjectLogic.index, pageObjectLogic.x, pageObjectLogic.y);
-				}
+				else if (global_mouseEvent.ClickCount == 4)
+					oThis.file.selectWholePage(pageObjectLogic.index);
 			}
 
 			// если было нажатие - то отжимаем
@@ -3283,7 +3280,7 @@
 			{
 				if (null === this.file.pages[i].text)
 				{
-					this.file.pages[i].text = this.file.getText(this.file.pages[i].originIndex);
+					this.file.pages[i].text = this.file.getText(i);
 					isCommands = true;
 				}
 			}
@@ -3298,7 +3295,7 @@
 						this.pagesInfo.countTextPages++;
 						continue;
 					}
-					this.file.pages[this.pagesInfo.countTextPages].text = this.file.getText(this.file.pages[this.pagesInfo.countTextPages].originIndex);
+					this.file.pages[this.pagesInfo.countTextPages].text = this.file.getText(this.pagesInfo.countTextPages);
 					if (null !== this.file.pages[this.pagesInfo.countTextPages].text)
 					{
 						this.pagesInfo.countTextPages++;
