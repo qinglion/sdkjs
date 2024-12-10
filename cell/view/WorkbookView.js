@@ -5601,7 +5601,7 @@
 				History.EndTransaction();
 
 				//кроме пересчёта нужно изменить ссылку на лист во всех диапазонах, которые используют данную ссылку
-				for (let j = 0; i < updatedReferences.length; j++) {
+				for (let j = 0; j < updatedReferences.length; j++) {
 					for (let n in updatedReferences[j].worksheets) {
 						let prepared = t.model.dependencyFormulas.prepareChangeSheet(updatedReferences[j].worksheets[n].getId());
 						t.model.dependencyFormulas.dependencyFormulas.changeSheet(prepared);
