@@ -120,6 +120,7 @@ var CPresentation = CPresentation || function(){};
         this.MathTrackHandler       = new AscWord.CMathTrackHandler(this.GetDrawingDocument(), Asc.editor);
         this.AnnotTextPrTrackHandler= new AscPDF.CAnnotTextPrTrackHandler(this.GetDrawingDocument(), Asc.editor);
         this.TextSelectTrackHandler = new AscPDF.CTextSelectTrackHandler(this.GetDrawingDocument(), Asc.editor);
+        this.AnnotSelectTrackHandler= new AscPDF.CAnnotSelectTrackHandler(this, Asc.editor);
         this.SearchEngine           = new AscPDF.CPdfSearch(this);
 
         this.theme                  = AscFormat.GenerateDefaultTheme(this);
@@ -1929,6 +1930,7 @@ var CPresentation = CPresentation || function(){};
         }
         
         this.UpdateInterface();
+        this.AnnotSelectTrackHandler.Update(true);
         oViewer.onUpdateOverlay();
         oViewer.file.onUpdateSelection();
     };
@@ -2615,6 +2617,7 @@ var CPresentation = CPresentation || function(){};
     };
     CPDFDoc.prototype.UpdateAnnotTrackPos = function() {
         this.AnnotTextPrTrackHandler.OnChangePosition();
+        this.AnnotSelectTrackHandler.OnChangePosition();
     };
     CPDFDoc.prototype.UpdateSelectionTrackPos = function() {
         this.TextSelectTrackHandler.OnChangePosition();
@@ -2669,7 +2672,7 @@ var CPresentation = CPresentation || function(){};
 		}
 		
 		if (this.IsSelectionLocked(nChangesType, Additional)) {
-			return;
+			return false;
 		}
 		
 		this.StartAction(nDescription);
@@ -2793,6 +2796,10 @@ var CPresentation = CPresentation || function(){};
             }
         }
 
+        if (this.Viewer.file.isSelectionUse()) {
+            return;
+        }
+        
         if (oAnnot) {
             this.showedCommentId = oAnnot.GetId();
 
@@ -3533,10 +3540,6 @@ var CPresentation = CPresentation || function(){};
         let oTargetTextObject = AscFormat.getTargetTextObject(oController);
 
         this.UpdateUndoRedo();
-        this.UpdateCommentPos();
-        this.UpdateMathTrackPos();
-        this.UpdateAnnotTrackPos();
-        this.UpdateSelectionTrackPos();
         this.UpdateCopyCutState();
         this.UpdateParagraphProps();
         this.UpdateTextProps();
@@ -3547,6 +3550,12 @@ var CPresentation = CPresentation || function(){};
         this.Api.sync_EndCatchSelectedElements();
         
         Asc.editor.CheckChangedDocument();
+    };
+    CPDFDoc.prototype.UpdateInterfaceTracks = function() {
+        this.UpdateCommentPos();
+        this.UpdateMathTrackPos();
+        this.UpdateAnnotTrackPos();
+        this.UpdateSelectionTrackPos();
     };
 
     //-----------------------------------------------------------------------------------

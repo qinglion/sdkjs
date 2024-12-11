@@ -4555,6 +4555,9 @@
 	window['AscDFH'].historydescription_Pdf_ExecActions			= 0x2a8;
 	window['AscDFH'].historydescription_Pdf_FreeTextFitTextBox	= 0x2a9;
 	window['AscDFH'].historydescription_Pdf_AddComment			= 0x2b0;
+	window['AscDFH'].historydescription_Pdf_ChangeStrokeColor	= 0x2b1;
+	window['AscDFH'].historydescription_Pdf_ChangeFillColor		= 0x2b2;
+	window['AscDFH'].historydescription_Pdf_ChangeOpacity		= 0x2b3;
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
