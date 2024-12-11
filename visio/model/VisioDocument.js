@@ -631,7 +631,7 @@
 			graphics.RestoreGrState();
 
 			topLevelShapesAndGroups.forEach(function(shapeOrGroup) {
-				if (isFlipYMatrix) {
+				if (isFlipImages || isRecalculateTextY) {
 					drawShapeOrGroupRecursively(graphics, shapeOrGroup, baseMatrix, baseTextMatrix, isRecalculateTextY,
 						isFlipImages, logic_h_mm);
 				} else {
