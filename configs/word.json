@@ -381,7 +381,7 @@
 			"pdf/src/annotations/square.js",
 			"pdf/src/textSelectTrackHandler.js",
 			"pdf/src/annotations/textPrTrackHandler.js",
-			"pdf/src/annotations/annotTrackHandler.js",
+			"pdf/src/annotations/annot-track-handler.js",
 			"pdf/src/DrawingDocument.js",
 			"pdf/src/GraphicObjects.js",
 			"common/geometry/geometry.js",
