@@ -306,7 +306,7 @@ function NativeOpenFileData(data, version, xlsx_file_path, options)
 
 	switch (window.NATIVE_DOCUMENT_TYPE)
 	{
-		case "draw":
+		case "visio":
 		case "document":
 		case "presentation":
 		{
