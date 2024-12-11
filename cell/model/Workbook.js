@@ -14100,6 +14100,7 @@
 	Cell.prototype.clone=function(oNewWs, renameParams){
 		if(!oNewWs)
 			oNewWs = this.ws;
+		let oThis = this;
 		var oNewCell = new Cell(oNewWs);
 		oNewCell.nRow = this.nRow;
 		oNewCell.nCol = this.nCol;
@@ -14111,7 +14112,7 @@
 		oNewCell.multiText = this.multiText;
 		this.processFormula(function(parsed) {
 			var newFormula;
-			if (oNewWs != this.ws && renameParams) {
+			if (oNewWs != oThis.ws && renameParams) {
 				var formula = parsed.clone(null, null, this.ws);
 				formula.renameSheetCopy(renameParams);
 				newFormula = formula.assemble(true);
