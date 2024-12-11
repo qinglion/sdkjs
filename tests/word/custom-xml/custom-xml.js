@@ -155,6 +155,7 @@ $(function () {
 	let oXMLManager			= logicDocument.getCustomXmlManager();
 	const oCustomXMLData	= {
 		'date': "2000-01-01",
+		'dateFormatted': "01-01-2000",
 		'checkboxTrue': true,
 		'checkboxFalse': false,
 		'checkbox0': 0,
@@ -244,6 +245,7 @@ $(function () {
 	{
 		let cc = CreateFilledContentControl(nPos, isInline);
 		let dateTimePr = new AscWord.CSdtDatePickerPr();
+		dateTimePr.SetDateFormat('DD-MM-YYYY');
 		cc.ApplyDatePickerPr(dateTimePr, true);
 		return cc;
 	}
@@ -321,14 +323,13 @@ $(function () {
 		CreateCustomXMLForDocument(oCustomXMLs.checkboxTrueAnotherXML, "{694325A8-B1C9-407B-A2C2-E2DD1740AA55}", ["/weather[1]"]);
 
 		let c1			= CreateDateCC(0);
+
 		CreateDataBindingForCC(c1);
-
+		c1.updateDataBinding(); // set format
 		let oDatePr		= c1.GetDatePickerPr();
-		let strDate		= oDatePr.GetFullDate();
-		let oDate		= new Date(strDate).toDateString();
-		let oStartDate	= new Date(oCustomXMLData.date).toDateString();
+		let oDate		= oDatePr.get_String();
 
-		assert.strictEqual(oDate, oStartDate, "Date loaded from CustomXml");
+		assert.strictEqual(oDate, oCustomXMLData.dateFormatted, "Date loaded from CustomXml");
 
 		let c2			= CreateCheckBoxCC(1);
 		CreateDataBindingForCC(c2, '', "{694325A8-B1C9-407B-A2C2-E2DD1740AA55}", '/weather[1]', '');
@@ -342,7 +343,7 @@ $(function () {
 
 		assert.strictEqual(
 			oXMLManager.getCustomXMLString(oXMLManager.getCustomXml(0)),
-			'<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<documentData xmlns=\"http://example.com/picture\">\n\t<simpleText>2000-01-01</simpleText>\n</documentData>',
+			'<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<documentData xmlns=\"http://example.com/picture\">\n\t<simpleText>' + oDate + '</simpleText>\n</documentData>',
 			"Check saved CustomXML"
 		);
 
@@ -359,17 +360,24 @@ $(function () {
 
 		let c1			= CreateDateCC(0);
 		CreateDataBindingForCC(c1);
+		c1.updateDataBinding(); //set format
 
 		let oDatePr		= c1.GetDatePickerPr();
-		let strDate		= oDatePr.GetFullDate();
-		let oDate		= new Date(strDate).toDateString();
-		let oStartDate	= new Date(oCustomXMLData.date).toDateString();
+		let oDate		= oDatePr.get_String();
 
-		assert.strictEqual(oDate, oStartDate, "Date loaded from CustomXml");
+		assert.strictEqual(oDate, oCustomXMLData.dateFormatted, "Date loaded from CustomXml");
 
 		assert.strictEqual(
 			oXMLManager.getCustomXMLString(oXMLManager.getCustomXml(0)),
-			'<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<documentData xmlns=\"http://example.com/picture\">\n\t<simpleText>2000-01-01</simpleText>\n</documentData>',
+			'<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<documentData xmlns=\"http://example.com/picture\">\n\t<simpleText>' + oDate + '</simpleText>\n</documentData>',
+			"Check saved CustomXML"
+		);
+
+		SetDataToContentControl(c1, "2020-02-02");
+		c1.updateDataBinding();
+		assert.strictEqual(
+			oXMLManager.getCustomXMLString(oXMLManager.getCustomXml(0)),
+			'<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<documentData xmlns=\"http://example.com/picture\">\n\t<simpleText>02-02-2020</simpleText>\n</documentData>',
 			"Check saved CustomXML"
 		);
 	});
@@ -457,7 +465,7 @@ $(function () {
 
 		let oValue		= c1.GetCurrentParagraph().GetText();
 
-		assert.strictEqual(oValue, "hello ", "Date loaded from CustomXml");
+		assert.strictEqual(oValue, "hello ", "Data loaded from CustomXml");
 		assert.strictEqual(
 			oXMLManager.getCustomXMLString(oXMLManager.getCustomXml(0)),
 			'<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<documentData xmlns=\"http://example.com/picture\">\n\t<simpleText>hello</simpleText>\n</documentData>',
@@ -467,7 +475,7 @@ $(function () {
 		SetDataToContentControl(c1, oCustomXMLData.checkboxMess2);
 		oValue		= c1.GetInnerText();
 
-		assert.strictEqual(oValue, "hello123\r\n", "Date loaded from CustomXml");
+		assert.strictEqual(oValue, "hello123\r\n", "Data loaded from CustomXml");
 		assert.strictEqual(
 			oXMLManager.getCustomXMLString(oXMLManager.getCustomXml(0)),
 			'<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<documentData xmlns=\"http://example.com/picture\">\n\t<simpleText>hello123</simpleText>\n</documentData>',
@@ -484,7 +492,7 @@ $(function () {
 
 		let oValue		= c1.GetCurrentParagraph().GetText();
 
-		assert.strictEqual(oValue, "hello ", "Date loaded from CustomXml");
+		assert.strictEqual(oValue, "hello ", "Data loaded from CustomXml");
 		assert.strictEqual(
 			oXMLManager.getCustomXMLString(oXMLManager.getCustomXml(0)),
 			'<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<documentData xmlns=\"http://example.com/picture\">\n\t<simpleText>hello</simpleText>\n</documentData>',
@@ -494,7 +502,7 @@ $(function () {
 		SetDataToContentControl(c1, oCustomXMLData.checkboxMess2);
 		oValue		= c1.GetInnerText();
 
-		assert.strictEqual(oValue, "hello123\r\n", "Date loaded from CustomXml");
+		assert.strictEqual(oValue, "hello123\r\n", "Data loaded from CustomXml");
 		assert.strictEqual(
 			oXMLManager.getCustomXMLString(oXMLManager.getCustomXml(0)),
 			'<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<documentData xmlns=\"http://example.com/picture\">\n\t<simpleText>hello123</simpleText>\n</documentData>',
@@ -545,10 +553,10 @@ $(function () {
 			"Check load CustomXML"
 		);
 
-		SetDataToContentControl(c1, "2020-01-01");
+		SetDataToContentControl(c1, "qwe");
 		assert.strictEqual(
 			oXMLManager.getCustomXMLString(oXMLManager.getCustomXml(0)),
-			'<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<documentData xmlns=\"http://example.com/picture\">\n\t<simpleText>2020-01-01</simpleText>\n</documentData>',
+			'<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<documentData xmlns=\"http://example.com/picture\">\n\t<simpleText>qwe</simpleText>\n</documentData>',
 			"Check saved CustomXML"
 		);
 	});
@@ -581,10 +589,10 @@ $(function () {
 			"Check load CustomXML"
 		);
 
-		SetDataToContentControl(c1, "2020-01-01");
+		SetDataToContentControl(c1, "qwe");
 		assert.strictEqual(
 			oXMLManager.getCustomXMLString(oXMLManager.getCustomXml(0)),
-			'<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<documentData xmlns=\"http://example.com/picture\">\n\t<simpleText>2020-01-01</simpleText>\n</documentData>',
+			'<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<documentData xmlns=\"http://example.com/picture\">\n\t<simpleText>qwe</simpleText>\n</documentData>',
 			"Check saved CustomXML"
 		);
 	});
@@ -598,13 +606,12 @@ $(function () {
 
 		let c1			= CreateDateCC(0, true);
 		CreateDataBindingForCC(c1);
+		c1.updateDataBinding(); // set format
 
 		let oDatePr		= c1.GetDatePickerPr();
-		let strDate		= oDatePr.GetFullDate();
-		let oDate		= new Date(strDate).toDateString();
-		let oStartDate	= new Date(oCustomXMLData.date).toDateString();
+		let oDate		= oDatePr.get_String();
 
-		assert.strictEqual(oDate, oStartDate, "Date loaded from CustomXml");
+		assert.strictEqual(oDate, oCustomXMLData.dateFormatted, "Date loaded from CustomXml");
 
 		let c2			= CreateCheckBoxCC(1, true);
 		CreateDataBindingForCC(c2, '', "{694325A8-B1C9-407B-A2C2-E2DD1740AA55}", '/weather[1]', '');
@@ -618,7 +625,7 @@ $(function () {
 
 		assert.strictEqual(
 			oXMLManager.getCustomXMLString(oXMLManager.getCustomXml(0)),
-			'<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<documentData xmlns=\"http://example.com/picture\">\n\t<simpleText>2000-01-01</simpleText>\n</documentData>',
+			'<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<documentData xmlns=\"http://example.com/picture\">\n\t<simpleText>' + oDate +'</simpleText>\n</documentData>',
 			"Check saved CustomXML"
 		);
 
@@ -632,27 +639,26 @@ $(function () {
 	QUnit.test("Date content control load/save CustomXML", async function (assert)
 	{
 		CreateCustomXMLForDocument(oCustomXMLs.date);
-
 		let c1			= CreateDateCC(0, true);
 		CreateDataBindingForCC(c1);
+		c1.updateDataBinding(); // set format
 
 		let oDatePr		= c1.GetDatePickerPr();
-		let strDate		= oDatePr.GetFullDate();
-		let oDate		= new Date(strDate).toDateString();
-		let oStartDate	= new Date(oCustomXMLData.date).toDateString();
+		let oDate		= oDatePr.get_String();
 
-		assert.strictEqual(oDate, oStartDate, "Date loaded from CustomXml");
+		assert.strictEqual(oDate, oCustomXMLData.dateFormatted, "Date loaded from CustomXml");
 
 		assert.strictEqual(
 			oXMLManager.getCustomXMLString(oXMLManager.getCustomXml(0)),
-			'<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<documentData xmlns=\"http://example.com/picture\">\n\t<simpleText>2000-01-01</simpleText>\n</documentData>',
+			'<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<documentData xmlns=\"http://example.com/picture\">\n\t<simpleText>' + oDate + '</simpleText>\n</documentData>',
 			"Check saved CustomXML"
 		);
 
-		SetDataToContentControl(c1, "2020-01-01");
+		SetDataToContentControl(c1, "2020-02-02");
+		c1.updateDataBinding();
 		assert.strictEqual(
 			oXMLManager.getCustomXMLString(oXMLManager.getCustomXml(0)),
-			'<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<documentData xmlns=\"http://example.com/picture\">\n\t<simpleText>2020-01-01</simpleText>\n</documentData>',
+			'<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<documentData xmlns=\"http://example.com/picture\">\n\t<simpleText>02-02-2020</simpleText>\n</documentData>',
 			"Check saved CustomXML"
 		);
 	});
@@ -748,7 +754,7 @@ $(function () {
 
 		let oValue		= c1.GetInnerText();
 
-		assert.strictEqual(oValue, "hello", "Date loaded from CustomXml");
+		assert.strictEqual(oValue, "hello", "Data loaded from CustomXml");
 		assert.strictEqual(
 			oXMLManager.getCustomXMLString(oXMLManager.getCustomXml(0)),
 			'<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<documentData xmlns=\"http://example.com/picture\">\n\t<simpleText>hello</simpleText>\n</documentData>',
@@ -758,7 +764,7 @@ $(function () {
 		SetDataToContentControl(c1, oCustomXMLData.checkboxMess2);
 		oValue		= c1.GetInnerText();
 
-		assert.strictEqual(oValue, "hello123", "Date loaded from CustomXml");
+		assert.strictEqual(oValue, "hello123", "Data loaded from CustomXml");
 		assert.strictEqual(
 			oXMLManager.getCustomXMLString(oXMLManager.getCustomXml(0)),
 			'<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<documentData xmlns=\"http://example.com/picture\">\n\t<simpleText>hello123</simpleText>\n</documentData>',
@@ -778,7 +784,7 @@ $(function () {
 
 		let oValue		= c1.GetInnerText();
 
-		assert.strictEqual(oValue, "hello", "Date loaded from CustomXml");
+		assert.strictEqual(oValue, "hello", "Data loaded from CustomXml");
 		assert.strictEqual(
 			oXMLManager.getCustomXMLString(oXMLManager.getCustomXml(0)),
 			'<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<documentData xmlns=\"http://example.com/picture\">\n\t<simpleText>hello</simpleText>\n</documentData>',
@@ -788,7 +794,7 @@ $(function () {
 		SetDataToContentControl(c1, '123');
 		oValue		= c1.GetInnerText();
 
-		assert.strictEqual(oValue, "123", "Date saved from CustomXml");
+		assert.strictEqual(oValue, "123", "Data saved to CustomXml");
 		assert.strictEqual(
 			oXMLManager.getCustomXMLString(oXMLManager.getCustomXml(0)),
 			'<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<documentData xmlns=\"http://example.com/picture\">\n\t<simpleText>123</simpleText>\n</documentData>',
@@ -840,7 +846,7 @@ $(function () {
 		SetDataToContentControl(c1, '123');
 		let oValue		= c1.GetInnerText();
 
-		assert.strictEqual(oValue, "123", "Date saved from CustomXml");
+		assert.strictEqual(oValue, "123", "Data saved to CustomXml");
 		assert.strictEqual(
 			oXMLManager.getCustomXMLString(oXMLManager.getCustomXml(0)),
 			'<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<documentData xmlns=\"http://example.com/picture\">\n\t<simpleText>123</simpleText>\n</documentData>',
