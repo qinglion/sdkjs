@@ -3126,6 +3126,7 @@
 			this._paintFormsHighlight();
 			this._paintFormsMarkers();
 			oDoc.UpdateInterface();
+			oDoc.UpdateInterfaceTracks();
 			
 			// Обязательно делаем в конце, т.к. во время отрисовки происходит пересчет
 			this._checkTargetUpdate();

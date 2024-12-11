@@ -51,7 +51,7 @@
 	CAnnotSelectTrackHandler.prototype.OnChangePosition = function(bCheckMouseUpPos) {
 		let oMouseDownAnnot = this.Document.mouseDownAnnot;
 
-		if (!oMouseDownAnnot || false == oMouseDownAnnot.IsTextMarkup()) {
+		if (!oMouseDownAnnot || false == oMouseDownAnnot.IsTextMarkup() || this.Document.Viewer.file.isSelectionUse()) {
 			this.OnHide();
 			return;
 		}

@@ -2796,6 +2796,10 @@ var CPresentation = CPresentation || function(){};
             }
         }
 
+        if (this.Viewer.file.isSelectionUse()) {
+            return;
+        }
+        
         if (oAnnot) {
             this.showedCommentId = oAnnot.GetId();
 
@@ -3536,10 +3540,6 @@ var CPresentation = CPresentation || function(){};
         let oTargetTextObject = AscFormat.getTargetTextObject(oController);
 
         this.UpdateUndoRedo();
-        this.UpdateCommentPos();
-        this.UpdateMathTrackPos();
-        this.UpdateAnnotTrackPos();
-        this.UpdateSelectionTrackPos();
         this.UpdateCopyCutState();
         this.UpdateParagraphProps();
         this.UpdateTextProps();
@@ -3550,6 +3550,12 @@ var CPresentation = CPresentation || function(){};
         this.Api.sync_EndCatchSelectedElements();
         
         Asc.editor.CheckChangedDocument();
+    };
+    CPDFDoc.prototype.UpdateInterfaceTracks = function() {
+        this.UpdateCommentPos();
+        this.UpdateMathTrackPos();
+        this.UpdateAnnotTrackPos();
+        this.UpdateSelectionTrackPos();
     };
 
     //-----------------------------------------------------------------------------------
