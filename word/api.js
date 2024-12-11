@@ -10707,7 +10707,7 @@ background-repeat: no-repeat;\
 					oApi.WordControl.m_oLogicDocument.StartAction(AscDFH.historydescription_Document_ApplyImagePrWithUrl);
 					oApi.WordControl.m_oLogicDocument.SetImageProps(oImagePr);
 					oCC.SetShowingPlcHdr(false);
-
+					
 					if (oCC.IsPictureForm())
 					{
 						oCC.UpdatePictureFormLayout();

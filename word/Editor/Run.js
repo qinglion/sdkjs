@@ -473,10 +473,10 @@ ParaRun.prototype.Get_Text = function(Text)
 					Text.Text = null;
 					bBreak    = true;
 				}
-
-				if (true === Text.ParaEndToSpace)
-					Text.Text += " ";
-
+				
+				if (Text.ParaSeparator)
+					Text.Text += Text.ParaSeparator;
+				
 				break;
 			}
 

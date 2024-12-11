@@ -34,6 +34,7 @@
 			"word/api.js",
 			"word/api_plugins.js",
 			"common/spell/spell.js",
+			"common/zlib/zlib.js",
 			"word/Editor/Table/TableLook.js",
 			"cell/utils/utils.js",
 			"pdf/src/defines.js",
@@ -77,7 +78,7 @@
 			"common/Drawings/Metafile.js",
 			"common/libfont/textmeasurer.js",
 			"common/Drawings/WorkEvents.js",
-			
+
 			"word/Editor/History.js",
 
 			"common/Shapes/EditorSettings.js",
@@ -161,7 +162,7 @@
 			"word/Math/math-settings.js",
 			"word/Editor/StructuredDocumentTags/sdt-settings.js",
 			"word/Editor/DocumentSettings.js",
-			
+
 			"word/Editor/Paragraph/Run/FontClassification.js",
 			"word/Editor/Paragraph/Run/FontCalculator.js",
 			"word/Editor/Paragraph/Run/run-composite-input.js",
@@ -325,6 +326,9 @@
 			"word/Editor/InsertDocumentFile.js",
 			"word/Editor/revisions/review-info.js",
 			"word/Editor/revisions/track-revisions-manager.js",
+			"word/Editor/custom-xml/custom-xml.js",
+			"word/Editor/custom-xml/custom-xml-manager.js",
+			"word/Editor/custom-xml/data-binding.js",
 			"word/Editor/Merge.js",
 
 			"word/Drawing/Graphics.js",
@@ -405,11 +409,11 @@
 			"word/Math/accent.js",
 			"word/Math/borderBox.js",
 			"word/Math/mathTrackHandler.js",
-			
+
 			"word/Editor/Styles/style-cache.js",
 			"word/Editor/Styles/FixedFormDefaults.js",
 			"word/Editor/Styles/default-styles.js",
-
+			
 			"word/apiBuilder.js",
 
 			"word/fromToJSON.js",
