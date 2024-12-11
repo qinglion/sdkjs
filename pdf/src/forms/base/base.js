@@ -739,7 +739,7 @@
     };
     CBaseField.prototype.IsUseInDocument = function() {
         let oDoc = Asc.editor.getPDFDoc();
-        if (oDoc.forms.indexOf(this) == -1)
+        if (oDoc.widgets.indexOf(this) == -1)
             return false;
 
         return true;

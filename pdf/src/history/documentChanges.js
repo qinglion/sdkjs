@@ -840,7 +840,7 @@ CChangesPDFDocumentPagesContent.prototype.private_WriteItem = function(Writer, o
     if (undefined != oPage.originIndex) {
         Writer.WriteLong(oPage.originIndex);
     }
-    Writer.WriteBool(oPage.isRecognized);
+	Writer.WriteBool(!!oPage.isRecognized);
 	Writer.WriteLong(oPage.Dpi);
 	Writer.WriteLong(oPage.W);
 	Writer.WriteLong(oPage.H);
