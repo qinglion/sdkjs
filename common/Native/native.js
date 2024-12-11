@@ -269,7 +269,6 @@ function NativeCreateApi(options)
 
 	switch (window.NATIVE_DOCUMENT_TYPE)
 	{
-		case "draw":
 		case "document":
 		case "presentation":
 		{
@@ -286,6 +285,11 @@ function NativeCreateApi(options)
 		case "pdf":
 		{
 			Api = new window["Asc"]["PDFEditorApi"](configApi);
+			break;
+		}
+		case "visio":
+		{
+			Api = new window["Asc"]["VisioEditorApi"](configApi);
 			break;
 		}
 		default:
