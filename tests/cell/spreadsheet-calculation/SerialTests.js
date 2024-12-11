@@ -4691,6 +4691,20 @@ $(function () {
 		expectedData = [['1'], ['732'], ['1'], ['732'], ['1'], ['732']];
 		autofillData(assert, autofillRange, expectedData, 'Autofill Columns. Context menu - Fill years. Two selected cells. Reverse sequence. Type Date. 1900 year.');
 		clearData(0, 0, 0, 7);
+		// Case: The context menu property "Fill series". Horizontal. Two selected cells. Asc sequence. Type Date.
+		testData = [
+			['01/01/2000', '04/01/2000']
+		];
+		getFilledData(0, 0, 1, 0, testData, [0, 0]);
+		nType = oRightClickOptions.fillSeries;
+		wsView.activeFillHandle = getRange(0, 0, 7, 0);
+		wsView.fillHandleDirection = 0; // 0 - Horizontal, 1 - Vertical.
+		api.asc_FillCells(nType);
+
+		autofillRange = getRange(2, 0, 7, 0);
+		expectedData = [['36708', '36800', '36892', '36982', '37073', '37165']];
+		autofillData(assert, autofillRange, expectedData, 'Autofill Rows. Context menu - Fill series. Two selected cells. Asc sequence. Type Date.');
+		clearData(0, 0, 7, 0);
 	});
 	QUnit.test('Toolbar: Fill -> "Up/Down, Left/Right"', function(assert) {
 		const testData = [

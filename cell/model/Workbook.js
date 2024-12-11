@@ -21387,6 +21387,8 @@
 		this.nDaysInYear = null;
 		this.nPrevDateValue = null;
 		this.nPrevIntDateValue = null;
+		this.bDiffDirectionDateTime = null;
+		this.nCurrentDayValue = null; // Using for Date & Time format for month step mode when day changed.
 
 		this.bOneSelectedCell = false;
 	}
@@ -21610,6 +21612,9 @@
 						const aMenuPropsForDate = [oFillType.fillMonths, oFillType.fillYears];
 
 						// For activating month or year calculate mode in default autofill. Using for data of date format.
+						if (bDate && this.getFillMenuChosenProp() === oFillType.fillSeries) {
+							this.setFillMenuChosenProp(null);
+						}
 						if (this.getFillMenuChosenProp() == null && bDate && aDigits.length > 1) {
 							this.initFillMenuChosenProp(aDigits, oFirstData.getVal());
 						}
@@ -21645,6 +21650,9 @@
 									oSequence.a0 = 1;
 								}
 							}
+						}
+						if (aDigits.length === 2 && bDateTime) {
+							this.initDiffDirectionDateTime(aDigits);
 						}
 						//для дат и чисел с префиксом автозаполняются только целочисленные последовательности
 						let nFirstVal = oFirstData.getVal();
@@ -21903,6 +21911,52 @@
 			this.nPrevIntDateValue = nPrevIntDateValue;
 		},
 		/**
+		 * Returns the current state of the flag recognizing different direction at date and time.
+		 * @returns {boolean}
+		 */
+		getIsDiffDirectionDateTime: function () {
+			return this.bDiffDirectionDateTime;
+		},
+		/**
+		 * Sets the current state of the flag recognizing different direction at date and time.
+		 * @param {boolean} bDiffDirectionDateTime
+		 */
+		setIsDiffDirectionDateTime: function (bDiffDirectionDateTime) {
+			this.bDiffDirectionDateTime = bDiffDirectionDateTime;
+		},
+		/**
+		 * Returns current day value for Date & Time format.
+		 * Using for month step mode when day changed.
+		 * @returns {number}
+		 */
+		getCurrentDayValue: function () {
+			return this.nCurrentDayValue;
+		},
+		/**
+		 * Sets current day value for Date & Time format.
+		 * Using for month step mode when day changed.
+		 * @param {number} nCurrentDayValue
+		 */
+		setCurrentDayValue: function (nCurrentDayValue) {
+			this.nCurrentDayValue = nCurrentDayValue;
+		},
+		/**
+		 * Initializes flag recognizing that date and time have different direction between each other.
+		 * true - date and time have different direction.
+		 * false - date and time have same direction
+		 * @param {{x:number, y:number}[]} aDigits
+		 */
+		initDiffDirectionDateTime: function (aDigits) {
+			let nFirstValueTimePart = aDigits[0].y - parseInt(aDigits[0].y);
+			let nSecondValueTimePart = aDigits[1].y - parseInt(aDigits[1].y);
+			let nFirstValueDatePart = parseInt(aDigits[0].y);
+			let nSecondValueDatePart = parseInt(aDigits[1].y);
+			let bAscTimePart = nSecondValueTimePart > nFirstValueTimePart;
+			let bAscDatePart = nSecondValueDatePart > nFirstValueDatePart;
+
+			this.setIsDiffDirectionDateTime(bAscTimePart !== bAscDatePart);
+		},
+		/**
 		 * Initializes property of autofill context menu if in default autofill, has the required step to needed mode.
 		 * Modes: "Fill months", "Fill years".
 		 * @param {{x:number, y:number}[]} aDigits
@@ -21923,7 +21977,7 @@
 			let nMonthSecondValue = dtSecondValue.getMonth();
 			let nYearSecondValue = dtSecondValue.getFullYear();
 
-			if (nDayFirstValue === nDaySecondValue && nMonthFirstValue !== nMonthSecondValue && nYearFirstValue === nYearSecondValue) {
+			if (nDayFirstValue === nDaySecondValue && nMonthFirstValue !== nMonthSecondValue) {
 				this.setFillMenuChosenProp(oFillType.fillMonths);
 			} else if (nDayFirstValue === nDaySecondValue && nMonthFirstValue === nMonthSecondValue && nYearFirstValue !== nYearSecondValue) {
 				this.setFillMenuChosenProp(oFillType.fillYears);
@@ -21966,8 +22020,15 @@
 				step: nStep,
 				dateUnit: nUnitDate,
 				previousValue: this.getPrevDateValue(),
-				previousIntValue: this.getPrevIntDateValue()
+				previousIntValue: this.getPrevIntDateValue(),
+				expectedDayValue: oDataRow.getVal()
 			};
+			if (oDataRow.getIsDateTime() && this.nColLength === 2) {
+				if (oSequence.nX === this.nColLength) { // For first iteration using element from selected range.
+					this.setCurrentDayValue(oDataRow.getVal());
+				}
+				oCellInfo.expectedDayValue = this.getCurrentDayValue();
+			}
 			const oResult = _calculateDate(oCellInfo, true);
 			let bFloatDate = oDataRow.getIsDateTime() || oDataRow.getIsMixedDateFormat();
 			// Logic for time.
@@ -21976,10 +22037,28 @@
 				if (oDataRow.getIsDateTime() && this.nColLength === 2) {
 					nTimePart = oCellInfo.previousValue - parseInt(oCellInfo.previousValue);
 					nTimePart += (oSequence.a1 - parseInt(oSequence.a1));
+					if (this.getIsDiffDirectionDateTime()) {
+						if (this.bReverse) {
+							if (Math.sign(nTimePart) < 0) {
+								nTimePart = nTimePart + 1;
+							} else {
+								nTimePart += 1;
+							}
+						} else {
+							if (nTimePart > 1) {
+								nTimePart -= parseInt(nTimePart);
+							} else {
+								nTimePart = nTimePart - 1;
+							}
+						}
+					}
 				}
 				oResult.previousValue += nTimePart;
 				if (oResult.previousIntValue) {
 					oResult.previousIntValue += nTimePart;
+					if (nTimePart > 1 || Math.sign(nTimePart) < 0) {
+						this.setCurrentDayValue(oResult.previousIntValue);
+					}
 				}
 				oResult.currentValue += nTimePart;
 			}
@@ -22829,10 +22908,37 @@
 
 		return nValue;
 	}
+	/**
+	 * Checks if the next month is February and the day of the current date is more than the last day of February
+	 * or isn't the last day of the current month.
+	 * Using for fixed problem with February month, when the day of the current date that needs to be increased to Feb
+	 * is more than the last day of Feb, the Date function may skip this month.
+	 * @param {number} nCurrentExcelDate
+	 * @param {number} nStep
+	 * @return {{nextMonthIsFeb:boolean, lastDayOfFeb:number}}
+	 */
+	function checkNextMonthIsFeb (nCurrentExcelDate, nStep) {
+		const CURRENT_MONTH = 0;
+		const FEB_MONTH  = 1;
+
+		let dtTempCurrentDate = new Asc.cDate().getDateFromExcel(nCurrentExcelDate);
+		let nMonthIdOfCurrentDate = dtTempCurrentDate.getMonth();
+		let nNextMonthId = (nMonthIdOfCurrentDate + nStep) % 12;
+		let nDayOfCurrentDate = dtTempCurrentDate.getDate();
+		let nLastDayOfCurrentMonth = AscCommonExcel.getLastDayInMonth(nCurrentExcelDate, CURRENT_MONTH).getDate();
+		dtTempCurrentDate.addMonths(nStep) // For recognize correct year for next month
+		let nCurrentYear = dtTempCurrentDate.getFullYear();
+		let nLastDayOfFeb = AscCommonExcel.getLastDayInMonth(new Asc.cDate(nCurrentYear, FEB_MONTH, 1, 12).getExcelDate(), CURRENT_MONTH).getDate();
+
+		return {
+			nextMonthIsFeb: nNextMonthId === FEB_MONTH && nDayOfCurrentDate > nLastDayOfFeb && nDayOfCurrentDate < nLastDayOfCurrentMonth,
+			lastDayOfFeb: nLastDayOfFeb
+		};
+	}
 
 	/**
 	 * Calculates date for autofill and Series.
-	 * @param {{step:number, dateUnit:c_oAscDateUnitType, previousValue:number, previousIntValue:number}} oCellInfo
+	 * @param {{step:number, dateUnit:c_oAscDateUnitType, previousValue:number, previousIntValue:number, expectedDayValue:number}} oCellInfo
 	 * @param {boolean} bAutofill
 	 * @returns {{previousValue:number, currentValue:number, previousIntValue:number}}
 	 * @private
@@ -22842,6 +22948,7 @@
 		const nDateUnit = oCellInfo.dateUnit;
 		let nPrevValue = oCellInfo.previousValue;
 		let nPrevIntValue = oCellInfo.previousIntValue;
+		let dtExpectedDayValue = new Asc.cDate().getDateFromExcel(oCellInfo.expectedDayValue < 60 ? oCellInfo.expectedDayValue + 1 : oCellInfo.expectedDayValue);
 		let oReturn = {};
 
 		// Condition: nPrevVal < 60 is temporary solution for "01/01/1900 - 01/03/1900" dates
@@ -22905,14 +23012,28 @@
 			return oReturn;
 		}
 		if (nDateUnit === oSeriesDateUnitType.month) {
+			let oRes = checkNextMonthIsFeb(nIntegerVal, nFinalStep);
+			let bNextMonthIsFeb = oRes.nextMonthIsFeb;
+			if(bNextMonthIsFeb) {
+				// Change day to the last day of february for don't skip Feb month.
+				oCurrentValDate.setUTCDate(oRes.lastDayOfFeb);
+			}
 			if (Number.isInteger(nFinalStep)) {
 				oCurrentValDate.addMonths(nFinalStep);
+				let nLastDayOfCurrentMonth = AscCommonExcel.getLastDayInMonth(oCurrentValDate.getExcelDate(), 0).getDate();
+				if (!bNextMonthIsFeb &&  nLastDayOfCurrentMonth >= dtExpectedDayValue.getDate() && dtExpectedDayValue.getDate() !== oCurrentValDate.getDate()) {
+					oCurrentValDate.setUTCDate(dtExpectedDayValue.getDate());
+				}
 				oReturn.currentValue = oCurrentValDate.getExcelDate();
 				oReturn.previousIntValue = oReturn.currentValue;
 				oReturn.previousValue = oReturn.currentValue;
 				return oReturn;
 			}
 			oCurrentValDate.addMonths(nFinalStep);
+			let nLastDayOfCurrentMonth = AscCommonExcel.getLastDayInMonth(oCurrentValDate.getExcelDate(), 0).getDate();
+			if (!bNextMonthIsFeb && nLastDayOfCurrentMonth >= dtExpectedDayValue.getDate() && dtExpectedDayValue.getDate() !== oCurrentValDate.getDate()) {
+				oCurrentValDate.setUTCDate(dtExpectedDayValue.getDate());
+			}
 			oReturn.currentValue = oCurrentValDate.getExcelDate();
 			return oReturn;
 		}
@@ -22947,7 +23068,8 @@
 			step: this.getStep(),
 			dateUnit: this.getDateUnit(),
 			previousValue: this.getPrevValue(),
-			previousIntValue: oFilledLine.nValue
+			previousIntValue: oFilledLine.nValue,
+			expectedDayValue: oFilledLine.oCell.getNumberValue()
 		}
 
 		const oResult = _calculateDate(oCellInfo, false);
