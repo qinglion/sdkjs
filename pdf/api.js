@@ -1289,7 +1289,7 @@
 			return false;
 		}
 
-		let aColor = [r, g, b];
+		let aColor = [r / 255, g / 255, b / 255];
 		
 		return oDoc.DoAction(function() {
 			oMouseDownAnnot.SetFillColor(aColor);
@@ -1320,7 +1320,7 @@
 			return false;
 		}
 
-		let aColor = [r, g, b];
+		let aColor = [r / 255, g / 255, b / 255];
 
 		return oDoc.DoAction(function() {
 			oMouseDownAnnot.SetStrokeColor(aColor);
