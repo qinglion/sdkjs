@@ -4322,7 +4322,7 @@
 	 * @param {ApiRange | ApiName | number} arg1 - A serial date number that represents the start date.
 	 * @param {ApiRange | ApiName | number} arg2 - The number of nonweekend and non-holiday days before or after the start date. A positive value for days yields a future date; a negative value yields a past date.
 	 * @param {?ApiRange | ?ApiName | ?number | ?string} arg3 - A number or string specifying when weekends occur.
-	 * @param {?ApiRange | ?ApiName | &number[]} arg4 - An optional range or array of one or more serial date numbers to exclude from the working calendar, such as state and federal holidays and floating holidays.
+	 * @param {?ApiRange | ?ApiName | ?number[]} arg4 - An optional range or array of one or more serial date numbers to exclude from the working calendar, such as state and federal holidays and floating holidays.
 	 * @returns {number}
 	 * @see office-js-api/Examples/{Editor}/ApiWorksheetFunction/Methods/WORKDAY_INTL.js
 	 */
@@ -6976,7 +6976,7 @@
 	 * * <b>-1</b> - The values must be sorted in descending order. If the exact match is not found, the function will return the smallest value that is greater than the searched value.
 	 * * <b>0</b> - The values can be sorted in any order. If the exact match is not found, the function will return the <em>#N/A</em> error.
 	 * * <b>1</b> (or omitted) - The values must be sorted in ascending order. If the exact match is not found, the function will return the largest value that is less than the searched value.
-	 * @typedef {(-1 | 0 | 1)} MatchType
+	 * @typedef {("-1" | "0" | "1")} MatchType
 	 * */
 
 	/**
