@@ -11377,12 +11377,14 @@
 			let resultShapes;
 			if (operation === 'divide') {
 				const resultPathsArray = AscCommon.PathBoolean.CompoundPath.prototype.divide(compoundPathLst);
-				resultShapes = resultPathsArray.map(createShapeByCompoundPath);
+				resultShapes = resultPathsArray.map(function (path) {
+					return createShapeByCompoundPath(path, selectedShapes[0]);
+				});
 			} else {
 				const resultPath = compoundPathLst.reduce(function (resultPath, currentPath) {
 					return resultPath[operation](currentPath);
 				});
-				resultShapes = [createShapeByCompoundPath(resultPath)];
+				resultShapes = [createShapeByCompoundPath(resultPath, selectedShapes[0])];
 			}
 
 			if (Asc.editor.isDocumentEditor) return de_replaceShapes(selectedShapes, resultShapes);
@@ -11480,7 +11482,12 @@
 			return formatPath;
 		}
 
-		function createShapeByCompoundPath(compoundPath /* compoundPath can be either Path or CompoundPath */) {
+		function createShapeByCompoundPath(compoundPath /* compoundPath can be either Path or CompoundPath */, referenceShape) {
+			const supportedConstructors = [AscFormat.CShape, AscFormat.CImageShape];
+			const constructor = supportedConstructors.indexOf(referenceShape.constructor) === -1
+				? supportedConstructors[0]
+				: referenceShape.constructor;
+
 			const compoundPathBounds = compoundPath.getBounds();
 			const formatPath = convertCompoundPathToFormatPath(compoundPath);
 			const pathLst = [formatPath];
@@ -11488,10 +11495,33 @@
 			const resultGeometry = new AscFormat.Geometry();
 			pathLst.forEach(function (path) {
 				resultGeometry.AddPath(path);
-			})
+			});
 
-			const resultShape = new AscFormat.CShape();
+			const resultShape = new constructor();
 			resultShape.setBDeleted(false);
+
+			if (AscCommon.isRealObject(referenceShape.blipFill)) {
+				const blipFill = referenceShape.blipFill.createDuplicate();
+
+				const refX = referenceShape.bounds.x;
+				const refY = referenceShape.bounds.y;
+				const refW = referenceShape.bounds.w;
+				const refH = referenceShape.bounds.h;
+				const resX = compoundPathBounds.x;
+				const resY = compoundPathBounds.y;
+				const resW = compoundPathBounds.width;
+				const resH = compoundPathBounds.height;
+
+				blipFill.srcRect = {
+					l: 100 * (resX - refX) / refW,
+					t: 100 * (resY - refY) / refH,
+					r: 100 * (resX + resW - refX) / refW,
+					b: 100 * (resY + resH - refY) / refH,
+				};
+
+				resultShape.setBlipFill(blipFill);
+			}
+
 			resultShape.setSpPr(new AscFormat.CSpPr());
 			resultShape.spPr.setParent(resultShape);
 			resultShape.spPr.setXfrm(new AscFormat.CXfrm());
