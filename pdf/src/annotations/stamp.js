@@ -447,6 +447,13 @@
         
         memory.WriteString(this.GetIconType());
         memory.WriteDouble(this.GetRotate());
+        
+        let aInRect = this.GetInRect();
+        // original rect
+        memory.WriteDouble(aInRect[0]); // x1
+        memory.WriteDouble(aInRect[3]); // y1
+        memory.WriteDouble(aInRect[4]); // x2
+        memory.WriteDouble(aInRect[1]); // y2
 
         let nEndPos = memory.GetCurPosition();
         memory.Seek(memory.posForFlags);
