@@ -1572,7 +1572,9 @@
 		if (!isNaN(fillPatternType) && uniFillBkgnd && uniFillForegnd) {
 			// https://learn.microsoft.com/ru-ru/office/client-developer/visio/fillpattern-cell-fill-format-section
 			let isfillPatternTypeGradient = fillPatternType >= 25 && fillPatternType <= 40;
-			if (fillPatternType === 0) {
+			if (gradientEnabled) {
+				uniFillForegndWithPattern = uniFillForegnd;
+			} else if (fillPatternType === 0) {
 				uniFillForegndWithPattern = AscFormat.CreateNoFillUniFill();
 			} else if (fillPatternType === 1 || isfillPatternTypeGradient) {
 				uniFillForegndWithPattern = uniFillForegnd;
