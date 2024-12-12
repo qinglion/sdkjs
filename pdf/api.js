@@ -1988,7 +1988,7 @@
 			let oDoc = t.getPDFDoc();
             let oThumbnails = oDoc.GetThumbnails();
 			let Id = e["block"]["guid"];
-			let Class = g_oTableId.Get_ById(Id);
+			let Class = AscCommon.g_oTableId.Get_ById(Id);
 			if (Class && e["block"]["type"] == AscPDF.AscLockTypeElemPDF.Page) {
 				oThumbnails && oThumbnails._repaintPage(Class.GetIndex());
 			}
