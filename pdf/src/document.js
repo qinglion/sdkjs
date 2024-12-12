@@ -4441,15 +4441,9 @@ var CPresentation = CPresentation || function(){};
     CPDFDoc.prototype.CreateStampRender = function(sType) {
         this.History.StartNoHistoryMode();
 
-        let oParserContext  = new AscCommon.XmlParserContext();
-        let oXmlReader = new AscCommon.StaxParser(AscPDF.STAMP_XML[sType], undefined, oParserContext);
-        oXmlReader.parseNode(0);
+        let oJsonReader = new AscJsonConverter.ReaderFromJSON();
+        oShape = oJsonReader.ShapeFromJSON(AscPDF.STAMPS_JSON[sType]);
 
-        let oShape = new AscFormat.CShape();
-        oShape.fromXml(oXmlReader);
-        oShape.bDeleted = false;
-        oShape.setWordShape(true);
-        
         let oContent = oShape.getDocContent();
         let sUserName = Asc.editor.User.asc_getUserName();
 

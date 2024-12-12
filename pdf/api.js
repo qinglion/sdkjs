@@ -1992,6 +1992,30 @@
 	PDFEditorApi.prototype.asc_getPropertyEditorStamps = function() {
 		return this.stampAnnotPreviewManager.getStampPreviews();
 	};
+	PDFEditorApi.prototype.loadStampsJSON = function() {
+		try {
+			var xhr = new XMLHttpRequest();
+			xhr.open("GET", "../../../../sdkjs/pdf/src/annotations/stamps.json", true);
+			var t = this;
+			xhr.onload = function()
+			{
+				if (this.status === 200 || location.href.indexOf("file:") === 0)
+				{
+					try
+					{
+						AscPDF["STAMPS_JSON"] = AscPDF.STAMPS_JSON = JSON.parse(this.responseText);
+					}
+					catch (err) {}
+				}
+			};
+			xhr.send('');
+		}
+		catch (e) {}
+	};
+	PDFEditorApi.prototype._init = function() {
+		AscCommon.DocumentEditorApi.prototype._init.call(this);
+		this.loadStampsJSON();
+	}
 	PDFEditorApi.prototype._coAuthoringInitEnd = function() {
 		AscCommon.DocumentEditorApi.prototype._coAuthoringInitEnd.call(this);
 

@@ -74,7 +74,7 @@
 			let aRet = [];
 
 			let _t = this;
-			Object.entries(AscPDF.STAMP_XML).forEach(function(entry) {
+			Object.entries(AscPDF.STAMPS_JSON).forEach(function(entry) {
 				let type = entry[0];
 
 				let oPreview = {};
