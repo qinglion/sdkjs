@@ -5254,6 +5254,10 @@ var editor;
       return AscFormat.canMergeSelectedShapes(operation);
     };
     spreadsheet_api.prototype.asc_mergeSelectedShapes = function (operation) {
+      const controller = this.wb.getWorksheet().objectRender.controller;
+      if (controller.checkSelectedObjectsProtection())
+        return;
+
       if (this.asc_canMergeSelectedShapes(operation)) {
         controller.checkSelectedObjectsAndCallback(
           AscFormat.mergeSelectedShapes, [operation], false,
