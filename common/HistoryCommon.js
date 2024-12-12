@@ -2127,7 +2127,7 @@
 	window['AscDFH'].historyitem_MathBase_RFontsEastAsia  = window['AscDFH'].historyitem_type_Math | 315;
 	window['AscDFH'].historyitem_MathBase_RFontsHint      = window['AscDFH'].historyitem_type_Math | 316;
 	window['AscDFH'].historyitem_MathBase_HighLight       = window['AscDFH'].historyitem_type_Math | 317;
-	window['AscDFH'].historyitem_MathBase_ReviewType      = window['AscDFH'].historyitem_type_Math | 318;
+	window['AscDFH'].historyitem_MathBase_ReviewInfo      = window['AscDFH'].historyitem_type_Math | 318;
 	window['AscDFH'].historyitem_MathBase_TextFill        = window['AscDFH'].historyitem_type_Math | 319;
 	window['AscDFH'].historyitem_MathBase_TextOutline     = window['AscDFH'].historyitem_type_Math | 320;
 	window['AscDFH'].historyitem_MathBase_HighlightColor  = window['AscDFH'].historyitem_type_Math | 321;
@@ -2325,7 +2325,8 @@
 	window['AscDFH'].historyitem_SdtPr_FormPr           = window['AscDFH'].historyitem_type_SdtPr | 22;
 	window['AscDFH'].historyitem_SdtPr_PictureFormPr    = window['AscDFH'].historyitem_type_SdtPr | 23;
 	window['AscDFH'].historyitem_SdtPr_ComplexFormPr    = window['AscDFH'].historyitem_type_SdtPr | 24;
-	window['AscDFH'].historyitem_SdtPr_OForm    = window['AscDFH'].historyitem_type_SdtPr | 24;
+	window['AscDFH'].historyitem_SdtPr_OForm            = window['AscDFH'].historyitem_type_SdtPr | 25;
+	window['AscDFH'].historyitem_SdtPr_DataBinding      = window['AscDFH'].historyitem_type_SdtPr | 26;
 	//------------------------------------------------------------------------------------------------------------------
 	// Типы изменений в классе CSdtPr
 	//------------------------------------------------------------------------------------------------------------------
@@ -4039,6 +4040,7 @@
 	AscDFH.historyitem_Pdf_Annot_Quads				= AscDFH.historyitem_type_Pdf_Annot | 17;
 	AscDFH.historyitem_Pdf_Annot_Intent				= AscDFH.historyitem_type_Pdf_Annot | 18;
 	AscDFH.historyitem_Pdf_Annot_Rotate				= AscDFH.historyitem_type_Pdf_Annot | 19;
+	AscDFH.historyitem_Pdf_Annot_User_Id			= AscDFH.historyitem_type_Pdf_Annot | 20;
 
 	// Comment
 	AscDFH.historyitem_Pdf_Comment_Data			= AscDFH.historyitem_type_Pdf_Comment | 1;
@@ -4558,6 +4560,9 @@
 	window['AscDFH'].historydescription_Pdf_ExecActions			= 0x2a8;
 	window['AscDFH'].historydescription_Pdf_FreeTextFitTextBox	= 0x2a9;
 	window['AscDFH'].historydescription_Pdf_AddComment			= 0x2b0;
+	window['AscDFH'].historydescription_Pdf_ChangeStrokeColor	= 0x2b1;
+	window['AscDFH'].historydescription_Pdf_ChangeFillColor		= 0x2b2;
+	window['AscDFH'].historydescription_Pdf_ChangeOpacity		= 0x2b3;
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

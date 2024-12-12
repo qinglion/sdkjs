@@ -105,6 +105,12 @@
 
         return oRecalcData;
     };
+    CPdfDrawingPrototype.prototype.SetParentPage = function(oParent) {
+        this.setParent(oParent);
+    };
+    CPdfDrawingPrototype.prototype.GetParentPage = function() {
+        return this.parent;
+    };
     CPdfDrawingPrototype.prototype.GetSelectionQuads = function() {
         let oDoc        = this.GetDocument();
         let oViewer     = oDoc.Viewer;
@@ -303,6 +309,10 @@
     CPdfDrawingPrototype.prototype.AddToRedraw = function() {
         let oViewer = Asc.editor.getDocumentRenderer();
         let nPage   = this.GetPage();
+        
+        if (false == this.IsUseInDocument()) {
+            return;
+        }
         
         if (this.group && this.group.IsAnnot()) {
             this.group.AddToRedraw();

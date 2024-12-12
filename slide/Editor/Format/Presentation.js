@@ -5581,7 +5581,6 @@ CPresentation.prototype.OnKeyDown = function (e) {
 					}
 				}
 			}
-			bRetValue = keydownresult_PreventAll;
 		} else if (e.KeyCode === 33) // PgUp
 		{
 			if (e.AltKey) {

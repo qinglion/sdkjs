@@ -156,6 +156,7 @@
 
 	CExternalDataPromiseGetter.prototype.getLocalFileLink = function () {
 		let res = this.externalReference;
+		// todo should we make .replace to the local link here?
 		if (res) {
 			res = res.replace(/^file:\/\/\//, '');
 			res = res.replace(/^file:\/\//, '');

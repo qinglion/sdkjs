@@ -2013,7 +2013,10 @@ function (window, undefined) {
 
 	CellEditor.prototype._addNewLine = function () {
 		this._wrapText();
-		this._addChars( /*codeNewLine*/"\n");
+		let sNewLine = "\n";
+		AscFonts.FontPickerByCharacter.checkText(sNewLine, this, function () {
+			this._addChars( /*codeNewLine*/sNewLine);
+		});
 	};
 
 	CellEditor.prototype._removeChars = function (pos, length, isRange) {
@@ -2571,16 +2574,6 @@ function (window, undefined) {
 				}
 				t._removeChars(bIsWordRemove ? kPrevWord : kPrevChar);
 				return false;
-
-			case 32:  // "space"
-
-				t._addChars(String.fromCharCode(32));
-				event.stopPropagation();
-				event.preventDefault();
-
-				t._setSkipKeyPress(false);
-				return false;
-
 			case 35:  // "end"
 				if (!this.enableKeyEvents) {
 					break;

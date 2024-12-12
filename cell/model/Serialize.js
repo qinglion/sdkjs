@@ -86,6 +86,50 @@
         return res;
     }
 
+    function completePathForLocalLinks(str) {
+        // if the result contains a path relative to the current file, then we add data from the local path
+        // BookLink.xlsx => C:\Users\FileFolder\[BookLink.xlsx] - same folder
+        // test/BookLink.xlsx => C:\Users\FileFolder\test\[BookLink.xlsx] - deep folder
+        // Users/FileFolder/BookLink.xlsx => C:\Users\FileFolder\[BookLink.xlsx] - up folder
+        // file:///D:\AnotherDiskFolder\BookLink.xlsx => D:\AnotherDiskFolder\[BookLink.xlsx] - file on another disk
+
+        let res = str;
+        if (window["AscDesktopEditor"] && window["AscDesktopEditor"]["IsLocalFile"]()) {
+            /* replace file:// */
+            res = res.replace(/^file:\/\/\//, '');
+            res = res.replace(/^file:\/\//, '');
+
+            const currentFilePath = window["AscDesktopEditor"].LocalFileGetSourcePath();
+            let currentPathParts = currentFilePath && currentFilePath.split(/[\\/]/).slice(0, -1);    // remove file name
+
+            let receivedPathParts = res.split(/[\\/]/);
+
+            let diskRegex = /^[a-zA-Z]:/;
+            let isLinkHasDiskLetter = diskRegex.test(receivedPathParts[0]);
+
+            if (currentPathParts && !isLinkHasDiskLetter && res.indexOf(currentPathParts[0]) === -1) {
+                // incomplete link string, check the path
+
+                // TODO all links should contain BookLink, not the full path
+                if (res[0] === "/" || res[0] === "//") {
+                    // link to other file up folder
+                    // add only disk name to path
+                    res = currentPathParts[0] + receivedPathParts.join("\\");
+                } else {
+                    // link to other file deep in the current folder
+                    // add current folder to path
+                    for (let i = 0; i < receivedPathParts.length; i++) {
+                        let part = receivedPathParts[i];
+                        currentPathParts.push(part);
+                    }
+    
+                    res = currentPathParts.join("\\");
+                }
+            } 
+        }
+        return res;
+    }
+
 	var XLSB = {
 		rt_ROW_HDR : 0,
 		rt_CELL_BLANK : 1,
@@ -9571,6 +9615,8 @@
 			    var id = this.stream.GetString2LE(length);
 			    if (id) {
                     id = decodeXmlPath(id);
+                    /* TODO is it possible to transfer the id .replace when opening a file to another location?? */
+                    id = completePathForLocalLinks(id);
                 }
 				externalBook.Id = id;
 			} else if (c_oSer_ExternalLinkTypes.SheetNames == type) {

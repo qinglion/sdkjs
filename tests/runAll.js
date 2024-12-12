@@ -43,6 +43,7 @@ const allTests = [
 	'word/content-control/inline-level/checkbox.html',
 	'word/content-control/inline-level/cursorAndSelection.html',
 	'word/content-control/inline-level/date-time.html',
+	'word/custom-xml/custom-xml.html',
 	'word/document-calculation/floating-position/drawing.html',
 	'word/document-calculation/paragraph.html',
 	'word/document-calculation/table/correctBadTable.html',
@@ -69,6 +70,7 @@ const allTests = [
 	'word/revisions/paragraph.html',
 	'word/merge-documents/mergeDocuments.html',
 	'word/math-autocorrection/math-autocorrection.html',
+	'word/change-case/change-case.html',
 
 	'cell/shortcuts/shortcuts.html',
 	'slide/shortcuts/shortcuts.html',

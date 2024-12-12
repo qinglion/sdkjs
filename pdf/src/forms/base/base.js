@@ -737,7 +737,13 @@
         
         oActionsQueue.Start();
     };
+    CBaseField.prototype.IsUseInDocument = function() {
+        let oDoc = Asc.editor.getPDFDoc();
+        if (oDoc.widgets.indexOf(this) == -1)
+            return false;
 
+        return true;
+    };
     CBaseField.prototype.DrawHighlight = function(oCtx) {
         if (this.IsHidden() == true)
             return;
@@ -1218,7 +1224,12 @@
     CBaseField.prototype.DrawSelected = function() {
         return;
     };
-    
+    CBaseField.prototype.SetParentPage = function(oParent) {
+        this.parentPage = oParent;
+    };
+    CBaseField.prototype.GetParentPage = function() {
+        return this.parentPage;
+    };
     CBaseField.prototype.Get_Id = function() {
         return this._id;
     };
@@ -1292,6 +1303,10 @@
     CBaseField.prototype.AddToRedraw = function() {
         let oViewer = editor.getDocumentRenderer();
         let nPage   = this.GetPage();
+        
+        if (false == this.IsUseInDocument()) {
+            return;
+        }
         
         function setRedrawPageOnRepaint() {
             if (oViewer.pagesInfo.pages[nPage]) {
@@ -1807,12 +1822,27 @@
 
         let aOringRect = this.GetOrigRect();
 
-        let X = (aOringRect[0] >> 0);
-        let Y = (aOringRect[1] >> 0);
+        let X = aOringRect[0];
+        let Y = aOringRect[1];
 
         if (originView) {
-            oGraphicsPDF.DrawImageXY(originView, X, Y);
+            oGraphicsPDF.DrawImageXY(originView, X, Y, undefined, true);
         }
+
+        // oGraphicsPDF.SetLineWidth(1);
+        // let nWidth  = aOringRect[2] - aOringRect[0];
+        // let nHeight = aOringRect[3] - aOringRect[1];
+
+        // Y += 1 / 2;
+        // X += 1 / 2;
+        // nWidth  -= 1;
+        // nHeight -= 1;
+
+        // oGraphicsPDF.SetStrokeStyle(0, 255, 255);
+        // oGraphicsPDF.SetLineDash([]);
+        // oGraphicsPDF.BeginPath();
+        // oGraphicsPDF.Rect(X, Y, nWidth, nHeight);
+        // oGraphicsPDF.Stroke();
     };
 	CBaseField.prototype.DrawFromTextBox = function(pdfGraphics, textBoxGraphics, pageIndex) {
 		this.Draw(pdfGraphics, textBoxGraphics);

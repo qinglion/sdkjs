@@ -505,7 +505,6 @@
 		this.m_oFactoryClass[AscDFH.historyitem_type_GeoLocations] = AscFormat.CGeoLocations;
 		this.m_oFactoryClass[AscDFH.historyitem_type_GeoPolygon] = AscFormat.CGeoPolygon;
 		this.m_oFactoryClass[AscDFH.historyitem_type_GeoPolygons] = AscFormat.CGeoPolygons;
-		this.m_oFactoryClass[AscDFH.historyitem_type_Gridlines] = AscFormat.CGridlines;
 		this.m_oFactoryClass[AscDFH.historyitem_type_Dimension] = AscFormat.CDimension;
 		this.m_oFactoryClass[AscDFH.historyitem_type_NumericDimension] = AscFormat.CNumericDimension;
 		this.m_oFactoryClass[AscDFH.historyitem_type_PercentageColorPosition] = AscFormat.CPercentageColorPosition;

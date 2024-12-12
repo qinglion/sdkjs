@@ -396,7 +396,7 @@
 			case c_oEditorId.Presentation:
 				res = isOpenOoxml ? Asc.c_oAscFileType.PPTX : Asc.c_oAscFileType.CANVAS_PRESENTATION;
 				break;
-			case c_oEditorId.Draw:
+			case c_oEditorId.Visio:
 				res = Asc.c_oAscFileType.VSDX;
 				break;
 		}
@@ -1064,7 +1064,7 @@
 	{
 		this.sendEvent("asc_onPrint");
 	};
-	baseEditorsApi.prototype._getOpenCmd = function(versionHistory)
+	baseEditorsApi.prototype._getOpenCmd = function()
 	{
 		var rData                  = null;
 		if (!(this.DocInfo && this.DocInfo.get_OfflineApp()))
@@ -1097,30 +1097,21 @@
 				rData["convertToOrigin"] += Asc.c_sNativeViewerFormats;
 			}
 
-			if (versionHistory)
+			if (this.VersionHistory)
 			{
-				rData["serverVersion"] = versionHistory.serverVersion;
-				rData["closeonerror"] = versionHistory.isRequested;
-				rData["tokenHistory"] = versionHistory.token;
-				//чтобы результат пришел только этому соединению, а не всем кто в документе
-				rData["userconnectionid"] = this.CoAuthoringApi.getUserConnectionId();
+				rData["serverVersion"] = this.VersionHistory.serverVersion;
 			}
 		}
 		return rData;
 	}
 	// Open
-	baseEditorsApi.prototype.asc_LoadDocument                    = function(versionHistory, isRepeat)
+	baseEditorsApi.prototype.asc_LoadDocument                    = function(isRepeat)
 	{
 		// Меняем тип состояния (на открытие)
 		this.advancedOptionsAction = AscCommon.c_oAscAdvancedOptionsAction.Open;
 
-		let rData = this._getOpenCmd(versionHistory);
-		if (versionHistory) {
-			this.CoAuthoringApi.versionHistory(rData);
-		} else {
-			//todo auth on connection
-			this.CoAuthoringApi.auth(this.getViewMode(), rData);
-		}
+		//todo auth on connection
+		this.CoAuthoringApi.auth(this.getViewMode(), this._getOpenCmd());
 
 		if (!isRepeat) {
 			this.sync_StartAction(c_oAscAsyncActionType.BlockInteraction, c_oAscAsyncAction.Open);
@@ -1230,10 +1221,6 @@
 
 		if (window.g_asc_plugins)
             window.g_asc_plugins.onPluginEvent("onDocumentContentReady");
-
-        if (c_oEditorId.Spreadsheet === this.editorId) {
-			this.onUpdateDocumentModified(this.isDocumentModified());
-		}
 
 		if (this.DocInfo)
 			this["pluginMethod_SetProperties"](this.DocInfo.asc_getOptions());
@@ -1675,7 +1662,7 @@
 					t.CoAuthoringApi.auth(t.getViewMode(), undefined, t.isIdle());
 				} else {
 					//первый запрос или ответ не дошел надо повторить открытие
-					t.asc_LoadDocument(undefined, true);
+					t.asc_LoadDocument(true);
 				}
 			}
 		};
@@ -1843,6 +1830,9 @@
 		 */
 		this.CoAuthoringApi.onDisconnect = function(e, opt_closeCode)
 		{
+			if (AscCommon.c_oCloseCode.quiet === opt_closeCode) {
+				return;
+			}
 			if (AscCommon.ConnectionState.None === t.CoAuthoringApi.get_state())
 			{
 				t.asyncServerIdEndLoaded();
@@ -1854,13 +1844,18 @@
 					t.asc_setRestriction(t.disconnectRestrictions);
 					t.disconnectRestrictions = null;
 				}
-				var error = AscCommon.getDisconnectErrorCode(t.isDocumentLoadComplete, opt_closeCode);
-				var level = t.isDocumentLoadComplete ? Asc.c_oAscError.Level.NoCritical : Asc.c_oAscError.Level.Critical;
-				t.setViewModeDisconnect(AscCommon.getEnableDownloadByCloseCode(opt_closeCode));
-				if (Asc.c_oAscError.ID.UpdateVersion === error && !t.isDocumentModified()) {
-					t.sendEvent("asc_onDocumentUpdateVersion", function() {});
+				let allowRefresh = [c_oCloseCode.updateVersion, c_oCloseCode.noCache, c_oCloseCode.restore, c_oCloseCode.quiet];
+				if (-1 !== allowRefresh.indexOf(opt_closeCode) && !t.isDocumentModified() && t.canRefreshFile())  {
+					t.onRefreshFile();
 				} else {
-					t.sendEvent('asc_onError', error, level);
+					var error = AscCommon.getDisconnectErrorCode(t.isDocumentLoadComplete, opt_closeCode);
+					var level = t.isDocumentLoadComplete ? Asc.c_oAscError.Level.NoCritical : Asc.c_oAscError.Level.Critical;
+					t.setViewModeDisconnect(AscCommon.getEnableDownloadByCloseCode(opt_closeCode));
+					if (Asc.c_oAscError.ID.UpdateVersion === error && !t.isDocumentModified()) {
+						t.sendEvent("asc_onDocumentUpdateVersion", function() {});
+					} else {
+						t.sendEvent('asc_onError', error, level);
+					}
 				}
 			} else if (null === t.disconnectRestrictions){
 				t.disconnectRestrictions = t.restrictions;
@@ -1912,13 +1907,16 @@
 								if (null != documentUrl) {
 									if ('ok' === input["status"] || t.getViewMode()) {
 										t._onOpenCommand(documentUrl);
+									} else if (t.canRefreshFile()) {
+										t.sync_EndAction(c_oAscAsyncActionType.BlockInteraction, c_oAscAsyncAction.Open);
+										t.onRefreshFile();
 									} else {
 										t.sendEvent("asc_onDocumentUpdateVersion", function () {
 											if (t.isCoAuthoringEnable) {
 												t.asc_coAuthoringDisconnect();
 											}
 											t._onOpenCommand(documentUrl);
-										})
+										});
 									}
 								} else {
 									t.sendEvent("asc_onError", c_oAscError.ID.ConvertationOpenError,
@@ -2673,12 +2671,17 @@
 		if (bUpdate) {
 			this.asc_CloseFile();
 
-			this.DocInfo.put_Id(this.VersionHistory.docId);
-			this.DocInfo.put_Url(this.VersionHistory.url);
 			this.documentUrlChanges = this.VersionHistory.urlChanges;
 			this.documentTokenChanges = this.VersionHistory.token;
-			this.asc_setDocInfo(this.DocInfo);
-			this.asc_LoadDocument(this.VersionHistory);
+
+			let newDocInfo = this.DocInfo.clone();
+			newDocInfo.put_Id(this.VersionHistory.docId);
+			newDocInfo.put_Url(this.VersionHistory.url);
+			newDocInfo.put_Mode('view');
+			newDocInfo.put_CoEditingMode('strict');
+			newDocInfo.put_Token(this.VersionHistory.token);
+
+			this.reopenFileWithReconnection(newDocInfo);
 		} else if (this.VersionHistory.currentChangeId < newObj.currentChangeId) {
 			var oApi = Asc.editor || editor;
 			this.isApplyChangesOnVersionHistory = true;
@@ -2692,6 +2695,59 @@
 	baseEditorsApi.prototype.getVersionHistory = function()
 	{
 		return this.VersionHistory;
+	};
+	baseEditorsApi.prototype.asc_refreshFile = function(docInfo) {
+		this.sync_EndAction(c_oAscAsyncActionType.BlockInteraction, Asc.c_oAscAsyncAction.RefreshFile);
+		//todo always call asc_CloseFile ?
+		let isInfinityLoop = this.documentIsWopi
+			? docInfo.get_Wopi()["Version"] === this.DocInfo.get_Wopi()["Version"]
+			&& docInfo.get_Wopi()["LastModifiedTime"] === this.DocInfo.get_Wopi()["LastModifiedTime"]
+			: docInfo.get_Id() === this.DocInfo.get_Id();
+		if (this.isDocumentLoadComplete) {
+			this.asc_CloseFile();
+		} else if (isInfinityLoop) {
+			//loop protection (need backoff and retry?)
+			//todo unique error
+			this.sendEvent("asc_onDocumentUpdateVersion", function() {});
+			// this.sendEvent('asc_onError', Asc.c_oAscError.ID.UpdateVersion, Asc.c_oAscError.Level.Critical);
+			return;
+		}
+		this.reopenFileWithReconnection(docInfo);
+	};
+	baseEditorsApi.prototype.canRefreshFile = function () {
+		return this.documentIsWopi || this.asc_checkNeedCallback('asc_onRequestRefreshFile');
+	}
+	baseEditorsApi.prototype.onRefreshFile = function () {
+		let t = this;
+		this.sync_StartAction(c_oAscAsyncActionType.BlockInteraction, Asc.c_oAscAsyncAction.RefreshFile);
+		if (this.documentIsWopi) {
+			let callback = function (isTimeout, response) {
+				if (response) {
+					//todo event to simulate 'refreshFile' integrator method
+					let newDocInfo = t.DocInfo.extendWithWopiParams(response);
+					//send rename event
+					t.CoAuthoringApi.onMeta({'title': newDocInfo.get_Title()});
+					t.asc_refreshFile(newDocInfo);
+				} else {
+					t.sendEvent("asc_onError", c_oAscError.ID.Unknown, c_oAscError.Level.NoCritical);
+				}
+			};
+			if (!this.CoAuthoringApi.callPRC({'type': 'wopi_RefreshFile'}, Asc.c_nCommonRequestTime, callback)) {
+				callback(false, undefined);
+			}
+		} else {
+			this.sendEvent("asc_onRequestRefreshFile");
+		}
+	}
+	baseEditorsApi.prototype.reopenFileWithReconnection = function(docInfo) {
+		this.asc_setDocInfo(docInfo);
+
+		this.isOnLoadLicense = false;
+		this.ServerIdWaitComplete = false;
+		this.CoAuthoringApi.disconnect(AscCommon.c_oCloseCode.quiet);
+		//create new connection because new docId can be on different shard
+		this.CoAuthoringApi = new AscCommon.CDocsCoApi();
+		this._coAuthoringInit();
 	};
 	baseEditorsApi.prototype.asc_undoAllChanges = function()
 	{
@@ -2856,7 +2912,7 @@
 					case AscCommon.c_oEditorId.Word: errorData = 'docx';break;
 					case AscCommon.c_oEditorId.Spreadsheet: errorData = 'xlsx';break;
 					case AscCommon.c_oEditorId.Presentation: errorData = 'pptx';break;
-					case AscCommon.c_oEditorId.Draw: errorData = 'vsdx';break;
+					case AscCommon.c_oEditorId.Visio: errorData = 'vsdx';break;
 					default:
 						if (isNativeFormat) {
 							errorData = 'pdf'
@@ -5242,7 +5298,38 @@
 	
 	baseEditorsApi.prototype.asc_setPdfViewer = function(isPdfViewer) {
 	};
-	
+
+	// internal analog for plugins
+	baseEditorsApi.prototype.callCommand = function(value, isRecalculate, callback) {
+		let plugins = window.g_asc_plugins;
+		if (!plugins)
+			return;
+
+		let isRecalc = isRecalculate !== false;
+		if (typeof value === "string")
+		{
+			plugins.internalCallbacks.push(callback);
+			plugins.callCommand(plugins.internalGuid, value, false, false, isRecalc, false);
+		}
+		else
+		{
+			let scope = {};
+			if (window["Asc"] && window["Asc"]["scope"])
+				scope = window["Asc"]["scope"];
+			let txtValue = "var Asc = {}; Asc.scope = " + JSON.stringify(scope) + "; var scope = Asc.scope; (" + value.toString() + ")();";
+			plugins.internalCallbacks.push(callback);
+			plugins.callCommand(plugins.internalGuid, txtValue, false, false, isRecalc, false);
+		}
+	};
+
+	baseEditorsApi.prototype.callMethod = function(name, params, callback) {
+		let plugins = window.g_asc_plugins;
+		if (!plugins)
+			return
+
+		plugins.internalCallbacks.push(callback);
+		plugins.callMethod(plugins.internalGuid, name, params);
+	};
 
 	//----------------------------------------------------------export----------------------------------------------------
 	window['AscCommon']                = window['AscCommon'] || {};
@@ -5257,6 +5344,7 @@
 	prot['asc_selectSearchingResults'] = prot.asc_selectSearchingResults;
 	prot['asc_isSelectSearchingResults'] = prot.asc_isSelectSearchingResults;
 	prot['asc_showRevision'] = prot.asc_showRevision;
+	prot['asc_refreshFile'] = prot.asc_refreshFile;
 	prot['asc_getAdvancedOptions'] = prot.asc_getAdvancedOptions;
 	prot['asc_Print'] = prot.asc_Print;
 	prot['asc_GetCurrentColorSchemeName'] = prot.asc_GetCurrentColorSchemeName;
@@ -5348,5 +5436,8 @@
 	prot["asc_removeCustomProperty"] = prot.asc_removeCustomProperty;
 	
 	prot["asc_setPdfViewer"] = prot.asc_setPdfViewer;
+
+	prot["callCommand"] = prot.callCommand;
+	prot["callMethod"] = prot.callMethod;
 
 })(window);

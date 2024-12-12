@@ -256,11 +256,17 @@
             ctx.restore();
         }
     };
-    CPDFGraphics.prototype.DrawImageXY = function(image, dx, dy, rot) {
+    CPDFGraphics.prototype.DrawImageXY = function(image, dx, dy, rot, minus1) {
         let tr = this.GetTransform();
 
-        let _x = Math.floor(tr.TransformPointX(dx, dy));
-        let _y = Math.floor(tr.TransformPointY(dx, dy));
+        let _x = Math.round(tr.TransformPointX(dx, dy));
+        let _y = Math.round(tr.TransformPointY(dx, dy));
+
+        if (minus1)
+        {
+            _x--;
+            _y--;
+        }
 
         let context = this.m_oContext;
 
@@ -270,10 +276,12 @@
         if (rot && rot !== 0) {
             let W = image.width;
             let H = image.height;
+            let rotW = Math.round(W / 2);
+            let rotH = Math.round(H / 2);
 
-            context.translate(Math.floor(W / 2), Math.floor(H / 2));
+            context.translate(rotW, rotH);
             context.rotate(rot);
-            context.translate(Math.floor(-W / 2), Math.floor(-H / 2));
+            context.translate(-rotW, -rotH);
         }
 
         context.drawImage(image, 0, 0);

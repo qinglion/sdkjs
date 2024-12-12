@@ -651,7 +651,14 @@
 
             for (let i = 0; i < curKeys.length; i++) {
                 let key = curKeys[i];
-                if (curRC[key] !== calcedRC[key]) {
+                if (Array.isArray(curRC[key] && Array.isArray(calcedRC[key]))) {
+                    for (let nComp = 0, nCount = Math.max(curRC[key].length, calcedRC[key].length); nComp < nCount; nComp++) {
+                        if (curRC[key][nComp] !== calcedRC[key][nComp]) {
+                            return true;
+                        }
+                    }
+                }
+                else if (curRC[key] !== calcedRC[key]) {
                     return true;
                 }
             }
@@ -890,7 +897,7 @@
         let oMainComm = this._replies[0];
         oAscCommData.asc_putText(oMainComm.GetContents());
         oAscCommData.asc_putOnlyOfficeTime(oMainComm.GetModDate().toString());
-        oAscCommData.asc_putUserId(editor.documentUserId);
+        oAscCommData.asc_putUserId(this.GetUserId());
         oAscCommData.asc_putUserName(oMainComm.GetAuthor());
         oAscCommData.asc_putSolved(false);
         oAscCommData.asc_putQuoteText("");
@@ -1331,17 +1338,17 @@
                 if (this.IsInTextBox() == false) {
                     oDoc.SetGlobalHistory();
                     oDoc.DoAction(function() {
-                        this.selectedObjects.length = 0;
-                        oContent.Selection_SetStart(xContent, yContent, 0, e);
-                        oContent.RemoveSelection();
-                        oContent.RecalculateCurPos();
-
-                        oDrDoc.UpdateTargetFromPaint = true;
-                        oDrDoc.TargetStart(true);
-                        this.SetInTextBox(true);
                         this.FitTextBox();
                     }, AscDFH.historydescription_Pdf_FreeTextFitTextBox, this);
                     oDoc.SetLocalHistory();
+
+                    this.selectedObjects.length = 0;
+                    oContent.Selection_SetStart(xContent, yContent, 0, e);
+                    oContent.RemoveSelection();
+                    oContent.RecalculateCurPos();
+                    oDrDoc.UpdateTargetFromPaint = true;
+                    oDrDoc.TargetStart(true);
+                    this.SetInTextBox(true);
                 }
                 else {
                     oContent.SelectAll();

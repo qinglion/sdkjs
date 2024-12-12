@@ -1041,7 +1041,7 @@ CDocumentContentElementBase.prototype.SetSelectionState2 = function(State)
 };
 CDocumentContentElementBase.prototype.GetReviewInfo = function()
 {
-	return new CReviewInfo();
+	return new AscWord.ReviewInfo();
 };
 CDocumentContentElementBase.prototype.SetReviewTypeWithInfo = function(nType, oInfo)
 {

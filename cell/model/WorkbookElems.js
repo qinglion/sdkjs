@@ -9015,6 +9015,10 @@ function RangeDataManagerElem(bbox, data)
 			let startCol = this.getTableNameColumnByIndex(handleSelectionRange.c1 - this.Ref.c1);
 			let endCol = this.getTableNameColumnByIndex(handleSelectionRange.c2 - this.Ref.c1);
 
+			/* add special character escaping for string inside the table (escaping with single quote) */
+			startCol = parserHelp.escapeTableCharacters(startCol, true);
+			endCol = parserHelp.escapeTableCharacters(endCol, true);
+
 			if (this.Ref.isEqual(handleSelectionRange)) {
 				//Table1[#All]
 				return this.DisplayName + "[" + AscCommon.cStrucTableReservedWords.all + "]";
@@ -10340,6 +10344,10 @@ function RangeDataManagerElem(bbox, data)
 			}
 		}
 
+		let visibleDropDown = obj.asc_getVisibleDropDown();
+		this.ShowButton = visibleDropDown === false ? false : null;
+
+
 		return allFilterOpenElements;
 	};
 
@@ -11325,9 +11333,6 @@ function RangeDataManagerElem(bbox, data)
 
 	CustomFilter.prototype.asc_setOperator = function (val) { this.Operator = val; };
 	CustomFilter.prototype.asc_setVal = function (val) {
-
-
-
 		this.Val = val;
 	};
 
@@ -15527,7 +15532,9 @@ function RangeDataManagerElem(bbox, data)
 	asc_CExternalReference.prototype.asc_getSource = function () {
 		let id = this.externalReference && this.externalReference.Id;
 		if (id) {
-			let lastIndex =0 === id.indexOf("file:///") ? id.lastIndexOf('\\') : id.lastIndexOf('/');
+			let diskRegex = /^[a-zA-Z]\:/gi; 
+			let lastIndex = 0 === id.indexOf("file:///") || id.match(diskRegex) ? id.lastIndexOf('\\') : id.lastIndexOf('/');
+
 			if (lastIndex === -1) {
 				lastIndex = id.lastIndexOf('/\/');
 			}
@@ -16534,9 +16541,9 @@ function RangeDataManagerElem(bbox, data)
 							seriesSettings.asc_setType(Asc.c_oAscSeriesType.date);
 
 							contextMenuAllowedProps[Asc.c_oAscFillType.fillDays] = true;
-							//contextMenuAllowedProps[Asc.c_oAscFillType.fillWeekdays] = true;
-							//contextMenuAllowedProps[Asc.c_oAscFillType.fillMonths] = true;
-							//contextMenuAllowedProps[Asc.c_oAscFillType.fillYears] = true;
+							contextMenuAllowedProps[Asc.c_oAscFillType.fillWeekdays] = true;
+							contextMenuAllowedProps[Asc.c_oAscFillType.fillMonths] = true;
+							contextMenuAllowedProps[Asc.c_oAscFillType.fillYears] = true;
 						}
 					}
 				}
@@ -16628,9 +16635,9 @@ function RangeDataManagerElem(bbox, data)
 		contextMenuAllowedProps[Asc.c_oAscFillType.fillFormattingOnly] = null;
 		contextMenuAllowedProps[Asc.c_oAscFillType.fillWithoutFormatting] = null;
 		contextMenuAllowedProps[Asc.c_oAscFillType.fillDays] = false;
-		contextMenuAllowedProps[Asc.c_oAscFillType.fillWeekdays] = null;
-		contextMenuAllowedProps[Asc.c_oAscFillType.fillMonths] = null;
-		contextMenuAllowedProps[Asc.c_oAscFillType.fillYears] = null;
+		contextMenuAllowedProps[Asc.c_oAscFillType.fillWeekdays] = false;
+		contextMenuAllowedProps[Asc.c_oAscFillType.fillMonths] = false;
+		contextMenuAllowedProps[Asc.c_oAscFillType.fillYears] = false;
 		contextMenuAllowedProps[Asc.c_oAscFillType.linearTrend] = false;
 		contextMenuAllowedProps[Asc.c_oAscFillType.growthTrend] = false;
 		contextMenuAllowedProps[Asc.c_oAscFillType.flashFill] = null;

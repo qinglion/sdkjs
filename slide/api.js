@@ -1209,6 +1209,7 @@
 		AscCommon.CollaborativeEditing.Clear();
 		this.isApplyChangesOnOpenEnabled = true;
 		this.isDocumentLoadComplete = false;
+		this.ServerImagesWaitComplete = false;
 		this.turnOffSpecialModes();
 
 		var oLogicDocument = this.WordControl.m_oLogicDocument;
@@ -8975,10 +8976,7 @@ background-repeat: no-repeat;\
 		if (isFull)
 		{
 			AscCommon.CollaborativeEditing.m_aChanges = [];
-
-			// У новых элементов выставляем указатели на другие классы
-			AscCommon.CollaborativeEditing.Apply_LinkData();
-
+			
 			// Делаем проверки корректности новых изменений
 			AscCommon.CollaborativeEditing.Check_MergeData();
 

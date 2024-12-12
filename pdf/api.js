@@ -649,7 +649,7 @@
 		let oDoc 	= this.getPDFDoc();
 
 		let oThumbnails = oViewer.thumbnails;
-		aPages = aPages != undefined ? aPages : oThumbnails.getSelectedPages();
+		aPages = aPages != undefined ? aPages : oThumbnails.getSelectedPages().slice();
 
 		oDoc.DoAction(function() {
 			oDoc.RemovePages(aPages);
@@ -1203,6 +1203,7 @@
 		ImagePr.flipHInvert			= obj.flipHInvert;
 		ImagePr.flipVInvert			= obj.flipVInvert;
 		ImagePr.resetCrop			= obj.resetCrop;
+		ImagePr.transparent         = obj.transparent;
 
 		if (undefined != obj.Position) {
 			ImagePr.Position =
@@ -1279,6 +1280,92 @@
 	PDFEditorApi.prototype.asc_FitImagesToPage = function() {
 		let oDoc = this.getPDFDoc();
 		oDoc.FitImagesToPage();
+	};
+
+	PDFEditorApi.prototype.asc_SetFillColor = function(r, g, b) {
+		let oDoc = this.getPDFDoc();
+		let oMouseDownAnnot = oDoc.mouseDownAnnot;
+
+		if (!oMouseDownAnnot) {
+			return false;
+		}
+
+		let aColor = [r / 255, g / 255, b / 255];
+		
+		return oDoc.DoAction(function() {
+			oMouseDownAnnot.SetFillColor(aColor);
+        }, AscDFH.historydescription_Pdf_ChangeFillColor);
+	};
+
+	PDFEditorApi.prototype.asc_GetFillColor = function() {
+		let oDoc = this.getPDFDoc();
+		let oMouseDownAnnot = oDoc.mouseDownAnnot;
+
+		if (!oMouseDownAnnot) {
+			return null;
+		}
+
+		let oColor = oMouseDownAnnot.GetRGBColor(oMouseDownAnnot.GetFillColor());
+		oColor["r"] = oColor.r;
+        oColor["g"] = oColor.g;
+        oColor["b"] = oColor.b;
+
+		return oColor;
+	};
+
+	PDFEditorApi.prototype.asc_SetStrokeColor = function(r, g, b) {
+		let oDoc = this.getPDFDoc();
+		let oMouseDownAnnot = oDoc.mouseDownAnnot;
+
+		if (!oMouseDownAnnot) {
+			return false;
+		}
+
+		let aColor = [r / 255, g / 255, b / 255];
+
+		return oDoc.DoAction(function() {
+			oMouseDownAnnot.SetStrokeColor(aColor);
+        }, AscDFH.historydescription_Pdf_ChangeStrokeColor);
+	};
+
+	PDFEditorApi.prototype.asc_GetStrokeColor = function() {
+		let oDoc = this.getPDFDoc();
+		let oMouseDownAnnot = oDoc.mouseDownAnnot;
+
+		if (!oMouseDownAnnot) {
+			return null;
+		}
+
+		let oColor = oMouseDownAnnot.GetRGBColor(oMouseDownAnnot.GetStrokeColor());
+		oColor["r"] = oColor.r;
+        oColor["g"] = oColor.g;
+        oColor["b"] = oColor.b;
+
+		return oColor;
+	};
+
+	PDFEditorApi.prototype.asc_SetOpacity = function(nValue) {
+		let oDoc = this.getPDFDoc();
+		let oMouseDownAnnot = oDoc.mouseDownAnnot;
+
+		if (!oMouseDownAnnot) {
+			return null;
+		}
+
+		return oDoc.DoAction(function() {
+			oMouseDownAnnot.SetOpacity(nValue / 100);
+        }, AscDFH.historydescription_Pdf_ChangeOpacity);
+	};
+
+	PDFEditorApi.prototype.asc_GetOpacity = function() {
+		let oDoc = this.getPDFDoc();
+		let oMouseDownAnnot = oDoc.mouseDownAnnot;
+
+		if (!oMouseDownAnnot) {
+			return null;
+		}
+
+		return oMouseDownAnnot.GetOpacity() * 100;
 	};
 
 	/////////////////////////////////////////////////////////////
@@ -1879,13 +1966,13 @@
                         Lock.Set_Type(AscCommon.c_oAscLockTypes.kLockTypeOther, true);
                     }
 
-					if (Class.IsAnnot()) {
+					if (Class.IsAnnot && Class.IsAnnot()) {
 						// если аннотация коммент или аннотация с комментом то блокируем и комментарий тоже
 						if (Class.IsComment() || (Class.IsUseContentAsComment() && Class.GetContents() != undefined) || Class.GetReply(0) != null) {
 							t.sync_LockComment(Class.Get_Id(), e["user"]);
 						}
 					}
-					Class.AddToRedraw();
+					Class.AddToRedraw && Class.AddToRedraw();
                     oDoc.UpdateInterface();
                 }
                 else {
@@ -1901,7 +1988,7 @@
 			let oDoc = t.getPDFDoc();
             let oThumbnails = oDoc.GetThumbnails();
 			let Id = e["block"]["guid"];
-			let Class = g_oTableId.Get_ById(Id);
+			let Class = AscCommon.g_oTableId.Get_ById(Id);
 			if (Class && e["block"]["type"] == AscPDF.AscLockTypeElemPDF.Page) {
 				oThumbnails && oThumbnails._repaintPage(Class.GetIndex());
 			}
@@ -1931,7 +2018,7 @@
 					oDoc.UpdateInterface();
 				}
 
-				if (Class.IsAnnot()) {
+				if (Class.IsAnnot && Class.IsAnnot()) {
 					// если аннотация коммент или аннотация с комментом то блокируем и комментарий тоже
 					if (Class.IsComment() || (Class.IsUseContentAsComment() && Class.GetContents() != undefined) || Class.GetReply(0) != null) {
 						t.sync_UnLockComment(Class.Get_Id());
@@ -2846,6 +2933,14 @@
 	// math
 	PDFEditorApi.prototype['asc_AddMath2']			= PDFEditorApi.prototype.asc_AddMath2;
 	PDFEditorApi.prototype['asc_ConvertMathView']	= PDFEditorApi.prototype.asc_ConvertMathView;
+
+	// highlight annots
+	PDFEditorApi.prototype['asc_SetFillColor']		= PDFEditorApi.prototype.asc_SetFillColor;
+	PDFEditorApi.prototype['asc_GetFillColor']		= PDFEditorApi.prototype.asc_GetFillColor;
+	PDFEditorApi.prototype['asc_SetStrokeColor']	= PDFEditorApi.prototype.asc_SetStrokeColor;
+	PDFEditorApi.prototype['asc_GetStrokeColor']	= PDFEditorApi.prototype.asc_GetStrokeColor;
+	PDFEditorApi.prototype['asc_SetOpacity']		= PDFEditorApi.prototype.asc_SetOpacity;
+	PDFEditorApi.prototype['asc_GetOpacity']		= PDFEditorApi.prototype.asc_GetOpacity;
 
 	// freetext
 	PDFEditorApi.prototype['AddFreeTextAnnot']	= PDFEditorApi.prototype.AddFreeTextAnnot;

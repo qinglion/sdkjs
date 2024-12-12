@@ -832,7 +832,7 @@
 			-1 !== contentTypes.indexOf("application/vnd.ms-powerpoint.presentation.macroEnabled.main+xml") ||
 			-1 !== contentTypes.indexOf("application/vnd.ms-powerpoint.slideshow.macroEnabled.main+xml") ||
 			-1 !== contentTypes.indexOf("application/vnd.ms-powerpoint.template.macroEnabled.main+xml");
-		let isDraw = -1 !== contentTypes.indexOf("application/vnd.ms-visio.drawing.main+xml") ||
+		let isVisio = -1 !== contentTypes.indexOf("application/vnd.ms-visio.drawing.main+xml") ||
 			-1 !== contentTypes.indexOf("application/vnd.ms-visio.stencil.main+xml") ||
 			-1 !== contentTypes.indexOf("application/vnd.ms-visio.template.main+xml") ||
 			-1 !== contentTypes.indexOf("application/vnd.ms-visio.drawing.macroEnabled.main+xml") ||
@@ -844,8 +844,8 @@
 			return AscCommon.c_oEditorId.Spreadsheet;
 		} else if (isSlide) {
 			return AscCommon.c_oEditorId.Presentation;
-		} else if (isDraw) {
-			return AscCommon.c_oEditorId.Draw;
+		} else if (isVisio) {
+			return AscCommon.c_oEditorId.Visio;
 		} else {
 			return null;
 		}
@@ -962,12 +962,6 @@
 	function sendCommand(editor, fCallback, rdata, dataContainer)
 	{
 		//json не должен превышать размера 2097152, иначе при его чтении будет exception
-		var docConnectionId = editor.CoAuthoringApi.getDocId();
-		if (docConnectionId && docConnectionId !== rdata["id"])
-		{
-			//на случай если поменялся documentId в Version History
-			rdata['docconnectionid'] = docConnectionId;
-		}
 		if (null == rdata["savetype"])
 		{
 			editor.CoAuthoringApi.openDocument(rdata);
@@ -2173,7 +2167,7 @@
 
 							if (data["subType"] === "connector")
 							{
-								window.g_asc_plugins.externalConnectorMessage(data["data"]);
+								window.g_asc_plugins.externalConnectorMessage(data["data"], event.origin);
 								return;
 							}
 
@@ -3440,6 +3434,11 @@
 			//пока не реализовываем с открытыми файлами, работаем только с путями
 			external = parseExternalLink(subSTR);
 			if (external) {
+				if (external.name && (external.name.indexOf("[") !== -1 || external.name.indexOf(":") !== -1)) {
+					// if the name contains '[' and ':' , then we return an error
+					return [false, null, null, external, externalLength];
+				}
+
 				externalLength = external.fullname.length;
 				subSTR = formula.substring(start_pos + externalLength);
 				const posQuote =  subSTR.indexOf("'");
@@ -4209,6 +4208,19 @@
 			}
 		}
 		return null;
+	};
+	parserHelper.prototype.escapeTableCharacters = function (string, doEscape) {
+		if (!string) {
+			return "";
+		}
+		
+		// make escape for the special character inside the string
+		if (doEscape) {
+			return string.replace(/(['#@\[\]])/g, "'$1");
+		}
+
+		// return only the character from the capture group(without escaping)
+		return string.replace(/'(['#@\[\]])/g, "$1");
 	};
 
 	var parserHelp = new parserHelper();
@@ -14790,7 +14802,19 @@
 	registerServiceWorker();
 
 	function consoleLog(val) {
-		//console.log(val);
+		// console.log(val);
+		const showMessages = false;
+
+		if (!showMessages) {
+			return;
+		}
+
+		// see v8 arguments leak - performance loss
+		// console.log.apply(console, arguments);
+
+		for (let i = 0; i < arguments.length; i++) {
+			console.log(arguments[i]);
+		}
 	}
 
 	//------------------------------------------------------------export---------------------------------------------------

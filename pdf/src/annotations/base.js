@@ -92,6 +92,8 @@
         this._wasChanged = false;
         this.Lock = new AscCommon.CLock();
 
+        this.uid = "";
+
         this.SetDocument(oDoc);
         this.SetName(sName);
         this.SetPage(nPage);
@@ -100,6 +102,18 @@
     CAnnotationBase.prototype = Object.create(AscFormat.CBaseNoIdObject.prototype);
 	CAnnotationBase.prototype.constructor = CAnnotationBase;
     
+    CAnnotationBase.prototype.SetUserId = function(sUID) {
+        if (this.uid == sUID) {
+            return;
+        }
+
+        AscCommon.History.Add(new CChangesPDFAnnotUserId(this, this.uid, sUID));
+        this.uid = sUID;
+    };
+    CAnnotationBase.prototype.GetUserId = function() {
+        return this.uid;
+    };
+
     CAnnotationBase.prototype.GetDocContent = function() {
         return null;
     };
@@ -142,6 +156,9 @@
             let oRGB    = this.GetRGBColor(aColor);
             let oFill   = AscFormat.CreateSolidFillRGBA(oRGB.r, oRGB.g, oRGB.b, 255);
             this.setFill(oFill);
+        }
+        else {
+            this.AddToRedraw();
         }
     };
     CAnnotationBase.prototype.GetFillColor = function() {
@@ -239,6 +256,9 @@
             this.handleUpdateLn();
             this.handleUpdateFill();
         }
+        else {
+            this.AddToRedraw();
+        }
     };
     CAnnotationBase.prototype.GetOpacity = function() {
         return this._opacity;
@@ -278,13 +298,13 @@
         if (originView) {
             let aOrigRect = this.GetOrigRect();
             
-            let X = aOrigRect[0] >> 0;
-            let Y = aOrigRect[1] >> 0;
+            let X = aOrigRect[0];
+            let Y = aOrigRect[1];
 
             if (this.IsHighlight())
                 AscPDF.startMultiplyMode(oGraphicsPDF.GetContext());
             
-            oGraphicsPDF.DrawImageXY(originView, X, Y);
+            oGraphicsPDF.DrawImageXY(originView, X, Y, undefined, true);
             AscPDF.endMultiplyMode(oGraphicsPDF.GetContext());
         }
 
@@ -574,6 +594,12 @@
     CAnnotationBase.prototype.GetPopupIdx = function() {
         return this._popupIdx;
     };
+    CAnnotationBase.prototype.SetParentPage = function(oParent) {
+        this.parentPage = oParent;
+    };
+    CAnnotationBase.prototype.GetParentPage = function() {
+        return this.parentPage;
+    };
     CAnnotationBase.prototype.SetPage = function(nPage) {
         let nCurPage = this.GetPage();
         if (nPage == nCurPage)
@@ -645,16 +671,18 @@
     CAnnotationBase.prototype._AddReplyOnOpen = function(oReplyInfo) {
         let oReply = new AscPDF.CAnnotationText(oReplyInfo["UniqueName"], this.GetPage(), [], this.GetDocument());
 
-        oReply.SetContents(oReplyInfo["Contents"]);
         oReply.SetCreationDate(AscPDF.ParsePDFDate(oReplyInfo["CreationDate"]).getTime());
         oReply.SetModDate(AscPDF.ParsePDFDate(oReplyInfo["LastModified"]).getTime());
         oReply.SetAuthor(oReplyInfo["User"]);
         oReply.SetDisplay(window["AscPDF"].Api.Objects.display["visible"]);
         oReply.SetPopupIdx(oReplyInfo["Popup"]);
         oReply.SetSubject(oReplyInfo["Subj"]);
+        oReply.SetUserId(oReplyInfo["OUserID"]);
 
         oReply.SetReplyTo(this);
         oReply.SetApIdx(oReplyInfo["AP"]["i"]);
+
+        oReply.SetContents(oReplyInfo["Contents"]);
         
         this._replies.push(oReply);
     };
@@ -757,9 +785,10 @@
         }
 
         if (oFirstCommToEdit.GetContents() != oCommentData.m_sText) {
-            oFirstCommToEdit.SetContents(oCommentData.m_sText);
             oFirstCommToEdit.SetModDate(oCommentData.m_sOOTime);
             oFirstCommToEdit.SetAuthor(oCommentData.m_sUserName);
+            oFirstCommToEdit.SetUserId(oCommentData.m_sUserId);
+            oFirstCommToEdit.SetContents(oCommentData.m_sText);
         }
 
         let aReplyToDel = [];
@@ -825,7 +854,7 @@
         let sModDate = this.GetModDate();
         if (sModDate)
             oAscCommData.asc_putOnlyOfficeTime(sModDate.toString());
-        oAscCommData.asc_putUserId(editor.documentUserId);
+        oAscCommData.asc_putUserId(this.GetUserId());
         oAscCommData.asc_putUserName(this.GetAuthor());
         oAscCommData.asc_putSolved(false);
         oAscCommData.asc_putQuoteText("");
@@ -1042,6 +1071,9 @@
             oLine.setFill(oFill);
             this.handleUpdateLn();
         }
+        else {
+            this.AddToRedraw();
+        }
     };
     CAnnotationBase.prototype.GetStrokeColor = function() {
         return this._strokeColor;
@@ -1166,6 +1198,13 @@
         this.WriteRenderToBinary(memory);
         if (nEndPos != memory.GetCurPosition())
             Flags |= (1 << 6);
+
+        // uid
+        let sUserId = this.GetUserId();
+        if (sUserId) {
+            Flags |= (1 << 7);
+            memory.WriteString(sUserId);
+        }
 
         nEndPos = memory.GetCurPosition();
         memory.Seek(nPosForFlags);

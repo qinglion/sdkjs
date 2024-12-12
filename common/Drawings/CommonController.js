@@ -7404,7 +7404,7 @@
 
 								new_shape_props =
 									{
-										canFill: false,
+										canFill: drawing.canFill(),
 										type: drawing.getPresetGeom(),
 										fill: drawing.getFill(),
 										stroke: drawing.getStroke(),
