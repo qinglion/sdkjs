@@ -1203,6 +1203,7 @@
 		ImagePr.flipHInvert			= obj.flipHInvert;
 		ImagePr.flipVInvert			= obj.flipVInvert;
 		ImagePr.resetCrop			= obj.resetCrop;
+		ImagePr.transparent         = obj.transparent;
 
 		if (undefined != obj.Position) {
 			ImagePr.Position =
