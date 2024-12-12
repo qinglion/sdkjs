@@ -904,7 +904,9 @@
 		CImageShape.prototype.getText = function() {
 			return null;
 		};
-
+		CImageShape.prototype.canFill = function () {
+			return true;
+		};
 
 		function CreateBrushFromBlipFill(oBlipFill) {
 			if (!oBlipFill) {
