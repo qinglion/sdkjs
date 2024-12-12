@@ -40,7 +40,7 @@
     function(window, undefined) {
 
         function StampAnnotPreviewManager() {
-            this.canvasHeight = 28;
+            this.canvasHeight = 60;
         }
 
         StampAnnotPreviewManager.prototype.clear = function() {
