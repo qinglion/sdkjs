@@ -80,10 +80,12 @@
 	 */
 	CustomXml.prototype.addContent = function (arrData)
 	{
-		let strContent		= "".fromUtf8(arrData),
-			strCustomXml	= strContent.slice(strContent.indexOf("<"), strContent.length); // Skip "L"
-
-		this.addContentByXMLString(strCustomXml);
+		let customXml = fromUtf8(arrData);
+		let startPos = customXml.indexOf("<");
+		if (-1 !== startPos)
+			customXml = customXml.slice(customXml.indexOf("<")); // Skip "L"
+		
+		this.addContentByXMLString(customXml);
 	};
 	CustomXml.prototype.addContentByXMLString = function (strCustomXml)
 	{
@@ -224,6 +226,49 @@
 			str			= str.replaceAll("&amp;", "&");
 			return str;
 		};
+	}
+	
+	
+	// TODO: Временно вынес метод сюда, потом перенести надо будет
+	// разница с AscCommon.UTF8ArrayToString, что тут на 0-символе не останавливаемся
+	function fromUtf8(buffer, start, len)
+	{
+		if (undefined === start)
+			start = 0;
+		if (undefined === len)
+			len = buffer.length;
+		
+		var result = "";
+		var index  = start;
+		var end = start + len;
+		while (index < end)
+		{
+			var u0 = buffer[index++];
+			if (!(u0 & 128))
+			{
+				result += String.fromCharCode(u0);
+				continue;
+			}
+			var u1 = buffer[index++] & 63;
+			if ((u0 & 224) == 192)
+			{
+				result += String.fromCharCode((u0 & 31) << 6 | u1);
+				continue;
+			}
+			var u2 = buffer[index++] & 63;
+			if ((u0 & 240) == 224)
+				u0 = (u0 & 15) << 12 | u1 << 6 | u2;
+			else
+				u0 = (u0 & 7) << 18 | u1 << 12 | u2 << 6 | buffer[index++] & 63;
+			if (u0 < 65536)
+				result += String.fromCharCode(u0);
+			else
+			{
+				var ch = u0 - 65536;
+				result += String.fromCharCode(55296 | ch >> 10, 56320 | ch & 1023);
+			}
+		}
+		return result;
 	}
 
 	//--------------------------------------------------------export----------------------------------------------------
