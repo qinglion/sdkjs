@@ -8813,6 +8813,20 @@ background-repeat: no-repeat;\
 		return this.WordControl.m_oLogicDocument.CanUnGroup();
 	};
 
+	asc_docs_api.prototype.asc_canMergeSelectedShapes = function (operation) {
+		return AscFormat.canMergeSelectedShapes(operation);
+	};
+	asc_docs_api.prototype.asc_mergeSelectedShapes = function (operation) {
+		const isSelectionLocked = this.WordControl.m_oLogicDocument.Document_Is_SelectionLocked(AscCommon.changestype_Drawing_Props);
+		const canMerge = this.asc_canMergeSelectedShapes(operation);
+		if (!isSelectionLocked && canMerge) {
+			// Should rename to "AscDFH.historydescription_Common_ShapesMerge"?
+			this.WordControl.m_oLogicDocument.StartAction(AscDFH.historydescription_Presentation_ShapesMerge);
+			AscFormat.mergeSelectedShapes(operation);
+			this.WordControl.m_oLogicDocument.FinalizeAction();
+		}
+	};
+
 	asc_docs_api.prototype.CanChangeWrapPolygon = function()
 	{
 		return this.WordControl.m_oLogicDocument.CanChangeWrapPolygon();
@@ -14552,7 +14566,8 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype["asc_GetWatermarkProps"]                     = asc_docs_api.prototype.asc_GetWatermarkProps;
 	asc_docs_api.prototype["asc_SetWatermarkProps"]                     = asc_docs_api.prototype.asc_SetWatermarkProps;
 	asc_docs_api.prototype["asc_WatermarkRemove"]                       = asc_docs_api.prototype.asc_WatermarkRemove;
-
+	asc_docs_api.prototype['asc_canMergeSelectedShapes']                = asc_docs_api.prototype.asc_canMergeSelectedShapes;
+	asc_docs_api.prototype['asc_mergeSelectedShapes']                   = asc_docs_api.prototype.asc_mergeSelectedShapes;
 	asc_docs_api.prototype['sync_StartAddShapeCallback']                = asc_docs_api.prototype.sync_StartAddShapeCallback;
 	asc_docs_api.prototype['CanGroup']                                  = asc_docs_api.prototype.CanGroup;
 	asc_docs_api.prototype['CanUnGroup']                                = asc_docs_api.prototype.CanUnGroup;

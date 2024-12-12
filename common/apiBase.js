@@ -282,12 +282,16 @@
 
 		this._loadModules();
 
+		const noop = function () { };
 		if (!this.isPdfEditor())
 		{
-			AscCommon.loadChartStyles(function() {}, function(err) {
+			AscCommon.loadChartStyles(noop, function (err) {
 				t.sendEvent("asc_onError", Asc.c_oAscError.ID.LoadingScriptError, c_oAscError.Level.NoCritical);
 			});
 		}
+		AscCommon.loadPathBoolean(noop, function () {
+			t.sendEvent("asc_onError", Asc.c_oAscError.ID.LoadingScriptError, c_oAscError.Level.NoCritical)
+		})
 
 		var oldOnError = window.onerror;
 		window.onerror = function(errorMsg, url, lineNumber, column, errorObj) {

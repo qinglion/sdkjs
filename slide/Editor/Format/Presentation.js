@@ -3751,6 +3751,14 @@ CPresentation.prototype.unGroupShapes = function () {
 	oController && oController.checkSelectedObjectsAndCallback(oController.unGroupCallback, [], false, AscDFH.historydescription_Presentation_UnGroup);
 	this.Document_UpdateInterfaceState();
 };
+
+CPresentation.prototype.mergeSelectedShapes = function (operation) {
+	const oController = this.GetCurrentController();
+	if (oController)
+		oController.checkSelectedObjectsAndCallback(AscFormat.mergeSelectedShapes, [operation], false, AscDFH.historydescription_Presentation_MergeSelectedShapes);
+	this.Document_UpdateInterfaceState();
+};
+
 CPresentation.prototype.SetThumbnailsFocusElement = function(nFocusType) {
 	let oThumbnails = this.Api.WordControl.Thumbnails;
 	if (oThumbnails) {

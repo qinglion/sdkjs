@@ -5275,6 +5275,22 @@ var editor;
     ws.objectRender.unGroupGraphicObjects();
   };
 
+    spreadsheet_api.prototype.asc_canMergeSelectedShapes = function (operation) {
+      return AscFormat.canMergeSelectedShapes(operation);
+    };
+    spreadsheet_api.prototype.asc_mergeSelectedShapes = function (operation) {
+      const controller = this.wb.getWorksheet().objectRender.controller;
+      if (controller.checkSelectedObjectsProtection())
+        return;
+
+      if (this.asc_canMergeSelectedShapes(operation)) {
+        controller.checkSelectedObjectsAndCallback(
+          AscFormat.mergeSelectedShapes, [operation], false,
+          AscDFH.historydescription_Presentation_MergeSelectedShapes
+        );
+      }
+    };
+
   spreadsheet_api.prototype.asc_changeShapeType = function(value) {
     this.asc_setGraphicObjectProps(new Asc.asc_CImgProperty({ShapeProperties: {type: value}}));
   };
@@ -9879,6 +9895,8 @@ var editor;
   prot["asc_groupGraphicsObjects"] = prot.asc_groupGraphicsObjects;
   prot["asc_canUnGroupGraphicsObjects"] = prot.asc_canUnGroupGraphicsObjects;
   prot["asc_unGroupGraphicsObjects"] = prot.asc_unGroupGraphicsObjects;
+  prot["asc_canMergeSelectedShapes"] = prot.asc_canMergeSelectedShapes;
+  prot["asc_mergeSelectedShapes"] = prot.asc_mergeSelectedShapes;
   prot["asc_getGraphicObjectProps"] = prot.asc_getGraphicObjectProps;
   prot["asc_GetSelectedText"] = prot.asc_GetSelectedText;
   prot["asc_setGraphicObjectProps"] = prot.asc_setGraphicObjectProps;

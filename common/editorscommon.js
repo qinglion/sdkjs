@@ -11386,6 +11386,10 @@
 		loadScript('../../../../sdkjs/common/Charts/ChartStyles.js', onSuccess, onError);
 	}
 
+	function loadPathBoolean(onSuccess, onError) {
+		loadScript('../../../../sdkjs/common/Drawings/Format/Path.Boolean.min.js', onSuccess, onError);
+	}
+
 	function getAltGr(e)
 	{
 		if (true === e["altGraphKey"])
@@ -14913,6 +14917,7 @@
 	window["AscCommon"].loadSdk = loadSdk;
     window["AscCommon"].loadScript = loadScript;
     window["AscCommon"].loadChartStyles = loadChartStyles;
+    window["AscCommon"].loadPathBoolean = loadPathBoolean;
 	window["AscCommon"].getAltGr = getAltGr;
 	window["AscCommon"].getColorSchemeByName = getColorSchemeByName;
 	window["AscCommon"].getColorSchemeByIdx = getColorSchemeByIdx;
