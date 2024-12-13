@@ -11668,7 +11668,7 @@
 				paraDrawing.AddToParagraph(firstParagraph);
 				paraDrawing.Set_Parent(firstParagraph);
 
-				paraDrawing.Set_Props(new asc_CImgProperty({
+				paraDrawing.Set_Props(new Asc.asc_CImgProperty({
 					PositionH: {
 						RelativeFrom: Asc.c_oAscRelativeFromH.Page,
 						UseAlign: false,
