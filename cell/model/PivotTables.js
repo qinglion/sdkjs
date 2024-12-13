@@ -10123,7 +10123,7 @@ PivotFormatsManager.prototype.checkReferenceValues = function(referenceInfo, val
  */
 CT_pivotTableDefinition.prototype.asc_convertNameToFormula = function(name) {
 	let result = '';
-	const reg = /^\w+$/;
+	const reg = new XRegExp('^[\\p{L}_][\\p{L}\\p{N}_]*$');
 	result = name.replace(/\'/g, "''");
 	if (!reg.test(result)) {
 		result = "'" + result + "'";

@@ -3860,7 +3860,16 @@
 			this._reset();
 		}
 		const subSTR = formula.substring(start_pos);
-		const reg = /^(\w+|(?:\'.+?\'(?!\')))\[(\w+|(?:\'.+?\'(?!\')))\]/;
+		const reg = XRegExp.build('(?x) ^({{fieldName}})\\[({{itemName}})\\]', {
+			'fieldName': XRegExp.build('{{simple}}|{{quotes}}', {
+				'simple': '[\\p{L}_][\\p{L}\\p{N}_]*',
+				'quotes': "\\'.+?\\'(?!\\')",
+			}),
+			'itemName': XRegExp.build('{{simple}}|{{quotes}}', {
+				'simple': '[\\p{L}\\p{N}_]+',
+				'quotes': "\\'.+?\\'(?!\\')",
+			})
+		});
 		const match = reg.exec(subSTR);
 		if (match !== null && match[1] && match[2]) {
 			this.operand_str = match[0];
