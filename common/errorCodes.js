@@ -260,7 +260,11 @@
 
 			MustIntegerOrDecimalNumber: 1070,
 
-			DocumentAndChangeMismatch: 1080
+			DocumentAndChangeMismatch: 1080,
+
+
+			// pdf forms
+			PDFFormsLocked: -1200
 		}
 	};
 
