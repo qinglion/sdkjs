@@ -1129,7 +1129,7 @@
 	 * Realizes Master-To-Shape inheritance.
 	 * Comes through the shape recursively through all subshapes
 	 * and copies properties from their masters if master exist.
-	 * Uses clone function so copied objects are unlinked from master.
+	 * Not uses clone function.
 	 *
 	 * This function erases original shape object and after function call we cant find what props are
 	 * inherited.
@@ -1392,6 +1392,7 @@
 	 */
 	function realizeStyleToSheetObjInheritanceRecursive(thisArgument, styles, stylesWithRealizedInheritance) {
 		if (stylesWithRealizedInheritance.has(thisArgument)) {
+			// thisArgument is style not shape and it has realized inheritance already
 			// AscCommon.consoleLog("style has realized inheritance already. return");
 			return;
 		}
@@ -1489,6 +1490,7 @@
 			return;
 		}
 
+		// if lineStyle === textStyle === fillStyle so let's take lineStyle
 		let styleId = Number(thisArgument.lineStyle);
 		let styleSheet = styles.find(function(style) {
 			return style.iD === styleId;
@@ -1506,8 +1508,10 @@
 	/**
 	 * Style-To-Shape inheritance
 	 * Copy all style elements (sections, rows, cells) to shape.
-	 * (Doesnt take much memory < 300MB with master inheritance for the most large files).
+	 * (Doesn't take much memory < 300MB with master inheritance for the most large files).
 	 * stylesWithRealizedInheritance was added for optimization.
+	 * Check if this shape or sub-shapes have lineStyle/fillStyle/textStyle if so realize inheritance with
+	 * recursive style inheritance
 	 * @param styles
 	 * @param {?Set} [stylesWithRealizedInheritance]
 	 * @memberOf Shape_Type
