@@ -23911,10 +23911,10 @@ CDocument.prototype.UpdateBookmarks = function()
 };
 CDocument.prototype.AddBookmark = function(sName)
 {
-	var arrBookmarkChars = this.BookmarksManager.GetBookmarkByName(sName);
+	let haveBookmark = this.BookmarksManager.HaveBookmark(sName);
 
-	var oStartPara = null,
-		oEndPara   = null;
+	let oStartPara = null;
+	let oEndPara   = null;
 	var arrParagraphs = [];
 	if (true === this.IsSelectionUse())
 	{
@@ -23948,52 +23948,69 @@ CDocument.prototype.AddBookmark = function(sName)
 	if (arrParagraphs.length <= 0)
 		return;
 
-	if (arrBookmarkChars)
+	if (haveBookmark)
 	{
-		var oStartPara = arrBookmarkChars[0].GetParagraph();
-		var oEndPara   = arrBookmarkChars[1].GetParagraph();
-
-		if (oStartPara)
-			arrParagraphs.push(oStartPara);
-
-		if (oEndPara)
-			arrParagraphs.push(oEndPara);
+		let relatedPara = this.BookmarksManager.GetRelatedParagraphs(sName);
+		arrParagraphs = arrParagraphs.concat(relatedPara);
 	}
-
-	if (false === this.Document_Is_SelectionLocked(changestype_None, {Type : AscCommon.changestype_2_ElementsArray_and_Type, Elements : arrParagraphs, CheckType : changestype_Paragraph_Content}, true))
+	
+	if (this.IsSelectionLocked(changestype_None, {
+		Type      : AscCommon.changestype_2_ElementsArray_and_Type,
+		Elements  : arrParagraphs,
+		CheckType : changestype_Paragraph_Content
+	}, true))
+		return false;
+	
+	this.StartAction(AscDFH.historydescription_Document_AddBookmark);
+	
+	let _t = this;
+	function addBookmark(name)
 	{
-		this.StartAction(AscDFH.historydescription_Document_AddBookmark);
-
-		if (this.BookmarksManager.HaveBookmark(sName))
-			this.private_RemoveBookmark(sName);
-
-		var sBookmarkId = this.BookmarksManager.GetNewBookmarkId();
-
-		if (true === this.IsSelectionUse())
+		var sBookmarkId = _t.BookmarksManager.GetNewBookmarkId();
+		
+		let bookmarkStart = new AscWord.CParagraphBookmark(true, sBookmarkId, name);
+		let bookmarkEnd   = new AscWord.CParagraphBookmark(false, sBookmarkId, name);
+		
+		if (_t.IsSelectionUse())
 		{
-			var nDirection = this.GetSelectDirection();
-			if (nDirection > 0)
+			if (_t.GetSelectDirection() > 0)
 			{
-				oEndPara.AddBookmarkChar(new CParagraphBookmark(false, sBookmarkId, sName), true, false);
-				oStartPara.AddBookmarkChar(new CParagraphBookmark(true, sBookmarkId, sName), true, true);
+				oEndPara.AddBookmarkChar(bookmarkEnd, true, false);
+				oStartPara.AddBookmarkChar(bookmarkStart, true, true);
 			}
 			else
 			{
-				oEndPara.AddBookmarkChar(new CParagraphBookmark(false, sBookmarkId, sName), true, true);
-				oStartPara.AddBookmarkChar(new CParagraphBookmark(true, sBookmarkId, sName), true, false);
+				oEndPara.AddBookmarkChar(bookmarkEnd, true, true);
+				oStartPara.AddBookmarkChar(bookmarkStart, true, false);
 			}
 		}
 		else
 		{
-			oStartPara.AddBookmarkChar(new CParagraphBookmark(false, sBookmarkId, sName), false);
-			oStartPara.AddBookmarkChar(new CParagraphBookmark(true, sBookmarkId, sName), false);
+			oStartPara.AddBookmarkChar(bookmarkEnd, false);
+			oStartPara.AddBookmarkChar(bookmarkStart, false);
 		}
-
-		// TODO: Здесь добавляются просто метки закладок, нужно сделать упрощенный пересчет
-		this.Recalculate();
-		this.FinalizeAction();
 	}
-
+	
+	if (haveBookmark)
+	{
+		let tempName = "_temp_" + sName;
+		addBookmark(tempName);
+		this.private_RemoveBookmark(sName);
+		
+		let newBookmark = this.BookmarksManager.GetBookmarkByName(tempName);
+		if (newBookmark)
+		{
+			newBookmark[0].ChangeBookmarkName(sName);
+			newBookmark[1].ChangeBookmarkName(sName);
+		}
+	}
+	else
+	{
+		addBookmark(sName);
+	}
+	
+	this.Recalculate();
+	this.FinalizeAction();
 };
 CDocument.prototype.RemoveBookmark = function(sName)
 {
