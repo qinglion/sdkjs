@@ -170,6 +170,11 @@ $(function () {
 		Init();
 	})
 
+	// TODO
+	//  1. substack in LaTeX mode
+	//
+	//
+
 	QUnit.module( "Unicode", function ()
 	{
 		QUnit.module( "Auto-convert rules", function ()

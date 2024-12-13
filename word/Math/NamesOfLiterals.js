@@ -1194,7 +1194,6 @@
 			"\\begin{Bmatrix}" : 1,
 			"\\begin{vmatrix}" : 1,
 			"\\begin{Vmatrix}" : 1,
-			"\\begin{array}" : 1,
 			"\\begin{equation}" : 1,
 
 			"\\end{cases}" : 2,
@@ -1204,7 +1203,6 @@
 			"\\end{Bmatrix}" : 2,
 			"\\end{vmatrix}" : 2,
 			"\\end{Vmatrix}" : 2,
-			"\\end{array}" : 2,
 			"\\end{equation}" : 2,
 		};
 		this.Init();
@@ -1212,6 +1210,22 @@
 	TokenMatrix.prototype = Object.create(LexerLiterals.prototype);
 	TokenMatrix.prototype.constructor = TokenMatrix;
 	TokenMatrix.prototype.isUseLaTeXBrackets = true;
+
+	function TokenArray()
+	{
+		this.id = 89;
+		this.data = [];
+		this.Unicode = {};
+		this.LaTeX = {
+			"\\begin{array}" : 1,
+			"\\end{array}" : 2,
+			"\\array{" : 1,
+		};
+		this.Init();
+	}
+	TokenArray.prototype = Object.create(LexerLiterals.prototype);
+	TokenArray.prototype.constructor = TokenArray;
+	TokenArray.prototype.isUseLaTeXBrackets = true;
 
 	function TokenRect()
 	{
@@ -1557,6 +1571,7 @@
 		box: 			new TokenBox(),
 		rect:			new TokenRect(),
 		matrix: 		new TokenMatrix(),
+		array: 			new TokenArray(),
 		font:			new TokenFont(),
 		of:				new TokenOf(),
 		delimiter:		new TokenDelimiter(),
@@ -1591,6 +1606,7 @@
 		MathLiterals.invisible,
 		MathLiterals.horizontal,
 		MathLiterals.matrix,
+		MathLiterals.array,
 		MathLiterals.nary,
 		MathLiterals.radical,
 		MathLiterals.other,
