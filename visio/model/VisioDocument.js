@@ -712,7 +712,11 @@
 		for(let i = 0; i < pageContent.shapes.length; i++) {
 			let shape = pageContent.shapes[i];
 
+			// inherit styles
+			shape.realizeStyleInheritanceRecursively(this.styleSheets);
+			// inherit master and links to master styles
 			shape.realizeMasterInheritanceRecursively(masters);
+			// inherit master styles
 			shape.realizeStyleInheritanceRecursively(this.styleSheets);
 
 			if (shape.type === "Group") {
