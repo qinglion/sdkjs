@@ -9185,9 +9185,11 @@ CT_pivotTableDefinition.prototype.checkInvalidNewFieldName = function(name) {
 		namesMap.set(this.getPivotFieldName(i).toLowerCase(), 1);
 	}
 	const dataFields = this.asc_getDataFields();
-	for(let i = 0; i < dataFields.length; i += 1) {
-		const dataField = dataFields[i];
-		namesMap.set(dataField.asc_getName().toLowerCase(), 1);
+	if (dataFields) {
+		for(let i = 0; i < dataFields.length; i += 1) {
+			const dataField = dataFields[i];
+			namesMap.set(dataField.asc_getName().toLowerCase(), 1);
+		}
 	}
 	const dataCaption = (this.dataCaption || AscCommon.translateManager.getValue(AscCommonExcel.DATA_CAPTION)).toLowerCase();
 	namesMap.set(dataCaption, 1);
