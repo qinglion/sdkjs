@@ -1263,6 +1263,7 @@
 
 		if (name !== "\\array{")
 		{
+			// set align in NamesOfLiterals
 			let align	= this.IsAlignBlockForArray();
 			data		= this.GetContentOfMatrixOrArray(function (oThis) {return oThis.IsEndArrayLiteral()});
 		}

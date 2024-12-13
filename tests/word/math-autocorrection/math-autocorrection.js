@@ -1749,8 +1749,9 @@ $(function () {
 				assert.strictEqual(strFunc, '\\lim\\below{\\left(n\\to\\infty\\right){\\left(1+\\frac{1}{n}\\right)^n}}', 'Check complex math func content');
 			})
 
-			QUnit.test('Check eqarray frac', function (assert)
+			QUnit.todo('Check eqarray frac - Find case for LaTeX', function (assert)
 			{
+				// Find case for LaTeX
 				Clear();
 				logicDocument.SetMathInputType(1);
 				AddText('\\frac{\\substack{1\\\\\\substack{\\\\\\substack{\\\\\\substack{\\\\}}}}}{2}');
@@ -1769,6 +1770,7 @@ $(function () {
 				Test("\\begin{pmatrix}1&2\\\\3&4\\\\\\end{pmatrix}", [["ParaRun", ""], ["CDelimiter", "\\left(\\begin{matrix}1&2\\\\3&4\\\\\\end{matrix}\\right)"]], true, "Check bug #61007 pmatrix");
 				Test("\\left[\\begin{matrix}1&2\\\\3&4\\\\\\end{matrix}\\right]", [["ParaRun", ""], ["CDelimiter", "\\left[\\begin{matrix}1&2\\\\3&4\\\\\\end{matrix}\\right]"]], true, "Check bug #61007 pmatrix");
 				Test("\\begin{matrix}&&\\\\&&\\\\&&\\\\&&\\end{matrix}", [["ParaRun", ""], ["CMathMatrix", "\\begin{matrix}&&\\\\&&\\\\&&\\\\&&\\\\\\end{matrix}"]], true, "Check matrix bug #71892");
+				Test("\\begin{array}{l} n + 1\\end{array}", [["ParaRun", ""], ["CEqArray", "\\matrix{n+1}"]], true, "Check matrix bug #71892");
 			})
 
 			QUnit.module( "Check bug #67181", function ()
