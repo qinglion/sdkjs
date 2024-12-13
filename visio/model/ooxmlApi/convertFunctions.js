@@ -38,7 +38,6 @@
 	let Shape_Type = window['AscVisio'].Shape_Type;
 
 	let isInvertCoords = true;
-	let angleInvertCoef = isInvertCoords ? -1 : 1;
 
 	function convertVsdxTextToPptxText(text){
 		// Replace LineSeparator
@@ -166,12 +165,13 @@
 		 * @param {CUniFill} lineUniFill
 		 * @param {CUniFill} fillUniFill
 		 * @param {number} drawingPageScale
+		 * @param {number} maxHeightScaledIn
 		 * @param {number} currentPageIndex
 		 * @param {number} pagesCount
 		 * @return {CShape} textCShape
 		 */
 		function getTextCShape(theme, shape, cShape, lineUniFill,
-							   fillUniFill, drawingPageScale, currentPageIndex, pagesCount ) {
+							   fillUniFill, drawingPageScale, maxHeightScaledIn, currentPageIndex, pagesCount ) {
 			// see 2.2.8	Text [MS-VSDX]-220215
 			/**
 			 * handle QuickStyleVariation cell which can change color (but only if color is a result of ThemeVal)
@@ -954,8 +954,7 @@
 
 
 			// to rotate around point we 1) add one more offset 2) rotate around center
-			// could be refactored maybe
-			// https://www.figma.com/file/jr1stjGUa3gKUBWxNAR80T/locPinHandle?type=design&node-id=0%3A1&mode=design&t=raXzFFsssqSexysi-1
+			// https://www.figma.com/design/SJSKMY5dGoAvRg75YnHpdX/newRotateScheme?node-id=0-1&node-type=canvas&t=UTtoZyLRItzaQvS9-0
 			let txtPinX_inch = shape.getCellNumberValueWithScale("TxtPinX", drawingPageScale);
 			let txtPinY_inch = shape.getCellNumberValueWithScale("TxtPinY", drawingPageScale);
 
@@ -965,6 +964,9 @@
 			// also check for {}, undefined, NaN, null
 			let oSpPr = new AscFormat.CSpPr();
 			let oXfrm = new AscFormat.CXfrm();
+
+			let globalXmm = cShape.spPr.xfrm.offX;
+			let globalYmm = cShape.spPr.xfrm.offY;
 			if (!(isNaN(txtPinX_inch) || txtPinX_inch === null)  && !(isNaN(txtPinY_inch) || txtPinY_inch === null)) {
 				// https://www.figma.com/file/WiAC4sxQuJaq65h6xppMYC/cloudFare?type=design&node-id=0%3A1&mode=design&t=SZbio0yIyxq0YnMa-1s
 
@@ -981,28 +983,32 @@
 				let oBodyPr = textCShape.getBodyPr().createDuplicate();
 				// oBodyPr.anchor = 4; // 4 - bottom, 1,2,3 - center
 
-				let globalXmm = cShape.spPr.xfrm.offX;
 				let localXmm = (txtPinX_inch - txtLocPinX_inch) * g_dKoef_in_to_mm;
 				oXfrm.setOffX(globalXmm + localXmm); // mm
+
+				// back to MS coords
+				if (isInvertCoords) {
+					let topLeftCornerYNewCoords = maxHeightScaledIn * g_dKoef_in_to_mm - globalYmm;
+					// now it is bottom left corner y coord
+					globalYmm = topLeftCornerYNewCoords - cShape.spPr.xfrm.extY;
+				}
+
+				let localYmm;
 
 				let flipYCell = shape.getCell("FlipY");
 				let flipVertically = flipYCell ?  flipYCell.v === "1" : false;
 				if (flipVertically) {
 					// if we flip figure we flip text pinY around shape pinY
-
 					if (txtPinY_inch > 0) {
 						// y cord of text block start. when cord system starts in left bottom corner on shape
 						let blockCord = txtPinY_inch - txtLocPinY_inch;
 						// (y part of vector) from shape center to txt block start
 						let fromShapeCenterToBlockStart = blockCord - shapeLocPinY;
 
-						let globalYmm = cShape.spPr.xfrm.offY;
-
 						// mirror distance fromBlock start ToShapeCenter then add text block height to it
 						// + shapeLocPinY made shift from shape center to shape bottom bcs we calculate
 						// localYmm starting from bottom of shape not from center
-						let localYmm = (-fromShapeCenterToBlockStart - txtHeight_inch + shapeLocPinY) * g_dKoef_in_to_mm;
-						oXfrm.setOffY(globalYmm + localYmm);
+						localYmm = (-fromShapeCenterToBlockStart - txtHeight_inch + shapeLocPinY) * g_dKoef_in_to_mm;
 					} else {
 						// negative, y part of vector. y cord of text block start. when cord system starts in left bottom corner on shape
 						let blockCord = txtPinY_inch + (txtHeight_inch - txtLocPinY_inch);
@@ -1011,26 +1017,31 @@
 						// It is vector that comes from shape center to text block start.
 						let fromBlockToShapeCenter = blockCord - shapeLocPinY;
 
-						let globalYmm = cShape.spPr.xfrm.offY;
 						// Finally we mirror fromBlockToShapeCenter by multiplying by -1 and add shapeLocPinY to move its
 						// start to bottom on shape
-						let localYmm = (-fromBlockToShapeCenter + shapeLocPinY) * g_dKoef_in_to_mm;
-						oXfrm.setOffY(globalYmm + localYmm);
+						localYmm = (-fromBlockToShapeCenter + shapeLocPinY) * g_dKoef_in_to_mm;
 					}
+					oXfrm.setRot(shapeAngle - textAngle);
 				} else {
-					let globalYmm = cShape.spPr.xfrm.offY;
-					let localYmm = (txtPinY_inch - txtLocPinY_inch) * g_dKoef_in_to_mm;
-					oXfrm.setOffY(globalYmm + localYmm);
+					// do calculations
+					localYmm = (txtPinY_inch - txtLocPinY_inch) * g_dKoef_in_to_mm;
+					oXfrm.setRot(shapeAngle + textAngle);
 				}
+
+				let offY = globalYmm + localYmm;
+				// back to presentation coords
+				if (isInvertCoords) {
+					let bottomCornerOffY = maxHeightScaledIn * g_dKoef_in_to_mm - offY;
+					let topCornerOffY = bottomCornerOffY - txtHeight_inch * g_dKoef_in_to_mm;
+					offY = topCornerOffY;
+				}
+				oXfrm.setOffY(offY);
 
 				oXfrm.setExtX(txtWidth_inch * g_dKoef_in_to_mm);
 				oXfrm.setExtY(txtHeight_inch * g_dKoef_in_to_mm);
-				oXfrm.setRot( shapeAngle);
 			} else {
 				// create text block with shape sizes
-				let globalXmm = cShape.spPr.xfrm.offX;
-				let globalYmm = cShape.spPr.xfrm.offY;
-				oXfrm.setOffX(globalXmm); // mm
+				oXfrm.setOffX(globalXmm);
 				oXfrm.setOffY(globalYmm);
 				oXfrm.setExtX(shapeWidth_inch * g_dKoef_in_to_mm);
 				oXfrm.setExtY(shapeHeight_inch * g_dKoef_in_to_mm);
@@ -1572,7 +1583,9 @@
 		if (!isNaN(fillPatternType) && uniFillBkgnd && uniFillForegnd) {
 			// https://learn.microsoft.com/ru-ru/office/client-developer/visio/fillpattern-cell-fill-format-section
 			let isfillPatternTypeGradient = fillPatternType >= 25 && fillPatternType <= 40;
-			if (fillPatternType === 0) {
+			if (gradientEnabled) {
+				uniFillForegndWithPattern = uniFillForegnd;
+			} else if (fillPatternType === 0) {
 				uniFillForegndWithPattern = AscFormat.CreateNoFillUniFill();
 			} else if (fillPatternType === 1 || isfillPatternTypeGradient) {
 				uniFillForegndWithPattern = uniFillForegnd;
@@ -1683,7 +1696,7 @@
 
 		// not scaling fontSize
 		let textCShape = getTextCShape(visioDocument.themes[0], this, cShape,
-			lineUniFill, uniFillForegnd, drawingPageScale,
+			lineUniFill, uniFillForegnd, drawingPageScale, maxHeightScaledIn,
 			visioDocument.pageIndex, visioDocument.pages.page.length);
 
 		if (textCShape !== null) {
