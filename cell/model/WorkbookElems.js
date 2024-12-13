@@ -18154,6 +18154,10 @@ function RangeDataManagerElem(bbox, data)
 		this.activeLocale = sLocale;
 	};
 
+	CCustomFunctionEngine.prototype.getActiveLocale = function () {
+		return this.activeLocale;
+	};
+
 	CCustomFunctionEngine.prototype._getParamsInfo = function (func, params) {
 		let aArgs = this._getArgsByFunc(func);
 		let argsInfo = [];
