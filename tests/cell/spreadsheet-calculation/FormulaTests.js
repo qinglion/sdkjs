@@ -29380,6 +29380,18 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), 13);
 
+		ws.getRange2("G1").setValue("Profit");
+		ws.getRange2("G2").setValue("555");
+
+		oParser = new parserFormula('DAVERAGE(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "#DIV/0!");
+
+		ws.getRange2("G1").setValue("noname");
+
+		oParser = new parserFormula('DAVERAGE(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 13);
 	});
 
 	QUnit.test("Test: \"DCOUNT\"", function (assert) {
@@ -29398,6 +29410,18 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!");
 
+		ws.getRange2("G1").setValue("Profit");
+		ws.getRange2("G2").setValue("555");
+
+		oParser = new parserFormula('DCOUNT(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0);
+
+		ws.getRange2("G1").setValue("noname");
+
+		oParser = new parserFormula('DCOUNT(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 6);
 	});
 
 	QUnit.test("Test: \"DCOUNTA\"", function (assert) {
@@ -29416,6 +29440,18 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!");
 
+		ws.getRange2("G1").setValue("Profit");
+		ws.getRange2("G2").setValue("555");
+
+		oParser = new parserFormula('DCOUNTA(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0);
+
+		ws.getRange2("G1").setValue("noname");
+
+		oParser = new parserFormula('DCOUNTA(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 6);
 	});
 
 	QUnit.test("Test: \"DGET\"", function (assert) {
@@ -29430,6 +29466,18 @@ $(function () {
 		assert.ok(oParser.parse(), 'DGET(A4:E10, "Yield", A1:F2)');
 		assert.strictEqual(oParser.calculate().getValue(), 10, 'DGET(A4:E10, "Yield", A1:F2)');
 
+		ws.getRange2("G1").setValue("Profit");
+		ws.getRange2("G2").setValue("555");
+
+		oParser = new parserFormula('DGET(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!");
+
+		ws.getRange2("G1").setValue("noname");
+
+		oParser = new parserFormula('DGET(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "#NUM!");
 	});
 
 	QUnit.test("Test: \"DMAX\"", function (assert) {
@@ -29440,6 +29488,18 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), 96);
 
+		ws.getRange2("G1").setValue("Profit");
+		ws.getRange2("G2").setValue("555");
+
+		oParser = new parserFormula('DMAX(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0);
+
+		ws.getRange2("G1").setValue("noname");
+
+		oParser = new parserFormula('DMAX(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 20);
 	});
 
 	QUnit.test("Test: \"DMIN\"", function (assert) {
@@ -29450,6 +29510,18 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), 75);
 
+		ws.getRange2("G1").setValue("Profit");
+		ws.getRange2("G2").setValue("555");
+
+		oParser = new parserFormula('DMIN(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0);
+
+		ws.getRange2("G1").setValue("noname");
+
+		oParser = new parserFormula('DMIN(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 8);
 	});
 
 	QUnit.test("Test: \"DPRODUCT\"", function (assert) {
@@ -29460,6 +29532,18 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), 800);
 
+		ws.getRange2("G1").setValue("Profit");
+		ws.getRange2("G2").setValue("555");
+
+		oParser = new parserFormula('DPRODUCT(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0);
+
+		ws.getRange2("G1").setValue("noname");
+
+		oParser = new parserFormula('DPRODUCT(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 3628800);
 	});
 
 	QUnit.test("Test: \"DSTDEV\"", function (assert) {
@@ -29470,6 +29554,19 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue().toFixed(4) - 0, 1.1547);
 
+
+		ws.getRange2("G1").setValue("Profit");
+		ws.getRange2("G2").setValue("555");
+
+		oParser = new parserFormula('DSTDEV(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "#DIV/0!");
+
+		ws.getRange2("G1").setValue("noname");
+
+		oParser = new parserFormula('DSTDEV(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 4.381780460041329);
 	});
 
 	QUnit.test("Test: \"DSTDEVP\"", function (assert) {
@@ -29480,6 +29577,18 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue().toFixed(6) - 0, 0.942809);
 
+		ws.getRange2("G1").setValue("Profit");
+		ws.getRange2("G2").setValue("555");
+
+		oParser = new parserFormula('DSTDEVP(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "#DIV/0!");
+
+		ws.getRange2("G1").setValue("noname");
+
+		oParser = new parserFormula('DSTDEV(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 4.381780460041329);
 	});
 
 	QUnit.test("Test: \"STDEVPA\"", function (assert) {
@@ -29564,6 +29673,30 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), 247.8);
 
+		oParser = new parserFormula('DSUM(A4:E10, "Age",A1:F2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 15);
+
+		oParser = new parserFormula('DSUM(A4:E10, "Age","test")', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!");
+
+		oParser = new parserFormula('DSUM(A4:E10, "Age",E2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!");
+
+		ws.getRange2("G1").setValue("Profit");
+		ws.getRange2("G2").setValue("555");
+
+		oParser = new parserFormula('DSUM(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0);
+
+		ws.getRange2("G1").setValue("noname");
+
+		oParser = new parserFormula('DSUM(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 78);
 	});
 
 	QUnit.test("Test: \"DVAR\"", function (assert) {
@@ -29574,6 +29707,18 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue().toFixed(1) - 0, 8.8);
 
+		ws.getRange2("G1").setValue("Profit");
+		ws.getRange2("G2").setValue("555");
+
+		oParser = new parserFormula('DSTDEVP(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "#DIV/0!");
+
+		ws.getRange2("G1").setValue("noname");
+
+		oParser = new parserFormula('DVAR(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 19.2);
 	});
 
 	QUnit.test("Test: \"DVARP\"", function (assert) {
@@ -29583,6 +29728,19 @@ $(function () {
 		oParser = new parserFormula('DVARP(A4:E10, "Yield", A1:A3)', "AA2", ws);
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue().toFixed(2) - 0, 7.04);
+
+		ws.getRange2("G1").setValue("Profit");
+		ws.getRange2("G2").setValue("555");
+
+		oParser = new parserFormula('DSTDEVP(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "#DIV/0!");
+
+		ws.getRange2("G1").setValue("noname");
+
+		oParser = new parserFormula('DVARP(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 16);
 
 	});
 
