@@ -24604,12 +24604,12 @@ $(function () {
 				fv = 0;
 			}
 
-			var res;
+			let res;
 			if (rate != 0) {
 				res = (-fv * rate + pmt * (1 + rate * type)) / (rate * pv + pmt * (1 + rate * type))
 				res = Math.log(res) / Math.log(1 + rate)
 			} else {
-				res = (-pv - fv) / pmt;
+				res = -(pv + fv) / pmt;
 			}
 			return res;
 		}
@@ -24622,6 +24622,15 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), nper(0.12 / 12, -100, -1000));
 
+
+		// bug 70050
+		oParser = new parserFormula("NPER(0,-393977.5252,14351946.04,,1)", "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), nper(0,-393977.5252,14351946.04,0,1));
+
+		oParser = new parserFormula("NPER(0,393977.5252,14351946.04,,1)", "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), nper(0,393977.5252,14351946.04,0,1));
 
 		testArrayFormula2(assert, "NPER", 3, 5);
 	});
