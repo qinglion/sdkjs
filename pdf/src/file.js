@@ -578,6 +578,10 @@ void main() {\n\
         let _line  = -1;
         let _glyph = -1;
         let _minDist = Infinity;
+        let _minBlockId = -1;
+        let _curBlockId = -1;
+        let _minBlockDist = Infinity;
+        let _predY = Infinity;
 
         // textline parameters
         let _lineX  = 0;
@@ -637,19 +641,28 @@ void main() {\n\
                     return { Line : _numLine, Glyph : --_glyph, ...(bNeedLinePos ? { LinePos: _linePos } : {}) };
                 }
 
-                if (_distX >= 0 && _distX <= _lineWidth)
-                    tmp = Math.abs(y - _lineY);
-                else if (_distX < 0)
-                    tmp = Math.sqrt((x - _lineX) * (x - _lineX) + (y - _lineY) * (y - _lineY));
-                else
+                tmp = Infinity;
+                if (y > _lineY)
                 {
-                    let _xx1 = _lineX + _lineWidth;
-                    tmp = Math.sqrt((x - _xx1) * (x - _xx1) + (y - _lineY) * (y - _lineY));
+                    if (_distX >= 0 && _distX <= _lineWidth)
+                        tmp = y - _lineY;
+                    else if (_distX < 0)
+                        tmp = Math.sqrt((x - _lineX) * (x - _lineX) + (y - _lineY) * (y - _lineY));
+                    else if (_distX > _lineWidth)
+                    {
+                        let _xx1 = _lineX + _lineWidth;
+                        tmp = Math.sqrt((x - _xx1) * (x - _xx1) + (y - _lineY) * (y - _lineY));
+                    }
                 }
 
-                if (tmp < _minDist)
+                if (_lineY < _predY)
+                    _curBlockId++;
+
+                if (tmp < _minBlockDist || (_minBlockId == _curBlockId && y > _lineY && y - _lineY < _minDist))
                 {
-                    _minDist = tmp;
+                    _minDist = y - _lineY;
+                    _minBlockDist = tmp;
+                    _minBlockId = _curBlockId;
                     _line = _numLine;
                     _minLinePos = _linePos;
 
@@ -700,9 +713,9 @@ void main() {\n\
                     tmp = Math.sqrt((x - _tmpX) * (x - _tmpX) + (y - _tmpY) * (y - _tmpY));
                 }
 
-                if (tmp < _minDist)
+                if (tmp < _minBlockDist)
                 {
-                    _minDist = tmp;
+                    _minBlockDist = tmp;
                     _line = _numLine;
                     _minLinePos = _linePos;
 
@@ -721,6 +734,7 @@ void main() {\n\
                     }
                 }
             }
+            _predY = _lineY;
             _numLine++;
         }
         return { Line : _line, Glyph : _glyph, ...(bNeedLinePos ? { LinePos: _minLinePos } : {}) };
