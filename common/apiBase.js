@@ -3287,8 +3287,15 @@
 	{
 		if (null != this.pluginsManager)
 		{
-			this.pluginsManager.register(basePath, plugins);
+			let runnedArray = [];
+			this.pluginsManager.register(basePath, plugins, undefined, runnedArray);
 			this.checkInstalledPlugins();
+
+			for (let i = 0, len = runnedArray.length; i < len; i++)
+			{
+				if (!this.pluginsManager.isRunned(runnedArray[i]))
+					this.pluginsManager.run(runnedArray[i], 0, "");
+			}
 		}
 		else
 		{

@@ -206,7 +206,7 @@
 			return null;
 		},
 
-		register : function(basePath, plugins, isDelayRun)
+		register : function(basePath, plugins, isDelayRun, runDelayArray)
 		{
 			this.path = basePath;
 
@@ -252,7 +252,12 @@
 				if (isSystem)
 				{
 					if (!isDelayRun)
-						this.run(guid, 0, "");
+					{
+						if (undefined === runDelayArray)
+							this.run(guid, 0, "");
+						else
+							runDelayArray.push(guid);
+					}
 					else
 					{
 						setTimeout(function(){
@@ -271,7 +276,12 @@
 					if (!this.isRunned(guid))
 					{
 						if (!isDelayRun)
-							this.run(guid, 0, "");
+						{
+							if (undefined === runDelayArray)
+								this.run(guid, 0, "");
+							else
+								runDelayArray.push(guid);
+						}
 						else
 						{
 							setTimeout(function(){
@@ -327,6 +337,8 @@
 						{
 							if (this.plugins[j].guid === newPlugin.guid)
 							{
+								if (this.runnedPluginsMap[newPlugin.guid])
+									this.close(newPlugin.guid);
 								this.plugins.splice(j, 1);
 								break;
 							}
