@@ -713,11 +713,13 @@
 			let shape = pageContent.shapes[i];
 
 			// inherit styles
-			shape.realizeStyleInheritanceRecursively(this.styleSheets);
+			let stylesWithRealizedInheritance = new Set();
+			shape.realizeStyleInheritanceRecursively(this.styleSheets, stylesWithRealizedInheritance);
 			// inherit master and links to master styles
 			shape.realizeMasterInheritanceRecursively(masters);
 			// inherit master styles
-			shape.realizeStyleInheritanceRecursively(this.styleSheets);
+			// TODO performance: realize style inheritance only if style is inherited from master
+			shape.realizeStyleInheritanceRecursively(this.styleSheets, stylesWithRealizedInheritance);
 
 			if (shape.type === "Group") {
 				let cGroupShapeAndText = shape.toCGroupShapeRecursively(this, pageInfo, drawingPageScale);
