@@ -4981,13 +4981,6 @@
 		if (!(oContent instanceof MathTextAndStyles) && oContent.Content.length === 0)
 			return this.GetLastPos();
 
-		// check what's wrong
-		// for mathBase set rFont
-		if (!(oContent instanceof ParaRun)
-			&& !(oContent instanceof MathTextAndStyles)
-			&& !(oContent instanceof CMathContent))
-			oContent.Set_RFont_ForMath();
-
 		let nPosCopy = this.nPos;
 
 		if (oContent instanceof MathTextAndStyles)
