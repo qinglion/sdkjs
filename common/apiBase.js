@@ -289,9 +289,6 @@
 				t.sendEvent("asc_onError", Asc.c_oAscError.ID.LoadingScriptError, c_oAscError.Level.NoCritical);
 			});
 		}
-		AscCommon.loadPathBoolean(noop, function () {
-			t.sendEvent("asc_onError", Asc.c_oAscError.ID.LoadingScriptError, c_oAscError.Level.NoCritical)
-		})
 
 		var oldOnError = window.onerror;
 		window.onerror = function(errorMsg, url, lineNumber, column, errorObj) {
@@ -5338,6 +5335,24 @@
 		plugins.callMethod(plugins.internalGuid, name, params);
 	};
 
+
+	baseEditorsApi.prototype.asc_mergeSelectedShapes = function(operation) {
+		if(AscCommon['PathBoolean']) {
+			this.asc_mergeSelectedShapesAction(operation);
+			return;
+		}
+		let oThis = this;
+		AscCommon.loadPathBoolean(function () {
+			oThis.asc_mergeSelectedShapesAction(operation);
+		}, function () {
+			oThis.sendEvent("asc_onError", Asc.c_oAscError.ID.LoadingScriptError, c_oAscError.Level.NoCritical)
+		})
+	};
+
+	baseEditorsApi.prototype.asc_mergeSelectedShapesAction = function(operation) {
+
+	};
+
 	//----------------------------------------------------------export----------------------------------------------------
 	window['AscCommon']                = window['AscCommon'] || {};
 	window['AscCommon'].baseEditorsApi = baseEditorsApi;
@@ -5443,6 +5458,7 @@
 	prot["asc_removeCustomProperty"] = prot.asc_removeCustomProperty;
 	
 	prot["asc_setPdfViewer"] = prot.asc_setPdfViewer;
+	prot["asc_mergeSelectedShapes"] = prot.asc_mergeSelectedShapes;
 
 	prot["callCommand"] = prot.callCommand;
 	prot["callMethod"] = prot.callMethod;

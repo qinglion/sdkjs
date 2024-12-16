@@ -11387,7 +11387,7 @@
 	}
 
 	function loadPathBoolean(onSuccess, onError) {
-		loadScript('../../../../sdkjs/common/Drawings/Format/Path.Boolean.min.js', onSuccess, onError);
+		loadScript('../../../../sdkjs/common/Drawings/Format/path-boolean-min.js', onSuccess, onError);
 	}
 
 	function getAltGr(e)

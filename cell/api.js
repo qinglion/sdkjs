@@ -5280,7 +5280,7 @@ var editor;
     spreadsheet_api.prototype.asc_canMergeSelectedShapes = function (operation) {
       return AscFormat.canMergeSelectedShapes(operation);
     };
-    spreadsheet_api.prototype.asc_mergeSelectedShapes = function (operation) {
+    spreadsheet_api.prototype.asc_mergeSelectedShapesAction = function (operation) {
       const controller = this.wb.getWorksheet().objectRender.controller;
       if (controller.checkSelectedObjectsProtection())
         return;
@@ -9915,7 +9915,6 @@ var editor;
   prot["asc_canUnGroupGraphicsObjects"] = prot.asc_canUnGroupGraphicsObjects;
   prot["asc_unGroupGraphicsObjects"] = prot.asc_unGroupGraphicsObjects;
   prot["asc_canMergeSelectedShapes"] = prot.asc_canMergeSelectedShapes;
-  prot["asc_mergeSelectedShapes"] = prot.asc_mergeSelectedShapes;
   prot["asc_getGraphicObjectProps"] = prot.asc_getGraphicObjectProps;
   prot["asc_GetSelectedText"] = prot.asc_GetSelectedText;
   prot["asc_setGraphicObjectProps"] = prot.asc_setGraphicObjectProps;

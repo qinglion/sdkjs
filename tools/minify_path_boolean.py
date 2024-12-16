@@ -3,7 +3,7 @@ import os
 import sys
 
 def run_minification():
-    input_file = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', 'common', 'Drawings', 'Format', 'Path.Boolean.js'))
+    input_file = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', 'common', 'Drawings', 'Format', 'path-boolean.js'))
     if not os.path.isfile(input_file):
         print(f'Source file not found: {input_file}')
         sys.exit(1)
@@ -13,7 +13,7 @@ def run_minification():
         print(f'Closure Compiler file not found: {closure_compiler_path}')
         sys.exit(1)
 
-    output_file = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', 'common', 'Drawings', 'Format', 'Path.Boolean.min.js'))
+    output_file = os.path.normpath(os.path.join(os.path.dirname(__file__), '..', 'common', 'Drawings', 'Format', 'path-boolean-min.js'))
     command = [
         closure_compiler_path,
         '--language_out=ECMASCRIPT5',

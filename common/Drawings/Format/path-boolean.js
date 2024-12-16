@@ -1,8 +1,9 @@
 (function (window) {
 
 	function InitClassWithStatics(fClass, fBase) {
-		window['AscFormat']['InitClassWithoutType'](fClass, fBase);
-
+		fClass.prototype = Object.create(fBase.prototype);
+		fClass.prototype.superclass = fBase;
+		fClass.prototype.constructor = fClass;
 		Object.getOwnPropertyNames(fBase).forEach(function (prop) {
 			if (['prototype', 'name', 'length'].includes(prop) || Function.prototype.hasOwnProperty(prop)) { return; }
 			Object.defineProperty(fClass, prop, Object.getOwnPropertyDescriptor(fBase, prop));
@@ -536,6 +537,9 @@
 			return removed;
 		}
 	};
+	function isRealNumber(n) {
+		return typeof n === "number" && !isNaN(n) && isFinite(n);
+	}
 
 	const Point = function (arg0, arg1, owner) {
 		const type = typeof arg0;
@@ -553,7 +557,7 @@
 			readCount = 1;
 			if (Array.isArray(arg0)) {
 				this._set(+arg0[0], +(arg0.length > 1 ? arg0[1] : arg0[0]));
-			} else if (window['AscFormat']['isRealNumber'](arg0.x)) {
+			} else if (isRealNumber(arg0.x)) {
 				this._set(arg0.x || 0, arg0.y || 0);
 			} else {
 				this._set(0, 0);
