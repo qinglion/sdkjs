@@ -169,6 +169,7 @@
 		this.forceSaveForm = null;
 		this.disconnectRestrictions = null;//to restore restrictions after disconnect
 		this.forceSaveUndoRequest = false; // Флаг нужен, чтобы мы знали, что данное сохранение пришло по запросу Undo в совместке
+		this.saveRelativePrev = {};
 
 		// Version History
 		this.VersionHistory = null;				// Объект, который отвечает за точку в списке версий
@@ -1315,7 +1316,15 @@
 	 * @param callback {saveRelativeFromChangesCallback}
 	 */
 	baseEditorsApi.prototype.saveRelativeFromChanges = function(docId, token, timeout, callback) {
-		if (!this.CoAuthoringApi.callPRC({'type': 'saveRelativeFromChanges', 'docId': docId, 'token': token}, timeout, callback)) {
+		let t = this;
+		let time = this.saveRelativePrev[docId];
+		let callbackWrapper = function (timeout, data) {
+			if (data && data.time) {
+				t.saveRelativePrev[docId] = data.time;
+			}
+			callback(timeout, data);
+		}
+		if (!this.CoAuthoringApi.callPRC({'type': 'saveRelativeFromChanges', 'docId': docId, 'token': token, 'time': time}, timeout, callbackWrapper)) {
 			callback(true, undefined);
 		}
 	};
