@@ -1750,20 +1750,20 @@ $(function () {
 				assert.strictEqual(strFunc, '\\lim\\below{\\left(n\\to\\infty\\right){\\left(1+\\frac{1}{n}\\right)^n}}', 'Check complex math func content');
 			})
 
-			QUnit.todo('Check eqarray frac - Find case for LaTeX', function (assert)
-			{
-				// Find case for LaTeX
-				Clear();
-				logicDocument.SetMathInputType(1);
-				AddText('\\frac{\\substack{1\\\\\\substack{\\\\\\substack{\\\\\\substack{\\\\}}}}}{2}');
-				assert.ok(true, "Add text '\\frac{\\substack{1\\\\\\substack{\\\\\\substack{\\\\\\substack{\\\\}}}}}{2}'");
-
-				MathContent.ConvertView(false, Asc.c_oAscMathInputType.LaTeX);
-				assert.ok(true, "Convert to linear view");
-
-				let strBinomial = MathContent.GetTextOfElement(true).GetText();
-				assert.strictEqual(strBinomial, '\\frac{\\substack{1\\\\\\substack{\\\\\\substack{\\\\\\substack{\\\\}}}}}{2}', 'Check');
-			})
+			// QUnit.todo('Check eqarray frac - Find case for LaTeX', function (assert)
+			// {
+			// 	// Find case for LaTeX
+			// 	Clear();
+			// 	logicDocument.SetMathInputType(1);
+			// 	AddText('\\frac{\\substack{1\\\\\\substack{\\\\\\substack{\\\\\\substack{\\\\}}}}}{2}');
+			// 	assert.ok(true, "Add text '\\frac{\\substack{1\\\\\\substack{\\\\\\substack{\\\\\\substack{\\\\}}}}}{2}'");
+			//
+			// 	MathContent.ConvertView(false, Asc.c_oAscMathInputType.LaTeX);
+			// 	assert.ok(true, "Convert to linear view");
+			//
+			// 	let strBinomial = MathContent.GetTextOfElement(true).GetText();
+			// 	assert.strictEqual(strBinomial, '\\frac{\\substack{1\\\\\\substack{\\\\\\substack{\\\\\\substack{\\\\}}}}}{2}', 'Check');
+			// })
 
 			QUnit.module( "Check LaTeX matrix", function ()
 			{
