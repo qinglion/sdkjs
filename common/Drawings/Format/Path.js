@@ -568,6 +568,7 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
         }
         var APCI=this.ArrPathCommandInfo, n = APCI.length, cmd;
         var x0, y0, x1, y1, x2, y2, wR, hR, stAng, swAng, ellipseRotation, lastX, lastY;
+        let handledCommandsNumber = 0;
         for(var i=0; i<n; ++i)
         {
             cmd=APCI[i];
@@ -578,7 +579,8 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                 {
                     x0 = this.calculateCommandCoord(gdLst, cmd.X, cw, dCustomPathCoeffW);
                     y0 = this.calculateCommandCoord(gdLst, cmd.Y, ch, dCustomPathCoeffH);
-                    this.ArrPathCommand[i] ={id:cmd.id, X:x0, Y:y0};
+                    this.ArrPathCommand[handledCommandsNumber] ={id:cmd.id, X:x0, Y:y0};
+                    handledCommandsNumber++;
                     lastX = x0;
                     lastY = y0;
                     break;
@@ -589,7 +591,8 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                     y0 = this.calculateCommandCoord(gdLst, cmd.Y0, ch, dCustomPathCoeffH);
                     x1 = this.calculateCommandCoord(gdLst, cmd.X1, cw, dCustomPathCoeffW);
                     y1 = this.calculateCommandCoord(gdLst, cmd.Y1, ch, dCustomPathCoeffH);
-                    this.ArrPathCommand[i] = {id:bezier3, X0: x0, Y0: y0, X1: x1, Y1: y1};
+                    this.ArrPathCommand[handledCommandsNumber] = {id:bezier3, X0: x0, Y0: y0, X1: x1, Y1: y1};
+                    handledCommandsNumber++;
                     lastX = x1;
                     lastY = y1;
                     break;
@@ -602,7 +605,8 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                     y1 = this.calculateCommandCoord(gdLst, cmd.Y1, ch, dCustomPathCoeffH);
                     x2 = this.calculateCommandCoord(gdLst, cmd.X2, cw, dCustomPathCoeffW);
                     y2 = this.calculateCommandCoord(gdLst, cmd.Y2, ch, dCustomPathCoeffH);
-                    this.ArrPathCommand[i] = {id:bezier4, X0:x0, Y0: y0, X1:x1, Y1:y1, X2:x2, Y2:y2};
+                    this.ArrPathCommand[handledCommandsNumber] = {id:bezier4, X0:x0, Y0: y0, X1:x1, Y1:y1, X2:x2, Y2:y2};
+                    handledCommandsNumber++;
                     lastX = x2;
                     lastY = y2;
                     break;
@@ -654,13 +658,14 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                     var l1 = 1 / Math.sqrt(_xrad1 * _xrad1 + _yrad1 * _yrad1);
 
                     if (cmd.ellipseRotation === undefined ) {
-                        this.ArrPathCommand[i]={id: arcTo,
+                        this.ArrPathCommand[handledCommandsNumber]={id: arcTo,
                             stX: lastX,
                             stY: lastY,
                             wR: wR,
                             hR: hR,
                             stAng: stAng*cToRad,
                             swAng: swAng*cToRad};
+                        handledCommandsNumber++;
 
                         lastX = xc + l1 * cos1;
                         lastY = yc + l1 * sin1;
@@ -681,7 +686,7 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                         if((ellipseRotation < 0) && (a4 > 0)) ellipseRotation += 21600000;
                         if(ellipseRotation == 0 && a4 != 0) ellipseRotation = 21600000;
 
-                        this.ArrPathCommand[i]={id: arcTo,
+                        this.ArrPathCommand[handledCommandsNumber]={id: arcTo,
                             stX: lastX,
                             stY: lastY,
                             wR: wR,
@@ -689,6 +694,7 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                             stAng: stAng*cToRad,
                             swAng: swAng*cToRad,
                             ellipseRotation: ellipseRotation*cToRad};
+                        handledCommandsNumber++;
 
                         // https://www.figma.com/file/hs43oiAUyuoqFULVoJ5lyZ/EllipticArcConvert?type=design&node-id=291-34&mode=design&t=LKiEAjzKEzKacCBc-0
 
@@ -731,7 +737,8 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                 }
                 case close:
                 {
-                    this.ArrPathCommand[i]={id: close};
+                    this.ArrPathCommand[handledCommandsNumber]={id: close};
+                    handledCommandsNumber++;
                     break;
                 }
                 case ellipticalArcTo:
@@ -779,7 +786,7 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                     // } else {
 
                     // change ellipticalArcTo params to draw arc easy
-                    this.ArrPathCommand[i]={id: ellipticalArcTo,
+                    this.ArrPathCommand[handledCommandsNumber]={id: ellipticalArcTo,
                         stX: lastX,
                         stY: lastY,
                         wR: newParams.wR,
@@ -787,6 +794,7 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                         stAng: newParams.stAng*cToRad,
                         swAng: newParams.swAng*cToRad,
                         ellipseRotation: newParams.ellipseRotation*cToRad};
+                    handledCommandsNumber++;
 
                     // }
 
@@ -984,6 +992,12 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                         break;
                     }
 
+                    // round knots maybe start is clamped
+                    // let precision = 10e13;
+                    // for (let j = 0; j < knots.length; j++) {
+                    //     knots[j] = Math.round(knots[j] * precision) / precision;
+                    // }
+
                     let clampedStart = true;
                     for (let j = 0; j < degree; j++) {
                         // compare first degree + 1 knots
@@ -1001,7 +1015,8 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
 
                     // change nurbsTo params to draw using bezier
                     // nurbs degree is equal to each bezier degree
-                    this.ArrPathCommand[i]={id: nurbsTo, degree: degree, bezierArray: bezierArray};
+                    this.ArrPathCommand[handledCommandsNumber]={id: nurbsTo, degree: degree, bezierArray: bezierArray};
+                    handledCommandsNumber++;
 
                     lastX = bezierArray[bezierArray.length-1].endPoint.x;
                     lastY = bezierArray[bezierArray.length-1].endPoint.y;
