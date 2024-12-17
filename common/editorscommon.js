@@ -13853,7 +13853,12 @@
 		var textQualifier = options.asc_getTextQualifier();
 		var matrix = [];
 		//var rows = text.match(/[^\r\n]+/g);
-		var rows = text.split(/\r?\n/);
+		var rows;
+		if (delimiterChar === '\n') {
+			rows = [text];
+		} else {
+			rows = text.split(/\r?\n/);
+		}
 		for (var i = 0; i < rows.length; ++i) {
 			var row = rows[i];
 			if(" " === delimiterChar && bTrimSpaces) {
