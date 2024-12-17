@@ -70,6 +70,34 @@ AscCommon.TIMELINE_HEIGHT = TIMELINE_HEIGHT;
 AscCommon.TIMELINE_LIST_RIGHT_MARGIN = TIMELINE_LIST_RIGHT_MARGIN;
 AscCommon.TIMELINE_HEADER_RIGHT_MARGIN = TIMELINE_HEADER_RIGHT_MARGIN;
 
+function Splitter(type, position, min, max) {
+	this.type = type; // 'horizontal' or 'vertical'
+	this.min = min;
+	this.max = max;
+	this.position = position;
+	this.oldPosition = position;
+	this.parts = Array(2);
+}
+Splitter.prototype.setPosition = function (position) {
+	this.position = position;
+};
+Splitter.prototype.setLimits = function (min, max) {
+	this.min = min;
+	this.max = max;
+};
+Splitter.prototype.updatePosition = function (newPosition) {
+	this.oldPosition = this.position;
+	this.position = Math.max(this.min, Math.min(newPosition, this.max));
+
+	// this.parts.forEach(function (part) {
+	// 	part.updateLayout();
+	// });
+};
+Splitter.prototype.bindParts = function (partA, partB) {
+	this.parts[0] = partA;
+	this.parts[1] = partB;
+};
+
 function CEditorPage(api)
 {
 	// ------------------------------------------------------------------
