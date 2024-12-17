@@ -169,6 +169,12 @@
 
 			function Write(content)
 			{
+				if (content.name === "" && content.textContent === "" && content.content.length === 0)
+				{
+					writer.WriteXmlString("\x00");
+					return;
+				}
+
 				let current = null;
 
 				if (!content.name)
