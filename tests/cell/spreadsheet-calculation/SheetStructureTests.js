@@ -5574,5 +5574,55 @@ $(function () {
 
 	});
 
-	QUnit.module("Sheet structure");
+	QUnit.test('All selection test', function (assert) {
+
+		ws.getRange2("A1:Z100").cleanAll();
+
+		ws.getRange2("A1").setValue("1");
+		ws.getRange2("A2").setValue("2");
+		ws.getRange2("B1").setValue("3");
+		ws.getRange2("B2").setValue("4");
+		ws.getRange2("C2").setValue("5");
+
+		let fillRange = new Asc.Range(0, 0, 0, 0);
+		wsView.setSelection(fillRange);
+		assert.strictEqual(ws.selectionRange.getLast().getName(), "A1");
+
+		api.wb._onSelectAllByRange();
+		assert.strictEqual(ws.selectionRange.getLast().getName(), "A1:C2");
+		api.wb._onSelectAllByRange();
+		assert.strictEqual(ws.selectionRange.getLast().getType(), Asc.c_oAscSelectionType.RangeMax);
+
+		fillRange = new Asc.Range(10, 10, 10, 10);
+		wsView.setSelection(fillRange);
+		api.wb._onSelectAllByRange();
+		assert.strictEqual(ws.selectionRange.getLast().getType(), Asc.c_oAscSelectionType.RangeMax);
+
+
+		let tableOptions = new AscCommonExcel.AddFormatTableOptions();
+		fillRange = new Asc.Range(0, 0, 2, 1);
+		tableOptions.range = fillRange.getName();
+		ws.autoFilters.addAutoFilter("style", fillRange, tableOptions);
+		assert.strictEqual(ws.TableParts.length, 1);
+		assert.strictEqual(ws.TableParts[0].Ref.getName(), "A1:C3");
+
+
+		fillRange = new Asc.Range(1, 1, 1, 1);
+		wsView.setSelection(fillRange);
+		api.wb._onSelectAllByRange();
+		assert.strictEqual(ws.selectionRange.getLast().getName(), "A2:C3");
+		api.wb._onSelectAllByRange();
+		assert.strictEqual(ws.selectionRange.getLast().getName(), "A1:C3");
+		api.wb._onSelectAllByRange();
+		assert.strictEqual(ws.selectionRange.getLast().getType(), Asc.c_oAscSelectionType.RangeMax);
+
+		fillRange = new Asc.Range(0, 0, 0, 0);
+		wsView.setSelection(fillRange);
+		api.wb._onSelectAllByRange();
+		assert.strictEqual(ws.selectionRange.getLast().getName(), "A1:C3");
+		api.wb._onSelectAllByRange();
+		assert.strictEqual(ws.selectionRange.getLast().getType(), Asc.c_oAscSelectionType.RangeMax);
+	});
+
+		QUnit.module("Sheet structure");
 });

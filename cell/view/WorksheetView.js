@@ -9871,6 +9871,55 @@
         }
     };
 
+	WorksheetView.prototype._selectAllByRange = function () {
+		var ar = this.model.selectionRange.getLast();
+		var type = ar.getType();
+		if (this.isMultiSelect() || c_oAscSelectionType.RangeCol === type || c_oAscSelectionType.RangeRow === type) {
+			this._selectColumnsByRange();
+			this._selectRowsByRange();
+		} else if (c_oAscSelectionType.RangeMax !== type) {
+			this.cleanSelection();
+			if (c_oAscSelectionType.RangeCol === type || c_oAscSelectionType.RangeRow === type) {
+				ar.assign(0, 0, gc_nMaxCol0, gc_nMaxRow0);
+			} else {
+				let ar = this.model.selectionRange.getLast();
+				let newRange;
+				let tableParts = this.model.TableParts;
+				if (tableParts && tableParts.length) {
+					for (let i = 0; i < tableParts.length; i++) {
+						if (tableParts[i].Ref.containsRange(ar)) {
+							//into body table
+							let _dataRange = tableParts[i].getTableRangeForFormula({param: AscCommon.FormulaTablePartInfo.data});
+							if (_dataRange && _dataRange.containsRange(ar) && !_dataRange.isEqual(ar)) {
+								newRange = _dataRange;
+							} else if (!tableParts[i].Ref.isEqual(ar)) {
+								newRange = tableParts[i].Ref;
+							} else {
+								newRange = ar;
+							}
+							break;
+						}
+					}
+				}
+
+				if (!newRange) {
+					newRange = this.model.autoFilters.expandRange(ar, true);
+				}
+
+				if (newRange) {
+					if (newRange.isEqual(ar)) {
+						ar.assign(0, 0, gc_nMaxCol0, gc_nMaxRow0);
+					} else {
+						ar.assign(newRange.c1, newRange.r1, newRange.c2, newRange.r2);
+					}
+				}
+			}
+
+			this._drawSelection();
+			this._updateSelectionNameAndInfo();
+		}
+	};
+
     /**
      * Возвращает true, если диапазон больше видимой области, и операции над ним могут привести к задержкам
      * @param {Asc.Range} range  Диапазон для проверки
