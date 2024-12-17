@@ -100,6 +100,10 @@
         }
         else {
             let oStructure = this.GetRenderStructure();
+            if (!oStructure) {
+                return;
+            }
+
             let nScale = this.GetOriginViewScale();
             let oTr = new AscCommon.CMatrix();
             oTr.Scale(nScale, nScale);
@@ -129,7 +133,7 @@
         else {
             let oDoc = this.GetDocument();
             let oTextDrawer = oDoc.CreateStampRender(this.GetIconType());
-            this.SetRenderStructure(oTextDrawer.m_aStack[0]);
+            this.SetRenderStructure(oTextDrawer && oTextDrawer.m_aStack[0]);
             return this.renderStructure;
         }
     };
@@ -144,6 +148,10 @@
 
         let nShapeW = getDistance(aInRect[0], aInRect[1], aInRect[6], aInRect[7]);
         let nShapeH = getDistance(aInRect[0], aInRect[1], aInRect[2], aInRect[3]);
+
+        if (nShapeH == 0 || nShapeW == 0) {
+            return;
+        }
 
         this.spPr.xfrm.setExtX(nShapeW * g_dKoef_pt_to_mm);
         this.spPr.xfrm.setExtY(nShapeH * g_dKoef_pt_to_mm);
@@ -432,10 +440,10 @@
         memory.WriteLong(nEndPos - nStartPos);
         memory.Seek(nEndPos);
     };
-    CAnnotationStamp.prototype.SetDrawFromStream = function(bFromStream) {
+    CAnnotationStamp.prototype.SetDrawFromStream = function() {
         let oViewer = editor.getDocumentRenderer();
         if (oViewer.IsOpenAnnotsInProgress) {
-            this._bDrawFromStream = bFromStream;
+            this._bDrawFromStream = true;
         }
     };
     CAnnotationStamp.prototype.WriteRenderToBinary = function(memory) {

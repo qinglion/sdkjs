@@ -4442,6 +4442,10 @@ var CPresentation = CPresentation || function(){};
         this.History.StartNoHistoryMode();
 
         let oJsonReader = new AscJsonConverter.ReaderFromJSON();
+        if (!AscPDF.STAMPS_JSON[sType]) {
+            return null;
+        }
+
         oShape = oJsonReader.ShapeFromJSON(AscPDF.STAMPS_JSON[sType]);
 
         let oContent = oShape.getDocContent();
