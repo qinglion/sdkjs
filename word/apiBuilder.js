@@ -5623,7 +5623,7 @@
 	ApiDocumentContent.prototype.GetAllDrawingObjects = function()
 	{
 		let arrAllDrawing = this.Document.GetAllDrawingObjects();
-		return private_GetApiDrawings(arrAllDrawing.map(function(drawing) {
+		return AscBuilder.GetApiDrawings(arrAllDrawing.map(function(drawing) {
 			return drawing.GraphicObj;
 		}));
 	};
@@ -8868,7 +8868,7 @@
 	ApiParagraph.prototype.GetAllDrawingObjects = function()
 	{
 		let arrAllDrawing = this.Paragraph.GetAllDrawingObjects();
-		return private_GetApiDrawings(arrAllDrawing.map(function(drawing) {
+		return AscBuilder.GetApiDrawings(arrAllDrawing.map(function(drawing) {
 			return drawing.GraphicObj;
 		}));
 	};
@@ -18775,7 +18775,7 @@
 	ApiBlockLvlSdt.prototype.GetAllDrawingObjects = function()
 	{
 		let arrAllDrawing = this.Sdt.GetAllDrawingObjects();
-		return private_GetApiDrawings(arrAllDrawing.map(function(drawing) {
+		return AscBuilder.GetApiDrawings(arrAllDrawing.map(function(drawing) {
 			return drawing.GraphicObj;
 		}));
 	};
@@ -22899,6 +22899,9 @@
 	window['AscBuilder'].GetNumberParameter     = GetNumberParameter;
 	window['AscBuilder'].GetArrayParameter      = GetArrayParameter;
 	window['AscBuilder'].executeNoFormLockCheck = executeNoFormLockCheck;
+
+	window['AscBuilder'].GetApiDrawings         = GetApiDrawings;
+	window['AscBuilder'].GetApiDrawing          = GetApiDrawing;
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Private area
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -23083,7 +23086,7 @@
 		return new ApiInlineLvlSdt(oSdt);
 	}
 
-	function private_GetApiDrawing(drawing) {
+	function GetApiDrawing(drawing) {
         switch (drawing.getObjectType()) {
             case AscDFH.historyitem_type_Shape:
                 return new ApiShape(drawing);
@@ -23101,9 +23104,9 @@
         return null;
     }
 
-	function private_GetApiDrawings(drawingObjects) {
+	function GetApiDrawings(drawingObjects) {
 		return drawingObjects.map(function(drawing) {
-			return private_GetApiDrawing(drawing);
+			return GetApiDrawing(drawing);
 		}).filter(function(apiDrawing) {
 			return !!apiDrawing;
 		});
