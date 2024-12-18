@@ -11320,6 +11320,11 @@
 			const selectedArray = graphicController.getSelectedArray();
 			if (selectedArray.length < 2) return false;
 
+			const hasShape = selectedArray.some(function (item) {
+				return item instanceof AscFormat.CShape;
+			});
+			if (!hasShape) return false;
+
 			const hasLocked = selectedArray.some(function(item) {
 				return item.Lock &&
 					item.Lock.Type !== AscCommon.c_oAscLockTypes.kLockTypeNone &&
