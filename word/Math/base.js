@@ -2865,13 +2865,6 @@ CMathBase.prototype.GetTextOfElement = function(oMathText)
 	oMathText = new AscMath.MathTextAndStyles(oMathText);
 	return oMathText;
 };
-CMathBase.prototype.Set_RFont_ForMath = function()
-{
-	this.SetRFontsAscii({Name : "Cambria Math", Index : -1});
-	this.SetRFontsCS({Name : "Cambria Math", Index : -1});
-	this.SetRFontsEastAsia({Name : "Cambria Math", Index : -1});
-	this.SetRFontsHAnsi({Name : "Cambria Math", Index : -1});
-};
 CMathBase.prototype.CheckRunContent = function (fCheck, oStartPos, oEndPos, nDepth, oCurrentPos, isForward)
 {
 	if (undefined === isForward)
