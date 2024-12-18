@@ -314,6 +314,19 @@
 
 		this.WordControl.GoToPage(this.Document.getCurrentPage());
 	};
+	VisioEditorApi.prototype._coAuthoringInitEnd = function()
+	{
+		//todo other events
+		var t                                        = this;
+		this.CoAuthoringApi.onConnectionStateChanged = function(e)
+		{
+			// if (true === AscCommon.CollaborativeEditing.Is_Fast() && false === e['state'])
+			// {
+			// 	editor.WordControl.m_oLogicDocument.Remove_ForeignCursor(e['id']);
+			// }
+			t.sendEvent("asc_onConnectionStateChanged", e);
+		};
+	};
 
 	VisioEditorApi.prototype.OpenDocumentFromZip = function(data)
 	{
