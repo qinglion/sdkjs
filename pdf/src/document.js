@@ -3203,8 +3203,12 @@ var CPresentation = CPresentation || function(){};
             isVisible = true;
         }
         
-        if (isVisible == true && bForceMove != true)
+        this.SetMouseDownObject(oAnnot);
+        if (isVisible == true && bForceMove != true) {
+            this.Viewer.onUpdateOverlay();
+            this.UpdateInterfaceTracks();
             return;
+        }
         
         // выставляем смещения
         let yOffset;
@@ -4416,6 +4420,8 @@ var CPresentation = CPresentation || function(){};
         if (nOriginIndex == undefined) {
             return;
         }
+
+        this.BlurActiveObject();
 
         this.StartAction(AscDFH.historydescription_Pdf_EditPage);
         if (this.IsSelectionLocked(AscDFH.historydescription_Pdf_EditPage, [nPage])) {
