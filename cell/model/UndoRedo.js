@@ -3652,10 +3652,7 @@ function (window, undefined) {
 				ws.setShowFormulas(bUndo ? Data.from : Data.to);
 			}
 		} else if (AscCH.historyitem_Worksheet_SetTopLeftCell === Type) {
-			//накатываем только при открытии
-			if (!bUndo && this.wb.bCollaborativeChanges) {
-				ws.setTopLeftCell(Data.to ? new Asc.Range(Data.to.c1, Data.to.r1, Data.to.c2, Data.to.r2) : null);
-			}
+			ws.setTopLeftCell(Data.to ? new Asc.Range(Data.to.c1, Data.to.r1, Data.to.c2, Data.to.r2) : null);
 		} else if (AscCH.historyitem_Worksheet_AddProtectedRange === Type) {
 			if (bUndo) {
 				ws.deleteProtectedRange(Data.id);
@@ -3767,6 +3764,11 @@ function (window, undefined) {
 				ws.timelines.push(Data.from);
 			} else {
 				wb.onTimelinesDelete(Data.from.name);
+			}
+		} else if (AscCH.historyitem_Worksheet_SetRightToLeft === Type) {
+			//накатываем только при открытии
+			if (!bUndo && this.wb.bCollaborativeChanges) {
+				ws.setRightToLeft(bUndo ? Data.from : Data.to);
 			}
 		}
 	};

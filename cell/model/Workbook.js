@@ -2968,6 +2968,8 @@
 		this.TimelineStyles = null;
 
 		this.metadata = null;
+		//true - rightToLeft, false/null - leftToRight
+		this.defaultDirection = null;
 	}
 	Workbook.prototype.init=function(tableCustomFunc, tableIds, sheetIds, bNoBuildDep, bSnapshot){
 		if(this.nActive < 0)
@@ -5614,6 +5616,15 @@
 		this.oGoalSeek && this.oGoalSeek.step();
 	};
 
+	Workbook.prototype.setDefaultDirection = function(val) {
+		this.defaultDirection = val;
+	};
+	Workbook.prototype.getDefaultDirection = function() {
+		return this.defaultDirection;
+	};
+
+
+
 
 
 //-------------------------------------------------------------------------------------------------
@@ -6961,12 +6972,14 @@
 			}
 		}
 	};
-	Worksheet.prototype.setRightToLeft = function (value) {
+	Worksheet.prototype.setRightToLeft = function (value, addToHistory) {
 		var view = this.sheetViews[0];
 		if (value !== view.rightToLeft) {
-			/*AscCommon.History.Create_NewPoint();
-			AscCommon.History.Add(AscCommonExcel.g_oUndoRedoWorksheet, AscCH.historyitem_Worksheet_SetShowFormulas,
-				this.getId(), new Asc.Range(0, 0, gc_nMaxCol0, gc_nMaxRow0), new UndoRedoData_FromTo(view.showFormulas, value));*/
+			if (addToHistory) {
+				AscCommon.History.Create_NewPoint();
+				AscCommon.History.Add(AscCommonExcel.g_oUndoRedoWorksheet, AscCH.historyitem_Worksheet_SetRightToLeft,
+					this.getId(), new Asc.Range(0, 0, gc_nMaxCol0, gc_nMaxRow0), new UndoRedoData_FromTo(view.rightToLeft, value));
+			}
 			view.rightToLeft = value;
 
 			this.workbook.handlers.trigger("changeSheetViewSettings", this.getId(), AscCH.historyitem_Worksheet_SetRightToLeft);
