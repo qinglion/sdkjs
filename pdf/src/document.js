@@ -4417,6 +4417,8 @@ var CPresentation = CPresentation || function(){};
             return;
         }
 
+        this.BlurActiveObject();
+
         this.StartAction(AscDFH.historydescription_Pdf_EditPage);
         if (this.IsSelectionLocked(AscDFH.historydescription_Pdf_EditPage, [nPage])) {
             this.FinalizeAction(true);
