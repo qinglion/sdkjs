@@ -442,6 +442,7 @@
 	prot['TracePrecedentsNoValidReference']  = prot.TracePrecedentsNoValidReference;
 	prot['MustIntegerOrDecimalNumber']       = prot.MustIntegerOrDecimalNumber;
 	prot['DocumentAndChangeMismatch']        = prot.DocumentAndChangeMismatch;
+	prot['PDFFormsLocked']                   = prot.PDFFormsLocked;
 
 
 
