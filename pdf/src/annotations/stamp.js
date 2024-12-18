@@ -146,6 +146,10 @@
             return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
         }
 
+        if (!aInRect) {
+            return;
+        }
+        
         let nShapeW = getDistance(aInRect[0], aInRect[1], aInRect[6], aInRect[7]);
         let nShapeH = getDistance(aInRect[0], aInRect[1], aInRect[2], aInRect[3]);
 
