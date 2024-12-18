@@ -11368,7 +11368,7 @@
 					return convertFormatPathToCompoundPath(path, shape.transform);
 				});
 				const unitedCompoundPath = compoundPaths.reduce(function (resultPath, currentPath) {
-					return resultPath.unite(currentPath);
+					return resultPath['unite'](currentPath);
 				})
 				return unitedCompoundPath;
 			});
