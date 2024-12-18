@@ -60,28 +60,30 @@
 	const MIN_MEDIA_CONTROL_CONTROL_INSET = 20;
 	const MEDIA_CONTROL_TOP_MARGIN = 10;
 
-	function Splitter(type, position, min, max) {
-		this.type = type; // 'horizontal' or 'vertical'
-		this.min = min;
-		this.max = max;
+	function Splitter(isHorizontal, position, minPosition, maxPosition) {
+		this.isHorizontal = isHorizontal;
 		this.position = position;
-		this.oldPosition = position;
+		this.minPosition = minPosition;
+		this.maxPosition = maxPosition;
+
+		this.savedPosition = position;
 		this.parts = Array(2);
 	}
-	Splitter.prototype.setPosition = function (position) {
-		this.position = position;
-	};
-	Splitter.prototype.setLimits = function (min, max) {
-		this.min = min;
-		this.max = max;
-	};
-	Splitter.prototype.updatePosition = function (newPosition) {
-		this.oldPosition = this.position;
-		this.position = Math.max(this.min, Math.min(newPosition, this.max));
+	Splitter.prototype.setPosition = function (position, considerLimits, preserveSavedPosition) {
+		const newPosition = considerLimits
+			? Math.min(Math.max(position, this.minPosition), this.maxPosition)
+			: position;
 
-		// this.parts.forEach(function (part) {
-		// 	part.updateLayout();
-		// });
+		this.position = newPosition;
+		if (!preserveSavedPosition)
+			this.savedPosition = newPosition;
+	};
+	Splitter.prototype.restorePosition = function () {
+		this.position = this.savedPosition;
+	};
+	Splitter.prototype.setLimits = function (minPosition, maxPosition) {
+		this.minPosition = minPosition;
+		this.maxPosition = maxPosition;
 	};
 	Splitter.prototype.bindParts = function (partA, partB) {
 		this.parts[0] = partA;
@@ -251,26 +253,10 @@
 		this.Thumbnails = new CThumbnailsManager();
 
 		// сплиттеры (для табнейлов и для заметок)
-		this.Splitter1Pos = 0;
-		this.Splitter1PosSetUp = 0;
-		this.Splitter1PosMin = 0;
-		this.Splitter1PosMax = 0;
-
-		this.Splitter2Pos = 0;
-		this.Splitter2PosMin = 0;
-		this.Splitter2PosMax = 0;
-
-		this.Splitter3Pos = 0;
-		this.Splitter3PosMin = 0;
-		this.Splitter3PosMax = 0;
+		this.splitters;
 
 		this.SplitterDiv = null;
 		this.SplitterType = 0;
-
-		this.OldSplitter1Pos = 0;
-		this.OldSplitter2Pos = 0;
-		this.OldSplitter3Pos = 0;
-
 		this.IsUseNullThumbnailsSplitter = false;
 
 		// axis Y
@@ -326,30 +312,15 @@
 		this.m_oBody = CreateControlContainer(this.Name);
 		this.m_oBody.HtmlElement.style.touchAction = "none";
 
-		this.Splitter1PosMin = 20;
-		this.Splitter1PosMax = 80;
-		this.Splitter2PosMin = 10;
-		this.Splitter2PosMax = 100;
-		this.Splitter3PosMin = 40;
-		this.Splitter3PosMax = 100 - HIDDEN_PANE_HEIGHT;
+		this.splitters = [
+			new Splitter(false, 67.5, 20, 80),
+			this.m_oApi.isReporterMode
+				? new Splitter(true, Math.min(Math.max(window.innerHeight * 0.5 * AscCommon.g_dKoef_pix_to_mm, 10), 200), 10, 200)
+				: new Splitter(true, this.IsNotesSupported() && !this.m_oApi.isEmbedVersion ? 10 : 0, 10, 100),
+			new Splitter(true, 0, 40, 100 - HIDDEN_PANE_HEIGHT),
+		];
 
-		this.Splitter1Pos = 67.5;
-		this.Splitter1PosSetUp = this.Splitter1Pos;
-		this.Splitter2Pos = (this.IsNotesSupported() && !this.m_oApi.isEmbedVersion) ? this.Splitter2PosMin : 0;
-		this.Splitter3Pos = 0;
-
-		this.OldSplitter1Pos = this.Splitter1Pos;
-		this.OldSplitter2Pos = this.Splitter2Pos;
-		this.OldSplitter3Pos = this.Splitter3Pos;
-
-		if (this.m_oApi.isReporterMode) {
-			this.Splitter2Pos = window.innerHeight * 0.5 * AscCommon.g_dKoef_pix_to_mm;
-			this.Splitter2PosMax = 200;
-			if (this.Splitter2Pos > this.Splitter2PosMax)
-				this.Splitter2Pos = this.Splitter2PosMax;
-			if (this.Splitter2Pos < this.Splitter2PosMin)
-				this.Splitter2Pos = this.Splitter2PosMin;
-		}
+		this.Splitter1PosSetUp = this.splitters[0].position;
 
 		var ScrollWidthMm = this.ScrollWidthPx * g_dKoef_pix_to_mm;
 		var ScrollWidthMm9 = 10 * g_dKoef_pix_to_mm;
@@ -358,12 +329,12 @@
 
 		// thumbnails -----
 		this.m_oThumbnailsContainer = CreateControlContainer("id_panel_thumbnails");
-		this.m_oThumbnailsContainer.Bounds.SetParams(0, 0, this.Splitter1Pos, 1000, false, false, true, false, this.Splitter1Pos, -1);
+		this.m_oThumbnailsContainer.Bounds.SetParams(0, 0, this.splitters[0].position, 1000, false, false, true, false, this.splitters[0].position, -1);
 		this.m_oThumbnailsContainer.Anchor = (g_anchor_left | g_anchor_top | g_anchor_bottom);
 		this.m_oBody.AddControl(this.m_oThumbnailsContainer);
 
 		this.m_oThumbnailsSplit = CreateControlContainer("id_panel_thumbnails_split");
-		this.m_oThumbnailsSplit.Bounds.SetParams(this.Splitter1Pos, 0, 1000, 1000, true, false, false, false, GlobalSkin.SplitterWidthMM, -1);
+		this.m_oThumbnailsSplit.Bounds.SetParams(this.splitters[0].position, 0, 1000, 1000, true, false, false, false, GlobalSkin.SplitterWidthMM, -1);
 		this.m_oThumbnailsSplit.Anchor = (g_anchor_left | g_anchor_top | g_anchor_bottom);
 		this.m_oBody.AddControl(this.m_oThumbnailsSplit);
 
@@ -389,11 +360,11 @@
 
 		// main content -------------------------------------------------------------
 		this.m_oMainParent = CreateControlContainer("id_main_parent");
-		this.m_oMainParent.Bounds.SetParams(this.Splitter1Pos + GlobalSkin.SplitterWidthMM, 0, g_dKoef_pix_to_mm, 1000, true, false, true, false, -1, -1);
+		this.m_oMainParent.Bounds.SetParams(this.splitters[0].position + GlobalSkin.SplitterWidthMM, 0, g_dKoef_pix_to_mm, 1000, true, false, true, false, -1, -1);
 		this.m_oBody.AddControl(this.m_oMainParent);
 
 		this.m_oMainContent = CreateControlContainer("id_main");
-		this.m_oMainContent.Bounds.SetParams(0, 0, g_dKoef_pix_to_mm, this.Splitter2Pos + GlobalSkin.SplitterWidthMM, true, false, true, true, -1, -1);
+		this.m_oMainContent.Bounds.SetParams(0, 0, g_dKoef_pix_to_mm, this.splitters[1].position + GlobalSkin.SplitterWidthMM, true, false, true, true, -1, -1);
 
 		this.m_oMainContent.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right | g_anchor_bottom);
 		this.m_oMainParent.AddControl(this.m_oMainContent);
@@ -476,7 +447,7 @@
 		// -------------
 
 		this.m_oBottomPanesContainer = CreateControlContainer("id_bottom_pannels_container");
-		this.m_oBottomPanesContainer.Bounds.SetParams(0, 0, 0, 1000, true, true, true, false, -1, this.Splitter2Pos);
+		this.m_oBottomPanesContainer.Bounds.SetParams(0, 0, 0, 1000, true, true, true, false, -1, this.splitters[1].position);
 		this.m_oBottomPanesContainer.Anchor = (g_anchor_left | g_anchor_right | g_anchor_bottom);
 		this.m_oMainParent.AddControl(this.m_oBottomPanesContainer);
 		// notes ----
@@ -982,46 +953,46 @@
 		return false;
 	};
 
-	// Splitter
+	// Splitter elements
 	CEditorPage.prototype.createSplitterElement = function () {
-		var Splitter = document.createElement("div");
-		Splitter.id = "splitter_id";
-		Splitter.style.position = "absolute";
+		var splitterElement = document.createElement("div");
+		splitterElement.id = "splitter_id";
+		splitterElement.style.position = "absolute";
 		// skin
-		//Splitter.style.backgroundColor = "#000000";
-		//Splitter.style.backgroundImage = "url(Images/splitter.png)";
-		Splitter.style.backgroundImage = "url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwgAADsIBFShKgAAAABh0RVh0U29mdHdhcmUAUGFpbnQuTkVUIHYzLjMxN4N3hgAAAB9JREFUGFdj+P//PwsDAwOQ+m8PooEYwQELwmRwqgAAbXwhnmjs9sgAAAAASUVORK5CYII=)";
-		Splitter.style.overflow = 'hidden';
-		Splitter.style.zIndex = 1000;
-		Splitter.setAttribute("contentEditable", false);
-		return Splitter;
+		//splitterElement.style.backgroundColor = "#000000";
+		//splitterElement.style.backgroundImage = "url(Images/splitter.png)";
+		splitterElement.style.backgroundImage = "url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwgAADsIBFShKgAAAABh0RVh0U29mdHdhcmUAUGFpbnQuTkVUIHYzLjMxN4N3hgAAAB9JREFUGFdj+P//PwsDAwOQ+m8PooEYwQELwmRwqgAAbXwhnmjs9sgAAAAASUVORK5CYII=)";
+		splitterElement.style.overflow = 'hidden';
+		splitterElement.style.zIndex = 1000;
+		splitterElement.setAttribute("contentEditable", false);
+		return splitterElement;
 	};
-	CEditorPage.prototype.setVerticalSplitter = function (Splitter, dXPos) {
-		Splitter.style.left = parseInt(dXPos * g_dKoef_mm_to_pix) + "px";
-		Splitter.style.top = "0px";
-		Splitter.style.width = parseInt(GlobalSkin.SplitterWidthMM * g_dKoef_mm_to_pix) + "px";
-		Splitter.style.height = this.Height + "px";
-		Splitter.style.backgroundRepeat = "repeat-y";
+	CEditorPage.prototype.setVerticalSplitter = function (splitterElement, dXPos) {
+		splitterElement.style.left = parseInt(dXPos * g_dKoef_mm_to_pix) + "px";
+		splitterElement.style.top = "0px";
+		splitterElement.style.width = parseInt(GlobalSkin.SplitterWidthMM * g_dKoef_mm_to_pix) + "px";
+		splitterElement.style.height = this.Height + "px";
+		splitterElement.style.backgroundRepeat = "repeat-y";
 	};
-	CEditorPage.prototype.setHorizontalSplitter = function (Splitter, dYPos) {
-		Splitter.style.left = parseInt((this.Splitter1Pos + GlobalSkin.SplitterWidthMM) * g_dKoef_mm_to_pix) + "px";
-		Splitter.style.top = (this.Height - parseInt((dYPos + GlobalSkin.SplitterWidthMM) * g_dKoef_mm_to_pix) + 1) + "px";
-		Splitter.style.width = this.Width - parseInt((this.Splitter1Pos + GlobalSkin.SplitterWidthMM) * g_dKoef_mm_to_pix) + "px";
-		Splitter.style.height = parseInt(GlobalSkin.SplitterWidthMM * g_dKoef_mm_to_pix) + "px";
-		Splitter.style.backgroundRepeat = "repeat-x";
+	CEditorPage.prototype.setHorizontalSplitter = function (splitterElement, dYPos) {
+		splitterElement.style.left = parseInt((this.splitters[0].position + GlobalSkin.SplitterWidthMM) * g_dKoef_mm_to_pix) + "px";
+		splitterElement.style.top = (this.Height - parseInt((dYPos + GlobalSkin.SplitterWidthMM) * g_dKoef_mm_to_pix) + 1) + "px";
+		splitterElement.style.width = this.Width - parseInt((this.splitters[0].position + GlobalSkin.SplitterWidthMM) * g_dKoef_mm_to_pix) + "px";
+		splitterElement.style.height = parseInt(GlobalSkin.SplitterWidthMM * g_dKoef_mm_to_pix) + "px";
+		splitterElement.style.backgroundRepeat = "repeat-x";
 	};
 	CEditorPage.prototype.createSplitterDiv = function (nIdx) {
-		var Splitter = this.createSplitterElement();
-		this.SplitterDiv = Splitter;
+		var splitterElement = this.createSplitterElement();
+		this.SplitterDiv = splitterElement;
 		this.SplitterType = nIdx;
 		if (nIdx === 1) {
-			this.setVerticalSplitter(Splitter, this.Splitter1Pos);
+			this.setVerticalSplitter(splitterElement, this.splitters[0].position);
 		}
 		else if (nIdx === 2) {
-			this.setHorizontalSplitter(Splitter, this.Splitter2Pos);
+			this.setHorizontalSplitter(splitterElement, this.splitters[1].position);
 		}
 		else if (nIdx === 3) {
-			this.setHorizontalSplitter(Splitter, this.Splitter3Pos);
+			this.setHorizontalSplitter(splitterElement, this.splitters[2].position);
 		}
 		this.m_oBody.HtmlElement.appendChild(this.SplitterDiv);
 	};
@@ -1029,27 +1000,27 @@
 		let nResult = 0;
 		let oWordControl = oThis;
 
-		let x1 = oWordControl.Splitter1Pos * g_dKoef_mm_to_pix;
-		let x2 = (oWordControl.Splitter1Pos + GlobalSkin.SplitterWidthMM) * g_dKoef_mm_to_pix;
+		let x1 = oWordControl.splitters[0].position * g_dKoef_mm_to_pix;
+		let x2 = (oWordControl.splitters[0].position + GlobalSkin.SplitterWidthMM) * g_dKoef_mm_to_pix;
 
 		let _x = global_mouseEvent.X - oWordControl.X;
 		let _y = global_mouseEvent.Y - oWordControl.Y;
 
-		if (_x >= x1 && _x <= x2 && _y >= 0 && _y <= oWordControl.Height && (oThis.IsUseNullThumbnailsSplitter || (oThis.Splitter1Pos != 0))) {
+		if (_x >= x1 && _x <= x2 && _y >= 0 && _y <= oWordControl.Height && (oThis.IsUseNullThumbnailsSplitter || (oThis.splitters[0].position != 0))) {
 			nResult = 1;
 		}
 		else if (_x >= x2 && _x <= oWordControl.Width) {
 
-			var y1 = oWordControl.Height - ((oWordControl.Splitter2Pos + GlobalSkin.SplitterWidthMM) * g_dKoef_mm_to_pix);
-			var y2 = oWordControl.Height - (oWordControl.Splitter2Pos * g_dKoef_mm_to_pix);
+			var y1 = oWordControl.Height - ((oWordControl.splitters[1].position + GlobalSkin.SplitterWidthMM) * g_dKoef_mm_to_pix);
+			var y2 = oWordControl.Height - (oWordControl.splitters[1].position * g_dKoef_mm_to_pix);
 
 			if (_y >= y1 && _y <= y2) {
 				nResult = 2;
 			}
 			else {
 				if (oThis.IsAnimPaneShown()) {
-					y1 = oWordControl.Height - ((oWordControl.Splitter3Pos + GlobalSkin.SplitterWidthMM) * g_dKoef_mm_to_pix);
-					y2 = oWordControl.Height - (oWordControl.Splitter3Pos * g_dKoef_mm_to_pix);
+					y1 = oWordControl.Height - ((oWordControl.splitters[2].position + GlobalSkin.SplitterWidthMM) * g_dKoef_mm_to_pix);
+					y2 = oWordControl.Height - (oWordControl.splitters[2].position * g_dKoef_mm_to_pix);
 					if (_y >= y1 && _y <= y2) {
 						nResult = 3;
 					}
@@ -1080,14 +1051,6 @@
 
 		}
 		return nResult;
-	};
-	CEditorPage.prototype.SetSplitter3Pos = function (dPos) {
-		var dDiff = this.Splitter2Pos - this.Splitter3Pos;
-		this.Splitter3Pos = dPos;
-		this.Splitter2Pos = Math.max(this.Splitter2Pos, this.Splitter3Pos + dDiff);
-	};
-	CEditorPage.prototype.SetSplitter2Pos = function (dPos) {
-		this.Splitter2Pos = Math.max(this.Splitter3Pos + HIDDEN_PANE_HEIGHT, dPos);
 	};
 
 	// Event handlers
@@ -1158,12 +1121,10 @@
 			var _y = global_mouseEvent.Y - oWordControl.Y;
 
 			if (1 == oWordControl.SplitterType) {
-				var isCanUnShowThumbnails = true;
-				if (oWordControl.m_oApi.isReporterMode)
-					isCanUnShowThumbnails = false;
+				let isCanUnShowThumbnails = !oWordControl.m_oApi.isReporterMode;
 
-				var _min = parseInt(oWordControl.Splitter1PosMin * g_dKoef_mm_to_pix);
-				var _max = parseInt(oWordControl.Splitter1PosMax * g_dKoef_mm_to_pix);
+				var _min = parseInt(oWordControl.splitters[0].minPosition * g_dKoef_mm_to_pix);
+				var _max = parseInt(oWordControl.splitters[0].maxPosition * g_dKoef_mm_to_pix);
 				if (_x > _max)
 					_x = _max;
 				else if ((_x < (_min / 2)) && isCanUnShowThumbnails)
@@ -1175,13 +1136,13 @@
 				oWordControl.SplitterDiv.style.left = _x + "px";
 			}
 			else {
-				var _max = oWordControl.Height - parseInt(oWordControl.Splitter2PosMin * g_dKoef_mm_to_pix);
-				var _min = oWordControl.Height - parseInt(oWordControl.Splitter2PosMax * g_dKoef_mm_to_pix);
+				var _max = oWordControl.Height - parseInt(oWordControl.splitters[1].minPosition * g_dKoef_mm_to_pix);
+				var _min = oWordControl.Height - parseInt(oWordControl.splitters[1].maxPosition * g_dKoef_mm_to_pix);
 
 				if (_min < (30 * g_dKoef_mm_to_pix))
 					_min = 30 * g_dKoef_mm_to_pix;
 
-				var _c = parseInt(oWordControl.Splitter2PosMin * g_dKoef_mm_to_pix);
+				var _c = parseInt(oWordControl.splitters[1].minPosition * g_dKoef_mm_to_pix);
 				if (_y > (_max + (_c / 2)))
 					_y = oWordControl.Height;
 				else if (_y > _max)
@@ -1200,31 +1161,32 @@
 			AscCommon.stopEvent(e);
 	};
 	CEditorPage.prototype.OnResizeSplitter = function (isNoNeedResize) {
-		this.OldSplitter1Pos = this.Splitter1Pos;
-		this.OldSplitter2Pos = this.Splitter2Pos;
-		this.OldSplitter3Pos = this.Splitter3Pos;
-
-		this.m_oThumbnailsContainer.Bounds.R = this.Splitter1Pos;
-		this.m_oThumbnailsContainer.Bounds.AbsW = this.Splitter1Pos;
-		this.m_oThumbnailsSplit.Bounds.L = this.Splitter1Pos;
+		this.m_oThumbnailsContainer.Bounds.R = this.splitters[0].position;
+		this.m_oThumbnailsContainer.Bounds.AbsW = this.splitters[0].position;;
+		this.m_oThumbnailsSplit.Bounds.L = this.splitters[0].position;
 
 		if (this.IsSupportAnimPane) {
-			if (this.Splitter3Pos < HIDDEN_PANE_HEIGHT) {
-				this.Splitter3Pos = 0;
+			if (this.splitters[2].position < HIDDEN_PANE_HEIGHT) {
+				this.splitters[2].setPosition(0, false, true);
 				Asc.editor.sendEvent('asc_onCloseAnimPane');
 			}
-			if (this.Splitter3Pos > this.Splitter3PosMax) this.Splitter3Pos = this.Splitter3PosMax;
+			this.splitters[2].setPosition(
+				Math.min(this.splitters[2].position, this.splitters[2].maxPosition),
+				false, true
+			);
 		} else {
-			this.Splitter3Pos = 0;
+			this.splitters[2].setPosition(0);
 		}
 
-		this.Splitter2Pos = (this.IsNotesSupported())
-			? Math.min(Math.max(this.Splitter2Pos, this.Splitter3Pos + HIDDEN_PANE_HEIGHT), this.Splitter2PosMax)
-			: 0;
 
-		if (this.IsUseNullThumbnailsSplitter || (0 != this.Splitter1Pos)) {
-			this.m_oMainParent.Bounds.L = this.Splitter1Pos + GlobalSkin.SplitterWidthMM;
-			this.m_oMainContent.Bounds.B = GlobalSkin.SupportNotes ? this.Splitter2Pos + GlobalSkin.SplitterWidthMM : 1000;
+		const notesSplitterPosition = this.IsNotesSupported()
+			? Math.min(Math.max(this.splitters[1].position, this.splitters[2].position + HIDDEN_PANE_HEIGHT), this.splitters[1].maxPosition)
+			: 0;
+		this.splitters[1].setPosition(notesSplitterPosition, false, true);
+
+		if (this.IsUseNullThumbnailsSplitter || (0 != this.splitters[0].position)) {
+			this.m_oMainParent.Bounds.L = this.splitters[0].position + GlobalSkin.SplitterWidthMM;
+			this.m_oMainContent.Bounds.B = GlobalSkin.SupportNotes ? this.splitters[1].position + GlobalSkin.SplitterWidthMM : 1000;
 			this.m_oMainContent.Bounds.isAbsB = GlobalSkin.SupportNotes;
 
 			this.UpdateBottomControlsParams();
@@ -1235,7 +1197,7 @@
 		}
 		else {
 			this.m_oMainParent.Bounds.L = 0;
-			this.m_oMainContent.Bounds.B = GlobalSkin.SupportNotes ? this.Splitter2Pos + GlobalSkin.SplitterWidthMM : 1000;
+			this.m_oMainContent.Bounds.B = GlobalSkin.SupportNotes ? this.splitters[1].position + GlobalSkin.SplitterWidthMM : 1000;
 			this.m_oMainContent.Bounds.isAbsB = GlobalSkin.SupportNotes;
 
 			this.UpdateBottomControlsParams();
@@ -1250,7 +1212,7 @@
 				this.m_oNotesContainer.Bounds.AbsH = 1;
 		}
 
-		if (this.Splitter2Pos <= 1) {
+		if (this.splitters[1].position <= 1) {
 			this.m_oNotes.HtmlElement.style.display = "none";
 			this.m_oNotes_scroll.HtmlElement.style.display = "none";
 		}
@@ -1291,18 +1253,23 @@
 
 			if (oWordControl.SplitterType == 1) {
 				var _posX = _x * g_dKoef_pix_to_mm;
-				if (Math.abs(oWordControl.Splitter1Pos - _posX) > 1) {
-					oWordControl.Splitter1Pos = _posX;
-					oWordControl.Splitter1PosSetUp = oWordControl.Splitter1Pos;
+				if (Math.abs(oWordControl.splitters[0].position - _posX) > 1) {
+					oWordControl.Splitter1PosSetUp = _posX;
+
+					oWordControl.splitters[0].setPosition(_posX);
 					oWordControl.OnResizeSplitter();
+
 					oWordControl.m_oApi.syncOnThumbnailsShow();
 				}
 			}
 			else if (oWordControl.SplitterType == 2) {
 				var _posY = (oWordControl.Height - _y) * g_dKoef_pix_to_mm - GlobalSkin.SplitterWidthMM;
-				if (Math.abs(oWordControl.Splitter2Pos - _posY) > 1) {
-					oWordControl.SetSplitter2Pos(_posY);
+				if (Math.abs(oWordControl.splitters[1].position - _posY) > 1) {
+					const notesSplitterPosition = Math.max(oWordControl.splitters[2].position + HIDDEN_PANE_HEIGHT, _posY);
+					oWordControl.splitters[1].setPosition(notesSplitterPosition);
+
 					oWordControl.OnResizeSplitter();
+
 					oWordControl.m_oApi.syncOnNotesShow();
 					if (oWordControl.m_oLogicDocument) {
 						oWordControl.m_oLogicDocument.CheckNotesShow();
@@ -1311,9 +1278,17 @@
 			}
 			else if (oWordControl.SplitterType == 3) {
 				var _posY = (oWordControl.Height - _y) * g_dKoef_pix_to_mm - GlobalSkin.SplitterWidthMM;
-				if (Math.abs(oWordControl.Splitter3Pos - _posY) > 1) {
-					oWordControl.SetSplitter3Pos(_posY);
+				if (Math.abs(oWordControl.splitters[2].position - _posY) > 1) {
+
+					const dDiff = oWordControl.splitters[1].position - oWordControl.splitters[2].position;
+					oWordControl.splitters[2].setPosition(_posY);
+
+					oWordControl.splitters[1].setPosition(
+						Math.max(oWordControl.splitters[1].position, oWordControl.splitters[2].position + dDiff)
+					);
+
 					oWordControl.OnResizeSplitter();
+
 					oWordControl.m_oApi.syncOnNotesShow();
 					if (oWordControl.m_oLogicDocument) {
 						oWordControl.m_oLogicDocument.CheckNotesShow();
@@ -1333,7 +1308,7 @@
 	};
 
 	CEditorPage.prototype.UpdateBottomControlsParams = function () {
-		this.m_oBottomPanesContainer.Bounds.AbsH = this.Splitter2Pos;
+		this.m_oBottomPanesContainer.Bounds.AbsH = this.splitters[1].position;
 		this.m_oNotesContainer.Bounds.AbsH = this.GetNotesHeight();
 		if (!this.IsNotesShown()) {
 			this.m_oNotes.HtmlElement.style.display = "none";
@@ -3692,7 +3667,7 @@
 		}
 
 		if (oWordControl.Thumbnails.FocusObjType == FOCUS_OBJECT_THUMBNAILS) {
-			if (0 == oWordControl.Splitter1Pos) {
+			if (0 == oWordControl.splitters[0].position) {
 				// табнейлы не видны. Чего же тогда обрабатывать им клавиатуру
 				e.preventDefault();
 				return false;
@@ -3901,39 +3876,35 @@
 		if (this.m_oApi.printPreview)
 			this.m_oApi.printPreview.resize();
 
-		var isDesktopVersion = (undefined !== window["AscDesktopEditor"]) ? true : false;
+		var isDesktopVersion = window["AscDesktopEditor"] !== undefined;
 
-		if (this.Splitter1Pos > 0.1 && !isDesktopVersion) {
-			var maxSplitterThMax = g_dKoef_pix_to_mm * this.Width / 3;
-			if (maxSplitterThMax > 80)
-				maxSplitterThMax = 80;
+		if (this.splitters[0].position > 0.1 && !isDesktopVersion) {
+			const maxSplitterThMax = Math.min(g_dKoef_pix_to_mm * this.Width / 3, 80);
+			this.splitters[0].setLimits(maxSplitterThMax >> 2, maxSplitterThMax >> 0);
 
-			this.Splitter1PosMin = maxSplitterThMax >> 2;
-			this.Splitter1PosMax = maxSplitterThMax >> 0;
-
-			this.Splitter1Pos = this.Splitter1PosSetUp;
-			if (this.Splitter1Pos < this.Splitter1PosMin)
-				this.Splitter1Pos = this.Splitter1PosMin;
-			if (this.Splitter1Pos > this.Splitter1PosMax)
-				this.Splitter1Pos = this.Splitter1PosMax;
+			const considerLimits = true;
+			this.splitters[0].setPosition(this.Splitter1PosSetUp, considerLimits);
 
 			this.OnResizeSplitter(true);
 		}
 
-		//console.log("resize");
 		this.CheckRetinaDisplay();
 
 		if (GlobalSkin.SupportNotes) {
-			var _pos = this.Height - ((this.Splitter2Pos * g_dKoef_mm_to_pix) >> 0);
-			var _min = 30 * g_dKoef_mm_to_pix;
+			const _pos = this.Height - ((this.splitters[1].position * g_dKoef_mm_to_pix) >> 0);
+			const _min = 30 * g_dKoef_mm_to_pix;
 			if (_pos < _min && !isDesktopVersion) {
-				this.SetSplitter2Pos((this.Height - _min) / g_dKoef_mm_to_pix);
-				if (this.Splitter2Pos < this.Splitter2PosMin)
-					this.Splitter2Pos = 1;
+
+				const dPos = (this.Height - _min) * g_dKoef_pix_to_mm;
+
+				const notesSplitterPosition = this.splitters[1].position >= this.splitters[1].minPosition
+					? Math.max(this.splitters[2].position + HIDDEN_PANE_HEIGHT, dPos)
+					: 1;
+				this.splitters[1].setPosition(notesSplitterPosition, false, true);
 
 				this.UpdateBottomControlsParams();
 
-				this.m_oMainContent.Bounds.B = this.Splitter2Pos + GlobalSkin.SplitterWidthMM;
+				this.m_oMainContent.Bounds.B = this.splitters[1].position + GlobalSkin.SplitterWidthMM;
 				this.m_oMainContent.Bounds.isAbsB = true;
 			}
 		}
@@ -4369,10 +4340,10 @@
 
 	// Animation pane
 	CEditorPage.prototype.GetAnimPaneHeight = function () {
-		return this.Splitter3Pos;
+		return this.splitters[2].position;
 	};
 	CEditorPage.prototype.IsBottomPaneShown = function () {
-		return this.Splitter2Pos > HIDDEN_PANE_HEIGHT;
+		return this.splitters[1].position > HIDDEN_PANE_HEIGHT;
 	};
 	CEditorPage.prototype.IsAnimPaneShown = function () {
 		if (!this.IsBottomPaneShown()) {
@@ -4381,19 +4352,21 @@
 		return this.GetAnimPaneHeight() > 0;
 	};
 	CEditorPage.prototype.ShowAnimPane = function (bShow) {
-		if (this.IsAnimPaneShown() === bShow) { return; }
+		if (this.IsAnimPaneShown() === bShow)
+			return;
 
 		if (bShow) {
-			this.Splitter3Pos = (this.OldSplitter3Pos > HIDDEN_PANE_HEIGHT) ? this.OldSplitter3Pos : this.Splitter3PosMin;
-			this.Splitter2Pos += this.Splitter3Pos;
+			const restoredAnimPaneSplitterPosition = this.splitters[2].savedPosition > HIDDEN_PANE_HEIGHT
+				? this.splitters[2].savedPosition
+				: this.splitters[2].minPosition;
+			this.splitters[2].setPosition(restoredAnimPaneSplitterPosition, true);
+			this.splitters[1].setPosition(this.splitters[1].position + this.splitters[2].position, true);
 			this.OnResizeSplitter();
 		} else {
-			const old = this.OldSplitter3Pos;
-			this.Splitter2Pos -= this.Splitter3Pos;
-			this.Splitter3Pos = 0;
+			this.splitters[1].setPosition(this.GetNotesHeight(), true);
+			this.splitters[2].setPosition(0, false, true);
 			this.OnResizeSplitter();
-			this.OldSplitter3Pos = old;
-			this.m_oLogicDocument.CheckAnimPaneShow();
+			if (this.m_oLogicDocument) this.m_oLogicDocument.CheckAnimPaneShow();
 		}
 	};
 	CEditorPage.prototype.ChangeTimelineScale = function (bZoomOut) {
@@ -4405,7 +4378,7 @@
 
 	// Notes
 	CEditorPage.prototype.GetNotesHeight = function () {
-		return this.Splitter2Pos - this.Splitter3Pos;
+		return this.splitters[1].position - this.splitters[2].position;
 	};
 	CEditorPage.prototype.IsNotesShown = function () {
 		if (!this.IsBottomPaneShown()) {
@@ -4414,21 +4387,19 @@
 		return this.GetNotesHeight() > HIDDEN_PANE_HEIGHT;
 	};
 	CEditorPage.prototype.ShowNotes = function (bShow) {
-		if (this.IsNotesShown() === bShow) { return; }
+		if (this.IsNotesShown() === bShow)
+			return;
 
 		if (bShow) {
-			this.Splitter2Pos = (this.OldSplitter2Pos - this.Splitter3Pos <= HIDDEN_PANE_HEIGHT)
-				? this.Splitter3Pos + 11
-				: this.OldSplitter2Pos;
+			const notesSplitterPosition = this.splitters[1].savedPosition - this.splitters[2].position < this.splitters[1].minPosition
+				? this.splitters[2].position + this.splitters[1].minPosition
+				: this.splitters[1].savedPosition;
+			this.splitters[1].setPosition(notesSplitterPosition, true);
 			this.OnResizeSplitter();
 		} else {
-			const old = this.OldSplitter2Pos;
-			this.Splitter2Pos = 0;
+			this.splitters[1].setPosition(0, false, true);
 			this.OnResizeSplitter();
-			this.OldSplitter2Pos = old;
-			if (this.m_oLogicDocument) {
-				this.m_oLogicDocument.CheckNotesShow();
-			}
+			if (this.m_oLogicDocument) this.m_oLogicDocument.CheckNotesShow();
 		}
 	};
 	CEditorPage.prototype.setNotesEnable = function (bEnabled) {
@@ -4443,7 +4414,7 @@
 		if (bEnabled == this.IsSupportAnimPane)
 			return;
 		this.IsSupportAnimPane = bEnabled;
-		this.Splitter3Pos = 0;
+		this.splitters[2].setPosition(0);
 		Asc.editor.sendEvent('asc_onCloseAnimPane');
 		this.OnResizeSplitter();
 	};
