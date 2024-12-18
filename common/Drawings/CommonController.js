@@ -11342,7 +11342,7 @@
 				if (operations.indexOf(operation) === -1) return false;
 
 				if (operation === 'intersect') {
-					const rects = selectedArray.map(item => item.getRectBounds());
+					const rects = selectedArray.map(function (item) {return item.getRectBounds();});
 					const hasIntersection = rects.every(function (rectA, indexA) {
 						return rects.some(function (rectB, indexB) {
 							return indexA !== indexB && rectA.isIntersectOther(rectB);
@@ -11376,7 +11376,7 @@
 			// resultPath can be either Path or CompoundPath
 			let resultShapes;
 			if (operation === 'divide') {
-				const resultPathsArray = AscCommon.PathBoolean.CompoundPath.prototype.divide(compoundPathLst);
+				const resultPathsArray = AscCommon['PathBoolean']['CompoundPath'].prototype['divide'](compoundPathLst);
 				resultShapes = resultPathsArray.map(function (path) {
 					return createShapeByCompoundPath(path, selectedShapes[0]);
 				});
@@ -11399,25 +11399,25 @@
 				return _convertedPath;
 			}, this, [path]);
 
-			const compoundPath = new AscCommon.PathBoolean.CompoundPath();
+			const compoundPath = new AscCommon['PathBoolean']['CompoundPath']();
 
 			convertedPath.ArrPathCommand.forEach(function (pathCommand) {
 				switch (pathCommand.id) {
 					case AscFormat.moveTo:
-						compoundPath.moveTo(pathCommand.X, pathCommand.Y);
+						compoundPath['moveTo'](pathCommand.X, pathCommand.Y);
 						break;
 					case AscFormat.lineTo:
-						compoundPath.lineTo(pathCommand.X, pathCommand.Y);
+						compoundPath['lineTo'](pathCommand.X, pathCommand.Y);
 						break;
 					case AscFormat.bezier4:
-						compoundPath.cubicCurveTo(
+						compoundPath['cubicCurveTo'](
 							pathCommand.X0, pathCommand.Y0,
 							pathCommand.X1, pathCommand.Y1,
 							pathCommand.X2, pathCommand.Y2
 						);
 						break;
 					case AscFormat.close:
-						compoundPath.closePath();
+						compoundPath['closePath']();
 						break;
 				}
 			});
@@ -11426,54 +11426,63 @@
 		}
 
 		function convertCompoundPathToFormatPath(compoundPath) {
-			const compoundPathBounds = compoundPath.getBounds();
-			const position = compoundPath.getPosition().subtract(compoundPathBounds.getTopLeft())
-			compoundPath.setPosition(position);
+			const compoundPathBounds = compoundPath['getBounds']();
+			const position = compoundPath['getPosition']()['subtract'](compoundPathBounds['getTopLeft']())
+			compoundPath['setPosition'](position);
 
 			const formatPath = new AscFormat.Path();
-			formatPath.setPathW(compoundPathBounds.getWidth() * 36000);
-			formatPath.setPathH(compoundPathBounds.getHeight() * 36000);
+			formatPath.setPathW(compoundPathBounds['getWidth']() * 36000);
+			formatPath.setPathH(compoundPathBounds['getHeight']() * 36000);
 
-			const pathChildren = compoundPath instanceof AscCommon.PathBoolean.CompoundPath ? compoundPath.getChildren() : compoundPath;
+			const pathChildren = compoundPath instanceof AscCommon['PathBoolean']['CompoundPath'] ? compoundPath['getChildren']() : compoundPath;
 			const pathsToHandle = Array.isArray(pathChildren) && pathChildren.length > 0 ? pathChildren : [compoundPath];
 			pathsToHandle.forEach(function (path) {
-				const segments = path.getSegments();
+				const segments = path['getSegments']();
 
 				segments.forEach(function (segment, segmentIndex, segments) {
-					const prevSegment = segment.getPrevious();
-					const nextSegment = segment.getNext();
+					const prevSegment = segment['getPrevious']();
+					const nextSegment = segment['getNext']();
 
-					if (segment.isFirst()) {
+					if (segment['isFirst']()) {
+						let oPt = segment['getPoint']();
 						return formatPath.addPathCommand({
-							'id': AscFormat.moveTo,
-							'X': '' + (segment.getPoint().getX() * 36000 >> 0),
-							'Y': '' + (segment.getPoint().getY() * 36000 >> 0)
+							id: AscFormat.moveTo,
+							X: '' + (oPt['getX']() * 36000 >> 0),
+							Y: '' + (oPt['getY']() * 36000 >> 0)
 						});
 					}
 
 					// TODO: Check if bezier curve is just a straight line
+
+					let oPt = segment['getPoint']();
+					let oPrevPt = prevSegment['getPoint']();
+					let oPrevHandleOut = prevSegment['getHandleOut']();
+					let oSegmentHandleIn = segment['getHandleIn']();
+					let oSegmentHandleOut = segment['getHandleOut']();
+					let oPt0 = segments[0]['getPoint']();
+					let oSegment0HandleIn = segments[0]['getHandleIn']();
 					formatPath.addPathCommand({
-						'id': AscFormat.bezier4,
-						'X0': '' + ((prevSegment.getPoint().getX() + prevSegment.getHandleOut().getX()) * 36000 >> 0),
-						'Y0': '' + ((prevSegment.getPoint().getY() + prevSegment.getHandleOut().getY()) * 36000 >> 0),
-						'X1': '' + ((segment.getPoint().getX() + segment.getHandleIn().getX()) * 36000 >> 0),
-						'Y1': '' + ((segment.getPoint().getY() + segment.getHandleIn().getY()) * 36000 >> 0),
-						'X2': '' + (segment.getPoint().getX() * 36000 >> 0),
-						'Y2': '' + (segment.getPoint().getY() * 36000 >> 0)
+						id: AscFormat.bezier4,
+						X0: '' + ((oPrevPt['getX']() + oPrevHandleOut['getX']()) * 36000 >> 0),
+						Y0: '' + ((oPrevPt['getY']() + oPrevHandleOut['getY']()) * 36000 >> 0),
+						X1: '' + ((oPt['getX']() + oSegmentHandleIn['getX']()) * 36000 >> 0),
+						Y1: '' + ((oPt['getY']() + oSegmentHandleIn['getY']()) * 36000 >> 0),
+						X2: '' + (oPt['getX']() * 36000 >> 0),
+						Y2: '' + (oPt['getY']() * 36000 >> 0)
 					});
 
-					if (segment.isLast() && path.isClosed()) {
+					if (segment['isLast']() && path['isClosed']()) {
 						formatPath.addPathCommand({
-							'id': AscFormat.bezier4,
-							'X0': '' + ((segment.getPoint().getX() + segment.getHandleOut().getX()) * 36000 >> 0),
-							'Y0': '' + ((segment.getPoint().getY() + segment.getHandleOut().getY()) * 36000 >> 0),
-							'X1': '' + ((segments[0].getPoint().getX() + segments[0].getHandleIn().getX()) * 36000 >> 0),
-							'Y1': '' + ((segments[0].getPoint().getY() + segments[0].getHandleIn().getY()) * 36000 >> 0),
-							'X2': '' + (segments[0].getPoint().getX() * 36000 >> 0),
-							'Y2': '' + (segments[0].getPoint().getY() * 36000 >> 0)
+							id: AscFormat.bezier4,
+							X0: '' + ((oPt['getX']() + oSegmentHandleOut['getX']()) * 36000 >> 0),
+							Y0: '' + ((oPt['getY']() + oSegmentHandleOut['getY']()) * 36000 >> 0),
+							X1: '' + ((oPt0['getX']() + oSegment0HandleIn['getX']()) * 36000 >> 0),
+							Y1: '' + ((oPt0['getY']() + oSegment0HandleIn['getY']()) * 36000 >> 0),
+							X2: '' + (oPt0['getX']() * 36000 >> 0),
+							Y2: '' + (oPt0['getY']() * 36000 >> 0)
 						});
 						return formatPath.addPathCommand({
-							'id': AscFormat.close
+							id: AscFormat.close
 						});
 					}
 				});
@@ -11488,7 +11497,7 @@
 				? supportedConstructors[0]
 				: referenceShape.constructor;
 
-			const compoundPathBounds = compoundPath.getBounds();
+			const compoundPathBounds = compoundPath['getBounds']();
 			const formatPath = convertCompoundPathToFormatPath(compoundPath);
 			const pathLst = [formatPath];
 
@@ -11507,10 +11516,10 @@
 				const refY = referenceShape.bounds.y;
 				const refW = referenceShape.bounds.w;
 				const refH = referenceShape.bounds.h;
-				const resX = compoundPathBounds.x;
-				const resY = compoundPathBounds.y;
-				const resW = compoundPathBounds.width;
-				const resH = compoundPathBounds.height;
+				const resX = compoundPathBounds['getLeft']();
+				const resY = compoundPathBounds['getTop']();
+				const resW = compoundPathBounds['getWidth']();
+				const resH = compoundPathBounds['getHeight']();
 
 				blipFill.srcRect = {
 					l: 100 * (resX - refX) / refW,
@@ -11526,10 +11535,10 @@
 			resultShape.spPr.setParent(resultShape);
 			resultShape.spPr.setXfrm(new AscFormat.CXfrm());
 			resultShape.spPr.xfrm.setParent(resultShape.spPr);
-			resultShape.spPr.xfrm.setOffX(compoundPathBounds.getLeft());
-			resultShape.spPr.xfrm.setOffY(compoundPathBounds.getTop());
-			resultShape.spPr.xfrm.setExtX(compoundPathBounds.getWidth());
-			resultShape.spPr.xfrm.setExtY(compoundPathBounds.getHeight());
+			resultShape.spPr.xfrm.setOffX(compoundPathBounds['getLeft']());
+			resultShape.spPr.xfrm.setOffY(compoundPathBounds['getTop']());
+			resultShape.spPr.xfrm.setExtX(compoundPathBounds['getWidth']());
+			resultShape.spPr.xfrm.setExtY(compoundPathBounds['getHeight']());
 
 			resultGeometry.setParent(resultShape);
 			resultShape.spPr.setGeometry(resultGeometry);

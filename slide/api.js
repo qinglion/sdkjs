@@ -6723,7 +6723,7 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype.asc_canMergeSelectedShapes = function (operation) {
 		return AscFormat.canMergeSelectedShapes(operation);
 	};
-	asc_docs_api.prototype.asc_mergeSelectedShapes = function (operation) {
+	asc_docs_api.prototype.asc_mergeSelectedShapesAction = function (operation) {
 		const isSelectionLocked = this.WordControl.m_oLogicDocument.Document_Is_SelectionLocked(changestype_Drawing_Props);
 		const canMerge = this.asc_canMergeSelectedShapes(operation);
 		if (!isSelectionLocked && canMerge) {
@@ -9792,7 +9792,6 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype['groupShapes']                         = asc_docs_api.prototype.groupShapes;
 	asc_docs_api.prototype['unGroupShapes']                       = asc_docs_api.prototype.unGroupShapes;
 	asc_docs_api.prototype['asc_canMergeSelectedShapes']          = asc_docs_api.prototype.asc_canMergeSelectedShapes;
-	asc_docs_api.prototype['asc_mergeSelectedShapes']             = asc_docs_api.prototype.asc_mergeSelectedShapes;
 	asc_docs_api.prototype['setVerticalAlign']                    = asc_docs_api.prototype.setVerticalAlign;
 	asc_docs_api.prototype['setVert']                             = asc_docs_api.prototype.setVert;
 	asc_docs_api.prototype['sync_MouseMoveStartCallback']         = asc_docs_api.prototype.sync_MouseMoveStartCallback;

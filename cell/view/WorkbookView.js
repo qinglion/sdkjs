@@ -472,6 +472,8 @@
 				  self._onSelectColumnsByRange.apply(self, arguments);
 			  }, "selectRowsByRange": function () {
 				  self._onSelectRowsByRange.apply(self, arguments);
+			  }, "selectAllByRange": function () {
+				  self._onSelectAllByRange.apply(self, arguments);
 			  }, "save": function () {
 				  self.Api.asc_Save();
 			  }, "showCellEditorCursor": function () {
@@ -2324,6 +2326,10 @@
 
   WorkbookView.prototype._onSelectRowsByRange = function() {
     this.getWorksheet()._selectRowsByRange();
+  };
+
+  WorkbookView.prototype._onSelectAllByRange = function() {
+    this.getWorksheet()._selectAllByRange();
   };
 
   WorkbookView.prototype._onShowCellEditorCursor = function() {

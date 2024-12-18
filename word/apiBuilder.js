@@ -3699,6 +3699,16 @@
 	ApiChart.prototype.constructor = ApiChart;
 
 	/**
+	 * Class representing a group of drawings.
+	 * @constructor
+	 */
+	function ApiGroup(oGroup){
+		ApiDrawing.call(this, oGroup);
+	}
+	ApiGroup.prototype = Object.create(ApiDrawing.prototype);
+	ApiGroup.prototype.constructor = ApiGroup;
+
+	/**
 	 * Class representing a chart series.
 	 * @constructor
 	 *
@@ -4324,6 +4334,16 @@
 	 * @see office-js-api/Examples/Enumerations/TofStyle.js
 	 */
 
+	/**
+     * Any valid drawing element.
+     * @typedef {(ApiShape | ApiImage | ApiGroup | ApiOleObject | ApiChart )} Drawing
+	 */
+
+	/**
+     * Available drwaing element for grouping
+     * @typedef {(ApiShape | ApiGroup | ApiImage | ApiChart)} DrawingForGroup
+	 */
+
 	//------------------------------------------------------------------------------------------------------------------
 	//
 	// Base Api
@@ -4518,6 +4538,36 @@
 		oShape.spPr.setFill(oFill.UniFill);
 		oShape.spPr.setLn(oStroke.Ln);
 		return new ApiShape(oShape);
+	};
+
+	/**
+	 * Groups an array of drawings.
+	 * @memberof Api
+	 * @typeofeditors ["CDE"]
+	 * @param {DrawingForGroup[]} aDrawings - array of drawings to group
+	 * @returns {ApiGroup}
+	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateGroup.js
+	 */
+	Api.prototype.CreateGroup = function(aDrawings)
+	{
+		let oDoc = private_GetLogicDocument();
+		let oDrDoc = private_GetDrawingDocument();
+		let oGraphicObjects = oDoc.getDrawingObjects();
+
+		if (aDrawings.find(function(drawing) { return drawing.Drawing.IsUseInDocument(); }))
+			return null;
+
+		aDrawings.forEach(function(drawing) { drawing.Drawing.recalculate(); })
+
+		let oGroup = AscFormat.builder_CreateGroup(aDrawings, oGraphicObjects);
+		let oParaDrawing = new ParaDrawing(oGroup.getXfrmExtX(), oGroup.getXfrmExtY(), null, oDrDoc, oDoc, null);
+		oParaDrawing.Set_WrappingType(WRAPPING_TYPE_NONE);
+        oParaDrawing.Set_DrawingType(drawing_Anchor);
+		oGroup.setParent(oParaDrawing);
+		oParaDrawing.Set_GraphicObject(oGroup);
+
+		if (oGroup)
+			return new ApiGroup(oGroup);
 	};
 
 	/**
@@ -5567,18 +5617,15 @@
 	 * Returns a collection of drawing objects from the document content.
 	 * @memberof ApiDocumentContent
 	 * @typeofeditors ["CDE"]
-	 * @return {ApiDrawing[]}  
+	 * @return {Drawing[]}  
 	 * @see office-js-api/Examples/{Editor}/ApiDocumentContent/Methods/GetAllDrawingObjects.js
 	 */
 	ApiDocumentContent.prototype.GetAllDrawingObjects = function()
 	{
-		var arrAllDrawing = this.Document.GetAllDrawingObjects();
-		var arrApiShapes  = [];
-
-		for (var Index = 0; Index < arrAllDrawing.length; Index++)
-			arrApiShapes.push(new ApiDrawing(arrAllDrawing[Index].GraphicObj));
-		
-		return arrApiShapes;
+		let arrAllDrawing = this.Document.GetAllDrawingObjects();
+		return private_GetApiDrawings(arrAllDrawing.map(function(drawing) {
+			return drawing.GraphicObj;
+		}));
 	};
 	/**
 	 * Returns a collection of shape objects from the document content.
@@ -7851,6 +7898,40 @@
 		
 		paraMath.ConvertView(false, "latex" === format ? Asc.c_oAscMathInputType.LaTeX : Asc.c_oAscMathInputType.Unicode);
 	};
+
+	/**
+	 * Groups an array of drawings in document.
+	 * @memberof ApiDocument
+	 * @typeofeditors ["CDE"]
+	 * @param {DrawingForGroup[]} aDrawings - array of drawings to group
+	 * @returns {ApiGroup}
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/GroupDrawings.js
+	 */
+	ApiDocument.prototype.GroupDrawings = function(aDrawings)
+	{
+		if (aDrawings.find(function(drawing) { return !drawing.Drawing.IsUseInDocument(); }))
+			return null;
+
+		let oDoc = this.Document;
+		let oGraphicObjects = oDoc.getDrawingObjects();
+		oGraphicObjects.resetSelection();
+
+		aDrawings.forEach(function(drawing) { drawing.Drawing.recalculate(); })
+		aDrawings.forEach(function(drawing) {
+			oGraphicObjects.selectObject(drawing.Drawing, drawing.Drawing.Get_AbsolutePage());
+		});
+		
+		let canGroup = oGraphicObjects.canGroup();
+		if (!canGroup)
+			return null;
+
+		let oParaDrawing = oGraphicObjects.groupSelectedObjects();
+		if (!oParaDrawing)
+			return null;
+
+		return new ApiGroup(oParaDrawing.GraphicObj);
+	};
+
 	//------------------------------------------------------------------------------------------------------------------
 	//
 	// ApiParagraph
@@ -8781,20 +8862,15 @@
 	 * Returns a collection of drawing objects in the paragraph.
 	 * @memberof ApiParagraph
 	 * @typeofeditors ["CDE"]
-	 * @return {ApiDrawing[]}  
+	 * @return {Drawing[]}  
 	 * @see office-js-api/Examples/{Editor}/ApiParagraph/Methods/GetAllDrawingObjects.js
 	 */
 	ApiParagraph.prototype.GetAllDrawingObjects = function()
 	{
-		var arrAllDrawing = this.Paragraph.GetAllDrawingObjects();
-		var arrApiShapes  = [];
-
-		for (var Index = 0; Index < arrAllDrawing.length; Index++)
-		{
-			arrApiShapes.push(new ApiDrawing(arrAllDrawing[Index].GraphicObj));
-		}
-		
-		return arrApiShapes;
+		let arrAllDrawing = this.Paragraph.GetAllDrawingObjects();
+		return private_GetApiDrawings(arrAllDrawing.map(function(drawing) {
+			return drawing.GraphicObj;
+		}));
 	};
 	/**
 	 * Returns a collection of shape objects in the paragraph.
@@ -17173,6 +17249,48 @@
 
 	//------------------------------------------------------------------------------------------------------------------
 	//
+	// ApiGroup
+	//
+	//------------------------------------------------------------------------------------------------------------------
+
+	/**
+	 * Returns a type of the ApiGroup class.
+	 * @memberof ApiGroup
+	 * @typeofeditors ["CDE"]
+	 * @returns {"group"}
+	 * @see office-js-api/Examples/{Editor}/ApiGroup/Methods/GetClassType.js
+	 */
+	ApiGroup.prototype.GetClassType = function()
+	{
+		return "group";
+	};
+
+	/**
+	 * Ungroups current group drawing.
+	 * @memberof ApiGroup
+	 * @typeofeditors ["CDE"]
+	 * @returns {boolean}
+	 * @see office-js-api/Examples/{Editor}/ApiGroup/Methods/Ungroup.js
+	 */
+	ApiGroup.prototype.Ungroup = function()
+	{
+		let oDoc = private_GetLogicDocument();
+		let oGraphicObjects = oDoc.getDrawingObjects();
+
+		oGraphicObjects.resetSelection();
+		oGraphicObjects.selectObject(this.Drawing, this.Drawing.Get_AbsolutePage())
+		
+		let canUngroup = oGraphicObjects.canUnGroup();
+		if (!canUngroup) {
+			return false;
+		}
+
+		oGraphicObjects.unGroupSelectedObjects();
+		return true;
+	};
+
+	//------------------------------------------------------------------------------------------------------------------
+	//
 	// ApiFill
 	//
 	//------------------------------------------------------------------------------------------------------------------
@@ -18651,18 +18769,15 @@
 	 * Returns a collection of drawing objects in the current content control.
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
-	 * @return {ApiDrawing[]}  
+	 * @return {Drawing[]}  
 	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/GetAllDrawingObjects.js
 	 */
 	ApiBlockLvlSdt.prototype.GetAllDrawingObjects = function()
 	{
-		var arrAllDrawing = this.Sdt.GetAllDrawingObjects();
-		var arrApiDrawings  = [];
-
-		for (var Index = 0; Index < arrAllDrawing.length; Index++)
-			arrApiDrawings.push(new ApiDrawing(arrAllDrawing[Index].GraphicObj));
-
-		return arrApiDrawings;
+		let arrAllDrawing = this.Sdt.GetAllDrawingObjects();
+		return private_GetApiDrawings(arrAllDrawing.map(function(drawing) {
+			return drawing.GraphicObj;
+		}));
 	};
 
 	/**
@@ -21770,6 +21885,7 @@
 	Api.prototype["CreateHyperlink"]                 = Api.prototype.CreateHyperlink;
 	Api.prototype["CreateImage"]                     = Api.prototype.CreateImage;
 	Api.prototype["CreateShape"]                     = Api.prototype.CreateShape;
+	Api.prototype["CreateGroup"]                     = Api.prototype.CreateGroup;
 	Api.prototype["CreateChart"]                     = Api.prototype.CreateChart;
 	Api.prototype["CreateRGBColor"]                  = Api.prototype.CreateRGBColor;
 	Api.prototype["CreateSchemeColor"]               = Api.prototype.CreateSchemeColor;
@@ -21943,6 +22059,7 @@
 	ApiDocument.prototype["GetCurrentSentence"]          = ApiDocument.prototype.GetCurrentSentence;
 	ApiDocument.prototype["ReplaceCurrentSentence"]      = ApiDocument.prototype.ReplaceCurrentSentence;
 	ApiDocument.prototype["AddMathEquation"]             = ApiDocument.prototype.AddMathEquation;
+	ApiDocument.prototype["GroupDrawings"]             	 = ApiDocument.prototype.GroupDrawings;
 
 	ApiParagraph.prototype["GetClassType"]           = ApiParagraph.prototype.GetClassType;
 	ApiParagraph.prototype["AddText"]                = ApiParagraph.prototype.AddText;
@@ -22442,6 +22559,9 @@
 	ApiOleObject.prototype["GetData"]               = ApiOleObject.prototype.GetData;
 	ApiOleObject.prototype["SetApplicationId"]         = ApiOleObject.prototype.SetApplicationId;
 	ApiOleObject.prototype["GetApplicationId"]         = ApiOleObject.prototype.GetApplicationId;
+	
+	ApiGroup.prototype["GetClassType"]	= ApiGroup.prototype.GetClassType;
+	ApiGroup.prototype["Ungroup"]		= ApiGroup.prototype.Ungroup;
 
 	ApiFill.prototype["GetClassType"]                = ApiFill.prototype.GetClassType;
 	ApiFill.prototype["ToJSON"]                      = ApiFill.prototype.ToJSON;
@@ -22884,6 +23004,7 @@
 	{
 		// Добавляем не в конец из-за рана с символом конца параграфа TODO: ParaEnd
 		oPara.Add_ToContent(oPara.Content.length - 1, oElement);
+		oPara.CorrectContent();
 	}
 
 	function private_IsSupportedParaElement(oElement)
@@ -22960,6 +23081,32 @@
 			return new ApiDateForm(oSdt);
 
 		return new ApiInlineLvlSdt(oSdt);
+	}
+
+	function private_GetApiDrawing(drawing) {
+        switch (drawing.getObjectType()) {
+            case AscDFH.historyitem_type_Shape:
+                return new ApiShape(drawing);
+            case AscDFH.historyitem_type_ImageShape:
+                return new ApiImage(drawing);
+            case AscDFH.historyitem_type_GroupShape:
+                return new ApiGroup(drawing);
+            case AscDFH.historyitem_type_OleObject:
+                return new ApiOleObject(drawing);
+            case AscDFH.historyitem_type_GraphicFrame:
+                return new ApiTable(drawing);
+			case AscDFH.historyitem_type_ChartSpace:
+				return new ApiChart(drawing);
+        }
+        return null;
+    }
+
+	function private_GetApiDrawings(drawingObjects) {
+		return drawingObjects.map(function(drawing) {
+			return private_GetApiDrawing(drawing);
+		}).filter(function(apiDrawing) {
+			return !!apiDrawing;
+		});
 	}
 
 	function private_GetLogicDocument()

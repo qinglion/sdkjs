@@ -1237,8 +1237,9 @@
 							}
 							break;
 						case 65:
-							t.handlers.trigger("selectColumnsByRange");
-							t.handlers.trigger("selectRowsByRange");
+							//t.handlers.trigger("selectColumnsByRange");
+							//t.handlers.trigger("selectRowsByRange");
+							t.handlers.trigger("selectAllByRange");
 							action = true;
 							break;
 						case 66:

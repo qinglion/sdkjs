@@ -2822,7 +2822,10 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 		return this._toString(true);
 	};
 	cStrucPivotTable.prototype._toString = function (isLocal) {
-		return this.fieldString + '[' + this.itemString + ']';
+		if (this.fieldString) {
+			return this.fieldString + '[' + this.itemString + ']';
+		}
+		return this.itemString;
 	};
 
 	/**

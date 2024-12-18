@@ -909,12 +909,11 @@ var CPresentation = CPresentation || function(){};
     CPDFDoc.prototype.CommitField = function(oField) {
         return this.DoAction(function() {
             let isValid = true;
-
             if ([AscPDF.FIELD_TYPES.text, AscPDF.FIELD_TYPES.combobox].includes(oField.GetType())) {
                 isValid = oField.DoValidateAction(oField.GetValue(true));
             }
     
-            if (isValid) {
+            if (isValid && !this.IsCalcFieldsLocked()) {
                 oField.needValidate = false; 
                 oField.Commit();
                 if (this.event["rc"] == true && this.IsNeedDoCalculate()) {
@@ -1936,13 +1935,22 @@ var CPresentation = CPresentation || function(){};
     };
 
     CPDFDoc.prototype.OnMouseUpField = function(oField) {
-        oField.onMouseUp();
-        
         if ([AscPDF.FIELD_TYPES.checkbox, AscPDF.FIELD_TYPES.radiobutton].includes(oField.GetType())) {
-            if (oField.IsNeedCommit() && this.IsNeedDoCalculate()) {
-                this.DoCalculateFields();
-                this.CommitFields();
+            if (this.IsCalcFieldsLocked()) {
+                return;
             }
+
+            this.DoAction(function() {
+                oField.onMouseUp();
+                if (oField.IsNeedCommit() && this.IsNeedDoCalculate()) {
+                    this.DoCalculateFields();
+                    this.CommitFields();
+                }
+            }, AscDFH.historydescription_Pdf_ClickCheckbox, this);
+            oField.AddActionsToQueue(AscPDF.FORMS_TRIGGERS_TYPES.MouseUp);
+        }
+        else {
+            oField.onMouseUp();
         }
     };
     CPDFDoc.prototype.DoUndo = function() {
@@ -2115,6 +2123,7 @@ var CPresentation = CPresentation || function(){};
     CPDFDoc.prototype.DoCalculateFields = function(oSourceField) {
         // при изменении любого поля (с коммитом) вызывается calculate у всех
         let oThis = this;
+
         this.calculateInfo.SetIsInProgress(true);
         this.calculateInfo.SetSourceField(oSourceField);
         this.calculateInfo.ids.forEach(function(id) {
@@ -2143,6 +2152,27 @@ var CPresentation = CPresentation || function(){};
         });
         this.calculateInfo.SetIsInProgress(false);
         this.calculateInfo.SetSourceField(null);
+    };
+    CPDFDoc.prototype.IsCalcFieldsLocked = function() {
+        let oThis = this;
+
+        let isCalcLocked = false;
+        this.calculateInfo.ids.forEach(function(id) {
+            let oField = oThis.GetFieldBySourceIdx(id);
+            if (!oField)
+                return;
+
+            if (oField.Lock.Is_Locked()) {
+                isCalcLocked = true;
+            }
+        });
+
+        if (isCalcLocked) {
+            Asc.editor.sendEvent("asc_onError", Asc.c_oAscError.ID.PDFFormsLocked, Asc.c_oAscError.Level.NoCritical);
+            return true;
+        }
+
+        return false;
     };
     CPDFDoc.prototype.IsNeedDoCalculate = function() {
         if (this.calculateInfo.ids.length > 0 && false == AscCommon.History.UndoRedoInProgress)
@@ -2425,8 +2455,8 @@ var CPresentation = CPresentation || function(){};
 
         let oViewer = editor.getDocumentRenderer();
 
-        let oPagesInfo = oViewer.pagesInfo;
-        if (!oPagesInfo.pages[nPageNum])
+        let oPageInfo = oViewer.pagesInfo.pages[nPageNum];
+        if (!oPageInfo)
             return null;
         
         let oField = private_createField(cName, cFieldType, nPageNum, aCoords, this);
@@ -2438,10 +2468,7 @@ var CPresentation = CPresentation || function(){};
         this.widgets.push(oField);
         oField.SetNeedRecalc(true);
 
-        if (oPagesInfo.pages[nPageNum].fields == null) {
-            oPagesInfo.pages[nPageNum].fields = [];
-        }
-        oPagesInfo.pages[nPageNum].fields.push(oField);
+        oPageInfo.fields.push(oField);
 
         if (AscCommon.History.IsOn() == true)
             AscCommon.History.TurnOff();
@@ -2451,6 +2478,7 @@ var CPresentation = CPresentation || function(){};
             oField.SetDrawFromStream(false);
         }
 
+        oField.SetParentPage(oPageInfo);
         return oField;
     };
 
@@ -2676,6 +2704,10 @@ var CPresentation = CPresentation || function(){};
 		}
 		
 		this.StartAction(nDescription);
+        if ([AscDFH.historydescription_Pdf_ExecActions, AscDFH.historydescription_Pdf_ClickCheckbox, AscDFH.historydescription_Pdf_FieldCommit, AscDFH.historydescription_Pdf_FieldImportImage].includes(this.GetActionDescription())) {
+            this.CheckActionLock();
+        }
+
 		let result = fAction.call(oThis);
 		this.FinalizeAction(true);
 		return result;
@@ -2733,23 +2765,122 @@ var CPresentation = CPresentation || function(){};
     };
 
     CPDFDoc.prototype.FinalizeAction = function(checkEmptyAction) {
-		
+		let oCurHistory = AscCommon.History;
+        
+        if (this.GetActionDescription() == AscDFH.historydescription_Pdf_ExecActions) {
+            AscCommon.History = this.History;
+        }
+
         if (checkEmptyAction && AscCommon.History.Is_LastPointEmpty()) {
             AscCommon.History.Remove_LastPoint();
             this.UpdateInterface();
-            return;
+            this.ResetLastAction();
+            AscCommon.History = oCurHistory;
+            return false;
         }
+
+        this.private_CheckActionLock();
 
 		AscCommon.History.Get_RecalcData();
 		AscCommon.History.Reset_RecalcIndex();
         Asc.editor.checkLastWork();
         
-        if (false /* тут проверяем локи */) {
-            AscCommon.History.Undo();
-            AscCommon.History.Clear_Redo();
+        let actionCompleted = true;
+        if (this.Action.CancelAction) {
+            let arrChanges = [];
+            for (var nIndex = 0, nPointsCount = this.Action.PointsCount; nIndex < nPointsCount; ++nIndex)
+            {
+                arrChanges = arrChanges.concat(this.History.Undo());
+            }
+
+            if (arrChanges.length)
+                this.RecalculateByChanges(arrChanges);
+
+            this.History.ClearRedo();
+            actionCompleted = false;
+
+            if (this.canSendLockedFormsWarning) {
+                Asc.editor.sendEvent("asc_onError", Asc.c_oAscError.ID.PDFFormsLocked, Asc.c_oAscError.Level.NoCritical);
+            }
         }
 
+        AscCommon.History = oCurHistory;
         this.UpdateInterface();
+        this.ResetLastAction();
+
+        return actionCompleted;
+    };
+    /**
+     * Начинаем составную проверку на залоченность объектов
+     * @param [isIgnoreCanEditFlag=false] игнорируем ли запрет на редактирование
+     * @returns {boolean} началась ли проверка залоченности
+     */
+    CPDFDoc.prototype.StartSelectionLockCheck = function(isIgnoreCanEditFlag) {
+        if (true === this.CollaborativeEditing.Get_GlobalLock())
+            return false;
+
+        this.CollaborativeEditing.OnStart_CheckLock();
+
+        return true;
+    };
+    /**
+     * Сообщаем, что нужно отменить начатое действие
+     */
+    CPDFDoc.prototype.CancelAction = function() {
+        if (!this.IsActionStarted())
+            return;
+
+        this.Action.CancelAction = true;
+    };
+    /**
+     * Сообщаем, что перед окончанием действия нужно проверить, что все выполненные изменения были разрешены
+     * Используется, когда мы не может проверить лок объектов до самого действия
+     */
+    CPDFDoc.prototype.CheckActionLock = function() {
+        if (!this.IsActionStarted())
+            return;
+
+        this.Action.CheckLock = true;
+    };
+    /**
+     * Заканчиваем процесс составной проверки залоченности объектов
+     * @param [isDontLockInFastMode=false] {boolean} нужно ли лочить в быстром режиме совместного редактирования
+     * @returns {boolean} залочен ли редактор на выполнение данного составного действия
+     */
+    CPDFDoc.prototype.EndSelectionLockCheck = function(isDontLockInFastMode) {
+        let isLocked = this.CollaborativeEditing.OnEnd_CheckLock(isDontLockInFastMode);
+        return isLocked;
+    };
+    CPDFDoc.prototype.private_CheckActionLock = function() {
+        if (!this.Action.CheckLock || !this.Action.PointsCount || this.Action.CancelAction)
+            return;
+    
+        if (!this.StartSelectionLockCheck())
+        {
+            this.Action.CancelAction = true;
+            return;
+        }
+    
+        this.History.checkLock(this.Action.PointsCount);
+    
+        if (this.EndSelectionLockCheck())
+            this.Action.CancelAction = true;
+    
+        // TODO: Если сервер нам запрещает делать действие, то мы делаем Undo из совместки. Но там делается отмена
+        //       только для одной точки, а в действии их может быть несколько. Надо доработать этот момент (но в текущий
+        //       момент данная проверка не вызывается для случаев, где в действии более одной точки)
+    };
+    CPDFDoc.prototype.ResetLastAction = function() {
+        this.Action.Start              = false;
+        this.Action.Depth              = 0;
+        this.Action.PointsCount        = 0;
+        this.Action.Recalculate        = false;
+        this.Action.CancelAction       = false;
+        this.Action.CheckLock          = false;
+        this.Action.Additional         = {};
+    };
+    CPDFDoc.prototype.GetActionDescription = function() {
+        return this.Action.Description;
     };
 
     CPDFDoc.prototype.Refresh_RecalcData = function(){};
@@ -5701,7 +5832,7 @@ var CPresentation = CPresentation || function(){};
         return false;
     };
 	CPDFDoc.prototype.IsActionStarted = function() {
-		return false;
+		return this.Action.Start;
 	};
     CPDFDoc.prototype.Get_AbsolutePage = function () {
         return 0;
@@ -6268,15 +6399,26 @@ var CPresentation = CPresentation || function(){};
     };
     CActionQueue.prototype.Start = function() {
         if (this.IsInProgress() == false) {
+            let oHistory = this.doc.History;
+            let localHistory = AscCommon.History;
+            AscCommon.History = oHistory;
             this.doc.DoAction(function() {
                 let oFirstAction = this.actions[0];
                 if (oFirstAction) {
+                    if (AscPDF.FORMS_TRIGGERS_TYPES.MouseDown == oFirstAction.triggerType) {
+                        this.doc.canSendLockedFormsWarning = true;
+                    }
+                    else {
+                        this.doc.canSendLockedFormsWarning = false;
+                    }
+
                     Asc.editor.canSave = false;
                     this.SetInProgress(true);
                     this.SetCurActionIdx(0);
                     oFirstAction.Do();
                 }
             }, AscDFH.historydescription_Pdf_ExecActions, this);
+            AscCommon.History = localHistory;
         }
     };
     CActionQueue.prototype.Continue = function() {

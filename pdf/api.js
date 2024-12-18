@@ -1955,24 +1955,42 @@
                     oThumbnails && oThumbnails._repaintPage(Class.GetIndex());
                 }
                 if (null != Class) {
-                    let Lock = Class.Lock;
-                    // Выставляем ID пользователя, залочившего данный элемент
-                    Lock.Set_UserId(e["user"]);
-                    let OldType = Class.Lock.Get_Type();
-                    if (AscCommon.c_oAscLockTypes.kLockTypeOther2 === OldType || AscCommon.c_oAscLockTypes.kLockTypeOther3 === OldType) {
-                        Lock.Set_Type(AscCommon.c_oAscLockTypes.kLockTypeOther3, true);
-                    }
-                    else {
-                        Lock.Set_Type(AscCommon.c_oAscLockTypes.kLockTypeOther, true);
-                    }
+					function updateLock(Class) {
+						let Lock = Class.Lock;
+						if (!Lock) {
+							return;
+						}
 
-					if (Class.IsAnnot && Class.IsAnnot()) {
+						// Выставляем ID пользователя, залочившего данный элемент
+						Lock.Set_UserId(e["user"]);
+						let OldType = Lock.Get_Type();
+						if (AscCommon.c_oAscLockTypes.kLockTypeOther2 === OldType || AscCommon.c_oAscLockTypes.kLockTypeOther3 === OldType) {
+							Lock.Set_Type(AscCommon.c_oAscLockTypes.kLockTypeOther3, true);
+						}
+						else {
+							Lock.Set_Type(AscCommon.c_oAscLockTypes.kLockTypeOther, true);
+						}
+
+						Class.AddToRedraw && Class.AddToRedraw();
+					}
+
+					if (Class.IsForm && Class.IsForm()) {
+						let aWidgets = oDoc.GetAllWidgets(Class.GetFullName());
+						aWidgets.forEach(function(widget) {
+							updateLock(widget);
+						});
+					}
+					else {
+						updateLock(Class);
+					}
+
+                    if (Class.IsAnnot && Class.IsAnnot()) {
 						// если аннотация коммент или аннотация с комментом то блокируем и комментарий тоже
 						if (Class.IsComment() || (Class.IsUseContentAsComment() && Class.GetContents() != undefined) || Class.GetReply(0) != null) {
 							t.sync_LockComment(Class.Get_Id(), e["user"]);
 						}
 					}
-					Class.AddToRedraw && Class.AddToRedraw();
+					
                     oDoc.UpdateInterface();
                 }
                 else {
@@ -1993,10 +2011,13 @@
 				oThumbnails && oThumbnails._repaintPage(Class.GetIndex());
 			}
 			if (null != Class) {
-				let Lock = Class.Lock;
-				if ("undefined" != typeof(Lock)) {
+				function updateLock(Class) {
+					let Lock = Class.Lock;
+					if (!Lock) {
+						return;
+					}
+
 					let CurType = Lock.Get_Type();
-		
 					let NewType = AscCommon.c_oAscLockTypes.kLockTypeNone;
 		
 					if (CurType === AscCommon.c_oAscLockTypes.kLockTypeOther) {
@@ -2014,10 +2035,21 @@
 					}
 		
 					Lock.Set_Type(NewType, true);
-		
-					oDoc.UpdateInterface();
+					Class.AddToRedraw && Class.AddToRedraw();
+				}
+				
+
+				if (Class.IsForm && Class.IsForm()) {
+					let aWidgets = oDoc.GetAllWidgets(Class.GetFullName());
+					aWidgets.forEach(function(widget) {
+						updateLock(widget);
+					});
+				}
+				else {
+					updateLock(Class);
 				}
 
+				oDoc.UpdateInterface();
 				if (Class.IsAnnot && Class.IsAnnot()) {
 					// если аннотация коммент или аннотация с комментом то блокируем и комментарий тоже
 					if (Class.IsComment() || (Class.IsUseContentAsComment() && Class.GetContents() != undefined) || Class.GetReply(0) != null) {

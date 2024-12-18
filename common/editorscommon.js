@@ -3818,13 +3818,13 @@
 		{
 			this._reset();
 		}
-		// todo если строка подстрока другой
 		const subSTR = formula.substring(start_pos);
-		const fieldName = opt_namesList[0][0];
-		const itemNames = opt_namesList[1];
-		const fullPatterns = itemNames.map(function(name) {
-			return '^' + fieldName + '\\s*\\[\\s*(' + name + ')\\s*\\]'
-		});
+		const fullPatterns = [];
+		for (let i = 0; i < opt_namesList[0].length; i += 1) {
+			for (let j = 0; j < opt_namesList[1].length; j += 1) {
+				fullPatterns.push('^(' + opt_namesList[0][i] + ')\\s*\\[\\s*(' + opt_namesList[1][j] + ')\\s*\\]');
+			}
+		}
 		const fullRegs = fullPatterns.map(function(pattern) {
 			return new RegExp(pattern, 'i');
 		});
@@ -3833,10 +3833,10 @@
 			if (match !== null) {
 				this.operand_str = match[0];
 				this.pCurrPos += match[0].length;
-				return [fieldName, match[1]];
+				return [match[1], match[2]];
 			}
 		}
-		const shortPatterns = itemNames.map(function(name) {
+		const shortPatterns = opt_namesList[1].map(function(name) {
 			return '^(' + name + ')(?:\\W|$)'
 		});
 		const shortRegs = shortPatterns.map(function(pattern) {
@@ -3847,7 +3847,7 @@
 			if (match !== null) {
 				this.operand_str = match[1];
 				this.pCurrPos += match[1].length;
-				return [null, match[1]];
+				return [null, match[2] ? match[2] : match[1]];
 			}
 		}
 		return false;
@@ -3859,7 +3859,16 @@
 			this._reset();
 		}
 		const subSTR = formula.substring(start_pos);
-		const reg = /^(\w+|(?:\'.+?\'(?!\')))\[(\w+|(?:\'.+?\'(?!\')))\]/;
+		const reg = XRegExp.build('(?x) ^({{fieldName}})\\[({{itemName}})\\]', {
+			'fieldName': XRegExp.build('{{simple}}|{{quotes}}', {
+				'simple': '[\\p{L}_][\\p{L}\\p{N}_]*',
+				'quotes': "\\'.+?\\'(?!\\')",
+			}),
+			'itemName': XRegExp.build('{{simple}}|{{quotes}}', {
+				'simple': '[\\p{L}\\p{N}_]+',
+				'quotes': "\\'.+?\\'(?!\\')",
+			})
+		});
 		const match = reg.exec(subSTR);
 		if (match !== null && match[1] && match[2]) {
 			this.operand_str = match[0];
@@ -11387,7 +11396,7 @@
 	}
 
 	function loadPathBoolean(onSuccess, onError) {
-		loadScript('../../../../sdkjs/common/Drawings/Format/Path.Boolean.min.js', onSuccess, onError);
+		loadScript('../../../../sdkjs/common/Drawings/Format/path-boolean-min.js', onSuccess, onError);
 	}
 
 	function getAltGr(e)
@@ -14775,31 +14784,6 @@
 	function getArrayRandomElement(aArray) {
 		return aArray[Math.random() * aArray.length | 0];
 	}
-
-	function registerServiceWorker() {
-		if ('serviceWorker' in navigator) {
-			const serviceWorkerName = 'document_editor_service_worker.js';
-			const serviceWorkerPath = '../../../../' + serviceWorkerName;
-			let reg;
-			navigator.serviceWorker.register(serviceWorkerPath)
-				.then(function (registration) {
-					reg = registration;
-					return navigator.serviceWorker.getRegistrations();
-				})
-				.then(function (registrations) {
-					//delete stale service workers
-					for (const registration of registrations) {
-						if (registration !== reg && registration.active && registration.active.scriptURL.endsWith(serviceWorkerName)) {
-							registration.unregister();
-						}
-					}
-				})
-				.catch(function (err) {
-					console.error('Registration failed with ' + err);
-				});
-		}
-	}
-	registerServiceWorker();
 
 	function consoleLog(val) {
 		// console.log(val);

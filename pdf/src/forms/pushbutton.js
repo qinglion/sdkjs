@@ -727,6 +727,7 @@
             }
         }
         
+        this.DrawLocks(oGraphicsPDF);
     };
     CPushButtonField.prototype.SetImageRasterId = function(sRasterId, nAPType) {
         let sPrevRasterId;
@@ -1132,9 +1133,9 @@
     CPushButtonField.prototype.DrawFromStream = function(oGraphicsPDF) {
         if (this.IsHidden() == true)
             return;
-            
+        
         let oViewer = editor.getDocumentRenderer();
-
+        
         let nImgType;
         if (this.IsPressed()) {
             nImgType = AscPDF.APPEARANCE_TYPE.mouseDown;
@@ -1149,7 +1150,7 @@
         let oTr             = oGraphicsPDF.GetTransform();
         let highlightType   = this.GetHighlight();
 
-        let aOrigRect = this.GetOrigRect();
+        let aOrigRect = this.GetRect();
 
         let origX   = aOrigRect[0];
         let origY   = aOrigRect[1];
@@ -1169,6 +1170,7 @@
 
         if (this.IsPressed() == false) {
             oGraphicsPDF.DrawImageXY(originView, origX, origY, undefined, true);
+            this.DrawLocks(oGraphicsPDF);
             return;
         }
 
@@ -1245,6 +1247,8 @@
                 }
             }
         }
+
+        this.DrawLocks(oGraphicsPDF);
     };
     CPushButtonField.prototype.SetPressed = function(bValue) {
         this._pressed = bValue;

@@ -351,8 +351,11 @@
 		],
 		"desktop": {
 			"min": [
+				"common/Local/license.js"
 			],
 			"common": [
+				"common/Local/common.js",
+				"visio/Local/api.js"
 			]
 		},
 		"mobile_banners": {

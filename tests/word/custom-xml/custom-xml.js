@@ -381,6 +381,25 @@ $(function () {
 			"Check saved CustomXML"
 		);
 	});
+	
+	QUnit.test("Test invalid date content when loading customXML (bug 72133)", async function (assert)
+	{
+		CreateCustomXMLForDocument("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<documentData xmlns=\"http://example.com/picture\">\n<simpleText>BAD DATE</simpleText>\n</documentData>\"");
+		
+		let dateTimeCC = CreateDateCC(0);
+		CreateDataBindingForCC(dateTimeCC);
+		dateTimeCC.checkDataBinding();
+		
+		assert.strictEqual(dateTimeCC.GetInnerText(), "BAD DATE\r\n", "Check content of the datePicker when loading invalid date");
+		
+		SetDataToContentControl(dateTimeCC, "Invalid date");
+		dateTimeCC.updateDataBinding();
+		assert.strictEqual(
+			oXMLManager.getCustomXMLString(oXMLManager.getCustomXml(0)),
+			'<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<documentData xmlns=\"http://example.com/picture\">\n\t<simpleText>Invalid date</simpleText>\n</documentData>',
+			"Check saved CustomXML"
+		);
+	});
 
 	QUnit.test("Checkbox content control load/save CustomXML", async function (assert)
 	{

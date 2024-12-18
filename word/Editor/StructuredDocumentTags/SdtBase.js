@@ -1216,10 +1216,19 @@ CSdtBase.prototype.checkDataBinding = function()
 	}
 	else if (this.IsDatePicker())
 	{
-		let datePr = this.Pr.Date.Copy();
-		datePr.SetFullDate(content);
-		this.SetDatePickerPr(datePr);
-		this.private_UpdateDatePickerContent();
+		let date = new Date(content);
+		if (isNaN(date))
+		{
+			if (typeof content === "string")
+				this.SetInnerText(content);
+		}
+		else
+		{
+			let datePr = this.Pr.Date.Copy();
+			datePr.SetFullDate(content);
+			this.SetDatePickerPr(datePr);
+			this.private_UpdateDatePickerContent();
+		}
 	}
 	else if (this.IsDropDownList() || this.IsComboBox() || this.Pr.Text === true)
 	{
