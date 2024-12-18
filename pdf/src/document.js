@@ -3203,8 +3203,12 @@ var CPresentation = CPresentation || function(){};
             isVisible = true;
         }
         
-        if (isVisible == true && bForceMove != true)
+        this.SetMouseDownObject(oAnnot);
+        if (isVisible == true && bForceMove != true) {
+            this.Viewer.onUpdateOverlay();
+            this.UpdateInterfaceTracks();
             return;
+        }
         
         // выставляем смещения
         let yOffset;
