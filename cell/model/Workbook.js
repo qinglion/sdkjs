@@ -15198,7 +15198,7 @@
 	 * @private
 	 */
 	function _isExcludeFormula(aOutStack, oAreaMap) {
-		const aExcludeFormulas = AscCommonExcel.aExcludeRecursiveFomulas;
+		const aExcludeFormulas = AscCommonExcel.aExcludeRecursiveFormulas;
 		for (let i = 0, length = aOutStack.length; i < length; i++) {
 			const oElem = aOutStack[i];
 			if (oElem.type === cElementType.func && aExcludeFormulas.includes(oElem.name)) {
@@ -15238,6 +15238,7 @@
 	Cell.prototype.getListeners = function () {
 		const ws = this.ws;
 		const oDepFormulas = ws.workbook.dependencyFormulas;
+		const aExcludeFormulas = AscCommonExcel.aExcludeRecursiveFormulas;
 
 		if (!oDepFormulas || !oDepFormulas.sheetListeners.hasOwnProperty(ws.Id)) {
 			return null;
@@ -15245,13 +15246,14 @@
 
 		const nCellIndex = getCellIndex(this.nRow, this.nCol);
 		const oFormulaParsed = this.getFormulaParsed();
+		const sFunctionName = oFormulaParsed && oFormulaParsed.getFunctionName();
 		if (oFormulaParsed && !oFormulaParsed.ca) {
 			return null;
 		}
 		const aOutStack = oFormulaParsed && oFormulaParsed.outStack;
 		const oSheetListeners = oDepFormulas.sheetListeners[ws.Id];
 
-		if (oSheetListeners.cellMap.hasOwnProperty(nCellIndex)) {
+		if (oSheetListeners.cellMap.hasOwnProperty(nCellIndex) && !aExcludeFormulas.includes(sFunctionName)) {
 			return oSheetListeners.cellMap[nCellIndex];
 		} else if (aOutStack && aOutStack.length) {
 			for (let nIndex in oSheetListeners.areaMap) {

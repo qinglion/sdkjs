@@ -1704,6 +1704,12 @@ $(function () {
 		bCaFromSelectedCell = getCaFromSelectedCell("A1072");
 		assert.strictEqual(bCaFromSelectedCell, true, "Test: SWITCH. With default_arg. Default_arg has recursion but it matches. A1072 - flag ca: true");
 		bCaFromSelectedCell = null;
+		// Case: Exception formula "CELL" that ignores rules of recursion recognition
+		ws.getRange2("A1073").setValue("=CELL(\"filename\",A1073)");
+		assert.strictEqual(ws.getRange2("A1073").getValue(), "[TeSt.xlsx]Sheet1", "Test: Exception formulas that ignores rules of recursion recognition. A1073 - 1039. Formula - CELL");
+		bCaFromSelectedCell = getCaFromSelectedCell("A1073");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: Exception formulas that ignores rules of recursion recognition. A1039 - flag ca: true");
+		bCaFromSelectedCell = null;
 		// -- Test changeLinkedCell method.
 		oCell = selectCell("A1000");
 		let oCellNeedEnableRecalc = selectCell("B1000");

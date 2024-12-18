@@ -75,7 +75,7 @@ function (window, undefined) {
 	var arrayFunctionsMap = {"SUMPRODUCT": 1, "FILTER": 1, "SUM": 1, "LOOKUP": 1, "AGGREGATE": 1};
 
 	var importRangeLinksState = {importRangeLinks: null, startBuildImportRangeLinks: null};
-	const aExcludeRecursiveFomulas = ['ISFORMULA', 'SHEETS', 'AREAS', 'COLUMN', 'COLUMNS', 'ROW', 'ROWS'];
+	const aExcludeRecursiveFormulas = ['ISFORMULA', 'SHEETS', 'AREAS', 'COLUMN', 'COLUMNS', 'ROW', 'ROWS', 'CELL', 'INDIRECT'];
 
 	function getArrayCopy(arr) {
 		var newArray = [];
@@ -7968,7 +7968,7 @@ function parserFormula( formula, parent, _ws ) {
 			if (parserFormula.ca) {
 				return bRecursiveCell;
 			}
-			if (sFunctionName && aExcludeRecursiveFomulas.includes(sFunctionName)) {
+			if (sFunctionName && aExcludeRecursiveFormulas.includes(sFunctionName)) {
 				return bRecursiveCell;
 			}
 			if (bConditionalFormula) {
@@ -11411,7 +11411,7 @@ function parserFormula( formula, parent, _ws ) {
 	window['AscCommonExcel'].bIsSupportArrayFormula = bIsSupportArrayFormula;
 	window['AscCommonExcel'].bIsSupportDynamicArrays = bIsSupportDynamicArrays;
 
-	window['AscCommonExcel'].aExcludeRecursiveFomulas = aExcludeRecursiveFomulas;
+	window['AscCommonExcel'].aExcludeRecursiveFormulas = aExcludeRecursiveFormulas;
 
 	window['AscCommonExcel'].cNumber = cNumber;
 	window['AscCommonExcel'].cString = cString;
