@@ -111,7 +111,7 @@ protAPI.SetDocumentModified = function(bValue)
 
 protAPI._saveLocalCheck = function()
 {
-	return this._saveCheck();
+	return true;//this._saveCheck();
 };
 
 protAPI.asc_Save = function (isNoUserSave, isSaveAs, isResaveAttack, options)
@@ -130,16 +130,18 @@ protAPI.asc_Save = function (isNoUserSave, isSaveAs, isResaveAttack, options)
     if (true === this.canSave && this._saveLocalCheck())
 	{
 		var _isNaturalSave = this.IsUserSave;
+		/*
 		this.canSave = false;
 
 		var t = this;
 		this.CoAuthoringApi.askSaveChanges(function(e) {
 			t._onSaveCallback(e);
 		});
-		
+
 		if (this.CoAuthoringApi.onUnSaveLock)
 			this.CoAuthoringApi.onUnSaveLock();
-		
+		*/
+
 		if (_isNaturalSave === true)
 			window["DesktopOfflineAppDocumentStartSave"](isSaveAs, undefined, undefined, undefined, options);
 	}
@@ -179,10 +181,10 @@ window["DesktopOfflineAppDocumentStartSave"] = function(isSaveAs, password, isFo
 window["DesktopOfflineAppDocumentEndSave"] = function(error, hash, password)
 {
 	editor.sync_EndAction(Asc.c_oAscAsyncActionType.BlockInteraction, Asc.c_oAscAsyncAction.Save);
-	if (0 != error)
+	if (2 == error)
 		editor.sendEvent("asc_onError", c_oAscError.ID.ConvertationSaveError, c_oAscError.Level.NoCritical);
 };
-protAPI.asc_DownloadAsNatural = Asc['asc_docs_api'].prototype.asc_DownloadAs;
+protAPI.asc_DownloadAsNatural = protAPI.asc_DownloadAs;
 protAPI.asc_DownloadAs = function(options)
 {
     if (options && options.isNaturalDownload)
@@ -193,7 +195,7 @@ protAPI.asc_DownloadAs = function(options)
 protAPI["asc_Save"] = protAPI.asc_Save;
 protAPI["asc_DownloadAs"] = protAPI.asc_DownloadAs;
 
-protAPI.prototype.asc_isOffline = function()
+protAPI.asc_isOffline = function()
 {
 	return true;
 };
