@@ -11512,21 +11512,22 @@
 			if (AscCommon.isRealObject(referenceShape.blipFill)) {
 				const blipFill = referenceShape.blipFill.createDuplicate();
 
-				const refX = referenceShape.bounds.x;
-				const refY = referenceShape.bounds.y;
-				const refW = referenceShape.bounds.w;
-				const refH = referenceShape.bounds.h;
+				const refX = referenceShape.bounds.l;
+				const refY = referenceShape.bounds.t;
+				const refW = referenceShape.bounds.r - referenceShape.bounds.l;
+				const refH = referenceShape.bounds.b - referenceShape.bounds.t;
 				const resX = compoundPathBounds['getLeft']();
 				const resY = compoundPathBounds['getTop']();
 				const resW = compoundPathBounds['getWidth']();
 				const resH = compoundPathBounds['getHeight']();
 
-				blipFill.srcRect = {
-					l: 100 * (resX - refX) / refW,
-					t: 100 * (resY - refY) / refH,
-					r: 100 * (resX + resW - refX) / refW,
-					b: 100 * (resY + resH - refY) / refH,
-				};
+				blipFill.srcRect = new AscFormat.CSrcRect();
+				blipFill.srcRect.setLTRB(
+					100 * (resX - refX) / refW,
+					100 * (resY - refY) / refH,
+					100 * (resX + resW - refX) / refW,
+					100 * (resY + resH - refY) / refH
+				);
 
 				resultShape.setBlipFill(blipFill);
 			}
