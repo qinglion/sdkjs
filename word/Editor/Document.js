@@ -3852,6 +3852,17 @@ CDocument.prototype.private_RecalculateFastParagraph = function(arrChanges, nSta
 	for (let paraIndex = 0, paraCount = arrParagraphs.length; paraIndex < paraCount; ++paraIndex)
 	{
 		let para = arrParagraphs[paraIndex];
+		
+		if (this.FullRecalc.Id)
+		{
+			// TODO: По-хорошему надо для случая docPos[0].Class !== this
+			//       сделать тоже проверку. Для автофигур и сносок можно найти параграф, к которому они привязаны, а для
+			//       колонтитулов проверить какую секцию сейчас расчитываем
+			let docPos = para.GetDocumentPositionFromObject();
+			if (!docPos.length || (docPos[0].Class === this && docPos[0].Position >= this.FullRecalc.StartIndex))
+				return false;
+		}
+		
 		let _pages = para.Recalculate_FastWholeParagraph();
 		if (!_pages || _pages.length <= 0)
 			return false;
