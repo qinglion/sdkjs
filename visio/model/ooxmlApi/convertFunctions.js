@@ -1502,6 +1502,13 @@
 				} else {
 					AscCommon.consoleLog("fillForegndTrans value is themed or something. Not calculated for", this);
 				}
+			} else {
+				AscCommon.consoleLog("fillForegnd cell not found for", this);
+				// try to get from theme
+				// uniFillForegnd = AscVisio.themeval(null, this, pageInfo, visioDocument.themes, "FillColor",
+				// 	undefined, gradientEnabled);
+				// just use white
+				uniFillForegnd = AscFormat.CreateUnfilFromRGB(255, 255, 255);
 			}
 		}
 
