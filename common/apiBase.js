@@ -167,7 +167,7 @@
         this.forceSaveButtonContinue = false;
         this.forceSaveTimeoutTimeout = null;
 		this.forceSaveForm = null;
-		this.disconnectRestrictions = null;//to restore restrictions after disconnect
+		this.isDisconnectAction = false;//to restore restrictions after disconnect
 		this.forceSaveUndoRequest = false; // Флаг нужен, чтобы мы знали, что данное сохранение пришло по запросу Undo в совместке
 		this.saveRelativePrev = {};
 
@@ -1629,10 +1629,9 @@
 			t.sendEvent('asc_onCoAuthoringChatReceiveMessage', e, clear);
 		};
 		this.CoAuthoringApi.onServerVersion = function (buildVersion, buildNumber) {
-			if (null !== t.disconnectRestrictions) {
-				t.sync_EndAction(Asc.c_oAscAsyncActionType.Information, Asc.c_oAscAsyncAction.Disconnect);
-				t.asc_setRestriction(t.disconnectRestrictions);
-				t.disconnectRestrictions = null;
+			if (t.isDisconnectAction) {
+				t.sync_EndAction(Asc.c_oAscAsyncActionType.BlockInteraction, Asc.c_oAscAsyncAction.Disconnect);
+				t.isDisconnectAction = false;
 			}
 
 			t.sendEvent('asc_onServerVersion', buildVersion, buildNumber);
@@ -1845,10 +1844,9 @@
 			}
 			let isSessionIdleDisconnect = AscCommon.c_oCloseCode.sessionIdle === opt_closeCode;
 			if (null != opt_closeCode && !isSessionIdleDisconnect) {
-				if (null !== t.disconnectRestrictions) {
-					t.sync_EndAction(Asc.c_oAscAsyncActionType.Information, Asc.c_oAscAsyncAction.Disconnect);
-					t.asc_setRestriction(t.disconnectRestrictions);
-					t.disconnectRestrictions = null;
+				if (t.isDisconnectAction) {
+					t.sync_EndAction(Asc.c_oAscAsyncActionType.BlockInteraction, Asc.c_oAscAsyncAction.Disconnect);
+					t.isDisconnectAction = false;
 				}
 				let allowRefresh = [c_oCloseCode.updateVersion, c_oCloseCode.noCache, c_oCloseCode.restore, c_oCloseCode.quiet];
 				if (-1 !== allowRefresh.indexOf(opt_closeCode) && !t.isDocumentModified() && t.canRefreshFile())  {
@@ -1863,10 +1861,9 @@
 						t.sendEvent('asc_onError', error, level);
 					}
 				}
-			} else if (null === t.disconnectRestrictions){
-				t.disconnectRestrictions = t.restrictions;
-				t.sync_StartAction(Asc.c_oAscAsyncActionType.Information, Asc.c_oAscAsyncAction.Disconnect);
-				t.asc_setRestriction(Asc.c_oAscRestrictionType.View);
+			} else if (!t.isDisconnectAction){
+				t.sync_StartAction(Asc.c_oAscAsyncActionType.BlockInteraction, Asc.c_oAscAsyncAction.Disconnect);
+				t.isDisconnectAction = true;
 				if (isSessionIdleDisconnect) {
 					t.waitNotIdle(undefined, function () {
 						t.CoAuthoringApi.connect();
