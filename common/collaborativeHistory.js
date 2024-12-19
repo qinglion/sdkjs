@@ -370,7 +370,8 @@
 			let historyChange = historyItem.Data;
 			let historyClass  = historyItem.Class;
 
-			if (!historyClass || !historyClass.Get_Id)
+			//todo
+			if (!historyClass)
 				continue;
 
 			let data = AscCommon.CCollaborativeChanges.ToBase64(historyItem.Binary.Pos, historyItem.Binary.Len);

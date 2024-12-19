@@ -445,8 +445,7 @@ function CHistory(Document)
 	this.RegisterClasses = 0;
 	//this.MinorChanges    = false; // Данный параметр нужен, чтобы определить влияют ли добавленные изменения на пересчет
 
-	this.memory = new AscCommon.CMemory();
-	this.BinaryWriter = this.memory;
+	this.BinaryWriter = this.memory = new AscCommon.CMemory();
 
 	// this.FileCheckSum = 0;
 	// this.FileSize     = 0;
@@ -571,10 +570,10 @@ CHistory.prototype.Undo = function(Options)
   return true;
 };
 CHistory.prototype.UndoRedoPrepare = function (oRedoObjectParam, bUndo) {
-	if (this.Is_On()) {
-		oRedoObjectParam.bIsOn = true;
-		this.TurnOff();
-	}
+	// if (this.Is_On()) {
+	// 	oRedoObjectParam.bIsOn = true;
+	// 	this.TurnOff();
+	// }
 	/* отключаем отрисовку на случай необходимости пересчета ячеек, заносим ячейку, при необходимости в список перерисовываемых */
 	this.workbook.dependencyFormulas.lockRecal();
 
@@ -854,8 +853,8 @@ CHistory.prototype.UndoRedoEnd = function (Point, oRedoObjectParam, bUndo) {
         }
     }
 
-	if (oRedoObjectParam && oRedoObjectParam.bIsOn)
-		this.TurnOn();
+	// if (oRedoObjectParam && oRedoObjectParam.bIsOn)
+	// 	this.TurnOn();
 
 	if (!bUndo) {
 		this.workbook.handlers.trigger("updatePrintPreview");
@@ -1144,9 +1143,34 @@ CHistory.prototype.Create_NewPoint = function()
 		}
 	}
 	//this.workbook.handlers.trigger("cleanCutData");
-
+	this.Add(AscCommonExcel.g_oUndoRedoCell, AscCH.historyitem_Unknown, null, null, new AscDFH.CChangesPointChange(AscCommonExcel.g_oUndoRedoCell, this.Points[this.Index]), true);
 	return true;
 };
+	/**
+	 * Специальная функция, для создания точки, чтобы отловить все изменения, которые происходят. После использования
+	 * данная точка ДОЛЖНА быть удалена через функцию Remove_LastPoint.
+	 * @param {number} description - идентификатор действия
+	 */
+	CHistory.prototype.CreateNewPointToCollectChanges = function(description)
+	{
+		// Создаем новую точку
+		this.Points[++this.Index] = {
+			Items : [], // Массив изменений, начиная с текущего момента
+			UpdateRigions : {},
+			UndoSheetId: null,
+			RedoSheetId: null,
+			SelectRange : null,
+			SelectRangeRedo : null,
+			Time  : null,   // Текущее время
+			SelectionState : null
+		};
+
+
+		this.Points.length  = this.Index + 1;
+		this.CollectChanges = true;
+
+		return this.Index;
+	};
 
 // Регистрируем новое изменение:
 // Class - объект, в котором оно произошло
@@ -1155,13 +1179,33 @@ CHistory.prototype.Add = function(Class, Type, sheetid, range, Data, LocalChange
 {
 	if (!this.CanAddChanges())
 		return;
+	let serializable;
+	if (Class instanceof AscCommonExcel.UndoRedoItemSerializable) {
+		serializable = Class;
+		Class = serializable.oClass;
+		Type = serializable.nActionType;
+		sheetid = serializable.nSheetId;
+		range = serializable.oRange;
+		Data = serializable.oData;
+		LocalChange = serializable.LocalChange;
+	} else {
+		serializable = new AscCommonExcel.UndoRedoItemSerializable(Class, Type, sheetid, range, Data, this.LocalChange);
+	}
 
 	this._CheckCanNotAddChanges();
 
-	var Item;
 	if ( this.RecIndex >= this.Index )
 		this.RecIndex = this.Index - 1;
-		Item =
+
+	var Binary_Pos = this.BinaryWriter.GetCurPosition();
+
+	this.workbook._SerializeHistoryItem2(this.BinaryWriter, serializable);
+
+	if (Class && Class.SetIsRecalculated && (!Class || (Class.IsNeedRecalculate && Class.IsNeedRecalculate())))
+		Class.SetIsRecalculated(false);
+
+	var Binary_Len = this.BinaryWriter.GetCurPosition() - Binary_Pos;
+	var Item =
 		{
 			Class : Class,
 			Type  : Type,
@@ -1169,8 +1213,15 @@ CHistory.prototype.Add = function(Class, Type, sheetid, range, Data, LocalChange
 			Range : null,
 			Data  : Data,
 			LocalChange: this.LocalChange,
-			bytes: undefined
+			bytes: undefined,
+			Binary : {
+				Pos : Binary_Pos,
+				Len : Binary_Len
+			},
+			//NeedRecalc : !this.MinorChanges && (!Class || Class.IsNeedRecalculate() || Class.IsNeedRecalculateLineNumbers())
 		};
+
+
 	if(null != range)
 		Item.Range = range.clone();
 	if(null != LocalChange)
@@ -1189,8 +1240,12 @@ CHistory.prototype.Add = function(Class, Type, sheetid, range, Data, LocalChange
 	}
 	if (null != sheetid)
 		curPoint.UndoSheetId = sheetid;
-	if(1 == curPoint.Items.length)
+
+	if(1 === curPoint.Items.length)
 		this._sendCanUndoRedo();
+
+	if (!this.CollaborativeEditing)
+		return;
 
 	if (Class)
 	{
@@ -1206,6 +1261,9 @@ CHistory.prototype.Add = function(Class, Type, sheetid, range, Data, LocalChange
 			else
 				AscCommon.CollaborativeEditing.Update_DocumentPositionsOnRemove(Class.Class, Class.Pos, Count);
 		}
+		if(Class.IsPosExtChange && Class.IsPosExtChange()){
+			this.CollaborativeEditing.AddPosExtChanges(Item, Class);
+		}
 	}
 };
 CHistory.prototype.CanAddChanges = function()
@@ -1215,13 +1273,14 @@ CHistory.prototype.CanAddChanges = function()
 
 CHistory.prototype._sendCanUndoRedo = function()
 {
-	if (!this.workbook || this.workbook.bCollaborativeChanges) {
-		return;
-	}
+	this.Api.wb.Document_UpdateUndoRedoState();
+	// if (!this.workbook || this.workbook.bCollaborativeChanges) {
+	// 	return;
+	// }
 
-	this.workbook.handlers.trigger("setCanUndo", this.Can_Undo());
-	this.workbook.handlers.trigger("setCanRedo", this.Can_Redo());
-	this.workbook.handlers.trigger("setDocumentModified", this.Have_Changes());
+	// this.workbook.handlers.trigger("setCanUndo", this.Can_Undo());
+	// this.workbook.handlers.trigger("setCanRedo", this.Can_Redo());
+	// this.workbook.handlers.trigger("setDocumentModified", this.Have_Changes());
 };
 CHistory.prototype.SetSelection = function(range)
 {
@@ -1536,6 +1595,9 @@ CHistory.prototype.GetSerializeArray = function()
 			return AscCommon.CollaborativeEditing.GetDocumentPositionBinary(this.BinaryWriter, PosInfo);
 		}
 		return false;
+	};
+	CHistory.prototype.Update_PointInfoItem = function()
+	{
 	};
 	//------------------------------------------------------------export--------------------------------------------------
 	window['AscCommon'] = window['AscCommon'] || {};

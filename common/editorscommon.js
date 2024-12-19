@@ -14643,6 +14643,7 @@
 		if (api.documentOpenOptions && api.documentOpenOptions["debug"]) {
 			console.log("[speed]: "+ msg);
 		}
+		console.error("[speed]: "+ msg);
 		api.CoAuthoringApi.sendClientLog(level, msg);
 	}
 

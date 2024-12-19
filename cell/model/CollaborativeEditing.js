@@ -1029,6 +1029,8 @@
 			logicDocument.DrawingDocument.EndTrackTable(null, true);
 			logicDocument.TurnOffCheckChartSelection();
 
+			this.oRedoObjectParam = new AscCommonExcel.RedoObjectParam();
+			History.UndoRedoPrepare(this.oRedoObjectParam, false);
 			return this.private_SaveDocumentState();
 		}
 		CCollaborativeEditing.prototype.PostUndo = function (state, changes) {
@@ -1042,8 +1044,35 @@
 			logicDocument.UpdateRulers();
 			logicDocument.sendEvent("asc_onUndoRedoInCollaboration");
 
-			History.UndoRedoEnd();
+			let Point = {Items: []}
+			if (changes.length > 0) {
+				let elem = changes.find(function(elem){
+					if(elem && elem.Point) {
+						return true;
+					}
+				});
+				if (elem) {
+					Point = elem.Point;
+				}
+			}
+			History.UndoRedoEnd(Point, this.oRedoObjectParam, false);
 		}
+
+		AscCommon.CCollaborativeHistory.prototype.CommutePropertyChange = function(oClass, oChange, nStartPosition)
+		{
+			//todo снаследоваться потому что планируется обьедениение sdk
+			var arrChangesForProceed = this.Changes;
+			for (var nIndex = nStartPosition, nOverallCount = arrChangesForProceed.length; nIndex < nOverallCount; ++nIndex) {
+				var oOtherAction = arrChangesForProceed[nIndex];
+				if (!oOtherAction) {
+					continue;
+				}
+				if (oChange.CommuteRelated && false === oChange.CommuteRelated(oOtherAction)) {
+					return false;
+				}
+			}
+			return true;
+		};
 
 		/**
 		 * Отвечает за лок в совместном редактировании

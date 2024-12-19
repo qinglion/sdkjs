@@ -3278,6 +3278,7 @@ var editor;
 
 		this.wb = new AscCommonExcel.WorkbookView(this.wbModel, this.controller, this.handlers, this.HtmlElement,
 			this.topLineEditorElement, this, this.collaborativeEditing, this.fontRenderingMode);
+		//todo падение в CGraphics.prototype.DrawLockObjectRect из-за WordControl
 		this.WordControl = {m_oLogicDocument: this.wb};
 
 		this.registerCustomFunctionsLibrary();

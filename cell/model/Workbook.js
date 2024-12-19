@@ -3705,6 +3705,11 @@
 			return;
 		}
 	};
+	Workbook.prototype._SerializeHistoryItem2 = function (oMemory, item) {
+		if (!item.LocalChange) {
+			item.Serialize(oMemory, this.oApi.collaborativeEditing);
+		}
+	};
 	Workbook.prototype._SerializeHistory = function(oMemory, item, aPointChanges) {
 		let data = this._SerializeHistoryItem(oMemory, item);
 		if (data) {
@@ -3721,6 +3726,9 @@
 		// Пересчитываем позиции
 		AscCommon.CollaborativeEditing.Refresh_DCChanges();
 
+		if (this.aCollaborativeActions.length > 0) {
+			debugger;
+		}
 		var aActions = this.aCollaborativeActions.concat(AscCommon.History.GetSerializeArray());
 		if(aActions.length > 0)
 		{
@@ -5992,7 +6000,9 @@
 		this.activeFillType = null;
 		this.timelines = [];
 		this.changedArrays = null;
-		AscCommon.g_oTableId.Add(this, this.Id);
+		AscFormat.ExecuteNoHistory(function () {
+			AscCommon.g_oTableId.Add(this, this.Id);
+		}, this, [], true);
 	}
 
 	Worksheet.prototype.getCompiledStyle = function (row, col, opt_cell, opt_styleComponents) {
@@ -14549,8 +14559,8 @@
 		if(AscCommon.History.Is_On())
 			DataNew = this.getValueData();
 		if(AscCommon.History.Is_On() && false == DataOld.isEqual(DataNew)) {
-			History.Add(new AscDFH.CChangesCellValueChange(this.ws, DataOld, DataNew, new AscDFH.CCellCoordsWritable(this.nRow, this.nCol)));
-			//AscCommon.History.Add(AscCommonExcel.g_oUndoRedoCell, AscCH.historyitem_Cell_ChangeValue, this.ws.getId(), new Asc.Range(this.nCol, this.nRow, this.nCol, this.nRow), new UndoRedoData_CellSimpleData(this.nRow, this.nCol, DataOld, DataNew));
+			// History.Add(new AscDFH.CChangesCellValueChange(this.ws, DataOld, DataNew, new AscDFH.CCellCoordsWritable(this.nRow, this.nCol)));
+			AscCommon.History.Add(AscCommonExcel.g_oUndoRedoCell, AscCH.historyitem_Cell_ChangeValue, this.ws.getId(), new Asc.Range(this.nCol, this.nRow, this.nCol, this.nRow), new UndoRedoData_CellSimpleData(this.nRow, this.nCol, DataOld, DataNew));
 		}
 		//todo не должны удаляться ссылки, если сделать merge ее части.
 		if(this.isNullTextString())
