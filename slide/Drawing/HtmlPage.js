@@ -78,9 +78,6 @@
 		if (!preserveSavedPosition)
 			this.savedPosition = newPosition;
 	};
-	Splitter.prototype.restorePosition = function () {
-		this.position = this.savedPosition;
-	};
 	Splitter.prototype.setLimits = function (minPosition, maxPosition) {
 		this.minPosition = minPosition;
 		this.maxPosition = maxPosition;

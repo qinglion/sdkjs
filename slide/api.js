@@ -6803,22 +6803,12 @@ background-repeat: no-repeat;\
 		this.sendEvent("asc_onHideForeignCursorLabel", UserId);
 	};
 
-	asc_docs_api.prototype.ShowThumbnails           = function(bIsShow)
-	{
-		if (bIsShow)
-		{
-			this.WordControl.Splitter1Pos = this.WordControl.OldSplitter1Pos;
-			if (this.WordControl.Splitter1Pos == 0)
-				this.WordControl.Splitter1Pos = 70;
-			this.WordControl.OnResizeSplitter();
-		}
-		else
-		{
-			var old                       = this.WordControl.OldSplitter1Pos;
-			this.WordControl.Splitter1Pos = 0;
-			this.WordControl.OnResizeSplitter();
-			this.WordControl.OldSplitter1Pos = old;
-		}
+	asc_docs_api.prototype.ShowThumbnails = function (bIsShow) {
+		const savedSplitterPosition = this.WordControl.splitters[0].savedPosition;
+		bIsShow
+			? this.WordControl.splitters[0].setPosition(savedSplitterPosition <= 0 ? 70 : savedSplitterPosition, true)
+			: this.WordControl.splitters[0].setPosition(0, false, true);
+		this.WordControl.OnResizeSplitter();
 	};
 
 	asc_docs_api.prototype.asc_ShowNotes = function(bIsShow)
@@ -6859,7 +6849,7 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype.syncOnThumbnailsShow = function()
 	{
 		var bIsShow = true;
-		if (0 == this.WordControl.Splitter1Pos)
+		if (0 == this.WordControl.splitters[0].position)
 			bIsShow = false;
 
 		this.sendEvent("asc_onThumbnailsShow", bIsShow);
