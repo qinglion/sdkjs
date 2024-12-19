@@ -27021,7 +27021,7 @@
 	};
 	WorksheetView.prototype._moveImageData = function (sx, sy, sw, sh, dx, dy, dw, dh) {
 		if (AscBrowser.isSafari) {
-			this.drawingGraphicCtx.moveImageDataSafari(x, y, moveWidth, ctxH, x - dx, y);
+			this.drawingGraphicCtx.moveImageDataSafari(this.getRightToLeft() ? (this.getCtxWidth() - sx - sw) : sx, sy, sw, sh, this.getRightToLeft() ? (this.getCtxWidth() - dx - dw) : dx, dy);
 		} else {
 			this.drawingGraphicCtx.moveImageData(this.getRightToLeft() ? (this.getCtxWidth() - sx - sw) : sx, sy, sw, sh, this.getRightToLeft() ? (this.getCtxWidth() - dx - dw) : dx, dy);
 		}
