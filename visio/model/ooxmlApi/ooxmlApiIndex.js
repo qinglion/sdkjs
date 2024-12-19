@@ -746,6 +746,7 @@
 																		 gradientEnabled, themedColorsRow) {
 		let cellValue = this.v;
 		let cellName = this.n;
+		let cellFunction = this.f;
 
 		let returnValue;
 
@@ -759,7 +760,7 @@
 
 		// TODO handle 2.2.7.5	Fixed Theme
 
-		if (cellValue === "Themed") {
+		if (cellValue === "Themed" || cellFunction === "THEMEVAL()") {
 			// equal to THEMEVAL() call
 			// add themeval support for every supported cell
 			returnValue = AscVisio.themeval(this, shape, pageInfo, themes, undefined,
@@ -854,7 +855,14 @@
 						case 23:
 							rgba = AscCommon.RgbaHexToRGBA('#1A1A1A');
 							break;
+						default:
+							AscCommon.consoleLog("error: unknown color index");
+							rgba = AscCommon.RgbaHexToRGBA('#000000');
+							break;
 					}
+				} else {
+					AscCommon.consoleLog("error: color index is null");
+					rgba = AscCommon.RgbaHexToRGBA('#000000');
 				}
 			}
 

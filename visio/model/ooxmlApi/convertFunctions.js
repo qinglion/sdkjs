@@ -266,8 +266,8 @@
 			 * @param textCShape
 			 */
 			function parseParagraphAndAddToShapeContent(propsRowNum, paragraphPropsCommon, textCShape) {
-				if (paragraphPropsCommon === null) {
-					AscCommon.consoleLog("paragraphPropsCommon is null. Creating default paragraph");
+				if (paragraphPropsCommon === null || paragraphPropsCommon === undefined) {
+					AscCommon.consoleLog("paragraphPropsCommon is null or undefined. Creating default paragraph");
 					// create new paragraph to hold new properties
 					let oContent = textCShape.getDocContent();
 					let paragraph = new Paragraph(textCShape.getDrawingDocument(), true);
@@ -407,7 +407,7 @@
 				// handle lang
 				let oNewLang = new CLang();
 				let languageCell = characterPropsFinal && characterPropsFinal.getCell("LangID");
-				let languageId = Asc.g_oLcidNameToIdMap[languageCell.v];
+				let languageId = languageCell ? Asc.g_oLcidNameToIdMap[languageCell.v] : 1033;
 				// switch (languageCell.v) {
 				// 	case "ru-RU":
 				// 		languageId = 1049;
@@ -511,6 +511,28 @@
 					oRun.Pr.Italic = Boolean(Number(styleVsdx) & 2);
 					oRun.Pr.Underline = Boolean(Number(styleVsdx) & 4);
 					oRun.Pr.SmallCaps = Boolean(Number(styleVsdx) & 8);
+				}
+
+				// handle Strikethru
+				const strikeVsdx = characterPropsFinal && characterPropsFinal.getCellStringValue("Strikethru");
+				oRun.Pr.Strikeout = strikeVsdx === "1";
+
+				// handle DoubleStrikethrough
+				const doubleStrikeVsdx = characterPropsFinal && characterPropsFinal.getCellStringValue("DoubleStrikethrough");
+				oRun.Pr.DStrikeout = doubleStrikeVsdx === "1";
+
+				// handle Caps
+				const caseVsdx = characterPropsFinal && characterPropsFinal.getCellStringValue("Case");
+				oRun.Pr.Caps = caseVsdx === "1";
+
+				// handle VertAlign (doesn't work I don't know why)
+				const posVsdx = characterPropsFinal && characterPropsFinal.getCellStringValue("Pos");
+				if (posVsdx === "1") {
+					oRun.Pr.VertAlign = AscCommon.vertalign_SuperScript;
+				} else if (posVsdx === "2") {
+					oRun.Pr.VertAlign = AscCommon.vertalign_SubScript;
+				} else {
+					oRun.Pr.VertAlign = AscCommon.vertalign_Baseline;
 				}
 			}
 
@@ -1480,6 +1502,13 @@
 				} else {
 					AscCommon.consoleLog("fillForegndTrans value is themed or something. Not calculated for", this);
 				}
+			} else {
+				AscCommon.consoleLog("fillForegnd cell not found for", this);
+				// try to get from theme
+				// uniFillForegnd = AscVisio.themeval(null, this, pageInfo, visioDocument.themes, "FillColor",
+				// 	undefined, gradientEnabled);
+				// just use white
+				uniFillForegnd = AscFormat.CreateUnfilFromRGB(255, 255, 255);
 			}
 		}
 
