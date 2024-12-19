@@ -855,7 +855,14 @@
 						case 23:
 							rgba = AscCommon.RgbaHexToRGBA('#1A1A1A');
 							break;
+						default:
+							AscCommon.consoleLog("error: unknown color index");
+							rgba = AscCommon.RgbaHexToRGBA('#000000');
+							break;
 					}
+				} else {
+					AscCommon.consoleLog("error: color index is null");
+					rgba = AscCommon.RgbaHexToRGBA('#000000');
 				}
 			}
 
