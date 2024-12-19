@@ -266,8 +266,8 @@
 			 * @param textCShape
 			 */
 			function parseParagraphAndAddToShapeContent(propsRowNum, paragraphPropsCommon, textCShape) {
-				if (paragraphPropsCommon === null) {
-					AscCommon.consoleLog("paragraphPropsCommon is null. Creating default paragraph");
+				if (paragraphPropsCommon === null || paragraphPropsCommon === undefined) {
+					AscCommon.consoleLog("paragraphPropsCommon is null or undefined. Creating default paragraph");
 					// create new paragraph to hold new properties
 					let oContent = textCShape.getDocContent();
 					let paragraph = new Paragraph(textCShape.getDrawingDocument(), true);
@@ -407,7 +407,7 @@
 				// handle lang
 				let oNewLang = new CLang();
 				let languageCell = characterPropsFinal && characterPropsFinal.getCell("LangID");
-				let languageId = Asc.g_oLcidNameToIdMap[languageCell.v];
+				let languageId = languageCell ? Asc.g_oLcidNameToIdMap[languageCell.v] : 1033;
 				// switch (languageCell.v) {
 				// 	case "ru-RU":
 				// 		languageId = 1049;
