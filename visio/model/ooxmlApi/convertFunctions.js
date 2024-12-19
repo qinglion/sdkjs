@@ -512,6 +512,28 @@
 					oRun.Pr.Underline = Boolean(Number(styleVsdx) & 4);
 					oRun.Pr.SmallCaps = Boolean(Number(styleVsdx) & 8);
 				}
+
+				// handle Strikethru
+				const strikeVsdx = characterPropsFinal && characterPropsFinal.getCellStringValue("Strikethru");
+				oRun.Pr.Strikeout = strikeVsdx === "1";
+
+				// handle DoubleStrikethrough
+				const doubleStrikeVsdx = characterPropsFinal && characterPropsFinal.getCellStringValue("DoubleStrikethrough");
+				oRun.Pr.DStrikeout = doubleStrikeVsdx === "1";
+
+				// handle Caps
+				const caseVsdx = characterPropsFinal && characterPropsFinal.getCellStringValue("Case");
+				oRun.Pr.Caps = caseVsdx === "1";
+
+				// handle VertAlign (doesn't work I don't know why)
+				const posVsdx = characterPropsFinal && characterPropsFinal.getCellStringValue("Pos");
+				if (posVsdx === "1") {
+					oRun.Pr.VertAlign = AscCommon.vertalign_SuperScript;
+				} else if (posVsdx === "2") {
+					oRun.Pr.VertAlign = AscCommon.vertalign_SubScript;
+				} else {
+					oRun.Pr.VertAlign = AscCommon.vertalign_Baseline;
+				}
 			}
 
 			function initPresentationField(oFld, fieldRow, isTextInherited) {
