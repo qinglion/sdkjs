@@ -642,7 +642,7 @@ void main() {\n\
                 }
 
                 tmp = Infinity;
-                if (y > _lineY)
+                if (y > _lineY - _lineAscent * 2)
                 {
                     if (_distX >= 0 && _distX <= _lineWidth)
                         tmp = y - _lineY;
