@@ -705,11 +705,11 @@ function (window, undefined) {
 
 				// ToDo move this code to moveCursor
 
-				this.lastRangePos = this._parseResult && this._parseResult.argPosArr
+				this.lastRangePos = this._parseResult && this._parseResult.argPosArr && this._parseResult.argPosArr.length
 					? this._parseResult.argPosArr[0].start 
 					: this.cursorPos;
 
-				this.lastRangeLength = this._parseResult && this._parseResult.argPosArr
+				this.lastRangeLength = this._parseResult && this._parseResult.argPosArr && this._parseResult.argPosArr.length
 					? this._parseResult.argPosArr[this._parseResult.argPosArr.length - 1].end - this._parseResult.argPosArr[0].start 
 					: 0;
 			}
