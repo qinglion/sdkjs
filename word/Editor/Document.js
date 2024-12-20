@@ -9772,18 +9772,22 @@ CDocument.prototype.OnKeyDown = function(e)
 		}
 		else if (e.KeyCode === 38) // Top Arrow
 		{
+			let moveCursorUp = true;
 			if (this.IsFillingFormMode())
 			{
-				var oSelectedInfo = this.GetSelectedElementsInfo();
-				var oForm         = oSelectedInfo.GetForm();
+				moveCursorUp = false;
 
-				if (oForm && !oForm.IsComboBox() && !oForm.IsDropDownList())
-					oForm = null;
-
-				if (oForm)
-					this.TurnComboBoxFormValue(oForm, false);
+				let form = this.GetSelectedElementsInfo().GetForm();
+				if (form)
+				{
+					if (form.IsComboBox() || form.IsDropDownList())
+						this.TurnComboBoxFormValue(form, false);
+					else if (form.IsTextForm() || form.IsMultiLineForm())
+						moveCursorUp = true;
+				}
 			}
-			else
+			
+			if (moveCursorUp)
 			{
 				// TODO: Реализовать Ctrl + Up/ Ctrl + Shift + Up
 				// Чтобы при зажатой клавише курсор не пропадал
@@ -9824,18 +9828,22 @@ CDocument.prototype.OnKeyDown = function(e)
 		}
 		else if (e.KeyCode === 40) // Bottom Arrow
 		{
+			let moveCursorDown = true;
 			if (this.IsFillingFormMode())
 			{
-				var oSelectedInfo = this.GetSelectedElementsInfo();
-				var oForm         = oSelectedInfo.GetForm();
-
-				if (oForm && !oForm.IsComboBox() && !oForm.IsDropDownList())
-					oForm = null;
-
-				if (oForm)
-					this.TurnComboBoxFormValue(oForm, true);
+				moveCursorDown = false;
+				
+				let form = this.GetSelectedElementsInfo().GetForm();
+				if (form)
+				{
+					if (form.IsComboBox() || form.IsDropDownList())
+						this.TurnComboBoxFormValue(form, true);
+					else if (form.IsTextForm() && form.IsMultiLineForm())
+						moveCursorDown = true;
+				}
 			}
-			else
+			
+			if (moveCursorDown)
 			{
 				// TODO: Реализовать Ctrl + Down/ Ctrl + Shift + Down
 				// Чтобы при зажатой клавише курсор не пропадал
