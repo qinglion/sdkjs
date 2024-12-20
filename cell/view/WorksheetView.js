@@ -3739,8 +3739,6 @@
 			vector_koef /= t.getRetinaPixelRatio();
 		}
 
-		let printScale = printPagesData.scale ? printPagesData.scale : this.getPrintScale();
-
 		this.stringRender.fontNeedUpdate = true;
 		if (null === printPagesData) {
 			// Напечатаем пустую страницу
@@ -3759,6 +3757,7 @@
 			}
 			drawingCtx.EndPage && drawingCtx.EndPage();
 		} else {
+			let printScale = (printPagesData && printPagesData.scale) ? printPagesData.scale : this.getPrintScale();
 			if (this.getRightToLeft()) {
 				let renderingSettings = this.getRenderingSettings();
 				if (!renderingSettings) {
