@@ -7163,7 +7163,7 @@
 					t._lineVer(ctx, x1 + 2*t.getRightToLeftOffset(), y1, y2);
 					break;
 				case c_oAscBorderType.Diag:
-					t.lineDiag(ctx, x1, y1, x2, y2);
+					t._lineDiag(ctx, x1, y1, x2, y2);
 					break;
 			}
 		}
