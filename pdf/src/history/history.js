@@ -241,8 +241,9 @@
 			for (let changeIndex = 0; changeIndex < point.Items.length; ++changeIndex) {
                 let oClass = point.Items[changeIndex].Class;
 
-                let oParentPage = oClass.GetParentPage();
 				if (oClass.IsAnnot && oClass.IsAnnot() || oClass.IsForm && oClass.IsForm()) {
+                    let oParentPage = oClass.GetParentPage();
+
                     let check_obj = {
                         "type":     AscPDF.AscLockTypeElemPDF.Object,
                         "pageId":   oParentPage ? oParentPage.GetId() : null,
