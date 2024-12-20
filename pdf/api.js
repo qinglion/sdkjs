@@ -957,7 +957,7 @@
 
 				switch (this.curMarkerType) {
 					case AscPDF.ANNOTATIONS_TYPES.Highlight:
-						this.SetHighlight(r, g, b, opacity);
+						this.SetHighlight(r, g, b, 50);
 						break;
 					case AscPDF.ANNOTATIONS_TYPES.Underline:
 						this.SetUnderline(r, g, b, opacity);
