@@ -568,6 +568,7 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
         }
         var APCI=this.ArrPathCommandInfo, n = APCI.length, cmd;
         var x0, y0, x1, y1, x2, y2, wR, hR, stAng, swAng, ellipseRotation, lastX, lastY;
+        this.ArrPathCommand.length = 0;
         for(var i=0; i<n; ++i)
         {
             cmd=APCI[i];
