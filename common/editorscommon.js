@@ -194,7 +194,6 @@
 	var oZipImages = null;
 	var sDownloadServiceLocalUrl = "../../../../downloadas";
 	var sUploadServiceLocalUrl = "../../../../upload";
-	var sUploadServiceLocalUrlOld = "../../../../uploadold";
 	var sSaveFileLocalUrl = "../../../../savefile";
 	var sDownloadFileLocalUrl = "../../../../downloadfile";
 	var nMaxRequestLength = 5242880;//5mb <requestLimits maxAllowedContentLength="30000000" /> default 30mb
@@ -2278,48 +2277,7 @@
 	function ShowImageFileDialog(documentId, documentUserId, jwt, shardKey, wopiSrc, userSessionId, callback, callbackOld)
 	{
 		if (false === _ShowFileDialog(getAcceptByArray(c_oAscImageUploadProp.SupportedFormats), true, true, ValidateUploadImage, callback)) {
-			//todo remove this compatibility
-			var frameWindow = GetUploadIFrame();
-			let url = sUploadServiceLocalUrlOld + '/' + documentId;
-			let queryParams = [];
-			if (shardKey) {
-				queryParams.push(Asc.c_sShardKeyName + '=' + encodeURIComponent(shardKey));
-			}
-			if (wopiSrc) {
-				queryParams.push(Asc.c_sWopiSrcName + '=' + encodeURIComponent(wopiSrc));
-			}
-			if (userSessionId) {
-				queryParams.push(Asc.c_sUserSessionIdName + '=' + encodeURIComponent(userSessionId));
-			}
-			if (jwt) {
-				queryParams.push('token=' + encodeURIComponent(jwt));
-			}
-			if (queryParams.length > 0) {
-				url += '?' + queryParams.join('&');
-			}
-			var content = '<html><head></head><body><form action="' + url + '" method="POST" enctype="multipart/form-data"><input id="apiiuFile" name="apiiuFile" type="file" accept="image/*" size="1"><input id="apiiuSubmit" name="apiiuSubmit" type="submit" style="display:none;"></form></body></html>';
-			frameWindow.document.open();
-			frameWindow.document.write(content);
-			frameWindow.document.close();
-
-			var fileName = frameWindow.document.getElementById("apiiuFile");
-			var fileSubmit = frameWindow.document.getElementById("apiiuSubmit");
-
-			fileName.onchange = function (e)
-			{
-				if (e && e.target && e.target.files)
-				{
-					var nError = ValidateUploadImage(e.target.files);
-					if (c_oAscServerError.NoError != nError)
-					{
-						callbackOld(mapAscServerErrorToAscError(nError));
-						return;
-					}
-				}
-				callbackOld(Asc.c_oAscError.ID.No);
-				fileSubmit.click();
-			};
-			fileName.click();
+			callback(Asc.c_oAscError.ID.Unknown);
 		}
 	}
 	function ShowDocumentFileDialog(callback, isAllowMultiple) {
