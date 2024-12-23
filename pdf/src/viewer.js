@@ -151,13 +151,19 @@
 
         oViewer.paint(setRedrawPageOnRepaint);
 	};
-	CPageInfo.prototype.RedrawAnnots = function() {
+	CPageInfo.prototype.RedrawAnnots = function(isTextMarkup) {
 		let oViewer = Asc.editor.getDocumentRenderer();
 		let _t = this;
 
 		let nIdx = _t.GetIndex();
 		function setRedrawPageOnRepaint() {
-            _t.needRedrawAnnots = true;
+			if (isTextMarkup) {
+				_t.needRedrawMarkups = true;
+			}
+			else {
+				_t.needRedrawAnnots = true;
+			}
+
 			nIdx != -1 && oViewer.thumbnails && oViewer.thumbnails._repaintPage(nIdx);
         }
 
@@ -241,7 +247,7 @@
         this.annots.splice(nPos, 1);
         
         AscCommon.History.Add(new CChangesPDFDocumentAnnotsContent(this, nPos, [oAnnot], false));
-		this.RedrawAnnots();
+		this.RedrawAnnots(oAnnot.IsTextMarkup());
 	};
 	CPageInfo.prototype.AddField = function(oField, nPos) {
 		if (nPos == undefined) {
