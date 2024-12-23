@@ -68,7 +68,7 @@
         };
 
         StampAnnotPreviewManager.prototype.getStampPreview = function(type) {
-            return this.getStampPreviewCanvas(type).toDataURL("image/png");
+            return this.getStampPreviewCanvas(type);
         };
         StampAnnotPreviewManager.prototype.getStampPreviews = function() {
 			let aRet = [];
