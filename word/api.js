@@ -13786,6 +13786,15 @@ background-repeat: no-repeat;\
 			}
 		};
 
+		let prepareHash = function (_val) {
+			//todo check end of base64
+			//"L6VzBw==d==  d" and "L6VzBw==" in ms equal
+			if (_val && _val.length) {
+				return _val.replace(/\s/g, "");
+			}
+			return _val;
+		};
+
 		let password = props.temporaryPassword;
 		props.temporaryPassword = null;
 		let documentProtection = oDocument.Settings.DocumentProtection;
@@ -13793,7 +13802,7 @@ background-repeat: no-repeat;\
 		let cryptProviderType = AscCommonWord.ECryptAlgType.TypeAny;
 		if (password !== "" && password != null) {
 			if (documentProtection) {
-				salt = documentProtection.saltValue;
+				salt = prepareHash(documentProtection.saltValue);
 				spinCount =  documentProtection.spinCount;
 				alg = documentProtection.cryptAlgorithmSid;
 			}
@@ -13819,7 +13828,8 @@ background-repeat: no-repeat;\
 					callback(true);
 				} else {
 					//пробуем снять защиту
-					if (documentProtection && hash && (hash[0] === documentProtection.hashValue || hash[1] === documentProtection.hashValue)) {
+					let documentHashValue = prepareHash(documentProtection.hashValue);
+					if (documentProtection && hash && (hash[0] === documentHashValue || hash[1] === documentHashValue)) {
 						salt = null;
 						alg = null;
 						spinCount = null;
