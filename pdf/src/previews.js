@@ -74,14 +74,12 @@
 			let aRet = [];
 
 			let _t = this;
-			Object.entries(AscPDF.STAMPS_JSON).forEach(function(entry) {
-				let type = entry[0];
-
-				let oPreview = {};
-				oPreview["Type"] = type;
-				oPreview["Image"] = _t.getStampPreview(type);
-				aRet.push(oPreview);
-			});
+            for (let type in AscPDF.STAMPS_JSON) {
+                let oPreview = {};
+                oPreview["Type"] = type;
+                oPreview["Image"] = _t.getStampPreview(type);
+                aRet.push(oPreview);
+            }
 
 			return aRet;
         };
