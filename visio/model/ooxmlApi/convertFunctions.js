@@ -989,11 +989,13 @@
 
 			let globalXmm = cShape.spPr.xfrm.offX;
 			let globalYmm = cShape.spPr.xfrm.offY;
+
+			let shapeWidth = shape.getCellNumberValueWithScale("Width", drawingPageScale);
+			let shapeHeight =shape.getCellNumberValueWithScale("Height", drawingPageScale);
+
 			if (!(isNaN(txtPinX_inch) || txtPinX_inch === null)  && !(isNaN(txtPinY_inch) || txtPinY_inch === null)) {
 				// https://www.figma.com/file/WiAC4sxQuJaq65h6xppMYC/cloudFare?type=design&node-id=0%3A1&mode=design&t=SZbio0yIyxq0YnMa-1s
 
-				let shapeWidth = shape.getCellNumberValueWithScale("Width", drawingPageScale);
-				let shapeHeight = shape.getCellNumberValueWithScale("Height", drawingPageScale);
 				let shapeLocPinX = shape.getCellNumberValueWithScale("LocPinX", drawingPageScale);
 				let shapeLocPinY = shape.getCellNumberValueWithScale("LocPinY", drawingPageScale);
 				let txtWidth_inch = shape.getCellNumberValueWithScale("TxtWidth", drawingPageScale);
@@ -1006,7 +1008,6 @@
 				// oBodyPr.anchor = 4; // 4 - bottom, 1,2,3 - center
 
 				let localXmm = (txtPinX_inch - txtLocPinX_inch) * g_dKoef_in_to_mm;
-				oXfrm.setOffX(globalXmm + localXmm); // mm
 
 				// back to MS coords
 				if (isInvertCoords) {
@@ -1057,16 +1058,16 @@
 					let topCornerOffY = bottomCornerOffY - txtHeight_inch * g_dKoef_in_to_mm;
 					offY = topCornerOffY;
 				}
-				oXfrm.setOffY(offY);
-
+				oXfrm.setOffX(globalXmm + localXmm); // mm
+				oXfrm.setOffY(shapeHeight < 0 ? offY + 2 * shapeHeight * g_dKoef_in_to_mm : offY);
 				oXfrm.setExtX(txtWidth_inch * g_dKoef_in_to_mm);
 				oXfrm.setExtY(txtHeight_inch * g_dKoef_in_to_mm);
 			} else {
 				// create text block with shape sizes
 				oXfrm.setOffX(globalXmm);
-				oXfrm.setOffY(globalYmm);
-				oXfrm.setExtX(shapeWidth_inch * g_dKoef_in_to_mm);
-				oXfrm.setExtY(shapeHeight_inch * g_dKoef_in_to_mm);
+				oXfrm.setOffY(shapeHeight < 0 ? globalYmm + 2 * shapeHeight * g_dKoef_in_to_mm : globalYmm);
+				oXfrm.setExtX(Math.abs(shapeWidth) * g_dKoef_in_to_mm);
+				oXfrm.setExtY(Math.abs(shapeHeight) * g_dKoef_in_to_mm);
 				oXfrm.setRot(shapeAngle);
 			}
 			oSpPr.setXfrm(oXfrm);
