@@ -839,6 +839,7 @@ CChangesPDFDocumentPagesContent.prototype.private_WriteItem = function(Writer, o
 	Writer.WriteLong(oPage.Rotate);
     if (undefined != oPage.originIndex) {
         Writer.WriteLong(oPage.originIndex);
+        Writer.WriteLong(oPage.originRotate);
     }
 	Writer.WriteBool(!!oPage.isRecognized);
 	Writer.WriteLong(oPage.Dpi);
@@ -850,16 +851,21 @@ CChangesPDFDocumentPagesContent.prototype.private_ReadItem = function(Reader)
     let nFlags = Reader.GetLong();
     let hasOriginIndex = !(nFlags & 1);
 
-	return {
+    let oPage = {
         Id: Reader.GetString2(),
 		Rotate: Reader.GetLong(),
         originIndex: hasOriginIndex ? Reader.GetLong() : undefined,
+        originRotate: hasOriginIndex ? Reader.GetLong() : undefined,
         isRecognized: Reader.GetBool(),
 		Dpi: Reader.GetLong(),
 		W: Reader.GetLong(),
 		H: Reader.GetLong(),
         fonts: []
-	};
+    }
+	
+    oPage["originIndex"] = oPage.originIndex;
+
+    return oPage;
 };
 CChangesPDFDocumentPagesContent.prototype.ReadFromBinary = function (reader) {
     this.Add = reader.GetBool();
