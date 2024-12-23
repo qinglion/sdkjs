@@ -260,6 +260,7 @@
         for (let i = 0; i < aQuads.length; i++) {
             let aPoints     = aQuads[i];
             
+            oGraphicsPDF.SetGlobalAlpha(this.GetOpacity());
             oGraphicsPDF.SetStrokeStyle(oRGBFill.r, oRGBFill.g, oRGBFill.b);
             oGraphicsPDF.BeginPath();
 
@@ -420,6 +421,7 @@
         for (let i = 0; i < aQuads.length; i++) {
             let aPoints = aQuads[i];
             
+            oGraphicsPDF.SetGlobalAlpha(this.GetOpacity());
             oGraphicsPDF.SetStrokeStyle(oRGBFill.r, oRGBFill.g, oRGBFill.b);
             
             let oPoint1 = { x: aPoints[0], y: aPoints[1] };
@@ -532,6 +534,7 @@
         for (let i = 0; i < aQuads.length; i++) {
             let aPoints     = aQuads[i];
             
+            oGraphicsPDF.SetGlobalAlpha(this.GetOpacity());
             oGraphicsPDF.SetStrokeStyle(oRGBFill.r, oRGBFill.g, oRGBFill.b);
             oGraphicsPDF.BeginPath();
 
