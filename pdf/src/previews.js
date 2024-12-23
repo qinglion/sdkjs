@@ -40,7 +40,6 @@
     function(window, undefined) {
 
         function StampAnnotPreviewManager() {
-            this.canvasHeight = 60;
         }
 
         StampAnnotPreviewManager.prototype.clear = function() {
@@ -95,9 +94,7 @@
 			let pxWidth = oTextDrawer.Width * g_dKoef_mm_to_pix;
             let pxHeight = oTextDrawer.Height * g_dKoef_mm_to_pix;
 
-            let canvasWidth = pxWidth * this.canvasHeight / pxHeight;
-
-			let canvas		= this.createCanvas(canvasWidth, this.canvasHeight);
+			let canvas		= this.createCanvas(pxWidth / 2 >> 0, pxHeight / 2 >> 0);
             let ctx			= canvas.getContext('2d');
             let graphics	= new AscCommon.CGraphics();
             
