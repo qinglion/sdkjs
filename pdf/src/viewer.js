@@ -1329,6 +1329,10 @@
 				{
 					oForm.SetOptions(oFormInfo["opt"]);
 				}
+				if (null != oFormInfo["TI"])
+				{
+					oForm.SetTopIndex(oFormInfo["TI"]);
+				}
 
 				// checkbox - radiobutton
 				if (oFormInfo["ExportValue"])
