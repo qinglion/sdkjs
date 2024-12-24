@@ -811,6 +811,8 @@
     window["AscPDF"].CAnnotationStrikeout   = CAnnotationStrikeout;
     window["AscPDF"].CAnnotationSquiggly    = CAnnotationSquiggly;
     window["AscPDF"].CAnnotationCaret       = CAnnotationCaret;
+    window["AscPDF"].fillRegion             = fillRegion;
     window["AscPDF"].IsInQuads              = IsInQuads;
+    
 })();
 
