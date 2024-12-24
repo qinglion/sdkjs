@@ -276,12 +276,10 @@
 			let splineKnotCommandsData = [];
 			let prevCommandName;
 
-			for (let j = 0; true; j++) {
-				let rowNum = j + 1;
-				let commandRow = geometrySection.getRow(rowNum);
-				if (!commandRow) {
-					break;
-				}
+			let commandRows = geometrySection.getRows();
+
+			for (let j = 0; j < commandRows.length; j++) {
+				let commandRow = commandRows[j];
 				if (commandRow.del) {
 					continue;
 				}
