@@ -14387,6 +14387,8 @@ function RangeDataManagerElem(bbox, data)
 		this.formulaResult = null;
 		this.functionResult = null;
 
+		this.arguments = null;
+
 		this._init(name);
 
 		return this;
@@ -14424,6 +14426,12 @@ function RangeDataManagerElem(bbox, data)
 	};
 	CFunctionInfo.prototype.asc_getName = function () {
 		return this.name;
+	};
+	CFunctionInfo.prototype.asc_getArguments = function () {
+		return this.arguments;
+	};
+	CFunctionInfo.prototype.asc_setArguments = function (val) {
+		this.arguments = val;
 	};
 
 
@@ -19068,6 +19076,9 @@ function RangeDataManagerElem(bbox, data)
 	prot["asc_getFormulaResult"] = prot.asc_getFormulaResult;
 	prot["asc_getFunctionResult"] = prot.asc_getFunctionResult;
 	prot["asc_getName"] = prot.asc_getName;
+	prot["asc_getArguments"] = prot.asc_getArguments;
+	prot["asc_setArguments"] = prot.asc_setArguments;
+
 
 	window["Asc"]["asc_CExternalReference"] = window["Asc"].asc_CExternalReference = asc_CExternalReference;
 	prot = asc_CExternalReference.prototype;

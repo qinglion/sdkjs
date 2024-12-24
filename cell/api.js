@@ -6591,8 +6591,8 @@ var editor;
   spreadsheet_api.prototype.asc_canEnterWizardRange = function(char) {
     return this.wb.canEnterWizardRange(char);
   };
-  spreadsheet_api.prototype.asc_insertArgumentsInFormula = function(val, argNum, argType, name) {
-    var res = this.wb.insertArgumentsInFormula(val, argNum, argType, name);
+  spreadsheet_api.prototype.asc_insertArgumentsInFormula = function(val, argNum, argType, name, bEndInsertArg) {
+    var res = this.wb.insertArgumentsInFormula(val, argNum, argType, name, bEndInsertArg);
     this.wb.restoreFocus();
     return res;
   };

@@ -3194,15 +3194,39 @@
         return this.getCellEditMode() && this.cellEditor.checkSymbolBeforeRange(char);
     };
 
-	WorkbookView.prototype.insertArgumentsInFormula = function (args, argNum, argType, name) {
+	WorkbookView.prototype.insertArgumentsInFormula = function (args, argNum, argType, name, bEndInsertArg) {
 		if (this.getCellEditMode()) {
+			var ws = this.getActiveWS();
+
+			let needChange = false;
+			if (bEndInsertArg) {
+				if (argType === AscCommonExcel.cElementType.string) {
+					let curArg = args[argNum];
+					//!number + !defname + !quotes
+					if (curArg && !AscCommon.isNumber(curArg) && !(curArg[0] === '"' && curArg[curArg.length - 1] === '"')) {
+						let parser = new AscCommonExcel.parserFormula(curArg, null, ws);
+						let parseResultArg = new AscCommonExcel.ParseResult([], []);
+						parser.parse(true, true, parseResultArg, true);
+
+						let argRes = parser.calculate();
+						if (argRes && argRes.type === AscCommonExcel.cElementType.error && argRes.errorType === AscCommonExcel.cErrorType.wrong_name) {
+							//add quotes
+							args[argNum] = '"' + args[argNum] + '"';
+							needChange = true;
+						}
+					}
+				}
+			}
+
 			var sArguments = args.join(AscCommon.FormulaSeparators.functionArgumentSeparator);
 			this.cellEditor.changeCellText(sArguments);
 
 			if (name) {
-				var ws = this.getActiveWS();
 
 				var res = new AscCommonExcel.CFunctionInfo(name);
+				if (needChange) {
+					res.asc_setArguments(args);
+				}
 				res.argumentsResult = [];
 				var argCalc = ws.calculateWizardFormula(args[argNum], argType);
 				res.argumentsResult[argNum] = argCalc.str;
