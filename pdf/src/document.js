@@ -3204,6 +3204,10 @@ var CPresentation = CPresentation || function(){};
         }
         
         this.SetMouseDownObject(oAnnot);
+        if (!oAnnot.IsTextMarkup()) {
+            let oController = this.GetController();
+            oController.selectObject(oAnnot, nPage);
+        }
         if (isVisible == true && bForceMove != true) {
             this.Viewer.onUpdateOverlay();
             this.UpdateInterfaceTracks();
