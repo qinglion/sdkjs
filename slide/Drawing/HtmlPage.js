@@ -34,6 +34,7 @@
 
 (function (window) {
 	let oThis;
+	let isHorizontalThumbnails;
 
 	const g_anchor_left = AscCommon.g_anchor_left;
 	const g_anchor_top = AscCommon.g_anchor_top;
@@ -67,6 +68,7 @@
 		this.maxPosition = maxPosition;
 
 		this.savedPosition = position;
+		this.initialPosition = position;
 		this.parts = Array(2);
 	}
 	Splitter.prototype.setPosition = function (position, considerLimits, preserveSavedPosition) {
@@ -138,6 +140,7 @@
 		this.m_oTopRuler_horRuler = null;
 
 		this.ScrollWidthPx = 14;
+		this.ScrollWidthMm = 14 * g_dKoef_pix_to_mm;
 
 		// main view
 		this.m_oMainView = null;
@@ -297,253 +300,47 @@
 
 		this.m_oApi = api;
 		oThis = this;
+		isHorizontalThumbnails = true; // api.isMobileVersion;
 	}
 
 	CEditorPage.prototype.Init = function () {
 		if (this.m_oApi.isReporterMode) {
-			var _elem = document.getElementById(this.Name);
-			if (_elem)
-				_elem.style.overflow = "hidden";
+			const element = document.getElementById(this.Name);
+			if (element) element.style.overflow = "hidden";
 		}
 
-		this.m_oBody = CreateControlContainer(this.Name);
-		this.m_oBody.HtmlElement.style.touchAction = "none";
-
 		this.splitters = [
-			new Splitter(false, 67.5, 20, 80),
+			new Splitter(isHorizontalThumbnails, 67.5, 20, 80),
 			this.m_oApi.isReporterMode
 				? new Splitter(true, Math.min(Math.max(window.innerHeight * 0.5 * AscCommon.g_dKoef_pix_to_mm, 10), 200), 10, 200)
 				: new Splitter(true, this.IsNotesSupported() && !this.m_oApi.isEmbedVersion ? 10 : 0, 10, 100),
 			new Splitter(true, 0, 40, 100 - HIDDEN_PANE_HEIGHT),
 		];
 
-		this.Splitter1PosSetUp = this.splitters[0].position;
+		this.m_oBody = CreateControlContainer(this.Name);
+		this.m_oBody.HtmlElement.style.touchAction = "none";
 
-		var ScrollWidthMm = this.ScrollWidthPx * g_dKoef_pix_to_mm;
-		var ScrollWidthMm9 = 10 * g_dKoef_pix_to_mm;
+		// Thumbnails
+		this.initThumbnails();
 
-		this.Thumbnails.m_oWordControl = this;
-
-		// thumbnails -----
-		this.m_oThumbnailsContainer = CreateControlContainer("id_panel_thumbnails");
-		this.m_oThumbnailsContainer.Bounds.SetParams(0, 0, this.splitters[0].position, 1000, false, false, true, false, this.splitters[0].position, -1);
-		this.m_oThumbnailsContainer.Anchor = (g_anchor_left | g_anchor_top | g_anchor_bottom);
-		this.m_oBody.AddControl(this.m_oThumbnailsContainer);
-
-		this.m_oThumbnailsSplit = CreateControlContainer("id_panel_thumbnails_split");
-		this.m_oThumbnailsSplit.Bounds.SetParams(this.splitters[0].position, 0, 1000, 1000, true, false, false, false, GlobalSkin.SplitterWidthMM, -1);
-		this.m_oThumbnailsSplit.Anchor = (g_anchor_left | g_anchor_top | g_anchor_bottom);
-		this.m_oBody.AddControl(this.m_oThumbnailsSplit);
-
-		this.m_oThumbnailsBack = CreateControl("id_thumbnails_background");
-		this.m_oThumbnailsBack.Bounds.SetParams(0, 0, ScrollWidthMm9, 1000, false, false, true, false, -1, -1);
-		this.m_oThumbnailsBack.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right | g_anchor_bottom);
-		this.m_oThumbnailsContainer.AddControl(this.m_oThumbnailsBack);
-
-		this.m_oThumbnails = CreateControl("id_thumbnails");
-		this.m_oThumbnails.Bounds.SetParams(0, 0, ScrollWidthMm9, 1000, false, false, true, false, -1, -1);
-		this.m_oThumbnails.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right | g_anchor_bottom);
-		this.m_oThumbnailsContainer.AddControl(this.m_oThumbnails);
-
-		this.m_oThumbnails_scroll = CreateControl("id_vertical_scroll_thmbnl");
-		this.m_oThumbnails_scroll.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, ScrollWidthMm9, -1);
-		this.m_oThumbnails_scroll.Anchor = (g_anchor_top | g_anchor_right | g_anchor_bottom);
-		this.m_oThumbnailsContainer.AddControl(this.m_oThumbnails_scroll);
-		// ----------------
-
-		if (this.m_oApi.isMobileVersion) {
-			this.m_oThumbnails_scroll.HtmlElement.style.display = "none";
-		}
-
-		// main content -------------------------------------------------------------
+		// Main parent (everything excluding thumbnails)
 		this.m_oMainParent = CreateControlContainer("id_main_parent");
-		this.m_oMainParent.Bounds.SetParams(this.splitters[0].position + GlobalSkin.SplitterWidthMM, 0, g_dKoef_pix_to_mm, 1000, true, false, true, false, -1, -1);
+		isHorizontalThumbnails
+			? this.m_oMainParent.Bounds.SetParams(0, 0, 1000, this.splitters[0].position + GlobalSkin.SplitterWidthMM, false, false, false, true, -1, -1)
+			: this.m_oMainParent.Bounds.SetParams(this.splitters[0].position + GlobalSkin.SplitterWidthMM, 0, g_dKoef_pix_to_mm, 1000, true, false, true, false, -1, -1);
 		this.m_oBody.AddControl(this.m_oMainParent);
 
-		this.m_oMainContent = CreateControlContainer("id_main");
-		this.m_oMainContent.Bounds.SetParams(0, 0, g_dKoef_pix_to_mm, this.splitters[1].position + GlobalSkin.SplitterWidthMM, true, false, true, true, -1, -1);
+		// Main content (presentation, rulers, scrollers ...)
+		this.initMainContent();
 
-		this.m_oMainContent.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right | g_anchor_bottom);
-		this.m_oMainParent.AddControl(this.m_oMainContent);
-
-		// panel right --------------------------------------------------------------
-		this.m_oPanelRight = CreateControlContainer("id_panel_right");
-		this.m_oPanelRight.Bounds.SetParams(0, 0, 1000, ScrollWidthMm, false, false, false, true, ScrollWidthMm, -1);
-		this.m_oPanelRight.Anchor = (g_anchor_top | g_anchor_right | g_anchor_bottom);
-
-		this.m_oMainContent.AddControl(this.m_oPanelRight);
-
-		this.m_oPanelRight_buttonRulers = CreateControl("id_buttonRulers");
-		this.m_oPanelRight_buttonRulers.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, ScrollWidthMm);
-		this.m_oPanelRight_buttonRulers.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right);
-		this.m_oPanelRight.AddControl(this.m_oPanelRight_buttonRulers);
-
-		var _vertScrollTop = ScrollWidthMm;
-		if (GlobalSkin.RulersButton === false) {
-			this.m_oPanelRight_buttonRulers.HtmlElement.style.display = "none";
-			_vertScrollTop = 0;
-		}
-
-		this.m_oPanelRight_buttonNextPage = CreateControl("id_buttonNextPage");
-		this.m_oPanelRight_buttonNextPage.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, ScrollWidthMm);
-		this.m_oPanelRight_buttonNextPage.Anchor = (g_anchor_left | g_anchor_bottom | g_anchor_right);
-		this.m_oPanelRight.AddControl(this.m_oPanelRight_buttonNextPage);
-
-		this.m_oPanelRight_buttonPrevPage = CreateControl("id_buttonPrevPage");
-		this.m_oPanelRight_buttonPrevPage.Bounds.SetParams(0, 0, 1000, ScrollWidthMm, false, false, false, true, -1, ScrollWidthMm);
-		this.m_oPanelRight_buttonPrevPage.Anchor = (g_anchor_left | g_anchor_bottom | g_anchor_right);
-		this.m_oPanelRight.AddControl(this.m_oPanelRight_buttonPrevPage);
-
-		var _vertScrollBottom = 2 * ScrollWidthMm;
-		if (GlobalSkin.NavigationButtons == false) {
-			this.m_oPanelRight_buttonNextPage.HtmlElement.style.display = "none";
-			this.m_oPanelRight_buttonPrevPage.HtmlElement.style.display = "none";
-			_vertScrollBottom = 0;
-		}
-
-		this.m_oPanelRight_vertScroll = CreateControl("id_vertical_scroll");
-		this.m_oPanelRight_vertScroll.Bounds.SetParams(0, _vertScrollTop, 1000, _vertScrollBottom, false, true, false, true, -1, -1);
-		this.m_oPanelRight_vertScroll.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right | g_anchor_bottom);
-		this.m_oPanelRight.AddControl(this.m_oPanelRight_vertScroll);
-		// --------------------------------------------------------------------------
-
-		// --- left ---
-		this.m_oLeftRuler = CreateControlContainer("id_panel_left");
-		this.m_oLeftRuler.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, 5, -1);
-		this.m_oLeftRuler.Anchor = (g_anchor_left | g_anchor_top | g_anchor_bottom);
-		this.m_oMainContent.AddControl(this.m_oLeftRuler);
-
-		this.m_oLeftRuler_buttonsTabs = CreateControl("id_buttonTabs");
-		this.m_oLeftRuler_buttonsTabs.Bounds.SetParams(0, 0.8, 1000, 1000, false, true, false, false, -1, 5);
-		this.m_oLeftRuler_buttonsTabs.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right);
-		this.m_oLeftRuler.AddControl(this.m_oLeftRuler_buttonsTabs);
-
-		this.m_oLeftRuler_vertRuler = CreateControl("id_vert_ruler");
-		this.m_oLeftRuler_vertRuler.Bounds.SetParams(0, 7, 1000, 1000, false, true, false, false, -1, -1);
-		this.m_oLeftRuler_vertRuler.Anchor = (g_anchor_left | g_anchor_right | g_anchor_top | g_anchor_bottom);
-		this.m_oLeftRuler.AddControl(this.m_oLeftRuler_vertRuler);
-		// ------------
-
-		// --- top ----
-		this.m_oTopRuler = CreateControlContainer("id_panel_top");
-		this.m_oTopRuler.Bounds.SetParams(5, 0, 1000, 1000, true, false, false, false, -1, 7);
-		this.m_oTopRuler.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right);
-		this.m_oMainContent.AddControl(this.m_oTopRuler);
-
-		this.m_oTopRuler_horRuler = CreateControl("id_hor_ruler");
-		this.m_oTopRuler_horRuler.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, -1);
-		this.m_oTopRuler_horRuler.Anchor = (g_anchor_left | g_anchor_right | g_anchor_top | g_anchor_bottom);
-		this.m_oTopRuler.AddControl(this.m_oTopRuler_horRuler);
-		// ------------
-
-		// scroll hor --
-		this.m_oScrollHor = CreateControlContainer("id_horscrollpanel");
-		this.m_oScrollHor.Bounds.SetParams(0, 0, ScrollWidthMm, 1000, false, false, true, false, -1, ScrollWidthMm);
-		this.m_oScrollHor.Anchor = (g_anchor_left | g_anchor_right | g_anchor_bottom);
-		this.m_oMainContent.AddControl(this.m_oScrollHor);
-		// -------------
-
+		// Bottom panels (Notes and Animation Pane)
 		this.m_oBottomPanesContainer = CreateControlContainer("id_bottom_pannels_container");
-		this.m_oBottomPanesContainer.Bounds.SetParams(0, 0, 0, 1000, true, true, true, false, -1, this.splitters[1].position);
+		this.m_oBottomPanesContainer.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, this.splitters[1].position);
 		this.m_oBottomPanesContainer.Anchor = (g_anchor_left | g_anchor_right | g_anchor_bottom);
 		this.m_oMainParent.AddControl(this.m_oBottomPanesContainer);
-		// notes ----
-		this.m_oNotesContainer = CreateControlContainer("id_panel_notes");
-		this.m_oNotesContainer.Bounds.SetParams(0, 0, g_dKoef_pix_to_mm, 1000, true, false, true, false, -1, -1);
-		this.m_oNotesContainer.Anchor = (g_anchor_left | g_anchor_right | g_anchor_top);
-		this.m_oBottomPanesContainer.AddControl(this.m_oNotesContainer);
 
-		this.m_oNotes = CreateControl("id_notes");
-		this.m_oNotes.Bounds.SetParams(0, 0, ScrollWidthMm, 1000, false, false, true, false, -1, -1);
-		this.m_oNotes.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right | g_anchor_bottom);
-		this.m_oNotesContainer.AddControl(this.m_oNotes);
-
-		this.m_oNotesOverlay = CreateControl("id_notes_overlay");
-		this.m_oNotesOverlay.Bounds.SetParams(0, 0, ScrollWidthMm, 1000, false, false, true, false, -1, -1);
-		this.m_oNotesOverlay.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right | g_anchor_bottom);
-		this.m_oNotesContainer.AddControl(this.m_oNotesOverlay);
-
-		this.m_oNotes_scroll = CreateControl("id_vertical_scroll_notes");
-		this.m_oNotes_scroll.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, ScrollWidthMm, -1);
-		this.m_oNotes_scroll.Anchor = (g_anchor_top | g_anchor_right | g_anchor_bottom);
-		this.m_oNotesContainer.AddControl(this.m_oNotes_scroll);
-
-		if (!GlobalSkin.SupportNotes) {
-			this.m_oNotesContainer.HtmlElement.style.display = "none";
-		}
-
-		//animation pane
-
-		this.m_oAnimationPaneContainer = CreateControlContainer("id_panel_animation");
-		this.m_oAnimationPaneContainer.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, -1);
-		this.m_oAnimationPaneContainer.Anchor = (g_anchor_left | g_anchor_right | g_anchor_bottom);
-		this.m_oBottomPanesContainer.AddControl(this.m_oAnimationPaneContainer);
-
-		this.m_oAnimPaneHeaderContainer = CreateControlContainer("id_anim_header");
-		this.m_oAnimPaneHeaderContainer.Bounds.SetParams(0, 0, 1000, HEADER_HEIGHT, true, false, false, true, -1, HEADER_HEIGHT);
-		this.m_oAnimPaneHeaderContainer.Anchor = (g_anchor_left | g_anchor_right | g_anchor_top);
-		this.m_oAnimationPaneContainer.AddControl(this.m_oAnimPaneHeaderContainer);
-
-		this.m_oAnimPaneHeader = CreateControl("id_anim_header_canvas");
-		this.m_oAnimPaneHeader.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, -1);
-		this.m_oAnimPaneHeader.Anchor = (g_anchor_left | g_anchor_right | g_anchor_top | g_anchor_bottom);
-		this.m_oAnimPaneHeaderContainer.AddControl(this.m_oAnimPaneHeader);
-
-		this.m_oAnimPaneListContainer = CreateControlContainer("id_anim_list_container");
-		this.m_oAnimPaneListContainer.Bounds.SetParams(0, HEADER_HEIGHT, 0, TIMELINE_HEIGHT, true, true, true, true, -1, -1);
-		this.m_oAnimPaneListContainer.Anchor = (g_anchor_left | g_anchor_right | g_anchor_top | g_anchor_bottom);
-		this.m_oAnimationPaneContainer.AddControl(this.m_oAnimPaneListContainer);
-
-		this.m_oAnimPaneList = CreateControl("id_anim_list_canvas");
-		this.m_oAnimPaneList.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, -1);
-		this.m_oAnimPaneList.Anchor = (g_anchor_left | g_anchor_right | g_anchor_top | g_anchor_bottom);
-		this.m_oAnimPaneListContainer.AddControl(this.m_oAnimPaneList);
-
-		this.m_oAnimPaneList_scroll = CreateControl("id_anim_list_scroll");
-		this.m_oAnimPaneList_scroll.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, ScrollWidthMm, -1);
-		this.m_oAnimPaneList_scroll.Anchor = (g_anchor_top | g_anchor_right | g_anchor_bottom);
-		this.m_oAnimPaneListContainer.AddControl(this.m_oAnimPaneList_scroll);
-
-		this.m_oAnimPaneTimelineContainer = CreateControlContainer("id_anim_timeline_container");
-		this.m_oAnimPaneTimelineContainer.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, TIMELINE_HEIGHT);
-		this.m_oAnimPaneTimelineContainer.Anchor = (g_anchor_left | g_anchor_right | g_anchor_bottom);
-		this.m_oAnimationPaneContainer.AddControl(this.m_oAnimPaneTimelineContainer);
-
-		this.m_oAnimPaneTimeline = CreateControl("id_anim_timeline_canvas");
-		this.m_oAnimPaneTimeline.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, -1);
-		this.m_oAnimPaneTimeline.Anchor = (g_anchor_left | g_anchor_right | g_anchor_top | g_anchor_bottom);
-		this.m_oAnimPaneTimelineContainer.AddControl(this.m_oAnimPaneTimeline);
-
-
-		if (!this.IsSupportAnimPane) {
-			this.m_oAnimationPaneContainer.HtmlElement.style.display = "none";
-		}
-		// ----------
-
-		this.m_oMainView = CreateControlContainer("id_main_view");
-		var useScrollW = (this.m_oApi.isMobileVersion || this.m_oApi.isReporterMode) ? 0 : ScrollWidthMm;
-		this.m_oMainView.Bounds.SetParams(5, 7, useScrollW, useScrollW, true, true, true, true, -1, -1);
-		this.m_oMainView.Anchor = (g_anchor_left | g_anchor_right | g_anchor_top | g_anchor_bottom);
-		this.m_oMainContent.AddControl(this.m_oMainView);
-
-		// проблема с фокусом fixed-позиционированного элемента внутри (bug 63194)
-		this.m_oMainView.HtmlElement.onscroll = function () {
-			this.scrollTop = 0;
-		};
-
-		this.m_oEditor = CreateControl("id_viewer");
-		this.m_oEditor.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, -1);
-		this.m_oEditor.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right | g_anchor_bottom);
-		this.m_oMainView.AddControl(this.m_oEditor);
-
-		this.m_oOverlay = CreateControl("id_viewer_overlay");
-		this.m_oOverlay.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, -1);
-		this.m_oOverlay.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right | g_anchor_bottom);
-		this.m_oMainView.AddControl(this.m_oOverlay);
-
-		if (!this.m_oApi.isReporterMode) {
-			this.setMouseMode(this.m_oApi.mouseMode);
-		}
+		this.initNotes();
+		this.initAnimationPane();
 
 		if (this.m_oApi.isReporterMode) {
 			var _documentParent = document.createElement("div");
@@ -803,23 +600,20 @@
 				AscCommon.stopEvent(e);
 				return false;
 			};
-		}
-		else {
-			if (window.addEventListener) {
-				window.addEventListener("beforeunload", function (e) {
-					window.editor.EndDemonstration();
-				});
-			}
+		} else {
+			this.setMouseMode(this.m_oApi.mouseMode);
+			window.addEventListener && window.addEventListener(
+				"beforeunload",
+				function (e) { window.editor.EndDemonstration(); }
+			);
 
 			this.m_oBody.HtmlElement.oncontextmenu = function (e) {
-				if (AscCommon.AscBrowser.isVivaldiLinux) {
+				if (AscCommon.AscBrowser.isVivaldiLinux)
 					AscCommon.Window_OnMouseUp(e);
-				}
 				AscCommon.stopEvent(e);
 				return false;
 			};
 		}
-		// --------------------------------------------------------------------------
 
 		this.m_oDrawingDocument.TargetHtmlElement = document.getElementById('id_target_cursor');
 
@@ -871,6 +665,233 @@
 			}
 		}
 	};
+	CEditorPage.prototype.initThumbnails = function () {
+		const scrollWidth = 10 * g_dKoef_pix_to_mm;
+
+		this.Thumbnails.m_oWordControl = this;
+
+		// Thumbnails container
+		this.m_oThumbnailsContainer = CreateControlContainer("id_panel_thumbnails");
+		if (isHorizontalThumbnails) {
+			this.m_oThumbnailsContainer.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, this.splitters[0].position);
+			this.m_oThumbnailsContainer.Anchor = (g_anchor_left | g_anchor_right | g_anchor_bottom);
+		} else {
+			this.m_oThumbnailsContainer.Bounds.SetParams(0, 0, this.splitters[0].position, 1000, false, false, true, false, this.splitters[0].position, -1);
+			this.m_oThumbnailsContainer.Anchor = (g_anchor_left | g_anchor_top | g_anchor_bottom);
+		}
+		this.m_oBody.AddControl(this.m_oThumbnailsContainer);
+
+		this.m_oThumbnailsBack = CreateControl("id_thumbnails_background");
+		isHorizontalThumbnails
+			? this.m_oThumbnailsBack.Bounds.SetParams(0, 0, 1000, scrollWidth, false, false, false, true, -1, -1)
+			: this.m_oThumbnailsBack.Bounds.SetParams(0, 0, scrollWidth, 1000, false, false, true, false, -1, -1);
+		this.m_oThumbnailsBack.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right | g_anchor_bottom);
+		this.m_oThumbnailsContainer.AddControl(this.m_oThumbnailsBack);
+
+		this.m_oThumbnails = CreateControl("id_thumbnails");
+		isHorizontalThumbnails
+			? this.m_oThumbnails.Bounds.SetParams(0, 0, 1000, scrollWidth, false, false, false, true, -1, -1)
+			: this.m_oThumbnails.Bounds.SetParams(0, 0, scrollWidth, 1000, false, false, true, false, -1, -1);
+		this.m_oThumbnails.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right | g_anchor_bottom);
+		this.m_oThumbnailsContainer.AddControl(this.m_oThumbnails);
+
+		// НАДО ПЕРЕИМЕНОВАТЬ - ОН НЕ ВСЕГДА ВЕРТИКАЛЬНЫЙ ТЕПЕРЬ
+		this.m_oThumbnails_scroll = CreateControl("id_vertical_scroll_thmbnl");
+		if (isHorizontalThumbnails) {
+			this.m_oThumbnails_scroll.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, scrollWidth);
+			this.m_oThumbnails_scroll.Anchor = (g_anchor_left | g_anchor_right | g_anchor_bottom);
+		} else {
+			this.m_oThumbnails_scroll.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, scrollWidth, -1);
+			this.m_oThumbnails_scroll.Anchor = (g_anchor_top | g_anchor_right | g_anchor_bottom);
+		}
+		this.m_oThumbnailsContainer.AddControl(this.m_oThumbnails_scroll);
+
+		// Thumbnails splitter
+		this.m_oThumbnailsSplit = CreateControlContainer("id_panel_thumbnails_split");
+		if (isHorizontalThumbnails) {
+			this.m_oThumbnailsSplit.Bounds.SetParams(0, 0, 1000, this.splitters[0].position, false, false, false, true, -1, GlobalSkin.SplitterWidthMM);
+			this.m_oThumbnailsSplit.Anchor = (g_anchor_left | g_anchor_right | g_anchor_bottom);
+		} else {
+			this.m_oThumbnailsSplit.Bounds.SetParams(this.splitters[0].position, 0, 1000, 1000, true, false, false, false, GlobalSkin.SplitterWidthMM, -1);
+			this.m_oThumbnailsSplit.Anchor = (g_anchor_left | g_anchor_top | g_anchor_bottom);
+		}
+		this.m_oBody.AddControl(this.m_oThumbnailsSplit);
+
+		if (this.m_oApi.isMobileVersion)
+			this.m_oThumbnails_scroll.HtmlElement.style.display = "none";
+	};
+	CEditorPage.prototype.initMainContent = function () {
+		this.m_oMainContent = CreateControlContainer("id_main");
+		this.m_oMainContent.Bounds.SetParams(0, 0, g_dKoef_pix_to_mm, this.splitters[1].position + GlobalSkin.SplitterWidthMM, true, false, true, true, -1, -1);
+		this.m_oMainContent.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right | g_anchor_bottom);
+		this.m_oMainParent.AddControl(this.m_oMainContent);
+
+		this.m_oPanelRight = CreateControlContainer("id_panel_right");
+		this.m_oPanelRight.Bounds.SetParams(0, 0, 1000, this.ScrollWidthMm, false, false, false, true, this.ScrollWidthMm, -1);
+		this.m_oPanelRight.Anchor = (g_anchor_top | g_anchor_right | g_anchor_bottom);
+		this.m_oMainContent.AddControl(this.m_oPanelRight);
+
+		this.m_oPanelRight_buttonRulers = CreateControl("id_buttonRulers");
+		this.m_oPanelRight_buttonRulers.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, this.ScrollWidthMm);
+		this.m_oPanelRight_buttonRulers.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right);
+		this.m_oPanelRight.AddControl(this.m_oPanelRight_buttonRulers);
+
+		var _vertScrollTop = this.ScrollWidthMm;
+		if (GlobalSkin.RulersButton === false) {
+			this.m_oPanelRight_buttonRulers.HtmlElement.style.display = "none";
+			_vertScrollTop = 0;
+		}
+
+		this.m_oPanelRight_buttonNextPage = CreateControl("id_buttonNextPage");
+		this.m_oPanelRight_buttonNextPage.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, this.ScrollWidthMm);
+		this.m_oPanelRight_buttonNextPage.Anchor = (g_anchor_left | g_anchor_bottom | g_anchor_right);
+		this.m_oPanelRight.AddControl(this.m_oPanelRight_buttonNextPage);
+
+		this.m_oPanelRight_buttonPrevPage = CreateControl("id_buttonPrevPage");
+		this.m_oPanelRight_buttonPrevPage.Bounds.SetParams(0, 0, 1000, this.ScrollWidthMm, false, false, false, true, -1, this.ScrollWidthMm);
+		this.m_oPanelRight_buttonPrevPage.Anchor = (g_anchor_left | g_anchor_bottom | g_anchor_right);
+		this.m_oPanelRight.AddControl(this.m_oPanelRight_buttonPrevPage);
+
+		var _vertScrollBottom = 2 * this.ScrollWidthMm;
+		if (GlobalSkin.NavigationButtons == false) {
+			this.m_oPanelRight_buttonNextPage.HtmlElement.style.display = "none";
+			this.m_oPanelRight_buttonPrevPage.HtmlElement.style.display = "none";
+			_vertScrollBottom = 0;
+		}
+
+		this.m_oPanelRight_vertScroll = CreateControl("id_vertical_scroll");
+		this.m_oPanelRight_vertScroll.Bounds.SetParams(0, _vertScrollTop, 1000, _vertScrollBottom, false, true, false, true, -1, -1);
+		this.m_oPanelRight_vertScroll.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right | g_anchor_bottom);
+		this.m_oPanelRight.AddControl(this.m_oPanelRight_vertScroll);
+
+		// --- left ---
+		this.m_oLeftRuler = CreateControlContainer("id_panel_left");
+		this.m_oLeftRuler.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, 5, -1);
+		this.m_oLeftRuler.Anchor = (g_anchor_left | g_anchor_top | g_anchor_bottom);
+		this.m_oMainContent.AddControl(this.m_oLeftRuler);
+
+		this.m_oLeftRuler_buttonsTabs = CreateControl("id_buttonTabs");
+		this.m_oLeftRuler_buttonsTabs.Bounds.SetParams(0, 0.8, 1000, 1000, false, true, false, false, -1, 5);
+		this.m_oLeftRuler_buttonsTabs.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right);
+		this.m_oLeftRuler.AddControl(this.m_oLeftRuler_buttonsTabs);
+
+		this.m_oLeftRuler_vertRuler = CreateControl("id_vert_ruler");
+		this.m_oLeftRuler_vertRuler.Bounds.SetParams(0, 7, 1000, 1000, false, true, false, false, -1, -1);
+		this.m_oLeftRuler_vertRuler.Anchor = (g_anchor_left | g_anchor_right | g_anchor_top | g_anchor_bottom);
+		this.m_oLeftRuler.AddControl(this.m_oLeftRuler_vertRuler);
+		// ------------
+
+		// --- top ----
+		this.m_oTopRuler = CreateControlContainer("id_panel_top");
+		this.m_oTopRuler.Bounds.SetParams(5, 0, 1000, 1000, true, false, false, false, -1, 7);
+		this.m_oTopRuler.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right);
+		this.m_oMainContent.AddControl(this.m_oTopRuler);
+
+		this.m_oTopRuler_horRuler = CreateControl("id_hor_ruler");
+		this.m_oTopRuler_horRuler.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, -1);
+		this.m_oTopRuler_horRuler.Anchor = (g_anchor_left | g_anchor_right | g_anchor_top | g_anchor_bottom);
+		this.m_oTopRuler.AddControl(this.m_oTopRuler_horRuler);
+		// ------------
+
+		// scroll hor --
+		this.m_oScrollHor = CreateControlContainer("id_horscrollpanel");
+		this.m_oScrollHor.Bounds.SetParams(0, 0, this.ScrollWidthMm, 1000, false, false, true, false, -1, this.ScrollWidthMm);
+		this.m_oScrollHor.Anchor = (g_anchor_left | g_anchor_right | g_anchor_bottom);
+		this.m_oMainContent.AddControl(this.m_oScrollHor);
+
+		// Others
+		this.m_oMainView = CreateControlContainer("id_main_view");
+		var useScrollW = (this.m_oApi.isMobileVersion || this.m_oApi.isReporterMode) ? 0 : this.ScrollWidthMm;
+		this.m_oMainView.Bounds.SetParams(5, 7, useScrollW, useScrollW, true, true, true, true, -1, -1);
+		this.m_oMainView.Anchor = (g_anchor_left | g_anchor_right | g_anchor_top | g_anchor_bottom);
+		this.m_oMainContent.AddControl(this.m_oMainView);
+
+		// проблема с фокусом fixed-позиционированного элемента внутри (bug 63194)
+		this.m_oMainView.HtmlElement.onscroll = function () {
+			this.scrollTop = 0;
+		};
+
+		this.m_oEditor = CreateControl("id_viewer");
+		this.m_oEditor.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, -1);
+		this.m_oEditor.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right | g_anchor_bottom);
+		this.m_oMainView.AddControl(this.m_oEditor);
+
+		this.m_oOverlay = CreateControl("id_viewer_overlay");
+		this.m_oOverlay.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, -1);
+		this.m_oOverlay.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right | g_anchor_bottom);
+		this.m_oMainView.AddControl(this.m_oOverlay);
+	};
+	CEditorPage.prototype.initNotes = function () {
+		this.m_oNotesContainer = CreateControlContainer("id_panel_notes");
+		this.m_oNotesContainer.Bounds.SetParams(0, 0, g_dKoef_pix_to_mm, 1000, true, false, true, false, -1, -1);
+		this.m_oNotesContainer.Anchor = (g_anchor_left | g_anchor_right | g_anchor_top);
+		this.m_oBottomPanesContainer.AddControl(this.m_oNotesContainer);
+
+		this.m_oNotes = CreateControl("id_notes");
+		this.m_oNotes.Bounds.SetParams(0, 0, this.ScrollWidthMm, 1000, false, false, true, false, -1, -1);
+		this.m_oNotes.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right | g_anchor_bottom);
+		this.m_oNotesContainer.AddControl(this.m_oNotes);
+
+		this.m_oNotesOverlay = CreateControl("id_notes_overlay");
+		this.m_oNotesOverlay.Bounds.SetParams(0, 0, this.ScrollWidthMm, 1000, false, false, true, false, -1, -1);
+		this.m_oNotesOverlay.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right | g_anchor_bottom);
+		this.m_oNotesContainer.AddControl(this.m_oNotesOverlay);
+
+		this.m_oNotes_scroll = CreateControl("id_vertical_scroll_notes");
+		this.m_oNotes_scroll.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, this.ScrollWidthMm, -1);
+		this.m_oNotes_scroll.Anchor = (g_anchor_top | g_anchor_right | g_anchor_bottom);
+		this.m_oNotesContainer.AddControl(this.m_oNotes_scroll);
+
+		if (!GlobalSkin.SupportNotes) {
+			this.m_oNotesContainer.HtmlElement.style.display = "none";
+		}
+	};
+	CEditorPage.prototype.initAnimationPane = function () {
+		this.m_oAnimationPaneContainer = CreateControlContainer("id_panel_animation");
+		this.m_oAnimationPaneContainer.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, -1);
+		this.m_oAnimationPaneContainer.Anchor = (g_anchor_left | g_anchor_right | g_anchor_bottom);
+		this.m_oBottomPanesContainer.AddControl(this.m_oAnimationPaneContainer);
+
+		this.m_oAnimPaneHeaderContainer = CreateControlContainer("id_anim_header");
+		this.m_oAnimPaneHeaderContainer.Bounds.SetParams(0, 0, 1000, HEADER_HEIGHT, true, false, false, true, -1, HEADER_HEIGHT);
+		this.m_oAnimPaneHeaderContainer.Anchor = (g_anchor_left | g_anchor_right | g_anchor_top);
+		this.m_oAnimationPaneContainer.AddControl(this.m_oAnimPaneHeaderContainer);
+
+		this.m_oAnimPaneHeader = CreateControl("id_anim_header_canvas");
+		this.m_oAnimPaneHeader.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, -1);
+		this.m_oAnimPaneHeader.Anchor = (g_anchor_left | g_anchor_right | g_anchor_top | g_anchor_bottom);
+		this.m_oAnimPaneHeaderContainer.AddControl(this.m_oAnimPaneHeader);
+
+		this.m_oAnimPaneListContainer = CreateControlContainer("id_anim_list_container");
+		this.m_oAnimPaneListContainer.Bounds.SetParams(0, HEADER_HEIGHT, 0, TIMELINE_HEIGHT, true, true, true, true, -1, -1);
+		this.m_oAnimPaneListContainer.Anchor = (g_anchor_left | g_anchor_right | g_anchor_top | g_anchor_bottom);
+		this.m_oAnimationPaneContainer.AddControl(this.m_oAnimPaneListContainer);
+
+		this.m_oAnimPaneList = CreateControl("id_anim_list_canvas");
+		this.m_oAnimPaneList.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, -1);
+		this.m_oAnimPaneList.Anchor = (g_anchor_left | g_anchor_right | g_anchor_top | g_anchor_bottom);
+		this.m_oAnimPaneListContainer.AddControl(this.m_oAnimPaneList);
+
+		this.m_oAnimPaneList_scroll = CreateControl("id_anim_list_scroll");
+		this.m_oAnimPaneList_scroll.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, this.ScrollWidthMm, -1);
+		this.m_oAnimPaneList_scroll.Anchor = (g_anchor_top | g_anchor_right | g_anchor_bottom);
+		this.m_oAnimPaneListContainer.AddControl(this.m_oAnimPaneList_scroll);
+
+		this.m_oAnimPaneTimelineContainer = CreateControlContainer("id_anim_timeline_container");
+		this.m_oAnimPaneTimelineContainer.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, TIMELINE_HEIGHT);
+		this.m_oAnimPaneTimelineContainer.Anchor = (g_anchor_left | g_anchor_right | g_anchor_bottom);
+		this.m_oAnimationPaneContainer.AddControl(this.m_oAnimPaneTimelineContainer);
+
+		this.m_oAnimPaneTimeline = CreateControl("id_anim_timeline_canvas");
+		this.m_oAnimPaneTimeline.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, -1);
+		this.m_oAnimPaneTimeline.Anchor = (g_anchor_left | g_anchor_right | g_anchor_top | g_anchor_bottom);
+		this.m_oAnimPaneTimelineContainer.AddControl(this.m_oAnimPaneTimeline);
+
+		if (!this.IsSupportAnimPane) {
+			this.m_oAnimationPaneContainer.HtmlElement.style.display = "none";
+		}
+	};
+
 	CEditorPage.prototype.GetMainContentBounds = function () {
 		return this.m_oMainParent.AbsolutePosition;
 	};
@@ -995,32 +1016,31 @@
 	};
 	CEditorPage.prototype.hitToSplitter = function () {
 		let nResult = 0;
-		let oWordControl = oThis;
+		const oWordControl = oThis;
 
-		let x1 = oWordControl.splitters[0].position * g_dKoef_mm_to_pix;
-		let x2 = (oWordControl.splitters[0].position + GlobalSkin.SplitterWidthMM) * g_dKoef_mm_to_pix;
+		const position = oWordControl.splitters[0].position * g_dKoef_mm_to_pix;
+		const width = GlobalSkin.SplitterWidthMM * g_dKoef_mm_to_pix;
 
-		let _x = global_mouseEvent.X - oWordControl.X;
-		let _y = global_mouseEvent.Y - oWordControl.Y;
+		const mouseX = global_mouseEvent.X - oWordControl.X;
+		const mouseY = global_mouseEvent.Y - oWordControl.Y;
 
-		if (_x >= x1 && _x <= x2 && _y >= 0 && _y <= oWordControl.Height && (oThis.IsUseNullThumbnailsSplitter || (oThis.splitters[0].position != 0))) {
+		const isWithinFirstSplitter = isHorizontalThumbnails
+			? mouseY >= position && mouseY <= position + width && mouseX >= 0 && mouseX <= oWordControl.Width
+			: mouseX >= position && mouseX <= position + width && mouseY >= 0 && mouseY <= oWordControl.Height;
+
+		if (isWithinFirstSplitter && (oThis.IsUseNullThumbnailsSplitter || oThis.splitters[0].position != 0)) {
 			nResult = 1;
-		}
-		else if (_x >= x2 && _x <= oWordControl.Width) {
+		} else if (mouseX >= position + width && mouseX <= oWordControl.Width) {
+			let y1 = oWordControl.Height - ((oWordControl.splitters[1].position + GlobalSkin.SplitterWidthMM) * g_dKoef_mm_to_pix);
+			let y2 = oWordControl.Height - (oWordControl.splitters[1].position * g_dKoef_mm_to_pix);
 
-			var y1 = oWordControl.Height - ((oWordControl.splitters[1].position + GlobalSkin.SplitterWidthMM) * g_dKoef_mm_to_pix);
-			var y2 = oWordControl.Height - (oWordControl.splitters[1].position * g_dKoef_mm_to_pix);
-
-			if (_y >= y1 && _y <= y2) {
+			if (mouseY >= y1 && mouseY <= y2) {
 				nResult = 2;
-			}
-			else {
-				if (oThis.IsAnimPaneShown()) {
-					y1 = oWordControl.Height - ((oWordControl.splitters[2].position + GlobalSkin.SplitterWidthMM) * g_dKoef_mm_to_pix);
-					y2 = oWordControl.Height - (oWordControl.splitters[2].position * g_dKoef_mm_to_pix);
-					if (_y >= y1 && _y <= y2) {
-						nResult = 3;
-					}
+			} else if (oThis.IsAnimPaneShown()) {
+				y1 = oWordControl.Height - ((oWordControl.splitters[2].position + GlobalSkin.SplitterWidthMM) * g_dKoef_mm_to_pix);
+				y2 = oWordControl.Height - (oWordControl.splitters[2].position * g_dKoef_mm_to_pix);
+				if (mouseY >= y1 && mouseY <= y2) {
+					nResult = 3;
 				}
 			}
 		}
@@ -1069,21 +1089,18 @@
 		global_mouseEvent.LockMouse();
 
 		let oWordControl = oThis;
-		let nSplitter = 0;
-		nSplitter = oThis.hitToSplitter();
+		let nSplitter = oThis.hitToSplitter();
 		if (nSplitter > 0) {
-			if (nSplitter === 1) {
-				oWordControl.m_oBody.HtmlElement.style.cursor = "w-resize";
-			}
-			else {
-				oWordControl.m_oBody.HtmlElement.style.cursor = "s-resize";
-			}
+			oWordControl.m_oBody.HtmlElement.style.cursor = isHorizontalThumbnails
+				? "ns-resize"
+				: nSplitter === 1 ? "ew-resize" : "ns-resize";
+
 			oWordControl.createSplitterDiv(nSplitter);
 			_isCatch = true;
-		}
-		else {
+		} else {
 			oWordControl.m_oBody.HtmlElement.style.cursor = "default";
 		}
+
 		if (_isCatch) {
 			if (oWordControl.m_oMainParent && oWordControl.m_oMainParent.HtmlElement)
 				oWordControl.m_oMainParent.HtmlElement.style.pointerEvents = "none";
@@ -1158,9 +1175,14 @@
 			AscCommon.stopEvent(e);
 	};
 	CEditorPage.prototype.OnResizeSplitter = function (isNoNeedResize) {
-		this.m_oThumbnailsContainer.Bounds.R = this.splitters[0].position;
-		this.m_oThumbnailsContainer.Bounds.AbsW = this.splitters[0].position;;
-		this.m_oThumbnailsSplit.Bounds.L = this.splitters[0].position;
+		if (isHorizontalThumbnails) {
+			this.m_oThumbnailsContainer.Bounds.AbsH = this.splitters[0].position;
+			this.m_oThumbnailsSplit.Bounds.B = this.splitters[0].position;
+		} else {
+			this.m_oThumbnailsContainer.Bounds.R = this.splitters[0].position;
+			this.m_oThumbnailsContainer.Bounds.AbsW = this.splitters[0].position;
+			this.m_oThumbnailsSplit.Bounds.L = this.splitters[0].position;
+		}
 
 		if (this.IsSupportAnimPane) {
 			if (this.splitters[2].position < HIDDEN_PANE_HEIGHT) {
@@ -1175,25 +1197,28 @@
 			this.splitters[2].setPosition(0);
 		}
 
-
 		const notesSplitterPosition = this.IsNotesSupported()
 			? Math.min(Math.max(this.splitters[1].position, this.splitters[2].position + HIDDEN_PANE_HEIGHT), this.splitters[1].maxPosition)
 			: 0;
 		this.splitters[1].setPosition(notesSplitterPosition, false, true);
 
 		if (this.IsUseNullThumbnailsSplitter || (0 != this.splitters[0].position)) {
-			this.m_oMainParent.Bounds.L = this.splitters[0].position + GlobalSkin.SplitterWidthMM;
+			isHorizontalThumbnails
+				? this.m_oMainParent.Bounds.B = this.splitters[0].position + GlobalSkin.SplitterWidthMM
+				: this.m_oMainParent.Bounds.L = this.splitters[0].position + GlobalSkin.SplitterWidthMM;
 			this.m_oMainContent.Bounds.B = GlobalSkin.SupportNotes ? this.splitters[1].position + GlobalSkin.SplitterWidthMM : 1000;
 			this.m_oMainContent.Bounds.isAbsB = GlobalSkin.SupportNotes;
+
 
 			this.UpdateBottomControlsParams();
 
 			this.m_oThumbnailsContainer.HtmlElement.style.display = "block";
 			this.m_oThumbnailsSplit.HtmlElement.style.display = "block";
 			this.m_oMainParent.HtmlElement.style.borderLeft = ("1px solid " + GlobalSkin.BorderSplitterColor);
-		}
-		else {
-			this.m_oMainParent.Bounds.L = 0;
+		} else {
+			isHorizontalThumbnails
+				? this.m_oMainParent.Bounds.B = 0
+				: this.m_oMainParent.Bounds.L = 0;
 			this.m_oMainContent.Bounds.B = GlobalSkin.SupportNotes ? this.splitters[1].position + GlobalSkin.SplitterWidthMM : 1000;
 			this.m_oMainContent.Bounds.isAbsB = GlobalSkin.SupportNotes;
 
@@ -1212,16 +1237,14 @@
 		if (this.splitters[1].position <= 1) {
 			this.m_oNotes.HtmlElement.style.display = "none";
 			this.m_oNotes_scroll.HtmlElement.style.display = "none";
-		}
-		else {
+		} else {
 			this.m_oNotes.HtmlElement.style.display = "block";
 			this.m_oNotes_scroll.HtmlElement.style.display = "block";
 		}
 
 		if (this.IsAnimPaneShown()) {
 			this.m_oAnimationPaneContainer.HtmlElement.style.display = "block";
-		}
-		else {
+		} else {
 			this.m_oAnimationPaneContainer.HtmlElement.style.display = "none";
 		}
 
@@ -1251,11 +1274,9 @@
 			if (oWordControl.SplitterType == 1) {
 				var _posX = _x * g_dKoef_pix_to_mm;
 				if (Math.abs(oWordControl.splitters[0].position - _posX) > 1) {
-					oWordControl.Splitter1PosSetUp = _posX;
-
+					oWordControl.splitters[0].initialPosition = _posX;
 					oWordControl.splitters[0].setPosition(_posX);
 					oWordControl.OnResizeSplitter();
-
 					oWordControl.m_oApi.syncOnThumbnailsShow();
 				}
 			}
@@ -3880,7 +3901,7 @@
 			this.splitters[0].setLimits(maxSplitterThMax >> 2, maxSplitterThMax >> 0);
 
 			const considerLimits = true;
-			this.splitters[0].setPosition(this.Splitter1PosSetUp, considerLimits);
+			this.splitters[0].setPosition(this.splitters[0].initialPosition, considerLimits);
 
 			this.OnResizeSplitter(true);
 		}
