@@ -503,7 +503,7 @@ function (window, undefined) {
         if (this.m_nDrawAspect === AscFormat.EOLEDrawAspect.oledrawaspectContent && !this.m_bShowAsIcon) {
             if(typeof sImageUrl  === "string" &&
                 (!this.blipFill || this.blipFill.RasterImageId !== sImageUrl)) {
-                const _blipFill           = new AscFormat.CBlipFill();
+                const _blipFill = this.blipFill ? this.blipFill.createDuplicate() : new AscFormat.CBlipFill();
                 _blipFill.setRasterImageId(sImageUrl);
                 this.setBlipFill(_blipFill);
             }
