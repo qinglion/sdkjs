@@ -764,7 +764,9 @@
         this.repaint();
     };
     CDocument.prototype._repaintPage = function(nPage) {
-        this.pages[nPage].needRedraw = true;
+        if (this.pages[nPage]) {
+            this.pages[nPage].needRedraw = true;
+        }
     };
     CDocument.prototype._deletePage = function(nPage) {
         this.pages.splice(nPage, 1);

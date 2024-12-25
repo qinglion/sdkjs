@@ -2610,7 +2610,11 @@ var CPresentation = CPresentation || function(){};
             
             let w = aOrigRect[2] - aOrigRect[0];
             let h = aOrigRect[3] - aOrigRect[1];
-
+            if (oAnnot.IsComment()) {
+                w = 20 / this.Viewer.zoom;
+                h = 20 / this.Viewer.zoom;
+            }
+            
             let X, Y;
             switch (nPageRotate) {
                 case 0: {
@@ -2942,6 +2946,10 @@ var CPresentation = CPresentation || function(){};
             
             let w = aOrigRect[2] - aOrigRect[0];
             let h = aOrigRect[3] - aOrigRect[1];
+            if (oAnnot.IsComment()) {
+                w = 20 / this.Viewer.zoom;
+                h = 20 / this.Viewer.zoom;
+            }
 
             let X, Y;
             switch (nPageRotate) {
@@ -3220,20 +3228,20 @@ var CPresentation = CPresentation || function(){};
 
         switch (nPageRot) {
             case 0:
-                yOffset = aRect[1];
+                yOffset = aRect[1] - nOrigPageH * 0.1;
                 xOffset = aRect[0];
                 break;
             case 90:
                 yOffset = aRect[3];
-                xOffset = aRect[0];
+                xOffset = aRect[0] - nOrigPageW * 0.1;
                 break;
             case 180:
-                yOffset = aRect[3];
+                yOffset = aRect[3] + nOrigPageH * 0.1;
                 xOffset = aRect[2];
                 break;
             case 270:
                 yOffset = aRect[1];
-                xOffset = aRect[2];
+                xOffset = aRect[2] + nOrigPageW * 0.1;
                 break;
         }
 
@@ -5727,6 +5735,12 @@ var CPresentation = CPresentation || function(){};
                 let Y = aRect[1] * nScale - 0.5 >> 0;
                 let W = (aRect[2] - aRect[0]) * nScale + 0.5 >> 0;
                 let H = (aRect[3] - aRect[1]) * nScale + 0.5 >> 0;
+                if (aObjects[i].IsAnnot() && aObjects[i].IsComment()) {
+                    X = aRect[0] * nScale + 0.5 >> 0;
+                    Y = aRect[1] * nScale + 0.5 >> 0;
+                    W = 21 * nScale / this.Viewer.zoom;
+                    H = 21 * nScale / this.Viewer.zoom;
+                }
 
                 oCtx.strokeStyle = "rgb(" + oColor.r + "," + oColor.g + "," + oColor.b + ")";
                 oCtx.lineWidth = 2;

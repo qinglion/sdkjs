@@ -240,8 +240,8 @@
         
         let nX          = aOrigRect[0] + 0.5 >> 0;
         let nY          = aOrigRect[1] + 0.5 >> 0;
-        let nWidth      = (aOrigRect[2] - aOrigRect[0]) / oDoc.Viewer.zoom;
-        let nHeight     = (aOrigRect[3] - aOrigRect[1]) / oDoc.Viewer.zoom;
+        let nWidth      = 21 / oDoc.Viewer.zoom;
+        let nHeight     = 21 / oDoc.Viewer.zoom;
         
         let oCtx = oGraphics.GetContext();
         oCtx.save();
@@ -400,8 +400,9 @@
 	
     function drawIconCheck(ctx, x, y, xScale, yScale, rotationAngle) {
         ctx.save();
-        ctx.translate(x, y);
+        ctx.translate(x + 11 * xScale >> 0, y + 11 * yScale >> 0);
         ctx.rotate(rotationAngle);
+        ctx.translate(-11 * xScale >> 0, -11 * yScale >> 0);
         
         ctx.scale(xScale, yScale);
 
@@ -510,8 +511,9 @@
     }
     function drawIconCircle(ctx, x, y, xScale, yScale, rotationAngle) {
         ctx.save();
-        ctx.translate(x, y);
+        ctx.translate(x + 11 * xScale >> 0, y + 11 * yScale >> 0);
         ctx.rotate(rotationAngle);
+        ctx.translate(-11 * xScale >> 0, -11 * yScale >> 0);
         
         ctx.scale(xScale, yScale);
 
@@ -597,8 +599,9 @@
     }
     function drawIconComment(ctx, x, y, xScale, yScale, rotationAngle) {
         ctx.save();
-        ctx.translate(x, y);
+        ctx.translate(x + 11 * xScale >> 0, y + 11 * yScale >> 0);
         ctx.rotate(rotationAngle);
+        ctx.translate(-11 * xScale >> 0, -11 * yScale >> 0);
         
         ctx.scale(xScale, yScale);
 
@@ -748,8 +751,9 @@
     }
     function drawIconCross(ctx, x, y, xScale, yScale, rotationAngle) {
         ctx.save();
-        ctx.translate(x, y);
+        ctx.translate(x + 11 * xScale >> 0, y + 11 * yScale >> 0);
         ctx.rotate(rotationAngle);
+        ctx.translate(-11 * xScale >> 0, -11 * yScale >> 0);
         
         ctx.scale(xScale, yScale);
 
@@ -939,8 +943,9 @@
     }
     function drawIconCrossHairs(ctx, x, y, xScale, yScale, rotationAngle) {
         ctx.save();
-        ctx.translate(x, y);
+        ctx.translate(x + 11 * xScale >> 0, y + 11 * yScale >> 0);
         ctx.rotate(rotationAngle);
+        ctx.translate(-11 * xScale >> 0, -11 * yScale >> 0);
         
         ctx.scale(xScale, yScale);
 
@@ -1028,8 +1033,9 @@
     }
     function drawIconHelp(ctx, x, y, xScale, yScale, rotationAngle) {
         ctx.save();
-        ctx.translate(x, y);
+        ctx.translate(x + 11 * xScale >> 0, y + 11 * yScale >> 0);
         ctx.rotate(rotationAngle);
+        ctx.translate(-11 * xScale >> 0, -11 * yScale >> 0);
         
         ctx.scale(xScale, yScale);
 
@@ -1182,8 +1188,9 @@
     }
     function drawIconInsert(ctx, x, y, xScale, yScale, rotationAngle) {
         ctx.save();
-        ctx.translate(x, y);
+        ctx.translate(x + 11 * xScale >> 0, y + 11 * yScale >> 0);
         ctx.rotate(rotationAngle);
+        ctx.translate(-11 * xScale >> 0, -11 * yScale >> 0);
         
         ctx.scale(xScale, yScale);
 
@@ -1256,8 +1263,9 @@
     }
     function drawIconKey(ctx, x, y, xScale, yScale, rotationAngle) {
         ctx.save();
-        ctx.translate(x, y);
+        ctx.translate(x + 11 * xScale >> 0, y + 11 * yScale >> 0);
         ctx.rotate(rotationAngle);
+        ctx.translate(-11 * xScale >> 0, -11 * yScale >> 0);
         
         ctx.scale(xScale, yScale);
 
@@ -1484,8 +1492,9 @@
     }
     function drawIconNewParagraph(ctx, x, y, xScale, yScale, rotationAngle) {
         ctx.save();
-        ctx.translate(x, y);
+        ctx.translate(x + 11 * xScale >> 0, y + 11 * yScale >> 0);
         ctx.rotate(rotationAngle);
+        ctx.translate(-11 * xScale >> 0, -11 * yScale >> 0);
         
         ctx.scale(xScale, yScale);
 
@@ -1631,9 +1640,10 @@
     }
     function drawIconNote(ctx, x, y, xScale, yScale, rotationAngle) {
         ctx.save();
-        ctx.translate(x, y);
+        ctx.translate(x + 11 * xScale >> 0, y + 11 * yScale >> 0);
         ctx.rotate(rotationAngle);
-        
+        ctx.translate(-11 * xScale >> 0, -11 * yScale >> 0);
+
         ctx.scale(xScale, yScale);
 
         ctx.strokeStyle="rgba(0,0,0,0)";
@@ -1747,8 +1757,9 @@
     }
     function drawIconParagraph(ctx, x, y, xScale, yScale, rotationAngle) {
         ctx.save();
-        ctx.translate(x, y);
+        ctx.translate(x + 11 * xScale >> 0, y + 11 * yScale >> 0);
         ctx.rotate(rotationAngle);
+        ctx.translate(-11 * xScale >> 0, -11 * yScale >> 0);
         
         ctx.scale(xScale, yScale);
 
@@ -1832,8 +1843,9 @@
     }
     function drawIconRightArrow(ctx, x, y, xScale, yScale, rotationAngle) {
         ctx.save();
-        ctx.translate(x, y);
+        ctx.translate(x + 11 * xScale >> 0, y + 11 * yScale >> 0);
         ctx.rotate(rotationAngle);
+        ctx.translate(-11 * xScale >> 0, -11 * yScale >> 0);
         
         ctx.scale(xScale, yScale);
 
@@ -1968,8 +1980,9 @@
     }
     function drawIconRightPointer(ctx, x, y, xScale, yScale, rotationAngle) {
         ctx.save();
-        ctx.translate(x, y);
+        ctx.translate(x + 11 * xScale >> 0, y + 11 * yScale >> 0);
         ctx.rotate(rotationAngle);
+        ctx.translate(-11 * xScale >> 0, -11 * yScale >> 0);
         
         ctx.scale(xScale, yScale);
 
@@ -2047,8 +2060,9 @@
     }
     function drawIconStar(ctx, x, y, xScale, yScale, rotationAngle) {
         ctx.save();
-        ctx.translate(x, y);
+        ctx.translate(x + 11 * xScale >> 0, y + 11 * yScale >> 0);
         ctx.rotate(rotationAngle);
+        ctx.translate(-11 * xScale >> 0, -11 * yScale >> 0);
         
         ctx.scale(xScale, yScale);
 
@@ -2217,8 +2231,9 @@
     }
     function drawIconUpArrow(ctx, x, y, xScale, yScale, rotationAngle) {
         ctx.save();
-        ctx.translate(x, y);
+        ctx.translate(x + 11 * xScale >> 0, y + 11 * yScale >> 0);
         ctx.rotate(rotationAngle);
+        ctx.translate(-11 * xScale >> 0, -11 * yScale >> 0);
         
         ctx.scale(xScale, yScale);
 
@@ -2353,8 +2368,9 @@
     }
     function drawIconUpLeftArrow(ctx, x, y, xScale, yScale, rotationAngle) {
         ctx.save();
-        ctx.translate(x, y);
+        ctx.translate(x + 11 * xScale >> 0, y + 11 * yScale >> 0);
         ctx.rotate(rotationAngle);
+        ctx.translate(-11 * xScale >> 0, -11 * yScale >> 0);
         
         ctx.scale(xScale, yScale);
 
