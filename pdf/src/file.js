@@ -745,6 +745,10 @@ void main() {\n\
             return;
 
         let stream = this.getPageTextStream(pageIndex);
+        if (!stream) {
+            return;
+        }
+
         stream.pos = ret.LinePos;
 
         let _lineText = "";
@@ -825,6 +829,9 @@ void main() {\n\
     CFile.prototype.selectWholePage = function(pageIndex) {
         let _numLine = -1;
         let stream = this.getPageTextStream(pageIndex);
+        if (!stream) {
+            return;
+        }
         while (stream.pos < stream.size)
         {
             _numLine++;
@@ -856,6 +863,9 @@ void main() {\n\
         {
             let _numLine = -1;
             let stream = this.getPageTextStream(pagesCount - 1);
+            if (!stream) {
+                return;
+            }
             while (stream.pos < stream.size)
             {
                 _numLine++;
