@@ -1018,31 +1018,41 @@
 		let nResult = 0;
 		const oWordControl = oThis;
 
-		const position = oWordControl.splitters[0].position * g_dKoef_mm_to_pix;
-		const width = GlobalSkin.SplitterWidthMM * g_dKoef_mm_to_pix;
+		const splitterWidth = GlobalSkin.SplitterWidthMM * g_dKoef_mm_to_pix;
 
 		const mouseX = global_mouseEvent.X - oWordControl.X;
 		const mouseY = global_mouseEvent.Y - oWordControl.Y;
 
-		const isWithinFirstSplitter = isHorizontalThumbnails
-			? mouseY >= position && mouseY <= position + width && mouseX >= 0 && mouseX <= oWordControl.Width
-			: mouseX >= position && mouseX <= position + width && mouseY >= 0 && mouseY <= oWordControl.Height;
+		const thumbnailsSplitterPosition = isHorizontalThumbnails
+			? oWordControl.Height - (oWordControl.splitters[0].position * g_dKoef_mm_to_pix + splitterWidth)
+			: oWordControl.splitters[0].position * g_dKoef_mm_to_pix;
 
-		if (isWithinFirstSplitter && (oThis.IsUseNullThumbnailsSplitter || oThis.splitters[0].position != 0)) {
+		const notesSplitterPosition = isHorizontalThumbnails
+			? thumbnailsSplitterPosition - (oWordControl.splitters[1].position * g_dKoef_mm_to_pix + splitterWidth)
+			: oWordControl.Height - (oWordControl.splitters[1].position * g_dKoef_mm_to_pix + splitterWidth);
+
+		const animPaneSplitterPosition = isHorizontalThumbnails
+			? thumbnailsSplitterPosition - (oWordControl.splitters[2].position * g_dKoef_mm_to_pix + splitterWidth)
+			: oWordControl.Height - (oWordControl.splitters[2].position * g_dKoef_mm_to_pix + splitterWidth);
+
+		const isWithinThumbnailsSplitter = isHorizontalThumbnails
+			? mouseY >= thumbnailsSplitterPosition && mouseY <= thumbnailsSplitterPosition + splitterWidth && mouseX >= 0 && mouseX <= oWordControl.Width
+			: mouseX >= thumbnailsSplitterPosition && mouseX <= thumbnailsSplitterPosition + splitterWidth && mouseY >= 0 && mouseY <= oWordControl.Height;
+
+		const isWithinNotesSplitter = isHorizontalThumbnails
+			? mouseX >= 0 && mouseX <= oWordControl.Width && mouseY >= notesSplitterPosition && mouseY <= notesSplitterPosition + splitterWidth
+			: mouseX >= thumbnailsSplitterPosition + splitterWidth && mouseX <= oWordControl.Width && mouseY >= notesSplitterPosition && mouseY <= notesSplitterPosition + splitterWidth;
+
+		const isWithinAnimPaneSplitter = isHorizontalThumbnails
+			? mouseX >= 0 && mouseX <= oWordControl.Width && mouseY >= animPaneSplitterPosition && mouseY <= animPaneSplitterPosition + splitterWidth
+			: mouseX >= thumbnailsSplitterPosition + splitterWidth && mouseX <= oWordControl.Width && mouseY >= notesSplitterPosition && mouseY <= notesSplitterPosition + splitterWidth;
+
+		if (isWithinThumbnailsSplitter && (oThis.IsUseNullThumbnailsSplitter || oThis.splitters[0].position != 0)) {
 			nResult = 1;
-		} else if (mouseX >= position + width && mouseX <= oWordControl.Width) {
-			let y1 = oWordControl.Height - ((oWordControl.splitters[1].position + GlobalSkin.SplitterWidthMM) * g_dKoef_mm_to_pix);
-			let y2 = oWordControl.Height - (oWordControl.splitters[1].position * g_dKoef_mm_to_pix);
-
-			if (mouseY >= y1 && mouseY <= y2) {
-				nResult = 2;
-			} else if (oThis.IsAnimPaneShown()) {
-				y1 = oWordControl.Height - ((oWordControl.splitters[2].position + GlobalSkin.SplitterWidthMM) * g_dKoef_mm_to_pix);
-				y2 = oWordControl.Height - (oWordControl.splitters[2].position * g_dKoef_mm_to_pix);
-				if (mouseY >= y1 && mouseY <= y2) {
-					nResult = 3;
-				}
-			}
+		} else if (isWithinNotesSplitter) {
+			nResult = 2;
+		} else if (isWithinAnimPaneSplitter && oThis.IsAnimPaneShown()) {
+			nResult = 3;
 		}
 
 		//check event sender to prevent tracking after click on menu elements (bug 60586)
