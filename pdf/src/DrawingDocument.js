@@ -399,7 +399,7 @@
             let redrawPages = [];
             let viewer = this.m_oDocumentRenderer;
 
-            for (let i = viewer.startVisiblePage; i <= viewer.endVisiblePage; i++)
+            for (let i = 0; i < viewer.pagesInfo.pages.length; i++)
             {
                 let imgs = viewer.DrawingObjects.getAllRasterImagesOnPage(i);
                 for (let j = 0, len = imgs.length; j < len; j++)

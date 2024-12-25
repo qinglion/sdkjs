@@ -810,10 +810,10 @@
 			let oThumbnails = this.thumbnails;
 			for (var i = 0, len = pages.length; i < len; i++)
 			{
+				oThumbnails && oThumbnails._repaintPage(pages[i]);
 				if (pages[i] >= this.startVisiblePage && pages[i] <= this.endVisiblePage)
 				{
 					delete this.drawingPages[pages[i]].Image;
-					oThumbnails && oThumbnails._repaintPage(pages[i]);
 				}
 			}
 
