@@ -3903,7 +3903,7 @@
 				oBaseTransform.sx = printScale;
 				oBaseTransform.sy = printScale;
 
-				oBaseTransform.tx = asc_getcvt(0/*mm*/, 3/*px*/, t._getPPIX()) * ( -offsetCols * printScale  +  printPagesData.pageClipRectLeft + (printPagesData.leftFieldInPx - printPagesData.pageClipRectLeft + titleWidth) * printScale) - (t.getCellLeft(range.c1, 3) - t.getCellLeft(0, 3)) * printScale;
+				oBaseTransform.tx = asc_getcvt(0/*mm*/, 3/*px*/, t._getPPIX()) * ( -offsetCols * printScale  +  printPagesData.pageClipRectLeft + (printPagesData.leftFieldInPx - printPagesData.pageClipRectLeft + titleWidth) * printScale) - (t.getRightToLeft() ? -1 : 1) * (t.getCellLeft(range.c1, 3) - t.getCellLeft(0, 3)) * printScale;
 				oBaseTransform.ty = asc_getcvt(0/*mm*/, 3/*px*/, t._getPPIX()) * (printPagesData.pageClipRectTop + (printPagesData.topFieldInPx - printPagesData.pageClipRectTop + titleHeight) * printScale) - (t.getCellTop(range.r1, 3) - t.getCellTop(0, 3)) * printScale;
 
 				//oDocRenderer.transform(oDocRenderer.m_oFullTransform.sx, oDocRenderer.m_oFullTransform.shy, oDocRenderer.m_oFullTransform.shx, oDocRenderer.m_oFullTransform.sy, 100,200)
@@ -3915,7 +3915,7 @@
 					if (oDocRenderer.m_oCoordTransform) {
 						oldTx = oDocRenderer.m_oCoordTransform.tx;
 						oldTy = oDocRenderer.m_oCoordTransform.ty;
-						oDocRenderer.m_oCoordTransform.tx = !t.getRightToLeft() ? (t.getCellLeft(0) - offsetX) : (-t.getCellLeft(0) + ((printPagesData.leftFieldInPx + offsetCols - titleWidth) + t.getCellLeft(Math.max(0,range.c1-1))));
+						oDocRenderer.m_oCoordTransform.tx = !t.getRightToLeft() ? (t.getCellLeft(0) - offsetX) : (-t.getCellLeft(0) + t.getCellLeft(Math.max(0, range.c1)) + printPagesData.leftFieldInPx + offsetCols - titleWidth);
 						oDocRenderer.m_oCoordTransform.ty =  (t.getCellTop(0) - offsetY);
 					}
 					oDocRenderer.SaveGrState();
