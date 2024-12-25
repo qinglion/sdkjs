@@ -2119,143 +2119,39 @@
             return false;
         };
     };
-
+function getDiff(oOrigNode, oCompareNode) {
+	let dJaccard = oOrigNode.hashWords.jaccard(oCompareNode.hashWords);
+	return (oOrigNode.hashWords.count + oCompareNode.hashWords.count) * (1 - 2 * dJaccard / (1 + dJaccard));
+}
     CDocumentComparison.prototype.compareElementsArray = function(aBase, aCompare, bOrig, bUseMinDiff)
     {
         const oMapEquals = {};
         const aBase2 = [];
         const aCompare2 = [];
-        const oCompareMap = {};
-        const MIN_JACCARD_COEFFICIENT = this.getMinJaccardCoefficient();
-        const MIN_DIFF_COEFFICIENT = this.getMinDiffCoefficient();
 
         let bMatchNoEmpty = false;
         let oEqualMap = {};
-        for(let i = 0; i < aBase.length; ++i)
-        {
-            const oCurNode =  aBase[i];
-            if(oCurNode.hashWords)
-            {
-                const oCurInfo = {
-                    jaccard: 0,
-                    map: {},
-                    minDiff: 0,
-                    intersection: 0
-                };
-                oEqualMap[oCurNode.element.Id] = oCurInfo;
-                for(let j = 0; j < aCompare.length; ++j)
-                {
-                    const oCompareNode = aCompare[j];
-                    if(oCompareNode.hashWords && oCurNode.isComparable(oCompareNode))
-                    {
-                        let dJaccard = oCurNode.hashWords.jaccard(oCompareNode.hashWords);
-                        if(oCurNode.element instanceof CTable)
-                        {
-                            dJaccard += MIN_JACCARD_COEFFICIENT;
-                        }
-                        const dIntersection = dJaccard*(oCurNode.hashWords.count + oCompareNode.hashWords.count)/(1+dJaccard);
+				const result = {};
+	    for (let i = 0; i < aBase.length; i++) {
+				const oOrigElement = aBase[i];
+				const oDiffs = {};
 
-                        if(dJaccard > 0)
-                        {
-                            let diffA = 0, diffB = 0, dMinDiff = 0;
-                            if(oCurNode.hashWords.count > 0)
-                            {
-                                diffA = dIntersection/oCurNode.hashWords.count;
-                            }
-                            if(oCompareNode.hashWords.count > 0)
-                            {
-                                diffB = dIntersection/oCompareNode.hashWords.count;
-                            }
-                            dMinDiff = Math.max(diffA, diffB);
-
-                            if(oCurInfo.jaccard <= dJaccard && dJaccard >= MIN_JACCARD_COEFFICIENT || (oCurInfo.jaccard < MIN_JACCARD_COEFFICIENT && dMinDiff > MIN_DIFF_COEFFICIENT && oCurInfo.minDiff <= dMinDiff))
-                            {
-                                if(oCurInfo.jaccard < dJaccard && dJaccard >= MIN_JACCARD_COEFFICIENT)
-                                {
-                                    oCurInfo.map = {};
-                                    oCurInfo.minDiff = 0;
-                                }
-                                oCurInfo.map[oCompareNode.element.Id] = oCompareNode;
-                                oCurInfo.jaccard = dJaccard;
-                                oCurInfo.intersection = dIntersection;
-                                oCurInfo.minDiff = dMinDiff;
-                                if(AscFormat.fApproxEqual(dJaccard, 1.0, 0.01))
-                                {
-                                    oMapEquals[oCompareNode.element.Id] = true;
-                                }
-                            }
-                        }
-
-                    }
-                }
-                if(oCurInfo.jaccard >= MIN_JACCARD_COEFFICIENT || (bUseMinDiff && oCurInfo.minDiff > MIN_DIFF_COEFFICIENT && oCurNode.hashWords.countLetters > 0 ))
-                {
-                    aBase2.push(oCurNode);
-                    for(let key in oCurInfo.map)
-                    {
-                        if(oCurInfo.map.hasOwnProperty(key))
-                        {
-                            oCompareMap[key] = true;
-                            if(oCurNode.hashWords.countLetters > 0 && oCurInfo.map[key].hashWords.countLetters > 0)
-                            {
-                                bMatchNoEmpty = true;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        for(let j = 0; j < aCompare.length; ++j)
-        {
-            const oCompareNode = aCompare[j];
-            if(oCompareMap[oCompareNode.element.Id])
-            {
-                aCompare2.push(oCompareNode);
-            }
-        }
-        if(!bMatchNoEmpty)
-        {
-            if(bOrig)
-            {
-                for(let i = 0; i < aBase2.length; ++i)
-                {
-                    if(i !== aBase2[i].childidx)
-                    {
-                        aBase2.splice(i, aBase2[i].length - i);
-                        break;
-                    }
-                }
-                for(let i = aCompare2.length - 1; i > -1; i--)
-                {
-                    if(i !== aCompare2[i].childidx)
-                    {
-                        aCompare2.splice(0, i + 1);
-                        break;
-                    }
-                }
-            }
-            else
-            {
-
-                for(let i = 0; i < aCompare2.length; ++i)
-                {
-                    if(i !== aCompare2[i].childidx)
-                    {
-                        aCompare2.splice(i, aCompare2[i].length - i);
-                        break;
-                    }
-                }
-                for(let i = aBase2.length - 1; i > -1; i--)
-                {
-                    if(i !== aBase2[i].childidx)
-                    {
-                        aBase2.splice(0, i + 1);
-                        break;
-                    }
-                }
-            }
-
-        }
+				result[i] = oDiffs;
+				const oPreviousDiff = result[i - 1];
+		    for (let j = 0; j < aCompare.length; j += 1) {
+					const oCompareElement = aCompare[j];
+					const diff = getDiff(oOrigElement, oCompareElement);
+			    if (oPreviousDiff) {
+						const previousDiff = oPreviousDiff[j - 1];
+						oDiffs[j] += previousDiff;
+			    } else {
+						let tempDiff = diff;
+						for (let k = 0; k < j; k += 1) {
+							tempDiff += aCompare[k].hashWords.count;
+						}
+			    }
+		    }
+	    }
         if(aBase2.length > 0 && aCompare2.length > 0)
         {
             let oLCS;
