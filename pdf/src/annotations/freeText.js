@@ -1335,7 +1335,7 @@
                 let xContent    = oTransform.TransformPointX(X, 0);
                 let yContent    = oTransform.TransformPointY(0, Y);
 
-                if (this.IsInTextBox() == false) {
+                if (this.IsInTextBox() == false && false == this.Lock.Is_Locked()) {
                     oDoc.SetGlobalHistory();
                     oDoc.DoAction(function() {
                         this.FitTextBox();

@@ -539,6 +539,10 @@
 			return false;
 		}
 		
+		if (doc.IsSelectionLocked(AscCommon.changestype_Drawing_Props)) {
+			return false;
+		}
+		
 		if (true != isFromPaste) {
 			doc.StartAction(AscDFH.historydescription_Document_AddLetter);
 		}
