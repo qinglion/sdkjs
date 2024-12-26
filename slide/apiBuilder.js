@@ -1960,6 +1960,18 @@
     };
 
     /**
+     * Returns the name of the current layout.
+     * @typeofeditors ["CPE"]
+     * @param {string} sName - Layout name to be set.
+     * @returns {boolean}
+     * @see office-js-api/Examples/{Editor}/ApiLayout/Methods/GetName.js
+	 */
+    ApiLayout.prototype.GetName = function(sName)
+    {
+        return this.Layout.getName();
+    };
+
+    /**
      * Adds an object (image, shape or chart) to the current slide layout.
      * @typeofeditors ["CPE"]
      * @memberof ApiLayout
