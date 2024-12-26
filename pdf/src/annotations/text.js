@@ -69,6 +69,8 @@
         UpLeftArrow:    16
     }
 
+    let HALF_SIZE = 11;
+    
     /**
 	 * Class representing a text annotation.
 	 * @constructor
@@ -238,10 +240,10 @@
         let aOrigRect   = this.GetOrigRect();
         let nRotAngle   = oDoc.Viewer.getPageRotate(nPage);
         
-        let nX          = aOrigRect[0] + 0.5 >> 0;
-        let nY          = aOrigRect[1] + 0.5 >> 0;
-        let nWidth      = (aOrigRect[2] - aOrigRect[0]) / oDoc.Viewer.zoom;
-        let nHeight     = (aOrigRect[3] - aOrigRect[1]) / oDoc.Viewer.zoom;
+        let nX          = aOrigRect[0];
+        let nY          = aOrigRect[1];
+        let nWidth      = 21 / oDoc.Viewer.zoom;
+        let nHeight     = 21 / oDoc.Viewer.zoom;
         
         let oCtx = oGraphics.GetContext();
         oCtx.save();
@@ -400,8 +402,9 @@
 	
     function drawIconCheck(ctx, x, y, xScale, yScale, rotationAngle) {
         ctx.save();
-        ctx.translate(x, y);
+        ctx.translate(x + HALF_SIZE * xScale, y + HALF_SIZE * yScale);
         ctx.rotate(rotationAngle);
+        ctx.translate(-HALF_SIZE * xScale, -HALF_SIZE * yScale);
         
         ctx.scale(xScale, yScale);
 
@@ -510,8 +513,9 @@
     }
     function drawIconCircle(ctx, x, y, xScale, yScale, rotationAngle) {
         ctx.save();
-        ctx.translate(x, y);
+        ctx.translate(x + HALF_SIZE * xScale, y + HALF_SIZE * yScale);
         ctx.rotate(rotationAngle);
+        ctx.translate(-HALF_SIZE * xScale, -HALF_SIZE * yScale);
         
         ctx.scale(xScale, yScale);
 
@@ -597,8 +601,9 @@
     }
     function drawIconComment(ctx, x, y, xScale, yScale, rotationAngle) {
         ctx.save();
-        ctx.translate(x, y);
+        ctx.translate(x + HALF_SIZE * xScale, y + HALF_SIZE * yScale);
         ctx.rotate(rotationAngle);
+        ctx.translate(-HALF_SIZE * xScale, -HALF_SIZE * yScale);
         
         ctx.scale(xScale, yScale);
 
@@ -748,8 +753,9 @@
     }
     function drawIconCross(ctx, x, y, xScale, yScale, rotationAngle) {
         ctx.save();
-        ctx.translate(x, y);
+        ctx.translate(x + HALF_SIZE * xScale, y + HALF_SIZE * yScale);
         ctx.rotate(rotationAngle);
+        ctx.translate(-HALF_SIZE * xScale, -HALF_SIZE * yScale);
         
         ctx.scale(xScale, yScale);
 
@@ -939,8 +945,9 @@
     }
     function drawIconCrossHairs(ctx, x, y, xScale, yScale, rotationAngle) {
         ctx.save();
-        ctx.translate(x, y);
+        ctx.translate(x + HALF_SIZE * xScale, y + HALF_SIZE * yScale);
         ctx.rotate(rotationAngle);
+        ctx.translate(-HALF_SIZE * xScale, -HALF_SIZE * yScale);
         
         ctx.scale(xScale, yScale);
 
@@ -1030,6 +1037,7 @@
         ctx.save();
         ctx.translate(x, y);
         ctx.rotate(rotationAngle);
+        // ctx.translate(-HALF_SIZE * xScale, -HALF_SIZE * yScale);
         
         ctx.scale(xScale, yScale);
 
@@ -1182,8 +1190,9 @@
     }
     function drawIconInsert(ctx, x, y, xScale, yScale, rotationAngle) {
         ctx.save();
-        ctx.translate(x, y);
+        ctx.translate(x + HALF_SIZE * xScale, y + HALF_SIZE * yScale);
         ctx.rotate(rotationAngle);
+        ctx.translate(-HALF_SIZE * xScale, -HALF_SIZE * yScale);
         
         ctx.scale(xScale, yScale);
 
@@ -1256,8 +1265,9 @@
     }
     function drawIconKey(ctx, x, y, xScale, yScale, rotationAngle) {
         ctx.save();
-        ctx.translate(x, y);
+        ctx.translate(x + HALF_SIZE * xScale, y + HALF_SIZE * yScale);
         ctx.rotate(rotationAngle);
+        ctx.translate(-HALF_SIZE * xScale, -HALF_SIZE * yScale);
         
         ctx.scale(xScale, yScale);
 
@@ -1484,8 +1494,9 @@
     }
     function drawIconNewParagraph(ctx, x, y, xScale, yScale, rotationAngle) {
         ctx.save();
-        ctx.translate(x, y);
+        ctx.translate(x + HALF_SIZE * xScale, y + HALF_SIZE * yScale);
         ctx.rotate(rotationAngle);
+        ctx.translate(-HALF_SIZE * xScale, -HALF_SIZE * yScale);
         
         ctx.scale(xScale, yScale);
 
@@ -1631,9 +1642,10 @@
     }
     function drawIconNote(ctx, x, y, xScale, yScale, rotationAngle) {
         ctx.save();
-        ctx.translate(x, y);
+        ctx.translate(x + HALF_SIZE * xScale, y + HALF_SIZE * yScale);
         ctx.rotate(rotationAngle);
-        
+        ctx.translate(-HALF_SIZE * xScale, -HALF_SIZE * yScale);
+
         ctx.scale(xScale, yScale);
 
         ctx.strokeStyle="rgba(0,0,0,0)";
@@ -1747,8 +1759,9 @@
     }
     function drawIconParagraph(ctx, x, y, xScale, yScale, rotationAngle) {
         ctx.save();
-        ctx.translate(x, y);
+        ctx.translate(x + HALF_SIZE * xScale, y + HALF_SIZE * yScale);
         ctx.rotate(rotationAngle);
+        ctx.translate(-HALF_SIZE * xScale, -HALF_SIZE * yScale);
         
         ctx.scale(xScale, yScale);
 
@@ -1832,8 +1845,9 @@
     }
     function drawIconRightArrow(ctx, x, y, xScale, yScale, rotationAngle) {
         ctx.save();
-        ctx.translate(x, y);
+        ctx.translate(x + HALF_SIZE * xScale, y + HALF_SIZE * yScale);
         ctx.rotate(rotationAngle);
+        ctx.translate(-HALF_SIZE * xScale, -HALF_SIZE * yScale);
         
         ctx.scale(xScale, yScale);
 
@@ -1968,8 +1982,9 @@
     }
     function drawIconRightPointer(ctx, x, y, xScale, yScale, rotationAngle) {
         ctx.save();
-        ctx.translate(x, y);
+        ctx.translate(x + HALF_SIZE * xScale, y + HALF_SIZE * yScale);
         ctx.rotate(rotationAngle);
+        ctx.translate(-HALF_SIZE * xScale, -HALF_SIZE * yScale);
         
         ctx.scale(xScale, yScale);
 
@@ -2047,8 +2062,9 @@
     }
     function drawIconStar(ctx, x, y, xScale, yScale, rotationAngle) {
         ctx.save();
-        ctx.translate(x, y);
+        ctx.translate(x + HALF_SIZE * xScale, y + HALF_SIZE * yScale);
         ctx.rotate(rotationAngle);
+        ctx.translate(-HALF_SIZE * xScale, -HALF_SIZE * yScale);
         
         ctx.scale(xScale, yScale);
 
@@ -2217,8 +2233,9 @@
     }
     function drawIconUpArrow(ctx, x, y, xScale, yScale, rotationAngle) {
         ctx.save();
-        ctx.translate(x, y);
+        ctx.translate(x + HALF_SIZE * xScale, y + HALF_SIZE * yScale);
         ctx.rotate(rotationAngle);
+        ctx.translate(-HALF_SIZE * xScale, -HALF_SIZE * yScale);
         
         ctx.scale(xScale, yScale);
 
@@ -2353,8 +2370,9 @@
     }
     function drawIconUpLeftArrow(ctx, x, y, xScale, yScale, rotationAngle) {
         ctx.save();
-        ctx.translate(x, y);
+        ctx.translate(x + HALF_SIZE * xScale, y + HALF_SIZE * yScale);
         ctx.rotate(rotationAngle);
+        ctx.translate(-HALF_SIZE * xScale, -HALF_SIZE * yScale);
         
         ctx.scale(xScale, yScale);
 
