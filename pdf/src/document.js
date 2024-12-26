@@ -3167,7 +3167,7 @@ var CPresentation = CPresentation || function(){};
             // удаляем поле из массива родительских полей
             let nIdx = this.widgetsParents.indexOf(oForm);
             if (nIdx != -1) {
-                this.widgetsParents.splice(nIdx, oForm);
+                this.widgetsParents.splice(nIdx, 1);
                 this.History.Add(new CChangesPDFDocumentFieldsContent(this, -1, [oForm], false))
             }
 
@@ -3178,7 +3178,9 @@ var CPresentation = CPresentation || function(){};
             }
         }
     };
-
+    CPDFDoc.prototype.GetDocument = function() {
+        return this;
+    };
     /**
 	 * Move page to annot (if annot is't visible)
 	 * @memberof CPDFDoc
