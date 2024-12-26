@@ -2121,6 +2121,7 @@
     };
 function getDiff(oOrigNode, oCompareNode) {
 	let dJaccard = oOrigNode.hashWords.jaccard(oCompareNode.hashWords);
+	const intersect = (oOrigNode.hashWords.count + oCompareNode.hashWords.count) * dJaccard / (1 + dJaccard)
 	return (oOrigNode.hashWords.count + oCompareNode.hashWords.count) * (1 - 2 * dJaccard / (1 + dJaccard));
 }
     CDocumentComparison.prototype.compareElementsArray = function(aBase, aCompare, bOrig, bUseMinDiff)
@@ -2138,20 +2139,32 @@ function getDiff(oOrigNode, oCompareNode) {
 
 				result[i] = oDiffs;
 				const oPreviousDiff = result[i - 1];
+				oDiffs[-1] = {diff: oOrigElement.hashWords.count, bestVar: -1};
+				if (oPreviousDiff) {
+					oDiffs[-1].diff += oPreviousDiff[-1].diff;
+				}
 		    for (let j = 0; j < aCompare.length; j += 1) {
 					const oCompareElement = aCompare[j];
-					const diff = getDiff(oOrigElement, oCompareElement);
+					let diff = getDiff(oOrigElement, oCompareElement);
 			    if (oPreviousDiff) {
-						const previousDiff = oPreviousDiff[j - 1];
-						oDiffs[j] += previousDiff;
+						const oPreviousParagraphDiff = oPreviousDiff[j - 1];
+						diff += oPreviousParagraphDiff.diff;
+						for (let k = oPreviousParagraphDiff.bestVar + 1; k < j; k++) {
+							diff += aCompare[k].hashWords.count;
+						}
 			    } else {
-						let tempDiff = diff;
 						for (let k = 0; k < j; k += 1) {
-							tempDiff += aCompare[k].hashWords.count;
+							diff += aCompare[k].hashWords.count;
 						}
 			    }
+					if (diff < oDiffs[j - 1].diff) {
+						oDiffs[j] = {diff: diff, bestVar: j};
+					} else {
+						oDiffs[j] = Object.assign({}, oDiffs[j - 1]);
+					}
 		    }
 	    }
+			console.log(result)
         if(aBase2.length > 0 && aCompare2.length > 0)
         {
             let oLCS;
