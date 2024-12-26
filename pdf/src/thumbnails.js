@@ -784,6 +784,23 @@
         this._resize();
     };
 
+    CDocument.prototype.getStartVisiblePage = function() {
+        if (!this.blocks.length) {
+            return;
+        }
+
+        return this.blocks[0].pages[0].num;
+    };
+    CDocument.prototype.getEndVisiblePage = function() {
+        if (!this.blocks.length) {
+            return;
+        }
+
+        let nBlocks = this.blocks.length;
+        let nPages = this.blocks[nBlocks - 1].pages.length;
+
+        return this.blocks[nBlocks - 1].pages[nPages - 1].num;
+    };
     CDocument.prototype.calculateVisibleBlocks = function()
     {
         this.startBlock = -1;
