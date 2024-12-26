@@ -4465,13 +4465,20 @@ var CPresentation = CPresentation || function(){};
             }
         }
 
-        let nOldExtY = oShape.getXfrmExtY();
-        oShape.bodyPr.wrap = WRAPPING_TYPE_NONE;
-        oShape.bodyPr.textFit = new AscFormat.CTextFit();
-        oShape.bodyPr.textFit.type = AscFormat.text_fit_Auto;
+        let dOldExtY = oShape.getXfrmExtY();
+        let oOldBodyPr = oShape.bodyPr.createDuplicate();
+        let oBodyPr = oShape.bodyPr;
+        oBodyPr.rot = 0;
+        oBodyPr.spcFirstLastPara = false;
+        oBodyPr.vertOverflow = AscFormat.nVOTOverflow;
+        oBodyPr.horzOverflow = AscFormat.nHOTOverflow;
+        oBodyPr.vert = AscFormat.nVertTThorz;
+        oBodyPr.wrap = AscFormat.nTWTNone;
+        oBodyPr.textFit = new AscFormat.CTextFit();
+        oBodyPr.textFit.type = AscFormat.text_fit_Auto;
+        oShape.setBodyPr(oOldBodyPr);
         oShape.checkExtentsByDocContent(true);
-        oShape.bodyPr.textFit = null;
-        oShape.getXfrm().setExtY(nOldExtY);
+        oShape.spPr.xfrm.setExtY(dOldExtY);
         oShape.recalculate();
         oShape.recalculateText();
 
