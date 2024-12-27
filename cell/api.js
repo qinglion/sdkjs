@@ -10246,6 +10246,7 @@ var editor;
   prot["asc_updateExternalReferences"] = prot.asc_updateExternalReferences;
   prot["asc_removeExternalReferences"] = prot.asc_removeExternalReferences;
   prot["asc_openExternalReference"] = prot.asc_openExternalReference;
+  prot["asc_changeExternalReference"] = prot.asc_changeExternalReference;
   prot["asc_setUpdateLinks"] = prot.asc_setUpdateLinks;
   prot["asc_getUpdateLinks"] = prot.asc_getUpdateLinks;
 
