@@ -9065,10 +9065,10 @@ var editor;
 	* start timer if true, clear timer if false
 	* if update from interface all links, timer restart
 	* if part of links - not restart
-	* event from model to view - "changeExternalReferenceAutoUpdate"
+	* event from model to view - "changeUpdateLinks"
 	* @param {bool} val
 	* */
-	spreadsheet_api.prototype.asc_setUpdateLinks  = function(val) {
+	spreadsheet_api.prototype.asc_setUpdateLinks  = function(val, bFirstStart) {
 		//ms desktop: update automatic(realtime) only if open source file(not depends on workbookPr->UpdateLinks property). if source file changed by another editor - not update links
 		//workbookPr->UpdateLinks only the opening is affected
 		//ms online
@@ -9080,7 +9080,7 @@ var editor;
 		if (!wbModel) {
 			return;
 		}
-		wbModel.setUpdateLinks(val, true);
+		wbModel.setUpdateLinks(val, true, bFirstStart);
 	};
 
 	spreadsheet_api.prototype.asc_getUpdateLinks = function() {

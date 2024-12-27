@@ -14856,6 +14856,9 @@ function RangeDataManagerElem(bbox, data)
 		//portalName
 		this.referenceData = null;
 
+		//temp for update
+		this.sKey = null;
+
 		this.worksheets = {};
 	}
 
@@ -15515,7 +15518,13 @@ function RangeDataManagerElem(bbox, data)
 		}
 	};
 
+	ExternalReference.prototype.getKey = function() {
+		return this.sKey;
+	};
 
+	ExternalReference.prototype.setKey = function(val) {
+		this.sKey = val;
+	};
 
 	function asc_CExternalReference() {
 		this.type = null;

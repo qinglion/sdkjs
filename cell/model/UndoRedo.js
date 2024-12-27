@@ -2791,7 +2791,7 @@ function (window, undefined) {
 			AscCommonExcel.g_cCalcRecursion.initCalcProperties(wb.calcPr);
 
 		} else if(AscCH.historyitem_Workbook_UpdateLinks === Type) {
-			wb.setUpdateLinks(bUndo ? Data.from : Data.to);
+			wb.setUpdateLinks(bUndo ? Data.from : Data.to, null, null, !wb.oApi.isDocumentLoadComplete && wb.bCollaborativeChanges);
 		}
 	};
 	UndoRedoWorkbook.prototype.forwardTransformationIsAffect = function (Type) {

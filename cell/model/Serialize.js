@@ -3709,33 +3709,29 @@
         };
         this.WriteWorkbookPr = function()
         {
-            var oWorkbookPr = this.wb.workbookPr;
-            if(null != oWorkbookPr)
-            {
-                if(null != oWorkbookPr.Date1904)
-                {
+            let oWorkbookPr = this.wb.workbookPr;
+            if (null != oWorkbookPr) {
+                if (null != oWorkbookPr.Date1904) {
                     this.memory.WriteByte(c_oSerWorkbookPrTypes.Date1904);
                     this.memory.WriteByte(c_oSerPropLenType.Byte);
                     this.memory.WriteBool(oWorkbookPr.Date1904);
                 }
-                else if (null != oWorkbookPr.DateCompatibility)
-                {
+                if (null != oWorkbookPr.DateCompatibility) {
                     this.memory.WriteByte(c_oSerWorkbookPrTypes.DateCompatibility);
                     this.memory.WriteByte(c_oSerPropLenType.Byte);
                     this.memory.WriteBool(oWorkbookPr.DateCompatibility);
                 }
-				else if (null != oWorkbookPr.HidePivotFieldList)
-				{
-					this.memory.WriteByte(c_oSerWorkbookPrTypes.HidePivotFieldList);
-					this.memory.WriteByte(c_oSerPropLenType.Byte);
-					this.memory.WriteBool(oWorkbookPr.HidePivotFieldList);
-				}
-				else if (null != oWorkbookPr.ShowPivotChartFilter)
-				{
-					this.memory.WriteByte(c_oSerWorkbookPrTypes.ShowPivotChartFilter);
-					this.memory.WriteByte(c_oSerPropLenType.Byte);
-					this.memory.WriteBool(oWorkbookPr.ShowPivotChartFilter);
-				} else if (null != oWorkbookPr.UpdateLinks) {
+                if (null != oWorkbookPr.HidePivotFieldList) {
+                    this.memory.WriteByte(c_oSerWorkbookPrTypes.HidePivotFieldList);
+                    this.memory.WriteByte(c_oSerPropLenType.Byte);
+                    this.memory.WriteBool(oWorkbookPr.HidePivotFieldList);
+                }
+                if (null != oWorkbookPr.ShowPivotChartFilter) {
+                    this.memory.WriteByte(c_oSerWorkbookPrTypes.ShowPivotChartFilter);
+                    this.memory.WriteByte(c_oSerPropLenType.Byte);
+                    this.memory.WriteBool(oWorkbookPr.ShowPivotChartFilter);
+                }
+                if (null != oWorkbookPr.UpdateLinks) {
                     this.memory.WriteByte(c_oSerWorkbookPrTypes.UpdateLinks);
                     this.memory.WriteByte(c_oSerPropLenType.Byte);
                     this.memory.WriteBool(oWorkbookPr.UpdateLinks);

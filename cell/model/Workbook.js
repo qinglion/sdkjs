@@ -5500,7 +5500,7 @@
 		this.addExternalReferences(newExternalReferences);
 	};
 
-	Workbook.prototype.setUpdateLinks = function (val, addToHistory) {
+	Workbook.prototype.setUpdateLinks = function (val, addToHistory, bFirstStart, bNotStartTimer) {
 		var from = !!(this.workbookPr.UpdateLinks && this.workbookPr.UpdateLinks);
 		if (val !== from) {
 			this.workbookPr.UpdateLinks = val;
@@ -5509,12 +5509,14 @@
 				History.Add(AscCommonExcel.g_oUndoRedoWorkbook, AscCH.historyitem_Workbook_UpdateLinks,
 					null, null, new UndoRedoData_FromTo(from, val));
 			}
-			this.handlers && this.handlers.trigger("changeUpdateLinks");
+			!bNotStartTimer && this.handlers && this.handlers.trigger("changeUpdateLinks");
+		} else if (bFirstStart) {
+			!bNotStartTimer && this.handlers && this.handlers.trigger("changeUpdateLinks");
 		}
 	};
 
 	Workbook.prototype.getUpdateLinks = function () {
-		return !!(this.workbookPr && this.workbookPr.workbookPr);
+		return !!(this.workbookPr && this.workbookPr.UpdateLinks);
 	};
 
 	Workbook.prototype.unlockUserProtectedRanges = function(){
