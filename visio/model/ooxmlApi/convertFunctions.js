@@ -1580,7 +1580,13 @@
 				let shift = 11;
 				let dashTypeName = oStroke.GetDashByCode(linePatternNumber + shift);
 				if (dashTypeName !== null) {
-					oStroke.setPrstDash(linePatternNumber + shift);
+					if ("vsdxTransparent" === dashTypeName && oStroke.Fill) {
+						//todo реализовать прозрачный тип через отдельную настройку или разделить fill для линий и наконечников
+						//в vsdx может быть прозрачная линия с видимыми наконечниками
+						oStroke.Fill.fill = new AscFormat.CNoFill();
+					} else {
+						oStroke.setPrstDash(linePatternNumber + shift);
+					}
 				} else {
 					oStroke.setPrstDash(oStroke.GetDashCode("vsdxDash"));
 				}
