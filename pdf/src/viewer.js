@@ -2877,15 +2877,9 @@
 						oDoc.mouseDownAnnot.GetDocContent().DrawSelectionOnPage(0);
 						oDrDoc.private_EndDrawSelection();
 					}
-					if (oDoc.mouseDownAnnot.IsTextMarkup() || oDoc.mouseDownAnnot.IsComment())
-					{
-						oDrDoc.AutoShapesTrack.SetCurrentPage(oDoc.mouseDownAnnot.GetPage(), true);
-						oDoc.mouseDownAnnot.DrawSelected(this.overlay);
-					}
-					else if (oDoc.mouseDownAnnot.IsComment() == false)
-					{
+					else {
 						let nPage = oDoc.mouseDownAnnot.GetPage();
-						oDrDoc.AutoShapesTrack.PageIndex = nPage;
+						oDrDoc.AutoShapesTrack.SetCurrentPage(nPage, true);
 						this.DrawingObjects.drawSelect(nPage);
 					}
 				}

@@ -1001,6 +1001,7 @@ var CPresentation = CPresentation || function(){};
         let oMouseDownField     = oViewer.getPageFieldByMouse();
         let oMouseDownAnnot     = oViewer.getPageAnnotByMouse();
         let oMouseDownDrawing   = oViewer.getPageDrawingByMouse();
+        let oFloatObject        = oMouseDownAnnot || oMouseDownDrawing;
 
         // координаты клика на странице в MM
         var pageObject = oViewer.getPageByCoords2(x, y);
@@ -1046,17 +1047,21 @@ var CPresentation = CPresentation || function(){};
         
         let oCurObject = this.GetMouseDownObject();
         
+        let isSameType = (oCurObject && oFloatObject) && (oCurObject.IsAnnot() && oFloatObject.IsAnnot() || oCurObject.IsDrawing() && oFloatObject.IsDrawing()); 
         // докидываем в селект
-        if (e.CtrlKey && (oCurObject && oCurObject.IsDrawing() && oMouseDownDrawing && oCurObject != oMouseDownDrawing) && oMouseDownDrawing.GetPage() == oMouseDownDrawing.GetPage()) {
-            oController.selectObject(oMouseDownDrawing, oMouseDownDrawing.GetPage());
+        if (e.CtrlKey && (oCurObject && oFloatObject) && (oCurObject != oFloatObject) && isSameType) {
+            oController.selectObject(oFloatObject, oFloatObject.GetPage());
             return;
         }
 
         // оставляем текущий объет к селекте, если кликнули по нему же
-        let isDrawingSelected = oMouseDownDrawing && oController.selectedObjects.includes(oMouseDownDrawing);
-        let isObjectSelected = (oCurObject && ([oMouseDownField, oMouseDownAnnot, oMouseDownDrawing, oMouseDownLink].includes(oCurObject)) || isDrawingSelected);
+        let isFloatSelected = oFloatObject && oController.selectedObjects.includes(oFloatObject);
+        let isObjectSelected = (oCurObject && ([oMouseDownField, oMouseDownAnnot, oMouseDownDrawing, oMouseDownLink].includes(oCurObject)) || isFloatSelected);
         if (null == oCurObject || !isObjectSelected)
             this.SetMouseDownObject(oMouseDownField || oMouseDownAnnot || oMouseDownDrawing || oMouseDownLink);
+        else {
+            this.SetMouseDownObject(oMouseDownField || oMouseDownAnnot || oMouseDownDrawing || oMouseDownLink, false);
+        }
 
         let oMouseDownObject = this.GetMouseDownObject();
         if (oMouseDownObject) {
@@ -1173,9 +1178,9 @@ var CPresentation = CPresentation || function(){};
         this.SetGlobalHistory();
         this.Viewer.onUpdateOverlay();
     };
-    CPDFDoc.prototype.SetMouseDownObject = function(oObject) {
+    CPDFDoc.prototype.SetMouseDownObject = function(oObject, bBlurActive) {
         if (!oObject) {
-            this.BlurActiveObject();
+            bBlurActive !== false && this.BlurActiveObject();
 
             this.mouseDownField         = null;
             this.mouseDownAnnot         = null;
@@ -1193,7 +1198,7 @@ var CPresentation = CPresentation || function(){};
         if (oObject.IsForm && oObject.IsForm()) {
             // если попали в другую форму, то выход из текущей
             if (this.mouseDownAnnot != this.activeForm) {
-                this.BlurActiveObject();
+                bBlurActive !== false && this.BlurActiveObject();
             }
 
             this.mouseDownField         = oObject;
@@ -1203,7 +1208,7 @@ var CPresentation = CPresentation || function(){};
         }
         else if (oObject.IsAnnot && oObject.IsAnnot()) {
             if (oObject != this.mouseDownAnnot) {
-                this.BlurActiveObject();
+                bBlurActive !== false && this.BlurActiveObject();
             }
 
             this.mouseDownField         = null;
@@ -1213,7 +1218,7 @@ var CPresentation = CPresentation || function(){};
         }
         else if (oObject.IsDrawing && oObject.IsDrawing()) {
             if (oObject != this.activeDrawing) {
-                this.BlurActiveObject();
+                bBlurActive !== false && this.BlurActiveObject();
             }
 
             this.mouseDownField         = null;
@@ -2694,6 +2699,9 @@ var CPresentation = CPresentation || function(){};
 			case AscDFH.historydescription_Pdf_FreeTextGeom:
 			case AscDFH.historydescription_CommonDrawings_EndTrack:
 			case AscDFH.historydescription_Pdf_FreeTextFitTextBox:
+			case AscDFH.historydescription_Pdf_ChangeFillColor:
+			case AscDFH.historydescription_Pdf_ChangeStrokeColor:
+			case AscDFH.historydescription_Pdf_ChangeOpacity:
 				nChangesType = AscCommon.changestype_Drawing_Props;
 				break;
 			case AscDFH.historydescription_Document_ChangeComment:
@@ -2985,6 +2993,8 @@ var CPresentation = CPresentation || function(){};
     };
     
     CPDFDoc.prototype.Remove = function(nDirection, isCtrlKey) {
+        let oThis = this;
+        let oController = this.GetController();
         let oDrDoc = this.GetDrawingDocument();
         oDrDoc.UpdateTargetFromPaint = true;
 
@@ -3013,8 +3023,6 @@ var CPresentation = CPresentation || function(){};
                 oContent = oDrawing.GetDocContent();
             }
             else {
-                let oThis = this;
-                let oController = this.GetController();
                 let aDrawings = oController.getSelectedObjects().slice();
                 aDrawings.forEach(function(drawing) {
                     oThis.RemoveDrawing(drawing.GetId());
@@ -3022,7 +3030,10 @@ var CPresentation = CPresentation || function(){};
             }
         }
         else if (oAnnot && this.Viewer.isMouseDown == false) {
-            this.RemoveAnnot(oAnnot.GetId());
+            let aAnnots = oController.getSelectedObjects().slice();
+            aAnnots.forEach(function(annot) {
+                oThis.RemoveAnnot(annot.GetId());
+            });
         }
 
         if (oContent) {
@@ -5906,9 +5917,7 @@ var CPresentation = CPresentation || function(){};
         let oController = this.GetController();
 
         this.SetMouseDownObject(oState.activeObject);
-        if (false == this.Api.isRestrictionView()) {
-            oController.setSelectionState(oState.drawingSelection);
-        }
+        oController.setSelectionState(oState.drawingSelection);
 
         if (oState.CurPage != -1 && oState.CurPage != this.Viewer.currentPage)
 	        this.Viewer.navigateToPage(oState.CurPage);
@@ -5951,9 +5960,6 @@ var CPresentation = CPresentation || function(){};
                 let selected_objects = oController.selectedObjects.slice();
                 if (oController.selection.groupSelection) {
                     selected_objects.push(oController.selection.groupSelection);
-                }
-                if (this.mouseDownAnnot) {
-                    selected_objects.push(this.mouseDownAnnot);
                 }
 
                 if (isRestrictionView) {

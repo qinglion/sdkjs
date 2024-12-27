@@ -95,6 +95,26 @@
     AscFormat.InitClass(CAnnotationText, AscPDF.CAnnotationBase, AscDFH.historyitem_type_Pdf_Annot_Text);
 	CAnnotationText.prototype.constructor = CAnnotationText;
     
+    CAnnotationText.prototype.select = AscFormat.CGraphicObjectBase.prototype.select;
+    CAnnotationText.prototype.deselect = AscFormat.CGraphicObjectBase.prototype.deselect;
+    CAnnotationText.prototype.canChangeAdjustments = function() {};
+    CAnnotationText.prototype.hitToHandles = function() {};
+    CAnnotationText.prototype.hitInBoundingRect = function() {};
+    CAnnotationText.prototype.getNoChangeAspect = function() {};
+    CAnnotationText.prototype.getMainGroup = function() {};
+    CAnnotationText.prototype.getObjectName = function() {};
+    CAnnotationText.prototype.isShape = function() {};
+    CAnnotationText.prototype.isImage = function() {};
+    CAnnotationText.prototype.canMove = function() {
+        return true;
+    };
+    CAnnotationText.prototype.canResize = function() {
+        return false;
+    };
+    CAnnotationText.prototype.canRotate = function() {
+        return false;
+    };
+    
     CAnnotationText.prototype.SetState = function(nType) {
         this._state = nType;
     };
@@ -257,10 +277,10 @@
         oCtx.restore();
 
         let aRegions = [[
-            [nX + nWidth, nY],
             [nX, nY],
-            [nX, nY + nHeight],
-            [nX + nWidth, nY + nHeight]
+            [nX + nWidth, nY],
+            [nX + nWidth, nY + nHeight],
+            [nX, nY + nHeight]
         ]];
 
         oGraphics.DrawLockObjectRect(this.Lock.Get_Type(), aRegions);
