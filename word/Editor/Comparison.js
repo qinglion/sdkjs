@@ -2064,11 +2064,11 @@
     CDocumentComparison.prototype.getMinDiffCoefficient = function () {
         return MIN_DIFF;
     };
-    CDocumentComparison.prototype.getLCSCallback = function (oLCS, bOrig) {
+    CDocumentComparison.prototype.getLCSCallback = function (bOrig) {
         const oThis = this;
         return function(x, y) {
-            const oOrigNode = oLCS.a[x];
-            const oReviseNode = oLCS.b[y];
+            const oOrigNode = x;
+            const oReviseNode = y;
             const oDiff  = new AscCommon.Diff(oOrigNode, oReviseNode);
             oDiff.equals = function(a, b)
             {
@@ -2088,50 +2088,13 @@
         oOperation.anchor.base.addChange(oOperation);
     };
 
-    CDocumentComparison.prototype.getLCSEqualsMethod = function (oEqualMap, oMapEquals) {
+    CDocumentComparison.prototype.getLCSEqualsMethod = function (oEqualMap) {
         return function(a, b) {
-            const bEquals = oMapEquals[a.element.Id] || oMapEquals[b.element.Id];
-            if(oEqualMap[a.element.Id])
-            {
-                if(bEquals && !AscFormat.fApproxEqual(oEqualMap[a.element.Id].jaccard, 1.0, 0.01))
-                {
-                    return false;
-                }
-                if(oEqualMap[a.element.Id].map[b.element.Id])
-                {
-                    return true;
-                }
-            }
-            else
-            {
-                if(bEquals && !AscFormat.fApproxEqual(oEqualMap[b.element.Id].jaccard, 1.0, 0.01))
-                {
-                    return false;
-                }
-                if(oEqualMap[b.element.Id])
-                {
-                    if(oEqualMap[b.element.Id].map[a.element.Id])
-                    {
-                        return true;
-                    }
-                }
-            }
-            return false;
+            return oEqualMap[a.element.Id] === b.element.Id || oEqualMap[b.element.Id] === a.element.Id;
         };
     };
-function getDiff(oOrigNode, oCompareNode) {
-	let dJaccard = oOrigNode.hashWords.jaccard(oCompareNode.hashWords);
-	const intersect = (oOrigNode.hashWords.count + oCompareNode.hashWords.count) * dJaccard / (1 + dJaccard)
-	return (oOrigNode.hashWords.count + oCompareNode.hashWords.count) * (1 - 2 * dJaccard / (1 + dJaccard));
-}
-    CDocumentComparison.prototype.compareElementsArray = function(aBase, aCompare, bOrig, bUseMinDiff)
+	CDocumentComparison.prototype.compareElementsArray = function(aBase, aCompare, bOrig, bUseMinDiff)
     {
-        const oMapEquals = {};
-        const aBase2 = [];
-        const aCompare2 = [];
-
-        let bMatchNoEmpty = false;
-        let oEqualMap = {};
 				const result = {};
 	    for (let i = 0; i < aBase.length; i++) {
 				const oOrigElement = aBase[i];
@@ -2145,7 +2108,7 @@ function getDiff(oOrigNode, oCompareNode) {
 				}
 		    for (let j = 0; j < aCompare.length; j += 1) {
 					const oCompareElement = aCompare[j];
-					let diff = getDiff(oOrigElement, oCompareElement);
+					let diff = oOrigElement.hashWords.diff(oCompareElement.hashWords);
 			    if (oPreviousDiff) {
 						const oPreviousParagraphDiff = oPreviousDiff[j - 1];
 						diff += oPreviousParagraphDiff.diff;
@@ -2157,7 +2120,7 @@ function getDiff(oOrigNode, oCompareNode) {
 							diff += aCompare[k].hashWords.count;
 						}
 			    }
-					if (diff < oDiffs[j - 1].diff) {
+					if (j === 0 || diff < oDiffs[j - 1].diff) {
 						oDiffs[j] = {diff: diff, bestVar: j};
 					} else {
 						oDiffs[j] = Object.assign({}, oDiffs[j - 1]);
@@ -2165,24 +2128,23 @@ function getDiff(oOrigNode, oCompareNode) {
 		    }
 	    }
 			console.log(result)
-        if(aBase2.length > 0 && aCompare2.length > 0)
-        {
-            let oLCS;
-            if(bOrig)
-            {
-                oLCS = new AscCommon.LCS(aBase2, aCompare2);
-            }
-            else
-            {
-                oLCS = new AscCommon.LCS(aCompare2, aBase2);
-            }
-            const fLCSCallback = this.getLCSCallback(oLCS, bOrig);
-            oLCS.equals = this.getLCSEqualsMethod(oEqualMap, oMapEquals);
-            oLCS.forEachCommonSymbol(fLCSCallback);
-        }
-        oEqualMap.bMatchNoEmpty = bMatchNoEmpty;
-        return oEqualMap;
-    };
+	    const oEqualMap = {};
+			let index = aCompare.length - 1;
+	    for (let i = aBase.length - 1; i >= 0; i -= 1) {
+		    const oDiffs = result[i];
+				const oDiff = oDiffs[index];
+				if (oDiff && index >= 0) {
+					oEqualMap[aBase[i].element.Id] = aCompare[oDiff.bestVar];
+					aBase[i].setPartner(aCompare[oDiff.bestVar]);
+					index = oDiff.bestVar - 1;
+				}
+	    }
+
+	    const fLCSCallback = this.getLCSCallback(bOrig);
+			for (let i in oEqualMap) {
+				fLCSCallback(oEqualMap[i].partner, oEqualMap[i]);
+			}
+		};
     CDocumentComparison.prototype.compareNotes = function(oMatching)
     {
         for(let key in oMatching.Footnotes)
@@ -2414,70 +2376,7 @@ function getDiff(oOrigNode, oCompareNode) {
             aCompare = oOrigRoot.children;
         }
 
-        const aBase2 = [];
-        const aCompare2 = [];
-        const oEqualMap = this.compareElementsArray(aBase, aCompare, bOrig, false);
-        const bMatchNoEmpty = oEqualMap.bMatchNoEmpty;
-
-        //included paragraphs
-        if(bMatchNoEmpty)
-        {
-            let i = 0;
-            let j = 0;
-            let oCompareMap = {};
-
-            while(i < aBase.length && j < aCompare.length)
-            {
-                let oCurNode = aBase[i];
-                let oCompareNode = aCompare[j];
-                if(oCurNode.partner && oCompareNode.partner)
-                {
-                    ++i;
-                    ++j;
-                }
-                else
-                {
-                    const nStartI = i;
-                    const nStartJ = j;
-                    const nStartCompareIndex = j - 1;
-                    let nEndCompareIndex = nStartCompareIndex;
-                    aCompare2.length = 0;
-                    while(j < aCompare.length && !aCompare[j].partner)
-                    {
-                        aCompare2.push(aCompare[j]);
-                        ++j;
-                    }
-                    nEndCompareIndex = j;
-                    if((nEndCompareIndex - nStartCompareIndex) > 1)
-                    {
-                        oCompareMap = {};
-                        aBase2.length = 0;
-                        while (i < aBase.length && !aBase[i].partner)
-                        {
-                             oCurNode = aBase[i];
-                            aBase2.push(oCurNode);
-                            ++i;
-                        }
-
-                        if(aBase2.length > 0 && aCompare2.length > 0)
-                        {
-                            this.compareElementsArray(aBase2, aCompare2, bOrig, true);
-                        }
-                    }
-                    i = nStartI;
-                    j = nStartJ;
-                    while(j < aCompare.length && !aCompare[j].partner)
-                    {
-                        ++j;
-                    }
-                    while(i < aBase.length && !aBase[i].partner)
-                    {
-                        ++i;
-                    }
-                }
-            }
-        }
-
+        this.compareElementsArray(aBase, aCompare, bOrig);
         this.applyParagraphComparison(oOrigRoot, oRevisedRoot);
     };
     CDocumentComparison.prototype.compare = function(callback)
