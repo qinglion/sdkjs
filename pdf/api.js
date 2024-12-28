@@ -1288,6 +1288,7 @@
 
 	PDFEditorApi.prototype.asc_SetFillColor = function(r, g, b) {
 		let oDoc = this.getPDFDoc();
+		let oController = oDoc.GetController();
 		let oMouseDownAnnot = oDoc.mouseDownAnnot;
 
 		if (!oMouseDownAnnot) {
@@ -1297,7 +1298,13 @@
 		let aColor = [r / 255, g / 255, b / 255];
 		
 		return oDoc.DoAction(function() {
-			oMouseDownAnnot.SetFillColor(aColor);
+			oController.selectedObjects.forEach(function(annot) {
+				if (annot.IsTextMarkup()) {
+					annot.SetFillColor(aColor);
+				}
+			});
+
+			return true;
         }, AscDFH.historydescription_Pdf_ChangeFillColor);
 	};
 
@@ -1319,6 +1326,7 @@
 
 	PDFEditorApi.prototype.asc_SetStrokeColor = function(r, g, b) {
 		let oDoc = this.getPDFDoc();
+		let oController = oDoc.GetController();
 		let oMouseDownAnnot = oDoc.mouseDownAnnot;
 
 		if (!oMouseDownAnnot) {
@@ -1328,7 +1336,13 @@
 		let aColor = [r / 255, g / 255, b / 255];
 
 		return oDoc.DoAction(function() {
-			oMouseDownAnnot.SetStrokeColor(aColor);
+			oController.selectedObjects.forEach(function(annot) {
+				if (annot.IsTextMarkup()) {
+					annot.SetStrokeColor(aColor);
+				}
+			});
+
+			return true;
         }, AscDFH.historydescription_Pdf_ChangeStrokeColor);
 	};
 
@@ -1350,14 +1364,21 @@
 
 	PDFEditorApi.prototype.asc_SetOpacity = function(nValue) {
 		let oDoc = this.getPDFDoc();
+		let oController = oDoc.GetController();
 		let oMouseDownAnnot = oDoc.mouseDownAnnot;
 
 		if (!oMouseDownAnnot) {
-			return null;
+			return false;
 		}
 
 		return oDoc.DoAction(function() {
-			oMouseDownAnnot.SetOpacity(nValue / 100);
+			oController.selectedObjects.forEach(function(annot) {
+				if (annot.IsTextMarkup()) {
+					annot.SetOpacity(nValue / 100);
+				}
+			});
+
+			return true;
         }, AscDFH.historydescription_Pdf_ChangeOpacity);
 	};
 
@@ -2039,7 +2060,6 @@
 					}
 		
 					Lock.Set_Type(NewType, true);
-					Class.AddToRedraw && Class.AddToRedraw();
 				}
 				
 

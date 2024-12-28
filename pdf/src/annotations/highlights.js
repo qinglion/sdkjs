@@ -48,6 +48,27 @@
     CAnnotationTextMarkup.prototype = Object.create(AscPDF.CAnnotationBase.prototype);
 	CAnnotationTextMarkup.prototype.constructor = CAnnotationTextMarkup;
 
+    CAnnotationTextMarkup.prototype.select = AscFormat.CGraphicObjectBase.prototype.select;
+    CAnnotationTextMarkup.prototype.deselect = AscFormat.CGraphicObjectBase.prototype.deselect;
+    CAnnotationTextMarkup.prototype.canChangeAdjustments = function() {};
+    CAnnotationTextMarkup.prototype.hitToHandles = function() {};
+    CAnnotationTextMarkup.prototype.hitInBoundingRect = function() {};
+    CAnnotationTextMarkup.prototype.getNoChangeAspect = function() {};
+    CAnnotationTextMarkup.prototype.getMainGroup = function() {};
+    CAnnotationTextMarkup.prototype.getObjectName = function() {};
+    CAnnotationTextMarkup.prototype.isShape = function() {};
+    CAnnotationTextMarkup.prototype.isImage = function() {};
+    CAnnotationTextMarkup.prototype.createMoveTrack = function() {};
+    CAnnotationTextMarkup.prototype.canMove = function() {
+        return false;
+    };
+    CAnnotationTextMarkup.prototype.canResize = function() {
+        return false;
+    };
+    CAnnotationTextMarkup.prototype.canRotate = function() {
+        return false;
+    };
+
     CAnnotationTextMarkup.prototype.IsTextMarkup = function() {
         return true;
     };
