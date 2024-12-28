@@ -329,7 +329,7 @@
         DateCompatibility: 1,
 		HidePivotFieldList: 2,
 		ShowPivotChartFilter: 3,
-        UpdateLinks: 3
+        UpdateLinks: 4
     };
     /** @enum */
     var c_oSerWorkbookViewTypes =
@@ -1786,6 +1786,12 @@
         normal: 0,
         pageBreakPreview: 1,
         pageLayout: 2
+    };
+
+     var EUpdateLinksType = {
+        updatelinksAlways:  0,
+        updatelinksNever:  1,
+        updatelinksUserSet:  2
     };
 
     var g_nNumsMaxId = 164;
@@ -3734,7 +3740,7 @@
                 if (null != oWorkbookPr.UpdateLinks) {
                     this.memory.WriteByte(c_oSerWorkbookPrTypes.UpdateLinks);
                     this.memory.WriteByte(c_oSerPropLenType.Byte);
-                    this.memory.WriteBool(oWorkbookPr.UpdateLinks);
+                    this.memory.WriteByte(oWorkbookPr.UpdateLinks);
                 }
 			}
         };
@@ -9468,9 +9474,9 @@
 				WorkbookPr.setHidePivotFieldList(this.stream.GetBool());
 			} else if ( c_oSerWorkbookPrTypes.ShowPivotChartFilter === type ) {
 				WorkbookPr.setShowPivotChartFilter(this.stream.GetBool());
-			} /*else if ( c_oSerWorkbookPrTypes.UpdateLinks === type ) {
-                WorkbookPr.setUpdateLinks(this.stream.GetBool());
-            }*/ else
+			} else if ( c_oSerWorkbookPrTypes.UpdateLinks === type ) {
+                WorkbookPr.setUpdateLinks(this.stream.GetUChar());
+            } else
                 res = c_oSerConstants.ReadUnknown;
             return res;
         };
@@ -14798,5 +14804,11 @@
     prot['notView'] = prot.notView;
     prot['view'] = prot.view;
     prot['edit'] = prot.edit;
+
+    window['Asc']['EUpdateLinksType'] = window['Asc'].EUpdateLinksType = EUpdateLinksType;
+    prot = EUpdateLinksType;
+    prot['updatelinksAlways'] = prot.updatelinksAlways;
+    prot['updatelinksNever'] = prot.updatelinksNever;
+    prot['updatelinksUserSet'] = prot.updatelinksUserSet;
 
 })(window);

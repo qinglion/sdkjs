@@ -17550,7 +17550,7 @@ function RangeDataManagerElem(bbox, data)
 	 * @returns {boolean}
 	 */
 	CWorkbookPr.prototype.getUpdateLinks = function () {
-		return this.UpdateLinks;
+		return (this.UpdateLinks === Asc.EUpdateLinksType.updatelinksAlways || this.UpdateLinks === Asc.EUpdateLinksType.updatelinksUserSet);
 	};
 	/**
 	 * Method set "UpdateLinks" flag
@@ -17558,6 +17558,13 @@ function RangeDataManagerElem(bbox, data)
 	 * @returns {boolean}
 	 */
 	CWorkbookPr.prototype.setUpdateLinks = function (val) {
+		//bool from interface
+		if (val === true) {
+			val = Asc.EUpdateLinksType.updatelinksAlways;
+		}
+		if (val === false) {
+			val = Asc.EUpdateLinksType.updatelinksNever;
+		}
 		this.UpdateLinks = val;
 	};
 

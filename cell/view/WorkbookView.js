@@ -5323,7 +5323,7 @@
 	};
 
 	WorkbookView.prototype.changeUpdateLinks = function () {
-		let val = this.model.workbookPr && this.model.workbookPr.UpdateLinks;
+		let val = this.model.workbookPr && this.model.workbookPr.getUpdateLinks();
 		if (!val) {
 			this.clearExternalReferenceUpdateTimer();
 		} else {
@@ -5332,7 +5332,7 @@
 	};
 
 	WorkbookView.prototype.initExternalReferenceUpdateTimer = function (clear) {
-		let val = this.model.workbookPr && this.model.workbookPr.UpdateLinks;
+		let val = this.model.workbookPr && this.model.workbookPr.getUpdateLinks();
 		let oThis = this;
 		if (clear) {
 			this.clearExternalReferenceUpdateTimer();

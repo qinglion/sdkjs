@@ -5501,9 +5501,9 @@
 	};
 
 	Workbook.prototype.setUpdateLinks = function (val, addToHistory, bFirstStart, bNotStartTimer) {
-		var from = !!(this.workbookPr.UpdateLinks && this.workbookPr.UpdateLinks);
+		var from = !!(this.workbookPr.getUpdateLinks());
 		if (val !== from) {
-			this.workbookPr.UpdateLinks = val;
+			this.workbookPr.setUpdateLinks(val);
 			if (addToHistory) {
 				History.Create_NewPoint();
 				History.Add(AscCommonExcel.g_oUndoRedoWorkbook, AscCH.historyitem_Workbook_UpdateLinks,
@@ -5516,7 +5516,7 @@
 	};
 
 	Workbook.prototype.getUpdateLinks = function () {
-		return !!(this.workbookPr && this.workbookPr.UpdateLinks);
+		return this.workbookPr && this.workbookPr.getUpdateLinks();
 	};
 
 	Workbook.prototype.unlockUserProtectedRanges = function(){
