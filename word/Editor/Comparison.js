@@ -2096,6 +2096,44 @@
 	CDocumentComparison.prototype.compareElementsArray = function(aBase, aCompare, bOrig, bUseMinDiff)
     {
 				const result = {};
+				function sum(start, end) {
+					let sum = 0;
+					for (let i = start + 1; i <= end; i++) {
+						sum += aCompare[i].hashWords.count + 1;
+					}
+					return sum;
+				}
+				function best(compareIndex, baseMaxIndex) {
+					let bestResult = null;
+					if (baseMaxIndex === -1) {
+						return {diff: sum(-1, compareIndex)};
+					}
+					if (compareIndex === -1) {
+						let result = 0;
+						for (let i = 0; i <= baseMaxIndex; i++) {
+							result += aBase[baseMaxIndex].hashWords.count + 1;
+						}
+						return {diff: result};
+					}
+					for (let baseIndex = baseMaxIndex; baseIndex >= 0; baseIndex -= 1) {
+						for (let i = compareIndex; i >= 0; i -= 1) {
+							const summarize = sum(i, compareIndex);
+							const bestRes = best(i - 1, baseIndex - 1);
+							let diff = bestRes.diff + summarize;
+							const oBaseElement = aBase[baseIndex];
+							if (oBaseElement) {
+								diff += aBase[baseIndex].hashWords.diff(aCompare[i].hashWords);
+							} else {
+								diff += sum(-1, compareIndex)
+							}
+							if (bestResult === null || diff <= bestResult.diff) {
+								bestResult = {diff: diff, baseIndex: baseIndex, compareIndex: i, previousBest: bestRes};
+							}
+						}
+					}
+					return bestResult === null ? {diff: 0} : bestResult;
+				}
+				console.log(best(aCompare.length - 1, aBase.length - 1))
 	    for (let i = 0; i < aBase.length; i++) {
 				const oOrigElement = aBase[i];
 				const oDiffs = {};
