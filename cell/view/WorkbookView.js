@@ -5617,9 +5617,10 @@
 											}
 										}
 									}
+
+									eR.addDataSetFrom(eRAdded);
+									t.model.removeExternalReferences([eRAdded.getAscLink()]);
 								}
-								eR.addDataSetFrom(eRAdded);
-								t.model.removeExternalReferences([eRAdded.getAscLink()]);
 							}
 						}
 					}
@@ -5680,7 +5681,7 @@
 								wb.dependencyFormulas.initOpen();
 								AscCommonExcel.g_DefNameWorksheet = RealDefNameWorksheet;
 								if (wb.aWorksheets) {
-									eR && eR.updateData(wb.aWorksheets, _arrAfterPromise[i].data);
+									eR && eR.updateData(wb.aWorksheets, _arrAfterPromise[i].data, null, t.model);
 								}
 							}
 
@@ -5691,7 +5692,7 @@
 							}
 							let updatedData = window["Asc"]["editor"].openDocumentFromZip2(wb ? wb : t.model, stream);
 							if (updatedData) {
-								eR && eR.updateData(updatedData, _arrAfterPromise[i].data);
+								eR && eR.updateData(updatedData, _arrAfterPromise[i].data, null, t.model /* working file workbook */);
 							}
 						}
 					} else if (eR) {	 
@@ -5715,6 +5716,7 @@
 
 				History.EndTransaction();
 
+				//TODO
 				//кроме пересчёта нужно изменить ссылку на лист во всех диапазонах, которые используют данную ссылку
 				/*for (let j = 0; j < updatedReferences.length; j++) {
 					for (let n in updatedReferences[j].worksheets) {
