@@ -5310,7 +5310,7 @@
 		});
 	};
 
-	baseEditorsApi.prototype.wrapShortcut = function(shortcutType)
+	baseEditorsApi.prototype.wrapShortcut = function(methodName, shortcutType)
 	{
 		this[methodName] = function() {
 			this.executeShortcut.call(this, shortcutType);
