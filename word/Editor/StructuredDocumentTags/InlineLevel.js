@@ -3079,7 +3079,14 @@ CInlineLevelSdt.prototype.ConvertFormToFixed = function(nW, nH)
 		nW = _nW;
 		nH = _nH;
 	}
-
+	
+	// Для текстовых форм делаем по умолчанию размер как в Адобе 150ptх22pt
+	if (!this.IsPictureForm() && !this.IsCheckBox())
+	{
+		nW = Math.max(nW, 150 * g_dKoef_pt_to_mm);
+		nH = Math.max(nH, 22 * g_dKoef_pt_to_mm);
+	}
+	
 	// Для билдера, чтобы мы могли конвертить форму, даже если она нигде не лежит
 	if (!oParent)
 		return this.private_ConvertFormToFixed(nW, nH);
