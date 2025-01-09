@@ -8831,483 +8831,13 @@ CDocument.prototype.OnKeyDown = function(e)
     var bRetValue        = keydownresult_PreventNothing;
     const bIsMacOs       = AscCommon.AscBrowser.isMacOs;
 
-    var nShortcutAction = this.Api.getShortcut(e);
-    switch (nShortcutAction)
+    let shortcutType = this.Api.getShortcut(e);
+	if (this.executeShortcut(shortcutType))
 	{
-		case Asc.c_oAscDocumentShortcutType.InsertPageBreak:
-		{
-			if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_Content, null, false, false))
-			{
-				this.StartAction(AscDFH.historydescription_Document_EnterButton);
-				this.AddToParagraph(new AscWord.CRunBreak(AscWord.break_Page));
-				this.FinalizeAction();
-			}
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.InsertLineBreak:
-		{
-			if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_Content, null, false, this.IsFormFieldEditing()))
-			{
-				this.StartAction(AscDFH.historydescription_Document_EnterButton);
-				this.AddToParagraph(new AscWord.CRunBreak(AscWord.break_Line));
-				this.FinalizeAction();
-			}
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.InsertColumnBreak:
-		{
-			if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_Content, null, false, false))
-			{
-				this.StartAction(AscDFH.historydescription_Document_EnterButton);
-				this.AddToParagraph(new AscWord.CRunBreak(AscWord.break_Column));
-				this.FinalizeAction();
-			}
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.ResetChar:
-		{
-			if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_Content, null, true, false))
-			{
-				this.StartAction(AscDFH.historydescription_Document_Shortcut_ClearFormatting);
-				this.ClearParagraphFormatting(false, true);
-				this.FinalizeAction();
-			}
-			bRetValue = keydownresult_PreventNothing;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.NonBreakingSpace:
-		{
-			if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_Content, null, true, this.IsFormFieldEditing()))
-			{
-				this.StartAction(AscDFH.historydescription_Document_Shortcut_AddNonBreakingSpace);
-				this.DrawingDocument.TargetStart();
-				this.DrawingDocument.TargetShow();
-				this.AddToParagraph(new AscWord.CRunText(0x00A0));
-				this.FinalizeAction();
-			}
-			bRetValue = keydownresult_PreventNothing;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.ApplyHeading1:
-		{
-			if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_Properties))
-			{
-				this.StartAction(AscDFH.historydescription_Document_Shortcut_SetStyleHeading1);
-				this.SetParagraphStyle("Heading 1");
-				this.UpdateInterface();
-				this.FinalizeAction();
-			}
-			bRetValue = keydownresult_PreventAll;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.ApplyHeading2:
-		{
-			if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_Properties))
-			{
-				this.StartAction(AscDFH.historydescription_Document_Shortcut_SetStyleHeading2);
-				this.SetParagraphStyle("Heading 2");
-				this.UpdateInterface();
-				this.FinalizeAction();
-			}
-			bRetValue = keydownresult_PreventAll;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.ApplyHeading3:
-		{
-			if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_Properties))
-			{
-				this.StartAction(AscDFH.historydescription_Document_Shortcut_SetStyleHeading3);
-				this.SetParagraphStyle("Heading 3");
-				this.UpdateInterface();
-				this.FinalizeAction();
-			}
-			bRetValue = keydownresult_PreventAll;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.Strikeout:
-		{
-			var oTextPr = this.GetCalculatedTextPr();
-			if (oTextPr)
-			{
-				if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_TextProperties))
-				{
-					this.StartAction(AscDFH.historydescription_Document_SetTextStrikeoutHotKey);
-					this.AddToParagraph(new ParaTextPr({Strikeout : oTextPr.Strikeout !== true}));
-					this.UpdateInterface();
-					this.FinalizeAction();
-				}
-				bRetValue = keydownresult_PreventAll;
-			}
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.ShowAll:
-		{
-			var isShow = this.Api.get_ShowParaMarks();
-			this.Api.put_ShowParaMarks(!isShow);
-			this.Api.sync_ShowParaMarks();
-			bRetValue = keydownresult_PreventAll;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.EditSelectAll:
-		{
-			if (this.Api.isTargetHandMode() && !this.IsInFormField())
-				this.Api.asc_setViewerTargetType("select");
-
-			this.SelectAll();
-			bUpdateSelection = false;
-			bRetValue        = keydownresult_PreventAll;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.Bold:
-		{
-			var oTextPr = this.GetCalculatedTextPr();
-			if (oTextPr)
-			{
-				if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_TextProperties))
-				{
-					this.StartAction(AscDFH.historydescription_Document_SetTextBoldHotKey);
-					this.AddToParagraph(new ParaTextPr({Bold : oTextPr.Bold !== true}));
-					this.UpdateInterface();
-					this.FinalizeAction();
-				}
-				bRetValue = keydownresult_PreventAll;
-			}
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.CopyFormat:
-		{
-			this.Document_Format_Copy();
-			bRetValue = keydownresult_PreventAll;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.CopyrightSign:
-		{
-			this.private_AddSymbolByShortcut(0x00A9);
-			bRetValue = keydownresult_PreventAll;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.InsertEndnoteNow:
-		{
-			this.AddEndnote();
-			bRetValue = keydownresult_PreventAll;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.CenterPara:
-		{
-			this.private_ToggleParagraphAlignByHotkey(AscCommon.align_Center);
-			bRetValue = keydownresult_PreventAll;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.EuroSign:
-		{
-			this.private_AddSymbolByShortcut(0x20AC);
-			bRetValue = keydownresult_PreventAll;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.InsertFootnoteNow:
-		{
-			this.AddFootnote();
-			bRetValue = keydownresult_PreventAll;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.Italic:
-		{
-			var oTextPr = this.GetCalculatedTextPr();
-			if (oTextPr)
-			{
-				if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_TextProperties))
-				{
-					this.StartAction(AscDFH.historydescription_Document_SetTextItalicHotKey);
-					this.AddToParagraph(new ParaTextPr({Italic : oTextPr.Italic !== true}));
-					this.UpdateInterface();
-					this.FinalizeAction();
-				}
-				bRetValue = keydownresult_PreventAll;
-			}
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.JustifyPara:
-		{
-			this.private_ToggleParagraphAlignByHotkey(AscCommon.align_Justify);
-			bRetValue = keydownresult_PreventAll;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.InsertHyperlink:
-		{
-			if (true === this.CanAddHyperlink(false) && this.CanEdit())
-				this.Api.sync_DialogAddHyperlink();
-
-			bRetValue = keydownresult_PreventAll;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.ApplyListBullet:
-		{
-			if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_Content))
-			{
-				this.StartAction(AscDFH.historydescription_Document_SetParagraphNumberingHotKey);
-				
-				let numObject = AscWord.GetNumberingObjectByDeprecatedTypes(0, 1);
-				if (numObject)
-					this.SetParagraphNumbering(numObject);
-				
-				this.UpdateInterface();
-				this.FinalizeAction();
-			}
-			bRetValue = keydownresult_PreventAll;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.LeftPara:
-		{
-			this.private_ToggleParagraphAlignByHotkey(align_Left);
-			bRetValue = keydownresult_PreventAll;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.Indent:
-		{
-			this.IncreaseIndent();
-			bRetValue = keydownresult_PreventAll;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.UnIndent:
-		{
-			this.DecreaseIndent();
-			bRetValue = keydownresult_PreventAll;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.PrintPreviewAndPrint:
-		{
-			this.DrawingDocument.m_oWordControl.m_oApi.onPrint();
-			bRetValue = keydownresult_PreventAll;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.InsertPageNumber:
-		{
-			if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_Content))
-			{
-				this.StartAction(AscDFH.historydescription_Document_AddPageNumHotKey);
-				this.AddToParagraph(new AscWord.CRunPageNum());
-				this.FinalizeAction();
-			}
-			bRetValue = keydownresult_PreventAll;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.RightPara:
-		{
-			this.private_ToggleParagraphAlignByHotkey(AscCommon.align_Right);
-			bRetValue = keydownresult_PreventAll;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.RegisteredSign:
-		{
-			this.private_AddSymbolByShortcut(0x00AE);
-			bRetValue = keydownresult_PreventAll;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.Save:
-		{
-			if (!this.IsViewMode())
-				this.Api.asc_Save(false);
-
-			bRetValue = keydownresult_PreventAll;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.TrademarkSign:
-		{
-			this.private_AddSymbolByShortcut(0x2122);
-			bRetValue = keydownresult_PreventAll;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.Underline:
-		{
-			var oTextPr = this.GetCalculatedTextPr();
-			if (oTextPr)
-			{
-				if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_TextProperties))
-				{
-					this.StartAction(AscDFH.historydescription_Document_SetTextUnderlineHotKey);
-					this.AddToParagraph(new ParaTextPr({Underline : oTextPr.Underline !== true}));
-					this.UpdateInterface();
-					this.FinalizeAction();
-				}
-				bRetValue = keydownresult_PreventAll;
-			}
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.PasteFormat:
-		{
-			if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_Content))
-			{
-				this.StartAction(AscDFH.historydescription_Document_FormatPasteHotKey);
-				this.Document_Format_Paste();
-				this.FinalizeAction();
-			}
-			bRetValue = keydownresult_PreventAll;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.EditRedo:
-		{
-			if (!this.IsViewMode() && !this.IsViewModeInReview())
-				this.Document_Redo();
-
-			bRetValue = keydownresult_PreventAll;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.EditUndo:
-		{
-			if (!this.IsViewMode() && !this.IsViewModeInReview())
-				this.Document_Undo();
-
-			bRetValue = keydownresult_PreventAll;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.EmDash:
-		{
-			this.private_AddSymbolByShortcut(0x2014);
-			bRetValue = keydownresult_PreventAll;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.EnDash:
-		{
-			this.private_AddSymbolByShortcut(0x2013);
-			bRetValue = keydownresult_PreventAll;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.UpdateFields:
-		{
-			this.UpdateFields(true);
-			bUpdateSelection = false;
-			bRetValue        = keydownresult_PreventAll;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.InsertEquation:
-		{
-			let math = this.GetSelectedElementsInfo().GetMath();
-			if (!math)
-			{
-				let paragraph = this.GetCurrentParagraph();
-				let adjMath = paragraph && paragraph.getAdjacentMath();
-				if (adjMath)
-					adjMath.SetThisElementCurrentInParagraph();
-				else
-					this.Api.asc_AddMath();
-			}
-			else
-			{
-				if (math.IsContentControlEquation())
-				{
-					if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_Content))
-					{
-						this.StartAction(AscDFH.historydescription_Document_RemoveMathShortcut);
-						math.GetParent().RemoveThisFromParent();
-						this.UpdateInterface();
-						this.Recalculate();
-						this.FinalizeAction();
-					}
-				}
-				else
-				{
-					math.MoveCursorOutsideElement(math.IsCursorAtBegin());
-					// TODO: Когда курсор ни в начале, ни в конце надо сделать временное действие - разбивка формулу
-				}
-			}
-
-			bRetValue = keydownresult_PreventAll;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.Superscript:
-		{
-			var oTextPr = this.GetCalculatedTextPr();
-			if (oTextPr)
-			{
-				if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_TextProperties))
-				{
-					this.StartAction(AscDFH.historydescription_Document_SetTextVertAlignHotKey2);
-					this.AddToParagraph(new ParaTextPr({VertAlign : oTextPr.VertAlign === AscCommon.vertalign_SuperScript ? AscCommon.vertalign_Baseline : AscCommon.vertalign_SuperScript}));
-					this.UpdateInterface();
-					this.FinalizeAction();
-				}
-				bRetValue = keydownresult_PreventAll;
-			}
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.NonBreakingHyphen:
-		{
-			if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_Content, null, true))
-			{
-				this.StartAction(AscDFH.historydescription_Document_MinusButton);
-
-				this.DrawingDocument.TargetStart();
-				this.DrawingDocument.TargetShow();
-
-				this.AddToParagraph(AscWord.CreateNonBreakingHyphen());
-				this.FinalizeAction();
-			}
-			bRetValue = keydownresult_PreventAll;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.SoftHyphen:
-		{
-			// TODO: Реализовать
-			bRetValue = keydownresult_PreventAll;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.HorizontalEllipsis:
-		{
-			this.private_AddSymbolByShortcut(0x2026);
-			bRetValue = keydownresult_PreventAll;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.Subscript:
-		{
-			var oTextPr = this.GetCalculatedTextPr();
-			if (oTextPr)
-			{
-				if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_TextProperties))
-				{
-					this.StartAction(AscDFH.historydescription_Document_SetTextVertAlignHotKey3);
-					this.AddToParagraph(new ParaTextPr({VertAlign : oTextPr.VertAlign === AscCommon.vertalign_SubScript ? AscCommon.vertalign_Baseline : AscCommon.vertalign_SubScript}));
-					this.UpdateInterface();
-					this.FinalizeAction();
-				}
-				bRetValue = keydownresult_PreventAll;
-			}
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.DecreaseFontSize:
-		{
-			this.Api.FontSizeOut();
-			bRetValue = keydownresult_PreventAll;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.IncreaseFontSize:
-		{
-			this.Api.FontSizeIn();
-			bRetValue = keydownresult_PreventAll;
-			break;
-		}
-		case Asc.c_oAscDocumentShortcutType.SpeechWorker:
-		{
-			AscCommon.EditorActionSpeaker.toggle();
-			bRetValue = keydownresult_PreventAll;
-			break;
-		}
-		default:
-		{
-			var oCustom = this.Api.getCustomShortcutAction(nShortcutAction);
-			if (oCustom)
-			{
-				if (AscCommon.c_oAscCustomShortcutType.Symbol === oCustom.Type)
-				{
-					this.Api["asc_insertSymbol"](oCustom.Font, oCustom.CharCode);
-				}
-
-			}
-
-			break;
-		}
+		bRetValue = keydownresult_PreventAll;
+		bUpdateSelection = false;
 	}
-	
-	if (!nShortcutAction)
+	else
 	{
 		if (e.KeyCode === 8) // BackSpace
 		{
@@ -10197,6 +9727,490 @@ CDocument.prototype.private_AddSymbolByShortcut = function(nCode)
 		this.AddToParagraph(new AscWord.CRunText(nCode));
 		this.FinalizeAction();
 	}
+};
+CDocument.prototype.executeShortcut = function(type)
+{
+	let updateSelection = true;
+	let result = false;
+	
+	switch (type)
+	{
+		case Asc.c_oAscDocumentShortcutType.InsertPageBreak:
+		{
+			if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_Content, null, false, false))
+			{
+				this.StartAction(AscDFH.historydescription_Document_EnterButton);
+				this.AddToParagraph(new AscWord.CRunBreak(AscWord.break_Page));
+				this.FinalizeAction();
+				result = true;
+			}
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.InsertLineBreak:
+		{
+			if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_Content, null, false, this.IsFormFieldEditing()))
+			{
+				this.StartAction(AscDFH.historydescription_Document_EnterButton);
+				this.AddToParagraph(new AscWord.CRunBreak(AscWord.break_Line));
+				this.FinalizeAction();
+				result = true;
+			}
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.InsertColumnBreak:
+		{
+			if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_Content, null, false, false))
+			{
+				this.StartAction(AscDFH.historydescription_Document_EnterButton);
+				this.AddToParagraph(new AscWord.CRunBreak(AscWord.break_Column));
+				this.FinalizeAction();
+				result = true;
+			}
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.ResetChar:
+		{
+			if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_Content, null, true, false))
+			{
+				this.StartAction(AscDFH.historydescription_Document_Shortcut_ClearFormatting);
+				this.ClearParagraphFormatting(false, true);
+				this.FinalizeAction();
+				result = true;
+			}
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.NonBreakingSpace:
+		{
+			if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_Content, null, true, this.IsFormFieldEditing()))
+			{
+				this.StartAction(AscDFH.historydescription_Document_Shortcut_AddNonBreakingSpace);
+				this.DrawingDocument.TargetStart();
+				this.DrawingDocument.TargetShow();
+				this.AddToParagraph(new AscWord.CRunText(0x00A0));
+				this.FinalizeAction();
+				result = true;
+			}
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.ApplyHeading1:
+		{
+			if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_Properties))
+			{
+				this.StartAction(AscDFH.historydescription_Document_Shortcut_SetStyleHeading1);
+				this.SetParagraphStyle("Heading 1");
+				this.UpdateInterface();
+				this.FinalizeAction();
+			}
+			result = true;
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.ApplyHeading2:
+		{
+			if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_Properties))
+			{
+				this.StartAction(AscDFH.historydescription_Document_Shortcut_SetStyleHeading2);
+				this.SetParagraphStyle("Heading 2");
+				this.UpdateInterface();
+				this.FinalizeAction();
+			}
+			result = true;
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.ApplyHeading3:
+		{
+			if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_Properties))
+			{
+				this.StartAction(AscDFH.historydescription_Document_Shortcut_SetStyleHeading3);
+				this.SetParagraphStyle("Heading 3");
+				this.UpdateInterface();
+				this.FinalizeAction();
+			}
+			result = true;
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.Strikeout:
+		{
+			var oTextPr = this.GetCalculatedTextPr();
+			if (oTextPr)
+			{
+				if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_TextProperties))
+				{
+					this.StartAction(AscDFH.historydescription_Document_SetTextStrikeoutHotKey);
+					this.AddToParagraph(new ParaTextPr({Strikeout : oTextPr.Strikeout !== true}));
+					this.UpdateInterface();
+					this.FinalizeAction();
+				}
+				result = true;
+			}
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.ShowAll:
+		{
+			var isShow = this.Api.get_ShowParaMarks();
+			this.Api.put_ShowParaMarks(!isShow);
+			this.Api.sync_ShowParaMarks();
+			result = true;
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.EditSelectAll:
+		{
+			if (this.Api.isTargetHandMode() && !this.IsInFormField())
+				this.Api.asc_setViewerTargetType("select");
+			
+			this.SelectAll();
+			updateSelection = false;
+			result = true;
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.Bold:
+		{
+			var oTextPr = this.GetCalculatedTextPr();
+			if (oTextPr)
+			{
+				if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_TextProperties))
+				{
+					this.StartAction(AscDFH.historydescription_Document_SetTextBoldHotKey);
+					this.AddToParagraph(new ParaTextPr({Bold : oTextPr.Bold !== true}));
+					this.UpdateInterface();
+					this.FinalizeAction();
+				}
+				result = true;
+			}
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.CopyFormat:
+		{
+			this.Document_Format_Copy();
+			result = true;
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.CopyrightSign:
+		{
+			this.private_AddSymbolByShortcut(0x00A9);
+			result = true;
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.InsertEndnoteNow:
+		{
+			this.AddEndnote();
+			result = true;
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.CenterPara:
+		{
+			this.private_ToggleParagraphAlignByHotkey(AscCommon.align_Center);
+			result = true;
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.EuroSign:
+		{
+			this.private_AddSymbolByShortcut(0x20AC);
+			result = true;
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.InsertFootnoteNow:
+		{
+			this.AddFootnote();
+			result = true;
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.Italic:
+		{
+			var oTextPr = this.GetCalculatedTextPr();
+			if (oTextPr)
+			{
+				if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_TextProperties))
+				{
+					this.StartAction(AscDFH.historydescription_Document_SetTextItalicHotKey);
+					this.AddToParagraph(new ParaTextPr({Italic : oTextPr.Italic !== true}));
+					this.UpdateInterface();
+					this.FinalizeAction();
+				}
+				result = true;
+			}
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.JustifyPara:
+		{
+			this.private_ToggleParagraphAlignByHotkey(AscCommon.align_Justify);
+			result = true;
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.InsertHyperlink:
+		{
+			if (true === this.CanAddHyperlink(false) && this.CanEdit())
+				this.Api.sync_DialogAddHyperlink();
+			
+			result = true;
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.ApplyListBullet:
+		{
+			if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_Content))
+			{
+				this.StartAction(AscDFH.historydescription_Document_SetParagraphNumberingHotKey);
+				
+				let numObject = AscWord.GetNumberingObjectByDeprecatedTypes(0, 1);
+				if (numObject)
+					this.SetParagraphNumbering(numObject);
+				
+				this.UpdateInterface();
+				this.FinalizeAction();
+			}
+			result = true;
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.LeftPara:
+		{
+			this.private_ToggleParagraphAlignByHotkey(align_Left);
+			result = true;
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.Indent:
+		{
+			this.IncreaseIndent();
+			result = true;
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.UnIndent:
+		{
+			this.DecreaseIndent();
+			result = true;
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.PrintPreviewAndPrint:
+		{
+			this.DrawingDocument.m_oWordControl.m_oApi.onPrint();
+			result = true;
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.InsertPageNumber:
+		{
+			if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_Content))
+			{
+				this.StartAction(AscDFH.historydescription_Document_AddPageNumHotKey);
+				this.AddToParagraph(new AscWord.CRunPageNum());
+				this.FinalizeAction();
+			}
+			result = true;
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.RightPara:
+		{
+			this.private_ToggleParagraphAlignByHotkey(AscCommon.align_Right);
+			result = true;
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.RegisteredSign:
+		{
+			this.private_AddSymbolByShortcut(0x00AE);
+			result = true;
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.Save:
+		{
+			if (!this.IsViewMode())
+				this.Api.asc_Save(false);
+			
+			result = true;
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.TrademarkSign:
+		{
+			this.private_AddSymbolByShortcut(0x2122);
+			result = true;
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.Underline:
+		{
+			var oTextPr = this.GetCalculatedTextPr();
+			if (oTextPr)
+			{
+				if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_TextProperties))
+				{
+					this.StartAction(AscDFH.historydescription_Document_SetTextUnderlineHotKey);
+					this.AddToParagraph(new ParaTextPr({Underline : oTextPr.Underline !== true}));
+					this.UpdateInterface();
+					this.FinalizeAction();
+				}
+				result = true;
+			}
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.PasteFormat:
+		{
+			if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_Content))
+			{
+				this.StartAction(AscDFH.historydescription_Document_FormatPasteHotKey);
+				this.Document_Format_Paste();
+				this.FinalizeAction();
+			}
+			result = true;
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.EditRedo:
+		{
+			if (!this.IsViewMode() && !this.IsViewModeInReview())
+				this.Document_Redo();
+			
+			result = true;
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.EditUndo:
+		{
+			if (!this.IsViewMode() && !this.IsViewModeInReview())
+				this.Document_Undo();
+			
+			result = true;
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.EmDash:
+		{
+			this.private_AddSymbolByShortcut(0x2014);
+			result = true;
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.EnDash:
+		{
+			this.private_AddSymbolByShortcut(0x2013);
+			result = true;
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.UpdateFields:
+		{
+			this.UpdateFields(true);
+			updateSelection = false;
+			result = true;
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.InsertEquation:
+		{
+			let math = this.GetSelectedElementsInfo().GetMath();
+			if (!math)
+			{
+				let paragraph = this.GetCurrentParagraph();
+				let adjMath = paragraph && paragraph.getAdjacentMath();
+				if (adjMath)
+					adjMath.SetThisElementCurrentInParagraph();
+				else
+					this.Api.asc_AddMath();
+			}
+			else
+			{
+				if (math.IsContentControlEquation())
+				{
+					if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_Content))
+					{
+						this.StartAction(AscDFH.historydescription_Document_RemoveMathShortcut);
+						math.GetParent().RemoveThisFromParent();
+						this.UpdateInterface();
+						this.Recalculate();
+						this.FinalizeAction();
+					}
+				}
+				else
+				{
+					math.MoveCursorOutsideElement(math.IsCursorAtBegin());
+					// TODO: Когда курсор ни в начале, ни в конце надо сделать временное действие - разбивка формулу
+				}
+			}
+			
+			result = true;
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.Superscript:
+		{
+			var oTextPr = this.GetCalculatedTextPr();
+			if (oTextPr)
+			{
+				if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_TextProperties))
+				{
+					this.StartAction(AscDFH.historydescription_Document_SetTextVertAlignHotKey2);
+					this.AddToParagraph(new ParaTextPr({VertAlign : oTextPr.VertAlign === AscCommon.vertalign_SuperScript ? AscCommon.vertalign_Baseline : AscCommon.vertalign_SuperScript}));
+					this.UpdateInterface();
+					this.FinalizeAction();
+				}
+				result = true;
+			}
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.NonBreakingHyphen:
+		{
+			if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_Content, null, true))
+			{
+				this.StartAction(AscDFH.historydescription_Document_MinusButton);
+				
+				this.DrawingDocument.TargetStart();
+				this.DrawingDocument.TargetShow();
+				
+				this.AddToParagraph(AscWord.CreateNonBreakingHyphen());
+				this.FinalizeAction();
+			}
+			result = true;
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.SoftHyphen:
+		{
+			// TODO: Реализовать
+			result = true;
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.HorizontalEllipsis:
+		{
+			this.private_AddSymbolByShortcut(0x2026);
+			result = true;
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.Subscript:
+		{
+			var oTextPr = this.GetCalculatedTextPr();
+			if (oTextPr)
+			{
+				if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_TextProperties))
+				{
+					this.StartAction(AscDFH.historydescription_Document_SetTextVertAlignHotKey3);
+					this.AddToParagraph(new ParaTextPr({VertAlign : oTextPr.VertAlign === AscCommon.vertalign_SubScript ? AscCommon.vertalign_Baseline : AscCommon.vertalign_SubScript}));
+					this.UpdateInterface();
+					this.FinalizeAction();
+				}
+				result = true;
+			}
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.DecreaseFontSize:
+		{
+			this.Api.FontSizeOut();
+			result = true;
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.IncreaseFontSize:
+		{
+			this.Api.FontSizeIn();
+			result = true;
+			break;
+		}
+		case Asc.c_oAscDocumentShortcutType.SpeechWorker:
+		{
+			AscCommon.EditorActionSpeaker.toggle();
+			result = true;
+			break;
+		}
+		default:
+		{
+			let customShortcut = this.Api.getCustomShortcutAction(type);
+			if (customShortcut && AscCommon.c_oAscCustomShortcutType.Symbol === oCustom.Type)
+			{
+				this.Api["asc_insertSymbol"](oCustom.Font, oCustom.CharCode);
+				result = true;
+			}
+			break;
+		}
+	}
+	
+	if (result && updateSelection)
+		this.UpdateSelection();
+	
+	return result;
 };
 CDocument.prototype.OnKeyPress = function(e)
 {

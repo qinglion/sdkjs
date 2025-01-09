@@ -4627,6 +4627,10 @@
 		else
 			return this.Shortcuts.Get(e.KeyCode, e.CtrlKey, e.ShiftKey, e.AltKey);
 	};
+	baseEditorsApi.prototype.executeShortcut = function(type)
+	{
+		
+	};
 	baseEditorsApi.prototype.getCustomShortcutAction = function(nActionType)
 	{
 		return this.Shortcuts.GetCustomAction(nActionType);

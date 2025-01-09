@@ -1339,7 +1339,14 @@ background-repeat: no-repeat;\
 		
 		return text_data.data;
 	};
-
+	asc_docs_api.prototype.executeShortcut = function(type)
+	{
+		let logicDocument = this.private_GetLogicDocument();
+		if (!logicDocument)
+			return false;
+		
+		return logicDocument.executeShortcut(type);
+	};
 	asc_docs_api.prototype._InitCommonShortcuts = function () 
 	{
 		// ActionType, Key, Ctrl, Shift, Alt
