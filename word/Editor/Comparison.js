@@ -1303,8 +1303,12 @@
 
         let nInsertPosition = infoAboutEndOfRemoveChange.nInsertPosition;
         nInsertPosition = this.setReviewTypeForRemoveChanges(comparison, idxOfChange, posLastRunInContent, nInsertPosition, arrSetRemoveReviewType);
-
-        this.applyInsert(aContentToInsert, arrSetRemoveReviewType, nInsertPosition, comparison, {needReverse: true});
+				const oChange = this.changes[idxOfChange];
+				if (oChange.insert.length === 1 && oChange.remove.length === 1) {
+					comparison.compareByOneSymbol(aContentToInsert, arrSetRemoveReviewType, this.getApplyParagraph(comparison), arrSetRemoveReviewType[arrSetRemoveReviewType.length - 1].GetPosInParent());
+				} else {
+					this.applyInsert(aContentToInsert, arrSetRemoveReviewType, nInsertPosition, comparison, {needReverse: true});
+				}
     };
 
     CNode.prototype.insertContentAfterRemoveChanges = function (aContentToInsert, nInsertPosition, comparison) {
@@ -1808,10 +1812,6 @@
         if(aCheckArray.length > 0)
         {
             oHash.update(aCheckArray);
-            if(bVal)
-            {
-                oHash.countLetters++;
-            }
         }
     };
 
@@ -2007,7 +2007,44 @@
         this.oComparisonMoveMarkManager = new CMoveMarkComparisonManager();
 		this.oBookmarkManager = new CComparisonBookmarkManager(oOriginalDocument, oRevisedDocument);
 		this.oCommentManager = new CComparisonCommentManager(this);
+		this.isWordsByOneSymbol = false;
     }
+		CDocumentComparison.prototype.compareByOneSymbol = function(arrToInserts, arrToRemove, applyParagraph, nInsertPosition) {
+			if (arrToInserts.length === 0 || arrToRemove.length === 0) return;
+			arrToRemove.push(new AscCommonWord.ParaRun());
+			arrToInserts.push(new AscCommonWord.ParaRun());
+			arrToRemove[arrToRemove.length - 1].Content.push(new AscWord.CRunParagraphMark());
+			arrToInserts[arrToInserts.length - 1].Content.push(new AscWord.CRunParagraphMark());
+			const comparison = new AscCommonWord.CDocumentResolveConflictComparison(this.originalDocument, this.revisedDocument, this.options, true);
+
+			const oOldCommentsMeeting = this.oCommentManager.mapCommentMeeting;
+			this.oCommentManager.mapCommentMeeting = {};
+			comparison.oCommentManager = this.oCommentManager;
+
+			const oOldBookmarkMeeting = this.oBookmarkManager.mapBookmarkMeeting;
+			this.oBookmarkManager.mapBookmarkMeeting = {};
+			comparison.oBookmarkManager = this.oBookmarkManager;
+			comparison.oComparisonMoveMarkManager = this.oComparisonMoveMarkManager;
+			comparison.CommentsMap = this.CommentsMap;
+			comparison.StylesMap = this.StylesMap;
+			const originalDocument = new AscCommonWord.CMockDocument();
+			const revisedDocument = new AscCommonWord.CMockDocument();
+			const originalParagraph = new AscCommonWord.CMockParagraph();
+			const revisedParagraph = new AscCommonWord.CMockParagraph();
+			const origParagraph = applyParagraph;
+			comparison.startPosition = nInsertPosition;
+			comparison.parentParagraph = origParagraph;
+			originalParagraph.Content = arrToRemove;
+			revisedParagraph.Content = arrToInserts;
+			originalDocument.Content.push(originalParagraph);
+			revisedDocument.Content.push(revisedParagraph);
+
+			comparison.oComparisonMoveMarkManager.executeResolveConflictMode(function () {
+				comparison.compareRoots(originalDocument, revisedDocument);
+			});
+			this.oBookmarkManager.mapBookmarkMeeting = oOldBookmarkMeeting;
+			this.oCommentManager.mapCommentMeeting = oOldCommentsMeeting;
+		};
     CDocumentComparison.prototype.checkOriginalAndSplitRun = function (oOriginalRun, oSplitRun) {
 
     };
@@ -2056,14 +2093,6 @@
             return AscCommon.translateManager.getValue("Author");
         }
     };
-
-    CDocumentComparison.prototype.getMinJaccardCoefficient = function () {
-        return MIN_JACCARD;
-    };
-
-    CDocumentComparison.prototype.getMinDiffCoefficient = function () {
-        return MIN_DIFF;
-    };
     CDocumentComparison.prototype.getLCSCallback = function (bOrig) {
         const oThis = this;
         return function(x, y) {
@@ -2087,25 +2116,19 @@
     CDocumentComparison.prototype.forEachChangeCallback = function(oOperation) {
         oOperation.anchor.base.addChange(oOperation);
     };
-
-    CDocumentComparison.prototype.getLCSEqualsMethod = function (oEqualMap) {
-        return function(a, b) {
-            return oEqualMap[a.element.Id] === b.element.Id || oEqualMap[b.element.Id] === a.element.Id;
-        };
-    };
 	CDocumentComparison.prototype.compareElementsArray = function(aBase, aCompare, bOrig, bUseMinDiff)
     {
-				function sum(start, end) {
+				function sum(start, end, array) {
 					let sum = 0;
 					for (let i = start + 1; i <= end; i++) {
-						sum += aCompare[i].hashWords.count + 1;
+						sum += array[i].hashWords.count + 1;
 					}
 					return sum;
 				}
 				function best(compareIndex, baseMaxIndex) {
 					let bestResult = null;
 					if (baseMaxIndex === -1) {
-						return {diff: sum(-1, compareIndex)};
+						return {diff: sum(-1, compareIndex, aCompare)};
 					}
 					if (compareIndex === -1) {
 						let result = 0;
@@ -2115,15 +2138,16 @@
 						return {diff: result};
 					}
 					for (let baseIndex = baseMaxIndex; baseIndex >= 0; baseIndex -= 1) {
+						const summarizeDef = sum(baseIndex, baseMaxIndex, aBase);
 						for (let i = compareIndex; i >= 0; i -= 1) {
-							const summarize = sum(i, compareIndex);
+							const summarize = sum(i, compareIndex, aCompare) + summarizeDef;
 							const bestRes = best(i - 1, baseIndex - 1);
 							let diff = bestRes.diff + summarize;
 							const oBaseElement = aBase[baseIndex];
 							if (oBaseElement) {
 								diff += aBase[baseIndex].hashWords.diff(aCompare[i].hashWords);
 							} else {
-								diff += sum(-1, compareIndex)
+								diff += sum(-1, compareIndex, aCompare)
 							}
 							if (bestResult === null || diff <= bestResult.diff) {
 								bestResult = {diff: diff, baseIndex: baseIndex, compareIndex: i, previousBest: bestRes};
@@ -2132,7 +2156,6 @@
 					}
 					return bestResult === null ? {diff: 0} : bestResult;
 				}
-				console.log(best(aCompare.length - 1, aBase.length - 1))
 			const result = best(aCompare.length - 1, aBase.length - 1);
 	    const oEqualMap = {};
 
@@ -3198,7 +3221,6 @@
 
     CDocumentComparison.prototype.createNodeFromDocContent = function(oElement, oParentNode, oHashWords, isOriginalDocument)
     {
-        const NodeConstructor = this.getNodeConstructor();
         const oRet = this.createNode(oElement, oParentNode);
         const bRoot = (oParentNode === null);
         for(let i = 0; i < oElement.Content.length; ++i)
@@ -3306,7 +3328,7 @@
             for(let j = 0; j < oRun.Content.length; ++j)
             {
                 const oRunElement = oRun.Content[j];
-                if(isBreakWordElement(oRunElement))
+                if(isBreakWordElement(oRunElement) || this.isWordsByOneSymbol)
                 {
                     if(oLastText.elements.length > 0)
                     {

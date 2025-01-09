@@ -55,6 +55,16 @@
 
     CMergeComparisonNode.prototype = Object.create(CNode.prototype);
     CMergeComparisonNode.prototype.constructor = CMergeComparisonNode;
+		CMergeComparisonNode.prototype.applyInsertsToParagraphsWithRemove = function(comparison, aContentToInsert, idxOfChange) {
+			const arrSetRemoveReviewType = [];
+			const infoAboutEndOfRemoveChange = this.prepareEndOfRemoveChange(idxOfChange, comparison, arrSetRemoveReviewType);
+			const posLastRunInContent = infoAboutEndOfRemoveChange.posLastRunInContent;
+
+			let nInsertPosition = infoAboutEndOfRemoveChange.nInsertPosition;
+			nInsertPosition = this.setReviewTypeForRemoveChanges(comparison, idxOfChange, posLastRunInContent, nInsertPosition, arrSetRemoveReviewType);
+
+			this.applyInsert(aContentToInsert, arrSetRemoveReviewType, nInsertPosition, comparison, {needReverse: true});
+		};
     CMergeComparisonNode.prototype.privateCompareElements = function (oNode, bCheckNeighbors) {
         const oElement1 = this.element;
         const oElement2 = oNode.element;
@@ -289,7 +299,7 @@
     };
     
 
-    function CDocumentResolveConflictComparison(oOriginalDocument, oRevisedDocument, oOptions) {
+    function CDocumentResolveConflictComparison(oOriginalDocument, oRevisedDocument, oOptions, bIsWordsByOneSymbol) {
         CDocumentComparison.call(this, oOriginalDocument, oRevisedDocument, oOptions);
 	    this.needCopyForResolveEqualWords = false;
         this.parentParagraph = null;
@@ -301,6 +311,7 @@
             Comparison: this,
         };
         this.bSaveCustomReviewType = true;
+				this.isWordsByOneSymbol = !!bIsWordsByOneSymbol;
     }
     CDocumentResolveConflictComparison.prototype = Object.create(CDocumentComparison.prototype);
     CDocumentResolveConflictComparison.prototype.constructor = CDocumentResolveConflictComparison;
@@ -390,12 +401,6 @@
 
         this.applyChangesToChildrenOfParagraphNode(oNode);
         this.applyChangesToSectPr(oNode);
-    };
-
-    CDocumentResolveConflictComparison.prototype.getLCSEqualsMethod = function () {
-        return function () {
-            return true;
-        }
     };
 
     CDocumentResolveConflictComparison.prototype.setRemoveReviewType = function (element) {
@@ -494,7 +499,12 @@
         this.setReviewTypeForRemoveChanges(comparison, idxOfChange, posLastRunInContent, nInsertPosition, arrSetRemoveReviewType);
 
         const nInsertPosition2 = arrSetRemoveReviewType[arrSetRemoveReviewType.length - 1].GetPosInParent();
-        this.applyInsert(aContentToInsert, arrSetRemoveReviewType, nInsertPosition2, comparison, {needReverse: true, nCommentInsertIndex: nInsertPosition});
+				const oChange = this.changes[idxOfChange];
+				if (oChange.insert.length === 1 && oChange.remove.length === 1) {
+					comparison.compareByOneSymbol(aContentToInsert, arrSetRemoveReviewType, this.getApplyParagraph(comparison), nInsertPosition2);
+				} else {
+					this.applyInsert(aContentToInsert, arrSetRemoveReviewType, nInsertPosition2, comparison, {/*needReverse: true, */nCommentInsertIndex: nInsertPosition});
+				}
     };
 
     // обновим ноды в любом случае, для дальнейшего разрешения типов
@@ -930,7 +940,6 @@
         });
 	    this.oBookmarkManager.mapBookmarkMeeting = oOldBookmarkMeeting;
 	    this.oCommentManager.mapCommentMeeting = oOldCommentsMeeting;
-        return originalParagraph.Content;
     };
 
     CDocumentMergeComparison.prototype.getCompareReviewInfo = CDocumentResolveConflictComparison.prototype.getCompareReviewInfo;
@@ -1126,6 +1135,7 @@
     window['AscCommonWord'].mergeBinary = mergeBinary;
     window['AscCommonWord'].CMockDocument = CMockDocument;
     window['AscCommonWord'].CMockParagraph = CMockParagraph;
+    window['AscCommonWord'].CDocumentResolveConflictComparison = CDocumentResolveConflictComparison;
     window['AscCommonWord']["mergeDocuments"] = window['AscCommonWord'].mergeDocuments = mergeDocuments;
 
 })();
