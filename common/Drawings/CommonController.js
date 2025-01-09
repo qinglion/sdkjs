@@ -11537,6 +11537,11 @@
 				resultShape.setBlipFill(blipFill);
 			}
 
+			if (AscCommon.isRealObject(referenceShape.txBody)) {
+				const txBody = referenceShape.txBody.createDuplicate();
+				resultShape.setTxBody(txBody);
+			}
+
 			resultShape.setSpPr(new AscFormat.CSpPr());
 			resultShape.spPr.setParent(resultShape);
 			resultShape.spPr.setXfrm(new AscFormat.CXfrm());
