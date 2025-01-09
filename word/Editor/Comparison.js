@@ -2095,7 +2095,6 @@
     };
 	CDocumentComparison.prototype.compareElementsArray = function(aBase, aCompare, bOrig, bUseMinDiff)
     {
-				const result = {};
 				function sum(start, end) {
 					let sum = 0;
 					for (let i = start + 1; i <= end; i++) {
@@ -2134,49 +2133,17 @@
 					return bestResult === null ? {diff: 0} : bestResult;
 				}
 				console.log(best(aCompare.length - 1, aBase.length - 1))
-	    for (let i = 0; i < aBase.length; i++) {
-				const oOrigElement = aBase[i];
-				const oDiffs = {};
-
-				result[i] = oDiffs;
-				const oPreviousDiff = result[i - 1];
-				oDiffs[-1] = {diff: oOrigElement.hashWords.count, bestVar: -1};
-				if (oPreviousDiff) {
-					oDiffs[-1].diff += oPreviousDiff[-1].diff;
-				}
-		    for (let j = 0; j < aCompare.length; j += 1) {
-					const oCompareElement = aCompare[j];
-					let diff = oOrigElement.hashWords.diff(oCompareElement.hashWords);
-			    if (oPreviousDiff) {
-						const oPreviousParagraphDiff = oPreviousDiff[j - 1];
-						diff += oPreviousParagraphDiff.diff;
-						for (let k = oPreviousParagraphDiff.bestVar + 1; k < j; k++) {
-							diff += aCompare[k].hashWords.count;
-						}
-			    } else {
-						for (let k = 0; k < j; k += 1) {
-							diff += aCompare[k].hashWords.count;
-						}
-			    }
-					if (j === 0 || diff < oDiffs[j - 1].diff) {
-						oDiffs[j] = {diff: diff, bestVar: j};
-					} else {
-						oDiffs[j] = Object.assign({}, oDiffs[j - 1]);
-					}
-		    }
-	    }
-			console.log(result)
+			const result = best(aCompare.length - 1, aBase.length - 1);
 	    const oEqualMap = {};
-			let index = aCompare.length - 1;
-	    for (let i = aBase.length - 1; i >= 0; i -= 1) {
-		    const oDiffs = result[i];
-				const oDiff = oDiffs[index];
-				if (oDiff && index >= 0) {
-					oEqualMap[aBase[i].element.Id] = aCompare[oDiff.bestVar];
-					aBase[i].setPartner(aCompare[oDiff.bestVar]);
-					index = oDiff.bestVar - 1;
-				}
-	    }
+
+			let curObj = result;
+			while (curObj && curObj.baseIndex !== undefined && curObj.compareIndex !== undefined) {
+				const oCurElement = aBase[curObj.baseIndex];
+				const oCompareElement = aCompare[curObj.compareIndex];
+				oEqualMap[oCurElement.element.Id] = oCompareElement;
+				oCurElement.setPartner(oCompareElement);
+				curObj = curObj.previousBest;
+			}
 
 	    const fLCSCallback = this.getLCSCallback(bOrig);
 			for (let i in oEqualMap) {
@@ -3288,7 +3255,7 @@
             else if (oChElement instanceof AscCommonWord.CMockParagraph) {
                 if(bRoot)
                 {
-                    oHashWords = new AscCommonWord.CMockMinHash();
+                    oHashWords = new Minhash({});
                 }
                 const oParagraphNode = this.createNodeFromRunContentElement(oChElement, oRet, oHashWords, isOriginalDocument);
                 if(bRoot)

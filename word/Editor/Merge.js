@@ -693,19 +693,6 @@
 		this.Content.splice(position, 0, element);
 	};
 
-    function CMockMinHash() {
-        this.count = 0;
-        this.countLetters = 0;
-    }
-
-    CMockMinHash.prototype.jaccard = function () {
-        return 0.8;
-    };
-
-    CMockMinHash.prototype.update = function () {
-        this.count += 1;
-    };
-
     function CDocumentMergeComparison(oOriginalDocument, oRevisedDocument, oOptions) {
         CDocumentComparison.call(this, oOriginalDocument, oRevisedDocument, oOptions);
         this.bSaveCustomReviewType = true;
@@ -1137,7 +1124,6 @@
 
     window['AscCommonWord'].CDocumentMerge = CDocumentMerge;
     window['AscCommonWord'].mergeBinary = mergeBinary;
-    window['AscCommonWord'].CMockMinHash = CMockMinHash;
     window['AscCommonWord'].CMockDocument = CMockDocument;
     window['AscCommonWord'].CMockParagraph = CMockParagraph;
     window['AscCommonWord']["mergeDocuments"] = window['AscCommonWord'].mergeDocuments = mergeDocuments;
