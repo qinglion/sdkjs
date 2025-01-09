@@ -5310,6 +5310,14 @@
 		});
 	};
 
+	baseEditorsApi.prototype.wrapShortcut = function(shortcutType)
+	{
+		this[methodName] = function() {
+			this.executeShortcut.call(this, shortcutType);
+		};
+		this.wrapFunction(methodName);
+	};
+
 	baseEditorsApi.prototype.setPluginsOptions = function(options)
 	{
 		this.externalPluginsOptions = options;
