@@ -5833,6 +5833,8 @@ var CPresentation = CPresentation || function(){};
     CPDFDoc.prototype.TurnOnCheckChartSelection = function() {};
     CPDFDoc.prototype.UpdateRulers = function() {};
     CPDFDoc.prototype.UpdateSelection = function() {};
+    CPDFDoc.prototype.StopRecalculate = function() {};
+    CPDFDoc.prototype.StopSpellCheck = function() {};
     CPDFDoc.prototype.Get_Api = function() {
         return Asc.editor;
     };
