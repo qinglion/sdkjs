@@ -12441,7 +12441,7 @@
         return d;
     };
 
-    WorksheetView.prototype._calcRangeOffset = function (range, diffRange) {
+    WorksheetView.prototype._calcRangeOffset = function (range, diffRange, checkFrozen) {
         let vr = this.visibleRange;
         let ar = range || this._getSelection().getLast();
         if (this.getFormulaEditMode()) {
@@ -12489,6 +12489,17 @@
             }
             return res;
         };
+
+		if (checkFrozen) {
+			let cFrozen = this.topLeftFrozenCell.getCol0();
+			let rFrozen = this.topLeftFrozenCell.getRow0();
+			if (ar.r2 < rFrozen) {
+				incY = 0;
+			}
+			if (ar.c2 < cFrozen) {
+				incX = 0;
+			}
+		}
 
         if (adjustRight) {
             //isMC: if visible range can contains merge range -> try to find offset
@@ -13526,7 +13537,7 @@
 			comment = this.cellCommentator.getComment(x, y, true);
 			// move active range to offset x,y
 			this._moveActiveCellToOffset(activeCell, x, y);
-			ret = this._calcRangeOffset();
+			ret = this._calcRangeOffset(null, null, true);
 		}
 
 		if (!comment) {
@@ -13712,7 +13723,7 @@
 
         this.model.workbook.handlers.trigger("asc_onHideComment");
 
-        return isCoord ? this._calcActiveRangeOffsetIsCoord(x, y) : this._calcRangeOffset(undefined, diffRange);
+        return isCoord ? this._calcActiveRangeOffsetIsCoord(x, y) : this._calcRangeOffset(undefined, diffRange, true);
     };
 
     // Окончание выделения
