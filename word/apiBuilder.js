@@ -5711,6 +5711,53 @@
 		});
 		return result;
 	};
+	/**
+	 * Returns an inner text of this document content object.
+	 * @memberof ApiDocumentContent
+	 * @typeofeditors ["CDE"]
+	 * @param {object} oProps - The resulting string display properties.
+     * @param {boolean} oProps.NewLine - Defines if the resulting string will include line boundaries or not (they will be replaced with '\r').
+     * @param {boolean} oProps.NewLineParagraph - Defines if the resulting string will include paragraph line boundaries or not.
+     * @param {boolean} oProps.Numbering - Defines if the resulting string will include numbering or not.
+     * @param {boolean} oProps.Math - Defines if the resulting string will include mathematical expressions or not.
+     * @param {string} oProps.TableCellSeparator - Defines how the table cell separator will be specified in the resulting string.
+     * @param {string} oProps.TableRowSeparator - Defines how the table row separator will be specified in the resulting string.
+     * @param {string} oProps.ParaSeparator - Defines how the paragraph separator will be specified in the resulting string.
+     * @param {string} oProps.TabSymbol - Defines how the tab will be specified in the resulting string.
+     * @param {string} oProps.NewLineSeparator - Defines how the line separator will be specified in the resulting string (this property has the priority over *NewLine*).
+	 * @return {string}
+	 * @see office-js-api/Examples/{Editor}/ApiDocumentContent/Methods/GetText.js
+	 */
+	ApiDocumentContent.prototype.GetText = function(oProps)
+	{
+		let oInnerProps;
+        if (typeof oProps === "object")
+        {
+            oInnerProps =
+            {
+                NewLine : (oProps.hasOwnProperty("NewLine")) ? oProps["NewLine"] : true,
+                NewLineParagraph : (oProps.hasOwnProperty("NewLineParagraph")) ? oProps["NewLineParagraph"] : true,
+                Numbering : (oProps.hasOwnProperty("Numbering")) ? oProps["Numbering"] : true,
+                Math : (oProps.hasOwnProperty("Math")) ? oProps["Math"] : true,
+                TableCellSeparator: oProps["TableCellSeparator"],
+                TableRowSeparator: oProps["TableRowSeparator"],
+                ParaSeparator: oProps["ParaSeparator"],
+                NewLineSeparator: oProps["NewLineSeparator"],
+                TabSymbol: oProps["TabSymbol"]
+            }
+        }
+        else
+        {
+            oInnerProps =
+            {
+                NewLine : true,
+                NewLineParagraph : true,
+                Numbering : true
+            }
+        }
+
+		return this.Document.GetText(oInnerProps);
+	};
 	//------------------------------------------------------------------------------------------------------------------
 	//
 	// ApiDocument
@@ -21941,6 +21988,7 @@
 	ApiDocumentContent.prototype["GetAllOleObjects"]     = ApiDocumentContent.prototype.GetAllOleObjects;
 	ApiDocumentContent.prototype["GetAllParagraphs"]     = ApiDocumentContent.prototype.GetAllParagraphs;
 	ApiDocumentContent.prototype["GetAllTables"]         = ApiDocumentContent.prototype.GetAllTables;
+	ApiDocumentContent.prototype["GetText"]         	 = ApiDocumentContent.prototype.GetText;
 
 	ApiRange.prototype["GetClassType"]               = ApiRange.prototype.GetClassType;
 	ApiRange.prototype["GetParagraph"]               = ApiRange.prototype.GetParagraph;

@@ -7458,6 +7458,24 @@ CTable.prototype.GetSelectedText = function(bClearText, oPr)
 
 	return null;
 };
+CTable.prototype.GetText = function(pr)
+{
+	let sResultText = "";
+
+	for (let nRow = 0, nRows = this.GetRowsCount(); nRow < nRows; ++nRow)
+	{
+		let oRow = this.GetRow(nRow);
+
+		for (let nCell = 0, nCells = oRow.GetCellsCount(); nCell < nCells; ++nCell)
+		{
+			let oCell = oRow.GetCell(nCell);
+			let oContent = oCell.GetContent();
+			sResultText += oContent.GetText(pr);
+		}
+	}
+
+	return sResultText;
+};
 CTable.prototype.GetSelectedElementsInfo = function(Info)
 {
 	Info.SetTable();
