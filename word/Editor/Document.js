@@ -24254,6 +24254,10 @@ CDocument.prototype.GetPagesCount = function()
 {
 	return this.Pages.length;
 };
+CDocument.prototype.GetCurPage = function()
+{
+	return this.CurPage;
+};
 /**
  * Данная функция получает первую таблицу TOC по схеме Word
  * @param {boolean} [isCurrent=false] Ищем только в текущем месте или с начала документа

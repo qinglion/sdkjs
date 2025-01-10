@@ -7683,6 +7683,32 @@
 		return this.Document.GetPagesCount();
 	};
 	/**
+	 * Returns the index of the current page.
+	 * @memberof ApiDocument
+	 * @typeofeditors ["CDE"]
+	 * @return {number}
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/GetCurrentPage.js
+	 */
+	ApiDocument.prototype.GetCurrentPage = function()
+	{
+		return this.Document.GetCurPage();
+	};
+	/**
+	 * Returns the indexes of currently visible pages.
+	 * @memberof ApiDocument
+	 * @typeofeditors ["CDE"]
+	 * @return {number[]}
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/GetCurrentVisiblePages.js
+	 */
+	ApiDocument.prototype.GetCurrentVisiblePages = function()
+	{
+		let page = this.Document.GetApi().GetCurrentVisiblePage();
+		if (page < 0)
+			return [];
+		
+		return [page];
+	};
+	/**
 	 * Returns all styles of the current document.
 	 * @memberof ApiDocument
 	 * @typeofeditors ["CDE"]
@@ -22104,6 +22130,8 @@
 	ApiDocument.prototype["GetCommentById"]              = ApiDocument.prototype.GetCommentById;
 	ApiDocument.prototype["GetStatistics"]               = ApiDocument.prototype.GetStatistics;
 	ApiDocument.prototype["GetPageCount"]                = ApiDocument.prototype.GetPageCount;
+	ApiDocument.prototype["GetCurrentPage"]              = ApiDocument.prototype.GetCurrentPage;
+	ApiDocument.prototype["GetCurrentVisiblePages"]      = ApiDocument.prototype.GetCurrentVisiblePages;
 	ApiDocument.prototype["GetAllStyles"]                = ApiDocument.prototype.GetAllStyles;
 	ApiDocument.prototype["GetDocumentInfo"]             = ApiDocument.prototype.GetDocumentInfo;
 	ApiDocument.prototype["GetSelectedDrawings"]         = ApiDocument.prototype.GetSelectedDrawings;
