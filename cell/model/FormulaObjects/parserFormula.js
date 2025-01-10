@@ -8149,6 +8149,16 @@ function parserFormula( formula, parent, _ws ) {
 						// if we refer to defname that doesn't exist, but the ER itself exists, then we refer to the first existing worksheet
 						// since we don't know the name of the sheet in the short link and defname doesn't exist
 						wsF =  t.wb.getExternalWorksheet(externalLink, sheetName, true /* getFirtsSheet */);
+						
+						// todo in future versions it's necessary to check the internal defname and refer to it when opening the file with [0] eLink. 
+						// todo Research needed. this is special case when externalLink equal [0] and it refers to the current file
+						if (!wsF) {
+							parseResult.setError(c_oAscError.ID.FrmlWrongReferences);
+							if (!ignoreErrors) {
+								t.outStack = [];
+								return false;
+							}
+						}
 					}
 
 					wsT = wsF;

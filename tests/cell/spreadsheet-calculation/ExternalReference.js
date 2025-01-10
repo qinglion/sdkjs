@@ -1074,6 +1074,13 @@ $(function () {
 		oParser = new parserFormula("SUM('[1]'!_s1,2,3)", cellWithFormula, ws);
 		assert.ok(oParser.parse(false, null, parseResult) === false, "SUM('[1]'!_s1,2,3). isLocal = false");
 
+		// for bug 72385. eR in file === [0]
+		oParser = new parserFormula("[0]!_s1", cellWithFormula, ws);
+		assert.ok(oParser.parse(false, null, parseResult) === false, "[0]!_s1. isLocal = false");
+
+		oParser = new parserFormula("SUM([0]!_s1,2,3,4)", cellWithFormula, ws);
+		assert.ok(oParser.parse(false, null, parseResult) === false, "SUM([0]!_s1,2,3,4). isLocal = false");
+
 		// local = true. Manual input. Try parse string to external ref similiar as writing a string manually
 		oParser = new parserFormula(fullLinkLocal, cellWithFormula, ws);
 		assert.ok(oParser.parse(true/*isLocal*/, null, parseResult), "Full link. isLocal = true. " + fullLinkLocal);
