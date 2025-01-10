@@ -6408,7 +6408,7 @@
 							var oParagraph = oDocContent.GetElement(0);
 							var oForm;
 							if (oParagraph && oParagraph.IsParagraph() && oParagraph.IsInFixedForm() && (oForm = oParagraph.GetInnerForm())) {
-								oDocContent.ResetShiftView();
+								oDocContent.ShiftViewToFirstLine();
 								bRedraw = true;
 							}
 						}

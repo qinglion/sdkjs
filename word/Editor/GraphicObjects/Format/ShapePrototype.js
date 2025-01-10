@@ -522,6 +522,13 @@ CShape.prototype.recalculateText = function()
         if (this.recalcInfo.recalculateTransformText) {
             this.recalculateTransformText();
         }
+	
+		if(this.bWordShape)
+		{
+			var oContent = this.getDocContent();
+			if(oContent)
+				oContent.ShiftViewToFirstLine();
+		}
     }, this, []);
 };
 
