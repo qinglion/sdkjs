@@ -12490,7 +12490,7 @@
             return res;
         };
 
-		if (checkFrozen) {
+		if (checkFrozen && this.topLeftFrozenCell) {
 			let cFrozen = this.topLeftFrozenCell.getCol0();
 			let rFrozen = this.topLeftFrozenCell.getRow0();
 			if (ar.r2 < rFrozen) {
