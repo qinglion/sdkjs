@@ -1096,9 +1096,6 @@ var CPresentation = CPresentation || function(){};
             oViewer.isMouseMoveBetweenDownUp = true;
             oViewer.onMouseDownEpsilon(e);
         }
-        else if (this.mouseDownAnnot) {
-            oViewer.onUpdateOverlay();
-        }
         
         // если в селекте нет drawing (аннотации или шейпа) по которой кликнули, то сбрасываем селект
         if (oMouseDownObject == null || (false == oController.selectedObjects.includes(oMouseDownObject) && oController.selection.groupSelection != oMouseDownObject)) {
@@ -1106,6 +1103,7 @@ var CPresentation = CPresentation || function(){};
             oController.resetTrackState();
         }
 
+        oViewer.onUpdateOverlay();
         this.UpdateInterface();
         this.private_UpdateTargetForCollaboration();
     };
