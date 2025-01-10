@@ -7702,11 +7702,7 @@
 	 */
 	ApiDocument.prototype.GetCurrentVisiblePages = function()
 	{
-		let page = this.Document.GetApi().GetCurrentVisiblePage();
-		if (page < 0)
-			return [];
-		
-		return [page];
+		return this.Document.GetApi().GetCurrentVisiblePages();
 	};
 	/**
 	 * Returns all styles of the current document.
