@@ -5633,6 +5633,17 @@
 						//хранится sharedStrings, возмжно придтся использовать для каждого листа свою книгу
 						//необходимо проверить, ссылкой на 2 листа одной книги
 						let wb = eR.getWb();
+						let _updateData = function (_aWs, _aAfterPromiseData, _model) {
+							//g_DefNameWorksheet use on parse def name ref. here need use external ws.
+							let RealDefNameWorksheet = AscCommonExcel.g_DefNameWorksheet;
+							AscCommonExcel.g_DefNameWorksheet = new AscCommonExcel.Worksheet(wb, -1);
+							wb.dependencyFormulas.initOpen();
+							AscCommonExcel.g_DefNameWorksheet = RealDefNameWorksheet;
+							if (_aWs) {
+								eR && eR.updateData(_aWs, _aAfterPromiseData, null, _model);
+							}
+						};
+
 						let editor;
 						if (!t.Api["asc_isSupportFeature"]("ooxml") || isLocalDesktop) {
 							//в этом случае запрашиваем бинарник
@@ -5675,14 +5686,7 @@
 										oBinaryFileReader.Read(binaryData, wb);
 									});
 								});
-								//g_DefNameWorksheet use on parse def name ref. here need use external ws.
-								let RealDefNameWorksheet = AscCommonExcel.g_DefNameWorksheet;
-								AscCommonExcel.g_DefNameWorksheet = new AscCommonExcel.Worksheet(wb, -1);
-								wb.dependencyFormulas.initOpen();
-								AscCommonExcel.g_DefNameWorksheet = RealDefNameWorksheet;
-								if (wb.aWorksheets) {
-									eR && eR.updateData(wb.aWorksheets, _arrAfterPromise[i].data, null, t.model);
-								}
+								_updateData(wb.aWorksheets, _arrAfterPromise[i].data, null, t.model);
 							}
 
 						} else {
@@ -5691,9 +5695,7 @@
 								continue;
 							}
 							let updatedData = window["Asc"]["editor"].openDocumentFromZip2(wb ? wb : t.model, stream);
-							if (updatedData) {
-								eR && eR.updateData(updatedData, _arrAfterPromise[i].data, null, t.model /* working file workbook */);
-							}
+							_updateData(updatedData, _arrAfterPromise[i].data, t.model /* working file workbook */);
 						}
 					} else if (eR) {	 
 						/* 
