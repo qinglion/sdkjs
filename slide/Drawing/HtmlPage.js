@@ -972,46 +972,49 @@
 	};
 
 	// Splitter elements
-	CEditorPage.prototype.createSplitterElement = function () {
-		var splitterElement = document.createElement("div");
-		splitterElement.id = "splitter_id";
-		splitterElement.style.position = "absolute";
-		// skin
-		//splitterElement.style.backgroundColor = "#000000";
-		//splitterElement.style.backgroundImage = "url(Images/splitter.png)";
-		splitterElement.style.backgroundImage = "url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwgAADsIBFShKgAAAABh0RVh0U29mdHdhcmUAUGFpbnQuTkVUIHYzLjMxN4N3hgAAAB9JREFUGFdj+P//PwsDAwOQ+m8PooEYwQELwmRwqgAAbXwhnmjs9sgAAAAASUVORK5CYII=)";
+	CEditorPage.prototype.createSplitterElement = function (splitterIndex) {
+		const splitterElement = document.createElement("div");
+
+		const position = Math.round(this.splitters[splitterIndex - 1].position * g_dKoef_mm_to_pix);
+		const splitterWidth = Math.round(GlobalSkin.SplitterWidthMM * g_dKoef_mm_to_pix);
+
+		splitterElement.id = 'splitter_id';
+		splitterElement.style.position = 'absolute';
+		splitterElement.style.backgroundImage = 'url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAABGdBTUEAALGPC/xhBQAAAAlwSFlzAAAOwgAADsIBFShKgAAAABh0RVh0U29mdHdhcmUAUGFpbnQuTkVUIHYzLjMxN4N3hgAAAB9JREFUGFdj+P//PwsDAwOQ+m8PooEYwQELwmRwqgAAbXwhnmjs9sgAAAAASUVORK5CYII=)';
 		splitterElement.style.overflow = 'hidden';
 		splitterElement.style.zIndex = 1000;
-		splitterElement.setAttribute("contentEditable", false);
-		return splitterElement;
-	};
-	CEditorPage.prototype.setVerticalSplitter = function (splitterElement, dXPos) {
-		splitterElement.style.left = parseInt(dXPos * g_dKoef_mm_to_pix) + "px";
-		splitterElement.style.top = "0px";
-		splitterElement.style.width = parseInt(GlobalSkin.SplitterWidthMM * g_dKoef_mm_to_pix) + "px";
-		splitterElement.style.height = this.Height + "px";
-		splitterElement.style.backgroundRepeat = "repeat-y";
-	};
-	CEditorPage.prototype.setHorizontalSplitter = function (splitterElement, dYPos) {
-		splitterElement.style.left = parseInt((this.splitters[0].position + GlobalSkin.SplitterWidthMM) * g_dKoef_mm_to_pix) + "px";
-		splitterElement.style.top = (this.Height - parseInt((dYPos + GlobalSkin.SplitterWidthMM) * g_dKoef_mm_to_pix) + 1) + "px";
-		splitterElement.style.width = this.Width - parseInt((this.splitters[0].position + GlobalSkin.SplitterWidthMM) * g_dKoef_mm_to_pix) + "px";
-		splitterElement.style.height = parseInt(GlobalSkin.SplitterWidthMM * g_dKoef_mm_to_pix) + "px";
-		splitterElement.style.backgroundRepeat = "repeat-x";
-	};
-	CEditorPage.prototype.createSplitterDiv = function (nIdx) {
-		var splitterElement = this.createSplitterElement();
+		splitterElement.setAttribute('contentEditable', false);
+
+		if (isHorizontalThumbnails) {
+			const thumbnailsSplitterPosition = this.Height - Math.round(this.splitters[0].position * g_dKoef_mm_to_pix) - splitterWidth;
+			const bottom = splitterIndex === 1 ? this.Height : thumbnailsSplitterPosition;
+
+			splitterElement.style.left = '0px';
+			splitterElement.style.top = bottom - position - splitterWidth + 'px';
+			splitterElement.style.width = this.Width + 'px';
+			splitterElement.style.height = splitterWidth + 'px';
+			splitterElement.style.backgroundRepeat = 'repeat-x';
+		} else {
+			const isThumbnailsSplitter = splitterIndex === 1;
+			if (isThumbnailsSplitter) {
+				splitterElement.style.left = position + 'px';
+				splitterElement.style.top = '0px';
+				splitterElement.style.width = splitterWidth + 'px';
+				splitterElement.style.height = this.Height + 'px';
+				splitterElement.style.backgroundRepeat = 'repeat-y';
+			} else {
+				const thumbnailsSplitterPosition = Math.round(this.splitters[0].position * g_dKoef_mm_to_pix);
+
+				splitterElement.style.left = thumbnailsSplitterPosition + splitterWidth + 'px';
+				splitterElement.style.top = this.Height - position - splitterWidth + 'px';
+				splitterElement.style.width = this.Width - thumbnailsSplitterPosition - splitterWidth + 'px';
+				splitterElement.style.height = splitterWidth + 'px';
+				splitterElement.style.backgroundRepeat = 'repeat-x';
+			}
+		}
+
 		this.SplitterDiv = splitterElement;
-		this.SplitterType = nIdx;
-		if (nIdx === 1) {
-			this.setVerticalSplitter(splitterElement, this.splitters[0].position);
-		}
-		else if (nIdx === 2) {
-			this.setHorizontalSplitter(splitterElement, this.splitters[1].position);
-		}
-		else if (nIdx === 3) {
-			this.setHorizontalSplitter(splitterElement, this.splitters[2].position);
-		}
+		this.SplitterType = splitterIndex;
 		this.m_oBody.HtmlElement.appendChild(this.SplitterDiv);
 	};
 	CEditorPage.prototype.hitToSplitter = function () {
@@ -1045,7 +1048,7 @@
 
 		const isWithinAnimPaneSplitter = isHorizontalThumbnails
 			? mouseX >= 0 && mouseX <= oWordControl.Width && mouseY >= animPaneSplitterPosition && mouseY <= animPaneSplitterPosition + splitterWidth
-			: mouseX >= thumbnailsSplitterPosition + splitterWidth && mouseX <= oWordControl.Width && mouseY >= notesSplitterPosition && mouseY <= notesSplitterPosition + splitterWidth;
+			: mouseX >= thumbnailsSplitterPosition + splitterWidth && mouseX <= oWordControl.Width && mouseY >= animPaneSplitterPosition && mouseY <= animPaneSplitterPosition + splitterWidth;
 
 		if (isWithinThumbnailsSplitter && (oThis.IsUseNullThumbnailsSplitter || oThis.splitters[0].position != 0)) {
 			nResult = 1;
@@ -1105,7 +1108,7 @@
 				? "ns-resize"
 				: nSplitter === 1 ? "ew-resize" : "ns-resize";
 
-			oWordControl.createSplitterDiv(nSplitter);
+			oWordControl.createSplitterElement(nSplitter);
 			_isCatch = true;
 		} else {
 			oWordControl.m_oBody.HtmlElement.style.cursor = "default";
@@ -1123,59 +1126,64 @@
 		if (false === oThis.m_oApi.bInit_word_control)
 			return;
 
-		var _isCatch = false;
+		let _isCatch = false;
 
 		AscCommon.check_MouseMoveEvent(e, true);
 
-		var oWordControl = oThis;
+		const oWordControl = oThis;
 		if (null == oWordControl.SplitterDiv) {
-			var nSplitter = oThis.hitToSplitter();
-			if (nSplitter === 0) {
-				oWordControl.m_oBody.HtmlElement.style.cursor = "default";
-			}
-			else if (nSplitter === 1) {
-				oWordControl.m_oBody.HtmlElement.style.cursor = "w-resize";
-			}
-			else {
-				oWordControl.m_oBody.HtmlElement.style.cursor = "s-resize";
-			}
-		}
-		else {
-			var _x = global_mouseEvent.X - oWordControl.X;
-			var _y = global_mouseEvent.Y - oWordControl.Y;
+			const cursorStyles = {
+				0: 'default',
+				1: isHorizontalThumbnails ? 'ns-resize' : 'ew-resize',
+				2: 'ns-resize',
+				3: 'ns-resize',
+			};
+			const nSplitter = oThis.hitToSplitter();
+			oWordControl.m_oBody.HtmlElement.style.cursor = cursorStyles[nSplitter] || 'default';
+		} else {
+			const mouseX = global_mouseEvent.X - oWordControl.X;
+			const mouseY = global_mouseEvent.Y - oWordControl.Y;
 
 			if (1 == oWordControl.SplitterType) {
-				let isCanUnShowThumbnails = !oWordControl.m_oApi.isReporterMode;
+				const canHideThumbnails = !oWordControl.m_oApi.isReporterMode;
+				const splitter = oWordControl.splitters[0];
+				const minPosition = isHorizontalThumbnails ? oWordControl.Height - (splitter.maxPosition * g_dKoef_mm_to_pix >> 0) : splitter.minPosition * g_dKoef_mm_to_pix >> 0;
+				const maxPosition = isHorizontalThumbnails ? oWordControl.Height - (splitter.minPosition * g_dKoef_mm_to_pix >> 0) : splitter.maxPosition * g_dKoef_mm_to_pix >> 0;
 
-				var _min = parseInt(oWordControl.splitters[0].minPosition * g_dKoef_mm_to_pix);
-				var _max = parseInt(oWordControl.splitters[0].maxPosition * g_dKoef_mm_to_pix);
-				if (_x > _max)
-					_x = _max;
-				else if ((_x < (_min / 2)) && isCanUnShowThumbnails)
-					_x = 0;
-				else if (_x < _min)
-					_x = _min;
+				let splitterPosition;
+				if (isHorizontalThumbnails) {
+					splitterPosition = Math.max(mouseY, minPosition);
+					if (splitterPosition > maxPosition) {
+						const center = oWordControl.Height - maxPosition;
+						splitterPosition = splitterPosition > center ? 0 : maxPosition
+					}
+				} else {
+					const shouldHideThumbnails = canHideThumbnails && mouseX < (minPosition / 2)
+					splitterPosition = shouldHideThumbnails
+						? 0
+						: Math.min(Math.max(mouseX, minPosition), maxPosition);
+				}
 
-				oWordControl.m_oBody.HtmlElement.style.cursor = "w-resize";
-				oWordControl.SplitterDiv.style.left = _x + "px";
+				oWordControl.m_oBody.HtmlElement.style.cursor = isHorizontalThumbnails ? 'ns-resize' : 'ew-resize';
+				isHorizontalThumbnails
+					? oWordControl.SplitterDiv.style.top = splitterPosition + 'px'
+					: oWordControl.SplitterDiv.style.left = splitterPosition + 'px';
 			}
-			else {
-				var _max = oWordControl.Height - parseInt(oWordControl.splitters[1].minPosition * g_dKoef_mm_to_pix);
-				var _min = oWordControl.Height - parseInt(oWordControl.splitters[1].maxPosition * g_dKoef_mm_to_pix);
+			if (2 == oWordControl.SplitterType || 3 == oWordControl.SplitterType) {
+				const splitter = oWordControl.splitters[1];
+				const reservedWordControlHeight = 30 * g_dKoef_mm_to_pix;
+				const bottom = isHorizontalThumbnails ? oWordControl.Height - oWordControl.splitters[0].position * g_dKoef_mm_to_pix : oWordControl.Height;
+				const minPosition = Math.max(reservedWordControlHeight, bottom - (splitter.maxPosition * g_dKoef_mm_to_pix >> 0));
+				const maxPosition = bottom - (splitter.minPosition * g_dKoef_mm_to_pix >> 0);
 
-				if (_min < (30 * g_dKoef_mm_to_pix))
-					_min = 30 * g_dKoef_mm_to_pix;
+				let splitterPosition = Math.max(mouseY, minPosition);
+				if (splitterPosition > maxPosition) {
+					const center = (bottom - maxPosition) / 2;
+					splitterPosition = splitterPosition > center ? bottom : maxPosition;
+				}
 
-				var _c = parseInt(oWordControl.splitters[1].minPosition * g_dKoef_mm_to_pix);
-				if (_y > (_max + (_c / 2)))
-					_y = oWordControl.Height;
-				else if (_y > _max)
-					_y = _max;
-				else if (_y < _min)
-					_y = _min;
-
-				oWordControl.m_oBody.HtmlElement.style.cursor = "s-resize";
-				oWordControl.SplitterDiv.style.top = (_y - parseInt(GlobalSkin.SplitterWidthMM * g_dKoef_mm_to_pix)) + "px";
+				oWordControl.m_oBody.HtmlElement.style.cursor = "ns-resize";
+				oWordControl.SplitterDiv.style.top = splitterPosition - (GlobalSkin.SplitterWidthMM * g_dKoef_mm_to_pix >> 0) + "px";
 			}
 
 			_isCatch = true;
