@@ -14637,6 +14637,26 @@
 		else if ("none" === sType)
 			this.Num.SetLvlSuff(this.Lvl, Asc.c_oAscNumberingSuff.None);
 	};
+	
+	/**
+	 * Link the specified paragraph style with the current numbering level.
+	 * @memberof ApiParaPr
+	 * @typeofeditors ["CDE"]
+	 * @param {ApiStyle} oStyle - Paragraph style
+	 * @see office-js-api/Examples/{Editor}/ApiNumberingLevel/Methods/LinkWithStyle.js
+	 */
+	ApiNumberingLevel.prototype.LinkWithStyle = function(oStyle)
+	{
+		if (!oStyle || !(oStyle instanceof ApiStyle))
+			return;
+		
+		let logicDocument = private_GetLogicDocument();
+		if (!logicDocument)
+			return;
+		
+		let styles = logicDocument.GetStyleManager();
+		this.Num.LinkWithStyle(this.Lvl, oStyle.Style.Get_Id(), styles);
+	};
 
 	//------------------------------------------------------------------------------------------------------------------
 	//
@@ -22369,6 +22389,7 @@
 	ApiNumberingLevel.prototype["SetRestart"]        = ApiNumberingLevel.prototype.SetRestart;
 	ApiNumberingLevel.prototype["SetStart"]          = ApiNumberingLevel.prototype.SetStart;
 	ApiNumberingLevel.prototype["SetSuff"]           = ApiNumberingLevel.prototype.SetSuff;
+	ApiNumberingLevel.prototype["LinkWithStyle"]     = ApiNumberingLevel.prototype.LinkWithStyle;
 
 	ApiTextPr.prototype["GetClassType"]              = ApiTextPr.prototype.GetClassType;
 	ApiTextPr.prototype["SetStyle"]                  = ApiTextPr.prototype.SetStyle;
