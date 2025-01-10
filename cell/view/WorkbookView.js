@@ -846,7 +846,6 @@
 			  }, "cleanSelectRange": function () {
 			      self._onCleanSelectRange();
               }, "updateUndoRedoChanged": function (bCanUndo, bCanRedo) {
-				  //console.trace && console.trace('onCanUndo:'+bCanUndo);
 				  self.handlers.trigger("asc_onCanUndoChanged", bCanUndo);
 				  self.handlers.trigger("asc_onCanRedoChanged", bCanRedo);
 			  }, "applyCloseEvent": function () {
@@ -6133,24 +6132,7 @@
 			this.Api.asc_Save(true);
 		}
 
-		var CurTime = new Date().getTime();
-		if (true === this.NeedUpdateTargetForCollaboration && (CurTime - this.LastUpdateTargetTime > 1000))
-		{
-			this.NeedUpdateTargetForCollaboration = false;
-			if (true !== HaveChanges)
-			{
-				var CursorInfo = this.History.Get_DocumentPositionBinary();
-				if (null !== CursorInfo)
-				{
-					this.Api.CoAuthoringApi.sendCursor(CursorInfo);
-					this.LastUpdateTargetTime = CurTime;
-				}
-			}
-			else
-			{
-				this.LastUpdateTargetTime = CurTime;
-			}
-		}
+		this.sendCursor();
 	};
 	WorkbookView.prototype.private_UpdateTargetForCollaboration = function(bForce) {
 		this.NeedUpdateTargetForCollaboration = true;

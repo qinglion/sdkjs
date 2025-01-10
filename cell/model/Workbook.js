@@ -3738,6 +3738,7 @@
 				var aPointChanges = aActions[i];
 				for (j = 0, length2 = aPointChanges.length; j < length2; ++j) {
 					var item = aPointChanges[j];
+					item.applyCollaborative2(this.oApi.collaborativeEditing);
 					if (item.bytes) {
 						aRes.push(item.bytes);
 					} else {
@@ -3980,6 +3981,9 @@
 			var nCurOffset = 0;
 			for (i = 0; i < length; ++i) {
 				sChange = aChanges[i];
+				if (sChange.startsWith("0;")) {
+					continue;
+				}
 				var oBinaryFileReader = new AscCommonExcel.BinaryFileReader();
 				nCurOffset = oBinaryFileReader.getbase64DecodedData2(sChange, aIndexes[i], stream, nCurOffset);
 				var item = new UndoRedoItemSerializable();
@@ -4053,16 +4057,23 @@
 						if (!window["native"]["CheckNextChange"]())
 							break;
 					}
-					// TODO if(g_oUndoRedoGraphicObjects == item.oClass && item.oData.drawingData)
-					//     item.oData.drawingData.bCollaborativeChanges = true;
-					AscCommonExcel.executeInR1C1Mode(false, function () {
-						history.RedoAdd(oRedoObjectParam, item.oClass, item.nActionType, item.nSheetId, item.oRange, item.oData);
-					});
-					if (oThis.oApi.VersionHistory && item.nSheetId && item.GetChangedRange) {
-						let changedRange = item.nSheetId && item.GetChangedRange();
-						if (changedRange) {
-							oThis.oApi.wb.addToHistoryChangedRanges(item.nSheetId, changedRange, oColor);
+					if (true === oThis.oApi.collaborativeEditing.private_AddOverallChange(item))
+					{
+						// TODO if(g_oUndoRedoGraphicObjects == item.oClass && item.oData.drawingData)
+						//     item.oData.drawingData.bCollaborativeChanges = true;
+						AscCommonExcel.executeInR1C1Mode(false, function () {
+							history.RedoAdd(oRedoObjectParam, item.oClass, item.nActionType, item.nSheetId, item.oRange, item.oData, false, item);
+						});
+						if (oThis.oApi.VersionHistory && item.nSheetId && item.GetChangedRange) {
+							let changedRange = item.nSheetId && item.GetChangedRange();
+							if (changedRange) {
+								oThis.oApi.wb.addToHistoryChangedRanges(item.nSheetId, changedRange, oColor);
+							}
 						}
+
+						if (item.GetClass() && item.GetClass().SetIsRecalculated && item.IsNeedRecalculate())
+							item.GetClass().SetIsRecalculated(false);
+
 					}
 				}
 			}
@@ -4152,7 +4163,7 @@
 				item.Deserialize(stream);
 				if ((null != item.oClass || (item.oData && typeof item.oData.sChangedObjectId === "string")) && null != item.nActionType){
 					AscCommonExcel.executeInR1C1Mode(false, function () {
-						AscCommon.History.RedoAdd(oRedoObjectParam, item.oClass, item.nActionType, item.nSheetId, item.oRange, item.oData);
+						AscCommon.History.RedoAdd(oRedoObjectParam, item.oClass, item.nActionType, item.nSheetId, item.oRange, item.oData, false, item);
 					});
 				}
 

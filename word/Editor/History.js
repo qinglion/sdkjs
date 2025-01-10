@@ -1708,7 +1708,6 @@ CHistory.prototype.private_PostProcessingRecalcData = function()
 	 */
 	CHistory.prototype.ConvertPointItemsToSimpleChanges = function(pointIndex)
 	{
-		return;
 		let point = this.Points[pointIndex];
 		if (!point)
 			return;

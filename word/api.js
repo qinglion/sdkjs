@@ -2978,7 +2978,6 @@ background-repeat: no-repeat;\
 		if (!this.canUndoRedoByRestrictions())
 			canUndo = false;
 		
-		//console.trace && console.trace('asc_onCanUndo:'+canUndo);
 		this.sendEvent("asc_onCanUndo", canUndo);
 	};
 	asc_docs_api.prototype.sync_CanRedoCallback         = function(canRedo)

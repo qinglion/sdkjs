@@ -4598,7 +4598,6 @@
 	 */
 	function CChangesBase(Class)
 	{
-		//console.trace && console.trace('CChangesBase');
 		this.Class = Class;
 
 		this.Reverted = false;
@@ -4642,6 +4641,10 @@
 			this.Class.Refresh_RecalcData(this);
 	};
 	CChangesBase.prototype.IsContentChange = function()
+	{
+		return false;
+	};
+	CChangesBase.prototype.IsSpreadsheetChange = function()
 	{
 		return false;
 	};

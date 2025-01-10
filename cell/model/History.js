@@ -599,7 +599,7 @@ CHistory.prototype.UndoRedoPrepare = function (oRedoObjectParam, bUndo) {
 		oRedoObjectParam.bChangeActive = true;
 	}
 };
-CHistory.prototype.RedoAdd = function(oRedoObjectParam, Class, Type, sheetid, range, Data, LocalChange)
+CHistory.prototype.RedoAdd = function(oRedoObjectParam, Class, Type, sheetid, range, Data, LocalChange, undoRedoItemSerializable)
 {
 	//todo сделать что-нибудь с Is_On
 	var bNeedOff = false;
@@ -608,6 +608,7 @@ CHistory.prototype.RedoAdd = function(oRedoObjectParam, Class, Type, sheetid, ra
 		this.TurnOn();
 		bNeedOff = true;
 	}
+	var curPoint = this.Points[this.Index];
 	//if(Class)
 	this.Add(Class, Type, sheetid, range, Data, LocalChange);
 	if(bNeedOff)
@@ -645,13 +646,16 @@ CHistory.prototype.RedoAdd = function(oRedoObjectParam, Class, Type, sheetid, ra
 							var oChange = new fChangesClass(changedObject);
 							oChange.ReadFromBinary(Data.oBinaryReader);
 							oChange.Load(color);
+							if (curPoint) {
+								curPoint.Items[curPoint.Items.length - 1].Class = oChange;
+								undoRedoItemSerializable.oClass = oChange;
+							}
 						}
 					}
 				}
 			}
 		}
 	}
-    var curPoint = this.Points[this.Index];
     if (curPoint) {
         this._addRedoObjectParam(oRedoObjectParam, curPoint.Items[curPoint.Items.length - 1]);
     }
@@ -1599,6 +1603,8 @@ CHistory.prototype.GetSerializeArray = function()
 	CHistory.prototype.Update_PointInfoItem = function()
 	{
 	};
+	CHistory.prototype.ConvertPointItemsToSimpleChanges = function(pointIndex) {
+	}
 	//------------------------------------------------------------export--------------------------------------------------
 	window['AscCommon'] = window['AscCommon'] || {};
 	window['AscCommon'].CHistory = CHistory;

@@ -344,7 +344,7 @@
     CCollaborativeEditingBase.prototype.Add_Unlock2 = function(Lock)
     {
         this.m_aNeedUnlock2.push(Lock);
-		(Asc.editor || editor)._onUpdateDocumentCanSave();
+        (Asc.editor || editor)._onUpdateDocumentCanSave();
     };
     CCollaborativeEditingBase.prototype.Have_OtherChanges = function()
     {
@@ -356,10 +356,10 @@
         {
             this.GetEditorApi().sendEvent("asc_onBeforeApplyChanges");
             AscFonts.IsCheckSymbols = true;
-			(Asc.editor || editor).WordControl.m_oLogicDocument.PauseRecalculate();
-			(Asc.editor || editor).WordControl.m_oLogicDocument.EndPreview_MailMergeResult();
+            (Asc.editor || editor).WordControl.m_oLogicDocument.PauseRecalculate();
+            (Asc.editor || editor).WordControl.m_oLogicDocument.EndPreview_MailMergeResult();
 
-			(Asc.editor || editor).sync_StartAction(Asc.c_oAscAsyncActionType.BlockInteraction, Asc.c_oAscAsyncAction.ApplyChanges);
+            (Asc.editor || editor).sync_StartAction(Asc.c_oAscAsyncActionType.BlockInteraction, Asc.c_oAscAsyncAction.ApplyChanges);
 
             var DocState = this.private_SaveDocumentState();
             this.Clear_NewImages();
@@ -748,7 +748,7 @@
                 Lock.Set_Type( AscCommon.c_oAscLockTypes.kLockTypeOther, false );
                 if(Class.getObjectType && Class.getObjectType() === AscDFH.historyitem_type_Slide)
                 {
-					(Asc.editor || editor).WordControl.m_oLogicDocument.DrawingDocument.UnLockSlide && editor.WordControl.m_oLogicDocument.DrawingDocument.UnLockSlide(Class.num);
+                    (Asc.editor || editor).WordControl.m_oLogicDocument.DrawingDocument.UnLockSlide && editor.WordControl.m_oLogicDocument.DrawingDocument.UnLockSlide(Class.num);
                 }
                 Lock.Set_UserId( this.m_aNeedLock[Id] );
             }
@@ -828,10 +828,6 @@
 
         };
         CCollaborativeEditingBase.prototype.RewritePosExtChanges = function(changesArr, scale, Binary_Writer)
-        {
-        };
-
-        CCollaborativeEditingBase.prototype.RefreshPosExtChanges = function()
         {
         };
     //-----------------------------------------------------------------------------------

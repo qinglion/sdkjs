@@ -382,9 +382,13 @@
 		AscCommon.History.Remove_LastPoint();
 		this.CoEditing.Clear_DCChanges();
 
-		(Asc.editor || editor).CoAuthoringApi.saveChanges(changesToSend, null, null, false, this.CoEditing.getCollaborativeEditing());
-
+		this.saveChanges(changesToSend);
 		return changesToRecalc;
+	};
+	CCollaborativeHistory.prototype.saveChanges = function(changesToSend)
+	{
+		//separate function to override in excel
+		(Asc.editor || editor).CoAuthoringApi.saveChanges(changesToSend, null, null, false, this.CoEditing.getCollaborativeEditing());
 	};
 	CCollaborativeHistory.prototype.GetEmptyContentChanges = function()
 	{
@@ -454,6 +458,23 @@
 				if (this.CommuteContentChange(_oChange, nPosition + nCount))
 					arrChanges.push(_oChange);
 
+				oChange.SetReverted(true);
+			}
+			else if (oChange.IsSpreadsheetChange())
+			{
+				let _oChange = oChange.Copy();
+
+				if (this.CommuteRelated(_oChange, nPosition + nCount))
+				{
+					arrChanges.push(_oChange);
+				}
+				else
+				{
+					//в таблицах не принимается все точка
+					//например при вставка столбца копируется заливка соседнего столбца
+					arrChanges = [];
+					break;
+				}
 				oChange.SetReverted(true);
 			}
 			else
@@ -602,6 +623,11 @@
 
 		return true;
 	};
+
+	CCollaborativeHistory.prototype.CommuteRelated = function(oClass, oChange, nStartPosition)
+	{
+		return true;
+	}
 	CCollaborativeHistory.prototype.CreateLocalHistoryPointByReverseChanges = function(reverseChanges)
 	{
 		let localHistory = AscCommon.History;

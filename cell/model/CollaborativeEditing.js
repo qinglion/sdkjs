@@ -63,7 +63,7 @@
 
 			this.handlers					= new AscCommonExcel.asc_CHandlersList(handlers);
 			this.m_bIsViewerMode			= !!isViewerMode; // Режим Viewer-а
-			this.m_bGlobalLock				= false; // Глобальный lock
+			this.m_bGlobalLock				= 0; // Глобальный lock
 			this.m_bGlobalLockEditCell		= false; // Глобальный lock (для редактирования ячейки) - отключаем смену select-а, но разрешаем сразу вводить
 			this.m_arrCheckLocks			= [];    // Массив для проверки залоченности объектов, которые мы собираемся изменять
 
@@ -211,7 +211,7 @@
 
 				if (undefined !== callback) {
 					// Ставим глобальный лок (только если мы не одни и ждем ответа!)
-					this.m_bGlobalLock = true;
+					this.Set_GlobalLock(true);
 				}
 			} else {
 				asc_applyFunction(callback, true);
@@ -223,7 +223,7 @@
 
 		CCollaborativeEditing.prototype.onCallbackAskLock = function (result, callback) {
 			// Снимаем глобальный лок
-			this.m_bGlobalLock = false;
+			this.Set_GlobalLock(false);
 			// Снимаем глобальный лок (для редактирования ячейки)
 			this.m_bGlobalLockEditCell = false;
 
@@ -295,7 +295,7 @@
 			return true;
 		};
 
-		CCollaborativeEditing.prototype.sendChanges = function (IsUserSave, isAfterAskSave) {
+		CCollaborativeEditing.prototype.sendChanges = function (IsUserSave, isAfterAskSave, changesToSend) {
 			// Когда не совместное редактирование чистить ничего не нужно, но отправлять нужно.
 			var bIsCollaborative = this.getCollaborativeEditing();
 
@@ -363,7 +363,7 @@
 			}
 
 			// Отправляем на сервер изменения
-			this.handlers.trigger("sendChanges", this.getRecalcIndexSave(this.m_oRecalcIndexColumns), this.getRecalcIndexSave(this.m_oRecalcIndexRows), isAfterAskSave);
+			this.handlers.trigger("sendChanges", this.getRecalcIndexSave(this.m_oRecalcIndexColumns), this.getRecalcIndexSave(this.m_oRecalcIndexRows), isAfterAskSave, changesToSend);
 
 			if (bIsCollaborative) {
 				// Пересчитываем lock-и от чужих пользователей
@@ -378,7 +378,7 @@
 				this.clearRecalcIndex();
 
 				// Чистим Undo/Redo
-				// AscCommon.History.Clear_Redo();
+				AscCommon.History.Clear_Redo();
 				AscCommon.History.Clear();
 
 				// Перерисовываем
@@ -1058,7 +1058,7 @@
 			History.UndoRedoEnd(Point, this.oRedoObjectParam, false);
 		}
 
-		AscCommon.CCollaborativeHistory.prototype.CommutePropertyChange = function(oClass, oChange, nStartPosition)
+		AscCommon.CCollaborativeHistory.prototype.CommuteRelated = function(oClass, oChange, nStartPosition)
 		{
 			//todo снаследоваться потому что планируется обьедениение sdk
 			var arrChangesForProceed = this.Changes;
@@ -1067,11 +1067,16 @@
 				if (!oOtherAction) {
 					continue;
 				}
-				if (oChange.CommuteRelated && false === oChange.CommuteRelated(oOtherAction)) {
+				if (oChange.CommuteRelated && false === oChange.CommuteRelated(oChange, oOtherAction)) {
 					return false;
 				}
 			}
 			return true;
+		};
+
+		AscCommon.CCollaborativeHistory.prototype.saveChanges = function(changesToSend)
+		{
+			this.CoEditing.sendChanges(false, false, changesToSend);
 		};
 
 		/**
