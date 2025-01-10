@@ -1650,6 +1650,9 @@ ParaDrawing.prototype.updatePosition3 = function(pageIndex, x, y, oldPageNum)
 		this.wrappingPolygon.updatePosition(_x, _y);
 
 	this.calculateSnapArrays();
+	
+	if (this.GraphicObj.checkFormShiftView)
+		this.GraphicObj.checkFormShiftView();
 };
 ParaDrawing.prototype.calculateAfterChangeTheme = function()
 {

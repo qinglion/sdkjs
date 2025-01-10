@@ -522,14 +522,19 @@ CShape.prototype.recalculateText = function()
         if (this.recalcInfo.recalculateTransformText) {
             this.recalculateTransformText();
         }
-	
-		if(this.bWordShape)
-		{
-			var oContent = this.getDocContent();
-			if(oContent)
-				oContent.ShiftViewToFirstLine();
-		}
+		
+		this.checkFormShiftView();
     }, this, []);
+};
+
+CShape.prototype.checkFormShiftView = function()
+{
+	if (!this.bWordShape)
+		return;
+	
+	let docContent = this.getDocContent();
+	if (docContent)
+		docContent.ShiftViewToFirstLine();
 };
 
 CShape.prototype.recalculateWrapPolygon = function()
