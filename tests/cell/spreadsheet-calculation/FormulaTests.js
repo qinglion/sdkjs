@@ -1662,7 +1662,7 @@ $(function () {
 		bCaFromSelectedCell = getCaFromSelectedCell("B1068");
 		assert.strictEqual(bCaFromSelectedCell, true, "Test: IFS. 6 args. Recursion formula. One of condition is recursion but it matches. B1068 - flag ca: true");
 		bCaFromSelectedCell = null;
-		// Case: SWITCH. Without default_arg. One of result_arg has recursion, but it doesn't match. With disabled Iterative calculation setting.
+		// - Case: SWITCH. Without default_arg. One of result_arg has recursion, but it doesn't match. With disabled Iterative calculation setting.
 		// expression
 		ws.getRange2("A1069").setValue("3");
 		// values
@@ -1682,14 +1682,14 @@ $(function () {
 		bCaFromSelectedCell = getCaFromSelectedCell("A1072");
 		assert.strictEqual(bCaFromSelectedCell, false, "Test: SWITCH. Without default_arg. One of result_arg has recursion but it doesn't matches. A1072 - flag ca: false");
 		bCaFromSelectedCell = null;
-		// Case: SWITCH. Without default_arg. One of result_arg has recursion, but it matches. With disabled Iterative calculation setting.
+		// - Case: SWITCH. Without default_arg. One of result_arg has recursion, but it matches. With disabled Iterative calculation setting.
 		ws.getRange2("A1069").setValue("2");
 		ws.getRange2("A1072").setValue("=SWITCH(A1069,A1070, A1071, B1070, A1072, C1070, B1071, D1070, C1071, E1070, D1071)");
 		assert.strictEqual(ws.getRange2("A1072").getValue(), "0", "Test: SWITCH. Without default_arg. One of result_arg has recursion but it matches. A1072 - 0");
 		bCaFromSelectedCell = getCaFromSelectedCell("A1072");
 		assert.strictEqual(bCaFromSelectedCell, true, "Test: SWITCH. Without default_arg. One of result_arg has recursion but it matches. A1072 - flag ca: true");
 		bCaFromSelectedCell = null;
-		// Case: SWITCH. With default_arg. Default_arg has recursion, but it doesn't match. With disabled Iterative calculation setting.
+		// - Case: SWITCH. With default_arg. Default_arg has recursion, but it doesn't match. With disabled Iterative calculation setting.
 		ws.getRange2("A1069").setValue("7");
 		// default_arg
 		ws.getRange2("E1071").setValue("Unknown day of week");
@@ -1698,18 +1698,60 @@ $(function () {
 		bCaFromSelectedCell = getCaFromSelectedCell("A1072");
 		assert.strictEqual(bCaFromSelectedCell, false, "Test: SWITCH. With default_arg. Default_arg has recursion but it doesn't matches. A1072 - flag ca: false");
 		bCaFromSelectedCell = null;
-		// Case: SWITCH. With default_arg. Default_arg has recursion, but it matches. With disabled Iterative calculation setting.
+		// - Case: SWITCH. With default_arg. Default_arg has recursion, but it matches. With disabled Iterative calculation setting.
 		ws.getRange2("A1072").setValue("=SWITCH(A1069,A1070, A1071, B1070, A1072, C1070, B1071, D1070, C1071, E1070, D1071, A1072)");
 		assert.strictEqual(ws.getRange2("A1072").getValue(), "0", "Test: SWITCH. With default_arg. Default_arg has recursion but it matches. A1072 - 0");
 		bCaFromSelectedCell = getCaFromSelectedCell("A1072");
 		assert.strictEqual(bCaFromSelectedCell, true, "Test: SWITCH. With default_arg. Default_arg has recursion but it matches. A1072 - flag ca: true");
 		bCaFromSelectedCell = null;
-		// Case: Exception formula "CELL" that ignores rules of recursion recognition
+		// - Case: Exception formula "CELL" that ignores rules of recursion recognition
 		ws.getRange2("A1073").setValue("=CELL(\"filename\",A1073)");
 		assert.strictEqual(ws.getRange2("A1073").getValue(), "[TeSt.xlsx]Sheet1", "Test: Exception formulas that ignores rules of recursion recognition. A1073 - 1039. Formula - CELL");
 		bCaFromSelectedCell = getCaFromSelectedCell("A1073");
 		assert.strictEqual(bCaFromSelectedCell, true, "Test: Exception formulas that ignores rules of recursion recognition. A1039 - flag ca: true");
 		bCaFromSelectedCell = null;
+		// - Case: Chain without recursion. B1074 <- A1075 <- D1075 <- E1075 <- F1075. With disabled Iterative calculation setting. Case from bug-71996
+		// year field
+		ws.getRange2("A1074").setValue("2024");
+		// month field
+		ws.getRange2("B1074").setValue("=DATE(A1074, SHEET(),1");
+		//  time break
+		ws.getRange2("C1074").setValue("0.02");
+		ws.getRange2("D1074").setValue("0.03");
+		ws.getRange2("E1074").setValue("0.33");
+		// additional field
+		ws.getRange2("F1074").setValue("=IF(MONTH(B1074)=1;$G$1074;INDIRECT(TEXT(DATE(YEAR(B1074);MONTH(B1074)-1;1);\"MMM\") & \"!F39\"))");
+		ws.getRange2("G1074").setValue("0");
+		// main chain
+		ws.getRange2("A1075").setValue("=B1074");
+		ws.getRange2("B1075").setValue("0");
+		ws.getRange2("C1075").setValue("0");
+		ws.getRange2("D1075").setValue("=IF(ISNUMBER($A1075);IF((C1075-B1075)<TIME(6;1;0);TIME(0;0;0);IF((C1075-B1075)<TIME(9;31;0);$C$1074;$D$1074));\"\")");
+		ws.getRange2("E1075").setValue("=IF(ISNUMBER($A1075);IF(OR(G1075=\"U\";H1075=\"X\");(C1075-B1075-D1075);IF(OR(G1075=\"K\";G1075=\"B\";G1075=\"D\");TIME(0;0;0);C1075-B1075-D1075-$E$1074));\"\")");
+		ws.getRange2("F1075").setValue("==IF(ISNUMBER($A1075);IF(OR(G1075=\"Zaus\";E1075>-$E$1074;G1075=\"kA\");(F1074+E1075);TIME(0;0;0));\"\")");
+		ws.getRange2("G1075").setValue("Neujahr");
+		ws.getRange2("H1075").setValue("X");
+		// Checking via initStartCellForIterCalc method that cells haven't recursion
+		oCell = selectCell("A1075");
+		let bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, false, "Test: Chain without recursion. B1074 <- A1075 <- D1075 <- E1075 <- F1075. With disabled Iterative calculation setting. Case from bug-71996. A1075 - false");
+		bCellHasRecursion = null;
+		g_cCalcRecursion.setStartCellIndex(null);
+		oCell = selectCell("D1075");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, false, "Test: Chain without recursion. B1074 <- A1075 <- D1075 <- E1075 <- F1075. With disabled Iterative calculation setting. Case from bug-71996. D1075 - false");
+		bCellHasRecursion = null;
+		g_cCalcRecursion.setStartCellIndex(null);
+		oCell = selectCell("E1075");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, false, "Test: Chain without recursion. B1074 <- A1075 <- D1075 <- E1075 <- F1075. With disabled Iterative calculation setting. Case from bug-71996. E1075 - false");
+		bCellHasRecursion = null;
+		g_cCalcRecursion.setStartCellIndex(null);
+		oCell = selectCell("F1075");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, false, "Test: Chain without recursion. B1074 <- A1075 <- D1075 <- E1075 <- F1075. With disabled Iterative calculation setting. Case from bug-71996. F1075 - false");
+		bCellHasRecursion = null;
+		g_cCalcRecursion.setStartCellIndex(null);
 		// -- Test changeLinkedCell method.
 		oCell = selectCell("A1000");
 		let oCellNeedEnableRecalc = selectCell("B1000");
