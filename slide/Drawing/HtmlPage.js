@@ -986,8 +986,9 @@
 		splitterElement.setAttribute('contentEditable', false);
 
 		if (isHorizontalThumbnails) {
-			const thumbnailsSplitterPosition = this.Height - Math.round(this.splitters[0].position * g_dKoef_mm_to_pix) - splitterWidth;
-			const bottom = splitterIndex === 1 ? this.Height : thumbnailsSplitterPosition;
+			const bottom = splitterIndex === 1
+				? this.Height
+				: this.Height - Math.round(this.splitters[0].position * g_dKoef_mm_to_pix);
 
 			splitterElement.style.left = '0px';
 			splitterElement.style.top = bottom - position - splitterWidth + 'px';
@@ -1154,8 +1155,8 @@
 				if (isHorizontalThumbnails) {
 					splitterPosition = Math.max(mouseY, minPosition);
 					if (splitterPosition > maxPosition) {
-						const center = oWordControl.Height - maxPosition;
-						splitterPosition = splitterPosition > center ? 0 : maxPosition
+						const center = (oWordControl.Height + maxPosition) / 2; 
+						splitterPosition = splitterPosition > center ? oWordControl.Height : maxPosition;
 					}
 				} else {
 					const shouldHideThumbnails = canHideThumbnails && mouseX < (minPosition / 2)
@@ -1192,7 +1193,118 @@
 		if (_isCatch)
 			AscCommon.stopEvent(e);
 	};
-	CEditorPage.prototype.OnResizeSplitter = function (isNoNeedResize) {
+	CEditorPage.prototype.onBodyMouseUp = function (e) {
+		if (!oThis.m_oApi.bInit_word_control)
+			return;
+
+		AscCommon.check_MouseUpEvent(e, true);
+
+		const oWordControl = oThis;
+		oWordControl.UnlockCursorTypeOnMouseUp();
+
+		if (oWordControl.m_oMainParent && oWordControl.m_oMainParent.HtmlElement)
+			oWordControl.m_oMainParent.HtmlElement.style.pointerEvents = "";
+		if (oWordControl.m_oThumbnailsContainer && oWordControl.m_oThumbnailsContainer.HtmlElement)
+			oWordControl.m_oThumbnailsContainer.HtmlElement.style.pointerEvents = "";
+
+		if (!oWordControl.SplitterDiv)
+			return;
+
+		switch (oWordControl.SplitterType) {
+			case 1: oWordControl.handleThumbnailsSplitter(); break;
+			case 2: oWordControl.handleNotesSplitter(); break;
+			case 3: oWordControl.handleAnimPaneSplitter(); break;
+		}
+
+		oWordControl.m_oBody.HtmlElement.removeChild(oWordControl.SplitterDiv);
+		oWordControl.SplitterDiv = null;
+		oWordControl.SplitterType = 0;
+
+		AscCommon.stopEvent(e);
+	};
+	CEditorPage.prototype.handleThumbnailsSplitter = function () {
+		const splitterLeft = parseInt(this.SplitterDiv.style.left);
+		const splitterTop = parseInt(this.SplitterDiv.style.top);
+
+		const significantDelta = 1; // in millimeters
+		const position = isHorizontalThumbnails
+			? Math.max(0, (this.Height - splitterTop) * g_dKoef_pix_to_mm - GlobalSkin.SplitterWidthMM)
+			: splitterLeft * g_dKoef_pix_to_mm;
+
+		if (Math.abs(this.splitters[0].position - position) <= significantDelta)
+			return;
+
+		this.splitters[0].initialPosition = position;
+		this.splitters[0].setPosition(position);
+		this.onSplitterResize();
+		this.m_oApi.syncOnThumbnailsShow();
+	};
+	CEditorPage.prototype.handleNotesSplitter = function () {
+		const splitterTop = parseInt(this.SplitterDiv.style.top);
+
+		const bottom = isHorizontalThumbnails
+			? this.Height - this.splitters[0].position * g_dKoef_mm_to_pix
+			: this.Height;
+
+		const significantDelta = 1; // in millimeters
+		const position = (bottom - splitterTop) * g_dKoef_pix_to_mm - GlobalSkin.SplitterWidthMM;
+
+		if (Math.abs(this.splitters[1].position - position) <= significantDelta)
+			return;
+
+		const notesSplitterPosition = Math.max(this.splitters[2].position + HIDDEN_PANE_HEIGHT, position);
+		this.splitters[1].setPosition(notesSplitterPosition);
+		this.onSplitterResize();
+		this.m_oApi.syncOnNotesShow();
+		if (this.m_oLogicDocument)
+			this.m_oLogicDocument.CheckNotesShow();
+	};
+	CEditorPage.prototype.handleAnimPaneSplitter = function () {
+		const splitterTop = parseInt(this.SplitterDiv.style.top);
+
+		const bottom = isHorizontalThumbnails
+			? this.Height - this.splitters[0].position * g_dKoef_mm_to_pix
+			: this.Height;
+
+		const significantDelta = 1; // in millimeters
+		const position = (bottom - splitterTop) * g_dKoef_pix_to_mm - GlobalSkin.SplitterWidthMM;
+
+		if (Math.abs(this.splitters[2].position - position) <= significantDelta)
+			return;
+
+		const diff = this.splitters[1].position - this.splitters[2].position;
+		this.splitters[2].setPosition(position);
+		this.splitters[1].setPosition(
+			Math.max(this.splitters[1].position, this.splitters[2].position + diff)
+		);
+
+		this.onSplitterResize();
+		this.m_oApi.syncOnNotesShow();
+		if (this.m_oLogicDocument)
+			this.m_oLogicDocument.CheckNotesShow();
+
+	};
+	CEditorPage.prototype.UpdateBottomControlsParams = function () {
+		this.m_oBottomPanesContainer.Bounds.AbsH = this.splitters[1].position;
+		this.m_oNotesContainer.Bounds.AbsH = this.GetNotesHeight();
+		if (!this.IsNotesShown()) {
+			this.m_oNotes.HtmlElement.style.display = "none";
+			this.m_oNotes_scroll.HtmlElement.style.display = "none";
+		}
+		else {
+			this.m_oNotes.HtmlElement.style.display = "block";
+			this.m_oNotes_scroll.HtmlElement.style.display = "block";
+		}
+
+		this.m_oAnimationPaneContainer.Bounds.AbsH = this.GetAnimPaneHeight();
+		if (!this.IsAnimPaneShown()) {
+			this.m_oAnimationPaneContainer.HtmlElement.style.display = "none";
+		}
+		else {
+			this.m_oAnimationPaneContainer.HtmlElement.style.display = "block";
+		}
+	};
+	CEditorPage.prototype.onSplitterResize = function (isNoNeedResize) {
 		if (isHorizontalThumbnails) {
 			this.m_oThumbnailsContainer.Bounds.AbsH = this.splitters[0].position;
 			this.m_oThumbnailsSplit.Bounds.B = this.splitters[0].position;
@@ -1268,100 +1380,6 @@
 
 		if (true !== isNoNeedResize)
 			this.OnResize2(true);
-	};
-	CEditorPage.prototype.onBodyMouseUp = function (e) {
-		if (false === oThis.m_oApi.bInit_word_control)
-			return;
-
-		var _isCatch = false;
-
-		AscCommon.check_MouseUpEvent(e, true);
-
-		var oWordControl = oThis;
-		oWordControl.UnlockCursorTypeOnMouseUp();
-
-		if (oWordControl.m_oMainParent && oWordControl.m_oMainParent.HtmlElement)
-			oWordControl.m_oMainParent.HtmlElement.style.pointerEvents = "";
-		if (oWordControl.m_oThumbnailsContainer && oWordControl.m_oThumbnailsContainer.HtmlElement)
-			oWordControl.m_oThumbnailsContainer.HtmlElement.style.pointerEvents = "";
-
-		if (null != oWordControl.SplitterDiv) {
-			var _x = parseInt(oWordControl.SplitterDiv.style.left);
-			var _y = parseInt(oWordControl.SplitterDiv.style.top);
-
-			if (oWordControl.SplitterType == 1) {
-				var _posX = _x * g_dKoef_pix_to_mm;
-				if (Math.abs(oWordControl.splitters[0].position - _posX) > 1) {
-					oWordControl.splitters[0].initialPosition = _posX;
-					oWordControl.splitters[0].setPosition(_posX);
-					oWordControl.OnResizeSplitter();
-					oWordControl.m_oApi.syncOnThumbnailsShow();
-				}
-			}
-			else if (oWordControl.SplitterType == 2) {
-				var _posY = (oWordControl.Height - _y) * g_dKoef_pix_to_mm - GlobalSkin.SplitterWidthMM;
-				if (Math.abs(oWordControl.splitters[1].position - _posY) > 1) {
-					const notesSplitterPosition = Math.max(oWordControl.splitters[2].position + HIDDEN_PANE_HEIGHT, _posY);
-					oWordControl.splitters[1].setPosition(notesSplitterPosition);
-
-					oWordControl.OnResizeSplitter();
-
-					oWordControl.m_oApi.syncOnNotesShow();
-					if (oWordControl.m_oLogicDocument) {
-						oWordControl.m_oLogicDocument.CheckNotesShow();
-					}
-				}
-			}
-			else if (oWordControl.SplitterType == 3) {
-				var _posY = (oWordControl.Height - _y) * g_dKoef_pix_to_mm - GlobalSkin.SplitterWidthMM;
-				if (Math.abs(oWordControl.splitters[2].position - _posY) > 1) {
-
-					const dDiff = oWordControl.splitters[1].position - oWordControl.splitters[2].position;
-					oWordControl.splitters[2].setPosition(_posY);
-
-					oWordControl.splitters[1].setPosition(
-						Math.max(oWordControl.splitters[1].position, oWordControl.splitters[2].position + dDiff)
-					);
-
-					oWordControl.OnResizeSplitter();
-
-					oWordControl.m_oApi.syncOnNotesShow();
-					if (oWordControl.m_oLogicDocument) {
-						oWordControl.m_oLogicDocument.CheckNotesShow();
-					}
-				}
-			}
-
-			oWordControl.m_oBody.HtmlElement.removeChild(oWordControl.SplitterDiv);
-			oWordControl.SplitterDiv = null;
-			oWordControl.SplitterType = 0;
-
-			_isCatch = true;
-		}
-
-		if (_isCatch)
-			AscCommon.stopEvent(e);
-	};
-
-	CEditorPage.prototype.UpdateBottomControlsParams = function () {
-		this.m_oBottomPanesContainer.Bounds.AbsH = this.splitters[1].position;
-		this.m_oNotesContainer.Bounds.AbsH = this.GetNotesHeight();
-		if (!this.IsNotesShown()) {
-			this.m_oNotes.HtmlElement.style.display = "none";
-			this.m_oNotes_scroll.HtmlElement.style.display = "none";
-		}
-		else {
-			this.m_oNotes.HtmlElement.style.display = "block";
-			this.m_oNotes_scroll.HtmlElement.style.display = "block";
-		}
-
-		this.m_oAnimationPaneContainer.Bounds.AbsH = this.GetAnimPaneHeight();
-		if (!this.IsAnimPaneShown()) {
-			this.m_oAnimationPaneContainer.HtmlElement.style.display = "none";
-		}
-		else {
-			this.m_oAnimationPaneContainer.HtmlElement.style.display = "block";
-		}
 	};
 
 	// Events
@@ -3921,7 +3939,7 @@
 			const considerLimits = true;
 			this.splitters[0].setPosition(this.splitters[0].initialPosition, considerLimits);
 
-			this.OnResizeSplitter(true);
+			this.onSplitterResize(true);
 		}
 
 		this.CheckRetinaDisplay();
@@ -4397,11 +4415,11 @@
 				: this.splitters[2].minPosition;
 			this.splitters[2].setPosition(restoredAnimPaneSplitterPosition, true);
 			this.splitters[1].setPosition(this.splitters[1].position + this.splitters[2].position, true);
-			this.OnResizeSplitter();
+			this.onSplitterResize();
 		} else {
 			this.splitters[1].setPosition(this.GetNotesHeight(), true);
 			this.splitters[2].setPosition(0, false, true);
-			this.OnResizeSplitter();
+			this.onSplitterResize();
 			if (this.m_oLogicDocument) this.m_oLogicDocument.CheckAnimPaneShow();
 		}
 	};
@@ -4431,10 +4449,10 @@
 				? this.splitters[2].position + this.splitters[1].minPosition
 				: this.splitters[1].savedPosition;
 			this.splitters[1].setPosition(notesSplitterPosition, true);
-			this.OnResizeSplitter();
+			this.onSplitterResize();
 		} else {
 			this.splitters[1].setPosition(0, false, true);
-			this.OnResizeSplitter();
+			this.onSplitterResize();
 			if (this.m_oLogicDocument) this.m_oLogicDocument.CheckNotesShow();
 		}
 	};
@@ -4452,7 +4470,7 @@
 		this.IsSupportAnimPane = bEnabled;
 		this.splitters[2].setPosition(0);
 		Asc.editor.sendEvent('asc_onCloseAnimPane');
-		this.OnResizeSplitter();
+		this.onSplitterResize();
 	};
 	CEditorPage.prototype.IsNotesSupported = function () {
 		return this.IsSupportNotes && !this.m_oApi.isMasterMode();

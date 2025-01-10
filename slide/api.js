@@ -6808,7 +6808,7 @@ background-repeat: no-repeat;\
 		bIsShow
 			? this.WordControl.splitters[0].setPosition(savedSplitterPosition <= 0 ? 70 : savedSplitterPosition, true)
 			: this.WordControl.splitters[0].setPosition(0, false, true);
-		this.WordControl.OnResizeSplitter();
+		this.WordControl.onSplitterResize();
 	};
 
 	asc_docs_api.prototype.asc_ShowNotes = function(bIsShow)
