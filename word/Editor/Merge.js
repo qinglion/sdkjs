@@ -286,15 +286,8 @@
             oMainTextElement = other;
             oSecondaryTextElement = this;
         }
-        let bCheckStart = false;
-        let bCheckEnd = false;
-        if (oMainTextElement.checkRemoveReviewType(oSecondaryTextElement.elements.length - 1)) {
-            bCheckStart = oMainTextElement.isWordBeginWith(oSecondaryTextElement);
-        }
-        if (oMainTextElement.checkRemoveReviewType(oMainTextElement.elements.length - oSecondaryTextElement.elements.length)) {
-            bCheckEnd = oMainTextElement.isWordEndWith(oSecondaryTextElement);
-        }
-
+        const bCheckStart = oMainTextElement.isWordBeginWith(oSecondaryTextElement);
+        const bCheckEnd = oMainTextElement.isWordEndWith(oSecondaryTextElement);
         return bCheckStart || bCheckEnd;
     };
     
@@ -500,10 +493,12 @@
 
         const nInsertPosition2 = arrSetRemoveReviewType[arrSetRemoveReviewType.length - 1].GetPosInParent();
 				const oChange = this.changes[idxOfChange];
-				if (oChange.insert.length === 1 && oChange.remove.length === 1) {
+				if (!comparison.options.words && !comparison.isWordsByOneSymbol && oChange.insert.length === 1 && oChange.remove.length === 1) {
+					aContentToInsert.reverse();
+					arrSetRemoveReviewType.reverse();
 					comparison.compareByOneSymbol(aContentToInsert, arrSetRemoveReviewType, this.getApplyParagraph(comparison), nInsertPosition2);
 				} else {
-					this.applyInsert(aContentToInsert, arrSetRemoveReviewType, nInsertPosition2, comparison, {/*needReverse: true, */nCommentInsertIndex: nInsertPosition});
+					this.applyInsert(aContentToInsert, arrSetRemoveReviewType, nInsertPosition2, comparison, {needReverse: true, nCommentInsertIndex: nInsertPosition});
 				}
     };
 

@@ -1304,7 +1304,7 @@
         let nInsertPosition = infoAboutEndOfRemoveChange.nInsertPosition;
         nInsertPosition = this.setReviewTypeForRemoveChanges(comparison, idxOfChange, posLastRunInContent, nInsertPosition, arrSetRemoveReviewType);
 				const oChange = this.changes[idxOfChange];
-				if (oChange.insert.length === 1 && oChange.remove.length === 1) {
+				if (!comparison.options.words && !comparison.isWordsByOneSymbol && oChange.insert.length === 1 && oChange.remove.length === 1) {
 					comparison.compareByOneSymbol(aContentToInsert, arrSetRemoveReviewType, this.getApplyParagraph(comparison), arrSetRemoveReviewType[arrSetRemoveReviewType.length - 1].GetPosInParent());
 				} else {
 					this.applyInsert(aContentToInsert, arrSetRemoveReviewType, nInsertPosition, comparison, {needReverse: true});
@@ -1943,45 +1943,48 @@
 
     function ComparisonOptions()
     {
-        this.insertionsAndDeletions = null;
-        this.moves = null;
-        this.comments = null;
-        this.formatting = null;
-        this.caseChanges = null;
-        this.whiteSpace = null;
-        this.tables = null;
-        this.headersAndFooters = null;
-        this.footNotes  = null;
-        this.textBoxes = null;
-        this.fields = null;
-        this.words = null;
+
+	    this.textBoxes = true;
+	    this.tables = true;
+	    this.words = true;
+
+        this.comments = true;
+        this.formatting = true;
+        this.whiteSpace = true;
+        this.headersAndFooters = true;
+        this.footNotes  = true;
+        this.fields = true;
+
+	    // this.insertionsAndDeletions = true;
+	    // this.moves = true;
+	    // this.caseChanges = true;
     }
-    ComparisonOptions.prototype["getInsertionsAndDeletions"] = ComparisonOptions.prototype.getInsertionsAndDeletions = function(){return this.insertionsAndDeletions !== false;};
-    ComparisonOptions.prototype["getMoves"] = ComparisonOptions.prototype.getMoves = function(){return this.moves !== false;};
-    ComparisonOptions.prototype["getComments"] = ComparisonOptions.prototype.getComments = function(){return this.comments !== false;};
-    ComparisonOptions.prototype["getFormatting"] = ComparisonOptions.prototype.getFormatting = function(){return this.formatting !== false;};
-    ComparisonOptions.prototype["getCaseChanges"] = ComparisonOptions.prototype.getCaseChanges = function(){return this.caseChanges !== false;};
-    ComparisonOptions.prototype["getWhiteSpace"] = ComparisonOptions.prototype.getWhiteSpace = function(){return this.whiteSpace !== false;};
-    ComparisonOptions.prototype["getTables"] = ComparisonOptions.prototype.getTables = function(){return true;/*this.tables !== false;*/};
-    ComparisonOptions.prototype["getHeadersAndFooters"] = ComparisonOptions.prototype.getHeadersAndFooters = function(){return this.headersAndFooters !== false;};
-    ComparisonOptions.prototype["getFootNotes"] = ComparisonOptions.prototype.getFootNotes = function(){return this.footNotes !== false;};
-    ComparisonOptions.prototype["getTextBoxes"] = ComparisonOptions.prototype.getTextBoxes = function(){return this.textBoxes !== false;};
-    ComparisonOptions.prototype["getFields"] = ComparisonOptions.prototype.getFields = function(){return this.fields !== false;};
-    ComparisonOptions.prototype["getWords"] = ComparisonOptions.prototype.getWords = function(){return true;/* this.words !== false;*/};
+    // ComparisonOptions.prototype["asc_getInsertionsAndDeletions"] = ComparisonOptions.prototype.getInsertionsAndDeletions = function(){return this.insertionsAndDeletions;};
+    // ComparisonOptions.prototype["asc_getMoves"] = ComparisonOptions.prototype.getMoves = function(){return this.moves;};
+    ComparisonOptions.prototype["asc_getComments"] = ComparisonOptions.prototype.getComments = function(){return this.comments;};
+    ComparisonOptions.prototype["asc_getFormatting"] = ComparisonOptions.prototype.getFormatting = function(){return this.formatting;};
+    // ComparisonOptions.prototype["asc_getCaseChanges"] = ComparisonOptions.prototype.getCaseChanges = function(){return this.caseChanges;};
+    ComparisonOptions.prototype["asc_getWhiteSpace"] = ComparisonOptions.prototype.getWhiteSpace = function(){return this.whiteSpace;};
+    ComparisonOptions.prototype["asc_getTables"] = ComparisonOptions.prototype.getTables = function(){this.tables;};
+    ComparisonOptions.prototype["asc_getHeadersAndFooters"] = ComparisonOptions.prototype.getHeadersAndFooters = function(){return this.headersAndFooters;};
+    ComparisonOptions.prototype["asc_getFootNotes"] = ComparisonOptions.prototype.getFootNotes = function(){return this.footNotes;};
+    ComparisonOptions.prototype["asc_getTextBoxes"] = ComparisonOptions.prototype.getTextBoxes = function(){return this.textBoxes;};
+    ComparisonOptions.prototype["asc_getFields"] = ComparisonOptions.prototype.getFields = function(){return this.fields;};
+    ComparisonOptions.prototype["asc_getWords"] = ComparisonOptions.prototype.getWords = function(){return  this.words;};
 
 
-    ComparisonOptions.prototype["putInsertionsAndDeletions"] = ComparisonOptions.prototype.putInsertionsAndDeletions = function(v){this.insertionsAndDeletions = v;};
-    ComparisonOptions.prototype["putMoves"] = ComparisonOptions.prototype.putMoves = function(v){this.moves = v;};
-    ComparisonOptions.prototype["putComments"] = ComparisonOptions.prototype.putComments = function(v){this.comments = v;};
-    ComparisonOptions.prototype["putFormatting"] = ComparisonOptions.prototype.putFormatting = function(v){this.formatting = v;};
-    ComparisonOptions.prototype["putCaseChanges"] = ComparisonOptions.prototype.putCaseChanges = function(v){this.caseChanges = v;};
-    ComparisonOptions.prototype["putWhiteSpace"] = ComparisonOptions.prototype.putWhiteSpace = function(v){this.whiteSpace = v;};
-    ComparisonOptions.prototype["putTables"] = ComparisonOptions.prototype.putTables = function(v){this.tables = v;};
-    ComparisonOptions.prototype["putHeadersAndFooters"] = ComparisonOptions.prototype.putHeadersAndFooters = function(v){this.headersAndFooters = v;};
-    ComparisonOptions.prototype["putFootNotes"] = ComparisonOptions.prototype.putFootNotes = function(v){this.footNotes = v;};
-    ComparisonOptions.prototype["putTextBoxes"] = ComparisonOptions.prototype.putTextBoxes = function(v){this.textBoxes = v;};
-    ComparisonOptions.prototype["putFields"] = ComparisonOptions.prototype.putFields = function(v){this.fields = v;};
-    ComparisonOptions.prototype["putWords"] = ComparisonOptions.prototype.putWords = function(v){this.words = v;};
+    // ComparisonOptions.prototype["asc_putInsertionsAndDeletions"] = ComparisonOptions.prototype.putInsertionsAndDeletions = function(v){this.insertionsAndDeletions = v;};
+    // ComparisonOptions.prototype["asc_putMoves"] = ComparisonOptions.prototype.putMoves = function(v){this.moves = v;};
+    ComparisonOptions.prototype["asc_putComments"] = ComparisonOptions.prototype.putComments = function(v){this.comments = v;};
+    ComparisonOptions.prototype["asc_putFormatting"] = ComparisonOptions.prototype.putFormatting = function(v){this.formatting = v;};
+    // ComparisonOptions.prototype["asc_putCaseChanges"] = ComparisonOptions.prototype.putCaseChanges = function(v){this.caseChanges = v;};
+    ComparisonOptions.prototype["asc_putWhiteSpace"] = ComparisonOptions.prototype.putWhiteSpace = function(v){this.whiteSpace = v;};
+    ComparisonOptions.prototype["asc_putTables"] = ComparisonOptions.prototype.putTables = function(v){this.tables = v;};
+    ComparisonOptions.prototype["asc_putHeadersAndFooters"] = ComparisonOptions.prototype.putHeadersAndFooters = function(v){this.headersAndFooters = v;};
+    ComparisonOptions.prototype["asc_putFootNotes"] = ComparisonOptions.prototype.putFootNotes = function(v){this.footNotes = v;};
+    ComparisonOptions.prototype["asc_putTextBoxes"] = ComparisonOptions.prototype.putTextBoxes = function(v){this.textBoxes = v;};
+    ComparisonOptions.prototype["asc_putFields"] = ComparisonOptions.prototype.putFields = function(v){this.fields = v;};
+    ComparisonOptions.prototype["asc_putWords"] = ComparisonOptions.prototype.putWords = function(v){this.words = v;};
 
 
     function CDocumentComparison(oOriginalDocument, oRevisedDocument, oOptions)
@@ -1995,19 +1998,25 @@
         this.matchedNums = {};
         this.checkedNums = {};
         this.bSaveCustomReviewType = false;
-				this.needCopyForResolveEqualWords = true;
+
         this.copyPr = {
             CopyReviewPr: false,
             Comparison: this
-        };
+				};
 	    this.firstCheckNumId = null;
-				this.needCheckReview = false;
-        this.nInsertChangesType = reviewtype_Add;
-        this.nRemoveChangesType = reviewtype_Remove;
+
         this.oComparisonMoveMarkManager = new CMoveMarkComparisonManager();
 		this.oBookmarkManager = new CComparisonBookmarkManager(oOriginalDocument, oRevisedDocument);
 		this.oCommentManager = new CComparisonCommentManager(this);
+
 		this.isWordsByOneSymbol = false;
+
+	    this.needCheckReview = false;
+	    this.needCopyForResolveEqualWords = true;
+			this.skipCopiedElements = false;
+
+	    this.nInsertChangesType = reviewtype_Add;
+	    this.nRemoveChangesType = reviewtype_Remove;
     }
 		CDocumentComparison.prototype.compareByOneSymbol = function(arrToInserts, arrToRemove, applyParagraph, nInsertPosition) {
 			if (arrToInserts.length === 0 || arrToRemove.length === 0) return;
@@ -2056,14 +2065,29 @@
 		}
 		this.oCommentManager.mapDelete = {};
 	};
-    CDocumentComparison.prototype.checkCopyParaRun = function (oNewRun, oOldRun) {
-        const sMoveName = this.oComparisonMoveMarkManager.getMoveMarkNameByRun(oOldRun);
-        this.oComparisonMoveMarkManager.addRunMoveMarkNameRelation(sMoveName, oNewRun);
-        const nMoveReviewType = oOldRun.GetReviewMoveType();
-        if (AscFormat.isRealNumber(nMoveReviewType) && nMoveReviewType !== Asc.c_oAscRevisionsMove.NoMove)
-        {
-            this.oComparisonMoveMarkManager.addMoveMarkNameRunRelation(sMoveName, oNewRun);
-        }
+	CDocumentComparison.prototype.executeWithSkipCopiedElements = function (fCallback) {
+		const bOldSkipCheckCopyRuns = this.skipCopiedElements;
+		this.skipCopiedElements = true;
+		fCallback();
+		this.skipCopiedElements = bOldSkipCheckCopyRuns;
+	};
+	CDocumentComparison.prototype.checkCopyParaRunMoveMarks = function (oNewRun, oOldRun) {
+		const sMoveName = this.oComparisonMoveMarkManager.getMoveMarkNameByRun(oOldRun);
+		this.oComparisonMoveMarkManager.addRunMoveMarkNameRelation(sMoveName, oNewRun);
+		const nMoveReviewType = oOldRun.GetReviewMoveType();
+		if (AscFormat.isRealNumber(nMoveReviewType) && nMoveReviewType !== Asc.c_oAscRevisionsMove.NoMove)
+		{
+			this.oComparisonMoveMarkManager.addMoveMarkNameRunRelation(sMoveName, oNewRun);
+		}
+	}
+	CDocumentComparison.prototype.checkCopyParaRun = function (oNewRun, oOldRun) {
+		this.checkCopyParaRunMoveMarks(oNewRun, oOldRun);
+		this.checkReviewInfoOfCopiedElements(oNewRun, oOldRun);
+	}
+    CDocumentComparison.prototype.checkReviewInfoOfCopiedElements = function (oNewRun, oOldRun) {
+			if (this.skipCopiedElements) {
+				return;
+			}
         if (this.copyPr.SkipUpdateInfo)
         {
             this.saveReviewInfo(oNewRun, oOldRun);
@@ -2327,7 +2351,7 @@
     };
     CDocumentComparison.prototype.compareGraphicObject = function(oBaseGrObject, oCompareGrObject)
     {
-        if(!oBaseGrObject || !oCompareGrObject)
+        if(!this.options.textBoxes || !oBaseGrObject || !oCompareGrObject)
         {
             return;
         }
@@ -3085,7 +3109,9 @@
 
         while (arrCheckObjects.length) {
             const oCheckObject = arrCheckObjects.pop();
-
+						if (oCheckObject.Type === para_Drawing && !this.options.textBoxes) {
+							continue;
+						}
             if(oCheckObject.GetReviewInfo && oCheckObject.SetReviewTypeWithInfo)
             {
                arrReturnObjects.push(oCheckObject);
@@ -3097,7 +3123,7 @@
                     arrCheckObjects.push(oCheckObject.Content[i]);
                 }
             }
-            if(AscCommon.isRealObject(oCheckObject.Content))
+            else if(AscCommon.isRealObject(oCheckObject.Content))
             {
                 arrCheckObjects.push(oCheckObject.Content);
             }
