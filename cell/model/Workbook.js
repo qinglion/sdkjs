@@ -5228,7 +5228,7 @@
 			}
 
 			if (null == sheet) {
-				return extarnalLink;
+				return null;
 			}
 			if (extarnalLink.worksheets && extarnalLink.worksheets[sheet]) {
 				return extarnalLink.worksheets[sheet];
