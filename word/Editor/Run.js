@@ -4996,16 +4996,35 @@ ParaRun.prototype.Recalculate_LineMetrics = function(PRS, ParaPr, _CurLine, _Cur
 	// TODO: Пока для формул сделаем, чтобы работало по-старому, в дальнейшем надо будет переделать на fontslot
 	let fontSlot = this.IsMathRun() ? AscWord.fontslot_ASCII : AscWord.fontslot_None;
 	
+	let fontMap = {};
+	
 	for (var CurPos = StartPos; CurPos < EndPos; CurPos++)
 	{
 		var Item = this.private_CheckInstrText(this.Content[CurPos]);
-		fontSlot |= Item.GetFontSlot(textPr);
-
 		if (Item === Para.Numbering.Item)
 		{
 			PRS.LineAscent = Para.Numbering.LineAscent;
 		}
-
+		
+		if (para_Text === Item.Type)
+		{
+			let font = AscFonts.GetGraphemeFont(Item.GetGrapheme());
+			if (font)
+			{
+				let fontSize = Item.GetFontSlot(textPr) === fontslot_CS ? textPr.FontSizeCS : textPr.FontSize;
+				if (undefined === fontMap[font.name])
+					fontMap[font.name] = {};
+				if (undefined === fontMap[font.name][font.style])
+					fontMap[font.name][font.style] = fontSize;
+				else
+					fontMap[font.name][font.style] = Math.max(fontSize, fontMap[font.name][font.style]);
+			}
+			UpdateLineMetricsText = true;
+			continue;
+		}
+		
+		fontSlot |= Item.GetFontSlot(textPr);
+		
 		switch (Item.Type)
 		{
 			case para_Sym:
@@ -5086,6 +5105,14 @@ ParaRun.prototype.Recalculate_LineMetrics = function(PRS, ParaPr, _CurLine, _Cur
 			fontSlot = textPr.CS || textPr.RTL ? AscWord.fontslot_CS : AscWord.fontslot_ASCII;
 		
 		let metrics = textPr.GetTextMetrics(fontSlot, this.Paragraph.GetTheme());
+		
+		for (let fontName in fontMap)
+		{
+			for (let fontStyle in fontMap[fontName])
+			{
+				metrics.Update(fontName, fontMap[fontName][fontStyle], fontStyle);
+			}
+		}
 		
 		let textDescent = metrics.Descent;
 		let textAscent  = metrics.Ascent + metrics.LineGap;
