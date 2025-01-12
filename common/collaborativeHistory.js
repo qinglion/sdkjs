@@ -464,7 +464,7 @@
 			{
 				let _oChange = oChange.Copy();
 
-				if (this.CommuteRelated(_oChange, nPosition + nCount))
+				if (this.CommuteRelated(oClass, _oChange, nPosition + nCount))
 				{
 					arrChanges.push(_oChange);
 				}

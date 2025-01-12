@@ -81,6 +81,7 @@
 			this.m_bFast = false;
 
 			this.m_aForeignCursorsData = {};
+			this.WaitImages = {};//cell/model/DrawingObjects/GlobalCounters.js
 
 			this.init();
 
