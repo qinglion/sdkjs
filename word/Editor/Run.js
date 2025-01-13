@@ -5008,16 +5008,14 @@ ParaRun.prototype.Recalculate_LineMetrics = function(PRS, ParaPr, _CurLine, _Cur
 		
 		if (para_Text === Item.Type)
 		{
-			let font = AscFonts.GetGraphemeFont(Item.GetGrapheme());
-			if (font)
+			let fontId = AscFonts.GetGraphemeFontId(Item.GetGrapheme());
+			if (fontId)
 			{
 				let fontSize = Item.GetFontSlot(textPr) === fontslot_CS ? textPr.FontSizeCS : textPr.FontSize;
-				if (undefined === fontMap[font.name])
-					fontMap[font.name] = {};
-				if (undefined === fontMap[font.name][font.style])
-					fontMap[font.name][font.style] = fontSize;
+				if (undefined === fontMap[fontId])
+					fontMap[fontId] = fontSize;
 				else
-					fontMap[font.name][font.style] = Math.max(fontSize, fontMap[font.name][font.style]);
+					fontMap[fontId] = Math.max(fontSize, fontMap[fontId]);
 			}
 			UpdateLineMetricsText = true;
 			continue;
@@ -5106,12 +5104,11 @@ ParaRun.prototype.Recalculate_LineMetrics = function(PRS, ParaPr, _CurLine, _Cur
 		
 		let metrics = textPr.GetTextMetrics(fontSlot, this.Paragraph.GetTheme());
 		
-		for (let fontName in fontMap)
+		for (let fontId in fontMap)
 		{
-			for (let fontStyle in fontMap[fontName])
-			{
-				metrics.Update(fontName, fontMap[fontName][fontStyle], fontStyle);
-			}
+			let fontName  = AscFonts.GetFontNameByFontId(fontId);
+			let fontStyle = AscFonts.GetFontStyleByFontId(fontId);
+			metrics.Update(fontName, fontMap[fontId], fontStyle);
 		}
 		
 		let textDescent = metrics.Descent;
