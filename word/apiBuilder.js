@@ -7693,6 +7693,7 @@
 	 * @memberof ApiDocument
 	 * @typeofeditors ["CDE"]
 	 * @return {number}
+	 * @since 8.3.0
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/GetCurrentPage.js
 	 */
 	ApiDocument.prototype.GetCurrentPage = function()
@@ -7700,10 +7701,11 @@
 		return this.Document.GetCurPage();
 	};
 	/**
-	 * Returns the indexes of currently visible pages.
+	 * Returns the indexes of the currently visible pages.
 	 * @memberof ApiDocument
 	 * @typeofeditors ["CDE"]
 	 * @return {number[]}
+	 * @since 8.3.0
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/GetCurrentVisiblePages.js
 	 */
 	ApiDocument.prototype.GetCurrentVisiblePages = function()
@@ -14667,10 +14669,11 @@
 	};
 	
 	/**
-	 * Link the specified paragraph style with the current numbering level.
-	 * @memberof ApiParaPr
+	 * Links the specified paragraph style with the current numbering level.
+	 * @memberof ApiNumberingLevel
 	 * @typeofeditors ["CDE"]
-	 * @param {ApiStyle} oStyle - Paragraph style
+	 * @param {ApiStyle} oStyle - The paragraph style.
+	 * @since 8.3.0
 	 * @see office-js-api/Examples/{Editor}/ApiNumberingLevel/Methods/LinkWithStyle.js
 	 */
 	ApiNumberingLevel.prototype.LinkWithStyle = function(oStyle)
