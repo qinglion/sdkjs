@@ -597,7 +597,7 @@
 			this.openOOXInBrowserZip = file.data;
 			this.OpenDocumentFromZip(file.data);
 		} else {
-			//this.OpenDocumentFromBin(file.url, file.data);
+			this.sendEvent("asc_onError", Asc.c_oAscError.ID.ConvertationOpenError, Asc.c_oAscError.Level.Critical);
 		}
 		let perfEnd = performance.now();
 		AscCommon.sendClientLog("debug", AscCommon.getClientInfoString("onOpenDocument", perfEnd - perfStart), this);
