@@ -195,8 +195,8 @@
 		}
 		return true;
 	};
-    CMergeComparisonTextElement.prototype.equals = function (oOtherElement, bNeedCheckTypes) {
-        const bEquals = CTextElement.prototype.equals.call(this, oOtherElement);
+    CMergeComparisonTextElement.prototype.equals = function (oOtherElement, bNeedCheckTypes, oComparison) {
+        const bEquals = CTextElement.prototype.equals.call(this, oOtherElement, bNeedCheckTypes, oComparison);
         if (!bEquals) {
             return false;
         }
@@ -270,9 +270,9 @@
         return true;
     };
 
-    CResolveConflictTextElement.prototype.equals = function (other, bNeedCheckReview)
+    CResolveConflictTextElement.prototype.equals = function (other, bNeedCheckReview, oComparison)
     {
-        const bResult = CTextElement.prototype.equals.call(this, other);
+        const bResult = CTextElement.prototype.equals.call(this, other, bNeedCheckReview, oComparison);
         if (bResult || this.elements.length === other.elements.length) {
             return bResult;
         }
@@ -496,7 +496,7 @@
 				if (!comparison.options.words && !comparison.isWordsByOneSymbol && oChange.insert.length === 1 && oChange.remove.length === 1) {
 					aContentToInsert.reverse();
 					arrSetRemoveReviewType.reverse();
-					comparison.compareByOneSymbol(aContentToInsert, arrSetRemoveReviewType, this.getApplyParagraph(comparison), nInsertPosition2);
+					comparison.resolveConflicts(aContentToInsert, arrSetRemoveReviewType, this.getApplyParagraph(comparison), nInsertPosition2, true);
 				} else {
 					this.applyInsert(aContentToInsert, arrSetRemoveReviewType, nInsertPosition2, comparison, {needReverse: true, nCommentInsertIndex: nInsertPosition});
 				}
@@ -899,44 +899,6 @@
             this.resolveCustomReviewTypesBetweenElements(oMainRow, nRevisedReviewType, oRevisedReviewInfo);
         }
     };
-
-    CDocumentMergeComparison.prototype.resolveConflicts = function (arrToInserts, arrToRemove, applyParagraph, nInsertPosition) {
-        if (arrToInserts.length === 0 || arrToRemove.length === 0) return;
-        arrToRemove.push(new AscCommonWord.ParaRun());
-        arrToInserts.push(new AscCommonWord.ParaRun());
-        arrToRemove[arrToRemove.length - 1].Content.push(new AscWord.CRunParagraphMark());
-        arrToInserts[arrToInserts.length - 1].Content.push(new AscWord.CRunParagraphMark());
-        const comparison = new CDocumentResolveConflictComparison(this.originalDocument, this.revisedDocument, this.options);
-
-				const oOldCommentsMeeting = this.oCommentManager.mapCommentMeeting;
-	    this.oCommentManager.mapCommentMeeting = {};
-	    comparison.oCommentManager = this.oCommentManager;
-
-				const oOldBookmarkMeeting = this.oBookmarkManager.mapBookmarkMeeting;
-	      this.oBookmarkManager.mapBookmarkMeeting = {};
-	      comparison.oBookmarkManager = this.oBookmarkManager;
-        comparison.oComparisonMoveMarkManager = this.oComparisonMoveMarkManager;
-        comparison.CommentsMap = this.CommentsMap;
-				comparison.StylesMap = this.StylesMap;
-        const originalDocument = new CMockDocument();
-        const revisedDocument = new CMockDocument();
-        const originalParagraph = new CMockParagraph();
-        const revisedParagraph = new CMockParagraph();
-        const origParagraph = applyParagraph;
-        comparison.startPosition = nInsertPosition;
-        comparison.parentParagraph = origParagraph;
-        originalParagraph.Content = arrToRemove;
-        revisedParagraph.Content = arrToInserts;
-        originalDocument.Content.push(originalParagraph);
-        revisedDocument.Content.push(revisedParagraph);
-
-        comparison.oComparisonMoveMarkManager.executeResolveConflictMode(function () {
-            comparison.compareRoots(originalDocument, revisedDocument);
-        });
-	    this.oBookmarkManager.mapBookmarkMeeting = oOldBookmarkMeeting;
-	    this.oCommentManager.mapCommentMeeting = oOldCommentsMeeting;
-    };
-
     CDocumentMergeComparison.prototype.getCompareReviewInfo = CDocumentResolveConflictComparison.prototype.getCompareReviewInfo;
 
     CDocumentMergeComparison.prototype.applyParagraphComparison = function (oOrigRoot, oRevisedRoot) {
@@ -1014,7 +976,7 @@
                 }
             }
             oThis.compareRoots(oOriginalDocument, oRevisedDocument);
-            oThis.compareSectPr(oOriginalDocument, oRevisedDocument);
+            oThis.compareSectPr(oOriginalDocument, oRevisedDocument, !oThis.options.headersAndFooters);
 
             const oFonts = oOriginalDocument.Document_Get_AllFontNames();
             const aFonts = [];

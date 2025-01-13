@@ -42,6 +42,32 @@
     EXCLUDED_PUNCTUATION[160] = true;
     //EXCLUDED_PUNCTUATION[63] = true;
 
+	function WordCounter() {
+
+		this.mapWords = {};
+		this.count = 0;
+	}
+	WordCounter.prototype.update = function(aCodes, oComparison) {
+		++this.count;
+		let text = String.fromCharCode.apply(String, aCodes);
+		if (!oComparison.options.caseChanges) {
+			text = text.toLowerCase();
+		}
+		if (!this.mapWords[text]) {
+			this.mapWords[text] = 0;
+		}
+		this.mapWords[text] += 1;
+	};
+	WordCounter.prototype.diff = function(other) {
+		let shared = 0;
+		for (let i in this.mapWords) {
+			if (other.mapWords[i]) {
+				shared += Math.min(other.mapWords[i], this.mapWords[i]);
+			}
+		}
+		return other.count + this.count - 2 * shared;
+	};
+
 	function changeFirstTextElement(oTextIterator, oRun)
 	{
 		const oElement = oTextIterator.getCurrentElement();
@@ -297,13 +323,15 @@
 		this.commentManager.checkComments(arrMainComments, arrRevisedComments, arrRevisedComments);
 	};
 
-	function CReviewChangeCollector(arrMainElements, arrRevisedElements, oMoveMarkManager, oMainParagraph, oRevisedParagraph) {
+	function CReviewChangeCollector(arrMainElements, arrRevisedElements, oMoveMarkManager, oMainParagraph, oRevisedParagraph, oCopyPr) {
 		this.mainElements = arrMainElements;
 		this.revisedElements = arrRevisedElements;
 		this.moveMarkManager = oMoveMarkManager;
 		this.mainParagraph = oMainParagraph;
 		this.revisedParagraph = oRevisedParagraph;
+		this.copyPr = oCopyPr;
 	}
+	CReviewChangeCollector.prototype.isSkippedElement = CTextPrChangeCollector.prototype.isSkippedElement;
 	CReviewChangeCollector.prototype.getPriorityChange = function (oRevisedRun, oMainRun) {
 		const oRevisedReviewInfo = oRevisedRun.GetReviewInfo();
 		const nRevisedReviewType = oRevisedRun.GetReviewType();
@@ -468,13 +496,13 @@
 				do {
 					nRevisedRunIndex -= 1;
 					bSaveOldRevisedCount = false;
-				} while (!(oRevisedContent[nRevisedRunIndex] instanceof AscCommonWord.ParaRun) && nRevisedRunIndex >= 0)
+				} while (this.isSkippedElement(oRevisedContent[nRevisedRunIndex]) && nRevisedRunIndex >= 0)
 			}
 			if (nMainElementsCount === 0) {
 				do {
 					nMainRunIndex -= 1;
 					bSaveOldMainCount = false;
-				} while (!(oMainContent[nMainRunIndex] instanceof AscCommonWord.ParaRun) && nMainRunIndex >= 0)
+				} while (this.isSkippedElement(oMainContent[nMainRunIndex]) && nMainRunIndex >= 0)
 			}
 		}
 		return arrResult;
@@ -561,6 +589,15 @@
 		this.revisedParagraph = oRevisedParagraph;
 		this.copyPr = oCopyPr;
 	}
+	CTextPrChangeCollector.prototype.isSkippedElement = function (oRun) {
+		if (!(oRun instanceof AscCommonWord.ParaRun)) {
+			return true;
+		}
+		if (this.copyPr.SkipFootnoteReference) {
+			return oRun.IsFootEndnoteReferenceRun();
+		}
+		return false;
+	};
 	CTextPrChangeCollector.prototype.getRevisedLastRunIndex = function () {
 		const oLastElement = this.elements[this.elements.length - 1];
 		const oLastRun = oLastElement.lastRun;
@@ -672,13 +709,13 @@
 				do {
 					nRevisedRunIndex -= 1;
 					bSaveOldRevisedCount = false;
-				} while (!(oRevisedContent[nRevisedRunIndex] instanceof AscCommonWord.ParaRun) && nRevisedRunIndex >= 0)
+				} while (this.isSkippedElement(oRevisedContent[nRevisedRunIndex]) && nRevisedRunIndex >= 0)
 			}
 			if (nMainElementsCount === 0) {
 				do {
 					nMainRunIndex -= 1;
 					bSaveOldMainCount = false;
-				} while (!(oMainContent[nMainRunIndex] instanceof AscCommonWord.ParaRun) && nMainRunIndex >= 0)
+				} while (this.isSkippedElement(oMainContent[nMainRunIndex]) && nMainRunIndex >= 0)
 			}
 		}
 		return arrResult;
@@ -694,7 +731,7 @@
         this.partner = null;
         this.childidx = null;
 
-        this.hashWords = null;
+        this.wordCounter = null;
         if(oParent)
         {
             oParent.addChildNode(this);
@@ -707,7 +744,7 @@
 
 		let arrReviewChanges = [];
 		if (comparison.needCheckReview) {
-			const oReviewChangeCollector = new CReviewChangeCollector(arrOriginalTextElements, arrRevisedTextElements, comparison.oComparisonMoveMarkManager, oMainParent, oRevisedParent);
+			const oReviewChangeCollector = new CReviewChangeCollector(arrOriginalTextElements, arrRevisedTextElements, comparison.oComparisonMoveMarkManager, oMainParent, oRevisedParent, comparison.copyPr);
 			arrReviewChanges = oReviewChangeCollector.getReviewChanges();
 		}
 
@@ -1305,7 +1342,7 @@
         nInsertPosition = this.setReviewTypeForRemoveChanges(comparison, idxOfChange, posLastRunInContent, nInsertPosition, arrSetRemoveReviewType);
 				const oChange = this.changes[idxOfChange];
 				if (!comparison.options.words && !comparison.isWordsByOneSymbol && oChange.insert.length === 1 && oChange.remove.length === 1) {
-					comparison.compareByOneSymbol(aContentToInsert, arrSetRemoveReviewType, this.getApplyParagraph(comparison), arrSetRemoveReviewType[arrSetRemoveReviewType.length - 1].GetPosInParent());
+					comparison.resolveConflicts(aContentToInsert, arrSetRemoveReviewType, this.getApplyParagraph(comparison), arrSetRemoveReviewType[arrSetRemoveReviewType.length - 1].GetPosInParent(), true);
 				} else {
 					this.applyInsert(aContentToInsert, arrSetRemoveReviewType, nInsertPosition, comparison, {needReverse: true});
 				}
@@ -1364,7 +1401,7 @@
     {
         return this.changes.push(oOperation);
     };
-    CNode.prototype.equals = function(oNode)
+    CNode.prototype.equals = function(oNode, oComparison)
     {
         if(this.depth === oNode.depth)
         {
@@ -1381,12 +1418,12 @@
                     return false;
                 }
             }
-            return this.privateCompareElements(oNode, true);
+            return this.privateCompareElements(oNode, true, oComparison);
         }
         return false;
     };
 
-    CNode.prototype.privateCompareElements = function(oNode, bCheckNeighbors)
+    CNode.prototype.privateCompareElements = function(oNode, bCheckNeighbors, oComparison)
     {
         const oElement1 = this.element;
         const oElement2 = oNode.element;
@@ -1412,14 +1449,14 @@
                     }
                     if(aNeighbors1[0] && aNeighbors2[0])
                     {
-                        if(aNeighbors1[0].privateCompareElements(aNeighbors2[0], false))
+                        if(aNeighbors1[0].privateCompareElements(aNeighbors2[0], false, oComparison))
                         {
                             return true;
                         }
                     }
                     if(aNeighbors1[1] && aNeighbors2[1])
                     {
-                        if(aNeighbors1[1].privateCompareElements(aNeighbors2[1], false))
+                        if(aNeighbors1[1].privateCompareElements(aNeighbors2[1], false, oComparison))
                         {
                             return true;
                         }
@@ -1428,7 +1465,7 @@
                 }
                 else
                 {
-                    return oElement1.equals(oElement2, bCheckNeighbors);
+                    return oElement1.equals(oElement2, bCheckNeighbors, oComparison);
                 }
             }
             if (oElement1 instanceof AscCommon.CParaRevisionMove)
@@ -1745,7 +1782,7 @@
         return this.elements[idx];
     };
 
-    CTextElement.prototype.equals = function (other, bNeedCheckReview)
+    CTextElement.prototype.equals = function (other, bNeedCheckReview, oComparison)
     {
         if(this.elements.length !== other.elements.length)
         {
@@ -1761,7 +1798,12 @@
             }
             if(typeof oElement.Value === "number")
             {
-                if(oElement.Value !== oOtherElement.Value)
+							if (!oComparison.options.caseChanges) {
+								if (String.fromCharCode(oElement.Value).toLowerCase() !== String.fromCharCode(oOtherElement.Value).toLowerCase()) {
+									return false;
+								}
+							}
+							else if(oElement.Value !== oOtherElement.Value)
                 {
                     return false;
                 }
@@ -1774,7 +1816,7 @@
         return true;
     };
 
-    CTextElement.prototype.updateHash = function(oHash){
+    CTextElement.prototype.updateHash = function(oHash, oComparison){
         const aCheckArray = [];
 
         let bVal = false;
@@ -1811,7 +1853,7 @@
         }
         if(aCheckArray.length > 0)
         {
-            oHash.update(aCheckArray);
+            oHash.update(aCheckArray, oComparison);
         }
     };
 
@@ -1943,27 +1985,26 @@
 
     function ComparisonOptions()
     {
-
 	    this.textBoxes = true;
 	    this.tables = true;
 	    this.words = true;
+	    this.headersAndFooters = true;
+	    this.footNotes  = true;
+	    this.caseChanges = true;
 
         this.comments = true;
         this.formatting = true;
         this.whiteSpace = true;
-        this.headersAndFooters = true;
-        this.footNotes  = true;
         this.fields = true;
 
 	    // this.insertionsAndDeletions = true;
 	    // this.moves = true;
-	    // this.caseChanges = true;
     }
     // ComparisonOptions.prototype["asc_getInsertionsAndDeletions"] = ComparisonOptions.prototype.getInsertionsAndDeletions = function(){return this.insertionsAndDeletions;};
     // ComparisonOptions.prototype["asc_getMoves"] = ComparisonOptions.prototype.getMoves = function(){return this.moves;};
     ComparisonOptions.prototype["asc_getComments"] = ComparisonOptions.prototype.getComments = function(){return this.comments;};
     ComparisonOptions.prototype["asc_getFormatting"] = ComparisonOptions.prototype.getFormatting = function(){return this.formatting;};
-    // ComparisonOptions.prototype["asc_getCaseChanges"] = ComparisonOptions.prototype.getCaseChanges = function(){return this.caseChanges;};
+    ComparisonOptions.prototype["asc_getCaseChanges"] = ComparisonOptions.prototype.getCaseChanges = function(){return this.caseChanges;};
     ComparisonOptions.prototype["asc_getWhiteSpace"] = ComparisonOptions.prototype.getWhiteSpace = function(){return this.whiteSpace;};
     ComparisonOptions.prototype["asc_getTables"] = ComparisonOptions.prototype.getTables = function(){this.tables;};
     ComparisonOptions.prototype["asc_getHeadersAndFooters"] = ComparisonOptions.prototype.getHeadersAndFooters = function(){return this.headersAndFooters;};
@@ -1977,7 +2018,7 @@
     // ComparisonOptions.prototype["asc_putMoves"] = ComparisonOptions.prototype.putMoves = function(v){this.moves = v;};
     ComparisonOptions.prototype["asc_putComments"] = ComparisonOptions.prototype.putComments = function(v){this.comments = v;};
     ComparisonOptions.prototype["asc_putFormatting"] = ComparisonOptions.prototype.putFormatting = function(v){this.formatting = v;};
-    // ComparisonOptions.prototype["asc_putCaseChanges"] = ComparisonOptions.prototype.putCaseChanges = function(v){this.caseChanges = v;};
+    ComparisonOptions.prototype["asc_putCaseChanges"] = ComparisonOptions.prototype.putCaseChanges = function(v){this.caseChanges = v;};
     ComparisonOptions.prototype["asc_putWhiteSpace"] = ComparisonOptions.prototype.putWhiteSpace = function(v){this.whiteSpace = v;};
     ComparisonOptions.prototype["asc_putTables"] = ComparisonOptions.prototype.putTables = function(v){this.tables = v;};
     ComparisonOptions.prototype["asc_putHeadersAndFooters"] = ComparisonOptions.prototype.putHeadersAndFooters = function(v){this.headersAndFooters = v;};
@@ -2001,7 +2042,8 @@
 
         this.copyPr = {
             CopyReviewPr: false,
-            Comparison: this
+            Comparison: this,
+	        SkipFootnoteReference: !oOptions.footNotes
 				};
 	    this.firstCheckNumId = null;
 
@@ -2018,13 +2060,13 @@
 	    this.nInsertChangesType = reviewtype_Add;
 	    this.nRemoveChangesType = reviewtype_Remove;
     }
-		CDocumentComparison.prototype.compareByOneSymbol = function(arrToInserts, arrToRemove, applyParagraph, nInsertPosition) {
+		CDocumentComparison.prototype.resolveConflicts = function(arrToInserts, arrToRemove, applyParagraph, nInsertPosition, bIsWordsByOneSymbol) {
 			if (arrToInserts.length === 0 || arrToRemove.length === 0) return;
 			arrToRemove.push(new AscCommonWord.ParaRun());
 			arrToInserts.push(new AscCommonWord.ParaRun());
 			arrToRemove[arrToRemove.length - 1].Content.push(new AscWord.CRunParagraphMark());
 			arrToInserts[arrToInserts.length - 1].Content.push(new AscWord.CRunParagraphMark());
-			const comparison = new AscCommonWord.CDocumentResolveConflictComparison(this.originalDocument, this.revisedDocument, this.options, true);
+			const comparison = new AscCommonWord.CDocumentResolveConflictComparison(this.originalDocument, this.revisedDocument, this.options, bIsWordsByOneSymbol);
 
 			const oOldCommentsMeeting = this.oCommentManager.mapCommentMeeting;
 			this.oCommentManager.mapCommentMeeting = {};
@@ -2125,7 +2167,7 @@
             const oDiff  = new AscCommon.Diff(oOrigNode, oReviseNode);
             oDiff.equals = function(a, b)
             {
-                return a.equals(b);
+                return a.equals(b, oThis);
             };
             const oMatching = new CMatching();
             oDiff.matchTrees(oMatching);
@@ -2145,7 +2187,7 @@
 				function sum(start, end, array) {
 					let sum = 0;
 					for (let i = start + 1; i <= end; i++) {
-						sum += array[i].hashWords.count + 1;
+						sum += array[i].wordCounter.count + 1;
 					}
 					return sum;
 				}
@@ -2157,7 +2199,7 @@
 					if (compareIndex === -1) {
 						let result = 0;
 						for (let i = 0; i <= baseMaxIndex; i++) {
-							result += aBase[baseMaxIndex].hashWords.count + 1;
+							result += aBase[baseMaxIndex].wordCounter.count + 1;
 						}
 						return {diff: result};
 					}
@@ -2169,7 +2211,7 @@
 							let diff = bestRes.diff + summarize;
 							const oBaseElement = aBase[baseIndex];
 							if (oBaseElement) {
-								diff += aBase[baseIndex].hashWords.diff(aCompare[i].hashWords);
+								diff += aBase[baseIndex].wordCounter.diff(aCompare[i].wordCounter);
 							} else {
 								diff += sum(-1, compareIndex, aCompare)
 							}
@@ -2479,7 +2521,7 @@
                 }
             }
             oThis.compareRoots(oOriginalDocument, oRevisedDocument);
-            oThis.compareSectPr(oOriginalDocument, oRevisedDocument);
+            oThis.compareSectPr(oOriginalDocument, oRevisedDocument, !oThis.options.headersAndFooters);
 
             const oFonts = oOriginalDocument.Document_Get_AllFontNames();
             const aFonts = [];
@@ -2621,7 +2663,7 @@
         }
     };
 
-    CDocumentComparison.prototype.compareSectPr = function(oElement, oPartnerElement)
+    CDocumentComparison.prototype.compareSectPr = function(oElement, oPartnerElement, bSkipCheckHeadersFooters)
     {
         const oOrigSectPr = oElement.SectPr;
         const oReviseSectPr = oPartnerElement.SectPr;
@@ -2639,102 +2681,102 @@
         }
         if(oOrigSectPr)
         {
-            oOrigContent = oOrigSectPr.HeaderFirst && oOrigSectPr.HeaderFirst.Content;
-            oReviseContent = oReviseSectPr && oReviseSectPr.HeaderFirst && oReviseSectPr.HeaderFirst.Content;
-            if(oOrigContent && !oReviseContent)
-            {
-                this.setReviewInfoRecursive(oOrigContent, this.nRemoveChangesType);
-            }
-            else if(oOrigContent && oReviseContent)
-            {
-                this.compareRoots(oOrigContent, oReviseContent);
-            }
-            else if(!oOrigContent && oReviseContent && oReviseSectPr.HeaderFirst)
-            {
-                oOrigSectPr.Set_Header_First(oReviseSectPr.HeaderFirst.Copy(this.originalDocument, this.copyPr));
-            }
+					if (!bSkipCheckHeadersFooters) {
+						oOrigContent = oOrigSectPr.HeaderFirst && oOrigSectPr.HeaderFirst.Content;
+						oReviseContent = oReviseSectPr && oReviseSectPr.HeaderFirst && oReviseSectPr.HeaderFirst.Content;
+						if(oOrigContent && !oReviseContent)
+						{
+							this.setReviewInfoRecursive(oOrigContent, this.nRemoveChangesType);
+						}
+						else if(oOrigContent && oReviseContent)
+						{
+							this.compareRoots(oOrigContent, oReviseContent);
+						}
+						else if(!oOrigContent && oReviseContent && oReviseSectPr.HeaderFirst)
+						{
+							oOrigSectPr.Set_Header_First(oReviseSectPr.HeaderFirst.Copy(this.originalDocument, this.copyPr));
+						}
 
 
-            oOrigContent = oOrigSectPr.HeaderEven && oOrigSectPr.HeaderEven.Content;
-            oReviseContent = oReviseSectPr && oReviseSectPr.HeaderEven && oReviseSectPr.HeaderEven.Content;
-            if(oOrigContent && !oReviseContent)
-            {
-                this.setReviewInfoRecursive(oOrigContent, this.nRemoveChangesType);
-            }
-            else if(oOrigContent && oReviseContent)
-            {
-                this.compareRoots(oOrigContent, oReviseContent);
-            }
-            else if(!oOrigContent && oReviseContent && oReviseSectPr.HeaderEven)
-            {
-                oOrigSectPr.Set_Header_Even(oReviseSectPr.HeaderEven.Copy(this.originalDocument, this.copyPr));
-            }
+						oOrigContent = oOrigSectPr.HeaderEven && oOrigSectPr.HeaderEven.Content;
+						oReviseContent = oReviseSectPr && oReviseSectPr.HeaderEven && oReviseSectPr.HeaderEven.Content;
+						if(oOrigContent && !oReviseContent)
+						{
+							this.setReviewInfoRecursive(oOrigContent, this.nRemoveChangesType);
+						}
+						else if(oOrigContent && oReviseContent)
+						{
+							this.compareRoots(oOrigContent, oReviseContent);
+						}
+						else if(!oOrigContent && oReviseContent && oReviseSectPr.HeaderEven)
+						{
+							oOrigSectPr.Set_Header_Even(oReviseSectPr.HeaderEven.Copy(this.originalDocument, this.copyPr));
+						}
 
 
-            oOrigContent = oOrigSectPr.HeaderDefault && oOrigSectPr.HeaderDefault.Content;
-            oReviseContent = oReviseSectPr && oReviseSectPr.HeaderDefault && oReviseSectPr.HeaderDefault.Content;
-            if(oOrigContent && !oReviseContent)
-            {
-                this.setReviewInfoRecursive(oOrigContent, this.nRemoveChangesType);
-            }
-            else if(oOrigContent && oReviseContent)
-            {
-                this.compareRoots(oOrigContent, oReviseContent);
-            }
-            else if(!oOrigContent && oReviseContent && oReviseSectPr.HeaderDefault)
-            {
-                oOrigSectPr.Set_Header_Default(oReviseSectPr.HeaderDefault.Copy(this.originalDocument, this.copyPr));
-            }
+						oOrigContent = oOrigSectPr.HeaderDefault && oOrigSectPr.HeaderDefault.Content;
+						oReviseContent = oReviseSectPr && oReviseSectPr.HeaderDefault && oReviseSectPr.HeaderDefault.Content;
+						if(oOrigContent && !oReviseContent)
+						{
+							this.setReviewInfoRecursive(oOrigContent, this.nRemoveChangesType);
+						}
+						else if(oOrigContent && oReviseContent)
+						{
+							this.compareRoots(oOrigContent, oReviseContent);
+						}
+						else if(!oOrigContent && oReviseContent && oReviseSectPr.HeaderDefault)
+						{
+							oOrigSectPr.Set_Header_Default(oReviseSectPr.HeaderDefault.Copy(this.originalDocument, this.copyPr));
+						}
 
 
-            oOrigContent = oOrigSectPr.FooterFirst && oOrigSectPr.FooterFirst.Content;
-            oReviseContent = oReviseSectPr && oReviseSectPr.FooterFirst && oReviseSectPr.FooterFirst.Content;
-            if(oOrigContent && !oReviseContent)
-            {
-                this.setReviewInfoRecursive(oOrigContent, this.nRemoveChangesType);
-            }
-            else if(oOrigContent && oReviseContent)
-            {
-                this.compareRoots(oOrigContent, oReviseContent);
-            }
-            else if(!oOrigContent && oReviseContent && oReviseSectPr.FooterFirst)
-            {
-                oOrigSectPr.Set_Footer_First(oReviseSectPr.FooterFirst.Copy(this.originalDocument, this.copyPr));
-            }
+						oOrigContent = oOrigSectPr.FooterFirst && oOrigSectPr.FooterFirst.Content;
+						oReviseContent = oReviseSectPr && oReviseSectPr.FooterFirst && oReviseSectPr.FooterFirst.Content;
+						if(oOrigContent && !oReviseContent)
+						{
+							this.setReviewInfoRecursive(oOrigContent, this.nRemoveChangesType);
+						}
+						else if(oOrigContent && oReviseContent)
+						{
+							this.compareRoots(oOrigContent, oReviseContent);
+						}
+						else if(!oOrigContent && oReviseContent && oReviseSectPr.FooterFirst)
+						{
+							oOrigSectPr.Set_Footer_First(oReviseSectPr.FooterFirst.Copy(this.originalDocument, this.copyPr));
+						}
 
 
-            oOrigContent = oOrigSectPr.FooterEven && oOrigSectPr.FooterEven.Content;
-            oReviseContent = oReviseSectPr && oReviseSectPr.FooterEven && oReviseSectPr.FooterEven.Content;
-            if(oOrigContent && !oReviseContent)
-            {
-                this.setReviewInfoRecursive(oOrigContent, this.nRemoveChangesType);
-            }
-            else if(oOrigContent && oReviseContent)
-            {
-                this.compareRoots(oOrigContent, oReviseContent);
-            }
-            else if(!oOrigContent && oReviseContent && oReviseSectPr.FooterEven)
-            {
-                oOrigSectPr.Set_Footer_Even(oReviseSectPr.FooterEven.Copy(this.originalDocument, this.copyPr));
-            }
+						oOrigContent = oOrigSectPr.FooterEven && oOrigSectPr.FooterEven.Content;
+						oReviseContent = oReviseSectPr && oReviseSectPr.FooterEven && oReviseSectPr.FooterEven.Content;
+						if(oOrigContent && !oReviseContent)
+						{
+							this.setReviewInfoRecursive(oOrigContent, this.nRemoveChangesType);
+						}
+						else if(oOrigContent && oReviseContent)
+						{
+							this.compareRoots(oOrigContent, oReviseContent);
+						}
+						else if(!oOrigContent && oReviseContent && oReviseSectPr.FooterEven)
+						{
+							oOrigSectPr.Set_Footer_Even(oReviseSectPr.FooterEven.Copy(this.originalDocument, this.copyPr));
+						}
 
 
-            oOrigContent = oOrigSectPr.FooterDefault && oOrigSectPr.FooterDefault.Content;
-            oReviseContent = oReviseSectPr && oReviseSectPr.FooterDefault && oReviseSectPr.FooterDefault.Content;
-            if(oOrigContent && !oReviseContent)
-            {
-                this.setReviewInfoRecursive(oOrigContent, this.nRemoveChangesType);
-            }
-            else if(oOrigContent && oReviseContent)
-            {
-                this.compareRoots(oOrigContent, oReviseContent);
-            }
-            else if(!oOrigContent && oReviseContent && oReviseSectPr.FooterDefault)
-            {
-                oOrigSectPr.Set_Footer_Default(oReviseSectPr.FooterDefault.Copy(this.originalDocument, this.copyPr));
-            }
-
-
+						oOrigContent = oOrigSectPr.FooterDefault && oOrigSectPr.FooterDefault.Content;
+						oReviseContent = oReviseSectPr && oReviseSectPr.FooterDefault && oReviseSectPr.FooterDefault.Content;
+						if(oOrigContent && !oReviseContent)
+						{
+							this.setReviewInfoRecursive(oOrigContent, this.nRemoveChangesType);
+						}
+						else if(oOrigContent && oReviseContent)
+						{
+							this.compareRoots(oOrigContent, oReviseContent);
+						}
+						else if(!oOrigContent && oReviseContent && oReviseSectPr.FooterDefault)
+						{
+							oOrigSectPr.Set_Footer_Default(oReviseSectPr.FooterDefault.Copy(this.originalDocument, this.copyPr));
+						}
+					}
             if(oReviseSectPr)
             {
                 const oReviseHeaderFirst = oReviseSectPr.HeaderFirst;
@@ -3245,7 +3287,7 @@
         return CNode;
     };
 
-    CDocumentComparison.prototype.createNodeFromDocContent = function(oElement, oParentNode, oHashWords, isOriginalDocument)
+    CDocumentComparison.prototype.createNodeFromDocContent = function(oElement, oParentNode, oWordCounter, isOriginalDocument)
     {
         const oRet = this.createNode(oElement, oParentNode);
         const bRoot = (oParentNode === null);
@@ -3256,24 +3298,24 @@
             {
                 if(bRoot)
                 {
-                    oHashWords = new Minhash({});
+                    oWordCounter = new WordCounter();
                 }
-                const oParagraphNode = this.createNodeFromRunContentElement(oChElement, oRet, oHashWords, isOriginalDocument);
+                const oParagraphNode = this.createNodeFromRunContentElement(oChElement, oRet, oWordCounter, isOriginalDocument);
                 if(bRoot)
                 {
-                    oParagraphNode.hashWords = oHashWords;
+                    oParagraphNode.wordCounter = oWordCounter;
                 }
             }
             else if(oChElement instanceof CBlockLevelSdt)
             {
                 if(bRoot)
                 {
-                    oHashWords = new Minhash({});
+                    oWordCounter = new WordCounter();
                 }
-                const oBlockNode = this.createNodeFromDocContent(oChElement.Content, oRet, oHashWords, isOriginalDocument);
+                const oBlockNode = this.createNodeFromDocContent(oChElement.Content, oRet, oWordCounter, isOriginalDocument);
                 if(bRoot)
                 {
-                    oBlockNode.hashWords = oHashWords;
+                    oBlockNode.wordCounter = oWordCounter;
                 }
             }
             else if(oChElement instanceof CTable)
@@ -3282,20 +3324,20 @@
                 {
                     if(bRoot)
                     {
-                        oHashWords = new Minhash({});
+                        oWordCounter = new WordCounter();
                     }
                     const oTableNode = this.createNode(oChElement, oRet);
                     if(bRoot)
                     {
-                        oHashWords = new Minhash({});
-                        oTableNode.hashWords = oHashWords;
+                        oWordCounter = new WordCounter();
+                        oTableNode.wordCounter = oWordCounter;
                     }
                     for(let j = 0; j < oChElement.Content.length; ++j)
                     {
                         const oRowNode = this.createNode(oChElement.Content[j], oTableNode);
                         for(let k = 0; k < oChElement.Content[j].Content.length; ++k)
                         {
-                            this.createNodeFromDocContent(oChElement.Content[j].Content[k].Content, oRowNode, oHashWords, isOriginalDocument);
+                            this.createNodeFromDocContent(oChElement.Content[j].Content[k].Content, oRowNode, oWordCounter, isOriginalDocument);
                         }
                     }
                 }
@@ -3303,12 +3345,12 @@
             else if (oChElement instanceof AscCommonWord.CMockParagraph) {
                 if(bRoot)
                 {
-                    oHashWords = new Minhash({});
+                    oWordCounter = new WordCounter();
                 }
-                const oParagraphNode = this.createNodeFromRunContentElement(oChElement, oRet, oHashWords, isOriginalDocument);
+                const oParagraphNode = this.createNodeFromRunContentElement(oChElement, oRet, oWordCounter, isOriginalDocument);
                 if(bRoot)
                 {
-                    oParagraphNode.hashWords = oHashWords;
+                    oParagraphNode.wordCounter = oWordCounter;
                 }
             }
             else
@@ -3316,8 +3358,8 @@
                 const oNode = this.createNode(oChElement, oRet);
                 if(bRoot)
                 {
-                    oHashWords = new Minhash({});
-                    oNode.hashWords = oHashWords;
+                    oWordCounter = new WordCounter();
+                    oNode.wordCounter = oWordCounter;
                 }
             }
 
@@ -3338,7 +3380,7 @@
             || bPunctuation);
     }
 
-	CDocumentComparison.prototype._createNodeFromRun = function(oRun, oLastText, oHashWords, oRet, TextElementConstructor, NodeConstructor, oReviewInfo) {
+	CDocumentComparison.prototype._createNodeFromRun = function(oRun, oLastText, oWordCounter, oRet, TextElementConstructor, NodeConstructor, oReviewInfo) {
         if(oRun.Content.length > 0)
         {
             if(!oLastText)
@@ -3359,25 +3401,29 @@
                     if(oLastText.elements.length > 0)
                     {
                         this.createNode(oLastText, oRet);
-                        oLastText.updateHash(oHashWords);
+                        oLastText.updateHash(oWordCounter, this);
                         oLastText = new TextElementConstructor();
                         oLastText.setFirstRun(oRun);
                     }
+										if (this.options.footNotes || !(oRunElement.Type === para_FootnoteReference || oRunElement.Type === para_EndnoteReference)) {
+											oLastText.setLastRun(oRun);
+											oLastText.addToElements(oRunElement, oReviewInfo);
+											this.createNode(oLastText, oRet);
+											oLastText.updateHash(oWordCounter, this);
+										}
 
-                    oLastText.setLastRun(oRun);
-                    oLastText.addToElements(oRunElement, oReviewInfo);
-                    this.createNode(oLastText, oRet);
-                    oLastText.updateHash(oHashWords);
 
-                    oLastText = new TextElementConstructor();
-                    oLastText.setFirstRun(oRun);
+										if (oLastText.elements.length > 0) {
+											oLastText = new TextElementConstructor();
+											oLastText.setFirstRun(oRun);
+										}
                     oLastText.setLastRun(oRun);
                 }
                 else if(oRunElement.Type === para_Drawing)
                 {
                     if(oLastText.elements.length > 0)
                     {
-                        oLastText.updateHash(oHashWords);
+                        oLastText.updateHash(oWordCounter, this);
                         this.createNode(oLastText, oRet);
                         oLastText = new TextElementConstructor();
                         oLastText.setFirstRun(oRun);
@@ -3392,7 +3438,7 @@
                 else if (oRunElement.Type === para_RevisionMove) {
                     if(oLastText.elements.length > 0)
                     {
-                        oLastText.updateHash(oHashWords);
+                        oLastText.updateHash(oWordCounter, this);
                         this.createNode(oLastText, oRet);
                         oLastText = new TextElementConstructor();
                         oLastText.setFirstRun(oRun);
@@ -3403,7 +3449,7 @@
                 {
                     if(oLastText.elements.length > 0)
                     {
-                        oLastText.updateHash(oHashWords);
+                        oLastText.updateHash(oWordCounter, this);
                         this.createNode(oLastText, oRet);
                         oLastText = new TextElementConstructor();
                         oLastText.setFirstRun(oRun);
@@ -3414,7 +3460,7 @@
                     // мы будем сравнивать ревью paraEnd отдельно, поскольку это единственный общий элемент в параграфе, до которого мы можем вставить любой различающийся контент
                     oLastText.addToElements(oRun.Content[j], {reviewType: reviewtype_Common, moveReviewType: Asc.c_oAscRevisionsMove.NoMove});
                     this.createNode(oLastText, oRet);
-                    oLastText.updateHash(oHashWords);
+                    oLastText.updateHash(oWordCounter, this);
                     oLastText = new TextElementConstructor();
                     oLastText.setFirstRun(oRun);
                     oLastText.setLastRun(oRun);
@@ -3437,13 +3483,13 @@
 
     };
 
-    CDocumentComparison.prototype.createNodeFromRun = function (oRun, oLastText, oHashWords, oRet) {
+    CDocumentComparison.prototype.createNodeFromRun = function (oRun, oLastText, oWordCounter, oRet) {
         const TextElementConstructor = this.getTextElementConstructor();
         const NodeConstructor = this.getNodeConstructor();
         const oReviewInfo = this.getCompareReviewInfo(oRun);
-        return this._createNodeFromRun(oRun, oLastText, oHashWords, oRet, TextElementConstructor, NodeConstructor, oReviewInfo);
+        return this._createNodeFromRun(oRun, oLastText, oWordCounter, oRet, TextElementConstructor, NodeConstructor, oReviewInfo);
     };
-    CDocumentComparison.prototype.createNodeFromRunContentElement = function(oElement, oParentNode, oHashWords, isOriginalDocument)
+    CDocumentComparison.prototype.createNodeFromRunContentElement = function(oElement, oParentNode, oWordCounter, isOriginalDocument)
     {
 	    this.oBookmarkManager.previousNode = null;
 	    this.oCommentManager.previousNode = null;
@@ -3457,18 +3503,18 @@
             const oRun = oElement.Content[i];
             if(oRun instanceof ParaRun)
             {
-                oLastText = this.createNodeFromRun(oRun, oLastText, oHashWords, oRet);
+                oLastText = this.createNodeFromRun(oRun, oLastText, oWordCounter, oRet);
             }
             else if (oRun instanceof AscCommon.CParaRevisionMove)
             {
                 if(oLastText && oLastText.elements.length > 0)
                 {
-                    oLastText.updateHash(oHashWords);
+                    oLastText.updateHash(oWordCounter, this);
                     this.createNode(oLastText, oRet);
                 }
                 if(aLastWord.length > 0)
                 {
-                    oHashWords.update(aLastWord);
+                    oWordCounter.update(aLastWord, this);
                     aLastWord.length = 0;
                 }
                 oLastText = null;
@@ -3510,18 +3556,18 @@
             {
 	            if (oLastText && oLastText.elements.length > 0)
 	            {
-		            oLastText.updateHash(oHashWords);
+		            oLastText.updateHash(oWordCounter, this);
 		            this.createNode(oLastText, oRet);
 	            }
 	            if (aLastWord.length > 0)
 	            {
-		            oHashWords.update(aLastWord);
+		            oWordCounter.update(aLastWord, this);
 		            aLastWord.length = 0;
 	            }
 	            oLastText = null;
 	            if (Array.isArray(oRun.Content))
 	            {
-		            this.createNodeFromRunContentElement(oRun, oRet, oHashWords, isOriginalDocument);
+		            this.createNodeFromRunContentElement(oRun, oRet, oWordCounter, isOriginalDocument);
 	            }
 	            else
 	            {
@@ -3531,7 +3577,7 @@
         }
         if(oLastText && oLastText.elements.length > 0)
         {
-            oLastText.updateHash(oHashWords);
+            oLastText.updateHash(oWordCounter, this);
             this.createNode(oLastText, oRet);
         }
         return oRet;
