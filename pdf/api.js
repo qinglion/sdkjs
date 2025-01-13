@@ -1382,6 +1382,20 @@
         }, AscDFH.historydescription_Pdf_ChangeOpacity);
 	};
 
+	PDFEditorApi.prototype.asc_CloseFile = function() {
+		AscCommon.History.Clear();
+		AscCommon.g_oIdCounter.Clear();
+		AscCommon.g_oTableId.Clear();
+		AscCommon.CollaborativeEditing.Clear();
+		this.isApplyChangesOnOpenEnabled = true;
+		this.isDocumentLoadComplete = false;
+		this.ServerImagesWaitComplete = false;
+		this.turnOffSpecialModes();
+		AscCommon.pptx_content_loader.ImageMapChecker = {};
+
+		this.sendEvent("asc_onCloseFile");
+	};
+
 	PDFEditorApi.prototype.asc_GetOpacity = function() {
 		let oDoc = this.getPDFDoc();
 		let oMouseDownAnnot = oDoc.mouseDownAnnot;
@@ -2956,6 +2970,7 @@
 	PDFEditorApi.prototype['asc_CheckCopy']                = PDFEditorApi.prototype.asc_CheckCopy;
 	PDFEditorApi.prototype['Paste']                        = PDFEditorApi.prototype.Paste;
 	PDFEditorApi.prototype['asc_PasteData']                = PDFEditorApi.prototype.asc_PasteData;
+	PDFEditorApi.prototype['asc_CloseFile']                = PDFEditorApi.prototype.asc_CloseFile;
 
 	PDFEditorApi.prototype['getSelectionState']            = PDFEditorApi.prototype.getSelectionState;
 	PDFEditorApi.prototype['getSpeechDescription']         = PDFEditorApi.prototype.getSpeechDescription;
