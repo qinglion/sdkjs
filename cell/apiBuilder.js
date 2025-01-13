@@ -305,11 +305,13 @@
 	/**
      * Any valid drawing element.
      * @typedef {(ApiShape | ApiImage | ApiGroup | ApiOleObject | ApiChart )} Drawing
+	 * @see office-js-api/Examples/Enumerations/Drawing.js
 	 */
 
 	/**
-     * Available drwaing element for grouping
+     * Available drawing element for grouping.
      * @typedef {(ApiShape | ApiGroup | ApiImage | ApiChart)} DrawingForGroup
+	 * @see office-js-api/Examples/Enumerations/DrawingForGroup.js
 	 */
 
 	/**
@@ -8857,11 +8859,12 @@
 	};
 
 	/**
-     * Groups an array of drawings in worksheet.
+     * Groups an array of drawings in the current worksheet.
      * @memberof ApiWorksheet
      * @typeofeditors ["CSE"]
-     * @param {DrawingForGroup} aDrawings - The array of drawings not in document.
+     * @param {DrawingForGroup[]} aDrawings - An array of drawings to group.
      * @returns {ApiGroup}
+	 * @since 8.3.0
      * @see office-js-api/Examples/{Editor}/ApiWorksheet/Methods/GroupDrawings.js
 	 */
     ApiWorksheet.prototype.GroupDrawings = function(aDrawings) {
@@ -11365,7 +11368,7 @@
 	 */
 
 	/**
-	 * Adds a AutoFilter to the current worksheet.
+	 * Adds an AutoFilter to the current range.
 	 * @memberof ApiRange
 	 * @typeofeditors ["CSE"]
 	 * @param {?number} Field - The integer offset of the field on which you want to base the filter (from the left of the list; the leftmost field is field one).
@@ -12015,9 +12018,10 @@
 	};
 
 	/**
-	 * Gets drawing parent Sheet
+	 * Returns the parent sheet of the current drawing.
 	 * @typeofeditors ["CSE"]
 	 * @returns {?ApiWorksheet}
+	 * @since 8.3.0
 	 * @see office-js-api/Examples/{Editor}/ApiDrawing/Methods/GetParentSheet.js
 	 */
 	ApiDrawing.prototype.GetParentSheet = function () {
@@ -12040,6 +12044,7 @@
      * @memberof ApiGroup
      * @typeofeditors ["CSE"]
      * @returns {"group"}
+	 * @since 8.3.0
      * @see office-js-api/Examples/{Editor}/ApiGroup/Methods/GetClassType.js
      */
     ApiGroup.prototype.GetClassType = function() {
@@ -12047,10 +12052,11 @@
     };
 
     /**
-     * Ungroups current group drawing.
+     * Ungroups the current group of drawings.
      * @memberof ApiGroup
      * @typeofeditors ["CSE"]
      * @returns {boolean}
+	 * @since 8.3.0
      * @see office-js-api/Examples/{Editor}/ApiGroup/Methods/Ungroup.js
      */
     ApiGroup.prototype.Ungroup = function() {
