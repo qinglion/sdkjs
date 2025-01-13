@@ -20635,17 +20635,15 @@
 	 * @memberof Api
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {Array} arrString - An array of replacement strings.
-	 * @param {string} [sParaTab=" "] - A character which is used to specify the tab in the source text.
-	 * @param {string} [sParaNewLine=" "] - A character which is used to specify the line break character in the source text.
+	 * @param {string} [sParaTab="\t"] - A character which is used to specify the tab in the source text.
+	 * @param {string} [sParaNewLine="\r\n"] - A character which is used to specify the line break character in the source text.
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/ReplaceTextSmart.js
 	 */
 	Api.prototype.ReplaceTextSmart = function(arrString, sParaTab, sParaNewLine)
 	{
-		if (typeof(sParaTab) !== "string")
-			sParaTab = String.fromCharCode(32);
-		if (typeof(sParaNewLine) !== "string")
-			sParaNewLine = String.fromCharCode(32);
-
+		sParaTab     = GetStringParameter(sParaTab, "\t");
+		sParaNewLine = GetStringParameter(sParaTab, "\r\n");
+		
 		var allRunsInfo      = null;
 		var textDelta        = null;
 		var arrSelectedParas = null;
