@@ -5221,7 +5221,7 @@
 	};
 
 	Workbook.prototype.getExternalWorksheet = function (val, sheet, getFirstSheet) {
-		var extarnalLink = window['AscCommon'].isNumber(val) ? this.getExternalLinkByIndex(val - 1) : this.getExternalLinkByName(val);
+		let extarnalLink = this.getExternalLink(val);
 		if (extarnalLink) {
 			if (getFirstSheet && extarnalLink.SheetNames) {
 				sheet = extarnalLink.SheetNames[0];
@@ -5246,6 +5246,10 @@
 			}
 		}
 		return null;
+	};
+
+	Workbook.prototype.getExternalLink = function (val) {
+		return window['AscCommon'].isNumber(val) ? this.getExternalLinkByIndex(val - 1) : this.getExternalLinkByName(val);
 	};
 
 	Workbook.prototype.getExternalWorksheetByIndex = function (index, sheet) {

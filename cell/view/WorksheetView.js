@@ -26325,7 +26325,7 @@
 						let type = fP.outStack[i].type;
 						if ((AscCommonExcel.cElementType.cellsRange3D === type || AscCommonExcel.cElementType.cell3D === type ||
 							AscCommonExcel.cElementType.name3D === type) && fP.outStack[i].externalLink) {
-							let eR = t.model.workbook.getExternalWorksheet(fP.outStack[i].externalLink);
+							let eR = t.model.workbook.getExternalLink(fP.outStack[i].externalLink);
 							if (eR) {
 								externalReferences.push(opt_get_only_ids ? eR.Id : eR.getAscLink());
 								if (initStructure) {
@@ -26345,7 +26345,7 @@
 					let importRangeLinks = fP.importFunctionsRangeLinks;
 					if (importRangeLinks) {
 						for (let i in importRangeLinks) {
-							let eR = t.model.workbook.getExternalWorksheet(i);
+							let eR = t.model.workbook.getExternalLink(i);
 							if (eR) {
 								externalReferences.push(opt_get_only_ids ? eR.Id : eR.getAscLink());
 								if (initStructure) {
