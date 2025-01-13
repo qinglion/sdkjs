@@ -1957,6 +1957,9 @@ var CPresentation = CPresentation || function(){};
         }
     };
     CPDFDoc.prototype.DoUndo = function() {
+		if (this.CollaborativeEditing.Get_GlobalLock())
+			return;
+			
         let oDrDoc = this.GetDrawingDocument();
         oDrDoc.UpdateTargetFromPaint = true;
 
