@@ -1096,9 +1096,6 @@ var CPresentation = CPresentation || function(){};
             oViewer.isMouseMoveBetweenDownUp = true;
             oViewer.onMouseDownEpsilon(e);
         }
-        else if (this.mouseDownAnnot) {
-            oViewer.onUpdateOverlay();
-        }
         
         // если в селекте нет drawing (аннотации или шейпа) по которой кликнули, то сбрасываем селект
         if (oMouseDownObject == null || (false == oController.selectedObjects.includes(oMouseDownObject) && oController.selection.groupSelection != oMouseDownObject)) {
@@ -1106,6 +1103,7 @@ var CPresentation = CPresentation || function(){};
             oController.resetTrackState();
         }
 
+        oViewer.onUpdateOverlay();
         this.UpdateInterface();
         this.private_UpdateTargetForCollaboration();
     };
@@ -2702,6 +2700,7 @@ var CPresentation = CPresentation || function(){};
 			case AscDFH.historydescription_Pdf_ChangeFillColor:
 			case AscDFH.historydescription_Pdf_ChangeStrokeColor:
 			case AscDFH.historydescription_Pdf_ChangeOpacity:
+			case AscDFH.historydescription_Presentation_ParagraphAdd:
 				nChangesType = AscCommon.changestype_Drawing_Props;
 				break;
 			case AscDFH.historydescription_Document_ChangeComment:
@@ -4280,13 +4279,11 @@ var CPresentation = CPresentation || function(){};
         let oDoc = this;
         let oTargetContent = oController.getTargetDocContent();
 		if (!oTargetContent || oTargetContent.IsSelectionUse() && !oTargetContent.IsSelectionEmpty()) {
-			oController.checkSelectedObjectsAndCallback(function () {
-				if (false === IsColor) {
-					oDoc.AddToParagraph(new ParaTextPr({HighlightColor: null}));
-				} else {
-					oDoc.AddToParagraph(new ParaTextPr({HighlightColor: AscFormat.CreateUniColorRGB(r, g, b)}));
-				}
-			}, [], false, AscDFH.historydescription_Document_SetTextHighlight);
+			if (false === IsColor) {
+                oDoc.AddToParagraph(new ParaTextPr({HighlightColor: null}));
+            } else {
+                oDoc.AddToParagraph(new ParaTextPr({HighlightColor: AscFormat.CreateUniColorRGB(r, g, b)}));
+            }
 		}
     };
     CPDFDoc.prototype.SetUnderline = function(r, g, b, opacity) {

@@ -2550,10 +2550,16 @@ var editor;
 									ws.fromXml(reader);
 								});
 							}
+							xmlParserContext.InitOpenManager.putSheetAfterRead(wb, ws);
 							res.push(ws);
 						}
 					}
 				});
+			}
+
+			if (wbXml && wbXml.newDefinedNames) {
+				xmlParserContext.InitOpenManager.oReadResult.defNames = wbXml.newDefinedNames;
+				xmlParserContext.InitOpenManager.PostLoadPrepareDefNames(wb);
 			}
 
 			var readSheetDataExternal = function (bNoBuildDep) {

@@ -1010,7 +1010,12 @@
         return false;
     };
     CGraphicObjects.prototype.selectObject = function (object, pageIndex) {
+        let oDoc = this.document;
         object.select(this, pageIndex);
+        if (this.selectedObjects.length == 1 && !oDoc.GetActiveObject()) {
+            oDoc.SetMouseDownObject(object);
+        }
+
         if (AscFormat.MoveAnimationDrawObject) {
             if (object instanceof AscFormat.MoveAnimationDrawObject) {
                 for (let i = this.selectedObjects.length - 1; i > -1; --i) {

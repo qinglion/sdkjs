@@ -10198,9 +10198,9 @@ CDocument.prototype.executeShortcut = function(type)
 		default:
 		{
 			let customShortcut = this.Api.getCustomShortcutAction(type);
-			if (customShortcut && AscCommon.c_oAscCustomShortcutType.Symbol === oCustom.Type)
+			if (customShortcut && AscCommon.c_oAscCustomShortcutType.Symbol === customShortcut.Type)
 			{
-				this.Api["asc_insertSymbol"](oCustom.Font, oCustom.CharCode);
+				this.Api["asc_insertSymbol"](customShortcut.Font, customShortcut.CharCode);
 				result = true;
 			}
 			break;
@@ -24253,6 +24253,10 @@ CDocument.prototype.GetPage = function(nPageAbs)
 CDocument.prototype.GetPagesCount = function()
 {
 	return this.Pages.length;
+};
+CDocument.prototype.GetCurPage = function()
+{
+	return this.CurPage;
 };
 /**
  * Данная функция получает первую таблицу TOC по схеме Word

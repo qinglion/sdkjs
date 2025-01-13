@@ -251,6 +251,17 @@
 			maxY : maxY
 		};
 	}
+	function GetGraphemeFont(graphemeId)
+	{
+		let oGrapheme = GRAPHEMES[graphemeId];
+		if (!oGrapheme)
+			return null;
+		
+		return {
+			name : AscCommon.FontNameMap.GetName(oGrapheme[0] >> 8),
+			style : oGrapheme[0] & 0xF
+		};
+	}
 	//--------------------------------------------------------export----------------------------------------------------
 	window['AscFonts'] = window['AscFonts'] || {};
 	window['AscFonts'].NO_GRAPHEME        = NO_GRAPHEME;
@@ -261,5 +272,6 @@
 	window['AscFonts'].GetGrapheme        = GetGrapheme;
 	window['AscFonts'].GetGraphemeWidth   = GetGraphemeWidth;
 	window['AscFonts'].GetGraphemeBBox    = GetGraphemeBBox;
+	window['AscFonts'].GetGraphemeFont    = GetGraphemeFont;
 
 })(window);
