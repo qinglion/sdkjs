@@ -11554,6 +11554,11 @@
 			resultGeometry.setParent(resultShape);
 			resultShape.spPr.setGeometry(resultGeometry);
 
+			if (AscCommon.isRealObject(referenceShape.spPr.effectProps)) {
+				const effectProps = referenceShape.spPr.effectProps.createDuplicate();
+				resultShape.spPr.setEffectPr(effectProps);
+			}
+
 			return resultShape;
 		}
 
