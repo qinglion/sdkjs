@@ -1976,7 +1976,7 @@
      * @since 8.3.0
      * @see office-js-api/Examples/{Editor}/ApiLayout/Methods/GetName.js
 	 */
-    ApiLayout.prototype.GetName = function(sName)
+    ApiLayout.prototype.GetName = function()
     {
         return this.Layout.getName();
     };
