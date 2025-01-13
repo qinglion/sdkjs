@@ -2711,6 +2711,9 @@ var CPresentation = CPresentation || function(){};
 			case AscDFH.historydescription_Pdf_RemoveComment:
 				nChangesType = AscCommon.changestype_2_Comment;
 				break;
+			default:
+			    nChangesType = nDescription;
+			    break;
 		}
 		
 		if (this.IsSelectionLocked(nChangesType, Additional)) {
