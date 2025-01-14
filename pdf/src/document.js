@@ -2695,6 +2695,7 @@ var CPresentation = CPresentation || function(){};
 		switch (nDescription) {
 			case AscDFH.historydescription_Document_BackSpaceButton:
 			case AscDFH.historydescription_Document_DeleteButton:
+			case AscDFH.historydescription_Pdf_ContextMenuRemove:
 				nChangesType = AscCommon.changestype_Delete;
 				break;
 			case AscDFH.historydescription_Pdf_FreeTextGeom:
