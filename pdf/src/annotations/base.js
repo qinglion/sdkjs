@@ -750,8 +750,8 @@
         return this._replies[nPos];
     };
     CAnnotationBase.prototype.RemoveComment = function() {
-        this.SetContents(undefined);
         this.EditCommentData(undefined);
+        this.SetContents(undefined);
     };
     CAnnotationBase.prototype.EditCommentData = function(oCommentData) {
         let oDoc = this.GetDocument();
