@@ -721,9 +721,10 @@
 				var oContentElement = aContent[i];
 				if (oContentElement.Get_Type() === type_Paragraph) {
 					var paragraph_lines = aContent[i].Lines;
+					let dIndRight = oContentElement.Get_CompiledPr().ParaPr.Ind.Right;
 					for (var j = 0; j < paragraph_lines.length; ++j) {
 						if (paragraph_lines[j].Ranges[0].W > oMax.max_width)
-							oMax.max_width = paragraph_lines[j].Ranges[0].X + paragraph_lines[j].Ranges[0].W;
+							oMax.max_width = paragraph_lines[j].Ranges[0].X + paragraph_lines[j].Ranges[0].W + dIndRight;
 					}
 				} else if (oContentElement.Get_Type() === type_Table) {
 					if (oContentElement.Bounds.Right > oMax.max_width) {
