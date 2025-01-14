@@ -1057,7 +1057,7 @@ var CPresentation = CPresentation || function(){};
         // оставляем текущий объет к селекте, если кликнули по нему же
         let isFloatSelected = oFloatObject && oController.selectedObjects.includes(oFloatObject);
         let isObjectSelected = (oCurObject && ([oMouseDownField, oMouseDownAnnot, oMouseDownDrawing, oMouseDownLink].includes(oCurObject)) || isFloatSelected);
-        if (null == oCurObject || !isObjectSelected)
+        if (null == oCurObject || !isObjectSelected || !isSameType)
             this.SetMouseDownObject(oMouseDownField || oMouseDownAnnot || oMouseDownDrawing || oMouseDownLink);
         else {
             this.SetMouseDownObject(oMouseDownField || oMouseDownAnnot || oMouseDownDrawing || oMouseDownLink, false);
