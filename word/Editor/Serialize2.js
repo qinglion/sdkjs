@@ -7749,7 +7749,7 @@ function BinaryCustomsTableWriter(memory, doc, customXmlManager)
 		if (null !== customXml.content) {
 			this.bs.WriteItem(c_oSerCustoms.ContentA, function() {
 				let str = customXmlManager.getCustomXMLString(customXml);
-				oThis.memory.WriteCustomStringA(str);
+				oThis.memory.WriteStringA(AscCommon.Utf8.encode(str));
 			});
 		}
 	};
