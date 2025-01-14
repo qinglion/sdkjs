@@ -1057,7 +1057,7 @@ var CPresentation = CPresentation || function(){};
         // оставляем текущий объет к селекте, если кликнули по нему же
         let isFloatSelected = oFloatObject && oController.selectedObjects.includes(oFloatObject);
         let isObjectSelected = (oCurObject && ([oMouseDownField, oMouseDownAnnot, oMouseDownDrawing, oMouseDownLink].includes(oCurObject)) || isFloatSelected);
-        if (null == oCurObject || !isObjectSelected)
+        if (null == oCurObject || !isObjectSelected || !isSameType)
             this.SetMouseDownObject(oMouseDownField || oMouseDownAnnot || oMouseDownDrawing || oMouseDownLink);
         else {
             this.SetMouseDownObject(oMouseDownField || oMouseDownAnnot || oMouseDownDrawing || oMouseDownLink, false);
@@ -2695,6 +2695,7 @@ var CPresentation = CPresentation || function(){};
 		switch (nDescription) {
 			case AscDFH.historydescription_Document_BackSpaceButton:
 			case AscDFH.historydescription_Document_DeleteButton:
+			case AscDFH.historydescription_Pdf_ContextMenuRemove:
 				nChangesType = AscCommon.changestype_Delete;
 				break;
 			case AscDFH.historydescription_Pdf_FreeTextGeom:
