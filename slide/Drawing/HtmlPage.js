@@ -250,7 +250,7 @@
 		this.m_bIsIE = AscCommon.AscBrowser.isIE;
 
 		// thumbnails
-		this.Thumbnails = new CThumbnailsManager();
+		this.Thumbnails = new CThumbnailsManager(this);
 
 		// сплиттеры (для табнейлов и для заметок)
 		this.splitters;
@@ -667,8 +667,6 @@
 	};
 	CEditorPage.prototype.initThumbnails = function () {
 		const scrollWidth = 10 * g_dKoef_pix_to_mm;
-
-		this.Thumbnails.m_oWordControl = this;
 
 		// Thumbnails container
 		this.m_oThumbnailsContainer = CreateControlContainer("id_panel_thumbnails");

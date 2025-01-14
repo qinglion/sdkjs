@@ -2212,7 +2212,7 @@ background-repeat: no-repeat;\
 		if(fixPos && fixPos.slideId)
 		{
 			let oThumbnails = this.WordControl.Thumbnails;
-			if(oThumbnails.m_bIsVisible)
+			if(oThumbnails.isThumbnailsShown())
 			{
 				let oPos = this.WordControl.Thumbnails.getSpecialPasteButtonCoords(fixPos.slideId);
 				curCoord = new AscCommon.asc_CRect( oPos.X, oPos.Y, 1, 1 );

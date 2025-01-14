@@ -4157,7 +4157,7 @@ CMasterThumbnails.prototype.update = function() {
 	}
 };
 
-function CThumbnailsManager()
+function CThumbnailsManager(editorPage)
 {
 	this.isInit = false;
 	this.lastPixelRatio = 0;
@@ -4186,9 +4186,6 @@ function CThumbnailsManager()
 
 	this.m_dScrollY = 0;
 	this.m_dScrollY_max = 0;
-
-	this.m_bIsVisible = false;
-
 
 	this.m_bIsUpdate = false;
 
@@ -4220,9 +4217,8 @@ function CThumbnailsManager()
 
 	this.ScrollerHeight = 0;
 
-	this.m_oWordControl = null;
+	this.m_oWordControl = editorPage;
 	var oThis = this;
-
 
 	this.IsMasterMode = function() {
 		return Asc.editor.isMasterMode();
@@ -5220,7 +5216,7 @@ function CThumbnailsManager()
 
 	this.OnPaint = function()
 	{
-		if (!this.m_bIsVisible)
+		if (!this.isThumbnailsShown())
 			return;
 
 		var word_control = this.m_oWordControl;
@@ -5331,7 +5327,7 @@ function CThumbnailsManager()
 
 	this.onCheckUpdate = function()
 	{
-		if (!this.m_bIsVisible || 0 == this.DigitWidths.length)
+		if (!this.isThumbnailsShown() || 0 == this.DigitWidths.length)
 			return;
 
 		if (this.m_oWordControl.m_oApi.isSaveFonts_Images)
@@ -5433,7 +5429,7 @@ function CThumbnailsManager()
 	// overlay
 	this.OnUpdateOverlay = function()
 	{
-		if (!this.m_bIsVisible)
+		if (!this.isThumbnailsShown())
 			return;
 
 		var canvas = this.m_oWordControl.m_oThumbnailsBack.HtmlElement;
@@ -5807,7 +5803,7 @@ function CThumbnailsManager()
 
 	this.CalculatePlaces = function()
 	{
-		if (!this.m_bIsVisible)
+		if (!this.isThumbnailsShown())
 			return;
 
 		var word_control = this.m_oWordControl;
@@ -6040,12 +6036,10 @@ function CThumbnailsManager()
 	this.CheckSizes = function () {
 		this.InitCheckOnResize();
 
-		const wordControl = this.m_oWordControl;
-		let __w = wordControl.m_oThumbnailsContainer.AbsolutePosition.R - wordControl.m_oThumbnailsContainer.AbsolutePosition.L;
-		let __h = wordControl.m_oThumbnailsContainer.AbsolutePosition.B - wordControl.m_oThumbnailsContainer.AbsolutePosition.T;
+		if (!this.isThumbnailsShown())
+			return;
 
-		this.m_bIsVisible = (__w >= 1) && (__h >= 0);
-		if (!this.m_bIsVisible) return;
+		const wordControl = this.m_oWordControl;
 
 		const oPresentation = wordControl.m_oLogicDocument;
 		const dKoefToPix = AscCommon.AscBrowser.retinaPixelRatio * g_dKoef_mm_to_pix;
@@ -6057,6 +6051,8 @@ function CThumbnailsManager()
 
 		const dPosition = this.m_dScrollY_max != 0 ? this.m_dScrollY / this.m_dScrollY_max : 0;
 
+		let __w = wordControl.m_oThumbnailsContainer.AbsolutePosition.R - wordControl.m_oThumbnailsContainer.AbsolutePosition.L;
+		let __h = wordControl.m_oThumbnailsContainer.AbsolutePosition.B - wordControl.m_oThumbnailsContainer.AbsolutePosition.T;
 		let totalThumbnailsHeight = this.calculateTotalThumbnailsHeight(__w, __h);
 		const thumbnailsContainerHeight = __h * dKoefToPix >> 0;
 		if (totalThumbnailsHeight < thumbnailsContainerHeight) {
@@ -6240,6 +6236,15 @@ function CThumbnailsManager()
 		return this.thumbnails.GetCurSld();
 	};
 }
+CThumbnailsManager.prototype.isThumbnailsShown = function () {
+	const thumbnailsContainer = this.m_oWordControl.m_oThumbnailsContainer;
+	if (!thumbnailsContainer) return false;
+
+	const absolutePosition = thumbnailsContainer.AbsolutePosition;
+	const width = absolutePosition.R - absolutePosition.L;
+	const height = absolutePosition.B - absolutePosition.T;
+	return width >= 1 && height >= 0;
+};
 
 function CSlideDrawer()
 {
