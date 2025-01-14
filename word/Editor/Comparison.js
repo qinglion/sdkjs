@@ -42,6 +42,71 @@
     EXCLUDED_PUNCTUATION[160] = true;
     //EXCLUDED_PUNCTUATION[63] = true;
 
+	function getChanges(arrOriginalTextElements, arrRevisedTextElements, comparison, oMainParent, oRevisedParent) {
+		let arrTextPrChanges = [];
+		if (comparison.options.formatting) {
+			const oTextPrChangeCollector = new CTextPrChangeCollector(arrOriginalTextElements, arrRevisedTextElements, oMainParent, oRevisedParent, comparison.copyPr);
+			arrTextPrChanges = oTextPrChangeCollector.getTextPrChanges();
+		}
+
+		let arrReviewChanges = [];
+		if (comparison.needCheckReview) {
+			const oReviewChangeCollector = new CReviewChangeCollector(arrOriginalTextElements, arrRevisedTextElements, comparison.oComparisonMoveMarkManager, oMainParent, oRevisedParent, comparison.copyPr);
+			arrReviewChanges = oReviewChangeCollector.getReviewChanges();
+		}
+
+		let oCopyPr;
+		if (comparison.needCopyForResolveEqualWords) {
+			oCopyPr = comparison.copyPr;
+		}
+		const oCommentChangeCollector = new CCommentChangesCollector(arrOriginalTextElements, arrRevisedTextElements, oCopyPr, comparison.oCommentManager);
+		const arrCommentChanges = oCommentChangeCollector.getCommentChanges();
+
+		const oBookmarkChangeCollector = new CBookmarkChangesCollector(arrRevisedTextElements, oCopyPr);
+		const arrBookmarkChanges = oBookmarkChangeCollector.getBookmarkChanges();
+
+		const arrChanges = arrTextPrChanges.concat(arrReviewChanges, arrBookmarkChanges, arrCommentChanges);
+		return arrChanges.sort(function (a, b) {
+			if (a.elementIndex === b.elementIndex) {
+				if (b.innerElementIndex === a.innerElementIndex) {
+					return !!b.isStart - !!a.isStart;
+				}
+				return b.innerElementIndex - a.innerElementIndex;
+			}
+			return b.elementIndex - a.elementIndex;
+		});
+	}
+	function resolveTypesWithPartner(arrNodes, comparison) {
+		const arrMainElements = [];
+		const arrRevisedElements = [];
+		for (let i = 0; i < arrNodes.length; i += 1) {
+			const oNode = arrNodes[i];
+			const oMainElement = oNode.element;
+			const oRevisedElement = oNode.partner.element;
+
+			arrMainElements.push(oMainElement);
+			arrRevisedElements.push(oRevisedElement);
+		}
+		if (!arrMainElements.length) {
+			return;
+		}
+
+		const oFirstNode = arrNodes[0];
+		const oRevisedParent = oFirstNode.partner.par.element;
+		const oMainParent = oFirstNode.par.element;
+
+
+		const oNeedReviewWithUser = {};
+		const arrChanges = getChanges(arrMainElements, arrRevisedElements, comparison, oMainParent, oRevisedParent);
+
+		const oTextIterator = new CRunCollector(arrMainElements);
+
+		for (let i = 0; i < arrChanges.length; i += 1) {
+			const oChange = arrChanges[i];
+			oChange.apply(oTextIterator, comparison, oNeedReviewWithUser);
+		}
+		comparison.applyResolveTypes(oNeedReviewWithUser);
+	}
 	function WordCounter() {
 
 		this.mapWords = {};
@@ -737,69 +802,9 @@
             oParent.addChildNode(this);
         }
     }
-
-	function getChanges(arrOriginalTextElements, arrRevisedTextElements, comparison, oMainParent, oRevisedParent) {
-		const oTextPrChangeCollector = new CTextPrChangeCollector(arrOriginalTextElements, arrRevisedTextElements, oMainParent, oRevisedParent, comparison.copyPr);
-		const arrTextPrChanges = oTextPrChangeCollector.getTextPrChanges();
-
-		let arrReviewChanges = [];
-		if (comparison.needCheckReview) {
-			const oReviewChangeCollector = new CReviewChangeCollector(arrOriginalTextElements, arrRevisedTextElements, comparison.oComparisonMoveMarkManager, oMainParent, oRevisedParent, comparison.copyPr);
-			arrReviewChanges = oReviewChangeCollector.getReviewChanges();
-		}
-
-		let oCopyPr;
-		if (comparison.needCopyForResolveEqualWords) {
-			oCopyPr = comparison.copyPr;
-		}
-		const oCommentChangeCollector = new CCommentChangesCollector(arrOriginalTextElements, arrRevisedTextElements, oCopyPr, comparison.oCommentManager);
-		const arrCommentChanges = oCommentChangeCollector.getCommentChanges();
-
-		const oBookmarkChangeCollector = new CBookmarkChangesCollector(arrRevisedTextElements, oCopyPr);
-		const arrBookmarkChanges = oBookmarkChangeCollector.getBookmarkChanges();
-
-		const arrChanges = arrTextPrChanges.concat(arrReviewChanges, arrBookmarkChanges, arrCommentChanges);
-		return arrChanges.sort(function (a, b) {
-			if (a.elementIndex === b.elementIndex) {
-				if (b.innerElementIndex === a.innerElementIndex) {
-					return !!b.isStart - !!a.isStart;
-				}
-				return b.innerElementIndex - a.innerElementIndex;
-			}
-			return b.elementIndex - a.elementIndex;
-		});
-	}
-		function resolveTypesWithPartner(arrNodes, comparison) {
-			const arrMainElements = [];
-			const arrRevisedElements = [];
-			for (let i = 0; i < arrNodes.length; i += 1) {
-				const oNode = arrNodes[i];
-				const oMainElement = oNode.element;
-				const oRevisedElement = oNode.partner.element;
-
-				arrMainElements.push(oMainElement);
-				arrRevisedElements.push(oRevisedElement);
-			}
-			if (!arrMainElements.length) {
-				return;
-			}
-
-			const oFirstNode = arrNodes[0];
-			const oRevisedParent = oFirstNode.partner.par.element;
-			const oMainParent = oFirstNode.par.element;
-
-
-			const oNeedReviewWithUser = {};
-			const arrChanges = getChanges(arrMainElements, arrRevisedElements, comparison, oMainParent, oRevisedParent);
-
-			const oTextIterator = new CRunCollector(arrMainElements);
-
-			for (let i = 0; i < arrChanges.length; i += 1) {
-				const oChange = arrChanges[i];
-				oChange.apply(oTextIterator, comparison, oNeedReviewWithUser);
-			}
-			comparison.applyResolveTypes(oNeedReviewWithUser);
-		}
+		CNode.prototype.isSpaceText = function() {
+			return this.element instanceof CTextElement && this.element.isSpaceText();
+		};
 	CNode.prototype.resolveTypesWithPartner = function (comparison) {
 			if (this.partner && this.element instanceof CTextElement) {
 				resolveTypesWithPartner([this], comparison);
@@ -1139,7 +1144,7 @@
 
     CNode.prototype.applyInsertsToParagraph = function (comparison, aContentToInsert, idxOfChange) {
         const oChange = this.changes[idxOfChange];
-        if (oChange.remove.length > 0) {
+        if (oChange.remove.length > 0 && !comparison.isSkipWhitespaces(oChange.remove)) {
             this.applyInsertsToParagraphsWithRemove(comparison, aContentToInsert, idxOfChange);
         } else {
             this.applyInsertsToParagraphsWithoutRemove(comparison, aContentToInsert, idxOfChange);
@@ -1991,41 +1996,41 @@
 	    this.headersAndFooters = true;
 	    this.footNotes  = true;
 	    this.caseChanges = true;
+			this.formatting = true;
+			this.whiteSpace = true;
 
-        this.comments = true;
-        this.formatting = true;
-        this.whiteSpace = true;
+        this.comments = true
         this.fields = true;
 
-	    // this.insertionsAndDeletions = true;
+	    this.insertionsAndDeletions = true;
 	    // this.moves = true;
     }
-    // ComparisonOptions.prototype["asc_getInsertionsAndDeletions"] = ComparisonOptions.prototype.getInsertionsAndDeletions = function(){return this.insertionsAndDeletions;};
-    // ComparisonOptions.prototype["asc_getMoves"] = ComparisonOptions.prototype.getMoves = function(){return this.moves;};
-    ComparisonOptions.prototype["asc_getComments"] = ComparisonOptions.prototype.getComments = function(){return this.comments;};
-    ComparisonOptions.prototype["asc_getFormatting"] = ComparisonOptions.prototype.getFormatting = function(){return this.formatting;};
-    ComparisonOptions.prototype["asc_getCaseChanges"] = ComparisonOptions.prototype.getCaseChanges = function(){return this.caseChanges;};
-    ComparisonOptions.prototype["asc_getWhiteSpace"] = ComparisonOptions.prototype.getWhiteSpace = function(){return this.whiteSpace;};
-    ComparisonOptions.prototype["asc_getTables"] = ComparisonOptions.prototype.getTables = function(){this.tables;};
-    ComparisonOptions.prototype["asc_getHeadersAndFooters"] = ComparisonOptions.prototype.getHeadersAndFooters = function(){return this.headersAndFooters;};
-    ComparisonOptions.prototype["asc_getFootNotes"] = ComparisonOptions.prototype.getFootNotes = function(){return this.footNotes;};
-    ComparisonOptions.prototype["asc_getTextBoxes"] = ComparisonOptions.prototype.getTextBoxes = function(){return this.textBoxes;};
-    ComparisonOptions.prototype["asc_getFields"] = ComparisonOptions.prototype.getFields = function(){return this.fields;};
-    ComparisonOptions.prototype["asc_getWords"] = ComparisonOptions.prototype.getWords = function(){return  this.words;};
+    ComparisonOptions.prototype["asc_getInsertionsAndDeletions"] = ComparisonOptions.prototype.asc_getInsertionsAndDeletions = function(){return this.insertionsAndDeletions;};
+    // ComparisonOptions.prototype["asc_getMoves"] = ComparisonOptions.prototype.asc_getMoves = function(){return this.moves;};
+    ComparisonOptions.prototype["asc_getComments"] = ComparisonOptions.prototype.asc_getComments = function(){return this.comments;};
+    ComparisonOptions.prototype["asc_getFormatting"] = ComparisonOptions.prototype.asc_getFormatting = function(){return this.formatting;};
+    ComparisonOptions.prototype["asc_getCaseChanges"] = ComparisonOptions.prototype.asc_getCaseChanges = function(){return this.caseChanges;};
+    ComparisonOptions.prototype["asc_getWhiteSpace"] = ComparisonOptions.prototype.asc_getWhiteSpace = function(){return this.whiteSpace;};
+    ComparisonOptions.prototype["asc_getTables"] = ComparisonOptions.prototype.asc_getTables = function(){this.tables;};
+    ComparisonOptions.prototype["asc_getHeadersAndFooters"] = ComparisonOptions.prototype.asc_getHeadersAndFooters = function(){return this.headersAndFooters;};
+    ComparisonOptions.prototype["asc_getFootNotes"] = ComparisonOptions.prototype.asc_getFootNotes = function(){return this.footNotes;};
+    ComparisonOptions.prototype["asc_getTextBoxes"] = ComparisonOptions.prototype.asc_getTextBoxes = function(){return this.textBoxes;};
+    ComparisonOptions.prototype["asc_getFields"] = ComparisonOptions.prototype.asc_getFields = function(){return this.fields;};
+    ComparisonOptions.prototype["asc_getWords"] = ComparisonOptions.prototype.asc_getWords = function(){return  this.words;};
 
 
-    // ComparisonOptions.prototype["asc_putInsertionsAndDeletions"] = ComparisonOptions.prototype.putInsertionsAndDeletions = function(v){this.insertionsAndDeletions = v;};
-    // ComparisonOptions.prototype["asc_putMoves"] = ComparisonOptions.prototype.putMoves = function(v){this.moves = v;};
-    ComparisonOptions.prototype["asc_putComments"] = ComparisonOptions.prototype.putComments = function(v){this.comments = v;};
-    ComparisonOptions.prototype["asc_putFormatting"] = ComparisonOptions.prototype.putFormatting = function(v){this.formatting = v;};
-    ComparisonOptions.prototype["asc_putCaseChanges"] = ComparisonOptions.prototype.putCaseChanges = function(v){this.caseChanges = v;};
-    ComparisonOptions.prototype["asc_putWhiteSpace"] = ComparisonOptions.prototype.putWhiteSpace = function(v){this.whiteSpace = v;};
-    ComparisonOptions.prototype["asc_putTables"] = ComparisonOptions.prototype.putTables = function(v){this.tables = v;};
-    ComparisonOptions.prototype["asc_putHeadersAndFooters"] = ComparisonOptions.prototype.putHeadersAndFooters = function(v){this.headersAndFooters = v;};
-    ComparisonOptions.prototype["asc_putFootNotes"] = ComparisonOptions.prototype.putFootNotes = function(v){this.footNotes = v;};
-    ComparisonOptions.prototype["asc_putTextBoxes"] = ComparisonOptions.prototype.putTextBoxes = function(v){this.textBoxes = v;};
-    ComparisonOptions.prototype["asc_putFields"] = ComparisonOptions.prototype.putFields = function(v){this.fields = v;};
-    ComparisonOptions.prototype["asc_putWords"] = ComparisonOptions.prototype.putWords = function(v){this.words = v;};
+    ComparisonOptions.prototype["asc_putInsertionsAndDeletions"] = ComparisonOptions.prototype.asc_putInsertionsAndDeletions = function(v){this.insertionsAndDeletions = v;};
+    // ComparisonOptions.prototype["asc_putMoves"] = ComparisonOptions.prototype.asc_putMoves = function(v){this.moves = v;};
+    ComparisonOptions.prototype["asc_putComments"] = ComparisonOptions.prototype.asc_putComments = function(v){this.comments = v;};
+    ComparisonOptions.prototype["asc_putFormatting"] = ComparisonOptions.prototype.asc_putFormatting = function(v){this.formatting = v;};
+    ComparisonOptions.prototype["asc_putCaseChanges"] = ComparisonOptions.prototype.asc_putCaseChanges = function(v){this.caseChanges = v;};
+    ComparisonOptions.prototype["asc_putWhiteSpace"] = ComparisonOptions.prototype.asc_putWhiteSpace = function(v){this.whiteSpace = v;};
+    ComparisonOptions.prototype["asc_putTables"] = ComparisonOptions.prototype.asc_putTables = function(v){this.tables = v;};
+    ComparisonOptions.prototype["asc_putHeadersAndFooters"] = ComparisonOptions.prototype.asc_putHeadersAndFooters = function(v){this.headersAndFooters = v;};
+    ComparisonOptions.prototype["asc_putFootNotes"] = ComparisonOptions.prototype.asc_putFootNotes = function(v){this.footNotes = v;};
+    ComparisonOptions.prototype["asc_putTextBoxes"] = ComparisonOptions.prototype.asc_putTextBoxes = function(v){this.textBoxes = v;};
+    ComparisonOptions.prototype["asc_putFields"] = ComparisonOptions.prototype.asc_putFields = function(v){this.fields = v;};
+    ComparisonOptions.prototype["asc_putWords"] = ComparisonOptions.prototype.asc_putWords = function(v){this.words = v;};
 
 
     function CDocumentComparison(oOriginalDocument, oRevisedDocument, oOptions)
@@ -2050,6 +2055,7 @@
         this.oComparisonMoveMarkManager = new CMoveMarkComparisonManager();
 		this.oBookmarkManager = new CComparisonBookmarkManager(oOriginalDocument, oRevisedDocument);
 		this.oCommentManager = new CComparisonCommentManager(this);
+		this.complexParaFieldStack = [];
 
 		this.isWordsByOneSymbol = false;
 
@@ -2578,14 +2584,29 @@
 
 	CDocumentComparison.prototype.applyResolveTypes = function () {};
 
+	CDocumentComparison.prototype.isSkipWhitespaces = function(arrNodes) {
+		if (this.options.whiteSpace) {
+			return false;
+		}
+
+		for (let i = 0; i < arrNodes.length; i++) {
+			const oNode = arrNodes[i];
+			if (!oNode.isSpaceText()) {
+				return false;
+
+			}
+		}
+		return true;
+	};
 	CDocumentComparison.prototype.applyChangesToParagraph = function(oNode)
 	{
 		oNode.changes.sort(function(c1, c2){return c2.anchor.index - c1.anchor.index});
 		let nLastIndex = oNode.children.length - 1;
 		for(let i = 0; i < oNode.changes.length; ++i)
 		{
+			const oChange = oNode.changes[i];
 			let arrResult = [];
-			for (let j = nLastIndex; j >= oNode.changes[i].anchor.index; j -= 1)
+			for (let j = nLastIndex; j >= oChange.anchor.index; j -= 1)
 			{
 				const oChild = oNode.children[j];
 				if (oChild.partner && oChild.element instanceof CTextElement) {
@@ -2599,12 +2620,12 @@
 				resolveTypesWithPartner(arrResult, this);
 			}
 			this.executeWithCheckInsertAndRemove(function () {
-				const aContentToInsert = oNode.getArrOfInsertsFromChanges(i, this);
+				const aContentToInsert = this.isSkipWhitespaces(oChange.insert) ? [] : oNode.getArrOfInsertsFromChanges(i, this);
 				//handle removed elements
 				oNode.applyInsertsToParagraph(this, aContentToInsert, i);
-			}.bind(this), oNode.changes[i]);
+			}.bind(this), oChange);
 
-			nLastIndex = oNode.changes[i].anchor.index - 1;
+			nLastIndex = oChange.anchor.index - 1;
 		}
 		let arrResult = [];
 		for (let j = nLastIndex; j >= 0; j -= 1)
@@ -4265,7 +4286,7 @@
 	};
 
     window['AscCommonWord']["CompareBinary"] =  window['AscCommonWord'].CompareBinary = CompareBinary;
-    window['AscCommonWord']["ComparisonOptions"] = window['AscCommonWord'].ComparisonOptions = ComparisonOptions;
+    window['Asc']["ComparisonOptions"] = window['Asc'].ComparisonOptions = ComparisonOptions;
     window['AscCommonWord']['CompareDocuments'] = CompareDocuments;
     window['AscCommonWord'].CDocumentComparison = CDocumentComparison;
     window['AscCommonWord'].CNode = CNode;

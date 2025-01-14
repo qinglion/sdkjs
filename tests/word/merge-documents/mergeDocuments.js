@@ -2773,7 +2773,7 @@ const comments = [
 
 function merge(oMainDocument, oRevisedDocument, fCallback)
 {
-	const oMerge = new AscCommonWord.CDocumentMerge(oMainDocument, oRevisedDocument, new AscCommonWord.ComparisonOptions());
+	const oMerge = new AscCommonWord.CDocumentMerge(oMainDocument, oRevisedDocument, new Asc.ComparisonOptions());
 	const fOldMergeCallback = oMerge.applyLastMergeCallback;
 	oMerge.applyLastMergeCallback = function ()
 	{

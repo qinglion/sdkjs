@@ -381,13 +381,14 @@
 								oChildNode.resolveTypesWithPartner(this);
 							}
             }
-            if (currentChangeId < oNode.changes.length && oNode.changes[currentChangeId].anchor.index === i) {
-                const aContentToInsert = oNode.getArrOfInsertsFromChanges(currentChangeId, this);
+						const oChange = oNode.changes[currentChangeId];
+            if (oChange && oChange.anchor.index === i) {
+                const aContentToInsert = this.isSkipWhitespaces(oChange.insert) ? [] : oNode.getArrOfInsertsFromChanges(currentChangeId, this); // todo: check skip on symbol comparing
                 //handle removed elements
                 oNode.applyInsertsToParagraph(this, aContentToInsert, currentChangeId);
                 currentChangeId += 1
             }
-            if (currentChangeId < oNode.changes.length && oNode.changes[currentChangeId].anchor.index > i) {
+            if (oChange && oChange.anchor.index > i) {
                 currentChangeId += 1;
             }
         }
@@ -998,7 +999,7 @@
         this.revisedDocument = oRevisedDocument;
         this.options = oOptions;
         this.api = oOriginalDocument.GetApi();
-        this.comparison = new CDocumentMergeComparison(oOriginalDocument, oRevisedDocument, oOptions ? oOptions : new AscCommonWord.ComparisonOptions());
+        this.comparison = new CDocumentMergeComparison(oOriginalDocument, oRevisedDocument, oOptions ? oOptions : new Asc.ComparisonOptions());
         this.oldTrackRevisions = false;
     }
 
@@ -1070,7 +1071,7 @@
         }, this, []);
 	    oDoc1.SetTrackRevisions(oldTrackRevisions);
         if (oDoc2) {
-            const oMerge = new AscCommonWord.CDocumentMerge(oDoc1, oDoc2, oOptions ? oOptions : new AscCommonWord.ComparisonOptions());
+            const oMerge = new AscCommonWord.CDocumentMerge(oDoc1, oDoc2, oOptions ? oOptions : new Asc.ComparisonOptions());
             oMerge.merge();
         } else {
             AscCommon.pptx_content_loader.End_UseFullUrl();
