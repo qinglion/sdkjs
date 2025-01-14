@@ -5114,21 +5114,32 @@ function CThumbnailsManager(editorPage)
 	};
 
 	// draw
-	this.ShowPage = function(pageNum)
-	{
-		var y1 = this.m_arrPages[pageNum].top - this.const_border_w;
-		var y2 = this.m_arrPages[pageNum].bottom + this.const_border_w;
+	this.ShowPage = function (pageNum) {
+		const scrollApi = this.m_oWordControl.m_oScrollThumbApi;
+		if (!scrollApi) return;
 
-		if (!this.m_oWordControl.m_oScrollThumbApi)
-			return;
+		let startCoord, endCoord, visibleAreaSize, scrollTo, scrollBy;
+		if (this.m_oWordControl.isHorizontalThumbnails) {
+			startCoord = this.m_arrPages[pageNum].left - this.const_border_w;
+			endCoord = this.m_arrPages[pageNum].right + this.const_border_w;
+			visibleAreaSize = this.m_oWordControl.m_oThumbnails.HtmlElement.width;
 
-		if (y1 < 0)
-		{
-			var _sizeH = y2 - y1;
-			this.m_oWordControl.m_oScrollThumbApi.scrollToY(pageNum * _sizeH + (pageNum + 1) * this.const_border_w);
-		} else if (y2 > this.m_oWordControl.m_oThumbnails.HtmlElement.height)
-		{
-			this.m_oWordControl.m_oScrollThumbApi.scrollByY(y2 - this.m_oWordControl.m_oThumbnails.HtmlElement.height);
+			scrollTo = scrollApi.scrollToX.bind(scrollApi);
+			scrollBy = scrollApi.scrollByX.bind(scrollApi);
+		} else {
+			startCoord = this.m_arrPages[pageNum].top - this.const_border_w;
+			endCoord = this.m_arrPages[pageNum].bottom + this.const_border_w;
+			visibleAreaSize = this.m_oWordControl.m_oThumbnails.HtmlElement.height;
+
+			scrollTo = scrollApi.scrollToY.bind(scrollApi);
+			scrollBy = scrollApi.scrollByY.bind(scrollApi);
+		}
+
+		if (startCoord < 0) {
+			const size = endCoord - startCoord;
+			scrollTo(pageNum * size + (pageNum + 1) * this.const_border_w);
+		} else if (endCoord > visibleAreaSize) {
+			scrollBy(endCoord - visibleAreaSize);
 		}
 	};
 
