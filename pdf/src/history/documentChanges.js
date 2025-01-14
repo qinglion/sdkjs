@@ -564,8 +564,7 @@ CChangesPDFDocumentDrawingsContent.prototype.Undo = function()
             oDocument.drawings.splice(oDocument.drawings.indexOf(oItem), 1);
             oPage.drawings.splice(this.Pos, 1);
 
-            oItem.parentPage = oPage;
-            oItem._page = -1;
+            oItem.parent = oPage;
             oItem.selectStartPage = -1;
 
             oViewer.DrawingObjects.resetSelection();
@@ -580,8 +579,7 @@ CChangesPDFDocumentDrawingsContent.prototype.Undo = function()
             oDocument.drawings.push(oItem);
             oPage.drawings.splice(this.Pos, 0, oItem);
 
-            oItem.parentPage = oPage;
-            oItem._page = oPage.GetIndex();
+            oItem.parent = oPage;
             oItem.selectStartPage = oItem._page;
 
             oViewer.DrawingObjects.resetSelection();
@@ -608,8 +606,7 @@ CChangesPDFDocumentDrawingsContent.prototype.Redo = function()
             oDocument.drawings.push(oItem);
             oPage.drawings.splice(this.Pos, 0, oItem);
 
-            oItem.parentPage = oPage;
-            oItem._page = oPage.GetIndex();
+            oItem.parent = oPage;
             oItem.selectStartPage = oItem._page;
 
             oViewer.DrawingObjects.resetSelection();
@@ -625,8 +622,7 @@ CChangesPDFDocumentDrawingsContent.prototype.Redo = function()
             oDocument.drawings.splice(oDocument.drawings.indexOf(oItem), 1);
             oPage.drawings.splice(this.Pos, 1);
 
-            oItem.parentPage = null;
-            oItem._page = -1;
+            oItem.parent = null;
             oItem.selectStartPage = -1;
             
             oViewer.DrawingObjects.resetSelection();
@@ -672,8 +668,7 @@ CChangesPDFDocumentDrawingsContent.prototype.private_InsertInArrayLoad = functio
         let drawingsArray = oPage.drawings;
         nPos = Math.min(nPos, drawingsArray.length);
         drawingsArray.splice(nPos, 0, oItem);
-        oItem.parentPage = oPage;
-        oItem._page = oPage.GetIndex();
+        oItem.parent = oPage;
         oItem.selectStartPage = oItem._page;
 
         oViewer.DrawingObjects.resetSelection();
@@ -713,8 +708,7 @@ CChangesPDFDocumentDrawingsContent.prototype.private_RemoveInArrayLoad = functio
         if (indexInDrawingsArray !== -1)
             drawingsArray.splice(indexInDrawingsArray, 1);
 
-        oItem.parentPage = null;
-        oItem._page = -1;
+        oItem.parent = null;
         oItem.selectStartPage = -1;
 
         oViewer.DrawingObjects.resetSelection();

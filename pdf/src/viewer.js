@@ -204,10 +204,10 @@
         }
 
 		this.drawings.splice(nPos, 0, oDrawing);
+        oDrawing.SetParentPage(this);
+
 		AscCommon.History.Add(new CChangesPDFDocumentDrawingsContent(this, nPos, [oDrawing], true));
 
-		oDrawing.SetPage(this.GetIndex());
-        oDrawing.SetParentPage(this);
 		this.RedrawDrawings();
 	};
 	CPageInfo.prototype.RemoveDrawing = function(sId) {
@@ -230,9 +230,9 @@
         }
 
         this.annots.splice(nPos, 0, oAnnot);
+        oAnnot.SetParentPage(this);
 
         AscCommon.History.Add(new CChangesPDFDocumentAnnotsContent(this, nPos, [oAnnot], true));
-		oAnnot.SetParentPage(this);
 		this.RedrawAnnots();
 	};
 	CPageInfo.prototype.RemoveAnnot = function(sId) {
@@ -255,9 +255,9 @@
         }
 
 		this.fields.splice(nPos, 0, oField);
+		oField.SetParentPage(this);
 
         AscCommon.History.Add(new CChangesPDFDocumentFieldsContent(this, nPos, [oField], true));
-		oField.SetParentPage(this);
 		this.RedrawForms();
 	};
 	CPageInfo.prototype.RemoveField = function(sId) {
@@ -3268,7 +3268,7 @@
 			return landscapeAngles.includes(angle);
 		};
 		this.Get_PageLimits = function(nPage) {
-			let oPage = this.file.pages[nPage];
+			let oPage = this.file.pages[nPage] || this.file.pages[0];
 
 			return {
 				X: 0,
