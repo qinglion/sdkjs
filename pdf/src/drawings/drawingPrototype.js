@@ -180,39 +180,38 @@
                     for (let index = 0; index < aAnchored.length; ++index) {
                         aAnchored[index].Draw_Selection();
                     }
+                }
+            }
+
+            let aSelectionRanges = oDrawSelectionState.getSelectionRanges();
+            for (let iSel = 0; iSel < aSelectionRanges.length; ++iSel) {
+                let x = aSelectionRanges[iSel].x;
+                let w = aSelectionRanges[iSel].w;
+                let y = aSelectionRanges[iSel].y;
+                let h = aSelectionRanges[iSel].h;
+                
+                if (oPara.CalculatedFrame) {
+                    let Frame_X_min = oPara.CalculatedFrame.L2;
+                    let Frame_Y_min = oPara.CalculatedFrame.T2;
+                    let Frame_X_max = oPara.CalculatedFrame.L2 + oPara.CalculatedFrame.W2;
+                    let Frame_Y_max = oPara.CalculatedFrame.T2 + oPara.CalculatedFrame.H2;
                     
-                    let aSelectionRanges = oDrawSelectionState.getSelectionRanges();
-                    for (let iSel = 0; iSel < aSelectionRanges.length; ++iSel) {
-                        let x = aSelectionRanges[iSel].x;
-                        let w = aSelectionRanges[iSel].w;
-                        let y = aSelectionRanges[iSel].y;
-                        let h = aSelectionRanges[iSel].h;
-                        
-                        if (oPara.CalculatedFrame) {
-                            let Frame_X_min = oPara.CalculatedFrame.L2;
-                            let Frame_Y_min = oPara.CalculatedFrame.T2;
-                            let Frame_X_max = oPara.CalculatedFrame.L2 + oPara.CalculatedFrame.W2;
-                            let Frame_Y_max = oPara.CalculatedFrame.T2 + oPara.CalculatedFrame.H2;
-                            
-                            x = Math.min(Math.max(Frame_X_min, x), Frame_X_max);
-                            y = Math.min(Math.max(Frame_Y_min, y), Frame_Y_max);
-                            w = Math.min(w, Frame_X_max - x);
-                            h = Math.min(h, Frame_Y_max - y);
-                        }
-                        
-                        let isTextMatrixUse = ((null != oDrDoc.TextMatrix) && !global_MatrixTransformer.IsIdentity(oDrDoc.TextMatrix));
-                        if (isTextMatrixUse) {
-                            let oPt1 = oDrDoc.TextMatrix.TransformPoint(x, y);            // левый верхний
-                            let oPt2 = oDrDoc.TextMatrix.TransformPoint(x + w, y);        // правый верхний
-                            let oPt3 = oDrDoc.TextMatrix.TransformPoint(x + w, y + h);    // правый нижний
-                            let oPt4 = oDrDoc.TextMatrix.TransformPoint(x, y + h);        // левый нижний
+                    x = Math.min(Math.max(Frame_X_min, x), Frame_X_max);
+                    y = Math.min(Math.max(Frame_Y_min, y), Frame_Y_max);
+                    w = Math.min(w, Frame_X_max - x);
+                    h = Math.min(h, Frame_Y_max - y);
+                }
+                
+                let isTextMatrixUse = ((null != oDrDoc.TextMatrix) && !global_MatrixTransformer.IsIdentity(oDrDoc.TextMatrix));
+                if (isTextMatrixUse) {
+                    let oPt1 = oDrDoc.TextMatrix.TransformPoint(x, y);            // левый верхний
+                    let oPt2 = oDrDoc.TextMatrix.TransformPoint(x + w, y);        // правый верхний
+                    let oPt3 = oDrDoc.TextMatrix.TransformPoint(x + w, y + h);    // правый нижний
+                    let oPt4 = oDrDoc.TextMatrix.TransformPoint(x, y + h);        // левый нижний
 
-                            let nKoeff = oViewer.getDrawingPageScale(nPage) * g_dKoef_pix_to_mm;
+                    let nKoeff = oViewer.getDrawingPageScale(nPage) * g_dKoef_pix_to_mm;
 
-                            oInfo.quads.push([oPt1.x / nKoeff, oPt1.y / nKoeff, oPt2.x / nKoeff, oPt2.y / nKoeff, oPt4.x / nKoeff, oPt4.y / nKoeff, oPt3.x / nKoeff, oPt3.y / nKoeff]);
-                        }
-
-                    }
+                    oInfo.quads.push([oPt1.x / nKoeff, oPt1.y / nKoeff, oPt2.x / nKoeff, oPt2.y / nKoeff, oPt4.x / nKoeff, oPt4.y / nKoeff, oPt3.x / nKoeff, oPt3.y / nKoeff]);
                 }
             }
         }
