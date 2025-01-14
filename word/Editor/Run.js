@@ -3713,30 +3713,41 @@ ParaRun.prototype.Recalculate_Range = function(PRS, ParaPr, Depth)
             if (PRS.ComplexFields.isHiddenFieldContent() && para_End !== ItemType && para_FieldChar !== ItemType)
             	continue;
 
-			if (para_InstrText === ItemType && !PRS.IsFastRecalculate())
+			if (para_InstrText === ItemType)
 			{
-				var oInstrText = Item;
-				if (!PRS.ComplexFields.isComplexFieldCode())
+				if (PRS.IsFastRecalculate())
 				{
-					if (AscCommon.IsSpace(Item.Value))
+					if (Item.GetReplacementItem())
 					{
-						Item     = new AscWord.CRunSpace(Item.Value);
-						ItemType = para_Space;
-						Item.Measure(g_oTextMeasurer, this.getCompiledPr());
+						Item = Item.GetReplacementItem();
+						ItemType = Item.Type;
 					}
-					else
-					{
-						// TODO: Пока для такого текста не шейпим по-нормальному, а как по-старому по одному отдельному символу
-						Item     = new AscWord.CRunText(Item.Value);
-						ItemType = para_Text;
-						AscWord.ParagraphTextShaper.ShapeRunTextItem(Item, this.getCompiledPr());
-					}
-					
-					oInstrText.SetReplacementItem(Item);
 				}
 				else
 				{
-					oInstrText.SetReplacementItem(null);
+					var oInstrText = Item;
+					if (!PRS.ComplexFields.isComplexFieldCode())
+					{
+						if (AscCommon.IsSpace(Item.Value))
+						{
+							Item     = new AscWord.CRunSpace(Item.Value);
+							ItemType = para_Space;
+							Item.Measure(g_oTextMeasurer, this.getCompiledPr());
+						}
+						else
+						{
+							// TODO: Пока для такого текста не шейпим по-нормальному, а как по-старому по одному отдельному символу
+							Item     = new AscWord.CRunText(Item.Value);
+							ItemType = para_Text;
+							AscWord.ParagraphTextShaper.ShapeRunTextItem(Item, this.getCompiledPr());
+						}
+						
+						oInstrText.SetReplacementItem(Item);
+					}
+					else
+					{
+						oInstrText.SetReplacementItem(null);
+					}
 				}
 			}
 
