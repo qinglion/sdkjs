@@ -5462,7 +5462,6 @@ var CPresentation = CPresentation || function(){};
             let H = (_pageH - _y_mar - _b_mar);
             let oGrFrame = this.private_Create_TableGraphicFrame(5, 5, this.DefaultTableStyleId, W, H, _x_mar, _y_mar, this.Viewer.currentPage, true);
             oGrFrame.setBDeleted(true);
-            oGrFrame.SetPage(this.Viewer.currentPage);
             return oGrFrame.graphicObject;
         }, this, []);
     };

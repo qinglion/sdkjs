@@ -37,9 +37,6 @@
 	 * @constructor
     */
     function CPdfDrawingPrototype() {
-        this._page          = undefined;
-        this._apIdx         = undefined; // индекс объекта в файле
-
         this._isFromScan = false;   // флаг, что был прочитан из скана страницы 
 
         this._doc                   = undefined;
@@ -106,11 +103,13 @@
         return oRecalcData;
     };
     CPdfDrawingPrototype.prototype.SetParentPage = function(oParent) {
-        this.setParent(oParent);
+        this.parent = oParent;
     };
+    CPdfDrawingPrototype.prototype.setParent2 = function() {};
     CPdfDrawingPrototype.prototype.GetParentPage = function() {
         return this.parent;
     };
+    
     CPdfDrawingPrototype.prototype.GetSelectionQuads = function() {
         let oDoc        = this.GetDocument();
         let oViewer     = oDoc.Viewer;
@@ -264,37 +263,40 @@
         return this._doc;
     };
     CPdfDrawingPrototype.prototype.SetPage = function(nPage) {
-        let nCurPage = this.GetPage();
-        if (nPage == nCurPage)
-            return;
-
         let oViewer = editor.getDocumentRenderer();
         let oDoc    = this.GetDocument();
+        
+        let oCurPage = this.GetParentPage();
+        let oNewPage = oDoc.GetPageInfo(nPage);
+        let nCurPage = oCurPage ? oCurPage.GetIndex() : -1;
+        
+        if (oNewPage == oCurPage)
+            return;
 
         AscCommon.History.Add(new CChangesPDFDrawingPage(this, nCurPage, nPage));
 
         // initial set
-        if (nCurPage == undefined) {
-            this._page = nPage;
+        if (oCurPage == null) {
+            this.SetParentPage(oNewPage);
             return;
         }
         
-        let nCurIdxOnPage = oViewer.pagesInfo.pages[nCurPage] && oViewer.pagesInfo.pages[nCurPage].drawings ? oViewer.pagesInfo.pages[nCurPage].drawings.indexOf(this) : -1;
-        if (oViewer.pagesInfo.pages[nPage]) {
+        let nCurIdxOnPage = oCurPage && oCurPage.drawings ? oCurPage.drawings.indexOf(this) : -1;
+        if (oNewPage) {
             if (oDoc.drawings.indexOf(this) != -1) {
                 if (nCurIdxOnPage != -1) {
-                    oViewer.pagesInfo.pages[nCurPage].drawings.splice(nCurIdxOnPage, 1);
+                    oCurPage.drawings.splice(nCurIdxOnPage, 1);
                 }
     
-                if (this.IsUseInDocument() && oViewer.pagesInfo.pages[nPage].drawings.indexOf(this) == -1)
-                    oViewer.pagesInfo.pages[nPage].drawings.push(this);
+                if (this.IsUseInDocument() && oNewPage.drawings.indexOf(this) == -1)
+                    oNewPage.drawings.push(this);
 
                 // добавляем в перерисовку исходную страницу
                 this.AddToRedraw();
             }
 
-            this._page = nPage;
             this.selectStartPage = nPage;
+            this.SetParentPage(oViewer.pagesInfo.pages[nPage]);
             this.AddToRedraw();
         }
     };
@@ -302,7 +304,12 @@
         if (this.group)
             return this.group.GetPage();
         
-        return this._page;
+        let oParentPage = this.GetParentPage();
+        if (!oParentPage) {
+            return -1;
+        }
+
+        return oParentPage.GetIndex();
     };
     
     CPdfDrawingPrototype.prototype.AddToRedraw = function() {
