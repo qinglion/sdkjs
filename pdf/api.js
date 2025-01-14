@@ -2135,13 +2135,6 @@
 				}
 
 				oDoc.UpdateInterface();
-				if (Class.IsAnnot && Class.IsAnnot()) {
-					// если аннотация коммент или аннотация с комментом то блокируем и комментарий тоже
-					if (Class.IsComment() || (Class.IsUseContentAsComment() && Class.GetContents() != undefined) || Class.GetReply(0) != null) {
-						t.sync_UnLockComment(Class.Get_Id());
-					}
-				}
-
 			} else {
 				AscCommon.CollaborativeEditing.Remove_NeedLock(Id);
 			}
