@@ -326,8 +326,10 @@ CPDFCollaborativeEditing.prototype.Release_Locks = function() {
         }
     }
 };
-CPDFCollaborativeEditing.prototype.PostUndo = function(state, changes) {
-    this.m_oLogicDocument.sendEvent("asc_onUndoRedoInCollaboration");
+CPDFCollaborativeEditing.prototype._PreUndo = function() {
+    return null;
+};
+CPDFCollaborativeEditing.prototype._PostUndo = function(state, changes) {
 };
 
 //--------------------------------------------------------export----------------------------------------------------
