@@ -305,7 +305,7 @@
             return this.group.GetPage();
         
         let oParentPage = this.GetParentPage();
-        if (!oParentPage) {
+        if (!oParentPage || !(oParentPage instanceof AscPDF.CPageInfo)) {
             return -1;
         }
 
