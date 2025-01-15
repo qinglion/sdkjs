@@ -32,7 +32,7 @@
 
 $(function () {
 	
-	AscCommon.CustomXmlManager.prototype.isSupported = function()
+	AscWord.CustomXmlManager.prototype.isSupported = function()
 	{
 		return true;
 	};
