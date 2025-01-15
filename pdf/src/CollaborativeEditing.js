@@ -326,6 +326,9 @@ CPDFCollaborativeEditing.prototype.Release_Locks = function() {
         }
     }
 };
+CPDFCollaborativeEditing.prototype.PostUndo = function(state, changes) {
+    this.m_oLogicDocument.sendEvent("asc_onUndoRedoInCollaboration");
+};
 
 //--------------------------------------------------------export----------------------------------------------------
 window['AscPDF'] = window['AscPDF'] || {};

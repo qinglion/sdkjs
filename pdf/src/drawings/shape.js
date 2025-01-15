@@ -86,6 +86,11 @@
         if (this.IsNeedRecalc() == false)
             return;
 
+        let oContent = this.GetDocContent();
+        if (oContent) {
+            oContent.RecalculateCurPos();
+        }
+
         this.recalculateTransform();
         this.updateTransformMatrix();
         this.recalculate();
