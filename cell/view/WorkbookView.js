@@ -3924,8 +3924,8 @@
     var printType = adjustPrint.asc_getPrintType();
 
 	var i;
-    if (printType === Asc.c_oAscPrintType.ActiveSheets) {
-		var activeSheetsArray = adjustPrint.asc_getActiveSheetsArray();
+    let activeSheetsArray = printType !== Asc.c_oAscPrintType.Selection ? adjustPrint.asc_getActiveSheetsArray() : null;
+    if (printType === Asc.c_oAscPrintType.ActiveSheets || activeSheetsArray) {
 		if (activeSheetsArray) {
 			for (i = 0; i < activeSheetsArray.length; ++i) {
 				if(adjustPrint.isOnlyFirstPage && i !== 0) {
