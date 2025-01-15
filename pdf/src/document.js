@@ -5908,7 +5908,11 @@ var CPresentation = CPresentation || function(){};
     CPDFDoc.prototype.UpdateRulers = function() {};
     CPDFDoc.prototype.UpdateSelection = function() {};
     CPDFDoc.prototype.StopRecalculate = function() {};
-    CPDFDoc.prototype.StopSpellCheck = function() {};    CPDFDoc.prototype.Get_TableStyleForPara = function() {
+    CPDFDoc.prototype.StopSpellCheck = function() {};
+    CPDFDoc.prototype.Check_GraphicFrameRowHeight = function(oGrFrame) {
+        return this.GetController().Check_GraphicFrameRowHeight(oGrFrame);
+    };
+    CPDFDoc.prototype.Get_TableStyleForPara = function() {
         return null;
     };
     CPDFDoc.prototype.Get_ShapeStyleForPara = function() {
