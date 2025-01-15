@@ -15018,8 +15018,16 @@ function RangeDataManagerElem(bbox, data)
 				this.DefinedNames[i].parent = this;
 			}
 		}
-		this.initWorkbook();
+
+		let api = Asc.editor || editor;
+		let originalWb = api.wbModel;
+		originalWb && originalWb.dependencyFormulas.lockRecal();
+
 		this.initWorksheetsFromSheetDataSet();
+		this.initWorkbook();
+		this.prepareDefNames();
+
+		originalWb && originalWb.dependencyFormulas.unlockRecal();
 
 		return res;
 	};
@@ -15344,6 +15352,36 @@ function RangeDataManagerElem(bbox, data)
 		}
 	};
 
+	ExternalReference.prototype.prepareDefNames = function () {
+		let wb = this.getWb();
+		for (let i in wb.dependencyFormulas.defNames.wb) {
+			let defName = wb.dependencyFormulas.defNames.wb[i];
+			defName.parsedRef.parse();
+		}
+	};
+
+	ExternalReference.prototype.initWorksheets = function () {
+		if (this.SheetNames) {
+			for (var i = 0; i < this.SheetNames.length; i++) {
+				this.initWorksheet(this.SheetNames[i]);
+			}
+		}
+	};
+	
+	ExternalReference.prototype.initWorksheet = function (sheetName) {
+		var ws = this.worksheets[sheetName];
+		if (!this.worksheets[sheetName]) {
+			var wb = this.getWb();
+			if (!wb) {
+				wb = new AscCommonExcel.Workbook(null, window["Asc"]["editor"]);
+			}
+			ws = new AscCommonExcel.Worksheet(wb);
+			ws.sName = sheetName;
+
+			this.worksheets[sheetName] = ws;
+		}
+	};
+
 	ExternalReference.prototype.initWorksheetFromSheetDataSet = function (sheetName) {
 		var sheetDataSetIndex = this.getSheetByName(sheetName);
 		if (null !== sheetDataSetIndex) {
@@ -15351,11 +15389,15 @@ function RangeDataManagerElem(bbox, data)
 			var sheetDataSet = this.SheetDataSet[sheetDataSetIndex];
 			var ws = this.worksheets[sheetName];
 			if (!this.worksheets[sheetName]) {
-				var wb = new AscCommonExcel.Workbook(null, window["Asc"]["editor"]);
-				ws = new AscCommonExcel.Worksheet(wb);
+				var wb = this.getWb();
+				if (!wb) {
+					wb = new AscCommonExcel.Workbook(null, window["Asc"]["editor"]);
+				}
+				ws = new AscCommonExcel.Worksheet(wb, wb.aWorksheets.length);
 				ws.sName = sheetName;
 
 				this.worksheets[sheetName] = ws;
+				wb.aWorksheets.push(ws);
 			}
 
 
@@ -15471,7 +15513,7 @@ function RangeDataManagerElem(bbox, data)
 
 	ExternalReference.prototype.getWb = function () {
 		if (this.worksheets) {
-			for (var i in this.worksheets) {
+			for (let i in this.worksheets) {
 				//если есть this.worksheets, если нет - проверить и обработать
 				if (this.worksheets[i]) {
 					return this.worksheets[i].workbook;
