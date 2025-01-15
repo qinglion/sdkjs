@@ -805,7 +805,8 @@
 					}
 					case AscCommon.c_oEditorId.Spreadsheet:
 					{
-						if (this.Api.isStartAddShape === true)
+						if (this.Api.isStartAddShape === true ||
+							this.Api.isInkDrawerOn())
 						{
 							this.desktopTouchState = false;
 						}
@@ -813,7 +814,8 @@
 					}
 					case AscCommon.c_oEditorId.Presentation:
 					{
-						if (this.Api.isStartAddShape === true)
+						if (this.Api.isStartAddShape === true ||
+							this.Api.isInkDrawerOn())
 						{
 							this.desktopTouchState = false;
 						}
