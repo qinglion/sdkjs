@@ -952,13 +952,13 @@
     CAnnotationFreeText.prototype.onMouseDown = function(x, y, e) {
         let oDoc                = this.GetDocument();
         let oController         = oDoc.GetController();
-        this.selectStartPage    = this.GetPage();
         
         if (this.IsInTextBox() == false) {
             if (this.selectedObjects.length <= this.spTree.length - 1) {
                 let _t = this;
                 // селектим все фигуры в группе (кроме перпендикулярной линии) если до сих пор не заселекчены
                 oController.selection.groupSelection = this;
+                this.select(oController, this.selectStartPage);
                 this.selectedObjects.length = 0;
 
                 this.spTree.forEach(function(sp) {

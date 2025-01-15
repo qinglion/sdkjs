@@ -1285,7 +1285,9 @@
                     this.lastSelectedObject = object;
                 }
                 this.checkShowMediaControlOnSelect();
-                oDoc.SetMouseDownObject(this.selectedObjects[0], this.selectedObjects.length == 0);
+                if (!object.IsFreeText || !object.IsFreeText() || !object.IsInTextBox()) {
+                    oDoc.SetMouseDownObject(object, this.selectedObjects.length == 0);
+                }
                 return;
             }
         }
