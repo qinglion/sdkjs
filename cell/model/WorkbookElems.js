@@ -15018,8 +15018,8 @@ function RangeDataManagerElem(bbox, data)
 				this.DefinedNames[i].parent = this;
 			}
 		}
-		this.initWorksheetsFromSheetDataSet();
 		this.initWorkbook();
+		this.initWorksheetsFromSheetDataSet();
 
 		return res;
 	};
@@ -15363,6 +15363,9 @@ function RangeDataManagerElem(bbox, data)
 			if (!sheetDataSet || !sheetDataSet.Row) {
 				return;
 			}
+			let api = Asc.editor || editor;
+			let originalWb = api.wbModel;
+			let isLockRecalc = false;
 			for (var i = 0; i < sheetDataSet.Row.length; i++) {
 				if (!sheetDataSet.Row[i] || !sheetDataSet.Row[i].Cell) {
 					continue;
@@ -15376,11 +15379,18 @@ function RangeDataManagerElem(bbox, data)
 					// this.CellValue = null;
 					AscFormat.ExecuteNoHistory(function(){
 						AscCommonExcel.executeInR1C1Mode(false, function () {
+							if (!isLockRecalc) {
+								originalWb && originalWb.dependencyFormulas.lockRecal();
+								isLockRecalc = true;
+							}
 							var range = ws.getRange2(sheetDataSet.Row[i].Cell[j].Ref);
 							range.setValue(sheetDataSet.Row[i].Cell[j].CellValue);
 						});
 					});
 				}
+			}
+			if (isLockRecalc) {
+				originalWb && originalWb.dependencyFormulas.unlockRecal();
 			}
 		}
 	};
@@ -15391,11 +15401,36 @@ function RangeDataManagerElem(bbox, data)
 			for (let i = 0; i < this.DefinedNames.length; i++) {
 				let defName = this.DefinedNames[i];
 				let ws = this.getSheetByIndex(defName.SheetId);
+				if (!ws && defName.RefersTo) {
+					// try to find sheetname by RefersTo string
+					let exclamationMarkIndex = defName.RefersTo.lastIndexOf("!");
+					if (exclamationMarkIndex !== -1) {
+						let sheetNamePart = defName.RefersTo.slice(0, exclamationMarkIndex);
+						// remove equal sign
+						if (sheetNamePart[0] === "=") {
+							sheetNamePart = sheetNamePart.substring(1);
+						}
+
+						// regex to find string enclosed in single qoutes
+						let regex = /^'(.*)'$/;
+						let match = regex.exec(sheetNamePart);
+						if (match && match[1]) {
+							sheetNamePart = match[1];
+						}
+
+						ws = this.worksheets[sheetNamePart];
+					}
+				}
+
 				if (ws != null) {
 					//on parse name3d use g_DefNameWorksheet
 					let RealDefNameWorksheet = AscCommonExcel.g_DefNameWorksheet;
 					AscCommonExcel.g_DefNameWorksheet = ws;
-					let oDefName = new Asc.asc_CDefName(defName.Name, defName.RefersTo);
+					let stringToParse;
+					if (defName && defName.RefersTo && defName.RefersTo[0] === "=") {
+						stringToParse = defName.RefersTo.substring(1);
+					}
+					let oDefName = new Asc.asc_CDefName(defName.Name, stringToParse ? stringToParse : defName.RefersTo);
 					wb.editDefinesNames(null, oDefName);
 					AscCommonExcel.g_DefNameWorksheet = RealDefNameWorksheet;	
 				}
