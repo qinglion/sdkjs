@@ -1726,7 +1726,8 @@ var CPresentation = CPresentation || function(){};
                     if (this.mouseDownAnnot.IsInTextBox()) {
                         this.SelectionSetEnd(AscCommon.global_mouseEvent.X, AscCommon.global_mouseEvent.Y, e);
                     }
-                    else if (oController.curState instanceof AscFormat.NullState) {
+                    // premove in group selection (inside freetext)
+                    else if (oController.curState instanceof AscFormat.NullState && oController.selectedObjects.length < 2) {
                         
                         this.mouseDownAnnot.onPreMove(AscCommon.global_mouseEvent.X, AscCommon.global_mouseEvent.Y, e)
                     }
