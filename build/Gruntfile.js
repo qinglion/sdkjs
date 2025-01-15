@@ -236,6 +236,12 @@ module.exports = function(grunt) {
 			src: ['src/engine/*'],
 			dest: path.join(deploy, 'pdf'),
 			name: 'pdf'
+		},
+		{
+			cwd: '../pdf/',
+			src: ['src/annotations/stamps.json'],
+			dest: path.join(deploy, 'pdf'),
+			name: 'pdf'
 		}
 	];
 	const configWord = configs.word['sdk'];
