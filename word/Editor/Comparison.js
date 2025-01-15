@@ -958,6 +958,9 @@
     };
 
     CNode.prototype.pushToArrInsertContentWithCopy = function (aContentToInsert, elem, comparison) {
+			if (elem instanceof AscCommon.ParaComment && !comparison.options.comments) {
+				return;
+			}
         const elemCopy = elem.Copy(false, comparison.copyPr);
         this.pushToArrInsertContent(aContentToInsert, elemCopy, comparison);
 				if (elem instanceof AscCommon.ParaComment)
@@ -1998,9 +2001,9 @@
 	    this.caseChanges = true;
 			this.formatting = true;
 			this.whiteSpace = true;
+	    this.comments = true;
 
-        this.comments = true
-        this.fields = true;
+      this.fields = true;
 
 	    this.insertionsAndDeletions = true;
 	    // this.moves = true;
@@ -2066,6 +2069,12 @@
 	    this.nInsertChangesType = reviewtype_Add;
 	    this.nRemoveChangesType = reviewtype_Remove;
     }
+		CDocumentComparison.prototype.skipCommentElementOnCopyParagraph = function (oParaComment) {
+			if (this.options.comments) {
+				return false;
+			}
+			return !this.oCommentManager.savedParaComments[oParaComment.Id];
+		}
 		CDocumentComparison.prototype.resolveConflicts = function(arrToInserts, arrToRemove, applyParagraph, nInsertPosition, bIsWordsByOneSymbol) {
 			if (arrToInserts.length === 0 || arrToRemove.length === 0) return;
 			arrToRemove.push(new AscCommonWord.ParaRun());
@@ -2426,6 +2435,9 @@
     CDocumentComparison.prototype.applyParagraphComparison = function (oOrigRoot, oRevisedRoot) {
         const aInsertContent = [];
         let nRemoveCount = 0;
+	    this.oCommentManager.generateSavedParaComments();
+			const bOldSkipFootnoteReference = this.copyPr.SkipFootnoteReference;
+	    this.copyPr.SkipFootnoteReference = false;
         for(let i = oOrigRoot.children.length - 1; i > -1 ; --i)
         {
             if(!oOrigRoot.children[i].partner)
@@ -2457,6 +2469,7 @@
         {
             this.insertNodesToDocContent(oOrigRoot.element, nRemoveCount, aInsertContent);
         }
+	    this.copyPr.SkipFootnoteReference = bOldSkipFootnoteReference;
     };
 
     CDocumentComparison.prototype.compareRoots = function(oRoot1, oRoot2)
@@ -3514,10 +3527,7 @@
     {
 	    this.oBookmarkManager.previousNode = null;
 	    this.oCommentManager.previousNode = null;
-        const NodeConstructor = this.getNodeConstructor();
-        const TextElementConstructor = this.getTextElementConstructor();
         const oRet = this.createNode(oElement, oParentNode);
-        const aLastWord = [];
         let oLastText = null;
         for(let i = 0; i < oElement.Content.length; ++i)
         {
@@ -3532,11 +3542,6 @@
                 {
                     oLastText.updateHash(oWordCounter, this);
                     this.createNode(oLastText, oRet);
-                }
-                if(aLastWord.length > 0)
-                {
-                    oWordCounter.update(aLastWord, this);
-                    aLastWord.length = 0;
                 }
                 oLastText = null;
                 this.createNode(oRun, oRet);
@@ -3562,16 +3567,28 @@
             }
 						else if (oRun instanceof AscCommon.ParaComment)
             {
-							const oComment = this.getComment(oRun.GetCommentId());
-	            const oElement = new CCommentElement(oComment, oRun);
-							if (oLastText)
-							{
-								this.oCommentManager.addToStack(oElement, oLastText.elements.length);
+							if (this.options.comments) {
+								const oComment = this.getComment(oRun.GetCommentId());
+								const oElement = new CCommentElement(oComment, oRun);
+								if (oLastText)
+								{
+									this.oCommentManager.addToStack(oElement, oLastText.elements.length);
+								}
+								else
+								{
+									this.oCommentManager.addToStack(oElement, 0);
+								}
+							} else {
+								this.oCommentManager.addToCheckSaveParaComment(oRun);
 							}
-							else
-							{
-								this.oCommentManager.addToStack(oElement, 0);
-							}
+            }
+						else if (!this.options.fields && (oRun instanceof AscCommonWord.ParaField)) {
+	            if(oLastText && oLastText.elements.length > 0)
+	            {
+		            oLastText.updateHash(oWordCounter, this);
+		            this.createNode(oLastText, oRet);
+	            }
+	            oLastText = null;
             }
             else
             {
@@ -3579,11 +3596,6 @@
 	            {
 		            oLastText.updateHash(oWordCounter, this);
 		            this.createNode(oLastText, oRet);
-	            }
-	            if (aLastWord.length > 0)
-	            {
-		            oWordCounter.update(aLastWord, this);
-		            aLastWord.length = 0;
 	            }
 	            oLastText = null;
 	            if (Array.isArray(oRun.Content))
@@ -3940,8 +3952,35 @@
 		this.mapChecked = {};
 		this.mapLink = {};
 		this.mapMergeLater = {};
+		this.checkSkipParaComment = {};
+		this.savedParaComments = {};
 	}
 
+	CComparisonCommentManager.prototype.addToCheckSaveParaComment = function (oParaComment) {
+		const sCommentId = oParaComment.GetCommentId();
+		if (!this.checkSkipParaComment[sCommentId]) {
+			this.checkSkipParaComment[sCommentId] = Array(2);
+		}
+		if (oParaComment.IsCommentStart()) {
+			this.checkSkipParaComment[sCommentId][0] = oParaComment;
+		} else {
+			this.checkSkipParaComment[sCommentId][1] = oParaComment;
+		}
+	};
+	CComparisonCommentManager.prototype.generateSavedParaComments = function () {
+		for (let sCommentId in this.checkSkipParaComment) {
+			const arrParaComments = this.checkSkipParaComment[sCommentId];
+			const oStartParaComment = arrParaComments[0];
+			const oEndParaComment = arrParaComments[1];
+			if (oStartParaComment && oEndParaComment) {
+				if (oStartParaComment.Paragraph === oEndParaComment.Paragraph && oStartParaComment.Parent === oEndParaComment.Parent) {
+					this.savedParaComments[oStartParaComment.Id] = true;
+					this.savedParaComments[oEndParaComment.Id] = true;
+				}
+			}
+		}
+		this.checkSkipParaComment = {};
+	}
 	CComparisonCommentManager.prototype.addToLink = function (sKey, sValue)
 	{
 		this.mapLink[sKey] = sValue;

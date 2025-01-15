@@ -65,13 +65,13 @@
 
 			this.applyInsert(aContentToInsert, arrSetRemoveReviewType, nInsertPosition, comparison, {needReverse: true});
 		};
-    CMergeComparisonNode.prototype.privateCompareElements = function (oNode, bCheckNeighbors) {
+    CMergeComparisonNode.prototype.privateCompareElements = function (oNode, bCheckNeighbors, oComparison) {
         const oElement1 = this.element;
         const oElement2 = oNode.element;
         if (oElement1.isReviewWord !== oElement2.isReviewWord) {
             return false;
         }
-        return CNode.prototype.privateCompareElements.call(this, oNode, bCheckNeighbors);
+        return CNode.prototype.privateCompareElements.call(this, oNode, bCheckNeighbors, oComparison);
     }
 
     CMergeComparisonNode.prototype.copyRunWithMockParagraph = function (oRun, mockParagraph, comparison) {
@@ -302,6 +302,7 @@
         this.copyPr = {
             CopyReviewPr: false,
             Comparison: this,
+	        SkipFootnoteReference: !oOptions.footNotes
         };
         this.bSaveCustomReviewType = true;
 				this.isWordsByOneSymbol = !!bIsWordsByOneSymbol;
@@ -706,7 +707,8 @@
             CopyReviewPr: false,
             Comparison: this,
             SkipUpdateInfo: true,
-            CheckComparisonMoveMarks: true
+            CheckComparisonMoveMarks: true,
+	        SkipFootnoteReference: !oOptions.footNotes
         };
     }
 
