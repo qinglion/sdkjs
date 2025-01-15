@@ -1177,6 +1177,7 @@ var CPresentation = CPresentation || function(){};
 
         this.SetGlobalHistory();
         this.Viewer.onUpdateOverlay();
+        this.UpdateInterfaceTracks();
     };
     CPDFDoc.prototype.SetMouseDownObject = function(oObject, bBlurActive) {
         if (!oObject) {
