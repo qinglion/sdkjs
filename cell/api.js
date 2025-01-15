@@ -7033,6 +7033,8 @@ var editor;
 			   _adjustPrint.asc_setStartPageIndex(_options["adjustOptions"]["startPageIndex"]);
 		   if (_options["adjustOptions"]["endPageIndex"])
 			   _adjustPrint.asc_setEndPageIndex(_options["adjustOptions"]["endPageIndex"]);
+		   if (_options["adjustOptions"]["activeSheetsArray"])
+			   _adjustPrint.asc_setActiveSheetsArray(_options["adjustOptions"]["activeSheetsArray"]);
 	   }
 
 	   _adjustPrint.asc_setPrintType(Asc.c_oAscPrintType.EntireWorkbook);
