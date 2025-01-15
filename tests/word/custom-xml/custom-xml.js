@@ -31,6 +31,11 @@
  */
 
 $(function () {
+	
+	AscCommon.CustomXmlManager.prototype.isSupported = function()
+	{
+		return true;
+	};
 
 	function MockZLibEngine ()
 	{
