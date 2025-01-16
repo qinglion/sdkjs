@@ -2638,8 +2638,8 @@ function CEditorPage(api)
 		 */
 		if (Asc.editor.isPdfEditor())
 		{
-			var bIsPrev = (oWordControl.m_oDrawingDocument.m_oDocumentRenderer.OnKeyDown(global_keyboardEvent) === true) ? false : true;
-			if (false === bIsPrev)
+			let ret = oWordControl.m_oDrawingDocument.m_oDocumentRenderer.OnKeyDown(global_keyboardEvent);
+			if (ret === keydownresult_PreventAll || ret === true)
 			{
 				e.preventDefault();
 			}

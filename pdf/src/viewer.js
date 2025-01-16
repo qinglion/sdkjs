@@ -3603,12 +3603,15 @@
 			let oDoc		= this.getPDFDoc();
 			let oDrDoc		= oDoc.GetDrawingDocument();
 
-			if (e.KeyCode === 112 && e.CtrlKey == true) {
-				editor.AddStampAnnot();
-			}
-			if (e.KeyCode === 8) // BackSpace
+			let shortcutType = this.Api.getShortcut(e);
+			if (oDoc.executeShortcut(shortcutType))
 			{
-				oDoc.DoAction(function() {
+				bRetValue = keydownresult_PreventAll;
+				bUpdateSelection = false;
+			}
+			else if (e.KeyCode === 8) // BackSpace
+			{
+				bRetValue = oDoc.DoAction(function() {
 					oDoc.Remove(-1, e.CtrlKey == true);
 				}, AscDFH.historydescription_Document_BackSpaceButton);
 			}
@@ -3638,11 +3641,14 @@
 					else
 						this.SelectNextForm();
 				}
+
+				bRetValue = true;
 			}
 			else if (e.KeyCode === 13) // Enter
 			{
 				window.event.stopPropagation();
 				oDoc.EnterDown(e.ShiftKey === true);
+				bRetValue = true;
 			}
 			else if (e.KeyCode === 27) // Esc
 			{
@@ -3665,21 +3671,12 @@
 					const oController = oDoc.GetController();
 					oController.resetSelection();
 					this.onUpdateOverlay();
-				oDoc.EscapeForm();
-				oDoc.EscapeForm();
-				
 					oDoc.EscapeForm();
 				
 					editor.sync_HideComment();
 				}
-			}
-			else if (e.KeyCode === 32) // Space
-			{
-				if (oDoc.activeForm)
-				{
-					
-				}
-				// to do включить checkbox/radio
+
+				bRetValue = true;
 			}
 			else if ( e.KeyCode == 33 ) // PgUp
 			{
@@ -3698,6 +3695,8 @@
 					this.m_oScrollVerApi.scrollByY(-this.height, false);
 					this.timerSync();
 				}
+
+				bRetValue = true;
 			}
 			else if ( e.KeyCode == 34 ) // PgDn
 			{
@@ -3721,6 +3720,8 @@
 					this.m_oScrollVerApi.scrollByY(this.height, false);
 					this.timerSync();
 				}
+
+				bRetValue = true;
 			}
 			else if ( e.KeyCode == 35 ) // End
 			{
@@ -3793,35 +3794,11 @@
 			}
 			else if (e.KeyCode === 46) // Delete
 			{
-				oDoc.DoAction(function() {
+				bRetValue = oDoc.DoAction(function() {
 					oDoc.Remove(1, e.CtrlKey == true);
 				}, AscDFH.historydescription_Document_DeleteButton);
 			}
-			else if ( e.KeyCode == 65 && true === e.CtrlKey ) // Ctrl + A
-			{
-				oDoc.SelectAll();
-			}
-			else if ( e.KeyCode == 80 && true === e.CtrlKey ) // Ctrl + P + ...
-			{
-				this.Api.onPrint();
-				bRetValue = true;
-			}
-			else if ( e.KeyCode == 83 && true === e.CtrlKey ) // Ctrl + S + ...
-			{
-				this.Api.asc_Save(false);
-				bRetValue = true;
-			}
-			else if ( e.KeyCode == 89 && true === e.CtrlKey ) // Ctrl + Y
-			{
-				this.doc.DoRedo();
-				bRetValue = true;
-			}
-			else if ( e.KeyCode == 90 && true === e.CtrlKey ) // Ctrl + Z
-			{
-				this.doc.DoUndo();
-				bRetValue = true;
-			}
-
+			
 			oDoc.UpdateCopyCutState();
 			return bRetValue;
 		};

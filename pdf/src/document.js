@@ -2731,7 +2731,7 @@ var CPresentation = CPresentation || function(){};
 
 		let result = fAction.call(oThis);
 		this.FinalizeAction(true);
-		return result;
+		return result !== undefined ? result : true;
 	};
     /**
      * Начинаем новое действие, связанное с изменением документа
@@ -3747,6 +3747,10 @@ var CPresentation = CPresentation || function(){};
     };
     CPDFDoc.prototype.CanAddHyperlink = function(bCheckInHyperlink) {
         let oController = this.GetController();
+        if (oController.getSelectedArray().find(function(obj) { return obj.IsAnnot()})) {
+            return false;
+        }
+
         return oController.hyperlinkCanAdd(bCheckInHyperlink);
     };
     //-----------------------------------------------------------------------------------
@@ -4139,7 +4143,7 @@ var CPresentation = CPresentation || function(){};
         return oController.getParagraphTextPr();
     };
     CPDFDoc.prototype.AddToParagraph = function(oParaItem) {
-        this.DoAction(function() {
+        return this.DoAction(function() {
             let oController = this.GetController();
             let oMathShape  = null;
 
@@ -4179,6 +4183,7 @@ var CPresentation = CPresentation || function(){};
             }
 
             oController.paragraphAdd(oParaItem, false);
+            return true;
         }, AscDFH.historydescription_Presentation_ParagraphAdd, this);
     };
     CPDFDoc.prototype.AddNewParagraph = function() {
@@ -4407,6 +4412,9 @@ var CPresentation = CPresentation || function(){};
     };
     CPDFDoc.prototype.SetParagraphNumbering = function(oBullet) {
         let oController = this.GetController();
+        if (oController.getSelectedArray().find(function(obj) { return obj.IsAnnot()})) {
+            return false;
+        };
         oController.checkSelectedObjectsAndCallback(oController.setParagraphNumbering, [oBullet], false, AscDFH.historydescription_Presentation_SetParagraphNumbering);
     };
     CPDFDoc.prototype.IncreaseDecreaseFontSize = function(bIncrease) {
@@ -4418,20 +4426,30 @@ var CPresentation = CPresentation || function(){};
     };
     CPDFDoc.prototype.ChangeTextCase = function(nType) {
         let oController = this.GetController();
-        let oActiveObj  = this.GetActiveObject();
-        
         oController.changeTextCase(nType);
     };
     CPDFDoc.prototype.SetParagraphAlign = function(Align) {
         let oController = this.GetController();
+        if (oController.getSelectedArray().find(function(obj) { return obj.IsAnnot()})) {
+            return false;
+        }
+
         oController.checkSelectedObjectsAndCallback(oController.setParagraphAlign, [Align], false, AscDFH.historydescription_Presentation_SetParagraphAlign);
     };
     CPDFDoc.prototype.SetVerticalAlign = function(Align) {
         let oController = this.GetController();
+        if (oController.getSelectedArray().find(function(obj) { return obj.IsAnnot()})) {
+            return false;
+        }
+
         oController.checkSelectedObjectsAndCallback(oController.applyDrawingProps, [{verticalTextAlign: Align}], false, AscDFH.historydescription_Presentation_SetVerticalAlign);
     };
     CPDFDoc.prototype.IncreaseDecreaseIndent = function(bIncrease) {
         let oController = this.GetController();
+        if (oController.getSelectedArray().find(function(obj) { return obj.IsAnnot()})) {
+            return false;
+        }
+
         oController.checkSelectedObjectsAndCallback(oController.paragraphIncDecIndent, [bIncrease], false, AscDFH.historydescription_Presentation_ParagraphIncDecIndent);
     };
     CPDFDoc.prototype.ClearParagraphFormatting = function(isClearParaPr, isClearTextPr) {
@@ -5183,10 +5201,10 @@ var CPresentation = CPresentation || function(){};
                 Y2 = Y1 + nExtY;
                 break;
             case 90:
-                X1 = nPageW * ((oViewRect.y + oViewRect.b) / 2) - nExtY / 2;
-                Y1 = nPageH - nPageH * ((oViewRect.x + oViewRect.r) / 2) - nExtX / 2;
-                X2 = X1 + nExtY;
-                Y2 = Y1 + nExtX;
+                X1 = nPageW * ((oViewRect.y + oViewRect.b) / 2) - nExtX / 2;
+                Y1 = nPageH - nPageH * ((oViewRect.x + oViewRect.r) / 2) - nExtY / 2;
+                X2 = X1 + nExtX;
+                Y2 = Y1 + nExtY;
                 break;
             case 180:
                 X1 = nPageW - nPageW * ((oViewRect.x + oViewRect.r) / 2) - nExtX / 2;
@@ -5195,10 +5213,10 @@ var CPresentation = CPresentation || function(){};
                 Y2 = Y1 + nExtY;
                 break;
             case 270:
-                X1 = nPageW - nPageW * ((oViewRect.y + oViewRect.b) / 2) - nExtY / 2;
-                Y1 = nPageH * ((oViewRect.x + oViewRect.r) / 2) - nExtX / 2;
-                X2 = X1 + nExtY;
-                Y2 = Y1 + nExtX;
+                X1 = nPageW - nPageW * ((oViewRect.y + oViewRect.b) / 2) - nExtX / 2;
+                Y1 = nPageH * ((oViewRect.x + oViewRect.r) / 2) - nExtY / 2;
+                X2 = X1 + nExtX;
+                Y2 = Y1 + nExtY;
                 break;
         }
 
@@ -5588,8 +5606,6 @@ var CPresentation = CPresentation || function(){};
     CPDFDoc.prototype.CheckTableCoincidence = function (Table) {
         return false;
     };
-
-
     CPDFDoc.prototype.InitDefaultTextListStyles = function() {
         let oTextStyles     = new AscFormat.CTextStyles();
         let oTextListStyle  = new AscFormat.TextListStyle();
@@ -6133,7 +6149,155 @@ var CPresentation = CPresentation || function(){};
         let isLocked = AscCommon.CollaborativeEditing.OnEnd_CheckLock(DontLockInFastMode);
         return isLocked;
     };
+    CPDFDoc.prototype.executeShortcut = function(type) {
+        let result = false;
     
+        switch (type) {
+            case Asc.c_oAscDocumentShortcutType.Strikeout: {
+                let oTextPr = this.GetCalculatedTextPr();
+                if (oTextPr) {
+                    this.AddToParagraph(new ParaTextPr({
+                        Strikeout: oTextPr.Strikeout !== true
+                    }));
+                    result =  true;
+                }
+                break;
+            }
+            case Asc.c_oAscDocumentShortcutType.Bold: {
+                let oTextPr = this.GetCalculatedTextPr();
+                if (oTextPr) {
+                    this.AddToParagraph(new ParaTextPr({
+                        Bold: oTextPr.Bold !== true
+                    }));
+                    result =  true;
+                }
+                break;
+            }
+            case Asc.c_oAscDocumentShortcutType.Italic: {
+                let oTextPr = this.GetCalculatedTextPr();
+                if (oTextPr) {
+                    this.AddToParagraph(new ParaTextPr({
+                        Italic: oTextPr.Italic !== true
+                    }));
+                    result =  true;
+                }
+                break;
+            }
+            case Asc.c_oAscDocumentShortcutType.Underline: {
+                let oTextPr = this.GetCalculatedTextPr();
+                if (oTextPr) {
+                    this.AddToParagraph(new ParaTextPr({
+                        Underline: oTextPr.Underline !== true
+                    }));
+                    result =  true;
+                }
+                break;
+            }
+            case Asc.c_oAscDocumentShortcutType.Superscript: {
+                let oTextPr = this.GetCalculatedTextPr();
+                if (oTextPr) {
+                    this.AddToParagraph(new ParaTextPr({
+                        VertAlign: oTextPr.VertAlign === AscCommon.vertalign_SuperScript ? AscCommon.vertalign_Baseline : AscCommon.vertalign_SuperScript
+                    }));
+                    result =  true;
+                }
+                break;
+            }
+            case Asc.c_oAscDocumentShortcutType.Subscript: {
+                let oTextPr = this.GetCalculatedTextPr();
+                if (oTextPr) {
+                    this.AddToParagraph(new ParaTextPr({
+                        VertAlign: oTextPr.VertAlign === AscCommon.vertalign_SubScript ? AscCommon.vertalign_Baseline : AscCommon.vertalign_SubScript
+                    }));
+                    result =  true;
+                }
+                break;
+            }
+            case Asc.c_oAscDocumentShortcutType.Save: {
+                this.Api.asc_Save(false);
+                result = true;
+                break;
+            }
+            case Asc.c_oAscDocumentShortcutType.EditRedo: {
+                this.DoRedo();
+                result = true;
+                break;
+            }
+            case Asc.c_oAscDocumentShortcutType.EditUndo: {
+                this.DoUndo();
+                result = true;
+                break;
+            }
+            case Asc.c_oAscDocumentShortcutType.DecreaseFontSize: {
+                this.Api.FontSizeOut();
+                result = true;
+                break;
+            }
+            case Asc.c_oAscDocumentShortcutType.IncreaseFontSize: {
+                this.Api.FontSizeIn();
+                result = true;
+                break;
+            }
+            case Asc.c_oAscDocumentShortcutType.PrintPreviewAndPrint: {
+                this.Api.onPrint();
+                result = true;
+                break;
+            }
+            case Asc.c_oAscDocumentShortcutType.EditSelectAll: {
+                this.SelectAll();
+                result = true;
+                break;
+            }
+            case Asc.c_oAscDocumentShortcutType.InsertHyperlink: {
+                if (true === this.CanAddHyperlink(false) && this.CanEdit())
+                    this.Api.sync_DialogAddHyperlink();
+                
+                result = true;
+                break;
+            }
+            case Asc.c_oAscDocumentShortcutType.InsertEquation: {
+                this.Api.asc_AddMath();
+                result = true;
+                break;
+            }
+            case Asc.c_oAscDocumentShortcutType.Indent: {
+                this.IncreaseDecreaseIndent(true);
+                result = true;
+                break;
+            }
+            case Asc.c_oAscDocumentShortcutType.UnIndent: {
+                this.IncreaseDecreaseIndent(false);
+                result = true;
+                break;
+            }
+            case Asc.c_oAscDocumentShortcutType.LeftPara: {
+                this.SetParagraphAlign(AscCommon.align_Left);
+                result = true;
+                break;
+            }
+            case Asc.c_oAscDocumentShortcutType.CenterPara: {
+                this.SetParagraphAlign(AscCommon.align_Center);
+                result = true;
+                break;
+            }
+            case Asc.c_oAscDocumentShortcutType.JustifyPara: {
+                this.SetParagraphAlign(AscCommon.align_Justify);
+                result = true;
+                break;
+            }
+            case Asc.c_oAscDocumentShortcutType.RightPara: {
+                this.SetParagraphAlign(AscCommon.align_Right);
+                result = true;
+                break;
+            }
+            default: {
+                result = false;
+                break;
+            }
+        }
+    
+        return result;
+    };
     CPDFDoc.prototype.Document_UpdateUndoRedoState = function() {};
     CPDFDoc.prototype.SetHighlightRequiredFields = function() {};
     CPDFDoc.prototype.SetLocalTrackRevisions = function() {};
