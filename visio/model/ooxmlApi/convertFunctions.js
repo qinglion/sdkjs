@@ -1430,12 +1430,13 @@
 		if (gradientEnabled) {
 			let fillGradientDir = this.getCellNumberValue("FillGradientDir");
 
+			let invertGradient = false;
 			// global matrix transform: invert Y axis causes 0 is bottom of gradient and 100000 is top
-			let invertGradient = !isInvertCoords;
-			if (fillGradientDir === 3) {
-				// radial gradient seems to be handled in another way
-				invertGradient = isInvertCoords;
-			}
+			// let invertGradient = !isInvertCoords;
+			// if (fillGradientDir === 3) {
+			// 	// radial gradient seems to be handled in another way
+			// 	invertGradient = isInvertCoords;
+			// }
 
 			// now let's come through gradient stops
 			let fillGradientStopsSection = this.getSection("FillGradient");
@@ -1571,6 +1572,19 @@
 		/**	 * @type {CLn}	 */
 		let oStroke = AscFormat.builder_CreateLine(lineWidthEmu, {UniFill: lineUniFill});
 
+		// seems to be unsupported for now
+		let lineCapCell = this.getCell("LineCap");
+		let lineCapNumber;
+		if (lineCapCell) {
+			// see [MS-VSDX]-220215 (1) - 2.4.4.170	LineCap
+			lineCapNumber = lineCapCell.calculateValue(this, pageInfo, visioDocument.themes, themeValWasUsedFor);
+			if (isNaN(lineCapNumber)) {
+				oStroke.setCap(2);
+			} else {
+				oStroke.setCap(lineCapNumber);
+			}
+		}
+
 		let linePattern = this.getCell("LinePattern");
 		if (linePattern) {
 			// see ECMA-376-1 - L.4.8.5.2 Line Dash Properties and [MS-VSDX]-220215 (1) - 2.4.4.180	LinePattern
@@ -1581,6 +1595,18 @@
 				let shift = 11;
 				let dashTypeName = oStroke.GetDashByCode(linePatternNumber + shift);
 				if (dashTypeName !== null) {
+					if (lineCapNumber !== 2) {
+						AscCommon.consoleLog("linePattern may be wrong. Because visio cap is not square" +
+							"Now only flat cap is supported in sdkjs but Line patterns were made " +
+							"for visio cap square looks correct" +
+							"So when visio cap is not square line pattern will not fit."
+							)
+						if ("vsdxHalfHalfDash" === dashTypeName) {
+							// vsdxHalfHalfDash looks like solid on visio cap square but if cap is not square in visio
+							// vsdxHalfHalfDash should be dotted
+							linePatternNumber = 10;
+						}
+					}
 					if ("vsdxTransparent" === dashTypeName && oStroke.Fill) {
 						//todo реализовать прозрачный тип через отдельную настройку или разделить fill для линий и наконечников
 						//в vsdx может быть прозрачная линия с видимыми наконечниками
