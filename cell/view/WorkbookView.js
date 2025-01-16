@@ -1395,9 +1395,9 @@
             }, 1000);
         }
 
-        if (this.isFormulaEditMode && this.isCellEditMode && this.cellEditor && this.cellEditor.isTopLineActive) {
+        if (this.isFormulaEditMode && this.isCellEditMode && this.cellEditor && this.cellEditor.openFromTopLine) {
             /* set focus to the top formula entry line */
-            this.input.focus();
+            this.cellEditor.restoreFocus();
         }
 
         asc_applyFunction(callback, d);
