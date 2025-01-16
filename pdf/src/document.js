@@ -5183,10 +5183,10 @@ var CPresentation = CPresentation || function(){};
                 Y2 = Y1 + nExtY;
                 break;
             case 90:
-                X1 = nPageW * ((oViewRect.y + oViewRect.b) / 2) - nExtY / 2;
-                Y1 = nPageH - nPageH * ((oViewRect.x + oViewRect.r) / 2) - nExtX / 2;
-                X2 = X1 + nExtY;
-                Y2 = Y1 + nExtX;
+                X1 = nPageW * ((oViewRect.y + oViewRect.b) / 2) - nExtX / 2;
+                Y1 = nPageH - nPageH * ((oViewRect.x + oViewRect.r) / 2) - nExtY / 2;
+                X2 = X1 + nExtX;
+                Y2 = Y1 + nExtY;
                 break;
             case 180:
                 X1 = nPageW - nPageW * ((oViewRect.x + oViewRect.r) / 2) - nExtX / 2;
@@ -5195,10 +5195,10 @@ var CPresentation = CPresentation || function(){};
                 Y2 = Y1 + nExtY;
                 break;
             case 270:
-                X1 = nPageW - nPageW * ((oViewRect.y + oViewRect.b) / 2) - nExtY / 2;
-                Y1 = nPageH * ((oViewRect.x + oViewRect.r) / 2) - nExtX / 2;
-                X2 = X1 + nExtY;
-                Y2 = Y1 + nExtX;
+                X1 = nPageW - nPageW * ((oViewRect.y + oViewRect.b) / 2) - nExtX / 2;
+                Y1 = nPageH * ((oViewRect.x + oViewRect.r) / 2) - nExtY / 2;
+                X2 = X1 + nExtX;
+                Y2 = Y1 + nExtY;
                 break;
         }
 
