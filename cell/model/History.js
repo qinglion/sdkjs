@@ -569,11 +569,11 @@ CHistory.prototype.Undo = function(Options)
 	this.UndoRedoEnd(Point, oRedoObjectParam, true);
   return true;
 };
-CHistory.prototype.UndoRedoPrepare = function (oRedoObjectParam, bUndo) {
-	// if (this.Is_On()) {
-	// 	oRedoObjectParam.bIsOn = true;
-	// 	this.TurnOff();
-	// }
+CHistory.prototype.UndoRedoPrepare = function (oRedoObjectParam, bUndo, bKeepTurn) {
+	if (this.Is_On() && !bKeepTurn) {
+		oRedoObjectParam.bIsOn = true;
+		this.TurnOff();
+	}
 	/* отключаем отрисовку на случай необходимости пересчета ячеек, заносим ячейку, при необходимости в список перерисовываемых */
 	this.workbook.dependencyFormulas.lockRecal();
 
@@ -865,8 +865,8 @@ CHistory.prototype.UndoRedoEnd = function (Point, oRedoObjectParam, bUndo) {
         }
     }
 
-	// if (oRedoObjectParam && oRedoObjectParam.bIsOn)
-	// 	this.TurnOn();
+	if (oRedoObjectParam && oRedoObjectParam.bIsOn)
+		this.TurnOn();
 
 	if (!bUndo) {
 		this.workbook.handlers.trigger("updatePrintPreview");

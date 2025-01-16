@@ -1688,12 +1688,12 @@ var editor;
       this.collaborativeEditing.setFast(bFast);
     }
   };
-	spreadsheet_api.prototype.initCollaborativeEditing = function()
+	spreadsheet_api.prototype.initCollaborativeEditing = function(opt_handlers)
 	{
 		if (AscCommon.CollaborativeEditing)
 			return;
 
-		this._coAuthoringInitCollaborativeEditing();
+		this._coAuthoringInitCollaborativeEditing(opt_handlers);
 		AscCommon.CollaborativeEditing = this.collaborativeEditing;
 	};
 
@@ -2620,9 +2620,9 @@ var editor;
   /////////////////////////////////////////////////////////////////////////
   ///////////////////CoAuthoring and Chat api//////////////////////////////
   /////////////////////////////////////////////////////////////////////////
-	spreadsheet_api.prototype._coAuthoringInitCollaborativeEditing = function() {
+	spreadsheet_api.prototype._coAuthoringInitCollaborativeEditing = function(opt_handlers) {
 		var t = this;
-		this.collaborativeEditing = this.CollaborativeEditing = new AscCommonExcel.CCollaborativeEditing(/*handlers*/{
+		opt_handlers = opt_handlers || {
 			"askLock": function() {
 				t.CoAuthoringApi.askLock.apply(t.CoAuthoringApi, arguments);
 			},
@@ -2697,7 +2697,8 @@ var editor;
 			"unlockUserProtectedRanges": function() {
 				t._onUnlockUserProtectedRanges.apply(t, arguments);
 			}
-		}, this.getViewMode());
+		}
+		this.collaborativeEditing = this.CollaborativeEditing = new AscCommonExcel.CCollaborativeEditing(opt_handlers, this.getViewMode());
 	}
 	spreadsheet_api.prototype._coAuthoringInitEnd = function() {
 	var t = this;
