@@ -681,12 +681,8 @@ CHistory.prototype.Clear_Redo = function()
 	// Удаляем ненужные точки
 	this.Points.length = this.Index + 1;
 };
-CHistory.prototype.RedoExecute = function(Point, oRedoObjectParam)
-{
-	// Выполняем все действия в прямом порядке
-	for ( var Index = 0; Index < Point.Items.length; Index++ )
+	CHistory.prototype.RedoExecuteItem = function(Item, oRedoObjectParam)
 	{
-		var Item = Point.Items[Index];
 		if(!Item.Class.RefreshRecalcData)
 			Item.Class.Redo( Item.Type, Item.Data, Item.SheetId );
 		else
@@ -695,6 +691,14 @@ CHistory.prototype.RedoExecute = function(Point, oRedoObjectParam)
 			Item.Class.RefreshRecalcData();
 		}
 		this._addRedoObjectParam(oRedoObjectParam, Item);
+	}
+CHistory.prototype.RedoExecute = function(Point, oRedoObjectParam)
+{
+	// Выполняем все действия в прямом порядке
+	for ( var Index = 0; Index < Point.Items.length; Index++ )
+	{
+		var Item = Point.Items[Index];
+		this.RedoExecuteItem(Item, oRedoObjectParam);
 	}
 	AscCommon.CollaborativeEditing.Apply_LinkData();
 };

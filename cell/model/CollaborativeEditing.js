@@ -1051,6 +1051,8 @@
 					Point = elem.Point;
 				}
 			}
+			//todo Apply_LinkData inside UndoRedoEnd
+			AscCommon.CollaborativeEditing.Apply_LinkData();
 			History.UndoRedoEnd(Point, this.oRedoObjectParam, false);
 
 			AscCommon.CCollaborativeEditingBase.prototype.PostUndo.apply(this, arguments);
