@@ -3099,7 +3099,7 @@ var CPresentation = CPresentation || function(){};
             else {
                 oAnnot.RemoveComment();
             }
-        }, AscDFH.historydescription_Pdf_RemoveComment, this);
+        }, AscDFH.historydescription_Pdf_RemoveComment, this, Id);
     };
     CPDFDoc.prototype.RemoveAnnot = function(Id) {
         let oController = this.GetController();
@@ -6091,28 +6091,17 @@ var CPresentation = CPresentation || function(){};
                 break;
             }
             case AscCommon.changestype_2_Comment: {
-                let sCommentId = AdditionalData;
+                let oTargetAnnot = this.GetAnnotById(AdditionalData);
 
-                let selected_objects = oController.selectedObjects.slice();
-                if (oController.selection.groupSelection) {
-                    selected_objects.push(oController.selection.groupSelection);
-                }
-                if (this.mouseDownAnnot) {
-                    selected_objects.push(this.mouseDownAnnot);
-                }
+                if (oTargetAnnot) {
+                    let check_obj = {
+                        "type":     AscLockTypeElemPDF.Object,
+                        "pageId":   oCurPageInfo.GetId(),
+                        "objId":    oTargetAnnot.GetId(),
+                        "guid":     oTargetAnnot.GetId()
+                    };
 
-                for (let i = 0; i < selected_objects.length; ++i) {
-                    if (selected_objects[i].GetId() == sCommentId) {
-                        let check_obj = {
-                            "type":     AscLockTypeElemPDF.Object,
-                            "pageId":   oCurPageInfo.GetId(),
-                            "objId":    selected_objects[i].GetId(),
-                            "guid":     selected_objects[i].GetId()
-                        };
-    
-                        selected_objects[i].Lock.Check(check_obj);
-                        break;
-                    }
+                    oTargetAnnot.Lock.Check(check_obj);
                 }
 
                 break;

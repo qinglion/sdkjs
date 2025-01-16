@@ -2121,6 +2121,16 @@
 					}
 		
 					Lock.Set_Type(NewType, true);
+
+					if (NewType == AscCommon.c_oAscLockTypes.kLockTypeNone) {
+						Class.AddToRedraw && Class.AddToRedraw();
+						if (Class.IsAnnot && Class.IsAnnot()) {
+							// if annot is comment or annot with comment then release locks for it too
+							if (Class.IsComment() || (Class.IsUseContentAsComment() && Class.GetContents() != undefined) || Class.GetReply(0) != null) {
+								Asc.editor.sync_UnLockComment(Class.Get_Id());
+							}
+						}
+					}
 				}
 				
 
