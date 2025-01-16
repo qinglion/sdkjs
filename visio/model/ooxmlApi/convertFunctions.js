@@ -1430,12 +1430,13 @@
 		if (gradientEnabled) {
 			let fillGradientDir = this.getCellNumberValue("FillGradientDir");
 
+			let invertGradient = false;
 			// global matrix transform: invert Y axis causes 0 is bottom of gradient and 100000 is top
-			let invertGradient = !isInvertCoords;
-			if (fillGradientDir === 3) {
-				// radial gradient seems to be handled in another way
-				invertGradient = isInvertCoords;
-			}
+			// let invertGradient = !isInvertCoords;
+			// if (fillGradientDir === 3) {
+			// 	// radial gradient seems to be handled in another way
+			// 	invertGradient = isInvertCoords;
+			// }
 
 			// now let's come through gradient stops
 			let fillGradientStopsSection = this.getSection("FillGradient");
