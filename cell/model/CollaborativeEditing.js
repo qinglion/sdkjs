@@ -1024,29 +1024,24 @@
 			return res;
 		};
 		CCollaborativeEditing.prototype.PreUndo = function () {
-			let logicDocument = this.m_oLogicDocument;
-
-			logicDocument.sendEvent("asc_onBeforeUndoRedoInCollaboration");
-			logicDocument.DrawingDocument.EndTrackTable(null, true);
-			logicDocument.TurnOffCheckChartSelection();
+			let res = AscCommon.CCollaborativeEditingBase.prototype.PreUndo.apply(this);
 
 			this.oRedoObjectParam = new AscCommonExcel.RedoObjectParam();
 			History.UndoRedoPrepare(this.oRedoObjectParam, false);
-			return this.private_SaveDocumentState();
+			//todo встроить в GetReverseOwnChanges
+			if (this.CoHistory.OwnRanges.length > 0) {
+				let range     = this.CoHistory.OwnRanges[this.CoHistory.OwnRanges.length - 1];
+				let change = this.CoHistory.Changes[range.Position];
+				if (change && change.oData && change.oData.snapshot) {
+					this.oRedoObjectParam.snapshot = change.oData.snapshot
+				}
+			}
+			return res;
 		}
 		CCollaborativeEditing.prototype.PostUndo = function (state, changes) {
-			this.private_RestoreDocumentState(state);
-			this.private_RecalculateDocument(changes);
-
-			let logicDocument = this.m_oLogicDocument;
-			logicDocument.TurnOnCheckChartSelection();
-			logicDocument.UpdateSelection();
-			logicDocument.UpdateInterface();
-			logicDocument.UpdateRulers();
-			logicDocument.sendEvent("asc_onUndoRedoInCollaboration");
-
 			let Point = {Items: []}
 			if (changes.length > 0) {
+				//изменение не последнее потому что могут добавиться при корректировке
 				let elem = changes.find(function(elem){
 					if(elem && elem.Point) {
 						return true;
@@ -1057,6 +1052,8 @@
 				}
 			}
 			History.UndoRedoEnd(Point, this.oRedoObjectParam, false);
+
+			AscCommon.CCollaborativeEditingBase.prototype.PostUndo.apply(this, arguments);
 		}
 
 		AscCommon.CCollaborativeHistory.prototype.CommuteRelated = function(oClass, oChange, nStartPosition)

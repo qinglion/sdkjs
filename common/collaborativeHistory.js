@@ -443,6 +443,7 @@
 		let nPosition = range.Position;
 		let nCount    = range.Length;
 
+		let arrReverseChanges = [];
 		let arrChanges = [];
 		for (let nIndex = nCount - 1; nIndex >= 0; --nIndex)
 		{
@@ -463,19 +464,22 @@
 			else if (oChange.IsSpreadsheetChange())
 			{
 				let _oChange = oChange.Copy();
-
-				if (this.CommuteRelated(oClass, _oChange, nPosition + nCount))
-				{
-					arrChanges.push(_oChange);
+				//удобнее сначала создавать обратное изменение
+				let oReverseChange = _oChange.CreateReverseChange();
+				if (oReverseChange) {
+					oReverseChange.SetReverted(true);
+					if (this.CommuteRelated(oClass, oReverseChange, nPosition + nCount))
+					{
+						arrReverseChanges.push(oReverseChange);
+					}
+					else
+					{
+						//в таблицах не принимается все точка
+						//например при вставка столбца копируется заливка соседнего столбца
+						arrChanges = [];
+						break;
+					}
 				}
-				else
-				{
-					//в таблицах не принимается все точка
-					//например при вставка столбца копируется заливка соседнего столбца
-					arrChanges = [];
-					break;
-				}
-				oChange.SetReverted(true);
 			}
 			else
 			{
@@ -488,7 +492,6 @@
 
 		this.OwnRanges.length = this.OwnRanges.length - 1;
 
-		let arrReverseChanges = [];
 		for (let nIndex = 0, nCount = arrChanges.length; nIndex < nCount; ++nIndex)
 		{
 			let oReverseChange = arrChanges[nIndex].CreateReverseChange();

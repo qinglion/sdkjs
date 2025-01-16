@@ -3726,9 +3726,6 @@
 		// Пересчитываем позиции
 		AscCommon.CollaborativeEditing.Refresh_DCChanges();
 
-		if (this.aCollaborativeActions.length > 0) {
-			debugger;
-		}
 		var aActions = this.aCollaborativeActions.concat(AscCommon.History.GetSerializeArray());
 		if(aActions.length > 0)
 		{

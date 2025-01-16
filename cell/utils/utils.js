@@ -3243,6 +3243,7 @@
 			this.onSlicer = {};
 			this.onSlicerCache = {};
 			this.UpdateRigions = {};
+			this.snapshot = null;
 		}
 
 		/** @constructor */
