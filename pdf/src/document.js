@@ -5628,8 +5628,30 @@ var CPresentation = CPresentation || function(){};
     CPDFDoc.prototype.PauseRecalculate = function() {};
     CPDFDoc.prototype.EndPreview_MailMergeResult = function() {};
     CPDFDoc.prototype.Get_SelectionState2 = function() {};
-    CPDFDoc.prototype.Save_DocumentStateBeforeLoadChanges = function() {};
-    CPDFDoc.prototype.Load_DocumentStateAfterLoadChanges = function() {};
+    CPDFDoc.prototype.Save_DocumentStateBeforeLoadChanges = function() {
+        let State = {};
+
+        State.activeObject = this.GetActiveObject();
+
+        State.Pos        = [];
+        State.StartPos   = [];
+        State.EndPos     = [];
+
+        this.GetController().Save_DocumentStateBeforeLoadChanges(State);
+        this.RemoveSelection();
+
+        this.CollaborativeEditing.WatchDocumentPositionsByState(State);
+
+        return State;
+    };
+    CPDFDoc.prototype.Load_DocumentStateAfterLoadChanges = function(State) {
+        this.CollaborativeEditing.UpdateDocumentPositionsByState(State);
+
+        this.RemoveSelection();
+        this.SetMouseDownObject(State.activeObject)
+
+        this.GetController().Load_DocumentStateAfterLoadChanges(State);
+    };
     CPDFDoc.prototype.Check_MergeData = function() {};
     CPDFDoc.prototype.Set_SelectionState2 = function() {};
     CPDFDoc.prototype.ResumeRecalculate = function() {};
@@ -6118,7 +6140,13 @@ var CPresentation = CPresentation || function(){};
     CPDFDoc.prototype.Document_UpdateUndoRedoState = function() {
         this.UpdateUndoRedo();
     };
-    CPDFDoc.prototype.RecalculateCurPos = function() {};
+    CPDFDoc.prototype.RecalculateCurPos = function() {
+        let oAcitveObj = this.GetActiveObject();
+        let oContent = oAcitveObj ? oAcitveObj.GetDocContent() : null;
+        if (oContent) {
+            oContent.RecalculateCurPos();
+        }
+    };
     CPDFDoc.prototype.HaveRevisionChanges = function() {};
     CPDFDoc.prototype.ContinueSpellCheck = function() {};
     CPDFDoc.prototype.ContinueTrackRevisions = function() {};
