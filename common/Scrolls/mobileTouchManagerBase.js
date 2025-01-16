@@ -1339,7 +1339,9 @@
 	CMobileTouchManagerBase.prototype.Destroy = function()
 	{
 		var _scroller = document.getElementById(this.iScrollElement);
-		this.delegate.GetScrollerParent().removeChild(_scroller);
+		if (_scroller) {
+			this.delegate.GetScrollerParent().removeChild(_scroller);
+		}
 
 		if (this.iScroll != null)
 			this.iScroll.destroy();
