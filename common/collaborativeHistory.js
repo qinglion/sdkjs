@@ -346,7 +346,11 @@
 		// Формируем новую пачку действий, которые будут откатывать нужные нам действия
 		let reverseChanges = this.GetReverseOwnChanges();
 		if (reverseChanges.length <= 0)
+		{
+			//чтобы не было бесконечного saving(пересмотреть чтобы работало без saveChanges)
+			this.saveChanges([]);
 			return [];
+		}
 
 		for (let index = 0, count = reverseChanges.length; index < count; ++index)
 		{
@@ -474,6 +478,7 @@
 					}
 					else
 					{
+						//todo для автофигур не надо скрывать всю точку
 						//в таблицах не принимается все точка
 						//например при вставка столбца копируется заливка соседнего столбца
 						arrChanges = [];
@@ -481,7 +486,7 @@
 						break;
 					}
 				}
-				else
+				else if(null !== oReverseChange)
 				{
 					//ничего не делаем если есть изменения которые не готовы
 					arrChanges = [];

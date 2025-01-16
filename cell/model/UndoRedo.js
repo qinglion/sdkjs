@@ -418,13 +418,19 @@ function (window, undefined) {
 	};
 	UndoRedoItemSerializable.prototype.CreateReverseChange = function () {
 		if (this.oClass && this.oClass.CreateReverseChange) {
-			return new UndoRedoItemSerializable(this.oClass.CreateReverseChange(), this.nActionType, this.nSheetId, this.oRange, this.oData, this.LocalChange, this.bytes);
+			let change = this.oClass.CreateReverseChange();
+			if (change) {
+				return new UndoRedoItemSerializable(change, this.nActionType, this.nSheetId, this.oRange, this.oData, this.LocalChange, this.bytes);
+			} else {
+				return null;
+			}
 			// } else if (this.oData && this.oData.CreateReverseChange) {
 			// 	let oData = this.oData.CreateReverseChange();
 			// 	return new UndoRedoItemSerializable(this.oClass, this.nActionType, this.nSheetId, this.oRange, oData, this.LocalChange, this.bytes);
 		} else if (this.oClass && this.oClass.CreateReverseChangeSpreadsheet) {
 			return this.oClass.CreateReverseChangeSpreadsheet(this.oClass, this.nActionType, this.nSheetId, this.oRange, this.oData, this.LocalChange, this.bytes);
 		}
+		return undefined;
 	};
 	UndoRedoItemSerializable.prototype.IsRelated = function(oChanges)
 	{
@@ -448,7 +454,7 @@ function (window, undefined) {
 
 	UndoRedoItemSerializable.prototype.ToHistoryItem = function () {
 		return {
-				Class : this.oClass,
+				Class : this.oClass || this.Class,
 				Type  : this.nActionType,
 				SheetId : this.nSheetId,
 				Range : this.oRange,
@@ -467,7 +473,7 @@ function (window, undefined) {
 			if (!api.wb) {
 				return;
 			}
-			AscCommon.History.RedoExecuteItem(this.ToHistoryItem(), api.collaborativeEditing.oRedoObjectParam);
+			AscCommon.History.RedoExecuteItem(this.ToHistoryItem(), api.collaborativeEditing.oRedoObjectParam, true);
 		}, this);
 	};
 	UndoRedoItemSerializable.prototype.Redo = function () {
@@ -3371,7 +3377,8 @@ function (window, undefined) {
 			// res = AscCommonExcel.g_oUndoRedoWorksheet.CommuteRelatedRowCol(oActionToUndo.oData, true, oActionOther);
 		} else if (AscCH.historyitem_Worksheet_Sort === oActionToUndo.nActionType) {
 			res = AscCommonExcel.g_oUndoRedoWorksheet.CommuteRelatedRange(oActionToUndo.oData.bbox, oActionOther);
-		} else if (AscCH.historyitem_Worksheet_ChangeMerge === oActionToUndo.nActionType ||
+		} else if (AscCH.historyitem_Worksheet_MoveRange === oActionToUndo.nActionType ||
+			AscCH.historyitem_Worksheet_ChangeMerge === oActionToUndo.nActionType ||
 			AscCH.historyitem_Worksheet_ChangeHyperlink === oActionToUndo.nActionType ||
 			AscCH.historyitem_Worksheet_ChangeFrozenCell === oActionToUndo.nActionType) {
 			res = AscCommonExcel.g_oUndoRedoWorksheet.CommuteRelatedRange(oActionToUndo.oData.from, oActionOther);

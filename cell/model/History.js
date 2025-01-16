@@ -681,13 +681,17 @@ CHistory.prototype.Clear_Redo = function()
 	// Удаляем ненужные точки
 	this.Points.length = this.Index + 1;
 };
-	CHistory.prototype.RedoExecuteItem = function(Item, oRedoObjectParam)
+	CHistory.prototype.RedoExecuteItem = function(Item, oRedoObjectParam, isLoad)
 	{
 		if(!Item.Class.RefreshRecalcData)
 			Item.Class.Redo( Item.Type, Item.Data, Item.SheetId );
 		else
 		{
-			Item.Class.Redo();
+			if (isLoad) {
+				Item.Class.Load();
+			} else {
+				Item.Class.Redo();
+			}
 			Item.Class.RefreshRecalcData();
 		}
 		this._addRedoObjectParam(oRedoObjectParam, Item);
