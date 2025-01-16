@@ -918,9 +918,9 @@
             {
                 if(oEndOfInsertRun instanceof ParaRun)
                 {
+									const oNewRun = this.copyRunWithMockParagraph(oEndOfInsertRun, applyingParagraph.Paragraph || applyingParagraph, comparison);
                     for(let t = oEndOfInsertRun.Content.length - 1; t > -1; --t)
                     {
-                        const oNewRun = this.copyRunWithMockParagraph(oEndOfInsertRun, applyingParagraph.Paragraph || applyingParagraph, comparison);
                         //очищаем конец слова, которое нужно вставить
                         if(oLastText.elements[oLastText.elements.length - 1] === oEndOfInsertRun.Content[t])
                         {
@@ -957,9 +957,43 @@
         aContentToInsert.push(elem);
     };
 
-    CNode.prototype.pushToArrInsertContentWithCopy = function (aContentToInsert, elem, comparison) {
+    CNode.prototype.pushToArrInsertContentWithCopy = function (aContentToInsert, elem, comparison, paraFieldsStack) {
 			if (elem instanceof AscCommon.ParaComment && !comparison.options.comments) {
 				return;
+			}
+			if (!comparison.options.fields) {
+				if (elem instanceof AscCommonWord.ParaField) {
+					return;
+				}
+				if (elem instanceof AscCommonWord.ParaRun) {
+					const copiedElements = [];
+					for (let i = elem.Content.length - 1; i >= 0; i -= 1) {
+						const runElement = elem.Content[i];
+						if (runElement.Type === para_FieldChar) {
+							const oComplexField = runElement.GetComplexField();
+							if (oComplexField.IsValid()) {
+								const oLastFieldChar = paraFieldsStack[paraFieldsStack.length - 1];
+								if (runElement.IsBegin() && oLastFieldChar === runElement) {
+									paraFieldsStack.pop();
+								} else {
+									if (!paraFieldsStack.length) {
+										const oSplitRun = elem.Split2(i);
+										copiedElements.push(oSplitRun);
+									}
+									paraFieldsStack.push(runElement);
+								}
+							}
+						}
+					}
+					if (!paraFieldsStack.length) {
+						copiedElements.push(elem);
+					}
+					for (let i = 0; i < copiedElements.length; i++) {
+						const elemCopy = copiedElements[i].Copy(false, comparison.copyPr);
+						this.pushToArrInsertContent(aContentToInsert, elemCopy, comparison);
+					}
+					return;
+				}
 			}
         const elemCopy = elem.Copy(false, comparison.copyPr);
         this.pushToArrInsertContent(aContentToInsert, elemCopy, comparison);
@@ -1012,13 +1046,14 @@
         const oParentParagraph =  (this.partner && this.partner.element) || oLastElement.GetParent();
         let k = posOfLastInsertRun;
         let lastCheckRun;
+				const paraFieldsStack = [];
         for(k -= 1; k > -1; --k)
         {
             const oCurRun = oParentParagraph.Content[k];
             // Пока не дошли до первого рана слова, закидываем его на добавление
             if(oCurRun !== oFirstElement)
             {
-                this.pushToArrInsertContentWithCopy(aContentToInsert, oCurRun, comparison);
+                this.pushToArrInsertContentWithCopy(aContentToInsert, oCurRun, comparison, paraFieldsStack);
             }
             else
             {
@@ -1044,7 +1079,9 @@
 								let reviewInfo = oCurRun.GetReviewInfo();
                                 this.setCommonReviewTypeWithInfo(lastCheckRun, reviewInfo ? reviewInfo.Copy() : undefined);
                             }
-                        }
+                        } else if (!comparison.options.fields) {
+
+												}
                     }
                 }
 								else
@@ -3430,6 +3467,28 @@
             for(let j = 0; j < oRun.Content.length; ++j)
             {
                 const oRunElement = oRun.Content[j];
+							if (!this.options.fields && oRunElement.Type === ParaFieldChar) {
+								const oComplexField = oRunElement.GetComplexField();
+								if (oComplexField && oComplexField.IsValid()) {
+									const oLastComplexField = this.complexParaFieldStack[this.complexParaFieldStack.length - 1];
+									if (oRunElement.IsBegin()) {
+										this.complexParaFieldStack.push(oComplexField);
+									} else if (oLastComplexField.EndChar === oRunElement) {
+										this.complexParaFieldStack.pop();
+									}
+									if(oLastText.elements.length > 0)
+									{
+										oLastText.updateHash(oWordCounter, this);
+										this.createNode(oLastText, oRet);
+										oLastText = new TextElementConstructor();
+										oLastText.setFirstRun(oRun);
+										oLastText.setLastRun(oRun);
+									}
+								}
+							}
+								if (this.complexParaFieldStack.length) {
+									continue;
+								}
                 if(isBreakWordElement(oRunElement) || this.isWordsByOneSymbol)
                 {
                     if(oLastText.elements.length > 0)
@@ -3536,6 +3595,14 @@
             {
                 oLastText = this.createNodeFromRun(oRun, oLastText, oWordCounter, oRet);
             }
+						else if (this.complexParaFieldStack.length) {
+							if (oLastText && oLastText.elements.length > 0)
+							{
+								oLastText.updateHash(oWordCounter, this);
+								this.createNode(oLastText, oRet);
+							}
+							oLastText = null;
+						}
             else if (oRun instanceof AscCommon.CParaRevisionMove)
             {
                 if(oLastText && oLastText.elements.length > 0)
