@@ -479,7 +479,7 @@ var CPresentation = CPresentation || function(){};
                     oField.SetCurIdxs(oParent._currentValueIndices);
                 }
                 else {
-                    if (oField.GetType() !== AscPDF.FIELD_TYPES.radiobutton)
+                    if (oField.GetType() !== AscPDF.FIELD_TYPES.radiobutton && oParent.IsAllKidsWidgets())
                         oField.SetValue(value, true);
                 }
             }
