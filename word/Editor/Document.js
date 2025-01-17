@@ -2283,7 +2283,7 @@ CDocument.prototype.IsLoadingDocument = function()
 };
 CDocument.prototype.IsSelectParagraphEndMark = function()
 {
-	return false;
+	return true;
 };
 CDocument.prototype.On_EndLoad                     = function()
 {
