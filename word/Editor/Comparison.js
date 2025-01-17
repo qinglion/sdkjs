@@ -2007,32 +2007,32 @@
 	    // this.moves = true;
 	    // this.fields = true;
     }
-    ComparisonOptions.prototype["asc_getInsertionsAndDeletions"] = ComparisonOptions.prototype.asc_getInsertionsAndDeletions = function(){return this.insertionsAndDeletions;};
-    // ComparisonOptions.prototype["asc_getMoves"] = ComparisonOptions.prototype.asc_getMoves = function(){return this.moves;};
-    ComparisonOptions.prototype["asc_getComments"] = ComparisonOptions.prototype.asc_getComments = function(){return this.comments;};
-    ComparisonOptions.prototype["asc_getFormatting"] = ComparisonOptions.prototype.asc_getFormatting = function(){return this.formatting;};
-    ComparisonOptions.prototype["asc_getCaseChanges"] = ComparisonOptions.prototype.asc_getCaseChanges = function(){return this.caseChanges;};
-    ComparisonOptions.prototype["asc_getWhiteSpace"] = ComparisonOptions.prototype.asc_getWhiteSpace = function(){return this.whiteSpace;};
-    ComparisonOptions.prototype["asc_getTables"] = ComparisonOptions.prototype.asc_getTables = function(){this.tables;};
-    ComparisonOptions.prototype["asc_getHeadersAndFooters"] = ComparisonOptions.prototype.asc_getHeadersAndFooters = function(){return this.headersAndFooters;};
-    ComparisonOptions.prototype["asc_getFootNotes"] = ComparisonOptions.prototype.asc_getFootNotes = function(){return this.footNotes;};
-    ComparisonOptions.prototype["asc_getTextBoxes"] = ComparisonOptions.prototype.asc_getTextBoxes = function(){return this.textBoxes;};
-    // ComparisonOptions.prototype["asc_getFields"] = ComparisonOptions.prototype.asc_getFields = function(){return this.fields;};
-    ComparisonOptions.prototype["asc_getWords"] = ComparisonOptions.prototype.asc_getWords = function(){return  this.words;};
+    ComparisonOptions.prototype["getInsertionsAndDeletions"] = ComparisonOptions.prototype.getInsertionsAndDeletions = function(){return this.insertionsAndDeletions;};
+    // ComparisonOptions.prototype["getMoves"] = ComparisonOptions.prototype.getMoves = function(){return this.moves;};
+    ComparisonOptions.prototype["getComments"] = ComparisonOptions.prototype.getComments = function(){return this.comments;};
+    ComparisonOptions.prototype["getFormatting"] = ComparisonOptions.prototype.getFormatting = function(){return this.formatting;};
+    ComparisonOptions.prototype["getCaseChanges"] = ComparisonOptions.prototype.getCaseChanges = function(){return this.caseChanges;};
+    ComparisonOptions.prototype["getWhiteSpace"] = ComparisonOptions.prototype.getWhiteSpace = function(){return this.whiteSpace;};
+    ComparisonOptions.prototype["getTables"] = ComparisonOptions.prototype.getTables = function(){this.tables;};
+    ComparisonOptions.prototype["getHeadersAndFooters"] = ComparisonOptions.prototype.getHeadersAndFooters = function(){return this.headersAndFooters;};
+    ComparisonOptions.prototype["getFootNotes"] = ComparisonOptions.prototype.getFootNotes = function(){return this.footNotes;};
+    ComparisonOptions.prototype["getTextBoxes"] = ComparisonOptions.prototype.getTextBoxes = function(){return this.textBoxes;};
+    // ComparisonOptions.prototype["getFields"] = ComparisonOptions.prototype.getFields = function(){return this.fields;};
+    ComparisonOptions.prototype["getWords"] = ComparisonOptions.prototype.getWords = function(){return  this.words;};
 
 
-    ComparisonOptions.prototype["asc_putInsertionsAndDeletions"] = ComparisonOptions.prototype.asc_putInsertionsAndDeletions = function(v){this.insertionsAndDeletions = v;};
-    // ComparisonOptions.prototype["asc_putMoves"] = ComparisonOptions.prototype.asc_putMoves = function(v){this.moves = v;};
-    ComparisonOptions.prototype["asc_putComments"] = ComparisonOptions.prototype.asc_putComments = function(v){this.comments = v;};
-    ComparisonOptions.prototype["asc_putFormatting"] = ComparisonOptions.prototype.asc_putFormatting = function(v){this.formatting = v;};
-    ComparisonOptions.prototype["asc_putCaseChanges"] = ComparisonOptions.prototype.asc_putCaseChanges = function(v){this.caseChanges = v;};
-    ComparisonOptions.prototype["asc_putWhiteSpace"] = ComparisonOptions.prototype.asc_putWhiteSpace = function(v){this.whiteSpace = v;};
-    ComparisonOptions.prototype["asc_putTables"] = ComparisonOptions.prototype.asc_putTables = function(v){this.tables = v;};
-    ComparisonOptions.prototype["asc_putHeadersAndFooters"] = ComparisonOptions.prototype.asc_putHeadersAndFooters = function(v){this.headersAndFooters = v;};
-    ComparisonOptions.prototype["asc_putFootNotes"] = ComparisonOptions.prototype.asc_putFootNotes = function(v){this.footNotes = v;};
-    ComparisonOptions.prototype["asc_putTextBoxes"] = ComparisonOptions.prototype.asc_putTextBoxes = function(v){this.textBoxes = v;};
-    // ComparisonOptions.prototype["asc_putFields"] = ComparisonOptions.prototype.asc_putFields = function(v){this.fields = v;};
-    ComparisonOptions.prototype["asc_putWords"] = ComparisonOptions.prototype.asc_putWords = function(v){this.words = v;};
+    ComparisonOptions.prototype["putInsertionsAndDeletions"] = ComparisonOptions.prototype.putInsertionsAndDeletions = function(v){this.insertionsAndDeletions = v;};
+    // ComparisonOptions.prototype["putMoves"] = ComparisonOptions.prototype.putMoves = function(v){this.moves = v;};
+    ComparisonOptions.prototype["putComments"] = ComparisonOptions.prototype.putComments = function(v){this.comments = v;};
+    ComparisonOptions.prototype["putFormatting"] = ComparisonOptions.prototype.putFormatting = function(v){this.formatting = v;};
+    ComparisonOptions.prototype["putCaseChanges"] = ComparisonOptions.prototype.putCaseChanges = function(v){this.caseChanges = v;};
+    ComparisonOptions.prototype["putWhiteSpace"] = ComparisonOptions.prototype.putWhiteSpace = function(v){this.whiteSpace = v;};
+    ComparisonOptions.prototype["putTables"] = ComparisonOptions.prototype.putTables = function(v){this.tables = v;};
+    ComparisonOptions.prototype["putHeadersAndFooters"] = ComparisonOptions.prototype.putHeadersAndFooters = function(v){this.headersAndFooters = v;};
+    ComparisonOptions.prototype["putFootNotes"] = ComparisonOptions.prototype.putFootNotes = function(v){this.footNotes = v;};
+    ComparisonOptions.prototype["putTextBoxes"] = ComparisonOptions.prototype.putTextBoxes = function(v){this.textBoxes = v;};
+    // ComparisonOptions.prototype["putFields"] = ComparisonOptions.prototype.putFields = function(v){this.fields = v;};
+    ComparisonOptions.prototype["putWords"] = ComparisonOptions.prototype.putWords = function(v){this.words = v;};
 
 
     function CDocumentComparison(oOriginalDocument, oRevisedDocument, oOptions)
@@ -4315,7 +4315,7 @@
 	};
 
     window['AscCommonWord']["CompareBinary"] =  window['AscCommonWord'].CompareBinary = CompareBinary;
-    window['Asc']["ComparisonOptions"] = window['Asc'].ComparisonOptions = ComparisonOptions;
+    window['AscCommonWord']["ComparisonOptions"] = window['AscCommonWord'].ComparisonOptions = ComparisonOptions;
     window['AscCommonWord']['CompareDocuments'] = CompareDocuments;
     window['AscCommonWord'].CDocumentComparison = CDocumentComparison;
     window['AscCommonWord'].CNode = CNode;

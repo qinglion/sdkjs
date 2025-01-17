@@ -1001,7 +1001,7 @@
         this.revisedDocument = oRevisedDocument;
         this.options = oOptions;
         this.api = oOriginalDocument.GetApi();
-        this.comparison = new CDocumentMergeComparison(oOriginalDocument, oRevisedDocument, oOptions ? oOptions : new Asc.ComparisonOptions());
+        this.comparison = new CDocumentMergeComparison(oOriginalDocument, oRevisedDocument, oOptions ? oOptions : new AscCommonWord.ComparisonOptions());
         this.oldTrackRevisions = false;
     }
 
@@ -1073,7 +1073,7 @@
         }, this, []);
 	    oDoc1.SetTrackRevisions(oldTrackRevisions);
         if (oDoc2) {
-            const oMerge = new AscCommonWord.CDocumentMerge(oDoc1, oDoc2, oOptions ? oOptions : new Asc.ComparisonOptions());
+            const oMerge = new AscCommonWord.CDocumentMerge(oDoc1, oDoc2, oOptions ? oOptions : new AscCommonWord.ComparisonOptions());
             oMerge.merge();
         } else {
             AscCommon.pptx_content_loader.End_UseFullUrl();
