@@ -9154,6 +9154,12 @@ Paragraph.prototype.GetSelectionBounds = function()
 				if (StartPos > rangeEnd || EndPos < rangeStart)
 					continue;
 				
+				if (rangeEnd === this.Content.length - 1
+					&& this.GetLogicDocument()
+					&& this.GetLogicDocument().IsSelectParagraphEndMark
+					&& !this.GetLogicDocument().IsSelectParagraphEndMark())
+					--rangeEnd;
+				
 				drawSelectionState.beginRange(iRange);
 				for (var CurPos = rangeStart; CurPos <= rangeEnd; CurPos++)
 				{
