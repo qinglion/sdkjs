@@ -45,15 +45,15 @@
 	}
 
 	/**
-	 * calculateShapeParamsAndConvertToCShape
+	 * calculateShapeParamsAndConvertToCShape or CGroupShape which combines shape and text if Shape has text
 	 * @memberof Shape_Type
 	 * @param {CVisioDocument} visioDocument
 	 * @param {Page_Type} pageInfo
 	 * @param {Number} drawingPageScale
 	 * @param {CGroupShape?} currentGroupHandling
-	 * @return {{geometryCShape: CShape | CImageShape, textCShape: ?CShape}} cShapesObjects
+	 * @return {(CShape | CGroupShape)} cShape or cGroupShape (if shape and text)
 	 */
-	Shape_Type.prototype.toGeometryAndTextCShapes = function (visioDocument, pageInfo, drawingPageScale, currentGroupHandling) {
+	Shape_Type.prototype.convertShape = function (visioDocument, pageInfo, drawingPageScale, currentGroupHandling) {
 
 		/**
 		 * handle QuickStyleVariation cell which can change color (but only if color is a result of ThemeVal)
@@ -266,8 +266,8 @@
 			 * @param textCShape
 			 */
 			function parseParagraphAndAddToShapeContent(propsRowNum, paragraphPropsCommon, textCShape) {
-				if (paragraphPropsCommon === null) {
-					AscCommon.consoleLog("paragraphPropsCommon is null. Creating default paragraph");
+				if (paragraphPropsCommon === null || paragraphPropsCommon === undefined) {
+					AscCommon.consoleLog("paragraphPropsCommon is null or undefined. Creating default paragraph");
 					// create new paragraph to hold new properties
 					let oContent = textCShape.getDocContent();
 					let paragraph = new Paragraph(textCShape.getDrawingDocument(), true);
@@ -407,7 +407,7 @@
 				// handle lang
 				let oNewLang = new CLang();
 				let languageCell = characterPropsFinal && characterPropsFinal.getCell("LangID");
-				let languageId = Asc.g_oLcidNameToIdMap[languageCell.v];
+				let languageId = languageCell ? Asc.g_oLcidNameToIdMap[languageCell.v] : 1033;
 				// switch (languageCell.v) {
 				// 	case "ru-RU":
 				// 		languageId = 1049;
@@ -511,6 +511,28 @@
 					oRun.Pr.Italic = Boolean(Number(styleVsdx) & 2);
 					oRun.Pr.Underline = Boolean(Number(styleVsdx) & 4);
 					oRun.Pr.SmallCaps = Boolean(Number(styleVsdx) & 8);
+				}
+
+				// handle Strikethru
+				const strikeVsdx = characterPropsFinal && characterPropsFinal.getCellStringValue("Strikethru");
+				oRun.Pr.Strikeout = strikeVsdx === "1";
+
+				// handle DoubleStrikethrough
+				const doubleStrikeVsdx = characterPropsFinal && characterPropsFinal.getCellStringValue("DoubleStrikethrough");
+				oRun.Pr.DStrikeout = doubleStrikeVsdx === "1";
+
+				// handle Caps
+				const caseVsdx = characterPropsFinal && characterPropsFinal.getCellStringValue("Case");
+				oRun.Pr.Caps = caseVsdx === "1";
+
+				// handle VertAlign (doesn't work I don't know why)
+				const posVsdx = characterPropsFinal && characterPropsFinal.getCellStringValue("Pos");
+				if (posVsdx === "1") {
+					oRun.Pr.VertAlign = AscCommon.vertalign_SuperScript;
+				} else if (posVsdx === "2") {
+					oRun.Pr.VertAlign = AscCommon.vertalign_SubScript;
+				} else {
+					oRun.Pr.VertAlign = AscCommon.vertalign_Baseline;
 				}
 			}
 
@@ -955,6 +977,7 @@
 
 			// to rotate around point we 1) add one more offset 2) rotate around center
 			// https://www.figma.com/design/SJSKMY5dGoAvRg75YnHpdX/newRotateScheme?node-id=0-1&node-type=canvas&t=UTtoZyLRItzaQvS9-0
+
 			let txtPinX_inch = shape.getCellNumberValueWithScale("TxtPinX", drawingPageScale);
 			let txtPinY_inch = shape.getCellNumberValueWithScale("TxtPinY", drawingPageScale);
 
@@ -967,11 +990,13 @@
 
 			let globalXmm = cShape.spPr.xfrm.offX;
 			let globalYmm = cShape.spPr.xfrm.offY;
+
+			let shapeWidth = shape.getCellNumberValueWithScale("Width", drawingPageScale);
+			let shapeHeight =shape.getCellNumberValueWithScale("Height", drawingPageScale);
+
 			if (!(isNaN(txtPinX_inch) || txtPinX_inch === null)  && !(isNaN(txtPinY_inch) || txtPinY_inch === null)) {
 				// https://www.figma.com/file/WiAC4sxQuJaq65h6xppMYC/cloudFare?type=design&node-id=0%3A1&mode=design&t=SZbio0yIyxq0YnMa-1s
 
-				let shapeWidth = shape.getCellNumberValueWithScale("Width", drawingPageScale);
-				let shapeHeight = shape.getCellNumberValueWithScale("Height", drawingPageScale);
 				let shapeLocPinX = shape.getCellNumberValueWithScale("LocPinX", drawingPageScale);
 				let shapeLocPinY = shape.getCellNumberValueWithScale("LocPinY", drawingPageScale);
 				let txtWidth_inch = shape.getCellNumberValueWithScale("TxtWidth", drawingPageScale);
@@ -984,7 +1009,6 @@
 				// oBodyPr.anchor = 4; // 4 - bottom, 1,2,3 - center
 
 				let localXmm = (txtPinX_inch - txtLocPinX_inch) * g_dKoef_in_to_mm;
-				oXfrm.setOffX(globalXmm + localXmm); // mm
 
 				// back to MS coords
 				if (isInvertCoords) {
@@ -1021,11 +1045,11 @@
 						// start to bottom on shape
 						localYmm = (-fromBlockToShapeCenter + shapeLocPinY) * g_dKoef_in_to_mm;
 					}
-					oXfrm.setRot(shapeAngle - textAngle);
+					oXfrm.setRot(- textAngle);
 				} else {
 					// do calculations
 					localYmm = (txtPinY_inch - txtLocPinY_inch) * g_dKoef_in_to_mm;
-					oXfrm.setRot(shapeAngle + textAngle);
+					oXfrm.setRot(textAngle);
 				}
 
 				let offY = globalYmm + localYmm;
@@ -1035,19 +1059,19 @@
 					let topCornerOffY = bottomCornerOffY - txtHeight_inch * g_dKoef_in_to_mm;
 					offY = topCornerOffY;
 				}
-				oXfrm.setOffY(offY);
-
+				oXfrm.setOffX(globalXmm + localXmm); // mm
+				oXfrm.setOffY(shapeHeight < 0 ? offY + 2 * shapeHeight * g_dKoef_in_to_mm : offY);
 				oXfrm.setExtX(txtWidth_inch * g_dKoef_in_to_mm);
 				oXfrm.setExtY(txtHeight_inch * g_dKoef_in_to_mm);
 			} else {
 				// create text block with shape sizes
 				oXfrm.setOffX(globalXmm);
-				oXfrm.setOffY(globalYmm);
-				oXfrm.setExtX(shapeWidth_inch * g_dKoef_in_to_mm);
-				oXfrm.setExtY(shapeHeight_inch * g_dKoef_in_to_mm);
-				oXfrm.setRot(shapeAngle);
+				oXfrm.setOffY(shapeHeight < 0 ? globalYmm + 2 * shapeHeight * g_dKoef_in_to_mm : globalYmm);
+				oXfrm.setExtX(Math.abs(shapeWidth) * g_dKoef_in_to_mm);
+				oXfrm.setExtY(Math.abs(shapeHeight) * g_dKoef_in_to_mm);
+				oXfrm.setRot(0);
 			}
-			oSpPr.setXfrm(oXfrm);
+			oSpPr.setXfrm(oXfrm); 
 			oXfrm.setParent(oSpPr);
 			oSpPr.setFill(AscFormat.CreateNoFillUniFill());
 			oSpPr.setLn(AscFormat.CreateNoFillLine());
@@ -1297,7 +1321,7 @@
 
 		let isShapeDeleted = this.del === "1" || this.del === true;
 		if (isShapeDeleted) {
-			return {geometryCShape: null, textCShape: null};
+			return null;
 		}
 
 
@@ -1321,7 +1345,7 @@
 			oSpPr.setParent(emptyCShape);
 			emptyCShape.setParent2(visioDocument);
 
-			return {geometryCShape: emptyCShape, textCShape: null};
+			return emptyCShape;
 		}
 
 		let shapeAngle = this.getCellNumberValue("Angle");
@@ -1406,12 +1430,13 @@
 		if (gradientEnabled) {
 			let fillGradientDir = this.getCellNumberValue("FillGradientDir");
 
+			let invertGradient = false;
 			// global matrix transform: invert Y axis causes 0 is bottom of gradient and 100000 is top
-			let invertGradient = !isInvertCoords;
-			if (fillGradientDir === 3) {
-				// radial gradient seems to be handled in another way
-				invertGradient = isInvertCoords;
-			}
+			// let invertGradient = !isInvertCoords;
+			// if (fillGradientDir === 3) {
+			// 	// radial gradient seems to be handled in another way
+			// 	invertGradient = isInvertCoords;
+			// }
 
 			// now let's come through gradient stops
 			let fillGradientStopsSection = this.getSection("FillGradient");
@@ -1480,6 +1505,13 @@
 				} else {
 					AscCommon.consoleLog("fillForegndTrans value is themed or something. Not calculated for", this);
 				}
+			} else {
+				AscCommon.consoleLog("fillForegnd cell not found for", this);
+				// try to get from theme
+				// uniFillForegnd = AscVisio.themeval(null, this, pageInfo, visioDocument.themes, "FillColor",
+				// 	undefined, gradientEnabled);
+				// just use white
+				uniFillForegnd = AscFormat.CreateUnfilFromRGB(255, 255, 255);
 			}
 		}
 
@@ -1540,6 +1572,19 @@
 		/**	 * @type {CLn}	 */
 		let oStroke = AscFormat.builder_CreateLine(lineWidthEmu, {UniFill: lineUniFill});
 
+		// seems to be unsupported for now
+		let lineCapCell = this.getCell("LineCap");
+		let lineCapNumber;
+		if (lineCapCell) {
+			// see [MS-VSDX]-220215 (1) - 2.4.4.170	LineCap
+			lineCapNumber = lineCapCell.calculateValue(this, pageInfo, visioDocument.themes, themeValWasUsedFor);
+			if (isNaN(lineCapNumber)) {
+				oStroke.setCap(2);
+			} else {
+				oStroke.setCap(lineCapNumber);
+			}
+		}
+
 		let linePattern = this.getCell("LinePattern");
 		if (linePattern) {
 			// see ECMA-376-1 - L.4.8.5.2 Line Dash Properties and [MS-VSDX]-220215 (1) - 2.4.4.180	LinePattern
@@ -1550,7 +1595,25 @@
 				let shift = 11;
 				let dashTypeName = oStroke.GetDashByCode(linePatternNumber + shift);
 				if (dashTypeName !== null) {
-					oStroke.setPrstDash(linePatternNumber + shift);
+					if (lineCapNumber !== 2) {
+						AscCommon.consoleLog("linePattern may be wrong. Because visio cap is not square" +
+							"Now only flat cap is supported in sdkjs but Line patterns were made " +
+							"for visio cap square looks correct" +
+							"So when visio cap is not square line pattern will not fit."
+							)
+						if ("vsdxHalfHalfDash" === dashTypeName) {
+							// vsdxHalfHalfDash looks like solid on visio cap square but if cap is not square in visio
+							// vsdxHalfHalfDash should be dotted
+							linePatternNumber = 10;
+						}
+					}
+					if ("vsdxTransparent" === dashTypeName && oStroke.Fill) {
+						//todo реализовать прозрачный тип через отдельную настройку или разделить fill для линий и наконечников
+						//в vsdx может быть прозрачная линия с видимыми наконечниками
+						oStroke.Fill.fill = new AscFormat.CNoFill();
+					} else {
+						oStroke.setPrstDash(linePatternNumber + shift);
+					}
 				} else {
 					oStroke.setPrstDash(oStroke.GetDashCode("vsdxDash"));
 				}
@@ -1738,7 +1801,60 @@
 			}
 		}
 
-		return {geometryCShape: cShape, textCShape: textCShape};
+		// combine textCShape and geometryCShape to group
+		if (textCShape !== null) {
+			let groupShape = new AscFormat.CGroupShape();
+			// this.graphicObjectsController = new AscFormat.DrawingObjectsController();
+			// let groupShape = AscFormat.builder_CreateGroup();
+
+			groupShape.setLocks(0);
+
+			groupShape.setBDeleted(false);
+
+			// Create CGroupShape with SpPr from cShape but with no fill and line
+			let noLineFillSpPr = cShape.spPr.createDuplicate();
+			noLineFillSpPr.setFill(AscFormat.CreateNoFillUniFill());
+			noLineFillSpPr.setLn(AscFormat.CreateNoFillLine());
+			// these flips come to group
+			noLineFillSpPr.xfrm.flipV = false;
+			noLineFillSpPr.xfrm.flipH = false;
+
+			groupShape.setSpPr(noLineFillSpPr);
+			groupShape.spPr.setParent(groupShape);
+			// groupShape.rot = 0;
+			groupShape.brush = cShape.brush;
+			groupShape.bounds = cShape.bounds;
+			groupShape.localTransform = cShape.localTransform;
+			groupShape.pen = cShape.pen;
+			groupShape.Id = cShape.Id + "ShapeAndText";
+
+			groupShape.addToSpTree(groupShape.spTree.length, cShape);
+			groupShape.spTree[groupShape.spTree.length - 1].setGroup(groupShape);
+			cShape.spPr.xfrm.setOffX(0);
+			cShape.spPr.xfrm.setOffY(0);
+			cShape.spPr.xfrm.rot = 0;
+
+
+			cShape.recalculateLocalTransform(cShape.transform);
+
+			groupShape.addToSpTree(groupShape.spTree.length, textCShape);
+			groupShape.spTree[groupShape.spTree.length - 1].setGroup(groupShape);
+			textCShape.spPr.xfrm.setOffX(textCShape.spPr.xfrm.offX - groupShape.spPr.xfrm.offX);
+			textCShape.spPr.xfrm.setOffY(textCShape.spPr.xfrm.offY - groupShape.spPr.xfrm.offY);
+			textCShape.spPr.xfrm.flipH = false;
+			textCShape.spPr.xfrm.flipV = false;
+
+			textCShape.recalculateLocalTransform(textCShape.transform);
+			textCShape.recalculateTransformText();
+			textCShape.recalculateContent();
+
+			groupShape.setParent2(visioDocument);
+			groupShape.recalculate();
+
+			return groupShape;
+		} else {
+			return cShape;
+		}
 	}
 
 	/**
@@ -1749,18 +1865,19 @@
 	 * @param {Page_Type} pageInfo
 	 * @param {Number} drawingPageScale
 	 * @param {CGroupShape?} currentGroupHandling
-	 * @return {{cGroupShape: CGroupShape, textCShape: CShape}}
+	 * @return {CGroupShape}
 	 */
-	Shape_Type.prototype.toCGroupShapeRecursively = function (visioDocument, pageInfo,
-															  drawingPageScale, currentGroupHandling) {
+	Shape_Type.prototype.convertGroup = function (visioDocument, pageInfo,
+												  drawingPageScale, currentGroupHandling) {
 		// if we need to create CGroupShape create CShape first then copy its properties to CGroupShape object
 		// so anyway create CShapes
-		let cShapes = this.toGeometryAndTextCShapes(visioDocument, pageInfo, drawingPageScale, currentGroupHandling);
+		let cShapeOrCGroupShape = this.convertShape(visioDocument, pageInfo, drawingPageScale, currentGroupHandling);
 
+		// if it is group in vsdx
 		if (this.type === "Group") {
 			// CGroupShape cant support text. So cShape will represent everything related to Shape Type="Group".
 			// Let's push cShape into CGroupShape object.
-			if (cShapes.geometryCShape) {
+			if (cShapeOrCGroupShape) {
 				let groupShape = new AscFormat.CGroupShape();
 				// this.graphicObjectsController = new AscFormat.DrawingObjectsController();
 				// let groupShape = AscFormat.builder_CreateGroup();
@@ -1770,27 +1887,27 @@
 				groupShape.setBDeleted(false);
 
 				// Create CGroupShape with SpPr from cShape but with no fill and line
-				let noLineFillSpPr = cShapes.geometryCShape.spPr.createDuplicate();
+				let noLineFillSpPr = cShapeOrCGroupShape.spPr.createDuplicate();
 				noLineFillSpPr.setFill(AscFormat.CreateNoFillUniFill());
 				noLineFillSpPr.setLn(AscFormat.CreateNoFillLine());
 
 				groupShape.setSpPr(noLineFillSpPr);
 				groupShape.spPr.setParent(groupShape);
-				groupShape.rot = cShapes.geometryCShape.rot;
-				groupShape.brush = cShapes.geometryCShape.brush;
-				groupShape.bounds = cShapes.geometryCShape.bounds;
-				groupShape.flipH = cShapes.geometryCShape.flipH;
-				groupShape.flipV = cShapes.geometryCShape.flipV;
-				groupShape.localTransform = cShapes.geometryCShape.localTransform;
-				groupShape.pen = cShapes.geometryCShape.pen;
-				groupShape.Id = cShapes.geometryCShape.Id + "Group";
+				groupShape.rot = cShapeOrCGroupShape.rot;
+				groupShape.brush = cShapeOrCGroupShape.brush;
+				groupShape.bounds = cShapeOrCGroupShape.bounds;
+				groupShape.flipH = cShapeOrCGroupShape.flipH;
+				groupShape.flipV = cShapeOrCGroupShape.flipV;
+				groupShape.localTransform = cShapeOrCGroupShape.localTransform;
+				groupShape.pen = cShapeOrCGroupShape.pen;
+				groupShape.Id = cShapeOrCGroupShape.Id + "_Group";
 
-				groupShape.addToSpTree(groupShape.spTree.length, cShapes.geometryCShape);
+				groupShape.addToSpTree(groupShape.spTree.length, cShapeOrCGroupShape);
 				groupShape.spTree[groupShape.spTree.length - 1].setGroup(groupShape);
 
-				cShapes.geometryCShape.spPr.xfrm.setOffX(0);
-				cShapes.geometryCShape.spPr.xfrm.setOffY(0);
-				
+				cShapeOrCGroupShape.spPr.xfrm.setOffX(0);
+				cShapeOrCGroupShape.spPr.xfrm.setOffY(0);
+
 				// cShape.setLocks(1)?;
 
 				groupShape.setParent2(visioDocument);
@@ -1801,71 +1918,77 @@
 					let subShapes = this.getSubshapes();
 					for (let i = 0; i < subShapes.length; i++) {
 						const subShape = subShapes[i];
-						subShape.toCGroupShapeRecursively(visioDocument, pageInfo, drawingPageScale, currentGroupHandling);
+						subShape.convertGroup(visioDocument, pageInfo, drawingPageScale, currentGroupHandling);
 					}
 
 					// textCShape is returned from this function
 
 				} else {
-
-					// if currentGroupHandling add groupShape (withShape in it) and textCShape to it
+					// insert group to currentGroupHandling
 
 					currentGroupHandling.addToSpTree(currentGroupHandling.spTree.length, groupShape);
 					currentGroupHandling.spTree[currentGroupHandling.spTree.length - 1].setGroup(currentGroupHandling);
 					groupShape.recalculateLocalTransform(groupShape.transform);
 
-					if (cShapes.textCShape !== null) {
-						currentGroupHandling.addToSpTree(currentGroupHandling.spTree.length, cShapes.textCShape);
-						currentGroupHandling.spTree[currentGroupHandling.spTree.length - 1].setGroup(currentGroupHandling);
-						// cShapes.textCShape.recalculateLocalTransform(cShapes.textCShape.transform); // exists below
-					}
+
+					// delete bcs textCShape is always null see toGeometryAndTextCShapes
+					// if (cShapes.textCShape !== null) {
+					// 	currentGroupHandling.addToSpTree(currentGroupHandling.spTree.length, cShapes.textCShape);
+					// 	currentGroupHandling.spTree[currentGroupHandling.spTree.length - 1].setGroup(currentGroupHandling);
+					// 	// cShapes.textCShape.recalculateLocalTransform(cShapes.textCShape.transform); // exists below
+					// }
 
 					currentGroupHandling = groupShape;
 					let subShapes = this.getSubshapes();
 					for (let i = 0; i < subShapes.length; i++) {
 						const subShape = subShapes[i];
-						subShape.toCGroupShapeRecursively(visioDocument, pageInfo, drawingPageScale, currentGroupHandling);
+						subShape.convertGroup(visioDocument, pageInfo, drawingPageScale, currentGroupHandling);
 					}
 				}
 				// recalculate positions to local (group) coordinates
-				cShapes.geometryCShape.recalculateLocalTransform(cShapes.geometryCShape.transform);
+				cShapeOrCGroupShape.recalculateLocalTransform(cShapeOrCGroupShape.transform);
 				// cShapes.geometryCShape.recalculateTransformText();
 				// cShapes.geometryCShape.recalculateContent();
-				// cShape.recalculate(); // doesnt work here
+				// cShapes.geometryCShape.recalculate(); // doesnt work here
 			}
 
-			if (cShapes.textCShape !== null) {
-				// even if not add textCShape to currentGroupHandling above do recalculate just in case
-				cShapes.textCShape.recalculateLocalTransform(cShapes.textCShape.transform);
-				cShapes.textCShape.recalculateTransformText();
-				cShapes.textCShape.recalculateContent();
-			}
+			// 	delete bcs textCShape is always null see toGeometryAndTextCShapes
+			// if (cShapes.textCShape !== null) {
+			// 	// even if not add textCShape to currentGroupHandling above do recalculate just in case
+			// 	cShapes.textCShape.recalculateLocalTransform(cShapes.textCShape.transform);
+			// 	cShapes.textCShape.recalculateTransformText();
+			// 	cShapes.textCShape.recalculateContent();
+			// }
 
 		} else {
 			// if read cShape not CGroupShape
 			if (!currentGroupHandling) {
 				throw new Error("Group handler was called on simple shape");
 			} else {
-				// add shape and text to currentGroupHandling
+				// add shape and text (shapeAndTextGroup or shape) to currentGroupHandling
 
-				if (cShapes.geometryCShape) {
-					currentGroupHandling.addToSpTree(currentGroupHandling.spTree.length, cShapes.geometryCShape);
+				if (cShapeOrCGroupShape) {
+					currentGroupHandling.addToSpTree(currentGroupHandling.spTree.length, cShapeOrCGroupShape);
 					currentGroupHandling.spTree[currentGroupHandling.spTree.length-1].setGroup(currentGroupHandling);
 
 					// recalculate positions to local (group) coordinates
-					cShapes.geometryCShape.recalculateLocalTransform(cShapes.geometryCShape.transform);
-					// cShapes.geometryCShape.recalculateTransformText();
-					// cShapes.geometryCShape.recalculateContent();
-					// cShape.recalculate(); // doesnt work here
-				}
+					cShapeOrCGroupShape.recalculateLocalTransform(cShapeOrCGroupShape.transform);
+					cShapeOrCGroupShape.recalculate();
 
-				if (cShapes.textCShape !== null) {
-					currentGroupHandling.addToSpTree(currentGroupHandling.spTree.length, cShapes.textCShape);
-					currentGroupHandling.spTree[currentGroupHandling.spTree.length-1].setGroup(currentGroupHandling);
 
-					cShapes.textCShape.recalculateLocalTransform(cShapes.textCShape.transform);
-					cShapes.textCShape.recalculateTransformText();
-					cShapes.textCShape.recalculateContent();
+					// is group
+					if (cShapeOrCGroupShape.Id.endsWith("ShapeAndText")) {
+						let textShape = cShapeOrCGroupShape.spTree[1];
+						textShape.recalculateLocalTransform(textShape.transform);
+						textShape.recalculateTransformText && textShape.recalculateTransformText();
+						textShape.recalculateContent && textShape.recalculateContent();
+
+						let geometryShape = cShapeOrCGroupShape.spTree[0];
+						geometryShape.recalculateLocalTransform(geometryShape.transform);
+						geometryShape.recalculateTransformText && geometryShape.recalculateTransformText();
+						geometryShape.recalculateContent && geometryShape.recalculateContent();
+						geometryShape.recalculate();
+					}
 				}
 			}
 		}
@@ -1874,7 +1997,7 @@
 			currentGroupHandling.recalculate();
 		}
 
-		return {cGroupShape: currentGroupHandling, textCShape: cShapes.textCShape};
+		return currentGroupHandling;
 	}
 
 	/**

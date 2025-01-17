@@ -6408,7 +6408,7 @@
 							var oParagraph = oDocContent.GetElement(0);
 							var oForm;
 							if (oParagraph && oParagraph.IsParagraph() && oParagraph.IsInFixedForm() && (oForm = oParagraph.GetInnerForm())) {
-								oDocContent.ResetShiftView();
+								oDocContent.ShiftViewToFirstLine();
 								bRedraw = true;
 							}
 						}
@@ -11320,6 +11320,11 @@
 			const selectedArray = graphicController.getSelectedArray();
 			if (selectedArray.length < 2) return false;
 
+			const hasShape = selectedArray.some(function (item) {
+				return item instanceof AscFormat.CShape;
+			});
+			if (!hasShape) return false;
+
 			const hasLocked = selectedArray.some(function(item) {
 				return item.Lock &&
 					item.Lock.Type !== AscCommon.c_oAscLockTypes.kLockTypeNone &&
@@ -11368,7 +11373,7 @@
 					return convertFormatPathToCompoundPath(path, shape.transform);
 				});
 				const unitedCompoundPath = compoundPaths.reduce(function (resultPath, currentPath) {
-					return resultPath.unite(currentPath);
+					return resultPath['unite'](currentPath);
 				})
 				return unitedCompoundPath;
 			});
@@ -11512,23 +11517,29 @@
 			if (AscCommon.isRealObject(referenceShape.blipFill)) {
 				const blipFill = referenceShape.blipFill.createDuplicate();
 
-				const refX = referenceShape.bounds.x;
-				const refY = referenceShape.bounds.y;
-				const refW = referenceShape.bounds.w;
-				const refH = referenceShape.bounds.h;
+				const refX = referenceShape.bounds.l;
+				const refY = referenceShape.bounds.t;
+				const refW = referenceShape.bounds.r - referenceShape.bounds.l;
+				const refH = referenceShape.bounds.b - referenceShape.bounds.t;
 				const resX = compoundPathBounds['getLeft']();
 				const resY = compoundPathBounds['getTop']();
 				const resW = compoundPathBounds['getWidth']();
 				const resH = compoundPathBounds['getHeight']();
 
-				blipFill.srcRect = {
-					l: 100 * (resX - refX) / refW,
-					t: 100 * (resY - refY) / refH,
-					r: 100 * (resX + resW - refX) / refW,
-					b: 100 * (resY + resH - refY) / refH,
-				};
+				blipFill.srcRect = new AscFormat.CSrcRect();
+				blipFill.srcRect.setLTRB(
+					100 * (resX - refX) / refW,
+					100 * (resY - refY) / refH,
+					100 * (resX + resW - refX) / refW,
+					100 * (resY + resH - refY) / refH
+				);
 
 				resultShape.setBlipFill(blipFill);
+			}
+
+			if (AscCommon.isRealObject(referenceShape.txBody)) {
+				const txBody = referenceShape.txBody.createDuplicate();
+				resultShape.setTxBody(txBody);
 			}
 
 			resultShape.setSpPr(new AscFormat.CSpPr());
@@ -11542,6 +11553,11 @@
 
 			resultGeometry.setParent(resultShape);
 			resultShape.spPr.setGeometry(resultGeometry);
+
+			if (AscCommon.isRealObject(referenceShape.spPr.effectProps)) {
+				const effectProps = referenceShape.spPr.effectProps.createDuplicate();
+				resultShape.spPr.setEffectPr(effectProps);
+			}
 
 			return resultShape;
 		}

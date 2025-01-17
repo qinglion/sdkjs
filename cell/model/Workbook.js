@@ -2976,6 +2976,8 @@
 		this.metadata = null;
 		//true - rightToLeft, false/null - leftToRight
 		this.defaultDirection = null;
+
+		this.externalReferenceHelper = new CExternalReferenceHelper(this);
 	}
 	Workbook.prototype.init=function(tableCustomFunc, tableIds, sheetIds, bNoBuildDep, bSnapshot){
 		if(this.nActive < 0)
@@ -5248,11 +5250,15 @@
 		return null;
 	};
 
-	Workbook.prototype.getExternalWorksheet = function (val, sheet) {
-		var extarnalLink = window['AscCommon'].isNumber(val) ? this.getExternalLinkByIndex(val - 1) : this.getExternalLinkByName(val);
+	Workbook.prototype.getExternalWorksheet = function (val, sheet, getFirstSheet) {
+		let extarnalLink = this.getExternalLink(val);
 		if (extarnalLink) {
+			if (getFirstSheet && extarnalLink.SheetNames) {
+				sheet = extarnalLink.SheetNames[0];
+			}
+
 			if (null == sheet) {
-				return extarnalLink;
+				return null;
 			}
 			if (extarnalLink.worksheets && extarnalLink.worksheets[sheet]) {
 				return extarnalLink.worksheets[sheet];
@@ -5270,6 +5276,10 @@
 			}
 		}
 		return null;
+	};
+
+	Workbook.prototype.getExternalLink = function (val) {
+		return window['AscCommon'].isNumber(val) ? this.getExternalLinkByIndex(val - 1) : this.getExternalLinkByName(val);
 	};
 
 	Workbook.prototype.getExternalWorksheetByIndex = function (index, sheet) {
@@ -5530,21 +5540,23 @@
 		this.addExternalReferences(newExternalReferences);
 	};
 
-	Workbook.prototype.setUpdateLinks = function (val, addToHistory) {
-		var from = !!(this.workbookPr.UpdateLinks && this.workbookPr.UpdateLinks);
+	Workbook.prototype.setUpdateLinks = function (val, addToHistory, bFirstStart, bNotStartTimer) {
+		var from = !!(this.workbookPr.getUpdateLinks());
 		if (val !== from) {
-			this.workbookPr.UpdateLinks = val;
+			this.workbookPr.setUpdateLinks(val);
 			if (addToHistory) {
 				History.Create_NewPoint();
 				History.Add(AscCommonExcel.g_oUndoRedoWorkbook, AscCH.historyitem_Workbook_UpdateLinks,
 					null, null, new UndoRedoData_FromTo(from, val));
 			}
-			this.handlers && this.handlers.trigger("changeUpdateLinks");
+			!bNotStartTimer && this.handlers && this.handlers.trigger("changeUpdateLinks");
+		} else if (bFirstStart) {
+			!bNotStartTimer && this.handlers && this.handlers.trigger("changeUpdateLinks");
 		}
 	};
 
 	Workbook.prototype.getUpdateLinks = function () {
-		return !!(this.workbookPr && this.workbookPr.workbookPr);
+		return this.workbookPr && this.workbookPr.getUpdateLinks();
 	};
 
 	Workbook.prototype.unlockUserProtectedRanges = function(){
@@ -15290,7 +15302,7 @@
 
 		if (oSheetListeners.cellMap.hasOwnProperty(nCellIndex) && !aExcludeFormulas.includes(sFunctionName)) {
 			return oSheetListeners.cellMap[nCellIndex];
-		} else if (aOutStack && aOutStack.length) {
+		} else if (aOutStack && aOutStack.length && sFunctionName) {
 			for (let nIndex in oSheetListeners.areaMap) {
 				if (oSheetListeners.areaMap[nIndex].bbox.contains(this.nCol, this.nRow)
 					&& !_isExcludeFormula(aOutStack, oSheetListeners.areaMap[nIndex])) {
@@ -15601,10 +15613,6 @@
 			return false;
 		}
 		const oFormulaParsed = this.getFormulaParsed();
-		if (oFormulaParsed.ca) {
-			g_cCalcRecursion.resetRecursionCounter();
-			return true;
-		}
 		const aRefElements = _getRefElements(oFormulaParsed);
 		const oThis = this;
 		let bRecursiveFormula = false;
@@ -23533,6 +23541,135 @@
 			}
 		}
 	};
+
+	function CExternalReferenceHelper(wb) {
+		this.wb = wb;
+	}
+
+	CExternalReferenceHelper.prototype.getExternalLinkStr = function (nExternalLinkIndex, locale, isShortLink) {
+		let index = nExternalLinkIndex;
+
+		let wbModel = this.wb;
+		let oExternalLink = nExternalLinkIndex && wbModel && wbModel.getExternalLinkByIndex(index - 1, true);
+
+		if (oExternalLink && !locale) {
+			return "[" + index + "]";
+		}
+		let path = oExternalLink && oExternalLink.path;
+		let name = oExternalLink && oExternalLink.name;
+		let res = "";
+		if (path || name) {
+			if (path) {
+				res += path;
+			}
+			if (name) {
+				res += isShortLink ? name : "[" + name + "]";
+			}
+		} else if (oExternalLink) {
+			res = oExternalLink;
+		}
+		return res;
+	};
+
+	CExternalReferenceHelper.prototype.check3dRef = function (_3DRefTmp, local) {
+		let t = this;
+		let externalLink = _3DRefTmp[3];
+		let externalDefName, externalSheetName, receivedDefName, receivedLink, isShortLink;
+
+		// this argument contain shortLink object with full formula and two parts of it
+		let receivedShortLink = _3DRefTmp[4];
+		if (receivedShortLink) {
+			// receivedShortLink - the received, short formula that needs to be checked for an internal link (they have the same in structure)
+			// the link can be either to another sheet or to another book - they have the same entry
+			receivedLink = receivedShortLink.externalLink;
+			externalSheetName = receivedShortLink.externalLink;
+			receivedDefName = receivedShortLink.defname;
+		}
+
+		// This check of short links is performed only when opening/reading, manual input is processed differently
+		if (receivedShortLink && !local) {
+			let eReference = t.wb.getExternalLinkByIndex(externalLink - 1);
+			if (eReference && eReference.DefinedNames) {
+				for (let i = 0; i < eReference.DefinedNames.length; i++) {
+					if (eReference.DefinedNames[i].Name === receivedDefName) {
+						externalDefName = eReference.DefinedNames[i];
+						if (externalDefName.SheetId !== null) {
+							externalSheetName = eReference.SheetNames[eReference.DefinedNames[i].SheetId];
+						} else if (!externalDefName.SheetId && externalDefName.RefersTo) {
+							// parse string
+							let refString = externalDefName.RefersTo,
+								// regex to find a sheet name enclosed in single quotes
+								reg = /'([\S]+)'/gi,
+								regMatch = reg.exec(refString);
+
+							if (regMatch && regMatch[1]) {
+								externalSheetName = regMatch[1];
+							} else if (refString) {
+								externalSheetName = refString.split("!")[0];
+							}
+						}
+						break;
+					}
+				}
+			}
+		}
+
+		let sheetName = _3DRefTmp[1] ? _3DRefTmp[1] : externalSheetName;
+		if (!sheetName && local) {
+			return false;
+		}
+
+		let externalName = _3DRefTmp[3];
+		//check on add to this document
+		let thisTitle = externalLink && window["Asc"]["editor"] && window["Asc"]["editor"].DocInfo && window["Asc"]["editor"].DocInfo.get_Title();
+		if (thisTitle === externalLink) {
+			externalLink = null;
+		}
+
+		// we check whether sheetName is part of the document or is it a short link to external data
+		if (local && !externalLink && receivedShortLink) {
+			// если существует лист с таким же названием, ссылаемся на него, иначе создаем внешнюю ссылку(сокращенную)
+			let innerSheet = t.wb.getWorksheetByName(sheetName);
+			if (!innerSheet) {
+				let eReference = t.wb.getExternalLinkByName(sheetName);
+				if (eReference && eReference.DefinedNames) {
+					for (let i = 0; i < eReference.DefinedNames.length; i++) {
+						if (eReference.DefinedNames[i].Name === receivedDefName) {
+							externalDefName = eReference.DefinedNames[i];
+							if (externalDefName.SheetId !== null) {
+								externalSheetName = eReference.SheetNames[eReference.DefinedNames[i].SheetId];
+							} else if (!externalDefName.SheetId && externalDefName.RefersTo) {
+								// parse string
+								let refString = externalDefName.RefersTo,
+									// regex to find a sheet name enclosed in single quotes
+									reg = /'([\S]+)'/gi,
+									regMatch = reg.exec(refString);
+
+								if (regMatch && regMatch[1]) {
+									externalSheetName = regMatch[1];
+								} else if (refString) {
+									let externalWB = eReference.getWb();
+									let depFormulas = externalWB && externalWB.dependencyFormulas;
+									if (depFormulas && depFormulas.defNames && depFormulas.defNames.wb && depFormulas.defNames.wb[receivedDefName]) {
+										externalSheetName = refString.split("!")[0];
+									}
+								}
+							}
+							break;
+						}
+					}
+				}
+
+				sheetName = externalSheetName ? externalSheetName : receivedLink.split(".")[0];
+				externalName = receivedLink;
+				externalLink = receivedLink;
+				isShortLink = true;
+			}
+		}
+
+		return {sheetName: sheetName, externalLink: externalLink, receivedLink: receivedLink, externalName: externalName, isShortLink: isShortLink};
+	};
+
 	// Export
 	window['AscCommonExcel'] = window['AscCommonExcel'] || {};
 	window['AscCommonExcel'].g_nVerticalTextAngle = g_nVerticalTextAngle;

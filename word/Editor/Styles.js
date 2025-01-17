@@ -7967,7 +7967,8 @@ CStyles.prototype =
 	Set_DefaultTextPr : function(TextPr)
 	{
 		History.Add(new CChangesStylesChangeDefaultTextPr(this, this.Default.TextPr, TextPr));
-        this.Default.TextPr.InitDefault();
+		this.Default.TextPr = new AscWord.CTextPr();
+		this.Default.TextPr.InitDefault();
 		this.Default.TextPr.Merge(TextPr);
 		this.OnChangeDefaultTextPr();
 		// TODO: Пока данная функция используется только в билдере, как только будет использоваться в самом редакторе,
@@ -8479,6 +8480,20 @@ CStyles.prototype =
                 bNeedRecalc = true;
                 break;
             }
+			case AscDFH.historyitem_Styles_ChangeDefaultTextPr:
+			{
+				// TODO: Нужно сделать отдельный метод для проверки по стилю рана (в том числе и дефолтовому, как здесь)
+				let logicDocument = private_GetWordLogicDocument();
+				if (!logicDocument || !logicDocument.IsDocumentEditor())
+					return;
+				
+				let paragraphs = logicDocument.GetAllParagraphs({All : true});
+				for (let i = 0, count = paragraphs.length; i < count; ++i)
+				{
+					paragraphs[i].Recalc_CompiledPr();
+					paragraphs[i].Recalc_RunsCompiledPr();
+				}
+			}
         }
 
         if ( true === bNeedRecalc )
@@ -14963,16 +14978,16 @@ CTextPr.prototype.GetTextMetrics = function(nFontFlags, oTheme)
 	}
 
 	if ((nFontFlags & AscWord.fontslot_ASCII) && oTextPr.RFonts.Ascii)
-		oMetrics.Update(oTextPr.GetFontInfo(AscWord.fontslot_ASCII));
+		oMetrics.UpdateByFontInfo(oTextPr.GetFontInfo(AscWord.fontslot_ASCII));
 
 	if ((nFontFlags & AscWord.fontslot_CS) && oTextPr.RFonts.CS)
-		oMetrics.Update(oTextPr.GetFontInfo(AscWord.fontslot_CS));
+		oMetrics.UpdateByFontInfo(oTextPr.GetFontInfo(AscWord.fontslot_CS));
 
 	if ((nFontFlags & AscWord.fontslot_HAnsi) && oTextPr.RFonts.HAnsi)
-		oMetrics.Update(oTextPr.GetFontInfo(AscWord.fontslot_HAnsi));
+		oMetrics.UpdateByFontInfo(oTextPr.GetFontInfo(AscWord.fontslot_HAnsi));
 
 	if ((nFontFlags & AscWord.fontslot_EastAsia) && oTextPr.RFonts.EastAsia)
-		oMetrics.Update(oTextPr.GetFontInfo(AscWord.fontslot_EastAsia));
+		oMetrics.UpdateByFontInfo(oTextPr.GetFontInfo(AscWord.fontslot_EastAsia));
 
 	return oMetrics;
 };
@@ -15016,30 +15031,34 @@ function CTextMetrics()
 	this.Height  = 0;
 }
 /**
- * @param {AscFonts.CTextFontInfo} oFontInfo
+ * @param {AscFonts.CTextFontInfo} fontInfo
  */
-CTextMetrics.prototype.Update = function(oFontInfo)
+CTextMetrics.prototype.UpdateByFontInfo = function(fontInfo)
 {
-	g_oTextMeasurer.SetFontInternal(oFontInfo.Name, oFontInfo.Size, oFontInfo.Style);
-
+	this.Update(fontInfo.Name, fontInfo.Size, fontInfo.Style);
+};
+CTextMetrics.prototype.Update = function(fontName, fontSize, fontStyle)
+{
+	g_oTextMeasurer.SetFontInternal(fontName, fontSize, fontStyle);
+	
 	let nHeight  = g_oTextMeasurer.GetHeight();
 	let nAscent  = g_oTextMeasurer.GetAscender();
 	let nDescent = Math.abs(g_oTextMeasurer.GetDescender());
-
+	
 	let _nHeight  = nHeight;
 	let _nDescent = nDescent;
 	let _nAscent  = Math.min(nAscent, nHeight - nDescent);
 	let _nLineGap = Math.max(0, nHeight - nAscent - nDescent);
-
+	
 	if (this.Height < _nHeight)
 		this.Height = _nHeight;
-
+	
 	if (this.Descent < _nDescent)
 		this.Descent = _nDescent;
-
+	
 	if (this.Ascent < _nAscent)
 		this.Ascent = _nAscent;
-
+	
 	if (this.LineGap < _nLineGap)
 		this.LineGap = _nLineGap;
 };

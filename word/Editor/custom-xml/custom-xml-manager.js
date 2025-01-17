@@ -299,7 +299,7 @@
 
 		let zLib				= new AscCommon.ZLib;
 		zLib.create();
-		zLib.addFile('[Content_Types].xml', new TextEncoder("utf-8").encode('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+		zLib.addFile('[Content_Types].xml', AscCommon.Utf8.encode('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
 			'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
 			'<Default Extension="wmf" ContentType="image/x-wmf"/>' +
 			'<Default Extension="png" ContentType="image/png"/>' +
@@ -378,7 +378,7 @@
 			if (name[0] === "/")
 				name = name.substring(1, name.length);
 
-			zLib.addFile(name, new TextEncoder("utf-8").encode(data));
+			zLib.addFile(name, AscCommon.Utf8.encode(data));
 		}
 
 		let arr					= zLib.save();

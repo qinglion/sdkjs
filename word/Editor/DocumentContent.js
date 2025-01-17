@@ -1294,7 +1294,6 @@ CDocumentContent.prototype.Recalculate_Page               = function(PageIndex, 
 
     if (Index >= Count)
         this.Pages[PageIndex].EndPos = Count - 1;
-
     return Result;
 };
 CDocumentContent.prototype.CanCalculateFrames = function()
@@ -1582,6 +1581,33 @@ CDocumentContent.prototype.ResetShiftView = function()
 	this.ShiftViewX = 0;
 	this.ShiftViewY = 0;
 };
+CDocumentContent.prototype.ShiftViewToFirstLine = function()
+{
+	let para = this.GetElement(0);
+	if (this.GetElementsCount() <= 0 || !para || !para.IsParagraph())
+		return;
+	
+	let paraState = para.SaveSelectionState();
+	para.MoveCursorToStartPos();
+	this.ResetShiftView();
+	this.CheckFormViewWindow(true);
+	para.LoadSelectionState(paraState);
+};
+CDocumentContent.prototype.CheckShiftView = function()
+{
+	var oForm = this.GetInnerForm();
+	if (!this.LogicDocument
+		|| !oForm
+		|| oForm.IsCheckBox()
+		|| oForm.IsPicture()
+		|| (oForm.IsTextForm() && oForm.GetTextFormPr().IsComb())
+		|| oForm.IsAutoFitContent()
+		|| this.Content.length !== 1
+		|| !this.Content[0].IsParagraph())
+		return;
+	
+	this.ShiftViewToFirstLine();
+};
 CDocumentContent.prototype.CheckFormViewWindow = function()
 {
 	var isChanged = false;
@@ -1613,7 +1639,7 @@ CDocumentContent.prototype.CheckFormViewWindow = function()
 	{
 		nDx = -this.ShiftViewX;
 	}
-
+	
 	if (oPageBounds.Bottom - oPageBounds.Top > oFormBounds.H)
 	{
 		if (oPageBounds.Top > oFormBounds.Y)
@@ -1625,13 +1651,13 @@ CDocumentContent.prototype.CheckFormViewWindow = function()
 	{
 		nDy = -this.ShiftViewY;
 	}
-
+	
 	if (Math.abs(nDx) > 0.001 || Math.abs(nDy) > 0.001)
 	{
 		this.ShiftView(nDx, nDy);
 		isChanged = true;
 	}
-
+	
 	var oCursorPos  = oParagraph.GetCalculatedCurPosXY();
 	var oLineBounds = oParagraph.GetLineBounds(oCursorPos.Internal.Line);
 
@@ -1653,7 +1679,7 @@ CDocumentContent.prototype.CheckFormViewWindow = function()
 	if (oPageBounds.Bottom - oPageBounds.Top > oFormBounds.H)
 	{
 		if (nCursorH > oFormBounds.H - nPad || nCursorT < oFormBounds.Y + nPad)
-			nDy = oFormBounds.Y + nPad - nCursorT;
+			nDy = oFormBounds.Y + nPad - nCursorT - (nCursorH - oFormBounds.H - nPad);
 		else if (nCursorT + nCursorH > oFormBounds.H - nPad)
 			nDy = oFormBounds.H - nPad - nCursorT - nCursorH;
 	}

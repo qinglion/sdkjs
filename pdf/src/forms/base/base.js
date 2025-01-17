@@ -1863,10 +1863,10 @@
         let nHeight     = (aOrigRect[3] - aOrigRect[1]);
 
         let aRegions = [[
-            [nX + nWidth, nY],
             [nX, nY],
-            [nX, nY + nHeight],
-            [nX + nWidth, nY + nHeight]
+            [nX + nWidth, nY],
+            [nX + nWidth, nY + nHeight],
+            [nX, nY + nHeight]
         ]];
 
         oGraphicsPDF.DrawLockObjectRect(this.Lock.Get_Type(), aRegions);

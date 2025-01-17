@@ -127,6 +127,12 @@
 	AscFormat.InitClass(CPageInfo, AscFormat.CBaseNoIdObject, AscDFH.historyitem_type_Pdf_Page);
 	CPageInfo.prototype.constructor = CPageInfo;
 
+	Object.defineProperty(CPageInfo.prototype, "PageNum", {
+		get: function () {
+			return this.GetIndex();
+		}
+	});
+
 	CPageInfo.prototype.RedrawDrawings = function() {
 		let oViewer = Asc.editor.getDocumentRenderer();
 		let _t = this;
@@ -151,13 +157,19 @@
 
         oViewer.paint(setRedrawPageOnRepaint);
 	};
-	CPageInfo.prototype.RedrawAnnots = function() {
+	CPageInfo.prototype.RedrawAnnots = function(isTextMarkup) {
 		let oViewer = Asc.editor.getDocumentRenderer();
 		let _t = this;
 
 		let nIdx = _t.GetIndex();
 		function setRedrawPageOnRepaint() {
-            _t.needRedrawAnnots = true;
+			if (isTextMarkup) {
+				_t.needRedrawMarkups = true;
+			}
+			else {
+				_t.needRedrawAnnots = true;
+			}
+
 			nIdx != -1 && oViewer.thumbnails && oViewer.thumbnails._repaintPage(nIdx);
         }
 
@@ -198,10 +210,10 @@
         }
 
 		this.drawings.splice(nPos, 0, oDrawing);
+        oDrawing.SetParentPage(this);
+
 		AscCommon.History.Add(new CChangesPDFDocumentDrawingsContent(this, nPos, [oDrawing], true));
 
-		oDrawing.SetPage(this.GetIndex());
-        oDrawing.SetParentPage(this);
 		this.RedrawDrawings();
 	};
 	CPageInfo.prototype.RemoveDrawing = function(sId) {
@@ -224,9 +236,9 @@
         }
 
         this.annots.splice(nPos, 0, oAnnot);
+        oAnnot.SetParentPage(this);
 
         AscCommon.History.Add(new CChangesPDFDocumentAnnotsContent(this, nPos, [oAnnot], true));
-		oAnnot.SetParentPage(this);
 		this.RedrawAnnots();
 	};
 	CPageInfo.prototype.RemoveAnnot = function(sId) {
@@ -241,7 +253,7 @@
         this.annots.splice(nPos, 1);
         
         AscCommon.History.Add(new CChangesPDFDocumentAnnotsContent(this, nPos, [oAnnot], false));
-		this.RedrawAnnots();
+		this.RedrawAnnots(oAnnot.IsTextMarkup());
 	};
 	CPageInfo.prototype.AddField = function(oField, nPos) {
 		if (nPos == undefined) {
@@ -249,9 +261,9 @@
         }
 
 		this.fields.splice(nPos, 0, oField);
+		oField.SetParentPage(this);
 
         AscCommon.History.Add(new CChangesPDFDocumentFieldsContent(this, nPos, [oField], true));
-		oField.SetParentPage(this);
 		this.RedrawForms();
 	};
 	CPageInfo.prototype.RemoveField = function(sId) {
@@ -804,10 +816,10 @@
 			let oThumbnails = this.thumbnails;
 			for (var i = 0, len = pages.length; i < len; i++)
 			{
+				oThumbnails && oThumbnails._repaintPage(pages[i]);
 				if (pages[i] >= this.startVisiblePage && pages[i] <= this.endVisiblePage)
 				{
 					delete this.drawingPages[pages[i]].Image;
-					oThumbnails && oThumbnails._repaintPage(pages[i]);
 				}
 			}
 
@@ -972,6 +984,10 @@
 					AscCommon.addMouseEvent(_t.canvasForms, "down", _t.onMouseDown);
 					AscCommon.addMouseEvent(_t.canvasForms, "move", _t.onMouseMove);
 					AscCommon.addMouseEvent(_t.canvasForms, "up", _t.onMouseUp);
+
+					let targetElem = document.getElementById('id_target_cursor');
+					if (targetElem)
+						targetElem.style.pointerEvents = "none";
 
 					global_mouseEvent.Sender = _t.canvasForms;
 
@@ -2102,8 +2118,8 @@
 				for (let i = page.annots.length -1; i >= 0; i--)
 				{
 					let oAnnot = page.annots[i];
-					let nAnnotWidth		= AscCommon.AscBrowser.retinaPixelRatio * 16 / (this.zoom);
-					let nAnnotHeight	= AscCommon.AscBrowser.retinaPixelRatio * 16 / (this.zoom);
+					let nAnnotWidth		= 20 / (this.zoom);
+					let nAnnotHeight	= 20 / (this.zoom);
 					
 					if (true !== bGetHidden && oAnnot.IsHidden() == true || false == oAnnot.IsComment())
 						continue;
@@ -2785,7 +2801,9 @@
 			if (oDoc.fontLoader.isWorking() || this.IsOpenFormsInProgress)
 				return;
 
-			this.overlay.Clear()
+			this.overlay.Clear();
+
+			oDrDoc.AutoShapesTrack.PageIndex = -1;
 
 			if (!this.file)
 				return;
@@ -2871,15 +2889,9 @@
 						oDoc.mouseDownAnnot.GetDocContent().DrawSelectionOnPage(0);
 						oDrDoc.private_EndDrawSelection();
 					}
-					if (oDoc.mouseDownAnnot.IsTextMarkup())
-					{
-						oDrDoc.AutoShapesTrack.SetCurrentPage(oDoc.mouseDownAnnot.GetPage(), true);
-						oDoc.mouseDownAnnot.DrawSelected(this.overlay);
-					}
-					else if (oDoc.mouseDownAnnot.IsComment() == false)
-					{
+					else {
 						let nPage = oDoc.mouseDownAnnot.GetPage();
-						oDrDoc.AutoShapesTrack.PageIndex = nPage;
+						oDrDoc.AutoShapesTrack.SetCurrentPage(nPage, true);
 						this.DrawingObjects.drawSelect(nPage);
 					}
 				}
@@ -3268,7 +3280,7 @@
 			return landscapeAngles.includes(angle);
 		};
 		this.Get_PageLimits = function(nPage) {
-			let oPage = this.file.pages[nPage];
+			let oPage = this.file.pages[nPage] || this.file.pages[0];
 
 			return {
 				X: 0,
@@ -3597,12 +3609,14 @@
 			let oDoc		= this.getPDFDoc();
 			let oDrDoc		= oDoc.GetDrawingDocument();
 
-			if (e.KeyCode === 112 && e.CtrlKey == true) {
-				editor.AddStampAnnot();
-			}
-			if (e.KeyCode === 8) // BackSpace
+			let shortcutType = this.Api.getShortcut(e);
+			if (oDoc.executeShortcut(shortcutType))
 			{
-				oDoc.DoAction(function() {
+				bRetValue = keydownresult_PreventAll;
+			}
+			else if (e.KeyCode === 8) // BackSpace
+			{
+				bRetValue = oDoc.DoAction(function() {
 					oDoc.Remove(-1, e.CtrlKey == true);
 				}, AscDFH.historydescription_Document_BackSpaceButton);
 			}
@@ -3632,11 +3646,14 @@
 					else
 						this.SelectNextForm();
 				}
+
+				bRetValue = true;
 			}
 			else if (e.KeyCode === 13) // Enter
 			{
 				window.event.stopPropagation();
 				oDoc.EnterDown(e.ShiftKey === true);
+				bRetValue = true;
 			}
 			else if (e.KeyCode === 27) // Esc
 			{
@@ -3659,21 +3676,12 @@
 					const oController = oDoc.GetController();
 					oController.resetSelection();
 					this.onUpdateOverlay();
-				oDoc.EscapeForm();
-				oDoc.EscapeForm();
-				
 					oDoc.EscapeForm();
 				
 					editor.sync_HideComment();
 				}
-			}
-			else if (e.KeyCode === 32) // Space
-			{
-				if (oDoc.activeForm)
-				{
-					
-				}
-				// to do включить checkbox/radio
+
+				bRetValue = true;
 			}
 			else if ( e.KeyCode == 33 ) // PgUp
 			{
@@ -3692,6 +3700,8 @@
 					this.m_oScrollVerApi.scrollByY(-this.height, false);
 					this.timerSync();
 				}
+
+				bRetValue = true;
 			}
 			else if ( e.KeyCode == 34 ) // PgDn
 			{
@@ -3715,6 +3725,8 @@
 					this.m_oScrollVerApi.scrollByY(this.height, false);
 					this.timerSync();
 				}
+
+				bRetValue = true;
 			}
 			else if ( e.KeyCode == 35 ) // End
 			{
@@ -3787,35 +3799,11 @@
 			}
 			else if (e.KeyCode === 46) // Delete
 			{
-				oDoc.DoAction(function() {
+				bRetValue = oDoc.DoAction(function() {
 					oDoc.Remove(1, e.CtrlKey == true);
 				}, AscDFH.historydescription_Document_DeleteButton);
 			}
-			else if ( e.KeyCode == 65 && true === e.CtrlKey ) // Ctrl + A
-			{
-				oDoc.SelectAll();
-			}
-			else if ( e.KeyCode == 80 && true === e.CtrlKey ) // Ctrl + P + ...
-			{
-				this.Api.onPrint();
-				bRetValue = true;
-			}
-			else if ( e.KeyCode == 83 && true === e.CtrlKey ) // Ctrl + S + ...
-			{
-				this.Api.asc_Save(false);
-				bRetValue = true;
-			}
-			else if ( e.KeyCode == 89 && true === e.CtrlKey ) // Ctrl + Y
-			{
-				this.doc.DoRedo();
-				bRetValue = true;
-			}
-			else if ( e.KeyCode == 90 && true === e.CtrlKey ) // Ctrl + Z
-			{
-				this.doc.DoUndo();
-				bRetValue = true;
-			}
-
+			
 			oDoc.UpdateCopyCutState();
 			return bRetValue;
 		};

@@ -103,6 +103,8 @@
 		this.IsLongActionCurrent       = 0;
 		this.LongActionCallbacks       = [];
 		this.LongActionCallbacksParams = [];
+		this.IsActionRestrictionCurrent  = 0;
+		this.IsActionRestrictionPrev  = null;
 
 		// AutoSave
 		this.autoSaveGap = 0;					// Интервал автосохранения (0 - означает, что автосохранения нет) в милесекундах
@@ -167,7 +169,6 @@
         this.forceSaveButtonContinue = false;
         this.forceSaveTimeoutTimeout = null;
 		this.forceSaveForm = null;
-		this.disconnectRestrictions = null;//to restore restrictions after disconnect
 		this.forceSaveUndoRequest = false; // Флаг нужен, чтобы мы знали, что данное сохранение пришло по запросу Undo в совместке
 		this.saveRelativePrev = {};
 
@@ -690,7 +691,12 @@
 			this.sendEvent("asc_onInitEditorFonts", gui_fonts);
 		}
 	};
-	baseEditorsApi.prototype.sync_StartAction                = function(type, id)
+	/**
+	 * @param {Asc.c_oAscAsyncAction} type
+	 * @param {Asc.c_oAscAsyncActionType} id
+	 * @param {Asc.c_oAscRestrictionType} [actionRestriction]
+	 */
+	baseEditorsApi.prototype.sync_StartAction                = function(type, id, actionRestriction)
 	{
 		if (type !== c_oAscAsyncActionType.Empty)
 			this.sendEvent('asc_onStartAction', type, id);
@@ -700,8 +706,20 @@
 		{
 			this.incrementCounterLongAction();
 		}
+		if (undefined !== actionRestriction)
+		{
+			//для некоторых действий не хочется показывать модальный loader, который закрывает всю страницу
+			//если для них делать incrementCounterLongAction, то будут проблемы, что не заблокированы линейки, resize окна не работает
+			//И скорее всего другие проблемы, поэтому делается через asc_setRestriction
+			this.incrementCounterActionRestriction(actionRestriction);
+		}
 	};
-	baseEditorsApi.prototype.sync_EndAction                  = function(type, id)
+	/**
+	 * @param type {Asc.c_oAscAsyncAction}
+	 * @param id {Asc.c_oAscAsyncActionType}
+	 * @param {Asc.c_oAscRestrictionType} [actionRestriction]
+	 */
+	baseEditorsApi.prototype.sync_EndAction                  = function(type, id, actionRestriction)
 	{
 		if (type !== c_oAscAsyncActionType.Empty)
 			this.sendEvent('asc_onEndAction', type, id);
@@ -710,6 +728,10 @@
 		if (c_oAscAsyncActionType.BlockInteraction === type)
 		{
 			this.decrementCounterLongAction();
+		}
+		if (undefined !== actionRestriction)
+		{
+			this.decrementCounterActionRestriction();
 		}
 	};
 	baseEditorsApi.prototype.asc_setViewMode                 = function()
@@ -1022,6 +1044,34 @@
 			}
 			this.LongActionCallbacks.splice(0, _length);
 			this.LongActionCallbacksParams.splice(0, _length);
+		}
+	};
+
+	baseEditorsApi.prototype.isActionWithRestriction                   = function()
+	{
+		return 0 !== this.IsActionRestrictionCurrent;
+	};
+	baseEditorsApi.prototype.incrementCounterActionRestriction      = function(restrictions)
+	{
+		if (0 === this.IsActionRestrictionCurrent)
+		{
+			this.IsActionRestrictionPrev = this.restrictions;
+			this.asc_setRestriction(restrictions);
+		}
+		++this.IsActionRestrictionCurrent;
+	};
+	baseEditorsApi.prototype.decrementCounterActionRestriction      = function()
+	{
+		this.IsActionRestrictionCurrent--;
+		if (this.IsActionRestrictionCurrent < 0)
+		{
+			this.IsActionRestrictionCurrent = 0;
+		}
+
+		if (0 === this.IsActionRestrictionCurrent && null !== this.IsActionRestrictionPrev)
+		{
+			this.asc_setRestriction(this.IsActionRestrictionPrev);
+			this.IsActionRestrictionPrev = null;
 		}
 	};
 	baseEditorsApi.prototype.checkLongActionCallback         = function(_callback, _param)
@@ -1642,11 +1692,7 @@
 			t.sendEvent('asc_onCoAuthoringChatReceiveMessage', e, clear);
 		};
 		this.CoAuthoringApi.onServerVersion = function (buildVersion, buildNumber) {
-			if (null !== t.disconnectRestrictions) {
-				t.sync_EndAction(Asc.c_oAscAsyncActionType.Information, Asc.c_oAscAsyncAction.Disconnect);
-				t.asc_setRestriction(t.disconnectRestrictions);
-				t.disconnectRestrictions = null;
-			}
+			t.sync_EndAction(Asc.c_oAscAsyncActionType.Information, Asc.c_oAscAsyncAction.Disconnect, Asc.c_oAscRestrictionType.View);
 
 			t.sendEvent('asc_onServerVersion', buildVersion, buildNumber);
 		};
@@ -1858,11 +1904,7 @@
 			}
 			let isSessionIdleDisconnect = AscCommon.c_oCloseCode.sessionIdle === opt_closeCode;
 			if (null != opt_closeCode && !isSessionIdleDisconnect) {
-				if (null !== t.disconnectRestrictions) {
-					t.sync_EndAction(Asc.c_oAscAsyncActionType.Information, Asc.c_oAscAsyncAction.Disconnect);
-					t.asc_setRestriction(t.disconnectRestrictions);
-					t.disconnectRestrictions = null;
-				}
+				t.sync_EndAction(Asc.c_oAscAsyncActionType.Information, Asc.c_oAscAsyncAction.Disconnect, Asc.c_oAscRestrictionType.View);
 				let allowRefresh = [c_oCloseCode.updateVersion, c_oCloseCode.noCache, c_oCloseCode.restore, c_oCloseCode.quiet];
 				if (-1 !== allowRefresh.indexOf(opt_closeCode) && !t.isDocumentModified() && t.canRefreshFile())  {
 					t.onRefreshFile();
@@ -1876,10 +1918,8 @@
 						t.sendEvent('asc_onError', error, level);
 					}
 				}
-			} else if (null === t.disconnectRestrictions){
-				t.disconnectRestrictions = t.restrictions;
-				t.sync_StartAction(Asc.c_oAscAsyncActionType.Information, Asc.c_oAscAsyncAction.Disconnect);
-				t.asc_setRestriction(Asc.c_oAscRestrictionType.View);
+			} else if (!t.isActionWithRestriction()){
+				t.sync_StartAction(Asc.c_oAscAsyncActionType.Information, Asc.c_oAscAsyncAction.Disconnect, Asc.c_oAscRestrictionType.View);
 				if (isSessionIdleDisconnect) {
 					t.waitNotIdle(undefined, function () {
 						t.CoAuthoringApi.connect();
@@ -2716,7 +2756,7 @@
 		return this.VersionHistory;
 	};
 	baseEditorsApi.prototype.asc_refreshFile = function(docInfo) {
-		this.sync_EndAction(c_oAscAsyncActionType.BlockInteraction, Asc.c_oAscAsyncAction.RefreshFile);
+		this.sync_EndAction(Asc.c_oAscAsyncActionType.Information, Asc.c_oAscAsyncAction.RefreshFile, Asc.c_oAscRestrictionType.View);
 		//todo always call asc_CloseFile ?
 		let isInfinityLoop = this.documentIsWopi
 			? docInfo.get_Wopi()["Version"] === this.DocInfo.get_Wopi()["Version"]
@@ -2738,7 +2778,7 @@
 	}
 	baseEditorsApi.prototype.onRefreshFile = function () {
 		let t = this;
-		this.sync_StartAction(c_oAscAsyncActionType.BlockInteraction, Asc.c_oAscAsyncAction.RefreshFile);
+		this.sync_StartAction(Asc.c_oAscAsyncActionType.Information, Asc.c_oAscAsyncAction.RefreshFile, Asc.c_oAscRestrictionType.View);
 		if (this.documentIsWopi) {
 			let callback = function (isTimeout, response) {
 				if (response) {
@@ -4362,24 +4402,18 @@
 		return 0;
 	};
 
-	baseEditorsApi.prototype.asc_decodeBuffer = function(buffer, options, callback) {
+	baseEditorsApi.prototype.asc_decodeBuffer = function(buffer, codePage, callback) {
+		//todo TextDecoder (ie11)
 		var reader = new FileReader();
 		//todo onerror
 		reader.onload = reader.onerror = function(e) {
-			var text = e.target.result ? e.target.result : "";
-			if (options instanceof Asc.asc_CTextOptions) {
-				callback(AscCommon.parseText(text, options));
-			} else {
-				callback(text.match(/[^\r\n]+/g));
-			}
+			callback(e.target.result ? e.target.result : "");
 		};
-
 		var encoding = "UTF-8";
-		var codePage = options.asc_getCodePage();
 		var encodingsLen = AscCommon.c_oAscEncodings.length;
 		for (var i = 0; i < encodingsLen; ++i)
 		{
-			if (AscCommon.c_oAscEncodings[i][0] == codePage)
+			if (AscCommon.c_oAscEncodings[i][0] === codePage)
 			{
 				encoding = AscCommon.c_oAscEncodings[i][2];
 				break;
@@ -4388,6 +4422,9 @@
 
 		reader.readAsText(new Blob([buffer]), encoding);
 	};
+	baseEditorsApi.prototype.asc_parseText = function(text, options) {
+		return AscCommon.parseText(text, options, true);
+	}
 
 	baseEditorsApi.prototype.asc_setVisiblePasteButton = function(val)
 	{
@@ -4602,6 +4639,10 @@
 			return this.Shortcuts.Get(e.GetKeyCode(), e.IsCtrl(), e.IsShift(), e.IsAlt());
 		else
 			return this.Shortcuts.Get(e.KeyCode, e.CtrlKey, e.ShiftKey, e.AltKey);
+	};
+	baseEditorsApi.prototype.executeShortcut = function(type)
+	{
+		
 	};
 	baseEditorsApi.prototype.getCustomShortcutAction = function(nActionType)
 	{
@@ -5118,6 +5159,23 @@
 	baseEditorsApi.prototype.asc_StopInkDrawer = function() {
 		this.stopInkDrawer();
 	};
+	baseEditorsApi.prototype.asc_RemoveAllInks = function() {
+		this.removeAllInks();
+	};
+	baseEditorsApi.prototype.removeAllInks = function() {
+	};
+	baseEditorsApi.prototype.asc_HaveInks = function() {
+        return this.haveInks();
+	};
+	baseEditorsApi.prototype.haveInks = function() {
+        return true;
+	};
+	baseEditorsApi.prototype.asc_CanRemoveAllInks = function() {
+        return this.canRemoveAllInks();
+	};
+	baseEditorsApi.prototype.canRemoveAllInks = function() {
+        return true;
+	};
 	baseEditorsApi.prototype.stopInkDrawer = function() {
 		this.inkDrawer.turnOff();
 	};
@@ -5282,6 +5340,14 @@
 		});
 	};
 
+	baseEditorsApi.prototype.wrapShortcut = function(methodName, shortcutType)
+	{
+		this[methodName] = function() {
+			this.executeShortcut.call(this, shortcutType);
+		};
+		this.wrapFunction(methodName);
+	};
+
 	baseEditorsApi.prototype.setPluginsOptions = function(options)
 	{
 		this.externalPluginsOptions = options;
@@ -5396,6 +5462,7 @@
 	prot['asc_runAutostartMacroses'] = prot.asc_runAutostartMacroses;
 	prot['asc_runMacros'] = prot.asc_runMacros;
 	prot['asc_getAllMacrosNames'] = prot.asc_getAllMacrosNames;
+	prot['asc_parseText'] = prot.asc_parseText;
 	prot['asc_setVisiblePasteButton'] = prot.asc_setVisiblePasteButton;
 	prot['asc_getAutoCorrectMathSymbols'] = prot.asc_getAutoCorrectMathSymbols;
 	prot['asc_getAutoCorrectMathFunctions'] = prot.asc_getAutoCorrectMathFunctions;
@@ -5438,6 +5505,9 @@
 	prot['asc_StartDrawInk'] = prot.asc_StartDrawInk;
 	prot['asc_StartInkEraser'] = prot.asc_StartInkEraser;
 	prot['asc_StopInkDrawer'] = prot.asc_StopInkDrawer;
+	prot['asc_RemoveAllInks'] = prot.asc_RemoveAllInks;
+	prot['asc_HaveInks'] = prot.asc_HaveInks;
+	prot['asc_CanRemoveAllInks'] = prot.asc_CanRemoveAllInks;
 	prot['startGetDocInfo'] = prot.startGetDocInfo;
 	prot['stopGetDocInfo'] = prot.stopGetDocInfo;
 	prot["can_CopyCut"] = prot.can_CopyCut;

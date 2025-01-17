@@ -470,15 +470,21 @@
 	/**
 	 * Calls getCell on object and tries to parse as Number(cell.v) if cell exists otherwise return undefined.
 	 * @param {String} formula
+	 * @param {number?} defaultValue
 	 * @return {Number | undefined} number
 	 */
-	SheetStorage.prototype.getCellNumberValue = function (formula) {
+	SheetStorage.prototype.getCellNumberValue = function (formula, defaultValue) {
 		let cell = this.getCell(formula);
+		let result;
 		if (cell !== undefined) {
-			return Number(cell.v);
+			result = Number(cell.v);
 		} else {
-			return undefined;
+			result = undefined;
 		}
+		if (defaultValue !== undefined) {
+			result = result === undefined ? defaultValue : result;
+		}
+		return result;
 	}
 	/**
 	 * Calls getCell on object and tries to parse as Number(cell.v) if cell exists otherwise return undefined.
@@ -746,6 +752,7 @@
 																		 gradientEnabled, themedColorsRow) {
 		let cellValue = this.v;
 		let cellName = this.n;
+		let cellFunction = this.f;
 
 		let returnValue;
 
@@ -753,13 +760,13 @@
 		let fillResultCells = ["LineColor", "FillForegnd", "FillBkgnd"];
 		let fillColorResultCells = ["Color", "GradientStopColor"];
 		let numberResultCells = ["LinePattern", "LineWeight", "GradientStopColorTrans", "GradientStopPosition",
-		"FillGradientAngle", "EndArrowSize", "BeginArrowSize", "FillPattern"];
+		"FillGradientAngle", "EndArrowSize", "BeginArrowSize", "FillPattern", "LineCap"];
 		let stringResultCells = ["EndArrow", "BeginArrow"];
 		let booleanResultCells = ["FillGradientEnabled"];
 
 		// TODO handle 2.2.7.5	Fixed Theme
 
-		if (cellValue === "Themed") {
+		if (cellValue === "Themed" || cellFunction === "THEMEVAL()") {
 			// equal to THEMEVAL() call
 			// add themeval support for every supported cell
 			returnValue = AscVisio.themeval(this, shape, pageInfo, themes, undefined,
@@ -854,7 +861,14 @@
 						case 23:
 							rgba = AscCommon.RgbaHexToRGBA('#1A1A1A');
 							break;
+						default:
+							AscCommon.consoleLog("error: unknown color index");
+							rgba = AscCommon.RgbaHexToRGBA('#000000');
+							break;
 					}
+				} else {
+					AscCommon.consoleLog("error: color index is null");
+					rgba = AscCommon.RgbaHexToRGBA('#000000');
 				}
 			}
 
@@ -886,6 +900,18 @@
 						angle = 5400000;
 					}
 					cellNumberValue = angle;
+				} else if (cellName === "LineCap") {
+					switch (cellNumberValue) {
+						case 0:
+							cellNumberValue = 1;
+							break;
+						case 1:
+							cellNumberValue = 0;
+							break;
+						case 2:
+							cellNumberValue = 2;
+							break;
+					}
 				}
 				return cellNumberValue;
 			}

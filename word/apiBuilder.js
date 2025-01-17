@@ -4337,11 +4337,13 @@
 	/**
      * Any valid drawing element.
      * @typedef {(ApiShape | ApiImage | ApiGroup | ApiOleObject | ApiChart )} Drawing
+	 * @see office-js-api/Examples/Enumerations/Drawing.js
 	 */
 
 	/**
-     * Available drwaing element for grouping
+     * Available drawing element for grouping.
      * @typedef {(ApiShape | ApiGroup | ApiImage | ApiChart)} DrawingForGroup
+	 * @see office-js-api/Examples/Enumerations/DrawingForGroup.js
 	 */
 
 	//------------------------------------------------------------------------------------------------------------------
@@ -4544,8 +4546,9 @@
 	 * Groups an array of drawings.
 	 * @memberof Api
 	 * @typeofeditors ["CDE"]
-	 * @param {DrawingForGroup[]} aDrawings - array of drawings to group
+	 * @param {DrawingForGroup[]} aDrawings - An array of drawings to group.
 	 * @returns {ApiGroup}
+	 * @since 8.3.0
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateGroup.js
 	 */
 	Api.prototype.CreateGroup = function(aDrawings)
@@ -5710,6 +5713,54 @@
 			result.push(new ApiTable(table));
 		});
 		return result;
+	};
+	/**
+	 * Returns the inner text of the current document content object.
+	 * @memberof ApiDocumentContent
+	 * @typeofeditors ["CDE"]
+	 * @param {object} oProps - The resulting string display properties.
+     * @param {boolean} oProps.NewLine - Defines if the resulting string will include line boundaries or not (they will be replaced with '\r').
+     * @param {boolean} oProps.NewLineParagraph - Defines if the resulting string will include paragraph line boundaries or not.
+     * @param {boolean} oProps.Numbering - Defines if the resulting string will include numbering or not.
+     * @param {boolean} oProps.Math - Defines if the resulting string will include mathematical expressions or not.
+     * @param {string} oProps.TableCellSeparator - Defines how the table cell separator will be specified in the resulting string.
+     * @param {string} oProps.TableRowSeparator - Defines how the table row separator will be specified in the resulting string.
+     * @param {string} oProps.ParaSeparator - Defines how the paragraph separator will be specified in the resulting string.
+     * @param {string} oProps.TabSymbol - Defines how the tab will be specified in the resulting string.
+     * @param {string} oProps.NewLineSeparator - Defines how the line separator will be specified in the resulting string (this property has the priority over *NewLine*).
+	 * @return {string}
+	 * @since 8.3.0
+	 * @see office-js-api/Examples/{Editor}/ApiDocumentContent/Methods/GetText.js
+	 */
+	ApiDocumentContent.prototype.GetText = function(oProps)
+	{
+		let oInnerProps;
+        if (typeof oProps === "object")
+        {
+            oInnerProps =
+            {
+                NewLine : (oProps.hasOwnProperty("NewLine")) ? oProps["NewLine"] : true,
+                NewLineParagraph : (oProps.hasOwnProperty("NewLineParagraph")) ? oProps["NewLineParagraph"] : true,
+                Numbering : (oProps.hasOwnProperty("Numbering")) ? oProps["Numbering"] : true,
+                Math : (oProps.hasOwnProperty("Math")) ? oProps["Math"] : true,
+                TableCellSeparator: oProps["TableCellSeparator"],
+                TableRowSeparator: oProps["TableRowSeparator"],
+                ParaSeparator: oProps["ParaSeparator"],
+                NewLineSeparator: oProps["NewLineSeparator"],
+                TabSymbol: oProps["TabSymbol"]
+            }
+        }
+        else
+        {
+            oInnerProps =
+            {
+                NewLine : true,
+                NewLineParagraph : true,
+                Numbering : true
+            }
+        }
+
+		return this.Document.GetText(oInnerProps);
 	};
 	//------------------------------------------------------------------------------------------------------------------
 	//
@@ -7189,10 +7240,12 @@
 	};
 
 	/**
-	 * Gets bookmark by name
+	 * Returns a bookmark by its name from the current document.
 	 * @memberof ApiDocument
 	 * @typeofeditors ["CDE"]
+	 * @param {string} sBookmarkName - The bookmark name.
 	 * @returns {?ApiBookmark}
+	 * @since 8.3.0
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/GetBookmark.js
 	 */
 	ApiDocument.prototype.GetBookmark = function(sBookmarkName) 
@@ -7636,6 +7689,30 @@
 		return this.Document.GetPagesCount();
 	};
 	/**
+	 * Returns the index of the current page.
+	 * @memberof ApiDocument
+	 * @typeofeditors ["CDE"]
+	 * @return {number}
+	 * @since 8.3.0
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/GetCurrentPage.js
+	 */
+	ApiDocument.prototype.GetCurrentPage = function()
+	{
+		return this.Document.GetCurPage();
+	};
+	/**
+	 * Returns the indexes of the currently visible pages.
+	 * @memberof ApiDocument
+	 * @typeofeditors ["CDE"]
+	 * @return {number[]}
+	 * @since 8.3.0
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/GetCurrentVisiblePages.js
+	 */
+	ApiDocument.prototype.GetCurrentVisiblePages = function()
+	{
+		return this.Document.GetApi().GetCurrentVisiblePages();
+	};
+	/**
 	 * Returns all styles of the current document.
 	 * @memberof ApiDocument
 	 * @typeofeditors ["CDE"]
@@ -7873,9 +7950,6 @@
 	 * @typeofeditors ["CDE"]
 	 * @since 8.2.0
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddMathEquation.js
-	 * @memberof ApiDocument
-	 * @typeofeditors ["CDE"]
-	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddMathEquation.js
 	 */
 	ApiDocument.prototype.AddMathEquation = function(sText, sFormat)
 	{
@@ -7900,11 +7974,12 @@
 	};
 
 	/**
-	 * Groups an array of drawings in document.
+	 * Groups an array of drawings in the current document.
 	 * @memberof ApiDocument
 	 * @typeofeditors ["CDE"]
-	 * @param {DrawingForGroup[]} aDrawings - array of drawings to group
+	 * @param {DrawingForGroup[]} aDrawings - An array of drawings to group.
 	 * @returns {ApiGroup}
+	 * @since 8.3.0
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/GroupDrawings.js
 	 */
 	ApiDocument.prototype.GroupDrawings = function(aDrawings)
@@ -11012,11 +11087,12 @@
 		return JSON.stringify(oJSON);
 	};
 	/**
-	 * Sets start page number for specified section.
+	 * Sets the start page number for the specified section.
 	 * @memberof ApiSection
 	 * @typeofeditors ["CDE"]
-	 * @param {number} nStartNumber
+	 * @param {number} nStartNumber - The start page number.
 	 * @returns {boolean}
+	 * @since 8.3.0
 	 * @see office-js-api/Examples/{Editor}/ApiSection/Methods/SetStartPageNumber.js
 	 */
 	ApiSection.prototype.SetStartPageNumber = function(nStartNumber)
@@ -11031,10 +11107,11 @@
 		return true;
 	};
 	/**
-	 * Gets start page number of specified section.
+	 * Returns the start page number of the specified section.
 	 * @memberof ApiSection
 	 * @typeofeditors ["CDE"]
-	 * @returns {boolean}
+	 * @returns {number}
+	 * @since 8.3.0
 	 * @see office-js-api/Examples/{Editor}/ApiSection/Methods/GetStartPageNumber.js
 	 */
 	ApiSection.prototype.GetStartPageNumber = function()
@@ -14590,6 +14667,27 @@
 		else if ("none" === sType)
 			this.Num.SetLvlSuff(this.Lvl, Asc.c_oAscNumberingSuff.None);
 	};
+	
+	/**
+	 * Links the specified paragraph style with the current numbering level.
+	 * @memberof ApiNumberingLevel
+	 * @typeofeditors ["CDE"]
+	 * @param {ApiStyle} oStyle - The paragraph style.
+	 * @since 8.3.0
+	 * @see office-js-api/Examples/{Editor}/ApiNumberingLevel/Methods/LinkWithStyle.js
+	 */
+	ApiNumberingLevel.prototype.LinkWithStyle = function(oStyle)
+	{
+		if (!oStyle || !(oStyle instanceof ApiStyle))
+			return;
+		
+		let logicDocument = private_GetLogicDocument();
+		if (!logicDocument)
+			return;
+		
+		let styles = logicDocument.GetStyleManager();
+		this.Num.LinkWithStyle(this.Lvl, oStyle.Style.Get_Id(), styles);
+	};
 
 	//------------------------------------------------------------------------------------------------------------------
 	//
@@ -15429,6 +15527,19 @@
 		return "drawing";
 	};
 	/**
+	 * Returns the shape inner contents where a paragraph or text runs can be inserted if it exists.
+	 * @memberof ApiShape
+	 * @typeofeditors ["CDE", "CSE"]
+	 * @returns {?ApiDocumentContent}
+	 * @see office-js-api/Examples/{Editor}/ApiDrawing/Methods/GetContent.js
+	 */
+	ApiDrawing.prototype.GetContent = function()
+	{
+		if (this.Drawing && this.Drawing.textBoxContent && !this.Drawing.isForm())
+			return new ApiDocumentContent(this.Drawing.textBoxContent);
+		return null;
+	};
+	/**
 	 * Sets the size of the object (image, shape, chart) bounding box.
 	 * @memberof ApiDrawing
 	 * @typeofeditors ["CDE"]
@@ -16248,21 +16359,6 @@
 	 * @see office-js-api/Examples/{Editor}/ApiShape/Methods/GetDocContent.js
 	 */
 	ApiShape.prototype.GetDocContent = function()
-	{
-		if(this.Shape && this.Shape.textBoxContent && !this.Shape.isForm())
-		{
-			return new ApiDocumentContent(this.Shape.textBoxContent);
-		}
-		return null;
-	};
-	/**
-	 * Returns the shape inner contents where a paragraph or text runs can be inserted.
-	 * @memberof ApiShape
-	 * @typeofeditors ["CDE", "CSE"]
-	 * @returns {?ApiDocumentContent}
-	 * @see office-js-api/Examples/{Editor}/ApiShape/Methods/GetContent.js
-	 */
-	ApiShape.prototype.GetContent = function()
 	{
 		if(this.Shape && this.Shape.textBoxContent && !this.Shape.isForm())
 		{
@@ -17258,6 +17354,7 @@
 	 * @memberof ApiGroup
 	 * @typeofeditors ["CDE"]
 	 * @returns {"group"}
+	 * @since 8.3.0
 	 * @see office-js-api/Examples/{Editor}/ApiGroup/Methods/GetClassType.js
 	 */
 	ApiGroup.prototype.GetClassType = function()
@@ -17266,10 +17363,11 @@
 	};
 
 	/**
-	 * Ungroups current group drawing.
+	 * Ungroups the current group of drawings.
 	 * @memberof ApiGroup
 	 * @typeofeditors ["CDE"]
 	 * @returns {boolean}
+	 * @since 8.3.0
 	 * @see office-js-api/Examples/{Editor}/ApiGroup/Methods/Ungroup.js
 	 */
 	ApiGroup.prototype.Ungroup = function()
@@ -18953,6 +19051,7 @@
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @returns {ApiBlockLvlSdt}
+	 * @since 8.3.0
 	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/Copy.js
 	 */
 	ApiBlockLvlSdt.prototype.Copy = function()
@@ -20534,17 +20633,15 @@
 	 * @memberof Api
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {Array} arrString - An array of replacement strings.
-	 * @param {string} [sParaTab=" "] - A character which is used to specify the tab in the source text.
-	 * @param {string} [sParaNewLine=" "] - A character which is used to specify the line break character in the source text.
+	 * @param {string} [sParaTab="\t"] - A character which is used to specify the tab in the source text.
+	 * @param {string} [sParaNewLine="\r\n"] - A character which is used to specify the line break character in the source text.
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/ReplaceTextSmart.js
 	 */
 	Api.prototype.ReplaceTextSmart = function(arrString, sParaTab, sParaNewLine)
 	{
-		if (typeof(sParaTab) !== "string")
-			sParaTab = String.fromCharCode(32);
-		if (typeof(sParaNewLine) !== "string")
-			sParaNewLine = String.fromCharCode(32);
-
+		sParaTab     = GetStringParameter(sParaTab, "\t");
+		sParaNewLine = GetStringParameter(sParaTab, "\r\n");
+		
 		var allRunsInfo      = null;
 		var textDelta        = null;
 		var arrSelectedParas = null;
@@ -21697,9 +21794,11 @@
 	};
 
 	/**
-	 * Move cursor to this bookmark
+	 * Moves a cursor to the current bookmark.
 	 * @memberof ApiBookmark
+	 * @typeofeditors ["CDE"]
 	 * @returns {boolean}
+	 * @since 8.3.0
 	 * @see office-js-api/Examples/{Editor}/ApiBookmark/Methods/GoTo.js
 	 */
 	ApiBookmark.prototype.GoTo = function()
@@ -21712,9 +21811,11 @@
 	};
 	
 	/**
-	 * Select current bookmark
+	 * Selects the current bookmark.
 	 * @memberof ApiBookmark
+	 * @typeofeditors ["CDE"]
 	 * @returns {boolean}
+	 * @since 8.3.0
 	 * @see office-js-api/Examples/{Editor}/ApiBookmark/Methods/Select.js
 	 */
 	ApiBookmark.prototype.Select = function()
@@ -21727,10 +21828,12 @@
 	};
 
 	/**
-	 * Changes bookmark name
+	 * Changes the bookmark name.
 	 * @memberof ApiBookmark
-	 * @param {string} sNewName - new bookmark name
+	 * @typeofeditors ["CDE"]
+	 * @param {string} sNewName - A new bookmark name.
 	 * @returns {boolean}
+	 * @since 8.3.0
 	 * @see office-js-api/Examples/{Editor}/ApiBookmark/Methods/SetName.js
 	 */
 	ApiBookmark.prototype.SetName = function(sNewName)
@@ -21751,9 +21854,11 @@
 	};
 
 	/**
-	 * Gets bookmark name
+	 * Returns the bookmark name.
 	 * @memberof ApiBookmark
+	 * @typeofeditors ["CDE"]
 	 * @returns {string}
+	 * @since 8.3.0
 	 * @see office-js-api/Examples/{Editor}/ApiBookmark/Methods/GetName.js
 	 */
 	ApiBookmark.prototype.GetName = function()
@@ -21762,9 +21867,12 @@
 	};
 
 	/**
-	 * Sets bookmark text
+	 * Sets the bookmark text.
 	 * @memberof ApiBookmark
+	 * @typeofeditors ["CDE"]
+	 * @param {string} sText - The bookmark text.
 	 * @returns {boolean}
+	 * @since 8.3.0
 	 * @see office-js-api/Examples/{Editor}/ApiBookmark/Methods/SetText.js
 	 */
 	ApiBookmark.prototype.SetText = function(sText)
@@ -21797,8 +21905,9 @@
 	};
 
 	/**
-	 * Gets bookmark text
+	 * Returns the bookmark text.
 	 * @memberof ApiBookmark
+	 * @typeofeditors ["CDE"]
 	 * @param {object} oPr - The resulting string display properties.
      * @param {boolean} [oPr.NewLineParagraph=false] - Defines if the resulting string will include paragraph line boundaries or not.
      * @param {boolean} [oPr.Numbering=false] - Defines if the resulting string will include numbering or not.
@@ -21807,8 +21916,9 @@
      * @param {string} [oPr.TableCellSeparator='\t'] - Defines how the table cell separator will be specified in the resulting string.
      * @param {string} [oPr.TableRowSeparator='\r\n'] - Defines how the table row separator will be specified in the resulting string.
      * @param {string} [oPr.ParaSeparator='\r\n'] - Defines how the paragraph separator will be specified in the resulting string.
-	 * @param {string} [oPr.TabSymbol='\t'] - Defines how the tab will be specified in the resulting string (does not apply to numbering)
+	 * @param {string} [oPr.TabSymbol='\t'] - Defines how the tab will be specified in the resulting string (does not apply to numbering).
 	 * @returns {string}
+	 * @since 8.3.0
 	 * @see office-js-api/Examples/{Editor}/ApiBookmark/Methods/GetText.js
 	 */
 	ApiBookmark.prototype.GetText = function(oPr)
@@ -21838,9 +21948,11 @@
 	};
 
 	/**
-	 * Gets bookmark range
+	 * Returns the bookmark range.
 	 * @memberof ApiBookmark
+	 * @typeofeditors ["CDE"]
 	 * @returns {ApiRange}
+	 * @since 8.3.0
 	 * @see office-js-api/Examples/{Editor}/ApiBookmark/Methods/GetRange.js
 	 */
 	ApiBookmark.prototype.GetRange = function()
@@ -21859,9 +21971,11 @@
 	};
 
 	/**
-	 * Deletes bookmark from document;
+	 * Deletes the current bookmark from the document.
 	 * @memberof ApiBookmark
+	 * @typeofeditors ["CDE"]
 	 * @returns {boolean}
+	 * @since 8.3.0
 	 * @see office-js-api/Examples/{Editor}/ApiBookmark/Methods/Delete.js
 	 */
 	ApiBookmark.prototype.Delete = function()
@@ -21941,6 +22055,7 @@
 	ApiDocumentContent.prototype["GetAllOleObjects"]     = ApiDocumentContent.prototype.GetAllOleObjects;
 	ApiDocumentContent.prototype["GetAllParagraphs"]     = ApiDocumentContent.prototype.GetAllParagraphs;
 	ApiDocumentContent.prototype["GetAllTables"]         = ApiDocumentContent.prototype.GetAllTables;
+	ApiDocumentContent.prototype["GetText"]         	 = ApiDocumentContent.prototype.GetText;
 
 	ApiRange.prototype["GetClassType"]               = ApiRange.prototype.GetClassType;
 	ApiRange.prototype["GetParagraph"]               = ApiRange.prototype.GetParagraph;
@@ -22036,6 +22151,8 @@
 	ApiDocument.prototype["GetCommentById"]              = ApiDocument.prototype.GetCommentById;
 	ApiDocument.prototype["GetStatistics"]               = ApiDocument.prototype.GetStatistics;
 	ApiDocument.prototype["GetPageCount"]                = ApiDocument.prototype.GetPageCount;
+	ApiDocument.prototype["GetCurrentPage"]              = ApiDocument.prototype.GetCurrentPage;
+	ApiDocument.prototype["GetCurrentVisiblePages"]      = ApiDocument.prototype.GetCurrentVisiblePages;
 	ApiDocument.prototype["GetAllStyles"]                = ApiDocument.prototype.GetAllStyles;
 	ApiDocument.prototype["GetDocumentInfo"]             = ApiDocument.prototype.GetDocumentInfo;
 	ApiDocument.prototype["GetSelectedDrawings"]         = ApiDocument.prototype.GetSelectedDrawings;
@@ -22321,6 +22438,7 @@
 	ApiNumberingLevel.prototype["SetRestart"]        = ApiNumberingLevel.prototype.SetRestart;
 	ApiNumberingLevel.prototype["SetStart"]          = ApiNumberingLevel.prototype.SetStart;
 	ApiNumberingLevel.prototype["SetSuff"]           = ApiNumberingLevel.prototype.SetSuff;
+	ApiNumberingLevel.prototype["LinkWithStyle"]     = ApiNumberingLevel.prototype.LinkWithStyle;
 
 	ApiTextPr.prototype["GetClassType"]              = ApiTextPr.prototype.GetClassType;
 	ApiTextPr.prototype["SetStyle"]                  = ApiTextPr.prototype.SetStyle;
@@ -22459,6 +22577,7 @@
 	ApiTableStylePr.prototype["ToJSON"]              = ApiTableStylePr.prototype.ToJSON;
 
 	ApiDrawing.prototype["GetClassType"]             = ApiDrawing.prototype.GetClassType;
+	ApiDrawing.prototype["GetContent"]               = ApiDrawing.prototype.GetContent;
 	ApiDrawing.prototype["SetSize"]                  = ApiDrawing.prototype.SetSize;
 	ApiDrawing.prototype["SetWrappingStyle"]         = ApiDrawing.prototype.SetWrappingStyle;
 	ApiDrawing.prototype["SetHorAlign"]              = ApiDrawing.prototype.SetHorAlign;
@@ -22498,7 +22617,6 @@
 
 	ApiShape.prototype["GetClassType"]               = ApiShape.prototype.GetClassType;
 	ApiShape.prototype["GetDocContent"]              = ApiShape.prototype.GetDocContent;
-	ApiShape.prototype["GetContent"]                 = ApiShape.prototype.GetContent;
 	ApiShape.prototype["SetVerticalTextAlign"]       = ApiShape.prototype.SetVerticalTextAlign;
 	ApiShape.prototype["SetPaddings"]                = ApiShape.prototype.SetPaddings;
 	ApiShape.prototype["GetNextShape"]               = ApiShape.prototype.GetNextShape;

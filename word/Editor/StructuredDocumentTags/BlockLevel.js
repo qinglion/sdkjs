@@ -733,6 +733,10 @@ CBlockLevelSdt.prototype.GetSelectedText = function(bClearText, oPr)
 
 	return this.Content.GetSelectedText(bClearText, oPr);
 };
+CBlockLevelSdt.prototype.GetText = function(pr)
+{
+	return this.Content.GetText(pr);
+};
 CBlockLevelSdt.prototype.GetCurrentParagraph = function(bIgnoreSelection, arrSelectedParagraphs, oPr)
 {
 	if (oPr && true === oPr.ReplacePlaceHolder)

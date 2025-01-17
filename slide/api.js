@@ -717,6 +717,7 @@
 		if (this.isReporterMode)
 			this.watermarkDraw = null;
 
+		this.demoBackgroundColor = null;
 		this._init();
 	}
 
@@ -9438,6 +9439,16 @@ background-repeat: no-repeat;\
 			this.WordControl.setMouseMode(mode);
 	};
 
+
+	asc_docs_api.prototype.asc_setDemoBackgroundColor = function(sColor)
+	{
+		this.demoBackgroundColor = sColor;
+		if(this.isSlideShow())
+		{
+			this.WordControl.DemonstrationManager.CheckBackgroundColor();
+		}
+	};
+
 	//-------------------------------------------------------------export---------------------------------------------------
 	window['Asc']                                                 = window['Asc'] || {};
 	window['AscCommonSlide']                                      = window['AscCommonSlide'] || {};
@@ -10004,7 +10015,9 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype["asc_IsMasterMode"] = asc_docs_api.prototype.asc_IsMasterMode;
 
 	asc_docs_api.prototype["asc_setViewerTargetType"] = asc_docs_api.prototype.asc_setViewerTargetType;
-	
+
+	asc_docs_api.prototype["asc_setDemoBackgroundColor"] = asc_docs_api.prototype.asc_setDemoBackgroundColor;
+
 
 	window['Asc']['asc_CCommentData'] = window['Asc'].asc_CCommentData = asc_CCommentData;
 	asc_CCommentData.prototype['asc_getText']         = asc_CCommentData.prototype.asc_getText;
