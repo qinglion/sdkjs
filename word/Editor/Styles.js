@@ -12537,55 +12537,55 @@ CRFonts.prototype.Write_ToBinary = function(oWriter)
 	oWriter.Skip(4);
 	var nFlags = 0;
 
-	if (undefined !== this.Ascii)
+	if (undefined !== this.Ascii && null !== this.Ascii)
 	{
 		oWriter.WriteString2(this.Ascii.Name);
 		nFlags |= 1;
 	}
 
-	if (undefined !== this.EastAsia)
+	if (undefined !== this.EastAsia && null !== this.EastAsia)
 	{
 		oWriter.WriteString2(this.EastAsia.Name);
 		nFlags |= 2;
 	}
 
-	if (undefined !== this.HAnsi)
+	if (undefined !== this.HAnsi && null !== this.HAnsi)
 	{
 		oWriter.WriteString2(this.HAnsi.Name);
 		nFlags |= 4;
 	}
 
-	if (undefined !== this.CS)
+	if (undefined !== this.CS && null !== this.CS)
 	{
 		oWriter.WriteString2(this.CS.Name);
 		nFlags |= 8;
 	}
 
-	if (undefined !== this.Hint)
+	if (undefined !== this.Hint && null !== this.Hint)
 	{
 		oWriter.WriteLong(this.Hint);
 		nFlags |= 16;
 	}
 
-	if (undefined !== this.AsciiTheme)
+	if (undefined !== this.AsciiTheme && null !== this.AsciiTheme)
 	{
 		oWriter.WriteString2(this.AsciiTheme);
 		nFlags |= 32;
 	}
 
-	if (undefined !== this.EastAsiaTheme)
+	if (undefined !== this.EastAsiaTheme && null !== this.EastAsiaTheme)
 	{
 		oWriter.WriteString2(this.EastAsiaTheme);
 		nFlags |= 64;
 	}
 
-	if (undefined !== this.HAnsiTheme)
+	if (undefined !== this.HAnsiTheme && null !== this.HAnsiTheme)
 	{
 		oWriter.WriteString2(this.HAnsiTheme);
 		nFlags |= 128;
 	}
 
-	if (undefined !== this.CSTheme)
+	if (undefined !== this.CSTheme && null !== this.CSTheme)
 	{
 		oWriter.WriteString2(this.CSTheme);
 		nFlags |= 256;
@@ -13858,41 +13858,41 @@ CTextPr.prototype.Write_ToBinary = function(Writer)
 		Flags |= 4194304;
 	}
 
-	if (undefined !== this.Shd)
+	if (undefined != this.Shd)
 	{
 		this.Shd.Write_ToBinary(Writer);
 		Flags |= 8388608;
 	}
 
-	if (undefined !== this.Vanish)
+	if (undefined != this.Vanish)
 	{
 		Writer.WriteBool(this.Vanish);
 		Flags |= 16777216;
 	}
 
-	if (undefined !== this.FontRef)
+	if (undefined != this.FontRef)
 	{
 		this.FontRef.Write_ToBinary(Writer);
 		Flags |= 33554432;
 	}
 
-	if (undefined !== this.PrChange)
+	if (undefined != this.PrChange)
 	{
 		this.PrChange.Write_ToBinary(Writer);
 		Flags |= 67108864;
 	}
-	if (undefined !== this.TextOutline)
+	if (undefined != this.TextOutline)
 	{
 		this.TextOutline.Write_ToBinary(Writer);
 		Flags |= 134217728;
 	}
-	if (undefined !== this.TextFill)
+	if (undefined != this.TextFill)
 	{
 		this.TextFill.Write_ToBinary(Writer);
 		Flags |= 268435456;
 	}
 
-	if (undefined !== this.PrChange)
+	if (undefined != this.PrChange)
 	{
 		this.PrChange.WriteToBinary(Writer);
 		this.ReviewInfo.WriteToBinary(Writer);
@@ -13905,7 +13905,7 @@ CTextPr.prototype.Write_ToBinary = function(Writer)
 		Flags |= 1073741824;
 	}
 
-	if (undefined !== this.Ligatures)
+	if (undefined != this.Ligatures)
 	{
 		Writer.WriteByte(this.Ligatures);
 		Flags |= (1 << 31);
