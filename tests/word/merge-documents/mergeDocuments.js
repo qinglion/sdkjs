@@ -1452,13 +1452,12 @@ const arrAnswers = [
 	/////////////////////////////////// -> 1 <- ////////////////////////////////////////////
 	{
 		finalDocument: [
-			[createParagraphInfo(undefined, {reviewType: reviewtype_Remove, userName: 'Valdemar', dateTime: 3000000})],
 			[
 				createParagraphInfo('Привет', {
 					reviewType: reviewtype_Add,
 					userName  : 'Valdemar',
 					dateTime  : 3000000
-				}), createParagraphInfo(undefined, {reviewType: reviewtype_Add, userName: 'Valdemar', dateTime: 3000000})
+				})
 			]
 		]
 	},
@@ -1471,16 +1470,15 @@ const arrAnswers = [
 	/////////////////////////////////// -> 3 <- ////////////////////////////////////////////
 	{
 		finalDocument: [
-			[createParagraphInfo('Привет', {
-				reviewType: reviewtype_Remove,
-				userName  : 'Valdemar',
-				dateTime  : 3000000
-			}), createParagraphInfo(undefined, {reviewType: reviewtype_Remove, userName: 'Valdemar', dateTime: 3000000})],
 			[createParagraphInfo('Приветище', {
 				reviewType: reviewtype_Add,
 				userName  : 'Valdemar',
 				dateTime  : 3000000
-			}), createParagraphInfo(undefined, {reviewType: reviewtype_Add, userName: 'Valdemar', dateTime: 3000000})]
+			}), createParagraphInfo('Привет', {
+				reviewType: reviewtype_Remove,
+				userName  : 'Valdemar',
+				dateTime  : 3000000
+			})]
 		]
 	},
 	/////////////////////////////////// -> 4 <- ////////////////////////////////////////////
@@ -1496,16 +1494,15 @@ const arrAnswers = [
 	/////////////////////////////////// -> 5 <- ////////////////////////////////////////////
 	{
 		finalDocument: [
-			[createParagraphInfo('Привет', {
-				reviewType: reviewtype_Remove,
-				userName  : 'Valdemar',
-				dateTime  : 3000000
-			}), createParagraphInfo(undefined, {reviewType: reviewtype_Remove, userName: 'Valdemar', dateTime: 3000000})],
 			[createParagraphInfo('Приветище', {
 				reviewType: reviewtype_Add,
 				userName  : 'John Smith',
 				dateTime  : 1000000
-			}), createParagraphInfo(undefined, {reviewType: reviewtype_Add, userName: 'Valdemar', dateTime: 3000000})]
+			}), createParagraphInfo('Привет', {
+				reviewType: reviewtype_Remove,
+				userName  : 'Valdemar',
+				dateTime  : 3000000
+			})]
 		]
 	},
 	/////////////////////////////////// -> 6 <- ////////////////////////////////////////////
@@ -2773,7 +2770,7 @@ const comments = [
 
 function merge(oMainDocument, oRevisedDocument, fCallback)
 {
-	const oMerge = new AscCommonWord.CDocumentMerge(oMainDocument, oRevisedDocument, new Asc.ComparisonOptions());
+	const oMerge = new AscCommonWord.CDocumentMerge(oMainDocument, oRevisedDocument, new AscCommonWord.ComparisonOptions());
 	const fOldMergeCallback = oMerge.applyLastMergeCallback;
 	oMerge.applyLastMergeCallback = function ()
 	{
