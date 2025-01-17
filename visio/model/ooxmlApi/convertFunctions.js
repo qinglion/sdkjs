@@ -1656,7 +1656,7 @@
 
 				function mapVisioFillPatternToOOXML(fillPatternType) {
 					// change down to up and up to down bcs of Global matrix inverted
-					let upSideDownPatterns = true;
+					let upSideDownPatterns = false;
 					switch (fillPatternType) {
 						case 2:
 							return upSideDownPatterns ? AscCommon.global_hatch_offsets.dnDiag :
