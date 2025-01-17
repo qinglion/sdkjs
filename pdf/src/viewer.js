@@ -3607,7 +3607,6 @@
 			if (oDoc.executeShortcut(shortcutType))
 			{
 				bRetValue = keydownresult_PreventAll;
-				bUpdateSelection = false;
 			}
 			else if (e.KeyCode === 8) // BackSpace
 			{
