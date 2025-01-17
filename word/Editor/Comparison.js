@@ -2002,11 +2002,10 @@
 			this.formatting = true;
 			this.whiteSpace = true;
 	    this.comments = true;
-
-      this.fields = true;
-
+			
 	    this.insertionsAndDeletions = true;
 	    // this.moves = true;
+	    // this.fields = true;
     }
     ComparisonOptions.prototype["asc_getInsertionsAndDeletions"] = ComparisonOptions.prototype.asc_getInsertionsAndDeletions = function(){return this.insertionsAndDeletions;};
     // ComparisonOptions.prototype["asc_getMoves"] = ComparisonOptions.prototype.asc_getMoves = function(){return this.moves;};
@@ -2018,7 +2017,7 @@
     ComparisonOptions.prototype["asc_getHeadersAndFooters"] = ComparisonOptions.prototype.asc_getHeadersAndFooters = function(){return this.headersAndFooters;};
     ComparisonOptions.prototype["asc_getFootNotes"] = ComparisonOptions.prototype.asc_getFootNotes = function(){return this.footNotes;};
     ComparisonOptions.prototype["asc_getTextBoxes"] = ComparisonOptions.prototype.asc_getTextBoxes = function(){return this.textBoxes;};
-    ComparisonOptions.prototype["asc_getFields"] = ComparisonOptions.prototype.asc_getFields = function(){return this.fields;};
+    // ComparisonOptions.prototype["asc_getFields"] = ComparisonOptions.prototype.asc_getFields = function(){return this.fields;};
     ComparisonOptions.prototype["asc_getWords"] = ComparisonOptions.prototype.asc_getWords = function(){return  this.words;};
 
 
@@ -2032,7 +2031,7 @@
     ComparisonOptions.prototype["asc_putHeadersAndFooters"] = ComparisonOptions.prototype.asc_putHeadersAndFooters = function(v){this.headersAndFooters = v;};
     ComparisonOptions.prototype["asc_putFootNotes"] = ComparisonOptions.prototype.asc_putFootNotes = function(v){this.footNotes = v;};
     ComparisonOptions.prototype["asc_putTextBoxes"] = ComparisonOptions.prototype.asc_putTextBoxes = function(v){this.textBoxes = v;};
-    ComparisonOptions.prototype["asc_putFields"] = ComparisonOptions.prototype.asc_putFields = function(v){this.fields = v;};
+    // ComparisonOptions.prototype["asc_putFields"] = ComparisonOptions.prototype.asc_putFields = function(v){this.fields = v;};
     ComparisonOptions.prototype["asc_putWords"] = ComparisonOptions.prototype.asc_putWords = function(v){this.words = v;};
 
 
@@ -2058,7 +2057,6 @@
         this.oComparisonMoveMarkManager = new CMoveMarkComparisonManager();
 		this.oBookmarkManager = new CComparisonBookmarkManager(oOriginalDocument, oRevisedDocument);
 		this.oCommentManager = new CComparisonCommentManager(this);
-		this.complexParaFieldStack = [];
 
 		this.isWordsByOneSymbol = false;
 
@@ -3581,14 +3579,6 @@
 							} else {
 								this.oCommentManager.addToCheckSaveParaComment(oRun);
 							}
-            }
-						else if (!this.options.fields && (oRun instanceof AscCommonWord.ParaField)) {
-	            if(oLastText && oLastText.elements.length > 0)
-	            {
-		            oLastText.updateHash(oWordCounter, this);
-		            this.createNode(oLastText, oRet);
-	            }
-	            oLastText = null;
             }
             else
             {
