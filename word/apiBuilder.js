@@ -15528,7 +15528,7 @@
 	};
 	/**
 	 * Returns the shape inner contents where a paragraph or text runs can be inserted if it exists.
-	 * @memberof ApiShape
+	 * @memberof ApiDrawing
 	 * @typeofeditors ["CDE", "CSE"]
 	 * @returns {?ApiDocumentContent}
 	 * @see office-js-api/Examples/{Editor}/ApiDrawing/Methods/GetContent.js
