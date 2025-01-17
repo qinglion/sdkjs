@@ -985,6 +985,10 @@
 					AscCommon.addMouseEvent(_t.canvasForms, "move", _t.onMouseMove);
 					AscCommon.addMouseEvent(_t.canvasForms, "up", _t.onMouseUp);
 
+					let targetElem = document.getElementById('id_target_cursor');
+					if (targetElem)
+						targetElem.style.pointerEvents = "none";
+
 					global_mouseEvent.Sender = _t.canvasForms;
 
 					_t.parent.onmousewheel = _t.onMouseWhell;
@@ -2797,7 +2801,9 @@
 			if (oDoc.fontLoader.isWorking() || this.IsOpenFormsInProgress)
 				return;
 
-			this.overlay.Clear()
+			this.overlay.Clear();
+
+			oDrDoc.AutoShapesTrack.PageIndex = -1;
 
 			if (!this.file)
 				return;

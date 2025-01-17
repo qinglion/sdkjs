@@ -1887,11 +1887,7 @@ function CEditorPage(api)
 
 		if (e)
 		{
-			if (e.preventDefault)
-				e.preventDefault();
-			else
-				e.returnValue = false;
-
+			AscCommon.stopEvent(e);
 			AscCommon.check_MouseMoveEvent(e);
 		}
 
