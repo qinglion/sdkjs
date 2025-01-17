@@ -396,7 +396,15 @@
 		this.revisedParagraph = oRevisedParagraph;
 		this.copyPr = oCopyPr;
 	}
-	CReviewChangeCollector.prototype.isSkippedElement = CTextPrChangeCollector.prototype.isSkippedElement;
+	CReviewChangeCollector.prototype.isSkippedElement = function (oRun) {
+		if (!(oRun instanceof AscCommonWord.ParaRun)) {
+			return true;
+		}
+		if (this.copyPr.SkipFootnoteReference) {
+			return oRun.IsFootEndnoteReferenceRun();
+		}
+		return false;
+	};
 	CReviewChangeCollector.prototype.getPriorityChange = function (oRevisedRun, oMainRun) {
 		const oRevisedReviewInfo = oRevisedRun.GetReviewInfo();
 		const nRevisedReviewType = oRevisedRun.GetReviewType();
@@ -654,15 +662,7 @@
 		this.revisedParagraph = oRevisedParagraph;
 		this.copyPr = oCopyPr;
 	}
-	CTextPrChangeCollector.prototype.isSkippedElement = function (oRun) {
-		if (!(oRun instanceof AscCommonWord.ParaRun)) {
-			return true;
-		}
-		if (this.copyPr.SkipFootnoteReference) {
-			return oRun.IsFootEndnoteReferenceRun();
-		}
-		return false;
-	};
+	CTextPrChangeCollector.prototype.isSkippedElement = CReviewChangeCollector.prototype.isSkippedElement;
 	CTextPrChangeCollector.prototype.getRevisedLastRunIndex = function () {
 		const oLastElement = this.elements[this.elements.length - 1];
 		const oLastRun = oLastElement.lastRun;
