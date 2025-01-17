@@ -7967,7 +7967,8 @@ CStyles.prototype =
 	Set_DefaultTextPr : function(TextPr)
 	{
 		History.Add(new CChangesStylesChangeDefaultTextPr(this, this.Default.TextPr, TextPr));
-        this.Default.TextPr.InitDefault();
+		this.Default.TextPr = new AscWord.CTextPr();
+		this.Default.TextPr.InitDefault();
 		this.Default.TextPr.Merge(TextPr);
 		this.OnChangeDefaultTextPr();
 		// TODO: Пока данная функция используется только в билдере, как только будет использоваться в самом редакторе,
@@ -8479,6 +8480,20 @@ CStyles.prototype =
                 bNeedRecalc = true;
                 break;
             }
+			case AscDFH.historyitem_Styles_ChangeDefaultTextPr:
+			{
+				// TODO: Нужно сделать отдельный метод для проверки по стилю рана (в том числе и дефолтовому, как здесь)
+				let logicDocument = private_GetWordLogicDocument();
+				if (!logicDocument || !logicDocument.IsDocumentEditor())
+					return;
+				
+				let paragraphs = logicDocument.GetAllParagraphs({All : true});
+				for (let i = 0, count = paragraphs.length; i < count; ++i)
+				{
+					paragraphs[i].Recalc_CompiledPr();
+					paragraphs[i].Recalc_RunsCompiledPr();
+				}
+			}
         }
 
         if ( true === bNeedRecalc )
