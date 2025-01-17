@@ -15076,7 +15076,7 @@ function RangeDataManagerElem(bbox, data)
 				*/
 				for (let i = 0; i < this.DefinedNames.length; i++) {
 					let defname = this.DefinedNames[i];
-					let defnameFromWorkbook = wb.getDefinesNames(defname.Name);
+					let defnameFromWorkbook = wb && wb.getDefinesNames(defname.Name);
 					if (defnameFromWorkbook) {
 						let defnameArea3D = defnameFromWorkbook.parsedRef && defnameFromWorkbook.parsedRef.outStack && defnameFromWorkbook.parsedRef.outStack[0];
 						let defnameWorksheet = defnameArea3D && defnameArea3D.getWS && defnameArea3D.getWS();
@@ -15354,9 +15354,11 @@ function RangeDataManagerElem(bbox, data)
 
 	ExternalReference.prototype.prepareDefNames = function () {
 		let wb = this.getWb();
-		for (let i in wb.dependencyFormulas.defNames.wb) {
-			let defName = wb.dependencyFormulas.defNames.wb[i];
-			defName.parsedRef.parse();
+		if (wb && wb.dependencyFormulas && wb.dependencyFormulas.defNames && wb.dependencyFormulas.defNames.wb) {
+			for (let i in wb.dependencyFormulas.defNames.wb) {
+				let defName = wb.dependencyFormulas.defNames.wb[i];
+				defName.parsedRef.parse();
+			}
 		}
 	};
 
@@ -15473,7 +15475,7 @@ function RangeDataManagerElem(bbox, data)
 						stringToParse = defName.RefersTo.substring(1);
 					}
 					let oDefName = new Asc.asc_CDefName(defName.Name, stringToParse ? stringToParse : defName.RefersTo);
-					wb.editDefinesNames(null, oDefName);
+					wb && wb.editDefinesNames(null, oDefName);
 					AscCommonExcel.g_DefNameWorksheet = RealDefNameWorksheet;	
 				}
 			}
