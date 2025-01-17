@@ -885,8 +885,7 @@
 		}
 		return element;
 	};
-    CNode.prototype.cleanEndOfInsert = function (aContentToInsert, idxOfChange, comparison) {
-        const oChange = this.changes[idxOfChange];
+    CNode.prototype.cleanEndOfInsert = function (aContentToInsert, oChange, comparison) {
 				const oNode = oChange.insert[oChange.insert.length - 1];
         const oLastText = oNode.element;
 				const oEndOfInsertRun = oNode.getContentElement();
@@ -969,8 +968,7 @@
 				}
     };
 
-    CNode.prototype.cleanStartOfInsertSameRun = function (oNewRun, idxOfChange) {
-        const oChange = this.changes[idxOfChange];
+    CNode.prototype.cleanStartOfInsertSameRun = function (oNewRun, oChange) {
 				const oNode = oChange.insert[0];
         const oFirstText = oNode.element;
         if(oNewRun)
@@ -999,8 +997,7 @@
         return oNewRun;
     };
 
-    CNode.prototype.cleanStartOfInsertDifferentRun = function (aContentToInsert, posOfLastInsertRun, idxOfChange, comparison) {
-        const oChange = this.changes[idxOfChange];
+    CNode.prototype.cleanStartOfInsertDifferentRun = function (aContentToInsert, posOfLastInsertRun, oChange, comparison) {
 				const oFirstNode = oChange.insert[0];
 				const oLastNode = oChange.insert[oChange.insert.length - 1];
 	    const oFirstText = oFirstNode.element;
@@ -1055,10 +1052,9 @@
             }
         }
     };
-	CNode.prototype.checkCommentsFromInsert = function (idxOfChange, comparison)
+	CNode.prototype.checkCommentsFromInsert = function (oChange, comparison)
 	{
 		const mapRevisedComments = {};
-		const oChange = this.changes[idxOfChange];
 		const arrRevisedComments = [];
 		for (let i = 0; i < oChange.insert.length; i += 1)
 		{
@@ -1104,10 +1100,9 @@
 			comparison.oCommentManager.checkComments(arrMainComments, arrRevisedComments, arrMainComments);
 		}
 	};
-    CNode.prototype.getArrOfInsertsFromChanges = function (idxOfChange, comparison) {
-        const oChange = this.changes[idxOfChange];
+    CNode.prototype.getArrOfInsertsFromChanges = function (oChange, comparison) {
         const aContentToInsert = [];
-				this.checkCommentsFromInsert(idxOfChange, comparison);
+				this.checkCommentsFromInsert(oChange, comparison);
 
         if(oChange.insert.length > 0)
         {
@@ -1116,16 +1111,16 @@
             const oFirstText = oFirstNode.getContentElement(true);
             const oLastText = oLastNode.getContentElement();
 
-            const posLastRunOfInsert = this.cleanEndOfInsert(aContentToInsert, idxOfChange, comparison);
+            const posLastRunOfInsert = this.cleanEndOfInsert(aContentToInsert, oChange, comparison);
 
             // изменения находятся внутри одного рана или это один и тот же элемент
             if(oFirstText === oLastText)
             {
-                this.cleanStartOfInsertSameRun(aContentToInsert[aContentToInsert.length - 1], idxOfChange);
+                this.cleanStartOfInsertSameRun(aContentToInsert[aContentToInsert.length - 1], oChange);
             }
             else
             {
-                this.cleanStartOfInsertDifferentRun(aContentToInsert, posLastRunOfInsert, idxOfChange, comparison);
+                this.cleanStartOfInsertDifferentRun(aContentToInsert, posLastRunOfInsert, oChange, comparison);
             }
 
 	        const arrStartBookmarks = oFirstNode.getFirstBookmarks();
@@ -1145,12 +1140,11 @@
     };
 
 
-    CNode.prototype.applyInsertsToParagraph = function (comparison, aContentToInsert, idxOfChange) {
-        const oChange = this.changes[idxOfChange];
+    CNode.prototype.applyInsertsToParagraph = function (comparison, aContentToInsert, oChange) {
         if (oChange.remove.length > 0 && !comparison.isSkipWhitespaces(oChange.remove)) {
-            this.applyInsertsToParagraphsWithRemove(comparison, aContentToInsert, idxOfChange);
+            this.applyInsertsToParagraphsWithRemove(comparison, aContentToInsert, oChange);
         } else {
-            this.applyInsertsToParagraphsWithoutRemove(comparison, aContentToInsert, idxOfChange);
+            this.applyInsertsToParagraphsWithoutRemove(comparison, aContentToInsert, oChange);
         }
     };
 
@@ -1158,8 +1152,7 @@
         return 0;
     };
 
-    CNode.prototype.applyInsertsToParagraphsWithoutRemove = function (comparison, aContentToInsert, idxOfChange) {
-        const oChange = this.changes[idxOfChange];
+    CNode.prototype.applyInsertsToParagraphsWithoutRemove = function (comparison, aContentToInsert, oChange) {
         const applyingParagraph = this.getApplyParagraph(comparison);
 
         if(aContentToInsert.length > 0)
@@ -1239,8 +1232,7 @@
         element.SetReviewTypeWithInfo(reviewtype_Common, info);
     };
 
-    CNode.prototype.prepareEndOfRemoveChange = function (idxOfChange, comparison, arrSetRemove) {
-        const oChange = this.changes[idxOfChange];
+    CNode.prototype.prepareEndOfRemoveChange = function (oChange, comparison, arrSetRemove) {
         const oApplyParagraph = this.getApplyParagraph(comparison);
 				const oNode = oChange.remove[oChange.remove.length - 1];
         const oLastText = oNode.element;
@@ -1285,9 +1277,8 @@
         return {posLastRunInContent: k, nInsertPosition: nInsertPosition };
     };
 
-    CNode.prototype.setReviewTypeForRemoveChanges = function (comparison, idxOfChange, posLastRunInContent, nInsertPosition, arrSetRemoveReviewType) {
+    CNode.prototype.setReviewTypeForRemoveChanges = function (comparison, oChange, posLastRunInContent, nInsertPosition, arrSetRemoveReviewType) {
         const oApplyParagraph = this.getApplyParagraph(comparison);
-        const oChange = this.changes[idxOfChange];
 				const oNode = oChange.remove[0];
         const oFirstText = oNode.element;
 				const oStartOfRemoveRun = oNode.getContentElement(true);
@@ -1341,14 +1332,13 @@
         this.insertContentAfterRemoveChanges(arrToInsert, nInsertPosition, comparison, options);
     };
 
-    CNode.prototype.applyInsertsToParagraphsWithRemove = function (comparison, aContentToInsert, idxOfChange) {
+    CNode.prototype.applyInsertsToParagraphsWithRemove = function (comparison, aContentToInsert, oChange) {
         const arrSetRemoveReviewType = [];
-        const infoAboutEndOfRemoveChange = this.prepareEndOfRemoveChange(idxOfChange, comparison, arrSetRemoveReviewType);
+        const infoAboutEndOfRemoveChange = this.prepareEndOfRemoveChange(oChange, comparison, arrSetRemoveReviewType);
         const posLastRunInContent = infoAboutEndOfRemoveChange.posLastRunInContent;
 
         let nInsertPosition = infoAboutEndOfRemoveChange.nInsertPosition;
-        nInsertPosition = this.setReviewTypeForRemoveChanges(comparison, idxOfChange, posLastRunInContent, nInsertPosition, arrSetRemoveReviewType);
-				const oChange = this.changes[idxOfChange];
+        nInsertPosition = this.setReviewTypeForRemoveChanges(comparison, oChange, posLastRunInContent, nInsertPosition, arrSetRemoveReviewType);
 				if (!comparison.options.words && !comparison.isWordsByOneSymbol && oChange.insert.length === 1 && oChange.remove.length === 1) {
 					comparison.resolveConflicts(aContentToInsert, arrSetRemoveReviewType, this.getApplyParagraph(comparison), arrSetRemoveReviewType[arrSetRemoveReviewType.length - 1].GetPosInParent(), true);
 				} else {
@@ -2073,41 +2063,48 @@
 			}
 			return !this.oCommentManager.savedParaComments[oParaComment.Id];
 		}
+		function getMockDocumentFromRuns(arrRuns) {
+			const arrSlice = arrRuns.slice();
+			arrSlice.push(new AscCommonWord.ParaRun());
+			arrSlice[arrSlice.length - 1].Content.push(new AscWord.CRunParagraphMark());
+
+			const mockDocument = new AscCommonWord.CMockDocument();
+			const mockParagraph = new AscCommonWord.CMockParagraph();
+			mockDocument.Content.push(mockParagraph);
+			mockParagraph.Content = arrSlice;
+			
+			return mockDocument;
+		}
+	CDocumentComparison.prototype.executeResolveConflictMode = function (oResolveConflictComparison, fCallback) {
+		const oOldCommentsMeeting = this.oCommentManager.mapCommentMeeting;
+		this.oCommentManager.mapCommentMeeting = {};
+		oResolveConflictComparison.oCommentManager = this.oCommentManager;
+
+		const oOldBookmarkMeeting = this.oBookmarkManager.mapBookmarkMeeting;
+		this.oBookmarkManager.mapBookmarkMeeting = {};
+		oResolveConflictComparison.oBookmarkManager = this.oBookmarkManager;
+		oResolveConflictComparison.oComparisonMoveMarkManager = this.oComparisonMoveMarkManager;
+		oResolveConflictComparison.CommentsMap = this.CommentsMap;
+		oResolveConflictComparison.StylesMap = this.StylesMap;
+		fCallback();
+		this.oBookmarkManager.mapBookmarkMeeting = oOldBookmarkMeeting;
+		this.oCommentManager.mapCommentMeeting = oOldCommentsMeeting;
+	};
 		CDocumentComparison.prototype.resolveConflicts = function(arrToInserts, arrToRemove, applyParagraph, nInsertPosition, bIsWordsByOneSymbol) {
 			if (arrToInserts.length === 0 || arrToRemove.length === 0) return;
-			arrToRemove.push(new AscCommonWord.ParaRun());
-			arrToInserts.push(new AscCommonWord.ParaRun());
-			arrToRemove[arrToRemove.length - 1].Content.push(new AscWord.CRunParagraphMark());
-			arrToInserts[arrToInserts.length - 1].Content.push(new AscWord.CRunParagraphMark());
 			const comparison = new AscCommonWord.CDocumentResolveConflictComparison(this.originalDocument, this.revisedDocument, this.options, bIsWordsByOneSymbol);
 
-			const oOldCommentsMeeting = this.oCommentManager.mapCommentMeeting;
-			this.oCommentManager.mapCommentMeeting = {};
-			comparison.oCommentManager = this.oCommentManager;
+			this.executeResolveConflictMode(comparison, function () {
+				const originalDocument = getMockDocumentFromRuns(arrToRemove);
+				const revisedDocument = getMockDocumentFromRuns(arrToInserts);
+				const origParagraph = applyParagraph;
+				comparison.startPosition = nInsertPosition;
+				comparison.parentParagraph = origParagraph;
 
-			const oOldBookmarkMeeting = this.oBookmarkManager.mapBookmarkMeeting;
-			this.oBookmarkManager.mapBookmarkMeeting = {};
-			comparison.oBookmarkManager = this.oBookmarkManager;
-			comparison.oComparisonMoveMarkManager = this.oComparisonMoveMarkManager;
-			comparison.CommentsMap = this.CommentsMap;
-			comparison.StylesMap = this.StylesMap;
-			const originalDocument = new AscCommonWord.CMockDocument();
-			const revisedDocument = new AscCommonWord.CMockDocument();
-			const originalParagraph = new AscCommonWord.CMockParagraph();
-			const revisedParagraph = new AscCommonWord.CMockParagraph();
-			const origParagraph = applyParagraph;
-			comparison.startPosition = nInsertPosition;
-			comparison.parentParagraph = origParagraph;
-			originalParagraph.Content = arrToRemove;
-			revisedParagraph.Content = arrToInserts;
-			originalDocument.Content.push(originalParagraph);
-			revisedDocument.Content.push(revisedParagraph);
-
-			comparison.oComparisonMoveMarkManager.executeResolveConflictMode(function () {
-				comparison.compareRoots(originalDocument, revisedDocument);
+				comparison.oComparisonMoveMarkManager.executeResolveConflictMode(function () {
+					comparison.compareRoots(originalDocument, revisedDocument);
+				});
 			});
-			this.oBookmarkManager.mapBookmarkMeeting = oOldBookmarkMeeting;
-			this.oCommentManager.mapCommentMeeting = oOldCommentsMeeting;
 		};
     CDocumentComparison.prototype.checkOriginalAndSplitRun = function (oOriginalRun, oSplitRun) {
 
@@ -2631,9 +2628,9 @@
 				resolveTypesWithPartner(arrResult, this);
 			}
 			this.executeWithCheckInsertAndRemove(function () {
-				const aContentToInsert = this.isSkipWhitespaces(oChange.insert) ? [] : oNode.getArrOfInsertsFromChanges(i, this);
+				const aContentToInsert = this.isSkipWhitespaces(oChange.insert) ? [] : oNode.getArrOfInsertsFromChanges(oChange, this);
 				//handle removed elements
-				oNode.applyInsertsToParagraph(this, aContentToInsert, i);
+				oNode.applyInsertsToParagraph(this, aContentToInsert, oChange);
 			}.bind(this), oChange);
 
 			nLastIndex = oChange.anchor.index - 1;
@@ -3651,10 +3648,6 @@
 		}
 		oLogicDocument.LoadDocumentState(oSelectionState);
 	};
-
-    window['AscCommonWord'] = window['AscCommonWord'] || {};
-    window['AscCommonWord'].CDocumentComparison = CDocumentComparison;
-    window['AscCommonWord'].ComparisonOptions = window['AscCommonWord']["ComparisonOptions"] = ComparisonOptions;
 
     function CompareBinary(oApi, sBinary2, oOptions, bForceApplyChanges)
     {

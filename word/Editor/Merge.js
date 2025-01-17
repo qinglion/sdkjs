@@ -55,13 +55,13 @@
 
     CMergeComparisonNode.prototype = Object.create(CNode.prototype);
     CMergeComparisonNode.prototype.constructor = CMergeComparisonNode;
-		CMergeComparisonNode.prototype.applyInsertsToParagraphsWithRemove = function(comparison, aContentToInsert, idxOfChange) {
+		CMergeComparisonNode.prototype.applyInsertsToParagraphsWithRemove = function(comparison, aContentToInsert, oChange) {
 			const arrSetRemoveReviewType = [];
-			const infoAboutEndOfRemoveChange = this.prepareEndOfRemoveChange(idxOfChange, comparison, arrSetRemoveReviewType);
+			const infoAboutEndOfRemoveChange = this.prepareEndOfRemoveChange(oChange, comparison, arrSetRemoveReviewType);
 			const posLastRunInContent = infoAboutEndOfRemoveChange.posLastRunInContent;
 
 			let nInsertPosition = infoAboutEndOfRemoveChange.nInsertPosition;
-			nInsertPosition = this.setReviewTypeForRemoveChanges(comparison, idxOfChange, posLastRunInContent, nInsertPosition, arrSetRemoveReviewType);
+			nInsertPosition = this.setReviewTypeForRemoveChanges(comparison, oChange, posLastRunInContent, nInsertPosition, arrSetRemoveReviewType);
 
 			this.applyInsert(aContentToInsert, arrSetRemoveReviewType, nInsertPosition, comparison, {needReverse: true});
 		};
@@ -73,11 +73,6 @@
         }
         return CNode.prototype.privateCompareElements.call(this, oNode, bCheckNeighbors, oComparison);
     }
-
-    CMergeComparisonNode.prototype.copyRunWithMockParagraph = function (oRun, mockParagraph, comparison) {
-        const oRet = CNode.prototype.copyRunWithMockParagraph.call(this, oRun, mockParagraph, comparison);
-        return oRet;
-    };
 
     CMergeComparisonNode.prototype.setCommonReviewTypeWithInfo = function (element, info) {
         element.SetReviewTypeWithInfo((element.GetReviewType && element.GetReviewType()) || reviewtype_Common, info);
@@ -286,8 +281,18 @@
             oMainTextElement = other;
             oSecondaryTextElement = this;
         }
-        const bCheckStart = oMainTextElement.isWordBeginWith(oSecondaryTextElement);
-        const bCheckEnd = oMainTextElement.isWordEndWith(oSecondaryTextElement);
+	    let bCheckStart = false;
+	    let bCheckEnd = false;
+	    const nEndIndex = oSecondaryTextElement.elements.length - 1;
+	    const oEndElement = oMainTextElement.elements[nEndIndex];
+	    if (oMainTextElement.checkRemoveReviewType(nEndIndex) || AscCommon.isEastAsianScript(oEndElement.Value)) {
+		    bCheckStart = oMainTextElement.isWordBeginWith(oSecondaryTextElement);
+	    }
+	    const nStartIndex = oMainTextElement.elements.length - oSecondaryTextElement.elements.length;
+	    const oStartElement = oMainTextElement.elements[nStartIndex];
+	    if (oMainTextElement.checkRemoveReviewType(nStartIndex) || AscCommon.isEastAsianScript(oStartElement.Value)) {
+		    bCheckEnd = oMainTextElement.isWordEndWith(oSecondaryTextElement);
+	    }
         return bCheckStart || bCheckEnd;
     };
     
@@ -378,15 +383,14 @@
             const oChildNode = oNode.children[i];
             if (i !== oNode.children.length - 1) {
 							if (oChildNode.partner && oChildNode.element instanceof CTextElement) {
-								oChildNode.tryUpdateNode(this);
-								oChildNode.resolveTypesWithPartner(this);
+									oChildNode.updateEqualNode(this, i);
 							}
             }
 						const oChange = oNode.changes[currentChangeId];
             if (oChange && oChange.anchor.index === i) {
-                const aContentToInsert = this.isSkipWhitespaces(oChange.insert) ? [] : oNode.getArrOfInsertsFromChanges(currentChangeId, this); // todo: check skip on symbol comparing
+                const aContentToInsert = this.isSkipWhitespaces(oChange.insert) ? [] : oNode.getArrOfInsertsFromChanges(oChange, this); // todo: check skip on symbol comparing
                 //handle removed elements
-                oNode.applyInsertsToParagraph(this, aContentToInsert, currentChangeId);
+                oNode.applyInsertsToParagraph(this, aContentToInsert, oChange);
                 currentChangeId += 1
             }
             if (oChange && oChange.anchor.index > i) {
@@ -485,16 +489,15 @@
     CConflictResolveNode.prototype = Object.create(CNode.prototype);
     CConflictResolveNode.prototype.constructor = CConflictResolveNode;
 
-    CConflictResolveNode.prototype.applyInsertsToParagraphsWithRemove = function (comparison, aContentToInsert, idxOfChange) {
+    CConflictResolveNode.prototype.applyInsertsToParagraphsWithRemove = function (comparison, aContentToInsert, oChange) {
         const arrSetRemoveReviewType = [];
-        const infoAboutEndOfRemoveChange = this.prepareEndOfRemoveChange(idxOfChange, comparison, arrSetRemoveReviewType);
+        const infoAboutEndOfRemoveChange = this.prepareEndOfRemoveChange(oChange, comparison, arrSetRemoveReviewType);
         const posLastRunInContent = infoAboutEndOfRemoveChange.posLastRunInContent;
 
         const nInsertPosition = infoAboutEndOfRemoveChange.nInsertPosition;
-        this.setReviewTypeForRemoveChanges(comparison, idxOfChange, posLastRunInContent, nInsertPosition, arrSetRemoveReviewType);
+        this.setReviewTypeForRemoveChanges(comparison, oChange, posLastRunInContent, nInsertPosition, arrSetRemoveReviewType);
 
         const nInsertPosition2 = arrSetRemoveReviewType[arrSetRemoveReviewType.length - 1].GetPosInParent();
-				const oChange = this.changes[idxOfChange];
 				if (!comparison.options.words && !comparison.isWordsByOneSymbol && oChange.insert.length === 1 && oChange.remove.length === 1) {
 					aContentToInsert.reverse();
 					arrSetRemoveReviewType.reverse();
@@ -503,150 +506,30 @@
 					this.applyInsert(aContentToInsert, arrSetRemoveReviewType, nInsertPosition2, comparison, {needReverse: true, nCommentInsertIndex: nInsertPosition});
 				}
     };
-
-    // обновим ноды в любом случае, для дальнейшего разрешения типов
-    CConflictResolveNode.prototype.tryUpdateNode = function (comparison) {
-        const oPartnerNode = this.partner;
-        if (oPartnerNode)
-        {
-					let oSplitRun;
-            const oOriginalTextElement = this.element;
-            const oPartnerTextElement = oPartnerNode.element;
-            if (oPartnerTextElement.elements.length > oOriginalTextElement.elements.length) {
-                const oNewOriginalTextElement = new CResolveConflictTextElement();
-                oNewOriginalTextElement.firstRun = oOriginalTextElement.firstRun;
-                oNewOriginalTextElement.lastRun = oOriginalTextElement.lastRun;
-
-                const bIsWordBeginWithText = oPartnerTextElement.isWordBeginWith(oOriginalTextElement);
-                const bIsWordEndWithText = oPartnerTextElement.isWordEndWith(oOriginalTextElement);
-
-                const oParent = oOriginalTextElement.lastRun.GetParent();
-								const oMainMockParagraph = this.par.element;
-                if (bIsWordBeginWithText) {
-                    for (let i = 0; i < oOriginalTextElement.elements.length; i += 1) {
-                        oNewOriginalTextElement.addToElements(oOriginalTextElement.elements[i], oOriginalTextElement.reviewElementTypes[i]);
-                    }
-                }
-                let nPreviousRunPosition;
-                if (bIsWordBeginWithText || bIsWordEndWithText) {
-                    this.element = oNewOriginalTextElement;
-                    const oMockParagraph = oPartnerNode.par.element;
-                    let nAmountOfAddingElements = oPartnerTextElement.elements.length - oOriginalTextElement.elements.length;
-                    let nCurrentRunPosition = oPartnerTextElement.lastRun.GetPosInParent(oMockParagraph);
-                    let oCurrentRun = oMockParagraph.Content[nCurrentRunPosition];
-                    let nLastPartnerElementPosition = oCurrentRun.GetElementPosition(oPartnerTextElement.elements[oPartnerTextElement.elements.length - 1]);
-
-                    if (bIsWordEndWithText) {
-                        let nOffset = oOriginalTextElement.elements.length;
-                        while (nOffset) {
-                            if (nOffset - oCurrentRun.Content.length <= 0) {
-                                nLastPartnerElementPosition = oCurrentRun.Content.length - nOffset - 1;
-                                break;
-                            }
-                            nOffset -= oCurrentRun.Content.length;
-                            nCurrentRunPosition -= 1;
-                            oCurrentRun = oMockParagraph.Content[nCurrentRunPosition];
-                        }
-                    } else {
-                        nLastPartnerElementPosition = oCurrentRun.GetElementPosition(oPartnerTextElement.elements[oPartnerTextElement.elements.length - 1]);
-                    }
-	                oSplitRun = oCurrentRun.Split2(nLastPartnerElementPosition + 1);
-										oMockParagraph.Add_ToContent(nCurrentRunPosition + 1, oSplitRun);
-                    const arrContentForInsert = [];
-                    while (nAmountOfAddingElements) {
-                        const oReviewInfo = comparison.getCompareReviewInfo(oCurrentRun);
-                        for (let i = oCurrentRun.Content.length - 1; i >= 0; i -= 1) {
-                            nAmountOfAddingElements -= 1;
-                            if (nAmountOfAddingElements === 0 && i !== 0) {
-                                oCurrentRun = oCurrentRun.Split2(i);
-	                            oMockParagraph.Add_ToContent(nCurrentRunPosition + 1, oCurrentRun);
-                                break;
-                            }
-                        }
-												const oCopyCurrentRun = oCurrentRun.Copy(false, {CopyReviewPr: true});
-                        for (let i = 0; i < oCopyCurrentRun.Content.length; i += 1) {
-                            oNewOriginalTextElement.addToElements(oCopyCurrentRun.Content[i], oReviewInfo);
-                        }
-                        arrContentForInsert.push(oCopyCurrentRun);
-                        nCurrentRunPosition -= 1;
-                        oCurrentRun = oMockParagraph.Content[nCurrentRunPosition];
-                    }
-                    let nLastOriginalElementPosition;
-                    let nLastRunPosition;
-										let nMockRunPosition;
-                    if (bIsWordBeginWithText) {
-                        nLastRunPosition = oOriginalTextElement.lastRun.GetPosInParent();
-	                    nMockRunPosition = oOriginalTextElement.lastRun.GetPosInParent(oMainMockParagraph);
-                        oNewOriginalTextElement.lastRun = arrContentForInsert[0];
-                        nLastOriginalElementPosition = oParent.Content[nLastRunPosition].GetElementPosition(oOriginalTextElement.elements[oOriginalTextElement.elements.length - 1]);
-                        oSplitRun = oParent.Content[nLastRunPosition].Split2(nLastOriginalElementPosition + 1, oParent, nLastRunPosition)
-	                    oMainMockParagraph.Add_ToContent(nLastRunPosition + 1, oSplitRun);
-                    } else {
-                        nLastRunPosition = oOriginalTextElement.firstRun.GetPosInParent();
-	                    nMockRunPosition = oOriginalTextElement.firstRun.GetPosInParent(oMainMockParagraph);
-                        nPreviousRunPosition = nLastRunPosition + arrContentForInsert.length;
-                        nLastOriginalElementPosition = oParent.Content[nLastRunPosition].GetElementPosition(oOriginalTextElement.elements[0]);
-	                    oSplitRun = oParent.Content[nLastRunPosition].Split2(nLastOriginalElementPosition, oParent, nLastRunPosition);
-	                    oMainMockParagraph.Add_ToContent(nMockRunPosition + 1, oSplitRun);
-                        oNewOriginalTextElement.firstRun = arrContentForInsert[0];
-                    }
-
-                    for (let i = 0; i < arrContentForInsert.length; i += 1) {
-                        oParent.Add_ToContent(nLastRunPosition + 1, arrContentForInsert[i]);
-												oMainMockParagraph.Add_ToContent(nMockRunPosition + 1, arrContentForInsert[i]);
-                    }
-                }
-
-                if (bIsWordEndWithText && !bIsWordBeginWithText) {
-                    let nElementsAmount = oOriginalTextElement.elements.length;
-                    let nCurrentRunPosition = nPreviousRunPosition + 1;
-                    let oCurrentRun = oParent.Content[nCurrentRunPosition];
-                    while (nElementsAmount) {
-                        const oReviewInfo = comparison.getCompareReviewInfo(oCurrentRun);
-                        oNewOriginalTextElement.lastRun = oCurrentRun;
-                        for (let i = 0; i < oCurrentRun.Content.length; i += 1) {
-                            oNewOriginalTextElement.addToElements(oCurrentRun.Content[i], oReviewInfo);
-                            nElementsAmount -= 1;
-                            if (nElementsAmount === 0)
-                            {
-                                break;
-                            }
-                        }
-                        nCurrentRunPosition += 1;
-                        oCurrentRun = oParent.Content[nCurrentRunPosition];
-                    }
-                }
-            } else if (oPartnerTextElement.elements.length < oOriginalTextElement.elements.length) {
-                // здесь мы просто выравниваем количество элементов в ноде, чтобы разрешить остатки типов
-                const bIsWordBeginWithText = oOriginalTextElement.isWordBeginWith(oPartnerTextElement);
-                const bIsWordEndWithText = oOriginalTextElement.isWordEndWith(oPartnerTextElement);
-                const oNewPartnerTextElement = new CResolveConflictTextElement();
-                oNewPartnerTextElement.lastRun = oPartnerTextElement.lastRun;
-                oNewPartnerTextElement.firstRun = oPartnerTextElement.firstRun;
-                oPartnerNode.element = oNewPartnerTextElement;
-                if (bIsWordBeginWithText) {
-                    for (let i = 0; i < oPartnerTextElement.elements.length; i += 1) {
-                        oNewPartnerTextElement.addToElements(oPartnerTextElement.elements[i], oPartnerTextElement.reviewElementTypes[[i]]);
-                    }
-                    for (let i = oPartnerTextElement.elements.length; i < oOriginalTextElement.elements.length; i += 1) {
-                        oNewPartnerTextElement.addToElements(oOriginalTextElement.elements[i], oOriginalTextElement.reviewElementTypes[[i]]);
-                    }
-                } else if (bIsWordEndWithText) {
-                    for (let i = 0; i < (oOriginalTextElement.elements.length - oPartnerTextElement.elements.length); i += 1) {
-                        oNewPartnerTextElement.addToElements(oOriginalTextElement.elements[i], oOriginalTextElement.reviewElementTypes[[i]]);
-                    }
-                    for (let i = 0; i < oPartnerTextElement.elements.length; i += 1) {
-                        oNewPartnerTextElement.addToElements(oPartnerTextElement.elements[i], oPartnerTextElement.reviewElementTypes[[i]]);
-                    }
-                }
-            }
-        }
-    };
-
-    CConflictResolveNode.prototype.applyInsertsToParagraphsWithoutRemove = function (comparison, aContentToInsert, idxOfChange) {
-        const bRet = CNode.prototype.applyInsertsToParagraphsWithoutRemove.call(this, comparison, aContentToInsert, idxOfChange);
+	CConflictResolveNode.prototype.updateEqualNode = function (comparison, index) {
+		const oPartnerNode = this.partner;
+		const oOriginalTextElement = this.element;
+		const oPartnerTextElement = oPartnerNode.element;
+		if (oPartnerTextElement.elements.length === oOriginalTextElement.elements.length) {
+			this.resolveTypesWithPartner(comparison);
+		} else {
+			const oParentNode = this.par;
+			const oChange = new AscCommon.AttachedOperation(
+				new AscCommon.Anchor(oParentNode, oParentNode, index),
+				AscCommon.UPDATE_FOREST_TYPE, [index],
+				[this], [oPartnerNode]);
+			const bOldComparisonWordOption = comparison.options.words;
+			comparison.options.words = false;
+			comparison.copyPr.SkipUpdateInfo = true;
+			const aContentToInsert = comparison.isSkipWhitespaces(oChange.insert) ? [] : oParentNode.getArrOfInsertsFromChanges(oChange, comparison); // todo: check skip on symbol comparing
+			oParentNode.applyInsertsToParagraph(comparison, aContentToInsert, oChange);
+			comparison.options.words = bOldComparisonWordOption;
+			comparison.copyPr.SkipUpdateInfo = false;
+		}
+	};
+    CConflictResolveNode.prototype.applyInsertsToParagraphsWithoutRemove = function (comparison, aContentToInsert, oChange) {
+        const bRet = CNode.prototype.applyInsertsToParagraphsWithoutRemove.call(this, comparison, aContentToInsert, oChange);
         if (!bRet) {
-            const oChange = this.changes[idxOfChange];
             const applyingParagraph = this.getApplyParagraph(comparison);
             const index = oChange.anchor.index;
             if (index === this.children.length - 1) {
