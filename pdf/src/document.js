@@ -6415,6 +6415,9 @@ var CPresentation = CPresentation || function(){};
     CPDFDoc.prototype.GetAllTableStyles = function() {
         return this.globalTableStyles.Style;
     };
+	CPDFDoc.prototype.IsSelectParagraphEndMark = function() {
+		return false;
+	};
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Extension required for CGraphicObjects

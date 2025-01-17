@@ -2281,6 +2281,10 @@ CDocument.prototype.IsLoadingDocument = function()
 {
 	return (AscCommon.g_oIdCounter.m_bLoad);
 };
+CDocument.prototype.IsSelectParagraphEndMark = function()
+{
+	return true;
+};
 CDocument.prototype.On_EndLoad                     = function()
 {
 	this.Start_SilentMode();
