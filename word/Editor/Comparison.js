@@ -802,6 +802,12 @@
             oParent.addChildNode(this);
         }
     }
+		CNode.prototype.getDiff = function (oAnotherNode, oComparison) {
+			if (this.equals(oAnotherNode, oComparison)) {
+				return this.wordCounter.diff(oAnotherNode.wordCounter);
+			}
+			return this.wordCounter.count + oAnotherNode.wordCounter.count + 2;
+		};
 		CNode.prototype.isSpaceText = function() {
 			return this.element instanceof CTextElement && this.element.isSpaceText();
 		};
@@ -2003,12 +2009,12 @@
     ComparisonOptions.prototype["getFormatting"] = ComparisonOptions.prototype.getFormatting = function(){return this.formatting;};
     ComparisonOptions.prototype["getCaseChanges"] = ComparisonOptions.prototype.getCaseChanges = function(){return this.caseChanges;};
     ComparisonOptions.prototype["getWhiteSpace"] = ComparisonOptions.prototype.getWhiteSpace = function(){return this.whiteSpace;};
-    ComparisonOptions.prototype["getTables"] = ComparisonOptions.prototype.getTables = function(){this.tables;};
+    ComparisonOptions.prototype["getTables"] = ComparisonOptions.prototype.getTables = function(){return this.tables;};
     ComparisonOptions.prototype["getHeadersAndFooters"] = ComparisonOptions.prototype.getHeadersAndFooters = function(){return this.headersAndFooters;};
     ComparisonOptions.prototype["getFootNotes"] = ComparisonOptions.prototype.getFootNotes = function(){return this.footNotes;};
     ComparisonOptions.prototype["getTextBoxes"] = ComparisonOptions.prototype.getTextBoxes = function(){return this.textBoxes;};
     // ComparisonOptions.prototype["getFields"] = ComparisonOptions.prototype.getFields = function(){return this.fields;};
-    ComparisonOptions.prototype["getWords"] = ComparisonOptions.prototype.getWords = function(){return  this.words;};
+    ComparisonOptions.prototype["getWords"] = ComparisonOptions.prototype.getWords = function(){return this.words;};
 
 
     ComparisonOptions.prototype["putInsertionsAndDeletions"] = ComparisonOptions.prototype.putInsertionsAndDeletions = function(v){this.insertionsAndDeletions = v;};
@@ -2192,63 +2198,79 @@
     CDocumentComparison.prototype.forEachChangeCallback = function(oOperation) {
         oOperation.anchor.base.addChange(oOperation);
     };
-	CDocumentComparison.prototype.compareElementsArray = function(aBase, aCompare, bOrig, bUseMinDiff)
-    {
-				function sum(start, end, array) {
-					let sum = 0;
-					for (let i = start + 1; i <= end; i++) {
-						sum += array[i].wordCounter.count + 1;
-					}
-					return sum;
-				}
-				function best(compareIndex, baseMaxIndex) {
-					let bestResult = null;
-					if (baseMaxIndex === -1) {
-						return {diff: sum(-1, compareIndex, aCompare)};
-					}
-					if (compareIndex === -1) {
-						let result = 0;
-						for (let i = 0; i <= baseMaxIndex; i++) {
-							result += aBase[baseMaxIndex].wordCounter.count + 1;
-						}
-						return {diff: result};
-					}
-					for (let baseIndex = baseMaxIndex; baseIndex >= 0; baseIndex -= 1) {
-						const summarizeDef = sum(baseIndex, baseMaxIndex, aBase);
-						for (let i = compareIndex; i >= 0; i -= 1) {
-							const summarize = sum(i, compareIndex, aCompare) + summarizeDef;
-							const bestRes = best(i - 1, baseIndex - 1);
-							let diff = bestRes.diff + summarize;
-							const oBaseElement = aBase[baseIndex];
-							if (oBaseElement) {
-								diff += aBase[baseIndex].wordCounter.diff(aCompare[i].wordCounter);
-							} else {
-								diff += sum(-1, compareIndex, aCompare)
-							}
-							if (bestResult === null || diff <= bestResult.diff) {
-								bestResult = {diff: diff, baseIndex: baseIndex, compareIndex: i, previousBest: bestRes};
-							}
-						}
-					}
-					return bestResult === null ? {diff: 0} : bestResult;
-				}
-			const result = best(aCompare.length - 1, aBase.length - 1);
-	    const oEqualMap = {};
+	CDocumentComparison.prototype.compareElementsArray = function(aBase, aCompare, bOrig) {
+		const arrComparedSums = [0];
+		for (let i = 0; i < aCompare.length; i++) {
+			arrComparedSums.push(arrComparedSums[i] + aCompare[i].wordCounter.count + 1);
+		}
 
-			let curObj = result;
-			while (curObj && curObj.baseIndex !== undefined && curObj.compareIndex !== undefined) {
-				const oCurElement = aBase[curObj.baseIndex];
-				const oCompareElement = aCompare[curObj.compareIndex];
-				oEqualMap[oCurElement.element.Id] = oCompareElement;
-				oCurElement.setPartner(oCompareElement);
-				curObj = curObj.previousBest;
-			}
+		const arrBaseSums = [0];
+		for (let i = 0; i < aBase.length; i++) {
+			arrBaseSums.push(arrBaseSums[i] + aBase[i].wordCounter.count + 1);
+		}
 
-	    const fLCSCallback = this.getLCSCallback(bOrig);
-			for (let i in oEqualMap) {
-				fLCSCallback(oEqualMap[i].partner, oEqualMap[i]);
+		const oResult = {};
+		for (let i = 0; i < aBase.length; i += 1) {
+			const oBaseElem = aBase[i];
+			const oCurrentBestResult = {};
+			oResult[i] = oCurrentBestResult;
+			const oPreviousBestResult = oResult[i - 1];
+			for (let j = 0; j < aCompare.length; j++) {
+				const oCompareElem = aCompare[j];
+				const nDiff = oBaseElem.getDiff(oCompareElem, this);
+				if (oPreviousBestResult) {
+					const oCurPreviousBest = oPreviousBestResult[j];
+					const nCurBaseSum = arrBaseSums[i + 1] - arrBaseSums[oCurPreviousBest.baseIndex + 1];
+					const nCurCompareSum = arrComparedSums[j + 1] - arrComparedSums[oCurPreviousBest.compareIndex + 1];
+					const nPrevTotalDiff = nCurBaseSum + nCurCompareSum + oCurPreviousBest.diff;
+
+					const oPrevPreviousBest = oPreviousBestResult[j - 1];
+					if (oPrevPreviousBest) {
+						const nPrevBaseSum = arrBaseSums[i] - arrBaseSums[oPrevPreviousBest.baseIndex + 1];
+						const nPrevCompareSum = arrComparedSums[j] - arrComparedSums[oPrevPreviousBest.compareIndex + 1];
+						const nCurTotalDiff = nPrevBaseSum + nPrevCompareSum + oPrevPreviousBest.diff + nDiff;
+						if (nPrevTotalDiff >= nCurTotalDiff) {
+							oCurrentBestResult[j] = {diff: nCurTotalDiff, baseIndex: i, compareIndex: j};
+						} else {
+							oCurrentBestResult[j] = oCurPreviousBest;
+						}
+					} else {
+						const nBaseSum = arrBaseSums[i];
+						const nTotalDiff = nBaseSum + nDiff;
+						if (nPrevTotalDiff >= nTotalDiff) {
+							oCurrentBestResult[j] = {diff: nTotalDiff, baseIndex: i, compareIndex: j};
+						} else {
+							oCurrentBestResult[j] = oCurPreviousBest;
+						}
+					}
+				} else {
+					const nCompareSum = arrComparedSums[j];
+					const nBaseSum = arrComparedSums[i];
+					const nTotalDiff = nCompareSum + nBaseSum + nDiff;
+					if (!oCurrentBestResult[j - 1] || oCurrentBestResult[j - 1].diff >= nTotalDiff) {
+						oCurrentBestResult[j] = {diff: nTotalDiff, baseIndex: i, compareIndex: j};
+					} else {
+						oCurrentBestResult[j] = oCurrentBestResult[j - 1];
+					}
+				}
 			}
-		};
+		}
+
+		const fLCSCallback = this.getLCSCallback(bOrig);
+		let curBaseIndex = aBase.length - 1;
+		let curCompareIndex = aCompare.length - 1;
+		while (curBaseIndex >= 0 && curCompareIndex >= 0) {
+			const curResultObject = oResult[curBaseIndex][curCompareIndex];
+			const oBaseElement = aBase[curResultObject.baseIndex];
+			const oCompareElement = aCompare[curResultObject.compareIndex];
+			if (oBaseElement.equals(oCompareElement)) {
+				oBaseElement.setPartner(oCompareElement);
+				fLCSCallback(oBaseElement, oCompareElement);
+			}
+			curBaseIndex = curResultObject.baseIndex - 1;
+			curCompareIndex = curResultObject.compareIndex - 1;
+		}
+	};
     CDocumentComparison.prototype.compareNotes = function(oMatching)
     {
         for(let key in oMatching.Footnotes)
