@@ -314,7 +314,9 @@
     }
     CDocumentResolveConflictComparison.prototype = Object.create(CDocumentComparison.prototype);
     CDocumentResolveConflictComparison.prototype.constructor = CDocumentResolveConflictComparison;
-
+	CDocumentResolveConflictComparison.prototype.executeWithCheckInsertAndRemove = function (callback, oChange) {
+		callback();
+	};
 	CDocumentResolveConflictComparison.prototype.removeCommentsFromMap = function ()
 	{
 

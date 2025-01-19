@@ -1346,6 +1346,8 @@
         let nInsertPosition = infoAboutEndOfRemoveChange.nInsertPosition;
         nInsertPosition = this.setReviewTypeForRemoveChanges(comparison, oChange, posLastRunInContent, nInsertPosition, arrSetRemoveReviewType);
 				if (!comparison.options.words && !comparison.isWordsByOneSymbol && oChange.insert.length === 1 && oChange.remove.length === 1) {
+					aContentToInsert.reverse();
+					arrSetRemoveReviewType.reverse();
 					comparison.resolveConflicts(aContentToInsert, arrSetRemoveReviewType, this.getApplyParagraph(comparison), arrSetRemoveReviewType[arrSetRemoveReviewType.length - 1].GetPosInParent(), true);
 				} else {
 					this.applyInsert(aContentToInsert, arrSetRemoveReviewType, nInsertPosition, comparison, {needReverse: true});
@@ -2609,7 +2611,9 @@
         return !(oElement.IsParaEndRun && oElement.IsParaEndRun() || this.oBookmarkManager.isSkip(oElement));
     };
     CDocumentComparison.prototype.executeWithCheckInsertAndRemove = function (callback, oChange) {
-        callback();
+			this.copyPr.SkipUpdateInfo = !this.options.words && oChange.remove.length === 1 && oChange.insert.length === 1;
+			callback();
+			this.copyPr.SkipUpdateInfo = false;
     };
 
 	CDocumentComparison.prototype.applyResolveTypes = function () {};
