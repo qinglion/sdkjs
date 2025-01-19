@@ -2201,6 +2201,9 @@
         oOperation.anchor.base.addChange(oOperation);
     };
 	CDocumentComparison.prototype.compareElementsArray = function(aBase, aCompare, bOrig) {
+		if (!aBase.length || !aCompare.length) {
+			return;
+		}
 		const arrComparedSums = [0];
 		for (let i = 0; i < aCompare.length; i++) {
 			arrComparedSums.push(arrComparedSums[i] + aCompare[i].wordCounter.count + 1);
@@ -2212,48 +2215,62 @@
 		}
 
 		const oResult = {};
-		for (let i = 0; i < aBase.length; i += 1) {
-			const oBaseElem = aBase[i];
-			const oCurrentBestResult = {};
-			oResult[i] = oCurrentBestResult;
-			const oPreviousBestResult = oResult[i - 1];
-			for (let j = 0; j < aCompare.length; j++) {
-				const oCompareElem = aCompare[j];
-				const nDiff = oBaseElem.getDiff(oCompareElem, this);
-				if (oPreviousBestResult) {
-					const oCurPreviousBest = oPreviousBestResult[j];
-					const nCurBaseSum = arrBaseSums[i + 1] - arrBaseSums[oCurPreviousBest.baseIndex + 1];
-					const nCurCompareSum = arrComparedSums[j + 1] - arrComparedSums[oCurPreviousBest.compareIndex + 1];
-					const nPrevTotalDiff = nCurBaseSum + nCurCompareSum + oCurPreviousBest.diff;
+		const oFirstRow = {};
+		oResult[0] = oFirstRow;
+		oFirstRow[0] = {diff: aCompare[0].getDiff(aBase[0], this), baseIndex: 0, compareIndex: 0};
+		for (let i = 1; i < aCompare.length; i += 1) {
+			const nCompareSum = arrComparedSums[i];
+			const nTotalDiff = nCompareSum + aCompare[i].getDiff(aBase[0], this);
+			if (oFirstRow[i - 1].diff >= nTotalDiff) {
+				oFirstRow[i] = {diff: nTotalDiff, baseIndex: 0, compareIndex: i};
+			} else {
+				oFirstRow[i] = oFirstRow[i - 1];
+			}
+		}
+		for (let i = 1; i < aBase.length; i += 1) {
+			const oPreviousRow = oResult[i - 1];
+			const oCurrentRow = {};
+			oResult[i] = oCurrentRow;
+			const nCurTotalDiff = aBase[i].getDiff(aCompare[0], this) + arrBaseSums[i];
 
-					const oPrevPreviousBest = oPreviousBestResult[j - 1];
-					if (oPrevPreviousBest) {
-						const nPrevBaseSum = arrBaseSums[i] - arrBaseSums[oPrevPreviousBest.baseIndex + 1];
-						const nPrevCompareSum = arrComparedSums[j] - arrComparedSums[oPrevPreviousBest.compareIndex + 1];
-						const nCurTotalDiff = nPrevBaseSum + nPrevCompareSum + oPrevPreviousBest.diff + nDiff;
-						if (nPrevTotalDiff >= nCurTotalDiff) {
-							oCurrentBestResult[j] = {diff: nCurTotalDiff, baseIndex: i, compareIndex: j};
-						} else {
-							oCurrentBestResult[j] = oCurPreviousBest;
-						}
-					} else {
-						const nBaseSum = arrBaseSums[i];
-						const nTotalDiff = nBaseSum + nDiff;
-						if (nPrevTotalDiff >= nTotalDiff) {
-							oCurrentBestResult[j] = {diff: nTotalDiff, baseIndex: i, compareIndex: j};
-						} else {
-							oCurrentBestResult[j] = oCurPreviousBest;
-						}
-					}
+			const oPreviousCell = oPreviousRow[0];
+			const nPreviousTotalDiff = oPreviousCell.diff + arrBaseSums[i + 1] - arrBaseSums[oPreviousCell.baseIndex + 1];
+
+			if (nPreviousTotalDiff >= nCurTotalDiff) {
+				oCurrentRow[0] = {diff: nCurTotalDiff, compareIndex: 0, baseIndex: i};
+			} else {
+				oCurrentRow[0] = oPreviousCell;
+			}
+		}
+		for (let i = 1; i < aBase.length; i += 1) {
+			const oBaseElem = aBase[i];
+			const oCurrentBestResult = oResult[i];
+			const oPreviousBestResult = oResult[i - 1];
+			for (let j = 1; j < aCompare.length; j++) {
+				const oCompareElem = aCompare[j];
+
+				const oPrevCurrentBest = oCurrentBestResult[j - 1];
+				const baseSum = arrBaseSums[i + 1] - arrBaseSums[oPrevCurrentBest.baseIndex + 1];
+				const compareSum = arrComparedSums[j + 1] - arrComparedSums[oPrevCurrentBest.compareIndex + 1];
+				const nPrevColumnCurDiff = baseSum + compareSum + oPrevCurrentBest.diff;
+
+				const oCurPreviousBest = oPreviousBestResult[j];
+				const nCurBaseSum = arrBaseSums[i + 1] - arrBaseSums[oCurPreviousBest.baseIndex + 1];
+				const nCurCompareSum = arrComparedSums[j + 1] - arrComparedSums[oCurPreviousBest.compareIndex + 1];
+				const nPrevColumnPrevDiff = nCurBaseSum + nCurCompareSum + oCurPreviousBest.diff;
+
+				const oPrevPreviousBest = oPreviousBestResult[j - 1];
+				const nPrevBaseSum = arrBaseSums[i] - arrBaseSums[oPrevPreviousBest.baseIndex + 1];
+				const nPrevCompareSum = arrComparedSums[j] - arrComparedSums[oPrevPreviousBest.compareIndex + 1];
+				const nDiff = oBaseElem.getDiff(oCompareElem, this);
+				const nCurColumnPrevDiff = nPrevBaseSum + nPrevCompareSum + oPrevPreviousBest.diff + nDiff;
+
+				if (nCurColumnPrevDiff <= nPrevColumnPrevDiff && nCurColumnPrevDiff <= nPrevColumnCurDiff) {
+					oCurrentBestResult[j] = {diff: nCurColumnPrevDiff, baseIndex: i, compareIndex: j};
+				} else if (nPrevColumnCurDiff <= nCurColumnPrevDiff && nPrevColumnCurDiff <= nPrevColumnPrevDiff) {
+					oCurrentBestResult[j] = oPrevCurrentBest;
 				} else {
-					const nCompareSum = arrComparedSums[j];
-					const nBaseSum = arrBaseSums[i];
-					const nTotalDiff = nCompareSum + nBaseSum + nDiff;
-					if (!oCurrentBestResult[j - 1] || oCurrentBestResult[j - 1].diff >= nTotalDiff) {
-						oCurrentBestResult[j] = {diff: nTotalDiff, baseIndex: i, compareIndex: j};
-					} else {
-						oCurrentBestResult[j] = oCurrentBestResult[j - 1];
-					}
+					oCurrentBestResult[j] = oCurPreviousBest;
 				}
 			}
 		}
