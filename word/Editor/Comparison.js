@@ -2247,7 +2247,7 @@
 					}
 				} else {
 					const nCompareSum = arrComparedSums[j];
-					const nBaseSum = arrComparedSums[i];
+					const nBaseSum = arrBaseSums[i];
 					const nTotalDiff = nCompareSum + nBaseSum + nDiff;
 					if (!oCurrentBestResult[j - 1] || oCurrentBestResult[j - 1].diff >= nTotalDiff) {
 						oCurrentBestResult[j] = {diff: nTotalDiff, baseIndex: i, compareIndex: j};
