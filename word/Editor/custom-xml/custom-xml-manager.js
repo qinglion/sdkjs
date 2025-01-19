@@ -393,11 +393,12 @@
 			return [];
 
 		let oBinaryFileReader	= new AscCommonWord.BinaryFileReader(Doc, {});
-		oBinaryFileReader.PreLoadPrepare();
+		oBinaryFileReader.PreLoadPrepare(undefined, false);
 
 		Doc.fromZip(jsZlib, xmlParserContext, oBinaryFileReader.oReadResult);
-
-		oBinaryFileReader.PostLoadPrepare(xmlParserContext);
+		//очищать pptx_content_loader не надо чтобы не было проблем с вызовом внутри ReadPPTXElement и т.к. открываем zip
+		//лучше уйти от глобального pptx_content_loader
+		oBinaryFileReader.PostLoadPrepare(xmlParserContext, false);
 		jsZlib.close();
 
 		return Doc.Content;
