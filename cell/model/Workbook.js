@@ -19481,11 +19481,13 @@
 			return this.worksheet.getRange3(r1, c1, r2, c2);
 		return null;
 	};
-	Range.prototype.cleanFormat=function(){
+	Range.prototype.cleanFormat=function(ignoreNoEmpty){
 		AscCommon.History.Create_NewPoint();
 		AscCommon.History.StartTransaction();
 		this.unmerge();
-		this._setPropertyNoEmpty(function(row){
+
+		let fSetProperty = ignoreNoEmpty ? this._setProperty : this._setPropertyNoEmpty;
+		fSetProperty.call(this, function(row){
 			row.setStyle(null);
 			// if(row.isEmpty())
 			// row.Remove();
@@ -19522,7 +19524,7 @@
 			});
 		History.EndTransaction();
 	};
-	Range.prototype.cleanAll=function(){
+	Range.prototype.cleanAll=function(ignoreNoEmpty){
 		AscCommon.History.Create_NewPoint();
 		AscCommon.History.StartTransaction();
 		this.unmerge();
@@ -19531,7 +19533,8 @@
 		for(var i = 0, length = aHyperlinks.inner.length; i < length; ++i)
 			this.removeHyperlink(aHyperlinks.inner[i]);
 		var oThis = this;
-		this._setPropertyNoEmpty(function(row){
+		let fSetProperty = ignoreNoEmpty ? this._setProperty : this._setPropertyNoEmpty;
+		fSetProperty.call(this, function(row){
 			row.setStyle(null);
 			// if(row.isEmpty())
 			// row.Remove();
