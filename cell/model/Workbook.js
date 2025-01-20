@@ -14417,7 +14417,7 @@
 						let sheetContainer = fOld.wb && fOld.wb.dependencyFormulas && fOld.wb.dependencyFormulas.sheetListeners && fOld.wb.dependencyFormulas.sheetListeners[wsId];
 
 						if (sheetContainer) {
-							if (Object.keys(sheetContainer.cellMap).length === 0 && Object.keys(sheetContainer.areaMap).length === 0) {
+							if (Object.keys(sheetContainer.cellMap).length === 0 && Object.keys(sheetContainer.areaMap).length === 0 && Object.keys(sheetContainer.defName3d).length === 0) {
 								hasListeners = false;
 							} else {
 								hasListeners = true;
@@ -23514,6 +23514,12 @@
 	CExternalReferenceHelper.prototype.getExternalLinkStr = function (nExternalLinkIndex, locale, isShortLink) {
 		let index = nExternalLinkIndex;
 
+		let sameFile;
+		let fileName = window["Asc"]["editor"].DocInfo && window["Asc"]["editor"].DocInfo.get_Title();
+		if (index === fileName || index == "0") {
+			sameFile = true;
+		}
+
 		let wbModel = this.wb;
 		let oExternalLink = nExternalLinkIndex && wbModel && wbModel.getExternalLinkByIndex(index - 1, true);
 
@@ -23532,6 +23538,8 @@
 			}
 		} else if (oExternalLink) {
 			res = oExternalLink;
+		} else if (sameFile) {
+			res += locale ? fileName : "[0]";
 		}
 		return res;
 	};
@@ -23539,7 +23547,7 @@
 	CExternalReferenceHelper.prototype.check3dRef = function (_3DRefTmp, local) {
 		let t = this;
 		let externalLink = _3DRefTmp[3];
-		let externalDefName, externalSheetName, receivedDefName, receivedLink, isShortLink;
+		let externalDefName, externalSheetName, receivedDefName, receivedLink, isShortLink, isCurrentFile;
 
 		// this argument contain shortLink object with full formula and two parts of it
 		let receivedShortLink = _3DRefTmp[4];
@@ -23549,6 +23557,7 @@
 			receivedLink = receivedShortLink.externalLink;
 			externalSheetName = receivedShortLink.externalLink;
 			receivedDefName = receivedShortLink.defname;
+			isCurrentFile = receivedShortLink.currentFile;
 		}
 
 		// This check of short links is performed only when opening/reading, manual input is processed differently
@@ -23560,17 +23569,29 @@
 						externalDefName = eReference.DefinedNames[i];
 						if (externalDefName.SheetId !== null) {
 							externalSheetName = eReference.SheetNames[eReference.DefinedNames[i].SheetId];
-						} else if (!externalDefName.SheetId && externalDefName.RefersTo) {
-							// parse string
-							let refString = externalDefName.RefersTo,
-								// regex to find a sheet name enclosed in single quotes
-								reg = /'([\S]+)'/gi,
-								regMatch = reg.exec(refString);
+						} 
+						else if (!externalDefName.SheetId && externalDefName.RefersTo) {
+							// RefersTo differs from the wsName and may contain several exclamation marks,
+							// so we use a condition and a regular expression to get the correct name
 
-							if (regMatch && regMatch[1]) {
-								externalSheetName = regMatch[1];
+							let refString = externalDefName.RefersTo;
+							let exclamationMarkIndex = refString.lastIndexOf("!");
+
+							refString = refString.slice(0, exclamationMarkIndex);
+							refString = refString[0] === "=" ? refString.substring(1) : refString;
+							externalSheetName = refString;
+
+							// regex to find string enclosed in single qoutes
+							let regex = /^'(.*)'$/;
+							let match = regex.exec(refString);
+							if (match && match[1]) {
+								externalSheetName = match[1];
 							} else if (refString) {
-								externalSheetName = refString.split("!")[0];
+								let externalWB = eReference.getWb();
+								let depFormulas = externalWB && externalWB.dependencyFormulas;
+								if (depFormulas && depFormulas.defNames && depFormulas.defNames.wb && depFormulas.defNames.wb[receivedDefName]) {
+									externalSheetName = refString;
+								}
 							}
 						}
 						break;
@@ -23593,7 +23614,7 @@
 
 		// we check whether sheetName is part of the document or is it a short link to external data
 		if (local && !externalLink && receivedShortLink) {
-			// если существует лист с таким же названием, ссылаемся на него, иначе создаем внешнюю ссылку(сокращенную)
+			// if there is a sheet with the same name, we link to it, otherwise we create an external link (shortened)
 			let innerSheet = t.wb.getWorksheetByName(sheetName);
 			if (!innerSheet) {
 				let eReference = t.wb.getExternalLinkByName(sheetName);
@@ -23604,20 +23625,21 @@
 							if (externalDefName.SheetId !== null) {
 								externalSheetName = eReference.SheetNames[eReference.DefinedNames[i].SheetId];
 							} else if (!externalDefName.SheetId && externalDefName.RefersTo) {
-								// parse string
-								let refString = externalDefName.RefersTo,
-									// regex to find a sheet name enclosed in single quotes
-									reg = /'([\S]+)'/gi,
-									regMatch = reg.exec(refString);
-
-								if (regMatch && regMatch[1]) {
-									externalSheetName = regMatch[1];
-								} else if (refString) {
-									let externalWB = eReference.getWb();
-									let depFormulas = externalWB && externalWB.dependencyFormulas;
-									if (depFormulas && depFormulas.defNames && depFormulas.defNames.wb && depFormulas.defNames.wb[receivedDefName]) {
-										externalSheetName = refString.split("!")[0];
-									}
+								// RefersTo differs from the wsName and may contain several exclamation marks,
+								// so we use a condition and a regular expression to get the correct name
+	
+								let refString = externalDefName.RefersTo;
+								let exclamationMarkIndex = refString.lastIndexOf("!");
+	
+								refString = refString.slice(0, exclamationMarkIndex);
+								refString = refString[0] === "=" ? refString.substring(1) : refString;
+								externalSheetName = refString;
+	
+								// regex to find string enclosed in single qoutes
+								let regex = /^'(.*)'$/;
+								let match = regex.exec(refString);
+								if (match && match[1]) {
+									externalSheetName = match[1];
 								}
 							}
 							break;
@@ -23632,7 +23654,15 @@
 			}
 		}
 
-		return {sheetName: sheetName, externalLink: externalLink, receivedLink: receivedLink, externalName: externalName, isShortLink: isShortLink};
+		return {
+			sheetName: sheetName, 
+			externalLink: externalLink, 
+			receivedLink: receivedLink, 
+			externalName: externalName, 
+			isShortLink: isCurrentFile ? true : isShortLink,
+			isCurrentFile: isCurrentFile,
+			currentFileDefname: isCurrentFile ? receivedDefName : null
+		};
 	};
 
 	// Export

@@ -16196,7 +16196,8 @@ function RangeDataManagerElem(bbox, data)
 						this.RefersTo = defNames.wb[this.Name].getRef();
 						//need init from range + updateFromSheet from data set
 						if (this.RefersTo) {
-							this.parent.updateSheetData(sheetName, sheet, [AscCommonExcel.g_oRangeCache.getAscRange(this.RefersTo.split("!")[1])]);
+							let exclamationMarkIndex = this.RefersTo.lastIndexOf("!");
+							this.parent.updateSheetData(sheetName, sheet, [AscCommonExcel.g_oRangeCache.getAscRange(this.RefersTo.slice(exclamationMarkIndex + 1))]);
 						}
 
 						isChanged = true;

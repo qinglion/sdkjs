@@ -3475,10 +3475,19 @@
 			}
 		}
 
+		/* current file check */
+		let currentFileName = window["Asc"]["editor"].DocInfo && window["Asc"]["editor"].DocInfo.get_Title();
+		// let currentFileDefname;
+
 		/* shortlink return obj {fullstring, externalLink, defname} */
 		let shortLink = isExternalShortLink(subSTR) || (local && !external && isExternalShortLinkLocal(subSTR));
 
 		if (shortLink) {
+			if ((shortLink.externalLink && shortLink.externalLink === currentFileName) || external === "0") {
+				external = null;
+				shortLink.currentFile = true;
+			}
+
 			this.pCurrPos += shortLink.fullString.length + externalLength;
 			this.operand_str = shortLink.defname;
 			return [true, null, null, external, shortLink];
