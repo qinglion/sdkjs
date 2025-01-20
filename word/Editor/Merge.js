@@ -91,8 +91,7 @@
             if (opts.needReverse) {
                 arrToRemove = arrToRemove.reverse();
             }
-            nInsertPosition = arrToRemove[0].GetPosInParent();
-            comparison.resolveConflicts(arrToInsert, arrToRemove, this.getApplyParagraph(comparison), nInsertPosition);
+            comparison.resolveConflicts(arrToInsert, arrToRemove, this.getApplyParagraph(comparison));
         }
     }
 
@@ -191,7 +190,7 @@
 		return true;
 	};
     CMergeComparisonTextElement.prototype.equals = function (oOtherElement, bNeedCheckTypes, oComparison) {
-        const bEquals = CTextElement.prototype.equals.call(this, oOtherElement, bNeedCheckTypes, oComparison);
+        const bEquals = CTextElement.prototype._equals.call(this, oOtherElement, bNeedCheckTypes, oComparison);
         if (!bEquals) {
             return false;
         }
@@ -226,82 +225,10 @@
         return false;
     };
 
-    CResolveConflictTextElement.prototype.isWordBeginWith = function (oOther)
-    {
-        if (this.elements.length < oOther.elements.length) {
-            return false;
-        }
-
-        for (let i = 0; i < oOther.elements.length; i += 1)
-        {
-            const oMainElement = this.elements[i];
-            const oSecondaryElement = oOther.elements[i];
-            if (typeof oMainElement.Value !== 'number' || typeof oSecondaryElement.Value !== 'number')
-            {
-                return false;
-            } else if (oMainElement.Value !== oSecondaryElement.Value) {
-                return false;
-            }
-        }
-        return true;
-    };
-    CResolveConflictTextElement.prototype.isWordEndWith = function (oOther)
-    {
-        if (this.elements.length < oOther.elements.length) {
-            return false;
-        }
-
-        for (let i = 0; i < oOther.elements.length; i += 1)
-        {
-            const oMainElement = this.elements[this.elements.length - 1 - i];
-            const oSecondaryElement = oOther.elements[oOther.elements.length - 1 - i];
-            if (typeof oMainElement.Value !== 'number' || typeof oSecondaryElement.Value !== 'number')
-            {
-                return false;
-            } else if (oMainElement.Value !== oSecondaryElement.Value) {
-                return false;
-            }
-        }
-        return true;
-    };
-
-    CResolveConflictTextElement.prototype.equals = function (other, bNeedCheckReview, oComparison)
-    {
-        const bResult = CTextElement.prototype.equals.call(this, other, bNeedCheckReview, oComparison);
-        if (bResult || this.elements.length === other.elements.length) {
-            return bResult;
-        }
-        let oMainTextElement;
-        let oSecondaryTextElement;
-        if (this.elements.length > other.elements.length)
-        {
-            oMainTextElement = this;
-            oSecondaryTextElement = other;
-        } else {
-            oMainTextElement = other;
-            oSecondaryTextElement = this;
-        }
-	    let bCheckStart = false;
-	    let bCheckEnd = false;
-	    const nEndIndex = oSecondaryTextElement.elements.length - 1;
-	    const oEndElement = oMainTextElement.elements[nEndIndex];
-	    if (oMainTextElement.checkRemoveReviewType(nEndIndex) || AscCommon.isEastAsianScript(oEndElement.Value)) {
-		    bCheckStart = oMainTextElement.isWordBeginWith(oSecondaryTextElement);
-	    }
-	    const nStartIndex = oMainTextElement.elements.length - oSecondaryTextElement.elements.length;
-	    const oStartElement = oMainTextElement.elements[nStartIndex];
-	    if (oMainTextElement.checkRemoveReviewType(nStartIndex) || AscCommon.isEastAsianScript(oStartElement.Value)) {
-		    bCheckEnd = oMainTextElement.isWordEndWith(oSecondaryTextElement);
-	    }
-        return bCheckStart || bCheckEnd;
-    };
-    
-
     function CDocumentResolveConflictComparison(oOriginalDocument, oRevisedDocument, oOptions, bIsWordsByOneSymbol) {
-        CDocumentComparison.call(this, oOriginalDocument, oRevisedDocument, oOptions);
+        CDocumentComparison.call(this, oOriginalDocument, oRevisedDocument, oOptions, bIsWordsByOneSymbol);
 	    this.needCopyForResolveEqualWords = false;
         this.parentParagraph = null;
-        this.startPosition = 0;
         this.bSkipChangeMoveType = true;
 	      this.needCheckReview = true;
         this.copyPr = {
@@ -310,7 +237,6 @@
 	        SkipFootnoteReference: !oOptions.footNotes
         };
         this.bSaveCustomReviewType = true;
-				this.isWordsByOneSymbol = !!bIsWordsByOneSymbol;
     }
     CDocumentResolveConflictComparison.prototype = Object.create(CDocumentComparison.prototype);
     CDocumentResolveConflictComparison.prototype.constructor = CDocumentResolveConflictComparison;
@@ -390,7 +316,9 @@
             }
 						const oChange = oNode.changes[currentChangeId];
             if (oChange && oChange.anchor.index === i) {
+							this.copyPr.SkipUpdateInfo = !this.options.words && !this.isWordsByOneSymbol && oChange.insert.length === 1 && oChange.remove.length === 1;
                 const aContentToInsert = this.isSkipWhitespaces(oChange.insert) ? [] : oNode.getArrOfInsertsFromChanges(oChange, this); // todo: check skip on symbol comparing
+	            this.copyPr.SkipUpdateInfo = false;
                 //handle removed elements
                 oNode.applyInsertsToParagraph(this, aContentToInsert, oChange);
                 currentChangeId += 1
@@ -503,32 +431,11 @@
 				if (!comparison.options.words && !comparison.isWordsByOneSymbol && oChange.insert.length === 1 && oChange.remove.length === 1) {
 					aContentToInsert.reverse();
 					arrSetRemoveReviewType.reverse();
-					comparison.resolveConflicts(aContentToInsert, arrSetRemoveReviewType, this.getApplyParagraph(comparison), nInsertPosition2, true);
+					comparison.resolveConflicts(aContentToInsert, arrSetRemoveReviewType, this.getApplyParagraph(comparison), true);
 				} else {
 					this.applyInsert(aContentToInsert, arrSetRemoveReviewType, nInsertPosition2, comparison, {needReverse: true, nCommentInsertIndex: nInsertPosition});
 				}
     };
-	CConflictResolveNode.prototype.updateEqualNode = function (comparison, index) {
-		const oPartnerNode = this.partner;
-		const oOriginalTextElement = this.element;
-		const oPartnerTextElement = oPartnerNode.element;
-		if (oPartnerTextElement.elements.length === oOriginalTextElement.elements.length) {
-			this.resolveTypesWithPartner(comparison);
-		} else {
-			const oParentNode = this.par;
-			const oChange = new AscCommon.AttachedOperation(
-				new AscCommon.Anchor(oParentNode, oParentNode, index),
-				AscCommon.UPDATE_FOREST_TYPE, [index],
-				[this], [oPartnerNode]);
-			const bOldComparisonWordOption = comparison.options.words;
-			comparison.options.words = false;
-			comparison.copyPr.SkipUpdateInfo = true;
-			const aContentToInsert = comparison.isSkipWhitespaces(oChange.insert) ? [] : oParentNode.getArrOfInsertsFromChanges(oChange, comparison); // todo: check skip on symbol comparing
-			oParentNode.applyInsertsToParagraph(comparison, aContentToInsert, oChange);
-			comparison.options.words = bOldComparisonWordOption;
-			comparison.copyPr.SkipUpdateInfo = false;
-		}
-	};
     CConflictResolveNode.prototype.applyInsertsToParagraphsWithoutRemove = function (comparison, aContentToInsert, oChange) {
         const bRet = CNode.prototype.applyInsertsToParagraphsWithoutRemove.call(this, comparison, aContentToInsert, oChange);
         if (!bRet) {
@@ -549,10 +456,6 @@
     };
     CConflictResolveNode.prototype.insertContentAfterRemoveChanges = CMergeComparisonNode.prototype.insertContentAfterRemoveChanges;
 
-    CConflictResolveNode.prototype.getApplyParagraph = function (comparison) {
-        return comparison.parentParagraph;
-    };
-
     CConflictResolveNode.prototype.copyRunWithMockParagraph = function (oRun, mockParagraph, comparison) {
         comparison.copyPr.bSaveCustomReviewType = true;
         const oRet = CNode.prototype.copyRunWithMockParagraph.call(this, oRun, mockParagraph, comparison);
@@ -569,10 +472,6 @@
     CConflictResolveNode.prototype.setCommonReviewTypeWithInfo = function (element, info) {
         element.SetReviewTypeWithInfo((element.GetReviewType && element.GetReviewType()) || reviewtype_Common, info);
     };
-    
-    CConflictResolveNode.prototype.getStartPosition = function (comparison) {
-        return comparison.startPosition;
-    };
 
     function CMockDocument() {
         this.Content = [];
@@ -585,8 +484,8 @@
 		this.Content.splice(position, 0, element);
 	};
 
-    function CDocumentMergeComparison(oOriginalDocument, oRevisedDocument, oOptions) {
-        CDocumentComparison.call(this, oOriginalDocument, oRevisedDocument, oOptions);
+    function CDocumentMergeComparison(oOriginalDocument, oRevisedDocument, oOptions, bIsWordsByOneSymbol) {
+        CDocumentComparison.call(this, oOriginalDocument, oRevisedDocument, oOptions, bIsWordsByOneSymbol);
         this.bSaveCustomReviewType = true;
         this.copyPr = {
             CopyReviewPr: false,
@@ -889,9 +788,6 @@
         this.comparison = new CDocumentMergeComparison(oOriginalDocument, oRevisedDocument, oOptions ? oOptions : new AscCommonWord.ComparisonOptions());
         this.oldTrackRevisions = false;
     }
-
-    CDocumentMerge.prototype.resolveConflicts = CDocumentMergeComparison.prototype.resolveConflicts;
-
     CDocumentMerge.prototype.applyLastMergeCallback = function () {
         const oOriginalDocument = this.originalDocument;
         const oApi = this.api;
@@ -981,6 +877,7 @@
     window['AscCommonWord'].CMockDocument = CMockDocument;
     window['AscCommonWord'].CMockParagraph = CMockParagraph;
     window['AscCommonWord'].CDocumentResolveConflictComparison = CDocumentResolveConflictComparison;
+    window['AscCommonWord'].CDocumentMergeComparison = CDocumentMergeComparison;
     window['AscCommonWord']["mergeDocuments"] = window['AscCommonWord'].mergeDocuments = mergeDocuments;
 
 })();
