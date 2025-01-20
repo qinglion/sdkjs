@@ -1287,6 +1287,67 @@
 			return endArrow;
 		}
 
+		function mapVisioFillPatternToOOXML(fillPatternType) {
+			// change down to up and up to down bcs of Global matrix inverted
+			let upSideDownPatterns = false;
+			switch (fillPatternType) {
+				case 2:
+					return upSideDownPatterns ? AscCommon.global_hatch_offsets.dnDiag :
+						AscCommon.global_hatch_offsets.upDiag;
+				case 3:
+					return AscCommon.global_hatch_offsets.cross;
+				case 4:
+					return AscCommon.global_hatch_offsets.diagCross;
+				case 5:
+					return upSideDownPatterns ? AscCommon.global_hatch_offsets.upDiag :
+						AscCommon.global_hatch_offsets.dnDiag;
+				case 6:
+					return AscCommon.global_hatch_offsets.horz;
+				case 7:
+					return AscCommon.global_hatch_offsets.vert;
+				case 8:
+					return AscCommon.global_hatch_offsets.pct60;
+				case 9:
+					return AscCommon.global_hatch_offsets.pct40;
+				case 10:
+					return AscCommon.global_hatch_offsets.pct25;
+				case 11:
+					return AscCommon.global_hatch_offsets.pct20;
+				case 12:
+					return AscCommon.global_hatch_offsets.pct10;
+				case 13:
+					return AscCommon.global_hatch_offsets.dkHorz;
+				case 14:
+					return AscCommon.global_hatch_offsets.dkVert;
+				case 15:
+					return upSideDownPatterns ? AscCommon.global_hatch_offsets.dkUpDiag :
+						AscCommon.global_hatch_offsets.dkDnDiag;
+				case 16:
+					return upSideDownPatterns ? AscCommon.global_hatch_offsets.dkDnDiag :
+						AscCommon.global_hatch_offsets.dkUpDiag;
+				case 17:
+					return AscCommon.global_hatch_offsets.smCheck;
+				case 18:
+					return AscCommon.global_hatch_offsets.trellis;
+				case 19:
+					return AscCommon.global_hatch_offsets.ltHorz;
+				case 20:
+					return AscCommon.global_hatch_offsets.ltVert;
+				case 21:
+					return upSideDownPatterns ? AscCommon.global_hatch_offsets.ltUpDiag :
+						AscCommon.global_hatch_offsets.ltDnDiag;
+				case 22:
+					return upSideDownPatterns ? AscCommon.global_hatch_offsets.ltDnDiag :
+						AscCommon.global_hatch_offsets.ltUpDiag;
+				case 23:
+					return AscCommon.global_hatch_offsets.smGrid;
+				case 24:
+					return AscCommon.global_hatch_offsets.pct50;
+				default:
+					AscCommon.consoleLog("patten fill unhandled");
+					return AscCommon.global_hatch_offsets.cross;
+			}
+		}
 
 		// Method start
 
@@ -1653,69 +1714,6 @@
 			} else if (fillPatternType === 1 || isfillPatternTypeGradient) {
 				uniFillForegndWithPattern = uniFillForegnd;
 			} else if (fillPatternType > 1) {
-
-				function mapVisioFillPatternToOOXML(fillPatternType) {
-					// change down to up and up to down bcs of Global matrix inverted
-					let upSideDownPatterns = false;
-					switch (fillPatternType) {
-						case 2:
-							return upSideDownPatterns ? AscCommon.global_hatch_offsets.dnDiag :
-								AscCommon.global_hatch_offsets.upDiag;
-						case 3:
-							return AscCommon.global_hatch_offsets.cross;
-						case 4:
-							return AscCommon.global_hatch_offsets.diagCross;
-						case 5:
-							return upSideDownPatterns ? AscCommon.global_hatch_offsets.upDiag :
-								AscCommon.global_hatch_offsets.dnDiag;
-						case 6:
-							return AscCommon.global_hatch_offsets.horz;
-						case 7:
-							return AscCommon.global_hatch_offsets.vert;
-						case 8:
-							return AscCommon.global_hatch_offsets.pct60;
-						case 9:
-							return AscCommon.global_hatch_offsets.pct40;
-						case 10:
-							return AscCommon.global_hatch_offsets.pct25;
-						case 11:
-							return AscCommon.global_hatch_offsets.pct20;
-						case 12:
-							return AscCommon.global_hatch_offsets.pct10;
-						case 13:
-							return AscCommon.global_hatch_offsets.dkHorz;
-						case 14:
-							return AscCommon.global_hatch_offsets.dkVert;
-						case 15:
-							return upSideDownPatterns ? AscCommon.global_hatch_offsets.dkUpDiag :
-								AscCommon.global_hatch_offsets.dkDnDiag;
-						case 16:
-							return upSideDownPatterns ? AscCommon.global_hatch_offsets.dkDnDiag :
-								AscCommon.global_hatch_offsets.dkUpDiag;
-						case 17:
-							return AscCommon.global_hatch_offsets.smCheck;
-						case 18:
-							return AscCommon.global_hatch_offsets.trellis;
-						case 19:
-							return AscCommon.global_hatch_offsets.ltHorz;
-						case 20:
-							return AscCommon.global_hatch_offsets.ltVert;
-						case 21:
-							return upSideDownPatterns ? AscCommon.global_hatch_offsets.ltUpDiag :
-								AscCommon.global_hatch_offsets.ltDnDiag;
-						case 22:
-							return upSideDownPatterns ? AscCommon.global_hatch_offsets.ltDnDiag :
-								AscCommon.global_hatch_offsets.ltUpDiag;
-						case 23:
-							return AscCommon.global_hatch_offsets.smGrid;
-						case 24:
-							return AscCommon.global_hatch_offsets.pct50;
-						default:
-							AscCommon.consoleLog("patten fill unhandled");
-							return AscCommon.global_hatch_offsets.cross;
-					}
-				}
-
 				let ooxmlFillPatternType = mapVisioFillPatternToOOXML(fillPatternType);
 				if (uniFillForegnd.fill instanceof AscFormat.CPattFill) {
 					uniFillForegndWithPattern = AscFormat.CreatePatternFillUniFill(ooxmlFillPatternType,
