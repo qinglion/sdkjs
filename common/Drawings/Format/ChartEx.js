@@ -428,6 +428,11 @@ function (window, undefined) {
 		this.intervalClosed = null;
 		this.underflow = null;
 		this.overflow = null;
+		this.compiledBinSize = null;
+		this.compiledBinCount = null;
+		this.compiledUnderflow = null;
+		this.compiledOverflow = null;
+		this.testingNumArr = null;
 	}
 
 	InitClass(CBinning, CBaseChartObject, AscDFH.historyitem_type_Binning);
@@ -461,6 +466,83 @@ function (window, undefined) {
 		History.CanAddChanges() && History.Add(new CChangesDrawingsDouble2(this, AscDFH.historyitem_Binning_SetOverflow, this.overflow, pr));
 		this.overflow = pr;
 	};
+
+	CBinning.prototype.recalculate = function (axisProperties) {
+		this.compiledBinSize = this.binSize;
+		this.compiledBinCount = this.binCount;
+		this.compiledUnderflow = ((this.underflow === 0 || this.underflow) && this.underflow > axisProperties.cat.min && this.underflow <= axisProperties.cat.max) ? this.underflow : null;
+		this.compiledOverflow = ((this.overflow === 0 || this.overflow) && this.overflow < axisProperties.cat.max && this.overflow >= axisProperties.cat.min) ? this.overflow : null;
+
+		const catLimits = this.handleCatLimits(axisProperties);
+		this.calculateBinSizeAndCount(catLimits, this.testingNumArr ? this.testingNumArr : this.getNumArr());
+		return catLimits;
+	};
+	CBinning.prototype.getNumArr = function () {
+		const chartSpace = this.getChartSpace();
+		const plotAreaRegion = chartSpace ? chartSpace.getPlotAreaRegion() : null;
+		const seria = plotAreaRegion && Array.isArray(plotAreaRegion.series) && plotAreaRegion.series.length > 0 ? plotAreaRegion.series[0] : null;
+		const numLit = seria ? seria.getValLit() : null;
+		return numLit ? numLit.pts : null;
+	};
+	CBinning.prototype.handleCatLimits = function (axisProperties) {
+		const limits = {
+			isOverflowExist : !!AscFormat.isRealNumber(this.compiledOverflow),
+			isUnderflowExist : !!AscFormat.isRealNumber(this.compiledUnderflow),
+			trueMax : null,
+			trueMin : null,
+		}
+
+		if (limits.isOverflowExist && limits.isUnderflowExist && this.compiledUnderflow > this.compiledOverflow) {
+			this.compiledOverflow = null;
+			limits.isOverflowExist = false;
+		}
+
+		limits.trueMax = limits.isOverflowExist ? this.compiledOverflow : axisProperties.cat.max;
+		limits.trueMin = limits.isUnderflowExist ? this.compiledUnderflow : axisProperties.cat.min;
+		return limits;
+	};
+	CBinning.prototype.calculateBinSizeAndCount = function(catLimits, numArr) {
+		if (!catLimits || !numArr) {
+			return;
+		}
+		if (this.compiledBinSize) {
+			this.compiledBinCount = Math.max(Math.ceil((catLimits.trueMax - catLimits.trueMin) / this.compiledBinSize), 1);
+		} else if (this.compiledBinCount) {
+			this.compiledBinCount -= (catLimits.isOverflowExist ? 1 : 0) + (catLimits.isUnderflowExist ? 1 : 0);
+			this.compiledBinCount = Math.max(this.compiledBinCount, 0);
+			this.compiledBinSize = (this.compiledBinCount !== 0) ? ((catLimits.trueMax - catLimits.trueMin) / this.compiledBinCount) : null;
+		} else {
+			// Find stdev
+			// formula = sqrt((∑(x - mean)^2)/(n-1))
+			let isUnique = true;
+			let mean = 0;
+			let stDev = 0;
+			for (let i = 0; i < numArr.length; i++) {
+				mean += numArr[i].val;
+			}
+			mean /= numArr.length;
+
+			for (let i = 0; i < numArr.length; i++) {
+				isUnique = numArr[i].val === numArr[0].val;
+				stDev += Math.pow((numArr[i].val - mean), 2);
+			}
+			stDev = Math.sqrt(stDev / Math.max(numArr.length - 1, 1));
+
+			// Calculate bin size and bin count
+			this.compiledBinSize = (3.5 * stDev) / (Math.pow(numArr.length, 1 / 3));
+			this.compiledBinCount = (this.compiledBinSize) ? Math.max(Math.ceil((catLimits.trueMax - catLimits.trueMin) / this.compiledBinSize), 1) : 1;
+			if (isUnique) {
+				this.compiledBinSize = 5;
+				this.compiledBinCount = 1;
+				this.compiledOverflow = null;
+				this.compiledUnderflow = null;
+			}
+			// binSize is calculated automatically, it must be rounded to two digits. Example: 78.65 = 79, 0.856 : 0.86!
+			const BINNING_PRECISION = 1;
+			this.compiledBinSize = AscCommon._roundValue(this.compiledBinSize, true, BINNING_PRECISION);
+		}
+
+	}
 
 
 	// CategoryAxisScaling
@@ -2246,31 +2328,6 @@ function (window, undefined) {
 	AscDFH.changesFactory[AscDFH.historyitem_Gridlines_SetSpPr] = window['AscDFH'].CChangesDrawingsObject;
 	AscDFH.changesFactory[AscDFH.historyitem_Gridlines_SetName] = window['AscDFH'].CChangesDrawingsString;
 
-	function CGridlines() {
-		CBaseChartObject.call(this);
-		this.spPr = null;
-		this.name = null;
-	}
-
-	InitClass(CGridlines, CBaseChartObject, AscDFH.historyitem_type_Gridlines);
-
-	CGridlines.prototype.fillObject = function (oCopy) {
-		CBaseChartObject.prototype.fillObject.call(this, oCopy);
-		if (this.spPr) {
-			oCopy.setSpPr(this.spPr.createDuplicate());
-		}
-		oCopy.setName(this.name);
-	}
-
-	CGridlines.prototype.setSpPr = function (pr) {
-		History.CanAddChanges() && History.Add(new CChangesDrawingsObject(this, AscDFH.historyitem_Gridlines_SetSpPr, this.spPr, pr));
-		this.spPr = pr;
-		this.setParentToChild(pr);
-	};
-	CGridlines.prototype.setName = function (pr) {
-		History.CanAddChanges() && History.Add(new CChangesDrawingsString(this, AscDFH.historyitem_Gridlines_SetName, this.name, pr));
-		this.name = pr;
-	};
 
 
 	// // HeaderFooter (contains in ChartFormat.js)
@@ -2947,6 +3004,7 @@ function (window, undefined) {
 		CBaseChartObject.call(this);
 		this.plotSurface = null;
 		this.series = [];
+		this.cachedData = null;
 	}
 
 	InitClass(CPlotAreaRegion, CBaseChartObject, AscDFH.historyitem_type_PlotAreaRegion);
@@ -2961,6 +3019,14 @@ function (window, undefined) {
 				oCopy.addSeries(this.series[i].createDuplicate(), i);
 			}
 		}
+	}
+
+	CPlotAreaRegion.prototype.getCachedData = function () {
+		return this.cachedData;
+	};
+
+	CPlotAreaRegion.prototype.setCachedData = function (cachedData) {
+		this.cachedData = cachedData;
 	}
 
 	CPlotAreaRegion.prototype.getMaxSeriesIdx = function () {
@@ -4429,7 +4495,6 @@ function (window, undefined) {
 	window['AscFormat'].CGeoLocations = CGeoLocations;
 	window['AscFormat'].CGeoPolygon = CGeoPolygon;
 	window['AscFormat'].CGeoPolygons = CGeoPolygons;
-	window['AscFormat'].CGridlines = CGridlines;
 	// window['AscFormat'].CHeaderFooter = CHeaderFooter;
 	// window['AscFormat'].CChartExLegend = CChartExLegend;
 	// window['AscFormat'].CNumberColorPosition = CNumberColorPosition;
@@ -4460,6 +4525,7 @@ function (window, undefined) {
 	window['AscFormat'].CValueColorMiddlePosition = CValueColorMiddlePosition;
 	window['AscFormat'].CValueColorPositions = CValueColorPositions;
 	window['AscFormat'].CValueColors = CValueColors;
+	window['AscFormat'].CBinning = CBinning;
 	// ---------------------------------------------
 	// Simple Types
 	// ---------------------------------------------

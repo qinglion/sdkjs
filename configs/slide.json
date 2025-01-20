@@ -150,8 +150,10 @@
 			"cell/model/Workbook.js",
 			"cell/model/Serialize.js",
 			"cell/model/CellInfo.js",
+			"cell/model/HeaderFooter.js",
 			"cell/view/DrawingObjectsController.js",
 			
+			"word/Editor/Paragraph/RunContent/Types.js",
 			"word/Math/mathTypes.js",
 			"word/Editor/Styles.js",
 			"word/Math/math-settings.js",
@@ -215,7 +217,6 @@
 			"slide/Editor/Format/Notes.js",
 			"word/Editor/StylesChanges.js",
 			"word/Editor/RevisionsChange.js",
-			"word/Editor/Paragraph/RunContent/Types.js",
 			"word/Editor/Paragraph/RunContent/Base.js",
 			"word/Editor/Paragraph/RunContent/FootnoteReference.js",
 			"word/Editor/Paragraph/RunContent/FootnoteRef.js",
@@ -345,8 +346,12 @@
 			"word/Editor/Styles/style-cache.js",
 			"word/Editor/Styles/FixedFormDefaults.js",
 			"word/Editor/Styles/default-styles.js",
-			"word/Editor/Revisions/TrackRevisionsManager.js",
-
+			"word/Editor/revisions/review-info.js",
+			"word/Editor/revisions/track-revisions-manager.js",
+			"word/Editor/custom-xml/custom-xml.js",
+			"word/Editor/custom-xml/custom-xml-manager.js",
+			"word/Editor/custom-xml/data-binding.js",
+			
 			"slide/Editor/Format/ImagePrototype.js",
 			"slide/Editor/Format/GroupPrototype.js",
 			"slide/Editor/Format/ChartSpacePrototype.js",

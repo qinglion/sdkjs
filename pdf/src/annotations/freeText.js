@@ -651,7 +651,14 @@
 
             for (let i = 0; i < curKeys.length; i++) {
                 let key = curKeys[i];
-                if (curRC[key] !== calcedRC[key]) {
+                if (Array.isArray(curRC[key] && Array.isArray(calcedRC[key]))) {
+                    for (let nComp = 0, nCount = Math.max(curRC[key].length, calcedRC[key].length); nComp < nCount; nComp++) {
+                        if (curRC[key][nComp] !== calcedRC[key][nComp]) {
+                            return true;
+                        }
+                    }
+                }
+                else if (curRC[key] !== calcedRC[key]) {
                     return true;
                 }
             }
@@ -890,7 +897,7 @@
         let oMainComm = this._replies[0];
         oAscCommData.asc_putText(oMainComm.GetContents());
         oAscCommData.asc_putOnlyOfficeTime(oMainComm.GetModDate().toString());
-        oAscCommData.asc_putUserId(editor.documentUserId);
+        oAscCommData.asc_putUserId(this.GetUserId());
         oAscCommData.asc_putUserName(oMainComm.GetAuthor());
         oAscCommData.asc_putSolved(false);
         oAscCommData.asc_putQuoteText("");
@@ -941,17 +948,22 @@
         graphics.reset();
         graphics.SetIntegerGrid(true);
     };
-
+    CAnnotationFreeText.prototype.canResize = function () {
+        return false
+    };
     CAnnotationFreeText.prototype.onMouseDown = function(x, y, e) {
         let oDoc                = this.GetDocument();
         let oController         = oDoc.GetController();
-        this.selectStartPage    = this.GetPage();
         
         if (this.IsInTextBox() == false) {
-            if (this.selectedObjects.length <= this.spTree.length - 1) {
+            if (oController.selectedObjects.length > 1) {
+                AscPDF.CAnnotationBase.prototype.onMouseDown.call(this, x, y, e);
+            }
+            else if (this.selectedObjects.length <= this.spTree.length - 1) {
                 let _t = this;
                 // селектим все фигуры в группе (кроме перпендикулярной линии) если до сих пор не заселекчены
                 oController.selection.groupSelection = this;
+                this.select(oController, this.selectStartPage);
                 this.selectedObjects.length = 0;
 
                 this.spTree.forEach(function(sp) {
@@ -1328,20 +1340,20 @@
                 let xContent    = oTransform.TransformPointX(X, 0);
                 let yContent    = oTransform.TransformPointY(0, Y);
 
-                if (this.IsInTextBox() == false) {
+                if (this.IsInTextBox() == false && false == this.Lock.Is_Locked()) {
                     oDoc.SetGlobalHistory();
                     oDoc.DoAction(function() {
-                        this.selectedObjects.length = 0;
-                        oContent.Selection_SetStart(xContent, yContent, 0, e);
-                        oContent.RemoveSelection();
-                        oContent.RecalculateCurPos();
-
-                        oDrDoc.UpdateTargetFromPaint = true;
-                        oDrDoc.TargetStart(true);
-                        this.SetInTextBox(true);
                         this.FitTextBox();
                     }, AscDFH.historydescription_Pdf_FreeTextFitTextBox, this);
                     oDoc.SetLocalHistory();
+
+                    this.selectedObjects.length = 0;
+                    oContent.Selection_SetStart(xContent, yContent, 0, e);
+                    oContent.RemoveSelection();
+                    oContent.RecalculateCurPos();
+                    oDrDoc.UpdateTargetFromPaint = true;
+                    oDrDoc.TargetStart(true);
+                    this.SetInTextBox(true);
                 }
                 else {
                     oContent.SelectAll();
@@ -1538,7 +1550,34 @@
     CAnnotationFreeText.prototype.Get_AbsolutePage = function() {
         return this.GetPage();
     };
+    CAnnotationFreeText.prototype.select = function (drawingObjectsController, pageIndex) {
+		if (!AscFormat.canSelectDrawing(this)) {
+			return;
+		}
+		this.selected = true;
+		this.selectStartPage = pageIndex;
+		var content = this.getDocContent && this.getDocContent();
+		if (content)
+			content.Set_StartPage(pageIndex);
+		var selected_objects;
+		if (!AscCommon.isRealObject(this.group))
+			selected_objects = drawingObjectsController ? drawingObjectsController.selectedObjects : [];
+		else
+			selected_objects = this.group.getMainGroup().selectedObjects;
+		for (var i = 0; i < selected_objects.length; ++i) {
+			if (selected_objects[i] === this)
+				break;
+		}
+		if (i === selected_objects.length)
+			selected_objects.push(this);
 
+
+		if (drawingObjectsController) {
+			drawingObjectsController.onChangeDrawingsSelection();
+            drawingObjectsController.selection.groupSelection = null;
+            this.selectedObjects.length = 0;
+		}
+	}
     function fillShapeByPoints(arrOfArrPoints, aShapeRect, oParentAnnot) {
         let xMin = aShapeRect[0];
         let yMin = aShapeRect[1];

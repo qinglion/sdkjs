@@ -1814,6 +1814,11 @@ function(window, undefined) {
 		if(!oPlotArea) return false;
 		return oPlotArea.isChartEx();
 	};
+	CChartSpace.prototype.getPlotAreaRegion = function () {
+		let oPlotArea = this.getPlotArea();
+		if (!oPlotArea) return null;
+		return oPlotArea.plotAreaRegion;
+	};
 	CChartSpace.prototype.isLayoutSizes = function () {
 		let oPlotArea = this.getPlotArea();
 		if(!oPlotArea) return false;
@@ -1939,6 +1944,12 @@ function(window, undefined) {
 		}
 		return [];
 	};
+	CChartSpace.prototype.getCachedData = function () {
+		if (!this.chart || !this.chart.plotArea || !this.chart.plotArea.plotAreaRegion) {
+			return null;
+		}
+		return this.chart.plotArea.plotAreaRegion.getCachedData();
+	}
 	CChartSpace.prototype._getSeriesArrayIdx = function (oChart, nSeriesIdx) {
 		if (oChart.series[nSeriesIdx] && oChart.series[nSeriesIdx].idx === nSeriesIdx) {
 			return nSeriesIdx;
@@ -4580,35 +4591,18 @@ function(window, undefined) {
 		return fRetLayout;
 	};
 	CChartSpace.prototype.calculateDLblsForChartEx = function () {
-		const obtainData  = function (cachedData, key) {
-			if (!cachedData) {
-				return;
-			}
-			if (cachedData.clusteredColumn) {
-				if (cachedData.clusteredColumn.aggregation) {
-						return key ? cachedData.clusteredColumn.aggregation[key] : cachedData.clusteredColumn.aggregation;
-				} else if (cachedData.clusteredColumn.results) {
-						return key ? cachedData.clusteredColumn.results[key].occurrence : cachedData.clusteredColumn.results;
-				}
-			} else if (cachedData.waterfall && cachedData.waterfall.numArr) {
-				return key ? cachedData.waterfall.numArr[key].val : cachedData.waterfall.numArr;
-			} else if (cachedData.funnel) {
-				return key ? cachedData.funnel[key] : cachedData.funnel;
-			}
-			return null;
-		}
-
 		const size = this.chart.plotArea.plotAreaRegion.series.length;
 		const seria = this.chart.plotArea.plotAreaRegion.series[size - 1];
 		const cachedData = this.chart.plotArea.plotAreaRegion.cachedData;
-		const results = obtainData(cachedData);
+
 		//seria.dataLabels.visibility optional
-		if (cachedData && seria && seria.dataLabels && results) {
+		if (cachedData && seria && seria.dataLabels) {
 			const default_lbl = new AscFormat.CDLbl();
 			const nDefaultPosition = seria.dataLabels.pos ? seria.dataLabels.pos : AscFormat.DATA_LABEL_POS_OUT_END;
 			default_lbl.initDefault(nDefaultPosition);
 			cachedData.compiledDlbs = [];
 			let aPts = seria.getValPts();
+
 			for(let nPt = 0; nPt < aPts.length; ++nPt) {
 				let pt = aPts[nPt];
 				const compiled_dlb = new AscFormat.CDLbl();
@@ -4617,6 +4611,7 @@ function(window, undefined) {
 				pt.compiledDlb.chart = this;
 				pt.compiledDlb.series = seria;
 				pt.compiledDlb.pt = pt;
+				pt.compiledDlb.idx = pt.idx;
 				pt.compiledDlb.setShowChartExVal(true);
 				pt.compiledDlb.recalculate();
 				if (cachedData.funnel && pt.compiledDlb.pt <= 0) {
@@ -4634,7 +4629,6 @@ function(window, undefined) {
 		const aDLbls = this.recalcInfo.dataLbls;
 		for (let i = 0; i < aDLbls.length; i++) {
 			let oLbl = aDLbls[i];
-			oLbl.idx = i;
 			let pos = this.chartObj.recalculatePositionText(oLbl);
 			oLbl.setPosition(pos.x, pos.y);
 		}
@@ -4837,33 +4831,36 @@ function(window, undefined) {
 		return ret;
 	};
 
+	CChartSpace.prototype.getMultiplier = function (oAxis) {
+		if (!oAxis || !oAxis.dispUnits) {
+			return 1.0;
+		}
+		return oAxis.dispUnits.getMultiplier();
+	}
+
+	CChartSpace.prototype.getNumFmt = function (oAxis) {
+		const sFormatCode = oAxis ? oAxis.getFormatCode() : null;
+		if (typeof sFormatCode === "string") {
+			return oNumFormatCache.get(sFormatCode);
+		}
+		return oNumFormatCache.get("General");
+	}
+
+	CChartSpace.prototype.getFormattedString = function (fValue, oNumFormat, fMultiplier) {
+		const fCalcValue = fValue * fMultiplier;
+		if (oNumFormat) {
+			return oNumFormat.formatToChart(fCalcValue);
+		}
+		return fCalcValue + "";
+	}
 
 	CChartSpace.prototype.getValLabels = function(oAxis) {
 		let aStrings = [];
 		let aVal = [].concat(oAxis.scale);
-		let fMultiplier;
-		if (oAxis.dispUnits) {
-			fMultiplier = oAxis.dispUnits.getMultiplier();
-		} else {
-			fMultiplier = 1.0;
-		}
-		let oNumFormat = null;
-		let sFormatCode = oAxis.getFormatCode();
-		if (typeof sFormatCode === "string") {
-			oNumFormat = oNumFormatCache.get(sFormatCode);
-		}
-		if (!oNumFormat) {
-			oNumFormat = oNumFormatCache.get("General");
-		}
+		const fMultiplier = this.getMultiplier(oAxis);
+		const oNumFormat = this.getNumFmt(oAxis);
 		for (let t = 0; t < aVal.length; ++t) {
-			let fCalcValue = aVal[t] * fMultiplier;
-			let sRichValue;
-			if (oNumFormat) {
-				sRichValue = oNumFormat.formatToChart(fCalcValue);
-			} else {
-				sRichValue = fCalcValue + "";
-			}
-			aStrings.push(sRichValue);
+			aStrings.push(this.getFormattedString(aVal[t], oNumFormat, fMultiplier));
 		}
 		return aStrings;
 	};
@@ -5030,84 +5027,54 @@ function(window, undefined) {
 				if (strSeria) {
 					const cachedData = this.chart.plotArea.plotAreaRegion.cachedData;
 					const type = this.chart.plotArea.plotAreaRegion.series[0].layoutId;
+					const strCache = strSeria.getCatLit(type);
 					if (!cachedData || !oAxis.scale) {
 						return [];
 					}
 
-					if (type === AscFormat.SERIES_LAYOUT_CLUSTERED_COLUMN && cachedData.clusteredColumn && cachedData.clusteredColumn.aggregation) {
-						// if data is aggregated then convert array of integers into chars
-						const strCache = strSeria.getCatLit();
-						if (strCache && strCache.pts) {
-							const mySet = {};
-							for (let i = 0; i < strCache.pts.length; i++) {
-								// If no labels exist, then excel just leaves empty catAxis
-								const key = strCache.pts[i].val;
-								if (!mySet.hasOwnProperty(key)) {
-									mySet[key] = true;
-									aStrings.push(key);
-								}
+					if (type === AscFormat.SERIES_LAYOUT_CLUSTERED_COLUMN) {
+						const isAggregated = cachedData.subTypeAggr;
+						if (isAggregated) {
+							for (let i = 0; i < cachedData.data.length; i++) {
+								aStrings.push(cachedData.data[i].lblName);
 							}
 						} else {
-							aStrings.push('');
-						}
-					} else if (type === AscFormat.SERIES_LAYOUT_CLUSTERED_COLUMN && cachedData.clusteredColumn && cachedData.clusteredColumn.binning) {
-						// obtain properly formated array of integers
-						const bStrings = this.getValLabels(oAxis);
-						const binning = cachedData.clusteredColumn.binning;
-
-						//convert array of formated strings into ranges
-						if (bStrings && bStrings.length != 0) {
-							// ranges always start with '[' and end with ']', however between they can have '(' and ')'
-							let start = '[';
-							let end = binning.intervalClosed === AscFormat.INTERVAL_CLOSED_SIDE_L ? ')' : ']';
-							// user can manually set minimum and maximum, therefore alternative start and end needed
-							const alternativeStart = binning.intervalClosed === AscFormat.INTERVAL_CLOSED_SIDE_L ? '<' : '≤';
-							const alternativeEnd = binning.intervalClosed === AscFormat.INTERVAL_CLOSED_SIDE_L ? '≥' : '>';
-
-							const isAlternativeStartExist = binning.underflow === 0 || binning.underflow ? true : false;
-							const isAlternativeEndExist = binning.overflow === 0 || binning.overflow ? true : false;
-							// first check is alternativeStart exist, and append alternativeStartSign with value,
-							// also because start not the first anymore, we can change its value from '[' to '(';
-							if (isAlternativeStartExist) {
-								aStrings.push(alternativeStart + bStrings[0]);
-								start = '(';
-							}
-							// if element not the first one, then change value of start
-							// if element is last one and no alternativeEnd exist, then change value of end
-							for (let i = 0; i < (bStrings.length - 1); i++) {
-								if (i === 1 && start != "(" && binning.intervalClosed !== AscFormat.INTERVAL_CLOSED_SIDE_L) {
-									start = '(';
+							const oNumFmt = this.getNumFmt(oAxis);
+							const FMultiplier = this.getMultiplier(oAxis);
+							for (let i = 0; i < cachedData.data.length; i++) {
+								if (cachedData.data[i].min === null) {
+									aStrings.push(cachedData.data[i].subChars[0] + " " + this.getFormattedString(cachedData.data[i].max, oNumFmt, FMultiplier));
+								} else if (cachedData.data[i].max === null) {
+									aStrings.push(cachedData.data[i].subChars[0] + " " + this.getFormattedString(cachedData.data[i].min, oNumFmt, FMultiplier));
+								} else {
+									const sFormattedMin = this.getFormattedString(cachedData.data[i].min, oNumFmt, FMultiplier);
+									const sFormattedMax = this.getFormattedString(cachedData.data[i].max, oNumFmt, FMultiplier);
+									aStrings.push(cachedData.data[i].subChars[0] + sFormattedMin + ", " + sFormattedMax + cachedData.data[i].subChars[1]);
 								}
-
-								if (i === (bStrings.length - 2) && !isAlternativeEndExist && binning.intervalClosed === AscFormat.INTERVAL_CLOSED_SIDE_L) {
-									end = ']';
-								}
-								aStrings.push(start + bStrings[i] + ", " + bStrings[i + 1] + end)
-							}
-							// add alternativeEnd if exist
-							if (isAlternativeEndExist) {
-								const val = (bStrings.length > 1) ? bStrings[bStrings.length - 1] : binning.overflow;
-								aStrings.push(alternativeEnd +  " " + val);
 							}
 						}
-					} else if (type === AscFormat.SERIES_LAYOUT_WATERFALL) {
-						const strCache = strSeria.getCatLit(type);
-						if (strCache) {
-							for ( let i = 0; i < strCache.pts.length; i++) {
-								aStrings.push(strCache.pts[i].val);
+					} else if (type === AscFormat.SERIES_LAYOUT_WATERFALL && strCache) {
+						let j = 0;
+						for ( let i = 0; i < cachedData.data.length; i++) {
+							if (j < strCache.pts.length && strCache.pts[j].idx === i) {
+								aStrings.push(strCache.pts[j].val);
+								j++;
+							} else {
+								aStrings.push('');
 							}
-						} else {
-							aStrings = this.getValLabels(oAxis);
 						}
-					} else if (type === AscFormat.SERIES_LAYOUT_FUNNEL) {
-						const strCache = strSeria.getCatLit(type);
-						if (strCache) {
-							for ( let i = strCache.pts.length - 1; i >= 0; i--) {
-								aStrings.push(strCache.pts[i].val);
+					} else if (type === AscFormat.SERIES_LAYOUT_FUNNEL && strCache) {
+						let j = strCache.pts.length - 1;
+						for ( let i = cachedData.data.length - 1; i >= 0; i--) {
+							if (j >= 0 && strCache.pts[j].idx === i) {
+								aStrings.push(strCache.pts[j].val);
+								j--;
+							} else {
+								aStrings.push('');
 							}
-						} else {
-							aStrings = this.getValLabels(oAxis);
 						}
+					} else if (type === AscFormat.SERIES_LAYOUT_FUNNEL || type === AscFormat.SERIES_LAYOUT_WATERFALL) {
+						aStrings = this.getValLabels(oAxis);
 					}
 				}
 				break;
@@ -10690,6 +10657,14 @@ function(window, undefined) {
 		ret.setFill(new AscFormat.CNoFill());
 		return ret;
 	}
+	function CreatePatternFillUniFill(ftype, BgColorUnicolor, FgColorUnicolor) {
+		var oUniFill = new AscFormat.CUniFill();
+		oUniFill.fill = new AscFormat.CPattFill();
+		oUniFill.fill.ftype = ftype;
+		oUniFill.fill.fgClr = FgColorUnicolor;
+		oUniFill.fill.bgClr = BgColorUnicolor;
+		return oUniFill;
+	}
 
 
 	function CreateView3d(nRotX, nRotY, bRAngAx, nDepthPercent) {
@@ -12348,6 +12323,7 @@ function(window, undefined) {
 	window['AscFormat'].CreateUnifillSolidFillSchemeColor = CreateUnifillSolidFillSchemeColor;
 	window['AscFormat'].CreateNoFillLine = CreateNoFillLine;
 	window['AscFormat'].CreateNoFillUniFill = CreateNoFillUniFill;
+	window['AscFormat'].CreatePatternFillUniFill = CreatePatternFillUniFill;
 	window['AscFormat'].CreateView3d = CreateView3d;
 	window['AscFormat'].CreateLineChart = CreateLineChart;
 	window['AscFormat'].CreateBarChart = CreateBarChart;

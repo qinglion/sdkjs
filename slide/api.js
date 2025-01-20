@@ -717,6 +717,7 @@
 		if (this.isReporterMode)
 			this.watermarkDraw = null;
 
+		this.demoBackgroundColor = null;
 		this._init();
 	}
 
@@ -1100,6 +1101,9 @@
 	asc_docs_api.prototype.isMasterMode = function() {
 		return this.presentationViewMode === Asc.c_oAscPresentationViewMode.masterSlide && !this.isSlideShow();
 	};
+	asc_docs_api.prototype.isNormalMode = function() {
+		return this.presentationViewMode === Asc.c_oAscPresentationViewMode.normal && !this.isSlideShow();
+	};
 	asc_docs_api.prototype.asc_IsMasterMode = function() {
 		return this.isMasterMode();
 	};
@@ -1206,6 +1210,7 @@
 		AscCommon.CollaborativeEditing.Clear();
 		this.isApplyChangesOnOpenEnabled = true;
 		this.isDocumentLoadComplete = false;
+		this.ServerImagesWaitComplete = false;
 		this.turnOffSpecialModes();
 
 		var oLogicDocument = this.WordControl.m_oLogicDocument;
@@ -1899,7 +1904,7 @@ background-repeat: no-repeat;\
 			let oContentCustomPr = oCustomPrPart.getDocumentContent();
 			if(oContentCustomPr) {
 				let oCustomPrReader = new StaxParser(oContentCustomPr, oCustomPrPart, xmlParserContext);
-				this.WordControl.m_oLogicDocument.CustomPr.fromXml(oCustomPrReader, true);
+				this.WordControl.m_oLogicDocument.CustomProperties.fromXml(oCustomPrReader, true);
 			}
 		}
 		var context = reader.context;
@@ -4912,7 +4917,6 @@ background-repeat: no-repeat;\
             this.WordControl.m_oLogicDocument.GetCurrentSlide().graphicObjects.startEditCurrentOleObject();
     };
 
-
     // signatures
     asc_docs_api.prototype.asc_addSignatureLine = function (oPr, Width, Height, sImgUrl) {
         if (editor.WordControl.m_oLogicDocument.Document_Is_SelectionLocked(changestype_Drawing_Props) === false){
@@ -6679,6 +6683,12 @@ background-repeat: no-repeat;\
 		this.WordControl.m_oLogicDocument.Document_UpdateInterfaceState();
 		this.WordControl.Thumbnails.OnUpdateOverlay();
 	};
+	asc_docs_api.prototype.getThumbnailsManager = function()
+	{
+		if(!this.WordControl || !this.WordControl.Thumbnails)
+			return null;
+		return this.WordControl.Thumbnails;
+	};
 
 	asc_docs_api.prototype.asc_moveSelectedSlidesToEnd = function()
 	{
@@ -6764,6 +6774,17 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype.unGroupShapes = function()
 	{
 		this.WordControl.m_oLogicDocument.unGroupShapes();
+	};
+
+	asc_docs_api.prototype.asc_canMergeSelectedShapes = function (operation) {
+		return AscFormat.canMergeSelectedShapes(operation);
+	};
+	asc_docs_api.prototype.asc_mergeSelectedShapesAction = function (operation) {
+		const isSelectionLocked = this.WordControl.m_oLogicDocument.Document_Is_SelectionLocked(changestype_Drawing_Props);
+		const canMerge = this.asc_canMergeSelectedShapes(operation);
+		if (!isSelectionLocked && canMerge) {
+			this.WordControl.m_oLogicDocument.mergeSelectedShapes(operation);
+		}
 	};
 
 	asc_docs_api.prototype.setVerticalAlign = function(align)
@@ -9045,10 +9066,7 @@ background-repeat: no-repeat;\
 		if (isFull)
 		{
 			AscCommon.CollaborativeEditing.m_aChanges = [];
-
-			// У новых элементов выставляем указатели на другие классы
-			AscCommon.CollaborativeEditing.Apply_LinkData();
-
+			
 			// Делаем проверки корректности новых изменений
 			AscCommon.CollaborativeEditing.Check_MergeData();
 
@@ -9510,6 +9528,16 @@ background-repeat: no-repeat;\
 			this.WordControl.setMouseMode(mode);
 	};
 
+
+	asc_docs_api.prototype.asc_setDemoBackgroundColor = function(sColor)
+	{
+		this.demoBackgroundColor = sColor;
+		if(this.isSlideShow())
+		{
+			this.WordControl.DemonstrationManager.CheckBackgroundColor();
+		}
+	};
+
 	//-------------------------------------------------------------export---------------------------------------------------
 	window['Asc']                                                 = window['Asc'] || {};
 	window['AscCommonSlide']                                      = window['AscCommonSlide'] || {};
@@ -9863,6 +9891,7 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype['AddText']                             = asc_docs_api.prototype.AddText;
 	asc_docs_api.prototype['groupShapes']                         = asc_docs_api.prototype.groupShapes;
 	asc_docs_api.prototype['unGroupShapes']                       = asc_docs_api.prototype.unGroupShapes;
+	asc_docs_api.prototype['asc_canMergeSelectedShapes']          = asc_docs_api.prototype.asc_canMergeSelectedShapes;
 	asc_docs_api.prototype['setVerticalAlign']                    = asc_docs_api.prototype.setVerticalAlign;
 	asc_docs_api.prototype['setVert']                             = asc_docs_api.prototype.setVert;
 	asc_docs_api.prototype['sync_MouseMoveStartCallback']         = asc_docs_api.prototype.sync_MouseMoveStartCallback;
@@ -10075,7 +10104,9 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype["asc_IsMasterMode"] = asc_docs_api.prototype.asc_IsMasterMode;
 
 	asc_docs_api.prototype["asc_setViewerTargetType"] = asc_docs_api.prototype.asc_setViewerTargetType;
-	
+
+	asc_docs_api.prototype["asc_setDemoBackgroundColor"] = asc_docs_api.prototype.asc_setDemoBackgroundColor;
+
 
 	window['Asc']['asc_CCommentData'] = window['Asc'].asc_CCommentData = asc_CCommentData;
 	asc_CCommentData.prototype['asc_getText']         = asc_CCommentData.prototype.asc_getText;

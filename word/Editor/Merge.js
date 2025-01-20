@@ -87,7 +87,7 @@
                 arrToRemove = arrToRemove.reverse();
             }
             nInsertPosition = arrToRemove[0].GetPosInParent();
-            comparison.resolveConflicts(arrToInsert, arrToRemove, arrToRemove[0].Paragraph, nInsertPosition);
+            comparison.resolveConflicts(arrToInsert, arrToRemove, this.getApplyParagraph(comparison), nInsertPosition);
         }
     }
 
@@ -322,8 +322,7 @@
         for (let i = 0; i < arrNeedReviewObjects.length; i += 1) {
             const oNeedReviewObject = arrNeedReviewObjects[i];
             if (oNeedReviewObject.SetReviewTypeWithInfo) {
-                let oReviewInfo = oNeedReviewObject.ReviewInfo.Copy();
-                this.setReviewInfo(oReviewInfo);
+                let oReviewInfo = this.getReviewInfo();
                 if (this.bSaveCustomReviewType) {
                     const reviewType = oNeedReviewObject.GetReviewType && oNeedReviewObject.GetReviewType();
                     if (reviewType === reviewtype_Add || reviewType === reviewtype_Remove) {
@@ -347,8 +346,8 @@
     };
 
     CDocumentResolveConflictComparison.prototype.getCompareReviewInfo = function (oRun) {
-        const oReviewInfo = oRun.GetReviewInfo && oRun.GetReviewInfo();
-        const prevAdded = oReviewInfo.GetPrevAdded();
+        let oReviewInfo = oRun.GetReviewInfo && oRun.GetReviewInfo();
+        const prevAdded = oReviewInfo && oReviewInfo.GetPrevAdded();
         const reviewType = oRun.GetReviewType && oRun.GetReviewType();
         const moveReviewType = oRun.GetReviewMoveType && oRun.GetReviewMoveType();
         const bNotRunIdInit = !this.oComparisonMoveMarkManager.getMoveMarkNameByRun(oRun);
@@ -410,8 +409,13 @@
     CDocumentResolveConflictComparison.prototype.resolveCustomReviewTypesBetweenElements = function (oMainElement, nRevisedReviewType, oRevisedReviewInfo) {
         const nMainReviewType = oMainElement.GetReviewType();
         if (nRevisedReviewType !== reviewtype_Common && nRevisedReviewType !== nMainReviewType) {
-            const oMainReviewInfo = oMainElement.GetReviewInfo().Copy();
-            oRevisedReviewInfo = oRevisedReviewInfo.Copy();
+            let oMainReviewInfo = oMainElement.GetReviewInfo();
+			if (oMainReviewInfo)
+				oMainReviewInfo = oMainReviewInfo.Copy();
+			
+			if (oRevisedReviewInfo)
+				oRevisedReviewInfo = oRevisedReviewInfo.Copy();
+			
             if (nMainReviewType === reviewtype_Common) {
                 oMainElement.SetReviewTypeWithInfo(nRevisedReviewType, oRevisedReviewInfo);
             } else if (nMainReviewType === reviewtype_Add) {
@@ -509,7 +513,7 @@
                 const bIsWordBeginWithText = oPartnerTextElement.isWordBeginWith(oOriginalTextElement);
                 const bIsWordEndWithText = oPartnerTextElement.isWordEndWith(oOriginalTextElement);
 
-                const oParagraph = oOriginalTextElement.lastRun.Paragraph;
+                const oParent = oOriginalTextElement.lastRun.GetParent();
 								const oMainMockParagraph = this.par.element;
                 if (bIsWordBeginWithText) {
                     for (let i = 0; i < oOriginalTextElement.elements.length; i += 1) {
@@ -567,21 +571,21 @@
                         nLastRunPosition = oOriginalTextElement.lastRun.GetPosInParent();
 	                    nMockRunPosition = oOriginalTextElement.lastRun.GetPosInParent(oMainMockParagraph);
                         oNewOriginalTextElement.lastRun = arrContentForInsert[0];
-                        nLastOriginalElementPosition = oParagraph.Content[nLastRunPosition].GetElementPosition(oOriginalTextElement.elements[oOriginalTextElement.elements.length - 1]);
-                        oSplitRun = oParagraph.Content[nLastRunPosition].Split2(nLastOriginalElementPosition + 1, oParagraph, nLastRunPosition)
+                        nLastOriginalElementPosition = oParent.Content[nLastRunPosition].GetElementPosition(oOriginalTextElement.elements[oOriginalTextElement.elements.length - 1]);
+                        oSplitRun = oParent.Content[nLastRunPosition].Split2(nLastOriginalElementPosition + 1, oParent, nLastRunPosition)
 	                    oMainMockParagraph.Add_ToContent(nLastRunPosition + 1, oSplitRun);
                     } else {
                         nLastRunPosition = oOriginalTextElement.firstRun.GetPosInParent();
 	                    nMockRunPosition = oOriginalTextElement.firstRun.GetPosInParent(oMainMockParagraph);
                         nPreviousRunPosition = nLastRunPosition + arrContentForInsert.length;
-                        nLastOriginalElementPosition = oParagraph.Content[nLastRunPosition].GetElementPosition(oOriginalTextElement.elements[0]);
-	                    oSplitRun = oParagraph.Content[nLastRunPosition].Split2(nLastOriginalElementPosition, oParagraph, nLastRunPosition);
+                        nLastOriginalElementPosition = oParent.Content[nLastRunPosition].GetElementPosition(oOriginalTextElement.elements[0]);
+	                    oSplitRun = oParent.Content[nLastRunPosition].Split2(nLastOriginalElementPosition, oParent, nLastRunPosition);
 	                    oMainMockParagraph.Add_ToContent(nMockRunPosition + 1, oSplitRun);
                         oNewOriginalTextElement.firstRun = arrContentForInsert[0];
                     }
 
                     for (let i = 0; i < arrContentForInsert.length; i += 1) {
-                        oParagraph.Add_ToContent(nLastRunPosition + 1, arrContentForInsert[i]);
+                        oParent.Add_ToContent(nLastRunPosition + 1, arrContentForInsert[i]);
 												oMainMockParagraph.Add_ToContent(nMockRunPosition + 1, arrContentForInsert[i]);
                     }
                 }
@@ -589,7 +593,7 @@
                 if (bIsWordEndWithText && !bIsWordBeginWithText) {
                     let nElementsAmount = oOriginalTextElement.elements.length;
                     let nCurrentRunPosition = nPreviousRunPosition + 1;
-                    let oCurrentRun = oParagraph.Content[nCurrentRunPosition];
+                    let oCurrentRun = oParent.Content[nCurrentRunPosition];
                     while (nElementsAmount) {
                         const oReviewInfo = comparison.getCompareReviewInfo(oCurrentRun);
                         oNewOriginalTextElement.lastRun = oCurrentRun;
@@ -602,7 +606,7 @@
                             }
                         }
                         nCurrentRunPosition += 1;
-                        oCurrentRun = oParagraph.Content[nCurrentRunPosition];
+                        oCurrentRun = oParent.Content[nCurrentRunPosition];
                     }
                 }
             } else if (oPartnerTextElement.elements.length < oOriginalTextElement.elements.length) {
@@ -846,9 +850,9 @@
                     if (oInsertInfo.isParaEnd) {
                         oRun.AddAfterParaEnd(oInsertParaMove);
                         } else {
-                        const oParagraph = oRun.Paragraph;
-                        const nPosition = oRun.GetPosInParent(oParagraph);
-                        oParagraph.AddToContent(nPosition, oInsertParaMove);
+                        const oParent = oRun.GetParent();
+                        const nPosition = oRun.GetPosInParent(oParent);
+                        oParent.AddToContent(nPosition, oInsertParaMove);
                     }
                 }
             }

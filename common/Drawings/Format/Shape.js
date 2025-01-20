@@ -721,9 +721,10 @@
 				var oContentElement = aContent[i];
 				if (oContentElement.Get_Type() === type_Paragraph) {
 					var paragraph_lines = aContent[i].Lines;
+					let dIndRight = oContentElement.Get_CompiledPr().ParaPr.Ind.Right;
 					for (var j = 0; j < paragraph_lines.length; ++j) {
 						if (paragraph_lines[j].Ranges[0].W > oMax.max_width)
-							oMax.max_width = paragraph_lines[j].Ranges[0].X + paragraph_lines[j].Ranges[0].W;
+							oMax.max_width = paragraph_lines[j].Ranges[0].X + paragraph_lines[j].Ranges[0].W + dIndRight;
 					}
 				} else if (oContentElement.Get_Type() === type_Table) {
 					if (oContentElement.Bounds.Right > oMax.max_width) {
@@ -2918,16 +2919,16 @@
 					hierarchy_styles.splice(0, 0, ownStyle);
 				}
 				else if (Asc.editor.isPdfEditor()) {
-					// let oDoc		= Asc.editor.getPDFDoc();
-					// let aListStyle	= oDoc.styles.txStyles.otherStyle;
+					let oDoc		= Asc.editor.getPDFDoc();
+					let aListStyle	= oDoc.styles.txStyles.otherStyle;
 
-					// ownStyle = new CStyle("ownStyle", null, null, null, true);
-					// var own_ppt_style = aListStyle.levels[level];
-					// ownStyle.ParaPr = own_ppt_style.Copy();
-					// if (own_ppt_style.DefaultRunPr) {
-					// 	ownStyle.TextPr = own_ppt_style.DefaultRunPr.Copy();
-					// }
-					// hierarchy_styles.splice(0, 0, ownStyle);
+					ownStyle = new CStyle("ownStyle", null, null, null, true);
+					var own_ppt_style = aListStyle.levels[level];
+					ownStyle.ParaPr = own_ppt_style.Copy();
+					if (own_ppt_style.DefaultRunPr) {
+						ownStyle.TextPr = own_ppt_style.DefaultRunPr.Copy();
+					}
+					hierarchy_styles.splice(0, 0, ownStyle);
 				}
 
 				var shape_text_style;
@@ -3064,6 +3065,7 @@
 			if (isRealObject(parents.theme) && isRealObject(compiled_style) && isRealObject(compiled_style.lnRef)) {
 				//compiled_style.lnRef.Color.Calculate(parents.theme, parents.slide, parents.layout, parents.master, {R: 0, G: 0, B: 0, A:255});
 				//RGBA = compiled_style.lnRef.Color.RGBA;
+				// compiled_style is default style
 				this.pen = parents.theme.getLnStyle(compiled_style.lnRef.idx, compiled_style.lnRef.Color);
 				//if (isRealObject(this.pen)) {
 				//    if (isRealObject(compiled_style.lnRef.Color.color)
@@ -3082,6 +3084,7 @@
 				this.pen = null;
 			}
 
+			// compiled line is given line props object
 			var oCompiledLine = this.getCompiledLine();
 			if (oCompiledLine) {
 				if (!this.pen) {
@@ -3498,7 +3501,8 @@
 				}
 
 
-				if (this.checkAutofit && this.checkAutofit() && (!this.bWordShape || !this.group || this.bCheckAutoFitFlag) && !bNotesShape) {
+				if (this.checkAutofit && this.checkAutofit() &&
+					(!this.bWordShape || !this.group || this.bCheckAutoFitFlag) && !bNotesShape) {
 					var oBodyPr = this.getBodyPr();
 					if (this.bWordShape) {
 						if (this.recalcInfo.recalculateTxBoxContent) {
@@ -5295,6 +5299,9 @@
 			}
 		};
 
+		/**
+		 * @memberOf CShape
+		 */
 		CShape.prototype.draw = function (graphics, transform, transformText, pageIndex, opt) {
 
 			if (this.checkNeedRecalculate && this.checkNeedRecalculate()) {
@@ -6477,10 +6484,6 @@
 					this.parent.slide.addToRecalculate();
 				}
 			}
-		};
-
-
-		CShape.prototype.Load_LinkData = function (linkData) {
 		};
 
 		CShape.prototype.Get_PageContentStartPos = function (pageNum) {

@@ -56,6 +56,7 @@ function (window, undefined) {
 	window['AscCH'].historyitem_Workbook_CalcPr_iterate = 14;
 	window['AscCH'].historyitem_Workbook_CalcPr_iterateCount = 15;
 	window['AscCH'].historyitem_Workbook_CalcPr_iterateDelta = 16;
+	window['AscCH'].historyitem_Workbook_UpdateLinks = 17;
 
 	window['AscCH'].historyitem_Worksheet_RemoveCell = 1;
 	window['AscCH'].historyitem_Worksheet_RemoveRows = 2;
@@ -78,8 +79,9 @@ function (window, undefined) {
 	window['AscCH'].historyitem_Worksheet_ChangeHyperlink = 26;
 	window['AscCH'].historyitem_Worksheet_SetTabColor = 27;
 	window['AscCH'].historyitem_Worksheet_RowHide = 28;
-// Frozen cell
+
 	window['AscCH'].historyitem_Worksheet_SetRightToLeft = 29;
+	// Frozen cell
 	window['AscCH'].historyitem_Worksheet_ChangeFrozenCell = 30;
 	window['AscCH'].historyitem_Worksheet_SetDisplayGridlines = 31;
 	window['AscCH'].historyitem_Worksheet_SetDisplayHeadings = 32;
@@ -275,7 +277,11 @@ function (window, undefined) {
 	window['AscCH'].historyitem_PivotTable_SetDataCaption = 70;
 	window['AscCH'].historyitem_PivotTable_PivotFieldItemSetName = 71;
 	window['AscCH'].historyitem_PivotTable_PivotFieldMoveItem = 72;
-	
+
+	window['AscCH'].historyitem_PivotCache_SetCalculatedItems = 1;
+
+	window['AscCH'].historyitem_PivotCacheFields_SetCacheField = 1;
+
 	window['AscCH'].historyitem_SharedFormula_ChangeFormula = 1;
 	window['AscCH'].historyitem_SharedFormula_ChangeShared = 2;
 
@@ -665,6 +671,18 @@ CHistory.prototype.UndoRedoEnd = function (Point, oRedoObjectParam, bUndo) {
 		//important after updateWorksheetByModel
 		t.workbook.oApi.updatePivotTables();
 
+		for (i in oRedoObjectParam.onSlicerCache) {
+			const slicers = t.workbook.getSlicersByCacheName(i);
+			if (slicers) {
+				for (let i = 0; i < slicers.length; i++) {
+					oRedoObjectParam.onSlicer[slicers[i].name] = true;
+				}
+			}
+		}
+		for (i in oRedoObjectParam.onSlicer) {
+			this.workbook.onSlicerUpdate(i);
+		}
+
 		if(!bCoaut)
 		{
 			oState = bUndo ? Point.SelectionState : ((this.Index === this.Points.length - 1) ?
@@ -825,6 +843,20 @@ CHistory.prototype._addRedoObjectParam = function (oRedoObjectParam, Point) {
 		oRedoObjectParam.oChangeWorksheetUpdate[Point.SheetId] = Point.SheetId;
 	else if(AscCommonExcel.g_oUndoRedoWorkbook === Point.Class && AscCH.historyitem_Workbook_ChangeColorScheme === Point.Type)
 		oRedoObjectParam.bChangeColorScheme = true;
+	else if(AscCommonExcel.g_oUndoRedoSlicer === Point.Class) {
+		const cacheChange = AscCH.historyitem_Slicer_SetCacheSortOrder === Point.Type ||
+			AscCH.historyitem_Slicer_SetCacheCustomListSort === Point.Type ||
+			AscCH.historyitem_Slicer_SetCacheCrossFilter === Point.Type ||
+			AscCH.historyitem_Slicer_SetCacheHideItemsWithNoData === Point.Type ||
+			AscCH.historyitem_Slicer_SetCacheData === Point.Type ||
+			AscCH.historyitem_Slicer_SetCacheMovePivot === Point.Type ||
+			AscCH.historyitem_Slicer_SetCacheCopySheet === Point.Type;
+		if (cacheChange) {
+			oRedoObjectParam.onSlicerCache[Point.Data.name] = true;
+		} else {
+			oRedoObjectParam.onSlicer[Point.Data.name] = true;
+		}
+	}
 
 	if (null != Point.SheetId) {
 		oRedoObjectParam.activeSheet = Point.SheetId;

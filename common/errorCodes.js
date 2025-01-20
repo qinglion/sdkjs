@@ -173,6 +173,11 @@
 			PasteInPivot                : -319,
 
 			CircularReference			: -320,
+			PivotItemNameNotFound       : -321,
+			CalculatedItemInPageField   : -322,
+			NotUniqueFieldWithCalculated: -323,
+			WrongDataFieldSubtotalForCalculatedItems: -324,
+			PivotFieldCustomSubtotalsWithCalculatedItems: -325,
 
 			ForceSaveButton: -331,
 			ForceSaveTimeout: -332,
@@ -255,7 +260,11 @@
 
 			MustIntegerOrDecimalNumber: 1070,
 
-			DocumentAndChangeMismatch: 1080
+			DocumentAndChangeMismatch: 1080,
+
+
+			// pdf forms
+			PDFFormsLocked: -1200
 		}
 	};
 
@@ -366,6 +375,11 @@
 	prot['LockedCellPivot']                  = prot.LockedCellPivot;
 	prot['PivotFieldNameExists']             = prot.PivotFieldNameExists;
 	prot['FormulaInPivotFieldName']          = prot.FormulaInPivotFieldName;
+	prot['PivotItemNameNotFound']            = prot.PivotItemNameNotFound;
+	prot['CalculatedItemInPageField']        = prot.CalculatedItemInPageField;
+	prot['NotUniqueFieldWithCalculated']     = prot.NotUniqueFieldWithCalculated
+	prot['WrongDataFieldSubtotalForCalculatedItems'] = prot.WrongDataFieldSubtotalForCalculatedItems;
+	prot['PivotFieldCustomSubtotalsWithCalculatedItems'] = prot.PivotFieldCustomSubtotalsWithCalculatedItems;
 	prot['PasteInPivot']                     = prot.PasteInPivot;
 	prot['PivotLabledColumns']               = prot.PivotLabledColumns;
 	prot['PivotOverlap']                     = prot.PivotOverlap;
@@ -428,6 +442,7 @@
 	prot['TracePrecedentsNoValidReference']  = prot.TracePrecedentsNoValidReference;
 	prot['MustIntegerOrDecimalNumber']       = prot.MustIntegerOrDecimalNumber;
 	prot['DocumentAndChangeMismatch']        = prot.DocumentAndChangeMismatch;
+	prot['PDFFormsLocked']                   = prot.PDFFormsLocked;
 
 
 

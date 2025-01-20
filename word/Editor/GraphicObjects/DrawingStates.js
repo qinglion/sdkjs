@@ -209,7 +209,7 @@ StartAddNewShape.prototype =
                         let nLineW  = oTrack.pen.w / 36000 * g_dKoef_mm_to_pt;
                         let aRect   = [(bounds.min_x * g_dKoef_mm_to_pt - nLineW), (bounds.min_y * g_dKoef_mm_to_pt - nLineW), (bounds.max_x * g_dKoef_mm_to_pt + nLineW), (bounds.max_y * g_dKoef_mm_to_pt + nLineW)];
     
-                        let oInkAnnot = oLogicDocument.AddAnnot({
+                        let oInkAnnot = oLogicDocument.AddAnnotByProps({
                             rect:       aRect,
                             page:       this.pageIndex,
                             contents:   null,
@@ -1744,6 +1744,7 @@ MoveInGroupState.prototype =
                 this.drawingObjects.document.FinalizeAction();
             }
             else {
+                let oDoc = Asc.editor.getPDFDoc();
                 let oViewer = Asc.editor.getDocumentRenderer();
 
                 let xMin;
@@ -1970,6 +1971,7 @@ MoveInGroupState.prototype =
                 oFreeText.SetRect(aNewRect);
                 oFreeText.onAfterMove();
                 oViewer.DrawingObjects.drawingObjects.length = 0;
+                oDoc.FinalizeAction();
             }
         }
         if (isPdf) {
@@ -2176,7 +2178,7 @@ TextAddState.prototype =
                 return {cursorType: "default", objectId: oCheckObject.Get_Id()};
             }
             else if (Asc.editor.isPdfEditor()) {
-                if (oCheckObject.IsTextShape()) {
+                if (oCheckObject.IsShape()) {
                     return {cursorType: "text", objectId: oCheckObject.Get_Id()};
                 }   
             }

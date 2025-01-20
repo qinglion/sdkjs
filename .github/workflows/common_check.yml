@@ -63,11 +63,13 @@ jobs:
           node node_modules/node-qunit-puppeteer/cli.js tests/word/content-control/inline-level/checkbox.html 30000 "--no-sandbox"
           node node_modules/node-qunit-puppeteer/cli.js tests/word/content-control/inline-level/cursorAndSelection.html 30000 "--no-sandbox"
           node node_modules/node-qunit-puppeteer/cli.js tests/word/content-control/inline-level/date-time.html 30000 "--no-sandbox"
+          node node_modules/node-qunit-puppeteer/cli.js tests/word/custom-xml/custom-xml.html 30000 "--no-sandbox"
           node node_modules/node-qunit-puppeteer/cli.js tests/word/document-calculation/floating-position/drawing.html 30000 "--no-sandbox"
           node node_modules/node-qunit-puppeteer/cli.js tests/word/document-calculation/paragraph.html 30000 "--no-sandbox"
           node node_modules/node-qunit-puppeteer/cli.js tests/word/document-calculation/table/correctBadTable.html 30000 "--no-sandbox"
           node node_modules/node-qunit-puppeteer/cli.js tests/word/document-calculation/table/flowTablePosition.html 30000 "--no-sandbox"
           node node_modules/node-qunit-puppeteer/cli.js tests/word/document-calculation/table/pageBreak.html 30000 "--no-sandbox"
+          node node_modules/node-qunit-puppeteer/cli.js tests/word/document-calculation/table/table-flow.html 30000 "--no-sandbox"
           node node_modules/node-qunit-puppeteer/cli.js tests/word/document-calculation/table/table-header.html 30000 "--no-sandbox"
           node node_modules/node-qunit-puppeteer/cli.js tests/word/document-calculation/textShaper/textShaper.html 30000 "--no-sandbox"
           node node_modules/node-qunit-puppeteer/cli.js tests/word/document-calculation/text-hyphenator/text-hyphenator.html 30000 "--no-sandbox"
@@ -129,4 +131,4 @@ jobs:
                      -v $PWD/deploy/sdkjs/word:/opt/onlyoffice/documentbuilder/sdkjs/word \
                      -v $PWD/deploy/sdkjs/cell:/opt/onlyoffice/documentbuilder/sdkjs/cell \
                      -v $PWD/deploy/sdkjs/slide:/opt/onlyoffice/documentbuilder/sdkjs/slide \
-                     onlyoffice/doc-builder-testing:next-release rake rspec_critical
+                     onlyoffice/doc-builder-testing:next-release rspec_critical

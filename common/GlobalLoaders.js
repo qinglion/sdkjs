@@ -68,6 +68,9 @@
 
         this.check_loaded_timer_id = -1;
         this.endLoadingCallback = null;
+		
+		// Счетчик загрузки шрифтов через метод LoadFonts
+		this.loadFontsCounter = 0;
 
         this.perfStart = 0;
 
@@ -331,8 +334,15 @@
             }
         };
 		
+		this.isFontLoadInProgress = function()
+		{
+			return (this.isWorking() || this.loadFontsCounter > 0);
+		};
+		
 		this.LoadFonts = function(fonts, callback)
 		{
+			++this.loadFontsCounter;
+			
 			let fontMap = {}
 			
 			if (fonts && Array.isArray(fonts))
@@ -368,9 +378,12 @@
 				}
 				
 				if (needLoad)
-					setTimeout(checkLoaded, 50);
-				else if (callback)
+					return setTimeout(checkLoaded, 50);
+				
+				if (callback)
 					callback();
+				
+				--globalLoader.loadFontsCounter;
 			};
 			checkLoaded();
 		}

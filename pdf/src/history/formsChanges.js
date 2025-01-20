@@ -33,6 +33,7 @@
 "use strict";
 
 AscDFH.changesFactory[AscDFH.historyitem_Pdf_Form_Value]			= CChangesPDFFormValue;
+AscDFH.changesFactory[AscDFH.historyitem_Pdf_Form_Changed]			= CChangesPDFFormChanged;
 AscDFH.changesFactory[AscDFH.historyitem_Pdf_Form_Add_Kid]			= CChangesPDFFormAddKid;
 AscDFH.changesFactory[AscDFH.historyitem_Pdf_Form_Remove_Kid]		= CChangesPDFFormRemoveKid;
 AscDFH.changesFactory[AscDFH.historyitem_Pdf_Form_Change_Display]	= CChangesPDFFormDisplay;
@@ -123,6 +124,23 @@ CChangesPDFFormValue.prototype.ReadFromBinary = function(Reader)
 		this.Old = undefined;
 	else
 		this.Old = isArrayValue ? JSON.parse(Reader.GetString2()) : Reader.GetString2();
+};
+
+/**
+ * @constructor
+ * @extends {AscDFH.CChangesBaseBoolProperty}
+ */
+function CChangesPDFFormChanged(Class, Old, New, Color)
+{
+	AscDFH.CChangesBaseBoolProperty.call(this, Class, Old, New, Color);
+}
+CChangesPDFFormChanged.prototype = Object.create(AscDFH.CChangesBaseBoolProperty.prototype);
+CChangesPDFFormChanged.prototype.constructor = CChangesPDFFormChanged;
+CChangesPDFFormChanged.prototype.Type = AscDFH.historyitem_Pdf_Form_Changed;
+CChangesPDFFormChanged.prototype.private_SetValue = function(Value)
+{
+	let oForm = this.Class;
+	oForm.SetWasChanged(Value);
 };
 
 /**
@@ -340,6 +358,9 @@ function CChangesPDFPushbuttonImage(Class, sOldRasterId, sNewRasterId, nAPType, 
 CChangesPDFPushbuttonImage.prototype = Object.create(AscDFH.CChangesBaseStringProperty.prototype);
 CChangesPDFPushbuttonImage.prototype.constructor = CChangesPDFPushbuttonImage;
 CChangesPDFPushbuttonImage.prototype.Type = AscDFH.historyitem_Pdf_Pushbutton_Image;
+CChangesPDFPushbuttonImage.prototype.CreateReverseChange = function() {
+	return new this.constructor(this.Class, this.New, this.Old, this.APType, this.Color);
+};
 CChangesPDFPushbuttonImage.prototype.private_SetValue = function(Value)
 {
 	let oButtonField = this.Class;

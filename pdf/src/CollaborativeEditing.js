@@ -248,8 +248,7 @@ CPDFCollaborativeEditing.prototype.Send_Changes = function(IsUserSave, Additiona
     // Свои локи не проверяем. Когда все пользователи выходят, происходит перерисовка и свои локи уже не рисуются.
     if (0 !== UnlockCount || 1 !== this.m_nUseType) {
         // Перерисовываем документ (для обновления локов)
-        editor.WordControl.m_oLogicDocument.DrawingDocument.ClearCachePages();
-        editor.WordControl.m_oLogicDocument.DrawingDocument.FirePaint();
+        editor.getDocumentRenderer().paint();
     }
 
     editor.WordControl.m_oLogicDocument.getCompositeInput().checkState();
@@ -303,6 +302,38 @@ CPDFCollaborativeEditing.prototype.OnEnd_ReadForeignChanges = function() {
 	AscCommon.CCollaborativeEditingBase.prototype.OnEnd_ReadForeignChanges.apply(this, arguments);
 };
 CPDFCollaborativeEditing.prototype.Check_MergeData = function() {};
+CPDFCollaborativeEditing.prototype.Release_Locks = function() {
+    let UnlockCount = this.m_aNeedUnlock.length;
+    for (let Index = 0; Index < UnlockCount; Index++) {
+        let Class = this.m_aNeedUnlock[Index];
+        let CurLockType = Class.Lock.Get_Type();
+        
+        if (AscCommon.c_oAscLockTypes.kLockTypeOther3 != CurLockType && AscCommon.c_oAscLockTypes.kLockTypeOther != CurLockType) {
+            Class.Lock.Set_Type(AscCommon.c_oAscLockTypes.kLockTypeNone, false);
+            Class.AddToRedraw && Class.AddToRedraw();
+
+            if (Class.IsAnnot && Class.IsAnnot()) {
+                // if annot is comment or annot with comment then release locks for it too
+                if (Class.IsComment() || (Class.IsUseContentAsComment() && Class.GetContents() != undefined) || Class.GetReply(0) != null) {
+                    Asc.editor.sync_UnLockComment(Class.Get_Id());
+                }
+            }
+        }
+        else if (AscCommon.c_oAscLockTypes.kLockTypeOther3 === CurLockType)
+        {
+            Class.Lock.Set_Type(AscCommon.c_oAscLockTypes.kLockTypeOther, false);
+            Class.AddToRedraw && Class.AddToRedraw();
+        }
+    }
+};
+CPDFCollaborativeEditing.prototype._PreUndo = function() {
+    return this.private_SaveDocumentState()
+};
+CPDFCollaborativeEditing.prototype._PostUndo = function(state, changes) {
+    let logicDocument = this.m_oLogicDocument;
+    this.private_RestoreDocumentState(state);
+    logicDocument.History.Get_RecalcData(null, changes)
+};
 
 //--------------------------------------------------------export----------------------------------------------------
 window['AscPDF'] = window['AscPDF'] || {};

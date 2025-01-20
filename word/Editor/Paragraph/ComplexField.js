@@ -55,6 +55,11 @@ function ParaFieldChar(Type, LogicDocument)
 	this.textPr   = null;
 	this.checkBox = null;
 	this.hidden   = false;
+	
+	this.graphemes = [];
+	this.widths    = [];
+	this.ascent    = 0;
+	this.descent   = 0;
 }
 ParaFieldChar.prototype = Object.create(AscWord.CRunElementBase.prototype);
 ParaFieldChar.prototype.constructor = ParaFieldChar;
@@ -115,12 +120,14 @@ ParaFieldChar.prototype.Draw = function(x, y, context)
 		let shift = 0.75 * g_dKoef_pt_to_mm;
 		let penW  = 0.75 * g_dKoef_pt_to_mm;
 		
-		let w = this.GetWidth();
+		let width   = this.GetWidth();
+		let ascent  = this.ascent / AscWord.TEXTWIDTH_DIVIDER;
+		let descent = this.descent / AscWord.TEXTWIDTH_DIVIDER;
 		
-		let y0 = y - 0.815 * w + shift;
-		let y1 = y + 0.185 * w - shift;
+		let y0 = y - ascent + shift;
+		let y1 = y + descent - shift;
 		let x0 = x + shift;
-		let x1 = x + w - shift;
+		let x1 = x + width - shift;
 		
 		context.drawHorLineExt(c_oAscLineDrawingRule.Top, y0, x0, x1, penW, 0, 0);
 		context.drawHorLineExt(c_oAscLineDrawingRule.Bottom, y1, x0, x1, penW, 0, 0);
@@ -353,11 +360,20 @@ ParaFieldChar.prototype.private_UpdateWidth = function()
 		if (ffData && !ffData.isCheckBoxAutoSize())
 			fontSize = ffData.getCheckBoxSize();
 		
-		totalWidth = (1.15 * fontSize * g_dKoef_pt_to_mm * AscWord.TEXTWIDTH_DIVIDER) | 0;
+		let textPr = this.textPr.Copy();
+		textPr.FontSize = fontSize;
+		
+		AscCommon.g_oTextMeasurer.SetTextPr(textPr);
+		AscCommon.g_oTextMeasurer.SetFontSlot(AscWord.fontslot_ASCII, 1);
+		
+		let textHeight = AscCommon.g_oTextMeasurer.GetHeight();
+		totalWidth = (textHeight * AscWord.TEXTWIDTH_DIVIDER) | 0;
 		
 		// Для совместимости при работе с RecalcObject
 		this.graphemes = [];
 		this.widths    = [];
+		this.ascent    = (AscCommon.g_oTextMeasurer.GetAscender() * AscWord.TEXTWIDTH_DIVIDER) | 0;
+		this.descent   = (-AscCommon.g_oTextMeasurer.GetDescender() * AscWord.TEXTWIDTH_DIVIDER) | 0;
 	}
 	
 	this.Width        = totalWidth;
@@ -381,19 +397,25 @@ ParaFieldChar.prototype.IsNeedSaveRecalculateObject = function()
 };
 ParaFieldChar.prototype.SaveRecalculateObject = function(isCopy)
 {
-	return new AscWord.PageNumRecalculateObject(this.Type, this.graphemes, this.widths, this.Width, isCopy);
+	return new FieldCharRecalculateObject(this.Type, this.numText, this.checkBox, this.graphemes, this.widths, this.Width, this.ascent, this.descent, isCopy);
 };
 ParaFieldChar.prototype.LoadRecalculateObject = function(recalcObj)
 {
+	this.numText      = recalcObj.numText;
+	this.checkBox     = recalcObj.checkBox;
 	this.graphemes    = recalcObj.graphemes;
 	this.widths       = recalcObj.widths;
 	this.Width        = recalcObj.width;
 	this.WidthVisible = this.Width;
+	this.ascent       = recalcObj.ascent;
+	this.descent      = recalcObj.descent;
 };
 ParaFieldChar.prototype.PrepareRecalculateObject = function()
 {
 	this.graphemes = [];
 	this.widths    = [];
+	this.checkBox  = null;
+	this.numText   = null;
 };
 ParaFieldChar.prototype.IsValid = function()
 {
@@ -424,6 +446,21 @@ ParaFieldChar.prototype.FindNextFillingForm = function(isNext, isCurrent, isStar
 	else
 		return (this.IsEnd() && (!isCurrent || isNext) ? this.ComplexField : null);
 };
+
+/**
+ * @constructor
+ */
+function FieldCharRecalculateObject(type, numText, checkBox, graphemes, widths, totalWidth, ascent, descent, isCopy)
+{
+	this.type      = type;
+	this.numText   = numText;
+	this.checkBox  = checkBox;
+	this.graphemes = graphemes && isCopy ? graphemes.slice() : graphemes;
+	this.widths    = widths && isCopy ? widths.slice() : widths;
+	this.width     = totalWidth;
+	this.ascent    = ascent;
+	this.descent   = descent;
+}
 
 /**
  * Класс представляющий символ инструкции сложного поля

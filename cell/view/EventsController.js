@@ -154,7 +154,7 @@
 				return;
 			}
 
-			if (this.view.Api.isMobileVersion) {
+			if (this.view.Api.isUseOldMobileVersion()) {
 				/*раньше события на ресайз вызывался из меню через контроллер. теперь контроллер в меню не доступен, для ресайза подписываемся на глобальный ресайз от window.*/
 				window.addEventListener("resize", function () {
 					self._onWindowResize.apply(self, arguments);
@@ -1031,7 +1031,7 @@
 					if (t.getCellEditMode()) {
 						return true;
 					}
-					var isSelectColumns = ctrlKey;
+					var isSelectColumns = !AscCommon.getAltGr(event) && (!!event.metaKey !== !!event.ctrlKey);
 					var isSelectAllMacOs = isSelectColumns && shiftKey && macOs;
 					// Обработать как обычный текст
 					if ((!isSelectColumns && !shiftKey) || isSelectAllMacOs) {
@@ -1045,12 +1045,14 @@
 					}
 					// Отключим стандартную обработку браузера нажатия
 					// Ctrl+Shift+Spacebar, Ctrl+Spacebar, Shift+Spacebar
-					stop();
 					if (isSelectColumns) {
 						t.handlers.trigger("selectColumnsByRange");
 					}
 					if (shiftKey) {
 						t.handlers.trigger("selectRowsByRange");
+					}
+					if (shiftKey || isSelectColumns) {
+						stop();
 					}
 					return result;
 
@@ -1235,8 +1237,9 @@
 							}
 							break;
 						case 65:
-							t.handlers.trigger("selectColumnsByRange");
-							t.handlers.trigger("selectRowsByRange");
+							//t.handlers.trigger("selectColumnsByRange");
+							//t.handlers.trigger("selectRowsByRange");
+							t.handlers.trigger("selectAllByRange");
 							action = true;
 							break;
 						case 66:
@@ -1642,6 +1645,8 @@
 				touchManager.stopTouchingInProcess();
 				return res;
 			}
+			if (touchManager)
+				touchManager.checkMouseFocus(event);
 
 			var t = this;
 			asc["editor"].checkInterfaceElementBlur();
@@ -2175,6 +2180,11 @@
 					// Webkit
 					deltaY = -1 * event.wheelDeltaY / 40;
 				}
+			}
+
+			if (event.shiftKey) {
+				deltaX = deltaY;
+				deltaY = 0;
 			}
 
 			if (this.smoothWheelCorrector && !wb.smoothScroll) {

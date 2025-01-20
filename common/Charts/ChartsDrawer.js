@@ -214,7 +214,7 @@ CChartsDrawer.prototype =
 		this.charts = {};
 		switch (seria.layoutId) {
 			case AscFormat.SERIES_LAYOUT_CLUSTERED_COLUMN :
-				this.charts.chartEx = new drawHistogramChart(seria, this);
+				this.charts.chartEx = new drawClusteredColumn(seria, this);
 				break;
 			case AscFormat.SERIES_LAYOUT_WATERFALL :
 				this.charts.chartEx = new drawWaterfallChart(seria, this);
@@ -2417,8 +2417,8 @@ CChartsDrawer.prototype =
 		 * axis contains min and max values and logBase
 		 * if they are null just use yMin lowerBound and yMax upperBound
 		*/
-		let trueMin = (axis && axis.scaling && axis.scaling.min) !== null ? this._roundValue(axis.scaling.min) : null;
-		let trueMax = (axis && axis.scaling && axis.scaling.max) !== null ? this._roundValue(axis.scaling.max) : null;
+		let trueMin = (axis && axis.scaling && axis.scaling.min) !== null ? _roundValue(axis.scaling.min) : null;
+		let trueMax = (axis && axis.scaling && axis.scaling.max) !== null ? _roundValue(axis.scaling.max) : null;
 		yMin = (yMin <= 0 || yMin >= 1) ? 1 : yMin;
 		yMax = (yMax <= 0) ? logBase : yMax;
 		trueMin = (!trueMin || trueMin <= 0) ? yMin : trueMin;
@@ -2690,8 +2690,8 @@ CChartsDrawer.prototype =
 			return;
 		}
 		//check for user typed max and min properties
-		let trueMin = (axis.scaling && axis.scaling.min != null) ? this._roundValue(axis.scaling.min) : null;
-		let trueMax = (axis.scaling && axis.scaling.max != null) ? this._roundValue(axis.scaling.max) : null;
+		let trueMin = (axis.scaling && axis.scaling.min != null) ? _roundValue(axis.scaling.min) : null;
+		let trueMax = (axis.scaling && axis.scaling.max != null) ? _roundValue(axis.scaling.max) : null;
 		const isTrueMin = AscFormat.isRealNumber(trueMin);
 		const isTreuMax = AscFormat.isRealNumber(trueMax);
 
@@ -2726,259 +2726,6 @@ CChartsDrawer.prototype =
 		}
 	},
 
-	_chartExSetAxisMinAndMax: function (axis, num) {
-		if (!axis || (num !== 0 && !num)) {
-			return;
-		}
-		axis.max = (axis.max === null || num > axis.max) ? num : axis.max;
-		axis.min = (axis.min === null || num < axis.min) ? num : axis.min;
-	},
-
-	_chartExHandleAggregation: function (type, cachedData, numArr, strArr, axisProperties) {
-		if (type !== AscFormat.SERIES_LAYOUT_CLUSTERED_COLUMN || !cachedData || !numArr || !strArr || !axisProperties) {
-			return;
-		}
-		if (cachedData.aggregation) {
-			const aggregation = cachedData.aggregation;
-			axisProperties.cat.scale.push(1);
-			if (strArr.length !== 0) {
-				// create object of key and values
-				for (let i = 0; i < numArr.length; i++) {
-					const key = strArr[i].val;
-					if (!aggregation.hasOwnProperty(key)) {
-						aggregation[key] = 0;
-					}
-					aggregation[key] += numArr[i].val;
-					this._chartExSetAxisMinAndMax(axisProperties.val, aggregation[key]);
-				}
-			} else {
-				// Cases when labels do not exist
-				const val = numArr[0].val ? numArr[0].val : 0;
-				aggregation[''] = val;
-				this._chartExSetAxisMinAndMax(axisProperties.val, val);
-			}
-		}
-	},
-
-
-	_chartExHandleBinning: function (type, cachedData, numArr, axisProperties) {
-		if (type !== AscFormat.SERIES_LAYOUT_CLUSTERED_COLUMN || !cachedData || !numArr || !axisProperties) {
-			return;
-		}
-		if (cachedData.binning) {
-			const handleCatLimits = function (localBinning, axisProperties) {
-				if (!localBinning || !axisProperties || !axisProperties.cat) {
-					return;
-				}
-				// uncomment when excel will fix the problem of overflow and underflow being incorrect in some moments
-				// const statement1 = localBinning.intervalClosed !== AscFormat.INTERVAL_CLOSED_SIDE_L ? localBinning.overflow < axisProperties.cat.max && localBinning.overflow >= axisProperties.cat.min : localBinning.overflow <= axisProperties.cat.max && localBinning.overflow > axisProperties.cat.min;
-				// const statement2 = localBinning.intervalClosed !== AscFormat.INTERVAL_CLOSED_SIDE_L ? localBinning.underflow >= axisProperties.cat.min && localBinning.underflow < axisProperties.cat.max : localBinning.underflow > axisProperties.cat.min && localBinning.underflow <= axisProperties.cat.max;
-				// localBinning.overflow = ((localBinning.overflow === 0 || localBinning.overflow) && statement1) ? localBinning.overflow : null;
-				// localBinning.underflow = ((localBinning.underflow === 0 || localBinning.underflow) && statement2) ? localBinning.underflow : null;
-				localBinning.overflow = ((localBinning.overflow === 0 || localBinning.overflow) && localBinning.overflow < axisProperties.cat.max && localBinning.overflow >= axisProperties.cat.min) ? localBinning.overflow : null;
-				localBinning.underflow = ((localBinning.underflow === 0 || localBinning.underflow) && localBinning.underflow > axisProperties.cat.min && localBinning.underflow <= axisProperties.cat.max) ? localBinning.underflow : null;
-				const limits = {
-					isOverflowExist : localBinning.overflow === 0 || localBinning.overflow ? true : false,
-					isUnderflowExist : localBinning.underflow === 0 || localBinning.underflow ? true : false,
-					trueMax : null,
-					trueMin : null,
-				}
-				if (limits.isOverflowExist && limits.isUnderflowExist && localBinning.underflow > localBinning.overflow) {
-					localBinning.overflow = null;
-					limits.isOverflowExist = false;
-				}
-				limits.trueMax = limits.isOverflowExist ? localBinning.overflow : axisProperties.cat.max;
-				limits.trueMin = limits.isUnderflowExist ? localBinning.underflow : axisProperties.cat.min;
-				return limits;
-			}
-			
-			const calculateBinSizeAndCount = function (localBinning, cL, numArr, axisProperties) {
-				if (!localBinning || !cL || !numArr || !axisProperties) {
-					return;
-				}
-				if (localBinning.binSize) {
-					localBinning.binCount = Math.max(Math.ceil((cL.trueMax - cL.trueMin) / localBinning.binSize), 1);
-					localBinning.normalized = true;
-				} else if (localBinning.binCount) {
-					localBinning.binCount -= (cL.isOverflowExist ? 1 : 0) + (cL.isUnderflowExist ? 1 : 0);
-					localBinning.binCount = Math.max(localBinning.binCount, 0);
-					localBinning.binSize = (localBinning.binCount != 0) ? ((cL.trueMax - cL.trueMin) / localBinning.binCount) : null;
-					localBinning.normalized = true;;
-				} else {
-					// Find stdev 
-					// formula = sqrt((∑(x - mean)^2)/(n-1))
-					let isUnique = true;
-					let mean = 0;
-					let stDev = 0;
-					for (let i = 0; i < numArr.length; i++) {
-						mean += numArr[i].val;
-					}
-					mean /= numArr.length;
-
-					for (let i = 0; i < numArr.length; i++) {
-						isUnique = numArr[i].val === numArr[0].val ? true : false;
-						stDev += Math.pow((numArr[i].val - mean), 2);
-					}
-					stDev = Math.sqrt(stDev / Math.max(numArr.length - 1, 1));
-
-					// Calculate bin size and bin count
-					localBinning.binSize = (3.5 * stDev) / (Math.pow(numArr.length, 1 / 3));
-					localBinning.binCount = (localBinning.binSize) ? Math.max(Math.ceil((cL.trueMax - cL.trueMin) / localBinning.binSize), 1) : 1;
-					localBinning.normalized = false;
-					if (isUnique) {
-						localBinning.binSize = 5;
-						localBinning.binCount = 1;
-						localBinning.overflow = null;
-						localBinning.underflow = null;
-					}
-				}
-			}
-
-			const addRangesAndFillCatScale = function (localResults, localBinning, cL, axisProperties) {
-				if (!localResults || !localBinning || !cL || !axisProperties) {
-					return;
-				}
-				let prev = cL.trueMin;
-				const addRange = function (minVal, maxVal) {
-					localResults.push({ min: minVal, max: maxVal, occurrence: 0 });
-				}
-				if (cL.isUnderflowExist) {
-					addRange(null, prev);
-				}
-
-				axisProperties.cat.scale.push(prev);
-				for (let i = 0; i < localBinning.binCount; i++) {
-					let curr = prev + localBinning.binSize;
-
-					if (cL.isOverflowExist) {
-						curr = Math.min(curr, cL.trueMax);
-					}
-
-					addRange(prev, curr);
-					prev = curr;
-					axisProperties.cat.scale.push(curr);
-				}
-
-				if (cL.isOverflowExist) {
-					addRange(cL.trueMax, null);
-				}
-			}
-
-			const countOccurrencesAndValExtremum = function (localResults, localBinning, numArr, axisProperties, chartsDrawer) {
-				if (!localResults || !localBinning || !numArr || !axisProperties) {
-					return ;
-				}
-				if (numArr.length === 1) {
-					localResults[0].occurrence++;
-					chartsDrawer._chartExSetAxisMinAndMax(axisProperties.val, 1);
-				} else {
-					for (let i = 0; i < numArr.length; i++) {
-						// sometimes when bincount is fixed, values shifts into the last bean. 
-						// if this issue will be fixed remove isFound and last if case
-						let isFound = false;
-						for (let j = 0; j < localResults.length; j++) {
-							const min = localResults[j].min;
-							const max = localResults[j].max;
-							const statement1 = (j === 0 && numArr[i].val === min);
-							const statement2 = localBinning.intervalClosed !== AscFormat.INTERVAL_CLOSED_SIDE_L ? 
-								((!min || numArr[i].val > min) && (!max || numArr[i].val <= max)) : 
-								((!min || numArr[i].val >= min) && (!max || numArr[i].val < max));
-							if (statement1 || statement2) {
-								isFound = true;
-								localResults[j].occurrence++;
-								chartsDrawer._chartExSetAxisMinAndMax(axisProperties.val, localResults[j].occurrence);
-							}
-						}
-						if (!isFound && localResults.length > 1) {
-							const lastIndex = localResults.length - 1;
-							localResults[lastIndex].occurrence++;
-							chartsDrawer._chartExSetAxisMinAndMax(axisProperties.val, localResults[lastIndex].occurrence);
-						}
-					}
-				}
-			}
-
-			const localBinning = cachedData.binning;
-			const localResults = cachedData.results;
-			const catLimits = handleCatLimits(localBinning, axisProperties);
-			calculateBinSizeAndCount(localBinning, catLimits, numArr, axisProperties);
-			// if binSize is calculated automatically, it must be rounded to two digits. Example: 78.65 = 79, 0.856 : 0.86!
-			const BINNING_PRECISION = 1;
-			localBinning.binSize = !localBinning.normalized ? this._roundValue(localBinning.binSize, true, BINNING_PRECISION) : localBinning.binSize;
-			addRangesAndFillCatScale(localResults, localBinning, catLimits, axisProperties);
-			countOccurrencesAndValExtremum(localResults, localBinning, numArr, axisProperties, this);
-		}
-	},
-
-	_chartExHandleClusteredColumn: function (type, cachedData, numArr, strArr, axisProperties) { 
-		if (type !== AscFormat.SERIES_LAYOUT_CLUSTERED_COLUMN || !cachedData || !numArr || !axisProperties) {
-			return;
-		}
-
-		if (!cachedData.clusteredColumn) {
-			cachedData.clusteredColumn = {};
-		}
-		this._chartExSetAxisMinAndMax(axisProperties.val, 0);
-		this._chartExHandleAggregation(type, cachedData.clusteredColumn, numArr, strArr, axisProperties);
-		this._chartExHandleBinning(type, cachedData.clusteredColumn, numArr, axisProperties);
-	},
-
-	_chartExHandleWaterfall: function (type, cachedData, numArr, axisProperties, seria) {
-		if (type !== AscFormat.SERIES_LAYOUT_WATERFALL || !numArr || !axisProperties || !cachedData) {
-			return;
-		}
-
-		// prepare cached data
-		if (!cachedData.waterfall) {
-			cachedData.waterfall = {data: []};
-		}
-		cachedData.waterfall.numArr = numArr;
-
-		axisProperties.val.min = 0;
-		axisProperties.val.max = 0;
-		let sum = 0;
-
-		// Check if any total values exist is in the array
-		let index = 0;
-		const subtotals = seria.layoutPr && seria.layoutPr.subtotals ? seria.layoutPr.subtotals.idx : [];
-		const checkIsTotal = function (idx) {
-			if (index < subtotals.length) {
-				if (subtotals[index] === idx) {
-					index += 1;
-					return true;
-				}
-			}
-			return false;
-		}
-
-		for (let i = 0; i < numArr.length; i++) {
-			const isTotal = checkIsTotal(numArr[i].idx);
-			sum = isTotal ? numArr[i].val : sum + numArr[i].val;
-			cachedData.waterfall.data.push({val: sum, isTotal: isTotal});
-			this._chartExSetAxisMinAndMax(axisProperties.val, sum);
-			axisProperties.cat.scale.push(numArr[i].idx + 1);
-		}
-	},
-
-	_chartExHandleFunnel: function (type, cachedData, numArr, axisProperties) {
-		if (type !== AscFormat.SERIES_LAYOUT_FUNNEL || !numArr || !axisProperties || !cachedData) {
-			return;
-		}
-
-		if (!cachedData.funnel) {
-			cachedData.funnel = [];
-		}
-
-		//if there is at least one element in the array then min is 1, however if there is no elements then min is 0
-		axisProperties.val.min = 0;
-		axisProperties.val.max = 0;
-		for (let i = 0; i < numArr.length; i++) {
-			this._chartExSetAxisMinAndMax(axisProperties.val, numArr[i].val);
-			cachedData.funnel.push(numArr[i].val);
-			axisProperties.val.scale.push(numArr.length - i);
-		}
-	},
-
 	_prepChartExData: function (chartSpace) {
 		// plotArea: CPlotArea
 		// data: CNumericPoint
@@ -2992,66 +2739,50 @@ CChartsDrawer.prototype =
 			return;
 		}
 		const type = seria.layoutId;
-		const strCache = seria.getCatLit(type);
+		const secondType = 1 < plotArea.plotAreaRegion.series.length ? plotArea.plotAreaRegion.series[1].layoutId : null;
+		const strLit = seria.getCatLit(type);
 		const numLit = seria.getValLit();
 
-		//createCache for storing information
-		const createCachedData = function (chart, seria) {
+		if (numLit && numLit.pts && numLit.ptCount > 0) {
 
-			chart.cachedData = {}
-
-			if (seria.layoutPr) {
-				const binning = seria.layoutPr.binning;
-				const aggregation = seria.layoutPr.aggregation;
-				if (aggregation) {
-					chart.cachedData.clusteredColumn = {aggregation : {}};
-				}
-				if (binning) {
-					if (!chart.cachedData.clusteredColumn) {
-						chart.cachedData.clusteredColumn = {};
-					}
-					chart.cachedData.clusteredColumn.binning = {intervalClosed: binning.intervalClosed, overflow: binning.overflow, underflow: binning.underflow, binCount : binning.binCount, binSize : binning.binSize };
-					chart.cachedData.clusteredColumn.results = [];
-				}
-			}
-		}
-		
-		createCachedData(plotArea.plotAreaRegion, seria);
-
-		if (numLit && numLit.pts && numLit.pts.length > 0) {
-
-			const numArr = numLit.pts;
-			const strArr = strCache ? strCache.pts : [];
-			const cachedData = plotArea.plotAreaRegion.cachedData;
 			const axisProperties = {
 				cat : {max: null, min:null, scale : []},
 				val : {max: null, min:null, scale : []},
 			}
 
-			if (cachedData) {
-
-				const calculateExtremums = function (type, axisProperties, numArr, chartsDrawer) {
-					// Histogram has unique labels. Example: [1, 3], (3, 7], ... etc.
-					if (type === AscFormat.SERIES_LAYOUT_FUNNEL || !axisProperties || !numArr || axisProperties.mean || axisProperties.catMax || axisProperties.catMin) {
-						return;
-					}
-					const isUniqueLabels = (type === AscFormat.SERIES_LAYOUT_CLUSTERED_COLUMN) ? true : false;
-					if (isUniqueLabels) {
-						for (let i = 0; i < numArr.length; i++) {
-							chartsDrawer._chartExSetAxisMinAndMax(axisProperties.cat, numArr[i].val);
-						}
-					} else {
-						axisProperties.cat.min = numArr.length > 0 ? numArr[0].idx + 1 : 0;
-						axisProperties.cat.max = numArr.length > 0 ? numArr[numArr.length - 1].idx + 1 : 0;
-					}
+			const calculateExtremums = function (type, axisProperties, numLit) {
+				// ClusteredColumn has unique labels. Example: [1, 3], (3, 7], ... etc.
+				const numArr = numLit.pts;
+				if (type === AscFormat.SERIES_LAYOUT_FUNNEL || !axisProperties || !numArr || axisProperties.mean || axisProperties.catMax || axisProperties.catMin) {
+					return;
 				}
-
-				calculateExtremums(type, axisProperties, numArr, this);
-				this._chartExHandleClusteredColumn(type, plotArea.plotAreaRegion.cachedData, numArr, strArr, axisProperties);
-				this._chartExHandleWaterfall(type, plotArea.plotAreaRegion.cachedData, numArr, axisProperties, seria);
-				this._chartExHandleFunnel(type, plotArea.plotAreaRegion.cachedData, numArr, axisProperties);
-				this._chartExHandleAxesConfigurations(plotArea.axId, axisProperties);
+				const isUniqueLabels = type === AscFormat.SERIES_LAYOUT_CLUSTERED_COLUMN;
+				if (isUniqueLabels) {
+					for (let i = 0; i < numArr.length; i++) {
+						CCachedChartExData.prototype._chartExSetAxisMinAndMax.call(this, axisProperties.cat, numArr[i].val);
+					}
+				} else {
+					axisProperties.cat.min = numArr.length > 0 ? numArr[0].idx + 1 : 0;
+					axisProperties.cat.max = numArr.length > 0 ? numArr[numArr.length - 1].idx + 1 : 0;
+				}
 			}
+
+			calculateExtremums(type, axisProperties, numLit);
+			plotArea.plotAreaRegion.setCachedData(this._createCachedData(type, seria, numLit, strLit, axisProperties, secondType));
+			this._chartExHandleAxesConfigurations(plotArea.axId, axisProperties);
+		}
+	},
+
+	_createCachedData: function (type, seria, numLit, strLit, axisProperties, secondType) {
+		switch (type) {
+			case AscFormat.SERIES_LAYOUT_CLUSTERED_COLUMN:
+				return new CCachedClusteredColumn(type, seria, numLit, strLit, axisProperties, secondType);
+			case AscFormat.SERIES_LAYOUT_WATERFALL:
+				return new CCachedWaterfall(type, seria, numLit, axisProperties);
+			case AscFormat.SERIES_LAYOUT_FUNNEL:
+				return new CCachedFunnel(type, numLit, axisProperties);
+			default:
+				return null;
 		}
 	},
 
@@ -3850,58 +3581,11 @@ CChartsDrawer.prototype =
 	_roundValues: function (values) {
 		if (values.length) {
 		  for (let i = 0; i < values.length; i++) {
-			values[i] = this._roundValue(values[i]);
+			values[i] = _roundValue(values[i]);
 		  }
 		}
 	  
 		return values;
-	},
-
-	// if rounding is strong it affects whole number. Example 106.82 -> 107, for the precision 2
-	// if weak, then only decimal places. Example 106.82 ->106.8, for the precision 1
-	_roundValue: function (num, isStrong, precision) {
-		if (num !== 0 && (!num || !isFinite(num))) {
-			return 1;
-		}
-
-		if (num === 0) {
-			return num;
-		}
-
-		// if num is negative
-		let isNegative = false;
-		if (num < 0) {
-			isNegative = true;
-			num = -num;
-		}
-
-		if (!precision || precision < 0) {
-			//default precision is 9! 
-			precision = 9;
-		}
-
-		let count = 0;
-
-		// Normalize the number by adjusting its scale
-		if (isStrong) {
-			while (num >= 10) {
-				num /= 10;
-				count++;
-			}
-		}
-
-		while (num < 1) {
-			num *= 10;
-			count--;
-		}
-
-		// Round the number to two decimal places
-		const kF = Math.pow(10, precision);
-		const roundedNum = Math.round(num * kF) / kF;
-
-		// Return the normalized number with the appropriate scale
-		num = (count >= 0) ? roundedNum * Math.pow(10, count) : roundedNum / Math.pow(10, -count);
-		return isNegative ? -num : num;
 	},
 	
 	
@@ -4880,7 +4564,7 @@ CChartsDrawer.prototype =
 		const pathH = this.calcProp.pathH;
 		const pathW = this.calcProp.pathW;
 
-		if (!isPxToMmConverted) {
+		if (!isPxToMmConverted && AscFormat.isRealNumber(this.calcProp.pxToMM)) {
 			const pxToMm = this.calcProp.pxToMM;
 			x = x / pxToMm;
 			y = y / pxToMm;
@@ -7891,7 +7575,7 @@ drawBarChart.prototype = {
 
 
 /** @constructor */
-function drawHistogramChart(seria, chartsDrawer) {
+function drawClusteredColumn(seria, chartsDrawer) {
 	this.chartProp = chartsDrawer.calcProp;
 	this.cChartDrawer = chartsDrawer;
 	this.cChartSpace = chartsDrawer.cChartSpace;
@@ -7908,17 +7592,17 @@ function drawHistogramChart(seria, chartsDrawer) {
 	this.paths = {};
 }
 
-drawHistogramChart.prototype = {
-	constructor: drawHistogramChart,
+drawClusteredColumn.prototype = {
+	constructor: drawClusteredColumn,
 
 	recalculate: function () {
-		const oDataInfo = this.getHistogramData();
-		this.recalculateHistogram(oDataInfo);
+		const cachedData = this.cChartSpace ? this.cChartSpace.getCachedData() : null;
+		this.recalculateClusteredColumn(cachedData);
 	},
 
-	recalculateHistogram: function (oDataInfo, paretoLine) {
+	recalculateClusteredColumn: function (cachedData) {
 		// need data, at least two axes, chartProp and chartGutter
-		if (!oDataInfo || !this.cChartSpace.chart.plotArea.axId || !Array.isArray(this.cChartSpace.chart.plotArea.axId) || this.cChartSpace.chart.plotArea.axId.length < 2 || !this.chartProp || !this.chartProp.chartGutter) {
+		if (!cachedData || !this.cChartSpace.chart.plotArea.axId || !Array.isArray(this.cChartSpace.chart.plotArea.axId) || this.cChartSpace.chart.plotArea.axId.length < 2 || !this.chartProp || !this.chartProp.chartGutter) {
 			return;
 		}
 
@@ -7931,9 +7615,9 @@ drawHistogramChart.prototype = {
 
 		// 1 px gap for each section length
 		const gapWidth = 0.5 / this.chartProp.pxToMM;
-		const gapNumber = oDataInfo.data.length;
+		const gapNumber = cachedData.data.length;
 		//Each bar will have 2 gapWidth and 2 margins , on left and right sides
-		const initialBarWidth = (this.chartProp.trueWidth - (2 * gapWidth * gapNumber)) / oDataInfo.data.length;
+		const initialBarWidth = (this.chartProp.trueWidth - (2 * gapWidth * gapNumber)) / cachedData.data.length;
 		const barWidth = (initialBarWidth / (1 + coeff));
 		const margin = (initialBarWidth - barWidth) / 2;
 
@@ -7942,34 +7626,25 @@ drawHistogramChart.prototype = {
 		const gap = 2 * (margin + gapWidth);
 
 		// save pareto line its beginning, and interval;
-		if (paretoLine) {
-			paretoLine.push(start + barWidth / 2);
-			paretoLine.push(gap + barWidth);
+		if (cachedData.paretoLine) {
+			cachedData.paretoLine.push(start + barWidth / 2);
+			cachedData.paretoLine.push(gap + barWidth);
 		}
 
-		for (let i in oDataInfo.data) {
-			// aggregation object does not have field occurrence;
-			const val = oDataInfo.isAggregation ? oDataInfo.data[i] : oDataInfo.data[i].occurrence;
-			const startY = this.cChartDrawer.getYPosition(val, valAxis, true);
+		const cChartDrawer = this.cChartDrawer;
+		const chartProp = this.chartProp;
+		const paths = this.paths;
+
+		const recalculateBar = function (fData, i) {
+			const startY = cChartDrawer.getYPosition(fData.val, valAxis, true);
 			const bW = i === 0 ? barWidth : barWidth - gapWidth;
-			if (this.chartProp && this.chartProp.pxToMM ) {
-				const height = valStart - (startY * this.chartProp.pxToMM);
-				this.paths[i] = this.cChartDrawer._calculateRect(start, valStart, bW, height);
-			}
+			const height = valStart - (startY * chartProp.pxToMM);
+			paths[i] = cChartDrawer._calculateRect(start, valStart, bW, height);
 			start += (bW + gap);
 		}
-	},
 
-	getHistogramData : function () {
-		if (!this.cChartSpace || !this.cChartSpace.chart || !this.cChartSpace.chart.plotArea || !this.cChartSpace.chart.plotArea.plotAreaRegion
-			|| !this.cChartSpace.chart.plotArea.plotAreaRegion.cachedData || !this.cChartSpace.chart.plotArea.plotAreaRegion.cachedData.clusteredColumn) {
-			return null;
-		}
-		const clusteredColumn = this.cChartSpace.chart.plotArea.plotAreaRegion.cachedData.clusteredColumn;
-		const isAggregation = clusteredColumn.aggregation;
-		// two different ways of storing information, object and array, therefore convert object into array
-		const data = isAggregation ? clusteredColumn.aggregation : clusteredColumn.results;
-		return data ? {data: data, isAggregation: isAggregation} : null;
+
+		cachedData.data.forEach(recalculateBar);
 	},
 
 	draw: function () {
@@ -7977,7 +7652,7 @@ drawHistogramChart.prototype = {
 			return;
 		}
 		this.startRect();
-		this.drawHistogram();
+		this.drawChart();
 		this.endRect();
 	},
 
@@ -7996,7 +7671,7 @@ drawHistogramChart.prototype = {
 		this.cChartDrawer.cShapeDrawer.Graphics.AddClipRect(leftRect, topRect, rightRect, bottomRect);
 	},
 
-	drawHistogram: function () {
+	drawChart: function () {
 		//TODO !!!
 		//series color
 		/*<cx:plotArea>
@@ -8110,21 +7785,22 @@ drawHistogramChart.prototype = {
 };
 
 function drawParetoChart(seria, chartsDrawer) {
-	drawHistogramChart.call(this, seria, chartsDrawer);
+	drawClusteredColumn.call(this, seria, chartsDrawer);
 	this.linePath = null;
-	this.paretoLine = [];
 }
 
-AscFormat.InitClassWithoutType(drawParetoChart, drawHistogramChart);
+AscFormat.InitClassWithoutType(drawParetoChart, drawClusteredColumn);
 
 drawParetoChart.prototype.recalculate = function () {
-		const oDataInfo = this.getParetoData();
-		this.recalculateHistogram(oDataInfo, this.paretoLine);
-		this.recalculateLinePath(oDataInfo);
+		const cachedData = this.cChartSpace ? this.cChartSpace.getCachedData() : null;
+		cachedData.paretoLine = [];
+		this.recalculateClusteredColumn(cachedData);
+		const nTotal = this.calculateTotal(cachedData.data);
+		this.recalculateLinePath(cachedData, nTotal);
 };
 
-drawParetoChart.prototype.recalculateLinePath = function (oDataInfo) {
-	if (!oDataInfo || !this.cChartSpace.chart.plotArea.axId || !Array.isArray(this.cChartSpace.chart.plotArea.axId) || this.cChartSpace.chart.plotArea.axId.length < 3 || !this.chartProp && !this.chartProp.chartGutter) {
+drawParetoChart.prototype.recalculateLinePath = function (cachedData, nTotal) {
+	if (!cachedData || !this.cChartSpace.chart.plotArea.axId || !Array.isArray(this.cChartSpace.chart.plotArea.axId) || this.cChartSpace.chart.plotArea.axId.length < 3 || !this.chartProp && !this.chartProp.chartGutter) {
 		return null;
 	}
 	const valAxis = this.cChartSpace.chart.plotArea.axId[2];
@@ -8138,11 +7814,11 @@ drawParetoChart.prototype.recalculateLinePath = function (oDataInfo) {
 	// starting point
 	// interval
 	let percentage = 0;
-	for (let i = 0; i < oDataInfo.data.length; i++) {
-		const val = oDataInfo.isAggregation ? oDataInfo.data[i] : oDataInfo.data[i].occurrence;
-		percentage += (val / oDataInfo.total);
+	for (let i = 0; i < cachedData.data.length; i++) {
+		const val = cachedData.data[i].val;
+		percentage += (val / nTotal);
 		const yPos = this.cChartDrawer.getYPosition(percentage, valAxis, true);
-		const xPos = this.paretoLine[0] + i * this.paretoLine[1];
+		const xPos = cachedData.paretoLine[0] + i * cachedData.paretoLine[1];
 		if (i === 0) {
 			path.moveTo((xPos / pxToMm) * pathW, yPos * pathH);
 		} else {
@@ -8152,24 +7828,20 @@ drawParetoChart.prototype.recalculateLinePath = function (oDataInfo) {
 	this.linePath = pathId;
 };
 
-drawParetoChart.prototype.getParetoData = function () {
-		const oDataInfo = this.getHistogramData();
-		// calculate total amount of
-		if (oDataInfo) {
-			// calculate max number of occurrences
-			const getTotal = function (oDataInfo) {
-				let total = 0;
-				for (let i = 0; i < oDataInfo.data.length; i++) {
-					// aggregation object does not have field occurrence;
-					const val = oDataInfo.isAggregation ? oDataInfo.data[i] : oDataInfo.data[i].occurrence;
-					total += val;
-				}
-				return total;
-			}
+drawParetoChart.prototype.calculateTotal = function (aData) {
+	if (!aData) {
+		return null;
+	}
 
-			oDataInfo.total = getTotal(oDataInfo);
-			return oDataInfo;
-		}
+	// calculate max number of occurrences
+	let nTotal = 0;
+	for (let i = 0; i < aData.length; i++) {
+		// aggregation object does not have field occurrence;
+		const val = aData[i].val;
+		nTotal += val;
+	}
+	return nTotal;
+
 };
 
 drawParetoChart.prototype.draw = function () {
@@ -8177,7 +7849,7 @@ drawParetoChart.prototype.draw = function () {
 			return;
 		}
 		this.startRect();
-		this.drawHistogram();
+		this.drawChart();
 		this.drawParetoLine();
 		this.endRect();
 };
@@ -8214,60 +7886,67 @@ drawWaterfallChart.prototype = {
 	constructor: drawWaterfallChart,
 
 	recalculate: function () {
-		if (!this.cChartSpace || !this.cChartSpace.chart || !this.cChartSpace.chart.plotArea || !this.cChartSpace.chart.plotArea.plotAreaRegion || !this.cChartSpace.chart.plotArea.plotAreaRegion.cachedData || !this.cChartSpace.chart.plotArea.plotAreaRegion.cachedData.waterfall || !this.cChartSpace.chart.plotArea.axId) {
+		const cachedData = this.cChartSpace ? this.cChartSpace.getCachedData() : null;
+		if (!cachedData || !this.cChartSpace.chart.plotArea.axId) {
 			return;
 		}
-		const data = this.cChartSpace.chart.plotArea.plotAreaRegion.cachedData.waterfall.data;
 
-		if (data && data.length > 0 && this.chartProp && this.chartProp.chartGutter) {
+		if (cachedData.data.length > 0 && this.chartProp && this.chartProp.chartGutter) {
 			const valAxis = this.cChartSpace.chart.plotArea.axId[1];
 			const catAxis = this.cChartSpace.chart.plotArea.axId[0];
 
 			const catStart = this.chartProp.chartGutter._left;
 			let valStart = this.cChartSpace.chart.plotArea.axId ? this.cChartSpace.chart.plotArea.axId[0].posY * this.chartProp.pxToMM : this.chartProp.trueHeight + this.chartProp.chartGutter._top;
 			const zeroValStart = valStart;
-			if (AscFormat.isRealNumber(valStart)) {
+
+			if (AscFormat.isRealNumber(valStart) && AscFormat.isRealNumber(this.chartProp.pxToMM)) {
 				const coeff = catAxis.scaling.gapWidth;
 				// 1 px gap for each section length
 				const gapWidth = 0.5 / this.chartProp.pxToMM;
-				const gapNumber = data.length;
+				const gapNumber = cachedData.data.length;
 				//Each bar will have 2 gapWidth and 2 margins , on left and right sides
-				const initialBarWidth = (this.chartProp.trueWidth - (2 * gapWidth * gapNumber))/ data.length;
+				const initialBarWidth = (this.chartProp.trueWidth - (2 * gapWidth * gapNumber))/ cachedData.data.length;
 				const barWidth = (initialBarWidth / (1 + coeff));
 				const margin = (initialBarWidth - barWidth) / 2;
 
 				let start = (catStart + margin + gapWidth);
 
-				for (let i = 0; i < data.length; i++) {
-					const valPos = this.cChartDrawer.getYPosition(data[i].val, valAxis, true) * this.chartProp.pxToMM; // calc roof of the current bar
+				const cChartDrawer = this.cChartDrawer;
+				const cChartSpace = this.cChartSpace;
+				const chartProp = this.chartProp;
+				const paths = this.paths;
+				const calculateConnectorLine = this._calculateConnectorLine;
+
+				const recalculateBar = function (fVal, i, isTotal) {
+					const valPos = cChartDrawer.getYPosition(fVal, valAxis, true) * cChartDrawer.calcProp.pxToMM; // calc roof of the current bar
 					const next = start + (barWidth + margin + gapWidth + gapWidth + margin); // start of the next bar
-					if (this.chartProp && this.chartProp.pxToMM ) {
-						const height = data[i].isTotal && i !== 0 ? zeroValStart - valPos : valStart - valPos;
-						this.paths[i] = [];
-						this.paths[i].push(this.cChartDrawer._calculateRect(start, data[i].isTotal ? zeroValStart : valStart, barWidth, height));
-						//dont need last connectorLine
-						if (i !== data.length - 1 && margin !== 0) {
-							//exclude gapWidth from connector line
-							this.paths[i].push(this._calculateConnectorLine(valPos, start + barWidth + gapWidth, next - gapWidth))
-						}
+					const height = isTotal && i !== 0 ? zeroValStart - valPos : valStart - valPos;
+					paths[i] = [];
+					paths[i].push(cChartDrawer._calculateRect(start, isTotal ? zeroValStart : valStart, barWidth, height));
+					//dont need last connectorLine
+					if (i !== cachedData.data.length - 1 && margin !== 0) {
+						//exclude gapWidth from connector line
+						paths[i].push(calculateConnectorLine(valPos, start + barWidth + gapWidth, next - gapWidth, cChartSpace, chartProp))
 					}
 					valStart = valPos;	// go up in y direction
 					start = next;	// go right in x direction
 				}
+
+				cachedData.forEach(recalculateBar);
 			}
 		}
 	},
 
-	_calculateConnectorLine: function (y, x1, x2) {
-		if (!this.cChartSpace || !this.chartProp) {
+	_calculateConnectorLine: function (y, x1, x2, cChartSpace, chartProp) {
+		if (!cChartSpace || !chartProp) {
 			return null;
 		}
-		const pathId = this.cChartSpace.AllocPath();
-		const path = this.cChartSpace.GetPath(pathId);
+		const pathId = cChartSpace.AllocPath();
+		const path = cChartSpace.GetPath(pathId);
 
-		const pathH = this.chartProp.pathH;
-		const pathW = this.chartProp.pathW;
-		const pxToMm = this.chartProp.pxToMM;
+		const pathH = chartProp.pathH;
+		const pathW = chartProp.pathW;
+		const pxToMm = chartProp.pxToMM;
 
 		path.moveTo((x1 / pxToMm) * pathW, (y / pxToMm)  * pathH);
 		path.lnTo((x2 / pxToMm) * pathW, (y / pxToMm)  * pathH);
@@ -8431,38 +8110,42 @@ drawFunnelChart.prototype = {
 	constructor: drawFunnelChart,
 
 	recalculate: function () {
-		if (!this.cChartSpace || !this.cChartSpace.chart || !this.cChartSpace.chart.plotArea || !this.cChartSpace.chart.plotArea.plotAreaRegion || !this.cChartSpace.chart.plotArea.axId) {
+		const cachedData = this.cChartSpace ? this.cChartSpace.getCachedData() : null;
+		if (!cachedData || !this.cChartSpace.chart.plotArea.axId) {
 			return;
 		}
-		const seria = this.cChartSpace.chart.plotArea.plotAreaRegion.series[0];
-		const numLit = seria.getValLit();
-		const data = numLit ? numLit.pts : null;
-		if (data && data.length > 0 && this.chartProp && this.chartProp.chartGutter) {
+		if (cachedData.data.length > 0 && this.chartProp && this.chartProp.chartGutter) {
 			const valAxis = this.cChartSpace.chart.plotArea.axId[0];
-			const isSinglePoint = data.length === 1;
-			const catMiddle = (this.chartProp.trueWidth / 2 + this.chartProp.chartGutter._left );
+
+			const catMiddle = (this.chartProp.trueWidth / 2 + this.chartProp.chartGutter._left);
 			let valStart = this.chartProp.chartGutter._top;
 			let chartHeight = this.chartProp.trueHeight;
-			const pxToMM = this.chartProp.pxToMM;
+
 			if (AscFormat.isRealNumber(valStart) && AscFormat.isRealNumber(catMiddle)) {
 				const coeff = valAxis.scaling.gapWidth;
 				// 1 px gap for each section length
-				const gapWidth = 0.5 / pxToMM;
-				const gapNumber = data.length;
+				const gapWidth = 0.5 / this.chartProp.pxToMM;
+				const gapNumber = cachedData.data.length;
 				//Each bar will have 2 gapWidth and 2 margins , on top and bottom sides
-				const initialBarHeight = (chartHeight - (2 * gapWidth * gapNumber))/ data.length;
+				const initialBarHeight = (chartHeight - (2 * gapWidth * gapNumber))/ cachedData.data.length;
 				const barHeight = (initialBarHeight / (1 + coeff));
 				const margin = (initialBarHeight - barHeight) / 2;
 
 				// because calculate rect accepts bottom left point as starting y, we add barHeight to the calculation of starting point 
-				let startVertical = (valStart + margin + gapWidth + barHeight); 
-				for (let i = 0; i < data.length; i++) {
-					if (this.chartProp && pxToMM) {
-						const barWidth = valAxis.max && data[i].val > 0 ? (data[i].val / valAxis.max) * this.chartProp.trueWidth: 0;
-						this.paths[i] = this.cChartDrawer._calculateRect(catMiddle - (barWidth / 2), startVertical, barWidth, barHeight);
-					}
+				let startVertical = (valStart + margin + gapWidth + barHeight);
+
+				const cChartDrawer = this.cChartDrawer;
+				const chartProp = this.chartProp;
+				const paths = this.paths;
+
+				const recalculateBar = function (fVal, i) {
+					const barWidth = valAxis.max && fVal > 0 ? (fVal / valAxis.max) * chartProp.trueWidth: 0;
+					paths[i] = cChartDrawer._calculateRect(catMiddle - (barWidth / 2), startVertical, barWidth, barHeight);
 					startVertical += margin + gapWidth + gapWidth + margin + barHeight;
 				}
+
+				cachedData.forEach(recalculateBar);
+
 				// vertical line with 1 px from left 
 				this.linePath = this.cChartDrawer._calculateLine(startVertical, (startVertical - valStart), this.chartProp.chartGutter._left + 1, true);
 			}
@@ -8627,6 +8310,7 @@ drawLineChart.prototype = {
 	_calculateLines: function () {
 		var xPoints = this.catAx.xPoints;
 		var yPoints = this.valAx.yPoints;
+		let isLog;
 
 		if(!xPoints || !yPoints) {
 			return;
@@ -8637,6 +8321,7 @@ drawLineChart.prototype = {
 
 			seria = this.chart.series[i];
 			numCache = this.cChartDrawer.getNumCache(seria.val);
+			isLog = this.valAx && this.valAx.scaling ? this.valAx.scaling.logBase : false;
 
 			if (!numCache) {
 				continue;
@@ -8670,7 +8355,7 @@ drawLineChart.prototype = {
 				compiledMarkerSize = idxPoint && idxPoint.compiledMarker && idxPoint.compiledMarker.size ? idxPoint.compiledMarker.size : null;
 				compiledMarkerSymbol = idxPoint && idxPoint.compiledMarker && AscFormat.isRealNumber(idxPoint.compiledMarker.symbol) ? idxPoint.compiledMarker.symbol : null;
 
-				if (val != null) {
+				if (val != null && ((isLog && val !== 0) || !isLog)) {
 					this.paths.points[i][n] = this.cChartDrawer.calculatePoint(x, y, compiledMarkerSize, compiledMarkerSymbol);
 					let errBars = this.chart.series[i].errBars[0];
 					if (errBars) {
@@ -9174,11 +8859,13 @@ drawAreaChart.prototype = {
 		var y, x, val, seria, dataSeries, numCache;
 		var pxToMm = this.chartProp.pxToMM;
 		var nullPositionOX = this.catAx.posY;
+		let isLog;
 
 		for (var i = 0; i < this.chart.series.length; i++) {
 
 			seria = this.chart.series[i];
 			numCache = this.cChartDrawer.getNumCache(seria.val);
+			isLog = this.valAx && this.valAx.scaling ? this.valAx.scaling.logBase : false;
 
 			if (!numCache) {
 				continue;
@@ -9190,7 +8877,7 @@ drawAreaChart.prototype = {
 				//рассчитываем значения
 				val = this._getYVal(n, i);
 
-				if(null === val && this.cChartDrawer.nDimensionCount !== 3) {
+				if((null === val && this.cChartDrawer.nDimensionCount !== 3) || (isLog && val === 0)) {
 					continue;
 				}
 
@@ -14190,6 +13877,7 @@ drawScatterChart.prototype = {
 	_recalculateScatter: function () {
 		let seria, yVal, xVal, points, yNumCache, compiledMarkerSize, compiledMarkerSymbol, yPoint, idx, xPoint;
 		let dispBlanksAs =  this.cChartSpace.chart.dispBlanksAs;
+		let isLog;
 
 		let t = this;
 		let _initObjs = function (_index) {
@@ -14210,6 +13898,7 @@ drawScatterChart.prototype = {
 		for (let i = 0; i < this.chart.series.length; i++) {
 			seria = this.chart.series[i];
 			yNumCache = this.cChartDrawer.getNumCache(seria.yVal);
+			isLog = this.valAx && this.valAx.scaling ? this.valAx.scaling.logBase : false;
 
 			if (!yNumCache) {
 				continue;
@@ -14248,7 +13937,7 @@ drawScatterChart.prototype = {
 
 					_initObjs(i);
 
-					if (yVal != null) {
+					if (yVal != null && ((isLog && yVal !== 0) || !isLog)) {
 						let x = this.cChartDrawer.getYPosition(xVal, this.catAx, true);
 						let y = this.cChartDrawer.getYPosition(yVal, this.valAx, true);
 						this.paths.points[i].push(this.cChartDrawer.calculatePoint(x, y, compiledMarkerSize, compiledMarkerSymbol));
@@ -18959,6 +18648,327 @@ CColorObj.prototype =
 		}
 	}
 
+	function CCachedChartExData (type, data) {
+		this.type = type;
+		this.data = data;
+	}
+
+	CCachedChartExData.prototype = {
+		constructor: CCachedChartExData,
+		forEach: function (callBack) {
+			if (this.data) {
+				this.data.forEach(callBack);
+			}
+		},
+		_chartExSetAxisMinAndMax: function (axis, num) {
+			if (!axis || (num !== 0 && !num)) {
+				return;
+			}
+			axis.max = (axis.max === null || num > axis.max) ? num : axis.max;
+			axis.min = (axis.min === null || num < axis.min) ? num : axis.min;
+		}
+	}
+
+	function CCachedClusteredColumn(type, seria, numLit, strLit, axisProperties, secondType) {
+		// if subType is true then aggregation else binning
+		this.subTypeAggr = seria && seria.layoutPr && seria.layoutPr.aggregation;
+		this.binning = null;
+		CCachedChartExData.call(this, type, []);
+		this._calculate(seria, numLit, strLit, axisProperties);
+		if (secondType === AscFormat.SERIES_LAYOUT_PARETO_LINE) {
+			this.data.sort(function (a, b) {
+				return b.val - a.val;
+			});
+		}
+	}
+
+	AscFormat.InitClassWithoutType(CCachedClusteredColumn, CCachedChartExData);
+
+	CCachedClusteredColumn.prototype._calculate = function (seria, numLit, strLit, axisProperties) {
+		if (!seria || !seria.layoutPr || !numLit || !axisProperties) {
+			return;
+		}
+
+        const numArr = numLit.pts;
+
+        // set axis min to zero
+		this._chartExSetAxisMinAndMax(axisProperties.val, 0);
+
+		if (this.subTypeAggr) {
+            const strArr = strLit ? strLit.pts : null;
+			this.calculateAggregation(numArr, strArr, axisProperties);
+		} else {
+			this.binning = seria.layoutPr.binning;
+			this.calculateBinning(numArr, axisProperties);
+		}
+	}
+
+	CCachedClusteredColumn.prototype.calculateAggregation = function (numArr, strArr, axisProperties) {
+        if (!numArr) {
+            return;
+        }
+
+		axisProperties.cat.scale.push(1);
+		const dictSet = {}
+		if (strArr && strArr.length !== 0) {
+			// create object of key and values
+			for (let i = 0; i < numArr.length; i++) {
+				const key = strArr[i].val;
+				if (AscFormat.isRealNumber(dictSet[key])) {
+					this.data[dictSet[key]].val += numArr[i].val;
+				} else {
+					this.data.push({lblName: key, val: numArr[i].val});
+					dictSet[key] = this.data.length - 1;
+				}
+				this._chartExSetAxisMinAndMax(axisProperties.val, this.data[dictSet[key]].val);
+			}
+		} else {
+			// Cases when labels do not exist
+			let sum = 0;
+			for (let i = 0; i < numArr.length; i++) {
+				sum += numArr[i].val;
+			}
+			this.data.push({lblName: '', val: sum});
+			this._chartExSetAxisMinAndMax(axisProperties.val, sum);
+		}
+	}
+
+	CCachedClusteredColumn.prototype.calculateBinning = function (numArr, axisProperties) {
+		if (!this.binning) {
+			return;
+		}
+		const addRangesAndFillCatScale = function (localResults, localBinning, catLimits, axisProperties) {
+			if (!localResults || !localBinning || !catLimits || !axisProperties) {
+				return;
+			}
+			let prev = catLimits.trueMin;
+			const addRange = function (minVal, maxVal) {
+				localResults.push({ min: minVal, max: maxVal, val: 0 });
+			}
+			if (catLimits.isUnderflowExist) {
+				addRange(null, prev);
+			}
+
+			axisProperties.cat.scale.push(prev);
+			for (let i = 0; i < localBinning.compiledBinCount; i++) {
+				let curr = prev + localBinning.compiledBinSize;
+
+				if (catLimits.isOverflowExist) {
+					curr = Math.min(curr, catLimits.trueMax);
+				}
+
+				addRange(prev, curr);
+				prev = curr;
+				axisProperties.cat.scale.push(curr);
+			}
+
+			if (catLimits.isOverflowExist) {
+				addRange(catLimits.trueMax, null);
+			}
+		}
+
+		const countOccurrencesAndValExtremum = function (localResults, localBinning, numArr, axisProperties, chartsDrawer) {
+			if (!localResults || !localBinning || !numArr || !axisProperties) {
+				return ;
+			}
+			if (numArr.length === 1) {
+				localResults[0].val++;
+				chartsDrawer._chartExSetAxisMinAndMax(axisProperties.val, 1);
+			} else {
+				for (let i = 0; i < numArr.length; i++) {
+					// sometimes when bincount is fixed, values shifts into the last bean.
+					// if this issue will be fixed remove isFound and last if case
+					let isFound = false;
+					for (let j = 0; j < localResults.length; j++) {
+						const min = localResults[j].min;
+						const max = localResults[j].max;
+						const statement1 = (j === 0 && numArr[i].val === min);
+						const statement2 = localBinning.intervalClosed !== AscFormat.INTERVAL_CLOSED_SIDE_L ?
+							((!min || numArr[i].val > min) && (!max || numArr[i].val <= max)) :
+							((!min || numArr[i].val >= min) && (!max || numArr[i].val < max));
+						if (statement1 || statement2) {
+							isFound = true;
+							localResults[j].val++;
+							chartsDrawer._chartExSetAxisMinAndMax(axisProperties.val, localResults[j].val);
+						}
+					}
+					if (!isFound && localResults.length > 1) {
+						const lastIndex = localResults.length - 1;
+						localResults[lastIndex].val++;
+						chartsDrawer._chartExSetAxisMinAndMax(axisProperties.val, localResults[lastIndex].val);
+					}
+				}
+			}
+		}
+
+		const createSubChars = function (localResults, localBinning) {
+			let start = '[';
+			let end = localBinning.intervalClosed === AscFormat.INTERVAL_CLOSED_SIDE_L ? ')' : ']';
+			// user can manually set minimum and maximum, therefore alternative start and end needed
+			const startByExpression = localBinning.intervalClosed === AscFormat.INTERVAL_CLOSED_SIDE_L ? '<' : '≤';
+			const endByExpression = localBinning.intervalClosed === AscFormat.INTERVAL_CLOSED_SIDE_L ? '≥' : '>';
+
+			for (let i = 0; i < localResults.length; i++) {
+				if (localResults[i].min === null) {
+					localResults[i].subChars = [startByExpression];
+				} else if (localResults[i].max === null) {
+					localResults[i].subChars = [endByExpression];
+				} else {
+					if (i === 1 && localBinning.intervalClosed !== AscFormat.INTERVAL_CLOSED_SIDE_L) {
+						start = '(';
+					}
+
+					if (i === (localResults.length - 1) && localBinning.intervalClosed === AscFormat.INTERVAL_CLOSED_SIDE_L) {
+						end = ']';
+					}
+
+					localResults[i].subChars = [start, end];
+				}
+			}
+		}
+
+
+		const catLimits = this.binning.recalculate(axisProperties);
+		addRangesAndFillCatScale(this.data, this.binning, catLimits, axisProperties);
+		countOccurrencesAndValExtremum(this.data, this.binning, numArr, axisProperties, this);
+		createSubChars(this.data, this.binning, axisProperties);
+	}
+
+	function CCachedWaterfall(type, seria, numLit, axisProperties) {
+		CCachedChartExData.call(this, type, []);
+		this.subtotalsIndex = 0;
+		this.subtotals = seria.layoutPr && seria.layoutPr.subtotals ? seria.layoutPr.subtotals.idx : [];
+		this._calculate(seria, numLit, axisProperties);
+	}
+
+	AscFormat.InitClassWithoutType(CCachedWaterfall, CCachedChartExData);
+
+	CCachedWaterfall.prototype._calculate = function (seria, numLit, axisProperties) {
+		if (!seria || !seria.layoutPr || !numLit || !axisProperties) {
+			return;
+		}
+
+		const ptCount = numLit.ptCount;
+		const numArr = numLit.pts;
+
+		axisProperties.val.min = 0;
+		axisProperties.val.max = 0;
+		let sum = 0;
+
+		// Check if any total values exist is in the array
+		this.subtotalsIndex = 0;
+
+		let j = 0;
+		for (let i = 0; i < ptCount; i++) {
+			if (j < numArr.length && numArr[j].idx === i) {
+				const isTotal = this.checkIsTotal(numArr[j].idx);
+				sum = isTotal ? numArr[j].val : sum + numArr[j].val;
+				j++;
+			}
+			this.data.push(sum);
+			this._chartExSetAxisMinAndMax(axisProperties.val, sum);
+			axisProperties.cat.scale.push(i + 1);
+		}
+	}
+
+	CCachedWaterfall.prototype.checkIsTotal = function (idx) {
+		if (this.subtotalsIndex < this.subtotals.length) {
+			if (this.subtotals[this.subtotalsIndex] === idx) {
+				this.subtotalsIndex += 1;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	CCachedWaterfall.prototype.forEach = function (callback) {
+		this.subtotalsIndex = 0;
+		for (let i = 0; i < this.data.length ; i++) {
+			const isTotal = this.checkIsTotal(i);
+			callback(this.data[i], i, isTotal);
+		}
+	}
+
+	function CCachedFunnel(type, numLit, axisProperties) {
+		CCachedChartExData.call(this, type, []);
+		this._calculate(numLit, axisProperties);
+	}
+
+	AscFormat.InitClassWithoutType(CCachedFunnel, CCachedChartExData);
+
+	CCachedFunnel.prototype._calculate = function (numLit, axisProperties) {
+		if (!numLit || !axisProperties) {
+			return;
+		}
+
+		const ptCount = numLit.ptCount;
+		const numArr = numLit.pts;
+
+		//if there is at least one element in the array then min is 1, however if there is no elements then min is 0
+		axisProperties.val.min = 0;
+		axisProperties.val.max = 0;
+
+		let j = 0;
+		for (let i = 0; i < ptCount; i++) {
+			let val = 0;
+			if (j < numArr.length && numArr[j].idx === i) {
+				val = numArr[j].val;
+				j++;
+			}
+			this._chartExSetAxisMinAndMax(axisProperties.val, val);
+			this.data.push(val);
+			axisProperties.val.scale.push(ptCount - i);
+		}
+	}
+
+	// if rounding is strong it affects whole number. Example 106.82 -> 107, for the precision 2
+	// if weak, then only decimal places. Example 106.82 ->106.8, for the precision 1
+	function _roundValue (num, isStrong, precision) {
+		if (num !== 0 && (!num || !isFinite(num))) {
+			return 1;
+		}
+
+		if (num === 0) {
+			return num;
+		}
+
+		// if num is negative
+		let isNegative = false;
+		if (num < 0) {
+			isNegative = true;
+			num = -num;
+		}
+
+		if (!precision || precision < 0) {
+			//default precision is 9!
+			precision = 9;
+		}
+
+		let count = 0;
+
+		// Normalize the number by adjusting its scale
+		if (isStrong) {
+			while (num >= 10) {
+				num /= 10;
+				count++;
+			}
+		}
+
+		while (num < 1) {
+			num *= 10;
+			count--;
+		}
+
+		// Round the number to two decimal places
+		const kF = Math.pow(10, precision);
+		const roundedNum = Math.round(num * kF) / kF;
+
+		// Return the normalized number with the appropriate scale
+		num = (count >= 0) ? roundedNum * Math.pow(10, count) : roundedNum / Math.pow(10, -count);
+		return isNegative ? -num : num;
+	}
+
+
 	//----------------------------------------------------------export----------------------------------------------------
 	window['AscFormat'] = window['AscFormat'] || {};
 	window['AscFormat'].CChartsDrawer = CChartsDrawer;
@@ -18966,4 +18976,6 @@ CColorObj.prototype =
 	window['AscFormat'].CLineBuilder = CLineBuilder;
 	window['AscFormat'].CColorObj = CColorObj;
 	window["AscFormat"].c_oChartTypes = c_oChartTypes;
+	window["AscCommon"]._roundValue = _roundValue;
+	window["AscFormat"].CachedClusteredColumn = CCachedClusteredColumn;
 })(window);

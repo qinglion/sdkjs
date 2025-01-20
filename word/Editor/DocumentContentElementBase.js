@@ -133,6 +133,16 @@ CDocumentContentElementBase.prototype.GetPrevDocumentElement = function()
 
 	return oPrev;
 };
+CDocumentContentElementBase.prototype.GetNextParagraphInDocument = function()
+{
+	let next = this.GetNextDocumentElement();
+	return next ? next.GetFirstParagraph() : null;
+};
+CDocumentContentElementBase.prototype.GetPrevParagraphInDocument = function()
+{
+	let prev = this.GetPrevDocumentElement();
+	return prev ? prev.GetLastParagraph() : null;
+};
 CDocumentContentElementBase.prototype.GetParent = function()
 {
 	return this.Parent;
@@ -1031,7 +1041,7 @@ CDocumentContentElementBase.prototype.SetSelectionState2 = function(State)
 };
 CDocumentContentElementBase.prototype.GetReviewInfo = function()
 {
-	return new CReviewInfo();
+	return new AscWord.ReviewInfo();
 };
 CDocumentContentElementBase.prototype.SetReviewTypeWithInfo = function(nType, oInfo)
 {
@@ -1407,12 +1417,40 @@ CDocumentContentElementBase.prototype.getLayoutScaleCoefficient = function()
 };
 CDocumentContentElementBase.prototype.updateTrackRevisions = function()
 {
-	AscWord.checkElementInRevision(this);
+	AscWord.checkElementInRevision && AscWord.checkElementInRevision(this);
 };
 CDocumentContentElementBase.prototype.isPreventedPreDelete = function()
 {
 	let logicDocument = this.GetLogicDocument();
 	return !logicDocument || !logicDocument.IsDocumentEditor() || logicDocument.isPreventedPreDelete();
+};
+CDocumentContentElementBase.prototype.isWholeElementInPermRange = function()
+{
+	// TODO: В таблицах GetNextDocumentElement/GetPrevDocumentElement не работает, надо проверить не баг ли это
+	//       по логике оба варианта должны выдавать одинаковый результат
+	
+	// let prevPara = this.GetPrevParagraphInDocument();
+	// let nextPara = this.GetNextParagraphInDocument();
+	//
+	// let startRanges = prevPara ? prevPara.GetEndInfo().GetPermRanges() : [];
+	// let endRanges   = nextPara ? nextPara.GetEndInfoByPage(-1).GetPermRanges() : [];
+	
+	let startPara = this.GetFirstParagraph();
+	let endPara   = this.GetLastParagraph();
+	
+	if (!startPara
+		|| !endPara
+		|| !startPara.IsRecalculated()
+		|| !endPara.IsRecalculated())
+		return false;
+	
+	let startInfo = startPara.GetEndInfoByPage(-1);
+	let endInfo   = endPara.GetEndInfo();
+	
+	let startRanges = startInfo ? startInfo.GetPermRanges() : [];
+	let endRanges   = endInfo ? endInfo.GetPermRanges() : [];
+	
+	return AscWord.PermRangesManager.isInPermRange(startRanges, endRanges);
 };
 
 //--------------------------------------------------------export--------------------------------------------------------
