@@ -4404,17 +4404,17 @@
 	 * If you do not specify the start and end positions, the range will be taken from the entire element.
 	 * @memberof Api
 	 * @typeofeditors ["CDE"]
-	 * @param oElement - The element from which the range will be taken.
-	 * @param nStart - Start range position.
-	 * @param nEnd - End range position.
-	 * @returns {ApiRange | null} - returns null if oElement isn't supported.
+	 * @param element - The element from which the range will be taken.
+	 * @param start - Start range position.
+	 * @param end - End range position.
+	 * @returns {ApiRange | null} - returns null if element isn't supported.
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateRange.js
 	 */
-	Api.prototype.CreateRange = function(oElement, nStart, nEnd)
+	Api.prototype.CreateRange = function(element, start, end)
 	{
-		if (oElement) 
+		if (element)
 		{
-			switch (oElement.GetClassType())
+			switch (element.GetClassType())
 			{
 				case 'paragraph':
 				case 'hyperlink':
@@ -4424,7 +4424,7 @@
 				case 'document':
 				case 'inlineLvlSdt':
 				case 'blockLvlSdt':
-					return oElement.GetRange(nStart, nEnd);
+					return element.GetRange(start, end);
 				default:
 					return null;
 			}
@@ -4435,17 +4435,17 @@
 	 * Creates a new table with a specified number of rows and columns.
 	 * @memberof Api
 	 * @typeofeditors ["CDE"]
-	 * @param {number} nCols - Number of columns.
-	 * @param {number} nRows - Number of rows.
+	 * @param {number} cols - Number of columns.
+	 * @param {number} rows - Number of rows.
 	 * @returns {ApiTable}
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateTable.js
 	 */
-	Api.prototype.CreateTable = function(nCols, nRows)
+	Api.prototype.CreateTable = function(cols, rows)
 	{
-		if (!nRows || nRows <= 0 || !nCols || nCols <= 0)
+		if (!rows || rows <= 0 || !cols || cols <= 0)
 			return null;
 
-		var oTable = new CTable(private_GetDrawingDocument(), private_GetLogicDocument(), true, nRows, nCols, [], false);
+		var oTable = new CTable(private_GetDrawingDocument(), private_GetLogicDocument(), true, rows, cols, [], false);
 		oTable.CorrectBadGrid();
 		oTable.Set_TableW(undefined);
 		oTable.Set_TableStyle2(undefined);
@@ -4466,21 +4466,20 @@
 	 * Creates a new hyperlink text block to be inserted to the current paragraph or table.
 	 * @memberof Api
 	 * @typeofeditors ["CDE"]
-	 * @param {string} sLink - The hyperlink address. 
-	 * @param {string} sDisplay - The text to display the hyperlink.
-	 * @param {string} sScreenTipText - The screen tip text.
+	 * @param {string} link - The hyperlink address.
+	 * @param {string} display - The text to display the hyperlink.
+	 * @param {string} screenTipText - The screen tip text.
 	 * @returns {ApiHyperlink}
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateHyperlink.js
 	 */
-	Api.prototype.CreateHyperlink = function(sLink, sDisplay, sScreenTipText)
+	Api.prototype.CreateHyperlink = function(link, display, screenTipText)
 	{
-		// Создаем гиперссылку
-		var oHyperlink		= new ParaHyperlink();
-		var apiHyperlink	= new ApiHyperlink(oHyperlink);
-
-		apiHyperlink.SetLink(sLink);
-		apiHyperlink.SetDisplayedText(sDisplay);
-		apiHyperlink.SetScreenTipText(sScreenTipText);
+		var oHyperlink   = new ParaHyperlink();
+		var apiHyperlink = new ApiHyperlink(oHyperlink);
+		
+		apiHyperlink.SetLink(link);
+		apiHyperlink.SetDisplayedText(display);
+		apiHyperlink.SetScreenTipText(screenTipText);
 		
 		return apiHyperlink;
 	};
@@ -4489,19 +4488,19 @@
 	 * Creates an image with the parameters specified.
 	 * @memberof Api
 	 * @typeofeditors ["CDE"]
-	 * @param {string} sImageSrc - The image source where the image to be inserted should be taken from (currently only internet URL or Base64 encoded images are supported).
-	 * @param {EMU} nWidth - The image width in English measure units.
-	 * @param {EMU} nHeight - The image height in English measure units.
+	 * @param {string} imageSrc - The image source where the image to be inserted should be taken from (currently only internet URL or Base64 encoded images are supported).
+	 * @param {EMU} width - The image width in English measure units.
+	 * @param {EMU} height - The image height in English measure units.
 	 * @returns {ApiImage}
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateImage.js
 	 */
-	Api.prototype.CreateImage = function(sImageSrc, nWidth, nHeight)
+	Api.prototype.CreateImage = function(imageSrc, width, height)
 	{
-		var nW = private_EMU2MM(nWidth);
-		var nH = private_EMU2MM(nHeight);
+		var nW = private_EMU2MM(width);
+		var nH = private_EMU2MM(height);
 
 		var oDrawing = new ParaDrawing(nW, nH, null, private_GetDrawingDocument(), private_GetLogicDocument(), null);
-		var oImage = private_GetLogicDocument().DrawingObjects.createImage(sImageSrc, 0, 0, nW, nH);
+		var oImage = private_GetLogicDocument().DrawingObjects.createImage(imageSrc, 0, 0, nW, nH);
 		oImage.setParent(oDrawing);
 		oDrawing.Set_GraphicObject(oImage);
 		return new ApiImage(oImage);
@@ -4511,34 +4510,34 @@
 	 * Creates a shape with the parameters specified.
 	 * @memberof Api
 	 * @typeofeditors ["CDE"]
-	 * @param {ShapeType} [sType="rect"] - The shape type which specifies the preset shape geometry.
-	 * @param {EMU} [nWidth = 914400] - The shape width in English measure units.
-	 * @param {EMU} [nHeight = 914400] - The shape height in English measure units.
-	 * @param {ApiFill} [oFill = Api.CreateNoFill()] - The color or pattern used to fill the shape.
-	 * @param {ApiStroke} [oStroke = Api.CreateStroke(0, Api.CreateNoFill())] - The stroke used to create the element shadow.
+	 * @param {ShapeType} [shapeType="rect"] - The shape type which specifies the preset shape geometry.
+	 * @param {EMU} [width = 914400] - The shape width in English measure units.
+	 * @param {EMU} [height = 914400] - The shape height in English measure units.
+	 * @param {ApiFill} [fill = Api.CreateNoFill()] - The color or pattern used to fill the shape.
+	 * @param {ApiStroke} [stroke = Api.CreateStroke(0, Api.CreateNoFill())] - The stroke used to create the element shadow.
 	 * @returns {ApiShape}
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateShape.js
 	 */
-	Api.prototype.CreateShape = function(sType, nWidth, nHeight, oFill, oStroke)
+	Api.prototype.CreateShape = function(shapeType, width, height, fill, stroke)
 	{
 		var oLogicDocument = private_GetLogicDocument();
 		var oDrawingDocuemnt = private_GetDrawingDocument();
-		sType   = sType   || "rect";
-        nWidth  = nWidth  || 914400;
-	    nHeight = nHeight || 914400;
-		oFill   = oFill   || editor.CreateNoFill();
-		oStroke = oStroke || editor.CreateStroke(0, editor.CreateNoFill());
-		var nW = private_EMU2MM(nWidth);
-		var nH = private_EMU2MM(nHeight);
+		shapeType = shapeType || "rect";
+		width     = width || 914400;
+		height    = height || 914400;
+		fill      = fill || editor.CreateNoFill();
+		stroke    = stroke || editor.CreateStroke(0, editor.CreateNoFill());
+		var nW = private_EMU2MM(width);
+		var nH = private_EMU2MM(height);
 		var oDrawing = new ParaDrawing(nW, nH, null, oDrawingDocuemnt, oLogicDocument, null);
-		var oShapeTrack = new AscFormat.NewShapeTrack(sType, 0, 0, oLogicDocument.theme, null, null, null, 0);
+		var oShapeTrack = new AscFormat.NewShapeTrack(shapeType, 0, 0, oLogicDocument.theme, null, null, null, 0);
 		oShapeTrack.track({}, nW, nH);
 		var oShape = oShapeTrack.getShape(true, oDrawingDocuemnt, null);
 		oShape.setParent(oDrawing);
 		oDrawing.Set_GraphicObject(oShape);
 		oShape.createTextBoxContent();
-		oShape.spPr.setFill(oFill.UniFill);
-		oShape.spPr.setLn(oStroke.Ln);
+		oShape.spPr.setFill(fill.UniFill);
+		oShape.spPr.setLn(stroke.Ln);
 		return new ApiShape(oShape);
 	};
 
@@ -4546,23 +4545,23 @@
 	 * Groups an array of drawings.
 	 * @memberof Api
 	 * @typeofeditors ["CDE"]
-	 * @param {DrawingForGroup[]} aDrawings - An array of drawings to group.
+	 * @param {DrawingForGroup[]} drawings - An array of drawings to group.
 	 * @returns {ApiGroup}
 	 * @since 8.3.0
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateGroup.js
 	 */
-	Api.prototype.CreateGroup = function(aDrawings)
+	Api.prototype.CreateGroup = function(drawings)
 	{
 		let oDoc = private_GetLogicDocument();
 		let oDrDoc = private_GetDrawingDocument();
 		let oGraphicObjects = oDoc.getDrawingObjects();
 
-		if (aDrawings.find(function(drawing) { return drawing.Drawing.IsUseInDocument(); }))
+		if (drawings.find(function(drawing) { return drawing.Drawing.IsUseInDocument(); }))
 			return null;
+		
+		drawings.forEach(function(drawing) { drawing.Drawing.recalculate(); })
 
-		aDrawings.forEach(function(drawing) { drawing.Drawing.recalculate(); })
-
-		let oGroup = AscFormat.builder_CreateGroup(aDrawings, oGraphicObjects);
+		let oGroup = AscFormat.builder_CreateGroup(drawings, oGraphicObjects);
 		let oParaDrawing = new ParaDrawing(oGroup.getXfrmExtX(), oGroup.getXfrmExtY(), null, oDrDoc, oDoc, null);
 		oParaDrawing.Set_WrappingType(WRAPPING_TYPE_NONE);
         oParaDrawing.Set_DrawingType(drawing_Anchor);
@@ -4577,25 +4576,25 @@
 	 * Creates a chart with the parameters specified.
 	 * @memberof Api
 	 * @typeofeditors ["CDE"]
-	 * @param {ChartType} [sType="bar"] - The chart type used for the chart display.
-	 * @param {Array} aSeries - The array of the data used to build the chart from.
-	 * @param {Array} aSeriesNames - The array of the names (the source table column names) used for the data which the chart will be build from.
-	 * @param {Array} aCatNames - The array of the names (the source table row names) used for the data which the chart will be build from.
-	 * @param {EMU} nWidth - The chart width in English measure units.
-	 * @param {EMU} nHeight - The chart height in English measure units.
-	 * @param {number} nStyleIndex - The chart color style index (can be 1 - 48, as described in OOXML specification).
-	 * @param {NumFormat[] | String[]} aNumFormats - Numeric formats which will be applied to the series (can be custom formats).
+	 * @param {ChartType} [chartType="bar"] - The chart type used for the chart display.
+	 * @param {Array} series - The array of the data used to build the chart from.
+	 * @param {Array} seriesNames - The array of the names (the source table column names) used for the data which the chart will be build from.
+	 * @param {Array} catNames - The array of the names (the source table row names) used for the data which the chart will be build from.
+	 * @param {EMU} width - The chart width in English measure units.
+	 * @param {EMU} height - The chart height in English measure units.
+	 * @param {number} styleIndex - The chart color style index (can be 1 - 48, as described in OOXML specification).
+	 * @param {NumFormat[] | String[]} numFormats - Numeric formats which will be applied to the series (can be custom formats).
      * The default numeric format is "General".
 	 * @returns {ApiChart}
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateChart.js
 	 */
-	Api.prototype.CreateChart = function(sType, aSeries, aSeriesNames, aCatNames, nWidth, nHeight, nStyleIndex, aNumFormats)
+	Api.prototype.CreateChart = function(chartType, series, seriesNames, catNames, width, height, styleIndex, numFormats)
 	{
 		var oDrawingDocument = private_GetDrawingDocument();
-		var nW = private_EMU2MM(nWidth);
-		var nH = private_EMU2MM(nHeight);
+		var nW = private_EMU2MM(width);
+		var nH = private_EMU2MM(height);
 		var oDrawing = new ParaDrawing( nW, nH, null, oDrawingDocument, null, null);
-		var oChartSpace = AscFormat.builder_CreateChart(nW, nH, sType, aCatNames, aSeriesNames, aSeries, nStyleIndex, aNumFormats);
+		var oChartSpace = AscFormat.builder_CreateChart(nW, nH, chartType, catNames, seriesNames, series, styleIndex, numFormats);
 		if(!oChartSpace)
 		{
 			return null;
@@ -4610,26 +4609,26 @@
 	 * Creates an OLE object with the parameters specified.
 	 * @memberof Api
 	 * @typeofeditors ["CDE"]
-	 * @param {string} sImageSrc - The image source where the image to be inserted should be taken from (currently, only internet URL or Base64 encoded images are supported).
-	 * @param {EMU} nWidth - The OLE object width in English measure units.
-	 * @param {EMU} nHeight - The OLE object height in English measure units.
-	 * @param {string} sData - The OLE object string data.
-	 * @param {string} sAppId - The application ID associated with the current OLE object.
-	 * @returns {ApiOleObject}
+	 * @param {string} imageSrc - The image source where the image to be inserted should be taken from (currently, only internet URL or Base64 encoded images are supported).
+	 * @param {EMU} width - The OLE object width in English measure units.
+	 * @param {EMU} height - The OLE object height in English measure units.
+	 * @param {string} data - The OLE object string data.
+	 * @param {string} appId - The application ID associated with the current OLE object.
+	 * @returns {?ApiOleObject}
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateOleObject.js
 	 */
-	Api.prototype.CreateOleObject = function(sImageSrc, nWidth, nHeight, sData, sAppId)
+	Api.prototype.CreateOleObject = function(imageSrc, width, height, data, appId)
 	{
-		if (typeof sImageSrc === "string" && sImageSrc.length > 0 && typeof sData === "string"
-			&& typeof sAppId === "string" && sAppId.length > 0
-			&& AscFormat.isRealNumber(nWidth) && AscFormat.isRealNumber(nHeight)
-		)
-
-		var nW = private_EMU2MM(nWidth);
-		var nH = private_EMU2MM(nHeight);
+		if (!(typeof imageSrc === "string" && imageSrc.length > 0 && typeof data === "string"
+			&& typeof appId === "string" && appId.length > 0
+			&& AscFormat.isRealNumber(width) && AscFormat.isRealNumber(height)))
+			return null;
+		
+		var nW = private_EMU2MM(width);
+		var nH = private_EMU2MM(height);
 
 		var oDrawing = new ParaDrawing(nW, nH, null, private_GetDrawingDocument(), private_GetLogicDocument(), null);
-		var oImage = private_GetLogicDocument().DrawingObjects.createOleObject(sData, sAppId, sImageSrc, 0, 0, nW, nH);
+		var oImage = private_GetLogicDocument().DrawingObjects.createOleObject(data, appId, imageSrc, 0, 0, nW, nH);
 		oImage.setParent(oDrawing);
 		oDrawing.Set_GraphicObject(oImage);
 		return new ApiOleObject(oImage);
@@ -4654,53 +4653,53 @@
 	 * Creates a complex color scheme selecting from one of the available schemes.
 	 * @memberof Api
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
-	 * @param {SchemeColorId} sSchemeColorId - The color scheme identifier.
+	 * @param {SchemeColorId} schemeColorId - The color scheme identifier.
 	 * @returns {ApiSchemeColor}
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateSchemeColor.js
 	 */
-	Api.prototype.CreateSchemeColor = function(sSchemeColorId)
+	Api.prototype.CreateSchemeColor = function(schemeColorId)
 	{
-		return new ApiSchemeColor(sSchemeColorId);
+		return new ApiSchemeColor(schemeColorId);
 	};
 
 	/**
 	 * Creates a color selecting it from one of the available color presets.
 	 * @memberof Api
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
-	 * @param {PresetColor} sPresetColor - A preset selected from the list of the available color preset names.
+	 * @param {PresetColor} presetColor - A preset selected from the list of the available color preset names.
 	 * @returns {ApiPresetColor};
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreatePresetColor.js
 	 */
-	Api.prototype.CreatePresetColor = function(sPresetColor)
+	Api.prototype.CreatePresetColor = function(presetColor)
 	{
-		return new ApiPresetColor(sPresetColor);
+		return new ApiPresetColor(presetColor);
 	};
 
 	/**
 	 * Creates a solid fill to apply to the object using a selected solid color as the object background.
 	 * @memberof Api
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
-	 * @param {ApiUniColor} oUniColor - The color used for the element fill.
+	 * @param {ApiUniColor} uniColor - The color used for the element fill.
 	 * @returns {ApiFill}
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateSolidFill.js
 	 */
-	Api.prototype.CreateSolidFill = function(oUniColor)
+	Api.prototype.CreateSolidFill = function(uniColor)
 	{
-		return new ApiFill(AscFormat.CreateUniFillByUniColorCopy(oUniColor.Unicolor));
+		return new ApiFill(AscFormat.CreateUniFillByUniColorCopy(uniColor.Unicolor));
 	};
 
 	/**
 	 * Creates a linear gradient fill to apply to the object using the selected linear gradient as the object background.
 	 * @memberof Api
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
-	 * @param {Array} aGradientStop - The array of gradient color stops measured in 1000th of percent.
-	 * @param {PositiveFixedAngle} Angle - The angle measured in 60000th of a degree that will define the gradient direction.
+	 * @param {Array} gradientStops - The array of gradient color stops measured in 1000th of percent.
+	 * @param {PositiveFixedAngle} angle - The angle measured in 60000th of a degree that will define the gradient direction.
 	 * @returns {ApiFill}
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateLinearGradientFill.js
 	 */
-	Api.prototype.CreateLinearGradientFill = function(aGradientStop, Angle)
+	Api.prototype.CreateLinearGradientFill = function(gradientStops, angle)
 	{
-		return new ApiFill(AscFormat.builder_CreateLinearGradient(aGradientStop, Angle));
+		return new ApiFill(AscFormat.builder_CreateLinearGradient(gradientStops, angle));
 	};
 
 
@@ -4708,41 +4707,41 @@
 	 * Creates a radial gradient fill to apply to the object using the selected radial gradient as the object background.
 	 * @memberof Api
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
-	 * @param {Array} aGradientStop - The array of gradient color stops measured in 1000th of percent.
+	 * @param {Array} gradientStops - The array of gradient color stops measured in 1000th of percent.
 	 * @returns {ApiFill}
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateRadialGradientFill.js
 	 */
-	Api.prototype.CreateRadialGradientFill = function(aGradientStop)
+	Api.prototype.CreateRadialGradientFill = function(gradientStops)
 	{
-		return new ApiFill(AscFormat.builder_CreateRadialGradient(aGradientStop));
+		return new ApiFill(AscFormat.builder_CreateRadialGradient(gradientStops));
 	};
 	/**
 	 * Creates a pattern fill to apply to the object using the selected pattern as the object background.
 	 * @memberof Api
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
-	 * @param {PatternType} sPatternType - The pattern type used for the fill selected from one of the available pattern types.
-	 * @param {ApiUniColor} BgColor - The background color used for the pattern creation.
-	 * @param {ApiUniColor} FgColor - The foreground color used for the pattern creation.
+	 * @param {PatternType} patternType - The pattern type used for the fill selected from one of the available pattern types.
+	 * @param {ApiUniColor} bgColor - The background color used for the pattern creation.
+	 * @param {ApiUniColor} fgColor - The foreground color used for the pattern creation.
 	 * @returns {ApiFill}
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreatePatternFill.js
 	 */
-	Api.prototype.CreatePatternFill = function(sPatternType, BgColor, FgColor)
+	Api.prototype.CreatePatternFill = function(patternType, bgColor, fgColor)
 	{
-		return new ApiFill(AscFormat.builder_CreatePatternFill(sPatternType, BgColor, FgColor));
+		return new ApiFill(AscFormat.builder_CreatePatternFill(patternType, bgColor, fgColor));
 	};
 
 	/**
 	 * Creates a blip fill to apply to the object using the selected image as the object background.
 	 * @memberof Api
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
-	 * @param {string} sImageUrl - The path to the image used for the blip fill (currently only internet URL or Base64 encoded images are supported).
-	 * @param {BlipFillType} sBlipFillType - The type of the fill used for the blip fill (tile or stretch).
+	 * @param {string} imageUrl - The path to the image used for the blip fill (currently only internet URL or Base64 encoded images are supported).
+	 * @param {BlipFillType} blipFillType - The type of the fill used for the blip fill (tile or stretch).
 	 * @returns {ApiFill}
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateBlipFill.js
 	 */
-	Api.prototype.CreateBlipFill = function(sImageUrl, sBlipFillType)
+	Api.prototype.CreateBlipFill = function(imageUrl, blipFillType)
 	{
-		return new ApiFill(AscFormat.builder_CreateBlipFill(sImageUrl, sBlipFillType));
+		return new ApiFill(AscFormat.builder_CreateBlipFill(imageUrl, blipFillType));
 	};
 
 	/**
@@ -4761,28 +4760,28 @@
 	 * Creates a stroke adding shadows to the element.
 	 * @memberof Api
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
-	 * @param {EMU} nWidth - The width of the shadow measured in English measure units.
-	 * @param {ApiFill} oFill - The fill type used to create the shadow.
+	 * @param {EMU} width - The width of the shadow measured in English measure units.
+	 * @param {ApiFill} fill - The fill type used to create the shadow.
 	 * @returns {ApiStroke}
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateStroke.js
 	 */
-	Api.prototype.CreateStroke = function(nWidth, oFill)
+	Api.prototype.CreateStroke = function(width, fill)
 	{
-		return new ApiStroke(AscFormat.builder_CreateLine(nWidth, oFill));
+		return new ApiStroke(AscFormat.builder_CreateLine(width, fill));
 	};
 
 	/**
 	 * Creates a gradient stop used for different types of gradients.
 	 * @memberof Api
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
-	 * @param {ApiUniColor} oUniColor - The color used for the gradient stop.
-	 * @param {PositivePercentage} nPos - The position of the gradient stop measured in 1000th of percent.
+	 * @param {ApiUniColor} uniColor - The color used for the gradient stop.
+	 * @param {PositivePercentage} pos - The position of the gradient stop measured in 1000th of percent.
 	 * @returns {ApiGradientStop}
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateGradientStop.js
 	 */
-	Api.prototype.CreateGradientStop = function(oUniColor, nPos)
+	Api.prototype.CreateGradientStop = function(uniColor, pos)
 	{
-		return new ApiGradientStop(oUniColor, nPos);
+		return new ApiGradientStop(uniColor, pos);
 	};
 
 	/**
@@ -4807,60 +4806,72 @@
 	};
 
 	/**
-	 * Creates a bullet for a paragraph with the numbering character or symbol specified with the sType parameter.
+	 * Creates a bullet for a paragraph with the numbering character or symbol specified with the numType parameter.
 	 * @memberof Api
 	 * @typeofeditors ["CDE"]
-	 * @param {BulletType} sType - The numbering type the paragraphs will be numbered with.
-	 * @param {number} nStartAt - The number the first numbered paragraph will start with.
+	 * @param {BulletType} numType - The numbering type the paragraphs will be numbered with.
+	 * @param {number} startAt - The number the first numbered paragraph will start with.
 	 * @returns {ApiBullet}
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateNumbering.js
 	 */
-
-	Api.prototype.CreateNumbering = function(sType, nStartAt){
-		var oBullet = new AscFormat.CBullet();
-		oBullet.bulletType = new AscFormat.CBulletType();
+	Api.prototype.CreateNumbering = function(numType, startAt)
+	{
+		var oBullet             = new AscFormat.CBullet();
+		oBullet.bulletType      = new AscFormat.CBulletType();
 		oBullet.bulletType.type = AscFormat.BULLET_TYPE_BULLET_AUTONUM;
-		switch(sType){
-			case "ArabicPeriod" :{
+		switch (numType)
+		{
+			case "ArabicPeriod" :
+			{
 				oBullet.bulletType.AutoNumType = 12;
 				break;
 			}
-			case "ArabicParenR":{
+			case "ArabicParenR":
+			{
 				oBullet.bulletType.AutoNumType = 11;
 				break;
 			}
-			case "RomanUcPeriod":{
+			case "RomanUcPeriod":
+			{
 				oBullet.bulletType.AutoNumType = 34;
 				break;
 			}
-			case "RomanLcPeriod":{
+			case "RomanLcPeriod":
+			{
 				oBullet.bulletType.AutoNumType = 31;
 				break;
 			}
-			case "AlphaLcParenR":{
+			case "AlphaLcParenR":
+			{
 				oBullet.bulletType.AutoNumType = 1;
 				break;
 			}
-			case "AlphaLcPeriod":{
+			case "AlphaLcPeriod":
+			{
 				oBullet.bulletType.AutoNumType = 2;
 				break;
 			}
-			case "AlphaUcParenR":{
+			case "AlphaUcParenR":
+			{
 				oBullet.bulletType.AutoNumType = 4;
 				break;
 			}
-			case "AlphaUcPeriod":{
+			case "AlphaUcPeriod":
+			{
 				oBullet.bulletType.AutoNumType = 5;
 				break;
 			}
-			case "None":{
+			case "None":
+			{
 				oBullet.bulletType.type = AscFormat.BULLET_TYPE_BULLET_NONE;
 				break;
 			}
 		}
-		if( oBullet.bulletType.type === AscFormat.BULLET_TYPE_BULLET_AUTONUM){
-			if(AscFormat.isRealNumber(nStartAt)){
-				oBullet.bulletType.startAt = nStartAt;
+		if (oBullet.bulletType.type === AscFormat.BULLET_TYPE_BULLET_AUTONUM)
+		{
+			if (AscFormat.isRealNumber(startAt))
+			{
+				oBullet.bulletType.startAt = startAt;
 			}
 		}
 		return new ApiBullet(oBullet);
@@ -4898,7 +4909,8 @@
 	 * @memberof Api
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/Save.js
 	 */
-	Api.prototype.Save = function () {
+	Api.prototype.Save = function()
+	{
 		this.SaveAfterMacros = true;
 	};
 
@@ -4906,18 +4918,18 @@
 	 * Loads data for the mail merge. 
 	 * @memberof Api
 	 * @typeofeditors ["CDE"]
-	 * @param {String[][]} aList - Mail merge data. The first element of the array is the array with names of the merge fields.
+	 * @param {String[][]} data - Mail merge data. The first element of the array is the array with names of the merge fields.
 	 * The rest of the array elements are arrays with values for the merge fields.
 	 * @typeofeditors ["CDE"]
 	 * @return {boolean}
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/LoadMailMergeData.js
 	 */
-	Api.prototype.LoadMailMergeData = function(aList)
+	Api.prototype.LoadMailMergeData = function(data)
 	{
-		if (!aList || aList.length === 0)
+		if (!data || data.length === 0)
 			return false;
 
-		editor.asc_StartMailMergeByList(aList);
+		editor.asc_StartMailMergeByList(data);
 
 		return true;
 	};
@@ -5024,13 +5036,13 @@
 	 * Replaces the main document content with another document content.
 	 * @memberof Api
 	 * @typeofeditors ["CDE"]
-	 * @param {ApiDocumentContent} oApiDocumentContent - The document content which the main document content will be replaced with.
+	 * @param {ApiDocumentContent} documentContent - The document content which the main document content will be replaced with.
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/ReplaceDocumentContent.js
 	 */
-	Api.prototype.ReplaceDocumentContent = function(oApiDocumentContent)
+	Api.prototype.ReplaceDocumentContent = function(documentContent)
 	{
 		var oDocument        = editor.private_GetLogicDocument();
-		var mailMergeContent = oApiDocumentContent.Document.Content;
+		var mailMergeContent = documentContent.Document.Content;
 		oDocument.Remove_FromContent(0, oDocument.Content.length);
 
 		for (var nElement = 0; nElement < mailMergeContent.length; nElement++)
@@ -5043,17 +5055,17 @@
 	 * Starts the mail merge process.
 	 * @memberof Api
 	 * @typeofeditors ["CDE"]
-	 * @param {number} [nStartIndex=0] - The start index of the document for mail merge process.
-	 * @param {number} [nEndIndex=Api.GetMailMergeReceptionsCount() - 1] - The end index of the document for mail merge process.
+	 * @param {number} [startIndex=0] - The start index of the document for mail merge process.
+	 * @param {number} [endIndex=Api.GetMailMergeReceptionsCount() - 1] - The end index of the document for mail merge process.
 	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/MailMerge.js
 	 */
-	Api.prototype.MailMerge = function(nStartIndex, nEndIndex)
+	Api.prototype.MailMerge = function(startIndex, endIndex)
 	{
 		var oDocument = editor.private_GetLogicDocument();
 
-		var _nStartIndex = (undefined !== nStartIndex ? Math.max(0, nStartIndex) : 0);
-		var _nEndIndex   = (undefined !== nEndIndex   ? Math.min(nEndIndex, oDocument.MailMergeMap.length - 1) : oDocument.MailMergeMap.length - 1);
+		var _nStartIndex = (undefined !== startIndex ? Math.max(0, startIndex) : 0);
+		var _nEndIndex   = (undefined !== endIndex   ? Math.min(endIndex, oDocument.MailMergeMap.length - 1) : oDocument.MailMergeMap.length - 1);
 
 		var mailMergeDoc = oDocument.Get_MailMergedDocument(_nStartIndex, _nEndIndex);
 
@@ -5068,17 +5080,17 @@
 	/**
 	 * Converts the specified JSON object into the Document Builder object of the corresponding type.
 	 * @memberof Api
-	 * @param {JSON} sMessage - The JSON object to convert.
+	 * @param {JSON} message - The JSON object to convert.
 	 * @typeofeditors ["CDE"]
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/FromJSON.js
 	 */
-	Api.prototype.FromJSON = function(sMessage)
+	Api.prototype.FromJSON = function(message)
 	{
 		var oReader = new AscJsonConverter.ReaderFromJSON();
 		AscJsonConverter.ActiveReader = oReader;
 
 		var oDocument = this.GetDocument();
-		var oParsedObj  = JSON.parse(sMessage);
+		var oParsedObj  = JSON.parse(message);
 		var oResult = null;
 		if (oParsedObj["styles"])
 			oReader.StylesFromJSON(oParsedObj["styles"]);
@@ -5320,60 +5332,60 @@
 	 * Adds a comment to the specifed document element or array of Runs.
 	 * @memberof Api
 	 * @typeofeditors ["CDE"]
-	 * @param {ApiRun[] | DocumentElement} oElement - The element where the comment will be added. It may be applied to any element which has the *AddComment* method.
-	 * @param {string} sText - The comment text (required).
-	 * @param {string} sAuthor - The author's name (optional).
-	 * @param {string} sUserId - The user ID of the comment author (optional).
+	 * @param {ApiRun[] | DocumentElement} element - The element where the comment will be added. It may be applied to any element which has the *AddComment* method.
+	 * @param {string} text - The comment text (required).
+	 * @param {string} author - The author's name (optional).
+	 * @param {string} userId - The user ID of the comment author (optional).
 	 * @returns {ApiComment?} - Returns null if the comment was not added.
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/AddComment.js
 	 */
-	Api.prototype.AddComment = function(oElement, sText, sAuthor, sUserId)
+	Api.prototype.AddComment = function(element, text, author, userId)
 	{
-		if (!sText || typeof(sText) !== "string")
+		if (!text || typeof(text) !== "string")
 			return null;
 	
-		if (typeof(sAuthor) !== "string")
-			sAuthor = "";
+		if (typeof(author) !== "string")
+			author = "";
 		
-		// Если oElement не является массивом, определяем параграф это или документ
-		if (!Array.isArray(oElement))
+		// Если element не является массивом, определяем параграф это или документ
+		if (!Array.isArray(element))
 		{
-			if (oElement instanceof ApiParagraph || oElement instanceof ApiDocument || oElement instanceof ApiRange ||
-				oElement instanceof ApiBlockLvlSdt || oElement instanceof ApiInlineLvlSdt || oElement instanceof ApiTable ||
-				oElement instanceof ApiRun)
+			if (element instanceof ApiParagraph || element instanceof ApiDocument || element instanceof ApiRange ||
+				element instanceof ApiBlockLvlSdt || element instanceof ApiInlineLvlSdt || element instanceof ApiTable ||
+				element instanceof ApiRun)
 				{
-					return oElement.AddComment(sText, sAuthor, sUserId);
+					return element.AddComment(text, author, userId);
 				}
 		}
 		// Проверка на массив с ранами
-		else if (Array.isArray(oElement))
+		else if (Array.isArray(element))
 		{
 			// Если хотя бы один элемент массива не является раном, или хотя бы один ран не принадлежит 
 			// ни одному параграфу - не добавляем комментарий
-			for (var Index = 0; Index < oElement.length; Index++)
+			for (var Index = 0; Index < element.length; Index++)
 			{
-				if (!(oElement[Index] instanceof ApiRun))
-					return null;					
+				if (!(element[Index] instanceof ApiRun))
+					return null;
 			}
 			
 			// Если раны из принципиально разных контекcтов (из тела и хедера(или футера) то комментарий не добавляем)
-			for (Index = 1; Index < oElement.length; Index++)
+			for (Index = 1; Index < element.length; Index++)
 			{
-				if (oElement[0].Run.GetDocumentPositionFromObject()[0].Class !== oElement[Index].Run.GetDocumentPositionFromObject()[0].Class)
+				if (element[0].Run.GetDocumentPositionFromObject()[0].Class !== element[Index].Run.GetDocumentPositionFromObject()[0].Class)
 					return null;
 			}
 			
 			var oDocument = private_GetLogicDocument();
 
 			let CommentData = private_CreateCommentData({
-				text: sText,
-				author: sAuthor,
-				userId: sUserId
+				text: text,
+				author: author,
+				userId: userId
 			});
 
-			var oStartRun = private_GetFirstRunInArray(oElement); 
+			var oStartRun = private_GetFirstRunInArray(element);
 			var oStartPos = oStartRun.Run.GetDocumentPositionFromObject();
-			var oEndRun	= private_GetLastRunInArray(oElement)
+			var oEndRun	= private_GetLastRunInArray(element)
 			var oEndPos	= oEndRun.Run.GetDocumentPositionFromObject();
 
 			oStartPos.push({Class: oStartRun.Run, Position: 0});
@@ -5570,18 +5582,18 @@
 	 * Converts the ApiDocumentContent object into the JSON object.
 	 * @memberof ApiDocumentContent
 	 * @typeofeditors ["CDE"]
-	 * @param {boolean} bWriteNumberings - Specifies if the used numberings will be written to the JSON object or not.
-	 * @param {boolean} bWriteStyles - Specifies if the used styles will be written to the JSON object or not.
+	 * @param {boolean} isWriteNumberings - Specifies if the used numberings will be written to the JSON object or not.
+	 * @param {boolean} isWriteStyles - Specifies if the used styles will be written to the JSON object or not.
 	 * @returns {JSON}
 	 * @see office-js-api/Examples/{Editor}/ApiDocumentContent/Methods/ToJSON.js
 	 */
-	ApiDocumentContent.prototype.ToJSON = function(bWriteNumberings, bWriteStyles)
+	ApiDocumentContent.prototype.ToJSON = function(isWriteNumberings, isWriteStyles)
 	{
 		var oWriter = new AscJsonConverter.WriterToJSON();
 		var oJSON = oWriter.SerDocContent(this.Document);
-		if (bWriteNumberings)
+		if (isWriteNumberings)
 			oJSON["numbering"] = oWriter.jsonWordNumberings;
-		if (bWriteStyles)
+		if (isWriteStyles)
 			oJSON["styles"] = oWriter.SerWordStylesForWrite();
 
 		return JSON.stringify(oJSON);
@@ -20632,15 +20644,15 @@
 	 * Replaces each paragraph (or text in cell) in the select with the corresponding text from an array of strings.
 	 * @memberof Api
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
-	 * @param {Array} arrString - An array of replacement strings.
-	 * @param {string} [sParaTab="\t"] - A character which is used to specify the tab in the source text.
-	 * @param {string} [sParaNewLine="\r\n"] - A character which is used to specify the line break character in the source text.
+	 * @param {Array} textStrings - An array of replacement strings.
+	 * @param {string} [tab="\t"] - A character which is used to specify the tab in the source text.
+	 * @param {string} [newLine="\r\n"] - A character which is used to specify the line break character in the source text.
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/ReplaceTextSmart.js
 	 */
-	Api.prototype.ReplaceTextSmart = function(arrString, sParaTab, sParaNewLine)
+	Api.prototype.ReplaceTextSmart = function(textStrings, tab, newLine)
 	{
-		sParaTab     = GetStringParameter(sParaTab, "\t");
-		sParaNewLine = GetStringParameter(sParaTab, "\r\n");
+		let sParaTab     = GetStringParameter(tab, "\t");
+		let sParaNewLine = GetStringParameter(newLine, "\r\n");
 		
 		var allRunsInfo      = null;
 		var textDelta        = null;
@@ -20934,7 +20946,7 @@
 					continue;
 				}
 					
-				textDelta = AscCommon.getTextDelta(oParaText, arrString[Index]);
+				textDelta = AscCommon.getTextDelta(oParaText, textStrings[Index]);
 
 				DelInsertChars();
 				allRunsInfo = [];
@@ -20996,10 +21008,10 @@
 
 					for (var nText = nTextToReplace; nText < nTextToReplace + nCountLinesInCell; nText++) 
 					{
-						if (!arrString[nText])
+						if (!textStrings[nText])
 							continue;
 							
-						resultText += arrString[nText];
+						resultText += textStrings[nText];
 						if (nText !== nTextToReplace + nCountLinesInCell - 1)
 							resultText += '\n';
 
@@ -21029,18 +21041,18 @@
 			else 
 				oDocument.Document.RemoveSelection();
 
-			// вставка оставшихся параграфов из arrString
+			// вставка оставшихся параграфов из textStrings
 			var oParaParent   = arrSelectedParas[0].Parent;
 			var nIndexToPaste = arrSelectedParas[arrSelectedParas.length - 1].Index + 1;
 			var isPres        = !arrSelectedParas[0].bFromDocument;
 			if (!oParaParent)
 				return;
 
-			for (var nPara = arrSelectedParas.length; nPara < arrString.length; nPara++)
+			for (var nPara = arrSelectedParas.length; nPara < textStrings.length; nPara++)
 			{
 				var oPara = new AscWord.Paragraph(oParaParent, isPres);
 				var oRun = new ParaRun(oPara, false);
-				oRun.AddText(arrString[nPara]);
+				oRun.AddText(textStrings[nPara]);
 				private_PushElementToParagraph(oPara, oRun);
 				oParaParent.AddToContent(nIndexToPaste, oPara);
 
@@ -21048,37 +21060,37 @@
 			}
 		}
 	};
-	Api.prototype.CoAuthoringChatSendMessage = function(sString)
+	Api.prototype.CoAuthoringChatSendMessage = function(message)
 	{
-		if (typeof sString !== 'string' || sString === '')
+		if (typeof message !== 'string' || message === '')
 			return false;
 
-		this.asc_coAuthoringChatSendMessage(sString);
+		this.asc_coAuthoringChatSendMessage(message);
 		return true;
 	};
 	/**
 	 * Converts a document to Markdown or HTML text.
 	 * @memberof Api
 	 * @typeofeditors ["CDE"]
-	 * @param {"markdown" | "html"} [sConvertType="markdown"] - Conversion type.
-	 * @param {boolean} [bHtmlHeadings=false] - Defines if the HTML headings and IDs will be generated when the Markdown renderer of your target platform does not handle Markdown-style IDs.
-	 * @param {boolean} [bBase64img=false] - Defines if the images will be created in the base64 format.
-	 * @param {boolean} [bDemoteHeadings=false] - Defines if all heading levels in your document will be demoted to conform with the following standard: single H1 as title, H2 as top-level heading in the text body.
-	 * @param {boolean} [bRenderHTMLTags=false] - Defines if HTML tags will be preserved in your Markdown. If you just want to use an occasional HTML tag, you can avoid using the opening angle bracket
+	 * @param {"markdown" | "html"} [convertType="markdown"] - Conversion type.
+	 * @param {boolean} [htmlHeadings=false] - Defines if the HTML headings and IDs will be generated when the Markdown renderer of your target platform does not handle Markdown-style IDs.
+	 * @param {boolean} [base64img=false] - Defines if the images will be created in the base64 format.
+	 * @param {boolean} [demoteHeadings=false] - Defines if all heading levels in your document will be demoted to conform with the following standard: single H1 as title, H2 as top-level heading in the text body.
+	 * @param {boolean} [renderHTMLTags=false] - Defines if HTML tags will be preserved in your Markdown. If you just want to use an occasional HTML tag, you can avoid using the opening angle bracket
 	 * in the following way: \<tag&gt;text\</tag&gt;. By default, the opening angle brackets will be replaced with the special characters.
 	 * @returns {string}
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/ConvertDocument.js
 	 */
-	Api.prototype.ConvertDocument = function(sConvertType, bHtmlHeadings, bBase64img, bDemoteHeadings, bRenderHTMLTags) 
+	Api.prototype.ConvertDocument = function(convertType, htmlHeadings, base64img, demoteHeadings, renderHTMLTags)
 	{
 		var oDocument = this.GetDocument();
 		if (!oDocument.Document)
 			return "Please, use this plugin with the Word document editor";
 
-		if (sConvertType === "html")
-			return oDocument.ToHtml(bHtmlHeadings, bBase64img, bDemoteHeadings, bRenderHTMLTags);
+		if (convertType === "html")
+			return oDocument.ToHtml(htmlHeadings, base64img, demoteHeadings, renderHTMLTags);
 		else
-			return oDocument.ToMarkdown(bHtmlHeadings, bBase64img, bDemoteHeadings, bRenderHTMLTags);
+			return oDocument.ToMarkdown(htmlHeadings, base64img, demoteHeadings, renderHTMLTags);
 	};
 
 	/**
@@ -21088,7 +21100,8 @@
 	 * @returns {ApiTextPr}
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateTextPr.js
 	 */
-	Api.prototype.CreateTextPr = function () {
+	Api.prototype.CreateTextPr = function()
+	{
 		return this.private_CreateTextPr(null, new AscCommonWord.CTextPr());
 	};
 
@@ -21096,31 +21109,32 @@
 	 * Creates a Text Art object with the parameters specified.
 	 * @memberof Api
 	 * @typeofeditors ["CDE"]
-	 * @param {ApiTextPr} [oTextPr=Api.CreateTextPr()] - The text properties.
-	 * @param {string} [sText="Your text here"] - The text for the Text Art object.
-	 * @param {TextTransform} [sTransform="textNoShape"] - Text transform type.
-	 * @param {ApiFill}   [oFill=Api.CreateNoFill()] - The color or pattern used to fill the Text Art object.
-	 * @param {ApiStroke} [oStroke=Api.CreateStroke(0, Api.CreateNoFill())] - The stroke used to create the Text Art object shadow.
-	 * @param {number} [nRotAngle=0] - Rotation angle.
-	 * @param {EMU} [nWidth=1828800] - The Text Art width measured in English measure units.
-	 * @param {EMU} [nHeight=1828800] - The Text Art heigth measured in English measure units.
+	 * @param {ApiTextPr} [textPr=Api.CreateTextPr()] - The text properties.
+	 * @param {string} [text="Your text here"] - The text for the Text Art object.
+	 * @param {TextTransform} [transform="textNoShape"] - Text transform type.
+	 * @param {ApiFill}   [fill=Api.CreateNoFill()] - The color or pattern used to fill the Text Art object.
+	 * @param {ApiStroke} [stroke=Api.CreateStroke(0, Api.CreateNoFill())] - The stroke used to create the Text Art object shadow.
+	 * @param {number} [rotAngle=0] - Rotation angle.
+	 * @param {EMU} [width=1828800] - The Text Art width measured in English measure units.
+	 * @param {EMU} [height=1828800] - The Text Art heigth measured in English measure units.
 	 * @returns {ApiDrawing}
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/CreateWordArt.js
 	 */
-	Api.prototype.CreateWordArt = function(oTextPr, sText, sTransform, oFill, oStroke, nRotAngle, nWidth, nHeight) {
-		oTextPr   = oTextPr && oTextPr.TextPr ? oTextPr.TextPr : null;
-		nRotAngle = typeof(nRotAngle) === "number" && nRotAngle > 0 ? nRotAngle : 0;
-		nWidth    = typeof(nWidth) === "number" && nWidth > 0 ? nWidth : 1828800;
-		nHeight   = typeof(nHeight) === "number" && nHeight > 0 ? nHeight : 1828800;
-		oFill     = oFill && oFill.UniFill ? oFill.UniFill : this.CreateNoFill().UniFill;
-		oStroke   = oStroke && oStroke.Ln ? oStroke.Ln : this.CreateStroke(0, this.CreateNoFill()).Ln;
-		sTransform = typeof(sTransform) === "string" && sTransform !== "" ? sTransform : "textNoShape";
-
-		var oDrawing = new ParaDrawing(private_EMU2MM(nWidth), private_EMU2MM(nHeight), null, private_GetDrawingDocument(), private_GetLogicDocument(), null);
-		var oArt = this.private_createWordArt(oTextPr, sText, sTransform, oFill, oStroke, nRotAngle, nWidth, nHeight);
+	Api.prototype.CreateWordArt = function(textPr, text, transform, fill, stroke, rotAngle, width, height)
+	{
+		textPr    = textPr && textPr.TextPr ? textPr.TextPr : null;
+		rotAngle  = typeof (rotAngle) === "number" && rotAngle > 0 ? rotAngle : 0;
+		width     = typeof (width) === "number" && width > 0 ? width : 1828800;
+		height    = typeof (height) === "number" && height > 0 ? height : 1828800;
+		fill      = fill && fill.UniFill ? fill.UniFill : this.CreateNoFill().UniFill;
+		stroke    = stroke && stroke.Ln ? stroke.Ln : this.CreateStroke(0, this.CreateNoFill()).Ln;
+		transform = typeof (transform) === "string" && transform !== "" ? transform : "textNoShape";
+		
+		var oDrawing = new ParaDrawing(private_EMU2MM(width), private_EMU2MM(height), null, private_GetDrawingDocument(), private_GetLogicDocument(), null);
+		var oArt     = this.private_createWordArt(textPr, text, transform, fill, stroke, rotAngle, width, height);
 		oArt.setParent(oDrawing);
 		oDrawing.Set_GraphicObject(oArt);
-
+		
 		return new ApiDrawing(oArt);
 	};
 
@@ -21131,7 +21145,8 @@
 	 * @returns {string}
 	 * @see office-js-api/Examples/{Editor}/Api/Methods/GetFullName.js
 	 */
-	Api.prototype.GetFullName = function () {
+	Api.prototype.GetFullName = function()
+	{
 		return this.DocInfo.Title;
 	};
 	Object.defineProperty(Api.prototype, "FullName", {
