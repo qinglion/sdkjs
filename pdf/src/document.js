@@ -5164,6 +5164,10 @@ var CPresentation = CPresentation || function(){};
         oFreeText.SetInTextBox(true);
     };
     CPDFDoc.prototype.AddStampAnnot = function(sType, nPage, oImage) {
+        if (sType == undefined) {
+            sType = AscPDF.STAMP_TYPES.D_Approved;
+        }
+        
         let oController = this.GetController();
         let nRotAngle   = this.Viewer.getPageRotate(nPage);
         let oFile       = this.Viewer.file;
