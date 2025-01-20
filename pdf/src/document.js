@@ -2732,7 +2732,7 @@ var CPresentation = CPresentation || function(){};
 
 		let result = fAction.call(oThis);
 		this.FinalizeAction(true);
-		return result !== undefined ? result : true;
+		return result;
 	};
     /**
      * Начинаем новое действие, связанное с изменением документа

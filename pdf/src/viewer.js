@@ -3616,9 +3616,11 @@
 			}
 			else if (e.KeyCode === 8) // BackSpace
 			{
-				bRetValue = oDoc.DoAction(function() {
+				oDoc.DoAction(function() {
 					oDoc.Remove(-1, e.CtrlKey == true);
 				}, AscDFH.historydescription_Document_BackSpaceButton);
+
+				bRetValue = true;
 			}
 			else if (e.KeyCode === 9) // Tab
 			{
@@ -3799,9 +3801,11 @@
 			}
 			else if (e.KeyCode === 46) // Delete
 			{
-				bRetValue = oDoc.DoAction(function() {
+				oDoc.DoAction(function() {
 					oDoc.Remove(1, e.CtrlKey == true);
 				}, AscDFH.historydescription_Document_DeleteButton);
+
+				bRetValue = true;
 			}
 			
 			oDoc.UpdateCopyCutState();
