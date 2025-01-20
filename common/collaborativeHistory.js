@@ -374,12 +374,14 @@
 			let historyChange = historyItem.Data;
 			let historyClass  = historyItem.Class;
 
-			//todo
-			if (!historyClass)
+			if (!historyClass || !historyClass.Get_Id)
 				continue;
 
-			let data = AscCommon.CCollaborativeChanges.ToBase64(historyItem.Binary.Pos, historyItem.Binary.Len);
-			changesToSend.push(data);
+			if (historyItem.Binary.Len) //spreadsheet local changes
+			{
+				let data = AscCommon.CCollaborativeChanges.ToBase64(historyItem.Binary.Pos, historyItem.Binary.Len);
+				changesToSend.push(data);
+			}
 
 			changesToRecalc.push(historyChange);
 		}

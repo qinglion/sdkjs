@@ -4773,7 +4773,7 @@
 			var tempWorkbook, pastedWs, base64;
 			if (typeof (sheet_data) === "string") {
 				base64 = sheet_data;
-				tempWorkbook = new AscCommonExcel.Workbook();
+				tempWorkbook = new AscCommonExcel.Workbook(undefined, undefined, false);
 				tempWorkbook.DrawingDocument = Asc.editor.wbModel.DrawingDocument;
 				tempWorkbook.setCommonIndexObjectsFrom(this.model);
 				aPastedImages = aPastedImages.concat(pasteProcessor._readExcelBinary(base64.split('xslData;')[1], tempWorkbook, true));

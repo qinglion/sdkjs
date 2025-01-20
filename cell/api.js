@@ -3027,14 +3027,14 @@ var editor;
 
   spreadsheet_api.prototype._onSaveChanges = function(recalcIndexColumns, recalcIndexRows, isAfterAskSave, arrChanges) {
     if (this.isDocumentLoadComplete) {
-		let arrChanges2 = null;
+		let arrChangesaSerializable = null;
 		let deleteIndex = null;
 		if (arrChanges) {
 			deleteIndex = null;
 		} else {
 			let ser = this.wbModel.SerializeHistory();
 			arrChanges = ser[0];
-			arrChanges2 = ser[1];
+			arrChangesaSerializable = ser[1];
 			deleteIndex = History.GetDeleteIndex();
 		}
       var excelAdditionalInfo = null;
@@ -3059,8 +3059,8 @@ var editor;
               excelAdditionalInfo["UserShortId"] = this.DocInfo.get_UserId();
               excelAdditionalInfo["CursorInfo"] = this.wb.getCursorInfo();
           }
-		  if (arrChanges2) {
-			  this.collaborativeEditing.CoHistory.AddOwnChanges(arrChanges2, deleteIndex);
+		  if (arrChangesaSerializable) {
+			  this.collaborativeEditing.CoHistory.AddOwnChanges(arrChangesaSerializable, deleteIndex);
 		  }
         this.CoAuthoringApi.saveChanges(arrChanges, deleteIndex, excelAdditionalInfo, this.canUnlockDocument2, bCollaborative);
         History.CanNotAddChanges = true;

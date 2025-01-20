@@ -1191,17 +1191,15 @@ CHistory.prototype.Add = function(Class, Type, sheetid, range, Data, LocalChange
 {
 	if (!this.CanAddChanges())
 		return;
-	let serializable;
+
 	if (Class instanceof AscCommonExcel.UndoRedoItemSerializable) {
-		serializable = Class;
+		let serializable = Class;
 		Class = serializable.oClass;
 		Type = serializable.nActionType;
 		sheetid = serializable.nSheetId;
 		range = serializable.oRange;
 		Data = serializable.oData;
 		LocalChange = serializable.LocalChange;
-	} else {
-		serializable = new AscCommonExcel.UndoRedoItemSerializable(Class, Type, sheetid, range, Data, this.LocalChange);
 	}
 
 	this._CheckCanNotAddChanges();
@@ -1209,14 +1207,9 @@ CHistory.prototype.Add = function(Class, Type, sheetid, range, Data, LocalChange
 	if ( this.RecIndex >= this.Index )
 		this.RecIndex = this.Index - 1;
 
-	var Binary_Pos = this.BinaryWriter.GetCurPosition();
-
-	this.workbook._SerializeHistoryItem2(this.BinaryWriter, serializable);
-
 	if (Class && Class.SetIsRecalculated && (!Class || (Class.IsNeedRecalculate && Class.IsNeedRecalculate())))
 		Class.SetIsRecalculated(false);
 
-	var Binary_Len = this.BinaryWriter.GetCurPosition() - Binary_Pos;
 	var Item =
 		{
 			Class : Class,
@@ -1225,19 +1218,19 @@ CHistory.prototype.Add = function(Class, Type, sheetid, range, Data, LocalChange
 			Range : null,
 			Data  : Data,
 			LocalChange: this.LocalChange,
-			bytes: undefined,
 			Binary : {
-				Pos : Binary_Pos,
-				Len : Binary_Len
+				Pos : 0,
+				Len : 0
 			},
-			//NeedRecalc : !this.MinorChanges && (!Class || Class.IsNeedRecalculate() || Class.IsNeedRecalculateLineNumbers())
+			NeedRecalc : !this.MinorChanges && (!Class || Class.IsNeedRecalculate() || Class.IsNeedRecalculateLineNumbers())
 		};
-
 
 	if(null != range)
 		Item.Range = range.clone();
 	if(null != LocalChange)
 		Item.LocalChange = LocalChange;
+
+	this.Refresh_SpreadsheetChanges(Item);
 
     var curPoint = this.Points[this.Index];
 	curPoint.Items.push( Item );
@@ -1278,6 +1271,19 @@ CHistory.prototype.Add = function(Class, Type, sheetid, range, Data, LocalChange
 		}
 	}
 };
+	CHistory.prototype.Item_ToSerializable = function(item)
+	{
+		return new AscCommonExcel.UndoRedoItemSerializable(item.Class, item.Type, item.SheetId, item.Range, item.Data, item.LocalChange);
+	}
+	CHistory.prototype.Refresh_SpreadsheetChanges = function(item)
+	{
+		let serializable = this.Item_ToSerializable(item);
+		let Binary_Pos = this.BinaryWriter.GetCurPosition();
+		this.workbook._SerializeHistoryItem2(this.BinaryWriter, serializable);
+		let Binary_Len = this.BinaryWriter.GetCurPosition() - Binary_Pos;
+		item.Binary.Pos = Binary_Pos
+		item.Binary.Len = Binary_Len
+	}
 CHistory.prototype.CanAddChanges = function()
 {
 	return (0 === this.TurnOffHistory && this.Index >= 0);
@@ -1475,6 +1481,7 @@ CHistory.prototype.Is_On = function()
 };
 CHistory.prototype.GetSerializeArray = function()
 {
+	//todo избавиться от GetSerializeArray. ходить по массиву
 	var aRes = [];
 	var i = 0;
 	if (null != this.SavedIndex)
@@ -1485,14 +1492,18 @@ CHistory.prototype.GetSerializeArray = function()
 		var aPointChanges = [];
 		for(var j = 0, length2 = point.Items.length; j < length2; ++j)
 		{
-			var elem = point.Items[j];
-			aPointChanges.push(new AscCommonExcel.UndoRedoItemSerializable(elem.Class, elem.Type, elem.SheetId, elem.Range, elem.Data, elem.LocalChange, elem.bytes));
+			aPointChanges.push(point.Items[j]);
 		}
 		aRes.push(aPointChanges);
 	}
 		return aRes;
 	};
 	CHistory.prototype.GetLocalChangesSize = function() {
+		function GetBase64Size(binarySize)
+		{
+			// Бинарник пишется Binary.Len + ";" + base64Encode(Binary.Data)
+			return ((binarySize + ";").length + (((4 * binarySize / 3) + 3) & ~3));
+		}
 		let res = 0;
 		var i = 0;
 		if (null != this.SavedIndex) {
@@ -1501,14 +1512,8 @@ CHistory.prototype.GetSerializeArray = function()
 		for (; i <= this.Index; ++i) {
 			var point = this.Points[i];
 			for (var j = 0, length2 = point.Items.length; j < length2; ++j) {
-				let elem = point.Items[j];
-				if (!elem.bytes && this.workbook) {
-					let serializable = new AscCommonExcel.UndoRedoItemSerializable(elem.Class, elem.Type, elem.SheetId, elem.Range, elem.Data, elem.LocalChange);
-					elem.bytes = this.workbook._SerializeHistoryItem(this.memory, serializable);
-				}
-				if (elem.bytes) {
-					res += elem.bytes.length;
-				}
+				let item = point.Items[j];
+				res += GetBase64Size(item.Binary.Len);
 			}
 		}
 		return res;
