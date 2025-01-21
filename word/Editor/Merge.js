@@ -55,6 +55,11 @@
 
     CMergeComparisonNode.prototype = Object.create(CNode.prototype);
     CMergeComparisonNode.prototype.constructor = CMergeComparisonNode;
+	CMergeComparisonNode.prototype.applyInsertsToParagraphsWithoutRemove = function (comparison, aContentToInsert, oChange) {
+		if (this.checkLastNodeOnInsertWithResolveConflict(comparison, aContentToInsert, oChange)) {
+			CNode.prototype.applyInsertsToParagraphsWithoutRemove.call(this, comparison, aContentToInsert, oChange);
+		}
+	};
 		CMergeComparisonNode.prototype.applyInsertsToParagraphsWithRemove = function(comparison, aContentToInsert, oChange) {
 			const arrSetRemoveReviewType = [];
 			const infoAboutEndOfRemoveChange = this.prepareEndOfRemoveChange(oChange, comparison, arrSetRemoveReviewType);
@@ -196,11 +201,7 @@
         }
 				if (bNeedCheckTypes)
 				{
-					const bCheck = this.compareReviewElements(oOtherElement);
-					if (!bCheck)
-					{
-						return false;
-					}
+					return this.compareReviewElements(oOtherElement);
 				}
 
         return true;
@@ -436,23 +437,11 @@
 					this.applyInsert(aContentToInsert, arrSetRemoveReviewType, nInsertPosition2, comparison, {needReverse: true, nCommentInsertIndex: nInsertPosition});
 				}
     };
-    CConflictResolveNode.prototype.applyInsertsToParagraphsWithoutRemove = function (comparison, aContentToInsert, oChange) {
-        const bRet = CNode.prototype.applyInsertsToParagraphsWithoutRemove.call(this, comparison, aContentToInsert, oChange);
-        if (!bRet) {
-            const applyingParagraph = this.getApplyParagraph(comparison);
-            const index = oChange.anchor.index;
-            if (index === this.children.length - 1) {
 
-                const oLastConflictElement = this.children[this.children.length - 2].element;
-                const nInsertIndex = oLastConflictElement.lastRun.GetPosInParent(applyingParagraph);
-                const nLastSymbolPosition = oLastConflictElement.lastRun.GetElementPosition(oLastConflictElement.elements[oLastConflictElement.elements.length - 1]);
-                if (nLastSymbolPosition !== -1) {
-                    const oNewRun = oLastConflictElement.lastRun.Split2(nLastSymbolPosition + 1, applyingParagraph, nInsertIndex);
-                    comparison.checkOriginalAndSplitRun(oNewRun, oLastConflictElement.lastRun);
-                    this.applyInsert(aContentToInsert, [], nInsertIndex + 1, comparison);
-                }
-            }
-        }
+    CConflictResolveNode.prototype.applyInsertsToParagraphsWithoutRemove = function (comparison, aContentToInsert, oChange) {
+			if (this.checkLastNodeOnInsertWithResolveConflict(comparison, aContentToInsert, oChange)) {
+				CNode.prototype.applyInsertsToParagraphsWithoutRemove.call(this, comparison, aContentToInsert, oChange);
+			}
     };
     CConflictResolveNode.prototype.insertContentAfterRemoveChanges = CMergeComparisonNode.prototype.insertContentAfterRemoveChanges;
 

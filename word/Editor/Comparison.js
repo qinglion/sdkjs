@@ -802,6 +802,26 @@
             oParent.addChildNode(this);
         }
     }
+	CNode.prototype.checkLastNodeOnInsertWithResolveConflict = function(comparison, aContentToInsert, oChange) {
+			if (!comparison.parentParagraph) {
+				return true;
+			}
+		const applyingParagraph = comparison.parentParagraph;
+		const index = oChange.anchor.index;
+		if (index === this.children.length - 1) {
+
+			const oLastConflictElement = this.children[this.children.length - 2].element;
+			const nInsertIndex = oLastConflictElement.lastRun.GetPosInParent(applyingParagraph);
+			const nLastSymbolPosition = oLastConflictElement.lastRun.GetElementPosition(oLastConflictElement.elements[oLastConflictElement.elements.length - 1]);
+			if (nLastSymbolPosition !== -1) {
+				const oNewRun = oLastConflictElement.lastRun.Split2(nLastSymbolPosition + 1, applyingParagraph, nInsertIndex);
+				comparison.checkOriginalAndSplitRun(oNewRun, oLastConflictElement.lastRun);
+				this.applyInsert(aContentToInsert, [], nInsertIndex + 1, comparison);
+				return false;
+			}
+		}
+		return true;
+	};
 		CNode.prototype.getDiff = function (oAnotherNode, oComparison) {
 			if (this.equals(oAnotherNode, oComparison)) {
 				return this.wordCounter.diff(oAnotherNode.wordCounter);
@@ -1155,8 +1175,7 @@
     };
 
     CNode.prototype.applyInsertsToParagraphsWithoutRemove = function (comparison, aContentToInsert, oChange) {
-        const applyingParagraph = this.element/*this.getApplyParagraph(comparison)*/;
-				const parentParagraph = this.getApplyParagraph(comparison);
+        const applyingParagraph = this.getApplyParagraph(comparison);
         if(aContentToInsert.length > 0)
         {
             const index = oChange.anchor.index;
@@ -1212,7 +1231,7 @@
                             }
                             if(k <= oCurRun.Content.length && bFind)
                             {
-                                const oNewRun = oCurRun.Split2(k, parentParagraph, j);
+                                const oNewRun = oCurRun.Split2(k, applyingParagraph, j);
                                 comparison.checkOriginalAndSplitRun(oCurRun, oNewRun)
                                 //TODO: think about it
                                 this.applyInsert(aContentToInsert, [], j + 1, comparison);
