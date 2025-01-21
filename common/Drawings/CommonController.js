@@ -11341,6 +11341,7 @@
 				AscFormat.CGraphicFrame,
 				AscFormat.CChartSpace,
 				AscFormat.CGroupShape,
+				AscFormat.CConnectionShape,
 			];
 			const hasForbiddenTypesInSelection = selectedArray.some(function (item) {
 				return forbiddenTypes.some(function (forbiddenType) {
