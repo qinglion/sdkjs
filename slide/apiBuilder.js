@@ -5421,7 +5421,12 @@
 		}
 		return aWrappers;
 	}
-
+	window['AscBuilder'] = window['AscBuilder'] || {};
+	window['AscBuilder'].ApiShape = ApiShape;
+	window['AscBuilder'].ApiImage = ApiImage;
+	window['AscBuilder'].ApiGroup = ApiGroup;
+	window['AscBuilder'].ApiOleObject = ApiOleObject;
+	window['AscBuilder'].ApiTable = ApiTable;
 })(window, null);
 
 

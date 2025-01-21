@@ -18753,7 +18753,11 @@
 	function private_MakeError(message) {
 		console.error(new Error(message) );
 	}
-
+	window['AscBuilder'] = window['AscBuilder'] || {};
+	window['AscBuilder'].ApiShape           = ApiShape;
+	window['AscBuilder'].ApiImage           = ApiImage;
+	window['AscBuilder'].ApiGroup           = ApiGroup;
+	window['AscBuilder'].ApiOleObject       = ApiOleObject;
 
 }(window, null));
 
