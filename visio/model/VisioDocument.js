@@ -135,6 +135,8 @@
 		 */
 		this.backgroundAppliedFor = [];
 
+		this.isPagesArranged = false;
+
 		//stubs for compatibility with DocumentContent
 		AscCommon.mockLogicDoc(CVisioDocument.prototype);
 	}
@@ -651,6 +653,30 @@
 			return;
 		}
 
+		// arrange pages
+		if (!this.isPagesArranged) {
+
+			// count backgrounds
+			let backgroundsCount = 0;
+			for (let pageIndex = 0; pageIndex < this.pages.page.length; pageIndex++) {
+				let pageInfo = this.pages.page[pageIndex];
+				if (pageInfo.background === true) {
+					backgroundsCount++;
+				}
+			}
+
+			// move background pages to back
+			for (let i = 0; i < backgroundsCount; i++) {
+				let backgroundInfo = this.pages.page.shift();
+				let backgroundContent = this.pageContents.shift();
+
+				this.pages.page.push(backgroundInfo);
+				this.pageContents.push(backgroundContent);
+			}
+			this.isPagesArranged = true;
+		}
+
+		// convert shapes
 		for (let pageIndex = 0; pageIndex < this.pages.page.length; pageIndex++) {
 			if (this.pageShapesCache[pageIndex] === undefined) {
 				let pageInfo = this.pages.page[pageIndex];
