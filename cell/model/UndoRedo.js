@@ -439,6 +439,9 @@ function (window, undefined) {
 	UndoRedoItemSerializable.prototype.CommuteRelated = function (oActionToUndo, oActionOther) {
 		if (oActionToUndo.oClass && oActionToUndo.oClass.CommuteRelated) {
 			return oActionToUndo.oClass.CommuteRelated(oActionToUndo, oActionOther);
+		} else if (oActionToUndo.oClass.WriteToBinary) {
+			//todo просмотреть измнения автофигур которые зависят от сдвигов
+			return true;
 		}
 		return false;
 	};
@@ -4329,7 +4332,7 @@ function (window, undefined) {
 				}
 			} else if (isShiftTop) {
 				if (c1 <= nCol && nCol <= c2) {
-					if (c2 < nRow) {
+					if (r2 < nRow) {
 						nRow -= height;
 					} else if (r1 <= nRow) {
 						return false;
@@ -4338,7 +4341,7 @@ function (window, undefined) {
 			} else if (isShiftBottom) {
 				if (c1 <= nCol && nCol <= c2) {
 					if (r1 <= nRow) {
-						nCol += width;
+						nRow += height;
 					}
 				}
 			}
@@ -4422,6 +4425,69 @@ function (window, undefined) {
 				AscCH.historyitem_Worksheet_ShiftCellsRight === nActionType ||
 				AscCH.historyitem_Worksheet_ShiftCellsTop === nActionType ||
 				AscCH.historyitem_Worksheet_ShiftCellsBottom === nActionType) {
+			let r1Shift = oData.r1;
+			let c1Shift = oData.c1;
+			let r2Shift = oData.r2;
+			let c2Shift = oData.c2;
+			let width = c2Shift - c1Shift + 1;
+			let height = r2Shift - r1Shift + 1;
+			if (AscCH.historyitem_Worksheet_ShiftCellsLeft === nActionType) {
+				if (r1Shift <= r1 && r2 <= r2Shift) {
+					if (c2Shift < c1) {
+						c1 -= width;
+						c2 -= width;
+					} else if (c1Shift <= c1 && c2Shift < c2) {
+						c1 = c2Shift + 1;
+					} else if (c1 < c1Shift && c2Shift < c2) {
+						c2 -= width;
+					} else if (c1Shift <= c1 && c2 <= c2Shift) {
+						return false;
+					} else if (c1 < c1Shift && c1Shift <= c2) {
+						c2 = c1Shift - 1;
+					}
+				} else if ((r1 <= r1Shift && r1Shift <= r2) || (r1 <= r2Shift && r2Shift <= r2)) {
+					return false;
+				}
+			} else if (AscCH.historyitem_Worksheet_ShiftCellsRight === nActionType) {
+				if (r1Shift <= r1 && r2 <= r2Shift) {
+					if (c1Shift <= c1) {
+						c1 += width;
+						c2 += width;
+					} else if (c1Shift <= c2) {
+						c2 += width;
+					}
+				} else if ((r1 <= r1Shift && r1Shift <= r2) || (r1 <= r2Shift && r2Shift <= r2)) {
+					return false;
+				}
+			} else if (AscCH.historyitem_Worksheet_ShiftCellsTop === nActionType) {
+				if (c1Shift <= c1 && c2 <= c2Shift) {
+					if (r2Shift < r1) {
+						r1 -= height;
+						r2 -= height;
+					} else if (r1Shift <= r1 && r2Shift < r2) {
+						r1 = r2Shift + 1;
+					} else if (r1 < r1Shift && r2Shift < r2) {
+						r2 -= height;
+					} else if (r1Shift <= r1 && r2 <= r2Shift) {
+						return false;
+					} else if (r1 < r1Shift && r1Shift <= r2) {
+						r2 = r1Shift - 1;
+					}
+				} else if ((c1 <= c1Shift && c1Shift <= c2) || (c1 <= c2Shift && c2Shift <= c2)) {
+					return false;
+				}
+			} else if (AscCH.historyitem_Worksheet_ShiftCellsBottom === nActionType) {
+				if (c1Shift <= c1 && c2 <= c2Shift) {
+					if (r1Shift <= r1) {
+						r1 += height;
+						r2 += height;
+					} else if (r1Shift <= r2) {
+						r2 += height;
+					}
+				} else if ((c1 <= c1Shift && c1Shift <= c2) || (c1 <= c2Shift && c2Shift <= c2)) {
+					return false;
+				}
+			}
 		} else if (AscCH.historyitem_Worksheet_MoveRange === nActionType) {
 			if (oData.from.r1 <= r1 && r2 <= oData.from.r2 &&
 				oData.from.c1 <= c1 && c2 <= oData.from.c2) {
