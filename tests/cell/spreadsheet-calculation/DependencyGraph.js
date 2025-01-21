@@ -462,6 +462,7 @@ $(function () {
 	let api = new Asc.spreadsheet_api({
 		'id-view': 'editor_sdk'
 	});
+	api.initCollaborativeEditing({});
 	let wb = new AscCommonExcel.Workbook(new AscCommonExcel.asc_CHandlersList(), api, true);
 	let ws = new AscCommonExcel.Worksheet(wb, 0);
 	let sheetId = ws.getId();

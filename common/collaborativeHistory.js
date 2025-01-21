@@ -374,7 +374,8 @@
 			let historyChange = historyItem.Data;
 			let historyClass  = historyItem.Class;
 
-			if (!historyClass || !historyClass.Get_Id)
+			//todo заполнить Class и Data в изменениях автофигур spreadsheet
+			if (!historyClass || !(historyClass.Get_Id || historyClass.Class && historyClass.Class.Get_Id))
 				continue;
 
 			if (historyItem.Binary.Len) //spreadsheet local changes

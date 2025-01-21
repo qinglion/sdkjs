@@ -2908,6 +2908,7 @@
 			if (this.History)
 				this.History.Set_LogicDocument(this);
 		}
+		this.MainDocument = false !== isMainLogicDocument;
 		this.handlers = eventsHandlers;
 		this.dependencyFormulas = new DependencyGraph(this);
 		this.nActive = 0;
@@ -3033,7 +3034,10 @@
 			this.snapshot = this._getSnapshot();
 		}
 
-		g_cCalcRecursion.initCalcProperties(this.calcPr);
+		if (this.MainDocument) {
+			g_cCalcRecursion.initCalcProperties(this.calcPr);
+		}
+
 	};
 	Workbook.prototype.Get_Api = function() {
 		return this.oApi;

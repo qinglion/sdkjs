@@ -122,7 +122,6 @@ $(function() {
 		ws2 = api.wbModel.createWorksheet(0, "Sheet2");
 		AscCommonExcel.getFormulasInfo();
 
-		api.initCollaborativeEditing({});
 		api.wb = new AscCommonExcel.WorkbookView(api.wbModel, api.controller, api.handlers, api.HtmlElement,
 			api.topLineEditorElement, api, api.collaborativeEditing, api.fontRenderingMode);
 

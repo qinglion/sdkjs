@@ -1277,6 +1277,9 @@ CHistory.prototype.Add = function(Class, Type, sheetid, range, Data, LocalChange
 	}
 	CHistory.prototype.Refresh_SpreadsheetChanges = function(item)
 	{
+		if (!this.workbook) {
+			return;
+		}
 		let serializable = this.Item_ToSerializable(item);
 		let Binary_Pos = this.BinaryWriter.GetCurPosition();
 		this.workbook._SerializeHistoryItem2(this.BinaryWriter, serializable);
@@ -1291,14 +1294,9 @@ CHistory.prototype.CanAddChanges = function()
 
 CHistory.prototype._sendCanUndoRedo = function()
 {
-	this.Api.wb.Document_UpdateUndoRedoState();
-	// if (!this.workbook || this.workbook.bCollaborativeChanges) {
-	// 	return;
-	// }
-
-	// this.workbook.handlers.trigger("setCanUndo", this.Can_Undo());
-	// this.workbook.handlers.trigger("setCanRedo", this.Can_Redo());
-	// this.workbook.handlers.trigger("setDocumentModified", this.Have_Changes());
+	if (this.Api && this.Api.wb) {
+		this.Api.wb.Document_UpdateUndoRedoState();
+	}
 };
 CHistory.prototype.SetSelection = function(range)
 {
