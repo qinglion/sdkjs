@@ -619,12 +619,12 @@ $(function () {
 		let docInfo = new Asc.asc_CDocInfo();
 		docInfo.asc_putTitle("TeSt.xlsx");
 		api.DocInfo = docInfo;
-
+		api.initCollaborativeEditing({});
 
 		window["Asc"]["editor"] = api;
 
 		AscCommon.g_oTableId.init();
-		wb = new AscCommonExcel.Workbook(new AscCommonExcel.asc_CHandlersList(), api);
+		wb = new AscCommonExcel.Workbook(new AscCommonExcel.asc_CHandlersList(), api, true);
 		AscCommon.History.init(wb);
 		wb.maxDigitWidth = 7;
 		wb.paddingPlusBorder = 5;

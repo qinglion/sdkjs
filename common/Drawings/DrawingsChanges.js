@@ -938,18 +938,29 @@
         var collaborativeEditing = wb.oApi.collaborativeEditing;
         var nSheetId = this.Class && this.Class.worksheet && this.Class.worksheet.Id;
 
+        let res = false;
         if (this.NewPr && this.NewPr.length) {
             for (var i = 0; i < this.NewPr.length; i++) {
+                let r1old = this.NewPr[i].sqRef.r1;
+                let r2old = this.NewPr[i].sqRef.r2;
+                let c1old = this.NewPr[i].sqRef.c1;
+                let c2old = this.NewPr[i].sqRef.c2;
                 this.NewPr[i].sqRef.r1 = collaborativeEditing.getLockMeRow2(nSheetId, this.NewPr[i].sqRef.r1);
                 this.NewPr[i].sqRef.c1 = collaborativeEditing.getLockMeColumn2(nSheetId, this.NewPr[i].sqRef.c1);
                 this.NewPr[i].sqRef.r2 = collaborativeEditing.getLockMeRow2(nSheetId, this.NewPr[i].sqRef.r2);
                 this.NewPr[i].sqRef.c2 = collaborativeEditing.getLockMeColumn2(nSheetId, this.NewPr[i].sqRef.c2);
+                res = res || this.NewPr[i].sqRef.r1  !== r1old || this.NewPr[i].sqRef.r2  !== r2old || this.NewPr[i].sqRef.c1  !== c1old || this.NewPr[i].sqRef.c2  !== c2old;
 
                 if (this.NewPr[i]._f) {
+                    r1old = this.NewPr[i]._f.r1;
+                    r2old = this.NewPr[i]._f.r2;
+                    c1old = this.NewPr[i]._f.c1;
+                    c2old = this.NewPr[i]._f.c2;
                     this.NewPr[i]._f.r1 = collaborativeEditing.getLockMeRow2(nSheetId, this.NewPr[i]._f.r1);
                     this.NewPr[i]._f.c1 = collaborativeEditing.getLockMeColumn2(nSheetId, this.NewPr[i]._f.c1);
                     this.NewPr[i]._f.r2 = collaborativeEditing.getLockMeRow2(nSheetId, this.NewPr[i]._f.r2);
                     this.NewPr[i]._f.c2 = collaborativeEditing.getLockMeColumn2(nSheetId, this.NewPr[i]._f.c2);
+                    res = res || this.NewPr[i]._f.r1  !== r1old || this.NewPr[i]._f.r2  !== r2old || this.NewPr[i]._f.c1  !== c1old || this.NewPr[i]._f.c2  !== c2old;
 
                     AscCommonExcel.executeInR1C1Mode(false, function () {
                         t.NewPr[i].f = t.NewPr[i]._f.getName();
@@ -957,6 +968,7 @@
                 }
             }
         }
+        return res;
 	};
     CChangesSparklinesChangeData.prototype.Load = function(){
         this.Redo();

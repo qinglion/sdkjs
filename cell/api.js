@@ -363,7 +363,7 @@ var editor;
     }
   };
   spreadsheet_api.prototype._openDocument = function(data) {
-    this.wbModel = new AscCommonExcel.Workbook(this.handlers, this);
+    this.wbModel = new AscCommonExcel.Workbook(this.handlers, this, true);
     this.initGlobalObjects(this.wbModel);
 	  AscFonts.IsCheckSymbols = true;
 	  if(this.isOpenOOXInBrowser) {
@@ -380,8 +380,7 @@ var editor;
   };
 
   spreadsheet_api.prototype.initGlobalObjects = function(wbModel) {
-    // History & global counters
-    History.init(wbModel);
+    // global counters
 
     AscCommonExcel.UndoRedoClassTypes.Clean();
     AscCommonExcel.g_oUndoRedoCell = new AscCommonExcel.UndoRedoCell(wbModel);
@@ -724,7 +723,7 @@ var editor;
 				isCopyPaste: true, activeRange: null, selectAllSheet: true
 			};
 
-			let wb = new AscCommonExcel.Workbook();
+			let wb = new AscCommonExcel.Workbook(undefined, undefined, false);
 			wb.DrawingDocument = Asc.editor.wbModel.DrawingDocument;
 
 			AscFormat.ExecuteNoHistory(function () {
@@ -1038,19 +1037,42 @@ var editor;
     return result;
   };
 
-  spreadsheet_api.prototype.asc_Undo = function() {
-    if (!this.canUndoRedoByRestrictions())
-      return;
-    this.wb.undo();
-    this.wb.restoreFocus();
-  };
+	spreadsheet_api.prototype.sync_CanUndoCallback = function(canUndo) {
+		if (!this.canUndoRedoByRestrictions())
+			canUndo = false;
+		this.handlers.trigger("asc_onCanUndoChanged", canUndo);
+	};
+	spreadsheet_api.prototype.sync_CanRedoCallback = function(bCanRedo) {
+		this.handlers.trigger("asc_onCanRedoChanged", bCanRedo);
+	};
+	spreadsheet_api.prototype.CheckChangedDocument = function() {
+		// if (true === History.Have_Changes())
+		// {
+		// 	// дублирование евента. когда будет undo-redo - тогда
+		// 	// эти евенты начнут отличаться
+		// 	this.SetDocumentModified(true);
+		// }
+		// else
+		// {
+		// 	this.SetDocumentModified(false);
+		// }
 
-  spreadsheet_api.prototype.asc_Redo = function() {
-    if (!this.canUndoRedoByRestrictions())
-      return;
-    this.wb.redo();
-    this.wb.restoreFocus();
-  };
+		this._onUpdateDocumentCanSave();
+	};
+	spreadsheet_api.prototype.Undo = spreadsheet_api.prototype.asc_Undo = function () {
+		if (!this.canUndoRedoByRestrictions()) {
+			return;
+		}
+		this.wb.undo();
+		this.wb.restoreFocus();
+	};
+	spreadsheet_api.prototype.Undo = spreadsheet_api.prototype.asc_Redo = function () {
+		if (!this.canUndoRedoByRestrictions()) {
+			return;
+		}
+		this.wb.redo();
+		this.wb.restoreFocus();
+	};
 
   spreadsheet_api.prototype.asc_Resize = function () {
     var oldScale = AscCommon.AscBrowser.retinaPixelRatio;
@@ -1752,6 +1774,14 @@ var editor;
       this.collaborativeEditing.setFast(bFast);
     }
   };
+	spreadsheet_api.prototype.initCollaborativeEditing = function(opt_handlers)
+	{
+		if (AscCommon.CollaborativeEditing)
+			return;
+
+		this._coAuthoringInitCollaborativeEditing(opt_handlers);
+		AscCommon.CollaborativeEditing = this.collaborativeEditing;
+	};
 
 	spreadsheet_api.prototype.asc_setThumbnailStylesSizes = function (width, height) {
 		this.styleThumbnailWidth = width;
@@ -2682,84 +2712,88 @@ var editor;
   /////////////////////////////////////////////////////////////////////////
   ///////////////////CoAuthoring and Chat api//////////////////////////////
   /////////////////////////////////////////////////////////////////////////
-  spreadsheet_api.prototype._coAuthoringInitEnd = function() {
-    var t = this;
-    this.collaborativeEditing = new AscCommonExcel.CCollaborativeEditing(/*handlers*/{
-      "askLock": function() {
-        t.CoAuthoringApi.askLock.apply(t.CoAuthoringApi, arguments);
-      },
-      "releaseLocks": function() {
-        t.CoAuthoringApi.releaseLocks.apply(t.CoAuthoringApi, arguments);
-      },
-      "sendChanges": function() {
-        t._onSaveChanges.apply(t, arguments);
-      },
-      "applyChanges": function() {
-        t._onApplyChanges.apply(t, arguments);
-      },
-      "updateAfterApplyChanges": function() {
-        t._onUpdateAfterApplyChanges.apply(t, arguments);
-      },
-      "drawSelection": function() {
-        t._onDrawSelection.apply(t, arguments);
-      },
-      "drawFrozenPaneLines": function() {
-        t._onDrawFrozenPaneLines.apply(t, arguments);
-      },
-      "updateAllSheetsLock": function() {
-        t._onUpdateAllSheetsLock.apply(t, arguments);
-      },
-      "showDrawingObjects": function() {
-        t._onShowDrawingObjects.apply(t, arguments);
-      },
-      "showComments": function() {
-        t._onShowComments.apply(t, arguments);
-      },
-      "cleanSelection": function() {
-        t._onCleanSelection.apply(t, arguments);
-      },
-      "updateDocumentCanSave": function() {
-        t._onUpdateDocumentCanSave();
-      },
-      "checkCommentRemoveLock": function(lockElem) {
-        return t._onCheckCommentRemoveLock(lockElem);
-      },
-      "unlockDefName": function() {
-        t._onUnlockDefName.apply(t, arguments);
-      },
-      "checkDefNameLock": function(lockElem) {
-        return t._onCheckDefNameLock(lockElem);
-      },
-      "updateAllLayoutsLock": function() {
-          t._onUpdateAllLayoutsLock.apply(t, arguments);
-      },
-      "updateAllHeaderFooterLock": function() {
-          t._onUpdateAllHeaderFooterLock.apply(t, arguments);
-      },
-      "updateAllPrintScaleLock": function() {
-          t._onUpdateAllPrintScaleLock.apply(t, arguments);
-      },
-      "updateAllSheetViewLock": function() {
-          if (t._onUpdateAllSheetViewLock) {
-            t._onUpdateAllSheetViewLock.apply(t, arguments);
-          }
-      },
-      "unlockCF": function() {
-        t._onUnlockCF.apply(t, arguments);
-      },
-      "checkCFRemoveLock": function(lockElem) {
-        return t._onCheckCFRemoveLock(lockElem);
-      },
-      "unlockProtectedRange": function() {
-      	t._onUnlockProtectedRange.apply(t, arguments);
-      },
-      "checkProtectedRangeRemoveLock": function(lockElem) {
-      	return t._onCheckProtectedRangeRemoveLock(lockElem);
-      },
-      "unlockUserProtectedRanges": function() {
-      	t._onUnlockUserProtectedRanges.apply(t, arguments);
-      }
-    }, this.getViewMode());
+	spreadsheet_api.prototype._coAuthoringInitCollaborativeEditing = function(opt_handlers) {
+		var t = this;
+		opt_handlers = opt_handlers || {
+			"askLock": function() {
+				t.CoAuthoringApi.askLock.apply(t.CoAuthoringApi, arguments);
+			},
+			"releaseLocks": function() {
+				t.CoAuthoringApi.releaseLocks.apply(t.CoAuthoringApi, arguments);
+			},
+			"sendChanges": function() {
+				t._onSaveChanges.apply(t, arguments);
+			},
+			"applyChanges": function() {
+				t._onApplyChanges.apply(t, arguments);
+			},
+			"updateAfterApplyChanges": function() {
+				t._onUpdateAfterApplyChanges.apply(t, arguments);
+			},
+			"drawSelection": function() {
+				t._onDrawSelection.apply(t, arguments);
+			},
+			"drawFrozenPaneLines": function() {
+				t._onDrawFrozenPaneLines.apply(t, arguments);
+			},
+			"updateAllSheetsLock": function() {
+				t._onUpdateAllSheetsLock.apply(t, arguments);
+			},
+			"showDrawingObjects": function() {
+				t._onShowDrawingObjects.apply(t, arguments);
+			},
+			"showComments": function() {
+				t._onShowComments.apply(t, arguments);
+			},
+			"cleanSelection": function() {
+				t._onCleanSelection.apply(t, arguments);
+			},
+			"updateDocumentCanSave": function() {
+				t._onUpdateDocumentCanSave();
+			},
+			"checkCommentRemoveLock": function(lockElem) {
+				return t._onCheckCommentRemoveLock(lockElem);
+			},
+			"unlockDefName": function() {
+				t._onUnlockDefName.apply(t, arguments);
+			},
+			"checkDefNameLock": function(lockElem) {
+				return t._onCheckDefNameLock(lockElem);
+			},
+			"updateAllLayoutsLock": function() {
+				t._onUpdateAllLayoutsLock.apply(t, arguments);
+			},
+			"updateAllHeaderFooterLock": function() {
+				t._onUpdateAllHeaderFooterLock.apply(t, arguments);
+			},
+			"updateAllPrintScaleLock": function() {
+				t._onUpdateAllPrintScaleLock.apply(t, arguments);
+			},
+			"updateAllSheetViewLock": function() {
+				if (t._onUpdateAllSheetViewLock) {
+					t._onUpdateAllSheetViewLock.apply(t, arguments);
+				}
+			},
+			"unlockCF": function() {
+				t._onUnlockCF.apply(t, arguments);
+			},
+			"checkCFRemoveLock": function(lockElem) {
+				return t._onCheckCFRemoveLock(lockElem);
+			},
+			"unlockProtectedRange": function() {
+				t._onUnlockProtectedRange.apply(t, arguments);
+			},
+			"checkProtectedRangeRemoveLock": function(lockElem) {
+				return t._onCheckProtectedRangeRemoveLock(lockElem);
+			},
+			"unlockUserProtectedRanges": function() {
+				t._onUnlockUserProtectedRanges.apply(t, arguments);
+			}
+		}
+		this.collaborativeEditing = this.CollaborativeEditing = new AscCommonExcel.CCollaborativeEditing(opt_handlers, this.getViewMode());
+	}
+	spreadsheet_api.prototype._coAuthoringInitEnd = function() {
+	var t = this;
 
     this.CoAuthoringApi.onConnectionStateChanged = function(e) {
 		if (true === AscCommon.CollaborativeEditing.Is_Fast() && false === e['state']) {
@@ -2991,10 +3025,18 @@ var editor;
 	  };
   };
 
-  spreadsheet_api.prototype._onSaveChanges = function(recalcIndexColumns, recalcIndexRows, isAfterAskSave) {
+  spreadsheet_api.prototype._onSaveChanges = function(recalcIndexColumns, recalcIndexRows, isAfterAskSave, arrChanges) {
     if (this.isDocumentLoadComplete) {
-      var arrChanges = this.wbModel.SerializeHistory();
-      var deleteIndex = History.GetDeleteIndex();
+		let arrChangesaSerializable = null;
+		let deleteIndex = null;
+		if (arrChanges) {
+			deleteIndex = null;
+		} else {
+			let ser = this.wbModel.SerializeHistory();
+			arrChanges = ser[0];
+			arrChangesaSerializable = ser[1];
+			deleteIndex = History.GetDeleteIndex();
+		}
       var excelAdditionalInfo = null;
       var bCollaborative = this.collaborativeEditing.getCollaborativeEditing();
       if (bCollaborative) {
@@ -3003,7 +3045,7 @@ var editor;
           excelAdditionalInfo = {"indexCols": recalcIndexColumns, "indexRows": recalcIndexRows};
         }
       }
-      if (0 < arrChanges.length || null !== deleteIndex || null !== excelAdditionalInfo) {
+      if (true) {
           var oWs = this.wb.getWorksheet();
           var sCursorBinary = "";
           if (oWs && oWs.objectRender) {
@@ -3017,6 +3059,9 @@ var editor;
               excelAdditionalInfo["UserShortId"] = this.DocInfo.get_UserId();
               excelAdditionalInfo["CursorInfo"] = this.wb.getCursorInfo();
           }
+		  if (arrChangesaSerializable) {
+			  this.collaborativeEditing.CoHistory.AddOwnChanges(arrChangesaSerializable, deleteIndex);
+		  }
         this.CoAuthoringApi.saveChanges(arrChanges, deleteIndex, excelAdditionalInfo, this.canUnlockDocument2, bCollaborative);
         History.CanNotAddChanges = true;
       } else {
@@ -3524,7 +3569,16 @@ var editor;
 			}
 		};
 		// Пересылаем свои изменения
-		this.collaborativeEditing.sendChanges(this.IsUserSave, true);
+		if (this.forceSaveUndoRequest)
+		{
+			this.collaborativeEditing.Set_GlobalLock(false);
+			this.collaborativeEditing.Undo();
+			this.forceSaveUndoRequest = false;
+		}
+		else
+		{
+			this.collaborativeEditing.sendChanges(this.IsUserSave, true);
+		}
 	};
 
   spreadsheet_api.prototype._isLockedSparkline = function (id, callback) {
@@ -6731,7 +6785,9 @@ var editor;
 		  return;
         }
 
-		if (this.isLiveViewer()) {
+		if (this.CollaborativeEditing.Is_Fast() && !this.CollaborativeEditing.Is_SingleUser()) {
+			this.wb.Continue_FastCollaborativeEditing();
+		} else if (this.isLiveViewer()) {
 			if (this.collaborativeEditing.haveOtherChanges()) {
 				this.collaborativeEditing.applyChanges();
 			}

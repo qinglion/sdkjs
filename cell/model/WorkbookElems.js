@@ -6179,6 +6179,7 @@ StyleManager.prototype =
 		OffsetLast.col = collaborativeEditing.getLockMeColumn2(nSheetId, bbox.c2) - bbox.c2;
 		this.Ref.setOffsetFirst(OffsetFirst);
 		this.Ref.setOffsetLast(OffsetLast);
+		return !OffsetFirst.isEmpty() || !OffsetLast.isEmpty();
 	};
 	Hyperlink.prototype.tryInitLocalLink = function (wb) {
 		if (this.Hyperlink && this.Hyperlink[0] === "#") {
@@ -15296,7 +15297,7 @@ function RangeDataManagerElem(bbox, data)
 		if (addSheetObj) {
 			let wb = this.getWb();
 			if (!wb) {
-				wb = new AscCommonExcel.Workbook(null, window["Asc"]["editor"]);
+				wb = new AscCommonExcel.Workbook(null, window["Asc"]["editor"], false);
 			}
 			let ws = new AscCommonExcel.Worksheet(wb);
 			ws.sName = name;
@@ -15375,7 +15376,7 @@ function RangeDataManagerElem(bbox, data)
 		if (!this.worksheets[sheetName]) {
 			var wb = this.getWb();
 			if (!wb) {
-				wb = new AscCommonExcel.Workbook(null, window["Asc"]["editor"]);
+				wb = new AscCommonExcel.Workbook(null, window["Asc"]["editor"], false);
 			}
 			ws = new AscCommonExcel.Worksheet(wb);
 			ws.sName = sheetName;
@@ -15393,7 +15394,7 @@ function RangeDataManagerElem(bbox, data)
 			if (!this.worksheets[sheetName]) {
 				var wb = this.getWb();
 				if (!wb) {
-					wb = new AscCommonExcel.Workbook(null, window["Asc"]["editor"]);
+					wb = new AscCommonExcel.Workbook(null, window["Asc"]["editor"], false);
 				}
 				ws = new AscCommonExcel.Worksheet(wb, wb.aWorksheets.length);
 				ws.sName = sheetName;
