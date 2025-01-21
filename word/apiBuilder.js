@@ -18842,22 +18842,20 @@
 	 */
 	ApiBlockLvlSdt.prototype.Delete = function(keepContent)
 	{
-		if (this.Sdt.Index >= 0)
+		let posInParent = this.Sdt.GetIndex();
+		if (-1 === posInParent)
+			return false;
+		
+		if (keepContent)
 		{
-			if (keepContent)
-			{
-				this.Sdt.RemoveContentControlWrapper();
-			}
-			else 
-			{
-				this.Sdt.PreDelete();
-				this.Sdt.Parent.RemoveFromContent(this.Sdt.Index, 1, true);
-			}
-
-			return true;
+			this.Sdt.RemoveContentControlWrapper();
 		}
-
-		return false;
+		else
+		{
+			this.Sdt.PreDelete();
+			this.Sdt.GetParent().RemoveFromContent(posInParent, 1, true);
+		}
+		return true;
 	};
 
 	/**
@@ -18985,16 +18983,16 @@
 	 * Adds a paragraph or a table or a block content control to the current container.
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
-	 * @param {DocumentElement} oElement - The type of the element which will be added to the current container.
-	 * @param {Number} nPos - The specified position.
-	 * @return {boolean} - returns false if oElement unsupported.
+	 * @param {DocumentElement} element - The type of the element which will be added to the current container.
+	 * @param {Number} pos - The specified position.
+	 * @return {boolean} - returns false if element unsupported.
 	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/AddElement.js
 	 */
-	ApiBlockLvlSdt.prototype.AddElement = function(oElement, nPos)
+	ApiBlockLvlSdt.prototype.AddElement = function(element, pos)
 	{
-		if (oElement instanceof ApiParagraph || oElement instanceof ApiTable || oElement instanceof ApiBlockLvlSdt)
+		if (element instanceof ApiParagraph || element instanceof ApiTable || element instanceof ApiBlockLvlSdt)
 		{
-			var oElm = oElement.private_GetImpl();
+			var oElm = element.private_GetImpl();
 			if (oElm.IsUseInDocument())
 				return false;
 
@@ -19004,7 +19002,7 @@
 				this.Sdt.SetShowingPlcHdr(false);
 			}
 			
-			this.Sdt.Content.Internal_Content_Add(nPos, oElm);
+			this.Sdt.Content.Internal_Content_Add(pos, oElm);
 			return true;
 		}
 
@@ -19015,13 +19013,13 @@
 	 * Adds a text to the current content control.
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
-	 * @param {String} sText - The text which will be added to the content control.
+	 * @param {String} text - The text which will be added to the content control.
 	 * @return {boolean} - returns false if param is invalid.
 	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/AddText.js
 	 */
-	ApiBlockLvlSdt.prototype.AddText = function(sText)
+	ApiBlockLvlSdt.prototype.AddText = function(text)
 	{
-		let _sText = GetStringParameter(sText, null);
+		let _sText = GetStringParameter(text, null);
 		if (null === _sText)
 			return false;
 
@@ -19199,27 +19197,27 @@
 	 * <note>Please note that the current block content control must be in the document.</note>
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
-	 * @param {string} sText - The comment text (required).
-	 * @param {string} sAuthor - The author's name (optional).
-	 * @param {string} sUserId - The user ID of the comment author (optional).
+	 * @param {string} text - The comment text (required).
+	 * @param {string} author - The author's name (optional).
+	 * @param {string} userId - The user ID of the comment author (optional).
 	 * @returns {?ApiComment} - Returns null if the comment was not added.
 	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/AddComment.js
 	 */
-	ApiBlockLvlSdt.prototype.AddComment = function(sText, sAuthor, sUserId)
+	ApiBlockLvlSdt.prototype.AddComment = function(text, author, userId)
 	{
-		if (!sText || typeof(sText) !== "string")
+		if (!text || typeof(text) !== "string")
 			return null;
-		if (typeof(sAuthor) !== "string")
-			sAuthor = "";
+		if (typeof(author) !== "string")
+			author = "";
 
 		if (!this.Sdt.IsUseInDocument())
 			return null;
 
 		var oDocument = private_GetLogicDocument();
 		let CommentData = private_CreateCommentData({
-			text: sText,
-			author: sAuthor,
-			userId: sUserId
+			text: text,
+			author: author,
+			userId: userId
 		});
 
 		var oDocumentState = oDocument.SaveDocumentState();
@@ -19231,43 +19229,43 @@
 		
 		return comment;
 	};
-
+	
 	/**
-     * Adds a caption paragraph after (or before) the current content control.
+	 * Adds a caption paragraph after (or before) the current content control.
 	 * <note>Please note that the current content control must be in the document (not in the footer/header).
 	 * And if the current content control is placed in a shape, then a caption is added after (or before) the parent shape.</note>
-     * @memberof ApiBlockLvlSdt
-     * @typeofeditors ["CDE"]
-     * @param {string} sAdditional - The additional text.
-	 * @param {CaptionLabel | String} [sLabel="Table"] - The caption label.
-	 * @param {boolean} [bExludeLabel=false] - Specifies whether to exclude the label from the caption.
-	 * @param {CaptionNumberingFormat} [sNumberingFormat="Arabic"] - The possible caption numbering format.
-	 * @param {boolean} [bBefore=false] - Specifies whether to insert the caption before the current content control (true) or after (false) (after/before the shape if it is placed in the shape).
-	 * @param {Number} [nHeadingLvl=undefined] - The heading level (used if you want to specify the chapter number).
+	 * @memberof ApiBlockLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @param {string} additionalText - The additional text.
+	 * @param {CaptionLabel | String} [label="Table"] - The caption label.
+	 * @param {boolean} [excludeLabel=false] - Specifies whether to exclude the label from the caption.
+	 * @param {CaptionNumberingFormat} [numFormat="Arabic"] - The possible caption numbering format.
+	 * @param {boolean} [isBefore=false] - Specifies whether to insert the caption before the current content control (true) or after (false) (after/before the shape if it is placed in the shape).
+	 * @param {Number} [headingLvl=undefined] - The heading level (used if you want to specify the chapter number).
 	 * <note>If you want to specify "Heading 1", then nHeadingLvl === 0 and etc.</note>
-	 * @param {CaptionSep} [sCaptionSep="hyphen"] - The caption separator (used if you want to specify the chapter number).
-     * @returns {boolean}
-     * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/AddCaption.js
+	 * @param {CaptionSep} [captionSep="hyphen"] - The caption separator (used if you want to specify the chapter number).
+	 * @returns {boolean}
+	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/AddCaption.js
 	 */
-	ApiBlockLvlSdt.prototype.AddCaption = function(sAdditional, sLabel, bExludeLabel, sNumberingFormat, bBefore, nHeadingLvl, sCaptionSep)
+	ApiBlockLvlSdt.prototype.AddCaption = function(additionalText, label, excludeLabel, numFormat, isBefore, headingLvl, captionSep)
 	{
 		var oSdtParent = this.Sdt.GetParent();
 		if (this.Sdt.IsUseInDocument() === false || !oSdtParent || oSdtParent.Is_TopDocument(true) !== private_GetLogicDocument())
 			return false;
-		if (typeof(sAdditional) !== "string" || sAdditional.trim() === "")
-			sAdditional = "";
-		if (typeof(bExludeLabel) !== "boolean")
-			bExludeLabel = false;
-		if (typeof(bBefore) !== "boolean")
-			bBefore = false;
-		if (typeof(sLabel) !== "string" || sLabel.trim() === "")
-			sLabel = "Table";
+		if (typeof(additionalText) !== "string" || additionalText.trim() === "")
+			additionalText = "";
+		if (typeof(excludeLabel) !== "boolean")
+			excludeLabel = false;
+		if (typeof(isBefore) !== "boolean")
+			isBefore = false;
+		if (typeof(label) !== "string" || label.trim() === "")
+			label = "Table";
 		
 		let oCapPr = new Asc.CAscCaptionProperties();
 		let oDoc = private_GetLogicDocument();
 
 		let nNumFormat;
-		switch (sNumberingFormat)
+		switch (numFormat)
 		{
 			case "ALPHABETIC":
 				nNumFormat = Asc.c_oAscNumberingFormat.UpperLetter;
@@ -19285,38 +19283,38 @@
 				nNumFormat = Asc.c_oAscNumberingFormat.Decimal;
 				break;
 		}
-		switch (sCaptionSep)
+		switch (captionSep)
 		{
 			case "hyphen":
-				sCaptionSep = "-";
+				captionSep = "-";
 				break;
 			case "period":
-				sCaptionSep = ".";
+				captionSep = ".";
 				break;
 			case "colon":
-				sCaptionSep = ":";
+				captionSep = ":";
 				break;
 			case "longDash":
-				sCaptionSep = "—";
+				captionSep = "—";
 				break;
 			case "dash":
-				sCaptionSep = "-";
+				captionSep = "-";
 				break;
 			default:
-				sCaptionSep = "-";
+				captionSep = "-";
 				break;
 		}
 
-		oCapPr.Label = sLabel;
-		oCapPr.Before = bBefore;
-		oCapPr.ExcludeLabel = bExludeLabel;
+		oCapPr.Label = label;
+		oCapPr.Before = isBefore;
+		oCapPr.ExcludeLabel = excludeLabel;
 		oCapPr.Format = nNumFormat;
-		oCapPr.Separator = sCaptionSep;
-		oCapPr.Additional = sAdditional;
+		oCapPr.Separator = captionSep;
+		oCapPr.Additional = additionalText;
 
-		if (nHeadingLvl >= 0 && nHeadingLvl <= 8)
+		if (headingLvl >= 0 && headingLvl <= 8)
 		{
-			oCapPr.HeadingLvl = nHeadingLvl;
+			oCapPr.HeadingLvl = headingLvl;
 			oCapPr.IncludeChapterNumber = true;
 		}
 		else oCapPr.HeadingLvl = 0;
