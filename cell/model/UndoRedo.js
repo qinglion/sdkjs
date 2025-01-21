@@ -4458,10 +4458,6 @@ function (window, undefined) {
 			c1 = c2 = index;
 		}
 		return this.CommuteRelatedRange2(r1, c1, r2, c2, oActionOther);
-		if (res) {
-			return isRow ? this.tmpRange.r1 : this.tmpRange.c1;
-		}
-		return index;
 	}
 	function UndoRedoRowCol(wb, bRow) {
 		UndoRedoClassBase.call(this);
