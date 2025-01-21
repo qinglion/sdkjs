@@ -11537,9 +11537,25 @@
 				resultShape.setBlipFill(blipFill);
 			}
 
-			if (AscCommon.isRealObject(referenceShape.txBody)) {
-				const txBody = referenceShape.txBody.createDuplicate();
-				resultShape.setTxBody(txBody);
+			if (referenceShape.bWordShape) {
+				resultShape.bWordShape = true;
+				if (AscCommon.isRealObject(referenceShape.textBoxContent)) {
+					const textBoxContent = referenceShape.textBoxContent.Copy(resultShape, referenceShape.textBoxContent.DrawingDocument);
+					resultShape.setTextBoxContent(textBoxContent);
+				}
+				if (AscCommon.isRealObject(referenceShape.style)) {
+					const style = referenceShape.style.createDuplicate();
+					resultShape.setStyle(style);
+				}
+				if (AscCommon.isRealObject(referenceShape.bodyPr)) {
+					const bodyPr = referenceShape.bodyPr.createDuplicate();
+					resultShape.setBodyPr(bodyPr);
+				}
+			} else {
+				if (AscCommon.isRealObject(referenceShape.txBody)) {
+					const txBody = referenceShape.txBody.createDuplicate();
+					resultShape.setTxBody(txBody);
+				}
 			}
 
 			resultShape.setSpPr(new AscFormat.CSpPr());
