@@ -18623,17 +18623,17 @@
 	 * <b>"sdtLocked"</b> - the container cannot be deleted.
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
-	 * @param {"contentLocked" | "sdtContentLocked" | "sdtLocked"} sLockType - The type of the lock applied to the block text content control.
+	 * @param {"contentLocked" | "sdtContentLocked" | "sdtLocked"} lockType - The type of the lock applied to the block text content control.
 	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/SetLock.js
 	 */
-	ApiBlockLvlSdt.prototype.SetLock = function(sLockType)
+	ApiBlockLvlSdt.prototype.SetLock = function(lockType)
 	{
 		var nLock = c_oAscSdtLockType.Unlocked;
-		if ("contentLocked" === sLockType)
+		if ("contentLocked" === lockType)
 			nLock = c_oAscSdtLockType.ContentLocked;
-		else if ("sdtContentLocked" === sLockType)
+		else if ("sdtContentLocked" === lockType)
 			nLock = c_oAscSdtLockType.SdtContentLocked;
-		else if ("sdtLocked" === sLockType)
+		else if ("sdtLocked" === lockType)
 			nLock = c_oAscSdtLockType.SdtLocked;
 
 		this.Sdt.SetContentControlLock(nLock);
@@ -18666,12 +18666,12 @@
 	 * Sets the tag attribute to the current container.
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
-	 * @param {string} sTag - The tag which will be added to the current container.
+	 * @param {string} tag - The tag which will be added to the current container.
 	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/SetTag.js
 	 */
-	ApiBlockLvlSdt.prototype.SetTag = function(sTag)
+	ApiBlockLvlSdt.prototype.SetTag = function(tag)
 	{
-		this.Sdt.SetTag(sTag);
+		this.Sdt.SetTag(tag);
 	};
 
 	/**
@@ -18693,9 +18693,9 @@
 	 * @param {string} sLabel - The label which will be added to the current container. Can be a positive or negative integer from <b>-2147483647</b> to <b>2147483647</b>.
 	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/SetLabel.js
 	 */
-	ApiBlockLvlSdt.prototype.SetLabel = function(sLabel)
+	ApiBlockLvlSdt.prototype.SetLabel = function(label)
 	{
-		this.Sdt.SetLabel(sLabel);
+		this.Sdt.SetLabel(label);
 	};
 
 	/**
@@ -18714,12 +18714,12 @@
 	 * Sets the alias attribute to the current container.
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
-	 * @param {string} sAlias - The alias which will be added to the current container.
+	 * @param {string} alias - The alias which will be added to the current container.
 	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/SetAlias.js
 	 */
-	ApiBlockLvlSdt.prototype.SetAlias = function(sAlias)
+	ApiBlockLvlSdt.prototype.SetAlias = function(alias)
 	{
-		this.Sdt.SetAlias(sAlias);
+		this.Sdt.SetAlias(alias);
 	};
 
 	/**
@@ -18798,17 +18798,17 @@
 	 * process to arrange tables on the specified page.</note>
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
-	 * @param nPage - Page number. If it is not specified, an empty array will be returned.
+	 * @param page - Page number. If it is not specified, an empty array will be returned.
 	 * @return {ApiTable[]}  
 	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/GetAllTablesOnPage.js
 	 */
-	ApiBlockLvlSdt.prototype.GetAllTablesOnPage = function(nPage)
+	ApiBlockLvlSdt.prototype.GetAllTablesOnPage = function(page)
 	{
 		var oLogicDocument = this.Sdt.GetLogicDocument();
 		if (oLogicDocument)
-			(new ApiDocument(oLogicDocument)).ForceRecalculate(nPage + 1);
+			(new ApiDocument(oLogicDocument)).ForceRecalculate(page + 1);
 
-		var arrTables		= this.Sdt.GetAllTablesOnPage(nPage);
+		var arrTables		= this.Sdt.GetAllTablesOnPage(page);
 		var arrApiTables	= [];
 
 		for (var Index = 0, nCount = arrTables.length; Index < nCount; Index++)
@@ -18862,12 +18862,12 @@
 	 * Applies text settings to the content of the content control.
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
-	 * @param {ApiTextPr} oTextPr - The properties that will be set to the content of the content control.
+	 * @param {ApiTextPr} textPr - The properties that will be set to the content of the content control.
 	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/SetTextPr.js
 	 */
-	ApiBlockLvlSdt.prototype.SetTextPr = function(oTextPr)
+	ApiBlockLvlSdt.prototype.SetTextPr = function(textPr)
 	{
-		var ParaTextPr = new AscCommonWord.ParaTextPr(oTextPr.TextPr);
+		var ParaTextPr = new AscWord.ParaTextPr(textPr.TextPr);
 		this.Sdt.Content.SetApplyToAll(true);
 		this.Sdt.Add(ParaTextPr);
 		this.Sdt.Content.SetApplyToAll(false);
@@ -18954,15 +18954,15 @@
 	 * Pushes a paragraph or a table or a block content control to actually add it to the current container.
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
-	 * @param {DocumentElement} oElement - The type of the element which will be pushed to the current container.
-	 * @return {boolean} - returns false if oElement unsupported.
+	 * @param {DocumentElement} element - The type of the element which will be pushed to the current container.
+	 * @return {boolean} - returns false if element unsupported.
 	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/Push.js
 	 */
-	ApiBlockLvlSdt.prototype.Push = function(oElement)
+	ApiBlockLvlSdt.prototype.Push = function(element)
 	{
-		if (oElement instanceof ApiParagraph || oElement instanceof ApiTable || oElement instanceof ApiBlockLvlSdt)
+		if (element instanceof ApiParagraph || element instanceof ApiTable || element instanceof ApiBlockLvlSdt)
 		{
-			var oElm = oElement.private_GetImpl();
+			var oElm = element.private_GetImpl();
 			if (oElm.IsUseInDocument())
 				return false;
 
@@ -19046,14 +19046,14 @@
 	 * Returns a Range object that represents the part of the document contained in the specified content control.
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
-	 * @param {Number} Start - Start position index in the current element.
-	 * @param {Number} End - End position index in the current element.
+	 * @param {Number} start - Start position index in the current element.
+	 * @param {Number} end - End position index in the current element.
 	 * @returns {ApiRange} 
 	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/GetRange.js
 	 */
-	ApiBlockLvlSdt.prototype.GetRange = function(Start, End)
+	ApiBlockLvlSdt.prototype.GetRange = function(start, end)
 	{
-		return new ApiRange(this.Sdt, Start, End);
+		return new ApiRange(this.Sdt, start, end);
 	};
 	
 	/**
@@ -19079,12 +19079,12 @@
 	 * Searches for a scope of a content control object. The search results are a collection of ApiRange objects.
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
-	 * @param {string} sText - Search string.
+	 * @param {string} text - Search string.
 	 * @param {boolean} isMatchCase - Case sensitive or not.
 	 * @return {ApiRange[]}  
 	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/Search.js
 	 */
-	ApiBlockLvlSdt.prototype.Search = function(sText, isMatchCase)
+	ApiBlockLvlSdt.prototype.Search = function(text, isMatchCase)
 	{
 		if (isMatchCase === undefined)
 			isMatchCase	= false;
@@ -19096,7 +19096,7 @@
 		for (var para in allParagraphs)
 		{
 			var oParagraph			= new ApiParagraph(allParagraphs[para]);
-			var arrOfParaApiRanges	= oParagraph.Search(sText, isMatchCase);
+			var arrOfParaApiRanges	= oParagraph.Search(text, isMatchCase);
 
 			for (var itemRange = 0; itemRange < arrOfParaApiRanges.length; itemRange++)	
 				arrApiRanges.push(arrOfParaApiRanges[itemRange]);
@@ -19134,17 +19134,17 @@
 	/**
 	 * Sets the placeholder text to the current content control.
 	 * @memberof ApiBlockLvlSdt
-	 * @param {string} sText - The text that will be set to the current content control.
+	 * @param {string} text - The text that will be set to the current content control.
 	 * @typeofeditors ["CDE"]
 	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/SetPlaceholderText.js
 	 */
-	ApiBlockLvlSdt.prototype.SetPlaceholderText = function(sText)
+	ApiBlockLvlSdt.prototype.SetPlaceholderText = function(text)
 	{
-		if (typeof(sText) !== "string" || sText === "")
+		if (typeof(text) !== "string" || text === "")
 			return false;
 
-		this.Sdt.SetPlaceholderText(sText);
+		this.Sdt.SetPlaceholderText(text);
 		if (this.Sdt.IsEmpty())
 			this.Sdt.private_ReplaceContentWithPlaceHolder();
 
