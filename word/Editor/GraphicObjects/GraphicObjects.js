@@ -3030,7 +3030,7 @@ CGraphicObjects.prototype =
         if(ungroup_arr.length > 0)
         {
             this.resetSelection();
-            var i, j, nearest_pos, cur_group, sp_tree, sp, parent_paragraph, page_num;
+            var i, j, anchorPos, cur_group, sp_tree, sp, parent_paragraph, page_num;
             var arrCenterPos = [], aPos;
             for(i = 0; i < ungroup_arr.length; ++i)
             {
@@ -3108,9 +3108,8 @@ CGraphicObjects.prototype =
                     {
                         sp.spPr.setFill(cur_group.spPr.Fill.createDuplicate());
                     }
-
-                    nearest_pos = this.document.Get_NearestPos(page_num, sp.bounds.x + sp.posX, sp.bounds.y + sp.posY, true, drawing);
-                    nearest_pos.Paragraph.Check_NearestPos(nearest_pos);
+	
+					anchorPos = this.document.Get_NearestPos(page_num, sp.bounds.x + sp.posX, sp.bounds.y + sp.posY, true, drawing);
                     var fPosX = xc - hc;
                     var fPosY = yc - vc;
                     drawing.Set_Props(new asc_CImgProperty(
@@ -3131,7 +3130,12 @@ CGraphicObjects.prototype =
                             Value       : 0
                         }
                     }));
-                    drawing.Set_XYForAdd(fPosX, fPosY, nearest_pos, page_num);
+					
+					if (anchorPos && anchorPos.Paragraph)
+					{
+						anchorPos.Paragraph.Check_NearestPos(anchorPos);
+						drawing.Set_XYForAdd(fPosX, fPosY, anchorPos, page_num);
+					}
 
                     sp.convertFromSmartArt(true);
                     var oSm = sp.hasSmartArt && sp.hasSmartArt(true);
