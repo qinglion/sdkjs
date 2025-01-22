@@ -4544,6 +4544,13 @@ function (window, undefined) {
 			return this.nTypeCol;
 		}
 	};
+	UndoRedoRowCol.prototype.CreateReverseChangeSpreadsheet = function (ToClass, Type, nSheetId, oRange, Data, LocalChange) {
+		Data = Data.CreateReverseChangeSpreadsheet();
+		return new UndoRedoItemSerializable(ToClass, Type, nSheetId, oRange, Data, LocalChange);
+	};
+	UndoRedoRowCol.prototype.CommuteRelated = function (oActionToUndo, oActionOther) {
+		return AscCommonExcel.g_oUndoRedoWorksheet.CommuteRelatedRowCol(oActionToUndo.oData, this.bRow, oActionOther);
+	}
 	UndoRedoRowCol.prototype.Undo = function (Type, Data, nSheetId) {
 		this.UndoRedo(Type, Data, nSheetId, true);
 	};
