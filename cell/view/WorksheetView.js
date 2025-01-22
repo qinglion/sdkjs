@@ -20265,7 +20265,7 @@
 			ctx.setStrokeStyle(t.settings.cells.defaultState.border);
 
 			var _diff = isPivotCollapsed ? 1 : 0;
-			ctx.fillRect(startX + _diff, startY + _diff, width - _diff, height - _diff);
+			t._fillRect(ctx, startX + _diff, startY + _diff, width - _diff, height - _diff);
 			if (isPivotCollapsed) {
 				ctx.beginPath();
 				t._lineHor(ctx, startX + _diff, startY, startX + width);
