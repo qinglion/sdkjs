@@ -1837,7 +1837,7 @@
 
 				case Asc.c_oAscCellShortcutType.contextMenu:
 					stop();
-					this.handlers.trigger('onContextMenu', event);
+					this.handlers.trigger('onContextMenu');
 					result = true;
 					break;
 
