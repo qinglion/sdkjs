@@ -1560,23 +1560,13 @@
 					if (t.getCellEditMode()) {
 						return true;
 					}
-					// var isSelectColumns = !AscCommon.getAltGr(event) && (!!event.metaKey !== !!event.ctrlKey);
-					// var isSelectAllMacOs = isSelectColumns && shiftKey && macOs;
-					// Handle as regular text
-					if (Asc.c_oAscCellShortcutType.selectSheet === type) {
-						// Now space is processed on WindowKeyDown
-						// The second argument is true to prevent adding space twice and to trigger the event CellEditor.prototype._onWindowKeyDown
-						// The task of the EnterText function in this case is either to add data to the graphic or to open the cell editor, so that
-						// the next instruction in the above function can be called -> Api.onKeyDown
-						window["Asc"]["editor"].wb.EnterText(event.which, true);
-						_setSkipKeyPress(false);
-						return false;
-					}
+
 					// Disable standard browser handling for key presses
 					// Ctrl+Shift+Spacebar, Ctrl+Spacebar, Shift+Spacebar
-					if (Asc.c_oAscCellShortcutType.selectColumn === type) {
+					if (Asc.c_oAscCellShortcutType.selectColumn === type || Asc.c_oAscCellShortcutType.selectSheet === type) {
 						t.handlers.trigger("selectColumnsByRange");
-					} else {
+					}
+					if (Asc.c_oAscCellShortcutType.selectRow === type || Asc.c_oAscCellShortcutType.selectSheet === type) {
 						t.handlers.trigger("selectRowsByRange");
 					}
 					stop();
@@ -1588,7 +1578,7 @@
 					if (!canEdit || t.getCellEditMode() || selectionDialogMode) {
 						return true;
 					}
-					window["Asc"]["editor"].wb.EnterText(this.view.Api.asc_getDecimalSeparator().charCodeAt(0), true);
+					t.view.Api.wb.EnterText(this.view.Api.asc_getDecimalSeparator().charCodeAt(0), true);
 					//stop to prevent double enter
 					stop();
 
