@@ -23140,7 +23140,7 @@
 	{
 		// Добавляем не в конец из-за рана с символом конца параграфа TODO: ParaEnd
 		oPara.Add_ToContent(oPara.Content.length - 1, oElement);
-		oPara.CorrectContent();
+		oPara.CorrectContent(undefined, undefined, true);
 	}
 
 	function private_IsSupportedParaElement(oElement)
