@@ -289,6 +289,12 @@
     {
         return new this.constructor(this.Class, this.Type, this.New, this.Old, this.Color);
     };
+    CChangesDrawingsObjectNoId.prototype.CommuteRelated = function (oActionToUndo, oActionOther) {
+        if (this.New && this.New.CommuteRelated) {
+            return this.New.CommuteRelated(oActionToUndo, oActionOther);
+        }
+        return true;
+    };
     CChangesDrawingsObjectNoId.prototype.private_SetValue = private_SetValue;
     CChangesDrawingsObjectNoId.prototype.Load = function(){
         this.Redo();

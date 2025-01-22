@@ -451,7 +451,6 @@
 		let nCount    = range.Length;
 
 		let arrReverseChanges = [];
-		let arrChanges = [];
 		for (let nIndex = nCount - 1; nIndex >= 0; --nIndex)
 		{
 			let oChange = this.Changes[nPosition + nIndex];
@@ -464,7 +463,14 @@
 				let _oChange = oChange.Copy();
 
 				if (this.CommuteContentChange(_oChange, nPosition + nCount))
-					arrChanges.push(_oChange);
+				{
+					let oReverseChange = _oChange.CreateReverseChange();
+					if (oReverseChange)
+					{
+						arrReverseChanges.push(oReverseChange);
+						oReverseChange.SetReverted(true);
+					}
+				}
 
 				oChange.SetReverted(true);
 			}
@@ -484,7 +490,6 @@
 						//todo для автофигур не надо скрывать всю точку
 						//в таблицах не принимается все точка
 						//например при вставка столбца копируется заливка соседнего столбца
-						arrChanges = [];
 						arrReverseChanges = [];
 						break;
 					}
@@ -492,7 +497,6 @@
 				else if(null !== oReverseChange)
 				{
 					//ничего не делаем если есть изменения которые не готовы
-					arrChanges = [];
 					arrReverseChanges = [];
 					break;
 				}
@@ -502,21 +506,18 @@
 				let _oChange = oChange; // TODO: Тут надо бы сделать копирование
 
 				if (this.CommutePropertyChange(oClass, _oChange, nPosition + nCount))
-					arrChanges.push(_oChange);
+				{
+					let oReverseChange = _oChange.CreateReverseChange();
+					if (oReverseChange)
+					{
+						arrReverseChanges.push(oReverseChange);
+						oReverseChange.SetReverted(true);
+					}
+				}
 			}
 		}
 
 		this.OwnRanges.length = this.OwnRanges.length - 1;
-
-		for (let nIndex = 0, nCount = arrChanges.length; nIndex < nCount; ++nIndex)
-		{
-			let oReverseChange = arrChanges[nIndex].CreateReverseChange();
-			if (oReverseChange)
-			{
-				arrReverseChanges.push(oReverseChange);
-				oReverseChange.SetReverted(true);
-			}
-		}
 
 		return arrReverseChanges;
 	};
