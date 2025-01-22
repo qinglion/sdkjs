@@ -18206,10 +18206,32 @@ function RangeDataManagerElem(bbox, data)
 		let argumentsType = [];
 		let argumentsMin = 0;
 		let argumentsMax = argsInfo ? argsInfo.length : 0;
+
+
+		let argsFuncLength = func.length;
+		if (argsFuncLength > argumentsMax) {
+			console.log("REGISTRAION_ERROR_INVALID_FUNCTION_ARGUMENTS_COUNT");
+			return;
+		}
+
+		let supportedTypes = {
+			"number": 1,
+			"string": 1,
+			"boolean": 1,
+			"any": 1,
+			"number[][]": 1,
+			"string[][]": 1,
+			"boolean[][]": 1,
+			"any[][]": 1
+		};
 		if (argsInfo) {
 			let optionalCount = 0;
 			for (let i = 0; i < argsInfo.length; i++) {
 				argumentsType.push(this.getTypeByString(argsInfo[i].type));
+				if (!supportedTypes[argsInfo[i].type]) {
+					let paramName = (params && params[i]) ? params[i].name : "";
+					console.log("Registration custom function \"" +  funcName + "\" warning. Invalid param \"" + paramName + "\" type. The following types must be used: number, string, boolean, any, number[][], string[][], boolean[][], any[][].");
+				}
 				if (argsInfo[i].isOptional) {
 					optionalCount++;
 				} else {
@@ -18219,11 +18241,9 @@ function RangeDataManagerElem(bbox, data)
 			argumentsMin = argsInfo.length - optionalCount;
 		}
 
-
-		let argsFuncLength = func.length;
-		if (argsFuncLength > argumentsMax) {
-			console.log("REGISTRAION_ERROR_INVALID_FUNCTION_ARGUMENTS_COUNT");
-			return;
+		let returnInfo = options.returnInfo;
+		if (options.returnInfo && !supportedTypes[options.returnInfo.type]) {
+			console.log("Registration custom function \"" +  funcName + "\" warning. Invalid return type. The following types must be used: number, string, boolean, any, number[][], string[][], boolean[][], any[][].");
 		}
 
 		/**
@@ -18586,6 +18606,9 @@ function RangeDataManagerElem(bbox, data)
 			case "any[][]":
 				res = _elem.toArray(true, true);
 				break;
+			default:
+				res = new AscCommonExcel.cError(AscCommonExcel.cErrorType.wrong_value_type);
+				break;
 		}
 		return res;
 	};
@@ -18690,6 +18713,10 @@ function RangeDataManagerElem(bbox, data)
 					res = this._tocArray(val, null, true);
 				}
 				break;
+			default:
+				res = new AscCommonExcel.cError(AscCommonExcel.cErrorType.wrong_value_type);
+
+
 		}
 		return res;
 	};
@@ -18734,6 +18761,25 @@ function RangeDataManagerElem(bbox, data)
 
 	CCustomFunctionEngine.prototype._tocArray = function (array, resType, checkOnError) {
 		var oArray = [], _res = new AscCommonExcel.cArray();
+
+		function isOneDimensional(arr) {
+			if (!Array.isArray(arr)) {
+				return false;
+			}
+
+			for (let i = 0; i < arr.length; i++) {
+				if (Array.isArray(arr[i])) {
+					return false;
+				}
+			}
+			return true;
+		}
+
+		if (isOneDimensional(array)) {
+			let newArr = [];
+			newArr.push(array);
+			array = newArr;
+		}
 
 		for (var i = 0; i < array.length; i++) {
 			for (var j = 0; j < array[i].length; j++) {
