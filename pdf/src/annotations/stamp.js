@@ -106,16 +106,23 @@
 
             let nScale = this.GetOriginViewScale();
             let oTr = new AscCommon.CMatrix();
-            oTr.Scale(nScale, nScale);
             
-            // draw without rotate for saving
+            // draw without rotate and scale for saving
             if (oGraphicsWord.isPdf()) {
                 let hc = this.extX * 0.5;
 				let vc = this.extY * 0.5;
 				AscCommon.global_MatrixTransformer.TranslateAppend(oTr, -hc, -vc);
                 AscCommon.global_MatrixTransformer.TranslateAppend(oTr, this.x + hc, this.y + vc);
+
+                let aInRect = this.GetInRect();
+                let nSourceX = aInRect[0] * g_dKoef_pt_to_mm;
+                let nSourceY = aInRect[3] * g_dKoef_pt_to_mm;
+                
+                oTr.tx = nSourceX;
+                oTr.ty = nSourceY;
             }
             else {
+                oTr.Scale(nScale, nScale);
                 let oOwnTr = this.getTransformMatrix();
                 AscCommon.global_MatrixTransformer.MultiplyAppend(oTr, oOwnTr);
             }
@@ -216,9 +223,14 @@
             if (this.IsHighlight())
                 AscPDF.startMultiplyMode(oGraphicsPDF.GetContext());
             
+            oGraphicsPDF.SetGlobalAlpha(1);
             oGraphicsPDF.DrawImageXY(originView, X, Y, nRot, true);
             AscPDF.endMultiplyMode(oGraphicsPDF.GetContext());
         }
+    };
+    CAnnotationStamp.prototype.ClearCache = function() {
+        this._originView.normal = null;
+        this.APInfo = null;
     };
     CAnnotationStamp.prototype.GetOriginViewInfo = function(nPageW, nPageH) {
         let oViewer     = editor.getDocumentRenderer();

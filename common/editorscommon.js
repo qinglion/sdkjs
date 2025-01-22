@@ -2904,7 +2904,7 @@
 		hostnameRe            = /^(((https?)|(ftps?)):\/\/)?([\-\wа-яё]*:?[\-\wа-яё]*@)?(([\-\wа-яё]+\.)+[\wа-яё\-]{2,}(:\d+)?(\/[%\-\wа-яё]*(\.[\wа-яё]{2,})?(([\wа-яё\-\.\?\\\/+@&#;:`'~=%!,\(\)]*)(\.[\wа-яё]{2,})?)*)*\/?)/i,
 		localRe               = /^(((https?)|(ftps?)):\/\/)([\-\wа-яё]*:?[\-\wа-яё]*@)?(([\-\wа-яё]+)(:\d+)?(\/[%\-\wа-яё]*(\.[\wа-яё]{2,})?(([\wа-яё\-\.\?\\\/+@&#;:`'~=%!,\(\)]*)(\.[\wа-яё]{2,})?)*)*\/?)/i,
 		fileRe                = /^((file):\/\/)[^'`"%^{}<>].*/i,//reserved symbols from word 2010
-		rx_allowedProtocols      = /(^((https?|ftps?|file|tessa|smb):\/\/)|(mailto:)).*/i,
+		rx_allowedProtocols      = /(^((https?|ftps?|file|tessa|joplin|smb):\/\/)|(mailto:)).*/i,
 
 		rx_table              = build_rx_table(null),
 		rx_table_local        = build_rx_table(null);
@@ -3434,6 +3434,31 @@
 
 		return false;
 	};
+	/**
+	 * Checks if the provided formula is a 3D reference.
+	 *
+	 * A 3D reference in the context of formulas typically indicates a range of cells 
+	 * that can span multiple sheets in an Excel workbook. This function analyzes 
+	 * the formula to determine if it conforms to the format of a 3D reference.
+	 *
+	 * The function processes the formula starting from the specified position, 
+	 * handling external links, short links, and various formats of references.
+	 *
+	 * @param {string} formula - The formula to be checked for 3D reference.
+	 * @param {number} start_pos - The starting position in the formula for analysis.
+	 * @param {boolean} support_digital_start - Indicates whether the function 
+	 *     supports digital start references (e.g., "1Sheet").
+	 * @param {boolean} local - the flag that indicate is local context used or not, that may be used during 
+	 *     the analysis of the formula.
+	 * @returns {[boolean, (string|null), (string|null), (string|null), (number|Object|null), (string|null)]} 
+	 * Returns an array containing:
+	 * - A boolean indicating if the formula is a 3D reference.
+	 * - The name of the starting sheet or null if not applicable.
+	 * - The name of the ending sheet or null if not applicable.
+	 * - The external link if applicable, or null.
+	 * - The length of the external link if not applicable, or shortLink info object if it exists.
+	 * - The supposed defname or null.
+	 */
 	parserHelper.prototype.is3DRef = function (formula, start_pos, support_digital_start, local)
 	{
 		if (this instanceof parserHelper)
@@ -3475,10 +3500,18 @@
 			}
 		}
 
+		/* current file check */
+		let currentFileName = window["Asc"]["editor"].DocInfo && window["Asc"]["editor"].DocInfo.get_Title();
+
 		/* shortlink return obj {fullstring, externalLink, defname} */
 		let shortLink = isExternalShortLink(subSTR) || (local && !external && isExternalShortLinkLocal(subSTR));
 
 		if (shortLink) {
+			if ((shortLink.externalLink && shortLink.externalLink === currentFileName) || external === "0") {
+				external = null;
+				shortLink.currentFile = true;
+			}
+
 			this.pCurrPos += shortLink.fullString.length + externalLength;
 			this.operand_str = shortLink.defname;
 			return [true, null, null, external, shortLink];
@@ -3495,7 +3528,14 @@
 			this.pCurrPos += match[0].length + externalLength;
 			this.operand_str = match[1];
 
-			return [true, match["name_from"] ? match["name_from"].replace(/''/g, "'") : null, match["name_to"] ? match["name_to"].replace(/''/g, "'") : null, external];
+			let currentFileDefname;
+			if (external && external === currentFileName) {
+				let exclamationMarkIndex = subSTR.lastIndexOf("!");
+				let defname = exclamationMarkIndex !== -1 ? subSTR.slice(exclamationMarkIndex + 1) : null;
+				currentFileDefname = defname ? defname : null;
+			}
+
+			return [true, match["name_from"] ? match["name_from"].replace(/''/g, "'") : null, match["name_to"] ? match["name_to"].replace(/''/g, "'") : null, external, null, currentFileDefname];
 		}
 		return [false, null, null, external, externalLength];
 	};

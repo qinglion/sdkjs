@@ -129,6 +129,13 @@
 		 * @type {(CShape | CGroupShape | CImageShape)[][]} topLevelShapesAndGroups
 		 */
 		this.pageShapesCache = [];
+		/**
+		 * Stores pages for which background shapes were add already. Stores indexes in pageInfo array
+		 * @type {number[]}
+		 */
+		this.backgroundAppliedFor = [];
+
+		this.isPagesArranged = false;
 
 		//stubs for compatibility with DocumentContent
 		AscCommon.mockLogicDoc(CVisioDocument.prototype);
@@ -478,6 +485,7 @@
 				shape_drawer.Clear();
 				graphics.RestoreGrState();
 
+
 				// handle group children
 				group.spTree.forEach(function(shapeOrGroup) {
 					drawShapeOrGroupRecursively(graphics, shapeOrGroup, baseMatrix, baseTextMatrix, isRecalculateTextY,
@@ -525,7 +533,6 @@
 			let isRecalculateTextY = false;
 			let isFlipYMatrix = false;
 			let isFlipImages = false;
-
 
 			// let pageInfo = visioDocument.pages.page[pageIndex];
 			// let pageContent = visioDocument.pageContents[pageIndex];
@@ -646,6 +653,30 @@
 			return;
 		}
 
+		// arrange pages
+		if (!this.isPagesArranged) {
+
+			// count backgrounds
+			let backgroundsCount = 0;
+			for (let pageIndex = 0; pageIndex < this.pages.page.length; pageIndex++) {
+				let pageInfo = this.pages.page[pageIndex];
+				if (pageInfo.background === true) {
+					backgroundsCount++;
+				}
+			}
+
+			// move background pages to back
+			for (let i = 0; i < backgroundsCount; i++) {
+				let backgroundInfo = this.pages.page.shift();
+				let backgroundContent = this.pageContents.shift();
+
+				this.pages.page.push(backgroundInfo);
+				this.pageContents.push(backgroundContent);
+			}
+			this.isPagesArranged = true;
+		}
+
+		// convert shapes
 		for (let pageIndex = 0; pageIndex < this.pages.page.length; pageIndex++) {
 			if (this.pageShapesCache[pageIndex] === undefined) {
 				let pageInfo = this.pages.page[pageIndex];
@@ -661,6 +692,26 @@
 
 				let topLevelShapesAndGroups = this.convertToCShapesAndGroups(pageInfo, pageContent, drawingPageScale);
 				this.pageShapesCache[pageIndex] = topLevelShapesAndGroups;
+			}
+		}
+
+		// handle backgrounds
+		for (let pageIndex = 0; pageIndex < this.pages.page.length; pageIndex++) {
+			let pageInfo = this.pages.page[pageIndex];
+			let pageContent = this.pageContents[pageIndex];
+
+			if (!this.backgroundAppliedFor.includes(pageIndex)) {
+				let backgroundPageId = pageInfo.backPage;
+				if (backgroundPageId !== null && backgroundPageId !== undefined) {
+					// find background page
+					let backgroundPageIndex = this.pages.page.findIndex(function (pageInfo) {
+						return pageInfo.iD === backgroundPageId;
+					});
+					if (backgroundPageIndex !== -1) {
+						let backgroundPageContent = this.pageShapesCache[backgroundPageIndex];
+						this.pageShapesCache[pageIndex] = backgroundPageContent.concat(this.pageShapesCache[pageIndex]);
+					}
+				}
 			}
 		}
 
@@ -722,20 +773,14 @@
 			shape.realizeStyleInheritanceRecursively(this.styleSheets, stylesWithRealizedInheritance);
 
 			if (shape.type === "Group") {
-				let cGroupShapeAndText = shape.toCGroupShapeRecursively(this, pageInfo, drawingPageScale);
-				if (cGroupShapeAndText.cGroupShape) {
-					topLevelShapesAndGroups.push(cGroupShapeAndText.cGroupShape);
-				}
-				if (cGroupShapeAndText.textCShape) {
-					topLevelShapesAndGroups.push(cGroupShapeAndText.textCShape);
+				let cGroupShape = shape.convertGroup(this, pageInfo, drawingPageScale);
+				if (cGroupShape) {
+					topLevelShapesAndGroups.push(cGroupShape);
 				}
 			} else {
-				let cShapes = shape.toGeometryAndTextCShapes(this, pageInfo, drawingPageScale);
-				if (cShapes.geometryCShape !== null) {
-					topLevelShapesAndGroups.push(cShapes.geometryCShape);
-				}
-				if (cShapes.textCShape !== null) {
-					topLevelShapesAndGroups.push(cShapes.textCShape);
+				let cShapeOrCGroupShape = shape.convertShape(this, pageInfo, drawingPageScale);
+				if (cShapeOrCGroupShape !== null) {
+					topLevelShapesAndGroups.push(cShapeOrCGroupShape);
 				}
 			}
 		}

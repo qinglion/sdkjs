@@ -2900,8 +2900,15 @@
 		/**
 	 * @constructor
 	 */
-	function Workbook(eventsHandlers, oApi){
+	function Workbook(eventsHandlers, oApi, isMainLogicDocument){
 		this.oApi = oApi;
+		this.History = History;
+		if (false !== isMainLogicDocument)
+		{
+			if (this.History)
+				this.History.Set_LogicDocument(this);
+		}
+		this.MainDocument = false !== isMainLogicDocument;
 		this.handlers = eventsHandlers;
 		this.dependencyFormulas = new DependencyGraph(this);
 		this.nActive = 0;
@@ -3027,7 +3034,16 @@
 			this.snapshot = this._getSnapshot();
 		}
 
-		g_cCalcRecursion.initCalcProperties(this.calcPr);
+		if (this.MainDocument) {
+			g_cCalcRecursion.initCalcProperties(this.calcPr);
+		}
+
+	};
+	Workbook.prototype.Get_Api = function() {
+		return this.oApi;
+	};
+	Workbook.prototype.Get_CollaborativeEditing = function() {
+		return this.oApi.collaborativeEditing
 	};
 	Workbook.prototype.addImages = function (aImages, obj) {
 		const oApi = Asc.editor;
@@ -3695,6 +3711,11 @@
 			return;
 		}
 	};
+	Workbook.prototype._SerializeHistoryItem2 = function (oMemory, item) {
+		if (!item.LocalChange) {
+			item.Serialize(oMemory, this.oApi.collaborativeEditing);
+		}
+	};
 	Workbook.prototype._SerializeHistory = function(oMemory, item, aPointChanges) {
 		let data = this._SerializeHistoryItem(oMemory, item);
 		if (data) {
@@ -3702,7 +3723,8 @@
 		}
 	};
 	Workbook.prototype.SerializeHistory = function(){
-		var aRes = [];
+		var aResData = [];
+		var aResSerializable = [];
 		//соединяем изменения, которые были до приема данных с теми, что получились после.
 
 		var t, j, length2;
@@ -3716,23 +3738,28 @@
 			var oMemory = new AscCommon.CMemory();
 			for(var i = 0, length = aActions.length; i < length; ++i)
 			{
-				var aPointChanges = aActions[i];
-				for (j = 0, length2 = aPointChanges.length; j < length2; ++j) {
-					var item = aPointChanges[j];
-					if (item.bytes) {
-						aRes.push(item.bytes);
-					} else {
-						this._SerializeHistory(oMemory, item, aRes);
+				let items = aActions[i];
+				for (j = 0, length2 = items.length; j < length2; ++j) {
+					var item = items[j];
+					// Пересчитываем позиции
+					if (item.Data && item.Data.applyCollaborative) {
+						//не делаем копию oData, а сдвигаем в ней, потому что все равно после сериализации изменения потруться
+						if (item.Data.applyCollaborative(item.SheetId, this.oApi.collaborativeEditing)) {
+							AscCommon.History.Refresh_SpreadsheetChanges(item);
+						}
 					}
+					let data = AscCommon.CCollaborativeChanges.ToBase64(item.Binary.Pos, item.Binary.Len);
+					aResData.push(data);
+					aResSerializable.push(AscCommon.History.Item_ToSerializable(item));
 				}
 			}
 			this.aCollaborativeActions = [];
 			this.snapshot = this._getSnapshot();
 		}
-		return aRes;
+		return [aResData, aResSerializable];
 	};
 	Workbook.prototype._getSnapshot = function() {
-		var wb = new Workbook(new AscCommonExcel.asc_CHandlersList(), this.oApi);
+		var wb = new Workbook(new AscCommonExcel.asc_CHandlersList(), this.oApi, false);
 		wb.dependencyFormulas = this.dependencyFormulas.getSnapshot(wb);
 		this.forEach(function (ws) {
 			ws = ws.getSnapshot(wb);
@@ -3960,6 +3987,9 @@
 			var nCurOffset = 0;
 			for (i = 0; i < length; ++i) {
 				sChange = aChanges[i];
+				if (sChange.startsWith("0;")) {
+					continue;
+				}
 				var oBinaryFileReader = new AscCommonExcel.BinaryFileReader();
 				nCurOffset = oBinaryFileReader.getbase64DecodedData2(sChange, aIndexes[i], stream, nCurOffset);
 				var item = new UndoRedoItemSerializable();
@@ -4015,7 +4045,7 @@
 			AscCommon.History.Clear();
 			AscCommon.History.TurnOff();
 			var history = new AscCommon.CHistory();
-			history.init(this);
+			history.Set_LogicDocument(this);
 			history.Create_NewPoint();
 
 			history.SetSelection(null);
@@ -4033,16 +4063,23 @@
 						if (!window["native"]["CheckNextChange"]())
 							break;
 					}
-					// TODO if(g_oUndoRedoGraphicObjects == item.oClass && item.oData.drawingData)
-					//     item.oData.drawingData.bCollaborativeChanges = true;
-					AscCommonExcel.executeInR1C1Mode(false, function () {
-						history.RedoAdd(oRedoObjectParam, item.oClass, item.nActionType, item.nSheetId, item.oRange, item.oData);
-					});
-					if (oThis.oApi.VersionHistory && item.nSheetId && item.GetChangedRange) {
-						let changedRange = item.nSheetId && item.GetChangedRange();
-						if (changedRange) {
-							oThis.oApi.wb.addToHistoryChangedRanges(item.nSheetId, changedRange, oColor);
+					if (true === oThis.oApi.collaborativeEditing.private_AddOverallChange(item))
+					{
+						// TODO if(g_oUndoRedoGraphicObjects == item.oClass && item.oData.drawingData)
+						//     item.oData.drawingData.bCollaborativeChanges = true;
+						AscCommonExcel.executeInR1C1Mode(false, function () {
+							history.RedoAdd(oRedoObjectParam, item.oClass, item.nActionType, item.nSheetId, item.oRange, item.oData, false, item);
+						});
+						if (oThis.oApi.VersionHistory && item.nSheetId && item.GetChangedRange) {
+							let changedRange = item.nSheetId && item.GetChangedRange();
+							if (changedRange) {
+								oThis.oApi.wb.addToHistoryChangedRanges(item.nSheetId, changedRange, oColor);
+							}
 						}
+
+						if (item.GetClass() && item.GetClass().SetIsRecalculated && item.IsNeedRecalculate())
+							item.GetClass().SetIsRecalculated(false);
+
 					}
 				}
 			}
@@ -4132,7 +4169,7 @@
 				item.Deserialize(stream);
 				if ((null != item.oClass || (item.oData && typeof item.oData.sChangedObjectId === "string")) && null != item.nActionType){
 					AscCommonExcel.executeInR1C1Mode(false, function () {
-						AscCommon.History.RedoAdd(oRedoObjectParam, item.oClass, item.nActionType, item.nSheetId, item.oRange, item.oData);
+						AscCommon.History.RedoAdd(oRedoObjectParam, item.oClass, item.nActionType, item.nSheetId, item.oRange, item.oData, false, item);
 					});
 				}
 
@@ -5300,7 +5337,7 @@
 				}
 			}
 		}
-		return new Workbook();
+		return new Workbook(undefined, undefined, false);
 	};
 
 	Workbook.prototype.removeExternalReferences = function (arr) {
@@ -5990,6 +6027,9 @@
 		this.activeFillType = null;
 		this.timelines = [];
 		this.changedArrays = null;
+		AscFormat.ExecuteNoHistory(function () {
+			AscCommon.g_oTableId.Add(this, this.Id);
+		}, this, [], true);
 	}
 
 	Worksheet.prototype.getCompiledStyle = function (row, col, opt_cell, opt_styleComponents) {
@@ -6843,7 +6883,7 @@
 	Worksheet.prototype._forEachCell = function(fAction) {
 		this.getRange3(0, 0, gc_nMaxRow0, gc_nMaxCol0)._foreachNoEmpty(fAction);
 	};
-	Worksheet.prototype.getId=function(){
+	Worksheet.prototype.Get_Id = Worksheet.prototype.getId=function(){
 		return this.Id;
 	};
 	Worksheet.prototype.getIndex=function(){
@@ -14417,7 +14457,7 @@
 						let sheetContainer = fOld.wb && fOld.wb.dependencyFormulas && fOld.wb.dependencyFormulas.sheetListeners && fOld.wb.dependencyFormulas.sheetListeners[wsId];
 
 						if (sheetContainer) {
-							if (Object.keys(sheetContainer.cellMap).length === 0 && Object.keys(sheetContainer.areaMap).length === 0) {
+							if (Object.keys(sheetContainer.cellMap).length === 0 && Object.keys(sheetContainer.areaMap).length === 0 && Object.keys(sheetContainer.defName3d).length === 0) {
 								hasListeners = false;
 							} else {
 								hasListeners = true;
@@ -14545,8 +14585,10 @@
 		var DataNew = null;
 		if(AscCommon.History.Is_On())
 			DataNew = this.getValueData();
-		if(AscCommon.History.Is_On() && false == DataOld.isEqual(DataNew))
+		if(AscCommon.History.Is_On() && false == DataOld.isEqual(DataNew)) {
+			// History.Add(new AscDFH.CChangesCellValueChange(this.ws, DataOld, DataNew, new AscDFH.CCellCoordsWritable(this.nRow, this.nCol)));
 			AscCommon.History.Add(AscCommonExcel.g_oUndoRedoCell, AscCH.historyitem_Cell_ChangeValue, this.ws.getId(), new Asc.Range(this.nCol, this.nRow, this.nCol, this.nRow), new UndoRedoData_CellSimpleData(this.nRow, this.nCol, DataOld, DataNew));
+		}
 		//todo не должны удаляться ссылки, если сделать merge ее части.
 		if(this.isNullTextString())
 		{
@@ -19481,11 +19523,13 @@
 			return this.worksheet.getRange3(r1, c1, r2, c2);
 		return null;
 	};
-	Range.prototype.cleanFormat=function(){
+	Range.prototype.cleanFormat=function(ignoreNoEmpty){
 		AscCommon.History.Create_NewPoint();
 		AscCommon.History.StartTransaction();
 		this.unmerge();
-		this._setPropertyNoEmpty(function(row){
+
+		let fSetProperty = ignoreNoEmpty ? this._setProperty : this._setPropertyNoEmpty;
+		fSetProperty.call(this, function(row){
 			row.setStyle(null);
 			// if(row.isEmpty())
 			// row.Remove();
@@ -19522,7 +19566,7 @@
 			});
 		History.EndTransaction();
 	};
-	Range.prototype.cleanAll=function(){
+	Range.prototype.cleanAll=function(ignoreNoEmpty){
 		AscCommon.History.Create_NewPoint();
 		AscCommon.History.StartTransaction();
 		this.unmerge();
@@ -19531,7 +19575,8 @@
 		for(var i = 0, length = aHyperlinks.inner.length; i < length; ++i)
 			this.removeHyperlink(aHyperlinks.inner[i]);
 		var oThis = this;
-		this._setPropertyNoEmpty(function(row){
+		let fSetProperty = ignoreNoEmpty ? this._setProperty : this._setPropertyNoEmpty;
+		fSetProperty.call(this, function(row){
 			row.setStyle(null);
 			// if(row.isEmpty())
 			// row.Remove();
@@ -23514,6 +23559,12 @@
 	CExternalReferenceHelper.prototype.getExternalLinkStr = function (nExternalLinkIndex, locale, isShortLink) {
 		let index = nExternalLinkIndex;
 
+		let sameFile;
+		let fileName = window["Asc"]["editor"].DocInfo && window["Asc"]["editor"].DocInfo.get_Title();
+		if (index === fileName || index == "0") {
+			sameFile = true;
+		}
+
 		let wbModel = this.wb;
 		let oExternalLink = nExternalLinkIndex && wbModel && wbModel.getExternalLinkByIndex(index - 1, true);
 
@@ -23532,6 +23583,8 @@
 			}
 		} else if (oExternalLink) {
 			res = oExternalLink;
+		} else if (sameFile) {
+			res += locale ? fileName : "[0]";
 		}
 		return res;
 	};
@@ -23539,7 +23592,7 @@
 	CExternalReferenceHelper.prototype.check3dRef = function (_3DRefTmp, local) {
 		let t = this;
 		let externalLink = _3DRefTmp[3];
-		let externalDefName, externalSheetName, receivedDefName, receivedLink, isShortLink;
+		let externalDefName, externalSheetName, receivedDefName, receivedLink, isShortLink, isCurrentFile;
 
 		// this argument contain shortLink object with full formula and two parts of it
 		let receivedShortLink = _3DRefTmp[4];
@@ -23549,6 +23602,7 @@
 			receivedLink = receivedShortLink.externalLink;
 			externalSheetName = receivedShortLink.externalLink;
 			receivedDefName = receivedShortLink.defname;
+			isCurrentFile = receivedShortLink.currentFile;
 		}
 
 		// This check of short links is performed only when opening/reading, manual input is processed differently
@@ -23560,17 +23614,29 @@
 						externalDefName = eReference.DefinedNames[i];
 						if (externalDefName.SheetId !== null) {
 							externalSheetName = eReference.SheetNames[eReference.DefinedNames[i].SheetId];
-						} else if (!externalDefName.SheetId && externalDefName.RefersTo) {
-							// parse string
-							let refString = externalDefName.RefersTo,
-								// regex to find a sheet name enclosed in single quotes
-								reg = /'([\S]+)'/gi,
-								regMatch = reg.exec(refString);
+						} 
+						else if (!externalDefName.SheetId && externalDefName.RefersTo) {
+							// RefersTo differs from the wsName and may contain several exclamation marks,
+							// so we use a condition and a regular expression to get the correct name
 
-							if (regMatch && regMatch[1]) {
-								externalSheetName = regMatch[1];
+							let refString = externalDefName.RefersTo;
+							let exclamationMarkIndex = refString.lastIndexOf("!");
+
+							refString = refString.slice(0, exclamationMarkIndex);
+							refString = refString[0] === "=" ? refString.substring(1) : refString;
+							externalSheetName = refString;
+
+							// regex to find string enclosed in single qoutes
+							let regex = /^'(.*)'$/;
+							let match = regex.exec(refString);
+							if (match && match[1]) {
+								externalSheetName = match[1];
 							} else if (refString) {
-								externalSheetName = refString.split("!")[0];
+								let externalWB = eReference.getWb();
+								let depFormulas = externalWB && externalWB.dependencyFormulas;
+								if (depFormulas && depFormulas.defNames && depFormulas.defNames.wb && depFormulas.defNames.wb[receivedDefName]) {
+									externalSheetName = refString;
+								}
 							}
 						}
 						break;
@@ -23593,7 +23659,7 @@
 
 		// we check whether sheetName is part of the document or is it a short link to external data
 		if (local && !externalLink && receivedShortLink) {
-			// если существует лист с таким же названием, ссылаемся на него, иначе создаем внешнюю ссылку(сокращенную)
+			// if there is a sheet with the same name, we link to it, otherwise we create an external link (shortened)
 			let innerSheet = t.wb.getWorksheetByName(sheetName);
 			if (!innerSheet) {
 				let eReference = t.wb.getExternalLinkByName(sheetName);
@@ -23604,20 +23670,21 @@
 							if (externalDefName.SheetId !== null) {
 								externalSheetName = eReference.SheetNames[eReference.DefinedNames[i].SheetId];
 							} else if (!externalDefName.SheetId && externalDefName.RefersTo) {
-								// parse string
-								let refString = externalDefName.RefersTo,
-									// regex to find a sheet name enclosed in single quotes
-									reg = /'([\S]+)'/gi,
-									regMatch = reg.exec(refString);
-
-								if (regMatch && regMatch[1]) {
-									externalSheetName = regMatch[1];
-								} else if (refString) {
-									let externalWB = eReference.getWb();
-									let depFormulas = externalWB && externalWB.dependencyFormulas;
-									if (depFormulas && depFormulas.defNames && depFormulas.defNames.wb && depFormulas.defNames.wb[receivedDefName]) {
-										externalSheetName = refString.split("!")[0];
-									}
+								// RefersTo differs from the wsName and may contain several exclamation marks,
+								// so we use a condition and a regular expression to get the correct name
+	
+								let refString = externalDefName.RefersTo;
+								let exclamationMarkIndex = refString.lastIndexOf("!");
+	
+								refString = refString.slice(0, exclamationMarkIndex);
+								refString = refString[0] === "=" ? refString.substring(1) : refString;
+								externalSheetName = refString;
+	
+								// regex to find string enclosed in single qoutes
+								let regex = /^'(.*)'$/;
+								let match = regex.exec(refString);
+								if (match && match[1]) {
+									externalSheetName = match[1];
 								}
 							}
 							break;
@@ -23632,7 +23699,15 @@
 			}
 		}
 
-		return {sheetName: sheetName, externalLink: externalLink, receivedLink: receivedLink, externalName: externalName, isShortLink: isShortLink};
+		return {
+			sheetName: sheetName, 
+			externalLink: externalLink, 
+			receivedLink: receivedLink, 
+			externalName: externalName, 
+			isShortLink: isCurrentFile ? true : isShortLink,
+			isCurrentFile: isCurrentFile,
+			currentFileDefname: isCurrentFile ? receivedDefName : null
+		};
 	};
 
 	// Export

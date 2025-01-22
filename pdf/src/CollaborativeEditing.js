@@ -326,6 +326,14 @@ CPDFCollaborativeEditing.prototype.Release_Locks = function() {
         }
     }
 };
+CPDFCollaborativeEditing.prototype._PreUndo = function() {
+    return this.private_SaveDocumentState()
+};
+CPDFCollaborativeEditing.prototype._PostUndo = function(state, changes) {
+    let logicDocument = this.m_oLogicDocument;
+    this.private_RestoreDocumentState(state);
+    logicDocument.History.Get_RecalcData(null, changes)
+};
 
 //--------------------------------------------------------export----------------------------------------------------
 window['AscPDF'] = window['AscPDF'] || {};

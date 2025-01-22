@@ -15527,6 +15527,19 @@
 		return "drawing";
 	};
 	/**
+	 * Returns the shape inner contents where a paragraph or text runs can be inserted if it exists.
+	 * @memberof ApiDrawing
+	 * @typeofeditors ["CDE", "CSE"]
+	 * @returns {?ApiDocumentContent}
+	 * @see office-js-api/Examples/{Editor}/ApiDrawing/Methods/GetContent.js
+	 */
+	ApiDrawing.prototype.GetContent = function()
+	{
+		if (this.Drawing && this.Drawing.textBoxContent && !this.Drawing.isForm())
+			return new ApiDocumentContent(this.Drawing.textBoxContent);
+		return null;
+	};
+	/**
 	 * Sets the size of the object (image, shape, chart) bounding box.
 	 * @memberof ApiDrawing
 	 * @typeofeditors ["CDE"]
@@ -16346,21 +16359,6 @@
 	 * @see office-js-api/Examples/{Editor}/ApiShape/Methods/GetDocContent.js
 	 */
 	ApiShape.prototype.GetDocContent = function()
-	{
-		if(this.Shape && this.Shape.textBoxContent && !this.Shape.isForm())
-		{
-			return new ApiDocumentContent(this.Shape.textBoxContent);
-		}
-		return null;
-	};
-	/**
-	 * Returns the shape inner contents where a paragraph or text runs can be inserted.
-	 * @memberof ApiShape
-	 * @typeofeditors ["CDE", "CSE"]
-	 * @returns {?ApiDocumentContent}
-	 * @see office-js-api/Examples/{Editor}/ApiShape/Methods/GetContent.js
-	 */
-	ApiShape.prototype.GetContent = function()
 	{
 		if(this.Shape && this.Shape.textBoxContent && !this.Shape.isForm())
 		{
@@ -22579,6 +22577,7 @@
 	ApiTableStylePr.prototype["ToJSON"]              = ApiTableStylePr.prototype.ToJSON;
 
 	ApiDrawing.prototype["GetClassType"]             = ApiDrawing.prototype.GetClassType;
+	ApiDrawing.prototype["GetContent"]               = ApiDrawing.prototype.GetContent;
 	ApiDrawing.prototype["SetSize"]                  = ApiDrawing.prototype.SetSize;
 	ApiDrawing.prototype["SetWrappingStyle"]         = ApiDrawing.prototype.SetWrappingStyle;
 	ApiDrawing.prototype["SetHorAlign"]              = ApiDrawing.prototype.SetHorAlign;
@@ -22618,7 +22617,6 @@
 
 	ApiShape.prototype["GetClassType"]               = ApiShape.prototype.GetClassType;
 	ApiShape.prototype["GetDocContent"]              = ApiShape.prototype.GetDocContent;
-	ApiShape.prototype["GetContent"]                 = ApiShape.prototype.GetContent;
 	ApiShape.prototype["SetVerticalTextAlign"]       = ApiShape.prototype.SetVerticalTextAlign;
 	ApiShape.prototype["SetPaddings"]                = ApiShape.prototype.SetPaddings;
 	ApiShape.prototype["GetNextShape"]               = ApiShape.prototype.GetNextShape;
@@ -22959,6 +22957,8 @@
 	window['AscBuilder'].ApiImage           = ApiImage;
 	window['AscBuilder'].ApiShape           = ApiShape;
 	window['AscBuilder'].ApiChart           = ApiChart;
+	window['AscBuilder'].ApiGroup           = ApiGroup;
+	window['AscBuilder'].ApiOleObject       = ApiOleObject;
 	window['AscBuilder'].ApiInlineLvlSdt    = ApiInlineLvlSdt;
 	window['AscBuilder'].ApiBlockLvlSdt     = ApiBlockLvlSdt;
 	window['AscBuilder'].ApiFormBase        = ApiFormBase;
@@ -23209,17 +23209,17 @@
 	function GetApiDrawing(drawing) {
         switch (drawing.getObjectType()) {
             case AscDFH.historyitem_type_Shape:
-                return new ApiShape(drawing);
+                return new AscBuilder.ApiShape(drawing);
             case AscDFH.historyitem_type_ImageShape:
-                return new ApiImage(drawing);
+                return new AscBuilder.ApiImage(drawing);
             case AscDFH.historyitem_type_GroupShape:
-                return new ApiGroup(drawing);
+                return new AscBuilder.ApiGroup(drawing);
             case AscDFH.historyitem_type_OleObject:
-                return new ApiOleObject(drawing);
+                return new AscBuilder.ApiOleObject(drawing);
             case AscDFH.historyitem_type_GraphicFrame:
-                return new ApiTable(drawing);
+                return new AscBuilder.ApiTable(drawing);
 			case AscDFH.historyitem_type_ChartSpace:
-				return new ApiChart(drawing);
+				return new AscBuilder.ApiChart(drawing);
         }
         return null;
     }

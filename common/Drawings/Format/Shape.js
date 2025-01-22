@@ -2919,16 +2919,16 @@
 					hierarchy_styles.splice(0, 0, ownStyle);
 				}
 				else if (Asc.editor.isPdfEditor()) {
-					// let oDoc		= Asc.editor.getPDFDoc();
-					// let aListStyle	= oDoc.styles.txStyles.otherStyle;
+					let oDoc		= Asc.editor.getPDFDoc();
+					let aListStyle	= oDoc.styles.txStyles.otherStyle;
 
-					// ownStyle = new CStyle("ownStyle", null, null, null, true);
-					// var own_ppt_style = aListStyle.levels[level];
-					// ownStyle.ParaPr = own_ppt_style.Copy();
-					// if (own_ppt_style.DefaultRunPr) {
-					// 	ownStyle.TextPr = own_ppt_style.DefaultRunPr.Copy();
-					// }
-					// hierarchy_styles.splice(0, 0, ownStyle);
+					ownStyle = new CStyle("ownStyle", null, null, null, true);
+					var own_ppt_style = aListStyle.levels[level];
+					ownStyle.ParaPr = own_ppt_style.Copy();
+					if (own_ppt_style.DefaultRunPr) {
+						ownStyle.TextPr = own_ppt_style.DefaultRunPr.Copy();
+					}
+					hierarchy_styles.splice(0, 0, ownStyle);
 				}
 
 				var shape_text_style;
@@ -4183,7 +4183,27 @@
 			}
 			return currentFontSize;
 		}
-
+		CShape.prototype.isCorrectSmartArtContentPoints = function () {
+			const oContent = this.txBody && this.txBody.content;
+			const contentPoints = this.getSmartArtPointContent();
+			if (contentPoints && oContent) {
+				let countPointParagraphs = 0;
+				for (let i = 0; i < contentPoints.length; i++) {
+					const node = contentPoints[i];
+					const point = node.point;
+					const oPointContent = point && point.t && point.t.content;
+					if (oPointContent) {
+						countPointParagraphs += oPointContent.Content.length;
+					}
+				}
+				return oContent.Content.length === countPointParagraphs;
+			}
+			return false;
+		};
+		CShape.prototype.correctUngeneratedSmartArtContent = function () {
+				const textAlgorithm = new AscFormat.TextAlgorithm();
+				textAlgorithm.applyContentFilling(this);
+		};
 		CShape.prototype.setFontSizeInSmartArt = function (fontSize, bSkipRecalculateContent2, isParentWithChildren) {
 			const oContent = this.txBody && this.txBody.content;
 			if (this.txBody && oContent) {

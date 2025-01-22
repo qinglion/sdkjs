@@ -291,19 +291,17 @@
 				t.sendEvent("asc_onError", Asc.c_oAscError.ID.LoadingScriptError, c_oAscError.Level.NoCritical);
 			});
 		}
-
-		var oldOnError = window.onerror;
-		window.onerror = function(errorMsg, url, lineNumber, column, errorObj) {
-			//send only first error to reduce number of requests. also following error may be consequences of first
-			window.onerror = oldOnError;
+		const sendUnhandledError  = function(errorMsg, url, lineNumber, column, stack) {
 			let editorInfo = t.getEditorErrorInfo();
 			let memoryInfo = AscCommon.getMemoryInfo();
-			var msg = 'Error: ' + errorMsg + '\n Script: ' + url + '\n Line: ' + lineNumber + ':' + column +
+			lineNumber = undefined !== lineNumber ? lineNumber : "";
+			column = undefined !== column ? column : "";
+			var msg = 'Error: ' + errorMsg + '\n Script: ' + (url || "") + '\n Line: ' + lineNumber + ':' + column +
 				'\n userAgent: ' + (navigator.userAgent || navigator.vendor || window.opera) + '\n platform: ' +
 				navigator.platform + '\n isLoadFullApi: ' + t.isLoadFullApi + '\n isDocumentLoadComplete: ' +
 				t.isDocumentLoadComplete + (editorInfo ? '\n ' + editorInfo : "") +
 				(memoryInfo ? '\n performance.memory: ' + memoryInfo : "") +
-				'\n StackTrace: ' + (errorObj ? errorObj.stack : "");
+				'\n StackTrace: ' + (stack || "");
 			AscCommon.sendClientLog("error", "changesError: " + msg, t);
 			if (t.isLoadFullApi ) {
 				if(t.isDocumentLoadComplete) {
@@ -319,6 +317,25 @@
 					t.sendEvent("asc_onError", Asc.c_oAscError.ID.ConvertationOpenError, c_oAscError.Level.Critical);
 				}
 			}
+		}
+		var oldOnunhandledrejection = window.onunhandledrejection;
+		window.onunhandledrejection = function(errorEvent) {
+			//send only first error to reduce number of requests. also following error may be consequences of first
+			window.onunhandledrejection = oldOnunhandledrejection;
+			const errorMsg = errorEvent.reason.message || errorEvent.reason;
+			const stack = errorEvent.reason.stack || "";
+			sendUnhandledError(errorMsg, undefined, undefined, undefined, stack);
+			if (oldOnunhandledrejection) {
+				return oldOnunhandledrejection.apply(this, arguments);
+			} else {
+				return false;
+			}
+		}
+		var oldOnError = window.onerror;
+		window.onerror = function(errorMsg, url, lineNumber, column, errorObj) {
+			//send only first error to reduce number of requests. also following error may be consequences of first
+			window.onerror = oldOnError;
+			sendUnhandledError(errorMsg, url, lineNumber, column, (errorObj ? errorObj.stack : ""));
 			if (oldOnError) {
 				return oldOnError.apply(this, arguments);
 			} else {
@@ -716,10 +733,6 @@
 		{
 			this.decrementCounterActionRestriction();
 		}
-	};
-	baseEditorsApi.prototype.sync_TryUndoInFastCollaborative = function()
-	{
-		this.sendEvent("asc_OnTryUndoInFastCollaborative");
 	};
 	baseEditorsApi.prototype.asc_setViewMode                 = function()
 	{
@@ -5146,6 +5159,23 @@
 	baseEditorsApi.prototype.asc_StopInkDrawer = function() {
 		this.stopInkDrawer();
 	};
+	baseEditorsApi.prototype.asc_RemoveAllInks = function() {
+		this.removeAllInks();
+	};
+	baseEditorsApi.prototype.removeAllInks = function() {
+	};
+	baseEditorsApi.prototype.asc_HaveInks = function() {
+        return this.haveInks();
+	};
+	baseEditorsApi.prototype.haveInks = function() {
+        return true;
+	};
+	baseEditorsApi.prototype.asc_CanRemoveAllInks = function() {
+        return this.canRemoveAllInks();
+	};
+	baseEditorsApi.prototype.canRemoveAllInks = function() {
+        return true;
+	};
 	baseEditorsApi.prototype.stopInkDrawer = function() {
 		this.inkDrawer.turnOff();
 	};
@@ -5475,6 +5505,9 @@
 	prot['asc_StartDrawInk'] = prot.asc_StartDrawInk;
 	prot['asc_StartInkEraser'] = prot.asc_StartInkEraser;
 	prot['asc_StopInkDrawer'] = prot.asc_StopInkDrawer;
+	prot['asc_RemoveAllInks'] = prot.asc_RemoveAllInks;
+	prot['asc_HaveInks'] = prot.asc_HaveInks;
+	prot['asc_CanRemoveAllInks'] = prot.asc_CanRemoveAllInks;
 	prot['startGetDocInfo'] = prot.startGetDocInfo;
 	prot['stopGetDocInfo'] = prot.stopGetDocInfo;
 	prot["can_CopyCut"] = prot.can_CopyCut;
