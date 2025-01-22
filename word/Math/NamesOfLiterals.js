@@ -4983,6 +4983,7 @@
 		if (oContent instanceof MathTextAndStyles)
 		{
 			this.arr.push(oContent);
+			this.Increase();
 			return this.AddPosition(this.nPos - nPosCopy);
 		}
 
