@@ -302,6 +302,22 @@
 		//to be parent of shape
 		return 0;
 	};
+	/**
+	 * @memberOf CVisioDocument
+	 * @return {number}
+	 */
+	CVisioDocument.prototype.GetFirstSelectedType = function() {
+		return -1;
+	};
+	/**
+	 * @memberOf CVisioDocument
+	 * @param nIdx
+	 * @return {number}
+	 */
+	CVisioDocument.prototype.GetSlideType = function(nIdx) {
+		//чтобы не работал select thumbnail c ctrl или shift
+		return nIdx;
+	};
 
 	/**
 	 * get zoom from 0 to 100
