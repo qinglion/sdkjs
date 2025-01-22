@@ -2931,6 +2931,11 @@ CGraphicObjects.prototype =
         var objects_for_grouping = this.canGroup(true);
         if(objects_for_grouping.length < 2)
             return;
+		
+		let anchorPara = objects_for_grouping[0].parent.Get_ParentParagraph();
+		if (!anchorPara)
+			return;
+
 		var bTrackRevisions = false;
 		if (this.document.IsTrackRevisions())
 		{
@@ -2958,11 +2963,8 @@ CGraphicObjects.prototype =
         para_drawing.setExtent(group.spPr.xfrm.extX, group.spPr.xfrm.extY);
 
         var page_index = objects_for_grouping[0].parent.pageIndex;
-        var first_paragraph = objects_for_grouping[0].parent.Get_ParentParagraph();
-        var nearest_pos = this.document.Get_NearestPos(objects_for_grouping[0].parent.pageIndex, dOffX, dOffY, true, para_drawing);
-
-        nearest_pos.Paragraph.Check_NearestPos(nearest_pos);
-
+        let anchorPos = this.document.Get_NearestPos(objects_for_grouping[0].parent.pageIndex, dOffX, dOffY, true, para_drawing);
+		
         var nPageIndex = objects_for_grouping[0].parent.pageIndex;
         for(i = 0; i < objects_for_grouping.length; ++i)
         {
@@ -2991,10 +2993,15 @@ CGraphicObjects.prototype =
                     Value       : dOffY
                 }
             }));
-        para_drawing.Set_XYForAdd(dOffX, dOffY, nearest_pos, nPageIndex);
+		
+		if (anchorPos && anchorPos.Paragraph)
+		{
+			anchorPos.Paragraph.Check_NearestPos(anchorPos);
+			para_drawing.Set_XYForAdd(dOffX, dOffY, anchorPos, nPageIndex);
+		}
 
-        para_drawing.AddToParagraph(first_paragraph);
-        para_drawing.Parent = first_paragraph;
+        para_drawing.AddToParagraph(anchorPara);
+        para_drawing.Parent = anchorPara;
         this.addGraphicObject(para_drawing);
         this.resetSelection();
         this.selectObject(group, page_index);
