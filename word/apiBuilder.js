@@ -19547,19 +19547,23 @@
 	/**
 	 * Converts the current form to a fixed size form.
 	 * @memberof ApiFormBase
-	 * @param {twips} nWidth - The wrapper shape width measured in twentieths of a point (1/1440 of an inch).
-	 * @param {twips} nHeight - The wrapper shape height measured in twentieths of a point (1/1440 of an inch).
+	 * @param {twips} width - The wrapper shape width measured in twentieths of a point (1/1440 of an inch).
+	 * @param {twips} height - The wrapper shape height measured in twentieths of a point (1/1440 of an inch).
+	 * @param {boolean} keepPosition - Save position on the page (it can be a little bit slow, because it runs the document calculation)
 	 * @typeofeditors ["CDE", "CFE"]
 	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiFormBase/Methods/ToFixed.js
 	 */
-	ApiFormBase.prototype.ToFixed = function(nWidth, nHeight)
+	ApiFormBase.prototype.ToFixed = function(width, height, keepPosition)
 	{
 		return executeNoFormLockCheck(function() {
 			if (this.IsFixed())
 				return false;
 			
-			this.Sdt.ConvertFormToFixed(private_Twips2MM(nWidth), private_Twips2MM(nHeight));
+			if (keepPosition)
+				new ApiDocument(private_GetLogicDocument()).ForceRecalculate();
+			
+			this.Sdt.ConvertFormToFixed(private_Twips2MM(width), private_Twips2MM(height));
 			return true;
 		}, this);
 	};
