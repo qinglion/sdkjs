@@ -5149,11 +5149,12 @@
 		if (oWsView && oWsView.objectRender) {
 			oDrawingsController = oWsView.objectRender.controller;
 		}
+
+		this.getWorksheet().cleanSelection();
 		AscFormat.drawingsUpdateForeignCursor(oDrawingsController, Asc.editor.wbModel.DrawingDocument, sDrawingData, UserId, Show, UserShortId);
 
 		var selectionInfo = aCursorInfo[1];
 		if (sDrawingData || !selectionInfo) {
-			this.getWorksheet().cleanSelection();
 			this.collaborativeEditing.Remove_ForeignCursor(UserId);
 			this.getWorksheet()._drawSelection();
 			return;
@@ -5183,8 +5184,7 @@
 			}
 			i += 4;
 		}
-
-		this.getWorksheet().cleanSelection();
+		
 		if (this.collaborativeEditing.Add_ForeignCursor(UserId, newCursorInfo, UserShortId)) {
 			newCursorInfo.needDrawLabel = true;
 		}
