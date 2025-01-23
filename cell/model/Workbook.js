@@ -3748,9 +3748,11 @@
 							AscCommon.History.Refresh_SpreadsheetChanges(item);
 						}
 					}
-					let data = AscCommon.CCollaborativeChanges.ToBase64(item.Binary.Pos, item.Binary.Len);
-					aResData.push(data);
-					aResSerializable.push(AscCommon.History.Item_ToSerializable(item));
+					if (!item.LocalChange) {
+						let data = AscCommon.CCollaborativeChanges.ToBase64(item.Binary.Pos, item.Binary.Len);
+						aResData.push(data);
+						aResSerializable.push(AscCommon.History.Item_ToSerializable(item));
+					}
 				}
 			}
 			this.aCollaborativeActions = [];

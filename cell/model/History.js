@@ -1155,7 +1155,7 @@ CHistory.prototype.Create_NewPoint = function()
 		}
 	}
 	//this.workbook.handlers.trigger("cleanCutData");
-	this.Add(AscCommonExcel.g_oUndoRedoCell, AscCH.historyitem_Unknown, null, null, new AscDFH.CChangesPointChange(AscCommonExcel.g_oUndoRedoCell, this.Points[this.Index], this.workbook._getSnapshot()), true);
+	this.Add(AscCommonExcel.g_oUndoRedoCell, AscCH.historyitem_Unknown, null, null, new AscDFH.CChangesPointChange(AscCommonExcel.g_oUndoRedoCell, this.Points[this.Index], this.workbook._getSnapshot()), false);
 	return true;
 };
 	/**
