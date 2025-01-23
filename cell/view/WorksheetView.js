@@ -3763,7 +3763,7 @@
 				if (!renderingSettings) {
 					renderingSettings = this.initRenderingSettings();
 				}
-				renderingSettings && renderingSettings.setCtxWidth(printPagesData.pageWidth / vector_koef);
+				renderingSettings && !renderingSettings.getCtxWidth() && renderingSettings.setCtxWidth(printPagesData.pageWidth / vector_koef);
 				renderingSettings && renderingSettings.setPageLeftOffset(printPagesData.leftFieldInPx);
 				let pageRightField = c_oAscPrintDefaultSettings.PageRightField;
 				renderingSettings && renderingSettings.setPageRightOffset(pageRightField / vector_koef);
