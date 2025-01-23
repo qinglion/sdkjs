@@ -200,8 +200,9 @@
 				let lineColorRGBA = lineUniFill.fill && lineUniFill.fill.color && lineUniFill.fill.color.color.RGBA;
 				let fillColorRGBA = fillUniFill.fill && fillUniFill.fill.color && fillUniFill.fill.color.color.RGBA;
 
+				AscFormat.CColorModifiers.prototype.RGB2HSL(255, 255, 255, backgroundColorHSL);
+				let compareWithOneColor = lineColorRGBA === undefined || fillColorRGBA === undefined;
 				if (lineColorRGBA !== undefined && fillColorRGBA !== undefined && textColorRGBA !== undefined) {
-					AscFormat.CColorModifiers.prototype.RGB2HSL(255, 255, 255, backgroundColorHSL);
 					AscFormat.CColorModifiers.prototype.RGB2HSL(lineColorRGBA.R, lineColorRGBA.G, lineColorRGBA.B, lineColorHSL);
 					AscFormat.CColorModifiers.prototype.RGB2HSL(fillColorRGBA.R, fillColorRGBA.G, fillColorRGBA.B, fillColorHSL);
 					AscFormat.CColorModifiers.prototype.RGB2HSL(textColorRGBA.R, textColorRGBA.G, textColorRGBA.B, textColorHSL);
@@ -253,6 +254,51 @@
 											textColorRGBA.B = lineColorRGBA.B;
 										} // else leave text color
 									}
+								}
+							}
+						}
+					}
+				} else if (compareWithOneColor) {
+					let compareColorRGBA = lineColorRGBA || fillColorRGBA;
+					let compareColorHSL = {H: undefined, S: undefined, L: undefined};
+					AscFormat.CColorModifiers.prototype.RGB2HSL(compareColorRGBA.R, compareColorRGBA.G, compareColorRGBA.B, compareColorHSL);
+					AscFormat.CColorModifiers.prototype.RGB2HSL(textColorRGBA.R, textColorRGBA.G, textColorRGBA.B, textColorHSL);
+
+					// covert L to percents
+					backgroundColorHSL.L = backgroundColorHSL.L / 255 * 100;
+					compareColorHSL.L = compareColorHSL.L / 255 * 100;
+					textColorHSL.L = textColorHSL.L / 255 * 100;
+
+
+					let quickStyleVariationCell = shape.getCell("QuickStyleVariation");
+					if (quickStyleVariationCell) {
+						let quickStyleVariationCellValue = Number(quickStyleVariationCell.v);
+
+						if ((quickStyleVariationCellValue & 2) === 2) {
+							// text color variation enabled (bit mask used)
+
+							// let fillPattern = shape.getCellNumberValue("FillPattern");
+							// if (fillPattern !== 0) {
+							// 	AscCommon.consoleLog("TextQuickStyleVariation for shapes with FillPattern !== 0 is disabled");
+							// 	// consider example https://disk.yandex.ru/d/2fbgXRrCBThlCw
+							// 	return;
+							// }
+
+							if (Math.abs(backgroundColorHSL.L - textColorHSL.L) < 16.66) {
+								if (backgroundColorHSL.L <= 72.92) {
+									// if background is dark set stroke to white
+									textColorRGBA.R = 255;
+									textColorRGBA.G = 255;
+									textColorRGBA.B = 255;
+								} else {
+									// return the color with the largest absolute difference in luminance from the
+									// formula evaluation of the "TextColor" and "FillColor" or "LineColor" i.e. compareColor
+									if (Math.abs(backgroundColorHSL.L - compareColorHSL.L) >
+										Math.abs(backgroundColorHSL.L - textColorHSL.L)) {
+										textColorRGBA.R = compareColorRGBA.R;
+										textColorRGBA.G = compareColorRGBA.G;
+										textColorRGBA.B = compareColorRGBA.B;
+									} // else leave text color
 								}
 							}
 						}
