@@ -12291,6 +12291,20 @@ CDocument.prototype.private_UpdateInterface = function(isSaveCurrentReviewChange
 	this.UpdateStylePanel();
 	this.UpdateNumberingPanel();
 };
+CDocument.prototype.UpdateInterfaceRangePermPr = function()
+{
+	let api = this.GetApi();
+	if (!api)
+		return;
+	
+	let pr = new Asc.RangePermProp();
+	
+	pr.editText      = this.IsPermRangeEditing(AscCommon.changestype_Paragraph_Content);
+	pr.editParagraph = this.IsPermRangeEditing(AscCommon.changestype_Paragraph_Properties);
+	pr.insertObject  = this.IsPermRangeEditing(AscCommon.changestype_Paragraph_Content);
+	
+	api.sync_RangePermPropCallback(pr);
+};
 CDocument.prototype.private_UpdateRulers = function()
 {
 	if (true === this.TurnOffInterfaceEvents)

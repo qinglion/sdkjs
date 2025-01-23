@@ -6021,7 +6021,7 @@ function (window, undefined) {
 	RangePermProp.prototype.get_canEditPara = function() {
 		return this.editParagraph;
 	};
-	RangePermProp.prototype.get_canInsertObject = function() {
+	RangePermProp.prototype.get_canInsObject = function() {
 		return this.insertObject;
 	};
 
@@ -7057,7 +7057,7 @@ function (window, undefined) {
 	prot = RangePermProp.prototype;
 	prot["get_canEditText"] = prot.get_canEditText;
 	prot["get_canEditPara"] = prot.get_canEditPara;
-	prot["get_canInsertObject"] = prot.get_canInsertObject;
+	prot["get_canInsObject"] = prot.get_canInsObject;
 	
 	window["AscCommon"]["pix2mm"] = window["AscCommon"].pix2mm = function(pix)
 	{
