@@ -12293,6 +12293,9 @@ CDocument.prototype.private_UpdateInterface = function(isSaveCurrentReviewChange
 };
 CDocument.prototype.UpdateInterfaceRangePermPr = function()
 {
+	if (!this.IsViewModeInEditor() && !this.IsEditCommentsMode())
+		return;
+	
 	let api = this.GetApi();
 	if (!api)
 		return;
