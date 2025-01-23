@@ -2637,6 +2637,9 @@ Paragraph.prototype.FindLineBreakInLongWord = function(nWidth, oLineStartPos, oC
 	let nLastPos       = arrPositions.length - 1;
 	while (nLastPos > 0)
 	{
+		if (arrItems[nLastPos] instanceof CMathText)
+			return oCurPos;
+
 		// TODO: Возможно здесь проверку стоит изменить (или дополнить) на проверку может ли символ находится
 		//       в начале строки и может ли предыдущий находится в конце строки
 		while (arrItems[nLastPos].IsCombiningMark() && nLastPos > 0)
