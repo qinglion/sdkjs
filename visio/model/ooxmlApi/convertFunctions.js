@@ -1946,12 +1946,6 @@
 				groupShape.pen = cShapeOrCGroupShape.pen;
 				groupShape.Id = cShapeOrCGroupShape.Id + "_Group";
 
-				groupShape.addToSpTree(groupShape.spTree.length, cShapeOrCGroupShape);
-				groupShape.spTree[groupShape.spTree.length - 1].setGroup(groupShape);
-
-				cShapeOrCGroupShape.spPr.xfrm.setOffX(0);
-				cShapeOrCGroupShape.spPr.xfrm.setOffY(0);
-
 				// cShape.setLocks(1)?;
 
 				groupShape.setParent2(visioDocument);
@@ -1974,14 +1968,6 @@
 					currentGroupHandling.spTree[currentGroupHandling.spTree.length - 1].setGroup(currentGroupHandling);
 					groupShape.recalculateLocalTransform(groupShape.transform);
 
-
-					// delete bcs textCShape is always null see toGeometryAndTextCShapes
-					// if (cShapes.textCShape !== null) {
-					// 	currentGroupHandling.addToSpTree(currentGroupHandling.spTree.length, cShapes.textCShape);
-					// 	currentGroupHandling.spTree[currentGroupHandling.spTree.length - 1].setGroup(currentGroupHandling);
-					// 	// cShapes.textCShape.recalculateLocalTransform(cShapes.textCShape.transform); // exists below
-					// }
-
 					currentGroupHandling = groupShape;
 					let subShapes = this.getSubshapes();
 					for (let i = 0; i < subShapes.length; i++) {
@@ -1989,21 +1975,20 @@
 						subShape.convertGroup(visioDocument, pageInfo, drawingPageScale, currentGroupHandling);
 					}
 				}
+
+				// add group own geometry and text to bottom of spTree bcs so it will be brought to top on drawing
+				groupShape.addToSpTree(groupShape.spTree.length, cShapeOrCGroupShape);
+				groupShape.spTree[groupShape.spTree.length - 1].setGroup(groupShape);
+
+				cShapeOrCGroupShape.spPr.xfrm.setOffX(0);
+				cShapeOrCGroupShape.spPr.xfrm.setOffY(0);
+
 				// recalculate positions to local (group) coordinates
 				cShapeOrCGroupShape.recalculateLocalTransform(cShapeOrCGroupShape.transform);
 				// cShapes.geometryCShape.recalculateTransformText();
 				// cShapes.geometryCShape.recalculateContent();
 				// cShapes.geometryCShape.recalculate(); // doesnt work here
 			}
-
-			// 	delete bcs textCShape is always null see toGeometryAndTextCShapes
-			// if (cShapes.textCShape !== null) {
-			// 	// even if not add textCShape to currentGroupHandling above do recalculate just in case
-			// 	cShapes.textCShape.recalculateLocalTransform(cShapes.textCShape.transform);
-			// 	cShapes.textCShape.recalculateTransformText();
-			// 	cShapes.textCShape.recalculateContent();
-			// }
-
 		} else {
 			// if read cShape not CGroupShape
 			if (!currentGroupHandling) {
