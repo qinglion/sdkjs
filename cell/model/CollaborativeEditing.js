@@ -1076,7 +1076,7 @@
 
 		AscCommon.CCollaborativeHistory.prototype.saveChanges = function(changesToSend)
 		{
-			this.CoEditing.sendChanges(false, false, changesToSend);
+			this.CoEditing.sendChanges(false, true, changesToSend);
 		};
 
 		/**
