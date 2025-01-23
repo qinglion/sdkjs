@@ -831,8 +831,9 @@
 			let oThis = this;
 			if (this.scheduledRepaintTimer == null) {
 				this.scheduledRepaintTimer = setTimeout(function() {
-					oThis.isRepaint = true;
-	
+					oThis.scheduledRepaintTimer = null;
+					oThis.isRepaint = false;
+
 					oThis.onRepaintFormsCallbacks.forEach(function(callback) {
 						callback();
 					});
@@ -845,7 +846,7 @@
 					if (oThis.Api && oThis.Api.printPreview)
 						oThis.Api.printPreview.update();
 
-					oThis.scheduledRepaintTimer = null;
+					oThis.isRepaint = true;
 				});
 			}
 			
