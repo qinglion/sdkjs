@@ -12277,6 +12277,7 @@ CDocument.prototype.private_UpdateInterface = function(isSaveCurrentReviewChange
 	// Уберем из интерфейса записи о том где мы находимся (параграф, таблица, картинка или колонтитул)
 	oApi.ClearPropObjCallback();
 
+	this.UpdateInterfaceRangePermPr();
 	this.Controller.UpdateInterfaceState();
 
 	// Сообщаем, что список составлен

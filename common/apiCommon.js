@@ -2722,7 +2722,6 @@ function (window, undefined) {
 			this.CanEditBlockCC = undefined !== obj.CanEditBlockCC ? obj.CanEditBlockCC : true;
 			this.CanDeleteInlineCC = undefined !== obj.CanDeleteInlineCC ? obj.CanDeleteInlineCC : true;
 			this.CanEditInlineCC = undefined !== obj.CanEditInlineCC ? obj.CanEditInlineCC : true;
-
 		}
 		else {
 			//ContextualSpacing : false,            // Удалять ли интервал между параграфами одинакового стиля
@@ -6001,6 +6000,30 @@ function (window, undefined) {
 	CDocInfoProp.prototype.put_SymbolsWSCount = function (v) {
 		this.SymbolsWSCount = v;
 	};
+	
+	/**
+	 * @constructor
+	 */
+	function RangePermProp(obj) {
+		if (obj) {
+			this.editText      = undefined !== obj.editText ? obj.editText : true;
+			this.editParagraph = undefined !== obj.editParagraph ? obj.editParagraph : true;
+			this.insertObject  = undefined !== obj.insertObject ? obj.insertObject : true;
+		} else {
+			this.editText      = true;
+			this.editParagraph = true;
+			this.insertObject  = true;
+		}
+	}
+	RangePermProp.prototype.get_canEditText = function() {
+		return this.editText;
+	};
+	RangePermProp.prototype.get_canEditPara = function() {
+		return this.editParagraph;
+	};
+	RangePermProp.prototype.get_canInsertObject = function() {
+		return this.insertObject;
+	};
 
 	/*
 	 * Export
@@ -7029,6 +7052,12 @@ function (window, undefined) {
 	CDocInfoProp.prototype['put_SymbolsCount'] = CDocInfoProp.prototype.put_SymbolsCount;
 	CDocInfoProp.prototype['get_SymbolsWSCount'] = CDocInfoProp.prototype.get_SymbolsWSCount;
 	CDocInfoProp.prototype['put_SymbolsWSCount'] = CDocInfoProp.prototype.put_SymbolsWSCount;
+	
+	window["Asc"]["RangePermProp"] = window["Asc"].RangePermProp = RangePermProp;
+	prot = RangePermProp.prototype;
+	prot["get_canEditText"] = prot.get_canEditText;
+	prot["get_canEditPara"] = prot.get_canEditPara;
+	prot["get_canInsertObject"] = prot.get_canInsertObject;
 	
 	window["AscCommon"]["pix2mm"] = window["AscCommon"].pix2mm = function(pix)
 	{

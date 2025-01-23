@@ -2501,6 +2501,20 @@ CDocumentContentBase.prototype.UpdateInterfaceParaPr = function()
 
 	api.UpdateParagraphProp(paraPr);
 };
+CDocumentContentBase.prototype.UpdateInterfaceRangePermPr = function()
+{
+	let api = this.GetApi();
+	if (!api)
+		return;
+	
+	let pr = new Asc.RangePermProp();
+	
+	pr.editText = true;
+	pr.editParagraph = true;
+	pr.insertObject = true;
+	
+	api.sync_RangePermPropCallback(pr);
+};
 CDocumentContentBase.prototype.CanAddDropCap = function()
 {
 	return false;
