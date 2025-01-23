@@ -1880,7 +1880,12 @@ var CPresentation = CPresentation || function(){};
     };
     CPDFDoc.prototype.OnMouseUp = function(x, y, e) {
         let oViewer = this.Viewer;
+        let oDoc = this;
+
         if (!oViewer.canInteract()) {
+            oViewer.scheduleRepaint(function() {
+                oDoc.OnMouseUp(x, y, e);
+            });
             return;
         }
         
