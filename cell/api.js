@@ -1066,12 +1066,22 @@ var editor;
 		this.wb.undo();
 		this.wb.restoreFocus();
 	};
-	spreadsheet_api.prototype.Undo = spreadsheet_api.prototype.asc_Redo = function () {
+	spreadsheet_api.prototype.Redo = spreadsheet_api.prototype.asc_Redo = function () {
 		if (!this.canUndoRedoByRestrictions()) {
 			return;
 		}
 		this.wb.redo();
 		this.wb.restoreFocus();
+	};
+
+	spreadsheet_api.prototype.asc_getCanUndo = function () {
+		let bCanUndo = History.Can_Undo();
+
+		if (true !== bCanUndo && this.collaborativeEditing && true === this.collaborativeEditing.Is_Fast() && true !== this.collaborativeEditing.Is_SingleUser()) {
+			bCanUndo = this.collaborativeEditing.CanUndo();
+		}
+
+		return bCanUndo;
 	};
 
   spreadsheet_api.prototype.asc_Resize = function () {
