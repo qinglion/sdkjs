@@ -910,6 +910,9 @@
 	CVisioDocument.prototype.Set_FastCollaborativeEditing = function (isOn) {
 		//todo
 	};
+	CVisioDocument.prototype.shiftSlides = function (pos, array, bCopy) {
+		//todo
+	};
 	// CVisioDocument.prototype.getMasterByID = function(ID) {
 	// 	// join Master_Type and MasterContents_Type
 	// 	let masterFromMastersArray = this.masters.master;
