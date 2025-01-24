@@ -35,7 +35,7 @@
 window['AscFonts'] = window['AscFonts'] || {};
 var AscFonts = window['AscFonts'];
 
-var g_native_engine = null;
+var g_native_engine = CreateEmbedObject("CTextMeasurerEmbed");
 
 function CReturnObject()
 {
@@ -235,7 +235,5 @@ AscFonts.Hyphen_Word = function(lang, word)
 
 AscFonts.onLoadModule();
 AscFonts.onLoadModule();
-
-window["InitNativeTextMeasurer"] = function() { g_native_engine = CreateEmbedObject("CTextMeasurerEmbed"); };
 
 })(window, undefined);
