@@ -281,7 +281,7 @@
     CAnnotationBase.prototype.SetWasChanged = function(isChanged) {
         let oViewer = Asc.editor.getDocumentRenderer();
         let oDoc = Asc.editor.getPDFDoc();
-        let canChange = !oViewer.IsOpenAnnotsInProgress && !oDoc.History.UndoRedoInProgress;
+        let canChange = !oViewer.IsOpenAnnotsInProgress && oDoc.History.CanAddChanges();
         if (this._wasChanged == isChanged || !canChange) {
             return;
         }
