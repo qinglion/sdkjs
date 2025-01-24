@@ -13443,11 +13443,19 @@ CDocument.prototype.IsCursorInHyperlink = function(bCheckEnd)
  * @param [isIgnoreCanEditFlag=false]
  * @param [checkType=undefined]
  * @param [additionalData=undefined]
+ * @param [sendEvent=false]
  * @returns {boolean}
  */
-CDocument.prototype.CanPerformAction = function(isIgnoreCanEditFlag, checkType, additionalData)
+CDocument.prototype.CanPerformAction = function(isIgnoreCanEditFlag, checkType, additionalData, sendEvent)
 {
-	return (this.IsPermRangeEditing(checkType, additionalData) || !((!this.CanEdit() && true !== isIgnoreCanEditFlag) || (true === this.CollaborativeEditing.Get_GlobalLock())));
+	let isPermRange = this.IsPermRangeEditing(checkType, additionalData);
+	if (sendEvent)
+	{
+		if (!isPermRange && this.IsNeedNotificationOnEditProtectedRange(checkType, additionalData))
+			this.sendEvent("asc_onError", c_oAscError.ID.EditProtectedRange, c_oAscError.Level.NoCritical);
+	}
+	
+	return (isPermRange || !((!this.CanEdit() && true !== isIgnoreCanEditFlag) || (true === this.CollaborativeEditing.Get_GlobalLock())));
 };
 /**
  * Проверяем, что действие с заданным типом произойдет в разрешенной области
@@ -13550,6 +13558,12 @@ CDocument.prototype.IsPermRangeEditing = function(changesType, additionalData)
 	
 	return true;
 };
+CDocument.prototype.IsNeedNotificationOnEditProtectedRange = function(changesType, additionalData)
+{
+	return (AscCommon.changestype_Document_SectPr === changesType
+		|| AscCommon.changestype_Document_Settings === changesType
+		|| AscCommon.changestype_HdrFtr === changesType);
+};
 CDocument.prototype._checkActionForPermRange = function(changesType, additionalData)
 {
 	if (undefined === changesType || (AscCommon.changestype_None === changesType && undefined === additionalData))
@@ -13631,7 +13645,7 @@ CDocument.prototype.Document_Is_SelectionLocked = function(CheckType, Additional
 	if (this.IsActionStarted() && this.IsPostActionLockCheck())
 		return false;
 	
-	if (!this.CanPerformAction(isIgnoreCanEditFlag, CheckType, AdditionalData))
+	if (!this.CanPerformAction(isIgnoreCanEditFlag, CheckType, AdditionalData, true))
 	{
 		if (fCallback)
 			fCallback(true);
