@@ -279,12 +279,17 @@
         return this._origPage;
     };
     CAnnotationBase.prototype.SetWasChanged = function(isChanged) {
-        let oViewer = editor.getDocumentRenderer();
-
-        if (this._wasChanged !== isChanged && oViewer.IsOpenAnnotsInProgress == false) {
-            this._wasChanged = isChanged;
-            this.SetDrawFromStream(!isChanged);
+        let oViewer = Asc.editor.getDocumentRenderer();
+        let oDoc = Asc.editor.getPDFDoc();
+        let canChange = !oViewer.IsOpenAnnotsInProgress && !oDoc.History.UndoRedoInProgress;
+        if (this._wasChanged == isChanged || !canChange) {
+            return;
         }
+
+        oDoc.History.Add(new CChangesPDFAnnotChanged(this, this._wasChanged, isChanged));
+
+        this._wasChanged = isChanged;
+        this.SetDrawFromStream(!isChanged);
     };
     CAnnotationBase.prototype.IsChanged = function() {
         return this._wasChanged;  
