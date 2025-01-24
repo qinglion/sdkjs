@@ -2406,7 +2406,8 @@ CT_PivotCacheRecords.prototype._getDataMapTotal = function(rowMap, index, length
 	for (i in rowMap.vals) {
 		if (rowMap.vals.hasOwnProperty(i)) {
 			this._getDataMapTotal(rowMap.vals[i], index + 1, length);
-			rowMap.unionTotal(rowMap.vals[i], rowMap.vals[i].isCalculated);
+			const isCalculated = !!(rowMap.isCalculated * rowMap.vals[i].isCalculated);
+			rowMap.unionTotal(rowMap.vals[i], isCalculated);
 		}
 	}
 };
