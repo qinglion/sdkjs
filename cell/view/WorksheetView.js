@@ -13173,6 +13173,7 @@
 
         // Получаем гиперссылку (//ToDo)
         var ar = selectionRange.getLast().clone();
+		let isOneColSelected = Math.abs(ar.c2 - ar.c1) + 1;
         var range = this.model.getRange3(ar.r1, ar.c1, ar.r2, ar.c2);
         var hyperlink = range.getHyperlink();
         var oHyperlink;
@@ -13256,7 +13257,7 @@
 			cell_info.isLockedHeaderFooter = true;
 		}
 
-		cell_info.selectedColsCount = Math.abs(ar.c2 - ar.c1) + 1;
+		cell_info.selectedColsCount = isOneColSelected;
 
         return cell_info;
 	};
