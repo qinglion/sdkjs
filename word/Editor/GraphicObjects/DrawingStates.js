@@ -828,11 +828,6 @@ RotateState.prototype =
                                 let oAnnot  = oTrack.originalObject;
                                 let aRect   = [bounds.posX * g_dKoef_mm_to_pt, bounds.posY * g_dKoef_mm_to_pt, (bounds.posX + bounds.extX) * g_dKoef_mm_to_pt, (bounds.posY + bounds.extY) * g_dKoef_mm_to_pt];
                                 
-                                if (oTrack.originalFlipV != oTrack.resizedflipV)
-                                    oDoc.History.Add(new CChangesPDFInkFlipV(oAnnot, oTrack.originalFlipV, oTrack.resizedflipV));
-                                if (oTrack.originalFlipH != oTrack.resizedflipH)
-                                    oDoc.History.Add(new CChangesPDFInkFlipH(oAnnot, oTrack.originalFlipH, oTrack.resizedflipH));
-    
                                 if (oAnnot.IsLine()) {
                                     
                                     let aPaths = oTrack.geometry.pathLst[0].ArrPathCommand;
@@ -871,10 +866,10 @@ RotateState.prototype =
                                     // расширяем рект на ширину линии (или на радиус cloud бордера)
                                     let nLineWidth = oAnnot.GetWidth();
                                     if (oAnnot.GetBorderEffectStyle() === AscPDF.BORDER_EFFECT_STYLES.Cloud) {
-                                        aRect[0] -= oAnnot.GetBorderEffectIntensity() * 2 * g_dKoef_mm_to_pt;
-                                        aRect[1] -= oAnnot.GetBorderEffectIntensity() * 2 * g_dKoef_mm_to_pt;
-                                        aRect[2] += oAnnot.GetBorderEffectIntensity() * 2 * g_dKoef_mm_to_pt;
-                                        aRect[3] += oAnnot.GetBorderEffectIntensity() * 2 * g_dKoef_mm_to_pt;
+                                        aRect[0] -= oAnnot.GetBorderEffectIntensity() * nLineWidth / 4 * g_dKoef_mm_to_pt;
+                                        aRect[1] -= oAnnot.GetBorderEffectIntensity() * nLineWidth / 4 * g_dKoef_mm_to_pt;
+                                        aRect[2] += oAnnot.GetBorderEffectIntensity() * nLineWidth / 4 * g_dKoef_mm_to_pt;
+                                        aRect[3] += oAnnot.GetBorderEffectIntensity() * nLineWidth / 4 * g_dKoef_mm_to_pt;
                                     }
                                     else {
                                         aRect[0] -= nLineWidth;
@@ -1744,6 +1739,7 @@ MoveInGroupState.prototype =
                 this.drawingObjects.document.FinalizeAction();
             }
             else {
+                let oDoc = Asc.editor.getPDFDoc();
                 let oViewer = Asc.editor.getDocumentRenderer();
 
                 let xMin;
@@ -1802,10 +1798,10 @@ MoveInGroupState.prototype =
                     // расширяем рект на ширину линии (или на радиус cloud бордера)
                     let nLineWidth = oFreeText.GetWidth();
                     if (oFreeText.GetBorderEffectStyle() === AscPDF.BORDER_EFFECT_STYLES.Cloud) {
-                        aNewTextBoxRect[0] -= oFreeText.GetBorderEffectIntensity() * 1.5 * g_dKoef_mm_to_pt;
-                        aNewTextBoxRect[1] -= oFreeText.GetBorderEffectIntensity() * 1.5 * g_dKoef_mm_to_pt;
-                        aNewTextBoxRect[2] += oFreeText.GetBorderEffectIntensity() * 1.5 * g_dKoef_mm_to_pt;
-                        aNewTextBoxRect[3] += oFreeText.GetBorderEffectIntensity() * 1.5 * g_dKoef_mm_to_pt;
+                        aNewTextBoxRect[0] -= oFreeText.GetBorderEffectIntensity() * nLineWidth / 4 * g_dKoef_mm_to_pt;
+                        aNewTextBoxRect[1] -= oFreeText.GetBorderEffectIntensity() * nLineWidth / 4 * g_dKoef_mm_to_pt;
+                        aNewTextBoxRect[2] += oFreeText.GetBorderEffectIntensity() * nLineWidth / 4 * g_dKoef_mm_to_pt;
+                        aNewTextBoxRect[3] += oFreeText.GetBorderEffectIntensity() * nLineWidth / 4 * g_dKoef_mm_to_pt;
                     }
                     else {
                         aNewTextBoxRect[0] -= nLineWidth;
@@ -1935,10 +1931,10 @@ MoveInGroupState.prototype =
                     // расширяем рект на ширину линии (или на радиус cloud бордера)
                     let nLineWidth = oFreeText.GetWidth();
                     if (oFreeText.GetBorderEffectStyle() === AscPDF.BORDER_EFFECT_STYLES.Cloud) {
-                        aNewTextBoxRect[0] -= oFreeText.GetBorderEffectIntensity() * 1.5 * g_dKoef_mm_to_pt;
-                        aNewTextBoxRect[1] -= oFreeText.GetBorderEffectIntensity() * 1.5 * g_dKoef_mm_to_pt;
-                        aNewTextBoxRect[2] += oFreeText.GetBorderEffectIntensity() * 1.5 * g_dKoef_mm_to_pt;
-                        aNewTextBoxRect[3] += oFreeText.GetBorderEffectIntensity() * 1.5 * g_dKoef_mm_to_pt;
+                        aNewTextBoxRect[0] -= oFreeText.GetBorderEffectIntensity() * nLineWidth / 4 * g_dKoef_mm_to_pt;
+                        aNewTextBoxRect[1] -= oFreeText.GetBorderEffectIntensity() * nLineWidth / 4 * g_dKoef_mm_to_pt;
+                        aNewTextBoxRect[2] += oFreeText.GetBorderEffectIntensity() * nLineWidth / 4 * g_dKoef_mm_to_pt;
+                        aNewTextBoxRect[3] += oFreeText.GetBorderEffectIntensity() * nLineWidth / 4 * g_dKoef_mm_to_pt;
                     }
                     else {
                         aNewTextBoxRect[0] -= nLineWidth;
@@ -1970,6 +1966,7 @@ MoveInGroupState.prototype =
                 oFreeText.SetRect(aNewRect);
                 oFreeText.onAfterMove();
                 oViewer.DrawingObjects.drawingObjects.length = 0;
+                oDoc.FinalizeAction();
             }
         }
         if (isPdf) {
