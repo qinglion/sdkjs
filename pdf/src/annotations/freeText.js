@@ -1540,7 +1540,7 @@
 		}, undefined, this);
 
         this.SetNeedRecalc(true);
-        this.SetWasChanged(true);
+        this.SetWasChanged(true, false);
     };
 
     // shape methods
