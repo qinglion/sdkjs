@@ -15405,6 +15405,24 @@
 		return nCellIndex === nCompareCellIndex && sWsName === sCompareWsName;
 	};
 	/**
+	 * Checks cell contains in formula.
+	 * @memberof Cell
+	 * @returns {boolean}
+	 */
+	Cell.prototype.containInFormula = function () {
+		const oThis = this;
+		const aOutStack = this.getFormulaParsed().outStack;
+		let bContainsInFormula = false;
+		_foreachRefElements(function (oRange) {
+			if (oRange.containCell2(oThis)) {
+				bContainsInFormula = true;
+				return true;
+			}
+		}, aOutStack);
+
+		return bContainsInFormula;
+	};
+	/**
 	 * Method finds a start cell index of recursion formula.
 	 * Uses for only with enabled iterative calculations setting.
 	 * @param {Cell} [oPrevCell] - Previous cell in recursion.
@@ -15436,8 +15454,9 @@
 		oFirstCell = oFirstCell || this;
 		let nFirstCellIndex = getCellIndex(oFirstCell.nRow, oFirstCell.nCol);
 		aPassedCells = aPassedCells || [];
+		let bBreakFunction = false
 		_foreachListeners(function (oListenerCell, oThis) {
-			if (oThis.compareCellIndex(oListenerCell)) {
+			if (oThis.compareCellIndex(oListenerCell) && oThis.containInFormula()) {
 				g_cCalcRecursion.setStartCellIndex({cellId: nCellIndex, wsName: oThis.ws.getName().toLowerCase()});
 				g_cCalcRecursion.resetRecursionCounter();
 				return true;
@@ -15453,7 +15472,7 @@
 				}
 				g_cCalcRecursion.resetRecursionCounter();
 				return true;
-			} else if (oFirstCell.compareCellIndex(oListenerCell)) {
+			} else if (oFirstCell.compareCellIndex(oListenerCell) && g_cCalcRecursion.getRecursionCounter() > 0) {
 				g_cCalcRecursion.setStartCellIndex({cellId: nFirstCellIndex, wsName: oFirstCell.ws.getName().toLowerCase()});
 				g_cCalcRecursion.resetRecursionCounter();
 				return true;
@@ -15462,6 +15481,11 @@
 				oWs._getCell(oListenerCell.nRow, oListenerCell.nCol, function (oCell) {
 					oCellFromListener = oCell;
 				});
+				if (oCellFromListener.compareCellIndex(oThis)) {
+					g_cCalcRecursion.resetRecursionCounter();
+					bBreakFunction = true;
+					return;
+				}
 				let bPassedCell = aPassedCells.some(function (oPassedCell) {
 					let nPassedCellIndex = getCellIndex(oPassedCell.nRow, oPassedCell.nCol);
 					let nCellIndex = getCellIndex(oCellFromListener.nRow, oCellFromListener.nCol);
@@ -15480,7 +15504,7 @@
 				}
 			}
 		}, this, oListeners);
-		if (!g_cCalcRecursion.getStartCellIndex()) {
+		if (!g_cCalcRecursion.getStartCellIndex() && !bBreakFunction) {
 			let oTableStructOperand = oParserFormula && oParserFormula.outStack.find(function (oOperand) {
 				return oOperand.type === cElementType.table;
 			});
@@ -15543,10 +15567,17 @@
 		}
 		let nLastIndex = aRefElements.length - 1;
 		for (let i = 0; i < aRefElements.length; i++) {
-			let oRefElement = aRefElements[i];
-			let nRefType = oRefElement.type;
+			const oRefElement = aRefElements[i];
+			const nRefType = oRefElement.type;
+			const b3D = nRefType === cElementType.cell3D || nRefType === cElementType.cellsRange3D;
+			const bArea = nRefType === cElementType.cellsRange;
+			const bDefName = nRefType === cElementType.name || nRefType === cElementType.name3D;
+			const bTable = nRefType === cElementType.table;
 			let oRange = null;
 
+			if (nRefType !== cElementType.cell && !b3D && !bArea && !bDefName && !bTable) {
+				continue;
+			}
 			if (nRefType === cElementType.name || nRefType === cElementType.name3D) {
 				const oElemValue = oRefElement.getValue();
 				const oElemType = oElemValue.type;
