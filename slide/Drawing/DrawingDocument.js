@@ -5119,7 +5119,7 @@ function CThumbnailsManager(editorPage)
 		if (!scrollApi) return;
 
 		let startCoord, endCoord, visibleAreaSize, scrollTo, scrollBy;
-		if (this.m_oWordControl.isHorizontalThumbnails) {
+		if (this.m_oWordControl.thumbnailsPosition === 'bottom') {
 			startCoord = this.m_arrPages[pageNum].left - this.const_border_w;
 			endCoord = this.m_arrPages[pageNum].right + this.const_border_w;
 			visibleAreaSize = this.m_oWordControl.m_oThumbnails.HtmlElement.width;
