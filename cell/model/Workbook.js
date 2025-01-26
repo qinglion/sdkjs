@@ -3398,7 +3398,14 @@
 
 			this._insertWorksheetFormula(indexTo);
 
-			AscCommon.History.Add(AscCommonExcel.g_oUndoRedoWorkbook, AscCH.historyitem_Workbook_SheetMove, null, null, new UndoRedoData_FromTo(indexFrom, indexTo));
+			if (!AscCommon.g_oTableId.Get_ById(oWsFrom.getId())) {
+				//todo add in constructor with history
+				AscFormat.ExecuteNoHistory(function () {
+					AscCommon.g_oTableId.Add(oWsFrom, oWsFrom.getId())
+				}, this, [], true);
+			}
+			AscCommon.History.Add(AscCommonExcel.g_oUndoRedoWorkbook, AscCH.historyitem_Workbook_SheetRemove, null, null, new AscCommonExcel.UndoRedoData_SheetRemove(indexFrom, oWsFrom.getId(), oWsFrom));
+			AscCommon.History.Add(AscCommonExcel.g_oUndoRedoWorkbook, AscCH.historyitem_Workbook_SheetAdd, null, null, new UndoRedoData_SheetAdd(indexTo, oWsFrom.getName(), null, oWsFrom.getId(), null, oWsFrom, oWsFrom.getId()));
 			this.dependencyFormulas.unlockRecal();
 
 			if (!this.bUndoChanges && !this.bRedoChanges) {
@@ -3468,6 +3475,12 @@
 				oVisibleWs = this.findSheetNoHidden(nIndex);
 				if (null != oVisibleWs)
 					wsActive = oVisibleWs;
+			}
+			if (!AscCommon.g_oTableId.Get_ById(removedSheet.getId())) {
+				//todo add in constructor with history
+				AscFormat.ExecuteNoHistory(function () {
+					AscCommon.g_oTableId.Add(removedSheet, removedSheet.getId())
+				}, this, [], true);
 			}
 			AscCommon.History.Add(AscCommonExcel.g_oUndoRedoWorkbook, AscCH.historyitem_Workbook_SheetRemove, null, null, new AscCommonExcel.UndoRedoData_SheetRemove(nIndex, removedSheetId, removedSheet));
 			if (null != oVisibleWs) {
@@ -5914,7 +5927,7 @@
 		this.bHidden = false;
 		this.oSheetFormatPr = new AscCommonExcel.SheetFormatPr();
 		this.index = _index;
-		this.Id = null != sId ? sId : AscCommon.g_oIdCounter.Get_NewId();
+		this.Id = null != sId ? sId : AscCommon.g_oIdCounter.Get_NewId();//todo AscCommon.g_oTableId.Add
 		this.nRowsCount = 0;
 		this.nColsCount = 0;
 		this.rowsData = new SheetMemory(AscCommonExcel.g_nRowStructSize, gc_nMaxRow0);
@@ -6046,9 +6059,6 @@
 		this.activeFillType = null;
 		this.timelines = [];
 		this.changedArrays = null;
-		AscFormat.ExecuteNoHistory(function () {
-			AscCommon.g_oTableId.Add(this, this.Id);
-		}, this, [], true);
 	}
 
 	Worksheet.prototype.getCompiledStyle = function (row, col, opt_cell, opt_styleComponents) {
@@ -14605,7 +14615,6 @@
 		if(AscCommon.History.Is_On())
 			DataNew = this.getValueData();
 		if(AscCommon.History.Is_On() && false == DataOld.isEqual(DataNew)) {
-			// History.Add(new AscDFH.CChangesCellValueChange(this.ws, DataOld, DataNew, new AscDFH.CCellCoordsWritable(this.nRow, this.nCol)));
 			AscCommon.History.Add(AscCommonExcel.g_oUndoRedoCell, AscCH.historyitem_Cell_ChangeValue, this.ws.getId(), new Asc.Range(this.nCol, this.nRow, this.nCol, this.nRow), new UndoRedoData_CellSimpleData(this.nRow, this.nCol, DataOld, DataNew));
 		}
 		//todo не должны удаляться ссылки, если сделать merge ее части.
