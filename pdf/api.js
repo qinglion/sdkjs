@@ -925,7 +925,18 @@
 
 		this.sendEvent("asc_onHyperlinkClick", Url);
 	};
+	PDFEditorApi.prototype.add_Hyperlink = function(HyperProps) {
+		let oDoc = this.getPDFDoc();
 
+		if (null != HyperProps.Text) {
+			AscFonts.FontPickerByCharacter.checkText(HyperProps.Text, this, function() {
+				oDoc.AddHyperlink(HyperProps);
+			});
+		}
+		else {
+			oDoc.AddHyperlink(HyperProps);
+		}
+	};
 	PDFEditorApi.prototype.sync_VerticalTextAlign = function(align) {
 		this.sendEvent("asc_onVerticalTextAlign", align);
 	};
@@ -3114,6 +3125,7 @@
 	PDFEditorApi.prototype['remove_Hyperlink']						= PDFEditorApi.prototype.remove_Hyperlink;
 	PDFEditorApi.prototype['change_Hyperlink']						= PDFEditorApi.prototype.change_Hyperlink;
 	PDFEditorApi.prototype['sync_HyperlinkClickCallback']			= PDFEditorApi.prototype.sync_HyperlinkClickCallback;
+	PDFEditorApi.prototype['add_Hyperlink']							= PDFEditorApi.prototype.add_Hyperlink;
 	PDFEditorApi.prototype['SetShowTextSelectPanel']				= PDFEditorApi.prototype.SetShowTextSelectPanel;
 	PDFEditorApi.prototype['NeedShowTextSelectPanel']				= PDFEditorApi.prototype.NeedShowTextSelectPanel;
 
