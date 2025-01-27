@@ -23168,9 +23168,10 @@
 	function _calculateDate(oCellInfo, bAutofill) {
 		const nStep = oCellInfo.step;
 		const nDateUnit = oCellInfo.dateUnit;
+		const bDate1904 = AscCommon.bDate1904;
 		let nPrevValue = oCellInfo.previousValue;
 		let nPrevIntValue = oCellInfo.previousIntValue;
-		let dtExpectedDayValue = new Asc.cDate().getDateFromExcel(oCellInfo.expectedDayValue < 60 ? oCellInfo.expectedDayValue + 1 : oCellInfo.expectedDayValue);
+		let dtExpectedDayValue = new Asc.cDate().getDateFromExcel(oCellInfo.expectedDayValue < 59 && !bDate1904 ? oCellInfo.expectedDayValue + 1 : oCellInfo.expectedDayValue);
 		let oReturn = {};
 
 		// Condition: nPrevVal < 60 is temporary solution for "01/01/1900 - 01/03/1900" dates
@@ -23193,13 +23194,13 @@
 					nCurrentVal = _smartRound(nCurrentVal + nFinalStep, nStep);
 				}
 				// Convert number to cDate object
-				oCurrentValDate = new Asc.cDate().getDateFromExcel(nPrevValue < 60 ? nCurrentVal + 1 : nCurrentVal);
+				oCurrentValDate = new Asc.cDate().getDateFromExcel(nPrevValue < 59 && !bDate1904 ? nCurrentVal + 1 : nCurrentVal);
 				let nDayOfWeek = nPrevValue < 60 ? oCurrentValDate.getDay() - 1 : oCurrentValDate.getDay();
 				if (!aWeekdays.includes(nDayOfWeek)) {
 					while (true) {
 						nCurrentVal += Math.sign(nStep);
-						oCurrentValDate = new Asc.cDate().getDateFromExcel(nCurrentVal < 60 ? nCurrentVal + 1 : nCurrentVal);
-						nDayOfWeek = nCurrentVal < 60 ? oCurrentValDate.getDay() - 1 : oCurrentValDate.getDay();
+						oCurrentValDate = new Asc.cDate().getDateFromExcel(nCurrentVal < 59 && !bDate1904 ? nCurrentVal + 1 : nCurrentVal);
+						nDayOfWeek = nCurrentVal < 60 && !bDate1904 ? oCurrentValDate.getDay() - 1 : oCurrentValDate.getDay();
 						if (aWeekdays.includes(nDayOfWeek)) {
 							i++;
 							break;
@@ -23227,7 +23228,7 @@
 			return oReturn;
 		}
 		let nIntegerVal = nPrevIntValue;
-		let oCurrentValDate = new Asc.cDate().getDateFromExcel(nIntegerVal < 60 ? nIntegerVal + 1 : nIntegerVal);
+		let oCurrentValDate = new Asc.cDate().getDateFromExcel(nIntegerVal < 59 && !bDate1904 ? nIntegerVal + 1 : nIntegerVal);
 		let nFinalStep = _smartRound(nCurrentVal - nIntegerVal, nStep);
 		if (nFinalStep < 0 && !bAutofill) {
 			oReturn.currentValue = NaN;
