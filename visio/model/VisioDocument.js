@@ -1171,34 +1171,32 @@
 	function parsePages(documentPart, reader, context) {
 		let pagesPart = documentPart.getPartByRelationshipType(AscCommon.openXml.Types.pages.relationType);
 		if (pagesPart) {
-			let contentPages = pagesPart.getDocumentContent();
-			reader = new StaxParser(contentPages, pagesPart, context);
+			let pagesXml = pagesPart.getDocumentContent();
+			reader = new StaxParser(pagesXml, pagesPart, context);
 			this.pages = new CPages();
 			this.pages.fromXml(reader);
 
+			// page content parts
 			let pages = pagesPart.getPartsByRelationshipType(AscCommon.openXml.Types.page.relationType);
 			if (pages.length  > 0) {
-				// order is important so sort masters using uri
-				let pagesSort = [];
-				for (let i = 0; i < pages.length; i++) {
-					let pageNumber = pages[i].uri.match(/\d+/); // for page3.xml we get 3
-					if (!isNaN(parseFloat(pageNumber)) && !isNaN(pageNumber - 0)) {
-						// if masterNumber is number
-						pagesSort[pageNumber - 1] = pages[i];
+				// this.pageContents order is important it must correspond to this.pages but pages is messed up by default
+				// so now let's get page contents by page relationship to get pageContents in correct order
+				// 1) find page rId number
+				// 2) find pageContent by rId
+
+				for (let i = 0; i < this.pages.page.length; i++) {
+					let pageContentRid = this.pages.page[i] && this.pages.page[i].rel && this.pages.page[i].rel.id;
+					if (pageContentRid) {
+						// let pageContentRel = pagesPart.getRelationship(pageContentRid);
+						let pageContentPart = pagesPart.getPartById(pageContentRid);
+						let contentPage = pageContentPart.getDocumentContent();
+						reader = new StaxParser(contentPage, pageContentPart, context);
+						let PageContent = new CPageContents();
+						PageContent.fromXml(reader);
+						this.pageContents.push(PageContent);
 					} else {
-						AscCommon.consoleLog('check sdkjs/draw/model/VisioDocument.js : parsePages');
-						pagesSort = pages;
-						break;
+						AscCommon.consoleLog("Page content rId not found");
 					}
-				}
-				pages = pagesSort;
-				for (let i = 0; i < pages.length; i++) {
-					let pagePart = pages[i];
-					let contentPage = pagePart.getDocumentContent();
-					reader = new StaxParser(contentPage, pagePart, context);
-					let PageContent = new CPageContents();
-					PageContent.fromXml(reader);
-					this.pageContents.push(PageContent);
 				}
 			}
 		}
