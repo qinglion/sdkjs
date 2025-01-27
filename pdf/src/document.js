@@ -1052,6 +1052,7 @@ var CPresentation = CPresentation || function(){};
         let isSameType = (oCurObject && oFloatObject) && (oCurObject.IsAnnot() && oFloatObject.IsAnnot() || oCurObject.IsDrawing() && oFloatObject.IsDrawing()); 
         // докидываем в селект
         if (e.CtrlKey && (oCurObject && oFloatObject) && (oCurObject != oFloatObject) && isSameType) {
+            oController.selection.groupSelection = null;
             oController.selectObject(oFloatObject, oFloatObject.GetPage());
             return;
         }
