@@ -3070,6 +3070,10 @@ function (window, undefined) {
 
 		} else if(AscCH.historyitem_Workbook_UpdateLinks === Type) {
 			wb.setUpdateLinks(bUndo ? Data.from : Data.to, null, null, !wb.oApi.isDocumentLoadComplete && wb.bCollaborativeChanges);
+		} else if (AscCH.historyitem_Workbook_ShowVerticalScroll === Type) {
+			wb.setShowVerticalScroll(bUndo ? Data.from : Data.to);
+		} else if (AscCH.historyitem_Workbook_ShowHorizontalScroll === Type) {
+			wb.setShowHorizontalScroll(bUndo ? Data.from : Data.to);
 		}
 	};
 	UndoRedoWorkbook.prototype.forwardTransformationIsAffect = function (Type) {

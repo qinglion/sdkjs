@@ -334,7 +334,9 @@
     /** @enum */
     var c_oSerWorkbookViewTypes =
     {
-        ActiveTab: 0
+        ActiveTab: 0,
+        ShowHorizontalScroll: 1,
+        ShowVerticalScroll: 2
     };
     /** @enum */
     var c_oSerDefinedNameTypes =
@@ -3749,13 +3751,19 @@
             var oThis = this;
             this.bs.WriteItem(c_oSerWorkbookTypes.WorkbookView, function(){oThis.WriteWorkbookView();});
         };
-        this.WriteWorkbookView = function()
-        {
-            if (null != this.wb.nActive)
-            {
-                this.memory.WriteByte( c_oSerWorkbookViewTypes.ActiveTab);
+        this.WriteWorkbookView = function () {
+            if (null != this.wb.nActive) {
+                this.memory.WriteByte(c_oSerWorkbookViewTypes.ActiveTab);
                 this.memory.WriteByte(c_oSerPropLenType.Long);
                 this.memory.WriteLong(this.wb.nActive);
+            } else if (null != this.wb.showVerticalScroll) {
+                this.memory.WriteByte(c_oSerWorkbookViewTypes.ShowVerticalScroll);
+                this.memory.WriteByte(c_oSerPropLenType.Byte);
+                this.memory.WriteBool(this.wb.showVerticalScroll);
+            } else if (null != this.wb.showHorizontalScroll) {
+                this.memory.WriteByte(c_oSerWorkbookViewTypes.showHorizontalScroll);
+                this.memory.WriteByte(c_oSerPropLenType.Byte);
+                this.memory.WriteBool(this.wb.showVerticalScroll);
             }
         };
         this.WriteDefinedNames = function()
@@ -9494,12 +9502,15 @@
                 res = c_oSerConstants.ReadUnknown;
             return res;
         };
-        this.ReadWorkbookView = function(type, length)
-        {
+        this.ReadWorkbookView = function (type, length) {
             var res = c_oSerConstants.ReadOk;
-            if ( c_oSerWorkbookViewTypes.ActiveTab == type )
+            if (c_oSerWorkbookViewTypes.ActiveTab === type) {
                 this.oWorkbook.nActive = this.stream.GetULongLE();
-            else
+            } else  if (c_oSerWorkbookViewTypes.ShowVerticalScroll === type) {
+                this.oWorkbook.showVerticalScroll = this.stream.GetBool();
+            } else  if (c_oSerWorkbookViewTypes.ShowHorizontalScroll === type) {
+                this.oWorkbook.showHorizontalScroll = this.stream.GetBool();
+            } else
                 res = c_oSerConstants.ReadUnknown;
             return res;
         };

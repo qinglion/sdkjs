@@ -456,6 +456,7 @@
 			this.vsb = document.createElement('div');
 			this.vsb.id = "ws-v-scrollbar";
 			this.vsb.style.backgroundColor = AscCommon.GlobalSkin.ScrollBackgroundColor;
+
 			//TODO test rtl
 			/*if (window.rightToleft) {
 				this.vsb.style.left = "0px";
@@ -536,7 +537,8 @@
 				this.vsb.style.display = "none";
 			}
 
-
+			this.showVerticalScroll(this.view.getShowVerticalScroll());
+			this.showHorizontalScroll(this.view.getShowHorizontalScroll());
 		};
 
 		/**
@@ -2802,6 +2804,22 @@
 		asc_CEventsController.prototype._setSkipKeyPress = function (val) {
 			this.skipKeyPress = val;
 		};
+
+		asc_CEventsController.prototype.showHorizontalScroll = function (val) {
+			this.hsb.style.visibility = val ? "visible" : "hidden";
+			let cornerStyle = !val && this.vsb.style.visibility === "hidden" ? "hidden" : "visible";
+			let corner = document.getElementById("ws-scrollbar-corner");
+			corner.style.visibility = cornerStyle;
+		};
+
+		asc_CEventsController.prototype.showVerticalScroll = function (val) {
+			this.vsb.style.visibility = val ? "visible" : "hidden";
+			let cornerStyle = !val && this.hsb.style.visibility === "hidden" ? "hidden" : "visible";
+			let corner = document.getElementById("ws-scrollbar-corner");
+			corner.style.visibility = cornerStyle;
+		};
+
+
 
 		//------------------------------------------------------------export---------------------------------------------------
 		window['AscCommonExcel'] = window['AscCommonExcel'] || {};

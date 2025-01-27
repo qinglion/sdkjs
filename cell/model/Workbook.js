@@ -2912,6 +2912,8 @@
 		this.handlers = eventsHandlers;
 		this.dependencyFormulas = new DependencyGraph(this);
 		this.nActive = 0;
+		this.showVerticalScroll = null;
+		this.showHorizontalScroll = null;
 		this.App = null;
 		this.Core = null;
 
@@ -5702,6 +5704,34 @@
 	};
 	Workbook.prototype.getDefaultDirection = function() {
 		return this.defaultDirection;
+	};
+	Workbook.prototype.setShowVerticalScroll = function(val, addToHistory) {
+		var from = this.showVerticalScroll == null || this.showVerticalScroll === true;
+		val = (val === true || val == null) ? null : false;
+		if (from !== val) {
+			if (addToHistory) {
+				AscCommon.History.Create_NewPoint();
+				AscCommon.History.Add(AscCommonExcel.g_oUndoRedoWorkbook, AscCH.historyitem_Workbook_ShowVerticalScroll, null, null, new UndoRedoData_FromTo(from, val));
+			}
+			this.showVerticalScroll = val;
+		}
+	};
+	Workbook.prototype.getShowVerticalScroll = function() {
+		return this.showVerticalScroll;
+	};
+	Workbook.prototype.setShowHorizontalScroll = function(val, addToHistory) {
+		var from = this.showHorizontalScroll == null || this.showHorizontalScroll === true;
+		val = (val === true || val == null) ? null : false;
+		if (from !== val) {
+			if (addToHistory) {
+				AscCommon.History.Create_NewPoint();
+				AscCommon.History.Add(AscCommonExcel.g_oUndoRedoWorkbook, AscCH.historyitem_Workbook_ShowHorizontalScroll, null, null, new UndoRedoData_FromTo(from, val));
+			}
+			this.showHorizontalScroll = val;
+		}
+	};
+	Workbook.prototype.getShowHorizontalScroll = function() {
+		return this.showHorizontalScroll;
 	};
 
 

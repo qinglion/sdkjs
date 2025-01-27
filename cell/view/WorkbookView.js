@@ -2547,9 +2547,17 @@
   };
 
   WorkbookView.prototype._canResize = function() {
-    var styleWidth, styleHeight;
-    styleWidth = this.element.offsetWidth - (this.Api.isMobileVersion ? 0 : this.defaults.scroll.widthPx);
-    styleHeight = this.element.offsetHeight - (this.Api.isMobileVersion ? 0 : this.defaults.scroll.heightPx);
+	  let showVerticalScroll = this.Api.isMobileVersion || this.getShowVerticalScroll();
+	  let showHorizontalScroll = this.Api.isMobileVersion || this.getShowHorizontalScroll();
+
+	  let styleWidth, styleHeight;
+	  styleWidth = this.element.offsetWidth - (this.Api.isMobileVersion || !showVerticalScroll ? 0 : this.defaults.scroll.widthPx);
+	  styleHeight = this.element.offsetHeight - (this.Api.isMobileVersion || !showHorizontalScroll ? 0 : this.defaults.scroll.heightPx);
+	  
+	  this.canvasOverlay.parentNode.style.right = !showVerticalScroll ? 0 : 14 + 'px';
+	  this.canvasOverlay.parentNode.style.bottom = !showHorizontalScroll ? 0 : 14 + 'px';
+
+
 
     this.isInit = true;
 
@@ -6290,6 +6298,68 @@
 
 		this.Api.sendEvent.apply(this.Api, arguments);
 	};
+	WorkbookView.prototype.setShowVerticalScroll = function(val) {
+		// Проверка глобального лока
+		if (this.collaborativeEditing.getGlobalLock() || !window["Asc"]["editor"].canEdit()) {
+			return;
+		}
+
+		let t = this;
+		let verticalScroll = this.getShowVerticalScroll();
+		if (verticalScroll !== val) {
+			var callback = function () {
+				History.Create_NewPoint();
+				History.StartTransaction();
+
+				t.model.setShowVerticalScroll(val, true);
+
+				History.EndTransaction();
+				t.controller.showVerticalScroll(val);
+				t._canResize();
+
+				let ws = t.getWorksheet();
+				ws.draw();
+			};
+			callback();
+		}
+	};
+	WorkbookView.prototype.getShowVerticalScroll = function() {
+		let val = this.model.getShowVerticalScroll();
+		return val == null || val === true;
+	};
+	WorkbookView.prototype.setShowHorizontalScroll = function(val) {
+		// Проверка глобального лока
+		if (this.collaborativeEditing.getGlobalLock() || !window["Asc"]["editor"].canEdit()) {
+			return;
+		}
+
+		let t = this;
+		let horizontalScroll = this.getShowHorizontalScroll();
+		if (horizontalScroll !== val) {
+			var callback = function () {
+				History.Create_NewPoint();
+				History.StartTransaction();
+
+				t.model.setShowHorizontalScroll(val, true);
+
+				History.EndTransaction();
+
+
+				t.controller.showHorizontalScroll(val);
+				t._canResize();
+
+				let ws = t.getWorksheet();
+				ws.draw();
+			};
+			callback();
+		}
+	};
+	WorkbookView.prototype.getShowHorizontalScroll = function() {
+		let val = this.model.getShowHorizontalScroll();
+		return val == null || val === true;
+	};
+
+
 
 	//временно добавляю сюда. в идеале - использовать общий класс из документов(или сделать базовый, от него наследоваться) - CDocumentSearch
 	function CDocumentSearchExcel(wb) {

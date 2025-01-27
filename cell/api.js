@@ -6251,7 +6251,7 @@ var editor;
 	  if (this.collaborativeEditing.getGlobalLock() || !this.canEdit()) {
      return;
     }
-
+	  
   	let ws = this.wb.getWorksheet();
     if (ws.objectRender.selectedGraphicObjectsExists() && ws.objectRender.controller.setCellBold) {
       ws.objectRender.controller.setCellBold(isBold);
@@ -9972,6 +9972,38 @@ var editor;
 		}
 	};
 
+	spreadsheet_api.prototype.asc_SetShowVerticalScroll = function (val) {
+		let wb = this.wb;
+		if (!wb) {
+			return;
+		}
+		return wb.setShowVerticalScroll(val);
+	};
+
+	spreadsheet_api.prototype.asc_GetShowVerticalScroll = function () {
+		let wb = this.wb;
+		if (!wb) {
+			return;
+		}
+		return wb.getShowVerticalScroll();
+	};
+
+	spreadsheet_api.prototype.asc_SetShowHorizontalScroll = function (val) {
+		let wb = this.wb;
+		if (!wb) {
+			return;
+		}
+		return wb.setShowHorizontalScroll(val);
+	};
+
+	spreadsheet_api.prototype.asc_GetShowHorizontalScroll = function () {
+		let wb = this.wb;
+		if (!wb) {
+			return;
+		}
+		return wb.getShowHorizontalScroll();
+	};
+
   /*
    * Export
    * -----------------------------------------------------------------------------
@@ -10580,6 +10612,11 @@ var editor;
 
   prot["asc_SetSmoothScrolling"]= prot.asc_SetSmoothScrolling;
   prot["asc_GetSmoothScrolling"]= prot.asc_GetSmoothScrolling;
+
+  prot["asc_SetShowVerticalScroll"]= prot.asc_SetShowVerticalScroll;
+  prot["asc_GetShowVerticalScroll"]= prot.asc_GetShowVerticalScroll;
+  prot["asc_SetShowHorizontalScroll"]= prot.asc_SetShowHorizontalScroll;
+  prot["asc_GetShowHorizontalScroll"]= prot.asc_GetShowHorizontalScroll;
 
 
 
