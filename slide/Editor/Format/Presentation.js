@@ -10679,10 +10679,21 @@ CPresentation.prototype.StartAddShape = function (preset, _is_apply, nPlaceholde
 };
 CPresentation.prototype.EraseAllInksOnSlide = function ()
 {
+
 	let oCurSlide = this.GetCurrentSlide();
+	if(!Asc.editor.isSlideShow())
+		oCurSlide = this.GetCurrentSlide();
+	else
+	{
+		let oDemoManager = Asc.editor.getDemoManager();
+		if(!oDemoManager) return;
+
+		oCurSlide = oDemoManager.GetCurrentSlide();
+	}
 	if(!oCurSlide) return;
 	this.StartAction(0);
 	let aSpTree = oCurSlide.cSld.spTree;
+	let bRedraw = false;
 	for(let nSp = aSpTree.length - 1; nSp > -1; --nSp)
 	{
 		let oSp = aSpTree[nSp];
@@ -10690,6 +10701,18 @@ CPresentation.prototype.EraseAllInksOnSlide = function ()
 		{
 			oSp.deselect(oCurSlide.graphicObjects);
 			oCurSlide.removeFromSpTreeById(oSp.Id);
+			bRedraw = true;
+		}
+	}
+	if(bRedraw)
+	{
+		if(!Asc.editor.isSlideShow())
+			this.DrawingDocument.OnRecalculateSlide(this.CurPage);
+		else
+		{
+			let oDemoManager = Asc.editor.getDemoManager();
+			oDemoManager.Resize(true);
+
 		}
 	}
 	this.FinalizeAction();
