@@ -832,7 +832,7 @@
 	    const oldTrackRevisions = oDoc1.GetLocalTrackRevisions();
 	    oDoc1.SetTrackRevisions(false);
         const oDoc2 = AscFormat.ExecuteNoHistory(function () {
-            const openParams = {noSendComments: true};
+            const openParams = {noSendComments: true, noGenerateSmartArts: true};
             const oTempDocument = new CDocument(oApi.WordControl.m_oDrawingDocument, false);
             const oBinaryFileReader = new AscCommonWord.BinaryFileReader(oTempDocument, openParams);
             AscCommon.pptx_content_loader.Start_UseFullUrl(oApi.insertDocumentUrlsData);

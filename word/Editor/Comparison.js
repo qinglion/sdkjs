@@ -41,7 +41,18 @@
     //EXCLUDED_PUNCTUATION[95] = true;
     EXCLUDED_PUNCTUATION[160] = true;
     //EXCLUDED_PUNCTUATION[63] = true;
+	function getMockDocumentFromRuns(arrRuns) {
+		const arrSlice = arrRuns.slice();
+		arrSlice.push(new AscCommonWord.ParaRun());
+		arrSlice[arrSlice.length - 1].Content.push(new AscWord.CRunParagraphMark());
 
+		const mockDocument = new AscCommonWord.CMockDocument();
+		const mockParagraph = new AscCommonWord.CMockParagraph();
+		mockDocument.Content.push(mockParagraph);
+		mockParagraph.Content = arrSlice;
+
+		return mockDocument;
+	}
 	function getChanges(arrOriginalTextElements, arrRevisedTextElements, comparison, oMainParent, oRevisedParent) {
 		let arrTextPrChanges = [];
 		if (comparison.options.formatting) {
@@ -2168,18 +2179,6 @@
 			}
 			return !this.oCommentManager.savedParaComments[oParaComment.Id];
 		}
-		function getMockDocumentFromRuns(arrRuns) {
-			const arrSlice = arrRuns.slice();
-			arrSlice.push(new AscCommonWord.ParaRun());
-			arrSlice[arrSlice.length - 1].Content.push(new AscWord.CRunParagraphMark());
-
-			const mockDocument = new AscCommonWord.CMockDocument();
-			const mockParagraph = new AscCommonWord.CMockParagraph();
-			mockDocument.Content.push(mockParagraph);
-			mockParagraph.Content = arrSlice;
-			
-			return mockDocument;
-		}
 	CDocumentComparison.prototype.executeResolveConflictMode = function (oResolveConflictComparison, fCallback) {
 		const oOldCommentsMeeting = this.oCommentManager.mapCommentMeeting;
 		this.oCommentManager.mapCommentMeeting = {};
@@ -3847,7 +3846,7 @@
 	    oDoc1.SetTrackRevisions(false);
 	    let bHaveRevisons2 = false;
 	    const oDoc2 = AscFormat.ExecuteNoHistory(function(){
-            const openParams = {disableRevisions: true, noSendComments: true};
+            const openParams = {disableRevisions: true, noSendComments: true, noGenerateSmartArts: true};
             const oTempDocument = new CDocument(oApi.WordControl.m_oDrawingDocument, false);
             const oBinaryFileReader = new AscCommonWord.BinaryFileReader(oTempDocument, openParams);
             AscCommon.pptx_content_loader.Start_UseFullUrl(oApi.insertDocumentUrlsData);

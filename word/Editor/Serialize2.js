@@ -8473,7 +8473,11 @@ function BinaryFileReader(doc, openParams)
 				api && api.asc_addRestriction(restrictionType);
 			}
 		}
-	    pptx_content_loader.Reader.GenerateSmartArts();
+		if (this.openParams && this.openParams.noGenerateSmartArts) {
+			pptx_content_loader.Reader.smartarts.length = 0;
+		} else {
+			pptx_content_loader.Reader.GenerateSmartArts();
+		}
 
 		if (bClearPptxLoader) {
 			//чтобы удалялся stream с бинарником
