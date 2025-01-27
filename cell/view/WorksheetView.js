@@ -6259,9 +6259,9 @@
 
 			if (isMerged) {
 				wb = this._getColLeft(colR + 1, true, ctx) - this._getColLeft(colL, true, ctx);
-				//if (this.getRightToLeft()) {
+				if (this.getRightToLeft()) {
 					xb1 += this._getColumnWidth(col) - wb;
-				//}
+				}
 
 				hb = this._getRowTop(rowB + 1) - this._getRowTop(rowT);
 				this._AddClipRect(ctx, xb1, yb1, wb, hb);
