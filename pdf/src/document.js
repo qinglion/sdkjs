@@ -3661,6 +3661,10 @@ var CPresentation = CPresentation || function(){};
 	// Work with interface
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	CPDFDoc.prototype.UpdateInterface = function() {
+		if (!this.Viewer.canInteract()) {
+			return;
+		}
+
         this.Api.sync_BeginCatchSelectedElements();
 
         let oDrDoc      = this.GetDrawingDocument();
