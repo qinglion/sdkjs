@@ -669,9 +669,9 @@ CCellCommentator.prototype.isLockedComment = function(oComment, callbackFunc) {
 				x = metrics.left + metrics.width;
 				y = metrics.top;
 				this.drawingCtx.beginPath();
-				this.drawingCtx.moveTo(x - (size + borderW), y);
-				this.drawingCtx.lineTo(x - borderW, y);
-				this.drawingCtx.lineTo(x - borderW, y + size);
+				this.worksheet._moveTo(this.drawingCtx, x - (size + borderW), y);
+				this.worksheet._lineTo(this.drawingCtx, x - borderW, y);
+				this.worksheet._lineTo(this.drawingCtx, x - borderW, y + size);
 				this.drawingCtx.fill();
 
 				if (isClip) {
