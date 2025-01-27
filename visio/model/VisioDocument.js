@@ -890,6 +890,9 @@
 	};
 	CVisioDocument.prototype.Document_UpdateRulersState = function () {
 	};
+	CVisioDocument.prototype.private_UpdateCursorXY = function (bUpdateX, bUpdateY) {
+	};
+
 	CVisioDocument.prototype.OnMouseUp = function (e, X, Y, PageIndex) {
 	};
 	CVisioDocument.prototype.OnMouseDown = function (e, X, Y, PageIndex) {
@@ -920,6 +923,112 @@
 	};
 	CVisioDocument.prototype.shiftSlides = function (pos, array, bCopy) {
 		//todo
+	};
+	CVisioDocument.prototype.executeShortcut = function(type) {
+		let result = false;
+
+		switch (type) {
+			case Asc.c_oAscDiagramShortcutType.Print: {
+				this.api.onPrint();
+				result = true;
+				break;
+			}
+			default: {
+				var oCustom = this.api.getCustomShortcutAction(type);
+				if (oCustom) {
+					if (AscCommon.c_oAscCustomShortcutType.Symbol === oCustom.Type) {
+						this.api["asc_insertSymbol"](oCustom.Font, oCustom.CharCode);
+					}
+				}
+				break;
+			}
+		}
+		return result;
+	}
+	CVisioDocument.prototype.OnKeyDown = function (e) {
+		this.api.sendEvent("asc_onBeforeKeyDown", e);
+
+		var bUpdateSelection = true;
+		var bRetValue = keydownresult_PreventNothing;
+		let nStartHistoryIndex = this.History.Index;
+
+
+		// // Сбрасываем текущий элемент в поиске
+		// if (this.SearchEngine.Count > 0)
+		// 	this.SearchEngine.ResetCurrent();
+
+		let shortcutType = this.api.getShortcut(e);
+		if (this.executeShortcut(shortcutType))
+		{
+			bRetValue = keydownresult_PreventAll;
+			bUpdateSelection = false;
+		}
+		else {
+			const bIsMacOs = AscCommon.AscBrowser.isMacOs;
+			let WordControl = this.api.WordControl;
+			if (e.KeyCode === 33) // PgUp
+			{
+				//
+			}
+			else if (e.KeyCode === 34) // PgDn
+			{
+				//
+			}
+			else if (e.KeyCode === 35) // клавиша End
+			{
+				if (true === e.CtrlKey) // Ctrl + End - переход в конец документа
+				{
+					WordControl.m_oScrollVerApi.scrollTo(WordControl.m_dScrollX_max, WordControl.m_dScrollY_max);
+				}
+				else
+				{
+					WordControl.m_oScrollVerApi.scrollTo(0, WordControl.m_dScrollY_max);
+				}
+			}
+			else if (e.KeyCode === 36) // клавиша Home
+			{
+				if (true === e.CtrlKey) // Ctrl + Home - переход в начало документа
+				{
+					WordControl.m_oScrollVerApi.scrollTo(WordControl.m_dScrollX_max, 0);
+				}
+				else
+				{
+					WordControl.m_oScrollVerApi.scrollTo(0, 0);
+				}
+			}
+			else if (e.KeyCode === 37) // Left Arrow
+			{
+				if (true || WordControl.m_bIsHorScrollVisible)
+				{
+					WordControl.m_oScrollHorApi.scrollBy(-30, 0, false);
+				}
+			}
+			else if (e.KeyCode === 38) // Top Arrow
+			{
+				WordControl.m_oScrollVerApi.scrollBy(0, -30, false);
+			}
+			else if (e.KeyCode === 39) // Right Arrow
+			{
+				if (true || WordControl.m_bIsHorScrollVisible)
+				{
+					WordControl.m_oScrollHorApi.scrollBy(30, 0, false);
+				}
+			}
+			else if (e.KeyCode === 40) // Bottom Arrow
+			{
+				WordControl.m_oScrollVerApi.scrollBy(0, 30, false);
+			}
+		}
+
+		if (bRetValue & keydownflags_PreventKeyPress && true === bUpdateSelection)
+			this.Document_UpdateSelectionState();
+
+		if(nStartHistoryIndex === this.History.Index) {
+			this.private_UpdateCursorXY(true, true);
+		}
+
+		this.api.sendEvent("asc_onKeyDown", e);
+		return bRetValue;
 	};
 	// CVisioDocument.prototype.getMasterByID = function(ID) {
 	// 	// join Master_Type and MasterContents_Type

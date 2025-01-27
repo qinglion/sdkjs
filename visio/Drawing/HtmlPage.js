@@ -210,6 +210,7 @@ function CEditorPage(api)
 	// thumbnails
 	this.Thumbnails                 = new CThumbnailsManager();//todo override CThumbnailsManager
 	this.Thumbnails.showContextMenu = function(bPosBySelect) {}
+	this.Thumbnails.onKeyDown = function(e) {return true;}
 
 	// сплиттеры (для табнейлов и для заметок)
 	this.Splitter1Pos    = 0;
