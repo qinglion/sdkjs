@@ -2373,7 +2373,11 @@
 			const oCompareElement = aCompare[curResultObject.compareIndex];
 			if (oBaseElement.equals(oCompareElement)) {
 				oBaseElement.setPartner(oCompareElement);
-				fLCSCallback(oBaseElement, oCompareElement);
+				if (bOrig) {
+					fLCSCallback(oBaseElement, oCompareElement);
+				} else {
+					fLCSCallback(oCompareElement, oBaseElement);
+				}
 			}
 			curBaseIndex = curResultObject.baseIndex - 1;
 			curCompareIndex = curResultObject.compareIndex - 1;
