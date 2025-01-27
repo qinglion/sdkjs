@@ -2347,7 +2347,7 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 		} else if (null != this.reservedColumnIndex) {
 			if (this.isDynamic && isLocal && this.reservedColumnIndex === AscCommon.FormulaTablePartInfo.thisRow) {
 				tblStr += "[" + "@" + "]";
-			} else if (this.isDynamic) {
+			} else /*if (this.isDynamic)*/ {
 				tblStr += "[" + this._buildLocalTableString(this.reservedColumnIndex, isLocal) + "]";
 			}
 		} else if (this.hdtIndexes || this.hdtcstartIndex || this.hdtcendIndex) {
@@ -2420,6 +2420,14 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 			startCol = val['oneColumn']
 			if (startCol[0] === "@") {
 				this.isDynamic = true;
+			}
+
+			let openBracketIndex = startCol.indexOf("[");
+			if (openBracketIndex !== -1) {
+				let closeBracketIndex = startCol.lastIndexOf("]");
+				if (closeBracketIndex !== -1) {
+					startCol = startCol.slice(openBracketIndex + 1, closeBracketIndex);
+				} 
 			}
 
 			this.oneColumnIndex = this.wb.getTableIndexColumnByName(this.tableName, this.isDynamic ? startCol.slice(1) : startCol);
@@ -8278,7 +8286,7 @@ function parserFormula( formula, parent, _ws ) {
 				if (local || (local === false && digitDelim === false)) { // local and digitDelim with value false using only for copypaste mode.
 					t.ca = isRecursiveFormula(found_operand, t);
 				}
-			} else if (_tableTMP = parserHelp.isTable.call(ph, t.Formula, ph.pCurrPos, local)) {
+			} else if (_tableTMP = parserHelp.isTable.call(ph, t.Formula, ph.pCurrPos, local, t)) {
 				found_operand = cStrucTable.prototype.createFromVal(_tableTMP, t.wb, t.ws, tablesMap);
 
 				//todo undo delete column

@@ -2843,8 +2843,8 @@ $(function () {
 		resCell = ws.getRange4(101, 70);
 		resCell.setValue("=" + tableName +"[#All]");
 		
-		assert.strictEqual(resCell.getValueForEdit(), "=" + tableName, "Value for edit in cell after Table[#All] is typed");
-		assert.strictEqual(resCell.getFormula(), tableName, "Formula in cell after Table[#All] is typed");
+		assert.strictEqual(resCell.getValueForEdit(), "=" + tableName + "[#All]", "Value for edit in cell after Table[#All] is typed");
+		assert.strictEqual(resCell.getFormula(), tableName + "[#All]", "Formula in cell after Table[#All] is typed");
 
 
 		// calc res check
@@ -2883,8 +2883,8 @@ $(function () {
 		resCell = ws.getRange4(101, 80);
 		resCell.setValue("=" + tableName +"[#Data]");
 		
-		assert.strictEqual(resCell.getValueForEdit(), "=" + tableName, "Value for edit in cell after Table[#Data] is typed");
-		assert.strictEqual(resCell.getFormula(), tableName, "Formula in cell after Table[#Data] is typed");
+		assert.strictEqual(resCell.getValueForEdit(), "=" + tableName +"[#Data]", "Value for edit in cell after Table[#Data] is typed");
+		assert.strictEqual(resCell.getFormula(), tableName +"[#Data]", "Formula in cell after Table[#Data] is typed");
 
 
 		// calc res check
@@ -3021,6 +3021,40 @@ $(function () {
 		assert.strictEqual(resCell.getValueForEdit(), "=" + tableName + "[[#Data],[#Headers]]", "Value for edit in cell after Table[[#Data],[#Headers]] is typed");
 		assert.strictEqual(resCell.getFormula(), tableName + "[[#Data],[#Headers]]", "Formula in cell after Table[[#Data],[#Headers]] is typed");
 
+		// for bug 46174
+		// calc res check
+		cellWithFormula = new AscCommonExcel.CCellWithFormula(ws, 104, 0);
+		oParser = new AscCommonExcel.parserFormula("[[Column1]]", cellWithFormula, ws);
+		assert.ok(oParser.parse(true));
+		array = oParser.calculate();
+		assert.strictEqual(array.getValueByRowCol(0, 0).getValue(), 1, 'Short notation. Result of [[Column1]][0,0] inside table');
+		assert.strictEqual(array.getValueByRowCol(1, 0).getValue(), 1, 'Short notation. Result of [[Column1]][1,0] inside table');
+		assert.strictEqual(array.getValueByRowCol(2, 0).getValue(), 1, 'Short notation. Result of [[Column1]][2,0] inside table');
+		assert.strictEqual(array.getValueByRowCol(3, 0).getValue(), 1, 'Short notation. Result of [[Column1]][3,0] inside table');
+
+		cellWithFormula = new AscCommonExcel.CCellWithFormula(ws, 105, 0);
+		oParser = new AscCommonExcel.parserFormula("[[Column1]]", cellWithFormula, ws);
+		assert.ok(!oParser.parse(true));
+		array = oParser.calculate();
+		assert.strictEqual(array.type, AscCommonExcel.cElementType.error, 'Short notation. Result of [[Column1]] outside table');
+		
+		cellWithFormula = new AscCommonExcel.CCellWithFormula(ws, 101, 20);
+		oParser = new AscCommonExcel.parserFormula(tableName + "[[Column1]]", cellWithFormula, ws);
+		assert.ok(oParser.parse());
+		array = oParser.calculate();
+		assert.strictEqual(array.getValueByRowCol(0, 0).getValue(), 1, 'Result of [[Column1]][0,0]');
+		assert.strictEqual(array.getValueByRowCol(1, 0).getValue(), 1, 'Result of [[Column1]][1,0]');
+		assert.strictEqual(array.getValueByRowCol(2, 0).getValue(), 1, 'Result of [[Column1]][2,0]');
+		assert.strictEqual(array.getValueByRowCol(3, 0).getValue(), 1, 'Result of [[Column1]][3,0]');
+
+		// value for edit and formula in cell check
+		resCell = ws.getRange4(101, 20);
+		resCell.setValue("=" + tableName +"[[Column1]]");
+		
+		assert.strictEqual(resCell.getValueForEdit(), "=" + tableName + "[Column1]", "Value for edit in cell after Table[[Column1]] is typed");
+		assert.strictEqual(resCell.getFormula(), tableName + "[Column1]", "Formula in cell after Table[[Column1]] is typed");
+
+
 		clearData(0, 99, 0, 105);
 	});
 
@@ -3040,7 +3074,6 @@ $(function () {
 		let tables = wsView.model.autoFilters.getTablesIntersectionRange(new Asc.Range(0, 100, 0, 100));
 		assert.strictEqual(tables.length, 1, "compare tables length");
 
-		debugger
 		let table = tables[0];
 		let tableName = table.DisplayName;	// due to the fact that other tables are used in file, get the name of the one we need by this way
 		wsView.af_changeFormatTableInfo(tableName, Asc.c_oAscChangeTableStyleInfo.rowTotal, true);
@@ -3062,8 +3095,8 @@ $(function () {
 		resCell = ws.getRange4(101, 70);
 		resCell.setValue("=" + tableName +"[#All]");
 		
-		assert.strictEqual(resCell.getValueForEdit(), "=" + tableName, "Value for edit in cell after Table[#All] is typed");
-		assert.strictEqual(resCell.getFormula(), tableName, "Formula in cell after Table[#All] is typed");
+		assert.strictEqual(resCell.getValueForEdit(), "=" + tableName + "[#All]", "Value for edit in cell after Table[#All] is typed");
+		assert.strictEqual(resCell.getFormula(), tableName + "[#All]", "Formula in cell after Table[#All] is typed");
 
 
 		/* column header check */
