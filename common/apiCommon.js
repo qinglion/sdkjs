@@ -5169,6 +5169,15 @@ function (window, undefined) {
 			//console.log( this.image.toDataURL("image/png"));
 		};
 
+		this.getCorrectedInputContentSrc = function() {
+			let content = this.inputContentSrc;
+			for (let key in this.replaceMap) {
+				if (!this.replaceMap.hasOwnProperty(key)) continue;
+				content = content.replace(new RegExp(key, 'g'), this.replaceMap[key]);
+			}
+			return content;
+		};
+
 		this.Draw = function (context, dw_or_dx, dh_or_dy, dw, dh) {
 			if (!this.image || !this.isFontsLoaded) return;
 

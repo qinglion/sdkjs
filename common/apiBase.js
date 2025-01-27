@@ -2323,7 +2323,7 @@
 		} else if ((Asc.c_oAscFileType.PDF === options.fileType || Asc.c_oAscFileType.PDFA === options.fileType) &&
 			this.watermarkDraw && this.watermarkDraw.inputContentSrc) {
 			let jsonparams = {};
-			jsonparams["watermark"] = JSON.parse(this.watermarkDraw.inputContentSrc);
+			jsonparams["watermark"] = JSON.parse(this.watermarkDraw.getCorrectedInputContentSrc());
 			oAdditionalData["jsonparams"] = jsonparams;
 		}
 		if (options.textParams && undefined !== options.textParams.asc_getAssociation()) {
