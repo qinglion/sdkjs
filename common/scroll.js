@@ -472,7 +472,7 @@ CArrowDrawer.prototype.InitSize = function ( sizeW, sizeH )
 		this.canvas.style.height = "100%";
 
 		this.canvas.that = this;
-		this.canvas.style.zIndex = 1;
+		this.canvas.style.zIndex = 100;
 		this.canvas.style.position = "absolute";
 		this.canvas.style.top = "0px";
 		this.canvas.style["msTouchAction"] = "none";

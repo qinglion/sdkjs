@@ -1107,6 +1107,14 @@
 	this.model.handlers.add("changeUpdateLinks", function(val) {
 		self.changeUpdateLinks(val);
 	});
+	this.model.handlers.add("updateScrollVisibility", function() {
+		self.controller.showVerticalScroll(self.getShowVerticalScroll());
+		self.controller.showHorizontalScroll(self.getShowHorizontalScroll());
+		self._canResize();
+
+		let ws = self.getWorksheet();
+		ws.draw();
+	});
     this.cellCommentator = new AscCommonExcel.CCellCommentator({
       model: new WorkbookCommentsModel(this.handlers, this.model.aComments),
       collaborativeEditing: this.collaborativeEditing,
@@ -6314,11 +6322,6 @@
 				t.model.setShowVerticalScroll(val, true);
 
 				History.EndTransaction();
-				t.controller.showVerticalScroll(val);
-				t._canResize();
-
-				let ws = t.getWorksheet();
-				ws.draw();
 			};
 			callback();
 		}
@@ -6343,13 +6346,6 @@
 				t.model.setShowHorizontalScroll(val, true);
 
 				History.EndTransaction();
-
-
-				t.controller.showHorizontalScroll(val);
-				t._canResize();
-
-				let ws = t.getWorksheet();
-				ws.draw();
 			};
 			callback();
 		}

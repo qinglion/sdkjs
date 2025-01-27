@@ -335,8 +335,18 @@
     var c_oSerWorkbookViewTypes =
     {
         ActiveTab: 0,
-        ShowHorizontalScroll: 1,
-        ShowVerticalScroll: 2
+        AutoFilterDateGrouping: 1,
+        FirstSheet: 2,
+        Minimized: 3,
+        ShowHorizontalScroll: 4,
+        ShowSheetTabs: 5,
+        ShowVerticalScroll: 6,
+        TabRatio: 7,
+        Visibility: 8,
+        WindowHeight: 9,
+        WindowWidth: 10,
+        XWindow: 11,
+        YWindow: 12
     };
     /** @enum */
     var c_oSerDefinedNameTypes =

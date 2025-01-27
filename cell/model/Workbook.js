@@ -5714,6 +5714,7 @@
 				AscCommon.History.Add(AscCommonExcel.g_oUndoRedoWorkbook, AscCH.historyitem_Workbook_ShowVerticalScroll, null, null, new UndoRedoData_FromTo(from, val));
 			}
 			this.showVerticalScroll = val;
+			this.handlers && this.handlers.trigger("updateScrollVisibility");
 		}
 	};
 	Workbook.prototype.getShowVerticalScroll = function() {
@@ -5728,6 +5729,7 @@
 				AscCommon.History.Add(AscCommonExcel.g_oUndoRedoWorkbook, AscCH.historyitem_Workbook_ShowHorizontalScroll, null, null, new UndoRedoData_FromTo(from, val));
 			}
 			this.showHorizontalScroll = val;
+			this.handlers && this.handlers.trigger("updateScrollVisibility");
 		}
 	};
 	Workbook.prototype.getShowHorizontalScroll = function() {
