@@ -824,7 +824,19 @@
 	};
 		CNode.prototype.getDiff = function (oAnotherNode, oComparison) {
 			if (this.equals(oAnotherNode, oComparison)) {
-				return this.wordCounter.diff(oAnotherNode.wordCounter);
+				let nWordDiff = this.wordCounter.diff(oAnotherNode.wordCounter);
+				if (this.element instanceof AscWord.Paragraph) {
+					let startType;
+					let endType;
+					if (this.element.SectPr) {
+						startType = this.element.SectPr.Type;
+					}
+					if (oAnotherNode.element.SectPr) {
+						endType = oAnotherNode.element.SectPr.Type;
+					}
+					nWordDiff += endType !== startType ? 1 : 0;
+				}
+				return nWordDiff;
 			}
 			return this.wordCounter.count + oAnotherNode.wordCounter.count + 2;
 		};
