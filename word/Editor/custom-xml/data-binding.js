@@ -85,7 +85,7 @@
 			flags |= 4;
 		}
 		
-		let endPos = startPos.GetCurPosition();
+		let endPos = writer.GetCurPosition();
 		writer.Seek(startPos);
 		writer.WriteLong(flags);
 		writer.Seek(endPos);
