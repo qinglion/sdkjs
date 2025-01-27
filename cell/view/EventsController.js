@@ -2718,13 +2718,18 @@
 				deltaY = 0;
 			}
 
-			let isSupportDirections2 = false;
-			if (!isSupportDirections2) {
-				if (Math.abs(deltaY) >= Math.abs(deltaX)) {
-					deltaX = 0;
-				} else {
-					deltaY = 0;
-				}
+			//TODO!!! while only check direction. need refactor, and replace up code on checkMouseWhell function
+			let values = AscCommon.checkMouseWhell(event, {
+				isSupportBidirectional : false,
+				isAllowHorizontal : true,
+				isUseMaximumDelta : true
+			});
+
+			if (values.x === 0) {
+				deltaX = 0;
+			}
+			if (values.y === 0) {
+				deltaY = 0;
 			}
 
 			if (this.smoothWheelCorrector && !wb.smoothScroll) {
