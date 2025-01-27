@@ -5225,34 +5225,26 @@ function CThumbnailsManager(editorPage)
 		return {maxX: fCX(16), minX: fCX(4), maxY: fCY(15), minY: fCY(4)}
 	};
 
-	this.OnPaint = function()
-	{
+	this.OnPaint = function () {
 		if (!this.isThumbnailsShown())
 			return;
 
-		var word_control = this.m_oWordControl;
-		var canvas = word_control.m_oThumbnails.HtmlElement;
-
-		if (null == canvas)
+		const canvas = this.m_oWordControl.m_oThumbnails.HtmlElement;
+		if (!canvas)
 			return;
 
 		this.m_oWordControl.m_oApi.clearEyedropperImgData();
 
-		var context = canvas.getContext("2d");
-		var _width = canvas.width;
-		var _height = canvas.height;
+		const context = canvas.getContext("2d");
+		context.clearRect(0, 0, canvas.width, canvas.height);
 
-		context.clearRect(0, 0, _width, _height);
+		const _digit_distance = this.const_offset_x * g_dKoef_pix_to_mm;
+		const _logicDocument = this.m_oWordControl.m_oLogicDocument;
 
-		var _digit_distance = this.const_offset_x * g_dKoef_pix_to_mm;
+		for (let i = 0; i < this.GetSlidesCount(); i++) {
+			const page = this.m_arrPages[i];
 
-		var _logicDocument = word_control.m_oLogicDocument;
-		for (var i = 0; i < this.GetSlidesCount(); i++)
-		{
-			var page = this.m_arrPages[i];
-
-			if (i < this.m_lDrawingFirst || i > this.m_lDrawingEnd)
-			{
+			if (i < this.m_lDrawingFirst || i > this.m_lDrawingEnd) {
 				this.m_oCacheManager.UnLock(page.cachedImage);
 				page.cachedImage = null;
 				continue;
@@ -5260,12 +5252,12 @@ function CThumbnailsManager(editorPage)
 
 			// создаем отрисовщик
 			var g = new AscCommon.CGraphics();
-			g.init(context, _width, _height, _width * g_dKoef_pix_to_mm, _height * g_dKoef_pix_to_mm);
+			g.init(context, canvas.width, canvas.height, canvas.width * g_dKoef_pix_to_mm, canvas.height * g_dKoef_pix_to_mm);
 			g.m_oFontManager = this.m_oFontManager;
 			g.transform(1, 0, 0, 1, 0, 0);
 
 			var font = {
-				FontFamily: {Name: "Arial", Index: -1},
+				FontFamily: { Name: "Arial", Index: -1 },
 				Italic: false,
 				Bold: false,
 				FontSize: Math.round(10 * AscCommon.AscBrowser.retinaPixelRatio)
@@ -5278,13 +5270,11 @@ function CThumbnailsManager(editorPage)
 
 			// меряем надпись номера слайда
 			let nSlideNumber = _logicDocument.GetSlideNumber(i);
-			if(nSlideNumber !== null)
-			{
+			if (nSlideNumber !== null) {
 
 				var DrawNumSlide = nSlideNumber;
 				var num_slide_text_width = 0;
-				while (DrawNumSlide !== 0)
-				{
+				while (DrawNumSlide !== 0) {
 					var _last_dig = DrawNumSlide % 10;
 					num_slide_text_width += this.DigitWidths[_last_dig];
 					DrawNumSlide = (DrawNumSlide / 10) >> 0;
@@ -5303,9 +5293,8 @@ function CThumbnailsManager(editorPage)
 				let dY = page.top * g_dKoef_pix_to_mm + 3 * AscCommon.AscBrowser.retinaPixelRatio;
 				let _bounds = g.t("" + nSlideNumber, dX, dY, true);
 				let oSlide = _logicDocument.GetSlide(i);
-				if (oSlide && !oSlide.isVisible())
-				{
-					context.lineWidth =  AscCommon.AscBrowser.convertToRetinaValue(1, true);
+				if (oSlide && !oSlide.isVisible()) {
+					context.lineWidth = AscCommon.AscBrowser.convertToRetinaValue(1, true);
 					context.strokeStyle = sTextColor;
 					context.beginPath();
 					context.moveTo(_bounds.x - 3, _bounds.y);
@@ -5318,13 +5307,11 @@ function CThumbnailsManager(editorPage)
 					context.globalAlpha = 1;
 				}
 				page.animateLabelRect = null;
-				if (_logicDocument.isSlideAnimated(i))
-				{
+				if (_logicDocument.isSlideAnimated(i)) {
 					let nX = (_bounds.x + _bounds.r) / 2 - AscCommon.AscBrowser.convertToRetinaValue(9.5, true);
 					let nY = _bounds.b + 3;
 					let nIconH = AscCommon.AscBrowser.convertToRetinaValue(15, true);
-					if(nY + nIconH < page.bottom)
-					{
+					if (nY + nIconH < page.bottom) {
 						let oColor = text_color;
 						let resCords = this.DrawAnimLabel(g, nX, nY, oColor);
 						page.animateLabelRect = resCords
@@ -5812,99 +5799,135 @@ function CThumbnailsManager(editorPage)
 		return _MinPositionPage;
 	};
 
-	this.CalculatePlaces = function()
-	{
+	this.CalculatePlaces = function () {
 		if (!this.isThumbnailsShown())
 			return;
 
-		var word_control = this.m_oWordControl;
+		if (this.m_oWordControl && this.m_oWordControl.MobileTouchManagerThumbnails)
+			this.m_oWordControl.MobileTouchManagerThumbnails.ClearContextMenu();
 
-		var dKoefToPix = AscCommon.AscBrowser.retinaPixelRatio * g_dKoef_mm_to_pix;
-
-		if (word_control && word_control.MobileTouchManagerThumbnails)
-			word_control.MobileTouchManagerThumbnails.ClearContextMenu();
-
-		var canvas = word_control.m_oThumbnails.HtmlElement;
-		if (null == canvas)
+		const thumbnails = this.m_oWordControl.m_oThumbnails;
+		const thumbnailsCanvas = thumbnails.HtmlElement;
+		if (!thumbnailsCanvas)
 			return;
 
-		var _width = canvas.width;
-		var _height = canvas.height;
+		const canvasWidth = thumbnailsCanvas.width;
+		const canvasHeight = thumbnailsCanvas.height;
 
-		var bIsFoundFirst = false;
-		var bIsFoundEnd = false;
+		const thumbnailsWidthMm = thumbnails.AbsolutePosition.R - thumbnails.AbsolutePosition.L;
+		const thumbnailsHeightMm = thumbnails.AbsolutePosition.B - thumbnails.AbsolutePosition.T;
 
-		var lCurrentTopInDoc = (this.m_dScrollY) >> 0;
+		const pixelRatio = AscCommon.AscBrowser.retinaPixelRatio * g_dKoef_mm_to_pix;
+		const isVerticalThumbnails = this.m_oWordControl.thumbnailsPosition !== 'bottom';
 
-		var __w = word_control.m_oThumbnails.AbsolutePosition.R - word_control.m_oThumbnails.AbsolutePosition.L;
-		var __h = word_control.m_oThumbnails.AbsolutePosition.B - word_control.m_oThumbnails.AbsolutePosition.T;
-		var nWidthSlide = (__w * dKoefToPix) >> 0;
+		let thSlideWidthPx, thSlideHeightPx;
+		let startOffset, supplement;
+		if (isVerticalThumbnails) {
+			thSlideWidthPx = (thumbnailsWidthMm * pixelRatio >> 0) - this.const_offset_x - this.const_offset_r;
+			thSlideHeightPx = (thSlideWidthPx * this.SlideHeight / this.SlideWidth) >> 0;
+			startOffset = this.const_offset_y;
+		} else {
+			const topOffset = this.const_offset_y;
+			const bottomOffset = this.const_offset_b;
+			thSlideHeightPx = (thumbnailsHeightMm * pixelRatio >> 0) - topOffset - bottomOffset;
+			thSlideWidthPx = (thSlideHeightPx * this.SlideWidth / this.SlideHeight) >> 0;
+			startOffset = this.const_offset_x;
+		}
 
-		nWidthSlide -= (this.const_offset_x + this.const_offset_r);
-		var nHeightSlide = (nWidthSlide * this.SlideHeight / this.SlideWidth) >> 0;
+		const currentScrollPx = this.m_dScrollY >> 0;
 
-		var lStart = this.const_offset_y;
-		let SlidesCount = this.GetSlidesCount();
-		for (var i = 0; i < SlidesCount; i++)
-		{
-			if (this.m_oWordControl.m_oLogicDocument.isVisioDocument)
-			{
-				//todo override CThumbnailsManager
-				let SlideWidth = this.m_oWordControl.m_oLogicDocument.GetWidthMM(i);
-				let SlideHeight = this.m_oWordControl.m_oLogicDocument.GetHeightMM(i);
-				nHeightSlide = (nWidthSlide * SlideHeight / SlideWidth) >> 0;
+		let isFirstSlideFound = false;
+		let isLastSlideFound = false;
+
+		const totalSlidesCount = this.GetSlidesCount();
+		for (let slideIndex = 0; slideIndex < totalSlidesCount; slideIndex++) {
+			if (this.m_oWordControl.m_oLogicDocument.isVisioDocument) {
+				let visioSlideWidthMm = this.m_oWordControl.m_oLogicDocument.GetWidthMM(slideIndex);
+				let visioSlideHeightMm = this.m_oWordControl.m_oLogicDocument.GetHeightMM(slideIndex);
+				if (isVerticalThumbnails) {
+					thSlideHeightPx = (thSlideWidthPx * visioSlideHeightMm / visioSlideWidthMm) >> 0;
+				} else {
+					thSlideWidthPx = (thSlideHeightPx * visioSlideWidthMm / visioSlideHeightMm) >> 0;
+				}
 			}
 
-			if (i >= this.m_arrPages.length)
-			{
-				this.m_arrPages[i] = new CThPage();
-				if (0 == i)
+			if (slideIndex >= this.m_arrPages.length) {
+				this.m_arrPages[slideIndex] = new CThPage();
+				if (slideIndex === 0)
 					this.m_arrPages[0].IsSelected = true;
 			}
 
-			if (false === bIsFoundFirst)
-			{
-				if ((lStart + nHeightSlide) > lCurrentTopInDoc)
-				{
-					this.m_lDrawingFirst = i;
-					bIsFoundFirst = true;
+			const slideData = this.m_oWordControl.m_oLogicDocument.GetSlide(slideIndex);
+			const slideRect = this.m_arrPages[slideIndex];
+			slideRect.pageIndex = slideIndex;
+
+			if (isVerticalThumbnails) {
+				slideRect.left = this.const_offset_x;
+				slideRect.top = startOffset - currentScrollPx;
+				slideRect.right = slideRect.left + thSlideWidthPx;
+				slideRect.bottom = slideRect.top + thSlideHeightPx;
+
+				if (!isFirstSlideFound) {
+					if ((startOffset + thSlideHeightPx) > currentScrollPx) {
+						this.m_lDrawingFirst = slideIndex;
+						isFirstSlideFound = true;
+					}
+				}
+
+				if (!isLastSlideFound) {
+					if (slideRect.top > canvasHeight) {
+						this.m_lDrawingEnd = slideIndex - 1;
+						isLastSlideFound = true;
+					}
+				}
+
+				supplement = (thSlideHeightPx + 3 * this.const_border_w);
+			} else {
+				slideRect.left = startOffset - currentScrollPx;
+				slideRect.top = this.const_offset_y;
+				slideRect.right = slideRect.left + thSlideWidthPx;
+				slideRect.bottom = slideRect.top + thSlideHeightPx;
+
+				if (!isFirstSlideFound) {
+					if ((startOffset + thSlideWidthPx) > currentScrollPx) {
+						this.m_lDrawingFirst = slideIndex;
+						isFirstSlideFound = true;
+					}
+				}
+
+				if (!isLastSlideFound) {
+					if (slideRect.left > canvasWidth) {
+						this.m_lDrawingEnd = slideIndex - 1;
+						isLastSlideFound = true;
+					}
+				}
+
+				supplement = (thSlideWidthPx + 3 * this.const_border_w);
+			}
+
+			if (slideData.getObjectType() === AscDFH.historyitem_type_SlideLayout) {
+				const scaledWidth = (slideRect.right - slideRect.left) * LAYOUT_SCALE;
+				const scaledHeight = (slideRect.bottom - slideRect.top) * LAYOUT_SCALE;
+
+				if (isVerticalThumbnails) {
+					slideRect.left = (slideRect.right - scaledWidth) + 0.5 >> 0;
+					slideRect.bottom = (slideRect.top + scaledHeight) + 0.5 >> 0;
+					supplement = scaledHeight + 3 * this.const_border_w;
+				} else {
+					slideRect.right = (slideRect.left + scaledWidth) + 0.5 >> 0;
+					slideRect.top = (slideRect.bottom - scaledHeight) + 0.5 >> 0;
+					supplement = scaledWidth + 3 * this.const_border_w;
 				}
 			}
 
-			var drawRect = this.m_arrPages[i];
-			let nHeight = nHeightSlide;
-			drawRect.left = this.const_offset_x;
-			drawRect.top = lStart - lCurrentTopInDoc;
-			drawRect.right = drawRect.left + nWidthSlide;
-			drawRect.bottom = drawRect.top + nHeight;
-			drawRect.pageIndex = i;
-			let oSlide = this.m_oWordControl.m_oLogicDocument.GetSlide(i);
-			if(oSlide.getObjectType() === AscDFH.historyitem_type_SlideLayout)
-			{
-				let nWidth = (drawRect.right - drawRect.left) * LAYOUT_SCALE;
-				drawRect.left = (drawRect.right - nWidth) + 0.5 >> 0;
-				nHeight = nHeightSlide * LAYOUT_SCALE + 0.5 >> 0;
-				drawRect.bottom = drawRect.top + nHeight;
-			}
-
-			if (false === bIsFoundEnd)
-			{
-				if (drawRect.top > _height)
-				{
-					this.m_lDrawingEnd = i - 1;
-					bIsFoundEnd = true;
-				}
-			}
-
-			lStart += (nHeight + 3 * this.const_border_w);
+			startOffset += supplement;
 		}
 
-		if (this.m_arrPages.length > SlidesCount)
-			this.m_arrPages.splice(SlidesCount, this.m_arrPages.length - SlidesCount);
+		if (this.m_arrPages.length > totalSlidesCount)
+			this.m_arrPages.splice(totalSlidesCount, this.m_arrPages.length - totalSlidesCount);
 
-		if (false === bIsFoundEnd)
-		{
-			this.m_lDrawingEnd = SlidesCount - 1;
+		if (!isLastSlideFound) {
+			this.m_lDrawingEnd = totalSlidesCount - 1;
 		}
 	};
 
