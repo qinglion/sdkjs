@@ -10677,7 +10677,23 @@ CPresentation.prototype.StartAddShape = function (preset, _is_apply, nPlaceholde
 		this.Api.sync_EndAddShape();
 	}
 };
-
+CPresentation.prototype.EraseAllInksOnSlide = function ()
+{
+	let oCurSlide = this.GetCurrentSlide();
+	if(!oCurSlide) return;
+	this.StartAction(0);
+	let aSpTree = oCurSlide.cSld.spTree;
+	for(let nSp = aSpTree.length - 1; nSp > -1; --nSp)
+	{
+		let oSp = aSpTree[nSp];
+		if(oSp.isInk())
+		{
+			oSp.deselect(oCurSlide.graphicObjects);
+			oCurSlide.removeFromSpTreeById(oSp.Id);
+		}
+	}
+	this.FinalizeAction();
+};
 CPresentation.prototype.SetLayoutTitle = function (bVal) {
 	const oCurSlide = this.GetCurrentSlide();
 	if(!oCurSlide) {
