@@ -3303,7 +3303,8 @@ function (window, undefined) {
 			AscCH.historyitem_Worksheet_SetTabColor === Type || AscCH.historyitem_Worksheet_SetSummaryRight === Type ||
 			AscCH.historyitem_Worksheet_SetSummaryBelow === Type || AscCH.historyitem_Worksheet_GroupRow === Type ||
 			AscCH.historyitem_Worksheet_GroupCol === Type || AscCH.historyitem_Worksheet_CollapsedRow === Type ||
-			AscCH.historyitem_Worksheet_CollapsedCol === Type || AscCH.historyitem_Worksheet_SetFitToPage === Type) {
+			AscCH.historyitem_Worksheet_CollapsedCol === Type || AscCH.historyitem_Worksheet_SetFitToPage === Type ||
+			AscCH.historyitem_Worksheet_SetTopLeftCell === Type) {
 			Data = Data.CreateReverseChangeSpreadsheet();
 		} else {
 			return;
@@ -3401,7 +3402,8 @@ function (window, undefined) {
 		} else if (AscCH.historyitem_Worksheet_MoveRange === oActionToUndo.nActionType ||
 			AscCH.historyitem_Worksheet_ChangeMerge === oActionToUndo.nActionType ||
 			AscCH.historyitem_Worksheet_ChangeHyperlink === oActionToUndo.nActionType ||
-			AscCH.historyitem_Worksheet_ChangeFrozenCell === oActionToUndo.nActionType) {
+			AscCH.historyitem_Worksheet_ChangeFrozenCell === oActionToUndo.nActionType ||
+			AscCH.historyitem_Worksheet_SetTopLeftCell === oActionToUndo.nActionType) {
 			res = AscCommonExcel.g_oUndoRedoWorksheet.CommuteRelatedRange(oActionToUndo.oData.from, oActionOther);
 			res = res && AscCommonExcel.g_oUndoRedoWorksheet.CommuteRelatedRange(oActionToUndo.oData.to, oActionOther);
 		}
@@ -4239,6 +4241,9 @@ function (window, undefined) {
 	};
 
 	UndoRedoWoorksheet.prototype.CommuteRelatedCell = function (oData, oActionOther) {
+		if (!oData) {
+			return true;
+		}
 		let res = this.CommuteRelatedCell2(oData.nRow, oData.nCol, oActionOther);
 		if (res) {
 			oData.nRow = this.tmpCell.nRow;
@@ -4331,6 +4336,9 @@ function (window, undefined) {
 		return true;
 	}
 	UndoRedoWoorksheet.prototype.CommuteRelatedRange = function (oData, oActionOther) {
+		if (!oData) {
+			return true;
+		}
 		let res = this.CommuteRelatedRange2(oData.r1, oData.c1, oData.r2, oData.c2, oActionOther);
 		if (res) {
 			oData.r1 = this.tmpRange.r1;
