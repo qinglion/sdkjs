@@ -4769,7 +4769,7 @@ function (window, undefined) {
 			docInfo.put_Url(userAuth["wopiSrc"] + "/contents?access_token=" + userAuth["access_token"]);
 		}
 		docInfo.put_Title(fileInfo["BreadcrumbDocName"] || fileInfo["BaseFileName"]);
-		docInfo.put_CallbackUrl(JSON.stringify(userAuth),);
+		docInfo.put_CallbackUrl(JSON.stringify(userAuth));
 		docInfo.put_Token(token);
 		//todo does userInfo can change? (IsAnonymousUser)
 
