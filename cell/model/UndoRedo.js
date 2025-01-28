@@ -3434,9 +3434,11 @@ function (window, undefined) {
 				oLockInfo["rangeOrObjectId"] = new Asc.Range(nCol, nRow, nCol, nRow);
 				wb.aCollaborativeChangeElements.push(oLockInfo);
 			}
+
+			let oValue, oStyle;
 			if (bUndo) {
-				var oValue = Data.oOldVal.value;
-				var oStyle = Data.oOldVal.style;
+				oValue = Data.oOldVal.value;
+				oStyle = Data.oOldVal.style;
 				ws._getCell(nRow, nCol, function (cell) {
 					cell.setValueData(oValue);
 					if (null != oStyle) {
@@ -3447,7 +3449,20 @@ function (window, undefined) {
 				});
 
 			} else {
-				ws._removeCell(nRow, nCol);
+				if (Data.oNewVal) {
+					oValue = Data.oNewVal.value;
+					oStyle = Data.oNewVal.style;
+					ws._getCell(nRow, nCol, function (cell) {
+						cell.setValueData(oValue);
+						if (null != oStyle) {
+							cell.setStyle(oStyle);
+						} else {
+							cell.setStyle(null);
+						}
+					});
+				} else {
+					ws._removeCell(nRow, nCol);
+				}
 			}
 		} else if (AscCH.historyitem_Worksheet_ColProp === Type) {
 			index = Data.index;
