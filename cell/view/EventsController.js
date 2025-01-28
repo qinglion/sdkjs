@@ -2807,16 +2807,24 @@
 
 		asc_CEventsController.prototype.showHorizontalScroll = function (val) {
 			this.hsb.style.visibility = val ? "visible" : "hidden";
-			let cornerStyle = !val && this.vsb.style.visibility === "hidden" ? "hidden" : "visible";
-			let corner = document.getElementById("ws-scrollbar-corner");
-			corner.style.visibility = cornerStyle;
+			if (!this.view.Api.isMobileVersion) {
+				let cornerStyle = !val && this.vsb.style.visibility === "hidden" ? "hidden" : "visible";
+				let corner = document.getElementById("ws-scrollbar-corner");
+				if (corner) {
+					corner.style.visibility = cornerStyle;
+				}
+			}
 		};
 
 		asc_CEventsController.prototype.showVerticalScroll = function (val) {
 			this.vsb.style.visibility = val ? "visible" : "hidden";
-			let cornerStyle = !val && this.hsb.style.visibility === "hidden" ? "hidden" : "visible";
-			let corner = document.getElementById("ws-scrollbar-corner");
-			corner.style.visibility = cornerStyle;
+			if (!this.view.Api.isMobileVersion) {
+				let cornerStyle = !val && this.vsb.style.visibility === "hidden" ? "hidden" : "visible";
+				let corner = document.getElementById("ws-scrollbar-corner");
+				if (corner) {
+					corner.style.visibility = cornerStyle;
+				}
+			}
 		};
 
 
