@@ -3140,11 +3140,7 @@ function (window, undefined) {
 			//todo batch transform
 			this.wb._forwardTransformation(snapshot, [oActionToUndo], [oActionOther], true);
 		}
-		let res = true;
-		if (AscCommonExcel.g_oUndoRedoWorksheet === oActionOther.oClass) {
-			res = AscCommonExcel.g_oUndoRedoWorksheet.CommuteRelatedCell(oActionToUndo.oData, oActionOther);
-		}
-		return res;
+		return AscCommonExcel.g_oUndoRedoWorksheet.CommuteRelatedCell(oActionToUndo.oData, oActionOther);
 	};
 	UndoRedoCell.prototype.UndoRedo = function (Type, Data, nSheetId, bUndo) {
 		let ws = this.wb.getWorksheetById(nSheetId), t = this;
@@ -3316,10 +3312,10 @@ function (window, undefined) {
 		let isAddColUndo = AscCH.historyitem_Worksheet_AddCols === oActionToUndo.nActionType;
 		let isRemoveRowUndo = AscCH.historyitem_Worksheet_RemoveRows === oActionToUndo.nActionType;
 		let isRemoveColUndo = AscCH.historyitem_Worksheet_RemoveCols === oActionToUndo.nActionType;
-		let isAddRowOther = AscCH.historyitem_Worksheet_AddRows === oActionOther.nActionType;
-		let isAddColOther = AscCH.historyitem_Worksheet_AddCols === oActionOther.nActionType;
-		let isRemoveRowOther = AscCH.historyitem_Worksheet_RemoveRows === oActionOther.nActionType;
-		let isRemoveColOther = AscCH.historyitem_Worksheet_RemoveCols === oActionOther.nActionType;
+		let isAddRowOther = AscCommonExcel.g_oUndoRedoWorksheet === oActionOther.oClass && AscCH.historyitem_Worksheet_AddRows === oActionOther.nActionType;
+		let isAddColOther = AscCommonExcel.g_oUndoRedoWorksheet === oActionOther.oClass && AscCH.historyitem_Worksheet_AddCols === oActionOther.nActionType;
+		let isRemoveRowOther = AscCommonExcel.g_oUndoRedoWorksheet === oActionOther.oClass && AscCH.historyitem_Worksheet_RemoveRows === oActionOther.nActionType;
+		let isRemoveColOther = AscCommonExcel.g_oUndoRedoWorksheet === oActionOther.oClass && AscCH.historyitem_Worksheet_RemoveCols === oActionOther.nActionType;
 		let isAddUndo = isAddRowUndo || isAddColUndo;
 		let isAddOther = isAddRowOther || isAddColOther;
 		let isRemoveUndo = isRemoveRowUndo || isRemoveColUndo;
@@ -4644,6 +4640,29 @@ function (window, undefined) {
 	UndoRedoComment.prototype.getClassType = function () {
 		return this.nType;
 	};
+	UndoRedoComment.prototype.CreateReverseChangeSpreadsheet = function (ToClass, Type, nSheetId, oRange, Data, LocalChange) {
+		if (Type === AscCH.historyitem_Comment_Add) {
+			Type = AscCH.historyitem_Comment_Remove;
+		} else if (Type === AscCH.historyitem_Comment_Remove) {
+			Type = AscCH.historyitem_Comment_Add;
+		} else if (Type === AscCH.historyitem_Comment_Change || Type === AscCH.historyitem_Comment_Coords) {
+			Data = Data.CreateReverseChangeSpreadsheet();
+		}
+		return new AscCommonExcel.UndoRedoItemSerializable(ToClass, Type, nSheetId, oRange, Data, LocalChange);
+	};
+	UndoRedoComment.prototype.CommuteRelated = function (oActionToUndo, oActionOther) {
+		let res = true;
+		if (AscCH.historyitem_Comment_Add === oActionToUndo.nActionType || AscCH.historyitem_Comment_Add === oActionToUndo.nActionType) {
+			res = AscCommonExcel.g_oUndoRedoWorksheet.CommuteRelatedCell(oActionToUndo.oData, oActionOther);
+			if(oActionToUndo.oData.coords) {
+				res = res && AscCommonExcel.g_oUndoRedoWorksheet.CommuteRelatedCell(oActionToUndo.oData.coords, oActionOther);
+			}
+		} else if (AscCH.historyitem_Comment_Change === oActionToUndo.nActionType || AscCH.historyitem_Comment_Coords === oActionToUndo.nActionType) {
+			res = AscCommonExcel.g_oUndoRedoWorksheet.CommuteRelatedCell(oActionToUndo.oData.from, oActionOther);
+			res = res && AscCommonExcel.g_oUndoRedoWorksheet.CommuteRelatedCell(oActionToUndo.oData.to, oActionOther);
+		}
+		return res;
+	}
 	UndoRedoComment.prototype.Undo = function (Type, Data, nSheetId) {
 		this.UndoRedo(Type, Data, nSheetId, true);
 	};
