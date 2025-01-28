@@ -2459,7 +2459,10 @@ CMathBase.prototype.Displace_BreakOperator = function(isForward, bBrkBefore, Cou
 };
 CMathBase.prototype.Get_AlignBrk = function(_CurLine, bBrkBefore)
 {
-    return this.Content[this.NumBreakContent].Get_AlignBrk(_CurLine, bBrkBefore);
+	if (!this.Content[this.NumBreakContent])
+		return null;
+
+	return this.Content[this.NumBreakContent].Get_AlignBrk(_CurLine, bBrkBefore);
 };
 CMathBase.prototype.raw_SetReviewInfo = function(reviewInfo)
 {
