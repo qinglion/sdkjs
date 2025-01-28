@@ -4783,6 +4783,17 @@ function (window, undefined) {
 		return AscCH.historyitem_AutoFilter_Add === Type || AscCH.historyitem_AutoFilter_ChangeTableName === Type ||
 			AscCH.historyitem_AutoFilter_Empty === Type || AscCH.historyitem_AutoFilter_ChangeColumnName === Type;
 	};
+	UndoRedoAutoFilters.prototype.CreateReverseChangeSpreadsheet = function (ToClass, nActionType, nSheetId, oRange, oData, LocalChange) {
+		let type, data;
+		if (AscCH.historyitem_AutoFilter_Add === nActionType) {
+			type = AscCH.historyitem_AutoFilter_Empty;
+			data = new AscCommonExcel.UndoRedoData_AutoFilter();
+			data.activeCells = oData.activeCells;
+		} else {
+			return;
+		}
+		return new UndoRedoItemSerializable(ToClass, type, nSheetId, oRange, data, LocalChange);
+	};
 
 	function UndoRedoSparklines(wb) {
 		UndoRedoClassBase.call(this);
