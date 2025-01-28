@@ -6828,19 +6828,19 @@ function BinaryDocumentTableWriter(memory, doc, oMapCommentId, oNumIdMap, copyPa
 	this.WriteSdtPrDataBinding = function (val)
 	{
 		var oThis = this;
-		if (null != val.prefixMappings) {
+		if (undefined !== val.prefixMappings) {
 			this.memory.WriteByte(c_oSerSdt.PrefixMappings);
 			this.memory.WriteString2(val.prefixMappings);
 		}
-		if (null != val.storeItemID) {
+		if (undefined !== val.storeItemID) {
 			this.memory.WriteByte(c_oSerSdt.StoreItemID);
 			this.memory.WriteString2(val.storeItemID);
 		}
-		if (null != val.xpath) {
+		if (undefined !== val.xpath) {
 			this.memory.WriteByte(c_oSerSdt.XPath);
 			this.memory.WriteString2(val.xpath);
 		}
-		if (null !== val.storeItemCheckSum)
+		if (undefined !== val.storeItemCheckSum)
 		{
 			//let strCustomXmlContent = this.Document.customXml.getContentByDataBinding(val);
 			//val.recalculateCheckSum(strCustomXmlContent);
