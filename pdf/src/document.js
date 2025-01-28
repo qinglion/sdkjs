@@ -427,7 +427,7 @@ var CPresentation = CPresentation || function(){};
 
             let oParent = private_createField(aParentsInfo[i]["name"], sType, undefined, undefined, this);
             if (aParentsInfo[i]["value"] != null)
-                oParent.SetApiValue(aParentsInfo[i]["value"]);
+                oParent.SetParentValue(aParentsInfo[i]["value"]);
             if (aParentsInfo[i]["Parent"] != null)
                 this.AddFieldToChildsMap(oParent, aParentsInfo[i]["Parent"]);
             if (aParentsInfo[i]["defaultValue"] != null)
@@ -465,12 +465,12 @@ var CPresentation = CPresentation || function(){};
 
         for (let i = 0; i < this.widgets.length; i++) {
             let oField = this.widgets[i];
-            if ((oField.GetPartialName() == null || oField.GetApiValue(bInberitValue) == null) && oField.GetParent()) {
+            if ((oField.GetPartialName() == null || oField.GetParentValue(bInberitValue) == null) && oField.GetParent()) {
                 let oParent = oField.GetParent();
                 if (oParent.GetType() == AscPDF.FIELD_TYPES.radiobutton && oParent.IsAllKidsWidgets())
                     aRadios.push(oParent);
 
-                value = oParent.GetApiValue(false);
+                value = oParent.GetParentValue(false);
                 if (value != null && value.toString) {
                     value = value.toString();
                 }
@@ -2156,9 +2156,7 @@ var CPresentation = CPresentation || function(){};
             let oActionRunScript = oCalcTrigget ? oCalcTrigget.GetActions()[0] : null;
 
             if (oActionRunScript) {
-                oThis.StartNoHistoryMode();
                 oActionRunScript.RunScript();
-                oThis.EndNoHistoryMode();
                 if (oField.IsNeedCommit()) {
                     oField.SetNeedRecalc(true);
                     oThis.fieldsToCommit.push(oField);
@@ -6731,7 +6729,11 @@ var CPresentation = CPresentation || function(){};
                     oFirstAction.Do();
                 }
             }, AscDFH.historydescription_Pdf_ExecActions, this);
-            AscCommon.History = localHistory;
+            
+            // could changed to local in after focus callback
+            if (oHistory != localHistory) {
+                AscCommon.History = localHistory;
+            }
         }
     };
     CActionQueue.prototype.Continue = function() {

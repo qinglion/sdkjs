@@ -365,6 +365,10 @@
 	};
 	PDFEditorApi.prototype.asc_getCanUndo = function() {
 		let oDoc = this.getPDFDoc();
+		if (!oDoc) {
+			return false;
+		}
+		
 		let bCanUndo = oDoc.History.Can_Undo() || oDoc.LocalHistory.Can_Undo();
 
 		if (true !== bCanUndo && oDoc.CollaborativeEditing && true === oDoc.CollaborativeEditing.Is_Fast() && true !== oDoc.CollaborativeEditing.Is_SingleUser())
