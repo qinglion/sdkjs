@@ -3269,6 +3269,7 @@
     window['AscDFH'].historyitem_Sparkline_ChangeData = window['AscDFH'].historyitem_type_Sparkline | 27;
     window['AscDFH'].historyitem_Sparkline_RemoveData = window['AscDFH'].historyitem_type_Sparkline | 28;
     window['AscDFH'].historyitem_Sparkline_RemoveSparkline = window['AscDFH'].historyitem_type_Sparkline | 29;
+    window['AscDFH'].historyitem_Sparkline_Worksheet = window['AscDFH'].historyitem_type_Sparkline | 30;
 
 
     window['AscDFH'].historyitem_NotesMasterSetHF          = window['AscDFH'].historyitem_type_NotesMaster | 1;
