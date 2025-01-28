@@ -4813,6 +4813,19 @@ function (window, undefined) {
 		}
 		return new UndoRedoItemSerializable(ToClass, type, nSheetId, oRange, data, LocalChange);
 	};
+	UndoRedoAutoFilters.prototype.CommuteRelated = function (oActionToUndo, oActionOther) {
+		if (AscCommonExcel.g_oUndoRedoAutoFilters === oActionOther.oClass) {
+			//изменения в форматированной таблице. например добавление total
+			return false;
+		}
+		let res = true;
+		if (AscCH.historyitem_AutoFilter_Empty === oActionToUndo.nActionType) {
+			if(oActionToUndo.oData.activeCells) {
+				res = AscCommonExcel.g_oUndoRedoWorksheet.CommuteRelatedRange(oActionToUndo.oData.activeCells, oActionOther);
+			}
+		}
+		return res;
+	}
 
 	function UndoRedoSparklines(wb) {
 		UndoRedoClassBase.call(this);
