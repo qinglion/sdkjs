@@ -2532,7 +2532,7 @@
 
 			let values = AscCommon.checkMouseWhell(e, {
 				isSupportBidirectional : false,
-				isAllowHorizontal : oThis.m_bIsHorScrollVisible,
+				isAllowHorizontal : oThis.isVisibleHorScroll,
 				isUseMaximumDelta : true
 			});
 			
