@@ -13608,24 +13608,38 @@ CDocument.prototype._checkChangesTypeForPermRangeForSelection = function(changes
 };
 CDocument.prototype._checkPermRangeForCurrentSelection = function()
 {
-	// TODO: Пока запрещаем любые действия, связанные с выделением автофигур
-	if (this.IsTextSelectionUse())
+	let docPosType = this.GetDocPosType();
+	
+	// TODO: Для сносок нужна отдельная проверка, что сама ссылка на сноску лежит в резрешенном диапазоне
+	//       Диапазоны внутри самих сносок не учитываются
+	if (docpostype_Footnotes === docPosType || docpostype_Endnotes === docPosType)
+		return false;
+	
+	let docContent = this;
+	if (docPosType === docpostype_HdrFtr)
 	{
-		if (true !== this.Selection.Use || this.Controller !== this.LogicDocumentController)
-			return;
+		let hdrftr = this.HdrFtr.CurHdrFtr;
+		if (!hdrftr)
+			return null;
 		
+		docContent = hdrftr.GetContent();
+	}
+	
+	// TODO: Пока запрещаем любые действия, связанные с выделением автофигур
+	if (this.IsTextSelectionUse() && this.Selection.Use)
+	{
 		// Надо проверить, что у нас начало и конец попали хотя бы в один общий промежуток
-		let startPos = this.GetContentPosition(true, true);
-		let endPos   = this.GetContentPosition(true, false);
+		let startPos = docContent.GetContentPosition(true, true);
+		let endPos   = docContent.GetContentPosition(true, false);
 		
-		let startRanges = this.GetPermRangesByContentPos(startPos);
-		let endRanges   = this.GetPermRangesByContentPos(endPos);
+		let startRanges = this.GetPermRangesByContentPos(startPos, docContent);
+		let endRanges   = this.GetPermRangesByContentPos(endPos, docContent);
 		return AscWord.PermRangesManager.isInPermRange(startRanges, endRanges);
 	}
 	else if (!this.IsSelectionUse())
 	{
-		let currentPos = this.GetContentPosition();
-		return this.GetPermRangesByContentPos(currentPos).length > 0;
+		let currentPos = docContent.GetContentPosition();
+		return this.GetPermRangesByContentPos(currentPos, docContent).length > 0;
 	}
 	
 	return false;
@@ -16183,6 +16197,18 @@ CDocument.prototype.SetContentPosition = function(DocPos, Depth, Flag)
 
 	if (this.Content[Pos])
 		this.Content[Pos].SetContentPosition(_DocPos, Depth + 1, _Flag);
+};
+CDocument.prototype.GetControllerContentPosition = function(isSelection, start, posArray)
+{
+	return this.Controller.GetControllerContentPosition(isSelection, start, posArray);
+};
+CDocument.prototype.SetControllerContentPosition = function(docPos)
+{
+	return this.Controller.SetControllerContentPosition(docPos);
+};
+CDocument.prototype.SetControllerContentSelection = function(startPos, endPos)
+{
+	return this.Controller.SetControllerContentSelection(startPos, endPos);
 };
 CDocument.prototype.GetDocumentPositionFromObject = function(arrPos)
 {
@@ -23933,17 +23959,17 @@ CDocument.prototype.UpdateFields = function(isBySelection)
 	}
 
 };
-CDocument.prototype.GetPermRangesByContentPos = function(docPos)
+CDocument.prototype.GetPermRangesByContentPos = function(docPos, docContent)
 {
 	if (!docPos)
 		return [];
 	
 	let state = this.SaveDocumentState();
 	
-	this.SetContentPosition(docPos, 0, 0);
+	docContent.SetContentPosition(docPos, 0, 0);
 	
 	let result = [];
-	let currentParagraph = this.controller_GetCurrentParagraph(true, null);
+	let currentParagraph = this.GetCurrentParagraph(true, null);
 	if (currentParagraph)
 		result = currentParagraph.GetCurrentPermRanges();
 	
