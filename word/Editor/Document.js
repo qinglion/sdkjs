@@ -13498,8 +13498,11 @@ CDocument.prototype.IsPermRangeEditing = function(changesType, additionalData)
 		}
 	}
 	
-	if (additionalData)
+	function checkAdditional(additionalData)
 	{
+		if (!additionalData)
+			return true;
+		
 		if (AscCommon.changestype_2_InlineObjectMove === additionalData.Type)
 		{
 			// TODO: Надо проверить не целиком параграф, а только то место, куда происходит вставка
@@ -13556,7 +13559,23 @@ CDocument.prototype.IsPermRangeEditing = function(changesType, additionalData)
 		}
 	}
 	
-	return true;
+	if (!additionalData)
+		return true;
+	
+	if (Array.isArray(additionalData))
+	{
+		for (let i = 0; i < additionalData.length; ++i)
+		{
+			if (!checkAdditional(additionalData[i]))
+				return false;
+		}
+		
+		return true;
+	}
+	else
+	{
+		return checkAdditional(additionalData);
+	}
 };
 CDocument.prototype.IsNeedNotificationOnEditProtectedRange = function(changesType, additionalData)
 {
