@@ -950,7 +950,7 @@ RotateState.prototype =
                             
                             oTrack.originalObject.SetNeedRecalc(true);
                         }
-                }, AscDFH.historydescription_CommonDrawings_EndTrack, this);
+                }, AscDFH.historydescription_CommonDrawings_EndTrack, this, pageIndex);
 
                 this.drawingObjects.changeCurrentState(new NullState(this.drawingObjects));
                 this.drawingObjects.clearTrackObjects();

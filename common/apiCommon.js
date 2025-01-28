@@ -3440,6 +3440,33 @@ function (window, undefined) {
 	};
 
 	/** @constructor */
+	function asc_CPdfPageProperty() {
+		this.deleteLock	= false;
+		this.rotateLock	= false;
+		this.editLock	= false;
+	}
+
+	asc_CPdfPageProperty.prototype.constructor = asc_CPdfPageProperty;
+	asc_CPdfPageProperty.prototype.asc_getDeleteLock = function () {
+		return this.deleteLock;
+	};
+	asc_CPdfPageProperty.prototype.asc_putDeleteLock = function (v) {
+		this.deleteLock = v;
+	};
+	asc_CPdfPageProperty.prototype.asc_getRotateLock = function () {
+		return this.rotateLock;
+	};
+	asc_CPdfPageProperty.prototype.asc_putRotateLock = function (v) {
+		this.rotateLock = v;
+	};
+	asc_CPdfPageProperty.prototype.asc_getEditLock = function () {
+		return this.editLock;
+	};
+	asc_CPdfPageProperty.prototype.asc_putEditLock = function (v) {
+		this.editLock = v;
+	};
+
+	/** @constructor */
 	function asc_TextArtProperties(obj) {
 		if (obj) {
 			this.Fill = obj.Fill;//asc_Fill
@@ -6716,6 +6743,12 @@ function (window, undefined) {
 	prot["asc_getCanEditText"]		= prot.asc_getCanEditText;
 	prot["asc_setCanEditText"]		= prot.asc_setCanEditText;
 
+	window["Asc"]["asc_CPdfPageProperty"] = window["Asc"].asc_CPdfPageProperty = asc_CPdfPageProperty;
+	prot = asc_CPdfPageProperty.prototype;
+	prot["asc_getDeleteLock"]	= prot.asc_getDeleteLock;
+	prot["asc_putDeleteLock"]	= prot.asc_putDeleteLock;
+	prot["asc_getEditLock"]		= prot.asc_getEditLock;
+	prot["asc_putEditLock"]		= prot.asc_putEditLock;
 
 	window["Asc"]["asc_TextArtProperties"] = window["Asc"].asc_TextArtProperties = asc_TextArtProperties;
 	prot = asc_TextArtProperties.prototype;
