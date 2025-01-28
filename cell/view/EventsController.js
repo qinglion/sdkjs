@@ -2715,11 +2715,6 @@
 				}
 			}
 
-			if (event.shiftKey) {
-				deltaX = deltaY;
-				deltaY = 0;
-			}
-
 			//TODO!!! while only check direction. need refactor, and replace up code on checkMouseWhell function
 			let values = AscCommon.checkMouseWhell(event, {
 				isSupportBidirectional : false,
@@ -2731,6 +2726,11 @@
 				deltaX = 0;
 			}
 			if (values.y === 0) {
+				deltaY = 0;
+			}
+
+			if (event.shiftKey) {
+				deltaX = deltaY;
 				deltaY = 0;
 			}
 
