@@ -16797,6 +16797,14 @@ Paragraph.prototype.GetCurrentPermRanges = function()
 	
 	return permRanges;
 };
+Paragraph.prototype.GetPermRangesByPos = function(paraPos)
+{
+	let state = this.SaveSelectionState();
+	this.Set_ParaContentPos(paraPos, false, -1, -1, false);
+	let permRanges = this.GetCurrentPermRanges();
+	this.LoadSelectionState(state);
+	return permRanges;
+};
 Paragraph.prototype.GetCurrentComplexFields = function(bReturnFieldPos)
 {
 	var arrComplexFields = [];

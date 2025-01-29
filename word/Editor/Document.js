@@ -13659,10 +13659,19 @@ CDocument.prototype._checkPermRangeForCurrentSelection = function()
 {
 	let docPosType = this.GetDocPosType();
 	
-	// TODO: Для сносок нужна отдельная проверка, что сама ссылка на сноску лежит в резрешенном диапазоне
-	//       Диапазоны внутри самих сносок не учитываются
 	if (docpostype_Footnotes === docPosType || docpostype_Endnotes === docPosType)
-		return false;
+	{
+		let footnotes = this.Controller.private_GetSelectionArray();
+		if (!footnotes || !footnotes.length)
+			return false;
+		
+		for (let i = 0; i < footnotes.length; ++i)
+		{
+			if (!footnotes[i].IsInPermRange())
+				return false;
+		}
+		return true;
+	}
 	
 	let docContent = this;
 	if (docPosType === docpostype_HdrFtr)
