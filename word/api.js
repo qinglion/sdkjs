@@ -951,12 +951,8 @@
 
 		//g_clipboardBase.Init(this);
 		
-		if (config["headings-color"])
-		{
-			let rgba = AscCommon.RgbaHexToRGBA(config["headings-color"]);
-			AscWord.setDefaultHeadingColor(rgba.R, rgba.G, rgba.B)
-		}
-
+		this.headingsColor = config["headings-color"] ? config["headings-color"] : null;
+		
 		this._init();
 	}
 
@@ -9797,7 +9793,13 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype._onEndLoadSdk = function()
 	{
 		AscCommon.baseEditorsApi.prototype._onEndLoadSdk.call(this);
-
+		
+		if (this.headingsColor)
+		{
+			let rgba = AscCommon.RgbaHexToRGBA(this.headingsColor);
+			AscWord.setDefaultHeadingColor(rgba.R, rgba.G, rgba.B)
+		}
+		
 		History           = AscCommon.History;
 		g_fontApplication = AscFonts.g_fontApplication;
 		PasteElementsId   = AscCommon.PasteElementsId;
