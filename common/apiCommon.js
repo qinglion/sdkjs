@@ -5271,6 +5271,11 @@ function (window, undefined) {
 						oShape.setWorksheet(oApi.wb.getWorksheet().model);
 						break;
 					}
+					case AscCommon.c_oEditorId.Visio: {
+						oShape.setWordShape(false);
+						oShape.setParent(oApi.WordControl.m_oLogicDocument);
+						break;
+					}
 				}
 
 				let _oldTrackRevision = false;
@@ -5517,7 +5522,8 @@ function (window, undefined) {
 
 					break;
 				}
-				case AscCommon.c_oEditorId.Presentation: {
+				case AscCommon.c_oEditorId.Presentation:
+				case AscCommon.c_oEditorId.Visio: {
 					if (oApi.WordControl) {
 						if (oApi.watermarkDraw) {
 							oApi.watermarkDraw.zoom = oApi.WordControl.m_nZoomValue / 100;
