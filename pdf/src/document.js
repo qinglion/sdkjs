@@ -5846,6 +5846,10 @@ var CPresentation = CPresentation || function(){};
             let oColor = AscCommon.getUserColorById(this.CollaborativeEditing.m_aForeignCursorsId[userId], null, true);
 
             for (let i = 0; i < aObjects.length; i++) {
+                if (false == aObjects[i].IsUseInDocument()) {
+                    continue;
+                }
+                
                 let aRect = aObjects[i].GetOrigRect();
                 let nPage = aObjects[i].GetPage();
                 let nRotRad = aObjects[i].GetRot ? aObjects[i].GetRot() : 0;
