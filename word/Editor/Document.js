@@ -13465,8 +13465,11 @@ CDocument.prototype.CanPerformAction = function(isIgnoreCanEditFlag, checkType, 
  */
 CDocument.prototype.IsPermRangeEditing = function(changesType, additionalData)
 {
-	if (this.Api.isViewMode || !(this.Api.isRestrictionComments() || this.Api.isRestrictionView()))
+	if (this.Api.isViewMode)
 		return false;
+	
+	if (!this.Api.isRestrictionComments() && !this.Api.isRestrictionView())
+		return true;
 	
 	if (AscCommon.changestype_None !== changesType)
 	{
