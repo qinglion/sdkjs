@@ -4171,6 +4171,7 @@ function CEditorPage(api)
 		}
 
 
+		let oSlide = this.m_oLogicDocument.GetCurrentSlide();
 		if (isDrawNotes && drDoc.m_bIsSelection)
 		{
 			var ctxOverlay = overlayNotes.m_oContext;
@@ -4180,8 +4181,8 @@ function CEditorPage(api)
 
 			ctxOverlay.beginPath();
 
-			if (drDoc.SlideCurrent != -1)
-				this.m_oLogicDocument.Slides[drDoc.SlideCurrent].drawNotesSelect();
+			if (oSlide && oSlide.drawNotesSelect)
+				oSlide.drawNotesSelect();
 
 			ctxOverlay.globalAlpha = 0.2;
 			ctxOverlay.fill();
@@ -4196,13 +4197,12 @@ function CEditorPage(api)
 		ctx.globalAlpha = 1.0;
 		ctx             = null;
 
-		if (this.m_oLogicDocument != null && drDoc.SlideCurrent >= 0)
+		if (this.m_oLogicDocument != null && oSlide)
 		{
-			let oSlide = this.m_oLogicDocument.GetCurrentSlide();
 			oSlide.drawSelect(2);
 
 			var elements = oSlide.graphicObjects;
-			if (!elements.canReceiveKeyPress() && -1 != drDoc.SlideCurrent)
+			if (!elements.canReceiveKeyPress())
 			{
 				var drawPage = drDoc.SlideCurrectRect;
 				drDoc.AutoShapesTrack.init(overlay, drawPage.left, drawPage.top, drawPage.right, drawPage.bottom, this.m_oLogicDocument.GetWidthMM(), this.m_oLogicDocument.GetHeightMM());
