@@ -2807,8 +2807,13 @@
 
 		asc_CEventsController.prototype.showHorizontalScroll = function (val) {
 			this.hsb.style.visibility = val ? "visible" : "hidden";
+			let isVisibleVerScroll = this.view.getShowVerticalScroll();
+			let scrollWidth = this.view && this.view.defaults && this.view.defaults.scroll ? this.view.defaults.scroll.widthPx : 14;
+			if (val) {
+				this.hsb.style.right = isVisibleVerScroll ? scrollWidth + "px" : "0px";
+			}
 			if (!this.view.Api.isMobileVersion) {
-				let cornerStyle = !val && this.vsb.style.visibility === "hidden" ? "hidden" : "visible";
+				let cornerStyle = val && isVisibleVerScroll ? "visible" : "hidden";
 				let corner = document.getElementById("ws-scrollbar-corner");
 				if (corner) {
 					corner.style.visibility = cornerStyle;
@@ -2818,8 +2823,13 @@
 
 		asc_CEventsController.prototype.showVerticalScroll = function (val) {
 			this.vsb.style.visibility = val ? "visible" : "hidden";
+			let isVisibleHorScroll = this.view.getShowHorizontalScroll();
+			let scrollWidth = this.view && this.view.defaults && this.view.defaults.scroll ? this.view.defaults.scroll.heightPx : 14;
+			if (val) {
+				this.vsb.style.bottom = isVisibleHorScroll ? scrollWidth + "px" : "0px";
+			}
 			if (!this.view.Api.isMobileVersion) {
-				let cornerStyle = !val && this.vsb.style.visibility === "hidden" ? "hidden" : "visible";
+				let cornerStyle = val && isVisibleHorScroll ? "visible" : "hidden";
 				let corner = document.getElementById("ws-scrollbar-corner");
 				if (corner) {
 					corner.style.visibility = cornerStyle;
