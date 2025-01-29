@@ -6951,7 +6951,7 @@
 		return this.index;
 	};
 	Worksheet.prototype.getName=function(){
-		return this.sName !== undefined && this.sName.length > 0 ? this.sName : "";
+		return this.sName != null && this.sName.length > 0 ? this.sName : "";
 	};
 	Worksheet.prototype.setName=function(name){
 		if(name.length <= g_nSheetNameMaxLength)
