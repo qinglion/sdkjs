@@ -2995,8 +2995,11 @@ var editor;
     };
 	this.CoAuthoringApi.onChangesIndex = function(changesIndex)
 	{
-		if (t.isLiveViewer() && changesIndex >= 0) {
-			//todo
+		if (t.isLiveViewer() && changesIndex >= 0 && changesIndex < AscCommon.CollaborativeEditing.GetAllChangesCount()) {
+			//перестаем быть LiveViewer из-за бага, что мы не может делать undo действиям которые пришли в изменениях (нет oldValue)
+			t.asc_SetFastCollaborative(false);
+			// let count = AscCommon.CollaborativeEditing.GetAllChangesCount() - changesIndex;
+			// AscCommon.CollaborativeEditing.UndoGlobal(count);
 		}
 	};
     this.CoAuthoringApi.onRecalcLocks = function(excelAdditionalInfo) {
@@ -3023,16 +3026,6 @@ var editor;
         t.wb.Update_ForeignCursor(e[e.length - 1]['cursor'], e[e.length - 1]['user'], true, e[e.length - 1]['useridoriginal']);
       }
     };
-	  this.CoAuthoringApi.onParticipantsChangedOrigin     = function(users)
-	  {
-		  let m_bIsCollaborativeWithLiveViewer = users && -1 !== users.findIndex(function(element) {
-				  return !!element['isLiveViewer'];
-			  });
-		  t.collaborativeEditing.m_bIsCollaborativeWithLiveViewer = m_bIsCollaborativeWithLiveViewer;
-		  if (t.isDocumentLoadComplete && m_bIsCollaborativeWithLiveViewer) {
-			  AscCommon.History.Clear();
-		  }
-	  };
   };
 
   spreadsheet_api.prototype._onSaveChanges = function(recalcIndexColumns, recalcIndexRows, isAfterAskSave, arrChanges) {

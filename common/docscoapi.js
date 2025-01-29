@@ -59,9 +59,6 @@
       this._CoAuthoringApi.onParticipantsChanged = function(e) {
         t.callback_OnParticipantsChanged(e);
       };
-      this._CoAuthoringApi.onParticipantsChangedOrigin = function(e) {
-        t.callback_OnParticipantsChangedOrigin(e);
-      };
       this._CoAuthoringApi.onMessage = function(e, clear) {
         t.callback_OnMessage(e, clear);
       };
@@ -391,12 +388,6 @@
   CDocsCoApi.prototype.callback_OnParticipantsChanged = function(e) {
     if (this.onParticipantsChanged) {
       this.onParticipantsChanged(e);
-    }
-  };
-
-  CDocsCoApi.prototype.callback_OnParticipantsChangedOrigin = function(e) {
-    if (this.onParticipantsChangedOrigin) {
-      this.onParticipantsChangedOrigin(e);
     }
   };
 
@@ -1433,7 +1424,6 @@
       if (this.onAuthParticipantsChanged) {
         this.onAuthParticipantsChanged(this._participants, this._userId);
       }
-      this.onParticipantsChangedOrigin(participants);
 
       // Посылаем эвент о совместном редактировании
       if (1 < this._countEditUsers) {
@@ -1464,8 +1454,6 @@
     if (this.onConnectionStateChanged && (!this._participantsTimestamp || this._participantsTimestamp <= data['participantsTimestamp'])) {
       this._participantsTimestamp = data['participantsTimestamp'];
       usersStateChanged = this._onParticipantsChanged(data['participants'], true);
-
-      this.onParticipantsChangedOrigin(data['participants']);
 
       if (isWaitAuth && !(usersStateChanged.length > 0 && 1 < this._countEditUsers)) {
         var errorMsg = 'Error: connection state changed waitAuth' +
