@@ -1075,7 +1075,7 @@ var editor;
 	};
 
 	spreadsheet_api.prototype.asc_getCanUndo = function () {
-		let bCanUndo = History.Can_Undo();
+		let bCanUndo = AscCommon.History && AscCommon.History.Can_Undo();
 
 		if (true !== bCanUndo && this.collaborativeEditing && true === this.collaborativeEditing.Is_Fast() && true !== this.collaborativeEditing.Is_SingleUser()) {
 			bCanUndo = this.collaborativeEditing.CanUndo();
