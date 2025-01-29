@@ -396,6 +396,9 @@
 			case c_oEditorId.Presentation:
 				res = 'slide';
 				break;
+			case c_oEditorId.Visio:
+				res = 'visio';
+				break;
 		}
 		return res;
 	};
@@ -1106,6 +1109,10 @@
 				break;
 			case c_oEditorId.Presentation:
 				res = true;
+				break;
+			case c_oEditorId.Visio:
+				//todo сделать как в презентациях когда будет редактор
+				res = false;
 				break;
 		}
 		return res;
