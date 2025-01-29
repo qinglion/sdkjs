@@ -5698,8 +5698,11 @@
 
 					if (selectedObject && (selectedObject instanceof AscFormat.CShape)) {
 						this.selection.geometrySelection = new CGeometryEditSelection(this, selectedObject, null, null);
+						this.selection.textSelection = null;
 						this.updateSelectionState();
 						this.updateOverlay();
+
+						Asc.editor.sendEvent("asc_onSelectionEnd");
 					}
 				},
 
