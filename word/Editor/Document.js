@@ -13444,11 +13444,12 @@ CDocument.prototype.IsCursorInHyperlink = function(bCheckEnd)
  * @param [checkType=undefined]
  * @param [additionalData=undefined]
  * @param [sendEvent=false]
+ * @param [actionDescription=undefined]
  * @returns {boolean}
  */
-CDocument.prototype.CanPerformAction = function(isIgnoreCanEditFlag, checkType, additionalData, sendEvent)
+CDocument.prototype.CanPerformAction = function(isIgnoreCanEditFlag, checkType, additionalData, sendEvent, actionDescription)
 {
-	let isPermRange = this.IsPermRangeEditing(checkType, additionalData);
+	let isPermRange = this.IsPermRangeEditing(checkType, additionalData, actionDescription);
 	if (sendEvent)
 	{
 		if (!isPermRange && this.IsNeedNotificationOnEditProtectedRange(checkType, additionalData))
@@ -13461,15 +13462,41 @@ CDocument.prototype.CanPerformAction = function(isIgnoreCanEditFlag, checkType, 
  * Проверяем, что действие с заданным типом произойдет в разрешенной области
  * @param changesType
  * @param additionalData
+ * @param actionDescription
  * @returns {boolean}
  */
-CDocument.prototype.IsPermRangeEditing = function(changesType, additionalData)
+CDocument.prototype.IsPermRangeEditing = function(changesType, additionalData, actionDescription)
 {
 	if (this.Api.isViewMode)
 		return false;
 	
 	if (!this.Api.isRestrictionComments() && !this.Api.isRestrictionView())
 		return true;
+	
+	// Для некоторых специфичных действий пока оставим такую обработку
+	let t = this;
+	function getChangesTypeByDescription(changesType, actionDescription)
+	{
+		if (undefined === actionDescription)
+			return changesType;
+		
+		if (AscDFH.historydescription_Document_AddBlockLevelContentControl === actionDescription)
+		{
+			if (t.IsTextSelectionUse())
+				changesType = AscCommon.changestype_Paragraph_Properties;
+			else
+				changesType = AscCommon.changestype_Paragraph_Content;
+		}
+		else if (AscDFH.historydescription_Document_AddInlineLevelContentControl === actionDescription)
+		{
+			changesType = AscCommon.changestype_Paragraph_Content;
+		}
+		
+		return changesType;
+	}
+	
+	changesType = getChangesTypeByDescription(changesType, actionDescription);
+	
 	
 	if (AscCommon.changestype_None !== changesType)
 	{
@@ -13501,10 +13528,9 @@ CDocument.prototype.IsPermRangeEditing = function(changesType, additionalData)
 		}
 	}
 	
-	let t = this;
 	function checkAdditional(additionalData)
 	{
-		if (!additionalData)
+		if (!additionalData || undefined === additionalData.Type)
 			return true;
 		
 		if (AscCommon.changestype_2_InlineObjectMove === additionalData.Type)
@@ -13677,12 +13703,12 @@ CDocument.prototype._checkPermRangeForElement = function(element)
 	
 	return element.isWholeElementInPermRange();
 };
-CDocument.prototype.Document_Is_SelectionLocked = function(CheckType, AdditionalData, DontLockInFastMode, isIgnoreCanEditFlag, fCallback)
+CDocument.prototype.Document_Is_SelectionLocked = function(CheckType, AdditionalData, DontLockInFastMode, isIgnoreCanEditFlag, fCallback, actionDescription)
 {
 	if (this.IsActionStarted() && this.IsPostActionLockCheck())
 		return false;
 	
-	if (!this.CanPerformAction(isIgnoreCanEditFlag, CheckType, AdditionalData, true))
+	if (!this.CanPerformAction(isIgnoreCanEditFlag, CheckType, AdditionalData, true, actionDescription))
 	{
 		if (fCallback)
 			fCallback(true);
