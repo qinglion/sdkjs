@@ -2806,12 +2806,20 @@
 		};
 
 		asc_CEventsController.prototype.showHorizontalScroll = function (val) {
-			this.hsb.style.visibility = val ? "visible" : "hidden";
+			let toVisibility = val ? "visible" : "hidden";
+			let res;
+			if (this.hsb.style.visibility === toVisibility) {
+				res = false;
+			} else {
+				this.hsb.style.visibility = toVisibility;
+				res = true;
+			}
+
 			let isVisibleVerScroll = this.view.getShowVerticalScroll();
 			let scrollWidth = this.view && this.view.defaults && this.view.defaults.scroll ? this.view.defaults.scroll.widthPx : 14;
-			if (val) {
-				this.hsb.style.right = isVisibleVerScroll ? scrollWidth + "px" : "0px";
-			}
+
+			this.hsb.style.right = isVisibleVerScroll ? scrollWidth + "px" : "0px";
+
 			if (!this.view.Api.isMobileVersion) {
 				let cornerStyle = val && isVisibleVerScroll ? "visible" : "hidden";
 				let corner = document.getElementById("ws-scrollbar-corner");
@@ -2819,15 +2827,24 @@
 					corner.style.visibility = cornerStyle;
 				}
 			}
+			return res;
 		};
 
 		asc_CEventsController.prototype.showVerticalScroll = function (val) {
-			this.vsb.style.visibility = val ? "visible" : "hidden";
+			let toVisibility = val ? "visible" : "hidden";
+			let res;
+			if (this.vsb.style.visibility === toVisibility) {
+				res = false;
+			} else {
+				this.vsb.style.visibility = toVisibility;
+				res = true;
+			}
+			this.vsb.style.visibility = toVisibility;
 			let isVisibleHorScroll = this.view.getShowHorizontalScroll();
 			let scrollWidth = this.view && this.view.defaults && this.view.defaults.scroll ? this.view.defaults.scroll.heightPx : 14;
-			if (val) {
-				this.vsb.style.bottom = isVisibleHorScroll ? scrollWidth + "px" : "0px";
-			}
+
+			this.vsb.style.bottom = isVisibleHorScroll ? scrollWidth + "px" : "0px";
+
 			if (!this.view.Api.isMobileVersion) {
 				let cornerStyle = val && isVisibleHorScroll ? "visible" : "hidden";
 				let corner = document.getElementById("ws-scrollbar-corner");
@@ -2835,6 +2852,7 @@
 					corner.style.visibility = cornerStyle;
 				}
 			}
+			return res;
 		};
 
 

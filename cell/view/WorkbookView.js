@@ -1108,12 +1108,15 @@
 		self.changeUpdateLinks(val);
 	});
 	this.model.handlers.add("updateScrollVisibility", function() {
-		self.controller.showVerticalScroll(self.getShowVerticalScroll());
-		self.controller.showHorizontalScroll(self.getShowHorizontalScroll());
-		self._canResize();
+		let isChangedVertScroll = self.controller.showVerticalScroll(self.getShowVerticalScroll());
+		let isChangedHorScroll = self.controller.showHorizontalScroll(self.getShowHorizontalScroll());
+		if (isChangedVertScroll || isChangedHorScroll) {
+			self._canResize();
 
-		let ws = self.getWorksheet();
-		ws.draw();
+			let ws = self.getWorksheet();
+			ws._updateRange(new Asc.Range(0, 0, ws.model.getColsCount(), ws.model.getRowsCount()), true);
+			ws.draw();
+		}
 	});
     this.cellCommentator = new AscCommonExcel.CCellCommentator({
       model: new WorkbookCommentsModel(this.handlers, this.model.aComments),
