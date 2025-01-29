@@ -2689,24 +2689,25 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 				pGraphics.df();
 				Element = aHigh.Get_Next();
 			}
-			
 			//----------------------------------------------------------------------------------------------------------
 			// Рисуем выделение разрешенных областей
 			//----------------------------------------------------------------------------------------------------------
-			let aPerm = PDSH.Perm;
-			Element   = aPerm.Get_Next();
-			while (null != Element)
+			if (!pGraphics.isPrintMode && !pGraphics.isPdf())
 			{
-				if (!pGraphics.set_fillColor)
-					pGraphics.b_color1(Element.r, Element.g, Element.b, 255);
-				else
-					pGraphics.set_fillColor(Element.r, Element.g, Element.b);
-				
-				pGraphics.rect(Element.x0, Element.y0, Element.x1 - Element.x0, Element.y1 - Element.y0);
-				pGraphics.df();
-				Element = aPerm.Get_Next();
+				let aPerm = PDSH.Perm;
+				Element   = aPerm.Get_Next();
+				while (null != Element)
+				{
+					if (!pGraphics.set_fillColor)
+						pGraphics.b_color1(Element.r, Element.g, Element.b, 255);
+					else
+						pGraphics.set_fillColor(Element.r, Element.g, Element.b);
+					
+					pGraphics.rect(Element.x0, Element.y0, Element.x1 - Element.x0, Element.y1 - Element.y0);
+					pGraphics.df();
+					Element = aPerm.Get_Next();
+				}
 			}
-
 			//----------------------------------------------------------------------------------------------------------
 			// Рисуем комментарии
 			//----------------------------------------------------------------------------------------------------------
