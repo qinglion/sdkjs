@@ -13705,9 +13705,9 @@ CDocument.prototype._checkPermRangeForCurrentSelection = function()
 CDocument.prototype._checkPermRangeForElement = function(element)
 {
 	if (!element
-		&& !(element instanceof AscWord.Paragraph)
-		&& !(element instanceof AscWord.Table)
-		&& !(element instanceof AscWord.BlockLevelSdt))
+		|| (!(element instanceof AscWord.Paragraph)
+			&& !(element instanceof AscWord.Table)
+			&& !(element instanceof AscWord.BlockLevelSdt)))
 		return false;
 	
 	return element.isWholeElementInPermRange();
