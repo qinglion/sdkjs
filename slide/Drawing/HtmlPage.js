@@ -735,8 +735,8 @@ function CEditorPage(api)
 
 			_buttonsContent += [
 				"<ul id=\"dem_id_draw_menu\" class=\"menu\">",
-					"<li><a data-ratio data-tool=\"pen\"><span class=\"menu-item-icon btn-pointer back_image_buttons\"></span>" + this.reporterTranslates[3] + "</a></li>",
-					"<li><a data-ratio data-tool=\"highlighter\"><span class=\"menu-item-icon btn-pointer back_image_buttons\"></span>" + this.reporterTranslates[4] + "</a></li>",
+					"<li><a data-ratio data-tool=\"pen\"><span class=\"menu-item-icon btn-pen back_image_buttons\"></span>" + this.reporterTranslates[3] + "</a></li>",
+					"<li><a data-ratio data-tool=\"highlighter\"><span class=\"menu-item-icon btn-highlighter back_image_buttons\"></span>" + this.reporterTranslates[4] + "</a></li>",
 					"<li style=\"margin: 4px 0; height: 1px; background-color:" + GlobalSkin.BorderSplitterColor + ";\"></li>",
 					"<li id=\"dem_id_draw_color_menu_trigger\" class=\"submenu\"><a style=\"padding-left:28px;\">" + this.reporterTranslates[5] + "</a>",
 						"<ul id=\"dem_id_draw_color_menu\" class=\"menu\" style=\"min-width: fit-content;\">",
@@ -744,8 +744,8 @@ function CEditorPage(api)
 						"</ul>",
 					"</li>",
 					"<li style=\"margin: 4px 0; height: 1px; background-color:" + GlobalSkin.BorderSplitterColor + ";\"></li>",
-					"<li><a data-ratio data-tool=\"eraser\"><span class=\"menu-item-icon btn-pointer back_image_buttons\"></span>" + this.reporterTranslates[6] + "</a></li>",
-					"<li><a data-tool=\"erase-all\"><span class=\"menu-item-icon btn-pointer back_image_buttons\"></span>" + this.reporterTranslates[7] + "</a></li>",
+					"<li><a data-ratio data-tool=\"eraser\"><span class=\"menu-item-icon btn-eraser back_image_buttons\"></span>" + this.reporterTranslates[6] + "</a></li>",
+					"<li><a data-tool=\"erase-all\"><span class=\"menu-item-icon btn-erase-all back_image_buttons\"></span>" + this.reporterTranslates[7] + "</a></li>",
 				"</ul>"
 			].join("");
 
@@ -3248,6 +3248,10 @@ function CEditorPage(api)
 		styleContent += (".btn-pause { background-position: "          + xOffset1 + "px -80px; }");
 		styleContent += (".btn-pointer { background-position: "        + xOffset1 + "px -100px; }");
 		styleContent += (".btn-pointer-active { background-position: " + xOffset2 + "px -100px; }");
+		styleContent += (".btn-erase-all { background-position: " + xOffset1 + "px -120px; }");
+		styleContent += (".btn-eraser { background-position: " + xOffset1 + "px -140px; }");
+		styleContent += (".btn-highlighter { background-position: " + xOffset1 + "px -160px; }");
+		styleContent += (".btn-pen { background-position: " + xOffset1 + "px -180px; }");
 
 		styleContent += (".btn-text-default { position: absolute; background: " + AscCommon.GlobalSkin.DemButtonBackgroundColor + "; border: 1px solid " + AscCommon.GlobalSkin.DemButtonBorderColor + "; border-radius: 2px; color: " + AscCommon.GlobalSkin.DemButtonTextColor + "; font-size: 11px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; height: 22px; cursor: pointer; }");
 		styleContent += ".btn-text-default-img { background-repeat: no-repeat; position: absolute; background: transparent; border: none; height: 22px; cursor: pointer; }";
