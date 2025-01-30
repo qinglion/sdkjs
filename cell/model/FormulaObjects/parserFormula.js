@@ -6404,7 +6404,7 @@ function parserFormula( formula, parent, _ws ) {
 			this.ws._getCell(this.parent.nRow, this.parent.nCol, function (oElem) {
 				oCell = oElem;
 			});
-			if (oCell.containInFormula()) {
+			if (oCell && oCell.containInFormula()) {
 				this.ca = this.isRecursiveCondFormula(sFunctionName);
 			}
 		}
