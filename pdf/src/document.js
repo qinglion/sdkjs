@@ -2484,9 +2484,6 @@ var CPresentation = CPresentation || function(){};
 
         oPageInfo.fields.push(oField);
 
-        if (AscCommon.History.IsOn() == true)
-            AscCommon.History.TurnOff();
-
         if (oViewer.IsOpenFormsInProgress == false) {
             oField.SyncField();
             oField.SetDrawFromStream(false);
@@ -4471,6 +4468,7 @@ var CPresentation = CPresentation || function(){};
 
         let oJsonReader = new AscJsonConverter.ReaderFromJSON();
         if (!AscPDF.STAMPS_JSON[sType]) {
+            this.History.EndNoHistoryMode();
             return null;
         }
 
