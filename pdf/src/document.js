@@ -4463,7 +4463,7 @@ var CPresentation = CPresentation || function(){};
         oController.checkSelectedObjectsAndCallback(oController.paragraphClearFormatting, [isClearParaPr, isClearTextPr], false, AscDFH.historydescription_Presentation_ParagraphClearFormatting);
     };
     
-    CPDFDoc.prototype.CreateStampRender = function(sType) {
+    CPDFDoc.prototype.CreateStampRender = function(sType, sUserName, timeStamp) {
         this.History.StartNoHistoryMode();
 
         let oJsonReader = new AscJsonConverter.ReaderFromJSON();
@@ -4472,10 +4472,18 @@ var CPresentation = CPresentation || function(){};
             return null;
         }
 
-        let oShape = oJsonReader.ShapeFromJSON(AscPDF.STAMPS_JSON[sType]);
+        if (!timeStamp) {
+            timeStamp = new Date().getTime();
+        }
 
+        let sDate = (new Date(parseInt(timeStamp)).toDateString()).split(" ").join(", ");
+
+        if (!sUserName) {
+            sUserName = Asc.editor.User.asc_getUserName();
+        }
+
+        let oShape = oJsonReader.ShapeFromJSON(AscPDF.STAMPS_JSON[sType]);
         let oContent = oShape.getDocContent();
-        let sUserName = Asc.editor.User.asc_getUserName();
 
         switch (sType) {
             case AscPDF.STAMP_TYPES.D_Approved:
@@ -4485,7 +4493,7 @@ var CPresentation = CPresentation || function(){};
                 let oDinamicPara = oContent.GetElement(1);
                 let oRun = oDinamicPara.GetElement(0);
                 oRun.RemoveFromContent(0, oRun.Content.length);
-                let sText = "by " + sUserName + " at " + (new Date().toDateString()).split(" ").join(", ");
+                let sText = "by " + sUserName + " at " + sDate;
                 oRun.AddText(sText);
                 break;
             }
@@ -5187,6 +5195,9 @@ var CPresentation = CPresentation || function(){};
         let nExtY;
         let oStampRender;
 
+        let nCurTime = new Date().getTime();
+        let sAuthor = oUser.asc_getUserName();
+
         if (sType == AscPDF.STAMP_TYPES.Image) {
             if (oImage) {
                 nExtX   = Math.max(1, oImage.Image.width * g_dKoef_pix_to_mm);
@@ -5198,7 +5209,7 @@ var CPresentation = CPresentation || function(){};
             }
         }
         else {
-            oStampRender = this.CreateStampRender(sType);
+            oStampRender = this.CreateStampRender(sType, sAuthor, nCurTime);
             nExtX = oStampRender.Width * g_dKoef_mm_to_pt;
             nExtY = oStampRender.Height * g_dKoef_mm_to_pt;
         }
@@ -5231,8 +5242,6 @@ var CPresentation = CPresentation || function(){};
                 break;
         }
 
-        let nCurTime = new Date().getTime();
-
         let nLineW = oStampRender.m_oPen.Size * g_dKoef_mm_to_pt;
         
         let oProps = {
@@ -5240,7 +5249,7 @@ var CPresentation = CPresentation || function(){};
             page:           nPage,
             name:           AscCommon.CreateGUID(),
             type:           AscPDF.ANNOTATIONS_TYPES.Stamp,
-            author:         oUser.asc_getUserName(),
+            author:         sAuthor,
             modDate:        nCurTime,
             creationDate:   nCurTime,
             contents:       '',
