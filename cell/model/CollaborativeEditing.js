@@ -1062,7 +1062,7 @@
 				if (!oOtherAction) {
 					continue;
 				}
-				if (oChange.CommuteRelated && false === oChange.CommuteRelated(oChange, oOtherAction)) {
+				if (true !== oOtherAction.IsReverted() && oChange.CommuteRelated && false === oChange.CommuteRelated(oChange, oOtherAction)) {
 					return false;
 				}
 			}

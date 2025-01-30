@@ -2847,6 +2847,10 @@ function (window, undefined) {
 		//for CHistory.prototype.Add
 		return false;
 	};
+	UndoRedoClassBase.prototype.GetClass = function () {
+		//for CChangesBaseContentChange.prototype.IsRelated
+		return undefined;
+	};
 
 	function UndoRedoWorkbook(wb) {
 		UndoRedoClassBase.call(this);
