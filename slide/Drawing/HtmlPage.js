@@ -922,7 +922,7 @@ function CEditorPage(api)
 				return stroke;
 			};
 
-			this.currentDrawColor = '#e81416';
+			this.currentDrawColor = 'e81416';
 
 			this.elementReporterDrawMenu = document.getElementById("dem_id_draw_menu");
 			this.elementReporterDrawMenu.onclick = function(e) {
