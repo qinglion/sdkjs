@@ -615,6 +615,32 @@ window['AscCommon'].RgbaTextToRgbaHex = function(color)
 
 	return "#" + toHex(r) + toHex(g) + toHex(b);
 };
+window['AscCommon'].RgbaTextToRGBA = function(rgbStr)
+{
+	try
+	{
+		const match = rgbStr.match(/^\s*rgb\(\s*(\d+)\s*[\s,]\s*(\d+)\s*[\s,]\s*(\d+)\s*\)\s*$/);
+
+		if (!match)
+			return AscCommon.RgbaHexToRGBA(rgbStr);
+
+		return {
+			R : Math.min(255, Math.max(0, parseInt(match[1]))),
+			G : Math.min(255, Math.max(0, parseInt(match[2]))),
+			B : Math.min(255, Math.max(0, parseInt(match[3]))),
+			A : 255
+		};
+	}
+	catch (e)
+	{
+		return {
+			R : 0,
+			G : 0,
+			B : 0,
+			A : 255
+		};
+	}
+};
 
 if (AscCommon.TEMP_STYLE_THUMBNAIL_WIDTH !== undefined && AscCommon.TEMP_STYLE_THUMBNAIL_HEIGHT !== undefined)
 {

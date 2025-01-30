@@ -9796,7 +9796,7 @@ background-repeat: no-repeat;\
 		
 		if (this.headingsColor)
 		{
-			let rgba = AscCommon.RgbaHexToRGBA(this.headingsColor);
+			let rgba = AscCommon.RgbaTextToRGBA(this.headingsColor);
 			AscWord.setDefaultHeadingColor(rgba.R, rgba.G, rgba.B)
 		}
 		
