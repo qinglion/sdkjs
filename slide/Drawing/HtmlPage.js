@@ -922,7 +922,7 @@ function CEditorPage(api)
 				return stroke;
 			};
 
-			this.currentDrawColor = 'rgb(255,0,0)';
+			this.currentDrawColor = '#e81416';
 
 			this.elementReporterDrawMenu = document.getElementById("dem_id_draw_menu");
 			this.elementReporterDrawMenu.onclick = function(e) {
@@ -972,6 +972,8 @@ function CEditorPage(api)
 					}
 					api.asc_EraseAllInksOnSlide();
 				}
+
+				this.elementReporterDrawMenu.style.display = "none";
 			}.bind(this);
 
 			let isMenuHovered = false;
@@ -1015,7 +1017,12 @@ function CEditorPage(api)
 						delete elements[i].dataset.checked;
 					}
 
+					const btnIcon = document.getElementById("dem_id_draw_menu_trigger_span");
 					this.elementReporterDrawMenu.querySelector("a[data-tool=\"pen\"]").dataset.checked = "true";
+					this.elementReporterDrawMenuTrigger.classList.add("btn-text-default-img2");
+					this.elementReporterDrawMenuTrigger.classList.remove("btn-text-default-img");
+					btnIcon.classList.add("btn-pen-active");
+					btnIcon.classList.remove("btn-pen");
 				} else {
 					if (checkedMenuItem.dataset.tool === "pen") {
 						api.asc_StartDrawInk(createSolidPen(this.currentDrawColor, 1, 100));
@@ -1023,6 +1030,8 @@ function CEditorPage(api)
 						api.asc_StartDrawInk(createSolidPen(this.currentDrawColor, 6, 50));
 					}
 				}
+
+				this.elementReporterDrawMenu.style.display = "none";
 			}.bind(this));
 
 			this.elementReporterDrawMenuTrigger = document.getElementById("dem_id_draw_menu_trigger");
