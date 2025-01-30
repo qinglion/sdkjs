@@ -2036,7 +2036,7 @@
 		this._coAuthoringInitEnd();
 
 		let openCmd = this._getOpenCmd();
-		this.CoAuthoringApi.init(this.User, this.documentId, this.documentCallbackUrl, 'fghhfgsjdgfjs', this.editorId, this.documentFormatSave, this.DocInfo, this.documentShardKey, this.documentWopiSrc, this.documentUserSessionId, openCmd);
+		this.CoAuthoringApi.init(this.User, this.documentId, this.documentCallbackUrl, 'fghhfgsjdgfjs', this.editorId, this.documentFormatSave, this.DocInfo, this.documentShardKey, this.documentWopiSrc, this.documentUserSessionId, this.headingsColor, openCmd);
 	};
 	baseEditorsApi.prototype._coAuthoringInitEnd                 = function()
 	{
@@ -2322,7 +2322,7 @@
 			jsonparams["locale"] = this.asc_getLocale();
 			//todo move cmd from header to body and uncomment
 			// jsonparams["translate"] = AscCommon.translateManager.mapTranslate;
-			jsonparams["documentLayout"] = { "openedAt" : this.openedAt};
+			jsonparams["documentLayout"] = { "openedAt" : this.openedAt, "headingsColor" : this.headingsColor};
 			if (this.watermarkDraw && this.watermarkDraw.inputContentSrc) {
 				jsonparams["watermark"] = JSON.parse(this.watermarkDraw.inputContentSrc);
 			}

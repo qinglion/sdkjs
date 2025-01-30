@@ -275,6 +275,12 @@ function NativeCreateApi(options)
 			Api = new window["Asc"]["asc_docs_api"](configApi);
 			if (options && options["documentLayout"] && undefined !== options["documentLayout"]["openedAt"])
 				Api.setOpenedAt(options["documentLayout"]["openedAt"]);
+			if (options && options["documentLayout"] && undefined !== options["documentLayout"]["headingsColor"])
+			{
+				let rgba = AscCommon.RgbaTextToRGBA(options["documentLayout"]["headingsColor"]);
+				if (AscWord && AscWord.setDefaultHeadingColor)
+					AscWord.setDefaultHeadingColor(rgba.R, rgba.G, rgba.B);
+			}
 			break;
 		}
 		case "spreadsheet":
