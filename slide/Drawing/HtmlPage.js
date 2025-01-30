@@ -677,12 +677,12 @@ function CEditorPage(api)
 				.back_image_buttons { position:absolute; left: 0px; top: 0px; background-image: url('" + _images_url + "buttons@2x.png');background-size: 40px 120px; }\
 			}";
 			styleContent += ".menu-item-icon { position: relative;display:inline-block;float:left;width:20px;height:20px;margin:-2px 4px 0 -16px; }";
-			styleContent += ".menu {list-style: none;display: none; position: fixed; right: auto; min-height: fit-content; height: auto; min-width: 120px; padding: 5px 0; border-radius: 4px;}";
-			styleContent += "#dem_id_draw_menu li>a{white-space: nowrap; font-family: \"Helvetica Neue\", Helvetica, Arial, sans-serif;;display:block; padding:5px 20px;line-height:16px;cursor:pointer;font-size:11px;text-align:left;}";
-			styleContent += "#dem_id_draw_menu li>a:hover{color:" + GlobalSkin.ContentControlsText + ";background-color:" + GlobalSkin.ContentControlsHover + ";}";
-			styleContent += "#dem_id_draw_menu li>a[data-checked=\"true\"]{color:" + GlobalSkin.ContentControlsText + ";background-color:" + GlobalSkin.ContentControlsActive + ";}";
-			styleContent += "#dem_id_draw_menu >li.submenu>a:after{display:block;content:\" \";float:right;width:0;height:0;border-color:#fff0;border-style:solid;border-width:3px 0 3px 3px;border-left-color:" + GlobalSkin.ContentControlsText + ";margin-top:5px;margin-right:-7px;margin-left:0}";
-			styleContent += ".menu-color-cell { cursor:pointer;width:16px;height:16px;border:1px solid rgb(0 0 0 / .2);float:left;margin-right:2px;margin-left:0; }";
+			styleContent += ".menu {list-style: none;display: none; position: fixed; right: auto; min-height: fit-content; height: auto; min-width: 120px; padding: 5px 0; border-radius: 4px; background-color: " + GlobalSkin.DemBackgroundColor + "; border: 1px solid " + GlobalSkin.DemSplitterColor + ";}";
+			styleContent += "#dem_id_draw_menu li>a{color:" + GlobalSkin.DemButtonTextColor +"white-space: nowrap; font-family: \"Helvetica Neue\", Helvetica, Arial, sans-serif;;display:block; padding:5px 20px;line-height:16px;cursor:pointer;font-size:11px;text-align:left;}";
+			styleContent += "#dem_id_draw_menu li>a:hover{background-color:" + GlobalSkin.DemButtonBackgroundColorHover + ";}";
+			styleContent += "#dem_id_draw_menu li>a[data-checked=\"true\"]{color:" + GlobalSkin.DemButtonTextColorActive + ";background-color:" + GlobalSkin.DemButtonBackgroundColorActive + ";}";
+			styleContent += "#dem_id_draw_menu >li.submenu>a:after{display:block;content:\" \";float:right;width:0;height:0;border-color:#fff0;border-style:solid;border-width:3px 0 3px 3px;border-left-color:" + GlobalSkin.DemButtonTextColor + ";margin-top:5px;margin-right:-7px;margin-left:0}";
+			styleContent += ".menu-color-cell { cursor:pointer;width:14px;height:14px;border:1px solid rgb(0 0 0 / .2);float:left;margin-right:2px;margin-left:0; }";
 
 			styleContent += this.getStylesReporter();
 
@@ -725,7 +725,7 @@ function CEditorPage(api)
 
 			_buttonsContent += "<button class=\"btn-text-default-img\" id=\"dem_id_pointer\"  style=\"left: 365px; bottom: 3px; width: 20px; height: 20px;\"><span id=\"dem_id_pointer_span\" class=\"btn-pointer back_image_buttons\" style=\"width:100%;height:100%;\"></span></button>";
 			
-			_buttonsContent += "<button class=\"btn-text-default-img\" id=\"dem_id_draw_menu_trigger\"  style=\"left: 385px; bottom: 3px; width: 20px; height: 20px;\"><span id=\"dem_id_draw_menu_trigger_span\" class=\"btn-pointer back_image_buttons\" style=\"width:100%;height:100%;\"></span></button>";
+			_buttonsContent += "<button class=\"btn-text-default-img\" id=\"dem_id_draw_menu_trigger\"  style=\"left: 385px; bottom: 3px; width: 20px; height: 20px;\"><span id=\"dem_id_draw_menu_trigger_span\" class=\"btn-pen back_image_buttons\" style=\"width:100%;height:100%;\"></span></button>";
 			
 			let colorList = "";
 			const drawColors = ["FFFFFF","000000","E81416","FFA500","FAEB36","79C314","487DE7","4B369D","70369D"]; 
@@ -737,13 +737,13 @@ function CEditorPage(api)
 				"<ul id=\"dem_id_draw_menu\" class=\"menu\">",
 					"<li><a data-ratio data-tool=\"pen\"><span class=\"menu-item-icon btn-pen back_image_buttons\"></span>" + this.reporterTranslates[3] + "</a></li>",
 					"<li><a data-ratio data-tool=\"highlighter\"><span class=\"menu-item-icon btn-highlighter back_image_buttons\"></span>" + this.reporterTranslates[4] + "</a></li>",
-					"<li style=\"margin: 4px 0; height: 1px; background-color:" + GlobalSkin.BorderSplitterColor + ";\"></li>",
+					"<li style=\"margin: 4px 0; height: 1px; background-color:" + GlobalSkin.DemSplitterColor + ";\"></li>",
 					"<li id=\"dem_id_draw_color_menu_trigger\" class=\"submenu\"><a style=\"padding-left:28px;\">" + this.reporterTranslates[5] + "</a>",
-						"<ul id=\"dem_id_draw_color_menu\" class=\"menu\" style=\"min-width: fit-content;\">",
+						"<ul id=\"dem_id_draw_color_menu\" class=\"menu\" style=\"width: 162px;\">",
 						colorList,
 						"</ul>",
 					"</li>",
-					"<li style=\"margin: 4px 0; height: 1px; background-color:" + GlobalSkin.BorderSplitterColor + ";\"></li>",
+					"<li style=\"margin: 4px 0; height: 1px; background-color:" + GlobalSkin.DemSplitterColor + ";\"></li>",
 					"<li><a data-ratio data-tool=\"eraser\"><span class=\"menu-item-icon btn-eraser back_image_buttons\"></span>" + this.reporterTranslates[6] + "</a></li>",
 					"<li><a data-tool=\"erase-all\"><span class=\"menu-item-icon btn-erase-all back_image_buttons\"></span>" + this.reporterTranslates[7] + "</a></li>",
 				"</ul>"
@@ -925,15 +925,18 @@ function CEditorPage(api)
 			this.currentDrawColor = 'rgb(255,0,0)';
 
 			this.elementReporterDrawMenu = document.getElementById("dem_id_draw_menu");
-			this.elementReporterDrawMenu.style.backgroundColor = GlobalSkin.BackgroundColor;
-			this.elementReporterDrawMenu.style.border = "1px solid " + GlobalSkin.BorderSplitterColor;
 			this.elementReporterDrawMenu.onclick = function(e) {
 				if (e.target.hasAttribute("data-ratio")) {
+					const btnIcon = document.getElementById("dem_id_draw_menu_trigger_span");
+					
 					if (!!e.target.dataset.checked) {
 						delete e.target.dataset.checked;
 						api.asc_StopInkDrawer();
+
 						this.elementReporterDrawMenuTrigger.classList.remove("btn-text-default-img2");
 						this.elementReporterDrawMenuTrigger.classList.add("btn-text-default-img");
+						btnIcon.classList.remove("btn-pen-active");
+						btnIcon.classList.add("btn-pen");
 					} else {
 						const elements = this.elementReporterDrawMenu.querySelectorAll("a[data-ratio]")
 						for (let i = 0; i< elements.length; i++) {
@@ -957,6 +960,8 @@ function CEditorPage(api)
 
 						this.elementReporterDrawMenuTrigger.classList.add("btn-text-default-img2");
 						this.elementReporterDrawMenuTrigger.classList.remove("btn-text-default-img");
+						btnIcon.classList.add("btn-pen-active");
+						btnIcon.classList.remove("btn-pen");
 					}
 				}
 
@@ -974,9 +979,16 @@ function CEditorPage(api)
 			drawColorsMenuTrigger.on('mouseenter', function(e) {
 				if (!isMenuHovered) {
 					const offset = AscCommon.UI.getBoundingClientRect(e.target);
+					const menuWidth = 174; 
+					let leftPosition = offset.left + offset.width;
+					if (leftPosition + menuWidth > window.outerWidth) {
+						leftPosition = offset.left - menuWidth;
+					}
+			
 					this.elementReporterDrawColorsMenu.css({
 						display: "block",
-						top: offset.top + e.target.offsetHeight/2 + "px",
+						top: offset.top + "px",
+						left: leftPosition + "px"
 					});
 				}
 			}.bind(this));
@@ -989,8 +1001,6 @@ function CEditorPage(api)
 
 			this.elementReporterDrawColorsMenu = jQuery("#dem_id_draw_color_menu");
 			this.elementReporterDrawColorsMenu.css({
-				"background-color": GlobalSkin.BackgroundColorThumbnails,
-				"border": "1px solid " + GlobalSkin.BorderSplitterColor,
 				"z-index": 2,
 				"padding": "5px"
 			});
@@ -3252,6 +3262,8 @@ function CEditorPage(api)
 		styleContent += (".btn-eraser { background-position: " + xOffset1 + "px -140px; }");
 		styleContent += (".btn-highlighter { background-position: " + xOffset1 + "px -160px; }");
 		styleContent += (".btn-pen { background-position: " + xOffset1 + "px -180px; }");
+		styleContent += (".btn-pen-active { background-position: " + xOffset2 + "px -180px; }");
+		styleContent += ("a[data-checked] > .menu-item-icon { background-position-x: " + xOffset2 + "px; }");
 
 		styleContent += (".btn-text-default { position: absolute; background: " + AscCommon.GlobalSkin.DemButtonBackgroundColor + "; border: 1px solid " + AscCommon.GlobalSkin.DemButtonBorderColor + "; border-radius: 2px; color: " + AscCommon.GlobalSkin.DemButtonTextColor + "; font-size: 11px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; height: 22px; cursor: pointer; }");
 		styleContent += ".btn-text-default-img { background-repeat: no-repeat; position: absolute; background: transparent; border: none; height: 22px; cursor: pointer; }";
