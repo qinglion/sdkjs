@@ -75,6 +75,10 @@ function (window, undefined) {
 			this.slide.addToSpTreeToPos(undefined, this.inks[nIdx].copy());
 		}
 	};
+	CAnnotations.prototype.clear = function () {
+		this.inks.length = 0;
+		this.onUpdate();
+	};
 
 	function CSlideShowAnnotations() {
 		this.annotations = {};
@@ -89,6 +93,13 @@ function (window, undefined) {
 		this.track = null;
 		this.locked = false;
 		this.binaryWriter.Seek(0);
+	};
+	CSlideShowAnnotations.prototype.clearTrack = function () {
+		this.track = null;
+		let oManager = Asc.editor.getDemoManager();
+		if(oManager) {
+			oManager.Redraw();
+		}
 	};
 	CSlideShowAnnotations.prototype.getInks = function (oSlide) {
 		if(!this.annotations[oSlide.Id]) {
@@ -131,10 +142,12 @@ function (window, undefined) {
 	};
 	CSlideShowAnnotations.prototype.addInk = function (oInk) {
 		let oSlide = oInk.parent;
+		this.track = null;
 		this.addInkInternal(oInk);
 		let pptx_writer = new AscCommon.CBinaryFileWriter();
 		pptx_writer.WriteShape(oInk);
 		let sValue = oSlide.Id + ";" + pptx_writer.pos + ";" + pptx_writer.GetBase64Memory();
+
 		this.sendData("add_ink", sValue);
 	};
 	CSlideShowAnnotations.prototype.eraseInk = function (oSlide, nIdx) {
@@ -144,6 +157,14 @@ function (window, undefined) {
 		}
 		oAnnots.eraseInk(nIdx);
 		this.sendData("erase_ink", oSlide.Id + ";" + nIdx);
+	};
+	CSlideShowAnnotations.prototype.clearOnSlide = function (oSlide) {
+		let oAnnots = this.annotations[oSlide.Id];
+		if(!oAnnots) {
+			return;
+		}
+		oAnnots.clear();
+		this.sendData("erase_ink_all", oSlide.Id);
 	};
 	CSlideShowAnnotations.prototype.sendData = function(sType, sValue) {
 		let oData = {
@@ -164,7 +185,6 @@ function (window, undefined) {
 		let sType = oData["type"];
 		let sVal = oData["value"]
 
-		console.log("COMMAND: " + sType)
 		switch (sType) {
 			case "create_track": {
 				let aParts = sVal.split(";");
@@ -201,6 +221,7 @@ function (window, undefined) {
 				let sBinary = aParts[1]  + ";" + aParts[2];
 				let oBinaryReader = AscFormat.CreatePPTYLoader(sBinary, 0, sBinary.length);
 				oBinaryReader.TempMainObject = oSlide;
+				this.track = null;
 				AscFormat.ExecuteNoHistory(function () {
 					let oShape = oBinaryReader.ReadGraphicObject();
 					oShape.setParent(oSlide);
@@ -215,10 +236,21 @@ function (window, undefined) {
 				if(!oAnnots) {
 					return;
 				}
+				this.track = null;
 				oAnnots.eraseInk(nIdx);
 				break;
 			}
+			case "erase_ink_all": {
+				let oAnnots = this.annotations[sVal];
+				if(!oAnnots) {
+					return;
+				}
+				this.track = null;
+				oAnnots.clear();
+				break;
+			}
 		}
+
 	};
 	CSlideShowAnnotations.prototype.draw = function(oGraphics, oSlide) {
 		let oAnnots = this.annotations[oSlide.Id];
