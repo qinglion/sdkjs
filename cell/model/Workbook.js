@@ -15334,7 +15334,7 @@
 					}  else {
 						oBbox = oArgElem.getBBox0();
 					}
-					bBelongToFormula = oBbox.containsRange(oAreaMap.bbox);
+					bBelongToFormula = oAreaMap.bbox.containsRange(oBbox);
 					if (bBelongToFormula) {
 						return true;
 					}
@@ -15369,9 +15369,8 @@
 			return oSheetListeners.cellMap[nCellIndex];
 		} else if (aOutStack && aOutStack.length && sFunctionName) {
 			for (let nIndex in oSheetListeners.areaMap) {
-				if (oSheetListeners.areaMap[nIndex].bbox.contains(this.nCol, this.nRow)
-					&& !_isExcludeFormula(aOutStack, oSheetListeners.areaMap[nIndex])) {
-					return oSheetListeners.areaMap[nIndex];
+				if (oSheetListeners.areaMap[nIndex].bbox.contains(this.nCol, this.nRow)) {
+					return _isExcludeFormula(aOutStack, oSheetListeners.areaMap[nIndex]) ? null : oSheetListeners.areaMap[nIndex];
 				}
 			}
 		}
@@ -15477,7 +15476,7 @@
 
 		const oParserFormula = this.getFormulaParsed();
 		const sFunctionName = oParserFormula && oParserFormula.getFunctionName();
-		if (oParserFormula && oParserFormula._isConditionalFormula(sFunctionName) && !oParserFormula.isRecursiveCondFormula(sFunctionName)) {
+		if (oParserFormula && oParserFormula._isConditionalFormula(sFunctionName) && this.containInFormula() && !oParserFormula.isRecursiveCondFormula(sFunctionName)) {
 			g_cCalcRecursion.resetRecursionCounter();
 			return;
 		}
@@ -15555,17 +15554,7 @@
 				let bContainRange = oCellListeners.bbox.containsRange(oTableOpRange.bbox);
 				if (bContainRange && oCellListeners.bbox.contains(this.nCol, this.nRow)) {
 					g_cCalcRecursion.setStartCellIndex({cellId: nCellIndex, wsName: this.ws.getName().toLowerCase()});
-					return;
 				}
-			}
-			let bListenerHasCa = false;
-			for (let index in oListeners) {
-				let oListener = oListeners[index];
-				bListenerHasCa = oListener.ca;
-
-			}
-			if (oCellListeners.bbox && oCellListeners.bbox.contains(this.nCol, this.nRow) && bListenerHasCa) {
-				g_cCalcRecursion.setStartCellIndex({cellId: nCellIndex, wsName: this.ws.getName().toLowerCase()});
 			}
 		}
 	};
