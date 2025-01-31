@@ -947,6 +947,10 @@ function CEditorPage(api)
 						e.target.dataset.checked = "true";
 
 						const currentTool = e.target.getAttribute("data-tool");
+
+						if (window.editor.WordControl.reporterPointer) {
+							this.elementReporter6.onclick()
+						}
 						switch (currentTool) {
 							case "pen": 
 								api.asc_StartDrawInk(createSolidPen(this.currentDrawColor, 1, 100));
@@ -1011,6 +1015,9 @@ function CEditorPage(api)
 			this.elementReporterDrawColorsMenu.on('click', function(e) {
 				const checkedMenuItem = this.elementReporterDrawMenu.querySelector("a[data-checked]");
 				this.currentDrawColor = e.target.dataset.value;
+				if (window.editor.WordControl.reporterPointer) {
+					this.elementReporter6.onclick()
+				}
 				if ((checkedMenuItem && checkedMenuItem.dataset.tool === "eraser") || !checkedMenuItem) {
 					api.asc_StartDrawInk(createSolidPen(this.currentDrawColor, 1, 100));
 					const elements = this.elementReporterDrawMenu.querySelectorAll("a[data-ratio]")
