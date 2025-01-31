@@ -3697,16 +3697,51 @@ CDocument.prototype.private_Recalculate = function(_RecalcData, isForceStrictRec
 	//       некоторых других действиях нам важно, чтобы пересчет первый раз сработал сразу. Поэтому запускаем пересчет
 	//       на таймере ТОЛЬКО если он уже был запущен на таймере до этого. Если избавиться от первого условия, то
 	//       запускать на таймере можно будет всегда.
-    if (isUseTimeout && !isForceStrictRecalc)
+    // if (isUseTimeout && !isForceStrictRecalc)
+	// {
+	// 	this.FullRecalc.Id = setTimeout(Document_Recalculate_Page, 0);
+	// }
+    // else
+	// {
+	// 	this.Recalculate_Page();
+	// }
+	
+	if (isUseTimeout && !isForceStrictRecalc)
 	{
-		this.FullRecalc.Id = setTimeout(Document_Recalculate_Page, 0);
+		let _t = this;
+		this.FullRecalc.Id = setTimeout(function(){_t.ContinueRecalculationLoop();}, 0);
 	}
-    else
+	else
 	{
-		this.Recalculate_Page();
+		this.ContinueRecalculationLoop();
 	}
+	
 	this.UpdatePlaceholders();
     return document_recalcresult_LongRecalc;
+};
+CDocument.prototype.ContinueRecalculationLoop = function()
+{
+	this.FullRecalc.UseRecursion = false;
+	while (true)
+	{
+		this.FullRecalc.Continue = false;
+		
+		this.Recalculate_Page();
+		
+		if (!this.FullRecalc.Continue)
+			break;
+		
+		if (this.IsContinueRecalculateOnTimer())
+		{
+			let _t = this;
+			this.FullRecalc.TimerStartPage = this.FullRecalc.PageIndex;
+			this.FullRecalc.Id = setTimeout(function(){
+				_t.FullRecalc.TimerStartTime = performance.now();
+				_t.ContinueRecalculationLoop();
+			}, 10);
+			break;
+		}
+	}
 };
 /**
  * Запускаем пересчет документа.
@@ -3926,7 +3961,7 @@ CDocument.prototype.Recalculate_Page = function()
     var bStart       = this.FullRecalc.Start;        // флаг, который говорит о том, рассчитываем мы эту страницу первый раз или нет (за один общий пересчет)
     var StartIndex   = this.FullRecalc.StartIndex;
 
-    //var nStartTime = (new Date()).getTime();
+    // var nStartTime = (new Date()).getTime();
 
     if (0 === SectionIndex && 0 === ColumnIndex && true === bStart)
     {
@@ -4080,7 +4115,7 @@ CDocument.prototype.Recalculate_Page = function()
 
     this.Recalculate_PageColumn();
 
-	//console.log("PageIndex " + PageIndex + " " + ((new Date()).getTime() - nStartTime)/ 1000);
+	// console.log("PageIndex " + PageIndex + " " + ((new Date()).getTime() - nStartTime)/ 1000);
 };
 /**
  * Пересчитываем следующую колоноку.
@@ -4827,12 +4862,27 @@ CDocument.prototype.Recalculate_PageColumn                   = function()
 		this.UpdatePlaceholders();
 	}
 };
-CDocument.prototype.private_IsStartTimeoutOnRecalc = function(nPageAbs)
+CDocument.prototype.IsContinueRecalculateOnTimer = function()
 {
-	let nTime = this.Layout.GetCalculateTimeLimit();
-	return ((nPageAbs > this.FullRecalc.StartPage + this.FullRecalc.StartPagesCount
-		&& (performance.now() - this.FullRecalc.TimerStartTime > nTime
-			|| nPageAbs > this.FullRecalc.TimerStartPage + 50)));
+	// TODO: заменить window["native"]["WC_CheckSuspendRecalculate"] -> window['IS_NATIVE_EDITOR']
+	if (true === window["NATIVE_EDITOR_ENJINE_SYNC_RECALC"]
+		&& (!window["native"] || undefined === window["native"]["WC_CheckSuspendRecalculate"]))
+		return false;
+	
+	// this.FullRecalc.PageIndex - страница, с которой продолжится пересчет, значит расчитана предыдущая страница
+	let page = this.FullRecalc.PageIndex - 1;
+	
+	let timeLimit = this.Layout.GetCalculateTimeLimit();
+	return ((page > this.FullRecalc.StartPage + this.FullRecalc.StartPagesCount
+		&& (performance.now() - this.FullRecalc.TimerStartTime > timeLimit
+			|| page > this.FullRecalc.TimerStartPage + 50)));
+};
+CDocument.prototype.private_IsStartTimeoutOnRecalc = function(page)
+{
+	let timeLimit = this.Layout.GetCalculateTimeLimit();
+	return ((page > this.FullRecalc.StartPage + this.FullRecalc.StartPagesCount
+		&& (performance.now() - this.FullRecalc.TimerStartTime > timeLimit
+			|| page > this.FullRecalc.TimerStartPage + 50)));
 
 	// if (nRes)
 	// {

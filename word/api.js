@@ -950,7 +950,6 @@
 		this.isHandMode = false;
 
 		//g_clipboardBase.Init(this);
-		
 		this.headingsColor = config["headings-color"] ? config["headings-color"] : null;
 		
 		this._init();
