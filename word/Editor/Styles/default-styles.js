@@ -1248,5 +1248,5 @@
 	AscWord.DEFAULT_FONT           = DEFAULT_FONT;
 	AscWord.getDefaultStyleObject  = getDefaultStyleObject;
 	AscWord.getDefaultStyleName    = getDefaultStyleName;
-	AscWord.setDefaultHeadingColor = setDefaultHeadingColor;
+	AscWord["setDefaultHeadingColor"] = AscWord.setDefaultHeadingColor = setDefaultHeadingColor;
 })(window);
