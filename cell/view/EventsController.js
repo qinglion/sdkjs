@@ -2781,6 +2781,9 @@
 		};
 
 		asc_CEventsController.prototype.showHorizontalScroll = function (val) {
+			if (!this.hsb || !this.hsb.style) {
+				return;
+			}
 			let toVisibility = val ? "visible" : "hidden";
 			let res;
 			if (this.hsb.style.visibility === toVisibility) {
@@ -2806,6 +2809,10 @@
 		};
 
 		asc_CEventsController.prototype.showVerticalScroll = function (val) {
+			if (!this.vsb || !this.vsb.style) {
+				return;
+			}
+
 			let toVisibility = val ? "visible" : "hidden";
 			let res;
 			if (this.vsb.style.visibility === toVisibility) {
