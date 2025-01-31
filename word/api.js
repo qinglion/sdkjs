@@ -3521,6 +3521,28 @@ background-repeat: no-repeat;\
 		}
 	};
 	
+	
+	asc_docs_api.prototype.asc_setRtlTextDirection = function(isRtl)
+	{
+		let logicDocument = this.private_GetLogicDocument();
+		if (!logicDocument)
+			return;
+		
+		if (logicDocument.IsSelectionLocked(AscCommon.changestype_Paragraph_Properties))
+			return;
+		
+		logicDocument.StartAction(AscDFH.historydescription_Document_SetParagraphBidi);
+		
+		let paragraphs = logicDocument.GetSelectedParagraphs();
+		for (let i = 0; i < paragraphs.length; ++i)
+		{
+			paragraphs[i].SetParagraphBidi(isRtl);
+		}
+		
+		logicDocument.Recalculate();
+		logicDocument.UpdateInterface();
+		logicDocument.FinalizeAction();
+	};
 	asc_docs_api.prototype._addRemoveSpaceBeforeAfterParagraph = function(event)
 	{
 		let logicDocument = this.private_GetLogicDocument();
@@ -14345,6 +14367,7 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype['put_TextPrSmallCaps']                       = asc_docs_api.prototype.put_TextPrSmallCaps;
 	asc_docs_api.prototype['put_TextPrPosition']                        = asc_docs_api.prototype.put_TextPrPosition;
 	asc_docs_api.prototype['put_TextPrLang']                            = asc_docs_api.prototype.put_TextPrLang;
+	asc_docs_api.prototype['asc_setRtlTextDirection']                   = asc_docs_api.prototype.asc_setRtlTextDirection;
 	asc_docs_api.prototype['asc_addSpaceBeforeParagraph']               = asc_docs_api.prototype.asc_addSpaceBeforeParagraph;
 	asc_docs_api.prototype['asc_addSpaceAfterParagraph']                = asc_docs_api.prototype.asc_addSpaceAfterParagraph;
 	asc_docs_api.prototype['asc_removeSpaceBeforeParagraph']            = asc_docs_api.prototype.asc_removeSpaceBeforeParagraph;

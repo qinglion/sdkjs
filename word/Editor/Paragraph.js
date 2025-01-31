@@ -16539,6 +16539,18 @@ Paragraph.prototype.SetParagraphPr = function(oParaPr)
 {
 	this.SetDirectParaPr(oParaPr);
 };
+Paragraph.prototype.SetParagraphBidi = function(isRtl)
+{
+	if (this.Pr.Bidi === isRtl)
+		return;
+	
+	this.private_AddPrChange();
+	AscCommon.AddAndExecuteChange(new CChangesParagraphBidi(this, this.Pr.Bidi, isRtl));
+};
+Paragraph.prototype.GetParagraphBidi = function()
+{
+	return !!this.Get_CompiledPr2(false).ParaPr.Bidi;
+};
 Paragraph.prototype.SetParagraphAlign = function(Align)
 {
 	this.Set_Align(Align);
