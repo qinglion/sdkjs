@@ -5706,8 +5706,7 @@
 		return this.defaultDirection;
 	};
 	Workbook.prototype.setShowVerticalScroll = function(val, addToHistory) {
-		var from = this.showVerticalScroll == null || this.showVerticalScroll === true;
-		val = (val === true || val == null) ? null : false;
+		var from = this.showVerticalScroll;
 		if (from !== val) {
 			if (addToHistory) {
 				AscCommon.History.Create_NewPoint();
@@ -5721,8 +5720,7 @@
 		return this.showVerticalScroll;
 	};
 	Workbook.prototype.setShowHorizontalScroll = function(val, addToHistory) {
-		var from = this.showHorizontalScroll == null || this.showHorizontalScroll === true;
-		val = (val === true || val == null) ? null : false;
+		var from = this.showHorizontalScroll;
 		if (from !== val) {
 			if (addToHistory) {
 				AscCommon.History.Create_NewPoint();

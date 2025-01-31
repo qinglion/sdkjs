@@ -6316,8 +6316,13 @@
 		}
 
 		let t = this;
-		let verticalScroll = this.getShowVerticalScroll();
-		if (verticalScroll !== val) {
+		let verticalScroll = this.model.getShowVerticalScroll();
+		let configVal = this.Api.DocInfo && this.Api.DocInfo.asc_getShowVerticalScroll();
+
+		let fromWithDefault = verticalScroll == null || verticalScroll === true;
+		let valWithDefault = val === true || val == null;
+
+		if ((fromWithDefault !== valWithDefault) || (verticalScroll == null && val === false && configVal !== null)) {
 			var callback = function () {
 				History.Create_NewPoint();
 				History.StartTransaction();
@@ -6331,7 +6336,10 @@
 	};
 	WorkbookView.prototype.getShowVerticalScroll = function() {
 		let val = this.model.getShowVerticalScroll();
-		return val == null || val === true;
+		if (val == null) {
+			val = this.Api.DocInfo && this.Api.DocInfo.asc_getShowVerticalScroll();
+		}
+		return val === true || val == null;
 	};
 	WorkbookView.prototype.setShowHorizontalScroll = function(val) {
 		// Проверка глобального лока
@@ -6340,8 +6348,13 @@
 		}
 
 		let t = this;
-		let horizontalScroll = this.getShowHorizontalScroll();
-		if (horizontalScroll !== val) {
+		let horizontalScroll = this.model.getShowHorizontalScroll();
+		let configVal = this.Api.DocInfo && this.Api.DocInfo.asc_getShowHorizontalScroll();
+
+		let fromWithDefault = horizontalScroll == null || horizontalScroll === true;
+		let valWithDefault = val === true || val == null;
+
+		if ((fromWithDefault !== valWithDefault) || (horizontalScroll == null && val === false && configVal !== null)) {
 			var callback = function () {
 				History.Create_NewPoint();
 				History.StartTransaction();
@@ -6355,7 +6368,10 @@
 	};
 	WorkbookView.prototype.getShowHorizontalScroll = function() {
 		let val = this.model.getShowHorizontalScroll();
-		return val == null || val === true;
+		if (val == null) {
+			val = this.Api.DocInfo && this.Api.DocInfo.asc_getShowHorizontalScroll();
+		}
+		return val === true || val == null;
 	};
 
 

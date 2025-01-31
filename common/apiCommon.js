@@ -4721,6 +4721,9 @@ function (window, undefined) {
 
 		//for external reference
 		this.ReferenceData = null;
+
+		this.showVerticalScroll = null;
+		this.showHorizontalScroll = null;
 	}
 
 	prot = asc_CDocInfo.prototype;
@@ -4953,6 +4956,18 @@ function (window, undefined) {
 	};
 	prot.get_Shardkey = prot.asc_getShardkey = function () {
 		return this.shardkey;
+	};
+	prot.put_ShowVerticalScroll = prot.asc_putShowVerticalScroll = function (v) {
+		this.showVerticalScroll = v;
+	};
+	prot.get_ShowVerticalScroll = prot.asc_getShowVerticalScroll = function () {
+		return this.showVerticalScroll;
+	};
+	prot.put_ShowHorizontalScroll = prot.asc_putShowHorizontalScroll = function (v) {
+		this.showHorizontalScroll = v;
+	};
+	prot.get_ShowHorizontalScroll = prot.asc_getShowHorizontalScroll = function () {
+		return this.showHorizontalScroll;
 	};
 
 	function COpenProgress() {
@@ -7006,6 +7021,10 @@ function (window, undefined) {
 	prot["get_Wopi"] = prot["asc_getWopi"] = prot.asc_getWopi;
 	prot["put_Shardkey"] = prot["asc_putShardkey"] = prot.asc_putShardkey;
 	prot["get_Shardkey"] = prot["asc_getShardkey"] = prot.asc_getShardkey;
+	prot["put_ShowVerticalScroll"] = prot["asc_putShowVerticalScroll"] = prot.asc_putShowVerticalScroll;
+	prot["get_ShowVerticalScroll"] = prot["get_getShowVerticalScroll"] = prot.get_getShowVerticalScroll;
+	prot["put_ShowHorizontalScroll"] = prot["asc_putShowHorizontalScroll"] = prot.asc_putShowHorizontalScroll;
+	prot["get_ShowHorizontalScroll"] = prot["get_getShowHorizontalScroll"] = prot.get_getShowHorizontalScroll;
 
 	window["AscCommon"].COpenProgress = COpenProgress;
 	prot = COpenProgress.prototype;
