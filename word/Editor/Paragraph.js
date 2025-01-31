@@ -14008,7 +14008,7 @@ Paragraph.prototype.Refresh_RecalcData = function(Data)
 
 			break;
 		}
-
+		case AscDFH.historyitem_Paragraph_Bidi:
 		case AscDFH.historyitem_Paragraph_Align:
 		case AscDFH.historyitem_Paragraph_DefaultTabSize:
 		case AscDFH.historyitem_Paragraph_Ind_First:
