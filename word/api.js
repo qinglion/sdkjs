@@ -2264,6 +2264,9 @@ background-repeat: no-repeat;\
 		this.sync_ParaSpacingLine(ParaPr.Spacing);
 		this.Update_ParaInd(ParaPr.Ind);
 		this.sync_PrAlignCallBack(ParaPr.Jc);
+		
+		this.sendEvent("asc_onTextDirection", ParaPr.Bidi);
+		
 		this.sync_PrPropCallback(ParaPr);
 	};
 	/*----------------------------------------------------------------*/

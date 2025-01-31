@@ -16668,7 +16668,9 @@ CParaPr.prototype.Compare = function(ParaPr)
 	var Result_ParaPr    = new CParaPr();
 	Result_ParaPr.Locked = false;
 	
-	if (ParaPr.Bidi === this.Bidi)
+	if (undefined !== this.Bidi)
+		Result_ParaPr.Bidi = this.Bidi;
+	else
 		Result_ParaPr.Bidi = ParaPr.Bidi;
 
 	if (ParaPr.ContextualSpacing === this.ContextualSpacing)
