@@ -736,17 +736,17 @@ function CEditorPage(api)
 
 			_buttonsContent += [
 				"<ul id=\"dem_id_draw_menu\" class=\"dem_menu\">",
-					"<li><a data-ratio data-tool=\"pen\"><span class=\"menu-item-icon btn-pen back_image_buttons\"></span><span id=\"dem_id_draw_menu_item_pen_text\">" + this.reporterTranslates[3] + "</span></a></li>",
-					"<li><a data-ratio data-tool=\"highlighter\"><span class=\"menu-item-icon btn-highlighter back_image_buttons\"></span><span id=\"dem_id_draw_menu_item_highlighter_text\">" + this.reporterTranslates[4] + "</span></a></li>",
+					"<li><a data-ratio data-tool=\"pen\"><span class=\"menu-item-icon btn-pen back_image_buttons\"></span>" + this.reporterTranslates[3] + "</a></li>",
+					"<li><a data-ratio data-tool=\"highlighter\"><span class=\"menu-item-icon btn-highlighter back_image_buttons\"></span>" + this.reporterTranslates[4] + "</a></li>",
 					"<li class=\"dem_draw_menu_divider\"></li>",
-					"<li id=\"dem_id_draw_color_menu_trigger\" class=\"submenu\"><a style=\"padding-left:28px;\"><span id=\"dem_id_draw_menu_item_ink_color_text\">" + this.reporterTranslates[5] + "</span></a>",
+					"<li id=\"dem_id_draw_color_menu_trigger\" class=\"submenu\"><a style=\"padding-left:28px;\">" + this.reporterTranslates[5] + "</a>",
 						"<ul id=\"dem_id_draw_color_menu\" class=\"dem_menu\" style=\"width: 162px;\">",
 						colorList,
 						"</ul>",
 					"</li>",
 					"<li class=\"dem_draw_menu_divider\"></li>",
-					"<li><a data-ratio data-tool=\"eraser\"><span class=\"menu-item-icon btn-eraser back_image_buttons\"></span><span id=\"dem_id_draw_menu_item_eraser_text\">" + this.reporterTranslates[6] + "</span></a></li>",
-					"<li><a data-tool=\"erase-all\"><span class=\"menu-item-icon btn-erase-all back_image_buttons\"></span><span id=\"dem_id_draw_menu_item_erase_all_text\">" + this.reporterTranslates[7] + "</span></a></li>",
+					"<li><a data-ratio data-tool=\"eraser\"><span class=\"menu-item-icon btn-eraser back_image_buttons\"></span>" + this.reporterTranslates[6] + "</a></li>",
+					"<li><a data-tool=\"erase-all\"><span class=\"menu-item-icon btn-erase-all back_image_buttons\"></span>" + this.reporterTranslates[7] + "</a></li>",
 				"</ul>"
 			].join("");
 
