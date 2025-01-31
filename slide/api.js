@@ -8049,11 +8049,11 @@ background-repeat: no-repeat;\
 
 		var _button1 = document.getElementById("dem_id_reset");
 		var _button2 = document.getElementById("dem_id_end");
-		var _miPen = document.querySelector("#dem_id_draw_menu > a[data-tool=\"pen\"]");
-		var _miHighlighter = document.querySelector("#dem_id_draw_menu > a[data-tool=\"highlighter\"]");
+		var _miPen = document.querySelector("#dem_id_draw_menu a[data-tool=\"pen\"]");
+		var _miHighlighter = document.querySelector("#dem_id_draw_menu a[data-tool=\"highlighter\"]");
 		var _miInkColor = document.querySelector("#dem_id_draw_color_menu_trigger > a");
-		var _miEraser = document.querySelector("#dem_id_draw_menu > a[data-tool=\"eraser\"]");
-		var _miEraseAll = document.querySelector("#dem_id_draw_menu > a[data-tool=\"erase-all\"]");
+		var _miEraser = document.querySelector("#dem_id_draw_menu a[data-tool=\"eraser\"]");
+		var _miEraseAll = document.querySelector("#dem_id_draw_menu a[data-tool=\"erase-all\"]");
 
 		if (_button1)
 			_button1.innerHTML = this.reporterTranslates[0];
@@ -8063,11 +8063,11 @@ background-repeat: no-repeat;\
 			this.WordControl.OnResizeReporter();
 		}
 
-		if (_miPen) _miPen.textContent = this.reporterTranslates[4];
-		if (_miHighlighter) _miHighlighter.textContent = this.reporterTranslates[5];
+		if (_miPen) _miPen.childNodes[1].textContent = this.reporterTranslates[4];
+		if (_miHighlighter) _miHighlighter.childNodes[1].textContent = this.reporterTranslates[5];
 		if (_miInkColor) _miInkColor.textContent = this.reporterTranslates[6];
-		if (_miEraser) _miEraser.textContent = this.reporterTranslates[7];
-		if (_miEraseAll) _miEraseAll.textContent = this.reporterTranslates[8];
+		if (_miEraser) _miEraser.childNodes[1].textContent = this.reporterTranslates[7];
+		if (_miEraseAll) _miEraseAll.childNodes[1].textContent = this.reporterTranslates[8];
 
 		this.WordControl.UpdateBottomControlsParams();
 	};
