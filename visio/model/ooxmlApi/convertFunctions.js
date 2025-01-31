@@ -1826,6 +1826,40 @@
 					this.cImageShape.setBDeleted(false);
 					this.cImageShape.setSpPr(cShape.spPr.createDuplicate());
 					this.cImageShape.spPr.setParent(this.cImageShape);
+
+					let imgWidth_inch = this.getCellNumberValueWithScale("ImgWidth", drawingPageScale);
+					let imgHeight_inch = this.getCellNumberValueWithScale("ImgHeight", drawingPageScale);
+					let imgOffsetX_inch = this.getCellNumberValueWithScale("ImgOffsetX", drawingPageScale);
+					let imgOffsetY_inch = this.getCellNumberValueWithScale("ImgOffsetY", drawingPageScale);
+
+					let imgWidth_mm = imgWidth_inch * g_dKoef_in_to_mm;
+					let imgHeight_mm = imgHeight_inch * g_dKoef_in_to_mm;
+
+					this.cImageShape.blipFill.srcRect = new AscFormat.CSrcRect();
+					let rect = this.cImageShape.blipFill.srcRect;
+
+					if (imgWidth_inch !== undefined && imgHeight_inch !== undefined) {
+						let widthScale = imgWidth_mm / shapeWidth_mm;
+						let heightScale = imgHeight_mm / shapeHeight_mm;
+						// coords in our class CSrcRect is srcRect relative i.e. relative to original image size
+						// isInvertCoords check?
+						// add scale
+						rect.setLTRB(0, 100 - 1/heightScale * 100, 1/widthScale * 100, 100);
+					 }
+					if (imgOffsetX_inch !== undefined) {
+						let imgOffsetX_mm = imgOffsetX_inch * g_dKoef_in_to_mm;
+						let offsetX = imgOffsetX_mm / imgWidth_mm;
+						// add horizontal shift
+						rect.setLTRB(rect.l - offsetX * 100, rect.t, rect.r - offsetX * 100, rect.b);
+					}
+					if (imgOffsetY_inch !== undefined) {
+						let imgOffsetY_mm = imgOffsetY_inch * g_dKoef_in_to_mm;
+						let offsetY = imgOffsetY_mm / imgHeight_mm;
+						// add vertical shift
+						rect.setLTRB(rect.l, rect.t + offsetY * 100, rect.r, rect.b + offsetY * 100);
+					}
+
+
 					this.cImageShape.rot = cShape.rot;
 					// this.cImageShape.brush = cShape.brush;
 					this.cImageShape.bounds = cShape.bounds;
@@ -1837,6 +1871,8 @@
 
 					this.cImageShape.setParent2(visioDocument);
 					this.cImageShape.recalculate();
+					this.cImageShape.recalculateTransformText && this.cImageShape.recalculateTransformText();
+					this.cImageShape.recalculateContent && this.cImageShape.recalculateContent();
 
 					cShape = this.cImageShape;
 				} else {
