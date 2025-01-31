@@ -295,7 +295,7 @@ Paragraph.prototype.Copy = function(Parent, DrawingDocument, oPr)
 	{
 		var Item = this.Content[Index];
 
-		if (para_Comment === Item.Type && true === oPr.SkipComments)
+		if (para_Comment === Item.Type && (true === oPr.SkipComments || oPr.Comparison && oPr.Comparison.skipCommentElementOnCopyParagraph(Item)))
 			continue;
 		if (para_Bookmark === Item.Type && true === oPr.SkipBookmarks)
 			continue;
@@ -2689,24 +2689,25 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 				pGraphics.df();
 				Element = aHigh.Get_Next();
 			}
-			
 			//----------------------------------------------------------------------------------------------------------
 			// Рисуем выделение разрешенных областей
 			//----------------------------------------------------------------------------------------------------------
-			let aPerm = PDSH.Perm;
-			Element   = aPerm.Get_Next();
-			while (null != Element)
+			if (!pGraphics.isPrintMode && !pGraphics.isPdf())
 			{
-				if (!pGraphics.set_fillColor)
-					pGraphics.b_color1(Element.r, Element.g, Element.b, 255);
-				else
-					pGraphics.set_fillColor(Element.r, Element.g, Element.b);
-				
-				pGraphics.rect(Element.x0, Element.y0, Element.x1 - Element.x0, Element.y1 - Element.y0);
-				pGraphics.df();
-				Element = aPerm.Get_Next();
+				let aPerm = PDSH.Perm;
+				Element   = aPerm.Get_Next();
+				while (null != Element)
+				{
+					if (!pGraphics.set_fillColor)
+						pGraphics.b_color1(Element.r, Element.g, Element.b, 255);
+					else
+						pGraphics.set_fillColor(Element.r, Element.g, Element.b);
+					
+					pGraphics.rect(Element.x0, Element.y0, Element.x1 - Element.x0, Element.y1 - Element.y0);
+					pGraphics.df();
+					Element = aPerm.Get_Next();
+				}
 			}
-
 			//----------------------------------------------------------------------------------------------------------
 			// Рисуем комментарии
 			//----------------------------------------------------------------------------------------------------------
@@ -7477,17 +7478,17 @@ Paragraph.prototype.CanCorrectContent = function()
 /**
  * Корректируем содержимое параграфа
  */
-Paragraph.prototype.CorrectContent = function()
+Paragraph.prototype.CorrectContent = function(startPos, endPos, preserveEmptyElements)
 {
 	if (!this.CanCorrectContent())
 		return;
 
-	this.Correct_Content();
+	this.Correct_Content(startPos, endPos, preserveEmptyElements);
 
 	if (this.CurPos.ContentPos >= this.Content.length - 1)
 		this.MoveCursorToEndPos();
 };
-Paragraph.prototype.Correct_Content = function(_StartPos, _EndPos, bDoNotDeleteEmptyRuns)
+Paragraph.prototype.Correct_Content = function(_StartPos, _EndPos, preserveEmptyElements)
 {
 	if (!this.CanCorrectContent())
 		return;
@@ -7520,7 +7521,8 @@ Paragraph.prototype.Correct_Content = function(_StartPos, _EndPos, bDoNotDeleteE
 				|| para_Field === CurElement.Type
 				|| (para_InlineLevelSdt === CurElement.Type && !CurElement.IsPlaceHolder()))
 			&& true === CurElement.Is_Empty()
-			&& true !== CurElement.Is_CheckingNearestPos())
+			&& true !== CurElement.Is_CheckingNearestPos()
+			&& true !== preserveEmptyElements)
 		{
 			this.Internal_Content_Remove(CurPos);
 		}
@@ -7541,7 +7543,7 @@ Paragraph.prototype.Correct_Content = function(_StartPos, _EndPos, bDoNotDeleteE
 		}
 		else
 		{
-			if (true !== bDoNotDeleteEmptyRuns)
+			if (true !== preserveEmptyElements)
 			{
 				// TODO (Para_End): Предпоследний элемент мы не проверяем, т.к. на ран с Para_End мы не ориентируемся
 				if (true === CurElement.Is_Empty() && (0 < CurPos || para_Run !== this.Content[CurPos].Type) && CurPos < this.Content.length - 2 && para_Run === this.Content[CurPos + 1].Type)
@@ -16793,6 +16795,14 @@ Paragraph.prototype.GetCurrentPermRanges = function()
 		this.Content[pos].GetCurrentPermRanges(permRanges, pos === endPos);
 	}
 	
+	return permRanges;
+};
+Paragraph.prototype.GetPermRangesByPos = function(paraPos)
+{
+	let state = this.SaveSelectionState();
+	this.Set_ParaContentPos(paraPos, false, -1, -1, false);
+	let permRanges = this.GetCurrentPermRanges();
+	this.LoadSelectionState(state);
 	return permRanges;
 };
 Paragraph.prototype.GetCurrentComplexFields = function(bReturnFieldPos)

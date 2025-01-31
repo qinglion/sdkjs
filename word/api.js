@@ -950,7 +950,8 @@
 		this.isHandMode = false;
 
 		//g_clipboardBase.Init(this);
-
+		this.headingsColor = config["headings-color"] ? config["headings-color"] : null;
+		
 		this._init();
 	}
 
@@ -1138,6 +1139,9 @@
 				break;
 			case c_oAscTypeSelectElement.Header:
 				oUnkTypeObj = new CHeaderProp(obj);
+				break;
+			case Asc.c_oAscTypeSelectElement.UnProtectedRegion:
+				oUnkTypeObj = new Asc.RangePermProp(obj);
 				break;
 		}
 
@@ -1458,6 +1462,13 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype.isDocumentRenderer = function()
 	{
 		return !!this.WordControl.m_oDrawingDocument.m_oDocumentRenderer;
+	};
+	
+	asc_docs_api.prototype.canUndoRedoByRestrictions = function()
+	{
+		// В режиме вью можно редактировать в разрешенных областях
+		return (this.canEdit() || this.isRestrictionComments() || this.isRestrictionForms() || this.isRestrictionView());
+
 	};
 
 	asc_docs_api.prototype["asc_setViewerThumbnailsZoom"] = function(value) {
@@ -2255,7 +2266,6 @@ background-repeat: no-repeat;\
 		this.sync_PrAlignCallBack(ParaPr.Jc);
 		this.sync_PrPropCallback(ParaPr);
 	};
-
 	/*----------------------------------------------------------------*/
 	/*functions for working with clipboard, document*/
 	asc_docs_api.prototype._printDesktop = function (options)
@@ -2745,8 +2755,8 @@ background-repeat: no-repeat;\
 				window["AscDesktopEditor"]["emulateCloudPrinting"](false);
 		}
 
-		if (changes) {
-			if (isCloudLocal) {
+		if (changes || this.watermarkDraw) {
+			if (changes && isCloudLocal) {
 				this.sync_StartAction(Asc.c_oAscAsyncActionType.BlockInteraction, Asc.c_oAscAsyncAction.DownloadAs);
 				this.sync_StartAction(Asc.c_oAscAsyncActionType.BlockInteraction, Asc.c_oAscAsyncAction.Save);
 
@@ -4964,6 +4974,10 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype.sync_SpaceBetweenPrgCallback = function()
 	{
 		this.sendEvent("asc_onSpaceBetweenPrg");
+	};
+	asc_docs_api.prototype.sync_RangePermPropCallback = function(pr)
+	{
+		this.sync_ChangeLastSelectedElement(Asc.c_oAscTypeSelectElement.UnProtectedRegion, pr);
 	};
 	asc_docs_api.prototype.sync_PrPropCallback          = function(prProp)
 	{
@@ -9778,7 +9792,13 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype._onEndLoadSdk = function()
 	{
 		AscCommon.baseEditorsApi.prototype._onEndLoadSdk.call(this);
-
+		
+		if (this.headingsColor)
+		{
+			let rgba = AscCommon.RgbaTextToRGBA(this.headingsColor);
+			AscWord.setDefaultHeadingColor(rgba.R, rgba.G, rgba.B)
+		}
+		
 		History           = AscCommon.History;
 		g_fontApplication = AscFonts.g_fontApplication;
 		PasteElementsId   = AscCommon.PasteElementsId;
@@ -9932,7 +9952,7 @@ background-repeat: no-repeat;\
 		var oResult = null;
 		if (c_oAscSdtLevelType.Block === nType)
 		{
-			if (false === oLogicDocument.Document_Is_SelectionLocked(AscCommon.changestype_ContentControl_Add, null))
+			if (false === oLogicDocument.Document_Is_SelectionLocked(AscCommon.changestype_ContentControl_Add, null, true, false, null, AscDFH.historydescription_Document_AddBlockLevelContentControl))
 			{
 				oLogicDocument.StartAction(AscDFH.historydescription_Document_AddBlockLevelContentControl);
 
@@ -9954,7 +9974,7 @@ background-repeat: no-repeat;\
 		}
 		else if (c_oAscSdtLevelType.Inline === nType)
 		{
-			if (false === oLogicDocument.Document_Is_SelectionLocked(AscCommon.changestype_ContentControl_Add, null))
+			if (false === oLogicDocument.Document_Is_SelectionLocked(AscCommon.changestype_ContentControl_Add, null, true, false, null, AscDFH.historydescription_Document_AddInlineLevelContentControl))
 			{
 				oLogicDocument.StartAction(AscDFH.historydescription_Document_AddInlineLevelContentControl);
 
@@ -14406,6 +14426,7 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype['sync_KeepLinesCallback']                    = asc_docs_api.prototype.sync_KeepLinesCallback;
 	asc_docs_api.prototype['sync_ShowParaMarksCallback']                = asc_docs_api.prototype.sync_ShowParaMarksCallback;
 	asc_docs_api.prototype['sync_SpaceBetweenPrgCallback']              = asc_docs_api.prototype.sync_SpaceBetweenPrgCallback;
+	asc_docs_api.prototype['sync_RangePermPropCallback']                = asc_docs_api.prototype.sync_RangePermPropCallback;
 	asc_docs_api.prototype['sync_PrPropCallback']                       = asc_docs_api.prototype.sync_PrPropCallback;
 	asc_docs_api.prototype['sync_MathPropCallback']                     = asc_docs_api.prototype.sync_MathPropCallback;
 	asc_docs_api.prototype['sync_EndAddShape']                          = asc_docs_api.prototype.sync_EndAddShape;

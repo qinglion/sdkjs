@@ -6179,6 +6179,7 @@ StyleManager.prototype =
 		OffsetLast.col = collaborativeEditing.getLockMeColumn2(nSheetId, bbox.c2) - bbox.c2;
 		this.Ref.setOffsetFirst(OffsetFirst);
 		this.Ref.setOffsetLast(OffsetLast);
+		return !OffsetFirst.isEmpty() || !OffsetLast.isEmpty();
 	};
 	Hyperlink.prototype.tryInitLocalLink = function (wb) {
 		if (this.Hyperlink && this.Hyperlink[0] === "#") {
@@ -7742,7 +7743,12 @@ function RangeDataManagerElem(bbox, data)
 		this.colorLow = new RgbColor(defaultOtherColor);
 	};
 	sparklineGroup.prototype.setWorksheet = function (worksheet, oldWorksheet) {
+
+		let sOldId = this.worksheet ? this.worksheet.Id : null;
+		let sNewId = worksheet ? worksheet.Id : null;
+		AscCommon.History.Add(new AscDFH.CChangesDrawingsString(this, AscDFH.historyitem_Sparkline_Worksheet, sOldId, sNewId));
 		this.worksheet = worksheet;
+
 		if (oldWorksheet) {
 			var oldSparklines = [];
 			var newSparklines = [];
@@ -14739,6 +14745,14 @@ function RangeDataManagerElem(bbox, data)
 		oClass.applyRange(value);
 		oClass.addPointToLocalHistory(true);
 	};
+
+	AscDFH.changesFactory[AscDFH.historyitem_Sparkline_Worksheet] = AscDFH.CChangesDrawingsString;
+	AscDFH.drawingsChangesMap[AscDFH.historyitem_Sparkline_Worksheet] = function (oClass, value) {
+		let oWB = Asc.editor.wbModel;
+		if(!oWB) return;
+		let oWS = oWB.getWorksheetById(value);
+		oClass.worksheet = oWS;
+	};
 	/**
 	 *
 	 * @param ws
@@ -14765,6 +14779,9 @@ function RangeDataManagerElem(bbox, data)
 	OleSizeSelectionRange.prototype.constructor = OleSizeSelectionRange;
 	OleSizeSelectionRange.prototype.GetId = AscFormat.CBaseObject.prototype.Get_Id;
 	OleSizeSelectionRange.prototype.Get_Id = AscFormat.CBaseObject.prototype.Get_Id;
+	OleSizeSelectionRange.prototype.Write_ToBinary2 = AscFormat.CBaseNoIdObject.prototype.Write_ToBinary2;
+	OleSizeSelectionRange.prototype.Read_FromBinary2 = AscFormat.CBaseNoIdObject.prototype.Read_FromBinary2;
+	OleSizeSelectionRange.prototype.getObjectType = AscFormat.CBaseNoIdObject.prototype.getObjectType;
 
 	OleSizeSelectionRange.prototype.addToGlobalHistory = function () {
 		const oOldRange = this.getFirstFromLocalHistory();
@@ -15296,7 +15313,7 @@ function RangeDataManagerElem(bbox, data)
 		if (addSheetObj) {
 			let wb = this.getWb();
 			if (!wb) {
-				wb = new AscCommonExcel.Workbook(null, window["Asc"]["editor"]);
+				wb = new AscCommonExcel.Workbook(null, window["Asc"]["editor"], false);
 			}
 			let ws = new AscCommonExcel.Worksheet(wb);
 			ws.sName = name;
@@ -15375,7 +15392,7 @@ function RangeDataManagerElem(bbox, data)
 		if (!this.worksheets[sheetName]) {
 			var wb = this.getWb();
 			if (!wb) {
-				wb = new AscCommonExcel.Workbook(null, window["Asc"]["editor"]);
+				wb = new AscCommonExcel.Workbook(null, window["Asc"]["editor"], false);
 			}
 			ws = new AscCommonExcel.Worksheet(wb);
 			ws.sName = sheetName;
@@ -15393,7 +15410,7 @@ function RangeDataManagerElem(bbox, data)
 			if (!this.worksheets[sheetName]) {
 				var wb = this.getWb();
 				if (!wb) {
-					wb = new AscCommonExcel.Workbook(null, window["Asc"]["editor"]);
+					wb = new AscCommonExcel.Workbook(null, window["Asc"]["editor"], false);
 				}
 				ws = new AscCommonExcel.Worksheet(wb, wb.aWorksheets.length);
 				ws.sName = sheetName;
@@ -18205,10 +18222,38 @@ function RangeDataManagerElem(bbox, data)
 		let argumentsType = [];
 		let argumentsMin = 0;
 		let argumentsMax = argsInfo ? argsInfo.length : 0;
+
+
+		let argsFuncLength = func.length;
+		if (argsFuncLength > argumentsMax) {
+			console.log("REGISTRAION_ERROR_INVALID_FUNCTION_ARGUMENTS_COUNT");
+			return;
+		}
+
+		let supportedTypes = {
+			"number": 1,
+			"string": 1,
+			"boolean": 1,
+			"any": 1,
+			"number[][]": 1,
+			"string[][]": 1,
+			"boolean[][]": 1,
+			"any[][]": 1
+		};
+		let supportedArrTypes = {
+			"number[][]": 1,
+			"string[][]": 1,
+			"boolean[][]": 1,
+			"any[][]": 1
+		};
 		if (argsInfo) {
 			let optionalCount = 0;
 			for (let i = 0; i < argsInfo.length; i++) {
 				argumentsType.push(this.getTypeByString(argsInfo[i].type));
+				if (!supportedTypes[argsInfo[i].type]) {
+					let paramName = (params && params[i]) ? params[i].name : "";
+					console.log("Registration custom function \"" +  funcName + "\" warning. Invalid param \"" + paramName + "\" type. The following types must be used: number, string, boolean, any, number[][], string[][], boolean[][], any[][].");
+				}
 				if (argsInfo[i].isOptional) {
 					optionalCount++;
 				} else {
@@ -18218,12 +18263,12 @@ function RangeDataManagerElem(bbox, data)
 			argumentsMin = argsInfo.length - optionalCount;
 		}
 
-
-		let argsFuncLength = func.length;
-		if (argsFuncLength > argumentsMax) {
-			console.log("REGISTRAION_ERROR_INVALID_FUNCTION_ARGUMENTS_COUNT");
-			return;
+		let returnInfo = options.returnInfo;
+		if (options.returnInfo && !supportedTypes[returnInfo.type]) {
+			console.log("Registration custom function \"" +  funcName + "\" warning. Invalid return type. The following types must be used: number, string, boolean, any, number[][], string[][], boolean[][], any[][].");
 		}
+
+		let returnValueType = supportedArrTypes[returnInfo.type] ? AscCommonExcel.cReturnFormulaType.array : null;
 
 		/**
 		 * @constructor
@@ -18240,6 +18285,7 @@ function RangeDataManagerElem(bbox, data)
 		//newFunc.prototype.argumentsMax = argumentsMax;
 		//argumentsType - other arguments type, need convert
 		newFunc.prototype.argumentsType = argumentsType;
+		newFunc.prototype.returnValueType = returnValueType;
 		newFunc.prototype.Calculate = function (arg) {
 			try {
 
@@ -18585,6 +18631,9 @@ function RangeDataManagerElem(bbox, data)
 			case "any[][]":
 				res = _elem.toArray(true, true);
 				break;
+			default:
+				res = new AscCommonExcel.cError(AscCommonExcel.cErrorType.wrong_value_type);
+				break;
 		}
 		return res;
 	};
@@ -18689,6 +18738,10 @@ function RangeDataManagerElem(bbox, data)
 					res = this._tocArray(val, null, true);
 				}
 				break;
+			default:
+				res = new AscCommonExcel.cError(AscCommonExcel.cErrorType.wrong_value_type);
+
+
 		}
 		return res;
 	};
@@ -18733,6 +18786,25 @@ function RangeDataManagerElem(bbox, data)
 
 	CCustomFunctionEngine.prototype._tocArray = function (array, resType, checkOnError) {
 		var oArray = [], _res = new AscCommonExcel.cArray();
+
+		function isOneDimensional(arr) {
+			if (!Array.isArray(arr)) {
+				return false;
+			}
+
+			for (let i = 0; i < arr.length; i++) {
+				if (Array.isArray(arr[i])) {
+					return false;
+				}
+			}
+			return true;
+		}
+
+		if (isOneDimensional(array)) {
+			let newArr = [];
+			newArr.push(array);
+			array = newArr;
+		}
 
 		for (var i = 0; i < array.length; i++) {
 			for (var j = 0; j < array[i].length; j++) {

@@ -3763,7 +3763,7 @@
 				if (!renderingSettings) {
 					renderingSettings = this.initRenderingSettings();
 				}
-				renderingSettings && renderingSettings.setCtxWidth(printPagesData.pageWidth / vector_koef);
+				renderingSettings && !renderingSettings.getCtxWidth() && renderingSettings.setCtxWidth(printPagesData.pageWidth / vector_koef);
 				renderingSettings && renderingSettings.setPageLeftOffset(printPagesData.leftFieldInPx);
 				let pageRightField = c_oAscPrintDefaultSettings.PageRightField;
 				renderingSettings && renderingSettings.setPageRightOffset(pageRightField / vector_koef);
@@ -6259,9 +6259,9 @@
 
 			if (isMerged) {
 				wb = this._getColLeft(colR + 1, true, ctx) - this._getColLeft(colL, true, ctx);
-				//if (this.getRightToLeft()) {
+				if (this.getRightToLeft()) {
 					xb1 += this._getColumnWidth(col) - wb;
-				//}
+				}
 
 				hb = this._getRowTop(rowB + 1) - this._getRowTop(rowT);
 				this._AddClipRect(ctx, xb1, yb1, wb, hb);
@@ -8852,7 +8852,7 @@
 				ws.removeSparklines(locationRange);
 
 				var modelSparkline = new AscCommonExcel.sparklineGroup(true);
-				modelSparkline.worksheet = ws;
+				modelSparkline.setWorksheet(ws);
 				modelSparkline.set(newSparkLine);
 				modelSparkline.setSparklinesFromRange(dataRange, locationRange, true);
 				ws.addSparklineGroups(modelSparkline);
@@ -13173,6 +13173,7 @@
 
         // Получаем гиперссылку (//ToDo)
         var ar = selectionRange.getLast().clone();
+		let isOneColSelected = Math.abs(ar.c2 - ar.c1) + 1;
         var range = this.model.getRange3(ar.r1, ar.c1, ar.r2, ar.c2);
         var hyperlink = range.getHyperlink();
         var oHyperlink;
@@ -13256,7 +13257,7 @@
 			cell_info.isLockedHeaderFooter = true;
 		}
 
-		cell_info.selectedColsCount = Math.abs(ar.c2 - ar.c1) + 1;
+		cell_info.selectedColsCount = isOneColSelected;
 
         return cell_info;
 	};
@@ -15718,6 +15719,35 @@
 				return false;
 			};
 
+			const doByAllRange = function (_range, callback) {
+				let isAllProperty = false;
+				let _allColProps = t.model.getAllCol();
+				if (!_allColProps || !_allColProps.xfs) {
+					let _allRowProps = t.model.getAllRow();
+					if (!_allRowProps || !_allRowProps.xfs) {
+						_range._foreachColNoEmpty(function (_col) {
+							if (_col && _col.xfs) {
+								isAllProperty = true;
+								return true;
+							}
+						});
+						if (!isAllProperty) {
+							_range._foreachRowNoEmpty(function (_row) {
+								if (_row && _row.xfs) {
+									isAllProperty = true;
+									return true;
+								}
+							});
+						}
+					}
+				}
+
+				if (isAllProperty) {
+					callback(_range, true);
+				} else {
+					callback(_range);
+				}
+			};
 
             History.Create_NewPoint();
             History.StartTransaction();
@@ -15981,7 +16011,9 @@
 
                         switch(val) {
 							case c_oAscCleanOptions.All:
-							    range.cleanAll();
+								doByAllRange (range, function (_range, ignoreNoEmpty) {
+									_range.cleanAll(ignoreNoEmpty);
+								});
 								t.model.deletePivotTables(range.bbox);
 								t.model.removeSparklines(range.bbox);
 								t.model.clearDataValidation([range.bbox], true);
@@ -15999,7 +16031,9 @@
 								break;
 							case c_oAscCleanOptions.Format:
 								t.model.clearConditionalFormattingRulesByRanges([range.bbox]);
-							    range.cleanFormat();
+								doByAllRange (range, function (_range, ignoreNoEmpty) {
+									_range.cleanFormat(ignoreNoEmpty);
+								});
 								break;
 							case c_oAscCleanOptions.Hyperlinks:
 							    range.cleanHyperlinks();
@@ -20232,7 +20266,7 @@
 			ctx.setStrokeStyle(t.settings.cells.defaultState.border);
 
 			var _diff = isPivotCollapsed ? 1 : 0;
-			ctx.fillRect(startX + _diff, startY + _diff, width - _diff, height - _diff);
+			t._fillRect(ctx, startX + _diff, startY + _diff, width - _diff, height - _diff);
 			if (isPivotCollapsed) {
 				ctx.beginPath();
 				t._lineHor(ctx, startX + _diff, startY, startX + width);

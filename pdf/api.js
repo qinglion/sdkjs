@@ -363,6 +363,19 @@
 
 		this.sendEvent("asc_onCanRedo", canRedo);
 	};
+	PDFEditorApi.prototype.asc_getCanUndo = function() {
+		let oDoc = this.getPDFDoc();
+		if (!oDoc) {
+			return false;
+		}
+		
+		let bCanUndo = oDoc.History.Can_Undo() || oDoc.LocalHistory.Can_Undo();
+
+		if (true !== bCanUndo && oDoc.CollaborativeEditing && true === oDoc.CollaborativeEditing.Is_Fast() && true !== oDoc.CollaborativeEditing.Is_SingleUser())
+			bCanUndo = oDoc.CollaborativeEditing.CanUndo();
+
+		return bCanUndo;
+	};
 	PDFEditorApi.prototype.asc_PasteData = function(_format, data1, data2, text_data, useCurrentPoint, callback, checkLocks) {
 		if (!this.DocumentRenderer)
 			return;
@@ -912,7 +925,18 @@
 
 		this.sendEvent("asc_onHyperlinkClick", Url);
 	};
+	PDFEditorApi.prototype.add_Hyperlink = function(HyperProps) {
+		let oDoc = this.getPDFDoc();
 
+		if (null != HyperProps.Text) {
+			AscFonts.FontPickerByCharacter.checkText(HyperProps.Text, this, function() {
+				oDoc.AddHyperlink(HyperProps);
+			});
+		}
+		else {
+			oDoc.AddHyperlink(HyperProps);
+		}
+	};
 	PDFEditorApi.prototype.sync_VerticalTextAlign = function(align) {
 		this.sendEvent("asc_onVerticalTextAlign", align);
 	};
@@ -1994,6 +2018,11 @@
 	};
 	PDFEditorApi.prototype.loadStampsJSON = function() {
 		try {
+			if (window["native_pdf_stamps"]) {
+				AscPDF["STAMPS_JSON"] = AscPDF.STAMPS_JSON = window["native_pdf_stamps"];
+				delete window["native_pdf_stamps"];
+				return;
+			}
 			var xhr = new XMLHttpRequest();
 			xhr.open("GET", "../../../../sdkjs/pdf/src/annotations/stamps.json", true);
 			var t = this;
@@ -2960,6 +2989,7 @@
 	PDFEditorApi.prototype['sync_ContextMenuCallback']		= PDFEditorApi.prototype.sync_ContextMenuCallback;
 	PDFEditorApi.prototype['sync_CanUndoCallback']			= PDFEditorApi.prototype.sync_CanUndoCallback;
 	PDFEditorApi.prototype['sync_CanRedoCallback']			= PDFEditorApi.prototype.sync_CanRedoCallback;
+	PDFEditorApi.prototype['asc_getCanUndo']				= PDFEditorApi.prototype.asc_getCanUndo;
 	PDFEditorApi.prototype['asc_setAdvancedOptions']		= PDFEditorApi.prototype.asc_setAdvancedOptions;
 	PDFEditorApi.prototype['startGetDocInfo']				= PDFEditorApi.prototype.startGetDocInfo;
 	PDFEditorApi.prototype['stopGetDocInfo']				= PDFEditorApi.prototype.stopGetDocInfo;
@@ -3095,6 +3125,7 @@
 	PDFEditorApi.prototype['remove_Hyperlink']						= PDFEditorApi.prototype.remove_Hyperlink;
 	PDFEditorApi.prototype['change_Hyperlink']						= PDFEditorApi.prototype.change_Hyperlink;
 	PDFEditorApi.prototype['sync_HyperlinkClickCallback']			= PDFEditorApi.prototype.sync_HyperlinkClickCallback;
+	PDFEditorApi.prototype['add_Hyperlink']							= PDFEditorApi.prototype.add_Hyperlink;
 	PDFEditorApi.prototype['SetShowTextSelectPanel']				= PDFEditorApi.prototype.SetShowTextSelectPanel;
 	PDFEditorApi.prototype['NeedShowTextSelectPanel']				= PDFEditorApi.prototype.NeedShowTextSelectPanel;
 

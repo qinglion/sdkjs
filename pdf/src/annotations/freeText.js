@@ -78,6 +78,8 @@
         this.recalcInfo.recalculateGeometry = true;
         this.isInTextBox                    = false; // флаг, что внутри текстбокса
         this.defaultPerpLength              = 12; // длина выступающего перпендикуляра callout по умолчанию
+
+        this.lastClickCoords = {}; // for onPreMove
     };
     CAnnotationFreeText.prototype.constructor = CAnnotationFreeText;
     AscFormat.InitClass(CAnnotationFreeText, AscFormat.CGroupShape, AscDFH.historyitem_type_Pdf_Annot_FreeText);
@@ -227,10 +229,10 @@
             }
         
             // Return the coordinates of the rectangle
-            return [minX, minY, maxX, maxY];
+            return [minX - this.defaultPerpLength / 2, minY - this.defaultPerpLength / 2, maxX + this.defaultPerpLength / 2, maxY + this.defaultPerpLength / 2];
         }
 
-        return calculateBoundingRectangle(oLine, oShapeEndSize);
+        return calculateBoundingRectangle.call(this, oLine, oShapeEndSize);
     };
 
     CAnnotationFreeText.prototype.IsFreeText = function() {
@@ -955,6 +957,9 @@
         let oDoc                = this.GetDocument();
         let oController         = oDoc.GetController();
         
+        this.lastClickCoords.X = x;
+        this.lastClickCoords.Y = y;
+
         if (this.IsInTextBox() == false) {
             if (oController.selectedObjects.length > 1) {
                 AscPDF.CAnnotationBase.prototype.onMouseDown.call(this, x, y, e);
@@ -962,8 +967,8 @@
             else if (this.selectedObjects.length <= this.spTree.length - 1) {
                 let _t = this;
                 // селектим все фигуры в группе (кроме перпендикулярной линии) если до сих пор не заселекчены
-                oController.selection.groupSelection = this;
                 this.select(oController, this.selectStartPage);
+                oController.selection.groupSelection = this;
                 this.selectedObjects.length = 0;
 
                 this.spTree.forEach(function(sp) {
@@ -1371,13 +1376,33 @@
         }
     };
     CAnnotationFreeText.prototype.onAfterMove = function() {
-        this.onMouseDown();
+        let oDoc = this.GetDocument();
+        let oController = oDoc.GetController();
+        let _t = this;
+        this.lastClickCoords.X = undefined;
+        this.lastClickCoords.Y = undefined;
+
+        // селектим все фигуры в группе (кроме перпендикулярной линии) если до сих пор не заселекчены
+        if (oController.selectedObjects.length == 1) {
+            oController.selection.groupSelection = this;
+        }
+        
+        this.selectedObjects.length = 0;
+        this.spTree.forEach(function(sp) {
+            if (!(sp instanceof AscPDF.CPdfConnectionShape)) {
+                sp.selectStartPage = _t.selectStartPage;
+                _t.selectedObjects.push(sp);
+            }
+        });
     };
     CAnnotationFreeText.prototype.onPreMove = function(x, y, e) {
         let oViewer         = editor.getDocumentRenderer();
         let oDrawingObjects = oViewer.DrawingObjects;
 
         this.selectStartPage = this.GetPage();
+
+        x = this.lastClickCoords.X;
+        y = this.lastClickCoords.Y;
 
         // координаты клика на странице в MM
         var pageObject = oViewer.getPageByCoords2(x, y);
@@ -1540,7 +1565,7 @@
 		}, undefined, this);
 
         this.SetNeedRecalc(true);
-        this.SetWasChanged(true);
+        this.SetWasChanged(true, false);
     };
 
     // shape methods
@@ -1720,8 +1745,8 @@
                 oSize.height = nLineW;
             case AscPDF.LINE_END_TYPE.OpenArrow:
             case AscPDF.LINE_END_TYPE.ClosedArrow:
-                oSize.width = 4 * nLineW;
-                oSize.height = 2 * nLineW;
+                oSize.width = 6 * nLineW;
+                oSize.height = 3 * nLineW;
                 break;
             case AscPDF.LINE_END_TYPE.Diamond:
             case AscPDF.LINE_END_TYPE.Square:
@@ -1737,20 +1762,19 @@
                 oSize.height = 6 * nLineW;
                 break;
             case AscPDF.LINE_END_TYPE.ROpenArrow:
-                oSize.width = 5 * nLineW;
-                oSize.height = 5 * nLineW;
+                oSize.width = 6 * nLineW;
+                oSize.height = 6 * nLineW;
                 break;
             case AscPDF.LINE_END_TYPE.Butt:
                 oSize.width = 5 * nLineW;
                 oSize.height = 1.5 * nLineW;
                 break;
             case AscPDF.LINE_END_TYPE.Slash:
-                oSize.width = 4 * nLineW;
-                oSize.height = 3.5 * nLineW;
+                oSize.width = 6 * nLineW;
+                oSize.height = 3 * nLineW;
                 break;
             
         }
-
         return oSize;
     }
 

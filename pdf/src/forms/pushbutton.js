@@ -623,6 +623,7 @@
     CPushButtonField.prototype.SetValue = function() {
         return;
     };
+    CPushButtonField.prototype.private_SetValue = CPushButtonField.prototype.SetValue;
     CPushButtonField.prototype.Draw = function(oGraphicsPDF, oGraphicsWord) {
         if (this.IsHidden() == true)
             return;
@@ -1135,6 +1136,7 @@
             return;
         
         let oViewer = editor.getDocumentRenderer();
+        oGraphicsPDF.SetGlobalAlpha(1);
         
         let nImgType;
         if (this.IsPressed()) {

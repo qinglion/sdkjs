@@ -4006,63 +4006,18 @@ function CEditorPage(api)
 			return false;
 		}
 
-		var delta  = 0;
-		var deltaX = 0;
-		var deltaY = 0;
-
-		if (undefined != e.wheelDelta && e.wheelDelta != 0)
-		{
-			//delta = (e.wheelDelta > 0) ? -45 : 45;
-			delta = -45 * e.wheelDelta / 120;
-		}
-		else if (undefined != e.detail && e.detail != 0)
-		{
-			//delta = (e.detail > 0) ? 45 : -45;
-			delta = 45 * e.detail / 3;
-		}
-
-		// New school multidimensional scroll (touchpads) deltas
-		deltaY = delta;
-
-		if (oThis.m_bIsHorScrollVisible)
-		{
-			if (e.axis !== undefined && e.axis === e.HORIZONTAL_AXIS)
-			{
-				deltaY = 0;
-				deltaX = delta;
-			}
-
-			// Webkit
-			if (undefined !== e.wheelDeltaY && 0 !== e.wheelDeltaY)
-			{
-				//deltaY = (e.wheelDeltaY > 0) ? -45 : 45;
-				deltaY = -45 * e.wheelDeltaY / 120;
-			}
-			if (undefined !== e.wheelDeltaX && 0 !== e.wheelDeltaX)
-			{
-				//deltaX = (e.wheelDeltaX > 0) ? -45 : 45;
-				deltaX = -45 * e.wheelDeltaX / 120;
-			}
-		}
-
-		deltaX >>= 0;
-		deltaY >>= 0;
+		let values = AscCommon.checkMouseWhell(e, {
+			isSupportBidirectional : false,
+			isAllowHorizontal : oThis.m_bIsHorScrollVisible,
+			isUseMaximumDelta : true
+		});
 
 		oThis.m_nVerticalSlideChangeOnScrollEnabled = true;
 
-		let isSupportDirections2 = false;
-		if (!isSupportDirections2)
-		{
-			if (Math.abs(deltaY) >= Math.abs(deltaX))
-				deltaX = 0;
-			else
-				deltaY = 0;
-		}
-
-		if (0 !== deltaX)
-			oThis.m_oScrollHorApi.scrollBy(deltaX, 0, false);
-		if (0 !== deltaY)
-			oThis.m_oScrollVerApi.scrollBy(0, deltaY, false);
+		if (0 !== values.x)
+			oThis.m_oScrollHorApi.scrollBy(values.x, 0, false);
+		if (0 !== values.y)
+			oThis.m_oScrollVerApi.scrollBy(0, values.y, false);
 
 		oThis.m_nVerticalSlideChangeOnScrollEnabled = false;
 
@@ -4431,6 +4386,7 @@ function CEditorPage(api)
 		}
 
 
+		let oSlide = this.m_oLogicDocument.GetCurrentSlide();
 		if (isDrawNotes && drDoc.m_bIsSelection)
 		{
 			var ctxOverlay = overlayNotes.m_oContext;
@@ -4440,8 +4396,8 @@ function CEditorPage(api)
 
 			ctxOverlay.beginPath();
 
-			if (drDoc.SlideCurrent != -1)
-				this.m_oLogicDocument.Slides[drDoc.SlideCurrent].drawNotesSelect();
+			if (oSlide && oSlide.drawNotesSelect)
+				oSlide.drawNotesSelect();
 
 			ctxOverlay.globalAlpha = 0.2;
 			ctxOverlay.fill();
@@ -4456,13 +4412,12 @@ function CEditorPage(api)
 		ctx.globalAlpha = 1.0;
 		ctx             = null;
 
-		if (this.m_oLogicDocument != null && drDoc.SlideCurrent >= 0)
+		if (this.m_oLogicDocument != null && oSlide)
 		{
-			let oSlide = this.m_oLogicDocument.GetCurrentSlide();
 			oSlide.drawSelect(2);
 
 			var elements = oSlide.graphicObjects;
-			if (!elements.canReceiveKeyPress() && -1 != drDoc.SlideCurrent)
+			if (!elements.canReceiveKeyPress())
 			{
 				var drawPage = drDoc.SlideCurrectRect;
 				drDoc.AutoShapesTrack.init(overlay, drawPage.left, drawPage.top, drawPage.right, drawPage.bottom, this.m_oLogicDocument.GetWidthMM(), this.m_oLogicDocument.GetHeightMM());

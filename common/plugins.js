@@ -504,6 +504,9 @@
 				case AscCommon.c_oEditorId.Spreadsheet:
 					typeEditorString = "cell";
 					break;
+				case AscCommon.c_oEditorId.Visio:
+					typeEditorString = "diagram";
+					break;
 				default:
 					break;
 			}

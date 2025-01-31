@@ -200,8 +200,9 @@
 				let lineColorRGBA = lineUniFill.fill && lineUniFill.fill.color && lineUniFill.fill.color.color.RGBA;
 				let fillColorRGBA = fillUniFill.fill && fillUniFill.fill.color && fillUniFill.fill.color.color.RGBA;
 
+				AscFormat.CColorModifiers.prototype.RGB2HSL(255, 255, 255, backgroundColorHSL);
+				let compareWithOneColor = lineColorRGBA === undefined || fillColorRGBA === undefined;
 				if (lineColorRGBA !== undefined && fillColorRGBA !== undefined && textColorRGBA !== undefined) {
-					AscFormat.CColorModifiers.prototype.RGB2HSL(255, 255, 255, backgroundColorHSL);
 					AscFormat.CColorModifiers.prototype.RGB2HSL(lineColorRGBA.R, lineColorRGBA.G, lineColorRGBA.B, lineColorHSL);
 					AscFormat.CColorModifiers.prototype.RGB2HSL(fillColorRGBA.R, fillColorRGBA.G, fillColorRGBA.B, fillColorHSL);
 					AscFormat.CColorModifiers.prototype.RGB2HSL(textColorRGBA.R, textColorRGBA.G, textColorRGBA.B, textColorHSL);
@@ -253,6 +254,51 @@
 											textColorRGBA.B = lineColorRGBA.B;
 										} // else leave text color
 									}
+								}
+							}
+						}
+					}
+				} else if (compareWithOneColor) {
+					let compareColorRGBA = lineColorRGBA || fillColorRGBA;
+					let compareColorHSL = {H: undefined, S: undefined, L: undefined};
+					AscFormat.CColorModifiers.prototype.RGB2HSL(compareColorRGBA.R, compareColorRGBA.G, compareColorRGBA.B, compareColorHSL);
+					AscFormat.CColorModifiers.prototype.RGB2HSL(textColorRGBA.R, textColorRGBA.G, textColorRGBA.B, textColorHSL);
+
+					// covert L to percents
+					backgroundColorHSL.L = backgroundColorHSL.L / 255 * 100;
+					compareColorHSL.L = compareColorHSL.L / 255 * 100;
+					textColorHSL.L = textColorHSL.L / 255 * 100;
+
+
+					let quickStyleVariationCell = shape.getCell("QuickStyleVariation");
+					if (quickStyleVariationCell) {
+						let quickStyleVariationCellValue = Number(quickStyleVariationCell.v);
+
+						if ((quickStyleVariationCellValue & 2) === 2) {
+							// text color variation enabled (bit mask used)
+
+							// let fillPattern = shape.getCellNumberValue("FillPattern");
+							// if (fillPattern !== 0) {
+							// 	AscCommon.consoleLog("TextQuickStyleVariation for shapes with FillPattern !== 0 is disabled");
+							// 	// consider example https://disk.yandex.ru/d/2fbgXRrCBThlCw
+							// 	return;
+							// }
+
+							if (Math.abs(backgroundColorHSL.L - textColorHSL.L) < 16.66) {
+								if (backgroundColorHSL.L <= 72.92) {
+									// if background is dark set stroke to white
+									textColorRGBA.R = 255;
+									textColorRGBA.G = 255;
+									textColorRGBA.B = 255;
+								} else {
+									// return the color with the largest absolute difference in luminance from the
+									// formula evaluation of the "TextColor" and "FillColor" or "LineColor" i.e. compareColor
+									if (Math.abs(backgroundColorHSL.L - compareColorHSL.L) >
+										Math.abs(backgroundColorHSL.L - textColorHSL.L)) {
+										textColorRGBA.R = compareColorRGBA.R;
+										textColorRGBA.G = compareColorRGBA.G;
+										textColorRGBA.B = compareColorRGBA.B;
+									} // else leave text color
 								}
 							}
 						}
@@ -1287,6 +1333,67 @@
 			return endArrow;
 		}
 
+		function mapVisioFillPatternToOOXML(fillPatternType) {
+			// change down to up and up to down bcs of Global matrix inverted
+			let upSideDownPatterns = false;
+			switch (fillPatternType) {
+				case 2:
+					return upSideDownPatterns ? AscCommon.global_hatch_offsets["dnDiag"] :
+						AscCommon.global_hatch_offsets["upDiag"];
+				case 3:
+					return AscCommon.global_hatch_offsets["cross"];
+				case 4:
+					return AscCommon.global_hatch_offsets["diagCross"];
+				case 5:
+					return upSideDownPatterns ? AscCommon.global_hatch_offsets["upDiag"] :
+						AscCommon.global_hatch_offsets["dnDiag"];
+				case 6:
+					return AscCommon.global_hatch_offsets["horz"];
+				case 7:
+					return AscCommon.global_hatch_offsets["vert"];
+				case 8:
+					return AscCommon.global_hatch_offsets["pct60"];
+				case 9:
+					return AscCommon.global_hatch_offsets["pct40"];
+				case 10:
+					return AscCommon.global_hatch_offsets["pct25"];
+				case 11:
+					return AscCommon.global_hatch_offsets["pct20"];
+				case 12:
+					return AscCommon.global_hatch_offsets["pct10"];
+				case 13:
+					return AscCommon.global_hatch_offsets["dkHorz"];
+				case 14:
+					return AscCommon.global_hatch_offsets["dkVert"];
+				case 15:
+					return upSideDownPatterns ? AscCommon.global_hatch_offsets["dkUpDiag"] :
+						AscCommon.global_hatch_offsets["dkDnDiag"];
+				case 16:
+					return upSideDownPatterns ? AscCommon.global_hatch_offsets["dkDnDiag"] :
+						AscCommon.global_hatch_offsets["dkUpDiag"];
+				case 17:
+					return AscCommon.global_hatch_offsets["smCheck"];
+				case 18:
+					return AscCommon.global_hatch_offsets["trellis"];
+				case 19:
+					return AscCommon.global_hatch_offsets["ltHorz"];
+				case 20:
+					return AscCommon.global_hatch_offsets["ltVert"];
+				case 21:
+					return upSideDownPatterns ? AscCommon.global_hatch_offsets["ltUpDiag"] :
+						AscCommon.global_hatch_offsets["ltDnDiag"];
+				case 22:
+					return upSideDownPatterns ? AscCommon.global_hatch_offsets["ltDnDiag"] :
+						AscCommon.global_hatch_offsets["ltUpDiag"];
+				case 23:
+					return AscCommon.global_hatch_offsets["smGrid"];
+				case 24:
+					return AscCommon.global_hatch_offsets["pct50"];
+				default:
+					AscCommon.consoleLog("patten fill unhandled");
+					return AscCommon.global_hatch_offsets["cross"];
+			}
+		}
 
 		// Method start
 
@@ -1653,69 +1760,6 @@
 			} else if (fillPatternType === 1 || isfillPatternTypeGradient) {
 				uniFillForegndWithPattern = uniFillForegnd;
 			} else if (fillPatternType > 1) {
-
-				function mapVisioFillPatternToOOXML(fillPatternType) {
-					// change down to up and up to down bcs of Global matrix inverted
-					let upSideDownPatterns = false;
-					switch (fillPatternType) {
-						case 2:
-							return upSideDownPatterns ? AscCommon.global_hatch_offsets.dnDiag :
-								AscCommon.global_hatch_offsets.upDiag;
-						case 3:
-							return AscCommon.global_hatch_offsets.cross;
-						case 4:
-							return AscCommon.global_hatch_offsets.diagCross;
-						case 5:
-							return upSideDownPatterns ? AscCommon.global_hatch_offsets.upDiag :
-								AscCommon.global_hatch_offsets.dnDiag;
-						case 6:
-							return AscCommon.global_hatch_offsets.horz;
-						case 7:
-							return AscCommon.global_hatch_offsets.vert;
-						case 8:
-							return AscCommon.global_hatch_offsets.pct60;
-						case 9:
-							return AscCommon.global_hatch_offsets.pct40;
-						case 10:
-							return AscCommon.global_hatch_offsets.pct25;
-						case 11:
-							return AscCommon.global_hatch_offsets.pct20;
-						case 12:
-							return AscCommon.global_hatch_offsets.pct10;
-						case 13:
-							return AscCommon.global_hatch_offsets.dkHorz;
-						case 14:
-							return AscCommon.global_hatch_offsets.dkVert;
-						case 15:
-							return upSideDownPatterns ? AscCommon.global_hatch_offsets.dkUpDiag :
-								AscCommon.global_hatch_offsets.dkDnDiag;
-						case 16:
-							return upSideDownPatterns ? AscCommon.global_hatch_offsets.dkDnDiag :
-								AscCommon.global_hatch_offsets.dkUpDiag;
-						case 17:
-							return AscCommon.global_hatch_offsets.smCheck;
-						case 18:
-							return AscCommon.global_hatch_offsets.trellis;
-						case 19:
-							return AscCommon.global_hatch_offsets.ltHorz;
-						case 20:
-							return AscCommon.global_hatch_offsets.ltVert;
-						case 21:
-							return upSideDownPatterns ? AscCommon.global_hatch_offsets.ltUpDiag :
-								AscCommon.global_hatch_offsets.ltDnDiag;
-						case 22:
-							return upSideDownPatterns ? AscCommon.global_hatch_offsets.ltDnDiag :
-								AscCommon.global_hatch_offsets.ltUpDiag;
-						case 23:
-							return AscCommon.global_hatch_offsets.smGrid;
-						case 24:
-							return AscCommon.global_hatch_offsets.pct50;
-						default:
-							AscCommon.consoleLog("patten fill unhandled");
-							return AscCommon.global_hatch_offsets.cross;
-					}
-				}
-
 				let ooxmlFillPatternType = mapVisioFillPatternToOOXML(fillPatternType);
 				if (uniFillForegnd.fill instanceof AscFormat.CPattFill) {
 					uniFillForegndWithPattern = AscFormat.CreatePatternFillUniFill(ooxmlFillPatternType,
@@ -1902,8 +1946,14 @@
 				groupShape.pen = cShapeOrCGroupShape.pen;
 				groupShape.Id = cShapeOrCGroupShape.Id + "_Group";
 
-				groupShape.addToSpTree(groupShape.spTree.length, cShapeOrCGroupShape);
+				// add group geometry to bottom
+				if (cShapeOrCGroupShape instanceof CGroupShape) {
+					groupShape.addToSpTree(groupShape.spTree.length, cShapeOrCGroupShape.spTree[0]);
+				} else {
+					groupShape.addToSpTree(groupShape.spTree.length, cShapeOrCGroupShape);
+				}
 				groupShape.spTree[groupShape.spTree.length - 1].setGroup(groupShape);
+
 
 				cShapeOrCGroupShape.spPr.xfrm.setOffX(0);
 				cShapeOrCGroupShape.spPr.xfrm.setOffY(0);
@@ -1928,15 +1978,7 @@
 
 					currentGroupHandling.addToSpTree(currentGroupHandling.spTree.length, groupShape);
 					currentGroupHandling.spTree[currentGroupHandling.spTree.length - 1].setGroup(currentGroupHandling);
-					groupShape.recalculateLocalTransform(groupShape.transform);
-
-
-					// delete bcs textCShape is always null see toGeometryAndTextCShapes
-					// if (cShapes.textCShape !== null) {
-					// 	currentGroupHandling.addToSpTree(currentGroupHandling.spTree.length, cShapes.textCShape);
-					// 	currentGroupHandling.spTree[currentGroupHandling.spTree.length - 1].setGroup(currentGroupHandling);
-					// 	// cShapes.textCShape.recalculateLocalTransform(cShapes.textCShape.transform); // exists below
-					// }
+					// groupShape.recalculateLocalTransform(groupShape.transform);
 
 					currentGroupHandling = groupShape;
 					let subShapes = this.getSubshapes();
@@ -1945,21 +1987,44 @@
 						subShape.convertGroup(visioDocument, pageInfo, drawingPageScale, currentGroupHandling);
 					}
 				}
+
+				// add group text to top
+				if (cShapeOrCGroupShape instanceof CGroupShape) {
+					groupShape.addToSpTree(groupShape.spTree.length, cShapeOrCGroupShape.spTree[1]);
+					groupShape.spTree[groupShape.spTree.length - 1].setGroup(groupShape);
+				}
+
 				// recalculate positions to local (group) coordinates
-				cShapeOrCGroupShape.recalculateLocalTransform(cShapeOrCGroupShape.transform);
+				// cShapeOrCGroupShape.recalculateLocalTransform(cShapeOrCGroupShape.transform);
+
+				if (cShapeOrCGroupShape instanceof CGroupShape) {
+					cShapeOrCGroupShape.spTree[0].recalculateLocalTransform(cShapeOrCGroupShape.spTree[0].transform);
+					cShapeOrCGroupShape.spTree[0].recalculateTransformText && cShapeOrCGroupShape.spTree[0].recalculateTransformText();
+					cShapeOrCGroupShape.spTree[0].recalculateContent && cShapeOrCGroupShape.spTree[0].recalculateContent();
+					cShapeOrCGroupShape.spTree[0].recalculate();
+
+
+					cShapeOrCGroupShape.spTree[1].recalculateLocalTransform(cShapeOrCGroupShape.spTree[1].transform);
+					cShapeOrCGroupShape.spTree[1].recalculateTransformText && cShapeOrCGroupShape.spTree[1].recalculateTransformText();
+					cShapeOrCGroupShape.spTree[1].recalculateContent && cShapeOrCGroupShape.spTree[1].recalculateContent();
+
+					cShapeOrCGroupShape.spTree[1].recalculate();
+				} else {
+					cShapeOrCGroupShape.recalculateLocalTransform(cShapeOrCGroupShape.transform);
+					cShapeOrCGroupShape.recalculateTransformText && cShapeOrCGroupShape.recalculateTransformText();
+					cShapeOrCGroupShape.recalculateContent && cShapeOrCGroupShape.recalculateContent();
+					cShapeOrCGroupShape.recalculate();
+				}
+
+				groupShape.recalculateTransformText && groupShape.recalculateTransformText();
+				groupShape.recalculateContent && groupShape.recalculateContent();
+				groupShape.recalculateLocalTransform(groupShape.transform);
+				groupShape.recalculate();
+
 				// cShapes.geometryCShape.recalculateTransformText();
 				// cShapes.geometryCShape.recalculateContent();
 				// cShapes.geometryCShape.recalculate(); // doesnt work here
 			}
-
-			// 	delete bcs textCShape is always null see toGeometryAndTextCShapes
-			// if (cShapes.textCShape !== null) {
-			// 	// even if not add textCShape to currentGroupHandling above do recalculate just in case
-			// 	cShapes.textCShape.recalculateLocalTransform(cShapes.textCShape.transform);
-			// 	cShapes.textCShape.recalculateTransformText();
-			// 	cShapes.textCShape.recalculateContent();
-			// }
-
 		} else {
 			// if read cShape not CGroupShape
 			if (!currentGroupHandling) {
@@ -1994,6 +2059,9 @@
 		}
 
 		if (currentGroupHandling) {
+			currentGroupHandling.recalculateLocalTransform(currentGroupHandling.transform);
+			currentGroupHandling.recalculateTransformText && currentGroupHandling.recalculateTransformText();
+			currentGroupHandling.recalculateContent && currentGroupHandling.recalculateContent();
 			currentGroupHandling.recalculate();
 		}
 

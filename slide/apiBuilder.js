@@ -368,11 +368,17 @@
      * @see office-js-api/Examples/Enumerations/DrawingForGroup.js
 	 */
 
-    //------------------------------------------------------------------------------------------------------------------
-    //
-    // Base Api
-    //
-    //------------------------------------------------------------------------------------------------------------------
+    /**
+     * Any valid element which can be added to the document structure.
+	 * @typedef {(ApiParagraph)} DocumentElement
+	 * @see office-js-api/Examples/Enumerations/DocumentElement.js
+	 */
+
+    /**
+	 * The types of elements that can be added to the paragraph structure.
+	 * @typedef {(ApiUnsupported | ApiRun | ApiHyperlink)} ParagraphContent
+	 * @see office-js-api/Examples/Enumerations/ParagraphContent.js
+	 */
 
     /**
      * The 1000th of a percent (100000 = 100%).
@@ -381,17 +387,23 @@
 	 */
 
     /**
+	 * Represents the type of objects in a selection.
+	 * @typedef {("none" | "shapes" | "slides" | "text")} SelectionType - Available selection types.
+	 *
+	 */
+
+    //------------------------------------------------------------------------------------------------------------------
+    //
+    // Base Api
+    //
+    //------------------------------------------------------------------------------------------------------------------
+
+    /**
      * Returns the main presentation.
      * @typeofeditors ["CPE"]
      * @memberof Api
      * @returns {ApiPresentation}
      * @see office-js-api/Examples/{Editor}/Api/Methods/GetPresentation.js
-	 */
-
-	/**
-	 * Represents the type of objects in a selection.
-	 * @typedef {("none" | "shapes" | "slides" | "text")} SelectionType - Available selection types.
-	 *
 	 */
 
     Api.prototype.GetPresentation = function(){
@@ -5421,7 +5433,12 @@
 		}
 		return aWrappers;
 	}
-
+	window['AscBuilder'] = window['AscBuilder'] || {};
+	window['AscBuilder'].ApiShape = ApiShape;
+	window['AscBuilder'].ApiImage = ApiImage;
+	window['AscBuilder'].ApiGroup = ApiGroup;
+	window['AscBuilder'].ApiOleObject = ApiOleObject;
+	window['AscBuilder'].ApiTable = ApiTable;
 })(window, null);
 
 

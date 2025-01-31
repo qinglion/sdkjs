@@ -6399,8 +6399,14 @@ function parserFormula( formula, parent, _ws ) {
 		var eventData = {notifyData: data, assemble: null, formula: this};
 		let sFunctionName = this.getFunctionName();
 
-		if (this._isConditionalFormula(sFunctionName) && data.areaData) {
-			this.ca = this.isRecursiveCondFormula(sFunctionName);
+		if (this._isConditionalFormula(sFunctionName) && data.areaData && g_cCalcRecursion.getIsCellEdited()) {
+			let oCell = null;
+			this.ws._getCell(this.parent.nRow, this.parent.nCol, function (oElem) {
+				oCell = oElem;
+			});
+			if (oCell && oCell.containInFormula()) {
+				this.ca = this.isRecursiveCondFormula(sFunctionName);
+			}
 		}
 		if (AscCommon.c_oNotifyType.Dirty === data.type) {
 				if (this.parent && this.parent.onFormulaEvent) {
@@ -6598,6 +6604,9 @@ function parserFormula( formula, parent, _ws ) {
 
 		for (let i = 0; i < aOutStack.length; i++) {
 			if (!(aOutStack[i] instanceof cBaseOperator) && aOutStack[i].type === cElementType.operator) {
+				continue;
+			}
+			if (aOutStack[i].type === cElementType.specialFunctionStart || aOutStack[i].type === cElementType.specialFunctionEnd) {
 				continue;
 			}
 			if (typeof aOutStack[i] === 'number') {
@@ -7994,10 +8003,10 @@ function parserFormula( formula, parent, _ws ) {
 				let oRefElem = found_operand.toRef();
 				oRange = oRefElem.getRange();
 			} else {
-				oRange = found_operand.getRange();
+				oRange = found_operand && found_operand.getRange && found_operand.getRange();
 			}
 
-			oRange._foreachNoEmpty(function (oCell) {
+			oRange && oRange._foreachNoEmpty(function (oCell) {
 				if (!bRecursiveCell) {
 					bRecursiveCell = oCell.checkRecursiveFormula(parserFormula.getParent());
 				}
@@ -8092,9 +8101,14 @@ function parserFormula( formula, parent, _ws ) {
 				let wsF, wsT;
 				let sheetName = _3DRefTmp[1];
 
-				// _3DRefTmp[4] - shortlink info
-				let isExternalRefExist, externalLink, receivedLink, externalName, isShortLink, externalProps, isCurrentFile, currentFileDefname;
-				if (_3DRefTmp[4]) {
+				let isExternalRefExist, externalLink, receivedLink, externalName, 
+					createShortLink, externalProps, isCurrentFile, currentFileDefname;
+
+				/* these flags are needed to further check the link to the current file */
+				let isShortLink = _3DRefTmp[4] ? true : false;	// _3DRefTmp[4] - shortlink info
+				let isFullLink = _3DRefTmp[5] ? true : false;	// _3DRefTmp[5] - current file defname from full link
+
+				if (isShortLink) {
 					externalProps = t.wb && t.wb.externalReferenceHelper && t.wb.externalReferenceHelper.check3dRef(_3DRefTmp, local);
 				} else {
 					externalLink = _3DRefTmp[3];
@@ -8111,13 +8125,31 @@ function parserFormula( formula, parent, _ws ) {
 					externalLink = externalProps.externalLink;
 					externalName = externalProps.externalName;
 					receivedLink = externalProps.receivedLink;
-					isShortLink = externalProps.isShortLink;
+					createShortLink = externalProps.isShortLink;
 					isCurrentFile = externalProps.isCurrentFile;
 					currentFileDefname = externalProps.currentFileDefname;
 				}
 				
 				if (externalProps && !sheetName) {
 					sheetName = externalProps.sheetName ? externalProps.sheetName : externalName;
+				}
+
+				/* if the link is not short, then we check whether we received the currentFileDefname argument, which indicates whether there is a link to the current file */
+				if (!isShortLink && isFullLink) {
+					if (_3DRefTmp[1] && !t.wb.getWorksheetByName(_3DRefTmp[1])) {
+						// if there is sheetname in the arguments and this sheet is not exist in wb, return an error
+						parseResult.setError(c_oAscError.ID.FrmlWrongReferences);
+						if (!ignoreErrors) {
+							t.outStack = [];
+							return false;
+						}
+					}
+
+					// create shortlink flag
+					createShortLink = true;
+					isCurrentFile = true;
+					externalLink = null;
+					currentFileDefname = _3DRefTmp[5];
 				}
 
 				if (externalLink && !isCurrentFile) {
@@ -8151,9 +8183,6 @@ function parserFormula( formula, parent, _ws ) {
 						// if we refer to defname that doesn't exist, but the ER itself exists, then we refer to the first existing worksheet
 						// since we don't know the name of the sheet in the short link and defname doesn't exist
 						wsF =  t.wb.getExternalWorksheet(externalLink, sheetName, true /* getFirtsSheet */);
-
-						// todo in future versions it's necessary to check the internal defname and refer to it when opening the file with [0] eLink. 
-						// todo Research needed. this is special case when externalLink equal [0] and it refers to the current file
 						if (!wsF) {
 							parseResult.setError(c_oAscError.ID.FrmlWrongReferences);
 							if (!ignoreErrors) {
@@ -8168,19 +8197,11 @@ function parserFormula( formula, parent, _ws ) {
 					// isCurrentFileCheck
 					let currentDefname, sheet;
 					if (isCurrentFile && currentFileDefname /*&& !local*/) {
-						// if link to the same file - set external link to zero just like in MS
-						externalLink = "0";
-
 						// looking for defname from this sheet
 						currentDefname = t.wb.getDefinesNames(currentFileDefname);
-						if (!currentDefname) {
-							// todo it's not entirely clear what needs to be returned in the absence of defname - an error or cName
-							// parseResult.setError(c_oAscError.ID.FrmlWrongReferences);
-							// if (!ignoreErrors) {
-							// 	t.outStack = [];
-							// 	return false;
-							// }
-
+						if (!currentDefname && sheetName && isFullLink) {
+							wsF = t.wb.getWorksheetByName(sheetName);
+						} else if (!currentDefname && !isFullLink) {
 							sheet = t.wb.getActiveWs();
 							wsF = t.wb.getWorksheetByName(sheet.getName());
 						} else {
@@ -8237,7 +8258,8 @@ function parserFormula( formula, parent, _ws ) {
 					}
 				} else {
 					parserHelp.isName.call(ph, t.Formula, ph.pCurrPos);
-					found_operand = new cName3D(ph.operand_str, wsF, externalLink, isShortLink);
+					// if link to the same file - set external link to zero just like in MS
+					found_operand = new cName3D(ph.operand_str, wsF, isCurrentFile ? "0" : externalLink, createShortLink);
 					parseResult.addRefPos(prevCurrPos, ph.pCurrPos, t.outStack.length, found_operand);
 					if (local || (local === false && digitDelim === false)) { // local and digitDelim with value false using only for copypaste mode.
 						t.ca = isRecursiveFormula(found_operand, t);
@@ -10084,6 +10106,7 @@ function parserFormula( formula, parent, _ws ) {
 		this.bShowCycleWarn = true;
 		this.oRecursionCells = null;
 		this.nCellPasteValue = null; // for paste recursive cell
+		this.bIsCellEdited = false;
 
 		this.bIsEnabledRecursion = null;
 		this.nMaxIterations = null; // Max iterations of recursion calculations. Default value: 100.
@@ -10754,6 +10777,24 @@ function parserFormula( formula, parent, _ws ) {
 	CalcRecursion.prototype.getCellPasteValue = function () {
 		return this.nCellPasteValue;
 	};
+	/**
+	 * Method sets flag that checks cell is in edited mode
+	 * * true - cell is editing. File in the editor already opened.
+	 * * false - cell isn't editing. File in the editor is opening.
+	 * @param {boolean} bIsCellEdited
+	 */
+	CalcRecursion.prototype.setIsCellEdited = function (bIsCellEdited) {
+		this.bIsCellEdited = bIsCellEdited;
+	};
+	/**
+	 * Method gets flag that checks cell is in edited mode
+	 * * true - cell is editing. File in the editor already opened.
+	 * * false - cell isn't editing. File in the editor is opening.
+	 * @returns {boolean}
+	 */
+	CalcRecursion.prototype.getIsCellEdited = function () {
+		return this.bIsCellEdited;
+	}
 
 	const g_cCalcRecursion = new CalcRecursion();
 

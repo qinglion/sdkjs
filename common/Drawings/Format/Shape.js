@@ -2723,7 +2723,15 @@
 				copy.setBodyPr(this.bodyPr.createDuplicate());
 			}
 			if (this.textBoxContent) {
-				copy.setTextBoxContent(this.textBoxContent.Copy(copy, oPr && oPr.drawingDocument, oPr && oPr.contentCopyPr));
+				const contentCopyPr = oPr && oPr.contentCopyPr;
+				const fCallback = function () {
+					copy.setTextBoxContent(this.textBoxContent.Copy(copy, oPr && oPr.drawingDocument, contentCopyPr));
+				}.bind(this);
+				if (contentCopyPr && contentCopyPr.Comparison && !contentCopyPr.Comparison.options.textBoxes) {
+					contentCopyPr.Comparison.executeWithSkipCopiedElements(fCallback);
+				} else {
+					fCallback();
+				}
 			}
 			if (this.signatureLine && copy.setSignature) {
 				copy.setSignature(this.signatureLine.copy());
@@ -4183,7 +4191,27 @@
 			}
 			return currentFontSize;
 		}
-
+		CShape.prototype.isCorrectSmartArtContentPoints = function () {
+			const oContent = this.txBody && this.txBody.content;
+			const contentPoints = this.getSmartArtPointContent();
+			if (contentPoints && oContent) {
+				let countPointParagraphs = 0;
+				for (let i = 0; i < contentPoints.length; i++) {
+					const node = contentPoints[i];
+					const point = node.point;
+					const oPointContent = point && point.t && point.t.content;
+					if (oPointContent) {
+						countPointParagraphs += oPointContent.Content.length;
+					}
+				}
+				return oContent.Content.length === countPointParagraphs;
+			}
+			return false;
+		};
+		CShape.prototype.correctUngeneratedSmartArtContent = function () {
+				const textAlgorithm = new AscFormat.TextAlgorithm();
+				textAlgorithm.applyContentFilling(this);
+		};
 		CShape.prototype.setFontSizeInSmartArt = function (fontSize, bSkipRecalculateContent2, isParentWithChildren) {
 			const oContent = this.txBody && this.txBody.content;
 			if (this.txBody && oContent) {
