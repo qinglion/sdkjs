@@ -1579,6 +1579,10 @@
 				colorStop.setPos(pos);
 
 				fillGradientStops.push({Gs : colorStop});
+
+				if (pos === 100000 || (invertGradient && pos === 0)) {
+					break;
+				}
 			}
 
 			if (fillGradientDir === 3) {
