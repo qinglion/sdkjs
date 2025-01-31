@@ -7060,6 +7060,18 @@ CDocument.prototype.GoToPage = function(nPageAbs)
 
 	return nCurPage;
 };
+CDocument.prototype.SetParagraphBidi = function(isRtl)
+{
+	let paragraphs = this.GetSelectedParagraphs();
+	for (let i = 0; i < paragraphs.length; ++i)
+	{
+		paragraphs[i].SetParagraphBidi(isRtl);
+	}
+	
+	this.Recalculate();
+	this.UpdateInterface();
+	this.UpdateSelection();
+};
 CDocument.prototype.SetParagraphAlign = function(Align)
 {
 	var SelectedInfo = this.GetSelectedElementsInfo();

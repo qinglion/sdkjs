@@ -3535,15 +3535,7 @@ background-repeat: no-repeat;\
 			return;
 		
 		logicDocument.StartAction(AscDFH.historydescription_Document_SetParagraphBidi);
-		
-		let paragraphs = logicDocument.GetSelectedParagraphs();
-		for (let i = 0; i < paragraphs.length; ++i)
-		{
-			paragraphs[i].SetParagraphBidi(isRtl);
-		}
-		
-		logicDocument.Recalculate();
-		logicDocument.UpdateInterface();
+		logicDocument.SetParagraphBidi(isRtl);
 		logicDocument.FinalizeAction();
 	};
 	asc_docs_api.prototype._addRemoveSpaceBeforeAfterParagraph = function(event)
@@ -4089,6 +4081,9 @@ background-repeat: no-repeat;\
 
 			if (undefined !== Props.SuppressLineNumbers)
 				oLogicDocument.SetParagraphSuppressLineNumbers(Props.SuppressLineNumbers);
+			
+			if (undefined !== Props.Bidi)
+				oLogicDocument.SetParagraphBidi(Props.Bidi);
 
 			// TODO: как только разъединят настройки параграфа и текста переделать тут
 			var TextPr = new AscCommonWord.CTextPr();
@@ -4134,7 +4129,7 @@ background-repeat: no-repeat;\
 
 			if (undefined !== Props.Ligatures)
 				TextPr.Ligatures = Props.Ligatures;
-
+			
 			oLogicDocument.AddToParagraph(new AscCommonWord.ParaTextPr(TextPr));
 			oLogicDocument.Recalculate();
 			oLogicDocument.UpdateInterface();
