@@ -538,7 +538,7 @@ function updateGlobalSkin(obj)
 	}
 
 	if (obj["name"]) {
-		GlobalSkin["Name"] = obj["name"];
+		GlobalSkin.Name = obj["name"];
 	}
 
 	updateGlobalSkinColors(obj);
