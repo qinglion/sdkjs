@@ -700,6 +700,10 @@ function CEditorPage(api)
 				this.reporterTranslates[1] = _translates[1];
 				this.reporterTranslates[2] = _translates[2];
 				this.reporterTranslates[3] = _translates[3];
+				this.reporterTranslates[4] = _translates[4];
+				this.reporterTranslates[5] = _translates[5];
+				this.reporterTranslates[6] = _translates[6];
+				this.reporterTranslates[7] = _translates[7];
 
 				if (_translates[3])
 					this.m_oApi.DemonstrationEndShowMessage(_translates[3]);
