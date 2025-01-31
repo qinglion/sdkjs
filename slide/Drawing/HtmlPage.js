@@ -663,18 +663,18 @@ function CEditorPage(api)
 			styleContent += "@media (-webkit-min-device-pixel-ratio: 1.25) and (-webkit-max-device-pixel-ratio: 1.4),\
             						(min-resolution: 1.25dppx) and (max-resolution: 1.4dppx), \
 									(min-resolution: 120dpi) and (max-resolution: 143dpi) {\n\
-				.back_image_buttons { position:absolute; left: 0px; top: 0px; background-image: url('" + _images_url + "buttons@1.25x.png');background-size: 40px 120px; }\
+				.back_image_buttons { position:absolute; left: 0px; top: 0px; background-image: url('" + _images_url + "buttons@1.25x.png');background-size: 40px 200px; }\
 			}";
 			styleContent += "@media all and (-webkit-min-device-pixel-ratio : 1.5),all and (-o-min-device-pixel-ratio: 3/2),all and (min--moz-device-pixel-ratio: 1.5),all and (min-device-pixel-ratio: 1.5) {\n\
-				.back_image_buttons { position:absolute; left: 0px; top: 0px; background-image: url('" + _images_url + "buttons@1.5x.png');background-size: 40px 120px; }\
+				.back_image_buttons { position:absolute; left: 0px; top: 0px; background-image: url('" + _images_url + "buttons@1.5x.png');background-size: 40px 200px; }\
 			}";
 			styleContent += "@media (-webkit-min-device-pixel-ratio: 1.75) and (-webkit-max-device-pixel-ratio: 1.9),\
             						(min-resolution: 1.75dppx) and (max-resolution: 1.9dppx),\
                 					(min-resolution: 168dpi) and (max-resolution: 191dpi) {\n\
-				.back_image_buttons { position:absolute; left: 0px; top: 0px; background-image: url('" + _images_url + "buttons@1.75x.png');background-size: 40px 120px; }\
+				.back_image_buttons { position:absolute; left: 0px; top: 0px; background-image: url('" + _images_url + "buttons@1.75x.png');background-size: 40px 200px; }\
 			}";
 			styleContent += "@media all and (-webkit-min-device-pixel-ratio : 2),all and (-o-min-device-pixel-ratio: 2),all and (min--moz-device-pixel-ratio: 2),all and (min-device-pixel-ratio: 2) {\n\
-				.back_image_buttons { position:absolute; left: 0px; top: 0px; background-image: url('" + _images_url + "buttons@2x.png');background-size: 40px 120px; }\
+				.back_image_buttons { position:absolute; left: 0px; top: 0px; background-image: url('" + _images_url + "buttons@2x.png');background-size: 40px 200px; }\
 			}";
 			styleContent += ".menu-item-icon { position: relative;display:inline-block;float:left;width:20px;height:20px;margin:-2px 4px 0 -16px; }";
 			styleContent += ".dem_menu {list-style: none;display: none; position: fixed; right: auto; min-height: fit-content; height: auto; min-width: 120px; padding: 5px 0; border-radius: 4px; background-color: " + GlobalSkin.DemBackgroundColor + "; border: 1px solid " + GlobalSkin.DemSplitterColor + ";}";
