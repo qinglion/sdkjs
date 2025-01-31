@@ -4643,9 +4643,9 @@ var CPresentation = CPresentation || function(){};
         }
 
         let fEndCallback = function () {
-            aPageDrawings.forEach(function(drawing) {
+            aPageDrawings.forEach(function(drawing, idx) {
                 drawing.SetFromScan(true);
-                _t.AddDrawing(drawing, nPage);
+                _t.AddDrawing(drawing, nPage, idx);
                 drawing.SetNeedRecalc(true);
             });
             _t.FinalizeAction();
