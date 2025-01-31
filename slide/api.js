@@ -8011,8 +8011,18 @@ background-repeat: no-repeat;\
 			this.asc_setSkin(data["skin"]);
 		}
 
-		this.reporterTranslates = [data["translations"]["reset"], data["translations"]["slideOf"], data["translations"]["endSlideshow"], data["translations"]["finalMessage"]];
-
+		this.reporterTranslates = [
+			data["translations"]["reset"],
+			data["translations"]["slideOf"],
+			data["translations"]["endSlideshow"],
+			data["translations"]["finalMessage"],
+			data["translations"]["pen"],
+			data["translations"]["highlighter"],
+			data["translations"]["inkColor"],
+			data["translations"]["eraser"],
+			data["translations"]["eraseScreen"]
+		];
+		
         if (data["cryptoCurrentPassword"])
         {
             this.currentPassword = data["cryptoCurrentPassword"];
