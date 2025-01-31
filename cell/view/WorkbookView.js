@@ -6322,7 +6322,7 @@
 		let fromWithDefault = verticalScroll == null || verticalScroll === true;
 		let valWithDefault = val === true || val == null;
 
-		if ((fromWithDefault !== valWithDefault) || (verticalScroll == null && val === false && configVal !== null)) {
+		if ((fromWithDefault !== valWithDefault) || (verticalScroll == null && configVal !== null)) {
 			var callback = function () {
 				History.Create_NewPoint();
 				History.StartTransaction();
@@ -6354,7 +6354,7 @@
 		let fromWithDefault = horizontalScroll == null || horizontalScroll === true;
 		let valWithDefault = val === true || val == null;
 
-		if ((fromWithDefault !== valWithDefault) || (horizontalScroll == null && val === false && configVal !== null)) {
+		if ((fromWithDefault !== valWithDefault) || (horizontalScroll == null && configVal !== null)) {
 			var callback = function () {
 				History.Create_NewPoint();
 				History.StartTransaction();
