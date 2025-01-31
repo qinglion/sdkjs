@@ -50,7 +50,7 @@
     this._onlineWork = false;
   }
 
-  CDocsCoApi.prototype.init = function(user, docid, documentCallbackUrl, token, editorType, documentFormatSave, docInfo, shardKey, wopiSrc, userSessionId, openCmd) {
+  CDocsCoApi.prototype.init = function(user, docid, documentCallbackUrl, token, editorType, documentFormatSave, docInfo, shardKey, wopiSrc, userSessionId, headingsColor, openCmd) {
     if (this._CoAuthoringApi && this._CoAuthoringApi.isRightURL()) {
       var t = this;
       this._CoAuthoringApi.onAuthParticipantsChanged = function(e, id) {
@@ -142,7 +142,7 @@
         t.callback_OnLicenseChanged(res);
 	  };
 
-      this._CoAuthoringApi.init(user, docid, documentCallbackUrl, token, editorType, documentFormatSave, docInfo, shardKey, wopiSrc, userSessionId, openCmd);
+      this._CoAuthoringApi.init(user, docid, documentCallbackUrl, token, editorType, documentFormatSave, docInfo, shardKey, wopiSrc, userSessionId, headingsColor, openCmd);
       this._onlineWork = true;
     } else {
       // Фиктивные вызовы
@@ -642,6 +642,7 @@
     this.encrypted = undefined;
     this.IsAnonymousUser = undefined;
     this.coEditingMode = undefined;
+    this.headingsColor = undefined;
     this._isReSaveAfterAuth = false;	// Флаг для сохранения после повторной авторизации (для разрыва соединения во время сохранения)
     this._lockBuffer = [];
     this._saveChangesChunks = [];
@@ -1630,7 +1631,7 @@
     this._authOtherChanges = [];
   };
 
-  DocsCoApi.prototype.init = function(user, docid, documentCallbackUrl, token, editorType, documentFormatSave, docInfo, shardKey, wopiSrc, userSessionId, openCmd) {
+  DocsCoApi.prototype.init = function(user, docid, documentCallbackUrl, token, editorType, documentFormatSave, docInfo, shardKey, wopiSrc, userSessionId, headingsColor, openCmd) {
     this._user = user;
     this._docid = null;
     this._documentCallbackUrl = documentCallbackUrl;
@@ -1654,6 +1655,7 @@
     this.shardKey = shardKey;
     this.wopiSrc = wopiSrc;
     this.userSessionId = userSessionId;
+    this.headingsColor = headingsColor;
 
     this.setDocId(docid);
     this._initSocksJs();
@@ -1706,6 +1708,7 @@
       'encrypted': this.encrypted,
       'IsAnonymousUser': this.IsAnonymousUser,
       'timezoneOffset': (new Date()).getTimezoneOffset(),
+      'headingsColor': this.headingsColor,
       'coEditingMode': this.coEditingMode,
       'jwtOpen': this.jwtOpen,
       'jwtSession': this.jwtSession,
