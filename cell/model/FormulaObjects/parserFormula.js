@@ -6399,8 +6399,14 @@ function parserFormula( formula, parent, _ws ) {
 		var eventData = {notifyData: data, assemble: null, formula: this};
 		let sFunctionName = this.getFunctionName();
 
-		if (this._isConditionalFormula(sFunctionName) && data.areaData) {
-			this.ca = this.isRecursiveCondFormula(sFunctionName);
+		if (this._isConditionalFormula(sFunctionName) && data.areaData && g_cCalcRecursion.getIsCellEdited()) {
+			let oCell = null;
+			this.ws._getCell(this.parent.nRow, this.parent.nCol, function (oElem) {
+				oCell = oElem;
+			});
+			if (oCell && oCell.containInFormula()) {
+				this.ca = this.isRecursiveCondFormula(sFunctionName);
+			}
 		}
 		if (AscCommon.c_oNotifyType.Dirty === data.type) {
 				if (this.parent && this.parent.onFormulaEvent) {
@@ -6598,6 +6604,9 @@ function parserFormula( formula, parent, _ws ) {
 
 		for (let i = 0; i < aOutStack.length; i++) {
 			if (!(aOutStack[i] instanceof cBaseOperator) && aOutStack[i].type === cElementType.operator) {
+				continue;
+			}
+			if (aOutStack[i].type === cElementType.specialFunctionStart || aOutStack[i].type === cElementType.specialFunctionEnd) {
 				continue;
 			}
 			if (typeof aOutStack[i] === 'number') {
@@ -10097,6 +10106,7 @@ function parserFormula( formula, parent, _ws ) {
 		this.bShowCycleWarn = true;
 		this.oRecursionCells = null;
 		this.nCellPasteValue = null; // for paste recursive cell
+		this.bIsCellEdited = false;
 
 		this.bIsEnabledRecursion = null;
 		this.nMaxIterations = null; // Max iterations of recursion calculations. Default value: 100.
@@ -10767,6 +10777,24 @@ function parserFormula( formula, parent, _ws ) {
 	CalcRecursion.prototype.getCellPasteValue = function () {
 		return this.nCellPasteValue;
 	};
+	/**
+	 * Method sets flag that checks cell is in edited mode
+	 * * true - cell is editing. File in the editor already opened.
+	 * * false - cell isn't editing. File in the editor is opening.
+	 * @param {boolean} bIsCellEdited
+	 */
+	CalcRecursion.prototype.setIsCellEdited = function (bIsCellEdited) {
+		this.bIsCellEdited = bIsCellEdited;
+	};
+	/**
+	 * Method gets flag that checks cell is in edited mode
+	 * * true - cell is editing. File in the editor already opened.
+	 * * false - cell isn't editing. File in the editor is opening.
+	 * @returns {boolean}
+	 */
+	CalcRecursion.prototype.getIsCellEdited = function () {
+		return this.bIsCellEdited;
+	}
 
 	const g_cCalcRecursion = new CalcRecursion();
 
