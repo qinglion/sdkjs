@@ -971,10 +971,6 @@ function CEditorPage(api)
 				}
 
 				if (e.target.dataset.tool === "erase-all") {
-					const elements = this.elementReporterDrawMenu.querySelectorAll("a[data-ratio]")
-					for (let i = 0; i< elements.length; i++) {
-						delete elements[i].dataset.checked;
-					}
 					api.asc_EraseAllInksOnSlide();
 				}
 
