@@ -677,12 +677,13 @@ function CEditorPage(api)
 				.back_image_buttons { position:absolute; left: 0px; top: 0px; background-image: url('" + _images_url + "buttons@2x.png');background-size: 40px 120px; }\
 			}";
 			styleContent += ".menu-item-icon { position: relative;display:inline-block;float:left;width:20px;height:20px;margin:-2px 4px 0 -16px; }";
-			styleContent += ".menu {list-style: none;display: none; position: fixed; right: auto; min-height: fit-content; height: auto; min-width: 120px; padding: 5px 0; border-radius: 4px; background-color: " + GlobalSkin.DemBackgroundColor + "; border: 1px solid " + GlobalSkin.DemSplitterColor + ";}";
-			styleContent += "#dem_id_draw_menu li>a{color:" + GlobalSkin.DemButtonTextColor +"white-space: nowrap; font-family: \"Helvetica Neue\", Helvetica, Arial, sans-serif;;display:block; padding:5px 20px;line-height:16px;cursor:pointer;font-size:11px;text-align:left;}";
+			styleContent += ".dem_menu {list-style: none;display: none; position: fixed; right: auto; min-height: fit-content; height: auto; min-width: 120px; padding: 5px 0; border-radius: 4px; background-color: " + GlobalSkin.DemBackgroundColor + "; border: 1px solid " + GlobalSkin.DemSplitterColor + ";}";
+			styleContent += "#dem_id_draw_menu li>a{color:" + GlobalSkin.DemButtonTextColor +"; white-space: nowrap; font-family: \"Helvetica Neue\", Helvetica, Arial, sans-serif;;display:block; padding:5px 20px;line-height:16px;cursor:pointer;font-size:11px;text-align:left;}";
 			styleContent += "#dem_id_draw_menu li>a:hover{background-color:" + GlobalSkin.DemButtonBackgroundColorHover + ";}";
 			styleContent += "#dem_id_draw_menu li>a[data-checked=\"true\"]{color:" + GlobalSkin.DemButtonTextColorActive + ";background-color:" + GlobalSkin.DemButtonBackgroundColorActive + ";}";
 			styleContent += "#dem_id_draw_menu >li.submenu>a:after{display:block;content:\" \";float:right;width:0;height:0;border-color:#fff0;border-style:solid;border-width:3px 0 3px 3px;border-left-color:" + GlobalSkin.DemButtonTextColor + ";margin-top:5px;margin-right:-7px;margin-left:0}";
 			styleContent += ".menu-color-cell { cursor:pointer;width:14px;height:14px;border:1px solid rgb(0 0 0 / .2);float:left;margin-right:2px;margin-left:0; }";
+			styleContent += ".dem_draw_menu_divider { margin: 4px 0; height: 1px; background-color:" + GlobalSkin.DemSplitterColor + ";}";
 
 			styleContent += this.getStylesReporter();
 
@@ -734,16 +735,16 @@ function CEditorPage(api)
 			}
 
 			_buttonsContent += [
-				"<ul id=\"dem_id_draw_menu\" class=\"menu\">",
+				"<ul id=\"dem_id_draw_menu\" class=\"dem_menu\">",
 					"<li><a data-ratio data-tool=\"pen\"><span class=\"menu-item-icon btn-pen back_image_buttons\"></span>" + this.reporterTranslates[3] + "</a></li>",
 					"<li><a data-ratio data-tool=\"highlighter\"><span class=\"menu-item-icon btn-highlighter back_image_buttons\"></span>" + this.reporterTranslates[4] + "</a></li>",
-					"<li style=\"margin: 4px 0; height: 1px; background-color:" + GlobalSkin.DemSplitterColor + ";\"></li>",
+					"<li class=\"dem_draw_menu_divider\"></li>",
 					"<li id=\"dem_id_draw_color_menu_trigger\" class=\"submenu\"><a style=\"padding-left:28px;\">" + this.reporterTranslates[5] + "</a>",
-						"<ul id=\"dem_id_draw_color_menu\" class=\"menu\" style=\"width: 162px;\">",
+						"<ul id=\"dem_id_draw_color_menu\" class=\"dem_menu\" style=\"width: 162px;\">",
 						colorList,
 						"</ul>",
 					"</li>",
-					"<li style=\"margin: 4px 0; height: 1px; background-color:" + GlobalSkin.DemSplitterColor + ";\"></li>",
+					"<li class=\"dem_draw_menu_divider\"></li>",
 					"<li><a data-ratio data-tool=\"eraser\"><span class=\"menu-item-icon btn-eraser back_image_buttons\"></span>" + this.reporterTranslates[6] + "</a></li>",
 					"<li><a data-tool=\"erase-all\"><span class=\"menu-item-icon btn-erase-all back_image_buttons\"></span>" + this.reporterTranslates[7] + "</a></li>",
 				"</ul>"

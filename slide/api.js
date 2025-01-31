@@ -1708,7 +1708,15 @@ background-repeat: no-repeat;\
 				var _head = document.getElementsByTagName('head')[0];
 				var style = document.createElement('style');
 				style.type = 'text/css';
-				style.innerHTML = this.WordControl.getStylesReporter();
+				var styleContent = "";
+				styleContent += ".dem_menu {background-color: " + GlobalSkin.DemBackgroundColor + "; border: 1px solid " + GlobalSkin.DemSplitterColor + ";}";
+				styleContent += "#dem_id_draw_menu li>a{color:" + GlobalSkin.DemButtonTextColor +";}";
+				styleContent += "#dem_id_draw_menu li>a:hover{background-color:" + GlobalSkin.DemButtonBackgroundColorHover + ";}";
+				styleContent += "#dem_id_draw_menu li>a[data-checked=\"true\"]{color:" + GlobalSkin.DemButtonTextColorActive + ";background-color:" + GlobalSkin.DemButtonBackgroundColorActive + ";}";
+				styleContent += "#dem_id_draw_menu >li.submenu>a:after{border-left-color:" + GlobalSkin.DemButtonTextColor + ";}";
+				styleContent += ".dem_draw_menu_divider { background-color:" + GlobalSkin.DemSplitterColor + ";}";
+				styleContent += this.WordControl.getStylesReporter();
+				style.innerHTML = styleContent;
 				_head.appendChild(style);
 
 				["id_reporter_dem", "id_reporter_dem_controller", "id_main_parent", "id_reporter_dem_parent", "id_main"].forEach(function (id) {
