@@ -10690,7 +10690,19 @@ CPresentation.prototype.StartAddShape = function (preset, _is_apply, nPlaceholde
 		this.Api.sync_EndAddShape();
 	}
 };
+CPresentation.prototype.EraseAllInksOnSlide = function ()
+{
+	if(Asc.editor.isSlideShow())
+	{
+		let oDemoManager = Asc.editor.getDemoManager();
+		if(!oDemoManager) return;
 
+		let oCurSlide = oDemoManager.GetCurrentSlide();
+		if(!oCurSlide) return;
+		let oAnnot = Asc.editor.getAnnotations();
+		oAnnot.clearOnSlide(oCurSlide);
+	}
+};
 CPresentation.prototype.SetLayoutTitle = function (bVal) {
 	const oCurSlide = this.GetCurrentSlide();
 	if(!oCurSlide) {

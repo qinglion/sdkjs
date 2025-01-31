@@ -537,6 +537,10 @@ function updateGlobalSkin(obj)
 		}
 	}
 
+	if (obj["name"]) {
+		GlobalSkin.Name = obj["name"];
+	}
+
 	updateGlobalSkinColors(obj);
 	for (var item in obj)
 		GlobalSkin[item] = obj[item];
@@ -583,7 +587,7 @@ window['AscCommon'].RgbaHexToRGBA = function(color)
 
 	return ret;
 };
-window['AscCommon'].RgbaTextToRgbaHex = function(color)
+window['AscCommon']['RgbaTextToRgbaHex'] = window['AscCommon'].RgbaTextToRgbaHex = function(color)
 {
 	var toHex = function (c) {
 		var res = Number(c).toString(16);
@@ -615,7 +619,7 @@ window['AscCommon'].RgbaTextToRgbaHex = function(color)
 
 	return "#" + toHex(r) + toHex(g) + toHex(b);
 };
-window['AscCommon'].RgbaTextToRGBA = function(rgbStr)
+window['AscCommon']['RgbaTextToRGBA'] = window['AscCommon'].RgbaTextToRGBA = function(rgbStr)
 {
 	try
 	{

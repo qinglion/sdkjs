@@ -3352,6 +3352,11 @@
 		}
 	};
 
+	baseEditorsApi.prototype.isDrawSlideshowAnnotations = function()
+	{
+		return false;
+	};
+
 	// plugins
 	baseEditorsApi.prototype._checkLicenseApiFunctions   = function()
 	{
