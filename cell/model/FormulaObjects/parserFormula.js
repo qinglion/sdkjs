@@ -11192,11 +11192,27 @@ function parserFormula( formula, parent, _ws ) {
 
 	// ToDo use Array.prototype.max, but some like to use for..in without hasOwnProperty
 	function getArrayMax (array) {
-		return Math.max.apply(null, array);
+		//Math.min and Math.max crash on large arrays
+		let maxValue = array[0], i, length = array.length;
+		for (i = 1; i < length; i++) {
+			if (array[i] > maxValue) {
+				maxValue = array[i];
+			}
+		}
+
+		return maxValue;
 	}
 	// ToDo use Array.prototype.min, but some like to use for..in without hasOwnProperty
 	function getArrayMin (array) {
-		return Math.min.apply(null, array);
+		//Math.min and Math.max crash on large arrays
+		let minValue = array[0], i, length = array.length;
+		for (i = 1; i < length; i++) {
+			if (array[i] < minValue) {
+				minValue = array[i];
+			}
+		}
+
+		return minValue;
 	}
 
 	function compareFormula(formula1, refPos1, formula2, offsetRow) {
