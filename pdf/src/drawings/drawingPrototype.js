@@ -263,41 +263,16 @@
         return this._doc;
     };
     CPdfDrawingPrototype.prototype.SetPage = function(nPage) {
-        let oViewer = editor.getDocumentRenderer();
-        let oDoc    = this.GetDocument();
-        
-        let oCurPage = this.GetParentPage();
-        let oNewPage = oDoc.GetPageInfo(nPage);
-        let nCurPage = oCurPage ? oCurPage.GetIndex() : -1;
-        
-        if (oNewPage == oCurPage)
-            return;
-
-        AscCommon.History.Add(new CChangesPDFDrawingPage(this, nCurPage, nPage));
-
-        // initial set
-        if (oCurPage == null) {
-            this.SetParentPage(oNewPage);
+        if (this.GetPage() == nPage) {
             return;
         }
         
-        let nCurIdxOnPage = oCurPage && oCurPage.drawings ? oCurPage.drawings.indexOf(this) : -1;
+        let oDoc        = this.GetDocument();
+        let oNewPage    = oDoc.GetPageInfo(nPage);
+
         if (oNewPage) {
-            if (oDoc.drawings.indexOf(this) != -1) {
-                if (nCurIdxOnPage != -1) {
-                    oCurPage.drawings.splice(nCurIdxOnPage, 1);
-                }
-    
-                if (this.IsUseInDocument() && oNewPage.drawings.indexOf(this) == -1)
-                    oNewPage.drawings.push(this);
-
-                // добавляем в перерисовку исходную страницу
-                this.AddToRedraw();
-            }
-
-            this.selectStartPage = nPage;
-            this.SetParentPage(oViewer.pagesInfo.pages[nPage]);
-            this.AddToRedraw();
+            oDoc.RemoveDrawing(this.GetId());
+            oDoc.AddDrawing(this, nPage);
         }
     };
     CPdfDrawingPrototype.prototype.GetPage = function() {

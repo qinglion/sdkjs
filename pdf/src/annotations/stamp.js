@@ -70,10 +70,10 @@
 	 * Class representing a stamp annotation.
 	 * @constructor
     */
-    function CAnnotationStamp(sName, nPage, aRect, oDoc)
+    function CAnnotationStamp(sName, aRect, oDoc)
     {
         AscPDF.CPdfShape.call(this);
-        AscPDF.CAnnotationBase.call(this, sName, AscPDF.ANNOTATIONS_TYPES.Stamp, nPage, aRect, oDoc);
+        AscPDF.CAnnotationBase.call(this, sName, AscPDF.ANNOTATIONS_TYPES.Stamp, aRect, oDoc);
         
         this._rotate = 0;
         this._stampType = undefined;
@@ -373,7 +373,7 @@
         let oDoc = this.GetDocument();
         oDoc.StartNoHistoryMode();
 
-        let oNewStamp = new CAnnotationStamp(AscCommon.CreateGUID(), this.GetPage(), this.GetOrigRect().slice(), oDoc);
+        let oNewStamp = new CAnnotationStamp(AscCommon.CreateGUID(), this.GetOrigRect().slice(), oDoc);
 
         oNewStamp.inRect = this.inRect;
         oNewStamp.lazyCopy = true;

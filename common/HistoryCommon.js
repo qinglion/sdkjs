@@ -4092,6 +4092,7 @@
 	window['AscDFH'].historyitem_PDF_Document_SetDocument		= window['AscDFH'].historyitem_type_PDF_Document | 7;
 	window['AscDFH'].historyitem_PDF_Document_PageLocks			= window['AscDFH'].historyitem_type_PDF_Document | 8;
 	window['AscDFH'].historyitem_PDF_PropLocker_ObjectId		= window['AscDFH'].historyitem_type_PDF_Document | 9;
+	window['AscDFH'].historyitem_PDF_Document_MovePage			= window['AscDFH'].historyitem_type_PDF_Document | 10;
 
 
 	AscDFH.historyitem_CustomPropertiesAddProperty = AscDFH.historyitem_type_CustomProperties | 0;
@@ -4579,6 +4580,7 @@
 	window['AscDFH'].historydescription_Pdf_ChangeStrokeColor	= 0x2b1;
 	window['AscDFH'].historydescription_Pdf_ChangeFillColor		= 0x2b2;
 	window['AscDFH'].historydescription_Pdf_ChangeOpacity		= 0x2b3;
+	window['AscDFH'].historydescription_Pdf_MovePage			= 0x2b4;
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

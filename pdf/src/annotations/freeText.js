@@ -51,10 +51,10 @@
 	 * Class representing a free text annotation.
 	 * @constructor
     */
-    function CAnnotationFreeText(sName, nPage, aRect, oDoc)
+    function CAnnotationFreeText(sName, aRect, oDoc)
     {
         AscFormat.CGroupShape.call(this);
-        AscPDF.CAnnotationBase.call(this, sName, AscPDF.ANNOTATIONS_TYPES.FreeText, nPage, aRect, oDoc);
+        AscPDF.CAnnotationBase.call(this, sName, AscPDF.ANNOTATIONS_TYPES.FreeText, aRect, oDoc);
         
         initGroupShape(this);
         
@@ -483,7 +483,7 @@
         let oDoc = this.GetDocument();
         oDoc.StartNoHistoryMode();
 
-        let oFreeText = new CAnnotationFreeText(AscCommon.CreateGUID(), this.GetPage(), this.GetOrigRect().slice(), oDoc);
+        let oFreeText = new CAnnotationFreeText(AscCommon.CreateGUID(), this.GetOrigRect().slice(), oDoc);
 
         oFreeText.lazyCopy = true;
 
