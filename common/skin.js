@@ -537,6 +537,10 @@ function updateGlobalSkin(obj)
 		}
 	}
 
+	if (obj["name"]) {
+		GlobalSkin["Name"] = obj["name"];
+	}
+
 	updateGlobalSkinColors(obj);
 	for (var item in obj)
 		GlobalSkin[item] = obj[item];

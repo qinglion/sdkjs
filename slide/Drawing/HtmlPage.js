@@ -3273,7 +3273,6 @@ function CEditorPage(api)
 		styleContent += (".btn-highlighter { background-position: " + xOffset1 + "px -160px; }");
 		styleContent += (".btn-pen { background-position: " + xOffset1 + "px -180px; }");
 		styleContent += (".btn-pen-active { background-position: " + xOffset2 + "px -180px; }");
-		styleContent += ("a[data-checked] > .menu-item-icon { background-position-x: " + xOffset2 + "px; }");
 
 		styleContent += (".btn-text-default { position: absolute; background: " + AscCommon.GlobalSkin.DemButtonBackgroundColor + "; border: 1px solid " + AscCommon.GlobalSkin.DemButtonBorderColor + "; border-radius: 2px; color: " + AscCommon.GlobalSkin.DemButtonTextColor + "; font-size: 11px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; height: 22px; cursor: pointer; }");
 		styleContent += ".btn-text-default-img { background-repeat: no-repeat; position: absolute; background: transparent; border: none; height: 22px; cursor: pointer; }";
