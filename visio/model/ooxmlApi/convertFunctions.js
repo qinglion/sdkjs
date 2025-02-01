@@ -1580,7 +1580,7 @@
 
 				fillGradientStops.push({Gs : colorStop});
 
-				if (pos === 100000 || (invertGradient && pos === 0)) {
+				if ((pos === 100000 && !invertGradient) || (invertGradient && pos === 0)) {
 					break;
 				}
 			}
