@@ -14008,7 +14008,7 @@ Paragraph.prototype.Refresh_RecalcData = function(Data)
 
 			break;
 		}
-
+		case AscDFH.historyitem_Paragraph_Bidi:
 		case AscDFH.historyitem_Paragraph_Align:
 		case AscDFH.historyitem_Paragraph_DefaultTabSize:
 		case AscDFH.historyitem_Paragraph_Ind_First:
@@ -16538,6 +16538,18 @@ Paragraph.prototype.ClearParagraphFormatting = function(isClearParaPr, isClearTe
 Paragraph.prototype.SetParagraphPr = function(oParaPr)
 {
 	this.SetDirectParaPr(oParaPr);
+};
+Paragraph.prototype.SetParagraphBidi = function(isRtl)
+{
+	if (this.Pr.Bidi === isRtl)
+		return;
+	
+	this.private_AddPrChange();
+	AscCommon.AddAndExecuteChange(new CChangesParagraphBidi(this, this.Pr.Bidi, isRtl));
+};
+Paragraph.prototype.GetParagraphBidi = function()
+{
+	return !!this.Get_CompiledPr2(false).ParaPr.Bidi;
 };
 Paragraph.prototype.SetParagraphAlign = function(Align)
 {

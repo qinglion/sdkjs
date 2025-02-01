@@ -2680,6 +2680,7 @@ function (window, undefined) {
 	function asc_CParagraphProperty(obj) {
 
 		if (obj) {
+			this.Bidi = undefined !== obj.Bidi ? obj.Bidi : undefined;
 			this.ContextualSpacing = (undefined != obj.ContextualSpacing) ? obj.ContextualSpacing : null;
 			this.Ind = (undefined != obj.Ind && null != obj.Ind) ? new asc_CParagraphInd(obj.Ind) : null;
 			this.KeepLines = (undefined != obj.KeepLines) ? obj.KeepLines : null;
@@ -2741,6 +2742,7 @@ function (window, undefined) {
 			//
 			//    PageBreakBefore : false,              // начинать параграф с новой страницы
 
+			this.Bidi = undefined;
 			this.ContextualSpacing = undefined;
 			this.Ind = new asc_CParagraphInd();
 			this.KeepLines = undefined;
@@ -2776,7 +2778,13 @@ function (window, undefined) {
 			this.CanEditInlineCC = true;
 		}
 	}
-
+	
+	asc_CParagraphProperty.prototype.asc_getRtlDirection = function() {
+		return this.Bidi;
+	};
+	asc_CParagraphProperty.prototype.asc_putRtlDirection = function(v) {
+		this.Bidi = v;
+	};
 	asc_CParagraphProperty.prototype.asc_getContextualSpacing = function () {
 		return this.ContextualSpacing;
 	};
@@ -6515,6 +6523,8 @@ function (window, undefined) {
 
 	window["Asc"]["asc_CParagraphProperty"] = window["Asc"].asc_CParagraphProperty = asc_CParagraphProperty;
 	prot = asc_CParagraphProperty.prototype;
+	prot["get_RtlDirection"] = prot["asc_getRtlDirection"] = prot.asc_getRtlDirection;
+	prot["put_RtlDirection"] = prot["asc_putRtlDirection"] = prot.asc_putRtlDirection;
 	prot["get_ContextualSpacing"] = prot["asc_getContextualSpacing"] = prot.asc_getContextualSpacing;
 	prot["put_ContextualSpacing"] = prot["asc_putContextualSpacing"] = prot.asc_putContextualSpacing;
 	prot["get_Ind"] = prot["asc_getInd"] = prot.asc_getInd;

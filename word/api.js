@@ -2227,9 +2227,12 @@ background-repeat: no-repeat;\
 		//        After    : 10 * g_dKoef_pt_to_mm  // Дополнительное расстояние после абзаца
 		//    }
 		//	}
+		let logicDocument = this.private_GetLogicDocument();
+		if (!logicDocument)
+			return;
 
 		// TODO: как только разъединят настройки параграфа и текста переделать тут
-		var TextPr         = editor.WordControl.m_oLogicDocument.GetCalculatedTextPr();
+		var TextPr         = logicDocument.GetCalculatedTextPr();
 		ParaPr.Subscript   = TextPr.VertAlign === AscCommon.vertalign_SubScript;
 		ParaPr.Superscript = TextPr.VertAlign === AscCommon.vertalign_SuperScript;
 		ParaPr.Strikeout   = TextPr.Strikeout;
@@ -2264,6 +2267,16 @@ background-repeat: no-repeat;\
 		this.sync_ParaSpacingLine(ParaPr.Spacing);
 		this.Update_ParaInd(ParaPr.Ind);
 		this.sync_PrAlignCallBack(ParaPr.Jc);
+		
+		let bidi = ParaPr.Bidi;
+		if (undefined === bidi)
+		{
+			let paragraph = logicDocument.GetCurrentParagraph(false, false, {FirstInSelection : true});
+			bidi = paragraph ? paragraph.GetParagraphBidi() : undefined;
+		}
+		
+		this.sendEvent("asc_onTextDirection", bidi);
+		
 		this.sync_PrPropCallback(ParaPr);
 	};
 	/*----------------------------------------------------------------*/
@@ -3521,6 +3534,20 @@ background-repeat: no-repeat;\
 		}
 	};
 	
+	
+	asc_docs_api.prototype.asc_setRtlTextDirection = function(isRtl)
+	{
+		let logicDocument = this.private_GetLogicDocument();
+		if (!logicDocument)
+			return;
+		
+		if (logicDocument.IsSelectionLocked(AscCommon.changestype_Paragraph_Properties))
+			return;
+		
+		logicDocument.StartAction(AscDFH.historydescription_Document_SetParagraphBidi);
+		logicDocument.SetParagraphBidi(isRtl);
+		logicDocument.FinalizeAction();
+	};
 	asc_docs_api.prototype._addRemoveSpaceBeforeAfterParagraph = function(event)
 	{
 		let logicDocument = this.private_GetLogicDocument();
@@ -4064,6 +4091,9 @@ background-repeat: no-repeat;\
 
 			if (undefined !== Props.SuppressLineNumbers)
 				oLogicDocument.SetParagraphSuppressLineNumbers(Props.SuppressLineNumbers);
+			
+			if (undefined !== Props.Bidi)
+				oLogicDocument.SetParagraphBidi(Props.Bidi);
 
 			// TODO: как только разъединят настройки параграфа и текста переделать тут
 			var TextPr = new AscCommonWord.CTextPr();
@@ -4109,7 +4139,7 @@ background-repeat: no-repeat;\
 
 			if (undefined !== Props.Ligatures)
 				TextPr.Ligatures = Props.Ligatures;
-
+			
 			oLogicDocument.AddToParagraph(new AscCommonWord.ParaTextPr(TextPr));
 			oLogicDocument.Recalculate();
 			oLogicDocument.UpdateInterface();
@@ -14345,6 +14375,7 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype['put_TextPrSmallCaps']                       = asc_docs_api.prototype.put_TextPrSmallCaps;
 	asc_docs_api.prototype['put_TextPrPosition']                        = asc_docs_api.prototype.put_TextPrPosition;
 	asc_docs_api.prototype['put_TextPrLang']                            = asc_docs_api.prototype.put_TextPrLang;
+	asc_docs_api.prototype['asc_setRtlTextDirection']                   = asc_docs_api.prototype.asc_setRtlTextDirection;
 	asc_docs_api.prototype['asc_addSpaceBeforeParagraph']               = asc_docs_api.prototype.asc_addSpaceBeforeParagraph;
 	asc_docs_api.prototype['asc_addSpaceAfterParagraph']                = asc_docs_api.prototype.asc_addSpaceAfterParagraph;
 	asc_docs_api.prototype['asc_removeSpaceBeforeParagraph']            = asc_docs_api.prototype.asc_removeSpaceBeforeParagraph;
