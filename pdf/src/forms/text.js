@@ -234,6 +234,7 @@
         if (!oDoc.checkFieldFont(this, function() {
             _t.UpdateDisplayValue(displayValue);
         })) {
+            oDoc.EndNoHistoryMode();
             return;
         }
 
@@ -248,8 +249,10 @@
             displayValue = String.fromCharCode.apply(null, aChars);
         }
 
-        if (displayValue === this._displayValue && this._useDisplayValue == true)
-			return;
+        if (displayValue === this._displayValue && this._useDisplayValue == true) {
+            oDoc.EndNoHistoryMode();
+            return;
+        }
 		
 		this._displayValue      = displayValue;
 		this._useDisplayValue   = true;
@@ -262,8 +265,10 @@
 			_t.SetNeedRecalc(true);
         }
         else {
-            if (_t._displayValue !== displayValue)
+            if (_t._displayValue !== displayValue) {
+                oDoc.EndNoHistoryMode();
                 return;
+            }
             
             _t.content.replaceAllText(displayValue);
             _t.SetNeedRecalc(true);

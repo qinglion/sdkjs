@@ -1887,7 +1887,18 @@ function CEditorPage(api)
 
 		if (e)
 		{
-			AscCommon.stopEvent(e);
+			if (!oThis.m_bIsMouseLock)
+			{
+				if (e.preventDefault)
+					e.preventDefault();
+				else
+					e.returnValue = false;
+			}
+			else
+			{
+				AscCommon.stopEvent(e);
+			}
+
 			AscCommon.check_MouseMoveEvent(e);
 		}
 

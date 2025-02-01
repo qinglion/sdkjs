@@ -1892,6 +1892,7 @@
 	window['AscDFH'].historyitem_Paragraph_SuppressLineNumbers       = window['AscDFH'].historyitem_type_Paragraph | 39;
 	window['AscDFH'].historyitem_Paragraph_Shd_Fill                  = window['AscDFH'].historyitem_type_Paragraph | 40;
 	window['AscDFH'].historyitem_Paragraph_Shd_ThemeFill             = window['AscDFH'].historyitem_type_Paragraph | 41;
+	window['AscDFH'].historyitem_Paragraph_Bidi                      = window['AscDFH'].historyitem_type_Paragraph | 42;
 	//------------------------------------------------------------------------------------------------------------------
 	// Типы изменений в классе ParaTextPr
 	//------------------------------------------------------------------------------------------------------------------
@@ -4549,6 +4550,8 @@
 	window['AscDFH'].historydescription_CustomProperties_Modify                     = 0x01c0;
 
 	window['AscDFH'].historydescription_Presentation_MergeSelectedShapes            = 0x01c1;
+	window['AscDFH'].historydescription_Presentation_SaveAnnotations                = 0x01c2;
+	window['AscDFH'].historydescription_Document_SetParagraphBidi                   = 0x01c3;
 	// pdf
 	window['AscDFH'].historydescription_Pdf_AddAnnot			= 0x29a;
 	window['AscDFH'].historydescription_Pdf_FreeTextGeom		= 0x29b;

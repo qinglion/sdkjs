@@ -1402,6 +1402,9 @@ CHistory.prototype.EndTransaction = function(checkLockLastAction)
 	if(this.Transaction < 0)
 		this.Transaction = 0;
 	if (this.IsEndTransaction() && this.workbook) {
+		if (AscCommonExcel.g_cCalcRecursion) {
+			AscCommonExcel.g_cCalcRecursion.setIsCellEdited(true);
+		}
 		this.workbook.dependencyFormulas.unlockRecal();
 		this.workbook.handlers.trigger("updateCellWatches");
 		this.workbook.oApi.sendEvent("asc_onUserActionEnd");

@@ -497,12 +497,25 @@ function (window, undefined) {
 
 	function CChangesPointChange(Class, Point, snapshot)
 	{
+		//todo наследование от CChangesTableIdDescription
 		AscDFH.CChangesBase.call(this, Class);
 		this.Point = Point;
 		this.snapshot = snapshot;
 	}
 	CChangesPointChange.prototype = Object.create(AscDFH.CChangesBase.prototype);
 	CChangesPointChange.prototype.constructor = CChangesPointChange;
+	CChangesPointChange.prototype.Properties = {};
+	CChangesPointChange.prototype.getType = function () {
+		return UndoRedoDataTypes.Unknown;
+	};
+	CChangesPointChange.prototype.getProperties = function () {
+		return this.Properties;
+	};
+	CChangesPointChange.prototype.getProperty = function (nType) {
+		return null;
+	};
+	CChangesPointChange.prototype.setProperty = function (nType, value) {
+	}
 	CChangesPointChange.prototype.CreateReverseChangeSpreadsheet = function()
 	{
 		let Point = Object.assign({}, this.Point);
@@ -2833,6 +2846,10 @@ function (window, undefined) {
 	UndoRedoClassBase.prototype.IsNeedRecalculateLineNumbers = function () {
 		//for CHistory.prototype.Add
 		return false;
+	};
+	UndoRedoClassBase.prototype.GetClass = function () {
+		//for CChangesBaseContentChange.prototype.IsRelated
+		return undefined;
 	};
 
 	function UndoRedoWorkbook(wb) {

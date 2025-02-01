@@ -3766,14 +3766,16 @@
                 this.memory.WriteByte(c_oSerWorkbookViewTypes.ActiveTab);
                 this.memory.WriteByte(c_oSerPropLenType.Long);
                 this.memory.WriteLong(this.wb.nActive);
-            } else if (null != this.wb.showVerticalScroll) {
+            }
+            if (null != this.wb.showVerticalScroll) {
                 this.memory.WriteByte(c_oSerWorkbookViewTypes.ShowVerticalScroll);
                 this.memory.WriteByte(c_oSerPropLenType.Byte);
                 this.memory.WriteBool(this.wb.showVerticalScroll);
-            } else if (null != this.wb.showHorizontalScroll) {
-                this.memory.WriteByte(c_oSerWorkbookViewTypes.showHorizontalScroll);
+            }
+            if (null != this.wb.showHorizontalScroll) {
+                this.memory.WriteByte(c_oSerWorkbookViewTypes.ShowHorizontalScroll);
                 this.memory.WriteByte(c_oSerPropLenType.Byte);
-                this.memory.WriteBool(this.wb.showVerticalScroll);
+                this.memory.WriteBool(this.wb.showHorizontalScroll);
             }
         };
         this.WriteDefinedNames = function()

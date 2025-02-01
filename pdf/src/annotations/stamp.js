@@ -142,7 +142,7 @@
         }
         else {
             let oDoc = this.GetDocument();
-            let oTextDrawer = oDoc.CreateStampRender(this.GetIconType());
+            let oTextDrawer = oDoc.CreateStampRender(this.GetIconType(), this.GetAuthor(), this.GetCreationDate());
             this.SetRenderStructure(oTextDrawer && oTextDrawer.m_aStack[0]);
             return this.renderStructure;
         }
@@ -409,6 +409,11 @@
     };
     
     CAnnotationStamp.prototype.SetIconType = function(sType) {
+        if (typeof(sType) == "string") {
+            let aSplitted = sType.split('#');
+            sType = aSplitted[aSplitted.length - 1];
+        }
+
         if (sType == this._stampType) {
             return;
         }
