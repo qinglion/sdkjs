@@ -908,18 +908,18 @@ function CEditorPage(api)
 			function createSolidPen(color, size, opacity) {
 				color = parseInt(color, 16);
 				const ascColor = new Asc.asc_CColor();
-				ascColor.put_type(Asc.c_oAscColor.COLOR_TYPE_SRGB);
-				ascColor.put_r(color>>16);
-				ascColor.put_g((color&0xff00)>>8);
-				ascColor.put_b(color&0xff);
-				ascColor.put_a(0xff);
+				ascColor.asc_putType(Asc.c_oAscColor.COLOR_TYPE_SRGB);
+				ascColor.asc_putR(color>>16);
+				ascColor.asc_putG((color&0xff00)>>8);
+				ascColor.asc_putB(color&0xff);
+				ascColor.asc_putA(0xff);
 
 				const stroke = new Asc.asc_CStroke();
-				stroke.put_type(Asc.c_oAscStrokeType.STROKE_COLOR);
-				stroke.put_color(ascColor);
+				stroke.asc_putType(Asc.c_oAscStrokeType.STROKE_COLOR);
+				stroke.asc_putColor(ascColor);
 				stroke.asc_putPrstDash(Asc.c_oDashType.solid);
-				stroke.put_width(size);
-				stroke.put_transparent(opacity * 2.55);
+				stroke.asc_putWidth(size);
+				stroke.asc_putTransparent(opacity * 2.55);
 				return stroke;
 			};
 
