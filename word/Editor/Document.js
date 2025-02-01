@@ -13519,8 +13519,11 @@ CDocument.prototype.CanPerformAction = function(isIgnoreCanEditFlag, checkType, 
 	let isPermRange = this.IsPermRangeEditing(checkType, additionalData, actionDescription);
 	if (sendEvent)
 	{
-		if (!isPermRange && this.IsNeedNotificationOnEditProtectedRange(checkType, additionalData))
+		if ((this.Api.isRestrictionComments() || this.Api.isRestrictionView())
+			&& !isPermRange && this.IsNeedNotificationOnEditProtectedRange(checkType, additionalData))
+		{
 			this.sendEvent("asc_onError", c_oAscError.ID.EditProtectedRange, c_oAscError.Level.NoCritical);
+		}
 	}
 	
 	return (isPermRange || !((!this.CanEdit() && true !== isIgnoreCanEditFlag) || (true === this.CollaborativeEditing.Get_GlobalLock())));
@@ -13538,7 +13541,7 @@ CDocument.prototype.IsPermRangeEditing = function(changesType, additionalData, a
 		return false;
 	
 	if (!this.Api.isRestrictionComments() && !this.Api.isRestrictionView())
-		return true;
+		return false;
 	
 	// Для некоторых специфичных действий пока оставим такую обработку
 	let t = this;
