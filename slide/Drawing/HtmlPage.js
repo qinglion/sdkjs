@@ -294,8 +294,9 @@
 		this.MouseHandObject = null;
 
 		this.m_oApi = api;
-		oThis = this;
 		this.thumbnailsPosition = 'bottom'; // 'left', 'right', 'bottom'
+		this.isRTL = true;
+		oThis = this;
 	}
 
 	CEditorPage.prototype.Init = function () {
