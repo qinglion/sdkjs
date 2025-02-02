@@ -4499,20 +4499,50 @@ var CPresentation = CPresentation || function(){};
             }
         }
 
-        let dOldExtY = oShape.getXfrmExtY();
-        let oOldBodyPr = oShape.bodyPr.createDuplicate();
-        let oBodyPr = oShape.bodyPr;
-        oBodyPr.rot = 0;
-        oBodyPr.spcFirstLastPara = false;
-        oBodyPr.vertOverflow = AscFormat.nVOTOverflow;
-        oBodyPr.horzOverflow = AscFormat.nHOTOverflow;
-        oBodyPr.vert = AscFormat.nVertTThorz;
-        oBodyPr.wrap = AscFormat.nTWTNone;
-        oBodyPr.textFit = new AscFormat.CTextFit();
-        oBodyPr.textFit.type = AscFormat.text_fit_Auto;
-        oShape.setBodyPr(oOldBodyPr);
-        oShape.checkExtentsByDocContent(true);
-        oShape.spPr.xfrm.setExtY(dOldExtY);
+        function fContentCondition(oContent, dExtX) {
+            oShape.spPr.xfrm.setExtX(dExtX);
+            oShape.recalculate();
+            oShape.recalculateText();
+            let aParagraphs = oContent.Content;
+            for(let nIdx = 0; nIdx < aParagraphs.length; ++nIdx) {
+                let oParagraph = aParagraphs[nIdx];
+                if(oParagraph.Lines.length !== 1) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        if(!fContentCondition(oContent, oShape.spPr.xfrm.extX)) {
+
+            let dMaxExtX = 300;
+            function bisectionMethod(minVal, maxVal, conditionFunc, tolerance) {
+                if (conditionFunc(minVal)) return minVal;
+                if (!conditionFunc(maxVal)) return maxVal;
+
+                while ((maxVal - minVal) / 2 > tolerance) {
+                    let midVal = (minVal + maxVal) / 2;
+
+                    if (conditionFunc(midVal)) {
+                        maxVal = midVal;
+                    } else {
+                        minVal = midVal;
+                    }
+                }
+
+                if(conditionFunc(minVal)) {
+                    return minVal;
+                }
+                else {
+                    conditionFunc(maxVal);
+                    return maxVal;
+                }
+                return conditionFunc(minVal) ? minVal : maxVal;
+            }
+            bisectionMethod(oShape.extX, dMaxExtX, function (dVal) {
+                return fContentCondition(oContent, dVal);
+            }, 3);
+        }
         oShape.recalculate();
         oShape.recalculateText();
 
