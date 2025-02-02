@@ -550,6 +550,14 @@ ParaInstrText.prototype.GetValue = function()
 {
 	return String.fromCharCode(this.Value);
 };
+ParaInstrText.prototype.GetCodePoint = function()
+{
+	return this.Value;
+};
+ParaInstrText.prototype.GetCharCode = function()
+{
+	return this.Value;
+};
 ParaInstrText.prototype.SetCharCode = function(CharCode)
 {
 	this.Value = CharCode;
