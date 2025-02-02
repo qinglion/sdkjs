@@ -452,6 +452,28 @@ ParaFieldChar.prototype.IsShowFieldCode = function()
 {
 	return this.showFieldCode;
 };
+ParaFieldChar.prototype.SetShowFieldCode = function(isShow)
+{
+	this.showFieldCode = isShow;
+};
+ParaFieldChar.prototype.MoveCursorToChar = function(isBefore)
+{
+	let run = this.GetRun();
+	if (!run)
+		return;
+	let inRunPos = run.GetElementPosition(this);
+	if (-1 === inRunPos)
+		return;
+	
+	if (this.LogicDocument)
+		this.LogicDocument.RemoveSelection();
+	
+	if (false === isBefore)
+		inRunPos += 1
+	
+	run.Make_ThisElementCurrent(false);
+	run.SetCursorPosition(inRunPos);
+};
 
 /**
  * @constructor
@@ -2122,6 +2144,39 @@ CComplexField.prototype.GetRelatedParagraphs = function()
 		result.push(endPara);
 	
 	return result;
+};
+CComplexField.prototype.IsShowFieldCode = function()
+{
+	if (!this.IsValid())
+		return false;
+	
+	return this.BeginChar.IsShowFieldCode();
+};
+CComplexField.prototype.ToggleFieldCodes = function()
+{
+	let isShowFieldCode = !this.BeginChar.IsShowFieldCode();
+	
+	this.BeginChar.SetShowFieldCode(isShowFieldCode);
+	
+	let logicDocument = this.LogicDocument;
+	if (!logicDocument)
+		return;
+	
+	let history    = logicDocument.GetHistory();
+	let recalcData = history.getRecalcDataByElements([this.BeginChar.GetParagraph()]);
+	logicDocument.RecalculateWithParams(recalcData);
+	
+	if (isShowFieldCode)
+	{
+		this.BeginChar.MoveCursorToChar(false);
+	}
+	else
+	{
+		if (this.SeparateChar)
+			this.SeparateChar.MoveCursorToChar(false);
+		else
+			this.EndChar.MoveCursorToChar(true);
+	}
 };
 
 function getRefInstruction(sBookmarkName, nType, bHyperlink, bAboveBelow, sSeparator)
