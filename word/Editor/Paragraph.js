@@ -16551,9 +16551,17 @@ Paragraph.prototype.GetParagraphBidi = function()
 {
 	return !!this.Get_CompiledPr2(false).ParaPr.Bidi;
 };
-Paragraph.prototype.SetParagraphAlign = function(Align)
+Paragraph.prototype.SetParagraphAlign = function(align)
 {
-	this.Set_Align(Align);
+	if (this.isRtlDirection())
+	{
+		if (AscCommon.align_Left === align)
+			align = AscCommon.align_Right;
+		else if (AscCommon.align_Right === align)
+			align = AscCommon.align_Left;
+	}
+	
+	this.Set_Align(align);
 };
 Paragraph.prototype.GetParagraphAlign = function()
 {
