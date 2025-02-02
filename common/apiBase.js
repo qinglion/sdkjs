@@ -5217,6 +5217,9 @@
 	baseEditorsApi.prototype.getInkCursorType = function() {
 		return this.inkDrawer.getCursorType();
 	};
+	baseEditorsApi.prototype.getAnnotations = function() {
+		return null;
+	};
 	baseEditorsApi.prototype.isMasterMode = function(){
 		return false;
 	};
