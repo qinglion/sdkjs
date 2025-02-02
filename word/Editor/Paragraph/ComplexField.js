@@ -50,6 +50,8 @@ function ParaFieldChar(Type, LogicDocument)
 	this.X             = 0;
 	this.Y             = 0;
 	this.PageAbs       = 0;
+	
+	this.showFieldCode = false;
 
 	this.numText  = null;
 	this.textPr   = null;
@@ -445,6 +447,10 @@ ParaFieldChar.prototype.FindNextFillingForm = function(isNext, isCurrent, isStar
 		return (this.IsBegin() && (!isCurrent || isNext) ? this.ComplexField : null);
 	else
 		return (this.IsEnd() && (!isCurrent || isNext) ? this.ComplexField : null);
+};
+ParaFieldChar.prototype.IsShowFieldCode = function()
+{
+	return this.showFieldCode;
 };
 
 /**

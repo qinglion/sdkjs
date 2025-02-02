@@ -19519,6 +19519,11 @@ CComplexFieldStatePos.prototype.IsEqual = function(oState)
 		&& oState.ComplexField
 		&& this.ComplexField.GetBeginChar() === oState.ComplexField.GetBeginChar());
 };
+CComplexFieldStatePos.prototype.IsShowFieldCode = function()
+{
+	let beginChar = this.ComplexField ? this.ComplexField.GetBeginChar() : null;
+	return beginChar ? beginChar.IsShowFieldCode() : null;
+};
 
 //----------------------------------------------------------------------------------------------------------------------
 // Классы для работы с курсором
@@ -19638,7 +19643,7 @@ CParagraphSearchPos.prototype.InitComplexFields = function(arrComplexFields)
 };
 CParagraphSearchPos.prototype.isComplexField = function()
 {
-	return (this.ComplexFields.length > 0 ? true : false);
+	return (this.ComplexFields.length > 0);
 };
 CParagraphSearchPos.prototype.isComplexFieldCode = function()
 {
@@ -19651,6 +19656,18 @@ CParagraphSearchPos.prototype.isComplexFieldCode = function()
 			return true;
 	}
 
+	return false;
+};
+CParagraphSearchPos.prototype.isHiddenComplexFieldPart = function()
+{
+	for (let fieldIndex = 0, fieldCount = this.ComplexFields.length; fieldIndex < fieldCount; ++ fieldIndex)
+	{
+		let isFieldCode = this.ComplexFields[fieldIndex].IsFieldCode();
+		let isShowCode  = this.ComplexFields[fieldIndex].IsShowFieldCode();
+		if (isFieldCode !== isShowCode)
+			return true;
+	}
+	
 	return false;
 };
 CParagraphSearchPos.prototype.isComplexFieldValue = function()

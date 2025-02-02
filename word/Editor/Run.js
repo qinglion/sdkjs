@@ -3694,7 +3694,7 @@ ParaRun.prototype.Recalculate_Range = function(PRS, ParaPr, Depth)
 	let isSkipFillRange = false;
 
 	// TODO: Сделать возможность показывать инструкцию
-    var isHiddenCFPart = PRS.ComplexFields.isComplexFieldCode();
+    var isHiddenCFPart = PRS.ComplexFields.isHiddenComplexFieldPart();
 
     PRS.CheckUpdateLBP(Pos, Depth);
 
@@ -3726,7 +3726,7 @@ ParaRun.prototype.Recalculate_Range = function(PRS, ParaPr, Depth)
 				else
 				{
 					var oInstrText = Item;
-					if (!PRS.ComplexFields.isComplexFieldCode())
+					if (!isHiddenCFPart)
 					{
 						if (AscCommon.IsSpace(Item.Value))
 						{
@@ -4701,7 +4701,7 @@ ParaRun.prototype.Recalculate_Range = function(PRS, ParaPr, Depth)
 					Item.SetRun(this);
 					PRS.ComplexFields.processFieldChar(Item);
 
-					isHiddenCFPart = PRS.ComplexFields.isComplexFieldCode();
+					isHiddenCFPart = PRS.ComplexFields.isHiddenComplexFieldPart();
 					
 					if (Item.IsSeparate())
 					{
@@ -5168,7 +5168,7 @@ ParaRun.prototype.Recalculate_Range_Width = function(PRSC, _CurLine, _CurRange)
 	let textPr = this.Get_CompiledPr(false);
 
 	// TODO: Сделать возможность показывать инструкцию
-	var isHiddenCFPart = PRSC.ComplexFields.isComplexFieldCode();
+	var isHiddenCFPart = PRSC.ComplexFields.isHiddenComplexFieldPart();
     for ( var Pos = StartPos; Pos < EndPos; Pos++ )
     {
 		var Item = this.private_CheckInstrText(this.Content[Pos]);
@@ -5179,6 +5179,9 @@ ParaRun.prototype.Recalculate_Range_Width = function(PRSC, _CurLine, _CurRange)
 
 		if (isHiddenCFPart && para_End !== ItemType && para_FieldChar !== ItemType && para_InstrText !== ItemType)
 			continue;
+		
+		if (!isHiddenCFPart && para_InstrText === ItemType)
+			ItemType = para_Text;
 
 		switch( ItemType )
         {
@@ -5332,7 +5335,7 @@ ParaRun.prototype.Recalculate_Range_Width = function(PRSC, _CurLine, _CurRange)
 				else
 					PRSC.ComplexFields.processFieldCharAndCollectComplexField(Item);
 
-				isHiddenCFPart = PRSC.ComplexFields.isComplexFieldCode();
+				isHiddenCFPart = PRSC.ComplexFields.isHiddenComplexFieldPart();
 
 				if (Item.IsVisual())
 				{
@@ -5375,7 +5378,7 @@ ParaRun.prototype.Recalculate_Range_Spaces = function(PRSA, _CurLine, _CurRange,
     var EndPos   = this.protected_GetRangeEndPos(CurLine, CurRange);
 
 	// TODO: Сделать возможность показывать инструкцию
-	var isHiddenCFPart = PRSA.ComplexFields.isComplexFieldCode();
+	var isHiddenCFPart = PRSA.ComplexFields.isHiddenComplexFieldPart();
     for ( var Pos = StartPos; Pos < EndPos; Pos++ )
     {
 		var Item = this.private_CheckInstrText(this.Content[Pos]);
@@ -5755,7 +5758,7 @@ ParaRun.prototype.Recalculate_Range_Spaces = function(PRSA, _CurLine, _CurRange,
 			case para_FieldChar:
 			{
 				PRSA.ComplexFields.processFieldChar(Item);
-				isHiddenCFPart = PRSA.ComplexFields.isComplexFieldCode();
+				isHiddenCFPart = PRSA.ComplexFields.isHiddenComplexFieldPart();
 
 				if (Item.IsVisual())
 				{
