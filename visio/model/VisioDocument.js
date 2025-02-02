@@ -727,6 +727,7 @@
 			let pageContent = this.pageContents[pageIndex];
 
 			if (!this.backgroundAppliedFor.includes(pageIndex)) {
+				this.backgroundAppliedFor.push(pageIndex);
 				let backgroundPageId = pageInfo.backPage;
 				if (backgroundPageId !== null && backgroundPageId !== undefined) {
 					// find background page
