@@ -3548,6 +3548,15 @@ background-repeat: no-repeat;\
 		logicDocument.SetParagraphBidi(isRtl);
 		logicDocument.FinalizeAction();
 	};
+	asc_docs_api.prototype.asc_isRtlTextDirection = function()
+	{
+		let logicDocument = this.private_GetLogicDocument();
+		if (!logicDocument)
+			return false;
+		
+		let paragraph = logicDocument.GetCurrentParagraph(false, false, {FirstInSelection : true});
+		return paragraph ? paragraph.GetParagraphBidi() : false;
+	};
 	asc_docs_api.prototype._addRemoveSpaceBeforeAfterParagraph = function(event)
 	{
 		let logicDocument = this.private_GetLogicDocument();
@@ -14376,6 +14385,7 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype['put_TextPrPosition']                        = asc_docs_api.prototype.put_TextPrPosition;
 	asc_docs_api.prototype['put_TextPrLang']                            = asc_docs_api.prototype.put_TextPrLang;
 	asc_docs_api.prototype['asc_setRtlTextDirection']                   = asc_docs_api.prototype.asc_setRtlTextDirection;
+	asc_docs_api.prototype['asc_isRtlTextDirection']                    = asc_docs_api.prototype.asc_isRtlTextDirection;
 	asc_docs_api.prototype['asc_addSpaceBeforeParagraph']               = asc_docs_api.prototype.asc_addSpaceBeforeParagraph;
 	asc_docs_api.prototype['asc_addSpaceAfterParagraph']                = asc_docs_api.prototype.asc_addSpaceAfterParagraph;
 	asc_docs_api.prototype['asc_removeSpaceBeforeParagraph']            = asc_docs_api.prototype.asc_removeSpaceBeforeParagraph;
