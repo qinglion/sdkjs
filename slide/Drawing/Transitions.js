@@ -2961,7 +2961,7 @@ function CDemonstrationManager(htmlpage)
             }
             else
             {
-                this.Canvas.style.backgroundColor = Asc.editor.demoBackgroundColor;
+                this.Canvas.style.backgroundColor = "#000000";
             }
         }
     };
