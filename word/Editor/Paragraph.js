@@ -4702,11 +4702,16 @@ Paragraph.prototype.Add = function(Item)
 
 	if (Item.SetParagraph)
 		Item.SetParagraph(this);
-
+	
+	let itemType = Item.GetType();
+	if ((para_Text === itemType || para_Space === itemType) && this.IsCurrentPosInComplexFieldCode())
+		Item = new ParaInstrText(Item.GetCodePoint());
+	
 	switch (Item.Get_Type())
 	{
 		case para_Text:
 		case para_Space:
+		case para_InstrText:
 		case para_PageNum:
 		case para_Tab:
 		case para_Drawing:
@@ -4719,6 +4724,7 @@ Paragraph.prototype.Add = function(Item)
 		case para_ContinuationSeparator:
 		default:
 		{
+			
 			// Элементы данного типа добавляем во внутренний элемент
 			this.Content[this.CurPos.ContentPos].Add(Item);
 
@@ -16825,6 +16831,14 @@ Paragraph.prototype.GetPermRangesByPos = function(paraPos)
 	this.LoadSelectionState(state);
 	return permRanges;
 };
+Paragraph.prototype.IsCurrentPosInComplexFieldCode = function()
+{
+	let cfStatePos = this.GetCurrentComplexFields(true);
+	if (!cfStatePos.length)
+		return false;
+	
+	return cfStatePos[cfStatePos.length - 1].IsFieldCode();
+};
 Paragraph.prototype.GetCurrentComplexFields = function(bReturnFieldPos)
 {
 	var arrComplexFields = [];
@@ -19527,6 +19541,11 @@ CComplexFieldStatePos.prototype.IsEqual = function(oState)
 		&& oState.ComplexField
 		&& this.ComplexField.GetBeginChar() === oState.ComplexField.GetBeginChar());
 };
+CComplexFieldStatePos.prototype.IsShowFieldCode = function()
+{
+	let beginChar = this.ComplexField ? this.ComplexField.GetBeginChar() : null;
+	return beginChar ? beginChar.IsShowFieldCode() : null;
+};
 
 //----------------------------------------------------------------------------------------------------------------------
 // Классы для работы с курсором
@@ -19646,7 +19665,7 @@ CParagraphSearchPos.prototype.InitComplexFields = function(arrComplexFields)
 };
 CParagraphSearchPos.prototype.isComplexField = function()
 {
-	return (this.ComplexFields.length > 0 ? true : false);
+	return (this.ComplexFields.length > 0);
 };
 CParagraphSearchPos.prototype.isComplexFieldCode = function()
 {
@@ -19659,6 +19678,18 @@ CParagraphSearchPos.prototype.isComplexFieldCode = function()
 			return true;
 	}
 
+	return false;
+};
+CParagraphSearchPos.prototype.isHiddenComplexFieldPart = function()
+{
+	for (let fieldIndex = 0, fieldCount = this.ComplexFields.length; fieldIndex < fieldCount; ++ fieldIndex)
+	{
+		let isFieldCode = this.ComplexFields[fieldIndex].IsFieldCode();
+		let isShowCode  = this.ComplexFields[fieldIndex].IsShowFieldCode();
+		if (isFieldCode !== isShowCode)
+			return true;
+	}
+	
 	return false;
 };
 CParagraphSearchPos.prototype.isComplexFieldValue = function()
