@@ -11384,7 +11384,10 @@
 
 			const selectedShapes = Asc.editor.getGraphicController().getSelectedArray();
 			const compoundPathLst = selectedShapes.map(function (shape) {
-				const shapeGeometry = shape.getGeometry();
+				const isTextArt = shape.txBody && shape.txWarpStruct;
+				const shapeGeometry = isTextArt
+					? shape.txWarpStruct.getCombinedGeometry()
+					: shape.getGeometry();
 				const pathLst = shapeGeometry.pathLst;
 				const compoundPaths = pathLst.map(function (path) {
 					return convertFormatPathToCompoundPath(path, shape.transform);

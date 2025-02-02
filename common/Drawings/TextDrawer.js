@@ -194,7 +194,30 @@ CDocContentStructure.prototype.checkByWarpStruct = function(oWarpStruct, dWidth,
     }
     this.checkUnionPaths(aWarpedObjects2);
 };
+CDocContentStructure.prototype.getCombinedGeometry = function (transformMatrix) {
+    const paragraphStructures = this.m_aContent;
+    const lineStructures = paragraphStructures.reduce(function (acc, paragraphStructure) { return acc.concat(paragraphStructure.m_aContent) }, []);
+    const objectsToDraw = lineStructures.reduce(function (acc, lineStructure) { return acc.concat(lineStructure.m_aContent) }, []);
 
+    // allPaths - array of Path2 instances
+    const allPaths = objectsToDraw.reduce(function (acc, objectToDraw) { return acc.concat(objectToDraw.geometry.pathLst) }, []);
+
+    // allFormatPaths - array of Path instances
+    const allFormatPaths = allPaths.map(function (path) {
+        const formatPath = new AscFormat.Path();
+        path.convertToBezierCurves(formatPath, transformMatrix || new AscCommon.CMatrix());
+        return formatPath;
+    });
+
+    const combinedGeometry = new AscFormat.Geometry();
+    allFormatPaths.forEach(function (path) {
+        if (path.ArrPathCommand.length > 0) {
+            combinedGeometry.AddPath(path);
+        }
+    });
+
+    return combinedGeometry;
+};
 
 
 CDocContentStructure.prototype.checkContentReduct = function(oWarpStruct, dWidth, dHeight, oTheme, oColorMap, oShape, dOneLineWidth, XLimit, dContentHeight, dKoeff)
