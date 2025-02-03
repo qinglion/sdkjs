@@ -7743,7 +7743,12 @@ function RangeDataManagerElem(bbox, data)
 		this.colorLow = new RgbColor(defaultOtherColor);
 	};
 	sparklineGroup.prototype.setWorksheet = function (worksheet, oldWorksheet) {
+
+		let sOldId = this.worksheet ? this.worksheet.Id : null;
+		let sNewId = worksheet ? worksheet.Id : null;
+		AscCommon.History.Add(new AscDFH.CChangesDrawingsString(this, AscDFH.historyitem_Sparkline_Worksheet, sOldId, sNewId));
 		this.worksheet = worksheet;
+
 		if (oldWorksheet) {
 			var oldSparklines = [];
 			var newSparklines = [];
@@ -14740,6 +14745,14 @@ function RangeDataManagerElem(bbox, data)
 		oClass.applyRange(value);
 		oClass.addPointToLocalHistory(true);
 	};
+
+	AscDFH.changesFactory[AscDFH.historyitem_Sparkline_Worksheet] = AscDFH.CChangesDrawingsString;
+	AscDFH.drawingsChangesMap[AscDFH.historyitem_Sparkline_Worksheet] = function (oClass, value) {
+		let oWB = Asc.editor.wbModel;
+		if(!oWB) return;
+		let oWS = oWB.getWorksheetById(value);
+		oClass.worksheet = oWS;
+	};
 	/**
 	 *
 	 * @param ws
@@ -18227,6 +18240,12 @@ function RangeDataManagerElem(bbox, data)
 			"boolean[][]": 1,
 			"any[][]": 1
 		};
+		let supportedArrTypes = {
+			"number[][]": 1,
+			"string[][]": 1,
+			"boolean[][]": 1,
+			"any[][]": 1
+		};
 		if (argsInfo) {
 			let optionalCount = 0;
 			for (let i = 0; i < argsInfo.length; i++) {
@@ -18245,9 +18264,11 @@ function RangeDataManagerElem(bbox, data)
 		}
 
 		let returnInfo = options.returnInfo;
-		if (options.returnInfo && !supportedTypes[options.returnInfo.type]) {
+		if (options.returnInfo && !supportedTypes[returnInfo.type]) {
 			console.log("Registration custom function \"" +  funcName + "\" warning. Invalid return type. The following types must be used: number, string, boolean, any, number[][], string[][], boolean[][], any[][].");
 		}
+
+		let returnValueType = supportedArrTypes[returnInfo.type] ? AscCommonExcel.cReturnFormulaType.array : null;
 
 		/**
 		 * @constructor
@@ -18264,6 +18285,7 @@ function RangeDataManagerElem(bbox, data)
 		//newFunc.prototype.argumentsMax = argumentsMax;
 		//argumentsType - other arguments type, need convert
 		newFunc.prototype.argumentsType = argumentsType;
+		newFunc.prototype.returnValueType = returnValueType;
 		newFunc.prototype.Calculate = function (arg) {
 			try {
 

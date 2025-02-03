@@ -92,6 +92,15 @@
 	VisioEditorApi.prototype = Object.create(AscCommon.baseEditorsApi.prototype);
 	VisioEditorApi.prototype.constructor = VisioEditorApi;
 
+	VisioEditorApi.prototype.initDefaultShortcuts = function()
+	{
+		// [[ActionType, KeyCode, Ctrl, Shift, Alt]]
+		var aShortcuts =
+			[
+				[Asc.c_oAscDiagramShortcutType.Print, 80, true, false, false]
+			];
+		this.initShortcuts(aShortcuts, false)
+	};
 	VisioEditorApi.prototype.InitEditor = function(){
 		this.Document = new AscVisio.CVisioDocument(this, this.WordControl.m_oDrawingDocument);
 
@@ -400,15 +409,27 @@
 		//todo
 		return;
 	}
+	VisioEditorApi.prototype.onKeyDown = function(e)
+	{
+		return this.WordControl.onKeyDown(e);
+	};
+	VisioEditorApi.prototype.executeShortcut = function(type)
+	{
+		let logicDocument = this.private_GetLogicDocument();
+		if (!logicDocument)
+			return false;
+
+		return logicDocument.executeShortcut(type);
+	};
 
 	window["VisioEditorApi"]                                 = VisioEditorApi;
 	window["VisioEditorApi"].prototype["asc_nativeOpenFile"] = function(base64File, version)
 	{
 		// this.SpellCheckUrl = '';
-		//
-		// this.User = new AscCommon.asc_CUser();
-		// this.User.setId("TM");
-		// this.User.setUserName("native");
+
+		this.User = new AscCommon.asc_CUser();
+		this.User.setId("TM");
+		this.User.setUserName("native");
 
 		this.InitEditor();
 

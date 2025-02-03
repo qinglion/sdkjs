@@ -1338,60 +1338,60 @@
 			let upSideDownPatterns = false;
 			switch (fillPatternType) {
 				case 2:
-					return upSideDownPatterns ? AscCommon.global_hatch_offsets.dnDiag :
-						AscCommon.global_hatch_offsets.upDiag;
+					return upSideDownPatterns ? AscCommon.global_hatch_offsets["dnDiag"] :
+						AscCommon.global_hatch_offsets["upDiag"];
 				case 3:
-					return AscCommon.global_hatch_offsets.cross;
+					return AscCommon.global_hatch_offsets["cross"];
 				case 4:
-					return AscCommon.global_hatch_offsets.diagCross;
+					return AscCommon.global_hatch_offsets["diagCross"];
 				case 5:
-					return upSideDownPatterns ? AscCommon.global_hatch_offsets.upDiag :
-						AscCommon.global_hatch_offsets.dnDiag;
+					return upSideDownPatterns ? AscCommon.global_hatch_offsets["upDiag"] :
+						AscCommon.global_hatch_offsets["dnDiag"];
 				case 6:
-					return AscCommon.global_hatch_offsets.horz;
+					return AscCommon.global_hatch_offsets["horz"];
 				case 7:
-					return AscCommon.global_hatch_offsets.vert;
+					return AscCommon.global_hatch_offsets["vert"];
 				case 8:
-					return AscCommon.global_hatch_offsets.pct60;
+					return AscCommon.global_hatch_offsets["pct60"];
 				case 9:
-					return AscCommon.global_hatch_offsets.pct40;
+					return AscCommon.global_hatch_offsets["pct40"];
 				case 10:
-					return AscCommon.global_hatch_offsets.pct25;
+					return AscCommon.global_hatch_offsets["pct25"];
 				case 11:
-					return AscCommon.global_hatch_offsets.pct20;
+					return AscCommon.global_hatch_offsets["pct20"];
 				case 12:
-					return AscCommon.global_hatch_offsets.pct10;
+					return AscCommon.global_hatch_offsets["pct10"];
 				case 13:
-					return AscCommon.global_hatch_offsets.dkHorz;
+					return AscCommon.global_hatch_offsets["dkHorz"];
 				case 14:
-					return AscCommon.global_hatch_offsets.dkVert;
+					return AscCommon.global_hatch_offsets["dkVert"];
 				case 15:
-					return upSideDownPatterns ? AscCommon.global_hatch_offsets.dkUpDiag :
-						AscCommon.global_hatch_offsets.dkDnDiag;
+					return upSideDownPatterns ? AscCommon.global_hatch_offsets["dkUpDiag"] :
+						AscCommon.global_hatch_offsets["dkDnDiag"];
 				case 16:
-					return upSideDownPatterns ? AscCommon.global_hatch_offsets.dkDnDiag :
-						AscCommon.global_hatch_offsets.dkUpDiag;
+					return upSideDownPatterns ? AscCommon.global_hatch_offsets["dkDnDiag"] :
+						AscCommon.global_hatch_offsets["dkUpDiag"];
 				case 17:
-					return AscCommon.global_hatch_offsets.smCheck;
+					return AscCommon.global_hatch_offsets["smCheck"];
 				case 18:
-					return AscCommon.global_hatch_offsets.trellis;
+					return AscCommon.global_hatch_offsets["trellis"];
 				case 19:
-					return AscCommon.global_hatch_offsets.ltHorz;
+					return AscCommon.global_hatch_offsets["ltHorz"];
 				case 20:
-					return AscCommon.global_hatch_offsets.ltVert;
+					return AscCommon.global_hatch_offsets["ltVert"];
 				case 21:
-					return upSideDownPatterns ? AscCommon.global_hatch_offsets.ltUpDiag :
-						AscCommon.global_hatch_offsets.ltDnDiag;
+					return upSideDownPatterns ? AscCommon.global_hatch_offsets["ltUpDiag"] :
+						AscCommon.global_hatch_offsets["ltDnDiag"];
 				case 22:
-					return upSideDownPatterns ? AscCommon.global_hatch_offsets.ltDnDiag :
-						AscCommon.global_hatch_offsets.ltUpDiag;
+					return upSideDownPatterns ? AscCommon.global_hatch_offsets["ltDnDiag"] :
+						AscCommon.global_hatch_offsets["ltUpDiag"];
 				case 23:
-					return AscCommon.global_hatch_offsets.smGrid;
+					return AscCommon.global_hatch_offsets["smGrid"];
 				case 24:
-					return AscCommon.global_hatch_offsets.pct50;
+					return AscCommon.global_hatch_offsets["pct50"];
 				default:
 					AscCommon.consoleLog("patten fill unhandled");
-					return AscCommon.global_hatch_offsets.cross;
+					return AscCommon.global_hatch_offsets["cross"];
 			}
 		}
 
@@ -1946,6 +1946,18 @@
 				groupShape.pen = cShapeOrCGroupShape.pen;
 				groupShape.Id = cShapeOrCGroupShape.Id + "_Group";
 
+				// add group geometry to bottom
+				if (cShapeOrCGroupShape instanceof CGroupShape) {
+					groupShape.addToSpTree(groupShape.spTree.length, cShapeOrCGroupShape.spTree[0]);
+				} else {
+					groupShape.addToSpTree(groupShape.spTree.length, cShapeOrCGroupShape);
+				}
+				groupShape.spTree[groupShape.spTree.length - 1].setGroup(groupShape);
+
+
+				cShapeOrCGroupShape.spPr.xfrm.setOffX(0);
+				cShapeOrCGroupShape.spPr.xfrm.setOffY(0);
+
 				// cShape.setLocks(1)?;
 
 				groupShape.setParent2(visioDocument);
@@ -1966,7 +1978,7 @@
 
 					currentGroupHandling.addToSpTree(currentGroupHandling.spTree.length, groupShape);
 					currentGroupHandling.spTree[currentGroupHandling.spTree.length - 1].setGroup(currentGroupHandling);
-					groupShape.recalculateLocalTransform(groupShape.transform);
+					// groupShape.recalculateLocalTransform(groupShape.transform);
 
 					currentGroupHandling = groupShape;
 					let subShapes = this.getSubshapes();
@@ -1976,15 +1988,39 @@
 					}
 				}
 
-				// add group own geometry and text to bottom of spTree bcs so it will be brought to top on drawing
-				groupShape.addToSpTree(groupShape.spTree.length, cShapeOrCGroupShape);
-				groupShape.spTree[groupShape.spTree.length - 1].setGroup(groupShape);
-
-				cShapeOrCGroupShape.spPr.xfrm.setOffX(0);
-				cShapeOrCGroupShape.spPr.xfrm.setOffY(0);
+				// add group text to top
+				if (cShapeOrCGroupShape instanceof CGroupShape) {
+					groupShape.addToSpTree(groupShape.spTree.length, cShapeOrCGroupShape.spTree[1]);
+					groupShape.spTree[groupShape.spTree.length - 1].setGroup(groupShape);
+				}
 
 				// recalculate positions to local (group) coordinates
-				cShapeOrCGroupShape.recalculateLocalTransform(cShapeOrCGroupShape.transform);
+				// cShapeOrCGroupShape.recalculateLocalTransform(cShapeOrCGroupShape.transform);
+
+				if (cShapeOrCGroupShape instanceof CGroupShape) {
+					cShapeOrCGroupShape.spTree[0].recalculateLocalTransform(cShapeOrCGroupShape.spTree[0].transform);
+					cShapeOrCGroupShape.spTree[0].recalculateTransformText && cShapeOrCGroupShape.spTree[0].recalculateTransformText();
+					cShapeOrCGroupShape.spTree[0].recalculateContent && cShapeOrCGroupShape.spTree[0].recalculateContent();
+					cShapeOrCGroupShape.spTree[0].recalculate();
+
+
+					cShapeOrCGroupShape.spTree[1].recalculateLocalTransform(cShapeOrCGroupShape.spTree[1].transform);
+					cShapeOrCGroupShape.spTree[1].recalculateTransformText && cShapeOrCGroupShape.spTree[1].recalculateTransformText();
+					cShapeOrCGroupShape.spTree[1].recalculateContent && cShapeOrCGroupShape.spTree[1].recalculateContent();
+
+					cShapeOrCGroupShape.spTree[1].recalculate();
+				} else {
+					cShapeOrCGroupShape.recalculateLocalTransform(cShapeOrCGroupShape.transform);
+					cShapeOrCGroupShape.recalculateTransformText && cShapeOrCGroupShape.recalculateTransformText();
+					cShapeOrCGroupShape.recalculateContent && cShapeOrCGroupShape.recalculateContent();
+					cShapeOrCGroupShape.recalculate();
+				}
+
+				groupShape.recalculateTransformText && groupShape.recalculateTransformText();
+				groupShape.recalculateContent && groupShape.recalculateContent();
+				groupShape.recalculateLocalTransform(groupShape.transform);
+				groupShape.recalculate();
+
 				// cShapes.geometryCShape.recalculateTransformText();
 				// cShapes.geometryCShape.recalculateContent();
 				// cShapes.geometryCShape.recalculate(); // doesnt work here
@@ -2023,6 +2059,9 @@
 		}
 
 		if (currentGroupHandling) {
+			currentGroupHandling.recalculateLocalTransform(currentGroupHandling.transform);
+			currentGroupHandling.recalculateTransformText && currentGroupHandling.recalculateTransformText();
+			currentGroupHandling.recalculateContent && currentGroupHandling.recalculateContent();
 			currentGroupHandling.recalculate();
 		}
 

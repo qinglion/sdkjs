@@ -3697,16 +3697,51 @@ CDocument.prototype.private_Recalculate = function(_RecalcData, isForceStrictRec
 	//       некоторых других действиях нам важно, чтобы пересчет первый раз сработал сразу. Поэтому запускаем пересчет
 	//       на таймере ТОЛЬКО если он уже был запущен на таймере до этого. Если избавиться от первого условия, то
 	//       запускать на таймере можно будет всегда.
-    if (isUseTimeout && !isForceStrictRecalc)
+    // if (isUseTimeout && !isForceStrictRecalc)
+	// {
+	// 	this.FullRecalc.Id = setTimeout(Document_Recalculate_Page, 0);
+	// }
+    // else
+	// {
+	// 	this.Recalculate_Page();
+	// }
+	
+	if (isUseTimeout && !isForceStrictRecalc)
 	{
-		this.FullRecalc.Id = setTimeout(Document_Recalculate_Page, 0);
+		let _t = this;
+		this.FullRecalc.Id = setTimeout(function(){_t.ContinueRecalculationLoop();}, 0);
 	}
-    else
+	else
 	{
-		this.Recalculate_Page();
+		this.ContinueRecalculationLoop();
 	}
+	
 	this.UpdatePlaceholders();
     return document_recalcresult_LongRecalc;
+};
+CDocument.prototype.ContinueRecalculationLoop = function()
+{
+	this.FullRecalc.UseRecursion = false;
+	while (true)
+	{
+		this.FullRecalc.Continue = false;
+		
+		this.Recalculate_Page();
+		
+		if (!this.FullRecalc.Continue)
+			break;
+		
+		if (this.IsContinueRecalculateOnTimer())
+		{
+			let _t = this;
+			this.FullRecalc.TimerStartPage = this.FullRecalc.PageIndex;
+			this.FullRecalc.Id = setTimeout(function(){
+				_t.FullRecalc.TimerStartTime = performance.now();
+				_t.ContinueRecalculationLoop();
+			}, 10);
+			break;
+		}
+	}
 };
 /**
  * Запускаем пересчет документа.
@@ -3926,7 +3961,7 @@ CDocument.prototype.Recalculate_Page = function()
     var bStart       = this.FullRecalc.Start;        // флаг, который говорит о том, рассчитываем мы эту страницу первый раз или нет (за один общий пересчет)
     var StartIndex   = this.FullRecalc.StartIndex;
 
-    //var nStartTime = (new Date()).getTime();
+    // var nStartTime = (new Date()).getTime();
 
     if (0 === SectionIndex && 0 === ColumnIndex && true === bStart)
     {
@@ -4080,7 +4115,7 @@ CDocument.prototype.Recalculate_Page = function()
 
     this.Recalculate_PageColumn();
 
-	//console.log("PageIndex " + PageIndex + " " + ((new Date()).getTime() - nStartTime)/ 1000);
+	// console.log("PageIndex " + PageIndex + " " + ((new Date()).getTime() - nStartTime)/ 1000);
 };
 /**
  * Пересчитываем следующую колоноку.
@@ -4827,12 +4862,27 @@ CDocument.prototype.Recalculate_PageColumn                   = function()
 		this.UpdatePlaceholders();
 	}
 };
-CDocument.prototype.private_IsStartTimeoutOnRecalc = function(nPageAbs)
+CDocument.prototype.IsContinueRecalculateOnTimer = function()
 {
-	let nTime = this.Layout.GetCalculateTimeLimit();
-	return ((nPageAbs > this.FullRecalc.StartPage + this.FullRecalc.StartPagesCount
-		&& (performance.now() - this.FullRecalc.TimerStartTime > nTime
-			|| nPageAbs > this.FullRecalc.TimerStartPage + 50)));
+	// TODO: заменить window["native"]["WC_CheckSuspendRecalculate"] -> window['IS_NATIVE_EDITOR']
+	if (true === window["NATIVE_EDITOR_ENJINE_SYNC_RECALC"]
+		&& (!window["native"] || undefined === window["native"]["WC_CheckSuspendRecalculate"]))
+		return false;
+	
+	// this.FullRecalc.PageIndex - страница, с которой продолжится пересчет, значит расчитана предыдущая страница
+	let page = this.FullRecalc.PageIndex - 1;
+	
+	let timeLimit = this.Layout.GetCalculateTimeLimit();
+	return ((page > this.FullRecalc.StartPage + this.FullRecalc.StartPagesCount
+		&& (performance.now() - this.FullRecalc.TimerStartTime > timeLimit
+			|| page > this.FullRecalc.TimerStartPage + 50)));
+};
+CDocument.prototype.private_IsStartTimeoutOnRecalc = function(page)
+{
+	let timeLimit = this.Layout.GetCalculateTimeLimit();
+	return ((page > this.FullRecalc.StartPage + this.FullRecalc.StartPagesCount
+		&& (performance.now() - this.FullRecalc.TimerStartTime > timeLimit
+			|| page > this.FullRecalc.TimerStartPage + 50)));
 
 	// if (nRes)
 	// {
@@ -5603,6 +5653,11 @@ CDocument.prototype.OnContentReDraw                          = function(StartPag
 };
 CDocument.prototype.CheckTargetUpdate = function()
 {
+	// TODO: Эту загрушку стоит поменять на что-то более понятное
+	// Документ ни разу не был расчитан
+	if (this.RecalcId <= 0)
+		return;
+	
 	// Проверим можно ли вообще пересчитывать текущее положение.
 	if (this.DrawingDocument.UpdateTargetFromPaint === true)
 	{
@@ -7004,6 +7059,18 @@ CDocument.prototype.GoToPage = function(nPageAbs)
 	this.UpdateSelection();
 
 	return nCurPage;
+};
+CDocument.prototype.SetParagraphBidi = function(isRtl)
+{
+	let paragraphs = this.GetSelectedParagraphs();
+	for (let i = 0; i < paragraphs.length; ++i)
+	{
+		paragraphs[i].SetParagraphBidi(isRtl);
+	}
+	
+	this.Recalculate();
+	this.UpdateInterface();
+	this.UpdateSelection();
 };
 CDocument.prototype.SetParagraphAlign = function(Align)
 {
@@ -12277,6 +12344,7 @@ CDocument.prototype.private_UpdateInterface = function(isSaveCurrentReviewChange
 	// Уберем из интерфейса записи о том где мы находимся (параграф, таблица, картинка или колонтитул)
 	oApi.ClearPropObjCallback();
 
+	this.UpdateInterfaceRangePermPr();
 	this.Controller.UpdateInterfaceState();
 
 	// Сообщаем, что список составлен
@@ -12289,6 +12357,23 @@ CDocument.prototype.private_UpdateInterface = function(isSaveCurrentReviewChange
 	this.Document_UpdateSectionPr();
 	this.UpdateStylePanel();
 	this.UpdateNumberingPanel();
+};
+CDocument.prototype.UpdateInterfaceRangePermPr = function()
+{
+	if (!this.IsViewModeInEditor() && !this.IsEditCommentsMode())
+		return;
+	
+	let api = this.GetApi();
+	if (!api)
+		return;
+	
+	let pr = new Asc.RangePermProp();
+	
+	pr.editText      = this.IsPermRangeEditing(AscCommon.changestype_Paragraph_Content);
+	pr.editParagraph = this.IsPermRangeEditing(AscCommon.changestype_Paragraph_Properties);
+	pr.insertObject  = this.IsPermRangeEditing(AscCommon.changestype_Paragraph_Content);
+	
+	api.sync_RangePermPropCallback(pr);
 };
 CDocument.prototype.private_UpdateRulers = function()
 {
@@ -13425,22 +13510,63 @@ CDocument.prototype.IsCursorInHyperlink = function(bCheckEnd)
  * @param [isIgnoreCanEditFlag=false]
  * @param [checkType=undefined]
  * @param [additionalData=undefined]
+ * @param [sendEvent=false]
+ * @param [actionDescription=undefined]
  * @returns {boolean}
  */
-CDocument.prototype.CanPerformAction = function(isIgnoreCanEditFlag, checkType, additionalData)
+CDocument.prototype.CanPerformAction = function(isIgnoreCanEditFlag, checkType, additionalData, sendEvent, actionDescription)
 {
-	return (this.IsPermRangeEditing(checkType, additionalData) || !((!this.CanEdit() && true !== isIgnoreCanEditFlag) || (true === this.CollaborativeEditing.Get_GlobalLock())));
+	let isPermRange = this.IsPermRangeEditing(checkType, additionalData, actionDescription);
+	if (sendEvent)
+	{
+		if ((this.Api.isRestrictionComments() || this.Api.isRestrictionView())
+			&& !isPermRange && this.IsNeedNotificationOnEditProtectedRange(checkType, additionalData))
+		{
+			this.sendEvent("asc_onError", c_oAscError.ID.EditProtectedRange, c_oAscError.Level.NoCritical);
+		}
+	}
+	
+	return (isPermRange || !((!this.CanEdit() && true !== isIgnoreCanEditFlag) || (true === this.CollaborativeEditing.Get_GlobalLock())));
 };
 /**
  * Проверяем, что действие с заданным типом произойдет в разрешенной области
  * @param changesType
  * @param additionalData
+ * @param actionDescription
  * @returns {boolean}
  */
-CDocument.prototype.IsPermRangeEditing = function(changesType, additionalData)
+CDocument.prototype.IsPermRangeEditing = function(changesType, additionalData, actionDescription)
 {
-	if (this.Api.isViewMode || !(this.Api.isRestrictionComments() || this.Api.isRestrictionView()))
+	if (this.Api.isViewMode)
 		return false;
+	
+	if (!this.Api.isRestrictionComments() && !this.Api.isRestrictionView())
+		return false;
+	
+	// Для некоторых специфичных действий пока оставим такую обработку
+	let t = this;
+	function getChangesTypeByDescription(changesType, actionDescription)
+	{
+		if (undefined === actionDescription)
+			return changesType;
+		
+		if (AscDFH.historydescription_Document_AddBlockLevelContentControl === actionDescription)
+		{
+			if (t.IsTextSelectionUse())
+				changesType = AscCommon.changestype_Paragraph_Properties;
+			else
+				changesType = AscCommon.changestype_Paragraph_Content;
+		}
+		else if (AscDFH.historydescription_Document_AddInlineLevelContentControl === actionDescription)
+		{
+			changesType = AscCommon.changestype_Paragraph_Content;
+		}
+		
+		return changesType;
+	}
+	
+	changesType = getChangesTypeByDescription(changesType, actionDescription);
+	
 	
 	if (AscCommon.changestype_None !== changesType)
 	{
@@ -13472,30 +13598,33 @@ CDocument.prototype.IsPermRangeEditing = function(changesType, additionalData)
 		}
 	}
 	
-	if (additionalData)
+	function checkAdditional(additionalData)
 	{
+		if (!additionalData || undefined === additionalData.Type)
+			return true;
+		
 		if (AscCommon.changestype_2_InlineObjectMove === additionalData.Type)
 		{
 			// TODO: Надо проверить не целиком параграф, а только то место, куда происходит вставка
 			let pageNum = additionalData.PageNum;
 			let x       = additionalData.X;
 			let y       = additionalData.Y;
-			let para    = this.Get_NearestPos(pageNum, x, y).Paragraph;
-			return this._checkPermRangeForElement(para);
+			let para    = t.Get_NearestPos(pageNum, x, y).Paragraph;
+			return t._checkPermRangeForElement(para);
 		}
 		else if (AscCommon.changestype_2_Element_and_Type === additionalData.Type)
 		{
-			return (this._checkChangesTypeForPermRange(additionalData.CheckType)
-				&& this._checkPermRangeForElement(additionalData.Element));
+			return (t._checkChangesTypeForPermRange(additionalData.CheckType)
+				&& t._checkPermRangeForElement(additionalData.Element));
 		}
 		else if (AscCommon.changestype_2_ElementsArray_and_Type === additionalData.Type)
 		{
-			if (!this._checkChangesTypeForPermRange(additionalData.CheckType))
+			if (!t._checkChangesTypeForPermRange(additionalData.CheckType))
 				return false;
 			
 			for (let i = 0, count = additionalData.Elements.length; i < count; ++i)
 			{
-				if (!this._checkPermRangeForElement(additionalData.Elements[i]))
+				if (!t._checkPermRangeForElement(additionalData.Elements[i]))
 					return false;
 			}
 			return true;
@@ -13504,22 +13633,22 @@ CDocument.prototype.IsPermRangeEditing = function(changesType, additionalData)
 		{
 			for (let i = 0, count = Math.min(additionalData.Elements.length, additionalData.CheckTypes.length); i < count; ++i)
 			{
-				if (!this._checkChangesTypeForPermRange(additionalData.CheckTypes[i]))
+				if (!t._checkChangesTypeForPermRange(additionalData.CheckTypes[i]))
 					return false;
 				
-				if (!this._checkPermRangeForElement(additionalData.Elements[i]))
+				if (!t._checkPermRangeForElement(additionalData.Elements[i]))
 					return false;
 			}
 			return true;
 		}
 		else if (AscCommon.changestype_2_AdditionalTypes === additionalData.Type)
 		{
-			if (!this._checkPermRangeForCurrentSelection())
+			if (!t._checkPermRangeForCurrentSelection())
 				return false;
 			
 			for (let i = 0, count = additionalData.Types.length; i < count; ++i)
 			{
-				if (!this._checkChangesTypeForPermRange(additionalData.Types[i]))
+				if (!t._checkChangesTypeForPermRange(additionalData.Types[i]))
 					return false;
 			}
 			return true;
@@ -13530,7 +13659,29 @@ CDocument.prototype.IsPermRangeEditing = function(changesType, additionalData)
 		}
 	}
 	
-	return true;
+	if (!additionalData)
+		return true;
+	
+	if (Array.isArray(additionalData))
+	{
+		for (let i = 0; i < additionalData.length; ++i)
+		{
+			if (!checkAdditional(additionalData[i]))
+				return false;
+		}
+		
+		return true;
+	}
+	else
+	{
+		return checkAdditional(additionalData);
+	}
+};
+CDocument.prototype.IsNeedNotificationOnEditProtectedRange = function(changesType, additionalData)
+{
+	return (AscCommon.changestype_Document_SectPr === changesType
+		|| AscCommon.changestype_Document_Settings === changesType
+		|| AscCommon.changestype_HdrFtr === changesType);
 };
 CDocument.prototype._checkActionForPermRange = function(changesType, additionalData)
 {
@@ -13576,24 +13727,47 @@ CDocument.prototype._checkChangesTypeForPermRangeForSelection = function(changes
 };
 CDocument.prototype._checkPermRangeForCurrentSelection = function()
 {
-	// TODO: Пока запрещаем любые действия, связанные с выделением автофигур
-	if (this.IsTextSelectionUse())
+	let docPosType = this.GetDocPosType();
+	
+	if (docpostype_Footnotes === docPosType || docpostype_Endnotes === docPosType)
 	{
-		if (true !== this.Selection.Use || this.Controller !== this.LogicDocumentController)
-			return;
+		let footnotes = this.Controller.private_GetSelectionArray();
+		if (!footnotes || !footnotes.length)
+			return false;
 		
+		for (let i = 0; i < footnotes.length; ++i)
+		{
+			if (!footnotes[i].IsInPermRange())
+				return false;
+		}
+		return true;
+	}
+	
+	let docContent = this;
+	if (docPosType === docpostype_HdrFtr)
+	{
+		let hdrftr = this.HdrFtr.CurHdrFtr;
+		if (!hdrftr)
+			return null;
+		
+		docContent = hdrftr.GetContent();
+	}
+	
+	// TODO: Пока запрещаем любые действия, связанные с выделением автофигур
+	if (this.IsTextSelectionUse() && this.Selection.Use)
+	{
 		// Надо проверить, что у нас начало и конец попали хотя бы в один общий промежуток
-		let startPos = this.GetContentPosition(true, true);
-		let endPos   = this.GetContentPosition(true, false);
+		let startPos = docContent.GetContentPosition(true, true);
+		let endPos   = docContent.GetContentPosition(true, false);
 		
-		let startRanges = this.GetPermRangesByContentPos(startPos);
-		let endRanges   = this.GetPermRangesByContentPos(endPos);
+		let startRanges = this.GetPermRangesByContentPos(startPos, docContent);
+		let endRanges   = this.GetPermRangesByContentPos(endPos, docContent);
 		return AscWord.PermRangesManager.isInPermRange(startRanges, endRanges);
 	}
 	else if (!this.IsSelectionUse())
 	{
-		let currentPos = this.GetContentPosition();
-		return this.GetPermRangesByContentPos(currentPos).length > 0;
+		let currentPos = docContent.GetContentPosition();
+		return this.GetPermRangesByContentPos(currentPos, docContent).length > 0;
 	}
 	
 	return false;
@@ -13601,19 +13775,19 @@ CDocument.prototype._checkPermRangeForCurrentSelection = function()
 CDocument.prototype._checkPermRangeForElement = function(element)
 {
 	if (!element
-		&& !(element instanceof AscWord.Paragraph)
-		&& !(element instanceof AscWord.Table)
-		&& !(element instanceof AscWord.BlockLevelSdt))
+		|| (!(element instanceof AscWord.Paragraph)
+			&& !(element instanceof AscWord.Table)
+			&& !(element instanceof AscWord.BlockLevelSdt)))
 		return false;
 	
 	return element.isWholeElementInPermRange();
 };
-CDocument.prototype.Document_Is_SelectionLocked = function(CheckType, AdditionalData, DontLockInFastMode, isIgnoreCanEditFlag, fCallback)
+CDocument.prototype.Document_Is_SelectionLocked = function(CheckType, AdditionalData, DontLockInFastMode, isIgnoreCanEditFlag, fCallback, actionDescription)
 {
 	if (this.IsActionStarted() && this.IsPostActionLockCheck())
 		return false;
 	
-	if (!this.CanPerformAction(isIgnoreCanEditFlag, CheckType, AdditionalData))
+	if (!this.CanPerformAction(isIgnoreCanEditFlag, CheckType, AdditionalData, true, actionDescription))
 	{
 		if (fCallback)
 			fCallback(true);
@@ -16151,6 +16325,18 @@ CDocument.prototype.SetContentPosition = function(DocPos, Depth, Flag)
 
 	if (this.Content[Pos])
 		this.Content[Pos].SetContentPosition(_DocPos, Depth + 1, _Flag);
+};
+CDocument.prototype.GetControllerContentPosition = function(isSelection, start, posArray)
+{
+	return this.Controller.GetControllerContentPosition(isSelection, start, posArray);
+};
+CDocument.prototype.SetControllerContentPosition = function(docPos)
+{
+	return this.Controller.SetControllerContentPosition(docPos);
+};
+CDocument.prototype.SetControllerContentSelection = function(startPos, endPos)
+{
+	return this.Controller.SetControllerContentSelection(startPos, endPos);
 };
 CDocument.prototype.GetDocumentPositionFromObject = function(arrPos)
 {
@@ -23503,6 +23689,23 @@ CDocument.prototype.GetCurrentComplexFields = function()
 
 	return oParagraph.GetCurrentComplexFields();
 };
+CDocument.prototype.ToggleComplexFieldCodes = function()
+{
+	let fields = this.GetCurrentComplexFields();
+	if (fields.length <= 0)
+		return;
+	
+	for (let i = 0; i < fields.length; ++i)
+	{
+		if (!fields[i].IsShowFieldCode())
+		{
+			fields[i].ToggleFieldCodes();
+			return;
+		}
+	}
+	
+	fields[fields.length - 1].ToggleFieldCodes();
+};
 CDocument.prototype.IsFastCollaborationBeforeViewModeInReview = function()
 {
 	return this.ViewModeInReview.isFastCollaboration;
@@ -23901,17 +24104,17 @@ CDocument.prototype.UpdateFields = function(isBySelection)
 	}
 
 };
-CDocument.prototype.GetPermRangesByContentPos = function(docPos)
+CDocument.prototype.GetPermRangesByContentPos = function(docPos, docContent)
 {
 	if (!docPos)
 		return [];
 	
 	let state = this.SaveDocumentState();
 	
-	this.SetContentPosition(docPos, 0, 0);
+	docContent.SetContentPosition(docPos, 0, 0);
 	
 	let result = [];
-	let currentParagraph = this.controller_GetCurrentParagraph(true, null);
+	let currentParagraph = this.GetCurrentParagraph(true, null);
 	if (currentParagraph)
 		result = currentParagraph.GetCurrentPermRanges();
 	

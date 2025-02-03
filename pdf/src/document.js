@@ -427,7 +427,7 @@ var CPresentation = CPresentation || function(){};
 
             let oParent = private_createField(aParentsInfo[i]["name"], sType, undefined, undefined, this);
             if (aParentsInfo[i]["value"] != null)
-                oParent.SetApiValue(aParentsInfo[i]["value"]);
+                oParent.SetParentValue(aParentsInfo[i]["value"]);
             if (aParentsInfo[i]["Parent"] != null)
                 this.AddFieldToChildsMap(oParent, aParentsInfo[i]["Parent"]);
             if (aParentsInfo[i]["defaultValue"] != null)
@@ -465,12 +465,12 @@ var CPresentation = CPresentation || function(){};
 
         for (let i = 0; i < this.widgets.length; i++) {
             let oField = this.widgets[i];
-            if ((oField.GetPartialName() == null || oField.GetApiValue(bInberitValue) == null) && oField.GetParent()) {
+            if ((oField.GetPartialName() == null || oField.GetParentValue(bInberitValue) == null) && oField.GetParent()) {
                 let oParent = oField.GetParent();
                 if (oParent.GetType() == AscPDF.FIELD_TYPES.radiobutton && oParent.IsAllKidsWidgets())
                     aRadios.push(oParent);
 
-                value = oParent.GetApiValue(false);
+                value = oParent.GetParentValue(false);
                 if (value != null && value.toString) {
                     value = value.toString();
                 }
@@ -1052,6 +1052,7 @@ var CPresentation = CPresentation || function(){};
         let isSameType = (oCurObject && oFloatObject) && (oCurObject.IsAnnot() && oFloatObject.IsAnnot() || oCurObject.IsDrawing() && oFloatObject.IsDrawing()); 
         // докидываем в селект
         if (e.CtrlKey && (oCurObject && oFloatObject) && (oCurObject != oFloatObject) && isSameType) {
+            oController.selection.groupSelection = null;
             oController.selectObject(oFloatObject, oFloatObject.GetPage());
             return;
         }
@@ -2156,9 +2157,7 @@ var CPresentation = CPresentation || function(){};
             let oActionRunScript = oCalcTrigget ? oCalcTrigget.GetActions()[0] : null;
 
             if (oActionRunScript) {
-                oThis.StartNoHistoryMode();
                 oActionRunScript.RunScript();
-                oThis.EndNoHistoryMode();
                 if (oField.IsNeedCommit()) {
                     oField.SetNeedRecalc(true);
                     oThis.fieldsToCommit.push(oField);
@@ -2484,9 +2483,6 @@ var CPresentation = CPresentation || function(){};
         oField.SetNeedRecalc(true);
 
         oPageInfo.fields.push(oField);
-
-        if (AscCommon.History.IsOn() == true)
-            AscCommon.History.TurnOff();
 
         if (oViewer.IsOpenFormsInProgress == false) {
             oField.SyncField();
@@ -3663,6 +3659,13 @@ var CPresentation = CPresentation || function(){};
 	// Work with interface
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	CPDFDoc.prototype.UpdateInterface = function() {
+        this.UpdateUndoRedo();
+        Asc.editor.CheckChangedDocument();
+
+		if (!this.Viewer.canInteract()) {
+			return;
+		}
+
         this.Api.sync_BeginCatchSelectedElements();
 
         let oDrDoc      = this.GetDrawingDocument();
@@ -3714,7 +3717,6 @@ var CPresentation = CPresentation || function(){};
         let oTargetDocContent = oController.getTargetDocContent(undefined, true);
         let oTargetTextObject = AscFormat.getTargetTextObject(oController);
 
-        this.UpdateUndoRedo();
         this.UpdateCopyCutState();
         this.UpdateParagraphProps();
         this.UpdateTextProps();
@@ -3723,8 +3725,6 @@ var CPresentation = CPresentation || function(){};
             oTargetDocContent && oTargetDocContent.Document_UpdateInterfaceState();
         }
         this.Api.sync_EndCatchSelectedElements();
-        
-        Asc.editor.CheckChangedDocument();
     };
     CPDFDoc.prototype.UpdateInterfaceTracks = function() {
         this.UpdateCommentPos();
@@ -4463,18 +4463,27 @@ var CPresentation = CPresentation || function(){};
         oController.checkSelectedObjectsAndCallback(oController.paragraphClearFormatting, [isClearParaPr, isClearTextPr], false, AscDFH.historydescription_Presentation_ParagraphClearFormatting);
     };
     
-    CPDFDoc.prototype.CreateStampRender = function(sType) {
+    CPDFDoc.prototype.CreateStampRender = function(sType, sUserName, timeStamp) {
         this.History.StartNoHistoryMode();
 
         let oJsonReader = new AscJsonConverter.ReaderFromJSON();
         if (!AscPDF.STAMPS_JSON[sType]) {
+            this.History.EndNoHistoryMode();
             return null;
         }
 
-        let oShape = oJsonReader.ShapeFromJSON(AscPDF.STAMPS_JSON[sType]);
+        if (!timeStamp) {
+            timeStamp = new Date().getTime();
+        }
 
+        let sDate = (new Date(parseInt(timeStamp)).toDateString()).split(" ").join(", ");
+
+        if (!sUserName) {
+            sUserName = Asc.editor.User.asc_getUserName();
+        }
+
+        let oShape = oJsonReader.ShapeFromJSON(AscPDF.STAMPS_JSON[sType]);
         let oContent = oShape.getDocContent();
-        let sUserName = Asc.editor.User.asc_getUserName();
 
         switch (sType) {
             case AscPDF.STAMP_TYPES.D_Approved:
@@ -4484,26 +4493,56 @@ var CPresentation = CPresentation || function(){};
                 let oDinamicPara = oContent.GetElement(1);
                 let oRun = oDinamicPara.GetElement(0);
                 oRun.RemoveFromContent(0, oRun.Content.length);
-                let sText = "by " + sUserName + " at " + (new Date().toDateString()).split(" ").join(", ");
+                let sText = "by " + sUserName + " at " + sDate;
                 oRun.AddText(sText);
                 break;
             }
         }
 
-        let dOldExtY = oShape.getXfrmExtY();
-        let oOldBodyPr = oShape.bodyPr.createDuplicate();
-        let oBodyPr = oShape.bodyPr;
-        oBodyPr.rot = 0;
-        oBodyPr.spcFirstLastPara = false;
-        oBodyPr.vertOverflow = AscFormat.nVOTOverflow;
-        oBodyPr.horzOverflow = AscFormat.nHOTOverflow;
-        oBodyPr.vert = AscFormat.nVertTThorz;
-        oBodyPr.wrap = AscFormat.nTWTNone;
-        oBodyPr.textFit = new AscFormat.CTextFit();
-        oBodyPr.textFit.type = AscFormat.text_fit_Auto;
-        oShape.setBodyPr(oOldBodyPr);
-        oShape.checkExtentsByDocContent(true);
-        oShape.spPr.xfrm.setExtY(dOldExtY);
+        function fContentCondition(oContent, dExtX) {
+            oShape.spPr.xfrm.setExtX(dExtX);
+            oShape.recalculate();
+            oShape.recalculateText();
+            let aParagraphs = oContent.Content;
+            for(let nIdx = 0; nIdx < aParagraphs.length; ++nIdx) {
+                let oParagraph = aParagraphs[nIdx];
+                if(oParagraph.Lines.length !== 1) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        if(!fContentCondition(oContent, oShape.spPr.xfrm.extX)) {
+
+            let dMaxExtX = 300;
+            function bisectionMethod(minVal, maxVal, conditionFunc, tolerance) {
+                if (conditionFunc(minVal)) return minVal;
+                if (!conditionFunc(maxVal)) return maxVal;
+
+                while ((maxVal - minVal) / 2 > tolerance) {
+                    let midVal = (minVal + maxVal) / 2;
+
+                    if (conditionFunc(midVal)) {
+                        maxVal = midVal;
+                    } else {
+                        minVal = midVal;
+                    }
+                }
+
+                if(conditionFunc(minVal)) {
+                    return minVal;
+                }
+                else {
+                    conditionFunc(maxVal);
+                    return maxVal;
+                }
+                return conditionFunc(minVal) ? minVal : maxVal;
+            }
+            bisectionMethod(oShape.extX, dMaxExtX, function (dVal) {
+                return fContentCondition(oContent, dVal);
+            }, 3);
+        }
         oShape.recalculate();
         oShape.recalculateText();
 
@@ -4634,9 +4673,9 @@ var CPresentation = CPresentation || function(){};
         }
 
         let fEndCallback = function () {
-            aPageDrawings.forEach(function(drawing) {
+            aPageDrawings.forEach(function(drawing, idx) {
                 drawing.SetFromScan(true);
-                _t.AddDrawing(drawing, nPage);
+                _t.AddDrawing(drawing, nPage, idx);
                 drawing.SetNeedRecalc(true);
             });
             _t.FinalizeAction();
@@ -5186,6 +5225,9 @@ var CPresentation = CPresentation || function(){};
         let nExtY;
         let oStampRender;
 
+        let nCurTime = new Date().getTime();
+        let sAuthor = oUser.asc_getUserName();
+
         if (sType == AscPDF.STAMP_TYPES.Image) {
             if (oImage) {
                 nExtX   = Math.max(1, oImage.Image.width * g_dKoef_pix_to_mm);
@@ -5197,7 +5239,7 @@ var CPresentation = CPresentation || function(){};
             }
         }
         else {
-            oStampRender = this.CreateStampRender(sType);
+            oStampRender = this.CreateStampRender(sType, sAuthor, nCurTime);
             nExtX = oStampRender.Width * g_dKoef_mm_to_pt;
             nExtY = oStampRender.Height * g_dKoef_mm_to_pt;
         }
@@ -5230,8 +5272,6 @@ var CPresentation = CPresentation || function(){};
                 break;
         }
 
-        let nCurTime = new Date().getTime();
-
         let nLineW = oStampRender.m_oPen.Size * g_dKoef_mm_to_pt;
         
         let oProps = {
@@ -5239,7 +5279,7 @@ var CPresentation = CPresentation || function(){};
             page:           nPage,
             name:           AscCommon.CreateGUID(),
             type:           AscPDF.ANNOTATIONS_TYPES.Stamp,
-            author:         oUser.asc_getUserName(),
+            author:         sAuthor,
             modDate:        nCurTime,
             creationDate:   nCurTime,
             contents:       '',
@@ -5843,6 +5883,10 @@ var CPresentation = CPresentation || function(){};
             let oColor = AscCommon.getUserColorById(this.CollaborativeEditing.m_aForeignCursorsId[userId], null, true);
 
             for (let i = 0; i < aObjects.length; i++) {
+                if (false == aObjects[i].IsUseInDocument()) {
+                    continue;
+                }
+                
                 let aRect = aObjects[i].GetOrigRect();
                 let nPage = aObjects[i].GetPage();
                 let nRotRad = aObjects[i].GetRot ? aObjects[i].GetRot() : 0;
@@ -6731,7 +6775,11 @@ var CPresentation = CPresentation || function(){};
                     oFirstAction.Do();
                 }
             }, AscDFH.historydescription_Pdf_ExecActions, this);
-            AscCommon.History = localHistory;
+            
+            // could changed to local in after focus callback
+            if (oHistory != localHistory) {
+                AscCommon.History = localHistory;
+            }
         }
     };
     CActionQueue.prototype.Continue = function() {

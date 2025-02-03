@@ -173,7 +173,7 @@
 
         // currentRect
         var currentRect = null;
-        if (PageStyle.isDrawCurrentRect && doc.selectPageRect.num === this.num)
+        if (PageStyle.isDrawCurrentRect && doc.selectPageRect && doc.selectPageRect.num === this.num)
             currentRect = doc.selectPageRect;
         if (currentRect)
         {

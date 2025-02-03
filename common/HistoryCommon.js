@@ -1892,6 +1892,7 @@
 	window['AscDFH'].historyitem_Paragraph_SuppressLineNumbers       = window['AscDFH'].historyitem_type_Paragraph | 39;
 	window['AscDFH'].historyitem_Paragraph_Shd_Fill                  = window['AscDFH'].historyitem_type_Paragraph | 40;
 	window['AscDFH'].historyitem_Paragraph_Shd_ThemeFill             = window['AscDFH'].historyitem_type_Paragraph | 41;
+	window['AscDFH'].historyitem_Paragraph_Bidi                      = window['AscDFH'].historyitem_type_Paragraph | 42;
 	//------------------------------------------------------------------------------------------------------------------
 	// Типы изменений в классе ParaTextPr
 	//------------------------------------------------------------------------------------------------------------------
@@ -3269,6 +3270,7 @@
     window['AscDFH'].historyitem_Sparkline_ChangeData = window['AscDFH'].historyitem_type_Sparkline | 27;
     window['AscDFH'].historyitem_Sparkline_RemoveData = window['AscDFH'].historyitem_type_Sparkline | 28;
     window['AscDFH'].historyitem_Sparkline_RemoveSparkline = window['AscDFH'].historyitem_type_Sparkline | 29;
+    window['AscDFH'].historyitem_Sparkline_Worksheet = window['AscDFH'].historyitem_type_Sparkline | 30;
 
 
     window['AscDFH'].historyitem_NotesMasterSetHF          = window['AscDFH'].historyitem_type_NotesMaster | 1;
@@ -4010,9 +4012,12 @@
 	AscDFH.historyitem_Pdf_Form_Remove_Kid		= AscDFH.historyitem_type_Pdf_Form | 3;
 	AscDFH.historyitem_Pdf_Form_Change_Display	= AscDFH.historyitem_type_Pdf_Form | 4;
 	AscDFH.historyitem_Pdf_Form_Changed			= AscDFH.historyitem_type_Pdf_Form | 5;
+	AscDFH.historyitem_Pdf_Form_Parent_Value	= AscDFH.historyitem_type_Pdf_Form | 6;
+	AscDFH.historyitem_Pdf_Form_Format_Value	= AscDFH.historyitem_type_Pdf_Form | 7;
 	
-	AscDFH.historyitem_Pdf_List_Form_Cur_Idxs	= AscDFH.historyitem_type_Pdf_List_Form | 1;
-	AscDFH.historyitem_Pdf_List_Form_Top_Idx	= AscDFH.historyitem_type_Pdf_List_Form | 2;
+	AscDFH.historyitem_Pdf_List_Form_Cur_Idxs			= AscDFH.historyitem_type_Pdf_List_Form | 1;
+	AscDFH.historyitem_Pdf_List_Form_Top_Idx			= AscDFH.historyitem_type_Pdf_List_Form | 2;
+	AscDFH.historyitem_Pdf_List_Form_Parent_Cur_Idxs	= AscDFH.historyitem_type_Pdf_List_Form | 3;
 
 
 	AscDFH.historyitem_Pdf_Pushbutton_Image		= AscDFH.historyitem_type_Pdf_Pushbutton | 1;
@@ -4042,6 +4047,8 @@
 	AscDFH.historyitem_Pdf_Annot_Intent				= AscDFH.historyitem_type_Pdf_Annot | 18;
 	AscDFH.historyitem_Pdf_Annot_Rotate				= AscDFH.historyitem_type_Pdf_Annot | 19;
 	AscDFH.historyitem_Pdf_Annot_User_Id			= AscDFH.historyitem_type_Pdf_Annot | 20;
+	AscDFH.historyitem_Pdf_Annot_Changed			= AscDFH.historyitem_type_Pdf_Annot | 21;
+	AscDFH.historyitem_Pdf_Annot_Changed_View		= AscDFH.historyitem_type_Pdf_Annot | 22;
 
 	// Comment
 	AscDFH.historyitem_Pdf_Comment_Data			= AscDFH.historyitem_type_Pdf_Comment | 1;
@@ -4543,6 +4550,8 @@
 	window['AscDFH'].historydescription_CustomProperties_Modify                     = 0x01c0;
 
 	window['AscDFH'].historydescription_Presentation_MergeSelectedShapes            = 0x01c1;
+	window['AscDFH'].historydescription_Presentation_SaveAnnotations                = 0x01c2;
+	window['AscDFH'].historydescription_Document_SetParagraphBidi                   = 0x01c3;
 	// pdf
 	window['AscDFH'].historydescription_Pdf_AddAnnot			= 0x29a;
 	window['AscDFH'].historydescription_Pdf_FreeTextGeom		= 0x29b;

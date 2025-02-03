@@ -456,6 +456,7 @@
 			this.vsb = document.createElement('div');
 			this.vsb.id = "ws-v-scrollbar";
 			this.vsb.style.backgroundColor = AscCommon.GlobalSkin.ScrollBackgroundColor;
+
 			//TODO test rtl
 			/*if (window.rightToleft) {
 				this.vsb.style.left = "0px";
@@ -536,7 +537,8 @@
 				this.vsb.style.display = "none";
 			}
 
-
+			this.showVerticalScroll(this.view.getShowVerticalScroll());
+			this.showHorizontalScroll(this.view.getShowHorizontalScroll());
 		};
 
 		/**
@@ -2648,36 +2650,18 @@
 			var self = this;
 			var deltaX = 0, deltaY = 0;
 
+			//TODO!!! while only check direction. need refactor, and replace up code on checkMouseWhell function
+			let values = AscCommon.checkMouseWhell(event, {
+				isSupportBidirectional : false,
+				isAllowHorizontal : true,
+				isUseMaximumDelta : true
+			});
+
 			const wb = window["Asc"]["editor"].wb;
 			//TODO for mac touchpads. need review
 			if (wb.smoothScroll && AscCommon.AscBrowser.isMacOs) {
-				var delta  = 0;
-
-				if (undefined != event.wheelDelta && event.wheelDelta != 0) {
-					delta = -45 * event.wheelDelta / 120;
-				}
-				{
-					delta = 45 * event.detail / 3;
-				}
-
-				// New school multidimensional scroll (touchpads) deltas
-				deltaY = delta;
-
-
-				// Webkit
-				if (undefined !== event.wheelDeltaY && 0 !== event.wheelDeltaY) {
-					deltaY = -45 * event.wheelDeltaY / 120;
-				}
-				if (undefined !== event.wheelDeltaX && 0 !== event.wheelDeltaX) {
-					deltaX = -45 * event.wheelDeltaX / 120;
-				}
-
-
-				deltaX >>= 0;
-				deltaY >>= 0;
-
-				deltaX = (deltaX / wb.getWorksheet().getHScrollStep()) * AscCommon.AscBrowser.retinaPixelRatio;
-				deltaY = (deltaY / wb.getWorksheet().getVScrollStep()) * AscCommon.AscBrowser.retinaPixelRatio;
+				deltaX = (values.x / wb.getWorksheet().getHScrollStep()) * AscCommon.AscBrowser.retinaPixelRatio;
+				deltaY = (values.y / wb.getWorksheet().getVScrollStep()) * AscCommon.AscBrowser.retinaPixelRatio;
 			} else {
 				if (undefined !== event.wheelDelta && 0 !== event.wheelDelta) {
 					deltaY = -1 * event.wheelDelta / 40;
@@ -2713,18 +2697,16 @@
 				}
 			}
 
-			if (event.shiftKey) {
-				deltaX = deltaY;
+			if (values.x === 0) {
+				deltaX = 0;
+			}
+			if (values.y === 0) {
 				deltaY = 0;
 			}
 
-			let isSupportDirections2 = false;
-			if (!isSupportDirections2) {
-				if (Math.abs(deltaY) >= Math.abs(deltaX)) {
-					deltaX = 0;
-				} else {
-					deltaY = 0;
-				}
+			if (event.shiftKey) {
+				deltaX = deltaY;
+				deltaY = 0;
 			}
 
 			if (this.smoothWheelCorrector && !wb.smoothScroll) {
@@ -2797,6 +2779,65 @@
 		asc_CEventsController.prototype._setSkipKeyPress = function (val) {
 			this.skipKeyPress = val;
 		};
+
+		asc_CEventsController.prototype.showHorizontalScroll = function (val) {
+			if (!this.hsb || !this.hsb.style) {
+				return;
+			}
+			let toVisibility = val ? "visible" : "hidden";
+			let res;
+			if (this.hsb.style.visibility === toVisibility) {
+				res = false;
+			} else {
+				this.hsb.style.visibility = toVisibility;
+				res = true;
+			}
+
+			let isVisibleVerScroll = this.view.getShowVerticalScroll();
+			let scrollWidth = this.view && this.view.defaults && this.view.defaults.scroll ? this.view.defaults.scroll.widthPx : 14;
+
+			this.hsb.style.right = isVisibleVerScroll ? scrollWidth + "px" : "0px";
+
+			if (!this.view.Api.isMobileVersion) {
+				let cornerStyle = val && isVisibleVerScroll ? "visible" : "hidden";
+				let corner = document.getElementById("ws-scrollbar-corner");
+				if (corner) {
+					corner.style.visibility = cornerStyle;
+				}
+			}
+			return res;
+		};
+
+		asc_CEventsController.prototype.showVerticalScroll = function (val) {
+			if (!this.vsb || !this.vsb.style) {
+				return;
+			}
+
+			let toVisibility = val ? "visible" : "hidden";
+			let res;
+			if (this.vsb.style.visibility === toVisibility) {
+				res = false;
+			} else {
+				this.vsb.style.visibility = toVisibility;
+				res = true;
+			}
+			this.vsb.style.visibility = toVisibility;
+			let isVisibleHorScroll = this.view.getShowHorizontalScroll();
+			let scrollWidth = this.view && this.view.defaults && this.view.defaults.scroll ? this.view.defaults.scroll.heightPx : 14;
+
+			this.vsb.style.bottom = isVisibleHorScroll ? scrollWidth + "px" : "0px";
+
+			if (!this.view.Api.isMobileVersion) {
+				let cornerStyle = val && isVisibleHorScroll ? "visible" : "hidden";
+				let corner = document.getElementById("ws-scrollbar-corner");
+				if (corner) {
+					corner.style.visibility = cornerStyle;
+				}
+			}
+			return res;
+		};
+
+
 
 		//------------------------------------------------------------export---------------------------------------------------
 		window['AscCommonExcel'] = window['AscCommonExcel'] || {};

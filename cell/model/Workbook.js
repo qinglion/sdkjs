@@ -2912,6 +2912,8 @@
 		this.handlers = eventsHandlers;
 		this.dependencyFormulas = new DependencyGraph(this);
 		this.nActive = 0;
+		this.showVerticalScroll = null;
+		this.showHorizontalScroll = null;
 		this.App = null;
 		this.Core = null;
 
@@ -3017,10 +3019,6 @@
 		this.timelineCaches.forEach(function(elem){
 			elem.initPostOpen(tableIds, sheetIds);
 		});
-		//external references
-		this.externalReferences.forEach(function(elem){
-			elem && elem.initPostOpen && elem.initPostOpen();
-		});
 		//show active if it hidden
 		var wsActive = this.getActiveWs();
 		if (wsActive && wsActive.getHidden()) {
@@ -3030,6 +3028,10 @@
 		if(!bNoBuildDep){
 			this.dependencyFormulas.initOpen();
 		}
+		//external references
+		this.externalReferences.forEach(function(elem){
+			elem && elem.initPostOpen && elem.initPostOpen();
+		});
 		if (bSnapshot) {
 			this.snapshot = this._getSnapshot();
 		}
@@ -3398,7 +3400,14 @@
 
 			this._insertWorksheetFormula(indexTo);
 
-			AscCommon.History.Add(AscCommonExcel.g_oUndoRedoWorkbook, AscCH.historyitem_Workbook_SheetMove, null, null, new UndoRedoData_FromTo(indexFrom, indexTo));
+			if (!AscCommon.g_oTableId.Get_ById(oWsFrom.getId())) {
+				//todo add in constructor with history
+				AscFormat.ExecuteNoHistory(function () {
+					AscCommon.g_oTableId.Add(oWsFrom, oWsFrom.getId())
+				}, this, [], true);
+			}
+			AscCommon.History.Add(AscCommonExcel.g_oUndoRedoWorkbook, AscCH.historyitem_Workbook_SheetRemove, null, null, new AscCommonExcel.UndoRedoData_SheetRemove(indexFrom, oWsFrom.getId(), oWsFrom));
+			AscCommon.History.Add(AscCommonExcel.g_oUndoRedoWorkbook, AscCH.historyitem_Workbook_SheetAdd, null, null, new UndoRedoData_SheetAdd(indexTo, oWsFrom.getName(), null, oWsFrom.getId(), null, oWsFrom, oWsFrom.getId()));
 			this.dependencyFormulas.unlockRecal();
 
 			if (!this.bUndoChanges && !this.bRedoChanges) {
@@ -3468,6 +3477,12 @@
 				oVisibleWs = this.findSheetNoHidden(nIndex);
 				if (null != oVisibleWs)
 					wsActive = oVisibleWs;
+			}
+			if (!AscCommon.g_oTableId.Get_ById(removedSheet.getId())) {
+				//todo add in constructor with history
+				AscFormat.ExecuteNoHistory(function () {
+					AscCommon.g_oTableId.Add(removedSheet, removedSheet.getId())
+				}, this, [], true);
 			}
 			AscCommon.History.Add(AscCommonExcel.g_oUndoRedoWorkbook, AscCH.historyitem_Workbook_SheetRemove, null, null, new AscCommonExcel.UndoRedoData_SheetRemove(nIndex, removedSheetId, removedSheet));
 			if (null != oVisibleWs) {
@@ -5690,6 +5705,34 @@
 	Workbook.prototype.getDefaultDirection = function() {
 		return this.defaultDirection;
 	};
+	Workbook.prototype.setShowVerticalScroll = function(val, addToHistory) {
+		var from = this.showVerticalScroll;
+		if (from !== val) {
+			if (addToHistory) {
+				AscCommon.History.Create_NewPoint();
+				AscCommon.History.Add(AscCommonExcel.g_oUndoRedoWorkbook, AscCH.historyitem_Workbook_ShowVerticalScroll, null, null, new UndoRedoData_FromTo(from, val));
+			}
+			this.showVerticalScroll = val;
+			this.handlers && this.handlers.trigger("updateScrollVisibility");
+		}
+	};
+	Workbook.prototype.getShowVerticalScroll = function() {
+		return this.showVerticalScroll;
+	};
+	Workbook.prototype.setShowHorizontalScroll = function(val, addToHistory) {
+		var from = this.showHorizontalScroll;
+		if (from !== val) {
+			if (addToHistory) {
+				AscCommon.History.Create_NewPoint();
+				AscCommon.History.Add(AscCommonExcel.g_oUndoRedoWorkbook, AscCH.historyitem_Workbook_ShowHorizontalScroll, null, null, new UndoRedoData_FromTo(from, val));
+			}
+			this.showHorizontalScroll = val;
+			this.handlers && this.handlers.trigger("updateScrollVisibility");
+		}
+	};
+	Workbook.prototype.getShowHorizontalScroll = function() {
+		return this.showHorizontalScroll;
+	};
 
 
 
@@ -5914,7 +5957,7 @@
 		this.bHidden = false;
 		this.oSheetFormatPr = new AscCommonExcel.SheetFormatPr();
 		this.index = _index;
-		this.Id = null != sId ? sId : AscCommon.g_oIdCounter.Get_NewId();
+		this.Id = null != sId ? sId : AscCommon.g_oIdCounter.Get_NewId();//todo AscCommon.g_oTableId.Add
 		this.nRowsCount = 0;
 		this.nColsCount = 0;
 		this.rowsData = new SheetMemory(AscCommonExcel.g_nRowStructSize, gc_nMaxRow0);
@@ -6046,9 +6089,6 @@
 		this.activeFillType = null;
 		this.timelines = [];
 		this.changedArrays = null;
-		AscFormat.ExecuteNoHistory(function () {
-			AscCommon.g_oTableId.Add(this, this.Id);
-		}, this, [], true);
 	}
 
 	Worksheet.prototype.getCompiledStyle = function (row, col, opt_cell, opt_styleComponents) {
@@ -6909,7 +6949,7 @@
 		return this.index;
 	};
 	Worksheet.prototype.getName=function(){
-		return this.sName !== undefined && this.sName.length > 0 ? this.sName : "";
+		return this.sName != null && this.sName.length > 0 ? this.sName : "";
 	};
 	Worksheet.prototype.setName=function(name){
 		if(name.length <= g_nSheetNameMaxLength)
@@ -14605,7 +14645,6 @@
 		if(AscCommon.History.Is_On())
 			DataNew = this.getValueData();
 		if(AscCommon.History.Is_On() && false == DataOld.isEqual(DataNew)) {
-			// History.Add(new AscDFH.CChangesCellValueChange(this.ws, DataOld, DataNew, new AscDFH.CCellCoordsWritable(this.nRow, this.nCol)));
 			AscCommon.History.Add(AscCommonExcel.g_oUndoRedoCell, AscCH.historyitem_Cell_ChangeValue, this.ws.getId(), new Asc.Range(this.nCol, this.nRow, this.nCol, this.nRow), new UndoRedoData_CellSimpleData(this.nRow, this.nCol, DataOld, DataNew));
 		}
 		//todo не должны удаляться ссылки, если сделать merge ее части.
@@ -15295,7 +15334,7 @@
 					}  else {
 						oBbox = oArgElem.getBBox0();
 					}
-					bBelongToFormula = oBbox.containsRange(oAreaMap.bbox);
+					bBelongToFormula = oAreaMap.bbox.containsRange(oBbox);
 					if (bBelongToFormula) {
 						return true;
 					}
@@ -15330,9 +15369,8 @@
 			return oSheetListeners.cellMap[nCellIndex];
 		} else if (aOutStack && aOutStack.length && sFunctionName) {
 			for (let nIndex in oSheetListeners.areaMap) {
-				if (oSheetListeners.areaMap[nIndex].bbox.contains(this.nCol, this.nRow)
-					&& !_isExcludeFormula(aOutStack, oSheetListeners.areaMap[nIndex])) {
-					return oSheetListeners.areaMap[nIndex];
+				if (oSheetListeners.areaMap[nIndex].bbox.contains(this.nCol, this.nRow)) {
+					return _isExcludeFormula(aOutStack, oSheetListeners.areaMap[nIndex]) ? null : oSheetListeners.areaMap[nIndex];
 				}
 			}
 		}
@@ -15411,7 +15449,11 @@
 	 */
 	Cell.prototype.containInFormula = function () {
 		const oThis = this;
-		const aOutStack = this.getFormulaParsed().outStack;
+		const formulaParsed = this.getFormulaParsed();
+		const aOutStack = formulaParsed && formulaParsed.outStack;
+		if (!aOutStack) {
+			return false;
+		}
 		let bContainsInFormula = false;
 		_foreachRefElements(function (oRange) {
 			if (oRange.containCell2(oThis)) {
@@ -15438,7 +15480,7 @@
 
 		const oParserFormula = this.getFormulaParsed();
 		const sFunctionName = oParserFormula && oParserFormula.getFunctionName();
-		if (oParserFormula && oParserFormula._isConditionalFormula(sFunctionName) && !oParserFormula.isRecursiveCondFormula(sFunctionName)) {
+		if (oParserFormula && oParserFormula._isConditionalFormula(sFunctionName) && this.containInFormula() && !oParserFormula.isRecursiveCondFormula(sFunctionName)) {
 			g_cCalcRecursion.resetRecursionCounter();
 			return;
 		}
@@ -15516,17 +15558,7 @@
 				let bContainRange = oCellListeners.bbox.containsRange(oTableOpRange.bbox);
 				if (bContainRange && oCellListeners.bbox.contains(this.nCol, this.nRow)) {
 					g_cCalcRecursion.setStartCellIndex({cellId: nCellIndex, wsName: this.ws.getName().toLowerCase()});
-					return;
 				}
-			}
-			let bListenerHasCa = false;
-			for (let index in oListeners) {
-				let oListener = oListeners[index];
-				bListenerHasCa = oListener.ca;
-
-			}
-			if (oCellListeners.bbox && oCellListeners.bbox.contains(this.nCol, this.nRow) && bListenerHasCa) {
-				g_cCalcRecursion.setStartCellIndex({cellId: nCellIndex, wsName: this.ws.getName().toLowerCase()});
 			}
 		}
 	};
@@ -23147,9 +23179,10 @@
 	function _calculateDate(oCellInfo, bAutofill) {
 		const nStep = oCellInfo.step;
 		const nDateUnit = oCellInfo.dateUnit;
+		const bDate1904 = AscCommon.bDate1904;
 		let nPrevValue = oCellInfo.previousValue;
 		let nPrevIntValue = oCellInfo.previousIntValue;
-		let dtExpectedDayValue = new Asc.cDate().getDateFromExcel(oCellInfo.expectedDayValue < 60 ? oCellInfo.expectedDayValue + 1 : oCellInfo.expectedDayValue);
+		let dtExpectedDayValue = new Asc.cDate().getDateFromExcel(oCellInfo.expectedDayValue < 59 && !bDate1904 ? oCellInfo.expectedDayValue + 1 : oCellInfo.expectedDayValue);
 		let oReturn = {};
 
 		// Condition: nPrevVal < 60 is temporary solution for "01/01/1900 - 01/03/1900" dates
@@ -23172,13 +23205,13 @@
 					nCurrentVal = _smartRound(nCurrentVal + nFinalStep, nStep);
 				}
 				// Convert number to cDate object
-				oCurrentValDate = new Asc.cDate().getDateFromExcel(nPrevValue < 60 ? nCurrentVal + 1 : nCurrentVal);
+				oCurrentValDate = new Asc.cDate().getDateFromExcel(nPrevValue < 59 && !bDate1904 ? nCurrentVal + 1 : nCurrentVal);
 				let nDayOfWeek = nPrevValue < 60 ? oCurrentValDate.getDay() - 1 : oCurrentValDate.getDay();
 				if (!aWeekdays.includes(nDayOfWeek)) {
 					while (true) {
 						nCurrentVal += Math.sign(nStep);
-						oCurrentValDate = new Asc.cDate().getDateFromExcel(nCurrentVal < 60 ? nCurrentVal + 1 : nCurrentVal);
-						nDayOfWeek = nCurrentVal < 60 ? oCurrentValDate.getDay() - 1 : oCurrentValDate.getDay();
+						oCurrentValDate = new Asc.cDate().getDateFromExcel(nCurrentVal < 59 && !bDate1904 ? nCurrentVal + 1 : nCurrentVal);
+						nDayOfWeek = nCurrentVal < 60 && !bDate1904 ? oCurrentValDate.getDay() - 1 : oCurrentValDate.getDay();
 						if (aWeekdays.includes(nDayOfWeek)) {
 							i++;
 							break;
@@ -23206,7 +23239,7 @@
 			return oReturn;
 		}
 		let nIntegerVal = nPrevIntValue;
-		let oCurrentValDate = new Asc.cDate().getDateFromExcel(nIntegerVal < 60 ? nIntegerVal + 1 : nIntegerVal);
+		let oCurrentValDate = new Asc.cDate().getDateFromExcel(nIntegerVal < 59 && !bDate1904 ? nIntegerVal + 1 : nIntegerVal);
 		let nFinalStep = _smartRound(nCurrentVal - nIntegerVal, nStep);
 		if (nFinalStep < 0 && !bAutofill) {
 			oReturn.currentValue = NaN;

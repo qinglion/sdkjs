@@ -1075,7 +1075,7 @@ var editor;
 	};
 
 	spreadsheet_api.prototype.asc_getCanUndo = function () {
-		let bCanUndo = History.Can_Undo();
+		let bCanUndo = AscCommon.History && AscCommon.History.Can_Undo();
 
 		if (true !== bCanUndo && this.collaborativeEditing && true === this.collaborativeEditing.Is_Fast() && true !== this.collaborativeEditing.Is_SingleUser()) {
 			bCanUndo = this.collaborativeEditing.CanUndo();
@@ -1682,7 +1682,7 @@ var editor;
 		//возвращаю инфомарцию об активном листе, который печатаем
 		var indexActiveWs = curPage && curPage.indexWorksheet;
 		if (indexActiveWs === undefined) {
-			indexActiveWs = this.wbModel.getActive();
+			indexActiveWs = null !== this.wb.printPreviewState.realActiveSheet ? this.wb.printPreviewState.realActiveSheet : this.wbModel.getActive();
 		}
 		this.handlers.trigger("asc_onPrintPreviewSheetChanged", indexActiveWs);
 		this.handlers.trigger("asc_onPrintPreviewPageChanged", index);
@@ -2995,8 +2995,11 @@ var editor;
     };
 	this.CoAuthoringApi.onChangesIndex = function(changesIndex)
 	{
-		if (t.isLiveViewer() && changesIndex >= 0) {
-			//todo
+		if (t.isLiveViewer() && changesIndex >= 0 && changesIndex < AscCommon.CollaborativeEditing.GetAllChangesCount()) {
+			//перестаем быть LiveViewer из-за бага, что мы не может делать undo действиям которые пришли в изменениях (нет oldValue)
+			t.asc_SetFastCollaborative(false);
+			// let count = AscCommon.CollaborativeEditing.GetAllChangesCount() - changesIndex;
+			// AscCommon.CollaborativeEditing.UndoGlobal(count);
 		}
 	};
     this.CoAuthoringApi.onRecalcLocks = function(excelAdditionalInfo) {
@@ -3023,16 +3026,6 @@ var editor;
         t.wb.Update_ForeignCursor(e[e.length - 1]['cursor'], e[e.length - 1]['user'], true, e[e.length - 1]['useridoriginal']);
       }
     };
-	  this.CoAuthoringApi.onParticipantsChangedOrigin     = function(users)
-	  {
-		  let m_bIsCollaborativeWithLiveViewer = users && -1 !== users.findIndex(function(element) {
-				  return !!element['isLiveViewer'];
-			  });
-		  t.collaborativeEditing.m_bIsCollaborativeWithLiveViewer = m_bIsCollaborativeWithLiveViewer;
-		  if (t.isDocumentLoadComplete && m_bIsCollaborativeWithLiveViewer) {
-			  AscCommon.History.Clear();
-		  }
-	  };
   };
 
   spreadsheet_api.prototype._onSaveChanges = function(recalcIndexColumns, recalcIndexRows, isAfterAskSave, arrChanges) {
@@ -6251,7 +6244,7 @@ var editor;
 	  if (this.collaborativeEditing.getGlobalLock() || !this.canEdit()) {
      return;
     }
-
+	  
   	let ws = this.wb.getWorksheet();
     if (ws.objectRender.selectedGraphicObjectsExists() && ws.objectRender.controller.setCellBold) {
       ws.objectRender.controller.setCellBold(isBold);
@@ -9972,6 +9965,38 @@ var editor;
 		}
 	};
 
+	spreadsheet_api.prototype.asc_SetShowVerticalScroll = function (val) {
+		let wb = this.wb;
+		if (!wb) {
+			return;
+		}
+		return wb.setShowVerticalScroll(val);
+	};
+
+	spreadsheet_api.prototype.asc_GetShowVerticalScroll = function () {
+		let wb = this.wb;
+		if (!wb) {
+			return;
+		}
+		return wb.getShowVerticalScroll();
+	};
+
+	spreadsheet_api.prototype.asc_SetShowHorizontalScroll = function (val) {
+		let wb = this.wb;
+		if (!wb) {
+			return;
+		}
+		return wb.setShowHorizontalScroll(val);
+	};
+
+	spreadsheet_api.prototype.asc_GetShowHorizontalScroll = function () {
+		let wb = this.wb;
+		if (!wb) {
+			return;
+		}
+		return wb.getShowHorizontalScroll();
+	};
+
   /*
    * Export
    * -----------------------------------------------------------------------------
@@ -10580,6 +10605,11 @@ var editor;
 
   prot["asc_SetSmoothScrolling"]= prot.asc_SetSmoothScrolling;
   prot["asc_GetSmoothScrolling"]= prot.asc_GetSmoothScrolling;
+
+  prot["asc_SetShowVerticalScroll"]= prot.asc_SetShowVerticalScroll;
+  prot["asc_GetShowVerticalScroll"]= prot.asc_GetShowVerticalScroll;
+  prot["asc_SetShowHorizontalScroll"]= prot.asc_SetShowHorizontalScroll;
+  prot["asc_GetShowHorizontalScroll"]= prot.asc_GetShowHorizontalScroll;
 
 
 

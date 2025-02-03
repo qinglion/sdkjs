@@ -547,6 +547,8 @@
 					shapeOrGroup.recalculate();
 					shapeOrGroup.recalculateTransformText && shapeOrGroup.recalculateTransformText();
 					shapeOrGroup.recalculateLocalTransform(shapeOrGroup.transform);
+					shapeOrGroup.recalculateContent && shapeOrGroup.recalculateContent();
+
 				}
 			}
 		}
@@ -890,6 +892,9 @@
 	};
 	CVisioDocument.prototype.Document_UpdateRulersState = function () {
 	};
+	CVisioDocument.prototype.private_UpdateCursorXY = function (bUpdateX, bUpdateY) {
+	};
+
 	CVisioDocument.prototype.OnMouseUp = function (e, X, Y, PageIndex) {
 	};
 	CVisioDocument.prototype.OnMouseDown = function (e, X, Y, PageIndex) {
@@ -920,6 +925,112 @@
 	};
 	CVisioDocument.prototype.shiftSlides = function (pos, array, bCopy) {
 		//todo
+	};
+	CVisioDocument.prototype.executeShortcut = function(type) {
+		let result = false;
+
+		switch (type) {
+			case Asc.c_oAscDiagramShortcutType.Print: {
+				this.api.onPrint();
+				result = true;
+				break;
+			}
+			default: {
+				var oCustom = this.api.getCustomShortcutAction(type);
+				if (oCustom) {
+					if (AscCommon.c_oAscCustomShortcutType.Symbol === oCustom.Type) {
+						this.api["asc_insertSymbol"](oCustom.Font, oCustom.CharCode);
+					}
+				}
+				break;
+			}
+		}
+		return result;
+	}
+	CVisioDocument.prototype.OnKeyDown = function (e) {
+		this.api.sendEvent("asc_onBeforeKeyDown", e);
+
+		var bUpdateSelection = true;
+		var bRetValue = keydownresult_PreventNothing;
+		let nStartHistoryIndex = this.History.Index;
+
+
+		// // Сбрасываем текущий элемент в поиске
+		// if (this.SearchEngine.Count > 0)
+		// 	this.SearchEngine.ResetCurrent();
+
+		let shortcutType = this.api.getShortcut(e);
+		if (this.executeShortcut(shortcutType))
+		{
+			bRetValue = keydownresult_PreventAll;
+			bUpdateSelection = false;
+		}
+		else {
+			const bIsMacOs = AscCommon.AscBrowser.isMacOs;
+			let WordControl = this.api.WordControl;
+			if (e.KeyCode === 33) // PgUp
+			{
+				//
+			}
+			else if (e.KeyCode === 34) // PgDn
+			{
+				//
+			}
+			else if (e.KeyCode === 35) // клавиша End
+			{
+				if (true === e.CtrlKey) // Ctrl + End - переход в конец документа
+				{
+					WordControl.m_oScrollVerApi.scrollTo(WordControl.m_dScrollX_max, WordControl.m_dScrollY_max);
+				}
+				else
+				{
+					WordControl.m_oScrollVerApi.scrollTo(0, WordControl.m_dScrollY_max);
+				}
+			}
+			else if (e.KeyCode === 36) // клавиша Home
+			{
+				if (true === e.CtrlKey) // Ctrl + Home - переход в начало документа
+				{
+					WordControl.m_oScrollVerApi.scrollTo(WordControl.m_dScrollX_max, 0);
+				}
+				else
+				{
+					WordControl.m_oScrollVerApi.scrollTo(0, 0);
+				}
+			}
+			else if (e.KeyCode === 37) // Left Arrow
+			{
+				if (true || WordControl.m_bIsHorScrollVisible)
+				{
+					WordControl.m_oScrollHorApi.scrollBy(-30, 0, false);
+				}
+			}
+			else if (e.KeyCode === 38) // Top Arrow
+			{
+				WordControl.m_oScrollVerApi.scrollBy(0, -30, false);
+			}
+			else if (e.KeyCode === 39) // Right Arrow
+			{
+				if (true || WordControl.m_bIsHorScrollVisible)
+				{
+					WordControl.m_oScrollHorApi.scrollBy(30, 0, false);
+				}
+			}
+			else if (e.KeyCode === 40) // Bottom Arrow
+			{
+				WordControl.m_oScrollVerApi.scrollBy(0, 30, false);
+			}
+		}
+
+		if (bRetValue & keydownflags_PreventKeyPress && true === bUpdateSelection)
+			this.Document_UpdateSelectionState();
+
+		if(nStartHistoryIndex === this.History.Index) {
+			this.private_UpdateCursorXY(true, true);
+		}
+
+		this.api.sendEvent("asc_onKeyDown", e);
+		return bRetValue;
 	};
 	// CVisioDocument.prototype.getMasterByID = function(ID) {
 	// 	// join Master_Type and MasterContents_Type
@@ -1171,34 +1282,32 @@
 	function parsePages(documentPart, reader, context) {
 		let pagesPart = documentPart.getPartByRelationshipType(AscCommon.openXml.Types.pages.relationType);
 		if (pagesPart) {
-			let contentPages = pagesPart.getDocumentContent();
-			reader = new StaxParser(contentPages, pagesPart, context);
+			let pagesXml = pagesPart.getDocumentContent();
+			reader = new StaxParser(pagesXml, pagesPart, context);
 			this.pages = new CPages();
 			this.pages.fromXml(reader);
 
+			// page content parts
 			let pages = pagesPart.getPartsByRelationshipType(AscCommon.openXml.Types.page.relationType);
 			if (pages.length  > 0) {
-				// order is important so sort masters using uri
-				let pagesSort = [];
-				for (let i = 0; i < pages.length; i++) {
-					let pageNumber = pages[i].uri.match(/\d+/); // for page3.xml we get 3
-					if (!isNaN(parseFloat(pageNumber)) && !isNaN(pageNumber - 0)) {
-						// if masterNumber is number
-						pagesSort[pageNumber - 1] = pages[i];
+				// this.pageContents order is important it must correspond to this.pages but pages is messed up by default
+				// so now let's get page contents by page relationship to get pageContents in correct order
+				// 1) find page rId number
+				// 2) find pageContent by rId
+
+				for (let i = 0; i < this.pages.page.length; i++) {
+					let pageContentRid = this.pages.page[i] && this.pages.page[i].rel && this.pages.page[i].rel.id;
+					if (pageContentRid) {
+						// let pageContentRel = pagesPart.getRelationship(pageContentRid);
+						let pageContentPart = pagesPart.getPartById(pageContentRid);
+						let contentPage = pageContentPart.getDocumentContent();
+						reader = new StaxParser(contentPage, pageContentPart, context);
+						let PageContent = new CPageContents();
+						PageContent.fromXml(reader);
+						this.pageContents.push(PageContent);
 					} else {
-						AscCommon.consoleLog('check sdkjs/draw/model/VisioDocument.js : parsePages');
-						pagesSort = pages;
-						break;
+						AscCommon.consoleLog("Page content rId not found");
 					}
-				}
-				pages = pagesSort;
-				for (let i = 0; i < pages.length; i++) {
-					let pagePart = pages[i];
-					let contentPage = pagePart.getDocumentContent();
-					reader = new StaxParser(contentPage, pagePart, context);
-					let PageContent = new CPageContents();
-					PageContent.fromXml(reader);
-					this.pageContents.push(PageContent);
 				}
 			}
 		}
@@ -1230,7 +1339,29 @@
 				this.themes.push(theme);
 			}
 		} else {
-			this.themes.push(AscFormat.GenerateDefaultTheme(null, null));
+			AscCommon.consoleLog("Themes to parse not found. Mb no rels. Trying to get themes by filenames");
+			let themeNum = 1;
+			while (true) {
+				let uInt8ArrayTheme = documentPart.pkg.zip.getFile("visio/theme/theme" + themeNum + ".xml");
+				if (uInt8ArrayTheme === null) {
+					break;
+				}
+				if (!uInt8ArrayTheme) {
+					uInt8ArrayTheme = new Uint8Array(0);
+				}
+				let themeXml = AscCommon.UTF8ArrayToString(uInt8ArrayTheme, 0, uInt8ArrayTheme.length);
+
+				reader = new StaxParser(themeXml, undefined, context);
+				let theme = new AscFormat.CTheme();
+				theme.fromXml(reader, true);
+				this.themes.push(theme);
+
+				themeNum++;
+			}
+			if (themeNum === 1) {
+				AscCommon.consoleLog("No themes found by filenames. Creating default theme");
+				this.themes.push(AscFormat.GenerateDefaultTheme(null, null));
+			}
 		}
 	}
 

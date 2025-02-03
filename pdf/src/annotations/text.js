@@ -141,7 +141,8 @@
         oReply.SetReplyTo(this.GetReplyTo() || this);
         CommentData.SetUserData(oReply.GetId());
         oReply.SetContents(CommentData.m_sText);
-
+        oReply._wasChanged = true;
+        
         if (!nPos) {
             nPos = this._replies.length;
         }
@@ -335,21 +336,6 @@
 	};
     CAnnotationText.prototype.IsNeedDrawFromStream = function() {
         return false;
-    };
-    CAnnotationText.prototype.onMouseDown = function(x, y, e) {
-        let oViewer         = Asc.editor.getDocumentRenderer();
-        let oDrawingObjects = oViewer.DrawingObjects;
-
-        this.selectStartPage = this.GetPage();
-
-        let pageObject = oViewer.getPageByCoords2(x, y);
-        if (!pageObject)
-            return false;
-
-        let X = pageObject.x;
-        let Y = pageObject.y;
-
-        oDrawingObjects.OnMouseDown(e, X, Y, pageObject.index);
     };
     CAnnotationText.prototype.IsComment = function() {
         return true;

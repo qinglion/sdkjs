@@ -1040,8 +1040,6 @@
 			if (this.drawingPages[0]) {
 				this.navigateToPage(0, 0, this.scrollMaxX / 2);
 			}
-
-			this.doc.TurnOnHistory();
 		};
 
 		this.open = function(data, password)
@@ -1328,6 +1326,10 @@
 				if (oFormInfo["opt"])
 				{
 					oForm.SetOptions(oFormInfo["opt"]);
+				}
+				if (null != oFormInfo["TI"])
+				{
+					oForm.SetTopIndex(oFormInfo["TI"]);
 				}
 
 				// checkbox - radiobutton
@@ -2254,7 +2256,7 @@
 							return pageQuads.page == pageCoords.index;
 						}) : null;
 
-						if (oThis.canSelectPageText() && pageCoords && isSelectionUse && AscPDF.IsInQuads(pageSelQuads.quads, pageCoords.x, pageCoords.y))
+						if (oThis.canSelectPageText() && (pageCoords && isSelectionUse && pageSelQuads) && AscPDF.IsInQuads(pageSelQuads.quads, pageCoords.x, pageCoords.y))
 						{
 							isInSelection = true;
 						}
@@ -2530,52 +2532,16 @@
 				return false;
 			}
 
-			var delta  = 0;
-			var deltaX = 0;
-			var deltaY = 0;
-
-			if (undefined != e.wheelDelta && e.wheelDelta != 0)
-			{
-				//delta = (e.wheelDelta > 0) ? -45 : 45;
-				delta = -45 * e.wheelDelta / 120;
-			}
-			else if (undefined != e.detail && e.detail != 0)
-			{
-				//delta = (e.detail > 0) ? 45 : -45;
-				delta = 45 * e.detail / 3;
-			}
-
-			// New school multidimensional scroll (touchpads) deltas
-			deltaY = delta;
-
-			if (oThis.isVisibleHorScroll)
-			{
-				if (e.axis !== undefined && e.axis === e.HORIZONTAL_AXIS)
-				{
-					deltaY = 0;
-					deltaX = delta;
-				}
-
-				// Webkit
-				if (undefined !== e.wheelDeltaY && 0 !== e.wheelDeltaY)
-				{
-					//deltaY = (e.wheelDeltaY > 0) ? -45 : 45;
-					deltaY = -45 * e.wheelDeltaY / 120;
-				}
-				if (undefined !== e.wheelDeltaX && 0 !== e.wheelDeltaX)
-				{
-					//deltaX = (e.wheelDeltaX > 0) ? -45 : 45;
-					deltaX = -45 * e.wheelDeltaX / 120;
-				}
-			}
-
-			deltaX >>= 0;
-			deltaY >>= 0;
-
-			if (0 != deltaX)
-				oThis.m_oScrollHorApi.scrollBy(deltaX, 0, false);
-			else if (0 != deltaY)
-				oThis.m_oScrollVerApi.scrollBy(0, deltaY, false);
+			let values = AscCommon.checkMouseWhell(e, {
+				isSupportBidirectional : false,
+				isAllowHorizontal : oThis.isVisibleHorScroll,
+				isUseMaximumDelta : true
+			});
+			
+			if (0 !== values.x)
+				oThis.m_oScrollHorApi.scrollBy(values.x, 0, false);
+			if (0 !== values.y)
+				oThis.m_oScrollVerApi.scrollBy(0, values.y, false);
 
 			// здесь - имитируем моус мув ---------------------------
 			var _e   = {};
@@ -4439,6 +4405,9 @@
 	};
 	CHtmlPage.prototype.createComponents = function()
 	{
+		if (AscCommon.g_inputContext)
+			AscCommon.g_inputContext = null;
+
 		var elements = "<div id=\"id_main\" class=\"block_elem\" style=\"touch-action:none;-ms-touch-action:none;-moz-user-select:none;user-select:none;-webkit-user-select:none;background-color:" + AscCommon.GlobalSkin.BackgroundColor + ";overflow:hidden;\" UNSELECTABLE=\"on\">";
 		elements += "<canvas id=\"id_viewer\" class=\"block_elem\" style=\"touch-action:none;-ms-touch-action:none;-moz-user-select:none;user-select:none;-webkit-user-select:none;left:0px;top:0px;width:100;height:100;\"></canvas>";
 		elements += "<canvas id=\"id_forms\" class=\"block_elem\" style=\"touch-action:none;-ms-touch-action:none;-moz-user-select:none;user-select:none;-webkit-user-select:none;left:0px;top:0px;width:100;height:100;\"></canvas>";

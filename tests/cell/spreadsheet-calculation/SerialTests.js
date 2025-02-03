@@ -4989,6 +4989,20 @@ $(function () {
 		expectedData = [['35065'], ['35431'], ['35431'], ['35796'], ['35796'], ['36161'], ['36161']];
 		autofillData(assert, autofillRange, expectedData, 'Autofill Columns. Context menu - Fill years. Two selected cells. Reverse sequence. Type Date & Time. Diff time.');
 		clearData(0, 0, 0, 8);
+		// Case: The context menu property "Fill months". Horizontal. One selected cells. Asc sequence. Type Date. The junction between February and March. Case 1900
+		testData = [
+			['01/31/1900']
+		];
+		getFilledData(0, 0, 0, 0, testData, [0, 0]);
+		nType = oRightClickOptions.fillMonths
+		wsView.activeFillHandle = getRange(0, 0, 3, 0);
+		wsView.fillHandleDirection = 0; // 0 - Horizontal, 1 - Vertical.
+		api.asc_FillCells(nType);
+
+		autofillRange = getRange(1, 0, 3, 0);
+		expectedData = [['59', '91', '121']];
+		autofillData(assert, autofillRange, expectedData, "Autofill Columns. Context menu - Fill months. One selected cells. Asc sequence. Type Date. The junction between February and March. Case 1900");
+		clearData(0, 0, 3, 0);
 	});
 	QUnit.test('Toolbar: Fill -> "Up/Down, Left/Right"', function(assert) {
 		const testData = [

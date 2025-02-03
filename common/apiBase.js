@@ -324,6 +324,7 @@
 			window.onunhandledrejection = oldOnunhandledrejection;
 			const errorMsg = errorEvent.reason.message || errorEvent.reason;
 			const stack = errorEvent.reason.stack || "";
+			console.error(errorEvent.reason);
 			sendUnhandledError(errorMsg, undefined, undefined, undefined, stack);
 			if (oldOnunhandledrejection) {
 				return oldOnunhandledrejection.apply(this, arguments);
@@ -395,6 +396,9 @@
 			case c_oEditorId.Presentation:
 				res = 'slide';
 				break;
+			case c_oEditorId.Visio:
+				res = 'visio';
+				break;
 		}
 		return res;
 	};
@@ -404,7 +408,15 @@
 		switch (this.editorId)
 		{
 			case c_oEditorId.Word:
-				res = isOpenOoxml ? Asc.c_oAscFileType.DOCX : Asc.c_oAscFileType.CANVAS_WORD;
+				if (this.isPdfEditor())
+				{
+					//todo выставить формат
+					res = undefined;
+				}
+				else
+				{
+					res = isOpenOoxml ? Asc.c_oAscFileType.DOCX : Asc.c_oAscFileType.CANVAS_WORD;
+				}
 				break;
 			case c_oEditorId.Spreadsheet:
 				res = isOpenOoxml ? Asc.c_oAscFileType.XLSX: Asc.c_oAscFileType.CANVAS_SPREADSHEET;
@@ -1105,6 +1117,10 @@
 				break;
 			case c_oEditorId.Presentation:
 				res = true;
+				break;
+			case c_oEditorId.Visio:
+				//todo сделать как в презентациях когда будет редактор
+				res = false;
 				break;
 		}
 		return res;
@@ -2028,7 +2044,7 @@
 		this._coAuthoringInitEnd();
 
 		let openCmd = this._getOpenCmd();
-		this.CoAuthoringApi.init(this.User, this.documentId, this.documentCallbackUrl, 'fghhfgsjdgfjs', this.editorId, this.documentFormatSave, this.DocInfo, this.documentShardKey, this.documentWopiSrc, this.documentUserSessionId, openCmd);
+		this.CoAuthoringApi.init(this.User, this.documentId, this.documentCallbackUrl, 'fghhfgsjdgfjs', this.editorId, this.documentFormatSave, this.DocInfo, this.documentShardKey, this.documentWopiSrc, this.documentUserSessionId, this.headingsColor, openCmd);
 	};
 	baseEditorsApi.prototype._coAuthoringInitEnd                 = function()
 	{
@@ -2314,7 +2330,7 @@
 			jsonparams["locale"] = this.asc_getLocale();
 			//todo move cmd from header to body and uncomment
 			// jsonparams["translate"] = AscCommon.translateManager.mapTranslate;
-			jsonparams["documentLayout"] = { "openedAt" : this.openedAt};
+			jsonparams["documentLayout"] = { "openedAt" : this.openedAt, "headingsColor" : this.headingsColor};
 			if (this.watermarkDraw && this.watermarkDraw.inputContentSrc) {
 				jsonparams["watermark"] = JSON.parse(this.watermarkDraw.inputContentSrc);
 			}
@@ -2322,7 +2338,7 @@
 		} else if ((Asc.c_oAscFileType.PDF === options.fileType || Asc.c_oAscFileType.PDFA === options.fileType) &&
 			this.watermarkDraw && this.watermarkDraw.inputContentSrc) {
 			let jsonparams = {};
-			jsonparams["watermark"] = JSON.parse(this.watermarkDraw.inputContentSrc);
+			jsonparams["watermark"] = JSON.parse(this.watermarkDraw.getCorrectedInputContentSrc());
 			oAdditionalData["jsonparams"] = jsonparams;
 		}
 		if (options.textParams && undefined !== options.textParams.asc_getAssociation()) {
@@ -3334,6 +3350,11 @@
 				this.lastPlCompareOayerData = oData;
 			}
 		}
+	};
+
+	baseEditorsApi.prototype.isDrawSlideshowAnnotations = function()
+	{
+		return false;
 	};
 
 	// plugins
@@ -5195,6 +5216,9 @@
 	};
 	baseEditorsApi.prototype.getInkCursorType = function() {
 		return this.inkDrawer.getCursorType();
+	};
+	baseEditorsApi.prototype.getAnnotations = function() {
+		return null;
 	};
 	baseEditorsApi.prototype.isMasterMode = function(){
 		return false;

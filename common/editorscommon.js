@@ -1159,7 +1159,12 @@
 	function getFullImageSrc2(src)
 	{
 		if (window["NATIVE_EDITOR_ENJINE"])
+		{
+			let localUrl = g_oDocumentUrls.getImageUrl(src);
+			if (localUrl && localUrl.startsWith("blob:"))
+				return localUrl;
 			return src;
+		}
 
 		var start = src.slice(0, 6);
 		if (0 === start.indexOf('theme') && editor.ThemeLoader)
@@ -15350,6 +15355,9 @@ window["buildCryptoFile_End"] = function(url, error, hash, password)
 					break;
 				case AscCommon.c_oEditorId.Spreadsheet:
 					ext = ".xlsx";
+					break;
+				case AscCommon.c_oEditorId.Visio:
+					ext = ".vsdx";
 					break;
 				default:
 					break;
