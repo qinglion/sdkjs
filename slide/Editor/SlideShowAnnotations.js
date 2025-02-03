@@ -280,7 +280,7 @@ function (window, undefined) {
 		return true;
 	};
 	CSlideShowAnnotations.prototype.canSaveAnnotations = function() {
-		if(!Asc.editor.canSave()) {
+		if(!Asc.editor.canEdit()) {
 			return false;
 		}
 		return !this.isEmpty();
