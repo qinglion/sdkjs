@@ -6331,6 +6331,14 @@ CDocument.prototype.PutImageToSelection = function(sImageSrc, nWidth, nHeight, r
     return this.DrawingObjects.putImageToSelection(sImageSrc, nWidth, nHeight, replaceMode);
 
 };
+CDocument.prototype.RemoveAllInks = function()
+{
+    return this.DrawingObjects.removeAllInks();
+};
+CDocument.prototype.HaveInks = function()
+{
+    return this.DrawingObjects.haveInks();
+};
 /**
  * Добавляем таблицу в текущую позицию курсора
  * @param {number} nCols

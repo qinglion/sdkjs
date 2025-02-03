@@ -5195,7 +5195,7 @@
         return this.canRemoveAllInks();
 	};
 	baseEditorsApi.prototype.canRemoveAllInks = function() {
-        return true;
+        return this.haveInks();
 	};
 	baseEditorsApi.prototype.stopInkDrawer = function() {
 		this.inkDrawer.turnOff();
