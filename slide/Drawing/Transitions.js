@@ -3821,7 +3821,14 @@ function CDemonstrationManager(htmlpage)
 			}
 			case 27:    // escape
 			{
-				oThis.End();
+                if(Asc.editor.isInkDrawerOn())
+                {
+                    Asc.editor.stopInkDrawer();
+                }
+                else
+                {
+                    Asc.editor.EndDemonstration();
+                }
 				break;
 			}
 			case 48: // 0
