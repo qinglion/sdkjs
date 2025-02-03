@@ -3555,7 +3555,7 @@ function CDemonstrationManager(htmlpage)
             --_slide;
         }
 
-        return this.GetSlidesCount();
+        return this.GetSlidesCount() - 1;
     };
 
 	this.GetNextVisibleSlide = function()
