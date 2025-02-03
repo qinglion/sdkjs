@@ -429,6 +429,42 @@ CGraphicObjects.prototype =
     createWatermarkImage: DrawingObjectsController.prototype.createWatermarkImage,
 
 
+    getAllInksDrawings: function ()
+    {
+        let aDrawings = this.document.GetAllDrawingObjects();
+        let aInksDrawings = [];
+        for(let nIdx = 0; nIdx < aDrawings.length; ++nIdx)
+        {
+            let oDrawing = aDrawings[nIdx];
+            if(oDrawing.GraphicObj.isInk())
+            {
+                aInksDrawings.push(oDrawing);
+            }
+        }
+        return aInksDrawings;
+    },
+    haveInks: function ()
+    {
+        return this.getAllInksDrawings().length > 0;
+    },
+    removeAllInks: function ()
+    {
+        let aInksDrawings = this.getAllInksDrawings();
+        if(aInksDrawings.length > 0)
+        {
+            this.document.StartAction(0);
+            for(let nIdx = 0; nIdx < aInksDrawings.length; ++nIdx)
+            {
+                let oDrawing = aInksDrawings[nIdx];
+                oDrawing.Remove_FromDocument(false);
+                this.deselectObject(oDrawing.GraphicObj);
+            }
+            this.document.Recalculate();
+            this.document.FinalizeAction();
+        }
+    },
+
+
     createWatermark: function(oProps)
     {
         if(oProps.get_Type() === Asc.c_oAscWatermarkType.None)

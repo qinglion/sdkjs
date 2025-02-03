@@ -13611,6 +13611,20 @@ background-repeat: no-repeat;\
 		return bReset;
 	};
 
+	asc_docs_api.prototype.removeAllInks = function()
+	{
+		let oLogicDocument = this.getLogicDocument();
+		if(!oLogicDocument) return;
+		return oLogicDocument.RemoveAllInks();
+	};
+
+
+	asc_docs_api.prototype.haveInks = function() {
+		let oLogicDocument = this.getLogicDocument();
+		if(!oLogicDocument) return;
+		return oLogicDocument.HaveInks();
+	};
+
 	asc_docs_api.prototype.onUpdateRestrictions = function(restrictionSettings)
 	{
 		if (this.WordControl)
