@@ -7812,6 +7812,7 @@ background-repeat: no-repeat;\
 		this.reporterStartObject = startObject;
 		this.reporterStartObject["translate"] = AscCommon.translateManager.mapTranslate;
 		this.reporterStartObject["skin"] = AscCommon.GlobalSkin;
+		this.reporterStartObject["canEditMain"] = this.canEdit();
 
 		if (window["AscDesktopEditor"])
 		{
@@ -8049,11 +8050,22 @@ background-repeat: no-repeat;\
 
 		var _button1 = document.getElementById("dem_id_reset");
 		var _button2 = document.getElementById("dem_id_end");
-		var _miPen = document.querySelector("#dem_id_draw_menu a[data-tool=\"pen\"]");
-		var _miHighlighter = document.querySelector("#dem_id_draw_menu a[data-tool=\"highlighter\"]");
-		var _miInkColor = document.querySelector("#dem_id_draw_color_menu_trigger > a");
-		var _miEraser = document.querySelector("#dem_id_draw_menu a[data-tool=\"eraser\"]");
-		var _miEraseAll = document.querySelector("#dem_id_draw_menu a[data-tool=\"erase-all\"]");
+
+		let canEditMain = data["canEditMain"];
+		if(!canEditMain)
+		{
+			let drawButton = document.getElementById("dem_id_draw_menu_trigger");
+			drawButton.style.display = "none";
+		}
+		else
+		{
+			var _miPen = document.querySelector("#dem_id_draw_menu a[data-tool=\"pen\"]");
+			var _miHighlighter = document.querySelector("#dem_id_draw_menu a[data-tool=\"highlighter\"]");
+			var _miInkColor = document.querySelector("#dem_id_draw_color_menu_trigger > a");
+			var _miEraser = document.querySelector("#dem_id_draw_menu a[data-tool=\"eraser\"]");
+			var _miEraseAll = document.querySelector("#dem_id_draw_menu a[data-tool=\"erase-all\"]");
+		}
+
 
 		if (_button1)
 			_button1.innerHTML = this.reporterTranslates[0];
