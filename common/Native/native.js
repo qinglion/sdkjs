@@ -277,9 +277,8 @@ function NativeCreateApi(options)
 				Api.setOpenedAt(options["documentLayout"]["openedAt"]);
 			if (options && options["documentLayout"] && undefined !== options["documentLayout"]["headingsColor"])
 			{
-				let rgba = window["AscCommon"]["RgbaTextToRGBA"](options["documentLayout"]["headingsColor"]);
-				if (window["AscWord"] && window["AscWord"]["setDefaultHeadingColor"])
-					window["AscWord"]["setDefaultHeadingColor"](rgba.R, rgba.G, rgba.B);
+				if (window["AscWord"] && window["AscWord"]["setDefaultHeadingColorStr"])
+					window["AscWord"]["setDefaultHeadingColorStr"](options["documentLayout"]["headingsColor"]);
 			}
 			break;
 		}
