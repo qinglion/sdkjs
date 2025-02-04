@@ -5939,6 +5939,398 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), -51);
 
+		oParser = new parserFormula("ROUND(183.64, 2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 183.64);
+
+		ws.getRange2("A100").setValue("3.14159");
+		ws.getRange2("A101").setValue("2.71828");
+		ws.getRange2("A102").setValue("1.005");
+		ws.getRange2("A103").setValue("-1.56789");
+		ws.getRange2("A104").setValue("123.456");
+		ws.getRange2("A105").setValue("0.4999");
+		ws.getRange2("A106").setValue("-0.4999");
+		ws.getRange2("A107").setValue("1000.567");
+		ws.getRange2("A108").setValue("999.999");
+		ws.getRange2("A109").setValue("5.55555");
+		ws.getRange2("A110").setValue("1.123123");
+		ws.getRange2("A111").setValue("1.123123");
+
+		ws.getRange2("B100").setValue("2");
+		ws.getRange2("B101").setValue("3");
+		ws.getRange2("B102").setValue("2");
+		ws.getRange2("B103").setValue("1");
+		ws.getRange2("B104").setValue("0");
+		ws.getRange2("B105").setValue("2");
+		ws.getRange2("B106").setValue("2");
+		ws.getRange2("B107").setValue("-1");
+		ws.getRange2("B108").setValue("2");
+		ws.getRange2("B109").setValue("4");
+		ws.getRange2("B110").setValue("6");
+		ws.getRange2("B111").setValue("5");
+
+
+		oParser = new parserFormula("ROUND(A100, B100)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 3.14, "Round ROUND(A100, B100)");
+
+		oParser = new parserFormula("ROUND(A101, B101)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 2.718, "Round ROUND(A101, B101)");
+
+		oParser = new parserFormula("ROUND(A102, B102)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 1.01, "Round ROUND(A102, B102)");
+
+		oParser = new parserFormula("ROUND(A103, B103)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), -1.6, "Round ROUND(A103, B103)");
+
+		oParser = new parserFormula("ROUND(A104, B104)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 123, "Round ROUND(A104, B104)");
+
+		oParser = new parserFormula("ROUND(A105, B105)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0.5, "Round ROUND(A105, B105)");
+
+		oParser = new parserFormula("ROUND(A106, B106)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), -0.5, "Round ROUND(A106, B106)");
+
+		oParser = new parserFormula("ROUND(A107, B107)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 1000, "Round ROUND(A107, B107)");
+
+		oParser = new parserFormula("ROUND(A108, B108)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 1000, "Round ROUND(A108, B108)");
+
+		oParser = new parserFormula("ROUND(A109, B109)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 5.5556, "Round ROUND(A109, B109)");
+
+		oParser = new parserFormula("ROUND(A110, B110)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 1.123123, "Round ROUND(A110, B110)");
+
+		oParser = new parserFormula("ROUND(A111, B111)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 1.12312, "Round ROUND(A111, B111)");
+
+
+		oParser = new parserFormula("ROUND(1.123,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 1.12, "ROUND(1.123,2)");
+
+		oParser = new parserFormula("ROUND(1.125,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 1.13, "ROUND(1.125,2)");
+
+		oParser = new parserFormula("ROUND(1.005,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 1.01, "ROUND(1.005,2)");
+
+		oParser = new parserFormula("ROUND(1.995,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 2.00, "ROUND(1.995,2)");
+
+
+		oParser = new parserFormula("ROUND(3.14159,0)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 3, "ROUND(3.14159,0)");
+
+		oParser = new parserFormula("ROUND(3.14159,1)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 3.1, "ROUND(3.14159,1)");
+
+		oParser = new parserFormula("ROUND(3.14159,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 3.14, "ROUND(3.14159,2)");
+
+		oParser = new parserFormula("ROUND(3.14159,3)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 3.142, "ROUND(3.14159,3)");
+
+		oParser = new parserFormula("ROUND(3.14159,4)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 3.1416, "ROUND(3.14159,4)");
+
+
+		oParser = new parserFormula("ROUND(-1.123,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), -1.12, "ROUND(-1.123,2)");
+
+		oParser = new parserFormula("ROUND(-1.125,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), -1.13, "ROUND(-1.125,2)");
+
+		oParser = new parserFormula("ROUND(-1.005,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), -1.01, "ROUND(-1.005,2)");
+
+		oParser = new parserFormula("ROUND(-1.995,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), -2.00, "ROUND(-1.995,2)");
+
+		oParser = new parserFormula("ROUND(1.5,0)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 2, "ROUND(1.5,0)");
+
+		oParser = new parserFormula("ROUND(2.5,0)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 3, "ROUND(2.5,0)");
+
+		oParser = new parserFormula("ROUND(3.5,0)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 4, "ROUND(3.5,0)");
+
+		oParser = new parserFormula("ROUND(-1.5,0)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), -2, "ROUND(-1.5,0)");
+
+		oParser = new parserFormula("ROUND(-2.5,0)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), -3, "ROUND(-2.5,0)");
+
+		// Negative decimal places tests
+		oParser = new parserFormula("ROUND(123.456,-1)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 120, "ROUND(123.456,-1)");
+
+		oParser = new parserFormula("ROUND(123.456,-2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 100, "ROUND(123.456,-2)");
+
+		oParser = new parserFormula("ROUND(555.555,-1)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 560, "ROUND(555.555,-1)");
+
+		oParser = new parserFormula("ROUND(555.555,-2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 600, "ROUND(555.555,-2)");
+
+		oParser = new parserFormula("ROUND(555.555,-3)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 1000, "ROUND(555.555,-3)");
+
+		oParser = new parserFormula("ROUND(0.123456,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0.12, "ROUND(0.123456,2)");
+
+		oParser = new parserFormula("ROUND(0.123456,3)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0.123, "ROUND(0.123456,3)");
+
+		oParser = new parserFormula("ROUND(0.123456,4)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0.1235, "ROUND(0.123456,4)");
+
+		oParser = new parserFormula("ROUND(0.999999,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 1.00, "ROUND(0.999999,2)");
+
+		oParser = new parserFormula("ROUND(123456.789,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 123456.79, "ROUND(123456.789,2)");
+
+		oParser = new parserFormula("ROUND(999999.999,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 1000000.00, "ROUND(999999.999,2)");
+
+		oParser = new parserFormula("ROUND(1000000.001,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 1000000.00, "ROUND(1000000.001,2)");
+
+		oParser = new parserFormula("ROUND(0.0000123456,5)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0.00001, "ROUND(0.0000123456,5)");
+
+		oParser = new parserFormula("ROUND(0.0000123456,6)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0.000012, "ROUND(0.0000123456,6)");
+
+		oParser = new parserFormula("ROUND(0.0000123456,7)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0.0000123, "ROUND(0.0000123456,7)");
+
+		oParser = new parserFormula("ROUND(2.005,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 2.01, "ROUND(2.005,2)");
+
+		oParser = new parserFormula("ROUND(3.005,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 3.01, "ROUND(3.005,2)");
+
+		oParser = new parserFormula("ROUND(4.005,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 4.01, "ROUND(4.005,2)");
+
+		oParser = new parserFormula("ROUND(5.005,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 5.01, "ROUND(5.005,2)");
+
+		oParser = new parserFormula("ROUND(0.333333,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0.33, "ROUND(0.333333,2)");
+
+		oParser = new parserFormula("ROUND(0.666666,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0.67, "ROUND(0.666666,2)");
+
+		oParser = new parserFormula("ROUND(0.166666,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0.17, "ROUND(0.166666,2)");
+
+		oParser = new parserFormula("ROUND(0.142857,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0.14, "ROUND(0.142857,2)");
+
+		oParser = new parserFormula("ROUND(3.141592653589793,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 3.14, "ROUND(3.141592653589793,2)");
+
+		oParser = new parserFormula("ROUND(2.718281828459045,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 2.72, "ROUND(2.718281828459045,2)");
+
+		oParser = new parserFormula("ROUND(1.414213562373095,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 1.41, "ROUND(1.414213562373095,2)");
+
+		oParser = new parserFormula("ROUND(0.5,0)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 1, "ROUND(0.5,0)");
+
+		oParser = new parserFormula("ROUND(1.5,0)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 2, "ROUND(1.5,0)");
+
+		oParser = new parserFormula("ROUND(2.5,0)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 3, "ROUND(2.5,0)");
+
+		oParser = new parserFormula("ROUND(-0.5,0)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), -1, "ROUND(-0.5,0)");
+
+		oParser = new parserFormula("ROUND(-1.5,0)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), -2, "ROUND(-1.5,0)");
+
+		oParser = new parserFormula("ROUND(1.23456789,1)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 1.2, "ROUND(1.23456789,1)");
+
+		oParser = new parserFormula("ROUND(1.23456789,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 1.23, "ROUND(1.23456789,2)");
+
+		oParser = new parserFormula("ROUND(1.23456789,3)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 1.235, "ROUND(1.23456789,3)");
+
+		oParser = new parserFormula("ROUND(1.23456789,4)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 1.2346, "ROUND(1.23456789,4)");
+
+		oParser = new parserFormula("ROUND(1.23456789,5)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 1.23457, "ROUND(1.23456789,5)");
+
+		oParser = new parserFormula("ROUND(0,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0, "ROUND(0,2)");
+
+		oParser = new parserFormula("ROUND(0,0)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0, "ROUND(0,0)");
+
+		oParser = new parserFormula("ROUND(0,-2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0, "ROUND(0,-2)");
+
+		oParser = new parserFormula("ROUND(1.15,1)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 1.2, "ROUND(1.15,1)");
+
+		oParser = new parserFormula("ROUND(1.25,1)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 1.3, "ROUND(1.25,1)");
+
+		oParser = new parserFormula("ROUND(1.35,1)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 1.4, "ROUND(1.35,1)");
+
+		oParser = new parserFormula("ROUND(1.45,1)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 1.5, "ROUND(1.45,1)");
+
+		oParser = new parserFormula("ROUND(1.55,1)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 1.6, "ROUND(1.55,1)");
+
+		oParser = new parserFormula("ROUND(0.01,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0.01, "ROUND(0.01,2)");
+
+		oParser = new parserFormula("ROUND(0.02,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0.02, "ROUND(0.02,2)");
+
+		oParser = new parserFormula("ROUND(0.03,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0.03, "ROUND(0.03,2)");
+
+		oParser = new parserFormula("ROUND(0.04,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0.04, "ROUND(0.04,2)");
+
+		oParser = new parserFormula("ROUND(0.05,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0.05, "ROUND(0.05,2)");
+
+		oParser = new parserFormula("ROUND(-0.01,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), -0.01, "ROUND(-0.01,2)");
+
+		oParser = new parserFormula("ROUND(-0.02,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), -0.02, "ROUND(-0.02,2)");
+
+		oParser = new parserFormula("ROUND(-0.03,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), -0.03, "ROUND(-0.03,2)");
+
+		oParser = new parserFormula("ROUND(-0.04,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), -0.04, "ROUND(-0.04,2)");
+
+		oParser = new parserFormula("ROUND(-0.05,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), -0.05, "ROUND(-0.05,2)");
+
+
+		oParser = new parserFormula("ROUND(19.99,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 19.99, "ROUND(19.99,2)");
+
+		oParser = new parserFormula("ROUND(19.90,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 19.90, "ROUND(19.90,2)");
+
+		oParser = new parserFormula("ROUND(19.00,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 19.00, "ROUND(19.00,2)");
+
+		oParser = new parserFormula("ROUND(19.999,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 20.00, "ROUND(19.999,2)");
+
+		oParser = new parserFormula("ROUND(19.001,2)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 19.00, "ROUND(19.001,2)");
+
 
 		testArrayFormula2(assert, "ROUND", 2, 2);
 	});
