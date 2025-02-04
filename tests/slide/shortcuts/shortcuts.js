@@ -70,6 +70,7 @@
 	editor.asc_getShowGuides = Asc.asc_docs_api.prototype.asc_getShowGuides.bind(editor);
 	editor.sync_HyperlinkClickCallback = Asc.asc_docs_api.prototype.sync_HyperlinkClickCallback.bind(editor);
 	editor.getAnnotations = function () {return null;};
+	editor.EndDemonstration = function () {};
 	AscCommon.CDocsCoApi.prototype.askSaveChanges = function (callback)
 	{
 		window.setTimeout(function ()
