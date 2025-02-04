@@ -419,6 +419,20 @@ Paragraph.prototype.GetFirstRunPr = function()
 
 	return this.Content[0].Pr.Copy();
 };
+Paragraph.prototype.GetParaEndPr = function()
+{
+	return this.TextPr.Value.Copy();
+};
+Paragraph.prototype.SetParaEndPr = function(textPr)
+{
+	if (!textPr)
+		return;
+	
+	this.TextPr.Set_Value(textPr.Copy());
+	let endRun = this.GetParaEndRun();
+	if (endRun)
+		endRun.SetPr(textPr.Copy());
+};
 Paragraph.prototype.Get_FirstTextPr = function()
 {
 	if (this.Content.length <= 0 || para_Run !== this.Content[0].Type)
