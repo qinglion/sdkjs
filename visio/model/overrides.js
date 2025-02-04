@@ -692,6 +692,8 @@ AscCommonWord.CPresentationField.prototype.private_GetString = function()
 			valueInProperUnits = Number(valueV) * g_dKoef_in_to_mm / 10;
 		} else if (valueUnits === "MM") {
 			valueInProperUnits = Number(valueV) * g_dKoef_in_to_mm;
+		} else if (valueUnits === "M") {
+			valueInProperUnits = Number(valueV) * g_dKoef_in_to_mm / 1000;
 		} else {
 			valueInProperUnits = valueV;
 		}
@@ -764,7 +766,7 @@ AscCommonWord.CPresentationField.prototype.private_GetString = function()
 		else if("WIDTH" === sFieldType)
 		{
 			//todo display units
-			val = this.vsdxFieldValue.getValueInMM();
+			//leave value
 		}
 		else if ((this.vsdxFieldValue.u === "STR" || !this.vsdxFieldValue.u) && (sFieldType === "INH" || !sFieldType)) {
 			// handle simple values. consider is function is INH value is calculated correctly already
