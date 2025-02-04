@@ -23644,7 +23644,7 @@
 
 		let sameFile;
 		let fileName = window["Asc"]["editor"].DocInfo && window["Asc"]["editor"].DocInfo.get_Title();
-		if (index === fileName || index == "0") {
+		if ((fileName != null && index === fileName) || index == "0") {
 			sameFile = true;
 		}
 
