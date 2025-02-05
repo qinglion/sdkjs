@@ -23349,6 +23349,24 @@ $(function () {
 		assert.strictEqual(oParser.calculate().getValue(), 1, 'Result of MATCH(TRUE,{TRUE},0)');
 
 
+		oParser = new parserFormula("MATCH({6,2,3},F106:F117,1)", "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 5, "MATCH_16");
+
+		oParser = new parserFormula("MATCH(#REF!,{123,2})", "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "#REF!", "#REF!");
+
+		oParser = new parserFormula("MATCH({6,2,3},#VALUE!)", "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", "#VALUE!");
+
+		ws.getRange2("B300").setValue("#REF!");
+
+		oParser = new parserFormula("MATCH(B300,{1,2,3})", "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "#REF!", "#REF!");
+
 		//TODO excel по-другому работает
 		/*oParser = new parserFormula( "MATCH(123,F106:F117,1)", "A2", ws );
 		assert.ok( oParser.parse() );
@@ -24416,10 +24434,21 @@ $(function () {
 		assert.strictEqual(array.getElementRowCol(0, 1).getValue(), 2, 'Result of INDEX({1,2;3,4},)[0,1]');
 		assert.strictEqual(array.getElementRowCol(1, 1).getValue(), 4, 'Result of INDEX({1,2;3,4},)[1,1]');
 
+		oParser = new parserFormula('INDEX({"";1;2;3;4;5},#REF!)', "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "#REF!");
+
+		oParser = new parserFormula('INDEX({1,2;3,4},1,#VALUE!)', "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!");
+
+		oParser = new parserFormula('INDEX({1,2;3,4},1,#NUM!)', "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "#NUM!");
+
 		oParser = new parserFormula('INDEX(A100:B101,)', "A2", ws);
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), "#REF!");
-		
 	});
 
 	QUnit.test("Test: \"INDIRECT\"", function (assert) {
