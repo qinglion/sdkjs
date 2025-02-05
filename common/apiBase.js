@@ -4859,17 +4859,21 @@
     	if (!this.internalEvents.hasOwnProperty(name))
             this.internalEvents[name] = {};
         this.internalEvents[name]["" + ((undefined === listenerId) ? 0 : listenerId)] = callback;
+
+		return true;
     };
     baseEditorsApi.prototype.detachEvent = function(name, listenerId)
     {
         if (!this.internalEvents.hasOwnProperty(name))
-        	return;
+        	return false;
         var obj = this.internalEvents[name];
         var prop = "" + ((undefined === listenerId) ? 0 : listenerId);
         if (obj[prop])
         	delete obj[prop];
         if (0 === Object.getOwnPropertyNames(obj).length)
         	delete this.internalEvents[name];
+
+		return true;
     };
     baseEditorsApi.prototype.sendInternalEvent = function()
 	{
