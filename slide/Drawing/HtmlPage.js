@@ -35,6 +35,12 @@
 (function (window) {
 	let oThis;
 
+	const thumbnailsPositionMap = {
+		left: 0,
+		right: 1,
+		bottom: 2,
+	};
+
 	const g_anchor_left = AscCommon.g_anchor_left;
 	const g_anchor_top = AscCommon.g_anchor_top;
 	const g_anchor_right = AscCommon.g_anchor_right;
@@ -294,7 +300,7 @@
 		this.MouseHandObject = null;
 
 		this.m_oApi = api;
-		this.thumbnailsPosition = 'bottom'; // 'left', 'right', 'bottom'
+		this.thumbnailsPosition = thumbnailsPositionMap.bottom; // left, right, bottom
 		this.isRTL = true;
 		oThis = this;
 	}
@@ -305,7 +311,7 @@
 			if (element) element.style.overflow = "hidden";
 		}
 
-		const thumbnailsSplitter = new Splitter(67.5, 20, 80, this.thumbnailsPosition === 'bottom');
+		const thumbnailsSplitter = new Splitter(67.5, 20, 80, this.thumbnailsPosition === thumbnailsPositionMap.bottom);
 		const notesSplitter = this.m_oApi.isReporterMode
 			? new Splitter(Math.min(Math.max(window.innerHeight * 0.5 * AscCommon.g_dKoef_pix_to_mm, 10), 200), 10, 200, true)
 			: new Splitter(this.IsNotesSupported() && !this.m_oApi.isEmbedVersion ? 10 : 0, 10, 100, true);
@@ -320,13 +326,13 @@
 
 		// Main parent (everything excluding thumbnails)
 		this.m_oMainParent = CreateControlContainer("id_main_parent");
-		if (this.thumbnailsPosition === 'left') {
+		if (this.thumbnailsPosition === thumbnailsPositionMap.left) {
 			this.m_oMainParent.Bounds.SetParams(this.splitters[0].position + GlobalSkin.SplitterWidthMM, 0, g_dKoef_pix_to_mm, 1000, true, false, true, false, -1, -1);
 		}
-		if (this.thumbnailsPosition === 'right') {
+		if (this.thumbnailsPosition === thumbnailsPositionMap.right) {
 			this.m_oMainParent.Bounds.SetParams(0, 0, this.splitters[0].position + GlobalSkin.SplitterWidthMM, 1000, false, false, true, false, -1, -1);
 		}
-		if (this.thumbnailsPosition === 'bottom') {
+		if (this.thumbnailsPosition === thumbnailsPositionMap.bottom) {
 			this.m_oMainParent.Bounds.SetParams(0, 0, 1000, this.splitters[0].position + GlobalSkin.SplitterWidthMM, false, false, false, true, -1, -1);
 		}
 		this.m_oBody.AddControl(this.m_oMainParent);
@@ -672,35 +678,35 @@
 		// Thumbnails container
 		this.m_oThumbnailsContainer = CreateControlContainer("id_panel_thumbnails");
 
-		if (this.thumbnailsPosition === 'left') {
+		if (this.thumbnailsPosition === thumbnailsPositionMap.left) {
 			this.m_oThumbnailsContainer.Bounds.SetParams(0, 0, this.splitters[0].position, 1000, false, false, true, false, this.splitters[0].position, -1);
 			this.m_oThumbnailsContainer.Anchor = (g_anchor_left | g_anchor_top | g_anchor_bottom);
 		}
-		if (this.thumbnailsPosition === 'right') {
+		if (this.thumbnailsPosition === thumbnailsPositionMap.right) {
 			this.m_oThumbnailsContainer.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, this.splitters[0].position, -1);
 			this.m_oThumbnailsContainer.Anchor = (g_anchor_top | g_anchor_right | g_anchor_bottom);
 		}
-		if (this.thumbnailsPosition === 'bottom') {
+		if (this.thumbnailsPosition === thumbnailsPositionMap.bottom) {
 			this.m_oThumbnailsContainer.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, this.splitters[0].position);
 			this.m_oThumbnailsContainer.Anchor = (g_anchor_left | g_anchor_right | g_anchor_bottom);
 		}
 		this.m_oBody.AddControl(this.m_oThumbnailsContainer);
 
 		this.m_oThumbnailsBack = CreateControl("id_thumbnails_background");
-		if (this.thumbnailsPosition === 'left' || this.thumbnailsPosition === 'right') {
+		if (this.thumbnailsPosition === thumbnailsPositionMap.left || this.thumbnailsPosition === thumbnailsPositionMap.right) {
 			this.m_oThumbnailsBack.Bounds.SetParams(0, 0, scrollWidth, 1000, false, false, true, false, -1, -1);
 		}
-		if (this.thumbnailsPosition === 'bottom') {
+		if (this.thumbnailsPosition === thumbnailsPositionMap.bottom) {
 			this.m_oThumbnailsBack.Bounds.SetParams(0, 0, 1000, scrollWidth, false, false, false, true, -1, -1);
 		}
 		this.m_oThumbnailsBack.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right | g_anchor_bottom);
 		this.m_oThumbnailsContainer.AddControl(this.m_oThumbnailsBack);
 
 		this.m_oThumbnails = CreateControl("id_thumbnails");
-		if (this.thumbnailsPosition === 'left' || this.thumbnailsPosition === 'right') {
+		if (this.thumbnailsPosition === thumbnailsPositionMap.left || this.thumbnailsPosition === thumbnailsPositionMap.right) {
 			this.m_oThumbnails.Bounds.SetParams(0, 0, scrollWidth, 1000, false, false, true, false, -1, -1);
 		}
-		if (this.thumbnailsPosition === 'bottom') {
+		if (this.thumbnailsPosition === thumbnailsPositionMap.bottom) {
 			this.m_oThumbnails.Bounds.SetParams(0, 0, 1000, scrollWidth, false, false, false, true, -1, -1);
 		}
 		this.m_oThumbnails.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right | g_anchor_bottom);
@@ -708,11 +714,11 @@
 
 		// НАДО ПЕРЕИМЕНОВАТЬ - ОН НЕ ВСЕГДА ВЕРТИКАЛЬНЫЙ ТЕПЕРЬ
 		this.m_oThumbnails_scroll = CreateControl("id_vertical_scroll_thmbnl");
-		if (this.thumbnailsPosition === 'left' || this.thumbnailsPosition === 'right') {
+		if (this.thumbnailsPosition === thumbnailsPositionMap.left || this.thumbnailsPosition === thumbnailsPositionMap.right) {
 			this.m_oThumbnails_scroll.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, scrollWidth, -1);
 			this.m_oThumbnails_scroll.Anchor = (g_anchor_top | g_anchor_right | g_anchor_bottom);
 		}
-		if (this.thumbnailsPosition === 'bottom') {
+		if (this.thumbnailsPosition === thumbnailsPositionMap.bottom) {
 			this.m_oThumbnails_scroll.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, scrollWidth);
 			this.m_oThumbnails_scroll.Anchor = (g_anchor_left | g_anchor_right | g_anchor_bottom);
 		}
@@ -720,15 +726,15 @@
 
 		// Thumbnails splitter
 		this.m_oThumbnailsSplit = CreateControlContainer("id_panel_thumbnails_split");
-		if (this.thumbnailsPosition === 'left') {
+		if (this.thumbnailsPosition === thumbnailsPositionMap.left) {
 			this.m_oThumbnailsSplit.Bounds.SetParams(this.splitters[0].position, 0, 1000, 1000, true, false, false, false, GlobalSkin.SplitterWidthMM, -1);
 			this.m_oThumbnailsSplit.Anchor = (g_anchor_left | g_anchor_top | g_anchor_bottom);
 		}
-		if (this.thumbnailsPosition === 'right') {
+		if (this.thumbnailsPosition === thumbnailsPositionMap.right) {
 			this.m_oThumbnailsSplit.Bounds.SetParams(0, 0, this.splitters[0].position, 1000, false, false, true, false, GlobalSkin.SplitterWidthMM, -1);
 			this.m_oThumbnailsSplit.Anchor = (g_anchor_top | g_anchor_right | g_anchor_bottom);
 		}
-		if (this.thumbnailsPosition === 'bottom') {
+		if (this.thumbnailsPosition === thumbnailsPositionMap.bottom) {
 			this.m_oThumbnailsSplit.Bounds.SetParams(0, 0, 1000, this.splitters[0].position, false, false, false, true, -1, GlobalSkin.SplitterWidthMM);
 			this.m_oThumbnailsSplit.Anchor = (g_anchor_left | g_anchor_right | g_anchor_bottom);
 		}
@@ -1001,7 +1007,7 @@
 		splitterElement.style.zIndex = 1000;
 		splitterElement.setAttribute('contentEditable', false);
 
-		if (this.thumbnailsPosition === 'bottom') {
+		if (this.thumbnailsPosition === thumbnailsPositionMap.bottom) {
 			const bottom = splitterIndex === 1
 				? this.Height
 				: this.Height - Math.round(this.splitters[0].position * g_dKoef_mm_to_pix);
@@ -1014,7 +1020,7 @@
 		} else {
 			const isThumbnailsSplitter = splitterIndex === 1;
 			if (isThumbnailsSplitter) {
-				splitterElement.style.left = this.thumbnailsPosition === 'left'
+				splitterElement.style.left = this.thumbnailsPosition === thumbnailsPositionMap.left
 					? position + 'px'
 					: this.Width - position - splitterWidth + 'px';
 				splitterElement.style.top = '0px';
@@ -1024,7 +1030,7 @@
 			} else {
 				const thumbnailsSplitterPosition = Math.round(this.splitters[0].position * g_dKoef_mm_to_pix);
 
-				splitterElement.style.left = this.thumbnailsPosition === 'left'
+				splitterElement.style.left = this.thumbnailsPosition === thumbnailsPositionMap.left
 					? thumbnailsSplitterPosition + splitterWidth + 'px'
 					: '0px';
 				splitterElement.style.top = this.Height - position - splitterWidth + 'px';
@@ -1050,7 +1056,7 @@
 		let thumbnailsSplitterPosition, notesSplitterPosition, animPaneSplitterPosition;
 		let isWithinThumbnailsSplitter, isWithinNotesSplitter, isWithinAnimPaneSplitter;
 
-		if (this.thumbnailsPosition === 'left') {
+		if (this.thumbnailsPosition === thumbnailsPositionMap.left) {
 			thumbnailsSplitterPosition = oWordControl.splitters[0].position * g_dKoef_mm_to_pix;
 			notesSplitterPosition = oWordControl.Height - (oWordControl.splitters[1].position * g_dKoef_mm_to_pix + splitterWidth);
 			animPaneSplitterPosition = oWordControl.Height - (oWordControl.splitters[2].position * g_dKoef_mm_to_pix + splitterWidth);
@@ -1058,7 +1064,7 @@
 			isWithinNotesSplitter = mouseX >= thumbnailsSplitterPosition + splitterWidth && mouseX <= oWordControl.Width && mouseY >= notesSplitterPosition && mouseY <= notesSplitterPosition + splitterWidth;
 			isWithinAnimPaneSplitter = mouseX >= thumbnailsSplitterPosition + splitterWidth && mouseX <= oWordControl.Width && mouseY >= animPaneSplitterPosition && mouseY <= animPaneSplitterPosition + splitterWidth;
 		}
-		if (this.thumbnailsPosition === 'right') {
+		if (this.thumbnailsPosition === thumbnailsPositionMap.right) {
 			thumbnailsSplitterPosition = oWordControl.Width - oWordControl.splitters[0].position * g_dKoef_mm_to_pix - splitterWidth;
 			notesSplitterPosition = oWordControl.Height - (oWordControl.splitters[1].position * g_dKoef_mm_to_pix + splitterWidth);
 			animPaneSplitterPosition = oWordControl.Height - (oWordControl.splitters[2].position * g_dKoef_mm_to_pix + splitterWidth);
@@ -1066,7 +1072,7 @@
 			isWithinNotesSplitter = mouseX >= 0 && mouseX <= thumbnailsSplitterPosition && mouseY >= notesSplitterPosition && mouseY <= notesSplitterPosition + splitterWidth;
 			isWithinAnimPaneSplitter = mouseX >= 0 && mouseX <= thumbnailsSplitterPosition && mouseY >= animPaneSplitterPosition && mouseY <= animPaneSplitterPosition + splitterWidth;
 		}
-		if (this.thumbnailsPosition === 'bottom') {
+		if (this.thumbnailsPosition === thumbnailsPositionMap.bottom) {
 			thumbnailsSplitterPosition = oWordControl.Height - (oWordControl.splitters[0].position * g_dKoef_mm_to_pix + splitterWidth);
 			notesSplitterPosition = thumbnailsSplitterPosition - (oWordControl.splitters[1].position * g_dKoef_mm_to_pix + splitterWidth);
 			animPaneSplitterPosition = thumbnailsSplitterPosition - (oWordControl.splitters[2].position * g_dKoef_mm_to_pix + splitterWidth);
@@ -1129,7 +1135,7 @@
 		let oWordControl = oThis;
 		let nSplitter = oThis.hitToSplitter();
 		if (nSplitter > 0) {
-			oWordControl.m_oBody.HtmlElement.style.cursor = oWordControl.thumbnailsPosition === 'bottom'
+			oWordControl.m_oBody.HtmlElement.style.cursor = oWordControl.thumbnailsPosition === thumbnailsPositionMap.bottom
 				? "ns-resize"
 				: nSplitter === 1 ? "ew-resize" : "ns-resize";
 
@@ -1159,7 +1165,7 @@
 		if (null == oWordControl.SplitterDiv) {
 			const cursorStyles = {
 				0: 'default',
-				1: oWordControl.thumbnailsPosition === 'bottom' ? 'ns-resize' : 'ew-resize',
+				1: oWordControl.thumbnailsPosition === thumbnailsPositionMap.bottom ? 'ns-resize' : 'ew-resize',
 				2: 'ns-resize',
 				3: 'ns-resize',
 			};
@@ -1174,33 +1180,33 @@
 				const splitter = oWordControl.splitters[0];
 
 				let minPosition, maxPosition;
-				if (oWordControl.thumbnailsPosition === 'left') {
+				if (oWordControl.thumbnailsPosition === thumbnailsPositionMap.left) {
 					minPosition = splitter.minPosition * g_dKoef_mm_to_pix >> 0;
 					maxPosition = splitter.maxPosition * g_dKoef_mm_to_pix >> 0;
 				}
-				if (oWordControl.thumbnailsPosition === 'right') {
+				if (oWordControl.thumbnailsPosition === thumbnailsPositionMap.right) {
 					minPosition = oWordControl.Width - (splitter.maxPosition * g_dKoef_mm_to_pix >> 0);
 					maxPosition = oWordControl.Width - (splitter.minPosition * g_dKoef_mm_to_pix >> 0);
 				}
-				if (oWordControl.thumbnailsPosition === 'bottom') {
+				if (oWordControl.thumbnailsPosition === thumbnailsPositionMap.bottom) {
 					minPosition = oWordControl.Height - (splitter.maxPosition * g_dKoef_mm_to_pix >> 0);
 					maxPosition = oWordControl.Height - (splitter.minPosition * g_dKoef_mm_to_pix >> 0);
 				}
 
 				let splitterPosition;
-				if (oWordControl.thumbnailsPosition === 'left') {
+				if (oWordControl.thumbnailsPosition === thumbnailsPositionMap.left) {
 					const shouldHideThumbnails = canHideThumbnails && mouseX < (minPosition / 2);
 					splitterPosition = shouldHideThumbnails
 						? 0
 						: Math.min(Math.max(mouseX, minPosition), maxPosition);
 				}
-				if (oWordControl.thumbnailsPosition === 'right') {
+				if (oWordControl.thumbnailsPosition === thumbnailsPositionMap.right) {
 					const shouldHideThumbnails = canHideThumbnails && mouseX > (oWordControl.Width + maxPosition) / 2;
 					splitterPosition = shouldHideThumbnails
 						? oWordControl.Width
 						: Math.min(Math.max(mouseX, minPosition), maxPosition);
 				}
-				if (oWordControl.thumbnailsPosition === 'bottom') {
+				if (oWordControl.thumbnailsPosition === thumbnailsPositionMap.bottom) {
 					splitterPosition = Math.max(mouseY, minPosition);
 					if (splitterPosition > maxPosition) {
 						const center = (oWordControl.Height + maxPosition) / 2;
@@ -1208,7 +1214,7 @@
 					}
 				}
 
-				if (oWordControl.thumbnailsPosition === 'bottom') {
+				if (oWordControl.thumbnailsPosition === thumbnailsPositionMap.bottom) {
 					oWordControl.m_oBody.HtmlElement.style.cursor = 'ns-resize';
 					oWordControl.SplitterDiv.style.top = splitterPosition + 'px';
 				} else {
@@ -1219,7 +1225,7 @@
 			if (2 == oWordControl.SplitterType || 3 == oWordControl.SplitterType) {
 				const splitter = oWordControl.splitters[1];
 				const reservedWordControlHeight = 30 * g_dKoef_mm_to_pix;
-				const bottom = oWordControl.thumbnailsPosition === 'bottom'
+				const bottom = oWordControl.thumbnailsPosition === thumbnailsPositionMap.bottom
 					? oWordControl.Height - oWordControl.splitters[0].position * g_dKoef_mm_to_pix
 					: oWordControl.Height;
 				const minPosition = Math.max(reservedWordControlHeight, bottom - (splitter.maxPosition * g_dKoef_mm_to_pix >> 0));
@@ -1276,13 +1282,13 @@
 
 		const significantDelta = 1; // in millimeters
 		let position;
-		if (this.thumbnailsPosition === 'left') {
+		if (this.thumbnailsPosition === thumbnailsPositionMap.left) {
 			position = splitterLeft * g_dKoef_pix_to_mm;
 		}
-		if (this.thumbnailsPosition === 'right') {
+		if (this.thumbnailsPosition === thumbnailsPositionMap.right) {
 			position = Math.max(0, (this.Width - splitterLeft) * g_dKoef_pix_to_mm - GlobalSkin.SplitterWidthMM);
 		}
-		if (this.thumbnailsPosition === 'bottom') {
+		if (this.thumbnailsPosition === thumbnailsPositionMap.bottom) {
 			position = Math.max(0, (this.Height - splitterTop) * g_dKoef_pix_to_mm - GlobalSkin.SplitterWidthMM);
 		}
 
@@ -1297,7 +1303,7 @@
 	CEditorPage.prototype.handleNotesSplitter = function () {
 		const splitterTop = parseInt(this.SplitterDiv.style.top);
 
-		const bottom = this.thumbnailsPosition === 'bottom'
+		const bottom = this.thumbnailsPosition === thumbnailsPositionMap.bottom
 			? this.Height - this.splitters[0].position * g_dKoef_mm_to_pix
 			: this.Height;
 
@@ -1317,7 +1323,7 @@
 	CEditorPage.prototype.handleAnimPaneSplitter = function () {
 		const splitterTop = parseInt(this.SplitterDiv.style.top);
 
-		const bottom = this.thumbnailsPosition === 'bottom'
+		const bottom = this.thumbnailsPosition === thumbnailsPositionMap.bottom
 			? this.Height - this.splitters[0].position * g_dKoef_mm_to_pix
 			: this.Height;
 
@@ -1360,16 +1366,16 @@
 		}
 	};
 	CEditorPage.prototype.onSplitterResize = function (isNoNeedResize) {
-		if (this.thumbnailsPosition === 'left') {
+		if (this.thumbnailsPosition === thumbnailsPositionMap.left) {
 			this.m_oThumbnailsContainer.Bounds.AbsW = this.splitters[0].position;
 			this.m_oThumbnailsContainer.Bounds.R = this.splitters[0].position;
 			this.m_oThumbnailsSplit.Bounds.L = this.splitters[0].position;
 		}
-		if (this.thumbnailsPosition === 'right') {
+		if (this.thumbnailsPosition === thumbnailsPositionMap.right) {
 			this.m_oThumbnailsContainer.Bounds.AbsW = this.splitters[0].position;
 			this.m_oThumbnailsSplit.Bounds.R = this.splitters[0].position;
 		}
-		if (this.thumbnailsPosition === 'bottom') {
+		if (this.thumbnailsPosition === thumbnailsPositionMap.bottom) {
 			this.m_oThumbnailsContainer.Bounds.AbsH = this.splitters[0].position;
 			this.m_oThumbnailsSplit.Bounds.B = this.splitters[0].position;
 		}
@@ -1393,13 +1399,13 @@
 		this.splitters[1].setPosition(notesSplitterPosition, false, true);
 
 		if (this.IsUseNullThumbnailsSplitter || (0 != this.splitters[0].position)) {
-			if (this.thumbnailsPosition === 'left') {
+			if (this.thumbnailsPosition === thumbnailsPositionMap.left) {
 				this.m_oMainParent.Bounds.L = this.splitters[0].position + GlobalSkin.SplitterWidthMM;
 			}
-			if (this.thumbnailsPosition === 'right') {
+			if (this.thumbnailsPosition === thumbnailsPositionMap.right) {
 				this.m_oMainParent.Bounds.R = this.splitters[0].position + GlobalSkin.SplitterWidthMM;
 			}
-			if (this.thumbnailsPosition === 'bottom') {
+			if (this.thumbnailsPosition === thumbnailsPositionMap.bottom) {
 				this.m_oMainParent.Bounds.B = this.splitters[0].position + GlobalSkin.SplitterWidthMM;
 			}
 			this.m_oMainContent.Bounds.B = GlobalSkin.SupportNotes ? this.splitters[1].position + GlobalSkin.SplitterWidthMM : 1000;
@@ -1412,13 +1418,13 @@
 			this.m_oThumbnailsSplit.HtmlElement.style.display = "block";
 			this.m_oMainParent.HtmlElement.style.borderLeft = ("1px solid " + GlobalSkin.BorderSplitterColor);
 		} else {
-			if (this.thumbnailsPosition === 'left') {
+			if (this.thumbnailsPosition === thumbnailsPositionMap.left) {
 				this.m_oMainParent.Bounds.L = 0;
 			}
-			if (this.thumbnailsPosition === 'right') {
+			if (this.thumbnailsPosition === thumbnailsPositionMap.right) {
 				this.m_oMainParent.Bounds.R = 0;
 			}
-			if (this.thumbnailsPosition === 'bottom') {
+			if (this.thumbnailsPosition === thumbnailsPositionMap.bottom) {
 				this.m_oMainParent.Bounds.B = 0;
 			}
 
@@ -4765,8 +4771,6 @@
 	// EXPORTS
 
 	window['AscCommon'] = window['AscCommon'] || {};
-	window['AscCommonSlide'] = window['AscCommonSlide'] || {};
-	window['AscCommonSlide'].CEditorPage = CEditorPage;
 
 	window['AscCommon'].HIDDEN_PANE_HEIGHT = HIDDEN_PANE_HEIGHT;
 	window['AscCommon'].TIMELINE_HEIGHT = TIMELINE_HEIGHT;
@@ -4781,5 +4785,9 @@
 	window['AscCommon'].X_Right_Margin = 15;
 	window['AscCommon'].Y_Bottom_Margin = 20;
 	window['AscCommon'].Y_Top_Margin = 20;
+
+	window['AscCommonSlide'] = window['AscCommonSlide'] || {};
+	window['AscCommonSlide'].CEditorPage = CEditorPage;
+	window['AscCommonSlide'].thumbnailsPositionMap = thumbnailsPositionMap;
 
 })(window);
