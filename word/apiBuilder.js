@@ -15127,6 +15127,7 @@
 	 * @param {byte} g - Green color component value.
 	 * @param {byte} b - Blue color component value.
 	 * @returns {boolean}
+	 * @since 8.4.0
 	 * @see office-js-api/Examples/{Editor}/ApiTablePr/Methods/SetTableBorderAll.js
 	 */
 	ApiTablePr.prototype.SetTableBorderAll = function(sType, nSize, nSpace, r, g, b)
