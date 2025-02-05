@@ -4970,7 +4970,12 @@ background-repeat: no-repeat;\
 	};
 	asc_docs_api.prototype.sync_TextLangCallBack  = function(Lang)
 	{
-		this.sendEvent("asc_onTextLanguage", Lang.Val);
+		// TODO: По-хорошему, надо сюда уже присылать lcid, а решать какой выше
+		let lcid = Lang.Val;
+		if (this.asc_isRtlTextDirection() && undefined !== Lang.Bidi)
+			lcid = Lang.Bidi;
+		
+		this.sendEvent("asc_onTextLanguage", lcid);
 	};
 	asc_docs_api.prototype.sync_ParaStyleName     = function(Name)
 	{
