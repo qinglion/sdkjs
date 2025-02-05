@@ -5779,13 +5779,18 @@
 	 * Returns the current paragraph where the cursor is located.
 	 * @memberof ApiDocumentContent
 	 * @typeofeditors ["CDE"]
-	 * @return {ApiParagraph}
+	 * @return {?ApiParagraph}
 	 * @since 8.4.0
 	 * @see office-js-api/Examples/{Editor}/ApiDocumentContent/Methods/GetCurrentParagraph.js
 	 */
 	ApiDocumentContent.prototype.GetCurrentParagraph = function()
 	{
-		return new ApiParagraph(this.Document.GetCurrentParagraph());
+		let oPara = this.Document.GetCurrentParagraph();
+		if (!oPara) {
+			return null;
+		}
+
+		return new ApiParagraph(oPara);
 	};
 	//------------------------------------------------------------------------------------------------------------------
 	//
