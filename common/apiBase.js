@@ -5464,6 +5464,11 @@
 	baseEditorsApi.prototype.asc_mergeSelectedShapesAction = function(operation) {
 
 	};
+	baseEditorsApi.prototype.asc_setRtlTextDirection = function(isRtl) {
+	};
+	baseEditorsApi.prototype.asc_isRtlTextDirection = function() {
+		return false;
+	};
 
 	//----------------------------------------------------------export----------------------------------------------------
 	window['AscCommon']                = window['AscCommon'] || {};
