@@ -51,8 +51,7 @@
 	 */
 	function Text_Type() {
 		/**
-		 * if text is inherited so we consider that text fields in it have wrong values,
-		 * and we recalculate values them
+		 * if text is inherited (for calculate presentation field)
 		 */
 		this.isInherited = false;
 

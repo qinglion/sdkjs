@@ -402,7 +402,7 @@ AscCommon.CShapeDrawer.prototype.ds = function()
 
 function parseFieldPictureFormat(vsdxFieldValue, vsdxFieldFormat) {
 	let res = "@";
-	if (vsdxFieldFormat.f) {
+	if (vsdxFieldFormat.f && vsdxFieldFormat.f !== "Inh") {
 		let formatFunction = vsdxFieldFormat.f.toUpperCase();
 		let vFieldPicture = parseInt(formatFunction.substring('FIELDPICTURE('.length));
 
@@ -670,6 +670,9 @@ AscCommonWord.CPresentationField.prototype.private_GetString = function()
 {
 	//todo add num formats with units in editor
 
+	// now it works like if field function is not CREATOR or PAGECOUNT or it's now simple override value
+	// take values from text tag despite it is inherited or not
+
 	// return; returns direct tag value
 	// if (!this.isTextInherited) {
 	// 	return;
@@ -737,11 +740,12 @@ AscCommonWord.CPresentationField.prototype.private_GetString = function()
 				val = logicDocument.getCountPages();
 			}
 		}
-		else if("PAGENUMBER()" === sFieldType) {
-			if (logicDocument) {
-				val = logicDocument.getCurrentPage();
-			}
-		}
+		// else if("PAGENUMBER()" === sFieldType) {
+			// todo add recalculate on page load
+		// 	if (logicDocument) {
+		// 		val = logicDocument.getCurrentPage();
+		// 	}
+		// }
  		// else if("NOW()" === sFieldType)
 		// {
 		// 	let oDateTime = new Asc.cDate();
@@ -763,13 +767,17 @@ AscCommonWord.CPresentationField.prototype.private_GetString = function()
 				val = logicDocument.core.creator;
 			}
 		}
-		else if("WIDTH" === sFieldType)
-		{
-			//todo display units
-			//leave value
-		}
-		else if ((this.vsdxFieldValue.u === "STR" || !this.vsdxFieldValue.u) && (sFieldType === "INH" || !sFieldType)) {
+		// else if("WIDTH" === sFieldType)
+		// {
+		// 	//todo display units
+		// 	//leave value
+		// }
+		else if ((this.vsdxFieldValue.u === "STR" || !this.vsdxFieldValue.u) && (sFieldType === "INH" || !sFieldType)
+			&& !this.vsdxFieldFormat) {
+		// else if (this.vsdxFieldValue.u === "STR" && (sFieldType === "INH" || !sFieldType)) {
 			// handle simple values. consider is function is INH value is calculated correctly already
+			// like
+			// <Cell N='Value' V='1' F='Inh'/>
 			val = this.vsdxFieldValue.v;
 		}
 		else
