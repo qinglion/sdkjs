@@ -5774,6 +5774,19 @@
 
 		return this.Document.GetText(oInnerProps);
 	};
+
+	/**
+	 * Returns the current paragraph where the cursor is located.
+	 * @memberof ApiDocumentContent
+	 * @typeofeditors ["CDE"]
+	 * @return {ApiParagraph}
+	 * @since 8.4.0
+	 * @see office-js-api/Examples/{Editor}/ApiDocumentContent/Methods/GetCurrentParagraph.js
+	 */
+	ApiDocumentContent.prototype.GetCurrentParagraph = function()
+	{
+		return new ApiParagraph(this.Document.GetCurrentParagraph());
+	};
 	//------------------------------------------------------------------------------------------------------------------
 	//
 	// ApiDocument
@@ -22095,6 +22108,7 @@
 	ApiDocumentContent.prototype["GetAllParagraphs"]     = ApiDocumentContent.prototype.GetAllParagraphs;
 	ApiDocumentContent.prototype["GetAllTables"]         = ApiDocumentContent.prototype.GetAllTables;
 	ApiDocumentContent.prototype["GetText"]         	 = ApiDocumentContent.prototype.GetText;
+	ApiDocumentContent.prototype["GetCurrentParagraph"]  = ApiDocumentContent.prototype.GetCurrentParagraph;
 
 	ApiRange.prototype["GetClassType"]               = ApiRange.prototype.GetClassType;
 	ApiRange.prototype["GetParagraph"]               = ApiRange.prototype.GetParagraph;
