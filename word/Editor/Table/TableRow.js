@@ -87,7 +87,7 @@ function CTableRow(Table, Cols, TableGrid)
     this.Index = 0;
 
 	this.ReviewType = reviewtype_Common;
-	this.ReviewInfo = new CReviewInfo();
+	this.ReviewInfo = new AscWord.ReviewInfo();
 
 	if (editor
 		&& !editor.isPresentationEditor
@@ -137,13 +137,7 @@ CTableRow.prototype =
 		Row.private_UpdateTableGrid();
         if(oPr && oPr.Comparison)
         {
-            if (oPr.SkipUpdateInfo) {
-                oPr.Comparison.saveReviewInfo(Row, this);
-            } else if (oPr.bSaveCustomReviewType) {
-                oPr.Comparison.saveCustomReviewInfo(Row, this, oPr.Comparison.nInsertChangesType);
-            } else {
-                oPr.Comparison.updateReviewInfo(Row, oPr.Comparison.nInsertChangesType);
-            }
+					oPr.Comparison.checkReviewInfoOfCopiedElements(Row, this);
         }
 		return Row;
 	},
@@ -743,7 +737,7 @@ CTableRow.prototype =
 		// Long          : количество ячеек
 		// Array strings : Id ячеек
 		// Long          : ReviewType
-		// CReviewInfo   : ReviewType
+		// AscWord.ReviewInfo   : ReviewType
 
 		Writer.WriteString2(this.Id);
 		this.Pr.Write_ToBinary(Writer);
@@ -753,8 +747,8 @@ CTableRow.prototype =
 		for (var Index = 0; Index < Count; Index++)
 			Writer.WriteString2(this.Content[Index].Get_Id());
 
-		if (!(this.ReviewInfo instanceof CReviewInfo))
-			this.ReviewInfo = new CReviewInfo();
+		if (!(this.ReviewInfo instanceof AscWord.ReviewInfo))
+			this.ReviewInfo = new AscWord.ReviewInfo();
 
 		Writer.WriteLong(this.ReviewType);
 		this.ReviewInfo.WriteToBinary(Writer);
@@ -767,7 +761,7 @@ CTableRow.prototype =
 		// Long            : количество ячеек
 		// Array variables : сами ячейки
 		// Long            : ReviewType
-		// CReviewInfo     : ReviewType
+		// AscWord.ReviewInfo     : ReviewType
 
 		this.Id = Reader.GetString2();
 		this.Pr = new CTableRowPr();
@@ -783,17 +777,11 @@ CTableRow.prototype =
 		}
 
 		this.ReviewType = Reader.GetLong();
-		this.ReviewInfo = new CReviewInfo();
+		this.ReviewInfo = new AscWord.ReviewInfo();
 		this.ReviewInfo.ReadFromBinary(Reader);
 
 		this.Internal_ReIndexing();
-
-		AscCommon.CollaborativeEditing.Add_NewObject(this);
-	},
-
-    Load_LinkData : function(LinkData)
-    {
-    }
+	}
 };
 /**
  * Доступ к родительской таблице
@@ -1042,7 +1030,7 @@ CTableRow.prototype.GetReviewType = function()
 };
 /**
  * Возвращаем информацию о рецензенте
- * @returns {CReviewInfo}
+ * @returns {AscWord.ReviewInfo}
  */
 CTableRow.prototype.GetReviewInfo = function()
 {
@@ -1083,7 +1071,7 @@ CTableRow.prototype.SetReviewType = function(nType, isCheckDeleteAdded)
 /**
  * Меняем тип рецензирования вместе с информацией о рецензента
  * @param {number} nType
- * @param {CReviewInfo} oInfo
+ * @param {AscWord.ReviewInfo} oInfo
  */
 CTableRow.prototype.SetReviewTypeWithInfo = function(nType, oInfo)
 {

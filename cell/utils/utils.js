@@ -436,6 +436,12 @@
 		Range.prototype.compareByLeftTop = function (a, b) {
 			return Range.prototype.compareCell(a.c1, a.r1, b.c1, b.r1);
 		};
+		Range.prototype.compareByRightTop = function (a, b) {
+			return Range.prototype.compareCell(a.c2, a.r1, b.c2, b.r1);
+		};
+		Range.prototype.compareByLeftBottom = function (a, b) {
+			return Range.prototype.compareCell(a.c1, a.r2, b.c1, b.r2);
+		};
 		Range.prototype.compareByRightBottom = function (a, b) {
 			return Range.prototype.compareCell(a.c2, a.r2, b.c2, b.r2);
 		};
@@ -2404,10 +2410,10 @@
 					let api = window.Asc.editor;
 					let wb = api && api.wb;
 					let ws = wb.getWorksheet();
-					if (ws && ws.getRightToLeft()) {
+					/*if (ws && ws.getRightToLeft()) {
 						oMatrix.sx = -1;
 						oMatrix.tx = (ws.getCtxWidth() * vector_koef) - oMatrix.tx;
-					}
+					}*/
 					graphics.transform3(oMatrix);
 					var shapeDrawer = new AscCommon.CShapeDrawer();
 					shapeDrawer.Graphics = graphics;
@@ -3234,6 +3240,10 @@
 			this.bChangeColorScheme = false;
 			this.bChangeActive = false;
 			this.activeSheet = null;
+			this.onSlicer = {};
+			this.onSlicerCache = {};
+			this.UpdateRigions = {};
+			this.snapshot = null;
 		}
 
 		/** @constructor */

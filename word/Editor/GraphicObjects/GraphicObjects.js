@@ -151,7 +151,7 @@ CGraphicObjects.prototype =
     AddContentControl: function(nContentControlType)
     {
         var oTargetDocContent = this.getTargetDocContent();
-        if(oTargetDocContent && !oTargetDocContent.bPresentation){
+        if(oTargetDocContent && (!oTargetDocContent.bPresentation || nContentControlType === Asc.c_oAscSdtLevelType.Inline && !oTargetDocContent.Is_ChartTitleContent())){
             return oTargetDocContent.AddContentControl(nContentControlType);
         }
 
@@ -427,6 +427,42 @@ CGraphicObjects.prototype =
     },
 
     createWatermarkImage: DrawingObjectsController.prototype.createWatermarkImage,
+
+
+    getAllInksDrawings: function ()
+    {
+        let aDrawings = this.document.GetAllDrawingObjects();
+        let aInksDrawings = [];
+        for(let nIdx = 0; nIdx < aDrawings.length; ++nIdx)
+        {
+            let oDrawing = aDrawings[nIdx];
+            if(oDrawing.GraphicObj.isInk())
+            {
+                aInksDrawings.push(oDrawing);
+            }
+        }
+        return aInksDrawings;
+    },
+    haveInks: function ()
+    {
+        return this.getAllInksDrawings().length > 0;
+    },
+    removeAllInks: function ()
+    {
+        let aInksDrawings = this.getAllInksDrawings();
+        if(aInksDrawings.length > 0)
+        {
+            this.document.StartAction(0);
+            for(let nIdx = 0; nIdx < aInksDrawings.length; ++nIdx)
+            {
+                let oDrawing = aInksDrawings[nIdx];
+                oDrawing.Remove_FromDocument(false);
+                this.deselectObject(oDrawing.GraphicObj);
+            }
+            this.document.Recalculate();
+            this.document.FinalizeAction();
+        }
+    },
 
 
     createWatermark: function(oProps)
@@ -786,12 +822,14 @@ CGraphicObjects.prototype =
             {
                 image_props = new asc_CImgProperty(para_drawing_props);
                 image_props.ImageUrl = props_by_types.imageProps.ImageUrl;
+                image_props.isCrop = props_by_types.imageProps.isCrop;
                 image_props.Width = props_by_types.imageProps.w;
                 image_props.Height = props_by_types.imageProps.h;
                 image_props.rot = props_by_types.imageProps.rot;
                 image_props.flipH = props_by_types.imageProps.flipH;
                 image_props.flipV = props_by_types.imageProps.flipV;
                 image_props.lockAspect = props_by_types.imageProps.lockAspect;
+                image_props.transparent = props_by_types.imageProps.transparent;
 
                 image_props.pluginGuid = props_by_types.imageProps.pluginGuid;
                 image_props.pluginData = props_by_types.imageProps.pluginData;
@@ -2929,6 +2967,11 @@ CGraphicObjects.prototype =
         var objects_for_grouping = this.canGroup(true);
         if(objects_for_grouping.length < 2)
             return;
+		
+		let anchorPara = objects_for_grouping[0].parent.Get_ParentParagraph();
+		if (!anchorPara)
+			return;
+
 		var bTrackRevisions = false;
 		if (this.document.IsTrackRevisions())
 		{
@@ -2956,11 +2999,8 @@ CGraphicObjects.prototype =
         para_drawing.setExtent(group.spPr.xfrm.extX, group.spPr.xfrm.extY);
 
         var page_index = objects_for_grouping[0].parent.pageIndex;
-        var first_paragraph = objects_for_grouping[0].parent.Get_ParentParagraph();
-        var nearest_pos = this.document.Get_NearestPos(objects_for_grouping[0].parent.pageIndex, dOffX, dOffY, true, para_drawing);
-
-        nearest_pos.Paragraph.Check_NearestPos(nearest_pos);
-
+        let anchorPos = this.document.Get_NearestPos(objects_for_grouping[0].parent.pageIndex, dOffX, dOffY, true, para_drawing);
+		
         var nPageIndex = objects_for_grouping[0].parent.pageIndex;
         for(i = 0; i < objects_for_grouping.length; ++i)
         {
@@ -2989,10 +3029,15 @@ CGraphicObjects.prototype =
                     Value       : dOffY
                 }
             }));
-        para_drawing.Set_XYForAdd(dOffX, dOffY, nearest_pos, nPageIndex);
+		
+		if (anchorPos && anchorPos.Paragraph)
+		{
+			anchorPos.Paragraph.Check_NearestPos(anchorPos);
+			para_drawing.Set_XYForAdd(dOffX, dOffY, anchorPos, nPageIndex);
+		}
 
-        para_drawing.AddToParagraph(first_paragraph);
-        para_drawing.Parent = first_paragraph;
+        para_drawing.AddToParagraph(anchorPara);
+        para_drawing.Parent = anchorPara;
         this.addGraphicObject(para_drawing);
         this.resetSelection();
         this.selectObject(group, page_index);
@@ -3021,7 +3066,7 @@ CGraphicObjects.prototype =
         if(ungroup_arr.length > 0)
         {
             this.resetSelection();
-            var i, j, nearest_pos, cur_group, sp_tree, sp, parent_paragraph, page_num;
+            var i, j, anchorPos, cur_group, sp_tree, sp, parent_paragraph, page_num;
             var arrCenterPos = [], aPos;
             for(i = 0; i < ungroup_arr.length; ++i)
             {
@@ -3099,9 +3144,8 @@ CGraphicObjects.prototype =
                     {
                         sp.spPr.setFill(cur_group.spPr.Fill.createDuplicate());
                     }
-
-                    nearest_pos = this.document.Get_NearestPos(page_num, sp.bounds.x + sp.posX, sp.bounds.y + sp.posY, true, drawing);
-                    nearest_pos.Paragraph.Check_NearestPos(nearest_pos);
+	
+					anchorPos = this.document.Get_NearestPos(page_num, sp.bounds.x + sp.posX, sp.bounds.y + sp.posY, true, drawing);
                     var fPosX = xc - hc;
                     var fPosY = yc - vc;
                     drawing.Set_Props(new asc_CImgProperty(
@@ -3122,7 +3166,12 @@ CGraphicObjects.prototype =
                             Value       : 0
                         }
                     }));
-                    drawing.Set_XYForAdd(fPosX, fPosY, nearest_pos, page_num);
+					
+					if (anchorPos && anchorPos.Paragraph)
+					{
+						anchorPos.Paragraph.Check_NearestPos(anchorPos);
+						drawing.Set_XYForAdd(fPosX, fPosY, anchorPos, page_num);
+					}
 
                     sp.convertFromSmartArt(true);
                     var oSm = sp.hasSmartArt && sp.hasSmartArt(true);

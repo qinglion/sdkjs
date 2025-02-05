@@ -168,8 +168,16 @@
 			PivotOverlap				: -314,
 			PivotGroup					: -315,
 			PivotWithoutUnderlyingData	: -316,
+			PivotFieldNameExists        : -317,
+			FormulaInPivotFieldName     : -318,
+			PasteInPivot                : -319,
 
 			CircularReference			: -320,
+			PivotItemNameNotFound       : -321,
+			CalculatedItemInPageField   : -322,
+			NotUniqueFieldWithCalculated: -323,
+			WrongDataFieldSubtotalForCalculatedItems: -324,
+			PivotFieldCustomSubtotalsWithCalculatedItems: -325,
 
 			ForceSaveButton: -331,
 			ForceSaveTimeout: -332,
@@ -252,7 +260,12 @@
 
 			MustIntegerOrDecimalNumber: 1070,
 
-			DocumentAndChangeMismatch: 1080
+			DocumentAndChangeMismatch: 1080,
+			EditProtectedRange       : 1081,
+
+
+			// pdf forms
+			PDFFormsLocked: -1200
 		}
 	};
 
@@ -361,6 +374,14 @@
 	prot['InvalidReferenceOrName']           = prot.InvalidReferenceOrName;
 	prot['LockCreateDefName']                = prot.LockCreateDefName;
 	prot['LockedCellPivot']                  = prot.LockedCellPivot;
+	prot['PivotFieldNameExists']             = prot.PivotFieldNameExists;
+	prot['FormulaInPivotFieldName']          = prot.FormulaInPivotFieldName;
+	prot['PivotItemNameNotFound']            = prot.PivotItemNameNotFound;
+	prot['CalculatedItemInPageField']        = prot.CalculatedItemInPageField;
+	prot['NotUniqueFieldWithCalculated']     = prot.NotUniqueFieldWithCalculated
+	prot['WrongDataFieldSubtotalForCalculatedItems'] = prot.WrongDataFieldSubtotalForCalculatedItems;
+	prot['PivotFieldCustomSubtotalsWithCalculatedItems'] = prot.PivotFieldCustomSubtotalsWithCalculatedItems;
+	prot['PasteInPivot']                     = prot.PasteInPivot;
 	prot['PivotLabledColumns']               = prot.PivotLabledColumns;
 	prot['PivotOverlap']                     = prot.PivotOverlap;
 	prot['PivotGroup']                       = prot.PivotGroup;
@@ -422,6 +443,8 @@
 	prot['TracePrecedentsNoValidReference']  = prot.TracePrecedentsNoValidReference;
 	prot['MustIntegerOrDecimalNumber']       = prot.MustIntegerOrDecimalNumber;
 	prot['DocumentAndChangeMismatch']        = prot.DocumentAndChangeMismatch;
+	prot['EditProtectedRange']               = prot.EditProtectedRange;
+	prot['PDFFormsLocked']                   = prot.PDFFormsLocked;
 
 
 

@@ -86,6 +86,50 @@
         return res;
     }
 
+    function completePathForLocalLinks(str) {
+        // if the result contains a path relative to the current file, then we add data from the local path
+        // BookLink.xlsx => C:\Users\FileFolder\[BookLink.xlsx] - same folder
+        // test/BookLink.xlsx => C:\Users\FileFolder\test\[BookLink.xlsx] - deep folder
+        // Users/FileFolder/BookLink.xlsx => C:\Users\FileFolder\[BookLink.xlsx] - up folder
+        // file:///D:\AnotherDiskFolder\BookLink.xlsx => D:\AnotherDiskFolder\[BookLink.xlsx] - file on another disk
+
+        let res = str;
+        if (window["AscDesktopEditor"] && window["AscDesktopEditor"]["IsLocalFile"]()) {
+            /* replace file:// */
+            res = res.replace(/^file:\/\/\//, '');
+            res = res.replace(/^file:\/\//, '');
+
+            const currentFilePath = window["AscDesktopEditor"]["LocalFileGetSourcePath"]();
+            let currentPathParts = currentFilePath && currentFilePath.split(/[\\/]/).slice(0, -1);    // remove file name
+
+            let receivedPathParts = res.split(/[\\/]/);
+
+            let diskRegex = /^[a-zA-Z]:/;
+            let isLinkHasDiskLetter = diskRegex.test(receivedPathParts[0]);
+
+            if (currentPathParts && !isLinkHasDiskLetter && res.indexOf(currentPathParts[0]) === -1) {
+                // incomplete link string, check the path
+
+                // TODO all links should contain BookLink, not the full path
+                if (res[0] === "/" || res[0] === "//") {
+                    // link to other file up folder
+                    // add only disk name to path
+                    res = currentPathParts[0] + receivedPathParts.join("\\");
+                } else {
+                    // link to other file deep in the current folder
+                    // add current folder to path
+                    for (let i = 0; i < receivedPathParts.length; i++) {
+                        let part = receivedPathParts[i];
+                        currentPathParts.push(part);
+                    }
+    
+                    res = currentPathParts.join("\\");
+                }
+            } 
+        }
+        return res;
+    }
+
 	var XLSB = {
 		rt_ROW_HDR : 0,
 		rt_CELL_BLANK : 1,
@@ -284,12 +328,25 @@
         Date1904: 0,
         DateCompatibility: 1,
 		HidePivotFieldList: 2,
-		ShowPivotChartFilter: 3
+		ShowPivotChartFilter: 3,
+        UpdateLinks: 4
     };
     /** @enum */
     var c_oSerWorkbookViewTypes =
     {
-        ActiveTab: 0
+        ActiveTab: 0,
+        AutoFilterDateGrouping: 1,
+        FirstSheet: 2,
+        Minimized: 3,
+        ShowHorizontalScroll: 4,
+        ShowSheetTabs: 5,
+        ShowVerticalScroll: 6,
+        TabRatio: 7,
+        Visibility: 8,
+        WindowHeight: 9,
+        WindowWidth: 10,
+        XWindow: 11,
+        YWindow: 12
     };
     /** @enum */
     var c_oSerDefinedNameTypes =
@@ -1741,6 +1798,12 @@
         normal: 0,
         pageBreakPreview: 1,
         pageLayout: 2
+    };
+
+     var EUpdateLinksType = {
+        updatelinksAlways:  0,
+        updatelinksNever:  1,
+        updatelinksUserSet:  2
     };
 
     var g_nNumsMaxId = 164;
@@ -3664,33 +3727,33 @@
         };
         this.WriteWorkbookPr = function()
         {
-            var oWorkbookPr = this.wb.WorkbookPr;
-            if(null != oWorkbookPr)
-            {
-                if(null != oWorkbookPr.Date1904)
-                {
+            let oWorkbookPr = this.wb.workbookPr;
+            if (null != oWorkbookPr) {
+                if (null != oWorkbookPr.Date1904) {
                     this.memory.WriteByte(c_oSerWorkbookPrTypes.Date1904);
                     this.memory.WriteByte(c_oSerPropLenType.Byte);
                     this.memory.WriteBool(oWorkbookPr.Date1904);
                 }
-                else if (null != oWorkbookPr.DateCompatibility)
-                {
+                if (null != oWorkbookPr.DateCompatibility) {
                     this.memory.WriteByte(c_oSerWorkbookPrTypes.DateCompatibility);
                     this.memory.WriteByte(c_oSerPropLenType.Byte);
                     this.memory.WriteBool(oWorkbookPr.DateCompatibility);
                 }
-				else if (null != oWorkbookPr.HidePivotFieldList)
-				{
-					this.memory.WriteByte(c_oSerWorkbookPrTypes.HidePivotFieldList);
-					this.memory.WriteByte(c_oSerPropLenType.Byte);
-					this.memory.WriteBool(oWorkbookPr.HidePivotFieldList);
-				}
-				else if (null != oWorkbookPr.ShowPivotChartFilter)
-				{
-					this.memory.WriteByte(c_oSerWorkbookPrTypes.ShowPivotChartFilter);
-					this.memory.WriteByte(c_oSerPropLenType.Byte);
-					this.memory.WriteBool(oWorkbookPr.ShowPivotChartFilter);
-				}
+                if (null != oWorkbookPr.HidePivotFieldList) {
+                    this.memory.WriteByte(c_oSerWorkbookPrTypes.HidePivotFieldList);
+                    this.memory.WriteByte(c_oSerPropLenType.Byte);
+                    this.memory.WriteBool(oWorkbookPr.HidePivotFieldList);
+                }
+                if (null != oWorkbookPr.ShowPivotChartFilter) {
+                    this.memory.WriteByte(c_oSerWorkbookPrTypes.ShowPivotChartFilter);
+                    this.memory.WriteByte(c_oSerPropLenType.Byte);
+                    this.memory.WriteBool(oWorkbookPr.ShowPivotChartFilter);
+                }
+                if (null != oWorkbookPr.UpdateLinks) {
+                    this.memory.WriteByte(c_oSerWorkbookPrTypes.UpdateLinks);
+                    this.memory.WriteByte(c_oSerPropLenType.Byte);
+                    this.memory.WriteByte(oWorkbookPr.UpdateLinks);
+                }
 			}
         };
         this.WriteBookViews = function()
@@ -3698,13 +3761,21 @@
             var oThis = this;
             this.bs.WriteItem(c_oSerWorkbookTypes.WorkbookView, function(){oThis.WriteWorkbookView();});
         };
-        this.WriteWorkbookView = function()
-        {
-            if (null != this.wb.nActive)
-            {
-                this.memory.WriteByte( c_oSerWorkbookViewTypes.ActiveTab);
+        this.WriteWorkbookView = function () {
+            if (null != this.wb.nActive) {
+                this.memory.WriteByte(c_oSerWorkbookViewTypes.ActiveTab);
                 this.memory.WriteByte(c_oSerPropLenType.Long);
                 this.memory.WriteLong(this.wb.nActive);
+            }
+            if (null != this.wb.showVerticalScroll) {
+                this.memory.WriteByte(c_oSerWorkbookViewTypes.ShowVerticalScroll);
+                this.memory.WriteByte(c_oSerPropLenType.Byte);
+                this.memory.WriteBool(this.wb.showVerticalScroll);
+            }
+            if (null != this.wb.showHorizontalScroll) {
+                this.memory.WriteByte(c_oSerWorkbookViewTypes.ShowHorizontalScroll);
+                this.memory.WriteByte(c_oSerPropLenType.Byte);
+                this.memory.WriteBool(this.wb.showHorizontalScroll);
             }
         };
         this.WriteDefinedNames = function()
@@ -8694,10 +8765,8 @@
             var oThis = this;
             if ( c_oSerWorkbookTypes.WorkbookPr === type )
             {
-                if(null == this.oWorkbook.WorkbookPr)
-                    this.oWorkbook.WorkbookPr = {};
                 res = this.bcr.Read2Spreadsheet(length, function(t,l){
-                    return oThis.ReadWorkbookPr(t,l,oThis.oWorkbook.WorkbookPr);
+                    return oThis.ReadWorkbookPr(t,l,oThis.oWorkbook.workbookPr);
                 });
             }
             else if ( c_oSerWorkbookTypes.BookViews === type )
@@ -9417,15 +9486,17 @@
         this.ReadWorkbookPr = function(type, length, WorkbookPr)
         {
             var res = c_oSerConstants.ReadOk;
-            if ( c_oSerWorkbookPrTypes.Date1904 == type )
-                WorkbookPr.Date1904 = this.stream.GetBool();
-            else if ( c_oSerWorkbookPrTypes.DateCompatibility == type )
-                WorkbookPr.DateCompatibility = this.stream.GetBool();
-			else if ( c_oSerWorkbookPrTypes.HidePivotFieldList == type ) {
-				WorkbookPr.HidePivotFieldList = this.stream.GetBool();
-			} else if ( c_oSerWorkbookPrTypes.ShowPivotChartFilter == type ) {
-				WorkbookPr.ShowPivotChartFilter = this.stream.GetBool();
-			} else
+            if ( c_oSerWorkbookPrTypes.Date1904 === type )
+                WorkbookPr.setDate1904(this.stream.GetBool());
+            else if ( c_oSerWorkbookPrTypes.DateCompatibility === type )
+                WorkbookPr.setDateCompatibility(this.stream.GetBool());
+			else if ( c_oSerWorkbookPrTypes.HidePivotFieldList === type ) {
+				WorkbookPr.setHidePivotFieldList(this.stream.GetBool());
+			} else if ( c_oSerWorkbookPrTypes.ShowPivotChartFilter === type ) {
+				WorkbookPr.setShowPivotChartFilter(this.stream.GetBool());
+			} else if ( c_oSerWorkbookPrTypes.UpdateLinks === type ) {
+                WorkbookPr.setUpdateLinks(this.stream.GetUChar());
+            } else
                 res = c_oSerConstants.ReadUnknown;
             return res;
         };
@@ -9443,12 +9514,15 @@
                 res = c_oSerConstants.ReadUnknown;
             return res;
         };
-        this.ReadWorkbookView = function(type, length)
-        {
+        this.ReadWorkbookView = function (type, length) {
             var res = c_oSerConstants.ReadOk;
-            if ( c_oSerWorkbookViewTypes.ActiveTab == type )
+            if (c_oSerWorkbookViewTypes.ActiveTab === type) {
                 this.oWorkbook.nActive = this.stream.GetULongLE();
-            else
+            } else  if (c_oSerWorkbookViewTypes.ShowVerticalScroll === type) {
+                this.oWorkbook.showVerticalScroll = this.stream.GetBool();
+            } else  if (c_oSerWorkbookViewTypes.ShowHorizontalScroll === type) {
+                this.oWorkbook.showHorizontalScroll = this.stream.GetBool();
+            } else
                 res = c_oSerConstants.ReadUnknown;
             return res;
         };
@@ -9566,6 +9640,8 @@
 			    var id = this.stream.GetString2LE(length);
 			    if (id) {
                     id = decodeXmlPath(id);
+                    /* TODO is it possible to transfer the id .replace when opening a file to another location?? */
+                    id = completePathForLocalLinks(id);
                 }
 				externalBook.Id = id;
 			} else if (c_oSer_ExternalLinkTypes.SheetNames == type) {
@@ -12522,8 +12598,8 @@
         };
 		this.PostLoadPrepare = function(wb)
 		{
-			if (wb.WorkbookPr && null != wb.WorkbookPr.Date1904) {
-				AscCommon.bDate1904 = wb.WorkbookPr.Date1904;
+			if (wb.workbookPr && null != wb.workbookPr.Date1904) {
+				AscCommon.bDate1904 = wb.workbookPr.Date1904;
 				AscCommonExcel.c_DateCorrectConst = AscCommon.bDate1904?AscCommonExcel.c_Date1904Const:AscCommonExcel.c_Date1900Const;
 			}
 			if (this.InitOpenManager.oReadResult.macros) {
@@ -13368,8 +13444,8 @@
 
     InitOpenManager.prototype.PostLoadPrepare = function(wb)
     {
-        if (wb.WorkbookPr && null != wb.WorkbookPr.Date1904) {
-            AscCommon.bDate1904 = wb.WorkbookPr.Date1904;
+        if (wb.workbookPr && null != wb.workbookPr.Date1904) {
+            AscCommon.bDate1904 = wb.workbookPr.Date1904;
             AscCommonExcel.c_DateCorrectConst = AscCommon.bDate1904?AscCommonExcel.c_Date1904Const:AscCommonExcel.c_Date1900Const;
         }
         if (this.oReadResult.macros) {
@@ -13772,7 +13848,7 @@
                 newXf.XfId = XfIdTmp;
             }
 
-            if (0 == aCellXfs.length && !this.copyPasteObj.isCopyPaste) {
+            if (0 === aCellXfs.length && !this.copyPasteObj.isCopyPaste) {
                 firstXf = newXf;
             } else {
                 newXf = g_StyleCache.addXf(newXf);
@@ -14751,5 +14827,11 @@
     prot['notView'] = prot.notView;
     prot['view'] = prot.view;
     prot['edit'] = prot.edit;
+
+    window['Asc']['EUpdateLinksType'] = window['Asc'].EUpdateLinksType = EUpdateLinksType;
+    prot = EUpdateLinksType;
+    prot['updatelinksAlways'] = prot.updatelinksAlways;
+    prot['updatelinksNever'] = prot.updatelinksNever;
+    prot['updatelinksUserSet'] = prot.updatelinksUserSet;
 
 })(window);

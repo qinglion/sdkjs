@@ -275,6 +275,11 @@ function NativeCreateApi(options)
 			Api = new window["Asc"]["asc_docs_api"](configApi);
 			if (options && options["documentLayout"] && undefined !== options["documentLayout"]["openedAt"])
 				Api.setOpenedAt(options["documentLayout"]["openedAt"]);
+			if (options && options["documentLayout"] && options["documentLayout"]["headingsColor"])
+			{
+				if (window["AscWord"] && window["AscWord"]["setDefaultHeadingColorStr"])
+					window["AscWord"]["setDefaultHeadingColorStr"](options["documentLayout"]["headingsColor"]);
+			}
 			break;
 		}
 		case "spreadsheet":
@@ -285,6 +290,11 @@ function NativeCreateApi(options)
 		case "pdf":
 		{
 			Api = new window["Asc"]["PDFEditorApi"](configApi);
+			break;
+		}
+		case "visio":
+		{
+			Api = new window["Asc"]["VisioEditorApi"](configApi);
 			break;
 		}
 		default:
@@ -301,6 +311,7 @@ function NativeOpenFileData(data, version, xlsx_file_path, options)
 
 	switch (window.NATIVE_DOCUMENT_TYPE)
 	{
+		case "visio":
 		case "document":
 		case "presentation":
 		{
@@ -328,7 +339,7 @@ var clearInterval = window.clearInterval = function() {};
 var setInterval = window.setInterval = function() {};
 
 var console = {
-	log: function (param) { window.native.ConsoleLog(param); },
+	log: function (param) { window.native && window.native.ConsoleLog(param); },
 	time: function (param) {},
 	timeEnd: function (param) {},
 	warn: function() {},

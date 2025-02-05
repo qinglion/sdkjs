@@ -2680,6 +2680,7 @@ function (window, undefined) {
 	function asc_CParagraphProperty(obj) {
 
 		if (obj) {
+			this.Bidi = undefined !== obj.Bidi ? obj.Bidi : undefined;
 			this.ContextualSpacing = (undefined != obj.ContextualSpacing) ? obj.ContextualSpacing : null;
 			this.Ind = (undefined != obj.Ind && null != obj.Ind) ? new asc_CParagraphInd(obj.Ind) : null;
 			this.KeepLines = (undefined != obj.KeepLines) ? obj.KeepLines : null;
@@ -2722,7 +2723,6 @@ function (window, undefined) {
 			this.CanEditBlockCC = undefined !== obj.CanEditBlockCC ? obj.CanEditBlockCC : true;
 			this.CanDeleteInlineCC = undefined !== obj.CanDeleteInlineCC ? obj.CanDeleteInlineCC : true;
 			this.CanEditInlineCC = undefined !== obj.CanEditInlineCC ? obj.CanEditInlineCC : true;
-
 		}
 		else {
 			//ContextualSpacing : false,            // Удалять ли интервал между параграфами одинакового стиля
@@ -2742,6 +2742,7 @@ function (window, undefined) {
 			//
 			//    PageBreakBefore : false,              // начинать параграф с новой страницы
 
+			this.Bidi = undefined;
 			this.ContextualSpacing = undefined;
 			this.Ind = new asc_CParagraphInd();
 			this.KeepLines = undefined;
@@ -2777,7 +2778,13 @@ function (window, undefined) {
 			this.CanEditInlineCC = true;
 		}
 	}
-
+	
+	asc_CParagraphProperty.prototype.asc_getRtlDirection = function() {
+		return this.Bidi;
+	};
+	asc_CParagraphProperty.prototype.asc_putRtlDirection = function(v) {
+		this.Bidi = v;
+	};
 	asc_CParagraphProperty.prototype.asc_getContextualSpacing = function () {
 		return this.ContextualSpacing;
 	};
@@ -3658,6 +3665,8 @@ function (window, undefined) {
 			this.protectionPrint = obj.protectionPrint;
 
 			this.bSetOriginalSize = obj.bSetOriginalSize;
+			this.transparent = obj.transparent;
+			this.isCrop      = obj.isCrop;
 
 		}
 		else {
@@ -3716,6 +3725,9 @@ function (window, undefined) {
 			this.protectionLocked = undefined;
 			this.protectionPrint = undefined;
 			this.bSetOriginalSize = undefined;
+
+			this.transparent = undefined;
+			this.isCrop      = undefined;
 		}
 	}
 
@@ -4095,7 +4107,16 @@ function (window, undefined) {
 	asc_CImgProperty.prototype.asc_putProtectionPrint = function (v) {
 		this.protectionPrint = v;
 	};
+	asc_CImgProperty.prototype.asc_getTransparent = function () {
+		return this.transparent;
+	};
+	asc_CImgProperty.prototype.asc_putTransparent = function (v) {
+		this.transparent = v;
+	};
 
+	asc_CImgProperty.prototype.asc_getIsCrop = function () {
+		return this.isCrop;
+	};
 	/** @constructor */
 	function asc_CSelectedObject(type, val) {
 		this.Type = (undefined != type) ? type : null;
@@ -4108,6 +4129,8 @@ function (window, undefined) {
 	asc_CSelectedObject.prototype.asc_getObjectValue = function () {
 		return this.Value;
 	};
+
+
 
 	/** @constructor */
 	function asc_CShapeFill() {
@@ -4599,7 +4622,14 @@ function (window, undefined) {
 	CHyperlinkProperty.prototype['get_Heading'] = CHyperlinkProperty.prototype.get_Heading;
 
 
-	/** @constructor */
+	/**
+	 * @property {string|null} Id
+	 * @property {string|null} FullName
+	 * @property {string|null} FirstName
+	 * @property {string|null} LastName
+	 * @property {boolean|null} IsAnonymousUser
+	 * @constructor
+	 *  */
 	function asc_CUserInfo() {
 		this.Id = null;
 		this.FullName = null;
@@ -4607,7 +4637,15 @@ function (window, undefined) {
 		this.LastName = null;
 		this.IsAnonymousUser = false;
 	}
-
+	asc_CUserInfo.prototype.clone = function () {
+		let res = new asc_CUserInfo();
+		res.Id = this.Id;
+		res.FullName = this.FullName;
+		res.FirstName = this.FirstName;
+		res.LastName = this.LastName;
+		res.IsAnonymousUser = this.IsAnonymousUser;
+		return res;
+	};
 	asc_CUserInfo.prototype.asc_putId = asc_CUserInfo.prototype.put_Id = function (v) {
 		this.Id = v;
 	};
@@ -4639,7 +4677,32 @@ function (window, undefined) {
 		this.IsAnonymousUser = v;
 	};
 
-	/** @constructor */
+	/**
+	 * @property {string|null} Id
+	 * @property {string|null} Url
+	 * @property {string|null} Title
+	 * @property {string|null} Format
+	 * @property {string|null} VKey
+	 * @property {string|null} Token
+	 * @property {asc_CUserInfo|null} UserInfo
+	 * @property {object|null} Options
+	 * @property {string|null} CallbackUrl
+	 * @property {object|null} TemplateReplacement
+	 * @property {string|null} Mode
+	 * @property {object|null} Permissions
+	 * @property {string|null} Lang
+	 * @property {boolean|null} OfflineApp
+	 * @property {boolean|undefined} Encrypted
+	 * @property {object|undefined} EncryptedInfo
+	 * @property {boolean|null} IsEnabledPlugins
+	 * @property {boolean|null} IsEnabledMacroses
+	 * @property {boolean|null} IsWebOpening
+	 * @property {boolean|null} SupportsOnSaveDocument
+	 * @property {object|null} Wopi
+	 * @property {string|null} shardkey
+	 * @property {object|null} ReferenceData
+	 * @constructor
+	 * */
 	function asc_CDocInfo() {
 		this.Id = null;
 		this.Url = null;
@@ -4666,9 +4729,77 @@ function (window, undefined) {
 
 		//for external reference
 		this.ReferenceData = null;
+
+		this.showVerticalScroll = null;
+		this.showHorizontalScroll = null;
 	}
 
 	prot = asc_CDocInfo.prototype;
+	prot.clone = function () {
+		let res = new asc_CDocInfo();
+		res.Id = this.Id;
+		res.Url = this.Url;
+		res.Title = this.Title;
+		res.Format = this.Format;
+		res.VKey = this.VKey;
+		res.Token = this.Token;
+		res.UserInfo = this.UserInfo ? this.UserInfo.clone() : null;
+		res.Options = this.Options ? JSON.parse(JSON.stringify(this.Options)) : null;
+		res.CallbackUrl = this.CallbackUrl;
+		res.TemplateReplacement = this.TemplateReplacement ? JSON.parse(JSON.stringify(this.TemplateReplacement)) : null;
+		res.Mode = this.Mode;
+		res.Permissions = this.Permissions ? JSON.parse(JSON.stringify(this.Permissions)) : null;
+		res.Lang = this.Lang;
+		res.OfflineApp = this.OfflineApp;
+		res.Encrypted = this.Encrypted;
+		res.EncryptedInfo = this.EncryptedInfo ? JSON.parse(JSON.stringify(this.EncryptedInfo)) : undefined;
+		res.IsEnabledPlugins = this.IsEnabledPlugins;
+		res.IsEnabledMacroses = this.IsEnabledMacroses;
+		res.IsWebOpening = this.IsWebOpening;
+		res.SupportsOnSaveDocument = this.SupportsOnSaveDocument;
+		res.Wopi = this.Wopi ? JSON.parse(JSON.stringify(this.Wopi)) : null;
+		res.shardkey = this.shardkey;
+		res.ReferenceData = this.ReferenceData ? JSON.parse(JSON.stringify(this.ReferenceData)) : null;
+		return res;
+	};
+	prot.extendWithWopiParams = function(data) {
+		let docInfo = this.clone();
+		//like in web-apps/apps/api/wopi/editor-wopi.ejs and onRefreshFile(web-apps/apps/documenteditor/main/app/controller/Main.js)
+		let key = data["key"];
+		let userAuth = data["userAuth"];
+		let fileInfo = data["fileInfo"];
+		let token = data["token"];
+
+		docInfo.put_Id(key);
+		if (fileInfo["FileUrl"]) {
+			docInfo.put_Url(fileInfo["FileUrl"]);
+		} else if (fileInfo["TemplateSource"]) {
+			docInfo.put_Url(fileInfo["TemplateSource"]);
+		} else if (userAuth) {
+			docInfo.put_Url(userAuth["wopiSrc"] + "/contents?access_token=" + userAuth["access_token"]);
+		}
+		docInfo.put_Title(fileInfo["BreadcrumbDocName"] || fileInfo["BaseFileName"]);
+		docInfo.put_CallbackUrl(JSON.stringify(userAuth));
+		docInfo.put_Token(token);
+		//todo does userInfo can change? (IsAnonymousUser)
+
+		let fileType = fileInfo["BaseFileName"] ? fileInfo["BaseFileName"].substr(fileInfo["BaseFileName"].lastIndexOf('.') + 1) : "";
+		fileType = fileInfo["FileExtension"] ? fileInfo["FileExtension"].substr(1) : fileType;
+		fileType = fileType.toLowerCase();
+		docInfo.put_Format(fileType);
+		docInfo.put_Mode(userAuth["mode"]);
+		//todo does permissions can change? (formsubmit, dchat)
+		docInfo.put_CoEditingMode(userAuth["mode"] !== "view" ? "fast" : "strict");
+
+		docInfo.put_Wopi({
+			"FileNameMaxLength": fileInfo["FileNameMaxLength"] && fileInfo["FileNameMaxLength"] > 0 ? fileInfo["FileNameMaxLength"] : 250,
+			"WOPISrc": userAuth["wopiSrc"],
+			"UserSessionId": userAuth["userSessionId"],
+			"Version": fileInfo["Version"],
+			"LastModifiedTime": fileInfo["LastModifiedTime"]
+		});
+		return docInfo;
+	};
 	prot.isFormatWithForms = function () {
 		return this.Format === "oform" || this.Format === "docxf" || this.Format === "pdf";
 	};
@@ -4833,6 +4964,18 @@ function (window, undefined) {
 	};
 	prot.get_Shardkey = prot.asc_getShardkey = function () {
 		return this.shardkey;
+	};
+	prot.put_ShowVerticalScroll = prot.asc_putShowVerticalScroll = function (v) {
+		this.showVerticalScroll = v;
+	};
+	prot.get_ShowVerticalScroll = prot.asc_getShowVerticalScroll = function () {
+		return this.showVerticalScroll;
+	};
+	prot.put_ShowHorizontalScroll = prot.asc_putShowHorizontalScroll = function (v) {
+		this.showHorizontalScroll = v;
+	};
+	prot.get_ShowHorizontalScroll = prot.asc_getShowHorizontalScroll = function () {
+		return this.showHorizontalScroll;
 	};
 
 	function COpenProgress() {
@@ -5048,6 +5191,15 @@ function (window, undefined) {
 			//console.log( this.image.toDataURL("image/png"));
 		};
 
+		this.getCorrectedInputContentSrc = function() {
+			let content = this.inputContentSrc;
+			for (let key in this.replaceMap) {
+				if (!this.replaceMap.hasOwnProperty(key)) continue;
+				content = content.replace(new RegExp(key, 'g'), this.replaceMap[key]);
+			}
+			return content;
+		};
+
 		this.Draw = function (context, dw_or_dx, dh_or_dy, dw, dh) {
 			if (!this.image || !this.isFontsLoaded) return;
 
@@ -5140,6 +5292,11 @@ function (window, undefined) {
 					case AscCommon.c_oEditorId.Spreadsheet: {
 						oShape.setWordShape(false);
 						oShape.setWorksheet(oApi.wb.getWorksheet().model);
+						break;
+					}
+					case AscCommon.c_oEditorId.Visio: {
+						oShape.setWordShape(false);
+						oShape.setParent(oApi.WordControl.m_oLogicDocument);
 						break;
 					}
 				}
@@ -5388,7 +5545,8 @@ function (window, undefined) {
 
 					break;
 				}
-				case AscCommon.c_oEditorId.Presentation: {
+				case AscCommon.c_oEditorId.Presentation:
+				case AscCommon.c_oEditorId.Visio: {
 					if (oApi.WordControl) {
 						if (oApi.watermarkDraw) {
 							oApi.watermarkDraw.zoom = oApi.WordControl.m_nZoomValue / 100;
@@ -5880,6 +6038,30 @@ function (window, undefined) {
 	CDocInfoProp.prototype.put_SymbolsWSCount = function (v) {
 		this.SymbolsWSCount = v;
 	};
+	
+	/**
+	 * @constructor
+	 */
+	function RangePermProp(obj) {
+		if (obj) {
+			this.editText      = undefined !== obj.editText ? obj.editText : true;
+			this.editParagraph = undefined !== obj.editParagraph ? obj.editParagraph : true;
+			this.insertObject  = undefined !== obj.insertObject ? obj.insertObject : true;
+		} else {
+			this.editText      = true;
+			this.editParagraph = true;
+			this.insertObject  = true;
+		}
+	}
+	RangePermProp.prototype.get_canEditText = function() {
+		return this.editText;
+	};
+	RangePermProp.prototype.get_canEditPara = function() {
+		return this.editParagraph;
+	};
+	RangePermProp.prototype.get_canInsObject = function() {
+		return this.insertObject;
+	};
 
 	/*
 	 * Export
@@ -6341,6 +6523,8 @@ function (window, undefined) {
 
 	window["Asc"]["asc_CParagraphProperty"] = window["Asc"].asc_CParagraphProperty = asc_CParagraphProperty;
 	prot = asc_CParagraphProperty.prototype;
+	prot["get_RtlDirection"] = prot["asc_getRtlDirection"] = prot.asc_getRtlDirection;
+	prot["put_RtlDirection"] = prot["asc_putRtlDirection"] = prot.asc_putRtlDirection;
 	prot["get_ContextualSpacing"] = prot["asc_getContextualSpacing"] = prot.asc_getContextualSpacing;
 	prot["put_ContextualSpacing"] = prot["asc_putContextualSpacing"] = prot.asc_putContextualSpacing;
 	prot["get_Ind"] = prot["asc_getInd"] = prot.asc_getInd;
@@ -6677,7 +6861,9 @@ function (window, undefined) {
 	prot["put_ProtectionLocked"] = prot["asc_putProtectionLocked"] = prot.asc_putProtectionLocked;
 	prot["get_ProtectionPrint"] = prot["asc_getProtectionPrint"] = prot.asc_getProtectionPrint;
 	prot["put_ProtectionPrint"] = prot["asc_putProtectionPrint"] = prot.asc_putProtectionPrint;
-
+	prot["get_Transparent"] = prot["asc_getTransparent"] = prot.asc_getTransparent;
+	prot["put_Transparent"] = prot["asc_putTransparent"] = prot.asc_putTransparent;
+	prot["get_IsCrop"] = prot["asc_getIsCrop"] = prot.asc_getIsCrop;
 
 	window["AscCommon"].asc_CSelectedObject = asc_CSelectedObject;
 	prot = asc_CSelectedObject.prototype;
@@ -6845,6 +7031,10 @@ function (window, undefined) {
 	prot["get_Wopi"] = prot["asc_getWopi"] = prot.asc_getWopi;
 	prot["put_Shardkey"] = prot["asc_putShardkey"] = prot.asc_putShardkey;
 	prot["get_Shardkey"] = prot["asc_getShardkey"] = prot.asc_getShardkey;
+	prot["put_ShowVerticalScroll"] = prot["asc_putShowVerticalScroll"] = prot.asc_putShowVerticalScroll;
+	prot["get_ShowVerticalScroll"] = prot["get_getShowVerticalScroll"] = prot.get_getShowVerticalScroll;
+	prot["put_ShowHorizontalScroll"] = prot["asc_putShowHorizontalScroll"] = prot.asc_putShowHorizontalScroll;
+	prot["get_ShowHorizontalScroll"] = prot["get_getShowHorizontalScroll"] = prot.get_getShowHorizontalScroll;
 
 	window["AscCommon"].COpenProgress = COpenProgress;
 	prot = COpenProgress.prototype;
@@ -6906,6 +7096,12 @@ function (window, undefined) {
 	CDocInfoProp.prototype['put_SymbolsCount'] = CDocInfoProp.prototype.put_SymbolsCount;
 	CDocInfoProp.prototype['get_SymbolsWSCount'] = CDocInfoProp.prototype.get_SymbolsWSCount;
 	CDocInfoProp.prototype['put_SymbolsWSCount'] = CDocInfoProp.prototype.put_SymbolsWSCount;
+	
+	window["Asc"]["RangePermProp"] = window["Asc"].RangePermProp = RangePermProp;
+	prot = RangePermProp.prototype;
+	prot["get_canEditText"] = prot.get_canEditText;
+	prot["get_canEditPara"] = prot.get_canEditPara;
+	prot["get_canInsObject"] = prot.get_canInsObject;
 	
 	window["AscCommon"]["pix2mm"] = window["AscCommon"].pix2mm = function(pix)
 	{

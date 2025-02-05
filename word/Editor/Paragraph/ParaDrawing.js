@@ -1151,7 +1151,9 @@ ParaDrawing.prototype.CheckWH = function()
 		extY = 5;
 		rot = 0;
 	}
-	this.setExtent(extX, extY);
+
+	let dKoef = this.GetScaleCoefficient();
+	this.setExtent(extX / dKoef, extY / dKoef);
 
 
 	var EEL = 0.0, EET = 0.0, EER = 0.0, EEB = 0.0;
@@ -1650,6 +1652,9 @@ ParaDrawing.prototype.updatePosition3 = function(pageIndex, x, y, oldPageNum)
 		this.wrappingPolygon.updatePosition(_x, _y);
 
 	this.calculateSnapArrays();
+	
+	if (this.GraphicObj.checkFormShiftView)
+		this.GraphicObj.checkFormShiftView();
 };
 ParaDrawing.prototype.calculateAfterChangeTheme = function()
 {
@@ -1823,11 +1828,23 @@ ParaDrawing.prototype.Get_DrawingType = function()
 };
 ParaDrawing.prototype.Is_Inline = function()
 {
+
 	if(this.Parent &&
 		this.Parent.Get_ParentTextTransform &&
 		this.Parent.Get_ParentTextTransform())
 	{
-			return true;
+		return true;
+	}
+	
+	
+	let para = this.GetParagraph();
+	let logicDocument = para ? para.GetLogicDocument() : null;
+	if (logicDocument
+		&& logicDocument.IsDocumentEditor()
+		&& this.IsForm()
+		&& logicDocument.GetDocumentLayout().IsReadMode())
+	{
+		return true;
 	}
 
 	return ( drawing_Inline === this.DrawingType ? true : false );
@@ -2463,9 +2480,6 @@ ParaDrawing.prototype.Read_FromBinary2 = function(Reader)
 	this.graphicObjects  = editor.WordControl.m_oLogicDocument.DrawingObjects;
 	this.graphicObjects.addGraphicObject(this);
 	g_oTableId.Add(this, this.Id);
-};
-ParaDrawing.prototype.Load_LinkData = function()
-{
 };
 ParaDrawing.prototype.draw = function(graphics, PDSE)
 {

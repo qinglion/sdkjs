@@ -173,6 +173,19 @@
 				return this.blipFill.RasterImageId;
 			return null;
 		};
+		CImageShape.prototype.getTransparent = function () {
+			if (isRealObject(this.blipFill)) {
+				return this.blipFill.getTransparent();
+			}
+			return null;
+		};
+		CImageShape.prototype.setTransparent = function (v) {
+			if(this.blipFill) {
+				let oNewBlipFill = this.blipFill.createDuplicate();
+				oNewBlipFill.setTransparent(v);
+				this.setBlipFill(oNewBlipFill);
+			}
+		};
 
 		CImageShape.prototype.getSnapArrays = function (snapX, snapY) {
 			var transform = this.getTransformMatrix();
@@ -578,14 +591,14 @@
 			var oldBrush = this.brush;
 			var oldPen = this.pen;
 
-			if (this.getObjectType() === AscDFH.historyitem_type_OleObject) {
+			if (this.getObjectType() === AscDFH.historyitem_type_OleObject && !graphics.isBoundsChecker()) {
 				var sImageId = this.blipFill && this.blipFill.RasterImageId;
 				if (sImageId) {
 					var oApi = editor || window['Asc']['editor'];
 					if (oApi) {
 						sImageId = AscCommon.getFullImageSrc2(sImageId);
 						var _img = oApi.ImageLoader.map_image_index[sImageId];
-						if ((_img && _img.Status === AscFonts.ImageLoadStatus.Loading) || (_img && _img.Image) || graphics.isBoundsChecker() || graphics.isPdf()) {
+						if ((_img && _img.Status === AscFonts.ImageLoadStatus.Loading) || (_img && _img.Image) || window["NATIVE_EDITOR_ENJINE"]) {
 							this.brush = CreateBrushFromBlipFill(this.blipFill);
 							this.pen = null;
 						} else {
@@ -655,6 +668,26 @@
 			}
 			this.spPr.setLn(stroke);
 		};
+		CImageShape.prototype.changeFill = function (unifill) {
+
+			if (this.recalcInfo.recalculateBrush) {
+				this.recalculateBrush();
+			}
+			var unifill2 = AscFormat.CorrectUniFill(unifill, this.brush, this.getEditorType());
+			unifill2.convertToPPTXMods();
+			this.setFill(unifill2);
+		};
+		CImageShape.prototype.setFill = function (fill) {
+
+			this.spPr.setFill(fill);
+		};
+
+		CImageShape.prototype.hasCrop = function () {
+			if(this.blipFill && this.blipFill.srcRect) {
+				return true;
+			}
+			return false;
+		};
 
 
 		CImageShape.prototype.drawAdjustments = function (drawingDocument) {
@@ -720,9 +753,6 @@
 				return false;
 			}
 			return true;
-		};
-
-		CImageShape.prototype.Load_LinkData = function (linkData) {
 		};
 
 		CImageShape.prototype.getTypeName = function () {
@@ -874,7 +904,9 @@
 		CImageShape.prototype.getText = function() {
 			return null;
 		};
-
+		CImageShape.prototype.canFill = function () {
+			return true;
+		};
 
 		function CreateBrushFromBlipFill(oBlipFill) {
 			if (!oBlipFill) {
@@ -882,14 +914,10 @@
 			}
 			var oBrush = new AscFormat.CUniFill();
 			oBrush.fill = oBlipFill;
-			if (Array.isArray(oBlipFill.Effects)) {
-				for (var nEffect = 0; nEffect < oBlipFill.Effects.length; ++nEffect) {
-					var oEffect = oBlipFill.Effects[nEffect];
-					if (oEffect && oEffect instanceof AscFormat.CAlphaModFix && AscFormat.isRealNumber(oEffect.amt)) {
-						oBrush.setTransparent(255 * oEffect.amt / 100000);
-						break;
-					}
-				}
+
+			let nTransparent = oBlipFill.getTransparent();
+			if(AscFormat.isRealNumber(nTransparent)) {
+				oBrush.setTransparent(nTransparent);
 			}
 			return oBrush;
 		}

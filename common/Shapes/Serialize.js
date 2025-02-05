@@ -7316,7 +7316,9 @@ function BinaryPPTYLoader()
             _smartArt.fromPPTY(this);
             _smartArt.setBDeleted(false);
 						_smartArt.generateDefaultStructures();
+            _smartArt.checkDataModel();
             _smartArt.checkNodePointsAfterRead();
+						_smartArt.correctUngeneratedSmartArtContent();
         }
         else
         {

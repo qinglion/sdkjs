@@ -443,6 +443,8 @@ window.AscCommon.g_cIsBeta = "false";
  */
 	function(window, undefined)
 {
+	window['Asc'] = window['Asc'] || {};
+	
 	var g_cCharDelimiter      = String.fromCharCode(5);
 	var g_cGeneralFormat      = 'General';
 	var FONT_THUMBNAIL_HEIGHT = (window["AscDesktopEditor"] && window["AscDesktopEditor"]["GetFontThumbnailHeight"]) ? window["AscDesktopEditor"]["GetFontThumbnailHeight"]() : 28;
@@ -507,6 +509,7 @@ window.AscCommon.g_cIsBeta = "false";
 		XLSX_FLAT  : 0x010b,
 		XLSX_PACKAGE  : 0x010c,
 		XLSY : 0x1002,
+		CANVAS_SPREADSHEET : 0x2002,
 
 		// PowerPoint
 		PPTX : 0x0081,
@@ -521,6 +524,15 @@ window.AscCommon.g_cIsBeta = "false";
 		OTP  : 0x008a,
 		PPTX_PACKAGE  : 0x008b,
 		PPTY : 0x1003,
+		CANVAS_PRESENTATION : 0x2003,
+
+		//Draw
+		VSDX : 0x4001,
+		VSSX : 0x4002,
+		VSTX : 0x4003,
+		VSDM : 0x4004,
+		VSSM : 0x4005,
+		VSTM : 0x4006,
 
 		//image
 		IMG  : 0x0400,
@@ -568,7 +580,8 @@ window.AscCommon.g_cIsBeta = "false";
 		ForceSaveTimeout  : 17,
 		Waiting	: 18,
 		Submit : 19,
-		Disconnect :20
+		Disconnect :20,
+		RefreshFile: 21
 	};
 
 	var c_oAscAdvancedOptionsID = {
@@ -681,21 +694,22 @@ window.AscCommon.g_cIsBeta = "false";
 	};
 
 	var c_oAscTypeSelectElement = {
-		Paragraph      : 0,
-		Table          : 1,
-		Image          : 2,
-		Header         : 3,
-		Hyperlink      : 4,
-		SpellCheck     : 5,
-		Shape          : 6,
-		Slide          : 7,
-		Chart          : 8,
-		Math           : 9,
-		MailMerge      : 10,
-		ContentControl : 11,
-		Animation      : 12,
-		Text           : 13, // viewer
-		Annot          : 14
+		Paragraph         : 0,
+		Table             : 1,
+		Image             : 2,
+		Header            : 3,
+		Hyperlink         : 4,
+		SpellCheck        : 5,
+		Shape             : 6,
+		Slide             : 7,
+		Chart             : 8,
+		Math              : 9,
+		MailMerge         : 10,
+		ContentControl    : 11,
+		Animation         : 12,
+		Text              : 13, // viewer
+		Annot             : 14,
+		UnProtectedRegion : 15
 	};
 
 	var c_oAscLineDrawingRule = {
@@ -1938,7 +1952,33 @@ window.AscCommon.g_cIsBeta = "false";
 		sysDash       : 7,
 		sysDashDot    : 8,
 		sysDashDotDot : 9,
-		sysDot        : 10
+		sysDot        : 10,
+		// visio types
+		vsdxTransparent		: 11, // 0 visio value
+		vsdxSolid			: 12,
+		vsdxDash			: 13,
+		vsdxDot				: 14,
+		vsdxDashDot			: 15,
+		vsdxDashDotDot		: 16,
+		vsdxDashDashDot		: 17,
+		vsdxLongDashShortDash   		: 18,
+		vsdxLongDashShortDashShortDash  : 19,
+		vsdxHalfDash  			: 20,
+		vsdxHalfDot				: 21,
+		vsdxHalfDashDot			: 22,
+		vsdxHalfDashDotDot		: 23,
+		vsdxHalfDashDashDot   	: 24,
+		vsdxHalfLongDashShortDash   		 : 25,
+		vsdxHalfLongDashShortDashShortDash   : 26,
+		vsdxDoubleDash   		: 27,
+		vsdxDoubleDot   		: 28,
+		vsdxDoubleDashDot   	: 29,
+		vsdxDoubleDashDotDot   	: 30,
+		vsdxDoubleDashDashDot   : 31,
+		vsdxDoubleLongDashShortDash   			: 32,
+		vsdxDoubleLongDashShortDashShortDash    : 33,
+		vsdxHalfHalfDash   		: 34,
+
 	};
 
 
@@ -4421,6 +4461,25 @@ window.AscCommon.g_cIsBeta = "false";
 		"HH:mm",
 		"HH:mm:ss"
 	];
+	c_oAscDateTimeFormat[lcid_sqAL]     = [
+		"d.M.yyyy",
+		"dddd, d MMMM yyyy",
+		"d MMMM yyyy",
+		"d.M.yy",
+		"yyyy-MM-dd",
+		"d-MMM-yy",
+		"d/M/yyyy",
+		"d MMM. yy",
+		"d/M/yy",
+		"MMMM yy",
+		"MMM-yy",
+		"d.M.yyyy h:mm am/pm",
+		"d.M.yyyy h:mm:ss am/pm",
+		"h:mm am/pm",
+		"h:mm:ss am/pm",
+		"HH:mm",
+		"HH:mm:ss"
+	];
 	c_oAscDateTimeFormat[lcid_trTR]     = [
 		"d.MM.yyyy",
 		"d MMMM yyyy dddd",
@@ -4514,7 +4573,6 @@ window.AscCommon.g_cIsBeta = "false";
 
 	//------------------------------------------------------------export--------------------------------------------------
 	var prot;
-	window['Asc']                          = window['Asc'] || {};
 	window['Asc']['FONT_THUMBNAIL_HEIGHT'] = FONT_THUMBNAIL_HEIGHT;
 	window['Asc']['c_oAscMaxColumnWidth']  = window['Asc'].c_oAscMaxColumnWidth = c_oAscMaxColumnWidth;
 	window['Asc']['c_oAscMaxRowHeight'] = window['Asc'].c_oAscMaxRowHeight = c_oAscMaxRowHeight;
@@ -4575,6 +4633,7 @@ window.AscCommon.g_cIsBeta = "false";
 	prot['XLSX_FLAT']            = prot.XLSX_FLAT;
 	prot['XLSX_PACKAGE']         = prot.XLSX_PACKAGE;
 	prot['XLSY']                 = prot.XLSY;
+	prot['CANVAS_SPREADSHEET']   = prot.CANVAS_SPREADSHEET;
 	prot['PPTX']                 = prot.PPTX;
 	prot['PPT']                  = prot.PPT;
 	prot['ODP']                  = prot.ODP;
@@ -4586,6 +4645,13 @@ window.AscCommon.g_cIsBeta = "false";
 	prot['FODP']                 = prot.FODP;
 	prot['OTP']                  = prot.OTP;
 	prot['PPTX_PACKAGE']         = prot.PPTX_PACKAGE;
+	prot['CANVAS_PRESENTATION']  = prot.CANVAS_PRESENTATION;
+
+	prot['VSDX']        		 = prot.VSDX;
+	prot['VSSX']        		 = prot.VSSX;
+	prot['VSTX']        		 = prot.VSTX;
+	prot['VSDM']        		 = prot.VSDM;
+	prot['VSTM']        		 = prot.VSTM;
 
 	prot['JPG']                  = prot.JPG;
 	prot['TIFF']                 = prot.TIFF;
@@ -4631,6 +4697,7 @@ window.AscCommon.g_cIsBeta = "false";
 	prot['Waiting']                          = prot.Waiting;
 	prot['Submit']                           = prot.Submit;
 	prot['Disconnect']                       = prot.Disconnect;
+	prot['RefreshFile']                      = prot.RefreshFile;
 	window['Asc']['c_oAscAdvancedOptionsID'] = window['Asc'].c_oAscAdvancedOptionsID = c_oAscAdvancedOptionsID;
 	prot                                         = c_oAscAdvancedOptionsID;
 	prot['CSV']                                  = prot.CSV;
@@ -4666,22 +4733,25 @@ window.AscCommon.g_cIsBeta = "false";
 	prot['BringForward']                     = prot.BringForward;
 	prot['SendBackward']                     = prot.SendBackward;
 	window['Asc']['c_oAscTypeSelectElement'] = window['Asc'].c_oAscTypeSelectElement = c_oAscTypeSelectElement;
-	prot                              = c_oAscTypeSelectElement;
-	prot['Paragraph']                 = prot.Paragraph;
-	prot['Table']                     = prot.Table;
-	prot['Image']                     = prot.Image;
-	prot['Header']                    = prot.Header;
-	prot['Hyperlink']                 = prot.Hyperlink;
-	prot['SpellCheck']                = prot.SpellCheck;
-	prot['Shape']                     = prot.Shape;
-	prot['Slide']                     = prot.Slide;
-	prot['Chart']                     = prot.Chart;
-	prot['Math']                      = prot.Math;
-	prot['MailMerge']                 = prot.MailMerge;
-	prot['ContentControl']            = prot.ContentControl;
-	prot['Animation']                 = prot.Animation;
-	prot['Text']                      = prot.Text;
-	prot['Annot']                     = prot.Annot;
+	
+	prot                      = c_oAscTypeSelectElement;
+	prot['Paragraph']         = prot.Paragraph;
+	prot['Table']             = prot.Table;
+	prot['Image']             = prot.Image;
+	prot['Header']            = prot.Header;
+	prot['Hyperlink']         = prot.Hyperlink;
+	prot['SpellCheck']        = prot.SpellCheck;
+	prot['Shape']             = prot.Shape;
+	prot['Slide']             = prot.Slide;
+	prot['Chart']             = prot.Chart;
+	prot['Math']              = prot.Math;
+	prot['MailMerge']         = prot.MailMerge;
+	prot['ContentControl']    = prot.ContentControl;
+	prot['Animation']         = prot.Animation;
+	prot['Text']              = prot.Text;
+	prot['Annot']             = prot.Annot;
+	prot['UnProtectedRegion'] = prot.UnProtectedRegion;
+	
 	window['Asc']['linerule_AtLeast'] = window['Asc'].linerule_AtLeast = linerule_AtLeast;
 	window['Asc']['linerule_Auto'] = window['Asc'].linerule_Auto = linerule_Auto;
 	window['Asc']['linerule_Exact'] = window['Asc'].linerule_Exact = linerule_Exact;

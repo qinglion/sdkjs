@@ -144,6 +144,7 @@ function (window, undefined) {
 		this.selectionTimer = undefined;
 		this.enableKeyEvents = true;
 		this.isTopLineActive = false;
+		this.openFromTopLine = false;
 		this.skipTLUpdate = true;
 		this.loadFonts = false;
 		this.isOpened = false;
@@ -332,7 +333,7 @@ function (window, undefined) {
 		}
 		this._setOptions(options);
 		this._cleanLastRangeInfo();
-		this._updateTopLineActive(true === this.input.isFocused);
+		this._updateTopLineActive(true === this.input.isFocused, true);
 
 		this._updateEditorState();
 		this._draw();
@@ -365,6 +366,7 @@ function (window, undefined) {
 		this._updateUndoRedoChanged();
 
 		AscCommon.StartIntervalDrawText(true);
+		this.openAction();
 	};
 
 	CellEditor.prototype.close = function (saveValue, callback) {
@@ -410,6 +412,7 @@ function (window, undefined) {
 			// Сброс состояния редактора
 			t._setEditorState(c_oAscCellEditorState.editEnd);
 			t.handlers.trigger("closed");
+			t.closeAction();
 
 			if (callback) {
 				callback(true);
@@ -466,6 +469,8 @@ function (window, undefined) {
 		// Сброс состояния редактора
 		this._setEditorState(c_oAscCellEditorState.editEnd);
 		this.handlers.trigger("closed");
+		t.closeAction();
+
 		if (callback) {
 			callback(true);
 		}
@@ -704,8 +709,14 @@ function (window, undefined) {
 				this._moveCursor(kPosition, this.cursorPos - 1);
 
 				// ToDo move this code to moveCursor
-				this.lastRangePos = this.cursorPos;
-				this.lastRangeLength = 0;
+
+				this.lastRangePos = this._parseResult && this._parseResult.argPosArr && this._parseResult.argPosArr.length
+					? this._parseResult.argPosArr[0].start 
+					: this.cursorPos;
+
+				this.lastRangeLength = this._parseResult && this._parseResult.argPosArr && this._parseResult.argPosArr.length
+					? this._parseResult.argPosArr[this._parseResult.argPosArr.length - 1].end - this._parseResult.argPosArr[0].start 
+					: 0;
 			}
 		}
 
@@ -1131,9 +1142,10 @@ function (window, undefined) {
 		return !range ? {range: null} : {range: range, wsName: wsName};
 	};
 
-	CellEditor.prototype._updateTopLineActive = function (state) {
+	CellEditor.prototype._updateTopLineActive = function (state, isOpening) {
 		if (state !== this.isTopLineActive) {
 			this.isTopLineActive = state;
+			this.openFromTopLine = isOpening && state;
 			this.handlers.trigger("updateTopLine", this.isTopLineActive ? c_oAscCellEditorState.editInFormulaBar : c_oAscCellEditorState.editInCell);
 		}
 	};
@@ -2007,7 +2019,10 @@ function (window, undefined) {
 
 	CellEditor.prototype._addNewLine = function () {
 		this._wrapText();
-		this._addChars( /*codeNewLine*/"\n");
+		let sNewLine = "\n";
+		AscFonts.FontPickerByCharacter.checkText(sNewLine, this, function () {
+			this._addChars( /*codeNewLine*/sNewLine);
+		});
 	};
 
 	CellEditor.prototype._removeChars = function (pos, length, isRange) {
@@ -2565,16 +2580,6 @@ function (window, undefined) {
 				}
 				t._removeChars(bIsWordRemove ? kPrevWord : kPrevChar);
 				return false;
-
-			case 32:  // "space"
-
-				t._addChars(String.fromCharCode(32));
-				event.stopPropagation();
-				event.preventDefault();
-
-				t._setSkipKeyPress(false);
-				return false;
-
 			case 35:  // "end"
 				if (!this.enableKeyEvents) {
 					break;
@@ -2914,12 +2919,15 @@ function (window, undefined) {
 
 		//TODO в случае добавляения массива - првоерить - возможно часть нужно вызывать каждый раз после _addChars
 		var tmpCursorPos;
-		// При первом быстром вводе стоит добавить в конце проценты (для процентного формата и только для числа)
+		// The first time we enter quickly, we should add percentages at the end (for percentage format and only for numbers)
 		if (t.options.isAddPersentFormat && AscCommon.isNumber(newChar)) {
 			t.options.isAddPersentFormat = false;
 			tmpCursorPos = t.cursorPos;
 			t.undoMode = true;
-			t._addChars("%");
+			// add the percentage only to the line without a formula
+			if (!t._formula) {
+				t._addChars("%");
+			}
 			t.cursorPos = tmpCursorPos;
 			t.undoMode = false;
 			t._updateCursorPosition();
@@ -3367,6 +3375,22 @@ function (window, undefined) {
 			return;
 		}
 		api.sendEvent('asc_onUserActionEnd');
+	};
+
+	CellEditor.prototype.openAction = function () {
+		var api = window["Asc"]["editor"];
+		if (!api) {
+			return;
+		}
+		api.sendEvent('onOpenCellEditor');
+	};
+
+	CellEditor.prototype.closeAction = function () {
+		var api = window["Asc"]["editor"];
+		if (!api) {
+			return;
+		}
+		api.sendEvent('onCloseCellEditor');
 	};
 
 

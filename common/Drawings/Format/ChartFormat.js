@@ -14444,7 +14444,7 @@
         this.drawerData = null;
 
         let oDrawerData = oChartSpace.chartObj.recalculatePositionText(this);
-        if(!oDrawerData) {
+        if(!oDrawerData || !oDrawerData.coefficients) {
             return;
         }
         this.drawerData = oDrawerData;
@@ -16521,7 +16521,12 @@
 
     function fCreateRef(oBBoxInfo) {
         if(oBBoxInfo) {
-            return AscCommon.parserHelp.getEscapeSheetName(oBBoxInfo.worksheet.getName()) + "!" + oBBoxInfo.bbox.getAbsName();
+            let externalIndex = null;
+            let api = Asc['editor'] && Asc['editor'].wbModel;
+            if (api && oBBoxInfo && oBBoxInfo.worksheet) {
+                externalIndex = Asc['editor'].wbModel.getExternalIndexByWorksheet(oBBoxInfo.worksheet);
+            }
+            return AscCommon.parserHelp.getEscapeSheetName((externalIndex !== null ? "[" + externalIndex + "]" : "") + oBBoxInfo.worksheet.getName()) + "!" + oBBoxInfo.bbox.getAbsName();
         }
         return null;
     }

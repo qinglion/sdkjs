@@ -324,6 +324,11 @@
 				_ret_value = -1;
 			}
 
+			// can resize only on corners
+			if ([1, 3, 5, 7].includes(_ret_value) && (object.IsAnnot && object.IsAnnot() && object.IsStamp()) && object.getNoChangeAspect()) {
+				return -1;
+			}
+
 			if (_min_dist < radius)
 				return _ret_value;
 
@@ -716,9 +721,10 @@
 				var oContentElement = aContent[i];
 				if (oContentElement.Get_Type() === type_Paragraph) {
 					var paragraph_lines = aContent[i].Lines;
+					let dIndRight = oContentElement.Get_CompiledPr().ParaPr.Ind.Right;
 					for (var j = 0; j < paragraph_lines.length; ++j) {
 						if (paragraph_lines[j].Ranges[0].W > oMax.max_width)
-							oMax.max_width = paragraph_lines[j].Ranges[0].X + paragraph_lines[j].Ranges[0].W;
+							oMax.max_width = paragraph_lines[j].Ranges[0].X + paragraph_lines[j].Ranges[0].W + dIndRight;
 					}
 				} else if (oContentElement.Get_Type() === type_Table) {
 					if (oContentElement.Bounds.Right > oMax.max_width) {
@@ -2717,7 +2723,15 @@
 				copy.setBodyPr(this.bodyPr.createDuplicate());
 			}
 			if (this.textBoxContent) {
-				copy.setTextBoxContent(this.textBoxContent.Copy(copy, oPr && oPr.drawingDocument, oPr && oPr.contentCopyPr));
+				const contentCopyPr = oPr && oPr.contentCopyPr;
+				const fCallback = function () {
+					copy.setTextBoxContent(this.textBoxContent.Copy(copy, oPr && oPr.drawingDocument, contentCopyPr));
+				}.bind(this);
+				if (contentCopyPr && contentCopyPr.Comparison && !contentCopyPr.Comparison.options.textBoxes) {
+					contentCopyPr.Comparison.executeWithSkipCopiedElements(fCallback);
+				} else {
+					fCallback();
+				}
 			}
 			if (this.signatureLine && copy.setSignature) {
 				copy.setSignature(this.signatureLine.copy());
@@ -2913,16 +2927,16 @@
 					hierarchy_styles.splice(0, 0, ownStyle);
 				}
 				else if (Asc.editor.isPdfEditor()) {
-					// let oDoc		= Asc.editor.getPDFDoc();
-					// let aListStyle	= oDoc.styles.txStyles.otherStyle;
+					let oDoc		= Asc.editor.getPDFDoc();
+					let aListStyle	= oDoc.styles.txStyles.otherStyle;
 
-					// ownStyle = new CStyle("ownStyle", null, null, null, true);
-					// var own_ppt_style = aListStyle.levels[level];
-					// ownStyle.ParaPr = own_ppt_style.Copy();
-					// if (own_ppt_style.DefaultRunPr) {
-					// 	ownStyle.TextPr = own_ppt_style.DefaultRunPr.Copy();
-					// }
-					// hierarchy_styles.splice(0, 0, ownStyle);
+					ownStyle = new CStyle("ownStyle", null, null, null, true);
+					var own_ppt_style = aListStyle.levels[level];
+					ownStyle.ParaPr = own_ppt_style.Copy();
+					if (own_ppt_style.DefaultRunPr) {
+						ownStyle.TextPr = own_ppt_style.DefaultRunPr.Copy();
+					}
+					hierarchy_styles.splice(0, 0, ownStyle);
 				}
 
 				var shape_text_style;
@@ -3059,6 +3073,7 @@
 			if (isRealObject(parents.theme) && isRealObject(compiled_style) && isRealObject(compiled_style.lnRef)) {
 				//compiled_style.lnRef.Color.Calculate(parents.theme, parents.slide, parents.layout, parents.master, {R: 0, G: 0, B: 0, A:255});
 				//RGBA = compiled_style.lnRef.Color.RGBA;
+				// compiled_style is default style
 				this.pen = parents.theme.getLnStyle(compiled_style.lnRef.idx, compiled_style.lnRef.Color);
 				//if (isRealObject(this.pen)) {
 				//    if (isRealObject(compiled_style.lnRef.Color.color)
@@ -3077,6 +3092,7 @@
 				this.pen = null;
 			}
 
+			// compiled line is given line props object
 			var oCompiledLine = this.getCompiledLine();
 			if (oCompiledLine) {
 				if (!this.pen) {
@@ -3493,7 +3509,8 @@
 				}
 
 
-				if (this.checkAutofit && this.checkAutofit() && (!this.bWordShape || !this.group || this.bCheckAutoFitFlag) && !bNotesShape) {
+				if (this.checkAutofit && this.checkAutofit() &&
+					(!this.bWordShape || !this.group || this.bCheckAutoFitFlag) && !bNotesShape) {
 					var oBodyPr = this.getBodyPr();
 					if (this.bWordShape) {
 						if (this.recalcInfo.recalculateTxBoxContent) {
@@ -4174,7 +4191,27 @@
 			}
 			return currentFontSize;
 		}
-
+		CShape.prototype.isCorrectSmartArtContentPoints = function () {
+			const oContent = this.txBody && this.txBody.content;
+			const contentPoints = this.getSmartArtPointContent();
+			if (contentPoints && oContent) {
+				let countPointParagraphs = 0;
+				for (let i = 0; i < contentPoints.length; i++) {
+					const node = contentPoints[i];
+					const point = node.point;
+					const oPointContent = point && point.t && point.t.content;
+					if (oPointContent) {
+						countPointParagraphs += oPointContent.Content.length;
+					}
+				}
+				return oContent.Content.length === countPointParagraphs;
+			}
+			return false;
+		};
+		CShape.prototype.correctUngeneratedSmartArtContent = function () {
+				const textAlgorithm = new AscFormat.TextAlgorithm();
+				textAlgorithm.applyContentFilling(this);
+		};
 		CShape.prototype.setFontSizeInSmartArt = function (fontSize, bSkipRecalculateContent2, isParentWithChildren) {
 			const oContent = this.txBody && this.txBody.content;
 			if (this.txBody && oContent) {
@@ -5290,6 +5327,9 @@
 			}
 		};
 
+		/**
+		 * @memberOf CShape
+		 */
 		CShape.prototype.draw = function (graphics, transform, transformText, pageIndex, opt) {
 
 			if (this.checkNeedRecalculate && this.checkNeedRecalculate()) {
@@ -6474,10 +6514,6 @@
 			}
 		};
 
-
-		CShape.prototype.Load_LinkData = function (linkData) {
-		};
-
 		CShape.prototype.Get_PageContentStartPos = function (pageNum) {
 			if (this.textBoxContent) {
 				if (this.getTextRect) {
@@ -7225,6 +7261,17 @@
 			var memoryData = AscCommon.Base64.decode(szSrc, true, srcLen, offset);
 			return new AscCommon.FT_Stream2(memoryData, memoryData.length);
 		}
+		function CreatePPTYLoader(szSrc, offset, srcLen) {
+			let stream = CreateBinaryReader(szSrc, offset, srcLen);
+			let oBinaryReader = new AscCommon.BinaryPPTYLoader();
+			oBinaryReader.stream = new AscCommon.FileStream();
+			oBinaryReader.stream.obj = stream.obj;
+			oBinaryReader.stream.data = stream.data;
+			oBinaryReader.stream.size = stream.size;
+			oBinaryReader.stream.pos = stream.pos;
+			oBinaryReader.stream.cur = stream.cur;
+			return oBinaryReader;
+		}
 
 		function getParaDrawing(oDrawing) {
 			var oCurDrawing = oDrawing;
@@ -7352,6 +7399,7 @@
 		window['AscFormat'].SetXfrmFromMetrics = SetXfrmFromMetrics;
 		window['AscFormat'].CShape = CShape;
 		window['AscFormat'].CreateBinaryReader = CreateBinaryReader;
+		window['AscFormat'].CreatePPTYLoader = CreatePPTYLoader;
 		window['AscFormat'].getParaDrawing = getParaDrawing;
 		window['AscFormat'].ConvertGraphicFrameToWordTable = ConvertGraphicFrameToWordTable;
 		window['AscFormat'].ConvertTableToGraphicFrame = ConvertTableToGraphicFrame;

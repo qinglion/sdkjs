@@ -73,6 +73,7 @@ AscDFH.changesFactory[AscDFH.historyitem_Paragraph_DefaultTabSize]            = 
 AscDFH.changesFactory[AscDFH.historyitem_Paragraph_SuppressLineNumbers]       = CChangesParagraphSuppressLineNumbers;
 AscDFH.changesFactory[AscDFH.historyitem_Paragraph_Shd_Fill]                  = CChangesParagraphShdFill;
 AscDFH.changesFactory[AscDFH.historyitem_Paragraph_Shd_ThemeFill]             = CChangesParagraphShdThemeFill;
+AscDFH.changesFactory[AscDFH.historyitem_Paragraph_Bidi]                      = CChangesParagraphBidi;
 
 function private_ParagraphChangesOnLoadPr(oColor)
 {
@@ -257,7 +258,8 @@ AscDFH.changesRelationMap[AscDFH.historyitem_Paragraph_Pr]                      
 	AscDFH.historyitem_Paragraph_PrChange,
 	AscDFH.historyitem_Paragraph_PrReviewInfo,
 	AscDFH.historyitem_Paragraph_OutlineLvl,
-	AscDFH.historyitem_Paragraph_SuppressLineNumbers
+	AscDFH.historyitem_Paragraph_SuppressLineNumbers,
+	AscDFH.historyitem_Paragraph_Bidi
 ];
 AscDFH.changesRelationMap[AscDFH.historyitem_Paragraph_PresentationPr_Bullet]     = [
 	AscDFH.historyitem_Paragraph_PresentationPr_Bullet,
@@ -299,6 +301,10 @@ AscDFH.changesRelationMap[AscDFH.historyitem_Paragraph_Shd_Fill]                
 AscDFH.changesRelationMap[AscDFH.historyitem_Paragraph_Shd_ThemeFill]               = [
 	AscDFH.historyitem_Paragraph_Shd_ThemeFill,
 	AscDFH.historyitem_Paragraph_Shd,
+	AscDFH.historyitem_Paragraph_Pr
+];
+AscDFH.changesRelationMap[AscDFH.historyitem_Paragraph_Bidi] = [
+	AscDFH.historyitem_Paragraph_Bidi,
 	AscDFH.historyitem_Paragraph_Pr
 ];
 
@@ -1775,9 +1781,9 @@ CChangesParagraphPrChange.prototype.WriteToBinary = function(Writer)
 	// 3-bit : is Old.PrChange undefined ?
 	// 4-bit : is Old.ReviewInfo undefined ?
 	// Variable(CParaPr)     : New.PrChange   (1bit = 0)
-	// Variable(CReviewInfo) : New.ReviewInfo (2bit = 0)
+	// Variable(AscWord.ReviewInfo) : New.ReviewInfo (2bit = 0)
 	// Variable(CParaPr)     : Old.PrChange   (3bit = 0)
-	// Variable(CReviewInfo) : Old.ReviewInfo (4bit = 0)
+	// Variable(AscWord.ReviewInfo) : Old.ReviewInfo (4bit = 0)
 	var nFlags = 0;
 	if (undefined === this.New.PrChange)
 		nFlags |= 1;
@@ -1813,9 +1819,9 @@ CChangesParagraphPrChange.prototype.ReadFromBinary = function(Reader)
 	// 3-bit : is Old.PrChange undefined ?
 	// 4-bit : is Old.ReviewInfo undefined ?
 	// Variable(CParaPr)     : New.PrChange   (1bit = 0)
-	// Variable(CReviewInfo) : New.ReviewInfo (2bit = 0)
+	// Variable(AscWord.ReviewInfo) : New.ReviewInfo (2bit = 0)
 	// Variable(CParaPr)     : Old.PrChange   (3bit = 0)
-	// Variable(CReviewInfo) : Old.ReviewInfo (4bit = 0)
+	// Variable(AscWord.ReviewInfo) : Old.ReviewInfo (4bit = 0)
 	var nFlags = Reader.GetLong();
 
 	this.New = {
@@ -1844,7 +1850,7 @@ CChangesParagraphPrChange.prototype.ReadFromBinary = function(Reader)
 	}
 	else
 	{
-		this.New.ReviewInfo = new CReviewInfo();
+		this.New.ReviewInfo = new AscWord.ReviewInfo();
 		this.New.ReviewInfo.Read_FromBinary(Reader);
 	}
 
@@ -1864,7 +1870,7 @@ CChangesParagraphPrChange.prototype.ReadFromBinary = function(Reader)
 	}
 	else
 	{
-		this.Old.ReviewInfo = new CReviewInfo();
+		this.Old.ReviewInfo = new AscWord.ReviewInfo();
 		this.Old.ReviewInfo.Read_FromBinary(Reader);
 	}
 };
@@ -1913,7 +1919,7 @@ CChangesParagraphPrReviewInfo.prototype.constructor = CChangesParagraphPrReviewI
 CChangesParagraphPrReviewInfo.prototype.Type = AscDFH.historyitem_Paragraph_PrReviewInfo;
 CChangesParagraphPrReviewInfo.prototype.private_CreateObject = function()
 {
-	return new CReviewInfo();
+	return new AscWord.ReviewInfo();
 };
 CChangesParagraphPrReviewInfo.prototype.private_SetValue = function(Value)
 {
@@ -2058,3 +2064,28 @@ CChangesParagraphShdThemeFill.prototype.IsNeedRecalculate = function()
 	return false;
 };
 CChangesParagraphShdThemeFill.prototype.CheckLock = private_ParagraphContentChangesCheckLock;
+/**
+ * @constructor
+ * @extends {AscDFH.CChangesBaseBoolProperty}
+ */
+function CChangesParagraphBidi(Class, Old, New, Color)
+{
+	AscDFH.CChangesBaseBoolProperty.call(this, Class, Old, New, Color);
+}
+CChangesParagraphBidi.prototype = Object.create(AscDFH.CChangesBaseBoolProperty.prototype);
+CChangesParagraphBidi.prototype.constructor = CChangesParagraphBidi;
+CChangesParagraphBidi.prototype.Type = AscDFH.historyitem_Paragraph_Bidi;
+CChangesParagraphBidi.prototype.private_SetValue = function(value)
+{
+	let paragraph = this.Class;
+	paragraph.Pr.Bidi = value;
+	paragraph.CompiledPr.NeedRecalc = true;
+	paragraph.private_UpdateTrackRevisionOnChangeParaPr(false);
+};
+CChangesParagraphBidi.prototype.Merge = private_ParagraphChangesOnMergePr;
+CChangesParagraphBidi.prototype.Load = private_ParagraphChangesOnLoadPr;
+CChangesParagraphBidi.prototype.IsNeedRecalculate = function()
+{
+	return true;
+};
+CChangesParagraphBidi.prototype.CheckLock = private_ParagraphContentChangesCheckLock;

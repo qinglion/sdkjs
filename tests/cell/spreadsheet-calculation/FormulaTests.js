@@ -624,12 +624,15 @@ $(function () {
 		window["Asc"]["editor"] = api;
 
 		AscCommon.g_oTableId.init(api);
-		wb = new AscCommonExcel.Workbook(new AscCommonExcel.asc_CHandlersList(), api);
+		wb = new AscCommonExcel.Workbook(new AscCommonExcel.asc_CHandlersList(), api, true);
 		AscCommon.History.init(wb);
+		//нет тестовых операция с историей, отключаем чтобы не было лишних сериализаций
+		AscCommon.History.TurnOff();
 		wb.maxDigitWidth = 7;
 		wb.paddingPlusBorder = 5;
 
 		api.wbModel = wb;
+		api.initCollaborativeEditing({});
 
 		if (this.User) {
 			g_oIdCounter.Set_UserId(this.User.asc_getId());
@@ -1308,6 +1311,450 @@ $(function () {
 		bCaFromSelectedCell = getCaFromSelectedCell("D1039");
 		assert.strictEqual(bCaFromSelectedCell, false, "Test: Exception formulas that ignores rules of recursion recognition. D1039 - flag ca: false");
 		bCaFromSelectedCell = null;
+		// - Case: SUMIF 2 args recursion range. Recursion formula with disabled Iterative calculation setting.
+		ws.getRange2("A1040").setValue("2");
+		ws.getRange2("B1040").setValue("4");
+		ws.getRange2("C1040").setValue("8");
+		ws.getRange2("D1040").setValue("=SUMIF(A1040:D1040, \">4\")");
+		assert.strictEqual(ws.getRange2("D1040").getValue(), "0", "Test: SUMIF 2 args recursion range. D1040 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("D1040");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: SUMIF 2 args recursion range. D1040 - flag ca: true");
+		bCaFromSelectedCell = null;
+		// - Case: SUMIF 2 args non recursion range with disabled Iterative calculation setting.
+		ws.getRange2("D1040").setValue("=SUMIF(A1040:C1040, \">4\")");
+		assert.strictEqual(ws.getRange2("D1040").getValue(), "8", "Test: SUMIF 2 args non recursion range. D1040 - 8");
+		bCaFromSelectedCell = getCaFromSelectedCell("D1040");
+		assert.strictEqual(bCaFromSelectedCell, false, "Test: SUMIF 2 args non recursion range. D1040 - flag ca: false");
+		bCaFromSelectedCell = null;
+		// - Case: SUMIF. 2 args. Recursion criteria. Recursion formula with disabled Iterative calculation setting.
+		ws.getRange2("A1041").setValue("2");
+		ws.getRange2("B1041").setValue("4");
+		ws.getRange2("C1041").setValue("8");
+		ws.getRange2("A1042").setValue("2");
+		ws.getRange2("B1042").setValue("4");
+		ws.getRange2("C1042").setValue("=SUMIF(A1041:C1041, A1042:C1042)");
+		assert.strictEqual(ws.getRange2("C1042").getValue(), "0", "Test: SUMIF. 2 args. Recursion criteria. C1042 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("C1042");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: SUMIF. 2 args. Recursion criteria. C1042 - flag ca: true");
+		bCaFromSelectedCell = null;
+		// - Case: SUMIF. 2 args. Non recursion criteria with disabled Iterative calculation setting.
+		ws.getRange2("A1043").setValue("2");
+		ws.getRange2("B1043").setValue("4");
+		ws.getRange2("C1043").setValue("8");
+		ws.getRange2("A1044").setValue("2");
+		ws.getRange2("B1044").setValue("4");
+		ws.getRange2("C1044").setValue("=SUMIF(A1043:C1043, A1044:B1044)");
+		bCaFromSelectedCell = getCaFromSelectedCell("C1044");
+		assert.strictEqual(bCaFromSelectedCell, false, "Test: SUMIF. 2 args. Non recursion criteria. C1044 - flag ca: false");
+		bCaFromSelectedCell = null;
+		// - Case: SUMIF. 2 args. Recursion formula. Recursion criteria name with disabled Iterative calculation setting.
+		let oCriteriaRangeName = new Asc.asc_CDefName("Criteria_range", ws.getName() + "!$A$1045:$C$1045");
+		wb.editDefinesNames(null, oCriteriaRangeName);
+		ws.getRange2("A1045").setValue("2");
+		ws.getRange2("B1045").setValue("4");
+		ws.getRange2("C1045").setValue("=SUMIF(A1043:C1043, Criteria_range)");
+		assert.strictEqual(ws.getRange2("C1045").getValue(), "0", "Test: SUMIF. 2 args. Recursion formula. Recursion criteria name. C1045 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("C1045");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: SUMIF. 2 args. Recursion formula. Recursion criteria name. C1045 - flag ca: true");
+		bCaFromSelectedCell = null;
+		wb.delDefinesNames(oCriteriaRangeName);
+		oCriteriaRangeName = null;
+		// - Case: SUMIF. 3 args. Recursion formula. Recursion sum_range, but the cell with formula doesn't match with criteria. With disabled Iterative calculation setting.
+		// range row
+		ws.getRange2("A1046").setValue("1");
+		ws.getRange2("B1046").setValue("0");
+		ws.getRange2("C1046").setValue("1");
+		ws.getRange2("D1046").setValue("0");
+		// criteria row
+		ws.getRange2("A1047").setValue("1");
+		// sum_range row
+		ws.getRange2("A1048").setValue("2");
+		ws.getRange2("B1048").setValue("4");
+		ws.getRange2("C1048").setValue("8");
+		ws.getRange2("D1048").setValue("=SUMIF(A1046:D1046, A1047 ,A1048:D1048)");
+		assert.strictEqual(ws.getRange2("D1048").getValue(), "10", "Test: SUMIF. 3 args. Recursion formula. Recursion sum_range, but the cell with formula doesn't match with criteria. D1048 - 10");
+		bCaFromSelectedCell = getCaFromSelectedCell("D1048");
+		assert.strictEqual(bCaFromSelectedCell, false, "Test: SUMIF. 3 args. Recursion formula. Recursion sum_range, but the cell with formula doesn't match with criteria. D1048 - flag ca: false");
+		bCaFromSelectedCell = null;
+		// - Case: SUMIF. 3 args. Recursion formula. Recursion sum_range, but the cell with formula matches with criteria. With disabled Iterative calculation setting.
+		ws.getRange2("D1046").setValue("1");
+		assert.strictEqual(ws.getRange2("D1048").getValue(), "10", "Test: SUMIF. 3 args. Recursion formula. Recursion sum_range, but the cell with formula matches with criteria. D1048 - 10");
+		bCaFromSelectedCell = getCaFromSelectedCell("D1048");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: SUMIF. 3 args. Recursion formula. Recursion sum_range, but the cell with formula matches with criteria. D1048 - flag ca: true");
+		bCaFromSelectedCell = null;
+		// - Case:  SUMIF. 3 args. Recursion formula. Recursion range. With disabled Iterative calculation setting.
+		// range row
+		ws.getRange2("A1049").setValue("1");
+		ws.getRange2("B1049").setValue("0");
+		ws.getRange2("C1049").setValue("1");
+		// criteria row
+		ws.getRange2("A1050").setValue("1");
+		// sum_range row
+		ws.getRange2("A1051").setValue("2");
+		ws.getRange2("B1051").setValue("4");
+		ws.getRange2("C1051").setValue("8");
+		ws.getRange2("D1051").setValue("16");
+		ws.getRange2("D1049").setValue("=SUMIF(A1049:D1049, A1050, A1051:D1051)");
+		assert.strictEqual(ws.getRange2("D1049").getValue(), "0", "Test: SUMIF. 3 args. Recursion formula. Recursion range. D1049 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("D1049");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: SUMIF. 3 args. Recursion formula. Recursion range. D1049 - flag ca: true");
+		bCaFromSelectedCell = null;
+		// - Case: SUMIF. 3 args. Recursion formula. Recursion criteria. With disabled Iterative calculation setting.
+		// range row
+		ws.getRange2("A1052").setValue("1");
+		ws.getRange2("B1052").setValue("0");
+		ws.getRange2("C1052").setValue("1");
+		ws.getRange2("D1052").setValue("0")
+		// criteria row
+		ws.getRange2("A1053").setValue("1");
+		// sum_range row
+		ws.getRange2("A1054").setValue("2");
+		ws.getRange2("B1054").setValue("4");
+		ws.getRange2("C1054").setValue("8");
+		ws.getRange2("D1054").setValue("16");
+		ws.getRange2("B1053").setValue("=SUMIF(A1052:D1052, A1053:B1053, A1054:D1054)");
+		assert.strictEqual(ws.getRange2("B1053").getValue(), "0", "Test: SUMIF. 3 args. Recursion formula. Recursion criteria. B1053 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("B1053");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: SUMIF. 3 args. Recursion formula. Recursion criteria. B1053 - flag ca: true");
+		bCaFromSelectedCell = null;
+		// - Case: SUMIF. 3 args. Recursion formula. Recursion criteria_range with DefName. With disabled Iterative calculation setting.
+		oCriteriaRangeName = new Asc.asc_CDefName("Criteria_range", ws.getName() + "!$A$1055:$D$1055");
+		let oCriteriaName = new Asc.asc_CDefName("criteria", ws.getName() + "!$A$1056:$B$1056");
+		let oSumRangeName = new Asc.asc_CDefName("sum_range", ws.getName() + "!$A$1057:$D$1057");
+		wb.editDefinesNames(null, oCriteriaRangeName);
+		wb.editDefinesNames(null, oCriteriaName);
+		wb.editDefinesNames(null, oSumRangeName);
+		ws.getRange2("A1055").setValue("1");
+		ws.getRange2("B1055").setValue("0");
+		ws.getRange2("C1055").setValue("1");
+		ws.getRange2("A1056").setValue(">0");
+		ws.getRange2("A1057").setValue("2");
+		ws.getRange2("B1057").setValue("4");
+		ws.getRange2("C1057").setValue("8");
+		ws.getRange2("D1057").setValue("16");
+		ws.getRange2("D1055").setValue("=SUMIF(Criteria_range, A1056, sum_range)");
+		assert.strictEqual(ws.getRange2("D1055").getValue(), "0", "Test: SUMIF. 3 args. Recursion formula. Recursion criteria_range with DefName. D1055 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("D1055");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: SUMIF. 3 args. Recursion formula. Recursion criteria_range with DefName. D1055 - flag ca: true");
+		bCaFromSelectedCell = null;
+		// - Case: SUMIF. 3 args. Recursion formula. Recursion sum_range with DefName. With disabled Iterative calculation setting.
+		ws.getRange2("D1055").setValue("1");
+		ws.getRange2("D1057").setValue("=SUMIF(Criteria_range, A1056, sum_range)");
+		assert.strictEqual(ws.getRange2("D1057").getValue(), "0", "Test: SUMIF. 3 args. Recursion formula. Recursion sum_range with DefName. D1057 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("D1057");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: SUMIF. 3 args. Recursion formula. Recursion sum_range with DefName. D1057 - flag ca: true");
+		bCaFromSelectedCell = null;
+		// - Case: SUMIF. 3 args. Recursion formula. Recursion sum_range with DefName, but the cell with formula doesn't match with criteria. With disabled Iterative calculation setting.
+		ws.getRange2("D1055").setValue("0");
+		ws.getRange2("D1057").setValue("=SUMIF(Criteria_range, A1056, sum_range)");
+		assert.strictEqual(ws.getRange2("D1057").getValue(), "10", "Test: SUMIF. 3 args. Recursion formula. Recursion sum_range with DefName, but the cell with formula doesn't match with criteria. D1057 - 10")
+		bCaFromSelectedCell = getCaFromSelectedCell("D1057");
+		assert.strictEqual(bCaFromSelectedCell, false, "Test: SUMIF. 3 args. Recursion formula. Recursion sum_range with DefName, but the cell with formula doesn't match with criteria. D1057 - flag ca: false");
+		bCaFromSelectedCell = null;
+		// - Case: SUMIF. 3 args. Recursion formula. Recursion criteria with DefName. With disabled Iterative calculation setting.
+		ws.getRange2("D1055").setValue("0");
+		ws.getRange2("D1057").setValue("16");
+		ws.getRange2("A1056").setValue("1");
+		ws.getRange2("B1056").setValue("=SUMIF(Criteria_range, criteria, sum_range)");
+		assert.strictEqual(ws.getRange2("B1056").getValue(), "0", "Test: SUMIF. 3 args. Recursion formula. Recursion criteria with DefName. B1056 - 0")
+		bCaFromSelectedCell = getCaFromSelectedCell("B1056");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: SUMIF. 3 args. Recursion formula. Recursion criteria with DefName. B1056 - flag ca: true");
+		bCaFromSelectedCell = null;
+		wb.delDefinesNames(oCriteriaRangeName);
+		wb.delDefinesNames(oCriteriaName);
+		wb.delDefinesNames(oSumRangeName);
+		oCriteriaRangeName = null;
+		oCriteriaName = null;
+		oSumRangeName = null;
+		// - Case: SUMIFS. 3 args. Recursion formula. Recursion sum_range, but the cell with formula doesn't match with criteria. Criteria with formula. With disabled Iterative calculation setting.
+		ws.getRange2("A1058").setValue("2");
+		ws.getRange2("B1058").setValue("4");
+		ws.getRange2("C1058").setValue("8");
+		ws.getRange2("A1059").setValue("09/15/2024");
+		ws.getRange2("B1059").setValue("09/16/2024");
+		ws.getRange2("C1059").setValue("09/17/2024");
+		ws.getRange2("D1059").setValue("09/18/2024");
+		ws.getRange2("D1058").setValue("=SUMIFS(A1058:D1058, A1059:D1059, DATE(2024, 9, 17))");
+		assert.strictEqual(ws.getRange2("D1058").getValue(), "8", "Test: SUMIFS. 3 args. Recursion formula. Recursion sum_range, but the cell with formula doesn't match with criteria. Criteria with formula. D1058 - 8");
+		bCaFromSelectedCell = getCaFromSelectedCell("D1058");
+		assert.strictEqual(bCaFromSelectedCell, false, "Test: SUMIFS. 3 args. Recursion formula. Recursion sum_range, but the cell with formula doesn't match with criteria. Criteria with formula. D1058 - flag ca: false");
+		bCaFromSelectedCell = null;
+		// - Case: SUMIFS. 3 args. Recursion formula. Recursion sum_range,the cell with formula matches with criteria. Criteria with formula. With disabled Iterative calculation setting.
+		ws.getRange2("D1058").setValue("=SUMIFS(A1058:D1058, A1059:D1059, DATE(2024, 9, 18))");
+		assert.strictEqual(ws.getRange2("D1058").getValue(), "0", "Test: SUMIFS. 3 args. Recursion formula. Recursion sum_range,the cell with formula matches with criteria. Criteria with formula. D1058 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("D1058");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: SUMIFS. 3 args. Recursion formula. Recursion sum_range,the cell with formula matches with criteria. Criteria with formula. D1058 - flag ca: true");
+		bCaFromSelectedCell = null;
+		// - Case: SUMIFS. 5 args. Recursion formula. Recursion sum_range, but the cell with formula doesn't match with criterias. With disabled Iterative calculation setting.
+		// sum_range row
+		ws.getRange2("A1060").setValue("5");
+		ws.getRange2("B1060").setValue("4");
+		ws.getRange2("C1060").setValue("11");
+		ws.getRange2("D1060").setValue("3");
+		// criteria_range row
+		ws.getRange2("A1061").setValue("Apples");
+		ws.getRange2("B1061").setValue("Bananas");
+		ws.getRange2("C1061").setValue("Artichokes");
+		ws.getRange2("D1061").setValue("Apples");
+		ws.getRange2("E1061").setValue("Bananas");
+		// criteria row
+		ws.getRange2("A1062").setValue("<>Bananas");
+		// criteria_range2 row
+		ws.getRange2("A1063").setValue("Sarah");
+		ws.getRange2("B1063").setValue("Tom");
+		ws.getRange2("C1063").setValue("Sarah");
+		ws.getRange2("D1063").setValue("Tom");
+		ws.getRange2("E1063").setValue("Sarah");
+		// criteria2 row
+		ws.getRange2("A1064").setValue("Tom");
+		// formula
+		ws.getRange2("E1060").setValue("=SUMIFS(A1060:E1060, A1061:E1061, A1062, A1063:E1063, A1064)");
+		assert.strictEqual(ws.getRange2("E1060").getValue(), "3", "Test: SUMIFS. 5 args. Recursion formula. Recursion sum_range, but the cell with formula doesn't match with criterias. E1060 - 3");
+		bCaFromSelectedCell = getCaFromSelectedCell("E1060");
+		assert.strictEqual(bCaFromSelectedCell, false, "Test: SUMIFS. 5 args. Recursion formula. Recursion sum_range, but the cell with formula doesn't match with criterias. E1060 - flag ca: false");
+		bCaFromSelectedCell = null;
+		// - Case: SUMIFS. 5 args. Recursion formula. Recursion sum_range,the cell with formula 1 criteria is matches 2 is not. With disabled Iterative calculation setting.
+		ws.getRange2("E1061").setValue("Apples");
+		ws.getRange2("E1060").setValue("=SUMIFS(A1060:E1060, A1061:E1061, A1062, A1063:E1063, A1064)");
+		assert.strictEqual(ws.getRange2("E1060").getValue(), "3", "Test: SUMIFS. 5 args. Recursion formula. Recursion sum_range,the cell with formula 1 criteria is matches 2 is not. E1060 - 3");
+		bCaFromSelectedCell = getCaFromSelectedCell("E1060");
+		assert.strictEqual(bCaFromSelectedCell, false, "Test: SUMIFS. 5 args. Recursion formula. Recursion sum_range,the cell with formula 1 criteria is matches 2 is not. E1060 - flag ca: false");
+		bCaFromSelectedCell = null;
+		// - Case: SUMIFS. 5 args. Recursion formula. Recursion sum_range, the cell with formula - 1 criteria doesn't match 2 is matches. With disabled Iterative calculation setting.
+		ws.getRange2("E1061").setValue("Bananas");
+		ws.getRange2("E1063").setValue("Tom");
+		ws.getRange2("E1060").setValue("=SUMIFS(A1060:E1060, A1061:E1061, A1062, A1063:E1063, A1064)");
+		assert.strictEqual(ws.getRange2("E1060").getValue(), "3", "Test: SUMIFS. 5 args. Recursion formula. Recursion sum_range, the cell with formula - 1 criteria doesn't match 2 is matches. E1060 - 3");
+		bCaFromSelectedCell = getCaFromSelectedCell("E1060");
+		assert.strictEqual(bCaFromSelectedCell, false, "Test: SUMIFS. 5 args. Recursion formula. Recursion sum_range, the cell with formula - 1 criteria doesn't match 2 is matches. E1060 - flag ca: false");
+		bCaFromSelectedCell = null;
+		// - Case: SUMIFS. 5 args. Recursion formula. Recursion sum_range, the cell with formula both criterias match. With disabled Iterative calculation setting.
+		ws.getRange2("E1061").setValue("Apples");
+		ws.getRange2("E1060").setValue("=SUMIFS(A1060:E1060, A1061:E1061, A1062, A1063:E1063, A1064)");
+		assert.strictEqual(ws.getRange2("E1060").getValue(), "0", "Test: SUMIFS. 5 args. Recursion formula. Recursion sum_range, the cell with formula both criterias match. E1060 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("E1060");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: SUMIFS. 5 args. Recursion formula. Recursion sum_range, the cell with formula both criterias match. E1060 - flag ca: true");
+		bCaFromSelectedCell = null;
+		// - Case: SUMIFS. 5 args. Recursion formula. Recursion criteria_range. With disabled Iterative calculation setting.
+		ws.getRange2("E1060").setValue("3");
+		ws.getRange2("E1061").setValue("=SUMIFS(A1060:E1060, A1061:E1061, A1062, A1063:E1063, A1064)");
+		assert.strictEqual(ws.getRange2("E1061").getValue(), "0", "Test: SUMIFS. 5 args. Recursion formula. Recursion criteria_range. E1061 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("E1061");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: SUMIFS. 5 args. Recursion formula. Recursion criteria_range. E1061 - flag ca: true");
+		bCaFromSelectedCell = null;
+		// - Case: SUMIFS. 5 args. Recursion formula. Recursion criteria_range2, but criteria_range is not matches. With disabled Iterative calculation setting.
+		ws.getRange2("E1061").setValue("Bananas");
+		ws.getRange2("E1063").setValue("=SUMIFS(A1060:E1060, A1061:E1061, A1062, A1063:E1063, A1064)");
+		assert.strictEqual(ws.getRange2("E1063").getValue(), "3", "Test: SUMIFS. 5 args. Recursion formula. Recursion criteria_range2, but criteria_range is not matches. E1063 - 3");
+		bCaFromSelectedCell = getCaFromSelectedCell("E1063");
+		assert.strictEqual(bCaFromSelectedCell, false, "Test: SUMIFS. 5 args. Recursion formula. Recursion criteria_range2, but criteria_range is not matches. E1063 - flag ca: false");
+		bCaFromSelectedCell = null;
+		// - Case: SUMIFS. 5 args. Recursion formula. Recursion criteria_range2, but criteria_range is matches. With disabled Iterative calculation setting.
+		ws.getRange2("E1061").setValue("Apples");
+		ws.getRange2("E1063").setValue("=SUMIFS(A1060:E1060, A1061:E1061, A1062, A1063:E1063, A1064)");
+		assert.strictEqual(ws.getRange2("E1063").getValue(), "0", "Test: SUMIFS. 5 args. Recursion formula. Recursion criteria_range2, but criteria_range is matches. E1063 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("E1063");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: SUMIFS. 5 args. Recursion formula. Recursion criteria_range2, but criteria_range is matches. E1063 - flag ca: true");
+		bCaFromSelectedCell = null;
+		// - Case: COUNTIFS. 4 args. Recursion formula. Recursion criteria_range2, but criteria_range isn't matches. With disabled Iterative calculation setting.
+	 	// Criteria range
+		ws.getRange2("A1064").setValue("100");
+		ws.getRange2("B1064").setValue("1000");
+		ws.getRange2("C1064").setValue("10000");
+		ws.getRange2("D1064").setValue("10");
+		ws.getRange2("E1064").setValue("0");
+		// Criteria
+		ws.getRange2("A1065").setValue(">0");
+		// Criteria range 2
+		ws.getRange2("A1066").setValue("Bob");
+		ws.getRange2("B1066").setValue("Tom");
+		ws.getRange2("C1066").setValue("Bob");
+		ws.getRange2("D1066").setValue("Bob");
+		ws.getRange2("E1066").setValue("=COUNTIFS(A1064:E1064, A1065, A1066:E1066, A1067)");
+		// Criteria2
+		ws.getRange2("A1067").setValue("Bob")
+		assert.strictEqual(ws.getRange2("E1066").getValue(), "3", "Test: COUNTIFS. 4 args. Recursion formula. Recursion criteria_range2, but criteria_range isn't matches. E1066 - 3");
+		bCaFromSelectedCell = getCaFromSelectedCell("E1066");
+		assert.strictEqual(bCaFromSelectedCell, false, "Test: COUNTIFS. 4 args. Recursion formula. Recursion criteria_range2, but criteria_range isn't matches. E1066 - flag ca: false");
+		bCaFromSelectedCell = null;
+		// - Case: COUNTIFS. 4 args. Recursion formula. Recursion criteria_range2, but criteria_range is matches. With disabled Iterative calculation setting.
+		ws.getRange2("E1064").setValue("10");
+		ws.getRange2("E1066").setValue("=COUNTIFS(A1064:E1064, A1065, A1066:E1066, A1067)");
+		assert.strictEqual(ws.getRange2("E1066").getValue(), "0", "Test: COUNTIFS. 4 args. Recursion formula. Recursion criteria_range2, but criteria_range is matches. E1066 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("E1066");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: COUNTIFS. 4 args. Recursion formula. Recursion criteria_range2, but criteria_range is matches. E1066 - flag ca: true");
+		// - Case: IF. 3 args. Recursion formula. recursion value_false but it doesn't match. With disabled Iterative calculation setting.
+		ws.getRange2("A1067").setValue("Yes");
+		ws.getRange2("B1067").setValue("23");
+		ws.getRange2("C1067").setValue("=IF(A1067 = \"Yes\", B1067, C1067)");
+		assert.strictEqual(ws.getRange2("C1067").getValue(), "23", "Test: IF. 3 args. Recursion formula. recursion value_false. C1067 - 23");
+		bCaFromSelectedCell = getCaFromSelectedCell("C1067");
+		assert.strictEqual(bCaFromSelectedCell, false, "Test: IF. 3 args. Recursion formula. recursion value_false. C1067 - flag ca: false");
+		bCaFromSelectedCell = null;
+		// - Case: IF. 3 args. Recursion formula. Recursion value_false but it matches. With disabled Iterative calculation setting.
+		ws.getRange2("C1067").setValue("=IF(A1067 = \"No\", B1067, C1067)");
+		assert.strictEqual(ws.getRange2("C1067").getValue(), "0", "Test: IF. 3 args. Recursion formula. Recursion value_false. C1067 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("C1067");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: IF. 3 args. Recursion formula. Recursion value_false. C1067 - flag ca: true");
+		bCaFromSelectedCell = null;
+		// - Case: IF. 3 args. Recursion formula. logical_test is Ref. Recursion value_false, but it doesn't match. With disabled Iterative calculation setting.
+		ws.getRange2("D1067").setValue("TRUE");
+		ws.getRange2("C1067").setValue("=IF(D1067, B1067, C1067");
+		assert.strictEqual(ws.getRange2("C1067").getValue(), "23", "Test: IF. 3 args. Recursion formula. logical_test is Ref. Recursion value_false, but it doesn't match. C1067 - 23");
+		bCaFromSelectedCell = getCaFromSelectedCell("C1067");
+		assert.strictEqual(bCaFromSelectedCell, false, "Test: IF. 3 args. Recursion formula. logical_test is Ref. Recursion value_false, but it doesn't match. C1067 - flag ca: false");
+		bCaFromSelectedCell = null;
+		// - Case: IF. 3 args. Recursion formula. logical_test is Ref. Recursion value_false, but it matches. With disabled Iterative calculation setting.
+		ws.getRange2("D1067").setValue("FALSE");
+		ws.getRange2("C1067").setValue("=IF(D1067, B1067, C1067");
+		assert.strictEqual(ws.getRange2("C1067").getValue(), "0", "Test: IF. 3 args. Recursion formula. logical_test is Ref. Recursion value_false, but it matches. C1067 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("C1067");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: IF. 3 args. Recursion formula. logical_test is Ref. Recursion value_false, but it matches. C1067 - flag ca: true");
+		bCaFromSelectedCell = null;
+		// - Case: IF. 3 args. Recursion formula.logical_test is DefName. Recursion value_false is DefName, but it doesn't match. With disabled Iterative calculation setting.
+		let oLogicalTest = new Asc.asc_CDefName("logical_test", ws.getName() + "!$D$1067");
+		let oTrueValue = new Asc.asc_CDefName("true_value", ws.getName() + "!$B$1067");
+		let oFalseValue = new Asc.asc_CDefName("false_value", ws.getName() + "!$C$1067");
+		wb.editDefinesNames(null, oLogicalTest);
+		wb.editDefinesNames(null, oTrueValue);
+		wb.editDefinesNames(null, oFalseValue);
+		ws.getRange2("D1067").setValue("TRUE");
+		ws.getRange2("C1067").setValue("=IF(logical_test, true_value, C1067)");
+		assert.strictEqual(ws.getRange2("C1067").getValue(), "23", "Case: IF. 3 args. Recursion formula.logical_test is DefName. Recursion value_false is DefName, but it doesn't match. C1067 - 23");
+		bCaFromSelectedCell = getCaFromSelectedCell("C1067");
+		assert.strictEqual(bCaFromSelectedCell, false, "Case: IF. 3 args. Recursion formula.logical_test is DefName. Recursion value_false is DefName, but it doesn't match. C1067 - flag ca: false");
+		bCaFromSelectedCell = null;
+		// - Case: IF. 3 args. Recursion formula.logical_test is DefName. Recursion value_false is DefName, but it matches. With disabled Iterative calculation setting.
+		ws.getRange2("D1067").setValue("FALSE");
+		ws.getRange2("C1067").setValue("=IF(logical_test, true_value, false_value)");
+		assert.strictEqual(ws.getRange2("C1067").getValue(), "0", "Case: IF. 3 args. Recursion formula.logical_test is DefName. Recursion value_false is DefName, but it matches. C1067 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("C1067");
+		assert.strictEqual(bCaFromSelectedCell, true, "Case: IF. 3 args. Recursion formula.logical_test is DefName. Recursion value_false is DefName, but it matches. C1067 - flag ca: true");
+		bCaFromSelectedCell = null;
+		wb.delDefinesNames(oLogicalTest);
+		oLogicalTest = null;
+		wb.delDefinesNames(oTrueValue);
+		oTrueValue = null;
+		wb.delDefinesNames(oFalseValue);
+		oFalseValue = null;
+		// - Case: IF. 3 args. Recursion formula. With operand function. One of condition is recursion, but it doesn't match. With disabled Iterative calculation setting.
+		ws.getRange2("A1073").setValue("10");
+		ws.getRange2("B1073").setValue("=IF(A1073=10, 10, B1073)+IF(A1073=10, 10, B1073)");
+		assert.strictEqual(ws.getRange2("B1073").getValue(), "20", "Test: IF. 3 args. Recursion formula. With operand function. One of condition is recursion, but it doesn't match. B1073 - 20");
+		bCaFromSelectedCell = getCaFromSelectedCell("B1073");
+		assert.strictEqual(bCaFromSelectedCell, false, "Test: IF. 3 args. Recursion formula. With operand function. One of condition is recursion, but it doesn't match. B1073 - flag ca: false");
+		bCaFromSelectedCell = null;
+		// - Case: IF. 3 args. Recursion formula. With operand function. One of condition is recursion but it matches. With disabled Iterative calculation setting.
+		ws.getRange2("A1073").setValue("1");
+		ws.getRange2("B1073").setValue("=IF(A1073=10, 10, B1073)+IF(A1073=10, 10, B1073)");
+		assert.strictEqual(ws.getRange2("B1073").getValue(), "0", "Test: IF. 3 args. Recursion formula. With operand function. One of condition is recursion but it matches. B1073 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("B1073");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: IF. 3 args. Recursion formula. With operand function. One of condition is recursion but it matches. B1073 - flag ca: true");
+		bCaFromSelectedCell = null;
+		// - Case: IFS. 6 args. Recursion formula. One of condition is recursion, but it doesn't match. With disabled Iterative calculation setting.
+		ws.getRange2("A1068").setValue("3");
+		ws.getRange2("B1068").setValue('=IFS(A1068=1, "First", A1068=2, B1068, A1068=3, "Third")');
+		assert.strictEqual(ws.getRange2("B1068").getValue(), "Third", "Test: IFS. 6 args. Recursion formula. One of condition is recursion but it doesn't match. B1068 - Third");
+		bCaFromSelectedCell = getCaFromSelectedCell("B1068");
+		assert.strictEqual(bCaFromSelectedCell, false, "Test: IFS. 6 args. Recursion formula. One of condition is recursion but it doesn't match. B1068 - flag ca: false");
+		bCaFromSelectedCell = null;
+		// - Case: IFS. 6 args. Recursion formula. One of condition is recursion but it matches. With disabled Iterative calculation setting.
+		ws.getRange2("A1068").setValue("2");
+		ws.getRange2("B1068").setValue('=IFS(A1068=1, "First", A1068=2, B1068, A1068=3, "Third")');
+		assert.strictEqual(ws.getRange2("B1068").getValue(), "0", "Test: IFS. 6 args. Recursion formula. One of condition is recursion but it matches. B1068 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("B1068");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: IFS. 6 args. Recursion formula. One of condition is recursion but it matches. B1068 - flag ca: true");
+		bCaFromSelectedCell = null;
+		// - Case: SWITCH. Without default_arg. One of result_arg has recursion, but it doesn't match. With disabled Iterative calculation setting.
+		// expression
+		ws.getRange2("A1069").setValue("3");
+		// values
+		ws.getRange2("A1070").setValue("1");
+		ws.getRange2("B1070").setValue("2");
+		ws.getRange2("C1070").setValue("3");
+		ws.getRange2("D1070").setValue("4");
+		ws.getRange2("E1070").setValue("5");
+		// results
+		ws.getRange2("A1071").setValue("Monday");
+		ws.getRange2("B1071").setValue("Wednesday");
+		ws.getRange2("C1071").setValue("Thursday");
+		ws.getRange2("D1071").setValue("Friday");
+		// formula
+		ws.getRange2("A1072").setValue("=SWITCH(A1069,A1070, A1071, B1070, A1072, C1070, B1071, D1070, C1071, E1070, D1071)");
+		assert.strictEqual(ws.getRange2("A1072").getValue(), "Wednesday", "Test: SWITCH. Without default_arg. One of result_arg has recursion but it doesn't matches. A1072 - Wednesday");
+		bCaFromSelectedCell = getCaFromSelectedCell("A1072");
+		assert.strictEqual(bCaFromSelectedCell, false, "Test: SWITCH. Without default_arg. One of result_arg has recursion but it doesn't matches. A1072 - flag ca: false");
+		bCaFromSelectedCell = null;
+		// - Case: SWITCH. Without default_arg. One of result_arg has recursion, but it matches. With disabled Iterative calculation setting.
+		ws.getRange2("A1069").setValue("2");
+		ws.getRange2("A1072").setValue("=SWITCH(A1069,A1070, A1071, B1070, A1072, C1070, B1071, D1070, C1071, E1070, D1071)");
+		assert.strictEqual(ws.getRange2("A1072").getValue(), "0", "Test: SWITCH. Without default_arg. One of result_arg has recursion but it matches. A1072 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("A1072");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: SWITCH. Without default_arg. One of result_arg has recursion but it matches. A1072 - flag ca: true");
+		bCaFromSelectedCell = null;
+		// - Case: SWITCH. With default_arg. Default_arg has recursion, but it doesn't match. With disabled Iterative calculation setting.
+		ws.getRange2("A1069").setValue("7");
+		// default_arg
+		ws.getRange2("E1071").setValue("Unknown day of week");
+		ws.getRange2("A1072").setValue("=SWITCH(A1069,A1070, A1071, B1070, A1072, C1070, B1071, D1070, C1071, E1070, D1071, E1071)");
+		assert.strictEqual(ws.getRange2("A1072").getValue(), "Unknown day of week", "Test: SWITCH. With default_arg. Default_arg has recursion but it doesn't matches. A1072 - Unknown day of week");
+		bCaFromSelectedCell = getCaFromSelectedCell("A1072");
+		assert.strictEqual(bCaFromSelectedCell, false, "Test: SWITCH. With default_arg. Default_arg has recursion but it doesn't matches. A1072 - flag ca: false");
+		bCaFromSelectedCell = null;
+		// - Case: SWITCH. With default_arg. Default_arg has recursion, but it matches. With disabled Iterative calculation setting.
+		ws.getRange2("A1072").setValue("=SWITCH(A1069,A1070, A1071, B1070, A1072, C1070, B1071, D1070, C1071, E1070, D1071, A1072)");
+		assert.strictEqual(ws.getRange2("A1072").getValue(), "0", "Test: SWITCH. With default_arg. Default_arg has recursion but it matches. A1072 - 0");
+		bCaFromSelectedCell = getCaFromSelectedCell("A1072");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: SWITCH. With default_arg. Default_arg has recursion but it matches. A1072 - flag ca: true");
+		bCaFromSelectedCell = null;
+		// - Case: Exception formula "CELL" that ignores rules of recursion recognition
+		ws.getRange2("A1073").setValue("=CELL(\"filename\",A1073)");
+		assert.strictEqual(ws.getRange2("A1073").getValue(), "[TeSt.xlsx]Sheet1", "Test: Exception formulas that ignores rules of recursion recognition. A1073 - 1039. Formula - CELL");
+		bCaFromSelectedCell = getCaFromSelectedCell("A1073");
+		assert.strictEqual(bCaFromSelectedCell, true, "Test: Exception formulas that ignores rules of recursion recognition. A1039 - flag ca: true");
+		bCaFromSelectedCell = null;
+		// - Case: Chain without recursion. B1074 <- A1075 <- D1075 <- E1075 <- F1075. With disabled Iterative calculation setting. Case from bug-71996
+		// year field
+		ws.getRange2("A1074").setValue("2024");
+		// month field
+		ws.getRange2("B1074").setValue("=DATE(A1074, SHEET(),1");
+		//  time break
+		ws.getRange2("C1074").setValue("0.02");
+		ws.getRange2("D1074").setValue("0.03");
+		ws.getRange2("E1074").setValue("0.33");
+		// additional field
+		ws.getRange2("F1074").setValue("=IF(MONTH(B1074)=1;$G$1074;INDIRECT(TEXT(DATE(YEAR(B1074);MONTH(B1074)-1;1);\"MMM\") & \"!F39\"))");
+		ws.getRange2("G1074").setValue("0");
+		// main chain
+		ws.getRange2("A1075").setValue("=B1074");
+		ws.getRange2("B1075").setValue("0");
+		ws.getRange2("C1075").setValue("0");
+		ws.getRange2("D1075").setValue("=IF(ISNUMBER($A1075);IF((C1075-B1075)<TIME(6;1;0);TIME(0;0;0);IF((C1075-B1075)<TIME(9;31;0);$C$1074;$D$1074));\"\")");
+		ws.getRange2("E1075").setValue("=IF(ISNUMBER($A1075);IF(OR(G1075=\"U\";H1075=\"X\");(C1075-B1075-D1075);IF(OR(G1075=\"K\";G1075=\"B\";G1075=\"D\");TIME(0;0;0);C1075-B1075-D1075-$E$1074));\"\")");
+		ws.getRange2("F1075").setValue("==IF(ISNUMBER($A1075);IF(OR(G1075=\"Zaus\";E1075>-$E$1074;G1075=\"kA\");(F1074+E1075);TIME(0;0;0));\"\")");
+		ws.getRange2("G1075").setValue("Neujahr");
+		ws.getRange2("H1075").setValue("X");
+		// Checking via initStartCellForIterCalc method that cells haven't recursion
+		oCell = selectCell("A1075");
+		let bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, false, "Test: Chain without recursion. B1074 <- A1075 <- D1075 <- E1075 <- F1075. With disabled Iterative calculation setting. Case from bug-71996. A1075 - false");
+		bCellHasRecursion = null;
+		g_cCalcRecursion.setStartCellIndex(null);
+		oCell = selectCell("D1075");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, false, "Test: Chain without recursion. B1074 <- A1075 <- D1075 <- E1075 <- F1075. With disabled Iterative calculation setting. Case from bug-71996. D1075 - false");
+		bCellHasRecursion = null;
+		g_cCalcRecursion.setStartCellIndex(null);
+		oCell = selectCell("E1075");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, false, "Test: Chain without recursion. B1074 <- A1075 <- D1075 <- E1075 <- F1075. With disabled Iterative calculation setting. Case from bug-71996. E1075 - false");
+		bCellHasRecursion = null;
+		g_cCalcRecursion.setStartCellIndex(null);
+		oCell = selectCell("F1075");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, false, "Test: Chain without recursion. B1074 <- A1075 <- D1075 <- E1075 <- F1075. With disabled Iterative calculation setting. Case from bug-71996. F1075 - false");
+		bCellHasRecursion = null;
+		g_cCalcRecursion.setStartCellIndex(null);
 		// -- Test changeLinkedCell method.
 		oCell = selectCell("A1000");
 		let oCellNeedEnableRecalc = selectCell("B1000");
@@ -14661,93 +15108,69 @@ $(function () {
 		assert.strictEqual(oParser.calculate().getValue(), 0, "RANDBETWEEN(-0.1,-0.00000000005)");
 
 		// for bug 67684
+		/* Sample of 10 thousand values */
+		ws.getRange2("A1:Z10002").cleanAll();
 		wb.dependencyFormulas.unlockRecal();
-		ws.getRange2("A100:D1002").cleanAll();
+
+		ws.getRange2("A10002:C10002").setValue("0");
 		ws.getRange2("A100").setValue("1");
 		ws.getRange2("A101").setValue("2");
-		ws.getRange2("A102:A1002").setValue("=RANDBETWEEN(A100,A101)");		// [1,2]
+		ws.getRange2("A102:A10002").setValue("=RANDBETWEEN(A100,A101)");		// [1,2]
 		ws.getRange2("B101").setValue("3");
-		ws.getRange2("B102:B1002").setValue("=RANDBETWEEN(A100,B101)");		// [1,3]
-		ws.getRange2("C101").setValue("4");	
-		ws.getRange2("C102:C1002").setValue("=RANDBETWEEN(A100,C101)");		// [1,4]
-		ws.getRange2("D101").setValue("5");	
-		ws.getRange2("D102:D1002").setValue("=RANDBETWEEN(A100,D101)");		// [1,5]
 
+		ws.getRange2("B102:B10002").setValue("=RANDBETWEEN(A100,B101)");		// [1,3]
+		ws.getRange2("C101").setValue("4");
+		ws.getRange2("C102:C10002").setValue("=RANDBETWEEN(A100,C101)");		// [1,4]
+		
 		// spreading percentages for range [1,2]
-		oParser = new parserFormula("COUNTIF(A102:A1002,1)/1000", "A1", ws);
+		oParser = new parserFormula("COUNTIF(A102:A10002,1)/100", "A1", ws);
 		assert.ok(oParser.parse());
-		res = Math.round(oParser.calculate().getValue() * 10);
-		assert.ok(res >= 4 && res <= 5, "Spreading percentages for number 1 in COUNTIF(A102:A1002,1)/1000");
+		res = Math.round(oParser.calculate().getValue());
+		assert.ok(res >= 47 && res <= 53, "Spreading percentages for number 1 in COUNTIF(A102:A10002,1)/100");
 
-		oParser = new parserFormula("COUNTIF(A102:A1002,2)/1000", "A1", ws);
+		oParser = new parserFormula("COUNTIF(A102:A10002,2)/100", "A1", ws);
 		assert.ok(oParser.parse());
-		res = Math.round(oParser.calculate().getValue() * 10);
-		assert.ok(res >= 4 && res <= 5, "Spreading percentages for number 2 in COUNTIF(A102:A1002,2)/1000");
+		res = Math.round(oParser.calculate().getValue());
+		assert.ok(res >= 47 && res <= 53, "Spreading percentages for number 2 in COUNTIF(A102:A10002,2)/100");
 
 		// spreading percentages for range [1,3]
-		oParser = new parserFormula("COUNTIF(B102:B1002,1)/1000", "A1", ws);
+		oParser = new parserFormula("COUNTIF(B102:B10002,1)/100", "A1", ws);
 		assert.ok(oParser.parse());
-		res = Math.round(oParser.calculate().getValue() * 10);
-		assert.ok(res >= 3 && res <= 3, "Spreading percentages for number 1 in COUNTIF(B102:B1002,1)/1000");
+		res = Math.round(oParser.calculate().getValue());
+		assert.ok(res >= 31 && res <= 37, "Spreading percentages for number 1 in COUNTIF(B102:B10002,1)/100");
 
-		oParser = new parserFormula("COUNTIF(B102:B1002,2)/1000", "A1", ws);
+		oParser = new parserFormula("COUNTIF(B102:B10002,2)/100", "A1", ws);
 		assert.ok(oParser.parse());
-		res = Math.round(oParser.calculate().getValue() * 10);
-		assert.ok(res >= 3 && res <= 3, "Spreading percentages for number 2 in COUNTIF(B102:B1002,2)/1000");
+		res = Math.round(oParser.calculate().getValue());
+		assert.ok(res >= 31 && res <= 37, "Spreading percentages for number 2 in COUNTIF(B102:B10002,2)/100");
 
-		oParser = new parserFormula("COUNTIF(B102:B1002,3)/1000", "A1", ws);
+		oParser = new parserFormula("COUNTIF(B102:B10002,3)/100", "A1", ws);
 		assert.ok(oParser.parse());
-		res = Math.round(oParser.calculate().getValue() * 10);
-		assert.ok(res >= 3 && res <= 3, "Spreading percentages for number 3 in COUNTIF(B102:B1002,3)/1000");
-
+		res = Math.round(oParser.calculate().getValue());
+		assert.ok(res >= 31 && res <= 37, "Spreading percentages for number 3 in COUNTIF(B102:B10002,3)/100");
+		
 		// spreading percentages for range [1,4]
-		oParser = new parserFormula("COUNTIF(C102:C1002,1)/1000", "A1", ws);
+		oParser = new parserFormula("COUNTIF(C102:C10002,1)/100", "A1", ws);
 		assert.ok(oParser.parse());
-		res = Math.round(oParser.calculate().getValue() * 100);
-		assert.ok(res >= 20 && res <= 29, "Spreading percentages for number 1 in COUNTIF(C102:C1002,1)/1000");
+		res = Math.round(oParser.calculate().getValue());
+		assert.ok(res >= 20 && res <= 29, "Spreading percentages for number 1 in COUNTIF(C102:C10002,1)/100");
 
-		oParser = new parserFormula("COUNTIF(C102:C1002,2)/1000", "A1", ws);
+		oParser = new parserFormula("COUNTIF(C102:C10002,2)/100", "A1", ws);
 		assert.ok(oParser.parse());
-		res = Math.round(oParser.calculate().getValue() * 100);
-		assert.ok(res >= 20 && res <= 29, "Spreading percentages for number 2 in COUNTIF(C102:C1002,2)/1000");
+		res = Math.round(oParser.calculate().getValue());
+		assert.ok(res >= 20 && res <= 29, "Spreading percentages for number 2 in COUNTIF(C102:C10002,2)/100");
 
-		oParser = new parserFormula("COUNTIF(C102:C1002,3)/1000", "A1", ws);
+		oParser = new parserFormula("COUNTIF(C102:C10002,3)/100", "A1", ws);
 		assert.ok(oParser.parse());
-		res = Math.round(oParser.calculate().getValue() * 100);
-		assert.ok(res >= 20 && res <= 29, "Spreading percentages for number 3 in COUNTIF(C102:C1002,3)/1000");
+		res = Math.round(oParser.calculate().getValue());
+		assert.ok(res >= 20 && res <= 29, "Spreading percentages for number 3 in COUNTIF(C102:C10002,3)/100");
 
-		oParser = new parserFormula("COUNTIF(C102:C1002,4)/1000", "A1", ws);
+		oParser = new parserFormula("COUNTIF(C102:C10002,4)/100", "A1", ws);
 		assert.ok(oParser.parse());
-		res = Math.round(oParser.calculate().getValue() * 100);
-		assert.ok(res >= 20 && res <= 29, "Spreading percentages for number 4 in COUNTIF(C102:C1002,4)/1000");
-
-		// spreading percentages for range [1,5]
-		oParser = new parserFormula("COUNTIF(D102:D1002,1)/1000", "A1", ws);
-		assert.ok(oParser.parse());
-		res = Math.round(oParser.calculate().getValue() * 100);
-		assert.ok(res >= 15 && res <= 22, "Spreading percentages for number 1 in COUNTIF(D102:D1002,1)/1000");
-
-		oParser = new parserFormula("COUNTIF(D102:D1002,2)/1000", "A1", ws);
-		assert.ok(oParser.parse());
-		res = Math.round(oParser.calculate().getValue() * 100);
-		assert.ok(res >= 15 && res <= 22, "Spreading percentages for number 2 in COUNTIF(D102:D1002,1)/1000");
-
-		oParser = new parserFormula("COUNTIF(D102:D1002,3)/1000", "A1", ws);
-		assert.ok(oParser.parse());
-		res = Math.round(oParser.calculate().getValue() * 100);
-		assert.ok(res >= 15 && res <= 22, "Spreading percentages for number 3 in COUNTIF(D102:D1002,1)/1000");
-
-		oParser = new parserFormula("COUNTIF(D102:D1002,4)/1000", "A1", ws);
-		assert.ok(oParser.parse());
-		res = Math.round(oParser.calculate().getValue() * 100);
-		assert.ok(res >= 15 && res <= 22, "Spreading percentages for number 4 in COUNTIF(D102:D1002,1)/1000");
-
-		oParser = new parserFormula("COUNTIF(D102:D1002,5)/1000", "A1", ws);
-		assert.ok(oParser.parse());
-		res = Math.round(oParser.calculate().getValue() * 100);
-		assert.ok(res >= 15 && res <= 22, "Spreading percentages for number 5 in COUNTIF(D102:D1002,1)/1000");
-
-		ws.getRange2("A100:D1002").cleanAll();
+		res = Math.round(oParser.calculate().getValue());
+		assert.ok(res >= 20 && res <= 29, "Spreading percentages for number 4 in COUNTIF(C102:C10002,4)/100");
+		
+		ws.getRange2("A100:D10002").cleanAll();
 	});
 
 	QUnit.test("Test: \"RANDARRAY\"", function (assert) {
@@ -22469,6 +22892,28 @@ $(function () {
 		assert.ok(oParser.parse(), 'LOOKUP(5,A201:A203+{1},A201:D202)');
 		assert.strictEqual(oParser.calculate().getValue(), "#N/A", 'Result of LOOKUP(5,A201:A203+{1},A201:D202)');
 
+		// for bug 69527
+		// cell3D tests
+		let currentSheet = ws.getName();
+
+		ws.getRange2("E200").setValue("3");
+		ws.getRange2("A200:A210").setValue("4000");
+		ws.getRange2("A205").setValue("3");
+		ws.getRange2("B200:B210").setValue("1000");
+		ws.getRange2("B200").setValue("1");
+		ws.getRange2("B205").setValue("55");
+
+		oParser = new parserFormula('LOOKUP(' + currentSheet + '!E200,A200:A210,B200:B210)', "A2", ws);
+		assert.ok(oParser.parse(), 'LOOKUP(' + currentSheet + '!E200,A200:A210,B200:B210)');
+		assert.strictEqual(oParser.calculate().getValue().getValue(), 55, 'Result of LOOKUP(' + currentSheet + '!E200,A200:A210,B200:B210)');
+
+		oParser = new parserFormula('LOOKUP(E200,' + currentSheet + '!A205,B200:B210)', "A2", ws);
+		assert.ok(oParser.parse(), 'LOOKUP(E200,' + currentSheet + '!A205,B200:B210)');
+		assert.strictEqual(oParser.calculate().getValue(), 1, 'Result of LOOKUP(E200,' + currentSheet + '!A205,B200:B210)');
+
+		oParser = new parserFormula('LOOKUP(E200,A200:A210,' + currentSheet + '!A205)', "A2", ws);
+		assert.ok(oParser.parse(), 'LOOKUP(E200,A200:A210,' + currentSheet + '!A205)');
+		assert.strictEqual(oParser.calculate().getValue().getValue(), 3, 'Result of LOOKUP(E200,A200:A210,' + currentSheet + '!A205)');
 
 	});
 
@@ -22689,6 +23134,22 @@ $(function () {
 		assert.ok(oParser.parse(), 'XLOOKUP(A306,A300:A311,B300:B311,-2,0,1)');
 		assert.strictEqual(_getValue(oParser.calculate()), "#DIV/0!", 'Result of XLOOKUP(A306,A300:A311,B300:B311,-2,0,1)');
 
+		// for bug 70550
+		ws.getRange2("A100:G110").setValue("1");
+		ws.getRange2("A101").setValue("2");
+		ws.getRange2("B101:G101").setValue("3");
+
+		oParser = new parserFormula('XLOOKUP(2,A100:A110,A100:G110,"",1)', "A2", ws);
+		assert.ok(oParser.parse(), 'XLOOKUP(2,A100:A110,A100:G110,"",1)');
+		assert.strictEqual(oParser.calculate().type, AscCommonExcel.cElementType.cellsRange, 'Result of XLOOKUP(2,A100:A110,A100:G110,"",1)');
+
+		oParser = new parserFormula('ISREF(XLOOKUP(2,A100:A110,A100:G110,"",1))', "A2", ws);
+		assert.ok(oParser.parse(), 'ISREF(XLOOKUP(2,A100:A110,A100:G110,"",1))');
+		assert.strictEqual(oParser.calculate().getValue(), "TRUE", 'Result of ISREF(XLOOKUP(2,A100:A110,A100:G110,"",1))');
+
+		oParser = new parserFormula('SUM(XLOOKUP(2,A100:A110,A100:G110,"",1):XLOOKUP(2,A100:A110,A100:G110,"",1))', "A2", ws);
+		assert.ok(oParser.parse(), 'SUM(XLOOKUP(2,A100:A110,A100:G110,"",1):XLOOKUP(2,A100:A110,A100:G110,"",1))');
+		assert.strictEqual(oParser.calculate().getValue(), 20, 'Result of SUM(XLOOKUP(2,A100:A110,A100:G110,"",1):XLOOKUP(2,A100:A110,A100:G110,"",1))');
 	});
 
 
@@ -24194,12 +24655,12 @@ $(function () {
 				fv = 0;
 			}
 
-			var res;
+			let res;
 			if (rate != 0) {
 				res = (-fv * rate + pmt * (1 + rate * type)) / (rate * pv + pmt * (1 + rate * type))
 				res = Math.log(res) / Math.log(1 + rate)
 			} else {
-				res = (-pv - fv) / pmt;
+				res = -(pv + fv) / pmt;
 			}
 			return res;
 		}
@@ -24212,6 +24673,15 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), nper(0.12 / 12, -100, -1000));
 
+
+		// bug 70050
+		oParser = new parserFormula("NPER(0,-393977.5252,14351946.04,,1)", "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), nper(0,-393977.5252,14351946.04,0,1));
+
+		oParser = new parserFormula("NPER(0,393977.5252,14351946.04,,1)", "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), nper(0,393977.5252,14351946.04,0,1));
 
 		testArrayFormula2(assert, "NPER", 3, 5);
 	});
@@ -28970,6 +29440,18 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), 13);
 
+		ws.getRange2("G1").setValue("Profit");
+		ws.getRange2("G2").setValue("555");
+
+		oParser = new parserFormula('DAVERAGE(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "#DIV/0!");
+
+		ws.getRange2("G1").setValue("noname");
+
+		oParser = new parserFormula('DAVERAGE(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 13);
 	});
 
 	QUnit.test("Test: \"DCOUNT\"", function (assert) {
@@ -28988,6 +29470,18 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!");
 
+		ws.getRange2("G1").setValue("Profit");
+		ws.getRange2("G2").setValue("555");
+
+		oParser = new parserFormula('DCOUNT(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0);
+
+		ws.getRange2("G1").setValue("noname");
+
+		oParser = new parserFormula('DCOUNT(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 6);
 	});
 
 	QUnit.test("Test: \"DCOUNTA\"", function (assert) {
@@ -29006,6 +29500,18 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!");
 
+		ws.getRange2("G1").setValue("Profit");
+		ws.getRange2("G2").setValue("555");
+
+		oParser = new parserFormula('DCOUNTA(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0);
+
+		ws.getRange2("G1").setValue("noname");
+
+		oParser = new parserFormula('DCOUNTA(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 6);
 	});
 
 	QUnit.test("Test: \"DGET\"", function (assert) {
@@ -29020,6 +29526,18 @@ $(function () {
 		assert.ok(oParser.parse(), 'DGET(A4:E10, "Yield", A1:F2)');
 		assert.strictEqual(oParser.calculate().getValue(), 10, 'DGET(A4:E10, "Yield", A1:F2)');
 
+		ws.getRange2("G1").setValue("Profit");
+		ws.getRange2("G2").setValue("555");
+
+		oParser = new parserFormula('DGET(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!");
+
+		ws.getRange2("G1").setValue("noname");
+
+		oParser = new parserFormula('DGET(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "#NUM!");
 	});
 
 	QUnit.test("Test: \"DMAX\"", function (assert) {
@@ -29030,6 +29548,18 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), 96);
 
+		ws.getRange2("G1").setValue("Profit");
+		ws.getRange2("G2").setValue("555");
+
+		oParser = new parserFormula('DMAX(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0);
+
+		ws.getRange2("G1").setValue("noname");
+
+		oParser = new parserFormula('DMAX(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 20);
 	});
 
 	QUnit.test("Test: \"DMIN\"", function (assert) {
@@ -29040,6 +29570,18 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), 75);
 
+		ws.getRange2("G1").setValue("Profit");
+		ws.getRange2("G2").setValue("555");
+
+		oParser = new parserFormula('DMIN(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0);
+
+		ws.getRange2("G1").setValue("noname");
+
+		oParser = new parserFormula('DMIN(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 8);
 	});
 
 	QUnit.test("Test: \"DPRODUCT\"", function (assert) {
@@ -29050,6 +29592,18 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), 800);
 
+		ws.getRange2("G1").setValue("Profit");
+		ws.getRange2("G2").setValue("555");
+
+		oParser = new parserFormula('DPRODUCT(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0);
+
+		ws.getRange2("G1").setValue("noname");
+
+		oParser = new parserFormula('DPRODUCT(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 3628800);
 	});
 
 	QUnit.test("Test: \"DSTDEV\"", function (assert) {
@@ -29060,6 +29614,19 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue().toFixed(4) - 0, 1.1547);
 
+
+		ws.getRange2("G1").setValue("Profit");
+		ws.getRange2("G2").setValue("555");
+
+		oParser = new parserFormula('DSTDEV(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "#DIV/0!");
+
+		ws.getRange2("G1").setValue("noname");
+
+		oParser = new parserFormula('DSTDEV(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 4.381780460041329);
 	});
 
 	QUnit.test("Test: \"DSTDEVP\"", function (assert) {
@@ -29070,6 +29637,18 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue().toFixed(6) - 0, 0.942809);
 
+		ws.getRange2("G1").setValue("Profit");
+		ws.getRange2("G2").setValue("555");
+
+		oParser = new parserFormula('DSTDEVP(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "#DIV/0!");
+
+		ws.getRange2("G1").setValue("noname");
+
+		oParser = new parserFormula('DSTDEV(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 4.381780460041329);
 	});
 
 	QUnit.test("Test: \"STDEVPA\"", function (assert) {
@@ -29154,6 +29733,30 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), 247.8);
 
+		oParser = new parserFormula('DSUM(A4:E10, "Age",A1:F2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 15);
+
+		oParser = new parserFormula('DSUM(A4:E10, "Age","test")', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!");
+
+		oParser = new parserFormula('DSUM(A4:E10, "Age",E2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!");
+
+		ws.getRange2("G1").setValue("Profit");
+		ws.getRange2("G2").setValue("555");
+
+		oParser = new parserFormula('DSUM(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0);
+
+		ws.getRange2("G1").setValue("noname");
+
+		oParser = new parserFormula('DSUM(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 78);
 	});
 
 	QUnit.test("Test: \"DVAR\"", function (assert) {
@@ -29164,6 +29767,18 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue().toFixed(1) - 0, 8.8);
 
+		ws.getRange2("G1").setValue("Profit");
+		ws.getRange2("G2").setValue("555");
+
+		oParser = new parserFormula('DSTDEVP(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "#DIV/0!");
+
+		ws.getRange2("G1").setValue("noname");
+
+		oParser = new parserFormula('DVAR(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 19.2);
 	});
 
 	QUnit.test("Test: \"DVARP\"", function (assert) {
@@ -29173,6 +29788,19 @@ $(function () {
 		oParser = new parserFormula('DVARP(A4:E10, "Yield", A1:A3)', "AA2", ws);
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue().toFixed(2) - 0, 7.04);
+
+		ws.getRange2("G1").setValue("Profit");
+		ws.getRange2("G2").setValue("555");
+
+		oParser = new parserFormula('DSTDEVP(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "#DIV/0!");
+
+		ws.getRange2("G1").setValue("noname");
+
+		oParser = new parserFormula('DVARP(A4:E10, "Age",G1:G2)', "AA2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 16);
 
 	});
 
@@ -35525,11 +36153,11 @@ $(function () {
 			'id-view': 'editor_sdk'
 		});
 		window["Asc"]["editor"] = api;
-		AscCommon.g_oTableId.init();
 		api._onEndLoadSdk();
 		api.isOpenOOXInBrowser = false;
 		api._openDocument(AscCommon.getEmpty());
-		api.collaborativeEditing = new AscCommonExcel.CCollaborativeEditing({});
+		api.initCollaborativeEditing({});
+		api._coAuthoringInitCollaborativeEditing({});
 		api.wb = new AscCommonExcel.WorkbookView(api.wbModel, api.controller, api.handlers, api.HtmlElement,
 			api.topLineEditorElement, api, api.collaborativeEditing, api.fontRenderingMode);
 		// Test api: GetCalcSettings
