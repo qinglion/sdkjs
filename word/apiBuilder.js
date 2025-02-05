@@ -14879,6 +14879,28 @@
 		this.TablePr.TableBorders.InsideV = private_GetTableBorder(sType, nSize, nSpace, r, g, b);
 		this.private_OnChange();
 	};
+	/**
+	 * Specifies the border which will be displayed on all table cell borders.
+	 * @memberof ApiTablePr
+	 * @typeofeditors ["CDE"]
+	 * @param {BorderType} sType - The vertical table cell border style.
+	 * @param {pt_8} nSize - The width of the current border measured in eighths of a point.
+	 * @param {pt} nSpace - The spacing offset in the vertical table cells of the table measured in points used to place this border.
+	 * @param {byte} r - Red color component value.
+	 * @param {byte} g - Green color component value.
+	 * @param {byte} b - Blue color component value.
+	 * @see office-js-api/Examples/{Editor}/ApiTablePr/Methods/SetTableBorderAll.js
+	 */
+	ApiTablePr.prototype.SetTableBorderAll = function(sType, nSize, nSpace, r, g, b)
+	{
+		this.TablePr.TableBorders.Top = private_GetTableBorder(sType, nSize, nSpace, r, g, b);
+		this.TablePr.TableBorders.Bottom = private_GetTableBorder(sType, nSize, nSpace, r, g, b);
+		this.TablePr.TableBorders.Left = private_GetTableBorder(sType, nSize, nSpace, r, g, b);
+		this.TablePr.TableBorders.Right = private_GetTableBorder(sType, nSize, nSpace, r, g, b);
+		this.TablePr.TableBorders.InsideH = private_GetTableBorder(sType, nSize, nSpace, r, g, b);
+		this.TablePr.TableBorders.InsideV = private_GetTableBorder(sType, nSize, nSpace, r, g, b);
+		this.private_OnChange();
+	};
 
 	/**
 	 * Specifies an amount of space which will be left between the bottom extent of the cell contents and the border
@@ -22548,6 +22570,7 @@
 	ApiTablePr.prototype["SetTableBorderRight"]      = ApiTablePr.prototype.SetTableBorderRight;
 	ApiTablePr.prototype["SetTableBorderInsideH"]    = ApiTablePr.prototype.SetTableBorderInsideH;
 	ApiTablePr.prototype["SetTableBorderInsideV"]    = ApiTablePr.prototype.SetTableBorderInsideV;
+	ApiTablePr.prototype["SetTableBorderAll"]    	 = ApiTablePr.prototype.SetTableBorderAll;
 	ApiTablePr.prototype["SetTableCellMarginBottom"] = ApiTablePr.prototype.SetTableCellMarginBottom;
 	ApiTablePr.prototype["SetTableCellMarginLeft"]   = ApiTablePr.prototype.SetTableCellMarginLeft;
 	ApiTablePr.prototype["SetTableCellMarginRight"]  = ApiTablePr.prototype.SetTableCellMarginRight;
