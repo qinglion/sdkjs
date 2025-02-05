@@ -2933,6 +2933,11 @@
 	PDFEditorApi.prototype.isLiveViewer = function() {
 		return this.isPdfViewer && AscCommon.CollaborativeEditing.Is_Fast() && !this.VersionHistory;
 	};
+	PDFEditorApi.prototype.asc_setRtlTextDirection = function(isRtl) {
+	};
+	PDFEditorApi.prototype.asc_isRtlTextDirection = function() {
+		return false;
+	};
 	
 	function CPdfContextMenuData(obj) {
 		if (obj) {
