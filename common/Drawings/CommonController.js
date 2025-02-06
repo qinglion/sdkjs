@@ -5717,22 +5717,15 @@
 					}
 				},
 
-				onKeyDown: function (oEvent) {
-					const bIsMacOs = AscCommon.AscBrowser.isMacOs;
+				executeShortcut: function(nShortcutAction) {
+					let oRet = {keyResult: keydownresult_PreventDefault};
 					const bCanEdit = this.canEdit();
-					const oApi = window["Asc"]["editor"];
-
-					const bIsCtrl = oEvent.IsCtrl();
-					let nRetValue = keydownresult_PreventNothing;
-
-					const nShortcutAction = oApi.getShortcut(oEvent);
 					switch (nShortcutAction) {
 						case Asc.c_oAscSpreadsheetShortcutType.Bold: {
 							if (bCanEdit) {
 								const oTextPr = this.getParagraphTextPr();
 								if (isRealObject(oTextPr)) {
 									this.setCellBold(oTextPr.Bold !== true);
-									nRetValue = keydownresult_PreventDefault;
 								}
 							}
 							break;
@@ -5742,7 +5735,6 @@
 								const oTextPr = this.getParagraphTextPr();
 								if (isRealObject(oTextPr)) {
 									this.setCellItalic(oTextPr.Italic !== true);
-									nRetValue = keydownresult_PreventDefault;
 								}
 							}
 							break;
@@ -5752,7 +5744,6 @@
 								const oTextPr = this.getParagraphTextPr();
 								if (isRealObject(oTextPr)) {
 									this.setCellUnderline(oTextPr.Underline !== true);
-									nRetValue = keydownresult_PreventDefault;
 								}
 							}
 							break;
@@ -5760,12 +5751,10 @@
 						case Asc.c_oAscSpreadsheetShortcutType.EditSelectAll: {
 							this.selectAll();
 							this.drawingObjects.sendGraphicObjectProps();
-							nRetValue = keydownresult_PreventDefault;
 							break;
 						}
 						case Asc.c_oAscSpreadsheetShortcutType.EditOpenCellEditor: //todo: add the ability to insert formulas into shapes
 						{
-							nRetValue = keydownresult_PreventDefault;
 							break;
 						}
 						case Asc.c_oAscSpreadsheetShortcutType.DrawingIncreaseFontSize: {
@@ -5773,7 +5762,6 @@
 								break;
 							}
 							this.increaseFontSize();
-							nRetValue = keydownresult_PreventDefault;
 							break;
 						}
 						case Asc.c_oAscSpreadsheetShortcutType.DrawingDecreaseFontSize: {
@@ -5781,7 +5769,6 @@
 								break;
 							}
 							this.decreaseFontSize();
-							nRetValue = keydownresult_PreventDefault;
 							break;
 						}
 						case Asc.c_oAscSpreadsheetShortcutType.DrawingSubscript: {
@@ -5791,7 +5778,6 @@
 							const oTextPr = this.getParagraphTextPr();
 							if (isRealObject(oTextPr)) {
 								this.setCellSubscript(oTextPr.VertAlign !== AscCommon.vertalign_SubScript);
-								nRetValue = keydownresult_PreventDefault;
 							}
 							break;
 						}
@@ -5802,7 +5788,6 @@
 							const oTextPr = this.getParagraphTextPr();
 							if (isRealObject(oTextPr)) {
 								this.setCellSuperscript(oTextPr.VertAlign !== AscCommon.vertalign_SuperScript);
-								nRetValue = keydownresult_PreventDefault;
 							}
 							break;
 						}
@@ -5813,7 +5798,6 @@
 							const oParaPr = this.getParagraphParaPr();
 							if (isRealObject(oParaPr)) {
 								this.setCellAlign(oParaPr.Jc === AscCommon.align_Center ? AscCommon.align_Left : AscCommon.align_Center);
-								nRetValue = keydownresult_PreventDefault;
 							}
 							break;
 						}
@@ -5824,7 +5808,6 @@
 							const oParaPr = this.getParagraphParaPr();
 							if (isRealObject(oParaPr)) {
 								this.setCellAlign(oParaPr.Jc === AscCommon.align_Justify ? AscCommon.align_Left : AscCommon.align_Justify);
-								nRetValue = keydownresult_PreventDefault;
 							}
 							break;
 						}
@@ -5835,7 +5818,6 @@
 							const oParaPr = this.getParagraphParaPr();
 							if (isRealObject(oParaPr)) {
 								this.setCellAlign(oParaPr.Jc === AscCommon.align_Left ? AscCommon.align_Justify : AscCommon.align_Left);
-								nRetValue = keydownresult_PreventDefault;
 							}
 							break;
 						}
@@ -5846,7 +5828,6 @@
 							const oParaPr = this.getParagraphParaPr();
 							if (isRealObject(oParaPr)) {
 								this.setCellAlign(oParaPr.Jc === AscCommon.align_Right ? AscCommon.align_Left : AscCommon.align_Right);
-								nRetValue = keydownresult_PreventDefault;
 							}
 							break;
 						}
@@ -5863,7 +5844,6 @@
 								};
 								this.checkSelectedObjectsAndCallback(Callback, [], false, AscDFH.historydescription_Spreadsheet_AddItem, undefined, window["Asc"]["editor"].collaborativeEditing.getFast());
 							}
-							nRetValue = keydownresult_PreventDefault;
 							break;
 						}
 						default: {
@@ -5877,13 +5857,27 @@
 										oApi["asc_insertSymbol"](oCustom.Font, oCustom.CharCode);
 									}
 								}
-								nRetValue = keydownresult_PreventDefault;
+							} else {
+								oRet = null;
 							}
 							break;
 						}
 					}
+					return oRet;
+				},
 
-					if (nShortcutAction) {
+				onKeyDown: function (oEvent) {
+					const bIsMacOs = AscCommon.AscBrowser.isMacOs;
+					const bCanEdit = this.canEdit();
+					const oApi = window["Asc"]["editor"];
+
+					const bIsCtrl = oEvent.IsCtrl();
+					let nRetValue = keydownresult_PreventNothing;
+
+					const nShortcutAction = oApi.getShortcut(oEvent);
+					const oShortcutResult = this.executeShortcut(nShortcutAction);
+					if (oShortcutResult) {
+						nRetValue = oShortcutResult.keyResult;
 					} else if (oEvent.KeyCode === 8 && bCanEdit) // BackSpace
 					{
 						const bIsWord = bIsMacOs ? oEvent.AltKey : bIsCtrl;

@@ -1159,6 +1159,22 @@
     return this;
   };
 
+	WorkbookView.prototype.executeShortcut = function(nShortcutAction) {
+		const objectRender = this.getWorksheet().objectRender;
+		if (objectRender && !this.getCellEditMode() && !this.controller.isMousePressed && this.enableKeyEvents) {
+			const oGraphicRet = objectRender.executeShortcut(nShortcutAction);
+			if (oGraphicRet) {
+				return true;
+			}
+		}
+
+		let oRetValue = this.controller.executeShortcut(nShortcutAction);
+		if (this.isCellEditMode && !this.controller.skipCellEditor) {
+			oRetValue = oRetValue || this.cellEditor.executeShortcut(nShortcutAction);
+		}
+		this.controller.setSkipCellEditor(false);
+		return !!oRetValue;
+	};
 	WorkbookView.prototype.onKeyDown = function (oEvent) {
 		this.Api.sendEvent("asc_onBeforeKeyDown", oEvent);
 		let nRetValue = keydownresult_PreventNothing;

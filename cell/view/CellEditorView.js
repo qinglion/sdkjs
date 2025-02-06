@@ -2488,7 +2488,104 @@ function (window, undefined) {
 	};
 
 	// Event handlers
+	CellEditor.prototype.executeShortcut = function(nShortcutAction) {
+		let oResult = {keyResult: keydownresult_PreventAll};
 
+		const bHieroglyph = this.isTopLineActive && AscCommonExcel.getFragmentsLength(this.options.fragments) !== this.input.value.length;
+		switch (nShortcutAction) {
+			case Asc.c_oAscSpreadsheetShortcutType.Strikeout: {
+				if (bHieroglyph) {
+					this._syncEditors();
+				}
+				this.setTextStyle("s", null);
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.Bold: {
+				if (bHieroglyph) {
+					this._syncEditors();
+				}
+				this.setTextStyle("b", null);
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.Italic: {
+				if (bHieroglyph) {
+					this._syncEditors();
+				}
+				this.setTextStyle("i", null);
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.Underline: {
+				if (bHieroglyph) {
+					this._syncEditors();
+				}
+				this.setTextStyle("u", null);
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.EditSelectAll: {
+				if (!this.hasFocus) {
+					this.setFocus(true);
+				}
+				if (this.isTopLineActive) {
+					oResult.keyResult = keydownresult_PreventNothing;
+				}
+				this._moveCursor(kBeginOfText);
+				this._selectChars(kEndOfText);
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.EditUndo: {
+				this.undo();
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.EditRedo: {
+				this.redo();
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.CellInsertTime: {
+				const oDate = new Asc.cDate();
+				this._addChars(oDate.getTimeString(oApi));
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.CellInsertDate: {
+				const oDate = new Asc.cDate();
+				this._addChars(oDate.getDateString(oApi));
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.Print: {
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.EditOpenCellEditor: {
+				if (!AscBrowser.isOpera) {
+					oResult.keyResult = keydownresult_PreventNothing;
+				}
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.CellAddSeparator: {
+				this._addChars(oApi.asc_getDecimalSeparator());
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.CellEditorSwitchReference: {
+				const oRes = this._findRangeUnderCursor();
+				if (oRes.range) {
+					oRes.range.switchReference();
+					// ToDo add change ref to other sheet
+					this.changeCellRange(oRes.range);
+				}
+				break;
+			}
+			default: {
+				const oCustom = oApi.getCustomShortcutAction(nShortcutAction);
+				if (oCustom) {
+					if (AscCommon.c_oAscCustomShortcutType.Symbol === oCustom.Type) {
+						oApi["asc_insertSymbol"](oCustom.Font, oCustom.CharCode);
+					}
+				} else {
+					oResult = null;
+				}
+				break;
+			}
+		}
+		return oResult;
+	};
 	/**
 	 *
 	 * @param oEvent {AscCommon.CKeyboardEvent}
@@ -2497,7 +2594,7 @@ function (window, undefined) {
 	CellEditor.prototype._onWindowKeyDown = function (oEvent) {
 		const oThis = this;
 		const oApi = window["Asc"]["editor"];
-		let bHieroglyph = false;
+
 		let nRetValue = keydownresult_PreventNothing;
 
 		if (this.handlers.trigger('getWizard') || !oThis.isOpened) {
@@ -2508,119 +2605,14 @@ function (window, undefined) {
 		oThis.skipTLUpdate = true;
 
 		// определение ввода иероглифов
-		if (oThis.isTopLineActive && AscCommonExcel.getFragmentsLength(oThis.options.fragments) !== oThis.input.value.length) {
-			bHieroglyph = true;
-		}
+		const bHieroglyph = oThis.isTopLineActive && AscCommonExcel.getFragmentsLength(oThis.options.fragments) !== oThis.input.value.length;
 
 		nRetValue = keydownresult_PreventKeyPress;
 		const nShortcutAction = oApi.getShortcut(oEvent);
-		switch (nShortcutAction) {
-			case Asc.c_oAscSpreadsheetShortcutType.Strikeout: {
-				if (bHieroglyph) {
-					oThis._syncEditors();
-				}
-				oThis.setTextStyle("s", null);
-				nRetValue = keydownresult_PreventAll;
-				break;
-			}
-			case Asc.c_oAscSpreadsheetShortcutType.Bold: {
-				if (bHieroglyph) {
-					oThis._syncEditors();
-				}
-				oThis.setTextStyle("b", null);
-				nRetValue = keydownresult_PreventAll;
-				break;
-			}
-			case Asc.c_oAscSpreadsheetShortcutType.Italic: {
-				if (bHieroglyph) {
-					oThis._syncEditors();
-				}
-				oThis.setTextStyle("i", null);
-				nRetValue = keydownresult_PreventAll;
-				break;
-			}
-			case Asc.c_oAscSpreadsheetShortcutType.Underline: {
-				if (bHieroglyph) {
-					oThis._syncEditors();
-				}
-				oThis.setTextStyle("u", null);
-				nRetValue = keydownresult_PreventAll;
-				break;
-			}
-			case Asc.c_oAscSpreadsheetShortcutType.EditSelectAll: {
-				if (!oThis.hasFocus) {
-					oThis.setFocus(true);
-				}
-				if (!oThis.isTopLineActive) {
-					nRetValue = keydownresult_PreventAll;
-				}
-				oThis._moveCursor(kBeginOfText);
-				oThis._selectChars(kEndOfText);
-				break;
-			}
-			case Asc.c_oAscSpreadsheetShortcutType.EditUndo: {
-				oThis.undo();
-				nRetValue = keydownresult_PreventAll;
-				break;
-			}
-			case Asc.c_oAscSpreadsheetShortcutType.EditRedo: {
-				oThis.redo();
-				nRetValue = keydownresult_PreventAll;
-				break;
-			}
-			case Asc.c_oAscSpreadsheetShortcutType.CellInsertTime: {
-				const oDate = new Asc.cDate();
-				oThis._addChars(oDate.getTimeString(oApi));
-				nRetValue = keydownresult_PreventAll;
-				break;
-			}
-			case Asc.c_oAscSpreadsheetShortcutType.CellInsertDate: {
-				const oDate = new Asc.cDate();
-				oThis._addChars(oDate.getDateString(oApi));
-				nRetValue = keydownresult_PreventAll;
-				break;
-			}
-			case Asc.c_oAscSpreadsheetShortcutType.Print: {
-				nRetValue = keydownresult_PreventAll;
-				break;
-			}
-			case Asc.c_oAscSpreadsheetShortcutType.EditOpenCellEditor: {
-				if (AscBrowser.isOpera) {
-					nRetValue = keydownresult_PreventAll;
-				}
-				break;
-			}
-			case Asc.c_oAscSpreadsheetShortcutType.CellAddSeparator: {
-				oThis._addChars(oApi.asc_getDecimalSeparator());
-				nRetValue = keydownresult_PreventAll;
-				break;
-			}
-			case Asc.c_oAscSpreadsheetShortcutType.CellEditorSwitchReference: {
-				const oRes = this._findRangeUnderCursor();
-				if (oRes.range) {
-					oRes.range.switchReference();
-					// ToDo add change ref to other sheet
-					this.changeCellRange(oRes.range);
-				}
-
-				nRetValue = keydownresult_PreventAll;
-				break;
-			}
-			default: {
-				const oCustom = oApi.getCustomShortcutAction(nShortcutAction);
-				if (oCustom) {
-					if (AscCommon.c_oAscCustomShortcutType.Symbol === oCustom.Type) {
-						oApi["asc_insertSymbol"](oCustom.Font, oCustom.CharCode);
-					}
-					nRetValue = keydownresult_PreventAll;
-				} else {
-					nRetValue = keydownresult_PreventNothing;
-				}
-				break;
-			}
-		}
-
-		if (!nShortcutAction) {
+		const oShortcutRes = oThis.executeShortcut(nShortcutAction);
+		if (oShortcutRes) {
+			nRetValue = oShortcutRes.keyResult;
+		} else {
 			const bIsMacOs = AscCommon.AscBrowser.isMacOs;
 			const bIsWordRemove = bIsMacOs ? oEvent.IsAlt() : oEvent.CtrlKey;
 			switch (oEvent.GetKeyCode()) {
