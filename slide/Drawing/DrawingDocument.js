@@ -4812,23 +4812,21 @@ function CThumbnailsManager(editorPage)
 		oThis.OnUpdateOverlay();
 	};
 
-	this.onMouseWhell = function(e)
-	{
+	this.onMouseWhell = function (e) {
 		if (false === this.m_bIsScrollVisible || !oThis.m_oWordControl.m_oScrollThumbApi)
 			return;
 
 		if (global_keyboardEvent.CtrlKey)
 			return;
 
-		if (undefined !== window["AscDesktopEditor"])
-		{
-			if (false === window["AscDesktopEditor"]["CheckNeedWheel"]())
-				return;
-		}
+		if (undefined !== window["AscDesktopEditor"] && false === window["AscDesktopEditor"]["CheckNeedWheel"]())
+			return;
 
-		var delta = GetWheelDeltaY(e);
-
-		oThis.m_oWordControl.m_oScrollThumbApi.scrollBy(0, delta, false);
+		const delta = GetWheelDeltaY(e);
+		const isHorizontalOrientation = oThis.m_oWordControl.thumbnailsPosition === thumbnailsPositionMap.bottom;
+		isHorizontalOrientation
+			? oThis.m_oWordControl.m_oScrollThumbApi.scrollBy(delta, 0)
+			: oThis.m_oWordControl.m_oScrollThumbApi.scrollBy(0, delta, false);
 
 		if (e.preventDefault)
 			e.preventDefault();
@@ -6085,13 +6083,12 @@ function CThumbnailsManager(editorPage)
 		}
 	};
 
-	this.verticalScroll = function(sender, scrollPositionY, maxY, isAtTop, isAtBottom)
-	{
+	this.thumbnailsScroll = function (sender, scrollPosition, maxScrollPosition, isAtTop, isAtBottom) {
 		if (false === this.m_oWordControl.m_oApi.bInit_word_control || false === this.m_bIsScrollVisible)
 			return;
 
-		this.m_dScrollY = Math.max(0, Math.min(scrollPositionY, maxY));
-		this.m_dScrollY_max = maxY;
+		this.m_dScrollY = Math.max(0, Math.min(scrollPosition, maxScrollPosition));
+		this.m_dScrollY_max = maxScrollPosition;
 
 		this.CalculatePlaces();
 		AscCommon.g_specialPasteHelper.SpecialPasteButton_Update_Position();
@@ -6135,7 +6132,7 @@ function CThumbnailsManager(editorPage)
 
 		let __w = wordControl.m_oThumbnailsContainer.AbsolutePosition.R - wordControl.m_oThumbnailsContainer.AbsolutePosition.L;
 		let __h = wordControl.m_oThumbnailsContainer.AbsolutePosition.B - wordControl.m_oThumbnailsContainer.AbsolutePosition.T;
-		let totalThumbnailsHeight = this.calculateTotalThumbnailsHeight(__w, __h);
+		let totalThumbnailsHeight = this.calculateTotalThumbnailsLength(__w, __h);
 		const thumbnailsContainerHeight = __h * dKoefToPix >> 0;
 		if (totalThumbnailsHeight < thumbnailsContainerHeight) {
 			// все убралось. скролл не нужен
@@ -6145,7 +6142,7 @@ function CThumbnailsManager(editorPage)
 				wordControl.m_oThumbnails_scroll.Bounds.AbsW = 0;
 				wordControl.m_oThumbnailsContainer.Resize(__w, __h, wordControl);
 			} else {
-				wordControl.m_oThumbnails_scroll.HtmlElement.style.display = "none";
+				wordControl.m_oThumbnails_scroll.HtmlElement.style.display = 'none';
 			}
 			this.m_bIsScrollVisible = false;
 			this.m_dScrollY = 0;
@@ -6160,7 +6157,7 @@ function CThumbnailsManager(editorPage)
 					const _width_mm_scroll = 10;
 					wordControl.m_oThumbnails_scroll.Bounds.AbsW = _width_mm_scroll * dKoefToPix;
 				} else if (!wordControl.m_oApi.isMobileVersion) {
-					wordControl.m_oThumbnails_scroll.HtmlElement.style.display = "block";
+					wordControl.m_oThumbnails_scroll.HtmlElement.style.display = 'block';
 				}
 				wordControl.m_oThumbnailsContainer.Resize(__w, __h, wordControl);
 			}
@@ -6169,49 +6166,27 @@ function CThumbnailsManager(editorPage)
 			__w = wordControl.m_oThumbnails.AbsolutePosition.R - wordControl.m_oThumbnails.AbsolutePosition.L;
 			__h = wordControl.m_oThumbnails.AbsolutePosition.B - wordControl.m_oThumbnails.AbsolutePosition.T;
 
-			totalThumbnailsHeight = this.calculateTotalThumbnailsHeight(__w, __h);
+			totalThumbnailsHeight = this.calculateTotalThumbnailsLength(__w, __h);
 
 			// теперь нужно выставить размеры
-			const settings = new AscCommon.ScrollSettings();
-			settings.showArrows = false;
-			settings.screenW = wordControl.m_oThumbnails.HtmlElement.width;
-			settings.screenH = wordControl.m_oThumbnails.HtmlElement.height;
-			settings.cornerRadius = 1;
-			settings.slimScroll = true;
+			const settings = this.getSettingsForScrollObject(totalThumbnailsHeight);
 
-			settings.scrollBackgroundColor = GlobalSkin.BackgroundColorThumbnails;
-			settings.scrollBackgroundColorHover = GlobalSkin.BackgroundColorThumbnails;
-			settings.scrollBackgroundColorActive = GlobalSkin.BackgroundColorThumbnails;
-
-			settings.scrollerColor = GlobalSkin.ScrollerColor;
-			settings.scrollerHoverColor = GlobalSkin.ScrollerHoverColor;
-			settings.scrollerActiveColor = GlobalSkin.ScrollerActiveColor;
-
-			settings.arrowColor = GlobalSkin.ScrollArrowColor;
-			settings.arrowHoverColor = GlobalSkin.ScrollArrowHoverColor;
-			settings.arrowActiveColor = GlobalSkin.ScrollArrowActiveColor;
-
-			settings.strokeStyleNone = GlobalSkin.ScrollOutlineColor;
-			settings.strokeStyleOver = GlobalSkin.ScrollOutlineHoverColor;
-			settings.strokeStyleActive = GlobalSkin.ScrollOutlineActiveColor;
-
-			settings.targetColor = GlobalSkin.ScrollerTargetColor;
-			settings.targetHoverColor = GlobalSkin.ScrollerTargetHoverColor;
-			settings.targetActiveColor = GlobalSkin.ScrollerTargetActiveColor;
-
-			settings.contentH = totalThumbnailsHeight;
-
+			const isHorizontalOrientation = this.m_oWordControl.thumbnailsPosition === thumbnailsPositionMap.bottom;
 			if (wordControl.m_oScrollThumb_) {
 				wordControl.m_oScrollThumb_.Repos(settings);
-				wordControl.m_oScrollThumb_.isHorizontalScroll = false;
 			} else {
-				wordControl.m_oScrollThumb_ = new AscCommon.ScrollObject("id_vertical_scroll_thmbnl", settings);
-				wordControl.m_oScrollThumb_.bind("scrollvertical", function (evt) {
-					oThis.verticalScroll(this, evt.scrollD, evt.maxScrollY);
+				wordControl.m_oScrollThumb_ = new AscCommon.ScrollObject('id_vertical_scroll_thmbnl', settings);
+
+				const eventName = isHorizontalOrientation ? 'scrollhorizontal' : 'scrollvertical';
+				wordControl.m_oScrollThumb_.bind(eventName, function (evt) {
+					console.log(eventName, evt)
+					const maxScrollPosition = isHorizontalOrientation ? evt.maxScrollX : evt.maxScrollY;
+					oThis.thumbnailsScroll(this, evt.scrollD, maxScrollPosition);
 				});
+
 				wordControl.m_oScrollThumbApi = wordControl.m_oScrollThumb_;
-				wordControl.m_oScrollThumb_.isHorizontalScroll = false;
 			}
+			wordControl.m_oScrollThumb_.isHorizontalScroll = isHorizontalOrientation;
 		}
 
 		if (this.m_bIsScrollVisible) {
@@ -6228,34 +6203,95 @@ function CThumbnailsManager(editorPage)
 		AscCommon.g_specialPasteHelper.SpecialPasteButton_Update_Position();
 		this.m_bIsUpdate = true;
 	};
-	this.calculateTotalThumbnailsHeight = function (__w, __h) {
+	this.calculateTotalThumbnailsLength = function (containerWidth, containerHeight) {
 		const dKoefToPix = AscCommon.AscBrowser.retinaPixelRatio * g_dKoef_mm_to_pix;
 		const oPresentation = this.m_oWordControl.m_oLogicDocument;
 		const slidesCount = this.GetSlidesCount();
 
-		let thumbnailWidth = (__w * dKoefToPix >> 0) - (this.const_offset_x + this.const_offset_r);
-		let thumbnailHeight = thumbnailWidth * this.SlideHeight / this.SlideWidth >> 0;
+		const isHorizontalOrientation = this.m_oWordControl.thumbnailsPosition === thumbnailsPositionMap.bottom;
 
-		let cumulativeThumbnailHeight = 0;
+		let thumbnailHeight, thumbnailWidth;
+		if (isHorizontalOrientation) {
+			thumbnailHeight = (containerHeight * dKoefToPix >> 0) - (this.const_offset_y + this.const_offset_b);
+			thumbnailWidth = thumbnailHeight * this.SlideWidth / this.SlideHeight >> 0;
+		} else {
+			thumbnailWidth = (containerWidth * dKoefToPix >> 0) - (this.const_offset_x + this.const_offset_r);
+			thumbnailHeight = thumbnailWidth * this.SlideHeight / this.SlideWidth >> 0;
+		}
+
+		let cumulativeThumbnailLength = 0;
+
 		if (oPresentation.isVisioDocument) {
 			for (let nIdx = 0; nIdx < slidesCount; ++nIdx) {
 				const originalSlideWidth = oPresentation.GetWidthMM(nIdx);
 				const originalSlideHeight = oPresentation.GetHeightMM(nIdx);
-				cumulativeThumbnailHeight += thumbnailWidth * originalSlideHeight / originalSlideWidth >> 0;
+				const additionalLength = isHorizontalOrientation
+					? thumbnailHeight * originalSlideWidth / originalSlideHeight >> 0
+					: thumbnailWidth * originalSlideHeight / originalSlideWidth >> 0;;
+				cumulativeThumbnailLength += additionalLength;
 			}
+
 		} else if (this.IsMasterMode()) {
 			for (let nIdx = 0; nIdx < oPresentation.slideMasters.length; ++nIdx) {
-				cumulativeThumbnailHeight += thumbnailHeight;
 				const oMaster = oPresentation.slideMasters[nIdx];
-				cumulativeThumbnailHeight += LAYOUT_SCALE * oMaster.sldLayoutLst.length * thumbnailHeight;
+				const additionalLength = isHorizontalOrientation
+					? thumbnailWidth + oMaster.sldLayoutLst.length * thumbnailWidth * LAYOUT_SCALE
+					: thumbnailHeight + oMaster.sldLayoutLst.length * thumbnailHeight * LAYOUT_SCALE;
+				cumulativeThumbnailLength += additionalLength;
 			}
-			cumulativeThumbnailHeight = Math.round(cumulativeThumbnailHeight);
+			cumulativeThumbnailLength = Math.round(cumulativeThumbnailLength);
+
 		} else {
-			cumulativeThumbnailHeight = thumbnailHeight * slidesCount;
+			cumulativeThumbnailLength = isHorizontalOrientation
+				? thumbnailWidth * slidesCount
+				: thumbnailHeight * slidesCount;
 		}
 
-		const totalThumbnailsHeight = 2 * this.const_offset_y + cumulativeThumbnailHeight + (slidesCount > 0 ? (slidesCount - 1) * 3 * this.const_border_w : 0);
-		return totalThumbnailsHeight;
+		const totalThumbnailsLength = isHorizontalOrientation
+			? 2 * this.const_offset_x + cumulativeThumbnailLength + (slidesCount > 0 ? (slidesCount - 1) * 3 * this.const_border_w : 0)
+			: 2 * this.const_offset_y + cumulativeThumbnailLength + (slidesCount > 0 ? (slidesCount - 1) * 3 * this.const_border_w : 0);
+
+		return totalThumbnailsLength;
+	};
+	this.getSettingsForScrollObject = function (totalContentLength) {
+		const settings = new AscCommon.ScrollSettings();
+		settings.screenW = this.m_oWordControl.m_oThumbnails.HtmlElement.width;
+		settings.screenH = this.m_oWordControl.m_oThumbnails.HtmlElement.height;
+		settings.showArrows = false;
+		settings.slimScroll = true;
+		settings.cornerRadius = 1;
+
+		settings.scrollBackgroundColor = GlobalSkin.BackgroundColorThumbnails;
+		settings.scrollBackgroundColorHover = GlobalSkin.BackgroundColorThumbnails;
+		settings.scrollBackgroundColorActive = GlobalSkin.BackgroundColorThumbnails;
+
+		settings.scrollerColor = GlobalSkin.ScrollerColor;
+		settings.scrollerHoverColor = GlobalSkin.ScrollerHoverColor;
+		settings.scrollerActiveColor = GlobalSkin.ScrollerActiveColor;
+
+		settings.arrowColor = GlobalSkin.ScrollArrowColor;
+		settings.arrowHoverColor = GlobalSkin.ScrollArrowHoverColor;
+		settings.arrowActiveColor = GlobalSkin.ScrollArrowActiveColor;
+
+		settings.strokeStyleNone = GlobalSkin.ScrollOutlineColor;
+		settings.strokeStyleOver = GlobalSkin.ScrollOutlineHoverColor;
+		settings.strokeStyleActive = GlobalSkin.ScrollOutlineActiveColor;
+
+		settings.targetColor = GlobalSkin.ScrollerTargetColor;
+		settings.targetHoverColor = GlobalSkin.ScrollerTargetHoverColor;
+		settings.targetActiveColor = GlobalSkin.ScrollerTargetActiveColor;
+
+		if (this.m_oWordControl.thumbnailsPosition === thumbnailsPositionMap.bottom) {
+			settings.isHorizontalScroll = true;
+			settings.isVerticalScroll = false;
+			settings.contentW = totalContentLength;
+		} else {
+			settings.isHorizontalScroll = false;
+			settings.isVerticalScroll = true;
+			settings.contentH = totalContentLength;
+		}
+
+		return settings;
 	};
 
 	// interface
