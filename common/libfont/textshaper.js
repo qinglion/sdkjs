@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -149,7 +149,8 @@
 	{
 		if (this.Buffer.length >= AscFonts.HB_STRING_MAX_LEN)
 			this.FlushWord();
-
+		
+		// TODO: Check bugs 66317 66435
 		let nScript = this.GetTextScript(nUnicode);
 		if (nScript !== this.Script
 			&& -1 !== this.Script

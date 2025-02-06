@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -134,7 +134,7 @@
         }
         
         oTargetRun.RecalcInfo.TextPr = true
-        oCurForm.contentFormat.replaceAllText(sRes);
+        oCurForm.SetFormatValue(sRes);
     }
     /**
 	 * Check can the field accept the char or not.
@@ -156,7 +156,7 @@
         let nSelEnd = oDoc.event["selEnd"];
 
         function isValidNumber(str) {
-            return !isNaN(str) && isFinite(str);
+            return !isNaN(str) && isFinite(str) && false == /\s/.test(str);
         }
 
         let sNewValue = sValue.slice(0, nSelStart) + sChange + sValue.slice(nSelEnd);
@@ -262,7 +262,7 @@
         }
 
         sRes = sRes + "%";
-        oCurForm.contentFormat.replaceAllText(sRes);
+        oCurForm.SetFormatValue(sRes);
     }
     /**
 	 * Check can the field accept the char or not.
@@ -430,7 +430,7 @@
             sRes = oDateFormat.oTextFormat.format(oResParsed.value, 0, AscCommon.gc_nMaxDigCount, oCultureInfo)[0].text;
         }
 
-        oCurForm.contentFormat.replaceAllText(sRes);
+        oCurForm.SetFormatValue(sRes);
     }
 
     function FormatDateValue(sFormat, nValue) {
@@ -688,7 +688,7 @@
         
         oNumFormat.oTextFormat.formatType = AscCommon.NumFormatType.PDFFormDate;
         let sRes = oNumFormat.format(oResParsed.value, 0, AscCommon.gc_nMaxDigCount, true, undefined, true)[0].text;
-        oForm.contentFormat.replaceAllText(sRes);
+        oForm.SetFormatValue(sRes);
     }
     /**
 	 * Check can the field accept the char or not.
@@ -888,7 +888,7 @@
                 break;
         }
 
-        oCurForm.contentFormat.replaceAllText(sFormatValue);
+        oCurForm.SetFormatValue(sFormatValue);
     }
     /**
 	 * Check can the field accept the char or not.
@@ -1096,7 +1096,7 @@
                         return;
 
                     aFullNames.push(sFullName);
-                    aFields.push(oField);
+                    aFields.push(field);
                 });
             }
         });

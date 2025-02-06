@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -1017,14 +1017,14 @@ CHeaderFooter.prototype =
 	{
 		return this.Content.RemoveSelection(bNoCheckDrawing);
 	},
-
+	
 	DrawSelectionOnPage : function(CurPage)
-    {
-    	if (CurPage !== this.GetPage())
-    		return;
-
-        return this.Content.DrawSelectionOnPage(0, true, true);
-    },
+	{
+		if (CurPage !== this.GetPage())
+			return;
+		
+		return this.Content.DrawSelectionOnPage(0);
+	},
 
     Selection_SetStart : function(X,Y, PageIndex, MouseEvent)
     {
@@ -1396,7 +1396,7 @@ CHeaderFooter.prototype.Update_PageCountElements = function(nPageCount)
 {
 	for (var nIndex = 0, nCount = this.PageCountElements.length; nIndex < nCount; ++nIndex)
 	{
-		this.PageCountElements[nIndex].SetNumValue(nPageCount);
+		this.PageCountElements[nIndex].UpdatePageCount(nPageCount);
 	}
 };
 CHeaderFooter.prototype.ForceRecalculate = function(nPageAbs)
@@ -1415,7 +1415,15 @@ CHeaderFooter.prototype.GetContent = function()
 {
 	return this.Content;
 };
-
+/**
+ * Функция для выставления класса содержимого колонтитула (используется в совместке)
+ * @param {CDocumentContent} oDocumentContent
+ */
+CHeaderFooter.prototype.SetDocumentContent = function(oDocumentContent)
+{
+	this.Content = oDocumentContent;
+	oDocumentContent.SetParent(this);
+};
 CHeaderFooter.prototype.FindWatermark = function()
 {
     var aAllDrawings = this.Content.GetAllDrawingObjects();
@@ -1623,7 +1631,8 @@ CHeaderFooterController.prototype =
 
             Pr.Locked = this.Lock.Is_Locked();
 
-			Pr.StartPageNumber = SectPr.Get_PageNum_Start();
+			Pr.StartPageNumber = SectPr.GetPageNumStart();
+			Pr.NumFormat = SectPr.GetPageNumFormat();
 
             return Pr;
         }

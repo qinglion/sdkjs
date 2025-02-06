@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -531,6 +531,36 @@ function (window, undefined) {
 		}
 	}
 
+	/**
+	 * Returns the last day in the month in Date format.
+	 * @param {number} nExcelDateVal
+	 * @param {number} nMonths - The number of months before or after nExcelDateVal.
+	 * A positive value for months yields a future date; a negative value yields a past date.
+	 * @returns {cDate}
+	 */
+	function getLastDayInMonth (nExcelDateVal, nMonths) {
+		let dtValue;
+		if (!AscCommon.bDate1904) {
+			if (nExcelDateVal === 0) {
+				dtValue = new cDate((nExcelDateVal - AscCommonExcel.c_DateCorrectConst + 1) * c_msPerDay);
+			} else if (nExcelDateVal < 60) {
+				dtValue = new cDate((nExcelDateVal - AscCommonExcel.c_DateCorrectConst) * c_msPerDay);
+			} else if (nExcelDateVal === 60) {
+				dtValue = new cDate((nExcelDateVal - AscCommonExcel.c_DateCorrectConst - 1) * c_msPerDay);
+			} else {
+				dtValue = new cDate((nExcelDateVal - AscCommonExcel.c_DateCorrectConst - 1) * c_msPerDay);
+			}
+		} else {
+			dtValue = new cDate((nExcelDateVal - AscCommonExcel.c_DateCorrectConst) * c_msPerDay);
+		}
+		// setUTCDate doesn't work properly for -UTC time
+		dtValue.setUTCDate(1);
+		dtValue.setUTCMonth(dtValue.getUTCMonth() + nMonths);
+		dtValue.setUTCDate(dtValue.getDaysInMonth());
+
+		return dtValue;
+	}
+
 	cFormulaFunctionGroup['DateAndTime'] = cFormulaFunctionGroup['DateAndTime'] || [];
 	cFormulaFunctionGroup['DateAndTime'].push(cDATE, cDATEDIF, cDATEVALUE, cDAY, cDAYS, cDAYS360, cEDATE, cEOMONTH,
 		cHOUR, cISOWEEKNUM, cMINUTE, cMONTH, cNETWORKDAYS, cNETWORKDAYS_INTL, cNOW, cSECOND, cTIME, cTIMEVALUE, cTODAY,
@@ -619,6 +649,7 @@ function (window, undefined) {
 	cDATEDIF.prototype.argumentsMin = 3;
 	cDATEDIF.prototype.argumentsMax = 3;
 	cDATEDIF.prototype.numFormat = AscCommonExcel.cNumFormatNone;
+	cDATEDIF.prototype.argumentsType = [argType.number, argType.number, argType.text];
 	cDATEDIF.prototype.Calculate = function (arg) {
 		let arg0 = arg[0], arg1 = arg[1], arg2 = arg[2];
 
@@ -1196,30 +1227,13 @@ function (window, undefined) {
 		}
 
 		let val = arg0.getValue();
+		val = parseInt(val);
 		if (val < 0) {
 			return new cError(cErrorType.not_numeric);
-		} else if (!AscCommon.bDate1904) {
-			if (val === 0) {
-				val = new cDate((val - AscCommonExcel.c_DateCorrectConst + 1) * c_msPerDay);
-			} else if (val < 60) {
-				val = new cDate((val - AscCommonExcel.c_DateCorrectConst) * c_msPerDay);
-			} else if (val == 60) {
-				val = new cDate((val - AscCommonExcel.c_DateCorrectConst - 1) * c_msPerDay);
-			} else {
-				val = new cDate((val - AscCommonExcel.c_DateCorrectConst - 1) * c_msPerDay);
-			}
-		} else {
-			val = new cDate((val - AscCommonExcel.c_DateCorrectConst) * c_msPerDay);
 		}
-
-		// setUTCDate doesn't work properly for -UTC time
-		val.setUTCDate(1);
-		val.setUTCMonth(val.getUTCMonth() + arg1.getValue());
-		val.setUTCDate(val.getDaysInMonth());
+		val = getLastDayInMonth(val, arg1.getValue());
 
 		return new cNumber(Math.round(val.getExcelDateWithTime()));
-		// return new cNumber(Math.floor((val.getTime() / 1000 - val.getTimezoneOffset() * 60) / c_sPerDay +
-		// 	(AscCommonExcel.c_DateCorrectConst + 1)));
 	};
 
 
@@ -2203,16 +2217,21 @@ function (window, undefined) {
 	cWORKDAY_INTL.prototype.argumentsMin = 2;
 	cWORKDAY_INTL.prototype.argumentsMax = 4;
 	cWORKDAY_INTL.prototype.numFormat = AscCommonExcel.cNumFormatNone;
-	cWORKDAY_INTL.prototype.arrayIndexes = {2: 0, 3: 1};
+	cWORKDAY_INTL.prototype.arrayIndexes = {0: AscCommonExcel.arrayIndexesType.range, 1: AscCommonExcel.arrayIndexesType.range, 3: 1};
 	cWORKDAY_INTL.prototype.argumentsType = [argType.any, argType.any, argType.number, argType.any];
 	//TODO в данном случае есть различия с ms. при 3 и 4 аргументах - замена результата на ошибку не происходит.
-	cWORKDAY_INTL.prototype.returnValueType = AscCommonExcel.cReturnFormulaType.value_replace_area;
+	// cWORKDAY_INTL.prototype.returnValueType = AscCommonExcel.cReturnFormulaType.value_replace_area;
 	cWORKDAY_INTL.prototype.Calculate = function (arg) {
 		//TODO проблема с формулами следующего типа - WORKDAY.INTL(8,60,"0000000")
 		let t = this;
 		let tempArgs = arg[2] ? [arg[0], arg[1], arg[2]] : [arg[0], arg[1]];
 		let oArguments = this._prepareArguments(tempArgs, arguments[1]);
 		let argClone = oArguments.args;
+
+		if ((arg[0] && (arg[0].type === cElementType.cellsRange || arg[0].type === cElementType.cellsRange3D)) || 
+			(arg[1] && (arg[1].type === cElementType.cellsRange || arg[1].type === cElementType.cellsRange3D))) {
+			return new cError(cErrorType.wrong_value_type);
+		}
 
 		argClone[0] = argClone[0].tocNumber();
 		argClone[1] = argClone[1].tocNumber();
@@ -2428,4 +2447,5 @@ function (window, undefined) {
 	window['AscCommonExcel'].days360 = days360;
 	window['AscCommonExcel'].getCorrectDate = getCorrectDate;
 	window['AscCommonExcel'].daysInYear = daysInYear;
+	window['AscCommonExcel'].getLastDayInMonth = getLastDayInMonth;
 })(window);

@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -101,12 +101,62 @@
 	CRunElementBase.prototype.SetParent = function(oParent)
 	{
 	};
+	CRunElementBase.prototype.GetRun = function()
+	{
+		return null;
+	};
+	CRunElementBase.prototype.GetInRunPos = function()
+	{
+		let run = this.GetRun();
+		if (!run)
+			return -1;
+		
+		return run.GetElementPosition(this);
+	};
+	CRunElementBase.prototype.GetInParagraphPos = function()
+	{
+		let run = this.GetRun();
+		if (!run)
+			return null;
+		
+		let paragraph = run.GetParagraph();
+		if (!paragraph)
+			return null;
+		
+		let inRunPos = this.GetInRunPos();
+		if (-1 === inRunPos)
+			return null;
+		
+		let paraPos = paragraph.GetPosByElement(run);
+		if (!paraPos)
+			return null;
+		
+		paraPos.Add(inRunPos);
+		return paraPos;
+	};
 	CRunElementBase.prototype.SetParagraph = function(oParagraph)
 	{
 	};
+	CRunElementBase.prototype.GetParagraph = function()
+	{
+		let run = this.GetRun();
+		return run ? run.GetParagraph() : null;
+	};
+	CRunElementBase.prototype.IsInPermRange = function()
+	{
+		let paragraph = this.GetParagraph();
+		if (!paragraph)
+			return false;
+		
+		let paraPos = this.GetInParagraphPos();
+		if (!paraPos)
+			return null;
+		
+		return paragraph.GetPermRangesByPos(paraPos).length > 0;
+	};
 	CRunElementBase.prototype.Copy = function()
 	{
-		return new CRunElementBase();
+		return new this.constructor();
 	};
 	CRunElementBase.prototype.Write_ToBinary = function(Writer)
 	{
@@ -277,6 +327,14 @@
 		return false;
 	};
 	/**
+	 * Является ли данный элемент текстовым элементом внутри математического выражения
+	 * @returns {boolean}
+	 */
+	CRunElementBase.prototype.IsMathText = function()
+	{
+		return false;
+	};
+	/**
 	 * @returns {boolean}
 	 */
 	CRunElementBase.prototype.IsTab = function()
@@ -348,11 +406,11 @@
 		return false;
 	};
 	/**
-	 * return {AscWord.BidiType}
+	 * return {AscBidi.TYPE}
 	 */
 	CRunElementBase.prototype.getBidiType = function()
 	{
-		return AscWord.BidiType.neutral;
+		return AscBidi.TYPE.ON;
 	};
 	/**
 	 * @return {number}

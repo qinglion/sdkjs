@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -62,8 +62,6 @@
 		this.X = 0;
 		this.Y = 0;
 		
-		this.rtl = false;
-		
 		this.LineTop    = 0;
 		this.LineBottom = 0;
 		this.BaseLine   = 0;
@@ -82,7 +80,6 @@
 		this.mathTextInfo = null;
 		this.paraMath     = null;
 		
-		this.rtl      = false;
 		this.bidiFlow = new AscWord.BidiFlow(this);
 	}
 	ParagraphContentDrawState.prototype.init = function()
@@ -121,7 +118,7 @@
 		this.Range = range;
 		
 		this.X = x;
-		this.bidiFlow.begin(this.rtl);
+		this.bidiFlow.begin(this.Paragraph.isRtlDirection());
 	};
 	ParagraphContentDrawState.prototype.endRange = function()
 	{
@@ -348,7 +345,10 @@
 		
 		let editor = logicDocument.GetApi();
 		if ((!editor || !editor.ShowParaMarks) && (sectPr || !this.reviewColor))
+		{
+			this.X += paraMark.GetWidthVisible();
 			return;
+		}
 		
 		let y = this.Y;
 		if (!sectPr)
@@ -359,14 +359,14 @@
 		}
 		
 		paraMark.Draw(this.X, y - this.yOffset, this.Graphics);
-		this.X += paraMark.GetWidth();
+		this.X += paraMark.GetWidthVisible();
 	};
 	/**
 	 * @param element {CMathText | CMathAmp}
 	 */
 	ParagraphContentDrawState.prototype.handleMathElement = function(element)
 	{
-		if (para_Math_Placeholder === element.Type && this.Graphics.RENDERER_PDF_FLAG)
+		if (para_Math_Placeholder === element.Type && this.Graphics.isPdf())
 			return;
 		
 		let linePos = this.paraMath.GetLinePosition(this.Line, this.Range);
@@ -378,7 +378,7 @@
 	 */
 	ParagraphContentDrawState.prototype.handleFieldChar = function(fieldChar)
 	{
-		if (!fieldChar.IsNumValue())
+		if (!fieldChar.IsVisual())
 			return;
 		
 		// Draw the auto-calculated pageNum in the header/footer

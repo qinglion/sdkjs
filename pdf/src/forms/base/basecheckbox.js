@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -68,26 +68,13 @@
         if (this.IsHidden() == true)
             return;
 
-        let aRect = this.GetRect();
-
-        let X       = aRect[0];
-        let Y       = aRect[1];
-        let nWidth  = (aRect[2] - aRect[0]);
-        let nHeight = (aRect[3] - aRect[1]);
-
-        // save pos in page.
-        this._pagePos = {
-            x: X,
-            y: Y,
-            w: nWidth,
-            h: nHeight
-        };
-
         this.DrawBackground(oGraphicsPDF);
         this.DrawBorders(oGraphicsPDF);
 
         if (true == this.IsChecked())
             this.DrawCheckedSymbol(oGraphicsPDF);
+
+        this.DrawLocks(oGraphicsPDF);
     };
     CBaseCheckBoxField.prototype.IsChecked = function() {
         return this._checked;
@@ -113,7 +100,7 @@
         let nWidth  = aOrigRect[2] - aOrigRect[0];
         let nHeight = aOrigRect[3] - aOrigRect[1];
 
-        let oMargins = this.GetMarginsFromBorders(false, false);
+        let oMargins = this.GetMarginsFromBorders();
         let oRGB    = this.GetRGBColor(this._textColor);
 
         oGraphicsPDF.SetGlobalAlpha(1);
@@ -227,8 +214,8 @@
                 let nInsideW = nWidth - 2 * oMargins.bottom;
                 let nInsideH = nHeight - 2 * oMargins.bottom;
 
-                let nGrScale = oGraphicsPDF.GetScale();
-                let nScale = Math.min((nInsideW - nInsideW * 0.2) / imgW, (nInsideH - nInsideW * 0.2) / imgH);
+                let oTr     = oGraphicsPDF.GetTransform();
+                let nScale  = Math.min((nInsideW - nInsideW * 0.2) / imgW, (nInsideH - nInsideW * 0.2) / imgH);
 
                 let wScaled = Math.max(imgW * nScale, 1);
                 let hScaled = Math.max(imgH * nScale, 1);
@@ -240,8 +227,8 @@
                 var context = canvas.getContext('2d');
 
                 // Set the canvas dimensions to match the image
-                canvas.width = wScaled * nGrScale >> 0;
-                canvas.height = hScaled * nGrScale >> 0;
+                canvas.width = wScaled * oTr.sy >> 0;
+                canvas.height = hScaled * oTr.sy >> 0;
 
                 // Draw the image onto the canvas
                 context.drawImage(CHECKED_ICON, 0, 0, imgW, imgH, 0, 0, canvas.width, canvas.height);
@@ -323,7 +310,7 @@
         let supportImageDataConstructor = (AscCommon.AscBrowser.isIE && !AscCommon.AscBrowser.isIeEdge) ? false : true;
 
         let ctx             = canvas.getContext("2d");
-        let mappedBuffer    = new Uint8ClampedArray(oFile.memory().buffer, nRetValue, 4 * nWidth * nHeight);
+        let mappedBuffer    = oFile.getUint8ClampedArray(nRetValue, 4 * nWidth * nHeight);
         let imageData       = null;
 
         if (supportImageDataConstructor)
@@ -342,20 +329,35 @@
 
         return canvas;
     };
-    CBaseCheckBoxField.prototype.onMouseDown = function() {
-        let oDoc = this.GetDocument();
-        this.DrawPressed();
-                
-        let bHighlight = this.IsNeedDrawHighlight();
+    CBaseCheckBoxField.prototype.onMouseDown = function(x, y, e) {
+        let oDoc            = this.GetDocument();
+        let oDrDoc          = oDoc.GetDrawingDocument();
+        let oActionsQueue   = oDoc.GetActionsQueue();
+
+        oDrDoc.TargetEnd();
         this.SetDrawHighlight(false);
-
-        if (bHighlight)
-            this.AddToRedraw();
-
-        this.AddActionsToQueue(AscPDF.FORMS_TRIGGERS_TYPES.MouseDown);
-        if (oDoc.activeForm != this)
-            this.AddActionsToQueue(AscPDF.FORMS_TRIGGERS_TYPES.OnFocus);
+        this.DrawPressed();
+        
+        let isInFocus = oDoc.activeForm === this;
         oDoc.activeForm = this;
+        
+        function callbackAfterFocus() {
+            this.SetInForm(true);
+        }
+
+        let oOnFocus = this.GetTrigger(AscPDF.FORMS_TRIGGERS_TYPES.OnFocus);
+        // вызываем выставление курсора после onFocus. Если уже в фокусе, тогда сразу.
+        if (false == isInFocus && oOnFocus && oOnFocus.Actions.length > 0)
+            oActionsQueue.callbackAfterFocus = callbackAfterFocus.bind(this);
+        else
+            callbackAfterFocus.bind(this)();
+
+        if (isInFocus) {
+            this.AddActionsToQueue(AscPDF.FORMS_TRIGGERS_TYPES.MouseDown);
+        }
+        else {
+            this.AddActionsToQueue(AscPDF.FORMS_TRIGGERS_TYPES.MouseDown, AscPDF.FORMS_TRIGGERS_TYPES.OnFocus);
+        }
     };
     CBaseCheckBoxField.prototype.GetFontSizeAP = function() {
         return 12;
@@ -379,42 +381,55 @@
         editor.getDocumentRenderer()._paint();
     };
     CBaseCheckBoxField.prototype.onMouseUp = function() {
-        this.CreateNewHistoryPoint();
-        if (this.IsChecked()) {
-            if (this._noToggleToOff == false) {
-                this.SetChecked(false);
-                this.SetApiValue("Off");
+        let oDoc = this.GetDocument();
+        let oViewer = oDoc.Viewer;
+
+        let oThis = this;
+        let bCommit = false;
+        if (oThis.IsChecked()) {
+            if (oThis.IsNoToggleToOff() == false) {
+                oThis.SetChecked(false);
+                oThis.SetParentValue("Off");
+                bCommit = true;
             }
         }
         else {
-            let oParent = this.GetParent();
+            let oParent = oThis.GetParent();
             let aOpt    = oParent ? oParent.GetOptions() : undefined;
             let aKids   = oParent ? oParent.GetKids() : undefined;
-            this.SetChecked(true);
+            oThis.SetChecked(true);
             if (aOpt && aKids) {
-                this.SetApiValue(String(aKids.indexOf(this)));
+                oThis.SetParentValue(String(aKids.indexOf(oThis)));
             }
             else {
-                this.SetApiValue(this.GetExportValue());
+                oThis.SetParentValue(oThis.GetExportValue());
             }
+
+            bCommit = true;
+        }
+        
+        if (bCommit) {
+            oThis.SetNeedCommit(true);
+            oThis.Commit2();
         }
         
         this.DrawUnpressed();
-
-        if (AscCommon.History.Is_LastPointEmpty())
-            AscCommon.History.Remove_LastPoint();
-        else {
-            this.SetNeedCommit(true);
-            this.Commit2();
-        }
-
-        let oOverlay        = editor.getDocumentRenderer().overlay;
+        
+        let oOverlay        = oViewer.overlay;
         oOverlay.max_x      = 0;
         oOverlay.max_y      = 0;
         oOverlay.ClearAll   = true;
 
-        editor.getDocumentRenderer().onUpdateOverlay();
-        this.AddActionsToQueue(AscPDF.FORMS_TRIGGERS_TYPES.MouseUp);
+        oViewer.onUpdateOverlay();
+    };
+    /**
+	 * The value application logic for all fields with the same name has been changed for this field type.
+     * The method was left for compatibility.
+	 * @memberof CRadioButtonField
+	 * @typeofeditors ["PDF"]
+	 */
+    CBaseCheckBoxField.prototype.Commit = function() {
+        this.SetNeedCommit(false);
     };
     CBaseCheckBoxField.prototype.SetExportValue = function(sValue) {
         this._exportValue = sValue;
@@ -461,8 +476,9 @@
             this.SetChecked(false);
         
         if (editor.getDocumentRenderer().IsOpenFormsInProgress && this.GetParent() == null)
-            this.SetApiValue(value);
+            this.SetParentValue(value);
     };
+    CBaseCheckBoxField.prototype.private_SetValue = CBaseCheckBoxField.prototype.SetValue;
     CBaseCheckBoxField.prototype.GetValue = function() {
         return this.IsChecked() ? this.GetExportValue() : "Off";
     };
@@ -487,12 +503,13 @@
         this.SetWasChanged(true);
         this.AddToRedraw();
 
+        let oDoc = this.GetDocument();
         if (bChecked) {
-            !editor.getDocumentRenderer().isOnUndoRedo && AscCommon.History.Add(new CChangesPDFFormValue(this, this.GetValue(), this._exportValue));
+            oDoc.History.Add(new CChangesPDFFormValue(this, this.GetValue(), this._exportValue));
             this._checked = true;
         }
         else {
-            !editor.getDocumentRenderer().isOnUndoRedo && AscCommon.History.Add(new CChangesPDFFormValue(this, this.GetValue(), "Off"));
+            oDoc.History.Add(new CChangesPDFFormValue(this, this.GetValue(), "Off"));
             this._checked = false;
         }
     };

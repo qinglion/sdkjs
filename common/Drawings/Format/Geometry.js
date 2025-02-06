@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -40,9 +40,6 @@
 function (window, undefined) {
     // Import
     var ArcToCurvers = AscFormat.ArcToCurvers;
-
-    var History = AscCommon.History;
-
 
 var EPSILON_TEXT_AUTOFIT = 0.001;
 var FORMULA_TYPE_MULT_DIV = 0,
@@ -103,6 +100,7 @@ var MAP_FMLA_TO_TYPE = {};
     MAP_TYPE_TO_FMLA[FORMULA_TYPE_VALUE] =   "val";
 
 var cToRad = Math.PI/(60000*180);
+// it is not cToDeg. it is radToC. cToDeg = 1/60000
 var cToDeg = 1/cToRad;
 var MAX_ITER_COUNT = 50;
 
@@ -974,13 +972,13 @@ function CChangesGeometryAddAdj(Class, Name, OldValue, NewValue, OldAvValue, bRe
 
     Geometry.prototype.setParent = function(pr)
     {
-        History.CanAddChanges() && History.Add(new AscDFH.CChangesDrawingsObject(this, AscDFH.historyitem_GeometrySetParent, this.parent, pr));
+        AscCommon.History.CanAddChanges() && AscCommon.History.Add(new AscDFH.CChangesDrawingsObject(this, AscDFH.historyitem_GeometrySetParent, this.parent, pr));
         this.parent = pr;
     };
 
     Geometry.prototype.setPreset = function(preset)
     {
-        History.CanAddChanges() && History.Add(new AscDFH.CChangesDrawingsString(this, AscDFH.historyitem_GeometrySetPreset, this.preset, preset));
+        AscCommon.History.CanAddChanges() && AscCommon.History.Add(new AscDFH.CChangesDrawingsString(this, AscDFH.historyitem_GeometrySetPreset, this.preset, preset));
         this.preset = preset;
     };
 
@@ -990,7 +988,7 @@ function CChangesGeometryAddAdj(Class, Name, OldValue, NewValue, OldAvValue, bRe
         if(this.gdLst[name] !== null && this.gdLst[name] !== undefined){
             OldValue = this.gdLst[name] + "";
         }
-        History.CanAddChanges() && History.Add(new CChangesGeometryAddAdj(this, name, OldValue, x, this.avLst[name]));
+        AscCommon.History.CanAddChanges() && AscCommon.History.Add(new CChangesGeometryAddAdj(this, name, OldValue, x, this.avLst[name]));
         var dVal = parseInt(x);
         if(isNaN(dVal))
         {
@@ -1028,7 +1026,7 @@ function CChangesGeometryAddAdj(Class, Name, OldValue, NewValue, OldAvValue, bRe
 
     Geometry.prototype.AddGuide = function(name, formula, x, y, z)
     {
-        History.CanAddChanges() && History.Add(new CChangesGeometryAddGuide(this, name, formula, x, y, z));
+        AscCommon.History.CanAddChanges() && AscCommon.History.Add(new CChangesGeometryAddGuide(this, name, formula, x, y, z));
         this.gdLstInfo.push(
             {
                 name: name,
@@ -1039,9 +1037,10 @@ function CChangesGeometryAddAdj(Class, Name, OldValue, NewValue, OldAvValue, bRe
             });
     };
 
+    // if cnx is connection so may be it should be cxn like in ECMA-376-1_5th_edition?
     Geometry.prototype.AddCnx = function(ang, x, y)
     {
-        History.CanAddChanges() && History.Add(new CChangesGeometryAddCnx(this, ang, x, y));
+        AscCommon.History.CanAddChanges() && AscCommon.History.Add(new CChangesGeometryAddCnx(this, ang, x, y));
         this.cnxLstInfo.push(
             {
                 ang:ang,
@@ -1052,7 +1051,7 @@ function CChangesGeometryAddAdj(Class, Name, OldValue, NewValue, OldAvValue, bRe
 
     Geometry.prototype.AddHandleXY = function(gdRefX, minX, maxX, gdRefY, minY, maxY, posX, posY)
     {
-        History.CanAddChanges() && History.Add(new CChangesGeometryAddHandleXY(this, gdRefX, minX, maxX, gdRefY, minY, maxY, posX, posY));
+        AscCommon.History.CanAddChanges() && AscCommon.History.Add(new CChangesGeometryAddHandleXY(this, gdRefX, minX, maxX, gdRefY, minY, maxY, posX, posY));
         this.ahXYLstInfo.push(
             {
                 gdRefX:gdRefX,
@@ -1070,7 +1069,7 @@ function CChangesGeometryAddAdj(Class, Name, OldValue, NewValue, OldAvValue, bRe
 
     Geometry.prototype.AddHandlePolar = function(gdRefAng, minAng, maxAng, gdRefR, minR, maxR, posX, posY)
     {
-        History.CanAddChanges() && History.Add(new CChangesGeometryAddHandlePolar(this, gdRefR, minR, maxR, gdRefAng, minAng, maxAng, posX, posY));
+        AscCommon.History.CanAddChanges() && AscCommon.History.Add(new CChangesGeometryAddHandlePolar(this, gdRefR, minR, maxR, gdRefAng, minAng, maxAng, posX, posY));
         this.ahPolarLstInfo.push(
             {
                 gdRefAng:gdRefAng,
@@ -1088,7 +1087,7 @@ function CChangesGeometryAddAdj(Class, Name, OldValue, NewValue, OldAvValue, bRe
 
     Geometry.prototype.AddPath = function(pr)
     {
-        History.CanAddChanges() && History.Add(new AscDFH.CChangesDrawingsContent(this, AscDFH.historyitem_GeometryAddPath, this.pathLst.length, [pr], true));
+        AscCommon.History.CanAddChanges() && AscCommon.History.Add(new AscDFH.CChangesDrawingsContent(this, AscDFH.historyitem_GeometryAddPath, this.pathLst.length, [pr], true));
         this.pathLst.push(pr);
     };
 
@@ -1119,7 +1118,7 @@ function CChangesGeometryAddAdj(Class, Name, OldValue, NewValue, OldAvValue, bRe
             }
             case 3:
             {
-                this.pathLst[this.pathLst.length-1].arcTo(x1/*wR*/, y1/*hR*/, x2/*stAng*/, y2/*swAng*/);
+                this.pathLst[this.pathLst.length-1].arcTo(x1/*wR*/, y1/*hR*/, x2/*stAng*/, y2/*swAng*/, x3/*ellipseRotation*/);
                 break;
             }
             case 4:
@@ -1137,12 +1136,20 @@ function CChangesGeometryAddAdj(Class, Name, OldValue, NewValue, OldAvValue, bRe
                 this.pathLst[this.pathLst.length-1].close();
                 break;
             }
+            case 7:
+            {
+                // x, y, a, b, c, d
+                // https://learn.microsoft.com/en-us/office/client-developer/visio/ellipticalarcto-row-geometry-section
+                // but with a length in EMUs units and an angle in C-units, which will be expected clockwise as in other functions.
+                this.pathLst[this.pathLst.length-1].ellipticalArcTo(x1, y1, x2, y2, x3, y3);
+                break;
+            }
         }
     };
 
     Geometry.prototype.AddRect = function(l, t, r, b)
     {
-        History.CanAddChanges() && History.Add(new CChangesGeometryAddRect(this, l, t, r, b));
+        AscCommon.History.CanAddChanges() && AscCommon.History.Add(new CChangesGeometryAddRect(this, l, t, r, b));
         this.rectS = {};
         this.rectS.l = l;
         this.rectS.t = t;
@@ -1321,7 +1328,7 @@ function CChangesGeometryAddAdj(Class, Name, OldValue, NewValue, OldAvValue, bRe
 
     Geometry.prototype.draw = function(shape_drawer)
     {
-        if(shape_drawer.Graphics && shape_drawer.Graphics.bDrawSmart || this.bDrawSmart)
+        if(shape_drawer.Graphics && shape_drawer.Graphics.IsDrawSmart || this.bDrawSmart)
         {
             this.drawSmart(shape_drawer);
             return;

@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -448,7 +448,9 @@
 		showAutoComplete          : 68,
 		showDataValidation        : 69,
 		openCellEditor            : 70,
-	};
+		increaseFontSize          : 71,
+		decreaseFontSize          : 72,
+		};
 
 	const tableEvents = {};
 	tableEvents[tableHotkeyTypes.openCellEditor] = [
@@ -583,6 +585,9 @@
 		new CNativeEvent(keyCodes.ArrowBottom, false, false, true, false),
 		new CNativeEvent(keyCodes.ArrowTop, false, false, true, false)
 	];
+	tableEvents[tableHotkeyTypes.showDataValidation] = [new CNativeEvent(keyCodes.ArrowBottom, false, false, true, false)];
+	tableEvents[tableHotkeyTypes.increaseFontSize] = [new CNativeEvent(keyCodes.BracketRight, true, false, false, false)];
+	tableEvents[tableHotkeyTypes.decreaseFontSize] = [new CNativeEvent(keyCodes.BracketLeft, true, false, false, false)];
 
 	const cellEditorHotkeyTypes = {
 		closeWithoutSave     : 0,
@@ -618,6 +623,8 @@
 		disableScrollLock    : 36,
 		disableNumLock       : 37,
 		disableF2            : 42,
+		increaseFontSize     : 46,
+		decreaseFontSize     : 47
 	};
 
 	const oCellEditorEvents = {};
@@ -730,7 +737,8 @@
 	oCellEditorEvents[cellEditorHotkeyTypes.disableF2] = [
 		new CNativeEvent(keyCodes.F2, false, false, false, false, testFlags.opera)
 	];
-
+	oCellEditorEvents[cellEditorHotkeyTypes.increaseFontSize] = [new CNativeEvent(keyCodes.BracketRight, true, false, false, false)];
+	oCellEditorEvents[cellEditorHotkeyTypes.decreaseFontSize] = [new CNativeEvent(keyCodes.BracketLeft, true, false, false, false)];
 	function ExecuteGraphicHotkey(type, eventIndex)
 	{
 		const event = graphicEvents[type][eventIndex || 0];

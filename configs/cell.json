@@ -27,8 +27,8 @@
 			"cell/view/HandlerList.js",
 			"common/collaborativeHistory.js",
 			"common/CollaborativeEditingBase.js",
-			"cell/model/DrawingObjects/GlobalCounters.js",
 			"cell/model/CollaborativeEditing.js",
+			"cell/model/DrawingObjects/GlobalCounters.js",
 			"common/macros.js",
 			"common/apiBase.js",
 			"common/apiBase_plugins.js",
@@ -46,7 +46,9 @@
 			"common/api/autoCorrectSettings.js",
 			"common/api/firstLetterExceptions.js",
 			"common/api/restrictionSettings.js",
-
+			
+			"common/collaboration/deleted-text-recovery.js",
+			
 			"common/nameMap.js",
 			"common/downloaderfiles.js",
 			"common/NumFormat.js",
@@ -59,6 +61,7 @@
 			"common/libfont/character.js",
 			"common/libfont/grapheme.js",
 			"common/libfont/textshaper.js",
+			"common/libfont/stringshaper.js",
 			"common/libfont/file.js",
 			"common/libfont/manager.js",
 
@@ -68,13 +71,16 @@
 			"common/hash/hash.js",
 			"common/keychainstorage.js",
 
+			"common/Drawings/GraphicsBase.js",
 			"common/Drawings/Metafile.js",
 			"common/libfont/textmeasurer.js",
 			"common/Drawings/WorkEvents.js",
-			
+
+			"word/Editor/History.js",
 			"cell/model/History.js",
 
 			"common/Shapes/EditorSettings.js",
+			"common/Shapes/ColorSchemes.js",
 			"common/Shapes/Serialize.js",
 			"common/Shapes/SerializeWriter.js",
 
@@ -97,8 +103,11 @@
 			"common/Drawings/Format/Image.js",
 			"common/Drawings/Format/GroupShape.js",
 			"common/Drawings/Format/Data.js",
+			"common/SmartArts/DefaultStructures.js",
+			"common/SmartArts/SmartArtTree.js",
 			"common/Drawings/Format/ChartSpace.js",
 			"common/Drawings/Format/ChartFormat.js",
+			"common/Drawings/Format/ChartEx.js",
 			"common/Drawings/Format/TextBody.js",
 			"common/Charts/charts.js",
 			"common/Charts/DrawingArea.js",
@@ -125,7 +134,11 @@
 			"common/Controls.js",
 			"common/Overlay.js",
 			"common/Drawings/HatchPattern.js",
-
+			
+			"common/bidi/bidi-common.js",
+			"common/bidi/bidi-types.js",
+			"common/bidi/unicode-data.js",
+			
 			"common/scroll.js",
 			"vendor/iscroll.js",
 			"vendor/delta.js",
@@ -176,6 +189,7 @@
 			"cell/view/WorkbookView.js",
 			"cell/view/WorksheetView.js",
 			"cell/view/DrawingObjectsController.js",
+			"word/Drawing/Graphics.js",
 			"cell/model/DrawingObjects/Graphics.js",
 			"word/Drawing/buttons.js",
 			"word/Drawing/ShapeDrawer.js",
@@ -189,6 +203,7 @@
 			"common/Drawings/Format/SlicerView.js",
 			"cell/model/PivotTables.js",
 			
+			"word/Editor/Paragraph/RunContent/Types.js",
 			"word/Math/mathTypes.js",
 			"word/Editor/Styles.js",
 			"word/Math/math-settings.js",
@@ -201,13 +216,15 @@
 			"word/Editor/Paragraph/Run/RunAutoCorrect.js",
 			"word/Editor/DocumentContentElementBase.js",
 			"word/Editor/ParagraphContentBase.js",
+			"word/Editor/annotations/perm-ranges-manager.js",
+			"word/Editor/annotations/annotation-mark-base.js",
+			"word/Editor/annotations/paragraph-perm.js",
 			"word/Editor/Bookmarks.js",
 			"word/Editor/Comments.js",
 			"word/Editor/CommentsChanges.js",
 			"word/Editor/StylesChanges.js",
 			"word/Editor/RevisionsChange.js",
 			"word/Editor/FlowObjects.js",
-			"word/Editor/Paragraph/RunContent/Types.js",
 			"word/Editor/Paragraph/RunContent/Base.js",
 			"word/Editor/Paragraph/RunContent/FootnoteReference.js",
 			"word/Editor/Paragraph/RunContent/FootnoteRef.js",
@@ -238,6 +255,8 @@
 			"word/Editor/Paragraph/ComplexFieldInstruction.js",
 			"word/Editor/Paragraph/ComplexFields/Addin.js",
 			"word/Editor/Paragraph/ComplexFields/AddinData.js",
+			"word/Editor/Paragraph/ComplexFields/ffdata.js",
+			"word/Editor/Paragraph/ComplexFields/formcheckbox.js",
 			"word/Editor/Paragraph/ComplexFields/FormText.js",
 			"word/Editor/Paragraph/ComplexFields/MergeField.js",
 			"word/Editor/Paragraph/ComplexFields/ref.js",
@@ -285,6 +304,7 @@
 			"word/Editor/document-composite-input.js",
 			"word/Editor/ChangeCase.js",
 			"word/Editor/SelectedContent.js",
+			"word/Editor/document/document-background.js",
 			"word/Editor/DocumentOutline.js",
 			"word/Editor/DocumentChanges.js",
 			"word/Editor/DocumentContent.js",
@@ -350,8 +370,13 @@
 			"word/Math/mathTrackHandler.js",
 			"word/Editor/Styles/style-cache.js",
 			"word/Editor/Styles/FixedFormDefaults.js",
-			"word/Editor/Revisions/TrackRevisionsManager.js",
-
+			"word/Editor/Styles/default-styles.js",
+			"word/Editor/revisions/review-info.js",
+			"word/Editor/revisions/track-revisions-manager.js",
+			"word/Editor/custom-xml/custom-xml.js",
+			"word/Editor/custom-xml/custom-xml-manager.js",
+			"word/Editor/custom-xml/data-binding.js",
+			
 			"word/apiBuilder.js",
 			"slide/apiBuilder.js",
 			"cell/apiBuilder.js",

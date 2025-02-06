@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -256,6 +256,9 @@ ParaDrawing.prototype.GetSearchElementId = function(bNext, bCurrent)
 };
 ParaDrawing.prototype.FindNextFillingForm = function(isNext, isCurrent)
 {
+	if (isCurrent && this.IsForm())
+		return null;
+	
 	if (AscCommon.isRealObject(this.GraphicObj) && typeof this.GraphicObj.FindNextFillingForm === "function")
 		return this.GraphicObj.FindNextFillingForm(isNext, isCurrent);
 
@@ -299,6 +302,10 @@ ParaDrawing.prototype.canRotate = function()
 {
 	return AscCommon.isRealObject(this.GraphicObj) && typeof this.GraphicObj.canRotate == "function" && this.GraphicObj.canRotate();
 };
+ParaDrawing.prototype.canResize = function()
+{
+	return AscCommon.isRealObject(this.GraphicObj) && typeof this.GraphicObj.canResize == "function" && this.GraphicObj.canResize();
+};
 ParaDrawing.prototype.GetParagraph = function()
 {
 	return this.Get_ParentParagraph();
@@ -309,6 +316,7 @@ ParaDrawing.prototype.GetRun = function()
 };
 ParaDrawing.prototype.GetDocumentContent = function()
 {
+	// TODO: Check why do we need to skip BlockLevelSdt here. If it's not necessary then merge this method with GetParentDocumentContent
 	const oParagraph = this.GetParagraph();
 	let oDocumentContent = (oParagraph ? oParagraph.GetParent() : null);
 	if (oDocumentContent && oDocumentContent.IsBlockLevelSdtContent())
@@ -316,6 +324,11 @@ ParaDrawing.prototype.GetDocumentContent = function()
 		oDocumentContent = oDocumentContent.Parent.Parent;
 	}
 	return oDocumentContent;
+};
+ParaDrawing.prototype.GetParentDocumentContent = function()
+{
+	let para = this.GetParagraph();
+	return para ? para.GetParent() : null;
 };
 ParaDrawing.prototype.Get_Run = function()
 {
@@ -860,6 +873,14 @@ ParaDrawing.prototype.SetSizeRelV  = function(oSize)
 	History.Add(new CChangesParaDrawingSizeRelV(this, this.SizeRelV, oSize));
 	this.SizeRelV = oSize;
 };
+ParaDrawing.prototype.getExtX = function()
+{
+	return this.getXfrmExtX() * this.GetScaleCoefficient();
+};
+ParaDrawing.prototype.getExtY = function()
+{
+	return this.getXfrmExtY() * this.GetScaleCoefficient();
+};
 ParaDrawing.prototype.getXfrmExtX = function()
 {
 	if (AscCommon.isRealObject(this.GraphicObj) && AscCommon.isRealObject(this.GraphicObj.spPr) && AscCommon.isRealObject(this.GraphicObj.spPr.xfrm) && AscFormat.isRealNumber(this.GraphicObj.spPr.xfrm.extX))
@@ -1205,7 +1226,7 @@ ParaDrawing.prototype.Draw = function( X, Y, pGraphics, PDSE)
 	{
 		nPageIndex = PDSE.Page;
 	}
-	if (pGraphics.Start_Command)
+	if (pGraphics.isTextDrawer())
 	{
 		pGraphics.m_aDrawings.push(new AscFormat.ParaDrawingStruct(undefined, this));
 		return;
@@ -1216,10 +1237,8 @@ ParaDrawing.prototype.Draw = function( X, Y, pGraphics, PDSE)
 		this.draw(pGraphics, PDSE);
 		pGraphics.shapePageIndex = null;
 	}
-	if (pGraphics.End_Command)
-	{
-		pGraphics.End_Command();
-	}
+
+	pGraphics.End_Command();
 };
 
 ParaDrawing.prototype.Measure = function()
@@ -1283,25 +1302,8 @@ ParaDrawing.prototype.Measure = function()
 };
 ParaDrawing.prototype.GetScaleCoefficient = function ()
 {
-	let oParagraph = this.GetParagraph();
-	let oLogicDocument;
-
-	if (oParagraph
-		&& (oLogicDocument = oParagraph.GetLogicDocument())
-		&& oLogicDocument.IsDocumentEditor())
-	{
-		let oLayout = oLogicDocument.Layout;
-		oLogicDocument.Layout = oLogicDocument.Layouts.Print;
-		let oSectPr = oParagraph.Get_SectPr();
-		oLogicDocument.Layout = oLayout;
-
-		if (!oSectPr)
-			return 1;
-
-		return oLogicDocument.GetDocumentLayout().GetScaleBySection(oSectPr);
-	}
-
-	return 1;
+	let paragraph = this.GetParagraph();
+	return paragraph ? paragraph.getLayoutScaleCoefficient() : 1;
 };
 ParaDrawing.prototype.createPlaceholderControl = function (arrObjects)
 {
@@ -1520,7 +1522,6 @@ ParaDrawing.prototype.Update_Position = function(Paragraph, ParaLayout, PageLimi
 	this.updatePosition3(this.PageNum, this.X, this.Y, OldPageNum);
 	this.useWrap = this.Use_TextWrap();
 };
-
 ParaDrawing.prototype.GetClipRect = function ()
 {
 	if (this.Is_Inline() || this.Use_TextWrap())
@@ -1649,6 +1650,9 @@ ParaDrawing.prototype.updatePosition3 = function(pageIndex, x, y, oldPageNum)
 		this.wrappingPolygon.updatePosition(_x, _y);
 
 	this.calculateSnapArrays();
+	
+	if (this.GraphicObj.checkFormShiftView)
+		this.GraphicObj.checkFormShiftView();
 };
 ParaDrawing.prototype.calculateAfterChangeTheme = function()
 {
@@ -1822,11 +1826,23 @@ ParaDrawing.prototype.Get_DrawingType = function()
 };
 ParaDrawing.prototype.Is_Inline = function()
 {
+
 	if(this.Parent &&
 		this.Parent.Get_ParentTextTransform &&
 		this.Parent.Get_ParentTextTransform())
 	{
-			return true;
+		return true;
+	}
+	
+	
+	let para = this.GetParagraph();
+	let logicDocument = para ? para.GetLogicDocument() : null;
+	if (logicDocument
+		&& logicDocument.IsDocumentEditor()
+		&& this.IsForm()
+		&& logicDocument.GetDocumentLayout().IsReadMode())
+	{
+		return true;
 	}
 
 	return ( drawing_Inline === this.DrawingType ? true : false );
@@ -1850,8 +1866,14 @@ ParaDrawing.prototype.GetInnerForm = function()
 };
 ParaDrawing.prototype.Use_TextWrap = function()
 {
+	if (this.IsInline())
+		return false;
+	
+	// TODO: Проверить, возможно данную проверку можно заменить на Paragraph.IsInline()
 	// Если автофигура привязана к параграфу с рамкой, обтекание не делается
-	if (this.IsInline() || !this.Parent || !this.Parent.Get_FramePr || (null !== this.Parent.Get_FramePr() && undefined !== this.Parent.Get_FramePr()))
+	if (!this.Parent
+		|| !this.Parent.GetFramePr
+		|| (this.Parent.GetFramePr() && !this.Parent.GetFramePr().IsInline()))
 		return false;
 
 	// здесь должна быть проверка, нужно ли использовать обтекание относительно данного объекта,
@@ -2102,7 +2124,7 @@ ParaDrawing.prototype.AddToDocument = function(oAnchorPos, oRunPr, oRun, oPictur
 	let oAnchorParagraph = oAnchorPos.Paragraph;
 	oAnchorParagraph.Check_NearestPos(oAnchorPos);
 
-	let oInsertParagraph = new AscCommonWord.Paragraph(this.DrawingDocument);
+	let oInsertParagraph = new AscWord.Paragraph();
 	var oDrawingRun = new AscCommonWord.ParaRun();
 	oDrawingRun.AddToContent(0, this);
 
@@ -2119,10 +2141,7 @@ ParaDrawing.prototype.AddToDocument = function(oAnchorPos, oRunPr, oRun, oPictur
 		oSdt.ReplacePlaceHolderWithContent();
 		oSdt.AddToContent(0, oDrawingRun);
 		oInsertParagraph.AddToContent(0, oSdt);
-
-		let oFormPr = oPictureCC.GetFormPr();
-		if (oFormPr)
-			oSdt.SetFormPr(oFormPr.Copy());
+		oPictureCC.private_CopyPrTo(oSdt);
 	}
 	else
 	{
@@ -2460,22 +2479,25 @@ ParaDrawing.prototype.Read_FromBinary2 = function(Reader)
 	this.graphicObjects.addGraphicObject(this);
 	g_oTableId.Add(this, this.Id);
 };
-ParaDrawing.prototype.Load_LinkData = function()
-{
-};
 ParaDrawing.prototype.draw = function(graphics, PDSE)
 {
-	if (AscCommon.isRealObject(this.GraphicObj) && typeof this.GraphicObj.draw === "function")
+	let iO = AscCommon.isRealObject;
+	let iN = AscFormat.isRealNumber;
+	if (this.GraphicObj)
 	{
 		graphics.SaveGrState();
-		var bInline = this.Is_Inline();
-		if(bInline && AscCommon.isRealObject(PDSE) && AscFormat.isRealNumber(this.LineTop) && AscFormat.isRealNumber(this.LineBottom) && AscCommon.isRealObject(this.GraphicObj.bounds))
+		let bInline = this.Is_Inline();
+		let oBounds = this.GraphicObj.bounds;
+		let paragraph = this.GetParagraph();
+		let paraPr = paragraph.GetCompiledParaPr();
+		let spacing = paraPr.Spacing;
+		if(bInline && spacing.LineRule !== Asc.linerule_Exact && PDSE && iN(this.LineTop) && iN(this.LineBottom) && iO(oBounds))
 		{
-			var x, y, w, h;
-			var oEffectExtent = this.EffectExtent;
+			let x, y, w, h;
+			let oEffectExtent = this.EffectExtent;
 			x = PDSE.X;
 			y = this.LineTop;
-			w = this.GraphicObj.bounds.r - this.GraphicObj.bounds.l + AscFormat.getValOrDefault(oEffectExtent.R, 0) + AscFormat.getValOrDefault(oEffectExtent.L, 0);
+			w = oBounds.r - oBounds.l + AscFormat.getValOrDefault(oEffectExtent.R, 0) + AscFormat.getValOrDefault(oEffectExtent.L, 0);
 			h = this.LineBottom - this.LineTop;
 			graphics.AddClipRect(x, y, w, h);
 		}
@@ -2699,7 +2721,7 @@ ParaDrawing.prototype.setPageIndex = function(newPageIndex)
 		}
 	}
 };
-ParaDrawing.prototype.Get_PageNum = function()
+ParaDrawing.prototype.GetPageNum = function()
 {
 	return this.PageNum;
 };
@@ -3185,6 +3207,7 @@ ParaDrawing.prototype.ConvertToMath = function(isUpdatePos)
 
 	// Коректируем формулу после конвертации
 	this.ParaMath.Correct_AfterConvertFromEquation();
+	this.ParaMath.ProcessingOldEquationConvert();
 
 	// Сначала удаляем Drawing из рана
 	oRun.RemoveFromContent(nBotElementPos, 1);
@@ -3288,9 +3311,14 @@ ParaDrawing.prototype.CheckDeletingLock = function()
 	
 	if (logicDocument && logicDocument.IsDocumentEditor())
 	{
-		// Если в форму зайти нельзя, то и не проверяем можно ли удалять её внутреннюю часть
+		// Если в форму зайти нельзя, то проверяем можно ли удалять её внутреннюю часть
 		if (form && this.IsForm() && !form.CanPlaceCursorInside())
+		{
+			if (Asc.c_oAscSdtLockType.SdtLocked === form.GetContentControlLock() || Asc.c_oAscSdtLockType.SdtContentLocked === form.GetContentControlLock())
+				AscCommon.CollaborativeEditing.Add_CheckLock(true);
+			
 			return;
+		}
 		
 		if (!this.LogicDocument.CanEdit() || this.LogicDocument.IsFillingFormMode())
 		{

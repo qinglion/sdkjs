@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -52,6 +52,7 @@
 		this.Comments       = [];
 		this.CommentsMarks  = {};
 		this.Maths          = [];
+		this.PermRangeMarks = [];
 
 		this.LogicDocument  = null;
 
@@ -91,6 +92,7 @@
 		this.DrawingObjects = [];
 		this.Comments       = [];
 		this.Maths          = [];
+		this.PermRangeMarks = [];
 
 
 		this.MoveDrawing = false;
@@ -104,6 +106,7 @@
 		this.private_CollectObjects();
 		this.private_CheckComments(oLogicDocument);
 		this.private_CheckTrackMove(oLogicDocument);
+		this.private_CheckPermRangeMarks(oLogicDocument);
 	};
 	CSelectedContent.prototype.SetNewCommentsGuid = function(isNew)
 	{
@@ -534,6 +537,7 @@
 				oParagraph.GetAllDrawingObjects(this.DrawingObjects);
 				oParagraph.GetAllComments(this.Comments);
 				oParagraph.GetAllMaths(this.Maths);
+				oParagraph.GetAllPermRangeMarks(this.PermRangeMarks);
 			}
 
 			if (oElement.IsParagraph() && nCount > 1)
@@ -654,7 +658,7 @@
 				var oEndRun = oEndParagraph.GetParaEndRun();
 				oEndRun.AddAfterParaEnd(new AscWord.CRunRevisionMove(false, false, oLogicDocument.TrackMoveId));
 
-				var oInfo = new CReviewInfo();
+				var oInfo = new AscWord.ReviewInfo();
 				oInfo.Update();
 				oInfo.SetMove(Asc.c_oAscRevisionsMove.MoveTo);
 				oEndRun.SetReviewTypeWithInfo(reviewtype_Add, oInfo, false);
@@ -667,7 +671,7 @@
 			for (var nIndex = 0, nCount = this.MoveTrackRuns.length; nIndex < nCount; ++nIndex)
 			{
 				var oRun  = this.MoveTrackRuns[nIndex];
-				var oInfo = new CReviewInfo();
+				var oInfo = new AscWord.ReviewInfo();
 				oInfo.Update();
 				oInfo.SetMove(Asc.c_oAscRevisionsMove.MoveTo);
 				oRun.SetReviewTypeWithInfo(reviewtype_Add, oInfo);
@@ -676,6 +680,17 @@
 		else
 		{
 			oLogicDocument.TrackMoveId = null;
+		}
+	};
+	CSelectedContent.prototype.private_CheckPermRangeMarks = function(logicDocument)
+	{
+		// TODO: Пока мы удаляем все метки. В будущем надо сделать, что если скопированы начало и конец, то мы
+		//       приписываем им новый id диапазона, а если скопировано только начала или конец, то удаляем такие метки
+		
+		for (let markIndex = 0, markCount = this.PermRangeMarks.length; markIndex < markCount; ++markIndex)
+		{
+			let mark = this.PermRangeMarks[markIndex];
+			mark.removeMark();
 		}
 	};
 	CSelectedContent.prototype.private_CreateNewCommentsGuid = function()
@@ -1091,7 +1106,7 @@
 		else
 		{
 			oParagraphS = oParagraph;
-			oParagraphE = new Paragraph(oParagraph.DrawingDocument, undefined, this.IsPresentationContent);
+			oParagraphE = new AscWord.Paragraph(undefined, this.IsPresentationContent);
 			oParagraphS.Split(oParagraphE);
 			oDocContent.AddToContent(nDstIndex + 1, oParagraphE);
 			nInsertPos  = nDstIndex + 1;
@@ -1189,7 +1204,7 @@
 	};
 	CSelectedContent.prototype.private_CreateParagraph = function()
 	{
-		return new AscWord.CParagraph(this.private_GetDrawingDocument(), undefined, this.IsPresentationContent);
+		return new AscWord.Paragraph(undefined, this.IsPresentationContent);
 	};
 	CSelectedContent.prototype.private_IsBlockLevelSdtPlaceholder = function()
 	{
@@ -1206,8 +1221,7 @@
 			return false;
 		
 		let blockSdt = docContent.GetParent();
-		if (blockSdt.IsPlaceHolder())
-			return true;
+		return (blockSdt.IsPlaceHolder() || blockSdt.IsEmpty());
 	};
 	CSelectedContent.prototype.private_InsertToBlockLevelSdtWithPlaceholder = function()
 	{

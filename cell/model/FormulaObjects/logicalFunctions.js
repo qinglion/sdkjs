@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -446,6 +446,9 @@ function (window, undefined) {
 		var res = null;
 		for (var i = 1; i < argClone.length; i++) {
 			var argN = argClone[i].getValue();
+			if (cElementType.cell === argClone[i].type || cElementType.cell3D === argClone[i].type) {
+				argN = argN.getValue();
+			}
 			if (arg0 === argN) {
 				if (!argClone[i + 1]) {
 					return new cError(cErrorType.not_available);

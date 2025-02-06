@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -67,6 +67,8 @@
 		this.Ligatures = Asc.LigaturesType.None;
 		this.Spacing   = 0;
 		this.AscFont   = false;
+		
+		this.ClearBuffer();
 	};
 	CParagraphTextShaper.prototype.GetCodePoint = function(oItem)
 	{
@@ -274,16 +276,32 @@
 	};
 	CParagraphTextShaper.prototype.GetTextScript = function(nUnicode)
 	{
+		// TODO: Remove it after implementing bigi algorithm
+		// Check bugs 66317, 66435
+		if (0x060C <= nUnicode && nUnicode <= 0x074A)
+			return AscFonts.HB_SCRIPT.HB_SCRIPT_ARABIC;
+		
 		let script = AscFonts.hb_get_script_by_unicode(nUnicode);
 		if (AscFonts.HB_SCRIPT.HB_SCRIPT_COMMON === script && this.TextPr && this.TextPr.CS)
 			return AscFonts.HB_SCRIPT.HB_SCRIPT_INHERITED;
-
+		
 		return script;
+	};
+	CParagraphTextShaper.prototype.ShapeRunTextItem = function(item, textPr)
+	{
+		let fontSlot = item.GetFontSlot(textPr);
+		let fontInfo = textPr.GetFontInfo(fontSlot);
+		let grapheme = AscCommon.g_oTextMeasurer.GetGraphemeByUnicode(item.GetCodePoint(), fontInfo.Name, fontInfo.Style);
+		item.SetGrapheme(grapheme);
+		item.SetMetrics(fontInfo.Size, fontSlot, textPr);
+		item.SetCodePointType(CODEPOINT_TYPE.BASE);
+		item.SetWidth(AscFonts.GetGraphemeWidth(grapheme));
 	};
 	
 	//--------------------------------------------------------export----------------------------------------------------
 	window['AscWord'] = window['AscWord'] || {};
 	window['AscWord'].CODEPOINT_TYPE      = CODEPOINT_TYPE;
 	window['AscWord'].ParagraphTextShaper = new CParagraphTextShaper();
+	window['AscWord'].stringShaper        = new AscFonts.StringShaper();
 
 })(window);

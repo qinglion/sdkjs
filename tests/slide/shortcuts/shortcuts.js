@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -69,6 +69,7 @@
 	editor.sync_EndAddShape = Asc.asc_docs_api.prototype.sync_EndAddShape.bind(editor);
 	editor.asc_getShowGuides = Asc.asc_docs_api.prototype.asc_getShowGuides.bind(editor);
 	editor.sync_HyperlinkClickCallback = Asc.asc_docs_api.prototype.sync_HyperlinkClickCallback.bind(editor);
+	editor.getAnnotations = function () {return null;};
 	AscCommon.CDocsCoApi.prototype.askSaveChanges = function (callback)
 	{
 		window.setTimeout(function ()
@@ -79,8 +80,6 @@
 	function CreateSlide()
 	{
 		logicDocument.addNextSlide(0);
-		editor.WordControl.Thumbnails.SlidesCount = logicDocument.Slides.length;
-		editor.WordControl.m_oDrawingDocument.SlidesCount = logicDocument.Slides.length;
 		editor.WordControl.Thumbnails.CalculatePlaces();
 	}
 
@@ -102,7 +101,7 @@
 		shapeTrack.track({}, x+ width, y + height);
 		const shape = shapeTrack.getShape(false, AscTest.DrawingDocument, null);
 		shape.setBDeleted(false);
-		shape.setParent(logicDocument.Slides[0]);
+		shape.setParent(logicDocument.GetCurrentSlide());
 		shape.addToDrawingObjects();
 		shape.select(GetDrawingObjects(), 0);
 		return shape;
@@ -111,7 +110,7 @@
 	function AddChart()
 	{
 		const chart = editor.asc_getChartObject(Asc.c_oAscChartTypeSettings.lineNormal);
-		chart.setParent(logicDocument.Slides[0]);
+		chart.setParent(logicDocument.GetCurrentSlide());
 
 		chart.addToDrawingObjects();
 		chart.spPr.setXfrm(new AscFormat.CXfrm());

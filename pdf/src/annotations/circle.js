@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -38,8 +38,9 @@
     */
     function CAnnotationCircle(sName, nPage, aRect, oDoc)
     {
+        AscPDF.CPdfShape.call(this);
         AscPDF.CAnnotationBase.call(this, sName, AscPDF.ANNOTATIONS_TYPES.Circle, nPage, aRect, oDoc);
-        AscFormat.CShape.call(this);
+        
         AscPDF.initShape(this);
         this.spPr.setGeometry(AscFormat.CreateGeometry("ellipse"));
         this.setStyle(AscFormat.CreateDefaultShapeStyle("ellipse"));
@@ -52,12 +53,10 @@
         this._state         = undefined;
         this._stateModel    = undefined;
         this._width         = undefined;
-
-        // internal
-        TurnOffHistory();
+        this._rectDiff      = [0, 0, 0, 0];
     }
 	CAnnotationCircle.prototype.constructor = CAnnotationCircle;
-    AscFormat.InitClass(CAnnotationCircle, AscFormat.CShape, AscDFH.historyitem_type_Shape);
+    AscFormat.InitClass(CAnnotationCircle, AscPDF.CPdfShape, AscDFH.historyitem_type_Pdf_Annot_Circle);
     Object.assign(CAnnotationCircle.prototype, AscPDF.CAnnotationBase.prototype);
 
     CAnnotationCircle.prototype.IsCircle = function() {
@@ -65,154 +64,117 @@
     };
     CAnnotationCircle.prototype.LazyCopy = function() {
         let oDoc = this.GetDocument();
-        oDoc.TurnOffHistory();
+        oDoc.StartNoHistoryMode();
 
         let oCircle = new CAnnotationCircle(AscCommon.CreateGUID(), this.GetPage(), this.GetOrigRect().slice(), oDoc);
-
-        oCircle._pagePos = {
-            x: this._pagePos.x,
-            y: this._pagePos.y,
-            w: this._pagePos.w,
-            h: this._pagePos.h
-        }
-        oCircle._origRect = this._origRect.slice();
+        oCircle.lazyCopy = true;
 
         this.fillObject(oCircle);
 
-        oCircle.pen = new AscFormat.CLn();
+        let aStrokeColor    = this.GetStrokeColor();
+        let aFillColor      = this.GetFillColor();
+        let aRD             = this.GetRectangleDiff();
+
         oCircle._apIdx = this._apIdx;
         oCircle._originView = this._originView;
         oCircle.SetOriginPage(this.GetOriginPage());
         oCircle.SetAuthor(this.GetAuthor());
         oCircle.SetModDate(this.GetModDate());
         oCircle.SetCreationDate(this.GetCreationDate());
+        aStrokeColor && oCircle.SetStrokeColor(aStrokeColor.slice());
+        aFillColor && oCircle.SetFillColor(aFillColor.slice());
         oCircle.SetWidth(this.GetWidth());
-        oCircle.SetStrokeColor(this.GetStrokeColor().slice());
-        oCircle.SetFillColor(this.GetFillColor());
-        oCircle.recalcInfo.recalculatePen = false;
-        oCircle.recalcInfo.recalculateGeometry = true;
-        this._rectDiff && oCircle.SetRectangleDiff(this._rectDiff.slice());
+        oCircle.SetOpacity(this.GetOpacity());
+        oCircle.recalcGeometry()
+        aRD && oCircle.SetRectangleDiff(aRD.slice(), true);
         oCircle.SetDash(this.GetDash());
-        oCircle.recalculate();
+        oCircle.Recalculate(true);
 
+        oDoc.EndNoHistoryMode();
         return oCircle;
     };
     CAnnotationCircle.prototype.RefillGeometry = function(oGeometry, aShapeRectInMM) {
         let oViewer = editor.getDocumentRenderer();
         let oDoc    = oViewer.getPDFDoc();
 
-        let nScaleY = oViewer.drawingPages[this.GetPage()].H / oViewer.file.pages[this.GetPage()].H / oViewer.zoom * g_dKoef_pix_to_mm;
-        let nScaleX = oViewer.drawingPages[this.GetPage()].W / oViewer.file.pages[this.GetPage()].W / oViewer.zoom * g_dKoef_pix_to_mm;
-
         let aRD         = this.GetRectangleDiff() || [0, 0, 0, 0];
         let aOrigRect   = this.GetOrigRect();
 
-        if (!oGeometry)
+        if (!oGeometry) {
             oGeometry = this.spPr.geometry;
+        }
         if (!aShapeRectInMM) {
             aShapeRectInMM = [
-                (aOrigRect[0] + aRD[0]) * nScaleX, (aOrigRect[1] + aRD[1]) * nScaleY,
-                (aOrigRect[2] - aRD[2]) * nScaleX, (aOrigRect[3] - aRD[3]) * nScaleY
+                (aOrigRect[0] + aRD[0]) * g_dKoef_pt_to_mm, (aOrigRect[1] + aRD[1]) * g_dKoef_pt_to_mm,
+                (aOrigRect[2] - aRD[2]) * g_dKoef_pt_to_mm, (aOrigRect[3] - aRD[3]) * g_dKoef_pt_to_mm
             ];
         }
         
-        oDoc.TurnOffHistory();
+        oDoc.StartNoHistoryMode();
         if (this.GetBorderEffectStyle() === AscPDF.BORDER_EFFECT_STYLES.Cloud) {
             generateCloudyGeometry(undefined, aShapeRectInMM, oGeometry, this.GetBorderEffectIntensity());
         }
         else {
             oGeometry.Recalculate(aShapeRectInMM[2] - aShapeRectInMM[0], aShapeRectInMM[3] - aShapeRectInMM[1]);
         }
+        oDoc.EndNoHistoryMode();
     };
-    CAnnotationCircle.prototype.SetRect = function(aRect) {
-        let oViewer     = editor.getDocumentRenderer();
-        let oDoc        = oViewer.getPDFDoc();
-        let nPage       = this.GetPage();
-        let aCurRect    = this.GetRect();
+    CAnnotationCircle.prototype.SetRect = function(aOrigRect) {
+        let oViewer = editor.getDocumentRenderer();
+        let oDoc    = oViewer.getPDFDoc();
 
-        let nScaleY = oViewer.drawingPages[nPage].H / oViewer.file.pages[nPage].H / oViewer.zoom;
-        let nScaleX = oViewer.drawingPages[nPage].W / oViewer.file.pages[nPage].W / oViewer.zoom;
+        oDoc.History.Add(new CChangesPDFAnnotRect(this, this._origRect, aOrigRect));
 
-        this._rect = aRect;
-        this._pagePos = {
-            x: aRect[0],
-            y: aRect[1],
-            w: (aRect[2] - aRect[0]),
-            h: (aRect[3] - aRect[1])
-        };
-
-        this._origRect[0] = this._rect[0] / nScaleX;
-        this._origRect[1] = this._rect[1] / nScaleY;
-        this._origRect[2] = this._rect[2] / nScaleX;
-        this._origRect[3] = this._rect[3] / nScaleY;
-
-        this.SetRectangleDiff([0, 0, 0, 0]);
-        oDoc.History.Add(new CChangesPDFAnnotRect(this, aCurRect, aRect));
-
-        oDoc.TurnOffHistory();
-
-        this.recalcGeometry();
-        this.AddToRedraw();
+        this._origRect = aOrigRect;
+        
         this.SetWasChanged(true);
-        this.SetDrawFromStream(false);
+        this.SetNeedRecalcSizes(true);
     };
-    CAnnotationCircle.prototype.SetRectangleDiff = function(aDiff) {
+    CAnnotationCircle.prototype.SetRectangleDiff = function(aDiff, bOnResize) {
         let oDoc = this.GetDocument();
         oDoc.History.Add(new CChangesPDFAnnotRD(this, this.GetRectangleDiff(), aDiff));
 
         this._rectDiff = aDiff;
 
-        let oViewer     = editor.getDocumentRenderer();
-        let nPage       = this.GetPage();
-
-        let nScaleY = oViewer.drawingPages[nPage].H / oViewer.file.pages[nPage].H / oViewer.zoom * g_dKoef_pix_to_mm;
-        let nScaleX = oViewer.drawingPages[nPage].W / oViewer.file.pages[nPage].W / oViewer.zoom * g_dKoef_pix_to_mm;
-
-        let aOrigRect = this.GetOrigRect();
-
-        this.spPr.xfrm.setOffX(aDiff[0] * nScaleX);
-        this.spPr.xfrm.setOffY(aDiff[1] * nScaleY);
-        let extX = ((aOrigRect[2] - aOrigRect[0]) - aDiff[0] - aDiff[2]) * nScaleX;
-        let extY = ((aOrigRect[3] - aOrigRect[1]) - aDiff[1] - aDiff[3]) * nScaleY;
-
-        this.spPr.xfrm.setExtX(extX);
-        this.spPr.xfrm.setExtY(extY);
+        this.SetWasChanged(true);
+        this.SetNeedRecalcSizes(true);
+        this.SetNeedRecalc(true);
     };
-    CAnnotationCircle.prototype.SetStrokeColor = function(aColor) {
-        this._strokeColor = aColor;
-
-        let oRGB    = this.GetRGBColor(aColor);
-        let oFill   = AscFormat.CreateSolidFillRGBA(oRGB.r, oRGB.g, oRGB.b, 255);
-        let oLine   = this.pen;
-        oLine.setFill(oFill);
+    CAnnotationCircle.prototype.SetNeedRecalcSizes = function(bRecalc) {
+        this._needRecalcSizes = bRecalc;
+        this.recalcGeometry();
     };
-    CAnnotationCircle.prototype.SetFillColor = function(aColor) {
-        this._fillColor = aColor;
-
-        let oRGB    = this.GetRGBColor(aColor);
-        let oFill   = AscFormat.CreateSolidFillRGBA(oRGB.r, oRGB.g, oRGB.b, 255);
-        this.setFill(oFill);
+    CAnnotationCircle.prototype.IsNeedRecalcSizes = function() {
+        return this._needRecalcSizes;
     };
-    CAnnotationCircle.prototype.SetWidth = function(nWidthPt) {
-        this._width = nWidthPt; 
+    CAnnotationCircle.prototype.Recalculate = function(bForce) {
+        if (true !== bForce && false == this.IsNeedRecalc()) {
+            return;
+        }
 
-        nWidthPt = nWidthPt > 0 ? nWidthPt : 0.5;
-        let oLine = this.pen;
-        oLine.setW(nWidthPt * g_dKoef_pt_to_mm * 36000.0);
-    };
-    CAnnotationCircle.prototype.Recalculate = function() {
-        let oViewer     = editor.getDocumentRenderer();
-        let nPage       = this.GetPage();
-        let aOrigRect   = this.GetOrigRect();
+        if (this.IsNeedRecalcSizes()) {
+            let aOrigRect = this.GetOrigRect();
+            let aRD = this.GetRectangleDiff();
 
-        let nScaleY = oViewer.drawingPages[nPage].H / oViewer.file.pages[nPage].H / oViewer.zoom * g_dKoef_pix_to_mm;
-        let nScaleX = oViewer.drawingPages[nPage].W / oViewer.file.pages[nPage].W / oViewer.zoom * g_dKoef_pix_to_mm;
-        
-        if (this.recalcInfo.recalculateGeometry)
+            let extX = ((aOrigRect[2] - aOrigRect[0]) - aRD[0] - aRD[2]) * g_dKoef_pt_to_mm;
+            let extY = ((aOrigRect[3] - aOrigRect[1]) - aRD[1] - aRD[3]) * g_dKoef_pt_to_mm;
+
+            this.spPr.xfrm.offX = (aOrigRect[0] + aRD[0]) * g_dKoef_pt_to_mm;
+            this.spPr.xfrm.offY = (aOrigRect[1] + aRD[1]) * g_dKoef_pt_to_mm;
+
+            this.spPr.xfrm.extX = extX;
+            this.spPr.xfrm.extY = extY;
+
+            this.SetNeedRecalcSizes(false);
+        }
+        if (this.recalcInfo.recalculateGeometry) {
             this.RefillGeometry();
-        this.handleUpdatePosition();
+        }
+
+        this.recalculateTransform();
+        this.updateTransformMatrix();
         this.recalculate();
-        this.updatePosition(aOrigRect[0] * nScaleX, aOrigRect[1] * nScaleY);
+        this.SetNeedRecalc(false);
     };
     CAnnotationCircle.prototype.WriteToBinary = function(memory) {
         memory.WriteByte(AscCommon.CommandType.ctAnnotField);
@@ -250,11 +212,6 @@
         memory.Seek(nEndPos);
     };
     
-    function TurnOffHistory() {
-        if (AscCommon.History.IsOn() == true)
-            AscCommon.History.TurnOff();
-    }
-
     function generateCloudyGeometry(arrPoints, aBounds, oGeometry, nIntensity) {
         let xMin = aBounds[0];
         let yMin = aBounds[1];

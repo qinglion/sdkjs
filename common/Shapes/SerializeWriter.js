@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -582,7 +582,7 @@ function CBinaryFileWriter()
 			this.WriteCore(presentation.Core, presentation.Api);
 
 		// Core
-		if (presentation.CustomProperties)
+		if (presentation.CustomProperties && presentation.CustomProperties.hasProperties())
 			this.WriteCustomProperties(presentation.CustomProperties, presentation.Api);
 
         // ViewProps
@@ -611,6 +611,25 @@ function CBinaryFileWriter()
         var _slides = presentation.Slides;
         var _slide_count = _slides.length;
 
+
+        for (let nIdx = 0; nIdx < presentation.slideMasters.length; ++nIdx) {
+            let _m = presentation.slideMasters[nIdx];
+            let _len_dst = _dst_masters.length;
+            _dst_masters[_len_dst] = _m;
+
+            let _m_rels = { ThemeIndex : 0, Layouts : [] };
+            let _lay_c = _m.sldLayoutLst.length;
+
+            let _ind_l = _dst_layouts.length;
+            for (let k = 0; k < _lay_c; k++)
+            {
+                _dst_layouts[_ind_l] = _m.sldLayoutLst[k];
+                _m_rels.Layouts[k] = _ind_l;
+                _ind_l++;
+            }
+            _master_rels[_len_dst] = _m_rels;
+        }
+
         for (var i = 0; i < _slide_count; i++)
         {
             _dst_slides[i] = _slides[i];
@@ -618,37 +637,6 @@ function CBinaryFileWriter()
             {
                 _dst_notes.push(_slides[i].notes);
             }
-            var _m = _slides[i].Layout.Master;
-
-            var is_found = false;
-            var _len_dst = _dst_masters.length;
-            for (var j = 0; j < _len_dst; j++)
-            {
-                if (_dst_masters[j] == _m)
-                {
-                    is_found = true;
-                    break;
-                }
-            }
-
-            if (!is_found)
-            {
-                _dst_masters[_len_dst] = _m;
-
-                var _m_rels = { ThemeIndex : 0, Layouts : [] };
-                var _lay_c = _m.sldLayoutLst.length;
-
-                var _ind_l = _dst_layouts.length;
-                for (var k = 0; k < _lay_c; k++)
-                {
-                    _dst_layouts[_ind_l] = _m.sldLayoutLst[k];
-                    _m_rels.Layouts[k] = _ind_l;
-                    _ind_l++;
-                }
-
-                _master_rels[_len_dst] = _m_rels;
-            }
-
             var _layoutsC = _dst_layouts.length;
             for (var ii = 0; ii < _layoutsC; ii++)
             {
@@ -2983,8 +2971,10 @@ function CBinaryFileWriter()
         {
             oThis.WriteRecord2(1, txBody.lstStyle, oThis.WriteTextListStyle);
         }
-        var _content = txBody.content.Content;
-        oThis.WriteRecordArray(2, 0, _content, oThis.WriteParagraph);
+        var _content = txBody.content && txBody.content.Content;
+				if (_content) {
+					oThis.WriteRecordArray(2, 0, _content, oThis.WriteParagraph);
+				}
     };
 
     this.WriteParagraph = function(paragraph, startPos, endPos)
@@ -3341,7 +3331,7 @@ function CBinaryFileWriter()
         else{
             oThis.StartRecord(1);
             oThis.WriteUChar(g_nodeAttributeStart);
-            oThis._WriteBool2(0, shape.attrUseBgFill);
+            oThis._WriteBool2(0, shape.useBgFill);
             oThis.WriteUChar(g_nodeAttributeEnd);
         }
 
@@ -3519,7 +3509,14 @@ function CBinaryFileWriter()
             }
             case AscDFH.historyitem_type_ChartSpace:
             {
-                oThis.WriteRecord2(3, grObj, oThis.WriteChart2);
+                if(grObj.isChartEx())
+                {
+                    oThis.WriteRecord2(7, grObj, oThis.WriteChart2);
+                }
+                else
+                {
+                    oThis.WriteRecord2(3, grObj, oThis.WriteChart2);
+                }
                 break;
             }
             case AscDFH.historyitem_type_SlicerView:
@@ -3560,7 +3557,11 @@ function CBinaryFileWriter()
         oThis.UseContinueWriter++;
 
         var oBinaryChartWriter = new AscCommon.BinaryChartWriter(_memory);
-        oBinaryChartWriter.WriteCT_ChartSpace(grObj);
+        if (grObj.isChartEx()) {
+            oBinaryChartWriter.WriteCT_ChartExSpace(grObj);
+        } else {
+            oBinaryChartWriter.WriteCT_ChartSpace(grObj);
+        }
 
         oThis.data = _memory.data;
         oThis.len = _memory.len;
@@ -5238,7 +5239,7 @@ function CBinaryFileWriter()
             else{
                 _writer.StartRecord(1);
                 _writer.WriteUChar(g_nodeAttributeStart);
-                _writer._WriteBool2(0, shape.attrUseBgFill);
+                _writer._WriteBool2(0, shape.useBgFill);
                 _writer.WriteUChar(g_nodeAttributeEnd);
             }
 

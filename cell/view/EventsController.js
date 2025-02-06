@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -155,7 +155,7 @@
 				return;
 			}
 
-			if (this.view.Api.isMobileVersion) {
+			if (this.view.Api.isUseOldMobileVersion()) {
 				/*раньше события на ресайз вызывался из меню через контроллер. теперь контроллер в меню не доступен, для ресайза подписываемся на глобальный ресайз от window.*/
 				window.addEventListener("resize", function () {
 					self._onWindowResize.apply(self, arguments);
@@ -168,16 +168,16 @@
 				window.addEventListener("resize", function () {
 					self._onWindowResize.apply(self, arguments);
 				}, false);
-				window.addEventListener("mousemove", function () {
+				window.addEventListener(AscCommon.getPtrEvtName("move"), function () {
 					return self._onWindowMouseMove.apply(self, arguments);
 				}, false);
-				window.addEventListener("mouseup", function () {
+				window.addEventListener(AscCommon.getPtrEvtName("up"), function () {
 					return self._onWindowMouseUp.apply(self, arguments);
 				}, false);
-				window.addEventListener("mouseleave", function () {
+				window.addEventListener(AscCommon.getPtrEvtName("leave"), function () {
 					return self._onWindowMouseLeaveOut.apply(self, arguments);
 				}, false);
-				window.addEventListener("mouseout", function () {
+				window.addEventListener(AscCommon.getPtrEvtName("out"), function () {
 					return self._onWindowMouseLeaveOut.apply(self, arguments);
 				}, false);
 			}
@@ -190,16 +190,16 @@
 			}
 
 			if (this.element.addEventListener) {
-				this.element.addEventListener("mousedown", function () {
+				this.element.addEventListener(AscCommon.getPtrEvtName("down"), function () {
 					return self._onMouseDown.apply(self, arguments);
 				}, false);
-				this.element.addEventListener("mouseup", function () {
+				this.element.addEventListener(AscCommon.getPtrEvtName("up"), function () {
 					return self._onMouseUp.apply(self, arguments);
 				}, false);
-				this.element.addEventListener("mousemove", function () {
+				this.element.addEventListener(AscCommon.getPtrEvtName("move"), function () {
 					return self._onMouseMove.apply(self, arguments);
 				}, false);
-				this.element.addEventListener("mouseleave", function () {
+				this.element.addEventListener(AscCommon.getPtrEvtName("leave"), function () {
 					return self._onMouseLeave.apply(self, arguments);
 				}, false);
 				this.element.addEventListener("dblclick", function () {
@@ -226,16 +226,16 @@
 			// Курсор для графических объектов. Определяем mousedown и mouseup для выделения текста.
 			var oShapeCursor = document.getElementById("id_target_cursor");
 			if (null != oShapeCursor && oShapeCursor.addEventListener) {
-				oShapeCursor.addEventListener("mousedown", function () {
+				oShapeCursor.addEventListener(AscCommon.getPtrEvtName("down"), function () {
 					return self._onMouseDown.apply(self, arguments);
 				}, false);
-				oShapeCursor.addEventListener("mouseup", function () {
+				oShapeCursor.addEventListener(AscCommon.getPtrEvtName("up"), function () {
 					return self._onMouseUp.apply(self, arguments);
 				}, false);
-				oShapeCursor.addEventListener("mousemove", function () {
+				oShapeCursor.addEventListener(AscCommon.getPtrEvtName("move"), function () {
 					return self._onMouseMove.apply(self, arguments);
 				}, false);
-				oShapeCursor.addEventListener("mouseleave", function () {
+				oShapeCursor.addEventListener(AscCommon.getPtrEvtName("leave"), function () {
 					return self._onMouseLeave.apply(self, arguments);
 				}, false);
 			}
@@ -435,7 +435,7 @@
 				settings.isVerticalScroll = true;
 				settings.isHorizontalScroll = false;
 				this.vsbApi.canvasH = null;
-				this.reinitScrollY(settings, ws.getFirstVisibleRow(true), ws.getVerticalScrollRange(), ws.getVerticalScrollMax());
+				this.reinitScrollY(settings, ws.workbook.getSmoothScrolling() ? ws.getFirstVisibleRowSmoothScroll(true) : ws.getFirstVisibleRow(true), ws.getVerticalScrollRange(), ws.getVerticalScrollMax());
 				this.vsbApi.settings = settings;
 			}
 			if (this.hsbApi) {
@@ -445,7 +445,7 @@
 				settings.isVerticalScroll = false;
 				settings.isHorizontalScroll = true;
 				this.hsbApi.canvasW = null;
-				this.reinitScrollX(settings, ws.getFirstVisibleCol(true), ws.getHorizontalScrollRange(), ws.getHorizontalScrollMax());
+				this.reinitScrollX(settings, ws.workbook.getSmoothScrolling() ? ws.getFirstVisibleColSmoothScroll(true) : ws.getFirstVisibleCol(true), ws.getHorizontalScrollRange(), ws.getHorizontalScrollMax());
 				this.hsbApi.settings = settings;
 			}
 		};
@@ -457,7 +457,16 @@
 			this.vsb = document.createElement('div');
 			this.vsb.id = "ws-v-scrollbar";
 			this.vsb.style.backgroundColor = AscCommon.GlobalSkin.ScrollBackgroundColor;
-			this.widget.appendChild(this.vsb);
+
+			//TODO test rtl
+			/*if (window.rightToleft) {
+				this.vsb.style.left = "0px";
+				this.widget.prepend(this.vsb);
+				this.widget.children[1].style.left = this.vsb.clientWidth + "px";
+				this.widget.children[1].style.overflow = "visible"
+			} else {*/
+				this.widget.appendChild(this.vsb);
+			//}
 
 			if (!this.vsbApi) {
 				settings = this.createScrollSettings();
@@ -471,7 +480,7 @@
 				this.vsbApi.bind("scrollvertical", function (evt) {
 					self.handlers.trigger("scrollY", evt.scrollPositionY / self.settings.vscrollStep, !self.vsbApi.scrollerMouseDown);
 				});
-				this.vsbApi.bind("mouseup", function (evt) {
+				this.vsbApi.bind(AscCommon.getPtrEvtName("up"), function (evt) {
 					if (self.vsbApi.scrollerMouseDown) {
 						self.handlers.trigger('initRowsCount');
 					}
@@ -501,7 +510,7 @@
 				this.hsbApi.bind("scrollhorizontal", function (evt) {
 					self.handlers.trigger("scrollX", evt.scrollPositionX / self.settings.hscrollStep, !self.hsbApi.scrollerMouseDown);
 				});
-				this.hsbApi.bind("mouseup", function (evt) {
+				this.hsbApi.bind(AscCommon.getPtrEvtName("up"), function (evt) {
 					if (self.hsbApi.scrollerMouseDown) {
 						self.handlers.trigger('initColsCount');
 					}
@@ -529,7 +538,8 @@
 				this.vsb.style.display = "none";
 			}
 
-
+			this.showVerticalScroll(this.view.getShowVerticalScroll());
+			this.showHorizontalScroll(this.view.getShowHorizontalScroll());
 		};
 
 		/**
@@ -874,8 +884,7 @@
 				}
 				case Asc.c_oAscSpreadsheetShortcutType.EditSelectAll: {
 					if (!oThis.getCellEditMode()) {
-						oThis.handlers.trigger("selectColumnsByRange");
-						oThis.handlers.trigger("selectRowsByRange");
+						oThis.handlers.trigger("selectAllByRange");
 						nRetValue = keydownresult_PreventAll;
 					}
 					break;
@@ -1189,18 +1198,19 @@
 						if (oThis.getCellEditMode()) {
 							break;
 						}
-						const bIsSelectColumns = oEvent.CtrlKey;
+						const bIsSelectColumns = oEvent.IsShortcutCtrl() || oEvent.IsMacCmdKey();
 						if (bIsSelectColumns && bIsSelect && bIsMacOs) {
 							break;
 						}
 						// Отключим стандартную обработку браузера нажатия
 						// Ctrl+Shift+Spacebar, Ctrl+Spacebar, Shift+Spacebar
-						nRetValue = keydownresult_PreventAll;
 						if (bIsSelectColumns) {
 							oThis.handlers.trigger("selectColumnsByRange");
+							nRetValue = keydownresult_PreventAll;
 						}
 						if (bIsSelect) {
 							oThis.handlers.trigger("selectRowsByRange");
+							nRetValue = keydownresult_PreventAll;
 						}
 						break;
 					case 33: // PageUp
@@ -1282,6 +1292,14 @@
 							this.handlers.trigger('onContextMenu', oEvent);
 						}
 						break;
+					case 219:
+					case 221:
+						if (!oEvent.CtrlKey || oThis.getCellEditMode() || !bCanEdit || bSelectionDialogMode) {
+							return true;
+						}
+						nRetValue = keydownresult_PreventAll;
+						oThis.view.setFontAttributes("changeFontSize", oEvent.KeyCode === 221);
+						break;
 					default:
 						nRetValue = keydownresult_PreventNothing;
 						break;
@@ -1302,10 +1320,14 @@
 			};
 
 			if ((nDeltaColumn !== 0 || nDeltaRow !== 0) && false === oThis.handlers.trigger("isGlobalLockEditCell")) {
+				const oWb = window["Asc"]["editor"].wb;
+				let oWs = oWb.getWorksheet();
+				if (oWs && oWs.getRightToLeft()) {
+					nDeltaColumn = -nDeltaColumn;
+				}
 				const bIsChangeVisibleAreaMode = this.view.Api.isEditVisibleAreaOleEditor;
 				if (bIsChangeVisibleAreaMode) {
 					oThis.handlers.trigger("changeVisibleArea", !bIsSelect, nDeltaColumn, nDeltaRow, false, function (d) {
-						const oWb = window["Asc"]["editor"].wb;
 						if (oThis.targetInfo) {
 							oWb._onUpdateWorksheet(oThis.targetInfo.coordX, oThis.targetInfo.coordY, false);
 						}
@@ -1326,7 +1348,7 @@
 							if (oThis.targetInfo) {
 								oWb._onUpdateWorksheet(oThis.targetInfo.coordX, oThis.targetInfo.coordY, false);
 							}
-							oThis.scroll(d);
+							oThis.scroll(oWs.convertOffsetToSmooth(d));
 							CheckLastTab();
 						});
 				}
@@ -1336,6 +1358,537 @@
 				oThis._setSkipKeyPress(true);
 			}
 			return nRetValue;
+		};
+
+		asc_CEventsController.prototype.executeShortcut = function(type) {
+			let result = false;
+			let t = this;
+			let canEdit = this.canEdit();
+			let selectionDialogMode = this.getSelectionDialogMode();
+			let selectionActivePointChanged, dc = 0, dr = 0, shiftKey, isNeedCheckActiveCellChanged, enterOptions;
+			let isFormulaEditMode = this.getFormulaEditMode();
+			let isChangeVisibleAreaMode = this.view.Api.isEditVisibleAreaOleEditor;
+
+			// While not removed for compatibility with key down
+			function stop(immediate) {
+				/*event.stopPropagation();
+				immediate ? event.stopImmediatePropagation() : true;
+				event.preventDefault();
+				result = false;*/
+			}
+			function _setSkipKeyPress(val) {
+				/*event.stopPropagation();
+				immediate ? event.stopImmediatePropagation() : true;
+				event.preventDefault();
+				result = false;*/
+			}
+
+			switch (type) {
+				case Asc.c_oAscCellShortcutType.refreshAllConnections:
+				case Asc.c_oAscCellShortcutType.refreshSelectedConnections: {
+					if (canEdit && !t.getCellEditMode() && !selectionDialogMode && t.handlers.trigger("refreshConnections", type === Asc.c_oAscCellShortcutType.refreshAllConnections)) {
+						return true;
+					}
+					_setSkipKeyPress(false);
+					result = true;
+					break;
+				}
+				case Asc.c_oAscCellShortcutType.changeFormatTableInfo: {
+					stop();
+					if (canEdit && !t.getCellEditMode() && !selectionDialogMode) {
+						t.handlers.trigger("changeFormatTableInfo");
+					}
+
+					_setSkipKeyPress(false);
+					result = true;
+					break;
+				}
+				case Asc.c_oAscCellShortcutType.calculateActiveSheet:
+				case Asc.c_oAscCellShortcutType.calculateAll: {
+					let calcType;
+					if (Asc.c_oAscCellShortcutType.calculateActiveSheet === type) {
+						calcType = Asc.c_oAscCalculateType.ActiveSheet;
+					} else {
+						calcType = Asc.c_oAscCalculateType.All;
+					}
+					t.handlers.trigger("calculate", calcType);
+					result = true;
+					break;
+				}
+				case Asc.c_oAscCellShortcutType.focusOnCellEditor: {
+					if (!canEdit || t.getCellEditMode() || selectionDialogMode) {
+						return true;
+					}
+					if (AscBrowser.isOpera) {
+						stop();
+					}
+					// When pressing F2, set focus in the editor
+					let enterOptions = new AscCommonExcel.CEditorEnterOptions();
+					enterOptions.focus = true;
+					t.handlers.trigger("editCell", enterOptions);
+					result = true;
+
+					break;
+				}
+				case Asc.c_oAscCellShortcutType.addDate:
+				case Asc.c_oAscCellShortcutType.addTime: // add current date or time Ctrl + (Shift) + ;
+					if (!canEdit || t.getCellEditMode() || selectionDialogMode) {
+						return true;
+					}
+
+					// When a character is pressed, do not set focus. Clear the cell content
+					// Next event processed by cellEditor
+					enterOptions = new AscCommonExcel.CEditorEnterOptions();
+					enterOptions.newText = '';
+					enterOptions.quickInput = true;
+					this.handlers.trigger("editCell", enterOptions);
+					result = true;
+
+					break;
+				case Asc.c_oAscCellShortcutType.removeActiveCell: // backspace
+					if (!canEdit || t.getCellEditMode() || selectionDialogMode) {
+						return true;
+					}
+					stop();
+
+					// When backspace is pressed, focus is not in the editor (clearing content)
+					enterOptions = new AscCommonExcel.CEditorEnterOptions();
+					enterOptions.newText = '';
+					t.handlers.trigger("editCell", enterOptions);
+					result = true;
+
+					break;
+
+				case Asc.c_oAscCellShortcutType.emptyRange: // Del
+					if (!canEdit || this.getCellEditMode() || selectionDialogMode || shiftKey) {
+						return true;
+					}
+					// Удаляем содержимое
+					this.handlers.trigger("empty");
+					result = true;
+
+					break;
+
+				case Asc.c_oAscCellShortcutType.moveActiveCellToLeft: // tab
+				case Asc.c_oAscCellShortcutType.moveActiveCellToRight:
+					if (t.getCellEditMode() || selectionDialogMode) {
+						return true;
+					}
+					// Disable standard browser handling of the tab key press
+					stop();
+
+					// Special case (possibly moving within a selected area)
+					selectionActivePointChanged = true;
+					if (Asc.c_oAscCellShortcutType.moveActiveCellToLeft === type) {
+						dc = -1;      // (shift + tab) - move left by 1 column
+						shiftKey = false;  // Reset shift, because we are not selecting
+					} else {
+						let _activeCell = t.handlers.trigger("getActiveCell");
+						if (t.lastTab === null) {
+							if (_activeCell) {
+								t.lastTab = _activeCell.c2;
+							}
+						} else if (!_activeCell) {
+							t.lastTab = null;
+						}
+						dc = +1;      // (tab) - move right by 1 column
+					}
+					break;
+
+				case Asc.c_oAscCellShortcutType.moveActiveCellToDown: // "enter"
+				case Asc.c_oAscCellShortcutType.moveActiveCellToUp:
+					if (t.getCellEditMode() || selectionDialogMode) {
+						return true;
+					}
+					// Special case (possibly moving within a selected area)
+					selectionActivePointChanged = true;
+					if (Asc.c_oAscCellShortcutType.moveActiveCellToUp === type) {
+						dr = -1;      // (shift + enter) - move up by 1 row
+						shiftKey = false;  // Reset shift, because we are not selecting
+						t.lastTab = null;
+					} else {
+						if (t.lastTab !== null) {
+							let _activeCell = t.handlers.trigger("getActiveCell");
+							if (_activeCell) {
+								dc = t.lastTab - _activeCell.c2;
+							} else {
+								t.lastTab = null;
+							}
+						}
+						dr = +1;      // (enter) - move down by 1 row
+					}
+					break;
+
+				case Asc.c_oAscCellShortcutType.reset: // Esc
+					t.handlers.trigger("stopFormatPainter");
+					t.handlers.trigger("stopAddShape");
+					t.handlers.trigger("cleanCutData", true, true);
+					t.handlers.trigger("cleanCopyData", true, true);
+					t.view.Api.cancelEyedropper();
+					window['AscCommon'].g_specialPasteHelper.SpecialPasteButton_Hide();
+					result = true;
+					break;
+				case Asc.c_oAscCellShortcutType.disableNumLock: // Num Lock
+				case Asc.c_oAscCellShortcutType.disableScrollLock: // Scroll Lock
+					if (AscBrowser.isOpera) {
+						stop();
+					}
+					result = true;
+					break;
+				case Asc.c_oAscCellShortcutType.selectSheet: // Spacebar
+				case Asc.c_oAscCellShortcutType.selectColumn: // Spacebar
+				case Asc.c_oAscCellShortcutType.selectRow: // Spacebar
+					if (t.getCellEditMode()) {
+						return true;
+					}
+
+					// Disable standard browser handling for key presses
+					// Ctrl+Shift+Spacebar, Ctrl+Spacebar, Shift+Spacebar
+					if (Asc.c_oAscCellShortcutType.selectColumn === type || Asc.c_oAscCellShortcutType.selectSheet === type) {
+						t.handlers.trigger("selectColumnsByRange");
+					}
+					if (Asc.c_oAscCellShortcutType.selectRow === type || Asc.c_oAscCellShortcutType.selectSheet === type) {
+						t.handlers.trigger("selectRowsByRange");
+					}
+					stop();
+
+					result = true;
+					break;
+
+				case Asc.c_oAscCellShortcutType.addSeparator: //NumpadDecimal
+					if (!canEdit || t.getCellEditMode() || selectionDialogMode) {
+						return true;
+					}
+					t.view.Api.wb.EnterText(this.view.Api.asc_getDecimalSeparator().charCodeAt(0), true);
+					//stop to prevent double enter
+					stop();
+
+					result = true;
+					break;
+				case Asc.c_oAscCellShortcutType.goToPreviousSheet: // PageUp
+				case Asc.c_oAscCellShortcutType.moveToUpperCell:
+				case Asc.c_oAscCellShortcutType.selectToUpperCell:
+					// Disable standard browser handling of the PageUp key press
+					stop();
+					if (/*TODO ctrlKey */ Asc.c_oAscCellShortcutType.goToPreviousSheet === type) {
+						// Moving through sheets from right to left
+						// Not working in Chrome (because it has its own handling for certain key presses with Ctrl)
+						t.handlers.trigger("showNextPrevWorksheet", -1);
+						return true;
+					} else {
+						// Solution design department to handle Alt + PgUp  Alt + PgDown as a transition between sheets
+						/*event.altKey ? dc = -0.5 : */
+						dr = -0.5;
+					}
+					isNeedCheckActiveCellChanged = true;
+					result = true;
+					break;
+
+				case Asc.c_oAscCellShortcutType.moveToNextSheet: // PageDown
+				case Asc.c_oAscCellShortcutType.moveToLowerCell:
+				case Asc.c_oAscCellShortcutType.selectToLowerCell:
+					// Disable standard browser handling of the PageDown key press
+					stop();
+					if (/*TODO ctrlKey */ Asc.c_oAscCellShortcutType.moveToNextSheet) {
+						// Moving through sheets from left to right
+						// Not working in Chrome (because it has its own handling for certain key presses with Ctrl)
+						t.handlers.trigger("showNextPrevWorksheet", +1);
+						return true;
+					} else {
+						// Solution design department to handle Alt + PgUp  Alt + PgDown as a transition between sheets
+						/*event.altKey ? dc = +0.5 : */
+						dr = +0.5;
+					}
+					isNeedCheckActiveCellChanged = true;
+					result = true;
+					break;
+
+				case Asc.c_oAscCellShortcutType.moveToLeftEdgeCell: // left
+				case Asc.c_oAscCellShortcutType.selectToLeftEdgeCell: // + shift
+				case Asc.c_oAscCellShortcutType.moveToLeftCell:
+				case Asc.c_oAscCellShortcutType.selectToLeftCell: // + shift
+					stop(); // Disable standard browser handling of the left key press
+					dc = (Asc.c_oAscCellShortcutType.moveToLeftEdgeCell === type || Asc.c_oAscCellShortcutType.selectToLeftEdgeCell === type) ? -1.5 : -1; // Arrow key movement (left-right, up-down)
+					isNeedCheckActiveCellChanged = true;
+					result = true;
+					break;
+
+				case Asc.c_oAscCellShortcutType.moveToTopCell: // up
+				case Asc.c_oAscCellShortcutType.selectToTopCell: // + shift
+				case Asc.c_oAscCellShortcutType.moveToUpCell:
+				case Asc.c_oAscCellShortcutType.selectToUpCell: // + shift
+					stop(); // Disable standard browser handling of the up key press
+					/*if (canEdit && !t.getCellEditMode() && !selectionDialogMode && event.altKey && t.handlers.trigger("onDataValidation")) {
+						return result;
+					}*/
+					dr = (Asc.c_oAscCellShortcutType.moveToTopCell === type || Asc.c_oAscCellShortcutType.selectToTopCell === type) ? -1.5 : -1; // Arrow key movement (left-right, up-down)
+					isNeedCheckActiveCellChanged = true;
+					result = true;
+					break;
+
+				case Asc.c_oAscCellShortcutType.moveToRightEdgeCell: // right
+				case Asc.c_oAscCellShortcutType.selectToRightEdgeCell: // + shift
+				case Asc.c_oAscCellShortcutType.moveToRightCell:
+				case Asc.c_oAscCellShortcutType.selectToRightCell: // + shift
+					stop(); // Disable standard browser handling of the right key press
+					dc = (Asc.c_oAscCellShortcutType.moveToRightEdgeCell === type || Asc.c_oAscCellShortcutType.selectToRightEdgeCell === type) ? +1.5 : +1; // Arrow key movement (left-right, up-down)
+					isNeedCheckActiveCellChanged = true;
+					result = true;
+					break;
+				case Asc.c_oAscCellShortcutType.moveToBottomCell: // down
+				case Asc.c_oAscCellShortcutType.selectToBottomCell:
+				case Asc.c_oAscCellShortcutType.moveToDownCell:
+				case Asc.c_oAscCellShortcutType.selectToDownCell:
+				case Asc.c_oAscCellShortcutType.showFilterOptions:
+				case Asc.c_oAscCellShortcutType.showAutoComplete:
+				case Asc.c_oAscCellShortcutType.showDataValidation:
+					stop(); // Disable standard browser handling of the down key press
+					// Handling Alt + down
+					if (canEdit && !t.getCellEditMode() && !selectionDialogMode && (Asc.c_oAscCellShortcutType.showFilterOptions === type
+						|| Asc.c_oAscCellShortcutType.showAutoComplete === type || Asc.c_oAscCellShortcutType.showDataValidation === type)) {
+						if (Asc.c_oAscCellShortcutType.showFilterOptions === type && t.handlers.trigger("onShowFilterOptionsActiveCell")) {
+							return result;
+						}
+						if (Asc.c_oAscCellShortcutType.showDataValidation === type && t.handlers.trigger("onDataValidation")) {
+							return result;
+						}
+						Asc.c_oAscCellShortcutType.showAutoComplete === type && t.handlers.trigger("showAutoComplete");
+						return result;
+					}
+					dr = Asc.c_oAscCellShortcutType.selectToBottomCell === type ? +1.5 : +1; // Arrow key movement (left-right, up-down)
+					isNeedCheckActiveCellChanged = true;
+					result = true;
+					break;
+
+				case Asc.c_oAscCellShortcutType.moveToFirstColumn: // home
+				case Asc.c_oAscCellShortcutType.selectToFirstColumn:
+				case Asc.c_oAscCellShortcutType.moveToLeftEdgeTop:
+				case Asc.c_oAscCellShortcutType.selectToLeftEdgeTop:
+					stop(); // Disable standard browser handling of the home key press
+					if (isFormulaEditMode) {
+						break;
+					}
+					dc = -2.5;
+					if (type === Asc.c_oAscCellShortcutType.moveToLeftEdgeTop || type === Asc.c_oAscCellShortcutType.selectToLeftEdgeTop) {
+						dr = -2.5;
+					}
+					isNeedCheckActiveCellChanged = true;
+					break;
+
+				case Asc.c_oAscCellShortcutType.moveToRightBottomEdge: // end
+				case Asc.c_oAscCellShortcutType.selectToRightBottomEdge:
+					stop(); // Disable standard browser handling of the end key press
+					if (isFormulaEditMode) {
+						break;
+					}
+					dc = 2.5;
+					if (type === Asc.c_oAscCellShortcutType.moveToRightBottomEdge || type === Asc.c_oAscCellShortcutType.selectToRightBottomEdge) {
+						dr = 2.5;
+					}
+					isNeedCheckActiveCellChanged = true;
+					break;
+
+				case Asc.c_oAscCellShortcutType.setNumberFormat:  // set number format		Ctrl + Shift + !
+				case Asc.c_oAscCellShortcutType.setTimeFormat:  // set time format		Ctrl + Shift + @
+				case Asc.c_oAscCellShortcutType.setDateFormat:  // set date format		Ctrl + Shift + #
+				case Asc.c_oAscCellShortcutType.setCurrencyFormat:  // set currency format	Ctrl + Shift + $
+				case Asc.c_oAscCellShortcutType.setPercentFormat:  // make strikethrough		Ctrl + 5
+				case Asc.c_oAscCellShortcutType.setStrikethrough:  // make strikethrough		Ctrl + 5
+				case Asc.c_oAscCellShortcutType.setExponentialFormat:  // set exponential format Ctrl + Shift + ^
+				case Asc.c_oAscCellShortcutType.setBold:  // make bold				Ctrl + b
+				case Asc.c_oAscCellShortcutType.setItalic:  // make italic			Ctrl + i
+				//case 83: // save					Ctrl + s
+				case Asc.c_oAscCellShortcutType.setUnderline:  // make underline			Ctrl + u
+				case Asc.c_oAscCellShortcutType.setGeneralFormat: // set general format 	Ctrl + Shift + ~
+					if (!canEdit || selectionDialogMode) {
+						return true;
+					}
+
+				case Asc.c_oAscCellShortcutType.redo:  // redo					Ctrl + y
+				case Asc.c_oAscCellShortcutType.undo:  // undo					Ctrl + z
+					if (!(canEdit || t.handlers.trigger('isRestrictionComments')) || selectionDialogMode) {
+						return true;
+					}
+					isNeedCheckActiveCellChanged = true;
+
+				case Asc.c_oAscCellShortcutType.selectAll: // select all      Ctrl + a
+				case Asc.c_oAscCellShortcutType.print: // print           Ctrl + p
+					if (t.getCellEditMode()) {
+						return true;
+					}
+
+					let action = false;
+					switch (/*event.which*/type) {
+						case Asc.c_oAscCellShortcutType.setNumberFormat: //49:
+							if (shiftKey) {
+								t.handlers.trigger("setCellFormat", Asc.c_oAscNumFormatType.Number);
+								action = true;
+							}
+							break;
+						case  Asc.c_oAscCellShortcutType.setTimeFormat: //50:
+							if (shiftKey) {
+								t.handlers.trigger("setCellFormat", Asc.c_oAscNumFormatType.Time);
+								action = true;
+							}
+							break;
+						case  Asc.c_oAscCellShortcutType.setDateFormat: //51:
+							if (shiftKey) {
+								t.handlers.trigger("setCellFormat", Asc.c_oAscNumFormatType.Date);
+								action = true;
+							}
+							break;
+						case  Asc.c_oAscCellShortcutType.setCurrencyFormat: //52:
+							if (shiftKey) {
+								t.handlers.trigger("setCellFormat", Asc.c_oAscNumFormatType.Currency);
+								action = true;
+							}
+							break;
+						case  Asc.c_oAscCellShortcutType.setPercentFormat: //53:
+							if (shiftKey) {
+								t.handlers.trigger("setCellFormat", Asc.c_oAscNumFormatType.Percent);
+							} else {
+								t.handlers.trigger("setFontAttributes", "s");
+							}
+							action = true;
+							break;
+						case  Asc.c_oAscCellShortcutType.setExponentialFormat: //54:
+							t.handlers.trigger("setCellFormat", Asc.c_oAscNumFormatType.Scientific);
+							action = true;
+							break;
+						case Asc.c_oAscCellShortcutType.selectSheet:
+							//t.handlers.trigger("selectColumnsByRange");
+							//t.handlers.trigger("selectRowsByRange");
+							t.handlers.trigger("selectAllByRange");
+							action = true;
+							break;
+						case Asc.c_oAscCellShortcutType.setBold:
+							t.handlers.trigger("setFontAttributes", "b");
+							action = true;
+							break;
+						case Asc.c_oAscCellShortcutType.setItalic:
+							t.handlers.trigger("setFontAttributes", "i");
+							action = true;
+							break;
+						case Asc.c_oAscCellShortcutType.print:
+							t.handlers.trigger("print");
+							action = true;
+							break;
+						case Asc.c_oAscCellShortcutType.save:
+							t.handlers.trigger("save");
+							action = true;
+							break;
+						case Asc.c_oAscCellShortcutType.setUnderline:
+							t.handlers.trigger("setFontAttributes", "u");
+							action = true;
+							break;
+						case Asc.c_oAscCellShortcutType.redo:
+							t.handlers.trigger("redo");
+							action = true;
+							break;
+						case Asc.c_oAscCellShortcutType.undo:
+							t.handlers.trigger("undo");
+							action = true;
+							break;
+						case Asc.c_oAscCellShortcutType.setGeneralFormat:
+							t.handlers.trigger("setCellFormat", Asc.c_oAscNumFormatType.General);
+							action = true;
+							break;
+					}
+
+					if (!action) {
+						_setSkipKeyPress(false);
+						return true;
+					}
+					stop();
+					result = true;
+					break;
+				case Asc.c_oAscCellShortcutType.addSum:  // Firefox, Opera (+/=)
+					//case 187: // +/=
+					if (!canEdit || t.getCellEditMode() || selectionDialogMode) {
+						return true;
+					}
+
+					t.handlers.trigger('addFunction',
+						AscCommonExcel.cFormulaFunctionToLocale ? AscCommonExcel.cFormulaFunctionToLocale['SUM'] :
+							'SUM', Asc.c_oAscPopUpSelectorType.Func, true);
+					stop();
+
+					result = true;
+					break;
+
+				case Asc.c_oAscCellShortcutType.contextMenu:
+					stop();
+					this.handlers.trigger('onContextMenu');
+					result = true;
+					break;
+
+				case Asc.c_oAscCellShortcutType.decreaseFontSize:
+				case Asc.c_oAscCellShortcutType.increaseFontSize:
+					if (t.getCellEditMode() || !canEdit || selectionDialogMode) {
+						return true;
+					}
+					stop();
+					t.view.setFontAttributes("changeFontSize", type === Asc.c_oAscCellShortcutType.increaseFontSize);
+					result = true;
+					break;
+				default:
+					_setSkipKeyPress(false);
+					result = true;
+					break;
+
+			}
+
+
+
+			var activeCellBefore;
+			if (isNeedCheckActiveCellChanged) {
+				activeCellBefore = t.handlers.trigger("getActiveCell");
+			}
+			var _checkLastTab = function () {
+				if (isNeedCheckActiveCellChanged) {
+					var activeCellAfter = t.handlers.trigger("getActiveCell");
+					if (!activeCellBefore || !activeCellAfter || !activeCellAfter.isEqual(activeCellBefore)) {
+						t.lastTab = null;
+					}
+				}
+			};
+
+			if ((dc !== 0 || dr !== 0) && false === t.handlers.trigger("isGlobalLockEditCell")) {
+				const wb = window["Asc"]["editor"].wb;
+				let ws = wb.getWorksheet();
+				if (ws && ws.getRightToLeft()) {
+					dc = -dc;
+				}
+				if (isChangeVisibleAreaMode) {
+					t.handlers.trigger("changeVisibleArea", !shiftKey, dc, dr, false, function (d) {
+						if (t.targetInfo) {
+							wb._onUpdateWorksheet(t.targetInfo.coordX, t.targetInfo.coordY, false);
+						}
+						t.scroll(d);
+						const oOleSize = wb.getOleSize();
+						oOleSize.addPointToLocalHistory();
+						_checkLastTab();
+					}, true);
+				} else if (selectionActivePointChanged) { // Проверка на движение в выделенной области
+					t.handlers.trigger("selectionActivePointChanged", dc, dr, function (d) {
+						t.scroll(d);
+						_checkLastTab();
+					});
+				} else {
+					t.handlers.trigger("changeSelection", /*isStartPoint*/!shiftKey, dc, dr, /*isCoord*/false, false,
+						function (d) {
+							var wb = window["Asc"]["editor"].wb;
+							if (t.targetInfo) {
+								wb._onUpdateWorksheet(t.targetInfo.coordX, t.targetInfo.coordY, false);
+							}
+							const ws = wb.getWorksheet();
+							t.scroll(ws.convertOffsetToSmooth(d));
+							_checkLastTab();
+						});
+				}
+			}
+
+			return result;
 		};
 
 		/** @param event {AscCommon.CKeyboardEvent} */
@@ -1590,6 +2143,17 @@
 
 		/** @param event {MouseEvent} */
 		asc_CEventsController.prototype._onMouseDown = function (event) {
+			let touchManager = this.view.Api.wb.MobileTouchManager;
+			if (touchManager && touchManager.checkTouchEvent(event))
+			{
+				touchManager.startTouchingInProcess();
+				let res = touchManager.mainOnTouchStart(event);
+				touchManager.stopTouchingInProcess();
+				return res;
+			}
+			if (touchManager)
+				touchManager.checkMouseFocus(event);
+
 			var t = this;
 			asc["editor"].checkInterfaceElementBlur();
 			var ctrlKey = !AscCommon.getAltGr(event) && (event.metaKey || event.ctrlKey);
@@ -1764,6 +2328,9 @@
 					} else if (t.targetInfo.target === c_oTargetType.TableSelectionChange) {
 						this.handlers.trigger('onChangeTableSelection', t.targetInfo);
 						return;
+					} else if (t.targetInfo.target === c_oTargetType.TraceDependents) {
+						// if we do a single click on traces, do nothing
+						return;
 					}
 				}
 			} else {
@@ -1820,6 +2387,15 @@
 
 		/** @param event {MouseEvent} */
 		asc_CEventsController.prototype._onMouseUp = function (event) {
+			let touchManager = this.view.Api.wb.MobileTouchManager;
+			if (touchManager && touchManager.checkTouchEvent(event))
+			{
+				touchManager.startTouchingInProcess();
+				let res = touchManager.mainOnTouchEnd(event);
+				touchManager.stopTouchingInProcess();
+				return res;
+			}
+
 			var button = AscCommon.getMouseButton(event);
 			AscCommon.global_mouseEvent.UnLockMouse();
 
@@ -1912,6 +2488,15 @@
 
 		/** @param event {MouseEvent} */
 		asc_CEventsController.prototype._onMouseMove = function (event) {
+			let touchManager = this.view.Api.wb.MobileTouchManager;
+			if (touchManager && touchManager.checkTouchEvent(event))
+			{
+				touchManager.startTouchingInProcess();
+				let res = touchManager.mainOnTouchMove(event);
+				touchManager.stopTouchingInProcess();
+				return res;
+			}
+
 			var t = this;
 			var ctrlKey = !AscCommon.getAltGr(event) && (event.metaKey || event.ctrlKey);
 			var coord = t._getCoordinates(event);
@@ -2037,44 +2622,67 @@
 
 			var self = this;
 			var deltaX = 0, deltaY = 0;
-			if (undefined !== event.wheelDelta && 0 !== event.wheelDelta) {
-				deltaY = -1 * event.wheelDelta / 40;
-			} else if (undefined !== event.detail && 0 !== event.detail) {
-				// FF
-				deltaY = event.detail;
-			} else if (undefined !== event.deltaY && 0 !== event.deltaY) {
-				// FF
-				//ограничиваем шаг из-за некорректного значения deltaY после обновления FF
-				//TODO необходимо пересмотреть. нужны корректные значения и учетом системного шага.
-				var _maxDelta = 3;
-				if (AscCommon.AscBrowser.isMozilla && Math.abs(event.deltaY) > _maxDelta) {
-					deltaY = Math.sign(event.deltaY) * _maxDelta;
-				} else {
-					deltaY = event.deltaY;
+
+			//TODO!!! while only check direction. need refactor, and replace up code on checkMouseWhell function
+			let values = AscCommon.checkMouseWhell(event, {
+				isSupportBidirectional : false,
+				isAllowHorizontal : true,
+				isUseMaximumDelta : true
+			});
+
+			const wb = window["Asc"]["editor"].wb;
+			//TODO for mac touchpads. need review
+			if (wb.smoothScroll && AscCommon.AscBrowser.isMacOs) {
+				deltaX = (values.x / wb.getWorksheet().getHScrollStep()) * AscCommon.AscBrowser.retinaPixelRatio;
+				deltaY = (values.y / wb.getWorksheet().getVScrollStep()) * AscCommon.AscBrowser.retinaPixelRatio;
+			} else {
+				if (undefined !== event.wheelDelta && 0 !== event.wheelDelta) {
+					deltaY = -1 * event.wheelDelta / 40;
+				} else if (undefined !== event.detail && 0 !== event.detail) {
+					// FF
+					deltaY = event.detail;
+				} else if (undefined !== event.deltaY && 0 !== event.deltaY) {
+					// FF
+					//ограничиваем шаг из-за некорректного значения deltaY после обновления FF
+					//TODO необходимо пересмотреть. нужны корректные значения и учетом системного шага.
+					var _maxDelta = 3;
+					if (AscCommon.AscBrowser.isMozilla && Math.abs(event.deltaY) > _maxDelta) {
+						deltaY = Math.sign(event.deltaY) * _maxDelta;
+					} else {
+						deltaY = event.deltaY;
+					}
+				}
+				if (undefined !== event.deltaX && 0 !== event.deltaX) {
+					deltaX = event.deltaX;
+				}
+				if (event.axis !== undefined && event.axis === event.HORIZONTAL_AXIS) {
+					deltaX = deltaY;
+					deltaY = 0;
+				}
+
+				if (undefined !== event.wheelDeltaX && 0 !== event.wheelDeltaX) {
+					// Webkit
+					deltaX = -1 * event.wheelDeltaX / 40;
+				}
+				if (undefined !== event.wheelDeltaY && 0 !== event.wheelDeltaY) {
+					// Webkit
+					deltaY = -1 * event.wheelDeltaY / 40;
 				}
 			}
-			if (undefined !== event.deltaX && 0 !== event.deltaX) {
-				deltaX = event.deltaX;
+
+			if (values.x === 0) {
+				deltaX = 0;
 			}
-			if (event.axis !== undefined && event.axis === event.HORIZONTAL_AXIS) {
-				deltaX = deltaY;
+			if (values.y === 0) {
 				deltaY = 0;
 			}
 
-			if (undefined !== event.wheelDeltaX && 0 !== event.wheelDeltaX) {
-				// Webkit
-				deltaX = -1 * event.wheelDeltaX / 40;
-			}
-			if (undefined !== event.wheelDeltaY && 0 !== event.wheelDeltaY) {
-				// Webkit
-				deltaY = -1 * event.wheelDeltaY / 40;
-			}
 			if (event.shiftKey) {
 				deltaX = deltaY;
 				deltaY = 0;
 			}
 
-			if (this.smoothWheelCorrector) {
+			if (this.smoothWheelCorrector && !wb.smoothScroll) {
 				deltaX = this.smoothWheelCorrector.get_DeltaX(deltaX);
 				deltaY = this.smoothWheelCorrector.get_DeltaY(deltaY);
 			}
@@ -2087,11 +2695,15 @@
 			this.handlers.trigger("updateWorksheet", /*x*/undefined, /*y*/undefined, /*ctrlKey*/undefined,
 				function () {
 					if (deltaX && (!self.smoothWheelCorrector || !self.smoothWheelCorrector.isBreakX())) {
-						deltaX = Math.sign(deltaX) * Math.ceil(Math.abs(deltaX / 3));
+						if (!wb.smoothScroll) {
+							deltaX = Math.sign(deltaX) * Math.ceil(Math.abs(deltaX / 3));
+						}
 						self.scrollHorizontal(deltaX, event);
 					}
 					if (deltaY && (!self.smoothWheelCorrector || !self.smoothWheelCorrector.isBreakY())) {
-						deltaY = Math.sign(deltaY) * Math.ceil(Math.abs(deltaY * self.settings.wheelScrollLinesV / 3));
+						if (!wb.smoothScroll) {
+							deltaY = Math.sign(deltaY) * Math.ceil(Math.abs(deltaY * self.settings.wheelScrollLinesV / 3));
+						}
 						self.scrollVertical(deltaY, event);
 					}
 					self._onMouseMove(event);
@@ -2127,7 +2739,7 @@
 				return event.coord;
 			}
 
-			var offs = this.element.getBoundingClientRect();
+			var offs = AscCommon.UI.getBoundingClientRect(this.element);
 			var x = ((event.pageX * AscBrowser.zoom) >> 0) - offs.left;
 			var y = ((event.pageY * AscBrowser.zoom) >> 0) - offs.top;
 
@@ -2139,6 +2751,63 @@
 
 		asc_CEventsController.prototype._setSkipKeyPress = function (val) {
 			this.skipKeyPress = val;
+		};
+
+		asc_CEventsController.prototype.showHorizontalScroll = function (val) {
+			if (!this.hsb || !this.hsb.style) {
+				return;
+			}
+			let toVisibility = val ? "visible" : "hidden";
+			let res;
+			if (this.hsb.style.visibility === toVisibility) {
+				res = false;
+			} else {
+				this.hsb.style.visibility = toVisibility;
+				res = true;
+			}
+
+			let isVisibleVerScroll = this.view.getShowVerticalScroll();
+			let scrollWidth = this.view && this.view.defaults && this.view.defaults.scroll ? this.view.defaults.scroll.widthPx : 14;
+
+			this.hsb.style.right = isVisibleVerScroll ? scrollWidth + "px" : "0px";
+
+			if (!this.view.Api.isMobileVersion) {
+				let cornerStyle = val && isVisibleVerScroll ? "visible" : "hidden";
+				let corner = document.getElementById("ws-scrollbar-corner");
+				if (corner) {
+					corner.style.visibility = cornerStyle;
+				}
+			}
+			return res;
+		};
+
+		asc_CEventsController.prototype.showVerticalScroll = function (val) {
+			if (!this.vsb || !this.vsb.style) {
+				return;
+			}
+
+			let toVisibility = val ? "visible" : "hidden";
+			let res;
+			if (this.vsb.style.visibility === toVisibility) {
+				res = false;
+			} else {
+				this.vsb.style.visibility = toVisibility;
+				res = true;
+			}
+			this.vsb.style.visibility = toVisibility;
+			let isVisibleHorScroll = this.view.getShowHorizontalScroll();
+			let scrollWidth = this.view && this.view.defaults && this.view.defaults.scroll ? this.view.defaults.scroll.heightPx : 14;
+
+			this.vsb.style.bottom = isVisibleHorScroll ? scrollWidth + "px" : "0px";
+
+			if (!this.view.Api.isMobileVersion) {
+				let cornerStyle = val && isVisibleHorScroll ? "visible" : "hidden";
+				let corner = document.getElementById("ws-scrollbar-corner");
+				if (corner) {
+					corner.style.visibility = cornerStyle;
+				}
+			}
+			return res;
 		};
 
 		asc_CEventsController.prototype.setSkipCellEditor = function (val) {

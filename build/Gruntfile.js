@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -76,7 +76,13 @@ module.exports = function(grunt) {
 	function writeScripts(config, name) {
 		const develop = '../develop/sdkjs/';
 		const fileName = 'scripts.js';
-		const files = ['../vendor/polyfill.js', '../common/applyDocumentChanges.js', '../common/AllFonts.js'].concat(getFilesMin(config), getFilesAll(config));
+		let files = ['../vendor/polyfill.js', '../common/AllFonts.js'];
+		if (grunt.option('compiled')) {
+			//todo set window['AscNotLoadAllScript'] = false; (in applyDocumentChanges.js)
+			files.push(deploy + name + '/sdk-all-min.js');
+		} else {
+			files = files.concat(['../common/applyDocumentChanges.js'], getFilesMin(config), getFilesAll(config));
+		}
 		fixUrl(files, '../../../../sdkjs/build/');
 
 		grunt.file.write(path.join(develop, name, fileName), 'var sdk_scripts = [\n\t"' + files.join('",\n\t"') + '"\n];');
@@ -87,6 +93,7 @@ module.exports = function(grunt) {
 		this.word = null;
 		this.cell = null;
 		this.slide = null;
+		this.visio = null;
 
 		this.append(pathConfigs);
 	}
@@ -126,9 +133,10 @@ module.exports = function(grunt) {
 		appendOption.call(this, 'word');
 		appendOption.call(this, 'cell');
 		appendOption.call(this, 'slide');
+		appendOption.call(this, 'visio');
 	};
 	CConfig.prototype.valid = function () {
-		return this.externs && this.word && this.cell && this.slide;
+		return this.externs && this.word && this.cell && this.slide && this.visio;
 	};
 
 	function getExterns(config) {
@@ -170,6 +178,7 @@ module.exports = function(grunt) {
 	const word = path.join(deploy, 'word');
 	const cell = path.join(deploy, 'cell');
 	const slide = path.join(deploy, 'slide');
+	const visio = path.join(deploy, 'visio');
 
 	const level = grunt.option('level') || 'ADVANCED';
 	const formatting = grunt.option('formatting') || '';
@@ -190,6 +199,7 @@ module.exports = function(grunt) {
 		{
 			cwd: '../common/',
 			src: [
+				'Drawings/Format/path-boolean-min.js',
 				'Charts/ChartStyles.js',
 				'SmartArts/SmartArtData/*',
 				'SmartArts/SmartArtDrawing/*',
@@ -203,7 +213,8 @@ module.exports = function(grunt) {
 				'libfont/engine/*',
 				'spell/spell/*',
 				'hash/hash/*',
-				'zlib/engine/*'
+				'zlib/engine/*',
+				'serviceworker/*'
 			],
 			dest: path.join(deploy, 'common'),
 			name: 'common'
@@ -222,7 +233,10 @@ module.exports = function(grunt) {
 		},
 		{
 			cwd: '../pdf/',
-			src: ['src/engine/*'],
+			src: [
+				'src/engine/*',
+				'src/annotations/stamps.json'
+			],
 			dest: path.join(deploy, 'pdf'),
 			name: 'pdf'
 		}
@@ -230,6 +244,7 @@ module.exports = function(grunt) {
 	const configWord = configs.word['sdk'];
 	const configCell = configs.cell['sdk'];
 	const configSlide = configs.slide['sdk'];
+	const configVisio = configs.visio['sdk'];
 
 	const compilerArgs = getExterns(configs.externs);
 	if (formatting) {
@@ -295,6 +310,10 @@ module.exports = function(grunt) {
 		grunt.initConfig(getCompileConfig(getFilesMin(configSlide), getFilesAll(configSlide), 'sdk-all-min', 'sdk-all', 'slide', path.join(slide , '/')));
 		grunt.task.run('closure-compiler');
 	});
+	grunt.registerTask('compile-visio', 'Compile Visio SDK', function () {
+		grunt.initConfig(getCompileConfig(getFilesMin(configVisio), getFilesAll(configVisio), 'sdk-all-min', 'sdk-all', 'visio', path.join(visio , '/')));
+		grunt.task.run('closure-compiler');
+	});
 	grunt.registerTask('copy-maps', 'Copy maps from deploy to build', function() {
 		grunt.initConfig({
 			copy: {
@@ -345,7 +364,23 @@ module.exports = function(grunt) {
 							}
 						}
 					]
-				}
+				},
+				// visio: {
+					// files: [
+						// {
+							// expand: true,
+							// cwd: visio,
+							// src: [
+								// 'sdk-all-min.js.map',
+								// 'sdk-all.js.map',
+							// ],
+							// dest: 'maps',
+							// rename: function (dest, src) {
+								// return path.join(dest , src.replace('sdk', 'visio'));
+							// }
+						// }
+					// ]
+				// }
 			},
 			clean: {
 				deploy: {
@@ -359,13 +394,15 @@ module.exports = function(grunt) {
 						path.join(cell, 'sdk-all.js.map'),
 						path.join(slide, 'sdk-all-min.js.map'),
 						path.join(slide, 'sdk-all.js.map'),
+						// path.join(visio, 'sdk-all-min.js.map'),
+						// path.join(visio, 'sdk-all.js.map'),
 					]
 				}
 			}
 		});
 		grunt.task.run('copy', 'clean');
 	});
-	grunt.registerTask('compile-sdk', ['compile-word', 'compile-cell', 'compile-slide']);
+	grunt.registerTask('compile-sdk', ['compile-word', 'compile-cell', 'compile-slide'/* , 'compile-visio' */]);
 	grunt.registerTask('clean-deploy', 'Clean deploy folder before deploying', function () {
 		grunt.initConfig({
 			clean: {
@@ -484,6 +521,7 @@ module.exports = function(grunt) {
 		writeScripts(configs.word['sdk'], 'word');
 		writeScripts(configs.cell['sdk'], 'cell');
 		writeScripts(configs.slide['sdk'], 'slide');
+		// writeScripts(configs.visio['sdk'], 'visio');
 	});
 	const defaultTasks = ['clean-deploy', 'compile-sdk', 'copy-other'];
 	if (grunt.option('map')) {

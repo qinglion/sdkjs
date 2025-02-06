@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -396,12 +396,19 @@
 			
 			if (form.IsRadioButton())
 			{
-				let key = form.GetRadioButtonGroupKey();
-				if (key && "" !== key)
-					continue;
+				let groupKey = form.GetRadioButtonGroupKey();
+				if (!groupKey || "" === groupKey)
+				{
+					groupKey = keyGenerator.GetNewKey(form);
+					form.SetRadioButtonGroupKey(groupKey);
+				}
 				
-				key = keyGenerator.GetNewKey(form);
-				form.SetRadioButtonGroupKey(key);
+				let choice = form.GetFormKey();
+				if (!choice || "" === choice)
+				{
+					choice = keyGenerator.GetNewChoice(form);
+					form.SetFormKey(choice);
+				}
 			}
 			else
 			{
@@ -419,6 +426,7 @@
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	CFormsManager.prototype.CheckFormsList = function()
 	{
+		_flushFormToCheck();
 		if (!this.UpdateList)
 			return;
 
@@ -613,8 +621,56 @@
 	{
 		return (form && form.IsUseInDocument());
 	};
+	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	// Здесь мы копим список форм, которые еще никуда не добавлены и надо будет их обработать при первом обращении
+	let formToCheck = [];
+	function _registerForm(form)
+	{
+		let formId = form.GetId();
+		if (formToCheck[formId])
+			delete formToCheck[formId];
+		
+		let para = form.GetParagraph();
+		if (!para)
+			return;
+		
+		let logicDocument = para.GetLogicDocument();
+		if (!logicDocument || !logicDocument.IsDocumentEditor())
+			return;
+		
+		logicDocument.GetFormsManager().Register(form);
+	}
+	function _flushFormToCheck()
+	{
+		formToCheck.forEach(_registerForm);
+		formToCheck.length = 0;
+	}
+	function registerForm(form)
+	{
+		let para = form.GetParagraph();
+		if (!para || !para.GetLogicDocument())
+		{
+			formToCheck.push(form);
+			return;
+		}
+		
+		_registerForm(form);
+	}
+	function unregisterForm(form)
+	{
+		let para = form.GetParagraph();
+		let logicDocument = para.GetLogicDocument();
+		if (!logicDocument || !logicDocument.IsDocumentEditor())
+			return;
+		
+		logicDocument.GetFormsManager().Unregister(form);
+	}
 	//--------------------------------------------------------export----------------------------------------------------
 	window['AscWord'] = window['AscWord'] || {};
-	window['AscWord'].CFormsManager = CFormsManager;
+	window['AscWord'].CFormsManager  = CFormsManager;
+	window['AscWord'].registerForm   = registerForm;
+	window['AscWord'].unregisterForm = unregisterForm;
+	
+	
 
 })(window);

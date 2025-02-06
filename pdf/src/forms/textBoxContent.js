@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -43,6 +43,12 @@
 			CS : {Name : AscPDF.DEFAULT_FIELD_FONT, Index : -1}
 		}
 	});
+	STYLES.Default.ParaPr.Merge({
+		KeepLines : false,
+		KeepNext : false,
+		WidowControl : false,
+		PageBreakBefore : false
+	});
 	
 	/**
 	 * Class for working with rich text
@@ -60,6 +66,7 @@
 		this.PdfDoc    			= pdfDocument;
 		this.isFormatContent	= !!isFormatContent;
 		
+		this.transform = new AscCommon.CMatrix();
 		this.SetUseXLimit(false);
 		this.MoveCursorToStartPos();
 	}
@@ -71,18 +78,7 @@
 		return this.PdfDoc;
 	};
 	CTextBoxContent.prototype.SetAlign = function(alignType) {
-		let _alignType = AscCommon.align_Left;
-		switch (alignType) {
-			case AscPDF.ALIGN_TYPE.left:
-				_alignType = AscCommon.align_Left;
-				break;
-			case AscPDF.ALIGN_TYPE.center:
-				_alignType = AscCommon.align_Center;
-				break;
-			case AscPDF.ALIGN_TYPE.right:
-				_alignType = AscCommon.align_Right;
-				break;
-		}
+		let _alignType = getInternalAlignByPdfType(alignType);
 		
 		this.SetApplyToAll(true);
 		this.SetParagraphAlign(_alignType);
@@ -134,18 +130,6 @@
 		this.AddToParagraph(new AscWord.ParaTextPr({Italic : bItalic}));
 		this.SetApplyToAll(false);
 	};
-	CTextBoxContent.prototype.getCurrentRun = function() {
-		let paragraph = this.GetElement(0);
-		if (!paragraph || !paragraph.IsParagraph())
-			return null;
-		
-		let paraPos = paragraph.Get_ParaContentPos(false);
-		let run = paragraph.GetElementByPos(paraPos);
-		if (!run || !(run instanceof AscWord.CRun))
-			return null;
-		
-		return run;
-	};
 	CTextBoxContent.prototype.replaceAllText = function(value) {
 		let codePoints = typeof(value) === "string" ? value.codePointsArray() : value;
 		
@@ -161,8 +145,17 @@
 		run.ClearContent();
 		
 		if (codePoints) {
-			if (this.ParentPDF.IsComb && this.ParentPDF.IsComb() && codePoints.length > this.ParentPDF.GetCharLimit()) {
-				codePoints.length = this.ParentPDF.GetCharLimit();
+			if (this.ParentPDF && this.ParentPDF.GetCharLimit && 0 !== this.ParentPDF.GetCharLimit()) {
+				let oDoc        = this.ParentPDF.GetDocument();
+				let isOnOpen    = oDoc.Viewer.IsOpenFormsInProgress;
+				let nCharLimit	= this.ParentPDF.GetCharLimit();
+				
+				if (false == isOnOpen) {
+					let nCharsCount = AscWord.GraphemesCounter.GetCount(codePoints, this.GetCalculatedTextPr());
+					
+					if (nCharsCount > nCharLimit)
+						codePoints.length = nCharLimit;
+				}
 			}
 
 			for (let index = 0, inRunIndex = 0, count = codePoints.length; index < count; ++index) {
@@ -172,6 +165,49 @@
 			}
 			this.MoveCursorToEndPos();
 		}
+	};
+	CTextBoxContent.prototype.EnterText = function(value) {
+		let oParentPDF = this.ParentPDF;
+		let isAllowLineBreak = oParentPDF.IsForm() && oParentPDF.GetType() == AscPDF.FIELD_TYPES.text && oParentPDF.IsMultiline();
+
+		if (undefined === value
+			|| null === value
+			|| (Array.isArray(value) && !value.length))
+			return false;
+		
+		let codePoints = typeof(value) === "string" ? value.codePointsArray() : value;
+		
+		if (Array.isArray(codePoints)) {
+			for (let index = 0, count = codePoints.length; index < count; ++index) {
+				let codePoint = codePoints[index];
+				addToParagraph.call(this, codePoint);
+			}
+		}
+		else {
+			addToParagraph.call(this, codePoints);
+		}
+		
+		function addToParagraph(codePoint) {
+			if ((10 === codePoint || 13 === codePoint)) {
+				if (isAllowLineBreak) {
+					this.AddToParagraph(new AscWord.CRunBreak(AscWord.break_Line));
+				}
+				else {
+					this.AddToParagraph(new AscWord.CRunSpace(32));
+				}
+			}
+			else if (9 === codePoint) {
+				this.AddToParagraph(new AscWord.CRunSpace(32));
+			}
+			else if (AscCommon.IsSpace(codePoint)) {
+				this.AddToParagraph(new AscWord.CRunSpace(codePoint));
+			}
+			else {
+				this.AddToParagraph(new AscWord.CRunText(codePoint));
+			}
+		}
+
+		return true;
 	};
 	CTextBoxContent.prototype.getAllText = function() {
 		let paragraph = this.GetElement(0);
@@ -187,11 +223,52 @@
 		if (this.ParentPDF && this.ParentPDF.OnContentChange && this.isFormatContent == false)
 			this.ParentPDF.OnContentChange();
 	};
+	CTextBoxContent.prototype.Get_ParentTextTransform = function() {
+		return this.transform;
+	};
+	CTextBoxContent.prototype.Get_AbsolutePage = function() {
+		return this.ParentPDF.GetPage();
+	};
+	CTextBoxContent.prototype.Get_ParentTextTransform = function() {};
 	
+	function getInternalAlignByPdfType(nPdfType) {
+		let nInternalType = AscCommon.align_Left;
+		switch (nPdfType) {
+			case AscPDF.ALIGN_TYPE.left:
+				nInternalType = AscCommon.align_Left;
+				break;
+			case AscPDF.ALIGN_TYPE.center:
+				nInternalType = AscCommon.align_Center;
+				break;
+			case AscPDF.ALIGN_TYPE.right:
+				nInternalType = AscCommon.align_Right;
+				break;
+		}
+
+		return nInternalType;
+	}
+
+	function getPdfTypeAlignByInternal(nInternalType) {
+		let nPdfType = AscPDF.ALIGN_TYPE.left;
+		switch (nInternalType) {
+			case AscCommon.align_Left:
+				nPdfType = AscPDF.ALIGN_TYPE.left;
+				break;
+			case AscCommon.align_Center:
+				nPdfType = AscPDF.ALIGN_TYPE.center;
+				break;
+			case AscCommon.align_Right:
+				nPdfType = AscPDF.ALIGN_TYPE.right;
+				break;
+		}
+
+		return nPdfType;
+	}
 	//--------------------------------------------------------export----------------------------------------------------
 	window['AscPDF'] = window['AscPDF'] || {};
-	window['AscPDF'].CTextBoxContent = CTextBoxContent;
-	
+
+	window['AscPDF'].getInternalAlignByPdfType	= getInternalAlignByPdfType;
+	window['AscPDF'].getPdfTypeAlignByInternal	= getPdfTypeAlignByInternal;
+	window['AscPDF'].CTextBoxContent			= CTextBoxContent;
 	
 })(window);
-

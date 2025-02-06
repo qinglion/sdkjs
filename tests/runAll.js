@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -36,15 +36,30 @@ const allTests = [
 	'cell/spreadsheet-calculation/FormulaTests.html',
 	'cell/spreadsheet-calculation/PivotTests.html',
 	'cell/spreadsheet-calculation/CopyPasteTests.html',
-	'cell/spreadsheet-calculation/AutoFilterTests.html',
+	'cell/spreadsheet-calculation/SheetStructureTests.html',
+	'cell/spreadsheet-calculation/autoFilterTests.html',
+	'cell/spreadsheet-calculation/UserProtectedRangesTest.html',
+	'cell/spreadsheet-calculation/FormulaTrace.html',
+	'cell/spreadsheet-calculation/GoalSeekTests.html',
+	'cell/spreadsheet-calculation/NumFormatParse.html',
+	'cell/spreadsheet-calculation/DataValidationTests.html',
+	'cell/spreadsheet-calculation/conditionalFormattingTests.html',
+	'cell/spreadsheet-calculation/ExternalReference.html',
+	'cell/spreadsheet-calculation/SheetMemoryTest.html',
+	
 	'word/unit-tests/paragraphContentPos.html',
+	'word/unit-tests/deleted-text-recovery.html',
 	'word/content-control/block-level/cursorAndSelection.html',
+	'word/content-control/inline-level/checkbox.html',
 	'word/content-control/inline-level/cursorAndSelection.html',
+	'word/content-control/inline-level/date-time.html',
+	'word/custom-xml/custom-xml.html',
 	'word/document-calculation/floating-position/drawing.html',
 	'word/document-calculation/paragraph.html',
 	'word/document-calculation/table/correctBadTable.html',
 	'word/document-calculation/table/flowTablePosition.html',
 	'word/document-calculation/table/pageBreak.html',
+	'word/document-calculation/table/table-flow.html',
 	'word/document-calculation/table/table-header.html',
 	'word/document-calculation/textShaper/textShaper.html',
 	'word/document-calculation/text-hyphenator/text-hyphenator.html',
@@ -54,19 +69,26 @@ const allTests = [
 	'word/numbering/numberingCalculation.html',
 	'word/numbering/numberingAutocorrect.html',
 	'word/api/api.html',
+	'word/api/cross-ref.html',
 	'word/api/textInput.html',
 	'word/styles/displayStyle.html',
 	'word/styles/paraPr.html',
 	'word/styles/styleApplicator.html',
+	'word/text-autocorrection/as-you-type.html',
 	'word/plugins/pluginsApi.html',
+	'word/revisions/document-content.html',
 	'word/revisions/paragraph.html',
 	'word/merge-documents/mergeDocuments.html',
+	'word/math-autocorrection/math-autocorrection.html',
+	'word/change-case/change-case.html',
 
 	'cell/shortcuts/shortcuts.html',
 	'slide/shortcuts/shortcuts.html',
 	'word/shortcuts/shortcuts.html',
 
-	'oform/xml/oformXml.html'
+	// related ooxml tests
+	'oform/xml/oformXml.html',
+	'word/custom-xml/custom-xml-ooxml.html',
 ];
 
 const maxTestsAtOnce = require('events').defaultMaxListeners;

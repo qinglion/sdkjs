@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -56,6 +56,10 @@ CParagraphContentBase.prototype.GetLogicDocument = function()
 {
 	return this.Paragraph ? this.Paragraph.GetLogicDocument() : null;
 };
+CParagraphContentBase.prototype.GetLinesCount = function()
+{
+	return 0;
+};
 CParagraphContentBase.prototype.CanSplit = function()
 {
 	return false;
@@ -69,6 +73,9 @@ CParagraphContentBase.prototype.IsStopCursorOnEntryExit = function()
 	return false;
 };
 CParagraphContentBase.prototype.PreDelete = function()
+{
+};
+CParagraphContentBase.prototype.GetCurrentPermRanges = function(permRanges, isCurrent)
 {
 };
 /**
@@ -248,7 +255,7 @@ CParagraphContentBase.prototype.UpdateBookmarks = function(oManager)
 {
 };
 /**
- * @param oSpellCheckerEngine {CParagraphSpellCheckerCollector}
+ * @param oSpellCheckerEngine {AscWord.CParagraphSpellCheckerCollector}
  * @param nDepth {number}
  */
 CParagraphContentBase.prototype.CheckSpelling = function(oSpellCheckerEngine, nDepth)
@@ -463,6 +470,14 @@ CParagraphContentBase.prototype.Cursor_Is_NeededCorrectPos = function()
 	return true;
 };
 CParagraphContentBase.prototype.Cursor_Is_End = function()
+{
+	return true;
+};
+CParagraphContentBase.prototype.IsStartPos = function(contentPos, depth)
+{
+	return true;
+};
+CParagraphContentBase.prototype.IsEndPos = function(contentPos, depth)
 {
 	return true;
 };
@@ -839,6 +854,13 @@ CParagraphContentBase.prototype.IsStartFromNewLine = function()
 	return false;
 };
 /**
+ * Удаляем из параграфа заданный элемент, если он тут есть
+ * @param element
+ */
+CParagraphContentBase.prototype.RemoveElement = function(element)
+{
+};
+/**
  * Пробегаемся по все ранам с заданной функцией
  * @param fCheck - функция проверки содержимого рана
  * @param {AscWord.CParagraphContentPos} oStartPos
@@ -951,6 +973,21 @@ CParagraphContentBase.prototype.createDuplicateForSmartArt = function(oPr)
  */
 CParagraphContentBase.prototype.CalculateTextToTable = function(oEngine){};
 
+CParagraphContentBase.prototype.GetAllPermRangeMarks = function(marks)
+{
+	return [];
+};
+CParagraphContentBase.prototype.IsUseInDocument = function()
+{
+	return !!(this.Paragraph
+		&& this.Paragraph.IsUseInDocument()
+		&& this.IsUseInParagraph());
+};
+CParagraphContentBase.prototype.IsUseInParagraph = function()
+{
+	return (this.Paragraph && !!this.Paragraph.Get_PosByElement(this));
+};
+
 /**
  * Это базовый класс для элементов содержимого(контент) параграфа, у которых есть свое содержимое.
  * @constructor
@@ -1029,6 +1066,10 @@ CParagraphContentWithContentBase.prototype.getRangePos = function(line, range)
 		this.protected_GetRangeEndPos(_line, _range),
 	];
 };
+CParagraphContentWithContentBase.prototype.GetLinesCount = function()
+{
+	return this.protected_GetLinesCount();
+};
 
 // Здесь предполагается, что строки с номерами меньше, чем LineIndex заданы, а также заданы и отрезки в строке 
 // LineIndex, с номерами меньшими, чем RangeIndex. В данной функции удаляются все записи, которые идут после LineIndex,
@@ -1098,16 +1139,6 @@ CParagraphContentWithContentBase.prototype.private_UpdateShapeText = function()
 {
 	if (this.Paragraph)
 		this.Paragraph.RecalcInfo.NeedShapeText();
-};
-CParagraphContentWithContentBase.prototype.IsUseInDocument = function()
-{
-	return !!(this.Paragraph
-		&& this.Paragraph.IsUseInDocument()
-		&& this.IsUseInParagraph());
-};
-CParagraphContentWithContentBase.prototype.IsUseInParagraph = function()
-{
-	return (this.Paragraph && !!this.Paragraph.Get_PosByElement(this));
 };
 CParagraphContentWithContentBase.prototype.SelectThisElement = function(nDirection, isUseInnerSelection)
 {
@@ -1223,13 +1254,10 @@ CParagraphContentWithContentBase.prototype.protected_GetPrevRangeEndPos = functi
 
     return LineIndex == 0 && RangeIndex == 0 ? 0 : this.Lines[RangeOffset + 1];
 };
-CParagraphContentWithContentBase.prototype.private_UpdateTrackRevisions = function()
+CParagraphContentWithContentBase.prototype.updateTrackRevisions = function()
 {
-    if (this.Paragraph && this.Paragraph.LogicDocument && this.Paragraph.LogicDocument.GetTrackRevisionsManager)
-    {
-        var RevisionsManager = this.Paragraph.LogicDocument.GetTrackRevisionsManager();
-        RevisionsManager.CheckElement(this.Paragraph);
-    }
+	if (this.Paragraph)
+		this.Paragraph.updateTrackRevisions();
 };
 CParagraphContentWithContentBase.prototype.CanSplit = function()
 {
@@ -1268,6 +1296,20 @@ CParagraphContentWithContentBase.prototype.OnContentChange = function()
 		let oParagraph = this.GetParagraph();
 		if (oParagraph)
 			oParagraph.OnContentChange();
+	}
+};
+CParagraphContentWithContentBase.prototype.OnTextPrChange = function()
+{
+	let oParent = this.GetParent();
+	if (oParent && oParent.OnTextPrChange)
+	{
+		oParent.OnTextPrChange();
+	}
+	else
+	{
+		let oParagraph = this.GetParagraph();
+		if (oParagraph)
+			oParagraph.OnTextPrChange();
 	}
 };
 
@@ -1643,7 +1685,7 @@ CParagraphContentWithParagraphLikeContent.prototype.Check_Content = function()
 CParagraphContentWithParagraphLikeContent.prototype.Add_ToContent = function(Pos, Item, UpdatePosition)
 {
     this.Content.splice(Pos, 0, Item);
-    this.private_UpdateTrackRevisions();
+    this.updateTrackRevisions();
 	this.private_UpdateDocumentOutline();
     this.private_CheckUpdateBookmarks([Item]);
 	this.private_UpdateSelectionPosOnAdd(Pos, 1);
@@ -1728,7 +1770,7 @@ CParagraphContentWithParagraphLikeContent.prototype.Remove_FromContent = functio
 
 	var DeletedItems = this.Content.slice(Pos, Pos + Count);
 	this.Content.splice(Pos, Count);
-    this.private_UpdateTrackRevisions();
+    this.updateTrackRevisions();
 	this.private_UpdateDocumentOutline();
 	this.private_CheckUpdateBookmarks(DeletedItems);
 	this.private_UpdateSelectionPosOnRemove(Pos, Count);
@@ -2382,6 +2424,18 @@ CParagraphContentWithParagraphLikeContent.prototype.Get_Text = function(Text)
     {
         this.Content[CurPos].Get_Text( Text );
     }
+};
+CParagraphContentWithParagraphLikeContent.prototype.GetAllPermRangeMarks = function(marks)
+{
+	if (!marks)
+		marks = [];
+	
+	for (let i = 0, count = this.Content.length; i < count; ++i)
+	{
+		this.Content[i].GetAllPermRangeMarks(marks);
+	}
+	
+	return marks;
 };
 CParagraphContentWithParagraphLikeContent.prototype.GetAllParagraphs = function(Props, ParaArray)
 {
@@ -3079,6 +3133,34 @@ CParagraphContentWithParagraphLikeContent.prototype.Cursor_Is_End = function()
     }
 
     return this.Content[CurPos].Cursor_Is_End();
+};
+CParagraphContentWithParagraphLikeContent.prototype.IsStartPos = function(contentPos, depth)
+{
+	if (depth >= contentPos.Depth)
+		return true;
+	
+	let pos = contentPos.Get(depth);
+	if (!this.Content[pos])
+		return false;
+	
+	if (pos !== 0)
+		return false;
+	
+	return this.Content[pos].IsStartPos(contentPos, depth + 1);
+};
+CParagraphContentWithParagraphLikeContent.prototype.IsEndPos = function(contentPos, depth)
+{
+	if (depth >= contentPos.Depth)
+		return true;
+	
+	let pos = contentPos.Get(depth);
+	if (!this.Content[pos])
+		return true;
+	
+	if (pos !== this.Content.length - 1)
+		return false;
+	
+	return this.Content[pos].IsEndPos(contentPos, depth + 1);
 };
 CParagraphContentWithParagraphLikeContent.prototype.MoveCursorToStartPos = function()
 {
@@ -3966,7 +4048,7 @@ CParagraphContentWithParagraphLikeContent.prototype.RestartSpellCheck = function
     }
 };
 /**
- * @param oSpellCheckerEngine {CParagraphSpellCheckerCollector}
+ * @param oSpellCheckerEngine {AscWord.CParagraphSpellCheckerCollector}
  * @param nDepth {number}
  */
 CParagraphContentWithParagraphLikeContent.prototype.CheckSpelling = function(oSpellCheckerEngine, nDepth)
@@ -4221,14 +4303,6 @@ CParagraphContentWithParagraphLikeContent.prototype.RejectRevisionChanges = func
         }
 
         this.Correct_Content();
-    }
-};
-CParagraphContentWithParagraphLikeContent.prototype.private_UpdateTrackRevisions = function()
-{
-    if (this.Paragraph && this.Paragraph.LogicDocument && this.Paragraph.LogicDocument.GetTrackRevisionsManager)
-    {
-        var RevisionsManager = this.Paragraph.LogicDocument.GetTrackRevisionsManager();
-        RevisionsManager.CheckElement(this.Paragraph);
     }
 };
 CParagraphContentWithParagraphLikeContent.prototype.private_CheckUpdateBookmarks = function(Items)
@@ -4521,6 +4595,14 @@ CParagraphContentWithParagraphLikeContent.prototype.PreDelete = function()
 
 	this.RemoveSelection();
 };
+CParagraphContentWithParagraphLikeContent.prototype.GetCurrentPermRanges = function(permRanges, isCurrent)
+{
+	let endPos = isCurrent ? Math.min(this.State.ContentPos, this.Content.length - 1) : this.Content.length - 1;
+	for (let pos = 0; pos <= endPos; ++pos)
+	{
+		this.Content[pos].GetCurrentPermRanges(permRanges, isCurrent && pos === endPos);
+	}
+};
 CParagraphContentWithParagraphLikeContent.prototype.GetCurrentComplexFields = function(arrComplexFields, isCurrent, isFieldPos)
 {
 	var nEndPos = isCurrent ? this.State.ContentPos : this.Content.length - 1;
@@ -4588,6 +4670,23 @@ CParagraphContentWithParagraphLikeContent.prototype.CanAddComment = function()
 	}
 
 	return true;
+};
+CParagraphContentWithParagraphLikeContent.prototype.RemoveElement = function(element)
+{
+	for (let i = 0, count = this.Content.length; i < count; ++i)
+	{
+		let item = this.Content[i];
+		if (item === element)
+		{
+			this.RemoveFromContent(i, 1);
+			return true;
+		}
+		else if (item.RemoveElement(element))
+		{
+			return true;
+		}
+	}
+	return false;
 };
 CParagraphContentWithParagraphLikeContent.prototype.CheckRunContent = function(fCheck, oStartPos, oEndPos, nDepth, oCurrentPos, isForward)
 {
@@ -4890,3 +4989,42 @@ CParagraphContentWithParagraphLikeContent.prototype.Save_Changes = function(Data
 CParagraphContentWithParagraphLikeContent.prototype.Load_Changes = function(Reader){};
 CParagraphContentWithParagraphLikeContent.prototype.Write_ToBinary2 = function(Writer){};
 CParagraphContentWithParagraphLikeContent.prototype.Read_FromBinary2 = function(Reader){};
+
+// TODO: Сделать и перенести в коммоны для изменений
+/**
+ * Универсальный метод для проверки лока для простых изменений внутри параграфа
+ */
+function private_ParagraphContentChangesCheckLock(lockData)
+{
+	let obj = this.Class;
+	if (!this.IsContentChange() && lockData && lockData.isFillingForm())
+		return lockData.lock();
+	
+	let isForm = false;
+	let isCC   = false;
+	while (obj)
+	{
+		if (obj.Lock)
+			obj.Lock.Check(obj.Get_Id());
+		
+		isForm = isForm || (obj instanceof AscWord.CInlineLevelSdt && obj.IsForm());
+		isCC   = isCC || obj instanceof AscWord.CInlineLevelSdt;
+		
+		if (!(obj instanceof AscWord.Paragraph) && obj.GetParent)
+			obj = obj.GetParent()
+		else
+			obj = null;
+	}
+	
+	if (this.IsContentChange())
+	{
+		if (isForm && lockData && !lockData.isSkipFormCheck())
+			lockData.lock();
+
+		if (!isCC && lockData && lockData.isFillingForm())
+			lockData.lock();
+	}
+}
+//--------------------------------------------------------export----------------------------------------------------
+AscWord.ParagraphContentBase                     = CParagraphContentBase;
+AscWord.ParagraphContentWithParagraphLikeContent = CParagraphContentWithParagraphLikeContent;

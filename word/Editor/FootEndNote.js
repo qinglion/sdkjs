@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -274,7 +274,12 @@ CFootEndnote.prototype.GetRef = function()
 {
 	return this.Ref;
 };
+CFootEndnote.prototype.IsInPermRange = function()
+{
+	return this.Ref ? this.Ref.IsInPermRange() : false;
+};
 
 //--------------------------------------------------------export----------------------------------------------------
 window['AscCommonWord'] = window['AscCommonWord'] || {};
 window['AscCommonWord'].CFootEndnote = CFootEndnote;
+window['AscWord'].FootEndnote = CFootEndnote;

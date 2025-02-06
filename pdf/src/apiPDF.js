@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2019
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -747,7 +747,7 @@
         //                         aOpt[i] = arrValues[i];
         //                     }
         //                     if (oField.GetExportValue() == apiExpValue) {
-        //                         apiValueToSet = oField.GetApiValue();
+        //                         apiValueToSet = oField.GetParentValue();
         //                     }
         //                 }
         //             }
@@ -868,7 +868,7 @@
                             field.SetValue(value);
                         });
 
-                        this.field.SetApiValue(value);
+                        this.field.SetParentValue(value);
 
                         if (oCalcInfo.IsInProgress() == false && oDoc.IsNeedDoCalculate()) {
                             oDoc.DoCalculateFields(this.field);
@@ -876,7 +876,7 @@
                         }
                     }
                     else {
-                        this.field.SetApiValue(value);
+                        this.field.SetParentValue(value);
                     }
                 }
                 else {
@@ -885,7 +885,7 @@
                 
             },
             get: function() {
-                return this.field.GetApiValue();
+                return this.field.GetParentValue();
             }
         }
     });
@@ -954,7 +954,7 @@
                                 sApiValueToSet = String(nIdx);
                         }
 
-                        this.field.SetApiValue(sApiValueToSet);
+                        this.field.SetParentValue(sApiValueToSet);
                         this.field.GetKid(0).UpdateAll();
     
                         if (oCalcInfo.IsInProgress() == false && oDoc.IsNeedDoCalculate()) {
@@ -963,7 +963,7 @@
                         }
                     }
                     else {
-                        this.field.SetApiValue(sValue);
+                        this.field.SetParentValue(sValue);
                     }
                 }
                 else {
@@ -973,10 +973,10 @@
             get: function() {
                 let aOpt = this.field.GetOptions();
                 if (aOpt) {
-                    return aOpt[this.field.GetApiValue()];
+                    return aOpt[this.field.GetParentValue()];
                 }
                 else {
-                    return this.field.GetApiValue();
+                    return this.field.GetParentValue();
                 }
             }
         }
@@ -1261,7 +1261,7 @@
                         }
                     }
                     else {
-                        this.field.SetApiValue(value);
+                        this.field.SetParentValue(value);
                     }
                 }
                 else {
@@ -1269,7 +1269,7 @@
                 }
             },
             get: function() {
-                let value = this.field.GetApiValue();
+                let value = this.field.GetParentValue();
                 let isNumber = /^\d+(\.\d+)?$/.test(value);
                 return isNumber ? parseFloat(value) : (value != undefined ? value : "");
             }
@@ -1548,7 +1548,7 @@
                         }
                     }
                     else {
-                        this.field.SetApiValue(value);
+                        this.field.SetParentValue(value);
                     }
                 }
                 else {
@@ -1556,7 +1556,7 @@
                 }
             },
             get: function() {
-                let value = this.field.GetApiValue();
+                let value = this.field.GetParentValue();
                 let isNumber = /^\d+(\.\d+)?$/.test(value);
                 return isNumber ? parseFloat(value) : (value != undefined ? value : "");
             }
@@ -1753,7 +1753,7 @@
                         }
                     }
                     else {
-                        this.field.SetApiValue(value);
+                        this.field.SetParentValue(value);
                     }
                 }
                 else {
@@ -1762,7 +1762,7 @@
                 
             },
             get: function() {
-                let value = this.field.GetApiValue();
+                let value = this.field.GetParentValue();
                 let isNumber = /^\d+(\.\d+)?$/.test(value);
                 return isNumber ? parseFloat(value) : (value != undefined ? value : "");
             }

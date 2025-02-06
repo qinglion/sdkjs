@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -451,6 +451,9 @@
 			return false;
 		};
 
+		/**
+		 * @memberOf CGroupShape
+		 */
 		CGroupShape.prototype.draw = function (graphics) {
 			if (this.checkNeedRecalculate && this.checkNeedRecalculate()) {
 				return;
@@ -460,7 +463,7 @@
 				return;
 			}
 			var oClipRect;
-			if (!graphics.IsSlideBoundsCheckerType) {
+			if (!graphics.isBoundsChecker()) {
 				oClipRect = this.getClipRect();
 			}
 			if (oClipRect) {
@@ -511,7 +514,7 @@
 		CGroupShape.prototype.getResultScaleCoefficients = function () {
 			if (this.recalcInfo.recalculateScaleCoefficients) {
 				var cx, cy;
-				if (this.spPr.xfrm.isNotNullForGroup()) {
+				if (this.spPr && this.spPr.xfrm && this.spPr.xfrm.isNotNullForGroup()) {
 
 					var dExtX = this.spPr.xfrm.extX, dExtY = this.spPr.xfrm.extY;
 
@@ -1434,7 +1437,7 @@
 				}
 			}
 		};
-
+		CGroupShape.prototype.recalcSmartArtConnections = function () {};
 		CGroupShape.prototype.Refresh_RecalcData = function (oData) {
 			if (oData) {
 				switch (oData.Type) {
@@ -1449,6 +1452,13 @@
 					case AscDFH.historyitem_GroupShapeRemoveFromSpTree: {
 						if (!this.bDeleted) {
 							this.handleUpdateSpTree();
+							this.recalcSmartArtConnections();
+						}
+						break;
+					}
+					case AscDFH.historyitem_SmartArtDrawing: {
+						if (!this.bDeleted) {
+							this.addToRecalculate();
 						}
 						break;
 					}
@@ -1699,6 +1709,12 @@
 				}
 			}
 			return oCurCandidate;
+		};
+		CGroupShape.prototype.checkDrawingPartWithHistory = function() {};
+		CGroupShape.prototype.generateSmartArtDrawingPart = function () {
+			for (let i = 0; i < this.spTree.length; i += 1) {
+				this.spTree[i].generateSmartArtDrawingPart();
+			}
 		};
 
 		//--------------------------------------------------------export----------------------------------------------------

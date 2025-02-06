@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -251,7 +251,16 @@ function MoveShapeImageTrack(originalObject)
         }
         this.overlayObject.draw(overlay);
     };
+	this.checkDrawingPartWithHistory = function () {
+		if (this.originalObject.checkDrawingPartWithHistory) {
 
+			const newObject = this.originalObject.checkDrawingPartWithHistory();
+			if (newObject) {
+				this.originalObject = newObject;
+				this.originalShape = newObject;
+			}
+		}
+	};
     this.trackEnd = function(bWord, bNoResetCnx)
     {
         if(!this.bIsTracked)
@@ -574,7 +583,11 @@ function MoveGroupTrack(originalObject)
         bounds_checker.Bounds.extY = this.originalObject.extY;
         return bounds_checker.Bounds;
     };
-
+	this.checkDrawingPartWithHistory = function () {
+		if (this.originalObject.checkDrawingPartWithHistory) {
+			this.originalObject.checkDrawingPartWithHistory();
+		}
+	};
     this.trackEnd = function(bWord)
     {
         if(!this.bIsTracked){
@@ -659,23 +672,24 @@ function MoveComment(comment)
         boundsChecker.Bounds.extY = H;
         return boundsChecker.Bounds;
     };
+	this.checkDrawingPartWithHistory = function () {};
 }
 
 function MoveAnnotationTrack(originalObject)
 {
     this.bIsTracked     = false;
     this.originalObject = originalObject;
-    this.x              = originalObject._pagePos.x;
-    this.y              = originalObject._pagePos.y;
-    this.viewer         = editor.getDocumentRenderer();
+    this.x              = originalObject._origRect[0];
+    this.y              = originalObject._origRect[1];
+    this.viewer         = Asc.editor.getDocumentRenderer();
     this.objectToDraw   = originalObject.LazyCopy();
     this.pageIndex      = originalObject.GetPage();
 
     this.track = function(dx, dy, pageIndex)
     {
         this.bIsTracked = true;
-        this.x = this.originalObject._pagePos.x + dx * AscCommon.g_dKoef_mm_to_pix;
-        this.y = this.originalObject._pagePos.y + dy * AscCommon.g_dKoef_mm_to_pix;
+        this.x = originalObject._origRect[0] + dx * g_dKoef_mm_to_pt;
+        this.y = originalObject._origRect[1] + dy * g_dKoef_mm_to_pt;
         this.pageIndex = pageIndex;
 
         this.initCanvas();
@@ -685,8 +699,8 @@ function MoveAnnotationTrack(originalObject)
 
         if (bStart || nPage != this.objectToDraw.GetPage()) {
             let page = this.viewer.drawingPages[nPage];
-            let w = (page.W * AscCommon.AscBrowser.retinaPixelRatio) >> 0;
-            let h = (page.H * AscCommon.AscBrowser.retinaPixelRatio) >> 0;
+            let w = AscCommon.AscBrowser.convertToRetinaValue(page.W, true);
+            let h = AscCommon.AscBrowser.convertToRetinaValue(page.H, true);
 
             this.tmpCanvas = document.createElement('canvas');
             this.tmpCanvas.width = w;
@@ -697,17 +711,25 @@ function MoveAnnotationTrack(originalObject)
     this.draw = function(oDrawer)
     {
         // рисуем на отдельном канвасе
-        this.objectToDraw.SetPage(this.pageIndex);
+        let nPage = this.pageIndex;
+        this.objectToDraw.SetPage(nPage);
 
-        let page = this.viewer.drawingPages[this.objectToDraw.GetPage()];
+        let page = this.viewer.drawingPages[nPage];
         if (!page)
             return;
 
-        if(AscFormat.isRealNumber(this.objectToDraw.GetPage()) && oDrawer.SetCurrentPage)
+        if(AscFormat.isRealNumber(nPage) && oDrawer.SetCurrentPage)
         {
-            oDrawer.SetCurrentPage(this.objectToDraw.GetPage());
+            oDrawer.SetCurrentPage(nPage);
         }
-        
+
+        let oOverlay = oDrawer.m_oOverlay || oDrawer;
+        if(oOverlay)
+        {
+            oOverlay.ClearAll = true;
+            oOverlay.CheckRect(0, 0, 5, 5);
+        }
+
         let xCenter = this.viewer.width >> 1;
 		let yPos = this.viewer.scrollY >> 0;
 		if (this.viewer.documentWidth > this.viewer.width)
@@ -715,8 +737,8 @@ function MoveAnnotationTrack(originalObject)
 			xCenter = (this.viewer.documentWidth >> 1) - (this.viewer.scrollX) >> 0;
 		}
 
-        let w = (page.W * AscCommon.AscBrowser.retinaPixelRatio) >> 0;
-        let h = (page.H * AscCommon.AscBrowser.retinaPixelRatio) >> 0;
+        let w = AscCommon.AscBrowser.convertToRetinaValue(page.W, true);
+        let h = AscCommon.AscBrowser.convertToRetinaValue(page.H, true);
         
         let tmpCanvasCtx = this.tmpCanvas.getContext('2d');
         tmpCanvasCtx.clearRect(0, 0, this.tmpCanvas.width, this.tmpCanvas.height);
@@ -726,25 +748,27 @@ function MoveAnnotationTrack(originalObject)
         
         let oGraphicsPDF, oGraphicsWord;
         oGraphicsPDF = new AscPDF.CPDFGraphics();
-        oGraphicsPDF.Init(tmpCanvasCtx, this.tmpCanvas.width, this.tmpCanvas.height);
+        oGraphicsPDF.Init(tmpCanvasCtx, this.tmpCanvas.width, this.tmpCanvas.height, this.viewer.file.getPageWidth(nPage) , this.viewer.file.getPageHeight(nPage));
         oGraphicsPDF.SetGlobalAlpha(1);
 
         oGraphicsPDF.SetCurPage(this.objectToDraw.GetPage());
-        switch (this.objectToDraw.GetType()) {
+        switch (this.objectToDraw.GetType())
+        {
             case AscPDF.ANNOTATIONS_TYPES.Ink:
             case AscPDF.ANNOTATIONS_TYPES.Line:
             case AscPDF.ANNOTATIONS_TYPES.Square:
             case AscPDF.ANNOTATIONS_TYPES.Polygon:
             case AscPDF.ANNOTATIONS_TYPES.PolyLine:
             case AscPDF.ANNOTATIONS_TYPES.FreeText:
-            case AscPDF.ANNOTATIONS_TYPES.Circle: {
+            case AscPDF.ANNOTATIONS_TYPES.Circle:
+            case AscPDF.ANNOTATIONS_TYPES.Stamp: {
                 let nScale  = AscCommon.AscBrowser.retinaPixelRatio * this.viewer.zoom;
                 oGraphicsWord   = new AscCommon.CGraphics();
 
 				oGraphicsWord.init(tmpCanvasCtx, this.tmpCanvas.width * nScale, this.tmpCanvas.height * nScale,
                     this.tmpCanvas.width * AscCommon.g_dKoef_pix_to_mm, this.tmpCanvas.height * AscCommon.g_dKoef_pix_to_mm);
 				oGraphicsWord.m_oFontManager = AscCommon.g_fontManager;
-				oGraphicsWord.endGlobalAlphaColor = [255, 255, 255];
+				oGraphicsWord.setEndGlobalAlphaColor(255, 255, 255);
 				oGraphicsWord.transform(1, 0, 0, 1, 0, 0);
                 break;
             }
@@ -758,6 +782,9 @@ function MoveAnnotationTrack(originalObject)
         else
             this.objectToDraw.Draw(oGraphicsPDF, oGraphicsWord);
 
+        if (true == this.viewer.isLandscapePage(nPage))
+            x = x + (w - h) / 2;
+
         oDrawer.m_oContext.drawImage(this.tmpCanvas, 0, 0, w, h, x, y, w, h);
     };
 
@@ -767,32 +794,18 @@ function MoveAnnotationTrack(originalObject)
             return;
         }
 
-        let nPage       = this.originalObject.GetPage();
-        let nPageHeight = this.viewer.drawingPages[nPage].H / this.viewer.zoom;
-        let nPageWidth  = this.viewer.drawingPages[nPage].W / this.viewer.zoom;
-
-        // не даем выйти за границы листа
-        let X = Math.max(this.x, 5);
-        let Y = Math.max(this.y, 5);
-
-        if (X + this.originalObject._pagePos.w > nPageWidth) {
-            X = nPageWidth - this.originalObject._pagePos.w;
-        }
-        if (Y + this.originalObject._pagePos.h > nPageHeight) {
-            Y = nPageHeight - this.originalObject._pagePos.h;
-        }
-
-        let oDoc = this.viewer.getPDFDoc();
-        oDoc.CreateNewHistoryPoint();
-        this.originalObject.SetPosition(X, Y);
+        this.originalObject.SetPosition(this.x, this.y);
         this.originalObject.SetPage(this.pageIndex);
-        oDoc.TurnOffHistory();
+        if (this.originalObject.IsFreeText()) {
+            this.originalObject.onAfterMove();
+        }
     };
 
     this.getBounds = function()
     {
         return {x: this.x, y: this.y};
     };
+	this.checkDrawingPartWithHistory = function () {};
     
     this.initCanvas(true);
 }
@@ -906,6 +919,7 @@ function MoveChartObjectTrack(oObject, oChartSpace)
         boundsChecker.Bounds.extY = oObject.extY;
         return boundsChecker.Bounds;
     };
+	this.checkDrawingPartWithHistory = function () {};
 }
 
 
@@ -1004,6 +1018,7 @@ function MoveChartObjectTrack(oObject, oChartSpace)
         oBounds.extY = oBounds.max_y - oBounds.min_y;
         return oBounds;
     };
+	CGuideTrack.prototype.checkDrawingPartWithHistory = function () {};
 
     //--------------------------------------------------------export----------------------------------------------------
     window['AscFormat'] = window['AscFormat'] || {};

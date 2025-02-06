@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -12,7 +12,7 @@
  * warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR  PURPOSE. For
  * details, see the GNU AGPL at: http://www.gnu.org/licenses/agpl-3.0.html
  *
- * You can contact Ascensio System SIA at 20A-12 Ernesta Birznieka-Upisha
+ * You can contact Ascensio System SIA at 20A-6 Ernesta Birznieka-Upish
  * street, Riga, Latvia, EU, LV-1050.
  *
  * The  interactive user interfaces in modified source and object code versions
@@ -34,8 +34,8 @@
 
 (function (window)
 {
-const charCellEditorWidth = 5;
-const cellEditorWidth = 100;
+	const charCellEditorWidth = 5 * 96 / 25.4; // Шейпер возвращает ширину символа 5мм для шрифта размером 10
+	const cellEditorWidth = 100 * 96 / 25.4;
 
 	AscCommonExcel.WorkbookView.prototype._onUpdateCursor = function () {};
 	AscCommonExcel.WorkbookView.prototype._canResize = function () {};
@@ -157,6 +157,9 @@ const cellEditorWidth = 100;
 				setTimeout(Callback, 0)
 			}
 		};
+		let docInfo = new Asc.asc_CDocInfo();
+		docInfo.asc_putTitle("TeSt.xlsx");
+		editor.DocInfo = docInfo;
 
 		window["Asc"]["editor"] = editor;
 	}
@@ -170,7 +173,7 @@ const cellEditorWidth = 100;
 		editor.isOpenOOXInBrowser = false;
 		editor._openDocument(AscCommon.getEmpty());
 		editor._openOnClient();
-		editor.collaborativeEditing = new AscCommonExcel.CCollaborativeEditing({});
+		editor.initCollaborativeEditing({});
 		editor.wb = new AscCommonExcel.WorkbookView(editor.wbModel, editor.controller, editor.handlers, editor.HtmlElement,
 			editor.topLineEditorElement, editor, editor.collaborativeEditing, editor.fontRenderingMode);
 		const wb = editor.wbModel;

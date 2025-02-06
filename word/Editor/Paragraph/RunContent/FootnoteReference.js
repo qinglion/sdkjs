@@ -1,5 +1,5 @@
 /*
- * (c) Copyright Ascensio System SIA 2010-2023
+ * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License (AGPL)
@@ -154,7 +154,10 @@
 		// Bool : is undefined mark ?
 		// false -> String2 : CustomMark
 		this.Footnote = g_oTableId.Get_ById(Reader.GetString2());
-
+		
+		if (this.Footnote)
+			this.Footnote.SetRef(this);
+		
 		if (false === Reader.GetBool())
 			this.CustomMark = Reader.GetString2();
 	};
