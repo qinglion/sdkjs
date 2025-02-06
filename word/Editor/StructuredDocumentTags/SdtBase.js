@@ -1260,3 +1260,17 @@ CSdtBase.prototype.updateDataBinding = function()
 	let customXmlManager = logicDocument.getCustomXmlManager();
 	customXmlManager.updateDataBinding(this);
 };
+/**
+ * @returns {?AscWord.CDocumentColorA}
+ */
+CSdtBase.prototype.getShdColor = function()
+{
+	return this.Pr.ShdColor;
+};
+/**
+ * @return {?AscWord.CDocumentColorA}
+ */
+CSdtBase.prototype.getBorderColor = function()
+{
+	return this.Pr.BorderColor;
+};

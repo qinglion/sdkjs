@@ -2393,7 +2393,6 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 	{
 		var _Line        = this.Lines[CurLine];
 		var _LineMetrics = _Line.Metrics;
-		var EndLinePos   = _Line.EndPos;
 
 		var Y0 = (_Page.Y + _Line.Y - _LineMetrics.Ascent);
 		var Y1 = (_Page.Y + _Line.Y + _LineMetrics.Descent);
@@ -2549,7 +2548,7 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 				isForm     = oInlineSdt.IsForm();
 				oFormShd   = isForm ? oInlineSdt.GetFormShd() : null;
 
-				if (oFormShd && !oFormShd.IsNil())
+				if ((oFormShd && !oFormShd.IsNil()) || oInlineSdt.getShdColor())
 				{
 					isFormShd = true;
 					break;
@@ -2559,7 +2558,8 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 			if (SdtHighlightColor || FormsHighlight || isFormShd)
 			{
 				var oSdtBounds;
-				var oPrevColor = new CDocumentColor(-1, -1, -1);
+				let currentColor = new AscWord.CDocumentColorA(-1, -1, -1, 255);
+				let shdColor = null;
 
 				let isDrawFormHighlight = !pGraphics.isPrintMode;
 				if (true === LogicDocument.ForceDrawFormHighlight)
@@ -2573,6 +2573,7 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 					isForm     = oInlineSdt.IsForm();
 					oSdtBounds = PDSH.InlineSdt[nSdtIndex].GetRangeBounds(CurLine, CurRange);
 					oFormShd   = isForm ? oInlineSdt.GetFormShd() : null;
+					shdColor   = oInlineSdt.getShdColor();
 
 					if (-1 !== fixedForms.indexOf(oInlineSdt) || oInlineSdt.IsFixedForm())
 						continue;
@@ -2591,43 +2592,51 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 
 						if (oInlineSdt.IsCurrentComplexForm() || !isDrawFormHighlight)
 						{
-							if (!oPrevColor.IsEqualRGB(oFormShdColor))
+							if (!currentColor.isEqualRgb(oFormShdColor))
 							{
 								pGraphics.b_color1(oFormShdColor.r, oFormShdColor.g, oFormShdColor.b, 255);
-								oPrevColor.SetFromColor(oFormShdColor);
+								currentColor.setRgb(oFormShdColor);
 							}
 						}
 						else
 						{
 							if ((formHighlightColor = oInlineSdt.GetFormHighlightColor(FormsHighlight)))
 							{
-								if (!oPrevColor.IsEqualRGB(formHighlightColor))
+								if (!currentColor.isEqualRgb(formHighlightColor))
 								{
 									pGraphics.b_color1(formHighlightColor.r, formHighlightColor.g, formHighlightColor.b, 255);
-									oPrevColor.SetFromColor(formHighlightColor);
+									currentColor.setRgb(formHighlightColor);
 								}
 							}
-							else if (!oPrevColor.IsEqualRGB(oFormShdColorDark))
+							else if (!currentColor.isEqualRgb(oFormShdColorDark))
 							{
 								pGraphics.b_color1(oFormShdColorDark.r, oFormShdColorDark.g, oFormShdColorDark.b, 255);
-								oPrevColor.SetFromColor(oFormShdColorDark);
+								currentColor.setRgb(oFormShdColorDark);
 							}
 						}
 					}
 					else if (isForm && (formHighlightColor = oInlineSdt.GetFormHighlightColor(FormsHighlight)) && !oInlineSdt.IsCurrentComplexForm())
 					{
-						if (!oPrevColor.IsEqualRGB(formHighlightColor))
+						if (!currentColor.isEqualRgb(formHighlightColor))
 						{
 							pGraphics.b_color1(formHighlightColor.r, formHighlightColor.g, formHighlightColor.b, 255);
-							oPrevColor.SetFromColor(formHighlightColor);
+							currentColor.setRgb(formHighlightColor);
+						}
+					}
+					else if (shdColor)
+					{
+						if (!currentColor.isEqual(shdColor))
+						{
+							pGraphics.b_color1(shdColor.r, shdColor.g, shdColor.b, shdColor.a);
+							currentColor.setRgba(shdColor);
 						}
 					}
 					else if (!isForm && SdtHighlightColor)
 					{
-						if (!oPrevColor.IsEqualRGB(SdtHighlightColor))
+						if (!currentColor.isEqualRgb(SdtHighlightColor))
 						{
 							pGraphics.b_color1(SdtHighlightColor.r, SdtHighlightColor.g, SdtHighlightColor.b, 255);
-							oPrevColor.SetFromColor(SdtHighlightColor);
+							currentColor.setRgb(SdtHighlightColor);
 						}
 					}
 					else
