@@ -185,6 +185,14 @@
 			isFillIdx = true;
 
 			initialDefaultValue = 1; // number is return type in calculateValue. Solid fill.
+		} else if (cellName === "Font") {
+			// // uses other mechanism
+			// quickStyleCellName = null;
+			// quickStyleModifiersCellName = "QuickStyleFillMatrix";
+			// getModifiersMethod = themes[0].getFillProp;
+			// isFillIdx = true;
+
+			initialDefaultValue = "Calibri";
 		} else {
 			AscCommon.consoleLog("themeval argument error. cell name: " + cellName + " is unknown. return undefined.");
 			return undefined;
@@ -471,6 +479,13 @@
 				result = Number(fillPattern);
 			} else {
 				AscCommon.consoleLog("Error in themeval. result is not changed to appropriate type or quickStyleCellName is not set.");
+			}
+		}
+
+		if (isNaN(quickStyleColor) && isNaN(quickStyleMatrix)) {
+			// other mechanism for theme value calculate is used
+			if (cellName === "Font") {
+				result = theme.getFontScheme().majorFont.latin;
 			}
 		}
 

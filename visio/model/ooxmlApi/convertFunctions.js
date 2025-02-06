@@ -168,10 +168,11 @@
 		 * @param {number} maxHeightScaledIn
 		 * @param {number} currentPageIndex
 		 * @param {number} pagesCount
+		 * @param {Page_Type} pageInfo
 		 * @return {CShape} textCShape
 		 */
 		function getTextCShape(theme, shape, cShape, lineUniFill,
-							   fillUniFill, drawingPageScale, maxHeightScaledIn, currentPageIndex, pagesCount ) {
+							   fillUniFill, drawingPageScale, maxHeightScaledIn, currentPageIndex, pagesCount, pageInfo) {
 			// see 2.2.8	Text [MS-VSDX]-220215
 			/**
 			 * handle QuickStyleVariation cell which can change color (but only if color is a result of ThemeVal)
@@ -241,7 +242,7 @@
 										Math.abs(backgroundColorHSL.L - fillColorHSL.L) >
 										Math.abs(backgroundColorHSL.L - lineColorHSL.L) &&
 										Math.abs(backgroundColorHSL.L - fillColorHSL.L) >
-											Math.abs(backgroundColorHSL.L - textColorHSL.L);
+										Math.abs(backgroundColorHSL.L - textColorHSL.L);
 									if (fillDifferenceIsTheLargest) {
 										textColorRGBA.R = fillColorRGBA.R;
 										textColorRGBA.G = fillColorRGBA.G;
@@ -417,9 +418,10 @@
 			 * @param theme
 			 * @param shape
 			 * @param visioDocument
+			 * @param {Page_Type} pageInfo
 			 */
 			function setRunProps(characterRowNum, characterPropsCommon,  oRun, lineUniFill,
-											   fillUniFill, theme, shape, visioDocument) {
+								 fillUniFill, theme, shape, visioDocument, pageInfo) {
 				let characterPropsFinal = characterRowNum !== null && characterPropsCommon.getRow(characterRowNum);
 
 				/**
@@ -532,16 +534,12 @@
 				let fontCell = characterPropsFinal && characterPropsFinal.getCell("Font");
 				let cRFonts = new CRFonts();
 				if (fontCell && fontCell.kind === AscVisio.c_oVsdxSheetStorageKind.Cell_Type) {
-					// let fontColor = calculateCellValue(theme, shape, characterColorCell);
-
 					// all document fonts all loaded already in CVisioDocument.prototype.loadFonts
-					let fontName = fontCell.v;
-					if (fontName !== "Themed") {
-						cRFonts = getRFonts(fontName, visioDocument);
-					} else {
-						let themeFontName = theme.getFontScheme().majorFont.latin;
-						cRFonts = getRFonts(themeFontName, visioDocument);
-					}
+
+					let fontName = fontCell.calculateValue(shape, pageInfo,
+						visioDocument.themes, themeValWasUsedFor, true);
+
+					cRFonts = getRFonts(fontName, visioDocument);
 				} else {
 					AscCommon.consoleLog("fontCell was not found so default is set (Calibri). Check mb AsianFont or ScriptFont");
 				}
@@ -586,6 +584,7 @@
 				const valueCell = fieldRow.getCell("Value");
 				oFld.SetFieldType(valueCell.f);
 				oFld.vsdxFieldValue = valueCell;
+				// inits new class variable
 				oFld.isTextInherited = isTextInherited;
 
 				// then format it according to Format cell
@@ -852,7 +851,7 @@
 
 						setRunProps(characterRowNum, characterPropsCommon,
 							oRun, lineUniFill, fillUniFill, theme, shape,
-							visioDocument);
+							visioDocument, pageInfo);
 						paragraph.Add_ToContent(paragraph.Content.length - 1, oRun);
 					} else if (textElementPart.kind === AscVisio.c_oVsdxTextKind.FLD) {
 						// text field
@@ -879,7 +878,7 @@
 
 						setRunProps(characterRowNum, characterPropsCommon,
 							oFld, lineUniFill, fillUniFill, theme, shape,
-							visioDocument);
+							visioDocument, pageInfo);
 
 						paragraph.AddToContent(paragraph.Content.length - 1, new ParaRun(paragraph, false));
 						paragraph.AddToContent(paragraph.Content.length - 1, oFld);
@@ -1117,7 +1116,7 @@
 				oXfrm.setExtY(Math.abs(shapeHeight) * g_dKoef_in_to_mm);
 				oXfrm.setRot(0);
 			}
-			oSpPr.setXfrm(oXfrm); 
+			oSpPr.setXfrm(oXfrm);
 			oXfrm.setParent(oSpPr);
 			oSpPr.setFill(AscFormat.CreateNoFillUniFill());
 			oSpPr.setLn(AscFormat.CreateNoFillLine());
@@ -1515,7 +1514,7 @@
 		let gradientEnabled;
 		if (gradientEnabledCell !== undefined) {
 			gradientEnabled = gradientEnabledCell.calculateValue(this, pageInfo,
-			visioDocument.themes, themeValWasUsedFor, true);
+				visioDocument.themes, themeValWasUsedFor, true);
 		} else {
 			gradientEnabled = false;
 		}
@@ -1808,7 +1807,7 @@
 		// not scaling fontSize
 		let textCShape = getTextCShape(visioDocument.themes[0], this, cShape,
 			lineUniFill, uniFillForegnd, drawingPageScale, maxHeightScaledIn,
-			visioDocument.pageIndex, visioDocument.pages.page.length);
+			visioDocument.pageIndex, visioDocument.pages.page.length, pageInfo);
 
 		if (textCShape !== null) {
 			if (isShapeDeleted) {
