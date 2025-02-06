@@ -7292,6 +7292,16 @@
 								}
 							}
 						}
+
+						if (Asc.editor.isPdfEditor()) {
+							let oDoc = Asc.editor.getPDFDoc();
+							let oPageInfo = oDoc.GetPageInfo(drawing.GetPage());
+
+							if (oPageInfo.IsDeleteLock()) {
+								locked = true;
+							}
+						}
+						
 						var lockAspect = drawing.getNoChangeAspect();
 						var oMainGroup = drawing.getMainGroup();
 						let sOwnName = drawing.getObjectName();
