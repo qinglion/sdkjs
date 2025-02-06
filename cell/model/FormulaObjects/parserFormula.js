@@ -9960,7 +9960,7 @@ function parserFormula( formula, parent, _ws ) {
 
 	parserFormula.prototype.getFormulaHyperlink = function () {
 		for (var i = 0; i < this.outStack.length; i++) {
-			if (this.outStack[i] && this.outStack[i].name === "HYPERLINK") {
+			if (this.outStack[i] && (this.outStack[i].name === "HYPERLINK" || this.outStack[i].name === "IMPORTRANGE")) {
 				return true;
 			}
 		}
