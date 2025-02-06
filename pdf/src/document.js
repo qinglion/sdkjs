@@ -4467,7 +4467,7 @@ var CPresentation = CPresentation || function(){};
     };
     
     CPDFDoc.prototype.CreateStampRender = function(sType, sUserName, timeStamp) {
-        this.History.StartNoHistoryMode();
+        AscCommon.History.StartNoHistoryMode();
 
         let oJsonReader = new AscJsonConverter.ReaderFromJSON();
         if (!AscPDF.STAMPS_JSON[sType]) {
@@ -4557,7 +4557,7 @@ var CPresentation = CPresentation || function(){};
         oTextDrawer.Start_Command(AscFormat.DRAW_COMMAND_SHAPE);
         oShape.draw(oTextDrawer);
 
-        this.History.EndNoHistoryMode();
+        AscCommon.History.EndNoHistoryMode();
 
         return oTextDrawer;
     }    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
