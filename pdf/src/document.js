@@ -3028,14 +3028,9 @@ var CPresentation = CPresentation || function(){};
             oForm.Remove(nDirection, isCtrlKey);
             oContent = oForm.GetDocContent();
         }
-        else if (oFreeText) {
-            if (oFreeText.IsInTextBox()) {
-                oFreeText.Remove(nDirection, isCtrlKey);
-                oContent = oFreeText.GetDocContent();
-            }
-            else {
-                this.RemoveAnnot(oFreeText.GetId());
-            }
+        else if (oFreeText && oFreeText.IsInTextBox()) {
+            oFreeText.Remove(nDirection, isCtrlKey);
+            oContent = oFreeText.GetDocContent();
         }
         else if (oDrawing && !Asc.editor.isRestrictionView()) {
             if (oDrawing.IsInTextBox()) {
