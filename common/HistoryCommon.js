@@ -2328,6 +2328,8 @@
 	window['AscDFH'].historyitem_SdtPr_ComplexFormPr    = window['AscDFH'].historyitem_type_SdtPr | 24;
 	window['AscDFH'].historyitem_SdtPr_OForm            = window['AscDFH'].historyitem_type_SdtPr | 25;
 	window['AscDFH'].historyitem_SdtPr_DataBinding      = window['AscDFH'].historyitem_type_SdtPr | 26;
+	window['AscDFH'].historyitem_SdtPr_ShdColor         = window['AscDFH'].historyitem_type_SdtPr | 27;
+	window['AscDFH'].historyitem_SdtPr_BorderColor      = window['AscDFH'].historyitem_type_SdtPr | 28;
 	//------------------------------------------------------------------------------------------------------------------
 	// Типы изменений в классе CSdtPr
 	//------------------------------------------------------------------------------------------------------------------

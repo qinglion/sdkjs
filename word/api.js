@@ -567,14 +567,19 @@
 						};
 						LogicDocument.SetDocumentMargin(oMargins);
 					}
-
-
+					
 					if (undefined !== _current["Props"]["Appearance"])
 						_content_control_pr.Appearance = _current["Props"]["Appearance"];
-
+					
 					if (undefined !== _current["Props"]["Color"])
 						_content_control_pr.Color = new Asc.asc_CColor(_current["Props"]["Color"]["R"], _current["Props"]["Color"]["G"], _current["Props"]["Color"]["B"]);
-
+					
+					if (undefined !== _current["Props"]["ShdColor"])
+						_content_control_pr.ShdColor = new Asc.asc_CColor(_current["Props"]["ShdColor"]["R"], _current["Props"]["ShdColor"]["G"], _current["Props"]["ShdColor"]["B"], _current["Props"]["ShdColor"]["A"]);
+					
+					if (undefined !== _current["Props"]["BorderColor"])
+						_content_control_pr.BorderColor = new Asc.asc_CColor(_current["Props"]["BorderColor"]["R"], _current["Props"]["BorderColor"]["G"], _current["Props"]["BorderColor"]["B"], _current["Props"]["BorderColor"]["A"]);
+					
 					if (null === _blockStd)
 					{
 						let curPara = LogicDocument.GetCurrentParagraph();
@@ -736,7 +741,13 @@
 
 						if (undefined !== _current["Props"]["Color"])
 							_content_control_pr.Color = new Asc.asc_CColor(_current["Props"]["Color"]["R"], _current["Props"]["Color"]["G"], _current["Props"]["Color"]["B"]);
-
+						
+						if (undefined !== _current["Props"]["ShdColor"])
+							_content_control_pr.ShdColor = new Asc.asc_CColor(_current["Props"]["ShdColor"]["R"], _current["Props"]["ShdColor"]["G"], _current["Props"]["ShdColor"]["B"], _current["Props"]["ShdColor"]["A"]);
+						
+						if (undefined !== _current["Props"]["BorderColor"])
+							_content_control_pr.BorderColor = new Asc.asc_CColor(_current["Props"]["BorderColor"]["R"], _current["Props"]["BorderColor"]["G"], _current["Props"]["BorderColor"]["B"], _current["Props"]["BorderColor"]["A"]);
+						
 						_blockStd.SetContentControlPr(_content_control_pr);
 						LogicDocument.Recalculate();
 

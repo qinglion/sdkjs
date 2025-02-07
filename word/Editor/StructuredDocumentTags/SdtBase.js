@@ -1268,9 +1268,35 @@ CSdtBase.prototype.getShdColor = function()
 	return this.Pr.ShdColor;
 };
 /**
+ * @param color {?AscWord.CDocumentColorA}
+ */
+CSdtBase.prototype.setShdColor = function(color)
+{
+	if (!color)
+		color = undefined;
+	
+	if ((!color && !this.Pr.ShdColor) || (color && this.Pr.ShdColor && color.isEqual(this.Pr.ShdColor)))
+		return;
+	
+	AscCommon.AddAndExecuteChange(new CChangesSdtPrShdColor(this, this.Pr.ShdColor, color));
+};
+/**
  * @return {?AscWord.CDocumentColorA}
  */
 CSdtBase.prototype.getBorderColor = function()
 {
 	return this.Pr.BorderColor;
+};
+/**
+ * @param color {?AscWord.CDocumentColorA}
+ */
+CSdtBase.prototype.setBorderColor = function(color)
+{
+	if (!color)
+		color = undefined;
+	
+	if ((!color && !this.Pr.BorderColor) || (color && this.Pr.BorderColor && color.isEqual(this.Pr.BorderColor)))
+		return;
+		
+	AscCommon.AddAndExecuteChange(new CChangesSdtPrBorderColor(this, this.Pr.BorderColor, color));
 };

@@ -73,8 +73,8 @@ function CSdtPr()
 
 	this.OForm         = undefined;
 	
-	this.BorderColor = new AscWord.CDocumentColorA(Math.random() * 255 | 0, Math.random() * 255 | 0, Math.random() * 255 | 0, Math.random() * 255 | 0);
-	this.ShdColor    = new AscWord.CDocumentColorA(Math.random() * 255 | 0, Math.random() * 255 | 0, Math.random() * 255 | 0, Math.random() * 255 | 0);
+	this.BorderColor = undefined;//new AscWord.CDocumentColorA(Math.random() * 255 | 0, Math.random() * 255 | 0, Math.random() * 255 | 0, Math.random() * 255 | 0);
+	this.ShdColor    = undefined;//new AscWord.CDocumentColorA(Math.random() * 255 | 0, Math.random() * 255 | 0, Math.random() * 255 | 0, Math.random() * 255 | 0);
 }
 
 CSdtPr.prototype.Copy = function()
@@ -458,6 +458,9 @@ function CContentControlPr(nType)
 	this.PlaceholderText = undefined;
 	
 	this.FormPr = undefined;
+	
+	this.BorderColor = undefined;
+	this.ShdColor    = undefined;
 }
 CContentControlPr.prototype.GetEventObject = function()
 {
@@ -493,6 +496,12 @@ CContentControlPr.prototype.FillFromObject = function(oPr)
 
 	if (undefined !== oPr.PlaceholderText)
 		this.PlaceholderText = oPr.PlaceholderText;
+	
+	if (undefined !== oPr.ShdColor)
+		this.ShdColor = AscWord.CDocumentColorA.fromObjectRgba(oPr.ShdColor);
+	
+	if (undefined !== oPr.BorderColor)
+		this.BorderColor = AscWord.CDocumentColorA.fromObjectRgba(oPr.BorderColor);
 };
 CContentControlPr.prototype.FillFromContentControl = function(oContentControl)
 {
@@ -552,6 +561,12 @@ CContentControlPr.prototype.FillFromContentControl = function(oContentControl)
 		if (oContentControl.IsSignatureForm())
 			this.FormPr.SetRequired(true);
 	}
+	
+	if (oContentControl.getShdColor())
+		this.ShdColor = oContentControl.getShdColor().getAscColor();
+	
+	if (oContentControl.getBorderColor())
+		this.BorderColor = oContentControl.getBorderColor().getAscColor();
 };
 CContentControlPr.prototype.SetToContentControl = function(oContentControl)
 {
@@ -665,6 +680,12 @@ CContentControlPr.prototype.SetToContentControl = function(oContentControl)
 
 	if (undefined !== this.ComplexFormPr)
 		oContentControl.SetComplexFormPr(this.ComplexFormPr);
+	
+	if (this.ShdColor)
+		oContentControl.setShdColor(AscWord.CDocumentColorA.fromObjectRgba(this.ShdColor));
+	
+	if (this.BorderColor)
+		oContentControl.setBorderColor(AscWord.CDocumentColorA.fromObjectRgba(this.BorderColor));
 };
 CContentControlPr.prototype.SetFormPrToContentControl = function(contentControl)
 {

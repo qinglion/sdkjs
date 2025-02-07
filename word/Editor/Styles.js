@@ -9600,6 +9600,13 @@ AscWord.CDocumentColor = CDocumentColor;
 		this.b = color.b;
 		this.a = color.a;
 	};
+	/**
+	 * @return {Asc.asc_CColor}
+	 */
+	CDocumentColorA.prototype.getAscColor = function()
+	{
+		return new Asc.asc_CColor(this.r, this.g, this.b, this.a);
+	};
 	CDocumentColorA.prototype.SetFromHexColor = function(val)
 	{
 		if (AscFormat.mapPrstColor[val])
