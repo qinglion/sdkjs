@@ -9557,6 +9557,14 @@ AscWord.CDocumentColor = CDocumentColor;
 		let a = reader.GetByte();
 		return new CDocumentColorA(r, g, b, a);
 	};
+	CDocumentColorA.fromObjectRgb = function(obj)
+	{
+		return new CDocumentColorA(obj.r, obj.g, obj.b, 255);
+	};
+	CDocumentColorA.fromObjectRgba = function(obj)
+	{
+		return new CDocumentColorA(obj.r, obj.g, obj.b, obj.a);
+	};
 	CDocumentColorA.prototype.toBinary = function(writer)
 	{
 		writer.WriteByte(this.r);

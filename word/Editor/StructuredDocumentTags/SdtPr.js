@@ -73,8 +73,8 @@ function CSdtPr()
 
 	this.OForm         = undefined;
 	
-	this.BorderColor = new AscWord.CDocumentColorA(0, 255, 255, 125);
-	this.ShdColor    = new AscWord.CDocumentColorA(41, 52, 136, 125);
+	this.BorderColor = new AscWord.CDocumentColorA(Math.random() * 255 | 0, Math.random() * 255 | 0, Math.random() * 255 | 0, Math.random() * 255 | 0);
+	this.ShdColor    = new AscWord.CDocumentColorA(Math.random() * 255 | 0, Math.random() * 255 | 0, Math.random() * 255 | 0, Math.random() * 255 | 0);
 }
 
 CSdtPr.prototype.Copy = function()
