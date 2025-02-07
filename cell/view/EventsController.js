@@ -1022,6 +1022,14 @@
 					this.handlers.trigger("showFormulas");
 					break;
 				}
+				case Asc.c_oAscSpreadsheetShortcutType.IncreaseFontSize:
+				case Asc.c_oAscSpreadsheetShortcutType.DecreaseFontSize: {
+					if (this.getCellEditMode() || !bCanEdit || bSelectionDialogMode) {
+						return true;
+					}
+					this.view.setFontAttributes("changeFontSize", nShortcutAction === Asc.c_oAscSpreadsheetShortcutType.IncreaseFontSize);
+					break;
+				}
 				default: {
 					const oCustom = this.view.Api.getCustomShortcutAction(nShortcutAction);
 					if (oCustom) {
@@ -1075,7 +1083,7 @@
 
 
 			const oShortcutRes = this.executeShortcut(nShortcutAction);
-			if (this.executeShortcut(nShortcutAction)) {
+			if (oShortcutRes) {
 				nRetValue = oShortcutRes.keyResult;
 			} else {
 				switch (oEvent.GetKeyCode()) {
@@ -1276,14 +1284,6 @@
 							nRetValue = keydownresult_PreventAll;
 							this.handlers.trigger('onContextMenu', oEvent);
 						}
-						break;
-					case 219:
-					case 221:
-						if (!oEvent.CtrlKey || oThis.getCellEditMode() || !bCanEdit || bSelectionDialogMode) {
-							return true;
-						}
-						nRetValue = keydownresult_PreventAll;
-						oThis.view.setFontAttributes("changeFontSize", oEvent.KeyCode === 221);
 						break;
 					default:
 						nRetValue = keydownresult_PreventNothing;

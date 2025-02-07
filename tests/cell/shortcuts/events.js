@@ -585,7 +585,6 @@
 		new CNativeEvent(keyCodes.ArrowBottom, false, false, true, false),
 		new CNativeEvent(keyCodes.ArrowTop, false, false, true, false)
 	];
-	tableEvents[tableHotkeyTypes.showDataValidation] = [new CNativeEvent(keyCodes.ArrowBottom, false, false, true, false)];
 	tableEvents[tableHotkeyTypes.increaseFontSize] = [new CNativeEvent(keyCodes.BracketRight, true, false, false, false)];
 	tableEvents[tableHotkeyTypes.decreaseFontSize] = [new CNativeEvent(keyCodes.BracketLeft, true, false, false, false)];
 

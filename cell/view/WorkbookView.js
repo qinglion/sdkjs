@@ -1160,9 +1160,9 @@
   };
 
 	WorkbookView.prototype.executeShortcut = function(nShortcutAction) {
-		const objectRender = this.getWorksheet().objectRender;
-		if (objectRender && !this.getCellEditMode() && !this.controller.isMousePressed && this.enableKeyEvents) {
-			const oGraphicRet = objectRender.executeShortcut(nShortcutAction);
+		const oObjectRender = this.getWorksheet().objectRender;
+		if (oObjectRender && oObjectRender.getSelectedGraphicObjects().length > 0 && !this.getCellEditMode() && !this.controller.isMousePressed && this.enableKeyEvents) {
+			const oGraphicRet = oObjectRender.controller.executeShortcut(nShortcutAction);
 			if (oGraphicRet) {
 				return true;
 			}
@@ -1170,7 +1170,8 @@
 
 		let oRetValue = this.controller.executeShortcut(nShortcutAction);
 		if (this.isCellEditMode && !this.controller.skipCellEditor) {
-			oRetValue = oRetValue || this.cellEditor.executeShortcut(nShortcutAction);
+			const oCellRetValue = this.cellEditor.executeShortcut(nShortcutAction);
+			oRetValue = oRetValue || oCellRetValue;
 		}
 		this.controller.setSkipCellEditor(false);
 		return !!oRetValue;

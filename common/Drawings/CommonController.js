@@ -5720,6 +5720,7 @@
 				executeShortcut: function(nShortcutAction) {
 					let oRet = {keyResult: keydownresult_PreventDefault};
 					const bCanEdit = this.canEdit();
+					const oApi = window["Asc"]["editor"];
 					switch (nShortcutAction) {
 						case Asc.c_oAscSpreadsheetShortcutType.Bold: {
 							if (bCanEdit) {
@@ -5757,14 +5758,14 @@
 						{
 							break;
 						}
-						case Asc.c_oAscSpreadsheetShortcutType.DrawingIncreaseFontSize: {
+						case Asc.c_oAscSpreadsheetShortcutType.IncreaseFontSize: {
 							if (!bCanEdit) {
 								break;
 							}
 							this.increaseFontSize();
 							break;
 						}
-						case Asc.c_oAscSpreadsheetShortcutType.DrawingDecreaseFontSize: {
+						case Asc.c_oAscSpreadsheetShortcutType.DecreaseFontSize: {
 							if (!bCanEdit) {
 								break;
 							}
@@ -5914,7 +5915,7 @@
 									if (null !== oMath && oMath.Is_InInnerContent()) {
 										this.checkSelectedObjectsAndCallback(function () {
 											oMath.Handle_AddNewLine();
-											let oShape = target_doc_content.Is_DrawingShape(true);
+											let oShape = oTargetDocContent.Is_DrawingShape(true);
 											if(oShape)
 												oShape.checkExtentsByDocContent();
 										}, [], false, AscDFH.historydescription_Spreadsheet_AddNewParagraph, undefined, window["Asc"]["editor"].collaborativeEditing.getFast());

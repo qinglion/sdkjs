@@ -9545,8 +9545,8 @@ var editor;
 				[Asc.c_oAscSpreadsheetShortcutType.DrawingSubscript, 190, true, false, false],
 				[Asc.c_oAscSpreadsheetShortcutType.CellGeneralFormat, 192, true, true, false],
 				[Asc.c_oAscSpreadsheetShortcutType.ShowFormulas, 192, true, false, false],
-				[Asc.c_oAscSpreadsheetShortcutType.DrawingDecreaseFontSize, 219, true, false, false],
-				[Asc.c_oAscSpreadsheetShortcutType.DrawingIncreaseFontSize, 221, true, false, false]
+				[Asc.c_oAscSpreadsheetShortcutType.DecreaseFontSize, 219, true, false, false],
+				[Asc.c_oAscSpreadsheetShortcutType.IncreaseFontSize, 221, true, false, false]
 			];
 		this.initShortcuts(aShortcuts, false);
 	};

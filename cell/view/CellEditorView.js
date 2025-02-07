@@ -2490,7 +2490,7 @@ function (window, undefined) {
 	// Event handlers
 	CellEditor.prototype.executeShortcut = function(nShortcutAction) {
 		let oResult = {keyResult: keydownresult_PreventAll};
-
+		const oApi = window["Asc"]["editor"];
 		const bHieroglyph = this.isTopLineActive && AscCommonExcel.getFragmentsLength(this.options.fragments) !== this.input.value.length;
 		switch (nShortcutAction) {
 			case Asc.c_oAscSpreadsheetShortcutType.Strikeout: {
@@ -2570,6 +2570,14 @@ function (window, undefined) {
 					// ToDo add change ref to other sheet
 					this.changeCellRange(oRes.range);
 				}
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.IncreaseFontSize:
+			case Asc.c_oAscSpreadsheetShortcutType.DecreaseFontSize: {
+				if (bHieroglyph) {
+					this._syncEditors();
+				}
+				this.setTextStyle("changeFontSize", nShortcutAction === Asc.c_oAscSpreadsheetShortcutType.IncreaseFontSize);
 				break;
 			}
 			default: {
@@ -2802,18 +2810,6 @@ function (window, undefined) {
 				case 145: {//Scroll Lock
 					if (AscBrowser.isOpera) {
 						nRetValue = keydownresult_PreventAll;
-					}
-					break;
-				}
-				case 219:
-				case 221: {
-					if (ctrlKey) {
-						nRetValue = keydownresult_PreventAll;
-						if (bHieroglyph) {
-							oThis._syncEditors();
-						}
-						oThis.setTextStyle("changeFontSize", oEvent.GetKeyCode() === 221);
-						return true;
 					}
 					break;
 				}
