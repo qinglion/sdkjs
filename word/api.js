@@ -504,12 +504,10 @@
 					}
 
 					_content_control_pr = new AscCommon.CContentControlPr();
-					_content_control_pr.Id              = _current["Props"]["Id"];
-					_content_control_pr.Tag             = _current["Props"]["Tag"];
-					_content_control_pr.Lock            = c_oAscSdtLockType.Unlocked;
-					_content_control_pr.InternalId      = _current["Props"]["InternalId"];
-					_content_control_pr.Alias           = _current["Props"]["Alias"];
-					_content_control_pr.PlaceholderText = _current["Props"]["PlaceHolderText"];
+					AscCommon.readContentControlCommonPr(_content_control_pr, _current["Props"]);
+
+					_content_control_pr.Lock       = c_oAscSdtLockType.Unlocked;
+					_content_control_pr.InternalId = _current["Props"]["InternalId"];
 
 					// Page break
 					if (undefined !== _current["Props"]["SectionBreak"])
@@ -567,18 +565,6 @@
 						};
 						LogicDocument.SetDocumentMargin(oMargins);
 					}
-					
-					if (undefined !== _current["Props"]["Appearance"])
-						_content_control_pr.Appearance = _current["Props"]["Appearance"];
-					
-					if (undefined !== _current["Props"]["Color"])
-						_content_control_pr.Color = new Asc.asc_CColor(_current["Props"]["Color"]["R"], _current["Props"]["Color"]["G"], _current["Props"]["Color"]["B"]);
-					
-					if (undefined !== _current["Props"]["ShdColor"])
-						_content_control_pr.ShdColor = new Asc.asc_CColor(_current["Props"]["ShdColor"]["R"], _current["Props"]["ShdColor"]["G"], _current["Props"]["ShdColor"]["B"], _current["Props"]["ShdColor"]["A"]);
-					
-					if (undefined !== _current["Props"]["BorderColor"])
-						_content_control_pr.BorderColor = new Asc.asc_CColor(_current["Props"]["BorderColor"]["R"], _current["Props"]["BorderColor"]["G"], _current["Props"]["BorderColor"]["B"], _current["Props"]["BorderColor"]["A"]);
 					
 					if (null === _blockStd)
 					{
@@ -729,24 +715,8 @@
 					if (_blockStd)
 					{
 						_content_control_pr = new AscCommon.CContentControlPr();
-						_content_control_pr.Id              = _current["Props"]["Id"];
-						_content_control_pr.Tag             = _current["Props"]["Tag"];
-						_content_control_pr.Lock            = _current["Props"]["Lock"];
-						_content_control_pr.InternalId      = _current["Props"]["InternalId"];
-						_content_control_pr.Alias           = _current["Props"]["Alias"];
-						_content_control_pr.PlaceholderText = _current["Props"]["PlaceHolderText"];
-
-						if (undefined !== _current["Props"]["Appearance"])
-							_content_control_pr.Appearance = _current["Props"]["Appearance"];
-
-						if (undefined !== _current["Props"]["Color"])
-							_content_control_pr.Color = new Asc.asc_CColor(_current["Props"]["Color"]["R"], _current["Props"]["Color"]["G"], _current["Props"]["Color"]["B"]);
-						
-						if (undefined !== _current["Props"]["ShdColor"])
-							_content_control_pr.ShdColor = new Asc.asc_CColor(_current["Props"]["ShdColor"]["R"], _current["Props"]["ShdColor"]["G"], _current["Props"]["ShdColor"]["B"], _current["Props"]["ShdColor"]["A"]);
-						
-						if (undefined !== _current["Props"]["BorderColor"])
-							_content_control_pr.BorderColor = new Asc.asc_CColor(_current["Props"]["BorderColor"]["R"], _current["Props"]["BorderColor"]["G"], _current["Props"]["BorderColor"]["B"], _current["Props"]["BorderColor"]["A"]);
+						AscCommon.readContentControlCommonPr(_content_control_pr, _current["Props"]);
+						_content_control_pr.InternalId = _current["Props"]["InternalId"];
 						
 						_blockStd.SetContentControlPr(_content_control_pr);
 						LogicDocument.Recalculate();
