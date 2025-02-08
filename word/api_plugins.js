@@ -79,24 +79,33 @@
      * @property  {string} Url - A link to the shared file (can be replaced with the *Script* parameter).
      * @see office-js-api/Examples/Plugins/{Editor}/Enumeration/ContentControlPropertiesAndContent.js
 	 */
-
-    /**
-     * @typedef {Object} ContentControlProperties
-	 * The content control properties.
-     * @property {string} Id - A unique identifier of the content control. It can be used to search for a certain content control and make reference to it in the code.
-     * @property {string} Tag - A tag assigned to the content control. The same tag can be assigned to several content controls so that it is possible to make reference to them in the code.
-     * @property {ContentControlLock} Lock - A value that defines if it is possible to delete and/or edit the content control or not.
-     * @property {string} InternalId - A unique internal identifier of the content control.
-	 * @property {string} Alias - The alias attribute.
-	 * @property {string} PlaceHolderText - The content control placeholder text.
-     * @property {number} Appearance - Defines if the content control is shown as the bounding box (**1**) or not (**2**).
-     * @property {object} Color - The color for the current content control in the RGB format.
-     * @property {number} Color.R - Red color component value.
-     * @property {number} Color.G - Green color component value.
-     * @property {number} Color.B - Blue color component value.
-     * @see office-js-api/Examples/Plugins/{Editor}/Enumeration/ContentControlProperties.js
+	
+	/**
+	 * @typedef {Object} Color
+	 * @property {number} Color.R - Red color component value.
+	 * @property {number} Color.G - Green color component value.
+	 * @property {number} Color.B - Blue color component value.
+	 * @property {number} Color.A - Alpha color component value.
 	 */
 	
+	/**
+	 * @typedef {Object} ContentControlProperties
+	 * The content control properties.
+	 * @property {string} Id - A unique identifier of the content control. It can be used to search for a certain content control and make reference to it in the code.
+	 * @property {string} Tag - A tag assigned to the content control. The same tag can be assigned to several content controls so that it is possible to make reference to them in the code.
+	 * @property {ContentControlLock} Lock - A value that defines if it is possible to delete and/or edit the content control or not.
+	 * @property {string} InternalId - A unique internal identifier of the content control.
+	 * @property {string} Alias - The alias attribute.
+	 * @property {string} PlaceHolderText - The content control placeholder text.
+	 * @property {number} Appearance - Defines if the content control is shown as the bounding box (**1**) or not (**2**).
+	 * @property {Color} Color - The color for the current content control in the RGB format.
+	 * @property {Object} Shd - Background shading properties
+	 * @property {Color} Shd.Color - Shading color in RGBA format  
+	 * @property {Object} Border - Border properties
+	 * @property {Color} Border.Color - Border color in RGBA format
+	 * @see office-js-api/Examples/Plugins/{Editor}/Enumeration/ContentControlProperties.js
+	 */
+
 	/**
 	 * @typedef {('none' | 'comments' | 'forms' | 'readOnly')} DocumentEditingRestrictions
 	 * The document editing restrictions:
@@ -623,7 +632,7 @@
 	 */
 	window["asc_docs_api"].prototype["pluginMethod_AddContentControl"] = function(type, commonPr)
 	{
-		var _content_control_pr = private_ReadContentControlCommonPr(commonPr);
+		var _content_control_pr = readContentControlCommonPr(commonPr);
 
 		var _obj = this.asc_AddContentControl(type, _content_control_pr);
 		if (!_obj)
@@ -1287,23 +1296,44 @@
 		if (commonPr)
 		{
 			resultPr = new AscCommon.CContentControlPr();
+			resultPr = readContentControlCommonPr(contentControlPr, commonPr);
+		}
+		return resultPr;
+	}
+	function readContentControlCommonPr(ccPr, commonPr)
+	{
+		if (!ccPr || !commonPr)
+			return ccPr;
 
-			resultPr.Id    = commonPr["Id"];
-			resultPr.Tag   = commonPr["Tag"];
-			resultPr.Lock  = commonPr["Lock"];
-			resultPr.Alias = commonPr["Alias"];
-
-			if (undefined !== commonPr["Appearance"])
-				resultPr.Appearance = commonPr["Appearance"];
-
-			if (undefined !== commonPr["Color"])
-				resultPr.Color = new Asc.asc_CColor(commonPr["Color"]["R"], commonPr["Color"]["G"], commonPr["Color"]["B"]);
-
-			if (undefined !== commonPr["PlaceHolderText"])
-				resultPr.SetPlaceholderText(commonPr["PlaceHolderText"]);
+		ccPr.Id    = commonPr["Id"];
+		ccPr.Tag   = commonPr["Tag"];
+		ccPr.Lock  = commonPr["Lock"];
+		ccPr.Alias = commonPr["Alias"];
+		
+		if (undefined !== commonPr["Appearance"])
+			ccPr.Appearance = commonPr["Appearance"];
+		
+		if (undefined !== commonPr["Color"])
+			ccPr.Color = new Asc.asc_CColor(commonPr["Color"]["R"], commonPr["Color"]["G"], commonPr["Color"]["B"]);
+		
+		if (undefined !== commonPr["PlaceHolderText"])
+			ccPr.SetPlaceholderText(commonPr["PlaceHolderText"]);
+		
+		let shd = commonPr["Shd"];
+		if (shd)
+		{
+			if (undefined !== shd["Color"])
+				ccPr.ShdColor = new Asc.asc_CColor(shd["Color"]["R"], shd["Color"]["G"], shd["Color"]["B"], shd["Color"]["A"]);
+		}
+		
+		let border = commonPr["Border"];
+		if (border)
+		{
+			if (undefined !== border["Color"])
+				ccPr.BorderColor = new Asc.asc_CColor(border["Color"]["R"], border["Color"]["G"], border["Color"]["B"], border["Color"]["A"]);
 		}
 
-		return resultPr;
+		return ccPr;
 	}
 	function private_GetTextDirection(type)
 	{
@@ -1323,6 +1353,9 @@
 		}
 		return direction;
 	}
+
+	window["AscCommon"] = window["AscCommon"] || {};
+	window["AscCommon"].readContentControlCommonPr = readContentControlCommonPr;
 	
 })(window);
 

@@ -750,6 +750,19 @@
 
 		this.SelectedObjectsStack[this.SelectedObjectsStack.length] = new AscCommon.asc_CSelectedObject(Asc.c_oAscTypeSelectElement.Annot, obj);
 	};
+	PDFEditorApi.prototype.sync_pagePropCallback = function(pageInfo) {
+		let obj = AscPDF.CreateAscPagePropFromObj(pageInfo);
+
+		let _len = this.SelectedObjectsStack.length;
+		if (_len > 0) {
+			if (this.SelectedObjectsStack[_len - 1].Type == Asc.c_oAscTypeSelectElement.PdfPage) {
+				this.SelectedObjectsStack[_len - 1].Value = obj;
+				return;
+			}
+		}
+
+		this.SelectedObjectsStack[this.SelectedObjectsStack.length] = new AscCommon.asc_CSelectedObject(Asc.c_oAscTypeSelectElement.PdfPage, obj);
+	};
 	PDFEditorApi.prototype.canUnGroup = function() {
 		return false;
 	};
@@ -1644,6 +1657,15 @@
 		|| oDrawingProps.tableProps && oDrawingProps.tableProps.Locked) {
 			oParaPr.Locked = true;
 		}
+
+		let oActiveObj = oDoc.GetActiveObject();
+		if (oActiveObj) {
+			let oPageInfo = oDoc.GetPageInfo(oActiveObj.GetPage());
+
+			if (oPageInfo.IsDeleteLock()) {
+				oParaPr.Locked = true;
+			}
+		}
 		
 		oParaPr.Subscript   = ( TextPr.VertAlign === AscCommon.vertalign_SubScript ? true : false );
 		oParaPr.Superscript = ( TextPr.VertAlign === AscCommon.vertalign_SuperScript ? true : false );
@@ -2066,9 +2088,7 @@
             if (2 != e["state"]) {
                 let Id    = e["block"];
                 let Class = AscCommon.g_oTableId.Get_ById(Id);
-                if (Class && e["blockValue"]["type"] == AscPDF.AscLockTypeElemPDF.Page) {
-                    oThumbnails && oThumbnails._repaintPage(Class.GetIndex());
-                }
+                
                 if (null != Class) {
 					function updateLock(Class) {
 						let Lock = Class.Lock;
@@ -2099,6 +2119,10 @@
 						updateLock(Class);
 					}
 
+					if (Class && e["blockValue"]["type"] == AscPDF.AscLockTypeElemPDF.Page) {
+						let oPage = (Class instanceof AscPDF.PropLocker) ? AscCommon.g_oTableId.Get_ById(Class.objectId) : Class;
+						oThumbnails && oThumbnails._repaintPage(oPage.GetIndex());
+					}
                     if (Class.IsAnnot && Class.IsAnnot()) {
 						// если аннотация коммент или аннотация с комментом то блокируем и комментарий тоже
 						if (Class.IsComment() || (Class.IsUseContentAsComment() && Class.GetContents() != undefined) || Class.GetReply(0) != null) {
@@ -2122,9 +2146,6 @@
             let oThumbnails = oDoc.GetThumbnails();
 			let Id = e["block"]["guid"];
 			let Class = AscCommon.g_oTableId.Get_ById(Id);
-			if (Class && e["block"]["type"] == AscPDF.AscLockTypeElemPDF.Page) {
-				oThumbnails && oThumbnails._repaintPage(Class.GetIndex());
-			}
 			if (null != Class) {
 				function updateLock(Class) {
 					let Lock = Class.Lock;
@@ -2162,7 +2183,6 @@
 					}
 				}
 				
-
 				if (Class.IsForm && Class.IsForm()) {
 					let aWidgets = oDoc.GetAllWidgets(Class.GetFullName());
 					aWidgets.forEach(function(widget) {
@@ -2171,6 +2191,10 @@
 				}
 				else {
 					updateLock(Class);
+				}
+				if (Class && e["block"]["type"] == AscPDF.AscLockTypeElemPDF.Page) {
+					let oPage = (Class instanceof AscPDF.PropLocker) ? AscCommon.g_oTableId.Get_ById(Class.objectId) : Class;
+					oThumbnails && oThumbnails._repaintPage(oPage.GetIndex());
 				}
 
 				oDoc.UpdateInterface();

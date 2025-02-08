@@ -201,14 +201,30 @@ CBlockLevelSdt.prototype.Read_FromBinary2 = function(Reader)
 };
 CBlockLevelSdt.prototype.Draw = function(CurPage, oGraphics)
 {
-	if (this.LogicDocument.GetSdtGlobalShowHighlight() && !oGraphics.isPdf())
+	let shdColor = this.getShdColor();
+	if (!shdColor && (this.LogicDocument.GetSdtGlobalShowHighlight() && !oGraphics.isPdf()))
+		shdColor = AscWord.CDocumentColorA.fromObjectRgb(this.LogicDocument.GetSdtGlobalColor());
+	
+	if (shdColor)
 	{
-		var oBounds = this.GetContentBounds(CurPage);
-		var oColor  = this.LogicDocument.GetSdtGlobalColor();
-
-		oGraphics.b_color1(oColor.r, oColor.g, oColor.b, 255);
-		oGraphics.rect(oBounds.Left, oBounds.Top, oBounds.Right - oBounds.Left, oBounds.Bottom - oBounds.Top);
+		let pageBounds = this.GetContentBounds(CurPage);
+		oGraphics.b_color1(shdColor.r, shdColor.g, shdColor.b, shdColor.a);
+		oGraphics.rect(pageBounds.Left, pageBounds.Top, pageBounds.Right - pageBounds.Left, pageBounds.Bottom - pageBounds.Top);
 		oGraphics.df();
+	}
+	
+	let borderColor = this.getBorderColor();
+	if (borderColor)
+	{
+		let pageBounds = this.GetContentBounds(CurPage);
+		oGraphics.p_color(borderColor.r, borderColor.g, borderColor.b, borderColor.a);
+		oGraphics.drawPolygonByRects([[{
+			X    : pageBounds.Left,
+			Y    : pageBounds.Top,
+			W    : pageBounds.Right - pageBounds.Left,
+			H    : pageBounds.Bottom - pageBounds.Top,
+			Page : 0
+		}]], 0, 0);
 	}
 
 	var isPlaceHolder = this.IsPlaceHolder();
