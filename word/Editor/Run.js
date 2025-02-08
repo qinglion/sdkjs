@@ -472,11 +472,25 @@ ParaRun.prototype.Get_Text = function(Text)
 				{
 					Text.Text = null;
 					bBreak    = true;
+					break;
 				}
 				
-				if (Text.ParaSeparator)
-					Text.Text += Text.ParaSeparator;
-				
+				if (Text && true === Text.NewLineParagraph)
+				{
+					let oParagraph = this.GetParagraph();
+					if (oParagraph && null === oParagraph.Get_DocumentNext() && oParagraph.IsTableCellContent())
+					{
+						if (!oParagraph.Parent.IsLastTableCellInRow(false))
+							Text.Text += Text.TableCellSeparator ? Text.TableCellSeparator : '\t';
+						else
+							Text.Text += Text.TableRowSeparator ? Text.TableRowSeparator : '\r\n';
+					}
+					else
+					{
+						Text.Text += Text.ParaSeparator ? Text.ParaSeparator : '\r\n';
+					}
+				}
+
 				break;
 			}
 

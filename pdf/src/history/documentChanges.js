@@ -41,6 +41,8 @@ AscDFH.changesFactory[AscDFH.historyitem_PDF_Document_PagesContent]		= CChangesP
 AscDFH.changesFactory[AscDFH.historyitem_PDF_Document_RotatePage]		= CChangesPDFDocumentRotatePage;
 AscDFH.changesFactory[AscDFH.historyitem_PDF_Document_RecognizePage]	= CChangesPDFDocumentRecognizePage;
 AscDFH.changesFactory[AscDFH.historyitem_PDF_Document_SetDocument]      = CChangesPDFDocumentSetDocument;
+AscDFH.changesFactory[AscDFH.historyitem_PDF_Document_PageLocks]        = CChangesPDFDocumentPageLocks;
+AscDFH.changesFactory[AscDFH.historyitem_PDF_PropLocker_ObjectId]	    = CChangesPDFPropLockerObjectId;
 
 /**
  * @constructor
@@ -1025,4 +1027,69 @@ CChangesPDFDocumentSetDocument.prototype.private_SetValue = function(value)
 {
 	let doc = AscCommon.g_oTableId.Get_ById(value);
 	this.Class.SetDocument(doc);
+};
+
+/**
+ * @constructor
+ * @extends {AscDFH.CChangesBaseProperty}
+ */
+function CChangesPDFDocumentPageLocks(Class, deleteLock, rotateLock, editPageLock) {
+    this.deleteLock = deleteLock;
+    this.rotateLock = rotateLock;
+    this.editPageLock = editPageLock;
+    AscDFH.CChangesBaseProperty.call(this, Class);
+};
+
+CChangesPDFDocumentPageLocks.prototype = Object.create(AscDFH.CChangesBaseProperty.prototype);
+CChangesPDFDocumentPageLocks.prototype.constructor = CChangesPDFDocumentPageLocks;
+CChangesPDFDocumentPageLocks.prototype.Type = AscDFH.historyitem_PDF_Document_PageLocks;
+
+CChangesPDFDocumentPageLocks.prototype.WriteToBinary = function(Writer){
+    AscFormat.writeObject(Writer, this.deleteLock);
+    AscFormat.writeObject(Writer, this.rotateLock);
+    AscFormat.writeObject(Writer, this.editPageLock);
+};
+
+CChangesPDFDocumentPageLocks.prototype.ReadFromBinary = function(Reader){
+    this.deleteLock = AscFormat.readObject(Reader);
+    this.rotateLock = AscFormat.readObject(Reader);
+    this.editPageLock = AscFormat.readObject(Reader);
+};
+
+CChangesPDFDocumentPageLocks.prototype.Undo = function(){
+    let oPage = this.Class;
+    oPage.deleteLock = null;
+    oPage.rotateLock = null;
+    oPage.editPageLock = null;
+};
+
+CChangesPDFDocumentPageLocks.prototype.Redo = function(){
+    let oPage = this.Class;
+    oPage.deleteLock = this.deleteLock;
+    oPage.rotateLock = this.rotateLock;
+    oPage.editPageLock = this.editPageLock;
+};
+CChangesPDFDocumentPageLocks.prototype.Load = function(){
+    this.Redo();
+    this.RefreshRecalcData();
+};
+CChangesPDFDocumentPageLocks.prototype.CreateReverseChange = function()
+{
+    return new this.constructor(this.Class, null, null, null, null, null, null);
+};
+
+/**
+ * @constructor
+ * @extends {AscDFH.CChangesBaseStringProperty}
+ */
+function CChangesPDFPropLockerObjectId(Class, Old, New)
+{
+	AscDFH.CChangesBaseStringProperty.call(this, Class, Old, New);
+}
+CChangesPDFPropLockerObjectId.prototype = Object.create(AscDFH.CChangesBaseStringProperty.prototype);
+CChangesPDFPropLockerObjectId.prototype.constructor = CChangesPDFPropLockerObjectId;
+CChangesPDFPropLockerObjectId.prototype.Type = AscDFH.historyitem_PDF_PropLocker_ObjectId;
+CChangesPDFPropLockerObjectId.prototype.private_SetValue = function(value)
+{
+	this.Class.objectId = value;
 };

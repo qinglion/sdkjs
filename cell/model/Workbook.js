@@ -15421,6 +15421,26 @@
 			if (oListenerCell instanceof Asc.CT_WorksheetSource) {
 				continue;
 			}
+			if (oListeners[i].getFunctionName()) {
+				const aOutStack = oListeners[i].outStack;
+				const aExcludeFormulas = AscCommonExcel.aExcludeRecursiveFormulas;
+				const oCycleCells = new Map();
+
+				_foreachRefElements(function (oElem, nIndex) {
+					if (oElem.containCell2(oListenerCell)) {
+						const nIndexWithFunction = nIndex + 2;
+						const oElemWithFunction = aOutStack[nIndexWithFunction];
+						if (oElemWithFunction.type === cElementType.func && aExcludeFormulas.includes(oElemWithFunction.name)) {
+							oCycleCells.set(true, nIndex);
+							return;
+						}
+						oCycleCells.set(false, nIndex);
+					}
+				}, aOutStack);
+				if (oCycleCells.size > 0 && oCycleCells.get(false) === undefined) {
+					continue;
+				}
+			}
 			let oRes = fAction(oListenerCell, oCell, nListenerCellIndex);
 			if (oRes != null) {
 				return;
@@ -15624,7 +15644,7 @@
 			} else {
 				oRange = oRefElement.getRange();
 			}
-			let oRes = fAction(oRange, nLastIndex, i);
+			let oRes = fAction(oRange, i, nLastIndex);
 			if (oRes != null) {
 				return;
 			}
@@ -15761,7 +15781,7 @@
 		}
 
 		const aRefElements = _getRefElements(oFormulaParsed);
-		_foreachRefElements(function (oRange, nLastRefElemIndex, nIndex) {
+		_foreachRefElements(function (oRange, nIndex, nLastRefElemIndex) {
 			oRange._foreachNoEmpty(function(oCell) {
 				let nCellIndex = getCellIndex(oCell.nRow, oCell.nCol);
 				let sCellWsName = oCell.ws.getName().toLowerCase();

@@ -3902,7 +3902,7 @@
 		const fullPatterns = [];
 		for (let i = 0; i < opt_namesList[0].length; i += 1) {
 			for (let j = 0; j < opt_namesList[1].length; j += 1) {
-				fullPatterns.push('^(' + opt_namesList[0][i] + ')\\s*\\[\\s*(' + opt_namesList[1][j] + ')\\s*\\]');
+				fullPatterns.push('^(' + XRegExp.escape(opt_namesList[0][i]) + ')\\s*\\[\\s*(' + XRegExp.escape(opt_namesList[1][j]) + ')\\s*\\]');
 			}
 		}
 		const fullRegs = fullPatterns.map(function(pattern) {
@@ -3917,7 +3917,7 @@
 			}
 		}
 		const shortPatterns = opt_namesList[1].map(function(name) {
-			return '^(' + name + ')(?:\\W|$)'
+			return '^(' + XRegExp.escape(name) + ')(?:\\W|$)';
 		});
 		const shortRegs = shortPatterns.map(function(pattern) {
 			return new RegExp(pattern, 'i');

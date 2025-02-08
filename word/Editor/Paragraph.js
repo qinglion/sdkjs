@@ -16353,11 +16353,16 @@ Paragraph.prototype.GetText = function(oPr)
 		oText.SetParaSeparator(oPr.ParaSeparator);
 	else if (oPr && undefined !== oPr.ParaEndToSpace ? oPr.ParaEndToSpace: true)
 		oText.SetParaSeparator(" ");
+	else 
+		oText.SetParaSeparator("\r\n");
 	
 	oText.SetParaNumbering(oPr && undefined !== oPr.Numbering ? oPr.Numbering: true);
 	oText.SetParaMath(oPr && undefined !== oPr.Math ? oPr.Math: true);
 	oText.SetParaTabSymbol(oPr && undefined !== oPr.TabSymbol ? oPr.TabSymbol: " ");
 	oText.SetParaNewLineSeparator(oPr && undefined !== oPr.NewLineSeparator ? oPr.NewLineSeparator: "\r");
+	oText.SetNewLineParagraph(oPr && undefined !== oPr.NewLineParagraph ? oPr.NewLineParagraph: false);
+	oText.SetTableCellSeparator(oPr && undefined !== oPr.TableCellSeparator ? oPr.TableCellSeparator: "\t");
+	oText.SetTableRowSeparator(oPr && undefined !== oPr.TableRowSeparator ? oPr.TableRowSeparator: "\r\n");
 
 	if (true === oText.Numbering)
 	{
@@ -19815,6 +19820,18 @@ CParagraphGetText.prototype.SetParaMath = function(bValue)
 CParagraphGetText.prototype.SetParaTabSymbol = function(sValue)
 {
 	this.TabSymbol = sValue;
+};
+CParagraphGetText.prototype.SetNewLineParagraph = function(bValue)
+{
+	this.NewLineParagraph = bValue;
+};
+CParagraphGetText.prototype.SetTableCellSeparator = function(sValue)
+{
+	this.TableCellSeparator = sValue;
+};
+CParagraphGetText.prototype.SetTableRowSeparator = function(sValue)
+{
+	this.TableRowSeparator = sValue;
 };
 
 function CParagraphNearPos()

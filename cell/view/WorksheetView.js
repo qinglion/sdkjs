@@ -2031,6 +2031,9 @@
 
 		let c2 = Math.min(selectionRange.c2, this.nColsCount - 1);
 		let r2 = Math.min(selectionRange.r2, this.nRowsCount - 1);
+		if (selectionRange.c1 === c2 && selectionRange.r1 === r2 && selectionRange.isOneCell()) {
+			return null;
+		}
 		for (let c = selectionRange.c1; c <= c2; ++c) {
 			for (let r = selectionRange.r1; r <= r2; ++r) {
 				let cellCache = this._getCellTextCache(c, r, true);

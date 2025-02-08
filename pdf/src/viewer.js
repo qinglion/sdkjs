@@ -122,7 +122,11 @@
 		this.needRedrawDrawings		= true;
 		this.needRedrawAnnots		= true;
 
-		this.Lock = new AscCommon.CLock();
+		this.deleteLock = null;
+		this.rotateLock = null;
+		this.editPageLock = null;
+
+		this.SetLocks(new AscPDF.PropLocker(this.GetId()), new AscPDF.PropLocker(this.GetId()), new AscPDF.PropLocker(this.GetId()));
 	}
 	AscFormat.InitClass(CPageInfo, AscFormat.CBaseNoIdObject, AscDFH.historyitem_type_Pdf_Page);
 	CPageInfo.prototype.constructor = CPageInfo;
@@ -291,8 +295,23 @@
 
 		this.RedrawForms();
 	};
+	CPageInfo.prototype.SetLocks = function(deleteLock, rotateLock, editPageLock) {
+        this.deleteLock = deleteLock;
+        this.rotateLock = rotateLock;
+        this.editPageLock = editPageLock;
+       	AscCommon.History.Add(new CChangesPDFDocumentPageLocks(this, deleteLock, rotateLock, editPageLock));
+    };
 	CPageInfo.prototype.IsLocked = function() {
-		return false == [AscCommon.c_oAscLockTypes.kLockTypeNone, AscCommon.c_oAscLockTypes.kLockTypeMine].includes(this.Lock.Get_Type());
+		return this.IsDeleteLock() || this.IsRotateLock() || this.IsEditPageLock();
+	}
+	CPageInfo.prototype.IsDeleteLock = function() {
+		return false == [AscCommon.c_oAscLockTypes.kLockTypeNone, AscCommon.c_oAscLockTypes.kLockTypeMine].includes(this.deleteLock.Lock.Get_Type());
+	};
+	CPageInfo.prototype.IsRotateLock = function() {
+		return false == [AscCommon.c_oAscLockTypes.kLockTypeNone, AscCommon.c_oAscLockTypes.kLockTypeMine].includes(this.rotateLock.Lock.Get_Type());
+	};
+	CPageInfo.prototype.IsEditPageLock = function() {
+		return false == [AscCommon.c_oAscLockTypes.kLockTypeNone, AscCommon.c_oAscLockTypes.kLockTypeMine].includes(this.editPageLock.Lock.Get_Type());
 	};
 	CPageInfo.prototype.GetIndex = function() {
 		let oViewer = Asc.editor.getDocumentRenderer();
@@ -342,6 +361,49 @@
 		return oFile.pages[nIndex].Rotate;
 	};
 	CPageInfo.prototype.Is_Inline = function(){};
+
+	function PropLocker(objectId) {
+		this.objectId = null;
+		this.Lock = new AscCommon.CLock();
+		this.Id = AscCommon.g_oIdCounter.Get_NewId();
+		AscCommon.g_oTableId.Add(this, this.Id);
+
+		if (typeof objectId === "string") {
+			this.setObjectId(objectId);
+		}
+	}
+
+	PropLocker.prototype = {
+
+		getObjectType: function() {
+			return AscDFH.historyitem_type_Pdf_PropLocker;
+		},
+
+		setObjectId: function(id) {
+			AscCommon.History.Add(new CChangesPDFPropLockerObjectId(this, this.objectId, id));
+			this.objectId = id;
+		},
+
+		Get_Id: function() {
+			return this.Id;
+		},
+		GetId: function() {
+			return this.Get_Id();
+		},
+
+		Write_ToBinary2: function(w) {
+			w.WriteLong(AscDFH.historyitem_type_Pdf_PropLocker);
+			w.WriteString2(this.Id);
+		},
+
+		Read_FromBinary2: function(r) {
+			this.Id = r.GetString2();
+		},
+
+		Refresh_RecalcData: function()
+		{}
+	};
+
 	
 	function CDocumentPagesInfo()
 	{
@@ -3140,7 +3202,7 @@
 			this._paintForms();
 			this._paintFormsHighlight();
 			this._paintFormsMarkers();
-			oDoc.UpdateInterface();
+			oDoc.UpdateInterface(true);
 			oDoc.UpdateInterfaceTracks();
 			
 			// Обязательно делаем в конце, т.к. во время отрисовки происходит пересчет
@@ -5027,5 +5089,6 @@
 	    window["AscPDF"] = {};
 
 	window["AscPDF"].CPageInfo = CPageInfo;
+	window["AscPDF"].PropLocker = PropLocker;
 
 })();

@@ -1222,10 +1222,10 @@
             // расширяем рект на ширину линии (или на радиус cloud бордера)
             let nLineWidth = this.GetWidth();
             if (this.GetBorderEffectStyle() === AscPDF.BORDER_EFFECT_STYLES.Cloud) {
-                aNewTextBoxRect[0] -= this.GetBorderEffectIntensity() * 1.5;
-                aNewTextBoxRect[1] -= this.GetBorderEffectIntensity() * 1.5;
-                aNewTextBoxRect[2] += this.GetBorderEffectIntensity() * 1.5;
-                aNewTextBoxRect[3] += this.GetBorderEffectIntensity() * 1.5;
+                aNewTextBoxRect[0] -= this.GetBorderEffectIntensity() * 12;
+                aNewTextBoxRect[1] -= this.GetBorderEffectIntensity() * 12;
+                aNewTextBoxRect[2] += this.GetBorderEffectIntensity() * 12;
+                aNewTextBoxRect[3] += this.GetBorderEffectIntensity() * 12;
             } else {
                 aNewTextBoxRect[0] -= nLineWidth;
                 aNewTextBoxRect[1] -= nLineWidth;
@@ -1324,6 +1324,7 @@
 
         let oViewer         = editor.getDocumentRenderer();
         let oDoc            = this.GetDocument();
+        let oController     = oDoc.GetController();
         let oDrDoc          = oDoc.GetDrawingDocument();
 
         this.selectStartPage = this.GetPage();
@@ -1344,6 +1345,8 @@
                 let oTransform  = oTextBoxShape.invertTransformText;
                 let xContent    = oTransform.TransformPointX(X, 0);
                 let yContent    = oTransform.TransformPointY(0, Y);
+
+                oController.resetSelection();
 
                 if (this.IsInTextBox() == false && false == this.Lock.Is_Locked()) {
                     oDoc.SetGlobalHistory();

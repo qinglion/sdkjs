@@ -707,9 +707,10 @@ window.AscCommon.g_cIsBeta = "false";
 		MailMerge         : 10,
 		ContentControl    : 11,
 		Animation         : 12,
-		Text              : 13, // viewer
-		Annot             : 14,
-		UnProtectedRegion : 15
+		UnProtectedRegion : 13,
+		Text              : 14, // viewer
+		Annot             : 15,
+		PdfPage           : 16
 	};
 
 	var c_oAscLineDrawingRule = {
@@ -4313,6 +4314,9 @@ window.AscCommon.g_cIsBeta = "false";
 		"dd.MM.yyyy",
 		"dddd, d MMMM yyyy 'г.'",
 		"d MMMM yyyy 'г.'",
+		"'«'d'»' MMMM yyyy 'года'",
+		"d MMMM yyyy 'года'",
+		"d MMMM yyyy",
 		"dd.MM.yy",
 		"yyyy-MM-dd",
 		"d-MMM-yy",
