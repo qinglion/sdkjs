@@ -17657,7 +17657,19 @@
 	{
 		return "inlineLvlSdt";
 	};
-
+	
+	/**
+	 * Returns an internal id of the current content control.
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/GetInternalId.js
+	 */
+	ApiInlineLvlSdt.prototype.GetInternalId = function()
+	{
+		return this.Sdt.GetId();
+	};
+	
 	/**
 	 * Sets the lock to the current inline text content control:
 	 * <b>"contentLocked"</b> - content cannot be edited.
@@ -18615,7 +18627,19 @@
 	{
 		return "blockLvlSdt";
 	};
-
+	
+	/**
+	 * Returns an internal id of the current content control.
+	 * @memberof ApiBlockLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/GetInternalId.js
+	 */
+	ApiBlockLvlSdt.prototype.GetInternalId = function()
+	{
+		return this.Sdt.GetId();
+	};
+	
 	/**
 	 * Sets the lock to the current block text content control:
 	 * <b>"contentLocked"</b> - content cannot be edited.
@@ -22724,6 +22748,7 @@
 	ApiBullet.prototype["ToJSON"]                    = ApiBullet.prototype.ToJSON;
 
 	ApiInlineLvlSdt.prototype["GetClassType"]           = ApiInlineLvlSdt.prototype.GetClassType;
+	ApiInlineLvlSdt.prototype["GetInternalId"]          = ApiInlineLvlSdt.prototype.GetInternalId;
 	ApiInlineLvlSdt.prototype["SetLock"]                = ApiInlineLvlSdt.prototype.SetLock;
 	ApiInlineLvlSdt.prototype["GetLock"]                = ApiInlineLvlSdt.prototype.GetLock;
 	ApiInlineLvlSdt.prototype["SetTag"]                 = ApiInlineLvlSdt.prototype.SetTag;
@@ -22779,6 +22804,7 @@
 	ApiContentControlListEntry.prototype["SetValue"]		= ApiContentControlListEntry.prototype.SetValue;
 
 	ApiBlockLvlSdt.prototype["GetClassType"]            = ApiBlockLvlSdt.prototype.GetClassType;
+	ApiBlockLvlSdt.prototype["GetInternalId"]           = ApiBlockLvlSdt.prototype.GetInternalId;
 	ApiBlockLvlSdt.prototype["SetLock"]                 = ApiBlockLvlSdt.prototype.SetLock;
 	ApiBlockLvlSdt.prototype["GetLock"]                 = ApiBlockLvlSdt.prototype.GetLock;
 	ApiBlockLvlSdt.prototype["SetTag"]                  = ApiBlockLvlSdt.prototype.SetTag;
