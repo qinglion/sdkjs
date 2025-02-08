@@ -2393,7 +2393,6 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 	{
 		var _Line        = this.Lines[CurLine];
 		var _LineMetrics = _Line.Metrics;
-		var EndLinePos   = _Line.EndPos;
 
 		var Y0 = (_Page.Y + _Line.Y - _LineMetrics.Ascent);
 		var Y1 = (_Page.Y + _Line.Y + _LineMetrics.Descent);
@@ -2549,7 +2548,7 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 				isForm     = oInlineSdt.IsForm();
 				oFormShd   = isForm ? oInlineSdt.GetFormShd() : null;
 
-				if (oFormShd && !oFormShd.IsNil())
+				if ((oFormShd && !oFormShd.IsNil()) || oInlineSdt.getShdColor())
 				{
 					isFormShd = true;
 					break;
@@ -2559,7 +2558,8 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 			if (SdtHighlightColor || FormsHighlight || isFormShd)
 			{
 				var oSdtBounds;
-				var oPrevColor = new CDocumentColor(-1, -1, -1);
+				let currentColor = new AscWord.CDocumentColorA(-1, -1, -1, 255);
+				let shdColor = null;
 
 				let isDrawFormHighlight = !pGraphics.isPrintMode;
 				if (true === LogicDocument.ForceDrawFormHighlight)
@@ -2573,6 +2573,7 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 					isForm     = oInlineSdt.IsForm();
 					oSdtBounds = PDSH.InlineSdt[nSdtIndex].GetRangeBounds(CurLine, CurRange);
 					oFormShd   = isForm ? oInlineSdt.GetFormShd() : null;
+					shdColor   = oInlineSdt.getShdColor();
 
 					if (-1 !== fixedForms.indexOf(oInlineSdt) || oInlineSdt.IsFixedForm())
 						continue;
@@ -2591,43 +2592,51 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 
 						if (oInlineSdt.IsCurrentComplexForm() || !isDrawFormHighlight)
 						{
-							if (!oPrevColor.IsEqualRGB(oFormShdColor))
+							if (!currentColor.isEqualRgb(oFormShdColor))
 							{
 								pGraphics.b_color1(oFormShdColor.r, oFormShdColor.g, oFormShdColor.b, 255);
-								oPrevColor.SetFromColor(oFormShdColor);
+								currentColor.setRgb(oFormShdColor);
 							}
 						}
 						else
 						{
 							if ((formHighlightColor = oInlineSdt.GetFormHighlightColor(FormsHighlight)))
 							{
-								if (!oPrevColor.IsEqualRGB(formHighlightColor))
+								if (!currentColor.isEqualRgb(formHighlightColor))
 								{
 									pGraphics.b_color1(formHighlightColor.r, formHighlightColor.g, formHighlightColor.b, 255);
-									oPrevColor.SetFromColor(formHighlightColor);
+									currentColor.setRgb(formHighlightColor);
 								}
 							}
-							else if (!oPrevColor.IsEqualRGB(oFormShdColorDark))
+							else if (!currentColor.isEqualRgb(oFormShdColorDark))
 							{
 								pGraphics.b_color1(oFormShdColorDark.r, oFormShdColorDark.g, oFormShdColorDark.b, 255);
-								oPrevColor.SetFromColor(oFormShdColorDark);
+								currentColor.setRgb(oFormShdColorDark);
 							}
 						}
 					}
 					else if (isForm && (formHighlightColor = oInlineSdt.GetFormHighlightColor(FormsHighlight)) && !oInlineSdt.IsCurrentComplexForm())
 					{
-						if (!oPrevColor.IsEqualRGB(formHighlightColor))
+						if (!currentColor.isEqualRgb(formHighlightColor))
 						{
 							pGraphics.b_color1(formHighlightColor.r, formHighlightColor.g, formHighlightColor.b, 255);
-							oPrevColor.SetFromColor(formHighlightColor);
+							currentColor.setRgb(formHighlightColor);
+						}
+					}
+					else if (shdColor)
+					{
+						if (!currentColor.isEqual(shdColor))
+						{
+							pGraphics.b_color1(shdColor.r, shdColor.g, shdColor.b, shdColor.a);
+							currentColor.setRgba(shdColor);
 						}
 					}
 					else if (!isForm && SdtHighlightColor)
 					{
-						if (!oPrevColor.IsEqualRGB(SdtHighlightColor))
+						if (!currentColor.isEqualRgb(SdtHighlightColor))
 						{
 							pGraphics.b_color1(SdtHighlightColor.r, SdtHighlightColor.g, SdtHighlightColor.b, 255);
-							oPrevColor.SetFromColor(SdtHighlightColor);
+							currentColor.setRgb(SdtHighlightColor);
 						}
 					}
 					else
@@ -3289,7 +3298,6 @@ Paragraph.prototype.drawRunContentLines = function(CurPage, pGraphics, drawState
 	var arrFormAreasColors = [];
 	var arrFormAreas       = [];
 	var arrFormRects       = [];
-	var arrFormAreasWidths = [];
 	
 	let drawRunPrReview = !pGraphics.isPrintMode && !pGraphics.isPdf();
 
@@ -3416,7 +3424,7 @@ Paragraph.prototype.drawRunContentLines = function(CurPage, pGraphics, drawState
 					RunPrReview       = Element.Additional.RunPr;
 					arrRunReviewRects = [];
 					arrRunReviewAreas.push(arrRunReviewRects);
-					arrRunReviewAreasColors.push(new CDocumentColor(Element.r, Element.g, Element.b));
+					arrRunReviewAreasColors.push(new AscWord.CDocumentColorA(Element.r, Element.g, Element.b, 255));
 				}
 
 				arrRunReviewRectsLine.push({
@@ -3559,8 +3567,7 @@ Paragraph.prototype.drawRunContentLines = function(CurPage, pGraphics, drawState
 							}
 							arrFormRects = [];
 							arrFormAreas.push(arrFormRects);
-							arrFormAreasColors.push(new CDocumentColor(Element.r, Element.g, Element.b));
-							arrFormAreasWidths.push(Element.w);
+							arrFormAreasColors.push(new AscWord.CDocumentColorA(Element.r, Element.g, Element.b, Element.a));
 						}
 
 						arrFormRectsLine.push({
@@ -3581,37 +3588,16 @@ Paragraph.prototype.drawRunContentLines = function(CurPage, pGraphics, drawState
 
 		pGraphics.End_Command();
 	}
-
-	if (pGraphics.DrawPolygon)
+	
+	this.drawPolygons(pGraphics, arrRunReviewAreas, arrRunReviewAreasColors, 0, 0);
+	this.drawPolygons(pGraphics, arrFormAreas, arrFormAreasColors, 0, 0);
+};
+Paragraph.prototype.drawPolygons = function(graphics, areas, colors, lineWidth, shift)
+{
+	for (let i = 0, areaCount = areas.length; i < areaCount; ++i)
 	{
-		for (var ReviewAreaIndex = 0, ReviewAreasCount = arrRunReviewAreas.length; ReviewAreaIndex < ReviewAreasCount; ++ReviewAreaIndex)
-		{
-			var arrRunReviewRects = arrRunReviewAreas[ReviewAreaIndex];
-			var oRunReviewColor   = arrRunReviewAreasColors[ReviewAreaIndex];
-			var ReviewPolygon     = new AscCommon.CPolygon();
-			ReviewPolygon.fill(arrRunReviewRects);
-			var PolygonPaths = ReviewPolygon.GetPaths(0);
-			pGraphics.p_color(oRunReviewColor.r, oRunReviewColor.g, oRunReviewColor.b, 255);
-			for (var PolygonIndex = 0, PolygonsCount = PolygonPaths.length; PolygonIndex < PolygonsCount; ++PolygonIndex)
-			{
-				var Path = PolygonPaths[PolygonIndex];
-				pGraphics.DrawPolygon(Path, 1, 0);
-			}
-		}
-
-		for (var nFormAreaIndex = 0, nFormAreasCount = arrFormAreas.length; nFormAreaIndex < nFormAreasCount; ++nFormAreaIndex)
-		{
-			var arrFormRects = arrFormAreas[nFormAreaIndex];
-			var oFormColor   = arrFormAreasColors[nFormAreaIndex];
-			var oPolygon     = new AscCommon.CPolygon();
-			oPolygon.fill(arrFormRects);
-			var arrPolygonPaths = oPolygon.GetPaths(0);
-			pGraphics.p_color(oFormColor.r, oFormColor.g, oFormColor.b, 255);
-			for (var nPolygonIndex = 0, nPolygonsCount = arrPolygonPaths.length; nPolygonIndex < nPolygonsCount; ++nPolygonIndex)
-			{
-				pGraphics.DrawPolygon(arrPolygonPaths[nPolygonIndex], 1, 0);//arrFormAreasWidths[nFormAreaIndex], 0);
-			}
-		}
+		graphics.p_color(colors[i].r, colors[i].g, colors[i].b, colors[i].a);
+		graphics.drawPolygonByRects(areas[i], lineWidth, shift);
 	}
 };
 Paragraph.prototype.Internal_Draw_6 = function(CurPage, pGraphics, Pr)
@@ -19281,7 +19267,7 @@ CParaPos.prototype.IsValid = function(oParagraph)
 
 
 // используется в Internal_Draw_3 и Internal_Draw_5
-function CParaDrawingRangeLinesElement(y0, y1, x0, x1, w, r, g, b, Additional, Additional2)
+function CParaDrawingRangeLinesElement(y0, y1, x0, x1, w, r, g, b, a, Additional, Additional2)
 {
     this.y0 = y0;
     this.y1 = y1;
@@ -19291,6 +19277,7 @@ function CParaDrawingRangeLinesElement(y0, y1, x0, x1, w, r, g, b, Additional, A
     this.r  = r;
     this.g  = g;
     this.b  = b;
+	this.a  = a;
 
     this.Additional   = Additional;
     this.Additional2  = Additional2;
@@ -19312,8 +19299,14 @@ CParaDrawingRangeLines.prototype =
 
     Add : function (y0, y1, x0, x1, w, r, g, b, Additional, Additional2)
     {
-        this.Elements.push( new CParaDrawingRangeLinesElement(y0, y1, x0, x1, w, r, g, b, Additional, Additional2) );
+        this.Elements.push( new CParaDrawingRangeLinesElement(y0, y1, x0, x1, w, r, g, b, 255, Additional, Additional2) );
     },
+	
+	// TODO: Unite Add and addWithAlpha methods
+	addWithAlpha : function(y0, y1, x0, x1, w, r, g, b, a, Additional, Additional2)
+	{
+		this.Elements.push(new CParaDrawingRangeLinesElement(y0, y1, x0, x1, w, r, g, b, a, Additional, Additional2));
+	},
 
     Get_Next : function(isSaveIntermediate)
     {
@@ -19387,7 +19380,8 @@ CParaDrawingRangeLines.prototype =
 			&& Math.abs(PrevEl.w - Element.w) < 0.001
 			&& PrevEl.r === Element.r
 			&& PrevEl.g === Element.g
-			&& PrevEl.b === Element.b)
+			&& PrevEl.b === Element.b
+			&& PrevEl.a === Element.a)
 		{
 			if (undefined === PrevEl.Additional && undefined === Element.Additional)
 				return true;
