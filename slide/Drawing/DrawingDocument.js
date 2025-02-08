@@ -6346,7 +6346,11 @@ CThumbnailsManager.prototype.isThumbnailsShown = function () {
 	const absolutePosition = thumbnailsContainer.AbsolutePosition;
 	const width = absolutePosition.R - absolutePosition.L;
 	const height = absolutePosition.B - absolutePosition.T;
-	return width >= 1 && height >= 0;
+
+	const isHorizontalThumbnails = this.m_oWordControl.thumbnailsPosition === AscCommonSlide.thumbnailsPositionMap.bottom;
+	return isHorizontalThumbnails
+		? width >= 0 && height >= 1
+		: width >= 1 && height >= 0;
 };
 
 function CSlideDrawer()
