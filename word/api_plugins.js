@@ -1292,13 +1292,9 @@
 
 	function private_ReadContentControlCommonPr(commonPr)
 	{
-		var resultPr;
-		if (commonPr)
-		{
-			resultPr = new AscCommon.CContentControlPr();
-			resultPr = readContentControlCommonPr(contentControlPr, commonPr);
-		}
-		return resultPr;
+		if (!commonPr)
+			return undefined;
+		return readContentControlCommonPr(new AscCommon.CContentControlPr(), commonPr);
 	}
 	function readContentControlCommonPr(ccPr, commonPr)
 	{

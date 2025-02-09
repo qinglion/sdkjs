@@ -9619,6 +9619,7 @@ AscWord.CDocumentColor = CDocumentColor;
 		}
 		else if (val.length >= 8)
 		{
+			let index = "#" === val[0] ? 1 : 0;
 			this.r = parseInt(val.substring(index, index + 2), 16);
 			this.g = parseInt(val.substring(index + 2, index + 4), 16);
 			this.b = parseInt(val.substring(index + 4, index + 6), 16);
