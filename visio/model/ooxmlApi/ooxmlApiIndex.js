@@ -51,8 +51,7 @@
 	 */
 	function Text_Type() {
 		/**
-		 * if text is inherited so we consider that text fields in it have wrong values,
-		 * and we recalculate values them
+		 * if text is inherited (for calculate presentation field)
 		 */
 		this.isInherited = false;
 
@@ -761,7 +760,7 @@
 		let fillColorResultCells = ["Color", "GradientStopColor"];
 		let numberResultCells = ["LinePattern", "LineWeight", "GradientStopColorTrans", "GradientStopPosition",
 		"FillGradientAngle", "EndArrowSize", "BeginArrowSize", "FillPattern", "LineCap"];
-		let stringResultCells = ["EndArrow", "BeginArrow"];
+		let stringResultCells = ["EndArrow", "BeginArrow", "Font"];
 		let booleanResultCells = ["FillGradientEnabled"];
 
 		// TODO handle 2.2.7.5	Fixed Theme
