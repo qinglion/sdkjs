@@ -965,7 +965,7 @@ CBlockLevelSdt.prototype.GetBoundingRect = function()
 CBlockLevelSdt.prototype.DrawContentControlsTrack = function(nType, X, Y, nCurPage, isCheckHit, shift)
 {
 	if (!this.IsRecalculated() || !this.LogicDocument)
-		return;
+		return false;
 
 	var oLogicDocument   = this.LogicDocument;
 	var oDrawingDocument = oLogicDocument.GetDrawingDocument();
@@ -976,13 +976,13 @@ CBlockLevelSdt.prototype.DrawContentControlsTrack = function(nType, X, Y, nCurPa
 	if (this.IsContentControlEquation() && !this.IsPlaceHolder())
 	{
 		oDrawingDocument.OnDrawContentControl(null, nType);
-		return;
+		return false;
 	}
 
 	if (this.IsHideContentControlTrack())
 	{
 		oDrawingDocument.OnDrawContentControl(null, nType);
-		return;
+		return false;
 	}
 
 	var oHdrFtr     = this.IsHdrFtr(true);
@@ -1022,7 +1022,7 @@ CBlockLevelSdt.prototype.DrawContentControlsTrack = function(nType, X, Y, nCurPa
 		}
 
 		if (false !== isCheckHit && !isHit)
-			return;
+			return false;
 
 		var sHelpText = "";
 		if (AscCommon.ContentControlTrack.Hover === nType && this.IsForm() && (sHelpText = this.GetFormPr().HelpText))
@@ -1049,6 +1049,7 @@ CBlockLevelSdt.prototype.DrawContentControlsTrack = function(nType, X, Y, nCurPa
 	}
 
 	oDrawingDocument.addContentControlTrack(this, nType, arrRects);
+	return true;
 };
 CBlockLevelSdt.prototype.AddContentControl = function(nContentControlType)
 {

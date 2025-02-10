@@ -1111,24 +1111,21 @@ CInlineLevelSdt.prototype.GetFixedFormBounds = function(isUsePaddings)
 CInlineLevelSdt.prototype.DrawContentControlsTrack = function(nType, X, Y, nCurPage, isCheckHit, shift)
 {
 	if (!this.Paragraph)
-		return;
+		return false;
 
 	let logicDocument   = this.Paragraph.GetLogicDocument();
 	let drawingDocument = this.Paragraph.getDrawingDocument();
 	if (!logicDocument || !drawingDocument)
-		return;
+		return false;
 	
 	if (this.IsContentControlEquation())
-	{
-		drawingDocument.OnDrawContentControl(null, nType);
-		return;
-	}
+		return false;
 
 	// Не рисуем трек для фиксед форм, т.к. он уже есть от рамки автофигуры
 	if (this.IsFixedForm() && this.IsCurrent() && logicDocument.IsDocumentEditor() && !logicDocument.IsFillingOFormMode())
 	{
 		drawingDocument.OnDrawContentControl(null, nType);
-		return;
+		return false;
 	}
 	
 	let oMainForm;
@@ -1146,7 +1143,7 @@ CInlineLevelSdt.prototype.DrawContentControlsTrack = function(nType, X, Y, nCurP
 			{
 				drawingDocument.OnDrawContentControl(null, nType);
 				oMainForm.DrawContentControlsTrack(AscCommon.ContentControlTrack.Main, X, Y, nCurPage, isCheckHit);
-				return;
+				return true;
 			}
 
 			oMainForm.DrawContentControlsTrack(AscCommon.ContentControlTrack.Main, X, Y, nCurPage, isCheckHit);
@@ -1168,7 +1165,7 @@ CInlineLevelSdt.prototype.DrawContentControlsTrack = function(nType, X, Y, nCurP
 		}
 
 		if (false !== isCheckHit && !isHit)
-			return;
+			return false;
 
 		var sHelpText = "";
 		if (AscCommon.ContentControlTrack.Hover === nType && this.IsForm() && (sHelpText = this.GetFormPr().HelpText))
@@ -1189,18 +1186,20 @@ CInlineLevelSdt.prototype.DrawContentControlsTrack = function(nType, X, Y, nCurP
 		let oPolygon = new AscCommon.CPolygon();
 		oPolygon.fill([[oShape.getFormRelRect()]]);
 		drawingDocument.OnDrawContentControl(this, nType, oPolygon.GetPaths(0));
-		return;
+		return true;
 	}
 
 	if (this.IsHideContentControlTrack())
 	{
 		drawingDocument.OnDrawContentControl(null, nType);
-		return;
+		return false;
 	}
 	
 	let polygon = this.GetBoundingPolygon(shift ? shift : 0);
 	if (polygon || polygon.length)
 		drawingDocument.addContentControlTrack(this, nType, polygon);
+	
+	return true;
 };
 CInlineLevelSdt.prototype.IsDrawContentControlsTrackBounds = function()
 {

@@ -2401,6 +2401,8 @@
 			
 			this.lastHover  = null;
 			this.lastActive = null;
+			
+			this.ContentControlObjects = this.ContentControlObjects.reverse();
 		};
 		this.addTrackHover = function(obj, geom)
 		{

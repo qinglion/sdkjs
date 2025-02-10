@@ -1305,5 +1305,5 @@ CSdtBase.prototype.setBorderColor = function(color)
  */
 CSdtBase.prototype.drawContentControlsTrackIn = function(shift)
 {
-	this.DrawContentControlsTrack(AscCommon.ContentControlTrack.In, undefined, undefined, undefined, undefined, shift);
+	return this.DrawContentControlsTrack(AscCommon.ContentControlTrack.In, undefined, undefined, undefined, undefined, shift);
 };
