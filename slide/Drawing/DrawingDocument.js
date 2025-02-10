@@ -5864,7 +5864,9 @@ function CThumbnailsManager(editorPage)
 			startOffset = this.const_offset_x;
 		}
 
-		const currentScrollPx = this.m_dScrollY >> 0;
+		const currentScrollPx = isRightToLeft && !isVerticalThumbnails
+			? this.m_dScrollY_max - this.m_dScrollY >> 0
+			: this.m_dScrollY >> 0;
 
 		let isFirstSlideFound = false;
 		let isLastSlideFound = false;
@@ -6184,6 +6186,10 @@ function CThumbnailsManager(editorPage)
 
 			}
 			wordControl.m_oScrollThumb_.isHorizontalScroll = isHorizontalOrientation;
+
+			if (wordControl.isRTL && isHorizontalOrientation) {
+				wordControl.m_oScrollThumbApi.scrollToX(wordControl.m_oScrollThumbApi.maxScrollX);
+			}
 		}
 
 		if (this.m_bIsScrollVisible) {
