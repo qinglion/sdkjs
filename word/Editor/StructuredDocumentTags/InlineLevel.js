@@ -1108,7 +1108,7 @@ CInlineLevelSdt.prototype.GetFixedFormBounds = function(isUsePaddings)
 
 	return {X : 0, Y : 0, W : 0, H : 0, Page : 0};
 };
-CInlineLevelSdt.prototype.DrawContentControlsTrack = function(nType, X, Y, nCurPage, isCheckHit, shift)
+CInlineLevelSdt.prototype.DrawContentControlsTrack = function(nType, X, Y, nCurPage, isCheckHit, padding)
 {
 	if (!this.Paragraph)
 		return false;
@@ -1120,34 +1120,21 @@ CInlineLevelSdt.prototype.DrawContentControlsTrack = function(nType, X, Y, nCurP
 	
 	if (this.IsContentControlEquation())
 		return false;
-
-	// Не рисуем трек для фиксед форм, т.к. он уже есть от рамки автофигуры
-	if (this.IsFixedForm() && this.IsCurrent() && logicDocument.IsDocumentEditor() && !logicDocument.IsFillingOFormMode())
-	{
-		drawingDocument.OnDrawContentControl(null, nType);
+	
+	if (this.IsHideContentControlTrack())
 		return false;
-	}
+	
+	// Don't show inner inline-track for fixed forms
+	if (this.IsFixedForm() && logicDocument.IsDocumentEditor() && !logicDocument.IsFillingOFormMode())
+		return false;
 	
 	let oMainForm;
 	if (this.IsForm() && (oMainForm = this.GetMainForm()) && oMainForm !== this)
 	{
 		if (AscCommon.ContentControlTrack.Hover === nType)
-		{
 			return oMainForm.DrawContentControlsTrack(AscCommon.ContentControlTrack.Hover, X, Y, nCurPage, isCheckHit);
-		}
-		else
-		{
-			// В режиме заполнения, у внутренних текстовых форм и чекбоксов не рисуем собственный трек, а только внешний
-			if (logicDocument.IsFillingFormMode()
-				&& (this.IsTextForm() || this.IsCheckBox()))
-			{
-				drawingDocument.OnDrawContentControl(null, nType);
-				oMainForm.DrawContentControlsTrack(AscCommon.ContentControlTrack.Main, X, Y, nCurPage, isCheckHit);
-				return true;
-			}
-
-			oMainForm.DrawContentControlsTrack(AscCommon.ContentControlTrack.Main, X, Y, nCurPage, isCheckHit);
-		}
+		else if (logicDocument.IsFillingFormMode() && (this.IsTextForm() || this.IsCheckBox()))
+			return false;
 	}
 	
 	if (undefined !== X && undefined !== Y && undefined !== nCurPage)
@@ -1183,20 +1170,14 @@ CInlineLevelSdt.prototype.DrawContentControlsTrack = function(nType, X, Y, nCurP
 	var oShape = this.Paragraph.Parent ? this.Paragraph.Parent.Is_DrawingShape(true) : null;
 	if (this.IsForm() && oShape && oShape.isForm())
 	{
-		let oPolygon = new AscCommon.CPolygon();
-		oPolygon.fill([[oShape.getFormRelRect()]]);
-		drawingDocument.OnDrawContentControl(this, nType, oPolygon.GetPaths(0));
+		let polygon = new AscCommon.CPolygon();
+		polygon.fill([[oShape.getFormRelRect()]]);
+		drawingDocument.addContentControlTrack(this, nType, polygon.GetPaths(0));
 		return true;
 	}
-
-	if (this.IsHideContentControlTrack())
-	{
-		drawingDocument.OnDrawContentControl(null, nType);
-		return false;
-	}
 	
-	let polygon = this.GetBoundingPolygon(shift ? shift : 0);
-	if (polygon || polygon.length)
+	let polygon = this.GetBoundingPolygon(padding ? padding : 0);
+	if (polygon && polygon.length)
 		drawingDocument.addContentControlTrack(this, nType, polygon);
 	
 	return true;

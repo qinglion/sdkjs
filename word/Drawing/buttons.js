@@ -923,8 +923,7 @@
 
 	AscCommon.ContentControlTrack = {
 		Hover : 0,
-		In    : 1,
-		Main  : 2
+		In    : 1
 	};
 
 	function getOutlineCC(isActive)
@@ -2333,17 +2332,17 @@
 		
 		this.startCollectTracks = function()
 		{
-			// We can have many Track.In and just one Track.Hover
+			// We might have many Track.In and just one Track.Hover
 			// Check last active Track.In
 			
-			this.lastActive = null;
+			this.lastActive = false;
 			this.lastHover  = null;
 			
 			for (let i = 0; i < this.ContentControlObjects.length; ++i)
 			{
 				let ccTrack = this.ContentControlObjects[i];
 				if (AscCommon.ContentControlTrack.In === ccTrack.state && -2 !== ccTrack.ActiveButtonIndex)
-					this.lastActive = ccTrack;
+					this.lastActive = true;
 				
 				if (AscCommon.ContentControlTrack.Hover === ccTrack.state)
 					this.lastHover = ccTrack
@@ -2362,21 +2361,18 @@
 		{
 			if (this.lastActive)
 			{
-				let isActiveRemove = true;
+				let isActive = false;
 				for (let i = 0; i < this.ContentControlObjects.length; ++i)
 				{
 					let ccTrack = this.ContentControlObjects[i];
-					if (AscCommon.ContentControlTrack.In === ccTrack.state
-						&& this.lastActive.base
-						&& ccTrack.base
-						&& this.lastActive.base.GetId() === ccTrack.base.GetId())
+					if (AscCommon.ContentControlTrack.In === ccTrack.state && -2 !== ccTrack.ActiveButtonIndex)
 					{
-						isActiveRemove = false;
+						isActive = true;
 						break;
 					}
 				}
 				
-				if (isActiveRemove)
+				if (!isActive)
 					this.document.m_oWordControl.m_oApi.sendEvent("asc_onHideContentControlsActions");
 			}
 			
@@ -2400,7 +2396,7 @@
 			}
 			
 			this.lastHover  = null;
-			this.lastActive = null;
+			this.lastActive = false;
 			
 			this.ContentControlObjects = this.ContentControlObjects.reverse();
 		};
@@ -2436,67 +2432,6 @@
 				if (AscCommon.ContentControlTrack.Hover === this.ContentControlObjects[i].state)
 					this.ContentControlObjects.splice(i, 1);
 			}
-		};
-
-		this.OnDrawContentControl = function(obj, state, geom)
-		{
-			if (AscCommon.ContentControlTrack.In !== state)
-				return;
-			
-			if (!obj)
-			{
-				this.ContentControlObjects.length = 0;
-			}
-			
-			var isActiveRemove = false;
-			// всегда должен быть максимум один hover и in
-			for (var i = 0; i < this.ContentControlObjects.length; i++)
-			{
-				if (state === this.ContentControlObjects[i].state && obj === this.ContentControlObjects[i].base)
-				{
-					this.ContentControlObjects[i].UpdateGeom(geom);
-					return;
-				}
-
-				if (state == this.ContentControlObjects[i].state
-					|| ((!obj || !obj.IsForm() || obj.IsMainForm()) && AscCommon.ContentControlTrack.In === state && AscCommon.ContentControlTrack.Main === this.ContentControlObjects[i].state))
-				{
-					if (-2 != this.ContentControlObjects[i].ActiveButtonIndex)
-						isActiveRemove = true;
-					//
-					// this.ContentControlObjects.splice(i, 1);
-					// i--;
-				}
-			}
-
-			if (null == obj)
-			{
-				if (isActiveRemove)
-					this.document.m_oWordControl.m_oApi.sendEvent("asc_onHideContentControlsActions");
-				return;
-			}
-
-			if (this.ContentControlObjects.length != 0 && this.ContentControlObjects[0].base.GetId() == obj.GetId())
-			{
-				if (state === AscCommon.ContentControlTrack.Hover)
-					return;
-
-				// In
-				if (-2 != this.ContentControlObjects[0].ActiveButtonIndex)
-					isActiveRemove = true;
-
-				this.ContentControlObjects.splice(0, 1);
-			}
-
-			var isNormal = true;
-			if (Array.isArray(geom) && geom.length === 0)
-				isNormal = false;
-
-			if (isNormal)
-				this.ContentControlObjects.push(new CContentControlTrack(this, obj, state, geom));
-
-			if (isActiveRemove)
-				this.document.m_oWordControl.m_oApi.sendEvent("asc_onHideContentControlsActions");
 		};
 
 		this.checkSmallChanges = function(pos)

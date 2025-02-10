@@ -12501,58 +12501,19 @@ CDocument.prototype.private_UpdateTracks = function(bSelection, bEmptySelection)
 	this.DrawingDocument.startCollectContentControlTracks();
 	var oCurrentForm = null;
 	let contentControls = oSelectedInfo.GetAllSdts();
-	if (contentControls.length && this.IsFillingOFormMode())
-	{
-		let lastCC = contentControls[contentControls.length - 1];
-		if (lastCC && lastCC.IsForm())
-		{
-			oCurrentForm = lastCC;
-			lastCC.drawContentControlsTrackIn(0);
-		}
-	}
-	else if (contentControls.length)
+	if (contentControls.length)
 	{
 		let offset = this.DrawingDocument.GetMMPerDot(5);
 		// Math equation has its own track, so wee need to take that into account
 		let curOffset = oMath ? offset : 0;
 		for (let i = contentControls.length - 1; i >= 0; --i)
 		{
+			if (!oCurrentForm && contentControls[i].IsForm())
+				oCurrentForm = contentControls[i];
+			
 			if (contentControls[i].drawContentControlsTrackIn(curOffset))
 				curOffset += offset;
 		}
-	}
-	//
-	//
-	// if (oInlineLevelSdt)
-	// {
-	// 	this.DrawingDocument.OnDrawContentControl(null, AscCommon.ContentControlTrack.In);
-	//
-	// 	console.log(oSelectedInfo.GetAllSdts().length);
-	//
-	// 	if (oInlineLevelSdt.IsForm())
-	// 		oCurrentForm = oInlineLevelSdt;
-	//
-	// 	if (!oInlineLevelSdt.IsForm() || !oInlineLevelSdt.IsFixedForm() || this.IsFillingOFormMode())
-	// 		oInlineLevelSdt.DrawContentControlsTrack(AscCommon.ContentControlTrack.In);
-	// }
-	// else if (oBlockLevelSdt)
-	// {
-	// 	console.log(oSelectedInfo.GetAllSdts().length);
-	// 	this.DrawingDocument.OnDrawContentControl(null, AscCommon.ContentControlTrack.In);
-	// 	oBlockLevelSdt.DrawContentControlsTrack(AscCommon.ContentControlTrack.In);
-	// }
-	else
-	{
-		var oForm = null, oMajorParaDrawing;
-		if (docpostype_DrawingObjects === this.GetDocPosType()
-			&& (oMajorParaDrawing = this.DrawingObjects.getMajorParaDrawing())
-			&& this.DrawingObjects.getTargetDocContent())
-			oForm = oMajorParaDrawing.GetInnerForm();
-
-		if (oForm)
-			oForm.DrawContentControlsTrack(AscCommon.ContentControlTrack.In);
-		// else
-		// 	this.DrawingDocument.OnDrawContentControl(null, AscCommon.ContentControlTrack.In);
 	}
 	this.DrawingDocument.endCollectContentControlTracks();
 

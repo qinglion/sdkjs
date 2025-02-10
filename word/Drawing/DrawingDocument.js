@@ -5051,20 +5051,6 @@ function CDrawingDocument()
 		
 		return this.contentControls.endCollectTracks();
 	};
-	this.addContentControlTrackIn = function(obj, geom)
-	{
-		if (window["NATIVE_EDITOR_ENJINE"] === true)
-			return;
-		
-		return this.contentControls.addContentControlTrackIn(obj, geom);
-	};
-	this.addContentControlTrackHover = function(obj, geom)
-	{
-		if (window["NATIVE_EDITOR_ENJINE"] === true)
-			return;
-		
-		return this.contentControls.addContentControlTrackHover(obj, geom);
-	};
 	this.addContentControlTrack = function(obj, state, geom)
 	{
 		if (window["NATIVE_EDITOR_ENJINE"] === true)
@@ -5081,15 +5067,6 @@ function CDrawingDocument()
 			return;
 		
 		return this.contentControls.removeTrackHover();
-	};
-	
-
-	this.OnDrawContentControl = function(obj, state, geom)
-	{
-		if (window["NATIVE_EDITOR_ENJINE"] === true)
-			return;
-		
-		return this.contentControls.OnDrawContentControl(obj, state, geom);
 	};
 
 	this.DrawMathTrack = function (overlay)

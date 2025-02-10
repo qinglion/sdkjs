@@ -962,7 +962,7 @@ CBlockLevelSdt.prototype.GetBoundingRect = function()
 		Transform : this.Get_ParentTextTransform()
 	};
 };
-CBlockLevelSdt.prototype.DrawContentControlsTrack = function(nType, X, Y, nCurPage, isCheckHit, shift)
+CBlockLevelSdt.prototype.DrawContentControlsTrack = function(nType, X, Y, nCurPage, isCheckHit, padding)
 {
 	if (!this.IsRecalculated() || !this.LogicDocument)
 		return false;
@@ -974,17 +974,11 @@ CBlockLevelSdt.prototype.DrawContentControlsTrack = function(nType, X, Y, nCurPa
 	// TODO: Нужно отрисовать рамку формулы, но для этого нужно чтобы селект плейсхолдера был не целиком на параграф,
 	//       а только на формулу
 	if (this.IsContentControlEquation() && !this.IsPlaceHolder())
-	{
-		oDrawingDocument.OnDrawContentControl(null, nType);
 		return false;
-	}
-
+	
 	if (this.IsHideContentControlTrack())
-	{
-		oDrawingDocument.OnDrawContentControl(null, nType);
 		return false;
-	}
-
+	
 	var oHdrFtr     = this.IsHdrFtr(true);
 	var nHdrFtrPage = oHdrFtr ? oHdrFtr.GetContent().GetAbsolutePage(0) : null;
 	let isFullWidth = oLogicDocument.IsFillingFormMode();
@@ -1037,14 +1031,14 @@ CBlockLevelSdt.prototype.DrawContentControlsTrack = function(nType, X, Y, nCurPa
 		}
 	}
 	
-	if (shift)
+	if (padding)
 	{
 		for (let i = 0; i < arrRects.length; ++i)
 		{
-			arrRects[i].X -= shift;
-			arrRects[i].Y -= shift;
-			arrRects[i].R += shift;
-			arrRects[i].B += shift;
+			arrRects[i].X -= padding;
+			arrRects[i].Y -= padding;
+			arrRects[i].R += padding;
+			arrRects[i].B += padding;
 		}
 	}
 
