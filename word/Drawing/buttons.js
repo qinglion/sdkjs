@@ -2381,7 +2381,23 @@
 			}
 			
 			if (this.lastHover)
-				this.ContentControlObjects.push(this.lastHover);
+			{
+				for (let i = 0; i < this.ContentControlObjects.length; ++i)
+				{
+					let ccTrack = this.ContentControlObjects[i];
+					if (AscCommon.ContentControlTrack.In === ccTrack.state
+						&& this.lastHover.base
+						&& ccTrack.base
+						&& this.lastHover.base.GetId() === ccTrack.base.GetId())
+					{
+						this.lastHover = null;
+						break;
+					}
+				}
+				
+				if (this.lastHover)
+					this.ContentControlObjects.push(this.lastHover);
+			}
 			
 			this.lastHover  = null;
 			this.lastActive = null;

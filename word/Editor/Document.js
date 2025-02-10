@@ -12513,7 +12513,7 @@ CDocument.prototype.private_UpdateTracks = function(bSelection, bEmptySelection)
 	else if (contentControls.length)
 	{
 		let count = contentControls.length;
-		let shift = 0.5;
+		let shift = this.DrawingDocument.GetMMPerDot(5);
 		for (let i = 0; i < count; ++i)
 		{
 			contentControls[i].drawContentControlsTrackIn((count - 1 - i) * shift);
