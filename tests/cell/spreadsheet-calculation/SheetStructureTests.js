@@ -3337,6 +3337,17 @@ $(function () {
 		wb.dependencyFormulas._foreachDefName(function(defName) {
 			wb.dependencyFormulas.removeDefName(undefined, defName.name);
 		});
+
+		// for bug 61855
+		let insertArgsRes = api.wb.insertArgumentsInFormula(["1"], 0, 0, "SUM", true/*bEndInsertArg*/);
+		assert.strictEqual(insertArgsRes && insertArgsRes.functionResult, "1", "Calculation result for SUM function when insert first argument in formula");
+
+		insertArgsRes = api.wb.insertArgumentsInFormula(["1,2"], 1, 0, "SUM", true);
+		assert.strictEqual(insertArgsRes && insertArgsRes.functionResult, "3", "Calculation result for SUM function when insert second argument in formula");
+
+		insertArgsRes = api.wb.insertArgumentsInFormula(["1"], 1, 0, "SUM", true);
+		assert.strictEqual(insertArgsRes && insertArgsRes.functionResult, "1", "Calculation result for SUM function when delete second argument in formula");
+		
 	});
 
 	QUnit.test('autoCompleteFormula', function (assert) {

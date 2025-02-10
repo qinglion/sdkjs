@@ -3244,16 +3244,17 @@
 			this.cellEditor.changeCellText(sArguments);
 
 			if (name) {
-
-				var res = new AscCommonExcel.CFunctionInfo(name);
+				let res = new AscCommonExcel.CFunctionInfo(name);
 				if (needChange) {
 					res.asc_setArguments(args);
 				}
 				res.argumentsResult = [];
-				var argCalc = ws.calculateWizardFormula(args[argNum], argType);
+				let argCalc = ws.calculateWizardFormula(args[argNum], argType);
 				res.argumentsResult[argNum] = argCalc.str;
-				if (argCalc.obj && argCalc.obj.type !== AscCommonExcel.cElementType.error) {
-					var funcCalc = ws.calculateWizardFormula(name + '(' + sArguments + ')');
+				//second condition: if we haven't received the formulaResult, calculate with those arguments that exist in the array
+				if ((argCalc.obj && argCalc.obj.type !== AscCommonExcel.cElementType.error) ||
+					(argCalc.obj === null && res && !res.functionResult && args && sArguments)) {
+					let funcCalc = ws.calculateWizardFormula(name + '(' + sArguments + ')');
 					res.functionResult = funcCalc.str;
 					if (funcCalc.obj && funcCalc.obj.type !== AscCommonExcel.cElementType.error) {
 						res.formulaResult = ws.calculateWizardFormula(this.cellEditor.getText().substring(1)).str;
