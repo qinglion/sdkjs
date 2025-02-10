@@ -1679,11 +1679,11 @@ function (window, undefined) {
 		this.cursorStyle.display = "none";
 	};
 
-	CellEditor.prototype._updateCursorPosition = function (redrawText, isExpand) {
+	CellEditor.prototype._updateCursorPosition = function (redrawText, isExpand, lineIndex) {
 		// ToDo стоит переправить данную функцию
 		let h = this.canvas.height;
 		let y = -this.textRender.calcLineOffset(this.topLineIndex);
-		let cur = this.textRender.calcCharOffset(this.cursorPos);
+		let cur = this.textRender.calcCharOffset(this.cursorPos, lineIndex);
 		let charsCount = this.textRender.getCharsCount();
 		let textAlign = this.textFlags && this.textFlags.textAlign;
 		let curLeft = asc_round(
@@ -1759,7 +1759,7 @@ function (window, undefined) {
 		this._updateSelectionInfo();
 	};
 
-	CellEditor.prototype._moveCursor = function (kind, pos) {
+	CellEditor.prototype._moveCursor = function (kind, pos, lineIndex) {
 		this.newTextFormat = null;
 		var t = this;
 		this.sAutoComplete = null;
@@ -1807,12 +1807,16 @@ function (window, undefined) {
 			t.selectionBegin = t.selectionEnd = -1;
 			t._cleanSelection();
 		}
-		t._updateCursorPosition();
+		t._updateCursorPosition(null, null, lineIndex);
 		t._updateCursor();
 	};
 
 	CellEditor.prototype._findCursorPosition = function (coord) {
 		return this.textRender.getCharPosByXY(coord.x, coord.y, this.topLineIndex, this.getZoom());
+	};
+
+	CellEditor.prototype._findLineIndex = function (coord) {
+		return this.textRender.getLineByY(coord.y, this.topLineIndex, this.getZoom());
 	};
 
 	CellEditor.prototype._updateTopLineCurPos = function () {
@@ -3012,7 +3016,7 @@ function (window, undefined) {
 					this._updateCursor();
 					pos = this._findCursorPosition(coord);
 					if (pos !== undefined) {
-						pos >= 0 ? this._moveCursor(kPosition, pos) : this._moveCursor(pos);
+						pos >= 0 ? this._moveCursor(kPosition, pos, this._findLineIndex(coord)) : this._moveCursor(pos, null, this._findLineIndex(coord));
 					}
 				} else {
 					this._changeSelection(coord);
