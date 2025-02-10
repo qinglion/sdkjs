@@ -12499,18 +12499,46 @@ CDocument.prototype.private_UpdateTracks = function(bSelection, bEmptySelection)
 	var oInlineLevelSdt = oSelectedInfo.GetInlineLevelSdt();
 
 	var oCurrentForm = null;
-	if (oInlineLevelSdt)
+	let contentControls = oSelectedInfo.GetAllSdts();
+	if (contentControls.length && this.IsFillingOFormMode())
 	{
-		if (oInlineLevelSdt.IsForm())
-			oCurrentForm = oInlineLevelSdt;
-		
-		if (!oInlineLevelSdt.IsForm() || !oInlineLevelSdt.IsFixedForm() || this.IsFillingOFormMode())
-			oInlineLevelSdt.DrawContentControlsTrack(AscCommon.ContentControlTrack.In);
+		let lastCC = contentControls[contentControls.length - 1];
+		if (lastCC && lastCC.IsForm())
+		{
+			oCurrentForm = lastCC;
+			lastCC.DrawContentControlsTrack(AscCommon.ContentControlTrack.In, 0);
+		}
 	}
-	else if (oBlockLevelSdt)
+	else if (contentControls.length)
 	{
-		oBlockLevelSdt.DrawContentControlsTrack(AscCommon.ContentControlTrack.In);
+		this.DrawingDocument.OnDrawContentControl(null, AscCommon.ContentControlTrack.In);
+		let count = contentControls.length;
+		let shift = 0.5;
+		for (let i = 0; i < count; ++i)
+		{
+			contentControls[i].drawContentControlsTrackIn((count - 1 - i) * shift);
+		}
 	}
+	//
+	//
+	// if (oInlineLevelSdt)
+	// {
+	// 	this.DrawingDocument.OnDrawContentControl(null, AscCommon.ContentControlTrack.In);
+	//
+	// 	console.log(oSelectedInfo.GetAllSdts().length);
+	//
+	// 	if (oInlineLevelSdt.IsForm())
+	// 		oCurrentForm = oInlineLevelSdt;
+	//
+	// 	if (!oInlineLevelSdt.IsForm() || !oInlineLevelSdt.IsFixedForm() || this.IsFillingOFormMode())
+	// 		oInlineLevelSdt.DrawContentControlsTrack(AscCommon.ContentControlTrack.In);
+	// }
+	// else if (oBlockLevelSdt)
+	// {
+	// 	console.log(oSelectedInfo.GetAllSdts().length);
+	// 	this.DrawingDocument.OnDrawContentControl(null, AscCommon.ContentControlTrack.In);
+	// 	oBlockLevelSdt.DrawContentControlsTrack(AscCommon.ContentControlTrack.In);
+	// }
 	else
 	{
 		var oForm = null, oMajorParaDrawing;

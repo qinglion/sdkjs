@@ -2331,6 +2331,14 @@
 
 		this.OnDrawContentControl = function(obj, state, geom)
 		{
+			if (AscCommon.ContentControlTrack.In !== state)
+				return;
+			
+			if (!obj)
+			{
+				this.ContentControlObjects.length = 0;
+			}
+			
 			var isActiveRemove = false;
 			// всегда должен быть максимум один hover и in
 			for (var i = 0; i < this.ContentControlObjects.length; i++)
@@ -2346,9 +2354,9 @@
 				{
 					if (-2 != this.ContentControlObjects[i].ActiveButtonIndex)
 						isActiveRemove = true;
-
-					this.ContentControlObjects.splice(i, 1);
-					i--;
+					//
+					// this.ContentControlObjects.splice(i, 1);
+					// i--;
 				}
 			}
 

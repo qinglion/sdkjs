@@ -962,7 +962,7 @@ CBlockLevelSdt.prototype.GetBoundingRect = function()
 		Transform : this.Get_ParentTextTransform()
 	};
 };
-CBlockLevelSdt.prototype.DrawContentControlsTrack = function(nType, X, Y, nCurPage, isCheckHit)
+CBlockLevelSdt.prototype.DrawContentControlsTrack = function(nType, X, Y, nCurPage, isCheckHit, shift)
 {
 	if (!this.IsRecalculated() || !this.LogicDocument)
 		return;
@@ -1034,6 +1034,17 @@ CBlockLevelSdt.prototype.DrawContentControlsTrack = function(nType, X, Y, nCurPa
 			oMMData.Type  = Asc.c_oAscMouseMoveDataTypes.Form;
 			oMMData.Text  = sHelpText;
 			oLogicDocument.GetApi().sync_MouseMoveCallback(oMMData);
+		}
+	}
+	
+	if (shift)
+	{
+		for (let i = 0; i < arrRects.length; ++i)
+		{
+			arrRects[i].X -= shift;
+			arrRects[i].Y -= shift;
+			arrRects[i].R += shift;
+			arrRects[i].B += shift;
 		}
 	}
 

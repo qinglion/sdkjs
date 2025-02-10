@@ -49,6 +49,7 @@ function CInlineLevelSdt()
 
 	this.BoundsPaths          = null;
 	this.BoundsPathsStartPage = -1;
+	this.BoundsShift          = -1;
 
 	// Добавляем данный класс в таблицу Id (обязательно в конце конструктора)
 	AscCommon.g_oTableId.Add(this, this.Id);
@@ -973,13 +974,13 @@ CInlineLevelSdt.prototype.Get_WordEndPos = function(SearchPos, ContentPos, Depth
 
 	}
 };
-CInlineLevelSdt.prototype.GetBoundingPolygon = function()
+CInlineLevelSdt.prototype.GetBoundingPolygon = function(shift)
 {
 	var oHdrFtr     = this.Paragraph.Parent.IsHdrFtr(true);
 	var nHdrFtrPage = oHdrFtr ? oHdrFtr.GetContent().GetAbsolutePage(0) : null;
 
 	var StartPage = this.Paragraph.Get_StartPage_Absolute();
-	if (null === this.BoundsPaths || StartPage !== this.BoundsPathsStartPage)
+	if (null === this.BoundsPaths || StartPage !== this.BoundsPathsStartPage || shift !== this.BoundsShift)
 	{
 		var arrBounds = [], arrRects = [], CurPage = -1, isAllEmpty = true;
 		for (var Key in this.Bounds)
@@ -1008,10 +1009,11 @@ CInlineLevelSdt.prototype.GetBoundingPolygon = function()
 		{
 			var oPolygon = new AscCommon.CPolygon();
 			oPolygon.fill([arrBounds[nIndex]]);
-			this.BoundsPaths = this.BoundsPaths.concat(oPolygon.GetPaths(0));
+			this.BoundsPaths = this.BoundsPaths.concat(oPolygon.GetPaths(shift));
 		}
 
 		this.BoundsPathsStartPage = StartPage;
+		this.BoundsShift          = shift;
 	}
 
 	return this.BoundsPaths;
@@ -1106,7 +1108,7 @@ CInlineLevelSdt.prototype.GetFixedFormBounds = function(isUsePaddings)
 
 	return {X : 0, Y : 0, W : 0, H : 0, Page : 0};
 };
-CInlineLevelSdt.prototype.DrawContentControlsTrack = function(nType, X, Y, nCurPage, isCheckHit)
+CInlineLevelSdt.prototype.DrawContentControlsTrack = function(nType, X, Y, nCurPage, isCheckHit, shift)
 {
 	if (!this.Paragraph)
 		return;
@@ -1195,8 +1197,8 @@ CInlineLevelSdt.prototype.DrawContentControlsTrack = function(nType, X, Y, nCurP
 		drawingDocument.OnDrawContentControl(null, nType);
 		return;
 	}
-
-	let oPolygon = this.GetBoundingPolygon();
+	
+	let oPolygon = this.GetBoundingPolygon(shift ? shift : 0);
 	if (!oPolygon || !oPolygon.length)
 		drawingDocument.OnDrawContentControl(null, nType);
 	else

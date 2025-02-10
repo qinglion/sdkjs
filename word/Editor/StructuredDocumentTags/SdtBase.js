@@ -1300,3 +1300,10 @@ CSdtBase.prototype.setBorderColor = function(color)
 		
 	AscCommon.AddAndExecuteChange(new CChangesSdtPrBorderColor(this, this.Pr.BorderColor, color));
 };
+/**
+ * @param shift {number}
+ */
+CSdtBase.prototype.drawContentControlsTrackIn = function(shift)
+{
+	this.DrawContentControlsTrack(AscCommon.ContentControlTrack.In, undefined, undefined, undefined, undefined, shift);
+};
