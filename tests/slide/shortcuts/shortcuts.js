@@ -69,6 +69,10 @@
 	editor.sync_EndAddShape = Asc.asc_docs_api.prototype.sync_EndAddShape.bind(editor);
 	editor.asc_getShowGuides = Asc.asc_docs_api.prototype.asc_getShowGuides.bind(editor);
 	editor.sync_HyperlinkClickCallback = Asc.asc_docs_api.prototype.sync_HyperlinkClickCallback.bind(editor);
+	editor.getAnnotations = function () {return null;};
+	editor.EndDemonstration = Asc.asc_docs_api.prototype.EndDemonstration.bind(editor);
+	editor.closeDemonstration = Asc.asc_docs_api.prototype.closeDemonstration.bind(editor);
+	editor.endDemoMode = Asc.asc_docs_api.prototype.endDemoMode.bind(editor);
 	AscCommon.CDocsCoApi.prototype.askSaveChanges = function (callback)
 	{
 		window.setTimeout(function ()
@@ -100,7 +104,7 @@
 		shapeTrack.track({}, x+ width, y + height);
 		const shape = shapeTrack.getShape(false, AscTest.DrawingDocument, null);
 		shape.setBDeleted(false);
-		shape.setParent(logicDocument.Slides[0]);
+		shape.setParent(logicDocument.GetCurrentSlide());
 		shape.addToDrawingObjects();
 		shape.select(GetDrawingObjects(), 0);
 		return shape;
@@ -109,7 +113,7 @@
 	function AddChart()
 	{
 		const chart = editor.asc_getChartObject(Asc.c_oAscChartTypeSettings.lineNormal);
-		chart.setParent(logicDocument.Slides[0]);
+		chart.setParent(logicDocument.GetCurrentSlide());
 
 		chart.addToDrawingObjects();
 		chart.spPr.setXfrm(new AscFormat.CXfrm());

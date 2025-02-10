@@ -718,7 +718,7 @@
             oDoc.History.Add(new CChangesPDFAnnotContents(this, sCurContents, contents));
         }
         
-        this.SetWasChanged(true);
+        this.SetWasChanged(true, false);
         if (bSendAddCommentEvent)
             oDoc.CheckComment(this);
         
@@ -896,7 +896,7 @@
 
         AscCommon.History.Add(new CChangesPDFAnnotModDate(this, this._modDate, sDate));
         this._modDate = sDate;
-        this.SetWasChanged(true);
+        this.SetWasChanged(true, false);
     };
     CAnnotationBase.prototype.GetModDate = function(bPDF) {
         if (this._modDate == undefined)
@@ -915,7 +915,7 @@
 
         AscCommon.History.Add(new CChangesPDFAnnotCreationDate(this, this._creationDate, sDate));
         this._creationDate = sDate;
-        this.SetWasChanged(true);
+        this.SetWasChanged(true, false);
     };
     CAnnotationBase.prototype.GetCreationDate = function(bPDF) {
         if (this._creationDate == undefined)
@@ -935,7 +935,7 @@
 
         AscCommon.History.Add(new CChangesPDFAnnotAuthor(this, this._author, sAuthor));
         this._author = sAuthor;
-        this.SetWasChanged(true);
+        this.SetWasChanged(true, false);
     };
     CAnnotationBase.prototype.GetAuthor = function() {
         return this._author;

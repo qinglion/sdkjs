@@ -480,17 +480,21 @@
 				//удобнее сначала создавать обратное изменение
 				let oReverseChange = _oChange.CreateReverseChange();
 				if (oReverseChange) {
-					oReverseChange.SetReverted(true);
 					if (this.CommuteRelated(oClass, oReverseChange, nPosition + nCount))
 					{
+						oReverseChange.SetReverted(true);
 						arrReverseChanges.push(oReverseChange);
 					}
 					else
 					{
 						//todo для автофигур не надо скрывать всю точку
-						//в таблицах не принимается все точка
+						//в таблицах не принимается вся точка
 						//например при вставка столбца копируется заливка соседнего столбца
 						arrReverseChanges = [];
+						for (let i = nCount - 1; i > nIndex; --i)
+						{
+							this.Changes[nPosition + i].SetReverted(false);
+						}
 						break;
 					}
 				}
@@ -498,8 +502,13 @@
 				{
 					//ничего не делаем если есть изменения которые не готовы
 					arrReverseChanges = [];
+					for (let i = nCount - 1; i > nIndex; --i)
+					{
+						this.Changes[nPosition + i].SetReverted(false);
+					}
 					break;
 				}
+				oChange.SetReverted(true);
 			}
 			else
 			{

@@ -950,13 +950,8 @@
 		this.isHandMode = false;
 
 		//g_clipboardBase.Init(this);
+		this.headingsColor = config["headings-color"] ? config["headings-color"] : null;
 		
-		if (config["headings-color"])
-		{
-			let rgba = AscCommon.RgbaHexToRGBA(config["headings-color"]);
-			AscWord.setDefaultHeadingColor(rgba.R, rgba.G, rgba.B)
-		}
-
 		this._init();
 	}
 
@@ -2232,9 +2227,12 @@ background-repeat: no-repeat;\
 		//        After    : 10 * g_dKoef_pt_to_mm  // Дополнительное расстояние после абзаца
 		//    }
 		//	}
+		let logicDocument = this.private_GetLogicDocument();
+		if (!logicDocument)
+			return;
 
 		// TODO: как только разъединят настройки параграфа и текста переделать тут
-		var TextPr         = editor.WordControl.m_oLogicDocument.GetCalculatedTextPr();
+		var TextPr         = logicDocument.GetCalculatedTextPr();
 		ParaPr.Subscript   = TextPr.VertAlign === AscCommon.vertalign_SubScript;
 		ParaPr.Superscript = TextPr.VertAlign === AscCommon.vertalign_SuperScript;
 		ParaPr.Strikeout   = TextPr.Strikeout;
@@ -2269,6 +2267,16 @@ background-repeat: no-repeat;\
 		this.sync_ParaSpacingLine(ParaPr.Spacing);
 		this.Update_ParaInd(ParaPr.Ind);
 		this.sync_PrAlignCallBack(ParaPr.Jc);
+		
+		let bidi = ParaPr.Bidi;
+		if (undefined === bidi)
+		{
+			let paragraph = logicDocument.GetCurrentParagraph(false, false, {FirstInSelection : true});
+			bidi = paragraph ? paragraph.GetParagraphBidi() : undefined;
+		}
+		
+		this.sendEvent("asc_onTextDirection", bidi);
+		
 		this.sync_PrPropCallback(ParaPr);
 	};
 	/*----------------------------------------------------------------*/
@@ -3526,6 +3534,29 @@ background-repeat: no-repeat;\
 		}
 	};
 	
+	
+	asc_docs_api.prototype.asc_setRtlTextDirection = function(isRtl)
+	{
+		let logicDocument = this.private_GetLogicDocument();
+		if (!logicDocument)
+			return;
+		
+		if (logicDocument.IsSelectionLocked(AscCommon.changestype_Paragraph_Properties))
+			return;
+		
+		logicDocument.StartAction(AscDFH.historydescription_Document_SetParagraphBidi);
+		logicDocument.SetParagraphBidi(isRtl);
+		logicDocument.FinalizeAction();
+	};
+	asc_docs_api.prototype.asc_isRtlTextDirection = function()
+	{
+		let logicDocument = this.private_GetLogicDocument();
+		if (!logicDocument)
+			return false;
+		
+		let paragraph = logicDocument.GetCurrentParagraph(false, false, {FirstInSelection : true});
+		return paragraph ? paragraph.GetParagraphBidi() : false;
+	};
 	asc_docs_api.prototype._addRemoveSpaceBeforeAfterParagraph = function(event)
 	{
 		let logicDocument = this.private_GetLogicDocument();
@@ -4069,6 +4100,9 @@ background-repeat: no-repeat;\
 
 			if (undefined !== Props.SuppressLineNumbers)
 				oLogicDocument.SetParagraphSuppressLineNumbers(Props.SuppressLineNumbers);
+			
+			if (undefined !== Props.Bidi)
+				oLogicDocument.SetParagraphBidi(Props.Bidi);
 
 			// TODO: как только разъединят настройки параграфа и текста переделать тут
 			var TextPr = new AscCommonWord.CTextPr();
@@ -4114,7 +4148,7 @@ background-repeat: no-repeat;\
 
 			if (undefined !== Props.Ligatures)
 				TextPr.Ligatures = Props.Ligatures;
-
+			
 			oLogicDocument.AddToParagraph(new AscCommonWord.ParaTextPr(TextPr));
 			oLogicDocument.Recalculate();
 			oLogicDocument.UpdateInterface();
@@ -4145,15 +4179,18 @@ background-repeat: no-repeat;\
 		}
 		return false;
 	};
-
-	asc_docs_api.prototype.put_PrAlign        = function(value)
+	
+	asc_docs_api.prototype.put_PrAlign = function(value)
 	{
-		if (false === this.WordControl.m_oLogicDocument.Document_Is_SelectionLocked(changestype_Paragraph_Properties))
-		{
-			this.WordControl.m_oLogicDocument.StartAction(AscDFH.historydescription_Document_SetParagraphAlign);
-			this.WordControl.m_oLogicDocument.SetParagraphAlign(value);
-			this.WordControl.m_oLogicDocument.FinalizeAction();
-		}
+		let logicDocument = this.private_GetLogicDocument();
+		if (logicDocument.IsSelectionLocked(AscCommon.changestype_Paragraph_Properties))
+			return;
+		
+		logicDocument.StartAction(AscDFH.historydescription_Document_SetParagraphAlign);
+		logicDocument.SetParagraphAlign(value);
+		logicDocument.UpdateInterface();
+		logicDocument.Recalculate();
+		logicDocument.FinalizeAction();
 	};
 	// 0- baseline, 2-subscript, 1-superscript
 	asc_docs_api.prototype.put_TextPrBaseline = function(value)
@@ -4933,7 +4970,12 @@ background-repeat: no-repeat;\
 	};
 	asc_docs_api.prototype.sync_TextLangCallBack  = function(Lang)
 	{
-		this.sendEvent("asc_onTextLanguage", Lang.Val);
+		// TODO: По-хорошему, надо сюда уже присылать lcid, а решать какой выше
+		let lcid = Lang.Val;
+		if (this.asc_isRtlTextDirection() && undefined !== Lang.Bidi)
+			lcid = Lang.Bidi;
+		
+		this.sendEvent("asc_onTextLanguage", lcid);
 	};
 	asc_docs_api.prototype.sync_ParaStyleName     = function(Name)
 	{
@@ -9797,7 +9839,12 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype._onEndLoadSdk = function()
 	{
 		AscCommon.baseEditorsApi.prototype._onEndLoadSdk.call(this);
-
+		
+		if (this.headingsColor)
+		{
+			AscWord.setDefaultHeadingColorStr(this.headingsColor);
+		}
+		
 		History           = AscCommon.History;
 		g_fontApplication = AscFonts.g_fontApplication;
 		PasteElementsId   = AscCommon.PasteElementsId;
@@ -9951,7 +9998,7 @@ background-repeat: no-repeat;\
 		var oResult = null;
 		if (c_oAscSdtLevelType.Block === nType)
 		{
-			if (false === oLogicDocument.Document_Is_SelectionLocked(AscCommon.changestype_ContentControl_Add, null))
+			if (false === oLogicDocument.Document_Is_SelectionLocked(AscCommon.changestype_ContentControl_Add, null, true, false, null, AscDFH.historydescription_Document_AddBlockLevelContentControl))
 			{
 				oLogicDocument.StartAction(AscDFH.historydescription_Document_AddBlockLevelContentControl);
 
@@ -9973,7 +10020,7 @@ background-repeat: no-repeat;\
 		}
 		else if (c_oAscSdtLevelType.Inline === nType)
 		{
-			if (false === oLogicDocument.Document_Is_SelectionLocked(AscCommon.changestype_ContentControl_Add, null))
+			if (false === oLogicDocument.Document_Is_SelectionLocked(AscCommon.changestype_ContentControl_Add, null, true, false, null, AscDFH.historydescription_Document_AddInlineLevelContentControl))
 			{
 				oLogicDocument.StartAction(AscDFH.historydescription_Document_AddInlineLevelContentControl);
 
@@ -12036,6 +12083,11 @@ background-repeat: no-repeat;\
 
 		return logicDocument.UpdateFields(isInSelection);
 	};
+	asc_docs_api.prototype.asc_ToggleComplexFieldCodes = function()
+	{
+		let logicDocument = this.private_GetLogicDocument();
+		logicDocument && logicDocument.ToggleComplexFieldCodes()
+	};
 
 	asc_docs_api.prototype.asc_ParseTableFormulaInstrLine = function(sInstrLine)
 	{
@@ -13564,6 +13616,20 @@ background-repeat: no-repeat;\
 		return bReset;
 	};
 
+	asc_docs_api.prototype.removeAllInks = function()
+	{
+		let oLogicDocument = this.getLogicDocument();
+		if(!oLogicDocument) return;
+		return oLogicDocument.RemoveAllInks();
+	};
+
+
+	asc_docs_api.prototype.haveInks = function() {
+		let oLogicDocument = this.getLogicDocument();
+		if(!oLogicDocument) return;
+		return oLogicDocument.HaveInks();
+	};
+
 	asc_docs_api.prototype.onUpdateRestrictions = function(restrictionSettings)
 	{
 		if (this.WordControl)
@@ -14344,6 +14410,8 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype['put_TextPrSmallCaps']                       = asc_docs_api.prototype.put_TextPrSmallCaps;
 	asc_docs_api.prototype['put_TextPrPosition']                        = asc_docs_api.prototype.put_TextPrPosition;
 	asc_docs_api.prototype['put_TextPrLang']                            = asc_docs_api.prototype.put_TextPrLang;
+	asc_docs_api.prototype['asc_setRtlTextDirection']                   = asc_docs_api.prototype.asc_setRtlTextDirection;
+	asc_docs_api.prototype['asc_isRtlTextDirection']                    = asc_docs_api.prototype.asc_isRtlTextDirection;
 	asc_docs_api.prototype['asc_addSpaceBeforeParagraph']               = asc_docs_api.prototype.asc_addSpaceBeforeParagraph;
 	asc_docs_api.prototype['asc_addSpaceAfterParagraph']                = asc_docs_api.prototype.asc_addSpaceAfterParagraph;
 	asc_docs_api.prototype['asc_removeSpaceBeforeParagraph']            = asc_docs_api.prototype.asc_removeSpaceBeforeParagraph;
@@ -14828,6 +14896,7 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype['asc_CreateInstructionLine']                 = asc_docs_api.prototype.asc_CreateInstructionLine;
 	asc_docs_api.prototype['asc_HaveFields']                            = asc_docs_api.prototype.asc_HaveFields;
 	asc_docs_api.prototype['asc_UpdateFields']                          = asc_docs_api.prototype.asc_UpdateFields;
+	asc_docs_api.prototype['asc_ToggleComplexFieldCodes']               = asc_docs_api.prototype.asc_ToggleComplexFieldCodes;
 
 	asc_docs_api.prototype["asc_addDateTime"]                           = asc_docs_api.prototype.asc_addDateTime;
 

@@ -1247,7 +1247,7 @@ CHistory.prototype.Add = function(Class, Type, sheetid, range, Data, LocalChange
 	if (null != sheetid)
 		curPoint.UndoSheetId = sheetid;
 
-	if(1 === curPoint.Items.length)
+	if((1 === curPoint.Items.length && curPoint.Items[0].Type !== AscCH.historyitem_Unknown) || 2 === curPoint.Items.length)
 		this._sendCanUndoRedo();
 
 	if (!this.CollaborativeEditing)
@@ -1402,6 +1402,9 @@ CHistory.prototype.EndTransaction = function(checkLockLastAction)
 	if(this.Transaction < 0)
 		this.Transaction = 0;
 	if (this.IsEndTransaction() && this.workbook) {
+		if (AscCommonExcel.g_cCalcRecursion) {
+			AscCommonExcel.g_cCalcRecursion.setIsCellEdited(true);
+		}
 		this.workbook.dependencyFormulas.unlockRecal();
 		this.workbook.handlers.trigger("updateCellWatches");
 		this.workbook.oApi.sendEvent("asc_onUserActionEnd");

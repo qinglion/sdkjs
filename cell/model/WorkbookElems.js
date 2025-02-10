@@ -18240,6 +18240,12 @@ function RangeDataManagerElem(bbox, data)
 			"boolean[][]": 1,
 			"any[][]": 1
 		};
+		let supportedArrTypes = {
+			"number[][]": 1,
+			"string[][]": 1,
+			"boolean[][]": 1,
+			"any[][]": 1
+		};
 		if (argsInfo) {
 			let optionalCount = 0;
 			for (let i = 0; i < argsInfo.length; i++) {
@@ -18258,9 +18264,11 @@ function RangeDataManagerElem(bbox, data)
 		}
 
 		let returnInfo = options.returnInfo;
-		if (options.returnInfo && !supportedTypes[options.returnInfo.type]) {
+		if (options.returnInfo && !supportedTypes[returnInfo.type]) {
 			console.log("Registration custom function \"" +  funcName + "\" warning. Invalid return type. The following types must be used: number, string, boolean, any, number[][], string[][], boolean[][], any[][].");
 		}
+
+		let returnValueType = supportedArrTypes[returnInfo.type] ? AscCommonExcel.cReturnFormulaType.array : null;
 
 		/**
 		 * @constructor
@@ -18277,6 +18285,7 @@ function RangeDataManagerElem(bbox, data)
 		//newFunc.prototype.argumentsMax = argumentsMax;
 		//argumentsType - other arguments type, need convert
 		newFunc.prototype.argumentsType = argumentsType;
+		newFunc.prototype.returnValueType = returnValueType;
 		newFunc.prototype.Calculate = function (arg) {
 			try {
 

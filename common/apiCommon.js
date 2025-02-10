@@ -2680,6 +2680,7 @@ function (window, undefined) {
 	function asc_CParagraphProperty(obj) {
 
 		if (obj) {
+			this.Bidi = undefined !== obj.Bidi ? obj.Bidi : undefined;
 			this.ContextualSpacing = (undefined != obj.ContextualSpacing) ? obj.ContextualSpacing : null;
 			this.Ind = (undefined != obj.Ind && null != obj.Ind) ? new asc_CParagraphInd(obj.Ind) : null;
 			this.KeepLines = (undefined != obj.KeepLines) ? obj.KeepLines : null;
@@ -2741,6 +2742,7 @@ function (window, undefined) {
 			//
 			//    PageBreakBefore : false,              // начинать параграф с новой страницы
 
+			this.Bidi = undefined;
 			this.ContextualSpacing = undefined;
 			this.Ind = new asc_CParagraphInd();
 			this.KeepLines = undefined;
@@ -2776,7 +2778,13 @@ function (window, undefined) {
 			this.CanEditInlineCC = true;
 		}
 	}
-
+	
+	asc_CParagraphProperty.prototype.asc_getRtlDirection = function() {
+		return this.Bidi;
+	};
+	asc_CParagraphProperty.prototype.asc_putRtlDirection = function(v) {
+		this.Bidi = v;
+	};
 	asc_CParagraphProperty.prototype.asc_getContextualSpacing = function () {
 		return this.ContextualSpacing;
 	};
@@ -4721,6 +4729,9 @@ function (window, undefined) {
 
 		//for external reference
 		this.ReferenceData = null;
+
+		this.showVerticalScroll = null;
+		this.showHorizontalScroll = null;
 	}
 
 	prot = asc_CDocInfo.prototype;
@@ -4953,6 +4964,18 @@ function (window, undefined) {
 	};
 	prot.get_Shardkey = prot.asc_getShardkey = function () {
 		return this.shardkey;
+	};
+	prot.put_ShowVerticalScroll = prot.asc_putShowVerticalScroll = function (v) {
+		this.showVerticalScroll = v;
+	};
+	prot.get_ShowVerticalScroll = prot.asc_getShowVerticalScroll = function () {
+		return this.showVerticalScroll;
+	};
+	prot.put_ShowHorizontalScroll = prot.asc_putShowHorizontalScroll = function (v) {
+		this.showHorizontalScroll = v;
+	};
+	prot.get_ShowHorizontalScroll = prot.asc_getShowHorizontalScroll = function () {
+		return this.showHorizontalScroll;
 	};
 
 	function COpenProgress() {
@@ -5271,6 +5294,11 @@ function (window, undefined) {
 						oShape.setWorksheet(oApi.wb.getWorksheet().model);
 						break;
 					}
+					case AscCommon.c_oEditorId.Visio: {
+						oShape.setWordShape(false);
+						oShape.setParent(oApi.WordControl.m_oLogicDocument);
+						break;
+					}
 				}
 
 				let _oldTrackRevision = false;
@@ -5517,7 +5545,8 @@ function (window, undefined) {
 
 					break;
 				}
-				case AscCommon.c_oEditorId.Presentation: {
+				case AscCommon.c_oEditorId.Presentation:
+				case AscCommon.c_oEditorId.Visio: {
 					if (oApi.WordControl) {
 						if (oApi.watermarkDraw) {
 							oApi.watermarkDraw.zoom = oApi.WordControl.m_nZoomValue / 100;
@@ -6494,6 +6523,8 @@ function (window, undefined) {
 
 	window["Asc"]["asc_CParagraphProperty"] = window["Asc"].asc_CParagraphProperty = asc_CParagraphProperty;
 	prot = asc_CParagraphProperty.prototype;
+	prot["get_RtlDirection"] = prot["asc_getRtlDirection"] = prot.asc_getRtlDirection;
+	prot["put_RtlDirection"] = prot["asc_putRtlDirection"] = prot.asc_putRtlDirection;
 	prot["get_ContextualSpacing"] = prot["asc_getContextualSpacing"] = prot.asc_getContextualSpacing;
 	prot["put_ContextualSpacing"] = prot["asc_putContextualSpacing"] = prot.asc_putContextualSpacing;
 	prot["get_Ind"] = prot["asc_getInd"] = prot.asc_getInd;
@@ -7000,6 +7031,10 @@ function (window, undefined) {
 	prot["get_Wopi"] = prot["asc_getWopi"] = prot.asc_getWopi;
 	prot["put_Shardkey"] = prot["asc_putShardkey"] = prot.asc_putShardkey;
 	prot["get_Shardkey"] = prot["asc_getShardkey"] = prot.asc_getShardkey;
+	prot["put_ShowVerticalScroll"] = prot["asc_putShowVerticalScroll"] = prot.asc_putShowVerticalScroll;
+	prot["get_ShowVerticalScroll"] = prot["get_getShowVerticalScroll"] = prot.get_getShowVerticalScroll;
+	prot["put_ShowHorizontalScroll"] = prot["asc_putShowHorizontalScroll"] = prot.asc_putShowHorizontalScroll;
+	prot["get_ShowHorizontalScroll"] = prot["get_getShowHorizontalScroll"] = prot.get_getShowHorizontalScroll;
 
 	window["AscCommon"].COpenProgress = COpenProgress;
 	prot = COpenProgress.prototype;

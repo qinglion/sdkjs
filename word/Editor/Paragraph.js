@@ -419,6 +419,20 @@ Paragraph.prototype.GetFirstRunPr = function()
 
 	return this.Content[0].Pr.Copy();
 };
+Paragraph.prototype.GetParaEndPr = function()
+{
+	return this.TextPr.Value.Copy();
+};
+Paragraph.prototype.SetParaEndPr = function(textPr)
+{
+	if (!textPr)
+		return;
+	
+	this.TextPr.Set_Value(textPr.Copy());
+	let endRun = this.GetParaEndRun();
+	if (endRun)
+		endRun.SetPr(textPr.Copy());
+};
 Paragraph.prototype.Get_FirstTextPr = function()
 {
 	if (this.Content.length <= 0 || para_Run !== this.Content[0].Type)
@@ -2689,24 +2703,25 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 				pGraphics.df();
 				Element = aHigh.Get_Next();
 			}
-			
 			//----------------------------------------------------------------------------------------------------------
 			// Рисуем выделение разрешенных областей
 			//----------------------------------------------------------------------------------------------------------
-			let aPerm = PDSH.Perm;
-			Element   = aPerm.Get_Next();
-			while (null != Element)
+			if (!pGraphics.isPrintMode && !pGraphics.isPdf())
 			{
-				if (!pGraphics.set_fillColor)
-					pGraphics.b_color1(Element.r, Element.g, Element.b, 255);
-				else
-					pGraphics.set_fillColor(Element.r, Element.g, Element.b);
-				
-				pGraphics.rect(Element.x0, Element.y0, Element.x1 - Element.x0, Element.y1 - Element.y0);
-				pGraphics.df();
-				Element = aPerm.Get_Next();
+				let aPerm = PDSH.Perm;
+				Element   = aPerm.Get_Next();
+				while (null != Element)
+				{
+					if (!pGraphics.set_fillColor)
+						pGraphics.b_color1(Element.r, Element.g, Element.b, 255);
+					else
+						pGraphics.set_fillColor(Element.r, Element.g, Element.b);
+					
+					pGraphics.rect(Element.x0, Element.y0, Element.x1 - Element.x0, Element.y1 - Element.y0);
+					pGraphics.df();
+					Element = aPerm.Get_Next();
+				}
 			}
-
 			//----------------------------------------------------------------------------------------------------------
 			// Рисуем комментарии
 			//----------------------------------------------------------------------------------------------------------
@@ -4701,11 +4716,16 @@ Paragraph.prototype.Add = function(Item)
 
 	if (Item.SetParagraph)
 		Item.SetParagraph(this);
-
+	
+	let itemType = Item.GetType();
+	if ((para_Text === itemType || para_Space === itemType) && this.IsCurrentPosInComplexFieldCode())
+		Item = new ParaInstrText(Item.GetCodePoint());
+	
 	switch (Item.Get_Type())
 	{
 		case para_Text:
 		case para_Space:
+		case para_InstrText:
 		case para_PageNum:
 		case para_Tab:
 		case para_Drawing:
@@ -4718,6 +4738,7 @@ Paragraph.prototype.Add = function(Item)
 		case para_ContinuationSeparator:
 		default:
 		{
+			
 			// Элементы данного типа добавляем во внутренний элемент
 			this.Content[this.CurPos.ContentPos].Add(Item);
 
@@ -14007,7 +14028,7 @@ Paragraph.prototype.Refresh_RecalcData = function(Data)
 
 			break;
 		}
-
+		case AscDFH.historyitem_Paragraph_Bidi:
 		case AscDFH.historyitem_Paragraph_Align:
 		case AscDFH.historyitem_Paragraph_DefaultTabSize:
 		case AscDFH.historyitem_Paragraph_Ind_First:
@@ -16538,9 +16559,29 @@ Paragraph.prototype.SetParagraphPr = function(oParaPr)
 {
 	this.SetDirectParaPr(oParaPr);
 };
-Paragraph.prototype.SetParagraphAlign = function(Align)
+Paragraph.prototype.SetParagraphBidi = function(isRtl)
 {
-	this.Set_Align(Align);
+	if (this.Pr.Bidi === isRtl)
+		return;
+	
+	this.private_AddPrChange();
+	AscCommon.AddAndExecuteChange(new CChangesParagraphBidi(this, this.Pr.Bidi, isRtl));
+};
+Paragraph.prototype.GetParagraphBidi = function()
+{
+	return !!this.Get_CompiledPr2(false).ParaPr.Bidi;
+};
+Paragraph.prototype.SetParagraphAlign = function(align)
+{
+	if (this.isRtlDirection())
+	{
+		if (AscCommon.align_Left === align)
+			align = AscCommon.align_Right;
+		else if (AscCommon.align_Right === align)
+			align = AscCommon.align_Left;
+	}
+	
+	this.Set_Align(align);
 };
 Paragraph.prototype.GetParagraphAlign = function()
 {
@@ -16795,6 +16836,22 @@ Paragraph.prototype.GetCurrentPermRanges = function()
 	}
 	
 	return permRanges;
+};
+Paragraph.prototype.GetPermRangesByPos = function(paraPos)
+{
+	let state = this.SaveSelectionState();
+	this.Set_ParaContentPos(paraPos, false, -1, -1, false);
+	let permRanges = this.GetCurrentPermRanges();
+	this.LoadSelectionState(state);
+	return permRanges;
+};
+Paragraph.prototype.IsCurrentPosInComplexFieldCode = function()
+{
+	let cfStatePos = this.GetCurrentComplexFields(true);
+	if (!cfStatePos.length)
+		return false;
+	
+	return cfStatePos[cfStatePos.length - 1].IsFieldCode();
 };
 Paragraph.prototype.GetCurrentComplexFields = function(bReturnFieldPos)
 {
@@ -19498,6 +19555,11 @@ CComplexFieldStatePos.prototype.IsEqual = function(oState)
 		&& oState.ComplexField
 		&& this.ComplexField.GetBeginChar() === oState.ComplexField.GetBeginChar());
 };
+CComplexFieldStatePos.prototype.IsShowFieldCode = function()
+{
+	let beginChar = this.ComplexField ? this.ComplexField.GetBeginChar() : null;
+	return beginChar ? beginChar.IsShowFieldCode() : null;
+};
 
 //----------------------------------------------------------------------------------------------------------------------
 // Классы для работы с курсором
@@ -19617,7 +19679,7 @@ CParagraphSearchPos.prototype.InitComplexFields = function(arrComplexFields)
 };
 CParagraphSearchPos.prototype.isComplexField = function()
 {
-	return (this.ComplexFields.length > 0 ? true : false);
+	return (this.ComplexFields.length > 0);
 };
 CParagraphSearchPos.prototype.isComplexFieldCode = function()
 {
@@ -19630,6 +19692,18 @@ CParagraphSearchPos.prototype.isComplexFieldCode = function()
 			return true;
 	}
 
+	return false;
+};
+CParagraphSearchPos.prototype.isHiddenComplexFieldPart = function()
+{
+	for (let fieldIndex = 0, fieldCount = this.ComplexFields.length; fieldIndex < fieldCount; ++ fieldIndex)
+	{
+		let isFieldCode = this.ComplexFields[fieldIndex].IsFieldCode();
+		let isShowCode  = this.ComplexFields[fieldIndex].IsShowFieldCode();
+		if (isFieldCode !== isShowCode)
+			return true;
+	}
+	
 	return false;
 };
 CParagraphSearchPos.prototype.isComplexFieldValue = function()

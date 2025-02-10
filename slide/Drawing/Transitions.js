@@ -2761,6 +2761,8 @@ function CDemonstrationManager(htmlpage)
 
 	this.GoToSlideShortcutStack = [];
 
+    this.SlideAnnotations = new AscCommonSlide.CSlideShowAnnotations();
+
     var oThis = this;
 
     this.CacheSlide = function(slide_num, slide_index)
@@ -2959,7 +2961,7 @@ function CDemonstrationManager(htmlpage)
             }
             else
             {
-                this.Canvas.style.backgroundColor = Asc.editor.demoBackgroundColor;
+                this.Canvas.style.backgroundColor = "#000000";
             }
         }
     };
@@ -3023,6 +3025,8 @@ function CDemonstrationManager(htmlpage)
 
         if (false === is_play_mode)
             this.IsPlayMode = false;
+
+        this.SlideAnnotations.clear();
 
         this.SlideIndexes[0] = -1;
         this.SlideIndexes[1] = -1;
@@ -3316,6 +3320,16 @@ function CDemonstrationManager(htmlpage)
         }
     };
 
+    this.Redraw = function ()
+    {
+        oThis.Clear();
+        oThis.OnPaintSlide(true);
+    };
+    this.Clear = function ()
+    {
+        let oCtx = oThis.Canvas.getContext('2d');
+        oCtx.clearRect(0, 0, oThis.Canvas.width, oThis.Canvas.height)
+    };
     this.OnPaintSlide = function(is_clear_overlay)
     {
         if (is_clear_overlay && oThis.Overlay)
@@ -3342,10 +3356,20 @@ function CDemonstrationManager(htmlpage)
             oThis.CheckWatermark(oThis.Transition);
         }
 
+
+
         // теперь запустим функцию
         var _slides = oThis.HtmlPage.m_oLogicDocument.Slides;
         var nSlideNum = oThis.SlideNum;
         var oSlide = _slides[nSlideNum];
+
+        let oAnnotations = Asc.editor.getAnnotations();
+        let oPlayer = this.GetCurrentAnimPlayer();
+        if(oAnnotations && oPlayer)
+        {
+            let oGraphics = oPlayer.createGraphics(oThis.Canvas, oThis.Transition.Rect);
+            oAnnotations.draw(oGraphics, oSlide);
+        }
 
         oThis.WaitAnimationEnd = false;
         if (oSlide && oSlide.isAdvanceAfterTransition())
@@ -3353,6 +3377,8 @@ function CDemonstrationManager(htmlpage)
             oThis.CheckSlideDuration = setTimeout(function()
             {
                 oThis.CheckSlideDuration = -1;
+                if(!oThis.Mode)
+                    return;
                 if(oThis.IsMainSeqFinished(nSlideNum))
                 {
                     oThis.AdvanceAfter();
@@ -3393,6 +3419,8 @@ function CDemonstrationManager(htmlpage)
         }
 		this.HtmlPage.m_oApi.DemonstrationReporterEnd();
 
+
+        this.SlideAnnotations.clear();
         if (this.HtmlPage.m_oApi.isOnlyDemonstration)
             return;
 
@@ -3529,7 +3557,7 @@ function CDemonstrationManager(htmlpage)
             --_slide;
         }
 
-        return this.GetSlidesCount();
+        return this.GetSlidesCount() - 1;
     };
 
 	this.GetNextVisibleSlide = function()
@@ -3584,12 +3612,17 @@ function CDemonstrationManager(htmlpage)
 
 	this.GetCurrentAnimPlayer = function()
 	{
-        var oSlide = this.GetSlide(this.SlideNum);
+        let oSlide = this.GetCurrentSlide();
         if(!oSlide)
         {
             return null;
         }
         return oSlide.getAnimationPlayer();
+	};
+
+	this.GetCurrentSlide = function()
+	{
+        return this.GetSlide(this.SlideNum);
 	};
 
     this.OnNextSlide = function(isNoSendFormReporter)
@@ -3790,7 +3823,14 @@ function CDemonstrationManager(htmlpage)
 			}
 			case 27:    // escape
 			{
-				oThis.End();
+                if(Asc.editor.isInkDrawerOn())
+                {
+                    Asc.editor.stopInkDrawer();
+                }
+                else
+                {
+                    Asc.editor.EndDemonstration();
+                }
 				break;
 			}
 			case 48: // 0
@@ -3917,7 +3957,7 @@ function CDemonstrationManager(htmlpage)
     this.CheckMouseDown = function(x, y, page)
     {
         var ret = oThis.HtmlPage.m_oLogicDocument.OnMouseDown(AscCommon.global_mouseEvent, x, y, page);
-        if (ret == keydownresult_PreventAll)
+        if (ret == keydownresult_PreventAll && !Asc.editor.isInkDrawerOn())
         {
             // mouse up will not sended!!!
             oThis.HtmlPage.m_oLogicDocument.OnMouseUp(AscCommon.global_mouseEvent, x, y, page);
@@ -3944,11 +3984,15 @@ function CDemonstrationManager(htmlpage)
 
     this.onMouseDown = function(e)
     {
+        AscCommon.global_mouseEvent.LockMouse()
         var documentMI = oThis.documentMouseInfo(e);
         if (documentMI)
         {
             var oApi = oThis.HtmlPage.m_oApi;
-            oThis.HtmlPage.m_oApi.disableReporterEvents = true;
+            if(!oApi.isDrawSlideshowAnnotations())
+            {
+                oThis.HtmlPage.m_oApi.disableReporterEvents = true;
+            }
 
             // после fullscreen возможно изменение X, Y после вызова Resize.
             oThis.HtmlPage.checkBodyOffset();
@@ -4054,8 +4098,7 @@ function CDemonstrationManager(htmlpage)
     	if (!oThis.isMouseDown && true !== isAttack)
     		return;
 
-    	if (AscCommon.global_mouseEvent.IsLocked)
-			AscCommon.global_mouseEvent.IsLocked = false;
+        AscCommon.global_mouseEvent.UnLockMouse();
 
 		oThis.isMouseDown = false;
 		if (isFromMainToReporter && oThis.PointerDiv && oThis.HtmlPage.m_oApi.isReporterMode)
@@ -4067,7 +4110,7 @@ function CDemonstrationManager(htmlpage)
 			return false;
         }
 
-		if (oThis.HtmlPage.m_oApi.reporterWindow)
+		if (oThis.HtmlPage.m_oApi.reporterWindow && !Asc.editor.isDrawSlideshowAnnotations())
 		{
 			var _msg_ = {
 				"main_command"  : true,

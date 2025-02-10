@@ -2650,36 +2650,18 @@
 			var self = this;
 			var deltaX = 0, deltaY = 0;
 
+			//TODO!!! while only check direction. need refactor, and replace up code on checkMouseWhell function
+			let values = AscCommon.checkMouseWhell(event, {
+				isSupportBidirectional : false,
+				isAllowHorizontal : true,
+				isUseMaximumDelta : true
+			});
+
 			const wb = window["Asc"]["editor"].wb;
 			//TODO for mac touchpads. need review
 			if (wb.smoothScroll && AscCommon.AscBrowser.isMacOs) {
-				var delta  = 0;
-
-				if (undefined != event.wheelDelta && event.wheelDelta != 0) {
-					delta = -45 * event.wheelDelta / 120;
-				}
-				{
-					delta = 45 * event.detail / 3;
-				}
-
-				// New school multidimensional scroll (touchpads) deltas
-				deltaY = delta;
-
-
-				// Webkit
-				if (undefined !== event.wheelDeltaY && 0 !== event.wheelDeltaY) {
-					deltaY = -45 * event.wheelDeltaY / 120;
-				}
-				if (undefined !== event.wheelDeltaX && 0 !== event.wheelDeltaX) {
-					deltaX = -45 * event.wheelDeltaX / 120;
-				}
-
-
-				deltaX >>= 0;
-				deltaY >>= 0;
-
-				deltaX = (deltaX / wb.getWorksheet().getHScrollStep()) * AscCommon.AscBrowser.retinaPixelRatio;
-				deltaY = (deltaY / wb.getWorksheet().getVScrollStep()) * AscCommon.AscBrowser.retinaPixelRatio;
+				deltaX = (values.x / wb.getWorksheet().getHScrollStep()) * AscCommon.AscBrowser.retinaPixelRatio;
+				deltaY = (values.y / wb.getWorksheet().getVScrollStep()) * AscCommon.AscBrowser.retinaPixelRatio;
 			} else {
 				if (undefined !== event.wheelDelta && 0 !== event.wheelDelta) {
 					deltaY = -1 * event.wheelDelta / 40;
@@ -2714,13 +2696,6 @@
 					deltaY = -1 * event.wheelDeltaY / 40;
 				}
 			}
-
-			//TODO!!! while only check direction. need refactor, and replace up code on checkMouseWhell function
-			let values = AscCommon.checkMouseWhell(event, {
-				isSupportBidirectional : false,
-				isAllowHorizontal : true,
-				isUseMaximumDelta : true
-			});
 
 			if (values.x === 0) {
 				deltaX = 0;
@@ -2806,6 +2781,9 @@
 		};
 
 		asc_CEventsController.prototype.showHorizontalScroll = function (val) {
+			if (!this.hsb || !this.hsb.style) {
+				return;
+			}
 			let toVisibility = val ? "visible" : "hidden";
 			let res;
 			if (this.hsb.style.visibility === toVisibility) {
@@ -2831,6 +2809,10 @@
 		};
 
 		asc_CEventsController.prototype.showVerticalScroll = function (val) {
+			if (!this.vsb || !this.vsb.style) {
+				return;
+			}
+
 			let toVisibility = val ? "visible" : "hidden";
 			let res;
 			if (this.vsb.style.visibility === toVisibility) {

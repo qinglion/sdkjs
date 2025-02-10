@@ -7261,6 +7261,17 @@
 			var memoryData = AscCommon.Base64.decode(szSrc, true, srcLen, offset);
 			return new AscCommon.FT_Stream2(memoryData, memoryData.length);
 		}
+		function CreatePPTYLoader(szSrc, offset, srcLen) {
+			let stream = CreateBinaryReader(szSrc, offset, srcLen);
+			let oBinaryReader = new AscCommon.BinaryPPTYLoader();
+			oBinaryReader.stream = new AscCommon.FileStream();
+			oBinaryReader.stream.obj = stream.obj;
+			oBinaryReader.stream.data = stream.data;
+			oBinaryReader.stream.size = stream.size;
+			oBinaryReader.stream.pos = stream.pos;
+			oBinaryReader.stream.cur = stream.cur;
+			return oBinaryReader;
+		}
 
 		function getParaDrawing(oDrawing) {
 			var oCurDrawing = oDrawing;
@@ -7388,6 +7399,7 @@
 		window['AscFormat'].SetXfrmFromMetrics = SetXfrmFromMetrics;
 		window['AscFormat'].CShape = CShape;
 		window['AscFormat'].CreateBinaryReader = CreateBinaryReader;
+		window['AscFormat'].CreatePPTYLoader = CreatePPTYLoader;
 		window['AscFormat'].getParaDrawing = getParaDrawing;
 		window['AscFormat'].ConvertGraphicFrameToWordTable = ConvertGraphicFrameToWordTable;
 		window['AscFormat'].ConvertTableToGraphicFrame = ConvertTableToGraphicFrame;
