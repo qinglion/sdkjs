@@ -2296,26 +2296,6 @@ var CPresentation = CPresentation || function(){};
 
         this.History.Add(new CChangesPDFDocumentPagesContent(this, nPos, [oPage], true));
 
-        this.History.StartNoHistoryMode();
-        for (let nPage = nPos + 1; nPage < oViewer.pagesInfo.pages.length; nPage++) {
-            if (oViewer.pagesInfo.pages[nPage].fields) {
-                oViewer.pagesInfo.pages[nPage].fields.forEach(function(field) {
-                    field.SetPage(nPage);
-                });
-            }
-            if (oViewer.pagesInfo.pages[nPage].annots) {
-                oViewer.pagesInfo.pages[nPage].annots.forEach(function(annot) {
-                    annot.SetPage(nPage);
-                });
-            }
-            if (oViewer.pagesInfo.pages[nPage].drawings) {
-                oViewer.pagesInfo.pages[nPage].drawings.forEach(function(drawing) {
-                    drawing.SetPage(nPage);
-                });
-            }
-        }
-        this.History.EndNoHistoryMode();
-
         oViewer.paint();
     };
 
@@ -2342,7 +2322,7 @@ var CPresentation = CPresentation || function(){};
         // сначала удаляем все объекты со страницы
         if (oViewer.pagesInfo.pages[nPos].fields) {
             oViewer.pagesInfo.pages[nPos].fields.slice().forEach(function(field) {
-                oThis.RemoveForm(field);
+                oThis.RemoveField(field.GetId());
             });
         }
         if (oViewer.pagesInfo.pages[nPos].annots) {
@@ -2380,28 +2360,9 @@ var CPresentation = CPresentation || function(){};
 
         this.History.Add(new CChangesPDFDocumentPagesContent(this, nPos, aPages, false));
 
-        this.History.StartNoHistoryMode();
-        // проставляем новые номера страниц объектам на остальных страницах
-        for (let nPage = nPos; nPage < oViewer.pagesInfo.pages.length; nPage++) {
-            if (oViewer.pagesInfo.pages[nPage].fields) {
-                oViewer.pagesInfo.pages[nPage].fields.forEach(function(field) {
-                    field.SetPage(nPage);
-                });
-            }
-            if (oViewer.pagesInfo.pages[nPage].annots) {
-                oViewer.pagesInfo.pages[nPage].annots.forEach(function(annot) {
-                    annot.SetPage(nPage);
-                });
-            }
-            if (oViewer.pagesInfo.pages[nPage].drawings) {
-                oViewer.pagesInfo.pages[nPage].drawings.forEach(function(drawing) {
-                    drawing.SetPage(nPage);
-                });
-            }
-        }
-        this.History.EndNoHistoryMode();
-
         oViewer.paint();
+
+        return aPages[0];
     };
     CPDFDoc.prototype.RemovePages = function(aIndexes) {
         aIndexes.sort(function(a, b) {
@@ -2411,6 +2372,41 @@ var CPresentation = CPresentation || function(){};
         for (var i = 0; i < aIndexes.length; i++) {
             this.RemovePage(aIndexes[i] - i);
         }
+    };
+    CPDFDoc.prototype.MovePage = function(nPage, nNewPos) {
+        let oPageInfo = this.GetPageInfo(nPage);
+        if (!oPageInfo) {
+            return false;
+        }
+
+        if (false == oPageInfo.SetPosition(nNewPos)) {
+            return false;
+        }
+
+        let oThumbnails = this.GetThumbnails();
+        if (oThumbnails) {
+            let nStart = Math.min(nPage, nNewPos);
+            let nEnd = Math.max(nPage, nNewPos);
+    
+            for (let i = nStart; i <= nEnd; i++) {
+                oThumbnails._repaintPage(i);
+            }
+        }
+
+        this.Viewer.paint();
+        return true;
+    };
+    CPDFDoc.prototype.MovePages = function(aIndexes, nNewPos) {
+        if (!Array.isArray(aIndexes) || aIndexes.length === 0) return;
+
+        aIndexes.sort(function(a, b) {
+            return a - b;
+        });
+
+        let _t = this;
+        aIndexes.forEach(function(oldIndex, i) {
+            _t.MovePage(oldIndex, nNewPos + i);
+        });
     };
     CPDFDoc.prototype.SetPageRotate = function(nPage, nAngle) {
 		let oViewer     = this.Viewer;
@@ -2452,7 +2448,7 @@ var CPresentation = CPresentation || function(){};
         in the following order: upper-left x, upper-left y, lower-right x and lower-right y 
 	 * @returns {AscPDF.CBaseField}
 	 */
-    CPDFDoc.prototype.AddField = function(cName, cFieldType, nPageNum, aCoords) {
+    CPDFDoc.prototype.AddFieldByParams = function(cName, cFieldType, nPageNum, aCoords) {
         function checkValidParams(cFieldType, nPageNum, aCoords) {
             if (Object.values(AscPDF.FIELD_TYPES).includes(cFieldType) == false)
                 return false;
@@ -2501,9 +2497,18 @@ var CPresentation = CPresentation || function(){};
         oField.SetParentPage(oPageInfo);
         return oField;
     };
+    CPDFDoc.prototype.AddField = function(oField, nPage) {
+        let oPagesInfo = this.GetPageInfo(nPage);
+        if (!oPagesInfo)
+            return;
 
+        this.widgets.push(oField);
+
+        oField.SetDocument(this);
+        oPagesInfo.AddField(oField);
+    };
     /**
-	 * Adds an interactive field to document.
+	 * Adds an annot to document by annot props.
 	 * @memberof CPDFDoc
 	 * @typeofeditors ["PDF"]
      * @param {object} oProps - Annot props 
@@ -2516,12 +2521,8 @@ var CPresentation = CPresentation || function(){};
         if (!oPageInfo)
             return null;
         
-        AscCommon.g_oTableId.TurnOn();
         let oAnnot = AscPDF.CreateAnnotByProps(oProps, this);
-        if (oProps.apIdx != undefined) {
-            oAnnot.SetApIdx(oProps.apIdx);
-        }
-
+        
         oAnnot.SetNeedRecalc(true);
         oAnnot.SetDisplay(this.IsAnnotsHidden() ? window["AscPDF"].Api.Objects.display["hidden"] : window["AscPDF"].Api.Objects.display["visible"]);
         
@@ -2529,6 +2530,16 @@ var CPresentation = CPresentation || function(){};
         oPageInfo.AddAnnot(oAnnot);
         
         return oAnnot;
+    };
+    CPDFDoc.prototype.AddAnnot = function(oAnnot, nPage) {
+        let oPagesInfo = this.GetPageInfo(nPage);
+        if (!oPagesInfo)
+            return;
+
+        this.annots.push(oAnnot);
+
+        oAnnot.SetDocument(this);
+        oPagesInfo.AddAnnot(oAnnot);
     };
     CPDFDoc.prototype.AddComment = function(AscCommentData) {
         let oCurHistory = AscCommon.History;
@@ -3159,11 +3170,15 @@ var CPresentation = CPresentation || function(){};
         this.private_UpdateTargetForCollaboration(true);
     };
 
-    CPDFDoc.prototype.RemoveForm = function(oForm) {
+    CPDFDoc.prototype.RemoveField = function(sId) {
         let oController = this.GetController();
         this.BlurActiveObject();
 
-        if (!oForm.IsWidget())
+        let oForm = this.widgets.find(function(form) {
+            return form.GetId() == sId;
+        });
+
+        if (!oForm || !oForm.IsWidget())
             return;
 
         // удаляем поле из виджетов и со страницы
@@ -3666,6 +3681,9 @@ var CPresentation = CPresentation || function(){};
         if (isOnRepaint !== true && false == this.Viewer.canInteract()) {
             return false;
         }
+
+        this.UpdateUndoRedo();
+        Asc.editor.CheckChangedDocument();
         
         this.Api.sync_BeginCatchSelectedElements();
 
@@ -6196,7 +6214,8 @@ var CPresentation = CPresentation || function(){};
                 CheckPages(function(page) { return page.editPageLock }, aSelectedPagesIdx);
                 break;
             }
-            case AscDFH.historydescription_Pdf_RotatePage: {
+            case AscDFH.historydescription_Pdf_RotatePage:
+            case AscDFH.historydescription_Pdf_MovePage: {
                 let aSelectedPagesIdx = AdditionalData;
                 CheckPages(function(page) { return page.rotateLock }, aSelectedPagesIdx);
                 break;
@@ -6881,50 +6900,54 @@ var CPresentation = CPresentation || function(){};
 
         switch (nAnnotType) {
             case AscPDF.ANNOTATIONS_TYPES.Text:
-                oAnnot = new AscPDF.CAnnotationText(sName, nPageNum, aRect, oPdfDoc);
+                oAnnot = new AscPDF.CAnnotationText(sName, aRect, oPdfDoc);
                 break;
             case AscPDF.ANNOTATIONS_TYPES.Ink:
-                oAnnot = new AscPDF.CAnnotationInk(sName, nPageNum, aRect, oPdfDoc);
+                oAnnot = new AscPDF.CAnnotationInk(sName, aRect, oPdfDoc);
                 break;
             case AscPDF.ANNOTATIONS_TYPES.Highlight:
-                oAnnot = new AscPDF.CAnnotationHighlight(sName, nPageNum, aRect, oPdfDoc);
+                oAnnot = new AscPDF.CAnnotationHighlight(sName, aRect, oPdfDoc);
                 break;
             case AscPDF.ANNOTATIONS_TYPES.Underline:
-                oAnnot = new AscPDF.CAnnotationUnderline(sName, nPageNum, aRect, oPdfDoc);
+                oAnnot = new AscPDF.CAnnotationUnderline(sName, aRect, oPdfDoc);
                 break;
             case AscPDF.ANNOTATIONS_TYPES.Strikeout:
-                oAnnot = new AscPDF.CAnnotationStrikeout(sName, nPageNum, aRect, oPdfDoc);
+                oAnnot = new AscPDF.CAnnotationStrikeout(sName, aRect, oPdfDoc);
                 break;
             case AscPDF.ANNOTATIONS_TYPES.Squiggly:
-                oAnnot = new AscPDF.CAnnotationSquiggly(sName, nPageNum, aRect, oPdfDoc);
+                oAnnot = new AscPDF.CAnnotationSquiggly(sName, aRect, oPdfDoc);
                 break;
             case AscPDF.ANNOTATIONS_TYPES.Caret:
-                oAnnot = new AscPDF.CAnnotationCaret(sName, nPageNum, aRect, oPdfDoc);
+                oAnnot = new AscPDF.CAnnotationCaret(sName, aRect, oPdfDoc);
                 oAnnot.SetQuads([[aRect[0], aRect[1], aRect[2], aRect[1], aRect[0], aRect[3], aRect[2], aRect[3]]]);
                 break;
             case AscPDF.ANNOTATIONS_TYPES.Line:
-                oAnnot = new AscPDF.CAnnotationLine(sName, nPageNum, aRect, oPdfDoc);
+                oAnnot = new AscPDF.CAnnotationLine(sName, aRect, oPdfDoc);
                 break;
             case AscPDF.ANNOTATIONS_TYPES.Square:
-                oAnnot = new AscPDF.CAnnotationSquare(sName, nPageNum, aRect, oPdfDoc);
+                oAnnot = new AscPDF.CAnnotationSquare(sName, aRect, oPdfDoc);
                 break;
             case AscPDF.ANNOTATIONS_TYPES.Circle:
-                oAnnot = new AscPDF.CAnnotationCircle(sName, nPageNum, aRect, oPdfDoc);
+                oAnnot = new AscPDF.CAnnotationCircle(sName, aRect, oPdfDoc);
                 break;
             case AscPDF.ANNOTATIONS_TYPES.Polygon:
-                oAnnot = new AscPDF.CAnnotationPolygon(sName, nPageNum, aRect, oPdfDoc);
+                oAnnot = new AscPDF.CAnnotationPolygon(sName, aRect, oPdfDoc);
                 break;
             case AscPDF.ANNOTATIONS_TYPES.PolyLine:
-                oAnnot = new AscPDF.CAnnotationPolyLine(sName, nPageNum, aRect, oPdfDoc);
+                oAnnot = new AscPDF.CAnnotationPolyLine(sName, aRect, oPdfDoc);
                 break;
             case AscPDF.ANNOTATIONS_TYPES.FreeText:
-                oAnnot = new AscPDF.CAnnotationFreeText(sName, nPageNum, aRect, oPdfDoc);
+                oAnnot = new AscPDF.CAnnotationFreeText(sName, aRect, oPdfDoc);
                 break;
             case AscPDF.ANNOTATIONS_TYPES.Stamp:
-                oAnnot = new AscPDF.CAnnotationStamp(sName, nPageNum, aRect, oPdfDoc);
+                oAnnot = new AscPDF.CAnnotationStamp(sName, aRect, oPdfDoc);
                 break;
             default:
                 return null;
+        }
+
+        if (oProps.apIdx != undefined) {
+            oAnnot.SetApIdx(oProps.apIdx);
         }
 
         oAnnot.SetCreationDate(sCrDate);

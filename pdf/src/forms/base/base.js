@@ -286,26 +286,25 @@
         return this.needCommit;
     };
     CBaseField.prototype.SetPage = function(nPage) {
-        let nCurPage = this.GetPage();
-        if (nPage == nCurPage)
+        if (this.GetPage() == nPage) {
             return;
-
-
-        let oViewer = editor.getDocumentRenderer();
-        let nCurIdxOnPage = oViewer.pagesInfo.pages[nCurPage] && oViewer.pagesInfo.pages[nCurPage].fields ? oViewer.pagesInfo.pages[nCurPage].fields.indexOf(this) : -1;
-        if (oViewer.pagesInfo.pages[nPage]) {
-            if (nCurIdxOnPage != -1)
-                oViewer.pagesInfo.pages[nCurPage].fields.splice(nCurIdxOnPage, 1);
-
-            if (oViewer.pagesInfo.pages[nPage].fields.indexOf(this) == -1)
-                oViewer.pagesInfo.pages[nPage].fields.push(this);
-
-            this._page = nPage;
-            this.selectStartPage = nPage;
+        }
+        
+        let oDoc        = this.GetDocument();
+        let oNewPage    = oDoc.GetPageInfo(nPage);
+        
+        if (oNewPage) {
+            oDoc.RemoveField(this.GetId());
+            oDoc.AddField(this, nPage);
         }
     };
     CBaseField.prototype.GetPage = function() {
-        return this._page;
+        let oParentPage = this.GetParentPage();
+        if (!oParentPage || !(oParentPage instanceof AscPDF.CPageInfo)) {
+            return -1;
+        }
+
+        return oParentPage.GetIndex();
     };
 
     /**
