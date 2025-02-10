@@ -2240,6 +2240,9 @@
 						for (i = 0; i < hasNumber.arrCols.length; ++i) {
 							c = hasNumber.arrCols[i];
 							cell = t._getVisibleCell(c, arCopy.r2);
+							if (cell.hasMerged()) {
+								continue;
+							}
 							text = (new asc_Range(c, arCopy.r1, c, arCopy.r2 - 1)).getName();
 							val = t.generateAutoCompleteFormula(functionName, text);
 							// ToDo - при вводе формулы в заголовок автофильтра надо писать "0"
@@ -2249,15 +2252,20 @@
 						for (i = 0; i < hasNumber.arrRows.length; ++i) {
 							r = hasNumber.arrRows[i];
 							cell = t._getVisibleCell(arCopy.c2, r);
+							if (cell.hasMerged()) {
+								continue;
+							}
 							text = (new asc_Range(arCopy.c1, r, arCopy.c2 - 1, r)).getName();
 							val = t.generateAutoCompleteFormula(functionName, text);
 							cell.setValue(val);
 						}
 						// Значение в правой нижней ячейке
 						cell = t._getVisibleCell(arCopy.c2, arCopy.r2);
-						text = (new asc_Range(arCopy.c1, arCopy.r2, arCopy.c2 - 1, arCopy.r2)).getName();
-						val = t.generateAutoCompleteFormula(functionName, text);
-						cell.setValue(val);
+						if (!cell.hasMerged()) {
+							text = (new asc_Range(arCopy.c1, arCopy.r2, arCopy.c2 - 1, arCopy.r2)).getName();
+							val = t.generateAutoCompleteFormula(functionName, text);
+							cell.setValue(val);
+						}
 					};
 				} else if (true === hasNumberInLastRow && false === hasNumberInLastColumn) {
 					// Есть значения только в последней строке (значит нужно заполнить только последнюю колонку)
@@ -2269,6 +2277,9 @@
 						for (i = 0; i < hasNumber.arrRows.length; ++i) {
 							r = hasNumber.arrRows[i];
 							cell = t._getVisibleCell(arCopy.c2, r);
+							if (cell.hasMerged()) {
+								continue;
+							}
 							text = (new asc_Range(arCopy.c1, r, arCopy.c2 - 1, r)).getName();
 							val = t.generateAutoCompleteFormula(functionName, text);
 							cell.setValue(val);
@@ -2284,6 +2295,9 @@
 						for (i = 0; i < hasNumber.arrCols.length; ++i) {
 							c = hasNumber.arrCols[i];
 							cell = t._getVisibleCell(c, arCopy.r2);
+							if (cell.hasMerged()) {
+								continue;
+							}
 							text = (new asc_Range(c, arCopy.r1, c, arCopy.r2 - 1)).getName();
 							val = t.generateAutoCompleteFormula(functionName, text);
 							cell.setValue(val);
@@ -2356,9 +2370,15 @@
 				return result;
 			}
 		} else {
-			// change selection to the last cell if the values ​​in the range are not valid in the autocomplete formula
 			if (!result.text && !result.notEditCell) {
-				selection.setActiveCell(ar.r2, ar.c2);
+				let supposedCell = this.model.getCell3(activeCell.row, activeCell.col);
+				let merged = supposedCell && supposedCell.hasMerged();
+				if (merged) {
+					selection.setActiveCell(merged.r1, merged.c1);
+				} else if (firstCell && (firstCell.cellType === CellValueType.String) && lastCell && (lastCell.cellType === CellValueType.String)) {
+					// change selection to the last cell if the values ​​in the range are not valid in the autocomplete formula
+					selection.setActiveCell(ar.r2, ar.c2);
+				}
 			}
 		}
 

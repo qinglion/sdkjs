@@ -3896,6 +3896,182 @@ $(function () {
 		supposedActiveCell = ws.getCell2("B22");
 		assert.strictEqual(activeCell.col === supposedActiveCell.bbox.c1 && activeCell.row === supposedActiveCell.bbox.r1, true, "Active cell test. B20:B22(only text in range) autosum");
 
+		/* autocomplete to merge cells */
+		ws.getRange2("A30:B31").setValue("111");
+		// C30:D31 merge & center
+		ws.getRange2("C30:D31").merge(Asc.c_oAscMergeOptions.MergeCenter);
+		assert.ok(ws.getRange2("C30:D31").hasMerged(), 'Range C30:D31 is merged');
+
+		fillRange = ws.getRange2("A30:D31");
+		wsView.setSelection(fillRange.bbox);
+		wsView._initRowsCount();
+		wsView._initColsCount();
+		autoCompleteRes = wsView.autoCompleteFormula("SUM");
+
+		resCell = ws.getRange2("C30");
+		assert.strictEqual(resCell.getValueWithFormat(), "", "Value in merged cell after A30:D31 autosum");
+		assert.strictEqual(resCell.getValueForEdit(), "", "Formula in merged cell after A30:D31 autosum");
+		resCell = ws.getRange2("C31");
+		assert.strictEqual(resCell.getValueWithFormat(), "", "Value in merged cell after A30:D31 autosum");
+		assert.strictEqual(resCell.getValueForEdit(), "", "Formula in merged cell after A30:D31 autosum");
+		resCell = ws.getRange2("D30");
+		assert.strictEqual(resCell.getValueWithFormat(), "", "Value in merged cell after A30:D31 autosum");
+		assert.strictEqual(resCell.getValueForEdit(), "", "Formula in merged cell after A30:D31 autosum");
+		resCell = ws.getRange2("D31");
+		assert.strictEqual(resCell.getValueWithFormat(), "", "Value in merged cell after A30:D31 autosum");
+		assert.strictEqual(resCell.getValueForEdit(), "", "Formula in merged cell after A30:D31 autosum");
+
+		assert.strictEqual(wsView.model.selectionRange.getLast().getName(), "A30:D31", "Selection after A30:D31 autosum");
+
+
+		ws.getRange2("A40:B41").setValue("111");
+		ws.getRange2("C40:C41").merge(Asc.c_oAscMergeOptions.MergeCenter);
+		assert.ok(ws.getRange2("C40:C41").hasMerged(), 'Range C40:C41 is merged');
+
+		ws.getRange2("D40:D41").merge(Asc.c_oAscMergeOptions.MergeCenter);
+		assert.ok(ws.getRange2("D40:C41").hasMerged(), 'Range D40:C41 is merged');
+
+		fillRange = ws.getRange2("A40:D41");
+		wsView.setSelection(fillRange.bbox);
+		wsView._initRowsCount();
+		wsView._initColsCount();
+		autoCompleteRes = wsView.autoCompleteFormula("SUM");
+
+		resCell = ws.getRange2("C40");
+		assert.strictEqual(resCell.getValueWithFormat(), "", "Value in merged cell after A40:D41 autosum");
+		assert.strictEqual(resCell.getValueForEdit(), "", "Formula in merged cell after A40:D41 autosum");
+		resCell = ws.getRange2("C41");
+		assert.strictEqual(resCell.getValueWithFormat(), "", "Value in merged cell after A40:D41 autosum");
+		assert.strictEqual(resCell.getValueForEdit(), "", "Formula in merged cell after A40:D41 autosum");
+		resCell = ws.getRange2("D40");
+		assert.strictEqual(resCell.getValueWithFormat(), "", "Value in merged cell after A40:D41 autosum");
+		assert.strictEqual(resCell.getValueForEdit(), "", "Formula in merged cell after A40:D41 autosum");
+		resCell = ws.getRange2("D41");
+		assert.strictEqual(resCell.getValueWithFormat(), "", "Value in merged cell after A40:D41 autosum");
+		assert.strictEqual(resCell.getValueForEdit(), "", "Formula in merged cell after A40:D41 autosum");
+
+		assert.strictEqual(wsView.model.selectionRange.getLast().getName(), "A40:D41", "Selection after A40:D41 autosum");
+
+
+		ws.getRange2("A50:A51").setValue("111");
+		ws.getRange2("A52:A53").merge(Asc.c_oAscMergeOptions.MergeCenter);
+		assert.ok(ws.getRange2("A52:A53").hasMerged(), 'Range A52:A53 is merged');
+
+		fillRange = ws.getRange2("A50:A53");
+		wsView.setSelection(fillRange.bbox);
+		wsView._initRowsCount();
+		wsView._initColsCount();
+		autoCompleteRes = wsView.autoCompleteFormula("SUM");
+
+		resCell = ws.getRange2("A52");
+		assert.strictEqual(resCell.getValueWithFormat(), "", "Value in merged cell after A50:A53 autosum");
+		assert.strictEqual(resCell.getValueForEdit(), "", "Formula in merged cell after A50:A53 autosum");
+		resCell = ws.getRange2("A52");
+		assert.strictEqual(resCell.getValueWithFormat(), "", "Value in merged cell after A50:A53 autosum");
+		assert.strictEqual(resCell.getValueForEdit(), "", "Formula in merged cell after A50:A53 autosum");
+
+		assert.strictEqual(wsView.model.selectionRange.getLast().getName(), "A50:A53", "Selection after A50:A53 autosum");
+
+
+		ws.getRange2("A60:B61").setValue("111");
+		ws.getRange2("C60:D60").merge(Asc.c_oAscMergeOptions.MergeCenter);
+		assert.ok(ws.getRange2("C60:D60").hasMerged(), 'Range C60:D60 is merged');
+
+		ws.getRange2("C62:D62").merge(Asc.c_oAscMergeOptions.MergeCenter);
+		assert.ok(ws.getRange2("C62:D62").hasMerged(), 'Range C62:D62 is merged');
+
+		fillRange = ws.getRange2("A60:D62");
+		wsView.setSelection(fillRange.bbox);
+		wsView._initRowsCount();
+		wsView._initColsCount();
+		autoCompleteRes = wsView.autoCompleteFormula("SUM");
+
+		resCell = ws.getRange2("A62");
+		assert.strictEqual(resCell.getValueWithFormat(), "222", "Value in merged cell after A60:D62 autosum");
+		assert.strictEqual(resCell.getValueForEdit(), "=SUM(A60:A61)", "Formula in merged cell after A60:D62 autosum");
+		resCell = ws.getRange2("B62");
+		assert.strictEqual(resCell.getValueWithFormat(), "222", "Value in merged cell after A60:D62 autosum");
+		assert.strictEqual(resCell.getValueForEdit(), "=SUM(B60:B61)", "Formula in merged cell after A60:D62 autosum");
+		resCell = ws.getRange2("C62");
+		assert.strictEqual(resCell.getValueWithFormat(), "", "Value in merged cell after A60:D62 autosum");
+		assert.strictEqual(resCell.getValueForEdit(), "", "Formula in merged cell after A60:D62 autosum");
+		resCell = ws.getRange2("D62");
+		assert.strictEqual(resCell.getValueWithFormat(), "", "Value in merged cell after A60:D62 autosum");
+		assert.strictEqual(resCell.getValueForEdit(), "", "Formula in merged cell after A60:D62 autosum");
+		resCell = ws.getRange2("D60");
+		assert.strictEqual(resCell.getValueWithFormat(), "", "Value in merged cell after A60:D62 autosum");
+		assert.strictEqual(resCell.getValueForEdit(), "", "Formula in merged cell after A60:D62 autosum");
+		resCell = ws.getRange2("D61");
+		assert.strictEqual(resCell.getValueWithFormat(), "222", "Value in merged cell after A60:D62 autosum");
+		assert.strictEqual(resCell.getValueForEdit(), "=SUM(A61:C61)", "Formula in merged cell after A60:D62 autosum");
+
+		assert.strictEqual(wsView.model.selectionRange.getLast().getName(), "A60:D62", "Selection after A60:D62 autosum");
+
+		ws.getRange2("A1:D70").cleanAll();
+		// autosum from merged cell
+		ws.getRange2("A70:B70").setValue("111");
+		ws.getRange2("C70:D70").merge(Asc.c_oAscMergeOptions.MergeCenter);
+		assert.ok(ws.getRange2("C70:D70").hasMerged(), 'Range C70:D70 is merged');
+
+		fillRange = ws.getRange2("D70");
+		wsView.setSelection(fillRange.bbox);
+		wsView._initRowsCount();
+		wsView._initColsCount();
+		autoCompleteRes = wsView.autoCompleteFormula("SUM");
+
+		assert.strictEqual(autoCompleteRes && autoCompleteRes.text, "A70:B70", "Formula after autosum from merged cell. C70:D70 autosum from right");
+		resCell = ws.getRange2("C70");
+		assert.strictEqual(resCell.getValueWithFormat(), "", "Value in merged cell after C70:D70 autosum");
+		assert.strictEqual(resCell.getValueForEdit(), "", "Formula in merged cell after C70:D70 autosum");
+
+
+		ws.getRange2("A80:B82").setValue("111");
+		ws.getRange2("C80:H88").merge(Asc.c_oAscMergeOptions.MergeCenter);
+		assert.ok(ws.getRange2("C80:H88").hasMerged(), 'Range C80:H88" is merged');
+
+		fillRange = ws.getRange2("D82");
+		wsView.setSelection(fillRange.bbox);
+		wsView._initRowsCount();
+		wsView._initColsCount();
+		autoCompleteRes = wsView.autoCompleteFormula("SUM");
+
+		assert.strictEqual(autoCompleteRes && autoCompleteRes.text, "A80:B80", "Formula after autosum from merged cell. C80:H88 autosum from right");
+		resCell = ws.getRange2("C80");
+		assert.strictEqual(resCell.getValueWithFormat(), "", "Value in merged cell after C80:H88 autosum");
+		assert.strictEqual(resCell.getValueForEdit(), "", "Formula in merged cell after C80:H88 autosum");
+
+
+		ws.getRange2("A90:B91").setValue("111");
+		ws.getRange2("A92:D94").merge(Asc.c_oAscMergeOptions.MergeCenter);
+		assert.ok(ws.getRange2("A92:D94").hasMerged(), 'Range A92:D94 is merged');
+
+		fillRange = ws.getRange2("D94");
+		wsView.setSelection(fillRange.bbox);
+		wsView._initRowsCount();
+		wsView._initColsCount();
+		autoCompleteRes = wsView.autoCompleteFormula("SUM");
+
+		assert.strictEqual(autoCompleteRes && autoCompleteRes.text, "A90:A91", "Formula after autosum from merged cell. A92:D94 autosum from bottom");
+		resCell = ws.getRange2("A92");
+		assert.strictEqual(resCell.getValueWithFormat(), "", "Value in merged cell after A92:D94 autosum");
+		assert.strictEqual(resCell.getValueForEdit(), "", "Formula in merged cell after A92:D94 autosum");
+
+
+		ws.getRange2("A110:C111").setValue("111");
+		ws.getRange2("C112").setValue("111");
+		ws.getRange2("A113:C115").merge(Asc.c_oAscMergeOptions.MergeCenter);
+		assert.ok(ws.getRange2("A113:C115").hasMerged(), 'Range A113:C115 is merged');
+
+		fillRange = ws.getRange2("C113");
+		wsView.setSelection(fillRange.bbox);
+		wsView._initRowsCount();
+		wsView._initColsCount();
+		autoCompleteRes = wsView.autoCompleteFormula("SUM");
+
+		assert.strictEqual(autoCompleteRes && autoCompleteRes.text, "A110:A112", "Formula after autosum from merged cell. A113:C115 autosum from bottom");
+		resCell = ws.getRange2("A92");
+		assert.strictEqual(resCell.getValueWithFormat(), "", "Value in merged cell after A113:C115 autosum");
+		assert.strictEqual(resCell.getValueForEdit(), "", "Formula in merged cell after A113:C115 autosum");
 		
 		ws.getRange2("A1:Z100").cleanAll();
 	});
