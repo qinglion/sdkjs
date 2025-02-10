@@ -11403,10 +11403,9 @@
 
 			const selectedShapes = Asc.editor.getGraphicController().getSelectedArray();
 			const compoundPathLst = selectedShapes.map(function (shape) {
-				const isTextArt = shape.txBody && shape.txWarpStruct;
-				const shapeGeometry = isTextArt
-					? shape.txWarpStruct.getCombinedGeometry()
-					: shape.getGeometry();
+				const shapeGeometry = AscCommon.isRealObject(shape.txWarpStruct)
+					? shape.txWarpStruct.getCombinedGeometry() // text-art
+					: shape.getGeometry(); // usual shape
 				const pathLst = shapeGeometry.pathLst;
 				const compoundPaths = pathLst.map(function (path) {
 					return convertFormatPathToCompoundPath(path, shape.transform);
@@ -11541,6 +11540,8 @@
 				? supportedConstructors[0]
 				: referenceShape.constructor;
 
+			const isTextArt = AscCommon.isRealObject(referenceShape.txWarpStruct);
+
 			const compoundPathBounds = compoundPath['getBounds']();
 			const formatPath = convertCompoundPathToFormatPath(compoundPath);
 			const pathLst = [formatPath];
@@ -11553,6 +11554,7 @@
 			const resultShape = new constructor();
 			resultShape.setBDeleted(false);
 
+			// Copy blipFill (image or texture fill)
 			if (AscCommon.isRealObject(referenceShape.blipFill)) {
 				const blipFill = referenceShape.blipFill.createDuplicate();
 
@@ -11576,27 +11578,31 @@
 				resultShape.setBlipFill(blipFill);
 			}
 
-			if (referenceShape.bWordShape) {
-				resultShape.bWordShape = true;
-				if (AscCommon.isRealObject(referenceShape.textBoxContent)) {
-					const textBoxContent = referenceShape.textBoxContent.Copy(resultShape, referenceShape.textBoxContent.DrawingDocument);
-					resultShape.setTextBoxContent(textBoxContent);
-				}
-				if (AscCommon.isRealObject(referenceShape.style)) {
-					const style = referenceShape.style.createDuplicate();
-					resultShape.setStyle(style);
-				}
-				if (AscCommon.isRealObject(referenceShape.bodyPr)) {
-					const bodyPr = referenceShape.bodyPr.createDuplicate();
-					resultShape.setBodyPr(bodyPr);
-				}
-			} else {
-				if (AscCommon.isRealObject(referenceShape.txBody)) {
-					const txBody = referenceShape.txBody.createDuplicate();
-					resultShape.setTxBody(txBody);
+			if (!isTextArt) {
+				// Copy text content (txBody or textBoxContent)
+				if (referenceShape.bWordShape) {
+					resultShape.bWordShape = true;
+					if (AscCommon.isRealObject(referenceShape.textBoxContent)) {
+						const textBoxContent = referenceShape.textBoxContent.Copy(resultShape, referenceShape.textBoxContent.DrawingDocument);
+						resultShape.setTextBoxContent(textBoxContent);
+					}
+					if (AscCommon.isRealObject(referenceShape.style)) {
+						const style = referenceShape.style.createDuplicate();
+						resultShape.setStyle(style);
+					}
+					if (AscCommon.isRealObject(referenceShape.bodyPr)) {
+						const bodyPr = referenceShape.bodyPr.createDuplicate();
+						resultShape.setBodyPr(bodyPr);
+					}
+				} else {
+					if (AscCommon.isRealObject(referenceShape.txBody)) {
+						const txBody = referenceShape.txBody.createDuplicate();
+						resultShape.setTxBody(txBody);
+					}
 				}
 			}
 
+			// Set correct position and size
 			resultShape.setSpPr(new AscFormat.CSpPr());
 			resultShape.spPr.setParent(resultShape);
 			resultShape.spPr.setXfrm(new AscFormat.CXfrm());
@@ -11614,25 +11620,30 @@
 				resultShape.spPr.setEffectPr(effectProps);
 			}
 
+			// Copy Fill and Stroke properties from referenceShape
+			const shapeFill = isTextArt
+				? referenceShape.bWordShape
+					? referenceShape.textBoxContent.GetFirstParagraph().GetFirstRun().getCompiledPr().TextFill
+					: referenceShape.txBody.content.GetFirstParagraph().GetFirstRun().getCompiledPr().Unifill
+				: referenceShape.getFill();
+			const shapeStroke = isTextArt
+				? referenceShape.bWordShape
+					? referenceShape.textBoxContent.GetFirstParagraph().GetFirstRun().getCompiledPr().TextOutline
+					: referenceShape.txBody.content.GetFirstParagraph().GetFirstRun().getCompiledPr().TextOutline
+				: referenceShape.getStroke();
+
+			resultShape.getGeometry().pathLst.forEach(function (path) {
+				path.setFill('norm');
+				path.setStroke(true);
+				path.setExtrusionOk(false);
+			});
+			resultShape.spPr.setFill(shapeFill.createDuplicate());
+			resultShape.spPr.setLn(shapeStroke.createDuplicate());
+
 			return resultShape;
 		}
 
 		function replaceShapes(oldShapes, newShapes) {
-			const referenceShape = oldShapes[0];
-			const shapeFill = referenceShape.getFill();
-			const shapeStroke = referenceShape.getStroke();
-
-			// Copy Fill and Stroke properties from referenceShape
-			newShapes.forEach(function (newShape) {
-				newShape.getGeometry().pathLst.forEach(function (path) {
-					path.setFill('norm');
-					path.setStroke(true);
-					path.setExtrusionOk(false);
-				});
-				newShape.spPr.setFill(shapeFill.createDuplicate());
-				newShape.spPr.setLn(shapeStroke.createDuplicate());
-			});
-
 			// Remove old shapes
 			oldShapes.forEach(function (shape) {
 				shape.deleteDrawingBase();
@@ -11662,20 +11673,6 @@
 
 		function pdf_replaceShapes(oldShapes, newShapes) {
 			const aOldShapes = oldShapes.slice();
-			const referenceShape = aOldShapes[0];
-			const shapeFill = referenceShape.getFill();
-			const shapeStroke = referenceShape.getStroke();
-
-			// Copy Fill and Stroke properties from referenceShape
-			newShapes.forEach(function (newShape) {
-				newShape.getGeometry().pathLst.forEach(function (path) {
-					path.setFill('norm');
-					path.setStroke(true);
-					path.setExtrusionOk(false);
-				});
-				newShape.spPr.setFill(shapeFill.createDuplicate());
-				newShape.spPr.setLn(shapeStroke.createDuplicate());
-			});
 
 			let oDoc = Asc.editor.getPDFDoc();
 			let nPage = aOldShapes[0].GetPage();
@@ -11705,21 +11702,8 @@
 			const graphicController = Asc.editor.getGraphicController();
 
 			const referenceShape = oldShapes[0];
-			const shapeFill = referenceShape.getFill();
-			const shapeStroke = referenceShape.getStroke();
 			const pageIndex = referenceShape.parent.pageIndex;
 			const firstParagraph = referenceShape.parent.Get_ParentParagraph();
-
-			// Copy Fill and Stroke properties from referenceShape
-			newShapes.forEach(function (newShape) {
-				newShape.getGeometry().pathLst.forEach(function (path) {
-					path.setFill('norm');
-					path.setStroke(true);
-					path.setExtrusionOk(false);
-				});
-				newShape.spPr.setFill(shapeFill.createDuplicate());
-				newShape.spPr.setLn(shapeStroke.createDuplicate());
-			});
 
 			// Disable revision tracking ?
 			let bTrackRevisions = false;
