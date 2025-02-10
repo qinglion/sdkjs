@@ -3951,7 +3951,6 @@ CThumbnailsBase.prototype.GetPagesCount = function()
 };
 CThumbnailsBase.prototype.ConvertCoords2 = function(X, Y)
 {
-
 	let pages_count = this.GetPagesCount();
 	if (0 == pages_count)
 		return -1;
@@ -5759,57 +5758,77 @@ function CThumbnailsManager(editorPage)
 			Page: pageIndex
 		};
 	};
-
-	this.GetContextMenuPos = function()
-	{
-		let oPos = {};
-		oPos.X_abs = global_mouseEvent.X - ((oThis.m_oWordControl.m_oThumbnails.AbsolutePosition.L * g_dKoef_mm_to_pix) >> 0) - oThis.m_oWordControl.X;
-		oPos.Y_abs = global_mouseEvent.Y - ((oThis.m_oWordControl.m_oThumbnails.AbsolutePosition.T * g_dKoef_mm_to_pix) >> 0) - oThis.m_oWordControl.Y;
-		return oPos;
-	};
-	this.ConvertCoords2 = function(x, y)
-	{
-		var Pos = {X: x, Y: y};
-		Pos.X -= this.m_oWordControl.X;
-		Pos.Y -= this.m_oWordControl.Y;
-
-		Pos.X = AscCommon.AscBrowser.convertToRetinaValue(Pos.X, true);
-		Pos.Y = AscCommon.AscBrowser.convertToRetinaValue(Pos.Y, true);
-
-		var _abs_pos = this.m_oWordControl.m_oThumbnails.AbsolutePosition;
-		var _controlW = (_abs_pos.R - _abs_pos.L) * g_dKoef_mm_to_pix * AscCommon.AscBrowser.retinaPixelRatio;
-		var _controlH = (_abs_pos.B - _abs_pos.T) * g_dKoef_mm_to_pix * AscCommon.AscBrowser.retinaPixelRatio;
-
-		if (Pos.X < 0 || Pos.X > _controlW || Pos.Y < 0 || Pos.Y > _controlH)
+	this.ConvertCoords2 = function (x, y) {
+		if (this.m_arrPages.length == 0)
 			return -1;
 
-		var pages_count = this.m_arrPages.length;
-		if (0 == pages_count)
+		let posX, posY;
+		switch (this.m_oWordControl.thumbnailsPosition) {
+			case thumbnailsPositionMap.left:
+				posX = x - this.m_oWordControl.X;
+				posY = y - this.m_oWordControl.Y;
+				break;
+
+			case thumbnailsPositionMap.right:
+				posX = x - this.m_oWordControl.X - this.m_oWordControl.Width + this.m_oWordControl.splitters[0].position * g_dKoef_mm_to_pix;
+				posY = y - this.m_oWordControl.Y;
+				break;
+
+			case thumbnailsPositionMap.bottom:
+				posX = x - this.m_oWordControl.X;
+				posY = y - this.m_oWordControl.Y - this.m_oWordControl.Height + this.m_oWordControl.splitters[0].position * g_dKoef_mm_to_pix;
+				break;
+
+			default:
+				posX = posY = 0; // just in case
+				break;
+		}
+
+		const convertedX = AscCommon.AscBrowser.convertToRetinaValue(posX, true);
+		const convertedY = AscCommon.AscBrowser.convertToRetinaValue(posY, true);
+
+		const absolutePosition = this.m_oWordControl.m_oThumbnails.AbsolutePosition;
+		const thControlWidth = (absolutePosition.R - absolutePosition.L) * g_dKoef_mm_to_pix * AscCommon.AscBrowser.retinaPixelRatio;
+		const thControlHeight = (absolutePosition.B - absolutePosition.T) * g_dKoef_mm_to_pix * AscCommon.AscBrowser.retinaPixelRatio;
+
+		if (convertedX < 0 || convertedX > thControlWidth || convertedY < 0 || convertedY > thControlHeight)
 			return -1;
 
-		var _min = Math.abs(Pos.Y - this.m_arrPages[0].top);
-		var _MinPositionPage = 0;
+		const isHorizontalThumbnails = this.m_oWordControl.thumbnailsPosition === thumbnailsPositionMap.bottom;
+		const isRightToLeft = this.m_oWordControl.isRTL;
 
-		for (var i = 0; i < pages_count; i++)
-		{
-			var _min1 = Math.abs(Pos.Y - this.m_arrPages[i].top);
-			var _min2 = Math.abs(Pos.Y - this.m_arrPages[i].bottom);
+		let minDistance = Infinity;
+		let minPositionPage = 0;
 
-			if (_min1 < _min)
-			{
-				_min = _min1;
-				_MinPositionPage = i;
+		for (let i = 0; i < this.m_arrPages.length; i++) {
+			const page = this.m_arrPages[i];
+
+			let distanceToStart, distanceToEnd;
+			if (isHorizontalThumbnails) {
+				if (isRightToLeft) {
+					distanceToStart = Math.abs(convertedX - page.right);
+					distanceToEnd = Math.abs(convertedX - page.left);
+				} else {
+					distanceToStart = Math.abs(convertedX - page.left);
+					distanceToEnd = Math.abs(convertedX - page.right);
+				}
+			} else {
+				distanceToStart = Math.abs(convertedY - page.top);
+				distanceToEnd = Math.abs(convertedY - page.bottom);
 			}
-			if (_min2 < _min)
-			{
-				_min = _min2;
-				_MinPositionPage = i + 1;
+
+			if (distanceToStart < minDistance) {
+				minDistance = distanceToStart;
+				minPositionPage = i;
+			}
+			if (distanceToEnd < minDistance) {
+				minDistance = distanceToEnd;
+				minPositionPage = i + 1;
 			}
 		}
 
-		return _MinPositionPage;
+		return minPositionPage;
 	};
-
 	this.CalculatePlaces = function () {
 		if (!this.isThumbnailsShown())
 			return;
@@ -5969,7 +5988,13 @@ function CThumbnailsManager(editorPage)
 		};
 		return _ret;
 	};
-
+	this.GetContextMenuPos = function()
+	{
+		let oPos = {};
+		oPos.X_abs = global_mouseEvent.X - ((oThis.m_oWordControl.m_oThumbnails.AbsolutePosition.L * g_dKoef_mm_to_pix) >> 0) - oThis.m_oWordControl.X;
+		oPos.Y_abs = global_mouseEvent.Y - ((oThis.m_oWordControl.m_oThumbnails.AbsolutePosition.T * g_dKoef_mm_to_pix) >> 0) - oThis.m_oWordControl.Y;
+		return oPos;
+	};
 	this.getSpecialPasteButtonCoords = function(sSlideId)
 	{
 		if(!sSlideId) return null;
