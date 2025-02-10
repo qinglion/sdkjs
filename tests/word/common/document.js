@@ -241,9 +241,9 @@
 		editor.restrictions = Asc.c_oAscRestrictionType.OnlyForms;
 
 		if (isOForm)
-			editor.DocInfo = {Format : "oform"};
+			editor.DocInfo = {Format : "oform", isFormatWithForms : function() {return true;}};
 		else
-			editor.DocInfo = {Format : "docx"};
+			editor.DocInfo = {Format : "docx", isFormatWithForms : function() {return false;}};
 	}
 	function SetEditingMode()
 	{

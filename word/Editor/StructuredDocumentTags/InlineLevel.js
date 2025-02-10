@@ -1198,11 +1198,9 @@ CInlineLevelSdt.prototype.DrawContentControlsTrack = function(nType, X, Y, nCurP
 		return;
 	}
 	
-	let oPolygon = this.GetBoundingPolygon(shift ? shift : 0);
-	if (!oPolygon || !oPolygon.length)
-		drawingDocument.OnDrawContentControl(null, nType);
-	else
-		drawingDocument.OnDrawContentControl(this, nType, oPolygon);
+	let polygon = this.GetBoundingPolygon(shift ? shift : 0);
+	if (polygon || polygon.length)
+		drawingDocument.addContentControlTrack(this, nType, polygon);
 };
 CInlineLevelSdt.prototype.IsDrawContentControlsTrackBounds = function()
 {

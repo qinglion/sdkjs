@@ -5036,11 +5036,59 @@ function CDrawingDocument()
 			ctx.beginPath();
 		}
 	};
+	
+	this.startCollectContentControlTracks = function()
+	{
+		if (window["NATIVE_EDITOR_ENJINE"] === true)
+			return;
+		
+		return this.contentControls.startCollectTracks();
+	};
+	this.endCollectContentControlTracks = function()
+	{
+		if (window["NATIVE_EDITOR_ENJINE"] === true)
+			return;
+		
+		return this.contentControls.endCollectTracks();
+	};
+	this.addContentControlTrackIn = function(obj, geom)
+	{
+		if (window["NATIVE_EDITOR_ENJINE"] === true)
+			return;
+		
+		return this.contentControls.addContentControlTrackIn(obj, geom);
+	};
+	this.addContentControlTrackHover = function(obj, geom)
+	{
+		if (window["NATIVE_EDITOR_ENJINE"] === true)
+			return;
+		
+		return this.contentControls.addContentControlTrackHover(obj, geom);
+	};
+	this.addContentControlTrack = function(obj, state, geom)
+	{
+		if (window["NATIVE_EDITOR_ENJINE"] === true)
+			return;
+		
+		if (AscCommon.ContentControlTrack.In === state)
+			return this.contentControls.addTrackIn(obj, geom);
+		else
+			return this.contentControls.addTrackHover(obj, geom);
+	};
+	this.removeContentControlTrackHover = function()
+	{
+		if (window["NATIVE_EDITOR_ENJINE"] === true)
+			return;
+		
+		return this.contentControls.removeTrackHover();
+	};
+	
 
 	this.OnDrawContentControl = function(obj, state, geom)
 	{
 		if (window["NATIVE_EDITOR_ENJINE"] === true)
 			return;
+		
 		return this.contentControls.OnDrawContentControl(obj, state, geom);
 	};
 

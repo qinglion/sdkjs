@@ -1048,7 +1048,7 @@ CBlockLevelSdt.prototype.DrawContentControlsTrack = function(nType, X, Y, nCurPa
 		}
 	}
 
-	oDrawingDocument.OnDrawContentControl(this, nType, arrRects);
+	oDrawingDocument.addContentControlTrack(this, nType, arrRects);
 };
 CBlockLevelSdt.prototype.AddContentControl = function(nContentControlType)
 {

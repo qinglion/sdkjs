@@ -8644,9 +8644,9 @@ CDocument.prototype.UpdateCursorType = function(X, Y, PageAbs, MouseEvent)
 		return;
 
 	this.Api.sync_MouseMoveStartCallback();
-
-	this.DrawingDocument.OnDrawContentControl(null, AscCommon.ContentControlTrack.Hover);
-
+	
+	this.DrawingDocument.removeContentControlTrackHover();
+	
 	if (undefined !== X && null !== X)
 	{
 		var nDocPosType = this.GetDocPosType();
@@ -12498,6 +12498,7 @@ CDocument.prototype.private_UpdateTracks = function(bSelection, bEmptySelection)
 	var oBlockLevelSdt  = oSelectedInfo.GetBlockLevelSdt();
 	var oInlineLevelSdt = oSelectedInfo.GetInlineLevelSdt();
 
+	this.DrawingDocument.startCollectContentControlTracks();
 	var oCurrentForm = null;
 	let contentControls = oSelectedInfo.GetAllSdts();
 	if (contentControls.length && this.IsFillingOFormMode())
@@ -12506,12 +12507,11 @@ CDocument.prototype.private_UpdateTracks = function(bSelection, bEmptySelection)
 		if (lastCC && lastCC.IsForm())
 		{
 			oCurrentForm = lastCC;
-			lastCC.DrawContentControlsTrack(AscCommon.ContentControlTrack.In, 0);
+			lastCC.drawContentControlsTrackIn(0);
 		}
 	}
 	else if (contentControls.length)
 	{
-		this.DrawingDocument.OnDrawContentControl(null, AscCommon.ContentControlTrack.In);
 		let count = contentControls.length;
 		let shift = 0.5;
 		for (let i = 0; i < count; ++i)
@@ -12549,9 +12549,10 @@ CDocument.prototype.private_UpdateTracks = function(bSelection, bEmptySelection)
 
 		if (oForm)
 			oForm.DrawContentControlsTrack(AscCommon.ContentControlTrack.In);
-		else
-			this.DrawingDocument.OnDrawContentControl(null, AscCommon.ContentControlTrack.In);
+		// else
+		// 	this.DrawingDocument.OnDrawContentControl(null, AscCommon.ContentControlTrack.In);
 	}
+	this.DrawingDocument.endCollectContentControlTracks();
 
 	this.UpdateContentControlFocusState(oInlineLevelSdt ? oInlineLevelSdt : (oBlockLevelSdt ? oBlockLevelSdt : null));
 

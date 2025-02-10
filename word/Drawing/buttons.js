@@ -1568,6 +1568,8 @@
 		this.ContentControlObjectsLast = [];
 		this.ContentControlObjectState = -1;
 		this.ContentControlSmallChangesCheck = { X: 0, Y: 0, Page: 0, Min: 2, IsSmall : true };
+		this.lastActive = null;
+		this.lastHover  = null;
 
 		this.measures = {};
 
@@ -2327,6 +2329,95 @@
 			}
 
 			this.ContentControlsSaveLast();
+		};
+		
+		this.startCollectTracks = function()
+		{
+			// We can have many Track.In and just one Track.Hover
+			// Check last active Track.In
+			
+			this.lastActive = null;
+			this.lastHover  = null;
+			
+			for (let i = 0; i < this.ContentControlObjects.length; ++i)
+			{
+				let ccTrack = this.ContentControlObjects[i];
+				if (AscCommon.ContentControlTrack.In === ccTrack.state && -2 !== ccTrack.ActiveButtonIndex)
+					this.lastActive = ccTrack;
+				
+				if (AscCommon.ContentControlTrack.Hover === ccTrack.state)
+					this.lastHover = ccTrack
+			}
+			
+			this.ContentControlObjects.length = 0;
+		};
+		this.addTrackIn = function(obj, geom)
+		{
+			if (!geom || (Array.isArray(geom) && geom.length === 0))
+				return;
+			
+			this.ContentControlObjects.push(new CContentControlTrack(this, obj, AscCommon.ContentControlTrack.In, geom));
+		};
+		this.endCollectTracks = function()
+		{
+			if (this.lastActive)
+			{
+				let isActiveRemove = true;
+				for (let i = 0; i < this.ContentControlObjects.length; ++i)
+				{
+					let ccTrack = this.ContentControlObjects[i];
+					if (AscCommon.ContentControlTrack.In === ccTrack.state
+						&& this.lastActive.base
+						&& ccTrack.base
+						&& this.lastActive.base.GetId() === ccTrack.base.GetId())
+					{
+						isActiveRemove = false;
+						break;
+					}
+				}
+				
+				if (isActiveRemove)
+					this.document.m_oWordControl.m_oApi.sendEvent("asc_onHideContentControlsActions");
+			}
+			
+			if (this.lastHover)
+				this.ContentControlObjects.push(this.lastHover);
+			
+			this.lastHover  = null;
+			this.lastActive = null;
+		};
+		this.addTrackHover = function(obj, geom)
+		{
+			if (!geom || (Array.isArray(geom) && geom.length === 0))
+				return this.removeTrackHover();
+			
+			for (let i = 0; i < this.ContentControlObjects.length; ++i)
+			{
+				let ccTrack = this.ContentControlObjects[i];
+				if (ccTrack.state === AscCommon.ContentControlTrack.In && obj.GetId() === ccTrack.base.GetId())
+					return;
+			}
+			
+			for (let i = 0; i < this.ContentControlObjects.length; ++i)
+			{
+				let ccTrack = this.ContentControlObjects[i];
+				if (ccTrack.state === AscCommon.ContentControlTrack.Hover && obj === ccTrack.base)
+				{
+					ccTrack.UpdateGeom(geom);
+					return;
+				}
+			}
+			
+			this.removeTrackHover();
+			this.ContentControlObjects.push(new CContentControlTrack(this, obj, AscCommon.ContentControlTrack.Hover, geom));
+		};
+		this.removeTrackHover = function()
+		{
+			for (let i = this.ContentControlObjects.length - 1; i >= 0; --i)
+			{
+				if (AscCommon.ContentControlTrack.Hover === this.ContentControlObjects[i].state)
+					this.ContentControlObjects.splice(i, 1);
+			}
 		};
 
 		this.OnDrawContentControl = function(obj, state, geom)
