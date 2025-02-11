@@ -2402,14 +2402,55 @@ var CPresentation = CPresentation || function(){};
     CPDFDoc.prototype.MovePages = function(aIndexes, nNewPos) {
         if (!Array.isArray(aIndexes) || aIndexes.length === 0) return;
 
-        aIndexes.sort(function(a, b) {
-            return a - b;
+        let nMinIdx = Infinity;
+        let nMaxIdx = 0;
+        
+        aIndexes.forEach(function(idx) {
+            if (idx < nMinIdx) {
+                nMinIdx = idx;
+            }
+            if (idx > nMaxIdx) {
+                nMaxIdx = idx;
+            }
         });
 
         let _t = this;
-        aIndexes.forEach(function(oldIndex, i) {
-            _t.MovePage(oldIndex, nNewPos + i);
+        
+        let aLowerIndexes = [];
+        let aHigherIndexes = [];
+
+        aIndexes.forEach(function(idx) {
+            if (idx < nNewPos) {
+                aLowerIndexes.push(idx);
+            }
+            if (idx > nNewPos) {
+                aHigherIndexes.push(idx);
+            }
         });
+
+        
+        // insert front
+        if (aLowerIndexes.length !== 0) {
+            aLowerIndexes.sort(function(a, b) {
+                return b - a;
+            });
+
+            aLowerIndexes.forEach(function(oldIndex, i) {
+                _t.MovePage(oldIndex, nNewPos - i);
+            });
+        }
+        // insert back
+        if (aHigherIndexes.length !== 0) {
+            aHigherIndexes.sort(function(a, b) {
+                return a - b;
+            });
+
+            let nOffset = aLowerIndexes.length > 0 ? 1 : 0;
+            
+            aHigherIndexes.forEach(function(oldIndex, i) {
+                _t.MovePage(oldIndex, nNewPos + nOffset + i);
+            });
+        }
     };
     CPDFDoc.prototype.SetPageRotate = function(nPage, nAngle) {
 		let oViewer     = this.Viewer;
