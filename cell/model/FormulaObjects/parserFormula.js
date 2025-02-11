@@ -6401,9 +6401,11 @@ function parserFormula( formula, parent, _ws ) {
 
 		if (this._isConditionalFormula(sFunctionName) && data.areaData && g_cCalcRecursion.getIsCellEdited()) {
 			let oCell = null;
-			this.ws._getCell(this.parent.nRow, this.parent.nCol, function (oElem) {
-				oCell = oElem;
-			});
+			if (this.parent && null != this.parent.nRow && null != this.parent.nCol) {
+				this.ws._getCell(this.parent.nRow, this.parent.nCol, function (oElem) {
+					oCell = oElem;
+				});
+			}
 			if (oCell && oCell.containInFormula()) {
 				this.ca = this.isRecursiveCondFormula(sFunctionName);
 			}
