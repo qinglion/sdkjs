@@ -1053,6 +1053,7 @@
 		this.isForm = this.base.IsForm();
 		this.formInfo = null;
 		this.state = state;
+		this.visualState = - 1;
 
 		this.isFixedForm = this.base.IsFixedForm();
 
@@ -1647,10 +1648,10 @@
 
 		this.ContentControlObjects = [];
 		this.ContentControlObjectsLast = [];
-		this.ContentControlObjectState = -1;
 		this.ContentControlSmallChangesCheck = { X: 0, Y: 0, Page: 0, Min: 2, IsSmall : true };
 		this.lastActive = null;
 		this.lastHover  = null;
+		this.lastInline = null;
 
 		this.measures = {};
 
@@ -1658,7 +1659,6 @@
 		{
 			this.ContentControlObjects = [];
 			this.ContentControlObjectsLast = [];
-			this.ContentControlObjectState = -1;
 		};
 
 		this.getFont = function(koef)
@@ -2053,7 +2053,7 @@
 								if (_object.IsUseMoveRect())
 								{
 									ctx.rect(_x, _y, Math.round(CONTENT_CONTROL_HEADER_MOVER_W * rPR), cctw);
-									ctx.fillStyle = (1 == this.ContentControlObjectState) ? AscCommon.GlobalSkin.ContentControlsAnchorActive : AscCommon.GlobalSkin.ContentControlsBack;
+									ctx.fillStyle = (1 === _object.visualState) ? AscCommon.GlobalSkin.ContentControlsAnchorActive : AscCommon.GlobalSkin.ContentControlsBack;
 									ctx.fill();
 									ctx.beginPath();
 
@@ -2065,7 +2065,7 @@
 									var px10 = Math.round(8 * rPR);
 
 									var _color = "#ADADAD";
-									if (0 == this.ContentControlObjectState || 1 == this.ContentControlObjectState)
+									if (0 === _object.visualState || 1 === _object.visualState)
 										_color = "#444444";
 
 									overlay.AddRect(cx, cy, px3, px3);
@@ -2260,7 +2260,7 @@
 								if (_object.IsUseMoveRect())
 								{
 									ctx.rect(_x, _y, scaleX_15, scaleY_20);
-									ctx.fillStyle = (1 == this.ContentControlObjectState) ? AscCommon.GlobalSkin.ContentControlsAnchorActive : AscCommon.GlobalSkin.ContentControlsBack;
+									ctx.fillStyle = (1 === _object.visualState) ? AscCommon.GlobalSkin.ContentControlsAnchorActive : AscCommon.GlobalSkin.ContentControlsBack;
 									ctx.fill();
 									ctx.beginPath();
 
@@ -2288,7 +2288,7 @@
 									overlay.AddEllipse2(cx6, cy6, rad);
 
 									var _color1 = "#ADADAD";
-									if (0 == this.ContentControlObjectState || 1 == this.ContentControlObjectState)
+									if (0 === _object.visualState || 1 === _object.visualState)
 										_color1 = "#444444";
 
 									ctx.fillStyle = _color1;
@@ -2414,11 +2414,12 @@
 		
 		this.startCollectTracks = function()
 		{
-			// We might have many Track.In and just one Track.Hover
-			// Check last active Track.In
+			// We can have many Track.In and just one Track.Hover
+			// If we have an inline move, then we hold the current stack of tracks (which ends with track being moved)
 			
 			this.lastActive = null;
 			this.lastHover  = null;
+			this.lastInline = null;
 			
 			for (let i = 0; i < this.ContentControlObjects.length; ++i)
 			{
@@ -2428,13 +2429,21 @@
 				
 				if (AscCommon.ContentControlTrack.Hover === ccTrack.state)
 					this.lastHover = ccTrack;
+				
+				if (-1 !== ccTrack.visualState)
+				{
+					this.lastInline = ccTrack;
+					this.ContentControlObjects.length = i + 1;
+					break;
+				}
 			}
 			
-			this.ContentControlObjects.length = 0;
+			if (!this.lastInline)
+				this.ContentControlObjects.length = 0;
 		};
 		this.addTrackIn = function(obj, geom)
 		{
-			if (!geom || (Array.isArray(geom) && geom.length === 0))
+			if (!geom || (Array.isArray(geom) && geom.length === 0) || this.lastInline)
 				return;
 			
 			if (this.lastActive && this.lastActive.base && obj && this.lastActive.base.GetId() === obj.GetId())
@@ -2475,10 +2484,12 @@
 					this.ContentControlObjects.push(this.lastHover);
 			}
 			
-			this.lastHover  = null;
-			this.lastActive = false;
+			if (!this.lastInline)
+				this.ContentControlObjects = this.ContentControlObjects.reverse();
 			
-			this.ContentControlObjects = this.ContentControlObjects.reverse();
+			this.lastHover  = null;
+			this.lastActive = null;
+			this.lastInline = null;
 		};
 		this.addTrackHover = function(obj, geom)
 		{
@@ -2527,9 +2538,14 @@
 			}
 		};
 
-		this.isInlineTrack = function()
+		this.getInlineMoveTrack = function()
 		{
-			return (this.ContentControlObjectState == 1) ? true : false;
+			for (let i = 0; i < this.ContentControlObjects.length; ++i)
+			{
+				if (AscCommon.ContentControlTrack.In === this.ContentControlObjects[i].state && 1 === this.ContentControlObjects[i].visualState)
+					return this.ContentControlObjects[i];
+			}
+			return null;
 		};
 		
 		this.checkPointerInButtons = function(pos)
@@ -2610,7 +2626,7 @@
 				if (_object.isHitInMoveRect(xPos, yPos, koefX, koefY))
 				{
 					oWordControl.m_oLogicDocument.SelectContentControl(_object.base.GetId());
-					this.ContentControlObjectState = 1;
+					_object.visualState = 1;
 					this.ContentControlSmallChangesCheck.X = pos.X;
 					this.ContentControlSmallChangesCheck.Y = pos.Y;
 					this.ContentControlSmallChangesCheck.Page = pos.Page;
@@ -2737,29 +2753,41 @@
 
 		this.onPointerLeave = function()
 		{
-			var oWordControl = this.document.m_oWordControl;
-			var isChangeHover = false;
+			let updateOverlay = false;
 			for (var i = 0; i < this.ContentControlObjects.length; i++)
 			{
-				if (-2 !== this.ContentControlObjects[i].HoverButtonIndex)
-					isChangeHover = true;
-				this.ContentControlObjects[i].HoverButtonIndex = -2;
+				let ccTrack = this.ContentControlObjects[i];
+				
+				if (-2 !== ccTrack.HoverButtonIndex)
+				{
+					updateOverlay = true;
+					ccTrack.HoverButtonIndex = -2;
+				}
+				
+				if (-1 !== ccTrack.visualState)
+				{
+					updateOverlay = true;
+					ccTrack.visualState = -1;
+				}
 			}
 
-			if (isChangeHover)
-				oWordControl.OnUpdateOverlay();
+			if (updateOverlay)
+				this.document.m_oWordControl.OnUpdateOverlay();
 		};
 
 		this.onPointerMove = function(pos, isWithoutCoords)
 		{
 			var oWordControl = this.document.m_oWordControl;
-			var isChangeHover = false;
+			let updateOverlay = false;
 			for (let i = 0; i < this.ContentControlObjects.length; i++)
 			{
-				if (-2 !== this.ContentControlObjects[i].HoverButtonIndex)
-					isChangeHover = true;
+				let ccTrack = this.ContentControlObjects[i];
 				
-				this.ContentControlObjects[i].HoverButtonIndex = -2;
+				if (-2 !== ccTrack.HoverButtonIndex)
+				{
+					updateOverlay = true;
+					ccTrack.HoverButtonIndex = -2;
+				}
 			}
 			
 			for (var i = this.ContentControlObjects.length - 1; i >= 0; --i)
@@ -2771,7 +2799,7 @@
 					|| !this.document.m_arrPages[pos.Page])
 					continue;
 				
-				if (!_object.IsNoUseButtons() && 1 == this.ContentControlObjectState)
+				if (!_object.IsNoUseButtons() && 1 === _object.visualState)
 				{
 					if (pos.Page == this.ContentControlSmallChangesCheck.Page &&
 						Math.abs(pos.X - this.ContentControlSmallChangesCheck.X) < this.ContentControlSmallChangesCheck.Min &&
@@ -2795,6 +2823,12 @@
 					return true;
 				}
 				
+				if (-1 !== _object.visualState)
+				{
+					updateOverlay = true;
+					_object.visualState = -1;
+				}
+				
 				let _pos = this._getTrackRelativePos(pos, _object);
 				
 				let xPos  = _pos.xPos;
@@ -2804,12 +2838,9 @@
 				
 				if (!_object.IsNoUseButtons())
 				{
-					var oldState                   = this.ContentControlObjectState;
-					this.ContentControlObjectState = -1;
-					
 					if (_object.isHitInMoveRect(xPos, yPos, koefX, koefY))
 					{
-						this.ContentControlObjectState = 0;
+						_object.visualState = 0;
 						oWordControl.ShowOverlay();
 						oWordControl.OnUpdateOverlay();
 						oWordControl.EndUpdateOverlay();
@@ -2849,9 +2880,6 @@
 						oWordControl.m_oApi.sync_MouseMoveEndCallback();
 						return true;
 					}
-					
-					if (oldState != this.ContentControlObjectState)
-						oWordControl.OnUpdateOverlay();
 				}
 				
 				if (_object.isHitInComboRect(xPos, yPos, koefX, koefY))
@@ -2869,7 +2897,7 @@
 				}
 			}
 			
-			if (isChangeHover)
+			if (updateOverlay)
 				oWordControl.OnUpdateOverlay();
 			
 			return false;
@@ -2882,40 +2910,31 @@
 			var oldContentControlSmall = this.ContentControlSmallChangesCheck.IsSmall;
 			this.ContentControlSmallChangesCheck.IsSmall = true;
 
-			if (this.ContentControlObjectState == 1)
+			let ccTrack = this.getInlineMoveTrack();
+			if (!ccTrack)
+				return false;
+			
+			ccTrack.visualState = -1;
+			if (this.document.InlineTextTrackEnabled)
 			{
-				for (var i = this.ContentControlObjects.length - 1; i >= 0; --i)
+				if (this.document.InlineTextTrack && !oldContentControlSmall) // значит был MouseMove
 				{
-					var _object = this.ContentControlObjects[i];
-					if (_object.state == AscCommon.ContentControlTrack.In)
-					{
-						if (this.document.InlineTextTrackEnabled)
-						{
-							if (this.document.InlineTextTrack && !oldContentControlSmall) // значит был MouseMove
-							{
-								this.document.InlineTextTrack = oWordControl.m_oLogicDocument.Get_NearestPos(pos.Page, pos.X, pos.Y);
-								this.document.m_oLogicDocument.OnContentControlTrackEnd(_object.base.GetId(), this.document.InlineTextTrack, AscCommon.global_keyboardEvent.CtrlKey);
-								this.document.InlineTextTrackEnabled = false;
-								this.document.InlineTextTrack = null;
-								this.document.InlineTextTrackPage = -1;
-							}
-							else
-							{
-								this.document.InlineTextTrackEnabled = false;
-							}
-						}
-						break;
-					}
+					this.document.InlineTextTrack = oWordControl.m_oLogicDocument.Get_NearestPos(pos.Page, pos.X, pos.Y);
+					this.document.m_oLogicDocument.OnContentControlTrackEnd(ccTrack.base.GetId(), this.document.InlineTextTrack, AscCommon.global_keyboardEvent.CtrlKey);
+					this.document.InlineTextTrackEnabled = false;
+					this.document.InlineTextTrack = null;
+					this.document.InlineTextTrackPage = -1;
 				}
-
-				this.ContentControlObjectState = 0;
-				oWordControl.ShowOverlay();
-				oWordControl.OnUpdateOverlay();
-				oWordControl.EndUpdateOverlay();
-				return true;
+				else
+				{
+					this.document.InlineTextTrackEnabled = false;
+				}
 			}
-
-			return false;
+			
+			oWordControl.ShowOverlay();
+			oWordControl.OnUpdateOverlay();
+			oWordControl.EndUpdateOverlay();
+			return true;
 		}
 	}
 
@@ -3520,7 +3539,7 @@
 							ctx.strokeStyle = AscCommon.GlobalSkin.FormsContentControlsOutlineHover;
 						else
 						{
-							switch (object.parent.ContentControlObjectState)
+							switch (object.visualState)
 							{
 								case 0:
 									ctx.strokeStyle = AscCommon.GlobalSkin.FormsContentControlsOutlineMoverHover;
@@ -3843,7 +3862,7 @@
 							ctx.strokeStyle = AscCommon.GlobalSkin.FormsContentControlsOutlineHover;
 						else
 						{
-							switch (object.parent.ContentControlObjectState)
+							switch (object.visualState)
 							{
 								case 0:
 									ctx.strokeStyle = AscCommon.GlobalSkin.FormsContentControlsOutlineMoverHover;

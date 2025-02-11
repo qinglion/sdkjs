@@ -6859,7 +6859,7 @@ function CDrawingDocument()
 			return true;
 		}
 
-		if (this.InlineTextTrackEnabled && !this.contentControls.isInlineTrack())
+		if (this.InlineTextTrackEnabled && !this.contentControls.getInlineMoveTrack())
 		{
 			this.InlineTextTrack = oWordControl.m_oLogicDocument.Get_NearestPos(pos.Page, pos.X, pos.Y);
 			this.InlineTextTrackPage = pos.Page;
