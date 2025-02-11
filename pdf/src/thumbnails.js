@@ -1139,60 +1139,79 @@
     CDocument.prototype.prepareDragGhost = function(dp, countPages) {
         if (!this.dragCanvas) return;
     
-        // Уменьшаем «призрак» до 70% от исходного размера страницы
+        // Reduce the "ghost" to 70% of the original page size
         let w = dp.pageRect.w * 0.7;
         let h = dp.pageRect.h * 0.7;
     
-        this.dragCanvas.width  = w;
-        this.dragCanvas.height = h;
+        this.dragCanvas.width  = w + 15;
+        this.dragCanvas.height = h + 15;
         this.dragCanvas.style.display = "block";
     
-        // Очищаем canvas
+        // Clear the canvas
         this.dragCtx.clearRect(0, 0, w, h);
     
-        // Рисуем миниатюру страницы
+        // If a stack of pages needs to be created
+        if (countPages && countPages > 1) {
+            let offsets = [];
+            if (countPages === 2) {
+                // For two pages — one additional copy
+                offsets.push({ x: 5, y: 5 });
+            } else if (countPages >= 3) {
+                // For three or more — two additional copies
+                offsets.push({ x: 10, y: 10 });
+                offsets.push({ x: 5, y: 5 });
+            }
+    
+            // Draw additional copies (background pages)
+            for (let offset of offsets) {
+                this.dragCtx.fillStyle = PageStyle.emptyColor;
+                this.dragCtx.fillRect(offset.x, offset.y, w, h);
+                this.dragCtx.strokeRect(offset.x, offset.y, w, h);
+            }
+        }
+    
+        // Draw the main page on top (without offset)
         if (dp.page.image) {
             this.dragCtx.drawImage(dp.page.image, 0, 0, w, h);
         } else {
             this.dragCtx.fillStyle = PageStyle.emptyColor;
             this.dragCtx.fillRect(0, 0, w, h);
         }
+        this.dragCtx.strokeRect(0, 0, w, h);
     
-        // Устанавливаем прозрачность
-        this.dragCanvas.style.opacity = "0.9";
+        // Set opacity
+        this.dragCanvas.style.opacity = 0.95;
     
-        // Дополнительно выводим количество страниц, которое мы перетаскиваем
+        // If more than one page is being dragged, display text with the number of pages
         if (countPages && countPages > 1) {
             let text = countPages + " pages";
-            let fontSize = 16; // или распарсить из ctx.font
+            let fontSize = 16; // can be parsed from ctx.font
             this.dragCtx.font = fontSize + "px Arial";
-
-            // Получаем ширину текста
+    
+            // Calculate text dimensions
             let metrics = this.dragCtx.measureText(text);
             let textWidth = metrics.width;
-
             let textHeight = fontSize;
-
             let textX = (w - textWidth) / 2;
-            let textY = (h - textHeight) / 2;
-
-            // Координаты центра canvas
-            let centerX = w / 2;
+            let textY = (h - textHeight);
             let padding = 4;
-            // 1. Рисуем полупрозрачный фон (или белый/любой другой)
-            this.dragCtx.fillStyle = "rgba(255, 255, 255, 1)";  // Белый с прозрачностью
+            let centerX = w / 2;
+    
+            // Draw background for text
+            this.dragCtx.fillStyle = "rgba(255, 255, 255, 1)";
             this.dragCtx.fillRect(
-                centerX - textWidth / 2  - padding,
+                centerX - textWidth / 2 - padding,
                 textY - textHeight,
-                textWidth  + padding * 2,
+                textWidth + padding * 2,
                 textHeight + padding * 2
             );
-
+    
+            // Draw text
             this.dragCtx.fillStyle = "rgba(0, 0, 0, 1)";
             this.dragCtx.fillText(text, textX, textY);
         }
     
-        // Перемещаем «призрак» в положение курсора
+        // Move the "ghost" to the cursor position
         this.moveDragGhost(AscCommon.global_mouseEvent.X, AscCommon.global_mouseEvent.Y);
     };
     
@@ -1230,7 +1249,6 @@
 
         let oDoc = this.viewer.doc;
 
-        let _t = this;
         oDoc.DoAction(function() {
 			oDoc.MovePages(selectedIndices, toIndex);
             oDoc.Viewer.navigateToPage(toIndex);
