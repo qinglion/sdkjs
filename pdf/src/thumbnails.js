@@ -618,7 +618,11 @@
 
     // rendering
     CDocument.prototype._paint= function() {
-        if (!this.canvas) return;
+        if (!this.canvas || !this.viewer.canInteract()) return;
+        if (this.isNeedResize()) {
+            this.resize();
+        }
+
         let ctx= this.canvas.getContext("2d");
         this.canvas.width= this.canvas.width;
         ctx.fillStyle= ThumbnailsStyle.backgroundColor;
@@ -654,6 +658,12 @@
         this.resize();
     };
 
+    CDocument.prototype.setNeedResize = function(bResize) {
+        this.needResize = bResize;
+    };
+    CDocument.prototype.isNeedResize = function() {
+        return !!this.needResize;
+    };
     CDocument.prototype._resize = function(isZoomUpdated)
     {
         var element = document.getElementById(this.id);
@@ -769,6 +779,7 @@
 
         this.documentHeight = blockTop;
 
+        this.setNeedResize(false);
         this.updateScroll(scrollV);
         this.calculateVisibleBlocks();
         this.repaint();
@@ -1153,8 +1164,11 @@
         this.dragCanvas.height = h + 15;
         this.dragCanvas.style.display = "block";
     
+        // Set opacity
+        this.dragCanvas.style.opacity = 0.95;
+
         // Clear the canvas
-        this.dragCtx.clearRect(0, 0, w, h);
+        this.dragCtx.clearRect(0, 0, this.dragCanvas.width, this.dragCanvas.height);
     
         // If a stack of pages needs to be created
         if (countPages && countPages > 1) {
@@ -1184,9 +1198,6 @@
             this.dragCtx.fillRect(0, 0, w, h);
         }
         this.dragCtx.strokeRect(0, 0, w, h);
-    
-        // Set opacity
-        this.dragCanvas.style.opacity = 0.95;
     
         // If more than one page is being dragged, display text with the number of pages
         if (countPages && countPages > 1) {
