@@ -2531,110 +2531,35 @@
 		{
 			return (this.ContentControlObjectState == 1) ? true : false;
 		};
-
+		
 		this.checkPointerInButtons = function(pos)
 		{
 			for (var i = 0; i < this.ContentControlObjects.length; i++)
 			{
-				var _object = this.ContentControlObjects[i];
-				if (_object.state !== AscCommon.ContentControlTrack.In)
+				let _object = this.ContentControlObjects[i];
+				if (AscCommon.ContentControlTrack.In !== _object.state || _object.Pos.Page !== pos.Page)
 					continue;
-
-				// check header
-				var _page = this.document.m_arrPages[_object.Pos.Page];
-				if (!_page)
-					return false;
-
-				var drawingPage = _page.drawingPage;
-
-				var koefX = (drawingPage.right - drawingPage.left) / _page.width_mm;
-				var koefY = (drawingPage.bottom - drawingPage.top) / _page.height_mm;
-
-				var xPos = pos.X - _object.OffsetX;
-				var yPos = pos.Y - _object.OffsetY;
-
-				if (_object.transform)
-				{
-					var tmp = _object.invertTransform.TransformPointX(xPos, yPos);
-					yPos = _object.invertTransform.TransformPointY(xPos, yPos);
-					xPos = tmp;
-				}
-
-				if (_object.Pos.Page == pos.Page && !_object.IsNoUseButtons())
-				{
-					// move
-					var rectMove = _object.CalculateMoveRect(koefX, koefY, true);
-					if (rectMove && rectMove.W > 0.001 && xPos > rectMove.X && xPos < (rectMove.X + rectMove.W) && yPos > rectMove.Y && yPos < (rectMove.Y + rectMove.H))
-					{
-						return true;
-					}
-
-					// check buttons
-					if (_object.Buttons.length > 0)
-					{
-						var indexButton = -1;
-						var xCC, yCC;
-
-						var x, y, w, h;
-						if (_object.formInfo)
-						{
-							w = CONTENT_CONTROL_TRACK_H / koefX;
-							h = CONTENT_CONTROL_TRACK_H / koefY;
-
-							x = _object.formInfo.bounds.x + (_object.formInfo.bounds.w - w) / 2;
-							y = _object.formInfo.bounds.y + (_object.formInfo.bounds.h - h) / 2;
-
-							if (xPos > x && xPos < (x + w) && yPos > y && yPos < (y + h))
-							{
-								indexButton = 0;
-								xCC = x;
-								yCC = y + h;
-							}
-						}
-						else
-						{
-							var rectOrigin = rectMove;
-							if (!rectOrigin)
-								return false;
-							x = rectOrigin.X + rectOrigin.W;
-							y = rectOrigin.Y;
-							w = CONTENT_CONTROL_TRACK_H / koefX;
-							h = CONTENT_CONTROL_TRACK_H / koefY;
-
-							for (var indexB = 0; indexB < _object.Buttons.length; indexB++)
-							{
-								if (xPos > x && xPos < (x + w) && yPos > y && yPos < (y + h))
-								{
-									xCC = x + _object.OffsetX;
-									yCC = rectOrigin.Y + rectOrigin.H + _object.OffsetY;
-
-									indexButton = indexB;
-									break;
-								}
-								x += w;
-							}
-						}
-
-						if (-1 !== indexButton)
-						{
-							return true;
-						}
-					}
-				}
-
-				var rectCombo = _object.CalculateComboRect(koefX, koefY);
-
-				if (rectCombo && pos.Page == rectCombo.Page)
-				{
-					if (xPos > rectCombo.X && xPos < (rectCombo.X + rectCombo.W) && yPos > rectCombo.Y && yPos < (rectCombo.Y + rectCombo.H))
-					{
-						return true;
-					}
-				}
-
-				break;
+				
+				let _pos = this._getTrackRelativePos(pos, _object);
+				
+				let xPos  = _pos.xPos;
+				let yPos  = _pos.yPos;
+				let koefX = _pos.koefX;
+				let koefY = _pos.koefY;
+				
+				if (_object.isHitInMoveRect(xPos, yPos, koefX, koefY))
+					return true;
+				
+				if (_object.getButton(xPos, yPos, koefX, koefY))
+					return true;
+				
+				if (_object.isHitInNameRect(xPos, yPos, koefX, koefY))
+					return true;
+				
+				if (_object.isHitInComboRect(xPos, yPos, koefX, koefY))
+					return true;
 			}
-
+			
 			return false;
 		};
 		
