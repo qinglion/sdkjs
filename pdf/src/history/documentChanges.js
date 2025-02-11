@@ -1125,7 +1125,10 @@ CChangesPDFDocumentMovePage.prototype.private_SetValue = function(nNewPos)
         for (let i = nStart; i <= nEnd; i++) {
             oThumbnails._repaintPage(i);
         }
+
+        oThumbnails.setNeedResize(true);
     }
 
+    oDoc.Viewer.resize(true);
     oDoc.Viewer.paint();
 };

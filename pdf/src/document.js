@@ -2391,8 +2391,11 @@ var CPresentation = CPresentation || function(){};
             for (let i = nStart; i <= nEnd; i++) {
                 oThumbnails._repaintPage(i);
             }
+            
+            oThumbnails.setNeedResize(true);
         }
 
+        this.Viewer.resize(true);
         this.Viewer.paint();
         return true;
     };
