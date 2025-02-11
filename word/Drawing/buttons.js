@@ -1649,7 +1649,7 @@
 		this.ContentControlObjectsLast = [];
 		this.ContentControlObjectState = -1;
 		this.ContentControlSmallChangesCheck = { X: 0, Y: 0, Page: 0, Min: 2, IsSmall : true };
-		this.lastActive = false;
+		this.lastActive = null;
 		this.lastHover  = null;
 
 		this.measures = {};
@@ -2417,17 +2417,17 @@
 			// We might have many Track.In and just one Track.Hover
 			// Check last active Track.In
 			
-			this.lastActive = false;
+			this.lastActive = null;
 			this.lastHover  = null;
 			
 			for (let i = 0; i < this.ContentControlObjects.length; ++i)
 			{
 				let ccTrack = this.ContentControlObjects[i];
 				if (AscCommon.ContentControlTrack.In === ccTrack.state && -2 !== ccTrack.ActiveButtonIndex)
-					this.lastActive = true;
+					this.lastActive = ccTrack;
 				
 				if (AscCommon.ContentControlTrack.Hover === ccTrack.state)
-					this.lastHover = ccTrack
+					this.lastHover = ccTrack;
 			}
 			
 			this.ContentControlObjects.length = 0;
@@ -2437,24 +2437,22 @@
 			if (!geom || (Array.isArray(geom) && geom.length === 0))
 				return;
 			
-			this.ContentControlObjects.push(new CContentControlTrack(this, obj, AscCommon.ContentControlTrack.In, geom));
+			if (this.lastActive && this.lastActive.base && obj && this.lastActive.base.GetId() === obj.GetId())
+			{
+				this.lastActive.UpdateGeom(geom);
+				this.ContentControlObjects.push(this.lastActive);
+			}
+			else
+			{
+				this.ContentControlObjects.push(new CContentControlTrack(this, obj, AscCommon.ContentControlTrack.In, geom));
+			}
+			
 		};
 		this.endCollectTracks = function()
 		{
 			if (this.lastActive)
 			{
-				let isActive = false;
-				for (let i = 0; i < this.ContentControlObjects.length; ++i)
-				{
-					let ccTrack = this.ContentControlObjects[i];
-					if (AscCommon.ContentControlTrack.In === ccTrack.state && -2 !== ccTrack.ActiveButtonIndex)
-					{
-						isActive = true;
-						break;
-					}
-				}
-				
-				if (!isActive)
+				if (-1 === this.ContentControlObjects.indexOf(this.lastActive))
 					this.document.m_oWordControl.m_oApi.sendEvent("asc_onHideContentControlsActions");
 			}
 			
