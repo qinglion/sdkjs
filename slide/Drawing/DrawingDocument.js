@@ -5422,79 +5422,126 @@ function CThumbnailsManager(editorPage)
 		this.m_bIsUpdate = false;
 	};
 
-	// overlay
-	this.OnUpdateOverlay = function()
-	{
+	this.OnUpdateOverlay = function () {
 		if (!this.isThumbnailsShown())
 			return;
 
-		var canvas = this.m_oWordControl.m_oThumbnailsBack.HtmlElement;
-		if (null == canvas)
+		const canvas = this.m_oWordControl.m_oThumbnailsBack.HtmlElement;
+		if (canvas == null)
 			return;
 
 		if (this.m_oWordControl)
 			this.m_oWordControl.m_oApi.checkLastWork();
 
-		var context = canvas.getContext("2d");
-		var _width = canvas.width;
-		var _height = canvas.height;
+		const context = canvas.getContext("2d");
+		const canvasWidth = canvas.width;
+		const canvasHeight = canvas.height;
 
+		this.drawThumbnailsBorders(context, canvasWidth, canvasHeight);
+
+		if (this.MouseDownTrack.IsDragged()) {
+			this.drawThumbnailsInsertionLine(context, canvasWidth, canvasHeight);
+		}
+	};
+	this.drawThumbnailsBorders = function (context, canvasWidth, canvasHeight) {
 		context.fillStyle = GlobalSkin.BackgroundColorThumbnails;
-		context.fillRect(0, 0, _width, _height);
+		context.fillRect(0, 0, canvasWidth, canvasHeight);
 
-		var _style_select = GlobalSkin.ThumbnailsPageOutlineActive;
-		var _style_focus = GlobalSkin.ThumbnailsPageOutlineHover;
-		var _style_select_focus = GlobalSkin.ThumbnailsPageOutlineActive;
+		const _style_select = GlobalSkin.ThumbnailsPageOutlineActive;
+		const _style_focus = GlobalSkin.ThumbnailsPageOutlineHover;
+		const _style_select_focus = GlobalSkin.ThumbnailsPageOutlineActive;
 
-		// selected pages
 		context.fillStyle = _style_select;
-		var _border = this.const_border_w;
-		for (var i = 0; i < this.GetSlidesCount(); i++)
-		{
-			var page = this.m_arrPages[i];
 
-			if (page.IsLocked)
-			{
-				var _lock_focus = AscCommon.GlobalSkin.ThumbnailsLockColor;
-				var _lock_color = AscCommon.GlobalSkin.ThumbnailsLockColor;
+		for (let i = 0; i < this.GetSlidesCount(); i++) {
+			const page = this.m_arrPages[i];
+			let color = null;
+			let isFocus = false;
 
-				if (page.IsFocused)
-				{
-					this.FocusRectFlat(_lock_focus, context, page.left, page.top, page.right, page.bottom);
-				} else
-				{
-					this.FocusRectFlat(_lock_color, context, page.left, page.top, page.right, page.bottom);
-				}
-
-				continue;
+			if (page.IsLocked) {
+				color = AscCommon.GlobalSkin.ThumbnailsLockColor;
+			} else if (page.IsSelected && page.IsFocused) {
+				color = _style_select_focus;
+			} else if (page.IsSelected) {
+				color = _style_select;
+			} else if (page.IsFocused) {
+				color = _style_focus
+				isFocus = true;
 			}
 
-			if (page.IsSelected && page.IsFocused)
-			{
-				this.FocusRectFlat(_style_select_focus, context, page.left, page.top, page.right, page.bottom);
-			} else if (page.IsSelected)
-			{
-				this.FocusRectFlat(_style_select, context, page.left, page.top, page.right, page.bottom);
-			} else if (page.IsFocused)
-			{
-				this.FocusRectFlat(_style_focus, context, page.left, page.top, page.right, page.bottom, true);
+			if (color) {
+				this.FocusRectFlat(
+					color,
+					context,
+					page.left, page.top, page.right, page.bottom,
+					isFocus
+				);
 			}
 		}
+	};
+	this.drawThumbnailsInsertionLine = function (context, canvasWidth, canvasHeight) {
+		const isHorizontalThumbnails = this.m_oWordControl.thumbnailsPosition === thumbnailsPositionMap.bottom;
+		const nPosition = this.MouseDownTrack.GetPosition();
+		const oPage = this.m_arrPages[nPosition - 1];
 
-		if (this.MouseDownTrack.IsDragged())
-		{
-			// теперь нужно просто нарисовать линию
-			context.strokeStyle = "#DEDEDE";
-			let y = (0.5 * this.const_offset_y) >> 0;
-			let nPosition = this.MouseDownTrack.GetPosition();
-			let oPage = this.m_arrPages[nPosition - 1];
-			if (oPage)
-				y = (oPage.bottom + 1.5 * this.const_border_w) >> 0;
+		context.strokeStyle = "#DEDEDE";
+		if (isHorizontalThumbnails) {
+			// x, topY & bottomY - coordinates of the insertion line itself
+			const x = oPage
+				? (oPage.right + 1.5 * this.const_border_w) >> 0
+				: (this.const_offset_x / 2) >> 0;
 
-			var _left_pos = 0;
-			var _right_pos = _width;
-			if (this.m_arrPages.length > 0)
-			{
+			let topY, bottomY;
+			if (this.m_arrPages.length > 0) {
+				topY = this.m_arrPages[0].top + 4;
+				bottomY = this.m_arrPages[0].bottom - 4;
+			} else {
+				topY = 0;
+				bottomY = canvasHeight;
+			}
+
+			context.beginPath();
+			context.moveTo(x + 0.5, topY);
+			context.lineTo(x + 0.5, bottomY);
+			context.closePath();
+			context.lineWidth = 3;
+			context.stroke();
+
+			if (this.MouseTrackCommonImage) {
+				const commonImageWidth = this.MouseTrackCommonImage.width;
+				const commonImageHeight = this.MouseTrackCommonImage.height;
+
+				context.save();
+				context.translate(x, topY);
+				context.rotate(Math.PI / 2);
+
+				context.drawImage(
+					this.MouseTrackCommonImage,
+					0, 0,
+					commonImageWidth / 2, commonImageHeight,
+					-commonImageWidth, -commonImageHeight / 2,
+					commonImageWidth / 2, commonImageHeight
+				);
+
+				context.translate(bottomY - topY, 0);
+				context.drawImage(
+					this.MouseTrackCommonImage,
+					commonImageWidth / 2, 0,
+					commonImageWidth / 2, commonImageHeight,
+					commonImageWidth / 2, -commonImageHeight / 2,
+					commonImageWidth / 2, commonImageHeight
+				);
+
+				context.restore();
+			}
+		} else {
+			const y = oPage
+				? (oPage.bottom + 1.5 * this.const_border_w) >> 0
+				: this.const_offset_y / 2 >> 0;
+
+			let _left_pos = 0;
+			let _right_pos = canvasWidth;
+			if (this.m_arrPages.length > 0) {
 				_left_pos = this.m_arrPages[0].left + 4;
 				_right_pos = this.m_arrPages[0].right - 4;
 			}
@@ -5506,19 +5553,22 @@ function CThumbnailsManager(editorPage)
 			context.stroke();
 			context.beginPath();
 
-			if (null != this.MouseTrackCommonImage)
-			{
-				context.drawImage(this.MouseTrackCommonImage, 0, 0,
+			if (null != this.MouseTrackCommonImage) {
+				context.drawImage(
+					this.MouseTrackCommonImage,
+					0, 0,
 					(this.MouseTrackCommonImage.width + 1) >> 1, this.MouseTrackCommonImage.height,
-					_left_pos - this.MouseTrackCommonImage.width,
-					y - (this.MouseTrackCommonImage.height >> 1),
-					(this.MouseTrackCommonImage.width + 1) >> 1, this.MouseTrackCommonImage.height);
+					_left_pos - this.MouseTrackCommonImage.width, y - (this.MouseTrackCommonImage.height >> 1),
+					(this.MouseTrackCommonImage.width + 1) >> 1, this.MouseTrackCommonImage.height
+				);
 
-				context.drawImage(this.MouseTrackCommonImage, this.MouseTrackCommonImage.width >> 1, 0,
+				context.drawImage(
+					this.MouseTrackCommonImage,
+					this.MouseTrackCommonImage.width >> 1, 0,
 					(this.MouseTrackCommonImage.width + 1) >> 1, this.MouseTrackCommonImage.height,
-					_right_pos + (this.MouseTrackCommonImage.width >> 1),
-					y - (this.MouseTrackCommonImage.height >> 1),
-					(this.MouseTrackCommonImage.width + 1) >> 1, this.MouseTrackCommonImage.height);
+					_right_pos + (this.MouseTrackCommonImage.width >> 1), y - (this.MouseTrackCommonImage.height >> 1),
+					(this.MouseTrackCommonImage.width + 1) >> 1, this.MouseTrackCommonImage.height
+				);
 			}
 		}
 	};
