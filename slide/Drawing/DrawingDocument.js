@@ -6150,7 +6150,7 @@ function CThumbnailsManager(editorPage)
 				wordControl.m_oThumbnails_scroll.HtmlElement.style.display = 'none';
 			}
 			this.m_bIsScrollVisible = false;
-			this.m_dScrollY = 0;
+			this.m_dScrollY = isHorizontalOrientation ? this.m_dScrollY_max : 0;
 
 		} else {
 			// Scrollbar is needed
@@ -6163,7 +6163,13 @@ function CThumbnailsManager(editorPage)
 				} else if (!wordControl.m_oApi.isMobileVersion) {
 					wordControl.m_oThumbnails_scroll.HtmlElement.style.display = 'block';
 				}
-				wordControl.m_oThumbnailsContainer.Resize(thumbnailsContainerWidth, thumbnailsContainerHeight, wordControl);
+
+				const thumbnailsContainerParent = wordControl.m_oThumbnailsContainer.Parent; // editor.WordControl.m_oBody
+				wordControl.m_oThumbnailsContainer.Resize(
+					thumbnailsContainerParent.AbsolutePosition.R - thumbnailsContainerParent.AbsolutePosition.L,
+					thumbnailsContainerParent.AbsolutePosition.B - thumbnailsContainerParent.AbsolutePosition.T,
+					wordControl
+				);
 			}
 			this.m_bIsScrollVisible = true;
 
