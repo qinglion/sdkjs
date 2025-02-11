@@ -222,8 +222,14 @@
         {
             let isLandscape = oViewer.isLandscapePage(this.pages[i].num);
 
-            if (this.pages[i].page.height > maxPageHeight)
-                maxPageHeight = false == isLandscape ? this.pages[i].page.height : this.pages[i].page.width;
+            if (isLandscape) {
+                if (this.pages[i].page.width > maxPageHeight)
+                    maxPageHeight = this.pages[i].page.width;
+            }
+            else {
+                if (this.pages[i].page.height > maxPageHeight)
+                    maxPageHeight = this.pages[i].page.height;
+            }
         }
 
         var blockHeight = (maxPageHeight * zoom) >> 0;
