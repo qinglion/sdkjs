@@ -5311,9 +5311,10 @@ var CPresentation = CPresentation || function(){};
         }
 
         let oStamp = this.AddAnnotByProps(oProps);
+        oStamp.SetIconType(sType);
         oStamp.SetRotate(nRotAngle);
         oStamp.SetWidth(nLineW);
-        oStamp.SetIconType(sType);
+        
         if (oStampRender) {
             oStamp.SetRenderStructure(oStampRender.m_aStack[0]);
             oStamp.SetInRect([X1, Y2, X1, Y1, X2, Y1, X2, Y2]);
