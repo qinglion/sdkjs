@@ -1249,6 +1249,9 @@ function (window, undefined) {
 			if (!string) {
 				return false;
 			}
+			if (typeof string !== 'string') {
+				return false;
+			}
 
 			// protocol check
 			let protocols = ['http://', 'https://', 'ftp://'];

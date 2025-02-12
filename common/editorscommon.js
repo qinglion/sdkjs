@@ -3014,9 +3014,12 @@
 		let externalLink = exclamationMarkIndex !== -1 ? string.substring(0, exclamationMarkIndex) : null;
 		let secondPartOfString = exclamationMarkIndex !== -1 ? string.substring(exclamationMarkIndex + 1) : null;
 
-		let defname = XRegExp.exec(secondPartOfString, rx_name);
-		if (defname && defname["name"]) {
-			defname = defname["name"];
+		let defname = null;
+		if (secondPartOfString && !parserHelp.isArea(secondPartOfString, 0) && !parserHelp.isRef(secondPartOfString, 0)) {
+			defname = XRegExp.exec(secondPartOfString, rx_name);
+			if (defname && defname["name"]) {
+				defname = defname["name"];
+			}
 		}
 
 		if (externalLink && externalLink[0] === "'" && externalLink[externalLink.length - 1] === "'") {
