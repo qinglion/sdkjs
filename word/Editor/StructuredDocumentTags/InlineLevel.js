@@ -2926,11 +2926,19 @@ CInlineLevelSdt.prototype.IntersectWithRect = function(X, Y, W, H, nPageAbs)
 };
 CInlineLevelSdt.prototype.IsSelectedAll = function(Props)
 {
+	if (this.IsPicture())
+	{
+		let allDrawings = this.GetAllDrawingObjects();
+		if (allDrawings && 1 === allDrawings.length && allDrawings[0].isSelected())
+			return true;
+	}
+
 	if (!this.Selection.Use)
 		return false;
 
 	if (this.IsPlaceHolder())
 		return true;
+	
 
 	return CParagraphContentWithParagraphLikeContent.prototype.IsSelectedAll.apply(this, arguments);
 };

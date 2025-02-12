@@ -8461,7 +8461,18 @@ CDocument.prototype.OnEndTextDrag = function(NearPos, bCopy)
 
 		// Получим копию выделенной части документа, которую надо перенести в новое место, одновременно с этим
 		// удаляем эту выделенную часть (если надо).
-
+	
+		var oSelectInfo = this.GetSelectedElementsInfo({CheckAllSelection : true});
+		var arrSdts     = oSelectInfo.GetAllSdts();
+		
+		// Select picture content control with a regular text selection
+		for (let i = 0, count = arrSdts.length; i < count; ++i)
+		{
+			let cc = arrSdts[i];
+			if (cc.IsPicture() && cc instanceof AscWord.CInlineLevelSdt)
+				cc.SelectThisElement(1);
+		}
+		
 		var DocContent = this.GetSelectedContent(true);
 
 		if (!DocContent.CanInsert(NearPos))
@@ -8484,8 +8495,6 @@ CDocument.prototype.OnEndTextDrag = function(NearPos, bCopy)
 		// залоченных контент контролов
 		this.SetCheckContentControlsLock(false);
 
-		var oSelectInfo = this.GetSelectedElementsInfo({CheckAllSelection : true});
-		var arrSdts     = oSelectInfo.GetAllSdts();
 		if (arrSdts.length > 0 && !bCopy)
 		{
 			for (var nIndex = 0, nCount = arrSdts.length; nIndex < nCount; ++nIndex)
