@@ -69,21 +69,21 @@ $(function () {
 
 	QUnit.module("Paragraph Lines");
 
-	QUnit.test("Test: \"Test regular line break cases\"", function (assert)
+	QUnit.test("Test regular line break cases", function (assert)
 	{
 		setText("1234");
 		recalculate(charWidth * 3.5);
-		assert.strictEqual(para.GetText({ParaEndToSpace : false}), "1234", "Paragraph text: 1234");
-		assert.strictEqual(para.GetLinesCount(), 2, "Lines count 2");
-		assert.strictEqual(para.GetTextOnLine(0), "123", "Text on line 0 '123'");
-		assert.strictEqual(para.GetTextOnLine(1), "4", "Text on line 1 '4'");
+		checkLines(assert, para, [
+			"123",
+			"4"
+		]);
 		
 		setText("12 34");
 		recalculate(charWidth * 3.5);
-		assert.strictEqual(para.GetText({ParaEndToSpace : false}), "12 34", "Paragraph text: 12 34");
-		assert.strictEqual(para.GetLinesCount(), 2, "Lines count 2");
-		assert.strictEqual(para.GetTextOnLine(0), "12 ", "Text on line 0 '12 ");
-		assert.strictEqual(para.GetTextOnLine(1), "34", "Text on line 1 '34'");
+		checkLines(assert, para, [
+			"12 ",
+			"34"
+		]);
 	});
 	
 	QUnit.test("Test line breaks for Asian text", function (assert)
