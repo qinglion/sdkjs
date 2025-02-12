@@ -3706,6 +3706,8 @@ ParaRun.prototype.Recalculate_Range = function(PRS, ParaPr, Depth)
     var oSectionPr = undefined;
 
 	let isSkipFillRange = false;
+	
+	let textPr = this.Get_CompiledPr(false);
 
 	// TODO: Сделать возможность показывать инструкцию
     var isHiddenCFPart = PRS.ComplexFields.isHiddenComplexFieldPart();
@@ -3831,6 +3833,8 @@ ParaRun.prototype.Recalculate_Range = function(PRS, ParaPr, Depth)
 					let LetterLen   = Item.GetWidth();
 					let isLigature  = Item.IsLigature();
 					let GraphemeLen = isLigature ? Item.GetLigatureWidth() : LetterLen;
+					
+					let isBreakAfter = Item.IsSpaceAfter() || textPr.RFonts.Hint === AscWord.fonthint_EastAsia;
 
 					if (FirstItemOnLine
 						&& (X + SpaceLen + WordLen + GraphemeLen > XEnd
@@ -3951,12 +3955,12 @@ ParaRun.prototype.Recalculate_Range = function(PRS, ParaPr, Depth)
 							}
 
 							// Если текущий символ с переносом, например, дефис, тогда на нем заканчивается слово
-							if (Item.IsSpaceAfter()
+							if (isBreakAfter
 								|| (PRS.canPlaceAutoHyphenAfter(Item)
 									&& X + SpaceLen + LetterLen + PRS.getAutoHyphenWidth(Item, this) <= XEnd
 									&& (FirstItemOnLine || PRS.checkHyphenationZone(X + SpaceLen))))
 							{
-								if (!Item.IsSpaceAfter())
+								if (!isBreakAfter)
 									PRS.lastAutoHyphen = Item;
 
 								// Добавляем длину пробелов до слова и ширину самого слова.
@@ -3993,12 +3997,12 @@ ParaRun.prototype.Recalculate_Range = function(PRS, ParaPr, Depth)
                             // Мы убираемся в пределах данной строки. Прибавляем ширину буквы к ширине слова
                             WordLen += LetterLen;
 
-							if (Item.IsSpaceAfter()
+							if (isBreakAfter
 								|| (PRS.canPlaceAutoHyphenAfter(Item)
 									&& fitOnLine
 									&& (FirstItemOnLine || PRS.checkHyphenationZone(X + SpaceLen))))
                             {
-								if (!Item.IsSpaceAfter())
+								if (!isBreakAfter)
 									PRS.lastAutoHyphen = Item;
 								
                                 // Добавляем длину пробелов до слова и ширину самого слова.
