@@ -962,10 +962,10 @@ CBlockLevelSdt.prototype.GetBoundingRect = function()
 		Transform : this.Get_ParentTextTransform()
 	};
 };
-CBlockLevelSdt.prototype.DrawContentControlsTrack = function(nType, X, Y, nCurPage, isCheckHit)
+CBlockLevelSdt.prototype.DrawContentControlsTrack = function(nType, X, Y, nCurPage, isCheckHit, padding)
 {
 	if (!this.IsRecalculated() || !this.LogicDocument)
-		return;
+		return false;
 
 	var oLogicDocument   = this.LogicDocument;
 	var oDrawingDocument = oLogicDocument.GetDrawingDocument();
@@ -974,17 +974,11 @@ CBlockLevelSdt.prototype.DrawContentControlsTrack = function(nType, X, Y, nCurPa
 	// TODO: Нужно отрисовать рамку формулы, но для этого нужно чтобы селект плейсхолдера был не целиком на параграф,
 	//       а только на формулу
 	if (this.IsContentControlEquation() && !this.IsPlaceHolder())
-	{
-		oDrawingDocument.OnDrawContentControl(null, nType);
-		return;
-	}
-
+		return false;
+	
 	if (this.IsHideContentControlTrack())
-	{
-		oDrawingDocument.OnDrawContentControl(null, nType);
-		return;
-	}
-
+		return false;
+	
 	var oHdrFtr     = this.IsHdrFtr(true);
 	var nHdrFtrPage = oHdrFtr ? oHdrFtr.GetContent().GetAbsolutePage(0) : null;
 	let isFullWidth = oLogicDocument.IsFillingFormMode();
@@ -1022,7 +1016,7 @@ CBlockLevelSdt.prototype.DrawContentControlsTrack = function(nType, X, Y, nCurPa
 		}
 
 		if (false !== isCheckHit && !isHit)
-			return;
+			return false;
 
 		var sHelpText = "";
 		if (AscCommon.ContentControlTrack.Hover === nType && this.IsForm() && (sHelpText = this.GetFormPr().HelpText))
@@ -1036,8 +1030,20 @@ CBlockLevelSdt.prototype.DrawContentControlsTrack = function(nType, X, Y, nCurPa
 			oLogicDocument.GetApi().sync_MouseMoveCallback(oMMData);
 		}
 	}
+	
+	if (padding)
+	{
+		for (let i = 0; i < arrRects.length; ++i)
+		{
+			arrRects[i].X -= padding;
+			arrRects[i].Y -= padding;
+			arrRects[i].R += padding;
+			arrRects[i].B += padding;
+		}
+	}
 
-	oDrawingDocument.OnDrawContentControl(this, nType, arrRects);
+	oDrawingDocument.addContentControlTrack(this, nType, arrRects);
+	return true;
 };
 CBlockLevelSdt.prototype.AddContentControl = function(nContentControlType)
 {

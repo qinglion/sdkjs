@@ -328,7 +328,7 @@
 		this.formBorderWidth = 0;
 		this.formBorderColor = null;
 		
-		if (this.form)
+		if (this.form && formBorder)
 		{
 			this.formBorderWidth = formBorder.GetWidth();
 			this.formBorderColor = AscWord.CDocumentColorA.fromObjectRgb(formBorder.GetColor());
@@ -378,7 +378,7 @@
 	ParagraphLineDrawState.prototype.handleFormBorder = function(item, run, inRunPos)
 	{
 		let itemWidth = item.GetWidthVisible();
-		if (!this.form || itemWidth <= 0.001)
+		if (!this.form || itemWidth <= 0.001 || !this.formBorderColor)
 			return;
 		
 		let borderW     = this.formBorderWidth;

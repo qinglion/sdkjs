@@ -8461,7 +8461,18 @@ CDocument.prototype.OnEndTextDrag = function(NearPos, bCopy)
 
 		// Получим копию выделенной части документа, которую надо перенести в новое место, одновременно с этим
 		// удаляем эту выделенную часть (если надо).
-
+	
+		var oSelectInfo = this.GetSelectedElementsInfo({CheckAllSelection : true});
+		var arrSdts     = oSelectInfo.GetAllSdts();
+		
+		// Select picture content control with a regular text selection
+		for (let i = 0, count = arrSdts.length; i < count; ++i)
+		{
+			let cc = arrSdts[i];
+			if (cc.IsPicture() && cc instanceof AscWord.CInlineLevelSdt)
+				cc.SelectThisElement(1);
+		}
+		
 		var DocContent = this.GetSelectedContent(true);
 
 		if (!DocContent.CanInsert(NearPos))
@@ -8484,8 +8495,6 @@ CDocument.prototype.OnEndTextDrag = function(NearPos, bCopy)
 		// залоченных контент контролов
 		this.SetCheckContentControlsLock(false);
 
-		var oSelectInfo = this.GetSelectedElementsInfo({CheckAllSelection : true});
-		var arrSdts     = oSelectInfo.GetAllSdts();
 		if (arrSdts.length > 0 && !bCopy)
 		{
 			for (var nIndex = 0, nCount = arrSdts.length; nIndex < nCount; ++nIndex)
@@ -8644,9 +8653,9 @@ CDocument.prototype.UpdateCursorType = function(X, Y, PageAbs, MouseEvent)
 		return;
 
 	this.Api.sync_MouseMoveStartCallback();
-
-	this.DrawingDocument.OnDrawContentControl(null, AscCommon.ContentControlTrack.Hover);
-
+	
+	this.DrawingDocument.removeContentControlTrackHover();
+	
 	if (undefined !== X && null !== X)
 	{
 		var nDocPosType = this.GetDocPosType();
@@ -12498,32 +12507,24 @@ CDocument.prototype.private_UpdateTracks = function(bSelection, bEmptySelection)
 	var oBlockLevelSdt  = oSelectedInfo.GetBlockLevelSdt();
 	var oInlineLevelSdt = oSelectedInfo.GetInlineLevelSdt();
 
+	this.DrawingDocument.startCollectContentControlTracks();
 	var oCurrentForm = null;
-	if (oInlineLevelSdt)
+	let contentControls = oSelectedInfo.GetAllSdts();
+	if (contentControls.length)
 	{
-		if (oInlineLevelSdt.IsForm())
-			oCurrentForm = oInlineLevelSdt;
-		
-		if (!oInlineLevelSdt.IsForm() || !oInlineLevelSdt.IsFixedForm() || this.IsFillingOFormMode())
-			oInlineLevelSdt.DrawContentControlsTrack(AscCommon.ContentControlTrack.In);
+		let offset = this.DrawingDocument.GetMMPerDot(5);
+		// Math equation has its own track, so wee need to take that into account
+		let curOffset = oMath ? offset : 0;
+		for (let i = contentControls.length - 1; i >= 0; --i)
+		{
+			if (!oCurrentForm && contentControls[i].IsForm())
+				oCurrentForm = contentControls[i];
+			
+			if (contentControls[i].drawContentControlsTrackIn(curOffset))
+				curOffset += offset;
+		}
 	}
-	else if (oBlockLevelSdt)
-	{
-		oBlockLevelSdt.DrawContentControlsTrack(AscCommon.ContentControlTrack.In);
-	}
-	else
-	{
-		var oForm = null, oMajorParaDrawing;
-		if (docpostype_DrawingObjects === this.GetDocPosType()
-			&& (oMajorParaDrawing = this.DrawingObjects.getMajorParaDrawing())
-			&& this.DrawingObjects.getTargetDocContent())
-			oForm = oMajorParaDrawing.GetInnerForm();
-
-		if (oForm)
-			oForm.DrawContentControlsTrack(AscCommon.ContentControlTrack.In);
-		else
-			this.DrawingDocument.OnDrawContentControl(null, AscCommon.ContentControlTrack.In);
-	}
+	this.DrawingDocument.endCollectContentControlTracks();
 
 	this.UpdateContentControlFocusState(oInlineLevelSdt ? oInlineLevelSdt : (oBlockLevelSdt ? oBlockLevelSdt : null));
 
