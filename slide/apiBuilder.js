@@ -1631,6 +1631,9 @@
     {
         if (this.Master) 
         {
+            if (!(oDrawing instanceof ApiDrawing) || oDrawing.Drawing.group || oDrawing.Drawing.IsUseInDocument())
+                return false;
+
             oDrawing.Drawing.setParent(this.Master);
             this.Master.shapeAdd(this.Master.cSld.spTree.length, oDrawing.Drawing);
             editor.private_checkPlaceholders(this, oDrawing.GetPlaceholder());
@@ -2005,6 +2008,9 @@
     {
         if (this.Layout) 
         {
+            if (!(oDrawing instanceof ApiDrawing) || oDrawing.Drawing.group || oDrawing.Drawing.IsUseInDocument())
+                return false;
+
             oDrawing.Drawing.setParent(this.Layout);
             this.Layout.shapeAdd(this.Layout.cSld.spTree.length, oDrawing.Drawing);
             editor.private_checkPlaceholders(this, oDrawing.GetPlaceholder());
@@ -2927,6 +2933,9 @@
 	 */
     ApiSlide.prototype.AddObject = function(oDrawing){
         if(this.Slide){
+            if (!(oDrawing instanceof ApiDrawing) || oDrawing.Drawing.group || oDrawing.Drawing.IsUseInDocument())
+                return false;
+
             oDrawing.Drawing.setParent(this.Slide);
             this.Slide.shapeAdd(this.Slide.cSld.spTree.length, oDrawing.Drawing);
             editor.private_checkPlaceholders(this, oDrawing.GetPlaceholder());

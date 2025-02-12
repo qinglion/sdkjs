@@ -8374,15 +8374,14 @@
 	 */
 	ApiParagraph.prototype.AddDrawing = function(oDrawing)
 	{
-		let oRun = new ParaRun(this.Paragraph, false);
-
-		if (!(oDrawing instanceof ApiDrawing))
-			return new ApiRun(oRun);
+		if (!(oDrawing instanceof ApiDrawing) || oDrawing.Drawing.group || oDrawing.Drawing.IsUseInDocument())
+			return null;
 
 		let oParaDrawing = oDrawing.getParaDrawing();
 		if(!oParaDrawing)
-			return new ApiRun(oRun);
+			return null;
 
+		let oRun = new ParaRun(this.Paragraph, false);
 		oRun.Add_ToContent(0, oParaDrawing);
 		private_PushElementToParagraph(this.Paragraph, oRun);
 		oParaDrawing.Set_Parent(oRun);
@@ -10027,7 +10026,7 @@
 	 */ 
 	ApiRun.prototype.AddDrawing = function(oDrawing)
 	{
-		if (!(oDrawing instanceof ApiDrawing))
+		if (!(oDrawing instanceof ApiDrawing) || oDrawing.Drawing.group || oDrawing.Drawing.IsUseInDocument())
 			return false;
 
 		let oParaDrawing = oDrawing.getParaDrawing();
