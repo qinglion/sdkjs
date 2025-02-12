@@ -9637,6 +9637,25 @@ AscWord.CDocumentColor = CDocumentColor;
 	{
 		return AscCommon.ByteToHex(this.r) + AscCommon.ByteToHex(this.g) + AscCommon.ByteToHex(this.b) + AscCommon.ByteToHex(this.a);
 	};
+	CDocumentColorA.prototype.WriteToBinary = function(writer)
+	{
+		this.toBinary(writer);
+	};
+	CDocumentColorA.prototype.ReadFromBinary = function(reader)
+	{
+		this.r = reader.GetByte();
+		this.g = reader.GetByte();
+		this.b = reader.GetByte();
+		this.a = reader.GetByte();
+	};
+	CDocumentColorA.prototype.Write_ToBinary = function(writer)
+	{
+		return this.WriteToBinary(writer);
+	};
+	CDocumentColorA.prototype.Read_FromBinary = function(reader)
+	{
+		return this.ReadFromBinary(reader);
+	};
 	//------------------------------------------------------------------------------------------------------------------
 	AscWord.CDocumentColorA = CDocumentColorA;
 })();
