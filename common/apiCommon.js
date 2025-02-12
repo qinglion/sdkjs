@@ -5820,6 +5820,9 @@ function (window, undefined) {
 
 		_object["store"] = this.store;
 
+		if (this.events)
+			_object["events"] = this.events.slice(0, this.events.length);
+
 		return _object;
 	};
 	CPluginVariation.prototype["deserialize"] = function (_object) {
