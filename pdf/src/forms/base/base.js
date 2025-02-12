@@ -653,6 +653,13 @@
         
         return aActions;
     };
+    CBaseField.prototype.SetDocument = function(oDoc) {
+        if (this._doc == oDoc) {
+            return;
+        }
+
+        this._doc = oDoc;
+    };
     CBaseField.prototype.GetDocument = function() {
         return this._doc;
     };
@@ -2068,7 +2075,7 @@
         return this.type;
     };
     CBaseField.prototype["getPage"] = function() {
-        return this._page;
+        return this.GetPage();
     };
     CBaseField.prototype["getPagePos"] = function() {
         let aOrigRect = this.GetOrigRect();
