@@ -9903,7 +9903,7 @@
 				}
 
 				if (!newRange) {
-					newRange = this.model.autoFilters.expandRange(ar, true);
+					newRange = this.model.autoFilters.expandRange(ar, true, true);
 				}
 
 				if (newRange) {
