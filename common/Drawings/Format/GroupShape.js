@@ -1716,6 +1716,45 @@
 				this.spTree[i].generateSmartArtDrawingPart();
 			}
 		};
+		CGroupShape.prototype.isInk = function () {
+			if (!this.spTree.length) {
+				return false;
+			}
+			for (let i = 0; i < this.spTree.length; i++) {
+				const oDrawing = this.spTree[i];
+				if (!oDrawing.isInk()) {
+					return false;
+				}
+			}
+			return true;
+		};
+		CGroupShape.prototype.removeAllInks = function () {
+			for (let i = this.spTree.length - 1; i >= 0; i -= 1) {
+				const oDrawing = this.spTree[i];
+				if (oDrawing.isInk()) {
+					this.removeFromSpTreeByPos(i);
+					if (oDrawing.setBDeleted2) {
+						oDrawing.setBDeleted2(true);
+					} else {
+						oDrawing.setBDeleted(true);
+					}
+				} else {
+					oDrawing.removeAllInks();
+				}
+			}
+		};
+		CGroupShape.prototype.getAllInks = function (arrInks) {
+			arrInks = arrInks || [];
+			for (let i = this.spTree.length - 1; i >= 0; i -= 1) {
+				const oDrawing = this.spTree[i];
+				if (oDrawing.isInk()) {
+					arrInks.push(oDrawing);
+				} else {
+					oDrawing.getAllInks(arrInks);
+				}
+			}
+			return arrInks;
+		};
 
 		//--------------------------------------------------------export----------------------------------------------------
 		window['AscFormat'] = window['AscFormat'] || {};

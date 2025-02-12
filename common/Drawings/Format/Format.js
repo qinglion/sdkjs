@@ -10087,6 +10087,38 @@
 		}
 
 		InitClass(CSld, CBaseNoIdObject, 0);
+		CSld.prototype.removeAllInks = function () {
+			if (!this.parent) {
+				return;
+			}
+			const arrSpTree = this.spTree;
+			for (let i = arrSpTree.length - 1; i >= 0; i -= 1) {
+				const oDrawing = arrSpTree[i];
+				if (oDrawing.isInk()) {
+					this.parent.removeFromSpTreeByPos(i);
+					if (oDrawing.setBDeleted2) {
+						oDrawing.setBDeleted2(true);
+					} else {
+						oDrawing.setBDeleted(true);
+					}
+				} else {
+					oDrawing.removeAllInks();
+				}
+			}
+		};
+		CSld.prototype.getAllInks = function (arrInks) {
+			arrInks = arrInks || [];
+			const arrSpTree = this.spTree;
+			for (let i = arrSpTree.length - 1; i >= 0; i -= 1) {
+				const oDrawing = arrSpTree[i];
+				if (oDrawing.isInk()) {
+					arrInks.push(oDrawing);
+				} else {
+					oDrawing.getAllInks(arrInks);
+				}
+			}
+			return arrInks;
+		};
 		CSld.prototype.getObjectsNamesPairs = function () {
 			var aPairs = [];
 			var aSpTree = this.spTree;
