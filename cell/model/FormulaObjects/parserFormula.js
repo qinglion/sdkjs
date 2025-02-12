@@ -6777,7 +6777,13 @@ function parserFormula( formula, parent, _ws ) {
 		let nOperandType = found_operand.type;
 		let oRange = null;
 
+		if (!oParentCell) {
+			return false;
+		}
 		if (!(oParentCell instanceof AscCommonExcel.CCellWithFormula)) {
+			return false;
+		}
+		if (oParentCell.nRow == null && oParentCell.nCol == null) {
 			return false;
 		}
 		if (nOperandType === cElementType.name || nOperandType === cElementType.name3D) {
@@ -6818,6 +6824,9 @@ function parserFormula( formula, parent, _ws ) {
 		const oRange = oCriteriaRange.getRange();
 		const oBbox = oRange.bbox;
 		const oParentCell = this.getParent();
+		if (!oParentCell || (oParentCell && oParentCell.nRow == null && oParentCell.nCol == null)) {
+			return false;
+		}
 		let bHasFormula = false;
 		let bVertical = oBbox.c1 === oBbox.c2;
 		let nRow = bVertical ? oBbox.r1 + (oParentCell.nRow - oBbox.r1) : oBbox.r1;
@@ -6843,6 +6852,9 @@ function parserFormula( formula, parent, _ws ) {
 	 */
 	parserFormula.prototype._calculateMatch = function (oFormulaArgs) {
 		const oParentCell = this.getParent();
+		if (!oParentCell || (oParentCell && oParentCell.nRow == null && oParentCell.nCol == null)) {
+			return false;
+		}
 		const oCalcRange = oFormulaArgs.calcRange;
 		let oCriteriaRange = oFormulaArgs.criteriaRange;
 		let oCondition = oFormulaArgs.condition;
@@ -8579,7 +8591,7 @@ function parserFormula( formula, parent, _ws ) {
 				this.outStack.push(operand);
 			}
 		}
-		if (bConditionalFormula && t.getParent() instanceof AscCommonExcel.CCellWithFormula && !t.ca) {
+		if (bConditionalFormula && t.getParent() && t.getParent() instanceof AscCommonExcel.CCellWithFormula && !t.ca) {
 			t.ca = t.isRecursiveCondFormula(levelFuncMap[0].func.name);
 			t.outStack.forEach(function (oOperand) {
 				if (oOperand.type === cElementType.name || oOperand.type === cElementType.name3D) {

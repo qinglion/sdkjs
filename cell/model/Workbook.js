@@ -15386,6 +15386,9 @@
 	function _foreachListeners(fAction, oCell, oListeners) {
 		for (let i in oListeners) {
 			let oListenerCell = oListeners[i].getParent();
+			if (!oListenerCell) {
+				continue;
+			}
 			let nListenerCellIndex = null;
 			if (oListenerCell instanceof DefName) {
 				if (!oListeners[i].ca) {
