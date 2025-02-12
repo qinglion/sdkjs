@@ -223,13 +223,14 @@
 		if (this.ParentPDF && this.ParentPDF.OnContentChange && this.isFormatContent == false)
 			this.ParentPDF.OnContentChange();
 	};
-	CTextBoxContent.prototype.Get_ParentTextTransform = function() {
-		return this.transform;
-	};
 	CTextBoxContent.prototype.Get_AbsolutePage = function() {
 		return this.ParentPDF.GetPage();
 	};
-	CTextBoxContent.prototype.Get_ParentTextTransform = function() {};
+	CTextBoxContent.prototype.Get_ParentTextTransform = function() {
+		if (this.ParentPDF) {
+			return this.ParentPDF.GetTextTransform();
+		}
+	};
 	
 	function getInternalAlignByPdfType(nPdfType) {
 		let nInternalType = AscCommon.align_Left;

@@ -4017,6 +4017,7 @@
 	AscDFH.historyitem_Pdf_Form_Changed			= AscDFH.historyitem_type_Pdf_Form | 5;
 	AscDFH.historyitem_Pdf_Form_Parent_Value	= AscDFH.historyitem_type_Pdf_Form | 6;
 	AscDFH.historyitem_Pdf_Form_Format_Value	= AscDFH.historyitem_type_Pdf_Form | 7;
+	AscDFH.historyitem_Pdf_Form_Rotate			= AscDFH.historyitem_type_Pdf_Form | 8;
 	
 	AscDFH.historyitem_Pdf_List_Form_Cur_Idxs			= AscDFH.historyitem_type_Pdf_List_Form | 1;
 	AscDFH.historyitem_Pdf_List_Form_Top_Idx			= AscDFH.historyitem_type_Pdf_List_Form | 2;

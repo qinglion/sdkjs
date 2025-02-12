@@ -140,7 +140,7 @@
         this._print         = true;        // This property has been superseded by the display property and its use is discouraged.
         this._readonly      = false;
         this._required      = false;       // for all except button
-        this._rotation      = 0;
+        this._rotate        = 0;
         this._strokeColor   = null;     // In older versions of this specification, this property was borderColor. The use of borderColor is now discouraged,
                                         // although it is still valid for backward compatibility.
         this._noExport      = false;
@@ -198,6 +198,8 @@
 
         this.Lock = new AscCommon.CLock();
         this.SetRect(aRect);
+
+        this.textMatrix = new AscCommon.CMatrix();
     }
 
     CBaseField.prototype.IsAnnot = function() {
@@ -2155,6 +2157,36 @@
         let oTextPr = oRun.Get_CompiledPr(true);
 
         return oTextPr.FontSize;
+    };
+    CBaseField.prototype.SetRotate = function(nAngle) {
+        if (this._rotate == nAngle) {
+            return;
+        }
+        
+        AscCommon.History.Add(new CChangesPDFFormRotate(this, this._rotate, nAngle));
+
+        this._rotate = nAngle
+        this.RecalcTextTransform();
+    };
+    CBaseField.prototype.GetRotate = function() {
+        return this._rotate;
+    };
+    CBaseField.prototype.RecalculateTextTransform = function() {
+        if (this.content) {
+            AscCommon.global_MatrixTransformer.RotateRadAppend(this.textMatrix, -this.GetRotate() * (Math.PI / 180));
+            AscCommon.global_MatrixTransformer.TranslateAppend(this.textMatrix, this.content.X, this.content.Y);
+        }
+
+        this._needRecalcTxTransform = false;
+    };
+    CBaseField.prototype.RecalcTextTransform = function () {
+        this._needRecalcTxTransform = true;
+    };
+    CBaseField.prototype.IsNeedRecalcTextTransform = function() {
+        return this._needRecalcTxTransform;
+    };
+    CBaseField.prototype.GetTextTransform = function() {
+        return this.textMatrix;
     };
     CBaseField.prototype.WriteToBinaryBase2 = function(memory) {
         // font name

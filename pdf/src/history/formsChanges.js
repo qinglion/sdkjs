@@ -39,6 +39,7 @@ AscDFH.changesFactory[AscDFH.historyitem_Pdf_Form_Changed]			= CChangesPDFFormCh
 AscDFH.changesFactory[AscDFH.historyitem_Pdf_Form_Add_Kid]			= CChangesPDFFormAddKid;
 AscDFH.changesFactory[AscDFH.historyitem_Pdf_Form_Remove_Kid]		= CChangesPDFFormRemoveKid;
 AscDFH.changesFactory[AscDFH.historyitem_Pdf_Form_Change_Display]	= CChangesPDFFormDisplay;
+AscDFH.changesFactory[AscDFH.historyitem_Pdf_Form_Rotate]			= CChangesPDFFormRotate;
 
 AscDFH.changesFactory[AscDFH.historyitem_Pdf_List_Form_Cur_Idxs]		= CChangesPDFListFormCurIdxs;
 AscDFH.changesFactory[AscDFH.historyitem_Pdf_List_Form_Parent_Cur_Idxs]	= CChangesPDFListFormParentCurIdxs;
@@ -290,6 +291,23 @@ CChangesPDFFormDisplay.prototype.private_SetValue = function(Value)
 {
 	let oField = this.Class;
 	oField.SetDisplay(Value);
+};
+
+/**
+ * @constructor
+ * @extends {AscDFH.CChangesBaseLongProperty}
+ */
+function CChangesPDFFormRotate(Class, Old, New, Color)
+{
+	AscDFH.CChangesBaseLongProperty.call(this, Class, Old, New, Color);
+}
+CChangesPDFFormRotate.prototype = Object.create(AscDFH.CChangesBaseLongProperty.prototype);
+CChangesPDFFormRotate.prototype.constructor = CChangesPDFFormRotate;
+CChangesPDFFormRotate.prototype.Type = AscDFH.historyitem_Pdf_Form_Rotate;
+CChangesPDFFormRotate.prototype.private_SetValue = function(Value)
+{
+	let oForm = this.Class;
+	oForm.SetRotate(Value);
 };
 
 /**

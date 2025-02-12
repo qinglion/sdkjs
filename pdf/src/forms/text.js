@@ -594,6 +594,10 @@
             });
         }
 
+        if (this.IsNeedRecalcTextTransform()) {
+            this.RecalculateTextTransform();
+        }
+
         this.SetNeedRecalc(false);
     };
     CTextField.prototype.RecalculateContentRect = function() {
