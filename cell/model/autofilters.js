@@ -4471,7 +4471,7 @@
 				return range;
 			},
 
-			expandRange: function (activeRange, ignoreFilter, doNotCheckEmpty) {
+			expandRange: function (activeRange, ignoreFilter, doNotCheckEmpty, checkLastEmpty) {
 				var ws = this.worksheet;
 
 				//если вдруг встретили мерженную ячейку в диапазоне, расширяем
@@ -4708,6 +4708,14 @@
 					rangeAfterTableCrop = range.clone();
 					range = activeRange.clone();
 					doExpand();
+				}
+
+
+				if (checkLastEmpty) {
+					let _cropRange = this.checkEmptyAreas(range, rangeAfterTableCrop);
+					if (_cropRange.r2 !== range.r2 || _cropRange.c2 !== range.c2) {
+						return activeRange;
+					}
 				}
 
 				//проверяем на наличие пустых колонок/строк

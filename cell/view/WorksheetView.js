@@ -9920,7 +9920,7 @@
 				}
 
 				if (!newRange) {
-					newRange = this.model.autoFilters.expandRange(ar, true);
+					newRange = this.model.autoFilters.expandRange(ar, true, true, true);
 				}
 
 				if (newRange) {
