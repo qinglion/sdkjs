@@ -4594,6 +4594,8 @@ function CThumbnailsManager(editorPage)
 			return res;
 		}
 
+		const isHorizontalThumbnails = oThis.m_oWordControl.thumbnailsPosition === thumbnailsPositionMap.bottom;
+
 		if (oThis.m_oWordControl)
 			oThis.m_oWordControl.m_oApi.checkLastWork();
 
@@ -4631,18 +4633,21 @@ function CThumbnailsManager(editorPage)
 			oThis.OnUpdateOverlay();
 
 			// теперь нужно посмотреть, нужно ли проскроллить
-			if (oThis.m_bIsScrollVisible)
-			{
-				var _Y = global_mouseEvent.Y - oThis.m_oWordControl.Y;
-				var _abs_pos = oThis.m_oWordControl.m_oThumbnails.AbsolutePosition;
-				var _YMax = (_abs_pos.B - _abs_pos.T) * g_dKoef_mm_to_pix;
+			if (oThis.m_bIsScrollVisible) {
+				const _X = global_mouseEvent.X - oThis.m_oWordControl.X;
+				const _Y = global_mouseEvent.Y - oThis.m_oWordControl.Y;
 
-				var _check_type = -1;
-				if (/*oThis.MouseDownTrack.GetPosition() != -1 && _Y >= 0 && */_Y < 30)
-				{
+				const _abs_pos = oThis.m_oWordControl.m_oThumbnails.AbsolutePosition;
+				const _XMax = (_abs_pos.R - _abs_pos.L) * g_dKoef_mm_to_pix;
+				const _YMax = (_abs_pos.B - _abs_pos.T) * g_dKoef_mm_to_pix;
+
+				const mousePos = isHorizontalThumbnails ? _X : _Y;
+				const maxPos = isHorizontalThumbnails ? _XMax : _YMax;
+
+				let _check_type = -1;
+				if (mousePos < 30) {
 					_check_type = 0;
-				} else if (/*oThis.MouseDownTrack.GetPosition() != -1 &&*/_Y >= (_YMax - 30)/* && _Y < _YMax*/)
-				{
+				} else if (mousePos >= (maxPos - 30)) {
 					_check_type = 1;
 				}
 
@@ -5481,15 +5486,22 @@ function CThumbnailsManager(editorPage)
 	};
 	this.drawThumbnailsInsertionLine = function (context, canvasWidth, canvasHeight) {
 		const isHorizontalThumbnails = this.m_oWordControl.thumbnailsPosition === thumbnailsPositionMap.bottom;
+		const isRightToLeft = this.m_oWordControl.isRTL;
 		const nPosition = this.MouseDownTrack.GetPosition();
 		const oPage = this.m_arrPages[nPosition - 1];
 
 		context.strokeStyle = "#DEDEDE";
 		if (isHorizontalThumbnails) {
+			const containerRightBorder = editor.WordControl.m_oThumbnailsContainer.AbsolutePosition.R * AscCommon.AscBrowser.retinaPixelRatio * g_dKoef_mm_to_pix;
+
 			// x, topY & bottomY - coordinates of the insertion line itself
 			const x = oPage
-				? (oPage.right + 1.5 * this.const_border_w) >> 0
-				: (this.const_offset_x / 2) >> 0;
+				? isRightToLeft
+					? (oPage.left - 1.5 * this.const_border_w) >> 0
+					: (oPage.right + 1.5 * this.const_border_w) >> 0
+				: isRightToLeft
+					? (containerRightBorder - this.const_offset_x / 2) >> 0
+					: (this.const_offset_x / 2) >> 0;
 
 			let topY, bottomY;
 			if (this.m_arrPages.length > 0) {
@@ -6073,63 +6085,50 @@ function CThumbnailsManager(editorPage)
 	};
 
 	// scroll
-	this.OnScrollTrackTop = function()
-	{
-		oThis.m_oWordControl.m_oScrollThumbApi.scrollByY(-45);
-	};
-	this.OnScrollTrackBottom = function()
-	{
-		oThis.m_oWordControl.m_oScrollThumbApi.scrollByY(45);
-	};
+	this.CheckNeedAnimateScrolls = function (type) {
+		switch (type) {
+			case -1:
+				if (this.MouseThumbnailsAnimateScrollTopTimer != -1) {
+					clearInterval(this.MouseThumbnailsAnimateScrollTopTimer);
+					this.MouseThumbnailsAnimateScrollTopTimer = -1;
+				}
+				if (this.MouseThumbnailsAnimateScrollBottomTimer != -1) {
+					clearInterval(this.MouseThumbnailsAnimateScrollBottomTimer);
+					this.MouseThumbnailsAnimateScrollBottomTimer = -1;
+				}
+				break;
 
-	this.CheckNeedAnimateScrolls = function(type)
-	{
-		if (type == -1)
-		{
-			// нужно застопить все
-			if (this.MouseThumbnailsAnimateScrollTopTimer != -1)
-			{
-				clearInterval(this.MouseThumbnailsAnimateScrollTopTimer);
-				this.MouseThumbnailsAnimateScrollTopTimer = -1;
-			}
+			case 0:
+				if (this.MouseThumbnailsAnimateScrollBottomTimer != -1) {
+					clearInterval(this.MouseThumbnailsAnimateScrollBottomTimer);
+					this.MouseThumbnailsAnimateScrollBottomTimer = -1;
+				}
+				if (this.MouseThumbnailsAnimateScrollTopTimer == -1) {
+					this.MouseThumbnailsAnimateScrollTopTimer = setInterval(this.OnScrollTrackTop, 50);
+				}
+				break;
 
-			if (this.MouseThumbnailsAnimateScrollBottomTimer != -1)
-			{
-				clearInterval(this.MouseThumbnailsAnimateScrollBottomTimer);
-				this.MouseThumbnailsAnimateScrollBottomTimer = -1;
-			}
-		}
-
-		if (type == 0)
-		{
-			if (this.MouseThumbnailsAnimateScrollBottomTimer != -1)
-			{
-				clearInterval(this.MouseThumbnailsAnimateScrollBottomTimer);
-				this.MouseThumbnailsAnimateScrollBottomTimer = -1;
-			}
-
-			if (-1 == this.MouseThumbnailsAnimateScrollTopTimer)
-			{
-				this.MouseThumbnailsAnimateScrollTopTimer = setInterval(this.OnScrollTrackTop, 50);
-			}
-			return;
-		}
-		if (type == 1)
-		{
-			if (this.MouseThumbnailsAnimateScrollTopTimer != -1)
-			{
-				clearInterval(this.MouseThumbnailsAnimateScrollTopTimer);
-				this.MouseThumbnailsAnimateScrollTopTimer = -1;
-			}
-
-			if (-1 == this.MouseThumbnailsAnimateScrollBottomTimer)
-			{
-				this.MouseThumbnailsAnimateScrollBottomTimer = setInterval(this.OnScrollTrackBottom, 50);
-			}
-			return;
+			case 1:
+				if (this.MouseThumbnailsAnimateScrollTopTimer != -1) {
+					clearInterval(this.MouseThumbnailsAnimateScrollTopTimer);
+					this.MouseThumbnailsAnimateScrollTopTimer = -1;
+				}
+				if (-1 == this.MouseThumbnailsAnimateScrollBottomTimer) {
+					this.MouseThumbnailsAnimateScrollBottomTimer = setInterval(this.OnScrollTrackBottom, 50);
+				}
+				break;
 		}
 	};
-
+	this.OnScrollTrackTop = function () {
+		oThis.m_oWordControl.thumbnailsPosition === thumbnailsPositionMap.bottom
+			? oThis.m_oWordControl.m_oScrollThumbApi.scrollByX(-45)
+			: oThis.m_oWordControl.m_oScrollThumbApi.scrollByY(-45);
+	};
+	this.OnScrollTrackBottom = function () {
+		oThis.m_oWordControl.thumbnailsPosition === thumbnailsPositionMap.bottom
+			? oThis.m_oWordControl.m_oScrollThumbApi.scrollByX(45)
+			: oThis.m_oWordControl.m_oScrollThumbApi.scrollByY(45);
+	};
 	this.thumbnailsScroll = function (sender, scrollPosition, maxScrollPosition, isAtTop, isAtBottom) {
 		if (false === this.m_oWordControl.m_oApi.bInit_word_control || false === this.m_bIsScrollVisible)
 			return;
