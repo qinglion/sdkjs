@@ -10998,11 +10998,14 @@ CPresentation.prototype.StartAction = function (nDescription) {
 	this.StopAnimationPreview();
 	this.Api.sendEvent("asc_onUserActionStart");
 };
-CPresentation.prototype.FinalizeAction = function (isCheckEmptyAction) {
+CPresentation.prototype.FinalizeAction = function (isCheckEmptyAction, isCheckLockedAction) {
 	this.Recalculate();
 	this.Api.checkChangesSize();
 	if (false !== isCheckEmptyAction && AscCommon.History.Is_LastPointEmpty()) {
 		AscCommon.History.RemoveLastPoint();
+	} else if (isCheckLockedAction && !this.CanEdit()) {
+		const arrChanges = AscCommon.History.Undo();
+		this.Recalculate(this.History.Get_RecalcData(null, arrChanges));
 	}
 	this.Api.sendEvent("asc_onUserActionEnd");
 };

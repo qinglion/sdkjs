@@ -8756,13 +8756,18 @@ background-repeat: no-repeat;\
 	};
 	asc_docs_api.prototype.canRunBuilderScript = function()
 	{
-		return this.asc_canPaste();
+		let logicDocument = this.getLogicDocument();
+		if (!logicDocument)
+			return false;
+
+		logicDocument.StartAction(AscDFH.historydescription_BuilderScript);
+		return true;
 	};
 	asc_docs_api.prototype._onEndBuilderScript = function(callback)
 	{
 		this.asc_Recalculate();
 		let logicDocument = this.getLogicDocument();
-		logicDocument.FinalizeAction();
+		logicDocument.FinalizeAction(true, true);
 		
 		if (callback)
 			callback(true)
