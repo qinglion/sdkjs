@@ -5117,9 +5117,14 @@ function CThumbnailsManager(editorPage)
 
 		if (startCoord < 0) {
 			const size = endCoord - startCoord;
-			scrollTo(pageNum * size + (pageNum + 1) * this.const_border_w);
+			const shouldReversePageIndexes = this.m_oWordControl.isRTL &&
+				this.m_oWordControl.thumbnailsPosition === thumbnailsPositionMap.bottom;
+			const pos = shouldReversePageIndexes
+				? (size + this.const_border_w) * (this.m_arrPages.length - pageNum - 1)
+				: (size + this.const_border_w) * pageNum;
+			scrollTo(pos);
 		} else if (endCoord > visibleAreaSize) {
-			scrollBy(endCoord - visibleAreaSize);
+			scrollBy(endCoord + this.const_border_w - visibleAreaSize);
 		}
 	};
 
@@ -6231,7 +6236,7 @@ function CThumbnailsManager(editorPage)
 			}
 			wordControl.m_oScrollThumb_.isHorizontalScroll = isHorizontalOrientation;
 
-			if (wordControl.isRTL && isHorizontalOrientation) {
+			if (wordControl.isRTL && isHorizontalOrientation && this.m_dScrollY_max === 0) {
 				wordControl.m_oScrollThumbApi.scrollToX(wordControl.m_oScrollThumbApi.maxScrollX);
 			}
 		}
