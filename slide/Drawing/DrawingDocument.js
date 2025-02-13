@@ -4797,8 +4797,9 @@ function CThumbnailsManager(editorPage)
 
 		const delta = GetWheelDeltaY(e);
 		const isHorizontalOrientation = oThis.m_oWordControl.thumbnailsPosition === thumbnailsPositionMap.bottom;
+		const isRightToLeft = oThis.m_oWordControl.isRTL;
 		isHorizontalOrientation
-			? oThis.m_oWordControl.m_oScrollThumbApi.scrollBy(delta, 0)
+			? oThis.m_oWordControl.m_oScrollThumbApi.scrollBy(isRightToLeft ? -delta : delta, 0)
 			: oThis.m_oWordControl.m_oScrollThumbApi.scrollBy(0, delta, false);
 
 		if (e.preventDefault)

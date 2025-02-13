@@ -300,7 +300,7 @@
 		this.MouseHandObject = null;
 
 		this.m_oApi = api;
-		this.thumbnailsPosition = thumbnailsPositionMap.right; // left, right, bottom
+		this.thumbnailsPosition = thumbnailsPositionMap.bottom; // left, right, bottom
 		this.isRTL = true;
 		oThis = this;
 	}
