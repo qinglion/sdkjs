@@ -10088,22 +10088,38 @@
 
 		InitClass(CSld, CBaseNoIdObject, 0);
 		CSld.prototype.removeAllInks = function () {
-			if (!this.parent) {
+			const oController = this.parent && this.parent.graphicObjects;
+			if (!oController) {
 				return;
 			}
-			const arrSpTree = this.spTree;
-			for (let i = arrSpTree.length - 1; i >= 0; i -= 1) {
-				const oDrawing = arrSpTree[i];
-				if (oDrawing.isInk()) {
-					this.parent.removeFromSpTreeByPos(i);
-					if (oDrawing.setBDeleted2) {
-						oDrawing.setBDeleted2(true);
-					} else {
-						oDrawing.setBDeleted(true);
+
+			const arrInks = this.getAllInks();
+			const oGroups = {};
+			for (let i = 0; i < arrInks.length; i += 1) {
+				const oShape = arrInks[i];
+				if (oShape.group) {
+					const oMainGroup = oShape.getMainGroup();
+					const sMainGroupId = oMainGroup.Get_Id();
+					if (!oGroups[sMainGroupId]) {
+						oGroups[sMainGroupId] = {group: oMainGroup, shapes: []};
+					}
+					oGroups[sMainGroupId].shapes.push(oShape);
+					if (oShape.isGroup()) {
+						oShape.deselectInternal(oController);
 					}
 				} else {
-					oDrawing.removeAllInks();
+					oShape.deleteDrawingBase(true);
+					oShape.setBDeleted(true);
+					if (oShape.isGroup()) {
+						oShape.deselectInternal(oController);
+					}
+					oController.deselectObject(oShape);
 				}
+			}
+
+			for (let sId in oGroups) {
+				const oGroupInfo = oGroups[sId];
+				oController.removeInGroup(oGroupInfo.group, oGroupInfo.shapes);
 			}
 		};
 		CSld.prototype.getAllInks = function (arrInks) {
@@ -10111,7 +10127,7 @@
 			const arrSpTree = this.spTree;
 			for (let i = arrSpTree.length - 1; i >= 0; i -= 1) {
 				const oDrawing = arrSpTree[i];
-				if (oDrawing.isInk()) {
+				if (oDrawing.isInk() || oDrawing.isHaveOnlyInks()) {
 					arrInks.push(oDrawing);
 				} else {
 					oDrawing.getAllInks(arrInks);

@@ -491,6 +491,32 @@
 				}
 			}
 		};
+		CGroupShape.prototype.deselectInternal = function(oController) {
+			const oMainGroup = this.getMainGroup();
+			if (oMainGroup.selectedObjects.length) {
+				const oSelectedObjects = {};
+				for (let i = 0; i < oMainGroup.selectedObjects.length; i += 1) {
+					const oSelectedObject = oMainGroup.selectedObjects[i];
+					oSelectedObjects[oSelectedObject.Get_Id()] = oSelectedObject;
+				}
+
+				const arrGroups = [this];
+				while (arrGroups.length) {
+					const oGroup = arrGroups.pop();
+					for (let i = 0; i < oGroup.spTree.length; i += 1) {
+						const oShape = oGroup.spTree[i];
+						if (oShape.isGroup()) {
+							arrGroups.push(oShape);
+						} else if (oSelectedObjects[oShape.Get_Id()]) {
+							oMainGroup.deselectObject(oShape);
+						}
+					}
+				}
+				if (!oMainGroup.selectedObjects.length) {
+					oController.selection.groupSelection = null;
+				}
+			}
+		};
 
 
 		CGroupShape.prototype.getLocalTransform = function () {
@@ -1716,38 +1742,24 @@
 				this.spTree[i].generateSmartArtDrawingPart();
 			}
 		};
-		CGroupShape.prototype.isInk = function () {
+		CGroupShape.prototype.isHaveOnlyInks = function () {
 			if (!this.spTree.length) {
 				return false;
 			}
 			for (let i = 0; i < this.spTree.length; i++) {
 				const oDrawing = this.spTree[i];
-				if (!oDrawing.isInk()) {
+				if (!(oDrawing.isInk() || oDrawing.isHaveOnlyInks())) {
 					return false;
 				}
 			}
 			return true;
 		};
-		CGroupShape.prototype.removeAllInks = function () {
-			for (let i = this.spTree.length - 1; i >= 0; i -= 1) {
-				const oDrawing = this.spTree[i];
-				if (oDrawing.isInk()) {
-					this.removeFromSpTreeByPos(i);
-					if (oDrawing.setBDeleted2) {
-						oDrawing.setBDeleted2(true);
-					} else {
-						oDrawing.setBDeleted(true);
-					}
-				} else {
-					oDrawing.removeAllInks();
-				}
-			}
-		};
+
 		CGroupShape.prototype.getAllInks = function (arrInks) {
 			arrInks = arrInks || [];
 			for (let i = this.spTree.length - 1; i >= 0; i -= 1) {
 				const oDrawing = this.spTree[i];
-				if (oDrawing.isInk()) {
+				if (oDrawing.isInk() || oDrawing.isHaveOnlyInks()) {
 					arrInks.push(oDrawing);
 				} else {
 					oDrawing.getAllInks(arrInks);

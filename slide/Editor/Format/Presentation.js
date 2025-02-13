@@ -11359,7 +11359,8 @@ CPresentation.prototype.RemoveAllInks = function () {
 		return;
 	}
 
-	this.StartAction(0);
+	this.StartAction(AscDFH.historydescription_RemoveAllInks);
+
 	for (let i = 0; i < this.Slides.length; i += 1) {
 		const oSlide = this.Slides[i];
 		oSlide.removeAllInks();

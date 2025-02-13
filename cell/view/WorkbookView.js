@@ -6373,6 +6373,19 @@
 		}
 		return val === true || val == null;
 	};
+	WorkbookView.prototype.removeAllInks = function() {
+		const oWs = this.getWorksheet();
+		const oWbModel = this.model;
+		const oController = oWs.objectRender && oWs.objectRender.controller;
+		if (oController) {
+			const arrInks = oWbModel.getAllInks();
+			if (arrInks.length > 0) {
+				oController.checkObjectsAndCallback(function() {
+					oWbModel.removeAllInks();
+				}, [], false, AscDFH.historydescription_RemoveAllInks, arrInks);
+			}
+		}
+	};
 
 
 

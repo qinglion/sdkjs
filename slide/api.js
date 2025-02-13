@@ -9601,7 +9601,7 @@ background-repeat: no-repeat;\
 
 		oLogicDocument.RemoveAllInks();
 	};
-	baseEditorsApi.prototype.haveInks = function() {
+	asc_docs_api.prototype.haveInks = function() {
 		let oLogicDocument = this.getLogicDocument();
 		if(!oLogicDocument) return;
 

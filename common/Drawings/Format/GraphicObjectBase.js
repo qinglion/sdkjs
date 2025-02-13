@@ -1249,6 +1249,9 @@
 	CGraphicObjectBase.prototype.isInk = function () {
 		return false;
 	};
+	CGraphicObjectBase.prototype.isHaveOnlyInks = function () {
+		return false;
+	};
 	CGraphicObjectBase.prototype.isPlaceholder = function () {
 		let oUniPr = this.getUniNvProps();
 		if (oUniPr) {

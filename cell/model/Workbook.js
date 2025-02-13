@@ -5733,6 +5733,20 @@
 	Workbook.prototype.getShowHorizontalScroll = function() {
 		return this.showHorizontalScroll;
 	};
+	Workbook.prototype.getAllInks = function(arrInks) {
+		arrInks = arrInks || [];
+		for (let i = 0; i < this.aWorksheets.length; i += 1) {
+			const oWorksheet = this.aWorksheets[i];
+			oWorksheet.getAllInks(arrInks);
+		}
+		return arrInks;
+	};
+	Workbook.prototype.removeAllInks = function() {
+		for (let i = 0; i < this.aWorksheets.length; i += 1) {
+			const oWorksheet = this.aWorksheets[i];
+			oWorksheet.removeAllInks();
+		}
+	};
 
 
 
@@ -13998,6 +14012,33 @@
 		}
 
 		return new AscCommon.CellBase(lastR, lastC);
+	};
+	Worksheet.prototype.removeAllInks = function() {
+		for (let i = this.Drawings.length - 1; i >= 0; i -= 1) {
+			const oGraphicObject = this.Drawings[i].graphicObject;
+			if (oGraphicObject.isInk() || oGraphicObject.isHaveOnlyInks()) {
+				oGraphicObject.deleteDrawingBase(true);
+				if (oGraphicObject.setBDeleted2) {
+					oGraphicObject.setBDeleted2(true);
+				} else {
+					oGraphicObject.setBDeleted(true);
+				}
+			} else {
+				oGraphicObject.removeAllInks();
+			}
+		}
+	};
+	Worksheet.prototype.getAllInks = function(arrInks) {
+		arrInks = arrInks || [];
+		for (let i = 0; i < this.Drawings.length; i++) {
+			const oGraphicObject = this.Drawings[i].graphicObject;
+			if (oGraphicObject.isInk() || oGraphicObject.isHaveOnlyInks()) {
+				arrInks.push(oGraphicObject);
+			} else {
+				oGraphicObject.getAllInks(arrInks);
+			}
+		}
+		return arrInks;
 	};
 
 
