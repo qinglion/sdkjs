@@ -18622,6 +18622,19 @@
 	WorksheetView.prototype.openCellEditor = function (editor, enterOptions, selectionRange) {
 		var t = this, col, row, c, fl, mc, bg, isMerged;
 
+		let wsModel = this.model;
+		//todo after remove check native
+		if (window['IS_NATIVE_EDITOR'] && wsModel.getSheetProtection(Asc.c_oAscSheetProtectType.selectLockedCells) &&
+			wsModel.getSheetProtection(Asc.c_oAscSheetProtectType.selectUnlockedCells)) {
+			wsModel.workbook.handlers.trigger("asc_onError", c_oAscError.ID.ChangeOnProtectedSheet, c_oAscError.Level.NoCritical);
+			return;
+		}
+		let activeCell = selectionRange && selectionRange.activeCell ? selectionRange.activeCell : wsModel.selectionRange.activeCell;
+		if (window['IS_NATIVE_EDITOR'] && activeCell && wsModel.getSheetProtection() && wsModel.isLockedRange(new Asc.Range(activeCell.col, activeCell.row, activeCell.col, activeCell.row))) {
+			wsModel.workbook.handlers.trigger("asc_onError", c_oAscError.ID.ChangeOnProtectedSheet, c_oAscError.Level.NoCritical);
+			return;
+		}
+
 		if (selectionRange) {
 			this.model.selectionRange = selectionRange;
 		}
