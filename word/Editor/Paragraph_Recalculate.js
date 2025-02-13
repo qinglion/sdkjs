@@ -443,7 +443,7 @@ Paragraph.prototype.Recalculate_Page = function(CurPage, isStart, isFast)
     this.FontMap.NeedRecalc = true;
 
     this.RequestSpellCheck();
-    this.RecalculateEndInfo(isFast);
+    this.RecalculateEndInfo(isFast, true);
 
 	var RecalcResult = this.private_RecalculatePage( CurPage, isFast );
 

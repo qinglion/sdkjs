@@ -1507,7 +1507,7 @@ Paragraph.prototype.CheckNotInlineObject = function(nMathPos, nDirection)
 
 	return true;
 };
-Paragraph.prototype.RecalculateEndInfo = function(isFast)
+Paragraph.prototype.RecalculateEndInfo = function(isFast, isForce)
 {
 	let logicDocument = this.GetLogicDocument();
 	if (!logicDocument || !logicDocument.GetRecalcId)
@@ -1518,7 +1518,7 @@ Paragraph.prototype.RecalculateEndInfo = function(isFast)
 		return;
 	
 	let prevEndInfo = this.Parent.GetPrevElementEndInfo(this);
-	if (prevEndInfo && !prevEndInfo.CheckRecalcId(recalcId))
+	if (!isForce && prevEndInfo && !prevEndInfo.CheckRecalcId(recalcId))
 		return;
 	
 	let prsi = AscWord.ParagraphStatePool.getEndInfoState();
