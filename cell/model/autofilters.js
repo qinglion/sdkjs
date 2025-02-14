@@ -1555,6 +1555,12 @@
 
 				if (userRange) {
 					activeCells = AscCommonExcel.g_oRangeCache.getAscRange(userRange);
+					if (!activeCells) {
+						let aRanges = AscCommonExcel.getRangeByName(userRange, this.worksheet);
+						if (aRanges && aRanges.length === 1) {
+							activeCells = aRanges[0] && aRanges[0].bbox;
+						}
+					}
 				}
 
 				//данная функция возвращает false в двух случаях - при смене стиля ф/т или при поптыке добавить ф/т к части а/ф

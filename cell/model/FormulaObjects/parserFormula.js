@@ -5079,6 +5079,47 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 		return ranges;
 	}
 
+
+	function getRangeByName(sName, ws) {
+		// Early validation
+		if (!sName || !ws) {
+			return [];
+		}
+
+		// Initialize arrays
+		const ranges = [];
+		const activeCell = ws.getSelection().activeCell;
+		const bbox = new Asc.Range(activeCell.col, activeCell.row, activeCell.col, activeCell.row);
+
+		// Helper function to process names
+		const processName = function(item) {
+			if (item.oper.type === cElementType.name) {
+				const nameRef = item.oper.toRef(bbox);
+
+				// Skip if reference is error
+				if (nameRef instanceof AscCommonExcel.cError) {
+					return;
+				}
+
+				// Get range from valid reference
+				if (nameRef.getRange && nameRef.getWS && nameRef.getWS() === ws) {
+					ranges.push(nameRef.getRange());
+				}
+			}
+		};
+
+		// Parse formula and get references
+		const parseResult = new AscCommonExcel.ParseResult([]);
+		const parsed = new AscCommonExcel.parserFormula(sName, null, ws);
+
+		if (parsed.parse(undefined, undefined, parseResult)) {
+			// Process only name type references
+			parseResult.refPos.forEach(processName);
+		}
+
+		return ranges;
+	}
+
 /*--------------------------------------------------------------------------*/
 
 
@@ -11574,6 +11615,7 @@ function parserFormula( formula, parent, _ws ) {
 	window['AscCommonExcel'].getRangeByRef = getRangeByRef;
 	window['AscCommonExcel'].addNewFunction = addNewFunction;
 	window['AscCommonExcel'].removeCustomFunction = removeCustomFunction;
+	window['AscCommonExcel'].getRangeByName = getRangeByName;
 
 	window['AscCommonExcel']._func = _func;
 

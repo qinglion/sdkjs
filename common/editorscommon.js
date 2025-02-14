@@ -4104,6 +4104,12 @@
 		else
 		{
 			range = AscCommonExcel.g_oRangeCache.getAscRange(dataRange);
+			if (!range && model && cDialogType.FormatTable === dialogType && AscCommon.rx_defName.test(dataRange)) {
+				let aRanges = AscCommonExcel.getRangeByName(dataRange, model.getActiveWs());
+				if (aRanges && aRanges.length === 1) {
+					range = aRanges[0] && aRanges[0].bbox;
+				}
+			}
 		}
 
 		if (!range && cDialogType.DataValidation !== dialogType && cDialogType.ConditionalFormattingRule !== dialogType && cDialogType.GoalSeek_Cell !== dialogType &&
