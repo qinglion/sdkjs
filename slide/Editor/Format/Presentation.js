@@ -1028,7 +1028,7 @@ CPresentation.prototype.collectHFProps = function (oSlide) {
 				sText = "";
 				if(oSlideHF.get_ShowDateTime()) {
 					oContent.SetApplyToAll(true);
-					sText = oContent.GetSelectedText(false, {NewLine: true, NewParagraph: true});
+					sText = oContent.GetSelectedText(false);
 					oContent.SetApplyToAll(false);
 				}
 				oDateTime.put_CustomDateTime(sText);
@@ -1102,7 +1102,7 @@ CPresentation.prototype.collectHFProps = function (oSlide) {
 			oContent = oFooterShape.getDocContent();
 			if (oContent) {
 				oContent.SetApplyToAll(true);
-				sText = oContent.GetSelectedText(false, {NewLine: true, NewParagraph: true});
+				sText = oContent.GetSelectedText(false);
 				oContent.SetApplyToAll(false);
 				oSlideHF.put_Footer(sText);
 			}
@@ -1128,7 +1128,7 @@ CPresentation.prototype.collectHFProps = function (oSlide) {
 			oContent = oHeaderShape.getDocContent();
 			if (oContent) {
 				oContent.SetApplyToAll(true);
-				sText = oContent.GetSelectedText(false, {NewLine: true, NewParagraph: true});
+				sText = oContent.GetSelectedText(false);
 				oContent.SetApplyToAll(false);
 				oSlideHF.put_Header(sText);
 			}

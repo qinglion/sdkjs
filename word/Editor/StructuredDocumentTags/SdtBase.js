@@ -49,7 +49,7 @@ CSdtBase.prototype.GetPlaceholderText = function()
 	if (oDocPart)
 	{
 		var oFirstParagraph = oDocPart.GetFirstParagraph();
-		return oFirstParagraph.GetText({ParaEndToSpace : false});
+		return oFirstParagraph.GetText({ParaSeparator : ""});
 	}
 
 	return String.fromCharCode(nbsp_charcode, nbsp_charcode, nbsp_charcode, nbsp_charcode);

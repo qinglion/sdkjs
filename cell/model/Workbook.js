@@ -410,7 +410,7 @@
 				oChangeEngine.ProcessParagraphs(aParagraphs);
 
 				for (let i = 0; i < aParagraphs.length; i++) {
-					newText += aParagraphs[i].GetText({ParaEndToSpace: false});
+					newText += aParagraphs[i].GetText({ParaSeparator : ""});
 					if (i !== aParagraphs.length - 1) {
 						newText += "\n";
 					}

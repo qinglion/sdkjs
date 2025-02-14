@@ -133,7 +133,7 @@ $(function () {
 		
 		setText("123");
 		recalculate(narrowWidth);
-		assert.strictEqual(para.GetText({ParaEndToSpace : false}), "123", "Paragraph text: 123");
+		assert.strictEqual(AscTest.GetParagraphText(para), "123", "Paragraph text: 123");
 		assert.strictEqual(para.GetLinesCount(), 3, "Lines count 3");
 		assert.deepEqual(para.GetLineBounds(0), new AscWord.CDocumentBounds(0, 0, narrowWidth, AscTest.FontHeight), "Check line bounds");
 		assert.deepEqual(para.GetLineBounds(1), new AscWord.CDocumentBounds(0, AscTest.FontHeight, narrowWidth, AscTest.FontHeight * 2), "Check line bounds");
@@ -142,14 +142,14 @@ $(function () {
 		
 		setText("Q");
 		recalculate(narrowWidth);
-		assert.strictEqual(para.GetText({ParaEndToSpace : false}), "Q", "Paragraph text: Q");
+		assert.strictEqual(AscTest.GetParagraphText(para), "Q", "Paragraph text: Q");
 		assert.strictEqual(para.GetLinesCount(), 1, "Lines count 1");
 		assert.deepEqual(para.GetLineBounds(0), new AscWord.CDocumentBounds(0, 0, narrowWidth, AscTest.FontHeight), "Check line bounds");
 		assert.strictEqual(para.GetPagesCount(), 1, "Pages count of paragraph");
 		
 		setText("Q ");
 		recalculate(narrowWidth);
-		assert.strictEqual(para.GetText({ParaEndToSpace : false}), "Q ", "Paragraph text: Q'<'space'>'");
+		assert.strictEqual(AscTest.GetParagraphText(para), "Q ", "Paragraph text: Q'<'space'>'");
 		assert.strictEqual(para.GetLinesCount(), 1, "Lines count 1");
 		assert.deepEqual(para.GetLineBounds(0), new AscWord.CDocumentBounds(0, 0, narrowWidth, AscTest.FontHeight), "Check line bounds");
 		assert.strictEqual(para.GetPagesCount(), 1, "Pages count of paragraph");
@@ -164,7 +164,7 @@ $(function () {
 		let text_i   = run.GetElement(2);
 
 		recalculate(charWidth * 3.5);
-		assert.strictEqual(para.GetText({ParaEndToSpace : false}), "ffi", "Paragraph text: ffi");
+		assert.strictEqual(AscTest.GetParagraphText(para), "ffi", "Paragraph text: ffi");
 
 		assert.strictEqual(text_f_0.GetCodePointType(), AscWord.CODEPOINT_TYPE.LIGATURE, "Check f code point type");
 		assert.strictEqual(text_f_1.GetCodePointType(), AscWord.CODEPOINT_TYPE.LIGATURE_CONTINUE, "Check f code point type");
@@ -204,7 +204,7 @@ $(function () {
 		let text_z = run.GetElement(2);
 
 		recalculate(charWidth * 3.5);
-		assert.strictEqual(para.GetText({ParaEndToSpace : false}), "xyz", "Paragraph text: xyz");
+		assert.strictEqual(AscTest.GetParagraphText(para), "xyz", "Paragraph text: xyz");
 
 		assert.strictEqual(text_x.GetCodePointType(), AscWord.CODEPOINT_TYPE.BASE, "Check x code point type");
 		assert.strictEqual(text_y.GetCodePointType(), AscWord.CODEPOINT_TYPE.COMBINING_MARK, "Check y code point type");

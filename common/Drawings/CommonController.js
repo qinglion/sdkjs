@@ -8444,7 +8444,7 @@
 					var sText;
 					if (this.document) {
 						let oSelectedContent = this.document.GetSelectedContent(true);
-						let sSelectedText = oSelectedContent ? oSelectedContent.GetText({ParaEndToSpace: false}) : "";
+						let sSelectedText = oSelectedContent ? oSelectedContent.GetText({ParaSeparator : ""}) : "";
 						if (sSelectedText.length > 0) {
 							oSelectedContent.ReplaceContent(oContent);
 							oShape.bSelectedText = true;
