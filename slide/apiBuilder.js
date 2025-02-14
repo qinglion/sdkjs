@@ -5056,10 +5056,6 @@
     ApiTableCell.prototype["SetVerticalAlign"]            = ApiTableCell.prototype.SetVerticalAlign;
     ApiTableCell.prototype["SetTextDirection"]            = ApiTableCell.prototype.SetTextDirection;
 
-    ApiSelection.prototype["GetType"]                     = ApiSelection.prototype.GetType;
-    ApiSelection.prototype["GetShapes"]                   = ApiSelection.prototype.GetShapes;
-    ApiSelection.prototype["GetSlides"]                   = ApiSelection.prototype.GetSlides;
-    ApiSelection.prototype["IsEmpty"]                     = ApiSelection.prototype.IsEmpty;
 
 
     Api.prototype.private_CreateApiSlide = function(oSlide){
@@ -5171,6 +5167,12 @@
 	ApiSelection.prototype.IsEmpty = function() {
 		return this.GetType() === "none";
 	};
+
+	
+	ApiSelection.prototype["GetType"]                     = ApiSelection.prototype.GetType;
+	ApiSelection.prototype["GetShapes"]                   = ApiSelection.prototype.GetShapes;
+	ApiSelection.prototype["GetSlides"]                   = ApiSelection.prototype.GetSlides;
+	ApiSelection.prototype["IsEmpty"]                     = ApiSelection.prototype.IsEmpty;
 
     function private_GetCurrentSlide(){
         var oApiPresentation = editor.GetPresentation();
