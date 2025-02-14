@@ -10094,33 +10094,7 @@
 			}
 
 			const arrInks = this.getAllInks();
-			const oGroups = {};
-			for (let i = 0; i < arrInks.length; i += 1) {
-				const oShape = arrInks[i];
-				if (oShape.group) {
-					const oMainGroup = oShape.getMainGroup();
-					const sMainGroupId = oMainGroup.Get_Id();
-					if (!oGroups[sMainGroupId]) {
-						oGroups[sMainGroupId] = {group: oMainGroup, shapes: []};
-					}
-					oGroups[sMainGroupId].shapes.push(oShape);
-					if (oShape.isGroup()) {
-						oShape.deselectInternal(oController);
-					}
-				} else {
-					oShape.deleteDrawingBase(true);
-					oShape.setBDeleted(true);
-					if (oShape.isGroup()) {
-						oShape.deselectInternal(oController);
-					}
-					oController.deselectObject(oShape);
-				}
-			}
-
-			for (let sId in oGroups) {
-				const oGroupInfo = oGroups[sId];
-				oController.removeInGroup(oGroupInfo.group, oGroupInfo.shapes);
-			}
+			oController.removeAllInks(arrInks);
 		};
 		CSld.prototype.getAllInks = function (arrInks) {
 			arrInks = arrInks || [];

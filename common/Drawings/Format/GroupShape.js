@@ -491,13 +491,34 @@
 				}
 			}
 		};
+		CGroupShape.prototype.resetInternalSelectionObject = function (oSelectedObject) {
+			if (this.selection.textSelection === oSelectedObject) {
+				if (this.selection.textSelection.getObjectType() === AscDFH.historyitem_type_GraphicFrame) {
+					if (this.selection.textSelection.graphicObject) {
+						this.selection.textSelection.graphicObject.RemoveSelection();
+					}
+				} else {
+					const oContent = this.selection.textSelection.getDocContent();
+					oContent && oContent.RemoveSelection();
+				}
+			}
+			if (this.selection.chartSelection === oSelectedObject) {
+				this.selection.chartSelection.resetSelection();
+				this.selection.chartSelection = null;
+			}
+		};
 		CGroupShape.prototype.deselectInternal = function(oController) {
 			const oMainGroup = this.getMainGroup();
 			if (oMainGroup.selectedObjects.length) {
 				const oSelectedObjects = {};
-				for (let i = 0; i < oMainGroup.selectedObjects.length; i += 1) {
+				for (let i = oMainGroup.selectedObjects.length - 1; i >= 0; i -= 1) {
 					const oSelectedObject = oMainGroup.selectedObjects[i];
-					oSelectedObjects[oSelectedObject.Get_Id()] = oSelectedObject;
+					if (oSelectedObject.bDeleted) {
+						oMainGroup.deselectObject(oSelectedObject);
+						oMainGroup.resetInternalSelectionObject(oSelectedObject);
+					} else {
+						oSelectedObjects[oSelectedObject.Get_Id()] = oSelectedObject;
+					}
 				}
 
 				const arrGroups = [this];
@@ -509,6 +530,7 @@
 							arrGroups.push(oShape);
 						} else if (oSelectedObjects[oShape.Get_Id()]) {
 							oMainGroup.deselectObject(oShape);
+							oMainGroup.resetInternalSelectionObject(oShape);
 						}
 					}
 				}

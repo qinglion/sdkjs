@@ -493,6 +493,7 @@ CGraphicObjects.prototype =
 				const oGroupInfo = oGroups[sId];
 				this.removeFromGroup(oGroupInfo.group, oGroupInfo.shapes);
 			}
+			this.document.UpdateSelection();
 			this.document.Recalculate();
 			this.document.FinalizeAction();
 		}
@@ -3489,7 +3490,6 @@ CGraphicObjects.prototype =
 							{
 								para_drawing.Set_XY(new_x, new_y, para_drawing.Get_ParentParagraph(), para_drawing.GraphicObj.selectStartPage, true);
 							}
-							this.document.Recalculate();
 							return true;
 						}
 						else
@@ -3520,10 +3520,8 @@ CGraphicObjects.prototype =
 							cur_group.spPr.xfrm.setOffY(0);
 							para_drawing.CheckWH();
 							para_drawing.Set_XY(new_x, new_y, cur_group.parent.Get_ParentParagraph(), cur_group.selectStartPage, false);//X, Y, Paragraph, PageNum, bResetAlign
-							this.document.Recalculate();
-							break;
+							return true;
 						}
-
 					}
 				}
 			}
@@ -3549,7 +3547,7 @@ CGraphicObjects.prototype =
                 }
                 else if (this.removeFromGroup(this.selection.groupSelection, this.selection.groupSelection.selectedObjects))
                 {
-									return;
+	                this.document.Recalculate();
                 }
             }
             else if(this.selection.chartSelection)

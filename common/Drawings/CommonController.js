@@ -9649,6 +9649,34 @@
 						return lcid_enUS;
 					}
 					return oRun.Get_CompiledPr(false).Lang.Val;
+				},
+				removeAllInks: function (arrInks) {
+					const oGroups = {};
+					for (let i = 0; i < arrInks.length; i += 1) {
+						const oInk = arrInks[i];
+						if (oInk.group) {
+							const oMainGroup = oInk.getMainGroup();
+							const sMainGroupId = oMainGroup.Get_Id();
+							if (!oGroups[sMainGroupId]) {
+								oGroups[sMainGroupId] = {group: oMainGroup, shapes: []};
+							}
+							oGroups[sMainGroupId].shapes.push(oInk);
+							if (oInk.isGroup()) {
+								oInk.deselectInternal(this);
+							}
+						} else {
+							oInk.deleteDrawingBase(true);
+							oInk.setBDeleted(true);
+							if (oInk.isGroup()) {
+								oInk.deselectInternal(this);
+							}
+							this.deselectObject(oInk);
+						}
+					}
+					for (let sId in oGroups) {
+						const oGroupInfo = oGroups[sId];
+						this.removeInGroup(oGroupInfo.group, oGroupInfo.shapes);
+					}
 				}
 			};
 
