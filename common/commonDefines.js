@@ -4752,9 +4752,10 @@ window.AscCommon.g_cIsBeta = "false";
 	prot['MailMerge']         = prot.MailMerge;
 	prot['ContentControl']    = prot.ContentControl;
 	prot['Animation']         = prot.Animation;
+	prot['UnProtectedRegion'] = prot.UnProtectedRegion;
 	prot['Text']              = prot.Text;
 	prot['Annot']             = prot.Annot;
-	prot['UnProtectedRegion'] = prot.UnProtectedRegion;
+	prot['PdfPage']           = prot.PdfPage;
 	
 	window['Asc']['linerule_AtLeast'] = window['Asc'].linerule_AtLeast = linerule_AtLeast;
 	window['Asc']['linerule_Auto'] = window['Asc'].linerule_Auto = linerule_Auto;
