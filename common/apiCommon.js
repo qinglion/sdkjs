@@ -6750,6 +6750,8 @@ function (window, undefined) {
 	prot = asc_CPdfPageProperty.prototype;
 	prot["asc_getDeleteLock"]	= prot.asc_getDeleteLock;
 	prot["asc_putDeleteLock"]	= prot.asc_putDeleteLock;
+	prot["asc_getRotateLock"]	= prot.asc_getRotateLock;
+	prot["asc_putRotateLock"]	= prot.asc_putRotateLock;
 	prot["asc_getEditLock"]		= prot.asc_getEditLock;
 	prot["asc_putEditLock"]		= prot.asc_putEditLock;
 
