@@ -11403,12 +11403,15 @@
 
 			const selectedShapes = Asc.editor.getGraphicController().getSelectedArray();
 			const compoundPathLst = selectedShapes.map(function (shape) {
-				const shapeGeometry = AscCommon.isRealObject(shape.txWarpStruct)
+				const isTextArt = AscCommon.isRealObject(shape.txWarpStruct);
+
+				const shapeGeometry = isTextArt
 					? shape.txWarpStruct.getCombinedGeometry() // text-art
 					: shape.getGeometry(); // usual shape
+
 				const pathLst = shapeGeometry.pathLst;
 				const compoundPaths = pathLst.map(function (path) {
-					return convertFormatPathToCompoundPath(path, shape.transform);
+					return convertFormatPathToCompoundPath(path, isTextArt ? shape.transformText : shape.transform);
 				});
 				const unitedCompoundPath = compoundPaths.reduce(function (resultPath, currentPath) {
 					return resultPath['unite'](currentPath);
