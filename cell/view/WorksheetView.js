@@ -27079,6 +27079,14 @@
 			this.drawingGraphicCtx.moveImageData(this.getRightToLeft() ? (this.getCtxWidth() - sx - sw) : sx, sy, sw, sh, this.getRightToLeft() ? (this.getCtxWidth() - dx - dw) : dx, dy);
 		}
 	};
+	WorksheetView.prototype.removeAllInks = function () {
+		const model = this.model;
+		const oController = this.objectRender && this.objectRender.controller;
+		if (oController) {
+			const arrInks = model.getAllInks();
+			oController.removeAllInks(arrInks);
+		}
+	};
 	
 
 

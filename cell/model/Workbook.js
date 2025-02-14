@@ -5733,6 +5733,14 @@
 	Workbook.prototype.getShowHorizontalScroll = function() {
 		return this.showHorizontalScroll;
 	};
+	Workbook.prototype.getAllInks = function(arrInks) {
+		arrInks = arrInks || [];
+		for (let i = 0; i < this.aWorksheets.length; i += 1) {
+			const oWorksheet = this.aWorksheets[i];
+			oWorksheet.getAllInks(arrInks);
+		}
+		return arrInks;
+	};
 
 
 
@@ -13998,6 +14006,19 @@
 		}
 
 		return new AscCommon.CellBase(lastR, lastC);
+	};
+
+	Worksheet.prototype.getAllInks = function(arrInks) {
+		arrInks = arrInks || [];
+		for (let i = 0; i < this.Drawings.length; i++) {
+			const oGraphicObject = this.Drawings[i].graphicObject;
+			if (oGraphicObject.isInk() || oGraphicObject.isHaveOnlyInks()) {
+				arrInks.push(oGraphicObject);
+			} else {
+				oGraphicObject.getAllInks(arrInks);
+			}
+		}
+		return arrInks;
 	};
 
 

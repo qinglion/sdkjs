@@ -9595,6 +9595,18 @@ background-repeat: no-repeat;\
 
 		oLogicDocument.EraseAllInksOnSlide();
 	};
+	asc_docs_api.prototype.removeAllInks = function () {
+		let oLogicDocument = this.getLogicDocument();
+		if(!oLogicDocument) return;
+
+		oLogicDocument.RemoveAllInks();
+	};
+	asc_docs_api.prototype.haveInks = function() {
+		let oLogicDocument = this.getLogicDocument();
+		if(!oLogicDocument) return;
+
+		return !!oLogicDocument.GetAllInks().length;
+	};
 
 	//-------------------------------------------------------------export---------------------------------------------------
 	window['Asc']                                                 = window['Asc'] || {};
