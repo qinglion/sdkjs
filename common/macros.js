@@ -437,7 +437,7 @@ function (window, undefined)
 	window["AscCommon"].CDocumentMacros = CDocumentMacros;
 	window['AscCommon'].VbaProject = VbaProject;
 
-	var _safe_eval_closure = new Function("Function", "Api", "window", "alert", "document", "XMLHttpRequest", "self", "globalThis", "setTimeout", "setInterval", "value", "return eval(\"\\\"use strict\\\";\\r\\n\" + value)");
+	var _safe_eval_closure = new Function("Function", "Api", "window", "AscDesktopEditor", "alert", "document", "XMLHttpRequest", "self", "globalThis", "setTimeout", "setInterval", "value", "return eval(\"\\\"use strict\\\";\\r\\n\" + value)");
 	window['AscCommon'].safePluginEval = function(value) {
 		let protoFunc = Object.getPrototypeOf(function(){});
 		// for minimization we use eval!!!
@@ -478,7 +478,7 @@ function (window, undefined)
 			if (Api.parsedJSDoc.length > countOfAdding)
 				Api.parsedJSDoc.length = countOfAdding;
 		}
-		const result = _safe_eval_closure.call(null, {}, Api, {}, function(){}, {}, customXMLHttpRequest, {}, {}, timeout, interval, value);
+		const result = _safe_eval_closure.call(null, {}, Api, {}, {}, function(){}, {}, customXMLHttpRequest, {}, {}, timeout, interval, value);
 		protoFunc.constructor = normalConstructor;
 		if (protoFuncGen)
 			protoFuncGen.prototype.next = generatorNext;
