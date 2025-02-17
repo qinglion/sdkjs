@@ -6221,9 +6221,9 @@ var CPresentation = CPresentation || function(){};
                 }
 
                 // check lock adding/move drawings
-                if (undefined != AdditionalData) {
+                if (typeof(AdditionalData) === "number") {
                     let oPageInfo = this.GetPageInfo(AdditionalData);
-                    if (oPageInfo.IsDeleteLock()) {
+                    if (oPageInfo && oPageInfo.IsDeleteLock()) {
                         return true;
                     }
                 }
