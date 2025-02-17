@@ -347,17 +347,9 @@ CCollaborativeEditing.prototype.OnEnd_Load_Objects = function()
     // Запускаем полный пересчет документа
     let LogicDocument = this.GetPresentation();
 
-    let RecalculateData =
-    {
-        Drawings: {
-            All: true
-        },
-        Map: {
-
-        }
-    };
-
-    LogicDocument.Recalculate(RecalculateData);
+		const arrChanges = this.CoHistory.GetAllChanges();
+		const oRecalcData = LogicDocument.History.Get_RecalcData(null, arrChanges, this.m_nRecalcIndexStart, this.m_nRecalcIndexEnd);
+    LogicDocument.Recalculate(oRecalcData);
     LogicDocument.Document_UpdateSelectionState();
     LogicDocument.Document_UpdateInterfaceState();
 
