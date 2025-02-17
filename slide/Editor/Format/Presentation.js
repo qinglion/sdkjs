@@ -8730,6 +8730,10 @@ CPresentation.prototype.Refresh_RecalcData2 = function (Data) {
 			History.RecalcData_Add({Type: AscDFH.historyitem_recalctype_Drawing, Theme: true, ThemeObj: Data.Theme});
 			break;
 		}
+		case AscDFH.historyitem_ThemeSetName: {
+			this.bNeedUpdateThemes = true;
+			break;
+		}
 	}
 };
 

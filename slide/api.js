@@ -3396,6 +3396,7 @@ background-repeat: no-repeat;\
 				//if (!oPresentation.IsSelectionLocked(AscCommon.changestype_Timing)) {
 				AscCommon.History.Create_NewPoint(0);
 				oSlideLikeObject.setName(sName);
+				oPresentation.Recalculate();
 				//}
 			}
 		}

@@ -9791,6 +9791,11 @@
 					if(oPresentation && aSlideIndexes && aSlideIndexes.length > 0) {
 						oPresentation.Refresh_RecalcData2({Type: AscDFH.historyitem_ThemeSetFontScheme, aIndexes: aSlideIndexes});
 					}
+				} else if (oData.Type === AscDFH.historyitem_ThemeSetName) {
+					let oPresentation = this.GetPresentation();
+					if (oPresentation) {
+						oPresentation.Refresh_RecalcData2({Type: AscDFH.historyitem_ThemeSetName});
+					}
 				}
 			}
 		};
