@@ -301,7 +301,7 @@
 
 		this.m_oApi = api;
 		this.thumbnailsPosition = thumbnailsPositionMap.bottom; // left, right, bottom
-		this.isRTL = true;
+		this.isRTL = !true;
 		oThis = this;
 	}
 

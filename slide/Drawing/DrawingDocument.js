@@ -4220,6 +4220,7 @@ function CThumbnailsManager(editorPage)
 	this.MouseThumbnailsAnimateScrollBottomTimer = -1;
 
 	this.ScrollerHeight = 0;
+	this.ScrollerWidth = 0;
 
 	this.m_oWordControl = editorPage;
 	var oThis = this;
@@ -6267,7 +6268,9 @@ function CThumbnailsManager(editorPage)
 			wordControl.m_oScrollThumbApi.scrollToY(lPosition);
 		}
 
-		this.ScrollerHeight = totalThumbnailsLength;
+		isHorizontalOrientation
+			? this.ScrollerWidth = totalThumbnailsLength
+			: this.ScrollerHeight = totalThumbnailsLength;
 		if (wordControl.MobileTouchManagerThumbnails) {
 			wordControl.MobileTouchManagerThumbnails.Resize();
 		}
