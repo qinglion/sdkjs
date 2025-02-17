@@ -5750,43 +5750,63 @@ function CThumbnailsManager(editorPage)
 		return false;
 	};
 
-	this.SelectPage = function(pageNum)
-	{
+	this.SelectPage = function (pageNum) {
 		if (!this.SelectPageEnabled)
 			return;
 
-		var pages_count = this.m_arrPages.length;
+		const pagesCount = this.m_arrPages.length;
+		if (pageNum < 0 || pageNum >= pagesCount)
+			return;
 
-		if (pageNum >= 0 && pageNum < pages_count)
-		{
-			var bIsUpdate = false;
-			for (var i = 0; i < pages_count; i++)
-			{
-				if (this.m_arrPages[i].IsSelected === true && i != pageNum)
-					bIsUpdate = true;
-				this.m_arrPages[i].IsSelected = false;
-			}
+		let bIsUpdate = false;
 
-			if (this.m_arrPages[pageNum].IsSelected === false)
+		for (let i = 0; i < pagesCount; i++) {
+			if (this.m_arrPages[i].IsSelected === true && i != pageNum) {
 				bIsUpdate = true;
-			this.m_arrPages[pageNum].IsSelected = true;
-
-			this.m_bIsUpdate = bIsUpdate;
-
-			if (bIsUpdate && this.m_oWordControl.m_oScrollThumbApi != null)
-			{
-				var y1 = this.m_arrPages[pageNum].top - this.const_border_w;
-				var y2 = this.m_arrPages[pageNum].bottom + this.const_border_w;
-
-				if (y1 < 0)
-				{
-					var _sizeH = y2 - y1;
-					this.m_oWordControl.m_oScrollThumbApi.scrollToY(pageNum * _sizeH + (pageNum + 1) * this.const_border_w);
-				} else if (y2 > this.m_oWordControl.m_oThumbnails.HtmlElement.height)
-				{
-					this.m_oWordControl.m_oScrollThumbApi.scrollByY(y2 - this.m_oWordControl.m_oThumbnails.HtmlElement.height);
-				}
 			}
+			this.m_arrPages[i].IsSelected = false;
+		}
+
+		if (this.m_arrPages[pageNum].IsSelected === false) {
+			bIsUpdate = true;
+		}
+		this.m_arrPages[pageNum].IsSelected = true;
+		this.m_bIsUpdate = bIsUpdate;
+
+		const scrollApi = this.m_oWordControl.m_oScrollThumbApi;
+		if (!bIsUpdate || scrollApi == null)
+			return;
+
+		const isHorizontalThumbnails = this.m_oWordControl.thumbnailsPosition === thumbnailsPositionMap.bottom;
+		const isRightToLeft = this.m_oWordControl.isRTL;
+
+		let startCoord, endCoord, visibleAreaSize, scrollTo, scrollBy;
+		if (isHorizontalThumbnails) {
+			startCoord = this.m_arrPages[pageNum].left - this.const_border_w;
+			endCoord = this.m_arrPages[pageNum].right + this.const_border_w
+			visibleAreaSize = this.m_oWordControl.m_oThumbnails.HtmlElement.width;
+
+			scrollTo = scrollApi.scrollToX.bind(scrollApi);
+			scrollBy = scrollApi.scrollByX.bind(scrollApi);
+		} else {
+			startCoord = this.m_arrPages[pageNum].top - this.const_border_w;
+			endCoord = this.m_arrPages[pageNum].bottom + this.const_border_w;
+			visibleAreaSize = this.m_oWordControl.m_oThumbnails.HtmlElement.height;
+
+			scrollTo = scrollApi.scrollToY.bind(scrollApi);
+			scrollBy = scrollApi.scrollByY.bind(scrollApi);
+		}
+
+		if (startCoord < 0) {
+			const size = endCoord - startCoord;
+			const shouldReversePageIndexes = isRightToLeft && isHorizontalThumbnails;
+			const pos = shouldReversePageIndexes
+				? (size + this.const_border_w) * (this.m_arrPages.length - pageNum - 1)
+				: (size + this.const_border_w) * pageNum;
+			scrollTo(pos);
+		} else if (endCoord > visibleAreaSize) {
+			const pos = endCoord + this.const_border_w - visibleAreaSize;
+			scrollBy(pos);
 		}
 	};
 
