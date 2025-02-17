@@ -2834,47 +2834,35 @@ CPresentation.prototype.Recalculate = function (RecalcData) {
 								}
 							}
 						}
+						let oLayoutObject;
 						if (parent instanceof AscCommonSlide.SlideLayout) {
-							if (oDrawingObject.type === AscFormat.nSldLtTTitle) {
+							oLayoutObject = parent;
+						} else if (oDrawingObject instanceof AscCommonSlide.SlideLayout) {
+							oLayoutObject = oDrawingObject;
+						}
+						if (oLayoutObject) {
+							if (oLayoutObject.type === AscFormat.nSldLtTTitle) {
 								isUpdateThemes = true;
 							}
-							parent.ImageBase64 = "";
+							oLayoutObject.ImageBase64 = "";
 							b_check_layout = true;
 							bAttack = true;
 							for (let nIdx = 0; nIdx < this.Slides.length; ++nIdx) {
 								let oCalcSlide = this.Slides[nIdx];
-								if (oCalcSlide.Layout === oDrawingObject) {
+								if (oCalcSlide.Layout === oLayoutObject) {
 									oCalcSlide.checkSlideTheme();
 									oCalcSlide.recalculate();
-									if (redrawSlideIndexMap[nIdx] !== true) {
+									if (!this.IsMasterMode() && redrawSlideIndexMap[nIdx] !== true) {
 										redrawSlideIndexMap[nIdx] = true;
 										aToRedrawSlides.push(nIdx);
 									}
 								}
 							}
-							let nIdx = this.GetSlideIndex(oDrawingObject);
+							let nIdx = this.GetSlideIndex(oLayoutObject);
 							if(nIdx !== -1) {
 								if (redrawSlideIndexMap[nIdx] !== true) {
 									redrawSlideIndexMap[nIdx] = true;
 									aToRedrawSlides.push(nIdx);
-								}
-							}
-						}
-						if (oDrawingObject instanceof AscCommonSlide.SlideLayout) {
-							b_check_layout = true;
-							bAttack = true;
-							let nIdx = this.GetSlideIndex(oDrawingObject);
-							if(nIdx !== -1) {
-								if (redrawSlideIndexMap[nIdx] !== true) {
-									redrawSlideIndexMap[nIdx] = true;
-									aToRedrawSlides.push(nIdx);
-								}
-							}
-							for (let nIdx = 0; nIdx < this.Slides.length; ++nIdx) {
-								let oCalcSlide = this.Slides[nIdx];
-								if (oCalcSlide.Layout === oDrawingObject) {
-									oCalcSlide.checkSlideTheme();
-									oCalcSlide.recalculate();
 								}
 							}
 						}
