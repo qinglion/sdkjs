@@ -1163,6 +1163,24 @@
 
         return this.asc_GetSelectedText(false, properties);
     };
+	/**
+	 * Returns selected content in specified format.
+	 * @memberof Api
+	 * @typeofeditors ["CDE", "CPE", "CSE"]
+	 * @alias GetSelectedContent
+	 * @param {object} prop
+	 * @param {"text" | "html"} [prop.type="text"] - Defines the type of returned format.
+	 * @since 8.3.1
+	 * @see office-js-api/Examples/Plugins/{Editor}/Api/Methods/GetSelectedContent.js
+	 */
+	Api.prototype["pluginMethod_GetSelectedContent"] = function(prop)
+	{
+		let type = AscCommon.c_oAscClipboardDataFormat.Text;
+		if (prop && "html" === prop.type)
+			type = AscCommon.c_oAscClipboardDataFormat.Html;
+			
+		return this.getSelectedContent(type);
+	};
     /**
      * Replaces each paragraph (or text in cell) in the select with the corresponding text from an array of strings.
      * @memberof Api
