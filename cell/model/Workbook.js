@@ -21265,6 +21265,7 @@
 								if (bIsPromote) {
 									toRule.id = fromRule.id;
 									toRule.ranges = fromRule.ranges.concat(newRules[i]);
+									toRule.combineRangesToSingle();
 								} else {
 									toRule.ranges = newRules[i];
 								}
