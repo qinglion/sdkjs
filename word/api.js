@@ -655,14 +655,7 @@
 						return;	
 					}
 					
-					try
-					{
-						AscCommon.safePluginEval(_current["Script"]);
-					}
-					catch (err)
-					{
-						console.error(err);
-					}
+					AscCommon.safePluginEval(_current["Script"]);
 					
 					if (_isReplaced)
 						_blockStd.MoveCursorToContentControl(false);

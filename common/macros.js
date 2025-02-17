@@ -438,7 +438,7 @@ function (window, undefined)
 	window['AscCommon'].VbaProject = VbaProject;
 
 	var _safe_eval_closure = new Function("Function", "Api", "window", "AscDesktopEditor", "alert", "document", "XMLHttpRequest", "self", "globalThis", "setTimeout", "setInterval", "value", "return eval(\"\\\"use strict\\\";\\r\\n\" + value)");
-	window['AscCommon'].safePluginEval = function(value) {
+	function _safePluginEval(value) {
 		let protoFunc = Object.getPrototypeOf(function(){});
 		// for minimization we use eval!!!
 		let protoFuncGen = null;
@@ -484,6 +484,21 @@ function (window, undefined)
 			protoFuncGen.prototype.next = generatorNext;
 		return result;
 	};
-
+	window['AscCommon'].safePluginEval = function(value){
+		let result;
+		let isCheckSymbols = AscFonts.IsCheckSymbols;
+		AscFonts.IsCheckSymbols = true;
+		try
+		{
+			result = _safePluginEval(value);
+		}
+		catch (err)
+		{
+			result = undefined;
+			console.error(err);
+		}
+		AscFonts.IsCheckSymbols = isCheckSymbols;
+		return result;
+	};
 
 })(window);
