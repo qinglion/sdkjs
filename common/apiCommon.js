@@ -6063,6 +6063,34 @@ function (window, undefined) {
 		return this.insertObject;
 	};
 
+
+	function CButtonData(oData) {
+		this["obj"] = oData["obj"];
+		this["type"] = oData["type"];
+		this["button"] = oData["button"];
+		this["isForm"] = oData["isForm"];
+		this["pr"] = oData["pr"];
+	}
+	CButtonData.prototype.get_Obj = function() {
+		return this["obj"];
+	};
+	CButtonData.prototype.get_ObjId = function() {
+		if(!this["obj"]) return null;
+		return this["obj"].Id;
+	};
+	CButtonData.prototype.get_Type = function() {
+		return this["type"];
+	};
+	CButtonData.prototype.get_Button = function() {
+		return this["button"];
+	};
+	CButtonData.prototype.get_IsForm = function() {
+		return this["isForm"];
+	};
+	CButtonData.prototype.get_Properties = function() {
+		return this["pr"];
+	};
+
 	/*
 	 * Export
 	 * -----------------------------------------------------------------------------
@@ -7102,7 +7130,16 @@ function (window, undefined) {
 	prot["get_canEditText"] = prot.get_canEditText;
 	prot["get_canEditPara"] = prot.get_canEditPara;
 	prot["get_canInsObject"] = prot.get_canInsObject;
-	
+
+	window["Asc"]["CButtonData"] = window["Asc"].CButtonData = CButtonData;
+	prot = CButtonData.prototype;
+
+	prot["get_Obj"] = prot.get_Obj;
+	prot["get_Type"] = prot.get_Type;
+	prot["get_Button"] = prot.get_Button;
+	prot["get_IsForm"] = prot.get_IsForm;
+	prot["get_Properties"] = prot.get_Properties;
+
 	window["AscCommon"]["pix2mm"] = window["AscCommon"].pix2mm = function(pix)
 	{
 		return pix * AscCommon.g_dKoef_pix_to_mm;
