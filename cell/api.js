@@ -5550,6 +5550,11 @@ var editor;
     return ws.objectRender.getOriginalImageSize();
   };
 
+	spreadsheet_api.prototype.asc_getCropOriginalImageSize = function() {
+		var ws = this.wb.getWorksheet();
+		return ws.objectRender.getCropOriginalImageSize();
+	};
+
   spreadsheet_api.prototype.asc_setInterfaceDrawImagePlaceTextArt = function(elementId) {
     this.textArtElementId = elementId;
   };
@@ -10291,6 +10296,7 @@ var editor;
   prot["asc_GetSelectedText"] = prot.asc_GetSelectedText;
   prot["asc_setGraphicObjectProps"] = prot.asc_setGraphicObjectProps;
   prot["asc_getOriginalImageSize"] = prot.asc_getOriginalImageSize;
+  prot["asc_getCropOriginalImageSize"] = prot.asc_getCropOriginalImageSize;
   prot["asc_changeShapeType"] = prot.asc_changeShapeType;
   prot["asc_setInterfaceDrawImagePlaceShape"] = prot.asc_setInterfaceDrawImagePlaceShape;
   prot["asc_setInterfaceDrawImagePlaceTextArt"] = prot.asc_setInterfaceDrawImagePlaceTextArt;

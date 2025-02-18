@@ -7351,6 +7351,8 @@
 										ImageUrl: drawing.getImageUrl(),
 										transparent: drawing.getTransparent(),
 										isCrop: drawing.hasCrop(),
+										cropHeightCoefficient: drawing.getCropHeightCoefficient(),
+										cropWidthCoefficient: drawing.getCropWidthCoefficient(),
 										w: drawing.extX,
 										h: drawing.extY,
 										rot: drawing.rot,
@@ -7460,6 +7462,8 @@
 									{
 										ImageUrl: drawing.getImageUrl(),
 										isCrop: drawing.hasCrop(),
+										cropHeightCoefficient: drawing.getCropHeightCoefficient(),
+										cropWidthCoefficient: drawing.getCropWidthCoefficient(),
 										transparent: null,
 										w: drawing.extX,
 										h: drawing.extY,
@@ -8203,6 +8207,8 @@
 						image_props.flipV = props.imageProps.flipV;
 						image_props.ImageUrl = props.imageProps.ImageUrl;
 						image_props.isCrop = props.imageProps.isCrop;
+						image_props.cropHeightCoefficient = props.imageProps.cropHeightCoefficient;
+						image_props.cropWidthCoefficient = props.imageProps.cropWidthCoefficient;
 						image_props.transparent = props.imageProps.transparent;
 						image_props.Locked = props.imageProps.locked === true;
 						image_props.lockAspect = props.imageProps.lockAspect;
