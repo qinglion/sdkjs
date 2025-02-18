@@ -984,7 +984,7 @@ function CEditorPage(api)
 					const offset = AscCommon.UI.getBoundingClientRect(e.target);
 					const menuWidth = 174; 
 					let leftPosition = offset.left + offset.width;
-					if (leftPosition + menuWidth > window.outerWidth) {
+					if (leftPosition + menuWidth > window.innerWidth) {
 						leftPosition = offset.left - menuWidth;
 					}
 			
