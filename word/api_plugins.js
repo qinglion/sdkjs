@@ -98,11 +98,11 @@
 	 * @property {string} Alias - The alias attribute.
 	 * @property {string} PlaceHolderText - The content control placeholder text.
 	 * @property {number} Appearance - Defines if the content control is shown as the bounding box (**1**) or not (**2**).
-	 * @property {Color} Color - The color for the current content control in the RGB format.
-	 * @property {Object} Shd - Background shading properties
-	 * @property {Color} Shd.Color - Shading color in RGBA format  
-	 * @property {Object} Border - Border properties
-	 * @property {Color} Border.Color - Border color in RGBA format
+	 * @property {Color} Color - The color for the current content control in RGBA format.
+	 * @property {Object} Shd - The background shading properties.
+	 * @property {Color} Shd.Color - The shading color in RGBA format.
+	 * @property {Object} Border - The border properties.
+	 * @property {Color} Border.Color - The border color in RGBA format.
 	 * @see office-js-api/Examples/Plugins/{Editor}/Enumeration/ContentControlProperties.js
 	 */
 
@@ -1270,6 +1270,7 @@
 	 * @memberof Api
 	 * @typeofeditors ["CDE"]
 	 * @alias CanUndo
+	 * @returns {boolean}
 	 * @since 8.2.0
 	 * @see office-js-api/Examples/Plugins/{Editor}/Api/Methods/CanUndo.js
 	 */
@@ -1282,6 +1283,7 @@
 	 * @memberof Api
 	 * @typeofeditors ["CDE"]
 	 * @alias CanRedo
+	 * @returns {boolean}
 	 * @since 8.2.0
 	 * @see office-js-api/Examples/Plugins/{Editor}/Api/Methods/CanRedo.js
 	 */

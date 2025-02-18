@@ -268,8 +268,8 @@
 	 * Standard numeric format.
 	 * @typedef {("General" | "0" | "0.00" | "#,##0" | "#,##0.00" | "0%" | "0.00%" |
 	 * "0.00E+00" | "# ?/?" | "# ??/??" | "m/d/yyyy" | "d-mmm-yy" | "d-mmm" | "mmm-yy" | "h:mm AM/PM" |
-	 * "h:mm:ss AM/PM" | "h:mm" | "h:mm:ss" | "m/d/yyyy h:mm" | "#,##0_);(#,##0)" | "#,##0_);[Red](#,##0)" | 
-	 * "#,##0.00_);(#,##0.00)" | "#,##0.00_);[Red](#,##0.00)" | "mm:ss" | "[h]:mm:ss" | "mm:ss.0" | "##0.0E+0" | "@")} NumFormat
+	 * "h:mm:ss AM/PM" | "h:mm" | "h:mm:ss" | "m/d/yyyy h:mm" | "#,##0_\);(#,##0)" | "#,##0_\);\[Red\]\(#,##0)" | 
+	 * "#,##0.00_\);\(#,##0.00\)" | "#,##0.00_\);\[Red\]\(#,##0.00\)" | "mm:ss" | "[h]:mm:ss" | "mm:ss.0" | "##0.0E+0" | "@")} NumFormat
 	 * @see office-js-api/Examples/Enumerations/NumFormat.js
 	 */
 
@@ -315,18 +315,22 @@
 	 */
 
 	/**
+	 * The report filter area settings.
 	 * @typedef {object} PivotTableFilterAreaInfo
 	 * @property {FieldsInReportFilterType} Type - Specifies how the report filter fields are located.
 	 * @property {number} ReportFilterFields - Defines the number of the report filter fields.
+	 * @see office-js-api/Examples/Enumerations/PivotTableFilterAreaInfo.js
 	 */
 
 	/**
+	 * The settings for adding row, column, and page fields to the pivot table report.
 	 * @typedef {object} PivotTableFieldOptions
 	 * @property {number | string | number[] | string[]} [rows] - An array of field names or IDs to be added as rows or added to the category axis.
 	 * @property {number | string | number[] | string[]} [columns] - An array of field names or IDs to be added as columns or added to the series axis.
 	 * @property {number | string | number[] | string[]} [pages] - An array of field names or IDs to be added as pages or added to the page area.
 	 * @property {boolean} [addToTable=false] - Specifies whether to apply fields only to the pivot table reports. If `true`, the specified fields will be added to the report 
 	 * without replacing existing fields. If `false`, existing fields will be replaced with the new fields.
+	 * @see office-js-api/Examples/Enumerations/PivotTableFieldOptions.js
 	 */
 
 	/**

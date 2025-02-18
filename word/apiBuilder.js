@@ -3195,7 +3195,7 @@
 
 	/**
 	 * Class representing a comment reply.
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CPE"]
 	 * @constructor
 	 */
 	function ApiCommentReply(oParentComm, oCommentReply)
@@ -4232,8 +4232,8 @@
 	 * Standard numeric format.
 	 * @typedef {("General" | "0" | "0.00" | "#,##0" | "#,##0.00" | "0%" | "0.00%" |
 	 * "0.00E+00" | "# ?/?" | "# ??/??" | "m/d/yyyy" | "d-mmm-yy" | "d-mmm" | "mmm-yy" | "h:mm AM/PM" |
-	 * "h:mm:ss AM/PM" | "h:mm" | "h:mm:ss" | "m/d/yyyy h:mm" | "#,##0_);(#,##0)" | "#,##0_);[Red](#,##0)" | 
-	 * "#,##0.00_);(#,##0.00)" | "#,##0.00_);[Red](#,##0.00)" | "mm:ss" | "[h]:mm:ss" | "mm:ss.0" | "##0.0E+0" | "@")} NumFormat
+	 * "h:mm:ss AM/PM" | "h:mm" | "h:mm:ss" | "m/d/yyyy h:mm" | "#,##0_\);(#,##0)" | "#,##0_\);\[Red\]\(#,##0)" | 
+	 * "#,##0.00_\);\(#,##0.00\)" | "#,##0.00_\);\[Red\]\(#,##0.00\)" | "mm:ss" | "[h]:mm:ss" | "mm:ss.0" | "##0.0E+0" | "@")} NumFormat
 	 * @see office-js-api/Examples/Enumerations/NumFormat.js
 	 */
 
@@ -15538,7 +15538,7 @@
 		return "drawing";
 	};
 	/**
-	 * Returns the shape inner contents where a paragraph or text runs can be inserted if it exists.
+	 * Returns the drawing inner contents where a paragraph or text runs can be inserted if it exists.
 	 * @memberof ApiDrawing
 	 * @typeofeditors ["CDE", "CSE"]
 	 * @returns {?ApiDocumentContent}
@@ -19572,7 +19572,7 @@
 	 * @memberof ApiFormBase
 	 * @param {twips} width - The wrapper shape width measured in twentieths of a point (1/1440 of an inch).
 	 * @param {twips} height - The wrapper shape height measured in twentieths of a point (1/1440 of an inch).
-	 * @param {boolean} keepPosition - Save position on the page (it can be a little bit slow, because it runs the document calculation)
+	 * @param {boolean} keepPosition - Save position on the page (it can be a little bit slow, because it runs the document calculation).
 	 * @typeofeditors ["CDE", "CFE"]
 	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiFormBase/Methods/ToFixed.js
