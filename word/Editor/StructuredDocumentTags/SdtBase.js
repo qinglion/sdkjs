@@ -1050,6 +1050,32 @@ CSdtBase.prototype.SetFormRole = function(roleName)
 	formPr.SetRole(roleName);
 	this.SetFormPr(formPr);
 };
+CSdtBase.prototype.GetRoleColor = function()
+{
+	let logicDocument = this.GetLogicDocument();
+	
+	if (!logicDocument || !this.IsForm())
+		return null;
+	
+	let formPr = this.GetFormPr();
+	if (!this.IsMainForm())
+	{
+		let mainForm = this.GetMainForm();
+		if (!mainForm)
+			return null;
+		
+		formPr = mainForm.GetFormPr();
+	}
+	
+	if (!formPr)
+		return null;
+	
+	let fieldMaster = formPr.GetFieldMaster();
+	let userMaster  = fieldMaster ? fieldMaster.getFirstUser() : null;
+	let userColor   = userMaster ? userMaster.getColor() : null;
+	
+	return userColor ? userColor : null;
+};
 CSdtBase.prototype.SetFieldMaster = function(fieldMaster)
 {
 	if (!fieldMaster)
