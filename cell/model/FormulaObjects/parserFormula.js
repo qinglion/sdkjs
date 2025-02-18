@@ -2892,6 +2892,19 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 		this.countElementInRow[this.rowCount - 1]++;
 		this.countElement++;
 	};
+	cArray.prototype.addElementInRow = function (element, rowIndex) {
+		if (typeof rowIndex !== "number" || rowIndex < 0 || rowIndex > this.rowCount) {
+			return null;
+		}
+
+		if (this.array.length === 0) {
+			this.addRow();
+		}
+		let arr = this.array, subArr = arr[rowIndex]; 
+		subArr[subArr.length] = element;
+		this.countElementInRow[rowIndex]++;
+		this.countElement++;
+	};
 	cArray.prototype.getRow = function (rowIndex) {
 		if (rowIndex < 0 || rowIndex > this.array.length - 1) {
 			return null;

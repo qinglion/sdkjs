@@ -14308,6 +14308,29 @@ $(function () {
 		assert.ok(oParser.assemble() == "SUMPRODUCT(--ISNUMBER(SEARCH({5;6;7;1;2;3;4},123)))");
 		assert.strictEqual(oParser.calculate().getValue(), 3);
 
+		// for bug 68820
+		ws.getRange2("B100").setValue("-2");
+		ws.getRange2("B101").setValue("1");
+		ws.getRange2("B102").setValue("-1");
+		ws.getRange2("B103").setValue("0");
+		ws.getRange2("B104").setValue("1");
+		ws.getRange2("B105").setValue("1");
+		ws.getRange2("B106").setValue("-2");
+		ws.getRange2("B107").setValue("0");
+		ws.getRange2("B108").setValue("0");
+		
+		oParser = new parserFormula('SUMPRODUCT(SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0)))', "A2", ws);
+		assert.ok(oParser.parse(), 'SUMPRODUCT(SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0)))');
+		assert.strictEqual(oParser.calculate().getValue(), -2, 'SUMPRODUCT(SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0)))');
+
+		oParser = new parserFormula('SUMPRODUCT(SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0))*(B100:B108>0))', "A2", ws);
+		assert.ok(oParser.parse(), 'SUMPRODUCT(SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0))*(B100:B108>0))');
+		assert.strictEqual(oParser.calculate().getValue(), 3, 'SUMPRODUCT(SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0))*(B100:B108>0))');
+
+		oParser = new parserFormula('SUMPRODUCT(SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0),OFFSET(B100,ROW(B100:B108)-ROW(B100),0))*(B100:B108>0))', "A2", ws);
+		assert.ok(oParser.parse(), 'SUMPRODUCT(SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0),OFFSET(B100,ROW(B100:B108)-ROW(B100),0))*(B100:B108>0))');
+		assert.strictEqual(oParser.calculate().getValue(), 6, 'SUMPRODUCT(SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0),OFFSET(B100,ROW(B100:B108)-ROW(B100),0))*(B100:B108>0))');
+
 
 		testArrayFormula2(assert, "SUMPRODUCT", 1, 8, null, true);
 	});
@@ -30797,10 +30820,23 @@ $(function () {
 	});
 
 	QUnit.test("Test: \"SUBTOTAL\"", function (assert) {
+		let array;
 		ws.getRange2("A102").setValue("120");
 		ws.getRange2("A103").setValue("10");
 		ws.getRange2("A104").setValue("150");
 		ws.getRange2("A105").setValue("23");
+
+		ws.getRange2("A106").setValue("1");
+
+		ws.getRange2("B100").setValue("#N/A");
+
+		oParser = new parserFormula("SUBTOTAL(-1,A102:A105)", "A2", ws);
+		assert.ok(oParser.parse(), "SUBTOTAL(-1,A102:A105)");
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", "SUBTOTAL(-1,A102:A105)");
+
+		oParser = new parserFormula("SUBTOTAL(0,A102:A105)", "A2", ws);
+		assert.ok(oParser.parse(), "SUBTOTAL(0,A102:A105)");
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", "SUBTOTAL(0,A102:A105)");
 
 		oParser = new parserFormula("SUBTOTAL(1,A102:A105)", "A2", ws);
 		assert.ok(oParser.parse(), "SUBTOTAL(1,A102:A105)");
@@ -30837,6 +30873,108 @@ $(function () {
 		oParser = new parserFormula("SUBTOTAL(9,A102:A105)", "A2", ws);
 		assert.ok(oParser.parse(), "SUBTOTAL(9,A102:A105)");
 		assert.strictEqual(oParser.calculate().getValue(), 303, "SUBTOTAL(9,A102:A105)");
+
+		oParser = new parserFormula("SUBTOTAL(99,A102:A105)", "A2", ws);
+		assert.ok(oParser.parse(), "SUBTOTAL(99,A102:A105)");
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", "SUBTOTAL(99,A102:A105)");
+
+		oParser = new parserFormula('SUBTOTAL("str",A102:A105)', "A2", ws);
+		assert.ok(oParser.parse(), 'SUBTOTAL("str",A102:A105)');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'SUBTOTAL("str",A102:A105)');
+
+		oParser = new parserFormula('SUBTOTAL(B100,A102:A105)', "A2", ws);
+		assert.ok(oParser.parse(), 'SUBTOTAL(B100,A102:A105)');
+		assert.strictEqual(oParser.calculate().getValue(), "#N/A", 'SUBTOTAL(B100,A102:A105)');
+
+		oParser = new parserFormula("SUBTOTAL(2,A102,A102)", "A2", ws);
+		assert.ok(oParser.parse(), "SUBTOTAL(2,A102,A102)");
+		assert.strictEqual(oParser.calculate().getValue(), 2, "Two refs in SUBTOTAL(2,A102,A102)");
+
+		oParser = new parserFormula("SUBTOTAL(2,A102,A102,A102)", "A2", ws);
+		assert.ok(oParser.parse(), "SUBTOTAL(2,A102,A102,A102)");
+		assert.strictEqual(oParser.calculate().getValue(), 3, "Three refs in SUBTOTAL(2,A102,A102,A102)");
+
+		oParser = new parserFormula("SUBTOTAL(2,A102,A102,A102,A102)", "A2", ws);
+		assert.ok(oParser.parse(), "SUBTOTAL(2,A102,A102,A102,A102)");
+		assert.strictEqual(oParser.calculate().getValue(), 4, "Four refs in SUBTOTAL(2,A102,A102,A102,A102)");
+
+		oParser = new parserFormula("SUBTOTAL(9,A102,A102,A102,A102)", "A2", ws);
+		assert.ok(oParser.parse(), "SUBTOTAL(9,A102,A102,A102,A102)");
+		assert.strictEqual(oParser.calculate().getValue(), 480, "Four refs in SUBTOTAL(9,A102,A102,A102,A102)");
+
+		oParser = new parserFormula("SUBTOTAL(9,A102:A105,A102:A105)", "A2", ws);
+		assert.ok(oParser.parse(), "SUBTOTAL(9,A102:A105,A102:A105)");
+		assert.strictEqual(oParser.calculate().getValue(), 606, "Two refs in SUBTOTAL(9,A102:A105,A102:A105)");
+
+		oParser = new parserFormula("SUBTOTAL(9,A102:A105,A102:A105,A102:A105)", "A2", ws);
+		assert.ok(oParser.parse(), "SUBTOTAL(9,A102:A105,A102:A105,A102:A105)");
+		assert.strictEqual(oParser.calculate().getValue(), 909, "Three refs in SUBTOTAL(9,A102:A105,A102:A105,A102:A105)");
+
+		oParser = new parserFormula("SUBTOTAL(9,A102:A105,A102:A105,A102:A105,A102:A105)", "A2", ws);
+		assert.ok(oParser.parse(), "SUBTOTAL(9,A102:A105,A102:A105,A102:A105,A102:A105)");
+		assert.strictEqual(oParser.calculate().getValue(), 1212, "Four refs in SUBTOTAL(9,A102:A105,A102:A105,A102:A105,A102:A105)");
+
+		oParser = new parserFormula("SUBTOTAL(9,A102:A105,A102:A105,A102:A105,A102:A105,A102:A105)", "A2", ws);
+		assert.ok(oParser.parse(), "SUBTOTAL(9,A102:A105,A102:A105,A102:A105,A102:A105,A102:A105)");
+		assert.strictEqual(oParser.calculate().getValue(), 1515, "Five refs in SUBTOTAL(9,A102:A105,A102:A105,A102:A105,A102:A105,A102:A105)");
+
+		oParser = new parserFormula("SUBTOTAL(9,A102,A102:A105)", "A2", ws);
+		assert.ok(oParser.parse(), "SUBTOTAL(9,A102,A102:A105)");
+		assert.strictEqual(oParser.calculate().getValue(), 423, "SUBTOTAL(9,A102,A102:A105)");
+
+		oParser = new parserFormula("SUBTOTAL(9,A102,A102:A105,A106)", "A2", ws);
+		assert.ok(oParser.parse(), "SUBTOTAL(9,A102,A102:A105,A106)");
+		assert.strictEqual(oParser.calculate().getValue(), 424, "SUBTOTAL(9,A102,A102:A106)");
+
+		oParser = new parserFormula("SUBTOTAL(9,A102,A102:A105,A106,A102:A105)", "A2", ws);
+		assert.ok(oParser.parse(), "SUBTOTAL(9,A102,A102:A105,A106,A102:A105)");
+		assert.strictEqual(oParser.calculate().getValue(), 727, "SUBTOTAL(9,A102,A102:A106,A102:A105)");
+
+		oParser = new parserFormula("SUBTOTAL(9,A102,A102:A105,A106,A102:A105,A106)", "A2", ws);
+		assert.ok(oParser.parse(), "SUBTOTAL(9,A102,A102:A105,A106,A102:A105,A106)");
+		assert.strictEqual(oParser.calculate().getValue(), 728, "SUBTOTAL(9,A102,A102:A106,A102:A105,A106)");
+
+
+		// for bug 68820
+		ws.getRange2("B100").setValue("-2");
+		ws.getRange2("B101").setValue("1");
+		ws.getRange2("B102").setValue("-1");
+		ws.getRange2("B103").setValue("0");
+		ws.getRange2("B104").setValue("1");
+		ws.getRange2("B105").setValue("1");
+		ws.getRange2("B106").setValue("-2");
+		ws.getRange2("B107").setValue("0");
+		ws.getRange2("B108").setValue("0");
+
+		ws.getRange2("B109").setValue("1");
+		ws.getRange2("B110").setValue("1");
+		
+		oParser = new parserFormula('SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0))', "A2", ws);
+		assert.ok(oParser.parse(), 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0))');
+		array = oParser.calculate();
+		assert.strictEqual(array.getElementRowCol(0,0).getValue(), -2, 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0))');
+		assert.strictEqual(array.getElementRowCol(1,0).getValue(), 1, 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0))');
+		assert.strictEqual(array.getElementRowCol(2,0).getValue(), -1, 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0))');
+		assert.strictEqual(array.getElementRowCol(3,0).getValue(), 0, 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0))');
+		assert.strictEqual(array.getElementRowCol(4,0).getValue(), 1, 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0))');
+		assert.strictEqual(array.getElementRowCol(5,0).getValue(), 1, 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0))');
+		assert.strictEqual(array.getElementRowCol(6,0).getValue(), -2, 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0))');
+		assert.strictEqual(array.getElementRowCol(7,0).getValue(), 0, 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0))');
+		assert.strictEqual(array.getElementRowCol(8,0).getValue(), 0, 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0))');
+
+		oParser = new parserFormula('SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0),B109:B110)', "A2", ws);
+		assert.ok(oParser.parse(), 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0),B109:B110)');
+		array = oParser.calculate();
+		assert.strictEqual(array.getElementRowCol(0,0).getValue(), 0, 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0),B109:B110)');
+		assert.strictEqual(array.getElementRowCol(1,0).getValue(), 3, 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0),B109:B110)');
+		assert.strictEqual(array.getElementRowCol(2,0).getValue(), 1, 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0),B109:B110)');
+		assert.strictEqual(array.getElementRowCol(3,0).getValue(), 2, 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0),B109:B110)');
+		assert.strictEqual(array.getElementRowCol(4,0).getValue(), 3, 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0),B109:B110)');
+		assert.strictEqual(array.getElementRowCol(5,0).getValue(), 3, 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0),B109:B110)');
+		assert.strictEqual(array.getElementRowCol(6,0).getValue(), 0, 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0),B109:B110)');
+		assert.strictEqual(array.getElementRowCol(7,0).getValue(), 2, 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0),B109:B110)');
+		assert.strictEqual(array.getElementRowCol(8,0).getValue(), 2, 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0),B109:B110)');
+
 	});
 
 	QUnit.test("Test: \"MID\"", function (assert) {
