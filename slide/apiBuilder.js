@@ -347,8 +347,8 @@
 	 * Standard numeric format.
 	 * @typedef {("General" | "0" | "0.00" | "#,##0" | "#,##0.00" | "0%" | "0.00%" |
 	 * "0.00E+00" | "# ?/?" | "# ??/??" | "m/d/yyyy" | "d-mmm-yy" | "d-mmm" | "mmm-yy" | "h:mm AM/PM" |
-	 * "h:mm:ss AM/PM" | "h:mm" | "h:mm:ss" | "m/d/yyyy h:mm" | "#,##0_);(#,##0)" | "#,##0_);[Red](#,##0)" | 
-	 * "#,##0.00_);(#,##0.00)" | "#,##0.00_);[Red](#,##0.00)" | "mm:ss" | "[h]:mm:ss" | "mm:ss.0" | "##0.0E+0" | "@")} NumFormat
+	 * "h:mm:ss AM/PM" | "h:mm" | "h:mm:ss" | "m/d/yyyy h:mm" | "#,##0_\);(#,##0)" | "#,##0_\);\[Red\]\(#,##0)" | 
+     * "#,##0.00_\);\(#,##0.00\)" | "#,##0.00_\);\[Red\]\(#,##0.00\)" | "mm:ss" | "[h]:mm:ss" | "mm:ss.0" | "##0.0E+0" | "@")} NumFormat
 	 * @see office-js-api/Examples/Enumerations/NumFormat.js
 	 */
 
@@ -389,6 +389,7 @@
     /**
 	 * Represents the type of objects in a selection.
 	 * @typedef {("none" | "shapes" | "slides" | "text")} SelectionType - Available selection types.
+     * @see office-js-api/Examples/Enumerations/SelectionType.js
 	 *
 	 */
 
@@ -405,7 +406,6 @@
      * @returns {ApiPresentation}
      * @see office-js-api/Examples/{Editor}/Api/Methods/GetPresentation.js
 	 */
-
     Api.prototype.GetPresentation = function(){
         if(this.WordControl && this.WordControl.m_oLogicDocument){
             return new ApiPresentation(this.WordControl.m_oLogicDocument);
@@ -3926,7 +3926,7 @@
     /**
      * Ungroups the current group of drawings.
      * @memberof ApiGroup
-     * @typeofeditors ["CDE"]
+     * @typeofeditors ["CPE"]
      * @returns {boolean}
      * @since 8.3.0
      * @see office-js-api/Examples/{Editor}/ApiGroup/Methods/Ungroup.js

@@ -1618,11 +1618,11 @@
 	 * @param {object} oPr - The resulting string display properties.
      * @param {boolean} [oPr.Numbering=false] - Defines if the resulting string will include numbering or not.
      * @param {boolean} [oPr.Math=false] - Defines if the resulting string will include mathematical expressions or not.
-	 * @param {string} [oPr.NewLineSeparator='\r'] - Defines how the line separator will be specified in the resulting string.
-     * @param {string} [oPr.TableCellSeparator='\t'] - Defines how the table cell separator will be specified in the resulting string.
-     * @param {string} [oPr.TableRowSeparator='\r\n'] - Defines how the table row separator will be specified in the resulting string.
-     * @param {string} [oPr.ParaSeparator='\r\n'] - Defines how the paragraph separator will be specified in the resulting string.
-	 * @param {string} [oPr.TabSymbol='\t'] - Defines how the tab will be specified in the resulting string (does not apply to numbering)
+	 * @param {string} [oPr.NewLineSeparator='\r'] - Defines how the line separator will be specified in the resulting string. Any symbol can be used. The default separator is "\r".
+     * @param {string} [oPr.TableCellSeparator='\t'] - Defines how the table cell separator will be specified in the resulting string. Any symbol can be used. The default separator is "\t".
+     * @param {string} [oPr.TableRowSeparator='\r\n'] - Defines how the table row separator will be specified in the resulting string. Any symbol can be used. The default separator is "\r\n".
+     * @param {string} [oPr.ParaSeparator='\r\n'] - Defines how the paragraph separator will be specified in the resulting string. Any symbol can be used. The default separator is "\r\n".
+	 * @param {string} [oPr.TabSymbol='\t'] - Defines how the tab will be specified in the resulting string (does not apply to numbering). Any symbol can be used. The default symbol is "\t".
 	 * @typeofeditors ["CDE"]
 	 * @returns {String} - returns "" if range is empty.
 	 * @see office-js-api/Examples/{Editor}/ApiRange/Methods/GetText.js
@@ -3193,7 +3193,7 @@
 
 	/**
 	 * Class representing a comment reply.
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CPE"]
 	 * @constructor
 	 */
 	function ApiCommentReply(oParentComm, oCommentReply)
@@ -4230,8 +4230,8 @@
 	 * Standard numeric format.
 	 * @typedef {("General" | "0" | "0.00" | "#,##0" | "#,##0.00" | "0%" | "0.00%" |
 	 * "0.00E+00" | "# ?/?" | "# ??/??" | "m/d/yyyy" | "d-mmm-yy" | "d-mmm" | "mmm-yy" | "h:mm AM/PM" |
-	 * "h:mm:ss AM/PM" | "h:mm" | "h:mm:ss" | "m/d/yyyy h:mm" | "#,##0_);(#,##0)" | "#,##0_);[Red](#,##0)" | 
-	 * "#,##0.00_);(#,##0.00)" | "#,##0.00_);[Red](#,##0.00)" | "mm:ss" | "[h]:mm:ss" | "mm:ss.0" | "##0.0E+0" | "@")} NumFormat
+	 * "h:mm:ss AM/PM" | "h:mm" | "h:mm:ss" | "m/d/yyyy h:mm" | "#,##0_\);(#,##0)" | "#,##0_\);\[Red\]\(#,##0)" | 
+	 * "#,##0.00_\);\(#,##0.00\)" | "#,##0.00_\);\[Red\]\(#,##0.00\)" | "mm:ss" | "[h]:mm:ss" | "mm:ss.0" | "##0.0E+0" | "@")} NumFormat
 	 * @see office-js-api/Examples/Enumerations/NumFormat.js
 	 */
 
@@ -5731,11 +5731,11 @@
 	 * @param {object} oProps - The resulting string display properties.
      * @param {boolean} oProps.Numbering - Defines if the resulting string will include numbering or not.
      * @param {boolean} oProps.Math - Defines if the resulting string will include mathematical expressions or not.
-     * @param {string} oProps.TableCellSeparator - Defines how the table cell separator will be specified in the resulting string.
-     * @param {string} oProps.TableRowSeparator - Defines how the table row separator will be specified in the resulting string.
-     * @param {string} oProps.ParaSeparator - Defines how the paragraph separator will be specified in the resulting string.
-     * @param {string} oProps.TabSymbol - Defines how the tab will be specified in the resulting string.
-     * @param {string} oProps.NewLineSeparator - Defines how the line separator will be specified in the resulting string.
+     * @param {string} [oProps.TableCellSeparator='\t'] - Defines how the table cell separator will be specified in the resulting string. Any symbol can be used. The default separator is "\t".
+     * @param {string} [oProps.TableRowSeparator='\r\n'] - Defines how the table row separator will be specified in the resulting string. Any symbol can be used. The default separator is "\r\n".
+     * @param {string} [oProps.ParaSeparator='\r\n'] - Defines how the paragraph separator will be specified in the resulting string. Any symbol can be used. The default separator is "\r\n".
+     * @param {string} [oProps.TabSymbol='\t'] - Defines how the tab will be specified in the resulting string. Any symbol can be used. The default symbol is "\t".
+     * @param {string} [oProps.NewLineSeparator='\r'] - Defines how the line separator will be specified in the resulting string. Any symbol can be used. The default separator is "\r".
 	 * @return {string}
 	 * @since 8.3.0
 	 * @see office-js-api/Examples/{Editor}/ApiDocumentContent/Methods/GetText.js
@@ -9067,8 +9067,8 @@
 	 * @param {object} oPr - The resulting string display properties.
      * @param {boolean} [oPr.Numbering=false] - Defines if the resulting string will include numbering or not.
      * @param {boolean} [oPr.Math=false] - Defines if the resulting string will include mathematical expressions or not.
-	 * @param {string} [oPr.NewLineSeparator='\r'] - Defines how the line separator will be specified in the resulting string.
-	 * @param {string} [oPr.TabSymbol='\t'] - Defines how the tab will be specified in the resulting string (does not apply to numbering).
+	 * @param {string} [oPr.NewLineSeparator='\r'] - Defines how the line separator will be specified in the resulting string. Any symbol can be used. The default separator is "\r".
+	 * @param {string} [oPr.TabSymbol='\t'] - Defines how the tab will be specified in the resulting string (does not apply to numbering). Any symbol can be used. The default symbol is "\t".
 	 * @typeofeditors ["CDE"]
 	 * @return {string}
 	 * @see office-js-api/Examples/{Editor}/ApiParagraph/Methods/GetText.js
@@ -10636,8 +10636,8 @@
 	 * Returns a text from the text run.
 	 * @memberof ApiRun
 	 * @param {object} oPr - The resulting string display properties.
-	 * @param {string} [oPr.NewLineSeparator='\r'] - Defines how the line separator will be specified in the resulting string.
-	 * @param {string} [oPr.TabSymbol='\t'] - Defines how the tab will be specified in the resulting string.
+	 * @param {string} [oPr.NewLineSeparator='\r'] - Defines how the line separator will be specified in the resulting string. Any symbol can be used. The default separator is "\r".
+	 * @param {string} [oPr.TabSymbol='\t'] - Defines how the tab will be specified in the resulting string. Any symbol can be used. The default symbol is "\t".
 	 * @typeofeditors ["CDE"]
 	 * @returns {string}
 	 * @see office-js-api/Examples/{Editor}/ApiRun/Methods/GetText.js
@@ -15526,7 +15526,7 @@
 		return "drawing";
 	};
 	/**
-	 * Returns the shape inner contents where a paragraph or text runs can be inserted if it exists.
+	 * Returns the drawing inner contents where a paragraph or text runs can be inserted if it exists.
 	 * @memberof ApiDrawing
 	 * @typeofeditors ["CDE", "CSE"]
 	 * @returns {?ApiDocumentContent}
@@ -19560,7 +19560,7 @@
 	 * @memberof ApiFormBase
 	 * @param {twips} width - The wrapper shape width measured in twentieths of a point (1/1440 of an inch).
 	 * @param {twips} height - The wrapper shape height measured in twentieths of a point (1/1440 of an inch).
-	 * @param {boolean} keepPosition - Save position on the page (it can be a little bit slow, because it runs the document calculation)
+	 * @param {boolean} keepPosition - Save position on the page (it can be a little bit slow, because it runs the document calculation).
 	 * @typeofeditors ["CDE", "CFE"]
 	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiFormBase/Methods/ToFixed.js
@@ -21939,11 +21939,11 @@
 	 * @param {object} oPr - The resulting string display properties.
      * @param {boolean} [oPr.Numbering=false] - Defines if the resulting string will include numbering or not.
      * @param {boolean} [oPr.Math=false] - Defines if the resulting string will include mathematical expressions or not.
-	 * @param {string} [oPr.NewLineSeparator='\r'] - Defines how the line separator will be specified in the resulting string.
-     * @param {string} [oPr.TableCellSeparator='\t'] - Defines how the table cell separator will be specified in the resulting string.
-     * @param {string} [oPr.TableRowSeparator='\r\n'] - Defines how the table row separator will be specified in the resulting string.
-     * @param {string} [oPr.ParaSeparator='\r\n'] - Defines how the paragraph separator will be specified in the resulting string.
-	 * @param {string} [oPr.TabSymbol='\t'] - Defines how the tab will be specified in the resulting string (does not apply to numbering).
+	 * @param {string} [oPr.NewLineSeparator='\r'] - Defines how the line separator will be specified in the resulting string. Any symbol can be used. The default separator is "\r".
+     * @param {string} [oPr.TableCellSeparator='\t'] - Defines how the table cell separator will be specified in the resulting string. Any symbol can be used. The default separator is "\t".
+     * @param {string} [oPr.TableRowSeparator='\r\n'] - Defines how the table row separator will be specified in the resulting string. Any symbol can be used. The default separator is "\r\n".
+     * @param {string} [oPr.ParaSeparator='\r\n'] - Defines how the paragraph separator will be specified in the resulting string. Any symbol can be used. The default separator is "\r\n".
+	 * @param {string} [oPr.TabSymbol='\t'] - Defines how the tab will be specified in the resulting string (does not apply to numbering). Any symbol can be used. The default symbol is "\t".
 	 * @returns {string}
 	 * @since 8.3.0
 	 * @see office-js-api/Examples/{Editor}/ApiBookmark/Methods/GetText.js
