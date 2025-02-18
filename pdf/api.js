@@ -1977,7 +1977,8 @@
 		}
 	};
 	PDFEditorApi.prototype.CheckChangedDocument = function() {
-		if (true === AscCommon.History.Have_Changes()) {
+		let oDoc = this.getPDFDoc();
+		if (true === AscCommon.History.Have_Changes() || true === oDoc.History.Have_Changes()) {
 			this.SetDocumentModified(true);
 		}
 		else {
