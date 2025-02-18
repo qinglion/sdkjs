@@ -8462,7 +8462,6 @@
 		if (typeof(sScreenTipText) !== "string")
 			sScreenTipText = "";
 		
-		var oDocument	= editor.private_GetLogicDocument();
 		var hyperlinkPr	= new Asc.CHyperlinkProperty();
 		var urlType		= AscCommon.getUrlType(sLink);
 		var oHyperlink;
@@ -8477,7 +8476,7 @@
 		hyperlinkPr.put_Bookmark(null);
 		
 		oHyperlink = new ApiHyperlink(this.Paragraph.AddHyperlink(hyperlinkPr));
-		oDocument.RemoveSelection();
+		this.Paragraph.RemoveSelection();
 
 		return oHyperlink;
 	};
@@ -10092,7 +10091,6 @@
 		if (typeof(sScreenTipText) !== "string")
 			sScreenTipText = "";
 
-		var Document	= editor.private_GetLogicDocument();
 		var parentPara	= this.Run.GetParagraph();
 		if (!parentPara || this.Run.Content.length === 0)
 			return null;
@@ -10127,9 +10125,8 @@
 		hyperlinkPr.put_ToolTip(sScreenTipText);
 		hyperlinkPr.put_Bookmark(null);
 
-		parentPara.Selection.Use = true;
 		oHyperlink = new ApiHyperlink(parentPara.AddHyperlink(hyperlinkPr));
-		Document.RemoveSelection();
+		StartPos[parentParaDepth].Class.RemoveSelection();
 
 		return oHyperlink;
 	};
