@@ -4558,6 +4558,8 @@
 	window['AscDFH'].historydescription_Presentation_MergeSelectedShapes            = 0x01c1;
 	window['AscDFH'].historydescription_Presentation_SaveAnnotations                = 0x01c2;
 	window['AscDFH'].historydescription_Document_SetParagraphBidi                   = 0x01c3;
+
+	window['AscDFH'].historydescription_RemoveAllInks                               = 0x01c4;
 	// pdf
 	window['AscDFH'].historydescription_Pdf_AddAnnot			= 0x29a;
 	window['AscDFH'].historydescription_Pdf_FreeTextGeom		= 0x29b;

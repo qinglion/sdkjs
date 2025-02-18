@@ -967,7 +967,7 @@
             else if (this.selectedObjects.length <= this.spTree.length - 1) {
                 let _t = this;
                 // селектим все фигуры в группе (кроме перпендикулярной линии) если до сих пор не заселекчены
-                this.select(oController, this.selectStartPage);
+                this.select(oController, this.GetPage());
                 oController.selection.groupSelection = this;
                 this.selectedObjects.length = 0;
 
@@ -1152,7 +1152,7 @@
         let oContent    = this.GetDocContent();
 
         oContent.SetApplyToAll(true);
-		let sText = oContent.GetSelectedText(false, {NewLineParagraph: true, ParaSeparator: '\r'}).replace('\r', '');
+		let sText = oContent.GetSelectedText(false, {ParaSeparator: '\r'}).replace('\r', '');
 		oContent.SetApplyToAll(false);
 
         let isNeedUpdateRC = this.IsNeedUpdateRC();

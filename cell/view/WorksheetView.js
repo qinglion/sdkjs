@@ -9903,7 +9903,7 @@
 				}
 
 				if (!newRange) {
-					newRange = this.model.autoFilters.expandRange(ar, true);
+					newRange = this.model.autoFilters.expandRange(ar, true, true);
 				}
 
 				if (newRange) {
@@ -19504,8 +19504,7 @@
 			}
 		};
 
-		var api = window["Asc"]["editor"];
-		if (!window['AscCommonExcel'].filteringMode) {
+		if (!window['AscCommonExcel'].filteringMode && t.model.getActiveNamedSheetViewId() === null) {
 			History.LocalChange = true;
 			onChangeAutoFilterCallback();
 			History.LocalChange = false;
@@ -19591,7 +19590,7 @@
 				t.objectRender.updateSizeDrawingObjects({target: c_oTargetType.RowResize, row: minChangeRow});
 			}
 		};
-		if (!window['AscCommonExcel'].filteringMode) {
+		if (!window['AscCommonExcel'].filteringMode && t.model.getActiveNamedSheetViewId() === null) {
 			History.LocalChange = true;
 			onChangeAutoFilterCallback();
 			History.LocalChange = false;
@@ -19719,7 +19718,7 @@
 		if (null === isAddAutoFilter)//do not add autoFilter
 		{
 			var api = window["Asc"]["editor"];
-			if (!window['AscCommonExcel'].filteringMode) {
+			if (!window['AscCommonExcel'].filteringMode && t.model.getActiveNamedSheetViewId() === null) {
 				History.LocalChange = true;
 				onChangeAutoFilterCallback();
 				History.LocalChange = false;
@@ -19910,14 +19909,19 @@
 				return;
 			}
 
-			AscCommonExcel.checkFilteringMode(function () {
+			let _doApply = function () {
 				var updateRange = t.model.autoFilters.isApplyAutoFilterInCell(ar, true);
 				if (false !== updateRange) {
 					t._onUpdateFormatTable(updateRange);
 					t.objectRender.updateSizeDrawingObjects({target: c_oTargetType.RowResize, row: updateRange.r1});
 					t._updateSlicers(updateRange);
 				}
-			});
+			};
+			if (t.model.getActiveNamedSheetViewId() !== null) {
+				_doApply();
+			} else {
+				AscCommonExcel.checkFilteringMode(_doApply);
+			}
 		};
 
 		this._isLockedAll(onChangeAutoFilterCallback);
@@ -19945,14 +19949,19 @@
 				return;
 			}
 
-			AscCommonExcel.checkFilteringMode(function () {
+			let _doApply = function () {
 				var updateRange = t.model.autoFilters.clearFilterColumn(cellId, displayName);
 				if (false !== updateRange) {
 					t._onUpdateFormatTable(updateRange);
 					t.objectRender.updateSizeDrawingObjects({target: c_oTargetType.RowResize, row: updateRange.r1});
 					t._updateSlicers(updateRange);
 				}
-			});
+			}
+			if (t.model.getActiveNamedSheetViewId() !== null) {
+				_doApply();
+			} else {
+				AscCommonExcel.checkFilteringMode(_doApply);
+			}
 		};
 
 		this._isLockedAll(onChangeAutoFilterCallback);
@@ -27077,6 +27086,14 @@
 			this.drawingGraphicCtx.moveImageDataSafari(this.getRightToLeft() ? (this.getCtxWidth() - sx - sw) : sx, sy, sw, sh, this.getRightToLeft() ? (this.getCtxWidth() - dx - dw) : dx, dy);
 		} else {
 			this.drawingGraphicCtx.moveImageData(this.getRightToLeft() ? (this.getCtxWidth() - sx - sw) : sx, sy, sw, sh, this.getRightToLeft() ? (this.getCtxWidth() - dx - dw) : dx, dy);
+		}
+	};
+	WorksheetView.prototype.removeAllInks = function () {
+		const model = this.model;
+		const oController = this.objectRender && this.objectRender.controller;
+		if (oController) {
+			const arrInks = model.getAllInks();
+			oController.removeAllInks(arrInks);
 		}
 	};
 	

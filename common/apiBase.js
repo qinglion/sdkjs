@@ -5469,6 +5469,23 @@
 	baseEditorsApi.prototype.asc_isRtlTextDirection = function() {
 		return false;
 	};
+	
+	baseEditorsApi.prototype.asc_CheckCopy = function(data, format) {
+	};
+	baseEditorsApi.prototype.getSelectedContent = function(format) {
+		let text_data = {
+			data     : "",
+			pushData : function(format, value) {
+				this.data = value;
+			}
+		};
+		
+		this.asc_CheckCopy(text_data, format);
+		if (text_data.data == null)
+			text_data.data = "";
+		
+		return text_data.data;
+	};
 
 	//----------------------------------------------------------export----------------------------------------------------
 	window['AscCommon']                = window['AscCommon'] || {};

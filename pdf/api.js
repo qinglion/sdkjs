@@ -258,7 +258,7 @@
 		let oActiveDrawing	= oDoc.activeDrawing;
 
 		if (oActiveForm && oActiveForm.content.IsSelectionUse()) {
-			let sText = oActiveForm.content.GetSelectedText(false, {NewLine: true});
+			let sText = oActiveForm.content.GetSelectedText(false);
 			if (!sText)
 				return;
 
@@ -269,7 +269,7 @@
 				_clipboard.pushData(AscCommon.c_oAscClipboardDataFormat.Html, "<div><p><span>" + sText + "</span></p></div>");
 		}
 		else if (oActiveAnnot && oActiveAnnot.IsFreeText() && oActiveAnnot.IsInTextBox()) {
-			let sText = oActiveAnnot.GetDocContent().GetSelectedText(false, {NewLine: true});
+			let sText = oActiveAnnot.GetDocContent().GetSelectedText(false);
 			if (!sText)
 				return;
 
@@ -1977,7 +1977,8 @@
 		}
 	};
 	PDFEditorApi.prototype.CheckChangedDocument = function() {
-		if (true === AscCommon.History.Have_Changes()) {
+		let oDoc = this.getPDFDoc();
+		if (true === AscCommon.History.Have_Changes() || true === oDoc.History.Have_Changes()) {
 			this.SetDocumentModified(true);
 		}
 		else {

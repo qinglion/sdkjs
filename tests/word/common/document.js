@@ -162,14 +162,21 @@
 	}
 	function GetParagraphText(paragraph)
 	{
-		return paragraph.GetText({ParaEndToSpace : false});
+		return paragraph.GetText({
+			ParaSeparator : "",
+			TableCellSeparator : "",
+			TableRowSeparator : "",
+		});
 	}
 	function GetParagraphReviewText(paragraph)
 	{
 		let result = [];
 		paragraph.CheckRunContent(function(run)
 		{
-			let text = run.GetText();
+			let text = run.GetText({
+				ParaSeparator : "",
+				Text : ""
+			});
 			if (!text || !text.length)
 				return;
 			
@@ -195,7 +202,10 @@
 		let result = [];
 		cc.CheckRunContent(function(run)
 		{
-			let text = run.GetText();
+			let text = run.GetText({
+				ParaSeparator : "",
+				Text : ""
+			});
 			if (!text || !text.length)
 				return;
 			

@@ -655,14 +655,7 @@
 						return;	
 					}
 					
-					try
-					{
-						AscCommon.safePluginEval(_current["Script"]);
-					}
-					catch (err)
-					{
-						console.error(err);
-					}
+					AscCommon.safePluginEval(_current["Script"]);
 					
 					if (_isReplaced)
 						_blockStd.MoveCursorToContentControl(false);
@@ -2357,7 +2350,7 @@ background-repeat: no-repeat;\
 		//TEXT
 		if (AscCommon.c_oAscClipboardDataFormat.Text & _formats)
 		{
-			_data = this.WordControl.m_oLogicDocument.GetSelectedText(false, {NewLineParagraph : true});
+			_data = this.WordControl.m_oLogicDocument.GetSelectedText(false);
 			_clipboard.pushData(AscCommon.c_oAscClipboardDataFormat.Text, checkData(_data))
 		}
 		//HTML

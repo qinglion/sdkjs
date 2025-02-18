@@ -1126,15 +1126,13 @@
      * @typeofeditors ["CDE", "CPE", "CSE"]
      * @alias GetSelectedText
      * @param {object} prop - The resulting string display properties.
-     * @param {boolean} prop.NewLine - Defines if the resulting string will include line boundaries or not (they will be replaced with '\r').
-     * @param {boolean} prop.NewLineParagraph - Defines if the resulting string will include paragraph line boundaries or not.
      * @param {boolean} prop.Numbering - Defines if the resulting string will include numbering or not.
      * @param {boolean} prop.Math - Defines if the resulting string will include mathematical expressions or not.
      * @param {string} prop.TableCellSeparator - Defines how the table cell separator will be specified in the resulting string.
      * @param {string} prop.TableRowSeparator - Defines how the table row separator will be specified in the resulting string.
      * @param {string} prop.ParaSeparator - Defines how the paragraph separator will be specified in the resulting string.
      * @param {string} prop.TabSymbol - Defines how the tab will be specified in the resulting string.
-     * @param {string} prop.NewLineSeparator - Defines how the line separator will be specified in the resulting string (this property has the priority over *NewLine*).
+     * @param {string} prop.NewLineSeparator - Defines how the line separator will be specified in the resulting string.
 	 * @return {string} - Selected text.
      * @since 7.1.0
      * @see office-js-api/Examples/Plugins/{Editor}/Api/Methods/GetSelectedText.js
@@ -1146,8 +1144,6 @@
         {
             properties =
             {
-                NewLine : (prop.hasOwnProperty("NewLine")) ? prop["NewLine"] : true,
-                NewLineParagraph : (prop.hasOwnProperty("NewLineParagraph")) ? prop["NewLineParagraph"] : true,
                 Numbering : (prop.hasOwnProperty("Numbering")) ? prop["Numbering"] : true,
                 Math : (prop.hasOwnProperty("Math")) ? prop["Math"] : true,
                 TableCellSeparator: prop["TableCellSeparator"],
@@ -1161,14 +1157,30 @@
         {
             properties =
             {
-                NewLine : true,
-                NewLineParagraph : true,
                 Numbering : true
             }
         }
 
         return this.asc_GetSelectedText(false, properties);
     };
+	/**
+	 * Returns selected content in specified format.
+	 * @memberof Api
+	 * @typeofeditors ["CDE", "CPE", "CSE"]
+	 * @alias GetSelectedContent
+	 * @param {object} prop
+	 * @param {"text" | "html"} [prop.type="text"] - Defines the type of returned format.
+	 * @since 8.3.1
+	 * @see office-js-api/Examples/Plugins/{Editor}/Api/Methods/GetSelectedContent.js
+	 */
+	Api.prototype["pluginMethod_GetSelectedContent"] = function(prop)
+	{
+		let type = AscCommon.c_oAscClipboardDataFormat.Text;
+		if (prop && "html" === prop.type)
+			type = AscCommon.c_oAscClipboardDataFormat.Html;
+			
+		return this.getSelectedContent(type);
+	};
     /**
      * Replaces each paragraph (or text in cell) in the select with the corresponding text from an array of strings.
      * @memberof Api

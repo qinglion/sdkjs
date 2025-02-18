@@ -16031,7 +16031,7 @@
         }
         else {
             oContent.SetApplyToAll(true);
-            let sContentText = oContent.GetSelectedText(false, {NewLine: true, NewParagraph: true});
+            let sContentText = oContent.GetSelectedText(false);
             oContent.SetApplyToAll(false);
             if(sContentText !== sText) {
                 bClear = true;

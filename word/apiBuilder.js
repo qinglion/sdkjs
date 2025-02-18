@@ -1616,7 +1616,6 @@
 	 * Returns a text from the specified range.
 	 * @memberof ApiRange
 	 * @param {object} oPr - The resulting string display properties.
-     * @param {boolean} [oPr.NewLineParagraph=false] - Defines if the resulting string will include paragraph line boundaries or not.
      * @param {boolean} [oPr.Numbering=false] - Defines if the resulting string will include numbering or not.
      * @param {boolean} [oPr.Math=false] - Defines if the resulting string will include mathematical expressions or not.
 	 * @param {string} [oPr.NewLineSeparator='\r'] - Defines how the line separator will be specified in the resulting string.
@@ -1636,7 +1635,6 @@
 		
 		let oProp = {
 			NewLineSeparator:	(oPr.hasOwnProperty("NewLineSeparator")) ? oPr["NewLineSeparator"] : "\r",
-			NewLineParagraph:	(oPr.hasOwnProperty("NewLineParagraph")) ? oPr["NewLineParagraph"] : true,
 			Numbering:			(oPr.hasOwnProperty("Numbering")) ? oPr["Numbering"] : true,
 			Math:				(oPr.hasOwnProperty("Math")) ? oPr["Math"] : true,
 			TableCellSeparator:	oPr["TableCellSeparator"],
@@ -5731,15 +5729,13 @@
 	 * @memberof ApiDocumentContent
 	 * @typeofeditors ["CDE"]
 	 * @param {object} oProps - The resulting string display properties.
-     * @param {boolean} oProps.NewLine - Defines if the resulting string will include line boundaries or not (they will be replaced with '\r').
-     * @param {boolean} oProps.NewLineParagraph - Defines if the resulting string will include paragraph line boundaries or not.
      * @param {boolean} oProps.Numbering - Defines if the resulting string will include numbering or not.
      * @param {boolean} oProps.Math - Defines if the resulting string will include mathematical expressions or not.
      * @param {string} oProps.TableCellSeparator - Defines how the table cell separator will be specified in the resulting string.
      * @param {string} oProps.TableRowSeparator - Defines how the table row separator will be specified in the resulting string.
      * @param {string} oProps.ParaSeparator - Defines how the paragraph separator will be specified in the resulting string.
      * @param {string} oProps.TabSymbol - Defines how the tab will be specified in the resulting string.
-     * @param {string} oProps.NewLineSeparator - Defines how the line separator will be specified in the resulting string (this property has the priority over *NewLine*).
+     * @param {string} oProps.NewLineSeparator - Defines how the line separator will be specified in the resulting string.
 	 * @return {string}
 	 * @since 8.3.0
 	 * @see office-js-api/Examples/{Editor}/ApiDocumentContent/Methods/GetText.js
@@ -5751,8 +5747,6 @@
         {
             oInnerProps =
             {
-                NewLine : (oProps.hasOwnProperty("NewLine")) ? oProps["NewLine"] : true,
-                NewLineParagraph : (oProps.hasOwnProperty("NewLineParagraph")) ? oProps["NewLineParagraph"] : true,
                 Numbering : (oProps.hasOwnProperty("Numbering")) ? oProps["Numbering"] : true,
                 Math : (oProps.hasOwnProperty("Math")) ? oProps["Math"] : true,
                 TableCellSeparator: oProps["TableCellSeparator"],
@@ -5766,8 +5760,6 @@
         {
             oInnerProps =
             {
-                NewLine : true,
-                NewLineParagraph : true,
                 Numbering : true
             }
         }
@@ -8470,7 +8462,6 @@
 		if (typeof(sScreenTipText) !== "string")
 			sScreenTipText = "";
 		
-		var oDocument	= editor.private_GetLogicDocument();
 		var hyperlinkPr	= new Asc.CHyperlinkProperty();
 		var urlType		= AscCommon.getUrlType(sLink);
 		var oHyperlink;
@@ -8485,7 +8476,7 @@
 		hyperlinkPr.put_Bookmark(null);
 		
 		oHyperlink = new ApiHyperlink(this.Paragraph.AddHyperlink(hyperlinkPr));
-		oDocument.RemoveSelection();
+		this.Paragraph.RemoveSelection();
 
 		return oHyperlink;
 	};
@@ -9092,8 +9083,7 @@
 			NewLineSeparator:	(oPr.hasOwnProperty("NewLineSeparator")) ? oPr["NewLineSeparator"] : "\r",
 			Numbering:			(oPr.hasOwnProperty("Numbering")) ? oPr["Numbering"] : true,
 			Math:				(oPr.hasOwnProperty("Math")) ? oPr["Math"] : true,
-			TabSymbol:			oPr["TabSymbol"],
-			ParaEndToSpace:		false
+			TabSymbol:			oPr["TabSymbol"]
 		}
 
 		return this.Paragraph.GetText(oProp);
@@ -10101,7 +10091,6 @@
 		if (typeof(sScreenTipText) !== "string")
 			sScreenTipText = "";
 
-		var Document	= editor.private_GetLogicDocument();
 		var parentPara	= this.Run.GetParagraph();
 		if (!parentPara || this.Run.Content.length === 0)
 			return null;
@@ -10136,9 +10125,8 @@
 		hyperlinkPr.put_ToolTip(sScreenTipText);
 		hyperlinkPr.put_Bookmark(null);
 
-		parentPara.Selection.Use = true;
 		oHyperlink = new ApiHyperlink(parentPara.AddHyperlink(hyperlinkPr));
-		Document.RemoveSelection();
+		StartPos[parentParaDepth].Class.RemoveSelection();
 
 		return oHyperlink;
 	};
@@ -21949,7 +21937,6 @@
 	 * @memberof ApiBookmark
 	 * @typeofeditors ["CDE"]
 	 * @param {object} oPr - The resulting string display properties.
-     * @param {boolean} [oPr.NewLineParagraph=false] - Defines if the resulting string will include paragraph line boundaries or not.
      * @param {boolean} [oPr.Numbering=false] - Defines if the resulting string will include numbering or not.
      * @param {boolean} [oPr.Math=false] - Defines if the resulting string will include mathematical expressions or not.
 	 * @param {string} [oPr.NewLineSeparator='\r'] - Defines how the line separator will be specified in the resulting string.
@@ -21971,7 +21958,6 @@
 		
 		let oProp = {
 			NewLineSeparator:	(oPr.hasOwnProperty("NewLineSeparator")) ? oPr["NewLineSeparator"] : "\r",
-			NewLineParagraph:	(oPr.hasOwnProperty("NewLineParagraph")) ? oPr["NewLineParagraph"] : true,
 			Numbering:			(oPr.hasOwnProperty("Numbering")) ? oPr["Numbering"] : true,
 			Math:				(oPr.hasOwnProperty("Math")) ? oPr["Math"] : true,
 			TableCellSeparator:	oPr["TableCellSeparator"],
