@@ -899,6 +899,8 @@
 		this.CollaborativeMarksShowType = c_oAscCollaborativeMarksShowType.All;
 		
 		this.stylePainter = null;
+		
+		this.forceSaveDisconnectRequest = false;
 
 		// объекты, нужные для отправки в тулбар (шрифты, стили)
 		this._gui_control_colors = null;
@@ -2684,6 +2686,15 @@ background-repeat: no-repeat;\
 				"UserShortId" : this.DocInfo.get_UserId(),
 				"CursorInfo"  : CursorInfo
 			}, HaveOtherChanges, true);
+			
+			if (this.forceSaveDisconnectRequest)
+			{
+				this.forceSaveDisconnectRequest = false;
+				AscCommon.CollaborativeEditing.Set_GlobalLock(false);
+				this.setViewModeDisconnect(true);
+				this.asc_coAuthoringDisconnect();
+				this.sendEvent("asc_onDisconnectEveryone");
+			}
 		}
 	};
 	asc_docs_api.prototype._autoSaveInner = function () {
@@ -11319,6 +11330,23 @@ background-repeat: no-repeat;\
 		
 		return logicDocument.GetOFormDocument();
 	};
+	asc_docs_api.prototype.asc_DisconnectEveryone = function()
+	{
+		let logicDocument = this.private_GetLogicDocument();
+		if (!logicDocument)
+			return false;
+		
+		if (logicDocument.IsSelectionLocked(AscCommon.changestype_Document_Settings))
+			return false;
+		
+		logicDocument.StartAction(AscDFH.historydescription_DisconnectEveryone);
+		logicDocument.GetHistory().Add(new CChangesDocumentDisconnectEveryone(logicDocument));
+		logicDocument.FinalizeAction();
+		
+		this.forceSaveDisconnectRequest = true;
+		AscCommon.CollaborativeEditing.Set_GlobalLock(true);
+		this.asc_Save(false);
+	};
 
 	asc_docs_api.prototype.asc_UncheckContentControlButtons = function()
 	{
@@ -14830,6 +14858,7 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype['asc_SetHighlightRequiredFields']            = asc_docs_api.prototype.asc_SetHighlightRequiredFields;
 	asc_docs_api.prototype['asc_GetAllFormsData']                       = asc_docs_api.prototype.asc_GetAllFormsData;
 	asc_docs_api.prototype['asc_GetOForm']                              = asc_docs_api.prototype.asc_GetOForm;
+	asc_docs_api.prototype['asc_DisconnectEveryone']                    = asc_docs_api.prototype.asc_DisconnectEveryone;
 
 	asc_docs_api.prototype['asc_BeginViewModeInReview']                 = asc_docs_api.prototype.asc_BeginViewModeInReview;
 	asc_docs_api.prototype['asc_EndViewModeInReview']                   = asc_docs_api.prototype.asc_EndViewModeInReview;

@@ -1849,6 +1849,8 @@
 	window['AscDFH'].historyitem_Document_Settings_DoNotHyphenateCaps     = window['AscDFH'].historyitem_type_Document | 14;
 	window['AscDFH'].historyitem_Document_Settings_HyphenationZone        = window['AscDFH'].historyitem_type_Document | 15;
 	window['AscDFH'].historyitem_Document_PageColor                       = window['AscDFH'].historyitem_type_Document | 16;
+	
+	window['AscDFH'].historyitem_Document_DisconnectEveryone              = window['AscDFH'].historyitem_type_Document | 10000;
 	//------------------------------------------------------------------------------------------------------------------
 	// Типы изменений в классе Paragraph
 	//------------------------------------------------------------------------------------------------------------------
@@ -4550,16 +4552,15 @@
 	window['AscDFH'].historydescription_Document_EditComplexFieldInstruction        = 0x01b5;
 	window['AscDFH'].historydescription_Collaborative_DeletedTextRecovery           = 0x01b6;
 	window['AscDFH'].historydescription_Document_AutoCorrectMath                    = 0x01b7;
-
 	window['AscDFH'].historydescription_CustomProperties_Add                        = 0x01b8;
 	window['AscDFH'].historydescription_CustomProperties_Remove                     = 0x01b9;
 	window['AscDFH'].historydescription_CustomProperties_Modify                     = 0x01c0;
-
 	window['AscDFH'].historydescription_Presentation_MergeSelectedShapes            = 0x01c1;
 	window['AscDFH'].historydescription_Presentation_SaveAnnotations                = 0x01c2;
 	window['AscDFH'].historydescription_Document_SetParagraphBidi                   = 0x01c3;
-
 	window['AscDFH'].historydescription_RemoveAllInks                               = 0x01c4;
+	window['AscDFH'].historydescription_DisconnectEveryone                          = 0x01c5;
+	
 	// pdf
 	window['AscDFH'].historydescription_Pdf_AddAnnot			= 0x29a;
 	window['AscDFH'].historydescription_Pdf_FreeTextGeom		= 0x29b;
