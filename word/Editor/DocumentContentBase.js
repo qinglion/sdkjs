@@ -635,8 +635,21 @@ CDocumentContentBase.prototype.private_Remove = function(Count, isRemoveWholeEle
 					}
 				}
 			}
-
-			this.CurPos.ContentPos = StartPos;
+			
+			if (StartPos < this.Content.length)
+			{
+				this.CurPos.ContentPos = StartPos;
+			}
+			else if (this.Content.length > 0)
+			{
+				this.CurPos.ContentPos = this.Content.length - 1;
+				this.Content[this.CurPos.ContentPos].MoveCursorToEndPos();
+			}
+			else
+			{
+				// This shouldn't happen
+				this.CurPos.ContentPos = 0;
+			}
 		}
 		else
 		{
