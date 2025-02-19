@@ -1075,6 +1075,27 @@
 		}
 		return this.isDocumentModify;
 	};
+	
+	asc_docs_api.prototype.asc_getCanUndo = function()
+	{
+		if (!this.canUndoRedoByRestrictions())
+			return false;
+		
+		if (AscCommon.History.Can_Undo())
+			return true;
+		
+		if (AscCommon.CollaborativeEditing && AscCommon.CollaborativeEditing.Is_Fast() && !AscCommon.CollaborativeEditing.Is_SingleUser())
+			return AscCommon.CollaborativeEditing.CanUndo();
+		
+		return false;
+	};
+	asc_docs_api.prototype.asc_getCanRedo = function()
+	{
+		if (!this.canUndoRedoByRestrictions())
+			return false;
+		
+		return AscCommon.History.Can_Redo();
+	};
 
 	asc_docs_api.prototype.sync_BeginCatchSelectedElements = function()
 	{
