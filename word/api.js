@@ -13737,6 +13737,14 @@ background-repeat: no-repeat;\
 				oform.setCurrentRole(roleName);
 			else
 				oform.clearCurrentRole();
+			
+			// Need to redraw when we change role
+			let drawingDocument = oLogicDocument.GetDrawingDocument();
+			if (drawingDocument)
+			{
+				drawingDocument.ClearCachePages();
+				drawingDocument.FirePaint();
+			}
 		}
 	};
 	asc_docs_api.prototype.isShowShapeAdjustments = function()
