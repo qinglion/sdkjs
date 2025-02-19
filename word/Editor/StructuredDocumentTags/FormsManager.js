@@ -311,11 +311,15 @@
 			if (form.IsRadioButton())
 				stringType = "radio";
 			
+			let roleColor = form.GetRoleColor();
+			
 			data.push({
-				"key"   : key,
-				"tag"   : form.GetTag(),
-				"value" : this.GetFormValue(form),
-				"type"  : stringType
+				"key"       : key,
+				"tag"       : form.GetTag(),
+				"value"     : this.GetFormValue(form),
+				"type"      : stringType,
+				"role"      : form.GetFormRole(),
+				"roleColor" : roleColor ? roleColor.ToHexColor() : undefined
 			});
 		}
 		

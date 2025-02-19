@@ -899,6 +899,8 @@
 		this.CollaborativeMarksShowType = c_oAscCollaborativeMarksShowType.All;
 		
 		this.stylePainter = null;
+		
+		this.forceSaveDisconnectRequest = false;
 
 		// объекты, нужные для отправки в тулбар (шрифты, стили)
 		this._gui_control_colors = null;
@@ -2664,10 +2666,18 @@ background-repeat: no-repeat;\
 			}
 		};
 
-		var CursorInfo = null;
+		let cursorInfo = null;
 		if (true === AscCommon.CollaborativeEditing.Is_Fast())
+			cursorInfo = AscCommon.History.Get_DocumentPositionBinary();
+		
+		function sendChanges()
 		{
-			CursorInfo = AscCommon.History.Get_DocumentPositionBinary();
+			// Пересылаем свои изменения
+			AscCommon.CollaborativeEditing.Send_Changes(t.IsUserSave, {
+				"UserId"      : t.CoAuthoringApi.getUserConnectionId(),
+				"UserShortId" : t.DocInfo.get_UserId(),
+				"CursorInfo"  : cursorInfo
+			}, HaveOtherChanges, true);
 		}
 
 		if (this.forceSaveUndoRequest)
@@ -2676,14 +2686,25 @@ background-repeat: no-repeat;\
 			AscCommon.CollaborativeEditing.Undo();
 			this.forceSaveUndoRequest = false;
 		}
+		else if (this.forceSaveSendFormRequest)
+		{
+			this.forceSaveSendFormRequest = false;
+			this.setCurrentRoleFilled();
+			sendChanges();
+			this._sendForm();
+		}
 		else
 		{
-			// Пересылаем свои изменения
-			AscCommon.CollaborativeEditing.Send_Changes(this.IsUserSave, {
-				"UserId"      : this.CoAuthoringApi.getUserConnectionId(),
-				"UserShortId" : this.DocInfo.get_UserId(),
-				"CursorInfo"  : CursorInfo
-			}, HaveOtherChanges, true);
+			sendChanges();
+			
+			if (this.forceSaveDisconnectRequest)
+			{
+				this.forceSaveDisconnectRequest = false;
+				AscCommon.CollaborativeEditing.Set_GlobalLock(false);
+				this.setViewModeDisconnect(true);
+				this.asc_coAuthoringDisconnect();
+				this.sendEvent("asc_onDisconnectEveryone");
+			}
 		}
 	};
 	asc_docs_api.prototype._autoSaveInner = function () {
@@ -8682,7 +8703,35 @@ background-repeat: no-repeat;\
         this.isMarkerFormat = value;
         return this.sendEvent("asc_onMarkerFormatChanged", value);
     };
+	
 	asc_docs_api.prototype.asc_SendForm = function()
+	{
+		let logicDocument = this.private_GetLogicDocument();
+		let oform = logicDocument ? logicDocument.GetOFormDocument() : null;
+		if (!logicDocument || !oform)
+			return false;
+		
+		// Here we assume that the current role is allowed to fill right now and
+		// that all required fields are filled
+		
+		if (!oform.getCurrentRole())
+			return this._sendForm();
+		
+		this.forceSaveSendFormRequest = true;
+		this.asc_Save();
+		
+		return true;
+	};
+	asc_docs_api.prototype.setCurrentRoleFilled = function()
+	{
+		let logicDocument = this.private_GetLogicDocument();
+		let oform = logicDocument.GetOFormDocument();
+		
+		logicDocument.StartAction(AscDFH.historydescription_OForm_RoleFilled);
+		oform.setRoleFilled(oform.getCurrentRole(), true);
+		logicDocument.FinalizeAction();
+	};
+	asc_docs_api.prototype._sendForm = function()
 	{
 		var t = this;
 		this.sync_StartAction(c_oAscAsyncActionType.BlockInteraction, c_oAscAsyncAction.Submit);
@@ -8695,11 +8744,13 @@ background-repeat: no-repeat;\
 			}
 			t.sync_EndAction(c_oAscAsyncActionType.BlockInteraction, c_oAscAsyncAction.Submit);
 		});
-
+		
 		this.sendEvent("onSubmitForm");
-
+		
 		if (window.g_asc_plugins)
 			window.g_asc_plugins.onPluginEvent("onSubmitForm");
+		
+		return true;
 	};
 
     asc_docs_api.prototype.SetTableDrawMode = function(value)
@@ -11318,6 +11369,23 @@ background-repeat: no-repeat;\
 			return null;
 		
 		return logicDocument.GetOFormDocument();
+	};
+	asc_docs_api.prototype.asc_DisconnectEveryone = function()
+	{
+		let logicDocument = this.private_GetLogicDocument();
+		if (!logicDocument)
+			return false;
+		
+		if (logicDocument.IsSelectionLocked(AscCommon.changestype_Document_Settings))
+			return false;
+		
+		logicDocument.StartAction(AscDFH.historydescription_DisconnectEveryone);
+		logicDocument.GetHistory().Add(new CChangesDocumentDisconnectEveryone(logicDocument));
+		logicDocument.FinalizeAction();
+		
+		this.forceSaveDisconnectRequest = true;
+		AscCommon.CollaborativeEditing.Set_GlobalLock(true);
+		this.asc_Save(false);
 	};
 
 	asc_docs_api.prototype.asc_UncheckContentControlButtons = function()
@@ -14830,6 +14898,7 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype['asc_SetHighlightRequiredFields']            = asc_docs_api.prototype.asc_SetHighlightRequiredFields;
 	asc_docs_api.prototype['asc_GetAllFormsData']                       = asc_docs_api.prototype.asc_GetAllFormsData;
 	asc_docs_api.prototype['asc_GetOForm']                              = asc_docs_api.prototype.asc_GetOForm;
+	asc_docs_api.prototype['asc_DisconnectEveryone']                    = asc_docs_api.prototype.asc_DisconnectEveryone;
 
 	asc_docs_api.prototype['asc_BeginViewModeInReview']                 = asc_docs_api.prototype.asc_BeginViewModeInReview;
 	asc_docs_api.prototype['asc_EndViewModeInReview']                   = asc_docs_api.prototype.asc_EndViewModeInReview;
