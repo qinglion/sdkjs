@@ -472,11 +472,22 @@ ParaRun.prototype.Get_Text = function(Text)
 				{
 					Text.Text = null;
 					bBreak    = true;
+					break;
 				}
 				
-				if (Text.ParaSeparator)
-					Text.Text += Text.ParaSeparator;
-				
+				let oParagraph = this.GetParagraph();
+				if (oParagraph && null === oParagraph.Get_DocumentNext() && oParagraph.IsTableCellContent())
+				{
+					if (!oParagraph.Parent.IsLastTableCellInRow(false))
+						Text.Text += undefined !== Text.TableCellSeparator ? Text.TableCellSeparator : '\t';
+					else
+						Text.Text += undefined !== Text.TableRowSeparator ? Text.TableRowSeparator : '\r\n';
+				}
+				else
+				{
+					Text.Text += undefined !== Text.ParaSeparator ? Text.ParaSeparator : '\r\n';
+				}
+
 				break;
 			}
 
@@ -487,12 +498,12 @@ ParaRun.prototype.Get_Text = function(Text)
 			}
 			case para_NewLine:
 			{
-				Text.Text += undefined != Text.NewLineSeparator ? Text.NewLineSeparator : " ";
+				Text.Text += undefined !== Text.NewLineSeparator ? Text.NewLineSeparator : " ";
 				break;
 			}
 			case para_Tab:
 			{
-				Text.Text += undefined != Text.TabSymbol ? Text.TabSymbol : " ";
+				Text.Text += undefined !== Text.TabSymbol ? Text.TabSymbol : " ";
 				break;
 			}
 			case para_Space:
@@ -3157,7 +3168,7 @@ ParaRun.prototype.GetSelectedText = function(bAll, bClearText, oPr)
 			}
 			case para_Tab:
 			{
-				Str += oPr && oPr.TabSymbol ? oPr.TabSymbol : ' ';
+				Str += oPr && undefined !== oPr.TabSymbol ? oPr.TabSymbol : ' ';
 				break;
 			}
             case para_Math_Text:
@@ -3168,30 +3179,22 @@ ParaRun.prototype.GetSelectedText = function(bAll, bClearText, oPr)
             }
 			case para_NewLine:
 			{
-				if (oPr && undefined != oPr.NewLineSeparator) {
-					Str += oPr.NewLineSeparator;
-				}
-				else if (oPr && true === oPr.NewLine)
-					Str += '\r';
-				
+				Str += oPr && undefined !== oPr.NewLineSeparator ? oPr.NewLineSeparator : '\r';
 				break;
 			}
 			case para_End:
 			{
-				if (oPr && true === oPr.NewLineParagraph)
+				var oParagraph = this.GetParagraph();
+				if (oParagraph && null === oParagraph.Get_DocumentNext() && oParagraph.IsTableCellContent())
 				{
-					var oParagraph = this.GetParagraph();
-					if (oParagraph && null === oParagraph.Get_DocumentNext() && oParagraph.IsTableCellContent())
-					{
-						if (!oParagraph.Parent.IsLastTableCellInRow(true))
-							Str += oPr.TableCellSeparator ? oPr.TableCellSeparator : '\t';
-						else
-							Str += oPr.TableRowSeparator ? oPr.TableRowSeparator : '\r\n';
-					}
+					if (!oParagraph.Parent.IsLastTableCellInRow(true))
+						Str += oPr && undefined !== oPr.TableCellSeparator ? oPr.TableCellSeparator : '\t';
 					else
-					{
-						Str += oPr.ParaSeparator ? oPr.ParaSeparator : '\r\n';
-					}
+						Str += oPr && undefined !== oPr.TableRowSeparator ? oPr.TableRowSeparator : '\r\n';
+				}
+				else
+				{
+					Str += oPr && undefined !== oPr.ParaSeparator ? oPr.ParaSeparator : '\r\n';
 				}
 
 				break;
@@ -3692,6 +3695,8 @@ ParaRun.prototype.Recalculate_Range = function(PRS, ParaPr, Depth)
     var oSectionPr = undefined;
 
 	let isSkipFillRange = false;
+	
+	let textPr = this.Get_CompiledPr(false);
 
 	// TODO: Сделать возможность показывать инструкцию
     var isHiddenCFPart = PRS.ComplexFields.isHiddenComplexFieldPart();
@@ -3817,6 +3822,8 @@ ParaRun.prototype.Recalculate_Range = function(PRS, ParaPr, Depth)
 					let LetterLen   = Item.GetWidth();
 					let isLigature  = Item.IsLigature();
 					let GraphemeLen = isLigature ? Item.GetLigatureWidth() : LetterLen;
+					
+					let isBreakAfter = Item.IsSpaceAfter() || textPr.RFonts.Hint === AscWord.fonthint_EastAsia;
 
 					if (FirstItemOnLine
 						&& (X + SpaceLen + WordLen + GraphemeLen > XEnd
@@ -3937,12 +3944,12 @@ ParaRun.prototype.Recalculate_Range = function(PRS, ParaPr, Depth)
 							}
 
 							// Если текущий символ с переносом, например, дефис, тогда на нем заканчивается слово
-							if (Item.IsSpaceAfter()
+							if (isBreakAfter
 								|| (PRS.canPlaceAutoHyphenAfter(Item)
 									&& X + SpaceLen + LetterLen + PRS.getAutoHyphenWidth(Item, this) <= XEnd
 									&& (FirstItemOnLine || PRS.checkHyphenationZone(X + SpaceLen))))
 							{
-								if (!Item.IsSpaceAfter())
+								if (!isBreakAfter)
 									PRS.lastAutoHyphen = Item;
 
 								// Добавляем длину пробелов до слова и ширину самого слова.
@@ -3979,12 +3986,12 @@ ParaRun.prototype.Recalculate_Range = function(PRS, ParaPr, Depth)
                             // Мы убираемся в пределах данной строки. Прибавляем ширину буквы к ширине слова
                             WordLen += LetterLen;
 
-							if (Item.IsSpaceAfter()
+							if (isBreakAfter
 								|| (PRS.canPlaceAutoHyphenAfter(Item)
 									&& fitOnLine
 									&& (FirstItemOnLine || PRS.checkHyphenationZone(X + SpaceLen))))
                             {
-								if (!Item.IsSpaceAfter())
+								if (!isBreakAfter)
 									PRS.lastAutoHyphen = Item;
 								
                                 // Добавляем длину пробелов до слова и ширину самого слова.

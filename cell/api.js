@@ -1046,16 +1046,16 @@ var editor;
 		this.handlers.trigger("asc_onCanRedoChanged", bCanRedo);
 	};
 	spreadsheet_api.prototype.CheckChangedDocument = function() {
-		// if (true === History.Have_Changes())
-		// {
-		// 	// дублирование евента. когда будет undo-redo - тогда
-		// 	// эти евенты начнут отличаться
-		// 	this.SetDocumentModified(true);
-		// }
-		// else
-		// {
-		// 	this.SetDocumentModified(false);
-		// }
+		if (true === History.Have_Changes())
+		{
+			// дублирование евента. когда будет undo-redo - тогда
+			// эти евенты начнут отличаться
+			this.SetDocumentModified(true);
+		}
+		else
+		{
+			this.SetDocumentModified(false);
+		}
 
 		this._onUpdateDocumentCanSave();
 	};
@@ -6866,7 +6866,7 @@ var editor;
     return res;
   };
 
-  spreadsheet_api.prototype.onUpdateDocumentModified = function(bIsModified) {
+  spreadsheet_api.prototype.SetDocumentModified = spreadsheet_api.prototype.onUpdateDocumentModified = function(bIsModified) {
     // Обновляем только после окончания сохранения
     if (this.canSave) {
       this.handlers.trigger("asc_onDocumentModifiedChanged", bIsModified);
@@ -10001,6 +10001,20 @@ var editor;
 		}
 		return wb.getShowHorizontalScroll();
 	};
+	spreadsheet_api.prototype.haveInks = function() {
+		if (!this.wbModel) {
+			return false;
+		}
+
+		return !!this.wbModel.getAllInks().length;
+	};
+	spreadsheet_api.prototype.removeAllInks = function() {
+		if (!this.wb) {
+			return;
+		}
+
+		this.wb.removeAllInks();
+	};
 
   /*
    * Export
@@ -10056,6 +10070,7 @@ var editor;
   prot["asc_getCoreProps"] = prot.asc_getCoreProps;
   prot["asc_setCoreProps"] = prot.asc_setCoreProps;
   prot["asc_isDocumentModified"] = prot.asc_isDocumentModified;
+  prot["SetDocumentModified"] = prot.SetDocumentModified;
   prot["isDocumentModified"] = prot.isDocumentModified;
   prot["asc_isDocumentCanSave"] = prot.asc_isDocumentCanSave;
   prot["asc_getCanUndo"] = prot.asc_getCanUndo;

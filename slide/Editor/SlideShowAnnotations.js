@@ -280,6 +280,9 @@ function (window, undefined) {
 		return true;
 	};
 	CSlideShowAnnotations.prototype.canSaveAnnotations = function() {
+		if(!Asc.editor.canEdit()) {
+			return false;
+		}
 		return !this.isEmpty();
 	};
 	CSlideShowAnnotations.prototype.saveAnnotations = function () {

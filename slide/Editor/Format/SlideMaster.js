@@ -845,6 +845,22 @@ MasterSlide.prototype.drawViewPrMarks = function(oGraphics) {
     if(oGraphics.isSupportTextDraw && !oGraphics.isSupportTextDraw()) return;
     return AscCommonSlide.Slide.prototype.drawViewPrMarks.call(this, oGraphics);
 };
+MasterSlide.prototype.removeAllInks = function() {
+	AscCommonSlide.Slide.prototype.removeAllInks.call(this);
+	for (let i = 0; i < this.sldLayoutLst.length; i++) {
+		const oLayout = this.sldLayoutLst[i];
+		oLayout.removeAllInks();
+	}
+};
+MasterSlide.prototype.getAllInks = function(arrInks) {
+	arrInks = arrInks || [];
+	AscCommonSlide.Slide.prototype.getAllInks.call(this, arrInks);
+	for (let i = 0; i < this.sldLayoutLst.length; i++) {
+		const oLayout = this.sldLayoutLst[i];
+		oLayout.getAllInks(arrInks);
+	}
+	return arrInks;
+};
 function CMasterThumbnailDrawer()
 {
     this.CanvasImage    = null;

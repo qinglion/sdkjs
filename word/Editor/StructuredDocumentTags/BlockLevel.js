@@ -201,14 +201,30 @@ CBlockLevelSdt.prototype.Read_FromBinary2 = function(Reader)
 };
 CBlockLevelSdt.prototype.Draw = function(CurPage, oGraphics)
 {
-	if (this.LogicDocument.GetSdtGlobalShowHighlight() && !oGraphics.isPdf())
+	let shdColor = this.getShdColor();
+	if (!shdColor && (this.LogicDocument.GetSdtGlobalShowHighlight() && !oGraphics.isPdf()))
+		shdColor = AscWord.CDocumentColorA.fromObjectRgb(this.LogicDocument.GetSdtGlobalColor());
+	
+	if (shdColor)
 	{
-		var oBounds = this.GetContentBounds(CurPage);
-		var oColor  = this.LogicDocument.GetSdtGlobalColor();
-
-		oGraphics.b_color1(oColor.r, oColor.g, oColor.b, 255);
-		oGraphics.rect(oBounds.Left, oBounds.Top, oBounds.Right - oBounds.Left, oBounds.Bottom - oBounds.Top);
+		let pageBounds = this.GetContentBounds(CurPage);
+		oGraphics.b_color1(shdColor.r, shdColor.g, shdColor.b, shdColor.a);
+		oGraphics.rect(pageBounds.Left, pageBounds.Top, pageBounds.Right - pageBounds.Left, pageBounds.Bottom - pageBounds.Top);
 		oGraphics.df();
+	}
+	
+	let borderColor = this.getBorderColor();
+	if (borderColor)
+	{
+		let pageBounds = this.GetContentBounds(CurPage);
+		oGraphics.p_color(borderColor.r, borderColor.g, borderColor.b, borderColor.a);
+		oGraphics.drawPolygonByRects([[{
+			X    : pageBounds.Left,
+			Y    : pageBounds.Top,
+			W    : pageBounds.Right - pageBounds.Left,
+			H    : pageBounds.Bottom - pageBounds.Top,
+			Page : 0
+		}]], 0, 0);
 	}
 
 	var isPlaceHolder = this.IsPlaceHolder();
@@ -946,10 +962,10 @@ CBlockLevelSdt.prototype.GetBoundingRect = function()
 		Transform : this.Get_ParentTextTransform()
 	};
 };
-CBlockLevelSdt.prototype.DrawContentControlsTrack = function(nType, X, Y, nCurPage, isCheckHit)
+CBlockLevelSdt.prototype.DrawContentControlsTrack = function(nType, X, Y, nCurPage, isCheckHit, padding)
 {
 	if (!this.IsRecalculated() || !this.LogicDocument)
-		return;
+		return false;
 
 	var oLogicDocument   = this.LogicDocument;
 	var oDrawingDocument = oLogicDocument.GetDrawingDocument();
@@ -958,17 +974,11 @@ CBlockLevelSdt.prototype.DrawContentControlsTrack = function(nType, X, Y, nCurPa
 	// TODO: Нужно отрисовать рамку формулы, но для этого нужно чтобы селект плейсхолдера был не целиком на параграф,
 	//       а только на формулу
 	if (this.IsContentControlEquation() && !this.IsPlaceHolder())
-	{
-		oDrawingDocument.OnDrawContentControl(null, nType);
-		return;
-	}
-
+		return false;
+	
 	if (this.IsHideContentControlTrack())
-	{
-		oDrawingDocument.OnDrawContentControl(null, nType);
-		return;
-	}
-
+		return false;
+	
 	var oHdrFtr     = this.IsHdrFtr(true);
 	var nHdrFtrPage = oHdrFtr ? oHdrFtr.GetContent().GetAbsolutePage(0) : null;
 	let isFullWidth = oLogicDocument.IsFillingFormMode();
@@ -1006,7 +1016,7 @@ CBlockLevelSdt.prototype.DrawContentControlsTrack = function(nType, X, Y, nCurPa
 		}
 
 		if (false !== isCheckHit && !isHit)
-			return;
+			return false;
 
 		var sHelpText = "";
 		if (AscCommon.ContentControlTrack.Hover === nType && this.IsForm() && (sHelpText = this.GetFormPr().HelpText))
@@ -1020,8 +1030,20 @@ CBlockLevelSdt.prototype.DrawContentControlsTrack = function(nType, X, Y, nCurPa
 			oLogicDocument.GetApi().sync_MouseMoveCallback(oMMData);
 		}
 	}
+	
+	if (padding)
+	{
+		for (let i = 0; i < arrRects.length; ++i)
+		{
+			arrRects[i].X -= padding;
+			arrRects[i].Y -= padding;
+			arrRects[i].R += padding;
+			arrRects[i].B += padding;
+		}
+	}
 
-	oDrawingDocument.OnDrawContentControl(this, nType, arrRects);
+	oDrawingDocument.addContentControlTrack(this, nType, arrRects);
+	return true;
 };
 CBlockLevelSdt.prototype.AddContentControl = function(nContentControlType)
 {
@@ -1585,12 +1607,19 @@ CBlockLevelSdt.prototype.GetInnerText = function()
 };
 CBlockLevelSdt.prototype.SetInnerText = function(text)
 {
-	let textPr = this.GetFirstParagraph().GetFirstRunPr();
+	let firstParagraph = this.GetFirstParagraph();
+	
+	let textPr = firstParagraph.GetFirstRunPr();
+	let endPr  = firstParagraph.GetParaEndPr();
+	let paraPr = firstParagraph.GetDirectParaPr();
+	
 	this.Content.ClearContent(false);
 	let para = new AscWord.Paragraph();
 	let run  = new AscWord.Run();
 	run.AddText(text);
 	run.SetPr(textPr.Copy());
+	para.SetDirectParaPr(paraPr);
+	para.SetParaEndPr(endPr);
 	para.AddToContent(0, run);
 	this.Content.AddToContent(0, para);
 };

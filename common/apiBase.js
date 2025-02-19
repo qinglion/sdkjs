@@ -170,6 +170,7 @@
         this.forceSaveTimeoutTimeout = null;
 		this.forceSaveForm = null;
 		this.forceSaveUndoRequest = false; // Флаг нужен, чтобы мы знали, что данное сохранение пришло по запросу Undo в совместке
+		this.forceSaveSendFormRequest = false;
 		this.saveRelativePrev = {};
 
 		// Version History
@@ -2856,7 +2857,7 @@
 			this.IsUserSave = !isAutoSave;
 
 			if (this.asc_isDocumentCanSave() || this._haveChanges() || this._haveOtherChanges() ||
-				this.canUnlockDocument || this.forceSaveUndoRequest) {
+				this.canUnlockDocument || this.forceSaveUndoRequest || this.forceSaveSendFormRequest) {
 				if (this._prepareSave(isIdle)) {
 					// Не даем пользователю сохранять, пока не закончится сохранение (если оно началось)
 					this.canSave = false;
@@ -5199,7 +5200,7 @@
         return this.canRemoveAllInks();
 	};
 	baseEditorsApi.prototype.canRemoveAllInks = function() {
-        return true;
+        return this.haveInks();
 	};
 	baseEditorsApi.prototype.stopInkDrawer = function() {
 		this.inkDrawer.turnOff();
@@ -5467,6 +5468,28 @@
 
 	baseEditorsApi.prototype.asc_mergeSelectedShapesAction = function(operation) {
 
+	};
+	baseEditorsApi.prototype.asc_setRtlTextDirection = function(isRtl) {
+	};
+	baseEditorsApi.prototype.asc_isRtlTextDirection = function() {
+		return false;
+	};
+	
+	baseEditorsApi.prototype.asc_CheckCopy = function(data, format) {
+	};
+	baseEditorsApi.prototype.getSelectedContent = function(format) {
+		let text_data = {
+			data     : "",
+			pushData : function(format, value) {
+				this.data = value;
+			}
+		};
+		
+		this.asc_CheckCopy(text_data, format);
+		if (text_data.data == null)
+			text_data.data = "";
+		
+		return text_data.data;
 	};
 
 	//----------------------------------------------------------export----------------------------------------------------

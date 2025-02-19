@@ -3377,6 +3377,8 @@ function CDemonstrationManager(htmlpage)
             oThis.CheckSlideDuration = setTimeout(function()
             {
                 oThis.CheckSlideDuration = -1;
+                if(!oThis.Mode)
+                    return;
                 if(oThis.IsMainSeqFinished(nSlideNum))
                 {
                     oThis.AdvanceAfter();
@@ -3555,7 +3557,7 @@ function CDemonstrationManager(htmlpage)
             --_slide;
         }
 
-        return this.GetSlidesCount();
+        return this.GetSlidesCount() - 1;
     };
 
 	this.GetNextVisibleSlide = function()
@@ -3821,7 +3823,14 @@ function CDemonstrationManager(htmlpage)
 			}
 			case 27:    // escape
 			{
-				oThis.End();
+                if(Asc.editor.isInkDrawerOn())
+                {
+                    Asc.editor.stopInkDrawer();
+                }
+                else
+                {
+                    Asc.editor.EndDemonstration();
+                }
 				break;
 			}
 			case 48: // 0

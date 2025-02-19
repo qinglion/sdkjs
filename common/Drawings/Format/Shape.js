@@ -6413,7 +6413,12 @@
 			oProps.put_Type(Asc.c_oAscWatermarkType.Text);
 			oProps.setXfrmRot(AscFormat.normalizeRotate(this.getXfrmRot() || 0));
 			oContent.SetApplyToAll(true);
-			oProps.put_Text(oContent.GetSelectedText(true, {NewLineParagraph: false, NewLine: false}));
+			oProps.put_Text(oContent.GetSelectedText(true, {
+				ParaSeparator : "",
+				NewLineSeparator : "",
+				TableCellSeparator : "",
+				TableRowSeparator : ""
+			}));
 			oTextPr = oContent.GetCalculatedTextPr();
 			oProps.put_Opacity(255);
 			if (!AscFormat.isRealNumber(oTextPr.FontSize) ||

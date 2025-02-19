@@ -1151,7 +1151,9 @@ ParaDrawing.prototype.CheckWH = function()
 		extY = 5;
 		rot = 0;
 	}
-	this.setExtent(extX, extY);
+
+	let dKoef = this.GetScaleCoefficient();
+	this.setExtent(extX / dKoef, extY / dKoef);
 
 
 	var EEL = 0.0, EET = 0.0, EER = 0.0, EEB = 0.0;
@@ -2768,6 +2770,10 @@ ParaDrawing.prototype.select = function(pageIndex)
 	if (AscCommon.isRealObject(this.GraphicObj) && typeof  this.GraphicObj.select === "function")
 		this.GraphicObj.select(pageIndex);
 
+};
+ParaDrawing.prototype.isSelected = function()
+{
+	return this.GraphicObj ? this.GraphicObj.selected : false;
 };
 ParaDrawing.prototype.paragraphClearFormatting = function(isClearParaPr, isClearTextPr)
 {
