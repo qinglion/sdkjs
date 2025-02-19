@@ -15162,35 +15162,47 @@ function Binary_oMathReader(stream, oReadResult, curNote, openParams)
         return res;
     };
 	this.ReadMathText = function(type, length, oMRun)
-    {
-        var res = c_oSerConstants.ReadOk;
-        var oThis = this;
+	{
+		let res		= c_oSerConstants.ReadOk;
+
 		if (c_oSer_OMathBottomNodesValType.Val === type)
-        {
-			var aUnicodes = [];
-            if (length > 0)
-                aUnicodes = AscCommon.convertUTF16toUnicode(this.stream.GetString2LE(length));
+		{
+			let aUnicodes = [];
+			if (length > 0)
+			{
+				let strUTF16	= this.stream.GetString2LE(length);
+				aUnicodes		= AscCommon.convertUTF16toUnicode(strUTF16);
+			}
 
-			for (var nPos = 0, nCount = aUnicodes.length; nPos < nCount; ++nPos)
-            {
-                var nUnicode = aUnicodes[nPos];
+			for (let nPos = 0, nCount = aUnicodes.length; nPos < nCount; ++nPos)
+			{
+				let nUnicode	= aUnicodes[nPos];
+				let oText		= null;
 
-                var oText = null;
-                if (0x0026 == nUnicode)
-                    oText = new CMathAmp();
-                else
-                {
-                    oText = new CMathText(false);
-                    oText.add(nUnicode);
-                }
-                if (oText)
-                    oMRun.Add_ToContent(nPos, oText, false, true);
-            }
-        }
+				if (0x0026 == nUnicode)
+				{
+					oText = new CMathAmp();
+				}
+				else
+				{
+					oText = new CMathText(false);
+					oText.add(nUnicode);
+				}
+
+				if (oText)
+				{
+					let nPosMRun = oMRun.Content.length;
+					oMRun.Add_ToContent(nPosMRun, oText, false);
+				}
+			}
+		}
 		else
-            res = c_oSerConstants.ReadUnknown;
-        return res;
-    };
+		{
+			res = c_oSerConstants.ReadUnknown;
+		}
+
+		return res;
+	};
 	this.ReadMathMRun = function(type, length, oMRun, props, oParent, paragraphContent)
     {
 		//todo
