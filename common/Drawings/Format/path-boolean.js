@@ -3436,19 +3436,39 @@
 			const split = [];
 			const paths = compoundPath.getChildren().slice();
 			const hasIntersection = function (p1, p2) { return !p1.intersect(p2).isEmpty(); };
+
+			const groups = [];
+			const visited = new Set();
+
 			paths.forEach(function (path) {
-				const intersects = paths.some(function (p1) {
-					return p1 !== path && hasIntersection(p1, path);
+				if (visited.has(path))
+					return;
+
+				visited.add(path);
+				const group = [path];
+
+				paths.forEach(function (otherPath) {
+					if (!visited.has(otherPath) && hasIntersection(path, otherPath)) {
+						visited.add(otherPath);
+						group.push(otherPath);
+					}
 				});
-				if (!intersects) {
-					split.push(path);
-					path.remove();
+
+				groups.push(group);
+			});
+
+			groups.forEach(function (group) {
+				if (group.length === 1) {
+					split.push(group[0]);
+				} else {
+					let compoundPath = new CompoundPath();
+					compoundPath.addChildren(group);
+					compoundPath = compoundPath.reduce();
+					compoundPath.copyAttributes(group[0]);
+					split.push(compoundPath);
 				}
 			});
 
-			if (compoundPath.getChildren().length) {
-				split.push(compoundPath);
-			}
 			return split;
 		}
 
