@@ -13709,7 +13709,10 @@ background-repeat: no-repeat;\
 		if (oform)
 		{
 			let roleName = restrictionSettings ? restrictionSettings.GetOFormRole() : null;
-			if (oLogicDocument.IsFillingFormMode() && roleName)
+			
+			if (oLogicDocument.IsFillingFormMode() && restrictionSettings && restrictionSettings.IsOFormNoRole())
+				oform.setCurrentNoRole();
+			else if (oLogicDocument.IsFillingFormMode() && roleName)
 				oform.setCurrentRole(roleName);
 			else
 				oform.clearCurrentRole();
