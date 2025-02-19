@@ -2666,10 +2666,18 @@ background-repeat: no-repeat;\
 			}
 		};
 
-		var CursorInfo = null;
+		let cursorInfo = null;
 		if (true === AscCommon.CollaborativeEditing.Is_Fast())
+			cursorInfo = AscCommon.History.Get_DocumentPositionBinary();
+		
+		function sendChanges()
 		{
-			CursorInfo = AscCommon.History.Get_DocumentPositionBinary();
+			// Пересылаем свои изменения
+			AscCommon.CollaborativeEditing.Send_Changes(t.IsUserSave, {
+				"UserId"      : t.CoAuthoringApi.getUserConnectionId(),
+				"UserShortId" : t.DocInfo.get_UserId(),
+				"CursorInfo"  : cursorInfo
+			}, HaveOtherChanges, true);
 		}
 
 		if (this.forceSaveUndoRequest)
@@ -2678,14 +2686,16 @@ background-repeat: no-repeat;\
 			AscCommon.CollaborativeEditing.Undo();
 			this.forceSaveUndoRequest = false;
 		}
+		else if (this.forceSaveSendFormRequest)
+		{
+			this.forceSaveSendFormRequest = false;
+			this.setCurrentRoleFilled();
+			sendChanges();
+			this._sendForm();
+		}
 		else
 		{
-			// Пересылаем свои изменения
-			AscCommon.CollaborativeEditing.Send_Changes(this.IsUserSave, {
-				"UserId"      : this.CoAuthoringApi.getUserConnectionId(),
-				"UserShortId" : this.DocInfo.get_UserId(),
-				"CursorInfo"  : CursorInfo
-			}, HaveOtherChanges, true);
+			sendChanges();
 			
 			if (this.forceSaveDisconnectRequest)
 			{
@@ -8693,7 +8703,35 @@ background-repeat: no-repeat;\
         this.isMarkerFormat = value;
         return this.sendEvent("asc_onMarkerFormatChanged", value);
     };
+	
 	asc_docs_api.prototype.asc_SendForm = function()
+	{
+		let logicDocument = this.private_GetLogicDocument();
+		let oform = logicDocument ? logicDocument.GetOFormDocument() : null;
+		if (!logicDocument || !oform)
+			return false;
+		
+		// Here we assume that the current role is allowed to fill right now and
+		// that all required fields are filled
+		
+		if (!oform.getCurrentRole())
+			return this._sendForm();
+		
+		this.forceSaveSendFormRequest = true;
+		this.asc_Save();
+		
+		return true;
+	};
+	asc_docs_api.prototype.setCurrentRoleFilled = function()
+	{
+		let logicDocument = this.private_GetLogicDocument();
+		let oform = logicDocument.GetOFormDocument();
+		
+		logicDocument.StartAction(AscDFH.historydescription_OForm_RoleFilled);
+		oform.setRoleFilled(oform.getCurrentRole(), true);
+		logicDocument.FinalizeAction();
+	};
+	asc_docs_api.prototype._sendForm = function()
 	{
 		var t = this;
 		this.sync_StartAction(c_oAscAsyncActionType.BlockInteraction, c_oAscAsyncAction.Submit);
@@ -8706,11 +8744,13 @@ background-repeat: no-repeat;\
 			}
 			t.sync_EndAction(c_oAscAsyncActionType.BlockInteraction, c_oAscAsyncAction.Submit);
 		});
-
+		
 		this.sendEvent("onSubmitForm");
-
+		
 		if (window.g_asc_plugins)
 			window.g_asc_plugins.onPluginEvent("onSubmitForm");
+		
+		return true;
 	};
 
     asc_docs_api.prototype.SetTableDrawMode = function(value)

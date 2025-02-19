@@ -4560,6 +4560,7 @@
 	window['AscDFH'].historydescription_Document_SetParagraphBidi                   = 0x01c3;
 	window['AscDFH'].historydescription_RemoveAllInks                               = 0x01c4;
 	window['AscDFH'].historydescription_DisconnectEveryone                          = 0x01c5;
+	window['AscDFH'].historydescription_OForm_RoleFilled                            = 0x01c6;
 	
 	// pdf
 	window['AscDFH'].historydescription_Pdf_AddAnnot			= 0x29a;

@@ -170,6 +170,7 @@
         this.forceSaveTimeoutTimeout = null;
 		this.forceSaveForm = null;
 		this.forceSaveUndoRequest = false; // Флаг нужен, чтобы мы знали, что данное сохранение пришло по запросу Undo в совместке
+		this.forceSaveSendFormRequest = false;
 		this.saveRelativePrev = {};
 
 		// Version History
@@ -2856,7 +2857,7 @@
 			this.IsUserSave = !isAutoSave;
 
 			if (this.asc_isDocumentCanSave() || this._haveChanges() || this._haveOtherChanges() ||
-				this.canUnlockDocument || this.forceSaveUndoRequest) {
+				this.canUnlockDocument || this.forceSaveUndoRequest || this.forceSaveSendFormRequest) {
 				if (this._prepareSave(isIdle)) {
 					// Не даем пользователю сохранять, пока не закончится сохранение (если оно началось)
 					this.canSave = false;
