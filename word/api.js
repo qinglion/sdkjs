@@ -8732,11 +8732,11 @@ background-repeat: no-repeat;\
 		if (!logicDocument || !oform)
 			return false;
 		
-		// Here we assume that the current role is allowed to fill right now and
-		// that all required fields are filled
-		
 		if (!oform.getCurrentRole())
 			return this._sendForm();
+		
+		if (!oform.canFillRole(oform.getCurrentRole()))
+			return false;
 		
 		this.forceSaveSendFormRequest = true;
 		this.asc_Save();
