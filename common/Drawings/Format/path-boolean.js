@@ -3435,39 +3435,47 @@
 		function splitCompoundPath(compoundPath) {
 			const split = [];
 			const paths = compoundPath.getChildren().slice();
-			const hasIntersection = function (p1, p2) { return !p1.intersect(p2).isEmpty(); };
-
-			const groups = [];
 			const visited = new Set();
 
 			paths.forEach(function (path) {
 				if (visited.has(path))
 					return;
 
-				visited.add(path);
-				const group = [path];
-
-				paths.forEach(function (otherPath) {
-					if (!visited.has(otherPath) && hasIntersection(path, otherPath)) {
-						visited.add(otherPath);
-						group.push(otherPath);
-					}
-				});
-
-				groups.push(group);
-			});
-
-			groups.forEach(function (group) {
+				const group = findConnectedGroup(path);
 				if (group.length === 1) {
 					split.push(group[0]);
 				} else {
-					let compoundPath = new CompoundPath();
-					compoundPath.addChildren(group);
-					compoundPath = compoundPath.reduce();
-					compoundPath.copyAttributes(group[0]);
-					split.push(compoundPath);
+					let compound = new CompoundPath();
+					compound.addChildren(group);
+					compound = compound.reduce();
+					compound.copyAttributes(group[0]);
+					split.push(compound);
 				}
 			});
+
+			function findConnectedGroup(startPath) {
+				const queue = [startPath];
+				const group = [];
+
+				while (queue.length) {
+					const path = queue.pop();
+					if (visited.has(path)) continue;
+
+					visited.add(path);
+					group.push(path);
+
+					paths.forEach(function (otherPath) {
+						if (!visited.has(otherPath) && hasIntersection(path, otherPath)) {
+							queue.push(otherPath);
+						}
+					});
+				}
+				return group;
+			}
+
+			function hasIntersection(p1, p2) {
+				return !p1.intersect(p2).isEmpty();
+			};
 
 			return split;
 		}
