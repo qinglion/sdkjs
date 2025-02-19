@@ -504,7 +504,11 @@
     CDocument.prototype.checkTasks = function(isViewerTask)
     {
 		let pdfDoc = this.viewer.getPDFDoc();
-	
+        let element = document.getElementById(this.id);
+
+        if (0 === element.offsetWidth || !this.canvas)
+            return;
+
 		if (pdfDoc.fontLoader.isWorking() || AscCommon.CollaborativeEditing.waitingImagesForLoad)
 			return true;
 		
