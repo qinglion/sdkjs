@@ -1117,18 +1117,15 @@ CChangesPDFDocumentMovePage.prototype.private_SetValue = function(nNewPos)
     aFilePages.splice(nNewPos, 0, oMovedFilePage);
     aPagesInfo.splice(nNewPos, 0, oMovedPageInfo);
 
-    let oThumbnails = oDoc.GetThumbnails();
-    if (oThumbnails) {
-        let nStart = Math.min(nCurPos, nNewPos);
-        let nEnd = Math.max(nCurPos, nNewPos);
-
-        for (let i = nStart; i <= nEnd; i++) {
-            oThumbnails._repaintPage(i);
-        }
-
-        oThumbnails.setNeedResize(true);
+    let aPagesRange = [];
+    let nStart = Math.min(nCurPos, nNewPos);
+    let nEnd = Math.max(nCurPos, nNewPos);
+    for (let i = nStart; i <= nEnd; i++) {
+        aPagesRange.push(i);
     }
 
     oDoc.Viewer.resize(true);
-    oDoc.Viewer.paint();
+    oDoc.Viewer.onUpdatePages(aPagesRange);
+    oDoc.Viewer.onRepaintForms(aPagesRange);
+    oDoc.Viewer.onRepaintAnnots(aPagesRange);
 };

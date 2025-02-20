@@ -2383,20 +2383,18 @@ var CPresentation = CPresentation || function(){};
             return false;
         }
 
-        let oThumbnails = this.GetThumbnails();
-        if (oThumbnails) {
-            let nStart = Math.min(nPage, nNewPos);
-            let nEnd = Math.max(nPage, nNewPos);
-    
-            for (let i = nStart; i <= nEnd; i++) {
-                oThumbnails._repaintPage(i);
-            }
-            
-            oThumbnails.setNeedResize(true);
+        let aPagesRange = [];
+        let nStart = Math.min(nPage, nNewPos);
+        let nEnd = Math.max(nPage, nNewPos);
+        for (let i = nStart; i <= nEnd; i++) {
+            aPagesRange.push(i);
         }
 
         this.Viewer.resize(true);
-        this.Viewer.paint();
+        this.Viewer.onUpdatePages(aPagesRange);
+        this.Viewer.onRepaintForms(aPagesRange);
+        this.Viewer.onRepaintAnnots(aPagesRange);
+
         return true;
     };
     CPDFDoc.prototype.MovePages = function(aIndexes, nNewPos) {
