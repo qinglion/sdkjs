@@ -15188,36 +15188,19 @@ function Binary_oMathReader(stream, oReadResult, curNote, openParams)
             res = c_oSerConstants.ReadUnknown;
         return res;
     };
-	this.ReadMathText = function(type, length, oMRun)
-    {
-        var res = c_oSerConstants.ReadOk;
-        var oThis = this;
-		if (c_oSer_OMathBottomNodesValType.Val === type)
-        {
-			var aUnicodes = [];
-            if (length > 0)
-                aUnicodes = AscCommon.convertUTF16toUnicode(this.stream.GetString2LE(length));
-
-			for (var nPos = 0, nCount = aUnicodes.length; nPos < nCount; ++nPos)
-            {
-                var nUnicode = aUnicodes[nPos];
-
-                var oText = null;
-                if (0x0026 == nUnicode)
-                    oText = new CMathAmp();
-                else
-                {
-                    oText = new CMathText(false);
-                    oText.add(nUnicode);
-                }
-                if (oText)
-                    oMRun.Add_ToContent(nPos, oText, false, true);
-            }
-        }
-		else
-            res = c_oSerConstants.ReadUnknown;
-        return res;
-    };
+	this.ReadMathText = function(type, length, mathRun)
+	{
+		if (c_oSer_OMathBottomNodesValType.Val !== type)
+			return c_oSerConstants.ReadUnknown;
+		
+		let text = this.stream.GetString2LE(length);
+		AscWord.TextToMathRunElements(text, function(item)
+		{
+			mathRun.AddToContentToEnd(item);
+		});
+		
+		return c_oSerConstants.ReadOk;
+	};
 	this.ReadMathMRun = function(type, length, oMRun, props, oParent, paragraphContent)
     {
 		//todo
