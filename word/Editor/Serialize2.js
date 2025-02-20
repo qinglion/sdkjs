@@ -15161,47 +15161,18 @@ function Binary_oMathReader(stream, oReadResult, curNote, openParams)
             res = c_oSerConstants.ReadUnknown;
         return res;
     };
-	this.ReadMathText = function(type, length, oMRun)
+	this.ReadMathText = function(type, length, mathRun)
 	{
-		let res		= c_oSerConstants.ReadOk;
-
-		if (c_oSer_OMathBottomNodesValType.Val === type)
+		if (c_oSer_OMathBottomNodesValType.Val !== type)
+			return c_oSerConstants.ReadUnknown;
+		
+		let text = this.stream.GetString2LE(length);
+		AscWord.TextToMathRunElements(text, function(item)
 		{
-			let aUnicodes = [];
-			if (length > 0)
-			{
-				let strUTF16	= this.stream.GetString2LE(length);
-				aUnicodes		= AscCommon.convertUTF16toUnicode(strUTF16);
-			}
-
-			for (let nPos = 0, nCount = aUnicodes.length; nPos < nCount; ++nPos)
-			{
-				let nUnicode	= aUnicodes[nPos];
-				let oText		= null;
-
-				if (0x0026 == nUnicode)
-				{
-					oText = new CMathAmp();
-				}
-				else
-				{
-					oText = new CMathText(false);
-					oText.add(nUnicode);
-				}
-
-				if (oText)
-				{
-					let nPosMRun = oMRun.Content.length;
-					oMRun.Add_ToContent(nPosMRun, oText, false);
-				}
-			}
-		}
-		else
-		{
-			res = c_oSerConstants.ReadUnknown;
-		}
-
-		return res;
+			mathRun.AddToContentToEnd(item);
+		});
+		
+		return c_oSerConstants.ReadOk;
 	};
 	this.ReadMathMRun = function(type, length, oMRun, props, oParent, paragraphContent)
     {
