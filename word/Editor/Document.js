@@ -1071,6 +1071,7 @@ function CDocumentRecalcInfo()
 
     this.NeedRecalculateFromStart  = false;
     this.Paused                    = false;
+	this.PausedMain                = false;
 }
 
 CDocumentRecalcInfo.prototype =
@@ -2623,6 +2624,8 @@ CDocument.prototype.StartAction = function(nDescription, oSelectionState, flags)
 	}
 	else
 	{
+		this.PauseRecalculate();
+		
 		this.Action.Start           = true;
 		this.Action.Depth           = 0;
 		this.Action.PointsCount     = isNewPoint ? 1 : 0;
@@ -2826,6 +2829,8 @@ CDocument.prototype.FinalizeAction = function(checkEmptyAction)
 		this.Action.Depth--;
 		return true;
 	}
+	
+	this.ResumeRecalculate();
 
 	this.private_CheckAdditionalOnFinalize();
 	this.private_CheckEmptyPointsInAction(checkEmptyAction);
@@ -5632,8 +5637,16 @@ CDocument.prototype.PauseRecalculate = function()
 	if (this.FullRecalc.Id)
 	{
 		clearTimeout(this.FullRecalc.Id);
-		this.FullRecalc.Id     = null;
-		this.RecalcInfo.Paused = true;
+		this.FullRecalc.Id         = null;
+		this.RecalcInfo.Paused     = true;
+		this.RecalcInfo.PausedMain = true;
+	}
+	else if (this.HdrFtrRecalc)
+	{
+		clearTimeout(this.HdrFtrRecalc.Id);
+		this.HdrFtrRecalc.Id       = null;
+		this.RecalcInfo.Paused     = true;
+		this.RecalcInfo.PausedMain = false;
 	}
 };
 /**
@@ -5641,11 +5654,20 @@ CDocument.prototype.PauseRecalculate = function()
  */
 CDocument.prototype.ResumeRecalculate = function()
 {
-	if (this.RecalcInfo.Paused)
+	if (!this.RecalcInfo.Paused)
+		return;
+	
+	if (this.RecalcInfo.PausedMain)
 	{
-		this.FullRecalc.Id = setTimeout(Document_Recalculate_Page, 10);
-		this.RecalcInfo.Paused = false;
+		let _t = this;
+		this.FullRecalc.Id = setTimeout(function(){_t.ContinueRecalculationLoop();}, 10);
 	}
+	else
+	{
+		this.HdrFtrRecalc.Id = setTimeout(Document_Recalculate_HdrFtrPageCount, 10);
+	}
+	
+	this.RecalcInfo.Paused = false;
 };
 CDocument.prototype.OnContentReDraw                          = function(StartPage, EndPage)
 {
