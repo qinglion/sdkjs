@@ -138,6 +138,7 @@ function CDocumentContent(Parent, DrawingDocument, X, Y, XLimit, YLimit, Split, 
 
     this.m_oContentChanges = new AscCommon.CContentChanges(); // список изменений(добавление/удаление элементов)
     this.StartState = null;
+	this.Recalculated = false;
 
     this.ReindexStartPos = 0;
 
@@ -743,6 +744,8 @@ CDocumentContent.prototype.Reset_RecalculateCache = function()
 // Пересчитываем отдельную страницу DocumentContent
 CDocumentContent.prototype.Recalculate_Page               = function(PageIndex, bStart)
 {
+	this.Recalculated = true;
+	
 	this.ShiftViewX = 0;
 	this.ShiftViewY = 0;
 
@@ -1430,6 +1433,9 @@ CDocumentContent.prototype.OnContentReDraw = function(StartPage, EndPage)
 };
 CDocumentContent.prototype.Draw                           = function(nPageIndex, pGraphics)
 {
+	if (!this.IsRecalculated())
+		return;
+	
     var CurPage = nPageIndex - this.StartPage;
     if (CurPage < 0 || CurPage >= this.Pages.length)
         return;
