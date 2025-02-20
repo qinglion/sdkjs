@@ -66,7 +66,7 @@
 			AscCommonExcel.StringRender.apply(this, arguments);
 
 			/** @type RegExp */
-			this.reWordBegining = new XRegExp("[^\\p{L}\\p{N}][\\p{L}\\p{N}]", "i");
+			this.reWordBegining = new XRegExp("[^\\p{L}\\p{N}\\'][\\p{L}\\p{N}]", "i");
 
 			return this;
 		}
@@ -132,15 +132,15 @@
 
 		CellTextRender.prototype.getPrevWord = function (pos) {
 			//TODO регулярку не меняю, перегоняю в строку
-			var s = AscCommonExcel.convertUnicodeToSimpleString(this.chars);
-			var i = asc_lastindexof(s.slice(0, pos), this.reWordBegining);
+			let s = AscCommonExcel.convertUnicodeToSimpleString(this.chars);
+			let i = asc_lastindexof(s.slice(0, pos), this.reWordBegining);
 			return i >= 0 ? i + 1 : 0;
 		};
 
 		CellTextRender.prototype.getNextWord = function (pos) {
 			//TODO регулярку не меняю, перегоняю в строку
-			var s = AscCommonExcel.convertUnicodeToSimpleString(this.chars);
-			var i = s.slice(pos).search(this.reWordBegining);
+			let s = AscCommonExcel.convertUnicodeToSimpleString(this.chars);
+			let i = s.slice(pos).search(this.reWordBegining);
 			return i >= 0 ? pos + (i + 1) : this.getEndOfLine(pos);
 		};
 

@@ -3022,10 +3022,23 @@ function (window, undefined) {
 			} else {
 				// Dbl click
 				this.isSelectMode = c_oAscCellEditorSelectState.word;
-				// Окончание слова
-				var endWord = this.textRender.getNextWord(this.cursorPos);
-				// Начало слова (ищем по окончанию, т.к. могли попасть в пробел)
-				var startWord = this.textRender.getPrevWord(endWord);
+
+				let endWord, startWord;
+				let fullString = AscCommonExcel.convertUnicodeToSimpleString(this.textRender.chars);
+				let isNum = AscCommon.g_oFormatParser.isLocaleNumber(fullString);
+				if (isNum) {
+					// if we encounter a current numberDecimalSeparator in a number, we return the entire string as selection
+					let splitIndex = fullString.indexOf(AscCommon.g_oDefaultCultureInfo.NumberDecimalSeparator);
+					if (splitIndex !== -1) {
+						endWord = fullString.length;
+						startWord = 0;
+					}
+				}
+
+				// End of the word
+				endWord = endWord === undefined ? this.textRender.getNextWord(this.cursorPos) : endWord;
+				// The beginning of the word (we look for the end, because we could get into a space)
+				startWord = startWord === undefined ? this.textRender.getPrevWord(endWord) : startWord;
 
 				this._moveCursor(kPosition, startWord);
 				this._selectChars(kPosition, endWord);
