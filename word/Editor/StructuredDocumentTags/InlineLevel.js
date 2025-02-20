@@ -282,44 +282,18 @@ CInlineLevelSdt.prototype.private_CopyPrTo = function(oContentControl, oPr)
 	if (this.Pr.ComplexFormPr)
 		oContentControl.SetComplexFormPr(this.Pr.ComplexFormPr);
 };
-CInlineLevelSdt.prototype.GetSelectedContent = function(oSelectedContent)
+CInlineLevelSdt.prototype.GetSelectedContent = function(selectedContent)
 {
-	var oNewElement = new CInlineLevelSdt();
-	this.private_CopyPrTo(oNewElement);
-
 	if (this.IsPlaceHolder())
-	{
-		return oNewElement;
-	}
-	else
-	{
-		oNewElement.ReplacePlaceHolderWithContent();
-
-		var nStartPos = this.State.Selection.StartPos;
-		var nEndPos   = this.State.Selection.EndPos;
-
-		if (nStartPos > nEndPos)
-		{
-			nStartPos = this.State.Selection.EndPos;
-			nEndPos   = this.State.Selection.StartPos;
-		}
-
-		var nItemPos = 0;
-		for (var nPos = nStartPos, nItemPos = 0; nPos <= nEndPos; ++nPos)
-		{
-			var oNewItem = this.Content[nPos].GetSelectedContent(oSelectedContent);
-			if (oNewItem)
-			{
-				oNewElement.AddToContent(nItemPos, oNewItem);
-				nItemPos++;
-			}
-		}
-
-		if (0 === nItemPos)
-			return null;
-
-		return oNewElement;
-	}
+		this.SelectAll(1);
+	
+	let inlineSdt = CParagraphContentWithParagraphLikeContent.prototype.GetSelectedContent.apply(this, arguments);
+	if (!inlineSdt)
+		return null;
+	
+	this.private_CopyPrTo(inlineSdt);
+	inlineSdt.SetShowingPlcHdr(this.IsPlaceHolder());
+	return inlineSdt;
 };
 CInlineLevelSdt.prototype.GetSelectedText = function(bAll, bClearText, oPr)
 {
