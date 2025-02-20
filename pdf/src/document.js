@@ -2296,6 +2296,10 @@ var CPresentation = CPresentation || function(){};
 
         this.History.Add(new CChangesPDFDocumentPagesContent(this, nPos, [oPage], true));
 
+        if (null != oFile.pages[nPos].originIndex && null == oFile.getPageTextStream(nPos)) {
+            oFile.pages[nPos].text = oFile.getText(nPos);
+        }
+
         oViewer.paint();
     };
 
