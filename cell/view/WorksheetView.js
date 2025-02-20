@@ -10672,7 +10672,7 @@
 
         // Отрисовывать нужно всегда, вдруг бордеры
         this._drawFrozenPaneLines();
-        this._fixSelectionOfMergedCells();
+        this._fixSelectionOfMergedCells(null, true);
         this._drawSelection();
 		//this._cleanPagesModeData();
 
@@ -11012,7 +11012,7 @@
 
         // Отрисовывать нужно всегда, вдруг бордеры
         this._drawFrozenPaneLines();
-        this._fixSelectionOfMergedCells();
+        this._fixSelectionOfMergedCells(null, true);
         this._drawSelection();
         //this._cleanPagesModeData();
 
