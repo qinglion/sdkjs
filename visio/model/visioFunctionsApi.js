@@ -185,15 +185,24 @@
 			isFillIdx = true;
 
 			initialDefaultValue = 1; // number is return type in calculateValue. Solid fill.
+		} else if (cellName === "Font") {
+			// // uses other mechanism
+			// quickStyleCellName = null;
+			// quickStyleModifiersCellName = "QuickStyleFillMatrix";
+			// getModifiersMethod = themes[0].getFillProp;
+			// isFillIdx = true;
+
+			initialDefaultValue = "Calibri";
 		} else {
 			AscCommon.consoleLog("themeval argument error. cell name: " + cellName + " is unknown. return undefined.");
 			return undefined;
 		}
 
 		// lets define if shape is connector
-		// TODO rewrite consider 2.2.7.4.9	Connector
-		let isConnectorShape = shape.getCellNumberValue("EndArrow") !== 0
-			|| shape.getCellNumberValue("BeginArrow") !== 0;
+		// consider 2.2.7.4.9	Connector
+		// let isConnectorShape = shape.getCellNumberValue("EndArrow") !== 0
+		// 	|| shape.getCellNumberValue("BeginArrow") !== 0;
+		let isConnectorShape = shape.isConnectorStyleIherited;
 
 		// TODO rewrite themeScopeCellName choose consider 2.2.7.4.2	Dynamic Theme Identification
 		// find theme index
@@ -470,6 +479,13 @@
 				result = Number(fillPattern);
 			} else {
 				AscCommon.consoleLog("Error in themeval. result is not changed to appropriate type or quickStyleCellName is not set.");
+			}
+		}
+
+		if (isNaN(quickStyleColor) && isNaN(quickStyleMatrix)) {
+			// other mechanism for theme value calculate is used
+			if (cellName === "Font") {
+				result = theme.getFontScheme().majorFont.latin;
 			}
 		}
 

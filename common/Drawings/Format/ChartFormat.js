@@ -2438,6 +2438,22 @@
 	CDLbl.prototype.notAllowedWithoutId = function() {
 		return false;
 	};
+
+    // function to get label content width without accessing inner fields of CDLbl
+    CDLbl.prototype.getContentWidth = function() {
+        if (!this.tx || !this.tx.rich || !this.getContentWidth) {
+            return 0;
+        }
+        return this.tx.rich.getContentWidth();
+    };
+
+    // function to get label max content width without accessing inner fields of CDLbl
+    CDLbl.prototype.getMaxContentWidth = function(maxWidth, bLeft) {
+        if (!this.tx || !this.tx.rich || !this.getMaxContentWidth) {
+            return 0;
+        }
+        return this.tx.rich.getMaxContentWidth(maxWidth, bLeft);
+    };
     CDLbl.prototype.Check_AutoFit = function() {
         return true;
     };
@@ -14444,7 +14460,7 @@
         this.drawerData = null;
 
         let oDrawerData = oChartSpace.chartObj.recalculatePositionText(this);
-        if(!oDrawerData) {
+        if(!oDrawerData || !oDrawerData.coefficients) {
             return;
         }
         this.drawerData = oDrawerData;
@@ -16031,7 +16047,7 @@
         }
         else {
             oContent.SetApplyToAll(true);
-            let sContentText = oContent.GetSelectedText(false, {NewLine: true, NewParagraph: true});
+            let sContentText = oContent.GetSelectedText(false);
             oContent.SetApplyToAll(false);
             if(sContentText !== sText) {
                 bClear = true;
@@ -16521,7 +16537,12 @@
 
     function fCreateRef(oBBoxInfo) {
         if(oBBoxInfo) {
-            return AscCommon.parserHelp.getEscapeSheetName(oBBoxInfo.worksheet.getName()) + "!" + oBBoxInfo.bbox.getAbsName();
+            let externalIndex = null;
+            let api = Asc['editor'] && Asc['editor'].wbModel;
+            if (api && oBBoxInfo && oBBoxInfo.worksheet) {
+                externalIndex = Asc['editor'].wbModel.getExternalIndexByWorksheet(oBBoxInfo.worksheet);
+            }
+            return AscCommon.parserHelp.getEscapeSheetName((externalIndex !== null ? "[" + externalIndex + "]" : "") + oBBoxInfo.worksheet.getName()) + "!" + oBBoxInfo.bbox.getAbsName();
         }
         return null;
     }

@@ -458,7 +458,9 @@
 			this.m_oFactoryClass[AscDFH.historyitem_type_Pdf_Annot_Underline]	= AscPDF.CAnnotationUnderline;
 			this.m_oFactoryClass[AscDFH.historyitem_type_Pdf_Annot_Strikeout]	= AscPDF.CAnnotationStrikeout;
 			this.m_oFactoryClass[AscDFH.historyitem_type_Pdf_Annot_FreeText]	= AscPDF.CAnnotationFreeText;
+			this.m_oFactoryClass[AscDFH.historyitem_type_Pdf_Annot_Stamp]		= AscPDF.CAnnotationStamp;
 			this.m_oFactoryClass[AscDFH.historyitem_type_Pdf_Page]				= AscPDF.CPageInfo;
+			this.m_oFactoryClass[AscDFH.historyitem_type_Pdf_PropLocker]        = AscPDF.PropLocker;
 		}
 
 		this.m_oFactoryClass[AscDFH.historyitem_type_DocumentMacros] = AscCommon.CDocumentMacros;

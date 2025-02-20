@@ -295,7 +295,7 @@ Paragraph.prototype.Copy = function(Parent, DrawingDocument, oPr)
 	{
 		var Item = this.Content[Index];
 
-		if (para_Comment === Item.Type && true === oPr.SkipComments)
+		if (para_Comment === Item.Type && (true === oPr.SkipComments || oPr.Comparison && oPr.Comparison.skipCommentElementOnCopyParagraph(Item)))
 			continue;
 		if (para_Bookmark === Item.Type && true === oPr.SkipBookmarks)
 			continue;
@@ -418,6 +418,20 @@ Paragraph.prototype.GetFirstRunPr = function()
 		return this.TextPr.Value.Copy();
 
 	return this.Content[0].Pr.Copy();
+};
+Paragraph.prototype.GetParaEndPr = function()
+{
+	return this.TextPr.Value.Copy();
+};
+Paragraph.prototype.SetParaEndPr = function(textPr)
+{
+	if (!textPr)
+		return;
+	
+	this.TextPr.Set_Value(textPr.Copy());
+	let endRun = this.GetParaEndRun();
+	if (endRun)
+		endRun.SetPr(textPr.Copy());
 };
 Paragraph.prototype.Get_FirstTextPr = function()
 {
@@ -1493,7 +1507,7 @@ Paragraph.prototype.CheckNotInlineObject = function(nMathPos, nDirection)
 
 	return true;
 };
-Paragraph.prototype.RecalculateEndInfo = function(isFast)
+Paragraph.prototype.RecalculateEndInfo = function(isFast, isForce)
 {
 	let logicDocument = this.GetLogicDocument();
 	if (!logicDocument || !logicDocument.GetRecalcId)
@@ -1504,7 +1518,7 @@ Paragraph.prototype.RecalculateEndInfo = function(isFast)
 		return;
 	
 	let prevEndInfo = this.Parent.GetPrevElementEndInfo(this);
-	if (prevEndInfo && !prevEndInfo.CheckRecalcId(recalcId))
+	if (!isForce && prevEndInfo && !prevEndInfo.CheckRecalcId(recalcId))
 		return;
 	
 	let prsi = AscWord.ParagraphStatePool.getEndInfoState();
@@ -2015,7 +2029,12 @@ Paragraph.prototype.GetTextOnLine = function(nCurLine)
 	this.Selection.Use   = true;
 	this.Selection.Start = false;
 	this.SetSelectionContentPos(oStartPos, oEndPos);
-	let sResult = this.GetSelectedText(false, {Numbering : false});
+	let sResult = this.GetSelectedText(false, {
+		Numbering : false,
+		ParaSeparator : "",
+		TableCellSeparator : "",
+		TableRowSeparator : ""
+	});
 
 	this.LoadSelectionState(oState);
 
@@ -2379,7 +2398,6 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 	{
 		var _Line        = this.Lines[CurLine];
 		var _LineMetrics = _Line.Metrics;
-		var EndLinePos   = _Line.EndPos;
 
 		var Y0 = (_Page.Y + _Line.Y - _LineMetrics.Ascent);
 		var Y1 = (_Page.Y + _Line.Y + _LineMetrics.Descent);
@@ -2535,7 +2553,7 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 				isForm     = oInlineSdt.IsForm();
 				oFormShd   = isForm ? oInlineSdt.GetFormShd() : null;
 
-				if (oFormShd && !oFormShd.IsNil())
+				if ((oFormShd && !oFormShd.IsNil()) || oInlineSdt.getShdColor())
 				{
 					isFormShd = true;
 					break;
@@ -2545,7 +2563,8 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 			if (SdtHighlightColor || FormsHighlight || isFormShd)
 			{
 				var oSdtBounds;
-				var oPrevColor = new CDocumentColor(-1, -1, -1);
+				let currentColor = new AscWord.CDocumentColorA(-1, -1, -1, 255);
+				let shdColor = null;
 
 				let isDrawFormHighlight = !pGraphics.isPrintMode;
 				if (true === LogicDocument.ForceDrawFormHighlight)
@@ -2559,6 +2578,7 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 					isForm     = oInlineSdt.IsForm();
 					oSdtBounds = PDSH.InlineSdt[nSdtIndex].GetRangeBounds(CurLine, CurRange);
 					oFormShd   = isForm ? oInlineSdt.GetFormShd() : null;
+					shdColor   = oInlineSdt.getShdColor();
 
 					if (-1 !== fixedForms.indexOf(oInlineSdt) || oInlineSdt.IsFixedForm())
 						continue;
@@ -2577,43 +2597,51 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 
 						if (oInlineSdt.IsCurrentComplexForm() || !isDrawFormHighlight)
 						{
-							if (!oPrevColor.IsEqualRGB(oFormShdColor))
+							if (!currentColor.isEqualRgb(oFormShdColor))
 							{
 								pGraphics.b_color1(oFormShdColor.r, oFormShdColor.g, oFormShdColor.b, 255);
-								oPrevColor.SetFromColor(oFormShdColor);
+								currentColor.setRgb(oFormShdColor);
 							}
 						}
 						else
 						{
 							if ((formHighlightColor = oInlineSdt.GetFormHighlightColor(FormsHighlight)))
 							{
-								if (!oPrevColor.IsEqualRGB(formHighlightColor))
+								if (!currentColor.isEqualRgb(formHighlightColor))
 								{
 									pGraphics.b_color1(formHighlightColor.r, formHighlightColor.g, formHighlightColor.b, 255);
-									oPrevColor.SetFromColor(formHighlightColor);
+									currentColor.setRgb(formHighlightColor);
 								}
 							}
-							else if (!oPrevColor.IsEqualRGB(oFormShdColorDark))
+							else if (!currentColor.isEqualRgb(oFormShdColorDark))
 							{
 								pGraphics.b_color1(oFormShdColorDark.r, oFormShdColorDark.g, oFormShdColorDark.b, 255);
-								oPrevColor.SetFromColor(oFormShdColorDark);
+								currentColor.setRgb(oFormShdColorDark);
 							}
 						}
 					}
 					else if (isForm && (formHighlightColor = oInlineSdt.GetFormHighlightColor(FormsHighlight)) && !oInlineSdt.IsCurrentComplexForm())
 					{
-						if (!oPrevColor.IsEqualRGB(formHighlightColor))
+						if (!currentColor.isEqualRgb(formHighlightColor))
 						{
 							pGraphics.b_color1(formHighlightColor.r, formHighlightColor.g, formHighlightColor.b, 255);
-							oPrevColor.SetFromColor(formHighlightColor);
+							currentColor.setRgb(formHighlightColor);
+						}
+					}
+					else if (shdColor)
+					{
+						if (!currentColor.isEqual(shdColor))
+						{
+							pGraphics.b_color1(shdColor.r, shdColor.g, shdColor.b, shdColor.a);
+							currentColor.setRgba(shdColor);
 						}
 					}
 					else if (!isForm && SdtHighlightColor)
 					{
-						if (!oPrevColor.IsEqualRGB(SdtHighlightColor))
+						if (!currentColor.isEqualRgb(SdtHighlightColor))
 						{
 							pGraphics.b_color1(SdtHighlightColor.r, SdtHighlightColor.g, SdtHighlightColor.b, 255);
-							oPrevColor.SetFromColor(SdtHighlightColor);
+							currentColor.setRgb(SdtHighlightColor);
 						}
 					}
 					else
@@ -2689,24 +2717,25 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 				pGraphics.df();
 				Element = aHigh.Get_Next();
 			}
-			
 			//----------------------------------------------------------------------------------------------------------
 			// Рисуем выделение разрешенных областей
 			//----------------------------------------------------------------------------------------------------------
-			let aPerm = PDSH.Perm;
-			Element   = aPerm.Get_Next();
-			while (null != Element)
+			if (!pGraphics.isPrintMode && !pGraphics.isPdf())
 			{
-				if (!pGraphics.set_fillColor)
-					pGraphics.b_color1(Element.r, Element.g, Element.b, 255);
-				else
-					pGraphics.set_fillColor(Element.r, Element.g, Element.b);
-				
-				pGraphics.rect(Element.x0, Element.y0, Element.x1 - Element.x0, Element.y1 - Element.y0);
-				pGraphics.df();
-				Element = aPerm.Get_Next();
+				let aPerm = PDSH.Perm;
+				Element   = aPerm.Get_Next();
+				while (null != Element)
+				{
+					if (!pGraphics.set_fillColor)
+						pGraphics.b_color1(Element.r, Element.g, Element.b, 255);
+					else
+						pGraphics.set_fillColor(Element.r, Element.g, Element.b);
+					
+					pGraphics.rect(Element.x0, Element.y0, Element.x1 - Element.x0, Element.y1 - Element.y0);
+					pGraphics.df();
+					Element = aPerm.Get_Next();
+				}
 			}
-
 			//----------------------------------------------------------------------------------------------------------
 			// Рисуем комментарии
 			//----------------------------------------------------------------------------------------------------------
@@ -3274,7 +3303,6 @@ Paragraph.prototype.drawRunContentLines = function(CurPage, pGraphics, drawState
 	var arrFormAreasColors = [];
 	var arrFormAreas       = [];
 	var arrFormRects       = [];
-	var arrFormAreasWidths = [];
 	
 	let drawRunPrReview = !pGraphics.isPrintMode && !pGraphics.isPdf();
 
@@ -3401,7 +3429,7 @@ Paragraph.prototype.drawRunContentLines = function(CurPage, pGraphics, drawState
 					RunPrReview       = Element.Additional.RunPr;
 					arrRunReviewRects = [];
 					arrRunReviewAreas.push(arrRunReviewRects);
-					arrRunReviewAreasColors.push(new CDocumentColor(Element.r, Element.g, Element.b));
+					arrRunReviewAreasColors.push(new AscWord.CDocumentColorA(Element.r, Element.g, Element.b, 255));
 				}
 
 				arrRunReviewRectsLine.push({
@@ -3544,8 +3572,7 @@ Paragraph.prototype.drawRunContentLines = function(CurPage, pGraphics, drawState
 							}
 							arrFormRects = [];
 							arrFormAreas.push(arrFormRects);
-							arrFormAreasColors.push(new CDocumentColor(Element.r, Element.g, Element.b));
-							arrFormAreasWidths.push(Element.w);
+							arrFormAreasColors.push(new AscWord.CDocumentColorA(Element.r, Element.g, Element.b, Element.a));
 						}
 
 						arrFormRectsLine.push({
@@ -3566,37 +3593,16 @@ Paragraph.prototype.drawRunContentLines = function(CurPage, pGraphics, drawState
 
 		pGraphics.End_Command();
 	}
-
-	if (pGraphics.DrawPolygon)
+	
+	this.drawPolygons(pGraphics, arrRunReviewAreas, arrRunReviewAreasColors, 0, 0);
+	this.drawPolygons(pGraphics, arrFormAreas, arrFormAreasColors, 0, 0);
+};
+Paragraph.prototype.drawPolygons = function(graphics, areas, colors, lineWidth, shift)
+{
+	for (let i = 0, areaCount = areas.length; i < areaCount; ++i)
 	{
-		for (var ReviewAreaIndex = 0, ReviewAreasCount = arrRunReviewAreas.length; ReviewAreaIndex < ReviewAreasCount; ++ReviewAreaIndex)
-		{
-			var arrRunReviewRects = arrRunReviewAreas[ReviewAreaIndex];
-			var oRunReviewColor   = arrRunReviewAreasColors[ReviewAreaIndex];
-			var ReviewPolygon     = new AscCommon.CPolygon();
-			ReviewPolygon.fill(arrRunReviewRects);
-			var PolygonPaths = ReviewPolygon.GetPaths(0);
-			pGraphics.p_color(oRunReviewColor.r, oRunReviewColor.g, oRunReviewColor.b, 255);
-			for (var PolygonIndex = 0, PolygonsCount = PolygonPaths.length; PolygonIndex < PolygonsCount; ++PolygonIndex)
-			{
-				var Path = PolygonPaths[PolygonIndex];
-				pGraphics.DrawPolygon(Path, 1, 0);
-			}
-		}
-
-		for (var nFormAreaIndex = 0, nFormAreasCount = arrFormAreas.length; nFormAreaIndex < nFormAreasCount; ++nFormAreaIndex)
-		{
-			var arrFormRects = arrFormAreas[nFormAreaIndex];
-			var oFormColor   = arrFormAreasColors[nFormAreaIndex];
-			var oPolygon     = new AscCommon.CPolygon();
-			oPolygon.fill(arrFormRects);
-			var arrPolygonPaths = oPolygon.GetPaths(0);
-			pGraphics.p_color(oFormColor.r, oFormColor.g, oFormColor.b, 255);
-			for (var nPolygonIndex = 0, nPolygonsCount = arrPolygonPaths.length; nPolygonIndex < nPolygonsCount; ++nPolygonIndex)
-			{
-				pGraphics.DrawPolygon(arrPolygonPaths[nPolygonIndex], 1, 0);//arrFormAreasWidths[nFormAreaIndex], 0);
-			}
-		}
+		graphics.p_color(colors[i].r, colors[i].g, colors[i].b, colors[i].a);
+		graphics.drawPolygonByRects(areas[i], lineWidth, shift);
 	}
 };
 Paragraph.prototype.Internal_Draw_6 = function(CurPage, pGraphics, Pr)
@@ -4701,11 +4707,16 @@ Paragraph.prototype.Add = function(Item)
 
 	if (Item.SetParagraph)
 		Item.SetParagraph(this);
-
+	
+	let itemType = Item.GetType();
+	if ((para_Text === itemType || para_Space === itemType) && this.IsCurrentPosInComplexFieldCode())
+		Item = new ParaInstrText(Item.GetCodePoint());
+	
 	switch (Item.Get_Type())
 	{
 		case para_Text:
 		case para_Space:
+		case para_InstrText:
 		case para_PageNum:
 		case para_Tab:
 		case para_Drawing:
@@ -4718,6 +4729,7 @@ Paragraph.prototype.Add = function(Item)
 		case para_ContinuationSeparator:
 		default:
 		{
+			
 			// Элементы данного типа добавляем во внутренний элемент
 			this.Content[this.CurPos.ContentPos].Add(Item);
 
@@ -5953,6 +5965,10 @@ Paragraph.prototype.private_CorrectPosInCombiningMark = function(oContentPos, is
  */
 Paragraph.prototype.getSearchPosByXY = function(x, y, page, yIsLine, stepEnd, centerMode)
 {
+	let logicDocument = this.GetLogicDocument();
+	if (stepEnd && logicDocument && logicDocument.IsSelectParagraphEndMark)
+		stepEnd = logicDocument.IsSelectParagraphEndMark();
+	
 	let searchPos = new AscWord.ParagraphSearchPositionXY();
 	searchPos.init(this, stepEnd, centerMode);
 	
@@ -6653,7 +6669,7 @@ Paragraph.prototype.Get_StartRangePos2 = function(CurLine, CurRange)
 	this.Content[Pos].Get_StartRangePos2(CurLine, CurRange, ContentPos, Depth + 1);
 	return ContentPos;
 };
-Paragraph.prototype.Get_EndRangePos2 = function(CurLine, CurRange)
+Paragraph.prototype.Get_EndRangePos2 = function(CurLine, CurRange, stepEnd)
 {
 	var ContentPos = new AscWord.CParagraphContentPos();
 	if (!this.Lines[CurLine] || !this.Lines[CurLine].Ranges[CurRange])
@@ -6661,8 +6677,12 @@ Paragraph.prototype.Get_EndRangePos2 = function(CurLine, CurRange)
 
 	var Depth = 0;
 	var Pos   = this.Lines[CurLine].Ranges[CurRange].EndPos;
+	if (false === stepEnd && Pos === this.Content.length - 1 && Pos > 0)
+		--Pos;
+	
 	ContentPos.Update(Pos, Depth);
 	this.Content[Pos].Get_EndRangePos2(CurLine, CurRange, ContentPos, Depth + 1);
+	
 	return ContentPos;
 };
 Paragraph.prototype.Get_StartPos = function()
@@ -7412,7 +7432,7 @@ Paragraph.prototype.MoveCursorToDrawing = function(Id, bBefore)
 	this.RemoveSelection();
 	this.Set_ParaContentPos(ContentPos, false, -1, -1);
 
-	this.RecalculateCurPos();
+	this.RecalculateCurPos(true, true, false, false);
 	this.CurPos.RealX = this.CurPos.X;
 	this.CurPos.RealY = this.CurPos.Y;
 };
@@ -7469,17 +7489,17 @@ Paragraph.prototype.CanCorrectContent = function()
 /**
  * Корректируем содержимое параграфа
  */
-Paragraph.prototype.CorrectContent = function()
+Paragraph.prototype.CorrectContent = function(startPos, endPos, preserveEmptyElements)
 {
 	if (!this.CanCorrectContent())
 		return;
 
-	this.Correct_Content();
+	this.Correct_Content(startPos, endPos, preserveEmptyElements);
 
 	if (this.CurPos.ContentPos >= this.Content.length - 1)
 		this.MoveCursorToEndPos();
 };
-Paragraph.prototype.Correct_Content = function(_StartPos, _EndPos, bDoNotDeleteEmptyRuns)
+Paragraph.prototype.Correct_Content = function(_StartPos, _EndPos, preserveEmptyElements)
 {
 	if (!this.CanCorrectContent())
 		return;
@@ -7512,7 +7532,8 @@ Paragraph.prototype.Correct_Content = function(_StartPos, _EndPos, bDoNotDeleteE
 				|| para_Field === CurElement.Type
 				|| (para_InlineLevelSdt === CurElement.Type && !CurElement.IsPlaceHolder()))
 			&& true === CurElement.Is_Empty()
-			&& true !== CurElement.Is_CheckingNearestPos())
+			&& true !== CurElement.Is_CheckingNearestPos()
+			&& true !== preserveEmptyElements)
 		{
 			this.Internal_Content_Remove(CurPos);
 		}
@@ -7533,7 +7554,7 @@ Paragraph.prototype.Correct_Content = function(_StartPos, _EndPos, bDoNotDeleteE
 		}
 		else
 		{
-			if (true !== bDoNotDeleteEmptyRuns)
+			if (true !== preserveEmptyElements)
 			{
 				// TODO (Para_End): Предпоследний элемент мы не проверяем, т.к. на ран с Para_End мы не ориентируемся
 				if (true === CurElement.Is_Empty() && (0 < CurPos || para_Run !== this.Content[CurPos].Type) && CurPos < this.Content.length - 2 && para_Run === this.Content[CurPos + 1].Type)
@@ -8727,6 +8748,12 @@ Paragraph.prototype.DrawSelectionOnPage = function(CurPage, clipInfo)
 					
 					drawSelectionState.beginRange(iRange);
 					
+					if (rangeEnd === this.Content.length - 1
+						&& this.GetLogicDocument()
+						&& this.GetLogicDocument().IsSelectParagraphEndMark
+						&& !this.GetLogicDocument().IsSelectParagraphEndMark())
+						--rangeEnd;
+					
 					for (let pos = rangeStart; pos <= rangeEnd; ++pos)
 					{
 						this.Content[pos].drawSelectionInRange(iLine, iRange, drawSelectionState);
@@ -9139,6 +9166,12 @@ Paragraph.prototype.GetSelectionBounds = function()
 				
 				if (StartPos > rangeEnd || EndPos < rangeStart)
 					continue;
+				
+				if (rangeEnd === this.Content.length - 1
+					&& this.GetLogicDocument()
+					&& this.GetLogicDocument().IsSelectParagraphEndMark
+					&& !this.GetLogicDocument().IsSelectParagraphEndMark())
+					--rangeEnd;
 				
 				drawSelectionState.beginRange(iRange);
 				for (var CurPos = rangeStart; CurPos <= rangeEnd; CurPos++)
@@ -13986,7 +14019,7 @@ Paragraph.prototype.Refresh_RecalcData = function(Data)
 
 			break;
 		}
-
+		case AscDFH.historyitem_Paragraph_Bidi:
 		case AscDFH.historyitem_Paragraph_Align:
 		case AscDFH.historyitem_Paragraph_DefaultTabSize:
 		case AscDFH.historyitem_Paragraph_Ind_First:
@@ -16321,15 +16354,13 @@ Paragraph.prototype.GetText = function(oPr)
 
 	oText.SetBreakOnNonText(false);
 	
-	if (oPr && undefined !== oPr.ParaSeparator)
-		oText.SetParaSeparator(oPr.ParaSeparator);
-	else if (oPr && undefined !== oPr.ParaEndToSpace ? oPr.ParaEndToSpace: true)
-		oText.SetParaSeparator(" ");
-	
+	oText.SetParaSeparator(oPr && undefined !== oPr.ParaSeparator ? oPr.ParaSeparator : "\r\n");
 	oText.SetParaNumbering(oPr && undefined !== oPr.Numbering ? oPr.Numbering: true);
 	oText.SetParaMath(oPr && undefined !== oPr.Math ? oPr.Math: true);
 	oText.SetParaTabSymbol(oPr && undefined !== oPr.TabSymbol ? oPr.TabSymbol: " ");
 	oText.SetParaNewLineSeparator(oPr && undefined !== oPr.NewLineSeparator ? oPr.NewLineSeparator: "\r");
+	oText.SetTableCellSeparator(oPr && undefined !== oPr.TableCellSeparator ? oPr.TableCellSeparator: "\t");
+	oText.SetTableRowSeparator(oPr && undefined !== oPr.TableRowSeparator ? oPr.TableRowSeparator: "\r\n");
 
 	if (true === oText.Numbering)
 	{
@@ -16517,9 +16548,29 @@ Paragraph.prototype.SetParagraphPr = function(oParaPr)
 {
 	this.SetDirectParaPr(oParaPr);
 };
-Paragraph.prototype.SetParagraphAlign = function(Align)
+Paragraph.prototype.SetParagraphBidi = function(isRtl)
 {
-	this.Set_Align(Align);
+	if (this.Pr.Bidi === isRtl)
+		return;
+	
+	this.private_AddPrChange();
+	AscCommon.AddAndExecuteChange(new CChangesParagraphBidi(this, this.Pr.Bidi, isRtl));
+};
+Paragraph.prototype.GetParagraphBidi = function()
+{
+	return !!this.Get_CompiledPr2(false).ParaPr.Bidi;
+};
+Paragraph.prototype.SetParagraphAlign = function(align)
+{
+	if (this.isRtlDirection())
+	{
+		if (AscCommon.align_Left === align)
+			align = AscCommon.align_Right;
+		else if (AscCommon.align_Right === align)
+			align = AscCommon.align_Left;
+	}
+	
+	this.Set_Align(align);
 };
 Paragraph.prototype.GetParagraphAlign = function()
 {
@@ -16774,6 +16825,22 @@ Paragraph.prototype.GetCurrentPermRanges = function()
 	}
 	
 	return permRanges;
+};
+Paragraph.prototype.GetPermRangesByPos = function(paraPos)
+{
+	let state = this.SaveSelectionState();
+	this.Set_ParaContentPos(paraPos, false, -1, -1, false);
+	let permRanges = this.GetCurrentPermRanges();
+	this.LoadSelectionState(state);
+	return permRanges;
+};
+Paragraph.prototype.IsCurrentPosInComplexFieldCode = function()
+{
+	let cfStatePos = this.GetCurrentComplexFields(true);
+	if (!cfStatePos.length)
+		return false;
+	
+	return cfStatePos[cfStatePos.length - 1].IsFieldCode();
 };
 Paragraph.prototype.GetCurrentComplexFields = function(bReturnFieldPos)
 {
@@ -18466,12 +18533,8 @@ Paragraph.prototype.Document_Is_SelectionLocked = function(CheckType)
 	var arrContentControls = this.GetSelectedContentControls();
 	for (var nIndex = 0, nCount = arrContentControls.length; nIndex < nCount; ++nIndex)
 	{
-		let cc     = arrContentControls[nIndex];
-		let paraCC = cc.GetParagraph();
-		if (!paraCC)
-			continue;
-		
-		if (paraCC !== this)
+		let cc = arrContentControls[nIndex];
+		if (!(cc instanceof AscWord.CInlineLevelSdt) || this !== cc.GetParagraph())
 		{
 			// Проверяем типы, при которых произойдет удаление элемента, содержащего данный контрол
 			if (CheckType !== AscCommon.changestype_Paragraph_AddText
@@ -19202,7 +19265,7 @@ CParaPos.prototype.IsValid = function(oParagraph)
 
 
 // используется в Internal_Draw_3 и Internal_Draw_5
-function CParaDrawingRangeLinesElement(y0, y1, x0, x1, w, r, g, b, Additional, Additional2)
+function CParaDrawingRangeLinesElement(y0, y1, x0, x1, w, r, g, b, a, Additional, Additional2)
 {
     this.y0 = y0;
     this.y1 = y1;
@@ -19212,6 +19275,7 @@ function CParaDrawingRangeLinesElement(y0, y1, x0, x1, w, r, g, b, Additional, A
     this.r  = r;
     this.g  = g;
     this.b  = b;
+	this.a  = a;
 
     this.Additional   = Additional;
     this.Additional2  = Additional2;
@@ -19233,8 +19297,14 @@ CParaDrawingRangeLines.prototype =
 
     Add : function (y0, y1, x0, x1, w, r, g, b, Additional, Additional2)
     {
-        this.Elements.push( new CParaDrawingRangeLinesElement(y0, y1, x0, x1, w, r, g, b, Additional, Additional2) );
+        this.Elements.push( new CParaDrawingRangeLinesElement(y0, y1, x0, x1, w, r, g, b, 255, Additional, Additional2) );
     },
+	
+	// TODO: Unite Add and addWithAlpha methods
+	addWithAlpha : function(y0, y1, x0, x1, w, r, g, b, a, Additional, Additional2)
+	{
+		this.Elements.push(new CParaDrawingRangeLinesElement(y0, y1, x0, x1, w, r, g, b, a, Additional, Additional2));
+	},
 
     Get_Next : function(isSaveIntermediate)
     {
@@ -19308,7 +19378,8 @@ CParaDrawingRangeLines.prototype =
 			&& Math.abs(PrevEl.w - Element.w) < 0.001
 			&& PrevEl.r === Element.r
 			&& PrevEl.g === Element.g
-			&& PrevEl.b === Element.b)
+			&& PrevEl.b === Element.b
+			&& PrevEl.a === Element.a)
 		{
 			if (undefined === PrevEl.Additional && undefined === Element.Additional)
 				return true;
@@ -19481,6 +19552,11 @@ CComplexFieldStatePos.prototype.IsEqual = function(oState)
 		&& oState.ComplexField
 		&& this.ComplexField.GetBeginChar() === oState.ComplexField.GetBeginChar());
 };
+CComplexFieldStatePos.prototype.IsShowFieldCode = function()
+{
+	let beginChar = this.ComplexField ? this.ComplexField.GetBeginChar() : null;
+	return beginChar ? beginChar.IsShowFieldCode() : null;
+};
 
 //----------------------------------------------------------------------------------------------------------------------
 // Классы для работы с курсором
@@ -19600,7 +19676,7 @@ CParagraphSearchPos.prototype.InitComplexFields = function(arrComplexFields)
 };
 CParagraphSearchPos.prototype.isComplexField = function()
 {
-	return (this.ComplexFields.length > 0 ? true : false);
+	return (this.ComplexFields.length > 0);
 };
 CParagraphSearchPos.prototype.isComplexFieldCode = function()
 {
@@ -19613,6 +19689,18 @@ CParagraphSearchPos.prototype.isComplexFieldCode = function()
 			return true;
 	}
 
+	return false;
+};
+CParagraphSearchPos.prototype.isHiddenComplexFieldPart = function()
+{
+	for (let fieldIndex = 0, fieldCount = this.ComplexFields.length; fieldIndex < fieldCount; ++ fieldIndex)
+	{
+		let isFieldCode = this.ComplexFields[fieldIndex].IsFieldCode();
+		let isShowCode  = this.ComplexFields[fieldIndex].IsShowFieldCode();
+		if (isFieldCode !== isShowCode)
+			return true;
+	}
+	
 	return false;
 };
 CParagraphSearchPos.prototype.isComplexFieldValue = function()
@@ -19730,6 +19818,14 @@ CParagraphGetText.prototype.SetParaMath = function(bValue)
 CParagraphGetText.prototype.SetParaTabSymbol = function(sValue)
 {
 	this.TabSymbol = sValue;
+};
+CParagraphGetText.prototype.SetTableCellSeparator = function(sValue)
+{
+	this.TableCellSeparator = sValue;
+};
+CParagraphGetText.prototype.SetTableRowSeparator = function(sValue)
+{
+	this.TableRowSeparator = sValue;
 };
 
 function CParagraphNearPos()

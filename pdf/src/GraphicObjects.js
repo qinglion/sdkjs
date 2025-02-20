@@ -1009,11 +1009,25 @@
         }
         return false;
     };
+    CGraphicObjects.prototype.checkSelectedObjectsAndCallback = function(callback, args, bNoSendProps, nHistoryPointType, aAdditionaObjects, bNoCheckLock) {
+    	let oDoc = this.document;
+        let check_type = AscCommon.changestype_Drawing_Props;
+
+        if(bNoCheckLock || oDoc.Document_Is_SelectionLocked(check_type, null, false, false) === false) {
+            let nPointType = AscFormat.isRealNumber(nHistoryPointType) ? nHistoryPointType : AscDFH.historydescription_CommonControllerCheckSelected;
+			oDoc.StartAction(nPointType);
+            callback.apply(this, args);
+			oDoc.Recalculate();
+			oDoc.FinalizeAction(true);
+        }
+    };
     CGraphicObjects.prototype.selectObject = function (object, pageIndex) {
-        if (object.IsAnnot() && !object.IsShapeBased())
-            return;
-        
+        let oDoc = this.document;
         object.select(this, pageIndex);
+        if (this.selectedObjects.length == 1 && !oDoc.GetActiveObject()) {
+            oDoc.SetMouseDownObject(object);
+        }
+
         if (AscFormat.MoveAnimationDrawObject) {
             if (object instanceof AscFormat.MoveAnimationDrawObject) {
                 for (let i = this.selectedObjects.length - 1; i > -1; --i) {
@@ -1203,22 +1217,42 @@
         } else {
             for (i = 0; i < this.selectedObjects.length; ++i) {
                 let oDrawing = this.selectedObjects[i];
-                // if (oDrawing.selectStartPage === pageIndex) {
-                if (oDrawing.selectStartPage === pageIndex && !oDrawing.IsFreeText || (oDrawing.IsFreeText && !oDrawing.IsFreeText())) {
+                if (oDrawing.selectStartPage === pageIndex) {
                     let nType = oDrawing.IsAnnot() && oDrawing.IsStamp() ? AscFormat.TYPE_TRACK.ANNOT_STAMP : AscFormat.TYPE_TRACK.SHAPE;
 
-                    drawingDocument.DrawTrack(
-                        nType,
-                        oDrawing.getTransformMatrix(),
-                        0,
-                        0,
-                        oDrawing.extX,
-                        oDrawing.extY,
-                        AscFormat.CheckObjectLine(oDrawing),
-                        oDrawing.canRotate(),
-                        undefined,
-                        (isDrawHandles || this.document.IsViewerObject(oDrawing)) && oDrawing.canEdit()
-                    );
+                    if (oDrawing.IsAnnot() && (oDrawing.IsTextMarkup() || oDrawing.IsComment())) {
+                        oDrawing.DrawSelected(drawingDocument.Overlay);
+                    }
+                    else {
+                        if (oDrawing.IsAnnot() && oDrawing.IsFreeText()) {
+                            drawingDocument.DrawTrack(
+                                nType,
+                                oDrawing.getTransformMatrix(),
+                                0,
+                                0,
+                                oDrawing.extX,
+                                oDrawing.extY,
+                                AscFormat.CheckObjectLine(oDrawing),
+                                oDrawing.canRotate(),
+                                undefined,
+                                true
+                            );
+                        }
+                        else {
+                            drawingDocument.DrawTrack(
+                                nType,
+                                oDrawing.getTransformMatrix(),
+                                0,
+                                0,
+                                oDrawing.extX,
+                                oDrawing.extY,
+                                AscFormat.CheckObjectLine(oDrawing),
+                                oDrawing.canRotate(),
+                                undefined,
+                                (isDrawHandles || this.document.IsViewerObject(oDrawing)) && oDrawing.canEdit()
+                            );
+                        }
+                    }
                 }
             }
             if (this.selectedObjects.length === 1 && this.selectedObjects[0].drawAdjustments && this.selectedObjects[0].selectStartPage === pageIndex) {
@@ -1268,6 +1302,23 @@
             drawingDocument.EndDrawTracking();
 
 
+    };
+    CGraphicObjects.prototype.deselectObject = function (object) {
+        let oDoc = this.document;
+        for (let i = 0; i < this.selectedObjects.length; ++i) {
+            if (this.selectedObjects[i] === object) {
+                object.selected = false;
+                this.selectedObjects.splice(i, 1);
+                if(this.selectedObjects.length === 0) {
+                    this.lastSelectedObject = object;
+                }
+                this.checkShowMediaControlOnSelect();
+                if (!object.IsFreeText || !object.IsFreeText() || !object.IsInTextBox()) {
+                    oDoc.SetMouseDownObject(object, this.selectedObjects.length == 0);
+                }
+                return;
+            }
+        }
     };
     CGraphicObjects.prototype.hyperlinkCanAdd = function (bCheckInHyperlink) {
         var content = this.getTargetDocContent();
@@ -1331,7 +1382,6 @@
         return bRet;
     };
 
-    CGraphicObjects.prototype.loadDocumentStateAfterLoadChanges = function() {};
     CGraphicObjects.prototype.saveDocumentState = function(){};
 	
 	CGraphicObjects.prototype.getAllRasterImagesOnPage = function(pageIndex) {
@@ -1373,6 +1423,7 @@
     CGraphicObjects.prototype.getDrawingsPasteShift     = AscFormat.DrawingObjectsController.prototype.getDrawingsPasteShift;
     CGraphicObjects.prototype.removeCallback            = AscFormat.DrawingObjectsController.prototype.removeCallback;
     CGraphicObjects.prototype.getAllSingularDrawings    = AscFormat.DrawingObjectsController.prototype.getAllSingularDrawings;
+    CGraphicObjects.prototype.loadDocumentStateAfterLoadChanges = AscFormat.DrawingObjectsController.prototype.loadDocumentStateAfterLoadChanges;
 
     CGraphicObjects.prototype.startRecalculate = function() {};
 

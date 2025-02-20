@@ -4617,7 +4617,7 @@ PasteProcessor.prototype =
 			this.oLogicDocument.RemoveBeforePaste();
 			this.oDocument = this._GetTargetDocument(this.oDocument);
 
-			var oPr = {NewLineParagraph: true, Numbering: true};
+			var oPr = {Numbering: true};
 
 			this._initSelectedElem();
 			if (this.pasteIntoElem && this.pasteIntoElem.GetNumPr && this.pasteIntoElem.GetNumPr()) {
@@ -6699,7 +6699,7 @@ PasteProcessor.prototype =
 			oThis._AddNextPrevToContent(oThis.oDocument);
 
 			if (isPasteTextIntoList) {
-				oThis._pasteText(oThis._getTextFromContent(oThis.aContent, {NewLineParagraph: true, Numbering: false}));
+				oThis._pasteText(oThis._getTextFromContent(oThis.aContent, {Numbering: false}));
 				return;
 			}
 
@@ -7745,7 +7745,7 @@ PasteProcessor.prototype =
 
 	_readFromBinaryExcel: function (base64) {
 		var oBinaryFileReader = new AscCommonExcel.BinaryFileReader(true);
-		var tempWorkbook = new AscCommonExcel.Workbook();
+		var tempWorkbook = new AscCommonExcel.Workbook(undefined, undefined, false);
 		tempWorkbook.DrawingDocument = editor.WordControl.m_oLogicDocument.DrawingDocument;
 		tempWorkbook.theme = this.oDocument.theme ? this.oDocument.theme : this.oLogicDocument.theme;
 		if (!tempWorkbook.theme && this.oLogicDocument.Get_Theme)

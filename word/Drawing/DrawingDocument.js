@@ -4476,7 +4476,7 @@ function CDrawingDocument()
 
 		var dKoefX = (drawPage.right - drawPage.left) / page.width_mm;
 		var dKoefY = (drawPage.bottom - drawPage.top) / page.height_mm;
-		this.AutoShapesTrack.SetCurrentPage(pageIndex, true);
+		this.AutoShapesTrack.SetCurrentPage(pageIndex);
 		if (!this.IsTextMatrixUse)
 		{
 			var _x = ((drawPage.left + dKoefX * x) >> 0);
@@ -5036,12 +5036,37 @@ function CDrawingDocument()
 			ctx.beginPath();
 		}
 	};
-
-	this.OnDrawContentControl = function(obj, state, geom)
+	
+	this.startCollectContentControlTracks = function()
 	{
 		if (window["NATIVE_EDITOR_ENJINE"] === true)
 			return;
-		return this.contentControls.OnDrawContentControl(obj, state, geom);
+		
+		return this.contentControls.startCollectTracks();
+	};
+	this.endCollectContentControlTracks = function()
+	{
+		if (window["NATIVE_EDITOR_ENJINE"] === true)
+			return;
+		
+		return this.contentControls.endCollectTracks();
+	};
+	this.addContentControlTrack = function(obj, state, geom)
+	{
+		if (window["NATIVE_EDITOR_ENJINE"] === true)
+			return;
+		
+		if (AscCommon.ContentControlTrack.In === state)
+			return this.contentControls.addTrackIn(obj, geom);
+		else
+			return this.contentControls.addTrackHover(obj, geom);
+	};
+	this.removeContentControlTrackHover = function()
+	{
+		if (window["NATIVE_EDITOR_ENJINE"] === true)
+			return;
+		
+		return this.contentControls.removeTrackHover();
 	};
 
 	this.DrawMathTrack = function (overlay)
@@ -6834,7 +6859,7 @@ function CDrawingDocument()
 			return true;
 		}
 
-		if (this.InlineTextTrackEnabled && !this.contentControls.isInlineTrack())
+		if (this.InlineTextTrackEnabled && !this.contentControls.getInlineMoveTrack())
 		{
 			this.InlineTextTrack = oWordControl.m_oLogicDocument.Get_NearestPos(pos.Page, pos.X, pos.Y);
 			this.InlineTextTrackPage = pos.Page;

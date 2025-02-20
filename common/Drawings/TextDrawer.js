@@ -122,6 +122,7 @@ CDocContentStructure.prototype.drawComments = function(graphics, transform)
         this.m_aComments[i].drawComment2(graphics, undefined, transform);
     }
 };
+
 CDocContentStructure.prototype.checkByWarpStruct = function(oWarpStruct, dWidth, dHeight, oTheme, oColorMap, oShape, dOneLineWidth, XLimit, dContentHeight, dKoeff)
 {
     var i, j, t, aByPaths,  aWarpedObjects = [];
@@ -194,9 +195,6 @@ CDocContentStructure.prototype.checkByWarpStruct = function(oWarpStruct, dWidth,
     }
     this.checkUnionPaths(aWarpedObjects2);
 };
-
-
-
 CDocContentStructure.prototype.checkContentReduct = function(oWarpStruct, dWidth, dHeight, oTheme, oColorMap, oShape, dOneLineWidth, XLimit, dContentHeight, dKoeff)
 {
     var i, j, t, aByPaths,  aWarpedObjects = [];
@@ -275,7 +273,53 @@ CDocContentStructure.prototype.getAllBackgroundsBorders = function(aParaBackgrou
     {
         this.m_aContent[i].getAllBackgroundsBorders(aParaBackgrounds, aBackgrounds, aBorders, aComments);
     }
-}
+};
+CDocContentStructure.prototype.getCombinedGeometry = function (transformMatrix) {
+    const paragraphStructures = this.m_aContent;
+    const lineStructures = paragraphStructures.reduce(function (acc, paragraphStructure) { return acc.concat(paragraphStructure.m_aContent) }, []);
+    const objectsToDraw = lineStructures.reduce(function (acc, lineStructure) { return acc.concat(lineStructure.m_aContent) }, []);
+
+    // allPaths - array of Path2 instances
+    const allPaths = objectsToDraw.reduce(function (acc, objectToDraw) { return acc.concat(objectToDraw.geometry.pathLst) }, []);
+
+    // allFormatPaths - array of Path instances
+    const allFormatPaths = allPaths.map(function (path) {
+        const formatPath = new AscFormat.Path();
+        path.convertToBezierCurves(formatPath, transformMatrix || new AscCommon.CMatrix());
+
+        formatPath.ArrPathCommandInfo = formatPath.ArrPathCommand.map(function (pathCommand) {
+            switch (pathCommand.id) {
+                case AscFormat.moveTo:
+                case AscFormat.lineTo:
+                    return { id: pathCommand.id, X: '' + pathCommand.X * 36000, Y: '' + pathCommand.Y * 36000 };
+                case AscFormat.bezier4:
+                    return {
+                        id: pathCommand.id,
+                        X0: '' + pathCommand.X0 * 36000, X1: '' + pathCommand.X1 * 36000, X2: '' + pathCommand.X2 * 36000,
+                        Y0: '' + pathCommand.Y0 * 36000, Y1: '' + pathCommand.Y1 * 36000, Y2: '' + pathCommand.Y2 * 36000
+                    };
+                default:
+                    return { id: pathCommand.id };
+            }
+        });
+
+        const properties = ['extrusionOk', 'fill', 'parent', 'pathH', 'pathW', 'stroke'];
+        properties.forEach(function (property) {
+            formatPath[property] = path[property];
+        });
+
+        return formatPath;
+    });
+
+    const combinedGeometry = new AscFormat.Geometry();
+    allFormatPaths.forEach(function (path) {
+        if (path.ArrPathCommand.length > 0) {
+            combinedGeometry.AddPath(path);
+        }
+    });
+
+    return combinedGeometry;
+};
 
 function CheckIntervalIntersection(X1, Y1, X2, Y2, X3, Y3, X4, Y4)
 {
@@ -641,8 +685,8 @@ CParagraphStructure.prototype.checkWord = function() {
             let oObjectToDraw = aContent[nPosInLine];
             if(oObjectToDraw.Code !== undefined) {
                 aWord.push(aContent[nPosInLine]);
+	            oWordPos.posInLine = nPosInLine;
             }
-            oWordPos.posInLine = nPosInLine;
         }
         oWordPos.line = nLine;
     }
@@ -650,6 +694,45 @@ CParagraphStructure.prototype.checkWord = function() {
         this.m_aWords.push(aWord);
     }
 };
+
+function CShapeStructure()
+{
+    this.m_aContent = [];
+    this.m_aBorders = [];
+    this.m_nType = DRAW_COMMAND_SHAPE;
+}
+
+CShapeStructure.prototype.Recalculate = function(oTheme, oColorMap, dWidth, dHeight, oShape)
+{
+    for (let i = 0; i < this.m_aContent.length; ++i)
+        this.m_aContent[i].Recalculate(oTheme, oColorMap, dWidth, dHeight, oShape, true);
+
+    for (let i = 0; i < this.m_aBorders.length; ++i)
+        this.m_aBorders[i].Recalculate(oTheme, oColorMap, dWidth, dHeight, oShape, true);
+};
+CShapeStructure.prototype.CheckContentStructs = function(aContentStructs)
+{
+    for (let i = 0; i < this.m_aContent.length; ++i)
+        this.m_aContent[i].CheckContentStructs(aContentStructs);
+};
+
+CShapeStructure.prototype.getAllBackgroundsBorders = function(aParaBackgrounds, aBackgrounds, aBorders, aComments)
+{
+    for (let i = 0; i < this.m_aBorders.length; ++i)
+        aBorders.push(this.m_aBorders[i]);
+
+    for (let i = 0; i < this.m_aContent.length; ++i)
+        this.m_aContent[i].getAllBackgroundsBorders(aParaBackgrounds, aBackgrounds, aBorders, aComments);
+};
+
+CShapeStructure.prototype.draw = function(graphics, transform, oTheme, oColorMap)
+{
+    for(let i = 0; i < this.m_aBorders.length; ++i)
+        this.m_aBorders[i].draw(graphics, undefined, transform, oTheme, oColorMap);
+    
+    for(let i = 0; i < this.m_aContent.length; ++i)
+        this.m_aContent[i].draw(graphics, transform, oTheme, oColorMap);
+}
 
 function CTableStructure()
 {
@@ -844,6 +927,7 @@ var DRAW_COMMAND_DRAWING = 0x05;
 var DRAW_COMMAND_HIDDEN_ELEM = 0x06;
 var DRAW_COMMAND_NO_CREATE_GEOM = 0x07;
 var DRAW_COMMAND_TABLE_ROW = 0x08;
+var DRAW_COMMAND_SHAPE = 0x09;
 
 function GetConstDescription(nConst)
 {
@@ -1014,7 +1098,7 @@ CTextDrawer.prototype.p_color = function(r,g,b,a)
                 {
                     oTextPr.TextOutline = new AscFormat.CLn();
                 }
-                oTextPr.TextOutline.Fill = AscFormat.CreateUnfilFromRGB(r, g, b);
+                oTextPr.TextOutline.Fill = this.CreateUnfilFromRGB(r, g, b);
                 this.SetTextPr(oTextPr, this.m_oTheme);
                 return;
             }
@@ -1112,7 +1196,7 @@ CTextDrawer.prototype.SetShd = function(oShd)
             {
                 if(oShd.Color)
                 {
-                    this.m_oFill = AscFormat.CreateUnfilFromRGB(oShd.Color.r, oShd.Color.g, oShd.Color.b);
+                    this.m_oFill = this.CreateUnfilFromRGB(oShd.Color.r, oShd.Color.g, oShd.Color.b);
                 }
                 else
                 {
@@ -1136,7 +1220,7 @@ CTextDrawer.prototype.SetBorder = function(oBorder)
 {
     if(oBorder && oBorder.Value !== border_None)
     {
-        this.m_oLine = CreatePenFromParams(oBorder.Unifill ? oBorder.Unifill : AscFormat.CreateUnfilFromRGB(oBorder.Color.r, oBorder.Color.g, oBorder.Color.b), this.m_oPen.Style, this.m_oPen.LineCap, this.m_oPen.LineJoin, this.m_oPen.LineWidth, this.m_oPen.Size);
+        this.m_oLine = CreatePenFromParams(oBorder.Unifill ? oBorder.Unifill : this.CreateUnfilFromRGB(oBorder.Color.r, oBorder.Color.g, oBorder.Color.b), this.m_oPen.Style, this.m_oPen.LineCap, this.m_oPen.LineJoin, this.m_oPen.LineWidth, this.m_oPen.Size);
     }
     else
     {
@@ -1261,6 +1345,11 @@ CTextDrawer.prototype.Start_Command = function(commandId, param, index, nType)
             this.m_aStackCurRowMaxIndex[this.m_aStackCurRowMaxIndex.length] = -1;
             break;
         }
+        case DRAW_COMMAND_SHAPE:
+        {
+            oNewStructure = new CShapeStructure();
+            break;
+        }
     }
     if(oNewStructure)
     {
@@ -1327,6 +1416,11 @@ CTextDrawer.prototype.End_Command = function()
         case DRAW_COMMAND_TABLE_ROW:
         {
             this.m_nCurLineIndex = this.m_aStackCurRowMaxIndex.pop();
+            break;
+        }
+        case DRAW_COMMAND_SHAPE:
+        {
+            this.m_aStack.pop();
             break;
         }
     }
@@ -1485,6 +1579,30 @@ CTextDrawer.prototype.Get_PathToDraw = function(bStart, bStart2, x, y, Code)
                 oLastObjectToDraw.geometry.bDrawSmart = true;
                 break;
             }
+            case DRAW_COMMAND_SHAPE:
+            {
+                if(oLastCommand.m_aBorders.length === 0 || bStart2)
+                {
+                    oBrushColor = this.m_oBrush.Color1;
+                    oPenColor = this.m_oPen.Color;
+                    oLastCommand.m_aBorders.push(new ObjectToDraw(this.m_oFill, this.m_oLine, this.Width, this.Height, new Geometry(), this.m_oTransform, x, y));
+                }
+                oLastObjectToDraw = oLastCommand.m_aBorders[oLastCommand.m_aBorders.length - 1];
+
+                if(bStart2)
+                {
+                    if(oLastObjectToDraw.geometry.isEmpty())
+                    {
+                        oLastObjectToDraw.resetBrushPen(this.m_oFill, this.m_oLine, x, y);
+                    }
+                    else
+                    {
+                        oLastCommand.m_aBorders.push(new ObjectToDraw(this.m_oFill, this.m_oLine, this.Width, this.Height, new Geometry(), this.m_oTransform, x, y));
+                        oLastObjectToDraw = oLastCommand.m_aBorders[oLastCommand.m_aBorders.length - 1];
+                    }
+                }
+                break;
+            }
             case DRAW_COMMAND_PARAGRAPH:
             {
                 break;
@@ -1556,9 +1674,16 @@ CTextDrawer.prototype._m = function(x,y)
     if(this.m_bTurnOff)
         return;
     var oPathToDraw = this.Get_PathToDraw();
+
+    let tr = this.GetTransform();
+    let bUseTr = this.isStampAnnot;
+
+    let _x = bUseTr ? tr.TransformPointX(x, y) : x;
+    let _y = bUseTr ? tr.TransformPointY(x, y) : y;
+
     if(oPathToDraw)
     {
-        oPathToDraw.moveTo(this.xKoeff*x, this.yKoeff*y);
+        oPathToDraw.moveTo(this.xKoeff*_x, this.yKoeff*_y);
     }
     this.lastX = x;
     this.lastY = y;
@@ -1567,6 +1692,13 @@ CTextDrawer.prototype._l = function(x,y)
 {
     if(this.m_bTurnOff)
         return;
+    
+    let tr = this.GetTransform();
+    let bUseTr = this.isStampAnnot;
+
+    let _x = bUseTr ? tr.TransformPointX(x, y) : x;
+    let _y = bUseTr ? tr.TransformPointY(x, y) : y;
+
     if(this.bCheckLines)
     {
         if(Math.abs(x - this.lastX) < EPSILON_TEXT_AUTOFIT && Math.abs(x - this.lastX) < Math.abs(y - this.lastY))
@@ -1587,27 +1719,45 @@ CTextDrawer.prototype._l = function(x,y)
     var oPathToDraw = this.Get_PathToDraw();
     if(oPathToDraw)
     {
-        oPathToDraw.lnTo(this.xKoeff*x, this.yKoeff*y);
+        oPathToDraw.lnTo(this.xKoeff*_x, this.yKoeff*_y);
     }
     this.lastX = x;
     this.lastY = y;
 };
 CTextDrawer.prototype._c = function(x1,y1,x2,y2,x3,y3)
 {
+    let tr = this.GetTransform();
+    let bUseTr = this.isStampAnnot;
+
+    let _x1 = bUseTr ? tr.TransformPointX(x1, y1) : x1;
+    let _y1 = bUseTr ? tr.TransformPointY(x1, y1) : y1;
+    let _x2 = bUseTr ? tr.TransformPointX(x2, y2) : x2;
+    let _y2 = bUseTr ? tr.TransformPointY(x2, y2) : y2;
+    let _x3 = bUseTr ? tr.TransformPointX(x3, y3) : x3;
+    let _y3 = bUseTr ? tr.TransformPointY(x3, y3) : y3;
+
     var oPathToDraw = this.Get_PathToDraw();
     if(oPathToDraw)
     {
-        oPathToDraw.cubicBezTo(this.xKoeff*x1, this.yKoeff*y1, this.xKoeff*x2, this.yKoeff*y2, this.xKoeff*x3, this.yKoeff*y3);
+        oPathToDraw.cubicBezTo(this.xKoeff*_x1, this.yKoeff*_y1, this.xKoeff*_x2, this.yKoeff*_y2, this.xKoeff*_x3, this.yKoeff*_y3);
     }
     this.lastX = x3;
     this.lastY = y3;
 };
 CTextDrawer.prototype._c2 = function(x1,y1,x2,y2)
 {
+    let tr = this.GetTransform();
+    let bUseTr = this.isStampAnnot;
+
+    let _x1 = bUseTr ? tr.TransformPointX(x1, y1) : x1;
+    let _y1 = bUseTr ? tr.TransformPointY(x1, y1) : y1;
+    let _x2 = bUseTr ? tr.TransformPointX(x2, y2) : x2;
+    let _y2 = bUseTr ? tr.TransformPointY(x2, y2) : y2;
+
     var oPathToDraw = this.Get_PathToDraw();
     if(oPathToDraw)
     {
-        oPathToDraw.quadBezTo(this.xKoeff*x1, this.yKoeff*y1, this.xKoeff*x2, this.yKoeff*y2);
+        oPathToDraw.quadBezTo(this.xKoeff*_x1, this.yKoeff*_y1, this.xKoeff*_x2, this.yKoeff*_y2);
     }
     this.lastX = x2;
     this.lastY = y2;
@@ -2178,7 +2328,7 @@ CTextDrawer.prototype.GetFillFromTextPr = function(oTextPr)
                 var RGBA = oTextPr.FontRef.Color.RGBA;
                 oColor = new CDocumentColor( RGBA.R, RGBA.G, RGBA.B, RGBA.A );
             }
-            return AscFormat.CreateUnfilFromRGB(oColor.r, oColor.g, oColor.b);
+            return this.CreateUnfilFromRGB(oColor.r, oColor.g, oColor.b);
         }
         return null;
     }
@@ -2187,14 +2337,20 @@ CTextDrawer.prototype.GetFillFromTextPr = function(oTextPr)
         if(this.m_oBrush.Color1.R !== -1)
         {
             var Color = this.m_oBrush.Color1;
-            return AscFormat.CreateUnfilFromRGB(Color.R, Color.G, Color.B);
+            return this.CreateUnfilFromRGB(Color.R, Color.G, Color.B);
         }
         else
         {
-            return AscFormat.CreateUnfilFromRGB(0, 0, 0);
+            return this.CreateUnfilFromRGB(0, 0, 0);
         }
     }
 };
+
+    CTextDrawer.prototype.CreateUnfilFromRGB = function (r, g, b) {
+        let oFill = AscFormat.CreateUnfilFromRGB(r, g, b);
+        oFill.check(this.m_oTheme, AscFormat.GetDefaultColorMap());
+        return oFill;
+    };
 
 CTextDrawer.prototype.GetPenFromTextPr = function(oTextPr)
 {
@@ -2362,6 +2518,7 @@ function GetRectContentWidth(oContent, dMaxWidth)
     window['AscFormat'].DRAW_COMMAND_HIDDEN_ELEM = DRAW_COMMAND_HIDDEN_ELEM;
     window['AscFormat'].DRAW_COMMAND_NO_CREATE_GEOM = DRAW_COMMAND_NO_CREATE_GEOM;
     window['AscFormat'].DRAW_COMMAND_TABLE_ROW = DRAW_COMMAND_TABLE_ROW;
+    window['AscFormat'].DRAW_COMMAND_SHAPE = DRAW_COMMAND_SHAPE;
     window['AscFormat'].CreatePenFromParams = CreatePenFromParams;
     window['AscFormat'].CTextDrawer = CTextDrawer;
     window['AscFormat'].PolygonWrapper = PolygonWrapper;

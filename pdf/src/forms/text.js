@@ -110,7 +110,11 @@
             if (this._charLimit != nChars) {
 
                 if (oViewer.IsOpenFormsInProgress != true) {
-                    let sText = this.content.GetElement(0).GetText({ParaEndToSpace: false});
+                    let sText = this.content.GetElement(0).GetText({
+						ParaSeparator : "",
+						TableRowSeparator : "",
+						TableCellSeparator : ""
+					});
                     this.content.replaceAllText(sText.slice(0, Math.min(nChars, sText.length)));
                 }
             }
@@ -188,18 +192,41 @@
             let oDoc        = this.GetDocument();
             let isOnOpen    = oDoc.Viewer.IsOpenFormsInProgress;
 
+            oDoc.History.Add(new CChangesPDFFormValue(this, this.GetParentValue(), sValue));
+
 			if (isOnOpen != true)
 				this.SetWasChanged(true);
 			
 			if (isOnOpen == true && !this.GetParent())
-				this.SetApiValue(sValue);
+				this.SetParentValue(sValue);
 			
 			this.UpdateDisplayValue(sValue);
 		}
 		else {
-			this.SetApiValue(sValue);
+			this.SetParentValue(sValue);
 		}
 	};
+    CTextField.prototype.private_SetValue = function(sValue) {
+        if (this.IsWidget()) {
+			this.UpdateDisplayValue(sValue);
+		}
+		else {
+			this.SetParentValue(sValue);
+		}
+    };
+
+    CTextField.prototype.SetFormatValue = function(sValue) {
+        let oDoc = this.GetDocument();
+        oDoc.History.Add(new CChangesPDFFormFormatValue(this, this.GetFormatValue(), sValue));
+
+        oDoc.StartNoHistoryMode();
+        this.contentFormat.replaceAllText(sValue);
+        this.SetNeedRecalc(true);
+        oDoc.EndNoHistoryMode();
+    };
+    CTextField.prototype.GetFormatValue = function() {
+        return this.contentFormat.getAllText();
+    };
 	CTextField.prototype.UpdateDisplayValue = function(displayValue) {
         let oDoc        = this.GetDocument();
         let isOnOpen    = oDoc.Viewer.IsOpenFormsInProgress;
@@ -211,6 +238,7 @@
         if (!oDoc.checkFieldFont(this, function() {
             _t.UpdateDisplayValue(displayValue);
         })) {
+            oDoc.EndNoHistoryMode();
             return;
         }
 
@@ -225,8 +253,10 @@
             displayValue = String.fromCharCode.apply(null, aChars);
         }
 
-        if (displayValue === this._displayValue && this._useDisplayValue == true)
-			return;
+        if (displayValue === this._displayValue && this._useDisplayValue == true) {
+            oDoc.EndNoHistoryMode();
+            return;
+        }
 		
 		this._displayValue      = displayValue;
 		this._useDisplayValue   = true;
@@ -239,8 +269,10 @@
 			_t.SetNeedRecalc(true);
         }
         else {
-            if (_t._displayValue !== displayValue)
+            if (_t._displayValue !== displayValue) {
+                oDoc.EndNoHistoryMode();
                 return;
+            }
             
             _t.content.replaceAllText(displayValue);
             _t.SetNeedRecalc(true);
@@ -341,6 +373,9 @@
         // redraw target cursor if field is selected
         if (oDoc.activeForm == this && oContentToDraw.IsSelectionUse() == false && this.IsCanEditText())
             oContentToDraw.RecalculateCurPos();
+
+
+        this.DrawLocks(oGraphicsPDF);
     };
     CTextField.prototype.DrawDateMarker = function(oCtx) {
         if (this.IsHidden())
@@ -648,6 +683,7 @@
             oDoc.SetLocalHistory();
             if (false == e.ShiftKey) {
                 oDoc.SelectionSetStart(x, y, e);
+				oDoc.SelectionSetEnd(x, y, e);
             }
             else {
                 this.content.StartSelectionFromCurPos();
@@ -947,7 +983,7 @@
 		return Math.max(0, this._charLimit - (charCount - removeCount));
 	};
 	CTextField.prototype.EnterText = function(aChars) {
-		let selectedCount = this.content.GetSelectedText(true, {NewLine: true}).length;
+		let selectedCount = this.content.GetSelectedText(true).length;
 		let maxToAdd      = this.getRemainCharCount(selectedCount);
 		
         let nCharsCount = AscWord.GraphemesCounter.GetCount(aChars, this.content.GetCalculatedTextPr());
@@ -1099,35 +1135,19 @@
         let oDoc        = this.GetDocument();
         let aFields     = this.GetDocument().GetAllWidgets(this.GetFullName());
 
-        oDoc.StartNoHistoryMode();
         if (this.DoFormatAction() == false) {
             this.UndoNotAppliedChanges();
             if (this.IsChanged() == false)
                 this.SetDrawFromStream(true);
 
-            oDoc.EndNoHistoryMode();
             return;
         }
-        oDoc.EndNoHistoryMode();
         
-        if (this.GetApiValue() != this.GetValue()) {
-            AscCommon.History.Add(new CChangesPDFFormValue(this, this.GetApiValue(), this.GetValue()));
-            this.RevertContentView();
-            this.SetApiValue(this.GetValue());
-        }
-
-        oDoc.StartNoHistoryMode();
-
-        if (aFields.length == 1)
-            this.SetNeedCommit(false);
-
+        let sNewValue = this.GetValue();
         if (oDoc.event["rc"] == false) {
             this.needValidate = true;
             return;
         }
-
-		let sValue = this.GetValue();
-        this.UpdateDisplayValue(sValue);
 
         for (let i = 0; i < aFields.length; i++) {
             if (aFields[i].IsChanged() == false)
@@ -1135,29 +1155,25 @@
 
             if (aFields[i].HasShiftView()) {
                 aFields[i].content.MoveCursorToStartPos();
-
-                if (aFields[i] == this) {
-                    aFields[i].AddToRedraw();
-                    continue;
-                }
             }
                 
-            if (aFields[i] == this)
-                continue;
-
-            aFields[i].UpdateDisplayValue(sValue);
+            aFields[i].SetValue(sNewValue);
             aFields[i].SetNeedRecalc(true);
         }
 
-        let sFormatValue = this.contentFormat.getAllText();
+        let sFormatValue = this.GetFormatValue();
         for (let i = 0; i < aFields.length; i++) {
-            if (aFields[i] == this)
+            if (aFields[i] == this) {
                 continue;
-
-            aFields[i].contentFormat.replaceAllText(sFormatValue);
-            aFields[i].SetNeedRecalc(true);
+            }
+            
+            aFields[i].SetFormatValue(sFormatValue);
         }
 
+        if (this.GetParentValue() != sNewValue) {
+            this.RevertContentView();
+            this.SetParentValue(sNewValue);
+        }
         // когда выравнивание посередине или справа, то после того
         // как ширина контента будет больше чем размер формы, выравнивание становится слева, пока текста вновь не станет меньше чем размер формы
         aFields.forEach(function(field) {
@@ -1166,8 +1182,6 @@
 
         this.SetNeedCommit(false);
         this.needValidate = true;
-
-        oDoc.EndNoHistoryMode();
     };
 	CTextField.prototype.SetAlign = function(nAlignType) {
         this._alignment = nAlignType;
@@ -1187,7 +1201,7 @@
         let oFormatTrigger      = this.GetTrigger(AscPDF.FORMS_TRIGGERS_TYPES.Format);
         let oActionRunScript    = oFormatTrigger ? oFormatTrigger.GetActions()[0] : null;
         
-        let isCanFormat = AscCommon.History.UndoRedoInProgress != true ? this.DoKeystrokeAction(null, false, true) : true;
+        let isCanFormat = oDoc.History.UndoRedoInProgress != true ? this.DoKeystrokeAction(null, false, true) : true;
         if (!isCanFormat) {
             let oWarningInfo = oDoc.GetWarningInfo();
             if (!oWarningInfo) {
@@ -1221,7 +1235,7 @@
 
         function GetSelectionRange(p)
         {
-            let selectedText = p.GetSelectedText(undefined, {NewLine: true});
+            let selectedText = p.GetSelectedText(undefined);
             let state = p.SaveSelectionState();
 
             let selStart = p.Get_ParaContentPos(p.IsSelectionUse(), p.GetSelectDirection() > 0);
@@ -1229,7 +1243,7 @@
             p.RemoveSelection();
             p.StartSelectionFromCurPos();
             p.SetSelectionContentPos(p.GetStartPos(), selStart);
-            let preText = p.GetSelectedText(undefined, {NewLine: true});
+            let preText = p.GetSelectedText(undefined);
 
             p.LoadSelectionState(state);
 
@@ -1254,7 +1268,7 @@
             }
         }
         
-        let nCharsCount = this.content.GetElement(0).GetText({ParaEndToSpace: false}).length;
+        let nCharsCount = this.content.GetElement(0).GetText({ParaSeparator : ""}).length;
         if (nRemoveType && nSelStart == nSelEnd) {
             if (nRemoveType == -1 && nSelStart != 0) {
                 nSelStart--;
@@ -1583,7 +1597,7 @@
         this.WriteToBinaryBase(memory);
         this.WriteToBinaryBase2(memory);
 
-        let sValue = this.GetApiValue(false);
+        let sValue = this.GetParentValue(false);
         if (sValue != null && this.IsPassword() == false) {
             memory.fieldDataFlags |= (1 << 9);
             memory.WriteString(sValue);

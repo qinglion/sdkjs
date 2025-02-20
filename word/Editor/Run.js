@@ -472,11 +472,22 @@ ParaRun.prototype.Get_Text = function(Text)
 				{
 					Text.Text = null;
 					bBreak    = true;
+					break;
 				}
 				
-				if (Text.ParaSeparator)
-					Text.Text += Text.ParaSeparator;
-				
+				let oParagraph = this.GetParagraph();
+				if (oParagraph && null === oParagraph.Get_DocumentNext() && oParagraph.IsTableCellContent())
+				{
+					if (!oParagraph.Parent.IsLastTableCellInRow(false))
+						Text.Text += undefined !== Text.TableCellSeparator ? Text.TableCellSeparator : '\t';
+					else
+						Text.Text += undefined !== Text.TableRowSeparator ? Text.TableRowSeparator : '\r\n';
+				}
+				else
+				{
+					Text.Text += undefined !== Text.ParaSeparator ? Text.ParaSeparator : '\r\n';
+				}
+
 				break;
 			}
 
@@ -487,12 +498,12 @@ ParaRun.prototype.Get_Text = function(Text)
 			}
 			case para_NewLine:
 			{
-				Text.Text += undefined != Text.NewLineSeparator ? Text.NewLineSeparator : " ";
+				Text.Text += undefined !== Text.NewLineSeparator ? Text.NewLineSeparator : " ";
 				break;
 			}
 			case para_Tab:
 			{
-				Text.Text += undefined != Text.TabSymbol ? Text.TabSymbol : " ";
+				Text.Text += undefined !== Text.TabSymbol ? Text.TabSymbol : " ";
 				break;
 			}
 			case para_Space:
@@ -3157,7 +3168,7 @@ ParaRun.prototype.GetSelectedText = function(bAll, bClearText, oPr)
 			}
 			case para_Tab:
 			{
-				Str += oPr && oPr.TabSymbol ? oPr.TabSymbol : ' ';
+				Str += oPr && undefined !== oPr.TabSymbol ? oPr.TabSymbol : ' ';
 				break;
 			}
             case para_Math_Text:
@@ -3168,30 +3179,22 @@ ParaRun.prototype.GetSelectedText = function(bAll, bClearText, oPr)
             }
 			case para_NewLine:
 			{
-				if (oPr && undefined != oPr.NewLineSeparator) {
-					Str += oPr.NewLineSeparator;
-				}
-				else if (oPr && true === oPr.NewLine)
-					Str += '\r';
-				
+				Str += oPr && undefined !== oPr.NewLineSeparator ? oPr.NewLineSeparator : '\r';
 				break;
 			}
 			case para_End:
 			{
-				if (oPr && true === oPr.NewLineParagraph)
+				var oParagraph = this.GetParagraph();
+				if (oParagraph && null === oParagraph.Get_DocumentNext() && oParagraph.IsTableCellContent())
 				{
-					var oParagraph = this.GetParagraph();
-					if (oParagraph && null === oParagraph.Get_DocumentNext() && oParagraph.IsTableCellContent())
-					{
-						if (!oParagraph.Parent.IsLastTableCellInRow(true))
-							Str += oPr.TableCellSeparator ? oPr.TableCellSeparator : '\t';
-						else
-							Str += oPr.TableRowSeparator ? oPr.TableRowSeparator : '\r\n';
-					}
+					if (!oParagraph.Parent.IsLastTableCellInRow(true))
+						Str += oPr && undefined !== oPr.TableCellSeparator ? oPr.TableCellSeparator : '\t';
 					else
-					{
-						Str += oPr.ParaSeparator ? oPr.ParaSeparator : '\r\n';
-					}
+						Str += oPr && undefined !== oPr.TableRowSeparator ? oPr.TableRowSeparator : '\r\n';
+				}
+				else
+				{
+					Str += oPr && undefined !== oPr.ParaSeparator ? oPr.ParaSeparator : '\r\n';
 				}
 
 				break;
@@ -3692,9 +3695,11 @@ ParaRun.prototype.Recalculate_Range = function(PRS, ParaPr, Depth)
     var oSectionPr = undefined;
 
 	let isSkipFillRange = false;
+	
+	let textPr = this.Get_CompiledPr(false);
 
 	// TODO: Сделать возможность показывать инструкцию
-    var isHiddenCFPart = PRS.ComplexFields.isComplexFieldCode();
+    var isHiddenCFPart = PRS.ComplexFields.isHiddenComplexFieldPart();
 
     PRS.CheckUpdateLBP(Pos, Depth);
 
@@ -3713,30 +3718,41 @@ ParaRun.prototype.Recalculate_Range = function(PRS, ParaPr, Depth)
             if (PRS.ComplexFields.isHiddenFieldContent() && para_End !== ItemType && para_FieldChar !== ItemType)
             	continue;
 
-			if (para_InstrText === ItemType && !PRS.IsFastRecalculate())
+			if (para_InstrText === ItemType)
 			{
-				var oInstrText = Item;
-				if (!PRS.ComplexFields.isComplexFieldCode())
+				if (PRS.IsFastRecalculate())
 				{
-					if (AscCommon.IsSpace(Item.Value))
+					if (Item.GetReplacementItem())
 					{
-						Item     = new AscWord.CRunSpace(Item.Value);
-						ItemType = para_Space;
-						Item.Measure(g_oTextMeasurer, this.getCompiledPr());
+						Item = Item.GetReplacementItem();
+						ItemType = Item.Type;
 					}
-					else
-					{
-						// TODO: Пока для такого текста не шейпим по-нормальному, а как по-старому по одному отдельному символу
-						Item     = new AscWord.CRunText(Item.Value);
-						ItemType = para_Text;
-						AscWord.ParagraphTextShaper.ShapeRunTextItem(Item, this.getCompiledPr());
-					}
-					
-					oInstrText.SetReplacementItem(Item);
 				}
 				else
 				{
-					oInstrText.SetReplacementItem(null);
+					var oInstrText = Item;
+					if (!isHiddenCFPart)
+					{
+						if (AscCommon.IsSpace(Item.Value))
+						{
+							Item     = new AscWord.CRunSpace(Item.Value);
+							ItemType = para_Space;
+							Item.Measure(g_oTextMeasurer, this.getCompiledPr());
+						}
+						else
+						{
+							// TODO: Пока для такого текста не шейпим по-нормальному, а как по-старому по одному отдельному символу
+							Item     = new AscWord.CRunText(Item.Value);
+							ItemType = para_Text;
+							AscWord.ParagraphTextShaper.ShapeRunTextItem(Item, this.getCompiledPr());
+						}
+						
+						oInstrText.SetReplacementItem(Item);
+					}
+					else
+					{
+						oInstrText.SetReplacementItem(null);
+					}
 				}
 			}
 
@@ -3806,6 +3822,8 @@ ParaRun.prototype.Recalculate_Range = function(PRS, ParaPr, Depth)
 					let LetterLen   = Item.GetWidth();
 					let isLigature  = Item.IsLigature();
 					let GraphemeLen = isLigature ? Item.GetLigatureWidth() : LetterLen;
+					
+					let isBreakAfter = Item.IsSpaceAfter() || textPr.RFonts.Hint === AscWord.fonthint_EastAsia;
 
 					if (FirstItemOnLine
 						&& (X + SpaceLen + WordLen + GraphemeLen > XEnd
@@ -3926,12 +3944,12 @@ ParaRun.prototype.Recalculate_Range = function(PRS, ParaPr, Depth)
 							}
 
 							// Если текущий символ с переносом, например, дефис, тогда на нем заканчивается слово
-							if (Item.IsSpaceAfter()
+							if (isBreakAfter
 								|| (PRS.canPlaceAutoHyphenAfter(Item)
 									&& X + SpaceLen + LetterLen + PRS.getAutoHyphenWidth(Item, this) <= XEnd
 									&& (FirstItemOnLine || PRS.checkHyphenationZone(X + SpaceLen))))
 							{
-								if (!Item.IsSpaceAfter())
+								if (!isBreakAfter)
 									PRS.lastAutoHyphen = Item;
 
 								// Добавляем длину пробелов до слова и ширину самого слова.
@@ -3968,12 +3986,12 @@ ParaRun.prototype.Recalculate_Range = function(PRS, ParaPr, Depth)
                             // Мы убираемся в пределах данной строки. Прибавляем ширину буквы к ширине слова
                             WordLen += LetterLen;
 
-							if (Item.IsSpaceAfter()
+							if (isBreakAfter
 								|| (PRS.canPlaceAutoHyphenAfter(Item)
 									&& fitOnLine
 									&& (FirstItemOnLine || PRS.checkHyphenationZone(X + SpaceLen))))
                             {
-								if (!Item.IsSpaceAfter())
+								if (!isBreakAfter)
 									PRS.lastAutoHyphen = Item;
 								
                                 // Добавляем длину пробелов до слова и ширину самого слова.
@@ -4690,7 +4708,7 @@ ParaRun.prototype.Recalculate_Range = function(PRS, ParaPr, Depth)
 					Item.SetRun(this);
 					PRS.ComplexFields.processFieldChar(Item);
 
-					isHiddenCFPart = PRS.ComplexFields.isComplexFieldCode();
+					isHiddenCFPart = PRS.ComplexFields.isHiddenComplexFieldPart();
 					
 					if (Item.IsSeparate())
 					{
@@ -4996,16 +5014,33 @@ ParaRun.prototype.Recalculate_LineMetrics = function(PRS, ParaPr, _CurLine, _Cur
 	// TODO: Пока для формул сделаем, чтобы работало по-старому, в дальнейшем надо будет переделать на fontslot
 	let fontSlot = this.IsMathRun() ? AscWord.fontslot_ASCII : AscWord.fontslot_None;
 	
+	let fontMap = {};
+	
 	for (var CurPos = StartPos; CurPos < EndPos; CurPos++)
 	{
 		var Item = this.private_CheckInstrText(this.Content[CurPos]);
-		fontSlot |= Item.GetFontSlot(textPr);
-
 		if (Item === Para.Numbering.Item)
 		{
 			PRS.LineAscent = Para.Numbering.LineAscent;
 		}
-
+		
+		if (para_Text === Item.Type)
+		{
+			let fontId = AscFonts.GetGraphemeFontId(Item.GetGrapheme());
+			if (fontId)
+			{
+				let fontSize = Item.GetFontSlot(textPr) === fontslot_CS ? textPr.FontSizeCS : textPr.FontSize;
+				if (undefined === fontMap[fontId])
+					fontMap[fontId] = fontSize;
+				else
+					fontMap[fontId] = Math.max(fontSize, fontMap[fontId]);
+			}
+			UpdateLineMetricsText = true;
+			continue;
+		}
+		
+		fontSlot |= Item.GetFontSlot(textPr);
+		
 		switch (Item.Type)
 		{
 			case para_Sym:
@@ -5087,6 +5122,13 @@ ParaRun.prototype.Recalculate_LineMetrics = function(PRS, ParaPr, _CurLine, _Cur
 		
 		let metrics = textPr.GetTextMetrics(fontSlot, this.Paragraph.GetTheme());
 		
+		for (let fontId in fontMap)
+		{
+			let fontName  = AscFonts.GetFontNameByFontId(fontId);
+			let fontStyle = AscFonts.GetFontStyleByFontId(fontId);
+			metrics.Update(fontName, fontMap[fontId], fontStyle);
+		}
+		
 		let textDescent = metrics.Descent;
 		let textAscent  = metrics.Ascent + metrics.LineGap;
 		let textAscent2 = metrics.Ascent;
@@ -5133,7 +5175,7 @@ ParaRun.prototype.Recalculate_Range_Width = function(PRSC, _CurLine, _CurRange)
 	let textPr = this.Get_CompiledPr(false);
 
 	// TODO: Сделать возможность показывать инструкцию
-	var isHiddenCFPart = PRSC.ComplexFields.isComplexFieldCode();
+	var isHiddenCFPart = PRSC.ComplexFields.isHiddenComplexFieldPart();
     for ( var Pos = StartPos; Pos < EndPos; Pos++ )
     {
 		var Item = this.private_CheckInstrText(this.Content[Pos]);
@@ -5144,6 +5186,9 @@ ParaRun.prototype.Recalculate_Range_Width = function(PRSC, _CurLine, _CurRange)
 
 		if (isHiddenCFPart && para_End !== ItemType && para_FieldChar !== ItemType && para_InstrText !== ItemType)
 			continue;
+		
+		if (!isHiddenCFPart && para_InstrText === ItemType)
+			ItemType = para_Text;
 
 		switch( ItemType )
         {
@@ -5297,7 +5342,7 @@ ParaRun.prototype.Recalculate_Range_Width = function(PRSC, _CurLine, _CurRange)
 				else
 					PRSC.ComplexFields.processFieldCharAndCollectComplexField(Item);
 
-				isHiddenCFPart = PRSC.ComplexFields.isComplexFieldCode();
+				isHiddenCFPart = PRSC.ComplexFields.isHiddenComplexFieldPart();
 
 				if (Item.IsVisual())
 				{
@@ -5340,7 +5385,7 @@ ParaRun.prototype.Recalculate_Range_Spaces = function(PRSA, _CurLine, _CurRange,
     var EndPos   = this.protected_GetRangeEndPos(CurLine, CurRange);
 
 	// TODO: Сделать возможность показывать инструкцию
-	var isHiddenCFPart = PRSA.ComplexFields.isComplexFieldCode();
+	var isHiddenCFPart = PRSA.ComplexFields.isHiddenComplexFieldPart();
     for ( var Pos = StartPos; Pos < EndPos; Pos++ )
     {
 		var Item = this.private_CheckInstrText(this.Content[Pos]);
@@ -5720,7 +5765,7 @@ ParaRun.prototype.Recalculate_Range_Spaces = function(PRSA, _CurLine, _CurRange,
 			case para_FieldChar:
 			{
 				PRSA.ComplexFields.processFieldChar(Item);
-				isHiddenCFPart = PRSA.ComplexFields.isComplexFieldCode();
+				isHiddenCFPart = PRSA.ComplexFields.isHiddenComplexFieldPart();
 
 				if (Item.IsVisual())
 				{
@@ -6760,7 +6805,7 @@ ParaRun.prototype.Get_LeftPos = function(SearchPos, ContentPos, Depth, UseConten
 {
 	var CurPos = true === UseContentPos ? ContentPos.Get(Depth) : this.Content.length;
 
-	var isFieldCode  = SearchPos.isComplexFieldCode();
+	var isHiddenPart = SearchPos.isHiddenComplexFieldPart();
 	var isFieldValue = SearchPos.isComplexFieldValue();
 	var isHiddenCF   = SearchPos.isHiddenComplexField();
 
@@ -6773,12 +6818,12 @@ ParaRun.prototype.Get_LeftPos = function(SearchPos, ContentPos, Depth, UseConten
 		if (CurPos >= 0 && para_FieldChar === Item.Type)
 		{
 			SearchPos.ProcessComplexFieldChar(-1, Item);
-			isFieldCode  = SearchPos.isComplexFieldCode();
+			isHiddenPart = SearchPos.isComplexFieldCode();
 			isFieldValue = SearchPos.isComplexFieldValue();
 			isHiddenCF   = SearchPos.isHiddenComplexField();
 		}
 
-		if (CurPos >= 0 && (isFieldCode || isHiddenCF))
+		if (CurPos >= 0 && (isHiddenPart || isHiddenCF))
 			continue;
 
 		if (CurPos < 0 || (!(para_Drawing === Item.Type && false === Item.Is_Inline() && false === SearchPos.IsCheckAnchors()) && !((para_FootnoteReference === Item.Type || para_EndnoteReference === Item.Type) && true === Item.IsCustomMarkFollows())))
@@ -6795,8 +6840,8 @@ ParaRun.prototype.Get_LeftPos = function(SearchPos, ContentPos, Depth, UseConten
 ParaRun.prototype.Get_RightPos = function(SearchPos, ContentPos, Depth, UseContentPos, StepEnd)
 {
 	var CurPos = ( true === UseContentPos ? ContentPos.Get(Depth) : 0 );
-
-	var isFieldCode  = SearchPos.isComplexFieldCode();
+	
+	var isHiddenPart = SearchPos.isHiddenComplexFieldPart();
 	var isFieldValue = SearchPos.isComplexFieldValue();
 	var isHiddenCF   = SearchPos.isHiddenComplexField();
 
@@ -6819,12 +6864,12 @@ ParaRun.prototype.Get_RightPos = function(SearchPos, ContentPos, Depth, UseConte
 			if (para_FieldChar === PrevItem.Type)
 			{
 				SearchPos.ProcessComplexFieldChar(1, PrevItem);
-				isFieldCode  = SearchPos.isComplexFieldCode();
+				isHiddenPart = SearchPos.isHiddenComplexFieldPart();
 				isFieldValue = SearchPos.isComplexFieldValue();
 				isHiddenCF   = SearchPos.isHiddenComplexField();
 			}
 
-			if (isFieldCode || isHiddenCF)
+			if (isHiddenPart || isHiddenCF)
 				return;
 
 			if ((true !== StepEnd && para_End === PrevItemType) || (para_Drawing === PrevItemType && false === PrevItem.Is_Inline() && false === SearchPos.IsCheckAnchors()) || ((para_FootnoteReference === PrevItemType || para_EndnoteReference === PrevItemType) && true === PrevItem.IsCustomMarkFollows()))
@@ -6843,12 +6888,12 @@ ParaRun.prototype.Get_RightPos = function(SearchPos, ContentPos, Depth, UseConte
 		if (para_FieldChar === Item.Type)
 		{
 			SearchPos.ProcessComplexFieldChar(1, Item);
-			isFieldCode  = SearchPos.isComplexFieldCode();
+			isHiddenPart = SearchPos.isHiddenComplexFieldPart();
 			isFieldValue = SearchPos.isComplexFieldValue();
 			isHiddenCF   = SearchPos.isHiddenComplexField();
 		}
 
-		if (isFieldCode || isHiddenCF)
+		if (isHiddenPart || isHiddenCF)
 			continue;
 
 		if (!(true !== StepEnd && para_End === ItemType)
@@ -6874,7 +6919,7 @@ ParaRun.prototype.Get_WordStartPos = function(SearchPos, ContentPos, Depth, UseC
 
     SearchPos.Shift = true;
 
-	var isFieldCode  = SearchPos.isComplexFieldCode();
+	var isHiddenPart  = SearchPos.isHiddenComplexFieldPart();
 	var isFieldValue = SearchPos.isComplexFieldValue();
 	var isHiddenCF   = SearchPos.isHiddenComplexField();
 
@@ -6891,7 +6936,7 @@ ParaRun.prototype.Get_WordStartPos = function(SearchPos, ContentPos, Depth, UseC
 			if (para_FieldChar === Type)
 			{
 				SearchPos.ProcessComplexFieldChar(-1, Item);
-				isFieldCode  = SearchPos.isComplexFieldCode();
+				isHiddenPart  = SearchPos.isHiddenComplexFieldPart();
 				isFieldValue = SearchPos.isComplexFieldValue();
 				isHiddenCF   = SearchPos.isHiddenComplexField();
 			}
@@ -6899,7 +6944,7 @@ ParaRun.prototype.Get_WordStartPos = function(SearchPos, ContentPos, Depth, UseC
             if ( para_Space === Type || para_Tab === Type || ( para_Text === Type && true === Item.IsNBSP() ) || ( para_Drawing === Type && true !== Item.Is_Inline() ) )
                 bSpace = true;
 
-            if (true === bSpace || isFieldCode || isHiddenCF)
+            if (true === bSpace || isHiddenPart || isHiddenCF)
             {
                 CurPos--;
 
@@ -6947,12 +6992,12 @@ ParaRun.prototype.Get_WordStartPos = function(SearchPos, ContentPos, Depth, UseC
 		if (para_FieldChar === Item.Type)
 		{
 			SearchPos.ProcessComplexFieldChar(-1, Item);
-			isFieldCode  = SearchPos.isComplexFieldCode();
+			isHiddenPart  = SearchPos.isHiddenComplexFieldPart();
 			isFieldValue = SearchPos.isComplexFieldValue();
 			isHiddenCF   = SearchPos.isHiddenComplexField();
 		}
 
-		if (isFieldCode || isHiddenCF)
+		if (isHiddenPart || isHiddenCF)
 			continue;
 
         if ( (para_Text !== TempType && para_Math_Text !== TempType) || true === Item.IsNBSP() || ( true === SearchPos.Punctuation && true !== Item.IsPunctuation() ) || ( false === SearchPos.Punctuation && false !== Item.IsPunctuation() ) )
@@ -6977,8 +7022,8 @@ ParaRun.prototype.Get_WordEndPos = function(SearchPos, ContentPos, Depth, UseCon
     var ContentLen = this.Content.length;
 	if (CurPos >= ContentLen || ContentLen <= 0)
 		return;
-
-	var isFieldCode  = SearchPos.isComplexFieldCode();
+	
+	var isHiddenPart = SearchPos.isHiddenComplexFieldPart();
 	var isFieldValue = SearchPos.isComplexFieldValue();
 	var isHiddenCF   = SearchPos.isHiddenComplexField();
 
@@ -6994,7 +7039,7 @@ ParaRun.prototype.Get_WordEndPos = function(SearchPos, ContentPos, Depth, UseCon
 			if (para_FieldChar === Type)
 			{
 				SearchPos.ProcessComplexFieldChar(1, Item);
-				isFieldCode  = SearchPos.isComplexFieldCode();
+				isHiddenPart = SearchPos.isHiddenComplexFieldPart();
 				isFieldValue = SearchPos.isComplexFieldValue();
 				isHiddenCF   = SearchPos.isHiddenComplexField();
 			}
@@ -7002,9 +7047,9 @@ ParaRun.prototype.Get_WordEndPos = function(SearchPos, ContentPos, Depth, UseCon
             if ( (para_Text === Type || para_Math_Text === Type) && true != Item.IsNBSP() && ( true === SearchPos.First || ( SearchPos.Punctuation === Item.IsPunctuation() ) ) )
                 bText = true;
 
-            if (true === bText || isFieldCode || isHiddenCF)
+            if (true === bText || isHiddenPart || isHiddenCF)
             {
-            	if (!isFieldCode && !isHiddenCF)
+            	if (!isHiddenPart && !isHiddenCF)
 				{
 					if (true === SearchPos.First)
 					{
@@ -7092,12 +7137,12 @@ ParaRun.prototype.Get_WordEndPos = function(SearchPos, ContentPos, Depth, UseCon
 			if (para_FieldChar === Item.Type)
 			{
 				SearchPos.ProcessComplexFieldChar(1, Item);
-				isFieldCode  = SearchPos.isComplexFieldCode();
+				isHiddenPart = SearchPos.isHiddenComplexFieldPart();
 				isFieldValue = SearchPos.isComplexFieldValue();
 				isHiddenCF   = SearchPos.isHiddenComplexField();
 			}
 
-			if (isFieldCode || isHiddenCF)
+			if (isHiddenPart || isHiddenCF)
 				continue;
 
             if ( (true !== StepEnd && para_End === TempType) || !( para_Space === TempType || ( para_Text === TempType && true === Item.IsNBSP() ) ) )
@@ -10997,8 +11042,8 @@ ParaRun.prototype.RejectRevisionChanges = function(nType, bAll)
 			CenterRun.Set_Pr(CenterRun.Pr.PrChange);
 		}
 
-		var oReviewInfo = this.GetReviewInfo();
-		var oPrevInfo   = oReviewInfo.GetPrevAdded();
+		let reviewInfo = this.GetReviewInfo();
+		let prevInfo   = reviewInfo ? reviewInfo.GetPrevAdded() : null;
 		if ((reviewtype_Add === ReviewType
 			&& (undefined === nType
 			|| c_oAscRevisionsChangeType.TextAdd === nType
@@ -11006,11 +11051,11 @@ ParaRun.prototype.RejectRevisionChanges = function(nType, bAll)
 			&& Asc.c_oAscRevisionsMove.NoMove !== this.GetReviewMoveType()
 			&& oProcessMove
 			&& !oProcessMove.IsFrom()
-			&& oProcessMove.GetUserId() === this.GetReviewInfo().GetUserId())))
+			&& oProcessMove.GetUserId() === reviewInfo.GetUserId())))
 			|| (undefined === nType
 			&& bAll
 			&& reviewtype_Remove === ReviewType
-			&& oPrevInfo))
+			&& prevInfo))
 		{
 			Parent.RemoveFromContent(CenterRunPos, 1);
 			CenterRun.ClearContent();
@@ -11029,11 +11074,11 @@ ParaRun.prototype.RejectRevisionChanges = function(nType, bAll)
 			&& Asc.c_oAscRevisionsMove.NoMove !== this.GetReviewMoveType()
 			&& oProcessMove
 			&& oProcessMove.IsFrom()
-			&& oProcessMove.GetUserId() === this.GetReviewInfo().GetUserId())))
+			&& oProcessMove.GetUserId() === reviewInfo.GetUserId())))
 		{
-			if (oPrevInfo && c_oAscRevisionsChangeType.MoveMark !== nType)
+			if (prevInfo && c_oAscRevisionsChangeType.MoveMark !== nType)
 			{
-				CenterRun.SetReviewTypeWithInfo(reviewtype_Add, oPrevInfo.Copy());
+				CenterRun.SetReviewTypeWithInfo(reviewtype_Add, prevInfo.Copy());
 			}
 			else
 			{

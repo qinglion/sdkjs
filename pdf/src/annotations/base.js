@@ -36,7 +36,7 @@
 	 * Class representing a base annotation.
 	 * @constructor
     */
-    function CAnnotationBase(sName, nType, nPage, aOrigRect, oDoc)
+    function CAnnotationBase(sName, nType, aOrigRect, oDoc)
     {
         // если аннотация не shape based
         if (this.Id == undefined) {
@@ -63,7 +63,6 @@
         this._modDate               = undefined;
         this._name                  = undefined;
         this._opacity               = 1;
-        this._page                  = undefined;
         this._origRect              = [];
         this._refType               = undefined;
         this._seqNum                = undefined;
@@ -96,7 +95,6 @@
 
         this.SetDocument(oDoc);
         this.SetName(sName);
-        this.SetPage(nPage);
         this.SetRect(aOrigRect);
     };
     CAnnotationBase.prototype = Object.create(AscFormat.CBaseNoIdObject.prototype);
@@ -278,11 +276,18 @@
     CAnnotationBase.prototype.GetOriginPage = function() {
         return this._origPage;
     };
-    CAnnotationBase.prototype.SetWasChanged = function(isChanged) {
-        let oViewer = editor.getDocumentRenderer();
+    CAnnotationBase.prototype.SetWasChanged = function(isChanged, viewSync) {
+        let oViewer = Asc.editor.getDocumentRenderer();
+        let oDoc = Asc.editor.getPDFDoc();
+        let canChange = !oViewer.IsOpenAnnotsInProgress && oDoc.History.CanAddChanges();
+        if ((this._wasChanged == isChanged && this._wasChanged !== this.IsNeedDrawFromStream()) || !canChange) {
+            return;
+        }
 
-        if (this._wasChanged !== isChanged && oViewer.IsOpenAnnotsInProgress == false) {
-            this._wasChanged = isChanged;
+        oDoc.History.Add(new CChangesPDFAnnotChanged(this, [this._wasChanged, !this.IsNeedDrawFromStream()], [isChanged, viewSync]));
+
+        this._wasChanged = isChanged;
+        if (false !== viewSync) {
             this.SetDrawFromStream(!isChanged);
         }
     };
@@ -304,6 +309,7 @@
             if (this.IsHighlight())
                 AscPDF.startMultiplyMode(oGraphicsPDF.GetContext());
             
+            oGraphicsPDF.SetGlobalAlpha(1);
             oGraphicsPDF.DrawImageXY(originView, X, Y, undefined, true);
             AscPDF.endMultiplyMode(oGraphicsPDF.GetContext());
         }
@@ -501,7 +507,7 @@
         }
 
         this.SetNeedRecalc(true);
-        this.SetWasChanged(true);
+        this.SetWasChanged(true, false);
     };
     CAnnotationBase.prototype.IsShapeBased = function() {
         return this instanceof AscPDF.CPdfShape || this instanceof AscFormat.CGroupShape;
@@ -560,6 +566,12 @@
         return this._bDrawFromStream;
     };
     CAnnotationBase.prototype.SetDrawFromStream = function(bFromStream) {
+        let oDoc = Asc.editor.getPDFDoc();
+
+        if (this.IsChanged() && this.IsNeedDrawFromStream() && false == bFromStream) {
+            oDoc.History.Add(new CChangesPDFAnnotChangedView(this, this._bDrawFromStream, bFromStream));
+        }
+
         this._bDrawFromStream = bFromStream;
     };
     CAnnotationBase.prototype.SetRect = function(aOrigRect) {
@@ -598,39 +610,33 @@
         this.parentPage = oParent;
     };
     CAnnotationBase.prototype.GetParentPage = function() {
+        let oReplyTo = this.GetReplyTo();
+        if (oReplyTo && !this.parentPage) {
+            return oReplyTo.GetParentPage();
+        }
+
         return this.parentPage;
     };
     CAnnotationBase.prototype.SetPage = function(nPage) {
-        let nCurPage = this.GetPage();
-        if (nPage == nCurPage)
+        if (this.GetPage() == nPage) {
             return;
-
-        let oViewer     = editor.getDocumentRenderer();
+        }
+        
         let oDoc        = this.GetDocument();
-        let oPageInfo   = oViewer.pagesInfo.pages[nCurPage];
+        let oNewPage    = oDoc.GetPageInfo(nPage);
 
-        let nCurIdxOnPage = oPageInfo && oPageInfo.annots ? oPageInfo.annots.indexOf(this) : -1;
-        if (oViewer.pagesInfo.pages[nPage]) {
-            if (oDoc.annots.indexOf(this) != -1) {
-                if (nCurIdxOnPage != -1) {
-                    oPageInfo.annots.splice(nCurIdxOnPage, 1);
-                }
-    
-                if (this.IsUseInDocument() && oViewer.pagesInfo.pages[nPage].annots.indexOf(this) == -1)
-                    oViewer.pagesInfo.pages[nPage].annots.push(this);
-
-                // добавляем в перерисовку исходную страницу
-                this.AddToRedraw();
-            }
-
-            oDoc.History.Add(new CChangesPDFAnnotPage(this, nCurPage, nPage));
-            this._page = nPage;
-            this.selectStartPage = nPage;
-            this.AddToRedraw();
+        if (oNewPage) {
+            oDoc.RemoveAnnot(this.GetId());
+            oDoc.AddAnnot(this, nPage);
         }
     };
     CAnnotationBase.prototype.GetPage = function() {
-        return this._page;
+        let oParentPage = this.GetParentPage();
+        if (!oParentPage || !(oParentPage instanceof AscPDF.CPageInfo)) {
+            return -1;
+        }
+
+        return oParentPage.GetIndex();
     };
     CAnnotationBase.prototype.SetDocument = function(oDoc) {
         if (this._doc == oDoc) {
@@ -704,7 +710,7 @@
             oDoc.History.Add(new CChangesPDFAnnotContents(this, sCurContents, contents));
         }
         
-        this.SetWasChanged(true);
+        this.SetWasChanged(true, false);
         if (bSendAddCommentEvent)
             oDoc.CheckComment(this);
         
@@ -743,6 +749,12 @@
         // oGraphicsPDF.Rect(X, Y, nWidth, nHeight);
         // oGraphicsPDF.Stroke();
     };
+    CAnnotationBase.prototype.changeFlipH = function () {
+        return false;
+    };
+    CAnnotationBase.prototype.changeFlipV = function () {
+        return false;
+    };
     CAnnotationBase.prototype.GetReplies = function() {
         return this._replies;
     };
@@ -750,8 +762,8 @@
         return this._replies[nPos];
     };
     CAnnotationBase.prototype.RemoveComment = function() {
-        this.SetContents(null);
         this.EditCommentData(undefined);
+        this.SetContents(undefined);
     };
     CAnnotationBase.prototype.EditCommentData = function(oCommentData) {
         let oDoc = this.GetDocument();
@@ -876,7 +888,7 @@
 
         AscCommon.History.Add(new CChangesPDFAnnotModDate(this, this._modDate, sDate));
         this._modDate = sDate;
-        this.SetWasChanged(true);
+        this.SetWasChanged(true, false);
     };
     CAnnotationBase.prototype.GetModDate = function(bPDF) {
         if (this._modDate == undefined)
@@ -895,7 +907,7 @@
 
         AscCommon.History.Add(new CChangesPDFAnnotCreationDate(this, this._creationDate, sDate));
         this._creationDate = sDate;
-        this.SetWasChanged(true);
+        this.SetWasChanged(true, false);
     };
     CAnnotationBase.prototype.GetCreationDate = function(bPDF) {
         if (this._creationDate == undefined)
@@ -915,7 +927,7 @@
 
         AscCommon.History.Add(new CChangesPDFAnnotAuthor(this, this._author, sAuthor));
         this._author = sAuthor;
-        this.SetWasChanged(true);
+        this.SetWasChanged(true, false);
     };
     CAnnotationBase.prototype.GetAuthor = function() {
         return this._author;
@@ -1016,7 +1028,7 @@
         let oDoc = this.GetDocument();
         oDoc.StartNoHistoryMode();
 
-        let oNewAnnot = new CAnnotationBase(AscCommon.CreateGUID(), this.type, this.GetPage(), this.GetOrigRect().slice(), oDoc);
+        let oNewAnnot = new CAnnotationBase(AscCommon.CreateGUID(), this.type, this.GetOrigRect().slice(), oDoc);
 
         oNewAnnot.lazyCopy = true;
         
@@ -1124,15 +1136,6 @@
 
         memory.WriteLong(nPage);
 
-        // rect
-        let aOrigRect = this.GetOrigRect();
-        memory.WriteDouble(aOrigRect[0]); // x1
-        memory.WriteDouble(aOrigRect[1]); // y1
-        memory.WriteDouble(aOrigRect[2]); // x2
-        memory.WriteDouble(aOrigRect[3]); // y2
-
-        // new flags
-        let Flags = 0;
         let sName           = this.GetName();
         let sContents       = this.GetContents();
         let BES             = this.GetBorderEffectStyle();
@@ -1142,6 +1145,25 @@
         let nBorderW        = this.GetWidth();
         let sModDate        = this.GetModDate(true);
 
+        // rect
+        let aOrigRect = this.GetOrigRect();
+        if (this.IsStamp()) {
+            // for not clipping by half border width
+            memory.WriteDouble(aOrigRect[0] - nBorderW / 2); // x1
+            memory.WriteDouble(aOrigRect[1] - nBorderW / 2); // y1
+            memory.WriteDouble(aOrigRect[2] + nBorderW / 2); // x2
+            memory.WriteDouble(aOrigRect[3] + nBorderW / 2); // y2
+        }
+        else {
+            memory.WriteDouble(aOrigRect[0]); // x1
+            memory.WriteDouble(aOrigRect[1]); // y1
+            memory.WriteDouble(aOrigRect[2]); // x2
+            memory.WriteDouble(aOrigRect[3]); // y2
+        }
+        
+
+        // new flags
+        let Flags = 0;
         let nPosForFlags = memory.GetCurPosition();
         memory.Skip(4);
 
@@ -1313,7 +1335,7 @@
     };
     CAnnotationBase.prototype.WriteRenderToBinary = function(memory) {
         // пока только для основанных на фигурах
-        if (false == this.IsShapeBased()) {
+        if (false == this.IsShapeBased() || this.IsNeedDrawFromStream()) {
             return;
         }
 

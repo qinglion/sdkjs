@@ -89,8 +89,20 @@
 	};
 	CustomXml.prototype.addContentByXMLString = function (strCustomXml)
 	{
+		let nXmlHeaderStart	= strCustomXml.indexOf('<?', 0);
+		let nXmlHeaderEnd	= strCustomXml.indexOf('?>', nXmlHeaderStart);
+		let strXmlHeader 	= null;
+		if (nXmlHeaderStart !== -1 && nXmlHeaderEnd !== -1)
+		{
+			strXmlHeader = strCustomXml.substring(nXmlHeaderStart, nXmlHeaderEnd + "?>".length);
+			strCustomXml = strCustomXml.substring(nXmlHeaderEnd + '?>'.length, strCustomXml.length);
+		}
+
 		let oStax			= new StaxParser(strCustomXml),
 			rootContent		= new CustomXmlContent(null);
+
+		if (strXmlHeader !== null)
+			rootContent.xmlQuestionHeader = strXmlHeader;
 
 		while (oStax.Read())
 		{
@@ -130,6 +142,7 @@
 		this.content		= [];
 		this.attribute		= {};
 		this.textContent	= "";
+		this.xmlQuestionHeader = null;
 
 		this.addAttribute = function (name, value)
 		{
@@ -165,25 +178,27 @@
 		this.getBuffer = function ()
 		{
 			let writer = new AscCommon.CMemory();
-			let nTab = 0;
 
 			function Write(content)
 			{
+				if (content.name === "" && content.textContent === "" && content.content.length === 0)
+				{
+					writer.WriteXmlString("");
+					return;
+				}
+
 				let current = null;
 
 				if (!content.name)
 				{
-					writer.WriteXmlString("\x00<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+					if (content.xmlQuestionHeader !== null)
+						writer.WriteXmlString(content.xmlQuestionHeader + "\n");
+
 					current = content.content[0];
 				}
 				else
 				{
 					current = content;
-				}
-
-				for (let i = 0; i < nTab; i++)
-				{
-					writer.WriteXmlString("	");
 				}
 
 				writer.WriteXmlNodeStart(current.name);
@@ -200,13 +215,7 @@
 
 				for (let i = 0; i < current.content.length; i++)
 				{
-					nTab++;
-					if (i === 0)
-						writer.WriteXmlString("\n");
-					let curContent = current.content[i];
-					Write(curContent);
-					nTab--;
-					writer.WriteXmlString("\n");
+					Write(current.content[i]);
 				}
 
 				if (current.textContent)
@@ -221,7 +230,7 @@
 		this.getStringFromBuffer = function ()
 		{
 			let buffer	= this.getBuffer();
-			let str		= AscCommon.UTF8ArrayToString(buffer.data, 1);
+			let str		= fromUtf8(buffer.GetData());
 			str			= str.replaceAll("&quot;", "\"");
 			str			= str.replaceAll("&amp;", "&");
 			return str;

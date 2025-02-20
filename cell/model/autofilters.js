@@ -1555,6 +1555,12 @@
 
 				if (userRange) {
 					activeCells = AscCommonExcel.g_oRangeCache.getAscRange(userRange);
+					if (!activeCells) {
+						let aRanges = AscCommonExcel.getRangeByName(userRange, this.worksheet);
+						if (aRanges && aRanges.length === 1) {
+							activeCells = aRanges[0] && aRanges[0].bbox;
+						}
+					}
 				}
 
 				//данная функция возвращает false в двух случаях - при смене стиля ф/т или при поптыке добавить ф/т к части а/ф
@@ -4471,7 +4477,7 @@
 				return range;
 			},
 
-			expandRange: function (activeRange, ignoreFilter, doNotCheckEmpty) {
+			expandRange: function (activeRange, ignoreFilter, doNotCheckEmpty, checkLastEmpty) {
 				var ws = this.worksheet;
 
 				//если вдруг встретили мерженную ячейку в диапазоне, расширяем
@@ -4708,6 +4714,14 @@
 					rangeAfterTableCrop = range.clone();
 					range = activeRange.clone();
 					doExpand();
+				}
+
+
+				if (checkLastEmpty) {
+					let _cropRange = this.checkEmptyAreas(range, rangeAfterTableCrop);
+					if (_cropRange.r2 !== range.r2 || _cropRange.c2 !== range.c2) {
+						return activeRange;
+					}
 				}
 
 				//проверяем на наличие пустых колонок/строк

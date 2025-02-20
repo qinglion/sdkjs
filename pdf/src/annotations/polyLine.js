@@ -42,10 +42,10 @@
 	 * Class representing a Ink annotation.
 	 * @constructor
     */
-    function CAnnotationPolyLine(sName, nPage, aRect, oDoc)
+    function CAnnotationPolyLine(sName, aRect, oDoc)
     {
         AscPDF.CPdfShape.call(this);
-        AscPDF.CAnnotationBase.call(this, sName, AscPDF.ANNOTATIONS_TYPES.PolyLine, nPage, aRect, oDoc);
+        AscPDF.CAnnotationBase.call(this, sName, AscPDF.ANNOTATIONS_TYPES.PolyLine, aRect, oDoc);
         
         AscPDF.initShape(this);
 
@@ -139,7 +139,7 @@
         let oDoc = this.GetDocument();
         oDoc.StartNoHistoryMode();
 
-        let oPolyline = new CAnnotationPolyLine(AscCommon.CreateGUID(), this.GetPage(), this.GetOrigRect().slice(), oDoc);
+        let oPolyline = new CAnnotationPolyLine(AscCommon.CreateGUID(), this.GetOrigRect().slice(), oDoc);
         oPolyline.lazyCopy = true;
 
         this.fillObject(oPolyline);
@@ -541,8 +541,8 @@
                 oSize.height = nLineW;
             case AscPDF.LINE_END_TYPE.OpenArrow:
             case AscPDF.LINE_END_TYPE.ClosedArrow:
-                oSize.width = 4 * nLineW;
-                oSize.height = 2 * nLineW;
+                oSize.width = 6 * nLineW;
+                oSize.height = 3 * nLineW;
                 break;
             case AscPDF.LINE_END_TYPE.Diamond:
             case AscPDF.LINE_END_TYPE.Square:
@@ -558,18 +558,17 @@
                 oSize.height = 6 * nLineW;
                 break;
             case AscPDF.LINE_END_TYPE.ROpenArrow:
-                oSize.width = 5 * nLineW;
-                oSize.height = 5 * nLineW;
+                oSize.width = 6 * nLineW;
+                oSize.height = 6 * nLineW;
                 break;
             case AscPDF.LINE_END_TYPE.Butt:
                 oSize.width = 5 * nLineW;
                 oSize.height = 1.5 * nLineW;
                 break;
             case AscPDF.LINE_END_TYPE.Slash:
-                oSize.width = 4 * nLineW;
-                oSize.height = 3.5 * nLineW;
+                oSize.width = 6 * nLineW;
+                oSize.height = 3 * nLineW;
                 break;
-            
         }
 
         return oSize;

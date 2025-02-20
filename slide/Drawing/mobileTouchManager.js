@@ -1372,6 +1372,7 @@
 
 	//--------------------------------------------------------export----------------------------------------------------
 	window['AscCommon']                          		= window['AscCommon'] || {};
+	window['AscCommon'].CMobileDelegateEditorPresentation = CMobileDelegateEditorPresentation;
 	window['AscCommon'].CMobileTouchManager      		= CMobileTouchManager;
 	window['AscCommon'].CMobileTouchManagerThumbnails   = CMobileTouchManagerThumbnails;
 })(window);

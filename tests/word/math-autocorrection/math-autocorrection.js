@@ -970,6 +970,7 @@ $(function () {
 			Test("\\int _(x+1)\\of 1/2  ", [["ParaRun", ""], ["CNary", "∫_(x+1)▒〖1/2〗"], ["ParaRun", ""]], false, "Check large operators");
 			Test("\\prod ^(x+1)\\of 1/2  ", [["ParaRun", ""], ["CNary", "∏^(x+1)▒〖1/2〗"], ["ParaRun", ""]],false, "Check large operators");
 			Test("∫^(x+1)_(1_i)\\of 1/2  ", [["ParaRun", ""], ["CNary", "∫_(1_i)^(x+1)▒〖1/2〗"], ["ParaRun", ""]], false, "Check large operators");
+			Test("∑_(k=0)^n▒〖(n¦k) a^k b^(n-k)〗   ", [["ParaRun", ""], ["CNary", "∑_(k=0)^n▒〖(n¦k) a^k b^(n-k)〗"], ["ParaRun", " "]], false, "Check add space after nary");
 		})
 
 		QUnit.module( "Functions", function ()
@@ -1292,6 +1293,13 @@ $(function () {
 				let strFunc = MathContent.GetTextOfElement(0).GetText();
 				assert.strictEqual(strFunc, 'cos⁡〖 θ〗', 'Check complex math func content');
 			})
+		})
+
+		QUnit.module( "Font", function ()
+		{
+			Test("\\doubleE ", [["ParaRun", "𝔼"]], false, "Check math font autocorrection");
+			Test("\\frakturE ", [["ParaRun", "𝔈"]], false, "Check math font autocorrection");
+			Test("\\scriptE ", [["ParaRun", "ℰ"]], false, "Check math font autocorrection");
 		})
 	})
 
@@ -1750,20 +1758,20 @@ $(function () {
 				assert.strictEqual(strFunc, '\\lim\\below{\\left(n\\to\\infty\\right){\\left(1+\\frac{1}{n}\\right)^n}}', 'Check complex math func content');
 			})
 
-			QUnit.todo('Check eqarray frac - Find case for LaTeX', function (assert)
-			{
-				// Find case for LaTeX
-				Clear();
-				logicDocument.SetMathInputType(1);
-				AddText('\\frac{\\substack{1\\\\\\substack{\\\\\\substack{\\\\\\substack{\\\\}}}}}{2}');
-				assert.ok(true, "Add text '\\frac{\\substack{1\\\\\\substack{\\\\\\substack{\\\\\\substack{\\\\}}}}}{2}'");
-
-				MathContent.ConvertView(false, Asc.c_oAscMathInputType.LaTeX);
-				assert.ok(true, "Convert to linear view");
-
-				let strBinomial = MathContent.GetTextOfElement(true).GetText();
-				assert.strictEqual(strBinomial, '\\frac{\\substack{1\\\\\\substack{\\\\\\substack{\\\\\\substack{\\\\}}}}}{2}', 'Check');
-			})
+			// QUnit.todo('Check eqarray frac - Find case for LaTeX', function (assert)
+			// {
+			// 	// Find case for LaTeX
+			// 	Clear();
+			// 	logicDocument.SetMathInputType(1);
+			// 	AddText('\\frac{\\substack{1\\\\\\substack{\\\\\\substack{\\\\\\substack{\\\\}}}}}{2}');
+			// 	assert.ok(true, "Add text '\\frac{\\substack{1\\\\\\substack{\\\\\\substack{\\\\\\substack{\\\\}}}}}{2}'");
+			//
+			// 	MathContent.ConvertView(false, Asc.c_oAscMathInputType.LaTeX);
+			// 	assert.ok(true, "Convert to linear view");
+			//
+			// 	let strBinomial = MathContent.GetTextOfElement(true).GetText();
+			// 	assert.strictEqual(strBinomial, '\\frac{\\substack{1\\\\\\substack{\\\\\\substack{\\\\\\substack{\\\\}}}}}{2}', 'Check');
+			// })
 
 			QUnit.module( "Check LaTeX matrix", function ()
 			{

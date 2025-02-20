@@ -1166,7 +1166,9 @@ var c_oSerSdt = {
 
 	ComplexFormPr     : 90,
 	ComplexFormPrType : 91,
-	OformMaster : 92
+	OformMaster : 92,
+	Border : 93,
+	Shd : 94
 };
 var c_oSerFFData = {
 	CalcOnExit: 0,
@@ -6772,6 +6774,18 @@ function BinaryDocumentTableWriter(memory, doc, oMapCommentId, oNumIdMap, copyPa
 		if (complexFormPr) {
 			this.bs.WriteItem(c_oSerSdt.ComplexFormPr, function (){oThis.WriteSdtComplexFormPr(complexFormPr)});
 		}
+		if (undefined !== val.ShdColor) {
+			let shd = new AscWord.CShd();
+			shd.Value = Asc.c_oAscShd.Clear;
+			shd.Color = val.ShdColor;
+			oThis.bs.WriteItem(c_oSerSdt.Shd, function(){oThis.bs.WriteShd(shd)});
+		}
+		if (undefined !== val.BorderColor) {
+			let border = new AscWord.CBorder();
+			border.Color = val.BorderColor;
+			border.Value = AscWord.BorderType.single;
+			oThis.bs.WriteItem(c_oSerSdt.Border, function(){oThis.bs.WriteBorder(border)});
+		}
 	};
 	this.WriteSdtCheckBox = function (val)
 	{
@@ -6828,19 +6842,19 @@ function BinaryDocumentTableWriter(memory, doc, oMapCommentId, oNumIdMap, copyPa
 	this.WriteSdtPrDataBinding = function (val)
 	{
 		var oThis = this;
-		if (null != val.prefixMappings) {
+		if (undefined !== val.prefixMappings) {
 			this.memory.WriteByte(c_oSerSdt.PrefixMappings);
 			this.memory.WriteString2(val.prefixMappings);
 		}
-		if (null != val.storeItemID) {
+		if (undefined !== val.storeItemID) {
 			this.memory.WriteByte(c_oSerSdt.StoreItemID);
 			this.memory.WriteString2(val.storeItemID);
 		}
-		if (null != val.xpath) {
+		if (undefined !== val.xpath) {
 			this.memory.WriteByte(c_oSerSdt.XPath);
 			this.memory.WriteString2(val.xpath);
 		}
-		if (null !== val.storeItemCheckSum)
+		if (undefined !== val.storeItemCheckSum)
 		{
 			//let strCustomXmlContent = this.Document.customXml.getContentByDataBinding(val);
 			//val.recalculateCheckSum(strCustomXmlContent);
@@ -7748,8 +7762,10 @@ function BinaryCustomsTableWriter(memory, doc, customXmlManager)
 		}
 		if (null !== customXml.content) {
 			this.bs.WriteItem(c_oSerCustoms.ContentA, function() {
-				let str = customXmlManager.getCustomXMLString(customXml);
-				oThis.memory.WriteCustomStringA(str);
+				let str  = customXmlManager.getCustomXMLString(customXml);
+				let data = AscCommon.Utf8.encode(str);
+				oThis.memory.WriteULong(data.length);
+				oThis.memory.WriteBuffer(data, 0, data.length);
 			});
 		}
 	};
@@ -7819,16 +7835,16 @@ function BinaryFileReader(doc, openParams)
 	this.ReadFromStream = function(stream, bClearStreamOnly)
 	{
 		this.stream = stream;
-		this.PreLoadPrepare(bClearStreamOnly);
+		this.PreLoadPrepare(bClearStreamOnly, true);
 		this.ReadMainTable();
-		this.PostLoadPrepare();
+		this.PostLoadPrepare(undefined, true);
 		return true;
 	};
     this.Read = function(data)
     {
 		return this.ReadFromStream(this.getbase64DecodedData(data));
     };
-	this.PreLoadPrepare = function(bClearStreamOnly)
+	this.PreLoadPrepare = function(bClearStreamOnly, bClearPptxLoader)
 	{
 		var styles = this.Document.Styles.Style;
         
@@ -7838,8 +7854,10 @@ function BinaryFileReader(doc, openParams)
         stDefault.Paragraph = null;
 		stDefault.Table = null;
 
-        //надо сбросить то, что остался после открытия документа(повторное открытие в Version History)
-        pptx_content_loader.Clear(bClearStreamOnly);
+		if (bClearPptxLoader) {
+			//надо сбросить то, что остался после открытия документа(повторное открытие в Version History)
+			pptx_content_loader.Clear(bClearStreamOnly);
+		}
 	}
     this.ReadMainTable = function()
 	{	
@@ -8107,7 +8125,7 @@ function BinaryFileReader(doc, openParams)
 			}
 		}
 	};
-    this.PostLoadPrepare = function(opt_xmlParserContext)
+    this.PostLoadPrepare = function(opt_xmlParserContext, bClearPptxLoader)
     {
 		let api = this.Document.DrawingDocument && this.Document.DrawingDocument.m_oWordControl && this.Document.DrawingDocument.m_oWordControl.m_oApi;
 		this.Document.UpdateDefaultsDependingOnCompatibility();
@@ -8469,10 +8487,16 @@ function BinaryFileReader(doc, openParams)
 				api && api.asc_addRestriction(restrictionType);
 			}
 		}
-	    pptx_content_loader.Reader.GenerateSmartArts();
-		
-		//чтобы удалялся stream с бинарником
-		pptx_content_loader.Clear(true);
+		if (this.openParams && this.openParams.noGenerateSmartArts) {
+			pptx_content_loader.Reader.smartarts.length = 0;
+		} else {
+			pptx_content_loader.Reader.GenerateSmartArts();
+		}
+
+		if (bClearPptxLoader) {
+			//чтобы удалялся stream с бинарником
+			pptx_content_loader.Clear(true);
+		}
     };
     this.ReadFromString = function (sBase64, copyPasteObj) {
         //надо сбросить то, что остался после открытия документа
@@ -9359,7 +9383,7 @@ function Binary_pPrReader(doc, oReadResult, stream)
 		var oThis = this;
         if( c_oSerBorderType.Color === type )
         {
-            Border.Color = this.bcr.ReadColor();
+            Border.Color = this.bcr.ReadColor(length);
         }
         else if( c_oSerBorderType.Space === type )
         {
@@ -10022,7 +10046,7 @@ function Binary_pPrReader(doc, oReadResult, stream)
 		var oThis = this;
 		if( c_oSerPageBorders.Color === type )
 		{
-			Border.Color = this.bcr.ReadColor();
+			Border.Color = this.bcr.ReadColor(length);
 		}
 		else if( c_oSerPageBorders.Space === type )
 		{
@@ -10130,13 +10154,13 @@ function Binary_rPrReader(doc, oReadResult, stream)
                 rPr.FontSize = this.stream.GetULongLE() / 2;
                 break;
             case c_oSerProp_rPrType.Color:
-                rPr.Color = this.bcr.ReadColor();
+                rPr.Color = this.bcr.ReadColor(length);
                 break;
             case c_oSerProp_rPrType.VertAlign:
                 rPr.VertAlign = this.stream.GetUChar();
                 break;
             case c_oSerProp_rPrType.HighLight:
-                rPr.HighLight = this.bcr.ReadColor();
+                rPr.HighLight = this.bcr.ReadColor(length);
                 break;
             case c_oSerProp_rPrType.HighLightTyped:
                 var nHighLightTyped = this.stream.GetUChar();
@@ -11512,7 +11536,7 @@ function Binary_DocumentTableReader(doc, oReadResult, openParams, stream, curNot
 		var res = c_oSerConstants.ReadOk;
 		var oThis = this;
 		if (c_oSerBackgroundType.Color === type){
-			oBackground.Color = this.bcr.ReadColor();
+			oBackground.Color = this.bcr.ReadColor(length);
 		} else if(c_oSerBackgroundType.ColorTheme === type) {
 			var themeColor = {Auto: null, Color: null, Tint: null, Shade: null};
 			res = this.bcr.Read2(length, function(t, l){
@@ -13211,6 +13235,19 @@ function Binary_DocumentTableReader(doc, oReadResult, openParams, stream, curNot
 				return oThis.ReadSdtComplexFormPr(t, l, complexFormPr);
 			});
 			oSdt.SetComplexFormPr(complexFormPr);
+		} else if (c_oSerSdt.Border === type) {
+			let border = new AscWord.CBorder();
+			res = this.bcr.Read2(length, function (t, l) {
+				return oThis.bpPrr.ReadBorder(t, l, border);
+			});
+			if (border.Color)
+				oSdt.setBorderColor(border.Color);
+			
+		} else if (c_oSerSdt.Shd === type) {
+			let shd = new AscWord.CShd();
+			ReadDocumentShd(length, this.bcr, shd);
+			if (shd.Color)
+				oSdt.setShdColor(shd.Color);
 		} else {
 			res = c_oSerConstants.ReadUnknown;
 		}
@@ -15151,36 +15188,19 @@ function Binary_oMathReader(stream, oReadResult, curNote, openParams)
             res = c_oSerConstants.ReadUnknown;
         return res;
     };
-	this.ReadMathText = function(type, length, oMRun)
-    {
-        var res = c_oSerConstants.ReadOk;
-        var oThis = this;
-		if (c_oSer_OMathBottomNodesValType.Val === type)
-        {
-			var aUnicodes = [];
-            if (length > 0)
-                aUnicodes = AscCommon.convertUTF16toUnicode(this.stream.GetString2LE(length));
-
-			for (var nPos = 0, nCount = aUnicodes.length; nPos < nCount; ++nPos)
-            {
-                var nUnicode = aUnicodes[nPos];
-
-                var oText = null;
-                if (0x0026 == nUnicode)
-                    oText = new CMathAmp();
-                else
-                {
-                    oText = new CMathText(false);
-                    oText.add(nUnicode);
-                }
-                if (oText)
-                    oMRun.Add_ToContent(nPos, oText, false, true);
-            }
-        }
-		else
-            res = c_oSerConstants.ReadUnknown;
-        return res;
-    };
+	this.ReadMathText = function(type, length, mathRun)
+	{
+		if (c_oSer_OMathBottomNodesValType.Val !== type)
+			return c_oSerConstants.ReadUnknown;
+		
+		let text = this.stream.GetString2LE(length);
+		AscWord.TextToMathRunElements(text, function(item)
+		{
+			mathRun.AddToContentToEnd(item);
+		});
+		
+		return c_oSerConstants.ReadOk;
+	};
 	this.ReadMathMRun = function(type, length, oMRun, props, oParent, paragraphContent)
     {
 		//todo

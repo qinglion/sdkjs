@@ -286,26 +286,25 @@
         return this.needCommit;
     };
     CBaseField.prototype.SetPage = function(nPage) {
-        let nCurPage = this.GetPage();
-        if (nPage == nCurPage)
+        if (this.GetPage() == nPage) {
             return;
-
-
-        let oViewer = editor.getDocumentRenderer();
-        let nCurIdxOnPage = oViewer.pagesInfo.pages[nCurPage] && oViewer.pagesInfo.pages[nCurPage].fields ? oViewer.pagesInfo.pages[nCurPage].fields.indexOf(this) : -1;
-        if (oViewer.pagesInfo.pages[nPage]) {
-            if (nCurIdxOnPage != -1)
-                oViewer.pagesInfo.pages[nCurPage].fields.splice(nCurIdxOnPage, 1);
-
-            if (oViewer.pagesInfo.pages[nPage].fields.indexOf(this) == -1)
-                oViewer.pagesInfo.pages[nPage].fields.push(this);
-
-            this._page = nPage;
-            this.selectStartPage = nPage;
+        }
+        
+        let oDoc        = this.GetDocument();
+        let oNewPage    = oDoc.GetPageInfo(nPage);
+        
+        if (oNewPage) {
+            oDoc.RemoveField(this.GetId());
+            oDoc.AddField(this, nPage);
         }
     };
     CBaseField.prototype.GetPage = function() {
-        return this._page;
+        let oParentPage = this.GetParentPage();
+        if (!oParentPage || !(oParentPage instanceof AscPDF.CPageInfo)) {
+            return -1;
+        }
+
+        return oParentPage.GetIndex();
     };
 
     /**
@@ -654,6 +653,13 @@
         
         return aActions;
     };
+    CBaseField.prototype.SetDocument = function(oDoc) {
+        if (this._doc == oDoc) {
+            return;
+        }
+
+        this._doc = oDoc;
+    };
     CBaseField.prototype.GetDocument = function() {
         return this._doc;
     };
@@ -667,7 +673,7 @@
 	 * @memberof CBaseField
 	 * @typeofeditors ["PDF"]
 	 */
-    CBaseField.prototype.GetApiValue = function(bInherit) {
+    CBaseField.prototype.GetParentValue = function(bInherit) {
         let oParent = this.GetParent();
         if (oParent == null && this._value == null)
             return undefined;
@@ -676,19 +682,21 @@
         }
         
         if (oParent)
-            return oParent.GetApiValue();
+            return oParent.GetParentValue();
     };
     /**
 	 * Sets api value of form.
 	 * @memberof CBaseField
 	 * @typeofeditors ["PDF"]
 	 */
-    CBaseField.prototype.SetApiValue = function(value) {
+    CBaseField.prototype.SetParentValue = function(value) {
         let oParent = this.GetParent();
         if (oParent && this.IsWidget() && oParent.IsAllKidsWidgets())
-            oParent.SetApiValue(value);
+            oParent.SetParentValue(value);
         else {
             this.SetWasChanged(true);
+            let oDoc = this.GetDocument();
+            oDoc.History.Add(new CChangesPDFFormParentValue(this, this._value, value));
             this._value = value;
         }
     };
@@ -1233,6 +1241,9 @@
     CBaseField.prototype.Get_Id = function() {
         return this._id;
     };
+    CBaseField.prototype.GetId = function() {
+        return this._id;
+    };
     CBaseField.prototype.SetNeedRecalc = function(bRecalc, bSkipAddToRedraw) {
         if (bRecalc == false) {
             this._needRecalc = false;
@@ -1251,17 +1262,22 @@
     };
     CBaseField.prototype.Refresh_RecalcData = function(){};
     CBaseField.prototype.SetWasChanged = function(isChanged) {
-        let oViewer = editor.getDocumentRenderer();
-
-        if (oViewer.IsOpenFormsInProgress == false) {
-            this._wasChanged = isChanged;
-            this.IsWidget() && this.SetDrawFromStream(!isChanged);
+        let oViewer = Asc.editor.getDocumentRenderer();
+        let oDoc = Asc.editor.getPDFDoc();
+        let canChange = !oViewer.IsOpenFormsInProgress && !oDoc.History.UndoRedoInProgress;
+        if (this._wasChanged == isChanged || !canChange) {
+            return;
         }
+        
+        oDoc.History.Add(new CChangesPDFFormChanged(this, this._wasChanged, isChanged));
+
+        this._wasChanged = isChanged;
+        this.IsWidget() && this.SetDrawFromStream(!isChanged);
     };
 
     CBaseField.prototype.UndoNotAppliedChanges = function() {
         let isChanged = this.IsChanged();
-        this.SetValue(this.GetApiValue());
+        this.SetValue(this.GetParentValue());
         this.SetNeedRecalc(true);
         this.SetNeedCommit(false);
 
@@ -1826,6 +1842,7 @@
         let Y = aOringRect[1];
 
         if (originView) {
+            oGraphicsPDF.SetGlobalAlpha(1);
             oGraphicsPDF.DrawImageXY(originView, X, Y, undefined, true);
         }
 
@@ -1843,6 +1860,24 @@
         // oGraphicsPDF.BeginPath();
         // oGraphicsPDF.Rect(X, Y, nWidth, nHeight);
         // oGraphicsPDF.Stroke();
+
+        this.DrawLocks(oGraphicsPDF);
+    };
+    CBaseField.prototype.DrawLocks = function(oGraphicsPDF) {
+        let aOrigRect   = this.GetRect();
+        let nX          = aOrigRect[0];
+        let nY          = aOrigRect[1];
+        let nWidth      = (aOrigRect[2] - aOrigRect[0]);
+        let nHeight     = (aOrigRect[3] - aOrigRect[1]);
+
+        let aRegions = [[
+            [nX, nY],
+            [nX + nWidth, nY],
+            [nX + nWidth, nY + nHeight],
+            [nX, nY + nHeight]
+        ]];
+
+        oGraphicsPDF.DrawLockObjectRect(this.Lock.Get_Type(), aRegions);
     };
 	CBaseField.prototype.DrawFromTextBox = function(pdfGraphics, textBoxGraphics, pageIndex) {
 		this.Draw(pdfGraphics, textBoxGraphics);
@@ -2040,7 +2075,7 @@
         return this.type;
     };
     CBaseField.prototype["getPage"] = function() {
-        return this._page;
+        return this.GetPage();
     };
     CBaseField.prototype["getPagePos"] = function() {
         let aOrigRect = this.GetOrigRect();
@@ -2285,7 +2320,7 @@
         }
 
         // value
-        let value = this.GetApiValue();
+        let value = this.GetParentValue();
         if (value != null && Array.isArray(value) == false) {
             nFlags |= (1 << 1);
             memory.WriteString(value);
@@ -2301,7 +2336,7 @@
         // combobox/listbox
         let curIdxs = [];
         if ([AscPDF.FIELD_TYPES.combobox, AscPDF.FIELD_TYPES.listbox].includes(this.GetType())) {
-            curIdxs = this.GetApiCurIdxs();
+            curIdxs = this.GetParentCurIdxs();
         }
         if (curIdxs.length > 0) {
             nFlags |= (1 << 3);

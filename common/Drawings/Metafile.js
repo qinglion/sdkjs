@@ -840,17 +840,6 @@
 				this.data[this.pos++] = (c >>> 8) & 0xFF;
 			}
 		}
-		this.WriteCustomStringA = function(text)
-		{
-			var encoder = new TextEncoder('utf-8');
-			var encodedText = encoder.encode(text);
-
-			this.WriteULong(encodedText.length);
-
-			for (let i = 0; i < encodedText.length; i++) {
-				this.data[this.pos++] = encodedText[i];
-			}
-		}
 		this.WriteStringA = function(text)
 		{
 			var count = text.length;
@@ -1757,13 +1746,14 @@
 	// 		vsdxHalfDashDashDot   	: 24,
 	// 		vsdxHalfLongDashShortDash   		 : 25,
 	// 		vsdxHalfLongDashShortDashShortDash   : 26,
-	// 		vsdxDoubleDot   		: 27,
-	// 		vsdxDoubleDashDot   	: 28,
-	// 		vsdxDoubleDashDotDot   	: 29,
-	// 		vsdxDoubleDashDashDot   : 30,
-	// 		vsdxDoubleLongDashShortDash   			: 31,
-	// 		vsdxDoubleLongDashShortDashShortDash    : 32,
-	// 		vsdxHalfHalfDash   		: 33,
+	//		vsdxDoubleDash:			: 27
+	// 		vsdxDoubleDot   		: 28,
+	// 		vsdxDoubleDashDot   	: 29,
+	// 		vsdxDoubleDashDotDot   	: 30,
+	// 		vsdxDoubleDashDashDot   : 31,
+	// 		vsdxDoubleLongDashShortDash   			: 32,
+	// 		vsdxDoubleLongDashShortDashShortDash    : 33,
+	// 		vsdxHalfHalfDash   		: 34,
 
 	var DashPatternPresets = [
 		[4, 3],
@@ -1778,6 +1768,8 @@
 		[3, 1, 1, 1, 1, 1],
 		[1, 1],
 		// visio types
+		// !!! line patterns were made to look correct for visio line cap type square.
+		// But now only flat cap type is supported in sdkjs.
 		[0, 1], // vsdxTransparent
 		[1, 0], // vsdxSolid
 		[9, 3], // vsdxDash
@@ -1801,8 +1793,7 @@
 		[16, 7, 16, 7, 2, 7], // vsdxDoubleDashDashDot
 		[41, 7, 17, 7], // vsdxDoubleLongDashShortDash
 		[41, 7, 17, 7, 17, 7], // vsdxDoubleLongDashShortDashShortDash
-		[1, 0], // vsdxHalfHalfDash (in visio is solid)
-
+		[1, 0], // vsdxHalfHalfDash (in visio is solid for cap type square)
 	];
 
 	function CMetafileFontPicker(manager)
@@ -2092,7 +2083,11 @@
 			this.Memory.WriteByte(CommandType.ctBrushTexturePath);
 
 			var _src = src;
-			if (isCloudPrinting)
+			if (src.startsWith("blob:"))
+			{
+				_src = AscCommon.g_oDocumentBlobUrls.getImageBase64(src);
+			}
+			else if (isCloudPrinting)
 			{
 				_src = getCloudPrintingUrl(src)
 			}
@@ -2389,6 +2384,16 @@
 		// images
 		drawImage : function(img, x, y, w, h, isUseOriginUrl)
 		{
+			if (img.startsWith("blob:"))
+			{
+				this.Memory.WriteString2(AscCommon.g_oDocumentBlobUrls.getImageBase64(img));
+				this.Memory.WriteDouble(x);
+				this.Memory.WriteDouble(y);
+				this.Memory.WriteDouble(w);
+				this.Memory.WriteDouble(h);
+				return;
+			}
+
 			var isCloudPrinting = isCloudPrintingUrl();
 
 			if (!window.editor)
@@ -2797,7 +2802,7 @@
 					this.Memory.WriteLong(oTextFormPr.MaxCharacters);
 				}
 
-				let sValue = oForm.GetSelectedText(true, false, {NewLine : true});
+				let sValue = oForm.GetSelectedText(true, false, {});
 				if (sValue)
 				{
 					nFlag |= (1 << 22);
@@ -2981,7 +2986,7 @@
 				this.Memory.WriteLong(6);
 				let dateTimePr = oForm.GetDatePickerPr();
 				
-				let value = oForm.GetSelectedText(true, false, {NewLine : true});
+				let value = oForm.GetSelectedText(true, false, {});
 				if (value)
 				{
 					nFlag |= (1 << 22);

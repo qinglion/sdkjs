@@ -494,15 +494,7 @@ asc_CChartBinary.prototype = {
         var binary = this["themeBinary"];
         if(binary)
         {
-            var stream = AscFormat.CreateBinaryReader(binary, 0, binary.length);
-            var oBinaryReader = new AscCommon.BinaryPPTYLoader();
-
-            oBinaryReader.stream = new AscCommon.FileStream();
-            oBinaryReader.stream.obj    = stream.obj;
-            oBinaryReader.stream.data   = stream.data;
-            oBinaryReader.stream.size   = stream.size;
-            oBinaryReader.stream.pos    = stream.pos;
-            oBinaryReader.stream.cur    = stream.cur;
+            let oBinaryReader = AscFormat.CreatePPTYLoader(binary, 0, binary.length);
             return oBinaryReader.ReadTheme();
         }
         return null;
@@ -513,16 +505,9 @@ asc_CChartBinary.prototype = {
         var binary = this["colorMapBinary"];
         if(binary)
         {
-            var stream = AscFormat.CreateBinaryReader(binary, 0, binary.length);
-            var oBinaryReader = new AscCommon.BinaryPPTYLoader();
-            oBinaryReader.stream = new AscCommon.FileStream();
-            oBinaryReader.stream.obj    = stream.obj;
-            oBinaryReader.stream.data   = stream.data;
-            oBinaryReader.stream.size   = stream.size;
-            oBinaryReader.stream.pos    = stream.pos;
-            oBinaryReader.stream.cur    = stream.cur;
-            var _rec = oBinaryReader.stream.GetUChar();
-            var ret = new AscFormat.ClrMap();
+            let oBinaryReader = AscFormat.CreatePPTYLoader(binary, 0, binary.length);
+            let _rec = oBinaryReader.stream.GetUChar();
+            let ret = new AscFormat.ClrMap();
             oBinaryReader.ReadClrMap(ret);
             return ret;
         }
@@ -2713,7 +2698,7 @@ CSparklineView.prototype.setMinMaxValAx = function(minVal, maxVal, oSparklineGro
                 oContent.AddToParagraph(new AscCommonWord.MathMenu(Type), false);
             }
             oSp.checkExtentsByDocContent();
-            oSp.spPr.xfrm.setOffX(pxToMm(coordsFrom.x) + MOVE_DELTA);
+            oSp.spPr.xfrm.setOffX(pxToMm(coordsFrom.x) + MOVE_DELTA - ((worksheet.getRightToLeft() && oSp.spPr.xfrm.extX) ? oSp.spPr.xfrm.extX : 0));
             oSp.spPr.xfrm.setOffY(pxToMm(coordsFrom.y) + MOVE_DELTA);
 
             oSp.checkDrawingBaseCoords();
@@ -4045,25 +4030,30 @@ CSparklineView.prototype.setMinMaxValAx = function(minVal, maxVal, oSparklineGro
         }
     };
 
+		_this._getOriginalImageSize = function(isCrop) {
+			const selectedObjects = _this.controller.selectedObjects;
+			if ( (selectedObjects.length === 1) ) {
+				const oShape = selectedObjects[0];
+				if(oShape.isImage()){
+					const imageUrl = oShape.getImageUrl();
+
+					const oImagePr = new Asc.asc_CImgProperty();
+					oImagePr.asc_putImageUrl(imageUrl);
+					oImagePr.cropWidthCoefficient = oShape.getCropWidthCoefficient();
+					oImagePr.cropHeightCoefficient = oShape.getCropHeightCoefficient();
+					return isCrop ? oImagePr.asc_getCropOriginSize(api) : oImagePr.asc_getOriginSize(api);
+
+				}
+			}
+			return new AscCommon.asc_CImageSize( 50, 50, false );
+		};
     _this.getOriginalImageSize = function() {
-
-        var selectedObjects = _this.controller.selectedObjects;
-        if ( (selectedObjects.length == 1) ) {
-
-
-            if(selectedObjects[0].isImage()){
-                var imageUrl = selectedObjects[0].getImageUrl();
-
-                var oImagePr = new Asc.asc_CImgProperty();
-                oImagePr.asc_putImageUrl(imageUrl);
-                var oSize = oImagePr.asc_getOriginSize(api);
-                if(oSize.IsCorrect) {
-                    return oSize;
-                }
-            }
-        }
-        return new AscCommon.asc_CImageSize( 50, 50, false );
+			return this._getOriginalImageSize();
     };
+
+			_this.getCropOriginalImageSize = function() {
+				return this._getOriginalImageSize(true);
+			};
 
     _this.getSelectionImg = function() {
         return _this.controller.getSelectionImage().asc_getImageUrl();

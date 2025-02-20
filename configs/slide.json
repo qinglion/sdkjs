@@ -198,6 +198,7 @@
 			"word/Drawing/ShapeDrawer.js",
 			"word/Drawing/buttons.js",
 
+			"slide/Editor/SlideShowAnnotations.js",
 			"slide/Drawing/Transitions.js",
 			"slide/Drawing/MorphTransition.js",
 			"word/Drawing/cachemanager.js",

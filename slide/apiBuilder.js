@@ -347,8 +347,8 @@
 	 * Standard numeric format.
 	 * @typedef {("General" | "0" | "0.00" | "#,##0" | "#,##0.00" | "0%" | "0.00%" |
 	 * "0.00E+00" | "# ?/?" | "# ??/??" | "m/d/yyyy" | "d-mmm-yy" | "d-mmm" | "mmm-yy" | "h:mm AM/PM" |
-	 * "h:mm:ss AM/PM" | "h:mm" | "h:mm:ss" | "m/d/yyyy h:mm" | "#,##0_);(#,##0)" | "#,##0_);[Red](#,##0)" | 
-	 * "#,##0.00_);(#,##0.00)" | "#,##0.00_);[Red](#,##0.00)" | "mm:ss" | "[h]:mm:ss" | "mm:ss.0" | "##0.0E+0" | "@")} NumFormat
+	 * "h:mm:ss AM/PM" | "h:mm" | "h:mm:ss" | "m/d/yyyy h:mm" | "#,##0_\);(#,##0)" | "#,##0_\);\[Red\]\(#,##0)" | 
+     * "#,##0.00_\);\(#,##0.00\)" | "#,##0.00_\);\[Red\]\(#,##0.00\)" | "mm:ss" | "[h]:mm:ss" | "mm:ss.0" | "##0.0E+0" | "@")} NumFormat
 	 * @see office-js-api/Examples/Enumerations/NumFormat.js
 	 */
 
@@ -359,11 +359,38 @@
     /**
      * Any valid drawing element.
      * @typedef {(ApiShape | ApiImage | ApiGroup | ApiOleObject | ApiTable | ApiChart )} Drawing
+     * @see office-js-api/Examples/Enumerations/Drawing.js
 	 */
 
     /**
-     * Available drwaing element for grouping
+     * Available drawing element for grouping.
      * @typedef {(ApiShape | ApiGroup | ApiImage | ApiChart)} DrawingForGroup
+     * @see office-js-api/Examples/Enumerations/DrawingForGroup.js
+	 */
+
+    /**
+     * Any valid element which can be added to the document structure.
+	 * @typedef {(ApiParagraph)} DocumentElement
+	 * @see office-js-api/Examples/Enumerations/DocumentElement.js
+	 */
+
+    /**
+	 * The types of elements that can be added to the paragraph structure.
+	 * @typedef {(ApiUnsupported | ApiRun | ApiHyperlink)} ParagraphContent
+	 * @see office-js-api/Examples/Enumerations/ParagraphContent.js
+	 */
+
+    /**
+     * The 1000th of a percent (100000 = 100%).
+     * @typedef {number} PositivePercentage
+     * @see office-js-api/Examples/Enumerations/PositivePercentage.js
+	 */
+
+    /**
+	 * Represents the type of objects in a selection.
+	 * @typedef {("none" | "shapes" | "slides" | "text")} SelectionType - Available selection types.
+     * @see office-js-api/Examples/Enumerations/SelectionType.js
+	 *
 	 */
 
     //------------------------------------------------------------------------------------------------------------------
@@ -373,25 +400,12 @@
     //------------------------------------------------------------------------------------------------------------------
 
     /**
-     * The 1000th of a percent (100000 = 100%).
-     * @typedef {number} PositivePercentage
-     * @see office-js-api/Examples/Enumerations/PositivePercentage.js
-	 */
-
-    /**
      * Returns the main presentation.
      * @typeofeditors ["CPE"]
      * @memberof Api
      * @returns {ApiPresentation}
      * @see office-js-api/Examples/{Editor}/Api/Methods/GetPresentation.js
 	 */
-
-	/**
-	 * Represents the type of objects in a selection.
-	 * @typedef {("none" | "shapes" | "slides" | "text")} SelectionType - Available selection types.
-	 *
-	 */
-
     Api.prototype.GetPresentation = function(){
         if(this.WordControl && this.WordControl.m_oLogicDocument){
             return new ApiPresentation(this.WordControl.m_oLogicDocument);
@@ -728,8 +742,9 @@
      * Creates a group of drawings.
      * @memberof Api
      * @typeofeditors ["CPE"]
-     * @param {DrawingForGroup} aDrawings - The array of drawings not in document.
+     * @param {DrawingForGroup[]} aDrawings - An array of drawings to group.
      * @returns {ApiGroup}
+     * @since 8.3.0
      * @see office-js-api/Examples/{Editor}/Api/Methods/CreateGroup.js
 	 */
     Api.prototype.CreateGroup = function(aDrawings) {
@@ -1031,10 +1046,12 @@
 
 
     /**
-	 * Converts the specified JSON object into the Document Builder object of the corresponding type.
+	 * Returns the selection from the current presentation.
 	 * @memberof Api
 	 * @typeofeditors ["CPE"]
 	 * @returns {ApiSelection}
+     * @since 8.3.0
+     * @see office-js-api/Examples/{Editor}/Api/Methods/GetSelection.js
 	 */
 	Api.prototype.GetSelection = function()
 	{
@@ -1213,9 +1230,11 @@
     };
 
 	/**
-	 * Returns an array of all slides in the presentation.
+	 * Returns an array of all slides from the current presentation.
 	 * @typeofeditors ["CPE"]
 	 * @returns {ApiSlide[]}
+     * @since 8.3.0
+     * @see office-js-api/Examples/{Editor}/ApiPresentation/Methods/GetAllSlides.js
 	 */
 	ApiPresentation.prototype.GetAllSlides = function()
 	{
@@ -1240,9 +1259,11 @@
     };
 
     /**
-     * Returns an array of all slide masters in the presentation
+     * Returns an array of all slide masters from the current presentation.
      * @typeofeditors ["CPE"]
      * @returns {ApiMaster[]}
+     * @since 8.3.0
+     * @see office-js-api/Examples/{Editor}/ApiPresentation/Methods/GetAllSlideMasters.js
 	 */
     ApiPresentation.prototype.GetAllSlideMasters = function()
     {
@@ -1610,6 +1631,9 @@
     {
         if (this.Master) 
         {
+            if (!(oDrawing instanceof ApiDrawing) || oDrawing.Drawing.group || oDrawing.Drawing.IsUseInDocument())
+                return false;
+
             oDrawing.Drawing.setParent(this.Master);
             this.Master.shapeAdd(this.Master.cSld.spTree.length, oDrawing.Drawing);
             editor.private_checkPlaceholders(this, oDrawing.GetPlaceholder());
@@ -1796,7 +1820,7 @@
         }
 
         let drawingObjects = this.Master.cSld.spTree;
-        return private_GetApiDrawings(drawingObjects);
+        return AscBuilder.GetApiDrawings(drawingObjects);
     };
 
     /**
@@ -1884,11 +1908,12 @@
     };
 
     /**
-     * Groups an array of drawings in master slide.
+     * Groups an array of drawings in the current slide master.
      * @memberof ApiMaster
      * @typeofeditors ["CPE"]
-     * @param {DrawingForGroup[]} aDrawings - The array of drawings in master.
+     * @param {DrawingForGroup[]} aDrawings - An array of drawings to group.
      * @returns {ApiGroup}
+     * @since 8.3.0
      * @see office-js-api/Examples/{Editor}/ApiMaster/Methods/GroupDrawings.js
      */
     ApiMaster.prototype.GroupDrawings = function(aDrawings)
@@ -1960,6 +1985,18 @@
     };
 
     /**
+     * Returns a name of the current layout.
+     * @typeofeditors ["CPE"]
+     * @returns {string}
+     * @since 8.3.0
+     * @see office-js-api/Examples/{Editor}/ApiLayout/Methods/GetName.js
+	 */
+    ApiLayout.prototype.GetName = function()
+    {
+        return this.Layout.getName();
+    };
+
+    /**
      * Adds an object (image, shape or chart) to the current slide layout.
      * @typeofeditors ["CPE"]
      * @memberof ApiLayout
@@ -1971,6 +2008,9 @@
     {
         if (this.Layout) 
         {
+            if (!(oDrawing instanceof ApiDrawing) || oDrawing.Drawing.group || oDrawing.Drawing.IsUseInDocument())
+                return false;
+
             oDrawing.Drawing.setParent(this.Layout);
             this.Layout.shapeAdd(this.Layout.cSld.spTree.length, oDrawing.Drawing);
             editor.private_checkPlaceholders(this, oDrawing.GetPlaceholder());
@@ -2162,7 +2202,7 @@
         }
 
         let drawingObjects = this.Layout.cSld.spTree;
-        return private_GetApiDrawings(drawingObjects);
+        return AscBuilder.GetApiDrawings(drawingObjects);
     };
 
     /**
@@ -2267,11 +2307,12 @@
     };
 
     /**
-     * Groups an array of drawings in layout.
+     * Groups an array of drawings in the current layout.
      * @memberof ApiLayout
      * @typeofeditors ["CPE"]
-     * @param {DrawingForGroup[]} aDrawings - The array of drawings in layout.
+     * @param {DrawingForGroup[]} aDrawings - An array of drawings to group.
      * @returns {ApiGroup}
+     * @since 8.3.0
      * @see office-js-api/Examples/{Editor}/ApiLayout/Methods/GroupDrawings.js
      */
     ApiLayout.prototype.GroupDrawings = function(aDrawings)
@@ -2892,6 +2933,9 @@
 	 */
     ApiSlide.prototype.AddObject = function(oDrawing){
         if(this.Slide){
+            if (!(oDrawing instanceof ApiDrawing) || oDrawing.Drawing.group || oDrawing.Drawing.IsUseInDocument())
+                return false;
+
             oDrawing.Drawing.setParent(this.Slide);
             this.Slide.shapeAdd(this.Slide.cSld.spTree.length, oDrawing.Drawing);
             editor.private_checkPlaceholders(this, oDrawing.GetPlaceholder());
@@ -3347,7 +3391,7 @@
         }
 
         let drawingObjects = this.Slide.getDrawingObjects();
-        return private_GetApiDrawings(drawingObjects);
+        return AscBuilder.GetApiDrawings(drawingObjects);
     };
 
     /**
@@ -3446,6 +3490,8 @@
 	 * Selects the current slide.
 	 * @memberof ApiSlide
 	 * @typeofeditors ["CPE"]
+     * @since 8.3.0
+     * @see office-js-api/Examples/{Editor}/ApiSlide/Methods/Select.js
 	 */
 	ApiSlide.prototype.Select = function() {
 		if(!Asc.editor.isNormalMode())
@@ -3458,11 +3504,12 @@
 	};
 
     /**
-     * Groups an array of drawings in slide.
+     * Groups an array of drawings in the current slide.
      * @memberof ApiSlide
      * @typeofeditors ["CPE"]
-     * @param {DrawingForGroup[]} aDrawings - The array of drawings in slide.
+     * @param {DrawingForGroup[]} aDrawings - An array of drawings to group.
      * @returns {ApiGroup}
+     * @since 8.3.0
      * @see office-js-api/Examples/{Editor}/ApiSlide/Methods/GroupDrawings.js
      */
     ApiSlide.prototype.GroupDrawings = function(aDrawings)
@@ -3868,6 +3915,7 @@
      * @memberof ApiGroup
      * @typeofeditors ["CPE"]
      * @returns {"group"}
+     * @since 8.3.0
      * @see office-js-api/Examples/{Editor}/ApiGroup/Methods/GetClassType.js
      */
     ApiGroup.prototype.GetClassType = function()
@@ -3876,10 +3924,11 @@
     };
 
     /**
-     * Ungroups current group drawing.
+     * Ungroups the current group of drawings.
      * @memberof ApiGroup
-     * @typeofeditors ["CDE"]
+     * @typeofeditors ["CPE"]
      * @returns {boolean}
+     * @since 8.3.0
      * @see office-js-api/Examples/{Editor}/ApiGroup/Methods/Ungroup.js
      */
     ApiGroup.prototype.Ungroup = function()
@@ -5007,10 +5056,6 @@
     ApiTableCell.prototype["SetVerticalAlign"]            = ApiTableCell.prototype.SetVerticalAlign;
     ApiTableCell.prototype["SetTextDirection"]            = ApiTableCell.prototype.SetTextDirection;
 
-    ApiSelection.prototype["GetType"]                     = ApiSelection.prototype.GetType;
-    ApiSelection.prototype["GetShapes"]                   = ApiSelection.prototype.GetShapes;
-    ApiSelection.prototype["GetSlides"]                   = ApiSelection.prototype.GetSlides;
-    ApiSelection.prototype["IsEmpty"]                     = ApiSelection.prototype.IsEmpty;
 
 
     Api.prototype.private_CreateApiSlide = function(oSlide){
@@ -5027,7 +5072,7 @@
     };
 
 	/**
-	 * Class representing the selection in the presentation
+	 * Class representing the selection in the presentation.
 	 * @constructor
 	 */
 	function ApiSelection() {
@@ -5038,10 +5083,12 @@
 
 
 	/**
-	 * Returns the type of selection.
+	 * Returns the type of the current selection.
 	 * @memberof ApiSelection
 	 * @typeofeditors ["CPE"]
 	 * @returns {SelectionType}
+     * @since 8.3.0
+     * @see office-js-api/Examples/{Editor}/ApiSelection/Methods/GetType.js
 	 */
 	ApiSelection.prototype.GetType = function() {
 		let oPresentation = this.getPresentation();
@@ -5064,10 +5111,12 @@
 	};
 
 	/**
-	 * Returns selected shapes.
+	 * Returns the selected shapes.
 	 * @memberof ApiSelection
 	 * @typeofeditors ["CPE"]
 	 * @returns {ApiDrawing[]}
+     * @since 8.3.0
+     * @see office-js-api/Examples/{Editor}/ApiSelection/Methods/GetShapes.js
 	 */
 	ApiSelection.prototype.GetShapes = function() {
 		let oController = Asc.editor.getGraphicController();
@@ -5075,7 +5124,7 @@
 			let aApiDrawings = [];
 			let aSelectedDrawings = oController.selectedObjects;
 			for(let nIdx = 0; nIdx < aSelectedDrawings.length; ++nIdx) {
-				let oDrawing = private_GetApiDrawing(aSelectedDrawings[nIdx]);
+				let oDrawing = AscBuilder.GetApiDrawing(aSelectedDrawings[nIdx]);
 				if(oDrawing) {
 					aApiDrawings.push(oDrawing);
 				}
@@ -5086,10 +5135,12 @@
 	};
 
 	/**
-	 * Returns selected slides.
+	 * Returns the selected slides.
 	 * @memberof ApiSelection
 	 * @typeofeditors ["CPE"]
 	 * @returns {ApiSlide[]}
+     * @since 8.3.0
+     * @see office-js-api/Examples/{Editor}/ApiSelection/Methods/GetSlides.js
 	 */
 	ApiSelection.prototype.GetSlides = function() {
 		if(!Asc.editor.isNormalMode()) {
@@ -5106,14 +5157,22 @@
 	};
 
 	/**
-	 * Returns is current selection empty or not
+	 * Specifies whether the current selection is empty or not.
 	 * @memberof ApiSelection
 	 * @typeofeditors ["CPE"]
 	 * @returns {boolean}
+     * @since 8.3.0
+     * @see office-js-api/Examples/{Editor}/ApiSelection/Methods/IsEmpty.js
 	 */
 	ApiSelection.prototype.IsEmpty = function() {
 		return this.GetType() === "none";
 	};
+
+	
+	ApiSelection.prototype["GetType"]                     = ApiSelection.prototype.GetType;
+	ApiSelection.prototype["GetShapes"]                   = ApiSelection.prototype.GetShapes;
+	ApiSelection.prototype["GetSlides"]                   = ApiSelection.prototype.GetSlides;
+	ApiSelection.prototype["IsEmpty"]                     = ApiSelection.prototype.IsEmpty;
 
     function private_GetCurrentSlide(){
         var oApiPresentation = editor.GetPresentation();
@@ -5375,32 +5434,6 @@
         return sType;
     }
 
-    function private_GetApiDrawing(drawing) {
-        switch (drawing.getObjectType()) {
-            case AscDFH.historyitem_type_Shape:
-                return new ApiShape(drawing);
-            case AscDFH.historyitem_type_ImageShape:
-                return new ApiImage(drawing);
-            case AscDFH.historyitem_type_GroupShape:
-                return new ApiGroup(drawing);
-            case AscDFH.historyitem_type_OleObject:
-                return new ApiOleObject(drawing);
-            case AscDFH.historyitem_type_GraphicFrame:
-                return new ApiTable(drawing);
-			case AscDFH.historyitem_type_ChartSpace:
-				return new ApiChart(drawing);
-        }
-        return null;
-    }
-	
-	function private_GetApiDrawings(drawingObjects) {
-		return drawingObjects.map(function(drawing) {
-			return private_GetApiDrawing(drawing);
-		}).filter(function(apiDrawing) {
-			return !!apiDrawing;
-		});
-	}
-	
 	function private_GetAllDrawingsWithType(aDrawings, nObjectType, fCreateBuilderWrapper) {
 		let aWrappers = [];
 		for(let nIdx = 0; nIdx < aDrawings.length; ++nIdx) {
@@ -5411,7 +5444,12 @@
 		}
 		return aWrappers;
 	}
-
+	window['AscBuilder'] = window['AscBuilder'] || {};
+	window['AscBuilder'].ApiShape = ApiShape;
+	window['AscBuilder'].ApiImage = ApiImage;
+	window['AscBuilder'].ApiGroup = ApiGroup;
+	window['AscBuilder'].ApiOleObject = ApiOleObject;
+	window['AscBuilder'].ApiTable = ApiTable;
 })(window, null);
 
 
