@@ -1314,7 +1314,7 @@
 						this.handlers.trigger('onContextMenu', event);
 						return result;
 					}
-
+					return result;
 				case 219:
 				case 221:
 					if (!ctrlKey || t.getCellEditMode() || !canEdit || selectionDialogMode) {
@@ -2704,7 +2704,7 @@
 				deltaY = 0;
 			}
 
-			if (event.shiftKey) {
+			if (!AscCommon.AscBrowser.isMacOs && event.shiftKey) {
 				deltaX = deltaY;
 				deltaY = 0;
 			}

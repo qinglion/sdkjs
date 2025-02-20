@@ -1593,8 +1593,11 @@ CHistory.prototype.GetSerializeArray = function()
 	};
 	CHistory.prototype.Is_LastPointEmpty = function()
 	{
-		if (!this.Points[this.Index] || this.Points[this.Index].Items.length <= 0)
+		if (!this.Points[this.Index] || this.Points[this.Index].Items.length <= 0 || (this.Points[this.Index].Items.length === 1
+			&& this.Points[this.Index].Items[0].Type === AscCH.historyitem_Unknown))
+		{
 			return true;
+		}
 
 		return false;
 	};

@@ -1809,6 +1809,7 @@
 	window['AscDFH'].historyitem_type_Pdf_Drawing			= 2229 << 16;
 	window['AscDFH'].historyitem_type_Pdf_Page				= 2230 << 16;
 	window['AscDFH'].historyitem_type_Pdf_Annot_Stamp		= 2231 << 16;
+	window['AscDFH'].historyitem_type_Pdf_PropLocker		= 2232 << 16;
 	
 	window['AscDFH'].historyitem_type_CustomProperties      = 2301 << 16;
 
@@ -1848,6 +1849,8 @@
 	window['AscDFH'].historyitem_Document_Settings_DoNotHyphenateCaps     = window['AscDFH'].historyitem_type_Document | 14;
 	window['AscDFH'].historyitem_Document_Settings_HyphenationZone        = window['AscDFH'].historyitem_type_Document | 15;
 	window['AscDFH'].historyitem_Document_PageColor                       = window['AscDFH'].historyitem_type_Document | 16;
+	
+	window['AscDFH'].historyitem_Document_DisconnectEveryone              = window['AscDFH'].historyitem_type_Document | 10000;
 	//------------------------------------------------------------------------------------------------------------------
 	// Типы изменений в классе Paragraph
 	//------------------------------------------------------------------------------------------------------------------
@@ -2328,6 +2331,8 @@
 	window['AscDFH'].historyitem_SdtPr_ComplexFormPr    = window['AscDFH'].historyitem_type_SdtPr | 24;
 	window['AscDFH'].historyitem_SdtPr_OForm            = window['AscDFH'].historyitem_type_SdtPr | 25;
 	window['AscDFH'].historyitem_SdtPr_DataBinding      = window['AscDFH'].historyitem_type_SdtPr | 26;
+	window['AscDFH'].historyitem_SdtPr_ShdColor         = window['AscDFH'].historyitem_type_SdtPr | 27;
+	window['AscDFH'].historyitem_SdtPr_BorderColor      = window['AscDFH'].historyitem_type_SdtPr | 28;
 	//------------------------------------------------------------------------------------------------------------------
 	// Типы изменений в классе CSdtPr
 	//------------------------------------------------------------------------------------------------------------------
@@ -4080,13 +4085,16 @@
 	//------------------------------------------------------------------------------------------------------------------
 	// Типы изменений в классе CPDFDoc
 	//------------------------------------------------------------------------------------------------------------------
-	window['AscDFH'].historyitem_PDF_Document_AnnotsContent   = window['AscDFH'].historyitem_type_PDF_Document | 1;
-	window['AscDFH'].historyitem_PDF_Document_DrawingsContent = window['AscDFH'].historyitem_type_PDF_Document | 2;
-	window['AscDFH'].historyitem_PDF_Document_FieldsContent   = window['AscDFH'].historyitem_type_PDF_Document | 3;
-	window['AscDFH'].historyitem_PDF_Document_PagesContent    = window['AscDFH'].historyitem_type_PDF_Document | 4;
-	window['AscDFH'].historyitem_PDF_Document_RotatePage      = window['AscDFH'].historyitem_type_PDF_Document | 5;
-	window['AscDFH'].historyitem_PDF_Document_RecognizePage   = window['AscDFH'].historyitem_type_PDF_Document | 6;
-	window['AscDFH'].historyitem_PDF_Document_SetDocument     = window['AscDFH'].historyitem_type_PDF_Document | 7;
+	window['AscDFH'].historyitem_PDF_Document_AnnotsContent		= window['AscDFH'].historyitem_type_PDF_Document | 1;
+	window['AscDFH'].historyitem_PDF_Document_DrawingsContent	= window['AscDFH'].historyitem_type_PDF_Document | 2;
+	window['AscDFH'].historyitem_PDF_Document_FieldsContent		= window['AscDFH'].historyitem_type_PDF_Document | 3;
+	window['AscDFH'].historyitem_PDF_Document_PagesContent		= window['AscDFH'].historyitem_type_PDF_Document | 4;
+	window['AscDFH'].historyitem_PDF_Document_RotatePage		= window['AscDFH'].historyitem_type_PDF_Document | 5;
+	window['AscDFH'].historyitem_PDF_Document_RecognizePage		= window['AscDFH'].historyitem_type_PDF_Document | 6;
+	window['AscDFH'].historyitem_PDF_Document_SetDocument		= window['AscDFH'].historyitem_type_PDF_Document | 7;
+	window['AscDFH'].historyitem_PDF_Document_PageLocks			= window['AscDFH'].historyitem_type_PDF_Document | 8;
+	window['AscDFH'].historyitem_PDF_PropLocker_ObjectId		= window['AscDFH'].historyitem_type_PDF_Document | 9;
+	window['AscDFH'].historyitem_PDF_Document_MovePage			= window['AscDFH'].historyitem_type_PDF_Document | 10;
 
 
 	AscDFH.historyitem_CustomPropertiesAddProperty = AscDFH.historyitem_type_CustomProperties | 0;
@@ -4544,14 +4552,16 @@
 	window['AscDFH'].historydescription_Document_EditComplexFieldInstruction        = 0x01b5;
 	window['AscDFH'].historydescription_Collaborative_DeletedTextRecovery           = 0x01b6;
 	window['AscDFH'].historydescription_Document_AutoCorrectMath                    = 0x01b7;
-
 	window['AscDFH'].historydescription_CustomProperties_Add                        = 0x01b8;
 	window['AscDFH'].historydescription_CustomProperties_Remove                     = 0x01b9;
 	window['AscDFH'].historydescription_CustomProperties_Modify                     = 0x01c0;
-
 	window['AscDFH'].historydescription_Presentation_MergeSelectedShapes            = 0x01c1;
 	window['AscDFH'].historydescription_Presentation_SaveAnnotations                = 0x01c2;
 	window['AscDFH'].historydescription_Document_SetParagraphBidi                   = 0x01c3;
+	window['AscDFH'].historydescription_RemoveAllInks                               = 0x01c4;
+	window['AscDFH'].historydescription_DisconnectEveryone                          = 0x01c5;
+	window['AscDFH'].historydescription_OForm_RoleFilled                            = 0x01c6;
+	
 	// pdf
 	window['AscDFH'].historydescription_Pdf_AddAnnot			= 0x29a;
 	window['AscDFH'].historydescription_Pdf_FreeTextGeom		= 0x29b;
@@ -4574,6 +4584,7 @@
 	window['AscDFH'].historydescription_Pdf_ChangeStrokeColor	= 0x2b1;
 	window['AscDFH'].historydescription_Pdf_ChangeFillColor		= 0x2b2;
 	window['AscDFH'].historydescription_Pdf_ChangeOpacity		= 0x2b3;
+	window['AscDFH'].historydescription_Pdf_MovePage			= 0x2b4;
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

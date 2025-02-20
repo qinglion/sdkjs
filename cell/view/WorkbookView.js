@@ -959,11 +959,11 @@
         ws.changeWorksheet("update", val);
       }
     });
-    this.model.handlers.add("changeDocument", function(prop, arg1, arg2, wsId) {
+    this.model.handlers.add("changeDocument", function(prop, arg1, arg2, wsId, fMergeCellIndex) {
       self.SearchEngine && self.SearchEngine.changeDocument(prop, arg1, arg2);
       let ws = wsId && self.getWorksheetById(wsId, true);
       if (ws) {
-        ws.traceDependentsManager.changeDocument(prop, arg1, arg2);
+        ws.traceDependentsManager.changeDocument(prop, arg1, arg2, fMergeCellIndex);
       }
     });
     this.model.handlers.add("showWorksheet", function(wsId) {
@@ -3244,16 +3244,17 @@
 			this.cellEditor.changeCellText(sArguments);
 
 			if (name) {
-
-				var res = new AscCommonExcel.CFunctionInfo(name);
+				let res = new AscCommonExcel.CFunctionInfo(name);
 				if (needChange) {
 					res.asc_setArguments(args);
 				}
 				res.argumentsResult = [];
-				var argCalc = ws.calculateWizardFormula(args[argNum], argType);
+				let argCalc = ws.calculateWizardFormula(args[argNum], argType);
 				res.argumentsResult[argNum] = argCalc.str;
-				if (argCalc.obj && argCalc.obj.type !== AscCommonExcel.cElementType.error) {
-					var funcCalc = ws.calculateWizardFormula(name + '(' + sArguments + ')');
+				//second condition: if we haven't received the formulaResult, calculate with those arguments that exist in the array
+				if ((argCalc.obj && argCalc.obj.type !== AscCommonExcel.cElementType.error) ||
+					(argCalc.obj === null && res && !res.functionResult && args && sArguments)) {
+					let funcCalc = ws.calculateWizardFormula(name + '(' + sArguments + ')');
 					res.functionResult = funcCalc.str;
 					if (funcCalc.obj && funcCalc.obj.type !== AscCommonExcel.cElementType.error) {
 						res.formulaResult = ws.calculateWizardFormula(this.cellEditor.getText().substring(1)).str;
@@ -6372,6 +6373,26 @@
 			val = this.Api.DocInfo && this.Api.DocInfo.asc_getShowHorizontalScroll();
 		}
 		return val === true || val == null;
+	};
+	WorkbookView.prototype.removeAllInks = function() {
+		const oThis = this;
+		const oCurrentWs = this.getWorksheet();
+
+		const oCurrentController = oCurrentWs.objectRender && oCurrentWs.objectRender.controller;
+		if (oCurrentController) {
+			const oWbModel = this.model;
+			const arrInks = oWbModel.getAllInks();
+			if (arrInks.length > 0) {
+				oCurrentController.checkObjectsAndCallback(function() {
+					for (let i = 0; i < oWbModel.aWorksheets.length; i++) {
+						const oWs = oThis.getWorksheet(i);
+						oWs.removeAllInks();
+					}
+					oCurrentController.updateSelectionState();
+					oCurrentController.updateOverlay();
+				}, [], false, AscDFH.historydescription_RemoveAllInks, arrInks);
+			}
+		}
 	};
 
 

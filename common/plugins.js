@@ -1459,33 +1459,15 @@
 
 				if (task.interface)
 				{
-					try
-					{
-						AscCommon.safePluginEval(value);
-					}
-					catch (err)
-					{
-						console.error(err);
-					}
+					AscCommon.safePluginEval(value);
 				}
 				else if (!this.api.isLongAction() && (task.resize || this.api.canRunBuilderScript()))
 				{
 					this.api._beforeEvalCommand();
-					AscFonts.IsCheckSymbols = true;
-					try
-					{
-						commandReturnValue = AscCommon.safePluginEval(value);
-					}
-					catch (err)
-					{
-						commandReturnValue = undefined;
-						console.error(err);
-					}
+					commandReturnValue = AscCommon.safePluginEval(value);
 
 					if (!checkReturnCommand(commandReturnValue))
 						commandReturnValue = undefined;
-
-					AscFonts.IsCheckSymbols = false;
 					
 					let _t = this;
 					function onEndScript()

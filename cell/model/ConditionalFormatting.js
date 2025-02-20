@@ -151,6 +151,56 @@
 		}
 		return res;
 	};
+
+	CConditionalFormattingRule.prototype.combineRangesToSingle = function () {
+		let ranges = this.ranges;
+		if (!ranges || !ranges.length) {
+			return null;
+		}
+		if (ranges.length === 1) {
+			return ranges[0];
+		}
+
+		// Sort ranges by position
+		let sortedRanges = ranges.slice().sort(function(a, b) {
+			// First compare by rows
+			if (a.r1 !== b.r1) {
+				return a.r1 - b.r1;
+			}
+			// Then by columns if rows are equal
+			return a.c1 - b.c1;
+		});
+
+		let result = sortedRanges[0].clone();
+		let canCombine = true;
+
+		for (let i = 1; i < sortedRanges.length; i++) {
+			let current = sortedRanges[i];
+
+			// Check if ranges can be combined horizontally (same rows)
+			if (current.r1 === result.r1 && current.r2 === result.r2 && current.c1 <= result.c2 + 1) {
+				// Extend range horizontally
+				result.c2 = Math.max(result.c2, current.c2);
+				continue;
+			}
+
+			// Check if ranges can be combined vertically (same columns)
+			if (current.c1 === result.c1 && current.c2 === result.c2 && current.r1 <= result.r2 + 1) {
+				// Extend range vertically
+				result.r2 = Math.max(result.r2, current.r2);
+				continue;
+			}
+
+			// Cannot combine - ranges are not continuous
+			canCombine = false;
+			break;
+		}
+
+		if (canCombine) {
+			this.ranges = [result];
+		}
+	};
+
 	CConditionalFormattingRule.prototype.merge = function (oRule) {
 		if (this.aboveAverage === true) {
 			this.aboveAverage = oRule.aboveAverage;

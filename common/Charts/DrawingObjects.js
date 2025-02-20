@@ -4030,25 +4030,30 @@ CSparklineView.prototype.setMinMaxValAx = function(minVal, maxVal, oSparklineGro
         }
     };
 
+		_this._getOriginalImageSize = function(isCrop) {
+			const selectedObjects = _this.controller.selectedObjects;
+			if ( (selectedObjects.length === 1) ) {
+				const oShape = selectedObjects[0];
+				if(oShape.isImage()){
+					const imageUrl = oShape.getImageUrl();
+
+					const oImagePr = new Asc.asc_CImgProperty();
+					oImagePr.asc_putImageUrl(imageUrl);
+					oImagePr.cropWidthCoefficient = oShape.getCropWidthCoefficient();
+					oImagePr.cropHeightCoefficient = oShape.getCropHeightCoefficient();
+					return isCrop ? oImagePr.asc_getCropOriginSize(api) : oImagePr.asc_getOriginSize(api);
+
+				}
+			}
+			return new AscCommon.asc_CImageSize( 50, 50, false );
+		};
     _this.getOriginalImageSize = function() {
-
-        var selectedObjects = _this.controller.selectedObjects;
-        if ( (selectedObjects.length == 1) ) {
-
-
-            if(selectedObjects[0].isImage()){
-                var imageUrl = selectedObjects[0].getImageUrl();
-
-                var oImagePr = new Asc.asc_CImgProperty();
-                oImagePr.asc_putImageUrl(imageUrl);
-                var oSize = oImagePr.asc_getOriginSize(api);
-                if(oSize.IsCorrect) {
-                    return oSize;
-                }
-            }
-        }
-        return new AscCommon.asc_CImageSize( 50, 50, false );
+			return this._getOriginalImageSize();
     };
+
+			_this.getCropOriginalImageSize = function() {
+				return this._getOriginalImageSize(true);
+			};
 
     _this.getSelectionImg = function() {
         return _this.controller.getSelectionImage().asc_getImageUrl();

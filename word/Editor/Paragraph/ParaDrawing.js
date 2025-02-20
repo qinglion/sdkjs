@@ -2771,6 +2771,10 @@ ParaDrawing.prototype.select = function(pageIndex)
 		this.GraphicObj.select(pageIndex);
 
 };
+ParaDrawing.prototype.isSelected = function()
+{
+	return this.GraphicObj ? this.GraphicObj.selected : false;
+};
 ParaDrawing.prototype.paragraphClearFormatting = function(isClearParaPr, isClearTextPr)
 {
 	if (AscCommon.isRealObject(this.GraphicObj) && typeof  this.GraphicObj.paragraphAdd === "function")

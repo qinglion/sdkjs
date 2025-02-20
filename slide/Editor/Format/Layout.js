@@ -990,6 +990,13 @@ SlideLayout.prototype.getMaster = function(){
     SlideLayout.prototype.checkPlaceholders = function(oPlaceholders) {
         return AscCommonSlide.Slide.prototype.checkPlaceholders.call(this, oPlaceholders);
     };
+SlideLayout.prototype.removeAllInks = function() {
+	return AscCommonSlide.Slide.prototype.removeAllInks.call(this);
+};
+SlideLayout.prototype.getAllInks = function(arrInks) {
+	arrInks = arrInks || [];
+	return AscCommonSlide.Slide.prototype.getAllInks.call(this, arrInks);
+};
 
     let LAYOUT_TYPE_MAP = {};
     LAYOUT_TYPE_MAP["blank"] = AscFormat.nSldLtTBlank;
@@ -1436,6 +1443,7 @@ function CLayoutThumbnailDrawer()
         var _ctx = this.CanvasImage.getContext('2d');
 
         var g = new AscCommon.CGraphics();
+				g.IsThumbnail = true;
         g.init(_ctx, w_px, h_px, this.WidthMM, this.HeightMM);
         g.m_oFontManager = AscCommon.g_fontManager;
 

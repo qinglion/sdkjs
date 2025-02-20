@@ -1496,14 +1496,14 @@
 
 	function build_rx_table_cur()
 	{
-		var loc_all                          = cStrucTableLocalColumns['a'],
+		let loc_all                          = cStrucTableLocalColumns['a'],
 			loc_headers                      = cStrucTableLocalColumns['h'],
 			loc_data                         = cStrucTableLocalColumns['d'],
 			loc_totals                       = cStrucTableLocalColumns['t'],
 			loc_this_row                     = cStrucTableLocalColumns['tr'],
 			structured_tables_headata        = new XRegExp('(?:\\[\\#' + loc_headers + '\\]\\' + FormulaSeparators.functionArgumentSeparator + '\\[\\#' + loc_data + '\\])'),
 			structured_tables_datals         = new XRegExp('(?:\\[\\#' + loc_data + '\\]\\' + FormulaSeparators.functionArgumentSeparator + '\\[\\#' + loc_totals + '\\])'),
-			structured_tables_userColumn     = new XRegExp('(?:\'\\[|\'\\]|[^[\\]])+'),
+			structured_tables_userColumn     = new XRegExp('\\s*\\[{0,1}(?:\'\\[|\'\\]|[^[\\]])+\\]{0,1}\\s*'),
 			structured_tables_reservedColumn = new XRegExp('\\#(?:' + loc_all + '|' + loc_headers + '|' + loc_totals + '|' + loc_data + /*'|' + loc_this_row + */')'),
 			structured_tables_thisRow        = new XRegExp('(?:\\#(?:' + loc_this_row +')|(?:\\@))');
 
@@ -1529,7 +1529,7 @@
 		let argsSeparator = FormulaSeparators.functionArgumentSeparator;
 		return XRegExp.build('^(?<tableName>{{tableName}})\\[(?<columnName1>{{columnName}})?\\]', {
 			"tableName":  new XRegExp("^(:?[" + str_namedRanges + "][" + str_namedRanges + "\\d.]*)"),
-			"columnName": XRegExp.build('(?<reservedColumn>{{reservedColumn}}|{{thisRow}})|(?<oneColumn>{{userColumn}})|(?<columnRange>{{userColumnRange}})|(?<hdtcc>{{hdtcc}})', {
+			"columnName": XRegExp.build('(?<hdtcc>{{hdtcc}})|(?<reservedColumn>{{reservedColumn}}|{{thisRow}})|(?<oneColumn>{{userColumn}})|(?<columnRange>{{userColumnRange}})', {
 				"userColumn":      structured_tables_userColumn,
 				"reservedColumn":  structured_tables_reservedColumn,
 				"thisRow": structured_tables_thisRow,
@@ -3014,9 +3014,12 @@
 		let externalLink = exclamationMarkIndex !== -1 ? string.substring(0, exclamationMarkIndex) : null;
 		let secondPartOfString = exclamationMarkIndex !== -1 ? string.substring(exclamationMarkIndex + 1) : null;
 
-		let defname = XRegExp.exec(secondPartOfString, rx_name);
-		if (defname && defname["name"]) {
-			defname = defname["name"];
+		let defname = null;
+		if (secondPartOfString && !parserHelp.isArea(secondPartOfString, 0) && !parserHelp.isRef(secondPartOfString, 0)) {
+			defname = XRegExp.exec(secondPartOfString, rx_name);
+			if (defname && defname["name"]) {
+				defname = defname["name"];
+			}
 		}
 
 		if (externalLink && externalLink[0] === "'" && externalLink[externalLink.length - 1] === "'") {
@@ -3874,19 +3877,44 @@
 			return true;
 		}
 	};
-	parserHelper.prototype.isTable = function (formula, start_pos, local)
+	parserHelper.prototype.isTable = function (formula, start_pos, local, parserFormula)
 	{
 		if (this instanceof parserHelper)
 		{
 			this._reset();
 		}
-		let subSTR = formula.substring(start_pos),
-		match = XRegExp.exec(subSTR, local ? rx_table_local : rx_table);
+		let subSTR = formula.substring(start_pos);
+		/*
+			short notation can be used inside table cells
+			short entry - an entry without table name, but with the same syntax 
+		*/
+		let tableIntersection;
+		if (local && subSTR[0] === "[" && parserFormula.parent && parserFormula.ws && parserFormula.ws.TableParts) {
+			let col = parserFormula.parent.nCol;
+			let row = parserFormula.parent.nRow;
+			// go through each existing table and check intersection by col row
+			for (let i = 0; i < parserFormula.ws.TableParts.length; i++) {
+				let table = parserFormula.ws.TableParts[i];
+				let tableRef = table.Ref;
+				if (!tableRef.contains(col, row)) {
+					continue;
+				}
+				tableIntersection = table;
+				break;
+			}
+
+			if (tableIntersection) {
+				// add the table name to the beginning of the line for correct checking further  
+				subSTR = tableIntersection.DisplayName + subSTR;
+			}
+		}
+
+		const match = XRegExp.exec(subSTR, local ? rx_table_local : rx_table);
 
 		if (match != null && match["tableName"])
 		{
-			this.operand_str = match[0];
-			this.pCurrPos += match[0].length;
+			this.operand_str = tableIntersection ? "[" + match.columnName1 + "]" : match[0];
+			this.pCurrPos += tableIntersection ? match.columnName1.length + 2 : match[0].length;
 			return match;
 		}
 
@@ -3902,7 +3930,7 @@
 		const fullPatterns = [];
 		for (let i = 0; i < opt_namesList[0].length; i += 1) {
 			for (let j = 0; j < opt_namesList[1].length; j += 1) {
-				fullPatterns.push('^(' + opt_namesList[0][i] + ')\\s*\\[\\s*(' + opt_namesList[1][j] + ')\\s*\\]');
+				fullPatterns.push('^(' + XRegExp.escape(opt_namesList[0][i]) + ')\\s*\\[\\s*(' + XRegExp.escape(opt_namesList[1][j]) + ')\\s*\\]');
 			}
 		}
 		const fullRegs = fullPatterns.map(function(pattern) {
@@ -3917,7 +3945,7 @@
 			}
 		}
 		const shortPatterns = opt_namesList[1].map(function(name) {
-			return '^(' + name + ')(?:\\W|$)'
+			return '^(' + XRegExp.escape(name) + ')(?:\\W|$)';
 		});
 		const shortRegs = shortPatterns.map(function(pattern) {
 			return new RegExp(pattern, 'i');
@@ -4079,6 +4107,12 @@
 		else
 		{
 			range = AscCommonExcel.g_oRangeCache.getAscRange(dataRange);
+			if (!range && model && cDialogType.FormatTable === dialogType && AscCommon.rx_defName.test(dataRange)) {
+				let aRanges = AscCommonExcel.getRangeByName(dataRange, model.getActiveWs());
+				if (aRanges && aRanges.length === 1) {
+					range = aRanges[0] && aRanges[0].bbox;
+				}
+			}
 		}
 
 		if (!range && cDialogType.DataValidation !== dialogType && cDialogType.ConditionalFormattingRule !== dialogType && cDialogType.GoalSeek_Cell !== dialogType &&
@@ -4528,7 +4562,7 @@
 		this.Type = NewType;
 
 		var oApi = editor;
-		var oLogicDocument = oApi.WordControl.m_oLogicDocument;
+		var oLogicDocument = oApi && oApi.WordControl && oApi.WordControl.m_oLogicDocument;
 		if (false != Redraw && oLogicDocument)
 		{
 			// TODO: переделать перерисовку тут
@@ -4569,7 +4603,7 @@
 				oLogicDocument.Document_UpdateInterfaceState(false);
 			}
 		}
-		let oCustomProperties = oApi.getCustomProperties && oApi.getCustomProperties();
+		let oCustomProperties = oApi && oApi.getCustomProperties && oApi.getCustomProperties();
 		if(oCustomProperties && oCustomProperties.Lock === this)
 		{
 			oApi.sendEvent("asc_onCustomPropertiesLocked", this.Is_Locked());

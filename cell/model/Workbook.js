@@ -410,7 +410,7 @@
 				oChangeEngine.ProcessParagraphs(aParagraphs);
 
 				for (let i = 0; i < aParagraphs.length; i++) {
-					newText += aParagraphs[i].GetText({ParaEndToSpace: false});
+					newText += aParagraphs[i].GetText({ParaSeparator : ""});
 					if (i !== aParagraphs.length - 1) {
 						newText += "\n";
 					}
@@ -3407,7 +3407,7 @@
 				}, this, [], true);
 			}
 			AscCommon.History.Add(AscCommonExcel.g_oUndoRedoWorkbook, AscCH.historyitem_Workbook_SheetRemove, null, null, new AscCommonExcel.UndoRedoData_SheetRemove(indexFrom, oWsFrom.getId(), oWsFrom));
-			AscCommon.History.Add(AscCommonExcel.g_oUndoRedoWorkbook, AscCH.historyitem_Workbook_SheetAdd, null, null, new UndoRedoData_SheetAdd(indexTo, oWsFrom.getName(), null, oWsFrom.getId(), null, oWsFrom, oWsFrom.getId()));
+			AscCommon.History.Add(AscCommonExcel.g_oUndoRedoWorkbook, AscCH.historyitem_Workbook_SheetAdd, null, null, new UndoRedoData_SheetAdd(indexTo, oWsFrom.getName(), null, oWsFrom.getId(), null, null, oWsFrom.getId()));
 			this.dependencyFormulas.unlockRecal();
 
 			if (!this.bUndoChanges && !this.bRedoChanges) {
@@ -5732,6 +5732,14 @@
 	};
 	Workbook.prototype.getShowHorizontalScroll = function() {
 		return this.showHorizontalScroll;
+	};
+	Workbook.prototype.getAllInks = function(arrInks) {
+		arrInks = arrInks || [];
+		for (let i = 0; i < this.aWorksheets.length; i += 1) {
+			const oWorksheet = this.aWorksheets[i];
+			oWorksheet.getAllInks(arrInks);
+		}
+		return arrInks;
 	};
 
 
@@ -14000,6 +14008,19 @@
 		return new AscCommon.CellBase(lastR, lastC);
 	};
 
+	Worksheet.prototype.getAllInks = function(arrInks) {
+		arrInks = arrInks || [];
+		for (let i = 0; i < this.Drawings.length; i++) {
+			const oGraphicObject = this.Drawings[i].graphicObject;
+			if (oGraphicObject.isInk() || oGraphicObject.isHaveOnlyInks()) {
+				arrInks.push(oGraphicObject);
+			} else {
+				oGraphicObject.getAllInks(arrInks);
+			}
+		}
+		return arrInks;
+	};
+
 
 //-------------------------------------------------------------------------------------------------
 	var g_nCellOffsetFlag = 0;
@@ -15386,6 +15407,9 @@
 	function _foreachListeners(fAction, oCell, oListeners) {
 		for (let i in oListeners) {
 			let oListenerCell = oListeners[i].getParent();
+			if (!oListenerCell) {
+				continue;
+			}
 			let nListenerCellIndex = null;
 			if (oListenerCell instanceof DefName) {
 				if (!oListeners[i].ca) {
@@ -15420,6 +15444,26 @@
 			}
 			if (oListenerCell instanceof Asc.CT_WorksheetSource) {
 				continue;
+			}
+			if (oListeners[i].getFunctionName()) {
+				const aOutStack = oListeners[i].outStack;
+				const aExcludeFormulas = AscCommonExcel.aExcludeRecursiveFormulas;
+				const oCycleCells = new Map();
+
+				_foreachRefElements(function (oElem, nIndex) {
+					if (oElem.containCell2(oListenerCell)) {
+						const nIndexWithFunction = nIndex + 2;
+						const oElemWithFunction = aOutStack[nIndexWithFunction];
+						if (oElemWithFunction.type === cElementType.func && aExcludeFormulas.includes(oElemWithFunction.name)) {
+							oCycleCells.set(true, nIndex);
+							return;
+						}
+						oCycleCells.set(false, nIndex);
+					}
+				}, aOutStack);
+				if (oCycleCells.size > 0 && oCycleCells.get(false) === undefined) {
+					continue;
+				}
 			}
 			let oRes = fAction(oListenerCell, oCell, nListenerCellIndex);
 			if (oRes != null) {
@@ -15624,7 +15668,7 @@
 			} else {
 				oRange = oRefElement.getRange();
 			}
-			let oRes = fAction(oRange, nLastIndex, i);
+			let oRes = fAction(oRange, i, nLastIndex);
 			if (oRes != null) {
 				return;
 			}
@@ -15761,7 +15805,7 @@
 		}
 
 		const aRefElements = _getRefElements(oFormulaParsed);
-		_foreachRefElements(function (oRange, nLastRefElemIndex, nIndex) {
+		_foreachRefElements(function (oRange, nIndex, nLastRefElemIndex) {
 			oRange._foreachNoEmpty(function(oCell) {
 				let nCellIndex = getCellIndex(oCell.nRow, oCell.nCol);
 				let sCellWsName = oCell.ws.getName().toLowerCase();
@@ -18953,6 +18997,7 @@
 		var oFirstCellHyperlink = null;
 
 		let error = false;
+		let firstMergeCellIndex;
 
 		this._setPropertyNoEmpty(null, null,
 			function(cell, nRow0, nCol0, nRowStart, nColStart) {
@@ -18970,6 +19015,9 @@
 							oFirstCellValue = cell.getValueData();
 							oFirstCellRow = cell.nRow;
 							oFirstCellCol = cell.nCol;
+
+							/* we write down the coordinates of the first cell with data, that we will skip when clearing dependencies */
+							firstMergeCellIndex = AscCommonExcel.getCellIndex(oFirstCellRow, oFirstCellCol);
 						}
 					}
 
@@ -18994,7 +19042,14 @@
 			return {errorType: error};
 		}
 
-		this.worksheet.workbook.handlers.trigger("changeDocument", AscCommonExcel.docChangedType.mergeRange, true, this.bbox, this.worksheet.getId());
+		this.worksheet.workbook.handlers.trigger(
+			"changeDocument", 
+			AscCommonExcel.docChangedType.mergeRange, 
+			true, /* arg1 */
+			this.bbox, /* arg2 */
+			this.worksheet.getId(), 
+			firstMergeCellIndex
+		);
 		//правила работы с гиперссылками во время merge(отличются от Excel в случаем областей, например hyperlink: C3:D3 мержим C2:C3)
 		// 1)оставляем все ссылки, которые не полностью лежат в merge области
 		// 2)оставляем многоклеточные ссылки, top граница которых совпадает с top границей merge области, а высота merge > 1 или совпадает с высотой области merge
@@ -19205,7 +19260,14 @@
 		if (dataValidationRanges) {
 			this.worksheet.clearDataValidation(dataValidationRanges, true);
 		}
-		this.worksheet.workbook.handlers.trigger("changeDocument", AscCommonExcel.docChangedType.mergeRange, null, this.bbox, this.worksheet.getId());
+		this.worksheet.workbook.handlers.trigger(
+			"changeDocument", 
+			AscCommonExcel.docChangedType.mergeRange, 
+			null, /* arg1 */
+			this.bbox, /* arg2 */
+			this.worksheet.getId(), 
+			firstMergeCellIndex
+		);
 
 		AscCommon.History.EndTransaction();
 	};
@@ -21247,6 +21309,7 @@
 								if (bIsPromote) {
 									toRule.id = fromRule.id;
 									toRule.ranges = fromRule.ranges.concat(newRules[i]);
+									toRule.combineRangesToSingle();
 								} else {
 									toRule.ranges = newRules[i];
 								}

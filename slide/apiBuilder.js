@@ -347,8 +347,8 @@
 	 * Standard numeric format.
 	 * @typedef {("General" | "0" | "0.00" | "#,##0" | "#,##0.00" | "0%" | "0.00%" |
 	 * "0.00E+00" | "# ?/?" | "# ??/??" | "m/d/yyyy" | "d-mmm-yy" | "d-mmm" | "mmm-yy" | "h:mm AM/PM" |
-	 * "h:mm:ss AM/PM" | "h:mm" | "h:mm:ss" | "m/d/yyyy h:mm" | "#,##0_);(#,##0)" | "#,##0_);[Red](#,##0)" | 
-	 * "#,##0.00_);(#,##0.00)" | "#,##0.00_);[Red](#,##0.00)" | "mm:ss" | "[h]:mm:ss" | "mm:ss.0" | "##0.0E+0" | "@")} NumFormat
+	 * "h:mm:ss AM/PM" | "h:mm" | "h:mm:ss" | "m/d/yyyy h:mm" | "#,##0_\);(#,##0)" | "#,##0_\);\[Red\]\(#,##0)" | 
+     * "#,##0.00_\);\(#,##0.00\)" | "#,##0.00_\);\[Red\]\(#,##0.00\)" | "mm:ss" | "[h]:mm:ss" | "mm:ss.0" | "##0.0E+0" | "@")} NumFormat
 	 * @see office-js-api/Examples/Enumerations/NumFormat.js
 	 */
 
@@ -389,6 +389,7 @@
     /**
 	 * Represents the type of objects in a selection.
 	 * @typedef {("none" | "shapes" | "slides" | "text")} SelectionType - Available selection types.
+     * @see office-js-api/Examples/Enumerations/SelectionType.js
 	 *
 	 */
 
@@ -405,7 +406,6 @@
      * @returns {ApiPresentation}
      * @see office-js-api/Examples/{Editor}/Api/Methods/GetPresentation.js
 	 */
-
     Api.prototype.GetPresentation = function(){
         if(this.WordControl && this.WordControl.m_oLogicDocument){
             return new ApiPresentation(this.WordControl.m_oLogicDocument);
@@ -1631,6 +1631,9 @@
     {
         if (this.Master) 
         {
+            if (!(oDrawing instanceof ApiDrawing) || oDrawing.Drawing.group || oDrawing.Drawing.IsUseInDocument())
+                return false;
+
             oDrawing.Drawing.setParent(this.Master);
             this.Master.shapeAdd(this.Master.cSld.spTree.length, oDrawing.Drawing);
             editor.private_checkPlaceholders(this, oDrawing.GetPlaceholder());
@@ -2005,6 +2008,9 @@
     {
         if (this.Layout) 
         {
+            if (!(oDrawing instanceof ApiDrawing) || oDrawing.Drawing.group || oDrawing.Drawing.IsUseInDocument())
+                return false;
+
             oDrawing.Drawing.setParent(this.Layout);
             this.Layout.shapeAdd(this.Layout.cSld.spTree.length, oDrawing.Drawing);
             editor.private_checkPlaceholders(this, oDrawing.GetPlaceholder());
@@ -2927,6 +2933,9 @@
 	 */
     ApiSlide.prototype.AddObject = function(oDrawing){
         if(this.Slide){
+            if (!(oDrawing instanceof ApiDrawing) || oDrawing.Drawing.group || oDrawing.Drawing.IsUseInDocument())
+                return false;
+
             oDrawing.Drawing.setParent(this.Slide);
             this.Slide.shapeAdd(this.Slide.cSld.spTree.length, oDrawing.Drawing);
             editor.private_checkPlaceholders(this, oDrawing.GetPlaceholder());
@@ -3917,7 +3926,7 @@
     /**
      * Ungroups the current group of drawings.
      * @memberof ApiGroup
-     * @typeofeditors ["CDE"]
+     * @typeofeditors ["CPE"]
      * @returns {boolean}
      * @since 8.3.0
      * @see office-js-api/Examples/{Editor}/ApiGroup/Methods/Ungroup.js
@@ -5047,10 +5056,6 @@
     ApiTableCell.prototype["SetVerticalAlign"]            = ApiTableCell.prototype.SetVerticalAlign;
     ApiTableCell.prototype["SetTextDirection"]            = ApiTableCell.prototype.SetTextDirection;
 
-    ApiSelection.prototype["GetType"]                     = ApiSelection.prototype.GetType;
-    ApiSelection.prototype["GetShapes"]                   = ApiSelection.prototype.GetShapes;
-    ApiSelection.prototype["GetSlides"]                   = ApiSelection.prototype.GetSlides;
-    ApiSelection.prototype["IsEmpty"]                     = ApiSelection.prototype.IsEmpty;
 
 
     Api.prototype.private_CreateApiSlide = function(oSlide){
@@ -5162,6 +5167,12 @@
 	ApiSelection.prototype.IsEmpty = function() {
 		return this.GetType() === "none";
 	};
+
+	
+	ApiSelection.prototype["GetType"]                     = ApiSelection.prototype.GetType;
+	ApiSelection.prototype["GetShapes"]                   = ApiSelection.prototype.GetShapes;
+	ApiSelection.prototype["GetSlides"]                   = ApiSelection.prototype.GetSlides;
+	ApiSelection.prototype["IsEmpty"]                     = ApiSelection.prototype.IsEmpty;
 
     function private_GetCurrentSlide(){
         var oApiPresentation = editor.GetPresentation();

@@ -685,8 +685,8 @@ CParagraphStructure.prototype.checkWord = function() {
             let oObjectToDraw = aContent[nPosInLine];
             if(oObjectToDraw.Code !== undefined) {
                 aWord.push(aContent[nPosInLine]);
+	            oWordPos.posInLine = nPosInLine;
             }
-            oWordPos.posInLine = nPosInLine;
         }
         oWordPos.line = nLine;
     }

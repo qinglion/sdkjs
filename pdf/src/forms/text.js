@@ -110,7 +110,11 @@
             if (this._charLimit != nChars) {
 
                 if (oViewer.IsOpenFormsInProgress != true) {
-                    let sText = this.content.GetElement(0).GetText({ParaEndToSpace: false});
+                    let sText = this.content.GetElement(0).GetText({
+						ParaSeparator : "",
+						TableRowSeparator : "",
+						TableCellSeparator : ""
+					});
                     this.content.replaceAllText(sText.slice(0, Math.min(nChars, sText.length)));
                 }
             }
@@ -979,7 +983,7 @@
 		return Math.max(0, this._charLimit - (charCount - removeCount));
 	};
 	CTextField.prototype.EnterText = function(aChars) {
-		let selectedCount = this.content.GetSelectedText(true, {NewLine: true}).length;
+		let selectedCount = this.content.GetSelectedText(true).length;
 		let maxToAdd      = this.getRemainCharCount(selectedCount);
 		
         let nCharsCount = AscWord.GraphemesCounter.GetCount(aChars, this.content.GetCalculatedTextPr());
@@ -1231,7 +1235,7 @@
 
         function GetSelectionRange(p)
         {
-            let selectedText = p.GetSelectedText(undefined, {NewLine: true});
+            let selectedText = p.GetSelectedText(undefined);
             let state = p.SaveSelectionState();
 
             let selStart = p.Get_ParaContentPos(p.IsSelectionUse(), p.GetSelectDirection() > 0);
@@ -1239,7 +1243,7 @@
             p.RemoveSelection();
             p.StartSelectionFromCurPos();
             p.SetSelectionContentPos(p.GetStartPos(), selStart);
-            let preText = p.GetSelectedText(undefined, {NewLine: true});
+            let preText = p.GetSelectedText(undefined);
 
             p.LoadSelectionState(state);
 
@@ -1264,7 +1268,7 @@
             }
         }
         
-        let nCharsCount = this.content.GetElement(0).GetText({ParaEndToSpace: false}).length;
+        let nCharsCount = this.content.GetElement(0).GetText({ParaSeparator : ""}).length;
         if (nRemoveType && nSelStart == nSelEnd) {
             if (nRemoveType == -1 && nSelStart != 0) {
                 nSelStart--;
