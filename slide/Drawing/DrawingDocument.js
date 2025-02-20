@@ -1618,27 +1618,6 @@ function CDrawingDocument()
 		this.m_oWordControl.Thumbnails.LockMainObjType = false;
 	};
 
-	// draw
-	this.LockSlide = function(slideNum)
-	{
-		var _th_manager = this.m_oWordControl.Thumbnails;
-
-		if (slideNum >= 0 && slideNum < _th_manager.m_arrPages.length)
-			_th_manager.m_arrPages[slideNum].IsLocked = true;
-
-		_th_manager.OnUpdateOverlay();
-	};
-
-	this.UnLockSlide = function(slideNum)
-	{
-		var _th_manager = this.m_oWordControl.Thumbnails;
-
-		if (slideNum >= 0 && slideNum < _th_manager.m_arrPages.length)
-			_th_manager.m_arrPages[slideNum].IsLocked = false;
-
-		_th_manager.OnUpdateOverlay();
-	};
-
 	this.UpdateThumbnailsAttack = function()
 	{
 		this.m_oWordControl.Thumbnails.RecalculateAll();
@@ -3441,7 +3420,6 @@ function CThPage()
 
 	this.IsSelected = false;
 	this.IsFocused  = false;
-	this.IsLocked   = false;
 }
 
 CThPage.prototype.Draw = function(context, xDst, yDst, wDst, hDst)
@@ -3471,10 +3449,6 @@ CThPage.prototype.SetRecalc = function(bValue)
 CThPage.prototype.GetRecalc = function(bValue)
 {
 	return this.IsRecalc;
-};
-CThPage.prototype.SetLocked = function(bValue)
-{
-	this.IsLocked = bValue;
 };
 CThPage.prototype.SetSelected = function(bValue)
 {
@@ -3839,20 +3813,6 @@ CThumbnailsBase.prototype.SetSlideRecalc = function (idx) {
 	if(oTh)
 	{
 		oTh.SetRecalc(true);
-	}
-};
-CThumbnailsBase.prototype.LockSlide = function(idx) {
-	let oTh = this.GetPage(idx);
-	if(oTh)
-	{
-		oTh.SetLocked(true);
-	}
-};
-CThumbnailsBase.prototype.UnLockSlide = function(idx) {
-	let oTh = this.GetPage(idx);
-	if(oTh)
-	{
-		oTh.SetLocked(false);
 	}
 };
 CThumbnailsBase.prototype.GetPage = function (oIdx) {
@@ -4361,18 +4321,6 @@ function CThumbnailsManager()
 		this.thumbnails.SetSlideRecalc(nIdx);
 	};
 
-	this.LockSlide = function(nIdx)
-	{
-
-		this.thumbnails.LockSlide(nIdx);
-		this.OnUpdateOverlay();
-	};
-
-	this.UnLockSlide = function(nIdx)
-	{
-		this.thumbnails.UnLockSlide(nIdx);
-		this.OnUpdateOverlay();
-	};
 	this.SelectAll = function()
 	{
 		this.thumbnails.SelectAll();
@@ -5240,10 +5188,12 @@ function CThumbnailsManager()
 		var _digit_distance = this.const_offset_x * g_dKoef_pix_to_mm;
 
 		var _logicDocument = word_control.m_oLogicDocument;
-		for (var i = 0; i < this.GetSlidesCount(); i++)
+		const arrSlides = _logicDocument.GetAllSlides();
+		for (var i = 0; i < arrSlides.length; i++)
 		{
 			var page = this.m_arrPages[i];
-
+			const oSlide = arrSlides[i];
+			const bLocked = oSlide.deleteLock.Lock.Get_Type() !== AscCommon.c_oAscLockTypes.kLockTypeMine && oSlide.deleteLock.Lock.Get_Type() !== AscCommon.c_oAscLockTypes.kLockTypeNone;
 			if (i < this.m_lDrawingFirst || i > this.m_lDrawingEnd)
 			{
 				this.m_oCacheManager.UnLock(page.cachedImage);
@@ -5284,7 +5234,7 @@ function CThumbnailsManager()
 				}
 				var text_color = null;
 				let sTextColor = AscCommon.GlobalSkin.ThumbnailsPageNumberText;
-				if (!page.IsLocked)
+				if (!bLocked)
 					sTextColor = AscCommon.GlobalSkin.ThumbnailsPageNumberText;
 				else
 					sTextColor = AscCommon.GlobalSkin.ThumbnailsLockColor;
@@ -5457,11 +5407,17 @@ function CThumbnailsManager()
 		// selected pages
 		context.fillStyle = _style_select;
 		var _border = this.const_border_w;
-		for (var i = 0; i < this.GetSlidesCount(); i++)
+		const oLogicDocument = this.m_oWordControl && this.m_oWordControl.m_oLogicDocument;
+		if (!oLogicDocument) {
+			return;
+		}
+		const arrSlides = oLogicDocument.GetAllSlides();
+		for (var i = 0; i < arrSlides.length; i++)
 		{
 			var page = this.m_arrPages[i];
-
-			if (page.IsLocked)
+			const oSlide = arrSlides[i];
+			const bLocked = oSlide.deleteLock.Lock.Get_Type() !== AscCommon.c_oAscLockTypes.kLockTypeMine && oSlide.deleteLock.Lock.Get_Type() !== AscCommon.c_oAscLockTypes.kLockTypeNone;
+			if (bLocked)
 			{
 				var _lock_focus = AscCommon.GlobalSkin.ThumbnailsLockColor;
 				var _lock_color = AscCommon.GlobalSkin.ThumbnailsLockColor;

@@ -828,14 +828,6 @@
 						{
 							Lock.Set_Type(locktype_Other, true);
 						}
-						if (Class instanceof AscCommonSlide.PropLocker)
-						{
-							var object = g_oTableId.Get_ById(Class.objectId);
-							if (object instanceof AscCommonSlide.Slide && Class === object.deleteLock)
-							{
-								editor.WordControl.m_oLogicDocument.DrawingDocument.LockSlide(object.num);
-							}
-						}
 						// Выставляем ID пользователя, залочившего данный элемент
 						Lock.Set_UserId(e["user"]);
 
@@ -898,7 +890,6 @@
 								{
 									Lock.Set_Type(locktype_Other, true);
 								}
-								editor.WordControl.m_oLogicDocument.DrawingDocument.LockSlide(g_oTableId.Get_ById(delete_lock.objectId).num);
 							}
 							else
 							{
@@ -981,17 +972,6 @@
 						if (Class instanceof AscCommonSlide.PropLocker)
 						{
 							var object = g_oTableId.Get_ById(Class.objectId);
-							if (object instanceof AscCommonSlide.Slide && Class === object.deleteLock)
-							{
-								if (NewType !== locktype_Mine && NewType !== locktype_None)
-								{
-									editor.WordControl.m_oLogicDocument.DrawingDocument.LockSlide(object.num);
-								}
-								else
-								{
-									editor.WordControl.m_oLogicDocument.DrawingDocument.UnLockSlide(object.num);
-								}
-							}
 							if (object instanceof AscCommonSlide.CPresentation)
 							{
 								if (Class === object.themeLock)

@@ -562,9 +562,6 @@ function CPresentation(DrawingDocument) {
 	this.StartPage = 0; // Для совместимости с CDocumentContent
 	this.CurPage = 0;
 
-	this.slidesToUnlock = [];
-
-
 	this.TurnOffRecalc = false;
 
 	this.DrawingDocument = DrawingDocument;
@@ -3021,10 +3018,6 @@ CPresentation.prototype.Recalculate = function (RecalcData) {
 	}
 	this.Document_UpdateSelectionState();
 
-	for (i = 0; i < this.slidesToUnlock.length; ++i) {
-		this.DrawingDocument.UnLockSlide(this.slidesToUnlock[i]);
-	}
-	this.slidesToUnlock.length = 0;
 	if (oCurSlide) {
 		if (this.DrawingDocument.placeholders)
 			this.DrawingDocument.placeholders.update(oCurSlide.getPlaceholdersControls());
@@ -9187,9 +9180,6 @@ CPresentation.prototype.shiftSlides = function (pos, array, bCopy) {
 			this.insertSlideObjectToPos(pos + i, deleted[i]);
 			aNewSelected.push(pos + i);
 		}
-		for (i = 0; i < this.Slides.length; ++i) {
-			this.Slides[i].changeNum(i);
-		}
 	}
 	this.Recalculate();
 	this.Document_UpdateUndoRedoState();
@@ -9243,12 +9233,7 @@ CPresentation.prototype.deleteSlides = function (array) {
 			this.removeSlide(array[i]);
 		}
 		if(!this.IsMasterMode()) {
-			for (i = 0; i < this.Slides.length; ++i) {
-				this.Slides[i].changeNum(i);
-			}
-		}
-		else {
-
+			this.updateSlideIndexes();
 		}
 		this.DrawingDocument.UpdateThumbnailsAttack();
 		if (array[array.length - 1] != oldLen - 1) {
@@ -9991,7 +9976,7 @@ CPresentation.prototype.Document_Is_SelectionLocked = function (CheckType, Addit
 	function fCheckSlides(fGetLock, selectedSlideIndexes) {
 		let aSlides = oPres.GetAllSlides();
 		for (let nIdx = 0; nIdx < selectedSlideIndexes.length; ++nIdx) {
-			let oSlide = aSlides[nIdx];
+			let oSlide = aSlides[selectedSlideIndexes[nIdx]];
 			if(oSlide) {
 				let oLocker = fGetLock(oSlide);
 				if(oLocker) {
