@@ -138,7 +138,7 @@ function CDocumentContent(Parent, DrawingDocument, X, Y, XLimit, YLimit, Split, 
 
     this.m_oContentChanges = new AscCommon.CContentChanges(); // список изменений(добавление/удаление элементов)
     this.StartState = null;
-	this.Recalculated = false;
+	this.Recalculated = false; // Flag only for the current level
 
     this.ReindexStartPos = 0;
 
@@ -201,7 +201,10 @@ CDocumentContent.prototype.Copy3 = function(Parent)//для заголовков
 	}
 	return DC;
 };
-
+CDocumentContent.prototype.IsRecalculated = function()
+{
+	return this.Recalculated;
+};
 CDocumentContent.prototype.isDocumentContentInSmartArtShape = function ()
 {
 	return this.Parent && this.Parent.isObjectInSmartArt && this.Parent.isObjectInSmartArt();
@@ -7276,6 +7279,7 @@ CDocumentContent.prototype.Internal_Content_Add = function(Position, NewObject, 
 
 	this.private_ReindexContent(Position);
 	this.OnContentChange();
+	this.Recalculated = false;
 };
 CDocumentContent.prototype.Internal_Content_Remove = function(Position, Count, isCorrectContent)
 {
@@ -7311,6 +7315,7 @@ CDocumentContent.prototype.Internal_Content_Remove = function(Position, Count, i
 
 	this.private_ReindexContent(Position);
 	this.OnContentChange();
+	this.Recalculated = false;
 };
 CDocumentContent.prototype.Clear_ContentChanges = function()
 {

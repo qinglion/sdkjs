@@ -3408,7 +3408,6 @@ CDocument.prototype.private_Recalculate = function(_RecalcData, isForceStrictRec
 
     // Увеличиваем номер пересчета
     this.RecalcId++;
-	this.Recalculated = true;
 
     // Если задан параметр _RecalcData, тогда мы не можем ориентироваться на историю
     if (undefined === _RecalcData)

@@ -47,8 +47,6 @@ function CDocumentContentBase()
 	this.Content = [];
 
 	this.ReindexStartPos = 0;
-	
-	this.Recalculated = false;
 }
 CDocumentContentBase.prototype.Get_Id = function()
 {
@@ -2547,8 +2545,6 @@ CDocumentContentBase.prototype.CountElementsInFrame = function(nStartIndex)
 };
 CDocumentContentBase.prototype.OnContentChange = function()
 {
-	this.Recalculated = false;
-	
 	if (this.Parent && this.Parent.OnContentChange)
 		this.Parent.OnContentChange();
 	
@@ -2565,8 +2561,6 @@ CDocumentContentBase.prototype.OnContentChange = function()
 };
 CDocumentContentBase.prototype.OnTextPrChange = function()
 {
-	this.Recalculated = false;
-	
 	if (this.Parent && this.Parent.OnTextPrChange)
 		this.Parent.OnTextPrChange();
 	
@@ -2581,11 +2575,6 @@ CDocumentContentBase.prototype.OnTextPrChange = function()
 		shape.OnTextPrChange();
 	}
 };
-CDocumentContentBase.prototype.IsRecalculated = function()
-{
-	return this.Recalculated;
-};
-
 CDocumentContentBase.prototype.GetCalculatedTextPr = function()
 {
 	var oTextPr = new CTextPr();
