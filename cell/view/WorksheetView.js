@@ -5219,7 +5219,9 @@
             if(drawingCtx instanceof AscCommonExcel.CPdfPrinter) {
                 oGraphics = drawingCtx.DocumentRenderer;
                 oGraphics.SaveGrState();
-                oGraphics.SetBaseTransform(new AscCommon.CMatrix());
+				let oBaseTransform = new AscCommon.CMatrix();
+				oBaseTransform.Scale(printScale, printScale, AscCommon.MATRIX_ORDER_APPEND);
+                oGraphics.SetBaseTransform(oBaseTransform);
             }
             else {
                 oGraphics = new AscCommon.CGraphics();
