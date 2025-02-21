@@ -16822,7 +16822,17 @@
 				Asc.editor.wb.handleChartsOnWorkbookChange(aRanges);
 			}
 			if (isUpdateDefaultWidth) {
+				let beforeDefaultWidth = t.defaultColWidthPx;
+				let beforeDefaultHeight = t.defaultRowHeightPx;
 				t._initWorksheetDefaultWidth();
+				if (t.defaultColWidthPx !== beforeDefaultWidth) {
+					//we must recalculate before draw
+					t._updateVisibleColsCount(true);
+				}
+				if (t.defaultRowHeightPx !== beforeDefaultHeight) {
+					//we must recalculate before draw
+					t._updateVisibleRowsCount(true);
+				}
 			}
 			t.scrollType |= AscCommonExcel.c_oAscScrollType.ScrollVertical | AscCommonExcel.c_oAscScrollType.ScrollHorizontal;
 			t.draw(lockDraw);
