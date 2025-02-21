@@ -7064,6 +7064,8 @@ var editor;
 		res["spreadsheetLayout"] = {};
 		res["spreadsheetLayout"]["ignorePrintArea"] = false;
 		res["spreadsheetLayout"]["sheetsProps"] = this.wbModel && this.wbModel.getPrintOptionsJson();
+		res["spreadsheetLayout"]["formulaProps"] = {};
+		res["spreadsheetLayout"]["formulaProps"]["translate"] = AscCommonExcel.cFormulaFunctionToLocale;
 		return res;
 	};
 

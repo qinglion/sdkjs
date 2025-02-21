@@ -3963,6 +3963,14 @@
   		adjustPrint = new Asc.asc_CAdjustPrint();
 	}
 
+	let trueFormulaFunctionToLocale;
+  	let printOptionsJson = this.getPrintOptionsJson();
+	let spreadsheetLayout = printOptionsJson && printOptionsJson["spreadsheetLayout"];
+  	if (spreadsheetLayout && spreadsheetLayout["formulaProps"] && spreadsheetLayout["formulaProps"]["translate"]) {
+		trueFormulaFunctionToLocale = AscCommonExcel.cFormulaFunctionToLocale;
+  		AscCommonExcel.cFormulaFunctionToLocale = spreadsheetLayout["formulaProps"]["translate"];
+  	}
+
     var viewZoom = this.getZoom();
     this.changeZoom(1, true, true);
 
@@ -4003,6 +4011,10 @@
     }
 
     this.changeZoom(viewZoom, true, true);
+
+	if (trueFormulaFunctionToLocale) {
+		AscCommonExcel.cFormulaFunctionToLocale = trueFormulaFunctionToLocale;
+	}
 
     return printPagesData;
   };
