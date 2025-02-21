@@ -203,7 +203,7 @@ CDocumentContent.prototype.Copy3 = function(Parent)//для заголовков
 };
 CDocumentContent.prototype.IsRecalculated = function()
 {
-	return this.Recalculated;
+	return (this.Recalculated && this.Pages.length > 0);
 };
 CDocumentContent.prototype.isDocumentContentInSmartArtShape = function ()
 {
@@ -1747,8 +1747,8 @@ CDocumentContent.prototype.RecalculateCurPos = function(bUpdateX, bUpdateY, isUp
 };
 CDocumentContent.prototype.Get_PageBounds = function(CurPage, Height, bForceCheckDrawings)
 {
-	if (this.Pages.length <= 0)
-		return new CDocumentBounds(0, 0, 0, 0);
+	if (!this.IsRecalculated())
+		return new AscWord.CDocumentBounds(0, 0, 0, 0);
 
 	if (CurPage < 0)
 		CurPage = 0;
@@ -1811,6 +1811,9 @@ CDocumentContent.prototype.GetPageBounds = function(nCurPage, nHeight, isForceCh
 };
 CDocumentContent.prototype.GetContentBounds = function(CurPage)
 {
+	if (!this.IsRecalculated())
+		return new AscWord.CDocumentBounds(0, 0, 0, 0);
+	
 	var oPage = this.Pages[CurPage];
 	if (!oPage || oPage.Pos > oPage.EndPos)
 		return this.Get_PageBounds(CurPage);
