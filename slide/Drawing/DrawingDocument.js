@@ -4887,17 +4887,17 @@ function CThumbnailsManager()
 				{
 					if (oPresentation.CanEdit())
 					{
-						sSelectedIdx = this.GetSelectedArray();
+						const arrSlides = oPresentation.GetSelectedSlideObjects();
 						if (!oApi.IsSupportEmptyPresentation)
 						{
-							if (sSelectedIdx.length === oDrawingDocument.GetSlidesCount())
+							if (arrSlides.length === oDrawingDocument.GetSlidesCount())
 							{
-								sSelectedIdx.splice(0, 1);
+								arrSlides.splice(0, 1);
 							}
 						}
-						if (sSelectedIdx.length !== 0)
+						if (arrSlides.length !== 0)
 						{
-							oPresentation.deleteSlides(sSelectedIdx);
+							oPresentation.deleteSlides(arrSlides);
 						}
 						if (0 === oPresentation.GetSlidesCount())
 						{

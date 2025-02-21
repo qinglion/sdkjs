@@ -3630,16 +3630,16 @@ background-repeat: no-repeat;\
 			return;
 		}
 
-		const arr_ind    = oLogicDocument.GetSelectedSlides();
+		const arrSlides    = oLogicDocument.GetSelectedSlideObjects();
 		const bResetBackground = prop.get_ResetBackground();
 		if (bResetBackground) {
-			oLogicDocument.resetSlideBackground(arr_ind);
+			oLogicDocument.resetSlideBackground(arrSlides);
 			return;
 		}
 
 		const bNewShowMasterShapes = prop.get_ShowMasterSp();
 		if (bNewShowMasterShapes !== null) {
-			oLogicDocument.setShowMasterSp(bNewShowMasterShapes, arr_ind);
+			oLogicDocument.setShowMasterSp(bNewShowMasterShapes, arrSlides);
 		}
 
 		const _back_fill = prop.get_background();
@@ -3650,7 +3650,7 @@ background-repeat: no-repeat;\
 				bg.bgPr      = new AscFormat.CBgPr();
 				bg.bgPr.Fill = AscFormat.CorrectUniFill(_back_fill, null, 0);
 
-				oLogicDocument.changeBackground(bg, arr_ind);
+				oLogicDocument.changeBackground(bg, arrSlides);
 				return;
 			}
 
@@ -3692,7 +3692,7 @@ background-repeat: no-repeat;\
 							oApi.WordControl.m_oDrawingDocument.DrawImageTextureFillSlide(bg.bgPr.Fill.fill.RasterImageId);
 						}
 
-						oLogicDocument.changeBackground(bg, arr_ind);
+						oLogicDocument.changeBackground(bg, arrSlides);
 					}
 					else
 					{
@@ -3706,7 +3706,7 @@ background-repeat: no-repeat;\
 								oApi.WordControl.m_oDrawingDocument.DrawImageTextureFillSlide(bg.bgPr.Fill.fill.RasterImageId);
 							}
 
-							oLogicDocument.changeBackground(bg, arr_ind);
+							oLogicDocument.changeBackground(bg, arrSlides);
 							oApi.asyncImageEndLoaded2 = null;
 
 							oApi.sync_EndAction(c_oAscAsyncActionType.Information, c_oAscAsyncAction.LoadImage);
@@ -3748,12 +3748,12 @@ background-repeat: no-repeat;\
 				{
 					if (!this.noCreatePoint && !this.exucuteHistory && this.exucuteHistoryEnd)
 					{
-						oLogicDocument.changeBackground(bg, arr_ind, true);
+						oLogicDocument.changeBackground(bg, arrSlides, true);
 						this.exucuteHistoryEnd = false;
 					}
 					else
 					{
-						oLogicDocument.changeBackground(bg, arr_ind);
+						oLogicDocument.changeBackground(bg, arrSlides);
 					}
 					if (this.exucuteHistory)
 					{
@@ -3771,14 +3771,15 @@ background-repeat: no-repeat;\
 						AscFormat.ExecuteNoHistory(function()
 						{
 
-							oLogicDocument.changeBackground(bg, arr_ind, true);
-							for (var i = 0; i < arr_ind.length; ++i)
+							oLogicDocument.changeBackground(bg, arrSlides, true);
+							for (var i = 0; i < arrSlides.length; ++i)
 							{
-								oLogicDocument.GetSlide(arr_ind[i]).recalculateBackground()
+								arrSlides[i].recalculateBackground()
 							}
-							for (i = 0; i < arr_ind.length; ++i)
+							for (i = 0; i < arrSlides.length; ++i)
 							{
-								oLogicDocument.DrawingDocument.OnRecalculateSlide(arr_ind[i]);
+								const nIdx = oLogicDocument.GetSlideIndex(arrSlides[i]);
+								oLogicDocument.DrawingDocument.OnRecalculateSlide(nIdx);
 							}
 							oLogicDocument.DrawingDocument.OnEndRecalculate(true, false);
 						}, this, []);
@@ -6629,7 +6630,7 @@ background-repeat: no-repeat;\
 	};
 	asc_docs_api.prototype.DeleteSlide    = function()
 	{
-		var _delete_array = this.WordControl.m_oLogicDocument.GetSelectedSlides();
+		var _delete_array = this.WordControl.m_oLogicDocument.GetSelectedSlideObjects();
 
 		if (!this.IsSupportEmptyPresentation)
 		{
@@ -9598,6 +9599,13 @@ background-repeat: no-repeat;\
 		return !!oLogicDocument.GetAllInks().length;
 	};
 
+	asc_docs_api.prototype.asc_setPreserveSlideMaster = function (bPr) {
+		let oLogicDocument = this.getLogicDocument();
+		if(!oLogicDocument) return;
+
+		oLogicDocument.setPreserveSlideMaster(bPr);
+	};
+
 	//-------------------------------------------------------------export---------------------------------------------------
 	window['Asc']                                                 = window['Asc'] || {};
 	window['AscCommonSlide']                                      = window['AscCommonSlide'] || {};
@@ -10168,6 +10176,8 @@ background-repeat: no-repeat;\
 
 	asc_docs_api.prototype["asc_setDemoBackgroundColor"] = asc_docs_api.prototype.asc_setDemoBackgroundColor;
 	asc_docs_api.prototype["asc_EraseAllInksOnSlide"] = asc_docs_api.prototype.asc_EraseAllInksOnSlide;
+
+	asc_docs_api.prototype["asc_setPreserveSlideMaster"] = asc_docs_api.prototype.asc_setPreserveSlideMaster;
 
 
 	window['Asc']['asc_CCommentData'] = window['Asc'].asc_CCommentData = asc_CCommentData;
