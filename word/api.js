@@ -1897,10 +1897,8 @@ background-repeat: no-repeat;\
 		};
 		this.CoAuthoringApi.onChangesIndex = function(changesIndex)
 		{
-			if (t.isLiveViewer() && changesIndex >= 0 && changesIndex < AscCommon.CollaborativeEditing.GetAllChangesCount()) {
-				let count = AscCommon.CollaborativeEditing.GetAllChangesCount() - changesIndex;
-				AscCommon.CollaborativeEditing.UndoGlobal(count);
-			}
+			let count = AscCommon.CollaborativeEditing.GetAllChangesCount() - changesIndex;
+			AscCommon.CollaborativeEditing.UndoGlobal(count);
 		};
 		this.CoAuthoringApi.onRecalcLocks            = function(e)
 		{
