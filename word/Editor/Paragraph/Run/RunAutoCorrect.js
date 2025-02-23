@@ -139,8 +139,6 @@
 		if (!this.IsValid() || !this.Flags)
 			return this.Result;
 
-		// Чтобы позиция ContentPos была актуальна, отключаем корректировку содержимого параграфа на время выполнения
-		// автозамены. Все изменения должны происходить ТОЛЬКО внтури ранов
 		this.Paragraph.TurnOffCorrectContent();
 
 		this.private_CheckAsYouType();
@@ -200,6 +198,15 @@
 	};
 	CRunAutoCorrect.prototype.private_UpdatePos = function()
 	{
+		this.ContentPos = this.Paragraph.GetPosByElement(this.Run);
+		if (!this.ContentPos)
+		{
+			this.RunItem = null;
+			return;
+		}
+		
+		this.ContentPos.Update(this.Pos, this.ContentPos.GetDepth() + 1);
+		
 		let oRun = this.Run;
 		if (oRun.GetElement(this.Pos) === this.RunItem)
 		{
@@ -226,6 +233,7 @@
 		let oRunElementsBefore = new CParagraphRunElements(this.ContentPos, g_nMaxElements, [para_Text], false);
 		oRunElementsBefore.SetBreakOnBadType(true);
 		oRunElementsBefore.SetBreakOnDifferentClass(true);
+		oRunElementsBefore.SetBreakOnMath(true);
 		oRunElementsBefore.SetSaveContentPositions(true);
 
 		this.Paragraph.GetPrevRunElements(oRunElementsBefore);
@@ -253,6 +261,7 @@
 		let oRunElementsBefore = new CParagraphRunElements(this.ContentPos, 1, [para_Text], false);
 		oRunElementsBefore.SetBreakOnBadType(true);
 		oRunElementsBefore.SetBreakOnDifferentClass(true);
+		oRunElementsBefore.SetBreakOnMath(true);
 		this.Paragraph.GetPrevRunElements(oRunElementsBefore);
 
 		this.AsYouType = false;
@@ -266,10 +275,11 @@
 	CRunAutoCorrect.prototype.private_ProcessAutoCorrect = function(nType, pFunc)
 	{
 		if (this.Flags & nType && pFunc.call(this))
+		{
 			this.Result |= nType;
-
-		this.private_UpdatePos();
-
+			this.private_UpdatePos();
+		}
+		
 		return this.IsValid();
 	};
 	/**
@@ -290,6 +300,7 @@
 			return false;
 
 		var oRunElementsBefore = new CParagraphRunElements(oContentPos, 2, null, false);
+		oRunElementsBefore.SetBreakOnMath(true);
 		oRunElementsBefore.SetSaveContentPositions(true);
 		oParagraph.GetPrevRunElements(oRunElementsBefore);
 		var arrElements = oRunElementsBefore.GetElements();
@@ -339,6 +350,7 @@
 			return false;
 
 		var oRunElementsBefore = new CParagraphRunElements(oContentPos, 3, null, false);
+		oRunElementsBefore.SetBreakOnMath(true);
 		oRunElementsBefore.SetSaveContentPositions(true);
 		oParagraph.GetPrevRunElements(oRunElementsBefore);
 		var arrElements = oRunElementsBefore.GetElements();
@@ -398,6 +410,7 @@
 		var isDoubleQuote = 34 === oRunItem.Value;
 
 		var oRunElementsBefore = new CParagraphRunElements(oContentPos, 1, null, false);
+		oRunElementsBefore.SetBreakOnMath(true);
 		oParagraph.GetPrevRunElements(oRunElementsBefore);
 		var arrElements = oRunElementsBefore.GetElements();
 		if (arrElements.length > 0)
@@ -563,6 +576,7 @@
 			return false;
 
 		var oRunElementsBefore = new CParagraphRunElements(oContentPos, 1, null, false);
+		oRunElementsBefore.SetBreakOnMath(true);
 		oRunElementsBefore.SetSaveContentPositions(true);
 		oParagraph.GetPrevRunElements(oRunElementsBefore);
 		var arrElements = oRunElementsBefore.GetElements();
@@ -575,15 +589,8 @@
 
 			var oDash = new AscWord.CRunText(8212);
 			oRun.AddToContent(this.Pos + 1, oDash);
-			var oStartPos = oRunElementsBefore.GetContentPositions()[0];
-			var oEndPos   = oContentPos;
-			oContentPos.Update(this.Pos + 1, oContentPos.GetDepth());
-
-			oParagraph.RemoveSelection();
-			oParagraph.SetSelectionUse(true);
-			oParagraph.SetSelectionContentPos(oStartPos, oEndPos, false);
-			oParagraph.Remove(1);
-			oParagraph.RemoveSelection();
+			oRun.RemoveFromContent(this.Pos, 1);
+			oParagraph.RemoveRunElement(oRunElementsBefore.GetContentPositions()[0]);
 
 			oDocument.Recalculate();
 			oDocument.FinalizeAction();
@@ -629,6 +636,7 @@
 			if (arrElements.length > 1 && para_Text === arrElements[nElementsCount - 2].Type && 45 !== arrElements[nElementsCount - 2].Value)
 			{
 				var oTempRunElementsBefore = new CParagraphRunElements(oRunElementsBefore.GetContentPositions()[nElementsCount - 1], 1, null, false);
+				oTempRunElementsBefore.SetBreakOnMath(true);
 				oTempRunElementsBefore.SetSaveContentPositions(true);
 				oParagraph.GetPrevRunElements(oTempRunElementsBefore);
 				arrElements = oTempRunElementsBefore.GetElements();
@@ -639,6 +647,7 @@
 		else
 		{
 			var oTempRunElementsBefore = new CParagraphRunElements(oRunElementsBefore.GetContentPositions()[nElementsCount - 1], 3, null, false);
+			oTempRunElementsBefore.SetBreakOnMath(true);
 			oTempRunElementsBefore.SetSaveContentPositions(true);
 			oParagraph.GetPrevRunElements(oTempRunElementsBefore);
 			arrElements = oTempRunElementsBefore.GetElements();

@@ -1211,13 +1211,19 @@ ParaMath.prototype.Get_Layout = function(DrawingLayout, UseContentPos, ContentPo
 
 ParaMath.prototype.GetNextRunElements = function(oRunElements, isUseContentPos, nDepth)
 {
+	if (oRunElements.IsBreakOnMath())
+		return oRunElements.Stop();
+	
 	if (oRunElements.IsSkipMath())
 		return;
-
+	
 	this.Root.GetNextRunElements(oRunElements, isUseContentPos, nDepth);
 };
 ParaMath.prototype.GetPrevRunElements = function(oRunElements, isUseContentPos, nDepth)
 {
+	if (oRunElements.IsBreakOnMath())
+		return oRunElements.Stop();
+	
 	if (oRunElements.IsSkipMath())
 		return;
 

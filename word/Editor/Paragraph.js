@@ -20080,6 +20080,7 @@ function CParagraphRunElements(ContentPos, Count, arrTypes, isReverse)
 
 	this.BreakBadType        = false; // Заканчиваем ли поиск при нахождении неподходящих типов
 	this.BreakDifferentClass = false; // Заканчиваем ли поиск при достижении элемента, находящегося в классе отличном от this.StartClass
+	this.BreakMath           = false;
 	this.SkipMath            = true;  // TODO: Временно так делаем
 
 	this.CurContentPos        = new AscWord.CParagraphContentPos();
@@ -20104,6 +20105,21 @@ CParagraphRunElements.prototype.UpdatePos = function(nPos, nDepth)
 CParagraphRunElements.prototype.SetBreakOnBadType = function(isBreak)
 {
 	this.BreakBadType = isBreak;
+};
+/**
+ * Set if we need to stop when a math equation is encountered
+ * @param {boolean} isBreak
+ */
+CParagraphRunElements.prototype.SetBreakOnMath = function(isBreak)
+{
+	this.BreakMath = isBreak;
+};
+/**
+ * Check if we need to stop on math equation
+ */
+CParagraphRunElements.prototype.IsBreakOnMath = function()
+{
+	return this.BreakMath;
 };
 /**
  * Останавливаемся при попадании в другой класс
@@ -20256,6 +20272,15 @@ CParagraphRunElements.prototype.SetSkipMath = function(isSkip)
 CParagraphRunElements.prototype.IsSkipMath = function()
 {
 	return this.SkipMath;
+};
+/**
+ * Stops the collection process
+ * @param isEnd {boolean}
+ */
+CParagraphRunElements.prototype.Stop = function(isEnd)
+{
+	this.End   = isEnd ? isEnd : false;
+	this.Count = 0;
 };
 
 function CParagraphStatistics(Stats)
