@@ -5092,47 +5092,91 @@ Paragraph.prototype.extendLastLineToPos = function(_X)
 	var X  = _X - X0;
 
 	var Align = CompiledPr.Jc;
-
-	if (X < 0 || X > X1 || ( X < 7.5 && align_Left === Align ) || ( X > X1 - 10 && align_Right === Align ) || ( Math.abs(X1 / 2 - X) < 10 && align_Center === Align ))
-		return false;
-
-	if (true === this.IsEmpty())
+	
+	if (this.isRtlDirection())
 	{
-		if (align_Left !== Align)
+		if (X < 0 || X > X1 || (X < 7.5 && AscCommon.align_Right === Align) || (X > X1 - 10 && AscCommon.align_Left === Align) || (Math.abs(X1 / 2 - X) < 10 && align_Center === Align))
+			return false;
+		
+		if (this.IsEmpty())
 		{
-			this.Set_Align(align_Left);
+			if (AscCommon.align_Left !== Align)
+				this.Set_Align(AscCommon.align_Left);
+			
+			if (Math.abs(X - X1 / 2) < 12.5)
+			{
+				this.Set_Align(AscCommon.align_Center);
+				return true;
+			}
+			else if (X < 12.5)
+			{
+				this.Set_Align(align_Right);
+				return true;
+			}
+			else if (X > X1 - 17.5)
+			{
+				this.Set_Ind({FirstLine : 12.5}, false);
+				return true;
+			}
 		}
-
+		
+		let Tabs = CompiledPr.Tabs.Copy();
+		
 		if (Math.abs(X - X1 / 2) < 12.5)
-		{
-			this.Set_Align(align_Center);
-			return true;
-		}
-		else if (X > X1 - 12.5)
-		{
-			this.Set_Align(align_Right);
-			return true;
-		}
-		else if (X < 17.5)
-		{
-			this.Set_Ind({FirstLine : 12.5}, false);
-			return true;
-		}
+			Tabs.Add(new CParaTab(tab_Center, X1 / 2));
+		else if (X < 12.5)
+			Tabs.Add(new CParaTab(tab_Right, X1 - 0.001));
+		else
+			Tabs.Add(new CParaTab(tab_Left, X1 - X));
+		
+		this.Set_Tabs(Tabs);
+		
+		this.Set_ParaContentPos(this.Get_EndPos(false), false, -1, -1);
+		this.Add(new AscWord.CRunTab());
 	}
-
-	var Tabs = CompiledPr.Tabs.Copy();
-
-	if (Math.abs(X - X1 / 2) < 12.5)
-		Tabs.Add(new CParaTab(tab_Center, X1 / 2));
-	else if (X > X1 - 12.5)
-		Tabs.Add(new CParaTab(tab_Right, X1 - 0.001));
 	else
-		Tabs.Add(new CParaTab(tab_Left, X));
-
-	this.Set_Tabs(Tabs);
-
-	this.Set_ParaContentPos(this.Get_EndPos(false), false, -1, -1);
-	this.Add(new AscWord.CRunTab());
+	{
+		if (X < 0 || X > X1 || (X < 7.5 && align_Left === Align) || (X > X1 - 10 && align_Right === Align) || (Math.abs(X1 / 2 - X) < 10 && align_Center === Align))
+			return false;
+		
+		if (true === this.IsEmpty())
+		{
+			if (align_Left !== Align)
+			{
+				this.Set_Align(align_Left);
+			}
+			
+			if (Math.abs(X - X1 / 2) < 12.5)
+			{
+				this.Set_Align(align_Center);
+				return true;
+			}
+			else if (X > X1 - 12.5)
+			{
+				this.Set_Align(align_Right);
+				return true;
+			}
+			else if (X < 17.5)
+			{
+				this.Set_Ind({FirstLine : 12.5}, false);
+				return true;
+			}
+		}
+		
+		let Tabs = CompiledPr.Tabs.Copy();
+		
+		if (Math.abs(X - X1 / 2) < 12.5)
+			Tabs.Add(new CParaTab(tab_Center, X1 / 2));
+		else if (X > X1 - 12.5)
+			Tabs.Add(new CParaTab(tab_Right, X1 - 0.001));
+		else
+			Tabs.Add(new CParaTab(tab_Left, X));
+		
+		this.Set_Tabs(Tabs);
+		
+		this.Set_ParaContentPos(this.Get_EndPos(false), false, -1, -1);
+		this.Add(new AscWord.CRunTab());
+	}
 
 	return true;
 };

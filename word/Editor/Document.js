@@ -6174,6 +6174,7 @@ CDocument.prototype.Extend_ToPos = function(X, Y)
 
     var LastPara  = this.GetLastParagraph();
     var LastPara2 = LastPara;
+	let isBidi    = LastPara.GetParagraphBidi();
 
     this.StartAction(AscDFH.historydescription_Document_DocumentExtendToPos);
     this.History.Set_Additional_ExtendDocumentToPos();
@@ -6183,6 +6184,9 @@ CDocument.prototype.Extend_ToPos = function(X, Y)
         var NewParagraph = new AscWord.Paragraph();
         var NewRun       = new ParaRun(NewParagraph, false);
         NewParagraph.Add_ToContent(0, NewRun);
+		
+		if (isBidi)
+			NewParagraph.SetParagraphBidi(true);
 
         var StyleId = LastPara.Style_Get();
         var NextId  = undefined;
