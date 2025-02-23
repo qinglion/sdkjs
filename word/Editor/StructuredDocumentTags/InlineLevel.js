@@ -281,6 +281,12 @@ CInlineLevelSdt.prototype.private_CopyPrTo = function(oContentControl, oPr)
 
 	if (this.Pr.ComplexFormPr)
 		oContentControl.SetComplexFormPr(this.Pr.ComplexFormPr);
+	
+	if (this.Pr.BorderColor)
+		oContentControl.setBorderColor(this.Pr.BorderColor.Copy());
+	
+	if (this.Pr.ShdColor)
+		oContentControl.setShdColor(this.Pr.ShdColor.Copy());
 };
 CInlineLevelSdt.prototype.GetSelectedContent = function(selectedContent)
 {

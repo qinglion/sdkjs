@@ -1504,6 +1504,12 @@ CBlockLevelSdt.prototype.SetPr = function(oPr)
 
 	if (undefined !== oPr.DataBinding)
 		this.setDataBinding(oPr.DataBinding);
+	
+	if (oPr.BorderColor)
+		this.setBorderColor(oPr.BorderColor.Copy());
+	
+	if (oPr.ShdColor)
+		this.setShdColor(oPr.ShdColor.Copy());
 };
 /**
  * Выставляем настройки текста по умолчанию для данного контрола
