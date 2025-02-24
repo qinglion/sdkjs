@@ -179,14 +179,15 @@
 		if (1 !== codePoints.length)
 			return graphemeId;
 		
-		if (!t[codePoints])
+		let codePoint = codePoints[0];
+		if (!t[codePoint])
 			return graphemeId;
 		
 		let fontId    = AscFonts.GetGraphemeFontId(graphemeId);
 		let fontName  = AscFonts.GetFontNameByFontId(fontId);
 		let fontStyle = AscFonts.GetFontStyleByFontId(fontId);
 		
-		pairedGraphemes[graphemeId] = AscCommon.g_oTextMeasurer.GetGraphemeByUnicode(t[codePoints], fontName, fontStyle);
+		pairedGraphemes[graphemeId] = AscCommon.g_oTextMeasurer.GetGraphemeByUnicode(t[codePoint], fontName, fontStyle);
 		return pairedGraphemes[graphemeId];
 	}
 	AscBidi.isPairedBracket = function(codePoint)
