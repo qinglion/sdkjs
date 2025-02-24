@@ -5641,7 +5641,7 @@ CDocument.prototype.PauseRecalculate = function()
 		this.RecalcInfo.Paused     = true;
 		this.RecalcInfo.PausedMain = true;
 	}
-	else if (this.HdrFtrRecalc)
+	else if (this.HdrFtrRecalc.Id)
 	{
 		clearTimeout(this.HdrFtrRecalc.Id);
 		this.HdrFtrRecalc.Id       = null;
