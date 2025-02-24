@@ -167,6 +167,7 @@
             return;
         }
 
+        AscCommon.History.StartNoHistoryMode();
         this.spPr.xfrm.setExtX(nShapeW * g_dKoef_pt_to_mm);
         this.spPr.xfrm.setExtY(nShapeH * g_dKoef_pt_to_mm);
 
@@ -180,6 +181,8 @@
         
         this.spPr.xfrm.setOffX(nOffX * g_dKoef_pt_to_mm);
         this.spPr.xfrm.setOffY(nOffY * g_dKoef_pt_to_mm);
+
+        AscCommon.History.EndNoHistoryMode();
     };
     CAnnotationStamp.prototype.GetInRect = function() {
         return this.inRect;
