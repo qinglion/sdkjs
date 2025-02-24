@@ -3207,6 +3207,7 @@
 	window['AscDFH'].historyitem_SlideLayoutSetTiming         = window['AscDFH'].historyitem_type_SlideLayout | 13;
 	window['AscDFH'].historyitem_SlideLayoutSetTransition     = window['AscDFH'].historyitem_type_SlideLayout | 14;
 	window['AscDFH'].historyitem_SlideLayoutRemoveFromSpTree  = window['AscDFH'].historyitem_type_SlideLayout | 15;
+	window['AscDFH'].historyitem_SlideLayoutSetPreserve       = window['AscDFH'].historyitem_type_SlideLayout | 16;
 
 	window['AscDFH'].historyitem_SlideMasterAddToSpTree       = window['AscDFH'].historyitem_type_SlideMaster | 1;
 	window['AscDFH'].historyitem_SlideMasterSetTheme          = window['AscDFH'].historyitem_type_SlideMaster | 2;

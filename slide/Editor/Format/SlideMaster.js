@@ -1459,6 +1459,7 @@ function CreateDefaultMaster() {
     let oTheme = oBinaryReader.ReadTheme();
     oTheme.presentation = oPresentation;
     oMaster.setTheme(oTheme);
+		oMaster.setPreserve(true);
     return oMaster;
 }
 
@@ -1473,6 +1474,7 @@ function CreateDefaultLayout(oMaster) {
     let oLt = oBinaryReader.ReadSlideLayout();
     oLt.setSlideSize(DEFAULT_SLIDE_W, DEFAULT_SLIDE_H);
     oLt.setMaster(oMaster);
+		oLt.setPreserve(true);
     return oLt;
 
 }

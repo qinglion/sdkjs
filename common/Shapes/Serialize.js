@@ -4076,7 +4076,7 @@ function BinaryPPTYLoader()
                 }
                 case 1:
                 {
-                    layout.preserve = s.GetBool();
+                    layout.setPreserve(s.GetBool());
                     break;
                 }
                 case 2:

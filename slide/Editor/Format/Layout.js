@@ -43,6 +43,7 @@ AscDFH.changesFactory[AscDFH.historyitem_SlideLayoutSetType]           = AscDFH.
 AscDFH.changesFactory[AscDFH.historyitem_SlideLayoutSetBg]             = AscDFH.CChangesDrawingsObjectNoId;
 AscDFH.changesFactory[AscDFH.historyitem_SlideLayoutSetCSldName]       = AscDFH.CChangesDrawingsString;
 AscDFH.changesFactory[AscDFH.historyitem_SlideLayoutSetShow]           = AscDFH.CChangesDrawingsBool;
+AscDFH.changesFactory[AscDFH.historyitem_SlideLayoutSetPreserve]           = AscDFH.CChangesDrawingsBool;
 AscDFH.changesFactory[AscDFH.historyitem_SlideLayoutSetShowPhAnim]     = AscDFH.CChangesDrawingsBool;
 AscDFH.changesFactory[AscDFH.historyitem_SlideLayoutSetShowMasterSp]   = AscDFH.CChangesDrawingsBool;
 AscDFH.changesFactory[AscDFH.historyitem_SlideLayoutSetClrMapOverride] = AscDFH.CChangesDrawingsObject;
@@ -85,6 +86,7 @@ AscDFH.drawingsChangesMap[AscDFH.historyitem_SlideLayoutSetClrMapOverride]    = 
 AscDFH.drawingsChangesMap[AscDFH.historyitem_SlideLayoutSetSize]              = function(oClass, value){oClass.Width = value.a; oClass.Height = value.b;};
 AscDFH.drawingsChangesMap[AscDFH.historyitem_SlideLayoutSetTiming]            = function(oClass, value){oClass.timing = value;};
 AscDFH.drawingsChangesMap[AscDFH.historyitem_SlideLayoutSetTransition]        = function(oClass, value){oClass.transition = value;};
+AscDFH.drawingsChangesMap[AscDFH.historyitem_SlideLayoutSetPreserve]        = function(oClass, value){oClass.preserve = value;};
 
 AscDFH.drawingContentChanges[AscDFH.historyitem_SlideLayoutAddToSpTree] = function(oClass){
     oClass.recalcInfo.recalculateBounds = true;
@@ -1012,6 +1014,10 @@ SlideLayout.prototype.getAllInks = function(arrInks) {
 };
 SlideLayout.prototype.isPreserve = function() {
 	return this.preserve;
+};
+SlideLayout.prototype.setPreserve = function(bPr) {
+	History.Add(new AscDFH.CChangesDrawingsBool(this, AscDFH.historyitem_SlideLayoutSetPreserve, this.preserve, bPr));
+	this.preserve = bPr;
 };
 
     let LAYOUT_TYPE_MAP = {};
