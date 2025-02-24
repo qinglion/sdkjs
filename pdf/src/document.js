@@ -5458,9 +5458,10 @@ var CPresentation = CPresentation || function(){};
         this.DoAction(function() {
             let oController = this.GetController();
 
+            let aSelectedObjects = oController.selectedObjects.slice()
             if (!(oController.selection.groupSelection)) {
-                for (let i = oController.selectedObjects.length - 1; i > -1; --i) {
-                    let oShape = oController.selectedObjects[i];
+                for (let i = aSelectedObjects.length - 1; i > -1; --i) {
+                    let oShape = aSelectedObjects[i];
                     let oDrawings = oController.getDrawingObjects(oShape.GetPage());
                     this.ChangeDrawingPosInPageTree(oShape, oDrawings.length - 1);
                 }
@@ -5474,9 +5475,10 @@ var CPresentation = CPresentation || function(){};
         this.DoAction(function() {
             let oController = this.GetController();
             
+            let aSelectedObjects = oController.selectedObjects.slice();
             if (!(oController.selection.groupSelection)) {
-                for (let i = oController.selectedObjects.length - 1; i > -1; --i) {
-                    let oShape = oController.selectedObjects[i];
+                for (let i = aSelectedObjects.length - 1; i > -1; --i) {
+                    let oShape = aSelectedObjects[i];
                     let oDrawings = oController.getDrawingObjects(oShape.GetPage());
                     let nCurPos = oDrawings.indexOf(oShape);
 
@@ -5492,9 +5494,10 @@ var CPresentation = CPresentation || function(){};
         this.DoAction(function() {
             let oController = this.GetController();
             
+            let aSelectedObjects = oController.selectedObjects.slice();
             if (!(oController.selection.groupSelection)) {
-                for (let i = oController.selectedObjects.length - 1; i > -1; --i) {
-                    let oShape = oController.selectedObjects[i];
+                for (let i = aSelectedObjects.length - 1; i > -1; --i) {
+                    let oShape = aSelectedObjects[i];
                     this.ChangeDrawingPosInPageTree(oShape, 0);
                 }
             }
@@ -5507,9 +5510,10 @@ var CPresentation = CPresentation || function(){};
         this.DoAction(function() {
             let oController = this.GetController();
             
+            let aSelectedObjects = oController.selectedObjects.slice();
             if (!(oController.selection.groupSelection)) {
-                for (let i = oController.selectedObjects.length - 1; i > -1; --i) {
-                    let oShape = oController.selectedObjects[i];
+                for (let i = aSelectedObjects.length - 1; i > -1; --i) {
+                    let oShape = aSelectedObjects[i];
                     let oDrawings = oController.getDrawingObjects(oShape.GetPage());
                     let nCurPos = oDrawings.indexOf(oShape);
 
