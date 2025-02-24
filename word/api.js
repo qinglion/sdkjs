@@ -1898,6 +1898,18 @@ background-repeat: no-repeat;\
 		this.CoAuthoringApi.onChangesIndex = function(changesIndex)
 		{
 			let count = AscCommon.CollaborativeEditing.GetAllChangesCount() - changesIndex;
+			if (count < 0)
+			{
+				// This should never happen
+				return;
+			}
+			
+			if (!t.isViewMode && count > 0)
+			{
+				// TODO: This shouldn't happen too with the current behaviour, but it actually can be handled
+				return;
+			}
+			
 			AscCommon.CollaborativeEditing.UndoGlobal(count);
 		};
 		this.CoAuthoringApi.onRecalcLocks            = function(e)
