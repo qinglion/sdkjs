@@ -85,31 +85,31 @@
 			this.isResizeMode = false;
 			this.isResizeModeMove = false;
 
-			// Режим автозаполнения
+			// Autofill mode
 			this.isFillHandleMode = false;
 			this.isMoveRangeMode = false;
 			this.isMoveResizeRange = false;
-			// Режим установки закреплённых областей
+			// Pinned Areas Setup Mode
 			this.frozenAnchorMode = false;
 
-			// Обработчик кликов для граф.объектов
+			// Click handler for graph objects
 			this.clickCounter = new AscFormat.ClickCounter();
 			this.isMousePressed = false;
 			this.isShapeAction = false;
 			this.isUpOnCanvas = false;
 
-			// Был ли DblClick обработан в onMouseDown эвенте
+			// Was DblClick handled in onMouseDown event
 			this.isDblClickInMouseDown = false;
-			// Нужно ли обрабатывать эвент браузера dblClick
+			// Should I handle the browser event dblClick
 			this.isDoBrowserDblClick = false;
-			// Последние координаты, при MouseDown (для IE)
+			// Last coordinates, on MouseDown (for IE)
 			this.mouseDownLastCord = null;
 			//-----------------------
 
 			this.vsbApiLockMouse = false;
 			this.hsbApiLockMouse = false;
 
-			//когда нажали на кнопку свертывания/развертывания группы строк
+			// when you click on the collapse/expand button for a group of rows
 			this.isRowGroup = false;
 
 			this.smoothWheelCorrector = null;
@@ -156,7 +156,7 @@
 			}
 
 			if (this.view.Api.isUseOldMobileVersion()) {
-				/*раньше события на ресайз вызывался из меню через контроллер. теперь контроллер в меню не доступен, для ресайза подписываемся на глобальный ресайз от window.*/
+				/*Previously, resize events were called from the menu via the controller. Now the controller is not available in the menu, for resize we subscribe to the global resize from window.*/
 				window.addEventListener("resize", function () {
 					self._onWindowResize.apply(self, arguments);
 				}, false);
@@ -223,7 +223,7 @@
 				}, false)
 			}
 
-			// Курсор для графических объектов. Определяем mousedown и mouseup для выделения текста.
+			// Cursor for graphic objects. We define mousedown and mouseup for text selection.
 			var oShapeCursor = document.getElementById("id_target_cursor");
 			if (null != oShapeCursor && oShapeCursor.addEventListener) {
 				oShapeCursor.addEventListener(AscCommon.getPtrEvtName("down"), function () {
@@ -337,12 +337,12 @@
 			return true;
 		};
 
-		// Будем делать dblClick как в Excel
+		// We will do dblClick as in Excel
 		asc_CEventsController.prototype.doMouseDblClick = function (event) {
 			var t = this;
 			var ctrlKey = !AscCommon.getAltGr(event) && (event.metaKey || event.ctrlKey);
 
-			// Для формулы не нужно выходить из редактирования ячейки
+			// The formula does not require exiting cell editing
 			if (this.getFormulaEditMode() || this.getSelectionDialogMode()) {
 				return true;
 			}
@@ -376,7 +376,7 @@
 			setTimeout(function () {
 				var coord = t._getCoordinates(event);
 				t.handlers.trigger("mouseDblClick", coord.x, coord.y, event, function () {
-					// Мы изменяли размеры колонки/строки, не редактируем ячейку. Обновим состояние курсора
+					// We resized the column/row, not edited the cell. Update the cursor state
 					t.handlers.trigger("updateWorksheet", coord.x, coord.y, ctrlKey,
 						function (info) {
 							t.targetInfo = info;
@@ -387,7 +387,7 @@
 			return true;
 		};
 
-		// Будем показывать курсор у редактора ячейки (только для dblClick)
+		// We will show the cursor near the cell editor (only for dblClick)
 		asc_CEventsController.prototype.showCellEditorCursor = function () {
 			if (this.getCellEditMode()) {
 				if (this.isDoBrowserDblClick) {
@@ -675,7 +675,7 @@
 		};
 
 		/**
-		 * Окончание выделения
+		 * End of selection
 		 * @param event {MouseEvent}
 		 */
 		asc_CEventsController.prototype._changeSelectionDone = function (event) {
@@ -707,7 +707,7 @@
 		 */
 		asc_CEventsController.prototype._changeFillHandle = function (event, callback, tableIndex) {
 			var t = this;
-			// Обновляемся в режиме автозаполнения
+			// Update in autofill mode
 			var coord = this._getCoordinates(event);
 			this.handlers.trigger("changeFillHandle", coord.x, coord.y,
 				function (d) {
@@ -741,7 +741,7 @@
 
 		/** @param event {MouseEvent} */
 		asc_CEventsController.prototype._changeFillHandleDone = function (event) {
-			// Закончили автозаполнение, пересчитаем
+			// We've finished autofilling, let's recalculate
 			var coord = this._getCoordinates(event);
 			var ctrlKey = !AscCommon.getAltGr(event) && (event.metaKey || event.ctrlKey);
 			this.handlers.trigger("changeFillHandleDone", coord.x, coord.y, ctrlKey);
@@ -753,7 +753,7 @@
 		 */
 		asc_CEventsController.prototype._moveRangeHandle = function (event, callback, colRowMoveProps) {
 			var t = this;
-			// Обновляемся в режиме перемещения диапазона
+			// Updating in range moving mode
 			var coord = this._getCoordinates(event);
 			this.handlers.trigger("moveRangeHandle", coord.x, coord.y,
 				function (d) {
@@ -778,7 +778,7 @@
 		 * @param target
 		 */
 		asc_CEventsController.prototype._moveFrozenAnchorHandleDone = function (event, target) {
-			// Закрепляем область
+			// Fixing the area
 			var t = this;
 			var coord = t._getCoordinates(event);
 			t.handlers.trigger("moveFrozenAnchorHandleDone", coord.x, coord.y, target);
@@ -791,7 +791,7 @@
 		 */
 		asc_CEventsController.prototype._moveResizeRangeHandle = function (event, target, callback) {
 			var t = this;
-			// Обновляемся в режиме перемещения диапазона
+			// Updating in range moving mode
 			var coord = this._getCoordinates(event);
 			this.handlers.trigger("moveResizeRangeHandle", coord.x, coord.y, target,
 				function (d) {
@@ -802,7 +802,7 @@
 		};
 
 		asc_CEventsController.prototype._groupRowClick = function (event, target) {
-			// Обновляемся в режиме перемещения диапазона
+			// Updating in range moving mode
 			var coord = this._getCoordinates(event);
 			return this.handlers.trigger("groupRowClick", coord.x, coord.y, target, event.type);
 		};
@@ -815,13 +815,13 @@
 
 		/** @param event {MouseEvent} */
 		asc_CEventsController.prototype._moveRangeHandleDone = function (event) {
-			// Закончили перемещение диапазона, пересчитаем
+			// We've finished moving the range, let's recalculate
 			var ctrlKey = !AscCommon.getAltGr(event) && (event.metaKey || event.ctrlKey);
 			this.handlers.trigger("moveRangeHandleDone", ctrlKey);
 		};
 
 		asc_CEventsController.prototype._moveResizeRangeHandleDone = function (isPageBreakPreview) {
-			// Закончили перемещение диапазона, пересчитаем
+			// We've finished moving the range, let's recalculate
 			this.handlers.trigger("moveResizeRangeHandleDone", isPageBreakPreview);
 		};
 
@@ -864,7 +864,7 @@
 					if (!bCanEdit || this.getCellEditMode() || bSelectionDialogMode) {
 						break;
 					}
-					// При нажатии символа, фокус не ставим. Очищаем содержимое ячейки
+					// When pressing the symbol, we do not set the focus. We clear the contents of the cell
 					const oEnterOptions = new AscCommonExcel.CEditorEnterOptions();
 					oEnterOptions.newText = '';
 					oEnterOptions.quickInput = true;
@@ -951,7 +951,7 @@
 					if (!AscBrowser.isOpera) {
 						oRet.keyResult = keydownresult_PreventNothing;
 					}
-					// При F2 выставляем фокус в редакторе
+					// With F2 we set the focus in the editor
 					const oEnterOptions = new AscCommonExcel.CEditorEnterOptions();
 					oEnterOptions.focus = true;
 					this.handlers.trigger("editCell", oEnterOptions);
@@ -1056,15 +1056,15 @@
 			let nRetValue = keydownresult_PreventKeyPress;
 			const nShortcutAction = oThis.view.Api.getShortcut(oEvent);
 
-			// Для таких браузеров, которые не присылают отжатие левой кнопки мыши для двойного клика, при выходе из
-			// окна редактора и отпускания кнопки, будем отрабатывать выход из окна (только Chrome присылает эвент MouseUp даже при выходе из браузера)
+			// For those browsers that do not send the left mouse button release for double click, when exiting
+			// the editor window and releasing the button, we will handle exiting the window (only Chrome sends the MouseUp event even when exiting the browser)
 			this.showCellEditorCursor();
 
 			if (oThis.getCellEditMode() && !oThis.hasFocus || oThis.isSelectMode ||
 				oThis.isFillHandleMode || oThis.isMoveRangeMode || oThis.isMoveResizeRange) {
-				// Почему-то очень хочется обрабатывать лишние условия в нашем коде, вместо обработки наверху...
+				// For some reason, I really want to process extra conditions in our code, instead of processing them at the top...
 				if (oThis.enableKeyEvents || (nShortcutAction !== Asc.c_oAscSpreadsheetShortcutType.Print)) {
-					// Только если отключены эвенты и нажаты Ctrl+S или Ctrl+P мы их обработаем
+					// Only if events are disabled and Ctrl+S or Ctrl+P is pressed we will process them
 					return nRetValue;
 				}
 			}
@@ -1076,7 +1076,7 @@
 			const bCanEdit = this.canEdit();
 			let nDeltaColumn = 0;
 			let nDeltaRow = 0;
-			// Двигаемся ли мы в выделенной области
+			//Are we moving in the selected area?
 			let bSelectionActivePointChanged = false;
 			let bIsNeedCheckActiveCellChanged = null;
 			let oActiveCell;
@@ -1101,7 +1101,7 @@
 						}
 						nRetValue = keydownresult_PreventAll;
 
-						// При backspace фокус не в редакторе (стираем содержимое)
+						// When backspace is pressed, the focus is not in the editor (we erase the contents)
 						const oEnterOptions = new AscCommonExcel.CEditorEnterOptions();
 						oEnterOptions.newText = '';
 						oThis.handlers.trigger("editCell", oEnterOptions);
@@ -1111,7 +1111,7 @@
 						if (!bCanEdit || this.getCellEditMode() || bSelectionDialogMode || bIsSelect) {
 							break;
 						}
-						// Удаляем содержимое
+						// Delete the contents
 						this.handlers.trigger("empty");
 						break;
 
@@ -1119,14 +1119,14 @@
 						if (oThis.getCellEditMode() || bSelectionDialogMode) {
 							break;
 						}
-						// Отключим стандартную обработку браузера нажатия tab
+						// Disable the browser's standard handling of tab pressing
 						nRetValue = keydownresult_PreventAll;
 
-						// Особый случай (возможно движение в выделенной области)
+						// Special case (movement in the selected area is possible)
 						bSelectionActivePointChanged = true;
 						if (bIsSelect) {
-							nDeltaColumn = -1;			// (shift + tab) - движение по ячейкам влево на 1 столбец
-							bIsSelect = false;	// Сбросим shift, потому что мы не выделяем
+							nDeltaColumn = -1;			// (shift + tab) - move cells to the left by 1 column
+							bIsSelect = false;	// Let's drop shift because we're not selecting
 						} else {
 							oActiveCell = oThis.handlers.trigger("getActiveCell");
 							if (oThis.lastTab === null) {
@@ -1136,7 +1136,7 @@
 							} else if (!oActiveCell) {
 								oThis.lastTab = null;
 							}
-							nDeltaColumn = +1;			// (tab) - движение по ячейкам вправо на 1 столбец
+							nDeltaColumn = +1;			// (tab) - move cells to the right by 1 column
 						}
 						break;
 
@@ -1152,11 +1152,11 @@
 							oThis.handlers.trigger("editCell", oEnterOptions);
 							break;
 						}
-						// Особый случай (возможно движение в выделенной области)
+						// Special case (movement in the selected area is possible)
 						bSelectionActivePointChanged = true;
 						if (bIsSelect) {
-							nDeltaRow = -1;			// (shift + enter) - движение по ячейкам наверх на 1 строку
-							bIsSelect = false;	// Сбросим shift, потому что мы не выделяем
+							nDeltaRow = -1;			// (shift + enter) - move up cells by 1 row
+							bIsSelect = false;	// Let's drop shift because we're not selecting
 							oThis.lastTab = null;
 						} else {
 							if (oThis.lastTab !== null) {
@@ -1167,7 +1167,7 @@
 									oThis.lastTab = null;
 								}
 							}
-							nDeltaRow = +1;			// (enter) - движение по ячейкам вниз на 1 строку
+							nDeltaRow = +1;			// (enter) - move down cells by 1 row
 						}
 						break;
 
@@ -1195,7 +1195,7 @@
 						if (bIsSelectColumns && bIsSelect && bIsMacOs) {
 							break;
 						}
-						// Отключим стандартную обработку браузера нажатия
+						// Disable the browser's standard click handling
 						// Ctrl+Shift+Spacebar, Ctrl+Spacebar, Shift+Spacebar
 						if (bIsSelectColumns) {
 							oThis.handlers.trigger("selectColumnsByRange");
@@ -1219,29 +1219,29 @@
 						break;
 
 					case 37: // left
-						nDeltaColumn = oEvent.CtrlKey ? -1.5 : -1;  // Движение стрелками (влево-вправо, вверх-вниз)
+						nDeltaColumn = oEvent.CtrlKey ? -1.5 : -1;  // Movement with arrows (left-right, up-down)
 						bIsNeedCheckActiveCellChanged = true;
-						nRetValue = keydownresult_PreventAll;                          // Отключим стандартную обработку браузера нажатия left
+						nRetValue = keydownresult_PreventAll;                          // Disable the browser's standard handling of pressing left
 						break;
 
 					case 38: // up
 						if (bCanEdit && !oThis.getCellEditMode() && !bSelectionDialogMode && oEvent.IsAlt() && oThis.handlers.trigger("onDataValidation")) {
 							break;
 						}
-						nDeltaRow = oEvent.CtrlKey ? -1.5 : -1;  // Движение стрелками (влево-вправо, вверх-вниз)
+						nDeltaRow = oEvent.CtrlKey ? -1.5 : -1;  // Movement with arrows (left-right, up-down)
 						bIsNeedCheckActiveCellChanged = true;
-						nRetValue = keydownresult_PreventAll;                           // Отключим стандартную обработку браузера нажатия up
+						nRetValue = keydownresult_PreventAll;                           // Disable the browser's standard handling of pressing up
 						break;
 
 					case 39: // right
-						nDeltaColumn = oEvent.CtrlKey ? +1.5 : +1;  // Движение стрелками (влево-вправо, вверх-вниз)
+						nDeltaColumn = oEvent.CtrlKey ? +1.5 : +1;  // Movement with arrows (left-right, up-down)
 						bIsNeedCheckActiveCellChanged = true;
-						nRetValue = keydownresult_PreventAll;                           // Отключим стандартную обработку браузера нажатия right
+						nRetValue = keydownresult_PreventAll;                           // Disable the browser's standard handling of pressing right
 						break;
 
 					case 40: // down
-						nRetValue = keydownresult_PreventAll;                           // Отключим стандартную обработку браузера нажатия down
-						// Обработка Alt + down
+						nRetValue = keydownresult_PreventAll;                           // Disable the browser's standard handling of pressing down
+						// Alt + down processing
 						if (bCanEdit && !oThis.getCellEditMode() && !bSelectionDialogMode && oEvent.IsAlt()) {
 							if (oThis.handlers.trigger("onShowFilterOptionsActiveCell")) {
 								break;
@@ -1252,12 +1252,12 @@
 							oThis.handlers.trigger("showAutoComplete");
 							break;
 						}
-						nDeltaRow = oEvent.CtrlKey ? +1.5 : +1;  // Движение стрелками (влево-вправо, вверх-вниз)
+						nDeltaRow = oEvent.CtrlKey ? +1.5 : +1;  // Movement with arrows (left-right, up-down)
 						bIsNeedCheckActiveCellChanged = true;
 						break;
 
 					case 36: // home
-						nRetValue = keydownresult_PreventAll;                           // Отключим стандартную обработку браузера нажатия home
+						nRetValue = keydownresult_PreventAll;                           // Disable the browser's standard handling of pressing home
 						if (bIsFormulaEditMode) {
 							break;
 						}
@@ -1269,7 +1269,7 @@
 						break;
 
 					case 35: // end
-						nRetValue = keydownresult_PreventAll;                           // Отключим стандартную обработку браузера нажатия end
+						nRetValue = keydownresult_PreventAll;                           // Disable the browser's standard handling of pressing end
 						if (bIsFormulaEditMode) {
 							break;
 						}
@@ -1321,7 +1321,7 @@
 						oOleSize.addPointToLocalHistory();
 						CheckLastTab();
 					}, true);
-				} else if (bSelectionActivePointChanged) { // Проверка на движение в выделенной области
+				} else if (bSelectionActivePointChanged) { // Check for movement in a selected area
 					oThis.handlers.trigger("selectionActivePointChanged", nDeltaColumn, nDeltaRow, function (d) {
 						oThis.scroll(d);
 						CheckLastTab();
@@ -1348,23 +1348,23 @@
 
 		/** @param event {AscCommon.CKeyboardEvent} */
 		asc_CEventsController.prototype._onWindowKeyPress = function (event) {
-			// Нельзя при отключенных эвентах возвращать false (это касается и ViewerMode)
+			// It is not allowed to return false when events are disabled (this also applies to ViewerMode)
 			if (!this.enableKeyEvents) {
 				return true;
 			}
 
-			// не вводим текст в режиме просмотра
-			// если в FF возвращать false, то отменяется дальнейшая обработка серии keydown -> keypress -> keyup
-			// и тогда у нас не будут обрабатываться ctrl+c и т.п. события
+			// do not enter text in view mode
+			// if false is returned in FF, then further processing of the keydown -> keypress -> keyup series is cancelled
+			// and then we will not process ctrl+c and similar events
 			if (!this.canEdit() || this.getSelectionDialogMode() || this.view.Api.isEditVisibleAreaOleEditor) {
 				return true;
 			}
 
-			// Для таких браузеров, которые не присылают отжатие левой кнопки мыши для двойного клика, при выходе из
-			// окна редактора и отпускания кнопки, будем отрабатывать выход из окна (только Chrome присылает эвент MouseUp даже при выходе из браузера)
+			// For those browsers that do not send the left mouse button release for double click, when exiting the editor
+			// window and releasing the button, we will handle exiting the window (only Chrome sends the MouseUp event even when exiting the browser)
 			this.showCellEditorCursor();
 
-			// Не можем вводить когда селектим или когда совершаем действия с объектом
+			// Cannot enter when selecting or when performing actions on an object
 			if (this.getCellEditMode() && !this.hasFocus || this.isSelectMode ||
 				!this.handlers.trigger('canReceiveKeyPress')) {
 				return true;
@@ -1380,7 +1380,7 @@
 					return true;
 				}
 
-				// При нажатии символа, фокус не ставим и очищаем содержимое ячейки
+				// When a symbol is pressed, we do not set the focus and clear the contents of the cell
 				var enterOptions = new AscCommonExcel.CEditorEnterOptions();
 				enterOptions.newText = '';
 				enterOptions.quickInput = true;
@@ -1390,24 +1390,24 @@
 		};
 
 		asc_CEventsController.prototype.EnterText = function (codePoints) {
-			//TODO практически копия _onWindowKeyPress - после того, как будет включена функция EnterText - проверить и объединить функции
-			// Нельзя при отключенных эвентах возвращать false (это касается и ViewerMode)
+			//TODO is almost a copy of _onWindowKeyPress - after the EnterText function is enabled - check and merge the functions
+			// It is impossible to return false when events are disabled (this also applies to ViewerMode)
 			if (!this.enableKeyEvents) {
 				return true;
 			}
 
-			// не вводим текст в режиме просмотра
-			// если в FF возвращать false, то отменяется дальнейшая обработка серии keydown -> keypress -> keyup
-			// и тогда у нас не будут обрабатываться ctrl+c и т.п. события
+			// do not enter text in view mode
+			// if false is returned in FF, then further processing of the keydown -> keypress -> keyup series is cancelled
+			// and then we will not process ctrl+c and similar events
 			if (!this.canEdit() || this.getSelectionDialogMode() || this.view.Api.isEditVisibleAreaOleEditor) {
 				return true;
 			}
 
-			// Для таких браузеров, которые не присылают отжатие левой кнопки мыши для двойного клика, при выходе из
-			// окна редактора и отпускания кнопки, будем отрабатывать выход из окна (только Chrome присылает эвент MouseUp даже при выходе из браузера)
+			// For those browsers that do not send the left mouse button release for double click, when exiting the editor window and releasing the button,
+			// we will handle exiting the window (only Chrome sends the MouseUp event even when exiting the browser)
 			this.showCellEditorCursor();
 
-			// Не можем вводить когда селектим или когда совершаем действия с объектом
+			// Cannot enter when selecting or when performing actions on an object
 			if (this.getCellEditMode() && !this.hasFocus || this.isSelectMode ||
 				!this.handlers.trigger('canReceiveKeyPress')) {
 				return true;
@@ -1423,7 +1423,7 @@
 					return true;
 				}
 
-				// При нажатии символа, фокус не ставим и очищаем содержимое ячейки
+				// When a symbol is pressed, we do not set the focus and clear the contents of the cell
 				var enterOptions = new AscCommonExcel.CEditorEnterOptions();
 				enterOptions.newText = '';
 				enterOptions.quickInput = true;
@@ -1434,7 +1434,7 @@
 
 		/** @param event {AscCommon.CKeyboardEvent} */
 		asc_CEventsController.prototype._onWindowKeyUp = function (event) {
-			// При отпускании shift нужно переслать информацию о выделении
+			// When you release shift, you need to send the selection information
 			if (16 === event.KeyCode) {
 				this.handlers.trigger("updateSelectionName");
 			}
@@ -1462,7 +1462,7 @@
 			else if (this.vsbApiLockMouse)
 				this.vsbApi.mouseDown ? this.vsbApi.evt_mousemove.call(this.vsbApi, event) : false;
 
-			// Режим установки закреплённых областей
+			// Pinned Areas Setup Mode
 			if (this.frozenAnchorMode) {
 				this._moveFrozenAnchorHandle(event, this.frozenAnchorMode);
 				return true;
@@ -1526,9 +1526,9 @@
 				this._resizeElementDone(event);
 			}
 
-			// Режим автозаполнения
+			// Autofill mode
 			if (this.isFillHandleMode) {
-				// Закончили автозаполнение
+				// Finished autofilling
 				this.isFillHandleMode = false;
 				if (2 === button && this.handlers.trigger('isRightClickFill')) {
 					this.handlers.trigger('onContextMenu', event, Asc.c_oAscContextMenuTypes.changeSeries);
@@ -1537,9 +1537,9 @@
 				}
 			}
 
-			// Режим перемещения диапазона
+			// Range Shift Mode
 			if (this.isMoveRangeMode) {
-				// Закончили перемещение диапазона
+				// Finished moving the range
 				this.isMoveRangeMode = false;
 				this._moveRangeHandleDone(event);
 			}
@@ -1548,13 +1548,13 @@
 				this.isMoveResizeRange = false;
 				this._moveResizeRangeHandleDone(this.targetInfo && this.targetInfo.isPageBreakPreview);
 			}
-			// Режим установки закреплённых областей
+			// Pinned Areas Setup Mode
 			if (this.frozenAnchorMode) {
 				this._moveFrozenAnchorHandleDone(event, this.frozenAnchorMode);
 				this.frozenAnchorMode = false;
 			}
 
-			// Мы можем dblClick и не отработать, если вышли из области и отпустили кнопку мыши, нужно отработать
+			// We may not work on dblClick if we left the area and released the mouse button, we need to work on it
 			this.showCellEditorCursor();
 
 
@@ -1568,7 +1568,7 @@
 		 * @param y
 		 */
 		asc_CEventsController.prototype._onWindowMouseUpExternal = function (event, x, y) {
-			// ToDo стоит переделать на нормальную схему, пока пропишем прямо в эвенте
+			// ToDo should be reworked into a normal scheme, for now we will write it directly in the event
 			if (null != x && null != y)
 				event.coord = {x: x, y: y};
 			this._onWindowMouseUp(event);
@@ -1579,19 +1579,19 @@
 
 		/** @param event {MouseEvent} */
 		asc_CEventsController.prototype._onWindowMouseLeaveOut = function (event) {
-			// Когда обрабатывать нечего - выходим
+			// When there is nothing to process, we leave.
 			if (!this.isDoBrowserDblClick)
 				return true;
 
 			var relatedTarget = event.relatedTarget || event.fromElement;
-			// Если мы двигаемся по редактору ячейки, то ничего не снимаем
+			// If we move along the cell editor, we don’t remove anything.
 			if (relatedTarget && ("ce-canvas-outer" === relatedTarget.id ||
 				"ce-canvas" === relatedTarget.id || "ce-canvas-overlay" === relatedTarget.id ||
 				"ce-cursor" === relatedTarget.id || "ws-canvas-overlay" === relatedTarget.id))
 				return true;
 
-			// Для таких браузеров, которые не присылают отжатие левой кнопки мыши для двойного клика, при выходе из
-			// окна редактора и отпускания кнопки, будем отрабатывать выход из окна (только Chrome присылает эвент MouseUp даже при выходе из браузера)
+			// For those browsers that do not send the left mouse button release for double click, when exiting the editor window
+			// and releasing the button, we will handle exiting the window (only Chrome sends the MouseUp event even when exiting the browser)
 			this.showCellEditorCursor();
 			return true;
 		};
@@ -1687,23 +1687,23 @@
 
 
 			if (2 === event.detail) {
-				// Это означает, что это MouseDown для dblClick эвента (его обрабатывать не нужно)
-				// Порядок эвентов для dblClick - http://javascript.ru/tutorial/events/mouse#dvoynoy-levyy-klik
+				// This means that it is MouseDown for dblClick event (it does not need to be processed)
+				// The order of events for dblClick is http://javascript.ru/tutorial/events/mouse#dvoynoy-levyy-klik
 
-				// Проверка для IE, т.к. он присылает DblClick при сдвиге мыши...
+				// Check for IE, because it sends DblClick when the mouse moves...
 				if (this.mouseDownLastCord && coord.x === this.mouseDownLastCord.x && coord.y === this.mouseDownLastCord.y &&
 					0 === button && !this.handlers.trigger('isFormatPainter')) {
-					// Выставляем, что мы уже сделали dblClick (иначе вдруг браузер не поддерживает свойство detail)
+					// We show that we have already done dblClick (otherwise the browser suddenly does not support the detail property)
 					this.isDblClickInMouseDown = true;
-					// Нам нужно обработать эвент браузера о dblClick (если мы редактируем ячейку, то покажем курсор, если нет - то просто ничего не произойдет)
+					// We need to handle the browser event about dblClick (if we edit a cell, then we will show the cursor, if not, then nothing will happen)
 					this.isDoBrowserDblClick = true;
 					this.doMouseDblClick(event);
-					// Обнуляем координаты
+					// We reset the coordinates
 					this.mouseDownLastCord = null;
 					return;
 				}
 			}
-			// Для IE preventDefault делать не нужно
+			// For IE preventDefault is not necessary
 			if (!(AscBrowser.isIE || AscBrowser.isOpera)) {
 				if (event.preventDefault) {
 					event.preventDefault();
@@ -1712,7 +1712,7 @@
 				}
 			}
 
-			// Запоминаем координаты нажатия
+			// Remember the coordinates of the click
 			this.mouseDownLastCord = coord;
 
 			if (!t.getCellEditMode() && !t.getSelectionDialogMode()) {
@@ -1729,12 +1729,12 @@
 						t._resizeElement(event);
 						return;
 					} else if (t.targetInfo.target === c_oTargetType.FillHandle && this.canEdit()) {
-						// В режиме автозаполнения
+						// In autofill mode
 						this.isFillHandleMode = true;
 						t._changeFillHandle(event, null, t.targetInfo.tableIndex);
 						return;
 					} else if (t.targetInfo.target === c_oTargetType.MoveRange && this.canEdit()) {
-						// В режиме перемещения диапазона
+						// In range moving mode
 						this.isMoveRangeMode = true;
 						t._moveRangeHandle(event);
 						return;
@@ -1763,7 +1763,7 @@
 						return;
 					} else if ((t.targetInfo.target === c_oTargetType.FrozenAnchorV ||
 						t.targetInfo.target === c_oTargetType.FrozenAnchorH) && this.canEdit()) {
-						// Режим установки закреплённых областей
+						// Pinned Areas Setup Mode
 						this.frozenAnchorMode = t.targetInfo.target;
 						t._moveFrozenAnchorHandle(event, this.frozenAnchorMode);
 						return;
@@ -1816,13 +1816,13 @@
 				}
 			}
 
-			// Если нажали правую кнопку мыши, то сменим выделение только если мы не в выделенной области
+			// If you press the right mouse button, then we will change the selection only if we are not in the selected area
 			if (2 === button) {
 				this.handlers.trigger("changeSelectionRightClick", coord.x, coord.y, this.targetInfo && this.targetInfo.target);
 				this.handlers.trigger('onContextMenu', event);
 			} else {
 				if (this.targetInfo && this.targetInfo.target === c_oTargetType.FillHandle && this.canEdit()) {
-					// В режиме автозаполнения
+					// In autofill mode
 					this.isFillHandleMode = true;
 					this._changeFillHandle(event, null, t.targetInfo.tableIndex);
 				} else {
@@ -1904,13 +1904,13 @@
 				this.isResizeMode = false;
 				this._resizeElementDone(event);
 			}
-			// Режим автозаполнения
+			// Autofill mode
 			if (this.isFillHandleMode) {
-				// Закончили автозаполнение
+				// Finished autofilling
 				this.isFillHandleMode = false;
 				this._changeFillHandleDone(event);
 			}
-			// Режим перемещения диапазона
+			// Range Shift Mode
 			if (this.isMoveRangeMode) {
 				this.isMoveRangeMode = false;
 				this._moveRangeHandleDone(event);
@@ -1921,7 +1921,7 @@
 				this._moveResizeRangeHandleDone(this.targetInfo && this.targetInfo.pageBreakSelectionType);
 				return true;
 			}
-			// Режим установки закреплённых областей
+			// Pinned Areas Setup Mode
 			if (this.frozenAnchorMode) {
 				this._moveFrozenAnchorHandleDone(event, this.frozenAnchorMode);
 				this.frozenAnchorMode = false;
@@ -1937,7 +1937,7 @@
 				this._onMouseMove(event);
 			}
 
-			// Мы можем dblClick и не отработать, если вышли из области и отпустили кнопку мыши, нужно отработать
+			// We may not work on dblClick if we left the area and released the mouse button, we need to work on it
 			this.showCellEditorCursor();
 		};
 
@@ -1986,13 +1986,13 @@
 				return true;
 			}
 
-			// Режим автозаполнения
+			// Autofill mode
 			if (t.isFillHandleMode) {
 				t._changeFillHandle(event);
 				return true;
 			}
 
-			// Режим перемещения диапазона
+			// Range Shift Mode
 			if (t.isMoveRangeMode) {
 				t._moveRangeHandle(event);
 				return true;
@@ -2003,7 +2003,7 @@
 				return true;
 			}
 
-			// Режим установки закреплённых областей
+			// Pinned Areas Setup Mode
 			if (t.frozenAnchorMode) {
 				t._moveFrozenAnchorHandle(event, this.frozenAnchorMode);
 				return true;
@@ -2098,8 +2098,8 @@
 					deltaY = event.detail;
 				} else if (undefined !== event.deltaY && 0 !== event.deltaY) {
 					// FF
-					//ограничиваем шаг из-за некорректного значения deltaY после обновления FF
-					//TODO необходимо пересмотреть. нужны корректные значения и учетом системного шага.
+					//limiting step due to incorrect deltaY value after FF update
+					//TODO needs to be revised. correct values ​​are needed and taking into account the system step.
 					var _maxDelta = 3;
 					if (AscCommon.AscBrowser.isMozilla && Math.abs(event.deltaY) > _maxDelta) {
 						deltaY = Math.sign(event.deltaY) * _maxDelta;
@@ -2175,21 +2175,21 @@
 				return false;
 			}
 
-			// Браузер не поддерживает свойство detail (будем делать по координатам)
+			// The browser does not support the detail property (we will do it by coordinates)
 			if (false === this.isDblClickInMouseDown) {
 				return this.doMouseDblClick(event);
 			}
 
 			this.isDblClickInMouseDown = false;
 
-			// Нужно отработать показ курсора, если dblClick был обработан в MouseDown
+			// Need to handle cursor display if dblClick was handled in MouseDown
 			this.showCellEditorCursor();
 			return true;
 		};
 
 		/** @param event */
 		asc_CEventsController.prototype._getCoordinates = function (event) {
-			// ToDo стоит переделать
+			// ToDo needs to be redone
 			if (event.coord) {
 				return event.coord;
 			}

@@ -149,9 +149,9 @@ function (window, undefined) {
 		this.loadFonts = false;
 		this.isOpened = false;
 		this.callTopLineMouseup = false;
-		this.m_nEditorState = c_oAscCellEditorState.editEnd; // Состояние редактора
+		this.m_nEditorState = c_oAscCellEditorState.editEnd; // Editor's status
 
-		// Функции, которые будем отключать
+		// Features that we will disable
 		this.fKeyMouseUp = null;
 		this.fKeyMouseMove = null;
 		//-----------------
@@ -179,7 +179,7 @@ function (window, undefined) {
 		this.lastRangePos = null;
 		this.lastRangeLength = null;
 
-		// Обработчик кликов
+		// Click handler
 		this.clickCounter = new AscFormat.ClickCounter();
 
 		//temporary - for safari rendering. remove after fixed
@@ -280,7 +280,7 @@ function (window, undefined) {
 			}, false);
 			t.eventListeners.push(eventInfo);
 
-			// Не поддерживаем drop на верхнюю строку
+			// We do not support drop to the top line
 			eventInfo = new AscCommon.CEventListenerInfo(t.input, "drop", function (e) {
 				e.preventDefault();
 				return false;
@@ -356,10 +356,10 @@ function (window, undefined) {
 		}
 
 		/*
-		 * Выставляем фокус при открытии
-		 * При нажатии символа, фокус не ставим
-		 * При F2 выставляем фокус в редакторе
-		 * При dbl клике фокус выставляем в зависимости от наличия текста в ячейке
+			* Set focus when opening
+			* When clicking a symbol, do not set focus
+			* When F2 sets focus in the editor
+			* When dbl clicking, set focus depending on the presence of text in the cell
 		 */
 		this.setFocus(this.isTopLineActive ? true : (null === options.enterOptions.focus) ? this._haveTextInEdit() : options.enterOptions.focus);
 		this._updateUndoRedoChanged();
@@ -408,7 +408,7 @@ function (window, undefined) {
 			// delete autoComplete
 			t.objAutoComplete.clear();
 
-			// Сброс состояния редактора
+			// Reset editor state
 			t._setEditorState(c_oAscCellEditorState.editEnd);
 			t.handlers.trigger("closed");
 			t.closeAction();
@@ -425,10 +425,10 @@ function (window, undefined) {
 		}
 
 		if (saveValue) {
-			// Пересчет делаем всегда для не пустой ячейки или если были изменения. http://bugzilla.onlyoffice.com/show_bug.cgi?id=34864
+			// We always recalculate for a non-empty cell or if there were changes. http://bugzilla.onlyoffice.com/show_bug.cgi?id=34864
 			if (0 < this.undoList.length || 0 < AscCommonExcel.getFragmentsCharCodesLength(this.options.fragments)) {
 				var isFormula = this.isFormula();
-				// Делаем замену текста на автодополнение, если есть select и текст полностью совпал.
+				// We replace the text with auto-completion if there is a select and the text matches completely.
 				if (this.sAutoComplete && !isFormula) {
 					this.selectionBegin = this.textRender.getBeginOfText();
 					this.cursorPos = this.selectionEnd = this.textRender.getEndOfText();
@@ -465,7 +465,7 @@ function (window, undefined) {
 		// delete autoComplete
 		this.objAutoComplete.clear();
 
-		// Сброс состояния редактора
+		// Reset editor state
 		this._setEditorState(c_oAscCellEditorState.editEnd);
 		this.handlers.trigger("closed");
 		t.closeAction();
@@ -512,7 +512,7 @@ function (window, undefined) {
 			if (first && last) {
 				for (i = first.index; i <= last.index; ++i) {
 					var valTmp = t._setFormatProperty(opt.fragments[i].format, prop, val);
-					// Только для горячих клавиш
+					// For hotkeys only
 					if (null === val) {
 						val = valTmp;
 					}
@@ -521,7 +521,7 @@ function (window, undefined) {
 				t._mergeFragments();
 				t._update();
 
-				// Обновляем выделение
+				// Refreshing the selection
 				t._cleanSelection();
 				t._drawSelection();
 
@@ -584,7 +584,7 @@ function (window, undefined) {
 			}
 
 			this._update();
-			// Обновляем выделение
+			// Refreshing the selection
 			this._cleanSelection();
 			this._drawSelection();
 		}
@@ -592,12 +592,12 @@ function (window, undefined) {
 	};
 
 	CellEditor.prototype.empty = function (options) {
-		// Чистка для редактирования только All
+		// Clean for editing only All
 		if (Asc.c_oAscCleanOptions.All !== options) {
 			return;
 		}
 
-		// Удаляем только selection
+		// We delete only the selection
 		this._removeChars();
 	};
 
@@ -843,7 +843,7 @@ function (window, undefined) {
 		this.noUpdateMode = noUpdateMode;
 		this._addFragments(fragments, this.cursorPos);
 
-		// Сделано только для вставки формулы в ячейку (когда не открыт редактор)
+		// Made only for inserting a formula into a cell (when the editor is not open)
 		if (undefined !== cursorPos) {
 			this._moveCursor(kPosition, cursorPos);
 		}
@@ -941,7 +941,7 @@ function (window, undefined) {
 	};
 
 	CellEditor.prototype._parseFormulaRanges = function () {
-		//получаю строку без двухбайтовых символов
+		//I get a string without double-byte characters
 		var s = this.options.fragments.reduce(function (pv, cv) {
 			return pv + AscCommonExcel.convertUnicodeToSimpleString(cv.getCharCodes());
 		}, "");
@@ -1165,7 +1165,7 @@ function (window, undefined) {
 		this.lastRangePos = null;
 	};
 
-	// Обновляем состояние Undo/Redo
+	// Update Undo/Redo state
 	CellEditor.prototype._updateUndoRedoChanged = function () {
 		this.handlers.trigger("updateUndoRedoChanged", 0 < this.undoList.length, 0 < this.redoList.length);
 	};
@@ -1252,7 +1252,7 @@ function (window, undefined) {
 			this._calculateCanvasSize();
 		}
 
-		// вызов нужен для обновление текста верхней строки, перед обновлением позиции курсора
+		// the call is needed to update the text of the top line, before updating the cursor position
 		this.textRender.initStartX(0, this.textRender.lines[0], this._getContentLeft(), this._getContentWidth(), true);
 		if (!this.getMenuEditorMode()) {
 			this._fireUpdated();
@@ -1268,7 +1268,7 @@ function (window, undefined) {
 	};
 
 	CellEditor.prototype._fireUpdated = function () {
-		//TODO оставляю текст!
+		//TODO I save the text!
 		var s = AscCommonExcel.getFragmentsText(this.options.fragments);
 		var isFormula = -1 === this.beginCompositePos && s.charAt(0) === "=";
 		var api = window["Asc"]["editor"];
@@ -1278,9 +1278,9 @@ function (window, undefined) {
 			this.input.value = s;
 		}
 
-		//получаю строку без двухбайтовых символов и её отдаю регулярке
-		//позиции всех функций должны совпадать
-		//остаётся вопрос с аргументами, которые могут содержать двухбайтовые символы
+		//get a string without double-byte characters and pass it to the regular expression
+		//positions of all functions must match
+		//the question remains with arguments that can contain double-byte characters
 		s = this.options.fragments ? this.options.fragments.reduce(function (pv, cv) {
 			return pv + AscCommonExcel.convertUnicodeToSimpleString(cv.getCharCodes());
 		}, "") : "";
@@ -1317,11 +1317,11 @@ function (window, undefined) {
 	};
 
 	CellEditor.prototype._getEditableFunction = function (parseResult, bEndCurPos) {
-		//TODO оставляю текст!
+		//TODO I save the text!
 		var findOpenFunc = [], editableFunction = null, level = -1;
 		if (!parseResult) {
-			//в этом случае запускаю парсинг формулы до текущей позиции
-			//получаю строку без двухбайтовых символов
+			//in this case, I start parsing the formula up to the current position
+			//I get a string without double-byte characters
 			var s = this.options.fragments.reduce(function (pv, cv) {
 				return pv + AscCommonExcel.convertUnicodeToSimpleString(cv.getCharCodes());
 			}, "");
@@ -1501,13 +1501,13 @@ function (window, undefined) {
 		widthStyle = AscCommon.AscBrowser.convertToRetinaValue(widthStyle);
 		heightStyle = AscCommon.AscBrowser.convertToRetinaValue(heightStyle);
 
-		// в сафари с включенным аппаратным ускорением баг при вводе текста.
-		// видимо они кешируют по особенному текстуры, которые размером (w*h<5000)
-		// формула точная. ни пикселом меньше. больше - можно сколько угодно.
-		// нужно проверять каждое обновление сафари - и как поправят - убрать эту заглушку
-		// canvas'ы прозрачные и их увеличенный размер не влияет на результат.
+		// in safari with hardware acceleration enabled, there is a bug when entering text.
+		// apparently they cache textures in a special way that are (w*h<5000) in size
+		// the formula is accurate. not a pixel less. more - you can have as much as you like.
+		// you need to check every safari update - and when they fix it - remove this stub
+		// canvases are transparent and their increased size does not affect the result.
 		//
-		// в новой версии сафари увеличиваем не только canvas'ы, но и дивку тоже.
+		// in the new version of safari, we increase not only the canvases, but also the div.
 		if (AscCommon.AscBrowser.isSafariMacOs) {
 			if ((widthStyle * heightStyle) < 5000) {
 				this._originalCanvasWidth = width;
@@ -1530,8 +1530,8 @@ function (window, undefined) {
 	};
 
 	CellEditor.prototype._calculateCanvasSize = function () {
-		//этот код вызывается после showCanvas, потому что внутри calculateCanvasSize использууется getBoundingClientRect
-		//если у канвы будет display = 'none', то размеры будут возвращаться нулевые
+		//this code is called after showCanvas because inside calculateCanvasSize getBoundingClientRect is used
+		//if canvas has display = 'none' then the sizes will be returned as zero
 		if (this.canvas) {
 			AscCommon.calculateCanvasSize(this.canvas);
 		}
@@ -1680,7 +1680,7 @@ function (window, undefined) {
 	};
 
 	CellEditor.prototype._updateCursorPosition = function (redrawText, isExpand, lineIndex) {
-		// ToDo стоит переправить данную функцию
+		// ToDo should forward this function
 		let h = this.canvas.height;
 		let y = -this.textRender.calcLineOffset(this.topLineIndex);
 		let cur = this.textRender.calcCharOffset(this.cursorPos, lineIndex);
@@ -1841,8 +1841,8 @@ function (window, undefined) {
 
 	CellEditor.prototype._topLineMouseUp = function () {
 		this.callTopLineMouseup = false;
-		// при такой комбинации ctrl+a, click, ctrl+a, click не обновляется selectionStart
-		// поэтому выполняем обработку после обработчика системы
+		// with this combination ctrl+a, click, ctrl+a, click selectionStart is not updated
+		// therefore we perform processing after the system handler
 		this._delayedUpdateCursorByTopLine();
 	};
 	CellEditor.prototype._delayedUpdateCursorByTopLine = function () {
@@ -1868,7 +1868,7 @@ function (window, undefined) {
 				this._selectChars(kPosition, e);
 			}
 
-			//onSelectionEnd - используется в плагинах. нужен он для отслеживания смены селекта.
+			//onSelectionEnd - used in plugins. It is needed to track the change of select.
 			if (!this.isSelectMode) {
 				this.handlers.trigger("onSelectionEnd");
 			}
@@ -2137,7 +2137,7 @@ function (window, undefined) {
 		var t = this;
 
 		function doChangeSelection(coordTmp) {
-			// ToDo реализовать для слова.
+			// ToDo implement for the word.
 			if (c_oAscCellEditorSelectState.word === t.isSelectMode) {
 				return;
 			}
@@ -2445,7 +2445,7 @@ function (window, undefined) {
 	CellEditor.prototype._tryCloseEditor = function (event) {
 		var t = this;
 		var callback = function (success) {
-			//для случая, когда пользователь нажимает ctrl+shift+enter/crtl+enter переход на новую строку не осуществляется
+			// for the case when the user presses ctrl+shift+enter/crtl+enter the transition to a new line is not performed
 			var applyByArray = t.textFlags && t.textFlags.ctrlKey;
 			if (!applyByArray && success) {
 				t.handlers.trigger("applyCloseEvent", event);
@@ -2456,8 +2456,8 @@ function (window, undefined) {
 	};
 
 	CellEditor.prototype._getAutoComplete = function (str) {
-		// ToDo можно ускорить делая поиск каждый раз не в большом массиве, а в уменьшенном (по предыдущим символам)
-		//TODO оставляю текст!
+		// ToDo can be sped up by searching each time not in a large array, but in a smaller one (by previous characters)
+		//TODO I save the text!
 		var oLastResult = this.objAutoComplete.get(str);
 		if (oLastResult) {
 			return oLastResult;
@@ -2487,7 +2487,7 @@ function (window, undefined) {
 	};
 
 	CellEditor.prototype._checkMaxCellLength = function (length) {
-		//TODO вопрос, измерять длину текста или количество символов
+		//TODO question, measure text length or number of characters
 		var count = AscCommonExcel.getFragmentsCharCodesLength(this.options.fragments) + length - Asc.c_oAscMaxCellOrCommentLength;
 		return 0 > count ? 0 : count;
 	};
@@ -2617,7 +2617,7 @@ function (window, undefined) {
 		oThis._setSkipKeyPress(false);
 		oThis.skipTLUpdate = true;
 
-		// определение ввода иероглифов
+		// hieroglyph input definition
 		const bHieroglyph = oThis.isTopLineActive && AscCommonExcel.getFragmentsLength(oThis.options.fragments) !== oThis.input.value.length;
 
 		nRetValue = keydownresult_PreventKeyPress;
@@ -2678,7 +2678,7 @@ function (window, undefined) {
 					}
 
 					if (!window['IS_NATIVE_EDITOR']) {
-						// Отключим стандартную обработку браузера нажатия backspace
+						// Disable the browser's standard handling of pressing backspace
 						nRetValue = keydownresult_PreventAll;
 						if (bHieroglyph) {
 							oThis._syncEditors();
@@ -2692,7 +2692,7 @@ function (window, undefined) {
 						break;
 					}
 
-					// Отключим стандартную обработку браузера нажатия end
+					// Disable the browser's standard handling of pressing end
 					nRetValue = keydownresult_PreventAll;
 					if (!oThis.hasFocus) {
 						break;
@@ -2709,7 +2709,7 @@ function (window, undefined) {
 						break;
 					}
 
-					// Отключим стандартную обработку браузера нажатия home
+					// Disable the browser's standard handling of pressing home
 					nRetValue = keydownresult_PreventAll;
 					if (!oThis.hasFocus) {
 						break;
@@ -2862,7 +2862,7 @@ function (window, undefined) {
 			if (!t.isOpened || !t.enableKeyEvents || this.handlers.trigger('getWizard')) {
 				return true;
 			}
-			// определение ввода иероглифов
+			// hieroglyph input definition
 			if (t.isTopLineActive && AscCommonExcel.getFragmentsLength(t.options.fragments) !== t.input.value.length) {
 				t._syncEditors();
 			}
@@ -2870,7 +2870,7 @@ function (window, undefined) {
 
 		t._setSkipKeyPress(false);
 
-		//TODO перевод из кода в символы!
+		//TODO Translation from code to symbols!
 		var newChar;
 		if (Array.isArray(codePoints)) {
 			for (let nIdx = 0; nIdx < codePoints.length; ++nIdx) {
@@ -2882,7 +2882,7 @@ function (window, undefined) {
 			t._addChars(newChar);
 		}
 
-		//TODO в случае добавляения массива - првоерить - возможно часть нужно вызывать каждый раз после _addChars
+		//TODO in case of adding an array - check - perhaps the part needs to be called every time after _addChars
 		var tmpCursorPos;
 		// The first time we enter quickly, we should add percentages at the end (for percentage format and only for numbers)
 		if (t.options.isAddPersentFormat && AscCommon.isNumber(newChar)) {
@@ -3039,7 +3039,7 @@ function (window, undefined) {
 
 	/** @param event {jQuery.Event} */
 	CellEditor.prototype._onInputTextArea = function (event) {
-		//TODO оставляю текст!
+		//TODO save the text!
 		var t = this;
 		if (!this.handlers.trigger("canEdit") || this.loadFonts) {
 			return true;
@@ -3083,7 +3083,7 @@ function (window, undefined) {
 	};
 
 	CellEditor.prototype.getTextFromCharCodes = function (arrCharCodes) {
-		//TODO оставляю текст!
+		//TODO save the text!
 		var code, codePt, newText = '';
 		for (var i = 0; i < arrCharCodes.length; ++i) {
 			code = arrCharCodes[i];
@@ -3123,7 +3123,7 @@ function (window, undefined) {
 		this.selectionBegin = tmpBegin;
 		this.selectionEnd = tmpEnd;
 
-		// Обновляем выделение
+		// Refreshing the selection
 		this._cleanSelection();
 		this._drawSelection();
 	};
@@ -3143,7 +3143,7 @@ function (window, undefined) {
 		this.selectionBegin = tmpBegin;
 		this.selectionEnd = tmpEnd;
 
-		// Обновляем выделение
+		// Refreshing the selection
 		this._cleanSelection();
 		this._drawSelection();
 	};

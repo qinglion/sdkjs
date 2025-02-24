@@ -6006,18 +6006,18 @@
 					{
 					} else if (oEvent.KeyCode === 34) // PgDn
 					{
-					} else if (oEvent.KeyCode === 35) // клавиша End
+					} else if (oEvent.KeyCode === 35) // key End
 					{
 						const oContent = this.getTargetDocContent();
 						if (oContent) {
-							if (bIsCtrl) // Ctrl + End - переход в конец документа
+							if (bIsCtrl) // Ctrl + End - go to the end of the document
 							{
 								oContent.MoveCursorToEndPos(oEvent.ShiftKey);
 								this.updateSelectionState();
 								this.updateOverlay();
 								this.drawingObjects.sendGraphicObjectProps();
 
-							} else // Переходим в конец строки
+							} else // Move to the end of the line
 							{
 								oContent.MoveCursorToEndOfLine(oEvent.ShiftKey);
 								this.updateSelectionState();
@@ -6026,17 +6026,17 @@
 							}
 						}
 						nRetValue = keydownresult_PreventDefault;
-					} else if (oEvent.KeyCode === 36) // клавиша Home
+					} else if (oEvent.KeyCode === 36) // key Home
 					{
 						const oContent = this.getTargetDocContent();
 						if (oContent) {
-							if (bIsCtrl) // Ctrl + End - переход в конец документа
+							if (bIsCtrl) // Ctrl + End - go to the end of the document
 							{
 								oContent.MoveCursorToStartPos(oEvent.ShiftKey);
 								this.updateSelectionState();
 								this.updateOverlay();
 								this.drawingObjects.sendGraphicObjectProps();
-							} else // Переходим в конец строки
+							} else // Move to the end of the line
 							{
 								oContent.MoveCursorToStartOfLine(oEvent.ShiftKey);
 								this.updateSelectionState();
@@ -6119,7 +6119,7 @@
 								nRetValue = keydownresult_PreventDefault;
 							}
 						}
-					} else if (oEvent.KeyCode === 75 && bCanEdit && true === bIsCtrl) // Ctrl + K - добавление гиперссылки
+					} else if (oEvent.KeyCode === 75 && bCanEdit && true === bIsCtrl) // Ctrl + K - adding a hyperlink
 					{
 						//TODO
 						nRetValue = keydownresult_PreventDefault;
@@ -6142,7 +6142,7 @@
 					} else if (oEvent.KeyCode === 88 && bCanEdit && true === bIsCtrl) // Ctrl + X - cut
 					{
 						//не возвращаем true чтобы не было preventDefault
-					} else if ((oEvent.KeyCode === 93 && !oEvent.MacCmdKey) || 57351 === oEvent.KeyCode/*в Opera такой код*/) // контекстное меню
+					} else if ((oEvent.KeyCode === 93 && !oEvent.MacCmdKey) || 57351 === oEvent.KeyCode/*in Opera there is such a code*/) // context menu
 					{
 						nRetValue = keydownresult_PreventDefault;
 					}
