@@ -2132,7 +2132,7 @@
 				deltaY = 0;
 			}
 
-			if (event.shiftKey) {
+			if (!AscCommon.AscBrowser.isMacOs && event.shiftKey) {
 				deltaX = deltaY;
 				deltaY = 0;
 			}

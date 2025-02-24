@@ -4836,7 +4836,7 @@ function (window, undefined) {
 	//TODO все оставшиеся аргументы приходят на вход функции как массивы
 	cSUBTOTAL.prototype.arrayIndexes = {1: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 1};
 	cSUBTOTAL.prototype.Calculate = function (arg) {
-		var f, exclude = false, arg0 = arg[0];
+		let f, exclude = false, arg0 = arg[0];
 
 		if (cElementType.cellsRange === arg0.type || cElementType.cellsRange3D === arg0.type) {
 			arg0 = arg0.cross(arguments[1]);
@@ -4905,17 +4905,67 @@ function (window, undefined) {
 				f = AscCommonExcel.cVARP.prototype;
 				break;
 		}
-		var res;
+
+		// resArr - result for an array arguments
+		// res - single cell result for a range arguments 
+		let resArr, resDimensions, res;
 		if (f) {
-			//вложенные итоги игнорируются, чтобы избежать двойного суммирования
-			var oldExcludeHiddenRows = f.excludeHiddenRows;
-			var oldIgnoreNestedStAg = f.excludeNestedStAg;
-			var oldCheckExclude = f.checkExclude;
+			// the inner results are ignored to avoid double summation
+			let oldExcludeHiddenRows = f.excludeHiddenRows;
+			let oldIgnoreNestedStAg = f.excludeNestedStAg;
+			let oldCheckExclude = f.checkExclude;
 
 			f.excludeHiddenRows = exclude;
 			f.excludeNestedStAg = true;
 			f.checkExclude = true;
-			res = f.Calculate(arg.slice(1));
+
+			for (let i = 1; i < arg.length; i++) {
+				// array may come as a result of computing internal functions (for example, offset or if)
+				if (arg[i].type == cElementType.array) {
+					resDimensions = arg[i].getDimensions();
+					if (!resArr) {
+						resArr = new cArray();
+					}
+
+					for (let r = 0; r < resDimensions.row; r++) {
+						if (!resArr.rowCount || resArr.rowCount < (r + 1)) {
+							resArr.addRow();
+						}
+						for (let c = 0; c < resDimensions.col; c++) {
+							let existedArrayElem = resArr.getValue2(r, c);
+							let newArrayElem = f.Calculate([arg[i].getElementRowCol(r, c)]);
+							if (!existedArrayElem) {
+								res ? resArr.addElementInRow(cSUM.prototype.Calculate([res, newArrayElem]), r) : resArr.addElementInRow(newArrayElem, r);
+							} else {
+								if (c > (resArr.countElementInRow[r] - 1)) {
+									resArr.addElementInRow(cSUM.prototype.Calculate([existedArrayElem, newArrayElem]), r);
+								} else {
+									resArr.array[r][c] = cSUM.prototype.Calculate([existedArrayElem, newArrayElem]);
+								}
+							}
+						}
+					}
+					// if we found an array, set res to null for further calculation
+					res = null;
+
+				} else if (arg[i].type === cElementType.error) {
+					return arg[i];
+				} else {
+					res = res ? cSUM.prototype.Calculate([f.Calculate([arg[i]]), res]) : f.Calculate([arg[i]]);
+					if (res && resArr) {
+						// add result to each element of the array
+						resArr.foreach(function(elem, r, c) {
+							// elem = elem + res;
+							resArr.array[r][c] = cSUM.prototype.Calculate([elem, res]);
+						});
+
+						// if we have an array, set res to null for further calculation
+						res = null;
+					}
+				}
+			}
+
+			res = resArr ? resArr : f.Calculate(arg.slice(1));
 			f.excludeHiddenRows = oldExcludeHiddenRows;
 			f.excludeNestedStAg = oldIgnoreNestedStAg;
 			f.checkExclude = oldCheckExclude;

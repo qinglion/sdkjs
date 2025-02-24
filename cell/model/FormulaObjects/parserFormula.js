@@ -2892,6 +2892,19 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 		this.countElementInRow[this.rowCount - 1]++;
 		this.countElement++;
 	};
+	cArray.prototype.addElementInRow = function (element, rowIndex) {
+		if (typeof rowIndex !== "number" || rowIndex < 0 || rowIndex > this.rowCount) {
+			return null;
+		}
+
+		if (this.array.length === 0) {
+			this.addRow();
+		}
+		let arr = this.array, subArr = arr[rowIndex]; 
+		subArr[subArr.length] = element;
+		this.countElementInRow[rowIndex]++;
+		this.countElement++;
+	};
 	cArray.prototype.getRow = function (rowIndex) {
 		if (rowIndex < 0 || rowIndex > this.array.length - 1) {
 			return null;
@@ -5079,6 +5092,47 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 		return ranges;
 	}
 
+
+	function getRangeByName(sName, ws) {
+		// Early validation
+		if (!sName || !ws) {
+			return [];
+		}
+
+		// Initialize arrays
+		const ranges = [];
+		const activeCell = ws.getSelection().activeCell;
+		const bbox = new Asc.Range(activeCell.col, activeCell.row, activeCell.col, activeCell.row);
+
+		// Helper function to process names
+		const processName = function(item) {
+			if (item.oper.type === cElementType.name) {
+				const nameRef = item.oper.toRef(bbox);
+
+				// Skip if reference is error
+				if (nameRef instanceof AscCommonExcel.cError) {
+					return;
+				}
+
+				// Get range from valid reference
+				if (nameRef.getRange && nameRef.getWS && nameRef.getWS() === ws) {
+					ranges.push(nameRef.getRange());
+				}
+			}
+		};
+
+		// Parse formula and get references
+		const parseResult = new AscCommonExcel.ParseResult([]);
+		const parsed = new AscCommonExcel.parserFormula(sName, null, ws);
+
+		if (parsed.parse(undefined, undefined, parseResult)) {
+			// Process only name type references
+			parseResult.refPos.forEach(processName);
+		}
+
+		return ranges;
+	}
+
 /*--------------------------------------------------------------------------*/
 
 
@@ -6409,9 +6463,11 @@ function parserFormula( formula, parent, _ws ) {
 
 		if (this._isConditionalFormula(sFunctionName) && data.areaData && g_cCalcRecursion.getIsCellEdited()) {
 			let oCell = null;
-			this.ws._getCell(this.parent.nRow, this.parent.nCol, function (oElem) {
-				oCell = oElem;
-			});
+			if (this.parent && null != this.parent.nRow && null != this.parent.nCol) {
+				this.ws._getCell(this.parent.nRow, this.parent.nCol, function (oElem) {
+					oCell = oElem;
+				});
+			}
 			if (oCell && oCell.containInFormula()) {
 				this.ca = this.isRecursiveCondFormula(sFunctionName);
 			}
@@ -6783,7 +6839,13 @@ function parserFormula( formula, parent, _ws ) {
 		let nOperandType = found_operand.type;
 		let oRange = null;
 
+		if (!oParentCell) {
+			return false;
+		}
 		if (!(oParentCell instanceof AscCommonExcel.CCellWithFormula)) {
+			return false;
+		}
+		if (oParentCell.nRow == null && oParentCell.nCol == null) {
 			return false;
 		}
 		if (nOperandType === cElementType.name || nOperandType === cElementType.name3D) {
@@ -6824,6 +6886,9 @@ function parserFormula( formula, parent, _ws ) {
 		const oRange = oCriteriaRange.getRange();
 		const oBbox = oRange.bbox;
 		const oParentCell = this.getParent();
+		if (!oParentCell || (oParentCell && oParentCell.nRow == null && oParentCell.nCol == null)) {
+			return false;
+		}
 		let bHasFormula = false;
 		let bVertical = oBbox.c1 === oBbox.c2;
 		let nRow = bVertical ? oBbox.r1 + (oParentCell.nRow - oBbox.r1) : oBbox.r1;
@@ -6849,6 +6914,9 @@ function parserFormula( formula, parent, _ws ) {
 	 */
 	parserFormula.prototype._calculateMatch = function (oFormulaArgs) {
 		const oParentCell = this.getParent();
+		if (!oParentCell || (oParentCell && oParentCell.nRow == null && oParentCell.nCol == null)) {
+			return false;
+		}
 		const oCalcRange = oFormulaArgs.calcRange;
 		let oCriteriaRange = oFormulaArgs.criteriaRange;
 		let oCondition = oFormulaArgs.condition;
@@ -8585,7 +8653,7 @@ function parserFormula( formula, parent, _ws ) {
 				this.outStack.push(operand);
 			}
 		}
-		if (bConditionalFormula && t.getParent() instanceof AscCommonExcel.CCellWithFormula && !t.ca) {
+		if (bConditionalFormula && t.getParent() && t.getParent() instanceof AscCommonExcel.CCellWithFormula && !t.ca) {
 			t.ca = t.isRecursiveCondFormula(levelFuncMap[0].func.name);
 			t.outStack.forEach(function (oOperand) {
 				if (oOperand.type === cElementType.name || oOperand.type === cElementType.name3D) {
@@ -9968,7 +10036,7 @@ function parserFormula( formula, parent, _ws ) {
 
 	parserFormula.prototype.getFormulaHyperlink = function () {
 		for (var i = 0; i < this.outStack.length; i++) {
-			if (this.outStack[i] && this.outStack[i].name === "HYPERLINK") {
+			if (this.outStack[i] && (this.outStack[i].name === "HYPERLINK" || this.outStack[i].name === "IMPORTRANGE")) {
 				return true;
 			}
 		}
@@ -11574,6 +11642,7 @@ function parserFormula( formula, parent, _ws ) {
 	window['AscCommonExcel'].getRangeByRef = getRangeByRef;
 	window['AscCommonExcel'].addNewFunction = addNewFunction;
 	window['AscCommonExcel'].removeCustomFunction = removeCustomFunction;
+	window['AscCommonExcel'].getRangeByName = getRangeByName;
 
 	window['AscCommonExcel']._func = _func;
 

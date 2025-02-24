@@ -3014,9 +3014,12 @@
 		let externalLink = exclamationMarkIndex !== -1 ? string.substring(0, exclamationMarkIndex) : null;
 		let secondPartOfString = exclamationMarkIndex !== -1 ? string.substring(exclamationMarkIndex + 1) : null;
 
-		let defname = XRegExp.exec(secondPartOfString, rx_name);
-		if (defname && defname["name"]) {
-			defname = defname["name"];
+		let defname = null;
+		if (secondPartOfString && !parserHelp.isArea(secondPartOfString, 0) && !parserHelp.isRef(secondPartOfString, 0)) {
+			defname = XRegExp.exec(secondPartOfString, rx_name);
+			if (defname && defname["name"]) {
+				defname = defname["name"];
+			}
 		}
 
 		if (externalLink && externalLink[0] === "'" && externalLink[externalLink.length - 1] === "'") {
@@ -3927,7 +3930,7 @@
 		const fullPatterns = [];
 		for (let i = 0; i < opt_namesList[0].length; i += 1) {
 			for (let j = 0; j < opt_namesList[1].length; j += 1) {
-				fullPatterns.push('^(' + opt_namesList[0][i] + ')\\s*\\[\\s*(' + opt_namesList[1][j] + ')\\s*\\]');
+				fullPatterns.push('^(' + XRegExp.escape(opt_namesList[0][i]) + ')\\s*\\[\\s*(' + XRegExp.escape(opt_namesList[1][j]) + ')\\s*\\]');
 			}
 		}
 		const fullRegs = fullPatterns.map(function(pattern) {
@@ -3942,7 +3945,7 @@
 			}
 		}
 		const shortPatterns = opt_namesList[1].map(function(name) {
-			return '^(' + name + ')(?:\\W|$)'
+			return '^(' + XRegExp.escape(name) + ')(?:\\W|$)';
 		});
 		const shortRegs = shortPatterns.map(function(pattern) {
 			return new RegExp(pattern, 'i');
@@ -4104,6 +4107,12 @@
 		else
 		{
 			range = AscCommonExcel.g_oRangeCache.getAscRange(dataRange);
+			if (!range && model && cDialogType.FormatTable === dialogType && AscCommon.rx_defName.test(dataRange)) {
+				let aRanges = AscCommonExcel.getRangeByName(dataRange, model.getActiveWs());
+				if (aRanges && aRanges.length === 1) {
+					range = aRanges[0] && aRanges[0].bbox;
+				}
+			}
 		}
 
 		if (!range && cDialogType.DataValidation !== dialogType && cDialogType.ConditionalFormattingRule !== dialogType && cDialogType.GoalSeek_Cell !== dialogType &&
@@ -4553,7 +4562,7 @@
 		this.Type = NewType;
 
 		var oApi = editor;
-		var oLogicDocument = oApi.WordControl.m_oLogicDocument;
+		var oLogicDocument = oApi && oApi.WordControl && oApi.WordControl.m_oLogicDocument;
 		if (false != Redraw && oLogicDocument)
 		{
 			// TODO: переделать перерисовку тут
@@ -4594,7 +4603,7 @@
 				oLogicDocument.Document_UpdateInterfaceState(false);
 			}
 		}
-		let oCustomProperties = oApi.getCustomProperties && oApi.getCustomProperties();
+		let oCustomProperties = oApi && oApi.getCustomProperties && oApi.getCustomProperties();
 		if(oCustomProperties && oCustomProperties.Lock === this)
 		{
 			oApi.sendEvent("asc_onCustomPropertiesLocked", this.Is_Locked());

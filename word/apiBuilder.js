@@ -1616,14 +1616,13 @@
 	 * Returns a text from the specified range.
 	 * @memberof ApiRange
 	 * @param {object} oPr - The resulting string display properties.
-     * @param {boolean} [oPr.NewLineParagraph=false] - Defines if the resulting string will include paragraph line boundaries or not.
      * @param {boolean} [oPr.Numbering=false] - Defines if the resulting string will include numbering or not.
      * @param {boolean} [oPr.Math=false] - Defines if the resulting string will include mathematical expressions or not.
-	 * @param {string} [oPr.NewLineSeparator='\r'] - Defines how the line separator will be specified in the resulting string.
-     * @param {string} [oPr.TableCellSeparator='\t'] - Defines how the table cell separator will be specified in the resulting string.
-     * @param {string} [oPr.TableRowSeparator='\r\n'] - Defines how the table row separator will be specified in the resulting string.
-     * @param {string} [oPr.ParaSeparator='\r\n'] - Defines how the paragraph separator will be specified in the resulting string.
-	 * @param {string} [oPr.TabSymbol='\t'] - Defines how the tab will be specified in the resulting string (does not apply to numbering)
+	 * @param {string} [oPr.NewLineSeparator='\r'] - Defines how the line separator will be specified in the resulting string. Any symbol can be used. The default separator is "\r".
+     * @param {string} [oPr.TableCellSeparator='\t'] - Defines how the table cell separator will be specified in the resulting string. Any symbol can be used. The default separator is "\t".
+     * @param {string} [oPr.TableRowSeparator='\r\n'] - Defines how the table row separator will be specified in the resulting string. Any symbol can be used. The default separator is "\r\n".
+     * @param {string} [oPr.ParaSeparator='\r\n'] - Defines how the paragraph separator will be specified in the resulting string. Any symbol can be used. The default separator is "\r\n".
+	 * @param {string} [oPr.TabSymbol='\t'] - Defines how the tab will be specified in the resulting string (does not apply to numbering). Any symbol can be used. The default symbol is "\t".
 	 * @typeofeditors ["CDE"]
 	 * @returns {String} - returns "" if range is empty.
 	 * @see office-js-api/Examples/{Editor}/ApiRange/Methods/GetText.js
@@ -1636,7 +1635,6 @@
 		
 		let oProp = {
 			NewLineSeparator:	(oPr.hasOwnProperty("NewLineSeparator")) ? oPr["NewLineSeparator"] : "\r",
-			NewLineParagraph:	(oPr.hasOwnProperty("NewLineParagraph")) ? oPr["NewLineParagraph"] : true,
 			Numbering:			(oPr.hasOwnProperty("Numbering")) ? oPr["Numbering"] : true,
 			Math:				(oPr.hasOwnProperty("Math")) ? oPr["Math"] : true,
 			TableCellSeparator:	oPr["TableCellSeparator"],
@@ -3198,7 +3196,7 @@
 
 	/**
 	 * Class representing a comment reply.
-	 * @typeofeditors ["CDE"]
+	 * @typeofeditors ["CDE", "CPE"]
 	 * @constructor
 	 */
 	function ApiCommentReply(oParentComm, oCommentReply)
@@ -4235,8 +4233,8 @@
 	 * Standard numeric format.
 	 * @typedef {("General" | "0" | "0.00" | "#,##0" | "#,##0.00" | "0%" | "0.00%" |
 	 * "0.00E+00" | "# ?/?" | "# ??/??" | "m/d/yyyy" | "d-mmm-yy" | "d-mmm" | "mmm-yy" | "h:mm AM/PM" |
-	 * "h:mm:ss AM/PM" | "h:mm" | "h:mm:ss" | "m/d/yyyy h:mm" | "#,##0_);(#,##0)" | "#,##0_);[Red](#,##0)" | 
-	 * "#,##0.00_);(#,##0.00)" | "#,##0.00_);[Red](#,##0.00)" | "mm:ss" | "[h]:mm:ss" | "mm:ss.0" | "##0.0E+0" | "@")} NumFormat
+	 * "h:mm:ss AM/PM" | "h:mm" | "h:mm:ss" | "m/d/yyyy h:mm" | "#,##0_\);(#,##0)" | "#,##0_\);\[Red\]\(#,##0)" | 
+	 * "#,##0.00_\);\(#,##0.00\)" | "#,##0.00_\);\[Red\]\(#,##0.00\)" | "mm:ss" | "[h]:mm:ss" | "mm:ss.0" | "##0.0E+0" | "@")} NumFormat
 	 * @see office-js-api/Examples/Enumerations/NumFormat.js
 	 */
 
@@ -5751,15 +5749,13 @@
 	 * @memberof ApiDocumentContent
 	 * @typeofeditors ["CDE"]
 	 * @param {object} oProps - The resulting string display properties.
-     * @param {boolean} oProps.NewLine - Defines if the resulting string will include line boundaries or not (they will be replaced with '\r').
-     * @param {boolean} oProps.NewLineParagraph - Defines if the resulting string will include paragraph line boundaries or not.
      * @param {boolean} oProps.Numbering - Defines if the resulting string will include numbering or not.
      * @param {boolean} oProps.Math - Defines if the resulting string will include mathematical expressions or not.
-     * @param {string} oProps.TableCellSeparator - Defines how the table cell separator will be specified in the resulting string.
-     * @param {string} oProps.TableRowSeparator - Defines how the table row separator will be specified in the resulting string.
-     * @param {string} oProps.ParaSeparator - Defines how the paragraph separator will be specified in the resulting string.
-     * @param {string} oProps.TabSymbol - Defines how the tab will be specified in the resulting string.
-     * @param {string} oProps.NewLineSeparator - Defines how the line separator will be specified in the resulting string (this property has the priority over *NewLine*).
+     * @param {string} [oProps.TableCellSeparator='\t'] - Defines how the table cell separator will be specified in the resulting string. Any symbol can be used. The default separator is "\t".
+     * @param {string} [oProps.TableRowSeparator='\r\n'] - Defines how the table row separator will be specified in the resulting string. Any symbol can be used. The default separator is "\r\n".
+     * @param {string} [oProps.ParaSeparator='\r\n'] - Defines how the paragraph separator will be specified in the resulting string. Any symbol can be used. The default separator is "\r\n".
+     * @param {string} [oProps.TabSymbol='\t'] - Defines how the tab will be specified in the resulting string. Any symbol can be used. The default symbol is "\t".
+     * @param {string} [oProps.NewLineSeparator='\r'] - Defines how the line separator will be specified in the resulting string. Any symbol can be used. The default separator is "\r".
 	 * @return {string}
 	 * @since 8.3.0
 	 * @see office-js-api/Examples/{Editor}/ApiDocumentContent/Methods/GetText.js
@@ -5771,8 +5767,6 @@
         {
             oInnerProps =
             {
-                NewLine : (oProps.hasOwnProperty("NewLine")) ? oProps["NewLine"] : true,
-                NewLineParagraph : (oProps.hasOwnProperty("NewLineParagraph")) ? oProps["NewLineParagraph"] : true,
                 Numbering : (oProps.hasOwnProperty("Numbering")) ? oProps["Numbering"] : true,
                 Math : (oProps.hasOwnProperty("Math")) ? oProps["Math"] : true,
                 TableCellSeparator: oProps["TableCellSeparator"],
@@ -5786,8 +5780,6 @@
         {
             oInnerProps =
             {
-                NewLine : true,
-                NewLineParagraph : true,
                 Numbering : true
             }
         }
@@ -8457,15 +8449,14 @@
 	 */
 	ApiParagraph.prototype.AddDrawing = function(oDrawing)
 	{
-		let oRun = new ParaRun(this.Paragraph, false);
-
-		if (!(oDrawing instanceof ApiDrawing))
-			return new ApiRun(oRun);
+		if (!(oDrawing instanceof ApiDrawing) || oDrawing.Drawing.group || oDrawing.Drawing.IsUseInDocument())
+			return null;
 
 		let oParaDrawing = oDrawing.getParaDrawing();
 		if(!oParaDrawing)
-			return new ApiRun(oRun);
+			return null;
 
+		let oRun = new ParaRun(this.Paragraph, false);
 		oRun.Add_ToContent(0, oParaDrawing);
 		private_PushElementToParagraph(this.Paragraph, oRun);
 		oParaDrawing.Set_Parent(oRun);
@@ -8554,7 +8545,6 @@
 		if (typeof(sScreenTipText) !== "string")
 			sScreenTipText = "";
 		
-		var oDocument	= editor.private_GetLogicDocument();
 		var hyperlinkPr	= new Asc.CHyperlinkProperty();
 		var urlType		= AscCommon.getUrlType(sLink);
 		var oHyperlink;
@@ -8569,7 +8559,7 @@
 		hyperlinkPr.put_Bookmark(null);
 		
 		oHyperlink = new ApiHyperlink(this.Paragraph.AddHyperlink(hyperlinkPr));
-		oDocument.RemoveSelection();
+		this.Paragraph.RemoveSelection();
 
 		return oHyperlink;
 	};
@@ -9160,8 +9150,8 @@
 	 * @param {object} oPr - The resulting string display properties.
      * @param {boolean} [oPr.Numbering=false] - Defines if the resulting string will include numbering or not.
      * @param {boolean} [oPr.Math=false] - Defines if the resulting string will include mathematical expressions or not.
-	 * @param {string} [oPr.NewLineSeparator='\r'] - Defines how the line separator will be specified in the resulting string.
-	 * @param {string} [oPr.TabSymbol='\t'] - Defines how the tab will be specified in the resulting string (does not apply to numbering).
+	 * @param {string} [oPr.NewLineSeparator='\r'] - Defines how the line separator will be specified in the resulting string. Any symbol can be used. The default separator is "\r".
+	 * @param {string} [oPr.TabSymbol='\t'] - Defines how the tab will be specified in the resulting string (does not apply to numbering). Any symbol can be used. The default symbol is "\t".
 	 * @typeofeditors ["CDE"]
 	 * @return {string}
 	 * @see office-js-api/Examples/{Editor}/ApiParagraph/Methods/GetText.js
@@ -9176,8 +9166,7 @@
 			NewLineSeparator:	(oPr.hasOwnProperty("NewLineSeparator")) ? oPr["NewLineSeparator"] : "\r",
 			Numbering:			(oPr.hasOwnProperty("Numbering")) ? oPr["Numbering"] : true,
 			Math:				(oPr.hasOwnProperty("Math")) ? oPr["Math"] : true,
-			TabSymbol:			oPr["TabSymbol"],
-			ParaEndToSpace:		false
+			TabSymbol:			oPr["TabSymbol"]
 		}
 
 		return this.Paragraph.GetText(oProp);
@@ -10129,7 +10118,7 @@
 	 */ 
 	ApiRun.prototype.AddDrawing = function(oDrawing)
 	{
-		if (!(oDrawing instanceof ApiDrawing))
+		if (!(oDrawing instanceof ApiDrawing) || oDrawing.Drawing.group || oDrawing.Drawing.IsUseInDocument())
 			return false;
 
 		let oParaDrawing = oDrawing.getParaDrawing();
@@ -10204,7 +10193,6 @@
 		if (typeof(sScreenTipText) !== "string")
 			sScreenTipText = "";
 
-		var Document	= editor.private_GetLogicDocument();
 		var parentPara	= this.Run.GetParagraph();
 		if (!parentPara || this.Run.Content.length === 0)
 			return null;
@@ -10239,9 +10227,8 @@
 		hyperlinkPr.put_ToolTip(sScreenTipText);
 		hyperlinkPr.put_Bookmark(null);
 
-		parentPara.Selection.Use = true;
 		oHyperlink = new ApiHyperlink(parentPara.AddHyperlink(hyperlinkPr));
-		Document.RemoveSelection();
+		StartPos[parentParaDepth].Class.RemoveSelection();
 
 		return oHyperlink;
 	};
@@ -10753,8 +10740,8 @@
 	 * Returns a text from the text run.
 	 * @memberof ApiRun
 	 * @param {object} oPr - The resulting string display properties.
-	 * @param {string} [oPr.NewLineSeparator='\r'] - Defines how the line separator will be specified in the resulting string.
-	 * @param {string} [oPr.TabSymbol='\t'] - Defines how the tab will be specified in the resulting string.
+	 * @param {string} [oPr.NewLineSeparator='\r'] - Defines how the line separator will be specified in the resulting string. Any symbol can be used. The default separator is "\r".
+	 * @param {string} [oPr.TabSymbol='\t'] - Defines how the tab will be specified in the resulting string. Any symbol can be used. The default symbol is "\t".
 	 * @typeofeditors ["CDE"]
 	 * @returns {string}
 	 * @see office-js-api/Examples/{Editor}/ApiRun/Methods/GetText.js
@@ -15853,7 +15840,7 @@
 		return "drawing";
 	};
 	/**
-	 * Returns the shape inner contents where a paragraph or text runs can be inserted if it exists.
+	 * Returns the drawing inner contents where a paragraph or text runs can be inserted if it exists.
 	 * @memberof ApiDrawing
 	 * @typeofeditors ["CDE", "CSE"]
 	 * @returns {?ApiDocumentContent}
@@ -18059,7 +18046,19 @@
 	{
 		return "inlineLvlSdt";
 	};
-
+	
+	/**
+	 * Returns an internal id of the current content control.
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/GetInternalId.js
+	 */
+	ApiInlineLvlSdt.prototype.GetInternalId = function()
+	{
+		return this.Sdt.GetId();
+	};
+	
 	/**
 	 * Sets the lock to the current inline text content control:
 	 * <b>"contentLocked"</b> - content cannot be edited.
@@ -19031,7 +19030,19 @@
 	{
 		return "blockLvlSdt";
 	};
-
+	
+	/**
+	 * Returns an internal id of the current content control.
+	 * @memberof ApiBlockLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/GetInternalId.js
+	 */
+	ApiBlockLvlSdt.prototype.GetInternalId = function()
+	{
+		return this.Sdt.GetId();
+	};
+	
 	/**
 	 * Sets the lock to the current block text content control:
 	 * <b>"contentLocked"</b> - content cannot be edited.
@@ -19981,7 +19992,7 @@
 	 * @memberof ApiFormBase
 	 * @param {twips} width - The wrapper shape width measured in twentieths of a point (1/1440 of an inch).
 	 * @param {twips} height - The wrapper shape height measured in twentieths of a point (1/1440 of an inch).
-	 * @param {boolean} keepPosition - Save position on the page (it can be a little bit slow, because it runs the document calculation)
+	 * @param {boolean} keepPosition - Save position on the page (it can be a little bit slow, because it runs the document calculation).
 	 * @typeofeditors ["CDE", "CFE"]
 	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiFormBase/Methods/ToFixed.js
@@ -22384,14 +22395,13 @@
 	 * @memberof ApiBookmark
 	 * @typeofeditors ["CDE"]
 	 * @param {object} oPr - The resulting string display properties.
-     * @param {boolean} [oPr.NewLineParagraph=false] - Defines if the resulting string will include paragraph line boundaries or not.
      * @param {boolean} [oPr.Numbering=false] - Defines if the resulting string will include numbering or not.
      * @param {boolean} [oPr.Math=false] - Defines if the resulting string will include mathematical expressions or not.
-	 * @param {string} [oPr.NewLineSeparator='\r'] - Defines how the line separator will be specified in the resulting string.
-     * @param {string} [oPr.TableCellSeparator='\t'] - Defines how the table cell separator will be specified in the resulting string.
-     * @param {string} [oPr.TableRowSeparator='\r\n'] - Defines how the table row separator will be specified in the resulting string.
-     * @param {string} [oPr.ParaSeparator='\r\n'] - Defines how the paragraph separator will be specified in the resulting string.
-	 * @param {string} [oPr.TabSymbol='\t'] - Defines how the tab will be specified in the resulting string (does not apply to numbering).
+	 * @param {string} [oPr.NewLineSeparator='\r'] - Defines how the line separator will be specified in the resulting string. Any symbol can be used. The default separator is "\r".
+     * @param {string} [oPr.TableCellSeparator='\t'] - Defines how the table cell separator will be specified in the resulting string. Any symbol can be used. The default separator is "\t".
+     * @param {string} [oPr.TableRowSeparator='\r\n'] - Defines how the table row separator will be specified in the resulting string. Any symbol can be used. The default separator is "\r\n".
+     * @param {string} [oPr.ParaSeparator='\r\n'] - Defines how the paragraph separator will be specified in the resulting string. Any symbol can be used. The default separator is "\r\n".
+	 * @param {string} [oPr.TabSymbol='\t'] - Defines how the tab will be specified in the resulting string (does not apply to numbering). Any symbol can be used. The default symbol is "\t".
 	 * @returns {string}
 	 * @since 8.3.0
 	 * @see office-js-api/Examples/{Editor}/ApiBookmark/Methods/GetText.js
@@ -22406,7 +22416,6 @@
 		
 		let oProp = {
 			NewLineSeparator:	(oPr.hasOwnProperty("NewLineSeparator")) ? oPr["NewLineSeparator"] : "\r",
-			NewLineParagraph:	(oPr.hasOwnProperty("NewLineParagraph")) ? oPr["NewLineParagraph"] : true,
 			Numbering:			(oPr.hasOwnProperty("Numbering")) ? oPr["Numbering"] : true,
 			Math:				(oPr.hasOwnProperty("Math")) ? oPr["Math"] : true,
 			TableCellSeparator:	oPr["TableCellSeparator"],
@@ -23184,6 +23193,7 @@
 	ApiBullet.prototype["ToJSON"]                    = ApiBullet.prototype.ToJSON;
 
 	ApiInlineLvlSdt.prototype["GetClassType"]           = ApiInlineLvlSdt.prototype.GetClassType;
+	ApiInlineLvlSdt.prototype["GetInternalId"]          = ApiInlineLvlSdt.prototype.GetInternalId;
 	ApiInlineLvlSdt.prototype["SetLock"]                = ApiInlineLvlSdt.prototype.SetLock;
 	ApiInlineLvlSdt.prototype["GetLock"]                = ApiInlineLvlSdt.prototype.GetLock;
 	ApiInlineLvlSdt.prototype["SetTag"]                 = ApiInlineLvlSdt.prototype.SetTag;
@@ -23239,6 +23249,7 @@
 	ApiContentControlListEntry.prototype["SetValue"]		= ApiContentControlListEntry.prototype.SetValue;
 
 	ApiBlockLvlSdt.prototype["GetClassType"]            = ApiBlockLvlSdt.prototype.GetClassType;
+	ApiBlockLvlSdt.prototype["GetInternalId"]           = ApiBlockLvlSdt.prototype.GetInternalId;
 	ApiBlockLvlSdt.prototype["SetLock"]                 = ApiBlockLvlSdt.prototype.SetLock;
 	ApiBlockLvlSdt.prototype["GetLock"]                 = ApiBlockLvlSdt.prototype.GetLock;
 	ApiBlockLvlSdt.prototype["SetTag"]                  = ApiBlockLvlSdt.prototype.SetTag;

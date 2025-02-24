@@ -14308,6 +14308,29 @@ $(function () {
 		assert.ok(oParser.assemble() == "SUMPRODUCT(--ISNUMBER(SEARCH({5;6;7;1;2;3;4},123)))");
 		assert.strictEqual(oParser.calculate().getValue(), 3);
 
+		// for bug 68820
+		ws.getRange2("B100").setValue("-2");
+		ws.getRange2("B101").setValue("1");
+		ws.getRange2("B102").setValue("-1");
+		ws.getRange2("B103").setValue("0");
+		ws.getRange2("B104").setValue("1");
+		ws.getRange2("B105").setValue("1");
+		ws.getRange2("B106").setValue("-2");
+		ws.getRange2("B107").setValue("0");
+		ws.getRange2("B108").setValue("0");
+		
+		oParser = new parserFormula('SUMPRODUCT(SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0)))', "A2", ws);
+		assert.ok(oParser.parse(), 'SUMPRODUCT(SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0)))');
+		assert.strictEqual(oParser.calculate().getValue(), -2, 'SUMPRODUCT(SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0)))');
+
+		oParser = new parserFormula('SUMPRODUCT(SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0))*(B100:B108>0))', "A2", ws);
+		assert.ok(oParser.parse(), 'SUMPRODUCT(SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0))*(B100:B108>0))');
+		assert.strictEqual(oParser.calculate().getValue(), 3, 'SUMPRODUCT(SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0))*(B100:B108>0))');
+
+		oParser = new parserFormula('SUMPRODUCT(SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0),OFFSET(B100,ROW(B100:B108)-ROW(B100),0))*(B100:B108>0))', "A2", ws);
+		assert.ok(oParser.parse(), 'SUMPRODUCT(SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0),OFFSET(B100,ROW(B100:B108)-ROW(B100),0))*(B100:B108>0))');
+		assert.strictEqual(oParser.calculate().getValue(), 6, 'SUMPRODUCT(SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0),OFFSET(B100,ROW(B100:B108)-ROW(B100),0))*(B100:B108>0))');
+
 
 		testArrayFormula2(assert, "SUMPRODUCT", 1, 8, null, true);
 	});
@@ -23741,6 +23764,24 @@ $(function () {
 		assert.strictEqual(oParser.calculate().getValue(), 1, 'Result of MATCH(TRUE,{TRUE},0)');
 
 
+		oParser = new parserFormula("MATCH({6,2,3},F106:F117,1)", "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 5, "MATCH_16");
+
+		oParser = new parserFormula("MATCH(#REF!,{123,2})", "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "#REF!", "#REF!");
+
+		oParser = new parserFormula("MATCH({6,2,3},#VALUE!)", "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", "#VALUE!");
+
+		ws.getRange2("B300").setValue("#REF!");
+
+		oParser = new parserFormula("MATCH(B300,{1,2,3})", "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "#REF!", "#REF!");
+
 		//TODO excel по-другому работает
 		/*oParser = new parserFormula( "MATCH(123,F106:F117,1)", "A2", ws );
 		assert.ok( oParser.parse() );
@@ -24808,10 +24849,21 @@ $(function () {
 		assert.strictEqual(array.getElementRowCol(0, 1).getValue(), 2, 'Result of INDEX({1,2;3,4},)[0,1]');
 		assert.strictEqual(array.getElementRowCol(1, 1).getValue(), 4, 'Result of INDEX({1,2;3,4},)[1,1]');
 
+		oParser = new parserFormula('INDEX({"";1;2;3;4;5},#REF!)', "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "#REF!");
+
+		oParser = new parserFormula('INDEX({1,2;3,4},1,#VALUE!)', "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!");
+
+		oParser = new parserFormula('INDEX({1,2;3,4},1,#NUM!)', "A2", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), "#NUM!");
+
 		oParser = new parserFormula('INDEX(A100:B101,)', "A2", ws);
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), "#REF!");
-		
 	});
 
 	QUnit.test("Test: \"INDIRECT\"", function (assert) {
@@ -30797,10 +30849,23 @@ $(function () {
 	});
 
 	QUnit.test("Test: \"SUBTOTAL\"", function (assert) {
+		let array;
 		ws.getRange2("A102").setValue("120");
 		ws.getRange2("A103").setValue("10");
 		ws.getRange2("A104").setValue("150");
 		ws.getRange2("A105").setValue("23");
+
+		ws.getRange2("A106").setValue("1");
+
+		ws.getRange2("B100").setValue("#N/A");
+
+		oParser = new parserFormula("SUBTOTAL(-1,A102:A105)", "A2", ws);
+		assert.ok(oParser.parse(), "SUBTOTAL(-1,A102:A105)");
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", "SUBTOTAL(-1,A102:A105)");
+
+		oParser = new parserFormula("SUBTOTAL(0,A102:A105)", "A2", ws);
+		assert.ok(oParser.parse(), "SUBTOTAL(0,A102:A105)");
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", "SUBTOTAL(0,A102:A105)");
 
 		oParser = new parserFormula("SUBTOTAL(1,A102:A105)", "A2", ws);
 		assert.ok(oParser.parse(), "SUBTOTAL(1,A102:A105)");
@@ -30837,6 +30902,108 @@ $(function () {
 		oParser = new parserFormula("SUBTOTAL(9,A102:A105)", "A2", ws);
 		assert.ok(oParser.parse(), "SUBTOTAL(9,A102:A105)");
 		assert.strictEqual(oParser.calculate().getValue(), 303, "SUBTOTAL(9,A102:A105)");
+
+		oParser = new parserFormula("SUBTOTAL(99,A102:A105)", "A2", ws);
+		assert.ok(oParser.parse(), "SUBTOTAL(99,A102:A105)");
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", "SUBTOTAL(99,A102:A105)");
+
+		oParser = new parserFormula('SUBTOTAL("str",A102:A105)', "A2", ws);
+		assert.ok(oParser.parse(), 'SUBTOTAL("str",A102:A105)');
+		assert.strictEqual(oParser.calculate().getValue(), "#VALUE!", 'SUBTOTAL("str",A102:A105)');
+
+		oParser = new parserFormula('SUBTOTAL(B100,A102:A105)', "A2", ws);
+		assert.ok(oParser.parse(), 'SUBTOTAL(B100,A102:A105)');
+		assert.strictEqual(oParser.calculate().getValue(), "#N/A", 'SUBTOTAL(B100,A102:A105)');
+
+		oParser = new parserFormula("SUBTOTAL(2,A102,A102)", "A2", ws);
+		assert.ok(oParser.parse(), "SUBTOTAL(2,A102,A102)");
+		assert.strictEqual(oParser.calculate().getValue(), 2, "Two refs in SUBTOTAL(2,A102,A102)");
+
+		oParser = new parserFormula("SUBTOTAL(2,A102,A102,A102)", "A2", ws);
+		assert.ok(oParser.parse(), "SUBTOTAL(2,A102,A102,A102)");
+		assert.strictEqual(oParser.calculate().getValue(), 3, "Three refs in SUBTOTAL(2,A102,A102,A102)");
+
+		oParser = new parserFormula("SUBTOTAL(2,A102,A102,A102,A102)", "A2", ws);
+		assert.ok(oParser.parse(), "SUBTOTAL(2,A102,A102,A102,A102)");
+		assert.strictEqual(oParser.calculate().getValue(), 4, "Four refs in SUBTOTAL(2,A102,A102,A102,A102)");
+
+		oParser = new parserFormula("SUBTOTAL(9,A102,A102,A102,A102)", "A2", ws);
+		assert.ok(oParser.parse(), "SUBTOTAL(9,A102,A102,A102,A102)");
+		assert.strictEqual(oParser.calculate().getValue(), 480, "Four refs in SUBTOTAL(9,A102,A102,A102,A102)");
+
+		oParser = new parserFormula("SUBTOTAL(9,A102:A105,A102:A105)", "A2", ws);
+		assert.ok(oParser.parse(), "SUBTOTAL(9,A102:A105,A102:A105)");
+		assert.strictEqual(oParser.calculate().getValue(), 606, "Two refs in SUBTOTAL(9,A102:A105,A102:A105)");
+
+		oParser = new parserFormula("SUBTOTAL(9,A102:A105,A102:A105,A102:A105)", "A2", ws);
+		assert.ok(oParser.parse(), "SUBTOTAL(9,A102:A105,A102:A105,A102:A105)");
+		assert.strictEqual(oParser.calculate().getValue(), 909, "Three refs in SUBTOTAL(9,A102:A105,A102:A105,A102:A105)");
+
+		oParser = new parserFormula("SUBTOTAL(9,A102:A105,A102:A105,A102:A105,A102:A105)", "A2", ws);
+		assert.ok(oParser.parse(), "SUBTOTAL(9,A102:A105,A102:A105,A102:A105,A102:A105)");
+		assert.strictEqual(oParser.calculate().getValue(), 1212, "Four refs in SUBTOTAL(9,A102:A105,A102:A105,A102:A105,A102:A105)");
+
+		oParser = new parserFormula("SUBTOTAL(9,A102:A105,A102:A105,A102:A105,A102:A105,A102:A105)", "A2", ws);
+		assert.ok(oParser.parse(), "SUBTOTAL(9,A102:A105,A102:A105,A102:A105,A102:A105,A102:A105)");
+		assert.strictEqual(oParser.calculate().getValue(), 1515, "Five refs in SUBTOTAL(9,A102:A105,A102:A105,A102:A105,A102:A105,A102:A105)");
+
+		oParser = new parserFormula("SUBTOTAL(9,A102,A102:A105)", "A2", ws);
+		assert.ok(oParser.parse(), "SUBTOTAL(9,A102,A102:A105)");
+		assert.strictEqual(oParser.calculate().getValue(), 423, "SUBTOTAL(9,A102,A102:A105)");
+
+		oParser = new parserFormula("SUBTOTAL(9,A102,A102:A105,A106)", "A2", ws);
+		assert.ok(oParser.parse(), "SUBTOTAL(9,A102,A102:A105,A106)");
+		assert.strictEqual(oParser.calculate().getValue(), 424, "SUBTOTAL(9,A102,A102:A106)");
+
+		oParser = new parserFormula("SUBTOTAL(9,A102,A102:A105,A106,A102:A105)", "A2", ws);
+		assert.ok(oParser.parse(), "SUBTOTAL(9,A102,A102:A105,A106,A102:A105)");
+		assert.strictEqual(oParser.calculate().getValue(), 727, "SUBTOTAL(9,A102,A102:A106,A102:A105)");
+
+		oParser = new parserFormula("SUBTOTAL(9,A102,A102:A105,A106,A102:A105,A106)", "A2", ws);
+		assert.ok(oParser.parse(), "SUBTOTAL(9,A102,A102:A105,A106,A102:A105,A106)");
+		assert.strictEqual(oParser.calculate().getValue(), 728, "SUBTOTAL(9,A102,A102:A106,A102:A105,A106)");
+
+
+		// for bug 68820
+		ws.getRange2("B100").setValue("-2");
+		ws.getRange2("B101").setValue("1");
+		ws.getRange2("B102").setValue("-1");
+		ws.getRange2("B103").setValue("0");
+		ws.getRange2("B104").setValue("1");
+		ws.getRange2("B105").setValue("1");
+		ws.getRange2("B106").setValue("-2");
+		ws.getRange2("B107").setValue("0");
+		ws.getRange2("B108").setValue("0");
+
+		ws.getRange2("B109").setValue("1");
+		ws.getRange2("B110").setValue("1");
+		
+		oParser = new parserFormula('SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0))', "A2", ws);
+		assert.ok(oParser.parse(), 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0))');
+		array = oParser.calculate();
+		assert.strictEqual(array.getElementRowCol(0,0).getValue(), -2, 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0))');
+		assert.strictEqual(array.getElementRowCol(1,0).getValue(), 1, 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0))');
+		assert.strictEqual(array.getElementRowCol(2,0).getValue(), -1, 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0))');
+		assert.strictEqual(array.getElementRowCol(3,0).getValue(), 0, 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0))');
+		assert.strictEqual(array.getElementRowCol(4,0).getValue(), 1, 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0))');
+		assert.strictEqual(array.getElementRowCol(5,0).getValue(), 1, 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0))');
+		assert.strictEqual(array.getElementRowCol(6,0).getValue(), -2, 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0))');
+		assert.strictEqual(array.getElementRowCol(7,0).getValue(), 0, 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0))');
+		assert.strictEqual(array.getElementRowCol(8,0).getValue(), 0, 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0))');
+
+		oParser = new parserFormula('SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0),B109:B110)', "A2", ws);
+		assert.ok(oParser.parse(), 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0),B109:B110)');
+		array = oParser.calculate();
+		assert.strictEqual(array.getElementRowCol(0,0).getValue(), 0, 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0),B109:B110)');
+		assert.strictEqual(array.getElementRowCol(1,0).getValue(), 3, 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0),B109:B110)');
+		assert.strictEqual(array.getElementRowCol(2,0).getValue(), 1, 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0),B109:B110)');
+		assert.strictEqual(array.getElementRowCol(3,0).getValue(), 2, 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0),B109:B110)');
+		assert.strictEqual(array.getElementRowCol(4,0).getValue(), 3, 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0),B109:B110)');
+		assert.strictEqual(array.getElementRowCol(5,0).getValue(), 3, 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0),B109:B110)');
+		assert.strictEqual(array.getElementRowCol(6,0).getValue(), 0, 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0),B109:B110)');
+		assert.strictEqual(array.getElementRowCol(7,0).getValue(), 2, 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0),B109:B110)');
+		assert.strictEqual(array.getElementRowCol(8,0).getValue(), 2, 'SUBTOTAL(9,OFFSET(B100,ROW(B100:B108)-ROW(B100),0),B109:B110)');
+
 	});
 
 	QUnit.test("Test: \"MID\"", function (assert) {
@@ -32533,7 +32700,7 @@ $(function () {
 		array = oParser.calculate();
 		assert.strictEqual(array.getValue(), 12, 'Result of FILTER(12,TRUE,#N/A)');
 
-		ws.getRange2("A100:Z200").cleanAll();
+		ws.getRange2("A:B").cleanAll();
 		ws.getRange2("A100:A200").setValue("10");
 		ws.getRange2("A100").setValue("1");
 		ws.getRange2("A102").setValue("2");
@@ -36417,6 +36584,7 @@ $(function () {
 	});
 
 	QUnit.test("Test: \"3d_ref_tests\"", function (assert) {
+		let cellWithFormula = new AscCommonExcel.CCellWithFormula(ws, 1, 0);
 		let wsName = "हरियाणवी";
 		let newWs = wb.createWorksheet(1, wsName);
 
@@ -36424,12 +36592,116 @@ $(function () {
 		assert.ok(oParser.parse(), wsName + '!A1');
 		assert.strictEqual(oParser.calculate().getValue().getValue(), "", wsName + '!A1');
 
+		// without quotes
+		oParser = new parserFormula("SUM(" + wsName + "!A1,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM(" + wsName + "!A1,0). isLocal = true. Link to 3d range A1 inside function without quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM(" + wsName + "!A1,0)");
+
+		oParser = new parserFormula("SUM(" + wsName + "!A1:A2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM(" + wsName + "!A1:A2,0). isLocal = true. Link to 3d range A1:A2 inside function without quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM(" + wsName + "!A1:A2,0)");
+
+		oParser = new parserFormula("SUM(" + wsName + "!$A$1:$A$2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM(" + wsName + "!$A$1:$A$2,0). isLocal = true. Link to 3d range $A$1:$A$2 inside function without quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM(" + wsName + "!$A$1:$A$2,0)");
+
+		oParser = new parserFormula("SUM(" + wsName + "!A:A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM(" + wsName + "!A:A,0). isLocal = true. Link to 3d range A:A inside function without quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM(" + wsName + "!A:A,0)");
+
+		oParser = new parserFormula("SUM(" + wsName + "!$A:$A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM(" + wsName + "!$A:$A,0). isLocal = true. Link to 3d range $A:$A inside function without quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM(" + wsName + "!$A:$A,0)");
+
+		// with quotes
+		oParser = new parserFormula("SUM('" + wsName + "'!A1,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!A1,0). isLocal = true. Link to 3d range A1 inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!A1,0)");
+
+		oParser = new parserFormula("SUM('" + wsName + "'!A1:A2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!A1:A2,0). isLocal = true. Link to 3d range A1:A2 inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!A1:A2,0)");
+
+		oParser = new parserFormula("SUM('" + wsName + "'!$A$1:$A$2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!$A$1:$A$2,0). isLocal = true. Link to 3d range $A$1:$A$2 inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!$A$1:$A$2,0)");
+
+		oParser = new parserFormula("SUM('" + wsName + "'!A:A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!A:A,0). isLocal = true. Link to 3d range A:A inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!A:A,0)");
+
+		oParser = new parserFormula("SUM('" + wsName + "'!$A:$A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!$A:$A,0). isLocal = true. Link to 3d range $A:$A inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!$A:$A,0)");
+
 		wsName = "हरियाण.वी";
 		newWs.setName(wsName);
 
 		oParser = new parserFormula(wsName + '!A1', "A2", ws);
 		assert.ok(oParser.parse(), wsName + '!A1');
 		assert.strictEqual(oParser.calculate().getValue().getValue(), "", wsName + '!A1');
+
+		// without quotes
+		oParser = new parserFormula("SUM(" + wsName + "!A1,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM(" + wsName + "!A1,0). isLocal = true. Link to 3d range A1 inside function without quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM(" + wsName + "!A1,0)");
+
+		oParser = new parserFormula("SUM(" + wsName + "!A1:A2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM(" + wsName + "!A1:A2,0). isLocal = true. Link to 3d range A1:A2 inside function without quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM(" + wsName + "!A1:A2,0)");
+
+		oParser = new parserFormula("SUM(" + wsName + "!$A$1:$A$2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM(" + wsName + "!$A$1:$A$2,0). isLocal = true. Link to 3d range $A$1:$A$2 inside function without quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM(" + wsName + "!$A$1:$A$2,0)");
+
+		oParser = new parserFormula("SUM(" + wsName + "!A:A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM(" + wsName + "!A:A,0). isLocal = true. Link to 3d range A:A inside function without quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM(" + wsName + "!A:A,0)");
+
+		oParser = new parserFormula("SUM(" + wsName + "!$A:$A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM(" + wsName + "!$A:$A,0). isLocal = true. Link to 3d range $A:$A inside function without quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM(" + wsName + "!$A:$A,0)");
+
+		// with quotes
+		oParser = new parserFormula("SUM('" + wsName + "'!A1,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!A1,0). isLocal = true. Link to 3d range A1 inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!A1,0)");
+
+		oParser = new parserFormula("SUM('" + wsName + "'!A1:A2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!A1:A2,0). isLocal = true. Link to 3d range A1:A2 inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!A1:A2,0)");
+
+		oParser = new parserFormula("SUM('" + wsName + "'!$A$1:$A$2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!$A$1:$A$2,0). isLocal = true. Link to 3d range $A$1:$A$2 inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!$A$1:$A$2,0)");
+
+		oParser = new parserFormula("SUM('" + wsName + "'!A:A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!A:A,0). isLocal = true. Link to 3d range A:A inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!A:A,0)");
+
+		oParser = new parserFormula("SUM('" + wsName + "'!$A:$A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!$A:$A,0). isLocal = true. Link to 3d range $A:$A inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!$A:$A,0)");
 
 		wsName = "हरियाण वी";
 		newWs.setName(wsName);
@@ -36441,12 +36713,111 @@ $(function () {
 		assert.ok(oParser.parse(), "'" + wsName + "'" + '!A1');
 		assert.strictEqual(oParser.calculate().getValue().getValue(), "", wsName + '!A1');
 
+		// without quotes
+		oParser = new parserFormula("SUM(" + wsName + "!A1,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true) === false, "SUM(" + wsName + "!A1,0). isLocal = true. Link to 3d range A1 inside function without quotes");
+		assert.strictEqual(oParser.calculate().getValue(), "#NAME?", "SUM(" + wsName + "!A1,0)");
+
+		oParser = new parserFormula("SUM(" + wsName + "!A1:A2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true) === false, "SUM(" + wsName + "!A1:A2,0). isLocal = true. Link to 3d range A1:A2 inside function without quotes");
+		assert.strictEqual(oParser.calculate().getValue(), "#NAME?", "SUM(" + wsName + "!A1:A2,0)");
+
+		oParser = new parserFormula("SUM(" + wsName + "!$A$1:$A$2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true) === false, "SUM(" + wsName + "!$A$1:$A$2,0). isLocal = true. Link to 3d range $A$1:$A$2 inside function without quotes");
+		assert.strictEqual(oParser.calculate().getValue(), "#NAME?", "SUM(" + wsName + "!$A$1:$A$2,0)");
+
+		oParser = new parserFormula("SUM(" + wsName + "!A:A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true) === false, "SUM(" + wsName + "!A:A,0). isLocal = true. Link to 3d range A:A inside function without quotes");
+		assert.strictEqual(oParser.calculate().getValue(), "#NAME?", "SUM(" + wsName + "!A:A,0)");
+
+		oParser = new parserFormula("SUM(" + wsName + "!$A:$A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true) === false, "SUM(" + wsName + "!$A:$A,0). isLocal = true. Link to 3d range $A:$A inside function without quotes");
+		assert.strictEqual(oParser.calculate().getValue(), "#NAME?", "SUM(" + wsName + "!$A:$A,0)");
+
+		// with quotes
+		oParser = new parserFormula("SUM('" + wsName + "'!A1,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!A1,0). isLocal = true. Link to 3d range A1 inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!A1,0)");
+
+		oParser = new parserFormula("SUM('" + wsName + "'!A1:A2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!A1:A2,0). isLocal = true. Link to 3d range A1:A2 inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!A1:A2,0)");
+
+		oParser = new parserFormula("SUM('" + wsName + "'!$A$1:$A$2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!$A$1:$A$2,0). isLocal = true. Link to 3d range $A$1:$A$2 inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!$A$1:$A$2,0)");
+
+		oParser = new parserFormula("SUM('" + wsName + "'!A:A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!A:A,0). isLocal = true. Link to 3d range A:A inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!A:A,0)");
+
+		oParser = new parserFormula("SUM('" + wsName + "'!$A:$A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!$A:$A,0). isLocal = true. Link to 3d range $A:$A inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!$A:$A,0)");
+
 		wsName = "हरियाणवी_test_тест_اختبار_123";
 		newWs.setName(wsName);
 
 		oParser = new parserFormula(wsName + '!A1', "A2", ws);
 		assert.ok(oParser.parse(), wsName + '!A1');
 		assert.strictEqual(oParser.calculate().getValue().getValue(), "", wsName + '!A1');
+
+		// without quotes
+		oParser = new parserFormula("SUM(" + wsName + "!A1,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM(" + wsName + "!A1,0). isLocal = true. Link to 3d range A1 inside function without quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM(" + wsName + "!A1,0)");
+
+		oParser = new parserFormula("SUM(" + wsName + "!A1:A2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM(" + wsName + "!A1:A2,0). isLocal = true. Link to 3d range A1:A2 inside function without quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM(" + wsName + "!A1:A2,0)");
+
+		oParser = new parserFormula("SUM(" + wsName + "!$A$1:$A$2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM(" + wsName + "!$A$1:$A$2,0). isLocal = true. Link to 3d range $A$1:$A$2 inside function without quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM(" + wsName + "!$A$1:$A$2,0)");
+
+		oParser = new parserFormula("SUM(" + wsName + "!A:A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM(" + wsName + "!A:A,0). isLocal = true. Link to 3d range A:A inside function without quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM(" + wsName + "!A:A,0)");
+
+		oParser = new parserFormula("SUM(" + wsName + "!$A:$A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM(" + wsName + "!$A:$A,0). isLocal = true. Link to 3d range $A:$A inside function without quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM(" + wsName + "!$A:$A,0)");
+
+		// with quotes
+		oParser = new parserFormula("SUM('" + wsName + "'!A1,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!A1,0). isLocal = true. Link to 3d range A1 inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!A1,0)");
+
+		oParser = new parserFormula("SUM('" + wsName + "'!A1:A2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!A1:A2,0). isLocal = true. Link to 3d range A1:A2 inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!A1:A2,0)");
+
+		oParser = new parserFormula("SUM('" + wsName + "'!$A$1:$A$2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!$A$1:$A$2,0). isLocal = true. Link to 3d range $A$1:$A$2 inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!$A$1:$A$2,0)");
+
+		oParser = new parserFormula("SUM('" + wsName + "'!A:A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!A:A,0). isLocal = true. Link to 3d range A:A inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!A:A,0)");
+
+		oParser = new parserFormula("SUM('" + wsName + "'!$A:$A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!$A:$A,0). isLocal = true. Link to 3d range $A:$A inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!$A:$A,0)");
 
 		wsName = "हरियाणवी_test_тест_اختبار_1 23";
 		newWs.setName(wsName);
@@ -36455,6 +36826,44 @@ $(function () {
 		assert.ok(oParser.parse(), "'" + wsName + "'" + '!A1');
 		assert.strictEqual(oParser.calculate().getValue().getValue(), "", wsName + '!A1');
 
+		// without quotes
+		oParser = new parserFormula("SUM(" + wsName + "!A1:A2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true) === false, "SUM(" + wsName + "!A1:A2,0). isLocal = true. Link to 3d range A1:A2 inside function without quotes");
+		assert.strictEqual(oParser.calculate().getValue(), "#NAME?", "SUM(" + wsName + "!A1:A2,0)");
+
+		oParser = new parserFormula("SUM(" + wsName + "!$A$1:$A$2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true) === false, "SUM(" + wsName + "!$A$1:$A$2,0). isLocal = true. Link to 3d range $A$1:$A$2 inside function without quotes");
+		assert.strictEqual(oParser.calculate().getValue(), "#NAME?", "SUM(" + wsName + "!$A$1:$A$2,0)");
+
+		oParser = new parserFormula("SUM(" + wsName + "!A:A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true) === false, "SUM(" + wsName + "!A:A,0). isLocal = true. Link to 3d range A:A inside function without quotes");
+		assert.strictEqual(oParser.calculate().getValue(), "#NAME?", "SUM(" + wsName + "!A:A,0)");
+
+		oParser = new parserFormula("SUM(" + wsName + "!$A:$A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true) === false, "SUM(" + wsName + "!$A:$A,0). isLocal = true. Link to 3d range $A:$A inside function without quotes");
+		assert.strictEqual(oParser.calculate().getValue(), "#NAME?", "SUM(" + wsName + "!$A:$A,0)");
+
+		// with quotes
+		oParser = new parserFormula("SUM('" + wsName + "'!A1:A2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!A1:A2,0). isLocal = true. Link to 3d range A1:A2 inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!A1:A2,0)");
+
+		oParser = new parserFormula("SUM('" + wsName + "'!$A$1:$A$2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!$A$1:$A$2,0). isLocal = true. Link to 3d range $A$1:$A$2 inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!$A$1:$A$2,0)");
+
+		oParser = new parserFormula("SUM('" + wsName + "'!A:A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!A:A,0). isLocal = true. Link to 3d range A:A inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!A:A,0)");
+
+		oParser = new parserFormula("SUM('" + wsName + "'!$A:$A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!$A:$A,0). isLocal = true. Link to 3d range $A:$A inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!$A:$A,0)");
+
 		wsName = "Ả, ẻ, Ỏ";
 		newWs.setName(wsName);
 
@@ -36462,12 +36871,212 @@ $(function () {
 		assert.ok(oParser.parse(), "'" + wsName + "'" + '!A1');
 		assert.strictEqual(oParser.calculate().getValue().getValue(), "", wsName + '!A1');
 
+		// without quotes
+		oParser = new parserFormula("SUM(" + wsName + "!A1:A2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true) === false, "SUM(" + wsName + "!A1:A2,0). isLocal = true. Link to 3d range A1:A2 inside function without quotes");
+		assert.strictEqual(oParser.calculate().getValue(), "#NAME?", "SUM(" + wsName + "!A1:A2,0)");
+
+		oParser = new parserFormula("SUM(" + wsName + "!$A$1:$A$2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true) === false, "SUM(" + wsName + "!$A$1:$A$2,0). isLocal = true. Link to 3d range $A$1:$A$2 inside function without quotes");
+		assert.strictEqual(oParser.calculate().getValue(), "#NAME?", "SUM(" + wsName + "!$A$1:$A$2,0)");
+
+		oParser = new parserFormula("SUM(" + wsName + "!A:A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true) === false, "SUM(" + wsName + "!A:A,0). isLocal = true. Link to 3d range A:A inside function without quotes");
+		assert.strictEqual(oParser.calculate().getValue(), "#NAME?", "SUM(" + wsName + "!A:A,0)");
+
+		oParser = new parserFormula("SUM(" + wsName + "!$A:$A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true) === false, "SUM(" + wsName + "!$A:$A,0). isLocal = true. Link to 3d range $A:$A inside function without quotes");
+		assert.strictEqual(oParser.calculate().getValue(), "#NAME?", "SUM(" + wsName + "!$A:$A,0)");
+
+		// with quotes
+		oParser = new parserFormula("SUM('" + wsName + "'!A1:A2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!A1:A2,0). isLocal = true. Link to 3d range A1:A2 inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!A1:A2,0)");
+
+		oParser = new parserFormula("SUM('" + wsName + "'!$A$1:$A$2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!$A$1:$A$2,0). isLocal = true. Link to 3d range $A$1:$A$2 inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!$A$1:$A$2,0)");
+
+		oParser = new parserFormula("SUM('" + wsName + "'!A:A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!A:A,0). isLocal = true. Link to 3d range A:A inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!A:A,0)");
+
+		oParser = new parserFormula("SUM('" + wsName + "'!$A:$A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!$A:$A,0). isLocal = true. Link to 3d range $A:$A inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!$A:$A,0)");
+
 		wsName = "@©™®†‡§";
 		newWs.setName(wsName);
 
 		oParser = new parserFormula("'" + wsName + "'" + '!A1', "A2", ws);
 		assert.ok(oParser.parse(), "'" + wsName + "'" + '!A1');
 		assert.strictEqual(oParser.calculate().getValue().getValue(), "", wsName + '!A1');
+
+		// without quotes
+		oParser = new parserFormula("SUM(" + wsName + "!A1:A2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true) === false, "SUM(" + wsName + "!A1:A2,0). isLocal = true. Link to 3d range A1:A2 inside function without quotes");
+		assert.strictEqual(oParser.calculate().getValue(), "#NAME?", "SUM(" + wsName + "!A1:A2,0)");
+
+		oParser = new parserFormula("SUM(" + wsName + "!$A$1:$A$2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true) === false, "SUM(" + wsName + "!$A$1:$A$2,0). isLocal = true. Link to 3d range $A$1:$A$2 inside function without quotes");
+		assert.strictEqual(oParser.calculate().getValue(), "#NAME?", "SUM(" + wsName + "!$A$1:$A$2,0)");
+
+		oParser = new parserFormula("SUM(" + wsName + "!A:A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true) === false, "SUM(" + wsName + "!A:A,0). isLocal = true. Link to 3d range A:A inside function without quotes");
+		assert.strictEqual(oParser.calculate().getValue(), "#NAME?", "SUM(" + wsName + "!A:A,0)");
+
+		oParser = new parserFormula("SUM(" + wsName + "!$A:$A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true) === false, "SUM(" + wsName + "!$A:$A,0). isLocal = true. Link to 3d range $A:$A inside function without quotes");
+		assert.strictEqual(oParser.calculate().getValue(), "#NAME?", "SUM(" + wsName + "!$A:$A,0)");
+
+		// with quotes
+		oParser = new parserFormula("SUM('" + wsName + "'!A1:A2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!A1:A2,0). isLocal = true. Link to 3d range A1:A2 inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!A1:A2,0)");
+
+		oParser = new parserFormula("SUM('" + wsName + "'!$A$1:$A$2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!$A$1:$A$2,0). isLocal = true. Link to 3d range $A$1:$A$2 inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!$A$1:$A$2,0)");
+
+		oParser = new parserFormula("SUM('" + wsName + "'!A:A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!A:A,0). isLocal = true. Link to 3d range A:A inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!A:A,0)");
+
+		oParser = new parserFormula("SUM('" + wsName + "'!$A:$A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!$A:$A,0). isLocal = true. Link to 3d range $A:$A inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!$A:$A,0)");
+
+
+		wsName = "Sheet!25";
+		newWs.setName(wsName);
+		
+		// without quotes
+		oParser = new parserFormula("SUM(" + wsName + "!A1:A2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true) === false, "SUM(" + wsName + "!A1:A2,0). isLocal = true. Link to 3d range A1:A2 inside function without quotes");
+		assert.strictEqual(oParser.calculate().getValue(), "#NAME?", "SUM(" + wsName + "!A1:A2,0)");
+
+		oParser = new parserFormula("SUM(" + wsName + "!$A$1:$A$2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true) === false, "SUM(" + wsName + "!$A$1:$A$2,0). isLocal = true. Link to 3d range $A$1:$A$2 inside function without quotes");
+		assert.strictEqual(oParser.calculate().getValue(), "#NAME?", "SUM(" + wsName + "!$A$1:$A$2,0)");
+
+		oParser = new parserFormula("SUM(" + wsName + "!A:A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true) === false, "SUM(" + wsName + "!A:A,0). isLocal = true. Link to 3d range A:A inside function without quotes");
+		assert.strictEqual(oParser.calculate().getValue(), "#NAME?", "SUM(" + wsName + "!A:A,0)");
+
+		oParser = new parserFormula("SUM(" + wsName + "!$A:$A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true) === false, "SUM(" + wsName + "!$A:$A,0). isLocal = true. Link to 3d range $A:$A inside function without quotes");
+		assert.strictEqual(oParser.calculate().getValue(), "#NAME?", "SUM(" + wsName + "!$A:$A,0)");
+
+		// with quotes
+		oParser = new parserFormula("SUM('" + wsName + "'!A1:A2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!A1:A2,0). isLocal = true. Link to 3d range A1:A2 inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!A1:A2,0)");
+
+		oParser = new parserFormula("SUM('" + wsName + "'!$A$1:$A$2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!$A$1:$A$2,0). isLocal = true. Link to 3d range $A$1:$A$2 inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!$A$1:$A$2,0)");
+
+		oParser = new parserFormula("SUM('" + wsName + "'!A:A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!A:A,0). isLocal = true. Link to 3d range A:A inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!A:A,0)");
+
+		oParser = new parserFormula("SUM('" + wsName + "'!$A:$A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!$A:$A,0). isLocal = true. Link to 3d range $A:$A inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!$A:$A,0)");
+
+		wsName = ",;";
+		newWs.setName(wsName);
+
+		// without quotes
+		oParser = new parserFormula("SUM(" + wsName + "!A1:A2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true) === false, "SUM(" + wsName + "!A1:A2,0). isLocal = true. Link to 3d range A1:A2 inside function without quotes");
+		assert.strictEqual(oParser.calculate().getValue(), "#NAME?", "SUM(" + wsName + "!A1:A2,0)");
+
+		oParser = new parserFormula("SUM(" + wsName + "!$A$1:$A$2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true) === false, "SUM(" + wsName + "!$A$1:$A$2,0). isLocal = true. Link to 3d range $A$1:$A$2 inside function without quotes");
+		assert.strictEqual(oParser.calculate().getValue(), "#NAME?", "SUM(" + wsName + "!$A$1:$A$2,0)");
+
+		oParser = new parserFormula("SUM(" + wsName + "!A:A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true) === false, "SUM(" + wsName + "!A:A,0). isLocal = true. Link to 3d range A:A inside function without quotes");
+		assert.strictEqual(oParser.calculate().getValue(), "#NAME?", "SUM(" + wsName + "!A:A,0)");
+
+		oParser = new parserFormula("SUM(" + wsName + "!$A:$A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true) === false, "SUM(" + wsName + "!$A:$A,0). isLocal = true. Link to 3d range $A:$A inside function without quotes");
+		assert.strictEqual(oParser.calculate().getValue(), "#NAME?", "SUM(" + wsName + "!$A:$A,0)");
+
+		// with quotes
+		oParser = new parserFormula("SUM('" + wsName + "'!A1:A2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!A1:A2,0). isLocal = true. Link to 3d range A1:A2 inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!A1:A2,0)");
+
+		oParser = new parserFormula("SUM('" + wsName + "'!$A$1:$A$2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!$A$1:$A$2,0). isLocal = true. Link to 3d range $A$1:$A$2 inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!$A$1:$A$2,0)");
+
+		oParser = new parserFormula("SUM('" + wsName + "'!A:A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!A:A,0). isLocal = true. Link to 3d range A:A inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!A:A,0)");
+
+		oParser = new parserFormula("SUM('" + wsName + "'!$A:$A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!$A:$A,0). isLocal = true. Link to 3d range $A:$A inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!$A:$A,0)");
+
+		wsName = "ds ds ds ! ds ; !";
+		newWs.setName(wsName);
+
+		// without quotes
+		oParser = new parserFormula("SUM(" + wsName + "!A1:A2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true) === false, "SUM(" + wsName + "!A1:A2,0). isLocal = true. Link to 3d range A1:A2 inside function without quotes");
+		assert.strictEqual(oParser.calculate().getValue(), "#NAME?", "SUM(" + wsName + "!A1:A2,0)");
+
+		oParser = new parserFormula("SUM(" + wsName + "!$A$1:$A$2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true) === false, "SUM(" + wsName + "!$A$1:$A$2,0). isLocal = true. Link to 3d range $A$1:$A$2 inside function without quotes");
+		assert.strictEqual(oParser.calculate().getValue(), "#NAME?", "SUM(" + wsName + "!$A$1:$A$2,0)");
+
+		oParser = new parserFormula("SUM(" + wsName + "!A:A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true) === false, "SUM(" + wsName + "!A:A,0). isLocal = true. Link to 3d range A:A inside function without quotes");
+		assert.strictEqual(oParser.calculate().getValue(), "#NAME?", "SUM(" + wsName + "!A:A,0)");
+
+		oParser = new parserFormula("SUM(" + wsName + "!$A:$A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true) === false, "SUM(" + wsName + "!$A:$A,0). isLocal = true. Link to 3d range $A:$A inside function without quotes");
+		assert.strictEqual(oParser.calculate().getValue(), "#NAME?", "SUM(" + wsName + "!$A:$A,0)");
+
+		// with quotes
+		oParser = new parserFormula("SUM('" + wsName + "'!A1:A2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!A1:A2,0). isLocal = true. Link to 3d range A1:A2 inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!A1:A2,0)");
+
+		oParser = new parserFormula("SUM('" + wsName + "'!$A$1:$A$2,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!$A$1:$A$2,0). isLocal = true. Link to 3d range $A$1:$A$2 inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!$A$1:$A$2,0)");
+
+		oParser = new parserFormula("SUM('" + wsName + "'!A:A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!A:A,0). isLocal = true. Link to 3d range A:A inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!A:A,0)");
+
+		oParser = new parserFormula("SUM('" + wsName + "'!$A:$A,0)", cellWithFormula, ws);
+		assert.ok(oParser.parse(true), "SUM('" + wsName + "'!$A:$A,0). isLocal = true. Link to 3d range $A:$A inside function with quotes");
+		assert.ok(oParser.outStack.length > 2, "OutStack length after parse");
+		assert.strictEqual(oParser.calculate().getValue(), 0, "SUM('" + wsName + "'!$A:$A,0)");
 
 	});
 

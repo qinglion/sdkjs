@@ -6063,7 +6063,9 @@
                 range = ws.getRange3(0, 0, gc_nMaxRow0, gc_nMaxCol0);
             }
 
-            var curRow = -1;
+            var curRowIndex = -1;
+            var curRow = null;
+            var curCol = null;
             var allRow = ws.getAllRowNoEmpty();
             var tempRow = new AscCommonExcel.Row(ws);
             if (allRow) {
@@ -6073,21 +6075,26 @@
 			this.memory.XlsbEndRecord();
 
             range._foreachRowNoEmpty(function(row, excludedCount) {
-				row.toXLSB(oThis.memory, -excludedCount, oThis.stylesForWrite);
-                curRow = row.getIndex();
+                row.toXLSB(oThis.memory, -excludedCount, oThis.stylesForWrite);
+                curRowIndex = row.getIndex();
+                curRow = row;
             }, function(cell, nRow0, nCol0, nRowStart0, nColStart0, excludedCount) {
-                if (curRow != nRow0) {
+                if (curRowIndex != nRow0) {
                     tempRow.setIndex(nRow0);
 					tempRow.toXLSB(oThis.memory, -excludedCount, oThis.stylesForWrite);
-					curRow = tempRow.getIndex();
+					curRowIndex = tempRow.getIndex();
+                    curRow = tempRow;
                 }
                 //готовим ячейку к записи
                 var nXfsId;
                 var cellXfs = cell.xfs;
                 nXfsId = oThis.stylesForWrite.add(cell.xfs);
 
-                //сохраняем как и Excel даже пустой стиль(нужно чтобы убрать стиль строки/колонки)
-                if (null != cellXfs || false == cell.isNullText()) {
+                // save even an empty style like Excel (needed to remove row/column style)
+                let needWrite = cellXfs || !cell.isNullText()
+                    || (curRow && curRow.xfs) //override row style
+                    || ((curCol = (ws.aCols[nCol0] || ws.oAllCol)) && curCol && curCol.xfs);//override col style
+                if (needWrite) {
 					var formulaToWrite;
 					if (cell.isFormula() && !(oThis.isCopyPaste && cell.ws && cell.ws.bIgnoreWriteFormulas)) {
 						formulaToWrite = oThis.InitSaveManager.PrepareFormulaToWrite(cell);

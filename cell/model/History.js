@@ -1247,7 +1247,7 @@ CHistory.prototype.Add = function(Class, Type, sheetid, range, Data, LocalChange
 	if (null != sheetid)
 		curPoint.UndoSheetId = sheetid;
 
-	if(1 === curPoint.Items.length)
+	if((1 === curPoint.Items.length && curPoint.Items[0].Type !== AscCH.historyitem_Unknown) || 2 === curPoint.Items.length)
 		this._sendCanUndoRedo();
 
 	if (!this.CollaborativeEditing)
@@ -1593,8 +1593,11 @@ CHistory.prototype.GetSerializeArray = function()
 	};
 	CHistory.prototype.Is_LastPointEmpty = function()
 	{
-		if (!this.Points[this.Index] || this.Points[this.Index].Items.length <= 0)
+		if (!this.Points[this.Index] || this.Points[this.Index].Items.length <= 0 || (this.Points[this.Index].Items.length === 1
+			&& this.Points[this.Index].Items[0].Type === AscCH.historyitem_Unknown))
+		{
 			return true;
+		}
 
 		return false;
 	};

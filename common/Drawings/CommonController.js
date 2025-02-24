@@ -4974,7 +4974,95 @@
 					}
 					this.checkSelectedObjectsAndCallback(this.removeCallback, [dir, bOnlyText, bRemoveOnlySelection, bOnTextAdd, isWord, undefined], false, AscDFH.historydescription_Spreadsheet_Remove, undefined, !!(oTargetContent && AscCommon.CollaborativeEditing.Is_Fast()));
 				},
-
+				removeInGroup: function(oGroup, arrShapes, arrSlicerNames) {
+					if (oGroup.getObjectType() === AscDFH.historyitem_type_GroupShape) {
+						arrSlicerNames = arrSlicerNames || [];
+						this.resetConnectors(arrShapes);
+						var group_map = {}, group_arr = [], i, cur_group, sp, xc, yc, hc, vc, rel_xc,
+							rel_yc, j;
+						for (i = 0; i < arrShapes.length; ++i) {
+							const oSp = arrShapes[i];
+							if (oSp.getObjectType() === AscDFH.historyitem_type_SlicerView) {
+								arrSlicerNames.push(oSp.getName());
+							} else {
+								oSp.group.removeFromSpTree(oSp.Get_Id());
+								group_map[oSp.group.Get_Id()] = oSp.group;
+								oSp.setBDeleted(true);
+							}
+						}
+						group_map[oGroup.Get_Id() + ""] = oGroup;
+						for (var key in group_map) {
+							if (group_map.hasOwnProperty(key))
+								group_arr.push(group_map[key]);
+						}
+						group_arr.sort(CompareGroups);
+						for (i = 0; i < group_arr.length; ++i) {
+							cur_group = group_arr[i];
+							if (isRealObject(cur_group.group)) {
+								if (cur_group.spTree.length === 0) {
+									cur_group.group.removeFromSpTree(cur_group.Get_Id());
+								} else if (cur_group.spTree.length === 1) {
+									sp = cur_group.spTree[0];
+									hc = sp.spPr.xfrm.extX / 2;
+									vc = sp.spPr.xfrm.extY / 2;
+									xc = sp.transform.TransformPointX(hc, vc);
+									yc = sp.transform.TransformPointY(hc, vc);
+									rel_xc = cur_group.group.invertTransform.TransformPointX(xc, yc);
+									rel_yc = cur_group.group.invertTransform.TransformPointY(xc, yc);
+									sp.spPr.xfrm.setOffX(rel_xc - hc);
+									sp.spPr.xfrm.setOffY(rel_yc - vc);
+									sp.spPr.xfrm.setRot(AscFormat.normalizeRotate(cur_group.rot + sp.rot));
+									sp.spPr.xfrm.setFlipH(cur_group.spPr.xfrm.flipH === true ? !(sp.spPr.xfrm.flipH === true) : sp.spPr.xfrm.flipH === true);
+									sp.spPr.xfrm.setFlipV(cur_group.spPr.xfrm.flipV === true ? !(sp.spPr.xfrm.flipV === true) : sp.spPr.xfrm.flipV === true);
+									sp.setGroup(cur_group.group);
+									for (j = 0; j < cur_group.group.spTree.length; ++j) {
+										if (cur_group.group.spTree[j] === cur_group) {
+											cur_group.group.addToSpTree(j, sp);
+											cur_group.group.removeFromSpTree(cur_group.Get_Id());
+										}
+									}
+								}
+							} else {
+								if (cur_group.spTree.length === 0) {
+									if (this.selection.groupSelection === cur_group) {
+										this.resetSelection();
+									}
+										cur_group.deleteDrawingBase(true);
+										cur_group.setBDeleted(true);
+									return true;
+								} else if (cur_group.spTree.length === 1) {
+									sp = cur_group.spTree[0];
+									sp.spPr.xfrm.setOffX(cur_group.spPr.xfrm.offX + sp.spPr.xfrm.offX);
+									sp.spPr.xfrm.setOffY(cur_group.spPr.xfrm.offY + sp.spPr.xfrm.offY);
+									sp.spPr.xfrm.setRot(AscFormat.normalizeRotate(cur_group.rot + sp.rot));
+									sp.spPr.xfrm.setFlipH(cur_group.spPr.xfrm.flipH === true ? !(sp.spPr.xfrm.flipH === true) : sp.spPr.xfrm.flipH === true);
+									sp.spPr.xfrm.setFlipV(cur_group.spPr.xfrm.flipV === true ? !(sp.spPr.xfrm.flipV === true) : sp.spPr.xfrm.flipV === true);
+									sp.setGroup(null);
+									sp.addToDrawingObjects();
+									sp.checkDrawingBaseCoords();
+									cur_group.deleteDrawingBase();
+									if (cur_group.selected || sp.selected) {
+										cur_group.deselectInternal(this);
+										this.deselectObject(cur_group);
+										this.selectObject(sp, cur_group.selectStartPage);
+									}
+								} else {
+									cur_group.updateCoordinatesAfterInternalResize();
+									if (this.selection.groupSelection === cur_group) {
+										this.resetInternalSelection();
+									}
+								}
+								const oWBView = Asc.editor && Asc.editor.wb;
+								if (arrSlicerNames.length > 0 && oWBView) {
+									History.StartTransaction();
+									oWBView.deleteSlicers(arrSlicerNames);
+								}
+								return true;
+							}
+						}
+						this.resetInternalSelection();
+					}
+				},
 				removeCallback: function (dir, bOnlyText, bRemoveOnlySelection, bOnTextAdd, isWord, bNoCheck) {
 					var target_text_object = getTargetTextObject(this);
 					if (target_text_object) {
@@ -5008,85 +5096,10 @@
 							if (this.selection.groupSelection.selection.chartSelection) {
 								this.selection.groupSelection.selection.chartSelection.remove();
 							} else {
-								if (this.selection.groupSelection.getObjectType() === AscDFH.historyitem_type_GroupShape) {
-									aSO = this.selection.groupSelection.selectedObjects;
-									this.resetConnectors(aSO);
-									var group_map = {}, group_arr = [], i, cur_group, sp, xc, yc, hc, vc, rel_xc,
-										rel_yc, j;
-									for (i = 0; i < aSO.length; ++i) {
-										oSp = aSO[i];
-										if (oSp.getObjectType() === AscDFH.historyitem_type_SlicerView) {
-											aSlicerNames.push(oSp.getName());
-										} else {
-											oSp.group.removeFromSpTree(oSp.Get_Id());
-											group_map[oSp.group.Get_Id()] = oSp.group;
-											oSp.setBDeleted(true);
-										}
-									}
-									group_map[this.selection.groupSelection.Get_Id() + ""] = this.selection.groupSelection;
-									for (var key in group_map) {
-										if (group_map.hasOwnProperty(key))
-											group_arr.push(group_map[key]);
-									}
-									group_arr.sort(CompareGroups);
-									for (i = 0; i < group_arr.length; ++i) {
-										cur_group = group_arr[i];
-										if (isRealObject(cur_group.group)) {
-											if (cur_group.spTree.length === 0) {
-												cur_group.group.removeFromSpTree(cur_group.Get_Id());
-											} else if (cur_group.spTree.length === 1) {
-												sp = cur_group.spTree[0];
-												hc = sp.spPr.xfrm.extX / 2;
-												vc = sp.spPr.xfrm.extY / 2;
-												xc = sp.transform.TransformPointX(hc, vc);
-												yc = sp.transform.TransformPointY(hc, vc);
-												rel_xc = cur_group.group.invertTransform.TransformPointX(xc, yc);
-												rel_yc = cur_group.group.invertTransform.TransformPointY(xc, yc);
-												sp.spPr.xfrm.setOffX(rel_xc - hc);
-												sp.spPr.xfrm.setOffY(rel_yc - vc);
-												sp.spPr.xfrm.setRot(AscFormat.normalizeRotate(cur_group.rot + sp.rot));
-												sp.spPr.xfrm.setFlipH(cur_group.spPr.xfrm.flipH === true ? !(sp.spPr.xfrm.flipH === true) : sp.spPr.xfrm.flipH === true);
-												sp.spPr.xfrm.setFlipV(cur_group.spPr.xfrm.flipV === true ? !(sp.spPr.xfrm.flipV === true) : sp.spPr.xfrm.flipV === true);
-												sp.setGroup(cur_group.group);
-												for (j = 0; j < cur_group.group.spTree.length; ++j) {
-													if (cur_group.group.spTree[j] === cur_group) {
-														cur_group.group.addToSpTree(j, sp);
-														cur_group.group.removeFromSpTree(cur_group.Get_Id());
-													}
-												}
-											}
-										} else {
-											if (cur_group.spTree.length === 0) {
-												this.resetInternalSelection();
-												this.removeCallback(-1, undefined, undefined, undefined, undefined, undefined);
-												return;
-											} else if (cur_group.spTree.length === 1) {
-												sp = cur_group.spTree[0];
-												sp.spPr.xfrm.setOffX(cur_group.spPr.xfrm.offX + sp.spPr.xfrm.offX);
-												sp.spPr.xfrm.setOffY(cur_group.spPr.xfrm.offY + sp.spPr.xfrm.offY);
-												sp.spPr.xfrm.setRot(AscFormat.normalizeRotate(cur_group.rot + sp.rot));
-												sp.spPr.xfrm.setFlipH(cur_group.spPr.xfrm.flipH === true ? !(sp.spPr.xfrm.flipH === true) : sp.spPr.xfrm.flipH === true);
-												sp.spPr.xfrm.setFlipV(cur_group.spPr.xfrm.flipV === true ? !(sp.spPr.xfrm.flipV === true) : sp.spPr.xfrm.flipV === true);
-												sp.setGroup(null);
-												sp.addToDrawingObjects();
-												sp.checkDrawingBaseCoords();
-												cur_group.deleteDrawingBase();
-												this.resetSelection();
-												this.selectObject(sp, cur_group.selectStartPage);
-											} else {
-												cur_group.updateCoordinatesAfterInternalResize();
-											}
-											this.resetInternalSelection();
-											this.recalculate();
-											oWBView = Asc.editor && Asc.editor.wb;
-											if (aSlicerNames.length > 0 && oWBView) {
-												History.StartTransaction();
-												oWBView.deleteSlicers(aSlicerNames);
-											}
-											return;
-										}
-									}
-									this.resetInternalSelection();
+								if (this.removeInGroup(this.selection.groupSelection, this.selection.groupSelection.selectedObjects, aSlicerNames)) {
+									this.recalculate();
+									this.updateOverlay();
+									return;
 								}
 							}
 						} else if (this.selection.chartSelection) {
@@ -7310,6 +7323,16 @@
 								}
 							}
 						}
+
+						if (Asc.editor.isPdfEditor()) {
+							let oDoc = Asc.editor.getPDFDoc();
+							let oPageInfo = oDoc.GetPageInfo(drawing.GetPage());
+
+							if (oPageInfo.IsDeleteLock()) {
+								locked = true;
+							}
+						}
+						
 						var lockAspect = drawing.getNoChangeAspect();
 						var oMainGroup = drawing.getMainGroup();
 						let sOwnName = drawing.getObjectName();
@@ -7369,6 +7392,8 @@
 										ImageUrl: drawing.getImageUrl(),
 										transparent: drawing.getTransparent(),
 										isCrop: drawing.hasCrop(),
+										cropHeightCoefficient: drawing.getCropHeightCoefficient(),
+										cropWidthCoefficient: drawing.getCropWidthCoefficient(),
 										w: drawing.extX,
 										h: drawing.extY,
 										rot: drawing.rot,
@@ -7478,6 +7503,8 @@
 									{
 										ImageUrl: drawing.getImageUrl(),
 										isCrop: drawing.hasCrop(),
+										cropHeightCoefficient: drawing.getCropHeightCoefficient(),
+										cropWidthCoefficient: drawing.getCropWidthCoefficient(),
 										transparent: null,
 										w: drawing.extX,
 										h: drawing.extY,
@@ -8221,6 +8248,8 @@
 						image_props.flipV = props.imageProps.flipV;
 						image_props.ImageUrl = props.imageProps.ImageUrl;
 						image_props.isCrop = props.imageProps.isCrop;
+						image_props.cropHeightCoefficient = props.imageProps.cropHeightCoefficient;
+						image_props.cropWidthCoefficient = props.imageProps.cropWidthCoefficient;
 						image_props.transparent = props.imageProps.transparent;
 						image_props.Locked = props.imageProps.locked === true;
 						image_props.lockAspect = props.imageProps.lockAspect;
@@ -8439,7 +8468,7 @@
 					var sText;
 					if (this.document) {
 						let oSelectedContent = this.document.GetSelectedContent(true);
-						let sSelectedText = oSelectedContent ? oSelectedContent.GetText({ParaEndToSpace: false}) : "";
+						let sSelectedText = oSelectedContent ? oSelectedContent.GetText({ParaSeparator : ""}) : "";
 						if (sSelectedText.length > 0) {
 							oSelectedContent.ReplaceContent(oContent);
 							oShape.bSelectedText = true;
@@ -8615,41 +8644,39 @@
 					}
 				},
 
-
-				checkSelectedObjectsAndCallback: function (callback, args, bNoSendProps, nHistoryPointType, aAdditionalObjects, bNoCheckLock) {
+				checkObjectsAndCallback: function(callback, args, bNoSendProps, nHistoryPointType, aObjects, bNoCheckLock) {
 					var oApi = Asc.editor;
 					if (oApi && oApi.collaborativeEditing && oApi.collaborativeEditing.getGlobalLock()) {
 						return;
 					}
+					const oObjects = {};
+					const aMainObjects = [];
+					for (let i = 0; i < aObjects.length; i += 1) {
+						const oObject = aObjects[i].getMainGroup() || aObjects[i];
+						const sId = oObject.Get_Id();
+						if (!oObjects[sId]) {
+							oObjects[sId] = true;
+							aMainObjects.push(oObject);
+						}
+					}
 					var selection_state = this.getSelectionState();
 					var aId = [], i;
 					if (!(bNoCheckLock === true)) {
-						for (i = 0; i < this.selectedObjects.length; ++i) {
-							aId.push(this.selectedObjects[i].Get_Id());
-						}
-						if (aAdditionalObjects) {
-							for (i = 0; i < aAdditionalObjects.length; ++i) {
-								aId.push(aAdditionalObjects[i].Get_Id());
-							}
+						for (i = 0; i < aMainObjects.length; ++i) {
+							aId.push(aMainObjects[i].Get_Id());
 						}
 					}
 					var _this = this;
 					var callback2 = function (bLock, bSync) {
 						if (bLock) {
-
 							const API = _this.getEditorApi();
 							API.sendEvent("asc_onUserActionStart");
 							var nPointType = AscFormat.isRealNumber(nHistoryPointType) ? nHistoryPointType : AscDFH.historydescription_CommonControllerCheckSelected;
 							History.Create_NewPoint(nPointType);
 							if (bSync !== true) {
 								_this.setSelectionState(selection_state);
-								for (var i = 0; i < _this.selectedObjects.length; ++i) {
-									_this.selectedObjects[i].lockType = c_oAscLockTypes.kLockTypeMine;
-								}
-								if (aAdditionalObjects) {
-									for (var i = 0; i < aAdditionalObjects.length; ++i) {
-										aAdditionalObjects[i].lockType = c_oAscLockTypes.kLockTypeMine;
-									}
+								for (var i = 0; i < aMainObjects.length; ++i) {
+									aMainObjects[i].lockType = c_oAscLockTypes.kLockTypeMine;
 								}
 							}
 							callback.apply(_this, args);
@@ -8666,6 +8693,13 @@
 					}
 					callback2(true, true);
 					return true;
+				},
+				checkSelectedObjectsAndCallback: function (callback, args, bNoSendProps, nHistoryPointType, aAdditionalObjects, bNoCheckLock) {
+					const aObjects = this.selectedObjects.slice();
+					if (aAdditionalObjects) {
+						aObjects.push.apply(aObjects, aAdditionalObjects);
+					}
+					return this.checkObjectsAndCallback(callback, args, bNoSendProps, nHistoryPointType, aObjects, bNoCheckLock);
 				},
 
 				checkSelectedObjectsAndCallback2: function (callback) {
@@ -9639,6 +9673,34 @@
 						return lcid_enUS;
 					}
 					return oRun.Get_CompiledPr(false).Lang.Val;
+				},
+				removeAllInks: function (arrInks) {
+					const oGroups = {};
+					for (let i = 0; i < arrInks.length; i += 1) {
+						const oInk = arrInks[i];
+						if (oInk.group) {
+							const oMainGroup = oInk.getMainGroup();
+							const sMainGroupId = oMainGroup.Get_Id();
+							if (!oGroups[sMainGroupId]) {
+								oGroups[sMainGroupId] = {group: oMainGroup, shapes: []};
+							}
+							oGroups[sMainGroupId].shapes.push(oInk);
+							if (oInk.isGroup()) {
+								oInk.deselectInternal(this);
+							}
+						} else {
+							oInk.deleteDrawingBase(true);
+							oInk.setBDeleted(true);
+							if (oInk.isGroup()) {
+								oInk.deselectInternal(this);
+							}
+							this.deselectObject(oInk);
+						}
+					}
+					for (let sId in oGroups) {
+						const oGroupInfo = oGroups[sId];
+						this.removeInGroup(oGroupInfo.group, oGroupInfo.shapes);
+					}
 				}
 			};
 
@@ -11421,10 +11483,15 @@
 
 			const selectedShapes = Asc.editor.getGraphicController().getSelectedArray();
 			const compoundPathLst = selectedShapes.map(function (shape) {
-				const shapeGeometry = shape.getGeometry();
+				const isTextArt = AscCommon.isRealObject(shape.txWarpStruct);
+
+				const shapeGeometry = isTextArt
+					? shape.txWarpStruct.getCombinedGeometry() // text-art
+					: shape.getGeometry(); // usual shape
+
 				const pathLst = shapeGeometry.pathLst;
 				const compoundPaths = pathLst.map(function (path) {
-					return convertFormatPathToCompoundPath(path, shape.transform);
+					return convertFormatPathToCompoundPath(path, isTextArt ? shape.transformText : shape.transform);
 				});
 				const unitedCompoundPath = compoundPaths.reduce(function (resultPath, currentPath) {
 					return resultPath['unite'](currentPath);
@@ -11556,6 +11623,8 @@
 				? supportedConstructors[0]
 				: referenceShape.constructor;
 
+			const isTextArt = AscCommon.isRealObject(referenceShape.txWarpStruct);
+
 			const compoundPathBounds = compoundPath['getBounds']();
 			const formatPath = convertCompoundPathToFormatPath(compoundPath);
 			const pathLst = [formatPath];
@@ -11568,6 +11637,7 @@
 			const resultShape = new constructor();
 			resultShape.setBDeleted(false);
 
+			// Copy blipFill (image or texture fill)
 			if (AscCommon.isRealObject(referenceShape.blipFill)) {
 				const blipFill = referenceShape.blipFill.createDuplicate();
 
@@ -11591,27 +11661,31 @@
 				resultShape.setBlipFill(blipFill);
 			}
 
-			if (referenceShape.bWordShape) {
-				resultShape.bWordShape = true;
-				if (AscCommon.isRealObject(referenceShape.textBoxContent)) {
-					const textBoxContent = referenceShape.textBoxContent.Copy(resultShape, referenceShape.textBoxContent.DrawingDocument);
-					resultShape.setTextBoxContent(textBoxContent);
-				}
-				if (AscCommon.isRealObject(referenceShape.style)) {
-					const style = referenceShape.style.createDuplicate();
-					resultShape.setStyle(style);
-				}
-				if (AscCommon.isRealObject(referenceShape.bodyPr)) {
-					const bodyPr = referenceShape.bodyPr.createDuplicate();
-					resultShape.setBodyPr(bodyPr);
-				}
-			} else {
-				if (AscCommon.isRealObject(referenceShape.txBody)) {
-					const txBody = referenceShape.txBody.createDuplicate();
-					resultShape.setTxBody(txBody);
+			if (!isTextArt) {
+				// Copy text content (txBody or textBoxContent)
+				if (referenceShape.bWordShape) {
+					resultShape.bWordShape = true;
+					if (AscCommon.isRealObject(referenceShape.textBoxContent)) {
+						const textBoxContent = referenceShape.textBoxContent.Copy(resultShape, referenceShape.textBoxContent.DrawingDocument);
+						resultShape.setTextBoxContent(textBoxContent);
+					}
+					if (AscCommon.isRealObject(referenceShape.style)) {
+						const style = referenceShape.style.createDuplicate();
+						resultShape.setStyle(style);
+					}
+					if (AscCommon.isRealObject(referenceShape.bodyPr)) {
+						const bodyPr = referenceShape.bodyPr.createDuplicate();
+						resultShape.setBodyPr(bodyPr);
+					}
+				} else {
+					if (AscCommon.isRealObject(referenceShape.txBody)) {
+						const txBody = referenceShape.txBody.createDuplicate();
+						resultShape.setTxBody(txBody);
+					}
 				}
 			}
 
+			// Set correct position and size
 			resultShape.setSpPr(new AscFormat.CSpPr());
 			resultShape.spPr.setParent(resultShape);
 			resultShape.spPr.setXfrm(new AscFormat.CXfrm());
@@ -11629,25 +11703,30 @@
 				resultShape.spPr.setEffectPr(effectProps);
 			}
 
+			// Copy Fill and Stroke properties from referenceShape
+			const shapeFill = isTextArt
+				? referenceShape.bWordShape
+					? referenceShape.textBoxContent.GetFirstParagraph().GetFirstRun().getCompiledPr().TextFill
+					: referenceShape.txBody.content.GetFirstParagraph().GetFirstRun().getCompiledPr().Unifill
+				: referenceShape.getFill();
+			const shapeStroke = isTextArt
+				? referenceShape.bWordShape
+					? referenceShape.textBoxContent.GetFirstParagraph().GetFirstRun().getCompiledPr().TextOutline
+					: referenceShape.txBody.content.GetFirstParagraph().GetFirstRun().getCompiledPr().TextOutline
+				: referenceShape.getStroke();
+
+			resultShape.getGeometry().pathLst.forEach(function (path) {
+				path.setFill('norm');
+				path.setStroke(true);
+				path.setExtrusionOk(false);
+			});
+			resultShape.spPr.setFill(shapeFill.createDuplicate());
+			resultShape.spPr.setLn(shapeStroke.createDuplicate());
+
 			return resultShape;
 		}
 
 		function replaceShapes(oldShapes, newShapes) {
-			const referenceShape = oldShapes[0];
-			const shapeFill = referenceShape.getFill();
-			const shapeStroke = referenceShape.getStroke();
-
-			// Copy Fill and Stroke properties from referenceShape
-			newShapes.forEach(function (newShape) {
-				newShape.getGeometry().pathLst.forEach(function (path) {
-					path.setFill('norm');
-					path.setStroke(true);
-					path.setExtrusionOk(false);
-				});
-				newShape.spPr.setFill(shapeFill.createDuplicate());
-				newShape.spPr.setLn(shapeStroke.createDuplicate());
-			});
-
 			// Remove old shapes
 			oldShapes.forEach(function (shape) {
 				shape.deleteDrawingBase();
@@ -11677,20 +11756,6 @@
 
 		function pdf_replaceShapes(oldShapes, newShapes) {
 			const aOldShapes = oldShapes.slice();
-			const referenceShape = aOldShapes[0];
-			const shapeFill = referenceShape.getFill();
-			const shapeStroke = referenceShape.getStroke();
-
-			// Copy Fill and Stroke properties from referenceShape
-			newShapes.forEach(function (newShape) {
-				newShape.getGeometry().pathLst.forEach(function (path) {
-					path.setFill('norm');
-					path.setStroke(true);
-					path.setExtrusionOk(false);
-				});
-				newShape.spPr.setFill(shapeFill.createDuplicate());
-				newShape.spPr.setLn(shapeStroke.createDuplicate());
-			});
 
 			let oDoc = Asc.editor.getPDFDoc();
 			let nPage = aOldShapes[0].GetPage();
@@ -11720,21 +11785,8 @@
 			const graphicController = Asc.editor.getGraphicController();
 
 			const referenceShape = oldShapes[0];
-			const shapeFill = referenceShape.getFill();
-			const shapeStroke = referenceShape.getStroke();
 			const pageIndex = referenceShape.parent.pageIndex;
 			const firstParagraph = referenceShape.parent.Get_ParentParagraph();
-
-			// Copy Fill and Stroke properties from referenceShape
-			newShapes.forEach(function (newShape) {
-				newShape.getGeometry().pathLst.forEach(function (path) {
-					path.setFill('norm');
-					path.setStroke(true);
-					path.setExtrusionOk(false);
-				});
-				newShape.spPr.setFill(shapeFill.createDuplicate());
-				newShape.spPr.setLn(shapeStroke.createDuplicate());
-			});
 
 			// Disable revision tracking ?
 			let bTrackRevisions = false;

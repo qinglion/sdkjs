@@ -3440,6 +3440,33 @@ function (window, undefined) {
 	};
 
 	/** @constructor */
+	function asc_CPdfPageProperty() {
+		this.deleteLock	= false;
+		this.rotateLock	= false;
+		this.editLock	= false;
+	}
+
+	asc_CPdfPageProperty.prototype.constructor = asc_CPdfPageProperty;
+	asc_CPdfPageProperty.prototype.asc_getDeleteLock = function () {
+		return this.deleteLock;
+	};
+	asc_CPdfPageProperty.prototype.asc_putDeleteLock = function (v) {
+		this.deleteLock = v;
+	};
+	asc_CPdfPageProperty.prototype.asc_getRotateLock = function () {
+		return this.rotateLock;
+	};
+	asc_CPdfPageProperty.prototype.asc_putRotateLock = function (v) {
+		this.rotateLock = v;
+	};
+	asc_CPdfPageProperty.prototype.asc_getEditLock = function () {
+		return this.editLock;
+	};
+	asc_CPdfPageProperty.prototype.asc_putEditLock = function (v) {
+		this.editLock = v;
+	};
+
+	/** @constructor */
 	function asc_TextArtProperties(obj) {
 		if (obj) {
 			this.Fill = obj.Fill;//asc_Fill
@@ -3667,7 +3694,8 @@ function (window, undefined) {
 			this.bSetOriginalSize = obj.bSetOriginalSize;
 			this.transparent = obj.transparent;
 			this.isCrop      = obj.isCrop;
-
+			this.cropHeightCoefficient = obj.cropHeightCoefficient;
+			this.cropWidthCoefficient = obj.cropWidthCoefficient;
 		}
 		else {
 			this.CanBeFlow = true;
@@ -3728,6 +3756,8 @@ function (window, undefined) {
 
 			this.transparent = undefined;
 			this.isCrop      = undefined;
+			this.cropHeightCoefficient = 1;
+			this.cropWidthCoefficient = 1;
 		}
 	}
 
@@ -3953,6 +3983,13 @@ function (window, undefined) {
 		return new asc_CImageSize(50, 50, false);
 	};
 
+	asc_CImgProperty.prototype.asc_getCropOriginSize = function(api) {
+		const oSizes = this.asc_getOriginSize(api);
+		oSizes.Width *= this.cropWidthCoefficient;
+		oSizes.Height *= this.cropHeightCoefficient;
+		return oSizes;
+	};
+
 	//oleObjects
 	asc_CImgProperty.prototype.asc_getPluginGuid = function () {
 		return this.pluginGuid;
@@ -4117,6 +4154,19 @@ function (window, undefined) {
 	asc_CImgProperty.prototype.asc_getIsCrop = function () {
 		return this.isCrop;
 	};
+	asc_CImgProperty.prototype.asc_getCropHeightCoefficient = function () {
+		return this.cropHeightCoefficient;
+	};
+	asc_CImgProperty.prototype.asc_putCropHeightCoefficient = function (v) {
+		this.cropHeightCoefficient = v;
+	};
+	asc_CImgProperty.prototype.asc_getCropWidthCoefficient = function () {
+		return this.cropWidthCoefficient;
+	};
+	asc_CImgProperty.prototype.asc_putCropWidthCoefficient = function (v) {
+		this.cropWidthCoefficient = v;
+	};
+
 	/** @constructor */
 	function asc_CSelectedObject(type, val) {
 		this.Type = (undefined != type) ? type : null;
@@ -5793,6 +5843,9 @@ function (window, undefined) {
 
 		_object["store"] = this.store;
 
+		if (this.events)
+			_object["events"] = this.events.slice(0, this.events.length);
+
 		return _object;
 	};
 	CPluginVariation.prototype["deserialize"] = function (_object) {
@@ -6061,6 +6114,34 @@ function (window, undefined) {
 	};
 	RangePermProp.prototype.get_canInsObject = function() {
 		return this.insertObject;
+	};
+
+
+	function CButtonData(oData) {
+		this["obj"] = oData["obj"];
+		this["type"] = oData["type"];
+		this["button"] = oData["button"];
+		this["isForm"] = oData["isForm"];
+		this["pr"] = oData["pr"];
+	}
+	CButtonData.prototype.get_Obj = function() {
+		return this["obj"];
+	};
+	CButtonData.prototype.get_ObjId = function() {
+		if(!this["obj"]) return null;
+		return this["obj"].Id;
+	};
+	CButtonData.prototype.get_Type = function() {
+		return this["type"];
+	};
+	CButtonData.prototype.get_Button = function() {
+		return this["button"];
+	};
+	CButtonData.prototype.get_IsForm = function() {
+		return this["isForm"];
+	};
+	CButtonData.prototype.get_Properties = function() {
+		return this["pr"];
 	};
 
 	/*
@@ -6716,6 +6797,14 @@ function (window, undefined) {
 	prot["asc_getCanEditText"]		= prot.asc_getCanEditText;
 	prot["asc_setCanEditText"]		= prot.asc_setCanEditText;
 
+	window["Asc"]["asc_CPdfPageProperty"] = window["Asc"].asc_CPdfPageProperty = asc_CPdfPageProperty;
+	prot = asc_CPdfPageProperty.prototype;
+	prot["asc_getDeleteLock"]	= prot.asc_getDeleteLock;
+	prot["asc_putDeleteLock"]	= prot.asc_putDeleteLock;
+	prot["asc_getRotateLock"]	= prot.asc_getRotateLock;
+	prot["asc_putRotateLock"]	= prot.asc_putRotateLock;
+	prot["asc_getEditLock"]		= prot.asc_getEditLock;
+	prot["asc_putEditLock"]		= prot.asc_putEditLock;
 
 	window["Asc"]["asc_TextArtProperties"] = window["Asc"].asc_TextArtProperties = asc_TextArtProperties;
 	prot = asc_TextArtProperties.prototype;
@@ -6816,6 +6905,7 @@ function (window, undefined) {
 	prot["put_SlicerProperties"] = prot["asc_putSlicerProperties"] = prot.asc_putSlicerProperties;
 	prot["get_SlicerProperties"] = prot["asc_getSlicerProperties"] = prot.asc_getSlicerProperties;
 	prot["get_OriginSize"] = prot["asc_getOriginSize"] = prot.asc_getOriginSize;
+	prot["get_CropOriginSize"] = prot["asc_getCropOriginSize"] = prot.asc_getCropOriginSize;
 	prot["get_PluginGuid"] = prot["asc_getPluginGuid"] = prot.asc_getPluginGuid;
 	prot["put_PluginGuid"] = prot["asc_putPluginGuid"] = prot.asc_putPluginGuid;
 	prot["get_PluginData"] = prot["asc_getPluginData"] = prot.asc_getPluginData;
@@ -6863,6 +6953,10 @@ function (window, undefined) {
 	prot["put_ProtectionPrint"] = prot["asc_putProtectionPrint"] = prot.asc_putProtectionPrint;
 	prot["get_Transparent"] = prot["asc_getTransparent"] = prot.asc_getTransparent;
 	prot["put_Transparent"] = prot["asc_putTransparent"] = prot.asc_putTransparent;
+	prot["get_CropHeightCoefficient"] = prot["asc_getCropHeightCoefficient"] = prot.asc_getCropHeightCoefficient;
+	prot["put_CropHeightCoefficient"] = prot["asc_putCropHeightCoefficient"] = prot.asc_putCropHeightCoefficient;
+	prot["get_CropWidthCoefficient"] = prot["asc_getCropWidthCoefficient"] = prot.asc_getCropWidthCoefficient;
+	prot["put_CropWidthCoefficient"] = prot["asc_putCropWidthCoefficient"] = prot.asc_putCropWidthCoefficient;
 	prot["get_IsCrop"] = prot["asc_getIsCrop"] = prot.asc_getIsCrop;
 
 	window["AscCommon"].asc_CSelectedObject = asc_CSelectedObject;
@@ -7102,7 +7196,16 @@ function (window, undefined) {
 	prot["get_canEditText"] = prot.get_canEditText;
 	prot["get_canEditPara"] = prot.get_canEditPara;
 	prot["get_canInsObject"] = prot.get_canInsObject;
-	
+
+	window["Asc"]["CButtonData"] = window["Asc"].CButtonData = CButtonData;
+	prot = CButtonData.prototype;
+
+	prot["get_Obj"] = prot.get_Obj;
+	prot["get_Type"] = prot.get_Type;
+	prot["get_Button"] = prot.get_Button;
+	prot["get_IsForm"] = prot.get_IsForm;
+	prot["get_Properties"] = prot.get_Properties;
+
 	window["AscCommon"]["pix2mm"] = window["AscCommon"].pix2mm = function(pix)
 	{
 		return pix * AscCommon.g_dKoef_pix_to_mm;
