@@ -11387,7 +11387,7 @@ CPresentation.prototype.setPreserveSlideMaster = function (bPr) {
 		for (let i = 0; i < arrIndexes.length; i++) {
 			const nIdx = arrIndexes[i];
 			const oSlideObject = this.GetSlide(nIdx);
-			if (oSlideObject.IsUseInDocument()) {
+			if (oSlideObject.IsUseInSlides()) {
 				nSlideIndex = arrIndexes[i];
 			} else {
 				arrMasterIndexesForDelete.push(nIdx);

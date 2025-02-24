@@ -2127,6 +2127,9 @@ AscFormat.InitClass(Slide, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_
         }
         return false;
     };
+Slide.prototype.IsUseInSlides = function() {
+	return this.IsUseInDocument();
+};
 Slide.prototype.removeAllInks = function () {
 	this.cSld.removeAllInks();
 };

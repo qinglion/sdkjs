@@ -843,6 +843,18 @@ MasterSlide.prototype.IsUseInDocument = function() {
     }
     return false;
 };
+MasterSlide.prototype.IsUseInSlides = function() {
+	let oPresentation = Asc.editor.private_GetLogicDocument();
+	if(!oPresentation) return false;
+	for(let nSlide = 0; nSlide < oPresentation.Slides.length; ++nSlide) {
+		const oSlide = oPresentation.Slides[nSlide];
+		const oMaster = oSlide.Layout && oSlide.Layout.Master;
+		if(oMaster === this) {
+			return true;
+		}
+	}
+	return false;
+};
 MasterSlide.prototype.drawViewPrMarks = function(oGraphics) {
     if(oGraphics.isSupportTextDraw && !oGraphics.isSupportTextDraw()) return;
     return AscCommonSlide.Slide.prototype.drawViewPrMarks.call(this, oGraphics);

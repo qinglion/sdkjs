@@ -983,6 +983,19 @@ SlideLayout.prototype.getMaster = function(){
         }
         return false;
     };
+		SlideLayout.prototype.IsUseInSlides = function() {
+			const oPresentation = this.presentation;
+			if (!oPresentation) {
+				return;
+			}
+			for (let i = 0; i < oPresentation.Slides.length; i += 1) {
+				const oSlide = oPresentation.Slides[i];
+				if (oSlide.Layout === this) {
+					return true;
+				}
+			}
+			return false;
+		};
     SlideLayout.prototype.drawViewPrMarks = function(oGraphics) {
         if(oGraphics.isSupportTextDraw && !oGraphics.isSupportTextDraw()) return;
         return AscCommonSlide.Slide.prototype.drawViewPrMarks.call(this, oGraphics);
