@@ -3058,8 +3058,6 @@ function CDemonstrationManager(htmlpage)
 
                 //oThis.DemonstrationDivEndPresentation.onmousedown  = oThis.onMouseDownDemonstration;
                 //oThis.DemonstrationDivEndPresentation.onmousemove  = oThis.onMouseMoveDemonstration;
-				oThis.DivEndPresentation.onmousedown  = oThis.onMouseDown;
-                oThis.DivEndPresentation.onmouseup    = oThis.onMouseUp;
 
                 AscCommon.addMouseEvent(this.DivEndPresentation, "down", oThis.onMouseDown);
                 AscCommon.addMouseEvent(this.DivEndPresentation, "up", oThis.onMouseUp);
