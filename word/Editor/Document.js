@@ -23390,16 +23390,25 @@ CDocument.prototype.addFieldWithInstructionToParagraph = function(paragraph, ins
 	let separateChar = new ParaFieldChar(fldchartype_Separate, this);
 	let endChar      = new ParaFieldChar(fldchartype_End, this);
 
-	var run = new AscWord.Run();
+	let run = new AscWord.Run();
 	run.AddToContent(-1, beginChar);
+	beginChar.SetRun(run);
+	paragraph.Add(run);
+	
+	run = new AscWord.Run();
 	run.AddInstrText(instructionLine);
+	paragraph.Add(run);
+	
+	run = new AscWord.Run();
 	run.AddToContent(-1, separateChar);
+	separateChar.SetRun(run);
+	paragraph.Add(run);
+	
+	run = new AscWord.Run();
 	run.AddToContent(-1, endChar);
+	endChar.SetRun(run);
 	paragraph.Add(run);
 
-	beginChar.SetRun(run);
-	separateChar.SetRun(run);
-	endChar.SetRun(run);
 
 	let complexField = beginChar.GetComplexField();
 	complexField.SetBeginChar(beginChar);
