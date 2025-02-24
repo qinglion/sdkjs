@@ -9228,26 +9228,23 @@ CPresentation.prototype.deleteMaster = function() {
 	}
 };
 CPresentation.prototype.deleteSlides = function (arrSlides) {
-	const unreserveInfo = this.getUnreserveLayoutsAndMasters(arrSlides);
-	const checkArray = [].concat(unreserveInfo.layouts, unreserveInfo.masters, arrSlides);
+	const unpreserveInfo = this.getUnpreserveLayoutsAndMasters(arrSlides);
+	const checkArray = [].concat(unpreserveInfo.layouts, unpreserveInfo.masters, arrSlides);
 	if (arrSlides.length > 0 && (this.Document_Is_SelectionLocked(AscCommon.changestype_RemoveSlide, checkArray) === false)) {
 		History.Create_NewPoint(AscDFH.historydescription_Presentation_DeleteSlides);
-		let oldLen = this.GetSlidesCount();
+		let nMinSlideIndex = this.GetSlidesCount() - 1;
 		for (var i = checkArray.length - 1; i > -1; --i) {
+			const nSlideIndex = this.GetSlideIndex(checkArray[i]);
+			if (nSlideIndex < nMinSlideIndex) {
+				nMinSlideIndex = nSlideIndex;
+			}
 			this.removeSlideByObject(checkArray[i]);
 		}
 		if(!this.IsMasterMode()) {
 			this.updateSlideIndexes();
 		}
 		this.DrawingDocument.UpdateThumbnailsAttack();
-		//todo think about it
-		if (arrIndexes[arrIndexes.length - 1] != oldLen - 1) {
-			let nIdx = arrIndexes[arrIndexes.length - 1] + 1 - arrIndexes.length;
-			nIdx = Math.min(this.GetSlidesCount() - 1, nIdx);
-			this.DrawingDocument.m_oWordControl.GoToPage(nIdx, undefined, undefined, true);
-		} else {
-			this.DrawingDocument.m_oWordControl.GoToPage(this.GetSlidesCount() - 1, undefined, undefined, true);
-		}
+		this.DrawingDocument.m_oWordControl.GoToPage(Math.max(Math.min(this.GetSlidesCount() - 1, nMinSlideIndex), 0), undefined, undefined, true);
 		this.Api.sync_HideComment();
 		this.Document_UpdateUndoRedoState();
 		this.Recalculate();
@@ -9982,10 +9979,9 @@ CPresentation.prototype.Document_Is_SelectionLocked = function (CheckType, Addit
 	}
 
 	let oPres = this;
-	function fCheckSlides(fGetLock, selectedSlideIndexes) {
-		let aSlides = oPres.GetAllSlides();
-		for (let nIdx = 0; nIdx < selectedSlideIndexes.length; ++nIdx) {
-			let oSlide = aSlides[selectedSlideIndexes[nIdx]];
+	function fCheckSlides(fGetLock, selectedSlides) {
+		for (let nIdx = 0; nIdx < selectedSlides.length; ++nIdx) {
+			let oSlide = selectedSlides[nIdx];
 			if(oSlide) {
 				let oLocker = fGetLock(oSlide);
 				if(oLocker) {
@@ -11424,21 +11420,17 @@ CPresentation.prototype.setPreserveSlideMaster = function (bPr) {
 
 	this.FinalizeAction();
 };
-CPresentation.prototype.removeUnreserve = function (arrSlides) {
-	const mapMasters = {};
-	const mapLayouts = {};
-
-	for (let i = 0; i < arrSlides; i++) {
-
-	}
-};
-CPresentation.prototype.getUnreserveLayoutsAndMasters = function (arrSlides) {
+CPresentation.prototype.getUnpreserveLayoutsAndMasters = function (arrSlides) {
+	const oResult = {masters: [], layouts: []};
 	const mapSlides = {};
 	const mapMasters = {};
 	const mapLayouts = {};
 
 	for (let i = 0; i < arrSlides; i++) {
 		const oSlide = arrSlides[i];
+		if (!(oSlide instanceof AscCommonSlide.Slide)) {
+			continue;
+		}
 		mapSlides[oSlide.Id] = oSlide;
 		const oSlideLayout = oSlide.Layout;
 		if (oSlideLayout) {
@@ -11465,9 +11457,6 @@ CPresentation.prototype.getUnreserveLayoutsAndMasters = function (arrSlides) {
 			}
 		}
 	}
-
-
-	const oResult = {masters: [], layouts: []};
 
 	for (let i in mapMasters) {
 		const oMaster = mapMasters[i];
