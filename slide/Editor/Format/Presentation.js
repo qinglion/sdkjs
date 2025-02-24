@@ -11426,7 +11426,7 @@ CPresentation.prototype.getUnpreserveLayoutsAndMasters = function (arrSlides) {
 	const mapMasters = {};
 	const mapLayouts = {};
 
-	for (let i = 0; i < arrSlides; i++) {
+	for (let i = 0; i < arrSlides.length; i++) {
 		const oSlide = arrSlides[i];
 		if (!(oSlide instanceof AscCommonSlide.Slide)) {
 			continue;
