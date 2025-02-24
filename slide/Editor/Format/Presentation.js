@@ -11473,6 +11473,17 @@ CPresentation.prototype.getUnpreserveLayoutsAndMasters = function (arrSlides) {
 
 	return oResult;
 };
+CPresentation.prototype.isPreserveSelectionSlides = function() {
+	const arrSlides = this.GetSelectedSlideObjects();
+	for (let i = 0; i < arrSlides.length; i += 1) {
+		const oSlide = arrSlides[i];
+		if (!oSlide.isPreserve()) {
+			return false;
+		}
+	}
+
+	return true;
+};
 function collectSelectedObjects(aSpTree, aCollectArray, bRecursive, oIdMap, bSourceFormatting) {
 	var oSp;
 	var oPr = new AscFormat.CCopyObjectProperties();

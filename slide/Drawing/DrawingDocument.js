@@ -6242,7 +6242,8 @@ function CThumbnailsManager()
 		}
 		if (oMenuPos)
 		{
-			let oFirstSlide = this.m_oWordControl.m_oLogicDocument.GetSlide(sSelectedIdx[0]);
+			const oLogicDocument = this.m_oWordControl.m_oLogicDocument;
+			let oFirstSlide = oLogicDocument.GetSlide(sSelectedIdx[0]);
 			let nType = Asc.c_oAscContextMenuTypes.Thumbnails;
 			if(oFirstSlide)
 			{
@@ -6261,7 +6262,8 @@ function CThumbnailsManager()
 					X_abs: oMenuPos.X,
 					Y_abs: oMenuPos.Y,
 					IsSlideSelect: bIsSlideSelect,
-					IsSlideHidden: this.IsSlideHidden(sSelectedIdx)
+					IsSlideHidden: this.IsSlideHidden(sSelectedIdx),
+					IsSlidePreserve: oLogicDocument.isPreserveSelectionSlides()
 				};
 			editor.sync_ContextMenuCallback(new AscCommonSlide.CContextMenuData(oData));
 		}

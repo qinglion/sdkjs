@@ -8451,12 +8451,13 @@ background-repeat: no-repeat;\
 	{
 		if (AscCommon.isRealObject(oData))
 		{
-			this.Type          = oData.Type;
-			this.X_abs         = oData.X_abs;
-			this.Y_abs         = oData.Y_abs;
-			this.IsSlideSelect = oData.IsSlideSelect;
-			this.IsSlideHidden = oData.IsSlideHidden;
-			this.Guide         = oData.Guide;
+			this.Type            = oData.Type;
+			this.X_abs           = oData.X_abs;
+			this.Y_abs           = oData.Y_abs;
+			this.IsSlideSelect   = oData.IsSlideSelect;
+			this.IsSlideHidden   = oData.IsSlideHidden;
+			this.Guide           = oData.Guide;
+			this.IsSlidePreserve = !!oData.IsSlidePreserve;
 		}
 		else
 		{
@@ -8466,6 +8467,7 @@ background-repeat: no-repeat;\
 			this.IsSlideSelect = true;
             this.IsSlideHidden = false;
             this.Guide         = null;
+			this.IsSlidePreserve = false;
 		}
 	}
 
@@ -8502,6 +8504,9 @@ background-repeat: no-repeat;\
 	}
 	CContextMenuData.prototype.get_ButtonHeight = function() {
 		return this.ButtonHeight;
+	}
+	CContextMenuData.prototype.get_IsSlidePreserve = function() {
+		return this.IsSlidePreserve;
 	}
 
 	asc_docs_api.prototype.sync_ContextMenuCallback = function(Data)
@@ -10217,6 +10222,7 @@ background-repeat: no-repeat;\
 	CContextMenuData.prototype['get_EffectStartType'] = CContextMenuData.prototype.get_EffectStartType;
 	CContextMenuData.prototype['get_ButtonWidth']     = CContextMenuData.prototype.get_ButtonWidth;
 	CContextMenuData.prototype['get_ButtonHeight']    = CContextMenuData.prototype.get_ButtonHeight;
+	CContextMenuData.prototype['get_IsSlidePreserve']    = CContextMenuData.prototype.get_IsSlidePreserve;
 
 	window['Asc']['CAscSlideProps'] = window['Asc'].CAscSlideProps = CAscSlideProps;
 	CAscSlideProps.prototype['get_background']        = CAscSlideProps.prototype.get_background;

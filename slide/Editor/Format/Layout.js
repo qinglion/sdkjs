@@ -1010,6 +1010,9 @@ SlideLayout.prototype.getAllInks = function(arrInks) {
 	arrInks = arrInks || [];
 	return AscCommonSlide.Slide.prototype.getAllInks.call(this, arrInks);
 };
+SlideLayout.prototype.isPreserve = function() {
+	return this.preserve;
+};
 
     let LAYOUT_TYPE_MAP = {};
     LAYOUT_TYPE_MAP["blank"] = AscFormat.nSldLtTBlank;

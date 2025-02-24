@@ -879,6 +879,9 @@ MasterSlide.prototype.setPreserve = function (bPr) {
 	History.Add(new AscDFH.CChangesDrawingsBool(this, AscDFH.historyitem_SlideMasterSetPreserve, this.preserve, bPr));
 	this.preserve = bPr;
 };
+MasterSlide.prototype.isPreserve = function() {
+	return this.preserve;
+};
 function CMasterThumbnailDrawer()
 {
     this.CanvasImage    = null;

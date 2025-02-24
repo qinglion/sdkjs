@@ -2138,6 +2138,9 @@ Slide.prototype.getAllInks = function (arrInks) {
 	this.cSld.getAllInks(arrInks);
 	return arrInks;
 };
+Slide.prototype.isPreserve = function() {
+	return false;
+};
 
 function fLoadComments(oObject, authors)
 {
