@@ -1516,13 +1516,13 @@
 			}
 		}
 
-		return {
+		return new Asc.CButtonData( {
 			"obj" : this.base,
 			"type" : this.type,
 			"button" : button,
 			"isForm" : this.isForm,
 			"pr" : this.base.GetContentControlPr ? this.base.GetContentControlPr() : null
-		}
+		});
 	};
 	CContentControlTrack.prototype.Copy = function()
 	{
