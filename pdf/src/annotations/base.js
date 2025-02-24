@@ -675,7 +675,7 @@
         }
     };
     CAnnotationBase.prototype._AddReplyOnOpen = function(oReplyInfo) {
-        let oReply = new AscPDF.CAnnotationText(oReplyInfo["UniqueName"], this.GetPage(), [], this.GetDocument());
+        let oReply = new AscPDF.CAnnotationText(oReplyInfo["UniqueName"], [], this.GetDocument());
 
         oReply.SetCreationDate(AscPDF.ParsePDFDate(oReplyInfo["CreationDate"]).getTime());
         oReply.SetModDate(AscPDF.ParsePDFDate(oReplyInfo["LastModified"]).getTime());
