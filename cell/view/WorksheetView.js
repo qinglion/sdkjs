@@ -10543,6 +10543,7 @@
         }
 
         // Перемещаем область
+        lastRowHeight = Math.max(lastRowHeight, 0)
         var moveHeight = oldH - lastRowHeight;
         if (moveHeight > 0) {
             ctx.drawImage(ctx.getCanvas(), x, y, oldW, moveHeight, x + dx, y - dy, oldW, moveHeight);
