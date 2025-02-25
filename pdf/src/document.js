@@ -1934,7 +1934,7 @@ var CPresentation = CPresentation || function(){};
         }
         else if (this.mouseDownAnnot) {
             oController.OnMouseUp(e, X, Y, pageObject.index);
-            if (this.mouseDownAnnot == oMouseUpAnnot)
+            if (oMouseUpAnnot && this.mouseDownAnnot == oMouseUpAnnot)
                 oMouseUpAnnot.onMouseUp(x, y, e);
         }
         else if (this.activeDrawing) {
@@ -3164,7 +3164,7 @@ var CPresentation = CPresentation || function(){};
             }
         }, AscDFH.historydescription_Pdf_RemoveComment, this, Id);
     };
-    CPDFDoc.prototype.RemoveAnnot = function(Id) {
+    CPDFDoc.prototype.RemoveAnnot = function(Id, bIsOnMove) {
         let oController = this.GetController();
 
         let oAnnot = this.annots.find(function(annot) {
@@ -3180,17 +3180,20 @@ var CPresentation = CPresentation || function(){};
         let oPage = oAnnot.GetParentPage();
         oPage.RemoveAnnot(Id);
         
-        if (this.mouseDownAnnot == oAnnot)
-            this.mouseDownAnnot = null;
+        if (bIsOnMove !== true) {
+            if (this.mouseDownAnnot == oAnnot)
+                this.mouseDownAnnot = null;
 
-        Asc.editor.sync_HideComment();
-        Asc.editor.sync_RemoveComment(Id);
-        oController.resetSelection();
-        oController.resetTrackState();
+            Asc.editor.sync_HideComment();
+            Asc.editor.sync_RemoveComment(Id);
+            oController.resetSelection();
+            oController.resetTrackState();
+        }
+        
         this.private_UpdateTargetForCollaboration(true);
     };
 
-    CPDFDoc.prototype.RemoveDrawing = function(Id) {
+    CPDFDoc.prototype.RemoveDrawing = function(Id, bIsOnMove) {
         let oController = this.GetController();
         let oDrawing = this.drawings.find(function(drawing) {
             return drawing.GetId() === Id;
@@ -3205,18 +3208,20 @@ var CPresentation = CPresentation || function(){};
         let oPage = oDrawing.GetParentPage();
         oPage.RemoveDrawing(Id);
 
-        oController.resetSelection(true);
-        oController.resetTrackState();
+        if (bIsOnMove !== true) {
+            oController.resetSelection(true);
+            oController.resetTrackState();
 
-        if (this.activeDrawing == oDrawing) {
-            this.activeDrawing = null;
+            if (this.activeDrawing == oDrawing) {
+                this.activeDrawing = null;
+            }
         }
 
         this.ClearSearch();
         this.private_UpdateTargetForCollaboration(true);
     };
 
-    CPDFDoc.prototype.RemoveField = function(sId) {
+    CPDFDoc.prototype.RemoveField = function(sId, bIsOnMove) {
         let oController = this.GetController();
         this.BlurActiveObject();
 
@@ -3233,9 +3238,11 @@ var CPresentation = CPresentation || function(){};
 
         let oPage = oForm.GetParentPage();
         oPage.RemoveField(oForm.GetId());
-        
-        oController.resetSelection();
-        oController.resetTrackState();
+
+        if (bIsOnMove !== true) {
+            oController.resetSelection();
+            oController.resetTrackState();
+        }
 
         this.ClearSearch();
     };

@@ -626,8 +626,9 @@
         let oNewPage    = oDoc.GetPageInfo(nPage);
 
         if (oNewPage) {
-            oDoc.RemoveAnnot(this.GetId());
+            oDoc.RemoveAnnot(this.GetId(), true);
             oDoc.AddAnnot(this, nPage);
+            this.selectStartPage = nPage;
         }
     };
     CAnnotationBase.prototype.GetPage = function() {
