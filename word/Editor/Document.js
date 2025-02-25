@@ -26714,39 +26714,40 @@ CDocument.prototype.GetLineNumbersInfo = function()
  */
 CDocument.prototype.SetLineNumbersProps = function(nApplyType, oProps)
 {
+	let arrSectPr = this.GetSectionsByApplyType(nApplyType);
+	if (arrSectPr.length <= 0)
+		return;
+
 	if (!this.IsSelectionLocked(AscCommon.changestype_Document_SectPr))
 	{
 		this.StartAction(AscDFH.historydescription_Document_SetLineNumbersProps);
-
-		var arrSectPr = this.GetSectionsByApplyType(nApplyType);
-		if (arrSectPr.length > 0)
+		if (undefined === oProps || null === oProps)
 		{
-			if (undefined === oProps || null === oProps)
+			for (let sectIndex = 0, sectCount = arrSectPr.length; sectIndex < sectCount; ++sectIndex)
 			{
-				for (var nIndex = 0, nCount = this.SectionsInfo.GetCount(); nIndex < nCount; ++nIndex)
-				{
-					var oSectPr = this.SectionsInfo.Get(nIndex).SectPr;
-					oSectPr.RemoveLineNumbers();
-				}
+				arrSectPr[sectIndex].RemoveLineNumbers();
 			}
-			else
+		}
+		else
+		{
+			var nCountBy  = oProps.GetCountBy();
+			var nDistance = oProps.GetDistance();
+			var nStart    = oProps.GetStart();
+			var nRestart  = oProps.GetRestart();
+			
+			for (var nIndex = 0, nCount = arrSectPr.length; nIndex < nCount; ++nIndex)
 			{
-				var nCountBy  = oProps.GetCountBy();
-				var nDistance = oProps.GetDistance();
-				var nStart    = oProps.GetStart();
-				var nRestart  = oProps.GetRestart();
+				var oSectPr = arrSectPr[nIndex];
 
-				for (var nIndex = 0, nCount = arrSectPr.length; nIndex < nCount; ++nIndex)
-				{
-					var oSectPr = arrSectPr[nIndex];
-
-					var _nCountBy  = undefined === nCountBy ? oSectPr.GetLineNumbersCountBy() : nCountBy;
-					var _nDistance = undefined === nDistance ? oSectPr.GetLineNumbersDistance() : nDistance;
-					var _nStart    = undefined === nStart ? oSectPr.GetLineNumbersStart() : nStart;
-					var _nRestart  = undefined === nRestart ? oSectPr.GetLineNumbersRestart() : nRestart;
-
-					oSectPr.SetLineNumbers(_nCountBy, _nDistance, _nStart, _nRestart);
-				}
+				var _nCountBy  = undefined === nCountBy ? oSectPr.GetLineNumbersCountBy() : nCountBy;
+				var _nDistance = undefined === nDistance ? oSectPr.GetLineNumbersDistance() : nDistance;
+				var _nStart    = undefined === nStart ? oSectPr.GetLineNumbersStart() : nStart;
+				var _nRestart  = undefined === nRestart ? oSectPr.GetLineNumbersRestart() : nRestart;
+				
+				if (undefined === nCountBy && 0 === oSectPr.GetLineNumbersCountBy())
+					_nCountBy = 1;
+				
+				oSectPr.SetLineNumbers(_nCountBy, _nDistance, _nStart, _nRestart);
 			}
 		}
 
