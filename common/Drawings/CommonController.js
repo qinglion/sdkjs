@@ -246,6 +246,17 @@
 			};
 		}
 
+		function fGetOuterRectangle(width, height, angle) {
+			const transform = new AscCommon.CMatrix();
+			const arrX = [];
+			const arrY = [];
+			transform.RotateAt(angle, width / 2, height / 2);
+			arrX.push(transform.TransformPointX(0, 0), transform.TransformPointX(width, 0), transform.TransformPointX(0, height), transform.TransformPointX(width, height));
+			arrY.push(transform.TransformPointY(0, 0), transform.TransformPointY(width, 0), transform.TransformPointY(0, height), transform.TransformPointY(width, height));
+
+			return {width: Math.max.apply(Math, arrX) - Math.min.apply(Math, arrX), height: Math.max.apply(Math, arrY) - Math.min.apply(Math, arrY)};
+		}
+
 		function checkParagraphDefFonts(map, par) {
 			par && par.Pr && par.Pr.DefaultRunPr && checkRFonts(map, par.Pr.DefaultRunPr.RFonts);
 		}
@@ -11917,6 +11928,7 @@
 		window['AscFormat'].fillImage = fillImage;
 		window['AscFormat'].fSolveQuadraticEquation = fSolveQuadraticEquation;
 		window['AscFormat'].fGetMaxInscribedRectangle = fGetMaxInscribedRectangle;
+		window['AscFormat'].fGetOuterRectangle = fGetOuterRectangle;
 		window['AscFormat'].fApproxEqual = fApproxEqual;
 		window['AscFormat'].fCheckBoxIntersectionSegment = fCheckBoxIntersectionSegment;
 		window['AscFormat'].CMathPainter = CMathPainter;

@@ -10554,6 +10554,10 @@ CPresentation.prototype.GetCurSlideObjectsNames = function () {
 	}
 	return oSlide.cSld.getObjectsNames();
 };
+CPresentation.prototype.isSlidePreserved = function (nSlideIdx) {
+	let oSlide = this.GetSlide(nSlideIdx);
+	return oSlide instanceof AscCommonSlide.MasterSlide && oSlide.isPreserve();
+};
 CPresentation.prototype.isSlideAnimated = function (nSlideIdx) {
 	let oSlide = this.GetSlide(nSlideIdx);
 	if (!oSlide) {

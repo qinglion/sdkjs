@@ -5166,6 +5166,56 @@ function CThumbnailsManager()
 		return {maxX: fCX(16), minX: fCX(4), maxY: fCY(15), minY: fCY(4)}
 	};
 
+	this.DrawPin = function(oGraphics, nX, nY, oColor, nAngle) {
+		const fCX = function(nVal)
+		{
+			return AscCommon.AscBrowser.convertToRetinaValue(nVal, true) + nX;
+		};
+		const fCY = function(nVal)
+		{
+			return AscCommon.AscBrowser.convertToRetinaValue(nVal, true) + nY;
+		};
+		const rotateAt = function(angle, x, y) {
+			oCtx.translate(fCX(x), fCY(y));
+			oCtx.rotate(AscCommon.deg2rad(angle));
+			oCtx.translate(-fCX(x), -fCY(y));
+		}
+		oGraphics.b_color1(oColor.R, oColor.G, oColor.B, 255);
+		oGraphics.SaveGrState();
+		oGraphics.SetIntegerGrid(true);
+		let oCtx = oGraphics.m_oContext;
+		oCtx.lineCap = 'round';
+		oCtx.lineWidth = AscCommon.AscBrowser.convertToRetinaValue(1, true);
+		rotateAt(nAngle, 5, 9);
+		oCtx.beginPath();
+		oCtx.moveTo(fCX(2), fCY(4));
+		oCtx.lineTo(fCX(8), fCY(4));
+		oCtx.closePath();
+		oCtx.stroke();
+
+		oCtx.beginPath();
+		oCtx.moveTo(fCX(3), fCY(4));
+		oCtx.lineTo(fCX(7), fCY(4));
+		oCtx.lineTo(fCX(7), fCY(7));
+		oCtx.lineTo(fCX(9), fCY(9));
+		oCtx.lineTo(fCX(9), fCY(10));
+		oCtx.lineTo(fCX(1), fCY(10));
+		oCtx.lineTo(fCX(1), fCY(9));
+		oCtx.lineTo(fCX(3), fCY(7));
+		oCtx.closePath();
+		oCtx.fill();
+
+		oCtx.beginPath();
+		oCtx.moveTo(fCX(5), fCY(10));
+		oCtx.lineTo(fCX(5), fCY(14));
+		oCtx.closePath();
+		oCtx.stroke();
+		rotateAt(-nAngle, 5, 9);
+		oCtx.beginPath();
+
+		oGraphics.RestoreGrState();
+	};
+
 	this.OnPaint = function()
 	{
 		if (!this.m_bIsVisible)
@@ -5261,16 +5311,29 @@ function CThumbnailsManager()
 					context.globalAlpha = 1;
 				}
 				page.animateLabelRect = null;
+				let nBottomBounds = _bounds.b;
 				if (_logicDocument.isSlideAnimated(i))
 				{
 					let nX = (_bounds.x + _bounds.r) / 2 - AscCommon.AscBrowser.convertToRetinaValue(9.5, true);
-					let nY = _bounds.b + 3;
+					let nY = nBottomBounds + 3;
 					let nIconH = AscCommon.AscBrowser.convertToRetinaValue(15, true);
 					if(nY + nIconH < page.bottom)
 					{
 						let oColor = text_color;
 						let resCords = this.DrawAnimLabel(g, nX, nY, oColor);
 						page.animateLabelRect = resCords
+						nBottomBounds = resCords.maxY;
+					}
+				}
+				if (_logicDocument.isSlidePreserved(i)) {
+					const pinAngle = 45;
+					const pinSizes = AscFormat.fGetOuterRectangle(AscCommon.AscBrowser.convertToRetinaValue(8, true), AscCommon.AscBrowser.convertToRetinaValue(10, true), pinAngle);
+					let nX = (_bounds.x + _bounds.r) / 2 - pinSizes.width / 2;
+					let nY = nBottomBounds + 3;
+					let nIconH = pinSizes.height;
+					if(nY + nIconH < page.bottom)
+					{
+						this.DrawPin(g, nX, nY, text_color, pinAngle);
 					}
 				}
 			}
