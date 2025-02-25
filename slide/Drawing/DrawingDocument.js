@@ -5184,6 +5184,7 @@ function CThumbnailsManager()
 		oGraphics.SaveGrState();
 		oGraphics.SetIntegerGrid(true);
 		let oCtx = oGraphics.m_oContext;
+		oCtx.save();
 		oCtx.lineCap = 'round';
 		oCtx.lineWidth = AscCommon.AscBrowser.convertToRetinaValue(1, true);
 		rotateAt(nAngle, 5, 9);
@@ -5212,7 +5213,7 @@ function CThumbnailsManager()
 		oCtx.stroke();
 		rotateAt(-nAngle, 5, 9);
 		oCtx.beginPath();
-
+		oCtx.restore();
 		oGraphics.RestoreGrState();
 	};
 
