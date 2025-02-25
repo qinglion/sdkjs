@@ -11400,29 +11400,40 @@ CPresentation.prototype.setPreserveSlideMaster = function (bPr) {
 		}
 	}
 
-	if (this.Document_Is_SelectionLocked(AscCommon.changestype_RemoveSlide, arrMastersForDelete)) {
-		return;
+	const oThis = this;
+	function callback(bDelete) {
+		if (bDelete && oThis.Document_Is_SelectionLocked(AscCommon.changestype_RemoveSlide, arrMastersForDelete)) {
+			return;
+		}
+
+		oThis.StartAction(AscDFH.historydescription_Presentation_SetPreserveSlideMaster);
+		for (let i = 0; i < arrIndexes.length; i++) {
+			const nIdx = arrIndexes[i];
+			const oSlideObject = oThis.GetSlide(nIdx);
+			oSlideObject.setPreserve(bPr);
+		}
+
+		if (bDelete) {
+			for (let i = arrMasterIndexesForDelete.length - 1; i >= 0; i -= 1) {
+				oThis.removeSlide(arrMasterIndexesForDelete[i]);
+			}
+
+			oThis.DrawingDocument.UpdateThumbnailsAttack();
+			if (nSlideIndex === null) {
+				nSlideIndex = Math.max(arrMasterIndexesForDelete[0] - 1, 0);
+			}
+			oThis.DrawingDocument.m_oWordControl.GoToPage(nSlideIndex, undefined, undefined, true);
+		}
+
+		oThis.Document_UpdateUndoRedoState();
+		oThis.FinalizeAction();
 	}
 
-	this.StartAction(AscDFH.historydescription_Presentation_SetPreserveSlideMaster);
-	for (let i = 0; i < arrIndexes.length; i++) {
-		const nIdx = arrIndexes[i];
-		const oSlideObject = this.GetSlide(nIdx);
-		oSlideObject.setPreserve(bPr);
+	if (arrMastersForDelete.length) {
+		this.Api.sendEvent("asc_onRemoveUnpreserveMasters", callback);
+	} else {
+		callback();
 	}
-
-	for (let i = arrMasterIndexesForDelete.length - 1; i >= 0; i -= 1) {
-		this.removeSlide(arrMasterIndexesForDelete[i]);
-	}
-
-	this.DrawingDocument.UpdateThumbnailsAttack();
-	if (nSlideIndex === null) {
-		nSlideIndex = Math.max(arrMasterIndexesForDelete[0] - 1, 0);
-	}
-	this.DrawingDocument.m_oWordControl.GoToPage(nSlideIndex, undefined, undefined, true);
-	this.Document_UpdateUndoRedoState();
-
-	this.FinalizeAction();
 };
 CPresentation.prototype.getUnpreserveLayoutsAndMasters = function (arrSlides) {
 	const oResult = {masters: [], layouts: []};
