@@ -2114,6 +2114,19 @@ CPresentation.prototype.GetCurrentMaster = function () {
 	let oParents = oSlide.getParentObjects();
 	return oParents.master;
 };
+CPresentation.prototype.GetUsedMasters = function () {
+	const mapMasters = {};
+	const arrMasters = [];
+	for (let i = 0; i < this.Slides.length; i++) {
+		const oSlide = this.Slides[i];
+		const oMaster = oSlide.Layout && oSlide.Layout.Master;
+		if (oMaster && !mapMasters[oMaster.Id]) {
+			arrMasters.push(oMaster);
+			mapMasters[oMaster.Id] = true;
+		}
+	}
+	return arrMasters;
+};
 CPresentation.prototype.GetCurrentNotes = function () {
 	let oCurSlide = this.GetCurrentSlide();
 	if(!oCurSlide) return null;
@@ -11441,6 +11454,9 @@ CPresentation.prototype.getUnpreserveLayoutsAndMasters = function (arrSlides) {
 	const mapMasters = {};
 	const mapLayouts = {};
 
+	const arrUsedPresentationMasters = this.GetUsedMasters();
+	const bCheckMasters = !(arrUsedPresentationMasters.length === 1 && arrUsedPresentationMasters[0] === this.slideMasters[0]);
+
 	for (let i = 0; i < arrSlides.length; i++) {
 		const oSlide = arrSlides[i];
 		if (!(oSlide instanceof AscCommonSlide.Slide)) {
@@ -11454,7 +11470,7 @@ CPresentation.prototype.getUnpreserveLayoutsAndMasters = function (arrSlides) {
 			}
 
 			const oSlideMaster = oSlideLayout.Master;
-			if (oSlideMaster && !oSlideMaster.preserve) {
+			if (bCheckMasters && oSlideMaster && !oSlideMaster.preserve) {
 				mapMasters[oSlideMaster.Id] = oSlideMaster;
 			}
 		}
