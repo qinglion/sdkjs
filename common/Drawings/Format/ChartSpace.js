@@ -628,7 +628,7 @@ function(window, undefined) {
 		let oFirstTextPr = null;
 
 		// set text properties for the label
-		const setTextProperties = (oLbl) => {
+		const setTextProperties = function (oLbl) {
 			if (!oLbl) {
 				return;
 			}
@@ -652,7 +652,7 @@ function(window, undefined) {
 		};
 
 		// calculate max width of the label
-		const recalculateMinWidth = (oLbl) => {
+		const recalculateMinWidth = function (oLbl) {
 			const minWidth = oLbl.tx && oLbl.tx.rich && oLbl.tx.rich.content && oLbl.tx.rich.content.RecalculateMinMaxContentWidth ? oLbl.tx.rich.content.RecalculateMinMaxContentWidth().Min : 0;
 			if (minWidth > this.maxMinWidth) {
 				this.maxMinWidth = minWidth;

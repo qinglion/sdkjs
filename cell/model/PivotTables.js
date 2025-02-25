@@ -2861,7 +2861,7 @@ CT_PivotCacheRecords.prototype._splitLabelFilters = function(indexes, labelFilte
 			cacheFieldsWithDataOther[i] = cacheFieldsWithData[i];
 		}
 	}
-	return {labelFiltersRowCols, labelFiltersOther, cacheFieldsWithDataRowCols, cacheFieldsWithDataOther};
+	return {labelFiltersRowCols: labelFiltersRowCols, labelFiltersOther: labelFiltersOther, cacheFieldsWithDataRowCols: cacheFieldsWithDataRowCols, cacheFieldsWithDataOther: cacheFieldsWithDataOther};
 };
 CT_PivotCacheRecords.prototype._getDataMapApplyLabelFilters = function(rowMap, indexes, rowIndexes, colIndexes, labelFilters, dataFields) {
 	if (labelFilters.length === 0) {

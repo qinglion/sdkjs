@@ -12072,7 +12072,10 @@
 					/* we get the coordinates of all dependence lines and check whether the cursor hits */
 					let coordsArray = t.traceDependentsManager.tracesCoords;
 					if (coordsArray) {
-						const isClickOnLine = function(x, y, lineCoords, tolerance = 7) {
+						const isClickOnLine = function(x, y, lineCoords, tolerance) {
+							if (tolerance == null) {
+								tolerance = 7;
+							}
 							const x1 = lineCoords.from.x;
 							const y1 = lineCoords.from.y;
 							const x2 = lineCoords.to.x;
