@@ -4016,6 +4016,7 @@
 								oImg.changePresetGeom("rect");
 							}
 						}
+						this.endImageCrop();
 					}
 					if (props.ChartProperties) {
 						for (i = 0; i < objects_by_type.charts.length; ++i) {
