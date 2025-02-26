@@ -11417,6 +11417,30 @@ background-repeat: no-repeat;\
 		AscCommon.CollaborativeEditing.Set_GlobalLock(true);
 		this.asc_Save(false);
 	};
+	asc_docs_api.prototype.asc_CompletePreparingOForm = function(disconnect)
+	{
+		let logicDocument = this.private_GetLogicDocument();
+		if (!logicDocument)
+			return false;
+		
+		if (logicDocument.IsSelectionLocked(AscCommon.changestype_Document_Settings))
+			return false;
+		
+		logicDocument.StartAction(AscDFH.historydescription_OForm_CompletePreparation);
+		logicDocument.GetOFormDocument().setAllRolesNotFilled();
+		if (disconnect)
+			logicDocument.GetHistory().Add(new CChangesDocumentDisconnectEveryone(logicDocument));
+		
+		logicDocument.FinalizeAction();
+		
+		if (disconnect)
+		{
+			this.forceSaveDisconnectRequest = true;
+			AscCommon.CollaborativeEditing.Set_GlobalLock(true);
+			this.asc_Save(false);
+		}
+	};
+	
 
 	asc_docs_api.prototype.asc_UncheckContentControlButtons = function()
 	{
@@ -14940,6 +14964,7 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype['asc_GetAllFormsData']                       = asc_docs_api.prototype.asc_GetAllFormsData;
 	asc_docs_api.prototype['asc_GetOForm']                              = asc_docs_api.prototype.asc_GetOForm;
 	asc_docs_api.prototype['asc_DisconnectEveryone']                    = asc_docs_api.prototype.asc_DisconnectEveryone;
+	asc_docs_api.prototype['asc_CompletePreparingOForm']                = asc_docs_api.prototype.asc_CompletePreparingOForm;
 
 	asc_docs_api.prototype['asc_BeginViewModeInReview']                 = asc_docs_api.prototype.asc_BeginViewModeInReview;
 	asc_docs_api.prototype['asc_EndViewModeInReview']                   = asc_docs_api.prototype.asc_EndViewModeInReview;
