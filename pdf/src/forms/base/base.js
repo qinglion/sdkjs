@@ -294,7 +294,7 @@
         let oNewPage    = oDoc.GetPageInfo(nPage);
         
         if (oNewPage) {
-            oDoc.RemoveField(this.GetId());
+            oDoc.RemoveField(this.GetId(), true);
             oDoc.AddField(this, nPage);
         }
     };

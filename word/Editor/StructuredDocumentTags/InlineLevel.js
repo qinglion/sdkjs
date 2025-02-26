@@ -281,45 +281,25 @@ CInlineLevelSdt.prototype.private_CopyPrTo = function(oContentControl, oPr)
 
 	if (this.Pr.ComplexFormPr)
 		oContentControl.SetComplexFormPr(this.Pr.ComplexFormPr);
+	
+	if (this.Pr.BorderColor)
+		oContentControl.setBorderColor(this.Pr.BorderColor.Copy());
+	
+	if (this.Pr.ShdColor)
+		oContentControl.setShdColor(this.Pr.ShdColor.Copy());
 };
-CInlineLevelSdt.prototype.GetSelectedContent = function(oSelectedContent)
+CInlineLevelSdt.prototype.GetSelectedContent = function(selectedContent)
 {
-	var oNewElement = new CInlineLevelSdt();
-	this.private_CopyPrTo(oNewElement);
-
 	if (this.IsPlaceHolder())
-	{
-		return oNewElement;
-	}
-	else
-	{
-		oNewElement.ReplacePlaceHolderWithContent();
-
-		var nStartPos = this.State.Selection.StartPos;
-		var nEndPos   = this.State.Selection.EndPos;
-
-		if (nStartPos > nEndPos)
-		{
-			nStartPos = this.State.Selection.EndPos;
-			nEndPos   = this.State.Selection.StartPos;
-		}
-
-		var nItemPos = 0;
-		for (var nPos = nStartPos, nItemPos = 0; nPos <= nEndPos; ++nPos)
-		{
-			var oNewItem = this.Content[nPos].GetSelectedContent(oSelectedContent);
-			if (oNewItem)
-			{
-				oNewElement.AddToContent(nItemPos, oNewItem);
-				nItemPos++;
-			}
-		}
-
-		if (0 === nItemPos)
-			return null;
-
-		return oNewElement;
-	}
+		this.SelectAll(1);
+	
+	let inlineSdt = CParagraphContentWithParagraphLikeContent.prototype.GetSelectedContent.apply(this, arguments);
+	if (!inlineSdt)
+		return null;
+	
+	this.private_CopyPrTo(inlineSdt);
+	inlineSdt.SetShowingPlcHdr(this.IsPlaceHolder());
+	return inlineSdt;
 };
 CInlineLevelSdt.prototype.GetSelectedText = function(bAll, bClearText, oPr)
 {
@@ -1522,7 +1502,7 @@ CInlineLevelSdt.prototype.private_FillPlaceholderContent = function()
 		if (this.IsContentControlEquation())
 		{
 			var oParaMath = new ParaMath();
-			oParaMath.Root.Load_FromMenu(c_oAscMathType.Default_Text, this.GetParagraph(), null, oFirstParagraph.GetText());
+			oParaMath.Root.Load_FromMenu(c_oAscMathType.Default_Text, this.GetParagraph(), null, oFirstParagraph.GetText({ParaSeparator : "", TableRowSeparator : "", TableCellSeparator : ""}));
 			oParaMath.Root.Correct_Content(true);
 			this.AddToContent(0, oParaMath);
 		}

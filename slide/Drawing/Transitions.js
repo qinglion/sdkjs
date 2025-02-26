@@ -3009,9 +3009,10 @@ function CDemonstrationManager(htmlpage)
 
         this.HtmlPage.m_oApi.sync_DemonstrationSlideChanged(this.SlideNum);
 
-		this.Canvas.onmousedown  = this.onMouseDown;
-		this.Canvas.onmousemove  = this.onMouseMove;
-        this.Canvas.onmouseup    = this.onMouseUp;
+
+        AscCommon.addMouseEvent(this.Canvas, "down", this.onMouseDown);
+        AscCommon.addMouseEvent(this.Canvas, "move", this.onMouseMove);
+        AscCommon.addMouseEvent(this.Canvas, "up", this.onMouseUp);
 		this.Canvas.onmouseleave = this.onMouseLeave;
 
         this.wrapKeyboard();
@@ -3057,8 +3058,9 @@ function CDemonstrationManager(htmlpage)
 
                 //oThis.DemonstrationDivEndPresentation.onmousedown  = oThis.onMouseDownDemonstration;
                 //oThis.DemonstrationDivEndPresentation.onmousemove  = oThis.onMouseMoveDemonstration;
-				oThis.DivEndPresentation.onmousedown  = oThis.onMouseDown;
-                oThis.DivEndPresentation.onmouseup    = oThis.onMouseUp;
+
+                AscCommon.addMouseEvent(this.DivEndPresentation, "down", oThis.onMouseDown);
+                AscCommon.addMouseEvent(this.DivEndPresentation, "up", oThis.onMouseUp);
 
                 oThis.DivEndPresentation.onmousewheel = oThis.onMouseWhell;
                 if (oThis.DivEndPresentation.addEventListener)
@@ -3244,9 +3246,11 @@ function CDemonstrationManager(htmlpage)
             oThis.Overlay.width = oThis.Canvas.width;
             oThis.Overlay.height = oThis.Canvas.height;
 
-            oThis.Overlay.onmousedown  = oThis.onMouseDown;
-            oThis.Overlay.onmousemove  = oThis.onMouseMove;
-            oThis.Overlay.onmouseup    = oThis.onMouseUp;
+
+
+            AscCommon.addMouseEvent(oThis.Overlay, "down", oThis.onMouseDown);
+            AscCommon.addMouseEvent(oThis.Overlay, "move", oThis.onMouseMove);
+            AscCommon.addMouseEvent(oThis.Overlay, "up", oThis.onMouseUp);
 			oThis.Overlay.onmouseleave = oThis.onMouseLeave;
 
             oThis.Overlay.onmousewheel = oThis.onMouseWhell;

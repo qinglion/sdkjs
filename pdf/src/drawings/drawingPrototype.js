@@ -271,8 +271,9 @@
         let oNewPage    = oDoc.GetPageInfo(nPage);
 
         if (oNewPage) {
-            oDoc.RemoveDrawing(this.GetId());
+            oDoc.RemoveDrawing(this.GetId(), true);
             oDoc.AddDrawing(this, nPage);
+            this.selectStartPage = nPage;
         }
     };
     CPdfDrawingPrototype.prototype.GetPage = function() {

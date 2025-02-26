@@ -626,8 +626,9 @@
         let oNewPage    = oDoc.GetPageInfo(nPage);
 
         if (oNewPage) {
-            oDoc.RemoveAnnot(this.GetId());
+            oDoc.RemoveAnnot(this.GetId(), true);
             oDoc.AddAnnot(this, nPage);
+            this.selectStartPage = nPage;
         }
     };
     CAnnotationBase.prototype.GetPage = function() {
@@ -675,7 +676,7 @@
         }
     };
     CAnnotationBase.prototype._AddReplyOnOpen = function(oReplyInfo) {
-        let oReply = new AscPDF.CAnnotationText(oReplyInfo["UniqueName"], this.GetPage(), [], this.GetDocument());
+        let oReply = new AscPDF.CAnnotationText(oReplyInfo["UniqueName"], [], this.GetDocument());
 
         oReply.SetCreationDate(AscPDF.ParsePDFDate(oReplyInfo["CreationDate"]).getTime());
         oReply.SetModDate(AscPDF.ParsePDFDate(oReplyInfo["LastModified"]).getTime());
