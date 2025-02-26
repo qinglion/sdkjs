@@ -11303,13 +11303,15 @@ background-repeat: no-repeat;\
 		oLogicDocument.UpdateSelection();
 		oLogicDocument.UpdateInterface();
 	};
-	asc_docs_api.prototype.asc_IsAllRequiredFormsFilled = function()
+	asc_docs_api.prototype.asc_IsAllRequiredFormsFilled = function(checkAll)
 	{
 		let oFormsManager = this.private_GetFormsManager();
+		let oform = this.asc_GetOForm();
 		if (!oFormsManager)
 			return true;
-
-		return oFormsManager.IsAllRequiredFormsFilled();
+		
+		let roleName = !checkAll && oform ? oform.getCurrentRole() : null;
+		return oFormsManager.IsAllRequiredFormsFilled(roleName);
 	};
 	asc_docs_api.prototype.sync_OnAllRequiredFormsFilled = function(isFilled)
 	{
