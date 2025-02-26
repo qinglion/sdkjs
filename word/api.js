@@ -2916,7 +2916,7 @@ background-repeat: no-repeat;\
 					"format"        : this.documentFormat,
 					"c"             : "reopen",
 					"title"         : this.documentTitle,
-					"codepage"      : option.asc_getCodePage(),
+					"codepage"      : option.asc_getCodePageOrDefault(),
 					"nobase64"      : true
 				};
 				sendCommand(this, null, rData);
