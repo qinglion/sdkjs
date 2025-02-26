@@ -5117,25 +5117,41 @@ var editor;
   spreadsheet_api.prototype.asc_startEditCrop = function()
   {
     var ws = this.wb.getWorksheet();
-    return ws.objectRender.controller.startImageCrop();
+		const bRes = ws.objectRender.controller.startImageCrop();
+	  if (bRes) {
+		  this.wb._onWSSelectionChanged();
+	  }
+    return bRes;
   };
 
   spreadsheet_api.prototype.asc_endEditCrop = function()
   {
     var ws = this.wb.getWorksheet();
-    return ws.objectRender.controller.endImageCrop();
+		const bRes = ws.objectRender.controller.endImageCrop();
+		if (bRes) {
+			this.wb._onWSSelectionChanged();
+		}
+		return bRes;
   };
 
   spreadsheet_api.prototype.asc_cropFit = function()
   {
     var ws = this.wb.getWorksheet();
-    return ws.objectRender.controller.cropFit();
+    const bRes = ws.objectRender.controller.cropFit();
+		if (bRes) {
+			this.wb._onWSSelectionChanged();
+		}
+		return bRes;
   };
 
   spreadsheet_api.prototype.asc_cropFill = function()
   {
     var ws = this.wb.getWorksheet();
-    return ws.objectRender.controller.cropFill();
+	  const bRes = ws.objectRender.controller.cropFill();
+		if (bRes) {
+			this.wb._onWSSelectionChanged();
+		}
+		return bRes;
   };
 
 

@@ -4937,22 +4937,38 @@ background-repeat: no-repeat;\
 
 	asc_docs_api.prototype.asc_startEditCrop = function()
 	{
-		return this.WordControl.m_oLogicDocument.startImageCrop();
+		const bRes = this.WordControl.m_oLogicDocument.startImageCrop();
+		if (bRes) {
+			this.WordControl.m_oLogicDocument.UpdateInterface();
+		}
+		return bRes;
 	};
 
 	asc_docs_api.prototype.asc_endEditCrop = function()
 	{
-		return this.WordControl.m_oLogicDocument.endImageCrop();
+		const bRes = this.WordControl.m_oLogicDocument.endImageCrop();
+		if (bRes) {
+			this.WordControl.m_oLogicDocument.UpdateInterface();
+		}
+		return bRes;
 	};
 
 	asc_docs_api.prototype.asc_cropFit = function()
 	{
-		return this.WordControl.m_oLogicDocument.cropFit();
+		const bRes = this.WordControl.m_oLogicDocument.cropFit();
+		if (bRes) {
+			this.WordControl.m_oLogicDocument.UpdateInterface();
+		}
+		return bRes;
 	};
 
 	asc_docs_api.prototype.asc_cropFill = function()
 	{
-		return this.WordControl.m_oLogicDocument.cropFill();
+		const bRes = this.WordControl.m_oLogicDocument.cropFill();
+		if (bRes) {
+			this.WordControl.m_oLogicDocument.UpdateInterface();
+		}
+		return bRes;
 	};
 
 

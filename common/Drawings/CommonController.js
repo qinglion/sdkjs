@@ -1156,13 +1156,13 @@
 
 				startImageCrop: function () {
 
-
+					let bRes = false;
 					if (this.checkSelectedObjectsProtection()) {
-						return;
+						return bRes;
 					}
 					var cropObject = this.getObjectForCrop();
 					if (!cropObject) {
-						return;
+						return bRes;
 					}
 
 
@@ -1172,8 +1172,10 @@
 							this.selection.cropSelection = cropObject;
 							this.sendCropState();
 							this.updateOverlay();
+							bRes = true;
 						}
 					}, [], false);
+					return bRes;
 				},
 
 				endImageCrop: function (bDoNotRedraw) {
@@ -1187,18 +1189,20 @@
 								this.drawingObjects.showDrawingObjects();
 							}
 						}
+						return true;
 					}
+					return false;
 				},
 
 				cropFit: function () {
 
-
+					let bRes = false;
 					if (this.checkSelectedObjectsProtection()) {
-						return;
+						return bRes;
 					}
 					var cropObject = this.getObjectForCrop();
 					if (!cropObject) {
-						return;
+						return bRes;
 					}
 					this.checkSelectedObjectsAndCallback(function () {
 						cropObject.checkSrcRect();
@@ -1210,19 +1214,21 @@
 								this.drawingObjects.showDrawingObjects();
 							}
 							this.updateOverlay();
+							bRes = true;
 						}
 					}, [], false);
+					return bRes;
 				},
 
 				cropFill: function () {
 
-
+					let bRes = false;
 					if (this.checkSelectedObjectsProtection()) {
-						return;
+						return bRes;
 					}
 					var cropObject = this.getObjectForCrop();
 					if (!cropObject) {
-						return;
+						return bRes;
 					}
 					this.checkSelectedObjectsAndCallback(function () {
 						cropObject.checkSrcRect();
@@ -1234,8 +1240,10 @@
 								this.drawingObjects.showDrawingObjects();
 							}
 							this.updateOverlay();
+							bRes = true;
 						}
 					}, [], false);
+					return bRes;
 				},
 
 				setCropAspect: function (dAspect) {
