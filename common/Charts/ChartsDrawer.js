@@ -14348,6 +14348,7 @@ function drawStockChart(chart, chartsDrawer) {
 	this.valAx = null;
 
 	this.paths = {};
+	this.connectedLines={}
 }
 
 drawStockChart.prototype = {
@@ -14355,6 +14356,7 @@ drawStockChart.prototype = {
 
 	draw: function () {
 		this._drawLines();
+		this._drawConnectedLine();
 		if (this.chart.upDownBars && this.cChartDrawer.upDownBars) {
 			this.cChartDrawer.upDownBars.draw(this.chart.Id);
 		}
@@ -14429,6 +14431,63 @@ drawStockChart.prototype = {
 				this.paths.values[i].highLines = this._calculateLine(xVal, yVal4, xVal, yVal3);
 			}
 		}
+
+		for (let i=0; i< this.chart.series.length; i++) {
+			const numCache = this.cChartDrawer.getNumCache(this.chart.series[i].val);
+			if(!numCache) {
+				continue;
+			}
+			this.connectedLines[i] = this._calcConnectedLine(numCache)
+		}
+	},
+
+	_drawConnectedLine: function () {
+		let leftRect = this.cChartDrawer.calcProp.chartGutter._left / this.cChartDrawer.calcProp.pxToMM;
+		let topRect = (this.cChartDrawer.calcProp.chartGutter._top) / this.cChartDrawer.calcProp.pxToMM;
+		let rightRect = this.cChartDrawer.calcProp.trueWidth / this.cChartDrawer.calcProp.pxToMM;
+		let bottomRect = (this.cChartDrawer.calcProp.trueHeight) / this.cChartDrawer.calcProp.pxToMM;
+
+		if (!AscFormat.isRealNumber(leftRect) || !AscFormat.isRealNumber(topRect) || !AscFormat.isRealNumber(rightRect) || !AscFormat.isRealNumber(bottomRect) ) {
+			return
+		}
+
+		this.cChartDrawer.cShapeDrawer.Graphics.SaveGrState();
+		this.cChartDrawer.cShapeDrawer.Graphics.AddClipRect(leftRect, topRect, rightRect, bottomRect);
+
+		for (let i in this.connectedLines) {
+			if (this.connectedLines.hasOwnProperty(i) && this.connectedLines[i]) {
+				// const brush = this.chart.series[i].compiledSeriesBrush;
+				const pen = this.chart.series[i].compiledSeriesPen;
+				this.cChartDrawer.drawPath(this.connectedLines[i], pen, null);
+			}
+		}
+
+		this.cChartDrawer.cShapeDrawer.Graphics.RestoreGrState();
+	},
+
+	_calcConnectedLine: function (numCache) {
+		var pathId = this.cChartSpace.AllocPath();
+		var path = this.cChartSpace.GetPath(pathId);
+
+		var pathH = this.chartProp.pathH;
+		var pathW = this.chartProp.pathW;
+
+
+		// path.moveTo(x * pathW, y * pathH);
+		// path.lnTo(x1 * pathW, y1 * pathH);
+		for (let i = 0; i < numCache.pts.length; i++) {
+			const valVal = numCache.pts[i].val;
+			const catVal = numCache.pts[i].idx + 1;
+			const x = this.cChartDrawer.getYPosition(catVal, this.catAx, true);
+			const y = this.cChartDrawer.getYPosition(valVal, this.valAx, true);
+			if (i === 0) {
+				path.moveTo(x * pathW, y * pathH);
+			} else {
+				path.lnTo(x * pathW, y * pathH);
+			}
+		}
+
+		return pathId;
 	},
 
 	_drawLines: function () {
