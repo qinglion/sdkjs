@@ -319,6 +319,7 @@ SlideLayout.prototype.getMaster = function(){
             copy.setTiming(this.timing.createDuplicate(oIdMap));
         }
         copy.setSlideSize(this.Width, this.Height);
+				copy.setPreserve(this.preserve);
         return copy;
     };
     SlideLayout.prototype.setMaster = function(master)

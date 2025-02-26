@@ -9257,7 +9257,7 @@ CPresentation.prototype.deleteSlides = function (arrSlides) {
 			this.updateSlideIndexes();
 		}
 		this.DrawingDocument.UpdateThumbnailsAttack();
-		this.DrawingDocument.m_oWordControl.GoToPage(Math.max(Math.min(this.GetSlidesCount() - 1, nMinSlideIndex), 0), undefined, undefined, true);
+		this.DrawingDocument.m_oWordControl.GoToPage(Math.min(this.GetSlidesCount() - 1, nMinSlideIndex), undefined, undefined, true);
 		this.Api.sync_HideComment();
 		this.Document_UpdateUndoRedoState();
 		this.Recalculate();

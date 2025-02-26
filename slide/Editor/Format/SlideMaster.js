@@ -727,6 +727,7 @@ MasterSlide.prototype.createDuplicate = function (IdMap) {
     if(this.Theme) {
         copy.setTheme(this.Theme.createDuplicate());
     }
+		copy.setPreserve(this.preserve);
     return copy;
 };
 MasterSlide.prototype.Clear_ContentChanges = function()

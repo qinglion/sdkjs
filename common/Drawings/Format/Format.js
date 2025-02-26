@@ -15235,7 +15235,7 @@
 			master.Theme = theme;
 
 			master.sldLayoutLst[0] = GenerateDefaultSlideLayout(master);
-
+			master.setPreserve(true);
 			return master;
 		}
 
@@ -15243,6 +15243,7 @@
 			var layout = new SlideLayout();
 			layout.Theme = master.Theme;
 			layout.Master = master;
+			layout.setPreserve(true);
 			return layout;
 		}
 
