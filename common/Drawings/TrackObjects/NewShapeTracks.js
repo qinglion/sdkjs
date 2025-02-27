@@ -563,20 +563,17 @@ function NewShapeTrack(presetGeom, startX, startY, theme, master, layout, slide,
         if (Asc.editor.isPdfEditor()) {
             let oDoc = Asc.editor.getPDFDoc();
             let nRotAngle = oDoc.Viewer.getPageRotate(this.pageIndex);
-            if (nRotAngle === 90 || nRotAngle === 270) {
+            this.rot = -nRotAngle * Math.PI / 180;
 
+            if (nRotAngle === 90 || nRotAngle === 270) {
 
                 this.x = this.x + (this.extX - this.extY) / 2;
                 this.y = this.y - (this.extX - this.extY) / 2;
-
-                this.rot = -nRotAngle * Math.PI / 180;
 
                 let tempExtX = this.extX;
                 this.extX = this.extY;
                 this.extY = tempExtX;
             }
-
-
         }
 
         this.overlayObject.updateExtents(this.extX, this.extY);
