@@ -11289,7 +11289,7 @@ CPresentation.prototype.resetSlideBackground = function(arrSlides) {
 	if (this.Document_Is_SelectionLocked(AscCommon.changestype_SlideBg, arrSlides) === false) {
 		this.StartAction(AscDFH.historydescription_Presentation_ResetSlideBackground);
 		for(let nIdx = 0; nIdx < arrSlides.length; ++nIdx) {
-			let oSlide = arrSlides[i];
+			let oSlide = arrSlides[nIdx];
 			if(!oSlide.isMaster()) {
 				oSlide.changeBackground(null);
 			}
