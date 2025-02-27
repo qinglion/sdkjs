@@ -970,7 +970,7 @@
 		const TEXT_RECT_ERROR = 0.01;
 
 		/**
-		 *
+		 * @extends CGraphicObjectBase
 		 * @constructor
 		 */
 		function CShape() {
