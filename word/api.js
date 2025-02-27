@@ -8890,22 +8890,38 @@ background-repeat: no-repeat;\
 
 	asc_docs_api.prototype.asc_startEditCrop = function()
 	{
-		return this.WordControl.m_oLogicDocument.DrawingObjects.startImageCrop();
+		const bRes = this.WordControl.m_oLogicDocument.DrawingObjects.startImageCrop();
+		if (bRes) {
+			this.WordControl.m_oLogicDocument.UpdateInterface();
+		}
+		return bRes;
 	};
 
 	asc_docs_api.prototype.asc_endEditCrop = function()
 	{
-		return this.WordControl.m_oLogicDocument.DrawingObjects.endImageCrop();
+		const bRes = this.WordControl.m_oLogicDocument.DrawingObjects.endImageCrop();
+		if (bRes) {
+			this.WordControl.m_oLogicDocument.UpdateInterface();
+		}
+		return bRes;
 	};
 
 	asc_docs_api.prototype.asc_cropFit = function()
 	{
-		return this.WordControl.m_oLogicDocument.DrawingObjects.cropFit();
+		const bRes = this.WordControl.m_oLogicDocument.DrawingObjects.cropFit();
+		if (bRes) {
+			this.WordControl.m_oLogicDocument.UpdateInterface();
+		}
+		return bRes;
 	};
 
 	asc_docs_api.prototype.asc_cropFill = function()
 	{
-		return this.WordControl.m_oLogicDocument.DrawingObjects.cropFill();
+		const bRes = this.WordControl.m_oLogicDocument.DrawingObjects.cropFill();
+		if (bRes) {
+			this.WordControl.m_oLogicDocument.UpdateInterface();
+		}
+		return bRes;
 	};
 
 	asc_docs_api.prototype.AddTextArt = function(nStyle)
