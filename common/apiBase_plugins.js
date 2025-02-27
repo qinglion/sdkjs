@@ -1126,15 +1126,13 @@
      * @typeofeditors ["CDE", "CPE", "CSE"]
      * @alias GetSelectedText
      * @param {object} prop - The resulting string display properties.
-     * @param {boolean} prop.NewLine - Defines if the resulting string will include line boundaries or not (they will be replaced with '\r').
-     * @param {boolean} prop.NewLineParagraph - Defines if the resulting string will include paragraph line boundaries or not.
      * @param {boolean} prop.Numbering - Defines if the resulting string will include numbering or not.
      * @param {boolean} prop.Math - Defines if the resulting string will include mathematical expressions or not.
-     * @param {string} prop.TableCellSeparator - Defines how the table cell separator will be specified in the resulting string.
-     * @param {string} prop.TableRowSeparator - Defines how the table row separator will be specified in the resulting string.
-     * @param {string} prop.ParaSeparator - Defines how the paragraph separator will be specified in the resulting string.
-     * @param {string} prop.TabSymbol - Defines how the tab will be specified in the resulting string.
-     * @param {string} prop.NewLineSeparator - Defines how the line separator will be specified in the resulting string (this property has the priority over *NewLine*).
+     * @param {string} [prop.TableCellSeparator='\t'] - Defines how the table cell separator will be specified in the resulting string. Any symbol can be used. The default separator is "\t".
+     * @param {string} [prop.TableRowSeparator='\r\n'] - Defines how the table row separator will be specified in the resulting string. Any symbol can be used. The default separator is "\r\n".
+     * @param {string} [prop.ParaSeparator='\r\n'] - Defines how the paragraph separator will be specified in the resulting string. Any symbol can be used. The default separator is "\r\n".
+     * @param {string} [prop.TabSymbol='\t'] - Defines how the tab will be specified in the resulting string. Any symbol can be used. The default symbol is "\t".
+     * @param {string} [prop.NewLineSeparator='\r'] - Defines how the line separator will be specified in the resulting string. Any symbol can be used. The default separator is "\r".
 	 * @return {string} - Selected text.
      * @since 7.1.0
      * @see office-js-api/Examples/Plugins/{Editor}/Api/Methods/GetSelectedText.js
@@ -1146,8 +1144,6 @@
         {
             properties =
             {
-                NewLine : (prop.hasOwnProperty("NewLine")) ? prop["NewLine"] : true,
-                NewLineParagraph : (prop.hasOwnProperty("NewLineParagraph")) ? prop["NewLineParagraph"] : true,
                 Numbering : (prop.hasOwnProperty("Numbering")) ? prop["Numbering"] : true,
                 Math : (prop.hasOwnProperty("Math")) ? prop["Math"] : true,
                 TableCellSeparator: prop["TableCellSeparator"],
@@ -1161,22 +1157,39 @@
         {
             properties =
             {
-                NewLine : true,
-                NewLineParagraph : true,
                 Numbering : true
             }
         }
 
         return this.asc_GetSelectedText(false, properties);
     };
+	/**
+	 * Returns the selected content in the specified format.
+	 * @memberof Api
+	 * @typeofeditors ["CDE", "CPE", "CSE"]
+	 * @alias GetSelectedContent
+	 * @param {object} prop  - The returned content properties.
+	 * @param {"text" | "html"} [prop.type="text"] - The format type of the returned content (text or HTML).
+	 * @returns {string} - The selected content.
+	 * @since 8.3.1
+	 * @see office-js-api/Examples/Plugins/{Editor}/Api/Methods/GetSelectedContent.js
+	 */
+	Api.prototype["pluginMethod_GetSelectedContent"] = function(prop)
+	{
+		let type = AscCommon.c_oAscClipboardDataFormat.Text;
+		if (prop && "html" === prop.type)
+			type = AscCommon.c_oAscClipboardDataFormat.Html;
+			
+		return this.getSelectedContent(type);
+	};
     /**
      * Replaces each paragraph (or text in cell) in the select with the corresponding text from an array of strings.
      * @memberof Api
      * @typeofeditors ["CDE", "CSE", "CPE"]
      * @alias ReplaceTextSmart
      * @param {Array} arrString - An array of replacement strings.
-     * @param {string} [sParaTab=" "] - A character which is used to specify the tab in the source text.
-     * @param {string} [sParaNewLine=" "] - A character which is used to specify the line break character in the source text.
+	 * @param {string} [sParaTab="\t"] - A character which is used to specify the tab in the source text. Any symbol can be used. The default separator is "\t".
+     * @param {string} [sParaNewLine="\r\n"] - A character which is used to specify the line break character in the source text. Any symbol can be used. The default separator is "\r\n".
      * @returns {boolean} - Always returns true.
      * @since 7.1.0
      * @see office-js-api/Examples/Plugins/{Editor}/Api/Methods/ReplaceTextSmart.js

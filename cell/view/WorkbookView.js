@@ -6373,6 +6373,26 @@
 		}
 		return val === true || val == null;
 	};
+	WorkbookView.prototype.removeAllInks = function() {
+		const oThis = this;
+		const oCurrentWs = this.getWorksheet();
+
+		const oCurrentController = oCurrentWs.objectRender && oCurrentWs.objectRender.controller;
+		if (oCurrentController) {
+			const oWbModel = this.model;
+			const arrInks = oWbModel.getAllInks();
+			if (arrInks.length > 0) {
+				oCurrentController.checkObjectsAndCallback(function() {
+					for (let i = 0; i < oWbModel.aWorksheets.length; i++) {
+						const oWs = oThis.getWorksheet(i);
+						oWs.removeAllInks();
+					}
+					oCurrentController.updateSelectionState();
+					oCurrentController.updateOverlay();
+				}, [], false, AscDFH.historydescription_RemoveAllInks, arrInks);
+			}
+		}
+	};
 
 
 

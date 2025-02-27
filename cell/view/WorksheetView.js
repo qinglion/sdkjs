@@ -2031,6 +2031,9 @@
 
 		let c2 = Math.min(selectionRange.c2, this.nColsCount - 1);
 		let r2 = Math.min(selectionRange.r2, this.nRowsCount - 1);
+		if (selectionRange.c1 === c2 && selectionRange.r1 === r2 && selectionRange.isOneCell()) {
+			return null;
+		}
 		for (let c = selectionRange.c1; c <= c2; ++c) {
 			for (let r = selectionRange.r1; r <= r2; ++r) {
 				let cellCache = this._getCellTextCache(c, r, true);
@@ -5216,7 +5219,9 @@
             if(drawingCtx instanceof AscCommonExcel.CPdfPrinter) {
                 oGraphics = drawingCtx.DocumentRenderer;
                 oGraphics.SaveGrState();
-                oGraphics.SetBaseTransform(new AscCommon.CMatrix());
+				let oBaseTransform = new AscCommon.CMatrix();
+				oBaseTransform.Scale(printScale, printScale, AscCommon.MATRIX_ORDER_APPEND);
+                oGraphics.SetBaseTransform(oBaseTransform);
             }
             else {
                 oGraphics = new AscCommon.CGraphics();
@@ -9900,7 +9905,7 @@
 				}
 
 				if (!newRange) {
-					newRange = this.model.autoFilters.expandRange(ar, true);
+					newRange = this.model.autoFilters.expandRange(ar, true, true);
 				}
 
 				if (newRange) {
@@ -15359,6 +15364,28 @@
 				return;
 			}
 
+			let _moveCallback = function (_success) {
+				if (!_success) {
+					History.EndTransaction();
+					return;
+				}
+				if (!ctrlKey) {
+					let insProp = null != colByX ? c_oAscDeleteOptions.DeleteCellsAndShiftLeft : c_oAscDeleteOptions.DeleteCellsAndShiftTop;
+					t.model.selectionRange.getLast().assign2(arnFrom);
+					t.changeWorksheet("delCell", insProp, function (_success) {
+						if (!_success) {
+							History.EndTransaction();
+							return;
+						}
+						let changedRange = arnTo.adjustRange(arnFrom, !colByX);
+						t.setSelection(changedRange ? changedRange : arnTo);
+						History.EndTransaction();
+					});
+				} else {
+					History.EndTransaction();
+				}
+			};
+
 			let resmove = t.model._prepareMoveRange(arnFrom, arnTo);
 			if (resmove === -2) {
 				t.handlers.trigger("onErrorEvent", c_oAscError.ID.CannotMoveRange, c_oAscError.Level.NoCritical);
@@ -15367,24 +15394,25 @@
 				t.model.workbook.handlers.trigger("asc_onConfirmAction", Asc.c_oAscConfirm.ConfirmReplaceRange,
 					function (can) {
 						if (can) {
-							t.moveRangeHandle(arnFrom, arnTo, ctrlKey, null, shiftMove && function () {History.EndTransaction();});
+							t.moveRangeHandle(arnFrom, arnTo, ctrlKey, null, shiftMove && _moveCallback);
 						} else {
 							t._cleanSelectionMoveRange();
 						}
 					});
 			} else {
-				t.moveRangeHandle(arnFrom, arnTo, ctrlKey, null, shiftMove && function () {History.EndTransaction();});
+				t.moveRangeHandle(arnFrom, arnTo, ctrlKey, null, shiftMove && _moveCallback);
 			}
 		};
 
 		//shift cols/rows and move
+		let colByX, rowByY;
 		let lastSelection;
 		let shiftMove = this.startCellMoveRange.colRowMoveProps && this.startCellMoveRange.colRowMoveProps.shiftKey;
 		if (shiftMove) {
 			lastSelection = t.model.selectionRange.getLast().clone();
 
-			let colByX = this.startCellMoveRange.colRowMoveProps.colByX;
-			let rowByY = this.startCellMoveRange.colRowMoveProps.rowByY;
+			colByX = this.startCellMoveRange.colRowMoveProps.colByX;
+			rowByY = this.startCellMoveRange.colRowMoveProps.rowByY;
 			if (colByX != null) {
 				let colStart = colByX + 1;
 				let colEnd = colStart + lastSelection.c2 - lastSelection.c1;
@@ -15535,6 +15563,10 @@
 				t.model._moveRange(arnFrom, arnTo, copyRange, opt_wsTo && opt_wsTo.model);
 				t.cellCommentator.moveRangeComments(arnFrom, arnTo, copyRange, opt_wsTo);
 				t.moveCellWatches(arnFrom, arnTo, copyRange, opt_wsTo);
+
+				if (!opt_wsTo && !copyRange && arnFrom) {
+
+				}
 
 				var oRangeFrom = new AscCommonExcel.Range(t.model, arnFrom.r1, arnFrom.c1, arnFrom.r2, arnFrom.c2);
 				var oRangeTo = new AscCommonExcel.Range(t.model, arnTo.r1, arnTo.c1, arnTo.r2, arnTo.c2);
@@ -16790,7 +16822,17 @@
 				Asc.editor.wb.handleChartsOnWorkbookChange(aRanges);
 			}
 			if (isUpdateDefaultWidth) {
+				let beforeDefaultWidth = t.defaultColWidthPx;
+				let beforeDefaultHeight = t.defaultRowHeightPx;
 				t._initWorksheetDefaultWidth();
+				if (t.defaultColWidthPx !== beforeDefaultWidth) {
+					//we must recalculate before draw
+					t._updateVisibleColsCount(true);
+				}
+				if (t.defaultRowHeightPx !== beforeDefaultHeight) {
+					//we must recalculate before draw
+					t._updateVisibleRowsCount(true);
+				}
 			}
 			t.scrollType |= AscCommonExcel.c_oAscScrollType.ScrollVertical | AscCommonExcel.c_oAscScrollType.ScrollHorizontal;
 			t.draw(lockDraw);
@@ -18772,11 +18814,11 @@
 						return false;
 					};
 
-					let beforeExternalReferences = t.getExternalReferencesByCell(c, null, true);
+					// let beforeExternalReferences = t.getExternalReferencesByCell(c, null, true);
 					let bRes = t._saveCellValueAfterEdit(c, val, flags, /*isNotHistory*/false, /*lockDraw*/false);
 
 					let afterExternalReferences = t.getExternalReferencesByCell(c, true, true);
-					if (afterExternalReferences && !_compare(afterExternalReferences, beforeExternalReferences)) {
+					if (afterExternalReferences) {
 						//t.model.workbook.handlers.trigger("asc_onNeedUpdateExternalReference");
 						t.updateExternalReferenceByCell(c, true);
 					}
@@ -19514,8 +19556,7 @@
 			}
 		};
 
-		var api = window["Asc"]["editor"];
-		if (!window['AscCommonExcel'].filteringMode) {
+		if (!window['AscCommonExcel'].filteringMode && t.model.getActiveNamedSheetViewId() === null) {
 			History.LocalChange = true;
 			onChangeAutoFilterCallback();
 			History.LocalChange = false;
@@ -19601,7 +19642,7 @@
 				t.objectRender.updateSizeDrawingObjects({target: c_oTargetType.RowResize, row: minChangeRow});
 			}
 		};
-		if (!window['AscCommonExcel'].filteringMode) {
+		if (!window['AscCommonExcel'].filteringMode && t.model.getActiveNamedSheetViewId() === null) {
 			History.LocalChange = true;
 			onChangeAutoFilterCallback();
 			History.LocalChange = false;
@@ -19729,7 +19770,7 @@
 		if (null === isAddAutoFilter)//do not add autoFilter
 		{
 			var api = window["Asc"]["editor"];
-			if (!window['AscCommonExcel'].filteringMode) {
+			if (!window['AscCommonExcel'].filteringMode && t.model.getActiveNamedSheetViewId() === null) {
 				History.LocalChange = true;
 				onChangeAutoFilterCallback();
 				History.LocalChange = false;
@@ -19920,14 +19961,19 @@
 				return;
 			}
 
-			AscCommonExcel.checkFilteringMode(function () {
+			let _doApply = function () {
 				var updateRange = t.model.autoFilters.isApplyAutoFilterInCell(ar, true);
 				if (false !== updateRange) {
 					t._onUpdateFormatTable(updateRange);
 					t.objectRender.updateSizeDrawingObjects({target: c_oTargetType.RowResize, row: updateRange.r1});
 					t._updateSlicers(updateRange);
 				}
-			});
+			};
+			if (t.model.getActiveNamedSheetViewId() !== null) {
+				_doApply();
+			} else {
+				AscCommonExcel.checkFilteringMode(_doApply);
+			}
 		};
 
 		this._isLockedAll(onChangeAutoFilterCallback);
@@ -19955,14 +20001,19 @@
 				return;
 			}
 
-			AscCommonExcel.checkFilteringMode(function () {
+			let _doApply = function () {
 				var updateRange = t.model.autoFilters.clearFilterColumn(cellId, displayName);
 				if (false !== updateRange) {
 					t._onUpdateFormatTable(updateRange);
 					t.objectRender.updateSizeDrawingObjects({target: c_oTargetType.RowResize, row: updateRange.r1});
 					t._updateSlicers(updateRange);
 				}
-			});
+			}
+			if (t.model.getActiveNamedSheetViewId() !== null) {
+				_doApply();
+			} else {
+				AscCommonExcel.checkFilteringMode(_doApply);
+			}
 		};
 
 		this._isLockedAll(onChangeAutoFilterCallback);
@@ -27087,6 +27138,14 @@
 			this.drawingGraphicCtx.moveImageDataSafari(this.getRightToLeft() ? (this.getCtxWidth() - sx - sw) : sx, sy, sw, sh, this.getRightToLeft() ? (this.getCtxWidth() - dx - dw) : dx, dy);
 		} else {
 			this.drawingGraphicCtx.moveImageData(this.getRightToLeft() ? (this.getCtxWidth() - sx - sw) : sx, sy, sw, sh, this.getRightToLeft() ? (this.getCtxWidth() - dx - dw) : dx, dy);
+		}
+	};
+	WorksheetView.prototype.removeAllInks = function () {
+		const model = this.model;
+		const oController = this.objectRender && this.objectRender.controller;
+		if (oController) {
+			const arrInks = model.getAllInks();
+			oController.removeAllInks(arrInks);
 		}
 	};
 	

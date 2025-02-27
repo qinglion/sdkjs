@@ -36,7 +36,7 @@
 	 * Class representing a base annotation.
 	 * @constructor
     */
-    function CAnnotationBase(sName, nType, nPage, aOrigRect, oDoc)
+    function CAnnotationBase(sName, nType, aOrigRect, oDoc)
     {
         // если аннотация не shape based
         if (this.Id == undefined) {
@@ -63,7 +63,6 @@
         this._modDate               = undefined;
         this._name                  = undefined;
         this._opacity               = 1;
-        this._page                  = undefined;
         this._origRect              = [];
         this._refType               = undefined;
         this._seqNum                = undefined;
@@ -96,7 +95,6 @@
 
         this.SetDocument(oDoc);
         this.SetName(sName);
-        this.SetPage(nPage);
         this.SetRect(aOrigRect);
     };
     CAnnotationBase.prototype = Object.create(AscFormat.CBaseNoIdObject.prototype);
@@ -612,39 +610,34 @@
         this.parentPage = oParent;
     };
     CAnnotationBase.prototype.GetParentPage = function() {
+        let oReplyTo = this.GetReplyTo();
+        if (oReplyTo && !this.parentPage) {
+            return oReplyTo.GetParentPage();
+        }
+
         return this.parentPage;
     };
     CAnnotationBase.prototype.SetPage = function(nPage) {
-        let nCurPage = this.GetPage();
-        if (nPage == nCurPage)
+        if (this.GetPage() == nPage) {
             return;
-
-        let oViewer     = editor.getDocumentRenderer();
+        }
+        
         let oDoc        = this.GetDocument();
-        let oPageInfo   = oViewer.pagesInfo.pages[nCurPage];
+        let oNewPage    = oDoc.GetPageInfo(nPage);
 
-        let nCurIdxOnPage = oPageInfo && oPageInfo.annots ? oPageInfo.annots.indexOf(this) : -1;
-        if (oViewer.pagesInfo.pages[nPage]) {
-            if (oDoc.annots.indexOf(this) != -1) {
-                if (nCurIdxOnPage != -1) {
-                    oPageInfo.annots.splice(nCurIdxOnPage, 1);
-                }
-    
-                if (this.IsUseInDocument() && oViewer.pagesInfo.pages[nPage].annots.indexOf(this) == -1)
-                    oViewer.pagesInfo.pages[nPage].annots.push(this);
-
-                // добавляем в перерисовку исходную страницу
-                this.AddToRedraw();
-            }
-
-            oDoc.History.Add(new CChangesPDFAnnotPage(this, nCurPage, nPage));
-            this._page = nPage;
+        if (oNewPage) {
+            oDoc.RemoveAnnot(this.GetId(), true);
+            oDoc.AddAnnot(this, nPage);
             this.selectStartPage = nPage;
-            this.AddToRedraw();
         }
     };
     CAnnotationBase.prototype.GetPage = function() {
-        return this._page;
+        let oParentPage = this.GetParentPage();
+        if (!oParentPage || !(oParentPage instanceof AscPDF.CPageInfo)) {
+            return -1;
+        }
+
+        return oParentPage.GetIndex();
     };
     CAnnotationBase.prototype.SetDocument = function(oDoc) {
         if (this._doc == oDoc) {
@@ -683,7 +676,7 @@
         }
     };
     CAnnotationBase.prototype._AddReplyOnOpen = function(oReplyInfo) {
-        let oReply = new AscPDF.CAnnotationText(oReplyInfo["UniqueName"], this.GetPage(), [], this.GetDocument());
+        let oReply = new AscPDF.CAnnotationText(oReplyInfo["UniqueName"], [], this.GetDocument());
 
         oReply.SetCreationDate(AscPDF.ParsePDFDate(oReplyInfo["CreationDate"]).getTime());
         oReply.SetModDate(AscPDF.ParsePDFDate(oReplyInfo["LastModified"]).getTime());
@@ -1036,7 +1029,7 @@
         let oDoc = this.GetDocument();
         oDoc.StartNoHistoryMode();
 
-        let oNewAnnot = new CAnnotationBase(AscCommon.CreateGUID(), this.type, this.GetPage(), this.GetOrigRect().slice(), oDoc);
+        let oNewAnnot = new CAnnotationBase(AscCommon.CreateGUID(), this.type, this.GetOrigRect().slice(), oDoc);
 
         oNewAnnot.lazyCopy = true;
         

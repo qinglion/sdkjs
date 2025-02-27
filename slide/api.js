@@ -2358,7 +2358,7 @@ background-repeat: no-repeat;\
 		//TEXT
 		if (AscCommon.c_oAscClipboardDataFormat.Text & _formats)
 		{
-			_data = this.WordControl.m_oLogicDocument.GetSelectedText(false, {NewLineParagraph : true, NewLine : true});
+			_data = this.WordControl.m_oLogicDocument.GetSelectedText(false);
 			_clipboard.pushData(AscCommon.c_oAscClipboardDataFormat.Text, _data)
 		}
 		//HTML
@@ -3396,6 +3396,7 @@ background-repeat: no-repeat;\
 				//if (!oPresentation.IsSelectionLocked(AscCommon.changestype_Timing)) {
 				AscCommon.History.Create_NewPoint(0);
 				oSlideLikeObject.setName(sName);
+				oPresentation.Recalculate();
 				//}
 			}
 		}
@@ -6794,7 +6795,9 @@ background-repeat: no-repeat;\
 		const isSelectionLocked = this.WordControl.m_oLogicDocument.Document_Is_SelectionLocked(changestype_Drawing_Props);
 		const canMerge = this.asc_canMergeSelectedShapes(operation);
 		if (!isSelectionLocked && canMerge) {
-			this.WordControl.m_oLogicDocument.mergeSelectedShapes(operation);
+			this.WordControl.m_oLogicDocument.StartAction(0);
+			AscFormat.mergeSelectedShapes(operation);
+			this.WordControl.m_oLogicDocument.FinalizeAction();
 		}
 	};
 
@@ -8756,13 +8759,18 @@ background-repeat: no-repeat;\
 	};
 	asc_docs_api.prototype.canRunBuilderScript = function()
 	{
-		return this.asc_canPaste();
+		let logicDocument = this.getLogicDocument();
+		if (!logicDocument)
+			return false;
+
+		logicDocument.StartAction(AscDFH.historydescription_BuilderScript);
+		return true;
 	};
 	asc_docs_api.prototype._onEndBuilderScript = function(callback)
 	{
 		this.asc_Recalculate();
 		let logicDocument = this.getLogicDocument();
-		logicDocument.FinalizeAction();
+		logicDocument.FinalizeAction(true, true);
 		
 		if (callback)
 			callback(true)
@@ -9589,6 +9597,18 @@ background-repeat: no-repeat;\
 		if(!oLogicDocument) return;
 
 		oLogicDocument.EraseAllInksOnSlide();
+	};
+	asc_docs_api.prototype.removeAllInks = function () {
+		let oLogicDocument = this.getLogicDocument();
+		if(!oLogicDocument) return;
+
+		oLogicDocument.RemoveAllInks();
+	};
+	asc_docs_api.prototype.haveInks = function() {
+		let oLogicDocument = this.getLogicDocument();
+		if(!oLogicDocument) return;
+
+		return !!oLogicDocument.GetAllInks().length;
 	};
 
 	//-------------------------------------------------------------export---------------------------------------------------

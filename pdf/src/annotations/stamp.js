@@ -70,10 +70,10 @@
 	 * Class representing a stamp annotation.
 	 * @constructor
     */
-    function CAnnotationStamp(sName, nPage, aRect, oDoc)
+    function CAnnotationStamp(sName, aRect, oDoc)
     {
         AscPDF.CPdfShape.call(this);
-        AscPDF.CAnnotationBase.call(this, sName, AscPDF.ANNOTATIONS_TYPES.Stamp, nPage, aRect, oDoc);
+        AscPDF.CAnnotationBase.call(this, sName, AscPDF.ANNOTATIONS_TYPES.Stamp, aRect, oDoc);
         
         this._rotate = 0;
         this._stampType = undefined;
@@ -167,6 +167,7 @@
             return;
         }
 
+        AscCommon.History.StartNoHistoryMode();
         this.spPr.xfrm.setExtX(nShapeW * g_dKoef_pt_to_mm);
         this.spPr.xfrm.setExtY(nShapeH * g_dKoef_pt_to_mm);
 
@@ -180,6 +181,8 @@
         
         this.spPr.xfrm.setOffX(nOffX * g_dKoef_pt_to_mm);
         this.spPr.xfrm.setOffY(nOffY * g_dKoef_pt_to_mm);
+
+        AscCommon.History.EndNoHistoryMode();
     };
     CAnnotationStamp.prototype.GetInRect = function() {
         return this.inRect;
@@ -293,39 +296,23 @@
         this.SetNeedRecalc(true);
         this.SetWasChanged(true);
     };
-    CAnnotationStamp.prototype.SetRect = function(aRect) {
+    CAnnotationStamp.prototype.SetRect = function(aRect, bUpdateShapeSizes) {
         let oViewer     = editor.getDocumentRenderer();
         let oDoc        = oViewer.getPDFDoc();
         let aCurRect    = this.GetRect();
 
-        let bCalcRect = aCurRect && aCurRect.length != 0 && false == AscCommon.History.UndoRedoInProgress;
-
         oDoc.History.Add(new CChangesPDFAnnotRect(this, aCurRect, aRect));
         this._origRect = aRect;
 
-        if (bCalcRect) {
-            let nX1 = aRect[0] * g_dKoef_pt_to_mm;
-            let nX2 = aRect[2] * g_dKoef_pt_to_mm;
-            let nY1 = aRect[1] * g_dKoef_pt_to_mm;
-            let nY2 = aRect[3] * g_dKoef_pt_to_mm;
-
-            this.spPr.xfrm.setExtX(nX2 - nX1);
-            this.spPr.xfrm.setExtY(nY2 - nY1);
-            this.spPr.xfrm.setOffX(nX1);
-            this.spPr.xfrm.setOffY(nY1);
-
-            this.recalcBounds();
-            this.recalcGeometry();
-            this.Recalculate(true);
-            
-            let oGrBounds = this.bounds;
-            this._origRect[0] = Math.round(oGrBounds.l) * g_dKoef_mm_to_pt;
-            this._origRect[1] = Math.round(oGrBounds.t) * g_dKoef_mm_to_pt;
-            this._origRect[2] = Math.round(oGrBounds.r) * g_dKoef_mm_to_pt;
-            this._origRect[3] = Math.round(oGrBounds.b) * g_dKoef_mm_to_pt;
-        }
-
         this.SetWasChanged(true);
+        this.SetNeedRecalcSizes(!!bUpdateShapeSizes);
+    };
+    CAnnotationStamp.prototype.SetNeedRecalcSizes = function(bRecalc) {
+        this._needRecalcSizes = bRecalc;
+        this.recalcGeometry();
+    };
+    CAnnotationStamp.prototype.IsNeedRecalcSizes = function() {
+        return this._needRecalcSizes;
     };
     CAnnotationStamp.prototype.canRotate = function() {
         return true;
@@ -360,6 +347,21 @@
             return;
         }
 
+        if (this.IsNeedRecalcSizes()) {
+            let aRect = this.GetRect();
+
+            let extX = ((aRect[2] - aRect[0])) * g_dKoef_pt_to_mm;
+            let extY = ((aRect[3] - aRect[1])) * g_dKoef_pt_to_mm;
+
+            this.spPr.xfrm.offX = (aRect[0]) * g_dKoef_pt_to_mm;
+            this.spPr.xfrm.offY = (aRect[1]) * g_dKoef_pt_to_mm;
+
+            this.spPr.xfrm.extX = extX;
+            this.spPr.xfrm.extY = extY;
+
+            this.SetNeedRecalcSizes(false);
+        }
+
         this.recalculateTransform();
         this.updateTransformMatrix();
         this.recalculate();
@@ -373,7 +375,7 @@
         let oDoc = this.GetDocument();
         oDoc.StartNoHistoryMode();
 
-        let oNewStamp = new CAnnotationStamp(AscCommon.CreateGUID(), this.GetPage(), this.GetOrigRect().slice(), oDoc);
+        let oNewStamp = new CAnnotationStamp(AscCommon.CreateGUID(), this.GetOrigRect().slice(), oDoc);
 
         oNewStamp.inRect = this.inRect;
         oNewStamp.lazyCopy = true;
@@ -438,18 +440,6 @@
 		
         this._rotate = nAngle;
 
-        if (oViewer.IsOpenAnnotsInProgress == false) {
-            this.recalcBounds();
-            this.recalcGeometry();
-            this.Recalculate(true);
-            
-            let oGrBounds = this.bounds;
-            this._origRect[0] = Math.round(oGrBounds.l) * g_dKoef_mm_to_pt;
-            this._origRect[1] = Math.round(oGrBounds.t) * g_dKoef_mm_to_pt;
-            this._origRect[2] = Math.round(oGrBounds.r) * g_dKoef_mm_to_pt;
-            this._origRect[3] = Math.round(oGrBounds.b) * g_dKoef_mm_to_pt;
-        }
-
         this.SetWasChanged(true);
         this.SetNeedRecalc(true);
     };
@@ -461,6 +451,18 @@
         let oXfrm = this.getXfrm();
 
         this.SetRotate(-oXfrm.rot * (180 / Math.PI));
+        this.recalcBounds();
+        this.recalcGeometry();
+        this.Recalculate(true);
+        
+        let aNewRect = [];
+        let oGrBounds = this.bounds;
+        aNewRect[0] = Math.round(oGrBounds.l) * g_dKoef_mm_to_pt;
+        aNewRect[1] = Math.round(oGrBounds.t) * g_dKoef_mm_to_pt;
+        aNewRect[2] = Math.round(oGrBounds.r) * g_dKoef_mm_to_pt;
+        aNewRect[3] = Math.round(oGrBounds.b) * g_dKoef_mm_to_pt;
+
+        this.SetRect(aNewRect, false);
     };
     CAnnotationStamp.prototype.WriteToBinary = function(memory) {
         memory.WriteByte(AscCommon.CommandType.ctAnnotField);

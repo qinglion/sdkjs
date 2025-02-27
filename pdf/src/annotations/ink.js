@@ -36,10 +36,10 @@
 	 * Class representing a Ink annotation.
 	 * @constructor
     */
-    function CAnnotationInk(sName, nPage, aRect, oDoc)
+    function CAnnotationInk(sName, aRect, oDoc)
     {
         AscPDF.CPdfShape.call(this);
-        AscPDF.CAnnotationBase.call(this, sName, AscPDF.ANNOTATIONS_TYPES.Ink, nPage, aRect, oDoc);
+        AscPDF.CAnnotationBase.call(this, sName, AscPDF.ANNOTATIONS_TYPES.Ink, aRect, oDoc);
         
         AscCommon.History.StartNoHistoryMode();
         initShape(this);
@@ -342,7 +342,7 @@
         let oDoc = this.GetDocument();
         oDoc.StartNoHistoryMode();
 
-        let oNewInk = new CAnnotationInk(AscCommon.CreateGUID(), this.GetPage(), this.GetOrigRect().slice(), oDoc);
+        let oNewInk = new CAnnotationInk(AscCommon.CreateGUID(), this.GetOrigRect().slice(), oDoc);
 
         oNewInk.lazyCopy = true;
 

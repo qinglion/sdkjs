@@ -9996,6 +9996,20 @@ var editor;
 		}
 		return wb.getShowHorizontalScroll();
 	};
+	spreadsheet_api.prototype.haveInks = function() {
+		if (!this.wbModel) {
+			return false;
+		}
+
+		return !!this.wbModel.getAllInks().length;
+	};
+	spreadsheet_api.prototype.removeAllInks = function() {
+		if (!this.wb) {
+			return;
+		}
+
+		this.wb.removeAllInks();
+	};
 
   /*
    * Export

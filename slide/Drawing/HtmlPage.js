@@ -682,7 +682,10 @@ function CEditorPage(api)
 			styleContent += "#dem_id_draw_menu li>a:hover{background-color:" + GlobalSkin.DemButtonBackgroundColorHover + ";}";
 			styleContent += "#dem_id_draw_menu li>a[data-checked=\"true\"]{color:" + GlobalSkin.DemButtonTextColorActive + ";background-color:" + GlobalSkin.DemButtonBackgroundColorActive + ";}";
 			styleContent += "#dem_id_draw_menu >li.submenu>a:after{display:block;content:\" \";float:right;width:0;height:0;border-color:#fff0;border-style:solid;border-width:3px 0 3px 3px;border-left-color:" + GlobalSkin.DemButtonTextColor + ";margin-top:5px;margin-right:-7px;margin-left:0}";
-			styleContent += ".menu-color-cell { cursor:pointer;width:14px;height:14px;border:1px solid rgb(0 0 0 / .2);float:left;margin-right:2px;margin-left:0; }";
+			styleContent += ".menu-color-cell { display: inline-block; cursor: pointer; border: 1px solid transparent; }";
+			styleContent += ".menu-color-cell span { display: block; width:14px; height:14px; border:1px solid rgb(0 0 0 / .2); pointer-events: none; }";
+			styleContent += ".menu-color-cell em { display: block; border: none; pointer-events: none; }";
+			styleContent += ".menu-color-cell[data-current] { border-color:" + GlobalSkin.DemSplitterColor + ";}";
 			styleContent += ".dem_draw_menu_divider { margin: 4px 0; height: 1px; background-color:" + GlobalSkin.DemSplitterColor + ";}";
 
 			styleContent += this.getStylesReporter();
@@ -731,7 +734,7 @@ function CEditorPage(api)
 			let colorList = "";
 			const drawColors = ["FFFFFF","000000","E81416","FFA500","FAEB36","79C314","487DE7","4B369D","70369D"]; 
 			for (let i = 0; i < drawColors.length; i++) {
-				colorList += "<li class=\"menu-color-cell\" data-value=\"" + drawColors[i] + "\" style=\"background-color: #" + drawColors[i] + "\"></li>";
+				colorList += "<li class=\"menu-color-cell\" data-value=\"" + drawColors[i] + "\"><em><span style=\"background-color: #" + drawColors[i] + "\"></span></em></li>";
 			}
 
 			_buttonsContent += [
@@ -923,15 +926,28 @@ function CEditorPage(api)
 				return stroke;
 			};
 
-			this.currentDrawColor = 'e81416';
+			this.currentDrawColor = 'E81416';
+
+			const showCurrentColor = function() {
+				const elements = document.querySelectorAll(".menu-color-cell");
+				for (let i = 0; i< elements.length; i++) {
+					if (this.currentDrawColor === elements[i].getAttribute("data-value")) {
+						elements[i].dataset["current"] = "true";
+					} else {
+						delete elements[i].dataset["current"];
+					}
+				}
+			}.bind(this);
+			
+			showCurrentColor();
 
 			this.elementReporterDrawMenu = document.getElementById("dem_id_draw_menu");
 			this.elementReporterDrawMenu.onclick = function(e) {
 				if (e.target.hasAttribute("data-ratio")) {
 					const btnIcon = document.getElementById("dem_id_draw_menu_trigger_span");
 					
-					if (!!e.target.dataset.checked) {
-						delete e.target.dataset.checked;
+					if (!!e.target.getAttribute("data-checked")) {
+						delete e.target.dataset["checked"];
 						api.asc_StopInkDrawer();
 
 						this.elementReporterDrawMenuTrigger.classList.remove("btn-text-default-img2");
@@ -941,10 +957,10 @@ function CEditorPage(api)
 					} else {
 						const elements = this.elementReporterDrawMenu.querySelectorAll("a[data-ratio]")
 						for (let i = 0; i< elements.length; i++) {
-							delete elements[i].dataset.checked;
+							delete elements[i].dataset["checked"];
 						}
 
-						e.target.dataset.checked = "true";
+						e.target.dataset["checked"] = "true";
 
 						const currentTool = e.target.getAttribute("data-tool");
 
@@ -970,7 +986,7 @@ function CEditorPage(api)
 					}
 				}
 
-				if (e.target.dataset.tool === "erase-all") {
+				if (e.target.getAttribute("data-tool") === "erase-all") {
 					api.asc_EraseAllInksOnSlide();
 				}
 
@@ -984,7 +1000,7 @@ function CEditorPage(api)
 					const offset = AscCommon.UI.getBoundingClientRect(e.target);
 					const menuWidth = 174; 
 					let leftPosition = offset.left + offset.width;
-					if (leftPosition + menuWidth > window.outerWidth) {
+					if (leftPosition + menuWidth > window.innerWidth) {
 						leftPosition = offset.left - menuWidth;
 					}
 			
@@ -1010,25 +1026,26 @@ function CEditorPage(api)
 
 			this.elementReporterDrawColorsMenu.on('click', function(e) {
 				const checkedMenuItem = this.elementReporterDrawMenu.querySelector("a[data-checked]");
-				this.currentDrawColor = e.target.dataset.value;
+				this.currentDrawColor = e.target.getAttribute("data-value");
+				showCurrentColor();
 				if (window.editor.WordControl.reporterPointer) {
 					this.elementReporter6.onclick()
 				}
-				if ((checkedMenuItem && checkedMenuItem.dataset.tool === "eraser") || !checkedMenuItem) {
+				if ((checkedMenuItem && checkedMenuItem.getAttribute("data-tool") === "eraser") || !checkedMenuItem) {
 					api.asc_StartDrawInk(createSolidPen(this.currentDrawColor, 1, 100));
 					const elements = this.elementReporterDrawMenu.querySelectorAll("a[data-ratio]")
 					for (let i = 0; i< elements.length; i++) {
-						delete elements[i].dataset.checked;
+						delete elements[i].dataset["checked"];
 					}
 
 					const btnIcon = document.getElementById("dem_id_draw_menu_trigger_span");
-					this.elementReporterDrawMenu.querySelector("a[data-tool=\"pen\"]").dataset.checked = "true";
+					this.elementReporterDrawMenu.querySelector("a[data-tool=\"pen\"]").dataset["checked"] = "true";
 					this.elementReporterDrawMenuTrigger.classList.add("btn-text-default-img2");
 					this.elementReporterDrawMenuTrigger.classList.remove("btn-text-default-img");
 					btnIcon.classList.add("btn-pen-active");
 					btnIcon.classList.remove("btn-pen");
 				} else {
-					if (checkedMenuItem.dataset.tool === "pen") {
+					if (checkedMenuItem.getAttribute("data-tool") === "pen") {
 						api.asc_StartDrawInk(createSolidPen(this.currentDrawColor, 1, 100));
 					} else {
 						api.asc_StartDrawInk(createSolidPen(this.currentDrawColor, 6, 50));

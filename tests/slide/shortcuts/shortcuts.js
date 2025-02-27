@@ -857,7 +857,7 @@
 		SelectDrawings([drawing2]);
 
 		ExecuteMainHotkey(mainShortcutTypes.checkSelectAllContentShape);
-		assert.strictEqual(logicDocument.GetSelectedText(), 'Hello', 'Check select non empty content');
+		assert.strictEqual(logicDocument.GetSelectedText(), 'Hello\r\n', 'Check select non empty content');
 
 		SelectDrawings([drawing1, drawing2]);
 
@@ -930,7 +930,7 @@
 		SelectDrawings([graphicFrame]);
 		ExecuteMainHotkey(mainShortcutTypes.checkSelectFirstCellContent);
 		CheckTablePosition(0, 0);
-		assert.strictEqual(logicDocument.GetSelectedText(), 'Hello Hello', 'Check select first cell content');
+		assert.strictEqual(logicDocument.GetSelectedText(), 'Hello Hello\r\n', 'Check select first cell content');
 
 		graphicFrame.MoveCursorToStartPos();
 		logicDocument.MoveCursorRight(true, true);
@@ -1016,7 +1016,7 @@
 		controller.selection.chartSelection = chart;
 		chart.selectTitle(titles[0], 0);
 		ExecuteMainHotkey(mainShortcutTypes.checkSelectAllContentChartTitle);
-		assert.strictEqual(logicDocument.GetSelectedText(), 'Diagram Title', 'Check select all content in chart title');
+		assert.strictEqual(logicDocument.GetSelectedText(), 'Diagram Title\r\n', 'Check select all content in chart title');
 		logicDocument.Remove();
 		AscTest.TurnOffRecalculate();
 	});
@@ -1163,7 +1163,7 @@
 
 		assert.true(shape.txBody.content.IsSelectionUse(), 'Check content selection');
 		assert.true(paragraph.IsSelectedAll(), 'Check paragraph selection');
-		assert.strictEqual(logicDocument.GetSelectedText(), 'Hello', 'Check selected text');
+		assert.strictEqual(logicDocument.GetSelectedText(), 'Hello\r\n', 'Check selected text');
 	});
 
 	QUnit.test('Check reset action with adding new shape', (assert) =>

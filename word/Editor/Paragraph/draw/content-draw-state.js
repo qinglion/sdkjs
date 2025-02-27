@@ -135,7 +135,7 @@
 		
 		this.bidiFlow.add([element, run], element.getBidiType());
 	};
-	ParagraphContentDrawState.prototype.handleBidiFlow = function(data)
+	ParagraphContentDrawState.prototype.handleBidiFlow = function(data, direction)
 	{
 		let element = data[0];
 		this.handleRun(data[1]);
@@ -143,7 +143,7 @@
 		switch (element.Type)
 		{
 			case para_Text:
-				this.handleText(element);
+				this.handleText(element, direction);
 				break;
 			case para_Drawing:
 				this.handleDrawing(element);
@@ -297,9 +297,13 @@
 	/**
 	 * @param text {AscWord.CRunText}
 	 */
-	ParagraphContentDrawState.prototype.handleText = function(text)
+	ParagraphContentDrawState.prototype.handleText = function(text, direction)
 	{
-		text.Draw(this.X, this.calcY - this.yOffset, this.Graphics, this, this.textPr);
+		if (AscBidi.DIRECTION.R === direction && AscBidi.isPairedBracket(text.GetCodePoint()))
+			text.Draw(this.X, this.calcY - this.yOffset, this.Graphics, this, this.textPr, AscBidi.getPairedBracketGrapheme(text.Grapheme));
+		else
+			text.Draw(this.X, this.calcY - this.yOffset, this.Graphics, this, this.textPr);
+		
 		this.X += text.GetWidthVisible();
 	};
 	/**
