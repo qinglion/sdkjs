@@ -560,6 +560,33 @@ function NewShapeTrack(presetGeom, startX, startY, theme, master, layout, slide,
             }
         }
 
+        if (Asc.editor.isPdfEditor()) {
+            let oDoc = Asc.editor.getPDFDoc();
+            let nRotAngle = oDoc.Viewer.getPageRotate(this.pageIndex);
+            
+            let newOffX = x;
+            let newOffY = y;
+            
+            if (nRotAngle === 90) {
+                newOffX = x + (this.extX - this.extY) / 2;
+                newOffY = y - (this.extX - this.extY) / 2;
+            } else if (nRotAngle === 270) {
+                newOffX = x - (this.extX - this.extY) / 2;
+                newOffY = y + (this.extX - this.extY) / 2;
+            }
+            
+            this.x = newOffX;
+            this.y = newOffY;
+            
+            this.rot = -nRotAngle * Math.PI / 180;
+            
+            if (nRotAngle === 90 || nRotAngle === 270) {
+                let tempExtX = this.extX;
+                this.extX = this.extY;
+                this.extY = tempExtX;
+            }
+        }
+
         this.overlayObject.updateExtents(this.extX, this.extY);
         this.transform.Reset();
         var hc = this.extX * 0.5;
@@ -696,6 +723,7 @@ function NewShapeTrack(presetGeom, startX, startY, theme, master, layout, slide,
             xfrm.setExtY(this.extY);
             xfrm.setFlipH(this.flipH);
             xfrm.setFlipV(this.flipV);
+            xfrm.setRot(this.rot);
         }
 
         shape.setBDeleted(false);
