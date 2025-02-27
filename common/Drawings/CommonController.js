@@ -4012,7 +4012,9 @@
 									}
 								}
 							}
-
+							if (oImg.isShapeCrop()) {
+								oImg.changePresetGeom("rect");
+							}
 						}
 					}
 					if (props.ChartProperties) {
