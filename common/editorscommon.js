@@ -3491,8 +3491,8 @@
 			//также ссылки типа [] + ! + Defname должны обрабатываться аналогично как [] + SheetName + ! + Defname
 			external = parseExternalLink(subSTR);
 			if (external) {
-				if (external.name && (external.name.indexOf("[") !== -1 || external.name.indexOf(":") !== -1)) {
-					// if the name contains '[' and ':' , then we return an error
+				if (external.name && (external.name.indexOf("[") !== -1)) {
+					// if the link/path to the file inside brackets contains '[' then we return an error
 					return [false, null, null, external, externalLength];
 				}
 

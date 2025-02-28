@@ -138,7 +138,16 @@
 		
 		// Do not enter to the run containing paragraphMark if we don't want to
 		if (true !== this.stepEnd && endPos === para.Content.length - 1 && endPos > startPos)
+		{
 			--endPos;
+			if (para.isRtlDirection())
+			{
+				let endRun = para.GetParaEndRun();
+				let paraMark = endRun ? endRun.GetParaEnd() : null;
+				if (paraMark)
+					this.curX += paraMark.GetWidthVisible();
+			}
+		}
 		
 		for (let pos = startPos; pos <= endPos; ++pos)
 		{

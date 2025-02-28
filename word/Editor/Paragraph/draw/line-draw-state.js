@@ -305,13 +305,16 @@
 		let combMax    = -1;
 		if (form)
 		{
+			if (form.IsTextForm() && form.GetTextFormPr().IsComb())
+				combMax = form.GetTextFormPr().GetMaxCharacters();
+
+			if (!form.IsMainForm())
+				form = form.GetMainForm();
+			
 			if (form.IsFormRequired() && this.logicDocument.IsHighlightRequiredFields() && !this.Graphics.isPrintMode)
 				formBorder = this.logicDocument.GetRequiredFieldsBorder();
 			else if (form.GetFormPr().GetBorder())
 				formBorder = form.GetFormPr().GetBorder();
-			
-			if (form.IsTextForm() && form.GetTextFormPr().IsComb())
-				combMax = form.GetTextFormPr().GetMaxCharacters();
 			
 			this.isFormPlaceholder = (form.IsPlaceHolder() && this.Graphics.isPrintMode);
 			

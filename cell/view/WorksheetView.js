@@ -2629,7 +2629,7 @@
 					break;
 				}
 				case AscCommon.SpeakerActionType.keyDown: {
-					if ((action.event.keyCode >= 35 && action.event.keyCode <= 40) || (action.event.keyCode === 9 || action.event.keyCode === 13)) {
+					if ((action.event.KeyCode >= 35 && action.event.KeyCode <= 40) || (action.event.KeyCode === 9 || action.event.KeyCode === 13)) {
 						return this._getSpeechDescriptionSelection(prevState, curState);
 					}
 					break;
@@ -5239,7 +5239,9 @@
             if(drawingCtx instanceof AscCommonExcel.CPdfPrinter) {
                 oGraphics = drawingCtx.DocumentRenderer;
                 oGraphics.SaveGrState();
-                oGraphics.SetBaseTransform(new AscCommon.CMatrix());
+				let oBaseTransform = new AscCommon.CMatrix();
+				oBaseTransform.Scale(printScale, printScale, AscCommon.MATRIX_ORDER_APPEND);
+                oGraphics.SetBaseTransform(oBaseTransform);
             }
             else {
                 oGraphics = new AscCommon.CGraphics();
@@ -10543,6 +10545,7 @@
         }
 
         // Перемещаем область
+        lastRowHeight = Math.max(lastRowHeight, 0)
         var moveHeight = oldH - lastRowHeight;
         if (moveHeight > 0) {
             ctx.drawImage(ctx.getCanvas(), x, y, oldW, moveHeight, x + dx, y - dy, oldW, moveHeight);
@@ -12072,7 +12075,10 @@
 					/* we get the coordinates of all dependence lines and check whether the cursor hits */
 					let coordsArray = t.traceDependentsManager.tracesCoords;
 					if (coordsArray) {
-						const isClickOnLine = function(x, y, lineCoords, tolerance = 7) {
+						const isClickOnLine = function(x, y, lineCoords, tolerance) {
+							if (tolerance == null) {
+								tolerance = 7;
+							}
 							const x1 = lineCoords.from.x;
 							const y1 = lineCoords.from.y;
 							const x2 = lineCoords.to.x;
@@ -16840,7 +16846,17 @@
 				Asc.editor.wb.handleChartsOnWorkbookChange(aRanges);
 			}
 			if (isUpdateDefaultWidth) {
+				let beforeDefaultWidth = t.defaultColWidthPx;
+				let beforeDefaultHeight = t.defaultRowHeightPx;
 				t._initWorksheetDefaultWidth();
+				if (t.defaultColWidthPx !== beforeDefaultWidth) {
+					//we must recalculate before draw
+					t._updateVisibleColsCount(true);
+				}
+				if (t.defaultRowHeightPx !== beforeDefaultHeight) {
+					//we must recalculate before draw
+					t._updateVisibleRowsCount(true);
+				}
 			}
 			t.scrollType |= AscCommonExcel.c_oAscScrollType.ScrollVertical | AscCommonExcel.c_oAscScrollType.ScrollHorizontal;
 			t.draw(lockDraw);
@@ -18822,11 +18838,11 @@
 						return false;
 					};
 
-					let beforeExternalReferences = t.getExternalReferencesByCell(c, null, true);
+					// let beforeExternalReferences = t.getExternalReferencesByCell(c, null, true);
 					let bRes = t._saveCellValueAfterEdit(c, val, flags, /*isNotHistory*/false, /*lockDraw*/false);
 
 					let afterExternalReferences = t.getExternalReferencesByCell(c, true, true);
-					if (afterExternalReferences && !_compare(afterExternalReferences, beforeExternalReferences)) {
+					if (afterExternalReferences) {
 						//t.model.workbook.handlers.trigger("asc_onNeedUpdateExternalReference");
 						t.updateExternalReferenceByCell(c, true);
 					}

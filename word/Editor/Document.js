@@ -119,6 +119,7 @@ var keydownflags_PreventKeyPress = 0x0002;
 var keydownresult_PreventNothing  = 0x0000;
 var keydownresult_PreventDefault  = 0x0001;
 var keydownresult_PreventKeyPress = 0x0002;
+var keydownresult_PreventPropagation = 0x0004;
 var keydownresult_PreventAll      = 0xFFFF;
 
 var MEASUREMENT_MAX_MM_VALUE = 1000; // Маскимальное значение в мм, используемое в документе (MS Word) - 55,87 см, или 558,7 мм.
@@ -1071,6 +1072,7 @@ function CDocumentRecalcInfo()
 
     this.NeedRecalculateFromStart  = false;
     this.Paused                    = false;
+	this.PausedMain                = false;
 }
 
 CDocumentRecalcInfo.prototype =
@@ -2623,6 +2625,8 @@ CDocument.prototype.StartAction = function(nDescription, oSelectionState, flags)
 	}
 	else
 	{
+		this.PauseRecalculate();
+		
 		this.Action.Start           = true;
 		this.Action.Depth           = 0;
 		this.Action.PointsCount     = isNewPoint ? 1 : 0;
@@ -2826,6 +2830,8 @@ CDocument.prototype.FinalizeAction = function(checkEmptyAction)
 		this.Action.Depth--;
 		return true;
 	}
+	
+	this.ResumeRecalculate();
 
 	this.private_CheckAdditionalOnFinalize();
 	this.private_CheckEmptyPointsInAction(checkEmptyAction);
@@ -5632,8 +5638,16 @@ CDocument.prototype.PauseRecalculate = function()
 	if (this.FullRecalc.Id)
 	{
 		clearTimeout(this.FullRecalc.Id);
-		this.FullRecalc.Id     = null;
-		this.RecalcInfo.Paused = true;
+		this.FullRecalc.Id         = null;
+		this.RecalcInfo.Paused     = true;
+		this.RecalcInfo.PausedMain = true;
+	}
+	else if (this.HdrFtrRecalc.Id)
+	{
+		clearTimeout(this.HdrFtrRecalc.Id);
+		this.HdrFtrRecalc.Id       = null;
+		this.RecalcInfo.Paused     = true;
+		this.RecalcInfo.PausedMain = false;
 	}
 };
 /**
@@ -5641,11 +5655,20 @@ CDocument.prototype.PauseRecalculate = function()
  */
 CDocument.prototype.ResumeRecalculate = function()
 {
-	if (this.RecalcInfo.Paused)
+	if (!this.RecalcInfo.Paused)
+		return;
+	
+	if (this.RecalcInfo.PausedMain)
 	{
-		this.FullRecalc.Id = setTimeout(Document_Recalculate_Page, 10);
-		this.RecalcInfo.Paused = false;
+		let _t = this;
+		this.FullRecalc.Id = setTimeout(function(){_t.ContinueRecalculationLoop();}, 10);
 	}
+	else
+	{
+		this.HdrFtrRecalc.Id = setTimeout(Document_Recalculate_HdrFtrPageCount, 10);
+	}
+	
+	this.RecalcInfo.Paused = false;
 };
 CDocument.prototype.OnContentReDraw                          = function(StartPage, EndPage)
 {
@@ -6152,6 +6175,7 @@ CDocument.prototype.Extend_ToPos = function(X, Y)
 
     var LastPara  = this.GetLastParagraph();
     var LastPara2 = LastPara;
+	let isBidi    = LastPara.GetParagraphBidi();
 
     this.StartAction(AscDFH.historydescription_Document_DocumentExtendToPos);
     this.History.Set_Additional_ExtendDocumentToPos();
@@ -6161,6 +6185,9 @@ CDocument.prototype.Extend_ToPos = function(X, Y)
         var NewParagraph = new AscWord.Paragraph();
         var NewRun       = new ParaRun(NewParagraph, false);
         NewParagraph.Add_ToContent(0, NewRun);
+		
+		if (isBidi)
+			NewParagraph.SetParagraphBidi(true);
 
         var StyleId = LastPara.Style_Get();
         var NextId  = undefined;
@@ -23364,16 +23391,25 @@ CDocument.prototype.addFieldWithInstructionToParagraph = function(paragraph, ins
 	let separateChar = new ParaFieldChar(fldchartype_Separate, this);
 	let endChar      = new ParaFieldChar(fldchartype_End, this);
 
-	var run = new AscWord.Run();
+	let run = new AscWord.Run();
 	run.AddToContent(-1, beginChar);
+	beginChar.SetRun(run);
+	paragraph.Add(run);
+	
+	run = new AscWord.Run();
 	run.AddInstrText(instructionLine);
+	paragraph.Add(run);
+	
+	run = new AscWord.Run();
 	run.AddToContent(-1, separateChar);
+	separateChar.SetRun(run);
+	paragraph.Add(run);
+	
+	run = new AscWord.Run();
 	run.AddToContent(-1, endChar);
+	endChar.SetRun(run);
 	paragraph.Add(run);
 
-	beginChar.SetRun(run);
-	separateChar.SetRun(run);
-	endChar.SetRun(run);
 
 	let complexField = beginChar.GetComplexField();
 	complexField.SetBeginChar(beginChar);
@@ -26679,39 +26715,40 @@ CDocument.prototype.GetLineNumbersInfo = function()
  */
 CDocument.prototype.SetLineNumbersProps = function(nApplyType, oProps)
 {
+	let arrSectPr = this.GetSectionsByApplyType(nApplyType);
+	if (arrSectPr.length <= 0)
+		return;
+
 	if (!this.IsSelectionLocked(AscCommon.changestype_Document_SectPr))
 	{
 		this.StartAction(AscDFH.historydescription_Document_SetLineNumbersProps);
-
-		var arrSectPr = this.GetSectionsByApplyType(nApplyType);
-		if (arrSectPr.length > 0)
+		if (undefined === oProps || null === oProps)
 		{
-			if (undefined === oProps || null === oProps)
+			for (let sectIndex = 0, sectCount = arrSectPr.length; sectIndex < sectCount; ++sectIndex)
 			{
-				for (var nIndex = 0, nCount = this.SectionsInfo.GetCount(); nIndex < nCount; ++nIndex)
-				{
-					var oSectPr = this.SectionsInfo.Get(nIndex).SectPr;
-					oSectPr.RemoveLineNumbers();
-				}
+				arrSectPr[sectIndex].RemoveLineNumbers();
 			}
-			else
+		}
+		else
+		{
+			var nCountBy  = oProps.GetCountBy();
+			var nDistance = oProps.GetDistance();
+			var nStart    = oProps.GetStart();
+			var nRestart  = oProps.GetRestart();
+			
+			for (var nIndex = 0, nCount = arrSectPr.length; nIndex < nCount; ++nIndex)
 			{
-				var nCountBy  = oProps.GetCountBy();
-				var nDistance = oProps.GetDistance();
-				var nStart    = oProps.GetStart();
-				var nRestart  = oProps.GetRestart();
+				var oSectPr = arrSectPr[nIndex];
 
-				for (var nIndex = 0, nCount = arrSectPr.length; nIndex < nCount; ++nIndex)
-				{
-					var oSectPr = arrSectPr[nIndex];
-
-					var _nCountBy  = undefined === nCountBy ? oSectPr.GetLineNumbersCountBy() : nCountBy;
-					var _nDistance = undefined === nDistance ? oSectPr.GetLineNumbersDistance() : nDistance;
-					var _nStart    = undefined === nStart ? oSectPr.GetLineNumbersStart() : nStart;
-					var _nRestart  = undefined === nRestart ? oSectPr.GetLineNumbersRestart() : nRestart;
-
-					oSectPr.SetLineNumbers(_nCountBy, _nDistance, _nStart, _nRestart);
-				}
+				var _nCountBy  = undefined === nCountBy ? oSectPr.GetLineNumbersCountBy() : nCountBy;
+				var _nDistance = undefined === nDistance ? oSectPr.GetLineNumbersDistance() : nDistance;
+				var _nStart    = undefined === nStart ? oSectPr.GetLineNumbersStart() : nStart;
+				var _nRestart  = undefined === nRestart ? oSectPr.GetLineNumbersRestart() : nRestart;
+				
+				if (undefined === nCountBy && 0 === oSectPr.GetLineNumbersCountBy())
+					_nCountBy = 1;
+				
+				oSectPr.SetLineNumbers(_nCountBy, _nDistance, _nStart, _nRestart);
 			}
 		}
 

@@ -138,6 +138,7 @@ function CDocumentContent(Parent, DrawingDocument, X, Y, XLimit, YLimit, Split, 
 
     this.m_oContentChanges = new AscCommon.CContentChanges(); // список изменений(добавление/удаление элементов)
     this.StartState = null;
+	this.Recalculated = false; // Flag only for the current level
 
     this.ReindexStartPos = 0;
 
@@ -200,7 +201,10 @@ CDocumentContent.prototype.Copy3 = function(Parent)//для заголовков
 	}
 	return DC;
 };
-
+CDocumentContent.prototype.IsRecalculated = function()
+{
+	return (this.Recalculated && this.Pages.length > 0);
+};
 CDocumentContent.prototype.isDocumentContentInSmartArtShape = function ()
 {
 	return this.Parent && this.Parent.isObjectInSmartArt && this.Parent.isObjectInSmartArt();
@@ -743,6 +747,8 @@ CDocumentContent.prototype.Reset_RecalculateCache = function()
 // Пересчитываем отдельную страницу DocumentContent
 CDocumentContent.prototype.Recalculate_Page               = function(PageIndex, bStart)
 {
+	this.Recalculated = true;
+	
 	this.ShiftViewX = 0;
 	this.ShiftViewY = 0;
 
@@ -1430,6 +1436,9 @@ CDocumentContent.prototype.OnContentReDraw = function(StartPage, EndPage)
 };
 CDocumentContent.prototype.Draw                           = function(nPageIndex, pGraphics)
 {
+	if (!this.IsRecalculated())
+		return;
+	
     var CurPage = nPageIndex - this.StartPage;
     if (CurPage < 0 || CurPage >= this.Pages.length)
         return;
@@ -1738,8 +1747,8 @@ CDocumentContent.prototype.RecalculateCurPos = function(bUpdateX, bUpdateY, isUp
 };
 CDocumentContent.prototype.Get_PageBounds = function(CurPage, Height, bForceCheckDrawings)
 {
-	if (this.Pages.length <= 0)
-		return new CDocumentBounds(0, 0, 0, 0);
+	if (!this.IsRecalculated())
+		return new AscWord.CDocumentBounds(0, 0, 0, 0);
 
 	if (CurPage < 0)
 		CurPage = 0;
@@ -1802,6 +1811,9 @@ CDocumentContent.prototype.GetPageBounds = function(nCurPage, nHeight, isForceCh
 };
 CDocumentContent.prototype.GetContentBounds = function(CurPage)
 {
+	if (!this.IsRecalculated())
+		return new AscWord.CDocumentBounds(0, 0, 0, 0);
+	
 	var oPage = this.Pages[CurPage];
 	if (!oPage || oPage.Pos > oPage.EndPos)
 		return this.Get_PageBounds(CurPage);
@@ -7270,6 +7282,7 @@ CDocumentContent.prototype.Internal_Content_Add = function(Position, NewObject, 
 
 	this.private_ReindexContent(Position);
 	this.OnContentChange();
+	this.Recalculated = false;
 };
 CDocumentContent.prototype.Internal_Content_Remove = function(Position, Count, isCorrectContent)
 {
@@ -7305,6 +7318,7 @@ CDocumentContent.prototype.Internal_Content_Remove = function(Position, Count, i
 
 	this.private_ReindexContent(Position);
 	this.OnContentChange();
+	this.Recalculated = false;
 };
 CDocumentContent.prototype.Clear_ContentChanges = function()
 {

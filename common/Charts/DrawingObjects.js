@@ -4301,27 +4301,13 @@ CSparklineView.prototype.setMinMaxValAx = function(minVal, maxVal, oSparklineGro
         Asc.editor.sendEvent("asc_onSelectionEnd");
     };
     _this.graphicObjectKeyDown = function(e) {
-        Asc.editor.sendEvent("asc_onBeforeKeyDown", e);
-        let nHistoryIndex = AscCommon.History.Index;
-        let ret = _this.controller.onKeyDown( e );
-        // if(nHistoryIndex === AscCommon.History.Index) {
-        //     _this.private_UpdateCursorXY();
-        // }
-        Asc.editor.sendEvent("asc_onKeyDown", e);
-        return ret;
+	    return _this.controller.onKeyDown(e);
     };
     _this.graphicObjectKeyUp = function(e) {
         return _this.controller.onKeyUp( e );
     };
 
     _this.graphicObjectKeyPress = function(e) {
-
-        e.KeyCode = e.keyCode;
-        e.CtrlKey = e.metaKey || e.ctrlKey;
-        e.AltKey = e.altKey;
-        e.ShiftKey = e.shiftKey;
-        e.Which = e.which;
-
         this.onStartUserAction();
         let ret = _this.controller.onKeyPress( e );
         this.onEndUserAction();

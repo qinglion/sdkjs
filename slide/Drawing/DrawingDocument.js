@@ -4870,17 +4870,17 @@ function CThumbnailsManager(editorPage)
 				{
 					if (oPresentation.CanEdit())
 					{
-						sSelectedIdx = this.GetSelectedArray();
+						const arrSlides = oPresentation.GetSelectedSlideObjects();
 						if (!oApi.IsSupportEmptyPresentation)
 						{
-							if (sSelectedIdx.length === oDrawingDocument.GetSlidesCount())
+							if (arrSlides.length === oDrawingDocument.GetSlidesCount())
 							{
-								sSelectedIdx.splice(0, 1);
+								arrSlides.splice(0, 1);
 							}
 						}
-						if (sSelectedIdx.length !== 0)
+						if (arrSlides.length !== 0)
 						{
-							oPresentation.deleteSlides(sSelectedIdx);
+							oPresentation.deleteSlides(arrSlides);
 						}
 						if (0 === oPresentation.GetSlidesCount())
 						{
@@ -5164,10 +5164,61 @@ function CThumbnailsManager(editorPage)
 		oGraphics.RestoreGrState();
 		return {maxX: fCX(16), minX: fCX(4), maxY: fCY(15), minY: fCY(4)}
 	};
+	this.DrawPin = function(oGraphics, nX, nY, oColor, nAngle) {
+		const fCX = function(nVal)
+		{
+			return AscCommon.AscBrowser.convertToRetinaValue(nVal, true) + nX;
+		};
+		const fCY = function(nVal)
+		{
+			return AscCommon.AscBrowser.convertToRetinaValue(nVal, true) + nY;
+		};
+		const rotateAt = function(angle, x, y) {
+			oCtx.translate(fCX(x), fCY(y));
+			oCtx.rotate(AscCommon.deg2rad(angle));
+			oCtx.translate(-fCX(x), -fCY(y));
+		}
+		oGraphics.b_color1(oColor.R, oColor.G, oColor.B, 255);
+		oGraphics.SaveGrState();
+		oGraphics.SetIntegerGrid(true);
+		let oCtx = oGraphics.m_oContext;
+		oCtx.save();
+		oCtx.lineCap = 'round';
+		oCtx.lineWidth = AscCommon.AscBrowser.convertToRetinaValue(1, true);
+		rotateAt(nAngle, 5, 9);
+		oCtx.beginPath();
+		oCtx.moveTo(fCX(2), fCY(4));
+		oCtx.lineTo(fCX(8), fCY(4));
+		oCtx.closePath();
+		oCtx.stroke();
+
+		oCtx.beginPath();
+		oCtx.moveTo(fCX(3), fCY(4));
+		oCtx.lineTo(fCX(7), fCY(4));
+		oCtx.lineTo(fCX(7), fCY(7));
+		oCtx.lineTo(fCX(9), fCY(9));
+		oCtx.lineTo(fCX(9), fCY(10));
+		oCtx.lineTo(fCX(1), fCY(10));
+		oCtx.lineTo(fCX(1), fCY(9));
+		oCtx.lineTo(fCX(3), fCY(7));
+		oCtx.closePath();
+		oCtx.fill();
+
+		oCtx.beginPath();
+		oCtx.moveTo(fCX(5), fCY(10));
+		oCtx.lineTo(fCX(5), fCY(14));
+		oCtx.closePath();
+		oCtx.stroke();
+		rotateAt(-nAngle, 5, 9);
+		oCtx.beginPath();
+		oCtx.restore();
+		oGraphics.RestoreGrState();
+	};
 
 	this.OnPaint = function () {
-		if (!this.isThumbnailsShown())
+		if (!this.isThumbnailsShown()) {
 			return;
+		}
 
 		const canvas = this.m_oWordControl.m_oThumbnails.HtmlElement;
 		if (!canvas)
@@ -5219,12 +5270,6 @@ function CThumbnailsManager(editorPage)
 					slideNumberTextWidth += this.DigitWidths[lastDigit];
 					currentSlideNumber = (currentSlideNumber / 10) >> 0;
 				}
-				var text_color = null;
-				let sTextColor = AscCommon.GlobalSkin.ThumbnailsPageNumberText;
-				if (!bLocked)
-					sTextColor = AscCommon.GlobalSkin.ThumbnailsPageNumberText;
-				else
-					sTextColor = AscCommon.GlobalSkin.ThumbnailsLockColor;
 
 				// Draw slide number
 				const textColorHex = bLocked
@@ -5272,6 +5317,7 @@ function CThumbnailsManager(editorPage)
 
 				// Draw animation label if slide has transition
 				page.animateLabelRect = null;
+				let nBottomBounds = textBounds.b;
 				if (logicDocument.isSlideAnimated(slideIndex)) {
 					let iconX, iconY;
 					if (this.m_oWordControl.thumbnailsPosition === thumbnailsPositionMap.bottom) {
@@ -5281,13 +5327,29 @@ function CThumbnailsManager(editorPage)
 						iconY = (textBounds.y + textBounds.b) / 2 - AscCommon.AscBrowser.convertToRetinaValue(9.5, true);
 					} else {
 						iconX = (textBounds.x + textBounds.r) / 2 - AscCommon.AscBrowser.convertToRetinaValue(9.5, true);
-						iconY = textBounds.b + 3;
+						iconY = nBottomBounds + 3;
 					}
 					const iconHeight = AscCommon.AscBrowser.convertToRetinaValue(15, true);
 
 					if (iconY + iconHeight < page.bottom) {
 						const labelCoords = this.DrawAnimLabel(graphics, iconX, iconY, textColor);
 						page.animateLabelRect = labelCoords;
+						nBottomBounds = labelCoords.maxY;
+					}
+				}
+
+				// Draw pin
+				if (logicDocument.isSlidePreserved(slideIndex)) {
+					const pinOriginalWidth = AscCommon.AscBrowser.convertToRetinaValue(8, true);
+					const pinOriginalHeight = AscCommon.AscBrowser.convertToRetinaValue(10, true);
+					const pinAngle = 45;
+					const pinSizes = AscFormat.fGetOuterRectangle(pinOriginalWidth, pinOriginalHeight, pinAngle);
+
+					let nX = (textBounds.x + textBounds.r) / 2 - pinSizes.width / 2;
+					let nY = nBottomBounds + 3;
+					let nIconH = pinSizes.height;
+					if (nY + nIconH < page.bottom) {
+						this.DrawPin(graphics, nX, nY, textColor, pinAngle);
 					}
 				}
 			}
@@ -6383,7 +6445,8 @@ function CThumbnailsManager(editorPage)
 		}
 		if (oMenuPos)
 		{
-			let oFirstSlide = this.m_oWordControl.m_oLogicDocument.GetSlide(sSelectedIdx[0]);
+			const oLogicDocument = this.m_oWordControl.m_oLogicDocument;
+			let oFirstSlide = oLogicDocument.GetSlide(sSelectedIdx[0]);
 			let nType = Asc.c_oAscContextMenuTypes.Thumbnails;
 			if(oFirstSlide)
 			{
@@ -6402,7 +6465,8 @@ function CThumbnailsManager(editorPage)
 					X_abs: oMenuPos.X,
 					Y_abs: oMenuPos.Y,
 					IsSlideSelect: bIsSlideSelect,
-					IsSlideHidden: this.IsSlideHidden(sSelectedIdx)
+					IsSlideHidden: this.IsSlideHidden(sSelectedIdx),
+					IsSlidePreserve: oLogicDocument.isPreserveSelectionSlides()
 				};
 			editor.sync_ContextMenuCallback(new AscCommonSlide.CContextMenuData(oData));
 		}

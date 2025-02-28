@@ -5117,25 +5117,41 @@ var editor;
   spreadsheet_api.prototype.asc_startEditCrop = function()
   {
     var ws = this.wb.getWorksheet();
-    return ws.objectRender.controller.startImageCrop();
+		const bRes = ws.objectRender.controller.startImageCrop();
+	  if (bRes) {
+		  this.wb._onWSSelectionChanged();
+	  }
+    return bRes;
   };
 
   spreadsheet_api.prototype.asc_endEditCrop = function()
   {
     var ws = this.wb.getWorksheet();
-    return ws.objectRender.controller.endImageCrop();
+		const bRes = ws.objectRender.controller.endImageCrop();
+		if (bRes) {
+			this.wb._onWSSelectionChanged();
+		}
+		return bRes;
   };
 
   spreadsheet_api.prototype.asc_cropFit = function()
   {
     var ws = this.wb.getWorksheet();
-    return ws.objectRender.controller.cropFit();
+    const bRes = ws.objectRender.controller.cropFit();
+		if (bRes) {
+			this.wb._onWSSelectionChanged();
+		}
+		return bRes;
   };
 
   spreadsheet_api.prototype.asc_cropFill = function()
   {
     var ws = this.wb.getWorksheet();
-    return ws.objectRender.controller.cropFill();
+	  const bRes = ws.objectRender.controller.cropFill();
+		if (bRes) {
+			this.wb._onWSSelectionChanged();
+		}
+		return bRes;
   };
 
 
@@ -7064,6 +7080,8 @@ var editor;
 		res["spreadsheetLayout"] = {};
 		res["spreadsheetLayout"]["ignorePrintArea"] = false;
 		res["spreadsheetLayout"]["sheetsProps"] = this.wbModel && this.wbModel.getPrintOptionsJson();
+		res["spreadsheetLayout"]["formulaProps"] = {};
+		res["spreadsheetLayout"]["formulaProps"]["translate"] = AscCommonExcel.cFormulaFunctionToLocale;
 		return res;
 	};
 
@@ -9498,6 +9516,82 @@ var editor;
 		}
 		return wb.getSpeechDescription(prevState, wb.getSelectionState(), action);
 	};
+	spreadsheet_api.prototype.initDefaultShortcuts = function () {
+		this.initCommonShortcuts();
+		if (AscCommon.AscBrowser.isMacOs) {
+			this.initMacOsShortcuts();
+		} else {
+			this.initWindowsShortcuts();
+		}
+	};
+	spreadsheet_api.prototype.initCommonShortcuts = function () {
+		// [[ActionType, KeyCode, Ctrl, Shift, Alt]]
+		const aShortcuts =
+			[
+				[Asc.c_oAscSpreadsheetShortcutType.PreviousWorksheet, 33, true, false, false],
+				[Asc.c_oAscSpreadsheetShortcutType.PreviousWorksheet, 33, false, false, true],
+				[Asc.c_oAscSpreadsheetShortcutType.NextWorksheet, 34, true, false, false],
+				[Asc.c_oAscSpreadsheetShortcutType.NextWorksheet, 34, false, false, true],
+				[Asc.c_oAscSpreadsheetShortcutType.CellNumberFormat, 49, true, true, false],
+				[Asc.c_oAscSpreadsheetShortcutType.CellTimeFormat, 50, true, true, false],
+				[Asc.c_oAscSpreadsheetShortcutType.CellDateFormat, 51, true, true, false],
+				[Asc.c_oAscSpreadsheetShortcutType.CellCurrencyFormat, 52, true, true, false],
+				[Asc.c_oAscSpreadsheetShortcutType.CellPercentFormat, 53, true, true, false],
+				[Asc.c_oAscSpreadsheetShortcutType.Strikeout, 53, true, false, false],
+				[Asc.c_oAscSpreadsheetShortcutType.CellExponentialFormat, 54, true, true, false],
+				[Asc.c_oAscSpreadsheetShortcutType.EditSelectAll, 65, true, false, false],
+				[Asc.c_oAscSpreadsheetShortcutType.Bold, 66, true, false, false],
+				[Asc.c_oAscSpreadsheetShortcutType.DrawingCenterPara, 69, true, false, false],
+				[Asc.c_oAscSpreadsheetShortcutType.Italic, 73, true, false, false],
+				[Asc.c_oAscSpreadsheetShortcutType.DrawingJustifyPara, 74, true, false, false],
+				[Asc.c_oAscSpreadsheetShortcutType.DrawingLeftPara, 76, true, false, false],
+				[Asc.c_oAscSpreadsheetShortcutType.Print, 80, true, false, false],
+				[Asc.c_oAscSpreadsheetShortcutType.DrawingRightPara, 82, true, false, false],
+				[Asc.c_oAscSpreadsheetShortcutType.Underline, 85, true, false, false],
+				[Asc.c_oAscSpreadsheetShortcutType.EditRedo, 89, true, false, false],
+				[Asc.c_oAscSpreadsheetShortcutType.EditUndo, 90, true, false, false],
+				[Asc.c_oAscSpreadsheetShortcutType.SpeechWorker, 90, true, false, true],
+				[Asc.c_oAscSpreadsheetShortcutType.CellAddSeparator, 110, false, false, false],
+				[Asc.c_oAscSpreadsheetShortcutType.EditOpenCellEditor, 113, false, false, false],
+				[Asc.c_oAscSpreadsheetShortcutType.CellEditorSwitchReference, 115, false, false, false],
+				[Asc.c_oAscSpreadsheetShortcutType.RefreshAllPivots, 116, true, false, true],
+				[Asc.c_oAscSpreadsheetShortcutType.RefreshSelectedPivots, 116, false, false, true],
+				[Asc.c_oAscSpreadsheetShortcutType.RecalculateAll, 120, false, false, false],
+				[Asc.c_oAscSpreadsheetShortcutType.RecalculateActiveSheet, 120, false, true, false],
+				[Asc.c_oAscSpreadsheetShortcutType.CellInsertDate, 186, true, false, false],
+				[Asc.c_oAscSpreadsheetShortcutType.CellInsertTime, 186, true, true, false],
+				[Asc.c_oAscSpreadsheetShortcutType.CellInsertDate, 59, true, false, false], //firefox
+				[Asc.c_oAscSpreadsheetShortcutType.CellInsertTime, 59, true, true, false], //firefox
+				[Asc.c_oAscSpreadsheetShortcutType.DrawingSuperscript, 188, true, false, false],
+				[Asc.c_oAscSpreadsheetShortcutType.DrawingEnDash, 189, true, true, false],
+				[Asc.c_oAscSpreadsheetShortcutType.DrawingEnDash, 173, true, true, false], //firefox
+				[Asc.c_oAscSpreadsheetShortcutType.DrawingSubscript, 190, true, false, false],
+				[Asc.c_oAscSpreadsheetShortcutType.CellGeneralFormat, 192, true, true, false],
+				[Asc.c_oAscSpreadsheetShortcutType.ShowFormulas, 192, true, false, false],
+				[Asc.c_oAscSpreadsheetShortcutType.DecreaseFontSize, 219, true, false, false],
+				[Asc.c_oAscSpreadsheetShortcutType.IncreaseFontSize, 221, true, false, false]
+			];
+		this.initShortcuts(aShortcuts, false);
+	};
+	spreadsheet_api.prototype.initWindowsShortcuts = function () {
+		// [[ActionType, KeyCode, Ctrl, Shift, Alt]]
+		const aShortcuts =
+			[
+				[Asc.c_oAscSpreadsheetShortcutType.CellInsertSumFunction, 61, false, false, true], //firefox
+				[Asc.c_oAscSpreadsheetShortcutType.CellInsertSumFunction, 187, false, false, true]
+			];
+		this.initShortcuts(aShortcuts, false);
+	};
+	spreadsheet_api.prototype.initMacOsShortcuts = function () {
+		// [[ActionType, KeyCode, Ctrl, Shift, Alt]]
+		const aShortcuts =
+			[
+				[Asc.c_oAscSpreadsheetShortcutType.CellInsertSumFunction, 61, true, false, true], //firefox
+				[Asc.c_oAscSpreadsheetShortcutType.CellInsertSumFunction, 187, true, false, true]
+			];
+		this.initShortcuts(aShortcuts, false);
+	};
+
 
 	spreadsheet_api.prototype.asc_GetSeriesSettings = function() {
 		let res = new Asc.asc_CSeriesSettings();
@@ -9783,191 +9877,7 @@ var editor;
 		if (!wb) {
 			return;
 		}
-		return wb.controller.executeShortcut(type);
-	};
-	spreadsheet_api.prototype._InitCommonShortcuts = function ()
-	{
-
-		const keyCodes = {
-			BackSpace       : 8,
-			Tab             : 9,
-			Enter           : 13,
-			Esc             : 27,
-			Space           : 32,
-			PageUp          : 33,
-			PageDown        : 34,
-			End             : 35,
-			Home            : 36,
-			ArrowLeft       : 37,
-			ArrowTop        : 38,
-			ArrowRight      : 39,
-			ArrowBottom     : 40,
-			Digit1          : 49,
-			Digit2          : 50,
-			Digit3          : 51,
-			Digit4          : 52,
-			Digit5          : 53,
-			Digit6          : 54,
-			SemicolonFirefox: 59,
-			Delete          : 46,
-			EqualFirefox    : 61,
-			A               : 65,
-			B               : 66,
-			C               : 67,
-			E               : 69,
-			I               : 73,
-			J               : 74,
-			K               : 75,
-			L               : 76,
-			M               : 77,
-			P               : 80,
-			R               : 82,
-			S               : 83,
-			U               : 85,
-			V               : 86,
-			X               : 88,
-			Y               : 89,
-			Z               : 90,
-			ContextMenu     : 93,
-			NumpadDecimal   : 110,
-			F2              : 113,
-			F4              : 115,
-			F5              : 116,
-			F9              : 120,
-			F10             : 121,
-			NumLock         : 144,
-			ScrollLock      : 145,
-			MinusFirefox    : 173,
-			Semicolon       : 186,
-			Equal           : 187,
-			Comma           : 188,
-			Minus           : 189,
-			Period          : 190,
-			Backquote       : 192,
-			BracketLeft     : 219,
-			BracketRight    : 221,
-			OperaContextMenu: 57351,
-		}
-
-
-		/*[Asc.c_oAscCellShortcutType.addDate] = [
-			new CNativeEvent(keyCodes.Semicolon, true, false, false, false),
-			new CNativeEvent(keyCodes.SemicolonFirefox, true, false, false, false),
-		];
-		[Asc.c_oAscCellShortcutType.addTime] = [
-			new CNativeEvent(keyCodes.Semicolon, true, true, false, false),
-			new CNativeEvent(keyCodes.SemicolonFirefox, true, true, false, false),
-		];
-		[
-		[Asc.c_oAscCellShortcutType.selectSheet] = [
-			new CNativeEvent(keyCodes.Space, true, true, false, false),
-			new CNativeEvent(keyCodes.A, true, false, false, false];
-		
-		[Asc.c_oAscCellShortcutType.moveToRightEdgeCell] = [
-			new CNativeEvent(keyCodes.ArrowRight, true, false, false, false),
-			new CNativeEvent(keyCodes.End, false, false, false, false)
-
-		];
-		[Asc.c_oAscCellShortcutType.selectToRightEdgeCell] = [
-			new CNativeEvent(keyCodes.ArrowRight, true, true, false, false),
-			new CNativeEvent(keyCodes.End, false, true, false, false];
-		
-		[Asc.c_oAscCellShortcutType.addSum,keyCodes.EqualFirefox, false, false, true, false),
-			new CNativeEvent(keyCodes.EqualFirefox, true, false, true, false, testFlags.macOs),
-			new CNativeEvent(keyCodes.Equal, false, false, true, false),
-			new CNativeEvent(keyCodes.Equal, true, false, true, false, testFlags.macOs];*/
-
-
-		// ActionType, Key, Ctrl, Shift, Alt
-		this.initShortcuts([
-			[Asc.c_oAscCellShortcutType.refreshAllConnections, keyCodes.F5, true, false, true],
-			[Asc.c_oAscCellShortcutType.refreshSelectedConnections, keyCodes.F5, false, false, true],
-			[Asc.c_oAscCellShortcutType.changeFormatTableInfo,keyCodes.R, true, true, false],
-			[Asc.c_oAscCellShortcutType.calculateAll,keyCodes.F9, false, false, false],
-			[Asc.c_oAscCellShortcutType.calculateActiveSheet,keyCodes.F9, false, true, false],
-			[Asc.c_oAscCellShortcutType.focusOnCellEditor,keyCodes.F2, false, false, false],
-			[Asc.c_oAscCellShortcutType.removeActiveCell,keyCodes.BackSpace, false, false, false],
-			[Asc.c_oAscCellShortcutType.emptyRange,keyCodes.Delete, false, false, false],
-			[Asc.c_oAscCellShortcutType.moveActiveCellToLeft,keyCodes.Tab, false, true, false],
-			[Asc.c_oAscCellShortcutType.moveActiveCellToRight,keyCodes.Tab, false, false, false],
-			[Asc.c_oAscCellShortcutType.moveActiveCellToDown,keyCodes.Enter, false, false, false],
-			[Asc.c_oAscCellShortcutType.moveActiveCellToUp,keyCodes.Enter, false, true, false],
-			[Asc.c_oAscCellShortcutType.reset,keyCodes.Esc, false, false, false],
-
-			[Asc.c_oAscCellShortcutType.disableNumLock,keyCodes.NumLock, false, false, false],//opera flags
-			[Asc.c_oAscCellShortcutType.disableScrollLock,keyCodes.ScrollLock, false, false],//opera flags
-
-			[Asc.c_oAscCellShortcutType.selectColumn,keyCodes.Space, false, true, false],
-			[Asc.c_oAscCellShortcutType.selectRow,keyCodes.Space, true, false, false],
-			[Asc.c_oAscCellShortcutType.addSeparator,keyCodes.NumpadDecimal, false, false, false],
-			[Asc.c_oAscCellShortcutType.goToPreviousSheet,keyCodes.PageUp, false, false, true],
-			[Asc.c_oAscCellShortcutType.moveToUpperCell,keyCodes.PageUp, false, false, false],
-			[Asc.c_oAscCellShortcutType.selectToUpperCell,keyCodes.PageUp, false, true, false],
-			[Asc.c_oAscCellShortcutType.moveToTopCell,keyCodes.ArrowTop, true, false, false],
-			[Asc.c_oAscCellShortcutType.moveToNextSheet,keyCodes.PageDown, false, false, true],
-			[Asc.c_oAscCellShortcutType.moveToBottomCell,keyCodes.ArrowBottom, true, false, false],
-			[Asc.c_oAscCellShortcutType.moveToLowerCell,keyCodes.PageDown, false, false, false],
-			[Asc.c_oAscCellShortcutType.selectToLowerCell,keyCodes.PageDown, false, true, false],
-			[Asc.c_oAscCellShortcutType.moveToLeftEdgeCell,keyCodes.ArrowLeft, true, false, false],
-			[Asc.c_oAscCellShortcutType.selectToLeftEdgeCell,keyCodes.ArrowLeft, true, true, false],
-			[Asc.c_oAscCellShortcutType.moveToLeftCell,keyCodes.ArrowLeft, false, false, false],
-			[Asc.c_oAscCellShortcutType.selectToLeftCell,keyCodes.ArrowLeft, false, true, false],
-			[Asc.c_oAscCellShortcutType.moveToRightCell,keyCodes.ArrowRight, false, false, false],
-			[Asc.c_oAscCellShortcutType.selectToRightCell,keyCodes.ArrowRight, false, true, false],
-			[Asc.c_oAscCellShortcutType.moveToRightEdgeCell,keyCodes.ArrowRight, true, false, false],
-			[Asc.c_oAscCellShortcutType.selectToRightEdgeCell,keyCodes.ArrowRight, true, true, false],
-			[Asc.c_oAscCellShortcutType.selectToTopCell,keyCodes.ArrowTop, true, true, false],
-			[Asc.c_oAscCellShortcutType.moveToUpCell,keyCodes.ArrowTop, false, false, false],
-			[Asc.c_oAscCellShortcutType.selectToUpCell,keyCodes.ArrowTop, false, true, false],
-			[Asc.c_oAscCellShortcutType.selectToBottomCell,keyCodes.ArrowBottom, true, true, false],
-			[Asc.c_oAscCellShortcutType.moveToDownCell,keyCodes.ArrowBottom, false, false, false],
-			[Asc.c_oAscCellShortcutType.selectToDownCell,keyCodes.ArrowBottom, false, true, false],
-			[Asc.c_oAscCellShortcutType.moveToFirstColumn,keyCodes.Home, false, false, false],
-			[Asc.c_oAscCellShortcutType.selectToFirstColumn,keyCodes.Home, false, true, false],
-			[Asc.c_oAscCellShortcutType.moveToLeftEdgeTop,keyCodes.Home, true, false, false],
-			[Asc.c_oAscCellShortcutType.selectToLeftEdgeTop,keyCodes.Home, true, true, false],
-			[Asc.c_oAscCellShortcutType.moveToRightBottomEdge,keyCodes.End, true, false, false],
-			[Asc.c_oAscCellShortcutType.selectToRightBottomEdge,keyCodes.End, true, true, false],
-			[Asc.c_oAscCellShortcutType.setNumberFormat,keyCodes.Digit1, true, true, false],
-			[Asc.c_oAscCellShortcutType.setTimeFormat,keyCodes.Digit2, true, true, false],
-			[Asc.c_oAscCellShortcutType.setDateFormat,keyCodes.Digit3, true, true, false],
-			[Asc.c_oAscCellShortcutType.setCurrencyFormat,keyCodes.Digit4, true, true, false],
-			[Asc.c_oAscCellShortcutType.setPercentFormat,keyCodes.Digit5, true, true, false],
-			[Asc.c_oAscCellShortcutType.setStrikethrough,keyCodes.Digit5, true, false, false],
-			[Asc.c_oAscCellShortcutType.setExponentialFormat,keyCodes.Digit6, true, true, false],
-			[Asc.c_oAscCellShortcutType.setBold,keyCodes.B, true, false, false],
-			[Asc.c_oAscCellShortcutType.setItalic,keyCodes.I, true, false, false],
-			[Asc.c_oAscCellShortcutType.setUnderline,keyCodes.U, true, false, false],
-			[Asc.c_oAscCellShortcutType.setGeneralFormat,keyCodes.Backquote, true, true, false],
-			[Asc.c_oAscCellShortcutType.redo,keyCodes.Y, true, false, false],
-			[Asc.c_oAscCellShortcutType.undo,keyCodes.Z, true, false, false],
-			[Asc.c_oAscCellShortcutType.print,keyCodes.P, true, false, false],
-			[Asc.c_oAscCellShortcutType.contextMenu, keyCodes.ContextMenu, false, false, false],
-			[Asc.c_oAscCellShortcutType.showFilterOptions, keyCodes.ArrowBottom, false, false, true],
-			[Asc.c_oAscCellShortcutType.showAutoComplete, keyCodes.ArrowBottom, false, false, true],
-			[Asc.c_oAscCellShortcutType.showDataValidation, keyCodes.ArrowBottom, false, false, true],
-			[Asc.c_oAscCellShortcutType.increaseFontSize, keyCodes.BracketRight, true, false, false],
-			[Asc.c_oAscCellShortcutType.decreaseFontSize, keyCodes.BracketLeft, true, false, false]
-		]);
-	}
-
-	spreadsheet_api.prototype._InitWindowsShortcuts = function () {
-		// ActionType, Key, Ctrl, Shift, Alt
-		this.initShortcuts([]);
-	}
-
-	spreadsheet_api.prototype._InitMacOsShortcuts = function () {
-		// ActionType, Key, Ctrl, Shift, Alt
-		this.initShortcuts([]);
-	}
-
-	spreadsheet_api.prototype.initDefaultShortcuts = function () {
-		this._InitCommonShortcuts();
-		if (AscCommon.AscBrowser.isMacOs) {
-			this._InitMacOsShortcuts();
-		} else {
-			this._InitWindowsShortcuts();
-		}
+		return wb.executeShortcut(type);
 	};
 
 	spreadsheet_api.prototype.asc_SetShowVerticalScroll = function (val) {

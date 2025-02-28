@@ -3207,6 +3207,7 @@
 	window['AscDFH'].historyitem_SlideLayoutSetTiming         = window['AscDFH'].historyitem_type_SlideLayout | 13;
 	window['AscDFH'].historyitem_SlideLayoutSetTransition     = window['AscDFH'].historyitem_type_SlideLayout | 14;
 	window['AscDFH'].historyitem_SlideLayoutRemoveFromSpTree  = window['AscDFH'].historyitem_type_SlideLayout | 15;
+	window['AscDFH'].historyitem_SlideLayoutSetPreserve       = window['AscDFH'].historyitem_type_SlideLayout | 16;
 
 	window['AscDFH'].historyitem_SlideMasterAddToSpTree       = window['AscDFH'].historyitem_type_SlideMaster | 1;
 	window['AscDFH'].historyitem_SlideMasterSetTheme          = window['AscDFH'].historyitem_type_SlideMaster | 2;
@@ -3222,6 +3223,7 @@
 	window['AscDFH'].historyitem_SlideMasterSetTransition     = window['AscDFH'].historyitem_type_SlideMaster | 12;
 	window['AscDFH'].historyitem_SlideMasterRemoveLayout      = window['AscDFH'].historyitem_type_SlideMaster | 13;
 	window['AscDFH'].historyitem_SlideMasterRemoveFromSpTree  = window['AscDFH'].historyitem_type_SlideMaster | 14;
+	window['AscDFH'].historyitem_SlideMasterSetPreserve       = window['AscDFH'].historyitem_type_SlideMaster | 15;
 
 	window['AscDFH'].historyitem_SlideCommentsAddComment    = window['AscDFH'].historyitem_type_SlideComments | 1;
 	window['AscDFH'].historyitem_SlideCommentsRemoveComment = window['AscDFH'].historyitem_type_SlideComments | 2;
@@ -4561,7 +4563,9 @@
 	window['AscDFH'].historydescription_RemoveAllInks                               = 0x01c4;
 	window['AscDFH'].historydescription_DisconnectEveryone                          = 0x01c5;
 	window['AscDFH'].historydescription_OForm_RoleFilled                            = 0x01c6;
-	
+	window['AscDFH'].historydescription_OForm_CompletePreparation                   = 0x01c7;
+	window['AscDFH'].historydescription_Presentation_SetPreserveSlideMaster         = 0x01c8;
+
 	// pdf
 	window['AscDFH'].historydescription_Pdf_AddAnnot			= 0x29a;
 	window['AscDFH'].historydescription_Pdf_FreeTextGeom		= 0x29b;

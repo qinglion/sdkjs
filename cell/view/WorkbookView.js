@@ -650,37 +650,45 @@
 				this.eventListeners.push(eventInfo);
 
 
-				eventInfo = new AscCommon.CEventListenerInfo(this.input, "keydown", function (event) {
-					if (this.isCellEditMode) {
-						this.handlers.trigger('asc_onInputKeyDown', event);
-						if (!event.defaultPrevented) {
-							this.cellEditor._onWindowKeyDown(event, true);
-						}
-					}
-				}.bind(this), false);
-				this.eventListeners.push(eventInfo);
-			}
+	      eventInfo = new AscCommon.CEventListenerInfo(this.input, "keydown", function (event) {
+		      if (this.isCellEditMode) {
+			      this.handlers.trigger('asc_onInputKeyDown', event);
+			      if (!event.defaultPrevented) {
+				      AscCommon.check_KeyboardEvent(event);
+				      const nRetValue = this.cellEditor._onWindowKeyDown(AscCommon.global_keyboardEvent);
+				      if (nRetValue & keydownresult_PreventPropagation) {
+					      event.stopPropagation();
+				      }
+				      if (nRetValue & keydownresult_PreventDefault) {
+					      event.preventDefault();
+				      }
+			      }
+		      }
+	      }.bind(this), false);
+	      this.eventListeners.push(eventInfo);
+      }
 
-      this.Api.onKeyDown = function (event) {
-        self.Api.sendEvent("asc_onBeforeKeyDown", event);
-        self.controller._onWindowKeyDown(event);
-        if (self.isCellEditMode) {
-          self.cellEditor._onWindowKeyDown(event, false);
-        }
-        self.Api.sendEvent("asc_onKeyDown", event);
-      };
-      this.Api.onKeyPress = function (event) {
-        self.controller._onWindowKeyPress(event);
-        if (self.isCellEditMode) {
-          self.cellEditor._onWindowKeyPress(event);
-        }
-      };
-      this.Api.onKeyUp = function (event) {
-        self.controller._onWindowKeyUp(event);
-        if (self.isCellEditMode) {
-          self.cellEditor._onWindowKeyUp(event);
-        }
-      };
+		  this.Api.onKeyDown = function (oEvent) {
+			  if (!self.enableKeyEvents && oEvent.emulated !== true && oEvent.keyCode !== 80) {
+				  return;
+			  }
+			  AscCommon.check_KeyboardEvent(oEvent);
+			  const nRetValue = self.onKeyDown(AscCommon.global_keyboardEvent);
+			  if (nRetValue & keydownresult_PreventPropagation) {
+				  oEvent.stopPropagation();
+			  }
+			  if (nRetValue & keydownresult_PreventDefault) {
+				  oEvent.preventDefault();
+			  }
+		  };
+		  this.Api.onKeyPress = function (oEvent) {
+			  AscCommon.check_KeyboardEvent(oEvent);
+			  self.onKeyPress(AscCommon.global_keyboardEvent);
+		  };
+		  this.Api.onKeyUp = function (oEvent) {
+			  AscCommon.check_KeyboardEvent(oEvent);
+			  self.onKeyUp(AscCommon.global_keyboardEvent);
+		  };
       this.Api.Begin_CompositeInput = function () {
         var oWSView = self.getWorksheet();
         if (oWSView && oWSView.isSelectOnShape) {
@@ -1150,6 +1158,55 @@
     this.cellEditor.destroy();
     return this;
   };
+
+	WorkbookView.prototype.executeShortcut = function(nShortcutAction) {
+		const oObjectRender = this.getWorksheet().objectRender;
+		if (oObjectRender && oObjectRender.getSelectedGraphicObjects().length > 0 && !this.getCellEditMode() && !this.controller.isMousePressed && this.enableKeyEvents) {
+			const oGraphicRet = oObjectRender.controller.executeShortcut(nShortcutAction);
+			if (oGraphicRet) {
+				return true;
+			}
+		}
+
+		let oRetValue = this.controller.executeShortcut(nShortcutAction);
+		if (this.isCellEditMode && !this.controller.skipCellEditor) {
+			const oCellRetValue = this.cellEditor.executeShortcut(nShortcutAction);
+			oRetValue = oRetValue || oCellRetValue;
+		}
+		this.controller.setSkipCellEditor(false);
+		return !!oRetValue;
+	};
+	WorkbookView.prototype.onKeyDown = function (oEvent) {
+		this.Api.sendEvent("asc_onBeforeKeyDown", oEvent);
+		let nRetValue = keydownresult_PreventNothing;
+
+		if (!this.getCellEditMode() && !this.controller.isMousePressed && this.enableKeyEvents) {
+			nRetValue |= this.controller.handlers.trigger("graphicObjectWindowKeyDown", oEvent);
+		}
+		if (nRetValue === keydownresult_PreventNothing) {
+			nRetValue |= this.controller._onWindowKeyDown(oEvent);
+
+			if (this.isCellEditMode && !this.controller.skipCellEditor) {
+				nRetValue |= this.cellEditor._onWindowKeyDown(oEvent);
+			}
+			this.controller.setSkipCellEditor(false);
+		}
+		this.Api.sendEvent("asc_onKeyDown", oEvent);
+		return nRetValue;
+	};
+
+	WorkbookView.prototype.onKeyPress = function (oEvent) {
+		this.controller._onWindowKeyPress(oEvent);
+		if (this.isCellEditMode) {
+			this.cellEditor._onWindowKeyPress(oEvent);
+		}
+	};
+	WorkbookView.prototype.onKeyUp = function (oEvent) {
+		this.controller._onWindowKeyUp(oEvent);
+		if (this.isCellEditMode) {
+			this.cellEditor._onWindowKeyUp(oEvent);
+		}
+	};
 
 	WorkbookView.prototype.scrollToOleSize = function () {
 		var ws = this.getWorksheet();
@@ -3963,6 +4020,14 @@
   		adjustPrint = new Asc.asc_CAdjustPrint();
 	}
 
+	let trueFormulaFunctionToLocale;
+  	let printOptionsJson = this.getPrintOptionsJson();
+	let spreadsheetLayout = printOptionsJson && printOptionsJson["spreadsheetLayout"];
+  	if (spreadsheetLayout && spreadsheetLayout["formulaProps"] && spreadsheetLayout["formulaProps"]["translate"]) {
+		trueFormulaFunctionToLocale = AscCommonExcel.cFormulaFunctionToLocale;
+  		AscCommonExcel.cFormulaFunctionToLocale = spreadsheetLayout["formulaProps"]["translate"];
+  	}
+
     var viewZoom = this.getZoom();
     this.changeZoom(1, true, true);
 
@@ -4003,6 +4068,10 @@
     }
 
     this.changeZoom(viewZoom, true, true);
+
+	if (trueFormulaFunctionToLocale) {
+		AscCommonExcel.cFormulaFunctionToLocale = trueFormulaFunctionToLocale;
+	}
 
     return printPagesData;
   };

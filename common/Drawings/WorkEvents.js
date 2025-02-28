@@ -226,6 +226,10 @@
 	{
 		return (this.CtrlKey || (this.AltKey && this.AltGr));
 	};
+	CKeyboardEvent.prototype.IsShortcutCtrl = function()
+	{
+		return this.IsCtrl();
+	};
 	CKeyboardEvent.prototype.IsShift = function()
 	{
 		return this.ShiftKey;
@@ -238,6 +242,10 @@
 	{
 		return this.KeyCode;
 	};
+	CKeyboardEvent.prototype.IsMacCmd = function() {
+		return this.MacCmdKey;
+	};
+
 
 
 	var global_mouseEvent    = new CMouseEventHandler();

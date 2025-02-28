@@ -149,10 +149,9 @@ function (window, undefined) {
 		this.loadFonts = false;
 		this.isOpened = false;
 		this.callTopLineMouseup = false;
-		this.lastKeyCode = undefined;
-		this.m_nEditorState = c_oAscCellEditorState.editEnd; // Состояние редактора
+		this.m_nEditorState = c_oAscCellEditorState.editEnd; // Editor's status
 
-		// Функции, которые будем отключать
+		// Features that we will disable
 		this.fKeyMouseUp = null;
 		this.fKeyMouseMove = null;
 		//-----------------
@@ -180,7 +179,7 @@ function (window, undefined) {
 		this.lastRangePos = null;
 		this.lastRangeLength = null;
 
-		// Обработчик кликов
+		// Click handler
 		this.clickCounter = new AscFormat.ClickCounter();
 
 		//temporary - for safari rendering. remove after fixed
@@ -281,7 +280,7 @@ function (window, undefined) {
 			}, false);
 			t.eventListeners.push(eventInfo);
 
-			// Не поддерживаем drop на верхнюю строку
+			// We do not support drop to the top line
 			eventInfo = new AscCommon.CEventListenerInfo(t.input, "drop", function (e) {
 				e.preventDefault();
 				return false;
@@ -357,10 +356,10 @@ function (window, undefined) {
 		}
 
 		/*
-		 * Выставляем фокус при открытии
-		 * При нажатии символа, фокус не ставим
-		 * При F2 выставляем фокус в редакторе
-		 * При dbl клике фокус выставляем в зависимости от наличия текста в ячейке
+			* Set focus when opening
+			* When clicking a symbol, do not set focus
+			* When F2 sets focus in the editor
+			* When dbl clicking, set focus depending on the presence of text in the cell
 		 */
 		this.setFocus(this.isTopLineActive ? true : (null === options.enterOptions.focus) ? this._haveTextInEdit() : options.enterOptions.focus);
 		this._updateUndoRedoChanged();
@@ -409,7 +408,7 @@ function (window, undefined) {
 			// delete autoComplete
 			t.objAutoComplete.clear();
 
-			// Сброс состояния редактора
+			// Reset editor state
 			t._setEditorState(c_oAscCellEditorState.editEnd);
 			t.handlers.trigger("closed");
 			t.closeAction();
@@ -426,10 +425,10 @@ function (window, undefined) {
 		}
 
 		if (saveValue) {
-			// Пересчет делаем всегда для не пустой ячейки или если были изменения. http://bugzilla.onlyoffice.com/show_bug.cgi?id=34864
+			// We always recalculate for a non-empty cell or if there were changes. http://bugzilla.onlyoffice.com/show_bug.cgi?id=34864
 			if (0 < this.undoList.length || 0 < AscCommonExcel.getFragmentsCharCodesLength(this.options.fragments)) {
 				var isFormula = this.isFormula();
-				// Делаем замену текста на автодополнение, если есть select и текст полностью совпал.
+				// We replace the text with auto-completion if there is a select and the text matches completely.
 				if (this.sAutoComplete && !isFormula) {
 					this.selectionBegin = this.textRender.getBeginOfText();
 					this.cursorPos = this.selectionEnd = this.textRender.getEndOfText();
@@ -466,7 +465,7 @@ function (window, undefined) {
 		// delete autoComplete
 		this.objAutoComplete.clear();
 
-		// Сброс состояния редактора
+		// Reset editor state
 		this._setEditorState(c_oAscCellEditorState.editEnd);
 		this.handlers.trigger("closed");
 		t.closeAction();
@@ -513,7 +512,7 @@ function (window, undefined) {
 			if (first && last) {
 				for (i = first.index; i <= last.index; ++i) {
 					var valTmp = t._setFormatProperty(opt.fragments[i].format, prop, val);
-					// Только для горячих клавиш
+					// For hotkeys only
 					if (null === val) {
 						val = valTmp;
 					}
@@ -522,7 +521,7 @@ function (window, undefined) {
 				t._mergeFragments();
 				t._update();
 
-				// Обновляем выделение
+				// Refreshing the selection
 				t._cleanSelection();
 				t._drawSelection();
 
@@ -585,7 +584,7 @@ function (window, undefined) {
 			}
 
 			this._update();
-			// Обновляем выделение
+			// Refreshing the selection
 			this._cleanSelection();
 			this._drawSelection();
 		}
@@ -593,12 +592,12 @@ function (window, undefined) {
 	};
 
 	CellEditor.prototype.empty = function (options) {
-		// Чистка для редактирования только All
+		// Clean for editing only All
 		if (Asc.c_oAscCleanOptions.All !== options) {
 			return;
 		}
 
-		// Удаляем только selection
+		// We delete only the selection
 		this._removeChars();
 	};
 
@@ -711,11 +710,11 @@ function (window, undefined) {
 				// ToDo move this code to moveCursor
 
 				this.lastRangePos = this._parseResult && this._parseResult.argPosArr && this._parseResult.argPosArr.length
-					? this._parseResult.argPosArr[0].start 
+					? this._parseResult.argPosArr[0].start
 					: this.cursorPos;
 
 				this.lastRangeLength = this._parseResult && this._parseResult.argPosArr && this._parseResult.argPosArr.length
-					? this._parseResult.argPosArr[this._parseResult.argPosArr.length - 1].end - this._parseResult.argPosArr[0].start 
+					? this._parseResult.argPosArr[this._parseResult.argPosArr.length - 1].end - this._parseResult.argPosArr[0].start
 					: 0;
 			}
 		}
@@ -844,7 +843,7 @@ function (window, undefined) {
 		this.noUpdateMode = noUpdateMode;
 		this._addFragments(fragments, this.cursorPos);
 
-		// Сделано только для вставки формулы в ячейку (когда не открыт редактор)
+		// Made only for inserting a formula into a cell (when the editor is not open)
 		if (undefined !== cursorPos) {
 			this._moveCursor(kPosition, cursorPos);
 		}
@@ -942,7 +941,7 @@ function (window, undefined) {
 	};
 
 	CellEditor.prototype._parseFormulaRanges = function () {
-		//получаю строку без двухбайтовых символов
+		//I get a string without double-byte characters
 		var s = this.options.fragments.reduce(function (pv, cv) {
 			return pv + AscCommonExcel.convertUnicodeToSimpleString(cv.getCharCodes());
 		}, "");
@@ -1166,7 +1165,7 @@ function (window, undefined) {
 		this.lastRangePos = null;
 	};
 
-	// Обновляем состояние Undo/Redo
+	// Update Undo/Redo state
 	CellEditor.prototype._updateUndoRedoChanged = function () {
 		this.handlers.trigger("updateUndoRedoChanged", 0 < this.undoList.length, 0 < this.redoList.length);
 	};
@@ -1253,7 +1252,7 @@ function (window, undefined) {
 			this._calculateCanvasSize();
 		}
 
-		// вызов нужен для обновление текста верхней строки, перед обновлением позиции курсора
+		// the call is needed to update the text of the top line, before updating the cursor position
 		this.textRender.initStartX(0, this.textRender.lines[0], this._getContentLeft(), this._getContentWidth(), true);
 		if (!this.getMenuEditorMode()) {
 			this._fireUpdated();
@@ -1269,7 +1268,7 @@ function (window, undefined) {
 	};
 
 	CellEditor.prototype._fireUpdated = function () {
-		//TODO оставляю текст!
+		//TODO I save the text!
 		var s = AscCommonExcel.getFragmentsText(this.options.fragments);
 		var isFormula = -1 === this.beginCompositePos && s.charAt(0) === "=";
 		var api = window["Asc"]["editor"];
@@ -1279,9 +1278,9 @@ function (window, undefined) {
 			this.input.value = s;
 		}
 
-		//получаю строку без двухбайтовых символов и её отдаю регулярке
-		//позиции всех функций должны совпадать
-		//остаётся вопрос с аргументами, которые могут содержать двухбайтовые символы
+		//get a string without double-byte characters and pass it to the regular expression
+		//positions of all functions must match
+		//the question remains with arguments that can contain double-byte characters
 		s = this.options.fragments ? this.options.fragments.reduce(function (pv, cv) {
 			return pv + AscCommonExcel.convertUnicodeToSimpleString(cv.getCharCodes());
 		}, "") : "";
@@ -1318,11 +1317,11 @@ function (window, undefined) {
 	};
 
 	CellEditor.prototype._getEditableFunction = function (parseResult, bEndCurPos) {
-		//TODO оставляю текст!
+		//TODO I save the text!
 		var findOpenFunc = [], editableFunction = null, level = -1;
 		if (!parseResult) {
-			//в этом случае запускаю парсинг формулы до текущей позиции
-			//получаю строку без двухбайтовых символов
+			//in this case, I start parsing the formula up to the current position
+			//I get a string without double-byte characters
 			var s = this.options.fragments.reduce(function (pv, cv) {
 				return pv + AscCommonExcel.convertUnicodeToSimpleString(cv.getCharCodes());
 			}, "");
@@ -1502,13 +1501,13 @@ function (window, undefined) {
 		widthStyle = AscCommon.AscBrowser.convertToRetinaValue(widthStyle);
 		heightStyle = AscCommon.AscBrowser.convertToRetinaValue(heightStyle);
 
-		// в сафари с включенным аппаратным ускорением баг при вводе текста.
-		// видимо они кешируют по особенному текстуры, которые размером (w*h<5000)
-		// формула точная. ни пикселом меньше. больше - можно сколько угодно.
-		// нужно проверять каждое обновление сафари - и как поправят - убрать эту заглушку
-		// canvas'ы прозрачные и их увеличенный размер не влияет на результат.
+		// in safari with hardware acceleration enabled, there is a bug when entering text.
+		// apparently they cache textures in a special way that are (w*h<5000) in size
+		// the formula is accurate. not a pixel less. more - you can have as much as you like.
+		// you need to check every safari update - and when they fix it - remove this stub
+		// canvases are transparent and their increased size does not affect the result.
 		//
-		// в новой версии сафари увеличиваем не только canvas'ы, но и дивку тоже.
+		// in the new version of safari, we increase not only the canvases, but also the div.
 		if (AscCommon.AscBrowser.isSafariMacOs) {
 			if ((widthStyle * heightStyle) < 5000) {
 				this._originalCanvasWidth = width;
@@ -1531,8 +1530,8 @@ function (window, undefined) {
 	};
 
 	CellEditor.prototype._calculateCanvasSize = function () {
-		//этот код вызывается после showCanvas, потому что внутри calculateCanvasSize использууется getBoundingClientRect
-		//если у канвы будет display = 'none', то размеры будут возвращаться нулевые
+		//this code is called after showCanvas because inside calculateCanvasSize getBoundingClientRect is used
+		//if canvas has display = 'none' then the sizes will be returned as zero
 		if (this.canvas) {
 			AscCommon.calculateCanvasSize(this.canvas);
 		}
@@ -1681,7 +1680,7 @@ function (window, undefined) {
 	};
 
 	CellEditor.prototype._updateCursorPosition = function (redrawText, isExpand, lineIndex) {
-		// ToDo стоит переправить данную функцию
+		// ToDo should forward this function
 		let h = this.canvas.height;
 		let y = -this.textRender.calcLineOffset(this.topLineIndex);
 		let cur = this.textRender.calcCharOffset(this.cursorPos, lineIndex);
@@ -1842,8 +1841,8 @@ function (window, undefined) {
 
 	CellEditor.prototype._topLineMouseUp = function () {
 		this.callTopLineMouseup = false;
-		// при такой комбинации ctrl+a, click, ctrl+a, click не обновляется selectionStart
-		// поэтому выполняем обработку после обработчика системы
+		// with this combination ctrl+a, click, ctrl+a, click selectionStart is not updated
+		// therefore we perform processing after the system handler
 		this._delayedUpdateCursorByTopLine();
 	};
 	CellEditor.prototype._delayedUpdateCursorByTopLine = function () {
@@ -1869,7 +1868,7 @@ function (window, undefined) {
 				this._selectChars(kPosition, e);
 			}
 
-			//onSelectionEnd - используется в плагинах. нужен он для отслеживания смены селекта.
+			//onSelectionEnd - used in plugins. It is needed to track the change of select.
 			if (!this.isSelectMode) {
 				this.handlers.trigger("onSelectionEnd");
 			}
@@ -2138,7 +2137,7 @@ function (window, undefined) {
 		var t = this;
 
 		function doChangeSelection(coordTmp) {
-			// ToDo реализовать для слова.
+			// ToDo implement for the word.
 			if (c_oAscCellEditorSelectState.word === t.isSelectMode) {
 				return;
 			}
@@ -2446,7 +2445,7 @@ function (window, undefined) {
 	CellEditor.prototype._tryCloseEditor = function (event) {
 		var t = this;
 		var callback = function (success) {
-			//для случая, когда пользователь нажимает ctrl+shift+enter/crtl+enter переход на новую строку не осуществляется
+			// for the case when the user presses ctrl+shift+enter/crtl+enter the transition to a new line is not performed
 			var applyByArray = t.textFlags && t.textFlags.ctrlKey;
 			if (!applyByArray && success) {
 				t.handlers.trigger("applyCloseEvent", event);
@@ -2457,8 +2456,8 @@ function (window, undefined) {
 	};
 
 	CellEditor.prototype._getAutoComplete = function (str) {
-		// ToDo можно ускорить делая поиск каждый раз не в большом массиве, а в уменьшенном (по предыдущим символам)
-		//TODO оставляю текст!
+		// ToDo can be sped up by searching each time not in a large array, but in a smaller one (by previous characters)
+		//TODO I save the text!
 		var oLastResult = this.objAutoComplete.get(str);
 		if (oLastResult) {
 			return oLastResult;
@@ -2488,388 +2487,349 @@ function (window, undefined) {
 	};
 
 	CellEditor.prototype._checkMaxCellLength = function (length) {
-		//TODO вопрос, измерять длину текста или количество символов
+		//TODO question, measure text length or number of characters
 		var count = AscCommonExcel.getFragmentsCharCodesLength(this.options.fragments) + length - Asc.c_oAscMaxCellOrCommentLength;
 		return 0 > count ? 0 : count;
 	};
 
 	// Event handlers
-
+	CellEditor.prototype.executeShortcut = function(nShortcutAction) {
+		let oResult = {keyResult: keydownresult_PreventAll};
+		const oApi = window["Asc"]["editor"];
+		const bHieroglyph = this.isTopLineActive && AscCommonExcel.getFragmentsLength(this.options.fragments) !== this.input.value.length;
+		switch (nShortcutAction) {
+			case Asc.c_oAscSpreadsheetShortcutType.Strikeout: {
+				if (bHieroglyph) {
+					this._syncEditors();
+				}
+				this.setTextStyle("s", null);
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.Bold: {
+				if (bHieroglyph) {
+					this._syncEditors();
+				}
+				this.setTextStyle("b", null);
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.Italic: {
+				if (bHieroglyph) {
+					this._syncEditors();
+				}
+				this.setTextStyle("i", null);
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.Underline: {
+				if (bHieroglyph) {
+					this._syncEditors();
+				}
+				this.setTextStyle("u", null);
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.EditSelectAll: {
+				if (!this.hasFocus) {
+					this.setFocus(true);
+				}
+				if (this.isTopLineActive) {
+					oResult.keyResult = keydownresult_PreventNothing;
+				}
+				this._moveCursor(kBeginOfText);
+				this._selectChars(kEndOfText);
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.EditUndo: {
+				this.undo();
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.EditRedo: {
+				this.redo();
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.CellInsertTime: {
+				const oDate = new Asc.cDate();
+				this._addChars(oDate.getTimeString(oApi));
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.CellInsertDate: {
+				const oDate = new Asc.cDate();
+				this._addChars(oDate.getDateString(oApi));
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.Print: {
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.EditOpenCellEditor: {
+				if (!AscBrowser.isOpera) {
+					oResult.keyResult = keydownresult_PreventNothing;
+				}
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.CellAddSeparator: {
+				this._addChars(oApi.asc_getDecimalSeparator());
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.CellEditorSwitchReference: {
+				const oRes = this._findRangeUnderCursor();
+				if (oRes.range) {
+					oRes.range.switchReference();
+					// ToDo add change ref to other sheet
+					this.changeCellRange(oRes.range);
+				}
+				break;
+			}
+			case Asc.c_oAscSpreadsheetShortcutType.IncreaseFontSize:
+			case Asc.c_oAscSpreadsheetShortcutType.DecreaseFontSize: {
+				if (bHieroglyph) {
+					this._syncEditors();
+				}
+				this.setTextStyle("changeFontSize", nShortcutAction === Asc.c_oAscSpreadsheetShortcutType.IncreaseFontSize);
+				break;
+			}
+			default: {
+				const oCustom = oApi.getCustomShortcutAction(nShortcutAction);
+				if (oCustom) {
+					if (AscCommon.c_oAscCustomShortcutType.Symbol === oCustom.Type) {
+						oApi["asc_insertSymbol"](oCustom.Font, oCustom.CharCode);
+					}
+				} else {
+					oResult = null;
+				}
+				break;
+			}
+		}
+		return oResult;
+	};
 	/**
 	 *
-	 * @param event {KeyboardEvent}
-	 * @param isInput {boolean}
-	 * @returns {boolean}
+	 * @param oEvent {AscCommon.CKeyboardEvent}
+	 * @returns {number}
 	 */
-	CellEditor.prototype._onWindowKeyDown = function (event, isInput) {
-		var t = this, kind = undefined, hieroglyph = false;
-		var ctrlKey = !AscCommon.getAltGr(event) && (event.metaKey || event.ctrlKey);
-		const bIsMacOs = AscCommon.AscBrowser.isMacOs;
-		const bIsWordRemove = bIsMacOs ? event.altKey : ctrlKey;
+	CellEditor.prototype._onWindowKeyDown = function (oEvent) {
+		const oThis = this;
+		const oApi = window["Asc"]["editor"];
 
-		if (this.handlers.trigger('getWizard') || !t.isOpened || (!isInput && !t.enableKeyEvents && event.emulated !== true)) {
-			return true;
+		let nRetValue = keydownresult_PreventNothing;
+
+		if (this.handlers.trigger('getWizard') || !oThis.isOpened) {
+			return nRetValue;
 		}
 
-		// для исправления Bug 15902 - Alt забирает фокус из приложения
-		if (event.which === 18) {
-			t.lastKeyCode = event.which;
-		}
+		oThis._setSkipKeyPress(false);
+		oThis.skipTLUpdate = true;
 
-		t._setSkipKeyPress(true);
-		t.skipTLUpdate = false;
+		// hieroglyph input definition
+		const bHieroglyph = oThis.isTopLineActive && AscCommonExcel.getFragmentsLength(oThis.options.fragments) !== oThis.input.value.length;
 
-		// определение ввода иероглифов
-		if (t.isTopLineActive && AscCommonExcel.getFragmentsLength(t.options.fragments) !== t.input.value.length) {
-			hieroglyph = true;
-		}
+		nRetValue = keydownresult_PreventKeyPress;
+		const nShortcutAction = oApi.getShortcut(oEvent);
+		const oShortcutRes = oThis.executeShortcut(nShortcutAction);
+		if (oShortcutRes) {
+			nRetValue = oShortcutRes.keyResult;
+		} else {
+			const bIsMacOs = AscCommon.AscBrowser.isMacOs;
+			const bIsWordRemove = bIsMacOs ? oEvent.IsAlt() : oEvent.CtrlKey;
+			switch (oEvent.GetKeyCode()) {
+				case 27: { // "esc"
 
-		let api = window["Asc"]["editor"];
-		switch (event.which) {
-
-			case 27:  // "esc"
-				if (t.handlers.trigger("isGlobalLockEditCell") || this.getMenuEditorMode()) {
-					return false;
+					if (oThis.handlers.trigger("isGlobalLockEditCell") || this.getMenuEditorMode()) {
+						break;
+					}
+					oThis.close();
+					nRetValue = keydownresult_PreventAll;
+					break;
 				}
-				t.close();
-				event.stopPropagation();
-				event.preventDefault();
-				return false;
 
-			case 13:  // "enter"
-				if (window['IS_NATIVE_EDITOR']) {
-					t._addNewLine();
-				} else {
-					if (!(event.altKey && event.shiftKey)) {
-						if (event.altKey) {
-							t._addNewLine();
-						} else if (this.getMenuEditorMode()) {
-							t._addNewLine();
-						} else {
-							if (false === t.handlers.trigger("isGlobalLockEditCell")) {
-								if (t.textFlags) {
-									t.textFlags.ctrlKey = event.ctrlKey;
-									t.textFlags.shiftKey = event.shiftKey;
+				case 13: {  // "enter"
+					if (window['IS_NATIVE_EDITOR']) {
+						oThis._addNewLine();
+					} else {
+						if (!(oEvent.IsAlt() && oEvent.IsShift())) {
+							if (oEvent.IsAlt()) {
+								oThis._addNewLine();
+							} else if (this.getMenuEditorMode()) {
+								oThis._addNewLine();
+							} else {
+								if (false === oThis.handlers.trigger("isGlobalLockEditCell")) {
+									if (oThis.textFlags) {
+										oThis.textFlags.ctrlKey = oEvent.CtrlKey;
+										oThis.textFlags.shiftKey = oEvent.IsShift();
+									}
+									oThis._tryCloseEditor(oEvent);
 								}
-								t._tryCloseEditor(event);
 							}
 						}
 					}
-				}
-				event.stopPropagation();
-				event.preventDefault();
-				return false;
-
-			case 9: // tab
-				if (hieroglyph) {
-					t._syncEditors();
-				}
-
-				if (false === t.handlers.trigger("isGlobalLockEditCell")) {
-					t._tryCloseEditor(event);
-				}
-				return false;
-
-			case 8:   // "backspace"
-				if (!this.enableKeyEvents) {
+					nRetValue = keydownresult_PreventAll;
 					break;
 				}
-
-				if (!window['IS_NATIVE_EDITOR']) {
-					// Отключим стандартную обработку браузера нажатия backspace
-					event.stopPropagation();
-					event.preventDefault();
-					if (hieroglyph) {
-						t._syncEditors();
+				case 9: { // tab
+					if (bHieroglyph) {
+						oThis._syncEditors();
 					}
-				}
-				t._removeChars(bIsWordRemove ? kPrevWord : kPrevChar);
-				return false;
-			case 35:  // "end"
-				if (!this.enableKeyEvents) {
-					break;
-				}
 
-				// Отключим стандартную обработку браузера нажатия end
-				event.stopPropagation();
-				event.preventDefault();
-				if (!t.hasFocus) {
-					break;
-				}
-				if (hieroglyph) {
-					t._syncEditors();
-				}
-				kind = ctrlKey ? kEndOfText : kEndOfLine;
-				event.shiftKey ? t._selectChars(kind) : t._moveCursor(kind);
-				return false;
-
-			case 36:  // "home"
-				if (!this.enableKeyEvents) {
-					break;
-				}
-
-				// Отключим стандартную обработку браузера нажатия home
-				event.stopPropagation();
-				event.preventDefault();
-				if (!t.hasFocus) {
-					break;
-				}
-				if (hieroglyph) {
-					t._syncEditors();
-				}
-				kind = ctrlKey ? kBeginOfText : kBeginOfLine;
-				event.shiftKey ? t._selectChars(kind) : t._moveCursor(kind);
-				return false;
-
-			case 37:  // "left"
-				if (!this.enableKeyEvents) {
-					this._delayedUpdateCursorByTopLine();
-					break;
-				}
-
-				event.stopPropagation();
-				event.preventDefault();
-				if (!t.hasFocus) {
-					break;
-				}
-				if (hieroglyph) {
-					t._syncEditors();
-				}
-				if (bIsMacOs && ctrlKey) {
-					event.shiftKey ? t._selectChars(kBeginOfLine) : t._moveCursor(kBeginOfLine);
-				} else {
-					const bWord = bIsMacOs ? event.altKey : ctrlKey;
-					kind = bWord ? kPrevWord : kPrevChar;
-					event.shiftKey ? t._selectChars(kind) : t._moveCursor(kind);
-				}
-
-				return false;
-
-			case 38:  // "up"
-				if (!this.enableKeyEvents) {
-					this._delayedUpdateCursorByTopLine();
-					break;
-				}
-
-				event.stopPropagation();
-				event.preventDefault();
-				if (!t.hasFocus) {
-					break;
-				}
-				if (hieroglyph) {
-					t._syncEditors();
-				}
-				event.shiftKey ? t._selectChars(kPrevLine) : t._moveCursor(kPrevLine);
-				return false;
-
-			case 39:  // "right"
-				if (!this.enableKeyEvents) {
-					this._delayedUpdateCursorByTopLine();
-					break;
-				}
-
-				event.stopPropagation();
-				event.preventDefault();
-				if (!t.hasFocus) {
-					break;
-				}
-				if (hieroglyph) {
-					t._syncEditors();
-				}
-				if (bIsMacOs && ctrlKey) {
-					event.shiftKey ? t._selectChars(kEndOfLine) : t._moveCursor(kEndOfLine);
-				} else {
-					const bWord = bIsMacOs ? event.altKey : ctrlKey;
-					kind = bWord ? kNextWord : kNextChar;
-					event.shiftKey ? t._selectChars(kind) : t._moveCursor(kind);
-				}
-				return false;
-
-			case 40:  // "down"
-				if (!this.enableKeyEvents) {
-					this._delayedUpdateCursorByTopLine();
-					break;
-				}
-
-				event.stopPropagation();
-				event.preventDefault();
-				if (!t.hasFocus) {
-					break;
-				}
-				if (hieroglyph) {
-					t._syncEditors();
-				}
-				event.shiftKey ? t._selectChars(kNextLine) : t._moveCursor(kNextLine);
-				return false;
-
-			case 46:  // "del"
-				if (!this.enableKeyEvents || event.shiftKey) {
-					break;
-				}
-
-				if (hieroglyph) {
-					t._syncEditors();
-				}
-				event.stopPropagation();
-				event.preventDefault();
-				t._removeChars(bIsWordRemove ? kNextWord : kNextChar);
-				return true;
-
-			case 53: // 5
-				if (ctrlKey) {
-					// Отключим стандартную обработку браузера нажатия ctrl + 5
-					event.stopPropagation();
-					event.preventDefault();
-					if (hieroglyph) {
-						t._syncEditors();
+					if (false === oThis.handlers.trigger("isGlobalLockEditCell")) {
+						oThis._tryCloseEditor(oEvent);
 					}
-					t.setTextStyle("s", null);
-					return true;
+					break;
 				}
-				break;
-
-			case 65: // A
-				if (ctrlKey) {
-					if (!t.hasFocus) {
-						t.setFocus(true);
+				case 8: {  // "backspace"
+					if (!this.enableKeyEvents) {
+						break;
 					}
-					// Отключим стандартную обработку браузера нажатия ctrl + a
-					if (!t.isTopLineActive) {
-						event.stopPropagation();
-						event.preventDefault();
+
+					if (!window['IS_NATIVE_EDITOR']) {
+						// Disable the browser's standard handling of pressing backspace
+						nRetValue = keydownresult_PreventAll;
+						if (bHieroglyph) {
+							oThis._syncEditors();
+						}
 					}
-					t._moveCursor(kBeginOfText);
-					t._selectChars(kEndOfText);
-					return true;
+					oThis._removeChars(bIsWordRemove ? kPrevWord : kPrevChar);
+					break;
 				}
-				break;
-
-			case 66: // B
-				if (ctrlKey) {
-					// Отключим стандартную обработку браузера нажатия ctrl + b
-					event.stopPropagation();
-					event.preventDefault();
-					if (hieroglyph) {
-						t._syncEditors();
+				case 35: {  // "end"
+					if (!this.enableKeyEvents) {
+						break;
 					}
-					t.setTextStyle("b", null);
-					return true;
-				}
-				break;
 
-			case 73: // I
-				if (ctrlKey) {
-					// Отключим стандартную обработку браузера нажатия ctrl + i
-					event.stopPropagation();
-					event.preventDefault();
-					if (hieroglyph) {
-						t._syncEditors();
+					// Disable the browser's standard handling of pressing end
+					nRetValue = keydownresult_PreventAll;
+					if (!oThis.hasFocus) {
+						break;
 					}
-					t.setTextStyle("i", null);
-					return true;
-				}
-				break;
-
-			/*case 83: // S
-			 if (ctrlKey) {
-			 if (hieroglyph) {t._syncEditors();}
-
-			 if (false === t.handlers.trigger("isGlobalLockEditCell"))
-			 t._tryCloseEditor(event);
-			 return false;
-			 }
-			 break;*/
-
-			case 85: // U
-				if (ctrlKey) {
-					// Отключим стандартную обработку браузера нажатия ctrl + u
-					event.stopPropagation();
-					event.preventDefault();
-					if (hieroglyph) {
-						t._syncEditors();
+					if (bHieroglyph) {
+						oThis._syncEditors();
 					}
-					t.setTextStyle("u", null);
-					return true;
+					const nKind = oEvent.CtrlKey ? kEndOfText : kEndOfLine;
+					oEvent.IsShift() ? oThis._selectChars(nKind) : oThis._moveCursor(nKind);
+					break;
 				}
-				break;
-
-			case 144://Num Lock
-			case 145://Scroll Lock
-				if (AscBrowser.isOpera) {
-					event.stopPropagation();
-					event.preventDefault();
-				}
-				return false;
-
-			case 80: // print           Ctrl + p
-				if (ctrlKey) {
-					event.stopPropagation();
-					event.preventDefault();
-					return false;
-				}
-				break;
-			case 89:  // ctrl + y
-			case 90:  // ctrl + z
-				if (ctrlKey) {
-					event.stopPropagation();
-					event.preventDefault();
-					event.which === 90 ? t.undo() : t.redo();
-					return false;
-				}
-				break;
-
-			case 110: //NumpadDecimal
-				t._addChars(api.asc_getDecimalSeparator());
-				event.stopPropagation();
-				event.preventDefault();
-				return false;
-
-			case 113: // F2
-				if (AscBrowser.isOpera) {
-					event.stopPropagation();
-					event.preventDefault();
-				}
-				return false;
-
-			case 115: // F4
-				var res = this._findRangeUnderCursor();
-				if (res.range) {
-					res.range.switchReference();
-					// ToDo add change ref to other sheet
-					this.changeCellRange(res.range);
-				}
-
-				event.stopPropagation();
-				event.preventDefault();
-				return false;
-
-			case 59:
-			case 186: // ctrl + (shift) + ;
-				if (ctrlKey) {
-					var oDate = new Asc.cDate();
-					t._addChars(event.shiftKey ? oDate.getTimeString(api) : oDate.getDateString(api, true));
-					event.stopPropagation();
-					event.preventDefault();
-				}
-				t._setSkipKeyPress(false);
-				return false;
-			case 219:
-			case 221:
-				if (ctrlKey) {
-					event.stopPropagation();
-					event.preventDefault();
-					if (hieroglyph) {
-						t._syncEditors();
+				case 36: { // "home"
+					if (!this.enableKeyEvents) {
+						break;
 					}
-					t.setTextStyle("changeFontSize", event.which === 221);
-					return true;
+
+					// Disable the browser's standard handling of pressing home
+					nRetValue = keydownresult_PreventAll;
+					if (!oThis.hasFocus) {
+						break;
+					}
+					if (bHieroglyph) {
+						oThis._syncEditors();
+					}
+					const nKind = oEvent.CtrlKey ? kBeginOfText : kBeginOfLine;
+					oEvent.IsShift() ? oThis._selectChars(nKind) : oThis._moveCursor(nKind);
+					break;
 				}
-			break;
+				case 37: { // "left"
+					if (!this.enableKeyEvents) {
+						this._delayedUpdateCursorByTopLine();
+						break;
+					}
+
+					nRetValue = keydownresult_PreventAll;
+					if (!oThis.hasFocus) {
+						break;
+					}
+					if (bHieroglyph) {
+						oThis._syncEditors();
+					}
+					if (bIsMacOs && oEvent.CtrlKey) {
+						oEvent.IsShift() ? oThis._selectChars(kBeginOfLine) : oThis._moveCursor(kBeginOfLine);
+					} else {
+						const bWord = bIsMacOs ? oEvent.IsAlt() : oEvent.CtrlKey;
+						const nKind = bWord ? kPrevWord : kPrevChar;
+						oEvent.IsShift() ? oThis._selectChars(nKind) : oThis._moveCursor(nKind);
+					}
+
+					break;
+				}
+				case 38: {// "up"
+					if (!this.enableKeyEvents) {
+						this._delayedUpdateCursorByTopLine();
+						break;
+					}
+
+					nRetValue = keydownresult_PreventAll;
+					if (!oThis.hasFocus) {
+						break;
+					}
+					if (bHieroglyph) {
+						oThis._syncEditors();
+					}
+					oEvent.IsShift() ? oThis._selectChars(kPrevLine) : oThis._moveCursor(kPrevLine);
+					break;
+				}
+
+				case 39: {// "right"
+					if (!this.enableKeyEvents) {
+						this._delayedUpdateCursorByTopLine();
+						break;
+					}
+
+					nRetValue = keydownresult_PreventAll;
+					if (!oThis.hasFocus) {
+						break;
+					}
+					if (bHieroglyph) {
+						oThis._syncEditors();
+					}
+					if (bIsMacOs && oEvent.CtrlKey) {
+						oEvent.IsShift() ? oThis._selectChars(kEndOfLine) : oThis._moveCursor(kEndOfLine);
+					} else {
+						const bWord = bIsMacOs ? oEvent.IsAlt() : oEvent.CtrlKey;
+						const nKind = bWord ? kNextWord : kNextChar;
+						oEvent.IsShift() ? oThis._selectChars(nKind) : oThis._moveCursor(nKind);
+					}
+					break;
+				}
+				case 40: { // "down"
+					if (!this.enableKeyEvents) {
+						this._delayedUpdateCursorByTopLine();
+						break;
+					}
+
+					nRetValue = keydownresult_PreventAll;
+					if (!oThis.hasFocus) {
+						break;
+					}
+					if (bHieroglyph) {
+						oThis._syncEditors();
+					}
+					oEvent.IsShift() ? oThis._selectChars(kNextLine) : oThis._moveCursor(kNextLine);
+					break;
+				}
+				case 46: {// "del"
+					if (!this.enableKeyEvents || oEvent.IsShift()) {
+						break;
+					}
+
+					if (bHieroglyph) {
+						oThis._syncEditors();
+					}
+					nRetValue = keydownresult_PreventAll;
+					oThis._removeChars(bIsWordRemove ? kNextWord : kNextChar);
+					break;
+				}
+				case 144://Num Lock
+				case 145: {//Scroll Lock
+					if (AscBrowser.isOpera) {
+						nRetValue = keydownresult_PreventAll;
+					}
+					break;
+				}
+				default: {
+					nRetValue = keydownresult_PreventNothing;
+					break;
+				}
+			}
 		}
 
-		t._setSkipKeyPress(false);
-		t.skipTLUpdate = true;
-		return true;
+		if (nRetValue & keydownresult_PreventKeyPress) {
+			oThis._setSkipKeyPress(true);
+			oThis.skipTLUpdate = false;
+		}
+		return nRetValue;
 	};
 
 	/** @param event {KeyboardEvent} */
@@ -2877,15 +2837,15 @@ function (window, undefined) {
 		var t = this;
 
 		if (!window['IS_NATIVE_EDITOR']) {
-			if (event.which < 32 || t.skipKeyPress) {
+			if (event.KeyCode < 32 || t.skipKeyPress) {
 				t._setSkipKeyPress(true);
 				return true;
 			}
 		}
 
 		let Code;
-		if (null != event.which) {
-			Code = event.which;
+		if (null != event.Which) {
+			Code = event.Which;
 		} else if (event.KeyCode) {
 			Code = event.KeyCode;
 		} else {
@@ -2902,7 +2862,7 @@ function (window, undefined) {
 			if (!t.isOpened || !t.enableKeyEvents || this.handlers.trigger('getWizard')) {
 				return true;
 			}
-			// определение ввода иероглифов
+			// hieroglyph input definition
 			if (t.isTopLineActive && AscCommonExcel.getFragmentsLength(t.options.fragments) !== t.input.value.length) {
 				t._syncEditors();
 			}
@@ -2910,7 +2870,7 @@ function (window, undefined) {
 
 		t._setSkipKeyPress(false);
 
-		//TODO перевод из кода в символы!
+		//TODO Translation from code to symbols!
 		var newChar;
 		if (Array.isArray(codePoints)) {
 			for (let nIdx = 0; nIdx < codePoints.length; ++nIdx) {
@@ -2922,7 +2882,7 @@ function (window, undefined) {
 			t._addChars(newChar);
 		}
 
-		//TODO в случае добавляения массива - првоерить - возможно часть нужно вызывать каждый раз после _addChars
+		//TODO in case of adding an array - check - perhaps the part needs to be called every time after _addChars
 		var tmpCursorPos;
 		// The first time we enter quickly, we should add percentages at the end (for percentage format and only for numbers)
 		if (t.options.isAddPersentFormat && AscCommon.isNumber(newChar)) {
@@ -2958,12 +2918,6 @@ function (window, undefined) {
 
 	/** @param event {KeyboardEvent} */
 	CellEditor.prototype._onWindowKeyUp = function (event) {
-		var t = this;
-
-		// для исправления Bug 15902 - Alt забирает фокус из приложения
-		if (t.lastKeyCode === 18 && event.which === 18) {
-			return false;
-		}
 	};
 
 	/** @param event {MouseEvent} */
@@ -3085,7 +3039,7 @@ function (window, undefined) {
 
 	/** @param event {jQuery.Event} */
 	CellEditor.prototype._onInputTextArea = function (event) {
-		//TODO оставляю текст!
+		//TODO save the text!
 		var t = this;
 		if (!this.handlers.trigger("canEdit") || this.loadFonts) {
 			return true;
@@ -3129,7 +3083,7 @@ function (window, undefined) {
 	};
 
 	CellEditor.prototype.getTextFromCharCodes = function (arrCharCodes) {
-		//TODO оставляю текст!
+		//TODO save the text!
 		var code, codePt, newText = '';
 		for (var i = 0; i < arrCharCodes.length; ++i) {
 			code = arrCharCodes[i];
@@ -3169,7 +3123,7 @@ function (window, undefined) {
 		this.selectionBegin = tmpBegin;
 		this.selectionEnd = tmpEnd;
 
-		// Обновляем выделение
+		// Refreshing the selection
 		this._cleanSelection();
 		this._drawSelection();
 	};
@@ -3189,7 +3143,7 @@ function (window, undefined) {
 		this.selectionBegin = tmpBegin;
 		this.selectionEnd = tmpEnd;
 
-		// Обновляем выделение
+		// Refreshing the selection
 		this._cleanSelection();
 		this._drawSelection();
 	};
@@ -3308,7 +3262,7 @@ function (window, undefined) {
 
 		if (action) {
 			let bWord = false;
-			if (action.type !== AscCommon.SpeakerActionType.keyDown || action.event.keyCode < 35 || action.event.keyCode > 40) {
+			if (action.type !== AscCommon.SpeakerActionType.keyDown || action.event.KeyCode < 35 || action.event.KeyCode > 40) {
 				return null;
 			}
 
@@ -3318,14 +3272,12 @@ function (window, undefined) {
 
 			let event = action.event;
 			let isWizard = this.handlers.trigger('getWizard');
-			if (!action.event || isWizard || !t.isOpened || (!t.enableKeyEvents && event.emulated !== true)) {
+			if (!action.event || isWizard || !t.isOpened) {
 				return null;
 			}
 
-			var ctrlKey = !AscCommon.getAltGr(event) && (event.metaKey || event.ctrlKey);
 			const bIsMacOs = AscCommon.AscBrowser.isMacOs;
-
-			switch (event.keyCode) {
+			switch (event.GetKeyCode()) {
 				case 8:   // "backspace"
 					/*const bIsWord = bIsMacOs ? event.altKey : ctrlKey;
 					t._removeChars(bIsWord ? kPrevWord : kPrevChar);*/
@@ -3340,10 +3292,10 @@ function (window, undefined) {
 					event.shiftKey ? t._selectChars(kind) : t._moveCursor(kind);*/
 					break;
 				case 37:  // "left"
-					if (bIsMacOs && ctrlKey) {
+					if (bIsMacOs && event.CtrlKey) {
 						//event.shiftKey ? t._selectChars(kBeginOfLine) : t._moveCursor(kBeginOfLine);
 					} else {
-						bWord = bIsMacOs ? event.altKey : ctrlKey;
+						bWord = bIsMacOs ? event.AltKey : event.CtrlKey;
 						/*kind = bWord ? kPrevWord : kPrevChar;
 						event.shiftKey ? t._selectChars(kind) : t._moveCursor(kind);*/
 					}
@@ -3353,10 +3305,10 @@ function (window, undefined) {
 					//event.shiftKey ? t._selectChars(kPrevLine) : t._moveCursor(kPrevLine);
 					break;
 				case 39:  // "right"
-					if (bIsMacOs && ctrlKey) {
+					if (bIsMacOs && event.CtrlKey) {
 						//event.shiftKey ? t._selectChars(kEndOfLine) : t._moveCursor(kEndOfLine);
 					} else {
-						bWord = bIsMacOs ? event.altKey : ctrlKey;
+						bWord = bIsMacOs ? event.AltKey : event.CtrlKey;
 						/*kind = bWord ? kNextWord : kNextChar;
 						event.shiftKey ? t._selectChars(kind) : t._moveCursor(kind);*/
 					}

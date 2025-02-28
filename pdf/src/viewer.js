@@ -950,7 +950,6 @@
 				{
 					this.pagesInfo.pages[pages[i]].needRedrawForms = true;
 					this.doc.ClearCacheForms(pages[i]);
-					break;
 				}
 			}
 
@@ -967,7 +966,6 @@
 					this.pagesInfo.pages[pages[i]].needRedrawAnnots = true;
 					this.pagesInfo.pages[pages[i]].needRedrawMarkups = true;
 					this.doc.ClearCacheAnnots(pages[i]);
-					break;
 				}
 			}
 
@@ -4542,6 +4540,9 @@
 			return;
 
 		AscCommon.AscBrowser.checkZoom();
+		if (isDisablePaint) {
+			this.disabledPaintOnScroll = true;
+		}
 
 		let oThis		= this;
 		let oEditorPage	= this.Api.WordControl;
@@ -4692,6 +4693,10 @@
 		}
 		else {
 			this.getPDFDoc().UpdatePagesTransform();
+		}
+
+		if (isDisablePaint) {
+			this.disabledPaintOnScroll = false;
 		}
 	};
 	CHtmlPage.prototype.repaintFormsOnPage = function(pageIndex)
