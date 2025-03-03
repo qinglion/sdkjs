@@ -5338,18 +5338,27 @@ function CThumbnailsManager(editorPage)
 					}
 				}
 
-				// Draw pin
+				// Draw pin if masterSlide is preserved
 				if (logicDocument.isSlidePreserved(slideIndex)) {
 					const pinOriginalWidth = AscCommon.AscBrowser.convertToRetinaValue(8, true);
 					const pinOriginalHeight = AscCommon.AscBrowser.convertToRetinaValue(10, true);
 					const pinAngle = 45;
 					const pinSizes = AscFormat.fGetOuterRectangle(pinOriginalWidth, pinOriginalHeight, pinAngle);
 
-					let nX = (textBounds.x + textBounds.r) / 2 - pinSizes.width / 2;
-					let nY = nBottomBounds + 3;
+					let pinX, pinY;
+					if (this.m_oWordControl.thumbnailsPosition === thumbnailsPositionMap.bottom) {
+						pinX = this.m_oWordControl.isRTL 
+							? textBounds.x - 3 - pinSizes.width
+							: textBounds.r + 3 + pinSizes.width / 2;
+						pinY = textBounds.b - pinSizes.height;
+					} else {
+						pinX = (textBounds.x + textBounds.r) / 2 - pinSizes.width / 2;
+						pinY = nBottomBounds + 3;
+					}
+
 					let nIconH = pinSizes.height;
-					if (nY + nIconH < page.bottom) {
-						this.DrawPin(graphics, nX, nY, textColor, pinAngle);
+					if (pinY + nIconH < page.bottom) {
+						this.DrawPin(graphics, pinX, pinY, textColor, pinAngle);
 					}
 				}
 			}
