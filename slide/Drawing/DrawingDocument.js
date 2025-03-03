@@ -6086,7 +6086,7 @@ function CThumbnailsManager(editorPage)
 				}
 			}
 
-			startOffset += supplement;
+			startOffset += supplement >> 0;
 		}
 
 		if (this.m_arrPages.length > totalSlidesCount)
