@@ -11399,8 +11399,28 @@
 
     function CTexturesCache() {
         this.map = {};
+				this.textDrawingMap = {};
     }
 
+		CTexturesCache.prototype.checkTextTexture = function (sDrawingId, fScale, oAnimParams) {
+			let bCreate = false;
+			if(!this.textDrawingMap[sDrawingId] || !this.map[sDrawingId] || !this.map[sDrawingId].checkScale(fScale)) {
+
+			}
+
+
+		};
+	CTexturesCache.prototype.createTextTexture = function (sDrawingId, fScale, oAnimParams) {
+		var oDrawing = AscCommon.g_oTableId.Get_ById(sDrawingId);
+		if (!oDrawing) {
+			return undefined;
+		}
+		var oBaseTexture = oDrawing.getAnimTexture(fScale, false, oAnimParams);
+		if(!oBaseTexture) {
+			return undefined;
+		}
+		return new CAnimTexture(this, oBaseTexture.canvas, oBaseTexture.scale, oBaseTexture.x, oBaseTexture.y);
+	};
     CTexturesCache.prototype.checkTexture = function (sId, fScale, bMorph, bCheckSize, oAnimParams) {
         let bCreate = false;
         if(!this.map[sId] || !this.map[sId].checkScale(fScale)) {
