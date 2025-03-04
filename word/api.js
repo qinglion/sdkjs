@@ -2916,7 +2916,7 @@ background-repeat: no-repeat;\
 					"format"        : this.documentFormat,
 					"c"             : "reopen",
 					"title"         : this.documentTitle,
-					"codepage"      : option.asc_getCodePage(),
+					"codepage"      : option.asc_getCodePageOrDefault(),
 					"nobase64"      : true
 				};
 				sendCommand(this, null, rData);
@@ -11412,7 +11412,7 @@ background-repeat: no-repeat;\
 			return false;
 		
 		logicDocument.StartAction(AscDFH.historydescription_DisconnectEveryone);
-		logicDocument.GetHistory().Add(new CChangesDocumentDisconnectEveryone(logicDocument));
+		logicDocument.GetHistory().Add(new AscDFH.CChangesDocumentDisconnectEveryone(logicDocument));
 		logicDocument.FinalizeAction();
 		
 		this.forceSaveDisconnectRequest = true;
@@ -11431,7 +11431,7 @@ background-repeat: no-repeat;\
 		logicDocument.StartAction(AscDFH.historydescription_OForm_CompletePreparation);
 		logicDocument.GetOFormDocument().setAllRolesNotFilled();
 		if (disconnect)
-			logicDocument.GetHistory().Add(new CChangesDocumentDisconnectEveryone(logicDocument));
+			logicDocument.GetHistory().Add(new AscDFH.CChangesDocumentDisconnectEveryone(logicDocument));
 		
 		logicDocument.FinalizeAction();
 		

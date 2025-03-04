@@ -28610,7 +28610,9 @@
 
 				pastedRangeProps.hidden = newVal.getHidden();
 
-				pastedRangeProps.locked = newVal.getLocked();
+				if (!t.ws.model.getSheetProtection()) {
+					pastedRangeProps.locked = newVal.getLocked();
+				}
 			}
 
 			var tableDxf = getTableDxf(fromRow, fromCol, newVal);

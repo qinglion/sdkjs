@@ -20507,7 +20507,43 @@
 			this.Sdt.SetCheckBoxPr(oPr);
 		}, this);
 	};
-
+	/**
+	 * Get the choice name for the current radio button.
+	 * @memberof ApiCheckBoxForm
+	 * @typeofeditors ["CDE", "CFE"]
+	 * @since 8.3.2
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiCheckBoxForm/Methods/GetChoiceName.js
+	 * */
+	ApiCheckBoxForm.prototype.GetChoiceName = function()
+	{
+		if (this.Sdt.IsRadioButton())
+			return this.Sdt.GetFormKey();
+		else
+			return "";
+	};
+	/**
+	 * Set the choice name for the current radio button.
+	 * @memberof ApiCheckBoxForm
+	 * @param {string} choiceName - Radio button choice name.
+	 * @typeofeditors ["CDE", "CFE"]
+	 * @since 8.3.2
+	 * @returns {boolean}
+	 * @see office-js-api/Examples/{Editor}/ApiCheckBoxForm/Methods/SetChoiceName.js
+	 * */
+	ApiCheckBoxForm.prototype.SetChoiceName = function(choiceName)
+	{
+		return executeNoFormLockCheck(function() {
+			let formPr = this.Sdt.GetFormPr();
+			if (!formPr || typeof (choiceName) !== "string" || "" === choiceName || !this.Sdt.IsRadioButton())
+				return false;
+			
+			formPr = formPr.Copy();
+			formPr.SetKey(choiceName);
+			this.Sdt.SetFormPr(formPr);
+			return true;
+		}, this);
+	};
 	//------------------------------------------------------------------------------------------------------------------
 	//
 	// ApiDateForm
@@ -22891,6 +22927,8 @@
 	ApiCheckBoxForm.prototype["IsRadioButton"] = ApiCheckBoxForm.prototype.IsRadioButton;
 	ApiCheckBoxForm.prototype["GetRadioGroup"] = ApiCheckBoxForm.prototype.GetRadioGroup;
 	ApiCheckBoxForm.prototype["SetRadioGroup"] = ApiCheckBoxForm.prototype.SetRadioGroup;
+	ApiCheckBoxForm.prototype["GetChoiceName"] = ApiCheckBoxForm.prototype.GetChoiceName;
+	ApiCheckBoxForm.prototype["SetChoiceName"] = ApiCheckBoxForm.prototype.SetChoiceName;
 	ApiCheckBoxForm.prototype["Copy"]          = ApiCheckBoxForm.prototype.Copy;
 
 	ApiComment.prototype["GetClassType"]	= ApiComment.prototype.GetClassType;
