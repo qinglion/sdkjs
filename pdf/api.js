@@ -342,16 +342,18 @@
 			if (oActiveObj && oActiveObj.IsDrawing()) {
 				oDoc.BlurActiveObject();
 			}
-
-			oDoc.drawings.forEach(function(drawing) {
-				drawing.AddToRedraw();
-			});
 		}
 		else {
 			setTimeout(function() {
 				oDoc.checkDefaultFonts();
 			});
 		}
+
+		oDoc.drawings.forEach(function(drawing) {
+			if (drawing.IsShape() && drawing.IsFromScan()) {
+				drawing.AddToRedraw();
+			}
+		});
 	};
 	PDFEditorApi.prototype.sync_CanUndoCallback = function(canUndo) {
 		this.sendEvent("asc_onCanUndo", canUndo);
