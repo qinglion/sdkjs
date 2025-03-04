@@ -6146,7 +6146,7 @@ StyleManager.prototype =
 	};
 	Hyperlink.prototype.getProperty = function (nType) {
 		switch (nType) {
-			case this.Properties.Ref: return parserHelp.get3DRef(this.Ref.worksheet.getName(), this.Ref.getName());
+			case this.Properties.Ref: return this.Ref && parserHelp.get3DRef(this.Ref.worksheet.getName(), this.Ref.getName()) || null;
 			case this.Properties.Location: return this.getLocation();
 			case this.Properties.Hyperlink: return this.Hyperlink;
 			case this.Properties.Tooltip: return this.Tooltip;
