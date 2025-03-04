@@ -1113,7 +1113,7 @@ Paragraph.prototype.private_RecalculateLineWidow       = function(CurLine, CurPa
     return true;
 };
 
-Paragraph.prototype.private_RecalculateLineFillRanges  = function(CurLine, CurPage, PRS, ParaPr)
+Paragraph.prototype.private_RecalculateLineFillRanges  = function(CurLine, CurPage, PRS, paraPr)
 {
     this.Lines[CurLine].Info = 0;
 
@@ -1158,14 +1158,38 @@ Paragraph.prototype.private_RecalculateLineFillRanges  = function(CurLine, CurPa
     }
 
     PRS.UseFirstLine = UseFirstLine;
+	
+	// Заполняем строку отрезками обтекания. Выставляем начальные сдвиги для отрезков. Начало промежутка = конец вырезаемого промежутка
+	this.Lines[CurLine].Reset();
+	if (paraPr.Bidi)
+	{
+		let xStart = PRS.XStart;
+		
+		let x0 = RangesCount > 0 ? Ranges[Ranges.length - 1].X1 : xStart;
+		let x1 = (UseFirstLine ? PRS.XLimit - paraPr.Ind.Left - paraPr.Ind.FirstLine : PRS.XLimit - paraPr.Ind.Left);
+		this.Lines[CurLine].addRange(x0, x1);
+		for (let rangeIndex = Ranges.length - 1; rangeIndex >= 0; --rangeIndex)
+		{
+			x0 = rangeIndex > 0 ? Ranges[rangeIndex - 1].X1 : xStart;
+			x1 = Ranges[rangeIndex].X0;
+			this.Lines[CurLine].addRange(x0, x1);
+		}
 
-    // Заполняем строку отрезками обтекания. Выставляем начальные сдвиги для отрезков. Начало промежутка = конец вырезаемого промежутка
-    this.Lines[CurLine].Reset();
-    this.Lines[CurLine].Add_Range( ( true === UseFirstLine ? PRS.XStart + ParaPr.Ind.Left + ParaPr.Ind.FirstLine : PRS.XStart + ParaPr.Ind.Left ), (RangesCount == 0 ? PRS.XLimit : Ranges[0].X0) );
-    for ( var Index = 1; Index < Ranges.length + 1; Index++ )
-    {
-        this.Lines[CurLine].Add_Range( Ranges[Index - 1].X1, (RangesCount == Index ? PRS.XLimit : Ranges[Index].X0) );
-    }
+	}
+	else
+	{
+		let xLimit = PRS.XLimit;
+		
+		let x0 = (UseFirstLine ? PRS.XStart + paraPr.Ind.Left + paraPr.Ind.FirstLine : PRS.XStart + paraPr.Ind.Left);
+		let x1 = RangesCount > 0 ? Ranges[0].X0 : xLimit;
+		this.Lines[CurLine].addRange(x0, x1);
+		for (let rangeIndex = 1, rangeCount = Ranges.length; rangeIndex <= rangeCount; ++rangeIndex)
+		{
+			x0 = Ranges[rangeIndex - 1].X1
+			x1 = rangeIndex === RangesCount ? xLimit : Ranges[rangeIndex].X0;
+			this.Lines[CurLine].addRange(x0, x1);
+		}
+	}
 
     if (true === PRS.RangeY)
     {
@@ -2186,7 +2210,7 @@ Paragraph.prototype.private_RecalculateRange           = function(CurRange, CurL
     }
 
     var X    = Range.X;
-    var XEnd = ( CurRange == RangesCount ? PRS.XLimit : PRS.Ranges[CurRange].X0 );
+    var XEnd = Range.XEnd;
 
     // Обновляем состояние пересчета
     PRS.Reset_Range(X, XEnd);
@@ -2753,14 +2777,8 @@ function CParaLine()
                        // 4 бит : строка переносится по Y по обтекаемому объекту
 	this.CF      = [];
 }
-
 CParaLine.prototype =
 {
-    Add_Range : function(X, XEnd)
-    {
-        this.Ranges.push(new CParaLineRange(X, XEnd));
-    },
-
     Shift : function(Dx, Dy)
     {
         // По Y мы ничего не переносим, т.к. все значени по Y у строки относительно начала страницы данного параграфа
@@ -2830,6 +2848,10 @@ CParaLine.prototype =
         this.Ranges   = [];
         this.Info     = 0;
     }
+};
+CParaLine.prototype.addRange = function(x, xEnd)
+{
+	this.Ranges.push(new AscWord.CParaLineRange(x, xEnd));
 };
 
 function CParaLineMetrics()
@@ -3057,6 +3079,7 @@ CParaLineRange.prototype.IsZeroRange = function()
 {
 	return ((this.XEnd - this.X) < 0.001);
 };
+AscWord.CParaLineRange = CParaLineRange;
 
 function CParaPage(X, Y, XLimit, YLimit, FirstLine)
 {
