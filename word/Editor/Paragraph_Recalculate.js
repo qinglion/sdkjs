@@ -610,7 +610,7 @@ Paragraph.prototype.private_RecalculateFastRange       = function(PRS, CurRange,
     let nEndPos   = Range.EndPos;
 
     // Обновляем состояние пересчета
-	PRS.Reset_Range(Range.X, Range.XEnd);
+	PRS.resetRange(Range);
 
 	let arrSavedLines = [];
 	for (let nPos = nStartPos; nPos <= nEndPos; ++nPos)
@@ -2181,7 +2181,7 @@ Paragraph.prototype.private_RecalculateLineCheckEndnotes = function(CurLine, Cur
         oTopDocument.GetEndnotesController().RegisterEndnotes(PRS.PageAbs, arrEndnotes);
 };
 
-Paragraph.prototype.private_RecalculateRange           = function(CurRange, CurLine, CurPage, RangesCount, PRS, ParaPr)
+Paragraph.prototype.private_RecalculateRange           = function(CurRange, CurLine, CurPage, RangesCount, PRS, paraPr)
 {
     // Найдем начальную позицию данного отрезка
     var StartPos = 0;
@@ -2194,26 +2194,29 @@ Paragraph.prototype.private_RecalculateRange           = function(CurRange, CurL
 
     var Line = this.Lines[CurLine];
     var Range = Line.Ranges[CurRange];
-
-    this.Lines[CurLine].Set_RangeStartPos( CurRange, StartPos );
-
-    if ( true === PRS.UseFirstLine && 0 !== CurRange && true === PRS.EmptyLine )
-    {
-        if ( ParaPr.Ind.FirstLine < 0 )
-        {
-            Range.X += ParaPr.Ind.Left + ParaPr.Ind.FirstLine;
-        }
-        else
-        {
-            Range.X += ParaPr.Ind.FirstLine;
-        }
-    }
-
-    var X    = Range.X;
-    var XEnd = Range.XEnd;
-
-    // Обновляем состояние пересчета
-    PRS.Reset_Range(X, XEnd);
+	
+	this.Lines[CurLine].setRangeStartPos(CurRange, StartPos);
+	
+	// Correct first line indentation if previous ranges were empty
+	if (PRS.UseFirstLine && 0 !== CurRange && PRS.EmptyLine)
+	{
+		if (paraPr.Bidi)
+		{
+			if (paraPr.Ind.FirstLine < 0)
+				Range.XEnd -= paraPr.Ind.Left + paraPr.Ind.FirstLine;
+			else
+				Range.XEnd -= paraPr.Ind.FirstLine;
+		}
+		else
+		{
+			if (paraPr.Ind.FirstLine < 0)
+				Range.X += paraPr.Ind.Left + paraPr.Ind.FirstLine;
+			else
+				Range.X += paraPr.Ind.FirstLine;
+		}
+	}
+	
+	PRS.resetRange(Range);
 
     var ContentLen = this.Content.length;
 
@@ -2242,7 +2245,7 @@ Paragraph.prototype.private_RecalculateRange           = function(CurRange, CurL
         }
 
         PRS.Update_CurPos( Pos, 0 );
-        Item.Recalculate_Range( PRS, ParaPr, 1 );
+        Item.Recalculate_Range( PRS, paraPr, 1 );
 
         if ( true === PRS.NewRange )
         {
@@ -2265,7 +2268,7 @@ Paragraph.prototype.private_RecalculateRange           = function(CurRange, CurL
             this.private_RecalculateRangeEndPos( PRS, PRS.LineBreakPos, 0 );
         }
         else
-            this.Lines[CurLine].Set_RangeEndPos( CurRange, Pos );
+			this.Lines[CurLine].setRangeEndPos(CurRange, Pos);
     }
 };
 
@@ -2276,7 +2279,7 @@ Paragraph.prototype.private_RecalculateRangeEndPos     = function(PRS, PRP, Dept
     var CurPos   = PRP.Get(Depth);
 
     this.Content[CurPos].Recalculate_Set_RangeEndPos(PRS, PRP, Depth + 1);
-    this.Lines[CurLine].Set_RangeEndPos( CurRange, CurPos );
+	this.Lines[CurLine].setRangeEndPos(CurRange, CurPos);
 };
 
 Paragraph.prototype.private_RecalculateGetTabPos = function(PRS, X, ParaPr, CurPage, NumTab)
@@ -2804,16 +2807,6 @@ CParaLine.prototype =
         return this.Ranges[this.Ranges.length - 1].EndPos;
     },
 
-    Set_RangeStartPos : function(CurRange, StartPos)
-    {
-        this.Ranges[CurRange].StartPos = StartPos;
-    },
-
-    Set_RangeEndPos : function(CurRange, EndPos)
-    {
-        this.Ranges[CurRange].EndPos = EndPos;
-    },
-
     Copy : function()
     {
         var NewLine = new CParaLine();
@@ -2852,6 +2845,14 @@ CParaLine.prototype =
 CParaLine.prototype.addRange = function(x, xEnd)
 {
 	this.Ranges.push(new AscWord.CParaLineRange(x, xEnd));
+};
+CParaLine.prototype.setRangeStartPos = function(rangeIndex, startPos)
+{
+	this.Ranges[rangeIndex].StartPos = startPos;
+};
+CParaLine.prototype.setRangeEndPos = function(rangeIndex, endPos)
+{
+	this.Ranges[rangeIndex].EndPos = endPos;
 };
 
 function CParaLineMetrics()
@@ -3483,7 +3484,7 @@ CParagraphRecalculateStateWrap.prototype.Reset_Line = function()
 	if (this.Line >= 0)
 		this.LineY[this.Line] = this.Y;
 };
-CParagraphRecalculateStateWrap.prototype.Reset_Range = function(X, XEnd)
+CParagraphRecalculateStateWrap.prototype.resetRange = function(range)
 {
 	this.LastTab.Reset();
 	
@@ -3495,9 +3496,9 @@ CParagraphRecalculateStateWrap.prototype.Reset_Range = function(X, XEnd)
 	this.FirstItemOnLine = true;
 	this.StartWord       = false;
 	this.NewRange        = false;
-	this.X               = X;
-	this.XEnd            = XEnd;
-	this.XRange          = X;
+	this.X               = range.X;
+	this.XEnd            = range.XEnd;
+	this.XRange          = range.X;
 	this.RangeSpaces     = [];
 	
 	this.MoveToLBP      = false;
