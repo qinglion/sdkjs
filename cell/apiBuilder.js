@@ -46,7 +46,7 @@
 	 * @global
 	 * @class
 	 * @name Api
-	 * @property {Array} Sheets - Returns the Sheets collection that represents all the sheets in the active workbook.
+	 * @property {ApiWorksheet[]} Sheets - Returns the Sheets collection that represents all the sheets in the active workbook.
 	 * @property {ApiWorksheet} ActiveSheet - Returns an object that represents the active sheet.
 	 * @property {ApiRange} Selection - Returns an object that represents the selected range.
 	 * @property {ApiComment[]} Comments - Returns all comments related to the whole workbook.
@@ -85,8 +85,8 @@
 	 * @property {PageOrientation} PageOrientation - Returns or sets the page orientation.
 	 * @property {boolean} PrintHeadings - Returns or sets the page PrintHeadings property.
 	 * @property {boolean} PrintGridlines - Returns or sets the page PrintGridlines property.
-	 * @property {Array} Defnames - Returns an array of the ApiName objects.
-	 * @property {Array} Comments - Returns all comments from the current worksheet.
+	 * @property {ApiName[]} Defnames - Returns an array of the ApiName objects.
+	 * @property {ApiComment[]} Comments - Returns all comments from the current worksheet.
 	 * @property {ApiFreezePanes} FreezePanes - Returns the freeze panes for the current worksheet.
 	 * @property {ApiProtectedRange[]} AllProtectedRanges - Returns all protected ranges from the current worksheet.
 	 * @property {ApiPivotTable[]} PivotTables - Returns all pivot tables from the current worksheet.
@@ -6998,7 +6998,7 @@
 	 * Returns a value or reference of the cell at the intersection of a particular row and column, in a given range.
 	 * @memberof ApiWorksheetFunction
 	 * @typeofeditors ["CSE"]
-	 * @param {ApiRange | ApiName | array} arg1 - A range of cells or an array constant.
+	 * @param {ApiRange | ApiName | number[]} arg1 - A range of cells or an array constant.
 	 * @param {ApiRange | ApiName | number} arg2 - The row in the range from which to return a value. If omitted, the column number is required.
 	 * @param {ApiRange | ApiName | number} [arg3] - The column in the range from which to return a value. If omitted, the row number is required.
 	 * @param {ApiRange | ApiName | number} [arg4] - An area to use in case the range contains several ranges. If it is omitted, the function will assume argument to be 1.
@@ -7035,7 +7035,7 @@
 	 * @memberof ApiWorksheetFunction
 	 * @typeofeditors ["CSE"]
 	 * @param {number | string | boolean | ApiRange | ApiName} arg1 - The value to be matched in the range. It can be a number, text, or logical value, or a reference to one of these.
-	 * @param {ApiRange | ApiName | array} arg2 - A contiguous range of cells or an array containing possible lookup values.
+	 * @param {ApiRange | ApiName | Array<number | string | boolean>} arg2 - A contiguous range of cells or an array containing possible lookup values.
 	 * @param {ApiRange | ApiName | number} [arg3] - A number 1, 0, or -1 indicating which value to return.
 	 * @returns {number}
 	 * @see office-js-api/Examples/{Editor}/ApiWorksheetFunction/Methods/MATCH.js
@@ -7047,7 +7047,7 @@
 	 * Returns the number of rows in a range.
 	 * @memberof ApiWorksheetFunction
 	 * @typeofeditors ["CSE"]
-	 * @param {ApiRange | ApiName | array} arg1 - A range of cells or an array for which the number of rows will be returned.
+	 * @param {ApiRange | ApiName | Array<number | string | boolean>} arg1 - A range of cells or an array for which the number of rows will be returned.
 	 * @returns {number}
 	 * @see office-js-api/Examples/{Editor}/ApiWorksheetFunction/Methods/ROWS.js
 	 */
@@ -7058,7 +7058,7 @@
 	 * Converts a vertical range of cells to a horizontal range, or vice versa.
 	 * @memberof ApiWorksheetFunction
 	 * @typeofeditors ["CSE"]
-	 * @param {ApiRange | ApiName | array} arg1 - A range of cells on a worksheet or an array that will be transposed.
+	 * @param {ApiRange | ApiName | Array<number | string | boolean>} arg1 - A range of cells on a worksheet or an array that will be transposed.
 	 * @returns {ApiRange}
 	 * @see office-js-api/Examples/{Editor}/ApiWorksheetFunction/Methods/TRANSPOSE.js
 	 */
@@ -7383,7 +7383,7 @@
 	 * Returns the logical <b>Exclusive Or</b> value of all arguments. The function returns <b>true</b> when the number of <b>true</b> inputs is odd and <b>false</b> when the number of <b>true</b> inputs is even.
 	 * @memberof ApiWorksheetFunction
 	 * @typeofeditors ["CSE"]
-	 * @param {ApiRange | ApiName | boolean | array} args - The conditions to check.
+	 * @param {ApiRange | ApiName | boolean | boolean[]} args - The conditions to check.
 	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiWorksheetFunction/Methods/XOR.js
 	 */
