@@ -94,9 +94,7 @@ $(function () {
 		}
 	}
 	
-	QUnit.module("Test paragraph wrap");
-	
-	QUnit.module("Test various situations with table header", {
+	QUnit.module("Test paragraph wrap", {
 		beforeEach : function()
 		{
 			initDocument();
@@ -106,20 +104,37 @@ $(function () {
 	
 	QUnit.test("Test simple wrap", function(assert)
 	{
+		let imageX0 = 45 * charWidth;
+		let imageX1 = imageX0 + 30 * charWidth;
+		let imageY0 = 40;
+		let imageY1 = imageY0 + 50;
+		
 		let p1 = logicDocument.GetElement(0);
 		
 		let p2 = AscTest.CreateParagraph();
 		
 		logicDocument.AddToContent(0, p2);
 		
-		addFlowImageToParagraph(p2, 50, 50, 45 * charWidth, 40);
+		addFlowImageToParagraph(p2, imageX1 - imageX0, imageY1 - imageY0, imageX0, imageY0);
 		
 		AscTest.AddTextToParagraph(p1, "VeryLongWord The quick brown fox jumps over the lazy dog");
-		
 		AscTest.Recalculate();
 		
 		checkText(assert, p1, [
 			["VeryLongWord The quick ", "brown fox jumps over the lazy dog\r\n"]
+		]);
+		checkRangeBounds(assert, p1, [
+			[[L_FIELD, imageX0], [imageX1, PAGE_W - R_FIELD]]
+		]);
+		
+		// Check ranges order for RTL paragraph
+		p1.SetParagraphBidi(true);
+		AscTest.Recalculate();
+		checkText(assert, p1, [
+			["VeryLongWord The quick brown fox jumps over ", "the lazy dog\r\n"]
+		]);
+		checkRangeBounds(assert, p1, [
+			[[imageX1, PAGE_W - R_FIELD], [L_FIELD, imageX0]]
 		]);
 	});
 	
@@ -151,7 +166,7 @@ $(function () {
 			AscTest.Recalculate();
 			return p1;
 		}
-
+		
 		function test(textLines, ranges)
 		{
 			let p = initParagraphWithImage();
@@ -169,7 +184,7 @@ $(function () {
 		]);
 		
 		AscTest.SetCompatibilityMode(AscCommon.document_compatibility_mode_Word14);
-
+		
 		text = "VeryLongWord The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog.";
 		
 		firstLine = 5 * charWidth;
@@ -255,7 +270,7 @@ $(function () {
 		], [
 			[[L_FIELD + firstLine + leftInd, imageX0], [imageX1 + leftInd + firstLine, PAGE_W - R_FIELD]]
 		]);
-
+		
 		// Check the indentation when the first range is empty
 		AscTest.SetCompatibilityMode(AscCommon.document_compatibility_mode_Word15);
 		
