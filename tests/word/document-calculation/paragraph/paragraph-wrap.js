@@ -39,8 +39,8 @@ $(function () {
 	const charWidth = AscTest.CharWidth * AscTest.FontSize;
 	
 	const L_FIELD = 20 * charWidth;
-	const R_FIELD = 20 * charWidth;
-	const PAGE_W  = 100 * charWidth;
+	const R_FIELD = 30 * charWidth;
+	const PAGE_W  = 150 * charWidth;
 
 	
 	function addFlowImageToParagraph(p, w, h, x, y)
@@ -96,10 +96,16 @@ $(function () {
 	
 	QUnit.module("Test paragraph wrap");
 	
+	QUnit.module("Test various situations with table header", {
+		beforeEach : function()
+		{
+			initDocument();
+			AscTest.SetCompatibilityMode(AscCommon.document_compatibility_mode_Current);
+		}
+	});
+	
 	QUnit.test("Test simple wrap", function(assert)
 	{
-		initDocument();
-		
 		let p1 = logicDocument.GetElement(0);
 		
 		let p2 = AscTest.CreateParagraph();
@@ -113,14 +119,23 @@ $(function () {
 		AscTest.Recalculate();
 		
 		checkText(assert, p1, [
-			["VeryLongWord The quick ", "brown fox jumps over the "],
-			["lazy dog\r\n", ""],
+			["VeryLongWord The quick ", "brown fox jumps over the lazy dog\r\n"]
 		]);
 	});
 	
 	QUnit.test("Test the first line indent", function(assert)
 	{
-		function initParagraphWithImage(text, x, y)
+		let imageX0   = 45 * charWidth;
+		let imageX1   = imageX0 + 10 * charWidth;
+		let imageY0   = 40;
+		let imageY1   = 90;
+		let firstLine = 5 * charWidth;
+		let leftInd   = 5 * charWidth;
+		let rightInd  = 0;
+		
+		let text = "VeryLongWord The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog.";
+		
+		function initParagraphWithImage()
 		{
 			initDocument();
 			
@@ -128,25 +143,164 @@ $(function () {
 			let p2 = AscTest.CreateParagraph();
 			logicDocument.AddToContent(0, p2);
 			
-			addFlowImageToParagraph(p2, 50, 50, x, y);
+			addFlowImageToParagraph(p2, imageX1 - imageX0, imageY1 - imageY0, imageX0, imageY0);
 			
-			p1.SetParagraphIndent({FirstLine : 5 * charWidth, Left : 5 * charWidth});
+			p1.SetParagraphIndent({FirstLine : firstLine, Left : leftInd, Right : rightInd});
+			p1.SetParagraphSpacing({Line : 1, LineRule : Asc.linerule_Auto, Before : 0, After : 0});
 			AscTest.AddTextToParagraph(p1, text);
 			AscTest.Recalculate();
 			return p1;
 		}
+
+		function test(textLines, ranges)
+		{
+			let p = initParagraphWithImage();
+			checkText(assert, p, textLines);
+			checkRangeBounds(assert, p, ranges);
+		}
 		
-		let imageX0 = 45 * charWidth;
-		let imageX1 = imageX0 + 50;
-		let p = initParagraphWithImage("VeryLongWord The quick brown fox jumps over the lazy dog", imageX0, 40);
+		// Simple situation
+		test([
+			["VeryLongWord ", "The quick brown fox jumps over the lazy dog. The quick brown fox "],
+			["jumps over the lazy ", "dog.\r\n"],
+		], [
+			[[L_FIELD + firstLine + leftInd, imageX0], [imageX1, PAGE_W - R_FIELD]],
+			[[L_FIELD + leftInd, imageX0], [imageX1, PAGE_W - R_FIELD]]
+		]);
 		
-		checkText(assert, p, [
-			["VeryLongWord ", "The quick brown fox jumps "],
-			["over the lazy dog\r\n", ""],
+		AscTest.SetCompatibilityMode(AscCommon.document_compatibility_mode_Word14);
+
+		text = "VeryLongWord The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog.";
+		
+		firstLine = 5 * charWidth;
+		leftInd   = 15 * charWidth;
+		test([
+			["", "VeryLongWord The quick brown fox jumps over the lazy dog. "],
+			["The quick ", "brown fox jumps over the lazy dog. The quick brown fox jumps over "],
+			["the lazy dog.\r\n"],
+		], [
+			[[L_FIELD + firstLine + leftInd, imageX0], [imageX1 + firstLine, PAGE_W - R_FIELD]],
+			[[L_FIELD + leftInd, imageX0], [imageX1, PAGE_W - R_FIELD]],
+			[[L_FIELD + leftInd, PAGE_W - R_FIELD]]
 		]);
-		checkRangeBounds(assert, p, [
-			[[L_FIELD + 10 * charWidth, imageX0], [imageX1, PAGE_W - R_FIELD]],
-			[[L_FIELD + 5 * charWidth, imageX0], [imageX1, PAGE_W - R_FIELD]]
+		
+		firstLine = 15 * charWidth;
+		leftInd   = 0;
+		test([
+			["", "VeryLongWord The quick brown fox jumps over the "],
+			["lazy dog. The quick brown ", "fox jumps over the lazy dog. The quick brown fox jumps over the "],
+			["lazy dog.\r\n"],
+		], [
+			[[L_FIELD + firstLine + leftInd, imageX0], [imageX1 + firstLine, PAGE_W - R_FIELD]],
+			[[L_FIELD + leftInd, imageX0], [imageX1, PAGE_W - R_FIELD]],
+			[[L_FIELD + leftInd, PAGE_W - R_FIELD]]
 		]);
+		
+		
+		AscTest.SetCompatibilityMode(AscCommon.document_compatibility_mode_Word15);
+		
+		firstLine = 5 * charWidth;
+		leftInd   = 15 * charWidth;
+		test([
+			["", "VeryLongWord The quick brown fox jumps over the lazy dog. "],
+			["The quick ", "brown fox jumps over the lazy dog. The quick brown fox jumps over "],
+			["the lazy dog.\r\n"],
+		], [
+			[[L_FIELD + firstLine + leftInd, imageX0], [imageX1 + firstLine, PAGE_W - R_FIELD]],
+			[[L_FIELD + leftInd, imageX0], [imageX1, PAGE_W - R_FIELD]],
+			[[L_FIELD + leftInd, PAGE_W - R_FIELD]]
+		]);
+		
+		
+		// Check the indentation when the first range is empty
+		AscTest.SetCompatibilityMode(AscCommon.document_compatibility_mode_Word14);
+		
+		firstLine = 0;
+		leftInd   = 0;
+		text      = "VeryLongLongLongLongLongLongLongWord"
+		test([
+			["", "VeryLongLongLongLongLongLongLongWord\r\n"],
+		], [
+			[[L_FIELD + firstLine + leftInd, imageX0], [imageX1 + firstLine, PAGE_W - R_FIELD]]
+		]);
+		
+		firstLine = 10 * charWidth;
+		leftInd   = 0;
+		test([
+			["", "VeryLongLongLongLongLongLongLongWord\r\n"],
+		], [
+			[[L_FIELD + firstLine + leftInd, imageX0], [imageX1 + firstLine, PAGE_W - R_FIELD]]
+		]);
+		
+		firstLine = 10 * charWidth;
+		leftInd   = 10 * charWidth;
+		test([
+			["", "VeryLongLongLongLongLongLongLongWord\r\n"],
+		], [
+			[[L_FIELD + firstLine + leftInd, imageX0], [imageX1 + firstLine, PAGE_W - R_FIELD]]
+		]);
+		
+		firstLine = -5 * charWidth;
+		leftInd   = 10 * charWidth;
+		test([
+			["", "VeryLongLongLongLongLongLongLongWord\r\n"],
+		], [
+			[[L_FIELD + firstLine + leftInd, imageX0], [imageX1 + leftInd + firstLine, PAGE_W - R_FIELD]]
+		]);
+		
+		firstLine = -15 * charWidth;
+		leftInd   = 10 * charWidth;
+		test([
+			["", "VeryLongLongLongLongLongLongLongWord\r\n"],
+		], [
+			[[L_FIELD + firstLine + leftInd, imageX0], [imageX1 + leftInd + firstLine, PAGE_W - R_FIELD]]
+		]);
+
+		// Check the indentation when the first range is empty
+		AscTest.SetCompatibilityMode(AscCommon.document_compatibility_mode_Word15);
+		
+		firstLine = 0;
+		leftInd   = 0;
+		text      = "VeryLongLongLongLongLongLongLongWord"
+		test([
+			["", "VeryLongLongLongLongLongLongLongWord\r\n"],
+		], [
+			[[L_FIELD + firstLine + leftInd, imageX0], [imageX1 + Math.max(0, firstLine), PAGE_W - R_FIELD]]
+		]);
+		
+		firstLine = 10 * charWidth;
+		leftInd   = 0;
+		test([
+			["", "VeryLongLongLongLongLongLongLongWord\r\n"],
+		], [
+			[[L_FIELD + firstLine + leftInd, imageX0], [imageX1 + Math.max(0, firstLine), PAGE_W - R_FIELD]]
+		]);
+		
+		firstLine = 10 * charWidth;
+		leftInd   = 10 * charWidth;
+		test([
+			["", "VeryLongLongLongLongLongLongLongWord\r\n"],
+		], [
+			[[L_FIELD + firstLine + leftInd, imageX0], [imageX1 + Math.max(0, firstLine), PAGE_W - R_FIELD]]
+		]);
+		
+		firstLine = -5 * charWidth;
+		leftInd   = 10 * charWidth;
+		test([
+			["", "VeryLongLongLongLongLongLongLongWord\r\n"],
+		], [
+			[[L_FIELD + firstLine + leftInd, imageX0], [imageX1 + Math.max(0, firstLine), PAGE_W - R_FIELD]]
+		]);
+		
+		firstLine = -15 * charWidth;
+		leftInd   = 10 * charWidth;
+		test([
+			["", "VeryLongLongLongLongLongLongLongWord\r\n"],
+		], [
+			[[L_FIELD + firstLine + leftInd, imageX0], [imageX1 + Math.max(0, firstLine), PAGE_W - R_FIELD]]
+		]);
+		
+		AscTest.SetCompatibilityMode(AscCommon.document_compatibility_mode_Current);
+		
 	});
 });
