@@ -174,6 +174,8 @@ $(function () {
 			checkRangeBounds(assert, p, ranges);
 		}
 		
+		AscTest.SetCompatibilityMode(AscCommon.document_compatibility_mode_Word15);
+		
 		// Simple situation
 		test([
 			["VeryLongWord ", "The quick brown fox jumps over the lazy dog. The quick brown fox "],

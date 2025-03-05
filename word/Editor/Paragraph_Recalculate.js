@@ -2200,20 +2200,16 @@ Paragraph.prototype.private_RecalculateRange           = function(CurRange, CurL
 	// Correct first line indentation if previous ranges were empty
 	if (PRS.UseFirstLine && 0 !== CurRange && PRS.EmptyLine)
 	{
-		if (paraPr.Bidi)
-		{
-			if (paraPr.Ind.FirstLine < 0)
-				Range.XEnd -= paraPr.Ind.Left + paraPr.Ind.FirstLine;
-			else
-				Range.XEnd -= paraPr.Ind.FirstLine;
-		}
+		let shift = 0;
+		if (PRS.getCompatibilityMode() >= AscCommon.document_compatibility_mode_Word15)
+			shift = Math.max(paraPr.Ind.FirstLine, 0);
 		else
-		{
-			if (paraPr.Ind.FirstLine < 0)
-				Range.X += paraPr.Ind.Left + paraPr.Ind.FirstLine;
-			else
-				Range.X += paraPr.Ind.FirstLine;
-		}
+			shift = paraPr.Ind.FirstLine < 0.001 ? paraPr.Ind.Left + paraPr.Ind.FirstLine : paraPr.Ind.FirstLine;
+			
+		if (paraPr.Bidi)
+			Range.XEnd -= shift;
+		else
+			Range.X += shift;
 	}
 	
 	PRS.resetRange(Range);
