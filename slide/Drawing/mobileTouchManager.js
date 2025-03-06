@@ -1130,7 +1130,7 @@
 	};
 	CMobileDelegateThumbnails.prototype.GetScrollerSize = function()
 	{
-		const isHorizontalThumbnails = this.Thumbnails.m_oWordControl.thumbnailsPosition === AscCommonSlide.thumbnailsPositionMap.bottom;
+		const isHorizontalThumbnails = Asc.editor.thumbnailsPosition === AscCommonSlide.thumbnailsPositionMap.bottom;
 		return isHorizontalThumbnails
 			? { H : 1, W : AscCommon.AscBrowser.convertToRetinaValue(this.Thumbnails.ScrollerWidth) }
 			: { W : 1, H : AscCommon.AscBrowser.convertToRetinaValue(this.Thumbnails.ScrollerHeight) };
@@ -1138,7 +1138,7 @@
 	CMobileDelegateThumbnails.prototype.ScrollTo = function(_scroll)
 	{
 		if (this.HtmlPage.m_oScrollThumbApi) {
-			const isHorizontalThumbnails = this.Thumbnails.m_oWordControl.thumbnailsPosition === AscCommonSlide.thumbnailsPositionMap.bottom;
+			const isHorizontalThumbnails = Asc.editor.thumbnailsPosition === AscCommonSlide.thumbnailsPositionMap.bottom;
 			isHorizontalThumbnails
 				? this.HtmlPage.m_oScrollThumbApi.scrollToX(-_scroll.x * AscCommon.AscBrowser.retinaPixelRatio)
 				: this.HtmlPage.m_oScrollThumbApi.scrollToY(-_scroll.y * AscCommon.AscBrowser.retinaPixelRatio);

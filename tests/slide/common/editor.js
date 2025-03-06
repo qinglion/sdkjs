@@ -94,7 +94,8 @@
 	editor.WordControl.m_oApi = editor;
 
 	editor.textArtPreviewManager = drawingDocument;
-
+	editor.thumbnailsPosition = AscCommonSlide.thumbnailsPositionMap.left
+	editor.thumbnailsRTL = false;
 	editor.asc_hideComments = function () {};
 	editor.isSlideShow = function () {return false};
 	editor.sync_HideComment = function () {};

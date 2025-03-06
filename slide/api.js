@@ -689,6 +689,20 @@
 		this.disableReporterEvents = false;
 		this.TableStylesPreviewGenerator = null;
 
+		this.thumbnailsPosition = AscCommonSlide.thumbnailsPositionMap.bottom;
+		this.thumbnailsRTL = false;
+
+		if(config["thumbnails-position"] === "bottom") {
+			this.thumbnailsPosition = AscCommonSlide.thumbnailsPositionMap.bottom;
+		}
+		else if(config["thumbnails-position"] === "right") {
+			this.thumbnailsPosition = AscCommonSlide.thumbnailsPositionMap.right;
+		}
+
+
+		if(config['thumbnails-rtl'] === true) {
+			this.thumbnailsRTL = true;
+		}
 		if (this.isReporterMode)
 		{
 			var _windowOnResize = function() {
