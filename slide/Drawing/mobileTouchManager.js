@@ -76,24 +76,28 @@
 	};
 	CMobileDelegateEditorPresentation.prototype.GetZoomFit = function()
 	{
-		var HtmlPage = this.HtmlPage;
-		var w = HtmlPage.m_oEditor.HtmlElement.width;
+		let HtmlPage = this.HtmlPage;
+		let w = HtmlPage.m_oEditor.HtmlElement.width;
 		w /= AscCommon.AscBrowser.retinaPixelRatio;
 
-		var h = (((HtmlPage.m_oBody.AbsolutePosition.B - HtmlPage.m_oBody.AbsolutePosition.T) -
+		let h = (((HtmlPage.m_oBody.AbsolutePosition.B - HtmlPage.m_oBody.AbsolutePosition.T) -
 			(HtmlPage.m_oTopRuler.AbsolutePosition.B - HtmlPage.m_oTopRuler.AbsolutePosition.T)) * g_dKoef_mm_to_pix) >> 0;
 
-		var _pageWidth  = this.LogicDocument.GetWidthMM() * g_dKoef_mm_to_pix;
-		var _pageHeight = this.LogicDocument.GetHeightMM() * g_dKoef_mm_to_pix;
+		if(Asc.editor.thumbnailsPosition === AscCommonSlide.thumbnailsPositionMap.bottom) {
+			h -= (HtmlPage.m_oThumbnails.AbsolutePosition.B - HtmlPage.m_oThumbnails.AbsolutePosition.T)
+		}
 
-		var _hor_Zoom = 100;
+		let _pageWidth  = this.LogicDocument.GetWidthMM() * g_dKoef_mm_to_pix;
+		let _pageHeight = this.LogicDocument.GetHeightMM() * g_dKoef_mm_to_pix;
+
+		let _hor_Zoom = 100;
 		if (0 != _pageWidth)
 			_hor_Zoom = (100 * (w - 2 * HtmlPage.SlideDrawer.CONST_BORDER)) / _pageWidth;
-		var _ver_Zoom = 100;
+		let _ver_Zoom = 100;
 		if (0 != _pageHeight)
 			_ver_Zoom = (100 * (h - 2 * HtmlPage.SlideDrawer.CONST_BORDER)) / _pageHeight;
 
-		var _new_value = (Math.min(_hor_Zoom, _ver_Zoom) - 0.5) >> 0;
+		let _new_value = (Math.min(_hor_Zoom, _ver_Zoom) - 0.5) >> 0;
 
 		if (_new_value < 5)
 			_new_value = 5;

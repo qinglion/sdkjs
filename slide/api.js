@@ -689,7 +689,7 @@
 		this.disableReporterEvents = false;
 		this.TableStylesPreviewGenerator = null;
 
-		this.thumbnailsPosition = AscCommonSlide.thumbnailsPositionMap.bottom;
+		this.thumbnailsPosition = AscCommonSlide.thumbnailsPositionMap.left;
 		this.thumbnailsRTL = false;
 
 		if(config["thumbnails-position"] === "bottom") {
