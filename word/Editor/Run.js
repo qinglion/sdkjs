@@ -9632,27 +9632,26 @@ function CParaRunLine()
     this.Ranges[0]    = new CParaRunRange( 0, 0 );
     this.RangesLength = 0;
 }
+CParaRunLine.prototype.addRange = function(RangeIndex, StartPos, EndPos)
+{
+	if (0 !== RangeIndex)
+	{
+		this.Ranges[RangeIndex] = new CParaRunRange(StartPos, EndPos);
+		this.RangesLength       = RangeIndex + 1;
+	}
+	else
+	{
+		this.Ranges[0].StartPos = StartPos;
+		this.Ranges[0].EndPos   = EndPos;
+		this.RangesLength       = 1;
+	}
+	
+	if (this.Ranges.length > this.RangesLength)
+		this.Ranges.legth = this.RangesLength;
+};
 
 CParaRunLine.prototype =
 {
-    Add_Range : function(RangeIndex, StartPos, EndPos)
-    {
-        if ( 0 !== RangeIndex )
-        {
-            this.Ranges[RangeIndex] = new CParaRunRange( StartPos, EndPos );
-            this.RangesLength  = RangeIndex + 1;
-        }
-        else
-        {
-            this.Ranges[0].StartPos = StartPos;
-            this.Ranges[0].EndPos   = EndPos;
-            this.RangesLength = 1;
-        }
-
-        if ( this.Ranges.length > this.RangesLength )
-            this.Ranges.legth = this.RangesLength;
-    },
-
     Copy : function()
     {
         var NewLine = new CParaRunLine();

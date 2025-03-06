@@ -52,6 +52,8 @@
 		this.x = 0;
 		this.y = 0;
 		
+		this.startX = 0;
+		
 		this.bidi = new AscWord.BidiFlow(this);
 		
 		this.isNextCurrent = false;
@@ -93,6 +95,8 @@
 		
 		this.x = p.Lines[line].Ranges[range].XVisible;
 		this.y = p.Pages[page].Y + p.Lines[line].Y;
+		
+		this.startX = this.x;
 		
 		if (p.Numbering.checkRange(range, line))
 			this.x += p.Numbering.WidthVisible;
@@ -371,7 +375,7 @@
 		
 		if (this.isNextCurrent)
 		{
-			this.posInfo.x   = this.x;
+			this.posInfo.x   = this.paragraph.isRtlDirection() ? this.startX : this.x;
 			this.posInfo.y   = this.y;
 			this.posInfo.run = this.nextRun;
 			
