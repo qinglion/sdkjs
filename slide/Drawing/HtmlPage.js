@@ -671,7 +671,7 @@
 					
 					if (!!e.target.getAttribute("data-checked")) {
 						delete e.target.dataset["checked"];
-						api.asc_StopInkDrawer();
+						Asc.editor.asc_StopInkDrawer();
 
 						this.elementReporterDrawMenuTrigger.classList.remove("btn-text-default-img2");
 						this.elementReporterDrawMenuTrigger.classList.add("btn-text-default-img");
@@ -691,14 +691,14 @@
 							this.elementReporter6.onclick()
 						}
 						switch (currentTool) {
-							case "pen": 
-								api.asc_StartDrawInk(createSolidPen(this.currentDrawColor, 1, 100));
+							case "pen":
+								Asc.editor.asc_StartDrawInk(createSolidPen(this.currentDrawColor, 1, 100));
 								break;
 							case "highlighter":
-								api.asc_StartDrawInk(createSolidPen(this.currentDrawColor, 6, 50));	
+								Asc.editor.asc_StartDrawInk(createSolidPen(this.currentDrawColor, 6, 50));
 								break;
 							case "eraser":
-								api.asc_StartInkEraser();
+								Asc.editor.asc_StartInkEraser();
 								break;
 						}
 
@@ -710,7 +710,7 @@
 				}
 
 				if (e.target.getAttribute("data-tool") === "erase-all") {
-					api.asc_EraseAllInksOnSlide();
+					Asc.editor.asc_EraseAllInksOnSlide();
 				}
 
 				this.elementReporterDrawMenu.style.display = "none";
@@ -755,7 +755,7 @@
 					this.elementReporter6.onclick()
 				}
 				if ((checkedMenuItem && checkedMenuItem.getAttribute("data-tool") === "eraser") || !checkedMenuItem) {
-					api.asc_StartDrawInk(createSolidPen(this.currentDrawColor, 1, 100));
+					Asc.editor.asc_StartDrawInk(createSolidPen(this.currentDrawColor, 1, 100));
 					const elements = this.elementReporterDrawMenu.querySelectorAll("a[data-ratio]")
 					for (let i = 0; i< elements.length; i++) {
 						delete elements[i].dataset["checked"];
@@ -769,9 +769,9 @@
 					btnIcon.classList.remove("btn-pen");
 				} else {
 					if (checkedMenuItem.getAttribute("data-tool") === "pen") {
-						api.asc_StartDrawInk(createSolidPen(this.currentDrawColor, 1, 100));
+						Asc.editor.asc_StartDrawInk(createSolidPen(this.currentDrawColor, 1, 100));
 					} else {
-						api.asc_StartDrawInk(createSolidPen(this.currentDrawColor, 6, 50));
+						Asc.editor.asc_StartDrawInk(createSolidPen(this.currentDrawColor, 6, 50));
 					}
 				}
 
