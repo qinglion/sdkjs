@@ -1177,7 +1177,7 @@
 	Api.prototype["pluginMethod_GetSelectedContent"] = function(prop)
 	{
 		let type = AscCommon.c_oAscClipboardDataFormat.Text;
-		if (prop && "html" === prop.type)
+		if (prop && "html" === prop["type"])
 			type = AscCommon.c_oAscClipboardDataFormat.Html;
 			
 		return this.getSelectedContent(type);
