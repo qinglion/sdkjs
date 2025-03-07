@@ -6601,9 +6601,11 @@ function parserFormula( formula, parent, _ws ) {
 	function _getNewOutStack(aOutStack) {
 		const aNewOutStack = [];
 		const nMainFuncIndex = _findLastOperandId(aOutStack, function (oElement) {
-			return oElement.type === cElementType.func || oElement.type === cElementType.operator;
+			return oElement.type && (oElement.type === cElementType.func || oElement.type === cElementType.operator);
 		});
-
+		if (!~nMainFuncIndex) {
+			return aNewOutStack;
+		}
 		for (let i = 0; i < aOutStack.length; i++) {
 			if (!(aOutStack[i] instanceof cBaseOperator) && aOutStack[i].type === cElementType.operator) {
 				continue;
@@ -6634,7 +6636,13 @@ function parserFormula( formula, parent, _ws ) {
 				let nPrevIndex = i - 1;
 				let nEndIndexArg = i - aOutStack[i].argumentsCurrent;
 				for (let j = nPrevIndex; j >= nEndIndexArg; j--) {
+					if (j < 0) { // over reaching minimum edge
+						break;
+					}
 					aArgsOfOperator.unshift(aNewOutStack.pop());
+				}
+				if (aArgsOfOperator.length < aOperatorData[1]) {
+					break;
 				}
 				aOperatorData.push(aArgsOfOperator);
 				aNewOutStack.push(aOperatorData);
@@ -7116,6 +7124,9 @@ function parserFormula( formula, parent, _ws ) {
 	parserFormula.prototype.isRecursiveCondFormula = function (sFunctionName, aArgs) {
 		const aCellFormulas = ['IF', 'IFS', 'SWITCH'];
 		const aOutStack = aArgs && aArgs.length ? aArgs : _getNewOutStack(this.outStack);
+		if (!aOutStack.length) {
+			return false;
+		}
 		if (aOutStack.length === 1 && aOutStack[0][0].type === cElementType.operator) {
 			const aArgs = aOutStack[0][2];
 			let bHasRecursion = false;
@@ -8591,7 +8602,7 @@ function parserFormula( formula, parent, _ws ) {
 				this.outStack.push(operand);
 			}
 		}
-		if (bConditionalFormula && t.getParent() && t.getParent() instanceof AscCommonExcel.CCellWithFormula && !t.ca) {
+		if (bConditionalFormula && t.getParent() && t.getParent() instanceof AscCommonExcel.CCellWithFormula && !t.ca && !ignoreErrors) {
 			t.ca = t.isRecursiveCondFormula(levelFuncMap[0].func.name);
 			t.outStack.forEach(function (oOperand) {
 				if (oOperand.type === cElementType.name || oOperand.type === cElementType.name3D) {
