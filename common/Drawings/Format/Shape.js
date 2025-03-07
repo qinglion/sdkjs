@@ -7281,51 +7281,14 @@
 			return  oCurCandidate;
 		};
 		CShape.prototype.checkDrawingPartWithHistory = function () {};
-		CShape.prototype.getSplitShapeForAnimation = function (scale, oAnimParams) {
-			const arrRet = [this];
+		CShape.prototype.getDocStructure = function () {
 			const oDocContent = this.getDocContent();
-			if(oDocContent) {
-				const oTextDrawer = new AscFormat.CTextDrawer(oDocContent.XLimit, oDocContent.YLimit, false, oDocContent.Get_Theme(), true);
-				oDocContent.Draw(oDocContent.StartPage, oTextDrawer);
-				const oDocStruct = oTextDrawer.m_oDocContentStructure;
-				let nIdx;
-				let oTheme = oDocContent.Get_Theme();
-				let oColorMap = oDocContent.Get_ColorMap();
-				let oTransform = oSp.transformText;
-				let oObjectForDraw;
-				for(nIdx = 0; nIdx < oDocStruct.m_aParagraphBackgrounds.length; ++nIdx)
-				{
-					oObjectForDraw = oDocStruct.m_aParagraphBackgrounds[nIdx];
-					aRet.push(new CObjectForDrawWrapper(this, oObjectForDraw, oTransform, oTheme, oColorMap, oSp));
+				if (oDocContent) {
+					const oTextDrawer = new AscFormat.CTextDrawer(oDocContent.XLimit, oDocContent.YLimit, false, oDocContent.Get_Theme(), true);
+					oDocContent.Draw(oDocContent.StartPage, oTextDrawer);
+					return oTextDrawer.m_oDocContentStructure;
 				}
-				for(nIdx = 0;nIdx< oDocStruct.m_aBorders.length; ++nIdx)
-				{
-					oObjectForDraw = oDocStruct.m_aBorders[nIdx];
-					aRet.push(new CObjectForDrawWrapper(this, oObjectForDraw, oTransform, oTheme, oColorMap, oSp));
-				}
-				for(nIdx = 0; nIdx < oDocStruct.m_aBackgrounds.length; ++nIdx)
-				{
-					oObjectForDraw = oDocStruct.m_aBackgrounds[nIdx];
-					aRet.push(new CObjectForDrawWrapper(this, oObjectForDraw, oTransform, oTheme, oColorMap, oSp));
-				}
-
-				for(nIdx = 0; nIdx < oDocStruct.m_aContent.length; ++nIdx) {
-					let oPara = oDocStruct.m_aContent[nIdx];
-					let aWords = oPara.m_aWords;
-					for(let nWord = 0; nWord < aWords.length; ++nWord) {
-						let aWord = aWords[nWord];
-						if(bLetter) {
-							for(let nLetter = 0; nLetter < aWord.length; ++nLetter) {
-								aRet.push( new CObjectForDrawWrapper(this, aWord[nLetter], oTransform, oTheme, oColorMap, oSp));
-							}
-						}
-						else {
-							aRet.push( new CObjectForDrawArrayWrapper(this, aWord, oTransform, oTheme, oColorMap, oSp));
-						}
-					}
-				}
-			}
-			return arrRet;
+			return null;
 		};
 
 		function CreateBinaryReader(szSrc, offset, srcLen) {

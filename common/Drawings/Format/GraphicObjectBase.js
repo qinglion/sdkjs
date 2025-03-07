@@ -3256,9 +3256,7 @@
 		}
 		return oTexture;
 	};
-	CGraphicObjectBase.prototype.getSplitShapeForAnimation = function () {
-		return [this];
-	};
+	CGraphicObjectBase.prototype.getDocStructure = function () {return null;};
 	CGraphicObjectBase.prototype.isOnProtectedSheet = function () {
 		if (this.worksheet) {
 			if (this.worksheet.getSheetProtection(Asc.c_oAscSheetProtectType.objects)) {

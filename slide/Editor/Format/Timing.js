@@ -1072,10 +1072,10 @@
         }
         return null;
     };
-    CTimeNodeBase.prototype.getTargetObject = function () {
-        return AscCommon.g_oTableId.Get_ById(this.getTargetObjectId());
+    CTimeNodeBase.prototype.getTargetObject = function (sDrawingId) {
+        return AscCommon.g_oTableId.Get_ById(sDrawingId || this.getTargetObjectId());
     };
-    CTimeNodeBase.prototype.calculateAttributes = function (nElapsedTime, oAttributes) {
+    CTimeNodeBase.prototype.calculateAttributes = function (nElapsedTime, oAttributes, sDrawingId, nDrawingIteration) {
     };
     CTimeNodeBase.prototype.setAttributeValue = function (oAttributes, sName, value) {
         if (AscFormat.isRealNumber(oAttributes[sName])) {
@@ -4318,8 +4318,8 @@
         }
         return this.valueType;
     };
-    CAnim.prototype.calculateAttributes = function (nElapsedTime, oAttributes) {
-        var oTargetObject = this.getTargetObject();
+    CAnim.prototype.calculateAttributes = function (nElapsedTime, oAttributes, sDrawingId, nDrawingIteration) {
+        var oTargetObject = this.getTargetObject(sDrawingId);
         if (!oTargetObject) {
             return;
         }
@@ -6886,8 +6886,9 @@
     CAnimClr.prototype.isAllowedAttribute = function (sAttrName) {
         return sAttrName === "style.color" || sAttrName === "fillcolor" || sAttrName === "stroke.color";
     };
-    CAnimClr.prototype.calculateAttributes = function (nElapsedTime, oAttributes) {
-        var oTargetObject = this.getTargetObject();
+    CAnimClr.prototype.calculateAttributes = function (nElapsedTime, oAttributes, sDrawingId, nDrawingIteration) {
+        var oTargetObject = this.getTargetObject(sDrawingId);
+				//todo think if this textObject
         if (!oTargetObject) {
             return;
         }
@@ -7120,7 +7121,7 @@
     CAnimEffect.prototype.isRemoveAfterFill = function () {
         return true;
     };
-    CAnimEffect.prototype.calculateAttributes = function (nElapsedTime, oAttributes) {
+    CAnimEffect.prototype.calculateAttributes = function (nElapsedTime, oAttributes, sDrawingId, nDrawingIteration) {
         if (!this.filter) {
             return;
         }
@@ -7429,8 +7430,8 @@
         }
         return ORIGIN_PARENT;
     };
-    CAnimMotion.prototype.calculateAttributes = function (nElapsedTime, oAttributes) {
-        var oTargetObject = this.getTargetObject();
+    CAnimMotion.prototype.calculateAttributes = function (nElapsedTime, oAttributes, sDrawingId, nDrawingIteration) {
+        var oTargetObject = this.getTargetObject(sDrawingId);
         if (!oTargetObject) {
             return;
         }
@@ -7911,8 +7912,8 @@
     CAnimRot.prototype.getChildren = function () {
         return [this.cBhvr];
     };
-    CAnimRot.prototype.calculateAttributes = function (nElapsedTime, oAttributes) {
-        var oTargetObject = this.getTargetObject();
+    CAnimRot.prototype.calculateAttributes = function (nElapsedTime, oAttributes, sDrawingId, nDrawingIteration) {
+        var oTargetObject = this.getTargetObject(sDrawingId);
         if (!oTargetObject) {
             return;
         }
@@ -8083,8 +8084,8 @@
     CAnimScale.prototype.getChildren = function () {
         return [this.cBhvr];
     };
-    CAnimScale.prototype.calculateAttributes = function (nElapsedTime, oAttributes) {
-        var oTargetObject = this.getTargetObject();
+    CAnimScale.prototype.calculateAttributes = function (nElapsedTime, oAttributes, sDrawingId, nDrawingIteration) {
+        var oTargetObject = this.getTargetObject(sDrawingId);
         if (!oTargetObject) {
             return;
         }
@@ -9538,7 +9539,7 @@
     CSet.prototype.getChildren = function () {
         return [this.cBhvr, this.to];
     };
-    CSet.prototype.calculateAttributes = function (nElapsedTime, oAttributes) {
+    CSet.prototype.calculateAttributes = function (nElapsedTime, oAttributes, sDrawingId, nDrawingIteration) {
         if (!this.to) {
             return;
         }
@@ -11594,11 +11595,15 @@
         return this.getSandwich(sDrawingId) !== null;
     };
 	CAnimationDrawer.prototype.isDrawingTextAnimated = function(sDrawingId) {
-
+		return true;
 	};
-	CAnimationDrawer.prototype.checkDrawingTextCache = function(sDrawingId) {
+	CAnimationDrawer.prototype.checkDrawingTextCache = function(oDrawing) {
+		const sDrawingId = oDrawing.Get_Id();
 		if (this.isDrawingTextAnimated(sDrawingId) && !this.objectsForDrawCache[sDrawingId]) {
-
+			const oDocStructure = oDrawing.getDocStructure();
+			if (oDocStructure) {
+				this.objectsForDrawCache[sDrawingId] = oDocStructure;
+			}
 		}
 	};
 	CAnimationDrawer.prototype.drawObject = function(oDrawing, oGraphics) {
@@ -11607,7 +11612,7 @@
 		const dScale = oGraphics.m_oCoordTransform.sx;
 		if (this.isDrawingVisible(sDrawingId)) {
 			if (oSandwich) {
-				this.checkDrawingTextCache(sDrawingId);
+				this.checkDrawingTextCache(oDrawing);
 				oSandwich.drawObject(oGraphics, oDrawing, this.texturesCache, this.objectsForDrawCache, this.objectsForDrawByDrawingCache);
 			} else {
 				const oTexture = this.texturesCache.checkTexture(sDrawingId, dScale);
@@ -12277,7 +12282,7 @@
         this.drawingId = sDrawingId;
         this.elapsedTime = nElapsedTime;
         this.animations = [];
-        this.cachedAttributes = null;
+        this.cachedAttributes = {};
     }
 
     CAnimSandwich.prototype.getDrawingId = function () {
@@ -12286,7 +12291,7 @@
     CAnimSandwich.prototype.addAnimation = function (oAnimation) {
         this.animations.push(oAnimation);
         if (this.cachedAttributes) {
-            this.cachedAttributes = null;
+            this.cachedAttributes = {};
         }
         this.checkOnAdd();
     };
@@ -12342,9 +12347,9 @@
         }
         return false;
     };
-    CAnimSandwich.prototype.getAttributesMap = function () {
-        if (this.cachedAttributes) {
-            return this.cachedAttributes;
+    CAnimSandwich.prototype.getAttributesMap = function (sDrawingId, nDrawingIteration) {
+        if (this.cachedAttributes[sDrawingId]) {
+            return this.cachedAttributes[sDrawingId];
         }
 
         var bCheckRemove = true;
@@ -12363,38 +12368,57 @@
         });
         var oAttributes = {};
         for (var nAnim = 0; nAnim < this.animations.length; ++nAnim) {
-            this.animations[nAnim].calculateAttributes(this.elapsedTime, oAttributes);
+            this.animations[nAnim].calculateAttributes(this.elapsedTime, oAttributes, sDrawingId, nDrawingIteration);
         }
-        this.cachedAttributes = oAttributes;
+        this.cachedAttributes[sDrawingId] = oAttributes;
         return oAttributes;
     };
     CAnimSandwich.prototype.print = function () {
         var oAttributes = this.getAttributesMap();
         //console.log(oAttributes);
     };
+	CAnimSandwich.prototype.getObjectsForDrawing = function (oDrawing, oObjectsForDrawCache) {
+		const oRet = [oDrawing];
+		const sDrawingId = oDrawing.Get_Id();
+		if (oObjectsForDrawCache[sDrawingId]) {
+			const oDocContent = oDrawing.getDocContent();
+			let oTheme = oDocContent.Get_Theme();
+			let oColorMap = oDocContent.Get_ColorMap();
+			let oTransform = oDrawing.transformText;
+			const oDocStructure = oObjectsForDrawCache[sDrawingId];
+			for (let i = 0; i < oDocStructure.m_aContent.length; i += 1) {
+				const oParaDraw = oDocStructure.m_aContent[i];
+				for (let j = 0; j < oParaDraw.m_aWords.length; j += 1) {
+					const oWord = oParaDraw.m_aWords[j];
+					oRet.push(new AscCommonSlide.CObjectForDrawArrayWrapper(oWord, oTransform, oTheme, oColorMap, oDrawing));
+				}
+			}
+		}
+		return oRet;
+	};
     CAnimSandwich.prototype.drawObject = function (oGraphics, oDrawing, oTextureCache, oObjectsForDrawCache, oObjectsForDrawByDrawingCache) {
 
         //this.print();
         //console.log(oAttributesMap);
-			if (!oObjectsForDrawCache[oDrawing.Id]) {
-				oObjectsForDrawCache[oDrawing.Id] = [];
-			}
-			const arrInnerObjects = oObjectsForDrawCache[oDrawing.Id];
-        const oTextureData = this.getTextureData(oDrawing, oTextureCache, oGraphics.m_oCoordTransform.sx);
-        if(!oTextureData) {
-            return;
-        }
+			const arrDrawings = this.getObjectsForDrawing(oDrawing, oObjectsForDrawCache);
+			for (let i = 0; i < arrDrawings.length; i += 1) {
+				const oObjectForDraw = arrDrawings[i];
+				const oTextureData = this.getTextureData(oObjectForDraw, oTextureCache, oGraphics.m_oCoordTransform.sx);
+				if(!oTextureData) {
+					return;
+				}
 
-        const fOpacity = oTextureData.opacity;
-        const oTransform = oTextureData.transform;
-        const oTexture = oTextureData.texture;
-        if (fOpacity !== undefined) {
-            oGraphics.put_GlobalAlpha(true, 1 - fOpacity);
-        }
-        oTexture.draw(oGraphics, oTransform);
-        if (fOpacity !== undefined) {
-            oGraphics.put_GlobalAlpha(false, 1);
-        }
+				const fOpacity = oTextureData.opacity;
+				const oTransform = oTextureData.transform;
+				const oTexture = oTextureData.texture;
+				if (fOpacity !== undefined) {
+					oGraphics.put_GlobalAlpha(true, 1 - fOpacity);
+				}
+				oTexture.draw(oGraphics, oTransform);
+				if (fOpacity !== undefined) {
+					oGraphics.put_GlobalAlpha(false, 1);
+				}
+			}
     };
     CAnimSandwich.prototype.getBrushPen = function(oDrawing) {
         let oAttributesMap = this.getAttributesMap();
