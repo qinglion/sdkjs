@@ -1313,8 +1313,9 @@ CHeaderFooter.prototype =
 
         this.Id      = Reader.GetString2();
         this.Type    = Reader.GetLong();
-
-        this.Content = AscCommon.g_oTableId.Get_ById( Reader.GetString2() );
+		
+		this.Content = AscCommon.g_oTableId.Get_ById(Reader.GetString2());
+		this.Content.SetParent(this);
     },
 //-----------------------------------------------------------------------------------
 // Функции для работы с комментариями
