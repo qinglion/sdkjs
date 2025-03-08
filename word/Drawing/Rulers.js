@@ -81,6 +81,7 @@ function CHorRulerRepaintChecker()
     this.BlitIndentRight = 0;
     this.BlitDefaultTab = 0;
     this.BlitTabs = null;
+	this.BlitRtl = false;
 
     this.BlitMarginLeftInd = 0;
     this.BlitMarginRightInd = 0;
@@ -194,6 +195,7 @@ function CHorRuler()
     this.m_dIndentLeft          = 10;
     this.m_dIndentRight         = 20;
     this.m_dIndentLeftFirst     = 20;
+	this.m_bRtl                 = false;
 
     this.m_oCanvas              = null;
 
@@ -209,6 +211,7 @@ function CHorRuler()
 
     this.DragTypeMouseDown = 0;
 
+	this.m_bRtl_old             = false;
     this.m_dIndentLeft_old      = -10000;
     this.m_dIndentLeftFirst_old = -10000;
     this.m_dIndentRight_old     = -10000;
@@ -2359,9 +2362,13 @@ function CHorRuler()
         var checker = this.RepaintChecker;
         if (!checker.BlitAttack && left == checker.BlitLeft && !this.m_bIsMouseDown)
         {
-            if (checker.BlitIndentLeft == this.m_dIndentLeft && checker.BlitIndentLeftFirst == this.m_dIndentLeftFirst
-                && checker.BlitIndentRight == this.m_dIndentRight && checker.BlitDefaultTab == this.m_dDefaultTab &&
-                _margin_left == checker.BlitMarginLeftInd && _margin_right == checker.BlitMarginRightInd)
+            if (checker.BlitIndentLeft == this.m_dIndentLeft
+				&& checker.BlitIndentLeftFirst == this.m_dIndentLeftFirst
+                && checker.BlitIndentRight == this.m_dIndentRight
+				&& checker.BlitRtl === this.m_bRtl
+				&& checker.BlitDefaultTab == this.m_dDefaultTab
+				&& _margin_left == checker.BlitMarginLeftInd
+				&& _margin_right == checker.BlitMarginRightInd)
             {
                 // осталось проверить только табы кастомные
                 var _count1 = 0;
@@ -2394,6 +2401,7 @@ function CHorRuler()
         if (null != this.m_oCanvas)
         {
             checker.BlitLeft = left;
+			checker.BlitRtl = this.m_bRtl;
             checker.BlitIndentLeft = this.m_dIndentLeft;
             checker.BlitIndentLeftFirst = this.m_dIndentLeftFirst;
             checker.BlitIndentRight = this.m_dIndentRight;
@@ -2439,9 +2447,11 @@ function CHorRuler()
             // old position --------------------------------------
 			context.strokeStyle = GlobalSkin.RulerMarkersOutlineColorOld;
             context.fillStyle = GlobalSkin.RulerMarkersFillColorOld;
-            if ((-10000 != this.m_dIndentLeft_old) && (this.m_dIndentLeft_old != this.m_dIndentLeft))
+            if ((-10000 !== this.m_dIndentLeft_old) && (this.m_dIndentLeft_old !== this.m_dIndentLeft || this.m_bRtl_old !== this.m_bRtl))
             {
-                dCenterX = left + (_margin_left +  this.m_dIndentLeft_old) * dKoef_mm_to_pix;
+				let offset = this.m_bRtl_old ? (_margin_right - this.m_dIndentLeft_old) : (_margin_left + this.m_dIndentLeft_old);
+				dCenterX   = left + offset * dKoef_mm_to_pix;
+				
 				var1 = parseInt(dCenterX - _1mm_to_pix) - indent + Math.round(dPR) - 1;
 				var4 = parseInt(dCenterX + _1mm_to_pix) + indent + Math.round(dPR) - 1;
 
@@ -2463,9 +2473,10 @@ function CHorRuler()
                 context.fill();
                 context.stroke();
             }
-            if ((-10000 != this.m_dIndentLeftFirst_old) && (this.m_dIndentLeftFirst_old != this.m_dIndentLeftFirst))
+            if ((-10000 !== this.m_dIndentLeftFirst_old) && (this.m_dIndentLeftFirst_old !== this.m_dIndentLeftFirst || this.m_bRtl_old !== this.m_bRtl))
             {
-                dCenterX = left + (_margin_left +  this.m_dIndentLeftFirst_old) * dKoef_mm_to_pix;
+				let offset = this.m_bRtl_old ? (_margin_right - this.m_dIndentLeftFirst_old) : (_margin_left + this.m_dIndentLeftFirst_old);
+				dCenterX   = left + offset * dKoef_mm_to_pix;
 				var1 = parseInt(dCenterX - _1mm_to_pix) - indent + Math.round(dPR) - 1;
 				var4 = parseInt(dCenterX + _1mm_to_pix) + indent + Math.round(dPR) - 1;
 
@@ -2485,9 +2496,10 @@ function CHorRuler()
                 context.fill();
                 context.stroke();
             }
-            if ((-10000 != this.m_dIndentRight_old) && (this.m_dIndentRight_old != this.m_dIndentRight))
+            if ((-10000 !== this.m_dIndentRight_old) && (this.m_dIndentRight_old !== this.m_dIndentRight || this.m_bRtl_old !== this.m_bRtl))
             {
-                dCenterX = left + (_margin_right -  this.m_dIndentRight_old) * dKoef_mm_to_pix;
+				let offset = this.m_bRtl_old ? (_margin_left + this.m_dIndentRight_old) : (_margin_right - this.m_dIndentRight_old);
+				dCenterX   = left + offset * dKoef_mm_to_pix;
 				var1 = parseInt(dCenterX - _1mm_to_pix) - indent + Math.round(dPR) - 1;
 				var4 = parseInt(dCenterX + _1mm_to_pix) + indent + Math.round(dPR) - 1;
 
@@ -2571,7 +2583,8 @@ function CHorRuler()
                 context.fillStyle = GlobalSkin.RulerMarkersFillColor;
 
                 // left indent
-                dCenterX = left + (_margin_left +  this.m_dIndentLeft) * dKoef_mm_to_pix;
+				let offset = this.m_bRtl ? (_margin_right - this.m_dIndentLeft) : (_margin_left + this.m_dIndentLeft);
+                dCenterX = left + offset * dKoef_mm_to_pix;
 
                 var _1mm_to_pix = g_dKoef_mm_to_pix * dPR;
 
@@ -2597,7 +2610,8 @@ function CHorRuler()
                 context.stroke();
 
                 // right indent
-                dCenterX = left + (_margin_right - this.m_dIndentRight) * dKoef_mm_to_pix;
+				offset = this.m_bRtl ? (_margin_left + this.m_dIndentRight) : (_margin_right - this.m_dIndentRight);
+                dCenterX = left + offset * dKoef_mm_to_pix;
                 var1 = parseInt(dCenterX - _1mm_to_pix) - indent + Math.round(dPR) - 1;
                 var4 = parseInt(dCenterX + _1mm_to_pix) + indent + Math.round(dPR) - 1;
 
@@ -2617,7 +2631,8 @@ function CHorRuler()
                 context.stroke();
 
                 // first line indent
-                dCenterX = left + (_margin_left +  this.m_dIndentLeftFirst) * dKoef_mm_to_pix;
+				offset = this.m_bRtl ? (_margin_right - this.m_dIndentLeftFirst) : (_margin_left + this.m_dIndentLeftFirst);
+                dCenterX = left + offset * dKoef_mm_to_pix;
                 var1 = parseInt(dCenterX - _1mm_to_pix) - indent + Math.round(dPR) - 1;
                 var4 = parseInt(dCenterX + _1mm_to_pix) + indent + Math.round(dPR) - 1;
 
@@ -2733,6 +2748,46 @@ function CHorRuler()
             // -----------------------------------------------------------
         }
     }
+	
+	this.UpdateParaInd = function(paraInd, isRtl)
+	{
+		const EPSILON = 0.001;
+		
+		if (!paraInd)
+			return false;
+		
+		let left      = undefined !== paraInd.Left ? paraInd.Left : this.m_dIndentLeft;
+		let right     = undefined !== paraInd.Right ? paraInd.Right : this.m_dIndentRight;
+		let firstLine = undefined !== paraInd.FirstLine ? left + paraInd.FirstLine : this.m_dIndentLeftFirst;
+		
+		let needUpdate = false;
+		
+		if (Math.abs(this.m_dIndentLeft - left) > EPSILON)
+		{
+			this.m_dIndentLeft = left;
+			needUpdate = true;
+		}
+		
+		if (Math.abs(this.m_dIndentLeftFirst - firstLine) > EPSILON)
+		{
+			this.m_dIndentLeftFirst = firstLine;
+			needUpdate = true;
+		}
+		
+		if (Math.abs(this.m_dIndentRight - right) > EPSILON)
+		{
+			this.m_dIndentRight = right;
+			needUpdate = true;
+		}
+		
+		if (this.m_bRtl !== isRtl)
+		{
+			this.m_bRtl = isRtl;
+			needUpdate = true;
+		}
+		
+		return needUpdate
+	};
 }
 
 function CVerRuler()
