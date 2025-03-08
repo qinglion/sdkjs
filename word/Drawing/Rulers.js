@@ -2443,81 +2443,96 @@ function CHorRuler()
             checker.BlitMarginRightInd = _margin_right;
 
 			var _1mm_to_pix = g_dKoef_mm_to_pix * dPR;
-
-            // old position --------------------------------------
-			context.strokeStyle = GlobalSkin.RulerMarkersOutlineColorOld;
-            context.fillStyle = GlobalSkin.RulerMarkersFillColorOld;
-            if ((-10000 !== this.m_dIndentLeft_old) && (this.m_dIndentLeft_old !== this.m_dIndentLeft || this.m_bRtl_old !== this.m_bRtl))
-            {
-				let offset = this.m_bRtl_old ? (_margin_right - this.m_dIndentLeft_old) : (_margin_left + this.m_dIndentLeft_old);
+			let top    = this.m_nTop;
+			let bottom = this.m_nBottom;
+			
+			function blitLeftInd(ind, isRtl)
+			{
+				let offset   = isRtl ? (_margin_right - ind) : (_margin_left + ind);
+				let dCenterX = left + offset * dKoef_mm_to_pix;
+				
+				let var1 = parseInt(dCenterX - _1mm_to_pix) - indent + Math.round(dPR) - 1;
+				let var4 = parseInt(dCenterX + _1mm_to_pix) + indent + Math.round(dPR) - 1;
+				
+				if (0 !== ((var1 - var4 + Math.round(dPR)) & 1))
+					var4 += 1;
+				
+				context.beginPath();
+				context.lineWidth = Math.round(dPR);
+				context.moveTo(var1, bottom + indent);
+				context.lineTo(var4, bottom + indent);
+				context.lineTo(var4, bottom + indent + Math.round(var2));
+				context.lineTo(var1, bottom + indent + Math.round(var2));
+				context.lineTo(var1, bottom + indent);
+				context.lineTo(var1, bottom + indent - Math.round(var3));
+				context.lineTo((var1 + var4) / 2, bottom - Math.round(var2 * 1.2));
+				context.lineTo(var4, bottom + indent - Math.round(var3));
+				context.lineTo(var4, bottom + indent);
+				
+				context.fill();
+				context.stroke();
+			}
+			
+			function blitFirstInd(ind, isRtl)
+			{
+				let offset = isRtl ? (_margin_right - ind) : (_margin_left + ind);
+				dCenterX   = left + offset * dKoef_mm_to_pix;
+				
+				let var1 = parseInt(dCenterX - _1mm_to_pix) - indent + Math.round(dPR) - 1;
+				let var4 = parseInt(dCenterX + _1mm_to_pix) + indent + Math.round(dPR) - 1;
+				
+				if (0 !== ((var1 - var4 + Math.round(dPR)) & 1))
+					var4 += 1;
+				
+				// first line indent
+				context.beginPath();
+				context.lineWidth = Math.round(dPR);
+				context.moveTo(var1, top + indent);
+				context.lineTo(var1, top + indent - Math.round(var3));
+				context.lineTo(var4, top + indent - Math.round(var3));
+				context.lineTo(var4, top + indent);
+				context.lineTo((var1 + var4) / 2, top + Math.round(var2 * 1.2));
+				context.closePath();
+				
+				context.fill();
+				context.stroke();
+			}
+			
+			function blitRightInd(ind, isRtl)
+			{
+				let offset = isRtl ? (_margin_left + ind) : (_margin_right - ind);
 				dCenterX   = left + offset * dKoef_mm_to_pix;
 				
 				var1 = parseInt(dCenterX - _1mm_to_pix) - indent + Math.round(dPR) - 1;
 				var4 = parseInt(dCenterX + _1mm_to_pix) + indent + Math.round(dPR) - 1;
-
-				if ( 0 != ((var1 - var4 + Math.round(dPR)) & 1))
+				
+				if (0 !== ((var1 - var4 + Math.round(dPR)) & 1))
 					var4 += 1;
-
-                context.beginPath();
-                context.lineWidth = Math.round(dPR);
-				context.moveTo(var1, this.m_nBottom + indent);
-				context.lineTo(var4, this.m_nBottom + indent);
-				context.lineTo(var4, this.m_nBottom + indent + Math.round(var2));
-				context.lineTo(var1, this.m_nBottom + indent + Math.round(var2));
-				context.lineTo(var1, this.m_nBottom + indent);
-				context.lineTo(var1, this.m_nBottom + indent - Math.round(var3));
-				context.lineTo((var1 + var4) / 2, this.m_nBottom - Math.round(var2 * 1.2));
-				context.lineTo(var4, this.m_nBottom + indent - Math.round(var3));
-				context.lineTo(var4, this.m_nBottom + indent);
-
-                context.fill();
-                context.stroke();
-            }
-            if ((-10000 !== this.m_dIndentLeftFirst_old) && (this.m_dIndentLeftFirst_old !== this.m_dIndentLeftFirst || this.m_bRtl_old !== this.m_bRtl))
-            {
-				let offset = this.m_bRtl_old ? (_margin_right - this.m_dIndentLeftFirst_old) : (_margin_left + this.m_dIndentLeftFirst_old);
-				dCenterX   = left + offset * dKoef_mm_to_pix;
-				var1 = parseInt(dCenterX - _1mm_to_pix) - indent + Math.round(dPR) - 1;
-				var4 = parseInt(dCenterX + _1mm_to_pix) + indent + Math.round(dPR) - 1;
-
-				if ( 0 != ((var1 - var4 + Math.round(dPR)) & 1))
-					var4 += 1;
-
-                // first line indent
-                context.beginPath();
-                context.lineWidth = Math.round(dPR);
-				context.moveTo(var1, this.m_nTop + indent);
-				context.lineTo(var1, this.m_nTop + indent - Math.round(var3));
-				context.lineTo(var4, this.m_nTop + indent - Math.round(var3));
-				context.lineTo(var4, this.m_nTop + indent);
-				context.lineTo((var1 + var4) / 2, this.m_nTop + Math.round(var2 * 1.2));
+				
+				context.beginPath();
+				context.lineWidth = Math.round(dPR);
+				context.moveTo(var1, bottom + indent);
+				context.lineTo(var4, bottom + indent);
+				context.lineTo(var4, bottom + indent - Math.round(var3));
+				context.lineTo((var1 + var4) / 2, bottom - Math.round(var2 * 1.2));
+				context.lineTo(var1, bottom + indent - Math.round(var3));
 				context.closePath();
-
-                context.fill();
-                context.stroke();
-            }
-            if ((-10000 !== this.m_dIndentRight_old) && (this.m_dIndentRight_old !== this.m_dIndentRight || this.m_bRtl_old !== this.m_bRtl))
-            {
-				let offset = this.m_bRtl_old ? (_margin_left + this.m_dIndentRight_old) : (_margin_right - this.m_dIndentRight_old);
-				dCenterX   = left + offset * dKoef_mm_to_pix;
-				var1 = parseInt(dCenterX - _1mm_to_pix) - indent + Math.round(dPR) - 1;
-				var4 = parseInt(dCenterX + _1mm_to_pix) + indent + Math.round(dPR) - 1;
-
-				if ( 0 != ((var1 - var4 + Math.round(dPR)) & 1))
-					var4 += 1;
-
-                context.beginPath();
-                context.lineWidth = Math.round(dPR);
-				context.moveTo(var1, this.m_nBottom + indent);
-				context.lineTo(var4, this.m_nBottom + indent);
-				context.lineTo(var4, this.m_nBottom + indent - Math.round(var3));
-				context.lineTo((var1 + var4) / 2, this.m_nBottom - Math.round(var2 * 1.2));
-				context.lineTo(var1, this.m_nBottom + indent - Math.round(var3));
-				context.closePath();
-
-                context.fill();
-                context.stroke();
-            }
+				
+				context.fill();
+				context.stroke();
+			}
+			
+			// old position --------------------------------------
+			context.strokeStyle = GlobalSkin.RulerMarkersOutlineColorOld;
+			context.fillStyle   = GlobalSkin.RulerMarkersFillColorOld;
+			if ((-10000 !== this.m_dIndentLeft_old) && (this.m_dIndentLeft_old !== this.m_dIndentLeft || this.m_bRtl_old !== this.m_bRtl))
+				blitLeftInd(this.m_dIndentLeft_old, this.m_bRtl_old);
+			
+			if ((-10000 !== this.m_dIndentLeftFirst_old) && (this.m_dIndentLeftFirst_old !== this.m_dIndentLeftFirst || this.m_bRtl_old !== this.m_bRtl))
+				blitFirstInd(this.m_dIndentLeftFirst_old, this.m_bRtl_old);
+			
+			if ((-10000 !== this.m_dIndentRight_old) && (this.m_dIndentRight_old !== this.m_dIndentRight || this.m_bRtl_old !== this.m_bRtl))
+				blitRightInd(this.m_dIndentRight_old, this.m_bRtl_old);
 
 			context.strokeStyle = GlobalSkin.RulerTabsColorOld;
             if (-1 != this.m_lCurrentTab && this.m_lCurrentTab < this.m_arrTabs.length)
@@ -2578,79 +2593,14 @@ function CHorRuler()
                 posR = _margin_right - this.m_dIndentRight;
 
             if (posL < posR)
-            {
+			{
 				context.strokeStyle = GlobalSkin.RulerMarkersOutlineColor;
-                context.fillStyle = GlobalSkin.RulerMarkersFillColor;
-
-                // left indent
-				let offset = this.m_bRtl ? (_margin_right - this.m_dIndentLeft) : (_margin_left + this.m_dIndentLeft);
-                dCenterX = left + offset * dKoef_mm_to_pix;
-
-                var _1mm_to_pix = g_dKoef_mm_to_pix * dPR;
-
-                var1 = parseInt(dCenterX - _1mm_to_pix) - indent + Math.round(dPR) - 1;
-                var4 = parseInt(dCenterX + _1mm_to_pix) + indent + Math.round(dPR) - 1;
-
-                if ( 0 != ((var1 - var4 + Math.round(dPR)) & 1))
-                    var4 += 1;
-
-                context.beginPath();
-                context.lineWidth = roundDPR;
-                context.moveTo(var1, this.m_nBottom + indent);
-                context.lineTo(var4, this.m_nBottom + indent);
-                context.lineTo(var4, this.m_nBottom + indent + Math.round(var2));
-                context.lineTo(var1, this.m_nBottom + indent + Math.round(var2));
-                context.lineTo(var1, this.m_nBottom + indent);
-                context.lineTo(var1, this.m_nBottom + indent - Math.round(var3));
-                context.lineTo((var1 + var4) / 2, this.m_nBottom - Math.round(var2 * 1.2));
-                context.lineTo(var4, this.m_nBottom + indent - Math.round(var3));
-                context.lineTo(var4, this.m_nBottom + indent);
-
-                context.fill();
-                context.stroke();
-
-                // right indent
-				offset = this.m_bRtl ? (_margin_left + this.m_dIndentRight) : (_margin_right - this.m_dIndentRight);
-                dCenterX = left + offset * dKoef_mm_to_pix;
-                var1 = parseInt(dCenterX - _1mm_to_pix) - indent + Math.round(dPR) - 1;
-                var4 = parseInt(dCenterX + _1mm_to_pix) + indent + Math.round(dPR) - 1;
-
-                if ( 0 != ((var1 - var4 + Math.round(dPR)) & 1))
-                    var4 += 1;
-
-                context.beginPath();
-                context.lineWidth = Math.round(dPR);
-                context.moveTo(var1, this.m_nBottom + indent);
-                context.lineTo(var4, this.m_nBottom + indent);
-                context.lineTo(var4, this.m_nBottom + indent - Math.round(var3));
-                context.lineTo((var1 + var4) / 2, this.m_nBottom - Math.round(var2 * 1.2));
-                context.lineTo(var1, this.m_nBottom + indent - Math.round(var3));
-                context.closePath();
-
-                context.fill();
-                context.stroke();
-
-                // first line indent
-				offset = this.m_bRtl ? (_margin_right - this.m_dIndentLeftFirst) : (_margin_left + this.m_dIndentLeftFirst);
-                dCenterX = left + offset * dKoef_mm_to_pix;
-                var1 = parseInt(dCenterX - _1mm_to_pix) - indent + Math.round(dPR) - 1;
-                var4 = parseInt(dCenterX + _1mm_to_pix) + indent + Math.round(dPR) - 1;
-
-                if ( 0 != ((var1 - var4 + Math.round(dPR)) & 1))
-                    var4 += 1;
-
-                context.beginPath();
-                context.lineWidth = Math.round(dPR);
-                context.moveTo(var1, this.m_nTop + indent);
-                context.lineTo(var1, this.m_nTop + indent - Math.round(var3));
-                context.lineTo(var4, this.m_nTop + indent - Math.round(var3));
-                context.lineTo(var4, this.m_nTop + indent);
-                context.lineTo((var1 + var4) / 2, this.m_nTop + Math.round(var2 * 1.2));
-                context.closePath();
-
-                context.fill();
-                context.stroke();
-            }
+				context.fillStyle   = GlobalSkin.RulerMarkersFillColor;
+				
+				blitLeftInd(this.m_dIndentLeft, this.m_bRtl);
+				blitRightInd(this.m_dIndentRight, this.m_bRtl)
+				blitFirstInd(this.m_dIndentLeftFirst, this.m_bRtl);
+			}
 
             // теперь рисуем табы ----------------------------------------
             // default
