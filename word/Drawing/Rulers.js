@@ -2428,10 +2428,8 @@ function CHorRuler()
                 return;
             var dKoef_mm_to_pix = g_dKoef_mm_to_pix * this.m_dZoom * dPR;
             var dCenterX = 0;
-            var var1 = 0;
             var var2 = 0;
             var var3 = 0;
-            var var4 = 0;
 
             var _positon_y = this.m_nBottom - 5 * dPR;
 
@@ -2503,8 +2501,8 @@ function CHorRuler()
 				let offset = isRtl ? (_margin_left + ind) : (_margin_right - ind);
 				dCenterX   = left + offset * dKoef_mm_to_pix;
 				
-				var1 = parseInt(dCenterX - _1mm_to_pix) - indent + Math.round(dPR) - 1;
-				var4 = parseInt(dCenterX + _1mm_to_pix) + indent + Math.round(dPR) - 1;
+				let var1 = parseInt(dCenterX - _1mm_to_pix) - indent + Math.round(dPR) - 1;
+				let var4 = parseInt(dCenterX + _1mm_to_pix) + indent + Math.round(dPR) - 1;
 				
 				if (0 !== ((var1 - var4 + Math.round(dPR)) & 1))
 					var4 += 1;
