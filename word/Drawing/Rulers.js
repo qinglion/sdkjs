@@ -174,6 +174,22 @@ RulerCheckSimpleChanges.prototype =
     }
 };
 
+(function(){
+	AscWord.RULER_DRAG_TYPE = {
+		none : 0,
+		leftMargin : 1,
+		rightMargin : 2,
+		leftFirstInd : 3,
+		leftInd : 4,
+		firstInd : 5,
+		rightInd : 6,
+		tab : 7,
+		table : 8,
+		columnSize : 9,
+		columnPos : 10
+	};
+})();
+
 function CHorRuler()
 {
     this.m_oPage        = null;     // текущая страница. Нужна для размеров и маргинов в режиме RULER_OBJECT_TYPE_PARAGRAPH
@@ -201,7 +217,7 @@ function CHorRuler()
 
     this.m_dZoom                = 1;
 
-    this.DragType = 0;  // 0 - none
+    this.DragType = AscWord.RULER_DRAG_TYPE.none;  // 0 - none
                         // 1 - left margin, 2 - right margin
                         // 3 - indent left + indent left first, 4 - indent left // 5 - indent left first, 6 - indent right
                         // 7 - tabs
@@ -211,7 +227,6 @@ function CHorRuler()
 
     this.DragTypeMouseDown = 0;
 
-	this.m_bRtl_old             = false;
     this.m_dIndentLeft_old      = -10000;
     this.m_dIndentLeftFirst_old = -10000;
     this.m_dIndentRight_old     = -10000;
@@ -1037,7 +1052,7 @@ function CHorRuler()
 
         switch (this.DragType)
         {
-            case 0:
+            case AscWord.RULER_DRAG_TYPE.none:
             {
                 var position = this.CheckMouseType(_x, _y);
                 if ((1 == position) || (2 == position) || (8 == position) || (9 == position) || (10 == position))
@@ -1047,7 +1062,7 @@ function CHorRuler()
 
                 break;
             }
-            case 1:
+            case AscWord.RULER_DRAG_TYPE.leftMargin:
             {
                 var newVal = RulerCorrectPosition(this, _x, _margin_left);
 
@@ -1073,7 +1088,7 @@ function CHorRuler()
                 word_control.m_oDrawingDocument.SetCursorType("w-resize");
                 break;
             }
-            case 2:
+            case AscWord.RULER_DRAG_TYPE.rightMargin:
             {
                 var newVal = RulerCorrectPosition(this, _x, _margin_left);
 
@@ -1101,7 +1116,7 @@ function CHorRuler()
                 word_control.m_oDrawingDocument.SetCursorType("w-resize");
                 break;
             }
-            case 3:
+            case AscWord.RULER_DRAG_TYPE.leftFirstInd:
             {
                 var newVal = RulerCorrectPosition(this, _x, _margin_left);
 
@@ -1142,34 +1157,52 @@ function CHorRuler()
 
                 break;
             }
-            case 4:
-            {
-                var newVal = RulerCorrectPosition(this, _x, _margin_left);
-
-                if (newVal < 0)
-                    newVal = 0;
-
-                var max = _margin_right - 20;
-                if (0 < this.m_dIndentRight)
-                    max -= this.m_dIndentRight;
-
-                if (_presentations)
-                {
-                    if (newVal < _margin_left)
-                        newVal = _margin_left;
-                }
-
-                if (newVal > max)
-                    newVal = Math.max(max, _margin_left + this.m_dIndentLeft_old);
-
-                this.m_dIndentLeft = newVal - _margin_left;
-                word_control.UpdateHorRulerBack();
-
-                var pos = left + (_margin_left + this.m_dIndentLeft) * dKoef_mm_to_pix;
-                word_control.m_oOverlayApi.VertLine(pos);
-
-                break;
-            }
+			case AscWord.RULER_DRAG_TYPE.leftInd:
+			{
+				let newVal = RulerCorrectPosition(this, _x, _margin_left);
+				if (newVal < 0)
+					newVal = 0;
+				
+				if (this.m_bRtl)
+				{
+					let max = _margin_right - 20;
+					if (0 < this.m_dIndentRight)
+						max -= this.m_dIndentRight;
+			
+					if (_presentations)
+					{
+						if (newVal < _margin_left)
+							newVal = _margin_left;
+					}
+			
+					if (newVal > max)
+						newVal = Math.max(max, _margin_left + this.m_dIndentLeft_old);
+			
+					this.m_dIndentLeft = newVal - _margin_left;
+				}
+				else
+				{
+					if (newVal > (this.m_oPage.width_mm))
+						newVal = this.m_oPage.width_mm;
+					
+					let min = Math.max(_margin_right, _margin_right + this.m_dIndentRight) + 20;
+					if (_presentations)
+					{
+						if (newVal < _margin_left)
+							newVal = _margin_left;
+					}
+					
+					if (newVal < min)
+						newVal = Math.min(min, _margin_right - this.m_dIndentLeft_old);
+					
+					this.m_dIndentLeft = _margin_right - newVal;
+				}
+				let pos = left + newVal * dKoef_mm_to_pix;
+				word_control.UpdateHorRulerBack();
+				word_control.m_oOverlayApi.VertLine(pos);
+		
+				break;
+			}
             case 5:
             {
                 var newVal = RulerCorrectPosition(this, _x, _margin_left);
@@ -1528,13 +1561,13 @@ function CHorRuler()
                     {
                         if (true === isMouseDown)
                             this.m_lCurrentTab = i;
-                        return 7;
+                        return AscWord.RULER_DRAG_TYPE.tab;
                     }
                 }
             }
 
             // left indent
-            var dCenterX = _margin_left +  this.m_dIndentLeft;
+            var dCenterX = this.m_bRtl ? _margin_right - this.m_dIndentLeft : _margin_left +  this.m_dIndentLeft;
 
             var var1 = dCenterX - 1;
             var var2 = 1.4;
@@ -1544,13 +1577,13 @@ function CHorRuler()
             if ((x >= var1) && (x <= var4))
             {
                 if ((y >= _bottom) && (y < (_bottom + var2)))
-                    return 3;
+                    return AscWord.RULER_DRAG_TYPE.leftFirstInd;
                 else if ((y > (_bottom - var3)) && (y < _bottom))
-                    return 4;
+                    return AscWord.RULER_DRAG_TYPE.leftInd;
             }
 
             // right indent
-            dCenterX = _margin_right -  this.m_dIndentRight;
+            dCenterX = this.m_bRtl ? _maring_left + this.m_dIndentRight : _margin_right -  this.m_dIndentRight;
 
             var1 = dCenterX - 1;
             var4 = dCenterX + 1;
@@ -1558,11 +1591,11 @@ function CHorRuler()
             if ((x >= var1) && (x <= var4))
             {
                 if ((y > (_bottom - var3)) && (y < _bottom))
-                    return 6;
+                    return AscWord.RULER_DRAG_TYPE.rightInd;
             }
 
             // first line indent
-            dCenterX = _margin_left +  this.m_dIndentLeftFirst;
+            dCenterX = this.m_bRtl ? _margin_right - this.m_dIndentLeftFirst : _margin_left +  this.m_dIndentLeftFirst;
 
             var1 = dCenterX - 1;
             var4 = dCenterX + 1;
@@ -1574,9 +1607,9 @@ function CHorRuler()
                     if (0 == this.m_dIndentLeftFirst && 0 == this.m_dIndentLeft && this.CurrentObjectType == RULER_OBJECT_TYPE_PARAGRAPH && this.IsCanMoveMargins)
                     {
                         if (y > (_top + 1))
-                            return 1;
+                            return this.m_bRtl ? AscWord.RULER_DRAG_TYPE.rightMargin : AscWord.RULER_DRAG_TYPE.leftMargin;
                     }
-                    return 5;
+                    return AscWord.RULER_DRAG_TYPE.firstInd;
                 }
             }
         }
@@ -1592,19 +1625,19 @@ function CHorRuler()
 				// внутри линейки
                 if (Math.abs(x - this.m_dMarginLeft) < 1)
                 {
-                    return 1;
+                    return AscWord.RULER_DRAG_TYPE.leftMargin;
                 }
                 else if (Math.abs(x - this.m_dMarginRight) < 1)
                 {
-                    return 2;
+                    return AscWord.RULER_DRAG_TYPE.rightMargin;
                 }
 
                 if (isNegative)
                 {
                     if (x < this.m_dMarginLeft)
-                        return -1;
+                        return -AscWord.RULER_DRAG_TYPE.leftMargin;
                     if (x > this.m_dMarginRight)
-                        return -2;
+                        return -AscWord.RULER_DRAG_TYPE.rightMargin;
                 }
             }
         }
@@ -1622,7 +1655,7 @@ function CHorRuler()
                     if (Math.abs(x - pos) < 1)
                     {
                         this.DragTablePos = i;
-                        return 8;
+                        return AscWord.RULER_DRAG_TYPE.table;
                     }
                     if (i == _count)
                     {
@@ -1663,7 +1696,7 @@ function CHorRuler()
                             if (Math.abs(x - _x) < 1)
                             {
                                 this.DragTablePos = _index;
-                                return 9;
+                                return AscWord.RULER_DRAG_TYPE.columnSize;
                             }
                         }
                         else
@@ -1671,7 +1704,7 @@ function CHorRuler()
                             if (x < _x + 1 && x > _x - 2)
                             {
                                 this.DragTablePos = _index;
-                                return 9;
+                                return AscWord.RULER_DRAG_TYPE.columnSize;
                             }
                         }
 
@@ -1684,7 +1717,7 @@ function CHorRuler()
                             if (Math.abs(x - _x) < 1)
                             {
                                 this.DragTablePos = _index;
-                                return 9;
+                                return AscWord.RULER_DRAG_TYPE.columnSize;
                             }
                         }
                         else
@@ -1692,7 +1725,7 @@ function CHorRuler()
                             if (x < _x + 2 && x > _x - 1)
                             {
                                 this.DragTablePos = _index;
-                                return 9;
+                                return AscWord.RULER_DRAG_TYPE.columnSize;
                             }
 
 							if (x > _x && x < (_x + markup.Space))
@@ -1715,7 +1748,7 @@ function CHorRuler()
                             if (Math.abs(x - _x) < 1)
                             {
                                 this.DragTablePos = _index;
-                                return 9;
+                                return AscWord.RULER_DRAG_TYPE.columnSize;
                             }
                         }
                         else
@@ -1723,7 +1756,7 @@ function CHorRuler()
                             if (x < _x + 1 && x > _x - 2)
                             {
                                 this.DragTablePos = _index;
-                                return 9;
+                                return AscWord.RULER_DRAG_TYPE.columnSize;
                             }
                         }
 
@@ -1736,7 +1769,7 @@ function CHorRuler()
                             if (Math.abs(x - _x) < 1)
                             {
                                 this.DragTablePos = _index;
-                                return 9;
+                                return AscWord.RULER_DRAG_TYPE.columnSize;
                             }
                         }
                         else
@@ -1744,7 +1777,7 @@ function CHorRuler()
                             if (x < _x + 2 && x > _x - 1)
                             {
                                 this.DragTablePos = _index;
-                                return 9;
+                                return AscWord.RULER_DRAG_TYPE.columnSize;
                             }
                         }
 
@@ -1753,7 +1786,7 @@ function CHorRuler()
                             if (Math.abs(x - (_x + markup.Cols[i].Space / 2)) < 1)
                             {
                                 this.DragTablePos = i;
-                                return 10;
+                                return AscWord.RULER_DRAG_TYPE.columnPos;
                             }
 
 							if (x > _x && x < (_x + markup.Cols[i].Space))
@@ -1773,23 +1806,23 @@ function CHorRuler()
         if (isNegative)
         {
             if (isColumnsInside)
-                return -9;
+                return -AscWord.RULER_DRAG_TYPE.columnSize;
 
             // если вникуда - то ВСЕГДА margins
-            return -1;
+            return -AscWord.RULER_DRAG_TYPE.leftMargin;
 
             if (isColumnsInside2)
                 return 0;
             if ((y >= _top && y <= _bottom) && !isTableInside)
             {
 				if (x < _margin_left)
-					return -1;
+					return -AscWord.RULER_DRAG_TYPE.leftMargin;
 				if (x > _margin_right)
-					return -2;
+					return -AscWord.RULER_DRAG_TYPE.rightMargin;
             }
         }
 
-        return 0;
+        return AscWord.RULER_DRAG_TYPE.none;
     }
 
     this.OnMouseDown = function(left, top, e)
@@ -1901,39 +1934,43 @@ function CHorRuler()
                 word_control.m_oOverlayApi.VertLine(pos);
                 break;
             }
-            case 3:
-            {
-                var pos = left + (_margin_left + this.m_dIndentLeft) * dKoef_mm_to_pix;
-                word_control.m_oOverlayApi.VertLine(pos);
-
-                this.m_dIndentLeft_old      = this.m_dIndentLeft;
-                this.m_dIndentLeftFirst_old = this.m_dIndentLeftFirst;
-                break;
-            }
-            case 4:
-            {
-                var pos = left + (_margin_left + this.m_dIndentLeft) * dKoef_mm_to_pix;
-                word_control.m_oOverlayApi.VertLine(pos);
-
-                this.m_dIndentLeft_old      = this.m_dIndentLeft;
-                break;
-            }
-            case 5:
-            {
-                var pos = left + (_margin_left + this.m_dIndentLeftFirst) * dKoef_mm_to_pix;
-                word_control.m_oOverlayApi.VertLine(pos);
-
-                this.m_dIndentLeftFirst_old = this.m_dIndentLeftFirst;
-                break;
-            }
-            case 6:
-            {
-                var pos = left + (_margin_right - this.m_dIndentRight) * dKoef_mm_to_pix;
-                word_control.m_oOverlayApi.VertLine(pos);
-
-                this.m_dIndentRight_old     = this.m_dIndentRight;
-                break;
-            }
+			case 3:
+			{
+				let offset = this.m_bRtl ? (_margin_right - this.m_dIndentLeft) : (_margin_left + this.m_dIndentLeft);
+				let pos    = left + offset * dKoef_mm_to_pix;
+				word_control.m_oOverlayApi.VertLine(pos);
+				
+				this.m_dIndentLeft_old      = this.m_dIndentLeft;
+				this.m_dIndentLeftFirst_old = this.m_dIndentLeftFirst;
+				break;
+			}
+			case 4:
+			{
+				let offset = this.m_bRtl ? (_margin_right - this.m_dIndentLeft) : (_margin_left + this.m_dIndentLeft);
+				let pos    = left + offset * dKoef_mm_to_pix;
+				word_control.m_oOverlayApi.VertLine(pos);
+				
+				this.m_dIndentLeft_old = this.m_dIndentLeft;
+				break;
+			}
+			case 5:
+			{
+				let offset = this.m_bRtl ? (_margin_right - this.m_dIndentLeftFirst) : (_margin_left + this.m_dIndentLeftFirst);
+				let pos    = left + offset * dKoef_mm_to_pix;
+				word_control.m_oOverlayApi.VertLine(pos);
+				
+				this.m_dIndentLeftFirst_old = this.m_dIndentLeftFirst;
+				break;
+			}
+			case 6:
+			{
+				let offset = this.m_bRtl ? (_margin_left + this.m_dIndentRight) : (_margin_right - this.m_dIndentRight);
+				let pos    = left + offset * dKoef_mm_to_pix;
+				word_control.m_oOverlayApi.VertLine(pos);
+				
+				this.m_dIndentRight_old = this.m_dIndentRight;
+				break;
+			}
             case 7:
             {
                 var pos = left + (_margin_left + this.m_arrTabs[this.m_lCurrentTab].pos) * dKoef_mm_to_pix;
@@ -2523,14 +2560,14 @@ function CHorRuler()
 			// old position --------------------------------------
 			context.strokeStyle = GlobalSkin.RulerMarkersOutlineColorOld;
 			context.fillStyle   = GlobalSkin.RulerMarkersFillColorOld;
-			if ((-10000 !== this.m_dIndentLeft_old) && (this.m_dIndentLeft_old !== this.m_dIndentLeft || this.m_bRtl_old !== this.m_bRtl))
-				blitLeftInd(this.m_dIndentLeft_old, this.m_bRtl_old);
+			if (-10000 !== this.m_dIndentLeft_old && this.m_dIndentLeft_old !== this.m_dIndentLeft)
+				blitLeftInd(this.m_dIndentLeft_old, this.m_bRtl);
 			
-			if ((-10000 !== this.m_dIndentLeftFirst_old) && (this.m_dIndentLeftFirst_old !== this.m_dIndentLeftFirst || this.m_bRtl_old !== this.m_bRtl))
-				blitFirstInd(this.m_dIndentLeftFirst_old, this.m_bRtl_old);
+			if (-10000 !== this.m_dIndentLeftFirst_old && this.m_dIndentLeftFirst_old !== this.m_dIndentLeftFirst)
+				blitFirstInd(this.m_dIndentLeftFirst_old, this.m_bRtl);
 			
-			if ((-10000 !== this.m_dIndentRight_old) && (this.m_dIndentRight_old !== this.m_dIndentRight || this.m_bRtl_old !== this.m_bRtl))
-				blitRightInd(this.m_dIndentRight_old, this.m_bRtl_old);
+			if (-10000 !== this.m_dIndentRight_old && this.m_dIndentRight_old !== this.m_dIndentRight)
+				blitRightInd(this.m_dIndentRight_old, this.m_bRtl);
 
 			context.strokeStyle = GlobalSkin.RulerTabsColorOld;
             if (-1 != this.m_lCurrentTab && this.m_lCurrentTab < this.m_arrTabs.length)
@@ -2704,9 +2741,9 @@ function CHorRuler()
 		if (!paraInd)
 			return false;
 		
-		let left      = undefined !== paraInd.Left ? paraInd.Left : this.m_dIndentLeft;
-		let right     = undefined !== paraInd.Right ? paraInd.Right : this.m_dIndentRight;
-		let firstLine = undefined !== paraInd.FirstLine ? left + paraInd.FirstLine : this.m_dIndentLeftFirst;
+		let left      = undefined !== paraInd.Left ? paraInd.Left : 0;
+		let right     = undefined !== paraInd.Right ? paraInd.Right : 0;
+		let firstLine = undefined !== paraInd.FirstLine ? left + paraInd.FirstLine : 0;
 		
 		let needUpdate = false;
 		
