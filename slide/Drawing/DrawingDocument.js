@@ -41,6 +41,7 @@ var History                  = AscCommon.History;
 var global_MatrixTransformer = AscCommon.global_MatrixTransformer;
 var g_dKoef_pix_to_mm        = AscCommon.g_dKoef_pix_to_mm;
 var g_dKoef_mm_to_pix        = AscCommon.g_dKoef_mm_to_pix;
+const thumbnailsPositionMap = AscCommon.thumbnailsPositionMap;
 
 var FontStyle         = AscFonts.FontStyle;
 var g_fontApplication = AscFonts.g_fontApplication;
@@ -4160,9 +4161,6 @@ function CThumbnailsManager(editorPage)
 	this.m_lDrawingFirst = -1;
 	this.m_lDrawingEnd = -1;
 
-	const thumbnailsPositionMap = AscCommonSlide.thumbnailsPositionMap;
-
-
 	this.bIsEmptyDrawed = false;
 
 	this.m_oCacheManager = new CCacheManager(true);
@@ -6134,7 +6132,7 @@ function CThumbnailsManager(editorPage)
 
 		const oThContainer = editor.WordControl.m_oThumbnailsContainer;
 		const isHidden = oThContainer.HtmlElement.style.display === "none";
-		const isHorizontalThumbnails = Asc.editor.thumbnailsPosition === AscCommonSlide.thumbnailsPositionMap.bottom;
+		const isHorizontalThumbnails = Asc.editor.thumbnailsPosition === thumbnailsPositionMap.bottom;
 
 		const offsetX = oThContainer.AbsolutePosition.L * g_dKoef_mm_to_pix;
 		const offsetY = oThContainer.AbsolutePosition.T * g_dKoef_mm_to_pix;
@@ -6494,7 +6492,7 @@ CThumbnailsManager.prototype.isThumbnailsShown = function () {
 	const width = absolutePosition.R - absolutePosition.L;
 	const height = absolutePosition.B - absolutePosition.T;
 
-	const isHorizontalThumbnails = Asc.editor.thumbnailsPosition === AscCommonSlide.thumbnailsPositionMap.bottom;
+	const isHorizontalThumbnails = Asc.editor.thumbnailsPosition === thumbnailsPositionMap.bottom;
 	return isHorizontalThumbnails
 		? width >= 0 && height >= 1
 		: width >= 1 && height >= 0;

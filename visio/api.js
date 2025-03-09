@@ -85,6 +85,18 @@
 				editor = window.editor;
 		}
 
+		this.thumbnailsPosition = AscCommon.thumbnailsPositionMap.left;
+		this.thumbnailsRTL = false;
+		if(config["thumbnails-position"] === "bottom") {
+			this.thumbnailsPosition = AscCommon.thumbnailsPositionMap.bottom;
+		}
+		else if(config["thumbnails-position"] === "right") {
+			this.thumbnailsPosition = AscCommon.thumbnailsPositionMap.right;
+		}
+		if(config['thumbnails-rtl'] === true) {
+			this.thumbnailsRTL = true;
+		}
+
 		this._init();
 		return this;
 	}

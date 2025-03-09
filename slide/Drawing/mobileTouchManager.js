@@ -83,7 +83,7 @@
 		let h = (((HtmlPage.m_oBody.AbsolutePosition.B - HtmlPage.m_oBody.AbsolutePosition.T) -
 			(HtmlPage.m_oTopRuler.AbsolutePosition.B - HtmlPage.m_oTopRuler.AbsolutePosition.T)) * g_dKoef_mm_to_pix) >> 0;
 
-		if(Asc.editor.thumbnailsPosition === AscCommonSlide.thumbnailsPositionMap.bottom) {
+		if(Asc.editor.thumbnailsPosition === AscCommon.thumbnailsPositionMap.bottom) {
 			h -= (HtmlPage.m_oThumbnails.AbsolutePosition.B - HtmlPage.m_oThumbnails.AbsolutePosition.T)
 		}
 
@@ -1134,7 +1134,7 @@
 	};
 	CMobileDelegateThumbnails.prototype.GetScrollerSize = function()
 	{
-		const isHorizontalThumbnails = Asc.editor.thumbnailsPosition === AscCommonSlide.thumbnailsPositionMap.bottom;
+		const isHorizontalThumbnails = Asc.editor.thumbnailsPosition === AscCommon.thumbnailsPositionMap.bottom;
 		return isHorizontalThumbnails
 			? { H : 1, W : AscCommon.AscBrowser.convertToRetinaValue(this.Thumbnails.ScrollerWidth) }
 			: { W : 1, H : AscCommon.AscBrowser.convertToRetinaValue(this.Thumbnails.ScrollerHeight) };
@@ -1142,7 +1142,7 @@
 	CMobileDelegateThumbnails.prototype.ScrollTo = function(_scroll)
 	{
 		if (this.HtmlPage.m_oScrollThumbApi) {
-			const isHorizontalThumbnails = Asc.editor.thumbnailsPosition === AscCommonSlide.thumbnailsPositionMap.bottom;
+			const isHorizontalThumbnails = Asc.editor.thumbnailsPosition === AscCommon.thumbnailsPositionMap.bottom;
 			isHorizontalThumbnails
 				? this.HtmlPage.m_oScrollThumbApi.scrollToX(-_scroll.x * AscCommon.AscBrowser.retinaPixelRatio)
 				: this.HtmlPage.m_oScrollThumbApi.scrollToY(-_scroll.y * AscCommon.AscBrowser.retinaPixelRatio);

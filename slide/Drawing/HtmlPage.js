@@ -35,11 +35,7 @@
 (function (window) {
 	let oThis;
 
-	const thumbnailsPositionMap = {
-		left: 0,
-		right: 1,
-		bottom: 2,
-	};
+	const thumbnailsPositionMap = AscCommon.thumbnailsPositionMap;
 
 	const g_anchor_left = AscCommon.g_anchor_left;
 	const g_anchor_top = AscCommon.g_anchor_top;
@@ -5007,6 +5003,5 @@
 
 	window['AscCommonSlide'] = window['AscCommonSlide'] || {};
 	window['AscCommonSlide'].CEditorPage = CEditorPage;
-	window['AscCommonSlide'].thumbnailsPositionMap = thumbnailsPositionMap;
 
 })(window);

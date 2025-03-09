@@ -689,14 +689,14 @@
 		this.disableReporterEvents = false;
 		this.TableStylesPreviewGenerator = null;
 
-		this.thumbnailsPosition = AscCommonSlide.thumbnailsPositionMap.left;
+		this.thumbnailsPosition = AscCommon.thumbnailsPositionMap.left;
 		this.thumbnailsRTL = false;
 
 		if(config["thumbnails-position"] === "bottom") {
-			this.thumbnailsPosition = AscCommonSlide.thumbnailsPositionMap.bottom;
+			this.thumbnailsPosition = AscCommon.thumbnailsPositionMap.bottom;
 		}
 		else if(config["thumbnails-position"] === "right") {
-			this.thumbnailsPosition = AscCommonSlide.thumbnailsPositionMap.right;
+			this.thumbnailsPosition = AscCommon.thumbnailsPositionMap.right;
 		}
 
 

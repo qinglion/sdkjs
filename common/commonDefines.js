@@ -3714,6 +3714,12 @@ window.AscCommon.g_cIsBeta = "false";
 			SzWidescreen: 16
 	};
 
+	const thumbnailsPositionMap = {
+		left: 0,
+		right: 1,
+		bottom: 2,
+	};
+
 	var c_oAscPictureFormScaleFlag = {
 		Always  : 0,
 		Bigger  : 1,
@@ -5890,6 +5896,8 @@ window.AscCommon.g_cIsBeta = "false";
 	prot['SzScreen16x9'] = prot.SzScreen16x9;
 	prot['SzScreen4x3'] = prot.SzScreen4x3;
 	prot['SzWidescreen'] = prot.SzWidescreen;
+
+	window['AscCommon'].thumbnailsPositionMap = thumbnailsPositionMap;
 
 	prot = window['Asc']['c_oAscPictureFormScaleFlag'] = window['Asc'].c_oAscPictureFormScaleFlag = c_oAscPictureFormScaleFlag;
 	prot['Always']  = prot.Always;

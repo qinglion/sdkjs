@@ -882,6 +882,9 @@
 	CVisioDocument.prototype.GetSlidesCount = function () {
 		return this.getCountPages();
 	};
+	CVisioDocument.prototype.GetAllSlides = function () {
+		return this.pages.page;
+	};
 	CVisioDocument.prototype.Recalculate = function (RecalcData) {
 		//todo
 		this.DrawingDocument.OnStartRecalculate(this.GetSlidesCount());
@@ -924,6 +927,9 @@
 		return nIdx + 1;
 	};
 	CVisioDocument.prototype.isSlideAnimated = function () {
+		return false;
+	};
+	CVisioDocument.prototype.isSlidePreserved = function () {
 		return false;
 	};
 	CVisioDocument.prototype.CheckTargetUpdate = function () {

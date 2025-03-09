@@ -1717,6 +1717,9 @@
 		this.associatedPage = null;
 		this.pageSheet = null;
 		this.rel = null;
+
+		//todo objectId
+		this.deleteLock = new AscVisio.PropLocker(undefined);
 		return this;
 	}
 
