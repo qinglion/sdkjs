@@ -2700,27 +2700,46 @@ function CHorRuler()
             _positon_y = this.m_nBottom + Math.round(1.5 * dPR);
 
             var _min_default_value = Math.max(0, this.m_dMaxTab);
-            if (this.m_dDefaultTab > 0.01)
-            {
-                while (true)
-                {
-                    if ((_margin_left + position_default_tab) > this.m_dMarginRight)
-                        break;
-
-                    if (position_default_tab < _min_default_value)
-                    {
-                        position_default_tab += this.m_dDefaultTab;
-                        continue;
-                    }
-
-                    var _x = parseInt((_margin_left + position_default_tab) * dKoef_mm_to_pix) + left + indent;
-                    context.beginPath();
-                    context.moveTo(_x, _positon_y);
-                    context.lineTo(_x, _positon_y + Math.round(3 * dPR));
-                    context.stroke();
-
-                    position_default_tab += this.m_dDefaultTab;
-                }
+			if (this.m_dDefaultTab > 0.01)
+			{
+				if (this.m_bRtl)
+				{
+					while (_margin_right - position_default_tab > this.m_dMarginLeft)
+					{
+						if (position_default_tab < _min_default_value)
+						{
+							position_default_tab += this.m_dDefaultTab;
+							continue;
+						}
+						
+						let _x = parseInt((_margin_right - position_default_tab) * dKoef_mm_to_pix) + left + indent;
+						context.beginPath();
+						context.moveTo(_x, _positon_y);
+						context.lineTo(_x, _positon_y + Math.round(3 * dPR));
+						context.stroke();
+						
+						position_default_tab += this.m_dDefaultTab;
+					}
+				}
+				else
+				{
+					while (_margin_left + position_default_tab < this.m_dMarginRight)
+					{
+						if (position_default_tab < _min_default_value)
+						{
+							position_default_tab += this.m_dDefaultTab;
+							continue;
+						}
+						
+						let _x = parseInt((_margin_left + position_default_tab) * dKoef_mm_to_pix) + left + indent;
+						context.beginPath();
+						context.moveTo(_x, _positon_y);
+						context.lineTo(_x, _positon_y + Math.round(3 * dPR));
+						context.stroke();
+						
+						position_default_tab += this.m_dDefaultTab;
+					}
+				}
             }
 
             // custom tabs
