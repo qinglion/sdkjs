@@ -691,6 +691,13 @@
 
 		this.thumbnailsPosition = AscCommon.thumbnailsPositionMap.left;
 
+		if(config["thumbnails-position"] === "bottom") {
+			this.thumbnailsPosition = AscCommon.thumbnailsPositionMap.bottom;
+		}
+		else if(config["thumbnails-position"] === "right") {
+			this.thumbnailsPosition = AscCommon.thumbnailsPositionMap.right;
+		}
+
 
 		if (this.isReporterMode)
 		{
@@ -9626,7 +9633,20 @@ background-repeat: no-repeat;\
 		this.thumbnailsPosition = pos;
 	};
 
+	asc_docs_api.prototype.getThumbnailsPosition = function () {
+		if(!this.isRTLInterface) {
+			return this.thumbnailsPosition;
+		}
+		if(this.thumbnailsPosition === AscCommon.thumbnailsPositionMap.left) {
+			return AscCommon.thumbnailsPositionMap.right;
+		}
+		return this.thumbnailsPosition;
+	};
+
 	asc_docs_api.prototype.onUpdateThumbnailsPosition = function () {
+	};
+	asc_docs_api.prototype.onChangeRTLInterface = function () {
+		this.onUpdateThumbnailsPosition();
 	};
 
 	//-------------------------------------------------------------export---------------------------------------------------

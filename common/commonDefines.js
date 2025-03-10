@@ -5897,7 +5897,10 @@ window.AscCommon.g_cIsBeta = "false";
 	prot['SzScreen4x3'] = prot.SzScreen4x3;
 	prot['SzWidescreen'] = prot.SzWidescreen;
 
-	window['AscCommon'].thumbnailsPositionMap = thumbnailsPositionMap;
+	prot = window['AscCommon']['thumbnailsPositionMap'] = window['AscCommon'].thumbnailsPositionMap = thumbnailsPositionMap;
+	prot['left']   = prot.left;
+	prot['right']  = prot.right;
+	prot['bottom'] = prot.bottom;
 
 	prot = window['Asc']['c_oAscPictureFormScaleFlag'] = window['Asc'].c_oAscPictureFormScaleFlag = c_oAscPictureFormScaleFlag;
 	prot['Always']  = prot.Always;

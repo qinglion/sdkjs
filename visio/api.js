@@ -86,6 +86,13 @@
 		}
 
 		this.thumbnailsPosition = AscCommon.thumbnailsPositionMap.left;
+		if(config["thumbnails-position"] === "bottom") {
+			this.thumbnailsPosition = AscCommon.thumbnailsPositionMap.bottom;
+		}
+		else if(config["thumbnails-position"] === "right") {
+			this.thumbnailsPosition = AscCommon.thumbnailsPositionMap.right;
+		}
+
 
 		this._init();
 		return this;
@@ -982,6 +989,7 @@
 
 	VisioEditorApi.prototype.asc_SetThumbnailsPosition = function (pos) {
 		this.thumbnailsPosition = pos;
+		this.onUpdateThumbnailsPosition();
 	};
 
 	VisioEditorApi.prototype.onUpdateThumbnailsPosition = function () {
