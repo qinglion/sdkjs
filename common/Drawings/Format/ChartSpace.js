@@ -4353,8 +4353,9 @@ function(window, undefined) {
 
 			let oSeries = plotAreaRegion.series[0];
 			if(!oSeries) return false;
+			return true;
 		}
-		if (this.isChartEx() && this.chart && this.chart.plotArea && this.chart.plotArea.charts.length > 0) {
+		if (this.chart && this.chart.plotArea && this.chart.plotArea.charts.length > 0) {
 			return true;
 		}
 		return false;
