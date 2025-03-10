@@ -1678,7 +1678,7 @@
 		oParaPr.ListType	= AscFormat.fGetListTypeFromBullet(oParaPr.Bullet);
 
 		this.sync_ParaSpacingLine(oParaPr.Spacing);
-		this.Update_ParaInd(oParaPr.Ind);
+		this.Update_ParaInd(oParaPr.Ind, false);
 		this.sync_PrAlignCallBack(oParaPr.Jc);
 		this.sync_ParaStyleName(oParaPr.StyleName);
 		this.sync_ListType(oParaPr.ListType);

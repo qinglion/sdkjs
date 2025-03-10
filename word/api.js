@@ -2272,7 +2272,7 @@ background-repeat: no-repeat;\
 		}
 
 		this.sync_ParaSpacingLine(ParaPr.Spacing);
-		this.Update_ParaInd(ParaPr.Ind);
+		this.Update_ParaInd(ParaPr.Ind, ParaPr.Bidi);
 		this.sync_PrAlignCallBack(ParaPr.Jc);
 		
 		let bidi = ParaPr.Bidi;
@@ -5375,45 +5375,12 @@ background-repeat: no-repeat;\
 			}
 		}
 	};
-	asc_docs_api.prototype.Update_ParaInd                = function(Ind)
+	asc_docs_api.prototype.Update_ParaInd                = function(paraInd, isRtl)
 	{
-		var FirstLine = 0,
-			Left      = 0,
-			Right     = 0;
-		if ("undefined" != typeof(Ind))
-		{
-			if ("undefined" != typeof(Ind.FirstLine))
-			{
-				FirstLine = Ind.FirstLine;
-			}
-			if ("undefined" != typeof(Ind.Left))
-			{
-				Left = Ind.Left;
-			}
-			if ("undefined" != typeof(Ind.Right))
-			{
-				Right = Ind.Right;
-			}
-		}
-
-		var bIsUpdate = false;
-		var _ruler    = this.WordControl.m_oHorRuler;
-		if (_ruler.m_dIndentLeft != Left)
-		{
-			_ruler.m_dIndentLeft = Left;
-			bIsUpdate            = true;
-		}
-		if (_ruler != (FirstLine + Left))
-		{
-			_ruler.m_dIndentLeftFirst = (FirstLine + Left);
-			bIsUpdate                 = true;
-		}
-		if (_ruler.m_dIndentRight != Right)
-		{
-			_ruler.m_dIndentRight = Right;
-			bIsUpdate             = true;
-		}
-		if (bIsUpdate)
+		let updateFlag = this.WordControl.m_oHorRuler.UpdateParaInd(paraInd, isRtl);
+		if (updateFlag & 2)
+			this.WordControl.UpdateHorRulerBack(true);
+		if (updateFlag & 1)
 			this.WordControl.UpdateHorRuler();
 	};
 	asc_docs_api.prototype.Internal_Update_Ind_FirstLine = function(FirstLine, Left)
