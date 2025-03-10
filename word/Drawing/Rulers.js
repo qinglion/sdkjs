@@ -703,9 +703,9 @@ function CHorRuler()
 		
 		if (drawFunc)
 		{
-			let zeroX  = this.m_bRtl ? right_margin : left_margin;
-			let rCount = this.m_bRtl ? ((width - right_margin) / step) >> 0 : (((width - left_margin) / step) >> 0) - 1;
-			let lCount = this.m_bRtl ? ((right_margin / step) >> 0) - 1 : left_margin / step >> 0;
+			let zeroX  = isRtl ? right_margin : left_margin;
+			let rCount = isRtl ? ((width - right_margin) / step) >> 0 : (((width - left_margin) / step) >> 0) - 1;
+			let lCount = isRtl ? ((right_margin / step) >> 0) - 1 : left_margin / step >> 0;
 			
 			drawFunc(zeroX, step, rCount);
 			drawFunc(zeroX, -step, lCount);
