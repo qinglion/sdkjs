@@ -553,7 +553,6 @@ function CHorRuler()
 		let mm_1_4     = 10 * dKoef_mm_to_pix / 4;
 		let inch_1_8   = 25.4 * dKoef_mm_to_pix / 8;
 		let point_1_12 = 25.4 * dKoef_mm_to_pix / 12;
-        var isDraw1_4 = (mm_1_4 > 7) ? true : false;
 
         var middleVert = (this.m_nTop + this.m_nBottom) / 2;
         var part1 = 1.5 * Math.round(dPR);
@@ -564,6 +563,7 @@ function CHorRuler()
 		let _bottom = this.m_nBottom;
 		function drawLayoutMM(x, step, count)
 		{
+			let isDraw1_4 = Math.abs(step) > 7;
 			let index = 0;
 			let num = 0;
 			for (let i = 1; i < count; ++i)
@@ -611,6 +611,7 @@ function CHorRuler()
 		}
 		function drawLayoutInch(x, step, count)
 		{
+			let isDraw1_8 = Math.abs(step) > 8;
 			let index = 0;
 			let num   = 0;
 			for (let i = 1; i < count; ++i)
@@ -638,7 +639,7 @@ function CHorRuler()
 					context.lineTo(lXPos, middleVert + part2);
 					context.stroke();
 				}
-				else if (inch_1_8 > 8)
+				else if (isDraw1_8)
 				{
 					// 1/8
 					context.beginPath();
@@ -650,6 +651,7 @@ function CHorRuler()
 		}
 		function drawLayoutPt(x, step, count)
 		{
+			let isDraw1_12 = Math.abs(step) > 5;
 			let index = 0;
 			let num   = 0;
 			for (let i = 1; i < count; ++i)
@@ -669,7 +671,7 @@ function CHorRuler()
 					lXPos -= (lWidthText / 2.0);
 					context.fillText(strNum, lXPos, _bottom - Math.round(3 * dPR));
 				}
-				else if (point_1_12 > 5)
+				else if (isDraw1_12)
 				{
 					// 1/12
 					context.beginPath();
@@ -1022,7 +1024,7 @@ function CHorRuler()
             }
 			case AscWord.RULER_DRAG_TYPE.leftFirstInd:
 			{
-				let newVal = RulerCorrectPosition(this, _x, _margin_left);
+				let newVal = RulerCorrectPosition(this, _x, this.m_bRtl ? _margin_right : _margin_left);
 				
 				if (this.m_bRtl)
 				{
@@ -1082,7 +1084,7 @@ function CHorRuler()
 			}
 			case AscWord.RULER_DRAG_TYPE.leftInd:
 			{
-				let newVal = RulerCorrectPosition(this, _x, _margin_left);
+				let newVal = RulerCorrectPosition(this, _x, this.m_bRtl ? _margin_right : _margin_left);
 				if (newVal < 0)
 					newVal = 0;
 				
@@ -1127,7 +1129,7 @@ function CHorRuler()
 			}
 			case AscWord.RULER_DRAG_TYPE.firstInd:
 			{
-				let newVal = RulerCorrectPosition(this, _x, _margin_left);
+				let newVal = RulerCorrectPosition(this, _x, this.m_bRtl ? _margin_right : _margin_left);
 		
 				if (newVal < 0)
 					newVal = 0;
@@ -1173,7 +1175,7 @@ function CHorRuler()
 			}
 			case AscWord.RULER_DRAG_TYPE.rightInd:
 			{
-				let newVal = RulerCorrectPosition(this, _x, _margin_left);
+				let newVal = RulerCorrectPosition(this, _x, this.m_bRtl ? _margin_right : _margin_left);
 				
 				if (newVal > (this.m_oPage.width_mm))
 					newVal = this.m_oPage.width_mm;
