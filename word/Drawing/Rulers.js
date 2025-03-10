@@ -216,16 +216,9 @@ function CHorRuler()
     this.m_oCanvas              = null;
 
     this.m_dZoom                = 1;
-
-    this.DragType = AscWord.RULER_DRAG_TYPE.none;  // 0 - none
-                        // 1 - left margin, 2 - right margin
-                        // 3 - indent left + indent left first, 4 - indent left // 5 - indent left first, 6 - indent right
-                        // 7 - tabs
-                        // 8 - table
-                        // 9 - column size
-                        // 10 - column move
-
-    this.DragTypeMouseDown = 0;
+	
+	this.DragType          = AscWord.RULER_DRAG_TYPE.none;
+	this.DragTypeMouseDown = AscWord.RULER_DRAG_TYPE.none;
 
     this.m_dIndentLeft_old      = -10000;
     this.m_dIndentLeftFirst_old = -10000;
@@ -1116,47 +1109,66 @@ function CHorRuler()
                 word_control.m_oDrawingDocument.SetCursorType("w-resize");
                 break;
             }
-            case AscWord.RULER_DRAG_TYPE.leftFirstInd:
-            {
-                var newVal = RulerCorrectPosition(this, _x, _margin_left);
-
-                var min = 0;
-                if (this.m_dIndentLeftFirst < this.m_dIndentLeft)
-                    min = this.m_dIndentLeft - this.m_dIndentLeftFirst;
-
-                if (newVal < min)
-                    newVal = min;
-
-                if (_presentations)
-                {
-                    min = _margin_left;
-                    if (this.m_dIndentLeftFirst < this.m_dIndentLeft)
-                        min += (this.m_dIndentLeft - this.m_dIndentLeftFirst);
-                    if (newVal < min)
-                        newVal = min;
-                }
-
-                var max = _margin_right;
-                if (0 < this.m_dIndentRight)
-                    max = _margin_right - this.m_dIndentRight;
-                if (this.m_dIndentLeftFirst > this.m_dIndentLeft)
-                {
-                    max = max + (this.m_dIndentLeft - this.m_dIndentLeftFirst);
-                }
-
-                if (newVal > (max - 20))
-                    newVal = Math.max(max - 20, (this.m_dIndentLeft_old + _margin_left));
-
-                var newIndent = newVal - _margin_left;
-                this.m_dIndentLeftFirst = (this.m_dIndentLeftFirst - this.m_dIndentLeft) + newIndent;
-                this.m_dIndentLeft = newIndent;
-                word_control.UpdateHorRulerBack();
-
-                var pos = left + (_margin_left + this.m_dIndentLeft) * dKoef_mm_to_pix;
-                word_control.m_oOverlayApi.VertLine(pos);
-
-                break;
-            }
+			case AscWord.RULER_DRAG_TYPE.leftFirstInd:
+			{
+				let newVal = RulerCorrectPosition(this, _x, _margin_left);
+				
+				if (this.m_bRtl)
+				{
+					let max = this.m_oPage.width_mm;
+					if (_presentations)
+						max = _margin_right;
+					else if (this.m_dIndentLeftFirst < this.m_dIndentLeft)
+						max = this.m_oPage.width_mm - (this.m_dIndentLeft - this.m_dIndentLeftFirst);
+					
+					if (newVal > max)
+						newVal = max;
+					
+					let min = _margin_left;
+					if (this.m_dIndentRight > 0)
+						min = _margin_left + this.m_dIndentRight;
+					
+					if (this.m_dIndentLeftFirst > this.m_dIndentLeft)
+						min += this.m_dIndentLeftFirst - this.m_dIndentLeft;
+					
+					if (newVal < min + 20)
+						newVal = Math.min(min + 20, _margin_right - this.m_dIndentLeft_old);
+					
+					let newIndent = _margin_right - newVal;
+					this.m_dIndentLeftFirst = (this.m_dIndentLeftFirst - this.m_dIndentLeft) + newIndent;
+					this.m_dIndentLeft      = newIndent;
+				}
+				else
+				{
+					let min = 0;
+					
+					if (_presentations)
+						min = _margin_left;
+					else if (this.m_dIndentLeftFirst < this.m_dIndentLeft)
+						min = this.m_dIndentLeft - this.m_dIndentLeftFirst;
+					
+					if (newVal < min)
+						newVal = min;
+					
+					let max = _margin_right;
+					if (0 < this.m_dIndentRight)
+						max = _margin_right - this.m_dIndentRight;
+					
+					if (this.m_dIndentLeftFirst > this.m_dIndentLeft)
+						max = max + (this.m_dIndentLeft - this.m_dIndentLeftFirst);
+					
+					if (newVal > (max - 20))
+						newVal = Math.max(max - 20, (this.m_dIndentLeft_old + _margin_left));
+					
+					let newIndent           = newVal - _margin_left;
+					this.m_dIndentLeftFirst = (this.m_dIndentLeftFirst - this.m_dIndentLeft) + newIndent;
+					this.m_dIndentLeft      = newIndent;
+				}
+				let pos = left + newVal * dKoef_mm_to_pix;
+				word_control.UpdateHorRulerBack();
+				word_control.m_oOverlayApi.VertLine(pos);
+				break;
+			}
 			case AscWord.RULER_DRAG_TYPE.leftInd:
 			{
 				let newVal = RulerCorrectPosition(this, _x, _margin_left);
@@ -1165,31 +1177,14 @@ function CHorRuler()
 				
 				if (this.m_bRtl)
 				{
-					let max = _margin_right - 20;
-					if (0 < this.m_dIndentRight)
-						max -= this.m_dIndentRight;
-			
-					if (_presentations)
-					{
-						if (newVal < _margin_left)
-							newVal = _margin_left;
-					}
-			
-					if (newVal > max)
-						newVal = Math.max(max, _margin_left + this.m_dIndentLeft_old);
-			
-					this.m_dIndentLeft = newVal - _margin_left;
-				}
-				else
-				{
 					if (newVal > (this.m_oPage.width_mm))
 						newVal = this.m_oPage.width_mm;
 					
-					let min = Math.max(_margin_right, _margin_right + this.m_dIndentRight) + 20;
+					let min = Math.max(_margin_left, _margin_left + this.m_dIndentRight) + 20;
 					if (_presentations)
 					{
-						if (newVal < _margin_left)
-							newVal = _margin_left;
+						if (newVal > _margin_right)
+							newVal = _margin_right;
 					}
 					
 					if (newVal < min)
@@ -1197,75 +1192,120 @@ function CHorRuler()
 					
 					this.m_dIndentLeft = _margin_right - newVal;
 				}
+				else
+				{
+					let max = _margin_right - 20;
+					if (0 < this.m_dIndentRight)
+						max -= this.m_dIndentRight;
+					
+					if (_presentations)
+					{
+						if (newVal < _margin_left)
+							newVal = _margin_left;
+					}
+					
+					if (newVal > max)
+						newVal = Math.max(max, _margin_left + this.m_dIndentLeft_old);
+					
+					this.m_dIndentLeft = newVal - _margin_left;
+				}
 				let pos = left + newVal * dKoef_mm_to_pix;
 				word_control.UpdateHorRulerBack();
 				word_control.m_oOverlayApi.VertLine(pos);
-		
 				break;
 			}
-            case 5:
-            {
-                var newVal = RulerCorrectPosition(this, _x, _margin_left);
-
-                if (newVal < 0)
-                    newVal = 0;
-
-                var max = _margin_right - 20;
-                if (0 < this.m_dIndentRight)
-                    max -= this.m_dIndentRight;
-
-                if (_presentations)
-                {
-                    if (newVal < _margin_left)
-                        newVal = _margin_left;
-                }
-
-                if (newVal > max)
-                    newVal = Math.max(max, _margin_left + this.m_dIndentLeftFirst_old);
-
-                this.m_dIndentLeftFirst = newVal - _margin_left;
-                word_control.UpdateHorRulerBack();
-
-                var pos = left + (_margin_left + this.m_dIndentLeftFirst) * dKoef_mm_to_pix;
-                word_control.m_oOverlayApi.VertLine(pos);
-
-                break;
-            }
-            case 6:
-            {
-                var newVal = RulerCorrectPosition(this, _x, _margin_left);
-
-                if (newVal > (this.m_oPage.width_mm))
-                    newVal = this.m_oPage.width_mm;
-
-                var min = _margin_left;
-                if ((_margin_left + this.m_dIndentLeft) > min)
-                    min = _margin_left + this.m_dIndentLeft;
-                if ((_margin_left + this.m_dIndentLeftFirst) > min)
-                    min = _margin_left + this.m_dIndentLeftFirst;
-
-                min += 20;
-
-                if (newVal < min)
-                    newVal = Math.min(min, _margin_right - this.m_dIndentRight_old);
-
-                if (_presentations)
-                {
-                    if (newVal > _margin_right)
-                        newVal = _margin_right;
-                }
-                this.m_dIndentRight = _margin_right - newVal;
-                word_control.UpdateHorRulerBack();
-
-                var pos = left + (_margin_right - this.m_dIndentRight) * dKoef_mm_to_pix;
-                word_control.m_oOverlayApi.VertLine(pos);
-
-				// if (!this.SimpleChanges.IsSimple)
-				// 	this.SetPrProperties(true);
-
-                break;
-            }
-            case 7:
+			case AscWord.RULER_DRAG_TYPE.firstInd:
+			{
+				let newVal = RulerCorrectPosition(this, _x, _margin_left);
+		
+				if (newVal < 0)
+					newVal = 0;
+				
+				if (this.m_bRtl)
+				{
+					if (newVal > (this.m_oPage.width_mm))
+						newVal = this.m_oPage.width_mm;
+					
+					let min = 20 + Math.max(_margin_left, _margin_left + this.m_dIndentRight);
+					if (_presentations)
+					{
+						if (newVal > _margin_right)
+							newVal = _margin_right;
+					}
+					
+					if (newVal < min)
+						newVal = Math.min(min, _margin_right - this.m_dIndentLeftFirst_old);
+					
+					this.m_dIndentLeftFirst = _margin_right - newVal;
+				}
+				else
+				{
+					let max = _margin_right - 20;
+					if (0 < this.m_dIndentRight)
+						max -= this.m_dIndentRight;
+					
+					if (_presentations)
+					{
+						if (newVal < _margin_left)
+							newVal = _margin_left;
+					}
+					
+					if (newVal > max)
+						newVal = Math.max(max, _margin_left + this.m_dIndentLeftFirst_old);
+					
+					this.m_dIndentLeftFirst = newVal - _margin_left;
+				}
+				let pos = left + newVal * dKoef_mm_to_pix;
+				word_control.UpdateHorRulerBack();
+				word_control.m_oOverlayApi.VertLine(pos);
+				break;
+			}
+			case AscWord.RULER_DRAG_TYPE.rightInd:
+			{
+				let newVal = RulerCorrectPosition(this, _x, _margin_left);
+				
+				if (newVal > (this.m_oPage.width_mm))
+					newVal = this.m_oPage.width_mm;
+				if (newVal < 0)
+					newVal = 0;
+				
+				if (this.m_bRtl)
+				{
+					let max = -20 + Math.min(_margin_right, _margin_right - this.m_dIndentLeft, _margin_right - this.m_dIndentLeftFirst);
+					if (newVal > max)
+						newVal = Math.max(max, _margin_left + this.m_dIndentRight_old);
+					
+					if (_presentations && newVal < _margin_left)
+						newVal = _margin_left;
+					
+					this.m_dIndentRight = newVal - _margin_left;
+				}
+				else
+				{
+					let min = _margin_left;
+					if ((_margin_left + this.m_dIndentLeft) > min)
+						min = _margin_left + this.m_dIndentLeft;
+					if ((_margin_left + this.m_dIndentLeftFirst) > min)
+						min = _margin_left + this.m_dIndentLeftFirst;
+					
+					min += 20;
+					
+					if (newVal < min)
+						newVal = Math.min(min, _margin_right - this.m_dIndentRight_old);
+					
+					if (_presentations)
+					{
+						if (newVal > _margin_right)
+							newVal = _margin_right;
+					}
+					this.m_dIndentRight = _margin_right - newVal;
+				}
+				let pos = left + newVal * dKoef_mm_to_pix;
+				word_control.UpdateHorRulerBack();
+				word_control.m_oOverlayApi.VertLine(pos);
+				break;
+			}
+            case AscWord.RULER_DRAG_TYPE.tab:
             {
                 var newVal = RulerCorrectPosition(this, _x, _margin_left);
 
@@ -1289,7 +1329,7 @@ function CHorRuler()
                     word_control.m_oOverlayApi.VertLine(pos);
                 break;
             }
-            case 8:
+            case AscWord.RULER_DRAG_TYPE.table:
             {
                 var newVal = RulerCorrectPosition(this, _x, this.TableMarginLeftTrackStart);
 
@@ -1334,7 +1374,7 @@ function CHorRuler()
                 word_control.m_oOverlayApi.VertLine(pos);
                 break;
             }
-            case 9:
+            case AscWord.RULER_DRAG_TYPE.columnSize:
             {
                 var newVal = RulerCorrectPosition(this, _x, this.TableMarginLeftTrackStart);
 
@@ -1483,7 +1523,7 @@ function CHorRuler()
                 word_control.m_oOverlayApi.VertLine(pos);
                 break;
             }
-            case 10:
+            case AscWord.RULER_DRAG_TYPE.columnPos:
             {
                 var newVal = RulerCorrectPosition(this, _x, this.TableMarginLeftTrackStart);
 
@@ -1583,7 +1623,7 @@ function CHorRuler()
             }
 
             // right indent
-            dCenterX = this.m_bRtl ? _maring_left + this.m_dIndentRight : _margin_right -  this.m_dIndentRight;
+            dCenterX = this.m_bRtl ? _margin_left + this.m_dIndentRight : _margin_right -  this.m_dIndentRight;
 
             var1 = dCenterX - 1;
             var4 = dCenterX + 1;
@@ -1855,7 +1895,7 @@ function CHorRuler()
         if (this.DragType < 0)
         {
 			this.DragTypeMouseDown = -this.DragType;
-			this.DragType = 0;
+			this.DragType = AscWord.RULER_DRAG_TYPE.none;
 		}
 		else
         {
@@ -1865,46 +1905,44 @@ function CHorRuler()
 		if (global_mouseEvent.ClickCount > 1)
         {
             var eventType = "";
-            switch (this.DragTypeMouseDown)
-            {
-                case 1:
-                case 2:
-                {
+			switch (this.DragTypeMouseDown)
+			{
+				case AscWord.RULER_DRAG_TYPE.leftMargin:
+				case AscWord.RULER_DRAG_TYPE.rightMargin:
+				{
 					eventType = "margins";
-                    break;
-                }
-                case 3:
-                case 4:
-                case 5:
-                case 6:
-                {
+					break;
+				}
+				case AscWord.RULER_DRAG_TYPE.leftFirstInd:
+				case AscWord.RULER_DRAG_TYPE.leftInd:
+				case AscWord.RULER_DRAG_TYPE.firstInd:
+				case AscWord.RULER_DRAG_TYPE.rightInd:
+				{
 					eventType = "indents";
-                    break;
-                }
-                case 7:
-                {
+					break;
+				}
+				case AscWord.RULER_DRAG_TYPE.tab:
+				{
 					eventType = "tabs";
-                    break;
-                }
-                case 8:
-                {
+					break;
+				}
+				case AscWord.RULER_DRAG_TYPE.table:
+				{
 					eventType = "tables";
-                    break;
-                }
-                case 9:
-                case 10:
-                {
+					break;
+				}
+				case AscWord.RULER_DRAG_TYPE.columnSize:
+				case AscWord.RULER_DRAG_TYPE.columnPos:
+				{
 					eventType = "columns";
-                    break;
-                }
-                default:
-                    break;
-            }
+					break;
+				}
+			}
 
             if (eventType != "")
             {
 				word_control.m_oApi.sendEvent("asc_onRulerDblClick", eventType);
-                this.DragType = 0;
+                this.DragType = AscWord.RULER_DRAG_TYPE.none;
                 this.OnMouseUp(left, top, e);
                 return;
             }
