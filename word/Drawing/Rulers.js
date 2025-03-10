@@ -566,7 +566,7 @@ function CHorRuler()
 			let isDraw1_4 = Math.abs(step) > 7;
 			let index = 0;
 			let num = 0;
-			for (let i = 1; i < count; ++i)
+			for (let i = 1; i <= count; ++i)
 			{
 				let lXPos = ((x + i * step) >> 0) + indent;
 				index++;
@@ -614,7 +614,7 @@ function CHorRuler()
 			let isDraw1_8 = Math.abs(step) > 8;
 			let index = 0;
 			let num   = 0;
-			for (let i = 1; i < count; ++i)
+			for (let i = 1; i <= count; ++i)
 			{
 				let lXPos = ((x + i * step) >> 0) + indent;
 				index++;
@@ -654,7 +654,7 @@ function CHorRuler()
 			let isDraw1_12 = Math.abs(step) > 5;
 			let index = 0;
 			let num   = 0;
-			for (let i = 1; i < count; ++i)
+			for (let i = 1; i <= count; ++i)
 			{
 				let lXPos = ((x + i * step) >> 0) + indent;
 				index++;
