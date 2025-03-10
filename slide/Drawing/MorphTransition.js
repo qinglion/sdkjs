@@ -1323,6 +1323,8 @@
     CWrapperBase.prototype.GetId = function() {
         return this.Id;
     };
+	CWrapperBase.prototype.Get_Id = CWrapperBase.prototype.GetId;
+	CWrapperBase.prototype.getPresentationSize = AscFormat.CGraphicObjectBase.prototype.getPresentationSize;
     CWrapperBase.prototype.registerId = function() {
         AscFormat.ExecuteNoHistory(function() {
             this.Id = AscCommon.g_oIdCounter.Get_NewId();
