@@ -1960,19 +1960,19 @@ function CHorRuler()
 
         switch (this.DragType)
         {
-            case 1:
+            case AscWord.RULER_DRAG_TYPE.leftMargin:
             {
                 var pos = left + _margin_left * dKoef_mm_to_pix;
                 word_control.m_oOverlayApi.VertLine(pos);
                 break;
             }
-            case 2:
+            case AscWord.RULER_DRAG_TYPE.rightMargin:
             {
                 var pos = left + _margin_right * dKoef_mm_to_pix;
                 word_control.m_oOverlayApi.VertLine(pos);
                 break;
             }
-			case 3:
+			case AscWord.RULER_DRAG_TYPE.leftFirstInd:
 			{
 				let offset = this.m_bRtl ? (_margin_right - this.m_dIndentLeft) : (_margin_left + this.m_dIndentLeft);
 				let pos    = left + offset * dKoef_mm_to_pix;
@@ -1982,7 +1982,7 @@ function CHorRuler()
 				this.m_dIndentLeftFirst_old = this.m_dIndentLeftFirst;
 				break;
 			}
-			case 4:
+			case AscWord.RULER_DRAG_TYPE.leftInd:
 			{
 				let offset = this.m_bRtl ? (_margin_right - this.m_dIndentLeft) : (_margin_left + this.m_dIndentLeft);
 				let pos    = left + offset * dKoef_mm_to_pix;
@@ -1991,7 +1991,7 @@ function CHorRuler()
 				this.m_dIndentLeft_old = this.m_dIndentLeft;
 				break;
 			}
-			case 5:
+			case AscWord.RULER_DRAG_TYPE.firstInd:
 			{
 				let offset = this.m_bRtl ? (_margin_right - this.m_dIndentLeftFirst) : (_margin_left + this.m_dIndentLeftFirst);
 				let pos    = left + offset * dKoef_mm_to_pix;
@@ -2000,7 +2000,7 @@ function CHorRuler()
 				this.m_dIndentLeftFirst_old = this.m_dIndentLeftFirst;
 				break;
 			}
-			case 6:
+			case AscWord.RULER_DRAG_TYPE.rightInd:
 			{
 				let offset = this.m_bRtl ? (_margin_left + this.m_dIndentRight) : (_margin_right - this.m_dIndentRight);
 				let pos    = left + offset * dKoef_mm_to_pix;
@@ -2009,14 +2009,14 @@ function CHorRuler()
 				this.m_dIndentRight_old = this.m_dIndentRight;
 				break;
 			}
-            case 7:
+            case AscWord.RULER_DRAG_TYPE.tab:
             {
                 var pos = left + (_margin_left + this.m_arrTabs[this.m_lCurrentTab].pos) * dKoef_mm_to_pix;
                 this.m_dCurrentTabNewPosition = this.m_arrTabs[this.m_lCurrentTab].pos;
                 word_control.m_oOverlayApi.VertLine(pos);
                 break;
             }
-            case 8:
+            case AscWord.RULER_DRAG_TYPE.table:
             {
                 var markup = this.m_oTableMarkup;
                 var pos = markup.X;
@@ -2031,7 +2031,7 @@ function CHorRuler()
                 this.TableMarginLeftTrackStart = this.TableMarginLeft;
                 break;
             }
-            case 9:
+            case AscWord.RULER_DRAG_TYPE.columnSize:
             {
                 var markup = this.m_oColumnMarkup;
                 var pos = 0;
@@ -2073,7 +2073,7 @@ function CHorRuler()
                 this.TableMarginLeftTrackStart = markup.X;
                 break;
             }
-            case 10:
+            case AscWord.RULER_DRAG_TYPE.columnPos:
             {
                 var markup = this.m_oColumnMarkup;
                 var pos = markup.X;
@@ -2101,7 +2101,7 @@ function CHorRuler()
             }
         }
 
-        if (0 == this.DragType)
+        if (AscWord.RULER_DRAG_TYPE.none === this.DragType)
         {
             // посмотрим - может это добавляется таб
             var _top = 1.8;
@@ -2133,7 +2133,7 @@ function CHorRuler()
                 }
                 */
 
-                this.DragType = 7;
+                this.DragType = AscWord.RULER_DRAG_TYPE.tab;
                 this.m_dCurrentTabNewPosition = _new_tab_pos;
 
                 var pos = left + (_margin_left + _new_tab_pos) * dKoef_mm_to_pix;
@@ -2153,7 +2153,7 @@ function CHorRuler()
         this.m_dIndentLeftFirst_old = -10000;
         this.m_dIndentRight_old     = -10000;
 
-        if (7 != this.DragType)
+        if (AscWord.RULER_DRAG_TYPE.tab !== this.DragType)
         {
             word_control.UpdateHorRuler();
             //word_control.m_oOverlayApi.UnShow();
@@ -2169,17 +2169,17 @@ function CHorRuler()
 
         switch (this.DragType)
         {
-            case 1:
-            case 2:
+			case AscWord.RULER_DRAG_TYPE.leftMargin:
+			case AscWord.RULER_DRAG_TYPE.rightMargin:
             {
                 if (!this.SimpleChanges.IsSimple)
                     this.SetMarginProperties();
                 break;
             }
-            case 3:
-            case 4:
-            case 5:
-            case 6:
+			case AscWord.RULER_DRAG_TYPE.leftFirstInd:
+			case AscWord.RULER_DRAG_TYPE.leftInd:
+            case AscWord.RULER_DRAG_TYPE.firstInd:
+            case AscWord.RULER_DRAG_TYPE.rightInd:
             {
                 if (!this.SimpleChanges.IsSimple)
                     this.SetPrProperties();
@@ -2187,7 +2187,7 @@ function CHorRuler()
                     word_control.OnUpdateOverlay();
                 break;
             }
-            case 7:
+            case AscWord.RULER_DRAG_TYPE.tab:
             {
                 // смотрим, сохраняем ли таб
                 var _y = (global_mouseEvent.Y - word_control.Y) * g_dKoef_pix_to_mm;
@@ -2208,15 +2208,15 @@ function CHorRuler()
                 this.SetTabsProperties();
                 break;
             }
-            case 8:
+            case AscWord.RULER_DRAG_TYPE.table:
             {
                 if (!this.SimpleChanges.IsSimple)
                     this.SetTableProperties();
                 this.DragTablePos = -1;
                 break;
             }
-            case 9:
-            case 10:
+            case AscWord.RULER_DRAG_TYPE.columnSize:
+			case AscWord.RULER_DRAG_TYPE.columnPos:
             {
                 if (!this.SimpleChanges.IsSimple)
                     this.SetColumnsProperties();
@@ -2225,7 +2225,7 @@ function CHorRuler()
             }
         }
 
-        if (7 == this.DragType)
+        if (AscWord.RULER_DRAG_TYPE.tab === this.DragType)
         {
             word_control.UpdateHorRuler();
             //word_control.m_oOverlayApi.UnShow();
@@ -2248,7 +2248,7 @@ function CHorRuler()
         this.m_dIndentLeftFirst_old = -10000;
         this.m_dIndentRight_old     = -10000;
 
-        if (7 != this.DragType)
+        if (AscWord.RULER_DRAG_TYPE.tab !== this.DragType)
         {
             word_control.UpdateHorRuler();
             //word_control.m_oOverlayApi.UnShow();
@@ -2264,23 +2264,23 @@ function CHorRuler()
 
         switch (this.DragType)
         {
-            case 1:
-            case 2:
+            case AscWord.RULER_DRAG_TYPE.leftMargin:
+            case AscWord.RULER_DRAG_TYPE.rightMargin:
             {
                 if (!this.SimpleChanges.IsSimple)
                     this.SetMarginProperties();
                 break;
             }
-            case 3:
-            case 4:
-            case 5:
-            case 6:
+            case AscWord.RULER_DRAG_TYPE.leftFirstInd:
+            case AscWord.RULER_DRAG_TYPE.leftInd:
+            case AscWord.RULER_DRAG_TYPE.firstInd:
+            case AscWord.RULER_DRAG_TYPE.rightInd:
             {
                 if (!this.SimpleChanges.IsSimple)
                     this.SetPrProperties();
                 break;
             }
-            case 7:
+            case AscWord.RULER_DRAG_TYPE.tab:
             {
                 // смотрим, сохраняем ли таб
                 var _y = (global_mouseEvent.Y - word_control.Y) * g_dKoef_pix_to_mm;
@@ -2300,15 +2300,15 @@ function CHorRuler()
                 this.SetTabsProperties();
                 break;
             }
-            case 8:
+            case AscWord.RULER_DRAG_TYPE.table:
             {
                 if (!this.SimpleChanges.IsSimple)
                     this.SetTableProperties();
                 this.DragTablePos = -1;
                 break;
             }
-            case 9:
-            case 10:
+            case AscWord.RULER_DRAG_TYPE.columnSize:
+            case AscWord.RULER_DRAG_TYPE.columnPos:
             {
                 if (!this.SimpleChanges.IsSimple)
                     this.SetColumnsProperties();
@@ -2317,7 +2317,7 @@ function CHorRuler()
             }
         }
 
-        if (7 == this.DragType)
+        if (AscWord.RULER_DRAG_TYPE.tab === this.DragType)
         {
             word_control.UpdateHorRuler();
             //word_control.m_oOverlayApi.UnShow();
