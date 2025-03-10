@@ -241,6 +241,9 @@
 		this.inkDrawer = new AscCommon.CInkDrawer(this);
 		this._correctEmbeddedWork();
 
+
+		this.isRTLInterface = false;
+
 		return this;
 	}
 
@@ -5492,6 +5495,13 @@
 		return text_data.data;
 	};
 
+	baseEditorsApi.prototype.asc_SetRTLInterface = function(isRTL) {
+		this.isRTLInterface = isRTL;
+		this.onChangeRTLInterface();
+	};
+	baseEditorsApi.prototype.onChangeRTLInterface = function() {
+	};
+
 	//----------------------------------------------------------export----------------------------------------------------
 	window['AscCommon']                = window['AscCommon'] || {};
 	window['AscCommon'].baseEditorsApi = baseEditorsApi;
@@ -5601,7 +5611,10 @@
 	prot["asc_removeCustomProperty"] = prot.asc_removeCustomProperty;
 	
 	prot["asc_setPdfViewer"] = prot.asc_setPdfViewer;
+
 	prot["asc_mergeSelectedShapes"] = prot.asc_mergeSelectedShapes;
+
+	prot["asc_SetRTLInterface"] = prot.asc_SetRTLInterface;
 
 	prot["callCommand"] = prot.callCommand;
 	prot["callMethod"] = prot.callMethod;

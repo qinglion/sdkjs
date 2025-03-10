@@ -894,7 +894,7 @@
 
 		this.m_oThumbnailsBack = CreateControl("id_thumbnails_background");
 		if (Asc.editor.thumbnailsPosition === thumbnailsPositionMap.left || Asc.editor.thumbnailsPosition === thumbnailsPositionMap.right) {
-			Asc.editor.thumbnailsRTL
+			Asc.editor.isRTLInterface
 				? this.m_oThumbnailsBack.Bounds.SetParams(scrollWidth, 0, 1000, 1000, true, false, false, false, -1, -1)
 				: this.m_oThumbnailsBack.Bounds.SetParams(0, 0, scrollWidth, 1000, false, false, true, false, -1, -1);
 		}
@@ -906,7 +906,7 @@
 
 		this.m_oThumbnails = CreateControl("id_thumbnails");
 		if (Asc.editor.thumbnailsPosition === thumbnailsPositionMap.left || Asc.editor.thumbnailsPosition === thumbnailsPositionMap.right) {
-			Asc.editor.thumbnailsRTL
+			Asc.editor.isRTLInterface
 				? this.m_oThumbnails.Bounds.SetParams(scrollWidth, 0, 1000, 1000, true, false, false, false, -1, -1)
 				: this.m_oThumbnails.Bounds.SetParams(0, 0, scrollWidth, 1000, false, false, true, false, -1, -1);
 		}
@@ -919,7 +919,7 @@
 		// НАДО ПЕРЕИМЕНОВАТЬ - ОН НЕ ВСЕГДА ВЕРТИКАЛЬНЫЙ ТЕПЕРЬ
 		this.m_oThumbnails_scroll = CreateControl("id_vertical_scroll_thmbnl");
 		if (Asc.editor.thumbnailsPosition === thumbnailsPositionMap.left || Asc.editor.thumbnailsPosition === thumbnailsPositionMap.right) {
-			if (Asc.editor.thumbnailsRTL) {
+			if (Asc.editor.isRTLInterface) {
 				this.m_oThumbnails_scroll.Bounds.SetParams(0, 0, scrollWidth, 1000, false, false, true, false, scrollWidth, -1);
 				this.m_oThumbnails_scroll.Anchor = (g_anchor_left | g_anchor_top | g_anchor_bottom);
 			} else {

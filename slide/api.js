@@ -690,19 +690,8 @@
 		this.TableStylesPreviewGenerator = null;
 
 		this.thumbnailsPosition = AscCommon.thumbnailsPositionMap.left;
-		this.thumbnailsRTL = false;
-
-		if(config["thumbnails-position"] === "bottom") {
-			this.thumbnailsPosition = AscCommon.thumbnailsPositionMap.bottom;
-		}
-		else if(config["thumbnails-position"] === "right") {
-			this.thumbnailsPosition = AscCommon.thumbnailsPositionMap.right;
-		}
 
 
-		if(config['thumbnails-rtl'] === true) {
-			this.thumbnailsRTL = true;
-		}
 		if (this.isReporterMode)
 		{
 			var _windowOnResize = function() {
@@ -9633,6 +9622,13 @@ background-repeat: no-repeat;\
 		oLogicDocument.setPreserveSlideMaster(bPr);
 	};
 
+	asc_docs_api.prototype.asc_SetThumbnailsPosition = function (pos) {
+		this.thumbnailsPosition = pos;
+	};
+
+	asc_docs_api.prototype.onUpdateThumbnailsPosition = function () {
+	};
+
 	//-------------------------------------------------------------export---------------------------------------------------
 	window['Asc']                                                 = window['Asc'] || {};
 	window['AscCommonSlide']                                      = window['AscCommonSlide'] || {};
@@ -10205,6 +10201,8 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype["asc_EraseAllInksOnSlide"] = asc_docs_api.prototype.asc_EraseAllInksOnSlide;
 
 	asc_docs_api.prototype["asc_setPreserveSlideMaster"] = asc_docs_api.prototype.asc_setPreserveSlideMaster;
+
+	asc_docs_api.prototype["asc_SetThumbnailsPosition"] = asc_docs_api.prototype.asc_SetThumbnailsPosition;
 
 
 	window['Asc']['asc_CCommentData'] = window['Asc'].asc_CCommentData = asc_CCommentData;

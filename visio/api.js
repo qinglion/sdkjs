@@ -86,16 +86,6 @@
 		}
 
 		this.thumbnailsPosition = AscCommon.thumbnailsPositionMap.left;
-		this.thumbnailsRTL = false;
-		if(config["thumbnails-position"] === "bottom") {
-			this.thumbnailsPosition = AscCommon.thumbnailsPositionMap.bottom;
-		}
-		else if(config["thumbnails-position"] === "right") {
-			this.thumbnailsPosition = AscCommon.thumbnailsPositionMap.right;
-		}
-		if(config['thumbnails-rtl'] === true) {
-			this.thumbnailsRTL = true;
-		}
 
 		this._init();
 		return this;
@@ -989,6 +979,13 @@
 		window["AscDesktopEditor"]["Print"](JSON.stringify(desktopOptions));
 		return true;
 	};
+
+	VisioEditorApi.prototype.asc_SetThumbnailsPosition = function (pos) {
+		this.thumbnailsPosition = pos;
+	};
+
+	VisioEditorApi.prototype.onUpdateThumbnailsPosition = function () {
+	};
 	//-------------------------------------------------------------export---------------------------------------------------
 	window['Asc']                                                       = window['Asc'] || {};
 	window['Asc']['VisioEditorApi']                                       = VisioEditorApi;
@@ -1063,6 +1060,7 @@
 	prot['asc_SetFastCollaborative']             	= prot.asc_SetFastCollaborative;
 	prot['asc_DownloadAs']             				= prot.asc_DownloadAs;
 	prot['asc_getPageName']             			= prot.asc_getPageName;
+	prot['asc_SetThumbnailsPosition']             	= prot.asc_SetThumbnailsPosition;
 	prot['InitEditor']                          	= prot.InitEditor;
 	prot['isDocumentModified']             			= prot.isDocumentModified;
 	prot['SetDrawingFreeze']             			= prot.SetDrawingFreeze;
