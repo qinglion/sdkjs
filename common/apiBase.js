@@ -243,6 +243,9 @@
 
 
 		this.isRTLInterface = false;
+		if (config['isRtlInterface'] === true) {
+			this.isRTLInterface = true;
+		}
 
 		return this;
 	}
