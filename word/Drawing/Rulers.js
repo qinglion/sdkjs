@@ -468,7 +468,8 @@ function CHorRuler()
 		// промежуток между маргинами
         var left_margin  = 0;
         var right_margin = 0;
-
+		
+		let isRtl = false;
         if (this.CurrentObjectType == RULER_OBJECT_TYPE_PARAGRAPH)
         {
             left_margin  = (this.m_dMarginLeft * dKoef_mm_to_pix) >> 0;
@@ -476,6 +477,7 @@ function CHorRuler()
 
             checker.MarginLeft = this.m_dMarginLeft;
             checker.MarginRight = this.m_dMarginRight;
+			isRtl = this.m_bRtl;
         }
         else if (this.CurrentObjectType == RULER_OBJECT_TYPE_TABLE && null != markup)
         {
@@ -557,246 +559,263 @@ function CHorRuler()
         var part2 = 2.5 * Math.round(dPR);
 
         context.font = Math.round(7 * dPR) + "pt Arial";
-
-        if (this.Units == c_oAscDocumentUnits.Millimeter)
-        {
-            var lCount1 = ((width - left_margin) / mm_1_4) >> 0;
-            var lCount2 = (left_margin / mm_1_4) >> 0;
-
-        var index = 0;
-        var num = 0;
-        for (var i = 1; i < lCount1; i++)
-        {
-            var lXPos = ((left_margin + i * mm_1_4) >> 0) + indent;
-            index++;
-
-            if (index == 4)
-                index = 0;
-
-            if (0 == index)
-            {
-                num++;
-                // number
-                var strNum = "" + num;
-                var lWidthText = context.measureText(strNum).width;
-                lXPos -= (lWidthText / 2.0);
-                context.fillText(strNum, lXPos, this.m_nBottom - Math.round(3 * dPR));
-            }
-            else if (1 == index && isDraw1_4)
-            {
-                // 1/4
-                context.beginPath();
-                context.moveTo(lXPos, middleVert - part1);
-                context.lineTo(lXPos, middleVert + part1);
-                context.stroke();
-            }
-            else if (2 == index)
-            {
-                // 1/2
-                context.beginPath();
-                context.moveTo(lXPos, middleVert - part2);
-                context.lineTo(lXPos, middleVert + part2);
-                context.stroke();
-            }
-            else if (isDraw1_4)
-            {
-                // 1/4
-                context.beginPath();
-                context.moveTo(lXPos, middleVert - part1);
-                context.lineTo(lXPos, middleVert + part1);
-                context.stroke();
-            }
-        }
-
-        index = 0;
-        num = 0;
-        for (var i = 1; i <= lCount2; i++)
-        {
-            var lXPos = ((left_margin - i * mm_1_4) >> 0) + indent;
-            index++;
-
-            if (index == 4)
-                index = 0;
-
-            if (0 == index)
-            {
-                num++;
-                // number
-                var strNum = "" + num;
-                var lWidthText = context.measureText(strNum).width;
-                lXPos -= (lWidthText / 2.0);
-                context.fillText(strNum, lXPos, this.m_nBottom - Math.round(3 * dPR) );
-            }
-            else if (1 == index && isDraw1_4)
-            {
-                // 1/4
-                context.beginPath();
-                context.moveTo(lXPos, middleVert - part1);
-                context.lineTo(lXPos, middleVert + part1);
-                context.stroke();
-            }
-            else if (2 == index)
-            {
-                // 1/2
-                context.beginPath();
-                context.moveTo(lXPos, middleVert - part2);
-                context.lineTo(lXPos, middleVert + part2);
-                context.stroke();
-            }
-            else if (isDraw1_4)
-            {
-                // 1/4
-                context.beginPath();
-                context.moveTo(lXPos, middleVert - part1);
-                context.lineTo(lXPos, middleVert + part1);
-                context.stroke();
-            }
-        }
-        }
-        else if (this.Units == c_oAscDocumentUnits.Inch)
-        {
-            var lCount1 = ((width - left_margin) / inch_1_8) >> 0;
-            var lCount2 = (left_margin / inch_1_8) >> 0;
-
-            var index = 0;
-            var num = 0;
-            for (var i = 1; i < lCount1; i++)
-            {
-                var lXPos = ((left_margin + i * inch_1_8) >> 0) + indent;
-                index++;
-
-                if (index == 8)
-                    index = 0;
-
-                if (0 == index)
-                {
-                    num++;
-                    // number
-                    var strNum = "" + num;
-                    var lWidthText = context.measureText(strNum).width;
-                    lXPos -= (lWidthText / 2.0);
-                    context.fillText(strNum, lXPos, this.m_nBottom - Math.round(3 * dPR));
-                }
-                else if (4 == index)
-                {
-                    // 1/2
-                    context.beginPath();
-                    context.moveTo(lXPos, middleVert - part2);
-                    context.lineTo(lXPos, middleVert + part2);
-                    context.stroke();
-                }
-                else if (inch_1_8 > 8)
-                {
-                    // 1/8
-                    context.beginPath();
-                    context.moveTo(lXPos, middleVert - part1);
-                    context.lineTo(lXPos, middleVert + part1);
-                    context.stroke();
-                }
-            }
-
-            index = 0;
-            num = 0;
-            for (var i = 1; i <= lCount2; i++)
-            {
-                var lXPos = ((left_margin - i * inch_1_8) >> 0) + indent;
-                index++;
-
-                if (index == 8)
-                    index = 0;
-
-                if (0 == index)
-                {
-                    num++;
-                    // number
-                    var strNum = "" + num;
-                    var lWidthText = context.measureText(strNum).width;
-                    lXPos -= (lWidthText / 2.0);
-                    context.fillText(strNum, lXPos, this.m_nBottom - Math.round(3 * dPR));
-                }
-                else if (4 == index)
-                {
-                    // 1/2
-                    context.beginPath();
-                    context.moveTo(lXPos, middleVert - part2);
-                    context.lineTo(lXPos, middleVert + part2);
-                    context.stroke();
-                }
-                else if (inch_1_8 > 8)
-                {
-                    // 1/8
-                    context.beginPath();
-                    context.moveTo(lXPos, middleVert - part1);
-                    context.lineTo(lXPos, middleVert + part1);
-                    context.stroke();
-                }
-            }
-        }
-        else if (this.Units == c_oAscDocumentUnits.Point)
-        {
-            var point_1_12 = 25.4 * dKoef_mm_to_pix / 12;
-
-            var lCount1 = ((width - left_margin) / point_1_12) >> 0;
-            var lCount2 = (left_margin / point_1_12) >> 0;
-
-            var index = 0;
-            var num = 0;
-            for (var i = 1; i < lCount1; i++)
-            {
-                var lXPos = ((left_margin + i * point_1_12) >> 0) + indent;
-                index++;
-
-                if (index == 12)
-                    index = 0;
-
-                if (0 == index || 6 == index)
-                {
-                    num++;
-                    // number
-                    var strNum = "" + (num * 36);
-                    var lWidthText = context.measureText(strNum).width;
-                    lXPos -= (lWidthText / 2.0);
-                    context.fillText(strNum, lXPos, this.m_nBottom - Math.round(3 * dPR));
-                }
-                else if (point_1_12 > 5)
-                {
-                    // 1/12
-                    context.beginPath();
-                    context.moveTo(lXPos, middleVert - part1);
-                    context.lineTo(lXPos, middleVert + part1);
-                    context.stroke();
-                }
-            }
-
-            index = 0;
-            num = 0;
-            for (var i = 1; i <= lCount2; i++)
-            {
-                var lXPos = ((left_margin - i * point_1_12) >> 0) + indent;
-                index++;
-
-                if (index == 12)
-                    index = 0;
-
-                if (0 == index || 6 == index)
-                {
-                    num++;
-                    // number
-                    var strNum = "" + (num * 36);
-                    var lWidthText = context.measureText(strNum).width;
-                    lXPos -= (lWidthText / 2.0);
-                    context.fillText(strNum, lXPos, this.m_nBottom - Math.round(3 * dPR));
-                }
-                else if (point_1_12 > 5)
-                {
-                    // 1/12
-                    context.beginPath();
-                    context.moveTo(lXPos, middleVert - part1);
-                    context.lineTo(lXPos, middleVert + part1);
-                    context.stroke();
-                }
-            }
-        }
+		
+		function getMainCount(step)
+		{
+			return ((isRtl ? right_margin : (width - left_margin)) / step) >> 0;
+		}
+		function getReverseCount(step)
+		{
+			return ((isRtl ? (width - right_margin) : left_margin) / step) >> 0;
+		}
+		function getMainPos(i, step)
+		{
+			return isRtl ? ((right_margin - i * step) >> 0) + indent : ((left_margin + i * step) >> 0) + indent;
+		}
+		function getReversePos(i, step)
+		{
+			return isRtl ? ((right_margin + i * step) >> 0) + indent : ((left_margin - i * step) >> 0) + indent;
+		}
+		
+		if (this.Units === c_oAscDocumentUnits.Millimeter)
+		{
+			let lCount1 = getMainCount(mm_1_4);
+			let lCount2 = getReverseCount(mm_1_4);
+			
+			let index = 0;
+			let num = 0;
+			for (let i = 1; i < lCount1; i++)
+			{
+				let lXPos = getMainPos(i, mm_1_4);
+				index++;
+				
+				if (index === 4)
+					index = 0;
+				
+				if (0 === index)
+				{
+					num++;
+					// number
+					var strNum = "" + num;
+					var lWidthText = context.measureText(strNum).width;
+					lXPos -= (lWidthText / 2.0);
+					context.fillText(strNum, lXPos, this.m_nBottom - Math.round(3 * dPR));
+				}
+				else if (1 === index && isDraw1_4)
+				{
+					// 1/4
+					context.beginPath();
+					context.moveTo(lXPos, middleVert - part1);
+					context.lineTo(lXPos, middleVert + part1);
+					context.stroke();
+				}
+				else if (2 === index)
+				{
+					// 1/2
+					context.beginPath();
+					context.moveTo(lXPos, middleVert - part2);
+					context.lineTo(lXPos, middleVert + part2);
+					context.stroke();
+				}
+				else if (isDraw1_4)
+				{
+					// 1/4
+					context.beginPath();
+					context.moveTo(lXPos, middleVert - part1);
+					context.lineTo(lXPos, middleVert + part1);
+					context.stroke();
+				}
+			}
+			
+			index = 0;
+			num = 0;
+			for (let i = 1; i <= lCount2; i++)
+			{
+				let lXPos = getReversePos(i, mm_1_4);
+				index++;
+				
+				if (index == 4)
+					index = 0;
+				
+				if (0 == index)
+				{
+					num++;
+					// number
+					var strNum = "" + num;
+					var lWidthText = context.measureText(strNum).width;
+					lXPos -= (lWidthText / 2.0);
+					context.fillText(strNum, lXPos, this.m_nBottom - Math.round(3 * dPR));
+				}
+				else if (1 == index && isDraw1_4)
+				{
+					// 1/4
+					context.beginPath();
+					context.moveTo(lXPos, middleVert - part1);
+					context.lineTo(lXPos, middleVert + part1);
+					context.stroke();
+				}
+				else if (2 == index)
+				{
+					// 1/2
+					context.beginPath();
+					context.moveTo(lXPos, middleVert - part2);
+					context.lineTo(lXPos, middleVert + part2);
+					context.stroke();
+				}
+				else if (isDraw1_4)
+				{
+					// 1/4
+					context.beginPath();
+					context.moveTo(lXPos, middleVert - part1);
+					context.lineTo(lXPos, middleVert + part1);
+					context.stroke();
+				}
+			}
+		}
+		else if (this.Units === c_oAscDocumentUnits.Inch)
+		{
+			let lCount1 = getMainCount(inch_1_8);
+			let lCount2 = getReverseCount(inch_1_8);
+			
+			let index = 0;
+			let num   = 0;
+			for (let i = 1; i < lCount1; i++)
+			{
+				let lXPos = getMainPos(i, inch_1_8);
+				index++;
+				
+				if (index === 8)
+					index = 0;
+				
+				if (0 === index)
+				{
+					num++;
+					// number
+					var strNum     = "" + num;
+					var lWidthText = context.measureText(strNum).width;
+					lXPos -= (lWidthText / 2.0);
+					context.fillText(strNum, lXPos, this.m_nBottom - Math.round(3 * dPR));
+				}
+				else if (4 === index)
+				{
+					// 1/2
+					context.beginPath();
+					context.moveTo(lXPos, middleVert - part2);
+					context.lineTo(lXPos, middleVert + part2);
+					context.stroke();
+				}
+				else if (inch_1_8 > 8)
+				{
+					// 1/8
+					context.beginPath();
+					context.moveTo(lXPos, middleVert - part1);
+					context.lineTo(lXPos, middleVert + part1);
+					context.stroke();
+				}
+			}
+			
+			index = 0;
+			num   = 0;
+			for (let i = 1; i <= lCount2; i++)
+			{
+				let lXPos = getReversePos(i, inch_1_8);
+				index++;
+				
+				if (index === 8)
+					index = 0;
+				
+				if (0 === index)
+				{
+					num++;
+					// number
+					var strNum     = "" + num;
+					var lWidthText = context.measureText(strNum).width;
+					lXPos -= (lWidthText / 2.0);
+					context.fillText(strNum, lXPos, this.m_nBottom - Math.round(3 * dPR));
+				}
+				else if (4 === index)
+				{
+					// 1/2
+					context.beginPath();
+					context.moveTo(lXPos, middleVert - part2);
+					context.lineTo(lXPos, middleVert + part2);
+					context.stroke();
+				}
+				else if (inch_1_8 > 8)
+				{
+					// 1/8
+					context.beginPath();
+					context.moveTo(lXPos, middleVert - part1);
+					context.lineTo(lXPos, middleVert + part1);
+					context.stroke();
+				}
+			}
+		}
+		else if (this.Units === c_oAscDocumentUnits.Point)
+		{
+			let point_1_12 = 25.4 * dKoef_mm_to_pix / 12;
+			
+			let lCount1 = getMainCount(point_1_12);
+			let lCount2 = getReverseCount(point_1_12);
+			
+			let index = 0;
+			let num   = 0;
+			for (let i = 1; i < lCount1; i++)
+			{
+				let lXPos = getMainPos(i, point_1_12);
+				index++;
+				
+				if (index === 12)
+					index = 0;
+				
+				if (0 === index || 6 === index)
+				{
+					num++;
+					// number
+					var strNum     = "" + (num * 36);
+					var lWidthText = context.measureText(strNum).width;
+					lXPos -= (lWidthText / 2.0);
+					context.fillText(strNum, lXPos, this.m_nBottom - Math.round(3 * dPR));
+				}
+				else if (point_1_12 > 5)
+				{
+					// 1/12
+					context.beginPath();
+					context.moveTo(lXPos, middleVert - part1);
+					context.lineTo(lXPos, middleVert + part1);
+					context.stroke();
+				}
+			}
+			
+			index = 0;
+			num   = 0;
+			for (let i = 1; i <= lCount2; i++)
+			{
+				let lXPos = getReversePos(i, point_1_12);
+				index++;
+				
+				if (index === 12)
+					index = 0;
+				
+				if (0 === index || 6 === index)
+				{
+					num++;
+					// number
+					var strNum     = "" + (num * 36);
+					var lWidthText = context.measureText(strNum).width;
+					lXPos -= (lWidthText / 2.0);
+					context.fillText(strNum, lXPos, this.m_nBottom - Math.round(3 * dPR));
+				}
+				else if (point_1_12 > 5)
+				{
+					// 1/12
+					context.beginPath();
+					context.moveTo(lXPos, middleVert - part1);
+					context.lineTo(lXPos, middleVert + part1);
+					context.stroke();
+				}
+			}
+		}
 
         if (null != markup && this.CurrentObjectType == RULER_OBJECT_TYPE_TABLE)
         {
@@ -2774,42 +2793,41 @@ function CHorRuler()
 	
 	this.UpdateParaInd = function(paraInd, isRtl)
 	{
-		const EPSILON = 0.001;
-		
 		if (!paraInd)
-			return false;
+			return 0;
 		
 		let left      = undefined !== paraInd.Left ? paraInd.Left : 0;
 		let right     = undefined !== paraInd.Right ? paraInd.Right : 0;
 		let firstLine = undefined !== paraInd.FirstLine ? left + paraInd.FirstLine : 0;
 		
-		let needUpdate = false;
+		let update = 0;
 		
-		if (Math.abs(this.m_dIndentLeft - left) > EPSILON)
+		if (Math.abs(this.m_dIndentLeft - left) > AscWord.EPSILON)
 		{
 			this.m_dIndentLeft = left;
-			needUpdate = true;
+			update |= 1;
 		}
 		
-		if (Math.abs(this.m_dIndentLeftFirst - firstLine) > EPSILON)
+		if (Math.abs(this.m_dIndentLeftFirst - firstLine) > AscWord.EPSILON)
 		{
 			this.m_dIndentLeftFirst = firstLine;
-			needUpdate = true;
+			update |= 1;
 		}
 		
-		if (Math.abs(this.m_dIndentRight - right) > EPSILON)
+		if (Math.abs(this.m_dIndentRight - right) > AscWord.EPSILON)
 		{
 			this.m_dIndentRight = right;
-			needUpdate = true;
+			update |= 1;
 		}
 		
 		if (this.m_bRtl !== isRtl)
 		{
 			this.m_bRtl = isRtl;
-			needUpdate = true;
+			update |= 1;
+			update |= 2;
 		}
 		
-		return needUpdate
+		return update;
 	};
 }
 

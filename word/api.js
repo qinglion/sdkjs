@@ -5377,7 +5377,10 @@ background-repeat: no-repeat;\
 	};
 	asc_docs_api.prototype.Update_ParaInd                = function(paraInd, isRtl)
 	{
-		if (this.WordControl.m_oHorRuler.UpdateParaInd(paraInd, isRtl))
+		let updateFlag = this.WordControl.m_oHorRuler.UpdateParaInd(paraInd, isRtl);
+		if (updateFlag & 2)
+			this.WordControl.UpdateHorRulerBack(true);
+		if (updateFlag & 1)
 			this.WordControl.UpdateHorRuler();
 	};
 	asc_docs_api.prototype.Internal_Update_Ind_FirstLine = function(FirstLine, Left)
