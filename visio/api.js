@@ -989,10 +989,21 @@
 
 	VisioEditorApi.prototype.asc_SetThumbnailsPosition = function (pos) {
 		this.thumbnailsPosition = pos;
-		this.onUpdateThumbnailsPosition();
+	};
+	VisioEditorApi.prototype.getThumbnailsPosition = function () {
+		if(!this.isRTLInterface) {
+			return this.thumbnailsPosition;
+		}
+		if(this.thumbnailsPosition === AscCommon.thumbnailsPositionMap.left) {
+			return AscCommon.thumbnailsPositionMap.right;
+		}
+		return this.thumbnailsPosition;
 	};
 
 	VisioEditorApi.prototype.onUpdateThumbnailsPosition = function () {
+	};
+	VisioEditorApi.prototype.onChangeRTLInterface = function () {
+		this.onUpdateThumbnailsPosition();
 	};
 	//-------------------------------------------------------------export---------------------------------------------------
 	window['Asc']                                                       = window['Asc'] || {};
