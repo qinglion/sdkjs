@@ -1181,9 +1181,9 @@
         } else {
             var fSimpleDur = this.simpleDuration.getVal();
             fRelTime = (nElapsedTime - this.startTick) / fSimpleDur;
-						if (nDrawingIteration !== 0) {
+						if (nDrawingIteration > 0) {
 							let nIterationDelta = oAttr.getIterationDelta();
-							if (nIterationDelta === null) {
+							if (nIterationDelta === null && oParentAttr) {
 								nIterationDelta = oParentAttr.getIterationDelta();
 							}
 							if (nIterationDelta !== null) {
@@ -1232,7 +1232,7 @@
         if (oAttr.spd !== null && oAttr.spd < 0) {
             fRelTime = 1 - fRelTime;
         }
-        return fRelTime;
+        return Math.max(0, Math.min(fRelTime, 1));
     };
     CTimeNodeBase.prototype.getSlideWidth = function () {
         return this.getPresentation().GetWidthMM();
@@ -1350,8 +1350,8 @@
             }
         }
     };
-    CTimeNodeBase.prototype.getOrigAttrVal = function (sAttrName) {
-        var oTargetObject = this.getTargetObject();
+    CTimeNodeBase.prototype.getOrigAttrVal = function (sAttrName, sDrawingId) {
+        var oTargetObject = this.getTargetObject(sDrawingId);
         if (!oTargetObject) {
             return null;
         }
@@ -4449,7 +4449,7 @@
                             fTimeInsideInterval = (fRelTime) / (oSecondTav.getTime());
                         }
                     }
-                    val = this.calculateBetweenTwoVals(oFirstTav.val, oSecondTav.val, fTimeInsideInterval, oAttributes);
+                    val = this.calculateBetweenTwoVals(oFirstTav.val, oSecondTav.val, fTimeInsideInterval, oAttributes, sDrawingId);
                 } else {
                     for (nTav = 1; nTav < aTav.length; ++nTav) {
                         if (fRelTime >= aTav[nTav - 1].getTime() && fRelTime <= aTav[nTav].getTime()) {
@@ -4464,14 +4464,14 @@
                             } else {
                                 oTav = aTav[nTav - 1];
                             }
-                            val = this.calculateBetweenTwoVals(oTav.val, oTav.val, 0, oAttributes);
+                            val = this.calculateBetweenTwoVals(oTav.val, oTav.val, 0, oAttributes, sDrawingId);
                             if (aTav[nTav - 1]) {
                                 sFmla = aTav[nTav - 1].fmla;
                             }
                         } else {
                             if (AscFormat.fApproxEqual(fRelTime, aTav[nTav].getTime())) {
                                 oTav = aTav[nTav];
-                                val = this.calculateBetweenTwoVals(oTav.val, oTav.val, 0, oAttributes);
+                                val = this.calculateBetweenTwoVals(oTav.val, oTav.val, 0, oAttributes, sDrawingId);
                                 if (aTav[nTav - 1]) {
                                     sFmla = aTav[nTav - 1].fmla;
                                 }
@@ -4480,14 +4480,14 @@
                                 oSecondTav = aTav[nTav];
                                 sFmla = oFirstTav.fmla;
                                 fTimeInsideInterval = (fRelTime - aTav[nTav - 1].getTime()) / (aTav[nTav].getTime() - aTav[nTav - 1].getTime());
-                                val = this.calculateBetweenTwoVals(oFirstTav.val, oSecondTav.val, fTimeInsideInterval, oAttributes);
+                                val = this.calculateBetweenTwoVals(oFirstTav.val, oSecondTav.val, fTimeInsideInterval, oAttributes, sDrawingId);
                             }
                         }
                     }
                 }
                 if (val !== null) {
                     if (sFmla) {
-                        oVarMap = this.getVarMapForFmla(oAttributes);
+                        oVarMap = this.getVarMapForFmla(oAttributes, sDrawingId);
                         oVarMap["$"] = val;
                         var fFmlaResult = this.getFormulaResult(sFmla, oVarMap);
                         if (fFmlaResult !== null) {
@@ -4504,7 +4504,7 @@
                 this.from === null && this.to !== null && this.by === null ||
                 this.from === null && this.to === null && this.by !== null) {
                 if (nValueType === VALUE_TYPE_NUM) {
-                    oVarMap = this.getVarMapForFmla();
+                    oVarMap = this.getVarMapForFmla(undefined, sDrawingId);
                     var fFrom = null, fTo = null, fBy = null;
                     if (this.from !== null) {
                         fFrom = this.getFormulaResult(this.from, oVarMap);
@@ -4550,16 +4550,16 @@
             }
         }
     };
-    CAnim.prototype.getVarMapForFmla = function (oAttributes) {
+    CAnim.prototype.getVarMapForFmla = function (oAttributes, sDrawingId) {
         return {
-            "#ppt_x": this.getOrigAttrVal("ppt_x"),
-            "#ppt_y": this.getOrigAttrVal("ppt_y"),
-            "#ppt_w": this.getOrigAttrVal("ppt_w"),
-            "#ppt_h": this.getOrigAttrVal("ppt_h"),
-            "ppt_x": oAttributes && AscFormat.isRealNumber(oAttributes["ppt_x"]) ? oAttributes["ppt_x"] : this.getOrigAttrVal("ppt_x"),
-            "ppt_y": oAttributes && AscFormat.isRealNumber(oAttributes["ppt_y"]) ? oAttributes["ppt_y"] : this.getOrigAttrVal("ppt_y"),
-            "ppt_w": oAttributes && AscFormat.isRealNumber(oAttributes["ppt_w"]) ? oAttributes["ppt_w"] : this.getOrigAttrVal("ppt_w"),
-            "ppt_h": oAttributes && AscFormat.isRealNumber(oAttributes["ppt_h"]) ? oAttributes["ppt_h"] : this.getOrigAttrVal("ppt_h"),
+            "#ppt_x": this.getOrigAttrVal("ppt_x", sDrawingId),
+            "#ppt_y": this.getOrigAttrVal("ppt_y", sDrawingId),
+            "#ppt_w": this.getOrigAttrVal("ppt_w", sDrawingId),
+            "#ppt_h": this.getOrigAttrVal("ppt_h", sDrawingId),
+            "ppt_x": oAttributes && AscFormat.isRealNumber(oAttributes["ppt_x"]) ? oAttributes["ppt_x"] : this.getOrigAttrVal("ppt_x", sDrawingId),
+            "ppt_y": oAttributes && AscFormat.isRealNumber(oAttributes["ppt_y"]) ? oAttributes["ppt_y"] : this.getOrigAttrVal("ppt_y", sDrawingId),
+            "ppt_w": oAttributes && AscFormat.isRealNumber(oAttributes["ppt_w"]) ? oAttributes["ppt_w"] : this.getOrigAttrVal("ppt_w", sDrawingId),
+            "ppt_h": oAttributes && AscFormat.isRealNumber(oAttributes["ppt_h"]) ? oAttributes["ppt_h"] : this.getOrigAttrVal("ppt_h", sDrawingId),
             "ppt_x_no_attr": !(oAttributes && AscFormat.isRealNumber(oAttributes["ppt_x"])),
             "ppt_y_no_attr": !(oAttributes && AscFormat.isRealNumber(oAttributes["ppt_y"])),
             "ppt_w_no_attr": !(oAttributes && AscFormat.isRealNumber(oAttributes["ppt_w"])),
@@ -4569,7 +4569,7 @@
     CAnim.prototype.getFormulaResult = function (sFormula, oVarMap) {
         return (new CFormulaParser(sFormula, oVarMap)).getResult();
     };
-    CAnim.prototype.calculateBetweenTwoVals = function (oVal1, oVal2, fRelTime, oAttributes) {
+    CAnim.prototype.calculateBetweenTwoVals = function (oVal1, oVal2, fRelTime, oAttributes, sDrawingId) {
         if (!oVal1 || !oVal2) {
             return null;
         }
@@ -4595,7 +4595,7 @@
             if (sStrVal1 === "hidden" || sStrVal1 === "visible") {
                 return sStrVal1;
             }
-            oVarMap = this.getVarMapForFmla(oAttributes);
+            oVarMap = this.getVarMapForFmla(oAttributes, sDrawingId);
             oVarMap["$"] = fRelTime;
             fVal1 = this.getFormulaResult(sStrVal1, oVarMap);
         }
@@ -4610,7 +4610,7 @@
             fVal2 = oVal2.intVal;
         }
         if (oVal2.isStr()) {
-            oVarMap = this.getVarMapForFmla(oAttributes);
+            oVarMap = this.getVarMapForFmla(oAttributes, sDrawingId);
             oVarMap["$"] = fRelTime;
             var sStrVal2 = oVal2.getVal();
             fVal2 = this.getFormulaResult(sStrVal2, oVarMap);
@@ -12510,7 +12510,7 @@
 		}
 		return oRet;
 	};
-    CAnimSandwich.prototype.drawObject = function (oGraphics, oDrawing, oTextureCache, oObjectsForDrawCache) {
+    CAnimSandwich.prototype.drawObject = function (oGraphics, oDrawing, oTextureCache) {
 
         //this.print();
         //console.log(oAttributesMap);
@@ -12519,9 +12519,10 @@
 			if (arrDrawings.length > 1) {
 				arrDrawings[0].txBody = null;
 			}
+			const dScale = oGraphics.m_oCoordTransform.sx;
 			for (let i = 0; i < arrDrawings.length; i += 1) {
 				const oObjectForDraw = arrDrawings[i];
-				const oTextureData = this.getTextureData(oObjectForDraw, oTextureCache, oGraphics.m_oCoordTransform.sx);
+				const oTextureData = this.getTextureData(oObjectForDraw, oTextureCache, dScale);
 				if(!oTextureData) {
 					return;
 				}
