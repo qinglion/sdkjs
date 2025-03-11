@@ -4640,36 +4640,24 @@ CT_pivotTableDefinition.prototype.getPivotFieldButtonCompact = function(range, b
 	if (!range.contains(col, row)) {
 		return;
 	}
-	var isSortState = null;
-	var isSetFilter = false;
-	var res = null;
-	var i = 0;
-	while (i < rowColFields.length && (null === isSortState || false === isSetFilter)) {
-		var index = rowColFields[i].asc_getIndex();
-		var button = this._getPivotFieldButton(range, index, row, col);
-		if (button) {
-			res = res || button;
-			if (null === isSortState) {
-				isSortState = button.isSortState;
+	let isSortState = null;
+	let isSetFilter = false;
+	let res = null;
+	let i = 0;
+	const pivotRange = this.getRange();
+	if (pivotRange.containsRange(range)) {
+		const api = this.worksheet.workbook.oApi;
+		const activeCell = api.asc_getActiveCell();
+		const pivotIndex = this.rangeMapper.getPivotIndexByCell(activeCell, row, col);
+		if (pivotIndex !== null) {
+			const button = this._getPivotFieldButton(range, pivotIndex, row, col);
+			if (button) {
+				res = button;
+				buttons.push(res);
 			}
-			isSetFilter = isSetFilter || button.isSetFilter;
+			return;
 		}
-		i++;
 	}
-	if (res) {
-		res.isSortState = isSortState;
-		res.isSetFilter = isSetFilter;
-		buttons.push(res);
-	}
-};
-CT_pivotTableDefinition.prototype.getPivotFieldCompact = function(range, buttons, rowColFields, row, col) {
-	if (!range.contains(col, row)) {
-		return;
-	}
-	var isSortState = null;
-	var isSetFilter = false;
-	var res = null;
-	var i = 0;
 	while (i < rowColFields.length && (null === isSortState || false === isSetFilter)) {
 		var index = rowColFields[i].asc_getIndex();
 		var button = this._getPivotFieldButton(range, index, row, col);
@@ -9304,6 +9292,45 @@ CT_pivotTableDefinition.prototype.asc_getItemsObjectWithFormulas = function(fiel
 function PivotRangeMapper(pivot) {
 	/** @type {CT_pivotTableDefinition} */
 	this.pivot = pivot;
+}
+
+/**
+ * @param {Asc.Range} bbox - activeCell
+ * @param {number} row - button's row position
+ * @param {number} col = button's col position
+ */
+PivotRangeMapper.prototype.getPivotIndexByCell = function (bbox, row, col) {
+	const range = this.pivot.getRange();
+	const rowFields = this.pivot.asc_getRowFields();
+	const colFields = this.pivot.asc_getColumnFields();
+	const rowItems = this.pivot.getRowItems();
+	const colItems = this.pivot.getColItems();
+	const location = this.pivot.location;
+	const rowItemIndex = bbox.r1 - (range.r1 + location.firstDataRow);
+	const colItemIndex = bbox.c1 - (range.c1 + location.firstDataCol);
+	const rowRange = this.getRowRange();
+	if (rowRange && bbox.intersection(rowRange.bbox)) {
+		const rowLabelsRange = this.getRowLabelsRange();
+		if (bbox.intersection(rowLabelsRange.bbox) && col < range.c1 + location.firstDataCol) {
+			const rowItem = rowItems[rowItemIndex];
+			const rowFieldsOffset = this.getRowFieldsOffset();
+			const labelCol = bbox.c1 - range.c1;
+			const xIndex = labelCol - rowFieldsOffset[rowItem.getR()];
+			const rowField = rowFields[xIndex + rowItem.getR()];
+			return rowField.asc_getIndex();
+		}
+	}
+	const colRange = this.getColRange();
+	if (colRange && bbox.intersection(colRange.bbox)) {
+		const colLabelsRange = this.getColLabelsRange()
+		if (colLabelsRange && bbox.intersection(colLabelsRange.bbox) && row < range.r1 + location.firstDataRow) {
+			const colItem = colItems[colItemIndex];
+			const xIndex = bbox.r1 - (range.r1 + location.firstHeaderRow) - colItem.getR();
+			const colField = colFields[xIndex + colItem.getR()];
+			return colField.asc_getIndex();
+		}
+	}
+	return null;
 }
 
 /**
@@ -17025,6 +17052,7 @@ CT_PivotField.prototype.getFilterObject = function(cacheField, pageFilterItem, n
 	if (items) {
 		for (var i = 0; i < items.length; ++i) {
 			var item = items[i];
+
 			if (Asc.c_oAscItemType.Data === item.t || Asc.c_oAscItemType.Blank === item.t) {
 				var elem = AscCommonExcel.AutoFiltersOptionsElements();
 				elem.val = item.x;
