@@ -5621,7 +5621,19 @@ ParaRun.prototype.Recalculate_Range_Spaces = function(PRSA, _CurLine, _CurRange,
                     // У нас Flow-объект. Если он с обтеканием, тогда мы останавливаем пересчет и
                     // запоминаем текущий объект. В функции Internal_Recalculate_2 пересчитываем
                     // его позицию и сообщаем ее внешнему классу.
-
+					
+					// Не учитываем обтекание, если у нас на странице больше 100 объектов с обтеканием (баг 73462)
+					if (isUseWrap
+						&& DrawingObjects && DrawingObjects.graphicPages
+						&& DrawingObjects.graphicPages[PageAbs]
+						&& DrawingObjects.graphicPages[PageAbs].beforeTextObjects.length >= 100)
+					{
+						isUseWrap = false;
+						let LDRecalcInfo  = Para.Parent.RecalcInfo;
+						if (LDRecalcInfo.FlowObject)
+							LDRecalcInfo.Reset();
+					}
+					
                     if (isUseWrap)
                     {
                         var LogicDocument = Para.Parent;
