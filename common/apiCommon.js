@@ -5715,6 +5715,8 @@ function (window, undefined) {
 		this.isCustomWindow = false;	// используется только если this.type === PluginType.Window
 		this.isModal = true;     // используется только если this.type === PluginType.Window
 
+		this.isCanDocked = false;
+
 		this.initDataType = EPluginDataType.none;
 		this.initData = "";
 
@@ -5770,6 +5772,10 @@ function (window, undefined) {
 		return this.isCustomWindow;
 	};
 
+	CPluginVariation.prototype["get_IsCanDocked"] = function () {
+		return this.isCanDocked;
+	};
+
 	CPluginVariation.prototype["get_Buttons"] = function () {
 		return this.buttons;
 	};
@@ -5807,6 +5813,8 @@ function (window, undefined) {
 
 		_object["isCustomWindow"] = this.isCustomWindow;
 		_object["isModal"] = this.isModal;
+
+		_object["isCanDocked"] = this.isCanDocked;
 
 		_object["initDataType"] = this.initDataType;
 		_object["initData"] = this.initData;
@@ -5857,6 +5865,8 @@ function (window, undefined) {
 
 		this.isCustomWindow = (_object["isCustomWindow"] != null) ? _object["isCustomWindow"] : this.isCustomWindow;
 		this.isModal = (_object["isModal"] != null) ? _object["isModal"] : this.isModal;
+
+		this.isCanDocked = (_object["isCanDocked"] != null) ? _object["isCanDocked"] : this.isCanDocked;
 
 		this.initDataType = (_object["initDataType"] != null) ? _object["initDataType"] : this.initDataType;
 		this.initData = (_object["initData"] != null) ? _object["initData"] : this.initData;
