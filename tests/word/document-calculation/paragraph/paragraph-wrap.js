@@ -278,7 +278,7 @@ $(function () {
 		test([
 			["", "VeryLongLongLongLongLongLongLongWord\r\n"],
 		], [
-			[[L_FIELD + leftInd, imageX0], [imageX1 + leftInd + firstLine, PAGE_W - R_FIELD]]
+			[[L_FIELD + firstLine + leftInd, imageX0], [imageX1 + leftInd + firstLine, PAGE_W - R_FIELD]]
 		]);
 		
 		firstLine = 0;
@@ -286,7 +286,7 @@ $(function () {
 		test([
 			["", "VeryLongLongLongLongLongLongLongWord\r\n"],
 		], [
-			[[L_FIELD + leftInd, imageX0], [imageX1, PAGE_W - R_FIELD]]
+			[[L_FIELD + firstLine + leftInd, imageX0], [imageX1, PAGE_W - R_FIELD]]
 		]);
 
 		// Check the indentation when the first range is empty

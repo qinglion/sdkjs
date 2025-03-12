@@ -2204,7 +2204,7 @@ Paragraph.prototype.private_RecalculateRange           = function(CurRange, CurL
 		if (PRS.getCompatibilityMode() >= AscCommon.document_compatibility_mode_Word15)
 			shift = Math.max(paraPr.Ind.FirstLine, 0);
 		else
-			shift = paraPr.Ind.FirstLine < 0.001 ? paraPr.Ind.Left + paraPr.Ind.FirstLine : paraPr.Ind.FirstLine;
+			shift = paraPr.Ind.FirstLine < -AscWord.EPSILON ? paraPr.Ind.Left + paraPr.Ind.FirstLine : paraPr.Ind.FirstLine;
 			
 		if (paraPr.Bidi)
 			Range.XEnd -= shift;
