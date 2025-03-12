@@ -2982,7 +2982,11 @@
 
 		this.externalReferenceHelper = new CExternalReferenceHelper(this);
 	}
-	Workbook.prototype.init=function(tableCustomFunc, tableIds, sheetIds, bNoBuildDep, bSnapshot){
+	Workbook.prototype.init=function(oReadResult, bNoBuildDep, bSnapshot){
+		let tableCustomFunc = oReadResult.tableCustomFunc || {};
+		let tableIds = oReadResult.tableIds || {};
+		let sheetIds = oReadResult.sheetIds || {};
+		let pivotCaches = oReadResult.pivotCacheDefinitions || {};
 		if(this.nActive < 0)
 			this.nActive = 0;
 		if(this.nActive >= this.aWorksheets.length)
@@ -3013,7 +3017,7 @@
 		}
 		//ws
 		this.forEach(function (ws) {
-			ws.initPostOpen(self.wsHandlers, tableIds, sheetIds);
+			ws.initPostOpen(self.wsHandlers, tableIds, sheetIds, pivotCaches, self.oNumFmtsOpen, self.dxfsOpen);
 		});
 		//timelinecache
 		this.timelineCaches.forEach(function(elem){
@@ -3094,18 +3098,6 @@
 		this.oleSize = oPr;
 	};
 
-	Workbook.prototype.initPostOpenZip=function(pivotCaches, xmlParserContext){
-		var t = this;
-		this.forEach(function (ws) {
-			ws.initPostOpenZip(pivotCaches, t.oNumFmtsOpen, t.dxfsOpen);
-		});
-		if (xmlParserContext) {
-			AscCommon.pptx_content_loader.Reader.ImageMapChecker = AscCommon.pptx_content_loader.ImageMapChecker;
-			var context = xmlParserContext;
-			context.loadDataLinks();
-			context.ClearSmartArts();
-		}
-	};
 	Workbook.prototype.preparePivotForSerialization=function(pivotCaches, isCopyPaste){
 		var pivotCacheIndex = 0;
 		this.forEach(function(ws) {
@@ -3784,7 +3776,7 @@
 			wb.aWorksheetsById[ws.getId()] = ws;
 		});
 		//init trigger
-		wb.init({}, {}, {}, true, false);
+		wb.init({}, true, false);
 		return wb;
 	};
 	Workbook.prototype.getAllFormulas = function(needReturnCellProps) {
@@ -6484,7 +6476,7 @@
 		this.initColumn(this.oAllCol);
 		this.aCols.forEach(this.initColumn, this);
 	};
-	Worksheet.prototype.initPostOpen = function (handlers, tableIds, sheetIds) {
+	Worksheet.prototype.initPostOpen = function (handlers, tableIds, sheetIds, pivotCaches, oNumFmts, dxfsOpen) {
 		var t = this;
 		this.PagePrintOptions.init();
 		this.headerFooter.init();
@@ -6515,8 +6507,6 @@
 		this.userProtectedRanges.forEach(function(elem){
 			elem.initPostOpen(t);
 		});
-	};
-	Worksheet.prototype.initPostOpenZip = function (pivotCaches, oNumFmts, dxfsOpen) {
 		this.pivotTables.forEach(function(pivotTable){
 			pivotTable.initPostOpenZip(oNumFmts, dxfsOpen);
 		});

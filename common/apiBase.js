@@ -1227,9 +1227,6 @@
 	{
 		this.sync_EndAction(c_oAscAsyncActionType.BlockInteraction, c_oAscAsyncAction.Open);
 	};
-	baseEditorsApi.prototype._openOnClient                       = function()
-	{
-	};
 	baseEditorsApi.prototype._onOpenCommand                      = function(data)
 	{
 		var t = this;
@@ -1245,7 +1242,6 @@
 			}
 			t.onEndLoadFile(result);
 		});
-		this._openOnClient();
 	};
 	baseEditorsApi.prototype.openFileCryptCallback               = function (stream)
 	{
@@ -2958,9 +2954,6 @@
 	};
 
 	baseEditorsApi.prototype.openDocument  = function(file)
-	{
-	};
-	baseEditorsApi.prototype.openDocumentFromZip  = function()
 	{
 	};
 	baseEditorsApi.prototype.saveLogicDocumentToZip  = function(fileType, options, callback)
