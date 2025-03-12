@@ -173,16 +173,6 @@
 	ApiImage.prototype.constructor = ApiImage;
 
 	/**
-     * Class representing a group of drawings.
-     * @constructor
-     */
-    function ApiGroup(oGroup){
-		ApiDrawing.call(this, oGroup);
-    }
-	ApiGroup.prototype = Object.create(ApiDrawing.prototype);
-	ApiGroup.prototype.constructor = ApiGroup;
-
-	/**
 	 * Class representing an OLE object.
 	 * @constructor
 	 */
@@ -304,7 +294,7 @@
 
 	/**
      * Any valid drawing element.
-     * @typedef {(ApiShape | ApiImage | ApiGroup | ApiOleObject | ApiChart )} Drawing
+     * @typedef {(ApiShape | ApiImage | ApiOleObject | ApiChart )} Drawing
 	 * @see office-js-api/Examples/Enumerations/Drawing.js
 	 */
 
@@ -8978,7 +8968,7 @@
 	 * @see office-js-api/Examples/{Editor}/ApiWorksheet/Methods/GetAllDrawings.js
 	 */
 	ApiWorksheet.prototype.GetAllDrawings = function () {
-		return AscBuilder.GetApiDrawings(this.worksheet.Drawings.map(function(drawingBase) { return drawingBase.graphicObject }));
+		return GetApiDrawings(this.worksheet.Drawings.map(function(drawingBase) { return drawingBase.graphicObject }));
 	};
 
 	/**
@@ -12047,24 +12037,6 @@
 
 		return nRad * 180 / Math.PI
 	};
-
-	//------------------------------------------------------------------------------------------------------------------
-    //
-    // ApiGroup
-    //
-    //------------------------------------------------------------------------------------------------------------------
-
-    /**
-     * Returns a type of the ApiGroup class.
-     * @memberof ApiGroup
-     * @typeofeditors ["CSE"]
-     * @returns {"group"}
-	 * @since 8.3.0
-     * @see office-js-api/Examples/{Editor}/ApiGroup/Methods/GetClassType.js
-     */
-    ApiGroup.prototype.GetClassType = function() {
-        return "group";
-    };
 
 	//------------------------------------------------------------------------------------------------------------------
 	//
@@ -17825,8 +17797,6 @@
 	ApiShape.prototype["GetContent"]                   =  ApiShape.prototype.GetContent;
 	ApiShape.prototype["SetVerticalTextAlign"]         =  ApiShape.prototype.SetVerticalTextAlign;
 
-	ApiGroup.prototype["GetClassType"]	= ApiGroup.prototype.GetClassType;
-
 	ApiChart.prototype["SetSeriaValues"]              =  ApiChart.prototype.SetSeriaValues;
 	ApiChart.prototype["SetSeriaXValues"]             =  ApiChart.prototype.SetSeriaXValues;
 	ApiChart.prototype["SetSeriaName"]                =  ApiChart.prototype.SetSeriaName;
@@ -18723,13 +18693,36 @@
 		oldSelection && oldSelection.Select(true);
 	}
 
+	function GetApiDrawings(drawingObjects) {
+		return drawingObjects.map(function(drawing) {
+			return GetApiDrawing(drawing);
+		}).filter(function(apiDrawing) {
+			return !!apiDrawing;
+		});
+	}
+	
+	function GetApiDrawing(drawing) {
+        switch (drawing.getObjectType()) {
+            case AscDFH.historyitem_type_Shape:
+                return new AscBuilder.ApiShape(drawing);
+            case AscDFH.historyitem_type_ImageShape:
+                return new AscBuilder.ApiImage(drawing);
+            case AscDFH.historyitem_type_OleObject:
+                return new AscBuilder.ApiOleObject(drawing);
+			case AscDFH.historyitem_type_GroupShape:
+                return new ApiDrawing(drawing);
+			case AscDFH.historyitem_type_ChartSpace:
+				return new AscBuilder.ApiChart(drawing);
+        }
+        return null;
+    }
+
 	function private_MakeError(message) {
 		console.error(new Error(message) );
 	}
 	window['AscBuilder'] = window['AscBuilder'] || {};
 	window['AscBuilder'].ApiShape           = ApiShape;
 	window['AscBuilder'].ApiImage           = ApiImage;
-	window['AscBuilder'].ApiGroup           = ApiGroup;
 	window['AscBuilder'].ApiOleObject       = ApiOleObject;
 
 }(window, null));
