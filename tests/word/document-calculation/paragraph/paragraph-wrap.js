@@ -273,6 +273,22 @@ $(function () {
 			[[L_FIELD + firstLine + leftInd, imageX0], [imageX1 + leftInd + firstLine, PAGE_W - R_FIELD]]
 		]);
 		
+		firstLine = -5 * charWidth;
+		leftInd   = 10 * charWidth;
+		test([
+			["", "VeryLongLongLongLongLongLongLongWord\r\n"],
+		], [
+			[[L_FIELD + leftInd, imageX0], [imageX1 + leftInd + firstLine, PAGE_W - R_FIELD]]
+		]);
+		
+		firstLine = 0;
+		leftInd   = 10 * charWidth;
+		test([
+			["", "VeryLongLongLongLongLongLongLongWord\r\n"],
+		], [
+			[[L_FIELD + leftInd, imageX0], [imageX1, PAGE_W - R_FIELD]]
+		]);
+
 		// Check the indentation when the first range is empty
 		AscTest.SetCompatibilityMode(AscCommon.document_compatibility_mode_Word15);
 		
