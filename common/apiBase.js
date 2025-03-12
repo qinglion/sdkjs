@@ -223,6 +223,8 @@
 		this.skinObject = config['skin'];
 		this.isDarkMode = false;
 
+		this.isRtlInterface = config['isRtlInterface'] === true;
+
 		this.Shortcuts = new AscCommon.CShortcuts();
 		this.initDefaultShortcuts();
 

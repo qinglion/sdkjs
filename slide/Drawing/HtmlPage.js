@@ -1205,6 +1205,10 @@
 	// Splitter elements
 	CEditorPage.prototype.createSplitterElement = function (splitterIndex) {
 		const splitterElement = document.createElement("div");
+	this.GetVertRulerLeft = function()
+	{
+		return 0;
+	};
 
 		const position = Math.round(this.splitters[splitterIndex - 1].position * g_dKoef_mm_to_pix);
 		const splitterWidth = Math.round(GlobalSkin.SplitterWidthMM * g_dKoef_mm_to_pix);

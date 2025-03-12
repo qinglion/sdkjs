@@ -1633,7 +1633,7 @@
     {
         if (this.Master) 
         {
-            if (!(oDrawing instanceof ApiDrawing) || oDrawing.Drawing.group || oDrawing.Drawing.IsUseInDocument())
+            if (oDrawing.Drawing.group || oDrawing.Drawing.IsUseInDocument())
                 return false;
 
             oDrawing.Drawing.setParent(this.Master);
@@ -2010,7 +2010,7 @@
     {
         if (this.Layout) 
         {
-            if (!(oDrawing instanceof ApiDrawing) || oDrawing.Drawing.group || oDrawing.Drawing.IsUseInDocument())
+            if (oDrawing.Drawing.group || oDrawing.Drawing.IsUseInDocument())
                 return false;
 
             oDrawing.Drawing.setParent(this.Layout);
@@ -2935,7 +2935,7 @@
 	 */
     ApiSlide.prototype.AddObject = function(oDrawing){
         if(this.Slide){
-            if (!(oDrawing instanceof ApiDrawing) || oDrawing.Drawing.group || oDrawing.Drawing.IsUseInDocument())
+            if (oDrawing.Drawing.group || oDrawing.Drawing.IsUseInDocument())
                 return false;
 
             oDrawing.Drawing.setParent(this.Slide);
@@ -3904,6 +3904,44 @@
         let oController = oDrawing.getDrawingObjectsController();
         oController.updateSelectionState();
         oController.updateOverlay();
+	};
+
+    /**
+     * Sets the rotation angle to the current drawing object.
+     * @memberof ApiDrawing
+     * @param {number} nRotAngle - new drawing rot angle
+     * @typeofeditors ["CPE"]
+     * @returns {boolean}
+     * @see office-js-api/Examples/{Editor}/ApiDrawing/Methods/SetRotation.js
+	 */
+	ApiDrawing.prototype.SetRotation = function(nRotAngle)
+	{
+		if (!this.Drawing.canRotate()) {
+			return false;
+		}
+
+		let oXfrm = this.Drawing.getXfrm();
+		oXfrm.setRot(nRotAngle * Math.PI / 180);
+
+		return true;
+	};
+	/**
+     * Gets the rotation angle of the current drawing object.
+     * @memberof ApiDrawing
+     * @typeofeditors ["CPE"]
+     * @returns {number}
+     * @see office-js-api/Examples/{Editor}/ApiDrawing/Methods/GetRotation.js
+	 */
+	ApiDrawing.prototype.GetRotation = function()
+	{
+		if (!this.Drawing.canRotate()) {
+			return 0;
+		}
+
+		let oXfrm = this.Drawing.getXfrm();
+		let nRad = oXfrm.getRot();
+
+		return nRad * 180 / Math.PI
 	};
 
     //------------------------------------------------------------------------------------------------------------------
@@ -4992,6 +5030,8 @@
     ApiDrawing.prototype["GetLockValue"]                  = ApiDrawing.prototype.GetLockValue;
     ApiDrawing.prototype["SetLockValue"]                  = ApiDrawing.prototype.SetLockValue;
     ApiDrawing.prototype["Select"]                        = ApiDrawing.prototype.Select;
+    ApiDrawing.prototype["SetRotation"]                   = ApiDrawing.prototype.SetRotation;
+    ApiDrawing.prototype["GetRotation"]                   = ApiDrawing.prototype.GetRotation;
 
     ApiGroup.prototype["GetClassType"]	= ApiGroup.prototype.GetClassType;
 	ApiGroup.prototype["Ungroup"]		= ApiGroup.prototype.Ungroup;

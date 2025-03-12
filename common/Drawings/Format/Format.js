@@ -8035,6 +8035,9 @@
 			this.rot = pr;
 			this.handleUpdateRot();
 		};
+		CXfrm.prototype.getRot = function() {
+			return this.rot;
+		};
 		CXfrm.prototype.shift = function(dDX, dDY) {
 			if(this.offX !== null && this.offY !== null) {
 				this.setOffX(this.offX + dDX);
