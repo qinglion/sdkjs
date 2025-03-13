@@ -716,8 +716,24 @@
         this.startTick[0] = oPlayer.getElapsedTicks();
         this.simpleDuration = this.calculateSimpleDuration();
         this.repeatCount = this.calculateRepeatCount();
+			this.initStartTicks();
         this.privateCalculateParams()
     };
+	CTimeNodeBase.prototype.initStartTicks = function(oPlayer) {
+		const startTick = oPlayer.getElapsedTicks();
+		this.startTick = [startTick];
+		const nIterationCount = this.getIterationCount(oPlayer);
+		if (nIterationCount) {
+			const nIterationDelta = this.getIterationDelta();
+			const oAttr = this.getAttributesObject();
+			const nEffectDuration = oAttr && oAttr.getEffectDuration();
+			this.startTick.push(startTick + nEffectDuration);
+			const nCalcIterationDelta = nEffectDuration * nIterationDelta;
+			for (let i = 1; i < nIterationCount; i++) {
+				this.startTick.push(this.startTick[this.startTick.length - 1] + nCalcIterationDelta);
+			}
+		}
+	};
     CTimeNodeBase.prototype.privateCalculateParams = function (oPlayer) {
     };
     CTimeNodeBase.prototype.scheduleEnd = function (oPlayer) {
