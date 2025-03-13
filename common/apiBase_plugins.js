@@ -2097,6 +2097,7 @@
 
 	/**
 	 * Callback from dockChangedEvents.
+	 * @undocumented
 	 * @memberof Api
 	 * @typeofeditors ["CDE", "CSE", "CPE", "PDF"]
 	 * @param {string} windowID - The frame ID.
