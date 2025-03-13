@@ -9316,7 +9316,8 @@ PivotRangeMapper.prototype.getPivotIndexByCell = function (activeCell, row, col)
 			const labelCol = activeCell.col - range.c1;
 			const xIndex = labelCol - rowFieldsOffset[rowItem.getR()];
 			const rowField = rowFields[xIndex + rowItem.getR()];
-			return rowField.asc_getIndex();
+			const res = rowField.asc_getIndex();
+			return AscCommonExcel.st_VALUES !== res ? res : null;
 		}
 	}
 	const colRange = this.getColRange();
@@ -9326,7 +9327,8 @@ PivotRangeMapper.prototype.getPivotIndexByCell = function (activeCell, row, col)
 			const colItem = colItems[colItemIndex];
 			const xIndex = activeCell.row - (range.r1 + location.firstHeaderRow) - colItem.getR();
 			const colField = colFields[xIndex + colItem.getR()];
-			return colField.asc_getIndex();
+			const res = colField.asc_getIndex();
+			return AscCommonExcel.st_VALUES !== res ? res : null;
 		}
 	}
 	return null;
