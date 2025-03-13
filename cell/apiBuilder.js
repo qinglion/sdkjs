@@ -173,16 +173,6 @@
 	ApiImage.prototype.constructor = ApiImage;
 
 	/**
-     * Class representing a group of drawings.
-     * @constructor
-     */
-    function ApiGroup(oGroup){
-		ApiDrawing.call(this, oGroup);
-    }
-	ApiGroup.prototype = Object.create(ApiDrawing.prototype);
-	ApiGroup.prototype.constructor = ApiGroup;
-
-	/**
 	 * Class representing an OLE object.
 	 * @constructor
 	 */
@@ -304,14 +294,8 @@
 
 	/**
      * Any valid drawing element.
-     * @typedef {(ApiShape | ApiImage | ApiGroup | ApiOleObject | ApiChart )} Drawing
+     * @typedef {(ApiShape | ApiImage | ApiOleObject | ApiChart )} Drawing
 	 * @see office-js-api/Examples/Enumerations/Drawing.js
-	 */
-
-	/**
-     * Available drawing element for grouping.
-     * @typedef {(ApiShape | ApiGroup | ApiImage | ApiChart)} DrawingForGroup
-	 * @see office-js-api/Examples/Enumerations/DrawingForGroup.js
 	 */
 
 	/**
@@ -8890,55 +8874,6 @@
 	};
 
 	/**
-     * Groups an array of drawings in the current worksheet.
-     * @memberof ApiWorksheet
-     * @typeofeditors ["CSE"]
-     * @param {DrawingForGroup[]} aDrawings - An array of drawings to group.
-     * @returns {ApiGroup}
-	 * @since 8.3.0
-     * @see office-js-api/Examples/{Editor}/ApiWorksheet/Methods/GroupDrawings.js
-	 */
-    ApiWorksheet.prototype.GroupDrawings = function(aDrawings) {
-        if (!Array.isArray(aDrawings) || aDrawings.length == 0)
-            return null;
-
-		let _t = this;
-		let aSheets = Asc.editor.GetSheets();
-		let nSheetIdx = aSheets.findIndex(function(sheet) {
-			return sheet.worksheet == _t.worksheet;
-		});
-
-		let oSheetView = Asc['editor'].wb.getWorksheet(nSheetIdx);
-        let oGraphicObjects = oSheetView.objectRender.controller;
-
-        if (aDrawings.find(function(drawing) {
-            return !drawing.Drawing.IsUseInDocument();
-        }))
-            return null;
-        
-		oGraphicObjects.resetSelection();
-
-        aDrawings.forEach(function(drawing) {
-            oGraphicObjects.selectObject(drawing.Drawing, drawing.Drawing.Get_AbsolutePage());
-        });
-        
-        let canGroup = oGraphicObjects.canGroup();
-        if (!canGroup)
-            return null;
-
-        aDrawings.forEach(function(drawing) {
-            drawing.Drawing.recalculate();
-        });
-
-        let oGroup = oGraphicObjects.createGroup();
-        if (!oGroup) {
-            return null;
-        }
-
-        return new ApiGroup(oGroup);
-    };
-	
-	/**
 	 * Adds a Text Art object to the current sheet with the parameters specified.
 	 * @memberof ApiWorksheet
 	 * @typeofeditors ["CSE"]
@@ -9033,7 +8968,7 @@
 	 * @see office-js-api/Examples/{Editor}/ApiWorksheet/Methods/GetAllDrawings.js
 	 */
 	ApiWorksheet.prototype.GetAllDrawings = function () {
-		return AscBuilder.GetApiDrawings(this.worksheet.Drawings.map(function(drawingBase) { return drawingBase.graphicObject }));
+		return GetApiDrawings(this.worksheet.Drawings.map(function(drawingBase) { return drawingBase.graphicObject }));
 	};
 
 	/**
@@ -12102,58 +12037,6 @@
 
 		return nRad * 180 / Math.PI
 	};
-
-	//------------------------------------------------------------------------------------------------------------------
-    //
-    // ApiGroup
-    //
-    //------------------------------------------------------------------------------------------------------------------
-
-    /**
-     * Returns a type of the ApiGroup class.
-     * @memberof ApiGroup
-     * @typeofeditors ["CSE"]
-     * @returns {"group"}
-	 * @since 8.3.0
-     * @see office-js-api/Examples/{Editor}/ApiGroup/Methods/GetClassType.js
-     */
-    ApiGroup.prototype.GetClassType = function() {
-        return "group";
-    };
-
-    /**
-     * Ungroups the current group of drawings.
-     * @memberof ApiGroup
-     * @typeofeditors ["CSE"]
-     * @returns {boolean}
-	 * @since 8.3.0
-     * @see office-js-api/Examples/{Editor}/ApiGroup/Methods/Ungroup.js
-     */
-    ApiGroup.prototype.Ungroup = function() {
-        let oSheet = this.GetParentSheet();
-		if (!oSheet) {
-			return false;
-		}
-
-		let aSheets = Asc.editor.GetSheets();
-		let nSheetIdx = aSheets.findIndex(function(sheet) {
-			return sheet.worksheet == oSheet.worksheet;
-		});
-
-		let oSheetView = Asc['editor'].wb.getWorksheet(nSheetIdx);
-        let oGraphicObjects = oSheetView.objectRender.controller;
-
-        oGraphicObjects.resetSelection();
-        oGraphicObjects.selectObject(this.Drawing, this.Drawing.Get_AbsolutePage())
-        
-        let canUngroup = oGraphicObjects.canUnGroup();
-        if (!canUngroup) {
-            return false;
-        }
-
-        oGraphicObjects.unGroupCallback();
-        return true;
-    };
 
 	//------------------------------------------------------------------------------------------------------------------
 	//
@@ -17810,7 +17693,6 @@
 	ApiWorksheet.prototype["AddChart"] = ApiWorksheet.prototype.AddChart;
 	ApiWorksheet.prototype["AddShape"] = ApiWorksheet.prototype.AddShape;
 	ApiWorksheet.prototype["AddImage"] = ApiWorksheet.prototype.AddImage;
-	ApiWorksheet.prototype["GroupDrawings"] = ApiWorksheet.prototype.GroupDrawings;
 	ApiWorksheet.prototype["AddOleObject"] = ApiWorksheet.prototype.AddOleObject;
 	ApiWorksheet.prototype["ReplaceCurrentImage"] = ApiWorksheet.prototype.ReplaceCurrentImage;
 	ApiWorksheet.prototype["AddWordArt"] = ApiWorksheet.prototype.AddWordArt;
@@ -17914,9 +17796,6 @@
 	ApiShape.prototype["GetDocContent"]                =  ApiShape.prototype.GetDocContent;
 	ApiShape.prototype["GetContent"]                   =  ApiShape.prototype.GetContent;
 	ApiShape.prototype["SetVerticalTextAlign"]         =  ApiShape.prototype.SetVerticalTextAlign;
-
-	ApiGroup.prototype["GetClassType"]	= ApiGroup.prototype.GetClassType;
-	ApiGroup.prototype["Ungroup"]		= ApiGroup.prototype.Ungroup;
 
 	ApiChart.prototype["SetSeriaValues"]              =  ApiChart.prototype.SetSeriaValues;
 	ApiChart.prototype["SetSeriaXValues"]             =  ApiChart.prototype.SetSeriaXValues;
@@ -18814,13 +18693,36 @@
 		oldSelection && oldSelection.Select(true);
 	}
 
+	function GetApiDrawings(drawingObjects) {
+		return drawingObjects.map(function(drawing) {
+			return GetApiDrawing(drawing);
+		}).filter(function(apiDrawing) {
+			return !!apiDrawing;
+		});
+	}
+	
+	function GetApiDrawing(drawing) {
+        switch (drawing.getObjectType()) {
+            case AscDFH.historyitem_type_Shape:
+                return new AscBuilder.ApiShape(drawing);
+            case AscDFH.historyitem_type_ImageShape:
+                return new AscBuilder.ApiImage(drawing);
+            case AscDFH.historyitem_type_OleObject:
+                return new AscBuilder.ApiOleObject(drawing);
+			case AscDFH.historyitem_type_GroupShape:
+                return new ApiDrawing(drawing);
+			case AscDFH.historyitem_type_ChartSpace:
+				return new AscBuilder.ApiChart(drawing);
+        }
+        return null;
+    }
+
 	function private_MakeError(message) {
 		console.error(new Error(message) );
 	}
 	window['AscBuilder'] = window['AscBuilder'] || {};
 	window['AscBuilder'].ApiShape           = ApiShape;
 	window['AscBuilder'].ApiImage           = ApiImage;
-	window['AscBuilder'].ApiGroup           = ApiGroup;
 	window['AscBuilder'].ApiOleObject       = ApiOleObject;
 
 }(window, null));
