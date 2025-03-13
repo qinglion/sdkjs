@@ -1201,14 +1201,13 @@
 		}
 		return false;
 	};
-
-	// Splitter elements
-	CEditorPage.prototype.createSplitterElement = function (splitterIndex) {
-		const splitterElement = document.createElement("div");
-	this.GetVertRulerLeft = function()
+	CEditorPage.prototype.GetVertRulerLeft = function()
 	{
 		return 0;
 	};
+	// Splitter elements
+	CEditorPage.prototype.createSplitterElement = function (splitterIndex) {
+		const splitterElement = document.createElement("div");
 
 		const position = Math.round(this.splitters[splitterIndex - 1].position * g_dKoef_mm_to_pix);
 		const splitterWidth = Math.round(GlobalSkin.SplitterWidthMM * g_dKoef_mm_to_pix);
