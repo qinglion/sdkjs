@@ -17696,6 +17696,32 @@
 	};
 	
 	/**
+	 * Specifies a unique ID for the current content control.
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 8.3.2
+	 * @param {string} id - The id which will be specified to the current content control.
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/SetId.js
+	 */
+	ApiInlineLvlSdt.prototype.SetId = function(id)
+	{
+		this.Sdt.SetContentControlId(id);
+	};
+	
+	/**
+	 * Gets a unique ID for the current content control.
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 8.3.2
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/GetId.js
+	 */
+	ApiInlineLvlSdt.prototype.GetId = function()
+	{
+		return this.Sdt.GetContentControlId();
+	};
+	
+	/**
 	 * Sets the lock to the current inline text content control:
 	 * <b>"contentLocked"</b> - content cannot be edited.
 	 * <b>"sdtContentLocked"</b> - content cannot be edited and the container cannot be deleted.
@@ -18665,6 +18691,31 @@
 		return this.Sdt.GetId();
 	};
 	
+	/**
+	 * Specifies a unique ID for the current content control.
+	 * @memberof ApiBlockLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 8.3.2
+	 * @param {string} id - The id which will be specified to the current content control.
+	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/SetId.js
+	 */
+	ApiBlockLvlSdt.prototype.SetId = function(id)
+	{
+		this.Sdt.SetContentControlId(id);
+	};
+	
+	/**
+	 * Gets a unique ID for the current content control.
+	 * @memberof ApiBlockLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 8.3.2
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/GetId.js
+	 */
+	ApiBlockLvlSdt.prototype.GetId = function()
+	{
+		return this.Sdt.GetContentControlId();
+	};
 	/**
 	 * Sets the lock to the current block text content control:
 	 * <b>"contentLocked"</b> - content cannot be edited.
@@ -22820,6 +22871,8 @@
 
 	ApiInlineLvlSdt.prototype["GetClassType"]           = ApiInlineLvlSdt.prototype.GetClassType;
 	ApiInlineLvlSdt.prototype["GetInternalId"]          = ApiInlineLvlSdt.prototype.GetInternalId;
+	ApiInlineLvlSdt.prototype["GetId"]                  = ApiInlineLvlSdt.prototype.GetId;
+	ApiInlineLvlSdt.prototype["SetId"]                  = ApiInlineLvlSdt.prototype.SetId;
 	ApiInlineLvlSdt.prototype["SetLock"]                = ApiInlineLvlSdt.prototype.SetLock;
 	ApiInlineLvlSdt.prototype["GetLock"]                = ApiInlineLvlSdt.prototype.GetLock;
 	ApiInlineLvlSdt.prototype["SetTag"]                 = ApiInlineLvlSdt.prototype.SetTag;
@@ -22876,6 +22929,8 @@
 
 	ApiBlockLvlSdt.prototype["GetClassType"]            = ApiBlockLvlSdt.prototype.GetClassType;
 	ApiBlockLvlSdt.prototype["GetInternalId"]           = ApiBlockLvlSdt.prototype.GetInternalId;
+	ApiBlockLvlSdt.prototype["GetId"]                   = ApiBlockLvlSdt.prototype.GetId;
+	ApiBlockLvlSdt.prototype["SetId"]                   = ApiBlockLvlSdt.prototype.SetId;
 	ApiBlockLvlSdt.prototype["SetLock"]                 = ApiBlockLvlSdt.prototype.SetLock;
 	ApiBlockLvlSdt.prototype["GetLock"]                 = ApiBlockLvlSdt.prototype.GetLock;
 	ApiBlockLvlSdt.prototype["SetTag"]                  = ApiBlockLvlSdt.prototype.SetTag;
