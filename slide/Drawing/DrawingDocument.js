@@ -6282,9 +6282,13 @@ function CThumbnailsManager(editorPage)
 			totalThumbnailsLength = this.calculateTotalThumbnailsLength(thumbnailsWidth, thumbnailsHeight);
 
 			const settings = this.getSettingsForScrollObject(totalThumbnailsLength);
-			if (wordControl.m_oScrollThumb_) {
+			if (wordControl.m_oScrollThumb_ && wordControl.m_oScrollThumb_.isHorizontalScroll === isHorizontalOrientation) {
 				wordControl.m_oScrollThumb_.Repos(settings);
 			} else {
+				const holder = wordControl.m_oThumbnails_scroll.HtmlElement;
+				const canvas = holder.getElementsByTagName('canvas')[0];
+				canvas && holder.removeChild(canvas);
+
 				wordControl.m_oScrollThumb_ = new AscCommon.ScrollObject('id_vertical_scroll_thmbnl', settings);
 				wordControl.m_oScrollThumbApi = wordControl.m_oScrollThumb_;
 
@@ -6293,7 +6297,6 @@ function CThumbnailsManager(editorPage)
 					const maxScrollPosition = isHorizontalOrientation ? evt.maxScrollX : evt.maxScrollY;
 					oThis.thumbnailsScroll(this, evt.scrollD, maxScrollPosition);
 				});
-
 			}
 			wordControl.m_oScrollThumb_.isHorizontalScroll = isHorizontalOrientation;
 

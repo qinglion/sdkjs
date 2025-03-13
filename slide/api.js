@@ -9644,6 +9644,11 @@ background-repeat: no-repeat;\
 	};
 
 	asc_docs_api.prototype.onUpdateThumbnailsPosition = function () {
+		const wordControl = Asc.editor.WordControl;
+		wordControl.recalculateThumbnailsBounds();
+		wordControl.recalculateMainContentBounds();
+		wordControl.Thumbnails.RecalculateAll();
+		wordControl.OnResize();
 	};
 	asc_docs_api.prototype.onChangeRTLInterface = function () {
 		this.onUpdateThumbnailsPosition();
