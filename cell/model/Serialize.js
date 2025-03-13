@@ -9748,6 +9748,9 @@
 				res = this.bcr.Read1(length, function(t, l) {
 					return oThis.ReadExternalCell(t, l, cell);
 				});
+				if (cell.CellType === Asc.ECellTypeType.celltypeError && cell.CellValue && AscCommon.rx_error && !cell.CellValue.match(AscCommon.rx_error)) {
+					cell.CellValue = null;
+				}
 				row.Cell.push(cell);
 			} else {
 				res = c_oSerConstants.ReadUnknown;
