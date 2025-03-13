@@ -18301,6 +18301,84 @@
 		
 		return new ApiContentControlList(this);
 	};
+	
+	/**
+	 * Sets the border color to the current content control.
+	 * @memberof ApiInlineLvlSdt
+	 * @param {byte} r - Red color component value.
+	 * @param {byte} g - Green color component value.
+	 * @param {byte} b - Blue color component value.
+	 * @param {byte} a - Alpha color component value.
+	 * @typeofeditors ["CDE"]
+	 * @since 8.3.2
+	 * @returns {boolean}
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/SetBorderColor.js
+	 */
+	ApiInlineLvlSdt.prototype.SetBorderColor = function(r, g, b, a)
+	{
+		this.Sdt.setBorderColor(new AscWord.CDocumentColorA(r, g, b, a));
+		return true;
+	};
+	/**
+	 * Gets the border color of the current content control.
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 8.3.2
+	 * @returns {null | {r:byte, g:byte, b:byte, a:byte}}
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/GetBorderColor.js
+	 */
+	ApiInlineLvlSdt.prototype.GetBorderColor = function()
+	{
+		let color = this.Sdt.getBorderColor();
+		if (!color)
+			return null;
+		
+		return {
+			"r" : color.r,
+			"g" : color.g,
+			"b" : color.b,
+			"a" : color.a
+		};
+	};
+	
+	/**
+	 * Sets the background color to the current content control.
+	 * @memberof ApiInlineLvlSdt
+	 * @param {byte} r - Red color component value.
+	 * @param {byte} g - Green color component value.
+	 * @param {byte} b - Blue color component value.
+	 * @param {byte} a - Alpha color component value.
+	 * @typeofeditors ["CDE"]
+	 * @returns {boolean}
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/SetBackgroundColor.js
+	 */
+	ApiInlineLvlSdt.prototype.SetBackgroundColor = function(r, g, b, a)
+	{
+		this.Sdt.setShdColor(new AscWord.CDocumentColorA(r, g, b, a));
+		return true;
+	};
+	
+	/**
+	 * Gets the background color of the current content control.
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 8.3.2
+	 * @returns {null | {r:byte, g:byte, b:byte, a:byte}}
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/GetBackgroundColor.js
+	 */
+	ApiInlineLvlSdt.prototype.GetBackgroundColor = function()
+	{
+		let color = this.Sdt.getShdColor();
+		if (!color)
+			return null;
+		
+		return {
+			"r" : color.r,
+			"g" : color.g,
+			"b" : color.b,
+			"a" : color.a
+		};
+	};
 
 	//------------------------------------------------------------------------------------------------------------------
 	//
@@ -19471,7 +19549,54 @@
 
 		return new ApiBlockLvlSdt(oInlineSdt);
 	};
-
+	
+	/**
+	 * Sets the border color to the current content control.
+	 * @memberof ApiBlockLvlSdt
+	 * @param {byte} r - Red color component value.
+	 * @param {byte} g - Green color component value.
+	 * @param {byte} b - Blue color component value.
+	 * @param {byte} a - Alpha color component value.
+	 * @typeofeditors ["CDE"]
+	 * @since 8.3.2
+	 * @returns {boolean}
+	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/SetBorderColor.js
+	 */
+	ApiBlockLvlSdt.prototype.SetBorderColor = ApiInlineLvlSdt.prototype.SetBorderColor;
+	
+	/**
+	 * Gets the border color of the current content control.
+	 * @memberof ApiBlockLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 8.3.2
+	 * @returns {null | {r:byte, g:byte, b:byte, a:byte}}
+	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/GetBorderColor.js
+	 */
+	ApiBlockLvlSdt.prototype.GetBorderColor = ApiInlineLvlSdt.prototype.GetBorderColor;
+	
+	/**
+	 * Sets the background color to the current content control.
+	 * @memberof ApiBlockLvlSdt
+	 * @param {byte} r - Red color component value.
+	 * @param {byte} g - Green color component value.
+	 * @param {byte} b - Blue color component value.
+	 * @param {byte} a - Alpha color component value.
+	 * @typeofeditors ["CDE"]
+	 * @returns {boolean}
+	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/SetBackgroundColor.js
+	 */
+	ApiBlockLvlSdt.prototype.SetBackgroundColor = ApiInlineLvlSdt.prototype.SetBackgroundColor;
+	
+	/**
+	 * Gets the background color of the current content control.
+	 * @memberof ApiBlockLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 8.3.2
+	 * @returns {null | {r:byte, g:byte, b:byte, a:byte}}
+	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/GetBackgroundColor.js
+	 */
+	ApiBlockLvlSdt.prototype.GetBackgroundColor = ApiInlineLvlSdt.prototype.GetBackgroundColor;
+	
 	//------------------------------------------------------------------------------------------------------------------
 	//
 	// ApiFormBase
@@ -22899,12 +23024,16 @@
 	ApiInlineLvlSdt.prototype["ToJSON"]                 = ApiInlineLvlSdt.prototype.ToJSON;
 	ApiInlineLvlSdt.prototype["AddComment"]             = ApiInlineLvlSdt.prototype.AddComment;
 	ApiInlineLvlSdt.prototype["MoveCursorOutside"]      = ApiInlineLvlSdt.prototype.MoveCursorOutside;
-
+	
 	ApiInlineLvlSdt.prototype["GetPlaceholderText"]     = ApiInlineLvlSdt.prototype.GetPlaceholderText;
 	ApiInlineLvlSdt.prototype["SetPlaceholderText"]     = ApiInlineLvlSdt.prototype.SetPlaceholderText;
 	ApiInlineLvlSdt.prototype["IsForm"]                 = ApiInlineLvlSdt.prototype.IsForm;
 	ApiInlineLvlSdt.prototype["GetForm"]                = ApiInlineLvlSdt.prototype.GetForm;
 	ApiInlineLvlSdt.prototype["GetDropdownList"]        = ApiInlineLvlSdt.prototype.GetDropdownList;
+	ApiInlineLvlSdt.prototype["SetBorderColor"]         = ApiInlineLvlSdt.prototype.SetBorderColor;
+	ApiInlineLvlSdt.prototype["GetBorderColor"]         = ApiInlineLvlSdt.prototype.GetBorderColor;
+	ApiInlineLvlSdt.prototype["SetBackgroundColor"]     = ApiInlineLvlSdt.prototype.SetBackgroundColor;
+	ApiInlineLvlSdt.prototype["GetBackgroundColor"]     = ApiInlineLvlSdt.prototype.GetBackgroundColor;
 
 	ApiContentControlList.prototype["GetClassType"]		= ApiContentControlList.prototype.GetClassType;
 	ApiContentControlList.prototype["GetAllItems"]		= ApiContentControlList.prototype.GetAllItems;
@@ -22966,6 +23095,10 @@
 	ApiBlockLvlSdt.prototype["AddCaption"]              = ApiBlockLvlSdt.prototype.AddCaption;
 	ApiBlockLvlSdt.prototype["GetDropdownList"]         = ApiBlockLvlSdt.prototype.GetDropdownList;
 	ApiBlockLvlSdt.prototype["MoveCursorOutside"]       = ApiBlockLvlSdt.prototype.MoveCursorOutside;
+	ApiBlockLvlSdt.prototype["SetBorderColor"]          = ApiBlockLvlSdt.prototype.SetBorderColor;
+	ApiBlockLvlSdt.prototype["GetBorderColor"]          = ApiBlockLvlSdt.prototype.GetBorderColor;
+	ApiBlockLvlSdt.prototype["SetBackgroundColor"]      = ApiBlockLvlSdt.prototype.SetBackgroundColor;
+	ApiBlockLvlSdt.prototype["GetBackgroundColor"]      = ApiBlockLvlSdt.prototype.GetBackgroundColor;
 
 	ApiFormBase.prototype["GetClassType"]        = ApiFormBase.prototype.GetClassType;
 	ApiFormBase.prototype["GetFormType"]         = ApiFormBase.prototype.GetFormType;
