@@ -3407,6 +3407,11 @@
 		if (null != this.pluginsManager)
 			this.pluginsManager.buttonClick(id, guid, windowId);
 	};
+	baseEditorsApi.prototype.asc_pluginButtonDockChanged = function(type, guid, windowId, callback)
+	{
+		if (null != this.pluginsManager)
+			this.pluginsManager.onPluginWindowDockChanged(type, guid, windowId, callback);
+	};
 
 	baseEditorsApi.prototype.asc_pluginEnableMouseEvents = function(isEnable)
 	{
@@ -5581,6 +5586,7 @@
 	prot['asc_getInputLanguage'] = prot.asc_getInputLanguage;
 
 	prot['setPluginsOptions'] = prot.setPluginsOptions;
+	prot['asc_pluginButtonDockChanged'] = prot.asc_pluginButtonDockChanged;
 
 	// passwords
 	prot["asc_setCurrentPassword"] = prot.asc_setCurrentPassword;

@@ -2102,6 +2102,25 @@
 	{
 		this.sendEvent("asc_onError", error, level);
 	};
+
+	/**
+	 * Callback from dockChangedEvents.
+	 * @memberof Api
+	 * @typeofeditors ["CDE", "CSE", "CPE", "PDF"]
+	 * @param {string} windowID - The frame ID.
+	 * @alias OnWindowDockChangedCallback
+	 * @since 8.2.2
+	 */
+	Api.prototype["pluginMethod_OnWindowDockChangedCallback"] = function(windowID)
+	{
+		let key = window.g_asc_plugins.getCurrentPluginGuid() + "_" + windowID;
+		if (window.g_asc_plugins.dockCallbacks[key])
+		{
+			window.g_asc_plugins.dockCallbacks[key]();
+			delete window.g_asc_plugins.dockCallbacks[key];
+		}
+	};
+
 })(window);
 
 
