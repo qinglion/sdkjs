@@ -4646,8 +4646,7 @@ CT_pivotTableDefinition.prototype.getPivotFieldButtonCompact = function(range, b
 	let i = 0;
 	const pivotRange = this.getRange();
 	if (pivotRange.containsRange(range)) {
-		const api = this.worksheet.workbook.oApi;
-		const activeCell = api.asc_getActiveCell();
+		const activeCell = this.worksheet.selectionRange.activeCell;
 		const pivotIndex = this.rangeMapper.getPivotIndexByCell(activeCell, row, col);
 		if (pivotIndex !== null) {
 			const button = this._getPivotFieldButton(range, pivotIndex, row, col);
@@ -9295,37 +9294,37 @@ function PivotRangeMapper(pivot) {
 }
 
 /**
- * @param {Asc.Range} bbox - activeCell
+ * @param {AscCommon.CellBase} activeCell
  * @param {number} row - button's row position
  * @param {number} col = button's col position
  */
-PivotRangeMapper.prototype.getPivotIndexByCell = function (bbox, row, col) {
+PivotRangeMapper.prototype.getPivotIndexByCell = function (activeCell, row, col) {
 	const range = this.pivot.getRange();
 	const rowFields = this.pivot.asc_getRowFields();
 	const colFields = this.pivot.asc_getColumnFields();
 	const rowItems = this.pivot.getRowItems();
 	const colItems = this.pivot.getColItems();
 	const location = this.pivot.location;
-	const rowItemIndex = bbox.r1 - (range.r1 + location.firstDataRow);
-	const colItemIndex = bbox.c1 - (range.c1 + location.firstDataCol);
+	const rowItemIndex = activeCell.row - (range.r1 + location.firstDataRow);
+	const colItemIndex = activeCell.col - (range.c1 + location.firstDataCol);
 	const rowRange = this.getRowRange();
-	if (rowRange && bbox.intersection(rowRange.bbox)) {
+	if (rowRange && rowRange.bbox.contains(activeCell.col, activeCell.row)) {
 		const rowLabelsRange = this.getRowLabelsRange();
-		if (bbox.intersection(rowLabelsRange.bbox) && col < range.c1 + location.firstDataCol) {
+		if (rowLabelsRange.bbox.contains(activeCell.col, activeCell.row) && col < range.c1 + location.firstDataCol) {
 			const rowItem = rowItems[rowItemIndex];
 			const rowFieldsOffset = this.getRowFieldsOffset();
-			const labelCol = bbox.c1 - range.c1;
+			const labelCol = activeCell.col - range.c1;
 			const xIndex = labelCol - rowFieldsOffset[rowItem.getR()];
 			const rowField = rowFields[xIndex + rowItem.getR()];
 			return rowField.asc_getIndex();
 		}
 	}
 	const colRange = this.getColRange();
-	if (colRange && bbox.intersection(colRange.bbox)) {
+	if (colRange && colRange.bbox.contains(activeCell.col, activeCell.row)) {
 		const colLabelsRange = this.getColLabelsRange()
-		if (colLabelsRange && bbox.intersection(colLabelsRange.bbox) && row < range.r1 + location.firstDataRow) {
+		if (colLabelsRange && colLabelsRange.bbox.contains(activeCell.col, activeCell.row) && row < range.r1 + location.firstDataRow) {
 			const colItem = colItems[colItemIndex];
-			const xIndex = bbox.r1 - (range.r1 + location.firstHeaderRow) - colItem.getR();
+			const xIndex = activeCell.row - (range.r1 + location.firstHeaderRow) - colItem.getR();
 			const colField = colFields[xIndex + colItem.getR()];
 			return colField.asc_getIndex();
 		}
@@ -22244,9 +22243,17 @@ PivotLayout.prototype.getSortFilterInfo = function(pivotTable, row, col) {
 			}
 		}
 	} else if (PivotLayoutType.headerCompactRow === this.type && pivotTable.rowFields) {
-		fld = pivotTable.rowFields.getFirstIndexExceptValue();
+		const activeCell = pivotTable.worksheet.selectionRange.activeCell;
+		fld = pivotTable.rangeMapper.getPivotIndexByCell(activeCell, row, col);
+		if (fld === null) {
+			fld = pivotTable.rowFields.getFirstIndexExceptValue();
+		}
 	} else if (PivotLayoutType.headerCompactCol === this.type && pivotTable.colFields) {
-		fld = pivotTable.colFields.getFirstIndexExceptValue();
+		const activeCell = pivotTable.worksheet.selectionRange.activeCell;
+		fld = pivotTable.rangeMapper.getPivotIndexByCell(activeCell, row, col);
+		if (fld === null) {
+			fld = pivotTable.colFields.getFirstIndexExceptValue();
+		}
 	} else if (PivotLayoutType.headerRow !== this.type && PivotLayoutType.headerCol !== this.type) {
 		fld = null;
 	}
