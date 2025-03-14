@@ -777,7 +777,7 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                     if ( Math.round(triangleSquare * accuracy) === 0 || Math.round(triangleSquare * accuracy) === -0) {
                         AscCommon.consoleLog("tranform ellipticalArcTo to line. 2 catch. Triangle square:",
                             triangleSquare);
-                        this.ArrPathCommand[i] ={id: lineTo, X:x, Y:y};
+                        this.ArrPathCommand.push({id: lineTo, X:x, Y:y});
                     } else {
                         // change ellipticalArcTo params to draw arc easy
                         this.ArrPathCommand.push({id: ellipticalArcTo,
@@ -895,8 +895,31 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                             };
                         }
 
+                        /**
+                         * Checks if all numbers in an array are in increasing order (allows duplicates)
+                         * @param {number[]} arr - The array to check
+                         * @returns {boolean} - True if array is in increasing order, false otherwise
+                         */
+                        function isIncreasingOrder(arr) {
+                            if (arr.length < 2) {
+                                return true; // An empty array or array with one element is considered in order
+                            }
+
+                            for (let i = 0; i < arr.length - 1; i++) {
+                                if (arr[i] > arr[i + 1]) {
+                                    return false; // Found an element that's decreasing
+                                }
+                            }
+
+                            return true;
+                        }
+
                         if (multiplicity === undefined) {
                             throw new Error('multiplicity is undefined');
+                        }
+
+                        if (!isIncreasingOrder(knots)) {
+                            throw new Error('Knots with decreasing elements is not supported. Knots: ' + knots);
                         }
 
                         let knotValue = knots[0];
@@ -1002,7 +1025,13 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                     }
 
                     // Convert to Bezier
-                    let newNURBSform = duplicateKnots(controlPoints, weights, knots, degree);
+                    let newNURBSform;
+                    try {
+                        newNURBSform = duplicateKnots(controlPoints, weights, knots, degree);
+                    } catch (e) {
+                        AscCommon.consoleLog(e);
+                        break;
+                    }
                     let bezierArray = NURBSnormalizedToBezier(newNURBSform.controlPoints, degree);
 
                     // change nurbsTo params to draw using bezier
