@@ -2166,16 +2166,12 @@
     };
     CBaseField.prototype.WriteToBinaryBase2 = function(memory) {
         // font name
-        let sFontName = this.GetTextFont();
-        if (sFontName != null) {
-            memory.WriteString(sFontName);
-        }
+        let sFontName = this.GetTextFont() || "";
+        memory.WriteString(sFontName);
 
         // text size
-        let nFontSize = this.GetTextSize();
-        if (nFontSize != null) {
-            memory.WriteDouble(nFontSize);
-        }
+        let nFontSize = this.GetTextSize() || 0;
+        memory.WriteDouble(nFontSize);
 
         // форматируемое значение
         let oFormatTrigger      = this.GetTrigger(AscPDF.FORMS_TRIGGERS_TYPES.Format);
