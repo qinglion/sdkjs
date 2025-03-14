@@ -6841,7 +6841,7 @@ function parserFormula( formula, parent, _ws ) {
 		let nCol = bVertical ? oBbox.c1 :  oBbox.c1 + (oParentCell.nCol - oBbox.c1);
 
 		oRange.worksheet._getCellNoEmpty(nRow, nCol, function (oCell) {
-			if (oCell.isFormula()) {
+			if (oCell && oCell.isFormula()) {
 				let oParsedFormula = oCell.getFormulaParsed();
 				if (oParsedFormula.Formula.replace(/\s+/g, '') === oThis.Formula.replace(/\s+/g, '')) {
 					bHasFormula = true;
