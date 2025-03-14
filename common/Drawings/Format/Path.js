@@ -805,7 +805,7 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                      * @param {Number[]} weights
                      * @param {Number[]} knots
                      * @param {Number} multiplicity
-                     * @returns {{controlPoints: {x: Number, y: Number, z? :Number}[], weights: Number[], knots: Number[]}} new bezier data
+                     * @returns {{controlPoints: {x: Number, y: Number, z? :Number}[], weights: Number[], knots: Number[]} || null} new bezier data
                      */
                     function duplicateKnots(controlPoints, weights, knots, multiplicity) {
                         /**
@@ -815,7 +815,7 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                          * @param {Number[]} weights
                          * @param {Number[]} knots
                          * @param {Number} tNew
-                         * @return {{controlPoints: {x: Number, y: Number, z? :Number}[], weights: Number[], knots: Number[]}} new bezier data
+                         * @return {{controlPoints: {x: Number, y: Number, z? :Number}[], weights: Number[], knots: Number[]} || null} new bezier data
                          */
                         function insertKnot(controlPoints, weights, knots, tNew) {
                             let n = controlPoints.length;
@@ -839,7 +839,8 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
 
                             // insert tNew
                             if (i === -1) {
-                                throw new Error("Not found position to insert new knot");
+                                AscCommon.consoleLog("Not found position to insert new knot");
+                                return null;
                             } else {
                                 // Copy knots to new array.
                                 for (let j = 0; j < n + k + 1; j++) {
@@ -915,11 +916,13 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                         }
 
                         if (multiplicity === undefined) {
-                            throw new Error('multiplicity is undefined');
+                            AscCommon.consoleLog("Error: multiplicity is undefined");
+                            return null;
                         }
 
                         if (!isIncreasingOrder(knots)) {
-                            throw new Error('Knots with decreasing elements is not supported. Knots: ' + knots);
+                            AscCommon.consoleLog("Error: Knots with decreasing elements is not supported. Knots: " + knots);
+                            return null;
                         }
 
                         let knotValue = knots[0];
@@ -934,12 +937,12 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                             let insertCount = multiplicity - knotsCount;
                             insertCount = insertCount < 0 ? 0 : insertCount;
                             for (let i = 0; i < insertCount; i++) {
-                                let newNURBSdata;
-                                try {
-                                    newNURBSdata = insertKnot(controlPoints, weights, knots, knotValue);
-                                } catch (e) {
+                                let newNURBSdata = insertKnot(controlPoints, weights, knots, knotValue);
+                                if (newNURBSdata == null) {
                                     AscCommon.consoleLog('Unknown error. unexpected t');
+                                    return null;
                                 }
+
                                 controlPoints = newNURBSdata.controlPoints;
                                 weights = newNURBSdata.weights;
                                 knots = newNURBSdata.knots;
@@ -1025,11 +1028,9 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                     }
 
                     // Convert to Bezier
-                    let newNURBSform;
-                    try {
-                        newNURBSform = duplicateKnots(controlPoints, weights, knots, degree);
-                    } catch (e) {
-                        AscCommon.consoleLog(e);
+                    let newNURBSform = duplicateKnots(controlPoints, weights, knots, degree);
+                    if (newNURBSform === null) {
+                        AscCommon.consoleLog("duplicateKnots() error");
                         break;
                     }
                     let bezierArray = NURBSnormalizedToBezier(newNURBSform.controlPoints, degree);
