@@ -9631,6 +9631,7 @@ background-repeat: no-repeat;\
 
 	asc_docs_api.prototype.asc_SetThumbnailsPosition = function (pos) {
 		this.thumbnailsPosition = pos;
+		this.onUpdateThumbnailsPosition();
 	};
 
 	asc_docs_api.prototype.getThumbnailsPosition = function () {
