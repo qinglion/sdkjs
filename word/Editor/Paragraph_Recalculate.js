@@ -1979,7 +1979,7 @@ Paragraph.prototype.private_RecalculateLineAlign       = function(CurLine, CurPa
 						{
 							X = Range.X + RangeWidth - Range.W - PRSC.SpaceLen;
 							if (this.IsUseXLimit())
-								X = Math.max(X, Range.X) - PRSC.SpaceLen;
+								X = Math.max(X, Range.X - PRSC.SpaceLen);
 						}
 						else
 						{
@@ -1993,7 +1993,7 @@ Paragraph.prototype.private_RecalculateLineAlign       = function(CurLine, CurPa
 						{
 							X = Range.X - PRSC.SpaceLen;
 							if (this.IsUseXLimit())
-								X = Math.max(X, Range.X) - PRSC.SpaceLen;
+								X = Math.max(X, Range.X - PRSC.SpaceLen);
 						}
 						else
 						{
@@ -2004,67 +2004,97 @@ Paragraph.prototype.private_RecalculateLineAlign       = function(CurLine, CurPa
 						
 						break;
 					}
-                    case AscCommon.align_Center:
-                    {
-                        X = Range.X + (RangeWidth - Range.W) / 2;
-
-						if (this.IsUseXLimit())
-							X = Math.max(X, Range.X);
-
-                        break;
-                    }
+					case AscCommon.align_Center:
+					{
+						if (ParaPr.Bidi)
+						{
+							X = Range.X + (RangeWidth - Range.W) / 2 - PRSC.SpaceLen;
+							if (this.IsUseXLimit())
+								X = Math.max(X, Range.X - PRSC.SpaceLen);
+						}
+						else
+						{
+							X = Range.X + (RangeWidth - Range.W) / 2;
+							if (this.IsUseXLimit())
+								X = Math.max(X, Range.X);
+						}
+						break;
+					}
                     case AscCommon.align_Justify:
                     {
-                        X = Range.X;
-
                         // Проверяем по количеству пробелов, т.к., например, в китайском языке пробелов нет, но
 						// каждый иероглиф как отдельное слово идет.
-                        if (1 == PRSC.Words || PRSC.Spaces <= 0)
+                        if (1 === PRSC.Words || PRSC.Spaces <= 0)
                         {
-                            if (1 == RangesCount && !(Line.Info & paralineinfo_End))
+                            if (1 === RangesCount && !(Line.Info & paralineinfo_End) && !ParaPr.Bidi)
                             {
+								X = Range.X;
                                 // Либо слово целиком занимает строку, либо не целиком, но разница очень мала
 								// либо это набор китайских иероглифов (PRSC.Words > 1)
                                 if ((RangeWidth - Range.W <= 0.05 * RangeWidth || PRSC.Words > 1) && PRSC.Letters > 1)
                                     JustifyWord = (RangeWidth - Range.W) / (PRSC.Letters - 1);
                             }
-                            else if (0 == CurRange || Line.Info & paralineinfo_End)
+                            else if (0 === CurRange || Line.Info & paralineinfo_End)
                             {
                                 // TODO: Здесь нужно улучшить проверку, т.к. отключено выравнивание по центру для всей
                                 //       последней строки, а нужно отключить для последнего отрезка, в котором идет
                                 //       конец параграфа.
-                                
-                                // Ничего не делаем (выравниваем текст по левой границе)
-                            }
-                            else if (CurRange == RangesCount - 1)
-                            {
-                                X = Range.X + RangeWidth - Range.W;
-                            }
-                            else
-                            {
-                                X = Range.X + (RangeWidth - Range.W) / 2;
-                            }
-                        }
-                        else
-                        {
-                            // TODO: Переделать проверку последнего отрезка в последней строке (нужно выставлять флаг когда пришел PRS.End в отрезке)
-
-                            // Последний промежуток последней строки не надо растягивать по ширине.
-                            if (PRSC.Spaces > 0 && (!(Line.Info & paralineinfo_End) || CurRange != Line.Ranges.length - 1))
-                                JustifySpace = (RangeWidth - Range.W) / PRSC.Spaces;
-                            else
-                                JustifySpace = 0;
-                        }
-
-                        break;
-                    }
-                    default:
-                    {
-                        X = Range.X;
-                        break;
-                    }
-                }
-            }
+								if (ParaPr.Bidi)
+									X = Range.X + RangeWidth - Range.W - PRSC.SpaceLen;
+								else
+									X = Range.X;
+							}
+							else if (CurRange === RangesCount - 1)
+							{
+								if (ParaPr.Bidi)
+									X = Range.X - PRSC.SpaceLen;
+								else
+									X = Range.X + RangeWidth - Range.W;
+							}
+							else
+							{
+								if (ParaPr.Bidi)
+									X = Range.X + (RangeWidth - Range.W) / 2 - PRSC.SpaceLen;
+								else
+									X = Range.X + (RangeWidth - Range.W) / 2;
+							}
+						}
+						else
+						{
+							// TODO: Переделать проверку последнего отрезка в последней строке (нужно выставлять флаг когда пришел PRS.End в отрезке)
+							
+							// Последний промежуток последней строки не надо растягивать по ширине.
+							if (PRSC.Spaces > 0 && (!(Line.Info & paralineinfo_End) || CurRange !== Line.Ranges.length - 1))
+							{
+								if (ParaPr.Bidi)
+									X = Range.X - PRSC.SpaceLen;
+								else
+									X = Range.X;
+								
+								JustifySpace = (RangeWidth - Range.W) / PRSC.Spaces;
+							}
+							else
+							{
+								if (ParaPr.Bidi)
+									X = Range.X + RangeWidth - Range.W - PRSC.SpaceLen;
+								else
+									X = Range.X;
+								
+								JustifySpace = 0;
+							}
+						}
+						break;
+					}
+					default:
+					{
+						if (ParaPr.Bidi)
+							X = Range.X + RangeWidth - Range.W - PRSC.SpaceLen;
+						else
+							X = Range.X;
+						break;
+					}
+				}
+			}
 
             // В последнем отрезке последней строки не делаем текст "по ширине"
             if ((CurLine === this.ParaEnd.Line && CurRange === this.ParaEnd.Range) || (this.Lines[CurLine].Info & paralineinfo_BreakLine && isDoNotExpandShiftReturn))
