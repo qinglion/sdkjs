@@ -1964,14 +1964,19 @@ Paragraph.prototype.private_RecalculateLineAlign       = function(CurLine, CurPa
         }
         else
         {
-            if (this.Lines[CurLine].Info & paralineinfo_BadLeftTab)
-            {
-                X            = Range.X;
-                JustifyWord  = 0;
-                JustifySpace = 0;
-            }
-            else
-            {
+			if ((this.Lines[CurLine].Info & paralineinfo_BadLeftTab)
+				|| (Range.WEnd > AscWord.EPSILON || (Range.WBreak > AscWord.EPSILON && isDoNotExpandShiftReturn)))
+			{
+				if (ParaPr.Bidi)
+					X = Range.X + RangeWidth - Range.W - rtlShift;
+				else
+					X = Range.X;
+				
+				JustifyWord  = 0;
+				JustifySpace = 0;
+			}
+			else
+			{
 				// RangeWidth - ширина всего пространства в данном отрезке, а Range.W - ширина занимаемого пространства
 				switch (jc)
 				{
@@ -2097,17 +2102,7 @@ Paragraph.prototype.private_RecalculateLineAlign       = function(CurLine, CurPa
 					}
 				}
 			}
-
-            // В последнем отрезке последней строки не делаем текст "по ширине"
-            if ((CurLine === this.ParaEnd.Line && CurRange === this.ParaEnd.Range) || (this.Lines[CurLine].Info & paralineinfo_BreakLine && isDoNotExpandShiftReturn))
-            {
-				if (ParaPr.Bidi)
-					X = Range.X + RangeWidth - Range.W - rtlShift;
-				
-                JustifyWord  = 0;
-                JustifySpace = 0;
-            }
-        }
+		}
 		
         Range.Spaces = PRSC.Spaces + PRSC.SpacesSkip;
 
