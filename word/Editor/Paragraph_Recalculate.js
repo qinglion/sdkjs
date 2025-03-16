@@ -1950,6 +1950,8 @@ Paragraph.prototype.private_RecalculateLineAlign       = function(CurLine, CurPa
         var RangeWidth   = Range.XEnd - Range.X;
 
         var X = 0;
+		
+		let rtlShift = PRSC.SpaceLen + Range.WBreak + PRSC.Range.WEnd;
 
         // Если данный отрезок содержит только формулу, тогда прилегание данного отрезка определяется формулой
         var ParaMath = this.Check_Range_OnlyMath(CurRange, CurLine);
@@ -1977,9 +1979,9 @@ Paragraph.prototype.private_RecalculateLineAlign       = function(CurLine, CurPa
 					{
 						if (ParaPr.Bidi)
 						{
-							X = Range.X + RangeWidth - Range.W - PRSC.SpaceLen;
+							X = Range.X + RangeWidth - Range.W - rtlShift;
 							if (this.IsUseXLimit())
-								X = Math.max(X, Range.X - PRSC.SpaceLen);
+								X = Math.max(X, Range.X - rtlShift);
 						}
 						else
 						{
@@ -1991,9 +1993,9 @@ Paragraph.prototype.private_RecalculateLineAlign       = function(CurLine, CurPa
 					{
 						if (ParaPr.Bidi)
 						{
-							X = Range.X - PRSC.SpaceLen;
+							X = Range.X - rtlShift;
 							if (this.IsUseXLimit())
-								X = Math.max(X, Range.X - PRSC.SpaceLen);
+								X = Math.max(X, Range.X - rtlShift);
 						}
 						else
 						{
@@ -2008,9 +2010,9 @@ Paragraph.prototype.private_RecalculateLineAlign       = function(CurLine, CurPa
 					{
 						if (ParaPr.Bidi)
 						{
-							X = Range.X + (RangeWidth - Range.W) / 2 - PRSC.SpaceLen;
+							X = Range.X + (RangeWidth - Range.W) / 2 - rtlShift;
 							if (this.IsUseXLimit())
-								X = Math.max(X, Range.X - PRSC.SpaceLen);
+								X = Math.max(X, Range.X - rtlShift);
 						}
 						else
 						{
@@ -2040,21 +2042,21 @@ Paragraph.prototype.private_RecalculateLineAlign       = function(CurLine, CurPa
                                 //       последней строки, а нужно отключить для последнего отрезка, в котором идет
                                 //       конец параграфа.
 								if (ParaPr.Bidi)
-									X = Range.X + RangeWidth - Range.W - PRSC.SpaceLen;
+									X = Range.X + RangeWidth - Range.W - rtlShift;
 								else
 									X = Range.X;
 							}
 							else if (CurRange === RangesCount - 1)
 							{
 								if (ParaPr.Bidi)
-									X = Range.X - PRSC.SpaceLen;
+									X = Range.X - rtlShift;
 								else
 									X = Range.X + RangeWidth - Range.W;
 							}
 							else
 							{
 								if (ParaPr.Bidi)
-									X = Range.X + (RangeWidth - Range.W) / 2 - PRSC.SpaceLen;
+									X = Range.X + (RangeWidth - Range.W) / 2 - rtlShift;
 								else
 									X = Range.X + (RangeWidth - Range.W) / 2;
 							}
@@ -2067,7 +2069,7 @@ Paragraph.prototype.private_RecalculateLineAlign       = function(CurLine, CurPa
 							if (PRSC.Spaces > 0 && (!(Line.Info & paralineinfo_End) || CurRange !== Line.Ranges.length - 1))
 							{
 								if (ParaPr.Bidi)
-									X = Range.X - PRSC.SpaceLen;
+									X = Range.X - rtlShift;
 								else
 									X = Range.X;
 								
@@ -2076,7 +2078,7 @@ Paragraph.prototype.private_RecalculateLineAlign       = function(CurLine, CurPa
 							else
 							{
 								if (ParaPr.Bidi)
-									X = Range.X + RangeWidth - Range.W - PRSC.SpaceLen;
+									X = Range.X + RangeWidth - Range.W - rtlShift;
 								else
 									X = Range.X;
 								
@@ -2088,7 +2090,7 @@ Paragraph.prototype.private_RecalculateLineAlign       = function(CurLine, CurPa
 					default:
 					{
 						if (ParaPr.Bidi)
-							X = Range.X + RangeWidth - Range.W - PRSC.SpaceLen;
+							X = Range.X + RangeWidth - Range.W - rtlShift;
 						else
 							X = Range.X;
 						break;
@@ -2099,18 +2101,13 @@ Paragraph.prototype.private_RecalculateLineAlign       = function(CurLine, CurPa
             // В последнем отрезке последней строки не делаем текст "по ширине"
             if ((CurLine === this.ParaEnd.Line && CurRange === this.ParaEnd.Range) || (this.Lines[CurLine].Info & paralineinfo_BreakLine && isDoNotExpandShiftReturn))
             {
+				if (ParaPr.Bidi)
+					X = Range.X + RangeWidth - Range.W - rtlShift;
+				
                 JustifyWord  = 0;
                 JustifySpace = 0;
             }
         }
-	
-		// TODO: Wrong range, always last
-		if (ParaPr.Bidi && (Line.Info & paralineinfo_End) && CurRange === Line.Ranges.length - 1)
-		{
-			let paraMark = this.GetParaEndRun().GetParaEnd();
-			if (paraMark)
-				X -= paraMark.GetWidthVisible();
-		}
 		
         Range.Spaces = PRSC.Spaces + PRSC.SpacesSkip;
 
