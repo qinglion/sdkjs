@@ -1964,8 +1964,7 @@ Paragraph.prototype.private_RecalculateLineAlign       = function(CurLine, CurPa
         }
         else
         {
-			if ((this.Lines[CurLine].Info & paralineinfo_BadLeftTab)
-				|| (Range.WEnd > AscWord.EPSILON || (Range.WBreak > AscWord.EPSILON && isDoNotExpandShiftReturn)))
+			if (this.Lines[CurLine].Info & paralineinfo_BadLeftTab)
 			{
 				if (ParaPr.Bidi)
 					X = Range.X + RangeWidth - Range.W - rtlShift;
@@ -2027,12 +2026,22 @@ Paragraph.prototype.private_RecalculateLineAlign       = function(CurLine, CurPa
 						}
 						break;
 					}
-                    case AscCommon.align_Justify:
-                    {
-                        // Проверяем по количеству пробелов, т.к., например, в китайском языке пробелов нет, но
-						// каждый иероглиф как отдельное слово идет.
-                        if (1 === PRSC.Words || PRSC.Spaces <= 0)
+					case AscCommon.align_Justify:
+					{
+						if (Range.WEnd > AscWord.EPSILON || (Range.WBreak > AscWord.EPSILON && isDoNotExpandShiftReturn))
+						{
+							if (ParaPr.Bidi)
+								X = Range.X + RangeWidth - Range.W - rtlShift;
+							else
+								X = Range.X;
+							
+							JustifyWord  = 0;
+							JustifySpace = 0;
+						}
+                        else if (1 === PRSC.Words || PRSC.Spaces <= 0)
                         {
+							// Проверяем по количеству пробелов, т.к., например, в китайском языке пробелов нет, но
+							// каждый иероглиф как отдельное слово идет.
                             if (1 === RangesCount && !(Line.Info & paralineinfo_End) && !ParaPr.Bidi)
                             {
 								X = Range.X;
