@@ -689,6 +689,16 @@
 		this.disableReporterEvents = false;
 		this.TableStylesPreviewGenerator = null;
 
+		this.thumbnailsPosition = AscCommon.thumbnailsPositionMap.left;
+
+		if(config["thumbnails-position"] === "bottom") {
+			this.thumbnailsPosition = AscCommon.thumbnailsPositionMap.bottom;
+		}
+		else if(config["thumbnails-position"] === "right") {
+			this.thumbnailsPosition = AscCommon.thumbnailsPositionMap.right;
+		}
+
+
 		if (this.isReporterMode)
 		{
 			var _windowOnResize = function() {
@@ -2127,7 +2137,7 @@ background-repeat: no-repeat;\
 		ParaPr.Position    = TextPr.Position;
 		ParaPr.ListType = AscFormat.fGetListTypeFromBullet(ParaPr.Bullet);
 		this.sync_ParaSpacingLine(ParaPr.Spacing);
-		this.Update_ParaInd(ParaPr.Ind);
+		this.Update_ParaInd(ParaPr.Ind, ParaPr.Bidi);
 		this.sync_PrAlignCallBack(ParaPr.Jc);
 		this.sync_ParaStyleName(ParaPr.StyleName);
 		this.sync_ListType(ParaPr.ListType);
@@ -2204,7 +2214,7 @@ background-repeat: no-repeat;\
 		if(fixPos && fixPos.slideId)
 		{
 			let oThumbnails = this.WordControl.Thumbnails;
-			if(oThumbnails.m_bIsVisible)
+			if(oThumbnails.isThumbnailsShown())
 			{
 				let oPos = this.WordControl.Thumbnails.getSpecialPasteButtonCoords(fixPos.slideId);
 				curCoord = new AscCommon.asc_CRect( oPos.X, oPos.Y, 1, 1 );
@@ -6879,22 +6889,12 @@ background-repeat: no-repeat;\
 		this.sendEvent("asc_onHideForeignCursorLabel", UserId);
 	};
 
-	asc_docs_api.prototype.ShowThumbnails           = function(bIsShow)
-	{
-		if (bIsShow)
-		{
-			this.WordControl.Splitter1Pos = this.WordControl.OldSplitter1Pos;
-			if (this.WordControl.Splitter1Pos == 0)
-				this.WordControl.Splitter1Pos = 70;
-			this.WordControl.OnResizeSplitter();
-		}
-		else
-		{
-			var old                       = this.WordControl.OldSplitter1Pos;
-			this.WordControl.Splitter1Pos = 0;
-			this.WordControl.OnResizeSplitter();
-			this.WordControl.OldSplitter1Pos = old;
-		}
+	asc_docs_api.prototype.ShowThumbnails = function (bIsShow) {
+		const savedSplitterPosition = this.WordControl.splitters[0].savedPosition;
+		bIsShow
+			? this.WordControl.splitters[0].setPosition(savedSplitterPosition <= 0 ? 70 : savedSplitterPosition, true)
+			: this.WordControl.splitters[0].setPosition(0, false, true);
+		this.WordControl.onSplitterResize();
 	};
 
 	asc_docs_api.prototype.asc_ShowNotes = function(bIsShow)
@@ -6935,7 +6935,7 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype.syncOnThumbnailsShow = function()
 	{
 		var bIsShow = true;
-		if (0 == this.WordControl.Splitter1Pos)
+		if (0 == this.WordControl.splitters[0].position)
 			bIsShow = false;
 
 		this.sendEvent("asc_onThumbnailsShow", bIsShow);
@@ -9629,6 +9629,26 @@ background-repeat: no-repeat;\
 		oLogicDocument.setPreserveSlideMaster(bPr);
 	};
 
+	asc_docs_api.prototype.asc_SetThumbnailsPosition = function (pos) {
+		this.thumbnailsPosition = pos;
+	};
+
+	asc_docs_api.prototype.getThumbnailsPosition = function () {
+		if(!this.isRTLInterface) {
+			return this.thumbnailsPosition;
+		}
+		if(this.thumbnailsPosition === AscCommon.thumbnailsPositionMap.left) {
+			return AscCommon.thumbnailsPositionMap.right;
+		}
+		return this.thumbnailsPosition;
+	};
+
+	asc_docs_api.prototype.onUpdateThumbnailsPosition = function () {
+	};
+	asc_docs_api.prototype.onChangeRTLInterface = function () {
+		this.onUpdateThumbnailsPosition();
+	};
+
 	//-------------------------------------------------------------export---------------------------------------------------
 	window['Asc']                                                 = window['Asc'] || {};
 	window['AscCommonSlide']                                      = window['AscCommonSlide'] || {};
@@ -10201,6 +10221,8 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype["asc_EraseAllInksOnSlide"] = asc_docs_api.prototype.asc_EraseAllInksOnSlide;
 
 	asc_docs_api.prototype["asc_setPreserveSlideMaster"] = asc_docs_api.prototype.asc_setPreserveSlideMaster;
+
+	asc_docs_api.prototype["asc_SetThumbnailsPosition"] = asc_docs_api.prototype.asc_SetThumbnailsPosition;
 
 
 	window['Asc']['asc_CCommentData'] = window['Asc'].asc_CCommentData = asc_CCommentData;

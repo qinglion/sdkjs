@@ -37,7 +37,7 @@
 	AscTest.DrawingDocument.m_oThumbnails = new AscCommon.CControl();
 	AscTest.DrawingDocument.m_oScrollThumbApi = AscTest.DrawingDocument;
 	AscTest.DrawingDocument.Thumbnails = new CThumbnailsManager();
-	AscTest.DrawingDocument.Thumbnails.m_bIsVisible = true;
+	AscTest.DrawingDocument.Thumbnails.isThumbnailsShown = function () { return true; };
 	AscTest.DrawingDocument.Thumbnails.m_oWordControl = AscTest.DrawingDocument;
 	AscTest.DrawingDocument.Thumbnails.OnUpdateOverlay = function () {};
 

@@ -615,6 +615,10 @@ $(function () {
 		let api = new Asc.spreadsheet_api({
 			'id-view': 'editor_sdk'
 		});
+		api.FontLoader = {
+			LoadDocumentFonts: function () {
+			}
+		};
 
 		let docInfo = new Asc.asc_CDocInfo();
 		docInfo.asc_putTitle("TeSt.xlsx");
@@ -37154,9 +37158,13 @@ $(function () {
 			'id-view': 'editor_sdk'
 		});
 		window["Asc"]["editor"] = api;
+		api.FontLoader = {
+			LoadDocumentFonts: function() {
+			}
+		};
 		api._onEndLoadSdk();
 		api.isOpenOOXInBrowser = false;
-		api._openDocument(AscCommon.getEmpty());
+		api.OpenDocumentFromBin(null, AscCommon.getEmpty());
 		api.initCollaborativeEditing({});
 		api._coAuthoringInitCollaborativeEditing({});
 		api.wb = new AscCommonExcel.WorkbookView(api.wbModel, api.controller, api.handlers, api.HtmlElement,
