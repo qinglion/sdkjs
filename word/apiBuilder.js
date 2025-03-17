@@ -7051,7 +7051,8 @@
 	 */
 	ApiDocument.prototype.ClearAllFields = function()
 	{
-		this.Document.ClearAllSpecialForms(false);
+		let contentControls = this.Document.GetFormsManager().GetAllForms();
+		this.Document.ClearAllSpecialForms(contentControls);
 	};
 
 	/**

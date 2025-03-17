@@ -11166,11 +11166,19 @@ background-repeat: no-repeat;\
 	};
 	asc_docs_api.prototype.asc_ClearAllSpecialForms = function()
 	{
-		var oLogicDocument = this.private_GetLogicDocument();
-		if (!oLogicDocument)
+		let logicDocument = this.private_GetLogicDocument();
+		let oform = this.asc_GetOForm();
+		if (!logicDocument)
 			return;
-
-		oLogicDocument.ClearAllSpecialForms(true);
+		
+		let roleName = oform ? oform.getCurrentRole() : null;
+		let contentControls;
+		if (null !== roleName)
+			contentControls = logicDocument.GetFormsManager().GetAllFormsByRole(roleName);
+		else
+			contentControls = logicDocument.GetAllContentControls();
+		
+		logicDocument.ClearAllSpecialForms(contentControls);
 	};
 	asc_docs_api.prototype.asc_SetSpecialFormsHighlightColor = function(r, g, b)
 	{
