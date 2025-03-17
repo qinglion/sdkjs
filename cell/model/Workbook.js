@@ -789,9 +789,9 @@
 			this.buildDependency();
 			return this._shiftMoveDelete(c_oNotifyType.Shift, sheetId, bbox, offset);
 		},
-		move: function(sheetId, bboxFrom, offset, sheetIdTo) {
+		move: function(sheetId, bboxFrom, offset, sheetIdTo, isTableCreated) {
 			this.buildDependency();
-			this._shiftMoveDelete(c_oNotifyType.Move, sheetId, bboxFrom, offset, sheetIdTo);
+			this._shiftMoveDelete(c_oNotifyType.Move, sheetId, bboxFrom, offset, sheetIdTo, isTableCreated);
 			this.addToChangedRange(sheetId, bboxFrom);
 		},
 		prepareChangeSheet: function(sheetId, data, tableNamesMap) {
@@ -2156,7 +2156,7 @@
 				}
 			}
 		},
-		_shiftMoveDelete: function(notifyType, sheetId, bbox, offset, sheetIdTo) {
+		_shiftMoveDelete: function(notifyType, sheetId, bbox, offset, sheetIdTo, isTableCreated) {
 			var listeners = {};
 			var res = {changed: listeners, shiftedShared: {}};
 			var sheetContainer = this.sheetListeners[sheetId];
@@ -2184,7 +2184,7 @@
 				for (var areaIndex in sheetContainer.areaMap) {
 					var areaMapElem = sheetContainer.areaMap[areaIndex];
 					if (c_oNotifyType.Shift === notifyType) {
-						isIntersect = bboxShift.isIntersect(areaMapElem.bbox)
+						isIntersect = bboxShift.isIntersect(areaMapElem.bbox);
 					} else if (c_oNotifyType.Move === notifyType || c_oNotifyType.Delete === notifyType) {
 						isIntersect = bbox.isIntersect(areaMapElem.bbox);
 					}
@@ -2195,7 +2195,7 @@
 					}
 				}
 				var notifyData = {
-					type: notifyType, sheetId: sheetId, sheetIdTo: sheetIdTo, bbox: bbox, offset: offset, shiftedShared: res.shiftedShared
+					type: notifyType, sheetId: sheetId, sheetIdTo: sheetIdTo, bbox: bbox, offset: offset, shiftedShared: res.shiftedShared, isTableCreated: isTableCreated
 				};
 				for (var listenerId in listeners) {
 					listeners[listenerId].notify(notifyData);
@@ -8605,9 +8605,9 @@
 				this.workbook.dependencyFormulas.deleteNodes(wsTo.getId(), range.getBBox0());
 		}
 	};
-	Worksheet.prototype._moveFormulas = function(oBBoxFrom, oBBoxTo, copyRange, wsTo, offset) {
+	Worksheet.prototype._moveFormulas = function(oBBoxFrom, oBBoxTo, copyRange, wsTo, offset, isTableCreated) {
 		if(!copyRange){
-			this.workbook.dependencyFormulas.move(this.Id, oBBoxFrom, offset, wsTo.getId());
+			this.workbook.dependencyFormulas.move(this.Id, oBBoxFrom, offset, wsTo.getId(), isTableCreated);
 		}
 		//todo avoid double getRange3
 		this.getRange3(oBBoxFrom.r1, oBBoxFrom.c1, oBBoxFrom.r2, oBBoxFrom.c2)._foreachNoEmpty(function(cell) {
@@ -8763,7 +8763,7 @@
 		}
 		return formula;
 	};
-	Worksheet.prototype._moveRange=function(oBBoxFrom, oBBoxTo, copyRange, wsTo){
+	Worksheet.prototype._moveRange=function(oBBoxFrom, oBBoxTo, copyRange, wsTo, isTableCreated){
 		if (!wsTo) {
 			wsTo = this;
 		}
@@ -8778,8 +8778,8 @@
 		var prepared = this._moveMergedAndHyperlinksPrepare(oBBoxFrom, oBBoxTo, copyRange, wsTo, offset);
 		this._movePivots(oBBoxFrom, oBBoxTo, copyRange, offset, wsTo);
 		this._moveCleanRanges(oBBoxFrom, oBBoxTo, copyRange, wsTo);
-		this._moveFormulas(oBBoxFrom, oBBoxTo, copyRange, wsTo, offset);
-		this._moveCells(oBBoxFrom, oBBoxTo, copyRange, wsTo, offset);
+		this._moveFormulas(oBBoxFrom, oBBoxTo, copyRange, wsTo, offset, isTableCreated);
+		this._moveCells(oBBoxFrom, oBBoxTo, copyRange, wsTo, offset, isTableCreated);
 		this._moveMergedAndHyperlinks(prepared, oBBoxFrom, oBBoxTo, copyRange, wsTo, offset);
 		this._moveDataValidation(oBBoxFrom, oBBoxTo, copyRange, offset, wsTo);
 		this.moveConditionalFormatting(oBBoxFrom, oBBoxTo, copyRange, offset, wsTo);
