@@ -411,6 +411,7 @@
 		const sId = oParent.GetId();
 		if (!oDrawer.drawingObjectsByTimeNode[sId]) {
 			const arrDrawingObjects = [oDrawing];
+
 			if (this.isCanIterate()) {
 				const oDocStructure = oDrawer.getDrawingTextCache(oDrawing);
 				if (oDocStructure) {
@@ -11764,6 +11765,32 @@
         this.collectHiddenObjects();
     }
 
+	CAnimationDrawer.prototype.getCacheFromTargetElement = function (tgtEl, isIterate) {
+			if (tgtEl.spTgt) {
+				const spId = this.spTgt.spid;
+				const oDrawing = AscCommon.g_oTableId.Get_ById(spId);
+				if (oDrawing) {
+					const oTextElement = tgtEl.spTgt.txEl;
+					if (oTextElement) {
+						const oDocStructure = this.getDrawingTextCache(oDrawing);
+						const pRange = oTextElement.pRg;
+						if (pRange) {
+							const start = pRange.start;
+							const end = pRange.end;
+							const arrResult = [];
+							for (let i = start; i < end; i += 1) {
+
+							}
+						}
+						const chRange = oTextElement.charRg;
+						if (chRange) {
+
+						}
+					}
+				}
+			}
+	};
+
     CAnimationDrawer.prototype.clearSandwiches = function () {
         this.sandwiches = {};
     };
@@ -11850,6 +11877,7 @@
 		if (!this.docStructureByDrawing[sDrawingId]) {
 			const oDocStructure = oDrawing.getDocStructure();
 			if (oDocStructure) {
+				console.log(oDocStructure)
 				this.docStructureByDrawing[sDrawingId] = oDocStructure;
 			}
 		}
