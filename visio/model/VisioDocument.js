@@ -449,6 +449,84 @@
 		api.FontLoader.LoadDocumentFonts(aFonts, false);
 	}
 
+	/**
+	 * using visio shapes data from this inits this.pageContents which is array of CShapes
+	 * @memberof CVisioDocument
+	 */
+	CVisioDocument.prototype.toCShapes = function() {
+		if (this.pages === null) {
+			// doesn't work after correct file read
+			alert("No pages or wrong file");
+			return;
+		}
+
+		// arrange pages
+		if (!this.isPagesArranged) {
+
+			// count backgrounds
+			let backgroundsCount = 0;
+			for (let pageIndex = 0; pageIndex < this.pages.page.length; pageIndex++) {
+				let pageInfo = this.pages.page[pageIndex];
+				if (pageInfo.background === true) {
+					backgroundsCount++;
+				}
+			}
+
+			// move background pages to back
+			for (let i = 0; i < backgroundsCount; i++) {
+				let backgroundInfo = this.pages.page.shift();
+				let backgroundContent = this.pageContents.shift();
+
+				this.pages.page.push(backgroundInfo);
+				this.pageContents.push(backgroundContent);
+			}
+			this.isPagesArranged = true;
+		}
+
+		// convert shapes
+		for (let pageIndex = 0; pageIndex < this.pages.page.length; pageIndex++) {
+			if (this.pageShapesCache[pageIndex] === undefined) {
+				let pageInfo = this.pages.page[pageIndex];
+				let pageContent = this.pageContents[pageIndex];
+
+				// Scale should be applied. Drawing scale should not be considered for text font size and stoke size
+				// https://support.microsoft.com/en-us/office/change-the-drawing-scale-on-a-page-in-visio-05c24456-67bf-47f7-b5dc-d5caa9974f19
+				// https://stackoverflow.com/questions/63295483/how-properly-set-line-scaling-in-ms-visio
+				// also arrow size
+				let drawingScale = pageInfo.pageSheet.getCellNumberValue("DrawingScale");
+				let pageScale = pageInfo.pageSheet.getCellNumberValue("PageScale");
+				let drawingPageScale = drawingScale / pageScale;
+
+				let topLevelShapesAndGroups = this.convertToCShapesAndGroups(pageInfo, pageContent, drawingPageScale);
+				this.pageShapesCache[pageIndex] = topLevelShapesAndGroups;
+
+				topLevelShapesAndGroups.forEach(function (shapeOrGroup) {
+					shapeOrGroup.recalculate();
+				});
+			}
+		}
+
+		// handle backgrounds
+		for (let pageIndex = 0; pageIndex < this.pages.page.length; pageIndex++) {
+			let pageInfo = this.pages.page[pageIndex];
+			let pageContent = this.pageContents[pageIndex];
+
+			if (!this.backgroundAppliedFor.includes(pageIndex)) {
+				this.backgroundAppliedFor.push(pageIndex);
+				let backgroundPageId = pageInfo.backPage;
+				if (backgroundPageId !== null && backgroundPageId !== undefined) {
+					// find background page
+					let backgroundPageIndex = this.pages.page.findIndex(function (pageInfo) {
+						return pageInfo.iD === backgroundPageId;
+					});
+					if (backgroundPageIndex !== -1) {
+						let backgroundPageContent = this.pageShapesCache[backgroundPageIndex];
+						this.pageShapesCache[pageIndex] = backgroundPageContent.concat(this.pageShapesCache[pageIndex]);
+					}
+				}
+			}
+		}
+	}
 
 	/**
 	 *
@@ -688,73 +766,6 @@
 			// doesn't work after correct file read
 			alert("No pages or wrong file");
 			return;
-		}
-
-		// arrange pages
-		if (!this.isPagesArranged) {
-
-			// count backgrounds
-			let backgroundsCount = 0;
-			for (let pageIndex = 0; pageIndex < this.pages.page.length; pageIndex++) {
-				let pageInfo = this.pages.page[pageIndex];
-				if (pageInfo.background === true) {
-					backgroundsCount++;
-				}
-			}
-
-			// move background pages to back
-			for (let i = 0; i < backgroundsCount; i++) {
-				let backgroundInfo = this.pages.page.shift();
-				let backgroundContent = this.pageContents.shift();
-
-				this.pages.page.push(backgroundInfo);
-				this.pageContents.push(backgroundContent);
-			}
-			this.isPagesArranged = true;
-		}
-
-		// convert shapes
-		for (let pageIndex = 0; pageIndex < this.pages.page.length; pageIndex++) {
-			if (this.pageShapesCache[pageIndex] === undefined) {
-				let pageInfo = this.pages.page[pageIndex];
-				let pageContent = this.pageContents[pageIndex];
-
-				// Scale should be applied. Drawing scale should not be considered for text font size and stoke size
-				// https://support.microsoft.com/en-us/office/change-the-drawing-scale-on-a-page-in-visio-05c24456-67bf-47f7-b5dc-d5caa9974f19
-				// https://stackoverflow.com/questions/63295483/how-properly-set-line-scaling-in-ms-visio
-				// also arrow size
-				let drawingScale = pageInfo.pageSheet.getCellNumberValue("DrawingScale");
-				let pageScale = pageInfo.pageSheet.getCellNumberValue("PageScale");
-				let drawingPageScale = drawingScale / pageScale;
-
-				let topLevelShapesAndGroups = this.convertToCShapesAndGroups(pageInfo, pageContent, drawingPageScale);
-				this.pageShapesCache[pageIndex] = topLevelShapesAndGroups;
-
-				topLevelShapesAndGroups.forEach(function (shapeOrGroup) {
-					shapeOrGroup.recalculate();
-				});
-			}
-		}
-
-		// handle backgrounds
-		for (let pageIndex = 0; pageIndex < this.pages.page.length; pageIndex++) {
-			let pageInfo = this.pages.page[pageIndex];
-			let pageContent = this.pageContents[pageIndex];
-
-			if (!this.backgroundAppliedFor.includes(pageIndex)) {
-				this.backgroundAppliedFor.push(pageIndex);
-				let backgroundPageId = pageInfo.backPage;
-				if (backgroundPageId !== null && backgroundPageId !== undefined) {
-					// find background page
-					let backgroundPageIndex = this.pages.page.findIndex(function (pageInfo) {
-						return pageInfo.iD === backgroundPageId;
-					});
-					if (backgroundPageIndex !== -1) {
-						let backgroundPageContent = this.pageShapesCache[backgroundPageIndex];
-						this.pageShapesCache[pageIndex] = backgroundPageContent.concat(this.pageShapesCache[pageIndex]);
-					}
-				}
-			}
 		}
 
 		//HOTFIX

@@ -308,6 +308,7 @@
 		if (this.isViewMode)
 			this.asc_setViewMode(true);
 
+		this.WordControl.m_oLogicDocument.toCShapes();
 		this.WordControl.m_oLogicDocument.Recalculate({Drawings : {All : true, Map : {}}});
 		AscCommon.History.private_ClearRecalcData();
 		this.WordControl.m_oLogicDocument.DrawingDocument.OnEndRecalculate();
