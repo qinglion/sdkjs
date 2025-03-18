@@ -341,18 +341,21 @@
 			t.sendEvent("asc_onConnectionStateChanged", e);
 		};
 	};
-
-	VisioEditorApi.prototype.OpenDocumentFromZip = function(data)
+	function BeforeOpenDocument()
 	{
+		this.InitEditor();
 		this.DocumentType = 2;
-
 		AscCommon.g_oIdCounter.Set_Load(true);
-		let res = this.OpenDocumentFromZipNoInit(data);
-		AscCommon.g_oIdCounter.Set_Load(false);
+		AscFonts.IsCheckSymbols = true;
+	};
+	function AfterOpenDocument(data, size)
+	{
 		this.WordControl.m_oLogicDocument.Set_FastCollaborativeEditing(true);
 
 		this.LoadedObject = 1;
 		AscFonts.IsCheckSymbols = false;
+
+		AscCommon.g_oIdCounter.Set_Load(false);
 
 		this.Document.loadFonts();
 
@@ -364,6 +367,30 @@
 		}
 		if (AscCommon.AscBrowser.isSafariMacOs)
 			setInterval(AscCommon.SafariIntervalFocus, 10);
+	};
+	VisioEditorApi.prototype.OpenDocumentFromBinNoInit = function(gObject)
+	{
+		AscFonts.IsCheckSymbols = true;
+		let loader = new BinaryVSDYLoader();
+		loader.Api = this;
+		loader.Load(gObject, this.WordControl.m_oLogicDocument);
+		AscFonts.IsCheckSymbols = false;
+	};
+	VisioEditorApi.prototype.OpenDocumentFromBin = function(url, gObject)
+	{
+		BeforeOpenDocument.call(this);
+
+		this.OpenDocumentFromBinNoInit(gObject);
+
+		AfterOpenDocument.call(this, 0, 0);
+	};
+	VisioEditorApi.prototype.OpenDocumentFromZip = function(data)
+	{
+		BeforeOpenDocument.call(this);
+
+		let res = this.OpenDocumentFromZipNoInit(data);
+
+		AfterOpenDocument.call(this, data, data.length);
 		return res;
 	};
 	VisioEditorApi.prototype.OpenDocumentFromZipNoInit = function(data)
@@ -452,6 +479,8 @@
 			//slice because array contains garbage after end of function
 			this.openOOXInBrowserZip = base64File.slice();
 			this.OpenDocumentFromZipNoInit(base64File);
+		} else {
+			this.OpenDocumentFromBinNoInit(base64File);
 		}
 
 		this.LoadedObject = 1;
@@ -623,7 +652,7 @@
 			this.openOOXInBrowserZip = file.data;
 			this.OpenDocumentFromZip(file.data);
 		} else {
-			this.sendEvent("asc_onError", Asc.c_oAscError.ID.AccessDeny, Asc.c_oAscError.Level.Critical);
+			this.OpenDocumentFromBin(file.url, file.data);
 		}
 		let perfEnd = performance.now();
 		AscCommon.sendClientLog("debug", AscCommon.getClientInfoString("onOpenDocument", perfEnd - perfStart), this);
