@@ -201,6 +201,8 @@ function ObjectToDraw(brush, pen, extX, extY, geometry, transform, x, y, oCommen
 	/*позиция символа*/
     this.x = x;
     this.y = y;
+
+		this.isUsedInAnimation = false;
 }
 ObjectToDraw.prototype =
 {

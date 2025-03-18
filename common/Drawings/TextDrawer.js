@@ -81,6 +81,59 @@ CDocContentStructure.prototype.Recalculate = function(oTheme, oColorMap, dWidth,
         this.m_aContent[i].Recalculate(oTheme, oColorMap, dWidth, dHeight, oShape);
     }
 };
+
+	CDocContentStructure.prototype.getCombinedWordWrappers = function(oTransform, oTheme, oColorMap, oDrawing) {
+		const arrRet = [];
+		let nParagraphIterate = 0;
+		let oParagraph = this.m_aContent[nParagraphIterate];
+		if (!oParagraph) {
+			return;
+		}
+		let nCurrentLine = 0;
+		let oCurrentLine = oParagraph.m_aContent[nCurrentLine];
+		if (!oCurrentLine) {
+			return;
+		}
+		let nCurrentSymbol = 0;
+		let oCurrentSymbol = oCurrentLine.m_aContent[nCurrentSymbol];
+
+
+		let nCurrentBackground = 0;
+		let oCurrentBackground = oCurrentLine.m_aBackgrounds[nCurrentBackground];
+		function nextBackground() {
+			nCurrentBackground += 1;
+			oCurrentBackground = oCurrentLine.m_aBackgrounds[nCurrentBackground];
+		}
+
+		let nCurrentStrikeout = 0;
+		let oCurrentStrikeout = oCurrentLine.m_aUnderlinesStrikeouts[nCurrentStrikeout];
+		function nextStrikeout() {
+			nCurrentStrikeout += 1;
+			oCurrentStrikeout = oCurrentLine.m_aUnderlinesStrikeouts[nCurrentStrikeout];
+		}
+
+		let nWord = 0;
+		let oCurrentWord = oParagraph.m_aWords[nWord];
+
+		let oCurrentBounds;
+		let oPreviousWrapper;
+		let oCurrentWordForWrapper = [];
+		let oWrapperBounds = {};
+		let oPreviousWord;
+		while (oCurrentWord || oCurrentBackground || oCurrentStrikeout) {
+			if (oCurrentBackground) {
+				if (oPreviousWord) {
+					if (oCurrentBackground.l > oPreviousWord.r && oCurrentBackground.r > oCurrentWord.l) {
+						oPreviousWord.r = oCurrentWord.l;
+					}
+				}
+			}
+		}
+		return arrRet;
+	};
+	CDocContentStructure.prototype.getCombinedLetterWrappers = function() {
+
+	};
 CDocContentStructure.prototype.CheckContentStructs = function(aContentStructs)
 {
     for(let nElement = 0; nElement < this.m_aContent.length; ++nElement)

@@ -11888,10 +11888,16 @@
 		const oSandwich = this.getSandwich(sDrawingId);
 		const dScale = oGraphics.m_oCoordTransform.sx;
 		if (this.isDrawingVisible(sDrawingId)) {
+			let sUnusedDrawingId;
 			if (oSandwich) {
 				oSandwich.drawObject(oGraphics, this.texturesCache);
+				// const oUnusedWrapper = this.getUnusedDocStructureWrapper(sDrawingId);
+				// sUnusedDrawingId = oUnusedWrapper && oUnusedWrapper.GetId();
 			} else {
-				const oTexture = this.texturesCache.checkTexture(sDrawingId, dScale);
+				sUnusedDrawingId = sDrawingId;
+			}
+			if(sUnusedDrawingId) {
+				const oTexture = this.texturesCache.checkTexture(sUnusedDrawingId, dScale);
 				if (oTexture) {
 					oTexture.draw(oGraphics);
 				}
