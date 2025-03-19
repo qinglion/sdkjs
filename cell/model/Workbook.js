@@ -2060,32 +2060,34 @@
 			AscCommonExcel.importRangeLinksState.startBuildImportRangeLinks = false;
 
 			this._foreachChanged(function (oCell) {
-				oCell && oCell._checkDirty();
-				if (oCell.formulaParsed && AscCommonExcel.bIsSupportDynamicArrays && (oCell.formulaParsed.getDynamicRef() || oCell.formulaParsed.getArrayFormulaRef()) && oCell.formulaParsed.aca && oCell.formulaParsed.ca) {
-					t.addToVolatileArrays(oCell.formulaParsed);
-				}
-				// Enable calculating formula for next cell in chain
-				const oFormulaParsed = oCell.getFormulaParsed();
-				if (g_cCalcRecursion.getIsEnabledRecursion() && oCell.isFormula() && oFormulaParsed.ca === true) {
-					const nThisCellIndex = getCellIndex(oCell.nRow, oCell.nCol);
-					const sCellWsName = oCell.ws.getName().toLowerCase();
-					const aRecursiveCells = g_cCalcRecursion.getRecursiveCells(oCell);
-					let bLinkedCell = aRecursiveCells.some(function (oCellIndex) {
-						return oCellIndex.cellId === nThisCellIndex && oCellIndex.wsName === sCellWsName;
-					});
-					if (aRecursiveCells.length && bLinkedCell) {
-						oCell.changeLinkedCell(function (oCell) {
-							const oFormulaParsed = oCell.getFormulaParsed();
-							const nCellIndex = getCellIndex(oCell.nRow, oCell.nCol);
-							const sCellWsName = oCell.ws.getName().toLowerCase();
-							let bLinkedCell = aRecursiveCells.some(function (oCellIndex) {
-								return oCellIndex.cellId === nCellIndex && oCellIndex.wsName === sCellWsName;
-							});
-							if (bLinkedCell && oFormulaParsed.ca === true && !oCell.getIsDirty()) {
-								oCell.setIsDirty(true);
-							}
-						}, false);
-						g_cCalcRecursion.calcDiffBetweenIter(oCell);
+				if (oCell) {
+					oCell._checkDirty();
+					if (oCell.formulaParsed && AscCommonExcel.bIsSupportDynamicArrays && (oCell.formulaParsed.getDynamicRef() || oCell.formulaParsed.getArrayFormulaRef()) && oCell.formulaParsed.aca && oCell.formulaParsed.ca) {
+						t.addToVolatileArrays(oCell.formulaParsed);
+					}
+					// Enable calculating formula for next cell in chain
+					const oFormulaParsed = oCell.getFormulaParsed();
+					if (g_cCalcRecursion.getIsEnabledRecursion() && oCell.isFormula() && oFormulaParsed.ca === true) {
+						const nThisCellIndex = getCellIndex(oCell.nRow, oCell.nCol);
+						const sCellWsName = oCell.ws.getName().toLowerCase();
+						const aRecursiveCells = g_cCalcRecursion.getRecursiveCells(oCell);
+						let bLinkedCell = aRecursiveCells.some(function (oCellIndex) {
+							return oCellIndex.cellId === nThisCellIndex && oCellIndex.wsName === sCellWsName;
+						});
+						if (aRecursiveCells.length && bLinkedCell) {
+							oCell.changeLinkedCell(function (oCell) {
+								const oFormulaParsed = oCell.getFormulaParsed();
+								const nCellIndex = getCellIndex(oCell.nRow, oCell.nCol);
+								const sCellWsName = oCell.ws.getName().toLowerCase();
+								let bLinkedCell = aRecursiveCells.some(function (oCellIndex) {
+									return oCellIndex.cellId === nCellIndex && oCellIndex.wsName === sCellWsName;
+								});
+								if (bLinkedCell && oFormulaParsed.ca === true && !oCell.getIsDirty()) {
+									oCell.setIsDirty(true);
+								}
+							}, false);
+							g_cCalcRecursion.calcDiffBetweenIter(oCell);
+						}
 					}
 				}
 			});
