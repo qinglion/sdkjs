@@ -115,18 +115,37 @@ CDocContentStructure.prototype.Recalculate = function(oTheme, oColorMap, dWidth,
 		let nWord = 0;
 		let oCurrentWord = oParagraph.m_aWords[nWord];
 
+		function nextWord() {
+
+		}
+
 		let oCurrentBounds;
 		let oPreviousWrapper;
 		let oCurrentWordForWrapper = [];
 		let oWrapperBounds = {};
 		let oPreviousWord;
-		while (oCurrentWord || oCurrentBackground || oCurrentStrikeout) {
-			if (oCurrentBackground) {
-				if (oPreviousWord) {
-					if (oCurrentBackground.l > oPreviousWord.r && oCurrentBackground.r > oCurrentWord.l) {
-						oPreviousWord.r = oCurrentWord.l;
-					}
+		let bOnlyOneWord = false;
+		while (oCurrentWord) {
+			const oWordWrapper = new AscCommonSlide.CObjectForDrawArrayWrapper(oCurrentWord, oTransform, oTheme, oColorMap, oDrawing);
+			const bounds = oWordWrapper.bounds.copy();
+			oWordWrapper.strictBounds = bounds;
+			while (oCurrentBackground && oCurrentBackground.l < oCurrentWord.l && oCurrentBackground.r < oCurrentWord.r) {
+				oPreviousWord.strictBounds.l = Math.min(oCurrentBackground.l, oPreviousWord.strictBounds.l);
+				oPreviousWord.strictBounds.t = Math.min(oCurrentBackground.t, oPreviousWord.strictBounds.t);
+				oPreviousWord.strictBounds.b = Math.max(oCurrentBackground.b, oPreviousWord.strictBounds.b);
+				oPreviousWord.strictBounds.r = Math.max(Math.min(oCurrentBackground.r, oCurrentWord.strictBounds.l), oPreviousWord.strictBounds.r);
+				nextBackground();
+			}
+			nextWord();
+		}
+		if (oPreviousWord) {
+			while (oCurrentBackground && oCurrentBackground.l < oPreviousWord.r) {
+				if (bOnlyOneWord) {
+					oPreviousWord.strictBounds.l = Math.min(oCurrentBackground.l, oPreviousWord.strictBounds.l);
 				}
+				oPreviousWord.strictBounds.t = Math.min(oCurrentBackground.t, oPreviousWord.strictBounds.t);
+				oPreviousWord.strictBounds.b = Math.max(oCurrentBackground.b, oPreviousWord.strictBounds.b);
+				oPreviousWord.strictBounds.r = Math.min(oCurrentBackground.r, oPreviousWord.strictBounds.r);
 			}
 		}
 		return arrRet;

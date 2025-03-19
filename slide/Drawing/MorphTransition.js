@@ -1424,15 +1424,48 @@
         return oDrawingToCheck;
     };
 
-		function CObjectForDrawArrayWrapper(aObjectForDraw, oTransform, oTheme, oColorMap, oDrawing) {
-			this.objectsForDraw = aObjectForDraw;
+		function CObjectForDrawArrayWrapper(aContentObjects, oTransform, oTheme, oColorMap, oDrawing) {
+			this.strikeoutUnderlineObjects = [];
+			this.backgroundObjects = [];
+			this.contentObjects = aContentObjects;
+			this.strictBounds = null;
 			CWrapperBase.call(this, oTransform, oTheme, oColorMap, oDrawing);
 		}
 	AscFormat.InitClassWithoutType(CObjectForDrawArrayWrapper, CWrapperBase);
-	CObjectForDrawArrayWrapper.prototype.draw = function(oGraphics) {
-		for(let nIdx = 0; nIdx < this.objectsForDraw.length; ++nIdx) {
-			this.objectsForDraw[nIdx].draw(oGraphics, undefined, this.transform, this.theme, this.colorMap);
+	CObjectForDrawArrayWrapper.prototype.recalculateBounds = function () {
+		const oBoundsChecker = new AscFormat.CSlideBoundsChecker();
+		this.drawContent(oBoundsChecker);
+		const oBounds = oBoundsChecker.Bounds;
+		if (this.strictBounds) {
+			this.bounds.reset(
+				Math.min(oBounds.min_x, this.strictBounds.l),
+				Math.min(oBounds.min_y, this.strictBounds.t),
+				Math.max(oBounds.max_x, this.strictBounds.r),
+				Math.max(oBounds.max_y, this.strictBounds.b)
+			);
+		} else {
+			this.bounds.reset(oBounds.min_x, oBounds.min_y, oBounds.max_x, oBounds.max_y);
 		}
+	}
+	CObjectForDrawArrayWrapper.prototype.drawBackground = function (oGraphics) {
+		for (let i = 0; i < this.backgroundObjects.length; i += 1) {
+			this.backgroundObjects[i].draw(oGraphics, undefined, this.transform, this.theme, this.colorMap);
+		}
+	};
+	CObjectForDrawArrayWrapper.prototype.drawContent = function (oGraphics) {
+		for (let i = 0; i < this.contentObjects.length; i += 1) {
+			this.contentObjects[i].draw(oGraphics, undefined, this.transform, this.theme, this.colorMap);
+		}
+	};
+	CObjectForDrawArrayWrapper.prototype.drawStrikeoutUnderlines = function (oGraphics) {
+		for (let i = 0; i < this.strikeoutUnderlineObjects.length; i += 1) {
+			this.strikeoutUnderlineObjects[i].draw(oGraphics, undefined, this.transform, this.theme, this.colorMap);
+		}
+	};
+	CObjectForDrawArrayWrapper.prototype.draw = function(oGraphics) {
+		this.drawBackground(oGraphics);
+		this.drawContent(oGraphics);
+		this.drawStrikeoutUnderlines(oGraphics);
 	};
 
     function CBackgroundWrapper(oMorph, oSlide) {

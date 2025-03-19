@@ -206,6 +206,12 @@ function ObjectToDraw(brush, pen, extX, extY, geometry, transform, x, y, oCommen
 }
 ObjectToDraw.prototype =
 {
+		recalculateBounds: function (oTransform) {
+			const oBoundsChecker = new AscFormat.CSlideBoundsChecker();
+			this.draw(oBoundsChecker, undefined, oTransform);
+			const oBounds = oBoundsChecker.Bounds;
+			return new AscFormat.CGraphicBounds(oBounds.min_x, oBounds.min_y, oBounds.max_x, oBounds.max_y);
+		},
     check_bounds: function(boundsChecker)
     {
         if(this.geometry)
