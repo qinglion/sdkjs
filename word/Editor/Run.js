@@ -5751,7 +5751,7 @@ ParaRun.prototype.Recalculate_Range_Spaces = function(PRSA, _CurLine, _CurRange,
             case para_End:
             {
 				Item.CheckMark(PRSA.Paragraph, PRSA.XEnd - PRSA.X);
-                PRSA.X += Item.GetWidth();
+                PRSA.X += Item.GetWidthVisible();
 
                 break;
             }

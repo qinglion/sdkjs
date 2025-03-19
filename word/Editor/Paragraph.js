@@ -8922,29 +8922,37 @@ Paragraph.prototype.DrawSelectionOnPage = function(CurPage, clipInfo)
 			if (!oNumPr)
 				break;
 
-			var nNumJc = this.Parent.GetNumbering().GetNum(oNumPr.NumId).GetLvl(oNumPr.Lvl).GetJc();
-
-			switch (nNumJc)
+			let numJc = this.Parent.GetNumbering().GetNum(oNumPr.NumId).GetLvl(oNumPr.Lvl).GetJc();
+			
+			if (this.isRtlDirection())
 			{
-				case align_Center:
+				SelectX = this.Lines[CurLine].Ranges[CurRange].XEndVisible - ParaNum.WidthVisible;
+
+				if (AscCommon.align_Center === numJc)
+					SelectW = ParaNum.WidthVisible + ParaNum.WidthNum / 2;
+				else if (AscCommon.align_Right === numJc)
+					SelectW = ParaNum.WidthVisible + ParaNum.WidthNum;
+				else // if (AscCommon.align_Left === numJc)
+					SelectW = ParaNum.WidthVisible;
+			}
+			else
+			{
+				if (AscCommon.align_Center === numJc)
 				{
 					SelectX = this.Lines[CurLine].Ranges[CurRange].XVisible - ParaNum.WidthNum / 2;
 					SelectW = ParaNum.WidthVisible + ParaNum.WidthNum / 2;
-					break;
 				}
-				case align_Right:
+				else if (AscCommon.align_Right === numJc)
 				{
 					SelectX = this.Lines[CurLine].Ranges[CurRange].XVisible - ParaNum.WidthNum;
 					SelectW = ParaNum.WidthVisible + ParaNum.WidthNum;
-					break;
 				}
-				case align_Left:
-				default:
+				else // if (AscCommon.align_Left === numJc)
 				{
 					SelectX = this.Lines[CurLine].Ranges[CurRange].XVisible;
 					SelectW = ParaNum.WidthVisible;
-					break;
 				}
+				
 			}
 			
 			AscWord.drawSelectionOnPage(drawingDocument, clipInfo, PageAbs, SelectX, SelectY, SelectW, SelectH);
