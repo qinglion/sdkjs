@@ -131,7 +131,8 @@
 		this.curX = paraRange.XVisible;
 		this.curY = 0;
 		
-		this.checkNumbering();
+		if (!para.isRtlDirection())
+			this.checkNumbering();
 		
 		let startPos = paraRange.StartPos;
 		let endPos   = paraRange.EndPos;

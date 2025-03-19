@@ -3049,7 +3049,7 @@ Paragraph.prototype.drawRunContentElements = function(CurPage, pGraphics, drawSt
 			var EndPos   = Range.EndPos;
 			
 			if (this.Numbering.checkRange(CurRange, CurLine) && !Pr.ParaPr.Bidi)
-				this.drawNumbering(pGraphics, drawState, Y);
+				this.drawNumbering(pGraphics, drawState);
 			
 			for (var Pos = StartPos; Pos <= EndPos; Pos++)
 			{
@@ -3061,13 +3061,13 @@ Paragraph.prototype.drawRunContentElements = function(CurPage, pGraphics, drawSt
 			PDSE.endRange();
 			
 			if (this.Numbering.checkRange(CurRange, CurLine) && Pr.ParaPr.Bidi)
-				this.drawNumbering(pGraphics, drawState, Y);
+				this.drawNumbering(pGraphics, drawState);
 		}
 
 		pGraphics.End_Command();
 	}
 };
-Paragraph.prototype.drawNumbering = function(pGraphics, drawState, Y)
+Paragraph.prototype.drawNumbering = function(pGraphics, drawState)
 {
 	let PDSE     = drawState.getRunElementState();
 	let BgColor  = drawState.getBgColor();
@@ -3076,6 +3076,9 @@ Paragraph.prototype.drawNumbering = function(pGraphics, drawState, Y)
 	let Pr       = drawState.getParagraphCompiledPr();
 	
 	let X = PDSE.X;
+	let Y = PDSE.Y;
+	let CurLine = PDSE.Line;
+	let CurPage = PDSE.Page;
 	
 	var nReviewType  = this.GetReviewType();
 	var oReviewColor = this.GetReviewColor();
@@ -3376,7 +3379,7 @@ Paragraph.prototype.drawRunContentLines = function(CurPage, pGraphics, drawState
 			var EndPos   = Range.EndPos;
 
 			// TODO: Нумерация подчеркивается и зачеркивается в Draw_Elements, неплохо бы сюда перенести
-			if (true === this.Numbering.checkRange(CurRange, CurLine))
+			if (this.Numbering.checkRange(CurRange, CurLine) && !this.isRtlDirection())
 				PDSL.X += this.Numbering.WidthVisible;
 
 			for (var Pos = StartPos; Pos <= EndPos; Pos++)
