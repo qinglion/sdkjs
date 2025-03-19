@@ -1945,6 +1945,19 @@
 						}
 						let oStartCellIndex = g_cCalcRecursion.getStartCellIndex();
 						if (oStartCellIndex) {
+							/** Checks static formulas with ca flag - false. For iterative calc static formulas that
+							 	participate in recursive formulas must be calculated before calculating dependent cells.**/
+							if (!oFormulaParsed.ca) {
+								oCell.changeLinkedCell(function (oLinkedCell) {
+									const oFormulaParsed = oLinkedCell.getFormulaParsed();
+									if (!oFormulaParsed.ca) {
+										oLinkedCell.setIsDirty(true);
+										oLinkedCell._checkDirty();
+									}
+								}, true);
+								oCell.setIsDirty(true);
+								oCell._checkDirty();
+							}
 							// Fill 0 value for empty cells with recursive formula.
 							if (oCell.getNumberValue() == null && (oCell.getValueText() == null || oCell.getValueText() === '#NUM!')) {
 								if (oCell.getType() !== CellValueType.Number) {
@@ -2052,7 +2065,8 @@
 					t.addToVolatileArrays(oCell.formulaParsed);
 				}
 				// Enable calculating formula for next cell in chain
-				if (g_cCalcRecursion.getIsEnabledRecursion() && oCell.isFormula()) {
+				const oFormulaParsed = oCell.getFormulaParsed();
+				if (g_cCalcRecursion.getIsEnabledRecursion() && oCell.isFormula() && oFormulaParsed.ca === true) {
 					const nThisCellIndex = getCellIndex(oCell.nRow, oCell.nCol);
 					const sCellWsName = oCell.ws.getName().toLowerCase();
 					const aRecursiveCells = g_cCalcRecursion.getRecursiveCells(oCell);
@@ -2061,12 +2075,13 @@
 					});
 					if (aRecursiveCells.length && bLinkedCell) {
 						oCell.changeLinkedCell(function (oCell) {
+							const oFormulaParsed = oCell.getFormulaParsed();
 							const nCellIndex = getCellIndex(oCell.nRow, oCell.nCol);
 							const sCellWsName = oCell.ws.getName().toLowerCase();
 							let bLinkedCell = aRecursiveCells.some(function (oCellIndex) {
 								return oCellIndex.cellId === nCellIndex && oCellIndex.wsName === sCellWsName;
 							});
-							if (bLinkedCell && !oCell.getIsDirty()) {
+							if (bLinkedCell && oFormulaParsed.ca === true && !oCell.getIsDirty()) {
 								oCell.setIsDirty(true);
 							}
 						}, false);
