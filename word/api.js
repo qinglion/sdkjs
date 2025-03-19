@@ -2272,7 +2272,7 @@ background-repeat: no-repeat;\
 		}
 
 		this.sync_ParaSpacingLine(ParaPr.Spacing);
-		this.Update_ParaInd(ParaPr.Ind);
+		this.Update_ParaInd(ParaPr.Ind, ParaPr.Bidi);
 		this.sync_PrAlignCallBack(ParaPr.Jc);
 		
 		let bidi = ParaPr.Bidi;
@@ -2916,7 +2916,7 @@ background-repeat: no-repeat;\
 					"format"        : this.documentFormat,
 					"c"             : "reopen",
 					"title"         : this.documentTitle,
-					"codepage"      : option.asc_getCodePage(),
+					"codepage"      : option.asc_getCodePageOrDefault(),
 					"nobase64"      : true
 				};
 				sendCommand(this, null, rData);
@@ -5375,45 +5375,12 @@ background-repeat: no-repeat;\
 			}
 		}
 	};
-	asc_docs_api.prototype.Update_ParaInd                = function(Ind)
+	asc_docs_api.prototype.Update_ParaInd                = function(paraInd, isRtl)
 	{
-		var FirstLine = 0,
-			Left      = 0,
-			Right     = 0;
-		if ("undefined" != typeof(Ind))
-		{
-			if ("undefined" != typeof(Ind.FirstLine))
-			{
-				FirstLine = Ind.FirstLine;
-			}
-			if ("undefined" != typeof(Ind.Left))
-			{
-				Left = Ind.Left;
-			}
-			if ("undefined" != typeof(Ind.Right))
-			{
-				Right = Ind.Right;
-			}
-		}
-
-		var bIsUpdate = false;
-		var _ruler    = this.WordControl.m_oHorRuler;
-		if (_ruler.m_dIndentLeft != Left)
-		{
-			_ruler.m_dIndentLeft = Left;
-			bIsUpdate            = true;
-		}
-		if (_ruler != (FirstLine + Left))
-		{
-			_ruler.m_dIndentLeftFirst = (FirstLine + Left);
-			bIsUpdate                 = true;
-		}
-		if (_ruler.m_dIndentRight != Right)
-		{
-			_ruler.m_dIndentRight = Right;
-			bIsUpdate             = true;
-		}
-		if (bIsUpdate)
+		let updateFlag = this.WordControl.m_oHorRuler.UpdateParaInd(paraInd, isRtl);
+		if (updateFlag & 2)
+			this.WordControl.UpdateHorRulerBack(true);
+		if (updateFlag & 1)
 			this.WordControl.UpdateHorRuler();
 	};
 	asc_docs_api.prototype.Internal_Update_Ind_FirstLine = function(FirstLine, Left)
@@ -5444,23 +5411,29 @@ background-repeat: no-repeat;\
 	// "where" где нижний или верхний, align выравнивание
 	asc_docs_api.prototype.put_PageNum = function(where, align)
 	{
+		let logicDocument = this.private_GetLogicDocument();
+		if (!logicDocument)
+			return;
+		
 		if (where >= 0)
 		{
-			if (false === this.WordControl.m_oLogicDocument.Document_Is_SelectionLocked(changestype_None, {Type : AscCommon.changestype_2_HdrFtr}))
-			{
-				this.WordControl.m_oLogicDocument.StartAction(AscDFH.historydescription_Document_AddPageNumToHdrFtr);
-				this.WordControl.m_oLogicDocument.Document_AddPageNum(where, align);
-				this.WordControl.m_oLogicDocument.FinalizeAction();
-			}
+			if (logicDocument.IsSelectionLocked(AscCommon.changestype_None, {Type : AscCommon.changestype_2_HdrFtr}))
+				return;
+			
+			logicDocument.StartAction(AscDFH.historydescription_Document_AddPageNumToHdrFtr);
+			logicDocument.Document_AddPageNum(where, align);
+			logicDocument.Recalculate();
+			logicDocument.FinalizeAction();
 		}
 		else
 		{
-			if (false === this.WordControl.m_oLogicDocument.Document_Is_SelectionLocked(changestype_Paragraph_Content))
-			{
-				this.WordControl.m_oLogicDocument.StartAction(AscDFH.historydescription_Document_AddPageNumToCurrentPos);
-				this.WordControl.m_oLogicDocument.Document_AddPageNum(where, align);
-				this.WordControl.m_oLogicDocument.FinalizeAction();
-			}
+			if (logicDocument.IsSelectionLocked(AscCommon.changestype_Paragraph_Content))
+				return;
+			
+			logicDocument.StartAction(AscDFH.historydescription_Document_AddPageNumToCurrentPos);
+			logicDocument.Document_AddPageNum(where, align);
+			logicDocument.Recalculate();
+			logicDocument.FinalizeAction();
 		}
 	};
 
@@ -11193,11 +11166,19 @@ background-repeat: no-repeat;\
 	};
 	asc_docs_api.prototype.asc_ClearAllSpecialForms = function()
 	{
-		var oLogicDocument = this.private_GetLogicDocument();
-		if (!oLogicDocument)
+		let logicDocument = this.private_GetLogicDocument();
+		let oform = this.asc_GetOForm();
+		if (!logicDocument)
 			return;
-
-		oLogicDocument.ClearAllSpecialForms(true);
+		
+		let roleName = oform ? oform.getCurrentRole() : null;
+		let contentControls;
+		if (null !== roleName)
+			contentControls = logicDocument.GetFormsManager().GetAllFormsByRole(roleName);
+		else
+			contentControls = logicDocument.GetAllContentControls();
+		
+		logicDocument.ClearAllSpecialForms(contentControls);
 	};
 	asc_docs_api.prototype.asc_SetSpecialFormsHighlightColor = function(r, g, b)
 	{
@@ -11261,47 +11242,68 @@ background-repeat: no-repeat;\
 	};
 	asc_docs_api.prototype.asc_MoveToFillingForm = function(isNext, isRequired, isNotFilled)
 	{
-		var oLogicDocument = this.private_GetLogicDocument();
-		if (!oLogicDocument)
+		let logicDocument = this.private_GetLogicDocument();
+		if (!logicDocument)
 			return;
+		
+		let oform = this.asc_GetOForm();
+		let role  = oform ? oform.getCurrentRole() : null;
+		
+		function findNextForm(checkFunc)
+		{
+			let startCC  = logicDocument.GetContentControl();
+			let docState = logicDocument.SaveDocumentState(false);
+			
+			let prevCC = null, curCC;
+			while (true)
+			{
+				logicDocument.MoveToFillingForm(isNext);
+				curCC = logicDocument.GetContentControl();
+				
+				if (!curCC || curCC === startCC || curCC === prevCC)
+				{
+					logicDocument.LoadDocumentState(docState);
+					break;
+				}
+				
+				if (checkFunc(curCC))
+					break;
+				
+				if (!startCC)
+					startCC = curCC;
+				
+				prevCC = curCC;
+			}
+		}
 
 		if (true === isRequired)
 		{
-			var oStartCC  = oLogicDocument.GetContentControl();
-			var oDocState = oLogicDocument.SaveDocumentState(false);
-
-			// Защита от зависания, по логике сравнение с предыдущим не нужно
-			var oPrevCC = null, oCurCC;
-			while (1)
+			findNextForm(function(form)
 			{
-				oLogicDocument.MoveToFillingForm(isNext);
-				oCurCC = oLogicDocument.GetContentControl();
-
-				if (!oCurCC || oCurCC === oStartCC || oCurCC === oPrevCC)
-				{
-					oLogicDocument.LoadDocumentState(oDocState);
-					break;
-				}
-
-				if (oCurCC.IsForm()
-					&& oCurCC.IsFormRequired()
-					&& !oCurCC.IsCheckBox()
-					&& (true !== isNotFilled || !oCurCC.IsFormFilled()))
-					break;
-
-				if (!oStartCC)
-					oStartCC = oCurCC;
-
-				oPrevCC = oCurCC;
-			}
+				return (form.IsForm()
+					&& form.IsFormRequired()
+					&& !form.IsCheckBox()
+					&& (true !== isNotFilled || !form.IsFormFilled())
+					&& (null === role || form.GetFormRole() === role));
+			});
 		}
 		else
 		{
-			oLogicDocument.MoveToFillingForm(isNext);
+			if (null !== role)
+			{
+				findNextForm(function(form)
+				{
+					return (form.IsForm() && form.GetFormRole() === role);
+				});
+			}
+			else
+			{
+				logicDocument.MoveToFillingForm(isNext);
+			}
 		}
-
-		oLogicDocument.UpdateSelection();
-		oLogicDocument.UpdateInterface();
+		
+		logicDocument.UpdateSelection();
+		logicDocument.UpdateInterface();
 	};
 	asc_docs_api.prototype.asc_IsAllRequiredFormsFilled = function(checkAll)
 	{
@@ -11412,7 +11414,7 @@ background-repeat: no-repeat;\
 			return false;
 		
 		logicDocument.StartAction(AscDFH.historydescription_DisconnectEveryone);
-		logicDocument.GetHistory().Add(new CChangesDocumentDisconnectEveryone(logicDocument));
+		logicDocument.GetHistory().Add(new AscDFH.CChangesDocumentDisconnectEveryone(logicDocument));
 		logicDocument.FinalizeAction();
 		
 		this.forceSaveDisconnectRequest = true;
@@ -11431,7 +11433,7 @@ background-repeat: no-repeat;\
 		logicDocument.StartAction(AscDFH.historydescription_OForm_CompletePreparation);
 		logicDocument.GetOFormDocument().setAllRolesNotFilled();
 		if (disconnect)
-			logicDocument.GetHistory().Add(new CChangesDocumentDisconnectEveryone(logicDocument));
+			logicDocument.GetHistory().Add(new AscDFH.CChangesDocumentDisconnectEveryone(logicDocument));
 		
 		logicDocument.FinalizeAction();
 		

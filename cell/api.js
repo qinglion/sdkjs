@@ -1275,7 +1275,7 @@ var editor;
           "title": this.documentTitle,
           "delimiter": option.asc_getDelimiter(),
           "delimiterChar": option.asc_getDelimiterChar(),
-          "codepage": option.asc_getCodePage(),
+          "codepage": option.asc_getCodePageOrDefault(),
           "nobase64": true
         };
         sendCommand(this, null, v);

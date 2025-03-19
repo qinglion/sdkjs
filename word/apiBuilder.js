@@ -4370,7 +4370,7 @@
 
 	/**
 	 * The watermark direction.
-	 * @typedef {("horizontal" | "clockwise45" | "counterclockwise45")} WatermarkDirection
+	 * @typedef {("horizontal" | "clockwise45" | "counterclockwise45" | "clockwise90" | "counterclockwise90")} WatermarkDirection
 	 * @see office-js-api/Examples/Enumerations/WatermarkDirection.js
 	 */
 
@@ -7051,7 +7051,8 @@
 	 */
 	ApiDocument.prototype.ClearAllFields = function()
 	{
-		this.Document.ClearAllSpecialForms(false);
+		let contentControls = this.Document.GetFormsManager().GetAllForms();
+		this.Document.ClearAllSpecialForms(contentControls);
 	};
 
 	/**
@@ -16179,6 +16180,44 @@
 		return true;
 	};
 
+	/**
+     * Sets the rotation angle to the current drawing object.
+     * @memberof ApiDrawing
+     * @param {number} nRotAngle - new drawing rot angle
+     * @typeofeditors ["CDE"]
+     * @returns {boolean}
+     * @see office-js-api/Examples/{Editor}/ApiDrawing/Methods/SetRotation.js
+	 */
+	ApiDrawing.prototype.SetRotation = function(nRotAngle)
+	{
+		if (!this.Drawing.canRotate()) {
+			return false;
+		}
+
+		let oXfrm = this.Drawing.getXfrm();
+		oXfrm.setRot(nRotAngle * Math.PI / 180);
+
+		return true;
+	};
+	/**
+     * Gets the rotation angle of the current drawing object.
+     * @memberof ApiDrawing
+     * @typeofeditors ["CDE"]
+     * @returns {number}
+     * @see office-js-api/Examples/{Editor}/ApiDrawing/Methods/GetRotation.js
+	 */
+	ApiDrawing.prototype.GetRotation = function()
+	{
+		if (!this.Drawing.canRotate()) {
+			return 0;
+		}
+
+		let oXfrm = this.Drawing.getXfrm();
+		let nRad = oXfrm.getRot();
+
+		return nRad * 180 / Math.PI
+	};
+
 	//------------------------------------------------------------------------------------------------------------------
 	//
 	// ApiImage
@@ -17658,6 +17697,32 @@
 	};
 	
 	/**
+	 * Specifies a unique ID for the current content control.
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 8.3.2
+	 * @param {string} id - The id which will be specified to the current content control.
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/SetId.js
+	 */
+	ApiInlineLvlSdt.prototype.SetId = function(id)
+	{
+		this.Sdt.SetContentControlId(id);
+	};
+	
+	/**
+	 * Gets a unique ID for the current content control.
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 8.3.2
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/GetId.js
+	 */
+	ApiInlineLvlSdt.prototype.GetId = function()
+	{
+		return this.Sdt.GetContentControlId();
+	};
+	
+	/**
 	 * Sets the lock to the current inline text content control:
 	 * <b>"contentLocked"</b> - content cannot be edited.
 	 * <b>"sdtContentLocked"</b> - content cannot be edited and the container cannot be deleted.
@@ -18237,6 +18302,84 @@
 		
 		return new ApiContentControlList(this);
 	};
+	
+	/**
+	 * Sets the border color to the current content control.
+	 * @memberof ApiInlineLvlSdt
+	 * @param {byte} r - Red color component value.
+	 * @param {byte} g - Green color component value.
+	 * @param {byte} b - Blue color component value.
+	 * @param {byte} a - Alpha color component value.
+	 * @typeofeditors ["CDE"]
+	 * @since 8.3.2
+	 * @returns {boolean}
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/SetBorderColor.js
+	 */
+	ApiInlineLvlSdt.prototype.SetBorderColor = function(r, g, b, a)
+	{
+		this.Sdt.setBorderColor(new AscWord.CDocumentColorA(r, g, b, a));
+		return true;
+	};
+	/**
+	 * Gets the border color of the current content control.
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 8.3.2
+	 * @returns {null | {r:byte, g:byte, b:byte, a:byte}}
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/GetBorderColor.js
+	 */
+	ApiInlineLvlSdt.prototype.GetBorderColor = function()
+	{
+		let color = this.Sdt.getBorderColor();
+		if (!color)
+			return null;
+		
+		return {
+			"r" : color.r,
+			"g" : color.g,
+			"b" : color.b,
+			"a" : color.a
+		};
+	};
+	
+	/**
+	 * Sets the background color to the current content control.
+	 * @memberof ApiInlineLvlSdt
+	 * @param {byte} r - Red color component value.
+	 * @param {byte} g - Green color component value.
+	 * @param {byte} b - Blue color component value.
+	 * @param {byte} a - Alpha color component value.
+	 * @typeofeditors ["CDE"]
+	 * @returns {boolean}
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/SetBackgroundColor.js
+	 */
+	ApiInlineLvlSdt.prototype.SetBackgroundColor = function(r, g, b, a)
+	{
+		this.Sdt.setShdColor(new AscWord.CDocumentColorA(r, g, b, a));
+		return true;
+	};
+	
+	/**
+	 * Gets the background color of the current content control.
+	 * @memberof ApiInlineLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 8.3.2
+	 * @returns {null | {r:byte, g:byte, b:byte, a:byte}}
+	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/GetBackgroundColor.js
+	 */
+	ApiInlineLvlSdt.prototype.GetBackgroundColor = function()
+	{
+		let color = this.Sdt.getShdColor();
+		if (!color)
+			return null;
+		
+		return {
+			"r" : color.r,
+			"g" : color.g,
+			"b" : color.b,
+			"a" : color.a
+		};
+	};
 
 	//------------------------------------------------------------------------------------------------------------------
 	//
@@ -18627,6 +18770,31 @@
 		return this.Sdt.GetId();
 	};
 	
+	/**
+	 * Specifies a unique ID for the current content control.
+	 * @memberof ApiBlockLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 8.3.2
+	 * @param {string} id - The id which will be specified to the current content control.
+	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/SetId.js
+	 */
+	ApiBlockLvlSdt.prototype.SetId = function(id)
+	{
+		this.Sdt.SetContentControlId(id);
+	};
+	
+	/**
+	 * Gets a unique ID for the current content control.
+	 * @memberof ApiBlockLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 8.3.2
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/GetId.js
+	 */
+	ApiBlockLvlSdt.prototype.GetId = function()
+	{
+		return this.Sdt.GetContentControlId();
+	};
 	/**
 	 * Sets the lock to the current block text content control:
 	 * <b>"contentLocked"</b> - content cannot be edited.
@@ -19382,7 +19550,54 @@
 
 		return new ApiBlockLvlSdt(oInlineSdt);
 	};
-
+	
+	/**
+	 * Sets the border color to the current content control.
+	 * @memberof ApiBlockLvlSdt
+	 * @param {byte} r - Red color component value.
+	 * @param {byte} g - Green color component value.
+	 * @param {byte} b - Blue color component value.
+	 * @param {byte} a - Alpha color component value.
+	 * @typeofeditors ["CDE"]
+	 * @since 8.3.2
+	 * @returns {boolean}
+	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/SetBorderColor.js
+	 */
+	ApiBlockLvlSdt.prototype.SetBorderColor = ApiInlineLvlSdt.prototype.SetBorderColor;
+	
+	/**
+	 * Gets the border color of the current content control.
+	 * @memberof ApiBlockLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 8.3.2
+	 * @returns {null | {r:byte, g:byte, b:byte, a:byte}}
+	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/GetBorderColor.js
+	 */
+	ApiBlockLvlSdt.prototype.GetBorderColor = ApiInlineLvlSdt.prototype.GetBorderColor;
+	
+	/**
+	 * Sets the background color to the current content control.
+	 * @memberof ApiBlockLvlSdt
+	 * @param {byte} r - Red color component value.
+	 * @param {byte} g - Green color component value.
+	 * @param {byte} b - Blue color component value.
+	 * @param {byte} a - Alpha color component value.
+	 * @typeofeditors ["CDE"]
+	 * @returns {boolean}
+	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/SetBackgroundColor.js
+	 */
+	ApiBlockLvlSdt.prototype.SetBackgroundColor = ApiInlineLvlSdt.prototype.SetBackgroundColor;
+	
+	/**
+	 * Gets the background color of the current content control.
+	 * @memberof ApiBlockLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 8.3.2
+	 * @returns {null | {r:byte, g:byte, b:byte, a:byte}}
+	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/GetBackgroundColor.js
+	 */
+	ApiBlockLvlSdt.prototype.GetBackgroundColor = ApiInlineLvlSdt.prototype.GetBackgroundColor;
+	
 	//------------------------------------------------------------------------------------------------------------------
 	//
 	// ApiFormBase
@@ -20507,7 +20722,43 @@
 			this.Sdt.SetCheckBoxPr(oPr);
 		}, this);
 	};
-
+	/**
+	 * Get the choice name for the current radio button.
+	 * @memberof ApiCheckBoxForm
+	 * @typeofeditors ["CDE", "CFE"]
+	 * @since 8.3.2
+	 * @returns {string}
+	 * @see office-js-api/Examples/{Editor}/ApiCheckBoxForm/Methods/GetChoiceName.js
+	 * */
+	ApiCheckBoxForm.prototype.GetChoiceName = function()
+	{
+		if (this.Sdt.IsRadioButton())
+			return this.Sdt.GetFormKey();
+		else
+			return "";
+	};
+	/**
+	 * Set the choice name for the current radio button.
+	 * @memberof ApiCheckBoxForm
+	 * @param {string} choiceName - Radio button choice name.
+	 * @typeofeditors ["CDE", "CFE"]
+	 * @since 8.3.2
+	 * @returns {boolean}
+	 * @see office-js-api/Examples/{Editor}/ApiCheckBoxForm/Methods/SetChoiceName.js
+	 * */
+	ApiCheckBoxForm.prototype.SetChoiceName = function(choiceName)
+	{
+		return executeNoFormLockCheck(function() {
+			let formPr = this.Sdt.GetFormPr();
+			if (!formPr || typeof (choiceName) !== "string" || "" === choiceName || !this.Sdt.IsRadioButton())
+				return false;
+			
+			formPr = formPr.Copy();
+			formPr.SetKey(choiceName);
+			this.Sdt.SetFormPr(formPr);
+			return true;
+		}, this);
+	};
 	//------------------------------------------------------------------------------------------------------------------
 	//
 	// ApiDateForm
@@ -21733,6 +21984,16 @@
 				this.Settings.put_Angle(-45);
 				break;
 			}
+			case "clockwise90":
+			{
+				this.Settings.put_Angle(90);
+				break;
+			}
+			case "counterclockwise90":
+			{
+				this.Settings.put_Angle(-90);
+				break;
+			}
 		}
 	};
 	/**
@@ -22634,6 +22895,8 @@
 	ApiDrawing.prototype["GetLockValue"]             = ApiDrawing.prototype.GetLockValue;
 	ApiDrawing.prototype["SetLockValue"]             = ApiDrawing.prototype.SetLockValue;
 	ApiDrawing.prototype["SetDrawingPrFromDrawing"]  = ApiDrawing.prototype.SetDrawingPrFromDrawing;
+	ApiDrawing.prototype["SetRotation"]  			 = ApiDrawing.prototype.SetRotation;
+	ApiDrawing.prototype["GetRotation"]  			 = ApiDrawing.prototype.GetRotation;
 
 	ApiDrawing.prototype["ToJSON"]                   = ApiDrawing.prototype.ToJSON;
 
@@ -22734,6 +22997,8 @@
 
 	ApiInlineLvlSdt.prototype["GetClassType"]           = ApiInlineLvlSdt.prototype.GetClassType;
 	ApiInlineLvlSdt.prototype["GetInternalId"]          = ApiInlineLvlSdt.prototype.GetInternalId;
+	ApiInlineLvlSdt.prototype["GetId"]                  = ApiInlineLvlSdt.prototype.GetId;
+	ApiInlineLvlSdt.prototype["SetId"]                  = ApiInlineLvlSdt.prototype.SetId;
 	ApiInlineLvlSdt.prototype["SetLock"]                = ApiInlineLvlSdt.prototype.SetLock;
 	ApiInlineLvlSdt.prototype["GetLock"]                = ApiInlineLvlSdt.prototype.GetLock;
 	ApiInlineLvlSdt.prototype["SetTag"]                 = ApiInlineLvlSdt.prototype.SetTag;
@@ -22760,12 +23025,16 @@
 	ApiInlineLvlSdt.prototype["ToJSON"]                 = ApiInlineLvlSdt.prototype.ToJSON;
 	ApiInlineLvlSdt.prototype["AddComment"]             = ApiInlineLvlSdt.prototype.AddComment;
 	ApiInlineLvlSdt.prototype["MoveCursorOutside"]      = ApiInlineLvlSdt.prototype.MoveCursorOutside;
-
+	
 	ApiInlineLvlSdt.prototype["GetPlaceholderText"]     = ApiInlineLvlSdt.prototype.GetPlaceholderText;
 	ApiInlineLvlSdt.prototype["SetPlaceholderText"]     = ApiInlineLvlSdt.prototype.SetPlaceholderText;
 	ApiInlineLvlSdt.prototype["IsForm"]                 = ApiInlineLvlSdt.prototype.IsForm;
 	ApiInlineLvlSdt.prototype["GetForm"]                = ApiInlineLvlSdt.prototype.GetForm;
 	ApiInlineLvlSdt.prototype["GetDropdownList"]        = ApiInlineLvlSdt.prototype.GetDropdownList;
+	ApiInlineLvlSdt.prototype["SetBorderColor"]         = ApiInlineLvlSdt.prototype.SetBorderColor;
+	ApiInlineLvlSdt.prototype["GetBorderColor"]         = ApiInlineLvlSdt.prototype.GetBorderColor;
+	ApiInlineLvlSdt.prototype["SetBackgroundColor"]     = ApiInlineLvlSdt.prototype.SetBackgroundColor;
+	ApiInlineLvlSdt.prototype["GetBackgroundColor"]     = ApiInlineLvlSdt.prototype.GetBackgroundColor;
 
 	ApiContentControlList.prototype["GetClassType"]		= ApiContentControlList.prototype.GetClassType;
 	ApiContentControlList.prototype["GetAllItems"]		= ApiContentControlList.prototype.GetAllItems;
@@ -22790,6 +23059,8 @@
 
 	ApiBlockLvlSdt.prototype["GetClassType"]            = ApiBlockLvlSdt.prototype.GetClassType;
 	ApiBlockLvlSdt.prototype["GetInternalId"]           = ApiBlockLvlSdt.prototype.GetInternalId;
+	ApiBlockLvlSdt.prototype["GetId"]                   = ApiBlockLvlSdt.prototype.GetId;
+	ApiBlockLvlSdt.prototype["SetId"]                   = ApiBlockLvlSdt.prototype.SetId;
 	ApiBlockLvlSdt.prototype["SetLock"]                 = ApiBlockLvlSdt.prototype.SetLock;
 	ApiBlockLvlSdt.prototype["GetLock"]                 = ApiBlockLvlSdt.prototype.GetLock;
 	ApiBlockLvlSdt.prototype["SetTag"]                  = ApiBlockLvlSdt.prototype.SetTag;
@@ -22825,6 +23096,10 @@
 	ApiBlockLvlSdt.prototype["AddCaption"]              = ApiBlockLvlSdt.prototype.AddCaption;
 	ApiBlockLvlSdt.prototype["GetDropdownList"]         = ApiBlockLvlSdt.prototype.GetDropdownList;
 	ApiBlockLvlSdt.prototype["MoveCursorOutside"]       = ApiBlockLvlSdt.prototype.MoveCursorOutside;
+	ApiBlockLvlSdt.prototype["SetBorderColor"]          = ApiBlockLvlSdt.prototype.SetBorderColor;
+	ApiBlockLvlSdt.prototype["GetBorderColor"]          = ApiBlockLvlSdt.prototype.GetBorderColor;
+	ApiBlockLvlSdt.prototype["SetBackgroundColor"]      = ApiBlockLvlSdt.prototype.SetBackgroundColor;
+	ApiBlockLvlSdt.prototype["GetBackgroundColor"]      = ApiBlockLvlSdt.prototype.GetBackgroundColor;
 
 	ApiFormBase.prototype["GetClassType"]        = ApiFormBase.prototype.GetClassType;
 	ApiFormBase.prototype["GetFormType"]         = ApiFormBase.prototype.GetFormType;
@@ -22891,6 +23166,8 @@
 	ApiCheckBoxForm.prototype["IsRadioButton"] = ApiCheckBoxForm.prototype.IsRadioButton;
 	ApiCheckBoxForm.prototype["GetRadioGroup"] = ApiCheckBoxForm.prototype.GetRadioGroup;
 	ApiCheckBoxForm.prototype["SetRadioGroup"] = ApiCheckBoxForm.prototype.SetRadioGroup;
+	ApiCheckBoxForm.prototype["GetChoiceName"] = ApiCheckBoxForm.prototype.GetChoiceName;
+	ApiCheckBoxForm.prototype["SetChoiceName"] = ApiCheckBoxForm.prototype.SetChoiceName;
 	ApiCheckBoxForm.prototype["Copy"]          = ApiCheckBoxForm.prototype.Copy;
 
 	ApiComment.prototype["GetClassType"]	= ApiComment.prototype.GetClassType;

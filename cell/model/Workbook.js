@@ -5760,7 +5760,7 @@
 	}
 	SheetMemory.prototype.checkIndex = function(index) {
 		if (index > this.maxIndex) {
-			return;
+			index = this.maxIndex;
 		}
 		if (this.data) {
 			let allocatedCount = this.getAllocatedCount();
@@ -5850,11 +5850,11 @@
 			this.indexA += insertCount;
 			this.indexB += insertCount;
 		} else {
-			let oldCount = (this.indexB + 1 - this.indexA);
 			this.checkIndex(this.indexB + insertCount);
-			var startOffset = (insA - this.indexA) * this.structSize;
-			var endOffset = (insB - this.indexA) * this.structSize;
-			var endData = oldCount * this.structSize;
+			const newCount = (this.indexB + 1 - this.indexA);
+			const startOffset = (insA - this.indexA) * this.structSize;
+			const endOffset = (insB - this.indexA) * this.structSize;
+			const endData = (newCount - insertCount) * this.structSize;
 			this.data.set(this.data.subarray(startOffset, endData), endOffset);
 			this.data.fill(0, startOffset, endOffset);
 		}
@@ -12911,6 +12911,9 @@
 			res = !res;
 		}
 
+		let counter = 0;
+		let bbox = oRange.getBBox0 && oRange.getBBox0();
+		let sizeRange = bbox ? bbox.getHeight() * bbox.getWidth() : null;
 		oRange._foreachNoEmpty(function(cell){
 			if (!cell) {
 				return;
@@ -12921,7 +12924,14 @@
 				res = true;
 				return true;
 			} else if (isLocked === false) {
-				res = false;
+				counter++;
+				if (res === true && sizeRange) {
+					if (counter === sizeRange) {
+						res = false;
+					}
+				} else {
+					res = false;
+				}
 			}
 		});
 

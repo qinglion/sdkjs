@@ -1177,7 +1177,7 @@
 	Api.prototype["pluginMethod_GetSelectedContent"] = function(prop)
 	{
 		let type = AscCommon.c_oAscClipboardDataFormat.Text;
-		if (prop && "html" === prop.type)
+		if (prop && "html" === prop["type"])
 			type = AscCommon.c_oAscClipboardDataFormat.Html;
 			
 		return this.getSelectedContent(type);
@@ -2094,6 +2094,26 @@
 	{
 		this.sendEvent("asc_onError", error, level);
 	};
+
+	/**
+	 * Callback from dockChangedEvents.
+	 * @undocumented
+	 * @memberof Api
+	 * @typeofeditors ["CDE", "CSE", "CPE", "PDF"]
+	 * @param {string} windowID - The frame ID.
+	 * @alias OnWindowDockChangedCallback
+	 * @since 8.2.2
+	 */
+	Api.prototype["pluginMethod_OnWindowDockChangedCallback"] = function(windowID)
+	{
+		let key = window.g_asc_plugins.getCurrentPluginGuid() + "_" + windowID;
+		if (window.g_asc_plugins.dockCallbacks[key])
+		{
+			window.g_asc_plugins.dockCallbacks[key]();
+			delete window.g_asc_plugins.dockCallbacks[key];
+		}
+	};
+
 })(window);
 
 

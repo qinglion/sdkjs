@@ -632,7 +632,7 @@
 	 */
 	window["asc_docs_api"].prototype["pluginMethod_AddContentControl"] = function(type, commonPr)
 	{
-		var _content_control_pr = readContentControlCommonPr(commonPr);
+		var _content_control_pr = readContentControlCommonPr(new AscCommon.CContentControlPr(), commonPr);
 
 		var _obj = this.asc_AddContentControl(type, _content_control_pr);
 		if (!_obj)

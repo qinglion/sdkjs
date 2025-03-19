@@ -5631,7 +5631,9 @@ ParaRun.prototype.Recalculate_Range_Spaces = function(PRSA, _CurLine, _CurRange,
 							// Обновляем позицию объекта
 							Item.Update_Position(PRSA.Paragraph, new CParagraphLayout( PRSA.X, PRSA.Y , PageAbs, PRSA.LastW, ColumnStartX, ColumnEndX, X_Left_Margin, X_Right_Margin, Page_Width, Top_Margin, Bottom_Margin, Page_H, PageFields.X, PageFields.Y, Para.Pages[CurPage].Y + Para.Lines[_CurLine].Y - Para.Lines[_CurLine].Metrics.Ascent, Para.Pages[_CurPage].Y), PageLimits, PageLimitsOrigin, _CurLine);
 							
-							if (PRSA.getCompatibilityMode() >= AscCommon.document_compatibility_mode_Word15
+							// For headers we do not check for exceeding lower bound in this case
+							if (!isInHdrFtr
+								&& PRSA.getCompatibilityMode() >= AscCommon.document_compatibility_mode_Word15
 								&& 0 === CurPage
 								&& Item.Get_Bounds().Bottom >= Y_Bottom_Field
 								&& Item.IsMoveWithTextVertically())
@@ -9630,27 +9632,26 @@ function CParaRunLine()
     this.Ranges[0]    = new CParaRunRange( 0, 0 );
     this.RangesLength = 0;
 }
+CParaRunLine.prototype.addRange = function(RangeIndex, StartPos, EndPos)
+{
+	if (0 !== RangeIndex)
+	{
+		this.Ranges[RangeIndex] = new CParaRunRange(StartPos, EndPos);
+		this.RangesLength       = RangeIndex + 1;
+	}
+	else
+	{
+		this.Ranges[0].StartPos = StartPos;
+		this.Ranges[0].EndPos   = EndPos;
+		this.RangesLength       = 1;
+	}
+	
+	if (this.Ranges.length > this.RangesLength)
+		this.Ranges.legth = this.RangesLength;
+};
 
 CParaRunLine.prototype =
 {
-    Add_Range : function(RangeIndex, StartPos, EndPos)
-    {
-        if ( 0 !== RangeIndex )
-        {
-            this.Ranges[RangeIndex] = new CParaRunRange( StartPos, EndPos );
-            this.RangesLength  = RangeIndex + 1;
-        }
-        else
-        {
-            this.Ranges[0].StartPos = StartPos;
-            this.Ranges[0].EndPos   = EndPos;
-            this.RangesLength = 1;
-        }
-
-        if ( this.Ranges.length > this.RangesLength )
-            this.Ranges.legth = this.RangesLength;
-    },
-
     Copy : function()
     {
         var NewLine = new CParaRunLine();
