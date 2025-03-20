@@ -609,7 +609,7 @@
 				}
 				else if (isHavePrChange && NumPr && !oPrevNumPr)
 				{
-					var oPrReviewColor = para.GetPrReviewColor();
+					let oPrReviewColor = para.GetPrReviewColor();
 					graphics.p_color(oPrReviewColor.r, oPrReviewColor.g, oPrReviewColor.b, 255);
 					graphics.drawHorLine(0, (Y + para.Lines[CurLine].Metrics.TextDescent * 0.4), X_start, X_start + NumberingItem.WidthNum + NumberingItem.WidthSuff, (oNumTextPr.FontSize / 18) * g_dKoef_pt_to_mm);
 				}
@@ -634,7 +634,7 @@
 					{
 						if (AscCommon.align_Left === nNumJc)
 							tabX += NumberingItem.WidthNum;
-						else if (AscCommon.align_Left === nNumJc)
+						else if (AscCommon.align_Center === nNumJc)
 							tabX += NumberingItem.WidthNum / 2;
 					}
 					
