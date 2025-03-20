@@ -9635,7 +9635,7 @@ background-repeat: no-repeat;\
 	};
 
 	asc_docs_api.prototype.getThumbnailsPosition = function () {
-		if(!this.isRTLInterface) {
+		if(!this.isRtlInterface) {
 			return this.thumbnailsPosition;
 		}
 		if(this.thumbnailsPosition === AscCommon.thumbnailsPositionMap.left) {

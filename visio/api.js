@@ -991,7 +991,7 @@
 		this.thumbnailsPosition = pos;
 	};
 	VisioEditorApi.prototype.getThumbnailsPosition = function () {
-		if(!this.isRTLInterface) {
+		if(!this.isRtlInterface) {
 			return this.thumbnailsPosition;
 		}
 		if(this.thumbnailsPosition === AscCommon.thumbnailsPositionMap.left) {

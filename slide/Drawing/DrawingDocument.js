@@ -4749,7 +4749,7 @@ function CThumbnailsManager(editorPage)
 
 		const delta = GetWheelDeltaY(e);
 		const isHorizontalOrientation = Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.bottom;
-		const isRightToLeft = Asc.editor.isRTLInterface;
+		const isRightToLeft = Asc.editor.isRtlInterface;
 		isHorizontalOrientation
 			? oThis.m_oWordControl.m_oScrollThumbApi.scrollBy(isRightToLeft ? -delta : delta, 0)
 			: oThis.m_oWordControl.m_oScrollThumbApi.scrollBy(0, delta, false);
@@ -5070,7 +5070,7 @@ function CThumbnailsManager(editorPage)
 
 		if (startCoord < 0) {
 			const size = endCoord - startCoord;
-			const shouldReversePageIndexes = Asc.editor.isRTLInterface &&
+			const shouldReversePageIndexes = Asc.editor.isRtlInterface &&
 				Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.bottom;
 			const pos = shouldReversePageIndexes
 				? (size + this.const_border_w) * (this.m_arrPages.length - pageNum - 1)
@@ -5284,12 +5284,12 @@ function CThumbnailsManager(editorPage)
 				if (Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.bottom) {
 					const textHeightMm = 10 * AscCommon.AscBrowser.retinaPixelRatio * g_dKoef_pix_to_mm;
 					textPosY = (page.top * g_dKoef_pix_to_mm + textHeightMm) / 2;
-					textPosX = Asc.editor.isRTLInterface
+					textPosX = Asc.editor.isRtlInterface
 						? page.right * g_dKoef_pix_to_mm - slideNumberTextWidth - 1 * AscCommon.AscBrowser.retinaPixelRatio
 						: page.left * g_dKoef_pix_to_mm + 1 * AscCommon.AscBrowser.retinaPixelRatio;
 				} else {
 					textPosY = page.top * g_dKoef_pix_to_mm + 3 * AscCommon.AscBrowser.retinaPixelRatio;
-					textPosX = Asc.editor.isRTLInterface
+					textPosX = Asc.editor.isRtlInterface
 						? canvasWidthMm - (digitDistance + slideNumberTextWidth) / 2
 						: (digitDistance - slideNumberTextWidth) / 2;
 				}
@@ -5319,7 +5319,7 @@ function CThumbnailsManager(editorPage)
 				if (logicDocument.isSlideAnimated(slideIndex)) {
 					let iconX, iconY;
 					if (Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.bottom) {
-						iconX = Asc.editor.isRTLInterface
+						iconX = Asc.editor.isRtlInterface
 							? textBounds.x - 3 - AscCommon.AscBrowser.convertToRetinaValue(19, true)
 							: textBounds.r + 3;
 						iconY = (textBounds.y + textBounds.b) / 2 - AscCommon.AscBrowser.convertToRetinaValue(9.5, true);
@@ -5345,7 +5345,7 @@ function CThumbnailsManager(editorPage)
 
 					let pinX, pinY;
 					if (Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.bottom) {
-						pinX = Asc.editor.isRTLInterface
+						pinX = Asc.editor.isRtlInterface
 							? textBounds.x - 3 - pinSizes.width
 							: textBounds.r + 3 + pinSizes.width / 2;
 						pinY = textBounds.b - pinSizes.height;
@@ -5532,7 +5532,7 @@ function CThumbnailsManager(editorPage)
 	};
 	this.drawThumbnailsInsertionLine = function (context, canvasWidth, canvasHeight) {
 		const isHorizontalThumbnails = Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.bottom;
-		const isRightToLeft = Asc.editor.isRTLInterface;
+		const isRightToLeft = Asc.editor.isRtlInterface;
 		const nPosition = this.MouseDownTrack.GetPosition();
 		const oPage = this.m_arrPages[nPosition - 1];
 
@@ -5891,7 +5891,7 @@ function CThumbnailsManager(editorPage)
 			return -1;
 
 		const isHorizontalThumbnails = Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.bottom;
-		const isRightToLeft = Asc.editor.isRTLInterface;
+		const isRightToLeft = Asc.editor.isRtlInterface;
 
 		let minDistance = Infinity;
 		let minPositionPage = 0;
@@ -5946,7 +5946,7 @@ function CThumbnailsManager(editorPage)
 		const pixelRatio = AscCommon.AscBrowser.retinaPixelRatio * g_dKoef_mm_to_pix;
 		const isVerticalThumbnails = Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.right
 			|| Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.left;
-		const isRightToLeft = Asc.editor.isRTLInterface;
+		const isRightToLeft = Asc.editor.isRtlInterface;
 
 		let thSlideWidthPx, thSlideHeightPx;
 		let startOffset, supplement;
@@ -6268,7 +6268,7 @@ function CThumbnailsManager(editorPage)
 			}
 			wordControl.m_oScrollThumb_.isHorizontalScroll = isHorizontalOrientation;
 
-			if (Asc.editor.isRTLInterface && isHorizontalOrientation && this.m_dScrollY_max === 0) {
+			if (Asc.editor.isRtlInterface && isHorizontalOrientation && this.m_dScrollY_max === 0) {
 				wordControl.m_oScrollThumbApi.scrollToX(wordControl.m_oScrollThumbApi.maxScrollX);
 			}
 		}

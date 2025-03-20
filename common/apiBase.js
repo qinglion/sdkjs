@@ -244,11 +244,6 @@
 		this._correctEmbeddedWork();
 
 
-		this.isRTLInterface = false;
-		if (config['isRtlInterface'] === true) {
-			this.isRTLInterface = true;
-		}
-
 		return this;
 	}
 
@@ -5499,7 +5494,7 @@
 	};
 
 	baseEditorsApi.prototype.asc_SetRTLInterface = function(isRTL) {
-		this.isRTLInterface = isRTL;
+		this.isRtlInterface = isRTL;
 		this.onChangeRTLInterface();
 	};
 	baseEditorsApi.prototype.onChangeRTLInterface = function() {
