@@ -588,7 +588,7 @@ Paragraph.prototype.private_RecalculateFastRange       = function(PRS, CurRange,
 
     PRS.XStart = XStart;
     PRS.YStart = YStart;
-    PRS.XLimit = XLimit - ParaPr.Ind.Right;
+    PRS.XLimit = XLimit;// - ParaPr.Ind.Right;
     PRS.YLimit = YLimit;
 
     // Обнуляем параметры PRS для строки и отрезка
@@ -829,7 +829,7 @@ Paragraph.prototype.private_RecalculatePageXY          = function(CurLine, CurPa
 
     PRS.XStart = XStart;
     PRS.YStart = YStart;
-    PRS.XLimit = XLimit - ParaPr.Ind.Right;
+    PRS.XLimit = XLimit;// - ParaPr.Ind.Right;
     PRS.YLimit = YLimit;
     PRS.Y      = YStart;
 
@@ -1163,7 +1163,7 @@ Paragraph.prototype.private_RecalculateLineFillRanges  = function(CurLine, CurPa
 	this.Lines[CurLine].Reset();
 	if (paraPr.Bidi)
 	{
-		let xStart = PRS.XStart;
+		let xStart = PRS.XStart + paraPr.Ind.Right;
 		
 		let x0 = RangesCount > 0 ? Ranges[Ranges.length - 1].X1 : xStart;
 		let x1 = (UseFirstLine ? PRS.XLimit - paraPr.Ind.Left - paraPr.Ind.FirstLine : PRS.XLimit - paraPr.Ind.Left);
@@ -1178,7 +1178,7 @@ Paragraph.prototype.private_RecalculateLineFillRanges  = function(CurLine, CurPa
 	}
 	else
 	{
-		let xLimit = PRS.XLimit;
+		let xLimit = PRS.XLimit - paraPr.Ind.Right;
 		
 		let x0 = (UseFirstLine ? PRS.XStart + paraPr.Ind.Left + paraPr.Ind.FirstLine : PRS.XStart + paraPr.Ind.Left);
 		let x1 = RangesCount > 0 ? Ranges[0].X0 : xLimit;
@@ -1943,19 +1943,15 @@ Paragraph.prototype.private_RecalculateLineAlign       = function(CurLine, CurPa
             Item.Recalculate_Range_Width( PRSC, CurLine, CurRange );
         }
 		
-		// TODO: Right edge is wrong
+		
 		let jc = ParaPr.Jc;
-		if (ParaPr.Bidi && (jc === AscCommon.align_Left || jc === AscCommon.align_Justify))
-		{
-			PRSC.Range.W += PRSC.SpaceLen;
-			PRSC.SpaceLen = 0;
-		}
-
         var JustifyWord  = 0;
         var JustifySpace = 0;
         var RangeWidth   = Range.XEnd - Range.X;
 
         var X = 0;
+		
+		let rtlShift = PRSC.SpaceLen + Range.WBreak + PRSC.Range.WEnd;
 
         // Если данный отрезок содержит только формулу, тогда прилегание данного отрезка определяется формулой
         var ParaMath = this.Check_Range_OnlyMath(CurRange, CurLine);
@@ -1968,109 +1964,155 @@ Paragraph.prototype.private_RecalculateLineAlign       = function(CurLine, CurPa
         }
         else
         {
-            if (this.Lines[CurLine].Info & paralineinfo_BadLeftTab)
-            {
-                X            = Range.X;
-                JustifyWord  = 0;
-                JustifySpace = 0;
-            }
-            else
-            {
+			if (this.Lines[CurLine].Info & paralineinfo_BadLeftTab)
+			{
 				if (ParaPr.Bidi)
-				{
-					if (AscCommon.align_Left === jc)
-						jc = AscCommon.align_Right;
-					else if (AscCommon.align_Right === jc)
-						jc = AscCommon.align_Left;
-				}
+					X = Range.X + RangeWidth - Range.W - rtlShift;
+				else
+					X = Range.X;
 				
+				JustifyWord  = 0;
+				JustifySpace = 0;
+			}
+			else
+			{
 				// RangeWidth - ширина всего пространства в данном отрезке, а Range.W - ширина занимаемого пространства
-                switch (jc)
-                {
-                    case AscCommon.align_Left :
-                    {
-                        X = Range.X;
-                        break;
-                    }
-                    case AscCommon.align_Right:
-                    {
-						X = Range.X + RangeWidth - Range.W;
-
-                    	if (this.IsUseXLimit())
-                        	X = Math.max(X, Range.X);
-
-                        break;
-                    }
-                    case AscCommon.align_Center:
-                    {
-                        X = Range.X + (RangeWidth - Range.W) / 2;
-
-						if (this.IsUseXLimit())
-							X = Math.max(X, Range.X);
-
-                        break;
-                    }
-                    case AscCommon.align_Justify:
-                    {
-                        X = Range.X;
-
-                        // Проверяем по количеству пробелов, т.к., например, в китайском языке пробелов нет, но
-						// каждый иероглиф как отдельное слово идет.
-                        if (1 == PRSC.Words || PRSC.Spaces <= 0)
+				switch (jc)
+				{
+					case AscCommon.align_Left :
+					{
+						if (ParaPr.Bidi)
+						{
+							X = Range.X + RangeWidth - Range.W - rtlShift;
+							if (this.IsUseXLimit())
+								X = Math.max(X, Range.X - rtlShift);
+						}
+						else
+						{
+							X = Range.X;
+						}
+						break;
+					}
+					case AscCommon.align_Right:
+					{
+						if (ParaPr.Bidi)
+						{
+							X = Range.X - rtlShift;
+							if (this.IsUseXLimit())
+								X = Math.max(X, Range.X - rtlShift);
+						}
+						else
+						{
+							X = Range.X + RangeWidth - Range.W;
+							if (this.IsUseXLimit())
+								X = Math.max(X, Range.X);
+						}
+						
+						break;
+					}
+					case AscCommon.align_Center:
+					{
+						if (ParaPr.Bidi)
+						{
+							X = Range.X + (RangeWidth - Range.W) / 2 - rtlShift;
+							if (this.IsUseXLimit())
+								X = Math.max(X, Range.X - rtlShift);
+						}
+						else
+						{
+							X = Range.X + (RangeWidth - Range.W) / 2;
+							if (this.IsUseXLimit())
+								X = Math.max(X, Range.X);
+						}
+						break;
+					}
+					case AscCommon.align_Justify:
+					{
+						if (Range.WEnd > AscWord.EPSILON || (Range.WBreak > AscWord.EPSILON && isDoNotExpandShiftReturn))
+						{
+							if (ParaPr.Bidi)
+								X = Range.X + RangeWidth - Range.W - rtlShift;
+							else
+								X = Range.X;
+							
+							JustifyWord  = 0;
+							JustifySpace = 0;
+						}
+                        else if (1 === PRSC.Words || PRSC.Spaces <= 0)
                         {
-                            if (1 == RangesCount && !(Line.Info & paralineinfo_End))
+							// Проверяем по количеству пробелов, т.к., например, в китайском языке пробелов нет, но
+							// каждый иероглиф как отдельное слово идет.
+                            if (1 === RangesCount && !(Line.Info & paralineinfo_End) && !ParaPr.Bidi)
                             {
+								X = Range.X;
                                 // Либо слово целиком занимает строку, либо не целиком, но разница очень мала
 								// либо это набор китайских иероглифов (PRSC.Words > 1)
                                 if ((RangeWidth - Range.W <= 0.05 * RangeWidth || PRSC.Words > 1) && PRSC.Letters > 1)
                                     JustifyWord = (RangeWidth - Range.W) / (PRSC.Letters - 1);
                             }
-                            else if (0 == CurRange || Line.Info & paralineinfo_End)
+                            else if (0 === CurRange || Line.Info & paralineinfo_End)
                             {
                                 // TODO: Здесь нужно улучшить проверку, т.к. отключено выравнивание по центру для всей
                                 //       последней строки, а нужно отключить для последнего отрезка, в котором идет
                                 //       конец параграфа.
-                                
-                                // Ничего не делаем (выравниваем текст по левой границе)
-                            }
-                            else if (CurRange == RangesCount - 1)
-                            {
-                                X = Range.X + RangeWidth - Range.W;
-                            }
-                            else
-                            {
-                                X = Range.X + (RangeWidth - Range.W) / 2;
-                            }
-                        }
-                        else
-                        {
-                            // TODO: Переделать проверку последнего отрезка в последней строке (нужно выставлять флаг когда пришел PRS.End в отрезке)
-
-                            // Последний промежуток последней строки не надо растягивать по ширине.
-                            if (PRSC.Spaces > 0 && (!(Line.Info & paralineinfo_End) || CurRange != Line.Ranges.length - 1))
-                                JustifySpace = (RangeWidth - Range.W) / PRSC.Spaces;
-                            else
-                                JustifySpace = 0;
-                        }
-
-                        break;
-                    }
-                    default:
-                    {
-                        X = Range.X;
-                        break;
-                    }
-                }
-            }
-
-            // В последнем отрезке последней строки не делаем текст "по ширине"
-            if ((CurLine === this.ParaEnd.Line && CurRange === this.ParaEnd.Range) || (this.Lines[CurLine].Info & paralineinfo_BreakLine && isDoNotExpandShiftReturn))
-            {
-                JustifyWord  = 0;
-                JustifySpace = 0;
-            }
-        }
-
+								if (ParaPr.Bidi)
+									X = Range.X + RangeWidth - Range.W - rtlShift;
+								else
+									X = Range.X;
+							}
+							else if (CurRange === RangesCount - 1)
+							{
+								if (ParaPr.Bidi)
+									X = Range.X - rtlShift;
+								else
+									X = Range.X + RangeWidth - Range.W;
+							}
+							else
+							{
+								if (ParaPr.Bidi)
+									X = Range.X + (RangeWidth - Range.W) / 2 - rtlShift;
+								else
+									X = Range.X + (RangeWidth - Range.W) / 2;
+							}
+						}
+						else
+						{
+							// TODO: Переделать проверку последнего отрезка в последней строке (нужно выставлять флаг когда пришел PRS.End в отрезке)
+							
+							// Последний промежуток последней строки не надо растягивать по ширине.
+							if (PRSC.Spaces > 0 && (!(Line.Info & paralineinfo_End) || CurRange !== Line.Ranges.length - 1))
+							{
+								if (ParaPr.Bidi)
+									X = Range.X - rtlShift;
+								else
+									X = Range.X;
+								
+								JustifySpace = (RangeWidth - Range.W) / PRSC.Spaces;
+							}
+							else
+							{
+								if (ParaPr.Bidi)
+									X = Range.X + RangeWidth - Range.W - rtlShift;
+								else
+									X = Range.X;
+								
+								JustifySpace = 0;
+							}
+						}
+						break;
+					}
+					default:
+					{
+						if (ParaPr.Bidi)
+							X = Range.X + RangeWidth - Range.W - rtlShift;
+						else
+							X = Range.X;
+						break;
+					}
+				}
+			}
+		}
+		
         Range.Spaces = PRSC.Spaces + PRSC.SpacesSkip;
 
         PRSA.X    = X;
@@ -2090,13 +2132,6 @@ Paragraph.prototype.private_RecalculateLineAlign       = function(CurLine, CurPa
             PRSA.Y1 += _LineMetrics.LineGap;
 
         this.Lines[CurLine].Ranges[CurRange].XVisible = X;
-		if (ParaPr.Bidi && Line.Info & paralineinfo_End && CurRange === Line.Ranges.length - 1)
-		{
-			let paraMark = this.GetParaEndRun().GetParaEnd();
-			if (paraMark)
-				this.Lines[CurLine].Ranges[CurRange].XVisible -= paraMark.GetWidthVisible();
-		}
-			
 
         if ( 0 === CurRange )
             this.Lines[CurLine].X = X - PRSW.XStart;

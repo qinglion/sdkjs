@@ -12918,6 +12918,9 @@
 			res = !res;
 		}
 
+		let counter = 0;
+		let bbox = oRange.getBBox0 && oRange.getBBox0();
+		let sizeRange = bbox ? bbox.getHeight() * bbox.getWidth() : null;
 		oRange._foreachNoEmpty(function(cell){
 			if (!cell) {
 				return;
@@ -12928,7 +12931,14 @@
 				res = true;
 				return true;
 			} else if (isLocked === false) {
-				res = false;
+				counter++;
+				if (res === true && sizeRange) {
+					if (counter === sizeRange) {
+						res = false;
+					}
+				} else {
+					res = false;
+				}
 			}
 		});
 

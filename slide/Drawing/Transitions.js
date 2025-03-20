@@ -4104,7 +4104,8 @@ function CDemonstrationManager(htmlpage)
 
         AscCommon.global_mouseEvent.UnLockMouse();
 
-		oThis.isMouseDown = false;
+				const isMouseDown = oThis.isMouseDown;
+				oThis.isMouseDown = false;
 		if (isFromMainToReporter && oThis.PointerDiv && oThis.HtmlPage.m_oApi.isReporterMode)
 		    oThis.PointerRemove();
 
@@ -4137,29 +4138,30 @@ function CDemonstrationManager(htmlpage)
 
         // next slide
         oThis.CorrectSlideNum();
+			if (isMouseDown) {
+				var _is_transition = oThis.Transition.IsPlaying();
+				if (_is_transition)
+				{
+					oThis.OnNextSlide();
+				}
+				else
+				{
+					if (oThis.SlideNum < 0 || oThis.SlideNum >= oThis.GetSlidesCount())
+					{
+						oThis.OnNextSlide();
+					}
+					else
+					{
+						var _slides = oThis.HtmlPage.m_oLogicDocument.Slides;
+						var _transition = _slides[oThis.SlideNum].transition;
 
-        var _is_transition = oThis.Transition.IsPlaying();
-        if (_is_transition)
-        {
-            oThis.OnNextSlide();
-        }
-        else
-        {
-            if (oThis.SlideNum < 0 || oThis.SlideNum >= oThis.GetSlidesCount())
-            {
-                oThis.OnNextSlide();
-            }
-            else
-            {
-                var _slides = oThis.HtmlPage.m_oLogicDocument.Slides;
-                var _transition = _slides[oThis.SlideNum].transition;
-
-                if (_transition.SlideAdvanceOnMouseClick === true)
-                {
-                    oThis.OnNextSlide();
-                }
-            }
-        }
+						if (_transition.SlideAdvanceOnMouseClick === true)
+						{
+							oThis.OnNextSlide();
+						}
+					}
+				}
+			}
 
 		AscCommon.stopEvent(e);
         return false;

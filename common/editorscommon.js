@@ -15153,6 +15153,7 @@
 	window["AscCommon"].trimMinMaxValue = trimMinMaxValue;
 	window["AscCommon"].cStrucTableReservedWords = cStrucTableReservedWords;
 	window["AscCommon"].getArrayRandomElement = getArrayRandomElement;
+	window["AscCommon"].rx_error = rx_error;
 })(window);
 
 window["asc_initAdvancedOptions"] = function(_code, _file_hash, _docInfo, csv_data)
