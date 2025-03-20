@@ -8160,10 +8160,20 @@ Paragraph.prototype.Selection_SetStart = function(X, Y, CurPage, bTableBorder)
 	this.Set_ParaContentPos(pos2, true, line, range);
 	this.Set_SelectionContentPos(pos2, pos2, true, line, range, line, range);
 	
-	if (SearchPosXY2.isNumbering() && undefined !== this.GetNumPr())
+	if (SearchPosXY2.isNumbering())
 	{
-		this.Set_ParaContentPos(this.Get_StartPos(), true, -1, -1);
-		this.Parent.SelectNumbering(this.GetNumPr(), this);
+		let numPr = this.GetNumPr();
+		let prevNumPr = this.GetPrChangeNumPr();
+		if (numPr && numPr.IsValid())
+		{
+			this.Set_ParaContentPos(this.Get_StartPos(), true, -1, -1);
+			this.Parent.SelectNumbering(numPr, this);
+		}
+		else if (prevNumPr && prevNumPr.IsValid())
+		{
+			this.Set_ParaContentPos(this.Get_StartPos(), true, -1, -1);
+			this.Parent.SelectNumberingSingleParagraph(this);
+		}
 	}
 };
 /**
@@ -8652,11 +8662,18 @@ Paragraph.prototype.DrawSelectionOnPage = function(CurPage, clipInfo)
 			let SelectX2 = SelectX;
 			let SelectW2 = ParaNum.WidthNum;
 
-			var oNumPr = this.GetNumPr();
-			if (!oNumPr)
+			let numLvl    = null;
+			let numPr     = this.GetNumPr();
+			let prevNumPr = this.GetPrChangeNumPr();
+			if (numPr)
+				numLvl = this.Parent.GetNumbering().GetNum(numPr.NumId).GetLvl(numPr.Lvl);
+			else if (prevNumPr)
+				numLvl = this.Parent.GetNumbering().GetNum(prevNumPr.NumId).GetLvl(undefined !== prevNumPr.Lvl && null !== prevNumPr.Lvl ? prevNumPr.Lvl : 0);
+			
+			if (!numLvl)
 				break;
-
-			let numJc = this.Parent.GetNumbering().GetNum(oNumPr.NumId).GetLvl(oNumPr.Lvl).GetJc();
+			
+			let numJc = numLvl.GetJc();
 			
 			if (this.isRtlDirection())
 			{
@@ -8853,9 +8870,9 @@ Paragraph.prototype.Selection_SelectNumbering = function()
 		this.Selection.Flag = selectionflag_Numbering;
 	}
 };
-Paragraph.prototype.SelectNumbering = function(isCurrent)
+Paragraph.prototype.SelectNumbering = function(isCurrent, isForce)
 {
-	if (this.HaveNumbering())
+	if (this.HaveNumbering() || isForce)
 	{
 		this.Selection.Use  = true;
 		this.Selection.Flag = isCurrent ? selectionflag_NumberingCur : selectionflag_Numbering;

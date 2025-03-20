@@ -478,10 +478,17 @@
 	{
 		let p = this.paragraph;
 		let numPr = p.GetNumPr();
+		let prevNumPr = p.GetPrChangeNumPr();
+		let numLvl = null;
+		if (numPr && numPr.IsValid())
+			numLvl = p.Parent.GetNumbering().GetNum(numPr.NumId).GetLvl(numPr.Lvl);
+		else if (prevNumPr && prevNumPr.IsValid())
+			numLvl = p.Parent.GetNumbering().GetNum(prevNumPr.NumId).GetLvl(undefined !== prevNumPr.Lvl && null !== prevNumPr.Lvl ? prevNumPr.Lvl : 0);
+		
 		let numWidthVisible = p.Numbering.WidthVisible;
-		if (para_Numbering === p.Numbering.Type && numPr && numPr.IsValid())
+		if (para_Numbering === p.Numbering.Type && numLvl)
 		{
-			let numJc = p.Parent.GetNumbering().GetNum(numPr.NumId).GetLvl(numPr.Lvl).GetJc();
+			let numJc = numLvl.GetJc();
 			
 			let numX0 = this.curX;
 			let numX1 = this.curX;
