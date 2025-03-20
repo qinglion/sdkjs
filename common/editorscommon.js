@@ -1529,7 +1529,7 @@
 		let argsSeparator = FormulaSeparators.functionArgumentSeparator;
 		return XRegExp.build('^(?<tableName>{{tableName}})\\[(?<columnName1>{{columnName}})?\\]', {
 			"tableName":  new XRegExp("^(:?[" + str_namedRanges + "][" + str_namedRanges + "\\d.]*)"),
-			"columnName": XRegExp.build('(?<hdtcc>{{hdtcc}})|(?<reservedColumn>{{reservedColumn}}|{{thisRow}})|(?<oneColumn>{{userColumn}})|(?<columnRange>{{userColumnRange}})', {
+			"columnName": XRegExp.build('(?<hdtcc>{{hdtcc}})|(?<reservedColumn>{{reservedColumn}}|{{thisRow}})|(?<columnRange>{{userColumnRange}})|(?<oneColumn>{{userColumn}})', {
 				"userColumn":      structured_tables_userColumn,
 				"reservedColumn":  structured_tables_reservedColumn,
 				"thisRow": structured_tables_thisRow,
@@ -15153,6 +15153,7 @@
 	window["AscCommon"].trimMinMaxValue = trimMinMaxValue;
 	window["AscCommon"].cStrucTableReservedWords = cStrucTableReservedWords;
 	window["AscCommon"].getArrayRandomElement = getArrayRandomElement;
+	window["AscCommon"].rx_error = rx_error;
 })(window);
 
 window["asc_initAdvancedOptions"] = function(_code, _file_hash, _docInfo, csv_data)
