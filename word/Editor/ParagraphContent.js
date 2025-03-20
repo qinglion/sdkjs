@@ -224,7 +224,7 @@ ParaNumbering.prototype.GetCalculatedNumId = function()
  * Нужно ли отрисовывать исходную нумерацию
  * @returns {boolean}
  */
-ParaNumbering.prototype.HaveSourceNumbering = function()
+ParaNumbering.prototype.havePrevNumbering = function()
 {
 	return !!this.Internal.SourceNumInfo;
 };
@@ -232,7 +232,7 @@ ParaNumbering.prototype.HaveSourceNumbering = function()
  * Нужно ли отрисовывать финальную нумерацию
  * @returns {boolean}
  */
-ParaNumbering.prototype.HaveFinalNumbering = function()
+ParaNumbering.prototype.haveFinalNumbering = function()
 {
 	return !!this.Internal.FinalNumInfo;
 };
@@ -240,9 +240,31 @@ ParaNumbering.prototype.HaveFinalNumbering = function()
  * Получаем ширину исходной нумерации
  * @returns {number}
  */
-ParaNumbering.prototype.GetSourceWidth = function()
+ParaNumbering.prototype.getPrevNumWidth = function()
 {
 	return this.Internal.SourceWidth;
+};
+/**
+ * Get the full width of the numbering element (including prev and final numberings)
+ */
+ParaNumbering.prototype.getNumWidth = function()
+{
+	return this.WidthNum;
+};
+/**
+ * Get the width of the suffix
+ */
+ParaNumbering.prototype.getSuffWidth = function()
+{
+	return this.WidthSuff;
+};
+/**
+ * Get visible width of the current numbering element
+ * @return {number}
+ */
+ParaNumbering.prototype.getVisibleWidth = function()
+{
+	return this.WidthVisible;
 };
 ParaNumbering.prototype.GetFontSlot = function(oTextPr)
 {
