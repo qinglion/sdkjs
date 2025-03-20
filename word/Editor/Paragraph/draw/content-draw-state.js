@@ -430,10 +430,21 @@
 			let prevNumPr = para.GetPrChangeNumPr();
 			let numPr     = Pr.ParaPr.NumPr;
 			
+			if (prevNumPr && prevNumPr.IsValid())
+			{
+				prevNumPr = prevNumPr.Copy();
+				if (undefined === prevNumPr.Lvl)
+					prevNumPr.Lvl = 0;
+			}
+			else
+			{
+				prevNumPr = null;
+			}
+			
 			var isHaveNumbering = false;
 			if ((undefined === para.Get_SectionPr() || true !== para.IsEmpty())
 				&& (!para.Parent || !para.Parent.IsEmptyParagraphAfterTableInTableCell(para.GetIndex()))
-				&& ((numPr && numPr.IsValid()) || (prevNumPr && prevNumPr.IsValid() && undefined !== prevNumPr.Lvl)))
+				&& ((numPr && numPr.IsValid()) || (prevNumPr && prevNumPr.IsValid())))
 			{
 				isHaveNumbering = true;
 			}
@@ -457,7 +468,7 @@
 				var oNumTextPr = para.GetNumberingTextPr();
 				
 				var oPrevNumTextPr = prevNumPr ? para.Get_CompiledPr2(false).TextPr.Copy() : null;
-				if (oPrevNumTextPr && (prevNumPr && prevNumPr.IsValid() && undefined !== prevNumPr.Lvl))
+				if (oPrevNumTextPr && (prevNumPr && prevNumPr.IsValid()))
 				{
 					var oPrevNumLvl = oNumbering.GetNum(prevNumPr.NumId).GetLvl(prevNumPr.Lvl);
 					oPrevNumTextPr.Merge(para.TextPr.Value.Copy());

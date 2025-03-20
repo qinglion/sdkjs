@@ -3657,11 +3657,19 @@ CParagraphRecalculateStateWrap.prototype.Recalculate_Numbering = function(Item, 
 		
 		var NumPr = ParaPr.NumPr;
 		
-		if (NumPr && (undefined === NumPr.NumId || 0 === NumPr.NumId || "0" === NumPr.NumId))
+		if (!NumPr || !NumPr.IsValid())
 			NumPr = undefined;
 		
-		if (oPrevNumPr && (undefined === oPrevNumPr.NumId || 0 === oPrevNumPr.NumId || "0" === oPrevNumPr.NumId || undefined === oPrevNumPr.Lvl))
+		if (!oPrevNumPr || !oPrevNumPr.IsValid())
+		{
 			oPrevNumPr = undefined;
+		}
+		else
+		{
+			oPrevNumPr = oPrevNumPr.Copy();
+			if (undefined === oPrevNumPr.Lvl)
+				oPrevNumPr.Lvl = 0;
+		}
 		
 		var isHaveNumbering = false;
 		if ((undefined === Para.Get_SectionPr() || true !== Para.IsEmpty()) && (NumPr || oPrevNumPr))
