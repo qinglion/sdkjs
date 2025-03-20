@@ -1447,6 +1447,126 @@
 	};
 
 	/**
+	 * Returns an array with all the OLE objects from the current presentation.
+	 * @memberof ApiPresentation
+	 * @typeofeditors ["CPE"]
+     * @returns {ApiOleObject[]}
+	 * @see office-js-api/Examples/{Editor}/ApiPresentation/Methods/GetAllOleObjects.js
+	 */
+	ApiPresentation.prototype.GetAllOleObjects = function () {
+		const aOleObjects = [];
+
+		function collectOleObjects(aSource) {
+			aSource.forEach(function (oSource) {
+				oSource.GetAllOleObjects().forEach(function (oOleObject) {
+					aOleObjects.push(oOleObject);
+				});
+			});
+		}
+
+		const aSlides = this.GetAllSlides();
+		const aMasters = this.GetAllSlideMasters();
+
+		collectOleObjects(aSlides);
+		collectOleObjects(aMasters);
+		aMasters.forEach(function (oMaster) {
+			collectOleObjects(oMaster.GetAllLayouts());
+		});
+
+		return aOleObjects;
+	};
+
+	/**
+	 * Returns an array with all the chart objects from the current presentation.
+	 * @memberof ApiPresentation
+	 * @typeofeditors ["CPE"]
+	 * @returns {ApiChart[]}
+	 * @see office-js-api/Examples/{Editor}/ApiPresentation/Methods/GetAllCharts.js
+	 */
+	ApiPresentation.prototype.GetAllCharts = function () {
+		const aCharts = [];
+
+		function collectCharts(aSource) {
+			aSource.forEach(function (oSource) {
+				oSource.GetAllCharts().forEach(function (oChart) {
+					aCharts.push(oChart);
+				});
+			});
+		}
+
+		const aSlides = this.GetAllSlides();
+		const aMasters = this.GetAllSlideMasters();
+
+		collectCharts(aSlides);
+		collectCharts(aMasters);
+		aMasters.forEach(function (oMaster) {
+			collectCharts(oMaster.GetAllLayouts());
+		});
+
+		return aCharts;
+	};
+
+	/**
+	 * Returns an array with all the shape objects from the current presentation.
+	 * @memberof ApiPresentation
+	 * @typeofeditors ["CPE"]
+	 * @returns {ApiShape[]}
+	 * @see office-js-api/Examples/{Editor}/ApiPresentation/Methods/GetAllShapes.js
+	 */
+	ApiPresentation.prototype.GetAllShapes = function () {
+		const aShapes = [];
+
+		function collectShapes(aSource) {
+			aSource.forEach(function (oSource) {
+				oSource.GetAllShapes().forEach(function (oShape) {
+					aShapes.push(oShape);
+				});
+			});
+		}
+
+		const aSlides = this.GetAllSlides();
+		const aMasters = this.GetAllSlideMasters();
+
+		collectShapes(aSlides);
+		collectShapes(aMasters);
+		aMasters.forEach(function (oMaster) {
+			collectShapes(oMaster.GetAllLayouts());
+		});
+
+		return aShapes;
+	};
+
+	/**
+	 * Returns an array with all the image objects from the current presentation.
+	 * @memberof ApiPresentation
+	 * @typeofeditors ["CPE"]
+	 * @returns {ApiImage[]}
+	 * @see office-js-api/Examples/{Editor}/ApiPresentation/Methods/GetAllImages.js
+	 */
+	ApiPresentation.prototype.GetAllImages = function () {
+		const aImages = [];
+
+		function collectImages(aSource) {
+			aSource.forEach(function (oSource) {
+				oSource.GetAllImages().forEach(function (oImage) {
+					aImages.push(oImage);
+				});
+			});
+		}
+
+		const aSlides = this.GetAllSlides();
+		const aMasters = this.GetAllSlideMasters();
+
+		collectImages(aSlides);
+		collectImages(aMasters);
+		aMasters.forEach(function (oMaster) {
+			collectImages(oMaster.GetAllLayouts());
+		});
+
+		return aImages;
+	};
+
+	/**
 	 * Returns the document information:
 	 * <b>Application</b> - the application the document has been created with.
 	 * <b>CreatedRaw</b> - the date and time when the file was created.
@@ -1546,6 +1666,21 @@
     {
         return "master";
     };
+
+	/**
+	 * Returns all layouts from the slide master
+	 * @typeofeditors ["CPE"]
+	 * @returns {ApiLayout[]} - returns an empty array if the slide master doesn't have layouts.
+	 * @see office-js-api/Examples/{Editor}/ApiMaster/Methods/GetAllLayouts.js
+	 */
+	ApiMaster.prototype.GetAllLayouts = function () {
+		const aLayouts = this.Master.sldLayoutLst;
+		const aApiLayouts = [];
+		aLayouts.forEach(function (oLayout) {
+			aApiLayouts.push(new ApiLayout(oLayout));
+		});
+		return aApiLayouts;
+	};
 
     /**
      * Returns a layout of the specified slide master by its position.
