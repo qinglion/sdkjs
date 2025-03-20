@@ -482,7 +482,7 @@
 	{
 		if (!fonts)
 		{
-			fonts = ["Arial", "Symbol", "Wingdings", "Courier New", "Times New Roman"];
+			fonts = ["Arial", "Symbol", "Wingdings", "Courier New", "Times New Roman", "Calibri", "Calibri Light"];
 		}
 		this.FontLoader.LoadFontsFromServer(fonts);
 	};
