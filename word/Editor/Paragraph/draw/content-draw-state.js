@@ -305,6 +305,7 @@
 	};
 	/**
 	 * @param text {AscWord.CRunText}
+	 * @param direction {AscBidi.DIRECTION}
 	 */
 	ParagraphContentDrawState.prototype.handleText = function(text, direction)
 	{
@@ -408,8 +409,6 @@
 	{
 		let graphics = this.Graphics;
 		let BgColor  = this.drawState.getBgColor();
-		let Theme    = this.drawState.getTheme();
-		let ColorMap = this.drawState.getColorMap();
 		let Pr       = this.drawState.getParagraphCompiledPr();
 		let isRtl    = Pr.ParaPr.Bidi;
 		
@@ -423,32 +422,23 @@
 		var nReviewType  = para.GetReviewType();
 		var oReviewColor = para.GetReviewColor();
 		
-		var NumberingItem = para.Numbering;
-		if (para_Numbering === NumberingItem.Type)
+		let numItem = para.Numbering;
+		if (para_Numbering === numItem.Type)
 		{
 			var isHavePrChange = para.HavePrChange();
-			var oPrevNumPr     = para.GetPrChangeNumPr();
 			
-			var NumPr = Pr.ParaPr.NumPr;
+			let prevNumPr = para.GetPrChangeNumPr();
+			let numPr     = Pr.ParaPr.NumPr;
 			
 			var isHaveNumbering = false;
-			if ((undefined === para.Get_SectionPr()
-					|| true !== para.IsEmpty())
+			if ((undefined === para.Get_SectionPr() || true !== para.IsEmpty())
 				&& (!para.Parent || !para.Parent.IsEmptyParagraphAfterTableInTableCell(para.GetIndex()))
-				&& ((NumPr
-						&& undefined !== NumPr.NumId
-						&& 0 !== NumPr.NumId
-						&& "0" !== NumPr.NumId)
-					|| (oPrevNumPr
-						&& undefined !== oPrevNumPr.NumId
-						&& undefined !== oPrevNumPr.Lvl
-						&& 0 !== oPrevNumPr.NumId
-						&& "0" !== oPrevNumPr.NumId)))
+				&& ((numPr && numPr.IsValid()) || (prevNumPr && prevNumPr.IsValid() && undefined !== prevNumPr.Lvl)))
 			{
 				isHaveNumbering = true;
 			}
 			
-			if (!isHaveNumbering || (!NumPr && !oPrevNumPr))
+			if (!isHaveNumbering || (!numPr && !prevNumPr))
 			{
 				// Ничего не делаем
 			}
@@ -457,43 +447,41 @@
 				var oNumbering = para.Parent.GetNumbering();
 				
 				var oNumLvl = null;
-				if (NumPr)
-					oNumLvl = oNumbering.GetNum(NumPr.NumId).GetLvl(NumPr.Lvl);
-				else if (oPrevNumPr)
-					oNumLvl = oNumbering.GetNum(oPrevNumPr.NumId).GetLvl(oPrevNumPr.Lvl);
+				if (numPr)
+					oNumLvl = oNumbering.GetNum(numPr.NumId).GetLvl(numPr.Lvl);
+				else if (prevNumPr)
+					oNumLvl = oNumbering.GetNum(prevNumPr.NumId).GetLvl(prevNumPr.Lvl);
 				
 				var nNumSuff   = oNumLvl.GetSuff();
 				var nNumJc     = oNumLvl.GetJc();
 				var oNumTextPr = para.GetNumberingTextPr();
 				
-				var oPrevNumTextPr = oPrevNumPr ? para.Get_CompiledPr2(false).TextPr.Copy() : null;
-				if (oPrevNumTextPr && (oPrevNumPr
-					&& undefined !== oPrevNumPr.NumId
-					&& undefined !== oPrevNumPr.Lvl
-					&& 0 !== oPrevNumPr.NumId
-					&& "0" !== oPrevNumPr.NumId))
+				var oPrevNumTextPr = prevNumPr ? para.Get_CompiledPr2(false).TextPr.Copy() : null;
+				if (oPrevNumTextPr && (prevNumPr && prevNumPr.IsValid() && undefined !== prevNumPr.Lvl))
 				{
-					var oPrevNumLvl = oNumbering.GetNum(oPrevNumPr.NumId).GetLvl(oPrevNumPr.Lvl);
+					var oPrevNumLvl = oNumbering.GetNum(prevNumPr.NumId).GetLvl(prevNumPr.Lvl);
 					oPrevNumTextPr.Merge(para.TextPr.Value.Copy());
 					oPrevNumTextPr.Merge(oPrevNumLvl.GetTextPr());
 				}
 				
 				var X_start = this.X;
 				
+				let numWidth  = numItem.getNumWidth();
+				let suffWidth = numItem.getSuffWidth();
 				if (isRtl)
 				{
-					X_start += NumberingItem.WidthVisible;
+					X_start = this.X + numItem.getVisibleWidth();
 					if (align_Left === nNumJc)
-						X_start -= NumberingItem.WidthNum;
+						X_start -= numWidth;
 					else if (align_Center === nNumJc)
-						X_start -= NumberingItem.WidthNum / 2;
+						X_start -= numWidth / 2;
 				}
 				else
 				{
 					if (align_Right === nNumJc)
-						X_start -= NumberingItem.WidthNum;
+						X_start -= numWidth;
 					else if (align_Center === nNumJc)
-						X_start -= NumberingItem.WidthNum / 2;
+						X_start -= numWidth / 2;
 				}
 				
 				var AutoColor = ( undefined !== BgColor && false === BgColor.Check_BlackAutoColor() ? new CDocumentColor(255, 255, 255, false) : new CDocumentColor(0, 0, 0, false) );
@@ -511,7 +499,7 @@
 					{
 						if(oNumTextPr.FontRef && oNumTextPr.FontRef.Color)
 						{
-							oNumTextPr.FontRef.Color.check(Theme, ColorMap);
+							oNumTextPr.FontRef.Color.check(this.Theme, this.ColorMap);
 							RGBA = oNumTextPr.FontRef.Color.RGBA;
 							graphics.b_color1(RGBA.R, RGBA.G, RGBA.B, 255);
 						}
@@ -526,30 +514,30 @@
 					}
 				}
 				
-				if (NumberingItem.HaveSourceNumbering() || reviewtype_Common !== nReviewType)
+				if (numItem.havePrevNumbering() || reviewtype_Common !== nReviewType)
 				{
 					if (reviewtype_Common === nReviewType)
 						graphics.b_color1(REVIEW_NUMBERING_COLOR.r, REVIEW_NUMBERING_COLOR.g, REVIEW_NUMBERING_COLOR.b, 255);
 					else
 						graphics.b_color1(oReviewColor.r, oReviewColor.g, oReviewColor.b, 255);
 				}
-				else if (isHavePrChange && NumPr && !oPrevNumPr)
+				else if (isHavePrChange && numPr && !prevNumPr)
 				{
 					var oPrReviewColor = para.GetPrReviewColor();
 					graphics.b_color1(oPrReviewColor.r, oPrReviewColor.g, oPrReviewColor.b, 255);
 				}
 				
-				var TempY = Y;
+				let baseY = Y;
 				switch (oNumTextPr.VertAlign)
 				{
 					case AscCommon.vertalign_SubScript:
 					{
-						Y -= AscCommon.vaKSub * oNumTextPr.FontSize * g_dKoef_pt_to_mm;
+						baseY -= AscCommon.vaKSub * oNumTextPr.FontSize * g_dKoef_pt_to_mm;
 						break;
 					}
 					case AscCommon.vertalign_SuperScript:
 					{
-						Y -= AscCommon.vaKSuper * oNumTextPr.FontSize * g_dKoef_pt_to_mm;
+						baseY -= AscCommon.vaKSuper * oNumTextPr.FontSize * g_dKoef_pt_to_mm;
 						break;
 					}
 				}
@@ -558,16 +546,16 @@
 				switch (nNumJc)
 				{
 					case align_Right:
-						NumberingItem.Draw(X_start, Y, graphics, oNumbering, oNumTextPr, this.Theme, oPrevNumTextPr);
+						numItem.Draw(X_start, baseY, graphics, oNumbering, oNumTextPr, this.Theme, oPrevNumTextPr);
 						break;
 					
 					case align_Center:
-						NumberingItem.Draw(X_start, Y, graphics, oNumbering, oNumTextPr, this.Theme, oPrevNumTextPr);
+						numItem.Draw(X_start, baseY, graphics, oNumbering, oNumTextPr, this.Theme, oPrevNumTextPr);
 						break;
 					
 					case align_Left:
 					default:
-						NumberingItem.Draw(X_start, Y, graphics, oNumbering, oNumTextPr, this.Theme, oPrevNumTextPr);
+						numItem.Draw(X_start, baseY, graphics, oNumbering, oNumTextPr, this.Theme, oPrevNumTextPr);
 						break;
 				}
 				
@@ -586,56 +574,86 @@
 					}
 				}
 				
-				if (NumberingItem.HaveSourceNumbering() || reviewtype_Common !== nReviewType)
+				let lineW      = (oNumTextPr.FontSize / 18) * g_dKoef_pt_to_mm;
+				let strikeoutY = (baseY - oNumTextPr.FontSize * g_dKoef_pt_to_mm * 0.27);
+				let underlineY = (baseY + para.Lines[CurLine].Metrics.TextDescent * 0.4);
+				if (numItem.havePrevNumbering() || reviewtype_Common !== nReviewType)
 				{
-					var nSourceWidth = NumberingItem.GetSourceWidth();
-					
+					let prevNumWidth = numItem.getPrevNumWidth();
 					if (reviewtype_Common === nReviewType)
 						graphics.p_color(REVIEW_NUMBERING_COLOR.r, REVIEW_NUMBERING_COLOR.g, REVIEW_NUMBERING_COLOR.b, 255);
 					else
 						graphics.p_color(oReviewColor.r, oReviewColor.g, oReviewColor.b, 255);
 					
 					// Либо у нас есть удаленная часть, либо у нас одновременно добавлен и удален параграф, тогда мы зачеркиваем суффикс
-					if (NumberingItem.HaveSourceNumbering() || (!NumberingItem.HaveSourceNumbering() && !NumberingItem.HaveFinalNumbering()))
+					if (numItem.havePrevNumbering() || (!numItem.havePrevNumbering() && !numItem.haveFinalNumbering()))
 					{
-						if (NumberingItem.HaveFinalNumbering())
-							graphics.drawHorLine(0, (Y - oNumTextPr.FontSize * g_dKoef_pt_to_mm * 0.27), X_start, X_start + nSourceWidth, (oNumTextPr.FontSize / 18) * g_dKoef_pt_to_mm);
+						if (numItem.haveFinalNumbering() || nReviewType !== reviewtype_Remove)
+						{
+							let x0 = X_start;
+							let x1 = X_start + prevNumWidth;
+							graphics.drawHorLine(0, strikeoutY, x0, x1, lineW);
+						}
 						else
-							graphics.drawHorLine(0, (Y - oNumTextPr.FontSize * g_dKoef_pt_to_mm * 0.27), X_start, X_start + nSourceWidth + NumberingItem.WidthSuff, (oNumTextPr.FontSize / 18) * g_dKoef_pt_to_mm);
+						{
+							let x0 = isRtl ? X_start - suffWidth : X_start;
+							let x1 = x0 + numWidth + suffWidth;
+							graphics.drawHorLine(0, strikeoutY, x0, x1, lineW);
+						}
 					}
 					
-					if (NumberingItem.HaveFinalNumbering())
-						graphics.drawHorLine(0, (Y + para.Lines[CurLine].Metrics.TextDescent * 0.4), X_start + nSourceWidth, X_start + NumberingItem.WidthNum + NumberingItem.WidthSuff, (oNumTextPr.FontSize / 18) * g_dKoef_pt_to_mm);
+					if (numItem.haveFinalNumbering())
+					{
+						if (isRtl)
+						{
+							let x0 = X_start - suffWidth;
+							let x1 = X_start;
+							graphics.drawHorLine(0, underlineY, x0, x1, lineW);
+							
+							x0 = X_start + prevNumWidth;
+							x1 = X_start + numWidth;
+							graphics.drawHorLine(0, underlineY, x0, x1, lineW);
+						}
+						else
+						{
+							let x0 = X_start + prevNumWidth;
+							let x1 = X_start + numWidth + suffWidth;
+							graphics.drawHorLine(0, underlineY, x0, x1, lineW);
+						}
+					}
 				}
-				else if (isHavePrChange && NumPr && !oPrevNumPr)
+				else if (isHavePrChange && numPr && !prevNumPr)
 				{
-					let oPrReviewColor = para.GetPrReviewColor();
-					graphics.p_color(oPrReviewColor.r, oPrReviewColor.g, oPrReviewColor.b, 255);
-					graphics.drawHorLine(0, (Y + para.Lines[CurLine].Metrics.TextDescent * 0.4), X_start, X_start + NumberingItem.WidthNum + NumberingItem.WidthSuff, (oNumTextPr.FontSize / 18) * g_dKoef_pt_to_mm);
+					let prevColor = para.GetPrReviewColor();
+					graphics.p_color(prevColor.r, prevColor.g, prevColor.b, 255);
+					
+					let x0 = isRtl ? X_start - suffWidth : X_start;
+					let x1 = x0 + numWidth + suffWidth;
+					graphics.drawHorLine(0, underlineY, x0, x1, lineW);
 				}
 				else
 				{
-					if (true === oNumTextPr.Strikeout)
-						graphics.drawHorLine(0, (Y - oNumTextPr.FontSize * g_dKoef_pt_to_mm * 0.27), X_start, X_start + NumberingItem.WidthNum, (oNumTextPr.FontSize / 18) * g_dKoef_pt_to_mm);
+					let x0 = X_start;
+					let x1 = x0 + numWidth;
 					
-					if (true === oNumTextPr.Underline)
-						graphics.drawHorLine(0, (Y + para.Lines[CurLine].Metrics.TextDescent * 0.4), X_start, X_start + NumberingItem.WidthNum, (oNumTextPr.FontSize / 18) * g_dKoef_pt_to_mm);
+					if (oNumTextPr.Strikeout)
+						graphics.drawHorLine(0, strikeoutY, x0, x1, lineW);
+					
+					if (oNumTextPr.Underline)
+						graphics.drawHorLine(0, underlineY, x0, x1, lineW);
 				}
-				
-				Y = TempY;
 				
 				if (true === editor.ShowParaMarks && (Asc.c_oAscNumberingSuff.Tab === nNumSuff || oNumLvl.IsLegacy()))
 				{
-					let suffWidth      = NumberingItem.WidthSuff;
 					let tabSymbolWidth = 3.143; // ширина символа "стрелка влево" в шрифте Wingding3,10
 					let tabX = this.X;
 					
 					if (!isRtl)
 					{
 						if (AscCommon.align_Left === nNumJc)
-							tabX += NumberingItem.WidthNum;
+							tabX += numWidth;
 						else if (AscCommon.align_Center === nNumJc)
-							tabX += NumberingItem.WidthNum / 2;
+							tabX += numWidth / 2;
 					}
 					
 					graphics.SetFont({
@@ -652,7 +670,7 @@
 				}
 			}
 		}
-		else if (para_PresentationNumbering === NumberingItem.Type)
+		else if (para_PresentationNumbering === numItem.Type)
 		{
 			var bIsEmpty = para.IsEmpty();
 			if (!bIsEmpty ||
@@ -660,13 +678,13 @@
 				para.Parent.IsSelectionUse() && para.Parent.IsSelectionEmpty() && para.Parent.Selection.StartPos === para.GetIndex())
 			{
 				if (Pr.ParaPr.Ind.FirstLine < 0)
-					NumberingItem.Draw(X, Y, graphics, this);
+					numItem.Draw(X, Y, graphics, this);
 				else
-					NumberingItem.Draw(para.Pages[CurPage].X + Pr.ParaPr.Ind.Left, Y, graphics, this);
+					numItem.Draw(para.Pages[CurPage].X + Pr.ParaPr.Ind.Left, Y, graphics, this);
 			}
 		}
 		
-		this.X += NumberingItem.WidthVisible;
+		this.X += numItem.getVisibleWidth();
 	};
 	ParagraphContentDrawState.prototype.calculateY = function(textPr)
 	{
