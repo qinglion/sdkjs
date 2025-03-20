@@ -118,11 +118,20 @@
 		this.Range = range;
 		
 		this.X = x;
+		
+		let isRtl = this.Paragraph.isRtlDirection();
+		if (this.Paragraph.Numbering.checkRange(this.Range, this.Line) && !isRtl)
+			this.handleNumbering();
+		
 		this.bidiFlow.begin(this.Paragraph.isRtlDirection());
 	};
 	ParagraphContentDrawState.prototype.endRange = function()
 	{
 		this.bidiFlow.end();
+		
+		let isRtl = this.Paragraph.isRtlDirection();
+		if (this.Paragraph.Numbering.checkRange(this.Range, this.Line) && isRtl)
+			this.handleNumbering();
 	};
 	/**
 	 * @param element {AscWord.CRunElementBase}
@@ -394,6 +403,270 @@
 		this.updateGraphicsState(textPr);
 		
 		this.handleRegularElement(fieldChar);
+	};
+	ParagraphContentDrawState.prototype.handleNumbering = function()
+	{
+		let graphics = this.Graphics;
+		let BgColor  = this.drawState.getBgColor();
+		let Theme    = this.drawState.getTheme();
+		let ColorMap = this.drawState.getColorMap();
+		let Pr       = this.drawState.getParagraphCompiledPr();
+		let isRtl    = Pr.ParaPr.Bidi;
+		
+		let X = this.X;
+		let Y = this.Y;
+		let CurLine = this.Line;
+		let CurPage = this.Page;
+		
+		let para = this.Paragraph;
+		
+		var nReviewType  = para.GetReviewType();
+		var oReviewColor = para.GetReviewColor();
+		
+		var NumberingItem = para.Numbering;
+		if (para_Numbering === NumberingItem.Type)
+		{
+			var isHavePrChange = para.HavePrChange();
+			var oPrevNumPr     = para.GetPrChangeNumPr();
+			
+			var NumPr = Pr.ParaPr.NumPr;
+			
+			var isHaveNumbering = false;
+			if ((undefined === para.Get_SectionPr()
+					|| true !== para.IsEmpty())
+				&& (!para.Parent || !para.Parent.IsEmptyParagraphAfterTableInTableCell(para.GetIndex()))
+				&& ((NumPr
+						&& undefined !== NumPr.NumId
+						&& 0 !== NumPr.NumId
+						&& "0" !== NumPr.NumId)
+					|| (oPrevNumPr
+						&& undefined !== oPrevNumPr.NumId
+						&& undefined !== oPrevNumPr.Lvl
+						&& 0 !== oPrevNumPr.NumId
+						&& "0" !== oPrevNumPr.NumId)))
+			{
+				isHaveNumbering = true;
+			}
+			
+			if (!isHaveNumbering || (!NumPr && !oPrevNumPr))
+			{
+				// Ничего не делаем
+			}
+			else
+			{
+				var oNumbering = para.Parent.GetNumbering();
+				
+				var oNumLvl = null;
+				if (NumPr)
+					oNumLvl = oNumbering.GetNum(NumPr.NumId).GetLvl(NumPr.Lvl);
+				else if (oPrevNumPr)
+					oNumLvl = oNumbering.GetNum(oPrevNumPr.NumId).GetLvl(oPrevNumPr.Lvl);
+				
+				var nNumSuff   = oNumLvl.GetSuff();
+				var nNumJc     = oNumLvl.GetJc();
+				var oNumTextPr = para.GetNumberingTextPr();
+				
+				var oPrevNumTextPr = oPrevNumPr ? para.Get_CompiledPr2(false).TextPr.Copy() : null;
+				if (oPrevNumTextPr && (oPrevNumPr
+					&& undefined !== oPrevNumPr.NumId
+					&& undefined !== oPrevNumPr.Lvl
+					&& 0 !== oPrevNumPr.NumId
+					&& "0" !== oPrevNumPr.NumId))
+				{
+					var oPrevNumLvl = oNumbering.GetNum(oPrevNumPr.NumId).GetLvl(oPrevNumPr.Lvl);
+					oPrevNumTextPr.Merge(para.TextPr.Value.Copy());
+					oPrevNumTextPr.Merge(oPrevNumLvl.GetTextPr());
+				}
+				
+				var X_start = this.X;
+				
+				if (isRtl)
+				{
+					X_start += NumberingItem.WidthVisible;
+					if (align_Left === nNumJc)
+						X_start -= NumberingItem.WidthNum;
+					else if (align_Center === nNumJc)
+						X_start -= NumberingItem.WidthNum / 2;
+				}
+				else
+				{
+					if (align_Right === nNumJc)
+						X_start -= NumberingItem.WidthNum;
+					else if (align_Center === nNumJc)
+						X_start -= NumberingItem.WidthNum / 2;
+				}
+				
+				var AutoColor = ( undefined !== BgColor && false === BgColor.Check_BlackAutoColor() ? new CDocumentColor(255, 255, 255, false) : new CDocumentColor(0, 0, 0, false) );
+				
+				var RGBA;
+				if (oNumTextPr.Unifill)
+				{
+					oNumTextPr.Unifill.check(this.Theme, this.ColorMap);
+					RGBA = oNumTextPr.Unifill.getRGBAColor();
+					graphics.b_color1(RGBA.R, RGBA.G, RGBA.B, 255);
+				}
+				else
+				{
+					if (true === oNumTextPr.Color.Auto)
+					{
+						if(oNumTextPr.FontRef && oNumTextPr.FontRef.Color)
+						{
+							oNumTextPr.FontRef.Color.check(Theme, ColorMap);
+							RGBA = oNumTextPr.FontRef.Color.RGBA;
+							graphics.b_color1(RGBA.R, RGBA.G, RGBA.B, 255);
+						}
+						else
+						{
+							graphics.b_color1(AutoColor.r, AutoColor.g, AutoColor.b, 255);
+						}
+					}
+					else
+					{
+						graphics.b_color1(oNumTextPr.Color.r, oNumTextPr.Color.g, oNumTextPr.Color.b, 255);
+					}
+				}
+				
+				if (NumberingItem.HaveSourceNumbering() || reviewtype_Common !== nReviewType)
+				{
+					if (reviewtype_Common === nReviewType)
+						graphics.b_color1(REVIEW_NUMBERING_COLOR.r, REVIEW_NUMBERING_COLOR.g, REVIEW_NUMBERING_COLOR.b, 255);
+					else
+						graphics.b_color1(oReviewColor.r, oReviewColor.g, oReviewColor.b, 255);
+				}
+				else if (isHavePrChange && NumPr && !oPrevNumPr)
+				{
+					var oPrReviewColor = para.GetPrReviewColor();
+					graphics.b_color1(oPrReviewColor.r, oPrReviewColor.g, oPrReviewColor.b, 255);
+				}
+				
+				var TempY = Y;
+				switch (oNumTextPr.VertAlign)
+				{
+					case AscCommon.vertalign_SubScript:
+					{
+						Y -= AscCommon.vaKSub * oNumTextPr.FontSize * g_dKoef_pt_to_mm;
+						break;
+					}
+					case AscCommon.vertalign_SuperScript:
+					{
+						Y -= AscCommon.vaKSuper * oNumTextPr.FontSize * g_dKoef_pt_to_mm;
+						break;
+					}
+				}
+				
+				// Рисуется только сам символ нумерации
+				switch (nNumJc)
+				{
+					case align_Right:
+						NumberingItem.Draw(X_start, Y, graphics, oNumbering, oNumTextPr, this.Theme, oPrevNumTextPr);
+						break;
+					
+					case align_Center:
+						NumberingItem.Draw(X_start, Y, graphics, oNumbering, oNumTextPr, this.Theme, oPrevNumTextPr);
+						break;
+					
+					case align_Left:
+					default:
+						NumberingItem.Draw(X_start, Y, graphics, oNumbering, oNumTextPr, this.Theme, oPrevNumTextPr);
+						break;
+				}
+				
+				if (true === oNumTextPr.Strikeout || true === oNumTextPr.Underline)
+				{
+					if (oNumTextPr.Unifill)
+					{
+						graphics.p_color(RGBA.R, RGBA.G, RGBA.B, 255);
+					}
+					else
+					{
+						if (true === oNumTextPr.Color.Auto)
+							graphics.p_color(AutoColor.r, AutoColor.g, AutoColor.b, 255);
+						else
+							graphics.p_color(oNumTextPr.Color.r, oNumTextPr.Color.g, oNumTextPr.Color.b, 255);
+					}
+				}
+				
+				if (NumberingItem.HaveSourceNumbering() || reviewtype_Common !== nReviewType)
+				{
+					var nSourceWidth = NumberingItem.GetSourceWidth();
+					
+					if (reviewtype_Common === nReviewType)
+						graphics.p_color(REVIEW_NUMBERING_COLOR.r, REVIEW_NUMBERING_COLOR.g, REVIEW_NUMBERING_COLOR.b, 255);
+					else
+						graphics.p_color(oReviewColor.r, oReviewColor.g, oReviewColor.b, 255);
+					
+					// Либо у нас есть удаленная часть, либо у нас одновременно добавлен и удален параграф, тогда мы зачеркиваем суффикс
+					if (NumberingItem.HaveSourceNumbering() || (!NumberingItem.HaveSourceNumbering() && !NumberingItem.HaveFinalNumbering()))
+					{
+						if (NumberingItem.HaveFinalNumbering())
+							graphics.drawHorLine(0, (Y - oNumTextPr.FontSize * g_dKoef_pt_to_mm * 0.27), X_start, X_start + nSourceWidth, (oNumTextPr.FontSize / 18) * g_dKoef_pt_to_mm);
+						else
+							graphics.drawHorLine(0, (Y - oNumTextPr.FontSize * g_dKoef_pt_to_mm * 0.27), X_start, X_start + nSourceWidth + NumberingItem.WidthSuff, (oNumTextPr.FontSize / 18) * g_dKoef_pt_to_mm);
+					}
+					
+					if (NumberingItem.HaveFinalNumbering())
+						graphics.drawHorLine(0, (Y + para.Lines[CurLine].Metrics.TextDescent * 0.4), X_start + nSourceWidth, X_start + NumberingItem.WidthNum + NumberingItem.WidthSuff, (oNumTextPr.FontSize / 18) * g_dKoef_pt_to_mm);
+				}
+				else if (isHavePrChange && NumPr && !oPrevNumPr)
+				{
+					var oPrReviewColor = para.GetPrReviewColor();
+					graphics.p_color(oPrReviewColor.r, oPrReviewColor.g, oPrReviewColor.b, 255);
+					graphics.drawHorLine(0, (Y + para.Lines[CurLine].Metrics.TextDescent * 0.4), X_start, X_start + NumberingItem.WidthNum + NumberingItem.WidthSuff, (oNumTextPr.FontSize / 18) * g_dKoef_pt_to_mm);
+				}
+				else
+				{
+					if (true === oNumTextPr.Strikeout)
+						graphics.drawHorLine(0, (Y - oNumTextPr.FontSize * g_dKoef_pt_to_mm * 0.27), X_start, X_start + NumberingItem.WidthNum, (oNumTextPr.FontSize / 18) * g_dKoef_pt_to_mm);
+					
+					if (true === oNumTextPr.Underline)
+						graphics.drawHorLine(0, (Y + para.Lines[CurLine].Metrics.TextDescent * 0.4), X_start, X_start + NumberingItem.WidthNum, (oNumTextPr.FontSize / 18) * g_dKoef_pt_to_mm);
+				}
+				
+				Y = TempY;
+				
+				if (true === editor.ShowParaMarks && (Asc.c_oAscNumberingSuff.Tab === nNumSuff || oNumLvl.IsLegacy()))
+				{
+					let suffWidth      = NumberingItem.WidthSuff;
+					let tabSymbolWidth = 3.143; // ширина символа "стрелка влево" в шрифте Wingding3,10
+					let tabX = this.X;
+					
+					if (!isRtl)
+					{
+						if (AscCommon.align_Left === nNumJc)
+							tabX += NumberingItem.WidthNum;
+						else if (AscCommon.align_Left === nNumJc)
+							tabX += NumberingItem.WidthNum / 2;
+					}
+					
+					graphics.SetFont({
+						FontFamily : {Name : "ASCW3", Index : -1},
+						FontSize   : 10,
+						Italic     : false,
+						Bold       : false
+					});
+					
+					if (suffWidth > tabSymbolWidth)
+						graphics.FillText2(tabX + suffWidth / 2 - tabSymbolWidth / 2, Y, String.fromCharCode(tab_Symbol), 0, suffWidth);
+					else
+						graphics.FillText2(tabX, Y, String.fromCharCode(tab_Symbol), tabSymbolWidth - suffWidth, suffWidth);
+				}
+			}
+		}
+		else if (para_PresentationNumbering === NumberingItem.Type)
+		{
+			var bIsEmpty = para.IsEmpty();
+			if (!bIsEmpty ||
+				para.IsThisElementCurrent() ||
+				para.Parent.IsSelectionUse() && para.Parent.IsSelectionEmpty() && para.Parent.Selection.StartPos === para.GetIndex())
+			{
+				if (Pr.ParaPr.Ind.FirstLine < 0)
+					NumberingItem.Draw(X, Y, graphics, this);
+				else
+					NumberingItem.Draw(para.Pages[CurPage].X + Pr.ParaPr.Ind.Left, Y, graphics, this);
+			}
+		}
+		
+		this.X += NumberingItem.WidthVisible;
 	};
 	ParagraphContentDrawState.prototype.calculateY = function(textPr)
 	{
