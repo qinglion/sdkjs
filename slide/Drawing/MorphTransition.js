@@ -1432,6 +1432,14 @@
 			CWrapperBase.call(this, oTransform, oTheme, oColorMap, oDrawing);
 		}
 	AscFormat.InitClassWithoutType(CObjectForDrawArrayWrapper, CWrapperBase);
+	CObjectForDrawArrayWrapper.prototype.addBackground = function(oBackground) {
+		for (let i = 0; i < this.backgroundObjects.length; i++) {
+			if (this.backgroundObjects === oBackground) {
+				return;
+			}
+		}
+		this.backgroundObjects.push(oBackground);
+	};
 	CObjectForDrawArrayWrapper.prototype.recalculateBounds = function () {
 		const oBoundsChecker = new AscFormat.CSlideBoundsChecker();
 		this.drawContent(oBoundsChecker);

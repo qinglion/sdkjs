@@ -2735,6 +2735,9 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 			var Element = aHigh.Get_Next();
 			while (null != Element)
 			{
+				if (pGraphics.m_bIsTextDrawer) {
+					pGraphics.CheckSplitHighlights(Element);
+				}
 				if (!pGraphics.set_fillColor)
 				{
 					pGraphics.b_color1(Element.r, Element.g, Element.b, 255);
@@ -19491,6 +19494,16 @@ CParaDrawingRangeLines.prototype =
 					&& Math.abs(PrevEl.Additional.Y - Element.Additional.Y) < 0.001
 					&& Math.abs(PrevEl.Additional.H - Element.Additional.H) < 0.001
 					&& PrevEl.Additional.Form === Element.Additional.Form);
+			} else if (PrevEl.Additional.TextDrawer && Element.Additional.TextDrawer) {
+				const oPrevTextDrawerPr = PrevEl.Additional.TextDrawer;
+				const oTextDrawerPr = Element.Additional.TextDrawer;
+				if (oPrevTextDrawerPr.textDrawer === oTextDrawerPr.textDrawer) {
+					const oTextDrawer = oTextDrawerPr.textDrawer;
+					if (oTextDrawer.SplitByWords) {
+						return oPrevTextDrawerPr.IsEmpty === oTextDrawerPr.IsEmpty || !oPrevTextDrawerPr.IsEmpty && oTextDrawerPr.IsEmpty;
+					}
+					return oPrevTextDrawerPr.IsEmpty === true && oTextDrawerPr.IsEmpty === true || oPrevTextDrawerPr.IsEmpty && !oTextDrawerPr.IsEmpty;
+				}
 			}
 
 			return false;

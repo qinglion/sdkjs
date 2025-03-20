@@ -422,15 +422,7 @@
 					let oTransform = oDrawing.transformText;
 					switch (iterationType) {
 						case ITERATEDATA_TYPE_WORD:
-							for (let i = 0; i < oDocStructure.m_aContent.length; i += 1) {
-								const oParaDraw = oDocStructure.m_aContent[i];
-								for (let j = 0; j < oParaDraw.m_aWords.length; j += 1) {
-									const oWord = oParaDraw.m_aWords[j];
-									arrDrawingObjects.push(new AscCommonSlide.CObjectForDrawArrayWrapper(oWord, oTransform, oTheme, oColorMap, oDrawing));
-								}
-								arrDrawingObjects.push(new AscCommonSlide.CObjectForDrawArrayWrapper([], oTransform, oTheme, oColorMap, oDrawing));
-							}
-							arrDrawingObjects.pop();
+							arrDrawingObjects.push.apply(arrDrawingObjects, oDocStructure.getCombinedWordWrappers(oTransform, oTheme, oColorMap, oDrawing));
 							break;
 						case ITERATEDATA_TYPE_LETTER:
 							for (let i = 0; i < oDocStructure.m_aContent.length; i += 1) {
