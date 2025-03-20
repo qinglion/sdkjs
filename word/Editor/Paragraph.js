@@ -8915,8 +8915,9 @@ Paragraph.prototype.DrawSelectionOnPage = function(CurPage, clipInfo)
 			var SelectX = this.Lines[CurLine].Ranges[CurRange].XVisible;
 			var SelectW = ParaNum.WidthVisible;
 			var SelectH = this.Lines[CurLine].Bottom - this.Lines[CurLine].Top;
-
-			var SelectW2 = SelectW;
+			
+			let SelectX2 = SelectX;
+			let SelectW2 = ParaNum.WidthNum;
 
 			var oNumPr = this.GetNumPr();
 			if (!oNumPr)
@@ -8926,39 +8927,49 @@ Paragraph.prototype.DrawSelectionOnPage = function(CurPage, clipInfo)
 			
 			if (this.isRtlDirection())
 			{
-				SelectX = this.Lines[CurLine].Ranges[CurRange].XEndVisible - ParaNum.WidthVisible;
-
+				let xEnd = this.Lines[CurLine].Ranges[CurRange].XEndVisible;
+				SelectX = xEnd - ParaNum.WidthVisible;
 				if (AscCommon.align_Center === numJc)
-					SelectW = ParaNum.WidthVisible + ParaNum.WidthNum / 2;
+				{
+					SelectW  = ParaNum.WidthVisible + ParaNum.WidthNum / 2;
+					SelectX2 = xEnd - ParaNum.WidthNum / 2;
+				}
 				else if (AscCommon.align_Right === numJc)
-					SelectW = ParaNum.WidthVisible + ParaNum.WidthNum;
+				{
+					SelectW  = ParaNum.WidthVisible + ParaNum.WidthNum;
+					SelectX2 = xEnd;
+				}
 				else // if (AscCommon.align_Left === numJc)
-					SelectW = ParaNum.WidthVisible;
+				{
+					SelectW  = ParaNum.WidthVisible;
+					SelectX2 = xEnd - ParaNum.WidthNum;
+				}
 			}
 			else
 			{
+				let xStart = this.Lines[CurLine].Ranges[CurRange].XVisible;
 				if (AscCommon.align_Center === numJc)
 				{
-					SelectX = this.Lines[CurLine].Ranges[CurRange].XVisible - ParaNum.WidthNum / 2;
+					SelectX = xStart - ParaNum.WidthNum / 2;
 					SelectW = ParaNum.WidthVisible + ParaNum.WidthNum / 2;
 				}
 				else if (AscCommon.align_Right === numJc)
 				{
-					SelectX = this.Lines[CurLine].Ranges[CurRange].XVisible - ParaNum.WidthNum;
+					SelectX = xStart - ParaNum.WidthNum;
 					SelectW = ParaNum.WidthVisible + ParaNum.WidthNum;
 				}
 				else // if (AscCommon.align_Left === numJc)
 				{
-					SelectX = this.Lines[CurLine].Ranges[CurRange].XVisible;
+					SelectX = xStart;
 					SelectW = ParaNum.WidthVisible;
 				}
-				
+				SelectX2 = SelectX;
 			}
 			
 			AscWord.drawSelectionOnPage(drawingDocument, clipInfo, PageAbs, SelectX, SelectY, SelectW, SelectH);
 			
 			if (selectionflag_NumberingCur === this.Selection.Flag && drawingDocument.AddPageSelection2)
-				AscWord.drawSelectionOnPage(drawingDocument, clipInfo, PageAbs, SelectX, SelectY, SelectW2, SelectH, true);
+				AscWord.drawSelectionOnPage(drawingDocument, clipInfo, PageAbs, SelectX2, SelectY, SelectW2, SelectH, true);
 			
 			break;
 		}
