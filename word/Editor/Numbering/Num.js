@@ -1148,6 +1148,9 @@ CLvlOverride.prototype.ReadFromBinary = function(oReader)
 		let codePoint = data[0];
 		let fontCoeff = data[1];
 		
+		if (AscBidi.DIRECTION.R === direction && AscBidi.isPairedBracket(codePoint))
+			codePoint = AscBidi.getPairedBracket(codePoint);
+		
 		let fontSlot = AscWord.GetFontSlotByTextPr(codePoint, this.textPr);
 		
 		this.graphics.SetFontSlot(fontSlot, fontCoeff);
