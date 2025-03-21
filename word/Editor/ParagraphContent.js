@@ -112,18 +112,18 @@ ParaNumbering.prototype = Object.create(AscWord.CRunElementBase.prototype);
 ParaNumbering.prototype.constructor = ParaNumbering;
 
 ParaNumbering.prototype.Type = para_Numbering;
-ParaNumbering.prototype.Draw = function(X, Y, oContext, oNumbering, oTextPr, oTheme, oPrevNumTextPr)
+ParaNumbering.prototype.Draw = function(X, Y, oContext, oNumbering, oTextPr, oTheme, oPrevNumTextPr, isRtl)
 {
 	var _X = X;
 	if (this.Internal.SourceNumInfo)
 	{
-		oNumbering.Draw(this.Internal.SourceNumId,this.Internal.SourceNumLvl, _X, Y, oContext, this.Internal.SourceNumInfo, oPrevNumTextPr ? oPrevNumTextPr : oTextPr, oTheme);
+		oNumbering.Draw(this.Internal.SourceNumId,this.Internal.SourceNumLvl, _X, Y, oContext, this.Internal.SourceNumInfo, oPrevNumTextPr ? oPrevNumTextPr : oTextPr, oTheme, isRtl);
 		_X += this.Internal.SourceWidth;
 	}
 
 	if (this.Internal.FinalNumInfo)
 	{
-		oNumbering.Draw(this.Internal.FinalNumId,this.Internal.FinalNumLvl, _X, Y, oContext, this.Internal.FinalNumInfo, oTextPr, oTheme);
+		oNumbering.Draw(this.Internal.FinalNumId,this.Internal.FinalNumLvl, _X, Y, oContext, this.Internal.FinalNumInfo, oTextPr, oTheme, isRtl);
 	}
 };
 ParaNumbering.prototype.Measure = function (oContext, oNumbering, oTextPr, oTheme, oFinalNumInfo, oFinalNumPr, oSourceNumInfo, oSourceNumPr)
@@ -326,4 +326,8 @@ ParaPresentationNumbering.prototype.checkRange = function(Range, Line)
 		return true;
 
 	return false;
+};
+ParaPresentationNumbering.prototype.getVisibleWidth = function()
+{
+	return this.WidthVisible;
 };

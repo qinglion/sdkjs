@@ -557,16 +557,16 @@
 				switch (nNumJc)
 				{
 					case align_Right:
-						numItem.Draw(X_start, baseY, graphics, oNumbering, oNumTextPr, this.Theme, oPrevNumTextPr);
+						numItem.Draw(X_start, baseY, graphics, oNumbering, oNumTextPr, this.Theme, oPrevNumTextPr, isRtl);
 						break;
 					
 					case align_Center:
-						numItem.Draw(X_start, baseY, graphics, oNumbering, oNumTextPr, this.Theme, oPrevNumTextPr);
+						numItem.Draw(X_start, baseY, graphics, oNumbering, oNumTextPr, this.Theme, oPrevNumTextPr, isRtl);
 						break;
 					
 					case align_Left:
 					default:
-						numItem.Draw(X_start, baseY, graphics, oNumbering, oNumTextPr, this.Theme, oPrevNumTextPr);
+						numItem.Draw(X_start, baseY, graphics, oNumbering, oNumTextPr, this.Theme, oPrevNumTextPr, isRtl);
 						break;
 				}
 				
