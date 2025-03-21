@@ -7287,13 +7287,15 @@
 		};
 		CShape.prototype.checkDrawingPartWithHistory = function () {};
 		CShape.prototype.getDocStructure = function () {
-			const oDocContent = this.getDocContent();
+			return AscFormat.ExecuteNoHistory(function () {
+				const oDocContent = this.getDocContent();
 				if (oDocContent) {
-					const oTextDrawer = new AscFormat.CTextDrawer(oDocContent.XLimit, oDocContent.YLimit, false, oDocContent.Get_Theme(), true);
+					const oTextDrawer = new AscFormat.CTextDrawer(oDocContent.XLimit, oDocContent.YLimit, false, oDocContent.Get_Theme(), true, true/*todo temp*/);
 					oDocContent.Draw(oDocContent.StartPage, oTextDrawer);
 					return oTextDrawer.m_oDocContentStructure;
 				}
-			return null;
+				return null;
+			}, this, []);
 		};
 
 		function CreateBinaryReader(szSrc, offset, srcLen) {

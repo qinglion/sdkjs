@@ -83,79 +83,18 @@ CDocContentStructure.prototype.Recalculate = function(oTheme, oColorMap, dWidth,
 };
 
 	CDocContentStructure.prototype.getCombinedWordWrappers = function(oTransform, oTheme, oColorMap, oDrawing) {
-		const arrRet = [];
+		const arrRes = [];
 		for (let i = 0; i < this.m_aContent.length; i += 1) {
 			const oParagraph = this.m_aContent[i];
-			let nWord = 0;
-			let oWord = oParagraph.m_aWords[nWord];
-			let oPreviousWrapper;
-			let oWordWrapper = new AscCommonSlide.CObjectForDrawArrayWrapper(oWord, oTransform, oTheme, oColorMap, oDrawing);
-			arrRet.push(oWordWrapper);
-			let nWordSymbol = 0;
-			function nextWord() {
-				nWord += 1;
-				nWordSymbol = 0;
-				oWord = oParagraph.m_aWords[nWord];
-				if (oWord) {
-					oPreviousWrapper = oWordWrapper;
-					oWordWrapper = new AscCommonSlide.CObjectForDrawArrayWrapper(oWord, oTransform, oTheme, oColorMap, oDrawing);
-					arrRet.push(oWordWrapper);
-				}
-			}
-			for (let j = 0; j < oParagraph.m_aContent.length; j += 1) {
-				const oLine = oParagraph.m_aContent[j];
-
-				let nBackground = 0;
-				let oBackground = oLine.m_aBackgrounds[nBackground];
-				let oBackgroundBounds = oBackground && oBackground.getBounds(oTransform);
-				function nextBackground() {
-					nBackground += 1;
-					oBackground = oLine.m_aBackgrounds[nBackground];
-					oBackgroundBounds = oBackground && oBackground.getBounds(oTransform);
-				}
-
-				let nSymbol = 0;
-				let oSymbol = oLine.m_aContent[nSymbol];
-				function nextSymbol() {
-					nSymbol += 1;
-					nWordSymbol += 1;
-					oSymbol = oLine.m_aContent[nSymbol];
-					if (oWord && nWordSymbol === oWord.length) {
-						nextWord();
-					}
-				}
-
-
-				while (oSymbol) {
-					if (oBackground) {
-						const nX = oTransform.TransformPointX(oSymbol.x, oSymbol.y);
-						if (nX >= oBackgroundBounds.l && (nX + oSymbol.extX <= oBackgroundBounds.r)) {
-							oWordWrapper.addBackground(oBackground);
-						} else if (oBackgroundBounds.r < oSymbol.x) {
-							if (oPreviousWrapper) {
-								const oFirstContentDrawing = oWordWrapper.contentObjects[0];
-								oPreviousWrapper.addBackground(oBackground);
-								const nX = oTransform.TransformPointX(oFirstContentDrawing.x, oFirstContentDrawing.y);
-								oPreviousWrapper.strictBounds.r = Math.max(Math.min(nX, oBackgroundBounds.l), oPreviousWrapper.strictBounds.r);
-								oPreviousWrapper.strictBounds.b = Math.max(oPreviousWrapper.bounds.b, oBackgroundBounds.b);
-								oPreviousWrapper.strictBounds.t = Math.min(oPreviousWrapper.bounds.t, oBackgroundBounds.t);
-							} else {
-								oWordWrapper.addBackground(oBackground);
-								oWordWrapper.strictBounds.l = Math.min(oWordWrapper.strictBounds.l, oBackgroundBounds.l);
-								oWordWrapper.strictBounds.b = Math.max(oWordWrapper.bounds.b, oBackgroundBounds.b);
-								oWordWrapper.strictBounds.t = Math.min(oWordWrapper.bounds.t, oBackgroundBounds.t);
-							}
-							nextBackground();
-						}
-					}
-					nextSymbol();
-				}
+			for (let j = 0; j < oParagraph.m_aWords.length; j += 1) {
+				const aWord = oParagraph.m_aWords[j];
+				const oWrapperWord = new AscCommonSlide.CObjectForDrawArrayWrapper(aWord, oTransform, oTheme, oColorMap, oDrawing);
+				arrRes.push(oWrapperWord);
+				const oBackgroundWord = oParagraph.m_aBackgroundsByWords[j];
+				oWrapperWord.setBackgroundObjects(oBackgroundWord);
 			}
 		}
-		for (let i = 0; i < arrRet.length; i += 1) {
-			arrRet[i].recalculateBounds();
-		}
-		return arrRet;
+		return arrRes;
 	};
 	CDocContentStructure.prototype.getCombinedLetterWrappers = function() {
 
@@ -709,7 +648,8 @@ function CParagraphStructure(oParagraph)
 	this.n_oLastBackgroundWordStart = {
 		line: 0,
 		posInLine: -1,
-		isLastEmpty: true
+		isLastEmpty: false,
+		isFirstNonEmptyFind: false
 	};
 }
 
@@ -783,9 +723,20 @@ CParagraphStructure.prototype.checkWord = function() {
 	CParagraphStructure.prototype.checkSplitHighlights = function(oElement) {
 		const oAdditionalInfo = oElement.Additional.TextDrawer;
 		const oBackgroundPos = this.n_oLastBackgroundWordStart;
-		if (!oAdditionalInfo.IsEmpty && oBackgroundPos.isLastEmpty) {
+		const isFirstWord = !this.m_aBackgroundsByWords.length;
+		const isFirstNonEmptyFind = oBackgroundPos.isFirstNonEmptyFind;
+		const isLastEmpty = oBackgroundPos.isLastEmpty;
 
+		if (!oAdditionalInfo.IsEmpty) {
+			oBackgroundPos.isFirstNonEmptyFind = true;
 		}
+		oBackgroundPos.isLastEmpty = oAdditionalInfo.IsEmpty;
+
+		console.log(oAdditionalInfo.IsEmpty)
+		if ((oAdditionalInfo.IsEmpty || !isLastEmpty)/* && (!isFirstWord || !isFirstNonEmptyFind)*/) {
+			return;
+		}
+
 		let aWord = [];
 		for(let nLine = oBackgroundPos.line; nLine < this.m_aContent.length; ++nLine) {
 			let oLine = this.m_aContent[nLine];
@@ -798,7 +749,7 @@ CParagraphStructure.prototype.checkWord = function() {
 			}
 			for(let nPosInLine = oBackgroundPos.posInLine + 1; nPosInLine < aContent.length; ++nPosInLine) {
 				let oObjectToDraw = aContent[nPosInLine];
-				if(!oObjectToDraw.geometry.IsEmpty()) {
+				if(!oObjectToDraw.geometry.isEmpty()) {
 					aWord.push(aContent[nPosInLine]);
 					oBackgroundPos.posInLine = nPosInLine;
 				}
@@ -1175,13 +1126,19 @@ function CTextDrawer(dWidth, dHeight, bDivByLInes, oTheme, bDivGlyphs, bSplitByW
     }
 
     this.m_bIsTextDrawer = true;
-		this.m_bIsSplitByWords = bSplitByWords;
+		this.m_bIsSplitByWords = !!bSplitByWords;
     this.pathMemory = new AscFormat.CPathMemory();
 }
 
 CTextDrawer.prototype = Object.create(AscCommon.CGraphicsBase.prototype);
 CTextDrawer.prototype.constructor = CTextDrawer;
-
+CTextDrawer.prototype.checkSplitHighlights = function (oElement) {
+	for(let nPos = 0; nPos < this.m_aStack.length; ++nPos) {
+		if(this.m_aStack[nPos] instanceof CParagraphStructure) {
+			this.m_aStack[nPos].checkSplitHighlights(oElement);
+		}
+	}
+};
 CTextDrawer.prototype.SetObjectToDraw = function(oObjectToDraw)
 {
     this.m_oObjectToDraw = oObjectToDraw;
@@ -1941,14 +1898,6 @@ CTextDrawer.prototype.CheckSpaceDraw = function()
         }
     }
 };
-	CTextDrawer.prototype.CheckHighlightOnSpace = function()
-	{
-		for(let nPos = 0; nPos < this.m_aStack.length; ++nPos) {
-			if(this.m_aStack[nPos] instanceof CParagraphStructure) {
-				this.m_aStack[nPos].CheckHighlightOnSpace();
-			}
-		}
-	};
 
 CTextDrawer.prototype.FillTextCode = function(x,y,code)
 {

@@ -1432,29 +1432,11 @@
 			CWrapperBase.call(this, oTransform, oTheme, oColorMap, oDrawing);
 		}
 	AscFormat.InitClassWithoutType(CObjectForDrawArrayWrapper, CWrapperBase);
-	CObjectForDrawArrayWrapper.prototype.addBackground = function(oBackground) {
-		for (let i = 0; i < this.backgroundObjects.length; i++) {
-			if (this.backgroundObjects === oBackground) {
-				return;
-			}
+	CObjectForDrawArrayWrapper.prototype.setBackgroundObjects = function(arrBackground) {
+		if (arrBackground) {
+			this.backgroundObjects = arrBackground;
 		}
-		this.backgroundObjects.push(oBackground);
 	};
-	CObjectForDrawArrayWrapper.prototype.recalculateBounds = function () {
-		const oBoundsChecker = new AscFormat.CSlideBoundsChecker();
-		this.drawContent(oBoundsChecker);
-		const oBounds = oBoundsChecker.Bounds;
-		if (this.strictBounds) {
-			this.bounds.reset(
-				Math.min(oBounds.min_x, this.strictBounds.l),
-				Math.min(oBounds.min_y, this.strictBounds.t),
-				Math.max(oBounds.max_x, this.strictBounds.r),
-				Math.max(oBounds.max_y, this.strictBounds.b)
-			);
-		} else {
-			this.bounds.reset(oBounds.min_x, oBounds.min_y, oBounds.max_x, oBounds.max_y);
-		}
-	}
 	CObjectForDrawArrayWrapper.prototype.drawBackground = function (oGraphics) {
 		for (let i = 0; i < this.backgroundObjects.length; i += 1) {
 			this.backgroundObjects[i].draw(oGraphics, undefined, this.transform, this.theme, this.colorMap);

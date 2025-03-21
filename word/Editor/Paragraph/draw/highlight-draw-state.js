@@ -280,7 +280,7 @@
 		let w = element.GetWidthVisible();
 
 		if (this.Graphics.m_bIsTextDrawer) {
-			highlightAdditional = {TextDrawer: {IsEmpty: typeof element.Code === 'number'}};
+			highlightAdditional = {TextDrawer: {IsEmpty: !element.IsText(), textDrawer: this.Graphics}};
 		}
 		
 		this.handleRun(run);
