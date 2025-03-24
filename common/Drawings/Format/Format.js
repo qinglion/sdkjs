@@ -250,7 +250,10 @@
 			var oStream = pReader.stream;
 			while (oStream.cur < nEnd) {
 				var nType = oStream.GetUChar();
-				this.readChild(nType, pReader);
+				const res = this.readChild(nType, pReader);
+				if (false === res) {
+					oStream.SkipRecord();
+				}
 			}
 		};
 		CBaseFormatNoIdObject.prototype.readChild = function (nType, pReader) {

@@ -434,7 +434,7 @@
 				res = isOpenOoxml ? Asc.c_oAscFileType.PPTX : Asc.c_oAscFileType.CANVAS_PRESENTATION;
 				break;
 			case c_oEditorId.Visio:
-				res = Asc.c_oAscFileType.VSDX;
+				res = isOpenOoxml ? Asc.c_oAscFileType.VSDX : Asc.c_oAscFileType.CANVAS_DIAGRAM;
 				break;
 		}
 		return res;

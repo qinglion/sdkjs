@@ -371,7 +371,7 @@
 	VisioEditorApi.prototype.OpenDocumentFromBinNoInit = function(gObject)
 	{
 		AscFonts.IsCheckSymbols = true;
-		let loader = new BinaryVSDYLoader();
+		let loader = new AscVisio.BinaryVSDYLoader();
 		loader.Api = this;
 		loader.Load(gObject, this.WordControl.m_oLogicDocument);
 		AscFonts.IsCheckSymbols = false;

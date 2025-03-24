@@ -534,8 +534,8 @@ window.AscCommon.g_cIsBeta = "false";
 		VSSM : 0x4005,
 		VSTM : 0x4006,
 
-		VSDY : 0x1003,
-		CANVAS_DIAGRAM : 0x2003,
+		VSDY : 0x1004,
+		CANVAS_DIAGRAM : 0x2005,
 
 		//image
 		IMG  : 0x0400,

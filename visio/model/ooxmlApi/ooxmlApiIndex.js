@@ -154,6 +154,7 @@
 		// this.data3 = null;
 		// this.foreignData = null;
 	}
+	AscFormat.InitClass(SheetStorage, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
 
 	/**
 	 * Abstract class for ShapeSheet_Type (Sheet_Type) descendents only.
