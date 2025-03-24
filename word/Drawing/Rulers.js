@@ -1221,30 +1221,26 @@ function CHorRuler()
 				word_control.m_oOverlayApi.VertLine(pos);
 				break;
 			}
-            case AscWord.RULER_DRAG_TYPE.tab:
-            {
-                var newVal = RulerCorrectPosition(this, _x, _margin_left);
-
-                this.m_dCurrentTabNewPosition = newVal - _margin_left;
-
-                var pos = left + (_margin_left + this.m_dCurrentTabNewPosition) * dKoef_mm_to_pix;
-
-                if (_y <= 3 || _y > 5.6)
-                {
-                    this.IsDrawingCurTab = false;
-                    word_control.OnUpdateOverlay();
-                }
-                else
-                {
-                    this.IsDrawingCurTab = true;
-                }
-
-                word_control.UpdateHorRulerBack();
-
-                if (this.IsDrawingCurTab)
-                    word_control.m_oOverlayApi.VertLine(pos);
-                break;
-            }
+			case AscWord.RULER_DRAG_TYPE.tab:
+			{
+				let newVal = RulerCorrectPosition(this, _x, this.m_bRtl ? _margin_right : _margin_left);
+				
+				this.m_dCurrentTabNewPosition = this.m_bRtl ? _margin_right - newVal : newVal - _margin_left;
+				if (_y <= 3 || _y > 5.6)
+				{
+					this.IsDrawingCurTab = false;
+					word_control.OnUpdateOverlay();
+				}
+				else
+				{
+					this.IsDrawingCurTab = true;
+					let offset = this.m_bRtl ? _margin_right - this.m_dCurrentTabNewPosition : _margin_left + this.m_dCurrentTabNewPosition;
+					let pos    = left + offset * dKoef_mm_to_pix;
+					word_control.m_oOverlayApi.VertLine(pos);
+				}
+				word_control.UpdateHorRulerBack();
+				break;
+			}
             case AscWord.RULER_DRAG_TYPE.table:
             {
                 var newVal = RulerCorrectPosition(this, _x, this.TableMarginLeftTrackStart);
@@ -1509,10 +1505,9 @@ function CHorRuler()
             // tabs
             if (y >= 3 && y <= _bottom)
             {
-                var _count_tabs = this.m_arrTabs.length;
-                for (var i = 0; i < _count_tabs; i++)
+                for (let i = 0, tabCount = this.m_arrTabs.length; i < tabCount; ++i)
                 {
-                    var _pos = _margin_left + this.m_arrTabs[i].pos;
+                    var _pos = this.m_bRtl ? _margin_right - this.m_arrTabs[i].pos : _margin_left + this.m_arrTabs[i].pos;
                     if ((x >= (_pos - 1)) && (x <= (_pos + 1)))
                     {
                         if (true === isMouseDown)
@@ -1928,13 +1923,14 @@ function CHorRuler()
 				this.m_dIndentRight_old = this.m_dIndentRight;
 				break;
 			}
-            case AscWord.RULER_DRAG_TYPE.tab:
-            {
-                var pos = left + (_margin_left + this.m_arrTabs[this.m_lCurrentTab].pos) * dKoef_mm_to_pix;
-                this.m_dCurrentTabNewPosition = this.m_arrTabs[this.m_lCurrentTab].pos;
-                word_control.m_oOverlayApi.VertLine(pos);
-                break;
-            }
+			case AscWord.RULER_DRAG_TYPE.tab:
+			{
+				let offset = this.m_bRtl ? (_margin_right - this.m_arrTabs[this.m_lCurrentTab].pos) : (_margin_left + this.m_arrTabs[this.m_lCurrentTab].pos);
+				let pos    = left + offset * dKoef_mm_to_pix;
+				word_control.m_oOverlayApi.VertLine(pos);
+				this.m_dCurrentTabNewPosition = this.m_arrTabs[this.m_lCurrentTab].pos;
+				break;
+			}
             case AscWord.RULER_DRAG_TYPE.table:
             {
                 var markup = this.m_oTableMarkup;
