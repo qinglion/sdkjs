@@ -1004,6 +1004,15 @@ AscFormat.InitClass(Path, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_P
                         controlPoints[j].y = this.calculateCommandCoord(gdLst, controlPoints[j].y, ch, dCustomPathCoeffH);
                     }
 
+                    // if degree === 0 just draw line to SplineStart like visio does
+                    if (degree === 0) {
+                        AscCommon.consoleLog("transform nurbsTo to line because degree is 0");
+                        this.ArrPathCommand.push({id: lineTo, X:controlPoints[1].x, Y:controlPoints[1].y});
+                        lastX = controlPoints[1].x;
+                        lastY = controlPoints[1].y;
+                        break;
+                    }
+
                     if (degree + 1 + controlPoints.length !== knots.length) {
                         AscCommon.consoleLog("Wrong arguments format.", "Degree + 1 + controlPoints.length !== knots.length",
                           degree + 1 + controlPoints.length, "!==", knots.length);
