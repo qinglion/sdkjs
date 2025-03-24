@@ -2015,49 +2015,40 @@ function CHorRuler()
                 break;
             }
         }
-
-        if (AscWord.RULER_DRAG_TYPE.none === this.DragType)
-        {
-            // посмотрим - может это добавляется таб
-            var _top = 1.8;
-            var _bottom = 5.2;
-
-            // tabs
-            if (_y >= 3 && _y <= _bottom && _x >= (_margin_left + this.m_dIndentLeft) && _x <= (_margin_right - this.m_dIndentRight))
-            {
-                var mm_1_4 = 10 / 4;
-                var mm_1_8 = mm_1_4 / 2;
-
-                var _new_tab_pos = RulerCorrectPosition(this, _x, _margin_left);
-                _new_tab_pos -= _margin_left;
-
-                this.m_arrTabs[this.m_arrTabs.length] = new CTab(_new_tab_pos, word_control.m_nTabsType);
-                //this.CorrectTabs();
-                word_control.UpdateHorRuler();
-
-                this.m_lCurrentTab = this.m_arrTabs.length - 1;
-                /*
-                var _len = this.m_arrTabs.length;
-                for (var i = 0; i < _len; i++)
-                {
-                    if (this.m_arrTabs[i].pos == _new_tab_pos)
-                    {
-                        this.m_lCurrentTab = i;
-                        break;
-                    }
-                }
-                */
-
-                this.DragType = AscWord.RULER_DRAG_TYPE.tab;
-                this.m_dCurrentTabNewPosition = _new_tab_pos;
-
-                var pos = left + (_margin_left + _new_tab_pos) * dKoef_mm_to_pix;
-                word_control.m_oOverlayApi.VertLine(pos);
-            }
-        }
-
-        word_control.m_oDrawingDocument.LockCursorTypeCur();
-    }
+		
+		if (AscWord.RULER_DRAG_TYPE.none === this.DragType)
+		{
+			let posT = 3;
+			let posB = 5.2;
+			let posL = this.m_bRtl ? _margin_left + this.m_dIndentRight : _margin_left + this.m_dIndentLeft;
+			let posR = this.m_bRtl ? _margin_right - this.m_dIndentRight : _margin_right - this.m_dIndentLeft;
+			if (posT <= _y && _y <= posB && posL <= _x && _x <= posR)
+			{
+				let newVal  = RulerCorrectPosition(this, _x, this.m_bRtl ? _margin_right : _margin_left);
+				let tabPos  = this.m_bRtl ? _margin_right - newVal : newVal - _margin_left;
+				let tabType = word_control.m_nTabsType;
+				if (this.m_bRtl)
+				{
+					if (tab_Left === tabType)
+						tabType = tab_Right;
+					else if (tab_Right === tabType)
+						tabType = tab_Left;
+				}
+				this.m_arrTabs[this.m_arrTabs.length] = new CTab(tabPos, tabType);
+				word_control.UpdateHorRuler();
+				
+				this.m_lCurrentTab = this.m_arrTabs.length - 1;
+				
+				this.DragType                 = AscWord.RULER_DRAG_TYPE.tab;
+				this.m_dCurrentTabNewPosition = tabPos;
+				
+				let pos = left + newVal * dKoef_mm_to_pix;
+				word_control.m_oOverlayApi.VertLine(pos);
+			}
+		}
+		
+		word_control.m_oDrawingDocument.LockCursorTypeCur();
+	}
     this.OnMouseUp = function(left, top, e)
     {
         var word_control = this.m_oWordControl;
@@ -2105,17 +2096,17 @@ function CHorRuler()
             case AscWord.RULER_DRAG_TYPE.tab:
             {
                 // смотрим, сохраняем ли таб
-                var _y = (global_mouseEvent.Y - word_control.Y) * g_dKoef_pix_to_mm;
-                if (_y <= 3 || _y > 5.6 || this.m_dCurrentTabNewPosition < this.m_dIndentLeft || (this.m_dCurrentTabNewPosition + _margin_left) > (_margin_right - this.m_dIndentRight))
-                {
-					if (-1 != this.m_lCurrentTab)
+				var _y = (global_mouseEvent.Y - word_control.Y) * g_dKoef_pix_to_mm;
+				if (_y <= 3 || _y > 5.6 || this.m_dCurrentTabNewPosition < this.m_dIndentLeft || this.m_dCurrentTabNewPosition > _margin_right - _margin_left - this.m_dIndentRight)
+				{
+					if (-1 !== this.m_lCurrentTab)
 						this.m_arrTabs.splice(this.m_lCurrentTab, 1);
-                }
-                else
-                {
+				}
+				else
+				{
 					if (this.m_lCurrentTab < this.m_arrTabs.length)
 						this.m_arrTabs[this.m_lCurrentTab].pos = this.m_dCurrentTabNewPosition;
-                }
+				}
 
                 this.m_lCurrentTab = -1;
                 this.CorrectTabs();
@@ -2199,9 +2190,9 @@ function CHorRuler()
             {
                 // смотрим, сохраняем ли таб
                 var _y = (global_mouseEvent.Y - word_control.Y) * g_dKoef_pix_to_mm;
-                if (_y <= 3 || _y > 5.6 || this.m_dCurrentTabNewPosition < this.m_dIndentLeft || (this.m_dCurrentTabNewPosition + _margin_left) > (_margin_right - this.m_dIndentRight))
+                if (_y <= 3 || _y > 5.6 || this.m_dCurrentTabNewPosition < this.m_dIndentLeft || this.m_dCurrentTabNewPosition > _margin_right - _margin_left - this.m_dIndentRight)
                 {
-					if (-1 != this.m_lCurrentTab)
+					if (-1 !== this.m_lCurrentTab)
 						this.m_arrTabs.splice(this.m_lCurrentTab, 1);
                 }
                 else
