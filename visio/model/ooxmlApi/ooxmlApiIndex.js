@@ -745,7 +745,8 @@
 	 * @param {Shape_Type} shape
 	 * @param {Page_Type} pageInfo
 	 * @param {CTheme[]} themes
-	 * @param {{fontColor?: boolean, lineUniFill?: boolean, uniFillForegnd?: boolean}} themeValWasUsedFor - changes during function
+	 * @param {{fontColor?: boolean, lineUniFill?: boolean, uniFillForegnd?: boolean}?} themeValWasUsedFor - changes
+	 * during function. use only for font Color LineColor and FillColor cells otherwise undefined
 	 * @param {boolean?} gradientEnabled
 	 * @param {number?}  themedColorsRow
 	 * @return {(CUniFill | CUniColor | boolean | *)}
@@ -775,13 +776,15 @@
 			returnValue = AscVisio.themeval(this, shape, pageInfo, themes, undefined,
 				undefined, gradientEnabled, themedColorsRow);
 
-			if (cellName === "LineColor") {
-				themeValWasUsedFor.lineUniFill = true;
-			} else if (cellName === "FillForegnd") {
-				themeValWasUsedFor.uniFillForegnd = true;
-			} else if (cellName === "Color") {
-				// for text color
-				themeValWasUsedFor.fontColor = true;
+			if (themeValWasUsedFor) {
+				if (cellName === "LineColor") {
+					themeValWasUsedFor.lineUniFill = true;
+				} else if (cellName === "FillForegnd") {
+					themeValWasUsedFor.uniFillForegnd = true;
+				} else if (cellName === "Color") {
+					// for text color
+					themeValWasUsedFor.fontColor = true;
+				}
 			}
 		} else if (fillResultCells.includes(cellName) || fillColorResultCells.includes(cellName)) {
 			let rgba = null;
@@ -1065,7 +1068,7 @@
 	 * if shape has multiple layers attached only equal layer properties applied (and added to object).
 	 * @memberOf Shape_Type
 	 * @param {Page_Type} pageInfo
-	 * @return {*}
+	 * @return {{ [key: string]: Cell_Type }} An object mapping string identifiers to Cell_Type instances
 	 */
 	Shape_Type.prototype.getLayerProperties = function getLayerProperties(pageInfo) {
 		let layerMemberString = this.getCellStringValue("LayerMember");
@@ -1099,6 +1102,7 @@
 		});
 		// layers have the same set of properties so lets take any of them
 		// and remove unEqualProperties
+		/** @type {{ [key: string]: Cell_Type }} */
 		let resultObject = {};
 		if (previousLayer === undefined) {
 			return resultObject;
@@ -1106,7 +1110,7 @@
 		for (const cellKey in previousLayer.getElements()) {
 			const cell = previousLayer.getCell(cellKey);
 			if (!unEqualProperties.has(cell.n)) {
-				resultObject[cell.n] = cell.v;
+				resultObject[cell.n] = cell;
 			}
 		}
 		return resultObject;

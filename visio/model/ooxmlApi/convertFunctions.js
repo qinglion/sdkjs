@@ -185,10 +185,11 @@
 		 * @param {number} currentPageIndex
 		 * @param {number} pagesCount
 		 * @param {Page_Type} pageInfo
+		 * @param {CUniFill?} layerColor
 		 * @return {CShape} textCShape
 		 */
 		function getTextCShape(theme, shape, cShape, lineUniFill,
-							   fillUniFill, drawingPageScale, maxHeightScaledIn, currentPageIndex, pagesCount, pageInfo) {
+							   fillUniFill, drawingPageScale, maxHeightScaledIn, currentPageIndex, pagesCount, pageInfo, layerColor) {
 			// see 2.2.8	Text [MS-VSDX]-220215
 			/**
 			 * handle QuickStyleVariation cell which can change color (but only if color is a result of ThemeVal)
@@ -525,22 +526,27 @@
 
 
 				// handle Color
-				let characterColorCell = characterPropsFinal && characterPropsFinal.getCell("Color");
-				let fontColor;
-				if (characterColorCell && characterColorCell.kind === AscVisio.c_oVsdxSheetStorageKind.Cell_Type) {
-					fontColor = characterColorCell.calculateValue(shape, pageInfo,
-						visioDocument.themes, themeValWasUsedFor);
+				let textColor;
+				if (layerColor !== undefined && layerColor !== null) {
+					textColor = new CDocumentColor(layerColor.fill.color.color.RGBA.R, layerColor.fill.color.color.RGBA.G,
+							layerColor.fill.color.color.RGBA.B, false);
 				} else {
-					AscCommon.consoleLog("text color cell not found! set text color as themed");
-					fontColor = AscVisio.themeval(null, shape, pageInfo, visioDocument.themes, "TextColor");
-					themeValWasUsedFor.fontColor = true;
+					let characterColorCell = characterPropsFinal && characterPropsFinal.getCell("Color");
+					let fontColor;
+					if (characterColorCell && characterColorCell.kind === AscVisio.c_oVsdxSheetStorageKind.Cell_Type) {
+						fontColor = characterColorCell.calculateValue(shape, pageInfo,
+								visioDocument.themes, themeValWasUsedFor);
+					} else {
+						AscCommon.consoleLog("text color cell not found! set text color as themed");
+						fontColor = AscVisio.themeval(null, shape, pageInfo, visioDocument.themes, "TextColor");
+						themeValWasUsedFor.fontColor = true;
+					}
+					handleTextQuickStyleVariation(fontColor, lineUniFill, fillUniFill, themeValWasUsedFor);
+					textColor = new CDocumentColor(fontColor.color.RGBA.R, fontColor.color.RGBA.G,
+							fontColor.color.RGBA.B, false);
 				}
 
-
-				handleTextQuickStyleVariation(fontColor, lineUniFill, fillUniFill, themeValWasUsedFor);
-				const textColor1 = new CDocumentColor(fontColor.color.RGBA.R, fontColor.color.RGBA.G,
-					fontColor.color.RGBA.B, false);
-				oRun.Set_Color(textColor1);
+				oRun.Set_Color(textColor);
 
 				// handle lang
 				let oNewLang = new CLang();
@@ -627,7 +633,7 @@
 					// all document fonts all loaded already in CVisioDocument.prototype.loadFonts
 
 					let fontName = fontCell.calculateValue(shape, pageInfo,
-						visioDocument.themes, themeValWasUsedFor, true);
+						visioDocument.themes, undefined, true);
 
 					cRFonts = getRFonts(fontName, visioDocument);
 				} else {
@@ -1546,9 +1552,27 @@
 		let pinX_inch = this.getCellNumberValueWithScale("PinX", drawingPageScale);
 		let pinY_inch = this.getCellNumberValueWithScale("PinY", drawingPageScale);
 
+		/** @type {{ [key: string]: Cell_Type }} */
 		let layerProperties = this.getLayerProperties(pageInfo);
 		// only if all shape layers are invisible shape is invisible
-		let areShapeLayersInvisible = layerProperties["Visible"] === "0";
+		let areShapeLayersInvisible = layerProperties["Visible"] !== undefined && layerProperties["Visible"].v === "0";
+
+		/**
+		 * @type {CUniFill | undefined}
+		 * if layerColor is applied fill is always white
+		 */
+		let layerColor;
+		/**
+		 * @type {CUniFill}
+		 * if layerColor is applied fill is always white
+		 */
+		let layerFill = AscFormat.CreateUnfilFromRGB(255, 255, 255);
+		if (layerProperties["Color"] !== undefined && layerProperties["Color"].v !== "255") {
+			let layerColorUniColor = layerProperties["Color"].calculateValue(this, pageInfo,
+					visioDocument.themes);
+			layerColor = AscFormat.CreateUnfilFromRGB(layerColorUniColor.color.RGBA.R,
+					layerColorUniColor.color.RGBA.G, layerColorUniColor.color.RGBA.B);
+		}
 
 		let isShapeDeleted = this.del === "1" || this.del === true;
 		if (isShapeDeleted) {
@@ -1608,19 +1632,20 @@
 		let shapeWidth_mm = shapeWidth_inch * g_dKoef_in_to_mm;
 		let shapeHeight_mm = shapeHeight_inch * g_dKoef_in_to_mm;
 
-		/** @type CUniFill */
-		let uniFillForegndWithPattern = null;
+
 		/**
-		 * Fill without pattern applied.We need fill without pattern applied bcs pattern applied can set
-		 * NoSolidFill object without color, so we will not be able to calculate handleVariationColor function result.
+		 * Fill without pattern applied.
 		 * @type CUniFill */
 		let uniFillForegnd = null;
 
 		/**
-		 * fill without gradient to handle quick style variation
+		 * fill without gradient used to handle handleQuickStyleVariation function
 		 * @type CUniFill
 		 */
 		let uniFillForegndNoGradient = null;
+
+		/** @type CUniFill */
+		let uniFillForegndWithPattern = null;
 
 		/** @type CUniFill */
 		let	uniFillBkgnd = null;
@@ -1631,168 +1656,375 @@
 		 * @type CUniFill */
 		let lineUniFill = null;
 
+
 		/**
-		 * Let's memorize what color properties used themeVal because quickStyleVariation can change only those
-		 * color props that used themeVal function.
-		 * @type {{lineUniFill: boolean, uniFillForegnd: boolean}}
+		 * @type boolean
 		 */
-		let themeValWasUsedFor = {
-			lineUniFill : false,
-			uniFillForegnd: false
-		}
+		let fillGradientEnabled;
 
-		let gradientEnabledCell = this.getCell("FillGradientEnabled");
-		let gradientEnabled;
-		if (gradientEnabledCell !== undefined) {
-			gradientEnabled = gradientEnabledCell.calculateValue(this, pageInfo,
-				visioDocument.themes, themeValWasUsedFor, true);
+		if (layerColor) {
+			uniFillForegndWithPattern = layerFill;
+			lineUniFill = layerColor;
 		} else {
-			gradientEnabled = false;
-		}
+			/**
+			 * Let's memorize what color properties used themeVal because quickStyleVariation can change only those
+			 * color props that used themeVal function.
+			 * @type {{lineUniFill: boolean, uniFillForegnd: boolean}}
+			 */
+			let themeValWasUsedFor = {
+				lineUniFill : false,
+				uniFillForegnd: false
+			}
+
+			let fillGradientEnabledCell = this.getCell("FillGradientEnabled");
+			if (fillGradientEnabledCell !== undefined) {
+				fillGradientEnabled = fillGradientEnabledCell.calculateValue(this, pageInfo,
+						visioDocument.themes, undefined, true);
+			} else {
+				fillGradientEnabled = false;
+			}
 
 
-		// FillGradientDir and FillPattern can tell about gradient type
-		// if FillGradient Enabled
-		// FillGradientDir defines gradient type (shape) and clolors define colors. If gradient is linear gradient type is complemented with angle.
-		// 13 FillGradientDir is path. path cant be set in interface. also like some radial gradient types witch cant be set in interface.
-		// FillGradientDir > 13 is linear like FillGradientDir = 0
-		//
-		// if FillGradientEnabled Disabled
-		// FillPattern defines gradient type and colors define. There linear types with different predefined angles, rectandulat and radial gradient types.
-		// Rectangular and radial gradient types differs. There are two colors when i set three colors for gradient. Also FillPattern gradients are not listed in
-		// interface. Only true patterns.
-		//
-		// Its better to convert linear FillPattern gradients there. But FillPattern radial gradients seems to be
-		// not like FillGradientDir radial gradients but with different colors
+			// FillGradientDir and FillPattern can tell about gradient type
+			// if FillGradient Enabled
+			// FillGradientDir defines gradient type (shape) and clolors define colors. If gradient is linear gradient type is complemented with angle.
+			// 13 FillGradientDir is path. path cant be set in interface. also like some radial gradient types witch cant be set in interface.
+			// FillGradientDir > 13 is linear like FillGradientDir = 0
+			//
+			// if FillGradientEnabled Disabled
+			// FillPattern defines gradient type and colors define. There linear types with different predefined angles, rectandulat and radial gradient types.
+			// Rectangular and radial gradient types differs. There are two colors when i set three colors for gradient. Also FillPattern gradients are not listed in
+			// interface. Only true patterns.
+			//
+			// Its better to convert linear FillPattern gradients there. But FillPattern radial gradients seems to be
+			// not like FillGradientDir radial gradients but with different colors
 
-		// Calculate fillForegnd without gradient anyway for handleQuickStyleVariation
-		let fillForegndCell = this.getCell("FillForegnd");
-		if (fillForegndCell) {
-			// AscCommon.consoleLog("FillForegnd was found:", fillForegndCell);
-			uniFillForegndNoGradient = fillForegndCell.calculateValue(this, pageInfo,
-				visioDocument.themes, themeValWasUsedFor, false);
+			// Calculate fillForegnd without gradient anyway for handleQuickStyleVariation
+			let fillForegndCell = this.getCell("FillForegnd");
+			if (fillForegndCell) {
+				// AscCommon.consoleLog("FillForegnd was found:", fillForegndCell);
+				uniFillForegndNoGradient = fillForegndCell.calculateValue(this, pageInfo,
+					visioDocument.themes, themeValWasUsedFor, false);
 
-			let fillForegndTransValue = this.getCellNumberValue("FillForegndTrans");
-			if (!isNaN(fillForegndTransValue)) {
-				let fillObj = uniFillForegndNoGradient.fill;
-				if (fillObj.type === Asc.c_oAscFill.FILL_TYPE_PATT) {
-					// pattern fill
-					fillObj.fgClr.color.RGBA.A = fillObj.fgClr.color.RGBA.A * (1 - fillForegndTransValue);
+				let fillForegndTransValue = this.getCellNumberValue("FillForegndTrans");
+				if (!isNaN(fillForegndTransValue)) {
+					let fillObj = uniFillForegndNoGradient.fill;
+					if (fillObj.type === Asc.c_oAscFill.FILL_TYPE_PATT) {
+						// pattern fill
+						fillObj.fgClr.color.RGBA.A = fillObj.fgClr.color.RGBA.A * (1 - fillForegndTransValue);
+					} else {
+						fillObj.color.color.RGBA.A = fillObj.color.color.RGBA.A * (1 - fillForegndTransValue);
+					}
 				} else {
-					fillObj.color.color.RGBA.A = fillObj.color.color.RGBA.A * (1 - fillForegndTransValue);
+					AscCommon.consoleLog("fillForegndTrans value is themed or something. Not calculated for", this);
 				}
 			} else {
-				AscCommon.consoleLog("fillForegndTrans value is themed or something. Not calculated for", this);
+				AscCommon.consoleLog("fillForegnd cell not found for", this);
+				// try to get from theme
+				// uniFillForegnd = AscVisio.themeval(null, this, pageInfo, visioDocument.themes, "FillColor",
+				// 	undefined, fillGradientEnabled);
+				// just use white
+				uniFillForegndNoGradient = AscFormat.CreateUnfilFromRGB(255, 255, 255);
 			}
-		} else {
-			AscCommon.consoleLog("fillForegnd cell not found for", this);
-			// try to get from theme
-			// uniFillForegnd = AscVisio.themeval(null, this, pageInfo, visioDocument.themes, "FillColor",
-			// 	undefined, gradientEnabled);
-			// just use white
-			uniFillForegndNoGradient = AscFormat.CreateUnfilFromRGB(255, 255, 255);
-		}
 
-		if (gradientEnabled) {
-			let fillGradientDir = this.getCellNumberValue("FillGradientDir");
+			if (fillGradientEnabled) {
+				let fillGradientDir = this.getCellNumberValue("FillGradientDir");
 
-			let invertGradient = false;
-			// global matrix transform: invert Y axis causes 0 is bottom of gradient and 100000 is top
-			// let invertGradient = !isInvertCoords;
-			// if (fillGradientDir === 3) {
-			// 	// radial gradient seems to be handled in another way
-			// 	invertGradient = isInvertCoords;
-			// }
+				let invertGradient = false;
+				// global matrix transform: invert Y axis causes 0 is bottom of gradient and 100000 is top
+				// let invertGradient = !isInvertCoords;
+				// if (fillGradientDir === 3) {
+				// 	// radial gradient seems to be handled in another way
+				// 	invertGradient = isInvertCoords;
+				// }
 
-			// now let's come through gradient stops
-			let fillGradientStopsSection = this.getSection("FillGradient");
-			let rows = fillGradientStopsSection.getElements();
-			let fillGradientStops = [];
-			for (const rowKey in rows) {
-				let row = rows[rowKey];
-				if (row.del) {
-					continue;
+				// now let's come through gradient stops
+				let fillGradientStopsSection = this.getSection("FillGradient");
+				let rows = fillGradientStopsSection.getElements();
+				let fillGradientStops = [];
+				for (const rowKey in rows) {
+					let row = rows[rowKey];
+					if (row.del) {
+						continue;
+					}
+
+					// has color (CUniColor) and pos from 0 to 100000
+					let colorStop = new AscFormat.CGs();
+
+					// calculate color (CUniColor)
+					let color = new AscFormat.CUniColor();
+					let gradientStopColorCell = row.getCell("GradientStopColor");
+					color = gradientStopColorCell.calculateValue(this, pageInfo,
+						visioDocument.themes, themeValWasUsedFor, fillGradientEnabled, rowKey);
+
+					let gradientStopColorTransCell = row.getCell("GradientStopColorTrans");
+					let gradientStopColorTransValue = gradientStopColorTransCell.calculateValue(this, pageInfo,
+						visioDocument.themes, themeValWasUsedFor, fillGradientEnabled, rowKey);
+					color.RGBA.A = color.RGBA.A * (1 - gradientStopColorTransValue);
+
+					// now let's get pos
+					let gradientStopPositionCell = row.getCell("GradientStopPosition");
+					let pos = gradientStopPositionCell.calculateValue(this, pageInfo,
+						visioDocument.themes, undefined, fillGradientEnabled, rowKey);
+					pos = invertGradient ? 100000 - pos : pos;
+
+					colorStop.setColor(color);
+					colorStop.setPos(pos);
+
+					fillGradientStops.push({Gs : colorStop});
+
+					if ((pos === 100000 && !invertGradient) || (invertGradient && pos === 0)) {
+						break;
+					}
 				}
 
-				// has color (CUniColor) and pos from 0 to 100000
-				let colorStop = new AscFormat.CGs();
-
-				// calculate color (CUniColor)
-				let color = new AscFormat.CUniColor();
-				let gradientStopColorCell = row.getCell("GradientStopColor");
-				color = gradientStopColorCell.calculateValue(this, pageInfo,
-					visioDocument.themes, themeValWasUsedFor, gradientEnabled, rowKey);
-
-				let gradientStopColorTransCell = row.getCell("GradientStopColorTrans");
-				let gradientStopColorTransValue = gradientStopColorTransCell.calculateValue(this, pageInfo,
-					visioDocument.themes, themeValWasUsedFor, gradientEnabled, rowKey);
-				color.RGBA.A = color.RGBA.A * (1 - gradientStopColorTransValue);
-
-				// now let's get pos
-				let gradientStopPositionCell = row.getCell("GradientStopPosition");
-				let pos = gradientStopPositionCell.calculateValue(this, pageInfo,
-					visioDocument.themes, themeValWasUsedFor, gradientEnabled, rowKey);
-				pos = invertGradient ? 100000 - pos : pos;
-
-				colorStop.setColor(color);
-				colorStop.setPos(pos);
-
-				fillGradientStops.push({Gs : colorStop});
-
-				if ((pos === 100000 && !invertGradient) || (invertGradient && pos === 0)) {
-					break;
-				}
-			}
-
-			if (fillGradientDir && fillGradientDir !== 0) {
-				// radial
-				uniFillForegnd = AscFormat.builder_CreateRadialGradient(fillGradientStops);
-			} else {
-				// also if fillGradientDir === 0 - linear
-				let fillGradientAngleCell = this.getCell("FillGradientAngle");
-				// TODO handle multiple gradient types
-				let fillGradientAngle = fillGradientAngleCell.calculateValue(this, pageInfo,
-					visioDocument.themes, themeValWasUsedFor, gradientEnabled);
-
-				uniFillForegnd = AscFormat.builder_CreateLinearGradient(fillGradientStops, fillGradientAngle);
-			}
-		} else {
-			uniFillForegnd = uniFillForegndNoGradient;
-		}
-
-
-		let fillBkgndCell = this.getCell("FillBkgnd");
-		if (fillBkgndCell) {
-			// AscCommon.consoleLog("FillBkgnd was found:", fillBkgndCell);
-			uniFillBkgnd = fillBkgndCell.calculateValue(this, pageInfo,
-				visioDocument.themes, themeValWasUsedFor);
-
-			let fillBkgndTransValue = this.getCellNumberValue("FillBkgndTrans");
-			if (!isNaN(fillBkgndTransValue)) {
-				let fillObj = uniFillBkgnd.fill;
-				if (fillObj.type === Asc.c_oAscFill.FILL_TYPE_PATT) {
-					// pattern fill
-					fillObj.bgClr.color.RGBA.A = fillObj.fgClr.color.RGBA.A * (1 - fillBkgndTransValue);
+				if (fillGradientDir && fillGradientDir !== 0) {
+					// radial
+					uniFillForegnd = AscFormat.builder_CreateRadialGradient(fillGradientStops);
 				} else {
-					fillObj.color.color.RGBA.A = fillObj.color.color.RGBA.A * (1 - fillBkgndTransValue);
+					// also if fillGradientDir === 0 - linear
+					let fillGradientAngleCell = this.getCell("FillGradientAngle");
+					// TODO handle multiple gradient types
+					let fillGradientAngle = fillGradientAngleCell.calculateValue(this, pageInfo,
+						visioDocument.themes, undefined, fillGradientEnabled);
+
+					uniFillForegnd = AscFormat.builder_CreateLinearGradient(fillGradientStops, fillGradientAngle);
 				}
 			} else {
-				// AscCommon.consoleLog("fillBkgndTrans value is themed or something. Not calculated for", this);
+				uniFillForegnd = uniFillForegndNoGradient;
+			}
+
+
+			let fillBkgndCell = this.getCell("FillBkgnd");
+			if (fillBkgndCell) {
+				// AscCommon.consoleLog("FillBkgnd was found:", fillBkgndCell);
+				uniFillBkgnd = fillBkgndCell.calculateValue(this, pageInfo,
+					visioDocument.themes, themeValWasUsedFor);
+
+				let fillBkgndTransValue = this.getCellNumberValue("FillBkgndTrans");
+				if (!isNaN(fillBkgndTransValue)) {
+					let fillObj = uniFillBkgnd.fill;
+					if (fillObj.type === Asc.c_oAscFill.FILL_TYPE_PATT) {
+						// pattern fill
+						fillObj.bgClr.color.RGBA.A = fillObj.fgClr.color.RGBA.A * (1 - fillBkgndTransValue);
+					} else {
+						fillObj.color.color.RGBA.A = fillObj.color.color.RGBA.A * (1 - fillBkgndTransValue);
+					}
+				} else {
+					// AscCommon.consoleLog("fillBkgndTrans value is themed or something. Not calculated for", this);
+				}
+			}
+
+			let lineColorCell = this.getCell("LineColor");
+			if (lineColorCell) {
+				// AscCommon.consoleLog("LineColor was found for shape", lineColorCell);
+				lineUniFill = lineColorCell.calculateValue(this, pageInfo,
+					visioDocument.themes, themeValWasUsedFor);
+			} else {
+				AscCommon.consoleLog("LineColor cell for line stroke (border) was not found painting red");
+				lineUniFill = AscFormat.CreateUnfilFromRGB(255,0,0);
+			}
+
+			// calculate variation before pattern bcs pattern can make NoFillUniFill object without color
+			handleQuickStyleVariation(lineUniFill, uniFillForegndNoGradient, this, themeValWasUsedFor);
+
+
+			let fillPatternTypeCell = this.getCell("FillPattern");
+			let fillPatternType = fillPatternTypeCell ? fillPatternTypeCell.calculateValue(this, pageInfo,
+					visioDocument.themes) : 1;
+
+			if (!isNaN(fillPatternType) && uniFillBkgnd && uniFillForegnd) {
+				// https://learn.microsoft.com/ru-ru/office/client-developer/visio/fillpattern-cell-fill-format-section
+				let isfillPatternTypeGradient = fillPatternType >= 25 && fillPatternType <= 40;
+				if (fillGradientEnabled) {
+					uniFillForegndWithPattern = uniFillForegnd;
+				} else if (fillPatternType === 0) {
+					uniFillForegndWithPattern = AscFormat.CreateNoFillUniFill();
+				} else if (fillPatternType === 1) {
+					uniFillForegndWithPattern = uniFillForegnd;
+				} else if (isfillPatternTypeGradient) {
+					if (fillPatternType === 25) {
+						let fillGradientStops = [];
+
+						// has color (CUniColor) and pos from 0 to 100000
+						let colorStop1 = new AscFormat.CGs();
+						// calculate color (AscFormat.CUniColor)
+						let color1 = uniFillForegnd.fill.color;
+						let pos1 = 0;
+						colorStop1.setColor(color1);
+						colorStop1.setPos(pos1);
+						fillGradientStops.push({Gs : colorStop1});
+
+						let colorStop2 = new AscFormat.CGs();
+						// calculate color (AscFormat.CUniColor)
+						let color2 = uniFillBkgnd.fill.color;
+						let pos2 = 100000;
+						colorStop2.setColor(color2);
+						colorStop2.setPos(pos2);
+						fillGradientStops.push({Gs : colorStop2});
+
+						uniFillForegndWithPattern = AscFormat.builder_CreateLinearGradient(fillGradientStops, 0);
+					} else if (fillPatternType === 26) {
+						let fillGradientStops = [];
+
+						// has color (CUniColor) and pos from 0 to 100000
+						let colorStop1 = new AscFormat.CGs();
+						// calculate color (AscFormat.CUniColor)
+						let color1 = uniFillBkgnd.fill.color;
+						let pos1 = 0;
+						colorStop1.setColor(color1);
+						colorStop1.setPos(pos1);
+						fillGradientStops.push({Gs : colorStop1});
+
+						let colorStop2 = new AscFormat.CGs();
+						// calculate color (AscFormat.CUniColor)
+						let color2 = uniFillForegnd.fill.color;
+						let pos2 = 50000;
+						colorStop2.setColor(color2);
+						colorStop2.setPos(pos2);
+						fillGradientStops.push({Gs : colorStop2});
+
+						let colorStop3 = new AscFormat.CGs();
+						// calculate color (AscFormat.CUniColor)
+						let color3 = uniFillBkgnd.fill.color;
+						let pos3 = 100000;
+						colorStop3.setColor(color3);
+						colorStop3.setPos(pos3);
+						fillGradientStops.push({Gs : colorStop3});
+
+						uniFillForegndWithPattern = AscFormat.builder_CreateLinearGradient(fillGradientStops, 0);
+					} else if (fillPatternType === 27) {
+						let fillGradientStops = [];
+
+						// has color (CUniColor) and pos from 0 to 100000
+						let colorStop1 = new AscFormat.CGs();
+						// calculate color (AscFormat.CUniColor)
+						let color1 = uniFillBkgnd.fill.color;
+						let pos1 = 0;
+						colorStop1.setColor(color1);
+						colorStop1.setPos(pos1);
+						fillGradientStops.push({Gs : colorStop1});
+
+						let colorStop2 = new AscFormat.CGs();
+						// calculate color (AscFormat.CUniColor)
+						let color2 = uniFillForegnd.fill.color;
+						let pos2 = 100000;
+						colorStop2.setColor(color2);
+						colorStop2.setPos(pos2);
+						fillGradientStops.push({Gs : colorStop2});
+
+						uniFillForegndWithPattern = AscFormat.builder_CreateLinearGradient(fillGradientStops, 0);
+					} else if (fillPatternType === 28) {
+						let fillGradientStops = [];
+
+						// has color (CUniColor) and pos from 0 to 100000
+						let colorStop1 = new AscFormat.CGs();
+						// calculate color (AscFormat.CUniColor)
+						let color1 = uniFillForegnd.fill.color;
+						let pos1 = 0;
+						colorStop1.setColor(color1);
+						colorStop1.setPos(pos1);
+						fillGradientStops.push({Gs : colorStop1});
+
+						let colorStop2 = new AscFormat.CGs();
+						// calculate color (AscFormat.CUniColor)
+						let color2 = uniFillBkgnd.fill.color;
+						let pos2 = 100000;
+						colorStop2.setColor(color2);
+						colorStop2.setPos(pos2);
+						fillGradientStops.push({Gs : colorStop2});
+
+						uniFillForegndWithPattern = AscFormat.builder_CreateLinearGradient(fillGradientStops, 90 * AscFormat.degToC);
+					} else if (fillPatternType === 29) {
+						let fillGradientStops = [];
+
+						// has color (CUniColor) and pos from 0 to 100000
+						let colorStop1 = new AscFormat.CGs();
+						// calculate color (AscFormat.CUniColor)
+						let color1 = uniFillBkgnd.fill.color;
+						let pos1 = 0;
+						colorStop1.setColor(color1);
+						colorStop1.setPos(pos1);
+						fillGradientStops.push({Gs : colorStop1});
+
+						let colorStop2 = new AscFormat.CGs();
+						// calculate color (AscFormat.CUniColor)
+						let color2 = uniFillForegnd.fill.color;
+						let pos2 = 50000;
+						colorStop2.setColor(color2);
+						colorStop2.setPos(pos2);
+						fillGradientStops.push({Gs : colorStop2});
+
+						let colorStop3 = new AscFormat.CGs();
+						// calculate color (AscFormat.CUniColor)
+						let color3 = uniFillBkgnd.fill.color;
+						let pos3 = 100000;
+						colorStop3.setColor(color3);
+						colorStop3.setPos(pos3);
+						fillGradientStops.push({Gs : colorStop3});
+
+						uniFillForegndWithPattern = AscFormat.builder_CreateLinearGradient(fillGradientStops, 90 * AscFormat.degToC);
+					} else if (fillPatternType === 30) {
+						let fillGradientStops = [];
+
+						// has color (CUniColor) and pos from 0 to 100000
+						let colorStop1 = new AscFormat.CGs();
+						// calculate color (AscFormat.CUniColor)
+						let color1 = uniFillForegnd.fill.color;
+						let pos1 = 0;
+						colorStop1.setColor(color1);
+						colorStop1.setPos(pos1);
+						fillGradientStops.push({Gs : colorStop1});
+
+						let colorStop2 = new AscFormat.CGs();
+						// calculate color (AscFormat.CUniColor)
+						let color2 = uniFillBkgnd.fill.color;
+						let pos2 = 100000;
+						colorStop2.setColor(color2);
+						colorStop2.setPos(pos2);
+						fillGradientStops.push({Gs : colorStop2});
+
+						uniFillForegndWithPattern = AscFormat.builder_CreateLinearGradient(fillGradientStops, -90 * AscFormat.degToC);
+					} else {
+						let fillGradientStops = [];
+
+						// has color (CUniColor) and pos from 0 to 100000
+						let colorStop1 = new AscFormat.CGs();
+						// calculate color (AscFormat.CUniColor)
+						let color1 = uniFillForegnd.fill.color;
+						let pos1 = 0;
+						colorStop1.setColor(color1);
+						colorStop1.setPos(pos1);
+						fillGradientStops.push({Gs : colorStop1});
+
+						let colorStop2 = new AscFormat.CGs();
+						// calculate color (AscFormat.CUniColor)
+						let color2 = uniFillBkgnd.fill.color;
+						let pos2 = 100000;
+						colorStop2.setColor(color2);
+						colorStop2.setPos(pos2);
+						fillGradientStops.push({Gs : colorStop2});
+
+						uniFillForegndWithPattern = AscFormat.builder_CreateRadialGradient(fillGradientStops);
+					}
+				} else if (fillPatternType > 1) {
+					let ooxmlFillPatternType = mapVisioFillPatternToOOXML(fillPatternType);
+					if (uniFillForegnd.fill instanceof AscFormat.CPattFill) {
+						uniFillForegndWithPattern = AscFormat.CreatePatternFillUniFill(ooxmlFillPatternType,
+								uniFillForegnd.fill.bgClr, uniFillForegnd.fill.fgClr);
+					} else {
+						uniFillForegndWithPattern = AscFormat.CreatePatternFillUniFill(ooxmlFillPatternType,
+								uniFillBkgnd.fill.color, uniFillForegnd.fill.color);
+					}
+				}
+			} else if (uniFillForegnd) {
+				uniFillForegndWithPattern = uniFillForegnd;
+			} else {
+				AscCommon.consoleLog("FillForegnd not found for shape", this);
+				uniFillForegndWithPattern = AscFormat.CreateNoFillUniFill();
 			}
 		}
 
-		let lineColorCell = this.getCell("LineColor");
-		if (lineColorCell) {
-			// AscCommon.consoleLog("LineColor was found for shape", lineColorCell);
-			lineUniFill = lineColorCell.calculateValue(this, pageInfo,
-				visioDocument.themes, themeValWasUsedFor);
-		} else {
-			AscCommon.consoleLog("LineColor cell for line stroke (border) was not found painting red");
-			lineUniFill = AscFormat.CreateUnfilFromRGB(255,0,0);
-		}
-
-		// calculate variation before pattern bcs pattern can make NoFillUniFill object without color
-		handleQuickStyleVariation(lineUniFill, uniFillForegndNoGradient, this, themeValWasUsedFor);
 
 		let lineWidthEmu = null;
 		let lineWeightCell = this.getCell("LineWeight");
@@ -1800,7 +2032,7 @@
 			// to cell.v visio always saves inches
 			// let lineWeightInches = Number(lineWeightCell.v);
 			let lineWeightInches = lineWeightCell.calculateValue(this, pageInfo,
-				visioDocument.themes, themeValWasUsedFor);
+				visioDocument.themes);
 			if (!isNaN(lineWeightInches)) {
 				lineWidthEmu = lineWeightInches * AscCommonWord.g_dKoef_in_to_mm * AscCommonWord.g_dKoef_mm_to_emu;
 			} else {
@@ -1822,7 +2054,7 @@
 		let lineCapNumber;
 		if (lineCapCell) {
 			// see [MS-VSDX]-220215 (1) - 2.4.4.170	LineCap
-			lineCapNumber = lineCapCell.calculateValue(this, pageInfo, visioDocument.themes, themeValWasUsedFor);
+			lineCapNumber = lineCapCell.calculateValue(this, pageInfo, visioDocument.themes);
 			if (isNaN(lineCapNumber)) {
 				oStroke.setCap(2);
 			} else {
@@ -1833,7 +2065,7 @@
 		let linePattern = this.getCell("LinePattern");
 		if (linePattern) {
 			// see ECMA-376-1 - L.4.8.5.2 Line Dash Properties and [MS-VSDX]-220215 (1) - 2.4.4.180	LinePattern
-			let linePatternNumber = linePattern.calculateValue(this, pageInfo, visioDocument.themes, themeValWasUsedFor);
+			let linePatternNumber = linePattern.calculateValue(this, pageInfo, visioDocument.themes);
 			if (isNaN(linePatternNumber)) {
 				oStroke.setPrstDash(oStroke.GetDashCode("vsdxSolid"));
 			} else {
@@ -1868,216 +2100,21 @@
 		let endArrowTypeCell = this.getCell("EndArrow");
 		let endArrowSizeCell = this.getCell("EndArrowSize");
 		let endArrowType = endArrowTypeCell ? endArrowTypeCell.calculateValue(this, pageInfo,
-			visioDocument.themes, themeValWasUsedFor) : 0;
+			visioDocument.themes) : 0;
 		let endArrowSize = endArrowSizeCell ? endArrowSizeCell.calculateValue(this, pageInfo,
-			visioDocument.themes, themeValWasUsedFor) : 1;
+			visioDocument.themes) : 1;
 		let endArrow = getEndArrow(endArrowType, endArrowSize);
 		oStroke.setTailEnd(endArrow);
 
 		let beginArrowTypeCell = this.getCell("BeginArrow");
 		let beginArrowSizeCell = this.getCell("BeginArrowSize");
 		let beginArrowType = beginArrowTypeCell ? beginArrowTypeCell.calculateValue(this, pageInfo,
-			visioDocument.themes, themeValWasUsedFor) : 0;
+			visioDocument.themes) : 0;
 		let beginArrowSize = beginArrowSizeCell ? beginArrowSizeCell.calculateValue(this, pageInfo,
-			visioDocument.themes, themeValWasUsedFor) : 1;
+			visioDocument.themes) : 1;
 		let beginArrow = getEndArrow(beginArrowType, beginArrowSize);
 		oStroke.setHeadEnd(beginArrow);
 
-
-		let fillPatternTypeCell = this.getCell("FillPattern");
-		let fillPatternType = fillPatternTypeCell ? fillPatternTypeCell.calculateValue(this, pageInfo,
-			visioDocument.themes, themeValWasUsedFor) : 1;
-
-		if (!isNaN(fillPatternType) && uniFillBkgnd && uniFillForegnd) {
-			// https://learn.microsoft.com/ru-ru/office/client-developer/visio/fillpattern-cell-fill-format-section
-			let isfillPatternTypeGradient = fillPatternType >= 25 && fillPatternType <= 40;
-			if (gradientEnabled) {
-				uniFillForegndWithPattern = uniFillForegnd;
-			} else if (fillPatternType === 0) {
-				uniFillForegndWithPattern = AscFormat.CreateNoFillUniFill();
-			} else if (fillPatternType === 1) {
-				uniFillForegndWithPattern = uniFillForegnd;
-			} else if (isfillPatternTypeGradient) {
-				if (fillPatternType === 25) {
-					let fillGradientStops = [];
-
-					// has color (CUniColor) and pos from 0 to 100000
-					let colorStop1 = new AscFormat.CGs();
-					// calculate color (AscFormat.CUniColor)
-					let color1 = uniFillForegnd.fill.color;
-					let pos1 = 0;
-					colorStop1.setColor(color1);
-					colorStop1.setPos(pos1);
-					fillGradientStops.push({Gs : colorStop1});
-
-					let colorStop2 = new AscFormat.CGs();
-					// calculate color (AscFormat.CUniColor)
-					let color2 = uniFillBkgnd.fill.color;
-					let pos2 = 100000;
-					colorStop2.setColor(color2);
-					colorStop2.setPos(pos2);
-					fillGradientStops.push({Gs : colorStop2});
-
-					uniFillForegndWithPattern = AscFormat.builder_CreateLinearGradient(fillGradientStops, 0);
-				} else if (fillPatternType === 26) {
-					let fillGradientStops = [];
-
-					// has color (CUniColor) and pos from 0 to 100000
-					let colorStop1 = new AscFormat.CGs();
-					// calculate color (AscFormat.CUniColor)
-					let color1 = uniFillBkgnd.fill.color;
-					let pos1 = 0;
-					colorStop1.setColor(color1);
-					colorStop1.setPos(pos1);
-					fillGradientStops.push({Gs : colorStop1});
-
-					let colorStop2 = new AscFormat.CGs();
-					// calculate color (AscFormat.CUniColor)
-					let color2 = uniFillForegnd.fill.color;
-					let pos2 = 50000;
-					colorStop2.setColor(color2);
-					colorStop2.setPos(pos2);
-					fillGradientStops.push({Gs : colorStop2});
-
-					let colorStop3 = new AscFormat.CGs();
-					// calculate color (AscFormat.CUniColor)
-					let color3 = uniFillBkgnd.fill.color;
-					let pos3 = 100000;
-					colorStop3.setColor(color3);
-					colorStop3.setPos(pos3);
-					fillGradientStops.push({Gs : colorStop3});
-
-					uniFillForegndWithPattern = AscFormat.builder_CreateLinearGradient(fillGradientStops, 0);
-				} else if (fillPatternType === 27) {
-					let fillGradientStops = [];
-
-					// has color (CUniColor) and pos from 0 to 100000
-					let colorStop1 = new AscFormat.CGs();
-					// calculate color (AscFormat.CUniColor)
-					let color1 = uniFillBkgnd.fill.color;
-					let pos1 = 0;
-					colorStop1.setColor(color1);
-					colorStop1.setPos(pos1);
-					fillGradientStops.push({Gs : colorStop1});
-
-					let colorStop2 = new AscFormat.CGs();
-					// calculate color (AscFormat.CUniColor)
-					let color2 = uniFillForegnd.fill.color;
-					let pos2 = 100000;
-					colorStop2.setColor(color2);
-					colorStop2.setPos(pos2);
-					fillGradientStops.push({Gs : colorStop2});
-
-					uniFillForegndWithPattern = AscFormat.builder_CreateLinearGradient(fillGradientStops, 0);
-				} else if (fillPatternType === 28) {
-					let fillGradientStops = [];
-
-					// has color (CUniColor) and pos from 0 to 100000
-					let colorStop1 = new AscFormat.CGs();
-					// calculate color (AscFormat.CUniColor)
-					let color1 = uniFillForegnd.fill.color;
-					let pos1 = 0;
-					colorStop1.setColor(color1);
-					colorStop1.setPos(pos1);
-					fillGradientStops.push({Gs : colorStop1});
-
-					let colorStop2 = new AscFormat.CGs();
-					// calculate color (AscFormat.CUniColor)
-					let color2 = uniFillBkgnd.fill.color;
-					let pos2 = 100000;
-					colorStop2.setColor(color2);
-					colorStop2.setPos(pos2);
-					fillGradientStops.push({Gs : colorStop2});
-
-					uniFillForegndWithPattern = AscFormat.builder_CreateLinearGradient(fillGradientStops, 90 * AscFormat.degToC);
-				} else if (fillPatternType === 29) {
-					let fillGradientStops = [];
-
-					// has color (CUniColor) and pos from 0 to 100000
-					let colorStop1 = new AscFormat.CGs();
-					// calculate color (AscFormat.CUniColor)
-					let color1 = uniFillBkgnd.fill.color;
-					let pos1 = 0;
-					colorStop1.setColor(color1);
-					colorStop1.setPos(pos1);
-					fillGradientStops.push({Gs : colorStop1});
-
-					let colorStop2 = new AscFormat.CGs();
-					// calculate color (AscFormat.CUniColor)
-					let color2 = uniFillForegnd.fill.color;
-					let pos2 = 50000;
-					colorStop2.setColor(color2);
-					colorStop2.setPos(pos2);
-					fillGradientStops.push({Gs : colorStop2});
-
-					let colorStop3 = new AscFormat.CGs();
-					// calculate color (AscFormat.CUniColor)
-					let color3 = uniFillBkgnd.fill.color;
-					let pos3 = 100000;
-					colorStop3.setColor(color3);
-					colorStop3.setPos(pos3);
-					fillGradientStops.push({Gs : colorStop3});
-
-					uniFillForegndWithPattern = AscFormat.builder_CreateLinearGradient(fillGradientStops, 90 * AscFormat.degToC);
-				} else if (fillPatternType === 30) {
-					let fillGradientStops = [];
-
-					// has color (CUniColor) and pos from 0 to 100000
-					let colorStop1 = new AscFormat.CGs();
-					// calculate color (AscFormat.CUniColor)
-					let color1 = uniFillForegnd.fill.color;
-					let pos1 = 0;
-					colorStop1.setColor(color1);
-					colorStop1.setPos(pos1);
-					fillGradientStops.push({Gs : colorStop1});
-
-					let colorStop2 = new AscFormat.CGs();
-					// calculate color (AscFormat.CUniColor)
-					let color2 = uniFillBkgnd.fill.color;
-					let pos2 = 100000;
-					colorStop2.setColor(color2);
-					colorStop2.setPos(pos2);
-					fillGradientStops.push({Gs : colorStop2});
-
-					uniFillForegndWithPattern = AscFormat.builder_CreateLinearGradient(fillGradientStops, -90 * AscFormat.degToC);
-				} else {
-					let fillGradientStops = [];
-
-					// has color (CUniColor) and pos from 0 to 100000
-					let colorStop1 = new AscFormat.CGs();
-					// calculate color (AscFormat.CUniColor)
-					let color1 = uniFillForegnd.fill.color;
-					let pos1 = 0;
-					colorStop1.setColor(color1);
-					colorStop1.setPos(pos1);
-					fillGradientStops.push({Gs : colorStop1});
-
-					let colorStop2 = new AscFormat.CGs();
-					// calculate color (AscFormat.CUniColor)
-					let color2 = uniFillBkgnd.fill.color;
-					let pos2 = 100000;
-					colorStop2.setColor(color2);
-					colorStop2.setPos(pos2);
-					fillGradientStops.push({Gs : colorStop2});
-
-					uniFillForegndWithPattern = AscFormat.builder_CreateRadialGradient(fillGradientStops);
-				}
-			} else if (fillPatternType > 1) {
-				let ooxmlFillPatternType = mapVisioFillPatternToOOXML(fillPatternType);
-				if (uniFillForegnd.fill instanceof AscFormat.CPattFill) {
-					uniFillForegndWithPattern = AscFormat.CreatePatternFillUniFill(ooxmlFillPatternType,
-						uniFillForegnd.fill.bgClr, uniFillForegnd.fill.fgClr);
-				} else {
-					uniFillForegndWithPattern = AscFormat.CreatePatternFillUniFill(ooxmlFillPatternType,
-						uniFillBkgnd.fill.color, uniFillForegnd.fill.color);
-				}
-			}
-		} else if (uniFillForegnd) {
-			uniFillForegndWithPattern = uniFillForegnd;
-		} else {
-			AscCommon.consoleLog("FillForegnd not found for shape", this);
-			uniFillForegndWithPattern = AscFormat.CreateNoFillUniFill();
-		}
 
 		let flipHorizontally = this.getCellNumberValue("FlipX") === 1;
 
@@ -2103,8 +2140,8 @@
 
 		// not scaling fontSize
 		let textCShape = getTextCShape(visioDocument.themes[0], this, cShape,
-			lineUniFill, uniFillForegnd, drawingPageScale, maxHeightScaledIn,
-			visioDocument.pageIndex, visioDocument.pages.page.length, pageInfo);
+			lineUniFill, uniFillForegndNoGradient, drawingPageScale, maxHeightScaledIn,
+			visioDocument.pageIndex, visioDocument.pages.page.length, pageInfo, layerColor);
 
 		if (textCShape !== null) {
 			if (isShapeDeleted) {
