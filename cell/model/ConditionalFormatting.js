@@ -745,6 +745,10 @@
 		var res;
 		if (null !== this.text) {
 			res = new AscCommonExcel.cString(this.text);
+		} else if (this.aRuleElements[0] && (this.type === Asc.ECfType.notContainsText || this.type === Asc.ECfType.containsText)) {
+			//ms see on bool result of first formula
+			//formula1/formula2: true/false -> true, false/true -> false, false/false -> false
+			res = this.aRuleElements[0].getValue(ws, opt_parent, opt_bbox, opt_offset, opt_returnRaw);
 		} else if (this.aRuleElements[1]) {
 			res = this.aRuleElements[1].getValue(ws, opt_parent, opt_bbox, opt_offset, opt_returnRaw);
 		}
@@ -758,6 +762,14 @@
 			operator === AscCommonExcel.ECfOperator.Operator_endsWith ||
 			operator === AscCommonExcel.ECfOperator.Operator_containsText ||
 			operator === AscCommonExcel.ECfOperator.Operator_notContains) {
+			//ms see on bool result of first formula
+			//formula1/formula2: true/false -> true, false/true -> false, false/false -> false
+			if (v1 && v1.tocBool) {
+				let boolVal = v1.tocBool();
+				if (boolVal && (boolVal.value === false || boolVal.value === true)){
+					return boolVal.value;
+				}
+			}
 			return this._cellIsText(operator, cell, v1);
 		} else {
 			return this._cellIsNumber(operator, cell, v1, v2);
@@ -1256,7 +1268,7 @@
 			//генерируем массив
 			this.aRuleElements = [];
 			this.aRuleElements[0] = new CFormulaCF();
-			this.aRuleElements[0].Text = this.getFormulaByType(val);
+			this.aRuleElements[0].Text = this.getFormulaByType(val, true);
 			this.aRuleElements[1] = new CFormulaCF();
 			this.aRuleElements[1].Text = val;
 			this.text = null;
@@ -1268,7 +1280,7 @@
 		}
 	};
 
-	CConditionalFormattingRule.prototype.getFormulaByType = function (val) {
+	CConditionalFormattingRule.prototype.getFormulaByType = function (val, isFormulaVal) {
 		var t = this;
 		var _generateTimePeriodFunction = function () {
 			switch (t.timePeriod) {
@@ -1307,7 +1319,7 @@
 
 		var res = null;
 		var range;
-		if (val !== null && val !== undefined) {
+		if (val !== null && val !== undefined && !isFormulaVal) {
 			val = addQuotes(val);
 		}
 		if (this.ranges && this.ranges[0]) {
