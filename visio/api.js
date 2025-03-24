@@ -350,6 +350,7 @@
 	};
 	function AfterOpenDocument(data, size)
 	{
+		this.WordControl.m_oLogicDocument.AfterOpenDocument();
 		this.WordControl.m_oLogicDocument.Set_FastCollaborativeEditing(true);
 
 		this.LoadedObject = 1;

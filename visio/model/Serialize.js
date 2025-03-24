@@ -36,42 +36,15 @@
 	function BinaryVSDYLoader()
 	{
 		this.stream = null;
-		this.presentation = null;
-		this.DrawingDocument = null;
-		this.TempGroupObject = null;
-		this.TempMainObject = null;
+		this.document = null;
 
-		this.IsFillingSmartArt = false;
-		this.IsThemeLoader = false;
-		this.Api = null;
-
-		this.map_table_styles = {};
-
-		this.ImageMapChecker = null;
-
-		this.IsUseFullUrl = false;
-		this.insertDocumentUrlsData = null;
-		this.RebuildImages = [];
-
-		this.aSlideLayouts = [];
-		this.aThemes = [];
-
-		this.oConnectedObjects = {};
-		this.map_shapes_by_id = {};
-		this.fields = [];
-		this.smartarts = [];
-
-		this.ClearSmartArts = function () {
-			this.smartarts.length = 0;
-		};
-
-		this.Load = function(base64_ppty, presentation)
+		this.Load = function(base64_ppty, document)
 		{
-			this.presentation = presentation;
+			this.document = document;
 			this.DrawingDocument = null;
-			if(presentation)
+			if(document)
 			{
-				this.DrawingDocument = presentation.DrawingDocument;
+				this.DrawingDocument = document.DrawingDocument;
 			}
 			else
 			{
@@ -146,10 +119,6 @@
 				this.stream.Seek2(index);
 			}
 
-			this.presentation.ImageMap = {};
-			this.presentation.Fonts = [];
-			this.fields.length = 0;
-
 			this.LoadDocument();
 			// if(AscFonts.IsCheckSymbols)
 			// {
@@ -209,23 +178,23 @@
 				
 				switch (sectionType) {
 					case TABLE_TYPES.APP:
-						this.presentation.app = new AscCommon.CApp();
-						this.presentation.app.fromStream(stream);
+						this.document.app = new AscCommon.CApp();
+						this.document.app.fromStream(stream);
 						break;
 					
 					case TABLE_TYPES.CORE:
-						this.presentation.core = new AscCommon.CCore();
-						this.presentation.core.fromStream(stream);
+						this.document.core = new AscCommon.CCore();
+						this.document.core.fromStream(stream);
 						break;
 					
 					case TABLE_TYPES.CUSTOM_PROPERTIES:
-						if (this.presentation.customProperties) {
-							this.presentation.customProperties.fromStream(stream);
+						if (this.document.customProperties) {
+							this.document.customProperties.fromStream(stream);
 						}
 						break;
 					
 					case TABLE_TYPES.DOCUMENT:
-						this.presentation.fromPPTY(this);
+						this.document.fromPPTY(this);
 						break;
 				}
 				
@@ -265,9 +234,9 @@
 	/**
 	 * Read child elements from stream for CVisioDocument
 	 * 
-	 * @param  {BinaryVSDYLoader} pReader - The binary reader
-	 * @param {number} elementType - The type of child element
-	 */
+   * @param  {BinaryVSDYLoader} pReader - The binary reader
+   * @param {number} elementType - The type of child element
+   */
 	AscVisio.CVisioDocument.prototype.readChild = function(elementType, pReader) {
 		const stream = pReader.stream;
 		let t = this;
@@ -369,39 +338,39 @@
 				this.pages.fromPPTY(pReader);
 				break;
 				
-			case 9:
-				//todo
-				// AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY.call({
-				// 	readChildren: AscFormat.CBaseFormatNoIdObject.prototype.readChildren,
-				// 	readChild: function(elementType, pReader) {
-				// 		const stream = pReader.stream;
-				// 		if (elementType === 0) {
-				// 			const connection = new AscVisio.Connection_Type();
-				// 			connection.fromPPTY(pReader);
-				// 			t.connections.push(connection);
-				// 			return true;
-				// 		}
-				// 		return false;
-				// 	}
-				// }, pReader);
-				break;
+			// case 9:
+			// 	// todo
+			// 	AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY.call({
+			// 		readChildren: AscFormat.CBaseFormatNoIdObject.prototype.readChildren,
+			// 		readChild: function(elementType, pReader) {
+			// 			const stream = pReader.stream;
+			// 			if (elementType === 0) {
+			// 				const connection = new AscVisio.Connection_Type();
+			// 				connection.fromPPTY(pReader);
+			// 				t.connections.push(connection);
+			// 				return true;
+			// 			}
+			// 			return false;
+			// 		}
+			// 	}, pReader);
+			// 	break;
 				
-			case 10:
-				//todo
-				// AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY.call({
-				// 	readChildren: AscFormat.CBaseFormatNoIdObject.prototype.readChildren,
-				// 	readChild: function(elementType, pReader) {
-				// 		const stream = pReader.stream;
-				// 		if (elementType === 0) {
-				// 			const connection = new AscVisio.Recordset_Type();
-				// 			connection.fromPPTY(pReader);
-				// 			t.recordsets.push(connection);
-				// 			return true;
-				// 		}
-				// 		return false;
-				// 	}
-				// }, pReader);
-				break;
+			// case 10:
+			// 	//todo
+			// 	AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY.call({
+			// 		readChildren: AscFormat.CBaseFormatNoIdObject.prototype.readChildren,
+			// 		readChild: function(elementType, pReader) {
+			// 			const stream = pReader.stream;
+			// 			if (elementType === 0) {
+			// 				const connection = new AscVisio.Recordset_Type();
+			// 				connection.fromPPTY(pReader);
+			// 				t.recordsets.push(connection);
+			// 				return true;
+			// 			}
+			// 			return false;
+			// 		}
+			// 	}, pReader);
+			// 	break;
 				
 			case 11:
 				if (!this.solutions) {
@@ -417,22 +386,22 @@
 				this.validation.fromPPTY(pReader);
 				break;
 				
-			case 13:
-				//todo
-				// AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY.call({
-				// 	readChildren: AscFormat.CBaseFormatNoIdObject.prototype.readChildren,
-				// 	readChild: function(elementType, pReader) {
-				// 		const stream = pReader.stream;
-				// 		if (elementType === 0) {
-				// 			const connection = new AscVisio.Comment_Type();
-				// 			connection.fromPPTY(pReader);
-				// 			t.comments.push(connection);
-				// 			return true;
-				// 		}
-				// 		return false;
-				// 	}
-				// }, pReader);
-				break;
+			// case 13:
+			// 	//todo
+			// 	AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY.call({
+			// 		readChildren: AscFormat.CBaseFormatNoIdObject.prototype.readChildren,
+			// 		readChild: function(elementType, pReader) {
+			// 			const stream = pReader.stream;
+			// 			if (elementType === 0) {
+			// 				const connection = new AscVisio.Comment_Type();
+			// 				connection.fromPPTY(pReader);
+			// 				t.comments.push(connection);
+			// 				return true;
+			// 			}
+			// 			return false;
+			// 		}
+			// 	}, pReader);
+			// 	break;
 				
 			case 14:
 				if (!this.windows) {
@@ -576,6 +545,41 @@
 	};
 
 	/**
+	 * Read attributes from stream for FaceName_Type
+	 *
+	 * @param {number} attrType - The type of attribute
+	 * @param {BinaryVSDYLoader} pReader - The binary reader
+	 * @returns {boolean} - True if attribute was handled, false otherwise
+	 */
+	AscVisio.FaceName_Type.prototype.readAttribute = function(attrType, pReader) {
+		const stream = pReader.stream;
+		switch (attrType) {
+			case 0:
+				this.nameU = stream.GetString2();
+				break;
+			case 1:
+				this.unicodeRanges = stream.GetString2();
+				break;
+			case 2:
+				this.charSets = stream.GetString2();
+				break;
+			case 3:
+				this.panos = stream.GetString2();
+				break;
+			case 4:
+				this.panose = stream.GetString2();
+				break;
+			case 5:
+				this.flags = stream.GetULong();
+				break;
+			default:
+				return false;
+		}
+		
+		return true;
+	};
+
+	/**
 	 * Read attributes from stream for StyleSheet_Type
 	 * 
 	 * @param  {number} attrType - The type of attribute
@@ -635,10 +639,10 @@
 				break;
 			}
 			case 2: {
-				const selection = new AscVisio.Section_Type();
-				selection.fromPPTY(pReader);
-				const key = AscVisio.createKeyFromSheetObject(selection);
-				this.elements[key] = selection;
+				const section = new AscVisio.Section_Type();
+				section.fromPPTY(pReader);
+				const key = AscVisio.createKeyFromSheetObject(section);
+				this.elements[key] = section;
 				break;
 			}
 			default:
@@ -744,10 +748,10 @@
 		const stream = pReader.stream;
 		switch (attrType) {
 			case 0:
-				this.headerMargin = stream.GetDouble2();
+				this.headerMargin = stream.GetDouble();
 				break;
 			case 1:
-				this.footerMargin = stream.GetDouble2();
+				this.footerMargin = stream.GetDouble();
 				break;
 			case 2:
 				this.headerLeft = stream.GetString2();
@@ -778,27 +782,6 @@
 	};
 
 	/**
-	 * Read attributes from stream for CMasters
-	 * 
-	 * @param  {number} attrType - The type of attribute
-	 * @param {BinaryVSDYLoader} pReader - The binary reader
-	 * @returns {boolean} - True if attribute was handled, false otherwise
-	 */
-	AscVisio.CMasters.prototype.readAttribute = function(attrType, pReader) {
-		const stream = pReader.stream;
-		switch (attrType) {
-			case 0:
-				this.entriesCount = stream.GetULong();
-				this.masters = [];
-				break;
-			default:
-				return false;
-		}
-		
-		return true;
-	};
-
-	/**
 	 * Read child elements from stream for CMasters
 	 * 
 	 * @param  {number} elementType - The type of child element
@@ -810,7 +793,7 @@
 		if (elementType === 0) {
 			const master = new AscVisio.Master_Type();
 			master.fromPPTY(pReader);
-			this.masters.push(master);
+			this.master.push(master);
 			return true;
 		}
 		
@@ -831,34 +814,46 @@
 				this.id = stream.GetULong();
 				break;
 			case 1:
-				this.uniqueID = stream.GetString2();
-				break;
-			case 2:
 				this.name = stream.GetString2();
 				break;
-			case 3:
+			case 2:
 				this.nameU = stream.GetString2();
 				break;
+			case 3:
+				this.baseID = stream.GetString2();
+				break;
 			case 4:
-				this.iconSize = stream.GetULong();
+				this.uniqueID = stream.GetString2();
 				break;
 			case 5:
-				this.patternFlags = stream.GetULong();
+				this.matchByName = stream.GetBool();
 				break;
 			case 6:
-				this.prompt = stream.GetString2();
+				this.isCustomName = stream.GetBool();
 				break;
 			case 7:
-				this.hidden = stream.GetBool();
+				this.isCustomNameU = stream.GetBool();
 				break;
 			case 8:
-				this.iconUpdate = stream.GetBool();
+				this.iconSize = stream.GetULong();
 				break;
 			case 9:
-				this.alwaysDrawComps = stream.GetBool();
+				this.patternFlags = stream.GetULong();
 				break;
 			case 10:
-				this.matchByName = stream.GetBool();
+				this.prompt = stream.GetString2();
+				break;
+			case 11:
+				this.hidden = stream.GetBool();
+				break;
+			case 12:
+				this.iconUpdate = stream.GetBool();
+				break;
+			case 13:
+				this.alignName = stream.GetULong();
+				break;
+			case 14:
+				this.masterType = stream.GetULong();
 				break;
 			default:
 				return false;
@@ -875,22 +870,112 @@
 	 * @returns {boolean} - True if element was handled, false otherwise
 	 */
 	AscVisio.Master_Type.prototype.readChild = function(elementType, pReader) {
-		return false;
+		const stream = pReader.stream;
+		switch (elementType) {
+			case 0: {
+				this.pageSheet = new AscVisio.PageSheet_Type();
+				this.pageSheet.fromPPTY(pReader);
+				break;
+			}
+			case 1: {
+				const nStart = stream.cur;
+				const nEnd = nStart + stream.GetULong() + 4;
+				this.icon = new AscVisio.Icon_Type();
+				this.icon.value = stream.GetString2();
+				stream.Seek2(nEnd);
+				break;
+			}
+			//todo
+			case 2: {
+				const masterContents = new AscVisio.CMasterContents();
+				masterContents.fromPPTY(pReader);
+				//todo rels
+				pReader.document.masterContents.push(masterContents);
+				break;
+			}
+			default:
+				return false;
+		}
+
+		return true;
 	};
 
 	/**
-	 * Read attributes from stream for CPages
-	 * 
-	 * @param  {number} attrType - The type of attribute
+	 * Read child elements from stream for CMasterContents
+	 *
+	 * @param {number} elementType - The type of child element
+	 * @param {BinaryVSDYLoader} pReader - The binary reader
+	 * @returns {boolean} - True if element was handled, false otherwise
+	 */
+	AscVisio.CMasterContents.prototype.readChild = function(elementType, pReader) {
+		let t = this;
+		switch (elementType) {
+			case 0: {
+				// Read Shapes
+				AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY.call({
+					readChildren: AscFormat.CBaseFormatNoIdObject.prototype.readChildren,
+					readChild: function(elementType, pReader) {
+						if (elementType === 0) {
+							const shape = new AscVisio.Shape_Type();
+							shape.fromPPTY(pReader);
+							t.shapes.push(shape);
+							return true;
+						}
+						return false;
+					}
+				}, pReader);
+				break;
+			}
+			case 1: {
+				// Read Connects
+				AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY.call({
+					readChildren: AscFormat.CBaseFormatNoIdObject.prototype.readChildren,
+					readChild: function(elementType, pReader) {
+						if (elementType === 0) {
+							const connect = new AscVisio.Connect_Type();
+							connect.fromPPTY(pReader);
+							t.connects.push(connect);
+							return true;
+						}
+						return false;
+					}
+				}, pReader);
+				break;
+			}
+			default:
+				return false;
+		}
+		
+		return true;
+	};
+	
+	/**
+	 * Read attributes from stream for Connect_Type
+	 *
+	 * @param {number} attrType - The type of attribute
 	 * @param {BinaryVSDYLoader} pReader - The binary reader
 	 * @returns {boolean} - True if attribute was handled, false otherwise
 	 */
-	AscVisio.CPages.prototype.readAttribute = function(attrType, pReader) {
+	AscVisio.Connect_Type.prototype.readAttribute = function(attrType, pReader) {
 		const stream = pReader.stream;
 		switch (attrType) {
 			case 0:
-				this.entriesCount = stream.GetULong();
-				this.pages = [];
+				this.fromSheet = stream.GetULong();
+				break;
+			case 1:
+				this.fromCell = stream.GetString2();
+				break;
+			case 2:
+				this.fromPart = stream.GetLong();
+				break;
+			case 3:
+				this.toSheet = stream.GetULong();
+				break;
+			case 4:
+				this.toCell = stream.GetString2();
+				break;
+			case 5:
+				this.toPart = stream.GetLong();
 				break;
 			default:
 				return false;
@@ -911,7 +996,7 @@
 		if (elementType === 0) {
 			const page = new AscVisio.Page_Type();
 			page.fromPPTY(pReader);
-			this.pages.push(page);
+			this.page.push(page);
 			return true;
 		}
 		
@@ -938,16 +1023,31 @@
 				this.nameU = stream.GetString2();
 				break;
 			case 3:
-				this.background = stream.GetBool();
+				this.isCustomName = stream.GetBool();
 				break;
 			case 4:
-				this.backPage = stream.GetULong();
+				this.isCustomNameU = stream.GetBool();
 				break;
 			case 5:
-				this.width = stream.GetDoubleLE();
+				this.background = stream.GetBool();
 				break;
 			case 6:
-				this.height = stream.GetDoubleLE();
+				this.backPage = stream.GetULong();
+				break;
+			case 7:
+				this.viewScale = stream.GetDouble();
+				break;
+			case 8:
+				this.viewCenterX = stream.GetDouble();
+				break;
+			case 9:
+				this.viewCenterY = stream.GetDouble();
+				break;
+			case 10:
+				this.reviewerID = stream.GetULong();
+				break;
+			case 11:
+				this.associatedPage = stream.GetULong();
 				break;
 			default:
 				return false;
@@ -956,15 +1056,149 @@
 		return true;
 	};
 
+	/**
+	 * Read child elements from stream for Page_Type
+	 * 
+	 * @param  {number} elementType - The type of child element
+	 * @param {BinaryVSDYLoader} pReader - The binary reader
+	 * @returns {boolean} - True if element was handled, false otherwise
+	 */
+	AscVisio.Page_Type.prototype.readChild = function(elementType, pReader) {
+		switch (elementType) {
+			case 0: {
+				this.pageSheet = new AscVisio.PageSheet_Type();
+				this.pageSheet.fromPPTY(pReader);
+				break;
+			}
+			case 1: {
+				const pageContents = new AscVisio.CPageContents();
+				pageContents.fromPPTY(pReader);
+				//todo rels
+				pReader.document.pageContents.push(pageContents);
+				break;
+			}
+			default:
+				return false;
+		}
+
+		return true;
+	};
+
+	/**
+	 * Read attributes from stream for PageSheet_Type
+	 *
+	 * @param {number} attrType - The type of attribute
+	 * @param {BinaryVSDYLoader} pReader - The binary reader
+	 * @returns {boolean} - True if attribute was handled, false otherwise
+	 */
+	AscVisio.PageSheet_Type.prototype.readAttribute = function(attrType, pReader) {
+		const stream = pReader.stream;
+		switch (attrType) {
+			case 0:
+				this.uniqueID = stream.GetString2();
+				break;
+			case 1:
+				this.lineStyle = stream.GetULong();
+				break;
+			case 2:
+				this.fillStyle = stream.GetULong();
+				break;
+			case 3:
+				this.textStyle = stream.GetULong();
+				break;
+			default:
+				return false;
+		}
+		
+		return true;
+	};
+
+	/**
+	 * Read child elements from stream for PageSheet_Type
+	 *
+	 * @param {number} elementType - The type of child element
+	 * @param {BinaryVSDYLoader} pReader - The binary reader
+	 * @returns {boolean} - True if element was handled, false otherwise
+	 */
+	AscVisio.PageSheet_Type.prototype.readChild = function(elementType, pReader) {
+		switch (elementType) {
+			case 0: {
+				const cell = new AscVisio.Cell_Type();
+				cell.fromPPTY(pReader);
+				const key = AscVisio.createKeyFromSheetObject(cell);
+				this.elements[key] = cell;
+				break;
+			}
+			case 1: {
+				const trigger = new AscVisio.Trigger_Type();
+				trigger.fromPPTY(pReader);
+				const key = AscVisio.createKeyFromSheetObject(trigger);
+				this.elements[key] = trigger;
+				break;
+			}
+			case 2: {
+				const section = new AscVisio.Section_Type();
+				section.fromPPTY(pReader);
+				const key = AscVisio.createKeyFromSheetObject(section);
+				this.elements[key] = section;
+				break;
+			}
+			default:
+				return false;
+		}
+
+		return true;
+	};
 
 	// /**
-	//  * Read attributes from stream for Connection_Type
-	//  * 
+	//  * Read attributes from stream for Comment_Type
+	//  *
 	//  * @param  {number} attrType - The type of attribute
 	//  * @param {BinaryVSDYLoader} pReader - The binary reader
 	//  * @returns {boolean} - True if attribute was handled, false otherwise
 	//  */
-	// AscVisio.Connection_Type.prototype.readAttribute = function(attrType, pReader) {
+	// AscVisio.Comment_Type.prototype.readAttribute = function(attrType, pReader) {
+	// 	const stream = pReader.stream;
+	// 	switch (attrType) {
+	// 		case 0:
+	// 			this.id = stream.GetULong();
+	// 			break;
+	// 		case 1:
+	// 			this.authorName = stream.GetString2();
+	// 			break;
+	// 		case 2:
+	// 			this.authorInitials = stream.GetString2();
+	// 			break;
+	// 		case 3:
+	// 			this.text = stream.GetString2();
+	// 			break;
+	// 		case 4:
+	// 			this.date = stream.GetString2();
+	// 			break;
+	// 		case 5:
+	// 			this.reviewerID = stream.GetULong();
+	// 			break;
+	// 		case 6:
+	// 			this.shapeId = stream.GetULong();
+	// 			break;
+	// 		case 7:
+	// 			this.pageId = stream.GetULong();
+	// 			break;
+	// 		default:
+	// 			return false;
+	// 	}
+	//
+	// 	return true;
+	// };
+
+	// /**
+	//  * Read attributes from stream for Recordset_Type
+	//  *
+	//  * @param  {number} attrType - The type of attribute
+	//  * @param {BinaryVSDYLoader} pReader - The binary reader
+	//  * @returns {boolean} - True if attribute was handled, false otherwise
+	//  */
+	// AscVisio.Recordset_Type.prototype.readAttribute = function(attrType, pReader) {
 	// 	const stream = pReader.stream;
 	// 	switch (attrType) {
 	// 		case 0:
@@ -974,16 +1208,19 @@
 	// 			this.name = stream.GetString2();
 	// 			break;
 	// 		case 2:
-	// 			this.fromSheet = stream.GetULong();
+	// 			this.dataSource = stream.GetString2();
 	// 			break;
 	// 		case 3:
-	// 			this.toSheet = stream.GetULong();
+	// 			this.command = stream.GetString2();
 	// 			break;
 	// 		case 4:
-	// 			this.fromCell = stream.GetString2();
+	// 			this.options = stream.GetULong();
 	// 			break;
 	// 		case 5:
-	// 			this.toCell = stream.GetString2();
+	// 			this.timeRefreshed = stream.GetString2();
+	// 			break;
+	// 		case 6:
+	// 			this.nextRowID = stream.GetULong();
 	// 			break;
 	// 		default:
 	// 			return false;
@@ -991,27 +1228,6 @@
 	//
 	// 	return true;
 	// };
-
-	/**
-	 * Read attributes from stream for CSolutions
-	 * 
-	 * @param  {number} attrType - The type of attribute
-	 * @param {BinaryVSDYLoader} pReader - The binary reader
-	 * @returns {boolean} - True if attribute was handled, false otherwise
-	 */
-	AscVisio.CSolutions.prototype.readAttribute = function(attrType, pReader) {
-		const stream = pReader.stream;
-		switch (attrType) {
-			case 0:
-				this.entriesCount = stream.GetULong();
-				this.solutions = [];
-				break;
-			default:
-				return false;
-		}
-		
-		return true;
-	};
 
 	/**
 	 * Read child elements from stream for CSolutions
@@ -1025,7 +1241,7 @@
 		if (elementType === 0) {
 			const solution = new AscVisio.Solution_Type();
 			solution.fromPPTY(pReader);
-			this.solutions.push(solution);
+			this.solution.push(solution);
 			return true;
 		}
 		
@@ -1082,27 +1298,6 @@
 	};
 
 	/**
-	 * Read attributes from stream for CWindows
-	 * 
-	 * @param  {number} attrType - The type of attribute
-	 * @param {BinaryVSDYLoader} pReader - The binary reader
-	 * @returns {boolean} - True if attribute was handled, false otherwise
-	 */
-	AscVisio.CWindows.prototype.readAttribute = function(attrType, pReader) {
-		const stream = pReader.stream;
-		switch (attrType) {
-			case 0:
-				this.entriesCount = stream.GetULong();
-				this.windows = [];
-				break;
-			default:
-				return false;
-		}
-		
-		return true;
-	};
-
-	/**
 	 * Read child elements from stream for CWindows
 	 *
 	 * @param  {number} elementType - The type of child element
@@ -1114,7 +1309,7 @@
 		if (elementType === 0) {
 			const window = new AscVisio.Window_Type();
 			window.fromPPTY(pReader);
-			this.windows.push(window);
+			this.window.push(window);
 			return true;
 		}
 		
@@ -1343,114 +1538,10 @@
 	// 	return true;
 	// };
 
-	// /**
-	//  * Read child elements from stream for Document_Type
-	//  *
-	//  * @param  {number} elementType - The type of child element
-	//  * @param {BinaryVSDYLoader} pReader - The binary reader
-	//  * @returns {boolean} - True if element was handled, false otherwise
-	//  */
-	// AscVisio.Document_Type.prototype.readChild = function(elementType, pReader) {
-	// 	const stream = pReader.stream;
-	// 	switch (elementType) {
-	// 		case 0:
-	// 			AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY.call({
-	// 				readChild: function(elementType, pReader) {
-	// 					const stream = pReader.stream;
-	// 					if (elementType === 0) {
-	// 						const styleSheet = new AscVisio.StyleSheet_Type();
-	// 						styleSheet.fromPPTY(pReader);
-	// 						this.styleSheets.push(styleSheet);
-	// 						return true;
-	// 					}
-	// 					return false;
-	// 				}
-	// 			}, pReader);
-	// 			break;
-	// 		case 1:
-	// 			this.documentSheet = new AscVisio.DocumentSheet_Type();
-	// 			this.documentSheet.fromPPTY(pReader);
-	// 			break;
-	// 		case 2:
-	// 			AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY.call({
-	// 				readChild: function(elementType, pReader) {
-	// 					const stream = pReader.stream;
-	// 					if (elementType === 0) {
-	// 						const styleSheet = new AscVisio.EventItem_Type();
-	// 						styleSheet.fromPPTY(pReader);
-	// 						this.eventList.push(styleSheet);
-	// 						return true;
-	// 					}
-	// 					return false;
-	// 				}
-	// 			}, pReader);
-	// 			break;
-	// 		case 3:
-	// 			this.headerFooter = new AscVisio.CHeaderFooter();
-	// 			this.headerFooter.fromPPTY(pReader);
-	// 			break;
-	// 		case 4:
-	// 			this.masters = new AscVisio.CMasters();
-	// 			this.masters.fromPPTY(pReader);
-	// 			break;
-	// 		case 5:
-	// 			this.pages = new AscVisio.CPages();
-	// 			this.pages.fromPPTY(pReader);
-	// 			break;
-	// 		case 6:
-	// 			if (!this.connections) {
-	// 				this.connections = new AscVisio.CConnections();
-	// 			}
-	// 			this.connections.fromPPTY(pReader);
-	// 			break;
-	// 		case 7:
-	// 			//todo
-	// 			// AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY.call({
-	// 			// 	readChild: function(elementType, pReader) {
-	// 			// 		const stream = pReader.stream;
-	// 			// 		if (elementType === 0) {
-	// 			// 			const connection = new AscVisio.Recordset_Type();
-	// 			// 			connection.fromPPTY(pReader);
-	// 			// 			this.recordsets.push(connection);
-	// 			// 			return true;
-	// 			// 		}
-	// 			// 		return false;
-	// 			// 	}
-	// 			// }, pReader);
-	// 			break;
-	// 		case 8:
-	// 		 if (!this.solutions) {
-	// 				this.solutions = new AscVisio.CSolutions();
-	// 			}
-	// 			this.solutions.fromPPTY(pReader);
-	// 			break;
-	// 		case 9:
-	// 			this.validation = new AscVisio.CValidation();
-	// 			this.validation.fromPPTY(pReader);
-	// 			break;
-	// 		case 10:
-	// 		 if (!this.windows) {
-	// 				this.windows = new AscVisio.CWindows();
-	// 			}
-	// 			this.windows.fromPPTY(pReader);
-	// 			break;
-	// 		case 11:
-	// 		 if (!this.comments) {
-	// 				this.comments = new AscVisio.CComments();
-	// 			}
-	// 			this.comments.fromPPTY(pReader);
-	// 			break;
-	// 		default:
-	// 			return false;
-	// 	}
-	//
-	// 	return true;
-	// };
-
 	/**
-	 * Read attributes from stream for Window_Type
-	 *
-	 * @param {number} attrType - The type of attribute
+	 * Read attributes from stream for DocumentSheet_Type
+	 * 
+	 * @param  {number} attrType - The type of attribute
 	 * @param {BinaryVSDYLoader} pReader - The binary reader
 	 * @returns {boolean} - True if attribute was handled, false otherwise
 	 */
@@ -1484,7 +1575,7 @@
 			default:
 				return false;
 		}
-
+		
 		return true;
 	};
 
@@ -1689,6 +1780,403 @@
 		return true;
 	};
 
+	/**
+	 * Read child elements from stream for CPageContents
+	 *
+	 * @param {number} elementType - The type of child element
+	 * @param {BinaryVSDYLoader} pReader - The binary reader
+	 * @returns {boolean} - True if element was handled, false otherwise
+	 */
+	AscVisio.CPageContents.prototype.readChild = function(elementType, pReader) {
+		let t = this;
+		switch (elementType) {
+			case 0: {
+				// Read Shapes
+				AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY.call({
+					readChildren: AscFormat.CBaseFormatNoIdObject.prototype.readChildren,
+					readChild: function(elementType, pReader) {
+						const stream = pReader.stream;
+						if (elementType === 0) {
+							const shape = new AscVisio.Shape_Type();
+							shape.fromPPTY(pReader);
+							t.shapes.push(shape);
+							return true;
+						}
+						return false;
+					}
+				}, pReader);
+				break;
+			}
+			case 1: {
+				// Read Connects
+				AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY.call({
+					readChildren: AscFormat.CBaseFormatNoIdObject.prototype.readChildren,
+					readChild: function(elementType, pReader) {
+						if (elementType === 0) {
+							const connect = new AscVisio.Connect_Type();
+							connect.fromPPTY(pReader);
+							t.connects.push(connect);
+							return true;
+						}
+						return false;
+					}
+				}, pReader);
+				break;
+			}
+			// case 2: {
+			// 	// Handle Master relationships
+			// 	const stream = pReader.stream;
+			// 	const endPos = stream.GetPos() + stream.GetULong() + 4;
+			//
+			// 	// Skip start attributes byte
+			// 	stream.Skip2(1);
+			//
+			// 	let id = null;
+			// 	let uniqueID = null;
+			//
+			// 	// Read attributes
+			// 	while (true) {
+			// 		const attrType = stream.GetUChar();
+			// 		if (attrType === AscVisio.g_nodeAttributeEnd)
+			// 			break;
+			//
+			// 		switch (attrType) {
+			// 			case 0:
+			// 				id = stream.GetULong();
+			// 				break;
+			// 			case 1:
+			// 				uniqueID = stream.GetString2();
+			// 				break;
+			// 		}
+			// 	}
+			//
+			// 	// Store master relationship info
+			// 	if (id !== null || uniqueID !== null) {
+			// 		if (!this.masterRels) {
+			// 			this.masterRels = [];
+			// 		}
+			// 		this.masterRels.push({ id: id, uniqueID: uniqueID });
+			// 	}
+			//
+			// 	// Seek to end of record
+			// 	stream.Seek2(endPos);
+			// 	break;
+			// }
+			// case 3: {
+			// 	// Handle Page relationships
+			// 	const stream = pReader.stream;
+			// 	const endPos = stream.GetPos() + stream.GetULong() + 4;
+			//
+			// 	// Skip start attributes byte
+			// 	stream.Skip2(1);
+			//
+			// 	let id = null;
+			//
+			// 	// Read attributes
+			// 	while (true) {
+			// 		const attrType = stream.GetUChar();
+			// 		if (attrType === AscVisio.g_nodeAttributeEnd)
+			// 			break;
+			//
+			// 		switch (attrType) {
+			// 			case 0:
+			// 				id = stream.GetULong();
+			// 				break;
+			// 		}
+			// 	}
+			//
+			// 	// Store page relationship info
+			// 	if (id !== null) {
+			// 		if (!this.pageRels) {
+			// 			this.pageRels = [];
+			// 		}
+			// 		this.pageRels.push(id);
+			// 	}
+			//
+			// 	// Seek to end of record
+			// 	stream.Seek2(endPos);
+			// 	break;
+			// }
+			default:
+				return false;
+		}
+		
+		return true;
+	};
+
+	/**
+	 * Read attributes from stream for Shape_Type
+	 *
+	 * @param {number} attrType - The type of attribute
+	 * @param {BinaryVSDYLoader} pReader - The binary reader
+	 * @returns {boolean} - True if attribute was handled, false otherwise
+	 */
+	AscVisio.Shape_Type.prototype.readAttribute = function(attrType, pReader) {
+		const stream = pReader.stream;
+		switch (attrType) {
+			case 0:
+				this.id = stream.GetULong();
+				break;
+			case 1:
+				this.type = stream.GetUChar();
+				break;
+			case 2:
+				this.originalID = stream.GetULong();
+				break;
+			case 3:
+				this.del = stream.GetBool();
+				break;
+			case 4:
+				this.masterShape = stream.GetULong();
+				break;
+			case 5:
+				this.uniqueID = stream.GetString2();
+				break;
+			case 6:
+				this.nameU = stream.GetString2();
+				break;
+			case 7:
+				this.name = stream.GetString2();
+				break;
+			case 8:
+				this.isCustomName = stream.GetBool();
+				break;
+			case 9:
+				this.isCustomNameU = stream.GetBool();
+				break;
+			case 10:
+				this.master = stream.GetULong();
+				break;
+			case 11:
+				this.lineStyle = stream.GetULong();
+				break;
+			case 12:
+				this.fillStyle = stream.GetULong();
+				break;
+			case 13:
+				this.textStyle = stream.GetULong();
+				break;
+			default:
+				return false;
+		}
+		
+		return true;
+	};
+
+	/**
+	 * Read child elements from stream for Shape_Type
+	 *
+	 * @param {number} elementType - The type of child element
+	 * @param {BinaryVSDYLoader} pReader - The binary reader
+	 * @returns {boolean} - True if element was handled, false otherwise
+	 */
+	AscVisio.Shape_Type.prototype.readChild = function(elementType, pReader) {
+		let t = this;
+		switch (elementType) {
+			case 0: {
+				const cell = new AscVisio.Cell_Type();
+				cell.fromPPTY(pReader);
+				const key = AscVisio.createKeyFromSheetObject(cell);
+				this.elements[key] = cell;
+				break;
+			}
+			case 1: {
+				const trigger = new AscVisio.Trigger_Type();
+				trigger.fromPPTY(pReader);
+				const key = AscVisio.createKeyFromSheetObject(trigger);
+				this.elements[key] = trigger;
+				break;
+			}
+			case 2: {
+				const section = new AscVisio.Section_Type();
+				section.fromPPTY(pReader);
+				const key = AscVisio.createKeyFromSheetObject(section);
+				this.elements[key] = section;
+				break;
+			}
+			case 3: {
+				const text = new AscVisio.Text_Type();
+				text.fromPPTY(pReader);
+				const key = AscVisio.createKeyFromSheetObject(text);
+				this.elements[key] = text;
+				break;
+			}
+			//todo
+			// case 4: {
+			// 	if (!this.foreignData) {
+			// 		this.foreignData = new AscVisio.ForeignData_Type();
+			// 	}
+			// 	this.foreignData.fromPPTY(pReader);
+			// 	break;
+			// }
+			case 5: {
+				// Read Shapes
+				AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY.call({
+					readChildren: AscFormat.CBaseFormatNoIdObject.prototype.readChildren,
+					readChild: function(elementType, pReader) {
+						if (elementType === 0) {
+							const shape = new AscVisio.Shape_Type();
+							shape.fromPPTY(pReader);
+							t.shapes.push(shape);
+							return true;
+						}
+						return false;
+					}
+				}, pReader);
+				break;
+			}
+			default:
+				return false;
+		}
+		
+		return true;
+	};
+
+	/**
+	 * Read child elements from stream for Text_Type
+	 *
+	 * @param {number} elementType - The type of child element
+	 * @param {BinaryVSDYLoader} pReader - The binary reader
+	 * @returns {boolean} - True if element was handled, false otherwise
+	 */
+	AscVisio.Text_Type.prototype.readChild = function(elementType, pReader) {
+		let t = this;
+		switch (elementType) {
+			case 0: {
+				// Text_cp (Character properties)
+				const textCp = new AscVisio.cp_Type();
+				textCp.fromPPTY(pReader);
+				this.elements.push(textCp);
+				break;
+			}
+			case 1: {
+				// Text_pp (Paragraph properties)
+				const textPp = new AscVisio.pp_Type();
+				textPp.fromPPTY(pReader);
+				this.elements.push(textPp);
+				break;
+			}
+			case 2: {
+				// Text_tp (Tab properties)
+				const textTp = new AscVisio.tp_Type();
+				textTp.fromPPTY(pReader);
+				this.elements.push(textTp);
+				break;
+			}
+			case 3: {
+				// Text_fld (Field)
+				const textFld = new AscVisio.fld_Type();
+				textFld.fromPPTY(pReader);
+				this.elements.push(textFld);
+				break;
+			}
+			case 4: {
+				// Text_text (Text content)
+				// Read Shapes
+				AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY.call({
+					readChildren: AscFormat.CBaseFormatNoIdObject.prototype.readChildren,
+					readAttributes: AscFormat.CBaseFormatNoIdObject.prototype.readAttributes,
+					readAttribute: function(attrType, pReader) {
+						if (attrType === 0) {
+							t.elements.push(pReader.stream.GetString2());
+							return true;
+						}
+						return false;
+					}
+				}, pReader);
+				break;
+			}
+			default:
+				return false;
+		}
+		
+		return true;
+	};
+
+	/**
+	 * Read attributes from stream for Text_fld_Type
+	 *
+	 * @param {number} attrType - The type of attribute
+	 * @param {BinaryVSDYLoader} pReader - The binary reader
+	 * @returns {boolean} - True if attribute was handled, false otherwise
+	 */
+	AscVisio.fld_Type.prototype.readAttribute = function(attrType, pReader) {
+		const stream = pReader.stream;
+		switch (attrType) {
+			case 0:
+				this.iX = stream.GetULong();
+				break;
+			case 1:
+				this.value = stream.GetString2();
+				break;
+			default:
+				return false;
+		}
+		
+		return true;
+	};
+
+	/**
+	 * Read attributes from stream for Text_tp_Type
+	 *
+	 * @param {number} attrType - The type of attribute
+	 * @param {BinaryVSDYLoader} pReader - The binary reader
+	 * @returns {boolean} - True if attribute was handled, false otherwise
+	 */
+	AscVisio.tp_Type.prototype.readAttribute = function(attrType, pReader) {
+		const stream = pReader.stream;
+		switch (attrType) {
+			case 0:
+				this.iX = stream.GetULong();
+				break;
+			default:
+				return false;
+		}
+		
+		return true;
+	};
+
+	/**
+	 * Read attributes from stream for Text_pp_Type
+	 *
+	 * @param {number} attrType - The type of attribute
+	 * @param {BinaryVSDYLoader} pReader - The binary reader
+	 * @returns {boolean} - True if attribute was handled, false otherwise
+	 */
+	AscVisio.pp_Type.prototype.readAttribute = function(attrType, pReader) {
+		const stream = pReader.stream;
+		switch (attrType) {
+			case 0:
+				this.iX = stream.GetULong();
+				break;
+			default:
+				return false;
+		}
+		
+		return true;
+	};
+
+	/**
+	 * Read attributes from stream for Text_cp_Type
+	 *
+	 * @param {number} attrType - The type of attribute
+	 * @param {BinaryVSDYLoader} pReader - The binary reader
+	 * @returns {boolean} - True if attribute was handled, false otherwise
+	 */
+	AscVisio.cp_Type.prototype.readAttribute = function(attrType, pReader) {
+		const stream = pReader.stream;
+		switch (attrType) {
+			case 0:
+				this.iX = stream.GetULong();
+				break;
+			default:
+				return false;
+		}
+		
+		return true;
+	};
+
+
 	// //todo inherit from CBaseFormatNoIdObject and move to main sdk
 	// AscVisio.Comments_Type.prototype.fromPPTY = AscFormat.AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY;
 	// AscVisio.Comments_Type.prototype.readAttributes = AscFormat.CBaseFormatNoIdObject.prototype.readAttributes;
@@ -1755,9 +2243,6 @@
 	//
 	// AscVisio.StencilGroup_Type.prototype.fromPPTY = AscFormat.AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY;
 	// AscVisio.StencilGroup_Type.prototype.readAttributes = AscFormat.CBaseFormatNoIdObject.prototype.readAttributes;
-	//
-	// AscVisio.Icon_Type.prototype.fromPPTY = AscFormat.AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY;
-	// AscVisio.Icon_Type.prototype.readAttributes = AscFormat.CBaseFormatNoIdObject.prototype.readAttributes;
 	//
 	// AscVisio.tp_Type.prototype.fromPPTY = AscFormat.AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY;
 	// AscVisio.tp_Type.prototype.readAttributes = AscFormat.CBaseFormatNoIdObject.prototype.readAttributes;
@@ -1948,9 +2433,6 @@
 	// AscVisio.HeaderFooter_Type.prototype.fromPPTY = AscFormat.AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY;
 	// AscVisio.HeaderFooter_Type.prototype.readAttributes = AscFormat.CBaseFormatNoIdObject.prototype.readAttributes;
 	//
-	// AscVisio.FaceName_Type.prototype.fromPPTY = AscFormat.AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY;
-	// AscVisio.FaceName_Type.prototype.readAttributes = AscFormat.CBaseFormatNoIdObject.prototype.readAttributes;
-	//
 	// AscVisio.ColorEntry_Type.prototype.fromPPTY = AscFormat.AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY;
 	// AscVisio.ColorEntry_Type.prototype.readAttributes = AscFormat.CBaseFormatNoIdObject.prototype.readAttributes;
 	//
@@ -1984,4 +2466,5 @@
 	window['AscVisio']  = window['AscVisio'] || {};
 
 	window['AscVisio'].BinaryVSDYLoader = BinaryVSDYLoader;
+
 })(window, window.document);

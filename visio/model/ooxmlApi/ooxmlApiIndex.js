@@ -75,6 +75,7 @@
 		// if you want to see \r\n set proper settings in your editor
 		return this;
 	}
+	AscFormat.InitClass(Text_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
 	Text_Type.prototype.kind = c_oVsdxSheetStorageKind.Text_Type;
 
 	/**
@@ -88,6 +89,7 @@
 		this.tagName = null;
 		return this;
 	}
+	AscFormat.InitClass(Data_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
 	Data_Type.prototype.kind = c_oVsdxSheetStorageKind.Data_Type;
 
 	/**
@@ -121,6 +123,7 @@
 		this.refBy = [];
 		this.n = null;
 	}
+	AscFormat.InitClass(Trigger_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
 	Trigger_Type.prototype.kind = c_oVsdxSheetStorageKind.Trigger_Type;
 	/**
 	 * Abstract class. For all Cell containers: ShapeSheet_Type (Sheet_Type) descendents and
@@ -686,6 +689,7 @@
 		// left separate attributes refBy  and textContent and dont replace both by elements
 		return this;
 	}
+	AscFormat.InitClass(Cell_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
 	Cell_Type.prototype.kind = c_oVsdxSheetStorageKind.Cell_Type;
 	/**
 	 * get String(cell.v)
@@ -1282,11 +1286,13 @@
 			});
 			let topShapeMaster = masters[topShapeMasterIndex];
 
-			let masterShapes = topShapeMaster.content.shapes;
-			masterShapesToInheritFrom = masterShapes;
+			if (topShapeMaster) {
+				let masterShapes = topShapeMaster.content.shapes;
+				masterShapesToInheritFrom = masterShapes;
 
-			// all descendant shapes will inherit from that master
-			ancestorMasterShapes = masterShapesToInheritFrom;
+				// all descendant shapes will inherit from that master
+				ancestorMasterShapes = masterShapesToInheritFrom;
+			}
 		}
 
 		// check MasterShape attribute and set shapes/shape
@@ -1727,6 +1733,7 @@
 		this.deleteLock = new AscVisio.PropLocker(undefined);
 		return this;
 	}
+	AscFormat.InitClass(Page_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
 
 	/**
 	 * // Docs old:
@@ -1841,6 +1848,13 @@
 	ShapeSheet_Type.prototype = Object.create(SheetStorageAndStyles.prototype);
 	ShapeSheet_Type.prototype.constructor = ShapeSheet_Type;
 
+	// Docs old:
+// Icon_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/icon_type-complextypevisio-xml
+	function Icon_Type() {
+		this.value = null;
+		return this;
+	}
+
 	//todo move to commons
 	function PropLocker(objectId)
 	{
@@ -1913,6 +1927,7 @@
 	window['AscVisio'].DocumentSheet_Type = DocumentSheet_Type;
 	window['AscVisio'].StyleSheet_Type = StyleSheet_Type;
 	window['AscVisio'].ShapeSheet_Type = ShapeSheet_Type;
+	window['AscVisio'].Icon_Type = Icon_Type;
 	window['AscVisio'].PropLocker = PropLocker;
 	window['AscVisio'].createKeyFromSheetObject = createKeyFromSheetObject;
 

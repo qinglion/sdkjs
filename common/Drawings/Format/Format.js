@@ -244,8 +244,7 @@
 				this.readAttribute(nType, pReader)
 			}
 		};
-		CBaseFormatNoIdObject.prototype.readAttribute = function (nType, pReader) {
-		};
+		CBaseFormatNoIdObject.prototype.readAttribute = undefined;
 		CBaseFormatNoIdObject.prototype.readChildren = function (nEnd, pReader) {
 			var oStream = pReader.stream;
 			while (oStream.cur < nEnd) {

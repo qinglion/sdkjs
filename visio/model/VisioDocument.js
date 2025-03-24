@@ -316,6 +316,12 @@ AscDFH.historyitem_type_VisioWindow = 328;
 		}
 		memory.Seek(0);
 	};
+	CVisioDocument.prototype.AfterOpenDocument = function(zip, context) {
+		if (!this.themes.length) {
+			AscCommon.consoleLog("No themes found by filenames. Creating default theme");
+			this.themes.push(AscFormat.GenerateDefaultTheme(null, null));
+		}
+	};
 
 	CVisioDocument.prototype.Get_Api = function() {
 		return this.api;
@@ -886,6 +892,9 @@ AscDFH.historyitem_type_VisioWindow = 328;
 		let thisContext = this;
 		for (let i = 0; i < masterFromMastersInfoArray.length; i++) {
 			const masterFromMasters = masterFromMastersInfoArray[i];
+			if (!masterFromMasters.rel) {
+				continue;
+			}
 			let masterFromMastersArrayRelId = masterFromMasters.rel.id;
 			// TODO find file by relationships
 			let masterContentNum = +masterFromMastersArrayRelId.match(/\d+/)[0];
@@ -1559,6 +1568,39 @@ AscDFH.historyitem_type_VisioWindow = 328;
 	}
 	AscFormat.InitClass(Window_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
 
+	// Docs old:
+// tp_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/tp_type-complextypevisio-xml
+	function tp_Type() {
+		this.iX = null;
+		return this;
+	}
+	AscFormat.InitClass(tp_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
+
+	// Docs old:
+// pp_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/pp_type-complextypevisio-xml
+	function pp_Type() {
+		this.iX = null;
+		return this;
+	}
+	AscFormat.InitClass(pp_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
+
+	// Docs old:
+// fld_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/fld_type-complextypevisio-xml
+	function fld_Type() {
+		this.iX = null;
+		this.value = null;
+		return this;
+	}
+	AscFormat.InitClass(fld_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
+
+	// Docs old:
+// cp_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/cp_type-complextypevisio-xml
+	function cp_Type() {
+		this.iX = null;
+		return this;
+	}
+	AscFormat.InitClass(cp_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
+
 	function parseApp(doc, reader, context) {
 		let appPart = doc.getPartByRelationshipType(AscCommon.openXml.Types.extendedFileProperties.relationType);
 		if (appPart) {
@@ -1722,10 +1764,6 @@ AscDFH.historyitem_type_VisioWindow = 328;
 
 				themeNum++;
 			}
-			if (themeNum === 1) {
-				AscCommon.consoleLog("No themes found by filenames. Creating default theme");
-				this.themes.push(AscFormat.GenerateDefaultTheme(null, null));
-			}
 		}
 	}
 
@@ -1881,4 +1919,8 @@ AscDFH.historyitem_type_VisioWindow = 328;
 	window['AscVisio'].Solution_Type = Solution_Type;
 	window['AscVisio'].EventItem_Type = EventItem_Type;
 	window['AscVisio'].Window_Type = Window_Type;
+	window['AscVisio'].tp_Type = tp_Type;
+	window['AscVisio'].pp_Type = pp_Type;
+	window['AscVisio'].cp_Type = cp_Type;
+	window['AscVisio'].fld_Type = fld_Type;
 })(window, window.document);
