@@ -505,6 +505,12 @@
 		paragraph.SetSelectionContentPos(startPos, endPos, false);
 		paragraph.Document_SetThisElementCurrent();
 	}
+	function SelectParagraph(paragraph) {
+		if (logicDocument)
+			logicDocument.RemoveSelection();
+		
+		paragraph.SelectAll();
+	}
 	function GetFinalSection()
 	{
 		if (!logicDocument)
@@ -596,6 +602,7 @@
 	AscTest.SyncCollaboration                = SyncCollaboration;
 	AscTest.EndCollaboration                 = EndCollaboration;
 	AscTest.SelectParagraphRange             = SelectParagraphRange;
+	AscTest.SelectParagraph                  = SelectParagraph;
 	AscTest.StartTextSpeaker                 = StartTextSpeaker;
 	AscTest.StopTextSpeaker                  = StopTextSpeaker;
 

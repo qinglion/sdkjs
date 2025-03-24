@@ -21683,8 +21683,6 @@
 							else
 								itemText = new AscWord.CRunText(oChange.insert[nChar]);
 
-							itemText.Parent = oRunInfo.Run.GetParagraph();
-							
 							oRunToAdd.AddToContent(nPosToAdd, itemText);
 
 							oChange.insert.shift();
