@@ -7462,7 +7462,12 @@
 
 		if (Array.isArray(oTocPr["BuildFrom"]["StylesLvls"]) && oTocPr["BuildFrom"]["StylesLvls"].length > 0)
 		{
-			oTargetPr.Styles = oTocPr["BuildFrom"]["StylesLvls"];
+			oTargetPr.Styles = oTocPr["BuildFrom"]["StylesLvls"].map(function(styleLvl) {
+				return {
+					Name: styleLvl['Name'],
+					Lvl: styleLvl['Lvl']
+				}
+			});
 			oTargetPr.OutlineEnd = -1;
 			oTargetPr.OutlineStart = -1;
 		}
