@@ -747,10 +747,13 @@
 
 					var oNvPr;
 					if (this.document || this.drawingObjects && this.drawingObjects.cSld) {
-						var bCheckTextHyperlink = false;
-						if (this.isSlideShow()) {
-							bCheckTextHyperlink = true;
-						}
+						// var bCheckTextHyperlink = false;
+						// if (this.isSlideShow()) {
+						// 	bCheckTextHyperlink = true;
+						// }
+
+						const bCheckTextHyperlink = true;
+
 						var sHyperlink = null;
 						var sTooltip = "";
 						var oTextHyperlink;
@@ -7936,25 +7939,24 @@
 					}
 
 					let hyperlink_properties = null;
-					if(drawings.length === 1) {
-						let oDrawing = drawings[0];
-						let isStickyNote = oDrawing.IsAnnot && oDrawing.IsAnnot() && oDrawing.IsComment(); // skip pdf text annot
+					if (drawings.length === 1) {
+						const oDrawing = drawings[0];
+						const oDocContent = oDrawing.getDocContent();
 
-						if(!isStickyNote && (oDrawing.isShape() || oDrawing.isImage())) {
+						const isStickyNote = oDrawing.IsAnnot && oDrawing.IsAnnot() && oDrawing.IsComment(); // skip pdf text annot
+						const isValidType = oDrawing.isShape() || oDrawing.isImage();
 
-							let oNvPr = oDrawing.getCNvProps();
-							if (oNvPr) {
-								let oHyper = oNvPr.hlinkClick;
-								if(oHyper && oHyper.id) {
-									hyperlink_properties = new Asc.CHyperlinkProperty();
-									hyperlink_properties.Text = null;
-									hyperlink_properties.Value = oHyper.id;
-									hyperlink_properties.ToolTip = oHyper.tooltip;
-
-								}
+						if (!isStickyNote && !oDocContent && isValidType) {
+							const oNvPr = oDrawing.getCNvProps();
+							if (oNvPr && oNvPr.hlinkClick && oNvPr.hlinkClick.id) {
+								hyperlink_properties = new Asc.CHyperlinkProperty();
+								hyperlink_properties.Text = null;
+								hyperlink_properties.Value = oNvPr.hlinkClick.id;
+								hyperlink_properties.ToolTip = oNvPr.hlinkClick.tooltip;
 							}
 						}
 					}
+
 					return {
 						imageProps: image_props,
 						shapeProps: shape_props,
