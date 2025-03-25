@@ -29227,6 +29227,7 @@ CDocumentNumberingInfoEngine.prototype.CheckParagraph = function(oPara)
 			var oNum = this.Numbering.GetNum(oParaNumPrPrev.NumId);
 			if (oNum)
 			{
+				let prevLvl = undefined === oParaNumPrPrev.Lvl || null === oParaNumPrPrev.Lvl ? 0 : oParaNumPrPrev.Lvl;
 				var oAbstractNum = oNum.GetAbstractNum();
 				if (oAbstractNum === this.AbstractNum)
 				{
@@ -29235,7 +29236,7 @@ CDocumentNumberingInfoEngine.prototype.CheckParagraph = function(oPara)
 
 					if (reviewtype_Common === oReviewType)
 					{
-						this.private_UpdateCounter(this.SourceCounter, oNum, oParaNumPrPrev.Lvl);
+						this.private_UpdateCounter(this.SourceCounter, oNum, prevLvl);
 					}
 					else if (reviewtype_Add === oReviewType)
 					{
@@ -29243,7 +29244,7 @@ CDocumentNumberingInfoEngine.prototype.CheckParagraph = function(oPara)
 					else if (reviewtype_Remove === oReviewType)
 					{
 						if (!oReviewInfo.GetPrevAdded())
-							this.private_UpdateCounter(this.SourceCounter, oNum, oParaNumPrPrev.Lvl);
+							this.private_UpdateCounter(this.SourceCounter, oNum, prevLvl);
 					}
 				}
 			}

@@ -193,6 +193,10 @@ var tab_Symbol = 0x0022;//0x2192;
 	{
 		return AscWord.fontslot_Unknown;
 	};
+	CRunTab.prototype.getBidiType = function()
+	{
+		return AscBidi.TYPE.CD;
+	};
 	//--------------------------------------------------------export----------------------------------------------------
 	window['AscWord'] = window['AscWord'] || {};
 	window['AscWord'].CRunTab = CRunTab;
