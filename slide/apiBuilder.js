@@ -906,12 +906,13 @@
         let oPresentation = private_GetPresentation();
 		let oParsedObj  = JSON.parse(sMessage);
         let oResult = null;
+
+        if (oParsedObj["tblStyleLst"])
+            oReader.TableStylesFromJSON(oParsedObj["tblStyleLst"]);
+
 		switch (oParsedObj["type"])
 		{
             case "presentation":
-                if (oParsedObj["tblStyleLst"])
-                    oReader.TableStylesFromJSON(oParsedObj["tblStyleLst"]);
-
                 let oSldSize = oParsedObj["sldSz"] ? oReader.SlideSizeFromJSON(oParsedObj["sldSz"]) : null;
                 let oShowPr  = oParsedObj["showPr"] ? oReader.ShowPrFromJSON(oParsedObj["showPr"]) : null;
                 oSldSize && oPresentation.setSldSz(oSldSize);
@@ -972,8 +973,6 @@
 				oResult = this.private_CreateApiHyperlink(oReader.HyperlinkFromJSON(oParsedObj));
                 break;
             case "graphicFrame":
-                if (oParsedObj["tblStyleLst"])
-                    oReader.TableStylesFromJSON(oParsedObj["tblStyleLst"]);
                 oResult = new ApiTable(oReader.GraphicObjFromJSON(oParsedObj));
                 break;
 			case "image":
@@ -1006,18 +1005,12 @@
 				oResult = this.private_CreateApiUniColor(oReader.ColorFromJSON(oParsedObj));
                 break;
 			case "slide":
-                if (oParsedObj["tblStyleLst"])
-                    oReader.TableStylesFromJSON(oParsedObj["tblStyleLst"]);
 				oResult = new ApiSlide(oReader.SlideFromJSON(oParsedObj));
                 break;
 			case "sldLayout":
-                if (oParsedObj["tblStyleLst"])
-                    oReader.TableStylesFromJSON(oParsedObj["tblStyleLst"]);
 				oResult = new ApiLayout(oReader.SlideLayoutFromJSON(oParsedObj));
                 break;
 			case "sldMaster":
-                if (oParsedObj["tblStyleLst"])
-                    oReader.TableStylesFromJSON(oParsedObj["tblStyleLst"]);
                 oResult = new ApiMaster(oReader.MasterSlideFromJSON(oParsedObj));
                 break;
 			case "fontScheme":
@@ -1030,8 +1023,6 @@
 				oResult = new ApiThemeColorScheme(oReader.ClrSchemeFromJSON(oParsedObj));
                 break;
             case "slides":
-                if (oParsedObj["tblStyleLst"])
-                    oReader.TableStylesFromJSON(oParsedObj["tblStyleLst"]);
                 let aApiSlides = []
                 let aSlides = oReader.SlidesFromJSON(oParsedObj);
                 for (let nSlide = 0; nSlide < aSlides.length; nSlide++)

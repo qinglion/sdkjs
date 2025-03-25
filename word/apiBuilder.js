@@ -5092,14 +5092,12 @@
 		var oResult = null;
 		if (oParsedObj["styles"])
 			oReader.StylesFromJSON(oParsedObj["styles"]);
+		if (oParsedObj["numbering"])
+			oReader.parsedNumbering = oParsedObj["numbering"];
 
 		switch (oParsedObj["type"])
 		{
 			case "document":
-				if (oParsedObj["numbering"])
-				{
-					oReader.parsedNumbering = oParsedObj["numbering"];
-				}
 				if (oParsedObj["textPr"])
 				{
 					var oNewTextPr = oReader.TextPrFromJSON(oParsedObj["textPr"]);
