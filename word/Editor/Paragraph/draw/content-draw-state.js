@@ -170,7 +170,7 @@
 				this.handleFieldChar(element);
 				break;
 			default:
-				this.handleRegularElement(element);
+				this.handleRegularElement(element, direction);
 				break;
 		}
 	};
@@ -674,10 +674,11 @@
 						Bold       : false
 					});
 					
+					let tabCode = isRtl ? tab_Symbol_Rtl : tab_Symbol;
 					if (suffWidth > tabSymbolWidth)
-						graphics.FillText2(tabX + suffWidth / 2 - tabSymbolWidth / 2, Y, String.fromCharCode(tab_Symbol), 0, suffWidth);
+						graphics.FillText2(tabX + suffWidth / 2 - tabSymbolWidth / 2, Y, String.fromCharCode(tabCode), 0, suffWidth);
 					else
-						graphics.FillText2(tabX, Y, String.fromCharCode(tab_Symbol), tabSymbolWidth - suffWidth, suffWidth);
+						graphics.FillText2(tabX, Y, String.fromCharCode(tabCode), tabSymbolWidth - suffWidth, suffWidth);
 				}
 			}
 		}
@@ -715,6 +716,10 @@
 	ParagraphContentDrawState.prototype.isTextArtDraw = function()
 	{
 		return this.Graphics && this.Graphics.m_bIsTextDrawer;
+	};
+	ParagraphContentDrawState.prototype.isRtlMainDirection = function()
+	{
+		return this.Paragraph.isRtlDirection();
 	};
 	//--------------------------------------------------------export----------------------------------------------------
 	AscWord.ParagraphContentDrawState = ParagraphContentDrawState;
