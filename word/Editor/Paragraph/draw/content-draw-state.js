@@ -677,6 +677,8 @@
 					let tabCode = isRtl ? tab_Symbol_Rtl : tab_Symbol;
 					if (suffWidth > tabSymbolWidth)
 						graphics.FillText2(tabX + suffWidth / 2 - tabSymbolWidth / 2, Y, String.fromCharCode(tabCode), 0, suffWidth);
+					else if (isRtl)
+						graphics.FillText2(tabX, Y, String.fromCharCode(tabCode), 0, suffWidth);
 					else
 						graphics.FillText2(tabX, Y, String.fromCharCode(tabCode), tabSymbolWidth - suffWidth, suffWidth);
 				}
