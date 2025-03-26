@@ -3455,6 +3455,13 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 	cBaseFunction.prototype.Calculate = function () {
 		return new cError(cErrorType.wrong_name);
 	};
+	cBaseFunction.prototype.getArrayIndex = function (index) {
+		let res = false;
+		if (this.arrayIndexes) {
+			res = this.arrayIndexes[index];
+		}
+		return res;
+	};
 	cBaseFunction.prototype.Assemble2 = function (arg, start, count) {
 
 		var str = "", c = start + count - 1;
@@ -3888,7 +3895,6 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 			}
 		}
 
-		var arrayIndexes = this.arrayIndexes;
 		var replaceAreaByValue = cReturnFormulaType.value_replace_area === returnFormulaType;
 		var replaceAreaByRefs = cReturnFormulaType.area_to_ref === returnFormulaType;
 		//добавлен специальный тип для функции сT, она использует из области всегда первый аргумент
@@ -3897,13 +3903,14 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 		// Проверка должен ли элемент поступать в формулу без изменени?
 		const checkArrayIndex = function(index) {
 			let res = false;
-			if(arrayIndexes) {
-				if(arrayIndexes[index] === arrayIndexesType.any) {
+			let arrayIndex = t.getArrayIndex(index);
+			if(arrayIndex) {
+				if(arrayIndex === arrayIndexesType.any) {
 					res = true;
-				} else if(typeof arrayIndexes[index] === "object") {
+				} else if(typeof arrayIndex === "object") {
 					//для данной проверки запрашиваем у объекта 0 индекс, там хранится значение индекса аргумента
 					//от которого зависит стоит ли вопринимать данный аргумент как массив или нет
-					let tempsArgIndex = arrayIndexes[index][0];
+					let tempsArgIndex = arrayIndex[0];
 					if(undefined !== tempsArgIndex && arg[tempsArgIndex]) {
 						if(cElementType.cellsRange === arg[tempsArgIndex].type || cElementType.cellsRange3D === arg[tempsArgIndex].type || cElementType.array === arg[tempsArgIndex].type) {
 							res = true;
@@ -3917,7 +3924,8 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 		const checkArayIndexType = function(index, argType) {
 			// check for type of argument - whether array and range can be processed or just one of them
 			let res = false;
-			if(arrayIndexes && argType === arrayIndexes[index]) {
+			let arrayIndex = t.getArrayIndex(index);
+			if(argType === arrayIndex) {
 				res = true;
 			}
 			return res;
@@ -3941,7 +3949,7 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 		//bIsSpecialFunction - сделано только для для функции sumproduct
 		//необходимо, чтобы все внутренние функции возвращали массив, те обрабатывались как формулы массива
 
-		if((true === this.bArrayFormula || bIsSpecialFunction) && (!returnFormulaType || replaceAreaByValue || replaceAreaByRefs || arrayIndexes || replaceOnlyArray)) {
+		if((true === this.bArrayFormula || bIsSpecialFunction) && (!returnFormulaType || replaceAreaByValue || replaceAreaByRefs || this.arrayIndexes || replaceOnlyArray)) {
 
 			if (functionsCanReturnArray.indexOf(this.name.toLowerCase()) !== -1) {
 				var _tmp = this.Calculate(arg, opt_bbox, opt_defName, this.ws, bIsSpecialFunction);
@@ -4107,12 +4115,13 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 			const checkArrayIndex = function(index) {
 				let res = false;
 				if(arrayIndexes) {
-					if(1 === arrayIndexes[index]) {
+					let arrayIndex = t.getArrayIndex(index);
+					if(1 === arrayIndex) {
 						res = true;
-					} else if(typeof arrayIndexes[index] === "object") {
+					} else if(typeof arrayIndex === "object") {
 						// for this situation check object 0 for an index, the value of the argument index is stored there
 						// which determines whether a given argument should be treated as an array or not
-						let tempsArgIndex = arrayIndexes[index][0];
+						let tempsArgIndex = arrayIndex[0];
 						if(undefined !== tempsArgIndex && arg[tempsArgIndex]) {
 							if(cElementType.cellsRange === arg[tempsArgIndex].type || cElementType.cellsRange3D === arg[tempsArgIndex].type || cElementType.array === arg[tempsArgIndex].type) {
 								res = true;
@@ -4160,7 +4169,7 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 
 		let width = 1, height = 1;
 		for (let i = 0; i < arg.length; i++) {
-			if (!this.arrayIndexes || !this.arrayIndexes[i]) {
+			if (!this.arrayIndexes || !this.getArrayIndex(i)) {
 				let objSize = arg[i].getDimensions();
 				if (objSize) {
 					height = Math.max(objSize.row, height);
