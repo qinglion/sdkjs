@@ -7941,7 +7941,7 @@
 					let hyperlink_properties = null;
 					if (drawings.length === 1) {
 						const oDrawing = drawings[0];
-						const oDocContent = oDrawing.getDocContent();
+						const oDocContent = oDrawing.getDocContent && oDrawing.getDocContent();
 
 						const isStickyNote = oDrawing.IsAnnot && oDrawing.IsAnnot() && oDrawing.IsComment(); // skip pdf text annot
 						const isValidType = oDrawing.isShape() || oDrawing.isImage();
