@@ -10097,6 +10097,8 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype['sync_endDemonstration']               = asc_docs_api.prototype.sync_endDemonstration;
 	asc_docs_api.prototype['sync_DemonstrationSlideChanged']      = asc_docs_api.prototype.sync_DemonstrationSlideChanged;
 	asc_docs_api.prototype['StartDemonstration']                  = asc_docs_api.prototype.StartDemonstration;
+	asc_docs_api.prototype['StartDemonstrationFromBeginning']     = asc_docs_api.prototype.StartDemonstrationFromBeginning;
+	asc_docs_api.prototype['StartDemonstrationFromCurrentSlide']  = asc_docs_api.prototype.StartDemonstrationFromCurrentSlide;
 	asc_docs_api.prototype['EndDemonstration']                    = asc_docs_api.prototype.EndDemonstration;
 	asc_docs_api.prototype['DemonstrationPlay']                   = asc_docs_api.prototype.DemonstrationPlay;
 	asc_docs_api.prototype['DemonstrationPause']                  = asc_docs_api.prototype.DemonstrationPause;
