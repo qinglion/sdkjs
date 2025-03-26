@@ -1438,6 +1438,91 @@
 	};
 
 	/**
+	 * Private method to collect all objects of a specific type from the presentation (OleObjects, Charts, Shapes, Images).
+	 * Calls 'getObjectsMethod' method on each slide, master and layout to get the objects.
+	 */
+	ApiPresentation.prototype._collectAllObjects = function (getObjectsMethod) {
+		const aObjects = [];
+
+		function collectObjects(aSource) {
+			aSource.forEach(function (oSource) {
+				oSource[getObjectsMethod]().forEach(function (oObject) {
+					aObjects.push(oObject);
+				});
+			});
+		}
+
+		const aSlides = this.GetAllSlides();
+		const aMasters = this.GetAllSlideMasters();
+
+		// Can't use flatMap because it's not supported in IE11
+		const aLayouts = aMasters.reduce(function (acc, oMaster) {
+			return acc.concat(oMaster.GetAllLayouts());
+		}, []);
+
+		collectObjects(aSlides);
+		collectObjects(aMasters);
+		collectObjects(aLayouts);
+
+		return aObjects;
+	};
+
+	/**
+	 * Returns an array with all the OLE objects from the current presentation.
+	 * @memberof ApiPresentation
+	 * @typeofeditors ["CPE"]
+	 * @returns {ApiOleObject[]}
+	 * @see office-js-api/Examples/{Editor}/ApiPresentation/Methods/GetAllOleObjects.js
+	 */
+	ApiPresentation.prototype.GetAllOleObjects = function () {
+		return this._collectAllObjects('GetAllOleObjects');
+	};
+
+	/**
+	 * Returns an array with all the chart objects from the current presentation.
+	 * @memberof ApiPresentation
+	 * @typeofeditors ["CPE"]
+	 * @returns {ApiChart[]}
+	 * @see office-js-api/Examples/{Editor}/ApiPresentation/Methods/GetAllCharts.js
+	 */
+	ApiPresentation.prototype.GetAllCharts = function () {
+		return this._collectAllObjects('GetAllCharts');
+	};
+
+	/**
+	 * Returns an array with all the shape objects from the current presentation.
+	 * @memberof ApiPresentation
+	 * @typeofeditors ["CPE"]
+	 * @returns {ApiShape[]}
+	 * @see office-js-api/Examples/{Editor}/ApiPresentation/Methods/GetAllShapes.js
+	 */
+	ApiPresentation.prototype.GetAllShapes = function () {
+		return this._collectAllObjects('GetAllShapes');
+	};
+
+	/**
+	 * Returns an array with all the image objects from the current presentation.
+	 * @memberof ApiPresentation
+	 * @typeofeditors ["CPE"]
+	 * @returns {ApiImage[]}
+	 * @see office-js-api/Examples/{Editor}/ApiPresentation/Methods/GetAllImages.js
+	 */
+	ApiPresentation.prototype.GetAllImages = function () {
+		return this._collectAllObjects('GetAllImages');
+	};
+
+	/**
+	 * Returns an array with all the drawing objects from the current presentation.
+	 * @memberof ApiPresentation
+	 * @typeofeditors ["CPE"]
+	 * @returns {Drawing[]}
+	 * @see office-js-api/Examples/{Editor}/ApiPresentation/Methods/GetAllDrawings.js
+	 */
+	ApiPresentation.prototype.GetAllDrawings = function () {
+		return this._collectAllObjects('GetAllDrawings');
+	};
+
+	/**
 	 * Returns the document information:
 	 * <b>Application</b> - the application the document has been created with.
 	 * <b>CreatedRaw</b> - the date and time when the file was created.
@@ -1537,6 +1622,21 @@
     {
         return "master";
     };
+
+	/**
+	 * Returns all layouts from the slide master
+	 * @typeofeditors ["CPE"]
+	 * @returns {ApiLayout[]} - returns an empty array if the slide master doesn't have layouts.
+	 * @see office-js-api/Examples/{Editor}/ApiMaster/Methods/GetAllLayouts.js
+	 */
+	ApiMaster.prototype.GetAllLayouts = function () {
+		const aLayouts = this.Master.sldLayoutLst;
+		const aApiLayouts = [];
+		aLayouts.forEach(function (oLayout) {
+			aApiLayouts.push(new ApiLayout(oLayout));
+		});
+		return aApiLayouts;
+	};
 
     /**
      * Returns a layout of the specified slide master by its position.
