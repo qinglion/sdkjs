@@ -5273,6 +5273,9 @@ function(window, undefined) {
 		const oPlotArea = this.getPlotArea();
 		const bWithoutLabels = isLayoutSizes && this.chart.plotArea.layout.layoutTarget === AscFormat.LAYOUT_TARGET_INNER;
 		let bCorrected = false;
+		// width and height of rect can not be negative!
+		oRect.w = Math.max(0, oRect.w);
+		oRect.h = Math.max(0, oRect.h);
 		let fL = oRect.x, fT = oRect.y, fR = oRect.x + oRect.w, fB = oRect.y + oRect.h;
 		const isChartEx = this.isChartEx();
 		let fHorPadding = 0.0;
