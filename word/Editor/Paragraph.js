@@ -3383,6 +3383,40 @@ Paragraph.prototype.drawPolygons = function(graphics, areas, colors, lineWidth, 
 		graphics.drawPolygonByRects(areas[i], lineWidth, shift);
 	}
 };
+Paragraph.prototype.drawHorizontalBorder = function(graphics, curLine, border, lineAlign, y, isEmptyPara, X_left, X_right, leftMW, rightMW)
+{
+	let isRtl = this.isRtlDirection();
+	let RGBA = border.Get_Color(this);
+	graphics.p_color(RGBA.r, RGBA.g, RGBA.b, 255);
+	graphics.SetBorder(border);
+	
+	graphics.Start_Command(AscFormat.DRAW_COMMAND_LINE, this.Lines[curLine], curLine, 1);
+	
+	for (let curRange = 0, rangeCount = this.Lines[curLine].Ranges.length; curRange < rangeCount; ++curRange)
+	{
+		let lMW = 0;
+		let rMW = 0;
+		let x0 = this.Lines[curLine].Ranges[curRange].X;
+		let x1 = this.Lines[curLine].Ranges[curRange].XEnd;
+		
+		if ((0 === curRange && isRtl) || (rangeCount - 1 === curRange && !isRtl))
+		{
+			x1  = X_right;
+			rMW = rightMW;
+		}
+		
+		if ((0 === curRange && !isRtl) || (rangeCount - 1 === curRange && isRtl))
+		{
+			x0  = X_left;
+			lMW = leftMW;
+		}
+		
+		if (!this.IsEmptyRange(curLine, curRange) || (isEmptyPara && 1 === rangeCount))
+			graphics.drawHorLineExt(lineAlign, y, x0, x1, border.Size, lMW, rMW);
+	}
+	
+	graphics.End_Command();
+}
 Paragraph.prototype.Internal_Draw_6 = function(CurPage, pGraphics, Pr)
 {
 	if (true !== this.Is_NeedDrawBorders())
@@ -3475,41 +3509,6 @@ Paragraph.prototype.Internal_Draw_6 = function(CurPage, pGraphics, Pr)
 	{
 		bDrawBetween = true;
 	}
-	
-	let _t = this;
-	function drawBorder(curLine, border, lineAlign, y)
-	{
-		let RGBA = border.Get_Color(_t);
-		pGraphics.p_color(RGBA.r, RGBA.g, RGBA.b, 255);
-		pGraphics.SetBorder(border);
-		
-		pGraphics.Start_Command(AscFormat.DRAW_COMMAND_LINE, _t.Lines[curLine], curLine, 1);
-		
-		for (let curRange = 0, rangeCount = _t.Lines[curLine].Ranges.length; curRange < rangeCount; ++curRange)
-		{
-			let lMW = 0;
-			let rMW = 0;
-			let x0 = _t.Lines[curLine].Ranges[curRange].X;
-			let x1 = _t.Lines[curLine].Ranges[curRange].XEnd;
-			
-			if ((0 === curRange && isRtl) || (rangeCount - 1 === curRange && !isRtl))
-			{
-				x1  = X_right;
-				rMW = rightMW;
-			}
-			
-			if ((0 === curRange && !isRtl) || (rangeCount - 1 === curRange && isRtl))
-			{
-				x0  = X_left;
-				lMW = leftMW;
-			}
-			
-			if (!_t.IsEmptyRange(curLine, curRange) || (bEmpty && 1 === rangeCount))
-				pGraphics.drawHorLineExt(lineAlign, y, x0, x1, border.Size, lMW, rMW);
-		}
-		
-		pGraphics.End_Command();
-	}
 
 	if (bDrawTop)
 	{
@@ -3519,14 +3518,14 @@ Paragraph.prototype.Internal_Draw_6 = function(CurPage, pGraphics, Pr)
 			y += paraPr.Spacing.Before;
 		
 		let startLine = this.Pages[CurPage].StartLine;
-		drawBorder(startLine, paraPr.Brd.Top, c_oAscLineDrawingRule.Top, y);
+		this.drawHorizontalBorder(pGraphics, startLine, paraPr.Brd.Top, c_oAscLineDrawingRule.Top, y, bEmpty, X_left, X_right, leftMW, rightMW);
 	}
 
 	if (bDrawBetween)
 	{
 		let y = this.Pages[CurPage].Y + paraPr.Spacing.Before;
 		let startLine = this.Pages[CurPage].StartLine;
-		drawBorder(startLine, paraPr.Brd.Between, c_oAscLineDrawingRule.Top, y);
+		this.drawHorizontalBorder(pGraphics, startLine, paraPr.Brd.Between, c_oAscLineDrawingRule.Top, y, bEmpty, X_left, X_right, leftMW, rightMW);
 	}
 
 	var CurLine = this.Pages[CurPage].EndLine;
@@ -3564,7 +3563,7 @@ Paragraph.prototype.Internal_Draw_6 = function(CurPage, pGraphics, Pr)
 		}
 		
 		let endLine = this.Pages[CurPage].EndLine;
-		drawBorder(endLine, paraPr.Brd.Bottom, lineAlign, y);
+		this.drawHorizontalBorder(pGraphics, endLine, paraPr.Brd.Bottom, lineAlign, y, bEmpty, X_left, X_right, leftMW, rightMW);
 	}
 };
 /**
