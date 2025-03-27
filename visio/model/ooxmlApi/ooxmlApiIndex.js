@@ -1084,35 +1084,53 @@
 		if (layersInfo === undefined) {
 			return {};
 		}
-		let previousLayer = undefined;
+		let previousLayerElements = undefined;
 		/** @type {Set<string>} */
 		let unEqualProperties = new Set();
 		layersArray.forEach(function (layerIndexString) {
 			let layerIndex = Number(layerIndexString);
 			let layerInfo = layersInfo.getRow(layerIndex);
-			if (previousLayer === undefined) {
-				previousLayer = layerInfo;
+			let layerElements = layerInfo.getElements();
+
+			// Unlink original array
+			let layerElementsCopy= {};
+			for (const key in layerElements) {
+				if (layerElements.hasOwnProperty(key)) {
+					layerElementsCopy[key] = layerElements[key];
+				}
+			}
+
+			// Set default color
+			if (layerElementsCopy["Color"] === undefined) {
+				let defaultColorCell = new Cell_Type();
+				defaultColorCell.n = "Color";
+				defaultColorCell.v = "0";
+				layerElementsCopy["Color"] = defaultColorCell;
+			}
+
+			if (previousLayerElements === undefined) {
+				previousLayerElements = layerElementsCopy;
 			} else {
 				// compare with previous shape layer
-				for (const cellKey in layerInfo.getElements()) {
-					const cell = layerInfo.getCell(cellKey);
-					let previousLayerCell = previousLayer.getCell(cell.n);
+				for (const cellKey in layerElementsCopy) {
+					const cell = layerElementsCopy[cellKey];
+					let previousLayerCell = previousLayerElements[cell.n];
 					if (previousLayerCell.v !== cell.v) {
 						unEqualProperties.add(cell.n);
 					}
 				}
-				previousLayer = layerInfo;
+				previousLayerElements = layerElementsCopy;
 			}
 		});
 		// layers have the same set of properties so lets take any of them
 		// and remove unEqualProperties
 		/** @type {{ [key: string]: Cell_Type }} */
 		let resultObject = {};
-		if (previousLayer === undefined) {
+		if (previousLayerElements === undefined) {
 			return resultObject;
 		}
-		for (const cellKey in previousLayer.getElements()) {
-			const cell = previousLayer.getCell(cellKey);
+		for (const cellKey in previousLayerElements) {
+			const cell = previousLayerElements[cellKey];
 			if (!unEqualProperties.has(cell.n)) {
 				resultObject[cell.n] = cell;
 			}
