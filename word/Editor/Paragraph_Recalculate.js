@@ -2340,7 +2340,8 @@ Paragraph.prototype.private_RecalculateGetTabPos = function(PRS, X, ParaPr, CurP
 	
 	if (this.isRtlDirection())
 	{
-		let pageLimits = this.Parent.Get_PageLimits(PRS.PageAbs);
+		let pageRel = this.private_GetRelativePageIndex(CurPage);
+		let pageLimits = this.Parent.Get_PageLimits(pageRel);
 		
 		let range = this.Lines[PRS.Line].Ranges[PRS.Range];
 		X = X - range.X + pageLimits.XLimit - range.XEnd;
