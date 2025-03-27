@@ -2467,12 +2467,6 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 			{
 				pGraphics.Start_Command(AscFormat.DRAW_COMMAND_LINE, this.Lines[CurLine], CurLine, 4)
 
-				var TempX0 = this.Lines[CurLine].Ranges[CurRange].X;
-				if (0 === CurRange)
-					TempX0 = Math.min(TempX0, this.Pages[CurPage].X + Pr.ParaPr.Ind.Left, this.Pages[CurPage].X + Pr.ParaPr.Ind.Left + Pr.ParaPr.Ind.FirstLine);
-
-				var TempX1 = this.Lines[CurLine].Ranges[CurRange].XEnd;
-
 				var TempTop    = this.Lines[CurLine].Top;
 				var TempBottom = this.Lines[CurLine].Bottom;
 
@@ -2501,7 +2495,14 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 					if (true === Pr.ParaPr.Brd.First)
 					{
 						// Если следующий элемент таблица, тогда PrevPr = null
-						if (null === PrevEl || true === this.IsStartFromNewPage() || null === PrevPr || Asc.c_oAscShdNil === PrevPr.ParaPr.Shd.Value || PrevLeft != CurLeft || CurRight != PrevRight || false === this.Internal_Is_NullBorders(PrevPr.ParaPr.Brd) || false === this.Internal_Is_NullBorders(Pr.ParaPr.Brd))
+						if (null === PrevEl 
+							|| true === this.IsStartFromNewPage()
+							|| null === PrevPr
+							|| Asc.c_oAscShdNil === PrevPr.ParaPr.Shd.Value
+							|| PrevLeft != CurLeft
+							|| CurRight != PrevRight
+							|| false === this.Internal_Is_NullBorders(PrevPr.ParaPr.Brd)
+							|| false === this.Internal_Is_NullBorders(Pr.ParaPr.Brd))
 						{
 							if (false === this.IsStartFromNewPage() || null === PrevEl)
 								TempTop += Pr.ParaPr.Spacing.Before;
@@ -2542,23 +2543,33 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 							TempBottom -= Pr.ParaPr.Spacing.After;
 					}
 				}
-
-				if (0 === CurRange)
+				
+				let isRtl = Pr.ParaPr.Bidi;
+				
+				let x0 = this.Lines[CurLine].Ranges[CurRange].X;
+				let x1 = this.Lines[CurLine].Ranges[CurRange].XEnd;
+				let rangeCount = this.Lines[CurLine].Ranges.length;
+				
+				if ((0 === CurRange && isRtl) || (rangeCount - 1 === CurRange && !isRtl))
 				{
-					if (Pr.ParaPr.Brd.Left.Value === border_Single)
-						TempX0 -= 0.5 + Pr.ParaPr.Brd.Left.Size + Pr.ParaPr.Brd.Left.Space;
-					else
-						TempX0 -= 0.5;
-				}
-
-				if (this.Lines[CurLine].Ranges.length - 1 === CurRange)
-				{
-					TempX1 = this.Pages[CurPage].XLimit - Pr.ParaPr.Ind.Right;
-
+					let x_right = this.Pages[CurPage].XLimit - (isRtl ? Math.min(Pr.ParaPr.Ind.Left, Pr.ParaPr.Ind.Left + Pr.ParaPr.Ind.FirstLine) : Pr.ParaPr.Ind.Right);
+					x1 = Math.max(x1, x_right);
+					
 					if (Pr.ParaPr.Brd.Right.Value === border_Single)
-						TempX1 += 0.5 + Pr.ParaPr.Brd.Right.Size + Pr.ParaPr.Brd.Right.Space;
+						x1 += 0.5 + Pr.ParaPr.Brd.Right.Size + Pr.ParaPr.Brd.Right.Space;
 					else
-						TempX1 += 0.5;
+						x1 += 0.5;
+				}
+				
+				if ((0 === CurRange && !isRtl) || (rangeCount - 1 === CurRange && isRtl))
+				{
+					let x_left = this.Pages[CurPage].X + (isRtl ? Pr.ParaPr.Ind.Right : Math.min(Pr.ParaPr.Ind.Left, Pr.ParaPr.Ind.Left + Pr.ParaPr.Ind.FirstLine));
+					x0 = Math.min(x0, x_left);
+					
+					if (Pr.ParaPr.Brd.Left.Value === border_Single)
+						x0 -= 0.5 + Pr.ParaPr.Brd.Left.Size + Pr.ParaPr.Brd.Left.Space;
+					else
+						x0 -= 0.5;
 				}
 
 				pGraphics.b_color1(oShdColor.r, oShdColor.g, oShdColor.b, 255);
@@ -2566,7 +2577,7 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 				if (pGraphics.SetShd)
 					pGraphics.SetShd(Pr.ParaPr.Shd);
 
-				pGraphics.rect(TempX0, this.Pages[CurPage].Y + TempTop, TempX1 - TempX0, TempBottom - TempTop);
+				pGraphics.rect(x0, this.Pages[CurPage].Y + TempTop, x1 - x0, TempBottom - TempTop);
 				pGraphics.df();
 
 				pGraphics.End_Command();
@@ -2944,16 +2955,24 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 		//----------------------------------------------------------------------------------------------------------
 		if (true === bDrawBorders && ( ( this.Pages.length - 1 === CurPage ) || ( CurLine < this.Pages[CurPage + 1].FirstLine ) ))
 		{
-			var TempX0 = Math.min(this.Lines[CurLine].Ranges[0].X, this.Pages[CurPage].X + Pr.ParaPr.Ind.Left, this.Pages[CurPage].X + Pr.ParaPr.Ind.Left + Pr.ParaPr.Ind.FirstLine);
-			var TempX1 = this.Pages[CurPage].XLimit - Pr.ParaPr.Ind.Right;//this.Lines[CurLine].Ranges[this.Lines[CurLine].Ranges.length - 1].XEnd;
-
-			if (true === this.Is_LineDropCap())
+			let x0 = this.Lines[CurLine].Ranges[0].X;
+			let x1 = this.Lines[CurLine].Ranges[this.Lines[CurLine].Ranges.length - 1].XEnd;
+			if (Pr.ParaPr.Bidi)
 			{
-				TempX1 = TempX0 + this.Get_LineDropCapWidth();
+				x0 = Math.min(x0, this.Pages[CurPage].X + Pr.ParaPr.Ind.Right);
+				x1 = Math.max(x1, this.Pages[CurPage].XLimit - Pr.ParaPr.Ind.Left, this.Pages[CurPage].XLimit - Pr.ParaPr.Ind.Left - Pr.ParaPr.Ind.FirstLine);
+			}
+			else
+			{
+				x0 = Math.min(x0, this.Pages[CurPage].X + Pr.ParaPr.Ind.Left, this.Pages[CurPage].X + Pr.ParaPr.Ind.Left + Pr.ParaPr.Ind.FirstLine);
+				x1 = Math.max(x1, this.Pages[CurPage].XLimit - Pr.ParaPr.Ind.Right);
 			}
 
-			var TempTop    = this.Lines[CurLine].Top;
-			var TempBottom = this.Lines[CurLine].Bottom;
+			if (this.Is_LineDropCap())
+				x1 = x0 + this.Get_LineDropCapWidth();
+			
+			let TempTop    = this.Lines[CurLine].Top;
+			let TempBottom = this.Lines[CurLine].Bottom;
 
 			if (0 === CurLine)
 			{
@@ -2967,7 +2986,7 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 
 			if (this.Lines.length - 1 === CurLine)
 			{
-				var NextEl = this.GetNextDocumentElement();
+				let NextEl = this.GetNextDocumentElement();
 				while (NextEl && NextEl.IsBlockLevelSdt())
 				{
 					NextEl = NextEl.GetElement(0);
@@ -2982,24 +3001,18 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 
 			if (Pr.ParaPr.Brd.Right.Value === border_Single)
 			{
-				var RGBA = Pr.ParaPr.Brd.Right.Get_Color(this);
+				let RGBA = Pr.ParaPr.Brd.Right.Get_Color(this);
 				pGraphics.p_color(RGBA.r, RGBA.g, RGBA.b, 255);
-				if (pGraphics.SetBorder)
-				{
-					pGraphics.SetBorder(Pr.ParaPr.Brd.Right);
-				}
-				pGraphics.drawVerLine(c_oAscLineDrawingRule.Right, TempX1 + 0.5 + Pr.ParaPr.Brd.Right.Size + Pr.ParaPr.Brd.Right.Space, this.Pages[CurPage].Y + TempTop, this.Pages[CurPage].Y + TempBottom, Pr.ParaPr.Brd.Right.Size);
+				pGraphics.SetBorder(Pr.ParaPr.Brd.Right);
+				pGraphics.drawVerLine(c_oAscLineDrawingRule.Right, x1 + 0.5 + Pr.ParaPr.Brd.Right.Size + Pr.ParaPr.Brd.Right.Space, this.Pages[CurPage].Y + TempTop, this.Pages[CurPage].Y + TempBottom, Pr.ParaPr.Brd.Right.Size);
 			}
 
 			if (Pr.ParaPr.Brd.Left.Value === border_Single)
 			{
-				var RGBA = Pr.ParaPr.Brd.Left.Get_Color(this);
+				let RGBA = Pr.ParaPr.Brd.Left.Get_Color(this);
 				pGraphics.p_color(RGBA.r, RGBA.g, RGBA.b, 255);
-				if (pGraphics.SetBorder)
-				{
-					pGraphics.SetBorder(Pr.ParaPr.Brd.Left);
-				}
-				pGraphics.drawVerLine(c_oAscLineDrawingRule.Left, TempX0 - 0.5 - Pr.ParaPr.Brd.Left.Size - Pr.ParaPr.Brd.Left.Space, this.Pages[CurPage].Y + TempTop, this.Pages[CurPage].Y + TempBottom, Pr.ParaPr.Brd.Left.Size);
+				pGraphics.SetBorder(Pr.ParaPr.Brd.Left);
+				pGraphics.drawVerLine(c_oAscLineDrawingRule.Left, x0 - 0.5 - Pr.ParaPr.Brd.Left.Size - Pr.ParaPr.Brd.Left.Space, this.Pages[CurPage].Y + TempTop, this.Pages[CurPage].Y + TempBottom, Pr.ParaPr.Brd.Left.Size);
 			}
 		}
 
