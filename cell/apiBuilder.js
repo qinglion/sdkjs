@@ -11974,6 +11974,14 @@
 		return null;
 	};
 
+
+	ApiDrawing.prototype.resetDrawingBaseCoords = function() {
+		if(!this.Drawing) return;
+		this.Drawing.setDrawingBaseType(AscCommon.c_oAscCellAnchorType.cellanchorAbsolute);
+		this.Drawing.setDrawingBaseEditAs(AscCommon.c_oAscCellAnchorType.cellanchorAbsolute);
+		this.Drawing.setDrawingBasePos(this.Drawing.getXfrmOffX(), this.Drawing.getXfrmOffY());
+		this.Drawing.setDrawingBaseExt(this.Drawing.getXfrmExtX(), this.Drawing.getXfrmExtY());
+	};
 	/**
      * Sets the rotation angle to the current drawing object.
      * @memberof ApiDrawing
@@ -11990,8 +11998,6 @@
 
 		let oXfrm = this.Drawing.getXfrm();
 		oXfrm.setRot(nRotAngle * Math.PI / 180);
-		this.Drawing.checkDrawingBaseCoords();
-		
 		return true;
 	};
 	/**
