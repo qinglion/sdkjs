@@ -689,13 +689,14 @@
 						btnIcon.classList.add("btn-pen-active");
 						btnIcon.classList.remove("btn-pen");
 					}
+
+					this.elementReporterDrawMenu.style.display = "none";
 				}
 
 				if (e.target.getAttribute("data-tool") === "erase-all") {
 					Asc.editor.asc_EraseAllInksOnSlide();
+					this.elementReporterDrawMenu.style.display = "none";
 				}
-
-				this.elementReporterDrawMenu.style.display = "none";
 			}.bind(this);
 
 			let isMenuHovered = false;
@@ -761,10 +762,21 @@
 			}.bind(this));
 
 			this.elementReporterDrawMenuTrigger = document.getElementById("dem_id_draw_menu_trigger");
-			this.elementReporterDrawMenuTrigger.onclick = function () {
-				var drawMenu = document.getElementById("dem_id_draw_menu");
-				var _draw_menu_trigger = document.getElementById("dem_id_draw_menu_trigger");
-				var _draw_menu_trigger_offset = AscCommon.UI.getBoundingClientRect(_draw_menu_trigger);
+			this.elementReporterDrawMenuTrigger.onclick = function (e) {
+				e.stopPropagation();
+
+				const drawMenu = document.getElementById("dem_id_draw_menu");
+				const _draw_menu_trigger = document.getElementById("dem_id_draw_menu_trigger");
+				const _draw_menu_trigger_offset = AscCommon.UI.getBoundingClientRect(_draw_menu_trigger);
+
+				function handleOutsideClose(e) {
+					if (drawMenu.contains(e.target) || drawMenu === e.target) {
+						return;
+					}
+
+					drawMenu.style.display = "none";
+					window.removeEventListener('click', handleOutsideClose);
+				}
 
 				if (drawMenu.style.display == "block") {
 					drawMenu.style.display = "none";
@@ -772,6 +784,8 @@
 					drawMenu.style.display = "block";
 					drawMenu.style.left = _draw_menu_trigger_offset.left + (_draw_menu_trigger.offsetWidth - drawMenu.offsetWidth) / 2 + "px";
 					drawMenu.style.top = _draw_menu_trigger_offset.top - _draw_menu_trigger.offsetHeight - drawMenu.offsetHeight + "px";
+
+					window.addEventListener('click', handleOutsideClose);
 				}
 			};
 
