@@ -1648,18 +1648,26 @@ Paragraph.prototype.private_RecalculateLineBottomBound = function(CurLine, CurPa
 
 Paragraph.prototype.private_RecalculateLineCheckRanges = function(CurLine, CurPage, PRS, ParaPr)
 {
-    var Right   = this.Pages[CurPage].XLimit - ParaPr.Ind.Right;
     var Top     = PRS.LineTop;
     var Bottom  = PRS.LineBottom;
     var Top2    = PRS.LineTop2;
     var Bottom2 = PRS.LineBottom2;
-
-    var Left;
-
-    if(true === PRS.MathNotInline)
-        Left = this.Pages[CurPage].X;
-    else
-        Left = false === PRS.UseFirstLine ? this.Pages[CurPage].X + ParaPr.Ind.Left : this.Pages[CurPage].X + ParaPr.Ind.Left + ParaPr.Ind.FirstLine;
+	
+	var Left  = this.Pages[CurPage].X;
+	var Right = this.Pages[CurPage].XLimit;
+	if (!PRS.MathNotInline)
+	{
+		if (ParaPr.Bidi)
+		{
+			Left += ParaPr.Ind.Right;
+			Right -= PRS.UseFirstLine ? ParaPr.Ind.Left + ParaPr.Ind.FirstLine : ParaPr.Ind.Left;
+		}
+		else
+		{
+			Right -= ParaPr.Ind.Right;
+			Left  += PRS.UseFirstLine ? ParaPr.Ind.Left + ParaPr.Ind.FirstLine : ParaPr.Ind.Left;
+		}
+	}
 
 	var PageFields = null;
     if (this.bFromDocument && PRS.GetTopDocument() === this.LogicDocument && !PRS.IsInTable())
