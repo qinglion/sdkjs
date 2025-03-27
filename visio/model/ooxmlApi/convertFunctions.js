@@ -1562,6 +1562,7 @@
 		 * if layerColor is applied fill is always white
 		 */
 		let layerColor;
+
 		/**
 		 * @type {CUniFill}
 		 * if layerColor is applied fill is always white
