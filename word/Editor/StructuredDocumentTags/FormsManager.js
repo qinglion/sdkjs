@@ -100,6 +100,25 @@
 		return arrResult;
 	};
 	/**
+	 * Get all forms for specified role
+	 * @param roleName
+	 * @return {[]}
+	 */
+	CFormsManager.prototype.GetAllFormsByRole = function(roleName)
+	{
+		this.CheckFormsList();
+		
+		let result = [];
+		for (let i = 0, count = this.Forms.length; i < count; ++i)
+		{
+			let form = this.Forms[i];
+			if (form.IsUseInDocument() && roleName === form.GetFormRole())
+				result.push(form);
+		}
+		
+		return result;
+	};
+	/**
 	 * Получаем ключи форм по заданным параметрам
 	 * @param oPr
 	 * @returns {Array.string}

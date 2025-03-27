@@ -13279,7 +13279,7 @@ drawDoughnutChart.prototype = {
 		var outRadius = Math.min(trueHeight, trueWidth) / 2;
 
 		//% from out radius
-		var defaultSize = 50;
+		var defaultSize = 0;
 		var holeSize = this.chart.holeSize ? this.chart.holeSize : defaultSize;
 
 		//first ang

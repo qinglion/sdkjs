@@ -11191,11 +11191,19 @@ background-repeat: no-repeat;\
 	};
 	asc_docs_api.prototype.asc_ClearAllSpecialForms = function()
 	{
-		var oLogicDocument = this.private_GetLogicDocument();
-		if (!oLogicDocument)
+		let logicDocument = this.private_GetLogicDocument();
+		let oform = this.asc_GetOForm();
+		if (!logicDocument)
 			return;
-
-		oLogicDocument.ClearAllSpecialForms(true);
+		
+		let roleName = oform ? oform.getCurrentRole() : null;
+		let contentControls;
+		if (null !== roleName)
+			contentControls = logicDocument.GetFormsManager().GetAllFormsByRole(roleName);
+		else
+			contentControls = logicDocument.GetAllContentControls();
+		
+		logicDocument.ClearAllSpecialForms(contentControls);
 	};
 	asc_docs_api.prototype.asc_SetSpecialFormsHighlightColor = function(r, g, b)
 	{
@@ -11259,47 +11267,68 @@ background-repeat: no-repeat;\
 	};
 	asc_docs_api.prototype.asc_MoveToFillingForm = function(isNext, isRequired, isNotFilled)
 	{
-		var oLogicDocument = this.private_GetLogicDocument();
-		if (!oLogicDocument)
+		let logicDocument = this.private_GetLogicDocument();
+		if (!logicDocument)
 			return;
+		
+		let oform = this.asc_GetOForm();
+		let role  = oform ? oform.getCurrentRole() : null;
+		
+		function findNextForm(checkFunc)
+		{
+			let startCC  = logicDocument.GetContentControl();
+			let docState = logicDocument.SaveDocumentState(false);
+			
+			let prevCC = null, curCC;
+			while (true)
+			{
+				logicDocument.MoveToFillingForm(isNext);
+				curCC = logicDocument.GetContentControl();
+				
+				if (!curCC || curCC === startCC || curCC === prevCC)
+				{
+					logicDocument.LoadDocumentState(docState);
+					break;
+				}
+				
+				if (checkFunc(curCC))
+					break;
+				
+				if (!startCC)
+					startCC = curCC;
+				
+				prevCC = curCC;
+			}
+		}
 
 		if (true === isRequired)
 		{
-			var oStartCC  = oLogicDocument.GetContentControl();
-			var oDocState = oLogicDocument.SaveDocumentState(false);
-
-			// Защита от зависания, по логике сравнение с предыдущим не нужно
-			var oPrevCC = null, oCurCC;
-			while (1)
+			findNextForm(function(form)
 			{
-				oLogicDocument.MoveToFillingForm(isNext);
-				oCurCC = oLogicDocument.GetContentControl();
-
-				if (!oCurCC || oCurCC === oStartCC || oCurCC === oPrevCC)
-				{
-					oLogicDocument.LoadDocumentState(oDocState);
-					break;
-				}
-
-				if (oCurCC.IsForm()
-					&& oCurCC.IsFormRequired()
-					&& !oCurCC.IsCheckBox()
-					&& (true !== isNotFilled || !oCurCC.IsFormFilled()))
-					break;
-
-				if (!oStartCC)
-					oStartCC = oCurCC;
-
-				oPrevCC = oCurCC;
-			}
+				return (form.IsForm()
+					&& form.IsFormRequired()
+					&& !form.IsCheckBox()
+					&& (true !== isNotFilled || !form.IsFormFilled())
+					&& (null === role || form.GetFormRole() === role));
+			});
 		}
 		else
 		{
-			oLogicDocument.MoveToFillingForm(isNext);
+			if (null !== role)
+			{
+				findNextForm(function(form)
+				{
+					return (form.IsForm() && form.GetFormRole() === role);
+				});
+			}
+			else
+			{
+				logicDocument.MoveToFillingForm(isNext);
+			}
 		}
-
-		oLogicDocument.UpdateSelection();
-		oLogicDocument.UpdateInterface();
+		
+		logicDocument.UpdateSelection();
+		logicDocument.UpdateInterface();
 	};
 	asc_docs_api.prototype.asc_IsAllRequiredFormsFilled = function(checkAll)
 	{

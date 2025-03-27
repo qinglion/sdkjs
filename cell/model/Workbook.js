@@ -1945,6 +1945,19 @@
 						}
 						let oStartCellIndex = g_cCalcRecursion.getStartCellIndex();
 						if (oStartCellIndex) {
+							/** Checks static formulas with ca flag - false. For iterative calc static formulas that
+							 	participate in recursive formulas must be calculated before calculating dependent cells.**/
+							if (!oFormulaParsed.ca) {
+								oCell.changeLinkedCell(function (oLinkedCell) {
+									const oFormulaParsed = oLinkedCell.getFormulaParsed();
+									if (!oFormulaParsed.ca) {
+										oLinkedCell.setIsDirty(true);
+										oLinkedCell._checkDirty();
+									}
+								}, true);
+								oCell.setIsDirty(true);
+								oCell._checkDirty();
+							}
 							// Fill 0 value for empty cells with recursive formula.
 							if (oCell.getNumberValue() == null && (oCell.getValueText() == null || oCell.getValueText() === '#NUM!')) {
 								if (oCell.getType() !== CellValueType.Number) {
@@ -2047,30 +2060,34 @@
 			AscCommonExcel.importRangeLinksState.startBuildImportRangeLinks = false;
 
 			this._foreachChanged(function (oCell) {
-				oCell && oCell._checkDirty();
-				if (oCell.formulaParsed && AscCommonExcel.bIsSupportDynamicArrays && (oCell.formulaParsed.getDynamicRef() || oCell.formulaParsed.getArrayFormulaRef()) && oCell.formulaParsed.aca && oCell.formulaParsed.ca) {
-					t.addToVolatileArrays(oCell.formulaParsed);
-				}
-				// Enable calculating formula for next cell in chain
-				if (g_cCalcRecursion.getIsEnabledRecursion() && oCell.isFormula()) {
-					const nThisCellIndex = getCellIndex(oCell.nRow, oCell.nCol);
-					const sCellWsName = oCell.ws.getName().toLowerCase();
-					const aRecursiveCells = g_cCalcRecursion.getRecursiveCells(oCell);
-					let bLinkedCell = aRecursiveCells.some(function (oCellIndex) {
-						return oCellIndex.cellId === nThisCellIndex && oCellIndex.wsName === sCellWsName;
-					});
-					if (aRecursiveCells.length && bLinkedCell) {
-						oCell.changeLinkedCell(function (oCell) {
-							const nCellIndex = getCellIndex(oCell.nRow, oCell.nCol);
-							const sCellWsName = oCell.ws.getName().toLowerCase();
-							let bLinkedCell = aRecursiveCells.some(function (oCellIndex) {
-								return oCellIndex.cellId === nCellIndex && oCellIndex.wsName === sCellWsName;
-							});
-							if (bLinkedCell && !oCell.getIsDirty()) {
-								oCell.setIsDirty(true);
-							}
-						}, false);
-						g_cCalcRecursion.calcDiffBetweenIter(oCell);
+				if (oCell) {
+					oCell._checkDirty();
+					if (oCell.formulaParsed && AscCommonExcel.bIsSupportDynamicArrays && (oCell.formulaParsed.getDynamicRef() || oCell.formulaParsed.getArrayFormulaRef()) && oCell.formulaParsed.aca && oCell.formulaParsed.ca) {
+						t.addToVolatileArrays(oCell.formulaParsed);
+					}
+					// Enable calculating formula for next cell in chain
+					const oFormulaParsed = oCell.getFormulaParsed();
+					if (g_cCalcRecursion.getIsEnabledRecursion() && oCell.isFormula() && oFormulaParsed.ca === true) {
+						const nThisCellIndex = getCellIndex(oCell.nRow, oCell.nCol);
+						const sCellWsName = oCell.ws.getName().toLowerCase();
+						const aRecursiveCells = g_cCalcRecursion.getRecursiveCells(oCell);
+						let bLinkedCell = aRecursiveCells.some(function (oCellIndex) {
+							return oCellIndex.cellId === nThisCellIndex && oCellIndex.wsName === sCellWsName;
+						});
+						if (aRecursiveCells.length && bLinkedCell) {
+							oCell.changeLinkedCell(function (oCell) {
+								const oFormulaParsed = oCell.getFormulaParsed();
+								const nCellIndex = getCellIndex(oCell.nRow, oCell.nCol);
+								const sCellWsName = oCell.ws.getName().toLowerCase();
+								let bLinkedCell = aRecursiveCells.some(function (oCellIndex) {
+									return oCellIndex.cellId === nCellIndex && oCellIndex.wsName === sCellWsName;
+								});
+								if (bLinkedCell && oFormulaParsed.ca === true && !oCell.getIsDirty()) {
+									oCell.setIsDirty(true);
+								}
+							}, false);
+							g_cCalcRecursion.calcDiffBetweenIter(oCell);
+						}
 					}
 				}
 			});
@@ -12901,6 +12918,9 @@
 			res = !res;
 		}
 
+		let counter = 0;
+		let bbox = oRange.getBBox0 && oRange.getBBox0();
+		let sizeRange = bbox ? bbox.getHeight() * bbox.getWidth() : null;
 		oRange._foreachNoEmpty(function(cell){
 			if (!cell) {
 				return;
@@ -12911,7 +12931,14 @@
 				res = true;
 				return true;
 			} else if (isLocked === false) {
-				res = false;
+				counter++;
+				if (res === true && sizeRange) {
+					if (counter === sizeRange) {
+						res = false;
+					}
+				} else {
+					res = false;
+				}
 			}
 		});
 

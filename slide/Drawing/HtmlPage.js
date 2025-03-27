@@ -63,11 +63,10 @@
 	const MIN_MEDIA_CONTROL_CONTROL_INSET = 20;
 	const MEDIA_CONTROL_TOP_MARGIN = 10;
 
-	function Splitter(position, minPosition, maxPosition, isHorizontal) {
+	function Splitter(position, minPosition, maxPosition) {
 		this.position = position;
 		this.minPosition = minPosition;
 		this.maxPosition = maxPosition;
-		this.isHorizontal = isHorizontal;
 
 		this.savedPosition = position;
 		this.initialPosition = position;
@@ -305,34 +304,21 @@
 			if (element) element.style.overflow = "hidden";
 		}
 
-		const thumbnailsSplitter = new Splitter(67.5, 20, 80, Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.bottom);
+		const thumbnailsSplitter = new Splitter(67.5, 20, 80);
 		const notesSplitter = this.m_oApi.isReporterMode
-			? new Splitter(Math.min(Math.max(window.innerHeight * 0.5 * AscCommon.g_dKoef_pix_to_mm, 10), 200), 10, 200, true)
-			: new Splitter(this.IsNotesSupported() && !this.m_oApi.isEmbedVersion ? 10 : 0, 10, 100, true);
-		const animPaneSplitter = new Splitter(0, 40, 100 - HIDDEN_PANE_HEIGHT, true);
+			? new Splitter(Math.min(Math.max(window.innerHeight * 0.5 * AscCommon.g_dKoef_pix_to_mm, 10), 200), 10, 200)
+			: new Splitter(this.IsNotesSupported() && !this.m_oApi.isEmbedVersion ? 10 : 0, 10, 100);
+		const animPaneSplitter = new Splitter(0, 40, 100 - HIDDEN_PANE_HEIGHT);
 		this.splitters = [thumbnailsSplitter, notesSplitter, animPaneSplitter];
 
 		this.m_oBody = CreateControlContainer(this.Name);
 		this.m_oBody.HtmlElement.style.touchAction = "none";
 
-		// Thumbnails
 		this.initThumbnails();
+		this.recalculateThumbnailsBounds();
 
-		// Main parent (everything excluding thumbnails)
-		this.m_oMainParent = CreateControlContainer("id_main_parent");
-		if (Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.left) {
-			this.m_oMainParent.Bounds.SetParams(this.splitters[0].position + GlobalSkin.SplitterWidthMM, 0, g_dKoef_pix_to_mm, 1000, true, false, true, false, -1, -1);
-		}
-		if (Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.right) {
-			this.m_oMainParent.Bounds.SetParams(0, 0, this.splitters[0].position + GlobalSkin.SplitterWidthMM, 1000, false, false, true, false, -1, -1);
-		}
-		if (Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.bottom) {
-			this.m_oMainParent.Bounds.SetParams(0, 0, 1000, this.splitters[0].position + GlobalSkin.SplitterWidthMM, false, false, false, true, -1, -1);
-		}
-		this.m_oBody.AddControl(this.m_oMainParent);
-
-		// Main content (presentation, rulers, scrollers ...)
 		this.initMainContent();
+		this.recalculateMainContentBounds();
 
 		// Bottom panels (Notes and Animation Pane)
 		this.m_oBottomPanesContainer = CreateControlContainer("id_bottom_pannels_container");
@@ -393,7 +379,7 @@
 			styleContent += ".back_image_buttons { position:absolute; left: 0px; top: 0px; background-image: url('" + _images_url + "buttons.png') }";
 
 			styleContent += "@media (-webkit-min-device-pixel-ratio: 1.25) and (-webkit-max-device-pixel-ratio: 1.4),\
-            						(min-resolution: 1.25dppx) and (max-resolution: 1.4dppx), \
+									(min-resolution: 1.25dppx) and (max-resolution: 1.4dppx), \
 									(min-resolution: 120dpi) and (max-resolution: 143dpi) {\n\
 				.back_image_buttons { position:absolute; left: 0px; top: 0px; background-image: url('" + _images_url + "buttons@1.25x.png');background-size: 40px 200px; }\
 			}";
@@ -401,8 +387,8 @@
 				.back_image_buttons { position:absolute; left: 0px; top: 0px; background-image: url('" + _images_url + "buttons@1.5x.png');background-size: 40px 200px; }\
 			}";
 			styleContent += "@media (-webkit-min-device-pixel-ratio: 1.75) and (-webkit-max-device-pixel-ratio: 1.9),\
-            						(min-resolution: 1.75dppx) and (max-resolution: 1.9dppx),\
-                					(min-resolution: 168dpi) and (max-resolution: 191dpi) {\n\
+									(min-resolution: 1.75dppx) and (max-resolution: 1.9dppx),\
+									(min-resolution: 168dpi) and (max-resolution: 191dpi) {\n\
 				.back_image_buttons { position:absolute; left: 0px; top: 0px; background-image: url('" + _images_url + "buttons@1.75x.png');background-size: 40px 200px; }\
 			}";
 			styleContent += "@media all and (-webkit-min-device-pixel-ratio : 2),all and (-o-min-device-pixel-ratio: 2),all and (min--moz-device-pixel-ratio: 2),all and (min-device-pixel-ratio: 2) {\n\
@@ -410,7 +396,7 @@
 			}";
 			styleContent += ".menu-item-icon { position: relative;display:inline-block;float:left;width:20px;height:20px;margin:-2px 4px 0 -16px; }";
 			styleContent += ".dem_menu {list-style: none;display: none; position: fixed; right: auto; min-height: fit-content; height: auto; min-width: 120px; padding: 5px 0; border-radius: 4px; background-color: " + GlobalSkin.DemBackgroundColor + "; border: 1px solid " + GlobalSkin.DemSplitterColor + ";}";
-			styleContent += "#dem_id_draw_menu li>a{color:" + GlobalSkin.DemButtonTextColor +"; white-space: nowrap; font-family: \"Helvetica Neue\", Helvetica, Arial, sans-serif;;display:block; padding:5px 20px;line-height:16px;cursor:pointer;font-size:11px;text-align:left;}";
+			styleContent += "#dem_id_draw_menu li>a{color:" + GlobalSkin.DemButtonTextColor + "; white-space: nowrap; font-family: \"Helvetica Neue\", Helvetica, Arial, sans-serif;;display:block; padding:5px 20px;line-height:16px;cursor:pointer;font-size:11px;text-align:left;}";
 			styleContent += "#dem_id_draw_menu li>a:hover{background-color:" + GlobalSkin.DemButtonBackgroundColorHover + ";}";
 			styleContent += "#dem_id_draw_menu li>a[data-checked=\"true\"]{color:" + GlobalSkin.DemButtonTextColorActive + ";background-color:" + GlobalSkin.DemButtonBackgroundColorActive + ";}";
 			styleContent += "#dem_id_draw_menu >li.submenu>a:after{display:block;content:\" \";float:right;width:0;height:0;border-color:#fff0;border-style:solid;border-width:3px 0 3px 3px;border-left-color:" + GlobalSkin.DemButtonTextColor + ";margin-top:5px;margin-right:-7px;margin-left:0}";
@@ -459,28 +445,28 @@
 			_buttonsContent += "<div class=\"separator block_elem_no_select\" id=\"dem_id_sep2\" style=\"left: 350px; bottom: 3px;\"></div>";
 
 			_buttonsContent += "<button class=\"btn-text-default-img\" id=\"dem_id_pointer\"  style=\"left: 365px; bottom: 3px; width: 20px; height: 20px;\"><span id=\"dem_id_pointer_span\" class=\"btn-pointer back_image_buttons\" style=\"width:100%;height:100%;\"></span></button>";
-			
+
 			_buttonsContent += "<button class=\"btn-text-default-img\" id=\"dem_id_draw_menu_trigger\"  style=\"left: 385px; bottom: 3px; width: 20px; height: 20px;\"><span id=\"dem_id_draw_menu_trigger_span\" class=\"btn-pen back_image_buttons\" style=\"width:100%;height:100%;\"></span></button>";
-			
+
 			let colorList = "";
-			const drawColors = ["FFFFFF","000000","E81416","FFA500","FAEB36","79C314","487DE7","4B369D","70369D"]; 
+			const drawColors = ["FFFFFF", "000000", "E81416", "FFA500", "FAEB36", "79C314", "487DE7", "4B369D", "70369D"];
 			for (let i = 0; i < drawColors.length; i++) {
 				colorList += "<li class=\"menu-color-cell\" data-value=\"" + drawColors[i] + "\"><em><span style=\"background-color: #" + drawColors[i] + "\"></span></em></li>";
 			}
 
 			_buttonsContent += [
 				"<ul id=\"dem_id_draw_menu\" class=\"dem_menu\">",
-					"<li><a data-ratio data-tool=\"pen\"><span class=\"menu-item-icon btn-pen back_image_buttons\"></span>" + this.reporterTranslates[3] + "</a></li>",
-					"<li><a data-ratio data-tool=\"highlighter\"><span class=\"menu-item-icon btn-highlighter back_image_buttons\"></span>" + this.reporterTranslates[4] + "</a></li>",
-					"<li class=\"dem_draw_menu_divider\"></li>",
-					"<li id=\"dem_id_draw_color_menu_trigger\" class=\"submenu\"><a style=\"padding-left:28px;\">" + this.reporterTranslates[5] + "</a>",
-						"<ul id=\"dem_id_draw_color_menu\" class=\"dem_menu\" style=\"width: 162px;\">",
-						colorList,
-						"</ul>",
-					"</li>",
-					"<li class=\"dem_draw_menu_divider\"></li>",
-					"<li><a data-ratio data-tool=\"eraser\"><span class=\"menu-item-icon btn-eraser back_image_buttons\"></span>" + this.reporterTranslates[6] + "</a></li>",
-					"<li><a data-tool=\"erase-all\"><span class=\"menu-item-icon btn-erase-all back_image_buttons\"></span>" + this.reporterTranslates[7] + "</a></li>",
+				"<li><a data-ratio data-tool=\"pen\"><span class=\"menu-item-icon btn-pen back_image_buttons\"></span>" + this.reporterTranslates[3] + "</a></li>",
+				"<li><a data-ratio data-tool=\"highlighter\"><span class=\"menu-item-icon btn-highlighter back_image_buttons\"></span>" + this.reporterTranslates[4] + "</a></li>",
+				"<li class=\"dem_draw_menu_divider\"></li>",
+				"<li id=\"dem_id_draw_color_menu_trigger\" class=\"submenu\"><a style=\"padding-left:28px;\">" + this.reporterTranslates[5] + "</a>",
+				"<ul id=\"dem_id_draw_color_menu\" class=\"dem_menu\" style=\"width: 162px;\">",
+				colorList,
+				"</ul>",
+				"</li>",
+				"<li class=\"dem_draw_menu_divider\"></li>",
+				"<li><a data-ratio data-tool=\"eraser\"><span class=\"menu-item-icon btn-eraser back_image_buttons\"></span>" + this.reporterTranslates[6] + "</a></li>",
+				"<li><a data-tool=\"erase-all\"><span class=\"menu-item-icon btn-erase-all back_image_buttons\"></span>" + this.reporterTranslates[7] + "</a></li>",
 				"</ul>"
 			].join("");
 
@@ -631,9 +617,9 @@
 				color = parseInt(color, 16);
 				const ascColor = new Asc.asc_CColor();
 				ascColor.asc_putType(Asc.c_oAscColor.COLOR_TYPE_SRGB);
-				ascColor.asc_putR(color>>16);
-				ascColor.asc_putG((color&0xff00)>>8);
-				ascColor.asc_putB(color&0xff);
+				ascColor.asc_putR(color >> 16);
+				ascColor.asc_putG((color & 0xff00) >> 8);
+				ascColor.asc_putB(color & 0xff);
 				ascColor.asc_putA(0xff);
 
 				const stroke = new Asc.asc_CStroke();
@@ -647,9 +633,9 @@
 
 			this.currentDrawColor = 'E81416';
 
-			const showCurrentColor = function() {
+			const showCurrentColor = function () {
 				const elements = document.querySelectorAll(".menu-color-cell");
-				for (let i = 0; i< elements.length; i++) {
+				for (let i = 0; i < elements.length; i++) {
 					if (this.currentDrawColor === elements[i].getAttribute("data-value")) {
 						elements[i].dataset["current"] = "true";
 					} else {
@@ -657,14 +643,14 @@
 					}
 				}
 			}.bind(this);
-			
+
 			showCurrentColor();
 
 			this.elementReporterDrawMenu = document.getElementById("dem_id_draw_menu");
-			this.elementReporterDrawMenu.onclick = function(e) {
+			this.elementReporterDrawMenu.onclick = function (e) {
 				if (e.target.hasAttribute("data-ratio")) {
 					const btnIcon = document.getElementById("dem_id_draw_menu_trigger_span");
-					
+
 					if (!!e.target.getAttribute("data-checked")) {
 						delete e.target.dataset["checked"];
 						Asc.editor.asc_StopInkDrawer();
@@ -675,7 +661,7 @@
 						btnIcon.classList.add("btn-pen");
 					} else {
 						const elements = this.elementReporterDrawMenu.querySelectorAll("a[data-ratio]")
-						for (let i = 0; i< elements.length; i++) {
+						for (let i = 0; i < elements.length; i++) {
 							delete elements[i].dataset["checked"];
 						}
 
@@ -715,15 +701,15 @@
 
 			let isMenuHovered = false;
 			const drawColorsMenuTrigger = jQuery("#dem_id_draw_color_menu_trigger");
-			drawColorsMenuTrigger.on('mouseenter', function(e) {
+			drawColorsMenuTrigger.on('mouseenter', function (e) {
 				if (!isMenuHovered) {
 					const offset = AscCommon.UI.getBoundingClientRect(e.target);
-					const menuWidth = 174; 
+					const menuWidth = 174;
 					let leftPosition = offset.left + offset.width;
 					if (leftPosition + menuWidth > window.innerWidth) {
 						leftPosition = offset.left - menuWidth;
 					}
-			
+
 					this.elementReporterDrawColorsMenu.css({
 						display: "block",
 						top: offset.top + "px",
@@ -732,7 +718,7 @@
 				}
 			}.bind(this));
 
-			drawColorsMenuTrigger.on('mouseleave', function() {
+			drawColorsMenuTrigger.on('mouseleave', function () {
 				if (!isMenuHovered) {
 					this.elementReporterDrawColorsMenu.css("display", "none");
 				}
@@ -744,7 +730,7 @@
 				"padding": "5px"
 			});
 
-			this.elementReporterDrawColorsMenu.on('click', function(e) {
+			this.elementReporterDrawColorsMenu.on('click', function (e) {
 				const checkedMenuItem = this.elementReporterDrawMenu.querySelector("a[data-checked]");
 				this.currentDrawColor = e.target.getAttribute("data-value");
 				showCurrentColor();
@@ -754,7 +740,7 @@
 				if ((checkedMenuItem && checkedMenuItem.getAttribute("data-tool") === "eraser") || !checkedMenuItem) {
 					Asc.editor.asc_StartDrawInk(createSolidPen(this.currentDrawColor, 1, 100));
 					const elements = this.elementReporterDrawMenu.querySelectorAll("a[data-ratio]")
-					for (let i = 0; i< elements.length; i++) {
+					for (let i = 0; i < elements.length; i++) {
 						delete elements[i].dataset["checked"];
 					}
 
@@ -776,7 +762,7 @@
 			}.bind(this));
 
 			this.elementReporterDrawMenuTrigger = document.getElementById("dem_id_draw_menu_trigger");
-			this.elementReporterDrawMenuTrigger.onclick = function(e) {
+			this.elementReporterDrawMenuTrigger.onclick = function (e) {
 				e.stopPropagation();
 
 				const drawMenu = document.getElementById("dem_id_draw_menu");
@@ -887,169 +873,83 @@
 		}
 	};
 	CEditorPage.prototype.initThumbnails = function () {
-		const scrollWidth = 10 * g_dKoef_pix_to_mm;
 
-		// Thumbnails container
 		this.m_oThumbnailsContainer = CreateControlContainer("id_panel_thumbnails");
-
-		if (Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.left) {
-			this.m_oThumbnailsContainer.Bounds.SetParams(0, 0, this.splitters[0].position, 1000, false, false, true, false, this.splitters[0].position, -1);
-			this.m_oThumbnailsContainer.Anchor = (g_anchor_left | g_anchor_top | g_anchor_bottom);
-		}
-		if (Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.right) {
-			this.m_oThumbnailsContainer.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, this.splitters[0].position, -1);
-			this.m_oThumbnailsContainer.Anchor = (g_anchor_top | g_anchor_right | g_anchor_bottom);
-		}
-		if (Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.bottom) {
-			this.m_oThumbnailsContainer.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, this.splitters[0].position);
-			this.m_oThumbnailsContainer.Anchor = (g_anchor_left | g_anchor_right | g_anchor_bottom);
-		}
 		this.m_oBody.AddControl(this.m_oThumbnailsContainer);
 
 		this.m_oThumbnailsBack = CreateControl("id_thumbnails_background");
-		if (Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.left || Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.right) {
-			Asc.editor.isRTLInterface
-				? this.m_oThumbnailsBack.Bounds.SetParams(scrollWidth, 0, 1000, 1000, true, false, false, false, -1, -1)
-				: this.m_oThumbnailsBack.Bounds.SetParams(0, 0, scrollWidth, 1000, false, false, true, false, -1, -1);
-		}
-		if (Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.bottom) {
-			this.m_oThumbnailsBack.Bounds.SetParams(0, 0, 1000, scrollWidth, false, false, false, true, -1, -1);
-		}
-		this.m_oThumbnailsBack.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right | g_anchor_bottom);
 		this.m_oThumbnailsContainer.AddControl(this.m_oThumbnailsBack);
 
 		this.m_oThumbnails = CreateControl("id_thumbnails");
-		if (Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.left || Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.right) {
-			Asc.editor.isRTLInterface
-				? this.m_oThumbnails.Bounds.SetParams(scrollWidth, 0, 1000, 1000, true, false, false, false, -1, -1)
-				: this.m_oThumbnails.Bounds.SetParams(0, 0, scrollWidth, 1000, false, false, true, false, -1, -1);
-		}
-		if (Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.bottom) {
-			this.m_oThumbnails.Bounds.SetParams(0, 0, 1000, scrollWidth, false, false, false, true, -1, -1);
-		}
-		this.m_oThumbnails.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right | g_anchor_bottom);
 		this.m_oThumbnailsContainer.AddControl(this.m_oThumbnails);
 
-		// НАДО ПЕРЕИМЕНОВАТЬ - ОН НЕ ВСЕГДА ВЕРТИКАЛЬНЫЙ ТЕПЕРЬ
+		// TODO: 'id_vertical_scroll_thmbnl' is no longer always vertical (since thumbnails can be horizontal)
 		this.m_oThumbnails_scroll = CreateControl("id_vertical_scroll_thmbnl");
-		if (Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.left || Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.right) {
-			if (Asc.editor.isRTLInterface) {
-				this.m_oThumbnails_scroll.Bounds.SetParams(0, 0, scrollWidth, 1000, false, false, true, false, scrollWidth, -1);
-				this.m_oThumbnails_scroll.Anchor = (g_anchor_left | g_anchor_top | g_anchor_bottom);
-			} else {
-				this.m_oThumbnails_scroll.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, scrollWidth, -1);
-				this.m_oThumbnails_scroll.Anchor = (g_anchor_top | g_anchor_right | g_anchor_bottom);
-			}
-		}
-		if (Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.bottom) {
-			this.m_oThumbnails_scroll.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, scrollWidth);
-			this.m_oThumbnails_scroll.Anchor = (g_anchor_left | g_anchor_right | g_anchor_bottom);
-		}
 		this.m_oThumbnailsContainer.AddControl(this.m_oThumbnails_scroll);
 
-		// Thumbnails splitter
 		this.m_oThumbnailsSplit = CreateControlContainer("id_panel_thumbnails_split");
-		if (Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.left) {
-			this.m_oThumbnailsSplit.Bounds.SetParams(this.splitters[0].position, 0, 1000, 1000, true, false, false, false, GlobalSkin.SplitterWidthMM, -1);
-			this.m_oThumbnailsSplit.Anchor = (g_anchor_left | g_anchor_top | g_anchor_bottom);
-		}
-		if (Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.right) {
-			this.m_oThumbnailsSplit.Bounds.SetParams(0, 0, this.splitters[0].position, 1000, false, false, true, false, GlobalSkin.SplitterWidthMM, -1);
-			this.m_oThumbnailsSplit.Anchor = (g_anchor_top | g_anchor_right | g_anchor_bottom);
-		}
-		if (Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.bottom) {
-			this.m_oThumbnailsSplit.Bounds.SetParams(0, 0, 1000, this.splitters[0].position, false, false, false, true, -1, GlobalSkin.SplitterWidthMM);
-			this.m_oThumbnailsSplit.Anchor = (g_anchor_left | g_anchor_right | g_anchor_bottom);
-		}
 		this.m_oBody.AddControl(this.m_oThumbnailsSplit);
 
-		if (this.m_oApi.isMobileVersion)
+		if (this.m_oApi.isMobileVersion) {
 			this.m_oThumbnails_scroll.HtmlElement.style.display = "none";
+		}
 	};
 	CEditorPage.prototype.initMainContent = function () {
+		this.m_oMainParent = CreateControlContainer("id_main_parent");
+		this.m_oBody.AddControl(this.m_oMainParent);
+
 		this.m_oMainContent = CreateControlContainer("id_main");
-		this.m_oMainContent.Bounds.SetParams(0, 0, g_dKoef_pix_to_mm, this.splitters[1].position + GlobalSkin.SplitterWidthMM, true, false, true, true, -1, -1);
-		this.m_oMainContent.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right | g_anchor_bottom);
 		this.m_oMainParent.AddControl(this.m_oMainContent);
 
 		this.m_oPanelRight = CreateControlContainer("id_panel_right");
-		this.m_oPanelRight.Bounds.SetParams(0, 0, 1000, this.ScrollWidthMm, false, false, false, true, this.ScrollWidthMm, -1);
-		this.m_oPanelRight.Anchor = (g_anchor_top | g_anchor_right | g_anchor_bottom);
 		this.m_oMainContent.AddControl(this.m_oPanelRight);
 
 		this.m_oPanelRight_buttonRulers = CreateControl("id_buttonRulers");
-		this.m_oPanelRight_buttonRulers.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, this.ScrollWidthMm);
-		this.m_oPanelRight_buttonRulers.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right);
 		this.m_oPanelRight.AddControl(this.m_oPanelRight_buttonRulers);
 
-		var _vertScrollTop = this.ScrollWidthMm;
 		if (GlobalSkin.RulersButton === false) {
 			this.m_oPanelRight_buttonRulers.HtmlElement.style.display = "none";
-			_vertScrollTop = 0;
 		}
 
 		this.m_oPanelRight_buttonNextPage = CreateControl("id_buttonNextPage");
-		this.m_oPanelRight_buttonNextPage.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, this.ScrollWidthMm);
-		this.m_oPanelRight_buttonNextPage.Anchor = (g_anchor_left | g_anchor_bottom | g_anchor_right);
 		this.m_oPanelRight.AddControl(this.m_oPanelRight_buttonNextPage);
 
 		this.m_oPanelRight_buttonPrevPage = CreateControl("id_buttonPrevPage");
-		this.m_oPanelRight_buttonPrevPage.Bounds.SetParams(0, 0, 1000, this.ScrollWidthMm, false, false, false, true, -1, this.ScrollWidthMm);
-		this.m_oPanelRight_buttonPrevPage.Anchor = (g_anchor_left | g_anchor_bottom | g_anchor_right);
 		this.m_oPanelRight.AddControl(this.m_oPanelRight_buttonPrevPage);
 
-		var _vertScrollBottom = 2 * this.ScrollWidthMm;
 		if (GlobalSkin.NavigationButtons == false) {
 			this.m_oPanelRight_buttonNextPage.HtmlElement.style.display = "none";
 			this.m_oPanelRight_buttonPrevPage.HtmlElement.style.display = "none";
-			_vertScrollBottom = 0;
 		}
 
 		this.m_oPanelRight_vertScroll = CreateControl("id_vertical_scroll");
-		this.m_oPanelRight_vertScroll.Bounds.SetParams(0, _vertScrollTop, 1000, _vertScrollBottom, false, true, false, true, -1, -1);
-		this.m_oPanelRight_vertScroll.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right | g_anchor_bottom);
 		this.m_oPanelRight.AddControl(this.m_oPanelRight_vertScroll);
 
 		// --- left ---
 		this.m_oLeftRuler = CreateControlContainer("id_panel_left");
-		this.m_oLeftRuler.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, 5, -1);
-		this.m_oLeftRuler.Anchor = (g_anchor_left | g_anchor_top | g_anchor_bottom);
 		this.m_oMainContent.AddControl(this.m_oLeftRuler);
 
 		this.m_oLeftRuler_buttonsTabs = CreateControl("id_buttonTabs");
-		this.m_oLeftRuler_buttonsTabs.Bounds.SetParams(0, 0.8, 1000, 1000, false, true, false, false, -1, 5);
-		this.m_oLeftRuler_buttonsTabs.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right);
 		this.m_oLeftRuler.AddControl(this.m_oLeftRuler_buttonsTabs);
 
 		this.m_oLeftRuler_vertRuler = CreateControl("id_vert_ruler");
-		this.m_oLeftRuler_vertRuler.Bounds.SetParams(0, 7, 1000, 1000, false, true, false, false, -1, -1);
-		this.m_oLeftRuler_vertRuler.Anchor = (g_anchor_left | g_anchor_right | g_anchor_top | g_anchor_bottom);
 		this.m_oLeftRuler.AddControl(this.m_oLeftRuler_vertRuler);
 		// ------------
 
 		// --- top ----
 		this.m_oTopRuler = CreateControlContainer("id_panel_top");
-		this.m_oTopRuler.Bounds.SetParams(5, 0, 1000, 1000, true, false, false, false, -1, 7);
-		this.m_oTopRuler.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right);
 		this.m_oMainContent.AddControl(this.m_oTopRuler);
 
 		this.m_oTopRuler_horRuler = CreateControl("id_hor_ruler");
-		this.m_oTopRuler_horRuler.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, -1);
-		this.m_oTopRuler_horRuler.Anchor = (g_anchor_left | g_anchor_right | g_anchor_top | g_anchor_bottom);
 		this.m_oTopRuler.AddControl(this.m_oTopRuler_horRuler);
 		// ------------
 
 		// scroll hor --
 		this.m_oScrollHor = CreateControlContainer("id_horscrollpanel");
-		this.m_oScrollHor.Bounds.SetParams(0, 0, this.ScrollWidthMm, 1000, false, false, true, false, -1, this.ScrollWidthMm);
-		this.m_oScrollHor.Anchor = (g_anchor_left | g_anchor_right | g_anchor_bottom);
 		this.m_oMainContent.AddControl(this.m_oScrollHor);
 
 		// Others
 		this.m_oMainView = CreateControlContainer("id_main_view");
-		var useScrollW = (this.m_oApi.isMobileVersion || this.m_oApi.isReporterMode) ? 0 : this.ScrollWidthMm;
-		this.m_oMainView.Bounds.SetParams(5, 7, useScrollW, useScrollW, true, true, true, true, -1, -1);
-		this.m_oMainView.Anchor = (g_anchor_left | g_anchor_right | g_anchor_top | g_anchor_bottom);
 		this.m_oMainContent.AddControl(this.m_oMainView);
 
 		// проблема с фокусом fixed-позиционированного элемента внутри (bug 63194)
@@ -1058,13 +958,9 @@
 		};
 
 		this.m_oEditor = CreateControl("id_viewer");
-		this.m_oEditor.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, -1);
-		this.m_oEditor.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right | g_anchor_bottom);
 		this.m_oMainView.AddControl(this.m_oEditor);
 
 		this.m_oOverlay = CreateControl("id_viewer_overlay");
-		this.m_oOverlay.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, -1);
-		this.m_oOverlay.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right | g_anchor_bottom);
 		this.m_oMainView.AddControl(this.m_oOverlay);
 	};
 	CEditorPage.prototype.initNotes = function () {
@@ -1136,6 +1032,129 @@
 		if (!this.IsSupportAnimPane) {
 			this.m_oAnimationPaneContainer.HtmlElement.style.display = "none";
 		}
+	};
+
+	CEditorPage.prototype.recalculateThumbnailsBounds = function () {
+		const scrollWidth = 10 * g_dKoef_pix_to_mm;
+
+		if (Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.left) {
+			this.m_oThumbnailsContainer.Bounds.SetParams(0, 0, this.splitters[0].position, 1000, false, false, true, false, this.splitters[0].position, -1);
+			this.m_oThumbnailsContainer.Anchor = (g_anchor_left | g_anchor_top | g_anchor_bottom);
+		}
+		if (Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.right) {
+			this.m_oThumbnailsContainer.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, this.splitters[0].position, -1);
+			this.m_oThumbnailsContainer.Anchor = (g_anchor_top | g_anchor_right | g_anchor_bottom);
+		}
+		if (Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.bottom) {
+			this.m_oThumbnailsContainer.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, this.splitters[0].position);
+			this.m_oThumbnailsContainer.Anchor = (g_anchor_left | g_anchor_right | g_anchor_bottom);
+		}
+
+		if (Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.left || Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.right) {
+			Asc.editor.isRtlInterface
+				? this.m_oThumbnailsBack.Bounds.SetParams(scrollWidth, 0, 1000, 1000, true, false, false, false, -1, -1)
+				: this.m_oThumbnailsBack.Bounds.SetParams(0, 0, scrollWidth, 1000, false, false, true, false, -1, -1);
+		}
+		if (Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.bottom) {
+			this.m_oThumbnailsBack.Bounds.SetParams(0, 0, 1000, scrollWidth, false, false, false, true, -1, -1);
+		}
+		this.m_oThumbnailsBack.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right | g_anchor_bottom);
+
+		if (Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.left || Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.right) {
+			Asc.editor.isRtlInterface
+				? this.m_oThumbnails.Bounds.SetParams(scrollWidth, 0, 1000, 1000, true, false, false, false, -1, -1)
+				: this.m_oThumbnails.Bounds.SetParams(0, 0, scrollWidth, 1000, false, false, true, false, -1, -1);
+		}
+		if (Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.bottom) {
+			this.m_oThumbnails.Bounds.SetParams(0, 0, 1000, scrollWidth, false, false, false, true, -1, -1);
+		}
+		this.m_oThumbnails.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right | g_anchor_bottom);
+
+		if (Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.left || Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.right) {
+			if (Asc.editor.isRtlInterface) {
+				this.m_oThumbnails_scroll.Bounds.SetParams(0, 0, scrollWidth, 1000, false, false, true, false, scrollWidth, -1);
+				this.m_oThumbnails_scroll.Anchor = (g_anchor_left | g_anchor_top | g_anchor_bottom);
+			} else {
+				this.m_oThumbnails_scroll.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, scrollWidth, -1);
+				this.m_oThumbnails_scroll.Anchor = (g_anchor_top | g_anchor_right | g_anchor_bottom);
+			}
+		}
+		if (Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.bottom) {
+			this.m_oThumbnails_scroll.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, scrollWidth);
+			this.m_oThumbnails_scroll.Anchor = (g_anchor_left | g_anchor_right | g_anchor_bottom);
+		}
+
+		if (Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.left) {
+			this.m_oThumbnailsSplit.Bounds.SetParams(this.splitters[0].position, 0, 1000, 1000, true, false, false, false, GlobalSkin.SplitterWidthMM, -1);
+			this.m_oThumbnailsSplit.Anchor = (g_anchor_left | g_anchor_top | g_anchor_bottom);
+		}
+		if (Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.right) {
+			this.m_oThumbnailsSplit.Bounds.SetParams(0, 0, this.splitters[0].position, 1000, false, false, true, false, GlobalSkin.SplitterWidthMM, -1);
+			this.m_oThumbnailsSplit.Anchor = (g_anchor_top | g_anchor_right | g_anchor_bottom);
+		}
+		if (Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.bottom) {
+			this.m_oThumbnailsSplit.Bounds.SetParams(0, 0, 1000, this.splitters[0].position, false, false, false, true, -1, GlobalSkin.SplitterWidthMM);
+			this.m_oThumbnailsSplit.Anchor = (g_anchor_left | g_anchor_right | g_anchor_bottom);
+		}
+	};
+	CEditorPage.prototype.recalculateMainContentBounds = function () {
+		if (Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.left) {
+			this.m_oMainParent.Bounds.SetParams(this.splitters[0].position + GlobalSkin.SplitterWidthMM, 0, g_dKoef_pix_to_mm, 1000, true, false, true, false, -1, -1);
+		}
+		if (Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.right) {
+			this.m_oMainParent.Bounds.SetParams(0, 0, this.splitters[0].position + GlobalSkin.SplitterWidthMM, 1000, false, false, true, false, -1, -1);
+		}
+		if (Asc.editor.getThumbnailsPosition() === thumbnailsPositionMap.bottom) {
+			this.m_oMainParent.Bounds.SetParams(0, 0, 1000, this.splitters[0].position + GlobalSkin.SplitterWidthMM, false, false, false, true, -1, -1);
+		}
+
+		this.m_oMainContent.Bounds.SetParams(0, 0, g_dKoef_pix_to_mm, this.splitters[1].position + GlobalSkin.SplitterWidthMM, true, false, true, true, -1, -1);
+		this.m_oMainContent.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right | g_anchor_bottom);
+
+		this.m_oPanelRight.Bounds.SetParams(0, 0, 1000, this.ScrollWidthMm, false, false, false, true, this.ScrollWidthMm, -1);
+		this.m_oPanelRight.Anchor = (g_anchor_top | g_anchor_right | g_anchor_bottom);
+
+		this.m_oPanelRight_buttonRulers.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, this.ScrollWidthMm);
+		this.m_oPanelRight_buttonRulers.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right);
+
+		this.m_oPanelRight_buttonNextPage.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, this.ScrollWidthMm);
+		this.m_oPanelRight_buttonNextPage.Anchor = (g_anchor_left | g_anchor_bottom | g_anchor_right);
+
+		this.m_oPanelRight_buttonPrevPage.Bounds.SetParams(0, 0, 1000, this.ScrollWidthMm, false, false, false, true, -1, this.ScrollWidthMm);
+		this.m_oPanelRight_buttonPrevPage.Anchor = (g_anchor_left | g_anchor_bottom | g_anchor_right);
+
+		const _vertScrollTop = GlobalSkin.RulersButton === false ? 0 : this.ScrollWidthMm;
+		const _vertScrollBottom = GlobalSkin.NavigationButtons == false ? 0 : 2 * this.ScrollWidthMm;
+		this.m_oPanelRight_vertScroll.Bounds.SetParams(0, _vertScrollTop, 1000, _vertScrollBottom, false, true, false, true, -1, -1);
+		this.m_oPanelRight_vertScroll.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right | g_anchor_bottom);
+
+		this.m_oLeftRuler.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, 5, -1);
+		this.m_oLeftRuler.Anchor = (g_anchor_left | g_anchor_top | g_anchor_bottom);
+
+		this.m_oLeftRuler_buttonsTabs.Bounds.SetParams(0, 0.8, 1000, 1000, false, true, false, false, -1, 5);
+		this.m_oLeftRuler_buttonsTabs.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right);
+
+		this.m_oLeftRuler_vertRuler.Bounds.SetParams(0, 7, 1000, 1000, false, true, false, false, -1, -1);
+		this.m_oLeftRuler_vertRuler.Anchor = (g_anchor_left | g_anchor_right | g_anchor_top | g_anchor_bottom);
+
+		this.m_oTopRuler.Bounds.SetParams(5, 0, 1000, 1000, true, false, false, false, -1, 7);
+		this.m_oTopRuler.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right);
+
+		this.m_oTopRuler_horRuler.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, -1);
+		this.m_oTopRuler_horRuler.Anchor = (g_anchor_left | g_anchor_right | g_anchor_top | g_anchor_bottom);
+
+		this.m_oScrollHor.Bounds.SetParams(0, 0, this.ScrollWidthMm, 1000, false, false, true, false, -1, this.ScrollWidthMm);
+		this.m_oScrollHor.Anchor = (g_anchor_left | g_anchor_right | g_anchor_bottom);
+
+		const useScrollW = (this.m_oApi.isMobileVersion || this.m_oApi.isReporterMode) ? 0 : this.ScrollWidthMm;
+		this.m_oMainView.Bounds.SetParams(5, 7, useScrollW, useScrollW, true, true, true, true, -1, -1);
+		this.m_oMainView.Anchor = (g_anchor_left | g_anchor_right | g_anchor_top | g_anchor_bottom);
+
+		this.m_oEditor.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, -1);
+		this.m_oEditor.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right | g_anchor_bottom);
+
+		this.m_oOverlay.Bounds.SetParams(0, 0, 1000, 1000, false, false, false, false, -1, -1);
+		this.m_oOverlay.Anchor = (g_anchor_left | g_anchor_top | g_anchor_right | g_anchor_bottom);
 	};
 
 	// Controls
