@@ -2459,7 +2459,8 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 			//----------------------------------------------------------------------------------------------------------
 			// Заливка параграфа
 			//----------------------------------------------------------------------------------------------------------
-			var oShdColor = Pr.ParaPr.Shd.IsNil() ? null : Pr.ParaPr.Shd.GetSimpleColor(this.GetTheme(), this.GetColorMap());
+			let paraPr = Pr.ParaPr;
+			var oShdColor = paraPr.Shd.IsNil() ? null : paraPr.Shd.GetSimpleColor(this.GetTheme(), this.GetColorMap());
 			if ((_Range.W > 0.001 || true === this.IsEmpty() || true !== this.IsEmptyRange(CurLine, CurRange))
 				&& ((this.Pages.length - 1 === CurPage) || (CurLine < this.Pages[CurPage + 1].FirstLine))
 				&& oShdColor
@@ -2476,36 +2477,36 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 					// на странице, предыдущий параграф тоже имеет не пустой фон и у текущего и предыдущего
 					// параграфов совпадают правая и левая границы фонов.
 
-					var PrevEl = this.Get_DocumentPrev();
-					var PrevPr = null;
+					let prevEl = this.Get_DocumentPrev();
+					let prevPr = null;
 
-					var PrevLeft  = 0;
-					var PrevRight = 0;
-					var CurLeft   = Math.min(Pr.ParaPr.Ind.Left, Pr.ParaPr.Ind.Left + Pr.ParaPr.Ind.FirstLine);
-					var CurRight  = Pr.ParaPr.Ind.Right;
-					if (null != PrevEl && type_Paragraph === PrevEl.GetType())
+					let prevLeft  = 0;
+					let prevRight = 0;
+					let curLeft   = paraPr.Bidi ? paraPr.Ind.Right : Math.min(paraPr.Ind.Left, paraPr.Ind.Left + paraPr.Ind.FirstLine);
+					let curRight  = paraPr.Bidi ? Math.min(paraPr.Ind.Left, paraPr.Ind.Left + paraPr.Ind.FirstLine) : paraPr.Ind.Right;
+					if (prevEl && prevEl.IsParagraph())
 					{
-						PrevPr    = PrevEl.Get_CompiledPr2();
-						PrevLeft  = Math.min(PrevPr.ParaPr.Ind.Left, PrevPr.ParaPr.Ind.Left + PrevPr.ParaPr.Ind.FirstLine);
-						PrevRight = PrevPr.ParaPr.Ind.Right;
+						prevPr    = prevEl.Get_CompiledPr2().ParaPr;
+						prevLeft  = prevPr.Bidi ? prevPr.Ind.Right : Math.min(prevPr.Ind.Left, prevPr.Ind.Left + prevPr.Ind.FirstLine);
+						prevRight = prevPr.Bidi ? Math.min(prevPr.Ind.Left, prevPr.Ind.Left + prevPr.Ind.FirstLine) : prevPr.Ind.Right;
 					}
 
 					// Если данный параграф находится в группе параграфов с одинаковыми границами(с хотябы одной
 					// непустой), и он не первый, тогда закрашиваем вместе с расстоянием до параграфа
-					if (true === Pr.ParaPr.Brd.First)
+					if (true === paraPr.Brd.First)
 					{
-						// Если следующий элемент таблица, тогда PrevPr = null
-						if (null === PrevEl 
-							|| true === this.IsStartFromNewPage()
-							|| null === PrevPr
-							|| Asc.c_oAscShdNil === PrevPr.ParaPr.Shd.Value
-							|| PrevLeft != CurLeft
-							|| CurRight != PrevRight
-							|| false === this.Internal_Is_NullBorders(PrevPr.ParaPr.Brd)
-							|| false === this.Internal_Is_NullBorders(Pr.ParaPr.Brd))
+						// Если следующий элемент таблица, тогда prevPr = null
+						if (!prevEl
+							|| this.IsStartFromNewPage()
+							|| !prevPr
+							|| Asc.c_oAscShdNil === prevPr.Shd.Value
+							|| Math.abs(prevLeft - curLeft) > AscWord.EPSILON
+							|| Math.abs(curRight - prevRight) > AscWord.EPSILON
+							|| false === this.Internal_Is_NullBorders(prevPr.Brd)
+							|| false === this.Internal_Is_NullBorders(paraPr.Brd))
 						{
-							if (false === this.IsStartFromNewPage() || null === PrevEl)
-								TempTop += Pr.ParaPr.Spacing.Before;
+							if (false === this.IsStartFromNewPage() || !prevEl)
+								TempTop += paraPr.Spacing.Before;
 						}
 					}
 				}
@@ -2516,31 +2517,38 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 					// на странице, следующий параграф тоже имеет не пустой фон и у текущего и следующего
 					// параграфов совпадают правая и левая границы фонов.
 
-					var NextEl = this.Get_DocumentNext();
-					var NextPr = null;
+					let nextEl = this.Get_DocumentNext();
+					let nextPr = null;
 
-					var NextLeft  = 0;
-					var NextRight = 0;
-					var CurLeft   = Math.min(Pr.ParaPr.Ind.Left, Pr.ParaPr.Ind.Left + Pr.ParaPr.Ind.FirstLine);
-					var CurRight  = Pr.ParaPr.Ind.Right;
-					if (null != NextEl && type_Paragraph === NextEl.GetType())
+					let nextLeft  = 0;
+					let nextRight = 0;
+					let curLeft   = paraPr.Bidi ? paraPr.Ind.Right : Math.min(paraPr.Ind.Left, paraPr.Ind.Left + paraPr.Ind.FirstLine);
+					let curRight  = paraPr.Bidi ? Math.min(paraPr.Ind.Left, paraPr.Ind.Left + paraPr.Ind.FirstLine) : paraPr.Ind.Right;
+					if (nextEl && nextEl.IsParagraph())
 					{
-						NextPr    = NextEl.Get_CompiledPr2();
-						NextLeft  = Math.min(NextPr.ParaPr.Ind.Left, NextPr.ParaPr.Ind.Left + NextPr.ParaPr.Ind.FirstLine);
-						NextRight = NextPr.ParaPr.Ind.Right;
+						nextPr    = nextEl.Get_CompiledPr2().ParaPr;
+						nextLeft  = nextPr.Bidi ? nextPr.Ind.Right : Math.min(nextPr.Ind.Left, nextPr.Ind.Left + nextPr.Ind.FirstLine);
+						nextRight = nextPr.Bidi ? Math.min(nextPr.Ind.Left, nextPr.Ind.Left + nextPr.Ind.FirstLine) : nextPr.Ind.Right;
 					}
 
-					if (null != NextEl && type_Paragraph === NextEl.GetType() && true === NextEl.IsStartFromNewPage())
+					if (nextEl && nextEl.IsParagraph() && nextEl.IsStartFromNewPage())
 					{
 						TempBottom = this.Lines[CurLine].Y + this.Lines[CurLine].Metrics.Descent + this.Lines[CurLine].Metrics.LineGap;
 					}
 					// Если данный параграф находится в группе параграфов с одинаковыми границами(с хотябы одной
 					// непустой), и он не последний, тогда закрашиваем вместе с расстоянием после параграфа
-					else if (true === Pr.ParaPr.Brd.Last)
+					else if (true === paraPr.Brd.Last)
 					{
-						// Если следующий элемент таблица, тогда NextPr = null
-						if (null === NextEl || true === NextEl.IsStartFromNewPage() || null === NextPr || Asc.c_oAscShdNil === NextPr.ParaPr.Shd.Value || NextLeft != CurLeft || CurRight != NextRight || false === this.Internal_Is_NullBorders(NextPr.ParaPr.Brd) || false === this.Internal_Is_NullBorders(Pr.ParaPr.Brd))
-							TempBottom -= Pr.ParaPr.Spacing.After;
+						// Если следующий элемент таблица, тогда nextPr = null
+						if (!nextEl
+							|| nextEl.IsStartFromNewPage()
+							|| !nextPr
+							|| Asc.c_oAscShdNil === nextPr.Shd.Value
+							|| Math.abs(nextLeft - curLeft) > AscWord.EPSILON
+							|| Math.abs(curRight - nextRight) > AscWord.EPSILON
+							|| false === this.Internal_Is_NullBorders(nextPr.Brd)
+							|| false === this.Internal_Is_NullBorders(paraPr.Brd))
+							TempBottom -= paraPr.Spacing.After;
 					}
 				}
 				
@@ -16096,27 +16104,26 @@ Paragraph.prototype.Set_ParaPropsForVerticalTextInCell = function(isVerticalText
     }
 };
 /**
- * Проверяем можно ли объединить границы двух параграфов с заданными настройками Pr1, Pr2.
+ * Проверяем можно ли объединить границы двух параграфов с заданными настройками paraPr1, paraPr2
+ * @param paraPr1 {AscWord.CParaPr}
+ * @param paraPr2 {AscWord.CParaPr}
+ * @return {boolean}
  */
-Paragraph.prototype.private_CompareBorderSettings = function(Pr1, Pr2)
+Paragraph.prototype.private_CompareBorderSettings = function(paraPr1, paraPr2)
 {
-	// Сначала сравним правую и левую границы параграфов
-	var Left_1  = Math.min(Pr1.Ind.Left, Pr1.Ind.Left + Pr1.Ind.FirstLine);
-	var Right_1 = Pr1.Ind.Right;
-	var Left_2  = Math.min(Pr2.Ind.Left, Pr2.Ind.Left + Pr2.Ind.FirstLine);
-	var Right_2 = Pr2.Ind.Right;
-
-	if (Math.abs(Left_1 - Left_2) > 0.001 || Math.abs(Right_1 - Right_2) > 0.001)
-		return false;
-
+	let l_1 = paraPr1.Bidi ? paraPr1.Ind.Right : Math.min(paraPr1.Ind.Left, paraPr1.Ind.Left + paraPr1.Ind.FirstLine);
+	let r_1 = paraPr1.Bidi ? Math.min(paraPr1.Ind.Left, paraPr1.Ind.Left + paraPr1.Ind.FirstLine) : paraPr1.Ind.Right;
+	
+	let l_2 = paraPr2.Bidi ? paraPr2.Ind.Right : Math.min(paraPr2.Ind.Left, paraPr2.Ind.Left + paraPr2.Ind.FirstLine);
+	let r_2 = paraPr2.Bidi ? Math.min(paraPr2.Ind.Left, paraPr2.Ind.Left + paraPr2.Ind.FirstLine) : paraPr2.Ind.Right;
+	
 	// Почему то Word не сравнивает границы между параграфами.
-	if (false === Pr1.Brd.Top.Compare(Pr2.Brd.Top)
-		|| false === Pr1.Brd.Bottom.Compare(Pr2.Brd.Bottom)
-		|| false === Pr1.Brd.Left.Compare(Pr2.Brd.Left)
-		|| false === Pr1.Brd.Right.Compare(Pr2.Brd.Right))
-		return false;
-
-	return true;
+	return (Math.abs(l_1 - l_2) < AscWord.EPSILON
+		&& Math.abs(r_1 - r_2) < AscWord.EPSILON
+		&& paraPr1.Brd.Top.Compare(paraPr2.Brd.Top)
+		&& paraPr1.Brd.Bottom.Compare(paraPr2.Brd.Bottom)
+		&& paraPr1.Brd.Left.Compare(paraPr2.Brd.Left)
+		&& paraPr1.Brd.Right.Compare(paraPr2.Brd.Right));
 };
 Paragraph.prototype.GetFootnotesList = function(oEngine)
 {
