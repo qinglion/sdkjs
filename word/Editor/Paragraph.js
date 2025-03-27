@@ -3387,28 +3387,40 @@ Paragraph.prototype.Internal_Draw_6 = function(CurPage, pGraphics, Pr)
 {
 	if (true !== this.Is_NeedDrawBorders())
 		return;
+	
+	let paraPr = Pr.ParaPr;
+	
+	let leftInd  = paraPr.Ind.Left;
+	let rightInd = paraPr.Ind.Right;
+	let firstInd = paraPr.Ind.FirstLine;
 
 	var bEmpty  = this.IsEmpty();
-	var X_left  = Math.min(this.Pages[CurPage].X + Pr.ParaPr.Ind.Left, this.Pages[CurPage].X + Pr.ParaPr.Ind.Left + Pr.ParaPr.Ind.FirstLine);
-	var X_right = this.Pages[CurPage].XLimit - Pr.ParaPr.Ind.Right;
-
+	
+	let X_left  = this.Pages[CurPage].X + Math.min(leftInd, leftInd + firstInd);
+	let X_right = this.Pages[CurPage].XLimit - rightInd;
+	
+	let isRtl = this.isRtlDirection();
+	if (isRtl)
+	{
+		X_left  = this.Pages[CurPage].X + rightInd;
+		X_right = this.Pages[CurPage].XLimit - Math.min(leftInd, leftInd + firstInd);
+	}
+	
 	if (true === this.Is_LineDropCap())
 		X_right = X_left + this.Get_LineDropCapWidth();
 
-	if (Pr.ParaPr.Brd.Left.Value === border_Single)
-		X_left -= 0.5 + Pr.ParaPr.Brd.Left.Space;
+	if (paraPr.Brd.Left.Value === border_Single)
+		X_left -= 0.5 + paraPr.Brd.Left.Space;
 	else
 		X_left -= 0.5;
 
-	if (Pr.ParaPr.Brd.Right.Value === border_Single)
-		X_right += 0.5 + Pr.ParaPr.Brd.Right.Space;
+	if (paraPr.Brd.Right.Value === border_Single)
+		X_right += 0.5 + paraPr.Brd.Right.Space;
 	else
 		X_right += 0.5;
 
-	var LeftMW  = -( border_Single === Pr.ParaPr.Brd.Left.Value ? Pr.ParaPr.Brd.Left.Size : 0 );
-	var RightMW = ( border_Single === Pr.ParaPr.Brd.Right.Value ? Pr.ParaPr.Brd.Right.Size : 0 );
-
-	var RGBA;
+	let leftMW  = -( border_Single === paraPr.Brd.Left.Value ? paraPr.Brd.Left.Size : 0 );
+	let rightMW = ( border_Single === paraPr.Brd.Right.Value ? paraPr.Brd.Right.Size : 0 );
 
 	var bEmptyPagesWithBreakBefore = false;
 	var bCurEmptyPageWithBreak     = false;
@@ -3440,14 +3452,14 @@ Paragraph.prototype.Internal_Draw_6 = function(CurPage, pGraphics, Pr)
 	bEmptyPageCurrent = this.IsEmptyPage(CurPage);
 
 	var bDrawTop = false;
-	if (border_Single === Pr.ParaPr.Brd.Top.Value
-		&& ((true === Pr.ParaPr.Brd.First
+	if (border_Single === paraPr.Brd.Top.Value
+		&& ((true === paraPr.Brd.First
 		&& false === bCurEmptyPageWithBreak
 		&& ((true === bEmptyPagesBefore
 		&& true !== bEmptyPageCurrent)
 		|| (true === bEmptyPagesWithBreakBefore
 		&& false === bCurEmptyPageWithBreak)))
-		|| (false === Pr.ParaPr.Brd.First
+		|| (false === paraPr.Brd.First
 		&& true === bEmptyPagesWithBreakBefore
 		&& false === bCurEmptyPageWithBreak)))
 	{
@@ -3455,74 +3467,66 @@ Paragraph.prototype.Internal_Draw_6 = function(CurPage, pGraphics, Pr)
 	}
 
 	var bDrawBetween = false;
-	if (border_Single === Pr.ParaPr.Brd.Between.Value
+	if (border_Single === paraPr.Brd.Between.Value
 		&& false === bDrawTop
 		&& false === bEmptyPageCurrent
 		&& true === bEmptyPagesBefore
-		&& false === Pr.ParaPr.Brd.First)
+		&& false === paraPr.Brd.First)
 	{
 		bDrawBetween = true;
+	}
+	
+	let _t = this;
+	function drawBorder(curLine, border, lineAlign, y)
+	{
+		let RGBA = border.Get_Color(_t);
+		pGraphics.p_color(RGBA.r, RGBA.g, RGBA.b, 255);
+		pGraphics.SetBorder(border);
+		
+		pGraphics.Start_Command(AscFormat.DRAW_COMMAND_LINE, _t.Lines[curLine], curLine, 1);
+		
+		for (let curRange = 0, rangeCount = _t.Lines[curLine].Ranges.length; curRange < rangeCount; ++curRange)
+		{
+			let lMW = 0;
+			let rMW = 0;
+			let x0 = _t.Lines[curLine].Ranges[curRange].X;
+			let x1 = _t.Lines[curLine].Ranges[curRange].XEnd;
+			
+			if ((0 === curRange && isRtl) || (rangeCount - 1 === curRange && !isRtl))
+			{
+				x1  = X_right;
+				rMW = rightMW;
+			}
+			
+			if ((0 === curRange && !isRtl) || (rangeCount - 1 === curRange && isRtl))
+			{
+				x0  = X_left;
+				lMW = leftMW;
+			}
+			
+			if (!_t.IsEmptyRange(curLine, curRange) || (bEmpty && 1 === rangeCount))
+				pGraphics.drawHorLineExt(lineAlign, y, x0, x1, border.Size, lMW, rMW);
+		}
+		
+		pGraphics.End_Command();
 	}
 
 	if (bDrawTop)
 	{
-		var Y_top = this.Pages[CurPage].Y;
+		let y = this.Pages[CurPage].Y;
 
-		if (this.private_CheckNeedBeforeSpacing(CurPage, this.Parent, this.GetAbsolutePage(CurPage), Pr.ParaPr))
-			Y_top += Pr.ParaPr.Spacing.Before;
-
-		RGBA = Pr.ParaPr.Brd.Top.Get_Color(this);
-		pGraphics.p_color(RGBA.r, RGBA.g, RGBA.b, 255);
-
-		if (pGraphics.SetBorder)
-		{
-			pGraphics.SetBorder(Pr.ParaPr.Brd.Top);
-		}
-		// Учтем разрывы из-за обтекания
-		var StartLine = this.Pages[CurPage].StartLine;
-
-		pGraphics.Start_Command(AscFormat.DRAW_COMMAND_LINE, this.Lines[StartLine], StartLine, 1);
-
-		var RangesCount = this.Lines[StartLine].Ranges.length;
-		for (var CurRange = 0; CurRange < RangesCount; CurRange++)
-		{
-			var X0 = ( 0 === CurRange ? X_left : this.Lines[StartLine].Ranges[CurRange].X );
-			var X1 = ( RangesCount - 1 === CurRange ? X_right : this.Lines[StartLine].Ranges[CurRange].XEnd );
-
-			if (false === this.IsEmptyRange(StartLine, CurRange) || ( true === bEmpty && 1 === RangesCount ))
-				pGraphics.drawHorLineExt(c_oAscLineDrawingRule.Top, Y_top, X0, X1, Pr.ParaPr.Brd.Top.Size, LeftMW, RightMW);
-		}
-
-		pGraphics.End_Command();
+		if (this.private_CheckNeedBeforeSpacing(CurPage, this.Parent, this.GetAbsolutePage(CurPage), paraPr))
+			y += paraPr.Spacing.Before;
+		
+		let startLine = this.Pages[CurPage].StartLine;
+		drawBorder(startLine, paraPr.Brd.Top, c_oAscLineDrawingRule.Top, y);
 	}
 
-	if (true === bDrawBetween)
+	if (bDrawBetween)
 	{
-		RGBA = Pr.ParaPr.Brd.Between.Get_Color(this);
-		pGraphics.p_color(RGBA.r, RGBA.g, RGBA.b, 255);
-		if (pGraphics.SetBorder)
-		{
-			pGraphics.SetBorder(Pr.ParaPr.Brd.Between);
-		}
-		var Size = Pr.ParaPr.Brd.Between.Size;
-		var Y    = this.Pages[CurPage].Y + Pr.ParaPr.Spacing.Before;
-
-		// Учтем разрывы из-за обтекания
-		var StartLine   = this.Pages[CurPage].StartLine;
-		var RangesCount = this.Lines[StartLine].Ranges.length;
-
-		pGraphics.Start_Command(AscFormat.DRAW_COMMAND_LINE, this.Lines[StartLine], StartLine, 1);
-
-		for (var CurRange = 0; CurRange < RangesCount; CurRange++)
-		{
-			var X0 = ( 0 === CurRange ? X_left : this.Lines[StartLine].Ranges[CurRange].X );
-			var X1 = ( RangesCount - 1 === CurRange ? X_right : this.Lines[StartLine].Ranges[CurRange].XEnd );
-
-			if (false === this.IsEmptyRange(StartLine, CurRange) || ( true === bEmpty && 1 === RangesCount ))
-				pGraphics.drawHorLineExt(c_oAscLineDrawingRule.Top, Y, X0, X1, Size, LeftMW, RightMW);
-		}
-
-		pGraphics.End_Command();
+		let y = this.Pages[CurPage].Y + paraPr.Spacing.Before;
+		let startLine = this.Pages[CurPage].StartLine;
+		drawBorder(startLine, paraPr.Brd.Between, c_oAscLineDrawingRule.Top, y);
 	}
 
 	var CurLine = this.Pages[CurPage].EndLine;
@@ -3535,9 +3539,9 @@ Paragraph.prototype.Internal_Draw_6 = function(CurPage, pGraphics, Pr)
 		NextEl = NextEl.GetElement(0);
 	}
 
-	if (border_Single === Pr.ParaPr.Brd.Bottom.Value
+	if (border_Single === paraPr.Brd.Bottom.Value
 		&& true === bEnd
-		&& (true === Pr.ParaPr.Brd.Last
+		&& (true === paraPr.Brd.Last
 			|| !NextEl
 			|| !NextEl.IsParagraph()
 			|| NextEl.private_IsEmptyPageWithBreak(0)))
@@ -3545,42 +3549,22 @@ Paragraph.prototype.Internal_Draw_6 = function(CurPage, pGraphics, Pr)
 		bDrawBottom = true;
 	}
 
-	if (true === bDrawBottom)
+	if (bDrawBottom)
 	{
-		var TempY, DrawLineRule;
+		let y, lineAlign;
 		if (NextEl && NextEl.IsParagraph() && NextEl.IsStartFromNewPage())
 		{
-			TempY        = this.Pages[CurPage].Y + this.Lines[CurLine].Y + this.Lines[CurLine].Metrics.Descent + this.Lines[CurLine].Metrics.LineGap;
-			DrawLineRule = c_oAscLineDrawingRule.Top;
+			y = this.Pages[CurPage].Y + this.Lines[CurLine].Y + this.Lines[CurLine].Metrics.Descent + this.Lines[CurLine].Metrics.LineGap;
+			lineAlign = c_oAscLineDrawingRule.Top;
 		}
 		else
 		{
-			TempY        = this.Pages[CurPage].Y + this.Lines[CurLine].Bottom - Pr.ParaPr.Spacing.After;
-			DrawLineRule = c_oAscLineDrawingRule.Bottom;
+			y = this.Pages[CurPage].Y + this.Lines[CurLine].Bottom - paraPr.Spacing.After;
+			lineAlign = c_oAscLineDrawingRule.Bottom;
 		}
-
-		RGBA = Pr.ParaPr.Brd.Bottom.Get_Color(this);
-		pGraphics.p_color(RGBA.r, RGBA.g, RGBA.b, 255);
-		if (pGraphics.SetBorder)
-		{
-			pGraphics.SetBorder(Pr.ParaPr.Brd.Bottom);
-		}
-		// Учтем разрывы из-за обтекания
-		var EndLine     = this.Pages[CurPage].EndLine;
-		var RangesCount = this.Lines[EndLine].Ranges.length;
-
-		pGraphics.Start_Command(AscFormat.DRAW_COMMAND_LINE, this.Lines[EndLine], EndLine, 1);
-
-		for (var CurRange = 0; CurRange < RangesCount; CurRange++)
-		{
-			var X0 = ( 0 === CurRange ? X_left : this.Lines[EndLine].Ranges[CurRange].X );
-			var X1 = ( RangesCount - 1 === CurRange ? X_right : this.Lines[EndLine].Ranges[CurRange].XEnd );
-
-			if (false === this.IsEmptyRange(EndLine, CurRange) || ( true === bEmpty && 1 === RangesCount ))
-				pGraphics.drawHorLineExt(DrawLineRule, TempY, X0, X1, Pr.ParaPr.Brd.Bottom.Size, LeftMW, RightMW);
-		}
-
-		pGraphics.End_Command();
+		
+		let endLine = this.Pages[CurPage].EndLine;
+		drawBorder(endLine, paraPr.Brd.Bottom, lineAlign, y);
 	}
 };
 /**
