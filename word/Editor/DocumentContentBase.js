@@ -1813,7 +1813,7 @@ CDocumentContentBase.prototype.SelectNumberingSingleParagraph = function(para)
 	}
 	else
 	{
-		topDocContent.SelectNumberingSingleParagraph(oPara);
+		topDocContent.SelectNumberingSingleParagraph(para);
 	}
 };
 /**
