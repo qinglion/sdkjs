@@ -90,7 +90,7 @@
 		RLI : FLAG.NEUTRAL | FLAG.ISOLATE | FLAG.RTL,
 		FSI : FLAG.NEUTRAL | FLAG.ISOLATE | FLAG.FS,
 		PDI : FLAG.NEUTRAL | FLAG.WEAK | FLAG.ISOLATE,
-		CD  : FLAG.STRONG, // strong with main direction of the text (tab)
+		CD  : FLAG.STRONG, // strong with main direction of the text (tab/break)
 		PM  : FLAG.STRONG // Paragraph end mark
 	};
 	
