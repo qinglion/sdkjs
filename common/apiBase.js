@@ -244,11 +244,6 @@
 		this._correctEmbeddedWork();
 
 
-		this.isRTLInterface = false;
-		if (config['isRtlInterface'] === true) {
-			this.isRTLInterface = true;
-		}
-
 		return this;
 	}
 
@@ -482,7 +477,7 @@
 	{
 		if (!fonts)
 		{
-			fonts = ["Arial", "Symbol", "Wingdings", "Courier New", "Times New Roman"];
+			fonts = ["Arial", "Symbol", "Wingdings", "Courier New", "Times New Roman", "Calibri", "Calibri Light"];
 		}
 		this.FontLoader.LoadFontsFromServer(fonts);
 	};
@@ -1367,7 +1362,10 @@
 	};
 	baseEditorsApi.prototype.forceSave = function()
 	{
-		return this.CoAuthoringApi.forceSave();
+		if (!this.getViewMode()) {
+			return this.CoAuthoringApi.forceSave();
+		}
+		return false;
 	};
 	baseEditorsApi.prototype.saveFromChanges = function(data, timeout, callback) {
 		var t = this;
@@ -5499,7 +5497,7 @@
 	};
 
 	baseEditorsApi.prototype.asc_SetRTLInterface = function(isRTL) {
-		this.isRTLInterface = isRTL;
+		this.isRtlInterface = isRTL;
 		this.onChangeRTLInterface();
 	};
 	baseEditorsApi.prototype.onChangeRTLInterface = function() {
