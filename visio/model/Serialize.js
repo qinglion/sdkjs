@@ -889,8 +889,7 @@
 			case 2: {
 				const masterContents = new AscVisio.CMasterContents();
 				masterContents.fromPPTY(pReader);
-				//todo rels
-				pReader.document.masterContents.push(masterContents);
+				this.content = masterContents;
 				break;
 			}
 			default:

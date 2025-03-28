@@ -901,6 +901,12 @@ AscDFH.historyitem_type_VisioWindow = 328;
 		let thisContext = this;
 		for (let i = 0; i < masterFromMastersInfoArray.length; i++) {
 			const masterFromMasters = masterFromMastersInfoArray[i];
+			if (masterFromMasters.content) {
+				// if content was already parsed in Serialize.js
+				mastersJoined.push(masterFromMasters);
+				continue;
+			}
+
 			if (!masterFromMasters.rel) {
 				continue;
 			}
@@ -1325,7 +1331,9 @@ AscDFH.historyitem_type_VisioWindow = 328;
 
 	// Not realized, file defines schema and data of that schema
 	// Docs:
-	// SolutionXML_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/solutionxml_type-complextypevisio-xml
+	// https://learn.microsoft.com/ru-ru/office/vba/api/visio.document.solutionxmlelement
+	// 									https://learn.microsoft.com/ru-ru/office/client-developer/visio/solution_type-complextypevisio-xml
+	// SolutionXML_Type complexType: 	https://learn.microsoft.com/ru-ru/office/client-developer/visio/solutionxml_type-complextypevisio-xml
 	/**
 	 * @extends AscFormat.CBaseFormatNoIdObject
 	 * @constructor
