@@ -50,6 +50,8 @@
 	 * @constructor
 	 */
 	function Text_Type() {
+		AscFormat.CBaseFormatNoIdObject.call(this);
+
 		/**
 		 * if text is inherited (for calculate presentation field)
 		 */
@@ -84,6 +86,8 @@
 	 * @constructor
 	 */
 	function Data_Type() {
+		AscFormat.CBaseFormatNoIdObject.call(this);
+
 		this.value = null;
 		// to serialize in function writeShapeSheetElementsXml
 		this.tagName = null;
@@ -100,6 +104,8 @@
 	 * @constructor
 	 */
 	function ForeignData_Type() {
+		AscFormat.CBaseFormatNoIdObject.call(this);
+
 		this.foreignType = null;
 		this.objectType = null;
 		this.showAsIcon = null;
@@ -114,12 +120,16 @@
 		return this;
 	}
 	ForeignData_Type.prototype.kind = c_oVsdxSheetStorageKind.ForeignData_Type;
+	AscFormat.InitClass(ForeignData_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
+
 
 	/**
 	 *    // https://learn.microsoft.com/ru-ru/office/client-developer/visio/trigger_type-complextypevisio-xml
 	 * @constructor
 	 */
 	function Trigger_Type() {
+		AscFormat.CBaseFormatNoIdObject.call(this);
+
 		this.refBy = [];
 		this.n = null;
 	}
@@ -131,7 +141,8 @@
 	 * @constructor
 	 */
 	function SheetStorage() {
-		// for ooxml classes
+		AscFormat.CBaseFormatNoIdObject.call(this);
+
 
 		// setSheetClassMembers
 
@@ -653,6 +664,8 @@
 	 * @constructor
 	 */
 	function Cell_Type() {
+		AscFormat.CBaseFormatNoIdObject.call(this);
+
 		// read all as strings
 		/**
 		 * read as string
@@ -956,45 +969,45 @@
 	}
 
 
-	/**
-	 * @memberOf Cell_Type
-	 * @return {number}
-	 */
-	Cell_Type.prototype.getValueInMM = function () {
-		let res;
-		//todo all units
-		switch (this.u) {
-			case "DL":
-			case "IN":
-			case "IN_F":
-				res = parseFloat(this.v) * g_dKoef_in_to_mm;
-				break;
-			case "FT":
-				res = parseFloat(this.v) * 12 * g_dKoef_in_to_mm;
-				break;
-			case "F_I":
-				res = parseFloat(this.v);
-				let intPart = Math.floor(res);
-				res = (intPart * 12 + (res - intPart)) * g_dKoef_in_to_mm;
-				break;
-			case "KM":
-				res = parseFloat(this.v) * 1000000;
-				break;
-			case "M":
-				res = parseFloat(this.v) * 1000;
-				break;
-			case "CM":
-				res = parseFloat(this.v) * 10;
-				break;
-			case "MM":
-				res = parseFloat(this.v);
-				break;
-			default:
-				res = parseFloat(this.v) * g_dKoef_in_to_mm;
-				break;
-		}
-		return res;
-	};
+	// /**
+	//  * @memberOf Cell_Type
+	//  * @return {number}
+	//  */
+	// Cell_Type.prototype.getValueInMM = function () {
+	// 	let res;
+	// 	//todo all units
+	// 	switch (this.u) {
+	// 		case "DL":
+	// 		case "IN":
+	// 		case "IN_F":
+	// 			res = parseFloat(this.v) * g_dKoef_in_to_mm;
+	// 			break;
+	// 		case "FT":
+	// 			res = parseFloat(this.v) * 12 * g_dKoef_in_to_mm;
+	// 			break;
+	// 		case "F_I":
+	// 			res = parseFloat(this.v);
+	// 			let intPart = Math.floor(res);
+	// 			res = (intPart * 12 + (res - intPart)) * g_dKoef_in_to_mm;
+	// 			break;
+	// 		case "KM":
+	// 			res = parseFloat(this.v) * 1000000;
+	// 			break;
+	// 		case "M":
+	// 			res = parseFloat(this.v) * 1000;
+	// 			break;
+	// 		case "CM":
+	// 			res = parseFloat(this.v) * 10;
+	// 			break;
+	// 		case "MM":
+	// 			res = parseFloat(this.v);
+	// 			break;
+	// 		default:
+	// 			res = parseFloat(this.v) * g_dKoef_in_to_mm;
+	// 			break;
+	// 	}
+	// 	return res;
+	// };
 
 	// /**
 	//  * @memberOf Cell_Type
@@ -1869,9 +1882,13 @@
 	// Docs old:
 // Icon_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/icon_type-complextypevisio-xml
 	function Icon_Type() {
+		AscFormat.CBaseFormatNoIdObject.call(this);
+
 		this.value = null;
 		return this;
 	}
+	AscFormat.InitClass(Icon_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
+
 
 	//todo move to commons
 	function PropLocker(objectId)
