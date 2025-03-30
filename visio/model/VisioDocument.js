@@ -520,10 +520,14 @@ AscDFH.historyitem_type_VisioWindow = 328;
 			// move background pages to back
 			for (let i = 0; i < backgroundsCount; i++) {
 				let backgroundInfo = this.pages.page.shift();
-				let backgroundContent = this.pageContents.shift();
-
 				this.pages.page.push(backgroundInfo);
-				this.pageContents.push(backgroundContent);
+
+				if (this.pageContents.length > 0) {
+					// this.pageContents.length can be 0 if file is binary and read in Serialize.js and
+					// pageContent is in this.pages.page[pageIndex].content
+					let backgroundContent = this.pageContents.shift();
+					this.pageContents.push(backgroundContent);
+				}
 			}
 			this.isPagesArranged = true;
 		}
@@ -532,7 +536,14 @@ AscDFH.historyitem_type_VisioWindow = 328;
 		for (let pageIndex = 0; pageIndex < this.pages.page.length; pageIndex++) {
 			if (this.pageShapesCache[pageIndex] === undefined) {
 				let pageInfo = this.pages.page[pageIndex];
-				let pageContent = this.pageContents[pageIndex];
+				// page content is either in this.pageContents if open is from zip or in
+				// pageInfo.content if open is form bin
+				let pageContent;
+				if (pageInfo.content) {
+					pageContent = pageInfo.content;
+				} else {
+					pageContent = this.pageContents[pageIndex];
+				}
 
 				// Scale should be applied. Drawing scale should not be considered for text font size and stoke size
 				// https://support.microsoft.com/en-us/office/change-the-drawing-scale-on-a-page-in-visio-05c24456-67bf-47f7-b5dc-d5caa9974f19
@@ -554,7 +565,6 @@ AscDFH.historyitem_type_VisioWindow = 328;
 		// handle backgrounds
 		for (let pageIndex = 0; pageIndex < this.pages.page.length; pageIndex++) {
 			let pageInfo = this.pages.page[pageIndex];
-			let pageContent = this.pageContents[pageIndex];
 
 			if (!this.backgroundAppliedFor.includes(pageIndex)) {
 				this.backgroundAppliedFor.push(pageIndex);
@@ -694,10 +704,6 @@ AscDFH.historyitem_type_VisioWindow = 328;
 
 			let isAdditionalRecalculate = false;
 
-			// let pageInfo = visioDocument.pages.page[pageIndex];
-			// let pageContent = visioDocument.pageContents[pageIndex];
-			// let topLevelShapesAndGroups = visioDocument.convertToCShapesAndGroups(pageInfo, pageContent);
-			// calculated in CVisioDocument.prototype.draw
 			let topLevelShapesAndGroups = visioDocument.pageShapesCache[pageIndex];
 
 			let logic_w_mm = visioDocument.GetWidthScaledMM(pageIndex);

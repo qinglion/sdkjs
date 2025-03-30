@@ -1072,8 +1072,7 @@
 			case 1: {
 				const pageContents = new AscVisio.CPageContents();
 				pageContents.fromPPTY(pReader);
-				//todo rels
-				pReader.document.pageContents.push(pageContents);
+				this.content = pageContents;
 				break;
 			}
 			default:
