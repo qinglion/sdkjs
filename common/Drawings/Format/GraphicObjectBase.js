@@ -1190,6 +1190,7 @@
 				}
 				shape.recalculate();
 				this.shdwSp = shape;
+				shape.isShadowSp = true;
 			}, this, []);
 		}
 	};
