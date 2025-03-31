@@ -65,7 +65,8 @@
 		
 		this.bidiFlow = new AscWord.BidiFlow(this);
 		
-		this.checkEmptyRun = true;
+		this.emptyRun = null;
+		this.emptyRunHandler = {};
 		
 		// TODO: Unite with CRunWithPosition class
 		this.pos     = null;
@@ -93,7 +94,8 @@
 	ParagraphSearchPositionXY.prototype.reset = function()
 	{
 		this.bidiFlow.end();
-		this.checkEmptyRun = true;
+		this.emptyRun = null;
+		this.emptyRunHandler = {};
 	};
 	ParagraphSearchPositionXY.prototype.setDiff = function(diff)
 	{
@@ -160,15 +162,16 @@
 	};
 	ParagraphSearchPositionXY.prototype.handleRun = function(run)
 	{
-		if (!this.checkEmptyRun)
+		if (this.emptyRun)
 			return;
 		
 		if (!run.IsEmpty())
-		{
-			this.checkEmptyRun = false;
-			return;
-		}
-		
+			this.emptyRun = null;
+		else
+			this.emptyRun = run;
+	};
+	ParagraphSearchPositionXY.prototype.handleEmptyRun = function(run)
+	{
 		let curX = this.curX;
 		if (run.IsMathRun())
 		{
@@ -186,6 +189,12 @@
 	};
 	ParagraphSearchPositionXY.prototype.handleParaMath = function(math)
 	{
+		if (this.emptyRun)
+		{
+			this.handleEmptyRun(this.emptyRun);
+			this.emptyRun = null;
+		}
+		
 		let curX = this.curX;
 		let mathW = math.Root.GetWidth(this.line, this.range);
 		
@@ -222,6 +231,12 @@
 	};
 	ParagraphSearchPositionXY.prototype.handleMathBase = function(base)
 	{
+		if (this.emptyRun)
+		{
+			this.handleEmptyRun(this.emptyRun);
+			this.emptyRun = null;
+		}
+		
 		if (!base.Content.length)
 			return;
 		
@@ -286,6 +301,12 @@
 		if (!this.complexFields.checkRunElement(element))
 			return;
 		
+		if (this.emptyRun)
+		{
+			this.emptyRunHandler[element] = this.emptyRun;
+			this.emptyRun = null;
+		}
+		
 		this.bidiFlow.add([element, run, inRunPos], element.getBidiType());
 	};
 	ParagraphSearchPositionXY.prototype.handleBidiFlow = function(data, direction)
@@ -293,6 +314,12 @@
 		let item     = data[0];
 		let run      = data[1];
 		let inRunPos = data[2];
+		
+		if (this.emptyRunHandler[item] && direction === AscBidi.DIRECTION.L)
+		{
+			this.handleEmptyRun(this.emptyRunHandler[item]);
+			delete this.emptyRunHandler[item];
+		}
 		
 		let w = 0;
 		if (!item.IsDrawing() || item.IsInline())
@@ -345,8 +372,13 @@
 			}
 		}
 		
-		
 		this.curX += w;
+		
+		if (this.emptyRunHandler[item] && direction === AscBidi.DIRECTION.R)
+		{
+			this.handleEmptyRun(this.emptyRunHandler[item]);
+			delete this.emptyRunHandler[item];
+		}
 	};
 	ParagraphSearchPositionXY.prototype.getPos = function()
 	{
