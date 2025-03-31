@@ -1424,11 +1424,10 @@
         return oDrawingToCheck;
     };
 
-		function CObjectForDrawArrayWrapper(aContentObjects, oTransform, oTheme, oColorMap, oDrawing) {
-			this.strikeoutUnderlineObjects = [];
-			this.backgroundObjects = [];
-			this.contentObjects = aContentObjects;
-			this.strictBounds = null;
+		function CObjectForDrawArrayWrapper(aContentObjects, oTransform, oTheme, oColorMap, oDrawing, aStrikeoutUnderlineObjects, aBackgroundObjects) {
+			this.strikeoutUnderlineObjects = aStrikeoutUnderlineObjects || [];
+			this.backgroundObjects = aBackgroundObjects || [];
+			this.contentObjects = aContentObjects || [];
 			CWrapperBase.call(this, oTransform, oTheme, oColorMap, oDrawing);
 		}
 	AscFormat.InitClassWithoutType(CObjectForDrawArrayWrapper, CWrapperBase);

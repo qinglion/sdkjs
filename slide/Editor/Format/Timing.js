@@ -413,9 +413,9 @@
 			const arrDrawingObjects = [oDrawing];
 
 			if (this.isCanIterate()) {
-				const oDocStructure = oDrawer.getDrawingTextCache(oDrawing);
+				const iterationType = this.getIterationType();
+				const oDocStructure = oDrawer.getDrawingTextCache(oDrawing, iterationType === ITERATEDATA_TYPE_WORD);
 				if (oDocStructure) {
-					const iterationType = this.getIterationType();
 					const oDocContent = oDrawing.getDocContent();
 					let oTheme = oDocContent.Get_Theme();
 					let oColorMap = oDocContent.Get_ColorMap();
@@ -425,18 +425,7 @@
 							arrDrawingObjects.push.apply(arrDrawingObjects, oDocStructure.getCombinedWordWrappers(oTransform, oTheme, oColorMap, oDrawing));
 							break;
 						case ITERATEDATA_TYPE_LETTER:
-							for (let i = 0; i < oDocStructure.m_aContent.length; i += 1) {
-								const oParaDraw = oDocStructure.m_aContent[i];
-								for (let j = 0; j < oParaDraw.m_aWords.length; j += 1) {
-									const oWord = oParaDraw.m_aWords[j];
-									//todo maybe it's worth optimizing?
-									for (let k = 0; k < oWord.length; k += 1) {
-										arrDrawingObjects.push(new AscCommonSlide.CObjectForDrawArrayWrapper([oWord[k]], oTransform, oTheme, oColorMap, oDrawing));
-									}
-								}
-								arrDrawingObjects.push(new AscCommonSlide.CObjectForDrawArrayWrapper([], oTransform, oTheme, oColorMap, oDrawing));
-							}
-							arrDrawingObjects.pop();
+							arrDrawingObjects.push.apply(arrDrawingObjects, oDocStructure.getCombinedLetterWrappers(oTransform, oTheme, oColorMap, oDrawing));
 							break;
 						default:
 							break;
@@ -770,7 +759,7 @@
 		const iterationType = this.getIterationType();
 		const sId = this.getTargetObjectId();
 		const oDrawing = this.getTargetObject(sId);
-		oDrawer.getDrawingTextCache(oDrawing);
+		oDrawer.getDrawingTextCache(oDrawing, iterationType === ITERATEDATA_TYPE_WORD);
 		let nIterationCount = 0;
 		const oDocStructure = oDrawer.docStructureByDrawing[sId];
 		if (oDocStructure) {
@@ -11864,10 +11853,10 @@
         return this.getSandwich(sDrawingId) !== null;
     };
 
-	CAnimationDrawer.prototype.getDrawingTextCache = function(oDrawing) {
+	CAnimationDrawer.prototype.getDrawingTextCache = function(oDrawing, bSplitByWords) {
 		const sDrawingId = oDrawing.Get_Id();
 		if (!this.docStructureByDrawing[sDrawingId]) {
-			const oDocStructure = oDrawing.getDocStructure();
+			const oDocStructure = oDrawing.getDocStructure(bSplitByWords);
 			if (oDocStructure) {
 				console.log(oDocStructure)
 				this.docStructureByDrawing[sDrawingId] = oDocStructure;

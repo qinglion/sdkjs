@@ -283,12 +283,12 @@
 		let highlightAdditional;
 		
 		let w = element.GetWidthVisible();
-
-		if (this.Graphics.m_bIsTextDrawer) {
-			highlightAdditional = {TextDrawer: {IsEmpty: !element.IsText(), textDrawer: this.Graphics}};
-		}
 		
 		this.handleRun(run);
+
+		if (this.Graphics.m_bIsTextDrawer) {
+			highlightAdditional = {TextDrawer: {IsEmpty: !element.IsText(), textDrawer: this.Graphics, IsNoneHighlight: highlight_None === this.highlight}};
+		}
 		this.addHighlight(this.X, this.X + w, flags, hyperlink, collColor, comments, curComment, highlightAdditional);
 		
 		this.X += w;
@@ -476,7 +476,7 @@
 		if (flags & FLAG_COMMENT && comments.length)
 			this.Comm.Add(startY, endY, startX, endX, 0, 0, 0, 0, {Active : curComment, CommentId : comments});
 		
-		if ((flags & FLAG_HIGHLIGHT) && (this.highlight && highlight_None !== this.highlight))
+		if ((flags & FLAG_HIGHLIGHT) && (this.highlight && (highlight_None !== this.highlight || highlightAdditional)))
 			this.High.Add(startY, endY, startX, endX, 0, this.highlight.r, this.highlight.g, this.highlight.b, highlightAdditional, this.highlight);
 		
 		if (flags & FLAG_SEARCH)

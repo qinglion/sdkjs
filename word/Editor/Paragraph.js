@@ -2737,6 +2737,10 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 			{
 				if (pGraphics.m_bIsTextDrawer) {
 					pGraphics.checkSplitHighlights(Element);
+					if (Element.Additional.TextDrawer.IsNoneHighlight) {
+						Element = aHigh.Get_Next();
+						continue;
+					}
 				}
 				if (!pGraphics.set_fillColor)
 				{
@@ -3005,7 +3009,9 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 				pGraphics.drawVerLine(c_oAscLineDrawingRule.Left, TempX0 - 0.5 - Pr.ParaPr.Brd.Left.Size - Pr.ParaPr.Brd.Left.Space, this.Pages[CurPage].Y + TempTop, this.Pages[CurPage].Y + TempBottom, Pr.ParaPr.Brd.Left.Size);
 			}
 		}
-
+		if (pGraphics.m_bIsTextDrawer) {
+			pGraphics.checkSplitElements();
+		}
 		pGraphics.End_Command();
 	}
 };
@@ -19279,15 +19285,22 @@ CParaDrawingRangeLines.prototype =
 					&& Math.abs(PrevEl.Additional.H - Element.Additional.H) < 0.001
 					&& PrevEl.Additional.Form === Element.Additional.Form);
 			} else if (PrevEl.Additional.TextDrawer && Element.Additional.TextDrawer) {
-				const oPrevTextDrawerPr = PrevEl.Additional.TextDrawer;
+				const oTextDrawer = PrevEl.Additional.TextDrawer.textDrawer;
+				const bPrevEmpty = PrevEl.Additional.TextDrawer.IsEmpty;
+				const bNextEmpty = Element.Additional.TextDrawer.IsEmpty;
+				if (oTextDrawer.m_bIsSplitByWords) {
+					return bPrevEmpty === bNextEmpty;
+				}
+				return bPrevEmpty && bPrevEmpty === bNextEmpty;
+/*				const oPrevTextDrawerPr = PrevEl.Additional.TextDrawer;
 				const oTextDrawerPr = Element.Additional.TextDrawer;
 				if (oPrevTextDrawerPr.textDrawer === oTextDrawerPr.textDrawer) {
 					const oTextDrawer = oTextDrawerPr.textDrawer;
 					if (oTextDrawer.m_bIsSplitByWords) {
-						return oPrevTextDrawerPr.IsEmpty === oTextDrawerPr.IsEmpty/* || !oPrevTextDrawerPr.IsEmpty && oTextDrawerPr.IsEmpty*/;
+						return oPrevTextDrawerPr.IsEmpty === oTextDrawerPr.IsEmpty/!* || !oPrevTextDrawerPr.IsEmpty && oTextDrawerPr.IsEmpty*!/;
 					}
 					return oPrevTextDrawerPr.IsEmpty === true && oTextDrawerPr.IsEmpty === true || oPrevTextDrawerPr.IsEmpty && !oTextDrawerPr.IsEmpty;
-				}
+				}*/
 			}
 
 			return false;
