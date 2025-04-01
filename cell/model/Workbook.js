@@ -15606,10 +15606,10 @@
 			});
 			if (oTableStructOperand) {
 				let oTableOpRange = oTableStructOperand.getRange();
-				if (!oTableOpRange.bbox.contains(this.nCol, this.nRow)) {
+				if (oTableOpRange.bbox && !oTableOpRange.bbox.contains(this.nCol, this.nRow)) {
 					return;
 				}
-				let bContainRange = oCellListeners.bbox.containsRange(oTableOpRange.bbox);
+				let bContainRange = oCellListeners.bbox && oCellListeners.bbox.containsRange(oTableOpRange.bbox);
 				if (bContainRange && oCellListeners.bbox.contains(this.nCol, this.nRow)) {
 					g_cCalcRecursion.setStartCellIndex({cellId: nCellIndex, wsName: this.ws.getName().toLowerCase()});
 				}
