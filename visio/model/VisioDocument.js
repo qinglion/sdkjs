@@ -876,7 +876,7 @@ AscDFH.historyitem_type_VisioWindow = 328;
 			// TODO performance: realize style inheritance only if style is inherited from master
 			shape.realizeStyleInheritanceRecursively(this.styleSheets, stylesWithRealizedInheritance);
 
-			if (shape.type === "Group") {
+			if (shape.type === AscVisio.SHAPE_TYPES_GROUP) {
 				let cGroupShape = shape.convertGroup(this, pageInfo, drawingPageScale);
 				if (cGroupShape) {
 					topLevelShapesAndGroups.push(cGroupShape);
@@ -2246,111 +2246,6 @@ AscDFH.historyitem_type_VisioWindow = 328;
 	AscFormat.InitClass(ADOData_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
 
 	// Docs old:
-// TabSplitterPos_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/tabsplitterpos_type-complextypevisio-xml
-	/**
-	 * @extends AscFormat.CBaseFormatNoIdObject
-	 * @constructor
-	 */
-	function TabSplitterPos_Type() {
-		AscFormat.CBaseFormatNoIdObject.call(this);
-		this.value = null;
-		return this;
-	}
-	AscFormat.InitClass(TabSplitterPos_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
-
-	// Docs old:
-// ShowConnectionPoints_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/showconnectionpoints_type-complextypevisio-xml
-	/**
-	 * @extends AscFormat.CBaseFormatNoIdObject
-	 * @constructor
-	 */
-	function ShowConnectionPoints_Type() {
-		AscFormat.CBaseFormatNoIdObject.call(this);
-		this.value = null;
-		return this;
-	}
-	AscFormat.InitClass(ShowConnectionPoints_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
-
-	// Docs old:
-// ShowGuides_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/showguides_type-complextypevisio-xml
-	/**
-	 * @extends AscFormat.CBaseFormatNoIdObject
-	 * @constructor
-	 */
-	function ShowGuides_Type() {
-		AscFormat.CBaseFormatNoIdObject.call(this);
-		this.value = null;
-		return this;
-	}
-	AscFormat.InitClass(ShowGuides_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
-
-	// Docs old:
-// ShowPageBreaks_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/showpagebreaks_type-complextypevisio-xml
-	/**
-	 * @extends AscFormat.CBaseFormatNoIdObject
-	 * @constructor
-	 */
-	function ShowPageBreaks_Type() {
-		AscFormat.CBaseFormatNoIdObject.call(this);
-		this.value = null;
-		return this;
-	}
-	AscFormat.InitClass(ShowPageBreaks_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
-	AscFormat.CBaseFormatNoIdObject.call(this);
-
-	// Docs old:
-// ShowGrid_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/showgrid_type-complextypevisio-xml
-	/**
-	 * @extends AscFormat.CBaseFormatNoIdObject
-	 * @constructor
-	 */
-	function ShowGrid_Type() {
-		AscFormat.CBaseFormatNoIdObject.call(this);
-		this.value = null;
-		return this;
-	}
-	AscFormat.InitClass(ShowGrid_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
-
-	// Docs old:
-// ShowRulers_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/showrulers_type-complextypevisio-xml
-	/**
-	 * @extends AscFormat.CBaseFormatNoIdObject
-	 * @constructor
-	 */
-	function ShowRulers_Type() {
-		AscFormat.CBaseFormatNoIdObject.call(this);
-		this.value = null;
-		return this;
-	}
-	AscFormat.InitClass(ShowRulers_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
-
-	// Docs old:
-// StencilGroupPos_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/stencilgrouppos_type-complextypevisio-xml
-	/**
-	 * @extends AscFormat.CBaseFormatNoIdObject
-	 * @constructor
-	 */
-	function StencilGroupPos_Type() {
-		AscFormat.CBaseFormatNoIdObject.call(this);
-		this.value = null;
-		return this;
-	}
-	AscFormat.InitClass(StencilGroupPos_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
-
-	// Docs old:
-// StencilGroup_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/stencilgroup_type-complextypevisio-xml
-	/**
-	 * @extends AscFormat.CBaseFormatNoIdObject
-	 * @constructor
-	 */
-	function StencilGroup_Type() {
-		AscFormat.CBaseFormatNoIdObject.call(this);
-		this.value = null;
-		return this;
-	}
-	AscFormat.InitClass(StencilGroup_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
-
-	// Docs old:
 // Rel_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/rel_type-complextypevisio-xml
 	// In fact rel may have r:id attribute
 	/**
@@ -2562,32 +2457,6 @@ AscDFH.historyitem_type_VisioWindow = 328;
 	AscFormat.InitClass(HeaderMargin_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
 
 	// Docs old:
-// AttachedToolbars_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/attachedtoolbars_type-complextypevisio-xml
-	/**
-	 * @extends AscFormat.CBaseFormatNoIdObject
-	 * @constructor
-	 */
-	function AttachedToolbars_Type() {
-		AscFormat.CBaseFormatNoIdObject.call(this);
-		this.value = null;
-		return this;
-	}
-	AscFormat.InitClass(AttachedToolbars_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
-
-	// Docs old:
-// CustomToolbarsFile_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/customtoolbarsfile_type-complextypevisio-xml
-	/**
-	 * @extends AscFormat.CBaseFormatNoIdObject
-	 * @constructor
-	 */
-	function CustomToolbarsFile_Type() {
-		AscFormat.CBaseFormatNoIdObject.call(this);
-		this.value = null;
-		return this;
-	}
-	AscFormat.InitClass(CustomToolbarsFile_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
-
-	// Docs old:
 // CustomMenusFile_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/custommenusfile_type-complextypevisio-xml
 	/**
 	 * @extends AscFormat.CBaseFormatNoIdObject
@@ -2599,71 +2468,6 @@ AscDFH.historyitem_type_VisioWindow = 328;
 		return this;
 	}
 	AscFormat.InitClass(CustomMenusFile_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
-
-	// Docs old:
-// ProtectBkgnds_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/protectbkgnds_type-complextypevisio-xml
-	/**
-	 * @extends AscFormat.CBaseFormatNoIdObject
-	 * @constructor
-	 */
-	function ProtectBkgnds_Type() {
-		AscFormat.CBaseFormatNoIdObject.call(this);
-		this.value = null;
-		return this;
-	}
-	AscFormat.InitClass(ProtectBkgnds_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
-
-	// Docs old:
-// ProtectMasters_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/protectmasters_type-complextypevisio-xml
-	/**
-	 * @extends AscFormat.CBaseFormatNoIdObject
-	 * @constructor
-	 */
-	function ProtectMasters_Type() {
-		AscFormat.CBaseFormatNoIdObject.call(this);
-		this.value = null;
-		return this;
-	}
-	AscFormat.InitClass(ProtectMasters_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
-
-	// Docs old:
-// ProtectShapes_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/protectshapes_type-complextypevisio-xml
-	/**
-	 * @extends AscFormat.CBaseFormatNoIdObject
-	 * @constructor
-	 */
-	function ProtectShapes_Type() {
-		AscFormat.CBaseFormatNoIdObject.call(this);
-		this.value = null;
-		return this;
-	}
-	AscFormat.InitClass(ProtectShapes_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
-
-	// Docs old:
-// ProtectStyles_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/protectstyles_type-complextypevisio-xml
-	/**
-	 * @extends AscFormat.CBaseFormatNoIdObject
-	 * @constructor
-	 */
-	function ProtectStyles_Type() {
-		AscFormat.CBaseFormatNoIdObject.call(this);
-		this.value = null;
-		return this;
-	}
-	AscFormat.InitClass(ProtectStyles_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
-
-	// Docs old:
-// DynamicGridEnabled_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/dynamicgridenabled_type-complextypevisio-xml
-	/**
-	 * @extends AscFormat.CBaseFormatNoIdObject
-	 * @constructor
-	 */
-	function DynamicGridEnabled_Type() {
-		AscFormat.CBaseFormatNoIdObject.call(this);
-		this.value = null;
-		return this;
-	}
-	AscFormat.InitClass(DynamicGridEnabled_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
 
 	// Docs old:
 // SnapAngle_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/snapangle_type-complextypevisio-xml
@@ -2690,32 +2494,6 @@ AscDFH.historyitem_type_VisioWindow = 328;
 		return this;
 	}
 	AscFormat.InitClass(SnapExtensions_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
-
-	// Docs old:
-// SnapSettings_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/snapsettings_type-complextypevisio-xml
-	/**
-	 * @extends AscFormat.CBaseFormatNoIdObject
-	 * @constructor
-	 */
-	function SnapSettings_Type() {
-		AscFormat.CBaseFormatNoIdObject.call(this);
-		this.value = null;
-		return this;
-	}
-	AscFormat.InitClass(SnapSettings_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
-
-	// Docs old:
-// GlueSettings_Type complexType: https://learn.microsoft.com/ru-ru/office/client-developer/visio/gluesettings_type-complextypevisio-xml
-	/**
-	 * @extends AscFormat.CBaseFormatNoIdObject
-	 * @constructor
-	 */
-	function GlueSettings_Type() {
-		AscFormat.CBaseFormatNoIdObject.call(this);
-		this.value = null;
-		return this;
-	}
-	AscFormat.InitClass(GlueSettings_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
 
 	// Docs old:
 	// https://learn.microsoft.com/ru-ru/search/?terms=TimePrinted
@@ -3219,14 +2997,6 @@ AscDFH.historyitem_type_VisioWindow = 328;
 	window['AscVisio'].PrimaryKey_Type = PrimaryKey_Type;
 	window['AscVisio'].DataColumns_Type = DataColumns_Type;
 	window['AscVisio'].ADOData_Type = ADOData_Type;
-	window['AscVisio'].TabSplitterPos_Type = TabSplitterPos_Type;
-	window['AscVisio'].ShowConnectionPoints_Type = ShowConnectionPoints_Type;
-	window['AscVisio'].ShowGuides_Type = ShowGuides_Type;
-	window['AscVisio'].ShowPageBreaks_Type = ShowPageBreaks_Type;
-	window['AscVisio'].ShowGrid_Type = ShowGrid_Type;
-	window['AscVisio'].ShowRulers_Type = ShowRulers_Type;
-	window['AscVisio'].StencilGroupPos_Type = StencilGroupPos_Type;
-	window['AscVisio'].StencilGroup_Type = StencilGroup_Type;
 	window['AscVisio'].Rel_Type = Rel_Type;
 	window['AscVisio'].CommentEntry_Type = CommentEntry_Type;
 	window['AscVisio'].AuthorEntry_Type = AuthorEntry_Type;
@@ -3241,18 +3011,9 @@ AscDFH.historyitem_type_VisioWindow = 328;
 	window['AscVisio'].HeaderLeft_Type = HeaderLeft_Type;
 	window['AscVisio'].FooterMargin_Type = FooterMargin_Type;
 	window['AscVisio'].HeaderMargin_Type = HeaderMargin_Type;
-	window['AscVisio'].AttachedToolbars_Type = AttachedToolbars_Type;
-	window['AscVisio'].CustomToolbarsFile_Type = CustomToolbarsFile_Type;
 	window['AscVisio'].CustomMenusFile_Type = CustomMenusFile_Type;
-	window['AscVisio'].ProtectBkgnds_Type = ProtectBkgnds_Type;
-	window['AscVisio'].ProtectMasters_Type = ProtectMasters_Type;
-	window['AscVisio'].ProtectShapes_Type = ProtectShapes_Type;
-	window['AscVisio'].ProtectStyles_Type = ProtectStyles_Type;
-	window['AscVisio'].DynamicGridEnabled_Type = DynamicGridEnabled_Type;
 	window['AscVisio'].SnapAngle_Type = SnapAngle_Type;
 	window['AscVisio'].SnapExtensions_Type = SnapExtensions_Type;
-	window['AscVisio'].SnapSettings_Type = SnapSettings_Type;
-	window['AscVisio'].GlueSettings_Type = GlueSettings_Type;
 	window['AscVisio'].TimePrinted_Type = TimePrinted_Type;
 	window['AscVisio'].TimeEdited_Type = TimeEdited_Type;
 	window['AscVisio'].TimeSaved_Type = TimeSaved_Type;
@@ -3285,4 +3046,28 @@ AscDFH.historyitem_type_VisioWindow = 328;
 	window['AscVisio'].NamedIndexedRow_Type = NamedIndexedRow_Type;
 	window['AscVisio'].SolutionXML_Type = SolutionXML_Type;
 	window['AscVisio'].ExtendableCell_Type = SolutionXML_Type;
+
+	window['AscVisio'].FOREIGN_TYPES_BITMAP = 0;
+	window['AscVisio'].FOREIGN_TYPES_ENHMETAFILE = 1;
+	window['AscVisio'].FOREIGN_TYPES_INK = 2;
+	window['AscVisio'].FOREIGN_TYPES_OBJECT = 3;
+
+	window['AscVisio'].COMPRESSION_TYPES_JPEG = 0;
+	window['AscVisio'].COMPRESSION_TYPES_DIB = 1;
+	window['AscVisio'].COMPRESSION_TYPES_PNG = 2;
+	window['AscVisio'].COMPRESSION_TYPES_TIFF = 3;
+	window['AscVisio'].COMPRESSION_TYPES_GIF = 4;
+	
+	window['AscVisio'].SHAPE_TYPES_GROUP = 0;
+	window['AscVisio'].SHAPE_TYPES_GUIDE = 1;
+	window['AscVisio'].SHAPE_TYPES_FOREIGN = 2;
+	window['AscVisio'].SHAPE_TYPES_SHAPE = 3;
+
+	window['AscVisio'].WINDOW_TYPES_DRAWING = 0;
+	window['AscVisio'].WINDOW_TYPES_SHEET = 1;
+	window['AscVisio'].WINDOW_TYPES_STENCIL = 2;
+	
+	window['AscVisio'].CONTAINER_TYPES_PAGE = 0;
+	window['AscVisio'].CONTAINER_TYPES_SHEET = 1;
+	window['AscVisio'].CONTAINER_TYPES_MASTER = 2;
 })(window, window.document);

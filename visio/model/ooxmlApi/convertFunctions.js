@@ -2150,7 +2150,7 @@
 			}
 		}
 
-		if (this.type === "Foreign") {
+		if (this.type === AscVisio.SHAPE_TYPES_FOREIGN) {
 			// AscCommon.consoleLog("Shape has type Foreign and may not be displayed. " +
 			// 	"Check shape.elements --> ForeignData_Type obj. See shape:", this);
 
@@ -2290,7 +2290,7 @@
 		let cShapeOrCGroupShape = this.convertShape(visioDocument, pageInfo, drawingPageScale, currentGroupHandling);
 
 		// if it is group in vsdx
-		if (this.type === "Group") {
+		if (this.type === AscVisio.SHAPE_TYPES_GROUP) {
 			// CGroupShape cant support text. So cShape will represent everything related to Shape Type="Group".
 			// Let's push cShape into CGroupShape object.
 			if (cShapeOrCGroupShape) {

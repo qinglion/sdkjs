@@ -18,8 +18,8 @@ This table is used to track the status of class serialization/deserialization im
 
 ## Current task specification
 
-Look at the any row in the table that have non empty first and second column and doesn't have a plus sign in the 3rd column.
-Add implementation of the prototype of the class from the 1st column to the file @[visio/model/Serialize.js]. Use the C++ code of the "fromPPTY" function of the class from the 2nd column in the @[VsdxFormat] folder as the basis for the logic.
+Look at the any row in the table that have both non-empty first and second column and doesn't have a plus sign in the 3rd column.
+Add implementation only of the readChild and readAttribute of the class from the 1st column to the file @[visio/model/Serialize.js]. Use the C++ code of the "fromPPTY" function of the class from the 2nd column in the @[VsdxFormat] folder as the basis for the logic.
 No need to add init to class members that are declared in @[visio/model/VisioDocument.js] or @[visio/model/ooxmlApi/ooxmlApiIndex.js]
 Use Shape_Type.prototype.readAttribute and Shape_Type.prototype.readChild as references for implementation.
 Do not check initialized values in the methods (e.g., no need to check "if (!this.authorList) {").
@@ -28,7 +28,7 @@ At the end, add a plus sign to this row.
 | JavaScript Class (fromXml) | C++ Class (fromPPTY) | Binary Reading Implementation (Serialize.js) |
 | --- | --- | --- |
 | CVisioDocument | CDocumentFile | + |
-| CWindows | CWindowsFile | + |
+| CWindows | CWindows | + |
 | CMasters | CMastersFile | + |
 | CPageContents | CPageFile | + |
 | CMasterContents | CMasterFile | + |
@@ -41,8 +41,8 @@ At the end, add a plus sign to this row.
 | CSolutions | CSolutions | + |
 | CSolutionXML | | - |
 | Comments_Type | CCommentsFile | + |
-| RuleTest_Type | CRuleTest | + |
-| RuleFilter_Type | CRuleFilter | + |
+| RuleTest_Type | CRuleFormula | + |
+| RuleFilter_Type | CRuleFormula | + |
 | RowKeyValue_Type | CRowKeyValue | + |
 | DataColumn_Type | CDataColumn | + |
 | RuleInfo_Type | CRuleInfo | + |
@@ -55,14 +55,6 @@ At the end, add a plus sign to this row.
 | PrimaryKey_Type | CPrimaryKey | + |
 | DataColumns_Type | CDataColumns | + |
 | ADOData_Type | | - |
-| TabSplitterPos_Type | | - |
-| ShowConnectionPoints_Type | | - |
-| ShowGuides_Type | | - |
-| ShowPageBreaks_Type | | - |
-| ShowGrid_Type | | - |
-| ShowRulers_Type | | - |
-| StencilGroupPos_Type | | - |
-| StencilGroup_Type | | - |
 | Icon_Type | CIcon | + |
 | PageSheet_Type | CPageSheet | + |
 | tp_Type | CText_tp | + |
@@ -83,18 +75,10 @@ At the end, add a plus sign to this row.
 | HeaderLeft_Type | | - |
 | FooterMargin_Type | | - |
 | HeaderMargin_Type | | - |
-| AttachedToolbars_Type | | - |
 | CustomToolbarsFile_Type | | - |
 | CustomMenusFile_Type | | - |
-| ProtectBkgnds_Type | | - |
-| ProtectMasters_Type | | - |
-| ProtectShapes_Type | | - |
 | ProtectStyles_Type | | - |
-| DynamicGridEnabled_Type | | - |
-| SnapAngle_Type | | - |
 | SnapExtensions_Type | | - |
-| SnapSettings_Type | | - |
-| GlueSettings_Type | | - |
 | TimePrinted_Type | | - |
 | TimeEdited_Type | | - |
 | TimeSaved_Type | | - |

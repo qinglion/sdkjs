@@ -225,7 +225,11 @@
 		while (stream.GetCurPos() < endPos) {
 			const recordType = stream.GetUChar();
 			
-			this.readChild(recordType, pReader);
+			// this.readChild(recordType, pReader);
+			const res = this.readChild(recordType, pReader);
+				if (false === res) {
+					stream.SkipRecord();
+				}
 		}
 		
 		stream.Seek2(endPos);
@@ -282,7 +286,7 @@
 				break;
 				
 			case 3:
-				//CStyleSheetss
+				//CStyleSheets
 				AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY.call({
 					readChildren: AscFormat.CBaseFormatNoIdObject.prototype.readChildren,
 					readChild: function(elementType, pReader) {
@@ -408,27 +412,24 @@
 			// 	break;
 				
 			case 14:
-				if (!this.windows) {
-					this.windows = new AscVisio.CWindows();
-				}
-				this.windows.fromPPTY(pReader);
-				break;
-				
-			case 15:
-				//Themes
 				AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY.call({
 					readChildren: AscFormat.CBaseFormatNoIdObject.prototype.readChildren,
 					readChild: function(elementType, pReader) {
-						const stream = pReader.stream;
-						if (elementType === 0) {
-							let theme = new AscFormat.CTheme();
-							theme.Read(stream);
-							t.themes.push(theme);
+						if (elementType === 0 && !t.windows) {
+							t.windows = new AscVisio.CWindows();
+							t.windows.fromPPTY(pReader);
 							return true;
 						}
 						return false;
 					}
 				}, pReader);
+				break;
+				
+			case 15:
+				//Themes
+				let theme = new AscFormat.CTheme();
+				theme.fromPPTY(pReader);
+				this.themes.push(theme);
 				break;
 			default:
 				return false;
@@ -461,19 +462,19 @@
 				this.defaultGuideStyle = stream.GetULong();
 				break;
 			case 5:
-				this.glueSettings = stream.GetULong();
+				this.glueSettings = stream.GetLong();
 				break;
 			case 6:
-				this.snapSettings = stream.GetULong();
+				this.snapSettings = stream.GetLong();
 				break;
 			case 7:
-				this.snapExtensions = stream.GetULong();
+				this.snapExtensions = stream.GetLong();
 				break;
 			case 8:
-				this.snapAngles = stream.GetString2();
+				this.snapAngles = stream.GetLong();
 				break;
 			case 9:
-				this.dynamicsOff = stream.GetBool();
+				this.dynamicGridEnabled = stream.GetBool();
 				break;
 			case 10:
 				this.protectStyles = stream.GetBool();
@@ -482,10 +483,10 @@
 				this.protectShapes = stream.GetBool();
 				break;
 			case 12:
-				this.protectMasters = stream.GetBool();
+				this.protectBkgnds = stream.GetBool();
 				break;
 			case 13:
-				this.protectBkgnds = stream.GetBool();
+				this.protectMasters = stream.GetBool();
 				break;
 			case 14:
 				this.customMenusFile = stream.GetString2();
@@ -494,7 +495,7 @@
 				this.customToolbarsFile = stream.GetString2();
 				break;
 			case 16:
-				this.attachToDeployment = stream.GetBool();
+				this.attachedToolbars = stream.GetString2();
 				break;
 			default:
 				return false;
@@ -502,7 +503,7 @@
 		
 		return true;
 	};
-		
+
 	/**
 	 * Read attributes from stream for ColorEntry_Type
 	 * 
@@ -598,21 +599,27 @@
 		const stream = pReader.stream;
 		switch (attrType) {
 			case 0:
-				this.id = stream.GetULong();
+				this.iD = stream.GetULong();
 				break;
 			case 1:
-				this.name = stream.GetString2();
-				break;
-			case 2:
 				this.nameU = stream.GetString2();
 				break;
+			case 2:
+				this.name = stream.GetString2();
+				break;
 			case 3:
-				this.lineStyle = stream.GetULong();
+				this.isCustomName = stream.GetBool();
 				break;
 			case 4:
-				this.fillStyle = stream.GetULong();
+				this.isCustomNameU = stream.GetBool();
 				break;
 			case 5:
+				this.lineStyle = stream.GetULong();
+				break;
+			case 6:
+				this.fillStyle = stream.GetULong();
+				break;
+			case 7:
 				this.textStyle = stream.GetULong();
 				break;
 			default:
@@ -718,31 +725,27 @@
 	 * @returns {boolean} - True if attribute was handled, false otherwise
 	 */
 	AscVisio.EventItem_Type.prototype.readAttribute = function(attrType, pReader) {
-		const stream = pReader.stream;
 		switch (attrType) {
 			case 0:
-				this.eventID = stream.GetString2();
-				break;
+				this.iD = pReader.stream.GetULong();
+				return true;
 			case 1:
-				this.action = stream.GetString2();
-				break;
+				this.action = pReader.stream.GetULong();
+				return true;
 			case 2:
-				this.eventCode = stream.GetLong();
-				break;
+				this.eventCode = pReader.stream.GetULong();
+				return true;
 			case 3:
-				this.target = stream.GetString2();
-				break;
+				this.enabled = pReader.stream.GetBool();
+				return true;
 			case 4:
-				this.targetArgs = stream.GetString2();
-				break;
+				this.target = pReader.stream.GetString2();
+				return true;
 			case 5:
-				this.enabled = stream.GetBool();
-				break;
-			default:
-				return false;
+				this.targetArgs = pReader.stream.GetString2();
+				return true;
 		}
-		
-		return true;
+		return false;
 	};
 
 	/**
@@ -819,7 +822,7 @@
 		const stream = pReader.stream;
 		switch (attrType) {
 			case 0:
-				this.id = stream.GetULong();
+				this.iD = stream.GetULong();
 				break;
 			case 1:
 				this.name = stream.GetString2();
@@ -886,11 +889,9 @@
 				break;
 			}
 			case 1: {
-				const nStart = stream.cur;
-				const nEnd = nStart + stream.GetULong() + 4;
+				// debugger
 				this.icon = new AscVisio.Icon_Type();
 				this.icon.fromPPTY(pReader);
-				stream.Seek2(nEnd);
 				break;
 			}
 			//todo
@@ -1363,26 +1364,81 @@
 	};
 
 	/**
-	 * Read attributes from stream for CValidation
+	 * Read child elements from stream for CValidation
 	 * 
-	 * @param  {number} attrType - The type of attribute
+	 * @param {number} elementType - The type of child element
+	 * @param {BinaryVSDYLoader} pReader - The binary reader
+	 * @returns {boolean} - True if element was handled, false otherwise
+	 */
+	AscVisio.CValidation.prototype.readChild = function(elementType, pReader) {
+		let res = true;
+		let t = this;
+		switch (elementType) {
+			case 0: {
+				this.validationProperties = new AscVisio.ValidationProperties_Type();
+				this.validationProperties.fromPPTY(pReader);
+				break;
+			}
+			case 1: {
+				AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY.call({
+					readChildren: AscFormat.CBaseFormatNoIdObject.prototype.readChildren,
+					readChild: function(elementType, pReader) {
+						const stream = pReader.stream;
+						if (elementType === 0) {
+							let elem = new AscVisio.RuleSet_Type();
+							elem.fromPPTY(pReader);
+							t.ruleSets.push(elem);
+							return true;
+						}
+						return false;
+					}
+				}, pReader);
+				break;
+			}
+			case 2: {
+				AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY.call({
+					readChildren: AscFormat.CBaseFormatNoIdObject.prototype.readChildren,
+					readChild: function(elementType, pReader) {
+						const stream = pReader.stream;
+						if (elementType === 0) {
+							let elem = new AscVisio.Issue_Type();
+							elem.fromPPTY(pReader);
+							t.issues.push(elem);
+							return true;
+						}
+						return false;
+					}
+				}, pReader);
+				break;
+			}
+			default: {
+				res = false;
+				break;
+			}
+		}
+		
+		return res;
+	};
+
+	/**
+	 * Read attributes from stream for CWindows
+	 *
+	 * @param {number} attrType - The type of attribute
 	 * @param {BinaryVSDYLoader} pReader - The binary reader
 	 * @returns {boolean} - True if attribute was handled, false otherwise
 	 */
-	AscVisio.CValidation.prototype.readAttribute = function(attrType, pReader) {
-		const stream = pReader.stream;
+	AscVisio.CWindows.prototype.readAttribute = function(attrType, pReader) {
+		let stream = pReader.stream;
 		switch (attrType) {
 			case 0:
-				this.showIgnoredIssues = stream.GetBool();
-				break;
+				this.clientWidth = stream.GetULong();
+				return true;
 			case 1:
-				this.showPerPage = stream.GetBool();
-				break;
-			default:
-				return false;
+				this.clientHeight = stream.GetULong();
+				return true;
 		}
 		
-		return true;
+		return false;
 	};
 
 	/**
@@ -1393,9 +1449,9 @@
 	 * @returns {boolean} - True if element was handled, false otherwise
 	 */
 	AscVisio.CWindows.prototype.readChild = function(elementType, pReader) {
-		const stream = pReader.stream;
+		let stream = pReader.stream;
 		if (elementType === 0) {
-			const window = new AscVisio.Window_Type();
+			let window = new AscVisio.Window_Type();
 			window.fromPPTY(pReader);
 			this.window.push(window);
 			return true;
@@ -1415,136 +1471,98 @@
 		const stream = pReader.stream;
 		switch (attrType) {
 			case 0:
-				this.id = stream.GetULong();
-				break;
+				this.iD = stream.GetULong();
+				return true;
 			case 1:
-				this.wndIndex = stream.GetULong();
-				break;
+				this.windowType = stream.GetUChar();
+				return true;
 			case 2:
-				this.pageId = stream.GetULong();
-				break;
+				this.windowState = stream.GetULong();
+				return true;
 			case 3:
-				this.viewCenterX = stream.GetDouble();
-				break;
+				this.windowLeft = stream.GetULong();
+				return true;
 			case 4:
-				this.viewCenterY = stream.GetDouble();
-				break;
+				this.windowTop = stream.GetULong();
+				return true;
 			case 5:
-				this.viewScale = stream.GetDouble();
-				break;
+				this.windowWidth = stream.GetULong();
+				return true;
 			case 6:
-				this.viewWidth = stream.GetDouble();
-				break;
+				this.windowHeight = stream.GetULong();
+				return true;
 			case 7:
-				this.viewHeight = stream.GetDouble();
-				break;
+				this.containerType = stream.GetUChar();
+				return true;
 			case 8:
-				this.pagesX = stream.GetDouble();
-				break;
-			case 9:
-				this.pagesY = stream.GetDouble();
-				break;
-			case 10:
-				this.viewCenterX2 = stream.GetDouble();
-				break;
-			case 11:
-				this.viewCenterY2 = stream.GetDouble();
-				break;
-			case 12:
-				this.dynFeedback = stream.GetULong();
-				break;
-			case 13:
-				this.glueSettings = stream.GetULong();
-				break;
-			case 14:
-				this.snapSettings = stream.GetULong();
-				break;
-			case 15:
-				this.snapExtensions = stream.GetULong();
-				break;
-			case 16:
-				this.snapAngles = stream.GetString2();
-				break;
-			case 17:
-				this.dynGridEnabled = stream.GetBool();
-				break;
-			case 18:
-				this.stencilPage = stream.GetULong();
-				break;
-			case 19:
-				this.stencilVis = stream.GetBool();
-				break;
-			case 20:
-				this.uiVisibility = stream.GetULong();
-				break;
-			case 21:
-				this.winType = stream.GetULong();
-				break;
-			case 22:
-				this.windowLeft = stream.GetLong();
-				break;
-			case 23:
-				this.windowRight = stream.GetLong();
-				break;
-			case 24:
-				this.windowTop = stream.GetLong();
-				break;
-			case 25:
-				this.windowBottom = stream.GetLong();
-				break;
-			case 26:
-				this.showRulers = stream.GetBool();
-				break;
-			case 27:
-				this.showGrid = stream.GetBool();
-				break;
-			case 28:
-				this.showGuides = stream.GetBool();
-				break;
-			case 29:
-				this.showConnectionPoints = stream.GetBool();
-				break;
-			case 30:
-				this.tabSplitterPos = stream.GetDouble();
-				break;
-			case 31:
-				this.containerType = stream.GetULong();
-				break;
-			case 32:
 				this.container = stream.GetULong();
-				break;
-			case 33:
-				this.masterPage = stream.GetULong();
-				break;
-			case 34:
-				this.viewMode = stream.GetULong();
-				break;
-			case 35:
-				this.isCustomSize = stream.GetBool();
-				break;
-			case 36:
-				this.isCustomScale = stream.GetBool();
-				break;
-			case 37:
-				this.customWidth = stream.GetDouble();
-				break;
-			case 38:
-				this.customHeight = stream.GetDouble();
-				break;
-			case 39:
-				this.customScale = stream.GetDouble();
-				break;
-			case 40:
-				this.themePage = stream.GetULong();
-				break;
-			case 41:
-				this.selectedPage = stream.GetULong();
-				break;
-			default:
-				return false;
+				return true;
+			case 9:
+				this.page = stream.GetULong();
+				return true;
+			case 10:
+				this.sheet = stream.GetULong();
+				return true;
+			case 11:
+				this.viewScale = stream.GetDouble();
+				return true;
+			case 12:
+				this.viewCenterX = stream.GetDouble();
+				return true;
+			case 13:
+				this.viewCenterY = stream.GetDouble();
+				return true;
+			case 14:
+				this.document = stream.GetString2();
+				return true;
+			case 15:
+				this.parentWindow = stream.GetULong();
+				return true;
+			case 16:
+				this.readOnly = stream.GetBool();
+				return true;
+			case 17:
+				this.showRulers = stream.GetBool();
+				return true;
+			case 18:
+				this.showGrid = stream.GetBool();
+				return true;
+			case 19:
+				this.showPageBreaks = stream.GetBool();
+				return true;
+			case 20:
+				this.showGuides = stream.GetBool();
+				return true;
+			case 21:
+				this.showConnectionPoints = stream.GetBool();
+				return true;
+			case 22:
+				this.glueSettings = stream.GetULong();
+				return true;
+			case 23:
+				this.snapSettings = stream.GetULong();
+				return true;
+			case 24:
+				this.snapExtensions = stream.GetULong();
+				return true;
+			case 25:
+				this.snapAngles = stream.GetBool();
+				return true;
+			case 26:
+				this.dynamicGridEnabled = stream.GetBool();
+				return true;
+			case 27:
+				this.tabSplitterPos = stream.GetDouble();
+				return true;
+			case 28:
+				this.stencilGroup = stream.GetULong();
+				return true;
+			case 29:
+				this.stencilGroupPos = stream.GetULong();
+				return true;
 		}
 		
-		return true;
+		return false;
 	};
 
 	/**
@@ -1657,7 +1675,7 @@
 		if (elementType === 0) {
 			const refBy = new AscVisio.RefBy_Type();
 			refBy.fromPPTY(pReader);
-			this.refBy = refBy;
+			this.refBy.push(refBy);
 			return true;
 		}
 
@@ -1738,7 +1756,7 @@
 		const stream = pReader.stream;
 		switch (attrType) {
 			case 0:
-				this.ix = stream.GetULong();
+				this.iX = stream.GetULong();
 				break;
 			case 1:
 				this.n = stream.GetString2();
@@ -2390,30 +2408,7 @@
 		
 		return handled;
 	};
-
-	/**
-	 * Read attributes from stream for RuleFilter_Type
-	 * 
-	 * @param {number} attrType - The type of attribute
-	 * @param {BinaryVSDYLoader} pReader - The binary reader
-	 * @returns {boolean} - True if attribute was handled, false otherwise
-	 */
-	AscVisio.RuleFilter_Type.prototype.readAttribute = function(attrType, pReader)
-	{
-		let handled = true;
-		
-		switch (attrType)
-		{
-			case 0:
-				this.value = pReader.stream.GetString2(); // Formula in C++
-				break;
-			default:
-				handled = false;
-				break;
-		}
-		
-		return handled;
-	};
+	AscVisio.RuleFilter_Type.prototype.readAttribute = AscVisio.RuleTest_Type.prototype.readAttribute
 
 	/**
 	 * Read attributes from stream for RowKeyValue_Type
@@ -2613,11 +2608,11 @@
 		{
 			case 0:
 				this.ruleFilter = new AscVisio.RuleFilter_Type();
-				this.ruleFilter.fromStream(pReader);
+				this.ruleFilter.fromPPTY(pReader);
 				break;
 			case 1:
 				this.ruleTest = new AscVisio.RuleTest_Type();
-				this.ruleTest.fromStream(pReader);
+				this.ruleTest.fromPPTY(pReader);
 				break;
 			default:
 				handled = false;
@@ -2720,7 +2715,7 @@
 		{
 			case 0:
 				const rowKeyValue = new AscVisio.RowKeyValue_Type();
-				rowKeyValue.fromStream(pReader);
+				rowKeyValue.fromPPTY(pReader);
 				this.rowKeyValue.push(rowKeyValue);
 				break;
 			default:
@@ -2773,7 +2768,7 @@
 		{
 			case 0:
 				const dataColumn = new AscVisio.DataColumn_Type();
-				dataColumn.fromStream(pReader);
+				dataColumn.fromPPTY(pReader);
 				this.dataColumn.push(dataColumn);
 				break;
 			default:
@@ -2970,7 +2965,7 @@
 	 * @param {BinaryVSDYLoader} pReader - The binary reader
 	 */
 	AscVisio.Icon_Type.prototype.fromPPTY = function(pReader) {
-		const _end_rec = pReader.stream.GetPos() + pReader.stream.GetULong() + 4;
+		const _end_rec = pReader.stream.cur + pReader.stream.GetULong() + 4;
 		
 		this.value = pReader.stream.GetString2();
 		
@@ -3041,10 +3036,10 @@
 				this.iD = stream.GetULong();
 				break;
 			case 1:
-				this.name = stream.GetString2();
+				this.nameU = stream.GetString2();
 				break;
 			case 2:
-				this.nameU = stream.GetString2();
+				this.name = stream.GetString2();
 				break;
 			case 3:
 				this.description = stream.GetString2();
@@ -3098,10 +3093,10 @@
 		const stream = pReader.stream;
 		switch (attrType) {
 			case 0:
-				this.lastValidated = stream.GetString2();
+				this.showIgnored = stream.GetBool();
 				break;
 			case 1:
-				this.showIgnored = stream.GetBool();
+				this.lastValidated = stream.GetString2();
 				break;
 			default:
 				return false;

@@ -89,7 +89,7 @@
 		let pointsArray = getValueSafe(argumentsObject.points, []);
 
 		let shape = new AscVisio.ShapeSheet_Type();
-		shape.type = "Shape";
+		shape.type = AscVisio.SHAPE_TYPES_SHAPE;
 		shape.lineStyle = 0;
 		shape.fillStyle = 0;
 		shape.textStyle = 0;
