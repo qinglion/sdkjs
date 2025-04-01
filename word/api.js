@@ -899,8 +899,6 @@
 		this.CollaborativeMarksShowType = c_oAscCollaborativeMarksShowType.All;
 		
 		this.stylePainter = null;
-		
-		this.forceSaveDisconnectRequest = false;
 
 		// объекты, нужные для отправки в тулбар (шрифты, стили)
 		this._gui_control_colors = null;
@@ -2724,18 +2722,26 @@ background-repeat: no-repeat;\
 			sendChanges();
 			this._sendForm();
 		}
+		else if (this.forceSaveOformRequest)
+		{
+			this.forceSaveOformRequest = false;
+			AscCommon.CollaborativeEditing.Set_GlobalLock(false);
+			sendChanges();
+			this.sendEvent("asc_onCompletePreparingOForm");
+		}
 		else
 		{
 			sendChanges();
-			
-			if (this.forceSaveDisconnectRequest)
-			{
-				this.forceSaveDisconnectRequest = false;
-				AscCommon.CollaborativeEditing.Set_GlobalLock(false);
-				this.setViewModeDisconnect(true);
-				this.asc_coAuthoringDisconnect();
-				this.sendEvent("asc_onDisconnectEveryone");
-			}
+		}
+		
+		// Этот флаг может быть включен дополнительно к любому другому
+		if (this.forceSaveDisconnectRequest)
+		{
+			this.forceSaveDisconnectRequest = false;
+			AscCommon.CollaborativeEditing.Set_GlobalLock(false);
+			this.setViewModeDisconnect(true);
+			this.asc_coAuthoringDisconnect();
+			this.sendEvent("asc_onDisconnectEveryone");
 		}
 	};
 	asc_docs_api.prototype._autoSaveInner = function () {
@@ -11441,8 +11447,11 @@ background-repeat: no-repeat;\
 		{
 			this.forceSaveDisconnectRequest = true;
 			AscCommon.CollaborativeEditing.Set_GlobalLock(true);
-			this.asc_Save(false);
 		}
+		
+		this.forceSaveOformRequest = true;
+		AscCommon.CollaborativeEditing.Set_GlobalLock(true);
+		this.asc_Save(false);
 	};
 	
 
