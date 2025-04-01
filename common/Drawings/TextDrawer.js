@@ -86,6 +86,7 @@ CDocContentStructure.prototype.Recalculate = function(oTheme, oColorMap, dWidth,
 		const arrRes = [];
 		for (let i = 0; i < this.m_aContent.length; i += 1) {
 			const oParagraph = this.m_aContent[i];
+			oParagraph.normalizeBackForegroundObjects();
 			for (let j = 0; j < oParagraph.m_aWords.length; j += 1) {
 				const aWord = oParagraph.m_aWords[j];
 				const arrBackgroundWord = oParagraph.m_aBackgroundsByWords[j];
@@ -658,6 +659,7 @@ function CParagraphStructure(oParagraph)
 		this.m_aBackgroundsByWords = [];
 		this.m_aForegroundsByWords = [];
     this.m_oParagraph = oParagraph;
+		this.multilineWordsInfo = [];
     this.n_oLastWordStart = {
         line: 0,
         posInLine: -1
@@ -715,6 +717,7 @@ CParagraphStructure.prototype.getTextStructures = function() {
 CParagraphStructure.prototype.checkWord = function() {
     const oWordPos = this.n_oLastWordStart;
     let aWord = [];
+		let nWordLineCount = -1;
     for(let nLine = oWordPos.line; nLine < this.m_aContent.length; ++nLine) {
         let oLine = this.m_aContent[nLine];
         let aContent = oLine.m_aContent;
@@ -732,8 +735,15 @@ CParagraphStructure.prototype.checkWord = function() {
             }
         }
         oWordPos.line = nLine;
+				if (aWord.length) {
+					nWordLineCount += 1;
+				}
     }
+
     if(aWord.length > 0) {
+			if (nWordLineCount > 0) {
+				this.multilineWordsInfo.push({wordIndex: this.m_aWords.length, linesCount: nWordLineCount});
+			}
         this.m_aWords.push(aWord);
     }
 };
@@ -787,6 +797,20 @@ CParagraphStructure.prototype.checkWord = function() {
 			oBackgroundPos.isLastEmpty = false;
 		}
 	};
+	CParagraphStructure.prototype.normalizeBackForegroundObjects = function() {
+		this._normalizeBackForegroundObjects(this.m_aBackgroundsByWords);
+		// this._normalizeBackForegroundObjects(this.m_aForegroundsByWords); // todo
+		this.multilineWordsInfo = [];
+	}
+	CParagraphStructure.prototype._normalizeBackForegroundObjects = function(arrAdditionalObjects) {
+		for (let i = 0; i < this.multilineWordsInfo.length; i++) {
+			const oInfo = this.multilineWordsInfo[i];
+			const nSplicedWords = oInfo.linesCount;
+			const nAdditionalPos = oInfo.wordIndex;
+			const arrCurWord = arrAdditionalObjects[nAdditionalPos];
+			arrAdditionalObjects[nAdditionalPos] = arrCurWord.concat.apply(arrCurWord, arrAdditionalObjects.splice(nAdditionalPos + 1, nSplicedWords));
+		}
+	}
 
 function CShapeStructure()
 {
