@@ -1022,7 +1022,7 @@
 		const stream = pReader.stream;
 		switch (attrType) {
 			case 0:
-				this.id = stream.GetULong();
+				this.iD = stream.GetULong();
 				break;
 			case 1:
 				this.name = stream.GetString2();
@@ -1942,7 +1942,7 @@
 		const stream = pReader.stream;
 		switch (attrType) {
 			case 0:
-				this.id = stream.GetULong();
+				this.iD = stream.GetULong();
 				break;
 			case 1:
 				this.type = stream.GetUChar();
