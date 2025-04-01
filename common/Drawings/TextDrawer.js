@@ -771,8 +771,16 @@ CParagraphStructure.prototype.checkWord = function() {
 			oBackgroundPos.line = nLine;
 		}
 		aWord.reverse();
-		oBackgroundPos.tempBackgroundWords.push(aWord);
-		if (!oElement) {
+
+		if (oElement) {
+			oBackgroundPos.tempBackgroundWords.push(aWord);
+		} else {
+			if (bIsSplitByWords && oBackgroundPos.isLastEmpty && oBackgroundPos.tempBackgroundWords.length) {
+				const oLastWord = oBackgroundPos.tempBackgroundWords[oBackgroundPos.tempBackgroundWords.length - 1];
+				oLastWord.push.apply(oLastWord, aWord);
+			} else {
+				oBackgroundPos.tempBackgroundWords.push(aWord);
+			}
 			this.m_aBackgroundsByWords.push.apply(this.m_aBackgroundsByWords, oBackgroundPos.tempBackgroundWords.reverse());
 			oBackgroundPos.tempBackgroundWords = [];
 			oBackgroundPos.isSkipUnionWords = false;
