@@ -599,7 +599,7 @@
 		const stream = pReader.stream;
 		switch (attrType) {
 			case 0:
-				this.iD = stream.GetULong();
+				this.id = stream.GetULong();
 				break;
 			case 1:
 				this.nameU = stream.GetString2();
@@ -727,7 +727,7 @@
 	AscVisio.EventItem_Type.prototype.readAttribute = function(attrType, pReader) {
 		switch (attrType) {
 			case 0:
-				this.iD = pReader.stream.GetULong();
+				this.id = pReader.stream.GetULong();
 				return true;
 			case 1:
 				this.action = pReader.stream.GetULong();
@@ -822,7 +822,7 @@
 		const stream = pReader.stream;
 		switch (attrType) {
 			case 0:
-				this.iD = stream.GetULong();
+				this.id = stream.GetULong();
 				break;
 			case 1:
 				this.name = stream.GetString2();
@@ -1022,7 +1022,7 @@
 		const stream = pReader.stream;
 		switch (attrType) {
 			case 0:
-				this.iD = stream.GetULong();
+				this.id = stream.GetULong();
 				break;
 			case 1:
 				this.name = stream.GetString2();
@@ -1471,7 +1471,7 @@
 		const stream = pReader.stream;
 		switch (attrType) {
 			case 0:
-				this.iD = stream.GetULong();
+				this.id = stream.GetULong();
 				return true;
 			case 1:
 				this.windowType = stream.GetUChar();
@@ -1942,7 +1942,7 @@
 		const stream = pReader.stream;
 		switch (attrType) {
 			case 0:
-				this.iD = stream.GetULong();
+				this.id = stream.GetULong();
 				break;
 			case 1:
 				this.type = stream.GetUChar();
@@ -2366,7 +2366,7 @@
 		switch (attrType)
 		{
 			case 0:
-				this.iD = pReader.stream.GetULong();
+				this.id = pReader.stream.GetULong();
 				break;
 			case 1:
 				this.name = pReader.stream.GetString2();
@@ -2568,7 +2568,7 @@
 		switch (attrType)
 		{
 			case 0:
-				this.iD = pReader.stream.GetULong();
+				this.id = pReader.stream.GetULong();
 				break;
 			case 1:
 				this.category = pReader.stream.GetString2();
@@ -2946,7 +2946,7 @@
 		
 		switch (attrType) {
 			case 0:
-				this.iD = pReader.stream.GetULong();
+				this.id = pReader.stream.GetULong();
 				break;
 			case 1:
 				this.t = pReader.stream.GetString2();
@@ -2983,7 +2983,7 @@
 		const stream = pReader.stream;
 		switch (attrType) {
 			case 0:
-				this.iD = stream.GetULong();
+				this.id = stream.GetULong();
 				break;
 			case 1:
 				this.ignored = stream.GetBool();
@@ -3033,7 +3033,7 @@
 		const stream = pReader.stream;
 		switch (attrType) {
 			case 0:
-				this.iD = stream.GetULong();
+				this.id = stream.GetULong();
 				break;
 			case 1:
 				this.nameU = stream.GetString2();
@@ -3116,7 +3116,7 @@
 		const stream = pReader.stream;
 		switch (attrType) {
 			case 0:
-				this.iD = stream.GetULong();
+				this.id = stream.GetULong();
 				break;
 			case 1:
 				this.connectionID = stream.GetULong();
@@ -3223,7 +3223,7 @@
 		const stream = pReader.stream;
 		switch (attrType) {
 			case 0:
-				this.iD = stream.GetULong();
+				this.id = stream.GetULong();
 				break;
 			case 1:
 				this.fileName = stream.GetString2();

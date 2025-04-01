@@ -1028,7 +1028,7 @@
 	 * @extends SheetStorageAndStyles
 	 */
 	function Shape_Type() {
-		this.iD = null;
+		this.id = null;
 		this.originalID = null;
 		this.del = null;
 		this.masterShape = null;
@@ -1313,7 +1313,7 @@
 		let topShapeMasterId = this.getMasterID();
 		if (topShapeMasterId !== null && topShapeMasterId !== undefined) {
 			let topShapeMasterIndex = masters.findIndex(function(masterObject) {
-				return masterObject.iD === topShapeMasterId;
+				return masterObject.id === topShapeMasterId;
 			});
 			let topShapeMaster = masters[topShapeMasterIndex];
 
@@ -1338,7 +1338,7 @@
 					// if master has one top level shape
 					let masterSubshapes = ancestorMasterShapes[0].collectSubshapesRecursive();
 					masterIndex = masterSubshapes.findIndex(function (masterSubshape) {
-						return masterShapeId === masterSubshape.iD;
+						return masterShapeId === masterSubshape.id;
 					});
 					let masterShape = masterSubshapes[masterIndex];
 					masterShapesToInheritFrom = [masterShape];
@@ -1349,7 +1349,7 @@
 						masterSubshapes = masterSubshapes.concat(masterSubshapesNth);
 					})
 					masterIndex = masterSubshapes.findIndex(function (masterSubshape) {
-						return masterShapeId === masterSubshape.iD;
+						return masterShapeId === masterSubshape.id;
 					});
 					let masterShape = masterSubshapes[masterIndex];
 					masterShapesToInheritFrom = [masterShape];
@@ -1454,7 +1454,7 @@
 
 		function findIndexComparingByMasterShapeAttribute(shapeSubshapes, masterSubshape) {
 			return shapeSubshapes.findIndex(function (element) {
-				return element.masterShape === masterSubshape.iD;
+				return element.masterShape === masterSubshape.id;
 			});
 		}
 	}
@@ -1539,7 +1539,7 @@
 			if (thisArgument.lineStyle !== null) {
 				let styleId = Number(thisArgument.lineStyle);
 				let styleSheet = styles.find(function(style) {
-					return style.iD === styleId;
+					return style.id === styleId;
 				});
 				setIsConnectorStyleInherited(thisArgument, styleSheet);
 				realizeStyleToSheetObjInheritanceRecursive(styleSheet, styles, stylesWithRealizedInheritance);
@@ -1549,7 +1549,7 @@
 			if (thisArgument.fillStyle !== null) {
 				let styleId = Number(thisArgument.fillStyle);
 				let styleSheet = styles.find(function(style) {
-					return style.iD === styleId;
+					return style.id === styleId;
 				});
 				setIsConnectorStyleInherited(thisArgument, styleSheet);
 				realizeStyleToSheetObjInheritanceRecursive(styleSheet, styles, stylesWithRealizedInheritance);
@@ -1559,7 +1559,7 @@
 			if (thisArgument.textStyle !== null) {
 				let styleId = Number(thisArgument.textStyle);
 				let styleSheet = styles.find(function(style) {
-					return style.iD === styleId;
+					return style.id === styleId;
 				});
 				setIsConnectorStyleInherited(thisArgument, styleSheet);
 				realizeStyleToSheetObjInheritanceRecursive(styleSheet, styles, stylesWithRealizedInheritance);
@@ -1581,7 +1581,7 @@
 		// if lineStyle === textStyle === fillStyle so let's take lineStyle
 		let styleId = Number(thisArgument.lineStyle);
 		let styleSheet = styles.find(function(style) {
-			return style.iD === styleId;
+			return style.id === styleId;
 		});
 		setIsConnectorStyleInherited(thisArgument, styleSheet);
 
@@ -1745,7 +1745,7 @@
 	 * @constructor
 	 */
 	function Page_Type() {
-		this.iD = null;
+		this.id = null;
 		this.name = null;
 		this.nameU = null;
 		this.isCustomName = null;
@@ -1821,7 +1821,7 @@
 	 * @extends SheetStorageAndStyles
 	 */
 	function StyleSheet_Type() {
-		this.iD = null;
+		this.id = null;
 		this.name = null;
 		this.nameU = null;
 		this.isCustomName = null;
@@ -1852,7 +1852,7 @@
 	 * @extends SheetStorageAndStyles
 	 */
 	function ShapeSheet_Type() {
-		this.iD = null;
+		this.id = null;
 		this.originalID = null;
 		this.del = null;
 		this.masterShape = null;

@@ -2137,7 +2137,7 @@
 			cShape.setBDeleted(true);
 		}
 
-		cShape.Id = String(this.iD); // it was string in cShape
+		cShape.Id = String(this.id); // it was string in cShape
 
 		// not scaling fontSize
 		let textCShape = getTextCShape(visioDocument.themes[0], this, cShape,

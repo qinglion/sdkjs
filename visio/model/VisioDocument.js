@@ -572,7 +572,7 @@ AscDFH.historyitem_type_VisioWindow = 328;
 				if (backgroundPageId !== null && backgroundPageId !== undefined) {
 					// find background page
 					let backgroundPageIndex = this.pages.page.findIndex(function (pageInfo) {
-						return pageInfo.iD === backgroundPageId;
+						return pageInfo.id === backgroundPageId;
 					});
 					if (backgroundPageIndex !== -1) {
 						let backgroundPageContent = this.pageShapesCache[backgroundPageIndex];
@@ -1133,7 +1133,7 @@ AscDFH.historyitem_type_VisioWindow = 328;
 	// 	let thisContext = this;
 	// 	for (let i = 0; i < masterFromMastersArray.length; i++) {
 	// 		const masterFromMasters = masterFromMastersArray[i];
-	// 		if (masterFromMasters.iD === ID) {
+	// 		if (masterFromMasters.id === ID) {
 	// 			let masterFromMastersArrayRelId = masterFromMasters.rel.id;
 	// 			// TODO find file by relationships
 	// 			let masterContentNum = +masterFromMastersArrayRelId.match(/\d+/)[0];
@@ -1406,7 +1406,7 @@ AscDFH.historyitem_type_VisioWindow = 328;
 	function RefBy_Type() {
 		AscFormat.CBaseFormatNoIdObject.call(this);
 		this.t = null;
-		this.iD = null;
+		this.id = null;
 	}
 	AscFormat.InitClass(RefBy_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_VisioRefBy);
 
@@ -1424,7 +1424,7 @@ AscDFH.historyitem_type_VisioWindow = 328;
 		 * Not rel id
 		 * @type {Number}
 		 */
-		this.iD = null;
+		this.id = null;
 		this.baseID = null;
 		this.uniqueID = null;
 		this.matchByName = null;
@@ -1454,7 +1454,7 @@ AscDFH.historyitem_type_VisioWindow = 328;
 	 */
 	function MasterShortcut_Type() {
 		AscFormat.CBaseFormatNoIdObject.call(this);
-		this.iD = null;
+		this.id = null;
 		this.name = null;
 		this.nameU = null;
 		this.isCustomName = null;
@@ -1495,7 +1495,7 @@ AscDFH.historyitem_type_VisioWindow = 328;
 	 */
 	function DataConnection_Type() {
 		AscFormat.CBaseFormatNoIdObject.call(this);
-		this.iD = null;
+		this.id = null;
 		this.fileName = null;
 		this.connectionString = null;
 		this.command = null;
@@ -1628,7 +1628,7 @@ AscDFH.historyitem_type_VisioWindow = 328;
 	 */
 	function EventItem_Type() {
 		AscFormat.CBaseFormatNoIdObject.call(this);
-		this.iD = null;
+		this.id = null;
 		this.action = null;
 		this.eventCode = null;
 		this.enabled = null;
@@ -1651,7 +1651,7 @@ AscDFH.historyitem_type_VisioWindow = 328;
 	 */
 	function Window_Type() {
 		AscFormat.CBaseFormatNoIdObject.call(this);
-		this.iD = null;
+		this.id = null;
 		this.windowType = null;
 		this.windowState = null;
 		this.document = null;
@@ -2135,7 +2135,7 @@ AscDFH.historyitem_type_VisioWindow = 328;
 	 */
 	function Rule_Type() {
 		AscFormat.CBaseFormatNoIdObject.call(this);
-		this.iD = null;
+		this.id = null;
 		this.nameU = null;
 		this.category = null;
 		this.description = null;
@@ -2292,7 +2292,7 @@ AscDFH.historyitem_type_VisioWindow = 328;
 		this.initials = null;
 		this.sIP = null;
 		this.sMTP = null;
-		this.iD = null;
+		this.id = null;
 		this.resolutionID = null;
 		return this;
 	}
@@ -2306,7 +2306,7 @@ AscDFH.historyitem_type_VisioWindow = 328;
 	 */
 	function RefreshableData_Type() {
 		AscFormat.CBaseFormatNoIdObject.call(this);
-		this.iD = null;
+		this.id = null;
 		return this;
 	}
 	AscFormat.InitClass(RefreshableData_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
@@ -2319,7 +2319,7 @@ AscDFH.historyitem_type_VisioWindow = 328;
 	 */
 	function PublishedPage_Type() {
 		AscFormat.CBaseFormatNoIdObject.call(this);
-		this.iD = null;
+		this.id = null;
 		return this;
 	}
 	AscFormat.InitClass(PublishedPage_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
@@ -2778,7 +2778,7 @@ AscDFH.historyitem_type_VisioWindow = 328;
 	 */
 	function Issue_Type() {
 		AscFormat.CBaseFormatNoIdObject.call(this);
-		this.iD = null;
+		this.id = null;
 		this.ignored = null;
 		this.issueTarget = null;
 		this.ruleInfo = null;
@@ -2794,7 +2794,7 @@ AscDFH.historyitem_type_VisioWindow = 328;
 	 */
 	function RuleSet_Type() {
 		AscFormat.CBaseFormatNoIdObject.call(this);
-		this.iD = null;
+		this.id = null;
 		this.name = null;
 		this.nameU = null;
 		this.description = null;
@@ -2828,7 +2828,7 @@ AscDFH.historyitem_type_VisioWindow = 328;
 	 */
 	function DataRecordSet_Type() {
 		AscFormat.CBaseFormatNoIdObject.call(this);
-		this.iD = null;
+		this.id = null;
 		this.connectionID = null;
 		this.command = null;
 		this.options = null;
