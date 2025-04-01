@@ -110,7 +110,6 @@ CDocContentStructure.prototype.Recalculate = function(oTheme, oColorMap, dWidth,
 					const oForegroundLetter = arrForegroundWord[k];
 					const oWrapperWord = new AscCommonSlide.CObjectForDrawArrayWrapper([oWordLetter], oTransform, oTheme, oColorMap, oDrawing, oForegroundLetter && [oForegroundLetter], oBackgroundLetter);
 					arrRes.push(oWrapperWord);
-					nBackgroundCounter += 1;
 				}
 			}
 		}
@@ -667,7 +666,8 @@ function CParagraphStructure(oParagraph)
 		line: 0,
 		posInLine: -1,
 		isLastEmpty: false,
-		tempBackgroundWords: []
+		tempBackgroundWords: [],
+		isSkipUnionWords: false
 	};
 }
 
@@ -737,25 +737,18 @@ CParagraphStructure.prototype.checkWord = function() {
         this.m_aWords.push(aWord);
     }
 };
-	CParagraphStructure.prototype.checkSplitElements = function () {
-		this.checkSplitHighlights();
+	CParagraphStructure.prototype.checkSplitElements = function (bSplitByWords) {
+		this.checkSplitHighlights(undefined, bSplitByWords);
 	};
-	CParagraphStructure.prototype.checkSplitHighlights = function(oElement) {
+	CParagraphStructure.prototype.checkSplitHighlights = function(oElement, bIsSplitByWords) {
 		const oBackgroundPos = this.n_oLastBackgroundWordStart;
-		const isLastEmpty = oBackgroundPos.isLastEmpty;
 		if (oElement) {
 			const oAdditionalInfo = oElement.Additional.TextDrawer;
+			const isSkipUnionWords = bIsSplitByWords ? !oAdditionalInfo.IsEmpty || oBackgroundPos.isLastEmpty : oAdditionalInfo.IsEmpty;
 			oBackgroundPos.isLastEmpty = oAdditionalInfo.IsEmpty;
-			const oTextDrawer = oAdditionalInfo.textDrawer;
-			if (oTextDrawer.m_bIsSplitByWords) {
-				if (oAdditionalInfo.IsEmpty || !isLastEmpty) {
-					return;
-				}
-				} else if (oAdditionalInfo.IsEmpty) {
-						return;
-					}
-		} else if (isLastEmpty) {
-			return;
+			if (isSkipUnionWords) {
+				return;
+			}
 		}
 
 		let aWord = [];
@@ -763,7 +756,7 @@ CParagraphStructure.prototype.checkWord = function() {
 			let oLine = this.m_aContent[nLine];
 			let aContent = oLine.m_aBackgrounds;
 			if(aContent.length === 0) {
-				break;
+				return;
 			}
 			if(oBackgroundPos.line < nLine) {
 				oBackgroundPos.posInLine = -1;
@@ -782,6 +775,8 @@ CParagraphStructure.prototype.checkWord = function() {
 		if (!oElement) {
 			this.m_aBackgroundsByWords.push.apply(this.m_aBackgroundsByWords, oBackgroundPos.tempBackgroundWords.reverse());
 			oBackgroundPos.tempBackgroundWords = [];
+			oBackgroundPos.isSkipUnionWords = false;
+			oBackgroundPos.isLastEmpty = false;
 		}
 	};
 
@@ -1161,14 +1156,14 @@ CTextDrawer.prototype.constructor = CTextDrawer;
 CTextDrawer.prototype.checkSplitHighlights = function (oElement) {
 	for(let nPos = 0; nPos < this.m_aStack.length; ++nPos) {
 		if(this.m_aStack[nPos] instanceof CParagraphStructure) {
-			this.m_aStack[nPos].checkSplitHighlights(oElement);
+			this.m_aStack[nPos].checkSplitHighlights(oElement, this.m_bIsSplitByWords);
 		}
 	}
 };
 	CTextDrawer.prototype.checkSplitElements = function () {
 		for(let nPos = 0; nPos < this.m_aStack.length; ++nPos) {
 			if(this.m_aStack[nPos] instanceof CParagraphStructure) {
-				this.m_aStack[nPos].checkSplitElements();
+				this.m_aStack[nPos].checkSplitElements(this.m_bIsSplitByWords);
 			}
 		}
 	};

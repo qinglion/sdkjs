@@ -19291,7 +19291,7 @@ CParaDrawingRangeLines.prototype =
 				if (oTextDrawer.m_bIsSplitByWords) {
 					return bPrevEmpty === bNextEmpty;
 				}
-				return bPrevEmpty && bPrevEmpty === bNextEmpty;
+				return bPrevEmpty && bNextEmpty;
 /*				const oPrevTextDrawerPr = PrevEl.Additional.TextDrawer;
 				const oTextDrawerPr = Element.Additional.TextDrawer;
 				if (oPrevTextDrawerPr.textDrawer === oTextDrawerPr.textDrawer) {
