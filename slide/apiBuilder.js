@@ -1653,8 +1653,13 @@
 
 	/**
 	* Adds a math equation to the current document.
-	*
-	* TODO: description
+	* @memberof ApiPresentation
+	* @typeofeditors ["CPE"]
+	* @param {string} sText - The math equation text.
+	* @param {string} sFormat - The math equation format. Possible values are "unicode" and "latex".
+	* @returns {boolean}
+	* @since 9.0.0
+	* @see office-js-api/Examples/{Editor}/ApiPresentation/Methods/AddMathEquation.js
 	*/
 	ApiPresentation.prototype.AddMathEquation = function (sText, sFormat) {
 		if (!Asc.editor) {
@@ -1691,6 +1696,8 @@
 			const graphicController = Asc.editor.getGraphicController();
 			graphicController.startRecalculate();
 		}
+
+		return true;
 	};
 
 	//------------------------------------------------------------------------------------------------------------------
