@@ -81,11 +81,16 @@ CDocContentStructure.prototype.Recalculate = function(oTheme, oColorMap, dWidth,
         this.m_aContent[i].Recalculate(oTheme, oColorMap, dWidth, dHeight, oShape);
     }
 };
-
+	CDocContentStructure.prototype.combineElementsByLocation = function () {
+		for (let i = 0; i < this.m_aContent.length; i += 1) {
+			this.m_aContent[i].combineElementsByLocation();
+		}
+	};
 	CDocContentStructure.prototype.getCombinedWordWrappers = function(oTransform, oTheme, oColorMap, oDrawing) {
 		const arrRes = [];
 		for (let i = 0; i < this.m_aContent.length; i += 1) {
 			const oParagraph = this.m_aContent[i];
+			oParagraph.combineElementsByLocation();
 			oParagraph.normalizeBackForegroundObjects();
 			for (let j = 0; j < oParagraph.m_aWords.length; j += 1) {
 				const aWord = oParagraph.m_aWords[j];
@@ -102,13 +107,14 @@ CDocContentStructure.prototype.Recalculate = function(oTheme, oColorMap, dWidth,
 		for (let i = 0; i < this.m_aContent.length; i += 1) {
 			const oParagraph = this.m_aContent[i];
 			let nBackgroundCounter = 0;
+			oParagraph.combineElementsByLocation();
 			for (let j = 0; j < oParagraph.m_aWords.length; j += 1) {
 				const aWord = oParagraph.m_aWords[j];
-				const arrForegroundWord = oParagraph.m_aForegroundsByWords[j] || []/*todo temp*/;
+				const arrForegroundWord = oParagraph.m_aForegroundsByWords[j];
 				for (let k = 0; k < aWord.length; k += 1) {
 					const oWordLetter = aWord[k];
 					const oBackgroundLetter = oParagraph.m_aBackgroundsByWords[nBackgroundCounter++];
-					const oForegroundLetter = arrForegroundWord[k];
+					const oForegroundLetter = undefined/* = arrForegroundWord[k] todo temp*/;
 					const oWrapperWord = new AscCommonSlide.CObjectForDrawArrayWrapper([oWordLetter], oTransform, oTheme, oColorMap, oDrawing, oForegroundLetter && [oForegroundLetter], oBackgroundLetter);
 					arrRes.push(oWrapperWord);
 				}
@@ -649,7 +655,20 @@ CDocContentStructure.prototype.checkUnionPaths = function(aWarpedObjects)
         return this.m_aContent;
     };
 
-
+function CAdditionalElementPosition() {
+	this.line = 0;
+	this.posInLine = -1;
+	this.isLastText = true;
+	this.tempWords = [];
+	this.words = [];
+}
+	CAdditionalElementPosition.prototype.reset = function () {
+		this.line = 0;
+		this.posInLine = -1;
+		this.isLastText = true;
+		this.tempWords = [];
+		this.words = [];
+	};
 
 function CParagraphStructure(oParagraph)
 {
@@ -660,19 +679,32 @@ function CParagraphStructure(oParagraph)
 		this.m_aForegroundsByWords = [];
     this.m_oParagraph = oParagraph;
 		this.multilineWordsInfo = [];
-    this.n_oLastWordStart = {
-        line: 0,
-        posInLine: -1
-    };
-	this.n_oLastBackgroundWordStart = {
-		line: 0,
-		posInLine: -1,
-		isLastEmpty: false,
-		tempBackgroundWords: [],
-		isSkipUnionWords: false
-	};
+    this.m_oLastWordStart = new CAdditionalElementPosition();
+		this.m_oLastHighlightWordStart = new CAdditionalElementPosition();
+		this.m_oLastUnderlineWordStart = new CAdditionalElementPosition();
+		this.m_oLastDUnderlineWordStart = new CAdditionalElementPosition();
+		this.m_oLastStrikeoutWordStart = new CAdditionalElementPosition();
+		this.m_oLastDStrikeoutWordStart = new CAdditionalElementPosition();
 }
-
+	CParagraphStructure.prototype.combineElementsByLocation = function () {
+		const arrHighWords = this.m_oLastHighlightWordStart.words;
+		const arrUnderlineWords = this.m_oLastUnderlineWordStart.words;
+		const arrDUnderlineWords = this.m_oLastDUnderlineWordStart.words;
+		const arrStrikeoutWords = this.m_oLastStrikeoutWordStart.words;
+		const arrDStrikeoutWords = this.m_oLastDStrikeoutWordStart.words;
+		for (let i = 0; i < arrHighWords.length; i++) {
+			this.m_aBackgroundsByWords.push(arrHighWords[i]);
+		}
+		for (let i = 0; i < arrUnderlineWords.length; i++) {
+			const arrForegroundWord = [].concat(arrUnderlineWords[i], arrDUnderlineWords[i], arrStrikeoutWords[i], arrDStrikeoutWords[i]);
+			this.m_aForegroundsByWords.push(arrForegroundWord);
+		}
+		this.m_oLastHighlightWordStart.reset();
+		this.m_oLastUnderlineWordStart.reset();
+		this.m_oLastDUnderlineWordStart.reset();
+		this.m_oLastStrikeoutWordStart.reset();
+		this.m_oLastDStrikeoutWordStart.reset();
+	};
 CParagraphStructure.prototype.Recalculate = function(oTheme, oColorMap, dWidth, dHeight, oShape)
 {
     var i;
@@ -715,7 +747,7 @@ CParagraphStructure.prototype.getTextStructures = function() {
     return aTextStructures;
 };
 CParagraphStructure.prototype.checkWord = function() {
-    const oWordPos = this.n_oLastWordStart;
+    const oWordPos = this.m_oLastWordStart;
     let aWord = [];
 		let nWordLineCount = -1;
     for(let nLine = oWordPos.line; nLine < this.m_aContent.length; ++nLine) {
@@ -747,59 +779,80 @@ CParagraphStructure.prototype.checkWord = function() {
         this.m_aWords.push(aWord);
     }
 };
-	CParagraphStructure.prototype.checkSplitElements = function (bSplitByWords) {
-		this.checkSplitHighlights(undefined, bSplitByWords);
+	CParagraphStructure.prototype.checkSplitElements = function (bSplitByWords, bIsBackground) {
+		if (bIsBackground) {
+			this.checkSplitHighlights(undefined, bSplitByWords);
+		} else {
+			this.checkSplitUnderlines(undefined, bSplitByWords);
+			this.checkSplitDUnderlines(undefined, bSplitByWords);
+			this.checkSplitStrikeouts(undefined, bSplitByWords);
+			this.checkSplitDStrikeouts(undefined, bSplitByWords);
+		}
 	};
-	CParagraphStructure.prototype.checkSplitHighlights = function(oElement, bIsSplitByWords) {
-		const oBackgroundPos = this.n_oLastBackgroundWordStart;
+	CParagraphStructure.prototype.checkSplitBackForegroundElements = function (oElement, oElementPos, nDrawingType, bIsSplitByWords) {
 		if (oElement) {
 			const oAdditionalInfo = oElement.Additional.TextDrawer;
-			const isSkipUnionWords = bIsSplitByWords ? !oAdditionalInfo.IsEmpty || oBackgroundPos.isLastEmpty : oAdditionalInfo.IsEmpty;
-			oBackgroundPos.isLastEmpty = oAdditionalInfo.IsEmpty;
+			const isSkipUnionWords = bIsSplitByWords ? oAdditionalInfo.IsText || !oElementPos.isLastText : !oAdditionalInfo.IsText;
+			oElementPos.isLastText = oAdditionalInfo.IsText;
 			if (isSkipUnionWords) {
 				return;
 			}
 		}
 
 		let aWord = [];
-		for(let nLine = oBackgroundPos.line; nLine < this.m_aContent.length; ++nLine) {
+		for(let nLine = oElementPos.line; nLine < this.m_aContent.length; ++nLine) {
 			let oLine = this.m_aContent[nLine];
-			let aContent = oLine.m_aBackgrounds;
+			let aContent = oLine.getContentByDrawingType(nDrawingType);
 			if(aContent.length === 0) {
 				return;
 			}
-			if(oBackgroundPos.line < nLine) {
-				oBackgroundPos.posInLine = -1;
+			if(oElementPos.line < nLine) {
+				oElementPos.posInLine = -1;
 			}
-			for(let nPosInLine = oBackgroundPos.posInLine + 1; nPosInLine < aContent.length; ++nPosInLine) {
+			for(let nPosInLine = oElementPos.posInLine + 1; nPosInLine < aContent.length; ++nPosInLine) {
 				let oObjectToDraw = aContent[nPosInLine];
 				if(!oObjectToDraw.geometry.isEmpty()) {
 					aWord.push(aContent[nPosInLine]);
-					oBackgroundPos.posInLine = nPosInLine;
+					oElementPos.posInLine = nPosInLine;
 				}
 			}
-			oBackgroundPos.line = nLine;
+			oElementPos.line = nLine;
 		}
 		aWord.reverse();
 
 		if (oElement) {
-			oBackgroundPos.tempBackgroundWords.push(aWord);
+			oElementPos.tempWords.push(aWord);
 		} else {
-			if (bIsSplitByWords && oBackgroundPos.isLastEmpty && oBackgroundPos.tempBackgroundWords.length) {
-				const oLastWord = oBackgroundPos.tempBackgroundWords[oBackgroundPos.tempBackgroundWords.length - 1];
+			if (bIsSplitByWords && !oElementPos.isLastText && oElementPos.tempWords.length) {
+				const oLastWord = oElementPos.tempWords[oElementPos.tempWords.length - 1];
 				oLastWord.push.apply(oLastWord, aWord);
 			} else {
-				oBackgroundPos.tempBackgroundWords.push(aWord);
+				oElementPos.tempWords.push(aWord);
 			}
-			this.m_aBackgroundsByWords.push.apply(this.m_aBackgroundsByWords, oBackgroundPos.tempBackgroundWords.reverse());
-			oBackgroundPos.tempBackgroundWords = [];
-			oBackgroundPos.isSkipUnionWords = false;
-			oBackgroundPos.isLastEmpty = false;
+			oElementPos.words.push.apply(oElementPos.words, oElementPos.tempWords.reverse());
+
+			oElementPos.tempWords = [];
+			oElementPos.isLastText = true;
 		}
+	};
+	CParagraphStructure.prototype.checkSplitHighlights = function(oElement, bIsSplitByWords) {
+		this.checkSplitBackForegroundElements(oElement, this.m_oLastHighlightWordStart, CLineStructure_DrawType_Highlights, bIsSplitByWords);
+	};
+	CParagraphStructure.prototype.checkSplitUnderlines = function(oElement, bIsSplitByWords) {
+		this.checkSplitBackForegroundElements(oElement, this.m_oLastUnderlineWordStart, CLineStructure_DrawType_Underlines, bIsSplitByWords);
+	};
+	CParagraphStructure.prototype.checkSplitDUnderlines = function(oElement, bIsSplitByWords) {
+		this.checkSplitBackForegroundElements(oElement, this.m_oLastDUnderlineWordStart, CLineStructure_DrawType_DUnderlines, bIsSplitByWords);
+	};
+	CParagraphStructure.prototype.checkSplitStrikeouts = function(oElement, bIsSplitByWords) {
+		this.checkSplitBackForegroundElements(oElement, this.m_oLastStrikeoutWordStart, CLineStructure_DrawType_Strikeouts, bIsSplitByWords);
+	};
+	CParagraphStructure.prototype.checkSplitDStrikeouts = function(oElement, bIsSplitByWords) {
+		this.checkSplitBackForegroundElements(oElement, this.m_oLastDStrikeoutWordStart, CLineStructure_DrawType_DStrikeouts, bIsSplitByWords);
 	};
 	CParagraphStructure.prototype.normalizeBackForegroundObjects = function() {
 		this._normalizeBackForegroundObjects(this.m_aBackgroundsByWords);
-		// this._normalizeBackForegroundObjects(this.m_aForegroundsByWords); // todo
+		this._normalizeBackForegroundObjects(this.m_aForegroundsByWords);
 		this.multilineWordsInfo = [];
 	}
 	CParagraphStructure.prototype._normalizeBackForegroundObjects = function(arrAdditionalObjects) {
@@ -901,7 +954,16 @@ CTableStructure.prototype.getAllBackgroundsBorders = function(aParaBackgrounds, 
     }
 };
 
-
+const CLineStructure_DrawType_Content = 0;
+const CLineStructure_DrawType_Borders = 1;
+const CLineStructure_DrawType_Backgrounds = 2;
+const CLineStructure_DrawType_Foregrounds = 3;
+const CLineStructure_DrawType_ParagraphBackgrounds = 4;
+const CLineStructure_DrawType_Highlights = 5;
+const CLineStructure_DrawType_Underlines = 6;
+const CLineStructure_DrawType_DUnderlines = 7;
+const CLineStructure_DrawType_Strikeouts = 8;
+const CLineStructure_DrawType_DStrikeouts = 9;
 
 function CLineStructure(oLine)
 {
@@ -910,10 +972,75 @@ function CLineStructure(oLine)
     this.m_aContent = [];//ObjectToDraw
     this.m_aBorders = [];
     this.m_aBackgrounds = [];
-    this.m_aUnderlinesStrikeouts = [];
+		this.m_aHighlights = [];
+		this.m_aUnderlines = [];
+		this.m_aStrikeouts = [];
+		this.m_aDStrikeouts = [];
+		this.m_aDUnderlines = [];
+    this.m_aForegrounds = [];
     this.m_aParagraphBackgrounds = [];
-    this.m_nDrawType = 0;// 0 - content, 1 - borders, 2 - backgrounds, 3 - underlinestrikeouts, 4 - paragraphbackrounds
+    this.m_nDrawType = CLineStructure_DrawType_Content;
 }
+
+CLineStructure.prototype.isBackgroundDrawType = function () {
+	switch (this.m_nDrawType) {
+		case CLineStructure_DrawType_Backgrounds:
+		case CLineStructure_DrawType_ParagraphBackgrounds:
+		case CLineStructure_DrawType_Highlights:
+			return true;
+		default:
+			return false;
+	}
+};
+	CLineStructure.prototype.isForegroundDrawType = function () {
+		switch (this.m_nDrawType) {
+			case CLineStructure_DrawType_Underlines:
+			case CLineStructure_DrawType_DUnderlines:
+			case CLineStructure_DrawType_Strikeouts:
+			case CLineStructure_DrawType_DStrikeouts:
+			case CLineStructure_DrawType_Foregrounds:
+				return true;
+			default:
+				return false;
+		}
+	};
+	CLineStructure.prototype.isContentDrawType = function () {
+		switch (this.m_nDrawType) {
+			case CLineStructure_DrawType_Content:
+				return true;
+			default:
+				return false;
+		}
+	};
+
+CLineStructure.prototype.getContentByDrawingType = function (nDrawingType) {
+	nDrawingType = typeof nDrawingType === 'number' ? nDrawingType : this.m_nDrawType;
+	switch (nDrawingType) {
+		case CLineStructure_DrawType_Content:
+			return this.m_aContent;
+		case CLineStructure_DrawType_Borders:
+			return this.m_aBorders;
+		case CLineStructure_DrawType_Backgrounds:
+			return this.m_aBackgrounds;
+		case CLineStructure_DrawType_Foregrounds:
+			return this.m_aForegrounds;
+		case CLineStructure_DrawType_ParagraphBackgrounds:
+			return this.m_aParagraphBackgrounds;
+		case CLineStructure_DrawType_Highlights:
+			return this.m_aHighlights;
+		case CLineStructure_DrawType_Underlines:
+			return this.m_aUnderlines;
+		case CLineStructure_DrawType_DUnderlines:
+			return this.m_aDUnderlines;
+		case CLineStructure_DrawType_Strikeouts:
+			return this.m_aStrikeouts;
+		case CLineStructure_DrawType_DStrikeouts:
+			return this.m_aDStrikeouts;
+
+		default:
+			return [];
+	}
+};
 
 CLineStructure.prototype.Recalculate = function(oTheme, oColorMap, dWidth, dHeight, oShape)
 {
@@ -930,10 +1057,30 @@ CLineStructure.prototype.Recalculate = function(oTheme, oColorMap, dWidth, dHeig
     {
         this.m_aBackgrounds[i].Recalculate(oTheme, oColorMap, dWidth, dHeight, oShape, true);
     }
-    for(i = 0; i < this.m_aUnderlinesStrikeouts.length; ++i)
+	for(i = 0; i < this.m_aHighlights.length; ++i)
+	{
+		this.m_aHighlights[i].Recalculate(oTheme, oColorMap, dWidth, dHeight, oShape, true);
+	}
+    for(i = 0; i < this.m_aForegrounds.length; ++i)
     {
-        this.m_aUnderlinesStrikeouts[i].Recalculate(oTheme, oColorMap, dWidth, dHeight, oShape, true);
+        this.m_aForegrounds[i].Recalculate(oTheme, oColorMap, dWidth, dHeight, oShape, true);
     }
+	for(i = 0; i < this.m_aUnderlines.length; ++i)
+	{
+		this.m_aUnderlines[i].Recalculate(oTheme, oColorMap, dWidth, dHeight, oShape, true);
+	}
+	for(i = 0; i < this.m_aDUnderlines.length; ++i)
+	{
+		this.m_aDUnderlines[i].Recalculate(oTheme, oColorMap, dWidth, dHeight, oShape, true);
+	}
+	for(i = 0; i < this.m_aStrikeouts.length; ++i)
+	{
+		this.m_aStrikeouts[i].Recalculate(oTheme, oColorMap, dWidth, dHeight, oShape, true);
+	}
+	for(i = 0; i < this.m_aDStrikeouts.length; ++i)
+	{
+		this.m_aDStrikeouts[i].Recalculate(oTheme, oColorMap, dWidth, dHeight, oShape, true);
+	}
     for(i = 0; i < this.m_aParagraphBackgrounds.length; ++i)
     {
         this.m_aParagraphBackgrounds[i].Recalculate(oTheme, oColorMap, dWidth, dHeight, oShape, true);
@@ -968,10 +1115,30 @@ CLineStructure.prototype.GetAllWarped = function(aWarpedObjects)
     {
         aWarpedObjects.push(this.m_aBackgrounds[i]);
     }
-    for(i = 0; i < this.m_aUnderlinesStrikeouts.length; ++i)
+	for(i = 0; i < this.m_aHighlights.length; ++i)
+	{
+		aWarpedObjects.push(this.m_aHighlights[i]);
+	}
+    for(i = 0; i < this.m_aForegrounds.length; ++i)
     {
-        aWarpedObjects.push(this.m_aUnderlinesStrikeouts[i]);
+        aWarpedObjects.push(this.m_aForegrounds[i]);
     }
+	for(i = 0; i < this.m_aUnderlines.length; ++i)
+	{
+		aWarpedObjects.push(this.m_aUnderlines[i]);
+	}
+	for(i = 0; i < this.m_aDUnderlines.length; ++i)
+	{
+		aWarpedObjects.push(this.m_aDUnderlines[i]);
+	}
+	for(i = 0; i < this.m_aStrikeouts.length; ++i)
+	{
+		aWarpedObjects.push(this.m_aStrikeouts[i]);
+	}
+	for(i = 0; i < this.m_aDStrikeouts.length; ++i)
+	{
+		aWarpedObjects.push(this.m_aDStrikeouts[i]);
+	}
 };
 CLineStructure.prototype.CheckBoundsWarped = function(graphics)
 {
@@ -984,10 +1151,30 @@ CLineStructure.prototype.CheckBoundsWarped = function(graphics)
     {
         this.m_aBackgrounds[i].draw(graphics, true);
     }
-    for(i = 0; i < this.m_aUnderlinesStrikeouts.length; ++i)
+	for(i = 0; i < this.m_aHighlights.length; ++i)
+	{
+		this.m_aHighlights[i].draw(graphics, true);
+	}
+    for(i = 0; i < this.m_aForegrounds.length; ++i)
     {
-        this.m_aUnderlinesStrikeouts[i].draw(graphics, true);
+        this.m_aForegrounds[i].draw(graphics, true);
     }
+	for(i = 0; i < this.m_aUnderlines.length; ++i)
+	{
+		this.m_aUnderlines[i].draw(graphics, true);
+	}
+	for(i = 0; i < this.m_aDUnderlines.length; ++i)
+	{
+		this.m_aDUnderlines[i].draw(graphics, true);
+	}
+	for(i = 0; i < this.m_aStrikeouts.length; ++i)
+	{
+		this.m_aStrikeouts[i].draw(graphics, true);
+	}
+	for(i = 0; i < this.m_aDStrikeouts.length; ++i)
+	{
+		this.m_aDStrikeouts[i].draw(graphics, true);
+	}
 };
 CLineStructure.prototype.draw = function(graphics, transform, oTheme, oColorMap)
 {
@@ -1008,10 +1195,26 @@ CLineStructure.prototype.draw = function(graphics, transform, oTheme, oColorMap)
     {
         this.m_aContent[i].draw(graphics, undefined, transform, oTheme, oColorMap);
     }
-    for(i = 0; i < this.m_aUnderlinesStrikeouts.length; ++i)
+    for(i = 0; i < this.m_aForegrounds.length; ++i)
     {
-        this.m_aUnderlinesStrikeouts[i].draw(graphics, undefined, transform, oTheme, oColorMap);
+        this.m_aForegrounds[i].draw(graphics, undefined, transform, oTheme, oColorMap);
     }
+	for(i = 0; i < this.m_aUnderlines.length; ++i)
+	{
+		this.m_aUnderlines[i].draw(graphics, undefined, transform, oTheme, oColorMap);
+	}
+	for(i = 0; i < this.m_aDUnderlines.length; ++i)
+	{
+		this.m_aDUnderlines[i].draw(graphics, undefined, transform, oTheme, oColorMap);
+	}
+	for(i = 0; i < this.m_aStrikeouts.length; ++i)
+	{
+		this.m_aStrikeouts[i].draw(graphics, undefined, transform, oTheme, oColorMap);
+	}
+	for(i = 0; i < this.m_aDStrikeouts.length; ++i)
+	{
+		this.m_aDStrikeouts[i].draw(graphics, undefined, transform, oTheme, oColorMap);
+	}
 };
 
 CLineStructure.prototype.getAllBackgroundsBorders = function(aParaBackgrounds, aBackgrounds, aBorders, aComments)
@@ -1029,6 +1232,10 @@ CLineStructure.prototype.getAllBackgroundsBorders = function(aParaBackgrounds, a
             aComments.push(this.m_aBackgrounds[i])
         }
     }
+	for(i = 0; i < this.m_aHighlights.length; ++i)
+	{
+		aBackgrounds.push(this.m_aHighlights[i]);
+	}
     for(i = 0; i < this.m_aBorders.length; ++i)
     {
         aBorders.push(this.m_aBorders[i]);
@@ -1192,10 +1399,38 @@ CTextDrawer.prototype.checkSplitHighlights = function (oElement) {
 		}
 	}
 };
-	CTextDrawer.prototype.checkSplitElements = function () {
+	CTextDrawer.prototype.checkSplitUnderlines = function(oElement) {
 		for(let nPos = 0; nPos < this.m_aStack.length; ++nPos) {
 			if(this.m_aStack[nPos] instanceof CParagraphStructure) {
-				this.m_aStack[nPos].checkSplitElements(this.m_bIsSplitByWords);
+				this.m_aStack[nPos].checkSplitUnderlines(oElement, this.m_bIsSplitByWords);
+			}
+		}
+	};
+	CTextDrawer.prototype.checkSplitDUnderlines = function(oElement) {
+		for(let nPos = 0; nPos < this.m_aStack.length; ++nPos) {
+			if(this.m_aStack[nPos] instanceof CParagraphStructure) {
+				this.m_aStack[nPos].checkSplitDUnderlines(oElement, this.m_bIsSplitByWords);
+			}
+		}
+	};
+	CTextDrawer.prototype.checkSplitStrikeouts = function(oElement) {
+		for(let nPos = 0; nPos < this.m_aStack.length; ++nPos) {
+			if(this.m_aStack[nPos] instanceof CParagraphStructure) {
+				this.m_aStack[nPos].checkSplitStrikeouts(oElement, this.m_bIsSplitByWords);
+			}
+		}
+	};
+	CTextDrawer.prototype.checkSplitDStrikeouts = function(oElement) {
+		for(let nPos = 0; nPos < this.m_aStack.length; ++nPos) {
+			if(this.m_aStack[nPos] instanceof CParagraphStructure) {
+				this.m_aStack[nPos].checkSplitDStrikeouts(oElement, this.m_bIsSplitByWords);
+			}
+		}
+	};
+	CTextDrawer.prototype.checkSplitElements = function (bIsBackground) {
+		for(let nPos = 0; nPos < this.m_aStack.length; ++nPos) {
+			if(this.m_aStack[nPos] instanceof CParagraphStructure) {
+				this.m_aStack[nPos].checkSplitElements(this.m_bIsSplitByWords, bIsBackground);
 			}
 		}
 	};
@@ -1220,7 +1455,7 @@ CTextDrawer.prototype.p_color = function(r,g,b,a)
     if(oLastCommand)
     {
         if(oLastCommand.m_nType === DRAW_COMMAND_LINE &&
-            oLastCommand.m_nDrawType === 3)
+            oLastCommand.isForegroundDrawType())
         {
             if(this.m_oTextPr && this.m_oTheme)
             {
@@ -1266,7 +1501,7 @@ CTextDrawer.prototype.b_color1 = function(r,g,b,a)
     if(oLastCommand)
     {
         if(oLastCommand.m_nType === DRAW_COMMAND_LINE &&
-            (oLastCommand.m_nDrawType === 0))
+            oLastCommand.isContentDrawType())
         {
             if(this.m_oTextPr && this.m_oTheme)
             {
@@ -1561,22 +1796,23 @@ CTextDrawer.prototype.Get_PathToDraw = function(bStart, bStart2, x, y, Code)
 {
     var oPath = null;
     var oLastCommand = this.m_aStack[this.m_aStack.length - 1];
-    var oLastObjectToDraw, oBrushColor = this.m_oBrush.Color1, oPenColor = this.m_oPen.Color;
+    var oLastObjectToDraw;
     if(oLastCommand)
     {
         switch(oLastCommand.m_nType)
         {
             case DRAW_COMMAND_LINE:
             {
+							const arrContent = oLastCommand.getContentByDrawingType();
                 switch(oLastCommand.m_nDrawType)
                 {
-                    case 0://content
+                    case CLineStructure_DrawType_Content:
                     {
-                        if(oLastCommand.m_aContent.length === 0)
+                        if(arrContent.length === 0)
                         {
-                            oLastCommand.m_aContent.push(new ObjectToDraw(this.GetFillFromTextPr(this.m_oTextPr), this.GetPenFromTextPr(this.m_oTextPr), this.Width, this.Height, new Geometry(), this.m_oTransform, x, y, this.m_oCurComment, Code));
+                            arrContent.push(new ObjectToDraw(this.GetFillFromTextPr(this.m_oTextPr), this.GetPenFromTextPr(this.m_oTextPr), this.Width, this.Height, new Geometry(), this.m_oTransform, x, y, this.m_oCurComment, Code));
                         }
-                        oLastObjectToDraw = oLastCommand.m_aContent[oLastCommand.m_aContent.length - 1];
+                        oLastObjectToDraw = arrContent[arrContent.length - 1];
 
                         if(bStart2)
                         {
@@ -1586,19 +1822,22 @@ CTextDrawer.prototype.Get_PathToDraw = function(bStart, bStart2, x, y, Code)
                             }
                             else
                             {
-                                oLastCommand.m_aContent.push(new ObjectToDraw(this.GetFillFromTextPr(this.m_oTextPr), this.GetPenFromTextPr(this.m_oTextPr), this.Width, this.Height, new Geometry(), this.m_oTransform, x, y, null, Code));
-                                oLastObjectToDraw = oLastCommand.m_aContent[oLastCommand.m_aContent.length - 1];
+                                arrContent.push(new ObjectToDraw(this.GetFillFromTextPr(this.m_oTextPr), this.GetPenFromTextPr(this.m_oTextPr), this.Width, this.Height, new Geometry(), this.m_oTransform, x, y, null, Code));
+                                oLastObjectToDraw = arrContent[arrContent.length - 1];
                             }
                         }
                         break;
                     }
-                    case 1://borders
+                    case CLineStructure_DrawType_Borders:
+                    case CLineStructure_DrawType_Backgrounds:
+                    case CLineStructure_DrawType_ParagraphBackgrounds:
+                    case CLineStructure_DrawType_Highlights:
                     {
-                        if(oLastCommand.m_aBorders.length === 0)
+                        if(arrContent.length === 0)
                         {
-                            oLastCommand.m_aBorders.push(new ObjectToDraw(this.m_oFill, this.m_oLine, this.Width, this.Height, new Geometry(), this.m_oTransform, x, y))
+                            arrContent.push(new ObjectToDraw(this.m_oFill, this.m_oLine, this.Width, this.Height, new Geometry(), this.m_oTransform, x, y))
                         }
-                        oLastObjectToDraw = oLastCommand.m_aBorders[oLastCommand.m_aBorders.length - 1];
+                        oLastObjectToDraw = arrContent[arrContent.length - 1];
 
                         if(bStart2)
                         {
@@ -1608,43 +1847,23 @@ CTextDrawer.prototype.Get_PathToDraw = function(bStart, bStart2, x, y, Code)
                             }
                             else
                             {
-                                oLastCommand.m_aBorders.push(new ObjectToDraw(this.m_oFill, this.m_oLine, this.Width, this.Height, new Geometry(), this.m_oTransform, x, y));
-                                oLastObjectToDraw = oLastCommand.m_aBorders[oLastCommand.m_aBorders.length - 1];
+                                arrContent.push(new ObjectToDraw(this.m_oFill, this.m_oLine, this.Width, this.Height, new Geometry(), this.m_oTransform, x, y));
+                                oLastObjectToDraw = arrContent[arrContent.length - 1];
                             }
                         }
                         break;
                     }
-                    case 2://backgrounds
+                    case CLineStructure_DrawType_Foregrounds:
+                    case CLineStructure_DrawType_Underlines:
+                    case CLineStructure_DrawType_DUnderlines:
+                    case CLineStructure_DrawType_DStrikeouts:
+                    case CLineStructure_DrawType_Strikeouts:
                     {
-                        if(oLastCommand.m_aBackgrounds.length === 0)
+                        if(arrContent.length === 0)
                         {
-                            oLastCommand.m_aBackgrounds.push(new ObjectToDraw(this.m_oFill, this.m_oLine, this.Width, this.Height, new Geometry(), this.m_oTransform, x, y))
+                            arrContent.push(new ObjectToDraw(this.GetFillFromTextPr(this.m_oTextPr), this.GetPenFromTextPr(this.m_oTextPr), this.Width, this.Height, new Geometry(), this.m_oTransform, x, y))
                         }
-                        oLastObjectToDraw = oLastCommand.m_aBackgrounds[oLastCommand.m_aBackgrounds.length - 1];
-
-                        if(bStart2)
-                        {
-                            if(oLastObjectToDraw.geometry.isEmpty())
-                            {
-                                oLastObjectToDraw.resetBrushPen(this.m_oFill, this.m_oLine, x, y);
-                            }
-                            else
-                            {
-                                oLastCommand.m_aBackgrounds.push(new ObjectToDraw(this.m_oFill, this.m_oLine, this.Width, this.Height, new Geometry(), this.m_oTransform, x, y));
-                                oLastObjectToDraw = oLastCommand.m_aBackgrounds[oLastCommand.m_aBackgrounds.length - 1];
-                            }
-                        }
-                        break;
-                    }
-                    case 3://Underliens & Strikeouts
-                    {
-                        if(oLastCommand.m_aUnderlinesStrikeouts.length === 0)
-                        {
-                            oBrushColor = this.m_oBrush.Color1;
-                            oPenColor = this.m_oPen.Color;
-                            oLastCommand.m_aUnderlinesStrikeouts.push(new ObjectToDraw(this.GetFillFromTextPr(this.m_oTextPr), this.GetPenFromTextPr(this.m_oTextPr), this.Width, this.Height, new Geometry(), this.m_oTransform, x, y))
-                        }
-                        oLastObjectToDraw = oLastCommand.m_aUnderlinesStrikeouts[oLastCommand.m_aUnderlinesStrikeouts.length - 1];
+                        oLastObjectToDraw = arrContent[arrContent.length - 1];
 
                         if(bStart2)
                         {
@@ -1654,30 +1873,8 @@ CTextDrawer.prototype.Get_PathToDraw = function(bStart, bStart2, x, y, Code)
                             }
                             else
                             {
-                                oLastCommand.m_aUnderlinesStrikeouts.push(new ObjectToDraw(this.GetFillFromTextPr(this.m_oTextPr), this.GetPenFromTextPr(this.m_oTextPr), this.Width, this.Height, new Geometry(), this.m_oTransform, x, y));
-                                oLastObjectToDraw = oLastCommand.m_aUnderlinesStrikeouts[oLastCommand.m_aUnderlinesStrikeouts.length - 1];
-                            }
-                        }
-                        break;
-                    }
-                    case 4:
-                    {
-                        if(oLastCommand.m_aParagraphBackgrounds.length === 0)
-                        {
-                            oLastCommand.m_aParagraphBackgrounds.push(new ObjectToDraw(this.m_oFill, this.m_oLine, this.Width, this.Height, new Geometry(), this.m_oTransform, x, y))
-                        }
-                        oLastObjectToDraw = oLastCommand.m_aParagraphBackgrounds[oLastCommand.m_aParagraphBackgrounds.length - 1];
-
-                        if(bStart2)
-                        {
-                            if(oLastObjectToDraw.geometry.isEmpty())
-                            {
-                                oLastObjectToDraw.resetBrushPen(this.m_oFill, this.m_oLine, x, y);
-                            }
-                            else
-                            {
-                                oLastCommand.m_aParagraphBackgrounds.push(new ObjectToDraw(this.m_oFill, this.m_oLine, this.Width, this.Height, new Geometry(), this.m_oTransform, x, y));
-                                oLastObjectToDraw = oLastCommand.m_aParagraphBackgrounds[oLastCommand.m_aParagraphBackgrounds.length - 1];
+                                arrContent.push(new ObjectToDraw(this.GetFillFromTextPr(this.m_oTextPr), this.GetPenFromTextPr(this.m_oTextPr), this.Width, this.Height, new Geometry(), this.m_oTransform, x, y));
+                                oLastObjectToDraw = arrContent[arrContent.length - 1];
                             }
                         }
                         break;
@@ -1689,8 +1886,6 @@ CTextDrawer.prototype.Get_PathToDraw = function(bStart, bStart2, x, y, Code)
             {
                 if(oLastCommand.m_aBorders.length === 0 || bStart2)
                 {
-                    oBrushColor = this.m_oBrush.Color1;
-                    oPenColor = this.m_oPen.Color;
                     oLastCommand.m_aBorders.push(new ObjectToDraw(this.m_oFill, this.m_oLine, this.Width, this.Height, new Geometry(), this.m_oTransform, x, y));
                 }
                 oLastObjectToDraw = oLastCommand.m_aBorders[oLastCommand.m_aBorders.length - 1];
@@ -1714,8 +1909,6 @@ CTextDrawer.prototype.Get_PathToDraw = function(bStart, bStart2, x, y, Code)
             {
                 if(oLastCommand.m_aBorders.length === 0 || bStart2)
                 {
-                    oBrushColor = this.m_oBrush.Color1;
-                    oPenColor = this.m_oPen.Color;
                     oLastCommand.m_aBorders.push(new ObjectToDraw(this.m_oFill, this.m_oLine, this.Width, this.Height, new Geometry(), this.m_oTransform, x, y));
                 }
                 oLastObjectToDraw = oLastCommand.m_aBorders[oLastCommand.m_aBorders.length - 1];
@@ -2325,7 +2518,7 @@ CTextDrawer.prototype.rect = function(x,y,w,h)
     if(this.m_bTurnOff)
         return;
     var oLastCommand = this.m_aStack[this.m_aStack.length - 1];
-    if(oLastCommand && (oLastCommand.m_nDrawType === 2 || oLastCommand.m_nDrawType === 4))
+    if(oLastCommand && oLastCommand.m_nType === DRAW_COMMAND_LINE && oLastCommand.isBackgroundDrawType())
     {
         this.Get_PathToDraw(true, true);
         this._m(x, y);
@@ -2654,4 +2847,15 @@ function GetRectContentWidth(oContent, dMaxWidth)
     window['AscFormat'].CTextDrawer = CTextDrawer;
     window['AscFormat'].PolygonWrapper = PolygonWrapper;
     window['AscFormat'].GetRectContentWidth = GetRectContentWidth;
+
+	window['AscFormat'].CLineStructure_DrawType_Content = CLineStructure_DrawType_Content;
+	window['AscFormat'].CLineStructure_DrawType_Borders = CLineStructure_DrawType_Borders;
+	window['AscFormat'].CLineStructure_DrawType_Backgrounds = CLineStructure_DrawType_Backgrounds;
+	window['AscFormat'].CLineStructure_DrawType_Foregrounds = CLineStructure_DrawType_Foregrounds;
+	window['AscFormat'].CLineStructure_DrawType_ParagraphBackgrounds = CLineStructure_DrawType_ParagraphBackgrounds;
+	window['AscFormat'].CLineStructure_DrawType_Highlights = CLineStructure_DrawType_Highlights;
+	window['AscFormat'].CLineStructure_DrawType_Underlines = CLineStructure_DrawType_Underlines;
+	window['AscFormat'].CLineStructure_DrawType_DUnderlines = CLineStructure_DrawType_DUnderlines;
+	window['AscFormat'].CLineStructure_DrawType_Strikeouts = CLineStructure_DrawType_Strikeouts;
+	window['AscFormat'].CLineStructure_DrawType_DStrikeouts = CLineStructure_DrawType_DStrikeouts;
 })(window);

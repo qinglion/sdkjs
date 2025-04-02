@@ -287,7 +287,7 @@
 		this.handleRun(run);
 
 		if (this.Graphics.m_bIsTextDrawer) {
-			highlightAdditional = {TextDrawer: {IsEmpty: !element.IsText(), textDrawer: this.Graphics, IsNoneHighlight: highlight_None === this.highlight}};
+			highlightAdditional = {TextDrawer: {IsText: element.IsText(), IsSplitByWords: this.Graphics.m_bIsSplitByWords, IsSkipDraw: highlight_None === this.highlight}};
 		}
 		this.addHighlight(this.X, this.X + w, flags, hyperlink, collColor, comments, curComment, highlightAdditional);
 		

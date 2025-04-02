@@ -1091,10 +1091,15 @@
                             for(let nIdx = 0; nIdx < aContent1.length; ++nIdx) {
                                 let oLine = aContent1[nIdx];
                                 let aBg = oLine.m_aBackgrounds;
+                                let aHigh = oLine.m_aHighlights;
+                                let aUnderlines = oLine.m_aUnderlines;
+                                let aDUnderlines = oLine.m_aDUnderlines;
+	                            let aStrikeouts = oLine.m_aStrikeouts;
+	                            let aDStrikeouts = oLine.m_aDStrikeouts;
                                 let aBorders = oLine.m_aBorders;
                                 let aPBg = oLine.m_aParagraphBackgrounds;
-                                let aUS = oLine.m_aUnderlinesStrikeouts;
-                                let aDisappear = [].concat(aBg).concat(aBorders).concat(aPBg).concat(aUS);
+                                let aUS = oLine.m_aForegrounds;
+                                let aDisappear = [].concat(aBg, aBorders, aPBg, aUS, aHigh, aUnderlines, aDUnderlines, aStrikeouts, aDStrikeouts);
                                 for(let nObj = 0; nObj < aDisappear.length; ++nObj) {
                                     let oWrapper = new CMorphObjectForDrawWrapper(this.getMorph(), aDisappear[nObj], oTransform1, oContent1.Get_Theme(), oContent1.Get_ColorMap(), oContent1.Is_DrawingShape(true));
                                     this.addMorphObject(new CMorphedDisappearObject(oTexturesCache, oWrapper, nRelH1, false))
@@ -1104,10 +1109,15 @@
                             for(let nIdx = 0; nIdx < aContent2.length; ++nIdx) {
                                 let oLine = aContent2[nIdx];
                                 let aBg = oLine.m_aBackgrounds;
+	                            let aHigh = oLine.m_aHighlights;
+	                            let aUnderlines = oLine.m_aUnderlines;
+	                            let aDUnderlines = oLine.m_aDUnderlines;
+	                            let aStrikeouts = oLine.m_aStrikeouts;
+	                            let aDStrikeouts = oLine.m_aDStrikeouts;
                                 let aBorders = oLine.m_aBorders;
                                 let aPBg = oLine.m_aParagraphBackgrounds;
-                                let aUS = oLine.m_aUnderlinesStrikeouts;
-                                let aAppear = [].concat(aBg).concat(aBorders).concat(aPBg).concat(aUS);
+                                let aUS = oLine.m_aForegrounds;
+                                let aAppear = [].concat(aBg, aBorders, aPBg, aUS, aHigh, aUnderlines, aDUnderlines, aStrikeouts, aDStrikeouts);
                                 for(let nObj = 0; nObj < aAppear.length; ++nObj) {
                                     let oWrapper = new CMorphObjectForDrawWrapper(this.getMorph(), aAppear[nObj], oTransform2, oContent2.Get_Theme(), oContent2.Get_ColorMap(), oContent2.Is_DrawingShape(true));
                                     this.addMorphObject(new CMorphedAppearObject(oTexturesCache, oWrapper, nRelH2, false))
