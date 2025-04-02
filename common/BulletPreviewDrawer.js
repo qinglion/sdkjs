@@ -53,6 +53,7 @@
 		this.m_oLogicDocument = this.m_oApi.WordControl && this.m_oApi.WordControl.m_oLogicDocument;
 		this.m_oDrawingDocument = this.m_oLogicDocument && this.m_oLogicDocument.DrawingDocument;
 		this.m_oLang = this.m_oApi.asc_GetPossibleNumberingLanguage();
+		this.m_oCurrentPara = null;
 
 		this.m_oPrimaryTextColor = new AscCommonWord.CDocumentColor(0, 0, 0);
 		// для словесного текста используем цвет контрастнее
@@ -132,6 +133,14 @@
 
 		return nXPositionOfLine;
 	}
+	
+	CBulletPreviewDrawerBase.prototype.isRtl = function()
+	{
+		if (!this.m_oCurrentPara)
+			this.m_oCurrentPara = this.m_oLogicDocument ? this.m_oLogicDocument.GetCurrentParagraph(true) : null;
+		
+		return this.m_oCurrentPara ? this.m_oCurrentPara.isRtlDirection() : false;
+	};
 
 	CBulletPreviewDrawerBase.prototype.getFontSizeByLineHeight = function (nLineHeight)
 	{
@@ -256,7 +265,12 @@
 		oParaRun.Set_Pr(oTextPr);
 		oParaRun.AddText(sText);
 		oParagraph.AddToContent(0, oParaRun);
-
+		
+		if (this.isRtl())
+			oParagraph.SetParagraphBidi(true);
+		
+		oParagraph.SetParagraphAlign(AscCommon.align_Left);
+		
 		return oParagraph;
 	}
 
@@ -271,7 +285,7 @@
 
 		let oParagraph = this.getParagraphWithText(sText, oTextPr);
 		if (!oParagraph) return null;
-
+		
 		oParagraph.Reset(0, 0, 1000, 1000, 0, 0, 1);
 		oParagraph.Recalculate_Page(0);
 		oParagraph.LineNumbersInfo = null;
@@ -280,25 +294,42 @@
 		const nBaseLineOffset = oParagraph.Lines[0].Y;
 		const nYOffset = nY - ((nBaseLineOffset * AscCommon.g_dKoef_mm_to_pix) >> 0);
 		let nXOffset = nX;
-
-		if (nAlign === AscCommon.align_Right) {
-			nXOffset -= nNumberingTextWidth;
-		} else if (nAlign === AscCommon.align_Center) {
-			nXOffset -= (nNumberingTextWidth >> 1);
+		
+		let isRtl = this.isRtl();
+		if (isRtl)
+		{
+			if (nAlign === AscCommon.align_Left)
+				nXOffset -= nNumberingTextWidth;
+			else if (nAlign === AscCommon.align_Center)
+				nXOffset -= (nNumberingTextWidth >> 1);
 		}
-
+		else
+		{
+			if (nAlign === AscCommon.align_Right)
+				nXOffset -= nNumberingTextWidth;
+			else if (nAlign === AscCommon.align_Center)
+				nXOffset -= (nNumberingTextWidth >> 1);
+		}
+		
+		let cleanX = nXOffset - 1;
+		
 		let nBackTextWidth = 0;
 		if (nNumberingTextWidth !== 0)
 		{
 			nBackTextWidth = nNumberingTextWidth + 4; // 4 - чтобы линия никогда не была 'совсем рядом'
+			if (isRtl)
+				cleanX -= 4;
+			
 			if (nSuff === Asc.c_oAscNumberingSuff.Space ||
 				nSuff === Asc.c_oAscNumberingSuff.None)
 			{
 				nBackTextWidth += 4;
+				if (isRtl)
+					cleanX -= 4;
 			}
 		}
-
-		this.cleanParagraphField(oGraphics, (nXOffset - 1) * AscCommon.g_dKoef_pix_to_mm, (nY - nLineHeight) * AscCommon.g_dKoef_pix_to_mm, (nBackTextWidth + 1) * AscCommon.g_dKoef_pix_to_mm, (nLineHeight + (nLineHeight >> 1)) * AscCommon.g_dKoef_pix_to_mm);
+		
+		this.cleanParagraphField(oGraphics, cleanX * AscCommon.g_dKoef_pix_to_mm, (nY - nLineHeight) * AscCommon.g_dKoef_pix_to_mm, (nBackTextWidth + 1) * AscCommon.g_dKoef_pix_to_mm, (nLineHeight + (nLineHeight >> 1)) * AscCommon.g_dKoef_pix_to_mm);
 		this.drawParagraph(oGraphics, oParagraph, nXOffset, nYOffset);
 
 		// рисуем текст вместо черты текста
@@ -317,7 +348,7 @@
 
 			const oParagraph = this.getParagraphWithText(sParagraphText, oHeadingTextPr);
 			if (!oParagraph) return;
-
+			
 			oParagraph.Reset(0, 0, 1000, 1000, 0, 0, 1);
 			oParagraph.Recalculate_Page(0);
 			oParagraph.LineNumbersInfo = null;
@@ -647,6 +678,8 @@
 		const nOffset = (nHeight_px - (nLineWidth * nCountOfLines + nLineDistance * nCountOfLines)) >> 1;
 
 		const nTextBaseOffsetX = nOffset + Math.floor(2.25 * AscCommon.g_dKoef_mm_to_pix);
+		
+		const isRtl = this.isRtl();
 
 		let nY = nOffset + 11;
 		for (let j = 0; j < nCountOfLines; j += 1)
@@ -656,8 +689,8 @@
 			const nWidthmm = Math.round((nWidth_px - nOffsetBase)) * AscCommon.g_dKoef_pix_to_mm;
 			const nWidthLinemm = 2 * AscCommon.g_dKoef_pix_to_mm;
 
-			oGraphics.drawHorLine(AscCommon.c_oAscLineDrawingRule.Center, nYmm, nTextBaseXmm, nWidthmm, nWidthLinemm);
-			const nTextYx =  nTextBaseOffsetX - Math.floor(3.25 * AscCommon.g_dKoef_mm_to_pix);
+			oGraphics.drawHorLine(AscCommon.c_oAscLineDrawingRule.Center, nYmm, isRtl ? nOffset * AscCommon.g_dKoef_pix_to_mm : nTextBaseXmm, nWidthmm, nWidthLinemm);
+			const nTextYx = isRtl ? nWidth_px - nTextBaseOffsetX + Math.floor(3.25 * AscCommon.g_dKoef_mm_to_pix) : nTextBaseOffsetX - Math.floor(3.25 * AscCommon.g_dKoef_mm_to_pix);
 			const nTextYy = nY + (nLineWidth * 2.5);
 			const nLineHeight = nLineDistance - 4;
 			oTextPr.FontSize = this.getFontSizeByLineHeight(nLineHeight);
