@@ -117,10 +117,12 @@
 		this.compressionType = null;
 		this.compressionLevel = null;
 		this.rel = null;
+		this.mediaFilename = null;
+		this.oleFilename = null;
 		return this;
 	}
-	ForeignData_Type.prototype.kind = c_oVsdxSheetStorageKind.ForeignData_Type;
 	AscFormat.InitClass(ForeignData_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
+	ForeignData_Type.prototype.kind = c_oVsdxSheetStorageKind.ForeignData_Type;
 
 
 	/**
@@ -1949,6 +1951,7 @@
 
 
 	window['AscVisio'].c_oVsdxSheetStorageKind = c_oVsdxSheetStorageKind;
+	window['AscVisio'].SheetStorageAndStyles = SheetStorageAndStyles;
 	window['AscVisio'].Text_Type = Text_Type;
 	window['AscVisio'].Data_Type = Data_Type;
 	window['AscVisio'].ForeignData_Type = ForeignData_Type;

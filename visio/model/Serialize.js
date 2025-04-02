@@ -38,6 +38,9 @@
 		this.stream = null;
 		this.document = null;
 
+		this.ImageMapChecker = {};
+		this.binaryPPTYLoader = new AscCommon.BinaryPPTYLoader();
+
 		this.Load = function(base64_ppty, document)
 		{
 			this.document = document;
@@ -118,6 +121,9 @@
 				// this.stream.EnterFrame(index);
 				this.stream.Seek2(index);
 			}
+
+			this.binaryPPTYLoader.stream = this.stream;
+			this.binaryPPTYLoader.presentation = this.document;
 
 			this.LoadDocument();
 			// if(AscFonts.IsCheckSymbols)
@@ -345,46 +351,54 @@
 				this.pages.fromPPTY(pReader);
 				break;
 				
-			// case 9:
-			// 	// todo
-			// 	AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY.call({
-			// 		readChildren: AscFormat.CBaseFormatNoIdObject.prototype.readChildren,
-			// 		readChild: function(elementType, pReader) {
-			// 			const stream = pReader.stream;
-			// 			if (elementType === 0) {
-			// 				const connection = new AscVisio.Connection_Type();
-			// 				connection.fromPPTY(pReader);
-			// 				t.connections.push(connection);
-			// 				return true;
-			// 			}
-			// 			return false;
-			// 		}
-			// 	}, pReader);
-			// 	break;
-			
-			//todo
-			// case 10:
-			// 	//Recordsets
-			// 	AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY.call({
-			// 		readChildren: AscFormat.CBaseFormatNoIdObject.prototype.readChildren,
-			// 		readChild: function(elementType, pReader) {
-			// 			const stream = pReader.stream;
-			// 			if (elementType === 0) {
-			// 				const connection = new AscVisio.Recordset_Type();
-			// 				connection.fromPPTY(pReader);
-			// 				t.recordsets.push(connection);
-			// 				return true;
-			// 			}
-			// 			return false;
-			// 		}
-			// 	}, pReader);
-			// 	break;
+			case 9:
+				AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY.call({
+					readChildren: AscFormat.CBaseFormatNoIdObject.prototype.readChildren,
+					readChild: function(elementType, pReader) {
+						const stream = pReader.stream;
+						if (elementType === 0) {
+							t.dataConnections = new AscVisio.CDataConnections();
+							t.dataConnections.fromPPTY(pReader);
+							return true;
+						}
+						return false;
+					}
+				}, pReader);
+				break;
+
+			case 10:
+				//Recordsets
+				AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY.call({
+					readChildren: AscFormat.CBaseFormatNoIdObject.prototype.readChildren,
+					readChild: function(elementType, pReader) {
+						const stream = pReader.stream;
+						if (elementType === 0) {
+							t.dataRecordSets = new AscVisio.CDataRecordSets();
+							t.dataRecordSets.fromPPTY(pReader);
+							return true;
+						}
+						return false;
+					}
+				}, pReader);
+				break;
 				
 			case 11:
-				if (!this.solutions) {
-					this.solutions = new AscVisio.CSolutions();
-				}
-				this.solutions.fromPPTY(pReader);
+				//CEventList
+				AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY.call({
+					readChildren: AscFormat.CBaseFormatNoIdObject.prototype.readChildren,
+					readChild: function(elementType, pReader) {
+						const stream = pReader.stream;
+						if (elementType === 0) {
+							if (!t.solutions) {
+								t.solutions = new AscVisio.CSolutions();
+							}
+							t.solutions.fromPPTY(pReader);
+							return true;
+						}
+						return false;
+					}
+				}, pReader);
+
 				break;
 				
 			case 12:
@@ -393,23 +407,22 @@
 				}
 				this.validation.fromPPTY(pReader);
 				break;
-			//todo
-			// case 13:
-			// 	//Comments
-			// 	AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY.call({
-			// 		readChildren: AscFormat.CBaseFormatNoIdObject.prototype.readChildren,
-			// 		readChild: function(elementType, pReader) {
-			// 			const stream = pReader.stream;
-			// 			if (elementType === 0) {
-			// 				const connection = new AscVisio.Comment_Type();
-			// 				connection.fromPPTY(pReader);
-			// 				t.comments.push(connection);
-			// 				return true;
-			// 			}
-			// 			return false;
-			// 		}
-			// 	}, pReader);
-			// 	break;
+
+			case 13:
+				//Comments
+				AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY.call({
+					readChildren: AscFormat.CBaseFormatNoIdObject.prototype.readChildren,
+					readChild: function(elementType, pReader) {
+						const stream = pReader.stream;
+						if (elementType === 0) {
+							t.commentsPart = new AscVisio.CComments();
+							t.commentsPart.fromPPTY(pReader);
+							return true;
+						}
+						return false;
+					}
+				}, pReader);
+				break;
 				
 			case 14:
 				AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY.call({
@@ -426,11 +439,19 @@
 				break;
 				
 			case 15:
+				stream.Skip2(4);//len
 				//Themes
-				let theme = new AscFormat.CTheme();
-				theme.fromPPTY(pReader);
+				let theme = pReader.binaryPPTYLoader.ReadTheme()
 				this.themes.push(theme);
 				break;
+
+			// 	//todo VbaProject
+			// case 16:
+			// 	break;
+			//
+			// //todo JsaProject
+			// case 17:
+			// 	break;
 			default:
 				return false;
 		}
@@ -899,6 +920,7 @@
 				const masterContents = new AscVisio.CMasterContents();
 				masterContents.fromPPTY(pReader);
 				this.content = masterContents;
+				pReader.document.masterContents.push(masterContents);
 				break;
 			}
 			default:
@@ -1082,6 +1104,7 @@
 				const pageContents = new AscVisio.CPageContents();
 				pageContents.fromPPTY(pReader);
 				this.content = pageContents;
+				pReader.document.pageContents.push(pageContents);
 				break;
 			}
 			default:
@@ -1295,20 +1318,41 @@
 	AscVisio.CComments.prototype.readChild = function(elementType, pReader)
 	{
 		let handled = true;
-		
+		let t = this;
 		switch (elementType)
 		{
 			case 0:
 				// Read author list elements
-				const authorEntry = new AscVisio.AuthorEntry_Type();
-				this.authorList.push(authorEntry);
-				// If AuthorEntry_Type had a fromPPTY method, we would call it here
+				AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY.call({
+					readChildren: AscFormat.CBaseFormatNoIdObject.prototype.readChildren,
+					readChild: function(elementType, pReader) {
+						const stream = pReader.stream;
+						if (elementType === 0) {
+							const authorEntry = new AscVisio.AuthorEntry_Type();
+							authorEntry.fromPPTY(pReader);
+							t.authorList.push(authorEntry);
+							return true;
+						}
+						return false;
+					}
+				}, pReader);
 				break;
 			case 1:
 				// Read comment list elements
-				const commentEntry = new AscVisio.CommentEntry_Type();
-				this.commentList.push(commentEntry);
-				// If CommentEntry_Type had a fromPPTY method, we would call it here
+				AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY.call({
+					readChildren: AscFormat.CBaseFormatNoIdObject.prototype.readChildren,
+					readChild: function(elementType, pReader) {
+						const stream = pReader.stream;
+						if (elementType === 0) {
+							const commentEntry = new AscVisio.CommentEntry_Type();
+							commentEntry.fromPPTY(pReader);
+							t.commentList.push(commentEntry);
+							return true;
+						}
+						return false;
+					}
+				}, pReader);
+
 				break;
 			default:
 				handled = false;
@@ -1480,10 +1524,10 @@
 				this.windowState = stream.GetULong();
 				return true;
 			case 3:
-				this.windowLeft = stream.GetULong();
+				this.windowLeft = stream.GetLong();
 				return true;
 			case 4:
-				this.windowTop = stream.GetULong();
+				this.windowTop = stream.GetLong();
 				return true;
 			case 5:
 				this.windowWidth = stream.GetULong();
@@ -1693,7 +1737,7 @@
 		const stream = pReader.stream;
 		switch (attrType) {
 			case 0:
-				this.ix = stream.GetULong();
+				this.iX = stream.GetULong();
 				break;
 			case 1:
 				this.n = stream.GetString2();
@@ -1932,6 +1976,113 @@
 	};
 
 	/**
+	 * Loads a Visio document from a binary stream
+	 *
+	 * @param  {BinaryVSDYLoader} pReader - The binary reader
+	 */
+	AscVisio.Shape_Type.prototype.fromPPTY = function(pReader) {
+		AscVisio.SheetStorageAndStyles.prototype.fromPPTY.call(this, pReader);
+		//todo make common with xml
+		if (this.type === AscVisio.SHAPE_TYPES_FOREIGN) {
+			let foreignDataObject = this.getForeignDataObject();
+			if (foreignDataObject && foreignDataObject.mediaFilename) {
+				// if image init image
+				// imitate presentation parse workflow
+
+				// CBlipFill stores data about blib fill (stretch, effects, rasterImageId) and calls CBlip.fromXml
+				// CBlip has this.blipFill and this.link
+				// CBlip.prototype.readAttrXml reads image rId and calls
+				// fReadXmlRasterImageId which inits reader.context.imageMap, imageMap stores blipFills array.
+				// CBlipFill is part of CUniFill which is part of CImageShape
+
+				// pic tag read
+				let oSp = new AscFormat.CImageShape();
+
+				// nvPicPr tag read
+				let prop = new AscFormat.UniNvPr();
+				oSp.setNvPicPr(prop);
+				oSp.setLocks(prop.getLocks());
+
+
+				// blipFill tag read
+				let uni_fill = new AscFormat.CUniFill();
+				uni_fill.fill = new AscFormat.CBlipFill();
+				if (uni_fill.fill) {
+					let oImageShape = oSp;
+					var sReadPath = foreignDataObject.mediaFilename;
+					if (this.IsUseFullUrl && this.insertDocumentUrlsData && this.insertDocumentUrlsData.imageMap) {
+						var sReadPathNew = this.insertDocumentUrlsData.imageMap[AscCommon.g_oDocumentUrls.mediaPrefix + sReadPath];
+						if(sReadPathNew){
+							sReadPath = sReadPathNew;
+						}
+					}
+					if(this.IsUseFullUrl) {
+						if(window["native"] && window["native"]["CopyTmpToMedia"]){
+							if(!(window.documentInfo && window.documentInfo["iscoauthoring"])){
+								var sMedia = window["native"]["CopyTmpToMedia"](sReadPath);
+								if(typeof sMedia === "string" && sMedia.length > 0){
+									sReadPath = sMedia;
+								}
+							}
+						}
+					}
+					uni_fill.fill.setRasterImageId(sReadPath);
+
+					// TEST version ---------------
+					var _s = sReadPath;
+					var indS = _s.lastIndexOf("emf");
+					if (indS == -1)
+						indS = _s.lastIndexOf("wmf");
+
+					if (indS != -1 && (indS == (_s.length - 3)))
+					{
+						_s = _s.substring(0, indS);
+						_s += "svg";
+						sReadPath = _s;
+						uni_fill.fill.setRasterImageId(_s);
+					}
+					// ----------------------------
+
+					if (this.IsThemeLoader)
+					{
+						sReadPath = "theme" + (this.Api.ThemeLoader.CurrentLoadThemeIndex + 1) + "/media/" + sReadPath;
+						uni_fill.fill.setRasterImageId(sReadPath);
+					}
+
+					if (pReader.ImageMapChecker != null)
+					{
+						let bAddToMap = true;
+						if(oImageShape && oImageShape instanceof AscFormat.COleObject)
+						{
+							if(sReadPath.indexOf(".") === -1)
+							{
+								bAddToMap = false;
+							}
+						}
+						if(bAddToMap)
+						{
+							if (!pReader.document.ImageMap) {
+								pReader.document.ImageMap = {};
+							}
+							pReader.document.ImageMap[Object.keys(pReader.document.ImageMap).length] = sReadPath;
+						}
+					}
+
+					if (this.IsUseFullUrl)
+						this.RebuildImages.push(new CBuilderImages(uni_fill.fill, sReadPath, oImageShape, oSpPr, oLn, undefined, undefined, undefined, oParagraph, oBullet));
+
+
+					if (uni_fill.checkTransparent) {
+						uni_fill.checkTransparent();
+					}
+				}
+				oSp.setBlipFill(uni_fill.fill);
+
+				this.cImageShape = oSp;
+			}
+		}
+	}
+	/**
 	 * Read attributes from stream for Shape_Type
 	 *
 	 * @param {number} attrType - The type of attribute
@@ -2028,14 +2179,13 @@
 				this.elements[key] = text;
 				break;
 			}
-			//todo
-			// case 4: {
-			// 	if (!this.foreignData) {
-			// 		this.foreignData = new AscVisio.ForeignData_Type();
-			// 	}
-			// 	this.foreignData.fromPPTY(pReader);
-			// 	break;
-			// }
+			case 4: {
+				const foreignData = new AscVisio.ForeignData_Type();
+				foreignData.fromPPTY(pReader);
+				let key = AscVisio.createKeyFromSheetObject(foreignData);
+				this.elements[key] = foreignData;
+				break;
+			}
 			case 5: {
 				// Read Shapes
 				AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY.call({
@@ -2241,8 +2391,9 @@
 		switch (elementType)
 		{
 			case 0:
-				// In C++ it creates a new CDataConnection, adds it to m_arrItems and calls fromPPTY
-				// Since the DataConnection implementation is not available yet, we mark as handled
+				let dataConnection = new AscVisio.DataConnection_Type();
+				dataConnection.fromPPTY(pReader);
+				this.dataConnection.push(dataConnection);
 				break;
 			default:
 				handled = false;
@@ -2296,8 +2447,9 @@
 		switch (elementType)
 		{
 			case 0:
-				// In C++ it creates a new CDataRecordSet, adds it to m_arrItems and calls fromPPTY
-				// Since the DataRecordSet implementation is not available yet, we mark as handled
+				let dataRecordSet = new AscVisio.DataRecordSet_Type();
+				dataRecordSet.fromPPTY(pReader);
+				this.dataRecordSet.push(dataRecordSet);
 				break;
 			default:
 				handled = false;
@@ -2463,7 +2615,9 @@
 				this.origLabel = pReader.stream.GetString2();
 				break;
 			case 4:
-				this.langID = pReader.stream.GetString2();
+				//todo int or string
+				pReader.stream.GetString2();
+				//this.langID ;
 				break;
 			case 5:
 				this.calendar = pReader.stream.GetULong();
@@ -2838,10 +2992,12 @@
 		
 		switch (elementType) {
 			case 1:
+				pReader.stream.Skip2(4);//len
 				// media filename
 				this.mediaFilename = pReader.stream.GetString2();
 				break;
 			case 2:
+				pReader.stream.Skip2(4);//len
 				// ole filename
 				this.oleFilename = pReader.stream.GetString2();
 				break;
@@ -3172,38 +3328,41 @@
 		let handled = true;
 		
 		switch (elementType) {
+			//todo
+			// case 0:
+			// 	this.aDOData = new AscVisio.ADOData_Type();
+			// 	this.aDOData.fromPPTY(pReader);
+			// 	break;
 			case 0:
-				this.aDOData = new AscVisio.ADOData_Type();
-				this.aDOData.fromPPTY(pReader);
-				break;
-			case 1:
-				this.rel = new AscVisio.Rel_Type();
-				this.rel.fromPPTY(pReader);
-				break;
-			case 2:
 				this.dataColumns = new AscVisio.DataColumns_Type();
 				this.dataColumns.fromPPTY(pReader);
 				break;
-			case 3:
+			case 1:
 				let primaryKey = new AscVisio.PrimaryKey_Type();
 				primaryKey.fromPPTY(pReader);
 				this.primaryKey.push(primaryKey);
 				break;
-			case 4:
+			case 2:
 				let rowMap = new AscVisio.RowMap_Type();
 				rowMap.fromPPTY(pReader);
 				this.rowMap.push(rowMap);
 				break;
-			case 5:
-				let refreshConflict = new AscVisio.RefreshConflict_Type();
-				refreshConflict.fromPPTY(pReader);
-				this.refreshConflict.push(refreshConflict);
-				break;
-			case 6:
-				let autoLinkComparison = new AscVisio.AutoLinkComparison_Type();
-				autoLinkComparison.fromPPTY(pReader);
-				this.autoLinkComparison.push(autoLinkComparison);
-				break;
+			//todo
+			// case 5:
+			// 	let refreshConflict = new AscVisio.RefreshConflict_Type();
+			// 	refreshConflict.fromPPTY(pReader);
+			// 	this.refreshConflict.push(refreshConflict);
+			// 	break;
+			// case 6:
+			// 	let autoLinkComparison = new AscVisio.AutoLinkComparison_Type();
+			// 	autoLinkComparison.fromPPTY(pReader);
+			// 	this.autoLinkComparison.push(autoLinkComparison);
+			// 	break;
+
+			//todo remove .rel
+			// case 2:
+			// 	CRecordsetFile
+			// 	break;
 			default:
 				handled = false;
 				break;
