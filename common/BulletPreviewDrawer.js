@@ -912,8 +912,9 @@
 			const nY = (nHeight_px >> 1) - (nLineWidth >> 1);
 			const nLineHeight = (nHeight_px >> 1);
 			const nScaleCoefficient = this.getScaleCoefficientForMultiLevel(this.m_arrNumberingLvl, nWidth_px - nOffsetBase * 6);
+			const isRtl = this.isRtl();
 
-			for (let i = 0; i < nAmountOfPreview; i += 1)
+			for (let i = 0; i < nAmountOfPreview; ++i)
 			{
 				const oLvl = this.m_arrNumberingLvl[i];
 				oLvl.Jc = AscCommon.align_Left;
@@ -928,11 +929,14 @@
 				oTextPr.FontSize = oTextPr.FontSizeCS = this.getFontSizeByLineHeight(nLineHeight);
 
 				const nNumberPosition = oLvl.GetNumberPosition();
-				const nXLinePosition = nOffsetBase + (this.getFirstLineIndent(oLvl) * AscCommon.g_dKoef_mm_to_pix * nScaleCoefficient) << 0;
-				const nTextYx = nOffsetBase + nNumberPosition * AscCommon.g_dKoef_mm_to_pix * nScaleCoefficient;
+				const nTextYx = isRtl ? nWidth_px - (nOffsetBase + nNumberPosition * AscCommon.g_dKoef_mm_to_pix * nScaleCoefficient): nOffsetBase + nNumberPosition * AscCommon.g_dKoef_mm_to_pix * nScaleCoefficient;
 				const nTextYy = nY + (nLineWidth << 1);
-				oGraphics.drawHorLine(AscCommon.c_oAscLineDrawingRule.Center, nY * AscCommon.g_dKoef_pix_to_mm, nXLinePosition * AscCommon.g_dKoef_pix_to_mm, (nWidth_px - nOffsetBase) * AscCommon.g_dKoef_pix_to_mm, nLineWidth * AscCommon.g_dKoef_pix_to_mm);
-				const oParagraphTextOptions = this.getHeadingTextInformation(oLvl, nXLinePosition, nTextYy);
+				
+				const horlineX = isRtl ? nOffsetBase : nOffsetBase + nNumberPosition * AscCommon.g_dKoef_mm_to_pix * nScaleCoefficient;
+				const horlineR = isRtl ? nWidth_px - (nOffsetBase + nNumberPosition * AscCommon.g_dKoef_mm_to_pix * nScaleCoefficient) : nWidth_px - nOffsetBase;
+				
+				oGraphics.drawHorLine(AscCommon.c_oAscLineDrawingRule.Center, nY * AscCommon.g_dKoef_pix_to_mm, horlineX * AscCommon.g_dKoef_pix_to_mm, horlineR * AscCommon.g_dKoef_pix_to_mm, nLineWidth * AscCommon.g_dKoef_pix_to_mm);
+				const oParagraphTextOptions = this.getHeadingTextInformation(oLvl, isRtl ? horlineR : horlineX, nTextYy);
 				if (typeof drawingContent === "string")
 				{
 					this.drawTextWithLvlInformation(drawingContent, oLvl, nTextYx, nTextYy, (nHeight_px >> 1), oGraphics, oParagraphTextOptions);
