@@ -100,6 +100,8 @@ let tab_Symbol_Rtl = 0x0021;
 		
 		if (editor && editor.ShowParaMarks)
 		{
+			let isRtl = drawState.isRtlMainDirection();
+			
 			Context.p_color(0, 0, 0, 255);
 			Context.b_color1(0, 0, 0, 255);
 			
@@ -112,7 +114,7 @@ let tab_Symbol_Rtl = 0x0021;
 			if (X0 > 0)
 				Context.FillText2(X + X0, Y, String.fromCharCode(tabCode), 0, this.Width);
 			else
-				Context.FillText2(X, Y, String.fromCharCode(tabCode), tabActualWidth - this.Width, this.Width);
+				Context.FillText2(X, Y, String.fromCharCode(tabCode), isRtl ? 0 : tabActualWidth - this.Width, this.Width);
 		}
 	};
 	CRunTab.prototype.Measure = function(Context)
