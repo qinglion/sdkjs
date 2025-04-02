@@ -7452,14 +7452,17 @@ CDocumentContent.prototype.GetSelectionState = function()
 	{
 		// Работаем с колонтитулом
 		if (docpostype_DrawingObjects === this.CurPos.Type)
+		{
 			State = this.LogicDocument.DrawingObjects.getSelectionState();
-		else if (docpostype_Content === this.CurPos.Type)
+		}
+		else// if (docpostype_Content === this.CurPos.Type)
 		{
 			if (true === this.Selection.Use)
 			{
-				// Выделение нумерации
-				if (selectionflag_Numbering == this.Selection.Flag)
-					State = [];
+				if (selectionflag_Numbering === this.Selection.Flag)
+				{
+					State = [this.GetCurrentParagraph()];
+				}
 				else
 				{
 					var StartPos = this.Selection.StartPos;
@@ -7483,7 +7486,9 @@ CDocumentContent.prototype.GetSelectionState = function()
 				}
 			}
 			else
+			{
 				State = this.Content[this.CurPos.ContentPos].GetSelectionState();
+			}
 		}
 	}
 
@@ -7534,7 +7539,7 @@ CDocumentContent.prototype.SetSelectionState = function(State, StateIndex)
 	var NewStateIndex = StateIndex - 1;
 
 	// Работаем с колонтитулом
-	if (docpostype_DrawingObjects == this.CurPos.Type)
+	if (docpostype_DrawingObjects === this.CurPos.Type)
 	{
 		this.LogicDocument.DrawingObjects.setSelectionState(State, NewStateIndex);
 	}
@@ -7542,18 +7547,25 @@ CDocumentContent.prototype.SetSelectionState = function(State, StateIndex)
 	{
 		if (true === this.Selection.Use)
 		{
-			if (selectionflag_Numbering == this.Selection.Flag)
+			if (selectionflag_Numbering === this.Selection.Flag)
 			{
-				if (type_Paragraph === this.Content[this.Selection.StartPos].Get_Type())
+				let curPara = State[NewStateIndex];
+				if (curPara && curPara.IsParagraph && curPara.IsParagraph())
 				{
-					var NumPr = this.Content[this.Selection.StartPos].GetNumPr();
-					if (undefined !== NumPr)
-						this.SelectNumbering(NumPr, this.Content[this.Selection.StartPos]);
+					let numPr     = curPara.GetNumPr();
+					let prevNumPr = curPara.GetPrChangeNumPr();
+					
+					if (numPr && numPr.IsValid())
+						this.SelectNumbering(numPr, curPara);
+					else if (prevNumPr && prevNumPr.IsValid())
+						this.SelectNumberingSingleParagraph(curPara);
 					else
 						this.LogicDocument.RemoveSelection();
 				}
 				else
+				{
 					this.LogicDocument.RemoveSelection();
+				}
 			}
 			else
 			{
