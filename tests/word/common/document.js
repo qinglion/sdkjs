@@ -505,11 +505,13 @@
 		paragraph.SetSelectionContentPos(startPos, endPos, false);
 		paragraph.Document_SetThisElementCurrent();
 	}
-	function SelectParagraph(paragraph) {
+	function SelectParagraph(paragraph)
+	{
 		if (logicDocument)
 			logicDocument.RemoveSelection();
 		
 		paragraph.SelectAll();
+		paragraph.Document_SetThisElementCurrent();
 	}
 	function GetFinalSection()
 	{
