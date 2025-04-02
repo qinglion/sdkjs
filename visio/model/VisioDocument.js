@@ -523,7 +523,7 @@ AscDFH.historyitem_type_VisioWindow = 328;
 				this.pages.page.push(backgroundInfo);
 
 				if (this.pageContents.length > 0) {
-					// this.pageContents.length can be 0 if file is binary and read in Serialize.js and
+					// this.pageContents.length can be 0 if file is binary and read in SerializeReader.js and
 					// pageContent is in this.pages.page[pageIndex].content
 					let backgroundContent = this.pageContents.shift();
 					this.pageContents.push(backgroundContent);
@@ -908,7 +908,7 @@ AscDFH.historyitem_type_VisioWindow = 328;
 		for (let i = 0; i < masterFromMastersInfoArray.length; i++) {
 			const masterFromMasters = masterFromMastersInfoArray[i];
 			if (masterFromMasters.content) {
-				// if content was already parsed in Serialize.js
+				// if content was already parsed in SerializeReader.js
 				mastersJoined.push(masterFromMasters);
 				continue;
 			}

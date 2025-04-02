@@ -347,7 +347,7 @@
 			"visio/model/visioFunctionsApi.js",
 			"visio/model/VisioDocument.js",
 			"visio/model/overrides.js",
-			"visio/model/Serialize.js",
+			"visio/model/SerializeReader.js",
 
 			"slide/Editor/CollaborativeEditing.js"
 		],

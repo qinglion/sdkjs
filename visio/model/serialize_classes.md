@@ -8,7 +8,7 @@ This table serves as a reference for classes used for serialization/deserializat
 
 2. **C++ Class (fromPPTY)** - The corresponding C++ class that implements the `fromPPTY` method for deserialization from binary format. An empty cell indicates that there is no corresponding C++ class or that its name is unknown.
 
-3. **Binary Reading Implementation (Serialize.js)** - Indicator of the presence or absence of binary format reading method implementations in JavaScript (in the `visio/model/Serialize.js` file):
+3. **Binary Reading Implementation (SerializeReader.js)** - Indicator of the presence or absence of binary format reading method implementations in JavaScript (in the `visio/model/SerializeReader.js` file):
    - "+" means the class has binary reading method implementations (readAttribute/readChild)
    - "-" means the class does not have binary reading method implementations
 
@@ -19,13 +19,13 @@ This table is used to track the status of class serialization/deserialization im
 ## Current task specification
 
 Look at the any row in the table that have both non-empty first and second column and doesn't have a plus sign in the 3rd column.
-Add implementation only of the readChild and readAttribute of the class from the 1st column to the file @[visio/model/Serialize.js]. Use the C++ code of the "fromPPTY" function of the class from the 2nd column in the @[VsdxFormat] folder as the basis for the logic.
+Add implementation only of the readChild and readAttribute of the class from the 1st column to the file @[visio/model/SerializeReader.js]. Use the C++ code of the "fromPPTY" function of the class from the 2nd column in the @[VsdxFormat] folder as the basis for the logic.
 No need to add init to class members that are declared in @[visio/model/VisioDocument.js] or @[visio/model/ooxmlApi/ooxmlApiIndex.js]
 Use Shape_Type.prototype.readAttribute and Shape_Type.prototype.readChild as references for implementation.
 Do not check initialized values in the methods (e.g., no need to check "if (!this.authorList) {").
 At the end, add a plus sign to this row.
 
-| JavaScript Class (fromXml) | C++ Class (fromPPTY) | Binary Reading Implementation (Serialize.js) |
+| JavaScript Class (fromXml) | C++ Class (fromPPTY) | Binary Reading Implementation (SerializeReader.js) |
 | --- | --- | --- |
 | CVisioDocument | CDocumentFile | + |
 | CWindows | CWindows | + |
