@@ -917,7 +917,7 @@
 			var dd             = this.WordControl.m_oDrawingDocument;
 			dataContainer.data = dd.ToRendererPart(oAdditionalData["nobase64"], isSelection);
 		}
-		else if(false && this.isOpenOOXInBrowser && this["asc_isSupportFeature"]("ooxml"))
+		else if(this.isOpenOOXInBrowser && this["asc_isSupportFeature"]("ooxml"))
 		{
 			var title = this.documentTitle;
 			this.saveLogicDocumentToZip(undefined, undefined,
@@ -944,6 +944,10 @@
 					}
 				});
 			return true;
+		}
+		else
+		{
+			dataContainer.data = this.WordControl.SaveDocument(oAdditionalData["nobase64"]);
 		}
 
 		if (window.isCloudCryptoDownloadAs)

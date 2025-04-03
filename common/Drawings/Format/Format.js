@@ -241,7 +241,9 @@
 				var nType = oStream.GetUChar();
 				if (nType == g_nodeAttributeEnd)
 					break;
-				this.readAttribute(nType, pReader)
+				if (this.readAttribute) {
+					this.readAttribute(nType, pReader);
+				}
 			}
 		};
 		CBaseFormatNoIdObject.prototype.readAttribute = undefined;
@@ -266,11 +268,12 @@
 		};
 		CBaseFormatNoIdObject.prototype.writeAttributes = function (pWriter) {
 			pWriter.WriteUChar(g_nodeAttributeStart);
-			this.privateWriteAttributes(pWriter);
+			if (this.privateWriteAttributes) {
+				this.privateWriteAttributes(pWriter);
+			}
 			pWriter.WriteUChar(g_nodeAttributeEnd);
 		};
-		CBaseFormatNoIdObject.prototype.privateWriteAttributes = function (pWriter) {
-		};
+		CBaseFormatNoIdObject.prototype.privateWriteAttributes = undefined;
 		CBaseFormatNoIdObject.prototype.writeChildren = function (pWriter) {
 		};
 		CBaseFormatNoIdObject.prototype.writeRecord1 = function (pWriter, nType, oChild) {

@@ -519,6 +519,16 @@ function CBinaryFileWriter()
         }
     };
 
+    this.WriteRecordPPTY = function(type, val)
+    {
+        if (null != val)
+        {
+            this.StartRecord(type);
+            val.toPPTY(this);
+            this.EndRecord();
+        }
+    };
+
     this.WriteRecordArray = function(type, subtype, val_array, func_element_write)
     {
         this.StartRecord(type);
@@ -961,28 +971,38 @@ function CBinaryFileWriter()
         this.WriteMainPart(startPos);
     };
 
-    this.WriteDocument = function(presentation)
+    this.WriteDocument = function(presentation, opt_prefix)
     {
+        if (!opt_prefix) {
+            opt_prefix = "PPTY;v1;";
+        }
         this.WriteDocument2(presentation);
 
         // и скинем все в base64
-        var ret = "PPTY;v1;" + this.pos + ";";
+        var ret = opt_prefix + this.pos + ";";
         return ret + this.GetBase64Memory();
     };
 
-	this.WriteDocument3 = function(presentation, base64) {
-		var _memory = new AscCommon.CMemory(true);
+	this.WriteDocument3 = function(presentation, base64, opt_prefix, opt_callback) {
+        if (!opt_prefix) {
+            opt_prefix = "PPTY";
+        }
+        var _memory = new AscCommon.CMemory(true);
 		_memory.data = this.data;
 		_memory.len = this.len;
 		_memory.pos = this.pos;
 
-		_memory.WriteXmlString("PPTY;v" + Asc.c_nVersionNoBase64 + ";0;");
+		_memory.WriteXmlString(opt_prefix + ";v1;0;");
 
 		this.data = _memory.data;
 		this.len = _memory.len;
 		this.pos = _memory.pos;
 
-		this.WriteDocument2(presentation);
+        if (opt_callback) {
+            opt_callback(this);
+        } else {
+            this.WriteDocument2(presentation);
+        }
 
 		_memory.data = this.data;
 		_memory.len = this.len;
