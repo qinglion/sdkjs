@@ -195,9 +195,9 @@
 		}
 		
 		this.addCompositeInputLine(element, run, inRunPos);
-		let additionalInfo;
+		let fGetTextDrawerInfo;
 		if (this.Graphics.m_bIsTextDrawer) {
-			additionalInfo = {TextDrawer: {IsSplitByWords: this.Graphics.m_bIsSplitByWords, IsText: element.IsText()}};
+			fGetTextDrawerInfo = this.Graphics.getFTextDrawerInfo(element.IsText());
 		}
 		let startX = this.X;
 		let endX   = this.X + element.GetWidthVisible();
@@ -218,7 +218,7 @@
 			case para_Math_BreakOperator:
 			case para_Math_Ampersand:
 			case para_Math_Placeholder:
-				this.addLines(startX, endX, undefined, additionalInfo);
+				this.addLines(startX, endX, undefined, fGetTextDrawerInfo);
 				break;
 			case para_Space:
 				if (this.paraLineRange)
@@ -230,22 +230,22 @@
 				if (this.Spaces > 0 || this.ulTrailSpace)
 				{
 					--this.Spaces;
-					this.addLines(startX, endX, undefined, additionalInfo);
+					this.addLines(startX, endX, undefined, fGetTextDrawerInfo);
 				}
 				break;
 			case para_Drawing:
 				if (element.IsInline())
-					this.addLines(startX, endX, false, additionalInfo);
+					this.addLines(startX, endX, false, fGetTextDrawerInfo);
 				break;
 			case para_End:
 				this.isUnderline  = false;
 				this.isStrikeout  = false;
 				this.isDStrikeout = false;
-				this.addLines(startX, endX, undefined, additionalInfo);
+				this.addLines(startX, endX, undefined, fGetTextDrawerInfo);
 				break;
 			case para_FieldChar:
 				if (element.IsVisual())
-					this.addLines(startX, endX, undefined, additionalInfo);
+					this.addLines(startX, endX, undefined, fGetTextDrawerInfo);
 				break;
 		}
 		
@@ -553,46 +553,63 @@
 	 * @param endX {number}
 	 * @param drawStrikeout {boolean}
 	 */
-	ParagraphLineDrawState.prototype.addLines = function(startX, endX, drawStrikeout, additional)
+	ParagraphLineDrawState.prototype.addLines = function(startX, endX, drawStrikeout, fGetTextDrawerInfo)
 	{
 		if (endX - startX < 0.001)
 			return;
 		
 		if (false !== drawStrikeout)
 		{
-			if (this.reviewRem)
+			if (fGetTextDrawerInfo) {
+				if (this.reviewRem) {
+					this.DStrikeout.Add(startX, endX, this.reviewColor, fGetTextDrawerInfo(this.reviewMove));
+					this.Strikeout.Add(startX, endX, this.reviewColor, fGetTextDrawerInfo(!this.reviewMove));
+					this.Underline.Add(startX, endX, this.reviewRemAddColor, fGetTextDrawerInfo(this.reviewRemAdd));
+					this.DUnderline.Add(startX, endX, this.reviewRemAddColor, fGetTextDrawerInfo(false));
+				} else {
+					this.DStrikeout.Add(startX, endX, this.color, fGetTextDrawerInfo(this.isDStrikeout), this.textPr);
+					this.Strikeout.Add(startX, endX, this.color, fGetTextDrawerInfo(!this.isDStrikeout && this.isStrikeout), this.textPr);
+				}
+			}
+			else if (this.reviewRem)
 			{
 				if (this.reviewMove)
 					this.DStrikeout.Add(startX, endX, this.reviewColor);
 				else
 					this.Strikeout.Add(startX, endX, this.reviewColor);
-				
+
 				if (this.reviewRemAdd)
 					this.Underline.Add(startX, endX, this.reviewRemAddColor);
 			}
-			else if (this.isDStrikeout || additional)
+			else if (this.isDStrikeout)
 			{
-				additional.TextDrawer.IsSkipDraw = !this.isDStrikeout;
-				this.DStrikeout.Add(startX, endX, this.color, additional, this.textPr);
+				this.DStrikeout.Add(startX, endX, this.color, undefined, this.textPr);
 			}
-			else if (this.isStrikeout || additional)
+			else if (this.isStrikeout)
 			{
-				additional.TextDrawer.IsSkipDraw = !this.isStrikeout;
-				this.Strikeout.Add(startX, endX, this.color, additional, this.textPr);
+				this.Strikeout.Add(startX, endX, this.color, undefined, this.textPr);
 			}
 		}
-		
-		if (this.reviewAdd)
+
+		if (fGetTextDrawerInfo) {
+			if (this.reviewAdd) {
+				this.DUnderline.Add(startX, endX, this.reviewColor, fGetTextDrawerInfo(this.reviewMove));
+				this.Underline.Add(startX, endX, this.reviewColor, fGetTextDrawerInfo(!this.reviewMove));
+			} else {
+				this.Underline.Add(startX, endX, this.color, fGetTextDrawerInfo(this.isUnderline), this.textPr);
+				this.DUnderline.Add(startX, endX, this.color, fGetTextDrawerInfo(false), this.textPr);
+			}
+		}
+		else if (this.reviewAdd)
 		{
 			if (this.reviewMove)
 				this.DUnderline.Add(startX, endX, this.reviewColor);
 			else
 				this.Underline.Add(startX, endX, this.reviewColor);
 		}
-		else if (this.isUnderline || additional)
+		else if (this.isUnderline)
 		{
-			additional.TextDrawer.IsSkipDraw = !this.isUnderline;
-			this.Underline.Add(startX, endX, this.color, additional, this.textPr);
+			this.Underline.Add(startX, endX, this.color, undefined, this.textPr);
 		}
 	};
 	ParagraphLineDrawState.prototype.addCompositeInputLine = function(element, run, inRunPos)

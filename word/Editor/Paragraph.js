@@ -3102,8 +3102,6 @@ Paragraph.prototype.drawRunContentLines = function(CurPage, pGraphics, drawState
 		var Line  = this.Lines[CurLine];
 		var LineM = Line.Metrics;
 
-		pGraphics.Start_Command(AscFormat.DRAW_COMMAND_LINE, Line, CurLine, AscFormat.CLineStructure_DrawType_Foregrounds)
-
 		var Baseline        = Page.Y + Line.Y;
 		var UnderlineOffset = LineM.TextDescent * 0.4;
 
@@ -3160,11 +3158,9 @@ Paragraph.prototype.drawRunContentLines = function(CurPage, pGraphics, drawState
 					Element = aStrikeout.Get_Next();
 					continue;
 				}
-			}
-			if (pGraphics.SetAdditionalProps)
-			{
 				pGraphics.SetAdditionalProps(Element.Additional2);
 			}
+
 			pGraphics.p_color(Element.r, Element.g, Element.b, 255);
 			pGraphics.drawHorLine(c_oAscLineDrawingRule.Top, Element.y0, Element.x0, Element.x1, Element.w);
 			Element = aStrikeout.Get_Next();
@@ -3182,11 +3178,9 @@ Paragraph.prototype.drawRunContentLines = function(CurPage, pGraphics, drawState
 					Element = aDStrikeout.Get_Next();
 					continue;
 				}
-			}
-			if (pGraphics.SetAdditionalProps)
-			{
 				pGraphics.SetAdditionalProps(Element.Additional2);
 			}
+
 			pGraphics.p_color(Element.r, Element.g, Element.b, 255);
 			pGraphics.drawHorLine2(c_oAscLineDrawingRule.Top, Element.y0, Element.x0, Element.x1, Element.w);
 
@@ -3206,11 +3200,9 @@ Paragraph.prototype.drawRunContentLines = function(CurPage, pGraphics, drawState
 					Element = aUnderline.Get_Next();
 					continue;
 				}
-			}
-			if (pGraphics.SetAdditionalProps)
-			{
 				pGraphics.SetAdditionalProps(Element.Additional2);
 			}
+
 			pGraphics.p_color(Element.r, Element.g, Element.b, 255);
 			pGraphics.drawHorLine(0, Element.y0, Element.x0, Element.x1, Element.w);
 			Element = aUnderline.Get_Next();
@@ -3227,11 +3219,9 @@ Paragraph.prototype.drawRunContentLines = function(CurPage, pGraphics, drawState
 					Element = aDUnderline.Get_Next();
 					continue;
 				}
-			}
-			if (pGraphics.SetAdditionalProps)
-			{
 				pGraphics.SetAdditionalProps(Element.Additional2);
 			}
+
 			pGraphics.p_color(Element.r, Element.g, Element.b, 255);
 			pGraphics.drawHorLine2(c_oAscLineDrawingRule.Top, Element.y0, Element.x0, Element.x1, Element.w);
 
@@ -3239,6 +3229,7 @@ Paragraph.prototype.drawRunContentLines = function(CurPage, pGraphics, drawState
 		}
 		pGraphics.End_Command();
 
+		pGraphics.Start_Command(AscFormat.DRAW_COMMAND_LINE, Line, CurLine, AscFormat.CLineStructure_DrawType_Foregrounds)
 		if (drawRunPrReview)
 		{
 			// Рисуем красный рект вокруг измененных ранов
@@ -19190,6 +19181,12 @@ function CParaDrawingRangeLinesElement(y0, y1, x0, x1, w, r, g, b, a, Additional
     this.Additional2  = Additional2;
     this.Intermediate = [];
 }
+CParaDrawingRangeLinesElement.prototype.IsDrawable = function() {
+	if (this.Additional && this.Additional.TextDrawer) {
+		return !this.Additional.TextDrawer.IsSkipDraw;
+	}
+	return true;
+};
 
 
 function CParaDrawingRangeLines()
@@ -19328,12 +19325,17 @@ CParaDrawingRangeLines.prototype =
 					&& PrevEl.Additional.Form === Element.Additional.Form);
 			} else if (PrevEl.Additional.TextDrawer && Element.Additional.TextDrawer) {
 				const bIsSplitByWords = PrevEl.Additional.TextDrawer.IsSplitByWords;
-				const bPrevEmpty = PrevEl.Additional.TextDrawer.IsEmpty;
-				const bNextEmpty = Element.Additional.TextDrawer.IsEmpty;
-				if (bIsSplitByWords) {
-					return bPrevEmpty === bNextEmpty;
+				const bPrevSkipDraw = PrevEl.Additional.TextDrawer.IsSkipDraw;
+				const bNextSkipDraw = Element.Additional.TextDrawer.IsSkipDraw;
+				const bPrevText = PrevEl.Additional.TextDrawer.IsText;
+				const bNextText = Element.Additional.TextDrawer.IsText;
+				if (bPrevSkipDraw !== bNextSkipDraw) {
+					return false;
 				}
-				return bPrevEmpty && bNextEmpty;
+				if (bIsSplitByWords) {
+					return bPrevText === bNextText;
+				}
+				return !(bPrevText || bNextText);
 			}
 
 			return false;
@@ -19360,7 +19362,7 @@ CParaDrawingRangeLines.prototype =
             {
                 var PrevEl = CurElements[CurCount - 1];
 
-                if ( Math.abs( PrevEl.y0 - Element.y0 ) < 0.001 && Math.abs( PrevEl.y1 - Element.y1 ) < 0.001 && Math.abs( PrevEl.x1 - Element.x0 ) < 0.001 )
+                if ( Math.abs( PrevEl.y0 - Element.y0 ) < 0.001 && Math.abs( PrevEl.y1 - Element.y1 ) < 0.001 && Math.abs( PrevEl.x1 - Element.x0 ) < 0.001 && PrevEl.IsDrawable() && Element.IsDrawable())
                 {
                     // Сравниваем толщины линий
                     if ( Element.w > PrevEl.w )
@@ -19380,7 +19382,15 @@ CParaDrawingRangeLines.prototype =
                 }
             }
         }
-    }
+    },
+	IsDrawableElements: function(PrevEl, Element)
+											{
+			if (PrevEl.Additional && PrevEl.Additional.TextDrawer && Element.Additional && Element.Additional.TextDrawer)
+			{
+				return !PrevEl.Additional.TextDrawer.IsSkipDraw && !Element.Additional.TextDrawer.IsSkipDraw;
+			}
+		return true;
+	}
 };
 function CParaDrawingRangeHorizontalLines()
 {

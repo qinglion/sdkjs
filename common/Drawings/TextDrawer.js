@@ -106,17 +106,17 @@ CDocContentStructure.prototype.Recalculate = function(oTheme, oColorMap, dWidth,
 		const arrRes = [];
 		for (let i = 0; i < this.m_aContent.length; i += 1) {
 			const oParagraph = this.m_aContent[i];
-			let nBackgroundCounter = 0;
+			let nAdditionalCounter = 0;
 			oParagraph.combineElementsByLocation();
 			for (let j = 0; j < oParagraph.m_aWords.length; j += 1) {
 				const aWord = oParagraph.m_aWords[j];
-				const arrForegroundWord = oParagraph.m_aForegroundsByWords[j];
 				for (let k = 0; k < aWord.length; k += 1) {
 					const oWordLetter = aWord[k];
-					const oBackgroundLetter = oParagraph.m_aBackgroundsByWords[nBackgroundCounter++];
-					const oForegroundLetter = undefined/* = arrForegroundWord[k] todo temp*/;
-					const oWrapperWord = new AscCommonSlide.CObjectForDrawArrayWrapper([oWordLetter], oTransform, oTheme, oColorMap, oDrawing, oForegroundLetter && [oForegroundLetter], oBackgroundLetter);
+					const oBackgroundLetter = oParagraph.m_aBackgroundsByWords[nAdditionalCounter];
+					const oForegroundLetter  = oParagraph.m_aForegroundsByWords[nAdditionalCounter];
+					const oWrapperWord = new AscCommonSlide.CObjectForDrawArrayWrapper([oWordLetter], oTransform, oTheme, oColorMap, oDrawing, oForegroundLetter, oBackgroundLetter);
 					arrRes.push(oWrapperWord);
+					nAdditionalCounter += 1;
 				}
 			}
 		}
@@ -695,7 +695,7 @@ function CParagraphStructure(oParagraph)
 		for (let i = 0; i < arrHighWords.length; i++) {
 			this.m_aBackgroundsByWords.push(arrHighWords[i]);
 		}
-		for (let i = 0; i < arrUnderlineWords.length; i++) {
+		for (let i = 0; i < arrStrikeoutWords.length; i++) {
 			const arrForegroundWord = [].concat(arrUnderlineWords[i], arrDUnderlineWords[i], arrStrikeoutWords[i], arrDStrikeoutWords[i]);
 			this.m_aForegroundsByWords.push(arrForegroundWord);
 		}
@@ -800,16 +800,21 @@ CParagraphStructure.prototype.checkWord = function() {
 		}
 
 		let aWord = [];
+		let bReturn = true;
 		for(let nLine = oElementPos.line; nLine < this.m_aContent.length; ++nLine) {
 			let oLine = this.m_aContent[nLine];
 			let aContent = oLine.getContentByDrawingType(nDrawingType);
 			if(aContent.length === 0) {
-				return;
+				if (bReturn) {
+					return;
+				}
+				break;
 			}
 			if(oElementPos.line < nLine) {
 				oElementPos.posInLine = -1;
 			}
 			for(let nPosInLine = oElementPos.posInLine + 1; nPosInLine < aContent.length; ++nPosInLine) {
+				bReturn = false;
 				let oObjectToDraw = aContent[nPosInLine];
 				if(!oObjectToDraw.geometry.isEmpty()) {
 					aWord.push(aContent[nPosInLine]);
@@ -833,6 +838,8 @@ CParagraphStructure.prototype.checkWord = function() {
 
 			oElementPos.tempWords = [];
 			oElementPos.isLastText = true;
+			oElementPos.line += 1;
+			oElementPos.posInLine = -1;
 		}
 	};
 	CParagraphStructure.prototype.checkSplitHighlights = function(oElement, bIsSplitByWords) {
@@ -1392,12 +1399,24 @@ function CTextDrawer(dWidth, dHeight, bDivByLInes, oTheme, bDivGlyphs, bSplitByW
 
 CTextDrawer.prototype = Object.create(AscCommon.CGraphicsBase.prototype);
 CTextDrawer.prototype.constructor = CTextDrawer;
+CTextDrawer.prototype.getFTextDrawerInfo = function(bIsText) {
+	const bIsSplitByWords = this.m_bIsSplitByWords;
+	return function(bIsDrawElement) {
+		return {TextDrawer: {IsSplitByWords: bIsSplitByWords, IsText: bIsText, IsSkipDraw: !bIsDrawElement}};
+	}
+}
+	CTextDrawer.prototype.CheckAddNewPathWithElement = function(oElement) {
+		if (oElement) {
+			this.CheckAddNewPath();
+		}
+	};
 CTextDrawer.prototype.checkSplitHighlights = function (oElement) {
 	for(let nPos = 0; nPos < this.m_aStack.length; ++nPos) {
 		if(this.m_aStack[nPos] instanceof CParagraphStructure) {
 			this.m_aStack[nPos].checkSplitHighlights(oElement, this.m_bIsSplitByWords);
 		}
 	}
+	this.CheckAddNewPathWithElement(oElement);
 };
 	CTextDrawer.prototype.checkSplitUnderlines = function(oElement) {
 		for(let nPos = 0; nPos < this.m_aStack.length; ++nPos) {
@@ -1405,6 +1424,7 @@ CTextDrawer.prototype.checkSplitHighlights = function (oElement) {
 				this.m_aStack[nPos].checkSplitUnderlines(oElement, this.m_bIsSplitByWords);
 			}
 		}
+		this.CheckAddNewPathWithElement(oElement);
 	};
 	CTextDrawer.prototype.checkSplitDUnderlines = function(oElement) {
 		for(let nPos = 0; nPos < this.m_aStack.length; ++nPos) {
@@ -1412,6 +1432,7 @@ CTextDrawer.prototype.checkSplitHighlights = function (oElement) {
 				this.m_aStack[nPos].checkSplitDUnderlines(oElement, this.m_bIsSplitByWords);
 			}
 		}
+		this.CheckAddNewPathWithElement(oElement);
 	};
 	CTextDrawer.prototype.checkSplitStrikeouts = function(oElement) {
 		for(let nPos = 0; nPos < this.m_aStack.length; ++nPos) {
@@ -1419,6 +1440,7 @@ CTextDrawer.prototype.checkSplitHighlights = function (oElement) {
 				this.m_aStack[nPos].checkSplitStrikeouts(oElement, this.m_bIsSplitByWords);
 			}
 		}
+		this.CheckAddNewPathWithElement(oElement);
 	};
 	CTextDrawer.prototype.checkSplitDStrikeouts = function(oElement) {
 		for(let nPos = 0; nPos < this.m_aStack.length; ++nPos) {
@@ -1426,6 +1448,7 @@ CTextDrawer.prototype.checkSplitHighlights = function (oElement) {
 				this.m_aStack[nPos].checkSplitDStrikeouts(oElement, this.m_bIsSplitByWords);
 			}
 		}
+		this.CheckAddNewPathWithElement(oElement);
 	};
 	CTextDrawer.prototype.checkSplitElements = function (bIsBackground) {
 		for(let nPos = 0; nPos < this.m_aStack.length; ++nPos) {
