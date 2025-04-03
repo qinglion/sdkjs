@@ -509,7 +509,8 @@ var cErrorType = {
 		not_available       : 7,
 		getting_data        : 8,
 		array_not_calc      : 9,
-		cannot_be_spilled	: 10
+		cannot_be_spilled	: 10,
+		busy                : 11
   };
 //добавляю константу cReturnFormulaType для корректной обработки формул массива
 // value - функция умеет возвращать только значение(не массив)
@@ -572,6 +573,9 @@ function getMaxDate () {
 	return AscCommon.bDate1904 ? c_nMaxDate1904 : c_nMaxDate1900; 	// Maximum date used in calculations in ms (equivalent 31/12/9999)
 }
 
+let fIsPromise = function (val) {
+	return val && val.promise && val.promise.then;
+};
 
 // set type weight of base types
 let cElementTypeWeight =  new Map();
@@ -942,6 +946,13 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 				this.errorType = cErrorType.cannot_be_spilled;
 				break;
 			}
+			case cErrorLocal["busy"]:
+			case cErrorOrigin["busy"]:
+			case cErrorType.busy: {
+				this.value = "#BUSY!";
+				this.errorType = cErrorType.busy;
+				break;
+			}
 		}
 
 		return this;
@@ -1007,6 +1018,10 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 			case cErrorType.cannot_be_spilled: {
 				return cErrorLocal["spill"];
 			}
+			case cErrorOrigin["busy"]:
+			case cErrorType.busy: {
+				return cErrorLocal["busy"];
+			}
 		}
 		return cErrorLocal["na"];
 	};
@@ -1055,6 +1070,10 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 			}
 			case cErrorOrigin["spill"]: {
 				res = cErrorType.cannot_be_spilled;
+				break;
+			}
+			case cErrorOrigin["busy"]: {
+				res = cErrorType.busy;
 				break;
 			}
 			default: {
@@ -1109,6 +1128,10 @@ parserHelp.setDigitSeparator(AscCommon.g_oDefaultCultureInfo.NumberDecimalSepara
 			}
 			case cErrorType.cannot_be_spilled: {
 				res = cErrorOrigin["spill"];
+				break;
+			}
+			case cErrorType.busy: {
+				res = cErrorOrigin["busy"];
 				break;
 			}
 			default:
@@ -6394,6 +6417,8 @@ function parserFormula( formula, parent, _ws ) {
 
 	this.ref = null;
 
+	this.promiseResult = null;
+
 	//mark function, when need reparse and recalculate on custom function change change
 	this.bUnknownOrCustomFunction = null;
 
@@ -8805,8 +8830,10 @@ function parserFormula( formula, parent, _ws ) {
 							return false;
 						} else {
 							// if operator - check whether each of the arguments is a range or an array
+
 							let isOperator = currentElement.type === cElementType.operator;
 							let arg = [];
+							let _isPromise = false;
 							for (let i = 0; i < argumentsCount + defNameArgCount; i++) {
 								if ("number" === typeof(elemArr[elemArr.length - 1])) {
 									elemArr.pop();
@@ -8816,8 +8843,16 @@ function parserFormula( formula, parent, _ws ) {
 									isRef = true;
 								}
 
+								if (fIsPromise(tempElem)) {
+									_isPromise = true;
+									break;
+								}
 								// arg.unshift(elemArr.pop());
 								arg.unshift(tempElem);
+							}
+
+							if (_isPromise) {
+								continue;
 							}
 
 							let isCanExpand = null;
@@ -8880,6 +8915,7 @@ function parserFormula( formula, parent, _ws ) {
 			opt_bbox = new Asc.Range(0, 0, 0, 0);
 		}
 
+		let promiseCounter = 0;
 		var elemArr = [], _tmp, numFormat = cNumFormatFirstCell, currentElement = null, bIsSpecialFunction, argumentsCount, defNameCalcArr, defNameArgCount = 0;
 		for (var i = 0; i < this.outStack.length; i++) {
 			currentElement = this.outStack[i];
@@ -8930,11 +8966,21 @@ function parserFormula( formula, parent, _ws ) {
 					return this.value;
 				} else {
 					var arg = [];
+					let _isPromise = false;
 					for (var ind = 0; ind < argumentsCount + defNameArgCount; ind++) {
 						if("number" === typeof(elemArr[elemArr.length - 1])){
 							elemArr.pop();
 						}
-						arg.unshift(elemArr.pop());
+						let _elem = elemArr.pop();
+						arg.unshift(_elem);
+						if (fIsPromise(_elem)) {
+							_isPromise = true;
+							break;
+						}
+					}
+
+					if (_isPromise) {
+						break;
 					}
 
 					//***array-formula***
@@ -8955,10 +9001,28 @@ function parserFormula( formula, parent, _ws ) {
 						bIsSpecialFunction = true;
 					}
 
-					if(formulaArray) {
+					if (this.promiseResult && this.promiseResult[i]) {
+						_tmp = this.promiseResult[i];
+					} else if(formulaArray) {
 						_tmp = formulaArray;
 					} else {
-						_tmp = currentElement.Calculate(arg, opt_bbox, opt_defName, this.ws, bIsSpecialFunction);
+						//if recursion - we must rewrite promise, because arguments can changed
+						_tmp = !g_cCalcRecursion.getIsEnabledRecursion() && this.wb.asyncFormulasManager.getPromiseByIndex(this._index, i);
+						if (!_tmp) {
+							_tmp = currentElement.Calculate(arg, opt_bbox, opt_defName, this.ws, bIsSpecialFunction);
+						}
+					}
+
+					//check promise
+					if (fIsPromise(_tmp)) {
+						if (this.promiseResult && this.promiseResult[promiseCounter]) {
+							_tmp = this.promiseResult[promiseCounter];
+						} else {
+							_tmp.parserFormula = this;
+							_tmp.index = i;
+							this.wb.asyncFormulasManager.addPromise(_tmp, true);
+						}
+						promiseCounter++;
 					}
 
 					//_tmp = currentElement.Calculate(arg, opt_bbox, opt_defName, this.ws, bIsSpecialFunction);
@@ -8997,6 +9061,12 @@ function parserFormula( formula, parent, _ws ) {
 			}
 		}
 
+		if (promiseCounter && /*!this.promiseResult*/ this.wb.asyncFormulasManager.isPromises()) {
+			this.value = new cError(cErrorType.busy);
+			this._endCalculate();
+			return this.value;
+		}
+
 		// ref(CSE) - legacy array-formula
 		// dynamic range(DAF) - newest dynamic array-formula
 		// Differences:
@@ -9028,7 +9098,12 @@ function parserFormula( formula, parent, _ws ) {
 
 			this._endCalculate();
 		} else {
-			this.value = elemArr.pop();
+			let res = elemArr.pop();
+			if (cElementType.error === res.type && res.errorType === cErrorType.busy) {
+				this._endCalculate();
+				return;
+			}
+			this.value = res;
 
 			if (AscCommonExcel.bIsSupportDynamicArrays) {
 				// check further dynamic range
