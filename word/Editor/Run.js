@@ -3352,6 +3352,9 @@ ParaRun.prototype.Recalculate_MeasureContent = function()
 	var nCombWidth  = null;
 	var oTextForm   = this.GetTextForm();
 	let oTextFormPDF = this.GetFormPDF();
+	if (oTextFormPDF && oTextFormPDF.GetType() !== AscPDF.FIELD_TYPES.text)
+		oTextFormPDF = null;
+	
 	let isKeepWidth = false;
 	if (oTextForm && oTextForm.IsComb())
 	{
@@ -3389,10 +3392,10 @@ ParaRun.prototype.Recalculate_MeasureContent = function()
 
 	}
 	// for pdf text forms
-	else if (oTextFormPDF && oTextFormPDF._comb == true)
+	else if (oTextFormPDF && oTextFormPDF.IsComb() == true)
 	{
 		isKeepWidth = true;
-		nMaxComb = oTextFormPDF._charLimit;
+		nMaxComb = oTextFormPDF.GetCharLimit();
 		nCombWidth = oTextFormPDF.getFormRelRect().W / nMaxComb;
 	}
 
