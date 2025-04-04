@@ -113,10 +113,16 @@ AscDFH.historyitem_type_VisioWindow = 328;
 		// only but not XMLmethods and call class representing document.xml VisioDocument_Type
 		// this.visioDocument_Type = null;
 		this.windows = null;
+		/**
+		 * with rId resolved as content
+		 * @type {Master_Type[]}
+		 */
 		this.masters = null;
-		this.masterContents = [];
+		/**
+		 * with rId resolved as content
+		 * @type {Page_Type[]}
+		 */
 		this.pages = null;
-		this.pageContents = [];
 		this.themes = [];
 		this.app = null;
 		this.core = null;
@@ -521,13 +527,6 @@ AscDFH.historyitem_type_VisioWindow = 328;
 			for (let i = 0; i < backgroundsCount; i++) {
 				let backgroundInfo = this.pages.page.shift();
 				this.pages.page.push(backgroundInfo);
-
-				if (this.pageContents.length > 0) {
-					// this.pageContents.length can be 0 if file is binary and read in SerializeReader.js and
-					// pageContent is in this.pages.page[pageIndex].content
-					let backgroundContent = this.pageContents.shift();
-					this.pageContents.push(backgroundContent);
-				}
 			}
 			this.isPagesArranged = true;
 		}
@@ -535,25 +534,18 @@ AscDFH.historyitem_type_VisioWindow = 328;
 		// convert shapes
 		for (let pageIndex = 0; pageIndex < this.pages.page.length; pageIndex++) {
 			if (this.pageShapesCache[pageIndex] === undefined) {
-				let pageInfo = this.pages.page[pageIndex];
-				// page content is either in this.pageContents if open is from zip or in
-				// pageInfo.content if open is form bin
-				let pageContent;
-				if (pageInfo.content) {
-					pageContent = pageInfo.content;
-				} else {
-					pageContent = this.pageContents[pageIndex];
-				}
+				let page = this.pages.page[pageIndex];
+				let pageContent = page.content;
 
 				// Scale should be applied. Drawing scale should not be considered for text font size and stoke size
 				// https://support.microsoft.com/en-us/office/change-the-drawing-scale-on-a-page-in-visio-05c24456-67bf-47f7-b5dc-d5caa9974f19
 				// https://stackoverflow.com/questions/63295483/how-properly-set-line-scaling-in-ms-visio
 				// also arrow size
-				let drawingScale = pageInfo.pageSheet.getCellNumberValue("DrawingScale");
-				let pageScale = pageInfo.pageSheet.getCellNumberValue("PageScale");
+				let drawingScale = page.pageSheet.getCellNumberValue("DrawingScale");
+				let pageScale = page.pageSheet.getCellNumberValue("PageScale");
 				let drawingPageScale = drawingScale / pageScale;
 
-				let topLevelShapesAndGroups = this.convertToCShapesAndGroups(pageInfo, pageContent, drawingPageScale);
+				let topLevelShapesAndGroups = this.convertToCShapesAndGroups(page, pageContent, drawingPageScale);
 				this.pageShapesCache[pageIndex] = topLevelShapesAndGroups;
 
 				topLevelShapesAndGroups.forEach(function (shapeOrGroup) {
@@ -862,7 +854,7 @@ AscDFH.historyitem_type_VisioWindow = 328;
 		/** @type {(CShape | CGroupShape | CImageShape)[]} */
 		let topLevelShapesAndGroups = [];
 
-		let masters = this.joinMastersInfoAndContents();
+		let masters = this.masters.master;
 
 		for(let i = 0; i < pageContent.shapes.length; i++) {
 			let shape = pageContent.shapes[i];
@@ -891,41 +883,6 @@ AscDFH.historyitem_type_VisioWindow = 328;
 
 		return topLevelShapesAndGroups;
 	};
-
-	/**
-	 * @memberOf CVisioDocument
-	 */
-	CVisioDocument.prototype.joinMastersInfoAndContents = function() {
-		// join Master_Type and MasterContents_Type
-		if (this.masters === null || this.masters === undefined) {
-			return [];
-		}
-		let masterFromMastersInfoArray = this.masters.master;
-		let master = null;
-		let mastersJoined = [];
-
-		let thisContext = this;
-		for (let i = 0; i < masterFromMastersInfoArray.length; i++) {
-			const masterFromMasters = masterFromMastersInfoArray[i];
-			if (masterFromMasters.content) {
-				// if content was already parsed in SerializeReader.js
-				mastersJoined.push(masterFromMasters);
-				continue;
-			}
-
-			if (!masterFromMasters.rel) {
-				continue;
-			}
-			let masterFromMastersArrayRelId = masterFromMasters.rel.id;
-			// TODO find file by relationships
-			let masterContentNum = +masterFromMastersArrayRelId.match(/\d+/)[0];
-			let masterContent = thisContext.masterContents[masterContentNum - 1];
-			master = masterFromMasters;
-			master.content = masterContent;
-			mastersJoined.push(master);
-		}
-		return mastersJoined;
-	}
 	CVisioDocument.prototype.getCountPages = function() {
 		return this.pages && this.pages.page.length || 0;
 	}
@@ -1793,33 +1750,7 @@ AscDFH.historyitem_type_VisioWindow = 328;
 			reader = new StaxParser(contentMasters, mastersPart, context);
 			this.masters = new CMasters();
 			this.masters.fromXml(reader);
-
-			let masters = mastersPart.getPartsByRelationshipType(AscCommon.openXml.Types.master.relationType);
-			if (masters.length > 0) {
-				// order is important so sort masters using uri
-				let mastersSort = [];
-				for (let i = 0; i < masters.length; i++) {
-					let masterNumber = +masters[i].uri.match(/\d+/)[0]; // for master3.xml we get 3
-					if (!isNaN(parseFloat(masterNumber)) && !isNaN(masterNumber - 0)) {
-						// if masterNumber is number
-						mastersSort[masterNumber - 1] = masters[i];
-					} else {
-						AscCommon.consoleLog('check sdkjs/draw/model/VisioDocument.js : parseMasters');
-						mastersSort = masters;
-						break;
-					}
-				}
-
-				masters = mastersSort;
-				for (let i = 0; i < masters.length; i++) {
-					let masterPart = masters[i];
-					let contentMaster = masterPart.getDocumentContent();
-					reader = new StaxParser(contentMaster, masterPart, context);
-					let MasterContent = new CMasterContents();
-					MasterContent.fromXml(reader);
-					this.masterContents.push(MasterContent);
-				}
-			}
+			// don't read MasterContents separately. Master contents are read in masters using rId.
 		}
 	}
 
@@ -1830,30 +1761,7 @@ AscDFH.historyitem_type_VisioWindow = 328;
 			reader = new StaxParser(pagesXml, pagesPart, context);
 			this.pages = new CPages();
 			this.pages.fromXml(reader);
-
-			// page content parts
-			let pages = pagesPart.getPartsByRelationshipType(AscCommon.openXml.Types.page.relationType);
-			if (pages.length  > 0) {
-				// this.pageContents order is important it must correspond to this.pages but pages is messed up by default
-				// so now let's get page contents by page relationship to get pageContents in correct order
-				// 1) find page rId number
-				// 2) find pageContent by rId
-
-				for (let i = 0; i < this.pages.page.length; i++) {
-					let pageContentRid = this.pages.page[i] && this.pages.page[i].rel && this.pages.page[i].rel.id;
-					if (pageContentRid) {
-						// let pageContentRel = pagesPart.getRelationship(pageContentRid);
-						let pageContentPart = pagesPart.getPartById(pageContentRid);
-						let contentPage = pageContentPart.getDocumentContent();
-						reader = new StaxParser(contentPage, pageContentPart, context);
-						let PageContent = new CPageContents();
-						PageContent.fromXml(reader);
-						this.pageContents.push(PageContent);
-					} else {
-						AscCommon.consoleLog("Page content rId not found");
-					}
-				}
-			}
+			// don't read PageContents separately. Page contents are read in pages using rId.
 		}
 	}
 
