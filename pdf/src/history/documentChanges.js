@@ -40,10 +40,137 @@ AscDFH.changesFactory[AscDFH.historyitem_PDF_Document_DrawingsContent]	= CChange
 AscDFH.changesFactory[AscDFH.historyitem_PDF_Document_PagesContent]		= CChangesPDFDocumentPagesContent;
 AscDFH.changesFactory[AscDFH.historyitem_PDF_Document_RotatePage]		= CChangesPDFDocumentRotatePage;
 AscDFH.changesFactory[AscDFH.historyitem_PDF_Document_RecognizePage]	= CChangesPDFDocumentRecognizePage;
-AscDFH.changesFactory[AscDFH.historyitem_PDF_Document_SetDocument]      = CChangesPDFDocumentSetDocument;
+AscDFH.changesFactory[AscDFH.historyitem_PDF_Document_SetDocument]      = CChangesPDFObjectSetDocument;
 AscDFH.changesFactory[AscDFH.historyitem_PDF_Document_PageLocks]        = CChangesPDFDocumentPageLocks;
 AscDFH.changesFactory[AscDFH.historyitem_PDF_PropLocker_ObjectId]	    = CChangesPDFPropLockerObjectId;
 AscDFH.changesFactory[AscDFH.historyitem_PDF_Document_MovePage]         = CChangesPDFDocumentMovePage;
+AscDFH.changesFactory[AscDFH.historyitem_Pdf_Documen_Calc_Order]        = CChangesPDFCalcOrder;
+
+function CChangesPDFArrayOfDoubleProperty(Class, Old, New) {
+	AscDFH.CChangesBaseProperty.call(this, Class, Old, New);
+}
+CChangesPDFArrayOfDoubleProperty.prototype = Object.create(AscDFH.CChangesBaseProperty.prototype);
+CChangesPDFArrayOfDoubleProperty.prototype.constructor = CChangesPDFArrayOfDoubleProperty;
+
+CChangesPDFArrayOfDoubleProperty.prototype.WriteToBinary = function(Writer)
+{
+	let nFlags = 0;
+
+	if (undefined === this.New)
+		nFlags |= 1;
+
+	if (undefined === this.Old)
+		nFlags |= 2;
+
+	Writer.WriteLong(nFlags);
+
+	if (undefined !== this.New) {
+		var nNewCount = this.New.length;
+		Writer.WriteLong(nNewCount);
+		for (var nIndex = 0; nIndex < nNewCount; ++nIndex)
+			Writer.WriteDouble(this.New[nIndex]);
+	}
+	
+	if (undefined !== this.Old) {
+		var nOldCount = this.Old.length;
+		Writer.WriteLong(nOldCount);
+		for (var nIndex = 0; nIndex < nOldCount; ++nIndex)
+			Writer.WriteDouble(this.Old[nIndex]);
+	}
+};
+CChangesPDFArrayOfDoubleProperty.prototype.ReadFromBinary = function(Reader)
+{
+	// Long : Count of the columns in the new grid
+	// Array of double : widths of columns in the new grid
+	// Long : Count of the columns in the old grid
+	// Array of double : widths of columns in the old grid
+
+	let nFlags = Reader.GetLong();
+	
+	if (!(nFlags & 1)) {
+		let nCount = Reader.GetLong();
+		this.New = [];
+		for (var nIndex = 0; nIndex < nCount; ++nIndex)
+			this.New[nIndex] = Reader.GetDouble();
+	}
+
+	if (!(nFlags & 2)) {
+		let nCount = Reader.GetLong();
+		this.Old = [];
+		for (var nIndex = 0; nIndex < nCount; ++nIndex)
+			this.Old[nIndex] = Reader.GetDouble();
+	} 
+};
+
+CChangesPDFArrayOfDoubleProperty.prototype.Load = function(){
+	this.Redo();
+	this.RefreshRecalcData();
+};
+
+window['AscDFH'].CChangesPDFArrayOfDoubleProperty = CChangesPDFArrayOfDoubleProperty;
+
+function CChangesPDFArrayOfStringProperty(Class, Old, New) {
+	AscDFH.CChangesBaseProperty.call(this, Class, Old, New);
+}
+CChangesPDFArrayOfStringProperty.prototype = Object.create(AscDFH.CChangesBaseProperty.prototype);
+CChangesPDFArrayOfStringProperty.prototype.constructor = CChangesPDFArrayOfStringProperty;
+
+CChangesPDFArrayOfStringProperty.prototype.WriteToBinary = function(Writer)
+{
+	let nFlags = 0;
+
+	if (undefined === this.New)
+		nFlags |= 1;
+
+	if (undefined === this.Old)
+		nFlags |= 2;
+
+	Writer.WriteLong(nFlags);
+
+	if (undefined !== this.New) {
+		var nNewCount = this.New.length;
+		Writer.WriteLong(nNewCount);
+		for (var nIndex = 0; nIndex < nNewCount; ++nIndex)
+			Writer.WriteString2(this.New[nIndex]);
+	}
+	
+	if (undefined !== this.Old) {
+		var nOldCount = this.Old.length;
+		Writer.WriteLong(nOldCount);
+		for (var nIndex = 0; nIndex < nOldCount; ++nIndex)
+			Writer.WriteString2(this.Old[nIndex]);
+	}
+};
+CChangesPDFArrayOfStringProperty.prototype.ReadFromBinary = function(Reader)
+{
+	// Long : Count of the columns in the new grid
+	// Array of double : widths of columns in the new grid
+	// Long : Count of the columns in the old grid
+	// Array of double : widths of columns in the old grid
+
+	let nFlags = Reader.GetLong();
+	
+	if (!(nFlags & 1)) {
+		let nCount = Reader.GetLong();
+		this.New = [];
+		for (var nIndex = 0; nIndex < nCount; ++nIndex)
+			this.New[nIndex] = Reader.GetString2();
+	}
+
+	if (!(nFlags & 2)) {
+		let nCount = Reader.GetLong();
+		this.Old = [];
+		for (var nIndex = 0; nIndex < nCount; ++nIndex)
+			this.Old[nIndex] = Reader.GetString2();
+	} 
+};
+
+CChangesPDFArrayOfStringProperty.prototype.Load = function(){
+	this.Redo();
+	this.RefreshRecalcData();
+};
+
+window['AscDFH'].CChangesPDFArrayOfStringProperty = CChangesPDFArrayOfStringProperty;
 
 /**
  * @constructor
@@ -109,7 +236,7 @@ CChangesPDFDocumentAnnotsContent.prototype.Undo = function()
             oItem._page = oPage.GetIndex();
             oItem.selectStartPage = oItem._page;
 
-            oItem.SetDisplay(oDocument.IsAnnotsHidden() ? window["AscPDF"].Api.Objects.display["hidden"] : window["AscPDF"].Api.Objects.display["visible"]);
+            oItem.SetDisplay(oDocument.IsAnnotsHidden() ? window["AscPDF"].Api.Types.display["hidden"] : window["AscPDF"].Api.Types.display["visible"]);
             oViewer.DrawingObjects.resetSelection();
             oItem.AddToRedraw();
             oDocument.CheckComment(oItem);
@@ -138,7 +265,7 @@ CChangesPDFDocumentAnnotsContent.prototype.Redo = function()
             oItem._page = oPage.GetIndex();
             oItem.selectStartPage = oItem._page;
 
-            oItem.SetDisplay(oDocument.IsAnnotsHidden() ? window["AscPDF"].Api.Objects.display["hidden"] : window["AscPDF"].Api.Objects.display["visible"]);
+            oItem.SetDisplay(oDocument.IsAnnotsHidden() ? window["AscPDF"].Api.Types.display["hidden"] : window["AscPDF"].Api.Types.display["visible"]);
             oViewer.DrawingObjects.resetSelection();
             oItem.AddToRedraw();
             oDocument.CheckComment(oItem);
@@ -207,7 +334,7 @@ CChangesPDFDocumentAnnotsContent.prototype.private_InsertInArrayLoad = function(
 
         oDocument.CheckComment(oItem);
 
-        oItem.SetDisplay(oDocument.IsAnnotsHidden() ? window["AscPDF"].Api.Objects.display["hidden"] : window["AscPDF"].Api.Objects.display["visible"]);
+        oItem.SetDisplay(oDocument.IsAnnotsHidden() ? window["AscPDF"].Api.Types.display["hidden"] : window["AscPDF"].Api.Types.display["visible"]);
         oViewer.DrawingObjects.resetSelection();
         oItem.AddToRedraw();
     }
@@ -323,40 +450,30 @@ CChangesPDFDocumentFieldsContent.prototype.Undo = function()
         // Undo addition by removing items
         for (let nIndex = 0, nCount = this.Items.length; nIndex < nCount; ++nIndex) {
             let oItem = this.Items[nIndex];
-            if (oItem.IsWidget()) {
-                oItem.AddToRedraw();
-                oDocument.widgets.splice(oDocument.widgets.indexOf(oItem), 1);
-                oPage.fields.splice(this.Pos, 1);
+            oItem.AddToRedraw();
+            oDocument.widgets.splice(oDocument.widgets.indexOf(oItem), 1);
+            oPage.fields.splice(this.Pos, 1);
 
-                oItem.parentPage = null;
-                oItem._page = -1;
-                oItem.selectStartPage = -1;
+            oItem.parentPage = null;
+            oItem._page = -1;
+            oItem.selectStartPage = -1;
 
-                oItem.AddToRedraw();
-            }
-            else {
-                oDocument.widgetsParents.splice(oDocument.widgetsParents.indexOf(oItem), 1);
-            }
+            oItem.AddToRedraw();
         }
     }
     else {
         // Undo removal by adding items back
         for (let nIndex = 0, nCount = this.Items.length; nIndex < nCount; ++nIndex) {
             let oItem = this.Items[nIndex];
-            if (oItem.IsWidget()) {
-                oItem.AddToRedraw();
-                oPage.fields.splice(this.Pos, 0, oItem);
-                oDocument.widgets.push(oItem);
-    
-                oItem.parentPage = oPage;
-                oItem._page = oPage.GetIndex();
-                oItem.selectStartPage = oItem._page;
-    
-                oItem.AddToRedraw();
-            }
-            else {
-                oDocument.widgetsParents.push(oItem);
-            }
+            oItem.AddToRedraw();
+            oPage.fields.splice(this.Pos, 0, oItem);
+            oDocument.widgets.push(oItem);
+
+            oItem.parentPage = oPage;
+            oItem._page = oPage.GetIndex();
+            oItem.selectStartPage = oItem._page;
+
+            oItem.AddToRedraw();
         }
     }
 
@@ -372,20 +489,15 @@ CChangesPDFDocumentFieldsContent.prototype.Redo = function()
         for (let nIndex = 0, nCount = this.Items.length; nIndex < nCount; ++nIndex)
         {
             let oItem = this.Items[nIndex];
-            if (oItem.IsWidget()) {
-                oItem.AddToRedraw();
-                oDocument.widgets.push(oItem);
-                oPage.fields.splice(this.Pos, 0, oItem);
+            oItem.AddToRedraw();
+            oDocument.widgets.push(oItem);
+            oPage.fields.splice(this.Pos, 0, oItem);
 
-                oItem.parentPage = oPage;
-                oItem._page = oPage.GetIndex();
-                oItem.selectStartPage = oItem._page;
-                
-                oItem.AddToRedraw();
-            }
-            else {
-                oDocument.widgetsParents.push(oItem);
-            }
+            oItem.parentPage = oPage;
+            oItem._page = oPage.GetIndex();
+            oItem.selectStartPage = oItem._page;
+            
+            oItem.AddToRedraw();
         }
     }
     else {
@@ -393,20 +505,15 @@ CChangesPDFDocumentFieldsContent.prototype.Redo = function()
         for (let nIndex = 0, nCount = this.Items.length; nIndex < nCount; ++nIndex)
         {
             let oItem = this.Items[nIndex];
-            if (oItem.IsWidget()) {
-                oItem.AddToRedraw();
-                oDocument.widgets.splice(oDocument.widgets.indexOf(oItem), 1);
-                oPage.fields.splice(this.Pos, 1);
+            oItem.AddToRedraw();
+            oDocument.widgets.splice(oDocument.widgets.indexOf(oItem), 1);
+            oPage.fields.splice(this.Pos, 1);
 
-                oItem.parentPage = null;
-                oItem._page = -1;
-                oItem.selectStartPage = -1;
+            oItem.parentPage = null;
+            oItem._page = -1;
+            oItem.selectStartPage = -1;
 
-                oItem.AddToRedraw();
-            }
-            else {
-                oDocument.widgetsParents.splice(oDocument.widgetsParents.indexOf(oItem), 1);
-            }
+            oItem.AddToRedraw();
         }
     }
 
@@ -431,29 +538,24 @@ CChangesPDFDocumentFieldsContent.prototype.private_InsertInArrayLoad = function(
 
     for (let i = 0; i < this.Items.length; ++i) {
         let oItem = this.Items[i];
-        if (oItem.IsWidget()) {
-            // Adjust position based on content changes
-            let nPos = oContentChanges.Check(AscCommon.contentchanges_Add, true !== this.UseArray ? this.Pos + i : this.PosArray[i]);
-            if (nPos === false) continue;
+        // Adjust position based on content changes
+        let nPos = oContentChanges.Check(AscCommon.contentchanges_Add, true !== this.UseArray ? this.Pos + i : this.PosArray[i]);
+        if (nPos === false) continue;
 
-            // Insert into document widgets array
-            nPos = Math.min(nPos, oDocument.widgets.length);
-            oDocument.widgets.splice(nPos, 0, oItem);
+        // Insert into document widgets array
+        nPos = Math.min(nPos, oDocument.widgets.length);
+        oDocument.widgets.splice(nPos, 0, oItem);
 
-            // Insert into viewer fields array
-            let fieldsArray = oPage.fields;
-            nPos = Math.min(nPos, fieldsArray.length);
-            fieldsArray.splice(nPos, 0, oItem);
+        // Insert into viewer fields array
+        let fieldsArray = oPage.fields;
+        nPos = Math.min(nPos, fieldsArray.length);
+        fieldsArray.splice(nPos, 0, oItem);
 
-            oItem.parentPage = oPage;
-            oItem._page = oPage.GetIndex();
-            oItem.selectStartPage = oItem._page;
+        oItem.parentPage = oPage;
+        oItem._page = oPage.GetIndex();
+        oItem.selectStartPage = oItem._page;
 
-            oItem.AddToRedraw();
-        }
-        else {
-            oDocument.widgetsParents.push(oItem);
-        }
+        oItem.AddToRedraw();
     }
 
     oDocument.private_UpdateTargetForCollaboration(true);
@@ -470,31 +572,26 @@ CChangesPDFDocumentFieldsContent.prototype.private_RemoveInArrayLoad = function(
     // Remove items in reverse order to maintain indices
     for (let i = this.Items.length - 1; i >= 0; --i) {
         let oItem = this.Items[i];
-        if (oItem.IsWidget()) {
-            // Adjust position based on content changes
-            let nPos = oContentChanges.Check(AscCommon.contentchanges_Remove,  true !== this.UseArray ? this.Pos + i : this.PosArray[i]);
-            if (nPos === false) continue;
+        // Adjust position based on content changes
+        let nPos = oContentChanges.Check(AscCommon.contentchanges_Remove,  true !== this.UseArray ? this.Pos + i : this.PosArray[i]);
+        if (nPos === false) continue;
 
-            oItem.AddToRedraw();
+        oItem.AddToRedraw();
 
-            // Remove from document widgets array
-            let indexInWidgets = oDocument.widgets.indexOf(oItem);
-            if (indexInWidgets !== -1)
-                oDocument.widgets.splice(indexInWidgets, 1);
+        // Remove from document widgets array
+        let indexInWidgets = oDocument.widgets.indexOf(oItem);
+        if (indexInWidgets !== -1)
+            oDocument.widgets.splice(indexInWidgets, 1);
 
-            // Remove from viewer fields array
-            let fieldsArray = oPage.fields;
-            let indexInFields = fieldsArray.indexOf(oItem);
-            if (indexInFields !== -1)
-                fieldsArray.splice(indexInFields, 1);
+        // Remove from viewer fields array
+        let fieldsArray = oPage.fields;
+        let indexInFields = fieldsArray.indexOf(oItem);
+        if (indexInFields !== -1)
+            fieldsArray.splice(indexInFields, 1);
 
-            oItem.parentPage = null;
-            oItem._page = -1;
-            oItem.selectStartPage = -1;
-        }
-        else {
-            oDocument.widgetsParents.splice(oDocument.widgetsParents.indexOf(oItem), 1);
-        }
+        oItem.parentPage = null;
+        oItem._page = -1;
+        oItem.selectStartPage = -1;
     }
 
     oDocument.private_UpdateTargetForCollaboration(true);
@@ -1016,16 +1113,16 @@ CChangesPDFDocumentRecognizePage.prototype.private_SetValue = function(bRecogniz
  * @constructor
  * @extends {AscDFH.CChangesBaseStringProperty}
  */
-function CChangesPDFDocumentSetDocument(Class, Old, New)
+function CChangesPDFObjectSetDocument(Class, Old, New)
 {
 	let oldId = Old && Old.Get_Id ? Old.Get_Id() : undefined;
 	let newId = New && New.Get_Id ? New.Get_Id() : undefined;
 	AscDFH.CChangesBaseStringProperty.call(this, Class, oldId, newId);
 }
-CChangesPDFDocumentSetDocument.prototype = Object.create(AscDFH.CChangesBaseStringProperty.prototype);
-CChangesPDFDocumentSetDocument.prototype.constructor = CChangesPDFDocumentSetDocument;
-CChangesPDFDocumentSetDocument.prototype.Type = AscDFH.historyitem_PDF_Document_SetDocument;
-CChangesPDFDocumentSetDocument.prototype.private_SetValue = function(value)
+CChangesPDFObjectSetDocument.prototype = Object.create(AscDFH.CChangesBaseStringProperty.prototype);
+CChangesPDFObjectSetDocument.prototype.constructor = CChangesPDFObjectSetDocument;
+CChangesPDFObjectSetDocument.prototype.Type = AscDFH.historyitem_PDF_Document_SetDocument;
+CChangesPDFObjectSetDocument.prototype.private_SetValue = function(value)
 {
 	let doc = AscCommon.g_oTableId.Get_ById(value);
 	this.Class.SetDocument(doc);
@@ -1129,4 +1226,21 @@ CChangesPDFDocumentMovePage.prototype.private_SetValue = function(nNewPos)
     oDoc.Viewer.onUpdatePages(aPagesRange);
     oDoc.Viewer.onRepaintForms(aPagesRange);
     oDoc.Viewer.onRepaintAnnots(aPagesRange);
+};
+
+/**
+ * @constructor
+ * @extends {AscDFH.CChangesPDFArrayOfDoubleProperty}
+ */
+function CChangesPDFCalcOrder(Class, Old, New, Color)
+{
+	AscDFH.CChangesPDFArrayOfDoubleProperty.call(this, Class, Old, New, Color);
+}
+CChangesPDFCalcOrder.prototype = Object.create(AscDFH.CChangesPDFArrayOfDoubleProperty.prototype);
+CChangesPDFCalcOrder.prototype.constructor = CChangesPDFCalcOrder;
+CChangesPDFCalcOrder.prototype.Type = AscDFH.historyitem_Pdf_Documen_Calc_Order;
+CChangesPDFCalcOrder.prototype.private_SetValue = function(Value)
+{
+	let oCalcInfo = this.Class;
+	oCalcInfo.ids = Value;
 };

@@ -79,6 +79,11 @@
         return false;
     };
 	CPdfDrawingPrototype.prototype.IsUseInDocument = function() {
+		let oDoc = this.GetDocument();
+		if (!oDoc) {
+			return false;
+		}
+
 		if (this.group && this.group.IsUseInDocument)
 			return this.group.IsUseInDocument();
 		
@@ -87,8 +92,14 @@
             return true;
         }
 
-		return false;
-	};
+        if (this.IsShape() && oDoc.IsEditFieldsMode()) {
+            let oEditFiled = this.GetEditField();
+            if (oEditFiled) {
+                return oEditFiled.IsUseInDocument();
+            }
+        }
+        
+        return false;	};
     CPdfDrawingPrototype.prototype.OnBlur = function() {
         AscCommon.History.ForbidUnionPoint();
     };
@@ -237,7 +248,7 @@
             return;
         }
 
-        AscCommon.History.Add(new CChangesPDFDocumentSetDocument(this, this._doc, oDoc));
+        AscCommon.History.Add(new CChangesPDFObjectSetDocument(this, this._doc, oDoc));
         this._doc = oDoc;
     };
     CPdfDrawingPrototype.prototype.OnContentChange = function() {
@@ -445,6 +456,6 @@
         this.toXml(memory, '');
     };
 
-    window["AscPDF"].PdfDrawingPrototype = CPdfDrawingPrototype;
+    window["AscPDF"].CPdfDrawingPrototype = CPdfDrawingPrototype;
 })();
 
