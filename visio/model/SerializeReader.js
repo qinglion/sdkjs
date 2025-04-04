@@ -915,12 +915,10 @@
 				this.icon.fromPPTY(pReader);
 				break;
 			}
-			//todo
 			case 2: {
 				const masterContents = new AscVisio.CMasterContents();
 				masterContents.fromPPTY(pReader);
 				this.content = masterContents;
-				pReader.document.masterContents.push(masterContents);
 				break;
 			}
 			default:
@@ -1104,7 +1102,6 @@
 				const pageContents = new AscVisio.CPageContents();
 				pageContents.fromPPTY(pReader);
 				this.content = pageContents;
-				pReader.document.pageContents.push(pageContents);
 				break;
 			}
 			default:
