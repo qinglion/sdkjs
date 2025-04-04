@@ -18584,7 +18584,7 @@ function RangeDataManagerElem(bbox, data)
 				} else {
 					res = _elem.tocString();
 					if (res && res.type === AscCommonExcel.cElementType.error) {
-						return elem;
+						return res;
 					}
 					if (res.type !== AscCommonExcel.cElementType.error) {
 						res = res.toString();
@@ -18600,7 +18600,7 @@ function RangeDataManagerElem(bbox, data)
 				} else {
 					res = _elem.tocBool();
 					if (res && res.type === AscCommonExcel.cElementType.error) {
-						return elem;
+						return res;
 					}
 
 					if (res.type !== AscCommonExcel.cElementType.error && res.toBool) {
