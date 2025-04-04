@@ -3847,13 +3847,13 @@ window.AscCommon.g_cIsBeta = "false";
 	var c_oAscDateTimeFormat = {};
 	c_oAscDateTimeFormat[lcid_arSA] = [
 		"dd/MM/yyyy",
-		"dddd, dd MMMM, yyyy",
-		"dd MMMM, yyyy",
+		"dddd، dd MMMM، yyyy",
+		"dd MMMM، yyyy",
 		"dd/MM/yy",
 		"yyyy-MM-dd",
 		"d-MMM-yy",
 		"dd.MM.yyyy",
-		"dd MMM, yy",
+		"dd MMM، yy",
 		"d MMMM yyyy",
 		"MMMM yy",
 		"MMM-yy",
