@@ -200,6 +200,7 @@
 						break;
 					
 					case TABLE_TYPES.DOCUMENT:
+						stream.Skip2(1);//type
 						this.document.fromPPTY(this);
 						break;
 				}
@@ -215,31 +216,31 @@
 		};
 	}
 
-	/**
-	 * Loads a Visio document from a binary stream
-	 * 
-	 * @param  {BinaryVSDYLoader} pReader - The binary reader
-	 */
-	AscVisio.CVisioDocument.prototype.fromPPTY = function(pReader) {
-		const stream = pReader.stream;
-		stream.Skip2(1);
-		
-		const startPos = stream.GetCurPos();
-		const recordSize = stream.GetLong();
-		const endPos = startPos + recordSize + 4;
-		
-		while (stream.GetCurPos() < endPos) {
-			const recordType = stream.GetUChar();
-			
-			// this.readChild(recordType, pReader);
-			const res = this.readChild(recordType, pReader);
-				if (false === res) {
-					stream.SkipRecord();
-				}
-		}
-		
-		stream.Seek2(endPos);
-	};
+	// /**
+	//  * Loads a Visio document from a binary stream
+	//  *
+	//  * @param  {BinaryVSDYLoader} pReader - The binary reader
+	//  */
+	// AscVisio.CVisioDocument.prototype.fromPPTY = function(pReader) {
+	// 	const stream = pReader.stream;
+	// 	stream.Skip2(1);
+	//
+	// 	const startPos = stream.GetCurPos();
+	// 	const recordSize = stream.GetLong();
+	// 	const endPos = startPos + recordSize + 4;
+	//
+	// 	while (stream.GetCurPos() < endPos) {
+	// 		const recordType = stream.GetUChar();
+	//
+	// 		// this.readChild(recordType, pReader);
+	// 		const res = this.readChild(recordType, pReader);
+	// 			if (false === res) {
+	// 				stream.SkipRecord();
+	// 			}
+	// 	}
+	//
+	// 	stream.Seek2(endPos);
+	// };
 	
 	/**
 	 * Read child elements from stream for CVisioDocument
@@ -547,32 +548,6 @@
 		
 		return true;
 	};
-	
-	/**
-	 * Read attributes from stream for FaceName_Type
-	 * 
-	 * @param  {number} attrType - The type of attribute
-	 * @param {BinaryVSDYLoader} pReader - The binary reader
-	 * @returns {boolean} - True if attribute was handled, false otherwise
-	 */
-	AscVisio.FaceName_Type.prototype.readAttribute = function(attrType, pReader) {
-		const stream = pReader.stream;
-		switch (attrType) {
-			case 0:
-				this.id = stream.GetULong();
-				break;
-			case 1:
-				this.name = stream.GetString2();
-				break;
-			case 2:
-				this.flags = stream.GetULong();
-				break;
-			default:
-				return false;
-		}
-		
-		return true;
-	};
 
 	/**
 	 * Read attributes from stream for FaceName_Type
@@ -720,7 +695,7 @@
 		return true;
 	};
 	/**
-	 * Read child elements from stream for CMasters
+	 * Read child elements from stream for Cell_Type
 	 *
 	 * @param  {number} elementType - The type of child element
 	 * @param {BinaryVSDYLoader} pReader - The binary reader
@@ -1255,31 +1230,6 @@
 	//
 	// 	return true;
 	// };
-
-	/**
-	 * Read child elements from stream for Comments_Type
-	 * 
-	 * @param {number} elementType - The type of child element
-	 * @param {BinaryVSDYLoader} pReader - The binary reader
-	 * @returns {boolean} - True if element was handled, false otherwise
-	 */
-	AscVisio.Comments_Type.prototype.readChild = function(elementType, pReader)
-	{
-		let handled = true;
-		
-		switch (elementType)
-		{
-			case 0:
-				// In C++ it initializes Comments and calls fromPPTY
-				// Since the implementation is not available yet, we mark as handled
-				break;
-			default:
-				handled = false;
-				break;
-		}
-		
-		return handled;
-	};
 
 	/**
 	 * Read attributes from stream for CComments
