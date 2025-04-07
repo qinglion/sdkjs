@@ -2178,7 +2178,11 @@ NumFormat.prototype =
                 }
                 else if(numFormat_Text == item.type)
                 {
-                    oCurText.text += item.val;
+					if(',' === item.val && (lcid_ar === cultureInfoLCID.LCID || lcid_arSA === cultureInfoLCID.LCID)) {
+						oCurText.text += "،";
+					} else {
+						oCurText.text += item.val;
+					}
                 }
                 else if(numFormat_TextPlaceholder == item.type)
                 {
