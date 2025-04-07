@@ -259,7 +259,7 @@
     };
 
     color["convert"] = color.convert;
-    window["AscPDF"]["Api"]["Types"] = window.AscPDF.Api.Types = {
+    window["AscPDF"]["Api"]["Types"] = AscPDF.Api.Types = {
         "border":     border,
         "position":   position,
         "scaleHow":   scaleHow,

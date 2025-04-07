@@ -1192,26 +1192,25 @@
     window["AscPDF"].FormatPercentValue = FormatPercentValue;
     window["AscPDF"].FormatValueSpecial = FormatValueSpecial;
 
-    window["AscPDF"]["Api"] = {
-        "Functions": {
-            "AFNumber_Format":        AFNumber_Format,
-            "AFNumber_Keystroke":     AFNumber_Keystroke,
-            "AFPercent_Format":       AFPercent_Format,
-            "AFPercent_Keystroke":    AFPercent_Keystroke,
-            "AFDate_Format":          AFDate_Format,
-            "AFDate_Keystroke":       AFDate_Keystroke,
-            "AFDate_FormatEx":        AFDate_FormatEx,
-            "AFDate_KeystrokeEx":     AFDate_KeystrokeEx,
-            "AFTime_Format":          AFTime_Format,
-            "AFTime_Keystroke":       AFTime_Keystroke,
-            "AFTime_FormatEx":        AFTime_FormatEx,
-            "AFTime_KeystrokeEx":     AFTime_KeystrokeEx,
-            "AFSpecial_Format":       AFSpecial_Format,
-            "AFSpecial_Keystroke":    AFSpecial_Keystroke,
-            "AFSpecial_KeystrokeEx":  AFSpecial_KeystrokeEx,
-            "AFSimple_Calculate":     AFSimple_Calculate,
-            "AFRange_Validate":       AFRange_Validate,
-        }
-    }
+    window["AscPDF"]["Api"] = AscPDF.Api = {};
+    window["AscPDF"]["Api"]["Functions"] = AscPDF.Api.Functions = {
+        "AFNumber_Format":        AFNumber_Format,
+        "AFNumber_Keystroke":     AFNumber_Keystroke,
+        "AFPercent_Format":       AFPercent_Format,
+        "AFPercent_Keystroke":    AFPercent_Keystroke,
+        "AFDate_Format":          AFDate_Format,
+        "AFDate_Keystroke":       AFDate_Keystroke,
+        "AFDate_FormatEx":        AFDate_FormatEx,
+        "AFDate_KeystrokeEx":     AFDate_KeystrokeEx,
+        "AFTime_Format":          AFTime_Format,
+        "AFTime_Keystroke":       AFTime_Keystroke,
+        "AFTime_FormatEx":        AFTime_FormatEx,
+        "AFTime_KeystrokeEx":     AFTime_KeystrokeEx,
+        "AFSpecial_Format":       AFSpecial_Format,
+        "AFSpecial_Keystroke":    AFSpecial_Keystroke,
+        "AFSpecial_KeystrokeEx":  AFSpecial_KeystrokeEx,
+        "AFSimple_Calculate":     AFSimple_Calculate,
+        "AFRange_Validate":       AFRange_Validate,
+    };
 })();
 
