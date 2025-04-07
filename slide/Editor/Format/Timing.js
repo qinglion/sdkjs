@@ -11791,8 +11791,7 @@
 	        this.sandwiches[sDrawingId] = new CAnimSandwich(this.player.getElapsedTicks(), this.player);
         }
         var oSandwich = this.sandwiches[sDrawingId];
-        oSandwich.addAnimation(oAnimation);
-        oSandwich.addDrawings(arrDrawings);
+        oSandwich.addAnimation(oAnimation, arrDrawings);
     };
     CAnimationDrawer.prototype.onFrame = function () {
         this.lastFrameSandwiches = this.sandwiches;
@@ -11871,7 +11870,7 @@
 		if (this.isDrawingVisible(sDrawingId)) {
 			let sUnusedDrawingId;
 			if (oSandwich) {
-				oSandwich.drawObject(oGraphics, this.texturesCache);
+				oSandwich.drawObject(oGraphics, this.texturesCache, !!this.docStructureByDrawing[sDrawingId]);
 				// const oUnusedWrapper = this.getUnusedDocStructureWrapper(sDrawingId);
 				// sUnusedDrawingId = oUnusedWrapper && oUnusedWrapper.GetId();
 			} else {
@@ -12547,131 +12546,131 @@
 
     function CAnimSandwich(nElapsedTime, oPlayer) {
         this.elapsedTime = nElapsedTime;
-        this.animations = [];
+				this.animations = {};
         this.cachedAttributes = {};
 				this.drawings = [];
-				this.drawingsById = {};
     }
 
-    CAnimSandwich.prototype.addAnimation = function (oAnimation) {
-        this.animations.push(oAnimation);
+    CAnimSandwich.prototype.addAnimation = function (oAnimation, arrDrawings) {
+			for (let i = 0; i < arrDrawings.length; i++) {
+				const oDrawing = arrDrawings[i];
+				const sId = oDrawing.GetId();
+				if (!this.animations[sId]) {
+					this.animations[sId] = [];
+					this.drawings.push(oDrawing);
+				}
+				this.animations[sId].push(oAnimation);
+			}
+
         if (this.cachedAttributes) {
             this.cachedAttributes = {};
         }
         this.checkOnAdd();
     };
-	CAnimSandwich.prototype.addDrawings = function (arrDrawings) {
-		for (let i = 0; i < arrDrawings.length; i += 1) {
-			const oDrawing = arrDrawings[i];
-			const sId = oDrawing.GetId();
-			if (!this.drawingsById[sId]) {
-				this.drawingsById[sId] = oDrawing;
-				this.drawings.push(oDrawing);
-			}
-		}
-	};
     CAnimSandwich.prototype.checkOnAdd = function () {
     };
 	CAnimSandwich.prototype.getDrawingObjects = function () {
 		return this.drawings;
 	}
-    CAnimSandwich.prototype.checkRemoveOldAnim = function () {
-        var oEntrEffect = null, oExitEffect = null;
-        for (var nAnim = 0; nAnim < this.animations.length; ++nAnim) {
-            var oAnim = this.animations[nAnim];
-            var oEffect = oAnim.getParentTimeNode();
-            if (oEffect.isAnimEffect()) {
-                var oAttrObject = oEffect.getAttributesObject();
-                if (oAttrObject && AscFormat.PRESET_CLASS_EXIT === oAttrObject.presetClass) {
-                    oExitEffect = oEffect;
-                }
-                if (oAttrObject && AscFormat.PRESET_CLASS_ENTR === oAttrObject.presetClass) {
-                    oEntrEffect = oEffect;
-                }
-                if (oEntrEffect && oExitEffect) {
-                    break;
-                }
-            }
-        }
-        var oEffectToDelete = null;
-        if (oEntrEffect && oExitEffect) {
-            if (oEntrEffect.isAtEnd() && !oExitEffect.isAtEnd()) {
-                oEffectToDelete = oEntrEffect;
-            }
-            if (!oEntrEffect.isAtEnd() && oExitEffect.isAtEnd()) {
-                oEffectToDelete = oExitEffect;
-            }
-
-            if (oEntrEffect.isAtEnd() && oExitEffect.isAtEnd()) {
-                if (oEntrEffect.getMainTick() < oExitEffect.getMainTick()) {
-                    oEffectToDelete = oEntrEffect;
-                } else {
-                    oEffectToDelete = oExitEffect;
-                }
-            }
-        }
-        if (oEffectToDelete) {
-            for (var nAnim = this.animations.length - 1; nAnim > -1; --nAnim) {
-                var oAnim = this.animations[nAnim];
-                var oEffect = oAnim.getParentTimeNode();
-                if (oEffect === oEffectToDelete) {
-                    this.animations.splice(nAnim, 1);
-                }
-            }
-            return true;
-        }
-        return false;
-    };
-    CAnimSandwich.prototype.getAttributesMap = function (sDrawingId) {
-        if (this.cachedAttributes[sDrawingId]) {
-            return this.cachedAttributes[sDrawingId];
-        }
-
-        var bCheckRemove = true;
-
-        while (bCheckRemove) {
-            bCheckRemove = this.checkRemoveOldAnim();
-        }
-
-
-
-        this.animations.sort(function (oAnim1, oAnim2) {
-            if (oAnim1.startTick && oAnim2.startTick) {
-                return oAnim1.getMainTick() - oAnim2.getMainTick();
-            }
-            return 0;
-        });
-        var oAttributes = {};
-        for (var nAnim = 0; nAnim < this.animations.length; ++nAnim) {
-					const oAnimation = this.animations[nAnim];
-					const startTick = oAnimation.startTick[sDrawingId];
-					if (AscFormat.isRealNumber(startTick) && (this.elapsedTime - startTick >= 0)) {
-						oAnimation.calculateAttributes(this.elapsedTime, oAttributes, sDrawingId);
+	CAnimSandwich.prototype.checkRemoveOldAnim = function(sDrawingId) {
+		var oEntrEffect = null, oExitEffect = null;
+		while (true) {
+			const arrAnimations = this.animations[sDrawingId];
+			if (!arrAnimations) {
+				return;
+			}
+			for (var nAnim = 0; nAnim < arrAnimations.length; ++nAnim) {
+				var oAnim = arrAnimations[nAnim];
+				var oEffect = oAnim.getParentTimeNode();
+				if (oEffect.isAnimEffect()) {
+					var oAttrObject = oEffect.getAttributesObject();
+					if (oAttrObject && AscFormat.PRESET_CLASS_EXIT === oAttrObject.presetClass) {
+						oExitEffect = oEffect;
 					}
-        }
-        this.cachedAttributes[sDrawingId] = oAttributes;
-        return oAttributes;
-    };
+					if (oAttrObject && AscFormat.PRESET_CLASS_ENTR === oAttrObject.presetClass) {
+						oEntrEffect = oEffect;
+					}
+					if (oEntrEffect && oExitEffect) {
+						break;
+					}
+				}
+			}
+			var oEffectToDelete = null;
+			if (oEntrEffect && oExitEffect) {
+				if (oEntrEffect.isAtEnd() && !oExitEffect.isAtEnd()) {
+					oEffectToDelete = oEntrEffect;
+				}
+				if (!oEntrEffect.isAtEnd() && oExitEffect.isAtEnd()) {
+					oEffectToDelete = oExitEffect;
+				}
+
+				if (oEntrEffect.isAtEnd() && oExitEffect.isAtEnd()) {
+					if (oEntrEffect.getMainTick() < oExitEffect.getMainTick()) {
+						oEffectToDelete = oEntrEffect;
+					} else {
+						oEffectToDelete = oExitEffect;
+					}
+				}
+			}
+			if (oEffectToDelete) {
+				for (var nAnim = arrAnimations.length - 1; nAnim > -1; --nAnim) {
+					var oAnim = arrAnimations[nAnim];
+					var oEffect = oAnim.getParentTimeNode();
+					if (oEffect === oEffectToDelete) {
+						arrAnimations.splice(nAnim, 1);
+					}
+				}
+			} else {
+				break;
+			}
+		}
+
+	};
+	CAnimSandwich.prototype.getAttributesMap = function(sDrawingId) {
+		if (this.cachedAttributes[sDrawingId]) {
+			return this.cachedAttributes[sDrawingId];
+		}
+		const arrAnimations = this.animations[sDrawingId];
+		if (!arrAnimations) {
+			this.cachedAttributes[sDrawingId] = {};
+			return this.cachedAttributes[sDrawingId];
+		}
+		const oAttributes = {};
+		this.checkRemoveOldAnim(sDrawingId);
+
+
+		arrAnimations.sort(function(oAnim1, oAnim2) {
+			if (oAnim1.startTick && oAnim2.startTick) {
+				return oAnim1.getMainTick() - oAnim2.getMainTick();
+			}
+			return 0;
+		});
+		for (var nAnim = 0; nAnim < arrAnimations.length; ++nAnim) {
+			const oAnimation = arrAnimations[nAnim];
+			const startTick = oAnimation.startTick[sDrawingId];
+			if (AscFormat.isRealNumber(startTick) && (this.elapsedTime - startTick >= 0)) {
+				oAnimation.calculateAttributes(this.elapsedTime, oAttributes, sDrawingId);
+			}
+		}
+		this.cachedAttributes[sDrawingId] = oAttributes;
+		return oAttributes;
+	};
     CAnimSandwich.prototype.print = function () {
         var oAttributes = this.getAttributesMap();
         //console.log(oAttributes);
     };
-    CAnimSandwich.prototype.drawObject = function (oGraphics, oTextureCache) {
-
+    CAnimSandwich.prototype.drawObject = function (oGraphics, oTextureCache, bSkipDrawTxBody) {
         //this.print();
         //console.log(oAttributesMap);
 			const arrDrawings = this.getDrawingObjects();
 			if (!arrDrawings.length) {
 				return;
 			}
-
-			//todo upgrade condition
-
 			const dScale = oGraphics.m_oCoordTransform.sx;
 			for (let i = 0; i < arrDrawings.length; i += 1) {
 				const oObjectForDraw = arrDrawings[i];
 				let oOldTextBody = oObjectForDraw.txBody;
-				if (arrDrawings.length > 1) {
+				if (bSkipDrawTxBody) {
 					oObjectForDraw.txBody = null;
 				}
 				const oTextureData = this.getTextureData(oObjectForDraw, oTextureCache, dScale);
