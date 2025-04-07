@@ -1150,9 +1150,10 @@
             }
         } else if (oGrp) {
             if (oGrp.selectStartPage === pageIndex) {
-                isDrawHandles = !oGrp.IsAnnot;
+                isDrawHandles = !oGrp.IsAnnot();
+                let bDrawGroupTrack = !oGrp.IsAnnot() || oGrp.IsAnnot() && !oGrp.IsInTextBox(); 
 
-                drawingDocument.DrawTrack(
+                bDrawGroupTrack && drawingDocument.DrawTrack(
                     AscFormat.TYPE_TRACK.GROUP_PASSIVE,
                     oGrp.getTransformMatrix(),
                     0,
