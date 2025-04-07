@@ -11827,18 +11827,26 @@
 			f = (canEdit || viewMode) && (isNotFirst && y < r.top + epsChangeSize || y >= r.bottom - epsChangeSize) &&
 				readyMode && !this.model.getSheetProtection(Asc.c_oAscSheetProtectType.formatRows);
 
+			let isSelectedFullRow = false;
+			let selection = this._getSelection();
+			if (selection && selection.ranges) {
+				for (let i = 0 ; i < selection.ranges.length; i++) {
+					let curSelection = selection.ranges[i];
+					//move cols/rows was planned only for full version
+					if (curSelection.getType() === Asc.c_oAscSelectionType.RangeRow && curSelection.r1 <= r.row && curSelection.r2 >= r.row) {
+						isSelectedFullRow = true;
+						break;
+					}
+				}
+			}
 
+			if (f && isMobileVersion) {
+				f = isSelectedFullRow;
+			}
 			let _target = c_oTargetType.RowHeader;
 			if (!f && !isMobileVersion) {
-				let selection = this._getSelection();
-				if (selection && selection.ranges) {
-					for (let i = 0 ; i < selection.ranges.length; i++) {
-						let curSelection = selection.ranges[i];
-						//move cols/rows was planned only for full version
-						if (curSelection.getType() === Asc.c_oAscSelectionType.RangeRow && curSelection.r1 <= r.row && curSelection.r2 >= r.row) {
-							_target = c_oTargetType.ColumnRowHeaderMove;
-						}
-					}
+				if (isSelectedFullRow) {
+					_target = c_oTargetType.ColumnRowHeaderMove;
 				}
 			}
 
@@ -11867,17 +11875,26 @@
 				readyMode && !this.model.getSheetProtection(Asc.c_oAscSheetProtectType.formatColumns);
 			// ToDo В Excel зависимость epsilon от размера ячейки (у нас фиксированный 3)
 
+			let isSelectedFullCol = false;
+			let selection = this._getSelection();
+			if (selection && selection.ranges) {
+				for (let i = 0 ; i < selection.ranges.length; i++) {
+					let curSelection = selection.ranges[i];
+					//move cols/rows was planned only for full version
+					if (curSelection.getType() === Asc.c_oAscSelectionType.RangeCol && curSelection.c1 <= c.col && curSelection.c2 >= c.col) {
+						isSelectedFullCol = true;
+						break;
+					}
+				}
+			}
+
+			if (f && isMobileVersion) {
+				f = isSelectedFullCol;
+			}
 			let _target = c_oTargetType.ColumnHeader;
 			if (!f && !isMobileVersion) {
-				let selection = this._getSelection();
-				if (selection && selection.ranges) {
-					for (let i = 0 ; i < selection.ranges.length; i++) {
-						let curSelection = selection.ranges[i];
-						//move cols/rows was planned only for full version
-						if (curSelection.getType() === Asc.c_oAscSelectionType.RangeCol && curSelection.c1 <= c.col && curSelection.c2 >= c.col) {
-							_target = c_oTargetType.ColumnRowHeaderMove;
-						}
-					}
+				if (isSelectedFullCol) {
+					_target = c_oTargetType.ColumnRowHeaderMove;
 				}
 			}
 
