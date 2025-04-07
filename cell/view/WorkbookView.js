@@ -876,6 +876,8 @@
 			      return self.isWizardMode;
               }, "getActiveWS": function () {
 			      return self.getActiveWS();
+			  }, "getActiveWSView": function () {
+				  return self.getWorksheet();
 			  }, "updateEditorSelectionInfo": function (xfs) {
 				  self.handlers.trigger("asc_onEditorSelectionChanged", xfs);
 			  }, "onContextMenu": function (event) {
