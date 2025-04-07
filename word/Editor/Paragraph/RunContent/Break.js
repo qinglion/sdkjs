@@ -360,7 +360,7 @@
 	};
 	CRunBreak.prototype.getBidiType = function()
 	{
-		return AscBidi.TYPE.CD;
+		return AscBidi.TYPE.PM;
 	};
 
 	//--------------------------------------------------------export----------------------------------------------------

@@ -200,7 +200,7 @@ let tab_Symbol_Rtl = 0x0021;
 	};
 	CRunTab.prototype.getBidiType = function()
 	{
-		return AscBidi.TYPE.CD;
+		return AscBidi.TYPE.PM;
 	};
 	//--------------------------------------------------------export----------------------------------------------------
 	window['AscWord'] = window['AscWord'] || {};
