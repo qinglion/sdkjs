@@ -536,10 +536,10 @@
 		const stream = pReader.stream;
 		switch (attrType) {
 			case 0:
-				this.iX = stream.GetULong();
+				this.ix = stream.GetULong();
 				break;
 			case 1:
-				this.rGB = stream.GetString2();
+				this.rgb = stream.GetString2();
 				break;
 			default:
 				return false;
@@ -1734,7 +1734,7 @@
 		const stream = pReader.stream;
 		switch (attrType) {
 			case 0:
-				this.iX = stream.GetULong();
+				this.ix = stream.GetULong();
 				break;
 			case 1:
 				this.n = stream.GetString2();
@@ -1797,7 +1797,7 @@
 		const stream = pReader.stream;
 		switch (attrType) {
 			case 0:
-				this.iX = stream.GetULong();
+				this.ix = stream.GetULong();
 				break;
 			case 1:
 				this.n = stream.GetString2();
@@ -2278,7 +2278,7 @@
 		const stream = pReader.stream;
 		switch (attrType) {
 			case 0:
-				this.iX = stream.GetULong();
+				this.ix = stream.GetULong();
 				break;
 			case 1:
 				this.value = stream.GetString2();
@@ -2301,7 +2301,7 @@
 		const stream = pReader.stream;
 		switch (attrType) {
 			case 0:
-				this.iX = stream.GetULong();
+				this.ix = stream.GetULong();
 				break;
 			default:
 				return false;
@@ -2321,7 +2321,7 @@
 		const stream = pReader.stream;
 		switch (attrType) {
 			case 0:
-				this.iX = stream.GetULong();
+				this.ix = stream.GetULong();
 				break;
 			default:
 				return false;
@@ -2341,7 +2341,7 @@
 		const stream = pReader.stream;
 		switch (attrType) {
 			case 0:
-				this.iX = stream.GetULong();
+				this.ix = stream.GetULong();
 				break;
 			default:
 				return false;

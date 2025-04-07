@@ -1330,8 +1330,8 @@ AscDFH.historyitem_type_VisioWindow = 328;
 	 */
 	function ColorEntry_Type() {
 		AscFormat.CBaseFormatNoIdObject.call(this);
-		this.iX = null;
-		this.rGB = null;
+		this.ix = null;
+		this.rgb = null;
 	}
 	AscFormat.InitClass(ColorEntry_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_VisioColorEntry);
 
@@ -1651,7 +1651,7 @@ AscDFH.historyitem_type_VisioWindow = 328;
 	 */
 	function tp_Type() {
 		AscFormat.CBaseFormatNoIdObject.call(this);
-		this.iX = null;
+		this.ix = null;
 		return this;
 	}
 	AscFormat.InitClass(tp_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
@@ -1664,7 +1664,7 @@ AscDFH.historyitem_type_VisioWindow = 328;
 	 */
 	function pp_Type() {
 		AscFormat.CBaseFormatNoIdObject.call(this);
-		this.iX = null;
+		this.ix = null;
 		return this;
 	}
 	AscFormat.InitClass(pp_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
@@ -1677,7 +1677,7 @@ AscDFH.historyitem_type_VisioWindow = 328;
 	 */
 	function fld_Type() {
 		AscFormat.CBaseFormatNoIdObject.call(this);
-		this.iX = null;
+		this.ix = null;
 		this.value = null;
 		return this;
 	}
@@ -1691,7 +1691,7 @@ AscDFH.historyitem_type_VisioWindow = 328;
 	 */
 	function cp_Type() {
 		AscFormat.CBaseFormatNoIdObject.call(this);
-		this.iX = null;
+		this.ix = null;
 		return this;
 	}
 	AscFormat.InitClass(cp_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
@@ -2770,7 +2770,7 @@ AscDFH.historyitem_type_VisioWindow = 328;
 		this.n = null;
 		this.t = null;
 		this.f = null;
-		this.iX = null;
+		this.ix = null;
 		this.s = null;
 		return this;
 	}
@@ -2795,7 +2795,7 @@ AscDFH.historyitem_type_VisioWindow = 328;
 	 */
 	function IndexedRow_Type() {
 		AscFormat.CBaseFormatNoIdObject.call(this);
-		this.iX = null;
+		this.ix = null;
 		return this;
 	}
 	AscFormat.InitClass(IndexedRow_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
@@ -2809,7 +2809,7 @@ AscDFH.historyitem_type_VisioWindow = 328;
 		AscFormat.CBaseFormatNoIdObject.call(this);
 		this.n = null;
 		this.localName = null;
-		this.iX = null;
+		this.ix = null;
 		return this;
 	}
 	AscFormat.InitClass(NamedIndexedRow_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);

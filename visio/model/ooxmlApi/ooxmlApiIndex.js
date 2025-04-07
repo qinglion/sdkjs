@@ -232,9 +232,9 @@
 		} else if (object.kind === c_oVsdxSheetStorageKind.Row_Type) {
 			if (object.n !== null) {
 				key = object.n;
-			} else if (object.iX !== null) {
-				key = object.iX;
-				lastIx = object.iX;
+			} else if (object.ix !== null) {
+				key = object.ix;
+				lastIx = object.ix;
 			} else {
 				key = lastIx;
 				lastIx++;
@@ -242,9 +242,9 @@
 			}
 		} else if (object.kind === c_oVsdxSheetStorageKind.Section_Type)	{
 			if (object.n === "Geometry") {
-				key = "Geometry_" + object.iX;
-			} else if (object.iX !== null) {
-				key = object.iX;
+				key = "Geometry_" + object.ix;
+			} else if (object.ix !== null) {
+				key = object.ix;
 			} else if (object.n !== null) {
 				key = object.n;
 			} else {
@@ -550,12 +550,12 @@
 			let resultArr = [];
 			for (const key in this.elements) {
 				const element = this.elements[key];
-				if (element.kind === c_oVsdxSheetStorageKind.Section_Type && String(element.iX) === formula) {
+				if (element.kind === c_oVsdxSheetStorageKind.Section_Type && String(element.ix) === formula) {
 					resultArr.push(element);
 				}
 			}
 			return resultArr;
-			// return findObjects(this.elements, "Section_Type", "iX", formula);
+			// return findObjects(this.elements, "Section_Type", "ix", formula);
 		}
 		let resultArr = [];
 		for (const key in this.elements) {
@@ -565,7 +565,7 @@
 			}
 		}
 		resultArr.sort(function (a, b) {
-				return a.iX - b.iX;
+				return a.ix - b.ix;
 		});
 		return resultArr;
 		// return findObjects(this.elements, "Section_Type", "n", formula);
@@ -588,7 +588,7 @@
 			}
 		}
 		// resultArr.sort(function (a, b) {
-		// 	return a.iX - b.iX;
+		// 	return a.ix - b.ix;
 		// });
 		return resultArr;
 	}
@@ -614,7 +614,7 @@
 	function Section_Type() {
 		this.n = null;
 		this.del = null;
-		this.iX = null;
+		this.ix = null;
 
 		// always use getter setter methods
 		// Always use it see Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive js docs for explanation.
@@ -640,7 +640,7 @@
 	function Row_Type() {
 		this.n = null;
 		this.localName = null;
-		this.iX = null;
+		this.ix = null;
 		this.t = null;
 		this.del = null;
 

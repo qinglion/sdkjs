@@ -341,9 +341,9 @@
 				if (afterDropText.length > 2) {
 					return undefined;
 				} else if (afterNext && afterNext.kind === AscVisio.c_oVsdxTextKind.PP) {
-					return afterNext.iX;
+					return afterNext.ix;
 				} else if (next && next.kind === AscVisio.c_oVsdxTextKind.PP) {
-					return next.iX;
+					return next.ix;
 				}
 				return undefined;
 			}
@@ -972,7 +972,7 @@
 							oRun.AddText(textWithLineDrops);
 
 							// check character properties: get cp_Type object and in characterPropsCommon get needed Row
-							let characterRowNum = propsCP && propsCP.iX;
+							let characterRowNum = propsCP && propsCP.ix;
 							if (propsCP === null) {
 								characterRowNum = 0;
 							}
@@ -988,7 +988,7 @@
 						// text field
 
 						let oFld = new AscCommonWord.CPresentationField(currentParagraph);
-						let fieldRowNum = textElementPart.iX;
+						let fieldRowNum = textElementPart.ix;
 						let fieldPropsFinal = fieldRowNum !== null && fieldPropsCommon.getRow(fieldRowNum);
 						initPresentationField(oFld, fieldPropsFinal, isTextInherited);
 
@@ -1002,7 +1002,7 @@
 
 						// setup Run
 						// check character properties: get cp_Type object and in characterPropsCommon get needed Row
-						let characterRowNum = propsCP && propsCP.iX;
+						let characterRowNum = propsCP && propsCP.ix;
 						if (propsCP === null) {
 							characterRowNum = 0;
 						}
@@ -1018,7 +1018,7 @@
 				} else if (textElementPart.kind === AscVisio.c_oVsdxTextKind.PP) {
 					// search for pp only after CRLF and in the beginning of text element
 
-					// currentParagraphPropsRow = textElementPart.iX;
+					// currentParagraphPropsRow = textElementPart.ix;
 					// parseParagraphAndAddToShapeContent(currentParagraphPropsRow, paragraphPropsCommon, textCShape);
 
 				} else if (textElementPart.kind === AscVisio.c_oVsdxTextKind.CP) {
