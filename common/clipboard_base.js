@@ -932,7 +932,6 @@
 
 		isUseNewCopy : function()
 		{
-			return true
 			if (this.Api.isMobileVersion)
 			{
 				if (this.Api.isViewMode || this.Api.isRestrictionView())
@@ -959,12 +958,12 @@
 
 				try
 				{
-					this.Api.asc_CheckCopy(copy_data, c_oAscClipboardDataFormat.Text | c_oAscClipboardDataFormat.Html | c_oAscClipboardDataFormat.Internal | c_oAscClipboardDataFormat.Image);
+					this.Api.asc_CheckCopy(copy_data, c_oAscClipboardDataFormat.Text | c_oAscClipboardDataFormat.Html | c_oAscClipboardDataFormat.Internal);
 
 					const data = [new ClipboardItem({
 						"text/plain"        : new Blob([copy_data.data[c_oAscClipboardDataFormat.Text]], {type: "text/plain"}),
 						"text/html"         : new Blob([copy_data.data[c_oAscClipboardDataFormat.Html]], {type: "text/html"}),
-						"image/png"         : new Blob(copy_data.data[c_oAscClipboardDataFormat.Image], {type: "image/png"}),
+						/*"image/png"         : new Blob(copy_data.data[c_oAscClipboardDataFormat.Image], {type: "image/png"}),*/
 						"web text/x-custom" : new Blob(["asc_internalData2;" + copy_data.data[c_oAscClipboardDataFormat.Internal]], {type: "web text/x-custom"})
 					})];
 
