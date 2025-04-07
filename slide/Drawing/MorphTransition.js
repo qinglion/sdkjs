@@ -1471,19 +1471,26 @@
 		const oThis = this;
 		this.forEachObjectToDraw(function(oObjectToDraw) {
 			const oBoundsChecker = new AscFormat.CSlideBoundsChecker();
-			oObjectToDraw.draw(oBoundsChecker, undefined, oThis.transform, oThis.theme, oThis.colorMap);
+			oObjectToDraw.check_bounds(oBoundsChecker);
 			const oBounds = oBoundsChecker.Bounds;
-			let l = oBounds.min_x;
-			let r = oBounds.max_x;
-			let t = oBounds.min_y;
-			let b = oBounds.max_y;
-			if(oObjectToDraw.pen) {
-				const dCorrection = oObjectToDraw.pen.getWidthMM() / 2;
-				l -= dCorrection;
-				r += dCorrection;
-				t -= dCorrection;
-				b += dCorrection;
-			}
+			const minY = oObjectToDraw.lineStructure.m_oLine.Top;
+			const maxY = oObjectToDraw.lineStructure.m_oLine.Bottom;
+			const arr_x = [
+				oThis.transform.TransformPointX(oBounds.min_x, minY),
+				oThis.transform.TransformPointX(oBounds.max_x, minY),
+				oThis.transform.TransformPointX(oBounds.min_x, maxY),
+				oThis.transform.TransformPointX(oBounds.max_x, maxY)
+			];
+			const arr_y = [
+				oThis.transform.TransformPointY(oBounds.min_x, minY),
+				oThis.transform.TransformPointY(oBounds.max_x, minY),
+				oThis.transform.TransformPointY(oBounds.min_x, maxY),
+				oThis.transform.TransformPointY(oBounds.max_x, maxY)
+			];
+			const l = Math.min.apply(Math, arr_x);
+			const r = Math.max.apply(Math, arr_x);
+			const t = Math.min.apply(Math, arr_y);
+			const b = Math.max.apply(Math, arr_y);
 			if (oTempBounds) {
 				if (l < oTempBounds.l) {
 					oTempBounds.l = l;

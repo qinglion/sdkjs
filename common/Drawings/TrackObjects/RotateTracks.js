@@ -185,7 +185,7 @@ function OverlayObject(geometry, extX, extY, brush, pen, transform )
     };
 }
 
-function ObjectToDraw(brush, pen, extX, extY, geometry, transform, x, y, oComment, Code)
+function ObjectToDraw(brush, pen, extX, extY, geometry, transform, x, y, oComment, Code, oLineStructure)
 {
     this.extX = extX;
     this.extY = extY;
@@ -197,6 +197,7 @@ function ObjectToDraw(brush, pen, extX, extY, geometry, transform, x, y, oCommen
     this.Code = Code;
     this.pen = pen;
     this.brush = brush;
+		this.lineStructure = oLineStructure;
 
 	/*позиция символа*/
     this.x = x;
