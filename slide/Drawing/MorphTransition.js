@@ -1466,6 +1466,48 @@
 		this.drawContent(oGraphics);
 		this.drawStrikeoutUnderlines(oGraphics);
 	};
+	CObjectForDrawArrayWrapper.prototype.recalculateBounds = function() {
+		let oTempBounds = null;
+		const oThis = this;
+		this.forEachObjectToDraw(function(oObjectToDraw) {
+			const oBoundsChecker = new AscFormat.CSlideBoundsChecker();
+			oObjectToDraw.draw(oBoundsChecker, undefined, oThis.transform, oThis.theme, oThis.colorMap);
+			const oBounds = oBoundsChecker.Bounds;
+			let l = oBounds.min_x;
+			let r = oBounds.max_x;
+			let t = oBounds.min_y;
+			let b = oBounds.max_y;
+			if(oObjectToDraw.pen) {
+				const dCorrection = oObjectToDraw.pen.getWidthMM() / 2;
+				l -= dCorrection;
+				r += dCorrection;
+				t -= dCorrection;
+				b += dCorrection;
+			}
+			if (oTempBounds) {
+				if (l < oTempBounds.l) {
+					oTempBounds.l = l;
+				}
+				if (r > oTempBounds.r) {
+					oTempBounds.r = r;
+				}
+				if (t < oTempBounds.t) {
+					oTempBounds.t = t;
+				}
+				if (b > oTempBounds.b) {
+					oTempBounds.b = b;
+				}
+			} else {
+				oTempBounds = {l: l, t: t, r: r, b: b};
+			}
+		});
+		this.bounds.reset(oTempBounds.l, oTempBounds.t, oTempBounds.r, oTempBounds.b);
+	};
+	CObjectForDrawArrayWrapper.prototype.forEachObjectToDraw = function(callback) {
+		this.backgroundObjects.forEach(callback);
+		this.contentObjects.forEach(callback);
+		this.strikeoutUnderlineObjects.forEach(callback);
+	};
 
     function CBackgroundWrapper(oMorph, oSlide) {
         this.slide = oSlide;
