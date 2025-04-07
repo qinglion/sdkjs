@@ -257,28 +257,32 @@ AscDFH.historyitem_type_VisioWindow = 328;
 		// Not realized, file defines schema and data of that schema
 		let solutionsPart = docPart.part.addPart(AscCommon.openXml.Types.solutions);
 
-		for (let i = 0; i < this.masterContents.length; i++) {
-			let masterContent = mastersPart.part.addPart(AscCommon.openXml.Types.master);
-			masterContent.part.setDataXml(this.masterContents[i], memory);
+		if (this.masters) {
+			for (let i = 0; i < this.masters.master.length; i++) {
+				let masterContent = mastersPart.part.addPart(AscCommon.openXml.Types.master);
+				masterContent.part.setDataXml(this.masters.master[i].content, memory);
+			}
 		}
-
 		let pagesPart = docPart.part.addPart(AscCommon.openXml.Types.pages);
+		if (this.pages) {
+			for (let i = 0; i < this.pages.page.length; i++) {
+				let pageContent = pagesPart.part.addPart(AscCommon.openXml.Types.page);
+				pageContent.part.setDataXml(this.pages.page[i].content, memory);
 
-		for (let i = 0; i < this.pageContents.length; i++) {
-			let pageContent = pagesPart.part.addPart(AscCommon.openXml.Types.page);
-			pageContent.part.setDataXml(this.pageContents[i], memory);
-
-			// I add page[N].xml.rels below
-			// It has links to all masters but
-			// in examplevsdx file in page[N].xml.rels rId[N] states to random master[N]
-			// e.g. rId3 to ../masters/master1.xml
-			// here rId1 will state to master1, rId2 to master2, etc.
-			// TODO check if this is important
-			// in page[N].xml there is no rId used only <Shape ... Master="[ID]">
-			// e. g. <Shape ... Master="1">
-			for (let i = 0; i < this.masterContents.length; i++) {
-				pageContent.part.addRelationship(AscCommon.openXml.Types.masterFromPage.relationType,
-					"../masters/master" + (i + 1) + ".xml");
+				// I add page[N].xml.rels below
+				// It has links to all masters but
+				// in examplevsdx file in page[N].xml.rels rId[N] states to random master[N]
+				// e.g. rId3 to ../masters/master1.xml
+				// here rId1 will state to master1, rId2 to master2, etc.
+				// TODO check if this is important
+				// in page[N].xml there is no rId used only <Shape ... Master="[ID]">
+				// e. g. <Shape ... Master="1">
+				if (this.masters) {
+					for (let i = 0; i < this.masters.master.length; i++) {
+						pageContent.part.addRelationship(AscCommon.openXml.Types.masterFromPage.relationType,
+							"../masters/master" + (i + 1) + ".xml");
+					}
+				}
 			}
 		}
 
@@ -854,8 +858,6 @@ AscDFH.historyitem_type_VisioWindow = 328;
 		/** @type {(CShape | CGroupShape | CImageShape)[]} */
 		let topLevelShapesAndGroups = [];
 
-		let masters = this.masters.master;
-
 		for(let i = 0; i < pageContent.shapes.length; i++) {
 			let shape = pageContent.shapes[i];
 
@@ -863,7 +865,9 @@ AscDFH.historyitem_type_VisioWindow = 328;
 			let stylesWithRealizedInheritance = new Set();
 			shape.realizeStyleInheritanceRecursively(this.styleSheets, stylesWithRealizedInheritance);
 			// inherit master and links to master styles
-			shape.realizeMasterInheritanceRecursively(masters);
+			if (this.masters) {
+				shape.realizeMasterInheritanceRecursively(this.masters.master);
+			}
 			// inherit master styles
 			// TODO performance: realize style inheritance only if style is inherited from master
 			shape.realizeStyleInheritanceRecursively(this.styleSheets, stylesWithRealizedInheritance);

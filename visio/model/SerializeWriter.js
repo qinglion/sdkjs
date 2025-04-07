@@ -220,15 +220,16 @@
 		pWriter.StartRecord(14);
 		pWriter.WriteRecordPPTY(0, this.windows);
 		pWriter.EndRecord();
-		
-		// todo Write themes
-		// if (this.themes) {
-		// 	for (let i = 0; i < this.themes.length; i++) {
-		// 		pWriter.StartRecord(15);
-		// 		pWriter.binaryPPTYWriter.WriteTheme(this.themes[i]);
-		// 		pWriter.EndRecord();
-		// 	}
-		// }
+
+		if (this.themes) {
+			for (let i = 0; i < this.themes.length; i++) {
+				pWriter.StartRecord(15);
+				pWriter.WriteTheme(this.themes[i]);
+				pWriter.EndRecord();
+			}
+		}
+		//todo VbaProject
+		//todo JsaProject
 	};
 
 	/**
@@ -279,8 +280,8 @@
 			for (let i = 0; i < this.shapes.length; i++) {
 				pWriter.WriteRecordPPTY(0, this.shapes[i]);
 			}
+			pWriter.EndRecord();
 		}
-		pWriter.EndRecord();
 		
 		// Write connects
 		if (this.connects && this.connects.length > 0) {
@@ -290,7 +291,6 @@
 			}
 			pWriter.EndRecord();
 		}
-		pWriter.EndRecord();
 	};
 
 	/**
@@ -645,7 +645,7 @@
 	 * @param {CBinaryFileWriter} pWriter - The binary writer
 	 */
 	AscVisio.Icon_Type.prototype.toPPTY = function (pWriter) {
-		pWriter._WriteString2(0, this.value);
+		pWriter.WriteString2(this.value);
 	};
 
 	/**
@@ -689,7 +689,7 @@
 	 * @param {CBinaryFileWriter} pWriter - The binary writer
 	 */
 	AscVisio.tp_Type.prototype.privateWriteAttributes = function (pWriter) {
-		pWriter._WriteUInt2(0, this.iX);
+		pWriter._WriteUInt2(0, this.ix);
 	};
 
 	/**
@@ -698,7 +698,7 @@
 	 * @param {CBinaryFileWriter} pWriter - The binary writer
 	 */
 	AscVisio.pp_Type.prototype.privateWriteAttributes = function (pWriter) {
-		pWriter._WriteUInt2(0, this.iX);
+		pWriter._WriteUInt2(0, this.ix);
 	};
 
 	/**
@@ -707,7 +707,7 @@
 	 * @param {CBinaryFileWriter} pWriter - The binary writer
 	 */
 	AscVisio.fld_Type.prototype.privateWriteAttributes = function (pWriter) {
-		pWriter._WriteUInt2(0, this.iX);
+		pWriter._WriteUInt2(0, this.ix);
 		pWriter._WriteString2(1, this.value);
 	};
 
@@ -717,7 +717,7 @@
 	 * @param {CBinaryFileWriter} pWriter - The binary writer
 	 */
 	AscVisio.cp_Type.prototype.privateWriteAttributes = function (pWriter) {
-		pWriter._WriteUInt2(0, this.iX);
+		pWriter._WriteUInt2(0, this.ix);
 	};
 
 	/**
@@ -821,12 +821,10 @@
 		pWriter.WriteRecordPPTY(0, this.ruleSetFlags);
 		
 		// Write rules if present
-		if (this.rules) {
-			pWriter.StartRecord(1);
-			for (let i = 0; i < this.rules.length; i++) {
-				pWriter.WriteRecordPPTY(0, this.rules[i]);
+		if (this.rule) {
+			for (let i = 0; i < this.rule.length; i++) {
+				pWriter.WriteRecordPPTY(1, this.rule[i]);
 			}
-			pWriter.EndRecord();
 		}
 	};
 
@@ -871,15 +869,21 @@
 		pWriter.WriteRecordPPTY(0, this.dataColumns);
 		
 		// Write primaryKey if present
-		pWriter.WriteRecordPPTY(1, this.primaryKey);
+		if (this.primaryKey) {
+			for (let i = 0; i < this.primaryKey.length; i++) {
+				pWriter.StartRecord(1);
+				pWriter.WriteRecordPPTY(0, this.primaryKey[i]);
+				pWriter.EndRecord();
+			}
+		}
 		
 		// Write rowMaps if present
 		if (this.rowMaps) {
-			pWriter.StartRecord(2);
 			for (let i = 0; i < this.rowMaps.length; i++) {
+				pWriter.StartRecord(2);
 				pWriter.WriteRecordPPTY(0, this.rowMaps[i]);
+				pWriter.EndRecord();
 			}
-			pWriter.EndRecord();
 		}
 		
 		// Write refreshConflicts if present
@@ -944,9 +948,9 @@
 		pWriter._WriteUInt2(8, this.container);
 		pWriter._WriteUInt2(9, this.page);
 		pWriter._WriteUInt2(10, this.sheet);
-		pWriter._WriteDouble2(11, this.viewScale);
-		pWriter._WriteDouble2(12, this.viewCenterX);
-		pWriter._WriteDouble2(13, this.viewCenterY);
+		pWriter._WriteDoubleReal2(11, this.viewScale);
+		pWriter._WriteDoubleReal2(12, this.viewCenterX);
+		pWriter._WriteDoubleReal2(13, this.viewCenterY);
 		pWriter._WriteString2(14, this.document);
 		pWriter._WriteUInt2(15, this.parentWindow);
 		pWriter._WriteBool2(16, this.readOnly);
@@ -960,7 +964,7 @@
 		pWriter._WriteUInt2(24, this.snapExtensions);
 		pWriter._WriteBool2(25, this.snapAngles);
 		pWriter._WriteBool2(26, this.dynamicGridEnabled);
-		pWriter._WriteDouble2(27, this.tabSplitterPos);
+		pWriter._WriteDoubleReal2(27, this.tabSplitterPos);
 		pWriter._WriteUInt2(28, this.stencilGroup);
 		pWriter._WriteUInt2(29, this.stencilGroupPos);
 	};
@@ -978,9 +982,9 @@
 		pWriter._WriteBool2(4, this.isCustomNameU);
 		pWriter._WriteBool2(5, this.background);
 		pWriter._WriteUInt2(6, this.backPage);
-		pWriter._WriteDouble2(7, this.viewScale);
-		pWriter._WriteDouble2(8, this.viewCenterX);
-		pWriter._WriteDouble2(9, this.viewCenterY);
+		pWriter._WriteDoubleReal2(7, this.viewScale);
+		pWriter._WriteDoubleReal2(8, this.viewCenterX);
+		pWriter._WriteDoubleReal2(9, this.viewCenterY);
 		pWriter._WriteUInt2(10, this.reviewerID);
 		pWriter._WriteUInt2(11, this.associatedPage);
 	};
@@ -1072,34 +1076,13 @@
 	};
 
 	/**
-	 * Write attributes to stream for Text_Type
-	 * 
-	 * @param {CBinaryFileWriter} pWriter - The binary writer
-	 */
-	AscVisio.Text_Type.prototype.privateWriteAttributes = function (pWriter) {
-		pWriter._WriteString2(0, this.cp);
-		pWriter._WriteString2(1, this.pp);
-		pWriter._WriteString2(2, this.tp);
-	};
-
-	/**
 	 * Write children to stream for Text_Type
 	 *
 	 * @param {CBinaryFileWriter} pWriter - The binary writer
 	 */
 	AscVisio.Text_Type.prototype.writeChildren = function (pWriter) {
-		pWriter._WriteString2(0, this.text);
-		
-		// Write fields if present
-		if (this.fields && this.fields.length > 0) {
-			pWriter.StartRecord(1);
-			for (let i = 0; i < this.fields.length; i++) {
-				pWriter.WriteRecordPPTY(0, this.fields[i]);
-			}
-			pWriter.EndRecord();
-		}
 		this.elements.forEach(function(elem) {
-			switch (elem.type) {
+			switch (elem.kind) {
 				case AscVisio.c_oVsdxTextKind.CP:
 					pWriter.WriteRecordPPTY(0, elem);
 					break;
@@ -1114,7 +1097,9 @@
 					break;
 				default:
 					pWriter.StartRecord(4);
+					pWriter.WriteUChar(AscCommon.g_nodeAttributeStart);
 					pWriter._WriteString2(0, elem);
+					pWriter.WriteUChar(AscCommon.g_nodeAttributeEnd);
 					pWriter.EndRecord();
 					break;
 			}
@@ -1127,60 +1112,8 @@
 	 * @param {CBinaryFileWriter} pWriter - The binary writer
 	 */
 	AscVisio.RefBy_Type.prototype.privateWriteAttributes = function (pWriter) {
-		pWriter._WriteString2(0, this.id);
-		pWriter._WriteString2(1, this.name);
-	};
-
-	/**
-	 * Write attributes to stream for Text_Type
-	 * 
-	 * @param {CBinaryFileWriter} pWriter - The binary writer
-	 */
-	AscVisio.Text_Type.prototype.privateWriteAttributes = function (pWriter) {
-		pWriter._WriteString2(0, this.text);
-	};
-
-	/**
-	 * Write children to stream for Text_Type
-	 *
-	 * @param {CBinaryFileWriter} pWriter - The binary writer
-	 */
-	AscVisio.Text_Type.prototype.writeChildren = function (pWriter) {
-		// Write cp (character properties)
-		if (this.cp && this.cp.length > 0) {
-			pWriter.StartRecord(0);
-			for (let i = 0; i < this.cp.length; i++) {
-				pWriter.WriteRecordPPTY(0, this.cp[i]);
-			}
-			pWriter.EndRecord();
-		}
-		
-		// Write pp (paragraph properties)
-		if (this.pp && this.pp.length > 0) {
-			pWriter.StartRecord(1);
-			for (let i = 0; i < this.pp.length; i++) {
-				pWriter.WriteRecordPPTY(0, this.pp[i]);
-			}
-			pWriter.EndRecord();
-		}
-		
-		// Write tp (text properties)
-		if (this.tp && this.tp.length > 0) {
-			pWriter.StartRecord(2);
-			for (let i = 0; i < this.tp.length; i++) {
-				pWriter.WriteRecordPPTY(0, this.tp[i]);
-			}
-			pWriter.EndRecord();
-		}
-		
-		// Write fld (field properties)
-		if (this.fld && this.fld.length > 0) {
-			pWriter.StartRecord(3);
-			for (let i = 0; i < this.fld.length; i++) {
-				pWriter.WriteRecordPPTY(0, this.fld[i]);
-			}
-			pWriter.EndRecord();
-		}
+		pWriter._WriteUInt2(0, this.id);
+		pWriter._WriteString2(1, this.t);
 	};
 
 	/**
@@ -1189,8 +1122,8 @@
 	 * @param {CBinaryFileWriter} pWriter - The binary writer
 	 */
 	AscVisio.HeaderFooter_Type.prototype.privateWriteAttributes = function (pWriter) {
-		pWriter._WriteDouble2(0, this.headerMargin);
-		pWriter._WriteDouble2(1, this.footerMargin);
+		pWriter._WriteDoubleReal2(0, this.headerMargin);
+		pWriter._WriteDoubleReal2(1, this.footerMargin);
 		pWriter._WriteString2(2, this.headerLeft);
 		pWriter._WriteString2(3, this.headerCenter);
 		pWriter._WriteString2(4, this.headerRight);
@@ -1206,12 +1139,13 @@
 	 * @param {CBinaryFileWriter} pWriter - The binary writer
 	 */
 	AscVisio.EventItem_Type.prototype.privateWriteAttributes = function (pWriter) {
-		pWriter._WriteString2(0, this.eventCode);
-		pWriter._WriteString2(1, this.enabled);
-		pWriter._WriteString2(2, this.target);
-		pWriter._WriteString2(3, this.action);
-	};
-
+		pWriter._WriteUInt2(0, this.id);
+		pWriter._WriteUInt2(1, this.action);
+		pWriter._WriteUInt2(2, this.eventCode);
+		pWriter._WriteBool2(3, this.enabled);
+		pWriter._WriteString2(4, this.target);
+		pWriter._WriteString2(5, this.targetArgs);
+};
 	/**
 	 * Write attributes to stream for DocumentSheet_Type
 	 * 
@@ -1271,8 +1205,8 @@
 	 * @param {CBinaryFileWriter} pWriter - The binary writer
 	 */
 	AscVisio.ColorEntry_Type.prototype.privateWriteAttributes = function (pWriter) {
-		pWriter._WriteUInt2(0, this.iX);
-		pWriter._WriteString2(1, this.rGB);
+		pWriter._WriteUInt2(0, this.ix);
+		pWriter._WriteString2(1, this.rgb);
 	};
 
 	/**
@@ -1306,7 +1240,7 @@
 	 * @param {CBinaryFileWriter} pWriter - The binary writer
 	 */
 	AscVisio.Section_Type.prototype.privateWriteAttributes = function (pWriter) {
-		pWriter._WriteUInt2(0, this.iX);
+		pWriter._WriteUInt2(0, this.ix);
 		pWriter._WriteString2(1, this.n);
 		pWriter._WriteBool2(2, this.del);
 	};
@@ -1361,7 +1295,7 @@
 	 * @param {CBinaryFileWriter} pWriter - The binary writer
 	 */
 	AscVisio.Row_Type.prototype.privateWriteAttributes = function (pWriter) {
-		pWriter._WriteUInt2(0, this.iX);
+		pWriter._WriteUInt2(0, this.ix);
 		pWriter._WriteString2(1, this.n);
 		pWriter._WriteString2(2, this.localName);
 		pWriter._WriteString2(3, this.t);
@@ -1419,14 +1353,14 @@
 	 */
 	AscVisio.ForeignData_Type.prototype.privateWriteAttributes = function (pWriter) {
 		pWriter._WriteUChar2(0, this.foreignType);
-		pWriter._WriteULong2(1, this.objectType);
+		pWriter._WriteUInt2(1, this.objectType);
 		pWriter._WriteBool2(2, this.showAsIcon);
-		pWriter._WriteDouble2(3, this.objectWidth);
-		pWriter._WriteDouble2(4, this.objectHeight);
-		pWriter._WriteDouble2(5, this.extentX);
-		pWriter._WriteDouble2(6, this.extentY);
+		pWriter._WriteDoubleReal2(3, this.objectWidth);
+		pWriter._WriteDoubleReal2(4, this.objectHeight);
+		pWriter._WriteDoubleReal2(5, this.extentX);
+		pWriter._WriteDoubleReal2(6, this.extentY);
 		pWriter._WriteUChar2(7, this.compressionType);
-		pWriter._WriteDouble2(8, this.compressionLevel);
+		pWriter._WriteDoubleReal2(8, this.compressionLevel);
 	};
 
 	/**
@@ -1436,12 +1370,12 @@
 	 */
 	AscVisio.ForeignData_Type.prototype.writeChildren = function (pWriter) {
 		// Write image data
-		if (this.mediaFilename) {
+		if (null !== this.mediaFilename) {
 			pWriter.StartRecord(1);
 			pWriter.WriteString2(this.mediaFilename);
 			pWriter.EndRecord();
 		}
-		if (this.oleFilename) {
+		if (null !== this.oleFilename) {
 			pWriter.StartRecord(2);
 			pWriter.WriteString2(this.oleFilename);
 			pWriter.EndRecord();

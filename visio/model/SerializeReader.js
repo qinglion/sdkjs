@@ -440,10 +440,12 @@
 				break;
 				
 			case 15:
-				stream.Skip2(4);//len
-				//Themes
-				let theme = pReader.binaryPPTYLoader.ReadTheme()
-				this.themes.push(theme);
+				const len =stream.GetULong(4);//len
+				if (len > 0) {
+					//Themes
+					let theme = pReader.binaryPPTYLoader.ReadTheme()
+					this.themes.push(theme);
+				}
 				break;
 
 			// 	//todo VbaProject
@@ -885,7 +887,6 @@
 				break;
 			}
 			case 1: {
-				// debugger
 				this.icon = new AscVisio.Icon_Type();
 				this.icon.fromPPTY(pReader);
 				break;
