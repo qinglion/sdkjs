@@ -273,7 +273,6 @@
 		this.RedrawForms();
 	};
 	CPageInfo.prototype.RemoveField = function(sId) {
-		let oDoc = this.GetDocument();
 		let oField = this.fields.find(function(field) {
             return field.GetId() === sId;
         });

@@ -152,7 +152,7 @@
             if (typeof(nChars) == "number" && nChars <= 500 && nChars > 0 && widget.IsFileSelect() === false) {
                 nChars = Math.round(nChars);
                 if (oViewer.IsOpenFormsInProgress != true) {
-                    let sText = widget.content.GetElement(0).GetText({ParaEndToSpace: false});
+                    let sText = this.content.getAllText();
                     widget.content.replaceAllText(sText.slice(0, Math.min(nChars, sText.length)));
                 }
                 
@@ -387,18 +387,18 @@
     CTextField.prototype.GetFormatValue = function() {
         return this.contentFormat.getAllText();
     };
-	CTextField.prototype.UpdateDisplayValue = function(displayValue, bAddToHistory) {
+	CTextField.prototype.UpdateDisplayValue = function(displayValue) {
         let oDoc        = this.GetDocument();
         let isOnOpen    = oDoc.Viewer.IsOpenFormsInProgress;
         let _t          = this;
 
-        bAddToHistory !== true && AscCommon.History.StartNoHistoryMode();
+        AscCommon.History.StartNoHistoryMode();
 
         AscFonts.FontPickerByCharacter.getFontsByString(displayValue);
         if (!oDoc.checkFieldFont(this, function() {
             _t.UpdateDisplayValue(displayValue);
         })) {
-            bAddToHistory !== true && AscCommon.History.EndNoHistoryMode();
+            AscCommon.History.EndNoHistoryMode();
             return;
         }
 
@@ -414,7 +414,7 @@
         }
 
         if (displayValue === this._displayValue && this._useDisplayValue == true) {
-            bAddToHistory !== true && AscCommon.History.EndNoHistoryMode();
+            AscCommon.History.EndNoHistoryMode();
             return;
         }
 		
@@ -430,7 +430,7 @@
         }
         else {
             if (_t._displayValue !== displayValue) {
-                bAddToHistory !== true && AscCommon.History.EndNoHistoryMode();
+                AscCommon.History.EndNoHistoryMode();
                 return;
             }
             
@@ -439,7 +439,7 @@
             _t.content.MoveCursorToStartPos();
         }
 		
-        bAddToHistory !== true && AscCommon.History.EndNoHistoryMode();
+        AscCommon.History.EndNoHistoryMode();
 	};
     CTextField.prototype.GetCalcOrderIndex = function() {
         return this.GetDocument().GetCalculateInfo().ids.indexOf(this.GetApIdx());
@@ -1747,7 +1747,7 @@
             }
         }
         
-        let nCharsCount = this.content.GetElement(0).GetText({ParaEndToSpace: false}).length;
+        let nCharsCount = this.content.getAllText();
         if (nRemoveType && nSelStart == nSelEnd) {
             if (nRemoveType == -1 && nSelStart != 0) {
                 nSelStart--;
@@ -1860,7 +1860,7 @@
         
         for (let i = 0; i < aFields.length; i++) {
             if (aFields[i] != this) {
-                this.UpdateDisplayValue(aFields[i].GetValue(), true);
+                this.SetValue(aFields[i].GetValue());
                 this.SetFormatValue(aFields[i].GetFormatValue());
                 
                 this.SetNeedRecalc(true);

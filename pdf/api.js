@@ -337,8 +337,6 @@
 		}
 
 		if (this.isRestrictionView()) {
-			this.SetEditFieldsMode(false);
-
 			let oActiveObj = oDoc.GetActiveObject();
 
 			if (oActiveObj && oActiveObj.IsDrawing()) {
@@ -346,8 +344,6 @@
 			}
 		}
 		else {
-			this.SetEditFieldsMode(true);
-			
 			setTimeout(function() {
 				oDoc.checkDefaultFonts();
 			});
@@ -4262,6 +4258,7 @@
 	PDFEditorApi.prototype['AddFreeTextAnnot']	= PDFEditorApi.prototype.AddFreeTextAnnot;
 
 	// forms
+	PDFEditorApi.prototype['SetEditFieldsMode']			= PDFEditorApi.prototype.SetEditFieldsMode;
 	PDFEditorApi.prototype['AddTextField']				= PDFEditorApi.prototype.AddTextField;
 	PDFEditorApi.prototype['AddDateField']				= PDFEditorApi.prototype.AddDateField;
 	PDFEditorApi.prototype['AddImageField']				= PDFEditorApi.prototype.AddImageField;

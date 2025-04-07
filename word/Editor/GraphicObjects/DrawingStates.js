@@ -951,16 +951,30 @@ RotateState.prototype =
                                     oAnnot.SetRect(aRect);
                                 }
                             }
-                            if (oTrack.originalObject.IsDrawing() && oTrack instanceof AscFormat.MoveShapeImageTrack) {
-                                if (oTrack.pageIndex != oTrack.originalObject.GetPage()) {
-                                    oTrack.originalObject.SetPage(oTrack.pageIndex);
+                            if (oTrack.originalObject.IsDrawing()) {
+                                let isMoveShapeImageTrack = oTrack instanceof AscFormat.MoveShapeImageTrack;
+                                let isEditFieldShape = oTrack.originalObject.IsEditFieldShape();
+                                let aRect = [
+                                    bounds.posX * g_dKoef_mm_to_pt,
+                                    bounds.posY * g_dKoef_mm_to_pt,
+                                    (bounds.posX + bounds.extX) * g_dKoef_mm_to_pt,
+                                    (bounds.posY + bounds.extY) * g_dKoef_mm_to_pt
+                                ];
+                            
+                                if (isMoveShapeImageTrack && oTrack.pageIndex !== oTrack.originalObject.GetPage()) {
+                                    if (isEditFieldShape) {
+                                        let oField = oTrack.originalObject.GetEditField();
+                                        oField.SetRect(aRect);
+                                        oField.SetPage(oTrack.pageIndex);
+                                    }
+                                    else {
+                                        oTrack.originalObject.SetPage(oTrack.pageIndex);
+                                    }
                                 }
-                            }
-                            if (oTrack.originalObject.IsDrawing() && oTrack.originalObject.IsEditFieldShape()) {
-                                let aRect = [bounds.posX * g_dKoef_mm_to_pt, bounds.posY * g_dKoef_mm_to_pt, (bounds.posX + bounds.extX) * g_dKoef_mm_to_pt, (bounds.posY + bounds.extY) * g_dKoef_mm_to_pt];
-                                let oField = oTrack.originalObject.GetEditField();
-
-                                oField.SetRect(aRect);
+                                else if (isEditFieldShape) {
+                                    let oField = oTrack.originalObject.GetEditField();
+                                    oField.SetRect(aRect);
+                                }
                             }
                             
                             oTrack.originalObject.SetNeedRecalc(true);
