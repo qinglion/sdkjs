@@ -353,6 +353,7 @@
 				break;
 				
 			case 9:
+				//DataConnections
 				AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY.call({
 					readChildren: AscFormat.CBaseFormatNoIdObject.prototype.readChildren,
 					readChild: function(elementType, pReader) {
@@ -384,7 +385,7 @@
 				break;
 				
 			case 11:
-				//CEventList
+				//Solutions
 				AscFormat.CBaseFormatNoIdObject.prototype.fromPPTY.call({
 					readChildren: AscFormat.CBaseFormatNoIdObject.prototype.readChildren,
 					readChild: function(elementType, pReader) {
@@ -1342,19 +1343,40 @@
 			case 0:
 				this.name = stream.GetString2();
 				break;
-			case 1:
-				this.nameU = stream.GetString2();
-				break;
-			case 2:
-				this.xml = stream.GetString2();
-				break;
 			default:
 				return false;
 		}
 		
 		return true;
 	};
+	/**
+	 * Read child elements from stream for Solution_Type
+	 *
+	 * @param {number} elementType - The type of child element
+	 * @param {BinaryVSDYLoader} pReader - The binary reader
+	 * @returns {boolean} - True if element was handled, false otherwise
+	 */
+	AscVisio.Solution_Type.prototype.readChild = function(elementType, pReader) {
+		let res = true;
+		let t = this;
+		switch (elementType) {
+			case 0: {
+				pReader.stream.Skip2(4);//len
+				pReader.stream.Skip2(1);//type
+				const len = pReader.stream.GetULong();
+				this.content = pReader.stream.GetBufferUint8(len);
+				break;
+			}
+			default: {
+				res = false;
+				break;
+			}
+		}
 
+		return res;
+	}
+
+	// CSolutionXML
 	/**
 	 * Read child elements from stream for CValidation
 	 * 
@@ -3295,6 +3317,12 @@
 				rowMap.fromPPTY(pReader);
 				this.rowMap.push(rowMap);
 				break;
+			case 5:
+				pReader.stream.Skip2(4);//len
+				pReader.stream.Skip2(1);//type
+				const len = pReader.stream.GetULong();
+				this.content = pReader.stream.GetBufferUint8(len);
+				break;
 			//todo
 			// case 5:
 			// 	let refreshConflict = new AscVisio.RefreshConflict_Type();
@@ -3307,10 +3335,7 @@
 			// 	this.autoLinkComparison.push(autoLinkComparison);
 			// 	break;
 
-			//todo remove .rel
-			// case 2:
-			// 	CRecordsetFile
-			// 	break;
+
 			default:
 				handled = false;
 				break;

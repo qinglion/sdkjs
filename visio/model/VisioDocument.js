@@ -1578,6 +1578,7 @@ AscDFH.historyitem_type_VisioWindow = 328;
 		AscFormat.CBaseFormatNoIdObject.call(this);
 		this.name = null;
 		this.rel = null;
+		this.content = null;
 	}
 	AscFormat.InitClass(Solution_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_VisioSolution);
 
@@ -2760,6 +2761,7 @@ AscDFH.historyitem_type_VisioWindow = 328;
 		this.rowMap = [];
 		this.refreshConflict = [];
 		this.autoLinkComparison = [];
+		this.content = null;
 		return this;
 	}
 	AscFormat.InitClass(DataRecordSet_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);

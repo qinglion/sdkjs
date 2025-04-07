@@ -885,22 +885,12 @@
 				pWriter.EndRecord();
 			}
 		}
-		
-		// Write refreshConflicts if present
-		if (this.refreshConflicts) {
-			pWriter.StartRecord(3);
-			for (let i = 0; i < this.refreshConflicts.length; i++) {
-				pWriter.WriteRecordPPTY(0, this.refreshConflicts[i]);
-			}
+		// Write content if present
+		if (this.content) {
+			pWriter.StartRecord(5);
+			pWriter.StartRecord(0);
+			pWriter.WriteBuffer(this.content, 0, this.content.length);
 			pWriter.EndRecord();
-		}
-		
-		// Write autoLinkComparisons if present
-		if (this.autoLinkComparisons) {
-			pWriter.StartRecord(4);
-			for (let i = 0; i < this.autoLinkComparisons.length; i++) {
-				pWriter.WriteRecordPPTY(0, this.autoLinkComparisons[i]);
-			}
 			pWriter.EndRecord();
 		}
 	};
@@ -929,6 +919,22 @@
 		pWriter._WriteString2(0, this.name);
 		pWriter._WriteString2(1, this.nameU);
 		pWriter._WriteString2(2, this.xml);
+	};
+
+	/**
+	 * Write children to stream for Solution_Type
+	 *
+	 * @param {CBinaryFileWriter} pWriter - The binary writer
+	 */
+	AscVisio.Solution_Type.prototype.writeChildren = function (pWriter) {
+		// Write content if present
+		if (this.content) {
+			pWriter.StartRecord(0);
+			pWriter.StartRecord(0);
+			pWriter.WriteBuffer(this.content, 0, this.content.length);
+			pWriter.EndRecord();
+			pWriter.EndRecord();
+		}
 	};
 
 	/**
