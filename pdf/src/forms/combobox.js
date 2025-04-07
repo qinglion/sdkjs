@@ -324,7 +324,7 @@
 	 * @typeofeditors ["PDF"]
 	 */
     CComboBoxField.prototype.SelectOption = function(nIdx) {
-        if (this.GetCurIdxs() == nIdx)
+        if (this.GetCurIdxs().includes(nIdx))
             return;
         
         let oDoc = this.GetDocument();
@@ -593,7 +593,7 @@
 	 */
     CComboBoxField.prototype.UpdateIndexies = function() {
         let aOptions = this.GetOptions();
-        let sValue = this.content.GetElement(0).GetText({ParaEndToSpace: false});
+        let sValue = this.content.getAllText();
         let nIdx = -1;
         for (let i = 0; i < aOptions.length; i++) {
             if (aOptions[i][0] === sValue) {
@@ -692,7 +692,7 @@
         }
     };
     CComboBoxField.prototype.SetOptions = function(aOpt) {
-        while (this._options.length > 0) {
+        while (this.GetOptions().length > 0) {
             this.RemoveOption(0);
         }
         for (let i = 0; i < aOpt.length; i++) {
@@ -727,7 +727,7 @@
             return this._currentValueIndices;
 
         let aOptions = this.GetOptions();
-        let sValue = this.content.GetElement(0).GetText({ParaEndToSpace: false});
+        let sValue = this.content.getAllText();
         for (let i = 0; i < aOptions.length; i++) {
             if (Array.isArray(aOptions[i])) {
                 if (aOptions[i][0] == sValue)
@@ -742,7 +742,20 @@
         
         return [];
     };
-	
+    CComboBoxField.prototype.SyncValue = function() {
+        let aFields = this.GetDocument().GetAllWidgets(this.GetFullName());
+        
+        for (let i = 0; i < aFields.length; i++) {
+            if (aFields[i] != this) {
+                this.SetCurIdxs(aFields[i].GetParentCurIdxs());
+                this.SetFormatValue(aFields[i].GetFormatValue());
+                
+                this.SetNeedRecalc(true);
+                break;
+            }
+        }
+    };
+
     CComboBoxField.prototype.ProcessAutoFitContent = function(oContent) {
         let oPara   = oContent.GetElement(0);
         let oRun    = oPara.GetElement(0);
@@ -905,7 +918,6 @@
     CComboBoxField.prototype.SetArbitaryMask        = AscPDF.CTextField.prototype.SetArbitaryMask;
     CComboBoxField.prototype.ClearFormat            = AscPDF.CTextField.prototype.ClearFormat;
     CComboBoxField.prototype.SetDrawFromStream      = AscPDF.CTextField.prototype.SetDrawFromStream;
-    CComboBoxField.prototype.SyncValue              = AscPDF.CTextField.prototype.SyncValue;
 
 	window["AscPDF"].CComboBoxField = CComboBoxField;
 })();

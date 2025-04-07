@@ -291,11 +291,13 @@
         }
         
         let oDoc        = this.GetDocument();
+        let oCurPage    = this.GetParentPage();
         let oNewPage    = oDoc.GetPageInfo(nPage);
         
         if (oNewPage) {
-            oDoc.RemoveField(this.GetId(), true);
-            oDoc.AddField(this, nPage);
+            let sId = this.GetId();
+            oCurPage.RemoveField(sId);
+            oNewPage.AddField(this);
         }
     };
     CBaseField.prototype.GetPage = function() {

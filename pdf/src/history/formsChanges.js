@@ -1132,27 +1132,31 @@ CChangesPDFListOption.prototype.private_InsertInArrayLoad = function () {
 
 	let aChangedArray = this.private_GetChangedArray();
 	if (null !== aChangedArray) {
-		aChangedArray.splice(this.Pos, 0, this.Items);
+		for (let i = this.Items.length - 1; i >= 0; i--) {
+			this.Class.AddOption(this.Items[i], this.Pos);
+		}
 	}
 };
 CChangesPDFListOption.prototype.private_RemoveInArrayLoad = function () {
 
 	var aChangedArray = this.private_GetChangedArray();
 	if (null !== aChangedArray) {
-		aChangedArray.splice(this.Pos, 1);
+		this.Class.RemoveOption(this.Pos);
 	}
 };
 CChangesPDFListOption.prototype.private_InsertInArrayUndoRedo = function () {
 	var aChangedArray = this.private_GetChangedArray();
 	if (null !== aChangedArray) {
-		aChangedArray.splice(this.Pos, 0, this.Items);
+		for (let i = this.Items.length - 1; i >= 0; i--) {
+			this.Class.AddOption(this.Items[i], this.Pos);
+		}
 	}
 };
 CChangesPDFListOption.prototype.private_RemoveInArrayUndoRedo = function () {
 
 	var aChangedArray = this.private_GetChangedArray();
 	if (null !== aChangedArray) {
-		aChangedArray.splice(this.Pos, 1);
+		this.Class.RemoveOption(this.Pos);
 	}
 };
 CChangesPDFListOption.prototype.Load = function () {

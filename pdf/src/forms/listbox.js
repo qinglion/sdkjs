@@ -167,11 +167,7 @@
         
         for (let i = 0; i < aFields.length; i++) {
             if (aFields[i] != this) {
-                this.content.Internal_Content_RemoveAll();
-                for (let nItem = 0; nItem < aFields[i].content.Content.length; nItem++) {
-                    this.content.Internal_Content_Add(nItem, aFields[i].content.Content[nItem].Copy());
-                }
-                
+                this.SetOptions(aFields[i].GetOptions().slice());
                 this.SetCurIdxs(aFields[i].GetParentCurIdxs());
                 this.SetNeedRecalc(true);
                 break;
@@ -388,7 +384,7 @@
             return oParent.RemoveOption(nPos);
 
         function updateContent(widget) {
-            widget.content.Internal_Content_Remove(nPos);
+            widget.content.Internal_Content_Remove(nPos, 1);
 
             widget.SetNeedRecalc(true);
             widget.SetWasChanged(true);
@@ -408,7 +404,7 @@
         }
     };
     CListBoxField.prototype.SetOptions = function(aOpt) {
-        while (this._options.length > 0) {
+        while (this.GetOptions().length > 0) {
             this.RemoveOption(0);
         }
         for (let i = 0; i < aOpt.length; i++) {
