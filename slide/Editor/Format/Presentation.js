@@ -5891,6 +5891,20 @@ CPresentation.prototype.EnterText = function (value) {
 	}
 	return bRetValue;
 };
+
+CPresentation.prototype.GetCurrentParagraph = function(bIgnoreSelection, bReturnSelectedArray, oPr) {
+
+	let oController = this.GetCurrentController();
+	if (!oController) {
+		return null;
+	}
+	let oContent = oController.getTargetDocContent();
+	if(!oContent) {
+		return null;
+	}
+	return oContent.GetCurrentParagraph(bIgnoreSelection, bReturnSelectedArray, oPr);
+};
+
 CPresentation.prototype.CorrectEnterText = function (oldValue, newValue) {
 	if (undefined === oldValue
 		|| null === oldValue
