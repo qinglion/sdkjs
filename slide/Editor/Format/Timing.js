@@ -400,17 +400,28 @@
     CTimeNodeBase.prototype.getChildNode = function (nIdx) {
         return this.getChildrenTimeNodes()[nIdx] || null;
     };
+		CTimeNodeBase.prototype.isSkipMainDrawing = function() {
+			if (!this.isTimingContainer()) {
+				const oDrawing = this.getTargetObject();
+				if (oDrawing.brush && oDrawing.brush.isVisible() || oDrawing.pen && oDrawing.pen.Fill && oDrawing.pen.Fill.isVisible()) {
+					return false;
+				}
+			}
+			return true;
+		};
 	CTimeNodeBase.prototype.getDrawingObjects = function (oPlayer) {
-
 		const oDrawing = this.getTargetObject();
 		const oParent = this.getParentTimeNode();
 		if (!oDrawing || !oParent) {
 			return [];
 		}
 		const oDrawer = oPlayer.animationDrawer;
-		const sId = oParent.GetId();
+		const sId = oDrawing.GetId();
 		if (!oDrawer.drawingObjectsByTimeNode[sId]) {
-			const arrDrawingObjects = [oDrawing];
+			const arrDrawingObjects = [];
+			if (!this.isSkipMainDrawing()) {
+				arrDrawingObjects.push(oDrawing);
+			}
 
 			if (this.isCanIterate()) {
 				const iterationType = this.getIterationType();
@@ -570,7 +581,17 @@
                 }
                 if (oPreviousTimeNode) {
                     oTrigger = this.createEffectTrigger(function () {
-                        return oPreviousTimeNode.isActive() || oPreviousTimeNode.isAtEnd();
+											if (oPreviousTimeNode.isActive()) {
+												if (oPreviousTimeNode.isCanIterate() && !oPreviousTimeNode.isSkipMainDrawing()) {
+													const arrDrawingObjects = oPreviousTimeNode.getDrawingObjects();
+													const oFirstIterationDrawing = arrDrawingObjects[1];
+													if (oFirstIterationDrawing) {
+														return oPlayer.getElapsedTicks() >= oPreviousTimeNode.startTick[oFirstIterationDrawing.GetId()];
+													}
+												}
+												return true;
+											}
+                        return oPreviousTimeNode.isAtEnd();
                     }, oPlayer);
                 } else {
                     oTrigger = oAttributes.stCondLst.createComplexTrigger(oPlayer);
@@ -692,9 +713,6 @@
 			this.initStartTicks(oPlayer);
         this.privateCalculateParams()
     };
-	CTimeNodeBase.prototype.getMainTick = function () {
-		return this.startTick && this.startTick[this.getTargetObjectId()];
-	};
 	CTimeNodeBase.prototype.getMaxTick = function () {
 		let nMaxTick = 0;
 		if (this.startTick) {
@@ -711,29 +729,35 @@
 		const startTick = oPlayer.getElapsedTicks();
 		this.startTick = {};
 		const arrDrawings = this.getDrawingObjects(oPlayer);
-			if (!arrDrawings.length) {
-				return;
-			}
-			const oMainDrawing = arrDrawings[0];
-			this.startTick[oMainDrawing.GetId()] = startTick;
-			if (arrDrawings.length <= 1) {
-				return;
-			}
-
-			const oParent = this.getParentTimeNode();
-			const nIterationDelta = this.getIterationDelta();
-			const oAttr = oParent.getAttributesObject();
-			const nEffectDuration = oAttr && oAttr.getEffectDuration();
+		if (!arrDrawings.length) {
+			return;
+		}
+		const oFirstDrawing = arrDrawings[0];
+		this.startTick[oFirstDrawing.GetId()] = startTick;
+		if (arrDrawings.length <= 1) {
+			return;
+		}
+		const oParent = this.getParentTimeNode();
+		const nIterationDelta = this.getIterationDelta();
+		const oAttr = oParent.getAttributesObject();
+		const nEffectDuration = oAttr && oAttr.getEffectDuration();
+		let nIterationTick;
+		let startIndex;
+		if (this.isSkipMainDrawing()) {
+			nIterationTick = startTick;
+			startIndex = 1;
+		} else {
+			nIterationTick = startTick + nEffectDuration;
 			const oFirstIterationObject = arrDrawings[1];
-			let nIterationTick = startTick + nEffectDuration;
 			this.startTick[oFirstIterationObject.GetId()] = nIterationTick;
-			const nCalcIterationDelta = nEffectDuration * nIterationDelta;
-			for (let i = 2; i < arrDrawings.length; i++) {
-				nIterationTick = nIterationTick + nCalcIterationDelta;
-				const oDrawing = arrDrawings[i];
-				this.startTick[oDrawing.GetId()] = nIterationTick;
-			}
-
+			startIndex = 2;
+		}
+		const nCalcIterationDelta = nEffectDuration * nIterationDelta;
+		for (let i = startIndex; i < arrDrawings.length; i++) {
+			nIterationTick = nIterationTick + nCalcIterationDelta;
+			const oDrawing = arrDrawings[i];
+			this.startTick[oDrawing.GetId()] = nIterationTick;
+		}
 	};
     CTimeNodeBase.prototype.privateCalculateParams = function (oPlayer) {
     };
@@ -10510,11 +10534,12 @@
     const RANDOM_BARS_ARRAY = [62, 4, 27, 42, 80, 34, 67, 20, 74, 32, 10, 54, 3, 77, 36, 55, 26, 53, 97, 90, 68, 65, 57, 12, 52, 70, 23, 64, 30, 73, 79, 22, 14, 51, 9, 0, 49, 1, 15, 71, 93, 86, 19, 28, 45, 41, 39, 60, 25, 7, 92, 46, 2, 98, 33, 40, 31, 72, 69, 24, 75, 84, 43, 47, 87, 50, 18, 56, 13, 61, 76, 17, 91, 37, 8, 11, 78, 6, 5, 48, 59, 95, 66, 63, 81, 96, 35, 88, 94, 89, 38, 99, 82, 29, 16, 83, 21, 58, 44, 85];
     const STRIPS_COUNT = 16;
 
-    function CBaseAnimTexture(oCanvas, fScale, nX, nY) {
+    function CBaseAnimTexture(oCanvas, fScale, nX, nY, bNoText) {
         this.canvas = oCanvas;
         this.scale = fScale;
         this.x = nX;
         this.y = nY;
+				this.bNoText = bNoText;
     }
     CBaseAnimTexture.prototype.drawInRect = function(oGraphics, dAlpha, nX, nY, nW, nH) {
         if(this.canvas.width === 0 || this.canvas.height === 0 || nW === 0 || nH === 0) {
@@ -11633,11 +11658,15 @@
     function CTexturesCache() {
         this.map = {};
     }
-    CTexturesCache.prototype.checkTexture = function (sId, fScale, bMorph, bCheckSize, oAnimParams) {
+    CTexturesCache.prototype.checkTexture = function (sId, fScale, bMorph, bCheckSize, oAnimParams, bNoText) {
         let bCreate = false;
         if(!this.map[sId] || !this.map[sId].checkScale(fScale)) {
             bCreate = true;
         }
+				else if (bNoText && this.map[sId].bNoText !== bNoText) {
+					this.removeTexture(sId);
+					bCreate = true;
+				}
         else if(bMorph && bCheckSize) {
             const oDrawing = AscCommon.g_oTableId.Get_ById(sId);
             if (!oDrawing) {
@@ -11651,22 +11680,22 @@
             }
         }
         if (bCreate) {
-            const oTexture = this.createDrawingTexture(sId, fScale, bMorph, oAnimParams);
+            const oTexture = this.createDrawingTexture(sId, fScale, bMorph, oAnimParams, bNoText);
             if(oTexture) {
                 this.map[sId] = oTexture;
             }
         }
         return this.map[sId];
     };
-    CTexturesCache.prototype.checkMorphTexture = function (sId, fScale, bCheckSize, oAnimParams) {
-        return this.checkTexture(sId, fScale, true, bCheckSize, oAnimParams);
+    CTexturesCache.prototype.checkMorphTexture = function (sId, fScale, bCheckSize, oAnimParams, bNoText) {
+        return this.checkTexture(sId, fScale, true, bCheckSize, oAnimParams, bNoText);
     };
-    CTexturesCache.prototype.createDrawingTexture = function (sId, fScale, bMorph, oAnimParams) {
+    CTexturesCache.prototype.createDrawingTexture = function (sId, fScale, bMorph, oAnimParams, bNoText) {
         var oDrawing = AscCommon.g_oTableId.Get_ById(sId);
         if (!oDrawing) {
             return undefined;
         }
-        var oBaseTexture = oDrawing.getAnimTexture(fScale, bMorph, oAnimParams);
+        var oBaseTexture = oDrawing.getAnimTexture(fScale, bMorph, oAnimParams, bNoText);
 		if(!oBaseTexture) {
 			return undefined;
 		}
@@ -11869,15 +11898,13 @@
 		const dScale = oGraphics.m_oCoordTransform.sx;
 		if (this.isDrawingVisible(sDrawingId)) {
 			let sUnusedDrawingId;
+			const bSkipDrawTxBody = !!this.docStructureByDrawing[sDrawingId];
 			if (oSandwich) {
-				oSandwich.drawObject(oGraphics, this.texturesCache, !!this.docStructureByDrawing[sDrawingId]);
+				oSandwich.drawObject(oGraphics, this.texturesCache, bSkipDrawTxBody);
 				// const oUnusedWrapper = this.getUnusedDocStructureWrapper(sDrawingId);
 				// sUnusedDrawingId = oUnusedWrapper && oUnusedWrapper.GetId();
 			} else {
-				sUnusedDrawingId = sDrawingId;
-			}
-			if(sUnusedDrawingId) {
-				const oTexture = this.texturesCache.checkTexture(sUnusedDrawingId, dScale);
+				const oTexture = this.texturesCache.checkTexture(sDrawingId, dScale, undefined, undefined, undefined, bSkipDrawTxBody);
 				if (oTexture) {
 					oTexture.draw(oGraphics);
 				}
@@ -12605,7 +12632,7 @@
 				}
 
 				if (oEntrEffect.isAtEnd() && oExitEffect.isAtEnd()) {
-					if (oEntrEffect.getMainTick() < oExitEffect.getMainTick()) {
+					if (oEntrEffect.startTick[sDrawingId] < oExitEffect.startTick[sDrawingId]) {
 						oEffectToDelete = oEntrEffect;
 					} else {
 						oEffectToDelete = oExitEffect;
@@ -12641,7 +12668,7 @@
 
 		arrAnimations.sort(function(oAnim1, oAnim2) {
 			if (oAnim1.startTick && oAnim2.startTick) {
-				return oAnim1.getMainTick() - oAnim2.getMainTick();
+				return oAnim1.startTick[sDrawingId] - oAnim2.startTick[sDrawingId];
 			}
 			return 0;
 		});
@@ -12669,18 +12696,14 @@
 			const dScale = oGraphics.m_oCoordTransform.sx;
 			for (let i = 0; i < arrDrawings.length; i += 1) {
 				const oObjectForDraw = arrDrawings[i];
-				let oOldTextBody = oObjectForDraw.txBody;
-				if (bSkipDrawTxBody) {
-					oObjectForDraw.txBody = null;
-				}
-				const oTextureData = this.getTextureData(oObjectForDraw, oTextureCache, dScale);
-				oObjectForDraw.txBody = oOldTextBody;
+				const oTextureData = this.getTextureData(oObjectForDraw, oTextureCache, dScale, bSkipDrawTxBody);
 				if(!oTextureData) {
-					return;
+					continue;
 				}
 
 				const fOpacity = oTextureData.opacity;
 				const oTransform = oTextureData.transform;
+				console.log(this.cachedAttributes)
 				const oTexture = oTextureData.texture;
 				if (fOpacity !== undefined) {
 					oGraphics.put_GlobalAlpha(true, 1 - fOpacity);
@@ -12693,7 +12716,10 @@
     };
     CAnimSandwich.prototype.getBrushPen = function(oDrawing) {
         let oAttributesMap = this.getAttributesMap(oDrawing.Get_Id());
-        let oFillColor = oAttributesMap["fillcolor"] || oAttributesMap["style.color"];
+				let oFillColor;
+				if (!(!oDrawing.brush || oDrawing.brush.fill instanceof AscFormat.CNoFill) || !oDrawing.isShape()) {
+					oFillColor = oAttributesMap["fillcolor"] || oAttributesMap["style.color"];
+				}
         let sFillType = oAttributesMap["fill.type"];
         let bFillOn = oAttributesMap["fill.on"];
 
@@ -12814,25 +12840,25 @@
         let oAttributesMap = this.getAttributesMap(sDrawingId);
         return oTexture.createEffectTexture(oAttributesMap["effect"]);
     };
-    CAnimSandwich.prototype.getTextureData = function (oDrawing, oTextureCache, fScale) {
+    CAnimSandwich.prototype.getTextureData = function (oDrawing, oTextureCache, fScale, bNoText) {
         //this.print();
         //console.log(oAttributesMap);
 	    let sId = oDrawing.Get_Id();
         if(!this.isDrawingVisible(sId)) {
             return null;
         }
-        let oTexture = oTextureCache.checkTexture(sId, fScale);
+        let oTexture = oTextureCache.checkTexture(sId, fScale, undefined, undefined, undefined, bNoText);
         if(!oTexture) {
             return null;
         }
         let oCurBrush = oDrawing.brush;
         let oCurPen = oDrawing.pen;
         const oNewBrushPen = this.getBrushPen(oDrawing);
-        if(oNewBrushPen.brush !== oCurBrush || oNewBrushPen.pen !== oCurPen) {
+        if(!oDrawing.isEqualsBrushPen(oNewBrushPen.brush, oNewBrushPen.pen)) {
             //get texture with new brush and pen
             oDrawing.brush = oNewBrushPen.brush;
             oDrawing.pen = oNewBrushPen.pen;
-            oTexture = oTextureCache.createDrawingTexture(sId, fScale);
+            oTexture = oTextureCache.createDrawingTexture(sId, fScale, undefined, undefined, bNoText);
             oDrawing.brush = oCurBrush;
             oDrawing.pen = oCurPen;
         }

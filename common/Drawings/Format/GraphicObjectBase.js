@@ -576,6 +576,9 @@
 	CGraphicObjectBase.prototype.constructor = CGraphicObjectBase;
 
 	CGraphicObjectBase.prototype.isDrawing = true;
+	CGraphicObjectBase.prototype.isEqualsBrushPen = function(oBrush, oPen) {
+		return this.brush === oBrush && this.pen === oPen;
+	}
 	CGraphicObjectBase.prototype.notAllowedWithoutId = function () {
 		return true;
 	};
@@ -3214,7 +3217,7 @@
 			h: oPresentation.GetHeightMM()
 		}
 	};
-	CGraphicObjectBase.prototype.getAnimTexture = function (scale, bMorph, oAnimParams) {
+	CGraphicObjectBase.prototype.getAnimTexture = function (scale, bMorph, oAnimParams, bNoText) {
 
 		const oBounds = this.getBoundsByDrawing(bMorph);
 		const oCanvas = oBounds.createCanvas(scale);
@@ -3229,17 +3232,20 @@
 		AscCommon.IsShapeToImageConverter = true;
 		let oOldBrush = this.brush;
 		let oOldPen = this.pen;
-		if(oAnimParams && IsTrueDrawing(this)) {
+		if(oAnimParams) {
 			this.brush = oAnimParams.brush;
 			this.pen = oAnimParams.pen;
 		}
-		this.draw(oGraphics);
-		if(oAnimParams && IsTrueDrawing(this)) {
-			this.brush = oOldBrush;
-			this.pen = oOldPen;
+		let oOldTextBody = this.txBody;
+		if (bNoText) {
+			this.txBody = null;
 		}
+		this.draw(oGraphics);
+		this.txBody = oOldTextBody;
+		this.brush = oOldBrush;
+		this.pen = oOldPen;
 		AscCommon.IsShapeToImageConverter = false;
-		let oTexture = new AscFormat.CBaseAnimTexture(oCanvas, scale, nX, nY);
+		let oTexture = new AscFormat.CBaseAnimTexture(oCanvas, scale, nX, nY, bNoText);
 		if(oAnimParams && oAnimParams.transform) {
 			let oNewBounds = oBounds.copy();
 			oNewBounds.transformRect(oAnimParams.transform);
@@ -3253,7 +3259,7 @@
 			oNewGraphics.m_oCoordTransform.tx = -nX;
 			oNewGraphics.m_oCoordTransform.ty = -nY;
 			oTexture.draw(oNewGraphics, oAnimParams.transform);
-			oTexture = new AscFormat.CBaseAnimTexture(oNewCanvas, scale, nX, nY);
+			oTexture = new AscFormat.CBaseAnimTexture(oNewCanvas, scale, nX, nY, bNoText);
 		}
 		return oTexture;
 	};

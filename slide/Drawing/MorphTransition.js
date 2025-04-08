@@ -1441,11 +1441,6 @@
 			CWrapperBase.call(this, oTransform, oTheme, oColorMap, oDrawing);
 		}
 	AscFormat.InitClassWithoutType(CObjectForDrawArrayWrapper, CWrapperBase);
-	CObjectForDrawArrayWrapper.prototype.setBackgroundObjects = function(arrBackground) {
-		if (arrBackground) {
-			this.backgroundObjects = arrBackground;
-		}
-	};
 	CObjectForDrawArrayWrapper.prototype.drawBackground = function (oGraphics) {
 		for (let i = 0; i < this.backgroundObjects.length; i += 1) {
 			this.backgroundObjects[i].draw(oGraphics, undefined, this.transform, this.theme, this.colorMap);
@@ -1461,10 +1456,24 @@
 			this.strikeoutUnderlineObjects[i].draw(oGraphics, undefined, this.transform, this.theme, this.colorMap);
 		}
 	};
+	CObjectForDrawArrayWrapper.prototype.isEqualsBrushPen = function(oBrush, oPen) {
+		return oBrush === this.brush && oPen === this.pen;
+	};
 	CObjectForDrawArrayWrapper.prototype.draw = function(oGraphics) {
-		this.drawBackground(oGraphics);
-		this.drawContent(oGraphics);
-		this.drawStrikeoutUnderlines(oGraphics);
+		const oThis = this;
+		this.forEachObjectToDraw(function(oObjectToDraw) {
+			const oOldBrush = oObjectToDraw.brush;
+			const oOldPen = oObjectToDraw.pen;
+			if (oThis.brush) {
+				oObjectToDraw.brush = oThis.brush;
+			}
+			if (oThis.pen) {
+				oObjectToDraw.pen = oThis.pen;
+			}
+			oObjectToDraw.draw(oGraphics, undefined, oThis.transform, oThis.theme, oThis.colorMap);
+			oObjectToDraw.brush = oOldBrush;
+			oObjectToDraw.pen = oOldPen;
+		});
 	};
 	CObjectForDrawArrayWrapper.prototype.recalculateBounds = function() {
 		let oTempBounds = null;
@@ -1511,9 +1520,22 @@
 		this.bounds.reset(oTempBounds.l, oTempBounds.t, oTempBounds.r, oTempBounds.b);
 	};
 	CObjectForDrawArrayWrapper.prototype.forEachObjectToDraw = function(callback) {
-		this.backgroundObjects.forEach(callback);
-		this.contentObjects.forEach(callback);
-		this.strikeoutUnderlineObjects.forEach(callback);
+		for (let i = 0; i < this.backgroundObjects.length; i += 1) {
+			if (callback(this.backgroundObjects[i])) {
+				return true;
+			}
+		}
+		for (let i = 0; i < this.contentObjects.length; i += 1) {
+			if (callback(this.contentObjects[i])) {
+				return true;
+			}
+		}
+		for (let i = 0; i < this.strikeoutUnderlineObjects.length; i += 1) {
+			if (callback(this.strikeoutUnderlineObjects[i])) {
+				return true;
+			}
+		}
+		return false;
 	};
 
     function CBackgroundWrapper(oMorph, oSlide) {
