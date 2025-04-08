@@ -11339,12 +11339,10 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype.asc_IsAllRequiredFormsFilled = function(checkAll)
 	{
 		let oFormsManager = this.private_GetFormsManager();
-		let oform = this.asc_GetOForm();
 		if (!oFormsManager)
 			return true;
 		
-		let roleName = !checkAll && oform ? oform.getCurrentRole() : null;
-		return oFormsManager.IsAllRequiredFormsFilled(roleName);
+		return oFormsManager.IsAllRequiredFormsFilled(checkAll);
 	};
 	asc_docs_api.prototype.sync_OnAllRequiredFormsFilled = function(isFilled)
 	{
