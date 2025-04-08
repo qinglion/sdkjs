@@ -5199,6 +5199,7 @@
     ApiPresentation.prototype["GetHeight"]                = ApiPresentation.prototype.GetHeight;
     ApiPresentation.prototype["GetAllComments"]           = ApiPresentation.prototype.GetAllComments;
     ApiPresentation.prototype["GetDocumentInfo"]          = ApiPresentation.prototype.GetDocumentInfo;
+    ApiPresentation.prototype["AddMathEquation"]          = ApiPresentation.prototype.AddMathEquation;
     ApiPresentation.prototype["SlidesToJSON"]             = ApiPresentation.prototype.SlidesToJSON;
     ApiPresentation.prototype["ToJSON"]                   = ApiPresentation.prototype.ToJSON;
     ApiPresentation.prototype["GetAllOleObjects"]         = ApiPresentation.prototype.GetAllOleObjects;
