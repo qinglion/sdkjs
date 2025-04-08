@@ -2555,7 +2555,7 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 				let isRtl = Pr.ParaPr.Bidi;
 				
 				let x0 = this.Lines[CurLine].Ranges[CurRange].X;
-				let x1 = this.Lines[CurLine].Ranges[CurRange].XEnd;
+				let x1 = this.Lines[CurLine].Ranges[CurRange].getXEndOrigin();;
 				let rangeCount = this.Lines[CurLine].Ranges.length;
 				
 				if ((0 === CurRange && isRtl) || (rangeCount - 1 === CurRange && !isRtl))
@@ -2964,7 +2964,8 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 		if (true === bDrawBorders && ( ( this.Pages.length - 1 === CurPage ) || ( CurLine < this.Pages[CurPage + 1].FirstLine ) ))
 		{
 			let x0 = this.Lines[CurLine].Ranges[0].X;
-			let x1 = this.Lines[CurLine].Ranges[this.Lines[CurLine].Ranges.length - 1].XEnd;
+			let x1 = this.Lines[CurLine].Ranges[this.Lines[CurLine].Ranges.length - 1].getXEndOrigin();
+			
 			if (Pr.ParaPr.Bidi)
 			{
 				x0 = Math.min(x0, this.Pages[CurPage].X + Pr.ParaPr.Ind.Right);
