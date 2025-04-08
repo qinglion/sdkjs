@@ -3931,34 +3931,25 @@
 
 			let aForms		= this.pagesInfo.pages[i].fields != null ? this.pagesInfo.pages[i].fields : [];
 			let aDrawings	= this.pagesInfo.pages[i].drawings != null ? this.pagesInfo.pages[i].drawings : [];
-			let aFreeText	= this.pagesInfo.pages[i].annots != null ? this.pagesInfo.pages[i].annots.filter(function(annot) {
-				return annot.IsFreeText();
+			let aAnnotsWithText	= this.pagesInfo.pages[i].annots != null ? this.pagesInfo.pages[i].annots.filter(function(annot) {
+				return annot.IsFreeText() || annot.IsStamp();
 			}): [];
 
-			if (this.pagesInfo.pages[i].needRedrawForms)
-			{
-				aForms.forEach(function(field) {
-					if (field.IsNeedDrawFromStream() == false) {
-						let sFont = field.GetTextFontActual();
-						if (sFont)
-							fontMap[sFont] = true;
-					}
-				});
-			}
+			aForms.forEach(function(field) {
+				if (field.IsNeedDrawFromStream() == false) {
+					let sFont = field.GetTextFontActual();
+					if (sFont)
+						fontMap[sFont] = true;
+				}
+			});
 			
-			if (this.pagesInfo.pages[i].needRedrawDrawings)
-			{
-				aDrawings.forEach(function(drawing) {
-					drawing.GetAllFonts(fontMap);
-				});
-			}
+			aDrawings.forEach(function(drawing) {
+				drawing.GetAllFonts(fontMap);
+			});
 			
-			if (this.pagesInfo.pages[i].needRedrawAnnots)
-			{
-				aFreeText.forEach(function(annot) {
-					annot.GetAllFonts(fontMap);
-				});
-			}
+			aAnnotsWithText.forEach(function(annot) {
+				annot.GetAllFonts(fontMap);
+			});
 		}
 
 		let oThis = this;
