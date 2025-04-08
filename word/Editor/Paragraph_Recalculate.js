@@ -3135,6 +3135,10 @@ CParaLineRange.prototype.IsZeroRange = function()
 {
 	return ((this.XEnd - this.X) < 0.001);
 };
+CParaLineRange.prototype.getXEndOrigin = function()
+{
+	return (undefined !== this.XEndOrigin ? this.XEndOrigin : this.XEnd);
+};
 AscWord.CParaLineRange = CParaLineRange;
 
 function CParaPage(X, Y, XLimit, YLimit, FirstLine)

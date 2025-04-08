@@ -4540,6 +4540,9 @@ ParaRun.prototype.Recalculate_Range = function(PRS, ParaPr, Depth)
 						// правая граница имеет максимально возможное значение (55см)
 						if (AscCommon.MMToTwips(NewX) > AscCommon.MMToTwips(XEnd) && nCompatibilityMode <= AscCommon.document_compatibility_mode_Word14)
 						{
+							// TODO: Временно сделаем так. По-хорошему надо помечать промежуток, что в нем не учитывается границы при расчете переносов,
+							//  а XEnd не менять
+							Para.Lines[PRS.Line].Ranges[PRS.Range].XEndOrigin = Para.Lines[PRS.Line].Ranges[PRS.Range].XEnd;
 							Para.Lines[PRS.Line].Ranges[PRS.Range].XEnd = 558.7;
 							XEnd                                        = 558.7;
 							PRS.XEnd                                    = XEnd;
