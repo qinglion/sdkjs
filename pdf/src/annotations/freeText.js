@@ -1347,7 +1347,8 @@
                 let yContent    = oTransform.TransformPointY(0, Y);
 
                 oController.resetSelection();
-
+                oController.selection.groupSelection = this;
+                
                 if (this.IsInTextBox() == false && false == this.Lock.Is_Locked()) {
                     oDoc.SetGlobalHistory();
                     oDoc.DoAction(function() {

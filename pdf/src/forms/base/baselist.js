@@ -75,7 +75,7 @@
         if (oParent)
             return oParent.GetParentCurIdxs();
     };
-
+    CBaseListField.prototype.SetTopIndex = function() {};
     CBaseListField.prototype.SetCommitOnSelChange = function(bValue) {
         let oParent = this.GetParent();
         if (oParent && oParent.GetType() === this.GetType()) {

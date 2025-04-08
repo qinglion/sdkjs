@@ -6302,9 +6302,48 @@ CDocument.prototype.EditOleObject = function(oOleObject, sData, sImageUrl, fWidt
 {
     oOleObject.editExternal(sData, sImageUrl, fWidth, fHeight, nPixWidth, nPixHeight, arrImagesForAddToHistory);
 };
-CDocument.prototype.AddTextArt = function(nStyle)
+CDocument.prototype.AddTextArt = function(textArtStyle)
 {
-	this.Controller.AddTextArt(nStyle);
+	let curParagraph = this.GetCurrentParagraph();
+	if (!curParagraph)
+		return;
+	
+	let drawing = new AscWord.ParaDrawing(1828800 / 36000, 1828800 / 36000, null, this.DrawingDocument, this, null);
+	let textArt = this.DrawingObjects.createTextArt(textArtStyle, true);
+	textArt.setParent(drawing);
+	drawing.Set_GraphicObject(textArt);
+	drawing.Set_DrawingType(drawing_Anchor);
+	drawing.Set_WrappingType(WRAPPING_TYPE_NONE);
+	drawing.Set_BehindDoc(false);
+	drawing.Set_Distance(3.2, 0, 3.2, 0);
+	drawing.Set_PositionV(Asc.c_oAscRelativeFromV.Paragraph, false, 0, false);
+	
+	if (curParagraph.isRtlDirection())
+		drawing.Set_PositionH(Asc.c_oAscRelativeFromH.Column, true, Asc.c_oAscAlignH.Right, false);
+	else
+		drawing.Set_PositionH(Asc.c_oAscRelativeFromH.Column, false, 0, false);
+	
+	let docContent = textArt.getDocContent();
+	let directParaPr = curParagraph.GetDirectParaPr(false);
+	if (undefined !== directParaPr.Bidi)
+	{
+		docContent.GetAllParagraphs().forEach(function(p){
+			p.SetParagraphBidi(directParaPr.Bidi);
+		});
+	}
+	
+	this.RemoveBeforePaste();
+	
+	this.AddToParagraph(drawing);
+	if (textArt.bSelectedText)
+	{
+		this.Select_DrawingObject(drawing.GetId());
+	}
+	else
+	{
+		docContent.SelectAll();
+		docContent.SetThisElementCurrent();
+	}
 };
 
 CDocument.prototype.AddSignatureLine = function(oSignatureDrawing){
@@ -19748,42 +19787,6 @@ CDocument.prototype.controller_AddOleObject = function(W, H, nWidthPix, nHeightP
 	}
 	return Drawing;
 };
-CDocument.prototype.controller_AddTextArt = function(nStyle)
-{
-	var Item = this.Content[this.CurPos.ContentPos];
-	if (type_Paragraph == Item.GetType())
-	{
-		var Drawing = new ParaDrawing(1828800 / 36000, 1828800 / 36000, null, this.DrawingDocument, this, null);
-		var TextArt = this.DrawingObjects.createTextArt(nStyle, true);
-		TextArt.setParent(Drawing);
-		Drawing.Set_GraphicObject(TextArt);
-		Drawing.Set_DrawingType(drawing_Anchor);
-		Drawing.Set_WrappingType(WRAPPING_TYPE_NONE);
-		Drawing.Set_BehindDoc(false);
-		Drawing.Set_Distance(3.2, 0, 3.2, 0);
-		Drawing.Set_PositionH(Asc.c_oAscRelativeFromH.Column, false, 0, false);
-		Drawing.Set_PositionV(Asc.c_oAscRelativeFromV.Paragraph, false, 0, false);
-
-		if (true == this.Selection.Use)
-			this.Remove(1, true);
-
-		this.AddToParagraph(Drawing);
-		if (TextArt.bSelectedText)
-		{
-			this.Select_DrawingObject(Drawing.Get_Id());
-		}
-		else
-		{
-			var oContent = Drawing.GraphicObj.getDocContent();
-			oContent.Content[0].Document_SetThisElementCurrent(false);
-			this.SelectAll();
-		}
-	}
-	else
-	{
-		Item.AddTextArt(nStyle);
-	}
-};
 CDocument.prototype.controller_AddSignatureLine = function(oSignatureDrawing)
 {
 	var Item = this.Content[this.CurPos.ContentPos];
@@ -22439,9 +22442,13 @@ CDocument.prototype.controller_GetSelectionState = function()
 	var State;
 	if (true === this.Selection.Use)
 	{
-		if (this.controller_IsNumberingSelection() || this.controller_IsMovingTableBorder())
+		if (this.controller_IsMovingTableBorder())
 		{
-			State = [];
+			State = []
+		}
+		else if (this.controller_IsNumberingSelection())
+		{
+			State = [this.GetCurrentParagraph()];
 		}
 		else
 		{
@@ -22476,19 +22483,25 @@ CDocument.prototype.controller_SetSelectionState = function(State, StateIndex)
 {
 	if (true === this.Selection.Use)
 	{
-		// Выделение нумерации
-		if (selectionflag_Numbering == this.Selection.Flag)
+		if (selectionflag_Numbering === this.Selection.Flag)
 		{
-			if (type_Paragraph === this.Content[this.Selection.StartPos].Get_Type())
+			let curPara = State[StateIndex];
+			if (curPara && curPara.IsParagraph && curPara.IsParagraph())
 			{
-				var NumPr = this.Content[this.Selection.StartPos].GetNumPr();
-				if (undefined !== NumPr)
-					this.SelectNumbering(NumPr, this.Content[this.Selection.StartPos]);
+				let numPr     = curPara.GetNumPr();
+				let prevNumPr = curPara.GetPrChangeNumPr();
+				
+				if (numPr && numPr.IsValid())
+					this.SelectNumbering(numPr, curPara);
+				else if (prevNumPr && prevNumPr.IsValid())
+					this.SelectNumberingSingleParagraph(curPara);
 				else
 					this.RemoveSelection();
 			}
 			else
+			{
 				this.RemoveSelection();
+			}
 		}
 		else
 		{
