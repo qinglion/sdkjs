@@ -46,7 +46,7 @@
 		{
 			let t = this;
 			const writer = new AscCommon.CBinaryFileWriter();
-			return writer.WriteDocument3(document, false, "VSDY", function () {
+			return writer.WriteDocument3(document, false, "VSDY;v1;", function () {
 				t.WriteContent(writer, document);
 			});
 		};
@@ -130,6 +130,7 @@
 		}
 	}
 
+	AscVisio.CVisioDocument.prototype.privateWriteAttributes = undefined;
 	/**
 	 * Write children to stream for CVisioDocument
 	 *
@@ -255,6 +256,7 @@
 		}
 	};
 
+	AscVisio.CMasters.prototype.privateWriteAttributes = undefined;
 	/**
 	 * Write children to stream for CMasters
 	 *
@@ -268,6 +270,7 @@
 		}
 	};
 
+	AscVisio.CPageContents.prototype.privateWriteAttributes = undefined;
 	/**
 	 * Write children to stream for CPageContents
 	 *
@@ -293,6 +296,7 @@
 		}
 	};
 
+	AscVisio.CMasterContents.prototype.privateWriteAttributes = undefined;
 	/**
 	 * Write children to stream for CMasterContents
 	 *
@@ -318,7 +322,7 @@
 		}
 	};
 
-
+	AscVisio.CPages.prototype.privateWriteAttributes = undefined;
 	/**
 	 * Write children to stream for CPages
 	 *
@@ -449,6 +453,7 @@
 		}
 	};
 
+	AscVisio.CValidation.prototype.privateWriteAttributes = undefined;
 	/**
 	 * Write children to stream for CValidation
 	 *
@@ -1081,6 +1086,7 @@
 		}
 	};
 
+	AscVisio.Text_Type.prototype.privateWriteAttributes = undefined;
 	/**
 	 * Write children to stream for Text_Type
 	 *
@@ -1387,6 +1393,8 @@
 			pWriter.EndRecord();
 		}
 	};
+
+	AscVisio.CSolutions.prototype.privateWriteAttributes = undefined;
 	/**
 	 * Write attributes to stream for CSolutions
 	 * 

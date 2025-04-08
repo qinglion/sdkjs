@@ -241,13 +241,14 @@
 	//
 	// 	stream.Seek2(endPos);
 	// };
-	
+
+	AscVisio.CVisioDocument.prototype.readAttribute = undefined;
 	/**
 	 * Read child elements from stream for CVisioDocument
-   * 
-   * @param  {BinaryVSDYLoader} pReader - The binary reader
-   * @param {number} elementType - The type of child element
-   */
+	 *
+	 * @param  {BinaryVSDYLoader} pReader - The binary reader
+	 * @param {number} elementType - The type of child element
+	 */
 	AscVisio.CVisioDocument.prototype.readChild = function(elementType, pReader) {
 		const stream = pReader.stream;
 		let t = this;
@@ -791,6 +792,7 @@
 		return true;
 	};
 
+	AscVisio.CMasters.prototype.readAttribute = undefined;
 	/**
 	 * Read child elements from stream for CMasters
 	 * 
@@ -905,6 +907,7 @@
 		return true;
 	};
 
+	AscVisio.CMasterContents.prototype.readAttribute = undefined;
 	/**
 	 * Read child elements from stream for CMasterContents
 	 *
@@ -989,6 +992,7 @@
 		return true;
 	};
 
+	AscVisio.CPages.prototype.readAttribute = undefined;
 	/**
 	 * Read child elements from stream for CPages
 	 * 
@@ -1311,6 +1315,7 @@
 		return handled;
 	};
 
+	AscVisio.CSolutions.prototype.readAttribute = undefined;
 	/**
 	 * Read child elements from stream for CSolutions
 	 * 
@@ -1376,7 +1381,7 @@
 		return res;
 	}
 
-	// CSolutionXML
+	AscVisio.CValidation.prototype.readAttribute = undefined;
 	/**
 	 * Read child elements from stream for CValidation
 	 * 
@@ -1821,6 +1826,7 @@
 		return true;
 	};
 
+	AscVisio.CPageContents.prototype.readAttribute = undefined;
 	/**
 	 * Read child elements from stream for CPageContents
 	 *
@@ -2038,8 +2044,9 @@
 						}
 					}
 
-					if (this.IsUseFullUrl)
-						this.RebuildImages.push(new CBuilderImages(uni_fill.fill, sReadPath, oImageShape, oSpPr, oLn, undefined, undefined, undefined, oParagraph, oBullet));
+					if (this.IsUseFullUrl) {
+						//this.RebuildImages.push(new CBuilderImages(uni_fill.fill, sReadPath, oImageShape, oSpPr, oLn, undefined, undefined, undefined, oParagraph, oBullet));
+					}
 
 
 					if (uni_fill.checkTransparent) {
@@ -2179,6 +2186,7 @@
 		return true;
 	};
 
+	AscVisio.Text_Type.prototype.readAttribute = undefined;
 	/**
 	 * Read child elements from stream for Text_Type
 	 *

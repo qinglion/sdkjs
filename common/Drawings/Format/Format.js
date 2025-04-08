@@ -246,7 +246,8 @@
 				}
 			}
 		};
-		CBaseFormatNoIdObject.prototype.readAttribute = undefined;
+		CBaseFormatNoIdObject.prototype.readAttribute = function (nType, pReader) {//todo return undefined by default(check pptx)
+		};
 		CBaseFormatNoIdObject.prototype.readChildren = function (nEnd, pReader) {
 			var oStream = pReader.stream;
 			while (oStream.cur < nEnd) {
@@ -273,7 +274,8 @@
 			}
 			pWriter.WriteUChar(g_nodeAttributeEnd);
 		};
-		CBaseFormatNoIdObject.prototype.privateWriteAttributes = undefined;
+		CBaseFormatNoIdObject.prototype.privateWriteAttributes = function (pWriter) {//todo return undefined by default(check pptx)
+		};
 		CBaseFormatNoIdObject.prototype.writeChildren = function (pWriter) {
 		};
 		CBaseFormatNoIdObject.prototype.writeRecord1 = function (pWriter, nType, oChild) {

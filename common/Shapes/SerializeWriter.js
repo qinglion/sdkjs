@@ -971,28 +971,25 @@ function CBinaryFileWriter()
         this.WriteMainPart(startPos);
     };
 
-    this.WriteDocument = function(presentation, opt_prefix)
+    this.WriteDocument = function(presentation)
     {
-        if (!opt_prefix) {
-            opt_prefix = "PPTY;v1;";
-        }
         this.WriteDocument2(presentation);
 
         // и скинем все в base64
-        var ret = opt_prefix + this.pos + ";";
+        var ret = "PPTY;v1;" + this.pos + ";";
         return ret + this.GetBase64Memory();
     };
 
 	this.WriteDocument3 = function(presentation, base64, opt_prefix, opt_callback) {
         if (!opt_prefix) {
-            opt_prefix = "PPTY";
+            opt_prefix = "PPTY;v" + Asc.c_nVersionNoBase64 + ";";
         }
         var _memory = new AscCommon.CMemory(true);
 		_memory.data = this.data;
 		_memory.len = this.len;
 		_memory.pos = this.pos;
 
-		_memory.WriteXmlString(opt_prefix + ";v1;0;");
+		_memory.WriteXmlString(opt_prefix + "0;");
 
 		this.data = _memory.data;
 		this.len = _memory.len;
