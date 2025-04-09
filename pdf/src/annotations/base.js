@@ -100,6 +100,9 @@
     CAnnotationBase.prototype = Object.create(AscFormat.CBaseNoIdObject.prototype);
 	CAnnotationBase.prototype.constructor = CAnnotationBase;
     
+    CAnnotationBase.prototype.IsEditFieldShape = function() {
+        return false;
+    };
     CAnnotationBase.prototype.SetUserId = function(sUID) {
         if (this.uid == sUID) {
             return;

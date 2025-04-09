@@ -6493,6 +6493,7 @@ var CPresentation = CPresentation || function(){};
 
                 if (isRestrictionView) {
                     for (let i = 0; i < selected_objects.length; i++) {
+                        // can't delete drawings but can delete form in edit forms mode
                         if (selected_objects[i].IsDrawing() && !selected_objects[i].IsEditFieldShape()) {
                             return true;
                         }
@@ -6931,7 +6932,7 @@ var CPresentation = CPresentation || function(){};
         return this.Api.canEdit() && false == this.Api.IsCommentMarker();
     };
     CPDFDoc.prototype.IsViewerObject = function(oObject) {
-        return !!(oObject && oObject.IsAnnot && (oObject.IsAnnot() || oObject.IsForm() || (oObject.IsDrawing() && oObject.IsEditFieldShape()) || oObject.group && oObject.group.IsAnnot()));
+        return !!(oObject && oObject.IsAnnot && (oObject.IsAnnot() || oObject.IsForm() || oObject.IsEditFieldShape() || oObject.group && oObject.group.IsAnnot()));
     };
     CPDFDoc.prototype.IsFillingFormMode = function() {
 		return false;

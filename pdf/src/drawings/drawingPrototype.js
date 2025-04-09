@@ -66,6 +66,9 @@
     CPdfDrawingPrototype.prototype.IsPdfObject = function() {
         return true;
     };
+    CPdfDrawingPrototype.prototype.IsEditFieldShape = function() {
+        return false;
+    };
     CPdfDrawingPrototype.prototype.OnContentChange = function() {
         return this.SetNeedRecalc(true);
     };
