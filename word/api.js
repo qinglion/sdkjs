@@ -2278,6 +2278,15 @@ background-repeat: no-repeat;\
 		{
 			let paragraph = logicDocument.GetCurrentParagraph(false, false, {FirstInSelection : true});
 			bidi = paragraph ? paragraph.GetParagraphBidi() : undefined;
+			
+			ParaPr.Jc = undefined;
+		}
+		else if (bidi)
+		{
+			if (AscCommon.align_Left === ParaPr.Jc)
+				ParaPr.Jc = AscCommon.align_Right;
+			else if (AscCommon.align_Right === ParaPr.Jc)
+				ParaPr.Jc = AscCommon.align_Left;
 		}
 		
 		this.sendEvent("asc_onTextDirection", bidi);
