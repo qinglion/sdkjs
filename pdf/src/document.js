@@ -3379,18 +3379,12 @@ var CPresentation = CPresentation || function(){};
         oDrDoc.UpdateTargetFromPaint = true;
 
         let oForm       = this.activeForm;
-        let oAnnot      = this.mouseDownAnnot;
         let oFreeText   = this.mouseDownAnnot && this.mouseDownAnnot.IsFreeText() ? this.mouseDownAnnot : null;
         let oDrawing    = this.activeDrawing;
 
         let oContent;
-        if (this.IsEditFieldsMode()) {
-            oController.selectedObjects.forEach(function(shape) {
-                let field = shape.GetEditField();
-                oThis.RemoveField(field.GetId());
-            });
-        }
-        else if (oForm && oForm.IsCanEditText()) {
+        
+        if (oForm && oForm.IsCanEditText()) {
             oForm.Remove(nDirection, isCtrlKey);
             oContent = oForm.GetDocContent();
         }
@@ -3398,22 +3392,26 @@ var CPresentation = CPresentation || function(){};
             oFreeText.Remove(nDirection, isCtrlKey);
             oContent = oFreeText.GetDocContent();
         }
-        else if (oDrawing && !Asc.editor.isRestrictionView()) {
-            if (oDrawing.IsInTextBox()) {
-                oDrawing.Remove(nDirection, isCtrlKey);
-                oContent = oDrawing.GetDocContent();
-            }
-            else {
-                let aDrawings = oController.getSelectedObjects().slice();
-                aDrawings.forEach(function(drawing) {
-                    oThis.RemoveDrawing(drawing.GetId());
-                });
-            }
+        else if (oDrawing && oDrawing.IsInTextBox()) {
+            oDrawing.Remove(nDirection, isCtrlKey);
+            oContent = oDrawing.GetDocContent();
         }
-        else if (oAnnot && this.Viewer.isMouseDown == false) {
-            let aAnnots = oController.getSelectedObjects().slice();
-            aAnnots.forEach(function(annot) {
-                oThis.RemoveAnnot(annot.GetId());
+        else {
+            let aSelectedObjects = oController.getSelectedObjects().slice();
+
+            aSelectedObjects.forEach(function(object) {
+                if (object.IsDrawing() && !Asc.editor.isRestrictionView()) {
+                    if (object.IsShape() && object.GetEditField()) {
+                        let field = shape.GetEditField();
+                        oThis.RemoveField(field.GetId());
+                    }
+                    else {
+                        oThis.RemoveDrawing(object.GetId());
+                    }
+                }
+                else if (object.IsAnnot() && oThis.Viewer.isMouseDown == false) {
+                    oThis.RemoveAnnot(object.GetId());
+                }
             });
         }
 
