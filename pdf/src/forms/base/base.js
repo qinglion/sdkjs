@@ -2261,57 +2261,23 @@
         return null;
     };
 
-    CBaseField.prototype.SetApiTextColor = function(aApiColor) {
-        if ([AscPDF.FIELD_TYPES.radiobutton, AscPDF.FIELD_TYPES.checkbox].includes(this.GetType()))
-            return;
-
-        let color = AscPDF.Api.Types.color;
-
-        let oRGB = color.convert(aApiColor, "RGB");
-        if (this.content) {
-            let oPara       = this.content.GetElement(0);
-            let oApiPara    = editor.private_CreateApiParagraph(oPara);
-
-            oApiPara.SetColor(Math.round(oRGB[1] * 255), Math.round(oRGB[2] * 255), Math.round(oRGB[3] * 255), false);
-            oPara.RecalcCompiledPr(true);
-        }
-        if (this.contentFormat) {
-            let oPara       = this.contentFormat.GetElement(0);
-            let oApiPara    = editor.private_CreateApiParagraph(oPara);
-
-            oApiPara.SetColor(Math.round(oRGB[1] * 255), Math.round(oRGB[2] * 255), Math.round(oRGB[3] * 255), false);
-            oPara.RecalcCompiledPr(true);
-        }
-
-        let oApiColor   = color.convert(oRGB, aApiColor[0]);
-
-        AscCommon.History.Add(new CChangesPDFFormTextColor(this, this._textColor, oApiColor.slice(1)));
-        this._textColor = oApiColor.slice(1);
-
-        this.SetWasChanged(true);
-        this.AddToRedraw();
-    };
-    
     CBaseField.prototype.SetTextColor = function(aColor) {
-        AscCommon.History.Add(new CChangesPDFFormTextColor(this, this._textColor, aColor));
+        function applyColorToContent(content, color) {
+            if (content) {
+                content.SetApplyToAll(true);
+                content.AddToParagraph(new ParaTextPr({Color: color}));
+                content.SetApplyToAll(false);
+            }
+        }
 
+        AscCommon.History.Add(new CChangesPDFFormTextColor(this, this._textColor, aColor));
         this._textColor = aColor;
         
-        let oRGB = this.GetRGBColor(aColor);
-        if (this.content) {
-            let oPara       = this.content.GetElement(0);
-            let oApiPara    = editor.private_CreateApiParagraph(oPara);
-
-            oApiPara.SetColor(oRGB.r, oRGB.g, oRGB.b, false);
-            oPara.RecalcCompiledPr(true);
-        }
-        if (this.contentFormat) {
-            let oPara       = this.contentFormat.GetElement(0);
-            let oApiPara    = editor.private_CreateApiParagraph(oPara);
-
-            oApiPara.SetColor(oRGB.r, oRGB.g, oRGB.b, false);
-            oPara.RecalcCompiledPr(true);
-        }
+        var oRGB = this.GetRGBColor(aColor);
+        var oColor = new AscCommonWord.CDocumentColor(oRGB.r, oRGB.g, oRGB.b, false);
+    
+        applyColorToContent(this.content, oColor);
+        applyColorToContent(this.contentFormat, oColor);
         
         this.SetWasChanged(true);
         this.SetNeedRecalc(true);
@@ -2593,12 +2559,8 @@
             memory.Seek(nCurPos);
         }
     };
-    CBaseField.prototype.GetFontSizeAP = function(oContent) {
-        let oPara   = oContent.GetElement(0);
-        let oRun    = oPara.GetElement(0);
-        let oTextPr = oRun.Get_CompiledPr(true);
-
-        return oTextPr.FontSize;
+    CBaseField.prototype.GetFontSizeAP = function() {
+        return 0;
     };
     CBaseField.prototype.SetEditMode = function(bEdit) {
         if (bEdit == false) {
@@ -2678,13 +2640,8 @@
         let nFontSize = this.GetTextSize() || 0;
         memory.WriteDouble(nFontSize);
 
-        // форматируемое значение
-        let oFormatTrigger      = this.GetTrigger(AscPDF.FORMS_TRIGGERS_TYPES.Format);
-        let oActionRunScript    = oFormatTrigger ? oFormatTrigger.GetActions()[0] : null;
-        let oContentToDraw      = oActionRunScript ? this.contentFormat : this.content;
-
         // text size for ap
-        memory.WriteDouble(this.GetFontSizeAP(oContentToDraw));
+        memory.WriteDouble(this.GetFontSizeAP(this.content));
 
         // font style
         let oStyle = this.GetFontStyle();

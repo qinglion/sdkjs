@@ -111,6 +111,13 @@
     CPushButtonField.prototype.constructor = CPushButtonField;
     AscFormat.InitClass(CPushButtonField, AscPDF.CBaseField, AscDFH.historyitem_type_Pdf_Button_Field);
 
+    CPushButtonField.prototype.GetFontSizeAP = function(oContent) {
+        let oPara   = oContent.GetElement(0);
+        let oRun    = oPara.GetElement(0);
+        let oTextPr = oRun.Get_CompiledPr(true);
+
+        return oTextPr.FontSize;
+    };
     CPushButtonField.prototype.AddImage = function(oImgData, nAPType) {
         if (!oImgData) {
             return;
