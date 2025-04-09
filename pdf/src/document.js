@@ -3402,7 +3402,7 @@ var CPresentation = CPresentation || function(){};
             aSelectedObjects.forEach(function(object) {
                 if (object.IsDrawing() && !Asc.editor.isRestrictionView()) {
                     if (object.IsShape() && object.GetEditField()) {
-                        let field = shape.GetEditField();
+                        let field = object.GetEditField();
                         oThis.RemoveField(field.GetId());
                     }
                     else {
