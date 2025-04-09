@@ -337,6 +337,10 @@
         
         let formattedOption;
         let sCaption = "";
+        let aInnerColor = this.GetTextColor();
+        let oRGB = this.GetRGBColor(aInnerColor);
+        let oDocColor = new AscCommonWord.CDocumentColor(oRGB.r, oRGB.g, oRGB.b, false);
+
         if (typeof option === "string" && option !== "") {
             formattedOption = option;
             sCaption = option;
@@ -369,6 +373,11 @@
                     field.content.Internal_Content_Add(nPos, oPara);
                     oPara.Add(oRun);
                     oRun.AddText(sCaption);
+
+                    oPara.SetApplyToAll(true);
+                    oPara.Add(new ParaTextPr({Color: oDocColor}));
+                    oPara.RecalcCompiledPr(true);
+                    oPara.SetApplyToAll(false);
 
                     field.SetWasChanged(true);
                     field.SetNeedRecalc(true);
