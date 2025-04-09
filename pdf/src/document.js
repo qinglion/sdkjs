@@ -2779,7 +2779,7 @@ var CPresentation = CPresentation || function(){};
         oField.SetParentPage(oPageInfo);
         return oField;
     };
-    CPDFDoc.prototype.AddField = function(oField, nPage, bRecalcPos) {
+    CPDFDoc.prototype.AddField = function(oField, nPage, isFromUI) {
         let oPagesInfo = this.GetPageInfo(nPage);
         if (!oPagesInfo)
             return false;
@@ -2836,7 +2836,7 @@ var CPresentation = CPresentation || function(){};
             }
         }
 
-        if (bRecalcPos) {
+        if (isFromUI) {
             let nExtX = oField.GetWidth();
             let nExtY = oField.GetHeight();
 
@@ -2854,6 +2854,15 @@ var CPresentation = CPresentation || function(){};
         }
 
         oField.SyncValue();
+
+        if (isFromUI) {
+            let oController = this.GetController();
+            this.SetMouseDownObject(oField);
+            this.activeForm = oField;
+            let oEditShape = oField.GetEditShape();
+            oEditShape.select(oController, oField.GetPage());
+        }
+
         return true;
     };
     /**
