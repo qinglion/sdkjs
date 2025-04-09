@@ -2791,6 +2791,9 @@ CDocumentContent.prototype.AddNewParagraph = function(bForceAdd)
 								NewParagraph.Style_Remove();
 							else
 								NewParagraph.Style_Add(NextId, true);
+							
+							let bidi = Item.GetDirectParaPr(false).Bidi;
+							NewParagraph.SetParagraphBidi(bidi);
 						}
 
 						var LastRun = Item.Content[Item.Content.length - 1];

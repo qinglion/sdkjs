@@ -19556,6 +19556,9 @@ CDocument.prototype.controller_AddNewParagraph = function(bRecalculate, bForceAd
 							NewParagraph.Style_Remove();
 						else
 							NewParagraph.Style_Add(NextId, true);
+						
+						let bidi = Item.GetDirectParaPr(false).Bidi;
+						NewParagraph.SetParagraphBidi(bidi);
 					}
 
 					var SectPr = Item.Get_SectionPr();
