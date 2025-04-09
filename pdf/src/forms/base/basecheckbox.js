@@ -32,15 +32,6 @@
 
 (function(){
 
-    let CHECKBOX_STYLES = {
-        check:      0,
-        cross:      1,
-        diamond:    2,
-        circle:     3,
-        star:       4,
-        square:     5
-    }
-    
     /**
 	 * Class representing a base checkbox class.
 	 * @constructor
@@ -52,7 +43,7 @@
 
         this._value         = "Off";
         this._exportValue   = "Yes";
-        this._chStyle       = CHECKBOX_STYLES.check;
+        this._chStyle       = AscPDF.CHECKBOX_STYLES.check;
         this._checked       = false;
         this._options       = undefined; // используется для храненния export values дочерних полей
         this._textSize      = 0;
@@ -113,7 +104,7 @@
 
         let nStyle = this.GetStyle();
         switch (nStyle) {
-            case CHECKBOX_STYLES.circle: {
+            case AscPDF.CHECKBOX_STYLES.circle: {
                 let centerX = X + nWidth / 2;
                 let centerY = Y + nHeight / 2;
                 let nRadius = Math.abs(Math.min(nWidth / 4 - oMargins.left / 2, nHeight / 4 - oMargins.top / 2));
@@ -123,7 +114,7 @@
                 break;
             }
                 
-            case CHECKBOX_STYLES.cross: {
+            case AscPDF.CHECKBOX_STYLES.cross: {
                 let x = nWidth > nHeight ? X + (nWidth - nHeight) / 2 : X;
                 let y = nHeight > nWidth ? Y + (nHeight - nWidth) / 2 : Y;
                 let w = Math.min(nWidth, nHeight);
@@ -143,7 +134,7 @@
                 break;
             }
                 
-            case CHECKBOX_STYLES.diamond: {
+            case AscPDF.CHECKBOX_STYLES.diamond: {
                 let nDiamondWidth = Math.min(nWidth - oMargins.left * 1.5, nHeight - oMargins.top * 1.5) / 2;
                 let nCenterX = X + nWidth / 2;
                 let nCenterY = Y + nHeight / 2;
@@ -164,7 +155,7 @@
                 break;
             }
                 
-            case CHECKBOX_STYLES.square: {
+            case AscPDF.CHECKBOX_STYLES.square: {
                 let nDelta = Math.abs(nHeight - nWidth);
                 let nMaxW = Math.min(nWidth, nHeight) * 0.8 - oMargins.bottom * 2;
 
@@ -177,7 +168,7 @@
                 break;
             }
                 
-            case CHECKBOX_STYLES.star: {
+            case AscPDF.CHECKBOX_STYLES.star: {
                 // set the position of the center of the star
                 let nCenterX = X + nWidth / 2;
                 let nCenterY = Y + nHeight / 2;
@@ -209,7 +200,7 @@
                 break;
             }
 
-            case CHECKBOX_STYLES.check: {
+            case AscPDF.CHECKBOX_STYLES.check: {
                 let imgW = CHECKED_ICON.width;
                 let imgH = CHECKED_ICON.height;
 
@@ -758,6 +749,5 @@
     const CHECKED_ICON = getSvgImage(CHECK_SVG);
 
 	window["AscPDF"].CBaseCheckBoxField = CBaseCheckBoxField;
-	window["AscPDF"].CHECKBOX_STYLES = CHECKBOX_STYLES;
 })();
 

@@ -191,14 +191,71 @@
     ValidateType["CUSTOM"]    = ValidateType.CUSTOM;
 
     Object.freeze(FIELD_TYPES);
+
+    const CHECKBOX_STYLES = {
+        check:      0,
+        cross:      1,
+        diamond:    2,
+        circle:     3,
+        star:       4,
+        square:     5
+    }
+
+    CHECKBOX_STYLES["check"]    = CHECKBOX_STYLES.check;
+    CHECKBOX_STYLES["cross"]    = CHECKBOX_STYLES.cross;
+    CHECKBOX_STYLES["diamond"]  = CHECKBOX_STYLES.diamond;
+    CHECKBOX_STYLES["circle"]   = CHECKBOX_STYLES.circle;
+    CHECKBOX_STYLES["star"]     = CHECKBOX_STYLES.star;
+    CHECKBOX_STYLES["square"]   = CHECKBOX_STYLES.square;
+
+    const BORDER_TYPES = {
+        solid:      0,
+        beveled:    1,
+        dashed:     2,
+        inset:      3,
+        underline:  4
+    };
+
+    BORDER_TYPES["solid"]       = BORDER_TYPES.solid;
+    BORDER_TYPES["beveled"]     = BORDER_TYPES.beveled;
+    BORDER_TYPES["dashed"]      = BORDER_TYPES.dashed;
+    BORDER_TYPES["inset"]       = BORDER_TYPES.inset;
+    BORDER_TYPES["underline"]   = BORDER_TYPES.underline;
+
+    const BUTTON_HIGHLIGHT_TYPES = {
+        none:       0,
+        invert:     1,
+        push:       2,
+        outline:    3
+    }
+
+    BUTTON_HIGHLIGHT_TYPES["none"]      = BUTTON_HIGHLIGHT_TYPES.none;
+    BUTTON_HIGHLIGHT_TYPES["invert"]    = BUTTON_HIGHLIGHT_TYPES.invert;
+    BUTTON_HIGHLIGHT_TYPES["push"]      = BUTTON_HIGHLIGHT_TYPES.push;
+    BUTTON_HIGHLIGHT_TYPES["outline"]   = BUTTON_HIGHLIGHT_TYPES.outline;
+
+    const APPEARANCE_TYPES = {
+        normal:     0,
+        mouseDown:  1,
+        rollover:   2
+    };
+
+    APPEARANCE_TYPES["normal"]      = APPEARANCE_TYPES.normal;
+    APPEARANCE_TYPES["mouseDown"]   = APPEARANCE_TYPES.mouseDown;
+    APPEARANCE_TYPES["rollover"]    = APPEARANCE_TYPES.rollover;
+
     asc["FIELD_TYPES"]              = asc.FIELD_TYPES               = FIELD_TYPES;
     asc["BORDER_EFFECT_STYLES"]     = asc.BORDER_EFFECT_STYLES      = BORDER_EFFECT_STYLES;
     asc["REF_TO_REASON"]            = asc.REF_TO_REASON             = REF_TO_REASON;
     asc["FormatType"]               = asc.FormatType                = FormatType;
-    asc["SpecialFormatType"]   = asc.SpecialFormatType    = SpecialFormatType;
+    asc["SpecialFormatType"]        = asc.SpecialFormatType         = SpecialFormatType;
     asc["SeparatorStyle"]           = asc.SeparatorStyle            = SeparatorStyle;
     asc["NegativeStyle"]            = asc.NegativeStyle             = NegativeStyle;
     asc["CalculateType"]            = asc.CalculateType             = CalculateType;
     asc["ValidateType"]             = asc.ValidateType              = ValidateType;
+    asc["CHECKBOX_STYLES"]          = asc.CHECKBOX_STYLES           = CHECKBOX_STYLES;
+    asc["BORDER_TYPES"]             = asc.BORDER_TYPES              = BORDER_TYPES;
+    asc["BUTTON_HIGHLIGHT_TYPES"]   = asc.BUTTON_HIGHLIGHT_TYPES    = BUTTON_HIGHLIGHT_TYPES;
+    asc["APPEARANCE_TYPES"]         = asc.APPEARANCE_TYPES          = APPEARANCE_TYPES;
     asc.CommandType                 = CommandType;
 })();
