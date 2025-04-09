@@ -4766,6 +4766,7 @@ window.AscCommon.g_cIsBeta = "false";
 	prot['UnProtectedRegion'] = prot.UnProtectedRegion;
 	prot['Text']              = prot.Text;
 	prot['Annot']             = prot.Annot;
+	prot['Field']             = prot.Field;
 	prot['PdfPage']           = prot.PdfPage;
 	
 	window['Asc']['linerule_AtLeast'] = window['Asc'].linerule_AtLeast = linerule_AtLeast;

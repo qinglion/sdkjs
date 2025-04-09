@@ -49,20 +49,6 @@
         b: 255
     };
 
-    let BUTTON_PRESSED = {
-        r: 153,
-        g: 193,
-        b: 218
-    };
-
-    let BORDER_TYPES = {
-        solid:      0,
-        beveled:    1,
-        dashed:     2,
-        inset:      3,
-        underline:  4
-    };
-
     //------------------------------------------------------------------------------------------------------------------
 	//
 	// pdf api types
@@ -75,8 +61,6 @@
         right:  2
     };
 
-    const CHAR_LIM_MAX = 500; // to do проверить
-
     // For Span attributes (start)
     let FONT_STRETCH = ["ultra-condensed", "extra-condensed", "condensed", "semi-condensed", "normal",
         "semi-expanded", "expanded", "extra-expanded", "ultra-expanded"];
@@ -87,20 +71,11 @@
     }
 
     let FONT_WEIGHT = [100, 200, 300, 400, 500, 600, 700, 800, 900];
-
-    let LINE_WIDTH = {
-        none:   0,
-        thin:   1,
-        medium: 2,
-        thick:  3
-    }
-
     let VALID_ROTATIONS = [0, 90, 180, 270];
 
     const MAX_TEXT_SIZE = 32767;
 	
 	const DEFAULT_FIELD_FONT = "Arial";
-	
 	
 	// freeze objects
     Object.freeze(FIELDS_HIGHLIGHT);
@@ -987,7 +962,7 @@
         nHeight -= nLineWidth;
 
         // по умолчанию рисуется solid
-        let nBorderStyle = this.GetBorderStyle() != undefined ? this.GetBorderStyle() : BORDER_TYPES.solid;
+        let nBorderStyle = this.GetBorderStyle() != undefined ? this.GetBorderStyle() : AscPDF.BORDER_TYPES.solid;
 
         if (this.GetType() == AscPDF.FIELD_TYPES.radiobutton && this._chStyle == AscPDF.CHECKBOX_STYLES.circle) {
             // выставляем в центр круга
@@ -997,8 +972,8 @@
 
             // отрисовка
             switch (nBorderStyle) {
-                case BORDER_TYPES.solid:
-                case BORDER_TYPES.underline:
+                case AscPDF.BORDER_TYPES.solid:
+                case AscPDF.BORDER_TYPES.underline:
                     if (color == null)
                         break;
                     oGraphicsPDF.SetLineDash([]);
@@ -1006,7 +981,7 @@
                     oGraphicsPDF.Arc(centerX, centerY, nRadius, 0, 2 * Math.PI, false);
                     oGraphicsPDF.Stroke();
                     break;
-                case BORDER_TYPES.beveled:
+                case AscPDF.BORDER_TYPES.beveled:
                     if (color) {
                         oGraphicsPDF.SetLineDash([]);
                         oGraphicsPDF.BeginPath();
@@ -1037,7 +1012,7 @@
                     oGraphicsPDF.Stroke();
 
                     break;
-                case BORDER_TYPES.dashed:
+                case AscPDF.BORDER_TYPES.dashed:
                     if (color == null)
                         break;
 
@@ -1046,7 +1021,7 @@
                     oGraphicsPDF.Arc(centerX, centerY, nRadius, 0, 2 * Math.PI, false);
                     oGraphicsPDF.Stroke();
                     break;
-                case BORDER_TYPES.inset:
+                case AscPDF.BORDER_TYPES.inset:
                     if (color) {
                         oGraphicsPDF.SetLineDash([]);
                         oGraphicsPDF.BeginPath();
@@ -1080,7 +1055,7 @@
         else {
             // отрисовка
             switch (nBorderStyle) {
-                case BORDER_TYPES.solid:
+                case AscPDF.BORDER_TYPES.solid:
                     if (color == null)
                         break;
                     
@@ -1090,7 +1065,7 @@
                     oGraphicsPDF.Stroke();
 
                     break;
-                case BORDER_TYPES.beveled:
+                case AscPDF.BORDER_TYPES.beveled:
                     if (color) {
                         oGraphicsPDF.SetLineDash([]);
                         oGraphicsPDF.BeginPath();
@@ -1171,7 +1146,7 @@
                     oGraphicsPDF.Fill();
 
                     break;
-                case BORDER_TYPES.dashed:
+                case AscPDF.BORDER_TYPES.dashed:
                     if (color == null)
                         break;
 
@@ -1180,7 +1155,7 @@
                     oGraphicsPDF.Rect(X, Y, nWidth, nHeight);
                     oGraphicsPDF.Stroke();
                     break;
-                case BORDER_TYPES.inset:
+                case AscPDF.BORDER_TYPES.inset:
                     if (color) {
                         oGraphicsPDF.SetLineDash([]);
                         oGraphicsPDF.BeginPath();
@@ -1261,7 +1236,7 @@
                     oGraphicsPDF.Fill();
 
                     break;
-                case BORDER_TYPES.underline:
+                case AscPDF.BORDER_TYPES.underline:
                     if (color == null)
                         break;
                     
@@ -1277,9 +1252,9 @@
         // pressed border
         if (this.GetType() == AscPDF.FIELD_TYPES.button && this.IsPressed() && this.GetHighlight() == AscPDF.BUTTON_HIGHLIGHT_TYPES.push && this._imgData.mouseDown == undefined) {
             switch (nBorderStyle) {
-                case BORDER_TYPES.solid:
-                case BORDER_TYPES.dashed:
-                case BORDER_TYPES.underline: {
+                case AscPDF.BORDER_TYPES.solid:
+                case AscPDF.BORDER_TYPES.dashed:
+                case AscPDF.BORDER_TYPES.underline: {
                     
                         // left part
                         oGraphicsPDF.SetFillStyle(oBgRGBColor.r, oBgRGBColor.g, oBgRGBColor.b);
@@ -1310,7 +1285,7 @@
         }
 
         // draw comb cells
-        if ((this.GetType() == AscPDF.FIELD_TYPES.text && this.IsComb() == true) && this._borderColor != null && (nBorderStyle == BORDER_TYPES.solid || nBorderStyle == BORDER_TYPES.dashed)) {
+        if ((this.GetType() == AscPDF.FIELD_TYPES.text && this.IsComb() == true) && this._borderColor != null && (nBorderStyle == AscPDF.BORDER_TYPES.solid || nBorderStyle == AscPDF.BORDER_TYPES.dashed)) {
             let nCombWidth = (nWidth / this.GetCharLimit());
             let nIndentX = nCombWidth;
             
@@ -1838,7 +1813,7 @@
                     oBgRGBColor = {r: 191, g: 0, b: 0};
                 }
                 else {
-                    if (this.GetBorderStyle() !== BORDER_TYPES.beveled)
+                    if (this.GetBorderStyle() !== AscPDF.BORDER_TYPES.beveled)
                         oBgRGBColor = AscPDF.MakeColorMoreGray(oBgRGBColor, 50);
                 }
             }
@@ -1854,7 +1829,7 @@
             oGraphicsPDF.ClosePath();
         }
         else {
-            if ((this.GetType() == AscPDF.FIELD_TYPES.radiobutton || this.GetType() == AscPDF.FIELD_TYPES.checkbox) && this.IsPressed() && this.GetBorderStyle() !== BORDER_TYPES.beveled) {
+            if ((this.GetType() == AscPDF.FIELD_TYPES.radiobutton || this.GetType() == AscPDF.FIELD_TYPES.checkbox) && this.IsPressed() && this.GetBorderStyle() !== AscPDF.BORDER_TYPES.beveled) {
                 oBgRGBColor = AscPDF.MakeColorMoreGray(this.GetRGBColor(aBgColor), 50);
             }
             
@@ -1937,23 +1912,23 @@
         }
 
         switch (this._borderStyle) {
-            case BORDER_TYPES.solid:
-            case BORDER_TYPES.dashed:
+            case AscPDF.BORDER_TYPES.solid:
+            case AscPDF.BORDER_TYPES.dashed:
                 return {
                     left:     nLineWidth,
                     top:      nLineWidth,
                     right:    nLineWidth,
                     bottom:   nLineWidth
                 }
-            case BORDER_TYPES.beveled:
-            case BORDER_TYPES.inset:
+            case AscPDF.BORDER_TYPES.beveled:
+            case AscPDF.BORDER_TYPES.inset:
                 return {
                     left:     2 * nLineWidth,
                     top:      2 * nLineWidth,
                     right:    2 * nLineWidth,
                     bottom:   2 * nLineWidth
                 }
-            case BORDER_TYPES.underline:
+            case AscPDF.BORDER_TYPES.underline:
                 return {
                     left:     0,
                     top:      0,
@@ -1966,17 +1941,17 @@
         let oBorders = this.GetBordersWidth();
 
         switch (this._borderStyle) {
-            case BORDER_TYPES.solid:
-            case BORDER_TYPES.dashed:
-            case BORDER_TYPES.underline:
+            case AscPDF.BORDER_TYPES.solid:
+            case AscPDF.BORDER_TYPES.dashed:
+            case AscPDF.BORDER_TYPES.underline:
                 return {
                     left:     oBorders.bottom,
                     top:      oBorders.bottom,
                     right:    oBorders.bottom,
                     bottom:   oBorders.bottom
                 }
-            case BORDER_TYPES.inset:
-            case BORDER_TYPES.beveled:
+            case AscPDF.BORDER_TYPES.inset:
+            case AscPDF.BORDER_TYPES.beveled:
                 return {
                     left:     oBorders.bottom,
                     top:      oBorders.bottom,
@@ -2403,6 +2378,9 @@
             } else {
                 this.GetAllWidgets().forEach(updateMeasure);
             }
+        }
+        else if (this.GetType() == AscPDF.FIELD_TYPES.button) {
+            this.SetNeedUpdateImage(true);
         }
     };
     CBaseField.prototype.SetPosition = function(x, y) {
@@ -2966,8 +2944,7 @@
 	    window["AscPDF"] = {};
     
 	window["AscPDF"].ALIGN_TYPE         = ALIGN_TYPE;
-	window["AscPDF"].BORDER_TYPES       = window["AscPDF"]["BORDER_TYPES"] = BORDER_TYPES;
-    window["AscPDF"].VALID_ROTATIONS    = VALID_ROTATIONS;
+	window["AscPDF"].VALID_ROTATIONS    = VALID_ROTATIONS;
     window["AscPDF"].MAX_TEXT_SIZE      = MAX_TEXT_SIZE;
     window["AscPDF"].FONT_STRETCH       = FONT_STRETCH;
     window["AscPDF"].FONT_STYLE         = FONT_STYLE;
