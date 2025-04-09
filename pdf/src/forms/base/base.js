@@ -2404,6 +2404,9 @@
                 this.GetAllWidgets().forEach(updateMeasure);
             }
         }
+        else if (this.GetType() == AscPDF.FIELD_TYPES.button) {
+            this.SetNeedUpdateImage(true);
+        }
     };
     CBaseField.prototype.SetPosition = function(x, y) {
         let nExtX = this.GetWidth();

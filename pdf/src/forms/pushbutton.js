@@ -212,6 +212,12 @@
             this.SetImage(sRasterId);
         }
     };
+    CPushButtonField.prototype.SetNeedUpdateImage = function(isNeed) {
+        this._needUpdateImage = isNeed;
+    };
+    CPushButtonField.prototype.IsNeedUpdateImage = function() {
+        return this._needUpdateImage;
+    };
     /**
      * Sets image without any history changes.
      * @memberof CPushButtonField
@@ -222,16 +228,16 @@
 		if (this._rasterId === rasterId && this.GetDrawing())
 			return;
 		
-		this._needUpdateImage = true;
-		this._rasterId        = rasterId;
+		this.SetNeedUpdateImage(true);
+		this._rasterId = rasterId;
 		
 		this._UpdateImage();
 	};
 	CPushButtonField.prototype._UpdateImage = function() {
-		if (!this._needUpdateImage)
+		if (!this.IsNeedUpdateImage())
 			return;
 		
-		this._needUpdateImage = !this._SetImage();
+		this.SetNeedUpdateImage(!this._SetImage());
 	};
 	CPushButtonField.prototype._SetImage = function() {
 		let sRasterId = this._rasterId;
@@ -1019,7 +1025,7 @@
         };
     };
     CPushButtonField.prototype.DoInitialRecalc = function() {
-        if (null == this.contentClipRect) {
+        if (null == this.contentClipRect || this.IsNeedRecalc()) {
             if (this.GetDocument().checkFieldFont(this)) {
                 this.Recalculate();
                 return true;
@@ -1408,7 +1414,7 @@
             AscCommon.History.Add(new CChangesPDFPushbuttonFitBounds(this, this._buttonFitBounds, bValue));
 
             this._buttonFitBounds = bValue;
-            this._needUpdateImage = true;
+            this.SetNeedUpdateImage(true);
             this.CalculateContentClipRect();
             this.SetWasChanged(true);
             this._UpdateImage();
@@ -1421,7 +1427,7 @@
         AscCommon.History.Add(new CChangesPDFPushbuttonScaleWhenType(this, this._buttonScaleWhen, nType));
 
         this._buttonScaleWhen = nType;
-        this._needUpdateImage = true;
+        this.SetNeedUpdateImage(true);
         this.SetWasChanged(true);
         this._UpdateImage();
     };
@@ -1432,7 +1438,7 @@
         AscCommon.History.Add(new CChangesPDFPushbuttonScaleHowType(this, this._buttonScaleHow, nType));
 
         this._buttonScaleHow = nType;
-        this._needUpdateImage = true;
+        this.SetNeedUpdateImage(true);
         this.SetWasChanged(true);
         this._UpdateImage();
     };
