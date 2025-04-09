@@ -745,25 +745,25 @@
         let oApiFunc = AscPDF.Api.Functions;
         let aArgsPdfApi = [
             oParentDoc.event,
-            oApiObjects.color,
+            oApiObjects["color"],
 
-            oApiFunc.AFNumber_Format,
-            oApiFunc.AFNumber_Keystroke,
-            oApiFunc.AFPercent_Format,
-            oApiFunc.AFPercent_Keystroke,
-            oApiFunc.AFDate_Format,
-            oApiFunc.AFDate_Keystroke,
-            oApiFunc.AFDate_FormatEx,
-            oApiFunc.AFDate_KeystrokeEx,
-            oApiFunc.AFTime_Format,
-            oApiFunc.AFTime_Keystroke,
-            oApiFunc.AFTime_FormatEx,
-            oApiFunc.AFTime_KeystrokeEx,
-            oApiFunc.AFSpecial_Format,
-            oApiFunc.AFSpecial_Keystroke,
-            oApiFunc.AFSpecial_KeystrokeEx,
-            oApiFunc.AFSimple_Calculate,
-            oApiFunc.AFRange_Validate
+            oApiFunc["AFNumber_Format"],
+            oApiFunc["AFNumber_Keystroke"],
+            oApiFunc["AFPercent_Format"],
+            oApiFunc["AFPercent_Keystroke"],
+            oApiFunc["AFDate_Format"],
+            oApiFunc["AFDate_Keystroke"],
+            oApiFunc["AFDate_FormatEx"],
+            oApiFunc["AFDate_KeystrokeEx"],
+            oApiFunc["AFTime_Format"],
+            oApiFunc["AFTime_Keystroke"],
+            oApiFunc["AFTime_FormatEx"],
+            oApiFunc["AFTime_KeystrokeEx"],
+            oApiFunc["AFSpecial_Format"],
+            oApiFunc["AFSpecial_Keystroke"],
+            oApiFunc["AFSpecial_KeystrokeEx"],
+            oApiFunc["AFSimple_Calculate"],
+            oApiFunc["AFRange_Validate"]
         ];
     
         let funcArgs = aArgsNamesToDelete.concat(aArgsNamesPdfApi);
