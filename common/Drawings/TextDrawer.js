@@ -90,15 +90,8 @@ CDocContentStructure.prototype.Recalculate = function(oTheme, oColorMap, dWidth,
 		const arrRes = [];
 		for (let i = 0; i < this.m_aContent.length; i += 1) {
 			const oParagraph = this.m_aContent[i];
-			oParagraph.combineElementsByLocation();
-			oParagraph.normalizeBackForegroundObjects();
-			for (let j = 0; j < oParagraph.m_aWords.length; j += 1) {
-				const aWord = oParagraph.m_aWords[j];
-				const arrBackgroundWord = oParagraph.m_aBackgroundsByWords[j];
-				const arrForegroundWord = oParagraph.m_aForegroundsByWords[j];
-				const oWrapperWord = new AscCommonSlide.CObjectForDrawArrayWrapper(aWord, oTransform, oTheme, oColorMap, oDrawing, arrForegroundWord, arrBackgroundWord);
-				arrRes.push(oWrapperWord);
-			}
+			const arrParagraphWordWrappers = oParagraph.getCombinedWordWrappers(oTransform, oTheme, oColorMap, oDrawing);
+
 		}
 		return arrRes;
 	};
@@ -686,6 +679,45 @@ function CParagraphStructure(oParagraph)
 		this.m_oLastStrikeoutWordStart = new CAdditionalElementPosition();
 		this.m_oLastDStrikeoutWordStart = new CAdditionalElementPosition();
 }
+CParagraphStructure.prototype.getCombinedWordWrappers = function (oTransform, oTheme, oColorMap, oDrawing) {
+	const arrRes = [];
+	this.combineElementsByLocation();
+	this.normalizeBackForegroundObjects();
+	for (let i = 0; i < this.m_aWords.length; i += 1) {
+		const aWord = this.m_aWords[i];
+		const arrBackgroundWord = this.m_aBackgroundsByWords[i];
+		const arrForegroundWord = this.m_aForegroundsByWords[i];
+		const oWrapperWord = new AscCommonSlide.CObjectForDrawArrayWrapper(aWord, oTransform, oTheme, oColorMap, oDrawing, arrForegroundWord, arrBackgroundWord);
+		arrRes.push(oWrapperWord);
+	}
+	return arrRes;
+};
+	CParagraphStructure.prototype.getCombinedLetterWrappers = function (oTransform, oTheme, oColorMap, oDrawing) {
+		const arrRes = [];
+		let nAdditionalCounter = 0;
+		this.combineElementsByLocation();
+		for (let i = 0; i < this.m_aWords.length; i += 1) {
+			const aWord = this.m_aWords[i];
+			for (let j = 0; j < aWord.length; j += 1) {
+				const oWordLetter = aWord[j];
+				const oBackgroundLetter = this.m_aBackgroundsByWords[nAdditionalCounter];
+				const oForegroundLetter  = this.m_aForegroundsByWords[nAdditionalCounter];
+				const oWrapperWord = new AscCommonSlide.CObjectForDrawArrayWrapper([oWordLetter], oTransform, oTheme, oColorMap, oDrawing, oForegroundLetter, oBackgroundLetter);
+				arrRes.push(oWrapperWord);
+				nAdditionalCounter += 1;
+			}
+		}
+		return arrRes;
+	};
+	CParagraphStructure.prototype.getAllDrawingObjectsWrapper = function (oTransform, oTheme, oColorMap, oDrawing) {
+		let arrContentObjects = [];
+		arrContentObjects = arrContentObjects.concat.apply(arrContentObjects, this.m_aWords);
+		let arrBackgroundObjects = [];
+		arrBackgroundObjects = arrBackgroundObjects.concat.apply(arrBackgroundObjects, this.m_aBackgroundsByWords);
+		let arrForegroundObjects = [];
+		arrForegroundObjects = arrForegroundObjects.concat.apply(arrForegroundObjects, this.m_aForegroundsByWords);
+		return new AscCommonSlide.CObjectForDrawArrayWrapper(arrContentObjects, oTransform, oTheme, oColorMap, oDrawing, arrForegroundObjects, arrBackgroundObjects);
+	};
 	CParagraphStructure.prototype.combineElementsByLocation = function () {
 		const arrHighWords = this.m_oLastHighlightWordStart.words;
 		const arrUnderlineWords = this.m_oLastUnderlineWordStart.words;
