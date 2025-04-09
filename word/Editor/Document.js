@@ -7465,7 +7465,7 @@ CDocument.prototype.GetCalculatedTextPr = function()
 };
 /**
  * Получаем прямые настройки параграфа, т.е. которые выставлены непосредственно у параграфа, без учета стилей
- * @returns {CParaPr}
+ * @returns {CTextPr}
  */
 CDocument.prototype.GetDirectTextPr = function()
 {
@@ -7473,7 +7473,7 @@ CDocument.prototype.GetDirectTextPr = function()
 };
 /**
  * Получаем прямые настройки текста, т.е. которые выставлены непосредственно у рана, без учета стилей
- * @returns {CTextPr}
+ * @returns {CParaPr}
  */
 CDocument.prototype.GetDirectParaPr = function()
 {
@@ -23420,21 +23420,34 @@ CDocument.prototype.addFieldWithInstructionToParagraph = function(paragraph, ins
 	beginChar.SetRun(run);
 	paragraph.Add(run);
 	
+	if (textPr)
+		run.SetPr(textPr);
+	
 	run = new AscWord.Run();
 	run.AddInstrText(instructionLine);
 	paragraph.Add(run);
+	
+	if (textPr)
+		run.SetPr(textPr);
+	
 	
 	run = new AscWord.Run();
 	run.AddToContent(-1, separateChar);
 	separateChar.SetRun(run);
 	paragraph.Add(run);
 	
+	if (textPr)
+		run.SetPr(textPr);
+	
 	run = new AscWord.Run();
 	run.AddToContent(-1, endChar);
 	endChar.SetRun(run);
 	paragraph.Add(run);
-
-
+	
+	if (textPr)
+		run.SetPr(textPr);
+	
+	
 	let complexField = beginChar.GetComplexField();
 	complexField.SetBeginChar(beginChar);
 	complexField.SetInstructionLine(instructionLine);
@@ -23447,32 +23460,28 @@ CDocument.prototype.addFieldWithInstructionToParagraph = function(paragraph, ins
 		let pos = run.GetElementPosition(endChar);
 		run.AddText(value, pos);
 	}
-
-	if (textPr)
-		run.SetPr(textPr);
-
+	
 	return complexField;
 };
-CDocument.prototype.AddDateTime = function(oPr)
+CDocument.prototype.AddDateTime = function(dateTimePr)
 {
-	if (!oPr)
+	if (!dateTimePr)
 		return;
 
-	var nLang = oPr.get_Lang();
+	let nLang = dateTimePr.get_Lang();
 	if (!AscFormat.isRealNumber(nLang))
 		nLang = 1033;
 
-	if (oPr.get_Update())
+	if (dateTimePr.get_Update())
 	{
-		if (!this.Document_Is_SelectionLocked(AscCommon.changestype_Paragraph_Content))
+		if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_Content))
 		{
+			let textPr = this.GetDirectTextPr().Copy();
+			textPr.SetLang(nLang);
+			
 			this.StartAction(AscDFH.historydescription_Document_AddDateTimeField);
 
-			var oComplexField = this.AddFieldWithInstruction("TIME \\@ \"" + oPr.get_Format() + "\"");
-
-			var oBeginChar = oComplexField.GetBeginChar();
-			var oRun       = oBeginChar.GetRun();
-			oRun.Set_Lang_Val(nLang);
+			this.AddFieldWithInstruction("TIME \\@ \"" + dateTimePr.get_Format() + "\"", textPr);
 
 			this.Recalculate();
 			this.UpdateInterface();
@@ -23488,7 +23497,7 @@ CDocument.prototype.AddDateTime = function(oPr)
 		oSettings.SetTextPr(oTextPr);
 		oSettings.MoveCursorOutside(true);
 
-		this.AddTextWithPr(oPr.get_String(), oSettings);
+		this.AddTextWithPr(dateTimePr.get_String(), oSettings);
 	}
 };
 CDocument.prototype.ValidateComplexField = function(oComplexField)
