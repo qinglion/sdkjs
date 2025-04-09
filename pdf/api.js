@@ -3163,37 +3163,73 @@
 		this.stampAnnotPreviewManager = new AscPDF.StampAnnotPreviewManager();
 	};
 	PDFEditorApi.prototype.asc_getPropertyEditorStamps = function() {
-		return this.stampAnnotPreviewManager.getStampPreviews();
+		if (this.loadStampsJSON()) {
+			return this.stampAnnotPreviewManager.getStampPreviews();
+		}
+
+		return null;
 	};
-	PDFEditorApi.prototype.loadStampsJSON = function() {
+	PDFEditorApi.prototype.loadStampsJSON = function () {
 		try {
 			if (window["native_pdf_stamps"]) {
-				AscPDF["STAMPS_JSON"] = AscPDF.STAMPS_JSON = window["native_pdf_stamps"];
+				AscPDF.STAMPS_JSON = window["native_pdf_stamps"];
 				delete window["native_pdf_stamps"];
-				return;
+				return true;
 			}
-			var xhr = new XMLHttpRequest();
-			xhr.open("GET", "../../../../sdkjs/pdf/src/annotations/stamps.json", true);
-			var t = this;
-			xhr.onload = function()
-			{
-				if (this.status === 200 || location.href.indexOf("file:") === 0)
-				{
-					try
-					{
-						AscPDF["STAMPS_JSON"] = AscPDF.STAMPS_JSON = JSON.parse(this.responseText);
+
+			if (AscPDF.STAMPS_JSON) {
+				return true;
+			}
+	
+			let sLang = Asc.editor.InterfaceLocale;
+			
+			function loadLangFileSync(lang) {
+				if (lang.length === 2) {
+					if (lang == 'pt') {
+						lang = lang + '-BR';
 					}
-					catch (err) {}
+					else {
+						lang = lang + '-' + lang.toUpperCase();
+					}
 				}
-			};
-			xhr.send('');
-		}
-		catch (e) {}
+
+				let xhr = new XMLHttpRequest();
+				xhr.open("GET", "../../../../sdkjs/pdf/src/annotations/stamps/" + lang + ".json", false);
+				xhr.send(null);
+	
+				if (xhr.status === 200 || location.href.indexOf("file:") === 0) {
+					try {
+						AscPDF.STAMPS_JSON = JSON.parse(xhr.responseText);
+						AscPDF.stampsLocale = lang;
+
+						// fonts
+						let sText = Asc.editor.User.asc_getUserName();
+						for (let type in AscPDF.STAMPS_JSON) {
+							AscPDF.STAMPS_JSON[type]['content']['content'].forEach(function(para) {
+								para['content'].forEach(function(run) {
+									run['content'].forEach(function(text) {
+										sText += text;
+									});
+								});
+							});
+						}
+
+						AscFonts.FontPickerByCharacter.checkText(sText, Asc.editor, function () {
+							Asc.editor.sendEvent('asc_onStampsReady');
+						});
+					} catch (err) {}
+				} else if (lang !== "en") {
+					loadLangFileSync("en");
+				}
+			}
+	
+			loadLangFileSync(sLang);
+		} catch (e) {}
 	};
+	
 	PDFEditorApi.prototype._init = function() {
 		AscCommon.DocumentEditorApi.prototype._init.call(this);
-		this.loadStampsJSON();
-	}
+	};
 	PDFEditorApi.prototype._coAuthoringInitEnd = function() {
 		AscCommon.DocumentEditorApi.prototype._coAuthoringInitEnd.call(this);
 

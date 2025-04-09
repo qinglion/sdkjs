@@ -4782,8 +4782,9 @@ var CPresentation = CPresentation || function(){};
     };
     
     CPDFDoc.prototype.CreateStampRender = function(sType, sUserName, timeStamp) {
-        AscCommon.History.StartNoHistoryMode();
+        Asc.editor.loadStampsJSON();
 
+        AscCommon.History.StartNoHistoryMode();
         let oJsonReader = new AscJsonConverter.ReaderFromJSON();
         if (!AscPDF.STAMPS_JSON[sType]) {
             this.History.EndNoHistoryMode();
@@ -4794,7 +4795,12 @@ var CPresentation = CPresentation || function(){};
             timeStamp = new Date().getTime();
         }
 
-        let sDate = (new Date(parseInt(timeStamp)).toDateString()).split(" ").join(", ");
+        const sDate = new Date(parseInt(timeStamp)).toLocaleDateString(AscPDF.stampsLocale, {
+            weekday: "short",
+            year: "numeric",
+            month: "short",
+            day: "numeric"
+        });
 
         if (!sUserName) {
             sUserName = Asc.editor.User.asc_getUserName();
@@ -4810,8 +4816,9 @@ var CPresentation = CPresentation || function(){};
             case AscPDF.STAMP_TYPES.D_Received: {
                 let oDinamicPara = oContent.GetElement(1);
                 let oRun = oDinamicPara.GetElement(0);
+                let sRunText = oRun.GetText();
                 oRun.RemoveFromContent(0, oRun.Content.length);
-                let sText = "by " + sUserName + " at " + sDate;
+                let sText = sRunText.replace("(Name)", sUserName).replace("(Date)", sDate);
                 oRun.AddText(sText);
                 break;
             }
