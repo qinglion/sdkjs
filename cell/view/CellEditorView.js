@@ -1320,6 +1320,25 @@ function (window, undefined) {
 	};
 
 	CellEditor.prototype._getFunctionByString = function (cursorPos, s) {
+		let isInString = false;
+		let isEscaped = false;
+
+		if ('"' === s[cursorPos - 1]) {
+			return {fPos: undefined, fName: undefined};
+		}
+
+		for (let i = 0; i < cursorPos; i++) {
+			if (s[i] === '"') {
+				if (!isEscaped) {
+					isInString = !isInString;
+				}
+			}
+		}
+
+		if (isInString) {
+			return {fPos: undefined, fName: undefined};
+		}
+		
 		let fPos = asc_lastidx(s, this.reNotFormula, cursorPos) + 1;
 		let match;
 		if (fPos > 0) {
