@@ -2559,12 +2559,8 @@
             memory.Seek(nCurPos);
         }
     };
-    CBaseField.prototype.GetFontSizeAP = function(oContent) {
-        let oPara   = oContent.GetElement(0);
-        let oRun    = oPara.GetElement(0);
-        let oTextPr = oRun.Get_CompiledPr(true);
-
-        return oTextPr.FontSize;
+    CBaseField.prototype.GetFontSizeAP = function() {
+        return 0;
     };
     CBaseField.prototype.SetEditMode = function(bEdit) {
         if (bEdit == false) {
@@ -2644,13 +2640,8 @@
         let nFontSize = this.GetTextSize() || 0;
         memory.WriteDouble(nFontSize);
 
-        // форматируемое значение
-        let oFormatTrigger      = this.GetTrigger(AscPDF.FORMS_TRIGGERS_TYPES.Format);
-        let oActionRunScript    = oFormatTrigger ? oFormatTrigger.GetActions()[0] : null;
-        let oContentToDraw      = oActionRunScript ? this.contentFormat : this.content;
-
         // text size for ap
-        memory.WriteDouble(this.GetFontSizeAP(oContentToDraw));
+        memory.WriteDouble(this.GetFontSizeAP(this.content));
 
         // font style
         let oStyle = this.GetFontStyle();
