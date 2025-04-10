@@ -35217,6 +35217,84 @@ $(function () {
 		
 	});
 
+	QUnit.test("Long string splitting", function (assert) {
+		// Test case for long string (300 chars - should split into 2 parts)
+		let originalString = "a".repeat(300);
+		ws.getRange2("A1").setValue("=\"" + originalString + "\"");
+		let formula = ws.getRange2("A1").getFormula();
+		let expectedSplits = Math.ceil(originalString.length / 255) - 1;
+		let actualSplits = (formula.match(/&/g) || []).length;
+		assert.equal(actualSplits, expectedSplits, "300-char string should have exactly 1 concatenation");
+		assert.equal(ws.getRange2("A1").getValue(), originalString, "Result should match original 300-char string");
+
+		// Test very long string (600 chars - should split into 3 parts)
+		let longString = "b".repeat(600);
+		ws.getRange2("A2").setValue("=\"" + longString + "\"");
+		formula = ws.getRange2("A2").getFormula();
+		expectedSplits = Math.ceil(longString.length / 255) - 1;
+		actualSplits = (formula.match(/&/g) || []).length;
+		assert.equal(actualSplits, expectedSplits, "600-char string should have exactly 2 concatenations");
+		assert.equal(ws.getRange2("A2").getValue(), longString, "Result should match original 600-char string");
+
+		// Test mixed content string (480 chars - should split into 2 parts)
+		let mixedString = "Hello world! ".repeat(40); // 480 characters
+		ws.getRange2("A3").setValue("=\"" + mixedString + "\"");
+		formula = ws.getRange2("A3").getFormula();
+		expectedSplits = Math.ceil(mixedString.length / 255) - 1;
+		actualSplits = (formula.match(/&/g) || []).length;
+		assert.equal(actualSplits, expectedSplits, "480-char string should have exactly 1 concatenation");
+		assert.equal(ws.getRange2("A3").getValue(), mixedString, "Result should match original mixed string");
+
+		// Test boundary case (255 chars - should not split)
+		let boundaryString = "c".repeat(255);
+		ws.getRange2("A4").setValue("=\"" + boundaryString + "\"");
+		formula = ws.getRange2("A4").getFormula();
+		actualSplits = (formula.match(/&/g) || []).length;
+		assert.equal(actualSplits, 0, "255-char string should have no concatenations");
+		assert.equal(ws.getRange2("A4").getValue(), boundaryString, "Result should match original boundary string");
+
+		// Test string with quotes (360 chars with quotes - should split into 2 parts)
+		let quotedString = "Test\"\"Quote".repeat(30); // 12 chars * 30 = 360 chars
+		ws.getRange2("A5").setValue("=\"" + quotedString + "\"");
+		formula = ws.getRange2("A5").getFormula();
+		expectedSplits = Math.ceil(quotedString.length / 255) - 1;
+		actualSplits = (formula.match(/&/g) || []).length;
+		assert.equal(actualSplits, expectedSplits, "360-char quoted string should have exactly 1 concatenation");
+		assert.equal(ws.getRange2("A5").getValue(), quotedString.replace(/\"\"/g, "\""), "Result should match original quoted string");
+	});
+
+	QUnit.test("Long string splitting in functions", function (assert) {
+		// Test CONCATENATE with long strings (300 + 200 chars)
+		let string1 = "a".repeat(300);
+		let string2 = "b".repeat(200);
+		ws.getRange2("B1").setValue("=\"" + string2 + "\"");
+		ws.getRange2("A1").setValue("=CONCATENATE(\"" + string1 + "\", B1)");
+		let formula = ws.getRange2("A1").getFormula();
+		let expectedSplits = Math.ceil(string1.length / 255) - 1;
+		let actualSplits = (formula.match(/&/g) || []).length;
+		assert.equal(actualSplits, expectedSplits, "CONCATENATE with 300-char string should have exactly 1 concatenation");
+		assert.equal(ws.getRange2("A1").getValue(), string1 + string2, "CONCATENATE result should match combined strings");
+
+		// Test FIND with long strings (300 chars search in 600 chars text)
+		let searchString = "needle".repeat(50); // 300 chars
+		let haystackString = "needle".repeat(100); // 600 chars
+		ws.getRange2("A2").setValue("=FIND(\"" + searchString + "\", \"" + haystackString + "\")");
+		formula = ws.getRange2("A2").getFormula();
+		expectedSplits = Math.ceil(searchString.length / 255) - 1 + Math.ceil(haystackString.length / 255) - 1;
+		actualSplits = (formula.match(/&/g) || []).length;
+		assert.equal(actualSplits, expectedSplits, "FIND with long strings should have exactly 3 concatenations");
+		assert.equal(ws.getRange2("A2").getValue(), 1, "FIND should work with split strings");
+
+		// Test nested functions (400 chars)
+		let nestedString = "nested_text".repeat(40); // 400 chars
+		ws.getRange2("A4").setValue("=LEN(UPPER(\"" + nestedString + "\"))");
+		formula = ws.getRange2("A4").getFormula();
+		expectedSplits = Math.ceil(nestedString.length / 255) - 1;
+		actualSplits = (formula.match(/&/g) || []).length;
+		assert.equal(actualSplits, expectedSplits, "Nested function with 400-char string should have exactly 1 concatenation");
+		assert.equal(ws.getRange2("A4").getValue(), nestedString.length, "Nested functions should work with split strings");
+	});
+
 	function calcCustomFunction (innerFunc, jsDoc, oDoc, fCompare) {
 		let api = window["Asc"]["editor"];
 		if (jsDoc) {

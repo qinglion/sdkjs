@@ -8139,6 +8139,56 @@ function parserFormula( formula, parent, _ws ) {
 		var parseOperands = function () {
 			found_operand = null;
 
+			let needSplitString = true;
+			let _doSplitString = function(str) {
+				// Cache concatenation operator to avoid repeated lookups
+				const concatOperator = cFormulaOperators["&"].prototype;
+
+				// Process first part of string
+				let currentPos = 0;
+				const strLength = str.length;
+
+				while (currentPos < strLength) {
+					// If this is not the first part of string, add concatenation operator
+					if (currentPos > 0) {
+						// Add concatenation operator
+						parseResult.operand_expected = true;
+
+						// Handle operator precedence
+						while (elemArr.length > 0 &&
+						(concatOperator.rightAssociative ?
+							(concatOperator.priority < elemArr[elemArr.length - 1].priority) :
+							(concatOperator.priority <= elemArr[elemArr.length - 1].priority))) {
+							t.outStack.push(elemArr.pop());
+						}
+
+						elemArr.push(concatOperator);
+						parseResult.addElem(concatOperator);
+					}
+
+					// Calculate length of current part
+					const partLength = Math.min(g_nFormulaStringMaxLength, strLength - currentPos);
+					const part = str.slice(currentPos, currentPos + partLength);
+
+					// Create string operand
+					const stringOperand = new cString(part);
+
+					// If this is the last part of string
+					if (currentPos + partLength === strLength) {
+						found_operand = stringOperand;
+						break;
+					}
+
+					// Add operand to stack
+					t.outStack.push(stringOperand);
+					parseResult.addElem(stringOperand);
+					parseResult.operand_expected = false;
+
+					// Move to next part
+					currentPos += partLength;
+				}
+			}
+
 			if (wasRigthParentheses) {
 				parseResult.operand_expected = true;
 			}
@@ -8170,30 +8220,32 @@ function parserFormula( formula, parent, _ws ) {
 				if (!_checkReferenceCount(2)) {
 					return false;
 				}
-
-				/*if (found_operand.type !== cElementType.error) {
-					parseResult.addRefPos(ph.pCurrPos - ph.operand_str.length, ph.pCurrPos, t.outStack.length, found_operand, true);
-				}*/
-
 			} else if (parserHelp.isBoolean.call(ph, t.Formula, ph.pCurrPos, local)) {
 				if (!_checkReferenceCount(0.5)) {
 					return false;
 				}
 				found_operand = new cBool(ph.operand_str);
-			}
-
-			/* Strings */ else if (parserHelp.isString.call(ph, t.Formula, ph.pCurrPos)) {
+			} else if (parserHelp.isString.call(ph, t.Formula, ph.pCurrPos)) { /* Strings */
 				if (ph.operand_str.length > g_nFormulaStringMaxLength) {
-					parseResult.setError(c_oAscError.ID.FrmlMaxTextLength);
-					if (!ignoreErrors) {
-						t.outStack = [];
-						return false;
+					if (needSplitString) {
+						if (!_checkReferenceCount(ph.operand_str.length * 0.25 + 0.5)) {
+							return false;
+						}
+						_doSplitString(ph.operand_str);
+					} else {
+						parseResult.setError(c_oAscError.ID.FrmlMaxTextLength);
+						if (!ignoreErrors) {
+							t.outStack = [];
+							return false;
+						}
 					}
 				}
-				if (!_checkReferenceCount(ph.operand_str.length * 0.25 + 0.5)) {
-					return false;
+				if (!found_operand) {
+					if (!_checkReferenceCount(ph.operand_str.length * 0.25 + 0.5)) {
+						return false;
+					}
+					found_operand = new cString(ph.operand_str);
 				}
-				found_operand = new cString(ph.operand_str);
 			}
 
 			/* Errors */ else if (parserHelp.isError.call(ph, t.Formula, ph.pCurrPos, local)) {
