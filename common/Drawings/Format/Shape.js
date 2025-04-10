@@ -7286,11 +7286,11 @@
 			return  oCurCandidate;
 		};
 		CShape.prototype.checkDrawingPartWithHistory = function () {};
-		CShape.prototype.getDocStructure = function (bSplitByWords) {
+		CShape.prototype.getDocStructure = function (oParagraphSplitOptions, oIdGenerator) {
 			return AscFormat.ExecuteNoHistory(function () {
 				const oDocContent = this.getDocContent();
 				if (oDocContent) {
-					const oTextDrawer = new AscFormat.CTextDrawer(oDocContent.XLimit, oDocContent.YLimit, false, oDocContent.Get_Theme(), true, bSplitByWords);
+					const oTextDrawer = new AscFormat.CTextDrawer(oDocContent.XLimit, oDocContent.YLimit, false, oDocContent.Get_Theme(), true, oParagraphSplitOptions, oIdGenerator);
 					oDocContent.Draw(oDocContent.StartPage, oTextDrawer);
 					return oTextDrawer.m_oDocContentStructure;
 				}

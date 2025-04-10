@@ -440,7 +440,25 @@
 				const oParagraphs = oDrawer.drawingObjectsByTimeNode[sId].paragraphs;
 				const oDocStructure = oDrawer.getDrawingTextCache(oDrawing);
 				if (this.isCanIterate()) {
-
+					const iterationType = this.getIterationType();
+					const nStartIndex = oTargetTextOptions.pRg.st;
+					const nEndIndex = oTargetTextOptions.pRg.end;
+					for (let i = nStartIndex; i <= nEndIndex; i += 1) {
+						const oParagraph = oDocStructure.m_aContent[i];
+						if (!oParagraphs[i]) {
+							switch (iterationType) {
+								case ITERATEDATA_TYPE_WORD:
+									oParagraphs[i] = oParagraph.getCombinedWordWrappers(oTransform, oTheme, oColorMap, oDrawing);
+									break;
+								case ITERATEDATA_TYPE_LETTER:
+									oParagraphs[i] = oParagraph.getCombinedLetterWrappers(oTransform, oTheme, oColorMap, oDrawing);
+									break;
+								default:
+									break;
+							}
+						}
+						arrDrawingObjects.push.apply(arrDrawingObjects, oParagraphs[i]);
+					}
 				} else {
 					const nStartIndex = oTargetTextOptions.pRg.st;
 					const nEndIndex = oTargetTextOptions.pRg.end;
@@ -751,8 +769,12 @@
 		if (!arrDrawings.length) {
 			return;
 		}
+		const oThis = this;
 		const oFirstDrawing = arrDrawings[0];
-		this.startTick[oFirstDrawing.GetId()] = startTick;
+		oFirstDrawing.forEachAnimationDrawing(function(oAnimationDrawing) {
+			oThis.startTick[oAnimationDrawing.GetId()] = startTick;
+		});
+
 		if (arrDrawings.length <= 1) {
 			return;
 		}
@@ -768,14 +790,19 @@
 		} else {
 			nIterationTick = startTick + nEffectDuration;
 			const oFirstIterationObject = arrDrawings[1];
-			this.startTick[oFirstIterationObject.GetId()] = nIterationTick;
+			oFirstIterationObject.forEachAnimationDrawing(function(oAnimationDrawing) {
+				oThis.startTick[oAnimationDrawing.GetId()] = nIterationTick;
+			});
+
 			startIndex = 2;
 		}
 		const nCalcIterationDelta = nEffectDuration * nIterationDelta;
 		for (let i = startIndex; i < arrDrawings.length; i++) {
 			nIterationTick = nIterationTick + nCalcIterationDelta;
 			const oDrawing = arrDrawings[i];
-			this.startTick[oDrawing.GetId()] = nIterationTick;
+			oDrawing.forEachAnimationDrawing(function(oAnimationDrawing) {
+				oThis.startTick[oAnimationDrawing.GetId()] = nIterationTick;
+			});
 		}
 	};
     CTimeNodeBase.prototype.privateCalculateParams = function (oPlayer) {
@@ -11791,6 +11818,7 @@
 				this.docStructureByDrawing = {};
 				this.drawingObjectsByTimeNode = {};
         this.collectHiddenObjects();
+				this.generateParagraphCaches()
     }
 
 	CAnimationDrawer.prototype.getCacheFromTargetElement = function (tgtEl, isIterate) {
@@ -11899,15 +11927,7 @@
         return this.getSandwich(sDrawingId) !== null;
     };
 
-	CAnimationDrawer.prototype.getDrawingTextCache = function(oDrawing, bSplitByWords) {
-		const sDrawingId = oDrawing.Get_Id();
-		if (!this.docStructureByDrawing[sDrawingId]) {
-			const oDocStructure = oDrawing.getDocStructure(bSplitByWords);
-			if (oDocStructure) {
-				console.log(oDocStructure)
-				this.docStructureByDrawing[sDrawingId] = oDocStructure;
-			}
-		}
+	CAnimationDrawer.prototype.getDrawingTextCache = function(sDrawingId) {
 		return this.docStructureByDrawing[sDrawingId];
 	};
 	CAnimationDrawer.prototype.drawObject = function (oDrawing, oGraphics) {
@@ -12026,6 +12046,103 @@
         }
         return oSandwich.getDrawingParams(sId, bMorph);
     };
+		CAnimationDrawer.prototype.generateParagraphCaches = function() {
+			const oStructuresByDrawing = {};
+			this.traverseTimeNodes((function(oTimeNode) {
+				const oDrawing = oTimeNode.getTargetObject();
+				if (oDrawing) {
+					if (!oTimeNode.isCanIterate()) {
+						return;
+					}
+					const oDocContent = oDrawing.getDocContent();
+					if (!oDocContent) {
+						return;
+					}
+					const nIterationType = oTimeNode.getIterationType();
+					if (!oStructuresByDrawing[oDrawing.GetId()]) {
+						oStructuresByDrawing[oDrawing.GetId()] = {};
+					}
+					const oDrawingInfo = oStructuresByDrawing[oDrawing.GetId()];
+					const oTextEl = oTimeNode.getTargetTextOptions();
+					if (oTextEl) {
+						if (oTextEl.pRg) {
+							const nStart = oTextEl.pRg.st;
+							const nEnd = oTextEl.pRg.end;
+							for (let i = nStart; i <= nEnd; i += 1) {
+								if (oDrawingInfo[i] !== ITERATEDATA_TYPE_LETTER) {
+									oDrawingInfo[i] = nIterationType;
+								}
+							}
+						}
+					} else {
+
+							for (let i = 0; i < oDocContent.Content.length; i++) {
+								if (oDrawingInfo[i] !== ITERATEDATA_TYPE_LETTER) {
+									oDrawingInfo[i] = nIterationType;
+								}
+							}
+					}
+				}
+			}).bind(this));
+			const oIdGenerator = new AscFormat.CIdGenerator();
+			for (let sId in oStructuresByDrawing) {
+				const oParagraphSettings = oStructuresByDrawing[sId];
+				const oDrawing = AscCommon.g_oTableId.Get_ById(sId);
+				const oDocStructure = oDrawing.getDocStructure(oParagraphSettings, oIdGenerator);
+				if (oDocStructure) {
+					this.docStructureByDrawing[sId] = oDocStructure;
+				}
+			}
+		};
+	CAnimationDrawer.prototype.traverseTimeNodes = function(fCallback) {
+		var aTimings = this.player.timings;
+		for (var nTiming = 0; nTiming < aTimings.length; ++nTiming) {
+			var oRoot = aTimings[nTiming].getTimingRootNode();
+			if (oRoot) {
+				oRoot.traverseTimeNodes(fCallback);
+			}
+		}
+	};
+		CAnimationDrawer.prototype.collectUnusedObjectToDraw = function() {
+			const oUnusedObjectToDraw = {};
+			for (let sId in this.docStructureByDrawing) {
+				const oDocStructure = this.docStructureByDrawing[sId];
+				for (let i = 0; i < oDocStructure.m_oContent.length; i++) {
+					const oParagraph = oDocStructure.m_oContent[i];
+					for (let j = 0; j < oParagraph.m_aWords.length; j += 1) {
+						const aWord = oParagraph.m_aWords[j];
+						for (let k = 0; k < aWord.length; k += 1) {
+							const oObjectToDraw = aWord[k];
+							oUnusedObjectToDraw[oObjectToDraw.id] = true;
+						}
+					}
+					for (let j = 0; j < oParagraph.m_aForegroundsByWords.length; j += 1) {
+						const aWord = oParagraph.m_aForegroundsByWords[j];
+						for (let k = 0; k < aWord.length; k += 1) {
+							const oObjectToDraw = aWord[k];
+							oUnusedObjectToDraw[oObjectToDraw.id] = true;
+						}
+					}
+					for (let j = 0; j < oParagraph.m_aBackgroundsByWords.length; j += 1) {
+						const aWord = oParagraph.m_aBackgroundsByWords[j];
+						for (let k = 0; k < aWord.length; k += 1) {
+							const oObjectToDraw = aWord[k];
+							oUnusedObjectToDraw[oObjectToDraw.id] = true;
+						}
+					}
+				}
+			}
+
+			this.traverseTimeNodes(function(oTimeNode) {
+				const arrDrawingObjects = oTimeNode.getDrawingObjects();
+				for (let i = 0; i < arrDrawingObjects.length; i++) {
+					const oDrawing = arrDrawingObjects[i];
+					oDrawing.forEachObjectToDraw(function(oObjectToDraw) {
+						delete oUnusedObjectToDraw[oObjectToDraw.id];
+					});
+				}
+			});
+		};
 
     function createDrawingParams(isVisible, transform, brush, pen, opacity) {
         return {
@@ -12597,14 +12714,18 @@
     }
 
     CAnimSandwich.prototype.addAnimation = function (oAnimation, arrDrawings) {
+			const oThis = this;
 			for (let i = 0; i < arrDrawings.length; i++) {
 				const oDrawing = arrDrawings[i];
-				const sId = oDrawing.GetId();
-				if (!this.animations[sId]) {
-					this.animations[sId] = [];
-					this.drawings.push(oDrawing);
-				}
-				this.animations[sId].push(oAnimation);
+				oDrawing.forEachAnimationDrawing(function(oAnimationDrawing) {
+					const sId = oAnimationDrawing.GetId();
+					if (!oThis.animations[sId]) {
+						oThis.animations[sId] = [];
+						oThis.drawings.push(oAnimationDrawing);
+					}
+					oThis.animations[sId].push(oAnimation);
+				});
+
 			}
 
         if (this.cachedAttributes) {
@@ -14846,6 +14967,9 @@
     window['AscFormat'].TLChartSubElementPtInCategory = TLChartSubElementPtInCategory;
     window['AscFormat'].TLChartSubElementPtInSeries = TLChartSubElementPtInSeries;
     window['AscFormat'].TLChartSubElementSeries = TLChartSubElementSeries;
+	window['AscFormat'].ITERATEDATA_TYPE_ELEMENT = ITERATEDATA_TYPE_ELEMENT;
+	window['AscFormat'].ITERATEDATA_TYPE_LETTER = ITERATEDATA_TYPE_LETTER;
+	window['AscFormat'].ITERATEDATA_TYPE_WORD = ITERATEDATA_TYPE_WORD;
     window['AscFormat'].PLAYER_STATE_IDLE = PLAYER_STATE_IDLE;
     window['AscFormat'].PLAYER_STATE_PLAYING = PLAYER_STATE_PLAYING;
     window['AscFormat'].PLAYER_STATE_PAUSING = PLAYER_STATE_PAUSING;

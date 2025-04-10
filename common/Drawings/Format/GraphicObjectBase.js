@@ -3263,7 +3263,7 @@
 		}
 		return oTexture;
 	};
-	CGraphicObjectBase.prototype.getDocStructure = function () {return null;};
+	CGraphicObjectBase.prototype.getDocStructure = function (oParagraphSplitOptions, oIdGenerator) {return null;};
 	CGraphicObjectBase.prototype.isOnProtectedSheet = function () {
 		if (this.worksheet) {
 			if (this.worksheet.getSheetProtection(Asc.c_oAscSheetProtectType.objects)) {
@@ -3812,6 +3812,10 @@
 	CGraphicObjectBase.prototype.checkDrawingPartWithHistory = function () {};
 	CGraphicObjectBase.prototype.getAllInks = function (arrInks) {return arrInks || []};
 	CGraphicObjectBase.prototype.isShapeCrop = function () {return false};
+	CGraphicObjectBase.prototype.forEachAnimationDrawing = function(fCallback) {
+		return !!fCallback(this);
+	};
+	CGraphicObjectBase.prototype.forEachObjectToDraw = function(fCallback) {};
 	var ANIM_LABEL_WIDTH_PIX = 22;
 	var ANIM_LABEL_HEIGHT_PIX = 17;
 

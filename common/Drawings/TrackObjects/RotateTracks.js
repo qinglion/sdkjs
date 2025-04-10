@@ -185,7 +185,7 @@ function OverlayObject(geometry, extX, extY, brush, pen, transform )
     };
 }
 
-function ObjectToDraw(brush, pen, extX, extY, geometry, transform, x, y, oComment, Code, oLineStructure)
+function ObjectToDraw(brush, pen, extX, extY, geometry, transform, x, y, oComment, Code, oLineStructure, nId)
 {
     this.extX = extX;
     this.extY = extY;
@@ -203,7 +203,7 @@ function ObjectToDraw(brush, pen, extX, extY, geometry, transform, x, y, oCommen
     this.x = x;
     this.y = y;
 
-		this.isUsedInAnimation = false;
+		this.id = nId;
 }
 ObjectToDraw.prototype =
 {

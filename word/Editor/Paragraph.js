@@ -19324,11 +19324,16 @@ CParaDrawingRangeLines.prototype =
 					&& Math.abs(PrevEl.Additional.H - Element.Additional.H) < 0.001
 					&& PrevEl.Additional.Form === Element.Additional.Form);
 			} else if (PrevEl.Additional.TextDrawer && Element.Additional.TextDrawer) {
-				const bIsSplitByWords = PrevEl.Additional.TextDrawer.IsSplitByWords;
-				const bPrevSkipDraw = PrevEl.Additional.TextDrawer.IsSkipDraw;
-				const bNextSkipDraw = Element.Additional.TextDrawer.IsSkipDraw;
-				const bPrevText = PrevEl.Additional.TextDrawer.IsText;
-				const bNextText = Element.Additional.TextDrawer.IsText;
+				const oPrevTextInfo = PrevEl.Additional.TextDrawer;
+				if (oPrevTextInfo.SplitType === null) {
+					return true;
+				}
+				const oCurTextInfo = Element.Additional.TextDrawer;
+				const bIsSplitByWords = oPrevTextInfo.SplitType === AscFormat.ITERATEDATA_TYPE_WORD;
+				const bPrevSkipDraw = oPrevTextInfo.IsSkipDraw;
+				const bNextSkipDraw = oCurTextInfo.IsSkipDraw;
+				const bPrevText = oPrevTextInfo.IsText;
+				const bNextText = oCurTextInfo.IsText;
 				if (bPrevSkipDraw !== bNextSkipDraw) {
 					return false;
 				}

@@ -1441,6 +1441,9 @@
 			CWrapperBase.call(this, oTransform, oTheme, oColorMap, oDrawing);
 		}
 	AscFormat.InitClassWithoutType(CObjectForDrawArrayWrapper, CWrapperBase);
+		CObjectForDrawArrayWrapper.prototype.forEachAnimationDrawing = function(fCallback) {
+			return !!fCallback(this);
+		};
 	CObjectForDrawArrayWrapper.prototype.drawBackground = function (oGraphics) {
 		for (let i = 0; i < this.backgroundObjects.length; i += 1) {
 			this.backgroundObjects[i].draw(oGraphics, undefined, this.transform, this.theme, this.colorMap);
@@ -1482,8 +1485,9 @@
 			const oBoundsChecker = new AscFormat.CSlideBoundsChecker();
 			oObjectToDraw.check_bounds(oBoundsChecker);
 			const oBounds = oBoundsChecker.Bounds;
-			const minY = oObjectToDraw.lineStructure.m_oLine.Top;
-			const maxY = oObjectToDraw.lineStructure.m_oLine.Bottom;
+			const oLine = oObjectToDraw.lineStructure.m_oLine;
+			const maxY = oObjectToDraw.y + oLine.Metrics.Descent;
+			const minY = maxY - (oLine.Bottom - oLine.Top);
 			const arr_x = [
 				oThis.transform.TransformPointX(oBounds.min_x, minY),
 				oThis.transform.TransformPointX(oBounds.max_x, minY),
@@ -1532,6 +1536,23 @@
 		}
 		for (let i = 0; i < this.strikeoutUnderlineObjects.length; i += 1) {
 			if (callback(this.strikeoutUnderlineObjects[i])) {
+				return true;
+			}
+		}
+		return false;
+	};
+
+	function CWrapperDrawer(wrapperObjects) {
+		this.wrapperObjects = wrapperObjects;
+	}
+	CWrapperDrawer.prototype.draw = function(oGraphics) {
+		for (let i = 0; i < this.wrapperObjects.length; i += 1) {
+			this.wrapperObjects[i].draw(oGraphics);
+		}
+	}
+	CWrapperDrawer.prototype.forEachAnimationDrawing = function(fCallback) {
+		for (let i = 0; i < this.wrapperObjects.length; i += 1) {
+			if (fCallback(this.wrapperObjects[i])) {
 				return true;
 			}
 		}
