@@ -6757,6 +6757,11 @@ function BinaryPPTYLoader()
                             continue;
 
                         _object = this.ReadSpTreeElement();
+
+						if (this.map_shapes_by_id[_object.nvSpPr.cNvPr.id]) {
+							_object.nvSpPr.cNvPr.setId(AscCommon.CreateDurableId());
+						}
+
                         if(_object)
                         {
                             shapes[shapes.length] = _object;
