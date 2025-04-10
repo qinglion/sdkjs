@@ -1106,8 +1106,10 @@
             if (dp) {
                 // Выполняем логику выделения по shift/ctrl/одиночному клику
                 if (this._shiftPressed) {
-                    let minp = Math.min(...this.selectedPages.concat(dp.num));
-                    let maxp = Math.max(...this.selectedPages.concat(dp.num));
+                    let allPages = this.selectedPages.concat(dp.num);
+                    let minp = Math.min.apply(null, allPages);
+                    let maxp = Math.max.apply(null, allPages);
+
                     this.resetSelection();
                     for (let i = minp; i <= maxp; i++) {
                         this.selectedPages.push(i);

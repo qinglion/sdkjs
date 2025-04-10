@@ -993,6 +993,12 @@ CChangesPDFDocumentPagesContent.prototype.Copy = function() {
 CChangesPDFDocumentPagesContent.prototype.CreateReverseChange = function(){
     return this.private_CreateReverseChange(this.constructor);
 };
+CChangesPDFDocumentPagesContent.prototype.private_GetContentChanges = function() {
+    return this.Class.pagesContentChanges;
+};
+CChangesPDFDocumentPagesContent.prototype.GetContentChangesClass = function() {
+	return this.private_GetContentChanges();
+};
 
 /**
  * @constructor

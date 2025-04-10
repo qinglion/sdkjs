@@ -6537,9 +6537,15 @@ var CPresentation = CPresentation || function(){};
                 CheckPages(function(page) { return page.editPageLock }, aSelectedPagesIdx);
                 break;
             }
-            case AscDFH.historydescription_Pdf_RotatePage:
+            case AscDFH.historydescription_Pdf_RotatePage: {
+                let aSelectedPagesIdx = AdditionalData;
+                CheckPages(function(page) { return page.rotateLock }, aSelectedPagesIdx);
+                break;
+            }
             case AscDFH.historydescription_Pdf_MovePage: {
                 let aSelectedPagesIdx = AdditionalData;
+                CheckPages(function(page) { return page.deleteLock }, aSelectedPagesIdx);
+                CheckPages(function(page) { return page.editPageLock }, aSelectedPagesIdx);
                 CheckPages(function(page) { return page.rotateLock }, aSelectedPagesIdx);
                 break;
             }
