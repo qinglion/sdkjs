@@ -246,12 +246,19 @@ CGlossaryDocument.prototype.GetDefaultPlaceholderSignatureOform = function()
  */
 CGlossaryDocument.prototype.private_CreateDefaultPlaceholder = function(sName, sText)
 {
+	let logicDocument = this.LogicDocument;
+	let styles = logicDocument ? logicDocument.GetStyles() : null;
+	let defaultStyle = styles ? styles.GetDefaultPlaceholderText() : null;
+	
 	var oDocPart = this.CreateDocPart(sName);
 
 	var oParagraph = oDocPart.GetFirstParagraph();
 	var oRun       = new ParaRun();
 	oParagraph.AddToContent(0, oRun);
 	oRun.AddText(sText);
+	
+	if (defaultStyle)
+		oRun.SetRStyle(defaultStyle);
 
 	oDocPart.SetDocPartBehavior(c_oAscDocPartBehavior.Content);
 	oDocPart.SetDocPartCategory("Common", c_oAscDocPartGallery.Placeholder);
