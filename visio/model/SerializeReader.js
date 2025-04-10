@@ -678,19 +678,19 @@
 		const stream = pReader.stream;
 		switch (attrType) {
 			case 0:
-				this.n = stream.GetString2();
+				this.n = stream.GetString2Utf8();
 				break;
 			case 1:
-				this.u = stream.GetString2();
+				this.u = stream.GetString2Utf8();
 				break;
 			case 2:
-				this.e = stream.GetString2();
+				this.e = stream.GetString2Utf8();
 				break;
 			case 3:
-				this.f = stream.GetString2();
+				this.f = stream.GetString2Utf8();
 				break;
 			case 4:
-				this.v = stream.GetString2();
+				this.v = stream.GetString2Utf8();
 				break;
 			default:
 				return false;
@@ -971,7 +971,7 @@
 				this.fromSheet = stream.GetULong();
 				break;
 			case 1:
-				this.fromCell = stream.GetString2();
+				this.fromCell = stream.GetString2Utf8();
 				break;
 			case 2:
 				this.fromPart = stream.GetLong();
@@ -980,7 +980,7 @@
 				this.toSheet = stream.GetULong();
 				break;
 			case 4:
-				this.toCell = stream.GetString2();
+				this.toCell = stream.GetString2Utf8();
 				break;
 			case 5:
 				this.toPart = stream.GetLong();
@@ -1674,7 +1674,7 @@
 		const stream = pReader.stream;
 		switch (attrType) {
 			case 0:
-				this.n = stream.GetString2();
+				this.n = stream.GetString2Utf8();
 				break;
 			default:
 				return false;
@@ -1715,7 +1715,7 @@
 				this.ix = stream.GetULong();
 				break;
 			case 1:
-				this.n = stream.GetString2();
+				this.n = stream.GetString2Utf8();
 				break;
 			case 2:
 				this.del = stream.GetBool();
@@ -1778,13 +1778,13 @@
 				this.ix = stream.GetULong();
 				break;
 			case 1:
-				this.n = stream.GetString2();
+				this.n = stream.GetString2Utf8();
 				break;
 			case 2:
 				this.localName = stream.GetString2();
 				break;
 			case 3:
-				this.t = stream.GetString2();
+				this.t = stream.GetString2Utf8();
 				break;
 			case 4:
 				this.del = stream.GetBool();
