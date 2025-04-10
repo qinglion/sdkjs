@@ -6758,8 +6758,12 @@ function BinaryPPTYLoader()
 
                         _object = this.ReadSpTreeElement();
 
-						if (this.map_shapes_by_id[_object.nvSpPr.cNvPr.id]) {
-							_object.nvSpPr.cNvPr.setId(AscCommon.CreateDurableId());
+						const objectId = _object.getFormatId();
+						const objectCNvProps = _object.getCNvProps();
+						if (objectId !== null && objectCNvProps !== null) {
+							if (this.map_shapes_by_id[objectCNvProps.id]) {
+								objectCNvProps.setId(AscCommon.CreateDurableId());
+							}
 						}
 
                         if(_object)
