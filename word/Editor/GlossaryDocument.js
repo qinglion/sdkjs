@@ -380,6 +380,26 @@ CGlossaryDocument.prototype.GetDefaultPlaceholderSignatureOformDocPartId = funct
 {
 	return c_oAscDefaultPlaceholderName.SignatureOform;
 };
+CGlossaryDocument.prototype.UpdateStyleLinks = function()
+{
+	let logicDocument = this.LogicDocument;
+	let styles = logicDocument ? logicDocument.GetStyles() : null;
+	let defaultStyle = styles ? styles.GetDefaultPlaceholderText() : null;
+	
+	// Пока так жестко проверяем дефолтовый стиль, вообще надо сделать нормальное обновление стилей
+	for (let docPartId in this.DefaultPlaceholder)
+	{
+		let docPart = this.DefaultPlaceholder[docPartId];
+		docPart.CheckRunContent(function(run)
+		{
+			let rStyle = run.GetRStyle();
+			if (rStyle)
+				run.SetRStyle(defaultStyle);
+			
+			return false;
+		});
+	}
+};
 
 /**
  * Класс, представляющий дополнительное содержимое документа (например, для плейсхолдеров документа)

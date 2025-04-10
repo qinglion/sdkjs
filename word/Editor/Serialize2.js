@@ -8273,6 +8273,9 @@ function BinaryFileReader(doc, openParams)
 		{
 			this.PostLoadPrepareCheckStylesRecursion(stId, aStylesGrey, styles);
 		}
+		
+		this.Document.GetGlossaryDocument().UpdateStyleLinks(oIdRenameMap);
+		
 		//DefpPr, DefrPr
 		//важно чтобы со списками разобрались выше чем этот код
 		if(null != this.oReadResult.DefpPr)
