@@ -18287,7 +18287,7 @@ function RangeDataManagerElem(bbox, data)
 			console.log("Registration custom function \"" +  funcName + "\" warning. Invalid return type. The following types must be used: number, string, boolean, any, number[][], string[][], boolean[][], any[][].");
 		}
 
-		let returnValueType = supportedArrTypes[returnInfo.type] ? AscCommonExcel.cReturnFormulaType.array : null;
+		let returnValueType = (returnInfo && supportedArrTypes[returnInfo.type]) ? AscCommonExcel.cReturnFormulaType.array : null;
 
 		/**
 		 * @constructor
@@ -18348,7 +18348,7 @@ function RangeDataManagerElem(bbox, data)
 
 				//prepare result
 				let returnInfo = options.returnInfo;
-				return oThis.prepareResult(res, returnInfo.type);
+				return oThis.prepareResult(res, returnInfo ? returnInfo.type : null);
 			} catch (e) {
 				console.log("ERROR CUSTOM FUNCTION CALCULATE");
 				return  new AscCommonExcel.cError(AscCommonExcel.cErrorType.wrong_value_type);
