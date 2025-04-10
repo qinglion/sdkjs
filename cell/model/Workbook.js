@@ -178,8 +178,8 @@
 		}
 		return xf;
 	}
-	function getCompiledStyle(sheetMergedStyles, hiddenManager, nRow, nCol, opt_cell, opt_ws, opt_styleComponents) {
-		var styleComponents = opt_styleComponents ? opt_styleComponents : sheetMergedStyles.getStyle(hiddenManager, nRow, nCol, opt_ws);
+	function getCompiledStyle(sheetMergedStyles, hiddenManager, nRow, nCol, opt_cell, opt_ws, opt_styleComponents, opt_AffectingText) {
+		var styleComponents = opt_styleComponents ? opt_styleComponents : sheetMergedStyles.getStyle(hiddenManager, nRow, nCol, opt_ws, opt_AffectingText);
 		var xf = getCompiledStyleFromArray(null, styleComponents.table, true);
 		if (opt_cell) {
 			if (null === xf) {
@@ -6255,8 +6255,8 @@
 		this.changedArrays = null;
 	}
 
-	Worksheet.prototype.getCompiledStyle = function (row, col, opt_cell, opt_styleComponents) {
-		return getCompiledStyle(this.sheetMergedStyles, this.hiddenManager, row, col, opt_cell, this, opt_styleComponents);
+	Worksheet.prototype.getCompiledStyle = function (row, col, opt_cell, opt_styleComponents, opt_AffectingText) {
+		return getCompiledStyle(this.sheetMergedStyles, this.hiddenManager, row, col, opt_cell, this, opt_styleComponents, opt_AffectingText);
 	};
 	Worksheet.prototype.getCompiledStyleCustom = function(row, col, needTable, needCell, needConditional, opt_cell) {
 		var res;
@@ -14367,8 +14367,8 @@
 	Cell.prototype.getStyle=function(){
 		return this.xfs;
 	};
-	Cell.prototype.getCompiledStyle = function (opt_styleComponents) {
-		return this.ws.getCompiledStyle(this.nRow, this.nCol, this, opt_styleComponents);
+	Cell.prototype.getCompiledStyle = function (opt_styleComponents, opt_AffectingText) {
+		return this.ws.getCompiledStyle(this.nRow, this.nCol, this, opt_styleComponents, opt_AffectingText);
 	};
 	Cell.prototype.getCompiledStyleCustom = function(needTable, needCell, needConditional) {
 		return this.ws.getCompiledStyleCustom(this.nRow, this.nCol, needTable, needCell, needConditional, this);
@@ -15341,7 +15341,7 @@
 		return this._getValue2Result(oValueText, oValueArray, true);
 	};
 	Cell.prototype.getValueForExample = function(numFormat, cultureInfo) {
-		var aText = this._getValue2(AscCommon.gc_nMaxDigCountView, function(){return true;}, numFormat, cultureInfo);
+		var aText = this._getValue2(AscCommon.gc_nMaxDigCountView, function(){return true;}, numFormat, cultureInfo, true);
 		return AscCommonExcel.getStringFromMultiText(aText);
 	};
 	Cell.prototype.getValueWithoutFormat = function() {
@@ -15362,12 +15362,14 @@
 	};
 	Cell.prototype.getValue = function() {
 		this._checkDirty();
-		var aTextValue2 = this.getValue2(AscCommon.gc_nMaxDigCountView, function() {return true;});
+		let aTextValue2 = this._getValue2(AscCommon.gc_nMaxDigCountView, function() {return true;},
+			undefined, undefined, true);
 		return AscCommonExcel.getStringFromMultiText(aTextValue2);
 	};
 	Cell.prototype.getValueSkipToSpace = function() {
 		this._checkDirty();
-		var aTextValue2 = this.getValue2(AscCommon.gc_nMaxDigCountView, function() {return true;});
+		let aTextValue2 = this._getValue2(AscCommon.gc_nMaxDigCountView, function() {return true;},
+			undefined, undefined, true);
 		return AscCommonExcel.getStringFromMultiTextSkipToSpace(aTextValue2);
 	};
 	Cell.prototype.getValue2 = function(dDigitsCount, fIsFitMeasurer) {
@@ -16238,7 +16240,7 @@
 		this.type = val.type;
 		this._hasChanged = true;
 	};
-	Cell.prototype._getValue2 = function(dDigitsCount, fIsFitMeasurer, opt_numFormat, opt_cultureInfo) {
+	Cell.prototype._getValue2 = function(dDigitsCount, fIsFitMeasurer, opt_numFormat, opt_cultureInfo, opt_AffectingText) {
 		var aRes = null;
 		var bNeedMeasure = true;
 		var sText = null;
@@ -16259,7 +16261,7 @@
 			if (opt_numFormat) {
 				oNumFormat = opt_numFormat;
 			} else {
-				var xfs = this.getCompiledStyle();
+				var xfs = this.getCompiledStyle(undefined, opt_AffectingText);
 				if (null != xfs && null != xfs.num) {
 					oNumFormat = oNumFormatCache.get(xfs.num.getFormat());
 				} else {
@@ -16307,7 +16309,7 @@
 						if (true == oNumFormat.isTextFormat()) {
 							break;
 						} else {
-							aRes = this._getValue2Result(sText, aText, isMultyText);
+							aRes = this._getValue2Result(sText, aText, isMultyText, opt_AffectingText);
 							//Проверяем влезает ли текст
 							if (true == fIsFitMeasurer(aRes)) {
 								bFindResult = true;
@@ -16341,7 +16343,7 @@
 			}
 		}
 		if (bNeedMeasure) {
-			aRes = this._getValue2Result(sText, aText, isMultyText);
+			aRes = this._getValue2Result(sText, aText, isMultyText, opt_AffectingText);
 			//Проверяем влезает ли текст
 			if (false == fIsFitMeasurer(aRes)) {
 				aRes = null;
@@ -16353,7 +16355,7 @@
 			}
 		}
 		if (null == aRes) {
-			aRes = this._getValue2Result(sText, aText, isMultyText);
+			aRes = this._getValue2Result(sText, aText, isMultyText, opt_AffectingText);
 		}
 		return aRes;
 	};
@@ -16405,7 +16407,7 @@
 		}
 
 		var oNumFormat;
-		var xfs = this.getCompiledStyle();
+		var xfs = this.getCompiledStyle(undefined, true);
 		if(null != xfs && null != xfs.num)
 			oNumFormat = oNumFormatCache.get(xfs.num.getFormat());
 		else
@@ -16592,18 +16594,16 @@
 		}
 		return bRes;
 	};
-	Cell.prototype._getValue2Result = function(sText, aText, isMultyText)
+	Cell.prototype._getValue2Result = function(sText, aText, isMultyText, opt_AffectingText)
 	{
 		var aResult = [];
 		if(null == sText && null == aText)
 			sText = "";
-		var oNewItem, cellfont;
+		var oNewItem, cellfont = g_oDefaultFormat.Font;
 		var cellSelfFont = this.xfs && this.xfs.font;
-		var xfs = this.getCompiledStyle();
+		var xfs = this.getCompiledStyle(undefined, opt_AffectingText);
 		if(null != xfs && null != xfs.font)
 			cellfont = xfs.font;
-		else
-			cellfont = g_oDefaultFormat.Font;
 		if(null != sText){
 			oNewItem = new AscCommonExcel.Fragment();
 			oNewItem.setFragmentText(sText);

@@ -1,4 +1,4 @@
-﻿/*
+/*
  * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
@@ -4590,6 +4590,14 @@ var g_oFontProperties = {
 	CellXfs.prototype.isNormalFill = function () {
 		return g_StyleCache.firstXf === this || g_StyleCache.normalXf.fill === this.fill;
 	};
+	/**
+	 * Checks if number format is affecting text display
+	 * @returns {boolean} Returns true if number format affects text display
+	 */
+	CellXfs.prototype.isAffectingText = function () {
+		//todo check isGeneralFormat
+		return !!(this.num && AscCommon.g_cGeneralFormat !== this.num.f);
+	};
     CellXfs.prototype.merge = function (xfs, isTable, isTableBorders) {
         var xfIndexNumber = xfs.getIndexNumber();
         if (undefined === xfIndexNumber) {
@@ -5867,7 +5875,7 @@ StyleManager.prototype =
 			}
 		}
 	};
-	SheetMergedStyles.prototype.getStyle = function(hiddenManager, row, col, opt_ws) {
+	SheetMergedStyles.prototype.getStyle = function(hiddenManager, row, col, opt_ws, opt_AffectingText) {
 		var res = {table: [], conditional: []};
 		if (opt_ws) {
 			opt_ws._updateConditionalFormatting();
@@ -5885,6 +5893,12 @@ StyleManager.prototype =
 			return v2.rule.priority - v1.rule.priority;
 		});
 		for (var i = 0; i < rules.length; ++i) {
+			if (opt_AffectingText) {
+				let rule = rules[i].rule;
+				if (!(rule && rule.dxf && rule.dxf.isAffectingText())) {
+					continue;
+				}
+			}
 			var xf = rules[i].formula(row, col);
 			if (xf) {
 				res.conditional.push(xf);
@@ -5894,6 +5908,9 @@ StyleManager.prototype =
 			var style = this.stylesTablePivot[i];
 			var borderIndex;
 			var xf = style.xf;
+			if (opt_AffectingText && !(xf && xf.isAffectingText())) {
+				continue;
+			}
 			if (style.range.contains(col, row) && (borderIndex = this._getBorderIndex(hiddenManager, style.range, style.stripe, row, col, xf)) >= 0) {
 				if (borderIndex > 0) {
 					if (!style.borders) {
