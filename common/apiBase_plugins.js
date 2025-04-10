@@ -1886,7 +1886,19 @@
 		if (items["items"]) correctItemsWithData(items["items"], baseUrl);
 		this.onPluginAddContextMenuItem(items);
 	};
-
+	Api.prototype["pluginMethod_RegisterCCButtonType"] = function (CCButtons)
+	{
+		this.WordControl.m_oLogicDocument.DrawingDocument.contentControls.addButtons(CCButtons);
+	};
+	Api.prototype["pluginMethod_RegisterCCButtonIcons"] = function (CCButtons)
+	{
+		let baseUrl		= this.pluginsManager.pluginsMap[CCButtons.guid].baseUrl;
+		this.WordControl.m_oLogicDocument.DrawingDocument.contentControls.registerIcons(CCButtons, baseUrl);
+	};
+	Api.prototype["pluginMethod_UncheckContentControlButtons"] = function ()
+	{
+		this.asc_UncheckContentControlButtons();
+	};
 	/**
 	 * Updates an item in the context menu with the specified items.
 	 * @undocumented

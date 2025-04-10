@@ -108,6 +108,7 @@
 
 		this.images = [];
 		this.images_active = [];
+		this.images_hover = [];
 		this.url = "";
 		this.baseUrl = "";
 	}
@@ -156,9 +157,15 @@
 	};
 
 	// стартовые загрузки
-	BaseImageCtrl.prototype.load = function(type, url)
+	BaseImageCtrl.prototype.load = function(type, url, index)
 	{
 		this.url = url;
+		if (index !== undefined)
+		{
+			this._loadByIndex(index, url);
+			return;
+		}
+
 		if (!this.isLoadAllSizes)
 		{
 			this._loadIndex();
@@ -169,8 +176,13 @@
 			this._loadIndex(i);
 		}
 	};
-	BaseImageCtrl.prototype.loadActive = function()
+	BaseImageCtrl.prototype.loadActive = function(url, index)
 	{
+		if (index !== undefined)
+		{
+			this._loadActiveByIndex(index, url);
+			return;
+		}
 		if (!this.isLoadAllSizes)
 		{
 			this._loadActiveIndex();
@@ -181,11 +193,40 @@
 			this._loadActiveIndex(i);
 		}
 	};
+	BaseImageCtrl.prototype.loadHover = function(url, index)
+	{
+		if (index !== undefined)
+		{
+			this._loadHoverByIndex(index, url);
+			return;
+		}
+		if (!this.isLoadAllSizes)
+		{
+			this._loadHoverByIndex(index, url);
+			return;
+		}
+		for (var i = 0, len = this.support.length; i < len; i++)
+		{
+			this._loadHoverByIndex(i, url);
+		}
+	};
 
 	// берем картинку. если ее нет - то грузим, если не готова - то просто после загрузки - обновляем оверлей
-	BaseImageCtrl.prototype.get = function(isActive)
+	BaseImageCtrl.prototype.get = function(isActive, isHover)
 	{
-		if (isActive) return this.getActive();
+		if (isActive)
+		{
+			let activeImg = this.getActive();
+			if (activeImg)
+				return activeImg;
+		}
+
+		if (isHover)
+		{
+			let hoverImg = this.getHover();
+			if (hoverImg)
+				return hoverImg;
+		}
 
 		var index = this.getIndex();
 		if (!this.images[index])
@@ -216,6 +257,22 @@
 			return null;
 		}
 		return this.images_active[index];
+	};
+	BaseImageCtrl.prototype.getHover = function()
+	{
+		var index = this.getIndex();
+		if (!this.images_hover[index])
+		{
+			AscCommon.g_imageControlsStorage.needUpdate();
+			this._loadHoverByIndex(index);
+			return null;
+		}
+		if (!this.images_hover[index].asc_complete)
+		{
+			AscCommon.g_imageControlsStorage.needUpdate();
+			return null;
+		}
+		return this.images_hover[index];
 	};
 
 	// загрузка картинки по индексу. если индекса нет - то текущий
@@ -249,8 +306,216 @@
 			this.images_active[index] = img;
 		}
 	};
+	BaseImageCtrl.prototype._loadHoverIndex = function(index)
+	{
+		if (undefined === index)
+			index = this.getIndex();
+
+		if (!this.images_hover[index])
+		{
+			var img = new Image();
+			AscCommon.g_imageControlsStorage.updateLater();
+			img.onload = function() { this.asc_complete = true; AscCommon.g_imageControlsStorage.updateOverlay(); };
+			img.src = this.baseUrl + "/" + this.url + "_hover" + this.getAddon(this.support[index]) + ".png";
+			AscCommon.backoffOnErrorImg(img);
+			this.images_hover[index] = img;
+		}
+	};
+
+	BaseImageCtrl.prototype._loadByIndex = function(index, url)
+	{
+		if (undefined === index)
+			index = this.getIndex();
+
+		if (!this.images[index])
+		{
+			var img = new Image();
+			AscCommon.g_imageControlsStorage.updateLater();
+			img.onload = function() { this.asc_complete = true; AscCommon.g_imageControlsStorage.updateOverlay(); };
+			img.src = this.baseUrl + url;
+			AscCommon.backoffOnErrorImg(img);
+			this.images[index] = img;
+		}
+	};
+	BaseImageCtrl.prototype._loadActiveByIndex = function(index, url)
+	{
+		if (undefined === index)
+			index = this.getIndex();
+
+		if (!this.images_active[index])
+		{
+			var img = new Image();
+			AscCommon.g_imageControlsStorage.updateLater();
+			img.onload = function() { this.asc_complete = true; AscCommon.g_imageControlsStorage.updateOverlay(); };
+			img.src = this.baseUrl + url;
+			AscCommon.backoffOnErrorImg(img);
+			this.images_active[index] = img;
+		}
+	};
+	BaseImageCtrl.prototype._loadHoverByIndex = function(index, url)
+	{
+		if (undefined === index)
+			index = this.getIndex();
+
+		if (!this.images_hover[index])
+		{
+			var img = new Image();
+			AscCommon.g_imageControlsStorage.updateLater();
+			img.onload = function() { this.asc_complete = true; AscCommon.g_imageControlsStorage.updateOverlay(); };
+			img.src = this.baseUrl + url;
+			AscCommon.backoffOnErrorImg(img);
+			this.images_hover[index] = img;
+		}
+	};
 
 	AscCommon.BaseImageCtrl = BaseImageCtrl;
+
+	function iconsStr2IconsObj (icons) {
+		if (typeof icons !== 'string')
+			return icons;
+
+		/*
+			valid params:
+			theme-type - {string} theme type (light|dark|common)
+			theme-name - {string} the name of theme
+			state - {string} state of icons for different situations (normal|hover|active)
+			scale - {string} list of avaliable scales (100|125|150|175|200|default|extended)
+			extension - {string} use it after symbol "." (png|jpeg|svg)
+
+			Example: "resources/%theme-type%(light|dark)/icon%state%(normal|hover)%scale%(default).%extension%(png)"
+		*/
+		let params_array = {
+			"theme-name" : { origin : "", values : [""] },
+			"theme-type" : { origin : "", values : [""] },
+			"state" : { origin : "", values : ["normal"] },
+			"scale" : { origin : "", values : [] },
+			"extension" : { origin : "", values : [] }
+		};
+
+		// For bug in version <= 8.2.0
+		let initScaleAddon = "";
+
+		let param_parse = function(name) {
+			let posOrigin = icons.indexOf("%" + name + "%");
+			if (posOrigin === -1)
+				return;
+			let pos = posOrigin + name.length + 2;
+			let pos1 = icons.indexOf("(", pos);
+			if (pos1 != pos)
+				return;
+			let pos2 = icons.indexOf(")", pos1);
+			params_array[name].origin = icons.substring(posOrigin, pos2 + 1);
+			params_array[name].values = icons.substring(pos1 + 1, pos2).split("|");
+
+			if ("scale" === name && posOrigin > 0 && icons.charCodeAt(posOrigin - 1) == 47)
+				initScaleAddon = "icon";
+		};
+
+		for (let name in params_array)
+			param_parse(name);
+
+		for (let styleIndex = 0, stylesLen = params_array["scale"].values.length; styleIndex < stylesLen; styleIndex++) {
+			if ("default" === params_array["scale"].values[styleIndex])
+				params_array["scale"].values.splice(styleIndex, 1, "100", "125", "150", "175", "200");
+		}
+
+		let rasterExt = "";
+		let isSvgPresent = false;
+
+		for (let extIndex = 0, extsLen = params_array["extension"].values.length; extIndex < extsLen; extIndex++) {
+			if ("svg" === params_array["extension"].values[extIndex])
+				isSvgPresent = true;
+			else
+				rasterExt = params_array["extension"].values[extIndex];
+		}
+		if (isSvgPresent && rasterExt === "")
+			rasterExt = "svg";
+
+		let iconsObject = [];
+		for (let themeNameIndex = 0, themeNamesLen = params_array["theme-name"].values.length; themeNameIndex < themeNamesLen; themeNameIndex++) {
+			let themeName = params_array["theme-name"].values[themeNameIndex];
+			for (let themeTypeIndex = 0, themeTypesLen = params_array["theme-type"].values.length; themeTypeIndex < themeTypesLen; themeTypeIndex++) {
+				let url = icons;
+				let themeType = params_array["theme-type"].values[themeTypeIndex];
+
+				let obj = {};
+				if ("" !== themeName)
+					obj["theme"] = themeName;
+
+				if ("" !== themeType)
+					obj["style"] = themeType;
+
+				if ("" != params_array["theme-name"].origin)
+					url = url.replaceAll(params_array["theme-name"].origin, themeName);
+				if ("" != params_array["theme-type"].origin)
+					url = url.replaceAll(params_array["theme-type"].origin, themeType);
+
+				let scalesLen = params_array["scale"].values.length;
+				if (0 == scalesLen) {
+					params_array["scale"].values.push("100");
+					scalesLen++;
+				}
+				for (let scaleIndex = 0; scaleIndex < scalesLen; scaleIndex++) {
+					let scaleValue = params_array["scale"].values[scaleIndex];
+					let isAll = false;
+
+					if (scaleValue.length > 0) {
+						if (scaleValue === "*")
+							isAll = true;
+						else if (scaleValue.charAt(scaleValue.length - 1) === "%")
+							scaleValue = scaleValue.substring(0, scaleValue.length - 1);
+					} else {
+						isAll = true;
+						scaleValue = "*";
+					}
+
+					let addonScale = "";
+					if (!isAll) {
+						let intScale = parseInt(scaleValue);
+						if (intScale !== 100) {
+							let addon100 = intScale % 100;
+							addonScale = "@" + ((intScale / 100) >> 0);
+							if (addon100 !== 0) {
+								if (0 === (addon100 % 10))
+									addon100 /= 10;
+								addonScale += ("." + addon100);
+							}
+							addonScale += "x";
+						}
+						scaleValue = scaleValue + "%";
+					}
+
+					let urlAll = url;
+					if (params_array["scale"].origin != "")
+						urlAll = urlAll.replaceAll(params_array["scale"].origin, initScaleAddon + addonScale);
+					if (params_array["extension"].origin != "")
+						urlAll = urlAll.replaceAll(params_array["extension"].origin, (isAll && isSvgPresent) ? "svg" : rasterExt);
+
+					obj[scaleValue] = {};
+					let states =  params_array["state"].values;
+					for (let stateIndex = 0, statesLen = states.length; stateIndex < statesLen; stateIndex++) {
+						let stateValue = params_array["state"].values[stateIndex];
+						if (params_array["state"].origin !== "") {
+							if ("normal" === stateValue) {
+								let statePos = urlAll.indexOf(params_array["state"].origin);
+								obj[scaleValue][stateValue] = urlAll.replace(params_array["state"].origin, "");
+								if (obj[scaleValue][stateValue].charAt(statePos) == "/")
+									obj[scaleValue][stateValue] = obj[scaleValue][stateValue].substring(0, statePos) + obj[scaleValue][stateValue].substring(statePos + 1);
+							} else {
+								obj[scaleValue][stateValue] = urlAll.replace(params_array["state"].origin, "_" + stateValue);
+							}
+						} else
+							obj[scaleValue][stateValue] = urlAll;
+					}
+				}
+				iconsObject.push(obj);
+			}
+		}
+
+		return iconsObject;
+	}
+
+	AscCommon.IconsStr2IconsObj = iconsStr2IconsObj;
 
 })(window);
 
@@ -953,26 +1218,126 @@
 		 * @constructor
 		 * @extends {AscCommon.BaseImageCtrl}
 		 */
-		function CCI()
+		function CCI(baseUrl)
 		{
 			AscCommon.BaseImageCtrl.call(this);
-			this.baseUrl = "../../../../sdkjs/common/Images/content_controls";
+			this.baseUrl = baseUrl ? baseUrl : "../../../../sdkjs/common/Images/content_controls";
 		}
 		CCI.prototype = Object.create(AscCommon.BaseImageCtrl.prototype);
 		CCI.prototype.constructor = CCI;
 
 		this.images = [];
+		this.pluginImages = [];
 
-		this.register = function(type, url)
+		this.registerIconObj = function(type, images, baseUrl)
 		{
-			var image = new CCI();
+			for (let i = 0; i < images.length; i++)
+			{
+				let image					= new CCI(baseUrl);
+				let oCurrentThemeImages		= images[i];
+				let style					= oCurrentThemeImages.style || "default";
+				let theme					= oCurrentThemeImages.theme || "default";
+
+				delete oCurrentThemeImages.style;
+				delete oCurrentThemeImages.theme;
+
+				let keys = Object.keys(oCurrentThemeImages);
+
+				for (let j = 0; j < keys.length; j++)
+				{
+					let key		= keys[j];
+					let index	= this.calculateIndex(key, image)
+					let icon	= oCurrentThemeImages[keys[j]];
+
+					this.registerExternalIcon(image, index,{
+						type: type,
+						style: style,
+						theme: theme,
+						icon: icon,
+					});
+				}
+			}
+		};
+		this.calculateIndex = function (index, image)
+		{
+			if (index)
+				index = index.slice(0, -1); // delete %
+
+			index = index/100;
+
+			if (typeof index === 'number')
+			{
+				for (let p = 0; p < image.support.length; p++)
+				{
+					if (image.support[p] === index)
+					{
+						return p;
+					}
+				}
+			}
+			return false;
+		};
+		this.registerExternalIcon = function(image, index, data)
+		{
+			if (index === false)
+				return;
+
+			let type	= data.type; // id of icon
+			let style	= data.style;// type of theme
+			let theme	= data.theme;// name of theme
+			let icon	= data.icon; // {normal_url | active_url | hover_url}
+
+			if (image.support[index])
+			{
+				image.load(type, icon.normal, index);
+
+				if (icon.active)
+					image.loadActive(icon.active, index);
+
+				if (icon.hover)
+					image.loadHover(icon.hover, index);
+
+				if (!this.pluginImages[type])
+					this.pluginImages[type] = {};
+
+				if (!this.pluginImages[type][style])
+					this.pluginImages[type][style] = {};
+
+				this.pluginImages[type][style][theme] = image
+			}
+		};
+
+		this.register = function(type, url, baseUrl)
+		{
+			var image = new CCI(baseUrl);
+
 			image.load(type, url);
 			image.loadActive();
 			this.images[type] = image;
 		};
 
-		this.getImage = function(type, isActive)
+		this.getImage = function(type, isActive, isHover)
 		{
+			let pluginImage = this.pluginImages[type];
+			if (pluginImage)
+			{
+				let type	= AscCommon.GlobalSkin.Type;
+				let style	= AscCommon.GlobalSkin.Name;
+
+				if (pluginImage[type] && pluginImage[type][style])
+				{
+					return pluginImage[type][style].get(isActive, isHover);
+				}
+				else if (pluginImage[type] && pluginImage[type]['default'])
+				{
+					return pluginImage[type]['default'].get(isActive, isHover);
+				}
+				else if (pluginImage['default']['default'])
+				{
+					return pluginImage['default']['default'].get(isActive, isHover);
+				}
+			}
+
 			if (!this.images[type])
 				return null;
 
@@ -1094,6 +1459,13 @@
 		this.UpdateGeom(geom);
 	}
 
+	CContentControlTrack.prototype.AddButtonsManually = function(arrButtons)
+	{
+		for (let i = 0; i < arrButtons.length; i++)
+		{
+			this.Buttons.push(arrButtons[i]);
+		}
+	};
 	CContentControlTrack.prototype.UpdateTransform = function()
 	{
 		this.OffsetX = 0;
@@ -1526,7 +1898,9 @@
 	};
 	CContentControlTrack.prototype.Copy = function()
 	{
-		return new CContentControlTrack(this.parent, this.base, this.state, this.geom);
+		let newCCTrack = new CContentControlTrack(this.parent, this.base, this.state, this.geom);
+		newCCTrack.AddButtonsManually(this.Buttons);
+		return newCCTrack;
 	};
 
 	CContentControlTrack.prototype.isFormFullOneButtonHover = function()
@@ -1621,6 +1995,25 @@
 			y : resY
 		};
 	};
+	CContentControlTrack.prototype.GetPluginButtons = function()
+	{
+		let arr = [];
+		for (let i = 0; i < this.Buttons.length; i++)
+		{
+			if (this.parent.PluginButtons.includes(this.Buttons[i]))
+				arr.push(this.Buttons[i]);
+		}
+
+		return arr;
+	};
+	CContentControlTrack.prototype.IsPluginButtons = function()
+	{
+		let arrPluginButtons = this.GetPluginButtons();
+		if (arrPluginButtons.length > 0)
+			return true;
+
+		return false;
+	};
 
 	// draw methods
 	CContentControlTrack.prototype.SetColor = function(ctx)
@@ -1655,10 +2048,87 @@
 
 		this.measures = {};
 
+		this.PluginButtons = [];
+
 		this.clearAttack = function()
 		{
 			this.ContentControlObjects = [];
 			this.ContentControlObjectsLast = [];
+		};
+
+		this.registerPluginIcons = function (type, url, baseUrl)
+		{
+			let icons = AscCommon.IconsStr2IconsObj(url);
+			this.icons.registerIconObj(type, icons, baseUrl);
+		};
+
+		this.registerIcons = function (CCButtons, baseUrl)
+		{
+			let arrButtons = CCButtons.buttons;
+
+			for (let i = 0; i < arrButtons.length; i++)
+			{
+				let button = arrButtons[i];
+				let id = button.id;
+				let url = button.icons;
+
+				this.registerPluginIcons(id, url, baseUrl);
+				this.PluginButtons.push(Number(id));
+			}
+		};
+
+		this.addButtons = function(CCButtons)
+		{
+			let buttons = [];
+
+			let isAdd = false;
+			for (let p = 0; p < CCButtons.length; p++)
+			{
+				let oCurrentCCButton	= CCButtons[p];
+				let arrButtons			= oCurrentCCButton.buttons;
+
+				for (let i = 0; i < arrButtons.length; i++)
+				{
+					let button	= arrButtons[i];
+					let id		= button.id;
+					buttons.push(id);
+				}
+
+				let id = oCurrentCCButton.sdtId;
+
+				if (this.ContentControlObjects.length === 0 || oCurrentCCButton.sdtId === undefined)
+					return;
+
+				for (let i = 0; i < this.ContentControlObjects.length; i++)
+				{
+					let oCurContentControl = this.ContentControlObjects[i];
+
+					if (oCurContentControl.base.GetId() === id)
+					{
+						for (let j = 0; j < buttons.length; j++)
+						{
+							if (!(oCurContentControl.Buttons.includes(Number(buttons[j]))))
+							{
+								oCurContentControl.Buttons.push(Number(buttons[j]));
+								isAdd = true;
+							}
+						}
+						break;
+
+					}
+				}
+			}
+
+			console.log(isAdd);
+			if (isAdd)
+			{
+
+				var wordControl = window.editor ? window.editor.WordControl : undefined;
+				if (wordControl)
+				{
+					//wordControl.OnUpdateOverlay();
+				}
+			}
 		};
 
 		this.getFont = function(koef)
@@ -1791,6 +2261,8 @@
 			var _koefX = (_pages[_pageStart].drawingPage.right - _pages[_pageStart].drawingPage.left) / _pages[_pageStart].width_mm;
 			var _koefY = (_pages[_pageStart].drawingPage.bottom - _pages[_pageStart].drawingPage.top) / _pages[_pageStart].height_mm;
 			var rPR = AscCommon.AscBrowser.retinaPixelRatio;
+
+			let arrDraw = [];
 
 			for (var nIndexContentControl = 0; nIndexContentControl < this.ContentControlObjects.length; nIndexContentControl++)
 			{
@@ -2142,7 +2614,7 @@
 										ctx.beginPath();
 									}
 
-									var image = this.icons.getImage(_object.Buttons[nIndexB], nIndexB == _object.ActiveButtonIndex);
+									var image = this.icons.getImage(_object.Buttons[nIndexB], nIndexB == _object.ActiveButtonIndex, nIndexB === _object.HoverButtonIndex);
 									if (image)
 										ctx.drawImage(image, (xText + widthName + rPR * CONTENT_CONTROL_TRACK_H * nIndexB) >> 0, _y >> 0, cctw, cctw);
 								}
@@ -2153,6 +2625,11 @@
 								ctx.rect(_x, _y, widthHeader, cctw);
 								ctx.stroke();
 								ctx.beginPath();
+
+								if (!arrDraw.includes(_object.base.GetId()))
+								{
+									arrDraw.push(_object.base.GetId());
+								}
 							}
 
 							// есть ли комбо-кнопка?
@@ -2409,6 +2886,14 @@
 				}
 			}
 
+			if (arrDraw.length > 0)
+			{
+				window.g_asc_plugins.onPluginEvent(
+					"onDrawContentControlTrack",
+					arrDraw
+				);
+			}
+
 			this.ContentControlsSaveLast();
 		};
 		
@@ -2425,7 +2910,16 @@
 			{
 				let ccTrack = this.ContentControlObjects[i];
 				if (AscCommon.ContentControlTrack.In === ccTrack.state && -2 !== ccTrack.ActiveButtonIndex)
+				{
 					this.lastActive = ccTrack;
+				}
+				else if (AscCommon.ContentControlTrack.In === ccTrack.state && ccTrack.IsPluginButtons())
+				{
+					let Buttons = ccTrack.GetPluginButtons();
+
+					this.lastActive = ccTrack.Copy();
+					this.lastActive.Buttons = Buttons;
+				}
 				
 				if (AscCommon.ContentControlTrack.Hover === ccTrack.state)
 					this.lastHover = ccTrack;
@@ -2448,7 +2942,14 @@
 			
 			if (this.lastActive && this.lastActive.base && obj && this.lastActive.base.GetId() === obj.GetId())
 			{
+				let Buttons = this.lastActive.GetPluginButtons();
 				this.lastActive.UpdateGeom(geom);
+
+				for (let i = 0; i < Buttons.length; i++)
+				{
+					this.lastActive.Buttons.push(Buttons[i]);
+				}
+
 				this.ContentControlObjects.push(this.lastActive);
 			}
 			else
@@ -2702,7 +3203,12 @@
 						}
 
 						var posOnScreen = this.document.ConvertCoordsToCursorWR(xCC, yCC, _object.Pos.Page);
-						_sendEventToApi(oWordControl.m_oApi, _object.GetButtonObj(indexButton), posOnScreen.X, posOnScreen.Y);
+						let oButtonData = _object.GetButtonObj(indexButton);
+
+						if (this.isPluginButton(oButtonData.button))
+							this.ProceedPluginButtons(oButtonData);
+						else
+							_sendEventToApi(oWordControl.m_oApi, oButtonData, posOnScreen.X, posOnScreen.Y);
 					}
 
 					oWordControl.ShowOverlay();
@@ -2749,6 +3255,24 @@
 			}
 
 			return false;
+		};
+
+		this.ProceedPluginButtons = function (oButtonData)
+		{
+			let oBlock = oButtonData.obj;
+
+			window.g_asc_plugins.onPluginEvent2(
+				"onContentControlButtonClick",
+				{
+					"oCC": oBlock.Id,
+					"type": oButtonData.button
+				}
+			);
+		};
+
+		this.isPluginButton = function (type)
+		{
+			return this.PluginButtons.includes(type);
 		};
 
 		this.onPointerLeave = function()
@@ -2866,8 +3390,11 @@
 						return true;
 					}
 					
-					let buttonInfo =  (isWithoutCoords !== true) ? _object.getButton(xPos, yPos, koefX, koefY) : null;
-					if (buttonInfo && 1 !== buttonInfo.index)
+					let buttonInfo = (isWithoutCoords !== true)
+						? _object.getButton(xPos, yPos, koefX, koefY)
+						: null;
+
+					if (buttonInfo)
 					{
 						_object.HoverButtonIndex = buttonInfo.index;
 						oWordControl.ShowOverlay();
