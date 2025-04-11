@@ -637,6 +637,8 @@ var CPresentation = CPresentation || function(){};
                 oParent.SetMultiline(true);
             if (aParentsInfo[i]["comb"])
                 oParent.SetComb(true);
+            if (aParentsInfo[i]["maxLen"])
+                oParent.SetCharLimit(aParentsInfo[i]["maxLen"]);
             if (aParentsInfo[i]["required"])
                 oParent.SetRequired(true);
             if (aParentsInfo[i]["commitOnSelChange"])

@@ -2898,6 +2898,12 @@
             aActions[i].WriteToBinary(memory);
         }
 
+        // charLimit
+        if (this.GetType() == AscPDF.FIELD_TYPES.text) {
+            nFlags |= (1 << 9);
+            memory.WriteLong(this.GetCharLimit());
+        }
+
         // write flags
         let nEndPos = memory.GetCurPosition();
         memory.Seek(nStartPos);
