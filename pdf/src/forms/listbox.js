@@ -362,7 +362,7 @@
             }
 
             AscCommon.History.Add(new CChangesPDFListOption(this, nPos, [formattedOption], true));
-            this._options.push(formattedOption);
+            this._options.splice(nPos, 0, formattedOption);
             if (sCaption !== "") {
                 let aFields = this.GetAllWidgets();
 
