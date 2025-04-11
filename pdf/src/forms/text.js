@@ -1432,7 +1432,7 @@
 		return Math.max(0, this.GetCharLimit() - (charCount - removeCount));
 	};
 	CTextField.prototype.EnterText = function(aChars) {
-		let selectedCount = this.content.GetSelectedText(true, {NewLine: true}).length;
+		let selectedCount = this.content.GetSelectedText(true, {NewLine: true, ParaSeparator: ""}).length;
 		let maxToAdd      = this.getRemainCharCount(selectedCount);
 		
         let nCharsCount = AscWord.GraphemesCounter.GetCount(aChars, this.content.GetCalculatedTextPr());
@@ -1627,7 +1627,11 @@
             if (aFields[i].HasShiftView()) {
                 aFields[i].content.MoveCursorToStartPos();
             }
-                
+
+            if (aFields[i] == this) {
+                continue;
+            }
+            
             aFields[i].SetValue(sNewValue);
             aFields[i].SetNeedRecalc(true);
         }
@@ -1645,6 +1649,7 @@
             this.RevertContentView();
             this.SetParentValue(sNewValue);
         }
+
         // когда выравнивание посередине или справа, то после того
         // как ширина контента будет больше чем размер формы, выравнивание становится слева, пока текста вновь не станет меньше чем размер формы
         aFields.forEach(function(field) {
@@ -1714,7 +1719,7 @@
 
         function GetSelectionRange(p)
         {
-            let selectedText = p.GetSelectedText(undefined, {NewLine: true});
+            let selectedText = p.GetSelectedText(undefined, {NewLine: true, ParaSeparator: ""});
             let state = p.SaveSelectionState();
 
             let selStart = p.Get_ParaContentPos(p.IsSelectionUse(), p.GetSelectDirection() > 0);
@@ -1722,7 +1727,7 @@
             p.RemoveSelection();
             p.StartSelectionFromCurPos();
             p.SetSelectionContentPos(p.GetStartPos(), selStart);
-            let preText = p.GetSelectedText(undefined, {NewLine: true});
+            let preText = p.GetSelectedText(undefined, {NewLine: true, ParaSeparator: ""});
 
             p.LoadSelectionState(state);
 

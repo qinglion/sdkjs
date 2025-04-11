@@ -533,24 +533,27 @@
         }
 
         for (let i = 0; i < aFields.length; i++) {
-            if (aFields[i].IsChanged() == false)
-                aFields[i].SetWasChanged(true); // фиксируем, что форма была изменена
+            aFields[i].SetWasChanged(true);
 
             if (aFields[i].HasShiftView()) {
                 aFields[i].content.MoveCursorToStartPos();
 
                 if (aFields[i] == this) {
                     aFields[i].AddToRedraw();
-                    continue;
                 }
             }
-                
+            
+            if (aFields[i] == this) {
+                continue;
+            }
+
             if (aCurIdxs && aCurIdxs.length != 0) {
                 aFields[i].SetCurIdxs(aCurIdxs);
             }
             else {
                 aFields[i].SetValue(sNewValue);
             }
+            
             aFields[i].SetNeedRecalc(true);
         }
 
