@@ -6758,16 +6758,15 @@ function BinaryPPTYLoader()
 
                         _object = this.ReadSpTreeElement();
 
-						const objectId = _object.getFormatId();
-						const objectCNvProps = _object.getCNvProps();
-						if (objectId !== null && objectCNvProps !== null) {
-							if (this.map_shapes_by_id[objectCNvProps.id]) {
-								objectCNvProps.setId(AscCommon.CreateDurableId());
-							}
-						}
-
                         if(_object)
                         {
+                            const objectId = _object.getFormatId();
+                            const objectCNvProps = _object.getCNvProps();
+                            if (objectId !== null && objectCNvProps !== null) {
+                                if (this.map_shapes_by_id[objectCNvProps.id]) {
+                                    objectCNvProps.setId(AscCommon.CreateDurableId());
+                                }
+                            }
                             shapes[shapes.length] = _object;
                         }
                     }
