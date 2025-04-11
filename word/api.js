@@ -2660,7 +2660,10 @@ background-repeat: no-repeat;\
 		// Принимаем чужие изменения
 		var HaveOtherChanges = AscCommon.CollaborativeEditing.Have_OtherChanges();
 		AscCommon.CollaborativeEditing.Apply_Changes();
-
+		
+		// Собираем тут события, которые нужно послать на завершении сохранения
+		let onSaveEnd = [];
+		
 		this.CoAuthoringApi.onUnSaveLock = function()
 		{
 			t.CoAuthoringApi.onUnSaveLock = null;
@@ -2693,6 +2696,8 @@ background-repeat: no-repeat;\
 			if (t.canUnlockDocument) {
 				t._unlockDocument();
 			}
+			
+			onSaveEnd.forEach(function(f){f();});
 		};
 
 		let cursorInfo = null;
@@ -2727,7 +2732,9 @@ background-repeat: no-repeat;\
 			this.forceSaveOformRequest = false;
 			AscCommon.CollaborativeEditing.Set_GlobalLock(false);
 			sendChanges();
-			this.sendEvent("asc_onCompletePreparingOForm");
+			onSaveEnd.push(function(){
+				t.sendEvent("asc_onCompletePreparingOForm");
+			});
 		}
 		else
 		{
@@ -2741,7 +2748,9 @@ background-repeat: no-repeat;\
 			AscCommon.CollaborativeEditing.Set_GlobalLock(false);
 			this.setViewModeDisconnect(true);
 			this.asc_coAuthoringDisconnect();
-			this.sendEvent("asc_onDisconnectEveryone");
+			onSaveEnd.push(function(){
+				t.sendEvent("asc_onDisconnectEveryone");
+			});
 		}
 	};
 	asc_docs_api.prototype._autoSaveInner = function () {
