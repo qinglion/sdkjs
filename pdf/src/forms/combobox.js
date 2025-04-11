@@ -908,6 +908,7 @@
 	CComboBoxField.prototype.SetFormatValue         = AscPDF.CTextField.prototype.SetFormatValue;
 	CComboBoxField.prototype.IsDateFormat           = AscPDF.CTextField.prototype.IsDateFormat;
     CComboBoxField.prototype.IsNumberFormat         = AscPDF.CTextField.prototype.IsNumberFormat;
+    CComboBoxField.prototype.IsSpecialKeystroke     = AscPDF.CTextField.prototype.IsSpecialKeystroke;
     CComboBoxField.prototype.GetDateFormat          = AscPDF.CTextField.prototype.GetDateFormat;
     CComboBoxField.prototype.GetFormatType          = AscPDF.CTextField.prototype.GetFormatType;
     CComboBoxField.prototype.GetFormatArgs          = AscPDF.CTextField.prototype.GetFormatArgs;
