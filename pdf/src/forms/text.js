@@ -152,7 +152,7 @@
             if (typeof(nChars) == "number" && nChars <= 500 && nChars > 0 && widget.IsFileSelect() === false) {
                 nChars = Math.round(nChars);
                 if (oViewer.IsOpenFormsInProgress != true) {
-                    let sText = this.content.getAllText();
+                    let sText = widget.content.getAllText();
                     widget.content.replaceAllText(sText.slice(0, Math.min(nChars, sText.length)));
                 }
                 
