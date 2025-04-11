@@ -1825,7 +1825,10 @@
 			oController.selectedObjects.forEach(function(shape) {
 				let field = shape.GetEditField();
 				if ([AscPDF.FIELD_TYPES.text, AscPDF.FIELD_TYPES.combobox].includes(field.GetType())) {
-					field.SetPlaceholder(sText);
+					let aWidgets = field.GetAllWidgets();
+					aWidgets.forEach(function(widget) {
+						widget.SetPlaceholder(sText);
+					});
 				}
 			});
 
