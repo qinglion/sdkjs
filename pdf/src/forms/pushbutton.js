@@ -200,6 +200,7 @@
     };
     CPushButtonField.prototype.SetNeedUpdateImage = function(isNeed) {
         this._needUpdateImage = isNeed;
+        isNeed && this.AddToRedraw(true);
     };
     CPushButtonField.prototype.IsNeedUpdateImage = function() {
         return this._needUpdateImage;
@@ -782,10 +783,15 @@
                 break;
         }
 
+        if (!sPrevRasterId && !sRasterId) {
+            return;
+        }
+
         if (oViewer.IsOpenFormsInProgress == false && oDoc.History.UndoRedoInProgress == false) {
             oDoc.History.Add(new CChangesPDFPushbuttonImage(this, sPrevRasterId, sRasterId, nAPType));
         }
 
+        this.SetNeedUpdateImage(true);
         this.SetWasChanged(true);
     };
     CPushButtonField.prototype.DrawPressed = function() {

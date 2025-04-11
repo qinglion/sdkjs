@@ -2216,6 +2216,9 @@
 				let field = shape.GetEditField();
 				if (AscPDF.FIELD_TYPES.button == field.GetType()) {
 					field.SetImageRasterId('', nState);
+					if (nState == AscPDF.APPEARANCE_TYPES.normal) {
+						field.SetImage('');
+					}
 				}
 			});
 
