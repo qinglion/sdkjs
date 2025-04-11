@@ -642,15 +642,15 @@
 		},
 
 		// plugin events
-		onPluginEvent : function(name, data)
+		onPluginEvent : function(name, data, isExclusive)
 		{
 			if (this.mainEventTypes[name])
 				this.mainEvents[name] = data;
 
-			return this.onPluginEvent2(name, data, undefined);
+			return this.onPluginEvent2(name, data, undefined, isExclusive);
 		},
 
-		onPluginEvent2 : function(name, data, guids)
+		onPluginEvent2 : function(name, data, guids, isExclusive, isOnlyCheck)
 		{
 			let needsGuids = [];
 			for (let guid in this.runnedPluginsMap)
@@ -671,13 +671,20 @@
 						runObject.waitEvents.push({ n : name, d : data });
 						continue;
 					}
-					var pluginData = new CPluginData();
-					pluginData.setAttribute("guid", plugin.guid);
-					pluginData.setAttribute("type", "onEvent");
-					pluginData.setAttribute("eventName", name);
-					pluginData.setAttribute("eventData", data);
 
-					this.sendMessageToFrame(runObject.isConnector ? "" : runObject.frameId, pluginData);
+					if (true !== isOnlyCheck)
+					{
+						var pluginData = new CPluginData();
+						pluginData.setAttribute("guid", plugin.guid);
+						pluginData.setAttribute("type", "onEvent");
+						pluginData.setAttribute("eventName", name);
+						pluginData.setAttribute("eventData", data);
+
+						this.sendMessageToFrame(runObject.isConnector ? "" : runObject.frameId, pluginData);
+					}
+
+					if (isExclusive === true)
+						break;
 				}
 			}
 			return needsGuids;
