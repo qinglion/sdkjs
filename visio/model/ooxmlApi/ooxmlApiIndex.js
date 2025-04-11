@@ -453,6 +453,58 @@
 		return this.elements[formula];
 	}
 
+	// Attribute:	Cell_Type elements:
+	// LineStyle	Specifies Cell_Type elements related to line properties except for Cell_Type child elements
+	// of a FillGradient Section_Type.
+	// Line property information in shapes, masters, and styles is specified by the LineColor, LinePattern, LineWeight,
+	// LineCap, BeginArrow, EndArrow, LineColorTrans, CompoundType, BeginArrowSize, EndArrowSize, Rounding,
+	// LineGradientDir, LineGradientAngle, and LineGradientEnabled Cell_Type elements, and the Cell_Type
+	// elements belonging to the LineGradient Section_Type.
+
+	// FillStyle	Specifies Cell_Type elements related to fill properties and effect properties
+	// including Cell_Type child elements of a FillGradient Section_Type.
+	// Fill property information in shapes, masters, and styles is specified by the FillForegnd,
+	// FillForegndTrans, FillBkgnd, FillBkgndTrans, FillPattern,
+	// FillGradientDir, FillGradientAngle, FillGradientEnabled,
+	// RotateGradientWithShape, and UseGroupGradientCell_Type elements,
+	// and the Cell_Type elements belonging to the FillGradient Section_Type.
+	// Shadow effect set information in shapes, masters, and styles is specified by the ShdwForegnd, ShdwForegndTrans,
+	// ShdwPattern, ShapeShdwType, ShapeShdwOffsetX, ShapeShdwOffsetY, ShapeShdwObliqueAngle, ShapeShdwScaleFactor,
+	// and ShapeShdwBlur Cell_Type elements.
+
+	// TextStyle	Specifies Cell_Type elements related to text.
+
+	// What about Quick style cells?
+	// cells rows sections
+	// TODO check cells inside section LineGradient
+	let lineStyleElements = ["LineColor", "LinePattern", "LineWeight", "LineCap", "BeginArrow", "EndArrow",
+		"LineColorTrans", "CompoundType", "BeginArrowSize", "EndArrowSize", "Rounding",
+		"LineGradientDir", "LineGradientAngle", "LineGradientEnabled", "LineGradient",
+		"QuickStyleLineColor", "QuickStyleLineMatrix"];
+
+	// TODO check cells inside section FillGradient
+	let fillStyleElements = ["FillForegnd", "FillForegndTrans", "FillBkgnd", "FillBkgndTrans", "FillPattern",
+		"FillGradientDir", "FillGradientAngle", "FillGradientEnabled",
+		"RotateGradientWithShape", "UseGroupGradientCell_Type", "FillGradient",
+		"ShdwForegnd", "ShdwForegndTrans", "ShdwPattern", "ShapeShdwType", "ShapeShdwOffsetX", "ShapeShdwOffsetY",
+		"ShapeShdwObliqueAngle", "ShapeShdwScaleFactor", "ShapeShdwBlur",
+		"QuickStyleFillColor", "QuickStyleFillMatrix"];
+
+	let textStyleElements = ["TextBkgnd", "TextDirection", "TextBkgndTrans", "LockTextEdit", "HideText",
+		"TheText", "IsTextEditTarget", "KeepTextFlat", "ReplaceLockText", "TextPosAfterBullet",
+		"Character", "Paragraph", "Tabs", "DefaultTabStop", "VerticalAlign",
+		"BottomMargin", "TopMargin", "RightMargin", "LeftMargin"];
+
+	let commonElements = ["ColorSchemeIndex", "EffectSchemeIndex", "ConnectorSchemeIndex", "FontSchemeIndex",
+		"ThemeIndex", "VariationColorIndex", "VariationStyleIndex", "EmbellishmentIndex",
+		"QuickStyleLineColor", "QuickStyleFillColor", "QuickStyleShadowColor", "QuickStyleFontColor",
+		"QuickStyleLineMatrix", "QuickStyleFillMatrix", "QuickStyleEffectsMatrix", "QuickStyleFontMatrix",
+		"QuickStyleType", "QuickStyleVariation"];
+	lineStyleElements = lineStyleElements.concat(commonElements);
+	fillStyleElements = fillStyleElements.concat(commonElements);
+	textStyleElements = textStyleElements.concat(commonElements);
+
+
 	/**
 	 * Always use it see Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive js docs for explanation.
 	 * Finds shape cell by fromula.
@@ -474,26 +526,326 @@
 	 *
 	 * Let's search cells only directly in Section for now (if called on Section).
 	 * @param {String} formula
+	 * @param {CVisioDocument} [visioDocument]
 	 * @memberof SheetStorage
-	 * @returns {Cell_Type|null}
+	 * @returns {Cell_Type|undefined}
 	 */
-	SheetStorage.prototype.getCell = function getCell(formula) {
+	SheetStorage.prototype.getCell = function getCell(formula, visioDocument) {
+		// TODO move to override Shape_Type.getCell and override getCell for other classes
+		// 0) Check own cells
 		// Cells can have N only no IX
 		let cell = this.elements[formula];
+		// type check
 		if (cell !== undefined && !(cell instanceof Cell_Type)) {
 			AscCommon.consoleLog("ERR: Tried to get cell but got other object!");
 		}
-		return cell;
+		if (cell !== undefined) {
+			return cell;
+		}
+
+		if (!visioDocument) {
+			return undefined;
+		}
+
+
+		// 1) Check shape styles
+		if (this.lineStyle === null && this.fillStyle === null && this.textStyle === null) {
+			// AscCommon.consoleLog('Top parent style');
+			// continue below
+		} else if (!(this.lineStyle === this.fillStyle && this.lineStyle === this.textStyle)) {
+			// styles are different
+
+			//TODO optimize
+			if (this.lineStyle !== null /*&& lineStyleElements.contains(formula)*/) {
+				let styleId = Number(this.lineStyle);
+				let styleSheet = visioDocument.styleSheets.find(function(style) {
+					return style.id === styleId;
+				});
+				let styleCell = styleSheet.getCell(formula, visioDocument);
+				if (styleCell !== undefined) {
+					return styleCell;
+				}
+			}
+
+			//TODO optimize
+			if (this.fillStyle !== null) {
+				let styleId = Number(this.fillStyle);
+				let styleSheet = styles.find(function(style) {
+					return style.id === styleId;
+				});
+				let styleCell = styleSheet.getCell(formula, visioDocument);
+				if (styleCell !== undefined) {
+					return styleCell;
+				}
+			}
+
+			//TODO optimize
+			if (this.textStyle !== null) {
+				let styleId = Number(this.textStyle);
+				let styleSheet = visioDocument.styleSheets.find(function(style) {
+					return style.id === styleId;
+				});
+				let styleCell = styleSheet.getCell(formula, visioDocument);
+				if (styleCell !== undefined) {
+					return styleCell;
+				}
+			}
+		} else {
+			// if lineStyle === textStyle === fillStyle so let's take lineStyle
+			let styleId = Number(this.lineStyle);
+			let styleSheet = visioDocument.styleSheets.find(function(style) {
+				return style.id === styleId;
+			});
+			let styleCell = styleSheet.getCell(formula, visioDocument);
+			if (styleCell !== undefined) {
+				return styleCell;
+			}
+		}
+		// otherwise if cell was not found in styles
+
+
+		// 2) Check master own properties
+		if (visioDocument.masters && this instanceof Shape_Type) {
+			// 2.2.5.4.1	Master-to-Shape Inheritance
+			// If shape has master or masterShape that have 1 top level shape
+			//  - inherit elements (sections, rows, cells) and subshapes
+			// If shape has master or masterShape that have several top level shapes
+			// - inherit only subshapes as shape subshapes
+			//
+			// subshapes inheritance:
+			// 2.2.5.4.1	Master-to-Shape Inheritance
+			// "if an instance contains a subshape whose ShapeSheet_Type (now it is Shape_Type)
+			// element has a MasterShape attribute that matches the ID attribute of a subshape of the master,
+			// the local properties specified in this subshape will override those of the corresponding subshape
+			// in the master."
+			// "subshapes not specified in the instance are inherited from the master." (from its master)
+			//
+			// So in main function come across all shapes and subshapes and call realizeMasterToShapeInheritanceRecursive
+			//
+			// realizeMasterToShapeInheritanceRecursive:
+			// shape can have master or masterShape id and be it master or masterShape if master (master or masterShape) have
+			// 1 top level shape it inherits its elements, then handle subshapes.
+			//
+			// handle subshapes:
+			// come along master and check MasterShape attributes if we have no shape with this MasterShape copy it to
+			// out shape.
+			// What if we inherit with MasterShape id not with Master id do we check MasterShape attributes from our Shape?
+			// - I think yes we compare subshape ids from masterShape with MasterShape ids of subshapes of shape that
+			// is beiing inherited (check sub MasterShape ids)
+			// We dont need to merge subshapes elements in currents step because we will make it in recursion iterations?
+			// Its just a detail of realization but yes. For subshapes we merge elements on next steps on recursive calls.
+			//
+			// handle several top level subshapes:
+			// just handle shape subshapes like above
+			//
+			// - can shape just consist of multiple shapes like master?
+			// maybe dont memorize MasterShape shape. but when we inherit one level below its masterIds
+
+			// - should we search for Master shape with the specified MasterShape recursively?
+			// previously i set MasterShape as ancestorMasterShapes and didnt use collectSubshapesRecursive
+			// to search for master but now code is code is more flexible but picture didnt change anyway
+			// code is more readable
+
+			// - should we compare nested shapes of shape and master recursively?
+			// no bcs - realizeMasterToShapeInheritanceRecursive will call itself on subshapes so it will call
+			// compare nested shapes recursively (mergeSubshapes)
+			// but what if need to call merge subshapes recursively on subshapes relative to this master?
+			// - no because if subshape at any deep have no Master/MasterShape in need no
+			// call mergeSubshapes otherwise realizeMasterToShapeInheritanceRecursive will call mergeSubshapes because
+			// shape have Master/MasterShape attribute.
+
+			// - what about both master and masterShape inheritance?
+
+			// - dont forget to inherit links to styles from master
+
+			// Consider examples
+			// <PageContents>
+			//   <Shapes>
+			//    	<Shape ID='22' NameU='Process' Name='Process' Type='Group' Master='4'>
+			// 	  		<Cell N='PinX' V='2.75'/>
+			//      	<Cell N='PinY' V='6.375'/>
+			// 	  		...
+			//       	<Shapes>
+			//         		<Shape ID='98' NameU='Flags' Name='Flags' Type='Group' Master='26'>
+			// 		  				<Cell N='PinX' V='0.875' U='IN'/>
+			//          		<Cell N='PinY' V='0.9375' U='IN'/>
+			// 		  				...
+			//
+			// <PageContents>
+			//   <Shapes>
+			//     <Shape ID='31' NameU='Headquarters' Name='Headquarters' Type='Group' Master='2'>
+			//       <Cell N='PinX' V='5.5'/>
+			//       <Cell N='PinY' V='7.097826086956522'/>
+			// 	  		...
+			// 	  		<Shapes>
+			//         		<Shape ID='32' Type='Shape' MasterShape='6'>
+			//           		<Cell N='PinX' V='1.113900526692464' F='Inh'/>
+			//           		<Cell N='PinY' V='1.16976435446399' F='Inh'/>
+			// 		  				...
+
+
+			let masterShapesToInheritFrom = [];
+
+
+			// check Master attribute and set shapes/shape
+			// to inherit from: masterShapesToInheritFrom and ancestorMasterShapes
+			let topShapeMasterId = this.getMasterID();
+			if (topShapeMasterId !== null && topShapeMasterId !== undefined) {
+				let topShapeMasterIndex = visioDocument.masters.master.findIndex(function(masterObject) {
+					return masterObject.id === topShapeMasterId;
+				});
+				let topShapeMaster = visioDocument.masters.master[topShapeMasterIndex];
+
+				if (topShapeMaster) {
+					let masterShapes = topShapeMaster.content.shapes;
+					masterShapesToInheritFrom = masterShapes;
+
+					// all descendant shapes will inherit from that master
+					// ancestorMasterShapes = masterShapesToInheritFrom;
+				}
+			}
+
+			/**
+			 * go recursively from top to bottom. If our shape found
+			 * return last memorized masterId
+			 * @param {Shape_Type} shape
+			 * @param {Shape_Type} shapeToFind
+			 * @param {string} [currentMaster]
+			 * @return {string | undefined} masterId
+			 */
+			function findMasterId(shape, shapeToFind, currentMaster) {
+				let result;
+				if (shape === shapeToFind) {
+					return currentMaster;
+				}
+				if (shape.master) {
+					currentMaster = shape.master;
+				}
+				if (shape.shapes) {
+					shape.shapes.forEach(function(shape) {
+						let findRes = findMasterId(shape, shapeToFind, currentMaster);
+						result = findRes !== undefined ? findRes : result;
+					});
+				}
+				return result;
+			}
+
+			// check MasterShape attribute and set shapes/shape
+			// to inherit from: masterShapesToInheritFrom and ancestorMasterShapes
+			let masterShapeId = this.masterShape;
+			if (masterShapeId !== null && masterShapeId !== undefined) {
+				// find masterId
+				let masterId;
+				for (let pageIndex = 0; pageIndex < visioDocument.pages.page.length; pageIndex++) {
+					const page = visioDocument.pages.page[pageIndex];
+					for (let i = 0; i < page.content.shapes.length; i++) {
+						const shape = page.content.shapes[i];
+						const findRes = findMasterId(shape, this);
+						if (findRes !== undefined) {
+							masterId = findRes;
+							break;
+						}
+					}
+					if (masterId !== undefined) {
+						break;
+					}
+				}
+
+				// find master
+				let masterIndex = visioDocument.masters.master.findIndex(function (masterObject) {
+					return masterObject.id === masterId;
+				});
+				let master = visioDocument.masters.master[masterIndex];
+				let ancestorMasterShapes = master.content.shapes;
+
+
+				if (ancestorMasterShapes === null || ancestorMasterShapes === undefined) {
+					AscCommon.consoleLog("MasterShape attribute is set but Master is not set for ", this);
+				} else {
+					let masterIndex = -1;
+					// find shape in master
+					if (ancestorMasterShapes.length === 1) {
+						// if master has one top level shape
+						let masterSubshapes = ancestorMasterShapes[0].collectSubshapesRecursive();
+						masterIndex = masterSubshapes.findIndex(function (masterSubshape) {
+							return masterShapeId === masterSubshape.id;
+						});
+						let masterShape = masterSubshapes[masterIndex];
+						masterShapesToInheritFrom = [masterShape];
+					} else {
+						let masterSubshapes = [];
+						ancestorMasterShapes.forEach(function (ancestorMasterShape) {
+							let masterSubshapesNth = ancestorMasterShape.collectSubshapesRecursive();
+							masterSubshapes = masterSubshapes.concat(masterSubshapesNth);
+						})
+						masterIndex = masterSubshapes.findIndex(function (masterSubshape) {
+							return masterShapeId === masterSubshape.id;
+						});
+						let masterShape = masterSubshapes[masterIndex];
+						masterShapesToInheritFrom = [masterShape];
+					}
+
+					if (masterIndex === -1) {
+						AscCommon.consoleLog('For MasterShape = ', masterShapeId, 'shape not found in master. Check shape: ', this);
+					}
+				}
+			}
+
+			// inherit
+			if (masterShapesToInheritFrom.length === 1) {
+				let masterShapeToInheritFrom = masterShapesToInheritFrom[0];
+
+				// inherit link to styles
+				// if (!this.lineStyle) {
+				// 	this.lineStyle = masterShapeToInheritFrom.lineStyle;
+				// }
+				// if (!this.fillStyle) {
+				// 	this.fillStyle = masterShapeToInheritFrom.fillStyle;
+				// }
+				// if (!this.textStyle) {
+				// 	this.textStyle = masterShapeToInheritFrom.textStyle;
+				// }
+
+				// let shapeElements = this.elements;
+				// let masterElements = masterShapeToInheritFrom.elements;
+
+				// mergeElementArrays(shapeElements, masterElements);
+				let masterCell = masterShapeToInheritFrom.getCell(formula, visioDocument);
+				if (masterCell !== undefined) {
+					return masterCell;
+				}
+
+				// TODO getForeignTypeObject()
+				// if (masterShapeToInheritFrom.type === "Foreign") {
+				// 	if (masterShapeToInheritFrom.cImageShape) {
+				// 		this.cImageShape = clone(masterShapeToInheritFrom.cImageShape);
+				// 	}
+				// }
+
+				let shapeSubshapes = this.shapes;
+				let masterSubshapes = masterShapeToInheritFrom.shapes;
+				cloneSubshapes(shapeSubshapes, masterSubshapes, masters);
+			} else if (masterShapesToInheritFrom.length > 1) {
+				// does it ever happens?
+				// what about style inheritance?
+				// TODO getSubshapes()
+				// cloneSubshapes(this.shapes, masterShapesToInheritFrom, masters);
+			}
+		}
+
+		// 3) Check master styles
+		// masterShapeToInheritFrom.getCell(formula, visioDocument); above checks for styles
 	}
 
 	/**
 	 * Calls getCell on object and tries to parse as Number(cell.v) if cell exists otherwise return undefined.
 	 * @param {String} formula
 	 * @param {number?} defaultValue
+	 * @param {CVisioDocument} [visioDocument]
 	 * @return {Number | undefined} number
 	 */
-	SheetStorage.prototype.getCellNumberValue = function (formula, defaultValue) {
-		let cell = this.getCell(formula);
+	SheetStorage.prototype.getCellNumberValue = function (formula, defaultValue, visioDocument) {
+		let cell = this.getCell(formula, visioDocument);
 		let result;
 		if (cell !== undefined) {
 			result = Number(cell.v);
@@ -509,10 +861,11 @@
 	 * Calls getCell on object and tries to parse as Number(cell.v) if cell exists otherwise return undefined.
 	 * @param {String} formula
 	 * @param {Number} pageScale
+	 * @param {CVisioDocument} [visioDocument]
 	 * @return {Number | undefined} number
 	 */
-	SheetStorage.prototype.getCellNumberValueWithScale = function (formula, pageScale) {
-		let cell = this.getCell(formula);
+	SheetStorage.prototype.getCellNumberValueWithScale = function (formula, pageScale, visioDocument) {
+		let cell = this.getCell(formula, visioDocument);
 		if (cell !== undefined) {
 			return Number(cell.v) / pageScale;
 		} else {
@@ -523,10 +876,11 @@
 	/**
 	 * Calls getCell on object and tries to parse as String(cell.v) if cell exists otherwise return undefined.
 	 * @param {String} formula
+	 * @param {CVisioDocument} [visioDocument]
 	 * @return {String | undefined} string
 	 */
-	SheetStorage.prototype.getCellStringValue = function (formula) {
-		let cell = this.getCell(formula);
+	SheetStorage.prototype.getCellStringValue = function (formula, visioDocument) {
+		let cell = this.getCell(formula, visioDocument);
 		if (cell !== undefined) {
 			return String(cell.v);
 		} else {
@@ -1073,6 +1427,16 @@
 	Shape_Type.prototype = Object.create(SheetStorageAndStyles.prototype);
 	Shape_Type.prototype.constructor = Shape_Type;
 
+	// /**
+	//  * @override
+	//  * @param {String} formula
+	//  * @param {CVisioDocument} visioDocument
+	//  * @memberof Shape_Type
+	//  * @returns {Cell_Type|null}
+	//  */
+	// Shape_Type.prototype.getCell = function getCell(formula, visioDocument) {
+	//
+	// }
 
 	/**
 	 * @memberOf Shape_Type
@@ -1156,10 +1520,221 @@
 	/**
 	 * Always use it see Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive js docs for explanation.
 	 * @memberof Shape_Type
+	 * @param {CVisioDocument} [visioDocument]
 	 * @return {Shape_Type[]}
 	 */
-	Shape_Type.prototype.getSubshapes = function () {
-		return this.shapes;
+	Shape_Type.prototype.getSubshapes = function (visioDocument) {
+		// return this.shapes;
+
+		// TODO move to override Shape_Type.getCell and override getCell for other classes
+		if (visioDocument === undefined) {
+			return this.shapes;
+		}
+
+		// 2) Check master
+		if (visioDocument.masters && this instanceof Shape_Type) {
+			// 2.2.5.4.1	Master-to-Shape Inheritance
+			// If shape has master or masterShape that have 1 top level shape
+			//  - inherit elements (sections, rows, cells) and subshapes
+			// If shape has master or masterShape that have several top level shapes
+			// - inherit only subshapes as shape subshapes
+			//
+			// subshapes inheritance:
+			// 2.2.5.4.1	Master-to-Shape Inheritance
+			// "if an instance contains a subshape whose ShapeSheet_Type (now it is Shape_Type)
+			// element has a MasterShape attribute that matches the ID attribute of a subshape of the master,
+			// the local properties specified in this subshape will override those of the corresponding subshape
+			// in the master."
+			// "subshapes not specified in the instance are inherited from the master." (from its master)
+			//
+			// So in main function come across all shapes and subshapes and call realizeMasterToShapeInheritanceRecursive
+			//
+			// realizeMasterToShapeInheritanceRecursive:
+			// shape can have master or masterShape id and be it master or masterShape if master (master or masterShape) have
+			// 1 top level shape it inherits its elements, then handle subshapes.
+			//
+			// handle subshapes:
+			// come along master and check MasterShape attributes if we have no shape with this MasterShape copy it to
+			// out shape.
+			// What if we inherit with MasterShape id not with Master id do we check MasterShape attributes from our Shape?
+			// - I think yes we compare subshape ids from masterShape with MasterShape ids of subshapes of shape that
+			// is beiing inherited (check sub MasterShape ids)
+			// We dont need to merge subshapes elements in currents step because we will make it in recursion iterations?
+			// Its just a detail of realization but yes. For subshapes we merge elements on next steps on recursive calls.
+			//
+			// handle several top level subshapes:
+			// just handle shape subshapes like above
+			//
+			// - can shape just consist of multiple shapes like master?
+			// maybe dont memorize MasterShape shape. but when we inherit one level below its masterIds
+
+			// - should we search for Master shape with the specified MasterShape recursively?
+			// previously i set MasterShape as ancestorMasterShapes and didnt use collectSubshapesRecursive
+			// to search for master but now code is code is more flexible but picture didnt change anyway
+			// code is more readable
+
+			// - should we compare nested shapes of shape and master recursively?
+			// no bcs - realizeMasterToShapeInheritanceRecursive will call itself on subshapes so it will call
+			// compare nested shapes recursively (mergeSubshapes)
+			// but what if need to call merge subshapes recursively on subshapes relative to this master?
+			// - no because if subshape at any deep have no Master/MasterShape in need no
+			// call mergeSubshapes otherwise realizeMasterToShapeInheritanceRecursive will call mergeSubshapes because
+			// shape have Master/MasterShape attribute.
+
+			// - what about both master and masterShape inheritance?
+
+			// - dont forget to inherit links to styles from master
+
+			// Consider examples
+			// <PageContents>
+			//   <Shapes>
+			//    	<Shape ID='22' NameU='Process' Name='Process' Type='Group' Master='4'>
+			// 	  		<Cell N='PinX' V='2.75'/>
+			//      	<Cell N='PinY' V='6.375'/>
+			// 	  		...
+			//       	<Shapes>
+			//         		<Shape ID='98' NameU='Flags' Name='Flags' Type='Group' Master='26'>
+			// 		  				<Cell N='PinX' V='0.875' U='IN'/>
+			//          		<Cell N='PinY' V='0.9375' U='IN'/>
+			// 		  				...
+			//
+			// <PageContents>
+			//   <Shapes>
+			//     <Shape ID='31' NameU='Headquarters' Name='Headquarters' Type='Group' Master='2'>
+			//       <Cell N='PinX' V='5.5'/>
+			//       <Cell N='PinY' V='7.097826086956522'/>
+			// 	  		...
+			// 	  		<Shapes>
+			//         		<Shape ID='32' Type='Shape' MasterShape='6'>
+			//           		<Cell N='PinX' V='1.113900526692464' F='Inh'/>
+			//           		<Cell N='PinY' V='1.16976435446399' F='Inh'/>
+			// 		  				...
+
+
+			let masterShapesToInheritFrom = [];
+
+
+			// check Master attribute and set shapes/shape
+			// to inherit from: masterShapesToInheritFrom and ancestorMasterShapes
+			let topShapeMasterId = this.getMasterID();
+			if (topShapeMasterId !== null && topShapeMasterId !== undefined) {
+				let topShapeMasterIndex = visioDocument.masters.master.findIndex(function (masterObject) {
+					return masterObject.id === topShapeMasterId;
+				});
+				let topShapeMaster = visioDocument.masters.master[topShapeMasterIndex];
+
+				if (topShapeMaster) {
+					let masterShapes = topShapeMaster.content.shapes;
+					masterShapesToInheritFrom = masterShapes;
+
+					// all descendant shapes will inherit from that master
+					// ancestorMasterShapes = masterShapesToInheritFrom;
+				}
+			}
+
+			/**
+			 * go recursively from top to bottom. If our shape found
+			 * return last memorized masterId
+			 * @param {Shape_Type} shape
+			 * @param {Shape_Type} shapeToFind
+			 * @param {string} [currentMaster]
+			 * @return {string | undefined} masterId
+			 */
+			function findMasterId(shape, shapeToFind, currentMaster) {
+				let result;
+				if (shape === shapeToFind) {
+					return currentMaster;
+				}
+				if (shape.master) {
+					currentMaster = shape.master;
+				}
+				if (shape.shapes) {
+					shape.shapes.forEach(function (shape) {
+						let findRes = findMasterId(shape, shapeToFind, currentMaster);
+						result = findRes !== undefined ? findRes : result;
+					});
+				}
+				return result;
+			}
+
+			// check MasterShape attribute and set shapes/shape
+			// to inherit from: masterShapesToInheritFrom and ancestorMasterShapes
+			let masterShapeId = this.masterShape;
+			if (masterShapeId !== null && masterShapeId !== undefined) {
+				// find masterId
+				let masterId;
+				for (let pageIndex = 0; pageIndex < visioDocument.pages.page.length; pageIndex++) {
+					const page = visioDocument.pages.page[pageIndex];
+					for (let i = 0; i < page.content.shapes.length; i++) {
+						const shape = page.content.shapes[i];
+						const findRes = findMasterId(shape, this);
+						if (findRes !== undefined) {
+							masterId = findRes;
+							break;
+						}
+					}
+					if (masterId !== undefined) {
+						break;
+					}
+				}
+
+				// find master
+				let masterIndex = visioDocument.masters.master.findIndex(function (masterObject) {
+					return masterObject.id === masterId;
+				});
+				let master = visioDocument.masters.master[masterIndex];
+				let ancestorMasterShapes = master.content.shapes;
+
+
+				if (ancestorMasterShapes === null || ancestorMasterShapes === undefined) {
+					AscCommon.consoleLog("MasterShape attribute is set but Master is not set for ", this);
+				} else {
+					let masterIndex = -1;
+					// find shape in master
+					if (ancestorMasterShapes.length === 1) {
+						// if master has one top level shape
+						let masterSubshapes = ancestorMasterShapes[0].collectSubshapesRecursive();
+						masterIndex = masterSubshapes.findIndex(function (masterSubshape) {
+							return masterShapeId === masterSubshape.id;
+						});
+						let masterShape = masterSubshapes[masterIndex];
+						masterShapesToInheritFrom = [masterShape];
+					} else {
+						let masterSubshapes = [];
+						ancestorMasterShapes.forEach(function (ancestorMasterShape) {
+							let masterSubshapesNth = ancestorMasterShape.collectSubshapesRecursive();
+							masterSubshapes = masterSubshapes.concat(masterSubshapesNth);
+						})
+						masterIndex = masterSubshapes.findIndex(function (masterSubshape) {
+							return masterShapeId === masterSubshape.id;
+						});
+						let masterShape = masterSubshapes[masterIndex];
+						masterShapesToInheritFrom = [masterShape];
+					}
+
+					if (masterIndex === -1) {
+						AscCommon.consoleLog('For MasterShape = ', masterShapeId, 'shape not found in master. Check shape: ', this);
+					}
+				}
+			}
+
+			// inherit
+			if (masterShapesToInheritFrom.length === 1) {
+				let masterShapeToInheritFrom = masterShapesToInheritFrom[0];
+
+
+				let shapeSubshapes = this.shapes;
+				let masterSubshapes = masterShapeToInheritFrom.shapes;
+				return shapeSubshapes.concat(masterSubshapes)
+			} else if (masterShapesToInheritFrom.length > 1) {
+				// does it ever happens?
+				// what about style inheritance?
+				// TODO getSubshapes()
+				// cloneSubshapes(this.shapes, masterShapesToInheritFrom, masters);
+				return this.shapes.concat(masterShapesToInheritFrom);
+			}
+			return this.shapes;
+		}
 	}
 
 	/**
@@ -1336,6 +1911,7 @@
 				AscCommon.consoleLog("MasterShape attribute is set but Master is not set for ", this);
 			} else {
 				let masterIndex = -1;
+				// find shape in master
 				if (ancestorMasterShapes.length === 1) {
 					// if master has one top level shape
 					let masterSubshapes = ancestorMasterShapes[0].collectSubshapesRecursive();
@@ -1476,7 +2052,7 @@
 		}
 
 		/**
-		 * see MS-VSDX 2.2.7.4.9	Connector.
+		 * see MS-VSDX 2.2.7.4.9	Connector. For themeval calculation
 		 * @param {Shape_Type | StyleSheet_Type} object
 		 * @param {StyleSheet_Type} style
 		 */
@@ -1761,6 +2337,12 @@
 		this.associatedPage = null;
 		this.pageSheet = null;
 		this.rel = null;
+
+		/**
+		 *
+		 * @type {CPageContents | null}
+		 */
+		this.content = null;
 
 		//todo objectId
 		this.deleteLock = new AscVisio.PropLocker(undefined);
