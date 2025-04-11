@@ -1802,8 +1802,8 @@
                     "target": this
                 };
             }
-            if (oWarningInfo["greater"] != null || oWarningInfo["less"] != null)
-                editor.sendEvent("asc_onValidateErrorPdfForm", oWarningInfo);
+            
+            Asc.editor.sendEvent("asc_onValidateErrorPdfForm", oWarningInfo);    
             
             return isValid;
         }
