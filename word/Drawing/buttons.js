@@ -2239,7 +2239,7 @@
 		
 		this.SendShowHideEvent = function()
 		{
-			let prev = this._getContentControlsForTrackIn(this.ContentControlObjectsLast);
+			let prev = this._getContentControlsForTrackIn(this.lastTracks);
 			let curr = this._getContentControlsForTrackIn(this.ContentControlObjects);
 			
 			let hide = [];
@@ -2906,7 +2906,6 @@
 				}
 			}
 			
-			this.SendShowHideEvent();
 			this.ContentControlsSaveLast();
 		};
 		
@@ -2997,6 +2996,8 @@
 			
 			if (!this.lastInline)
 				this.ContentControlObjects = this.ContentControlObjects.reverse();
+			
+			this.SendShowHideEvent();
 			
 			this.lastHover  = null;
 			this.lastActive = null;
