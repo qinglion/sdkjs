@@ -1434,6 +1434,7 @@
 
 		this.ComboRect = null;
 		this.Buttons = []; // header buttons
+		this.pluginButtons = [];
 
 		this.Name = this.base.GetAlias();
 		if (this.base.IsBuiltInTableOfContents && this.base.IsBuiltInTableOfContents())
@@ -1458,14 +1459,7 @@
 
 		this.UpdateGeom(geom);
 	}
-
-	CContentControlTrack.prototype.AddButtonsManually = function(arrButtons)
-	{
-		for (let i = 0; i < arrButtons.length; i++)
-		{
-			this.Buttons.push(arrButtons[i]);
-		}
-	};
+	
 	CContentControlTrack.prototype.UpdateTransform = function()
 	{
 		this.OffsetX = 0;
@@ -1658,6 +1652,8 @@
 			default:
 				break;
 		}
+		
+		this.Buttons = this.Buttons.concat(this.pluginButtons);
 	};
 	CContentControlTrack.prototype.CalculateComboRect = function(koefX, koefY)
 	{
@@ -1899,7 +1895,7 @@
 	CContentControlTrack.prototype.Copy = function()
 	{
 		let newCCTrack = new CContentControlTrack(this.parent, this.base, this.state, this.geom);
-		newCCTrack.AddButtonsManually(this.Buttons);
+		newCCTrack.pluginButtons = this.pluginButtons.slice();
 		return newCCTrack;
 	};
 
@@ -1995,24 +1991,81 @@
 			y : resY
 		};
 	};
-	CContentControlTrack.prototype.GetPluginButtons = function()
+	CContentControlTrack.prototype.isEqual = function(track)
 	{
-		let arr = [];
-		for (let i = 0; i < this.Buttons.length; i++)
+		if (this.base.GetId() !== track.base.GetId())
+			return false;
+		
+		if (this.state !== track.state)
+			return false;
+		
+		if (this.rects && track.rects)
 		{
-			if (this.parent.PluginButtons.includes(this.Buttons[i]))
-				arr.push(this.Buttons[i]);
+			let count1 = this.rects.length;
+			let count2 = track.rects.length;
+			
+			if (count1 !== count2)
+				return false;
+			
+			for (let j = 0; j < count1; ++j)
+			{
+				if (this.rects[j].Page !== track.rects[j].Page
+					|| Math.abs(this.rects[j].X - track.rects[j].X) > 0.00001
+					|| Math.abs(this.rects[j].Y - track.rects[j].Y) > 0.00001
+					|| Math.abs(this.rects[j].R - track.rects[j].R) > 0.00001
+					|| Math.abs(this.rects[j].B - track.rects[j].B) > 0.00001)
+				{
+					return false;
+				}
+			}
 		}
-
-		return arr;
+		else if (this.path && track.path)
+		{
+			let count1 = this.paths.length;
+			let count2 = track.paths.length;
+			
+			if (count1 !== count2)
+				return false;
+			
+			for (var j = 0; j < count1; j++)
+			{
+				if (this.paths[j].Page !== track.paths[j].Page)
+					return false;
+				
+				let _points1 = this.paths[j].Points;
+				let _points2 = track.paths[j].Points;
+				
+				if (_points1.length !== _points2.length)
+					return false;
+				
+				for (var k = 0; k < _points1.length; k++)
+				{
+					if (Math.abs(_points1[k].X - _points2[k].X) > 0.00001 || Math.abs(_points1[k].Y - _points2[k].Y) > 0.00001)
+						return false;
+				}
+			}
+		}
+		else
+		{
+			return false;
+		}
+		
+		return true;
 	};
-	CContentControlTrack.prototype.IsPluginButtons = function()
+	CContentControlTrack.prototype.addPluginButtons = function(buttons)
 	{
-		let arrPluginButtons = this.GetPluginButtons();
-		if (arrPluginButtons.length > 0)
-			return true;
-
-		return false;
+		let result = 0;
+		for (let i = 0; i < buttons.length; ++i)
+		{
+			let buttonId = Number(buttons[i]);
+			if (this.pluginButtons.includes(buttonId))
+				continue;
+			
+			this.Buttons.push(buttonId);
+			this.pluginButtons.push(buttonId);
+			result += 1;
+		}
+		return result;
 	};
 
 	// draw methods
@@ -2081,7 +2134,7 @@
 		{
 			let buttons = [];
 
-			let isAdd = false;
+			let added = 0;
 			for (let p = 0; p < CCButtons.length; p++)
 			{
 				let oCurrentCCButton	= CCButtons[p];
@@ -2095,40 +2148,25 @@
 				}
 
 				let id = oCurrentCCButton.sdtId;
-
+				
 				if (this.ContentControlObjects.length === 0 || oCurrentCCButton.sdtId === undefined)
 					return;
-
+				
 				for (let i = 0; i < this.ContentControlObjects.length; i++)
 				{
-					let oCurContentControl = this.ContentControlObjects[i];
-
-					if (oCurContentControl.base.GetId() === id)
+					let ccTrack = this.ContentControlObjects[i];
+					if (ccTrack.base.GetId() === id)
 					{
-						for (let j = 0; j < buttons.length; j++)
-						{
-							if (!(oCurContentControl.Buttons.includes(Number(buttons[j]))))
-							{
-								oCurContentControl.Buttons.push(Number(buttons[j]));
-								isAdd = true;
-							}
-						}
+						added += ccTrack.addPluginButtons(buttons);
 						break;
-
 					}
 				}
 			}
-
-			console.log(isAdd);
-			if (isAdd)
-			{
-
-				var wordControl = window.editor ? window.editor.WordControl : undefined;
-				if (wordControl)
-				{
-					//wordControl.OnUpdateOverlay();
-				}
-			}
+			
+			if (added)
+				editor.WordControl.OnUpdateOverlay()
+			
+			console.log(added);
 		};
 
 		this.getFont = function(koef)
@@ -2170,77 +2208,59 @@
 		// смотрим, сменилось ли тут чего-то
 		this.ContentControlsCheckLast = function()
 		{
-			var _len1 = this.ContentControlObjects.length;
-			var _len2 = this.ContentControlObjectsLast.length;
+			let _len1 = this.ContentControlObjects.length;
+			let _len2 = this.ContentControlObjectsLast.length;
 
-			if (_len1 != _len2)
+			if (_len1 !== _len2)
 				return true;
 
-			var count1, count2;
 			for (var i = 0; i < _len1; i++)
 			{
-				var _obj1 = this.ContentControlObjects[i];
-				var _obj2 = this.ContentControlObjectsLast[i];
-
-				if (_obj1.base.GetId() != _obj2.base.GetId())
+				let _obj1 = this.ContentControlObjects[i];
+				let _obj2 = this.ContentControlObjectsLast[i];
+				
+				if (!_obj1.isEqual(_obj2))
 					return true;
-				if (_obj1.state != _obj2.state)
-					return true;
-
-				if (_obj1.rects && _obj2.rects)
-				{
-					count1 = _obj1.rects.length;
-					count2 = _obj2.rects.length;
-
-					if (count1 != count2)
-						return true;
-
-					for (var j = 0; j < count1; j++)
-					{
-						if (Math.abs(_obj1.rects[j].X - _obj2.rects[j].X) > 0.00001 ||
-							Math.abs(_obj1.rects[j].Y - _obj2.rects[j].Y) > 0.00001 ||
-							Math.abs(_obj1.rects[j].R - _obj2.rects[j].R) > 0.00001 ||
-							Math.abs(_obj1.rects[j].B - _obj2.rects[j].B) > 0.00001 ||
-							_obj1.rects[j].Page != _obj2.rects[j].Page)
-						{
-							return true;
-						}
-					}
-				}
-				else if (_obj1.path && _obj2.path)
-				{
-					count1 = _obj1.paths.length;
-					count2 = _obj2.paths.length;
-
-					if (count1 != count2)
-						return true;
-
-					var _points1, _points2;
-					for (var j = 0; j < count1; j++)
-					{
-						if (_obj1.paths[j].Page != _obj2.paths[j].Page)
-							return true;
-
-						_points1 = _obj1.paths[j].Points;
-						_points2 = _obj2.paths[j].Points;
-
-						if (_points1.length != _points2.length)
-							return true;
-
-						for (var k = 0; k < _points1.length; k++)
-						{
-							if (Math.abs(_points1[k].X - _points2[k].X) > 0.00001 || Math.abs(_points1[k].Y - _points2[k].Y) > 0.00001)
-								return true;
-						}
-					}
-				}
-				else
-				{
-					return true;
-				}
 			}
 
 			return false;
+		};
+		
+		this._getContentControlsForTrackIn = function(tracks)
+		{
+			let result = {};
+			for (let i = 0, len = tracks.length; i < len; ++i)
+			{
+				if (AscCommon.ContentControlTrack.In === tracks[i].state)
+					result[tracks[i].base.GetId()] = tracks[i].base;
+			}
+			return result;
+		};
+		
+		this.SendShowHideEvent = function()
+		{
+			let prev = this._getContentControlsForTrackIn(this.ContentControlObjectsLast);
+			let curr = this._getContentControlsForTrackIn(this.ContentControlObjects);
+			
+			let hide = [];
+			for (let id in prev)
+			{
+				if (!curr[id])
+					hide.push(id);
+			}
+			
+			let show = [];
+			for (let id in curr)
+			{
+				if (!prev[id])
+					show.push(id);
+			}
+			
+			if (hide.length)
+				window.g_asc_plugins.onPluginEvent("onHideContentControlTrack", hide);
+			
+			if (show.length)
+				window.g_asc_plugins.onPluginEvent("onShowContentControlTrack", show);
 		};
 
 		// отрисовка
@@ -2256,7 +2276,7 @@
 			var _geom;
 			if (_pageStart < 0)
 				return;
-
+			
 			var _x, _y, _r, _b;
 			var _koefX = (_pages[_pageStart].drawingPage.right - _pages[_pageStart].drawingPage.left) / _pages[_pageStart].width_mm;
 			var _koefY = (_pages[_pageStart].drawingPage.bottom - _pages[_pageStart].drawingPage.top) / _pages[_pageStart].height_mm;
@@ -2885,15 +2905,8 @@
 					}
 				}
 			}
-
-			if (arrDraw.length > 0)
-			{
-				window.g_asc_plugins.onPluginEvent(
-					"onDrawContentControlTrack",
-					arrDraw
-				);
-			}
-
+			
+			this.SendShowHideEvent();
 			this.ContentControlsSaveLast();
 		};
 		
@@ -2905,21 +2918,13 @@
 			this.lastActive = null;
 			this.lastHover  = null;
 			this.lastInline = null;
+			this.lastTracks = this.ContentControlObjects.slice();
 			
 			for (let i = 0; i < this.ContentControlObjects.length; ++i)
 			{
 				let ccTrack = this.ContentControlObjects[i];
 				if (AscCommon.ContentControlTrack.In === ccTrack.state && -2 !== ccTrack.ActiveButtonIndex)
-				{
 					this.lastActive = ccTrack;
-				}
-				else if (AscCommon.ContentControlTrack.In === ccTrack.state && ccTrack.IsPluginButtons())
-				{
-					let Buttons = ccTrack.GetPluginButtons();
-
-					this.lastActive = ccTrack.Copy();
-					this.lastActive.Buttons = Buttons;
-				}
 				
 				if (AscCommon.ContentControlTrack.Hover === ccTrack.state)
 					this.lastHover = ccTrack;
@@ -2942,19 +2947,24 @@
 			
 			if (this.lastActive && this.lastActive.base && obj && this.lastActive.base.GetId() === obj.GetId())
 			{
-				let Buttons = this.lastActive.GetPluginButtons();
 				this.lastActive.UpdateGeom(geom);
-
-				for (let i = 0; i < Buttons.length; i++)
-				{
-					this.lastActive.Buttons.push(Buttons[i]);
-				}
-
 				this.ContentControlObjects.push(this.lastActive);
 			}
 			else
 			{
-				this.ContentControlObjects.push(new CContentControlTrack(this, obj, AscCommon.ContentControlTrack.In, geom));
+				let lastTrack = this.findTrackInLast(obj);
+				
+				let newTrack;
+				if (lastTrack)
+				{
+					newTrack = lastTrack.Copy();
+					newTrack.UpdateGeom(geom);
+				}
+				else
+				{
+					newTrack = new CContentControlTrack(this, obj, AscCommon.ContentControlTrack.In, geom);
+				}
+				this.ContentControlObjects.push(newTrack);
 			}
 			
 		};
@@ -2991,6 +3001,7 @@
 			this.lastHover  = null;
 			this.lastActive = null;
 			this.lastInline = null;
+			this.lastTracks = [];
 		};
 		this.addTrackHover = function(obj, geom)
 		{
@@ -3024,6 +3035,19 @@
 				if (AscCommon.ContentControlTrack.Hover === this.ContentControlObjects[i].state)
 					this.ContentControlObjects.splice(i, 1);
 			}
+		};
+		this.findTrackInLast = function(obj)
+		{
+			let objId = obj.GetId();
+			for (let i = 0; i < this.lastTracks.length; ++i)
+			{
+				let ccTrack = this.lastTracks[i];
+				if (ccTrack.state === AscCommon.ContentControlTrack.In
+					&& ccTrack.base
+					&& ccTrack.base.GetId() === objId)
+					return ccTrack;
+			}
+			return null;
 		};
 
 		this.checkSmallChanges = function(pos)
