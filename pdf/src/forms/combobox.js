@@ -533,24 +533,27 @@
         }
 
         for (let i = 0; i < aFields.length; i++) {
-            if (aFields[i].IsChanged() == false)
-                aFields[i].SetWasChanged(true); // фиксируем, что форма была изменена
+            aFields[i].SetWasChanged(true);
 
             if (aFields[i].HasShiftView()) {
                 aFields[i].content.MoveCursorToStartPos();
 
                 if (aFields[i] == this) {
                     aFields[i].AddToRedraw();
-                    continue;
                 }
             }
-                
+            
+            if (aFields[i] == this) {
+                continue;
+            }
+
             if (aCurIdxs && aCurIdxs.length != 0) {
                 aFields[i].SetCurIdxs(aCurIdxs);
             }
             else {
                 aFields[i].SetValue(sNewValue);
             }
+            
             aFields[i].SetNeedRecalc(true);
         }
 
@@ -647,7 +650,7 @@
         
         let formattedOption;
         
-        if (option[0] !== undefined && option[1] !== undefined) {
+        if (Array.isArray(option) && option[0] !== undefined && option[1] !== undefined) {
             if (option[0].toString && option[1].toString) {
                 formattedOption = [option[0].toString(), option[1].toString()];
             }
@@ -663,7 +666,7 @@
             this._options.splice(nPos, 0, formattedOption);
         }
 
-        AscCommon.History.Add(new CChangesPDFListOption(this, nPos, formattedOption, true));
+        AscCommon.History.Add(new CChangesPDFListOption(this, nPos, [formattedOption], true));
 
         this.SetWasChanged(true);
         this.SetNeedRecalc(true);
@@ -683,7 +686,7 @@
 
             let option = this._options.splice(nPos, 1);
 
-            AscCommon.History.Add(new CChangesPDFListOption(this, nPos, option, false));
+            AscCommon.History.Add(new CChangesPDFListOption(this, nPos, [option], false));
 
             this.SetWasChanged(true);
             this.SetNeedRecalc(true);
@@ -908,6 +911,7 @@
 	CComboBoxField.prototype.SetFormatValue         = AscPDF.CTextField.prototype.SetFormatValue;
 	CComboBoxField.prototype.IsDateFormat           = AscPDF.CTextField.prototype.IsDateFormat;
     CComboBoxField.prototype.IsNumberFormat         = AscPDF.CTextField.prototype.IsNumberFormat;
+    CComboBoxField.prototype.IsSpecialKeystroke     = AscPDF.CTextField.prototype.IsSpecialKeystroke;
     CComboBoxField.prototype.GetDateFormat          = AscPDF.CTextField.prototype.GetDateFormat;
     CComboBoxField.prototype.GetFormatType          = AscPDF.CTextField.prototype.GetFormatType;
     CComboBoxField.prototype.GetFormatArgs          = AscPDF.CTextField.prototype.GetFormatArgs;

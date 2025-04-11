@@ -361,8 +361,8 @@
                 nPos = this._options.length;
             }
 
-            AscCommon.History.Add(new CChangesPDFListOption(this, nPos, formattedOption, true));
-            this._options.push(formattedOption);
+            AscCommon.History.Add(new CChangesPDFListOption(this, nPos, [formattedOption], true));
+            this._options.splice(nPos, 0, formattedOption);
             if (sCaption !== "") {
                 let aFields = this.GetAllWidgets();
 
@@ -401,7 +401,7 @@
     
         if (Number.isInteger(nPos) && nPos >= 0 && nPos < this._options.length) {
             let option = this._options.splice(nPos, 1);
-            AscCommon.History.Add(new CChangesPDFListOption(this, nPos, option, false));
+            AscCommon.History.Add(new CChangesPDFListOption(this, nPos, [option], false));
 
             if (this.IsWidget()) {
                 updateContent(this);

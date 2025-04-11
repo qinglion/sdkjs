@@ -258,7 +258,7 @@
 		let oActiveDrawing	= oDoc.activeDrawing;
 
 		if (oActiveForm && oActiveForm.content && oActiveForm.content.IsSelectionUse()) {
-			let sText = oActiveForm.content.GetSelectedText(false);
+			let sText = oActiveForm.content.GetSelectedText(false, {ParaSeparator: ""});
 			if (!sText)
 				return;
 
@@ -269,7 +269,7 @@
 				_clipboard.pushData(AscCommon.c_oAscClipboardDataFormat.Html, "<div><p><span>" + sText + "</span></p></div>");
 		}
 		else if (oActiveAnnot && oActiveAnnot.IsFreeText() && oActiveAnnot.IsInTextBox()) {
-			let sText = oActiveAnnot.GetDocContent().GetSelectedText(false);
+			let sText = oActiveAnnot.GetDocContent().GetSelectedText(false, {ParaSeparator: ""});
 			if (!sText)
 				return;
 
@@ -1825,7 +1825,10 @@
 			oController.selectedObjects.forEach(function(shape) {
 				let field = shape.GetEditField();
 				if ([AscPDF.FIELD_TYPES.text, AscPDF.FIELD_TYPES.combobox].includes(field.GetType())) {
-					field.SetPlaceholder(sText);
+					let aWidgets = field.GetAllWidgets();
+					aWidgets.forEach(function(widget) {
+						widget.SetPlaceholder(sText);
+					});
 				}
 			});
 
@@ -2213,6 +2216,9 @@
 				let field = shape.GetEditField();
 				if (AscPDF.FIELD_TYPES.button == field.GetType()) {
 					field.SetImageRasterId('', nState);
+					if (nState == AscPDF.APPEARANCE_TYPES.normal) {
+						field.SetImage('');
+					}
 				}
 			});
 

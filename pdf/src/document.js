@@ -3422,6 +3422,8 @@ var CPresentation = CPresentation || function(){};
                     oThis.RemoveAnnot(object.GetId());
                 }
             });
+
+            this.BlurActiveObject();
         }
 
         if (oContent) {

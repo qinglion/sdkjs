@@ -1269,6 +1269,8 @@ CChangesPDFPushbuttonImage.prototype.CreateReverseChange = function() {
 CChangesPDFPushbuttonImage.prototype.private_SetValue = function(Value)
 {
 	let oButtonField = this.Class;
+	oButtonField.lastValue = Value;
+
 	if (this.FromLoad && typeof Value === "string" && Value.length > 0) {
 		let sImageId = AscCommon.getFullImageSrc2(Value);
 		let _img = Asc.editor.ImageLoader.map_image_index[sImageId];
@@ -1278,7 +1280,11 @@ CChangesPDFPushbuttonImage.prototype.private_SetValue = function(Value)
 		}
 
 		AscCommon.CollaborativeEditing.Add_NewImage(Value);
-		AscCommon.CollaborativeEditing.m_aEndLoadCallbacks.push(oButtonField.AddImage2.bind(oButtonField, Value, this.APType));
+		AscCommon.CollaborativeEditing.m_aEndLoadCallbacks.push(function() {
+			if (oButtonField.lastValue === Value) {
+				oButtonField.AddImage2(Value, this.APType);
+			}
+		}.bind(oButtonField));
 	}
 	else {
 		oButtonField.AddImage2(Value, this.APType);
