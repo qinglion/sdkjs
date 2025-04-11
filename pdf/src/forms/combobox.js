@@ -647,7 +647,7 @@
         
         let formattedOption;
         
-        if (option[0] !== undefined && option[1] !== undefined) {
+        if (Array.isArray(option) && option[0] !== undefined && option[1] !== undefined) {
             if (option[0].toString && option[1].toString) {
                 formattedOption = [option[0].toString(), option[1].toString()];
             }
@@ -663,7 +663,7 @@
             this._options.splice(nPos, 0, formattedOption);
         }
 
-        AscCommon.History.Add(new CChangesPDFListOption(this, nPos, formattedOption, true));
+        AscCommon.History.Add(new CChangesPDFListOption(this, nPos, [formattedOption], true));
 
         this.SetWasChanged(true);
         this.SetNeedRecalc(true);
@@ -683,7 +683,7 @@
 
             let option = this._options.splice(nPos, 1);
 
-            AscCommon.History.Add(new CChangesPDFListOption(this, nPos, option, false));
+            AscCommon.History.Add(new CChangesPDFListOption(this, nPos, [option], false));
 
             this.SetWasChanged(true);
             this.SetNeedRecalc(true);
