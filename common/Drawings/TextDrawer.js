@@ -73,7 +73,32 @@ function CDocContentStructure()
     this.m_oBoundsRect2 = null;
     this.m_aComments = [];
 }
-
+CDocContentStructure.prototype.forEachAnimationObjectToDraw = function(fCallback) {
+	for (let i = 0; i < this.m_aContent.length; i++) {
+		const oParagraph = this.m_aContent[i];
+		for (let j = 0; j < oParagraph.m_aBackgroundsByWords.length; j += 1) {
+			const aWord = oParagraph.m_aBackgroundsByWords[j];
+			for (let k = 0; k < aWord.length; k += 1) {
+				const oObjectToDraw = aWord[k];
+				fCallback(oObjectToDraw);
+			}
+		}
+		for (let j = 0; j < oParagraph.m_aWords.length; j += 1) {
+			const aWord = oParagraph.m_aWords[j];
+			for (let k = 0; k < aWord.length; k += 1) {
+				const oObjectToDraw = aWord[k];
+				fCallback(oObjectToDraw);
+			}
+		}
+		for (let j = 0; j < oParagraph.m_aForegroundsByWords.length; j += 1) {
+			const aWord = oParagraph.m_aForegroundsByWords[j];
+			for (let k = 0; k < aWord.length; k += 1) {
+				const oObjectToDraw = aWord[k];
+				fCallback(oObjectToDraw);
+			}
+		}
+	}
+};
 CDocContentStructure.prototype.Recalculate = function(oTheme, oColorMap, dWidth, dHeight, oShape)
 {
     for(var i = 0; i < this.m_aContent.length; ++i)
@@ -678,7 +703,55 @@ function CParagraphStructure(oParagraph)
 		this.m_oLastDUnderlineWordStart = new CAdditionalElementPosition();
 		this.m_oLastStrikeoutWordStart = new CAdditionalElementPosition();
 		this.m_oLastDStrikeoutWordStart = new CAdditionalElementPosition();
+		this.m_aWrapperElementsCache = null;
+		this.m_nSplitParagraphType = null;
 }
+CParagraphStructure.prototype.generateWrappersBySplit = function(nSplitParagraphType, oTransform, oTheme, oColorMap, oDrawing) {
+	this.m_nSplitParagraphType = nSplitParagraphType;
+		switch (this.m_nSplitParagraphType) {
+			case AscFormat.ITERATEDATA_TYPE_WORD: {
+				this.m_aWrapperElementsCache = this.getCombinedWordWrappers(oTransform, oTheme, oColorMap, oDrawing);
+				break;
+			}
+			case AscFormat.ITERATEDATA_TYPE_LETTER: {
+				this.m_aWrapperElementsCache = this.getCombinedLetterWrappers(oTransform, oTheme, oColorMap, oDrawing);
+				break;
+			}
+			default: {
+				this.m_aWrapperElementsCache = this.getAllDrawingObjectsWrapper(oTransform, oTheme, oColorMap, oDrawing);
+				break;
+			}
+		}
+};
+	CParagraphStructure.prototype.getWrappersByIterationType = function(nIterationType) {
+		if (this.m_nSplitParagraphType === nIterationType) {
+			return this.m_aWrapperElementsCache;
+		}
+
+		switch (nIterationType) {
+			case AscFormat.ITERATEDATA_TYPE_WORD: {
+				let nCacheIndex = 0;
+				const arrWords = [];
+				for (let i = 0; i < this.m_aWords.length; i += 1) {
+					const oWord = this.m_aWords[i];
+					const nWordLength = oWord.length;
+					const arrWordWrappers = this.m_aWrapperElementsCache.slice(nCacheIndex, nWordLength);
+					arrWords.push(new AscCommonSlide.CWrapperDrawer(arrWordWrappers));
+					nCacheIndex += nWordLength;
+				}
+				return arrWords;
+			}
+			case AscFormat.ITERATEDATA_TYPE_LETTER: {
+				return [];
+			}
+			default: {
+				return [new AscCommonSlide.CWrapperDrawer(this.m_aWrapperElementsCache)];
+			}
+		}
+	};
+	CParagraphStructure.prototype.getWrappers = function() {
+		return this.m_aWrapperElementsCache;
+	};
 CParagraphStructure.prototype.getCombinedWordWrappers = function (oTransform, oTheme, oColorMap, oDrawing) {
 	const arrRes = [];
 	this.combineElementsByLocation();
@@ -716,7 +789,7 @@ CParagraphStructure.prototype.getCombinedWordWrappers = function (oTransform, oT
 		arrBackgroundObjects = arrBackgroundObjects.concat.apply(arrBackgroundObjects, this.m_aBackgroundsByWords);
 		let arrForegroundObjects = [];
 		arrForegroundObjects = arrForegroundObjects.concat.apply(arrForegroundObjects, this.m_aForegroundsByWords);
-		return new AscCommonSlide.CObjectForDrawArrayWrapper(arrContentObjects, oTransform, oTheme, oColorMap, oDrawing, arrForegroundObjects, arrBackgroundObjects);
+		return [new AscCommonSlide.CObjectForDrawArrayWrapper(arrContentObjects, oTransform, oTheme, oColorMap, oDrawing, arrForegroundObjects, arrBackgroundObjects)];
 	};
 	CParagraphStructure.prototype.combineElementsByLocation = function () {
 		const arrHighWords = this.m_oLastHighlightWordStart.words;

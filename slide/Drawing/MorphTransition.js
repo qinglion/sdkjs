@@ -1521,7 +1521,9 @@
 				oTempBounds = {l: l, t: t, r: r, b: b};
 			}
 		});
-		this.bounds.reset(oTempBounds.l, oTempBounds.t, oTempBounds.r, oTempBounds.b);
+		if (oTempBounds) {
+			this.bounds.reset(oTempBounds.l, oTempBounds.t, oTempBounds.r, oTempBounds.b);
+		}
 	};
 	CObjectForDrawArrayWrapper.prototype.forEachObjectToDraw = function(callback) {
 		for (let i = 0; i < this.backgroundObjects.length; i += 1) {
@@ -1557,6 +1559,11 @@
 			}
 		}
 		return false;
+	};
+	CWrapperDrawer.prototype.forEachObjectToDraw = function(fCallback) {
+		for (let i = 0; i < this.wrapperObjects.length; i += 1) {
+			this.wrapperObjects[i].forEachObjectToDraw(fCallback);
+		}
 	};
 
     function CBackgroundWrapper(oMorph, oSlide) {
@@ -1924,4 +1931,5 @@
     window['AscCommonSlide'] = window['AscCommonSlide'] || {};
     window['AscCommonSlide'].CSlideMorphEffect = CSlideMorphEffect;
     window['AscCommonSlide'].CObjectForDrawArrayWrapper = CObjectForDrawArrayWrapper;
+    window['AscCommonSlide'].CWrapperDrawer = CWrapperDrawer;
 }) (window);
