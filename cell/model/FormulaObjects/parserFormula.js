@@ -10363,6 +10363,7 @@ function parserFormula( formula, parent, _ws ) {
 		this.oRecursionCells = null;
 		this.nCellPasteValue = null; // for paste recursive cell
 		this.bIsCellEdited = false;
+		this.bIsSheetCreating = false;
 
 		this.bIsEnabledRecursion = null;
 		this.nMaxIterations = null; // Max iterations of recursion calculations. Default value: 100.
@@ -11050,7 +11051,27 @@ function parserFormula( formula, parent, _ws ) {
 	 */
 	CalcRecursion.prototype.getIsCellEdited = function () {
 		return this.bIsCellEdited;
-	}
+	};
+	/**
+	 * Method gets the flag that checks whether the editor is making an "Add sheet" operation.
+	 * * true - Editor is making an "Add sheet" operation.
+	 * * false - Editor isn't making an "Add sheet" operation.
+	 * @memberof CalcRecursion
+	 * @returns {boolean}
+	 */
+	CalcRecursion.prototype.getIsSheetCreating = function () {
+		return this.bIsSheetCreating;
+	};
+	/**
+	 * Method sets the flag that checks whether the editor is making an "Add sheet" operation.
+	 * * true - Editor is making an "Add sheet" operation.
+	 * * false - Editor isn't making an "Add sheet" operation.
+	 * @memberof CalcRecursion
+	 * @param {boolean} bIsSheetCreating
+	 */
+	CalcRecursion.prototype.setIsSheetCreating = function (bIsSheetCreating) {
+		this.bIsSheetCreating = bIsSheetCreating;
+	};
 
 	const g_cCalcRecursion = new CalcRecursion();
 

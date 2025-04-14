@@ -3549,12 +3549,21 @@ var editor;
 			this.asc_setRightToLeft(true);
 		}
 		this.wb.showWorksheet();
-		this.wbModel.dependencyFormulas.lockRecal();
+		this.wbModel.dependencyFormulas && this.wbModel.dependencyFormulas.lockRecal();
 		History.EndTransaction();
-		if (this.wbModel.dependencyFormulas.changedCell) {
-			this.wbModel.dependencyFormulas.changedCell = null;
+		if (this.wbModel.dependencyFormulas && this.wbModel.dependencyFormulas.changedCell) {
+		 	AscCommonExcel.g_cCalcRecursion && AscCommonExcel.g_cCalcRecursion.setIsSheetCreating(true);
+			const dependencyFormulas = this.wbModel.dependencyFormulas;
+			dependencyFormulas._foreachChanged(function (cell) {
+				if (cell.isFormula() && cell.getFormulaParsed().ca) {
+					const cellId = AscCommonExcel.getCellIndex(cell.nRow, cell.nCol);
+					const sheetId = cell.ws.getId();
+					delete dependencyFormulas.changedCell[sheetId][cellId];
+				}
+			});
 		}
-		this.wbModel.dependencyFormulas.unlockRecal();
+		this.wbModel.dependencyFormulas && this.wbModel.dependencyFormulas.unlockRecal();
+		AscCommonExcel.g_cCalcRecursion && AscCommonExcel.g_cCalcRecursion.setIsSheetCreating(false);
 		// Посылаем callback об изменении списка листов
 		this.sheetsChanged();
 		this.inkDrawer.endSilentMode();

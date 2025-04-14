@@ -818,7 +818,6 @@
 			if (this.volatileListeners) {
 				for (var listenerId in this.volatileListeners) {
 					listeners[listenerId] = this.volatileListeners[listenerId];
-					g_cCalcRecursion.findRecursionCell(this.volatileListeners[listenerId]);
 				}
 			}
 			if(tableNamesMap){
@@ -1592,7 +1591,9 @@
 				return;
 			}
 			var notifyData = {type: c_oNotifyType.Dirty, areaData: undefined};
-			this._broadscastVolatile(notifyData);
+			if (!g_cCalcRecursion.getIsSheetCreating()) {
+				this._broadscastVolatile(notifyData);
+			}
 			this._broadcastCellsStart();
 			let repeatCount = 0;
 			while (this.changedCellRepeated || this.changedRangeRepeated || this.changedDefNameRepeated) {
@@ -3418,7 +3419,6 @@
 		AscCommon.History.SetSheetUndo(wsActive.getId());
 		AscCommon.History.SetSheetRedo(oNewWorksheet.getId());
 		this.dependencyFormulas.unlockRecal();
-		g_cCalcRecursion.clearRecursionCells();
 		return oNewWorksheet;
 	};
 	Workbook.prototype.copyWorksheet=function(index, insertBefore, sName, sId, bFromRedo, tableNames, opt_sheet, opt_base64){
@@ -3661,7 +3661,6 @@
 			this.dependencyFormulas.unlockRecal();
 			this.handlers && this.handlers.trigger("asc_onSheetDeleted", nIndex);
 			this.handlers && this.handlers.trigger("changeDocument", AscCommonExcel.docChangedType.sheetRemove, nIndex);
-			g_cCalcRecursion.clearRecursionCells();
 			return wsActive.getIndex();
 		}
 		return -1;
@@ -14867,14 +14866,14 @@
 		}
 	};
 	Cell.prototype.setFormulaTemplate = function(bHistoryUndo, action) {
+		const formulaParsed = this.getFormulaParsed();
 		let DataOld = null;
 		let DataNew = null;
-		let cellIndex = getCellIndex(this.nRow, this.nCol);
 		if (AscCommon.History.Is_On()) {
 			DataOld = this.getValueData();
 		}
 
-		if (!g_cCalcRecursion.isRecursiveCell(cellIndex)) {
+		if (!formulaParsed || (formulaParsed && !formulaParsed.ca)) {
 			this.cleanText();
 		}
 		action(this);
