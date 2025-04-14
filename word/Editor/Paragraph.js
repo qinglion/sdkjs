@@ -3454,7 +3454,7 @@ Paragraph.prototype.drawHorizontalBorder = function(graphics, curLine, border, l
 	graphics.p_color(RGBA.r, RGBA.g, RGBA.b, 255);
 	graphics.SetBorder(border);
 
-	graphics.Start_Command(AscFormat.DRAW_COMMAND_LINE, this.Lines[curLine], curLine, 1);
+	graphics.Start_Command(AscFormat.DRAW_COMMAND_LINE, this.Lines[curLine], curLine, AscFormat.CLineStructure_DrawType_Borders);
 
 	for (let curRange = 0, rangeCount = this.Lines[curLine].Ranges.length; curRange < rangeCount; ++curRange)
 	{
