@@ -2387,7 +2387,7 @@ function Binary_pPrWriter(memory, oNumIdMap, oBinaryHeaderFooterTableWriter, sav
 	this.oBinaryHeaderFooterTableWriter = oBinaryHeaderFooterTableWriter;
     this.bs = new BinaryCommonWriter(this.memory);
     this.brPrs = new Binary_rPrWriter(this.memory, saveParams);
-    this.Write_pPr = function(pPr, pPr_rPr, EndRun, SectPr, oDocument)
+    this.Write_pPr = function(pPr, pPr_rPr, EndRun, paragraph, oDocument)
     {
         var oThis = this;
         //Стили надо писать первыми, потому что применение стиля при открытии уничтажаются настройки параграфа
@@ -2507,11 +2507,14 @@ function Binary_pPrWriter(memory, oNumIdMap, oBinaryHeaderFooterTableWriter, sav
             this.bs.WriteItemWithLength(function(){oThis.WriteFramePr(pPr.FramePr);});
         }
         //SectPr
-        if(null != SectPr && null != oDocument)
+        if(paragraph
+			&& paragraph.Get_SectionPr()
+			&& !paragraph.IsTableCellContent()
+			&& oDocument)
         {
             this.memory.WriteByte(c_oSerProp_pPrType.SectPr);
             this.memory.WriteByte(c_oSerPropLenType.Variable);
-            this.bs.WriteItemWithLength(function(){oThis.WriteSectPr(SectPr, oDocument);});
+            this.bs.WriteItemWithLength(function(){oThis.WriteSectPr(paragraph.Get_SectionPr(), oDocument);});
         }
 
         if(null != pPr.PrChange && pPr.ReviewInfo)
@@ -5393,7 +5396,7 @@ function BinaryDocumentTableWriter(memory, doc, oMapCommentId, oNumIdMap, copyPa
                 pPr = {};
             var EndRun = par.GetParaEndRun();
             this.memory.WriteByte(c_oSerParType.pPr);
-            this.bs.WriteItemWithLength(function(){oThis.bpPrs.Write_pPr(pPr, par.TextPr.Value, EndRun, par.Get_SectionPr(), oThis.Document);});
+            this.bs.WriteItemWithLength(function(){oThis.bpPrs.Write_pPr(pPr, par.TextPr.Value, EndRun, par, oThis.Document);});
         }
         //Content
         if(null != par.Content)
