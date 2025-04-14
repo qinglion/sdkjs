@@ -36935,10 +36935,12 @@ $(function () {
 			};
 
 			// Set cell formulas
+			wb.dependencyFormulas.lockRecal();
 			ws.getRange2("A1").setValue("=5+ASYNCFUNC()");
 			ws.getRange2("B1").setValue("=A1+B2+ASYNCFUNC2()");
 			ws.getRange2("B2").setValue("=C2+ASYNCFUNC3()");
 			ws.getRange2("C2").setValue("=A1+ASYNCFUNC4()");
+			wb.dependencyFormulas.unlockRecal();
 
 			// Expected calculation sequence:
 			// 1. A1 = 5 + 10 = 15
@@ -37137,6 +37139,7 @@ $(function () {
 			};
 
 			// Set cell formulas with complex dependencies
+			wb.dependencyFormulas.lockRecal();
 			ws.getRange2("A1").setValue("=5+GetCurrentPrice()");
 			ws.getRange2("A2").setValue("=FetchStockQuantity()+GetWarehouseStock()");
 			ws.getRange2("C2").setValue("=GetSupplierPrice()*GetMarkupRate()");
@@ -37147,6 +37150,7 @@ $(function () {
 			ws.getRange2("D2").setValue("=(A1+B1)*GetCurrencyRate()");
 			ws.getRange2("E1").setValue("=SUM(A1:D1)+CalculateInsurance()");
 			ws.getRange2("E2").setValue("=AVERAGE(A2:D2)+GetServiceFee()");
+			wb.dependencyFormulas.unlockRecal();
 
 			// Check initial loading states
 			const rangesToCheck = ["A1", "B1", "C1", "D1", "A2", "B2", "C2", "D2", "E1", "E2"];

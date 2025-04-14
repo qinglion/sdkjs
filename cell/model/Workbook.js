@@ -908,12 +908,14 @@
 		isLockRecal: function() {
 			return this.lockCounter > 0;
 		},
-		unlockRecal: function(notCalc) {
+		unlockRecal: function(notCalc, callback) {
 			if (0 < this.lockCounter) {
 				--this.lockCounter;
 			}
 			if (!notCalc && 0 >= this.lockCounter) {
-				this.calcTree();
+				this.calcTree(callback);
+			} else {
+				callback && callback();
 			}
 		},
 		lockRecalExecute: function(callback) {
@@ -1578,13 +1580,15 @@
 			this.buildArrayFormula = [];
 			this.buildPivot = [];
 		},
-		calcTree: function() {
+		calcTree: function(callback) {
 			if (this.lockCounter > 0) {
+				callback && callback();
 				return;
 			}
 			this.buildDependency();
 			this.addToChangedHiddenRows();
 			if (!(this.changedCell || this.changedRange || this.changedDefName)) {
+				callback && callback();
 				return;
 			}
 			var notifyData = {type: c_oNotifyType.Dirty, areaData: undefined};
@@ -1608,7 +1612,11 @@
 				}
 			} while (g_cCalcRecursion.needRecursiveCall());
 
-			this.wb.asyncFormulasManager.calculatePromises();
+			if (!this.wb.asyncFormulasManager.isRecalculating() && this.wb.asyncFormulasManager.getPromises() && !AscCommonExcel.g_LockCustomFunctionRecalculate) {
+				this.wb.asyncFormulasManager.calculatePromises(callback);
+			} else if (!g_cCalcRecursion.needRecursiveCall() && !this.wb.asyncFormulasManager.isRecalculating()) {
+				callback && callback();
+			}
 
 			g_cCalcRecursion.resetIterStep();
 			g_cCalcRecursion.setStartCellIndex(null);
@@ -2945,7 +2953,7 @@
 			this.aParserFormulas = null;
 		}
 	};
-	AsyncFormulasManager.prototype.calculatePromises = function () {
+	AsyncFormulasManager.prototype.calculatePromises = function (callback) {
 		let t = this;
 		let promises = !this.isRecalculating() && this.getPromises();
 		if (promises) {
@@ -3000,6 +3008,7 @@
 					} else {
 						t.cleanPromiseParserFormula();
 						t.endCallback && t.endCallback();
+						callback && callback();
 					}
 				});
 			};
@@ -3953,7 +3962,7 @@
 		var res = null;
 		let t = this;
 		this.dependencyFormulas.forEachFormula(function (fP) {
-			if (fP && fP.bUnknownOrCustomFunction) {
+			if (fP && fP.bUnknownOrCustomFunction && fP.ca) {
 				fP.isParsed = false;
 				fP.outStack = [];
 				fP.parse();
@@ -3965,7 +3974,7 @@
 		});
 		this.forEach(function (ws) {
 			ws.forEachFormula(function (fP) {
-				if (fP && fP.bUnknownOrCustomFunction) {
+				if (fP && fP.bUnknownOrCustomFunction && fP.ca) {
 					fP.isParsed = false;
 					fP.outStack = [];
 					fP.parse();
@@ -16159,6 +16168,11 @@
 		var parsed = this.getFormulaParsed();
 		var res = parsed.simplifyRefType(parsed.value, this.ws, this.nRow, this.nCol);
 
+		let DataOld, DataNew;
+		if (AscCommon.History.Is_On()) {
+			DataOld = this.getValueData();
+		}
+
 		if (res) {
 			this.cleanText();
 			switch (res.type) {
@@ -16200,6 +16214,15 @@
 				AscFormat.ExecuteNoHistory(function () {
 					this.setFont(oHyperlinkFont);
 				}, this, []);
+			}
+
+			if (AscCommon.History.Is_On()) {
+				DataNew = this.getValueData();
+			}
+			if (AscCommon.History.Is_On() && !DataOld.isEqual(DataNew) && parsed.bUnknownOrCustomFunction) {
+				AscCommon.History.Add(AscCommonExcel.g_oUndoRedoCell, AscCH.historyitem_Cell_ChangeValue, this.ws.getId(),
+					new Asc.Range(this.nCol, this.nRow, this.nCol, this.nRow),
+					new UndoRedoData_CellSimpleData(this.nRow, this.nCol, DataOld, DataNew));
 			}
 
 			this.ws.workbook.dependencyFormulas.addToCleanCellCache(this.ws.getId(), this.nRow, this.nCol);
@@ -17223,7 +17246,7 @@
 			});
 		} else if (AscCommon.c_oNotifyParentType.Shared === type) {
 			return this._onShared(eventData);
-					}
+		}
 	};
 	CCellWithFormula.prototype._onChange = function(eventData) {
 		var areaData = eventData.notifyData.areaData;

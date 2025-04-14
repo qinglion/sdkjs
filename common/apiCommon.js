@@ -275,7 +275,16 @@ function (window, undefined) {
 				});
 			}
 
-	
+			const tagRegex = /@(\w+)(?:\s+(.+))?/g;
+			const tags = [];
+			let tagMatch;
+			while ((tagMatch = tagRegex.exec(commentBlock)) !== null) {
+				const tagName = tagMatch[1];
+				if (!['param', 'property', 'returns', 'return', 'nameLocale'].includes(tagName)) {
+					tags[tagName] = 1;
+				}
+			}
+
 			// Parsing function description
 			const descriptionRegex = /\*\s*(.*)/g;
 			const descriptionMatch = descriptionRegex.exec(commentBlock);
@@ -286,6 +295,7 @@ function (window, undefined) {
 			parsedData.returnInfo = returnInfo;
 			parsedData.description = description;
 			parsedData.nameLocale = nameLocale;
+			parsedData.tags = tags;
 			result.push(parsedData);
 		}
 	

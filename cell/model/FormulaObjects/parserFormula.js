@@ -6419,7 +6419,7 @@ function parserFormula( formula, parent, _ws ) {
 
 	this.promiseResult = null;
 
-	//mark function, when need reparse and recalculate on custom function change change
+	//mark function, when need reparse and recalculate on custom function change
 	this.bUnknownOrCustomFunction = null;
 
 	if (AscFonts.IsCheckSymbols) {
@@ -8569,7 +8569,7 @@ function parserFormula( formula, parent, _ws ) {
 					t.bUnknownOrCustomFunction = true;
 				}
 
-				//mark function, when need reparse and recalculate on custom function change change
+				//mark function, when need reparse and recalculate on custom function change
 				let wb = Asc["editor"] && Asc["editor"].wb;
 				if (wb && wb.customFunctionEngine && wb.customFunctionEngine.getFunc(operandStr)) {
 					t.bUnknownOrCustomFunction = true;
@@ -8955,6 +8955,9 @@ function parserFormula( formula, parent, _ws ) {
 		}
 	};
 	parserFormula.prototype.calculate = function (opt_defName, opt_bbox, opt_offset, checkMultiSelect, opt_oCalculateResult, opt_pivotCallback) {
+		if (AscCommonExcel.g_LockCustomFunctionRecalculate && this.bUnknownOrCustomFunction) {
+			return;
+		}
 		if (this.outStack.length < 1) {
 			this.value = new cError(cErrorType.wrong_name);
 			this._endCalculate();
