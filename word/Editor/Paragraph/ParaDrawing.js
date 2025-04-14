@@ -4272,3 +4272,7 @@ CAnchorPosition.prototype.Calculate_Y_Value = function(RelativeFrom)
 //--------------------------------------------------------export----------------------------------------------------
 window['AscCommonWord'] = window['AscCommonWord'] || {};
 window['AscCommonWord'].ParaDrawing = ParaDrawing;
+
+window['AscWord'] = window['AscWord'] || {};
+window['AscWord'].ParaDrawing = ParaDrawing;
+

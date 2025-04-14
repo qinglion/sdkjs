@@ -433,8 +433,10 @@
                 let cur_pr, result_pr, content;
                 for (let i = 0; i < arr.length; ++i) {
                     cur_pr = null;
-                    if (arr[i].IsAnnot && arr[i].IsAnnot() || (arr[i].group && arr[i].group.IsAnnot && arr[i].group.IsAnnot())) {
-                        return result_pr;
+                    if (arr[i].IsAnnot && arr[i].IsAnnot()
+                        || (arr[i].group && arr[i].group.IsAnnot && arr[i].group.IsAnnot())
+                        || arr[i].IsDrawing() && arr[i].IsShape() && arr[i].GetEditField()) {
+                        return null;
                     }
 
                     if (arr[i].getObjectType() === AscDFH.historyitem_type_GroupShape) {
@@ -978,7 +980,7 @@
                 let oDoc = this.document;
                 let isDrawHandles = oApi ? oApi.isShowShapeAdjustments() : true;
 
-                let oObject = AscCommon.g_oTableId.Get_ById(ret.objectId) || oDoc.GetShapeBasedAnnotById(ret.objectId);
+                let oObject = AscCommon.g_oTableId.Get_ById(ret.objectId) || oDoc.GetShapeBasedAnnotById(ret.objectId) || this.selectedObjects.find(function(obj) { return obj.GetId() == ret.objectId});
                 let isViewerObj = this.document.IsViewerObject(oObject);
 
                 if (!isDrawHandles && isViewerObj) {
@@ -1009,6 +1011,70 @@
         }
         return false;
     };
+    CGraphicObjects.prototype.handleTextHit = function (object, e, x, y, group, pageIndex, bWord) {
+        var content, invert_transform_text, tx, ty, check_hyperlink;
+    
+        if (this.handleEventMode === HANDLE_EVENT_MODE_HANDLE) {
+            if (object.IsDrawing() && object.IsEditFieldShape()) {
+                return this.handleMoveHit(object, e, x, y, group, false, pageIndex, bWord);
+            }
+    
+            // Обработка выбора объекта (для одиночного объекта или группы)
+            if (!group) {
+                if (this.selection.textSelection !== object) {
+                    this.resetSelection(true);
+                    this.selectObject(object, pageIndex);
+                    this.selection.textSelection = object;
+                } else if (this.checkTargetSelection(object, x, y, object.invertTransformText)) {
+                    return true;
+                }
+            } else {
+                if (this.selection.groupSelection !== group || group.selection.textSelection !== object) {
+                    this.resetSelection(true);
+                    group.selectObject(object, pageIndex);
+                    this.selectObject(group, pageIndex);
+                    this.selection.groupSelection = group;
+                    group.selection.textSelection = object;
+                } else if (this.checkTargetSelection(object, x, y, object.invertTransformText)) {
+                    return true;
+                }
+            }
+    
+            // Вызываем начало выделения без проверки isSlideShow
+            object.selectionSetStart(e, x, y, pageIndex);
+            this.changeCurrentState(new AscFormat.TextAddState(this, object, x, y, e.Button));
+            return true;
+    
+        } else {
+            var ret = { objectId: object.Get_Id(), cursorType: "text" };
+            content = object.getDocContent();
+            invert_transform_text = object.invertTransformText;
+            if (content && invert_transform_text) {
+                tx = invert_transform_text.TransformPointX(x, y);
+                ty = invert_transform_text.TransformPointY(x, y);
+    
+                // Отрисовка контролов для Document Editor
+                if (this.document.IsDocumentEditor() && object instanceof AscFormat.CShape && object.isForm()) {
+                    var oForm = object.getInnerForm();
+                    if (oForm)
+                        oForm.DrawContentControlsTrack(AscCommon.ContentControlTrack.Hover, tx, ty, 0, false);
+                }
+    
+                var nPageIndex = pageIndex;
+                if (this.drawingObjects.cSld && !this.noNeedUpdateCursorType && AscFormat.isRealNumber(this.drawingObjects.num)) {
+                    nPageIndex = this.drawingObjects.num;
+                }
+                content.UpdateCursorType(tx, ty, 0);
+                ret.updated = true;
+            } else if (this.drawingObjects) {
+                check_hyperlink = AscFormat.fCheckObjectHyperlink(object, x, y);
+                if (isRealObject(check_hyperlink)) {
+                    ret.hyperlink = check_hyperlink;
+                }
+            }
+            return ret;
+        }
+    };
     CGraphicObjects.prototype.checkSelectedObjectsAndCallback = function(callback, args, bNoSendProps, nHistoryPointType, aAdditionaObjects, bNoCheckLock) {
     	let oDoc = this.document;
         let check_type = AscCommon.changestype_Drawing_Props;
@@ -1020,8 +1086,7 @@
 			oDoc.Recalculate();
 			oDoc.FinalizeAction(true);
         }
-    };
-    CGraphicObjects.prototype.selectObject = function (object, pageIndex) {
+    };    CGraphicObjects.prototype.selectObject = function (object, pageIndex) {
         let oDoc = this.document;
         object.select(this, pageIndex);
         if (this.selectedObjects.length == 1 && !oDoc.GetActiveObject()) {
@@ -1150,9 +1215,10 @@
             }
         } else if (oGrp) {
             if (oGrp.selectStartPage === pageIndex) {
-                isDrawHandles = !oGrp.IsAnnot;
+                isDrawHandles = !oGrp.IsAnnot();
+                let bDrawGroupTrack = !oGrp.IsAnnot() || oGrp.IsAnnot() && !oGrp.IsInTextBox(); 
 
-                drawingDocument.DrawTrack(
+                bDrawGroupTrack && drawingDocument.DrawTrack(
                     AscFormat.TYPE_TRACK.GROUP_PASSIVE,
                     oGrp.getTransformMatrix(),
                     0,
@@ -1218,6 +1284,11 @@
             for (i = 0; i < this.selectedObjects.length; ++i) {
                 let oDrawing = this.selectedObjects[i];
                 if (oDrawing.selectStartPage === pageIndex) {
+
+                    if (oDrawing.IsForm()) {
+                        oDrawing = oDrawing.editShape;
+                    }
+
                     let nType = oDrawing.IsAnnot() && oDrawing.IsStamp() ? AscFormat.TYPE_TRACK.ANNOT_STAMP : AscFormat.TYPE_TRACK.SHAPE;
 
                     if (oDrawing.IsAnnot() && (oDrawing.IsTextMarkup() || oDrawing.IsComment())) {

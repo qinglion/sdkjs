@@ -3294,8 +3294,8 @@ CInlineLevelSdt.prototype.IsMultiLineForm = function()
 	var oTextFormPr = this.GetTextFormPr();
 	if (oTextFormPr)
 		return oTextFormPr.GetMultiLine();
-
-	return true;
+	
+	return !(this.IsForm() && (this.IsDropDownList() || this.IsComboBox()));
 };
 CInlineLevelSdt.prototype.OnChangeFixedFormTrack = function(nW, nH)
 {

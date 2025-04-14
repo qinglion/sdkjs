@@ -1152,7 +1152,7 @@
         let oContent    = this.GetDocContent();
 
         oContent.SetApplyToAll(true);
-		let sText = oContent.GetSelectedText(false, {ParaSeparator: '\r'}).replace('\r', '');
+		let sText = oContent.GetSelectedText(false, {ParaSeparator: ''});
 		oContent.SetApplyToAll(false);
 
         let isNeedUpdateRC = this.IsNeedUpdateRC();
@@ -1347,7 +1347,8 @@
                 let yContent    = oTransform.TransformPointY(0, Y);
 
                 oController.resetSelection();
-
+                oController.selection.groupSelection = this;
+                
                 if (this.IsInTextBox() == false && false == this.Lock.Is_Locked()) {
                     oDoc.SetGlobalHistory();
                     oDoc.DoAction(function() {

@@ -171,6 +171,8 @@
 		this.forceSaveForm = null;
 		this.forceSaveUndoRequest = false; // Флаг нужен, чтобы мы знали, что данное сохранение пришло по запросу Undo в совместке
 		this.forceSaveSendFormRequest = false;
+		this.forceSaveDisconnectRequest = false;
+		this.forceSaveOformRequest = false;
 		this.saveRelativePrev = {};
 
 		// Version History
@@ -429,7 +431,7 @@
 				res = isOpenOoxml ? Asc.c_oAscFileType.PPTX : Asc.c_oAscFileType.CANVAS_PRESENTATION;
 				break;
 			case c_oEditorId.Visio:
-				res = Asc.c_oAscFileType.VSDX;
+				res = isOpenOoxml ? Asc.c_oAscFileType.VSDX : Asc.c_oAscFileType.CANVAS_DIAGRAM;
 				break;
 		}
 		return res;
@@ -2858,8 +2860,14 @@
 		if (this.canSave && this._saveCheck() && this.canSendChanges()) {
 			this.IsUserSave = !isAutoSave;
 
-			if (this.asc_isDocumentCanSave() || this._haveChanges() || this._haveOtherChanges() ||
-				this.canUnlockDocument || this.forceSaveUndoRequest || this.forceSaveSendFormRequest) {
+			if (this.asc_isDocumentCanSave()
+				|| this._haveChanges()
+				|| this._haveOtherChanges()
+				|| this.canUnlockDocument
+				|| this.forceSaveUndoRequest
+				|| this.forceSaveSendFormRequest
+				|| this.forceSaveDisconnectRequest
+				|| this.forceSaveOformRequest) {
 				if (this._prepareSave(isIdle)) {
 					// Не даем пользователю сохранять, пока не закончится сохранение (если оно началось)
 					this.canSave = false;
@@ -5501,6 +5509,44 @@
 		this.onChangeRTLInterface();
 	};
 	baseEditorsApi.prototype.onChangeRTLInterface = function() {
+	};
+
+	baseEditorsApi.prototype._AI = function()
+	{
+		let curItem = this.aiResolvers[0];
+		if (!window.g_asc_plugins)
+		{
+			curItem.resolve({ "error" : "plugins manager does not initialized" });
+			this.aiResolvers.shift();
+			return;
+		}
+
+		// TODO: only one AI plugin must be presented!
+		//let testGuids = ["asc.{9DC93CDB-B576-4F0C-B55E-FCC9C48DD007}"];
+		let testGuids = undefined;
+		let results = window.g_asc_plugins.onPluginEvent2("onAIRequest", curItem.data, testGuids, true);
+		if (results.length === 0)
+		{
+			curItem.resolve({ "error" : "no registered AI plugins found" });
+			this.aiResolvers.shift();
+		}
+	};
+
+	baseEditorsApi.prototype["AI"] = baseEditorsApi.prototype.AI = function(data, resolve)
+	{
+		this.aiResolvers = this.aiResolvers || [];
+		this.aiResolvers.push({data : data, resolve: resolve});
+
+		if (this.aiResolvers.length > 1)
+			return;
+
+		this._AI();
+	};
+
+	baseEditorsApi.prototype["checkAI"] = baseEditorsApi.prototype.checkAI = function()
+	{
+		let results = window.g_asc_plugins.onPluginEvent2("onAIRequest", null, undefined, true, true);
+		return (0 !== results.length) ? true : false;
 	};
 
 	//----------------------------------------------------------export----------------------------------------------------

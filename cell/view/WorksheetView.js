@@ -3625,6 +3625,99 @@
 		return new AscCommon.CellBase(maxRow, maxCol);
 	};
 
+	WorksheetView.prototype._calculateMaxPrintRange = function(range) {
+		let self = this;
+		let maxCol = -1;
+		let maxRow = -1;
+		let curRow = -1;
+		let rowCache;
+
+		// Helper function to check if cell content requires printing
+		function checkCellForPrinting(cell) {
+			let col = cell.nCol;
+			let row = cell.nRow;
+
+			// Skip hidden rows and columns
+			let hiddenRow = false;
+			if (curRow !== row) {
+				curRow = row;
+				hiddenRow = 0 === self._getRowHeight(row);
+				rowCache = self._getRowCache(row);
+			}
+			if (hiddenRow || 0 === self._getColumnWidth(col)) {
+				return;
+			}
+
+			// Check cell style (fills and borders)
+			let style = cell.getStyle();
+			if (style && ((style.fill && style.fill.notEmpty()) || (style.border && style.border.notEmpty()))) {
+				maxCol = Math.max(maxCol, col);
+				maxRow = Math.max(maxRow, row);
+			}
+
+			// Skip empty cells
+			if (cell.isEmptyTextString()) {
+				return;
+			}
+
+			// Get cell properties
+			let align = cell.getAlign();
+			let angle = align.getAngle();
+			let cellType = cell.getType();
+			let verticalText = angle === AscCommonExcel.g_nVerticalTextAngle;
+			let isNumberFormat = (null === cellType || CellValueType.String !== cellType);
+
+			// Check text wrapping and distribution
+			let isWrapped = align.getWrap() || align.hor === AscCommon.align_Distributed;
+
+			// Check indent
+			let indent = align.getIndent();
+			if (indent && indent > 0) {
+				maxCol = Math.max(maxCol, col);
+				maxRow = Math.max(maxRow, row);
+			}
+
+			// Always include cells with special formatting
+			if (angle || verticalText || isNumberFormat || isWrapped) {
+				maxCol = Math.max(maxCol, col);
+				maxRow = Math.max(maxRow, row);
+			}
+
+			// Check formulas
+			if (cell.isFormula()) {
+				maxCol = Math.max(maxCol, col);
+				maxRow = Math.max(maxRow, row);
+			}
+		}
+
+		// Prepare cell metrics cache
+		//this._prepareCellTextMetricsCache(range);
+
+		// Iterate through all non-empty cells
+		this.model.getRange3(range.r1, range.c1, range.r2, range.c2)._foreachNoEmpty(function(cell) {
+			checkCellForPrinting(cell);
+		});
+
+		let mergedRanges = this.model.mergeManager.getAll();
+		if (mergedRanges) {
+			for (let i = 0; i < mergedRanges.length; i++) {
+				if (mergedRanges[i].bbox) {
+					let type = mergedRanges[i].bbox.getType();
+					if (c_oAscSelectionType.RangeCells === type) {
+						maxCol = Math.max(maxCol, mergedRanges[i].bbox.c2);
+						maxRow = Math.max(maxRow, mergedRanges[i].bbox.r2);
+					} /*else if (c_oAscSelectionType.RangeCol === type) {
+						maxCol = Math.max(maxCol, mergedRanges[i].bbox.c2);
+					} else if (c_oAscSelectionType.RangeRow === type) {
+						maxRow = Math.max(maxRow, mergedRanges[i].bbox.r2);
+					}*/
+				}
+			}
+		}
+
+		return new AscCommon.CellBase(maxRow, maxCol);
+	};
+
     WorksheetView.prototype.calcPagesPrint = function (pageOptions, printOnlySelection, indexWorksheet, arrPages, arrRanges, adjustPrint, doNotRecalc) {
 		var range, maxCell, t = this;
 		//в опциях может прийти другая область печати. сделано на случай, когда при совместке меняется область в модели
@@ -3701,7 +3794,7 @@
 						this._prepareCellTextMetricsCache(range);
 					}
 				} else {
-					maxCell = this._checkPrintRange(range, doNotRecalc);
+					maxCell = this._calculateMaxPrintRange(range, doNotRecalc);
 					range = new asc_Range(range.c1, range.r1, maxCell.col, maxCell.row);
 				}
 
@@ -3726,7 +3819,7 @@
 						this._prepareCellTextMetricsCache(range);
 					}
 				} else {
-					maxCell = this._checkPrintRange(range, doNotRecalc);
+					maxCell = this._calculateMaxPrintRange(range, doNotRecalc);
 					range = new asc_Range(range.c1, range.r1, maxCell.col, maxCell.row);
 				}
 
@@ -4523,7 +4616,7 @@
 					maxRow = rowsCount - 1;
 				} else {
 					var range = new asc_Range(0, 0, colsCount - 1, rowsCount - 1);
-					var maxCell = this._checkPrintRange(range);
+					var maxCell = this._calculateMaxPrintRange(range);
 					var maxCol = maxCell.col;
 					var maxRow = maxCell.row;
 
@@ -11827,18 +11920,26 @@
 			f = (canEdit || viewMode) && (isNotFirst && y < r.top + epsChangeSize || y >= r.bottom - epsChangeSize) &&
 				readyMode && !this.model.getSheetProtection(Asc.c_oAscSheetProtectType.formatRows);
 
+			let isSelectedFullRow = false;
+			let selection = this._getSelection();
+			if (selection && selection.ranges) {
+				for (let i = 0 ; i < selection.ranges.length; i++) {
+					let curSelection = selection.ranges[i];
+					//move cols/rows was planned only for full version
+					if (curSelection.getType() === Asc.c_oAscSelectionType.RangeRow && curSelection.r1 <= r.row && curSelection.r2 >= r.row) {
+						isSelectedFullRow = true;
+						break;
+					}
+				}
+			}
 
+			if (f && isMobileVersion) {
+				f = isSelectedFullRow;
+			}
 			let _target = c_oTargetType.RowHeader;
 			if (!f && !isMobileVersion) {
-				let selection = this._getSelection();
-				if (selection && selection.ranges) {
-					for (let i = 0 ; i < selection.ranges.length; i++) {
-						let curSelection = selection.ranges[i];
-						//move cols/rows was planned only for full version
-						if (curSelection.getType() === Asc.c_oAscSelectionType.RangeRow && curSelection.r1 <= r.row && curSelection.r2 >= r.row) {
-							_target = c_oTargetType.ColumnRowHeaderMove;
-						}
-					}
+				if (isSelectedFullRow) {
+					_target = c_oTargetType.ColumnRowHeaderMove;
 				}
 			}
 
@@ -11867,17 +11968,26 @@
 				readyMode && !this.model.getSheetProtection(Asc.c_oAscSheetProtectType.formatColumns);
 			// ToDo В Excel зависимость epsilon от размера ячейки (у нас фиксированный 3)
 
+			let isSelectedFullCol = false;
+			let selection = this._getSelection();
+			if (selection && selection.ranges) {
+				for (let i = 0 ; i < selection.ranges.length; i++) {
+					let curSelection = selection.ranges[i];
+					//move cols/rows was planned only for full version
+					if (curSelection.getType() === Asc.c_oAscSelectionType.RangeCol && curSelection.c1 <= c.col && curSelection.c2 >= c.col) {
+						isSelectedFullCol = true;
+						break;
+					}
+				}
+			}
+
+			if (f && isMobileVersion) {
+				f = isSelectedFullCol;
+			}
 			let _target = c_oTargetType.ColumnHeader;
 			if (!f && !isMobileVersion) {
-				let selection = this._getSelection();
-				if (selection && selection.ranges) {
-					for (let i = 0 ; i < selection.ranges.length; i++) {
-						let curSelection = selection.ranges[i];
-						//move cols/rows was planned only for full version
-						if (curSelection.getType() === Asc.c_oAscSelectionType.RangeCol && curSelection.c1 <= c.col && curSelection.c2 >= c.col) {
-							_target = c_oTargetType.ColumnRowHeaderMove;
-						}
-					}
+				if (isSelectedFullCol) {
+					_target = c_oTargetType.ColumnRowHeaderMove;
 				}
 			}
 
@@ -18417,6 +18527,13 @@
         return (0 < val.length && 1 < val[0].getFragmentText().length && '=' === val[0].getFragmentText().charAt( 0 ));
     };
 
+    WorksheetView.prototype.canConverToFormula = function ( formulaText ) {
+		if (formulaText && formulaText.length > 1) {
+			return formulaText[0] === "+" || formulaText[0] === "-";
+		}
+		return false;
+    };
+
     WorksheetView.prototype.getActiveCell = function (x, y, isCoord) {
         var col, row;
         if (isCoord) {
@@ -18515,14 +18632,34 @@
 
 		let dynamicSelectionRange = null;
 		let isFormula = this._isFormula(val);
+
 		let newFP, parseResult;
+		let isFormulaFromVal;
+
+		let valText = val[0].getFragmentText();
+		let canConverToFormula = this.canConverToFormula(valText);
+		let cellWithFormula = new AscCommonExcel.CCellWithFormula(this.model, bbox.r1, bbox.c1);
+
+		if (!isFormula && canConverToFormula) {
+			newFP = new AscCommonExcel.parserFormula(valText, cellWithFormula, this.model);
+			parseResult = new AscCommonExcel.ParseResult();
+			// todo добавить подсветку при выборе ref/range. Одно число не должно превращаться в формулу (+5) 
+			if (newFP.parse(AscCommonExcel.oFormulaLocaleInfo.Parse, AscCommonExcel.oFormulaLocaleInfo.DigitSep, parseResult)) {
+				valText = "=" + valText;
+				val[0].setFragmentText(valText);
+				isFormulaFromVal = true;
+				isFormula = true;
+			}
+		}
+
 		if (isFormula) {
 			let calculateResult = new AscCommonExcel.CalculateResult(true);
 			//перед созданием точки в истории, проверяю, валидная ли формула
-			let cellWithFormula = new AscCommonExcel.CCellWithFormula(this.model, bbox.r1, bbox.c1);
-			newFP = new AscCommonExcel.parserFormula(val[0].getFragmentText().substring(1), cellWithFormula, this.model);
-			parseResult = new AscCommonExcel.ParseResult();
-			if (!newFP.parse(AscCommonExcel.oFormulaLocaleInfo.Parse, AscCommonExcel.oFormulaLocaleInfo.DigitSep, parseResult)) {
+			cellWithFormula = isFormulaFromVal ? cellWithFormula : new AscCommonExcel.CCellWithFormula(this.model, bbox.r1, bbox.c1);
+			newFP = isFormulaFromVal ? newFP : new AscCommonExcel.parserFormula(valText.substring(1), cellWithFormula, this.model);
+			parseResult = isFormulaFromVal ? parseResult : new AscCommonExcel.ParseResult();
+
+			if (!isFormulaFromVal && !newFP.parse(AscCommonExcel.oFormulaLocaleInfo.Parse, AscCommonExcel.oFormulaLocaleInfo.DigitSep, parseResult)) {
 				if (parseResult.error !== c_oAscError.ID.FrmlWrongFunctionName && parseResult.error !== c_oAscError.ID.FrmlParenthesesCorrectCount) {
 					this.model.workbook.handlers.trigger("asc_onError", parseResult.error, c_oAscError.Level.NoCritical);
 					endTransaction();
@@ -18533,7 +18670,7 @@
 				if (parseResult.externalReferenesNeedAdd) {
 					t.model.workbook.addExternalReferencesAfterParseFormulas(parseResult.externalReferenesNeedAdd);
 					// then we parse the formula again to obtain the correct outStack and external link indexes
-					newFP = new AscCommonExcel.parserFormula(val[0].getFragmentText().substring(1), cellWithFormula, this.model);
+					newFP = new AscCommonExcel.parserFormula(valText.substring(1), cellWithFormula, this.model);
 					if (!newFP.parse(AscCommonExcel.oFormulaLocaleInfo.Parse, AscCommonExcel.oFormulaLocaleInfo.DigitSep, parseResult)) {
 						this.model.workbook.handlers.trigger("asc_onError", parseResult.error, c_oAscError.Level.NoCritical);
 						endTransaction();
@@ -26480,7 +26617,7 @@
 			return null;
 		}
 		let range = new asc_Range(0, 0, modelColsCount - 1, modelRowsCount - 1);
-		let maxCell = this._checkPrintRange(range, doNotRecalc/*, modelRowsCount > nMaxPrintRows*/);
+		let maxCell = this._calculateMaxPrintRange(range, doNotRecalc/*, modelRowsCount > nMaxPrintRows*/);
 		/*if (!maxCell) {
 			return maxCell;
 		}*/

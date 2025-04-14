@@ -921,129 +921,120 @@ function CStatistics(LogicDocument)
     this.Id       = null; // Id таймера для подсчета всего кроме страниц
     this.PagesId  = null; // Id таймера для подсчета страниц
 
-    this.StartPos = 0;
-
-    this.Pages           = 0;
-    this.Words           = 0;
-    this.Paragraphs      = 0;
-    this.SymbolsWOSpaces = 0;
-    this.SymbolsWhSpaces = 0;
+    this.Reset();
 }
 
-CStatistics.prototype =
-{
 //-----------------------------------------------------------------------------------
 // Функции для запуска и остановки сбора статистики
 //-----------------------------------------------------------------------------------
-    Start : function()
-    {
-        this.StartPos = 0;
-        this.CurPage  = 0;
 
-        this.Pages           = 0;
-        this.Words           = 0;
-        this.Paragraphs      = 0;
-        this.SymbolsWOSpaces = 0;
-        this.SymbolsWhSpaces = 0;
+CStatistics.prototype.Reset = function()
+{
+	this.StartPos = 0;
+	this.CurPage  = 0;
 
+	this.Pages           = 0;
+	this.Words           = 0;
+	this.Paragraphs      = 0;
+	this.SymbolsWOSpaces = 0;
+	this.SymbolsWhSpaces = 0;
+};
+CStatistics.prototype.Start = function()
+{
+	this.Reset();
 
-        var LogicDocument = this.LogicDocument;
-        this.PagesId = setTimeout(function(){LogicDocument.Statistics_GetPagesInfo();}, 1);
-        this.Id      = setTimeout(function(){LogicDocument.Statistics_GetParagraphsInfo();}, 1);
-        this.Send();
-    },
+	var LogicDocument = this.LogicDocument;
+	this.PagesId = setTimeout(function(){LogicDocument.Statistics_GetPagesInfo();}, 1);
+	this.Id      = setTimeout(function(){LogicDocument.Statistics_GetParagraphsInfo();}, 1);
+	this.Send();
+};
+CStatistics.prototype.Stop = function()
+{
+	this.Reset();
+	this.Stop_PagesInfo();
+	this.Stop_ParagraphsInfo();
+};
+CStatistics.prototype.Next_ParagraphsInfo = function(StartPos)
+{
+	this.StartPos = StartPos;
+	var LogicDocument = this.LogicDocument;
+	clearTimeout(this.Id);
+	this.Id = setTimeout(function(){LogicDocument.Statistics_GetParagraphsInfo();}, 1);
+	this.Send();
+};
+CStatistics.prototype.Next_PagesInfo = function()
+{
+	var LogicDocument = this.LogicDocument;
+	clearTimeout(this.PagesId);
+	this.PagesId = setTimeout(function(){LogicDocument.Statistics_GetPagesInfo();}, 100);
+	this.Send();
+};
+CStatistics.prototype.Stop_PagesInfo = function()
+{
+	if (null !== this.PagesId)
+	{
+		clearTimeout(this.PagesId);
+		this.PagesId = null;
+	}
 
-    Next_ParagraphsInfo : function(StartPos)
-    {
-        this.StartPos = StartPos;
-        var LogicDocument = this.LogicDocument;
-        clearTimeout(this.Id);
-        this.Id = setTimeout(function(){LogicDocument.Statistics_GetParagraphsInfo();}, 1);
-        this.Send();
-    },
+	this.Check_Stop();
+};
+CStatistics.prototype.Stop_ParagraphsInfo = function()
+{
+	if (null != this.Id)
+	{
+		clearTimeout(this.Id);
+		this.Id = null;
+	}
 
-    Next_PagesInfo : function()
-    {
-        var LogicDocument = this.LogicDocument;
-        clearTimeout(this.PagesId);
-        this.PagesId = setTimeout(function(){LogicDocument.Statistics_GetPagesInfo();}, 100);
-        this.Send();
-    },
+	this.Check_Stop();
+};
+CStatistics.prototype.Check_Stop = function()
+{
+	if (null === this.Id && null === this.PagesId)
+	{
+		this.Send();
+		this.Api.sync_GetDocInfoEndCallback();
+	}
+};
+CStatistics.prototype.Send = function()
+{
+	var Stats =
+	{
+		PageCount      : this.Pages,
+		WordsCount     : this.Words,
+		ParagraphCount : this.Paragraphs,
+		SymbolsCount   : this.SymbolsWOSpaces,
+		SymbolsWSCount : this.SymbolsWhSpaces
+	};
 
-    Stop_PagesInfo : function()
-    {
-        if (null !== this.PagesId)
-        {
-            clearTimeout(this.PagesId);
-            this.PagesId = null;
-        }
+	this.Api.sync_DocInfoCallback(Stats);
+};
+CStatistics.prototype.Add_Paragraph = function (Count)
+{
+	if ( "undefined" != typeof( Count ) )
+		this.Paragraphs += Count;
+	else
+		this.Paragraphs++;
+};
+CStatistics.prototype.Add_Word = function(Count)
+{
+	if ( "undefined" != typeof( Count ) )
+		this.Words += Count;
+	else
+		this.Words++;
+};
 
-        this.Check_Stop();
-    },
+CStatistics.prototype.Update_Pages = function(PagesCount)
+{
+	this.Pages = PagesCount;
+};
 
-    Stop_ParagraphsInfo : function()
-    {
-        if (null != this.Id)
-        {
-            clearTimeout(this.Id);
-            this.Id = null;
-        }
-
-        this.Check_Stop();
-    },
-
-    Check_Stop : function()
-    {
-        if (null === this.Id && null === this.PagesId)
-        {
-            this.Send();
-            this.Api.sync_GetDocInfoEndCallback();
-        }
-    },
-
-    Send : function()
-    {
-        var Stats =
-        {
-            PageCount      : this.Pages,
-            WordsCount     : this.Words,
-            ParagraphCount : this.Paragraphs,
-            SymbolsCount   : this.SymbolsWOSpaces,
-            SymbolsWSCount : this.SymbolsWhSpaces
-        };
-
-        this.Api.sync_DocInfoCallback(Stats);
-    },
-//-----------------------------------------------------------------------------------
-// Функции для пополнения статистики
-//-----------------------------------------------------------------------------------
-    Add_Paragraph : function (Count)
-    {
-        if ( "undefined" != typeof( Count ) )
-            this.Paragraphs += Count;
-        else
-            this.Paragraphs++;
-    },
-
-    Add_Word : function(Count)
-    {
-        if ( "undefined" != typeof( Count ) )
-            this.Words += Count;
-        else
-            this.Words++;
-    },
-
-    Update_Pages : function(PagesCount)
-    {
-        this.Pages = PagesCount;
-    },
-
-    Add_Symbol : function(bSpace)
-    {
-        this.SymbolsWhSpaces++;
-        if ( true != bSpace )
-            this.SymbolsWOSpaces++;
-    }
+CStatistics.prototype.Add_Symbol = function(bSpace)
+{
+	this.SymbolsWhSpaces++;
+	if ( true != bSpace )
+		this.SymbolsWOSpaces++;
 };
 
 function CDocumentRecalcInfo()
@@ -6311,9 +6302,48 @@ CDocument.prototype.EditOleObject = function(oOleObject, sData, sImageUrl, fWidt
 {
     oOleObject.editExternal(sData, sImageUrl, fWidth, fHeight, nPixWidth, nPixHeight, arrImagesForAddToHistory);
 };
-CDocument.prototype.AddTextArt = function(nStyle)
+CDocument.prototype.AddTextArt = function(textArtStyle)
 {
-	this.Controller.AddTextArt(nStyle);
+	let curParagraph = this.GetCurrentParagraph();
+	if (!curParagraph)
+		return;
+	
+	let drawing = new AscWord.ParaDrawing(1828800 / 36000, 1828800 / 36000, null, this.DrawingDocument, this, null);
+	let textArt = this.DrawingObjects.createTextArt(textArtStyle, true);
+	textArt.setParent(drawing);
+	drawing.Set_GraphicObject(textArt);
+	drawing.Set_DrawingType(drawing_Anchor);
+	drawing.Set_WrappingType(WRAPPING_TYPE_NONE);
+	drawing.Set_BehindDoc(false);
+	drawing.Set_Distance(3.2, 0, 3.2, 0);
+	drawing.Set_PositionV(Asc.c_oAscRelativeFromV.Paragraph, false, 0, false);
+	
+	if (curParagraph.isRtlDirection())
+		drawing.Set_PositionH(Asc.c_oAscRelativeFromH.Column, true, Asc.c_oAscAlignH.Right, false);
+	else
+		drawing.Set_PositionH(Asc.c_oAscRelativeFromH.Column, false, 0, false);
+	
+	let docContent = textArt.getDocContent();
+	let directParaPr = curParagraph.GetDirectParaPr(false);
+	if (undefined !== directParaPr.Bidi)
+	{
+		docContent.GetAllParagraphs().forEach(function(p){
+			p.SetParagraphBidi(directParaPr.Bidi);
+		});
+	}
+	
+	this.RemoveBeforePaste();
+	
+	this.AddToParagraph(drawing);
+	if (textArt.bSelectedText)
+	{
+		this.Select_DrawingObject(drawing.GetId());
+	}
+	else
+	{
+		docContent.SelectAll();
+		docContent.SetThisElementCurrent();
+	}
 };
 
 CDocument.prototype.AddSignatureLine = function(oSignatureDrawing){
@@ -7435,7 +7465,7 @@ CDocument.prototype.GetCalculatedTextPr = function()
 };
 /**
  * Получаем прямые настройки параграфа, т.е. которые выставлены непосредственно у параграфа, без учета стилей
- * @returns {CParaPr}
+ * @returns {CTextPr}
  */
 CDocument.prototype.GetDirectTextPr = function()
 {
@@ -7443,7 +7473,7 @@ CDocument.prototype.GetDirectTextPr = function()
 };
 /**
  * Получаем прямые настройки текста, т.е. которые выставлены непосредственно у рана, без учета стилей
- * @returns {CTextPr}
+ * @returns {CParaPr}
  */
 CDocument.prototype.GetDirectParaPr = function()
 {
@@ -19526,6 +19556,9 @@ CDocument.prototype.controller_AddNewParagraph = function(bRecalculate, bForceAd
 							NewParagraph.Style_Remove();
 						else
 							NewParagraph.Style_Add(NextId, true);
+						
+						let bidi = Item.GetDirectParaPr(false).Bidi;
+						NewParagraph.SetParagraphBidi(bidi);
 					}
 
 					var SectPr = Item.Get_SectionPr();
@@ -19756,42 +19789,6 @@ CDocument.prototype.controller_AddOleObject = function(W, H, nWidthPix, nHeightP
 		Drawing = Item.AddOleObject(W, H, nWidthPix, nHeightPix, Img, Data, sApplicationId, bSelect, arrImagesForAddToHistory);
 	}
 	return Drawing;
-};
-CDocument.prototype.controller_AddTextArt = function(nStyle)
-{
-	var Item = this.Content[this.CurPos.ContentPos];
-	if (type_Paragraph == Item.GetType())
-	{
-		var Drawing = new ParaDrawing(1828800 / 36000, 1828800 / 36000, null, this.DrawingDocument, this, null);
-		var TextArt = this.DrawingObjects.createTextArt(nStyle, true);
-		TextArt.setParent(Drawing);
-		Drawing.Set_GraphicObject(TextArt);
-		Drawing.Set_DrawingType(drawing_Anchor);
-		Drawing.Set_WrappingType(WRAPPING_TYPE_NONE);
-		Drawing.Set_BehindDoc(false);
-		Drawing.Set_Distance(3.2, 0, 3.2, 0);
-		Drawing.Set_PositionH(Asc.c_oAscRelativeFromH.Column, false, 0, false);
-		Drawing.Set_PositionV(Asc.c_oAscRelativeFromV.Paragraph, false, 0, false);
-
-		if (true == this.Selection.Use)
-			this.Remove(1, true);
-
-		this.AddToParagraph(Drawing);
-		if (TextArt.bSelectedText)
-		{
-			this.Select_DrawingObject(Drawing.Get_Id());
-		}
-		else
-		{
-			var oContent = Drawing.GraphicObj.getDocContent();
-			oContent.Content[0].Document_SetThisElementCurrent(false);
-			this.SelectAll();
-		}
-	}
-	else
-	{
-		Item.AddTextArt(nStyle);
-	}
 };
 CDocument.prototype.controller_AddSignatureLine = function(oSignatureDrawing)
 {
@@ -22448,9 +22445,13 @@ CDocument.prototype.controller_GetSelectionState = function()
 	var State;
 	if (true === this.Selection.Use)
 	{
-		if (this.controller_IsNumberingSelection() || this.controller_IsMovingTableBorder())
+		if (this.controller_IsMovingTableBorder())
 		{
-			State = [];
+			State = []
+		}
+		else if (this.controller_IsNumberingSelection())
+		{
+			State = [this.GetCurrentParagraph()];
 		}
 		else
 		{
@@ -22485,19 +22486,25 @@ CDocument.prototype.controller_SetSelectionState = function(State, StateIndex)
 {
 	if (true === this.Selection.Use)
 	{
-		// Выделение нумерации
-		if (selectionflag_Numbering == this.Selection.Flag)
+		if (selectionflag_Numbering === this.Selection.Flag)
 		{
-			if (type_Paragraph === this.Content[this.Selection.StartPos].Get_Type())
+			let curPara = State[StateIndex];
+			if (curPara && curPara.IsParagraph && curPara.IsParagraph())
 			{
-				var NumPr = this.Content[this.Selection.StartPos].GetNumPr();
-				if (undefined !== NumPr)
-					this.SelectNumbering(NumPr, this.Content[this.Selection.StartPos]);
+				let numPr     = curPara.GetNumPr();
+				let prevNumPr = curPara.GetPrChangeNumPr();
+				
+				if (numPr && numPr.IsValid())
+					this.SelectNumbering(numPr, curPara);
+				else if (prevNumPr && prevNumPr.IsValid())
+					this.SelectNumberingSingleParagraph(curPara);
 				else
 					this.RemoveSelection();
 			}
 			else
+			{
 				this.RemoveSelection();
+			}
 		}
 		else
 		{
@@ -23416,21 +23423,34 @@ CDocument.prototype.addFieldWithInstructionToParagraph = function(paragraph, ins
 	beginChar.SetRun(run);
 	paragraph.Add(run);
 	
+	if (textPr)
+		run.SetPr(textPr);
+	
 	run = new AscWord.Run();
 	run.AddInstrText(instructionLine);
 	paragraph.Add(run);
+	
+	if (textPr)
+		run.SetPr(textPr);
+	
 	
 	run = new AscWord.Run();
 	run.AddToContent(-1, separateChar);
 	separateChar.SetRun(run);
 	paragraph.Add(run);
 	
+	if (textPr)
+		run.SetPr(textPr);
+	
 	run = new AscWord.Run();
 	run.AddToContent(-1, endChar);
 	endChar.SetRun(run);
 	paragraph.Add(run);
-
-
+	
+	if (textPr)
+		run.SetPr(textPr);
+	
+	
 	let complexField = beginChar.GetComplexField();
 	complexField.SetBeginChar(beginChar);
 	complexField.SetInstructionLine(instructionLine);
@@ -23443,32 +23463,28 @@ CDocument.prototype.addFieldWithInstructionToParagraph = function(paragraph, ins
 		let pos = run.GetElementPosition(endChar);
 		run.AddText(value, pos);
 	}
-
-	if (textPr)
-		run.SetPr(textPr);
-
+	
 	return complexField;
 };
-CDocument.prototype.AddDateTime = function(oPr)
+CDocument.prototype.AddDateTime = function(dateTimePr)
 {
-	if (!oPr)
+	if (!dateTimePr)
 		return;
 
-	var nLang = oPr.get_Lang();
+	let nLang = dateTimePr.get_Lang();
 	if (!AscFormat.isRealNumber(nLang))
 		nLang = 1033;
 
-	if (oPr.get_Update())
+	if (dateTimePr.get_Update())
 	{
-		if (!this.Document_Is_SelectionLocked(AscCommon.changestype_Paragraph_Content))
+		if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_Content))
 		{
+			let textPr = this.GetDirectTextPr().Copy();
+			textPr.SetLang(nLang);
+			
 			this.StartAction(AscDFH.historydescription_Document_AddDateTimeField);
 
-			var oComplexField = this.AddFieldWithInstruction("TIME \\@ \"" + oPr.get_Format() + "\"");
-
-			var oBeginChar = oComplexField.GetBeginChar();
-			var oRun       = oBeginChar.GetRun();
-			oRun.Set_Lang_Val(nLang);
+			this.AddFieldWithInstruction("TIME \\@ \"" + dateTimePr.get_Format() + "\"", textPr);
 
 			this.Recalculate();
 			this.UpdateInterface();
@@ -23484,7 +23500,7 @@ CDocument.prototype.AddDateTime = function(oPr)
 		oSettings.SetTextPr(oTextPr);
 		oSettings.MoveCursorOutside(true);
 
-		this.AddTextWithPr(oPr.get_String(), oSettings);
+		this.AddTextWithPr(dateTimePr.get_String(), oSettings);
 	}
 };
 CDocument.prototype.ValidateComplexField = function(oComplexField)

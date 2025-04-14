@@ -876,6 +876,8 @@
 			      return self.isWizardMode;
               }, "getActiveWS": function () {
 			      return self.getActiveWS();
+			  }, "getActiveWSView": function () {
+				  return self.getWorksheet();
 			  }, "updateEditorSelectionInfo": function (xfs) {
 				  self.handlers.trigger("asc_onEditorSelectionChanged", xfs);
 			  }, "onContextMenu": function (event) {
@@ -7187,7 +7189,7 @@
 		let oThis = this;
 
 		if (this.supportVisibilityChangeOption) {
-			document.addEventListener("visibilitychange", function() {
+			document.addEventListener && document.addEventListener("visibilitychange", function() {
 				if (document.hidden === false) {
 					// Document has become visible
 					if (!oThis.getExternalFormulaEditMode()) {
@@ -7230,7 +7232,7 @@
 
 		// Handle page unload when in formula mode
 		let isClosing = false;
-		window.addEventListener('beforeunload', function(event) {
+		window.addEventListener && window.addEventListener('beforeunload', function(event) {
 			if (!!oThis.getExternalFormulaEditMode()) {
 				isClosing = true;
 				event.preventDefault();
@@ -7238,7 +7240,7 @@
 			}
 		});
 
-		window.addEventListener('unload', function() {
+		window.addEventListener && window.addEventListener('unload', function() {
 			if (isClosing) {
 				oThis.sendExternalCloseEditor();
 			}
@@ -7267,7 +7269,7 @@
 		oThis.lockSendChangeSelection = true;
 		ws.openCellEditor(oThis.wb.cellEditor, editorEnterOptions, selectionRange);
 		oThis.wb.setFormulaEditMode(true);
-		oThis.wb.cellEditor._topLineGotFocus();
+		//oThis.wb.cellEditor._topLineGotFocus();
 		oThis.wb.cellEditor.setSelectionState(oThis.activeTabFormula);
 		oThis.lockSendChangeSelection = false;
 

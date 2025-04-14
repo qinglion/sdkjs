@@ -358,6 +358,10 @@
 	{
 		return AscWord.fontslot_Unknown;
 	};
+	CRunBreak.prototype.getBidiType = function()
+	{
+		return AscBidi.TYPE.PM;
+	};
 
 	//--------------------------------------------------------export----------------------------------------------------
 	window['AscWord'] = window['AscWord'] || {};

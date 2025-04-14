@@ -899,8 +899,6 @@
 		this.CollaborativeMarksShowType = c_oAscCollaborativeMarksShowType.All;
 		
 		this.stylePainter = null;
-		
-		this.forceSaveDisconnectRequest = false;
 
 		// объекты, нужные для отправки в тулбар (шрифты, стили)
 		this._gui_control_colors = null;
@@ -2280,6 +2278,15 @@ background-repeat: no-repeat;\
 		{
 			let paragraph = logicDocument.GetCurrentParagraph(false, false, {FirstInSelection : true});
 			bidi = paragraph ? paragraph.GetParagraphBidi() : undefined;
+			
+			ParaPr.Jc = undefined;
+		}
+		else if (bidi)
+		{
+			if (AscCommon.align_Left === ParaPr.Jc)
+				ParaPr.Jc = AscCommon.align_Right;
+			else if (AscCommon.align_Right === ParaPr.Jc)
+				ParaPr.Jc = AscCommon.align_Left;
 		}
 		
 		this.sendEvent("asc_onTextDirection", bidi);
@@ -2662,7 +2669,10 @@ background-repeat: no-repeat;\
 		// Принимаем чужие изменения
 		var HaveOtherChanges = AscCommon.CollaborativeEditing.Have_OtherChanges();
 		AscCommon.CollaborativeEditing.Apply_Changes();
-
+		
+		// Собираем тут события, которые нужно послать на завершении сохранения
+		let onSaveEnd = [];
+		
 		this.CoAuthoringApi.onUnSaveLock = function()
 		{
 			t.CoAuthoringApi.onUnSaveLock = null;
@@ -2695,6 +2705,8 @@ background-repeat: no-repeat;\
 			if (t.canUnlockDocument) {
 				t._unlockDocument();
 			}
+			
+			onSaveEnd.forEach(function(f){f();});
 		};
 
 		let cursorInfo = null;
@@ -2724,18 +2736,30 @@ background-repeat: no-repeat;\
 			sendChanges();
 			this._sendForm();
 		}
+		else if (this.forceSaveOformRequest)
+		{
+			this.forceSaveOformRequest = false;
+			AscCommon.CollaborativeEditing.Set_GlobalLock(false);
+			sendChanges();
+			onSaveEnd.push(function(){
+				t.sendEvent("asc_onCompletePreparingOForm");
+			});
+		}
 		else
 		{
 			sendChanges();
-			
-			if (this.forceSaveDisconnectRequest)
-			{
-				this.forceSaveDisconnectRequest = false;
-				AscCommon.CollaborativeEditing.Set_GlobalLock(false);
-				this.setViewModeDisconnect(true);
-				this.asc_coAuthoringDisconnect();
-				this.sendEvent("asc_onDisconnectEveryone");
-			}
+		}
+		
+		// Этот флаг может быть включен дополнительно к любому другому
+		if (this.forceSaveDisconnectRequest)
+		{
+			this.forceSaveDisconnectRequest = false;
+			AscCommon.CollaborativeEditing.Set_GlobalLock(false);
+			this.setViewModeDisconnect(true);
+			this.asc_coAuthoringDisconnect();
+			onSaveEnd.push(function(){
+				t.sendEvent("asc_onDisconnectEveryone");
+			});
 		}
 	};
 	asc_docs_api.prototype._autoSaveInner = function () {
@@ -11333,12 +11357,10 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype.asc_IsAllRequiredFormsFilled = function(checkAll)
 	{
 		let oFormsManager = this.private_GetFormsManager();
-		let oform = this.asc_GetOForm();
 		if (!oFormsManager)
 			return true;
 		
-		let roleName = !checkAll && oform ? oform.getCurrentRole() : null;
-		return oFormsManager.IsAllRequiredFormsFilled(roleName);
+		return oFormsManager.IsAllRequiredFormsFilled(checkAll);
 	};
 	asc_docs_api.prototype.sync_OnAllRequiredFormsFilled = function(isFilled)
 	{
@@ -11466,8 +11488,11 @@ background-repeat: no-repeat;\
 		{
 			this.forceSaveDisconnectRequest = true;
 			AscCommon.CollaborativeEditing.Set_GlobalLock(true);
-			this.asc_Save(false);
 		}
+		
+		this.forceSaveOformRequest = true;
+		AscCommon.CollaborativeEditing.Set_GlobalLock(true);
+		this.asc_Save(false);
 	};
 	
 
@@ -12228,24 +12253,26 @@ background-repeat: no-repeat;\
 		return sRet;
 	};
 
-	asc_docs_api.prototype.asc_addDateTime = function(oPr)
+	asc_docs_api.prototype.asc_addDateTime = function(dateTimePr)
 	{
-		var sTextForCheck = null;
-		if (!oPr.get_Update())
-			sTextForCheck = oPr.get_String();
-
-		var oLogicDocument = this.private_GetLogicDocument();
-		if (sTextForCheck)
+		let logicDocument = this.private_GetLogicDocument();
+		if (!logicDocument)
+			return;
+		
+		return new Promise(function(resolve)
 		{
-			AscFonts.FontPickerByCharacter.checkText(sTextForCheck, this, function()
-			{
-				oLogicDocument.AddDateTime(oPr);
-			});
-		}
-		else
+			AscCommon.CollaborativeEditing.Set_GlobalLock(true);
+			
+			let textToCheck = dateTimePr.get_String();
+			if (textToCheck)
+				AscFonts.FontPickerByCharacter.checkText(textToCheck, this, resolve);
+			else
+				resolve();
+		}).then(function()
 		{
-			oLogicDocument.AddDateTime(oPr);
-		}
+			AscCommon.CollaborativeEditing.Set_GlobalLock(false);
+			logicDocument.AddDateTime(dateTimePr);
+		});
 	};
 
 	asc_docs_api.prototype.asc_AddObjectCaption = function(oPr)

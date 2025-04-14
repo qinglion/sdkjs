@@ -796,6 +796,8 @@
 					return AscCommon.c_oEditorId.Spreadsheet;
 				case "PPTY":
 					return AscCommon.c_oEditorId.Presentation;
+				case "VSDY":
+					return AscCommon.c_oEditorId.Visio;
 			}
 		}
 		return null;
@@ -1470,6 +1472,7 @@
 		"uf": "#UNSUPPORTED_FUNCTION!",
 		"calc": "#CALC!",
 		"spill": "#SPILL!",
+		"busy": "#BUSY!",
 	};
 	var cErrorLocal = {};
 	let cCellFunctionLocal = {};
@@ -1577,7 +1580,8 @@
 			"getdata": "#GETTING_DATA",
 			"uf":      "#UNSUPPORTED_FUNCTION!",
 			"calc":    "#CALC!",
-			"spill":   "#SPILL!"
+			"spill":   "#SPILL!",
+			"busy":    "#BUSY!"
 		};
 		cErrorLocal['nil'] = local['nil'];
 		cErrorLocal['div'] = local['div'];
@@ -1590,6 +1594,7 @@
 		cErrorLocal['uf'] = local['uf'];
 		cErrorLocal['calc'] = local['calc'];
 		cErrorLocal['spill'] = local['spill'];
+		cErrorLocal['busy'] = local['busy'];
 
 		return new RegExp("^(" + cErrorLocal["nil"] + "|" +
 			cErrorLocal["div"] + "|" +
@@ -1601,7 +1606,8 @@
 			cErrorLocal["getdata"] + "|" +
 			cErrorLocal["uf"] + "|" +
 			cErrorLocal["calc"] + "|" +
-			cErrorLocal["spill"] + ")", "i")
+			cErrorLocal["spill"] + "|" +
+			cErrorLocal["busy"] + ")", "i")
 	}
 
 	function build_rx_cell_func(local)
@@ -2122,6 +2128,8 @@
 				return c_oAscFileType.XLSY;
 			case 'pptt':
 				return c_oAscFileType.PPTY;
+			case 'vsdt':
+				return c_oAscFileType.VSDY;
 		}
 		return c_oAscFileType.UNKNOWN;
 	}
@@ -4499,6 +4507,8 @@
 		this.m_nOFormLoadCounter = 0;
 		this.m_nOFormEditCounter = 0;
 		
+		this.m_nPdfNewFormCounter = 0;
+
 		this.m_nTurnOffCounter = 0;
 	}
 
@@ -4535,6 +4545,8 @@
 
 		this.m_nOFormLoadCounter = 0;
 		this.m_nOFormEditCounter = 0;
+
+		this.m_nPdfNewFormCounter = 0;
 	};
 	CIdCounter.prototype.GetNewIdForOForm = function()
 	{
@@ -4542,6 +4554,10 @@
 			return ("_oform_" + (++this.m_nOFormLoadCounter));
 		else
 			return ("" + this.m_sUserId + "_oform_" + (++this.m_nOFormEditCounter));
+	};
+	CIdCounter.prototype.GetNewIdForPdfForm = function()
+	{
+		return ++this.m_nPdfNewFormCounter;
 	};
 
 	function CLock()

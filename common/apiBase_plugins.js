@@ -2122,6 +2122,26 @@
 		}
 	};
 
+	/**
+	 * Catch AI event from plugin
+	 * @memberof Api
+	 * @undocumented
+	 * @typeofeditors ["CDE", "CSE", "CPE", "PDF"]
+	 * @alias onAIRequest
+	 * @param {object} data - Data.
+	 * @since 9.0.0
+	 */
+	Api.prototype["pluginMethod_onAIRequest"] = function(data)
+	{
+		let curItem = this.aiResolvers[0];
+		this.aiResolvers.shift();
+
+		if (this.aiResolvers.length > 0)
+			this._AI();
+
+		curItem.resolve(data);
+	};
+
 })(window);
 
 

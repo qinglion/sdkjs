@@ -7248,7 +7248,8 @@ function CStyles(bCreateDefault)
 			Caption           : null,
 			EndnoteText       : null,
 			EndnoteTextChar   : null,
-			EndnoteReference  : null
+			EndnoteReference  : null,
+			PlaceholderText   : null
 		};
 
         // Заполняем значения по умолчанию
@@ -9033,6 +9034,9 @@ CStyles.prototype.UpdateDefaultStyleLinks = function()
 			case "tableoffigures":
 				this.Default.TOF = styleId;
 				break;
+			case "placeholdertext":
+				this.Default.PlaceholderText = styleId;
+				break;
 		}
 	}
 };
@@ -9100,6 +9104,10 @@ CStyles.prototype.GetDefaultFollowedHyperlink = function()
 CStyles.prototype.GetDefaultHeading = function(nLvl)
 {
 	return this.Default.Headings[Math.max(Math.min(nLvl, 8), 0)];
+};
+CStyles.prototype.GetDefaultPlaceholderText = function()
+{
+	return this.Default.PlaceholderText;
 };
 CStyles.prototype.HaveHeadingsNum = function()
 {

@@ -3549,12 +3549,21 @@ var editor;
 			this.asc_setRightToLeft(true);
 		}
 		this.wb.showWorksheet();
-		this.wbModel.dependencyFormulas.lockRecal();
+		this.wbModel.dependencyFormulas && this.wbModel.dependencyFormulas.lockRecal();
 		History.EndTransaction();
-		if (this.wbModel.dependencyFormulas.changedCell) {
-			this.wbModel.dependencyFormulas.changedCell = null;
+		if (this.wbModel.dependencyFormulas && this.wbModel.dependencyFormulas.changedCell) {
+		 	AscCommonExcel.g_cCalcRecursion && AscCommonExcel.g_cCalcRecursion.setIsSheetCreating(true);
+			const dependencyFormulas = this.wbModel.dependencyFormulas;
+			dependencyFormulas._foreachChanged(function (cell) {
+				if (cell.isFormula() && cell.getFormulaParsed().ca) {
+					const cellId = AscCommonExcel.getCellIndex(cell.nRow, cell.nCol);
+					const sheetId = cell.ws.getId();
+					delete dependencyFormulas.changedCell[sheetId][cellId];
+				}
+			});
 		}
-		this.wbModel.dependencyFormulas.unlockRecal();
+		this.wbModel.dependencyFormulas && this.wbModel.dependencyFormulas.unlockRecal();
+		AscCommonExcel.g_cCalcRecursion && AscCommonExcel.g_cCalcRecursion.setIsSheetCreating(false);
 		// Посылаем callback об изменении списка листов
 		this.sheetsChanged();
 		this.inkDrawer.endSilentMode();
@@ -7009,12 +7018,12 @@ var editor;
 		res["spreadsheetLayout"]["sheetsProps"] = this.wbModel && this.wbModel.getPrintOptionsJson();
 		res["spreadsheetLayout"]["formulaProps"] = {};
 		res["spreadsheetLayout"]["formulaProps"]["translate"] = AscCommonExcel.cFormulaFunctionToLocale;
+		res["spreadsheetLayout"]["formulaProps"]["docTitle"] = this.DocInfo && this.DocInfo.Title;
 		return res;
 	};
 
   spreadsheet_api.prototype.asc_nativePrint = function (_printer, _page, _options) {
     //calc to fix case where file has formulas with no cache values and no changes
-    this.wbModel.dependencyFormulas.calcTree();
     var _adjustPrint = (window.AscDesktopEditor_PrintOptions && window.AscDesktopEditor_PrintOptions.advancedOptions) || new Asc.asc_CAdjustPrint();
     window.AscDesktopEditor_PrintOptions = undefined;
 
@@ -7128,6 +7137,7 @@ var editor;
     }
 
     this.wb.setPrintOptionsJson(_options);
+    this.wbModel.dependencyFormulas.calcTree();
 
     var _printPagesData = this.wb.calcPagesPrint(_adjustPrint);
 
