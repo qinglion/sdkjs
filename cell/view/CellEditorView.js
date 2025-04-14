@@ -88,6 +88,8 @@ function (window, undefined) {
 	/** @const */
 	var codeNewLine = 0x00A;
 	var codeEqually = 0x3D;
+	var codeUnarPlus = 0x2B;
+	var codeUnarMinus = 0x2D;
 
 
 	/**
@@ -874,8 +876,16 @@ function (window, undefined) {
 	};
 
 	CellEditor.prototype._isFormula = function () {
-		var fragments = this.options.fragments;
-		return fragments && fragments.length > 0 && fragments[0].getCharCodesLength() > 0 && fragments[0].getCharCode(0) === codeEqually;
+		let fragments = this.options.fragments;
+		if (fragments && fragments.length > 0 && fragments[0].getCharCodesLength() > 0) {
+			let firstSymbolCode = fragments[0].getCharCode(0);
+			let isEqualSign = firstSymbolCode === codeEqually;
+			let unarSign = isEqualSign ? false : (firstSymbolCode === codeUnarPlus || firstSymbolCode === codeUnarMinus);
+
+			return isEqualSign || unarSign;
+		}
+
+		return false;
 	};
 	CellEditor.prototype.isFormula = function () {
 		return c_oAscCellEditorState.editFormula === this.m_nEditorState;
@@ -1290,7 +1300,7 @@ function (window, undefined) {
 	CellEditor.prototype._fireUpdated = function () {
 		//TODO I save the text!
 		var s = AscCommonExcel.getFragmentsText(this.options.fragments);
-		var isFormula = -1 === this.beginCompositePos && s.charAt(0) === "=";
+		var isFormula = -1 === this.beginCompositePos && (s.charAt(0) === "=" || s.charAt(0) === "+" || s.charAt(0) === "-");
 		var api = window["Asc"]["editor"];
 		var fPos, fName, match, fCurrent;
 

@@ -18527,6 +18527,13 @@
         return (0 < val.length && 1 < val[0].getFragmentText().length && '=' === val[0].getFragmentText().charAt( 0 ));
     };
 
+    WorksheetView.prototype.canConverToFormula = function ( formulaText ) {
+		if (formulaText && formulaText.length > 1) {
+			return formulaText[0] === "+" || formulaText[0] === "-";
+		}
+		return false;
+    };
+
     WorksheetView.prototype.getActiveCell = function (x, y, isCoord) {
         var col, row;
         if (isCoord) {
@@ -18625,14 +18632,34 @@
 
 		let dynamicSelectionRange = null;
 		let isFormula = this._isFormula(val);
+
 		let newFP, parseResult;
+		let isFormulaFromVal;
+
+		let valText = val[0].getFragmentText();
+		let canConverToFormula = this.canConverToFormula(valText);
+		let cellWithFormula = new AscCommonExcel.CCellWithFormula(this.model, bbox.r1, bbox.c1);
+
+		if (!isFormula && canConverToFormula) {
+			newFP = new AscCommonExcel.parserFormula(valText, cellWithFormula, this.model);
+			parseResult = new AscCommonExcel.ParseResult();
+			// todo добавить подсветку при выборе ref/range. Одно число не должно превращаться в формулу (+5) 
+			if (newFP.parse(AscCommonExcel.oFormulaLocaleInfo.Parse, AscCommonExcel.oFormulaLocaleInfo.DigitSep, parseResult)) {
+				valText = "=" + valText;
+				val[0].setFragmentText(valText);
+				isFormulaFromVal = true;
+				isFormula = true;
+			}
+		}
+
 		if (isFormula) {
 			let calculateResult = new AscCommonExcel.CalculateResult(true);
 			//перед созданием точки в истории, проверяю, валидная ли формула
-			let cellWithFormula = new AscCommonExcel.CCellWithFormula(this.model, bbox.r1, bbox.c1);
-			newFP = new AscCommonExcel.parserFormula(val[0].getFragmentText().substring(1), cellWithFormula, this.model);
-			parseResult = new AscCommonExcel.ParseResult();
-			if (!newFP.parse(AscCommonExcel.oFormulaLocaleInfo.Parse, AscCommonExcel.oFormulaLocaleInfo.DigitSep, parseResult)) {
+			cellWithFormula = isFormulaFromVal ? cellWithFormula : new AscCommonExcel.CCellWithFormula(this.model, bbox.r1, bbox.c1);
+			newFP = isFormulaFromVal ? newFP : new AscCommonExcel.parserFormula(valText.substring(1), cellWithFormula, this.model);
+			parseResult = isFormulaFromVal ? parseResult : new AscCommonExcel.ParseResult();
+
+			if (!isFormulaFromVal && !newFP.parse(AscCommonExcel.oFormulaLocaleInfo.Parse, AscCommonExcel.oFormulaLocaleInfo.DigitSep, parseResult)) {
 				if (parseResult.error !== c_oAscError.ID.FrmlWrongFunctionName && parseResult.error !== c_oAscError.ID.FrmlParenthesesCorrectCount) {
 					this.model.workbook.handlers.trigger("asc_onError", parseResult.error, c_oAscError.Level.NoCritical);
 					endTransaction();
@@ -18643,7 +18670,7 @@
 				if (parseResult.externalReferenesNeedAdd) {
 					t.model.workbook.addExternalReferencesAfterParseFormulas(parseResult.externalReferenesNeedAdd);
 					// then we parse the formula again to obtain the correct outStack and external link indexes
-					newFP = new AscCommonExcel.parserFormula(val[0].getFragmentText().substring(1), cellWithFormula, this.model);
+					newFP = new AscCommonExcel.parserFormula(valText.substring(1), cellWithFormula, this.model);
 					if (!newFP.parse(AscCommonExcel.oFormulaLocaleInfo.Parse, AscCommonExcel.oFormulaLocaleInfo.DigitSep, parseResult)) {
 						this.model.workbook.handlers.trigger("asc_onError", parseResult.error, c_oAscError.Level.NoCritical);
 						endTransaction();
