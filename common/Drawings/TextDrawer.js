@@ -676,6 +676,7 @@ CDocContentStructure.prototype.checkUnionPaths = function(aWarpedObjects)
 function CAdditionalElementPosition() {
 	this.line = 0;
 	this.posInLine = -1;
+	this.charIndex = 0;
 	this.isLastText = true;
 	this.tempWords = [];
 	this.words = [];
@@ -723,7 +724,7 @@ CParagraphStructure.prototype.generateWrappersBySplit = function(nSplitParagraph
 			}
 		}
 };
-	CParagraphStructure.prototype.getWrappersByIterationType = function(nIterationType) {
+	CParagraphStructure.prototype.getParagraphWrappersByIterationType = function(nIterationType) {
 		if (this.m_nSplitParagraphType === nIterationType) {
 			return this.m_aWrapperElementsCache;
 		}
@@ -748,6 +749,69 @@ CParagraphStructure.prototype.generateWrappersBySplit = function(nSplitParagraph
 				return [new AscCommonSlide.CWrapperDrawer(this.m_aWrapperElementsCache)];
 			}
 		}
+	};
+	CParagraphStructure.prototype.getCharWrappersByIterationType = function(nIterationType, arrDrawingObjects, oCachedWrapperDrawer, nStartIndex, nEndIndex) {
+		switch (nIterationType) {
+			case AscFormat.ITERATEDATA_TYPE_WORD: {
+				let nCacheIndex = 0;
+				for (let i = 0; i < this.m_aWords.length; i += 1) {
+					const arrWord = this.m_aWords[i];
+					const arrCharWord = [];
+					for (let j = 0; j < arrWord.length; j += 1) {
+						const oObjectToDraw = arrWord[j];
+						if (oObjectToDraw.charIndex >= nStartIndex) {
+							if (oObjectToDraw.charIndex <= nEndIndex) {
+								arrCharWord.push(this.m_aWrapperElementsCache[nCacheIndex]);
+							} else {
+								return true;
+							}
+						}
+						nCacheIndex += 1;
+					}
+					if (arrCharWord.length) {
+						arrDrawingObjects.push(new AscCommonSlide.CWrapperDrawer(arrCharWord));
+					}
+				}
+				break;
+			}
+			case AscFormat.ITERATEDATA_TYPE_LETTER: {
+				let nCacheIndex = 0;
+				for (let i = 0; i < this.m_aWords.length; i += 1) {
+					const arrWord = this.m_aWords[i];
+					for (let j = 0; j < arrWord.length; j += 1) {
+						const oObjectToDraw = arrWord[j];
+						if (oObjectToDraw.charIndex >= nStartIndex) {
+							if (oObjectToDraw.charIndex <= nEndIndex) {
+								arrDrawingObjects.push(this.m_aWrapperElementsCache[nCacheIndex]);
+							} else {
+								return true;
+							}
+						}
+						nCacheIndex += 1;
+					}
+				}
+				break;
+			}
+			default: {
+				let nCacheIndex = 0;
+				for (let i = 0; i < this.m_aWords.length; i += 1) {
+					const arrWord = this.m_aWords[i];
+					for (let j = 0; j < arrWord.length; j += 1) {
+						const oObjectToDraw = arrWord[j];
+						if (oObjectToDraw.charIndex >= nStartIndex) {
+							if (oObjectToDraw.charIndex <= nEndIndex) {
+								oCachedWrapperDrawer.addElement(this.m_aWrapperElementsCache[nCacheIndex]);
+							} else {
+								return true;
+							}
+						}
+						nCacheIndex += 1;
+					}
+				}
+				break;
+			}
+		}
+		return false;
 	};
 	CParagraphStructure.prototype.getWrappers = function() {
 		return this.m_aWrapperElementsCache;
@@ -864,13 +928,15 @@ CParagraphStructure.prototype.checkWord = function() {
         if(oWordPos.line < nLine) {
             oWordPos.posInLine = -1;
         }
-        for(let nPosInLine = oWordPos.posInLine + 1; nPosInLine < aContent.length; ++nPosInLine) {
-            let oObjectToDraw = aContent[nPosInLine];
-            if(oObjectToDraw.Code !== undefined) {
-                aWord.push(aContent[nPosInLine]);
-	            oWordPos.posInLine = nPosInLine;
-            }
-        }
+				for(let nPosInLine = oWordPos.posInLine + 1; nPosInLine < aContent.length; ++nPosInLine) {
+					let oObjectToDraw = aContent[nPosInLine];
+					if(oObjectToDraw.Code !== undefined) {
+						aWord.push(oObjectToDraw);
+						oWordPos.posInLine = nPosInLine;
+					}
+					oObjectToDraw.charIndex = oWordPos.charIndex++;
+				}
+				oWordPos.charIndex++;
         oWordPos.line = nLine;
 				if (aWord.length) {
 					nWordLineCount += 1;
@@ -1795,8 +1861,14 @@ CTextDrawer.prototype.Start_Command = function(commandId, param, index, nType)
             if(!oNewStructure)
             {
                 oNewStructure = new CParagraphStructure(param);
-								if (this.m_aStack[this.m_aStack.length - 1]) {
-									this.setCurrentSplitOptions(this.m_aStack[this.m_aStack.length - 1].m_aContent.length);
+								const oDocStructure = this.m_aStack[this.m_aStack.length - 1];
+								if (oDocStructure) {
+									const oLastParagraph = oDocStructure.m_aContent[oDocStructure.m_aContent.length - 1];
+									if (oLastParagraph) {
+										oNewStructure.m_oLastWordStart.charIndex = oLastParagraph.m_oLastWordStart.charIndex;
+									}
+									this.setCurrentSplitOptions(oDocStructure.m_aContent.length);
+
 								}
                 if(!this.m_bDivByLines)
                 {

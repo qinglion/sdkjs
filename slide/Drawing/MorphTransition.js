@@ -1485,9 +1485,14 @@
 			const oBoundsChecker = new AscFormat.CSlideBoundsChecker();
 			oObjectToDraw.check_bounds(oBoundsChecker);
 			const oBounds = oBoundsChecker.Bounds;
-			const oLine = oObjectToDraw.lineStructure.m_oLine;
-			const maxY = oObjectToDraw.y + oLine.Metrics.Descent;
-			const minY = maxY - (oLine.Bottom - oLine.Top);
+			let maxY = oBounds.max_y;
+			let minY = oBounds.min_y;
+			if (oObjectToDraw.y !== undefined) {
+				const oLine = oObjectToDraw.lineStructure.m_oLine;
+				maxY = oObjectToDraw.y + oLine.Metrics.Descent;
+				minY = maxY - (oLine.Bottom - oLine.Top);
+			}
+
 			const arr_x = [
 				oThis.transform.TransformPointX(oBounds.min_x, minY),
 				oThis.transform.TransformPointX(oBounds.max_x, minY),
@@ -1543,9 +1548,12 @@
 		}
 		return false;
 	};
+	CObjectForDrawArrayWrapper.prototype.getParentObjects = function () {
+		return this.formatDrawing.getParentObjects();
+	};
 
 	function CWrapperDrawer(wrapperObjects) {
-		this.wrapperObjects = wrapperObjects;
+		this.wrapperObjects = wrapperObjects || [];
 	}
 	CWrapperDrawer.prototype.draw = function(oGraphics) {
 		for (let i = 0; i < this.wrapperObjects.length; i += 1) {
@@ -1564,6 +1572,9 @@
 		for (let i = 0; i < this.wrapperObjects.length; i += 1) {
 			this.wrapperObjects[i].forEachObjectToDraw(fCallback);
 		}
+	};
+	CWrapperDrawer.prototype.addElement = function (oElement) {
+		this.wrapperObjects.push(oElement);
 	};
 
     function CBackgroundWrapper(oMorph, oSlide) {
