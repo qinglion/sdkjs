@@ -413,11 +413,11 @@
 			if (!this.isTimingContainer()) {
 				const oDrawing = this.getTargetObject();
 				const oTargetTextOptions = this.getTargetTextOptions();
-				if ((oDrawing.brush && oDrawing.brush.isVisible() || oDrawing.pen && oDrawing.pen.Fill && oDrawing.pen.Fill.isVisible() || oDrawing.blipFill && oDrawing.blipFill.RasterImageId) && !oTargetTextOptions) {
-					return false;
+				if (oTargetTextOptions) {
+					return !(oDrawing.brush && oDrawing.brush.isVisible() || oDrawing.pen && oDrawing.pen.Fill && oDrawing.pen.Fill.isVisible() || oDrawing.blipFill && oDrawing.blipFill.RasterImageId);
 				}
 			}
-			return true;
+			return false;
 		};
 		CTimeNodeBase.prototype.getObjectOptionsHash = function() {
 			const sDrawingId = this.getTargetObjectId();
