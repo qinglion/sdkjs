@@ -106,40 +106,6 @@ CDocContentStructure.prototype.Recalculate = function(oTheme, oColorMap, dWidth,
         this.m_aContent[i].Recalculate(oTheme, oColorMap, dWidth, dHeight, oShape);
     }
 };
-	CDocContentStructure.prototype.combineElementsByLocation = function () {
-		for (let i = 0; i < this.m_aContent.length; i += 1) {
-			this.m_aContent[i].combineElementsByLocation();
-		}
-	};
-	CDocContentStructure.prototype.getCombinedWordWrappers = function(oTransform, oTheme, oColorMap, oDrawing) {
-		const arrRes = [];
-		for (let i = 0; i < this.m_aContent.length; i += 1) {
-			const oParagraph = this.m_aContent[i];
-			const arrParagraphWordWrappers = oParagraph.getCombinedWordWrappers(oTransform, oTheme, oColorMap, oDrawing);
-
-		}
-		return arrRes;
-	};
-	CDocContentStructure.prototype.getCombinedLetterWrappers = function(oTransform, oTheme, oColorMap, oDrawing) {
-		const arrRes = [];
-		for (let i = 0; i < this.m_aContent.length; i += 1) {
-			const oParagraph = this.m_aContent[i];
-			let nAdditionalCounter = 0;
-			oParagraph.combineElementsByLocation();
-			for (let j = 0; j < oParagraph.m_aWords.length; j += 1) {
-				const aWord = oParagraph.m_aWords[j];
-				for (let k = 0; k < aWord.length; k += 1) {
-					const oWordLetter = aWord[k];
-					const oBackgroundLetter = oParagraph.m_aBackgroundsByWords[nAdditionalCounter];
-					const oForegroundLetter  = oParagraph.m_aForegroundsByWords[nAdditionalCounter];
-					const oWrapperWord = new AscCommonSlide.CObjectForDrawArrayWrapper([oWordLetter], oTransform, oTheme, oColorMap, oDrawing, oForegroundLetter, oBackgroundLetter);
-					arrRes.push(oWrapperWord);
-					nAdditionalCounter += 1;
-				}
-			}
-		}
-		return arrRes;
-	};
 CDocContentStructure.prototype.CheckContentStructs = function(aContentStructs)
 {
     for(let nElement = 0; nElement < this.m_aContent.length; ++nElement)
@@ -816,6 +782,14 @@ CParagraphStructure.prototype.generateWrappersBySplit = function(nSplitParagraph
 	CParagraphStructure.prototype.getWrappers = function() {
 		return this.m_aWrapperElementsCache;
 	};
+function isPresentationBulletWord(arrWord) {
+	for (let i = 0; i < arrWord.length; i++) {
+		if (!arrWord[i].isBulletSymbol) {
+			return false;
+		}
+	}
+	return true;
+}
 CParagraphStructure.prototype.getCombinedWordWrappers = function (oTransform, oTheme, oColorMap, oDrawing) {
 	const arrRes = [];
 	this.combineElementsByLocation();
@@ -2008,7 +1982,7 @@ CTextDrawer.prototype.End_Command = function()
     }
 };
 
-CTextDrawer.prototype.Get_PathToDraw = function(bStart, bStart2, x, y, Code)
+CTextDrawer.prototype.Get_PathToDraw = function(bStart, bStart2, x, y, Code, bIsBulletSymbol)
 {
     var oPath = null;
     var oLastCommand = this.m_aStack[this.m_aStack.length - 1];
@@ -2026,7 +2000,7 @@ CTextDrawer.prototype.Get_PathToDraw = function(bStart, bStart2, x, y, Code)
                     {
                         if(arrContent.length === 0)
                         {
-                            arrContent.push(new ObjectToDraw(this.GetFillFromTextPr(this.m_oTextPr), this.GetPenFromTextPr(this.m_oTextPr), this.Width, this.Height, new Geometry(), this.m_oTransform, x, y, this.m_oCurComment, Code, oLastCommand, this.oIdGenerator && this.oIdGenerator.getId()));
+                            arrContent.push(new ObjectToDraw(this.GetFillFromTextPr(this.m_oTextPr), this.GetPenFromTextPr(this.m_oTextPr), this.Width, this.Height, new Geometry(), this.m_oTransform, x, y, this.m_oCurComment, Code, oLastCommand, this.oIdGenerator && this.oIdGenerator.getId(), bIsBulletSymbol));
                         }
                         oLastObjectToDraw = arrContent[arrContent.length - 1];
 
@@ -2038,7 +2012,7 @@ CTextDrawer.prototype.Get_PathToDraw = function(bStart, bStart2, x, y, Code)
                             }
                             else
                             {
-                                arrContent.push(new ObjectToDraw(this.GetFillFromTextPr(this.m_oTextPr), this.GetPenFromTextPr(this.m_oTextPr), this.Width, this.Height, new Geometry(), this.m_oTransform, x, y, null, Code, oLastCommand, this.oIdGenerator && this.oIdGenerator.getId()));
+                                arrContent.push(new ObjectToDraw(this.GetFillFromTextPr(this.m_oTextPr), this.GetPenFromTextPr(this.m_oTextPr), this.Width, this.Height, new Geometry(), this.m_oTransform, x, y, null, Code, oLastCommand, this.oIdGenerator && this.oIdGenerator.getId(), bIsBulletSymbol));
                                 oLastObjectToDraw = arrContent[arrContent.length - 1];
                             }
                         }
@@ -2350,12 +2324,12 @@ CTextDrawer.prototype.FillText = function(x,y,text)
     this.FillTextCode(x, y, text.charCodeAt(0));
 };
 
-CTextDrawer.prototype.CheckAddNewPath = function(x, y, Code)
+CTextDrawer.prototype.CheckAddNewPath = function(x, y, Code, isBulletSymbol)
 {
 
     if(this.m_bDivGlyphs === true)
     {
-        this.Get_PathToDraw(false, true, x, y, Code);
+        this.Get_PathToDraw(false, true, x, y, Code, isBulletSymbol);
     }
 };
 

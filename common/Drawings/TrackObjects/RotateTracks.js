@@ -185,7 +185,7 @@ function OverlayObject(geometry, extX, extY, brush, pen, transform )
     };
 }
 
-function ObjectToDraw(brush, pen, extX, extY, geometry, transform, x, y, oComment, Code, oLineStructure, nId)
+function ObjectToDraw(brush, pen, extX, extY, geometry, transform, x, y, oComment, Code, oLineStructure, nId, bIsBulletSymbol)
 {
     this.extX = extX;
     this.extY = extY;
@@ -198,6 +198,7 @@ function ObjectToDraw(brush, pen, extX, extY, geometry, transform, x, y, oCommen
     this.pen = pen;
     this.brush = brush;
 		this.lineStructure = oLineStructure;
+		this.isBulletSymbol = bIsBulletSymbol;
 
 	/*позиция символа*/
     this.x = x;
