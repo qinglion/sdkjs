@@ -3957,11 +3957,11 @@
 		});
 		return res;
 	};
-	Workbook.prototype.addCustomFunctionToChanged = function() {
+	Workbook.prototype.addCustomFunctionToChanged = function(isNotUpdate) {
 		var res = null;
 		let t = this;
 		this.dependencyFormulas.forEachFormula(function (fP) {
-			if (fP && fP.bUnknownOrCustomFunction && fP.ca) {
+			if (fP && fP.bUnknownOrCustomFunction && ((fP.ca && isNotUpdate) || !isNotUpdate)) {
 				fP.isParsed = false;
 				fP.outStack = [];
 				fP.parse();
@@ -3973,7 +3973,7 @@
 		});
 		this.forEach(function (ws) {
 			ws.forEachFormula(function (fP) {
-				if (fP && fP.bUnknownOrCustomFunction && fP.ca) {
+				if (fP && fP.bUnknownOrCustomFunction && ((fP.ca && isNotUpdate) || !isNotUpdate)) {
 					fP.isParsed = false;
 					fP.outStack = [];
 					fP.parse();
