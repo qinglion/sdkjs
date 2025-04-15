@@ -577,7 +577,27 @@
 
 	CGraphicObjectBase.prototype.isDrawing = true;
 	CGraphicObjectBase.prototype.isEqualsBrushPen = function(oBrush, oPen) {
-		return this.brush === oBrush && this.pen === oPen;
+		let bBrushEquals = false;
+		if (!this.brush && !this.blipFill && !oBrush) {
+			bBrushEquals = true;
+		} else {
+			if (this.brush) {
+				bBrushEquals = this.brush.IsIdentical(oBrush)
+			}
+			if (this.blipFill) {
+				bBrushEquals = bBrushEquals || this.blipFill.IsIdentical(oBrush && oBrush.fill);
+			}
+			if (!bBrushEquals) {
+				return false;
+			}
+		}
+		let bPenEquals = false;
+		if (this.pen) {
+			bPenEquals = this.pen.IsIdentical(oPen)
+		} else if (!this.pen && !oPen) {
+			bPenEquals = true;
+		}
+		return bBrushEquals && bPenEquals;
 	}
 	CGraphicObjectBase.prototype.notAllowedWithoutId = function () {
 		return true;

@@ -1459,9 +1459,7 @@
 			this.strikeoutUnderlineObjects[i].draw(oGraphics, undefined, this.transform, this.theme, this.colorMap);
 		}
 	};
-	CObjectForDrawArrayWrapper.prototype.isEqualsBrushPen = function(oBrush, oPen) {
-		return oBrush === this.brush && oPen === this.pen;
-	};
+	CObjectForDrawArrayWrapper.prototype.isEqualsBrushPen = AscFormat.CGraphicObjectBase.prototype.isEqualsBrushPen;
 	CObjectForDrawArrayWrapper.prototype.draw = function(oGraphics) {
 		const oThis = this;
 		this.forEachObjectToDraw(function(oObjectToDraw) {

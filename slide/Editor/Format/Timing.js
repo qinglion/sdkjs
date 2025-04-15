@@ -10644,8 +10644,8 @@
         return 0;
 	};
 
-    function CAnimTexture(oCache, oCanvas, fScale, nX, nY) {
-        CBaseAnimTexture.call(this, oCanvas, fScale, nX, nY);
+    function CAnimTexture(oCache, oCanvas, fScale, nX, nY, bNoText) {
+        CBaseAnimTexture.call(this, oCanvas, fScale, nX, nY, bNoText);
         this.cache = oCache;
         this.effectTexture = null;
     }
@@ -11704,7 +11704,7 @@
         if(!this.map[sId] || !this.map[sId].checkScale(fScale)) {
             bCreate = true;
         }
-				else if (bNoText && this.map[sId].bNoText !== bNoText) {
+				else if (!!this.map[sId].bNoText !== !!bNoText) {
 					this.removeTexture(sId);
 					bCreate = true;
 				}
@@ -11740,7 +11740,7 @@
 		if(!oBaseTexture) {
 			return undefined;
 		}
-        return new CAnimTexture(this, oBaseTexture.canvas, oBaseTexture.scale, oBaseTexture.x, oBaseTexture.y);
+        return new CAnimTexture(this, oBaseTexture.canvas, oBaseTexture.scale, oBaseTexture.x, oBaseTexture.y, bNoText);
     };
     CTexturesCache.prototype.removeTexture = function (sId) {
         if (this.map[sId]) {
