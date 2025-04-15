@@ -1227,7 +1227,7 @@
 		CCI.prototype.constructor = CCI;
 
 		this.images = [];
-		this.pluginImages = [];
+		this.pluginImages = {};
 
 		this.registerIconObj = function(type, images, baseUrl)
 		{
@@ -1303,7 +1303,7 @@
 				if (!this.pluginImages[type][style])
 					this.pluginImages[type][style] = {};
 
-				this.pluginImages[type][style][theme] = image
+				this.pluginImages[type][style][theme] = image;
 			}
 		};
 
@@ -1321,16 +1321,16 @@
 			let pluginImage = this.pluginImages[type];
 			if (pluginImage)
 			{
-				let type	= AscCommon.GlobalSkin.Type;
-				let style	= AscCommon.GlobalSkin.Name;
+				let skinType  = AscCommon.GlobalSkin.Type;
+				let skinStyle = AscCommon.GlobalSkin.Name;
 
-				if (pluginImage[type] && pluginImage[type][style])
+				if (pluginImage[skinType] && pluginImage[skinType][skinStyle])
 				{
-					return pluginImage[type][style].get(isActive, isHover);
+					return pluginImage[skinType][skinStyle].get(isActive, isHover);
 				}
-				else if (pluginImage[type] && pluginImage[type]['default'])
+				else if (pluginImage[skinType] && pluginImage[skinType]['default'])
 				{
-					return pluginImage[type]['default'].get(isActive, isHover);
+					return pluginImage[skinType]['default'].get(isActive, isHover);
 				}
 				else if (pluginImage['default']['default'])
 				{
@@ -2052,14 +2052,16 @@
 		
 		return true;
 	};
-	CContentControlTrack.prototype.addPluginButtons = function(buttons)
+	CContentControlTrack.prototype.addPluginButtons = function(buttons, pluginGuid, baseUrl)
 	{
 		let result = 0;
 		for (let i = 0; i < buttons.length; ++i)
 		{
-			let buttonId = Number(buttons[i]);
+			let buttonId = buttons[i]["id"];
 			if (this.pluginButtons.includes(buttonId))
 				continue;
+			
+			this.parent.registerPluginButton(buttons[i], pluginGuid, baseUrl);
 			
 			this.Buttons.push(buttonId);
 			this.pluginButtons.push(buttonId);
@@ -2108,56 +2110,23 @@
 			this.ContentControlObjects = [];
 			this.ContentControlObjectsLast = [];
 		};
-
-		this.registerPluginIcons = function (type, url, baseUrl)
+		
+		this.addPluginButtons = function(pluginButtons)
 		{
-			let icons = AscCommon.IconsStr2IconsObj(url);
-			this.icons.registerIconObj(type, icons, baseUrl);
-		};
-
-		this.registerIcons = function (CCButtons, baseUrl)
-		{
-			let arrButtons = CCButtons.buttons;
-
-			for (let i = 0; i < arrButtons.length; i++)
-			{
-				let button = arrButtons[i];
-				let id = button.id;
-				let url = button.icons;
-
-				this.registerPluginIcons(id, url, baseUrl);
-				this.PluginButtons.push(Number(id));
-			}
-		};
-
-		this.addButtons = function(CCButtons)
-		{
-			let buttons = [];
+			let pluginGuid = pluginButtons["guid"];
+			let baseUrl    = pluginButtons["baseUrl"];
+			let items      = pluginButtons["items"];
 
 			let added = 0;
-			for (let p = 0; p < CCButtons.length; p++)
+			for (let ccId in items)
 			{
-				let oCurrentCCButton	= CCButtons[p];
-				let arrButtons			= oCurrentCCButton.buttons;
-
-				for (let i = 0; i < arrButtons.length; i++)
-				{
-					let button	= arrButtons[i];
-					let id		= button.id;
-					buttons.push(id);
-				}
-
-				let id = oCurrentCCButton.sdtId;
-				
-				if (this.ContentControlObjects.length === 0 || oCurrentCCButton.sdtId === undefined)
-					return;
-				
+				let buttons = items[ccId];
 				for (let i = 0; i < this.ContentControlObjects.length; i++)
 				{
 					let ccTrack = this.ContentControlObjects[i];
-					if (ccTrack.base.GetId() === id)
+					if (ccTrack.base.GetId() === ccId)
 					{
-						added += ccTrack.addPluginButtons(buttons);
+						added += ccTrack.addPluginButtons(buttons, pluginGuid, baseUrl);
 						break;
 					}
 				}
@@ -2167,6 +2136,12 @@
 				editor.WordControl.OnUpdateOverlay()
 			
 			console.log(added);
+		};
+		
+		this.registerPluginButton = function(button, pluginGuid, baseUrl)
+		{
+			let icons = AscCommon.IconsStr2IconsObj(button["icons"]);
+			this.icons.registerIconObj(button["id"], icons, baseUrl);
 		};
 
 		this.getFont = function(koef)
