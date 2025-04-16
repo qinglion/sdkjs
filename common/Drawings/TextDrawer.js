@@ -794,11 +794,22 @@ CParagraphStructure.prototype.getCombinedWordWrappers = function (oTransform, oT
 	const arrRes = [];
 	this.combineElementsByLocation();
 	this.normalizeBackForegroundObjects();
+	let arrWordSymbols = [];
 	for (let i = 0; i < this.m_aWords.length; i += 1) {
 		const aWord = this.m_aWords[i];
-		const arrBackgroundWord = this.m_aBackgroundsByWords[i];
-		const arrForegroundWord = this.m_aForegroundsByWords[i];
+		arrWordSymbols.push.apply(arrWordSymbols, aWord);
+		if (isPresentationBulletWord(aWord)) {
+			continue;
+		}
+		const nGroundIndex = arrRes.length;
+		const arrBackgroundWord = this.m_aBackgroundsByWords[nGroundIndex];
+		const arrForegroundWord = this.m_aForegroundsByWords[nGroundIndex];
 		const oWrapperWord = new AscCommonSlide.CObjectForDrawArrayWrapper(aWord, oTransform, oTheme, oColorMap, oDrawing, arrForegroundWord, arrBackgroundWord);
+		arrRes.push(oWrapperWord);
+		arrWordSymbols = [];
+	}
+	if (arrWordSymbols.length) {
+		const oWrapperWord = new AscCommonSlide.CObjectForDrawArrayWrapper(arrWordSymbols, oTransform, oTheme, oColorMap, oDrawing);
 		arrRes.push(oWrapperWord);
 	}
 	return arrRes;
@@ -807,16 +818,26 @@ CParagraphStructure.prototype.getCombinedWordWrappers = function (oTransform, oT
 		const arrRes = [];
 		let nAdditionalCounter = 0;
 		this.combineElementsByLocation();
+		let arrLetterSymbols = [];
 		for (let i = 0; i < this.m_aWords.length; i += 1) {
 			const aWord = this.m_aWords[i];
 			for (let j = 0; j < aWord.length; j += 1) {
 				const oWordLetter = aWord[j];
+				arrLetterSymbols.push(oWordLetter);
+				if (oWordLetter.isBulletSymbol) {
+					continue;
+				}
 				const oBackgroundLetter = this.m_aBackgroundsByWords[nAdditionalCounter];
 				const oForegroundLetter  = this.m_aForegroundsByWords[nAdditionalCounter];
-				const oWrapperWord = new AscCommonSlide.CObjectForDrawArrayWrapper([oWordLetter], oTransform, oTheme, oColorMap, oDrawing, oForegroundLetter, oBackgroundLetter);
+				const oWrapperWord = new AscCommonSlide.CObjectForDrawArrayWrapper(arrLetterSymbols, oTransform, oTheme, oColorMap, oDrawing, oForegroundLetter, oBackgroundLetter);
 				arrRes.push(oWrapperWord);
 				nAdditionalCounter += 1;
+				arrLetterSymbols = [];
 			}
+		}
+		if (arrLetterSymbols.length) {
+			const oWrapperWord = new AscCommonSlide.CObjectForDrawArrayWrapper(arrLetterSymbols, oTransform, oTheme, oColorMap, oDrawing);
+			arrRes.push(oWrapperWord);
 		}
 		return arrRes;
 	};
@@ -2008,7 +2029,7 @@ CTextDrawer.prototype.Get_PathToDraw = function(bStart, bStart2, x, y, Code, bIs
                         {
                             if(oLastObjectToDraw.geometry.isEmpty())
                             {
-                                oLastObjectToDraw.resetBrushPen(this.GetFillFromTextPr(this.m_oTextPr), this.GetPenFromTextPr(this.m_oTextPr), x, y, Code)
+                                oLastObjectToDraw.resetBrushPen(this.GetFillFromTextPr(this.m_oTextPr), this.GetPenFromTextPr(this.m_oTextPr), x, y, Code, bIsBulletSymbol)
                             }
                             else
                             {

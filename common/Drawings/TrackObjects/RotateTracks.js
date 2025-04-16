@@ -226,7 +226,7 @@ ObjectToDraw.prototype =
         }
     },
 
-    resetBrushPen: function(brush, pen, x, y, Code)
+    resetBrushPen: function(brush, pen, x, y, Code, isBulletSymbol)
     {
         this.brush = brush;
         this.pen = pen;
@@ -240,6 +240,9 @@ ObjectToDraw.prototype =
         {
             this.Code = Code;
         }
+				if (AscFormat.isRealBool(isBulletSymbol)) {
+					this.isBulletSymbol = isBulletSymbol;
+				}
     },
 
     Recalculate: function(oTheme, oColorMap, dWidth, dHeight, oShape, bResetPathsInfo)
