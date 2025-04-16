@@ -8918,6 +8918,9 @@ function parserFormula( formula, parent, _ws ) {
 								isRef = true;
 							} else {
 								/* results of SEQUENCE, RANDARRAY etc... can return an array when using regular values ​​in arguments */
+								if (this.bUnknownOrCustomFunction && currentElement.returnValueType !== AscCommonExcel.cReturnFormulaType.array) {
+									return false;
+								}
 								_tmp = currentElement.Calculate(arg, opt_bbox, null, this.ws, bIsSpecialFunction);
 							}
 
