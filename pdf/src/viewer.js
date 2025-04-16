@@ -4718,7 +4718,6 @@
 				oMemory.WriteByte(AscPDF.CommandType.mergePages);
 				oMemory.WriteLong(aUint8Array.length);
 				oMemory.WriteBuffer(aUint8Array, 0, aUint8Array.length);
-				oMemory.Seek(oMemory.GetCurPosition() + aUint8Array.length);
 				oMemory.WriteLong(nMaxIdx);
 				oMemory.WriteString('Merged_' + i);
 				let nEndPos = oMemory.GetCurPosition();
