@@ -842,6 +842,7 @@ CParagraphStructure.prototype.getCombinedWordWrappers = function (oTransform, oT
 		return arrRes;
 	};
 	CParagraphStructure.prototype.getAllDrawingObjectsWrapper = function (oTransform, oTheme, oColorMap, oDrawing) {
+		this.combineElementsByLocation();
 		let arrContentObjects = [];
 		arrContentObjects = arrContentObjects.concat.apply(arrContentObjects, this.m_aWords);
 		let arrBackgroundObjects = [];
