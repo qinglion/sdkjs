@@ -2069,6 +2069,10 @@
 		}
 		return result;
 	};
+	CContentControlTrack.prototype.isPluginButton = function(buttonId)
+	{
+		return this.pluginButtons.includes(buttonId);
+	};
 
 	// draw methods
 	CContentControlTrack.prototype.SetColor = function(ctx)
@@ -2142,6 +2146,20 @@
 		{
 			let icons = AscCommon.IconsStr2IconsObj(button["icons"]);
 			this.icons.registerIconObj(button["id"], icons, baseUrl);
+		};
+		
+		this.onClickPluginButton = function(buttonId, ccTrack)
+		{
+			if (!ccTrack || !ccTrack.base)
+				return;
+			
+			window.g_asc_plugins.onPluginEvent2(
+				"onContentControlButtonClick",
+				{
+					"buttonId": buttonId,
+					"contentControlId": ccTrack.base.GetId()
+				}
+			);
 		};
 
 		this.getFont = function(koef)
@@ -3205,8 +3223,8 @@
 						var posOnScreen = this.document.ConvertCoordsToCursorWR(xCC, yCC, _object.Pos.Page);
 						let oButtonData = _object.GetButtonObj(indexButton);
 
-						if (this.isPluginButton(oButtonData.button))
-							this.ProceedPluginButtons(oButtonData);
+						if (_object.isPluginButton(oButtonData.button))
+							this.onClickPluginButton(oButtonData.button, _object);
 						else
 							_sendEventToApi(oWordControl.m_oApi, oButtonData, posOnScreen.X, posOnScreen.Y);
 					}
@@ -3255,24 +3273,6 @@
 			}
 
 			return false;
-		};
-
-		this.ProceedPluginButtons = function (oButtonData)
-		{
-			let oBlock = oButtonData.obj;
-
-			window.g_asc_plugins.onPluginEvent2(
-				"onContentControlButtonClick",
-				{
-					"oCC": oBlock.Id,
-					"type": oButtonData.button
-				}
-			);
-		};
-
-		this.isPluginButton = function (type)
-		{
-			return this.PluginButtons.includes(type);
 		};
 
 		this.onPointerLeave = function()
