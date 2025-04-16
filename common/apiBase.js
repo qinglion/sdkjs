@@ -171,6 +171,8 @@
 		this.forceSaveForm = null;
 		this.forceSaveUndoRequest = false; // Флаг нужен, чтобы мы знали, что данное сохранение пришло по запросу Undo в совместке
 		this.forceSaveSendFormRequest = false;
+		this.forceSaveDisconnectRequest = false;
+		this.forceSaveOformRequest = false;
 		this.saveRelativePrev = {};
 
 		// Version History
@@ -1365,7 +1367,10 @@
 	};
 	baseEditorsApi.prototype.forceSave = function()
 	{
-		return this.CoAuthoringApi.forceSave();
+		if (!this.getViewMode()) {
+			return this.CoAuthoringApi.forceSave();
+		}
+		return false;
 	};
 	baseEditorsApi.prototype.saveFromChanges = function(data, timeout, callback) {
 		var t = this;
@@ -2858,8 +2863,14 @@
 		if (this.canSave && this._saveCheck() && this.canSendChanges()) {
 			this.IsUserSave = !isAutoSave;
 
-			if (this.asc_isDocumentCanSave() || this._haveChanges() || this._haveOtherChanges() ||
-				this.canUnlockDocument || this.forceSaveUndoRequest || this.forceSaveSendFormRequest) {
+			if (this.asc_isDocumentCanSave()
+				|| this._haveChanges()
+				|| this._haveOtherChanges()
+				|| this.canUnlockDocument
+				|| this.forceSaveUndoRequest
+				|| this.forceSaveSendFormRequest
+				|| this.forceSaveDisconnectRequest
+				|| this.forceSaveOformRequest) {
 				if (this._prepareSave(isIdle)) {
 					// Не даем пользователю сохранять, пока не закончится сохранение (если оно началось)
 					this.canSave = false;

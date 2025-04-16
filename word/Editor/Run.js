@@ -4514,7 +4514,7 @@ ParaRun.prototype.Recalculate_Range = function(PRS, ParaPr, Depth)
                     WordLen = 0;
 
                     var TabPos   = Para.private_RecalculateGetTabPos(PRS, X, ParaPr, PRS.Page, false);
-                    var NewX     = TabPos.NewX;
+                    var NewX     = X + TabPos.TabWidth;
                     var TabValue = TabPos.TabValue;
 
                     Item.SetLeader(TabPos.TabLeader, this.Get_CompiledPr(false));
@@ -4535,8 +4535,11 @@ ParaRun.prototype.Recalculate_Range = function(PRS, ParaPr, Depth)
 
 						// В Word2013 и раньше, если не левый таб заканчивается правее правой границы, тогда у параграфа
 						// правая граница имеет максимально возможное значение (55см)
-						if (AscCommon.MMToTwips(TabPos.NewX) > AscCommon.MMToTwips(XEnd) && nCompatibilityMode <= AscCommon.document_compatibility_mode_Word14)
+						if (AscCommon.MMToTwips(NewX) > AscCommon.MMToTwips(XEnd) && nCompatibilityMode <= AscCommon.document_compatibility_mode_Word14)
 						{
+							// TODO: Временно сделаем так. По-хорошему надо помечать промежуток, что в нем не учитывается границы при расчете переносов,
+							//  а XEnd не менять
+							Para.Lines[PRS.Line].Ranges[PRS.Range].XEndOrigin = Para.Lines[PRS.Line].Ranges[PRS.Range].XEnd;
 							Para.Lines[PRS.Line].Ranges[PRS.Range].XEnd = 558.7;
 							XEnd                                        = 558.7;
 							PRS.XEnd                                    = XEnd;
@@ -5751,7 +5754,7 @@ ParaRun.prototype.Recalculate_Range_Spaces = function(PRSA, _CurLine, _CurRange,
             case para_End:
             {
 				Item.CheckMark(PRSA.Paragraph, PRSA.XEnd - PRSA.X);
-                PRSA.X += Item.GetWidth();
+                PRSA.X += Item.GetWidthVisible();
 
                 break;
             }

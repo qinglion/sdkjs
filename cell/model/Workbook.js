@@ -15460,11 +15460,14 @@
 				const aExcludeFormulas = AscCommonExcel.aExcludeRecursiveFormulas;
 				const oCycleCells = new Map();
 
-				_foreachRefElements(function (oElem, nIndex) {
+				_foreachRefElements(function (oElem, nIndex, nLastIndex) {
 					if (oElem.containCell2(oListenerCell)) {
 						const nIndexWithFunction = nIndex + 2;
+						if (nIndexWithFunction > nLastIndex) {
+							return;
+						}
 						const oElemWithFunction = aOutStack[nIndexWithFunction];
-						if (oElemWithFunction.type === cElementType.func && aExcludeFormulas.includes(oElemWithFunction.name)) {
+						if (oElemWithFunction && oElemWithFunction.type === cElementType.func && aExcludeFormulas.includes(oElemWithFunction.name)) {
 							oCycleCells.set(true, nIndex);
 							return;
 						}
@@ -15606,10 +15609,10 @@
 			});
 			if (oTableStructOperand) {
 				let oTableOpRange = oTableStructOperand.getRange();
-				if (!oTableOpRange.bbox.contains(this.nCol, this.nRow)) {
+				if (oTableOpRange.bbox && !oTableOpRange.bbox.contains(this.nCol, this.nRow)) {
 					return;
 				}
-				let bContainRange = oCellListeners.bbox.containsRange(oTableOpRange.bbox);
+				let bContainRange = oCellListeners.bbox && oCellListeners.bbox.containsRange(oTableOpRange.bbox);
 				if (bContainRange && oCellListeners.bbox.contains(this.nCol, this.nRow)) {
 					g_cCalcRecursion.setStartCellIndex({cellId: nCellIndex, wsName: this.ws.getName().toLowerCase()});
 				}
