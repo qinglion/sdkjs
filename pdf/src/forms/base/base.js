@@ -1382,7 +1382,15 @@
         }
 
         let _t = this;
-        Object.values(AscPDF.ACTIONS_TYPES).forEach(function(type) {
+
+        let aLogicActions = [
+            AscPDF.FORMS_TRIGGERS_TYPES.Keystroke,
+            AscPDF.FORMS_TRIGGERS_TYPES.Validate,
+            AscPDF.FORMS_TRIGGERS_TYPES.Calculate,
+            AscPDF.FORMS_TRIGGERS_TYPES.Format
+        ]
+
+        Object.values(aLogicActions).forEach(function(type) {
             _t.SetActions(type, oFieldToInherit.GetActions(type));
 
             if (bClearFrom !== false) {
@@ -1451,7 +1459,10 @@
                 }
                 // will be field-widget
                 else {
-                    this.DrainLogicFrom(oParent, false);
+                    if (oParent) {
+                        this.DrainLogicFrom(oParent, false);
+                    }
+                    
                     this.SetPartialName(sName);
                     return true;
                 }

@@ -987,6 +987,8 @@
         AscCommon.check_MouseDownEvent(e, true);
         AscCommon.global_mouseEvent.LockMouse();
     
+        this.isInFocus = true;
+
         let dp = this.getPageByCoords(AscCommon.global_mouseEvent.X, AscCommon.global_mouseEvent.Y);
         if (!dp) {
             // Клик вне страницы
