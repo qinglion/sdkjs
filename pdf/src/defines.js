@@ -105,7 +105,8 @@
         addPage:    1,
         removePage: 2,
         widgetInfo: 3,
-        movePage:   4
+        movePage:   4,
+        mergePages: 5
     }
 
     const FormatType = {

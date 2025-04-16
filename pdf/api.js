@@ -252,11 +252,20 @@
 			return;
 
 		let oDoc			= this.getPDFDoc();
-		let oFile			= oDoc.Viewer.file;
+		let oThumbnails		= oDoc.Viewer.thumbnails;
 		let oActiveForm		= oDoc.activeForm;
 		let oActiveAnnot	= oDoc.mouseDownAnnot;
 		let oActiveDrawing	= oDoc.activeDrawing;
 
+		if (oThumbnails && oThumbnails.isInFocus) {
+			let oCopyProcessor = new AscCommon.CopyProcessor(this);
+			let sBase64 = oCopyProcessor.Start();
+			//oDoc.GetPagesBinary(oThumbnails.selectedPages)
+
+			_clipboard.pushData(AscCommon.c_oAscClipboardDataFormat.Internal, sBase64);
+			return;
+		}
+		
 		if (oActiveForm && oActiveForm.content && oActiveForm.content.IsSelectionUse()) {
 			let sText = oActiveForm.content.GetSelectedText(false, {ParaSeparator: ""});
 			if (!sText)
@@ -383,6 +392,7 @@
 			return;
 		
 		let oDoc			= this.DocumentRenderer.getPDFDoc();
+		let oThumbnails		= this.DocumentRenderer.thumbnails;
 		let data			= typeof(text_data) == "string" ? text_data : data1;
 		let oActiveDrawing	= oDoc.activeDrawing;
 

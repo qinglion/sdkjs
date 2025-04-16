@@ -1005,7 +1005,10 @@
 			{
 				if (!this.file.isNeedCMap())
 				{
-					this.onDocumentReady();
+					// can check CMap after merge -> dont call onDocumentReady
+					if (!this.isDocumentReady) {
+						this.onDocumentReady();
+					}
 					return;
 				}
 
@@ -1120,6 +1123,8 @@
 			if (this.drawingPages[0]) {
 				this.navigateToPage(0, 0, this.scrollMaxX / 2);
 			}
+
+			this.isDocumentReady = true;
 		};
 
 		this.open = function(data, password)
@@ -2170,7 +2175,7 @@
 		};
 		this.canInteract = function() {
 			// не даем взаимодействовать с документом пока не произошла отрисовка
-			return this.scheduledRepaintTimer == null && this.isRepaint != true && this.initPaintDone == true;
+			return this.scheduledRepaintTimer == null && this.isRepaint != true && this.initPaintDone == true && !this.isCMapLoading;
 		};
 		this.getPageDrawingByMouse = function()
 		{
@@ -2214,6 +2219,10 @@
 
 		this.onMouseDown = function(e)
 		{
+			if (oThis.thumbnails) {
+				oThis.thumbnails.isInFocus = false;
+			}
+
 			Asc.editor.checkLastWork();
 
 			if (oThis.touchManager && oThis.touchManager.checkTouchEvent(e))
@@ -2939,7 +2948,7 @@
 			let oDoc = this.getPDFDoc();
 			Asc.editor.checkLastWork();
 			
-			if (oDoc.fontLoader.isFontLoadInProgress() || this.IsOpenFormsInProgress || AscCommon.CollaborativeEditing.waitingImagesForLoad) {
+			if (oDoc.fontLoader.isFontLoadInProgress() || this.IsOpenFormsInProgress || AscCommon.CollaborativeEditing.waitingImagesForLoad || this.isCMapLoading) {
 				this.paint();
 				return;
 			}
@@ -4677,13 +4686,8 @@
 			}
 		});
 
-		// edit		- 0
-		// add		- 1
-		// delete	- 2
-
-		function writePageInfo(operation, originIndex) {
-			if (!oMemory)
-			{
+		function checkMemory() {
+			if (!oMemory) {
 				oMemory = new AscCommon.CMemory(true);
 				oMemory.Init(memoryInitSize);
 				oMemory.images = [];
@@ -4694,6 +4698,42 @@
 				oMemory.WriteByte("D".charCodeAt(0));
 				oMemory.WriteByte("F".charCodeAt(0));
 			}
+		}
+
+		if (oDoc.mergedPagesData.length != 0) {
+			checkMemory();
+
+			for (let i = 0; i < oDoc.mergedPagesData.length; i++) {
+				let oPrevData = oDoc.mergedPagesData[i - 1];
+				let oData = oDoc.mergedPagesData[i];
+				let aUint8Array = oData.binary;
+
+				let nMaxIdx = oData.maxId;
+				if (oPrevData && oPrevData.maxId == oData.maxId) {
+					nMaxIdx = 0; // means has no changes after prev merge
+				}
+
+				let nStartPos = oMemory.GetCurPosition();
+				oMemory.Skip(4);
+				oMemory.WriteByte(AscPDF.CommandType.mergePages);
+				oMemory.WriteLong(aUint8Array.length);
+				oMemory.WriteBuffer(aUint8Array, 0, aUint8Array.length);
+				oMemory.Seek(oMemory.GetCurPosition() + aUint8Array.length);
+				oMemory.WriteLong(nMaxIdx);
+				oMemory.WriteString('Merged_' + i);
+				let nEndPos = oMemory.GetCurPosition();
+				oMemory.Seek(nStartPos);
+				oMemory.WriteLong(nEndPos - nStartPos);
+				oMemory.Seek(nEndPos);
+			}
+		}
+
+		// edit		- 0
+		// add		- 1
+		// delete	- 2
+
+		function writePageInfo(operation, originIndex) {
+			checkMemory();
 
 			let nCommandType = operation[0];
 			let curIndex = operation[1];

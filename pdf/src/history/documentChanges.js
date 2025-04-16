@@ -44,7 +44,8 @@ AscDFH.changesFactory[AscDFH.historyitem_PDF_Document_SetDocument]      = CChang
 AscDFH.changesFactory[AscDFH.historyitem_PDF_Document_PageLocks]        = CChangesPDFDocumentPageLocks;
 AscDFH.changesFactory[AscDFH.historyitem_PDF_PropLocker_ObjectId]	    = CChangesPDFPropLockerObjectId;
 AscDFH.changesFactory[AscDFH.historyitem_PDF_Document_MovePage]         = CChangesPDFDocumentMovePage;
-AscDFH.changesFactory[AscDFH.historyitem_Pdf_Documen_Calc_Order]        = CChangesPDFCalcOrder;
+AscDFH.changesFactory[AscDFH.historyitem_Pdf_Document_Merge_Pages]      = CChangesPDFDocumentMergePages;
+AscDFH.changesFactory[AscDFH.historyitem_Pdf_Document_Calc_Order]       = CChangesPDFCalcOrder;
 
 function CChangesPDFArrayOfDoubleProperty(Class, Old, New) {
 	AscDFH.CChangesBaseProperty.call(this, Class, Old, New);
@@ -1236,6 +1237,96 @@ CChangesPDFDocumentMovePage.prototype.private_SetValue = function(nNewPos)
 
 /**
  * @constructor
+ * @extends {AscDFH.CChangesBaseStringProperty}
+ */
+function CChangesPDFDocumentMergePages(Class, Old, New, nPosToAdd, Color)
+{
+	AscDFH.CChangesBaseStringProperty.call(this, Class, Old, New, Color);
+    this.PosToAdd = nPosToAdd;
+}
+CChangesPDFDocumentMergePages.prototype = Object.create(AscDFH.CChangesBaseStringProperty.prototype);
+CChangesPDFDocumentMergePages.prototype.constructor = CChangesPDFDocumentMergePages;
+CChangesPDFDocumentMergePages.prototype.Type = AscDFH.historyitem_Pdf_Document_Merge_Pages;
+CChangesPDFDocumentMergePages.prototype.private_SetValue = function(Value)
+{
+	this.Class.MergePagesBinary(this.PosToAdd, Value);
+};
+CChangesPDFDocumentMergePages.prototype.WriteToBinary = function(Writer)
+{
+	let nFlags = 0;
+
+	if (false !== this.Color)
+		nFlags |= 1;
+
+	if (undefined === this.PosToAdd)
+		nFlags |= 2;
+
+	if (undefined === this.New)
+		nFlags |= 4;
+
+	if (undefined === this.Old)
+		nFlags |= 8;
+	
+	Writer.WriteLong(nFlags);
+
+	if (undefined !== this.PosToAdd)
+		Writer.WriteLong(this.PosToAdd);
+
+	if (undefined !== this.New) {
+		var nNewCount = this.New.length;
+		Writer.WriteLong(nNewCount);
+		for (var nIndex = 0; nIndex < nNewCount; ++nIndex)
+			Writer.WriteByte(this.New[nIndex]);
+	}
+	
+	if (undefined !== this.Old) {
+		var nOldCount = this.Old.length;
+		Writer.WriteLong(nOldCount);
+		for (var nIndex = 0; nIndex < nOldCount; ++nIndex)
+			Writer.WriteByte(this.Old[nIndex]);
+	}
+};
+CChangesPDFDocumentMergePages.prototype.ReadFromBinary = function(Reader)
+{
+	this.FromLoad = true;
+
+	// Long  : Flag
+	// 1-bit : Подсвечивать ли данные изменения
+	// 2-bit : IsUndefined New
+	// 3-bit : IsUndefined Old
+	// long : New
+	// long : Old
+
+
+	var nFlags = Reader.GetLong();
+
+	if (nFlags & 1)
+		this.Color = true;
+	else
+		this.Color = false;
+
+	if (nFlags & 2)
+		this.PosToAdd = undefined;
+	else
+		this.PosToAdd = Reader.GetLong();
+
+    if (!(nFlags & 4)) {
+        let nCount = Reader.GetLong();
+        this.New = [];
+        for (var nIndex = 0; nIndex < nCount; ++nIndex)
+            this.New[nIndex] = Reader.GetByte();
+    }
+
+    if (!(nFlags & 8)) {
+        let nCount = Reader.GetLong();
+        this.Old = [];
+        for (var nIndex = 0; nIndex < nCount; ++nIndex)
+            this.Old[nIndex] = Reader.GetByte();
+    }
+};
+
+/**
+ * @constructor
  * @extends {AscDFH.CChangesPDFArrayOfDoubleProperty}
  */
 function CChangesPDFCalcOrder(Class, Old, New, Color)
@@ -1244,7 +1335,7 @@ function CChangesPDFCalcOrder(Class, Old, New, Color)
 }
 CChangesPDFCalcOrder.prototype = Object.create(AscDFH.CChangesPDFArrayOfDoubleProperty.prototype);
 CChangesPDFCalcOrder.prototype.constructor = CChangesPDFCalcOrder;
-CChangesPDFCalcOrder.prototype.Type = AscDFH.historyitem_Pdf_Documen_Calc_Order;
+CChangesPDFCalcOrder.prototype.Type = AscDFH.historyitem_Pdf_Document_Calc_Order;
 CChangesPDFCalcOrder.prototype.private_SetValue = function(Value)
 {
 	let oCalcInfo = this.Class;
