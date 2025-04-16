@@ -66,7 +66,6 @@
 		this.updateIndex--;
 		if (this.updateIndex < 0)
 			this.updateIndex = 0;
-
 		if (this.updateIndex != 0)
 		{
 			// обновится, когда все загрузятся
@@ -274,7 +273,31 @@
 		}
 		return this.images_hover[index];
 	};
-
+	BaseImageCtrl.prototype._loadImg = function(url)
+	{
+		let img = new Image();
+		img.src = url;
+		if (img.complete)
+		{
+			img.asc_complete = true;
+		}
+		else
+		{
+			AscCommon.g_imageControlsStorage.updateLater();
+			img.onload = function()
+			{
+				this.asc_complete = true;
+				AscCommon.g_imageControlsStorage.updateOverlay();
+			};
+			img.onerror = function()
+			{
+				this.asc_complete = false;
+				AscCommon.g_imageControlsStorage.updateOverlay();
+			};
+			AscCommon.backoffOnErrorImg(img);
+		}
+		return img;
+	};
 	// загрузка картинки по индексу. если индекса нет - то текущий
 	BaseImageCtrl.prototype._loadIndex = function(index)
 	{
@@ -282,14 +305,7 @@
 			index = this.getIndex();
 
 		if (!this.images[index])
-		{
-			var img = new Image();
-			AscCommon.g_imageControlsStorage.updateLater();
-			img.onload = function() { this.asc_complete = true; AscCommon.g_imageControlsStorage.updateOverlay(); };
-			img.src = this.baseUrl + "/" + this.url + this.getAddon(this.support[index]) + ".png";
-			AscCommon.backoffOnErrorImg(img);
-			this.images[index] = img;
-		}
+			this.images[index] = this._loadImg(this.baseUrl + "/" + this.url + this.getAddon(this.support[index]) + ".png");
 	};
 	BaseImageCtrl.prototype._loadActiveIndex = function(index)
 	{
@@ -297,75 +313,39 @@
 			index = this.getIndex();
 
 		if (!this.images_active[index])
-		{
-			var img = new Image();
-			AscCommon.g_imageControlsStorage.updateLater();
-			img.onload = function() { this.asc_complete = true; AscCommon.g_imageControlsStorage.updateOverlay(); };
-			img.src = this.baseUrl + "/" + this.url + "_active" + this.getAddon(this.support[index]) + ".png";
-			AscCommon.backoffOnErrorImg(img);
-			this.images_active[index] = img;
-		}
+			this.images_active[index] = this._loadImg(this.baseUrl + "/" + this.url + "_active" + this.getAddon(this.support[index]) + ".png");
 	};
 	BaseImageCtrl.prototype._loadHoverIndex = function(index)
 	{
 		if (undefined === index)
 			index = this.getIndex();
-
+		
 		if (!this.images_hover[index])
-		{
-			var img = new Image();
-			AscCommon.g_imageControlsStorage.updateLater();
-			img.onload = function() { this.asc_complete = true; AscCommon.g_imageControlsStorage.updateOverlay(); };
-			img.src = this.baseUrl + "/" + this.url + "_hover" + this.getAddon(this.support[index]) + ".png";
-			AscCommon.backoffOnErrorImg(img);
-			this.images_hover[index] = img;
-		}
+			this.images_hover[index] = this._loadImg(this.baseUrl + "/" + this.url + "_hover" + this.getAddon(this.support[index]) + ".png");
 	};
-
 	BaseImageCtrl.prototype._loadByIndex = function(index, url)
 	{
 		if (undefined === index)
 			index = this.getIndex();
 
 		if (!this.images[index])
-		{
-			var img = new Image();
-			AscCommon.g_imageControlsStorage.updateLater();
-			img.onload = function() { this.asc_complete = true; AscCommon.g_imageControlsStorage.updateOverlay(); };
-			img.src = this.baseUrl + url;
-			AscCommon.backoffOnErrorImg(img);
-			this.images[index] = img;
-		}
+			this.images[index] = this._loadImg(this.baseUrl + url);
 	};
 	BaseImageCtrl.prototype._loadActiveByIndex = function(index, url)
 	{
 		if (undefined === index)
 			index = this.getIndex();
-
+		
 		if (!this.images_active[index])
-		{
-			var img = new Image();
-			AscCommon.g_imageControlsStorage.updateLater();
-			img.onload = function() { this.asc_complete = true; AscCommon.g_imageControlsStorage.updateOverlay(); };
-			img.src = this.baseUrl + url;
-			AscCommon.backoffOnErrorImg(img);
-			this.images_active[index] = img;
-		}
+			this.images_active[index] = this._loadImg(this.baseUrl + url);
 	};
 	BaseImageCtrl.prototype._loadHoverByIndex = function(index, url)
 	{
 		if (undefined === index)
 			index = this.getIndex();
-
+		
 		if (!this.images_hover[index])
-		{
-			var img = new Image();
-			AscCommon.g_imageControlsStorage.updateLater();
-			img.onload = function() { this.asc_complete = true; AscCommon.g_imageControlsStorage.updateOverlay(); };
-			img.src = this.baseUrl + url;
-			AscCommon.backoffOnErrorImg(img);
-			this.images_hover[index] = img;
-		}
+			this.images_hover[index] = this._loadImg(this.baseUrl + url);
 	};
 
 	AscCommon.BaseImageCtrl = BaseImageCtrl;
