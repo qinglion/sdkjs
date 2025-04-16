@@ -1988,7 +1988,8 @@
 		return {
 			index : indexButton,
 			x : resX,
-			y : resY
+			y : resY,
+			button : this.Buttons[indexButton]
 		};
 	};
 	CContentControlTrack.prototype.isEqual = function(track)
@@ -2073,6 +2074,14 @@
 	{
 		return this.pluginButtons.includes(buttonId);
 	};
+	CContentControlTrack.prototype.isPluginButtonActive = function()
+	{
+		let index = this.ActiveButtonIndex;
+		if (index < 0 || index >= this.Buttons.length)
+			return false;
+		
+		return this.isPluginButton(this.Buttons[index]);
+	};
 
 	// draw methods
 	CContentControlTrack.prototype.SetColor = function(ctx)
@@ -2137,7 +2146,12 @@
 			}
 			
 			if (added)
-				editor.WordControl.OnUpdateOverlay()
+			{
+				let wordControl = this.document.m_oWordControl;
+				wordControl.ShowOverlay();
+				wordControl.OnUpdateOverlay();
+				wordControl.EndUpdateOverlay();
+			}
 			
 			console.log(added);
 		};
@@ -3128,7 +3142,6 @@
 		this.onPointerDown = function(pos)
 		{
 			var oWordControl = this.document.m_oWordControl;
-
 			for (var i = this.ContentControlObjects.length - 1; i >= 0; --i)
 			{
 				let _object = this.ContentControlObjects[i];
@@ -3223,9 +3236,7 @@
 						var posOnScreen = this.document.ConvertCoordsToCursorWR(xCC, yCC, _object.Pos.Page);
 						let oButtonData = _object.GetButtonObj(indexButton);
 
-						if (_object.isPluginButton(oButtonData.button))
-							this.onClickPluginButton(oButtonData.button, _object);
-						else
+						if (!_object.isPluginButton(oButtonData.button))
 							_sendEventToApi(oWordControl.m_oApi, oButtonData, posOnScreen.X, posOnScreen.Y);
 					}
 
@@ -3432,36 +3443,65 @@
 
 		this.onPointerUp = function(pos)
 		{
-			var oWordControl = this.document.m_oWordControl;
+			let wordControl = this.document.m_oWordControl;
 
 			var oldContentControlSmall = this.ContentControlSmallChangesCheck.IsSmall;
 			this.ContentControlSmallChangesCheck.IsSmall = true;
-
-			let ccTrack = this.getInlineMoveTrack();
-			if (!ccTrack)
-				return false;
 			
-			ccTrack.visualState = -1;
-			if (this.document.InlineTextTrackEnabled)
+			let updateOverlay = false;
+			let moveTrack = this.getInlineMoveTrack();
+			let result;
+			if (!moveTrack)
 			{
-				if (this.document.InlineTextTrack && !oldContentControlSmall) // значит был MouseMove
+				for (let i = 0; i < this.ContentControlObjects.length; ++i)
 				{
-					this.document.InlineTextTrack = oWordControl.m_oLogicDocument.Get_NearestPos(pos.Page, pos.X, pos.Y);
-					this.document.m_oLogicDocument.OnContentControlTrackEnd(ccTrack.base.GetId(), this.document.InlineTextTrack, AscCommon.global_keyboardEvent.CtrlKey);
-					this.document.InlineTextTrackEnabled = false;
-					this.document.InlineTextTrack = null;
-					this.document.InlineTextTrackPage = -1;
+					let ccTrack = this.ContentControlObjects[i];
+					if (ccTrack.state !== AscCommon.ContentControlTrack.In)
+						continue;
+					
+					if (ccTrack.isPluginButtonActive())
+					{
+						let _pos = this._getTrackRelativePos(pos, ccTrack);
+						let buttonInfo = ccTrack.getButton(_pos.xPos, _pos.yPos, _pos.koefX, _pos.koefY);
+						if (buttonInfo && buttonInfo.index === ccTrack.ActiveButtonIndex)
+							this.onClickPluginButton(buttonInfo.button, ccTrack);
+						
+						ccTrack.ActiveButtonIndex = -2;
+						updateOverlay = true;
+					}
 				}
-				else
+				result = false;
+			}
+			else
+			{
+				moveTrack.visualState = -1;
+				if (this.document.InlineTextTrackEnabled)
 				{
-					this.document.InlineTextTrackEnabled = false;
+					if (this.document.InlineTextTrack && !oldContentControlSmall) // значит был MouseMove
+					{
+						this.document.InlineTextTrack = oWordControl.m_oLogicDocument.Get_NearestPos(pos.Page, pos.X, pos.Y);
+						this.document.m_oLogicDocument.OnContentControlTrackEnd(moveTrack.base.GetId(), this.document.InlineTextTrack, AscCommon.global_keyboardEvent.CtrlKey);
+						this.document.InlineTextTrackEnabled = false;
+						this.document.InlineTextTrack        = null;
+						this.document.InlineTextTrackPage    = -1;
+					}
+					else
+					{
+						this.document.InlineTextTrackEnabled = false;
+					}
 				}
+				result = true;
+				updateOverlay = true;
 			}
 			
-			oWordControl.ShowOverlay();
-			oWordControl.OnUpdateOverlay();
-			oWordControl.EndUpdateOverlay();
-			return true;
+			if (updateOverlay)
+			{
+				wordControl.ShowOverlay();
+				wordControl.OnUpdateOverlay();
+				wordControl.EndUpdateOverlay();
+			}
+			
+			return result;
 		}
 	}
 
