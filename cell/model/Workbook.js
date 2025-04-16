@@ -13981,11 +13981,7 @@
 
 
 //-------------------------------------------------------------------------------------------------
-	var g_nCellOffsetFlag = 0;
-	var g_nCellOffsetXf = g_nCellOffsetFlag + 1;
-	var g_nCellOffsetFormula = g_nCellOffsetXf + 4;
-	var g_nCellOffsetValue = g_nCellOffsetFormula + 4;
-	var g_nCellStructSize = g_nCellOffsetValue + 8;
+	var g_nCellStructSize = 4 + 4 + 8;
 
 	var g_nCellFlag_empty = 0;
 	var g_nCellFlag_init = 1;
@@ -14058,23 +14054,33 @@
 			sheetMemory.checkIndex(this.nRow);
 			var xfSave = this.xfs ? this.xfs.getIndexNumber() : 0;
 			var numberSave = 0;
-			var formulaSave = this.formulaParsed ? wb.workbookFormulas.add(this.formulaParsed).getIndexNumber() :  0;
+			var formulaSave = this.formulaParsed ? wb.workbookFormulas.add(this.formulaParsed).getIndexNumber() : 0;
 			var flagValue = 0;
 			if (null != this.number) {
 				flagValue = 1;
-				sheetMemory.setFloat64(this.nRow, g_nCellOffsetValue, this.number);
+				const flags = this._toFlags(flagValue);
+				sheetMemory.setInt32(this.nRow, 0, xfSave | (flags << 24));
+				sheetMemory.setInt32(this.nRow, 4, formulaSave);
+				sheetMemory.setFloat64(this.nRow, 8, this.number);
 			} else if (null != this.text) {
 				flagValue = 2;
+				const flags = this._toFlags(flagValue);
+				sheetMemory.setInt32(this.nRow, 0, xfSave | (flags << 24));
+				sheetMemory.setInt32(this.nRow, 4, formulaSave);
 				numberSave = this.getTextIndex();
-				sheetMemory.setUint32(this.nRow, g_nCellOffsetValue, numberSave);
+				sheetMemory.setInt32(this.nRow, 8, numberSave);
 			} else if (null != this.multiText) {
 				flagValue = 3;
+				const flags = this._toFlags(flagValue);
+				sheetMemory.setInt32(this.nRow, 0, xfSave | (flags << 24));
+				sheetMemory.setInt32(this.nRow, 4, formulaSave);
 				numberSave = this.getTextIndex();
-				sheetMemory.setUint32(this.nRow, g_nCellOffsetValue, numberSave);
+				sheetMemory.setInt32(this.nRow, 8, numberSave);
+			} else {
+				const flags = this._toFlags(flagValue);
+				sheetMemory.setInt32(this.nRow, 0, xfSave | (flags << 24));
+				sheetMemory.setInt32(this.nRow, 4, formulaSave);
 			}
-			sheetMemory.setUint8(this.nRow, g_nCellOffsetFlag, this._toFlags(flagValue));
-			sheetMemory.setUint32(this.nRow, g_nCellOffsetXf, xfSave);
-			sheetMemory.setUint32(this.nRow, g_nCellOffsetFormula, formulaSave);
 		}
 	};
 	Cell.prototype.loadContent = function(row, col, opt_sheetMemory) {
@@ -14082,26 +14088,37 @@
 		this.clear();
 		this.nRow = row;
 		this.nCol = col;
-		var sheetMemory = opt_sheetMemory ? opt_sheetMemory : this.ws.getColDataNoEmpty(this.nCol);
-		if (sheetMemory) {
-			if (sheetMemory.hasIndex(this.nRow)) {
-				var flags = sheetMemory.getUint8(this.nRow, g_nCellOffsetFlag);
-				if (0 != (g_nCellFlag_init & flags)) {
-					var wb = this.ws.workbook;
-					var flagValue = this._fromFlags(flags);
-					this.xfs = g_StyleCache.getXf(sheetMemory.getUint32(this.nRow, g_nCellOffsetXf));
-					this.formulaParsed = wb.workbookFormulas.get(sheetMemory.getUint32(this.nRow, g_nCellOffsetFormula));
-					if (1 === flagValue) {
-						this.number = sheetMemory.getFloat64(this.nRow, g_nCellOffsetValue);
-					} else if (2 === flagValue) {
-						this.textIndex = sheetMemory.getUint32(this.nRow, g_nCellOffsetValue);
-						this.text = wb.sharedStrings.get(this.textIndex);
-					} else if (3 === flagValue) {
-						this.textIndex = sheetMemory.getUint32(this.nRow, g_nCellOffsetValue);
-						this.multiText = wb.sharedStrings.get(this.textIndex);
-					}
-					res = true;
+		let sheetMemory = opt_sheetMemory;
+		if (!sheetMemory) {
+			sheetMemory = this.ws.getColDataNoEmpty(this.nCol);
+			if (!sheetMemory) {
+				return res;
+			}
+		}
+		if (sheetMemory.hasIndex(this.nRow)) {
+			const mix = sheetMemory.getInt32(this.nRow, 0);
+			const flags = (mix >> 24) & 0xff;
+			const xfIndex = mix & 0xffffff;
+			if (0 !== (g_nCellFlag_init & flags)) {
+				var wb = this.ws.workbook;
+				var flagValue = this._fromFlags(flags);
+				if (xfIndex > 0) {
+					this.xfs = g_StyleCache.getXf(xfIndex);
 				}
+				const formulaIndex = sheetMemory.getInt32(this.nRow, 4)
+				if (formulaIndex > 0) {
+					this.formulaParsed = wb.workbookFormulas.get(formulaIndex);
+				}
+				if (1 === flagValue) {
+					this.number = sheetMemory.getFloat64(this.nRow, 8);
+				} else if (2 === flagValue) {
+					this.textIndex = sheetMemory.getInt32(this.nRow, 8);
+					this.text = wb.sharedStrings.get(this.textIndex);
+				} else if (3 === flagValue) {
+					this.textIndex = sheetMemory.getInt32(this.nRow, 8);
+					this.multiText = wb.sharedStrings.get(this.textIndex);
+				}
+				res = true;
 			}
 		}
 		return res;
