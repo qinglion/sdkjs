@@ -14375,6 +14375,11 @@ background-repeat: no-repeat;\
 			return;
 		oLogicDocument.RemoveCustomProperty(idx);
 	};
+	asc_docs_api.prototype.onPluginClose = function(guid)
+	{
+		AscCommon.baseEditorsApi.prototype.onPluginClose.call(this, guid);
+		this.WordControl.m_oLogicDocument.DrawingDocument.contentControls.removePluginButtons(guid);
+	};
 	
 	//-------------------------------------------------------------export---------------------------------------------------
 	window['Asc']                                                       = window['Asc'] || {};

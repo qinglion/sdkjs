@@ -1154,8 +1154,7 @@
 			}
 
 			delete this.runnedPluginsMap[guid];
-			this.api.onPluginCloseContextMenuItem(guid);
-			this.api.onPluginCloseToolbarMenuItem(guid);
+			this.api.onPluginClose(guid);
 
 			if (this.runAndCloseData)
 			{

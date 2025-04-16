@@ -2082,6 +2082,16 @@
 		
 		return this.isPluginButton(this.Buttons[index]);
 	};
+	CContentControlTrack.prototype.removePluginButton = function(buttonId)
+	{
+		let pos = this.Buttons.indexOf(buttonId);
+		if (-1 !== pos)
+			this.Buttons.splice(pos, 1);
+		
+		pos = this.pluginButtons.indexOf(buttonId);
+		if (-1 !== pos)
+			this.pluginButtons.splice(pos, 1);
+	};
 
 	// draw methods
 	CContentControlTrack.prototype.SetColor = function(ctx)
@@ -2116,7 +2126,7 @@
 
 		this.measures = {};
 
-		this.PluginButtons = [];
+		this.pluginButtons = {};
 
 		this.clearAttack = function()
 		{
@@ -2146,18 +2156,19 @@
 			}
 			
 			if (added)
-			{
-				let wordControl = this.document.m_oWordControl;
-				wordControl.ShowOverlay();
-				wordControl.OnUpdateOverlay();
-				wordControl.EndUpdateOverlay();
-			}
-			
-			console.log(added);
+				this.updateOverlay();
 		};
 		
 		this.registerPluginButton = function(button, pluginGuid, baseUrl)
 		{
+			if (!this.pluginButtons[pluginGuid])
+				this.pluginButtons[pluginGuid] = {};
+			
+			let buttonId = button["id"];
+			if (this.pluginButtons[pluginGuid][buttonId])
+				return;
+			
+			this.pluginButtons[pluginGuid][buttonId] = true;
 			let icons = AscCommon.IconsStr2IconsObj(button["icons"]);
 			this.icons.registerIconObj(button["id"], icons, baseUrl);
 		};
@@ -2174,6 +2185,25 @@
 					"contentControlId": ccTrack.base.GetId()
 				}
 			);
+		};
+		
+		this.removePluginButtons = function(pluginGuid)
+		{
+			if (!this.pluginButtons[pluginGuid])
+				return;
+			
+			for (let buttonId in this.pluginButtons[pluginGuid])
+			{
+				for (let i = 0, len = this.ContentControlObjects.length; i < len; ++i)
+				{
+					let ccTrack = this.ContentControlObjects[i];
+					if (AscCommon.ContentControlTrack.In === ccTrack.state)
+						ccTrack.removePluginButton(buttonId);
+				}
+			}
+			
+			delete this.pluginButtons[pluginGuid];
+			this.updateOverlay();
 		};
 
 		this.getFont = function(koef)
@@ -2244,7 +2274,7 @@
 			return result;
 		};
 		
-		this.SendShowHideEvent = function()
+		this.sendShowHidePluginEvent = function()
 		{
 			let prev = this._getContentControlsForTrackIn(this.lastTracks);
 			let curr = this._getContentControlsForTrackIn(this.ContentControlObjects);
@@ -2268,6 +2298,17 @@
 			
 			if (show.length)
 				window.g_asc_plugins.onPluginEvent("onShowContentControlTrack", show);
+		};
+		
+		this.sendPluginEventOnRun = function(pluginGuid)
+		{
+			let controls = Object.keys(this._getContentControlsForTrackIn(this.ContentControlObjects));
+			
+			let guids = {};
+			guids[pluginGuid] = true;
+			
+			if (controls.length)
+				window.g_asc_plugins.onPluginEvent2("onShowContentControlTrack", controls, guids);
 		};
 
 		// отрисовка
@@ -3004,7 +3045,7 @@
 			if (!this.lastInline)
 				this.ContentControlObjects = this.ContentControlObjects.reverse();
 			
-			this.SendShowHideEvent();
+			this.sendShowHidePluginEvent();
 			
 			this.lastHover  = null;
 			this.lastActive = null;
@@ -3443,8 +3484,6 @@
 
 		this.onPointerUp = function(pos)
 		{
-			let wordControl = this.document.m_oWordControl;
-
 			var oldContentControlSmall = this.ContentControlSmallChangesCheck.IsSmall;
 			this.ContentControlSmallChangesCheck.IsSmall = true;
 			
@@ -3479,7 +3518,7 @@
 				{
 					if (this.document.InlineTextTrack && !oldContentControlSmall) // значит был MouseMove
 					{
-						this.document.InlineTextTrack = oWordControl.m_oLogicDocument.Get_NearestPos(pos.Page, pos.X, pos.Y);
+						this.document.InlineTextTrack = this.document.m_oLogicDocument.Get_NearestPos(pos.Page, pos.X, pos.Y);
 						this.document.m_oLogicDocument.OnContentControlTrackEnd(moveTrack.base.GetId(), this.document.InlineTextTrack, AscCommon.global_keyboardEvent.CtrlKey);
 						this.document.InlineTextTrackEnabled = false;
 						this.document.InlineTextTrack        = null;
@@ -3495,14 +3534,19 @@
 			}
 			
 			if (updateOverlay)
-			{
-				wordControl.ShowOverlay();
-				wordControl.OnUpdateOverlay();
-				wordControl.EndUpdateOverlay();
-			}
+				this.updateOverlay();
 			
 			return result;
-		}
+		};
+		
+		this.updateOverlay = function()
+		{
+			let wordControl = this.document.m_oWordControl;
+			wordControl.ShowOverlay();
+			wordControl.StartUpdateOverlay();
+			wordControl.OnUpdateOverlay();
+			wordControl.EndUpdateOverlay();
+		};
 	}
 
 	AscCommon.DrawingContentControls = ContentControls;
