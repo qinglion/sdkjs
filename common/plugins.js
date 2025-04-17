@@ -1106,6 +1106,16 @@
 
 			runObject.currentInit = false;
 
+			let eventMap = plugin.variations[runObject.currentVariation].eventsMap;
+			if (eventMap)
+			{
+				for (let nameEvent in eventMap)
+				{
+					if (eventMap.hasOwnProperty(nameEvent))
+						this.api.onAttachPluginEvent(plugin.guid, nameEvent);
+				}
+			}
+
 			if (AscCommon.AscBrowser.isIE && !AscCommon.AscBrowser.isIeEdge)
 			{
 				let ie_frame_id = runObject.frameId;
@@ -1320,6 +1330,7 @@
 					let plugin = this.getPluginByGuid(data["guid"]);
 					if (plugin && plugin.variations && plugin.variations[0])
 					{
+						this.api.onAttachPluginEvent(data["guid"], data["name"]);
 						plugin.variations[0].eventsMap[data["name"]] = true;
 					}
 					break;
@@ -1789,7 +1800,10 @@
 				let plugin = window.g_asc_plugins.getPluginByGuid(guid);
 				if (plugin && plugin.variations && plugin.variations[runObject.currentVariation])
 				{
-					plugin.variations[runObject.currentVariation].eventsMap[pluginData.getAttribute("name")] = true;
+					let eventName = pluginData.getAttribute("name");
+					window.g_asc_plugins.api.onAttachPluginEvent(guid, eventName);
+					plugin.variations[runObject.currentVariation].eventsMap[eventName] = true;
+
 				}
 				break;
 			}

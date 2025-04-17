@@ -5554,6 +5554,10 @@
 		return (0 !== results.length) ? true : false;
 	};
 
+	baseEditorsApi.prototype.onAttachPluginEvent = function(guid, name)
+	{
+	};
+
 	//----------------------------------------------------------export----------------------------------------------------
 	window['AscCommon']                = window['AscCommon'] || {};
 	window['AscCommon'].baseEditorsApi = baseEditorsApi;
