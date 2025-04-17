@@ -2280,7 +2280,7 @@
 				window.g_asc_plugins.onPluginEvent("onShowContentControlTrack", show);
 		};
 		
-		this.sendPluginEventOnRun = function(pluginGuid)
+		this.onAttachPluginEvent = function(pluginGuid)
 		{
 			let controls = Object.keys(this._getContentControlsForTrackIn(this.ContentControlObjects));
 			

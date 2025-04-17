@@ -14380,6 +14380,15 @@ background-repeat: no-repeat;\
 		AscCommon.baseEditorsApi.prototype.onPluginClose.call(this, guid);
 		this.WordControl.m_oLogicDocument.DrawingDocument.contentControls.removePluginButtons(guid);
 	};
+	asc_docs_api.prototype.onAttachPluginEvent = function(guid, name)
+	{
+		AscCommon.baseEditorsApi.prototype.onAttachPluginEvent.call(this, guid, name);
+		
+		if ("onShowContentControlTrack" === name
+			&& this.WordControl
+			&& this.WordControl.m_oDrawingDocument)
+			this.WordControl.m_oDrawingDocument.contentControls.onAttachPluginEvent(guid);
+	};
 	
 	//-------------------------------------------------------------export---------------------------------------------------
 	window['Asc']                                                       = window['Asc'] || {};
