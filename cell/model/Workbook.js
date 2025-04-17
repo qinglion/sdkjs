@@ -14910,8 +14910,13 @@
 		this.setFormulaTemplate(bHistoryUndo, function(cell){
 			cell.setFormulaInternal(parsed);
 			cell.ws.workbook.dependencyFormulas.addToBuildDependencyCell(cell);
-			if (caProps && caProps.oldValue != null) {
-				cell.setValueNumberInternal(caProps.oldValue);
+			if (caProps) {
+				if (caProps.oldValue != null) {
+					cell.setValueNumberInternal(caProps.oldValue);
+				} else if (caProps.oldValueText != null) {
+					cell.setTypeInternal(CellValueType.String);
+					cell.setValueTextInternal(caProps.oldValueText);
+				}
 			}
 		});
 	};
@@ -15459,7 +15464,8 @@
 		if (null != Val.formula) {
 			let caProps = {
 				ca: Val.ca,
-				oldValue: Val.value.number
+				oldValue: Val.value.number,
+				oldValueText: Val.value.text
 			};
 			this.setFormula(Val.formula, null, Val.formulaRef, caProps);
 		} else if (null != Val.value) {
@@ -16218,7 +16224,7 @@
 			if (AscCommon.History.Is_On()) {
 				DataNew = this.getValueData();
 			}
-			if (AscCommon.History.Is_On() && !DataOld.isEqual(DataNew) && parsed.bUnknownOrCustomFunction) {
+			if (AscCommon.History.Is_On() && parsed.bUnknownOrCustomFunction && !(DataNew.value && DataNew.value.type === CellValueType.Error && DataNew.value.text === AscCommon.cErrorOrigin['busy']) && !DataOld.isEqual(DataNew)) {
 				AscCommon.History.Add(AscCommonExcel.g_oUndoRedoCell, AscCH.historyitem_Cell_ChangeValue, this.ws.getId(),
 					new Asc.Range(this.nCol, this.nRow, this.nCol, this.nRow),
 					new UndoRedoData_CellSimpleData(this.nRow, this.nCol, DataOld, DataNew));
