@@ -414,6 +414,8 @@
 				const oDrawing = this.getTargetObject();
 				const oTargetTextOptions = this.getTargetTextOptions();
 				if (oTargetTextOptions) {
+					return true;
+				} else if (this.isCanIterate()) {
 					return !(oDrawing.brush && oDrawing.brush.isVisible() || oDrawing.pen && oDrawing.pen.Fill && oDrawing.pen.Fill.isVisible() || oDrawing.blipFill && oDrawing.blipFill.RasterImageId);
 				}
 			}

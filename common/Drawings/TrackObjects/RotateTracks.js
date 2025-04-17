@@ -185,7 +185,7 @@ function OverlayObject(geometry, extX, extY, brush, pen, transform )
     };
 }
 
-function ObjectToDraw(brush, pen, extX, extY, geometry, transform, x, y, oComment, Code, oLineStructure, nId, bIsBulletSymbol)
+function ObjectToDraw(brush, pen, extX, extY, geometry, transform, x, y, oComment, TextElement, oLineStructure, nId, bIsBulletSymbol)
 {
     this.extX = extX;
     this.extY = extY;
@@ -194,12 +194,12 @@ function ObjectToDraw(brush, pen, extX, extY, geometry, transform, x, y, oCommen
     this.geometry = geometry;
     this.parentShape = null;
     this.Comment = oComment;
-    this.Code = Code;
+    this.TextElement = TextElement;
     this.pen = pen;
     this.brush = brush;
 		this.lineStructure = oLineStructure;
 		this.isBulletSymbol = bIsBulletSymbol;
-
+		this.SpaceTextElements = [];
 	/*позиция символа*/
     this.x = x;
     this.y = y;
@@ -226,7 +226,7 @@ ObjectToDraw.prototype =
         }
     },
 
-    resetBrushPen: function(brush, pen, x, y, Code, isBulletSymbol)
+    resetBrushPen: function(brush, pen, x, y, TextElement, isBulletSymbol)
     {
         this.brush = brush;
         this.pen = pen;
@@ -236,9 +236,9 @@ ObjectToDraw.prototype =
             this.x = x;
             this.y = y;
         }
-        if(AscFormat.isRealNumber(Code))
+        if(TextElement)
         {
-            this.Code = Code;
+            this.TextElement = TextElement;
         }
 				if (AscFormat.isRealBool(isBulletSymbol)) {
 					this.isBulletSymbol = isBulletSymbol;
@@ -359,9 +359,28 @@ ObjectToDraw.prototype =
     createDuplicate: function()
     {
     },
+	getTextElementCode: function () {
+		if (this.TextElement) {
+			return this.TextElement.GetValue();
+		}
+	},
+	compareGroundWithText: function (oTextObjectToDraw) {
+		if (this.TextElement === oTextObjectToDraw.TextElement) {
+			return true;
+		}
+		for (let i = 0; i < oTextObjectToDraw.SpaceTextElements.length; i += 1) {
+			if (oTextObjectToDraw.SpaceTextElements[i] === this.TextElement) {
+				return true;
+			}
+		}
+		return false;
+	},
+	addSpaceTextElement: function (oElement) {
+		this.SpaceTextElements.push(oElement);
+	},
 
     compareForMorph: function(oDrawingToCheck, oCurCandidate) {
-        if(AscFormat.isRealNumber(this.Code) && oDrawingToCheck.Code === this.Code) {
+        if(AscFormat.isRealNumber(this.getTextElementCode()) && oDrawingToCheck.getTextElementCode() === this.getTextElementCode()) {
             return oDrawingToCheck;
         }
         return oCurCandidate;

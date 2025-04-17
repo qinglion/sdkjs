@@ -1065,7 +1065,7 @@
                         for(nText = 0; nText < aTextStructs1.length; ++nText) {
                             let oTextStruct1 = aTextStructs1[nText];
                             let oTextStruct2 = aTextStructs2[nText];
-                            if(!isN(oTextStruct1.Code) || oTextStruct1.Code !== oTextStruct2.Code) {
+                            if(!isN(oTextStruct1.getTextElementCode()) || oTextStruct1.getTextElementCode() !== oTextStruct2.getTextElementCode()) {
                                 break;
                             }
                         }
@@ -1127,7 +1127,7 @@
                             for(nText = 0; nText < aTextStructs1.length; ++nText) {
                                 let oTextStruct1 = aTextStructs1[nText];
                                 let oTextStruct2 = aTextStructs2[nText];
-                                if(oTextStruct1.Code === oTextStruct2.Code) {
+                                if(oTextStruct1.getTextElementCode() === oTextStruct2.getTextElementCode()) {
                                     //let oGeomMorph = new CGeometryMorphObject(oTexturesCache, nRelH1, nRelH2,
                                     //    oTextStruct1.geometry, oTextStruct1.brush, oTextStruct1.pen, oTransform1,
                                     //    oTextStruct2.geometry, oTextStruct2.brush, oTextStruct2.pen, oTransform2);

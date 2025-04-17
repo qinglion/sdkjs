@@ -2756,13 +2756,6 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 			var Element = aHigh.Get_Next();
 			while (null != Element)
 			{
-				if (pGraphics.m_bIsTextDrawer) {
-					pGraphics.checkSplitHighlights(Element);
-					if (Element.Additional.TextDrawer.IsSkipDraw) {
-						Element = aHigh.Get_Next();
-						continue;
-					}
-				}
 				if (!pGraphics.set_fillColor)
 				{
 					pGraphics.b_color1(Element.r, Element.g, Element.b, 255);
@@ -2773,6 +2766,9 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 				}
 				pGraphics.rect(Element.x0, Element.y0, Element.x1 - Element.x0, Element.y1 - Element.y0, Element.Additional2);
 				pGraphics.df();
+				if (pGraphics.m_bIsTextDrawer) {
+					pGraphics.addGroundElement(Element);
+				}
 				Element = aHigh.Get_Next();
 			}
 			pGraphics.End_Command();
@@ -3036,9 +3032,6 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 			}
 		}
 		pGraphics.End_Command();
-		if (pGraphics.m_bIsTextDrawer) {
-			pGraphics.checkSplitElements(true);
-		}
 	}
 };
 Paragraph.prototype.drawRunContentElements = function(CurPage, pGraphics, drawState)
@@ -3175,16 +3168,14 @@ Paragraph.prototype.drawRunContentLines = function(CurPage, pGraphics, drawState
 		while (null != Element)
 		{
 			if (pGraphics.m_bIsTextDrawer) {
-				pGraphics.checkSplitStrikeouts(Element);
-				if (Element.Additional.TextDrawer.IsSkipDraw) {
-					Element = aStrikeout.Get_Next();
-					continue;
-				}
 				pGraphics.SetAdditionalProps(Element.Additional2);
 			}
 
 			pGraphics.p_color(Element.r, Element.g, Element.b, 255);
 			pGraphics.drawHorLine(c_oAscLineDrawingRule.Top, Element.y0, Element.x0, Element.x1, Element.w);
+			if (pGraphics.m_bIsTextDrawer) {
+				pGraphics.addGroundElement(Element);
+			}
 			Element = aStrikeout.Get_Next();
 		}
 		pGraphics.End_Command();
@@ -3195,17 +3186,14 @@ Paragraph.prototype.drawRunContentLines = function(CurPage, pGraphics, drawState
 		while (null != Element)
 		{
 			if (pGraphics.m_bIsTextDrawer) {
-				pGraphics.checkSplitDStrikeouts(Element);
-				if (Element.Additional.TextDrawer.IsSkipDraw) {
-					Element = aDStrikeout.Get_Next();
-					continue;
-				}
 				pGraphics.SetAdditionalProps(Element.Additional2);
 			}
 
 			pGraphics.p_color(Element.r, Element.g, Element.b, 255);
 			pGraphics.drawHorLine2(c_oAscLineDrawingRule.Top, Element.y0, Element.x0, Element.x1, Element.w);
-
+			if (pGraphics.m_bIsTextDrawer) {
+				pGraphics.addGroundElement(Element);
+			}
 			Element = aDStrikeout.Get_Next();
 		}
 		pGraphics.End_Command();
@@ -3217,16 +3205,14 @@ Paragraph.prototype.drawRunContentLines = function(CurPage, pGraphics, drawState
 		while (null != Element)
 		{
 			if (pGraphics.m_bIsTextDrawer) {
-				pGraphics.checkSplitUnderlines(Element);
-				if (Element.Additional.TextDrawer.IsSkipDraw) {
-					Element = aUnderline.Get_Next();
-					continue;
-				}
 				pGraphics.SetAdditionalProps(Element.Additional2);
 			}
 
 			pGraphics.p_color(Element.r, Element.g, Element.b, 255);
 			pGraphics.drawHorLine(0, Element.y0, Element.x0, Element.x1, Element.w);
+			if (pGraphics.m_bIsTextDrawer) {
+				pGraphics.addGroundElement(Element);
+			}
 			Element = aUnderline.Get_Next();
 		}
 		pGraphics.End_Command();
@@ -3236,17 +3222,14 @@ Paragraph.prototype.drawRunContentLines = function(CurPage, pGraphics, drawState
 		while (null != Element)
 		{
 			if (pGraphics.m_bIsTextDrawer) {
-				pGraphics.checkSplitDUnderlines(Element);
-				if (Element.Additional.TextDrawer.IsSkipDraw) {
-					Element = aDUnderline.Get_Next();
-					continue;
-				}
 				pGraphics.SetAdditionalProps(Element.Additional2);
 			}
 
 			pGraphics.p_color(Element.r, Element.g, Element.b, 255);
 			pGraphics.drawHorLine2(c_oAscLineDrawingRule.Top, Element.y0, Element.x0, Element.x1, Element.w);
-
+			if (pGraphics.m_bIsTextDrawer) {
+				pGraphics.addGroundElement(Element);
+			}
 			Element = aDUnderline.Get_Next();
 		}
 		pGraphics.End_Command();
@@ -3429,9 +3412,6 @@ Paragraph.prototype.drawRunContentLines = function(CurPage, pGraphics, drawState
 				if (arrFormRectsLine.length > 0)
 					arrFormRects.push(arrFormRectsLine);
 			}
-		}
-		if (pGraphics.m_bIsTextDrawer) {
-			pGraphics.checkSplitElements();
 		}
 		pGraphics.End_Command();
 	}
@@ -19185,13 +19165,6 @@ function CParaDrawingRangeLinesElement(y0, y1, x0, x1, w, r, g, b, a, Additional
     this.Additional2  = Additional2;
     this.Intermediate = [];
 }
-CParaDrawingRangeLinesElement.prototype.IsDrawable = function() {
-	if (this.Additional && this.Additional.TextDrawer) {
-		return !this.Additional.TextDrawer.IsSkipDraw;
-	}
-	return true;
-};
-
 
 function CParaDrawingRangeLines()
 {
@@ -19334,13 +19307,8 @@ CParaDrawingRangeLines.prototype =
 				}
 				const oCurTextInfo = Element.Additional.TextDrawer;
 				const bIsSplitByWords = oPrevTextInfo.SplitType === AscFormat.ITERATEDATA_TYPE_WORD;
-				const bPrevSkipDraw = oPrevTextInfo.IsSkipDraw;
-				const bNextSkipDraw = oCurTextInfo.IsSkipDraw;
-				const bPrevText = oPrevTextInfo.IsText;
-				const bNextText = oCurTextInfo.IsText;
-				if (bPrevSkipDraw !== bNextSkipDraw) {
-					return false;
-				}
+				const bPrevText = !oPrevTextInfo.TextElement || oPrevTextInfo.TextElement.IsText();
+				const bNextText = !oCurTextInfo.TextElement || oCurTextInfo.TextElement.IsText();
 				if (bIsSplitByWords) {
 					return bPrevText === bNextText;
 				}
@@ -19371,7 +19339,7 @@ CParaDrawingRangeLines.prototype =
             {
                 var PrevEl = CurElements[CurCount - 1];
 
-                if ( Math.abs( PrevEl.y0 - Element.y0 ) < 0.001 && Math.abs( PrevEl.y1 - Element.y1 ) < 0.001 && Math.abs( PrevEl.x1 - Element.x0 ) < 0.001 && PrevEl.IsDrawable() && Element.IsDrawable())
+                if ( Math.abs( PrevEl.y0 - Element.y0 ) < 0.001 && Math.abs( PrevEl.y1 - Element.y1 ) < 0.001 && Math.abs( PrevEl.x1 - Element.x0 ) < 0.001)
                 {
                     // Сравниваем толщины линий
                     if ( Element.w > PrevEl.w )
@@ -19391,15 +19359,7 @@ CParaDrawingRangeLines.prototype =
                 }
             }
         }
-    },
-	IsDrawableElements: function(PrevEl, Element)
-											{
-			if (PrevEl.Additional && PrevEl.Additional.TextDrawer && Element.Additional && Element.Additional.TextDrawer)
-			{
-				return !PrevEl.Additional.TextDrawer.IsSkipDraw && !Element.Additional.TextDrawer.IsSkipDraw;
-			}
-		return true;
-	}
+    }
 };
 function CParaDrawingRangeHorizontalLines()
 {

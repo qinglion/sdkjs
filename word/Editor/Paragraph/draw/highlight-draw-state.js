@@ -287,7 +287,7 @@
 		this.handleRun(run);
 
 		if (this.Graphics.m_bIsTextDrawer) {
-			highlightAdditional = {TextDrawer: {IsText: element.IsText(), SplitType: this.Graphics.m_nCurrentSplitOptions, IsSkipDraw: highlight_None === this.highlight}};
+			highlightAdditional = {TextDrawer: {TextElement: element, SplitType: this.Graphics.m_nCurrentSplitOptions}};
 		}
 		this.addHighlight(this.X, this.X + w, flags, hyperlink, collColor, comments, curComment, highlightAdditional);
 		
@@ -476,7 +476,7 @@
 		if (flags & FLAG_COMMENT && comments.length)
 			this.Comm.Add(startY, endY, startX, endX, 0, 0, 0, 0, {Active : curComment, CommentId : comments});
 		
-		if ((flags & FLAG_HIGHLIGHT) && (this.highlight && (highlight_None !== this.highlight || highlightAdditional)))
+		if ((flags & FLAG_HIGHLIGHT) && (this.highlight && highlight_None !== this.highlight))
 			this.High.Add(startY, endY, startX, endX, 0, this.highlight.r, this.highlight.g, this.highlight.b, highlightAdditional, this.highlight);
 		
 		if (flags & FLAG_SEARCH)
