@@ -22546,6 +22546,39 @@ $(function () {
 		assert.strictEqual(oParser.calculate().getValue(), 0.21, 'Result of VLOOKUP(576,N100:O114,2)');
 		wb.dependencyFormulas.lockRecal();
 
+		ws.getRange2("A1101:B1120").cleanAll();
+		ws.getRange2("A1101").setValue("BOMBaRDIRO CROCODILO");
+		ws.getRange2("A1102").setValue("B0MBoMBINI GUS1N1");
+		ws.getRange2("A1103").setValue("1.12");
+		ws.getRange2("A1104").setValue("2.24");
+		ws.getRange2("A1105").setValue("#VALUE!");
+		ws.getRange2("A1106").setValue("#NUM!");
+		ws.getRange2("A1107").setValue("#DIV/0!");
+		ws.getRange2("A1108").setValue("TRUE");
+		ws.getRange2("A1109").setValue("Sandra");
+		ws.getRange2("A1113").setValue("5,2");
+		ws.getRange2("B1101").setValue("1");
+		ws.getRange2("B1102").setValue("2");
+		ws.getRange2("B1103").setValue("3");
+		ws.getRange2("B1104").setValue("4");
+		ws.getRange2("B1105").setValue("5");
+		ws.getRange2("B1106").setValue("6");
+		ws.getRange2("B1107").setValue("7");
+		ws.getRange2("B1108").setValue("8");
+		ws.getRange2("B1109").setValue("9");
+		ws.getRange2("B1110").setValue("10");
+		ws.getRange2("B1111").setValue("11");
+		ws.getRange2("B1112").setValue("12");
+		ws.getRange2("B1113").setValue("13");
+
+		oParser = new parserFormula('VLOOKUP(2.24,A1101:B1113,2,FALSE)', "A2", ws);
+		assert.ok(oParser.parse(), 'VLOOKUP(2.24,A1101:B1113,2,FALSE)');
+		assert.strictEqual(oParser.calculate().getValue(), 4, 'Result of VLOOKUP("2.24",A1101:B1113,2,FALSE)');
+
+		oParser = new parserFormula('VLOOKUP("B0MBoMBINI GUS1N1",A1101:B1113,2,FALSE)', "A2", ws);
+		assert.ok(oParser.parse(), 'VLOOKUP("B0MBoMBINI GUS1N1",A1101:B1113,2,FALSE)');
+		assert.strictEqual(oParser.calculate().getValue(), 2, 'Result of VLOOKUP("B0MBoMBINI GUS1N1",A1101:B1113,2,FALSE)');
+
 		// for bug 65016 - error tests when simpleSearch
 		ws.getRange2("A101:B120").cleanAll();
 		ws.getRange2("A101").setValue("String");

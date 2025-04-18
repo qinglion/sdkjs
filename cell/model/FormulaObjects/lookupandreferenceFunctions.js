@@ -2880,6 +2880,7 @@ function (window, undefined) {
 		this.cacheId = {};
 		this.cacheRanges = {};
 		this.bHor = bHor;
+		this.sortedCache = {};
 	}
 
 	VHLOOKUPCache.prototype.calculate = function (arg, argument1) {
@@ -3076,7 +3077,33 @@ function (window, undefined) {
 			}
 			cacheRange.add(range.getBBox0(), cacheElem);
 		}
+		var sorted = this.sortedCache[sRangeName];
+		if (!sorted) {
+			const tmpArrays = {};
+			sorted = {};
+			for (let i = 0; i < cacheElem.elements.length; i += 1) {
+				const elem = cacheElem.elements[i];
+				const type = elem.v.type;
+				if (!tmpArrays[type]) {
+					tmpArrays[type] = []
+				}
+				tmpArrays[type].push(i);
+			}
+			for (let i in tmpArrays) {
+				sorted[i] = Uint32Array.from(tmpArrays[i]);
+				if (i === String(cElementType.number)) {
+					sorted[i].sort(function (a, b) {
+						return cacheElem.elements[a].v.value - cacheElem.elements[b].v.value;
+					});
+				} else {
+					sorted[i].sort(function (a, b) {
+						return String(cacheElem.elements[a].v.value).toLowerCase().localeCompare(String(cacheElem.elements[b].v.value).toLowerCase());
+					});
+				}
 
+			}
+			this.sortedCache[sRangeName] = sorted;
+		}
 		var sInputKey;
 		if (!opt_xlookup) {
 			sInputKey =
@@ -3088,12 +3115,12 @@ function (window, undefined) {
 		res = cacheElem.results[sInputKey];
 		if (!res) {
 			cacheElem.results[sInputKey] =
-				res = this._calculate(cacheElem.elements, valueForSearching, arg3Value, opt_arg4, opt_arg5);
+				res = this._calculate(cacheElem.elements, valueForSearching, arg3Value, opt_arg4, opt_arg5, sorted);
 		}
 
 		return res;
 	};
-	VHLOOKUPCache.prototype._calculate = function (cacheArray, valueForSearching, lookup, opt_arg4, opt_arg5) {
+	VHLOOKUPCache.prototype._calculate = function (cacheArray, valueForSearching, lookup, opt_arg4, opt_arg5, sorted) {
 		let res = -1, i = 0, j, length = cacheArray.length, k, elem, val, nextVal;
 		let xlookup = opt_arg4 !== undefined && opt_arg5 !== undefined;
 
@@ -3164,7 +3191,7 @@ function (window, undefined) {
 		//мы делаем иначе: бинарный поиск происходит всегда и не зависит от длины массива, при поиске наибольшего(наименьшего)
 		//из обработанных элементов выбираем те, которые больше(меньше) -> из них уже ищем наименьший(наибольший)
 		//т.е. в итоге получаем следующий наименьший/наибольший элемент
-		const _binarySearch = function (revert) {
+		const _binarySearch = function (revert, sortedCache) {
 			let canCompare;
 			
 			i = 0;
@@ -3173,7 +3200,11 @@ function (window, undefined) {
 				j = length - 1;
 				while (i <= j) {
 					k = Math.ceil((i + j) / 2);
-					elem = cacheArray[k];
+					if (sortedCache) {
+						elem = cacheArray[sortedCache[k]]
+					} else {
+						elem = cacheArray[k];
+					}
 					val = elem.v;
 					if (val.type === cElementType.empty) {
 						val = val.tocBool();
@@ -3192,7 +3223,11 @@ function (window, undefined) {
 				j = length - 1;
 				while (i <= j) {
 					k = Math.floor((i + j) / 2);
-					elem = cacheArray[k];
+					if (sortedCache) {
+						elem = cacheArray[sortedCache[k]]
+					} else {
+						elem = cacheArray[k];
+					}
 					val = elem.v;
 					canCompare = true;
 					if (val.type === cElementType.empty) {
@@ -3251,8 +3286,10 @@ function (window, undefined) {
 				res = simpleSearch();
 			}
 		} else {
-			// Exact value
-			res = simpleSearch();
+			xlookup = true;
+			const sortedCache = sorted[valueForSearching.type];
+			length = sortedCache.length;
+			res = _binarySearch(false, sortedCache);
 		}
 
 		return res;
@@ -3916,8 +3953,7 @@ function (window, undefined) {
 	};
 
 	function LOOKUPCache() {
-		this.cacheId = {};
-		this.cacheRanges = {};
+		VHLOOKUPCache.call(this);
 	}
 
 	LOOKUPCache.prototype = Object.create(VHLOOKUPCache.prototype);
