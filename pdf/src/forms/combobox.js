@@ -543,9 +543,10 @@
                 }
             }
             
-            if (aFields[i] == this) {
-                continue;
-            }
+            // not skip current field for history
+            // if (aFields[i] == this) {
+            //     continue;
+            // }
 
             if (aCurIdxs && aCurIdxs.length != 0) {
                 aFields[i].SetCurIdxs(aCurIdxs);
