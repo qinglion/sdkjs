@@ -197,7 +197,7 @@
 		this.addCompositeInputLine(element, run, inRunPos);
 		let oTextDrawerInfo;
 		if (this.Graphics.m_bIsTextDrawer) {
-			oTextDrawerInfo = {TextDrawer: {SplitType: this.Graphics.m_nSplitParagraphType, IsText: element}};
+			oTextDrawerInfo = {TextDrawer: {SplitType: this.Graphics.m_nCurrentSplitOptions, TextElement: element}};
 		}
 		let startX = this.X;
 		let endX   = this.X + element.GetWidthVisible();
@@ -563,33 +563,33 @@
 			if (this.reviewRem)
 			{
 				if (this.reviewMove)
-					this.DStrikeout.Add(startX, endX, this.reviewColor, undefined, undefined, oTextDrawerInfo);
+					this.DStrikeout.Add(startX, endX, this.reviewColor, oTextDrawerInfo);
 				else
-					this.Strikeout.Add(startX, endX, this.reviewColor, undefined, undefined, oTextDrawerInfo);
+					this.Strikeout.Add(startX, endX, this.reviewColor, oTextDrawerInfo);
 
 				if (this.reviewRemAdd)
-					this.Underline.Add(startX, endX, this.reviewRemAddColor, undefined, undefined, oTextDrawerInfo);
+					this.Underline.Add(startX, endX, this.reviewRemAddColor, oTextDrawerInfo);
 			}
 			else if (this.isDStrikeout)
 			{
-				this.DStrikeout.Add(startX, endX, this.color, undefined, this.textPr, oTextDrawerInfo);
+				this.DStrikeout.Add(startX, endX, this.color, oTextDrawerInfo, this.textPr);
 			}
 			else if (this.isStrikeout)
 			{
-				this.Strikeout.Add(startX, endX, this.color, undefined, this.textPr, oTextDrawerInfo);
+				this.Strikeout.Add(startX, endX, this.color, oTextDrawerInfo, this.textPr);
 			}
 		}
 
 		if (this.reviewAdd)
 		{
 			if (this.reviewMove)
-				this.DUnderline.Add(startX, endX, this.reviewColor, undefined, undefined, oTextDrawerInfo);
+				this.DUnderline.Add(startX, endX, this.reviewColor, oTextDrawerInfo);
 			else
-				this.Underline.Add(startX, endX, this.reviewColor, undefined, undefined, oTextDrawerInfo);
+				this.Underline.Add(startX, endX, this.reviewColor, oTextDrawerInfo);
 		}
 		else if (this.isUnderline)
 		{
-			this.Underline.Add(startX, endX, this.color, undefined, this.textPr, oTextDrawerInfo);
+			this.Underline.Add(startX, endX, this.color, oTextDrawerInfo, this.textPr);
 		}
 	};
 	ParagraphLineDrawState.prototype.addCompositeInputLine = function(element, run, inRunPos)

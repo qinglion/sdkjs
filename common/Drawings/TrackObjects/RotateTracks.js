@@ -364,17 +364,6 @@ ObjectToDraw.prototype =
 			return this.TextElement.GetValue();
 		}
 	},
-	compareGroundWithText: function (oTextObjectToDraw) {
-		if (this.TextElement === oTextObjectToDraw.TextElement) {
-			return true;
-		}
-		for (let i = 0; i < oTextObjectToDraw.SpaceTextElements.length; i += 1) {
-			if (oTextObjectToDraw.SpaceTextElements[i] === this.TextElement) {
-				return true;
-			}
-		}
-		return false;
-	},
 	addSpaceTextElement: function (oElement) {
 		this.SpaceTextElements.push(oElement);
 	},

@@ -7301,6 +7301,7 @@
 						const oParagraph = oDocStructure.m_aContent[i];
 						oParagraph.generateWrappersBySplit(oParagraphSplitOptions[i], oTransform, oTheme, oColorMap, this);
 					}
+					oTextDrawer.clearTextElements();
 					return oDocStructure;
 				}
 				return null;

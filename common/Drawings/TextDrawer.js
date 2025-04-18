@@ -781,13 +781,13 @@ function isPresentationBulletWord(arrWord) {
 }
 	CParagraphStructure.prototype.getObjectToDrawIterator = function (nDrawingType) {
 		const oThis = this;
-		let nLineIndex = this.m_aContent.length;
+		let nLineIndex = -1;
 		let oLine, arrLineContent, nObjectToDrawIndex = 0, oObjectToDraw;
 		return function() {
 			nObjectToDrawIndex -= 1;
 			oObjectToDraw = arrLineContent && arrLineContent[nObjectToDrawIndex];
-			if (nObjectToDrawIndex < 0 && nLineIndex) {
-				nLineIndex -= 1;
+			if (nObjectToDrawIndex < 0) {
+				nLineIndex += 1;
 				oLine = oThis.m_aContent[nLineIndex];
 				if (oLine) {
 					arrLineContent = oLine.getContentByDrawingType(nDrawingType);
@@ -798,96 +798,105 @@ function isPresentationBulletWord(arrWord) {
 			return oObjectToDraw;
 		}
 	};
-	CParagraphStructure.prototype.getCombinedGroundElementsByWord = function (nDrawingType, arrRes) {
-		const fGetObjectToDraw = this.getObjectToDrawIterator(nDrawingType);
-		let oObjectToDraw = fGetObjectToDraw();
-		for (let i = 0; i < this.m_aWords.length; i += 1) {
-			let arrResWord;
-			if (arrRes[i]) {
-				arrResWord = arrRes[i];
-			} else {
-				arrResWord = [];
-				arrRes.push(arrResWord);
-			}
+	CParagraphStructure.prototype.getLetterElementsMap = function (arrRes) {
+		const oMapWords = {};
+		let nLetterCounter = 0;
+		for (let i = 0; i < this.m_aWords.length; i++) {
 			const arrWord = this.m_aWords[i];
-			if (!oObjectToDraw) {
-				continue;
-			}
 			for (let j = 0; j < arrWord.length; j++) {
-				const oTextObject = arrWord[j];
-				if (oObjectToDraw) {
-					while (oObjectToDraw.compareGroundWithText(oTextObject)) {
-						arrResWord.push(oObjectToDraw);
-						oObjectToDraw = fGetObjectToDraw();
-						if (!oObjectToDraw) {
-							break;
-						}
-					}
-				} else {
-					break;
+				const oTextObjectToDraw = arrWord[j];
+				if (!arrRes[nLetterCounter]) {
+					arrRes.push([]);
 				}
+				const arrResWord = arrRes[nLetterCounter];
+				if (oTextObjectToDraw.TextElement) {
+					oMapWords[oTextObjectToDraw.TextElement.textDrawerId] = arrResWord;
+				}
+				for (let k = 0; k < oTextObjectToDraw.SpaceTextElements.length; k += 1) {
+					const oSpaceElement =  oTextObjectToDraw.SpaceTextElements[k];
+					oMapWords[oSpaceElement.textDrawerId] = arrResWord;
+				}
+				nLetterCounter += 1;
 			}
 		}
-		return arrRes;
+		return oMapWords;
 	};
-	CParagraphStructure.prototype.getCombinedGroundElementsByLetter = function (nDrawingType, arrRes) {
-		const fGetObjectToDraw = this.getObjectToDrawIterator(nDrawingType);
-		let oObjectToDraw = fGetObjectToDraw();
-		let nCountLetter = 0;
-		for (let i = 0; i < this.m_aWords.length; i += 1) {
+	CParagraphStructure.prototype.getWordElementsMap = function (arrRes) {
+		const oMapWords = {};
+		for (let i = 0; i < this.m_aWords.length; i++) {
 			const arrWord = this.m_aWords[i];
+			if (!arrRes[i]) {
+				arrRes.push([]);
+			}
+			const arrResWord = arrRes[i];
 			for (let j = 0; j < arrWord.length; j++) {
-				let arrResLetter;
-				if (arrRes[nCountLetter]) {
-					arrResLetter = arrRes[nCountLetter];
-				} else {
-					arrResLetter = [];
-					arrRes.push(arrResLetter);
+				const oTextObjectToDraw = arrWord[j];
+				if (oTextObjectToDraw.TextElement) {
+					oMapWords[oTextObjectToDraw.TextElement.textDrawerId] = arrResWord;
 				}
-				const oTextObject = arrWord[j];
-				while (oObjectToDraw && oObjectToDraw.compareGroundWithText(oTextObject)) {
-					arrResLetter.push(oObjectToDraw);
-					oObjectToDraw = fGetObjectToDraw();
-					if (!oObjectToDraw) {
-						break;
-					}
+				for (let k = 0; k < oTextObjectToDraw.SpaceTextElements.length; k += 1) {
+					const oSpaceElement =  oTextObjectToDraw.SpaceTextElements[k];
+					oMapWords[oSpaceElement.textDrawerId] = arrResWord;
 				}
-				nCountLetter += 1;
 			}
 		}
-		return arrRes;
+		return oMapWords;
+	};
+	CParagraphStructure.prototype.getCombinedGroundElements = function (nDrawingType, oLettersMap) {
+		const fGetObjectToDraw = this.getObjectToDrawIterator(nDrawingType);
+		let oObjectToDraw;
+		let arrAddElements = [];
+		while (oObjectToDraw = fGetObjectToDraw()) {
+			const oTextElement = oObjectToDraw.TextElement;
+			if (oTextElement) {
+				const arrLetter = oLettersMap[oTextElement.textDrawerId];
+				if (arrLetter) {
+					arrLetter.push(oObjectToDraw);
+					arrLetter.push.apply(arrLetter, arrAddElements);
+					arrAddElements = [];
+				} else {
+					arrAddElements.push(oObjectToDraw);
+				}
+			} else {
+				arrAddElements.push(oObjectToDraw);
+			}
+		}
 	};
 CParagraphStructure.prototype.getBackgroundElementsByWord = function () {
 	if (!this.m_aSplitBackgroundsByIterationType) {
 		this.m_aSplitBackgroundsByIterationType = [];
-		this.getCombinedGroundElementsByWord(CLineStructure_DrawType_Highlights, this.m_aSplitBackgroundsByIterationType);
+		const oWordsMap = this.getWordElementsMap(this.m_aSplitBackgroundsByIterationType);
+		this.getCombinedGroundElements(CLineStructure_DrawType_Highlights, oWordsMap);
 	}
 	return this.m_aSplitBackgroundsByIterationType;
 };
 	CParagraphStructure.prototype.getForegroundElementsByWord = function () {
 		if (!this.m_aSplitForegroundsByIterationType) {
 			this.m_aSplitForegroundsByIterationType = [];
-			this.getCombinedGroundElementsByWord(CLineStructure_DrawType_Underlines, this.m_aSplitForegroundsByIterationType);
-			this.getCombinedGroundElementsByWord(CLineStructure_DrawType_DUnderlines, this.m_aSplitForegroundsByIterationType);
-			this.getCombinedGroundElementsByWord(CLineStructure_DrawType_Strikeouts, this.m_aSplitForegroundsByIterationType);
-			this.getCombinedGroundElementsByWord(CLineStructure_DrawType_DStrikeouts, this.m_aSplitForegroundsByIterationType);
+			const oWordsMap = this.getWordElementsMap(this.m_aSplitForegroundsByIterationType);
+			this.getCombinedGroundElements(CLineStructure_DrawType_Underlines, oWordsMap);
+			this.getCombinedGroundElements(CLineStructure_DrawType_DUnderlines, oWordsMap);
+			this.getCombinedGroundElements(CLineStructure_DrawType_Strikeouts, oWordsMap);
+			this.getCombinedGroundElements(CLineStructure_DrawType_DStrikeouts, oWordsMap);
 		}
 		return this.m_aSplitForegroundsByIterationType;
 	};
 	CParagraphStructure.prototype.getBackgroundElementsByLetter = function () {
 		if (!this.m_aSplitBackgroundsByIterationType) {
 			this.m_aSplitBackgroundsByIterationType = [];
-			this.getCombinedGroundElementsByLetter(CLineStructure_DrawType_Highlights, this.m_aSplitBackgroundsByIterationType);
+			const oLetterMap = this.getLetterElementsMap(this.m_aSplitBackgroundsByIterationType);
+			this.getCombinedGroundElements(CLineStructure_DrawType_Highlights, oLetterMap);
 		}
 		return this.m_aSplitBackgroundsByIterationType;
 	};
 	CParagraphStructure.prototype.getForegroundElementsByLetter = function () {
 		if (!this.m_aSplitForegroundsByIterationType) {
 			this.m_aSplitForegroundsByIterationType = [];
-			this.getCombinedGroundElementsByLetter(CLineStructure_DrawType_Underlines, this.m_aSplitForegroundsByIterationType);
-			this.getCombinedGroundElementsByLetter(CLineStructure_DrawType_DUnderlines, this.m_aSplitForegroundsByIterationType);
-			this.getCombinedGroundElementsByLetter(CLineStructure_DrawType_Strikeouts, this.m_aSplitForegroundsByIterationType);
-			this.getCombinedGroundElementsByLetter(CLineStructure_DrawType_DStrikeouts, this.m_aSplitForegroundsByIterationType);
+			const oLetterMap = this.getLetterElementsMap(this.m_aSplitForegroundsByIterationType);
+			this.getCombinedGroundElements(CLineStructure_DrawType_Underlines, oLetterMap);
+			this.getCombinedGroundElements(CLineStructure_DrawType_DUnderlines, oLetterMap);
+			this.getCombinedGroundElements(CLineStructure_DrawType_Strikeouts, oLetterMap);
+			this.getCombinedGroundElements(CLineStructure_DrawType_DStrikeouts, oLetterMap);
 		}
 		return this.m_aSplitForegroundsByIterationType;
 	};
@@ -1174,14 +1183,12 @@ function CLineStructure(oLine)
     this.m_aParagraphBackgrounds = [];
     this.m_nDrawType = CLineStructure_DrawType_Content;
 }
-CLineStructure.prototype.addGroundElement = function (oElement) {
-	if (oElement && oElement.Additional && oElement.Additional.TextDrawer) {
+CLineStructure.prototype.addGroundElement = function (oTextElement) {
 		const arrContent = this.getContentByDrawingType();
 		const oLastElement = arrContent[arrContent.length - 1];
 		if (oLastElement) {
-			oLastElement.TextElement = oElement.Additional.TextDrawer.TextElement;
+			oLastElement.TextElement = oTextElement;
 		}
-	}
 }
 CLineStructure.prototype.isBackgroundDrawType = function () {
 	switch (this.m_nDrawType) {
@@ -1595,15 +1602,35 @@ function CTextDrawer(dWidth, dHeight, bDivByLInes, oTheme, bDivGlyphs, oSplitOpt
 		this.m_oSplitOptions = oSplitOptions || {};
 		this.m_nCurrentSplitOptions = null;
 		this.oIdGenerator = oIdGenerator;
+		this.m_oTextElementsWithId = {};
     this.pathMemory = new AscFormat.CPathMemory();
 }
 
 CTextDrawer.prototype = Object.create(AscCommon.CGraphicsBase.prototype);
 CTextDrawer.prototype.constructor = CTextDrawer;
+CTextDrawer.prototype.addTextElementId = function (oElement) {
+	if (!oElement) {
+		return;
+	}
+	if (this.oIdGenerator) {
+		if (!this.m_oTextElementsWithId[oElement.textDrawerId]) {
+			oElement.textDrawerId = this.oIdGenerator.getId();
+			this.m_oTextElementsWithId[oElement.textDrawerId] = oElement;
+		}
+	}
+};
+CTextDrawer.prototype.clearTextElements = function () {
+	for (let id in this.m_oTextElementsWithId) {
+		delete this.m_oTextElementsWithId[id].textDrawerId;
+	}
+	this.m_oTextElementsWithId = {};
+};
 CTextDrawer.prototype.addGroundElement = function (oElement) {
+	const oTextElement = oElement && oElement.Additional && oElement.Additional.TextDrawer && oElement.Additional.TextDrawer.TextElement;
+	this.addTextElementId(oTextElement);
 	for(let nPos = this.m_aStack.length - 1; nPos >= 0; nPos -= 1) {
 		if(this.m_aStack[nPos] instanceof CLineStructure) {
-			this.m_aStack[nPos].addGroundElement(oElement);
+			this.m_aStack[nPos].addGroundElement(oTextElement);
 		}
 	}
 }
@@ -2325,12 +2352,14 @@ CTextDrawer.prototype.CheckAddNewPath = function(x, y, oTextElement, isBulletSym
 
     if(this.m_bDivGlyphs === true)
     {
+	    this.addTextElementId(oTextElement);
         this.Get_PathToDraw(false, true, x, y, oTextElement, isBulletSymbol);
     }
 };
 
 CTextDrawer.prototype.CheckSpaceDraw = function(oSpaceElement, bCheckGeometry)
 {
+	this.addTextElementId(oSpaceElement);
     for(let nPos = 0; nPos < this.m_aStack.length; ++nPos) {
         if(this.m_aStack[nPos] instanceof CParagraphStructure) {
             this.m_aStack[nPos].checkWord(oSpaceElement, bCheckGeometry);

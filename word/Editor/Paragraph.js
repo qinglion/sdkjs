@@ -19307,8 +19307,8 @@ CParaDrawingRangeLines.prototype =
 				}
 				const oCurTextInfo = Element.Additional.TextDrawer;
 				const bIsSplitByWords = oPrevTextInfo.SplitType === AscFormat.ITERATEDATA_TYPE_WORD;
-				const bPrevText = !oPrevTextInfo.TextElement || oPrevTextInfo.TextElement.IsText();
-				const bNextText = !oCurTextInfo.TextElement || oCurTextInfo.TextElement.IsText();
+				const bPrevText = !oPrevTextInfo.TextElement || oPrevTextInfo.TextElement.IsText() || oPrevTextInfo.TextElement.IsMathText();
+				const bNextText = !oCurTextInfo.TextElement || oCurTextInfo.TextElement.IsText() || oCurTextInfo.TextElement.IsMathText();
 				if (bIsSplitByWords) {
 					return bPrevText === bNextText;
 				}
