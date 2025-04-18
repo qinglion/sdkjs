@@ -6120,14 +6120,13 @@ var CPresentation = CPresentation || function(){};
     };
     CPDFDoc.prototype.MergePagesBinary = function(nInsertPos, aUint8Array) {
         let oFile = this.Viewer.file;
-
-        AscCommon.History.Add(new CChangesPDFDocumentMergePages(this, undefined, aUint8Array, nInsertPos));
-
         let sMergeName = "Merged_" + this.mergedPagesData.length;
+
+        this.SetMergedBinaryData(aUint8Array, AscCommon.g_oIdCounter.m_nIdCounterEdit, sMergeName);
+
         let res = oFile.nativeFile.MergePages(aUint8Array, AscCommon.g_oIdCounter.m_nIdCounterEdit, sMergeName);
 
         if (res) {
-            AscCommon.History.StartNoHistoryMode();
             let aPages = oFile.nativeFile["getPagesInfo"]();
             
             for (let i = oFile.originalPagesCount; i < aPages.length; i++) {
@@ -6145,18 +6144,34 @@ var CPresentation = CPresentation || function(){};
             }
 
             oFile.originalPagesCount = aPages.length;
-            AscCommon.History.StartNoHistoryMode();
         }
-
-        this.mergedPagesData.push({
-            mergeName: sMergeName,
-            maxId: AscCommon.g_oIdCounter.m_nIdCounterEdit,
-            binary: aUint8Array
-        });
 
         this.Viewer.checkLoadCMap();
         
         return res;
+    };
+    CPDFDoc.prototype.SetMergedBinaryData = function(aUint8Array, nMaxIdx, sMergeName) {
+        const BINARY_PART_HISTORY_LIMIT = 1048576;
+
+        const binaryParts = [];
+        const amountOfParts = Math.ceil(aUint8Array.length / BINARY_PART_HISTORY_LIMIT);
+
+        for (let i = 0; i < amountOfParts; i += 1) {
+            binaryParts.push(aUint8Array.slice(i * BINARY_PART_HISTORY_LIMIT, (i + 1) * BINARY_PART_HISTORY_LIMIT));
+        }
+
+        AscCommon.History.Add(new CChangesPDFDocumentStartMergePages(this));
+        for (let i = 0; i < amountOfParts; i += 1) {
+            AscCommon.History.Add(new CChangesPDFDocumentPartMergePages(this, [], binaryParts[i]));
+        }
+        
+        AscCommon.History.Add(new CChangesPDFDocumentEndMergePages(this, nMaxIdx, sMergeName));
+
+        this.mergedPagesData.push({
+            mergeName: sMergeName,
+            maxId: nMaxIdx,
+            binary: aUint8Array
+        });
     };
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

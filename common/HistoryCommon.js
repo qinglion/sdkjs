@@ -4153,8 +4153,10 @@
 	window['AscDFH'].historyitem_PDF_Document_PageLocks			= window['AscDFH'].historyitem_type_PDF_Document | 8;
 	window['AscDFH'].historyitem_PDF_PropLocker_ObjectId		= window['AscDFH'].historyitem_type_PDF_Document | 9;
 	window['AscDFH'].historyitem_PDF_Document_MovePage			= window['AscDFH'].historyitem_type_PDF_Document | 10;
-	window['AscDFH'].historyitem_Pdf_Document_Merge_Pages		= window['AscDFH'].historyitem_type_PDF_Document | 11;
-	window['AscDFH'].historyitem_Pdf_Document_Calc_Order		= window['AscDFH'].historyitem_type_PDF_Document | 12;
+	window['AscDFH'].historyitem_Pdf_Document_Start_Merge_Pages	= window['AscDFH'].historyitem_type_PDF_Document | 11;
+	window['AscDFH'].historyitem_Pdf_Document_Part_Merge_Pages	= window['AscDFH'].historyitem_type_PDF_Document | 12;
+	window['AscDFH'].historyitem_Pdf_Document_End_Merge_Pages	= window['AscDFH'].historyitem_type_PDF_Document | 13;
+	window['AscDFH'].historyitem_Pdf_Document_Calc_Order		= window['AscDFH'].historyitem_type_PDF_Document | 14;
 
 
 	AscDFH.historyitem_CustomPropertiesAddProperty = AscDFH.historyitem_type_CustomProperties | 0;
