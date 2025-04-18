@@ -1239,17 +1239,42 @@ CChangesPDFDocumentMovePage.prototype.private_SetValue = function(nNewPos)
  * @constructor
  * @extends {AscDFH.CChangesBaseStringProperty}
  */
-function CChangesPDFDocumentMergePages(Class, Old, New, nPosToAdd, Color)
+function CChangesPDFDocumentMergePages(Class, Old, New, nPosToAdd, nMaxIdx, sMergeName, Color)
 {
 	AscDFH.CChangesBaseStringProperty.call(this, Class, Old, New, Color);
     this.PosToAdd = nPosToAdd;
+    this.MaxIdx = nMaxIdx;
+    this.MergeName = sMergeName;
 }
 CChangesPDFDocumentMergePages.prototype = Object.create(AscDFH.CChangesBaseStringProperty.prototype);
 CChangesPDFDocumentMergePages.prototype.constructor = CChangesPDFDocumentMergePages;
 CChangesPDFDocumentMergePages.prototype.Type = AscDFH.historyitem_Pdf_Document_Merge_Pages;
-CChangesPDFDocumentMergePages.prototype.private_SetValue = function(Value)
+CChangesPDFDocumentMergePages.prototype.Undo = function() {
+    let oDoc = this.Class;
+	let oFile = oDoc.Viewer.file;
+
+    oDoc.mergedPagesData.pop();
+    // oDoc.nativeFile.UndoLastMerge();
+
+    let aPages = oFile.nativeFile["getPagesInfo"]();
+    oFile.originalPagesCount = aPages.length;
+};
+CChangesPDFDocumentMergePages.prototype.Redo = function()
 {
-	this.Class.MergePagesBinary(this.PosToAdd, Value);
+    let oDoc = this.Class;
+	let oFile = oDoc.Viewer.file;
+
+    oFile.nativeFile.MergePages(this.New, this.MaxIdx, this.MergeName);
+    let aPages = oFile.nativeFile["getPagesInfo"]();
+    oFile.originalPagesCount = aPages.length;
+
+    oDoc.mergedPagesData.push({
+        mergeName: this.MergeName,
+        maxId: this.MaxIdx,
+        binary: this.New
+    });
+
+    oDoc.Viewer.checkLoadCMap();
 };
 CChangesPDFDocumentMergePages.prototype.WriteToBinary = function(Writer)
 {
@@ -1261,16 +1286,26 @@ CChangesPDFDocumentMergePages.prototype.WriteToBinary = function(Writer)
 	if (undefined === this.PosToAdd)
 		nFlags |= 2;
 
-	if (undefined === this.New)
+	if (undefined === this.MaxIdx)
 		nFlags |= 4;
 
-	if (undefined === this.Old)
+	if (undefined === this.MergeName)
 		nFlags |= 8;
+
+	if (undefined === this.New)
+		nFlags |= 16;
+
+	if (undefined === this.Old)
+		nFlags |= 32;
 	
 	Writer.WriteLong(nFlags);
 
 	if (undefined !== this.PosToAdd)
 		Writer.WriteLong(this.PosToAdd);
+	if (undefined !== this.MaxIdx)
+		Writer.WriteLong(this.MaxIdx);
+	if (undefined !== this.MergeName)
+		Writer.WriteString2(this.MergeName);
 
 	if (undefined !== this.New) {
 		var nNewCount = this.New.length;
@@ -1310,14 +1345,24 @@ CChangesPDFDocumentMergePages.prototype.ReadFromBinary = function(Reader)
 	else
 		this.PosToAdd = Reader.GetLong();
 
-    if (!(nFlags & 4)) {
+	if (nFlags & 4)
+		this.MaxIdx = undefined;
+	else
+		this.MaxIdx = Reader.GetLong();
+
+	if (nFlags & 8)
+		this.MergeName = undefined;
+	else
+		this.MergeName = Reader.GetString2();
+
+    if (!(nFlags & 16)) {
         let nCount = Reader.GetLong();
         this.New = [];
         for (var nIndex = 0; nIndex < nCount; ++nIndex)
             this.New[nIndex] = Reader.GetByte();
     }
 
-    if (!(nFlags & 8)) {
+    if (!(nFlags & 32)) {
         let nCount = Reader.GetLong();
         this.Old = [];
         for (var nIndex = 0; nIndex < nCount; ++nIndex)

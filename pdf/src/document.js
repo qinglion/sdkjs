@@ -6120,14 +6120,13 @@ var CPresentation = CPresentation || function(){};
     };
     CPDFDoc.prototype.MergePagesBinary = function(nInsertPos, aUint8Array) {
         let oFile = this.Viewer.file;
-
-        AscCommon.History.Add(new CChangesPDFDocumentMergePages(this, undefined, aUint8Array, nInsertPos));
-
         let sMergeName = "Merged_" + this.mergedPagesData.length;
+
+        AscCommon.History.Add(new CChangesPDFDocumentMergePages(this, undefined, aUint8Array, nInsertPos, AscCommon.g_oIdCounter.m_nIdCounterEdit, sMergeName));
+
         let res = oFile.nativeFile.MergePages(aUint8Array, AscCommon.g_oIdCounter.m_nIdCounterEdit, sMergeName);
 
         if (res) {
-            AscCommon.History.StartNoHistoryMode();
             let aPages = oFile.nativeFile["getPagesInfo"]();
             
             for (let i = oFile.originalPagesCount; i < aPages.length; i++) {
@@ -6145,7 +6144,6 @@ var CPresentation = CPresentation || function(){};
             }
 
             oFile.originalPagesCount = aPages.length;
-            AscCommon.History.StartNoHistoryMode();
         }
 
         this.mergedPagesData.push({
