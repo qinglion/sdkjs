@@ -44,7 +44,9 @@ AscDFH.changesFactory[AscDFH.historyitem_PDF_Document_SetDocument]      = CChang
 AscDFH.changesFactory[AscDFH.historyitem_PDF_Document_PageLocks]        = CChangesPDFDocumentPageLocks;
 AscDFH.changesFactory[AscDFH.historyitem_PDF_PropLocker_ObjectId]	    = CChangesPDFPropLockerObjectId;
 AscDFH.changesFactory[AscDFH.historyitem_PDF_Document_MovePage]         = CChangesPDFDocumentMovePage;
-AscDFH.changesFactory[AscDFH.historyitem_Pdf_Document_Merge_Pages]      = CChangesPDFDocumentMergePages;
+AscDFH.changesFactory[AscDFH.historyitem_Pdf_Document_Start_Merge_Pages]= CChangesPDFDocumentStartMergePages;
+AscDFH.changesFactory[AscDFH.historyitem_Pdf_Document_Part_Merge_Pages] = CChangesPDFDocumentPartMergePages;
+AscDFH.changesFactory[AscDFH.historyitem_Pdf_Document_End_Merge_Pages]  = CChangesPDFDocumentEndMergePages;
 AscDFH.changesFactory[AscDFH.historyitem_Pdf_Document_Calc_Order]       = CChangesPDFCalcOrder;
 
 function CChangesPDFArrayOfDoubleProperty(Class, Old, New) {
@@ -1235,103 +1237,136 @@ CChangesPDFDocumentMovePage.prototype.private_SetValue = function(nNewPos)
     oDoc.Viewer.onRepaintAnnots(aPagesRange);
 };
 
+function CChangesPDFDocumentStartMergePages(Class, Old, New, Color) {
+    AscDFH.CChangesBaseProperty.call(this, Class, Old, New, Color);
+}
+CChangesPDFDocumentStartMergePages.prototype = Object.create(AscDFH.CChangesBaseProperty.prototype);
+CChangesPDFDocumentStartMergePages.prototype.constructor = CChangesPDFDocumentStartMergePages;
+CChangesPDFDocumentStartMergePages.prototype.Type = AscDFH.historyitem_Pdf_Document_Start_Merge_Pages;
+
+CChangesPDFDocumentStartMergePages.prototype.Undo = function () {
+    delete this.Class.partsOfBinaryData;
+};
+CChangesPDFDocumentStartMergePages.prototype.Redo = function () {
+    this.Class.partsOfBinaryData = [];
+};
+
+function CChangesPDFDocumentPartMergePages(Class, Old, New, Color) {
+    AscDFH.CChangesBaseProperty.call(this, Class, Old, New, Color);
+}
+CChangesPDFDocumentPartMergePages.prototype = Object.create(AscDFH.CChangesBaseProperty.prototype);
+CChangesPDFDocumentPartMergePages.prototype.constructor = CChangesPDFDocumentPartMergePages;
+CChangesPDFDocumentPartMergePages.prototype.Type = AscDFH.historyitem_ImageShapeSetPartBinaryData;
+
+CChangesPDFDocumentPartMergePages.prototype.private_SetValue = function (aUint8Array) {
+    if (aUint8Array.length) {
+        this.Class.partsOfBinaryData.push(aUint8Array);
+    }
+};
+CChangesPDFDocumentPartMergePages.prototype.WriteToBinary = function(Writer) {
+    Writer.WriteLong(this.Old.length);
+    Writer.WriteBuffer(this.Old, 0, this.Old.length);
+
+    Writer.WriteLong(this.New.length);
+    Writer.WriteBuffer(this.New, 0, this.New.length);
+};
+CChangesPDFDocumentPartMergePages.prototype.ReadFromBinary = function(Reader) {
+    let length = Reader.GetLong();
+    this.Old = new Uint8Array(Reader.GetBuffer(length));
+
+    length = Reader.GetLong();
+    this.New = new Uint8Array(Reader.GetBuffer(length));
+};
+
+
 /**
  * @constructor
- * @extends {AscDFH.CChangesBaseStringProperty}
+ * @extends {AscDFH.CChangesBaseProperty}
  */
-function CChangesPDFDocumentMergePages(Class, Old, New, nPosToAdd, nMaxIdx, sMergeName, Color)
+function CChangesPDFDocumentEndMergePages(Class, nMaxIdx, sMergeName, Color)
 {
-	AscDFH.CChangesBaseStringProperty.call(this, Class, Old, New, Color);
-    this.PosToAdd = nPosToAdd;
+	AscDFH.CChangesBaseProperty.call(this, Class, undefined, undefined, Color);
     this.MaxIdx = nMaxIdx;
     this.MergeName = sMergeName;
 }
-CChangesPDFDocumentMergePages.prototype = Object.create(AscDFH.CChangesBaseStringProperty.prototype);
-CChangesPDFDocumentMergePages.prototype.constructor = CChangesPDFDocumentMergePages;
-CChangesPDFDocumentMergePages.prototype.Type = AscDFH.historyitem_Pdf_Document_Merge_Pages;
-CChangesPDFDocumentMergePages.prototype.Undo = function() {
+CChangesPDFDocumentEndMergePages.prototype = Object.create(AscDFH.CChangesBaseProperty.prototype);
+CChangesPDFDocumentEndMergePages.prototype.constructor = CChangesPDFDocumentEndMergePages;
+CChangesPDFDocumentEndMergePages.prototype.Type = AscDFH.historyitem_Pdf_Document_End_Merge_Pages;
+CChangesPDFDocumentEndMergePages.prototype.Undo = function() {
     let oDoc = this.Class;
 	let oFile = oDoc.Viewer.file;
 
+    // clear united binary
+    delete oDoc.unitedBinary;
+    
     oDoc.mergedPagesData.pop();
     // oDoc.nativeFile.UndoLastMerge();
 
     let aPages = oFile.nativeFile["getPagesInfo"]();
     oFile.originalPagesCount = aPages.length;
 };
-CChangesPDFDocumentMergePages.prototype.Redo = function()
+CChangesPDFDocumentEndMergePages.prototype.Redo = function()
 {
     let oDoc = this.Class;
 	let oFile = oDoc.Viewer.file;
 
-    oFile.nativeFile.MergePages(this.New, this.MaxIdx, this.MergeName);
+    // union binary
+    if (!oDoc.partsOfBinaryData) {
+        return this.Undo();
+    }
+    let lenOfAllBinaryData = 0;
+    for (let i = 0; i < oDoc.partsOfBinaryData.length; i += 1) {
+        lenOfAllBinaryData += oDoc.partsOfBinaryData[i].length;
+    }
+    oDoc.unitedBinary = new Uint8Array(lenOfAllBinaryData);
+
+    let indexOfInsert = 0;
+    for (let i = 0; i < oDoc.partsOfBinaryData.length; i += 1) {
+        const partOfBinaryData = oDoc.partsOfBinaryData[i];
+        for (let j = 0; j < partOfBinaryData.length; j += 1) {
+            oDoc.unitedBinary[indexOfInsert] = partOfBinaryData[j];
+            indexOfInsert += 1;
+        }
+    }
+
+    delete oDoc.partsOfBinaryData;
+
+    oFile.nativeFile.MergePages(oDoc.unitedBinary, this.MaxIdx, this.MergeName);
     let aPages = oFile.nativeFile["getPagesInfo"]();
     oFile.originalPagesCount = aPages.length;
 
     oDoc.mergedPagesData.push({
         mergeName: this.MergeName,
         maxId: this.MaxIdx,
-        binary: this.New
+        binary: oDoc.unitedBinary
     });
 
     oDoc.Viewer.checkLoadCMap();
 };
-CChangesPDFDocumentMergePages.prototype.WriteToBinary = function(Writer)
+CChangesPDFDocumentEndMergePages.prototype.WriteToBinary = function(Writer)
 {
 	let nFlags = 0;
 
 	if (false !== this.Color)
 		nFlags |= 1;
 
-	if (undefined === this.PosToAdd)
+	if (undefined === this.MaxIdx)
 		nFlags |= 2;
 
-	if (undefined === this.MaxIdx)
+	if (undefined === this.MergeName)
 		nFlags |= 4;
 
-	if (undefined === this.MergeName)
-		nFlags |= 8;
-
-	if (undefined === this.New)
-		nFlags |= 16;
-
-	if (undefined === this.Old)
-		nFlags |= 32;
-	
 	Writer.WriteLong(nFlags);
 
-	if (undefined !== this.PosToAdd)
-		Writer.WriteLong(this.PosToAdd);
 	if (undefined !== this.MaxIdx)
 		Writer.WriteLong(this.MaxIdx);
+
 	if (undefined !== this.MergeName)
 		Writer.WriteString2(this.MergeName);
-
-	if (undefined !== this.New) {
-		var nNewCount = this.New.length;
-		Writer.WriteLong(nNewCount);
-		for (var nIndex = 0; nIndex < nNewCount; ++nIndex)
-			Writer.WriteByte(this.New[nIndex]);
-	}
-	
-	if (undefined !== this.Old) {
-		var nOldCount = this.Old.length;
-		Writer.WriteLong(nOldCount);
-		for (var nIndex = 0; nIndex < nOldCount; ++nIndex)
-			Writer.WriteByte(this.Old[nIndex]);
-	}
 };
-CChangesPDFDocumentMergePages.prototype.ReadFromBinary = function(Reader)
+CChangesPDFDocumentEndMergePages.prototype.ReadFromBinary = function(Reader)
 {
 	this.FromLoad = true;
-
-	// Long  : Flag
-	// 1-bit : Подсвечивать ли данные изменения
-	// 2-bit : IsUndefined New
-	// 3-bit : IsUndefined Old
-	// long : New
-	// long : Old
-
 
 	var nFlags = Reader.GetLong();
 
@@ -1341,33 +1376,14 @@ CChangesPDFDocumentMergePages.prototype.ReadFromBinary = function(Reader)
 		this.Color = false;
 
 	if (nFlags & 2)
-		this.PosToAdd = undefined;
-	else
-		this.PosToAdd = Reader.GetLong();
-
-	if (nFlags & 4)
 		this.MaxIdx = undefined;
 	else
 		this.MaxIdx = Reader.GetLong();
 
-	if (nFlags & 8)
+	if (nFlags & 4)
 		this.MergeName = undefined;
 	else
 		this.MergeName = Reader.GetString2();
-
-    if (!(nFlags & 16)) {
-        let nCount = Reader.GetLong();
-        this.New = [];
-        for (var nIndex = 0; nIndex < nCount; ++nIndex)
-            this.New[nIndex] = Reader.GetByte();
-    }
-
-    if (!(nFlags & 32)) {
-        let nCount = Reader.GetLong();
-        this.Old = [];
-        for (var nIndex = 0; nIndex < nCount; ++nIndex)
-            this.Old[nIndex] = Reader.GetByte();
-    }
 };
 
 /**

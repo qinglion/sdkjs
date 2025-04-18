@@ -6122,7 +6122,7 @@ var CPresentation = CPresentation || function(){};
         let oFile = this.Viewer.file;
         let sMergeName = "Merged_" + this.mergedPagesData.length;
 
-        AscCommon.History.Add(new CChangesPDFDocumentMergePages(this, undefined, aUint8Array, nInsertPos, AscCommon.g_oIdCounter.m_nIdCounterEdit, sMergeName));
+        this.SetMergedBinaryData(aUint8Array, AscCommon.g_oIdCounter.m_nIdCounterEdit, sMergeName);
 
         let res = oFile.nativeFile.MergePages(aUint8Array, AscCommon.g_oIdCounter.m_nIdCounterEdit, sMergeName);
 
@@ -6146,15 +6146,32 @@ var CPresentation = CPresentation || function(){};
             oFile.originalPagesCount = aPages.length;
         }
 
-        this.mergedPagesData.push({
-            mergeName: sMergeName,
-            maxId: AscCommon.g_oIdCounter.m_nIdCounterEdit,
-            binary: aUint8Array
-        });
-
         this.Viewer.checkLoadCMap();
         
         return res;
+    };
+    CPDFDoc.prototype.SetMergedBinaryData = function(aUint8Array, nMaxIdx, sMergeName) {
+        const BINARY_PART_HISTORY_LIMIT = 1048576;
+
+        const binaryParts = [];
+        const amountOfParts = Math.ceil(aUint8Array.length / BINARY_PART_HISTORY_LIMIT);
+
+        for (let i = 0; i < amountOfParts; i += 1) {
+            binaryParts.push(aUint8Array.slice(i * BINARY_PART_HISTORY_LIMIT, (i + 1) * BINARY_PART_HISTORY_LIMIT));
+        }
+
+        AscCommon.History.Add(new CChangesPDFDocumentStartMergePages(this));
+        for (let i = 0; i < amountOfParts; i += 1) {
+            AscCommon.History.Add(new CChangesPDFDocumentPartMergePages(this, [], binaryParts[i]));
+        }
+        
+        AscCommon.History.Add(new CChangesPDFDocumentEndMergePages(this, nMaxIdx, sMergeName));
+
+        this.mergedPagesData.push({
+            mergeName: sMergeName,
+            maxId: nMaxIdx,
+            binary: aUint8Array
+        });
     };
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
