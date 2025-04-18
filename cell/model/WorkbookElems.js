@@ -1,4 +1,4 @@
-/*
+﻿/*
  * (c) Copyright Ascensio System SIA 2010-2024
  *
  * This program is a free software product. You can redistribute it and/or
@@ -6645,16 +6645,8 @@ StyleManager.prototype =
 		return this.collapsed;
 	};
 
-	//TODO удалить!
-	/*var g_nRowOffsetFlag = 0;
-	var g_nRowOffsetXf = g_nRowOffsetFlag + 1;
-	var g_nRowOffsetHeight = g_nRowOffsetXf + 4;
-	var g_nRowStructSize = g_nRowOffsetHeight + 8;*/
-	var g_nRowOffsetFlag = 0;
-	var g_nRowOffsetXf = g_nRowOffsetFlag + 1;
-	var g_nRowOutlineLevel = g_nRowOffsetXf + 4;
-	var g_nRowOffsetHeight = g_nRowOutlineLevel + 1;
-	var g_nRowStructSize = g_nRowOffsetHeight + 8;
+
+	var g_nRowStructSize = 4 + 4 + 8;
 
 	var g_nRowFlag_empty = 0;
 	var g_nRowFlag_init = 1;
@@ -6699,10 +6691,9 @@ StyleManager.prototype =
 				flagToSave |= g_nRowFlag_NullHeight;
 				heightToSave = 0;
 			}
-			sheetMemory.setUint8(this.index, g_nRowOffsetFlag, flagToSave);
-			sheetMemory.setUint32(this.index, g_nRowOffsetXf, xfSave);
-			sheetMemory.setUint8(this.index, g_nRowOutlineLevel, this.outlineLevel);
-			sheetMemory.setFloat64(this.index, g_nRowOffsetHeight, heightToSave);
+			sheetMemory.setInt32(this.index, 0, flagToSave | (this.outlineLevel << 8));
+			sheetMemory.setInt32(this.index, 4, xfSave);
+			sheetMemory.setFloat64(this.index, 8, heightToSave);
 		}
 	};
 	Row.prototype.loadContent = function (index) {
@@ -6711,15 +6702,16 @@ StyleManager.prototype =
 		this.index = index;
 		var sheetMemory = this.ws.rowsData;
 		if (sheetMemory.hasIndex(this.index)) {
-			this.flags = sheetMemory.getUint8(this.index, g_nRowOffsetFlag);
+			const mix = sheetMemory.getInt32(this.index, 0);
+			this.flags = mix & 0xff;
 			if (0 != (g_nRowFlag_init & this.flags)) {
-				this.xfs = g_StyleCache.getXf(sheetMemory.getUint32(this.index, g_nRowOffsetXf));
-				this.outlineLevel = sheetMemory.getUint8(this.index, g_nRowOutlineLevel);
+				this.xfs = g_StyleCache.getXf(sheetMemory.getInt32(this.index, 4));
+				this.outlineLevel = (mix >> 8) & 0xff;
 				if (0 !== (g_nRowFlag_NullHeight & this.flags)) {
 					this.flags &= ~g_nRowFlag_NullHeight;
 					this.h = null;
 				} else {
-					this.h = sheetMemory.getFloat64(this.index, g_nRowOffsetHeight);
+					this.h = sheetMemory.getFloat64(this.index, 8);
 				}
 				res = true;
 			}
