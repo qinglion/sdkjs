@@ -1051,8 +1051,13 @@
 			this.vScrollPxStep = oView ? oView.vscrollStep : defaultStep;
 			this.hScrollPxStep = oView ? oView.hscrollStep : defaultStep;
 		} else {
+			let defaultColWidthPx = this.defaultColWidthPx;
+			if (!defaultColWidthPx) {
+				let defaultColWidthChars = this.model.charCountToModelColWidth(this.model.getBaseColWidth());
+				defaultColWidthPx = this.model.modelColWidthToColWidth(defaultColWidthChars);
+			}
 			this.vScrollPxStep = this.defaultRowHeightPx;
-			this.hScrollPxStep = this.defaultColWidthPx;
+			this.hScrollPxStep = defaultColWidthPx;
 		}
 	};
 
