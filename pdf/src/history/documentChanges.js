@@ -1300,7 +1300,7 @@ CChangesPDFDocumentEndMergePages.prototype.Undo = function() {
     delete oDoc.unitedBinary;
     
     oDoc.mergedPagesData.pop();
-    // oDoc.nativeFile.UndoLastMerge();
+    oFile.nativeFile["UndoMergePages"]();
 
     let aPages = oFile.nativeFile["getPagesInfo"]();
     oFile.originalPagesCount = aPages.length;
