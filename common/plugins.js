@@ -1330,8 +1330,8 @@
 					let plugin = this.getPluginByGuid(data["guid"]);
 					if (plugin && plugin.variations && plugin.variations[0])
 					{
-						this.api.onAttachPluginEvent(data["guid"], data["name"]);
 						plugin.variations[0].eventsMap[data["name"]] = true;
+						this.api.onAttachPluginEvent(data["guid"], data["name"]);
 					}
 					break;
 				}
@@ -1801,8 +1801,8 @@
 				if (plugin && plugin.variations && plugin.variations[runObject.currentVariation])
 				{
 					let eventName = pluginData.getAttribute("name");
-					window.g_asc_plugins.api.onAttachPluginEvent(guid, eventName);
 					plugin.variations[runObject.currentVariation].eventsMap[eventName] = true;
+					window.g_asc_plugins.api.onAttachPluginEvent(guid, eventName);
 
 				}
 				break;
