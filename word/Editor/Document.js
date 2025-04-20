@@ -12524,6 +12524,8 @@ CDocument.prototype.private_UpdateSelection = function()
 	// TODO: Надо подумать как это вынести в верхнюю функцию внутренние реализации типа controller_UpdateSelectionState
 	//       потому что они все очень похожие.
 
+	this.CheckFixedFormSelectionInEditMode();
+	
 	this.Controller.UpdateSelectionState();
 
 	if (this.IsFillingFormMode() && !this.IsInFormField())
@@ -22330,6 +22332,32 @@ CDocument.prototype.controller_UpdateRulersState = function()
 			var ElementPageIndex = this.private_GetElementPageIndex(ElementPos, Page, Column, Element.Get_ColumnsCount());
 			Element.Document_UpdateRulersState(ElementPageIndex);
 		}
+	}
+};
+CDocument.prototype.CheckFixedFormSelectionInEditMode = function()
+{
+	if (this.IsFillingFormMode())
+		return;
+	
+	let selectionInfo = this.GetSelectedElementsInfo();
+	let form          = selectionInfo.GetInlineLevelSdt();
+	
+	if (!form
+		|| !form.IsForm()
+		|| !form.IsFixedForm()
+		|| !form.IsMainForm()
+		|| form.IsComplexForm())
+		return;
+	
+	let shape = form.GetFixedFormWrapperShape();
+	if (shape
+		&& shape.parent instanceof AscCommonWord.ParaDrawing
+		&& this.DrawingObjects.getTargetDocContent())
+	{
+		let oldValue = this.TurnOffInterfaceEvents;
+		this.TurnOffInterfaceEvents = true;
+		this.Select_DrawingObject(shape.parent.GetId());
+		this.TurnOffInterfaceEvents = oldValue;
 	}
 };
 CDocument.prototype.HandleOformSelectionInEditMode = function()
