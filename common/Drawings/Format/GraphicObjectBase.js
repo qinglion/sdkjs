@@ -3836,6 +3836,7 @@
 		return !!fCallback(this);
 	};
 	CGraphicObjectBase.prototype.forEachObjectToDraw = function(fCallback) {};
+	CGraphicObjectBase.prototype.onRemoveContent = function () {};
 	var ANIM_LABEL_WIDTH_PIX = 22;
 	var ANIM_LABEL_HEIGHT_PIX = 17;
 

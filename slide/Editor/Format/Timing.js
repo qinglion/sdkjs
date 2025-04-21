@@ -468,16 +468,18 @@
 		const nIterationType = this.getIterationType();
 		if (oTargetTextOptions) {
 			if (oTargetTextOptions.pRg) {
-				const nStartIndex = oTargetTextOptions.pRg.st;
-				const nEndIndex = oTargetTextOptions.pRg.end;
+				const nStartIndex = Math.max(0, Math.min(oTargetTextOptions.pRg.st, oDocStructure.m_aContent.length - 1));
+				const nEndIndex = Math.min(oTargetTextOptions.pRg.end, oDocStructure.m_aContent.length - 1);
 				for (let i = nStartIndex; i <= nEndIndex; i += 1) {
 					const oParagraph = oDocStructure.m_aContent[i];
 					const arrObjects = oParagraph.getParagraphWrappersByIterationType(nIterationType);
 					arrDrawingObjects.push.apply(arrDrawingObjects, arrObjects);
 				}
 			} else if (oTargetTextOptions.charRg) {
-				const nStartIndex = oTargetTextOptions.charRg.st;
-				const nEndIndex = oTargetTextOptions.charRg.end - 1;
+				const oDocContent = oDrawing.getDocContent();
+				const nContentLength = oDocContent ? oDocContent.getCharContentLength() : 0;
+				const nStartIndex = Math.max(Math.min(oTargetTextOptions.charRg.st, nContentLength - 1), 0);
+				const nEndIndex = Math.min(oTargetTextOptions.charRg.end - 1, nContentLength - 1);
 
 				let oCachedWrapper = null;
 				if (typeof nIterationType !== 'number') {
@@ -1942,6 +1944,11 @@
     CTiming.prototype.onRemoveObject = function (sObjectId) {
         this.removeObjectAnimation(sObjectId);
     };
+		CTiming.prototype.onRemoveContent = function (sObjectId) {
+			this.traverse(function (oNode) {
+				oNode.handleRemoveContent(sObjectId);
+			});
+		};
     CTiming.prototype.removeObjectAnimation = function (sObjectId) {
         this.traverse(function (oNode) {
             oNode.handleRemoveObject(sObjectId);
@@ -3654,6 +3661,9 @@
             }
         }
     };
+	CObjectTarget.prototype.handleRemoveContent = function (sObjectId) {
+
+	};
 
     changesFactory[AscDFH.historyitem_BldBaseGrpId] = CChangeLong;
     changesFactory[AscDFH.historyitem_BldBaseUIExpand] = CChangeBool;
@@ -4265,6 +4275,9 @@
             }
         }
     };
+	CGraphicEl.prototype.handleRemoveContent = function (sObjectId) {
+
+	};
 
     changesFactory[AscDFH.historyitem_IndexRgSt] = CChangeLong;
     changesFactory[AscDFH.historyitem_IndexRgEnd] = CChangeLong;
@@ -5035,6 +5048,13 @@
             this.attrNameLst.push(oAttrName);
         }
     };
+
+		CCBhvr.prototype.isOverrideChildStyle = function () {
+			return this.override === TLOverrideChildStyle;
+		};
+	CCBhvr.prototype.isOverrideNormal = function () {
+		return this.override !== TLOverrideChildStyle;
+	};
 
 
     const RESTART_TYPE_ALWAYS = 0;
@@ -6561,6 +6581,14 @@
             }
         }
     };
+	CSpTgt.prototype.handleRemoveContent = function (sObjectId) {
+		if (this.spid === sObjectId) {
+			if (this.txEl) {
+				const oTargetObject = AscCommon.g_oTableId.Get_ById(sObjectId);
+				this.txEl.handleRemoveContent(oTargetObject);
+			}
+		}
+	};
 		CSpTgt.prototype.getTargetTextOptions = function () {
 			return this.txEl;
 		};
@@ -10078,6 +10106,31 @@
     }
 
     InitClass(CTxEl, CBaseAnimObject, AscDFH.historyitem_type_TxEl);
+		CTxEl.prototype.handleRemoveContent = function (oObject) {
+			const oContent = oObject.getDocContent();
+			if (oContent) {
+				if (this.pRg) {
+						const nLastIndex = Math.max(oContent.Content.length - 1, 0);
+						if (this.pRg.st > nLastIndex) {
+							this.pRg.setSt(nLastIndex);
+						}
+						if (this.pRg.end > nLastIndex) {
+							this.pRg.setEnd(nLastIndex);
+						}
+				} else if (this.charRg) {
+					const nContentLength = oContent.getCharContentLength();
+					const nLastIndex = Math.max(0, nContentLength - 1);
+					if (this.pRg.st > nLastIndex) {
+						this.pRg.setSt(nLastIndex);
+					}
+					if (this.pRg.end > nContentLength) {
+						this.pRg.setEnd(nContentLength);
+					}
+
+				}
+			}
+
+		};
     CTxEl.prototype.setCharRg = function (pr) {
         oHistory.Add(new CChangeObject(this, AscDFH.historyitem_TxElCharRg, this.charRg, pr));
         this.charRg = pr;
@@ -11996,30 +12049,27 @@
 						const nStart = oTextEl.charRg.st;
 						const nEnd = oTextEl.charRg.end - 1;
 						let nCharIndex = 0;
-						const oDocContent = oDrawing.getDocContent();
-						if (oDocContent) {
-							for (let i = 0; i < oDocContent.Content.length; i++) {
-								const oParagraph = oDocContent.Content[i];
+						for (let i = 0; i < oDocContent.Content.length; i++) {
+							const oParagraph = oDocContent.Content[i];
+							if (nEnd < nCharIndex) {
+								break;
+							}
+							oParagraph.CheckRunContent(function (oRun) {
+								nCharIndex += oRun.Content.length;
 								if (nEnd < nCharIndex) {
-									break;
+									return true;
 								}
-								oParagraph.CheckRunContent(function (oRun) {
-									nCharIndex += oRun.Content.length;
-									if (nEnd < nCharIndex) {
-										return true;
-									}
-								});
-								if (nCharIndex >= nStart) {
-									oDrawingInfo[i] = ITERATEDATA_TYPE_LETTER;
-								}
+							});
+							if (nCharIndex >= nStart) {
+								oDrawingInfo[i] = ITERATEDATA_TYPE_LETTER;
 							}
 						}
 					} else if (bIsCanIterate) {
 						if (oTextEl) {
 							oThis.skipDrawTextIteration[sDrawingId] = true;
 							if (oTextEl.pRg) {
-								const nStart = oTextEl.pRg.st;
-								const nEnd = oTextEl.pRg.end;
+								const nStart = Math.max(0, Math.min(oTextEl.pRg.st, oDocContent.Content.length - 1));
+								const nEnd = Math.min(oTextEl.pRg.end, oDocContent.Content.length - 1);
 								for (let i = nStart; i <= nEnd; i += 1) {
 									if (oDrawingInfo[i] !== ITERATEDATA_TYPE_LETTER) {
 										oDrawingInfo[i] = nIterationType;
