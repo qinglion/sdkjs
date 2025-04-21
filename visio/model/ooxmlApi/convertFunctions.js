@@ -513,9 +513,6 @@
 			 */
 			function setRunProps(characterRowNum, characterPropsCommon,  oRun, lineUniFill,
 								 fillUniFill, theme, shape, visioDocument, pageInfo) {
-				if (!characterPropsCommon) {
-					return;
-				}
 				let characterPropsFinal = characterRowNum !== null && characterPropsCommon.getRow(characterRowNum);
 
 				/**
@@ -1552,8 +1549,8 @@
 
 		// there was case with shape type group with no PinX and PinY
 		// https://disk.yandex.ru/d/tl877cuzcRcZYg
-		let pinX_inch = this.getCellNumberValueWithScale("PinX", drawingPageScale, visioDocument);
-		let pinY_inch = this.getCellNumberValueWithScale("PinY", drawingPageScale, visioDocument);
+		let pinX_inch = this.getCellNumberValueWithScale("PinX", drawingPageScale);
+		let pinY_inch = this.getCellNumberValueWithScale("PinY", drawingPageScale);
 
 		/** @type {{ [key: string]: Cell_Type }} */
 		let layerProperties = this.getLayerProperties(pageInfo);
@@ -1607,11 +1604,11 @@
 			return emptyCShape;
 		}
 
-		let shapeAngle = this.getCellNumberValue("Angle", undefined, visioDocument);
-		let locPinX_inch = this.getCellNumberValueWithScale("LocPinX", drawingPageScale , visioDocument);
-		let locPinY_inch = this.getCellNumberValueWithScale("LocPinY", drawingPageScale , visioDocument);
-		let shapeWidth_inch = this.getCellNumberValueWithScale("Width", drawingPageScale , visioDocument);
-		let shapeHeight_inch = this.getCellNumberValueWithScale("Height", drawingPageScale , visioDocument);
+		let shapeAngle = this.getCellNumberValue("Angle");
+		let locPinX_inch = this.getCellNumberValueWithScale("LocPinX", drawingPageScale);
+		let locPinY_inch = this.getCellNumberValueWithScale("LocPinY", drawingPageScale);
+		let shapeWidth_inch = this.getCellNumberValueWithScale("Width", drawingPageScale);
+		let shapeHeight_inch = this.getCellNumberValueWithScale("Height", drawingPageScale);
 
 		if (isInvertCoords) {
 			pinY_inch = maxHeightScaledIn - pinY_inch;
@@ -1680,7 +1677,7 @@
 				uniFillForegnd: false
 			}
 
-			let fillGradientEnabledCell = this.getCell("FillGradientEnabled", visioDocument);
+			let fillGradientEnabledCell = this.getCell("FillGradientEnabled");
 			if (fillGradientEnabledCell !== undefined) {
 				fillGradientEnabled = fillGradientEnabledCell.calculateValue(this, pageInfo,
 						visioDocument.themes, undefined, true);
@@ -1704,13 +1701,13 @@
 			// not like FillGradientDir radial gradients but with different colors
 
 			// Calculate fillForegnd without gradient anyway for handleQuickStyleVariation
-			let fillForegndCell = this.getCell("FillForegnd", visioDocument);
+			let fillForegndCell = this.getCell("FillForegnd");
 			if (fillForegndCell) {
 				// AscCommon.consoleLog("FillForegnd was found:", fillForegndCell);
 				uniFillForegndNoGradient = fillForegndCell.calculateValue(this, pageInfo,
 					visioDocument.themes, themeValWasUsedFor, false);
 
-				let fillForegndTransValue = this.getCellNumberValue("FillForegndTrans", undefined, visioDocument);
+				let fillForegndTransValue = this.getCellNumberValue("FillForegndTrans");
 				if (!isNaN(fillForegndTransValue)) {
 					let fillObj = uniFillForegndNoGradient.fill;
 					if (fillObj.type === Asc.c_oAscFill.FILL_TYPE_PATT) {
@@ -1732,7 +1729,7 @@
 			}
 
 			if (fillGradientEnabled) {
-				let fillGradientDir = this.getCellNumberValue("FillGradientDir", undefined, visioDocument);
+				let fillGradientDir = this.getCellNumberValue("FillGradientDir");
 
 				let invertGradient = false;
 				// global matrix transform: invert Y axis causes 0 is bottom of gradient and 100000 is top
@@ -1787,7 +1784,7 @@
 					uniFillForegnd = AscFormat.builder_CreateRadialGradient(fillGradientStops);
 				} else {
 					// also if fillGradientDir === 0 - linear
-					let fillGradientAngleCell = this.getCell("FillGradientAngle", visioDocument);
+					let fillGradientAngleCell = this.getCell("FillGradientAngle");
 					// TODO handle multiple gradient types
 					let fillGradientAngle = fillGradientAngleCell.calculateValue(this, pageInfo,
 						visioDocument.themes, undefined, fillGradientEnabled);
@@ -1799,13 +1796,13 @@
 			}
 
 
-			let fillBkgndCell = this.getCell("FillBkgnd", visioDocument);
+			let fillBkgndCell = this.getCell("FillBkgnd");
 			if (fillBkgndCell) {
 				// AscCommon.consoleLog("FillBkgnd was found:", fillBkgndCell);
 				uniFillBkgnd = fillBkgndCell.calculateValue(this, pageInfo,
 					visioDocument.themes, themeValWasUsedFor);
 
-				let fillBkgndTransValue = this.getCellNumberValue("FillBkgndTrans", undefined, visioDocument);
+				let fillBkgndTransValue = this.getCellNumberValue("FillBkgndTrans");
 				if (!isNaN(fillBkgndTransValue)) {
 					let fillObj = uniFillBkgnd.fill;
 					if (fillObj.type === Asc.c_oAscFill.FILL_TYPE_PATT) {
@@ -1819,7 +1816,7 @@
 				}
 			}
 
-			let lineColorCell = this.getCell("LineColor", visioDocument);
+			let lineColorCell = this.getCell("LineColor");
 			if (lineColorCell) {
 				// AscCommon.consoleLog("LineColor was found for shape", lineColorCell);
 				lineUniFill = lineColorCell.calculateValue(this, pageInfo,
@@ -1833,7 +1830,7 @@
 			handleQuickStyleVariation(lineUniFill, uniFillForegndNoGradient, this, themeValWasUsedFor);
 
 
-			let fillPatternTypeCell = this.getCell("FillPattern", visioDocument);
+			let fillPatternTypeCell = this.getCell("FillPattern");
 			let fillPatternType = fillPatternTypeCell ? fillPatternTypeCell.calculateValue(this, pageInfo,
 					visioDocument.themes) : 1;
 
@@ -2031,7 +2028,7 @@
 
 
 		let lineWidthEmu = null;
-		let lineWeightCell = this.getCell("LineWeight", visioDocument);
+		let lineWeightCell = this.getCell("LineWeight");
 		if (lineWeightCell) {
 			// to cell.v visio always saves inches
 			// let lineWeightInches = Number(lineWeightCell.v);
@@ -2054,7 +2051,7 @@
 		let oStroke = AscFormat.builder_CreateLine(lineWidthEmu, {UniFill: lineUniFill});
 
 		// seems to be unsupported for now
-		let lineCapCell = this.getCell("LineCap", visioDocument);
+		let lineCapCell = this.getCell("LineCap");
 		let lineCapNumber;
 		if (lineCapCell) {
 			// see [MS-VSDX]-220215 (1) - 2.4.4.170	LineCap
@@ -2066,7 +2063,7 @@
 			}
 		}
 
-		let linePattern = this.getCell("LinePattern", visioDocument);
+		let linePattern = this.getCell("LinePattern");
 		if (linePattern) {
 			// see ECMA-376-1 - L.4.8.5.2 Line Dash Properties and [MS-VSDX]-220215 (1) - 2.4.4.180	LinePattern
 			let linePatternNumber = linePattern.calculateValue(this, pageInfo, visioDocument.themes);
@@ -2101,8 +2098,8 @@
 			}
 		}
 
-		let endArrowTypeCell = this.getCell("EndArrow", visioDocument);
-		let endArrowSizeCell = this.getCell("EndArrowSize", visioDocument);
+		let endArrowTypeCell = this.getCell("EndArrow");
+		let endArrowSizeCell = this.getCell("EndArrowSize");
 		let endArrowType = endArrowTypeCell ? endArrowTypeCell.calculateValue(this, pageInfo,
 			visioDocument.themes) : 0;
 		let endArrowSize = endArrowSizeCell ? endArrowSizeCell.calculateValue(this, pageInfo,
@@ -2110,8 +2107,8 @@
 		let endArrow = getEndArrow(endArrowType, endArrowSize);
 		oStroke.setTailEnd(endArrow);
 
-		let beginArrowTypeCell = this.getCell("BeginArrow", visioDocument);
-		let beginArrowSizeCell = this.getCell("BeginArrowSize", visioDocument);
+		let beginArrowTypeCell = this.getCell("BeginArrow");
+		let beginArrowSizeCell = this.getCell("BeginArrowSize");
 		let beginArrowType = beginArrowTypeCell ? beginArrowTypeCell.calculateValue(this, pageInfo,
 			visioDocument.themes) : 0;
 		let beginArrowSize = beginArrowSizeCell ? beginArrowSizeCell.calculateValue(this, pageInfo,
@@ -2120,9 +2117,9 @@
 		oStroke.setHeadEnd(beginArrow);
 
 
-		let flipHorizontally = this.getCellNumberValue("FlipX", undefined, visioDocument) === 1;
+		let flipHorizontally = this.getCellNumberValue("FlipX") === 1;
 
-		let flipVertically = this.getCellNumberValue("FlipY", undefined, visioDocument) === 1;
+		let flipVertically = this.getCellNumberValue("FlipY") === 1;
 
 		let cShape = this.convertToCShapeUsingParamsObj({
 			x_mm: x_mm, y_mm: y_mm,
@@ -2165,10 +2162,10 @@
 					this.cImageShape.setSpPr(cShape.spPr.createDuplicate());
 					this.cImageShape.spPr.setParent(this.cImageShape);
 
-					let imgWidth_inch = this.getCellNumberValueWithScale("ImgWidth", drawingPageScale, visioDocument);
-					let imgHeight_inch = this.getCellNumberValueWithScale("ImgHeight", drawingPageScale, visioDocument);
-					let imgOffsetX_inch = this.getCellNumberValueWithScale("ImgOffsetX", drawingPageScale, visioDocument);
-					let imgOffsetY_inch = this.getCellNumberValueWithScale("ImgOffsetY", drawingPageScale, visioDocument);
+					let imgWidth_inch = this.getCellNumberValueWithScale("ImgWidth", drawingPageScale);
+					let imgHeight_inch = this.getCellNumberValueWithScale("ImgHeight", drawingPageScale);
+					let imgOffsetX_inch = this.getCellNumberValueWithScale("ImgOffsetX", drawingPageScale);
+					let imgOffsetY_inch = this.getCellNumberValueWithScale("ImgOffsetY", drawingPageScale);
 
 					let imgWidth_mm = imgWidth_inch * g_dKoef_in_to_mm;
 					let imgHeight_mm = imgHeight_inch * g_dKoef_in_to_mm;
@@ -2348,7 +2345,7 @@
 
 				// handle sub-shapes
 				currentGroupHandling = groupShape;
-				let subShapes = this.getSubshapes(visioDocument);
+				let subShapes = this.getSubshapes();
 				for (let i = 0; i < subShapes.length; i++) {
 					const subShape = subShapes[i];
 					subShape.convertGroup(visioDocument, pageInfo, drawingPageScale, currentGroupHandling);

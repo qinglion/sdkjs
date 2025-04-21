@@ -95,9 +95,6 @@ AscDFH.historyitem_type_VisioWindow = 328;
 		 * @type {CFont[]}
 		 */
 		this.loadedFonts = [];
-		/**
-		 * @type {StyleSheet_Type[]} styles
-		 */
 		this.styleSheets = [];
 		this.documentSheet = null;
 		this.eventList = [];
@@ -118,12 +115,12 @@ AscDFH.historyitem_type_VisioWindow = 328;
 		this.windows = null;
 		/**
 		 * with rId resolved as content
-		 * @type {CMasters}
+		 * @type {Master_Type[]}
 		 */
 		this.masters = null;
 		/**
 		 * with rId resolved as content
-		 * @type {CPages}
+		 * @type {Page_Type[]}
 		 */
 		this.pages = null;
 		this.themes = [];
@@ -865,15 +862,15 @@ AscDFH.historyitem_type_VisioWindow = 328;
 			let shape = pageContent.shapes[i];
 
 			// inherit styles
-			// let stylesWithRealizedInheritance = new Set();
-			// shape.realizeStyleInheritanceRecursively(this.styleSheets, stylesWithRealizedInheritance);
-			// // inherit master and links to master styles
-			// if (this.masters) {
-			// 	shape.realizeMasterInheritanceRecursively(this.masters.master);
-			// }
-			// // inherit master styles
-			// // TODO performance: realize style inheritance only if style is inherited from master
-			// shape.realizeStyleInheritanceRecursively(this.styleSheets, stylesWithRealizedInheritance);
+			let stylesWithRealizedInheritance = new Set();
+			shape.realizeStyleInheritanceRecursively(this.styleSheets, stylesWithRealizedInheritance);
+			// inherit master and links to master styles
+			if (this.masters) {
+				shape.realizeMasterInheritanceRecursively(this.masters.master);
+			}
+			// inherit master styles
+			// TODO performance: realize style inheritance only if style is inherited from master
+			shape.realizeStyleInheritanceRecursively(this.styleSheets, stylesWithRealizedInheritance);
 
 			if (shape.type === AscVisio.SHAPE_TYPES_GROUP) {
 				let cGroupShape = shape.convertGroup(this, pageInfo, drawingPageScale);
@@ -1406,12 +1403,6 @@ AscDFH.historyitem_type_VisioWindow = 328;
 		this.pageSheet = null;
 		this.rel = null;
 		this.icon = null;
-
-		/**
-		 *
-		 * @type {CMasterContents}
-		 */
-		this.content = null;
 	}
 	AscFormat.InitClass(Master_Type, AscFormat.CBaseFormatNoIdObject, AscDFH.historyitem_type_VisioMaster);
 
