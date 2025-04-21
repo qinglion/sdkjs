@@ -5880,7 +5880,8 @@
     };
 		CCTn.prototype.getIterationDelta = function () {
 			if (this.iterate) {
-				return this.iterate.getIterationDelta();
+				const nAbsTime = this.getEffectDuration();
+				return this.iterate.getIterationDelta(nAbsTime);
 			}
 			return null;
 		};
@@ -6638,9 +6639,14 @@
     CIterateData.prototype.readChild = function (nType, pReader) {
         pReader.stream.SkipRecord();
     };
-	CIterateData.prototype.getIterationDelta = function () {
+	CIterateData.prototype.getIterationDelta = function (nAbsTime) {
 			if (this.tmPct !== null) {
 				return this.tmPct / 100000;
+			} else if (this.tmAbs) {
+				if (nAbsTime === 0) {
+					return 0;
+				}
+				return this.tmAbs / nAbsTime;
 			}
 			return null;
 		};
