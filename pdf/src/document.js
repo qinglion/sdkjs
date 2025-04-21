@@ -6114,7 +6114,7 @@ var CPresentation = CPresentation || function(){};
             }
         })
 
-        let aUint8Array = this.Viewer.file.nativeFile.SplitPages(aOriginIdexes); 
+        let aUint8Array = this.Viewer.file.nativeFile["SplitPages"](aOriginIdexes); 
         let base64 = AscCommon.Base64.encode(aUint8Array, 0, aUint8Array.length);
         return bytesToBase64 != false ? base64 : aUint8Array;
     };
@@ -6124,7 +6124,7 @@ var CPresentation = CPresentation || function(){};
 
         this.SetMergedBinaryData(aUint8Array, AscCommon.g_oIdCounter.m_nIdCounterEdit, sMergeName);
 
-        let res = oFile.nativeFile.MergePages(aUint8Array, AscCommon.g_oIdCounter.m_nIdCounterEdit, sMergeName);
+        let res = oFile.nativeFile["MergePages"](aUint8Array, AscCommon.g_oIdCounter.m_nIdCounterEdit, sMergeName);
 
         if (res) {
             let aPages = oFile.nativeFile["getPagesInfo"]();
