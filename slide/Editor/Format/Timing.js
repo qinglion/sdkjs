@@ -409,6 +409,9 @@
     CTimeNodeBase.prototype.getChildNode = function (nIdx) {
         return this.getChildrenTimeNodes()[nIdx] || null;
     };
+	CTimeNodeBase.prototype.isForceDrawingAnimation = function () {
+		return false;
+	};
 		CTimeNodeBase.prototype.isSkipMainDrawing = function() {
 			if (!this.isTimingContainer()) {
 				const oDrawing = this.getTargetObject();
@@ -7146,6 +7149,12 @@
     CAnimClr.prototype.isAllowedAttribute = function (sAttrName) {
         return sAttrName === "style.color" || sAttrName === "fillcolor" || sAttrName === "stroke.color";
     };
+		CAnimClr.prototype.isForceDrawingAnimation = function () {
+			if (this.cBhvr) {
+				return this.cBhvr.isOverrideNormal();
+			}
+			return false;
+		};
     CAnimClr.prototype.calculateAttributes = function (nElapsedTime, oAttributes, sDrawingId) {
         var oTargetObject = this.getTargetObject(sDrawingId);
 				//todo think if this textObject
