@@ -6777,7 +6777,7 @@
 			sText = "WATERMARK";
 		}
 		if (typeof(bIsDiagonal) != "boolean") {
-			sText = false;
+			bIsDiagonal = false;
 		}
 
 		let bRes = false;
