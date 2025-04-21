@@ -1186,21 +1186,27 @@ CSdtBase.prototype.checkDataBinding = function()
 {
 	let logicDocument = this.GetLogicDocument();
 	if (!logicDocument || !this.Pr.DataBinding)
-		return;
+		return false;
 	
 	let customXmlManager = logicDocument.getCustomXmlManager();
 	if (!customXmlManager || !customXmlManager.isSupported())
-		return;
+		return false;
 	
 	let content = customXmlManager.getContentByDataBinding(this.Pr.DataBinding, this);
 	if (!content)
-		return;
-	
+		return false
+
+	if (content.attribute)
+		content = content.content.attributes[content.attribute]
+	else
+		content = content.getText();
+
+
 	if (this.IsPicture())
 	{
 		let allDrawings = this.GetAllDrawingObjects();
 		if (!allDrawings.length)
-			return;
+			return false;
 
 		let drawing = allDrawings[0];
 		let imageData = "data:image/jpeg;base64," + content;
@@ -1221,12 +1227,14 @@ CSdtBase.prototype.checkDataBinding = function()
 			let checkBoxPr = this.Pr.CheckBox.Copy();
 			checkBoxPr.SetChecked(true);
 			this.SetCheckBoxPr(checkBoxPr)
+			this.private_UpdateCheckBoxContent();
 		}
 		else if (content === "false" || content === "0")
 		{
 			let checkBoxPr = this.Pr.CheckBox.Copy();
 			checkBoxPr.SetChecked(false);
 			this.SetCheckBoxPr(checkBoxPr)
+			this.private_UpdateCheckBoxContent()
 		}
 	}
 	else if (this.IsDatePicker())
@@ -1245,7 +1253,7 @@ CSdtBase.prototype.checkDataBinding = function()
 			this.private_UpdateDatePickerContent();
 		}
 	}
-	else if (this.IsDropDownList() || this.IsComboBox() || this.Pr.Text === true)
+	else if (this.IsDropDownList() || this.IsComboBox() || ((this instanceof CBlockLevelSdt && this.Pr.Text === true) || (this instanceof CInlineLevelSdt)))
 	{
 		if (typeof content === "string")
 			this.SetInnerText(content);
@@ -1254,8 +1262,15 @@ CSdtBase.prototype.checkDataBinding = function()
 	{
 		let customXmlManager = logicDocument.getCustomXmlManager();
 		let arrContent       = customXmlManager.proceedLinearXMl(content);
-		this.fillContentWithDataBinding(arrContent);
+
+		let strContent = arrContent[0].GetText().trim();
+		if (strContent === "" && content.length > 0)
+			this.SetInnerText(content);
+		else
+			this.fillContentWithDataBinding(arrContent);
 	}
+
+	return true;
 };
 CSdtBase.prototype.canFillWithComplexDataBindingContent = function()
 {

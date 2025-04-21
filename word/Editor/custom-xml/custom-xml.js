@@ -43,20 +43,125 @@
 	 * Класс представляющий CustomXML
 	 * @constructor
 	 */
-	function CustomXml(uri, itemId, content, oContentLink)
+	function CustomXml(oParent, itemId, nsManager, content)
 	{
-		this.uri				= uri ? uri : [];
-		this.itemId				= itemId ? itemId : "";
-		this.content			= content ? content : null;
-		this.oContentLink		= oContentLink ? oContentLink : null;
+		this.Id			= AscCommon.g_oIdCounter.Get_NewId();
+		this.Parent		= oParent;
+		this.itemId		= itemId ? itemId : this.setItemId();
+		this.content	= null;
+		this.nsManager	= (nsManager && nsManager instanceof CustomXmlPrefixMappings)
+			? nsManager
+			: new CustomXmlPrefixMappings(nsManager);
+
+		this.addContentByXMLString(content);
+
+		AscCommon.g_oTableId.Add(this, this.Id);
 	}
+	CustomXml.prototype.Copy = function ()
+	{
+		let strXml = this.getText();
+		let oCopy = new CustomXml(
+			this.Parent,
+			this.itemId,
+			this.nsManager,
+			undefined
+		);
+
+		oCopy.addContentByXMLString(strXml);
+
+		return oCopy;
+	};
+	CustomXml.prototype.Delete = function ()
+	{
+		if (this.Parent)
+		{
+			this.Parent.deleteExactXml(this.itemId);
+			return true;
+		}
+		return false;
+	};
+	CustomXml.prototype.Get_Id = function ()
+	{
+		return this.Id;
+	};
+	CustomXml.prototype.GetId = function()
+	{
+		return this.Id;
+	};
+	CustomXml.prototype.Refresh_RecalcData = function(Data)
+	{
+		// Ничего не делаем (если что просто будет перерисовка)
+	};
+	CustomXml.prototype.Write_ToBinary2 = function(Writer)
+	{
+		Writer.WriteLong(AscDFH.historyitem_type_CustomXML_Add);
+
+		// String : Id
+		// Long   : Количество элементов
+		// Array of Strings : массив с Id элементов
+
+		Writer.WriteString2(this.Id);
+		Writer.WriteString2(this.itemId);
+		Writer.WriteString2(this.getText());
+		this.nsManager.Write_ToBinary2(Writer);
+	};
+	CustomXml.prototype.Read_FromBinary2 = function(Reader)
+	{
+		// String : Id
+		// Long   : Количество элементов
+		// Array of Strings : массив с Id элементов
+		this.Id = Reader.GetString2();
+		this.itemId = Reader.GetString2();
+		this.addContentByXMLString(Reader.GetString2());
+
+		this.Parent = editor.WordControl.m_oLogicDocument.getCustomXmlManager();
+		this.nsManager.Read_FromBinary2(Reader);
+	};
+	CustomXml.prototype.Write_ToBinary = function(Writer)
+	{
+		this.Write_ToBinary2(Writer);
+	};
+	CustomXml.prototype.Read_FromBinary = function (Reader) {
+		this.Read_FromBinary2(Reader);
+	};
+	/**
+	 * Set UID of CustomXML
+	 * @param {uId} itemId
+	 */
+	CustomXml.prototype.setItemId = function ()
+	{
+		return AscCommon.CreateGUID();
+	};
+	/**
+	 * Set UID of CustomXML by given data
+	 * @param itemUId {string}
+	 */
+	CustomXml.prototype.setItemIdManually = function (itemUId)
+	{
+		this.itemId = itemUId;
+	};
+	/**
+	 * Add given uri to CustomXMl uri list
+	 * @param uri {string}
+	 */
+	CustomXml.prototype.addNamespace = function(prefix, ns)
+	{
+		if (!prefix)
+			prefix = "defaultNamespace";
+
+		this.nsManager.addNamespace(prefix, ns);
+		return true;
+	};
 	/**
 	 * Get CustomXML data by string
 	 * @return {string}
 	 */
 	CustomXml.prototype.getText = function ()
 	{
+		if (this.content)
 		return this.content.getStringFromBuffer();
+		else
+			return "";
 	};
 	/**
 	 * Find url in uri array
@@ -67,12 +172,7 @@
 		if (!str)
 			return false;
 
-		for (let i = 0; i < this.uri.length; i++)
-		{
-			if (str.includes(this.uri[i]))
-				return true;
-		}
-		return false;
+		return this.nsManager.getPrefix(str) !== undefined;
 	}
 	/**
 	 * Add content of CustomXML
@@ -89,99 +189,309 @@
 	};
 	CustomXml.prototype.addContentByXMLString = function (strCustomXml)
 	{
-		let nXmlHeaderStart	= strCustomXml.indexOf('<?', 0);
-		let nXmlHeaderEnd	= strCustomXml.indexOf('?>', nXmlHeaderStart);
-		let strXmlHeader 	= null;
-		if (nXmlHeaderStart !== -1 && nXmlHeaderEnd !== -1)
+		if (strCustomXml === undefined)
+			return;
+		if (strCustomXml instanceof CustomXmlContent)
+			strCustomXml = content.getStringFromBuffer();
+
+		this.content = CustomXmlCreateContent(strCustomXml, this);
+	};
+	CustomXml.prototype.findElementByXPath = function (xpath)
+	{
+		// add namespace support in the future
+
+		let arrParts		= xpath.split('/');
+		let currentElement	= this.content;
+		let arrResult		= [];
+		arrParts.shift();
+
+		for (let i = 0; i < arrParts.length; i++)
 		{
-			strXmlHeader = strCustomXml.substring(nXmlHeaderStart, nXmlHeaderEnd + "?>".length);
-			strCustomXml = strCustomXml.substring(nXmlHeaderEnd + '?>'.length, strCustomXml.length);
-		}
+			let namespaceAndTag,
+				index,
+				tagName,
+				part = arrParts[i];
 
-		let oStax			= new StaxParser(strCustomXml),
-			rootContent		= new CustomXmlContent(null);
-
-		if (strXmlHeader !== null)
-			rootContent.xmlQuestionHeader = strXmlHeader;
-
-		while (oStax.Read())
-		{
-			switch (oStax.GetEventType()) {
-				case EasySAXEvent.CHARACTERS:
-					rootContent.addTextContent(oStax.text);
-					break;
-				case EasySAXEvent.END_ELEMENT:
-					rootContent = rootContent.getParent();
-					break;
-				case EasySAXEvent.START_ELEMENT:
-					let name = oStax.GetName();
-					let childElement = rootContent.addContent(name);
-
-					while (oStax.MoveToNextAttribute())
-					{
-						let attributeName = oStax.GetName();
-						let attributeValue = oStax.GetValue();
-						childElement.addAttribute(attributeName, attributeValue);
-					}
-
-					rootContent = childElement;
-					break;
+			if (part.includes("*"))
+			{
+				currentElement.childNodes.forEach(function (node) {arrResult.push(node)})
+				return arrResult;
 			}
+
+			if (part.includes("@"))
+			{
+				let strAttributeName = part.slice(1);
+
+				return {
+					content: currentElement,
+					attribute: strAttributeName
+				}
+			}
+			else if (part.includes("["))
+			{
+				namespaceAndTag				= part.split('[')[0];
+				let partBeforeCloseBracket	= part.split(']')[0];
+				index						= partBeforeCloseBracket.slice(-1) - 1;
+			}
+			else
+			{
+				namespaceAndTag				= part;
+				index						= 0;
+			}
+
+			tagName = namespaceAndTag.includes(":")
+				? namespaceAndTag.split(':')[1]
+				: namespaceAndTag;
+
+			let matchingChildren = currentElement.childNodes.filter(function (child) {
+				let arr = child.nodeName.split(":");
+
+				if (arr.length > 1)
+					return arr[1] === tagName;
+				else
+					return arr[0] === tagName;
+			});
+
+			if (matchingChildren.length <= index)
+				break;
+
+			currentElement = matchingChildren[index];
 		}
 
-		this.content = rootContent;
-	}
-	
+		arrResult.push(currentElement);
+		return arrResult;
+	};
+	CustomXml.prototype.deleteAttribute = function(xPath, name)
+	{
+		return this.Change(function (){
+			let nodes = this.findElementByXPath(xPath);
+			if (nodes.length)
+			{
+				let el = nodes[0];
+				return el.deleteAttribute(name);
+			}
+			return false;
+		}, this);
+	};
+	CustomXml.prototype.insertAttribute = function(xPath, name, value)
+	{
+		return this.Change(function (){
+			let nodes = this.findElementByXPath(xPath);
+			if (nodes.length)
+			{
+				let el = nodes[0];
+				if (!el.attributes[name])
+					return el.setAttribute(name, value);
+			}
+			return false;
+		}, this);
+	};
+	CustomXml.prototype.updateAttribute = function(xPath, name, value)
+	{
+		return this.Change(function (){
+			let nodes = this.findElementByXPath(xPath);
+			if (nodes.length)
+			{
+				let el = nodes[0];
+				if (el.attributes[name])
+					return el.setAttribute(name, value);
+			}
+			return false;
+		}, this);
+	};
+	CustomXml.prototype.deleteElement = function (xPath)
+	{
+		return this.Change(function (){
+			let nodes = this.findElementByXPath(xPath);
+			if (nodes.length)
+			{
+				let el = nodes[0];
+				return el.delete();
+			}
+			return false;
+		}, this);
+	};
+	CustomXml.prototype.updateElement = function(xPath, xmlStr)
+	{
+		return this.Change(function (){
+			let nodes = this.findElementByXPath(xPath);
+			if (nodes.length)
+			{
+				let el = nodes[0];
+				el.setXml(xmlStr);
+				return true;
+			}
+			return false;
+		}, this);
+	};
+	CustomXml.prototype.insertElement = function (xPath, xmlStr, index)
+	{
+		return this.Change(function (){
+			let nodes = this.findElementByXPath(xPath);
+			if (nodes.length)
+			{
+				let el = nodes[0];
+				el.addElement(xmlStr, index);
+				return true;
+			}
+			return false;
+		}, this);
+	};
+	CustomXml.prototype.beforeChange = function ()
+	{
+		this.lastContent = this.Copy();
+	};
+	CustomXml.prototype.afterChange = function ()
+	{
+		let strLast			= this.lastContent.getText();
+		let strCurrentData	= this.getText();
+
+		if (strLast !== strCurrentData)
+			AscCommon.History.Add(new CChangesCustomXMLChange(this, this.lastContent.content, this.content));
+
+		this.lastContent = undefined;
+	};
+	CustomXml.prototype.Change = function (f, oThis)
+	{
+		this.beforeChange();
+		let data = f.apply(oThis);
+		this.afterChange();
+		return data;
+	};
+	CustomXml.prototype.setNamespaceUri = function(ns)
+	{
+		this.nsManager.setNamespaceUri(ns);
+	};
+	CustomXml.prototype.getNamespaceUri = function()
+	{
+		return this.nsManager.getNamespaceUri();
+	};
+
 	/**
 	 * @constructor
 	 */
-	function CustomXmlContent(parent, name)
+	function CustomXmlContent(oParentNode, oNodeName, xml)
 	{
-		this.parent			= parent;
-		this.name			= name ? name : "";
-		this.content		= [];
-		this.attribute		= {};
-		this.textContent	= "";
+		this.parentNode = oParentNode;
+		this.nodeName = oNodeName ? oNodeName : "";
+		this.childNodes = [];
+		this.attributes = {};
+		this.text = "";
 		this.xmlQuestionHeader = null;
+		this.xml = xml;
 
+		this.getNamespace = function ()
+		{
+			const parts = this.nodeName.split(":");
+			let prefix = parts.length === 2 ? parts[0] : null;
+
+			if (prefix)
+				return this.xml.nsManager.getNamespace(prefix);
+
+			return "";
+		}
+		this.getNodeName = function ()
+		{
+			return this.nodeName;
+		};
+		this.getText = function ()
+		{
+			return this.text;
+		};
+		this.getChildNodesCount = function()
+		{
+			return this.childNodes.length;
+		};
+		this.deleteChild = function (childNode)
+		{
+			this.childNodes = this.childNodes.filter(function (item) {return item !== childNode});
+		};
+		this.delete = function ()
+		{
+			this.parentNode.deleteChild(this);
+		};
 		this.addAttribute = function (name, value)
 		{
-			this.attribute[name] = value;
+			this.attributes[name] = value;
 		};
-		this.addContent = function (name)
+		this.getAttribute = function (name)
 		{
-			let newItem = new CustomXmlContent(this, name);
+			return this.attributes[name];
+		};
+		this.addContent = function(name)
+		{
+			let newItem = new CustomXmlContent(this, name, this.xml);
 
-			this.content.push(newItem);
+			this.childNodes.push(newItem);
 			return newItem;
+		};
+		this.addElement = function(xmlStr, index)
+		{
+			let newItem = new CustomXmlContent(this, name, this.xml);
+			newItem.setXml(xmlStr);
+
+			if (index !== undefined)
+				this.childNodes.splice(index, 0, newItem);
+			else
+				this.childNodes.splice(this.childNodes.length, 0, newItem);
+		};
+		this.setAttribute = function (attribute, value)
+		{
+			this.attributes[attribute] = value;
+		};
+		this.deleteAttribute = function(name)
+		{
+			if (this.attributes[name])
+			{
+				delete this.attributes[name];
+				return true;
+			}
+
+			return false;
 		};
 		this.getParent = function ()
 		{
-			if (this.parent)
-				return this.parent;
+			if (this.parentNode)
+				return this.parentNode;
 
 			return null;
 		};
 		this.addTextContent = function (text)
 		{
 			if (text !== "")
-				this.textContent += text;
+				this.text += text;
 		};
 		this.setTextContent = function (str)
 		{
-			this.textContent = str;
+			this.text = str;
+			return true;
 		};
-		this.setAttribute = function (attribute, value)
+		this.getInnerText = function ()
 		{
-			this.attribute[attribute] = value;
-		};
+			let result = [];
+
+			function GetText(node)
+			{
+				if (node.text)
+					result.push(node.text);
+
+				for (let i = 0; i < node.childNodes.length; i++)
+				{
+					GetText(node.childNodes[i]);
+				}
+			}
+
+			GetText(this);
+
+			return result.join("");
+		}
 		this.getBuffer = function ()
 		{
 			let writer = new AscCommon.CMemory();
 
 			function Write(content)
 			{
-				if (content.name === "" && content.textContent === "" && content.content.length === 0)
+				if (content.nodeName === "" && content.text === "" && content.childNodes.length === 0)
 				{
 					writer.WriteXmlString("");
 					return;
@@ -189,55 +499,82 @@
 
 				let current = null;
 
-				if (!content.name)
+				if (!content.nodeName)
 				{
 					if (content.xmlQuestionHeader !== null)
 						writer.WriteXmlString(content.xmlQuestionHeader + "\n");
 
-					current = content.content[0];
+					current = content.childNodes[0];
 				}
 				else
 				{
 					current = content;
 				}
 
-				writer.WriteXmlNodeStart(current.name);
+				writer.WriteXmlNodeStart(current.nodeName);
 
-				let atr = Object.keys(current.attribute)
+				let atr = Object.keys(current.attributes)
 
 				for (let i = 0; i < atr.length; i++)
 				{
 					let cur = atr[i];
-					writer.WriteXmlAttributeStringEncode(cur, current.attribute[cur]);
+					writer.WriteXmlAttributeStringEncode(cur, current.attributes[cur]);
 				}
 
 				writer.WriteXmlAttributesEnd();
 
-				for (let i = 0; i < current.content.length; i++)
+				for (let i = 0; i < current.childNodes.length; i++)
 				{
-					Write(current.content[i]);
+					Write(current.childNodes[i]);
 				}
 
-				if (current.textContent)
-					writer.WriteXmlString(current.textContent.toString().trim());
+				if (current.text)
+					writer.WriteXmlString(current.text.toString().trim());
 
-				writer.WriteXmlNodeEnd(current.name);
+				writer.WriteXmlNodeEnd(current.nodeName);
 			}
 
 			Write(this);
 			return writer;
 		};
-		this.getStringFromBuffer = function ()
+		this.getStringFromBuffer = function (isOnlyInner)
 		{
-			let buffer	= this.getBuffer();
+			let buffer	= this.getBuffer(isOnlyInner);
 			let str		= fromUtf8(buffer.GetData());
 			str			= str.replaceAll("&quot;", "\"");
 			str			= str.replaceAll("&amp;", "&");
 			return str;
 		};
+		this.setXml = function(strXml)
+		{
+			let content = CustomXmlCreateContent(strXml, this.xml);
+			let data = content.childNodes[0];
+
+			this.nodeName	= data.nodeName;
+			this.childNodes	= data.childNodes;
+			this.attributes	= data.attributes;
+			this.text		= data.text;
+
+			if (data.xmlQuestionHeader)
+				this.xmlQuestionHeader = data.xmlQuestionHeader;
+		};
+		this.Write_ToBinary2 = function (Writer)
+		{
+			Writer.WriteString2( this.getStringFromBuffer() );
+		};
+		this.Read_FromBinary2 = function (Reader)
+		{
+			let oContent = AscWord.CustomXmlCreateContent(Reader.GetString2(), this.xml);
+
+			this.parentNode			= oContent.parentNode;
+			this.name				= oContent.name;
+			this.childNodes			= oContent.childNodes;
+			this.attributes			= oContent.attributes;
+			this.textContent		= oContent.textContent;
+			this.xmlQuestionHeader	= oContent.xmlQuestionHeader;
+		};
 	}
-	
-	
+
 	// TODO: Временно вынес метод сюда, потом перенести надо будет
 	// разница с AscCommon.UTF8ArrayToString, что тут на 0-символе не останавливаемся
 	function fromUtf8(buffer, start, len)
@@ -279,8 +616,139 @@
 		}
 		return result;
 	}
+	function CustomXmlCreateContent(strCustomXml, xml)
+	{
+		function getPrefix(xmlnsAttrName) {
+			if (xmlnsAttrName.startsWith("xmlns:"))
+				return xmlnsAttrName.slice(6);
+			return null;
+		}
+
+		let nXmlHeaderStart	= strCustomXml.indexOf('<?', 0);
+		let nXmlHeaderEnd	= strCustomXml.indexOf('?>', nXmlHeaderStart);
+		let strXmlHeader 	= null;
+		if (nXmlHeaderStart !== -1 && nXmlHeaderEnd !== -1)
+		{
+			strXmlHeader = strCustomXml.substring(nXmlHeaderStart, nXmlHeaderEnd + "?>".length);
+			strCustomXml = strCustomXml.substring(nXmlHeaderEnd + '?>'.length, strCustomXml.length);
+		}
+
+		let oStax			= new StaxParser(strCustomXml),
+			rootContent		= new CustomXmlContent(null, null, xml);
+
+		if (strXmlHeader !== null)
+			rootContent.xmlQuestionHeader = strXmlHeader;
+
+		while (oStax.Read())
+		{
+			switch (oStax.GetEventType()) {
+				case EasySAXEvent.CHARACTERS:
+					rootContent.addTextContent(oStax.text);
+					break;
+				case EasySAXEvent.END_ELEMENT:
+					rootContent = rootContent.getParent();
+					break;
+				case EasySAXEvent.START_ELEMENT:
+					let name = oStax.GetName();
+					let childElement = rootContent.addContent(name);
+
+					while (oStax.MoveToNextAttribute())
+					{
+						let attributeName = oStax.GetName();
+						let attributeValue = oStax.GetValue();
+
+						if (attributeName === 'xmlns' && rootContent.xml)
+							rootContent.xml.addNamespace("defaultNamespace", attributeValue);
+
+						let prefix = getPrefix(attributeName);
+						if (prefix && rootContent.xml)
+							rootContent.xml.addNamespace(prefix, attributeValue);
+
+						childElement.addAttribute(attributeName, attributeValue);
+					}
+					rootContent = childElement;break;
+			}
+		}
+		return rootContent;
+	}
+	function CustomXmlPrefixMappings()
+	{
+		this.urls = {};
+		this.prefix = {};
+		this.namespaceUri = "";
+
+		this.setNamespaceUri = function(ns)
+		{
+			this.namespaceUri = ns;
+		};
+		this.getNamespaceUri = function()
+		{
+			return this.namespaceUri;
+		};
+		this.addNamespace = function (prefix, ns)
+		{
+			if (ns !== "" && this.namespaceUri === "")
+				this.namespaceUri = ns;
+
+			if (prefix && ns)
+			{
+				let prevPrefix = this.urls[ns];
+
+				this.urls[ns] = prefix;
+
+				if (prevPrefix)
+					delete this.prefix[prevPrefix];
+
+				this.prefix[prefix] = ns;
+			}
+		};
+		this.getNamespace = function(prefix)
+		{
+			return this.prefix[prefix];
+		};
+		this.getPrefix = function(urls)
+		{
+			return this.urls[urls];
+		};
+		this.Write_ToBinary2 = function(Writer)
+		{
+			Writer.WriteString2(this.namespaceUri);
+
+			let urls = Object.keys(this.urls);
+			let Count = urls.length;
+			Writer.WriteLong(Count);
+
+			for (let Index = 0; Index < Count; Index++)
+				Writer.WriteString2(urls[Index]);
+
+			Writer.WriteLong(Count);
+			for (let Index = 0; Index < Count; Index++)
+				Writer.WriteString2(this.urls[urls[Index]]);
+		};
+		this.Read_FromBinary2 = function(Reader)
+		{
+			this.namespaceUri = Reader.GetString2()
+			let url = [];
+
+			var Count = Reader.GetLong();
+			for (var Index = 0; Index < Count; Index++)
+			{
+				url.push(Reader.GetString2());
+				this.urls[url[url.length - 1]] = "";
+			}
+
+			var Count = Reader.GetLong();
+			for (var Index = 0; Index < Count; Index++)
+			{
+				let prefix = Reader.GetString2()
+				this.prefix[prefix] = url[Index];
+				this.urls[url[Index]] = prefix;
+			}
+		};
+	}
 
 	//--------------------------------------------------------export----------------------------------------------------
-	AscWord.CustomXml        = CustomXml;
-	AscWord.CustomXmlContent = CustomXmlContent;
+	AscWord.CustomXml					= CustomXml;
+	AscWord.CustomXmlContent			= CustomXmlContent;
+	AscWord.CustomXmlCreateContent		= CustomXmlCreateContent;
 })();

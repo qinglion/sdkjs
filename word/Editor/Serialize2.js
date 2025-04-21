@@ -6859,9 +6859,6 @@ function BinaryDocumentTableWriter(memory, doc, oMapCommentId, oNumIdMap, copyPa
 		}
 		if (undefined !== val.storeItemCheckSum)
 		{
-			//let strCustomXmlContent = this.Document.customXml.getContentByDataBinding(val);
-			//val.recalculateCheckSum(strCustomXmlContent);
-
 			this.memory.WriteByte(c_oSerSdt.StoreItemCheckSum);
 			this.memory.WriteString2(val.storeItemCheckSum);
 		}
@@ -7755,7 +7752,7 @@ function BinaryCustomsTableWriter(memory, doc, customXmlManager)
 		var oThis = this;
 		for(var i = 0; i < customXml.uri.length; ++i){
 			this.bs.WriteItem(c_oSerCustoms.Uri, function () {
-				oThis.memory.WriteString3(customXml.uri[i]);
+				oThis.memory.WriteString3(customXml.getNamespaceUri());
 			});
 		}
 		if (null !== customXml.itemId) {
@@ -16299,7 +16296,7 @@ function Binary_CustomsTableReader(doc, oReadResult, stream) {
 	this.ReadCustomContent = function(type, length, custom) {
 		var res = c_oSerConstants.ReadOk;
 		if (c_oSerCustoms.Uri === type) {
-			custom.uri.push(this.stream.GetString2LE(length));
+			custom.setNamespaceUri(this.stream.GetString2LE(length));
 		} else if (c_oSerCustoms.ItemId === type) {
 			custom.itemId = this.stream.GetString2LE(length);
 		} else if (c_oSerCustoms.ContentA === type) {

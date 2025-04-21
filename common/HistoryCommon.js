@@ -1438,7 +1438,10 @@
 	window['AscDFH'].historyitem_type_Endnotes           = 69 << 16;
 	window['AscDFH'].historyitem_type_ParagraphPermStart = 70 << 16;
 	window['AscDFH'].historyitem_type_ParagraphPermEnd   = 71 << 16;
-	
+	window['AscDFH'].historyitem_type_CustomXML_Add      = 72 << 16;
+	window['AscDFH'].historyitem_type_ChangeCustomXML    = 73 << 16;
+	window['AscDFH'].historyitem_type_CustomXML_Remove   = 74 << 16;
+
 	window['AscDFH'].historyitem_type_CommonShape            = 1000 << 16; // Этот класс добавлен для элементов, у которых нет конкретного класса
 
 	window['AscDFH'].historyitem_type_ColorMod               = 1001 << 16;
@@ -4625,6 +4628,7 @@
 	window['AscDFH'].historydescription_OForm_RoleFilled                            = 0x01c6;
 	window['AscDFH'].historydescription_OForm_CompletePreparation                   = 0x01c7;
 	window['AscDFH'].historydescription_Presentation_SetPreserveSlideMaster         = 0x01c8;
+	window['AscDFH'].historydescription_Document_AddCustomXML                       = 0x01c9;
 
 	// pdf
 	window['AscDFH'].historydescription_Pdf_AddAnnot			= 0x29a;
