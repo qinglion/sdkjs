@@ -1979,8 +1979,6 @@ function CDocument(DrawingDocument, isMainLogicDocument)
     this.TurnOffInterfaceEvents = false;
     this.TurnOffRecalcCurPos    = false;
 
-    this.CheckEmptyElementsOnSelection = true; // При выделении проверять или нет пустой параграф в конце/начале выделения.
-	
 	this.Numbering           = new AscWord.CNumbering();               // Форматный класс для хранения всех нумераций согласно формату
 	this.NumberingApplicator = new AscWord.CNumberingApplicator(this); // Класс для применения нумерации к текущему выделение
 	this.NumberingCollection = new AscWord.CNumberingCollection(this); // Класс, хранящий нумерации, используемые в документе
@@ -8307,13 +8305,13 @@ CDocument.prototype.Selection_SetEnd = function(X, Y, MouseEvent)
     this.Content[ContentPos].Selection_SetEnd(X, Y, ElementPageIndex, MouseEvent);
 
     // Проверяем, чтобы у нас в селект не попали элементы, в которых не выделено ничего
-    if (true === this.Content[End].IsSelectionEmpty() && true === this.CheckEmptyElementsOnSelection)
+    if (true === this.Content[End].IsSelectionEmpty())
     {
         this.Content[End].RemoveSelection();
         End--;
     }
 
-    if (Start != End && true === this.Content[Start].IsSelectionEmpty() && true === this.CheckEmptyElementsOnSelection)
+    if (Start != End && true === this.Content[Start].IsSelectionEmpty())
     {
         this.Content[Start].RemoveSelection();
         Start++;
@@ -15200,7 +15198,6 @@ CDocument.prototype.private_MoveCursorDown = function(StartX, StartY, AddToSelec
 	var PageH = this.Pages[this.CurPage].Height;
 
 	this.TurnOff_InterfaceEvents();
-	this.CheckEmptyElementsOnSelection = false;
 
 	var Result = false;
 	while (true)
@@ -15274,7 +15271,6 @@ CDocument.prototype.private_MoveCursorDown = function(StartX, StartY, AddToSelec
 		}
 	}
 
-	this.CheckEmptyElementsOnSelection = true;
 	this.TurnOn_InterfaceEvents(true);
 
 	this.private_UpdateCursorXY(false, true, true);
@@ -15293,7 +15289,6 @@ CDocument.prototype.private_MoveCursorUp = function(StartX, StartY, AddToSelect)
 	var PageH = this.Pages[this.CurPage].Height;
 
 	this.TurnOff_InterfaceEvents();
-	this.CheckEmptyElementsOnSelection = false;
 
 	var Result = false;
 	while (true)
@@ -15368,7 +15363,6 @@ CDocument.prototype.private_MoveCursorUp = function(StartX, StartY, AddToSelect)
 		}
 	}
 
-	this.CheckEmptyElementsOnSelection = true;
 	this.TurnOn_InterfaceEvents(true);
 	this.private_UpdateCursorXY(false, true, true);
 	return Result;
