@@ -13477,6 +13477,13 @@ Paragraph.prototype.Split = function(oNewParagraph, oContentPos, isNoDuplicate)
 		localTrack = oLogicDocument.GetLocalTrackRevisions();
 		oLogicDocument.SetLocalTrackRevisions(false);
 	}
+	
+	let clearNotesOnPreDelete = true;
+	if (oLogicDocument && oLogicDocument.IsDocumentEditor())
+	{
+		clearNotesOnPreDelete = oLogicDocument.ClearNotesOnPreDelete;
+		oLogicDocument.ClearNotesOnPreDelete = false;
+	}
 
 	var nCurPos = oContentPos.Get(0);
 	if (true === isNoDuplicate)
@@ -13542,6 +13549,9 @@ Paragraph.prototype.Split = function(oNewParagraph, oContentPos, isNoDuplicate)
 
 	this.MoveCursorToEndPos(false, false);
 	oNewParagraph.MoveCursorToStartPos(false);
+	
+	if (oLogicDocument && oLogicDocument.IsDocumentEditor())
+		oLogicDocument.ClearNotesOnPreDelete = clearNotesOnPreDelete;
 
 	oNewParagraph.DeleteCommentOnRemove = true;
 	this.DeleteCommentOnRemove          = true;
