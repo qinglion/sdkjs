@@ -833,36 +833,6 @@
 		}
 		return null;
 	};
-	CTimeNodeBase.prototype.getIterationCount = function (oDrawer) {
-		const iterationType = this.getIterationType();
-		const sId = this.getTargetObjectId();
-		const oDrawing = this.getTargetObject(sId);
-		let nIterationCount = 0;
-		const oDocStructure = oDrawer.getDrawingTextCache(sId);
-		if (oDocStructure) {
-			switch (iterationType) {
-				case ITERATEDATA_TYPE_WORD:
-					for (let i = 0; i < oDocStructure.m_aContent.length; i += 1) {
-						const oParaDraw = oDocStructure.m_aContent[i];
-						nIterationCount += oParaDraw.m_aWords.length;
-					}
-						break;
-				case ITERATEDATA_TYPE_LETTER:
-					for (let i = 0; i < oDocStructure.m_aContent.length; i += 1) {
-						const oParaDraw = oDocStructure.m_aContent[i];
-						for (let j = 0; j < oParaDraw.m_aWords.length; j += 1) {
-							const oWord = oParaDraw.m_aWords[j];
-							nIterationCount += oWord.length;
-						}
-					}
-					break;
-				default:
-					break;
-			}
-		}
-
-		return nIterationCount;
-	};
     CTimeNodeBase.prototype.getEndTrigger = function (oPlayer) {
         if (!this.isTimingContainer() && !this.getTargetObjectId()) {
             return this.getDefaultTrigger(oPlayer);
@@ -900,9 +870,6 @@
                             if (oThis.checkRepeatCondition(oPlayer)) {
                                 return false;
                             }
-														// if (oThis.checkIterateCondition(oPlayer)) {
-														// 	return false;
-														// }
                             return true;
                         });
                     }
@@ -1076,47 +1043,11 @@
         }
         return this.repeatCount.isSpecified() && this.simpleDurationIdx + 1 < this.repeatCount.getVal() / 1000;
     };
-	CTimeNodeBase.prototype.getIterateDuration = function (oDrawer, nIterateDuration) {
-		if (typeof this.startTick[0] === 'number' && typeof this.iterationTick === 'number') {
-			const nIterationDelta = this.getIterationDelta();
-			if (nIterationDelta !== null) {
-				const iterationCount = this.getIterationCount(oDrawer);
-				if (iterationCount > 0) {
-					return nIterateDuration + (nIterateDuration * nIterationDelta * (iterationCount - 1));
-				}
-			}
-		}
-		return null;
-	}
 
-	CTimeNodeBase.prototype.checkIterateCondition = function (oPlayer) {
-		if (!this.checkRepeatCondition(oPlayer)) {
-			if (this.isCanIterate()) {
-				if (this.iterationDuration !== null) {
-					const iterateDuration = this.getIterateDuration(oPlayer.animationDrawer, oPlayer.getElapsedTicks());
-					const elapsedTicks = oPlayer.getElapsedTicks();
-					return (this.iterationTick + iterateDuration) < elapsedTicks;
-				} else {
-					return true;
-				}
-			}
-		}
-		return false;
-	};
 	CTimeNodeBase.prototype.isCanIterate = function () {
 		const oParent = this.getParentTimeNode();
 		const oAttributeMap = oParent && oParent.getAttributesObject();
 		return !!(oAttributeMap && oAttributeMap.isAnimEffect() && oAttributeMap.iterate);
-	};
-	CTimeNodeBase.prototype.startIterateDuration = function (oPlayer) {
-		if (!this.isStartIteration && this.isCanIterate()) {
-			this.iterationDuration = this.getIterateDuration(oPlayer);
-			this.isStartIteration = true;
-			this.startChildrenIterationTick();
-		}
-	};
-	CTimeNodeBase.prototype.startChildrenIterationTick = function () {
-
 	};
     CTimeNodeBase.prototype.onFinished = function (oChild, oPlayer) {
         if (!this.isActive()) {
@@ -1134,9 +1065,6 @@
                 }
             }
             if (nChild === aChildren.length) {
-	            // if (this.checkIterateCondition(oPlayer)) {
-		          //   this.startIterateDuration(oPlayer);
-	            // }
                 if (this.checkRepeatCondition(oPlayer)) {
                     this.startSimpleDuration(++this.simpleDurationIdx, oPlayer);
                 }
@@ -1158,7 +1086,6 @@
                 //     }
                 // }
             } else {
-							// todo with iterate condition
                 if (this.checkRepeatCondition(oPlayer)) {
                     this.startSimpleDuration(++this.simpleDurationIdx, oPlayer);
                 } else {
