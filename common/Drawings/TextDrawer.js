@@ -1666,7 +1666,7 @@ CTextDrawer.prototype.p_color = function(r,g,b,a)
                     oTextPr.TextOutline = new AscFormat.CLn();
                 }
                 oTextPr.TextOutline.Fill = this.CreateUnfilFromRGB(r, g, b);
-                this.SetTextPr(oTextPr, this.m_oTheme);
+                this.SetTextPr(oTextPr, this.m_oTheme, this.m_nCurrentSplitOptions !== null);
                 return;
             }
         }
@@ -1711,7 +1711,7 @@ CTextDrawer.prototype.b_color1 = function(r,g,b,a)
                 oTextPr.TextFill = undefined;
                 oTextPr.FontRef = undefined;
                 oTextPr.Color = new CDocumentColor(r, g, b, false);
-                this.SetTextPr(oTextPr, this.m_oTheme);
+                this.SetTextPr(oTextPr, this.m_oTheme, this.m_nCurrentSplitOptions !== null);
                 return;
             }
         }
@@ -2793,12 +2793,12 @@ CTextDrawer.prototype.EndClipPath = function()
     this.m_bTurnOff = false;
 };
 
-CTextDrawer.prototype.SetTextPr = function(textPr, theme)
+CTextDrawer.prototype.SetTextPr = function(textPr, theme, bForceGetPath)
 {
     if (theme && textPr && textPr.ReplaceThemeFonts)
         textPr.ReplaceThemeFonts(theme.themeElements.fontScheme);
 
-    var bNeedGetPath = false;
+    var bNeedGetPath = !!bForceGetPath;
     if(!this.CheckCompareFillBrush(textPr, this.m_oTextPr))
     {
         bNeedGetPath = true;
