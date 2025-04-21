@@ -48,8 +48,35 @@
 	{
 		return new DataBinding(this.prefixMappings, this.storeItemID, this.xpath, this.storeItemCheckSum);
 	};
+	DataBinding.prototype.fillFromObject = function (obj)
+	{
+		this.prefixMappings		= obj.prefixMappings;
+		this.storeItemID 		= obj.storeItemID;
+		this.xpath				= obj.xpath;
+		this.storeItemCheckSum	= obj.storeItemCheckSum;
+	};
+	DataBinding.prototype.getPrefix = function()
+	{
+		return this.prefixMappings;
+	};
+	DataBinding.prototype.getItemId = function()
+	{
+		return this.storeItemID;
+	};
+	DataBinding.prototype.getXPath = function()
+	{
+		return this.xpath;
+	};
+	DataBinding.prototype.getCheckSum = function()
+	{
+		return this.storeItemCheckSum;
+	};
 	DataBinding.prototype.recalculateCheckSum = function (stringOfCustomXMlContent)
 	{
+	};
+	DataBinding.prototype.Refresh_RecalcData = function(Data)
+	{
+		// Ничего не делаем
 	};
 	DataBinding.prototype.toBinary = function(writer)
 	{
@@ -75,7 +102,7 @@
 		
 		if (undefined !== this.storeItemID)
 		{
-			writer.WriteLong(this.storeItemID);
+			writer.WriteString2(this.storeItemID);
 			flags |= 2;
 		}
 		

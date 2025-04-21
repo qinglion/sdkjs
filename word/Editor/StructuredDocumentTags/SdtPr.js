@@ -58,6 +58,7 @@ function CSdtPr()
 	this.Date     = undefined;
 	this.Equation = false;
 	this.TextForm = undefined;
+	this.DataBinding = false;
 
 	this.TextPr = new CTextPr();
 
@@ -293,6 +294,12 @@ CSdtPr.prototype.Write_ToBinary = function(Writer)
 		Flags |= (1 << 25);
 	}
 
+	if (this.DataBinding)
+	{
+		this.DataBinding.toBinary(Writer);
+		Flags |= (1 << 26);
+	}
+
 	var EndPos = Writer.GetCurPosition();
 	Writer.Seek(StartPos);
 	Writer.WriteLong(Flags);
@@ -406,6 +413,9 @@ CSdtPr.prototype.Read_FromBinary = function(Reader)
 	
 	if (Flags & (1 << 25))
 		this.ShdColor = AscWord.CDocumentColorA.fromBinary(Reader);
+
+	if (Flags & (1 << 26))
+		this.DataBinding = AscWord.DataBinding.fromBinary(Reader);
 };
 CSdtPr.prototype.IsBuiltInDocPart = function()
 {
@@ -430,6 +440,7 @@ function CContentControlPr(nType)
 	this.CCType     = undefined !== nType ? nType : c_oAscSdtLevelType.Inline;
 	
 	this.Temporary  = undefined;
+	this.DataBinding = undefined;
 	
 	// section property
 	this.SectionBreak = undefined;
@@ -502,6 +513,13 @@ CContentControlPr.prototype.FillFromObject = function(oPr)
 	
 	if (undefined !== oPr.BorderColor)
 		this.BorderColor = AscWord.CDocumentColorA.fromObjectRgba(oPr.BorderColor);
+
+	if (undefined !== oPr.DataBinding)
+	{
+		let oDataBinding = new AscWord.DataBinding();
+		oDataBinding.fillFromObject(oPr.DataBinding);
+		this.DataBinding = oDataBinding;
+	}
 };
 CContentControlPr.prototype.FillFromContentControl = function(oContentControl)
 {
@@ -518,6 +536,9 @@ CContentControlPr.prototype.FillFromContentControl = function(oContentControl)
 	this.Appearance = oContentControl.GetAppearance();
 	this.Color      = oContentControl.GetColor();
 	this.Temporary  = oContentControl.IsContentControlTemporary();
+
+	if (oContentControl.Pr.DataBinding)
+		this.DataBinding = oContentControl.GetDataBinding();
 
 	if (oContentControl.IsCheckBox())
 	{
