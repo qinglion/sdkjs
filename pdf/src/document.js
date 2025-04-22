@@ -6485,6 +6485,7 @@ var CPresentation = CPresentation || function(){};
     CPDFDoc.prototype.TurnOnCheckChartSelection = function() {};
     CPDFDoc.prototype.UpdateRulers = function() {};
     CPDFDoc.prototype.UpdateSelection = function() {};
+    CPDFDoc.prototype.GetCurrentParagraph = function() {};
     CPDFDoc.prototype.StopRecalculate = function() {};
     CPDFDoc.prototype.StopSpellCheck = function() {};
     CPDFDoc.prototype.Check_GraphicFrameRowHeight = function(oGrFrame) {
