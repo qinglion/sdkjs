@@ -2393,6 +2393,8 @@
         else if (this.GetType() == AscPDF.FIELD_TYPES.button) {
             this.SetNeedUpdateImage(true);
         }
+
+        this.CalculateContentClipRect();
     };
     CBaseField.prototype.SetPosition = function(x, y) {
         let nExtX = this.GetWidth();
