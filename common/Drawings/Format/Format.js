@@ -6833,7 +6833,7 @@
 		CLn.prototype.IsIdentical = function (ln) {
 			return ln && (this.Fill == null ? ln.Fill == null : this.Fill.IsIdentical(ln.Fill)) && (this.Join == null ? ln.Join == null : this.Join.IsIdentical(ln.Join))
 				&& (this.headEnd == null ? ln.headEnd == null : this.headEnd.IsIdentical(ln.headEnd))
-				&& (this.tailEnd == null ? ln.tailEnd == null : this.tailEnd.IsIdentical(ln.headEnd)) &&
+				&& (this.tailEnd == null ? ln.tailEnd == null : this.tailEnd.IsIdentical(ln.tailEnd)) &&
 				this.algn == ln.algn && this.cap == ln.cap && this.cmpd == ln.cmpd && this.w == ln.w && this.prstDash === ln.prstDash;
 		};
 		CLn.prototype.isEqual = function (ln) {
