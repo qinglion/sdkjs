@@ -1549,6 +1549,22 @@
 	CObjectForDrawArrayWrapper.prototype.getParentObjects = function () {
 		return this.formatDrawing.getParentObjects();
 	};
+	CObjectForDrawArrayWrapper.prototype.getBrush = function() {
+		let oBrush;
+		this.forEachObjectToDraw(function(oObjectToDraw) {
+			oBrush = oObjectToDraw.brush;
+			return true;
+		});
+		return oBrush;
+	};
+	CObjectForDrawArrayWrapper.prototype.getPen = function() {
+		let oPen;
+		this.forEachObjectToDraw(function(oObjectToDraw) {
+			oPen = oObjectToDraw.pen;
+			return true;
+		});
+		return oPen;
+	};
 
 	function CWrapperDrawer(wrapperObjects) {
 		this.wrapperObjects = wrapperObjects || [];
@@ -1573,6 +1589,22 @@
 	};
 	CWrapperDrawer.prototype.addElement = function (oElement) {
 		this.wrapperObjects.push(oElement);
+	};
+	CWrapperDrawer.prototype.getBrush = function() {
+		for (let i = 0; i < this.wrapperObjects.length; i += 1) {
+			const oBrush = this.wrapperObjects[i].getBrush();
+			if (oBrush) {
+				return oBrush;
+			}
+		}
+	};
+	CWrapperDrawer.prototype.getPen = function() {
+		for (let i = 0; i < this.wrapperObjects.length; i += 1) {
+			const oPen = this.wrapperObjects[i].getPen();
+			if (oPen) {
+				return oPen;
+			}
+		}
 	};
 
     function CBackgroundWrapper(oMorph, oSlide) {

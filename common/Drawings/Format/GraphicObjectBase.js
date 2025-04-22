@@ -578,11 +578,12 @@
 	CGraphicObjectBase.prototype.isDrawing = true;
 	CGraphicObjectBase.prototype.isEqualsBrushPen = function(oBrush, oPen) {
 		let bBrushEquals = false;
-		if (!this.brush && !this.blipFill && !oBrush) {
+		const oObjectBrush = this.getBrush();
+		if (!oObjectBrush && !this.blipFill && !oBrush) {
 			bBrushEquals = true;
 		} else {
-			if (this.brush) {
-				bBrushEquals = this.brush.IsIdentical(oBrush)
+			if (oObjectBrush) {
+				bBrushEquals = oObjectBrush.IsIdentical(oBrush)
 			}
 			if (this.blipFill) {
 				bBrushEquals = bBrushEquals || this.blipFill.IsIdentical(oBrush && oBrush.fill);
@@ -592,9 +593,10 @@
 			}
 		}
 		let bPenEquals = false;
-		if (this.pen) {
-			bPenEquals = this.pen.IsIdentical(oPen)
-		} else if (!this.pen && !oPen) {
+		const oObjectPen = this.getPen();
+		if (oObjectPen) {
+			bPenEquals = oObjectPen.IsIdentical(oPen)
+		} else if (!oObjectPen && !oPen) {
 			bPenEquals = true;
 		}
 		return bBrushEquals && bPenEquals;
@@ -3837,6 +3839,12 @@
 	};
 	CGraphicObjectBase.prototype.forEachObjectToDraw = function(fCallback) {};
 	CGraphicObjectBase.prototype.onRemoveContent = function () {};
+	CGraphicObjectBase.prototype.getBrush = function() {
+		return this.brush;
+	};
+	CGraphicObjectBase.prototype.getPen = function() {
+		return this.pen;
+	};
 	var ANIM_LABEL_WIDTH_PIX = 22;
 	var ANIM_LABEL_HEIGHT_PIX = 17;
 
