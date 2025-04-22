@@ -3274,7 +3274,7 @@ Paragraph.prototype.drawRunContentLines = function(CurPage, pGraphics, drawState
 		Element = aFormBorder.Get_NextForward();
 		if (Element)
 		{
-			if (this.IsInFixedForm() && this.GetInnerForm() && !this.GetInnerForm().IsComplexForm())
+			if (this.IsInFixedForm() && this.GetInnerForm())
 			{
 				pGraphics.RemoveLastClip && pGraphics.RemoveLastClip();
 
