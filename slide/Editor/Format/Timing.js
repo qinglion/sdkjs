@@ -412,11 +412,16 @@
 	CTimeNodeBase.prototype.isForceDrawingAnimation = function () {
 		return false;
 	};
+	CTimeNodeBase.prototype.isForceTextAnimation = function () {
+		return false;
+	};
 		CTimeNodeBase.prototype.isSkipMainDrawing = function() {
 			if (!this.isTimingContainer()) {
 				const oDrawing = this.getTargetObject();
 				const oTargetTextOptions = this.getTargetTextOptions();
 				if (oTargetTextOptions) {
+					return true;
+				}  else if (this.isForceTextAnimation()) {
 					return true;
 				} else if (this.isCanIterate()) {
 					return !(oDrawing.brush && oDrawing.brush.isVisible() || oDrawing.pen && oDrawing.pen.Fill && oDrawing.pen.Fill.isVisible() || oDrawing.blipFill && oDrawing.blipFill.RasterImageId);
@@ -432,7 +437,9 @@
 			const arrHash = [];
 			arrHash.push(sDrawingId);
 			arrHash.push(this.getIterationType());
-			arrHash.push(this.isSkipMainDrawing());
+			arrHash.push(Number(this.isSkipMainDrawing()));
+			arrHash.push(Number(this.isForceTextAnimation()));
+			arrHash.push(Number(this.isForceDrawingAnimation()));
 			const oTargetEl = this.getTargetTextOptions();
 			if (oTargetEl) {
 				if (oTargetEl.pRg) {
@@ -497,12 +504,23 @@
 					}
 				}
 			}
-		} else if (this.isCanIterate() && !oDrawer.skipDrawTextIteration[sId]) {
-			for (let i = 0; i < oDocStructure.m_aContent.length; i += 1) {
-				const oParagraph = oDocStructure.m_aContent[i];
-				const arrObjects = oParagraph.getParagraphWrappersByIterationType(nIterationType);
-				arrDrawingObjects.push.apply(arrDrawingObjects, arrObjects);
-			}
+		} else if (!oDrawer.skipDrawTextIteration[sId]) {
+				if (this.isCanIterate() && !this.isForceDrawingAnimation()) {
+					for (let i = 0; i < oDocStructure.m_aContent.length; i += 1) {
+						const oParagraph = oDocStructure.m_aContent[i];
+						const arrObjects = oParagraph.getParagraphWrappersByIterationType(nIterationType);
+						arrDrawingObjects.push.apply(arrDrawingObjects, arrObjects);
+					}
+				} else if (this.isForceTextAnimation()) {
+					const arrTempDrawingObjects = [];
+					for (let i = 0; i < oDocStructure.m_aContent.length; i += 1) {
+						const oParagraph = oDocStructure.m_aContent[i];
+						const arrObjects = oParagraph.getParagraphWrappersByIterationType();
+						arrTempDrawingObjects.push.apply(arrTempDrawingObjects, arrObjects);
+					}
+					const oWrapperDrawer = new AscCommonSlide.CWrapperDrawer(arrTempDrawingObjects);
+					arrDrawingObjects.push(oWrapperDrawer);
+				}
 		}
 		oDrawer.drawingObjectsCache[sHash] = arrDrawingObjects;
 		return arrDrawingObjects;
@@ -1412,12 +1430,12 @@
         }
         return oObject.rot;
     };
-    CTimeNodeBase.prototype.getTargetObjectBrush = function () {
-        var oObject = this.getTargetObject();
+    CTimeNodeBase.prototype.getTargetObjectBrush = function (oObject) {
         if (!oObject) {
             return null;
         }
-        if (!oObject.brush || oObject.brush.isNoFill()) {
+				const oObjectBrush = oObject.getBrush();
+        if (!oObjectBrush || oObjectBrush.isNoFill()) {
             var oBrush = AscFormat.CreateUniFillByUniColor(AscFormat.CreateUniColorRGB(255, 255, 255));
             oBrush.fill.color.RGBA.R = 255;
             oBrush.fill.color.RGBA.G = 255;
@@ -1425,14 +1443,13 @@
             oBrush.fill.color.RGBA.A = 255;
             return oBrush;
         }
-        return oObject.brush;
+        return oObjectBrush;
     };
-    CTimeNodeBase.prototype.getTargetObjectPen = function () {
-        var oObject = this.getTargetObject();
+    CTimeNodeBase.prototype.getTargetObjectPen = function (oObject) {
         if (!oObject) {
             return null;
         }
-        return oObject.pen;
+        return oObject.getPen();
     };
     CTimeNodeBase.prototype.getAnimatedVal = function (fTime, fStart, fEnd) {
         return fStart * (1 - fTime) + fEnd * fTime;
@@ -7155,9 +7172,14 @@
 			}
 			return false;
 		};
+	CAnimClr.prototype.isForceTextAnimation = function () {
+		if (this.cBhvr) {
+			return this.cBhvr.isOverrideChildStyle();
+		}
+		return false;
+	};
     CAnimClr.prototype.calculateAttributes = function (nElapsedTime, oAttributes, sDrawingId) {
         var oTargetObject = this.getTargetObject(sDrawingId);
-				//todo think if this textObject
         if (!oTargetObject) {
             return;
         }
@@ -7178,10 +7200,10 @@
         } else {
             var oBrush;
             if (sFirstAttrName === "stroke.color") {
-                var oPen = this.getTargetObjectPen();
+                var oPen = this.getTargetObjectPen(oTargetObject);
                 oBrush = oPen && oPen.Fill || AscFormat.CreateUnfilFromRGB(0, 0, 0);
             } else {
-                oBrush = this.getTargetObjectBrush();
+                oBrush = this.getTargetObjectBrush(oTargetObject);
             }
 
             if (oBrush) {
@@ -11751,7 +11773,6 @@
         }
     };
     CTexturesCache.prototype.createBoundsTexture = function(sTextureId, oBounds, dScale) {
-        const oCanvas = oBounds.createCanvas(dScale);
         const oTexture = new CAnimTexture(this, oBounds.createCanvas(dScale), dScale, 0, 0);
         this.map[sTextureId] = oTexture;
         return oTexture;
@@ -12041,7 +12062,7 @@
 				if (oDrawing) {
 					const oTextEl = oTimeNode.getTargetTextOptions();
 					const bIsCanIterate = oTimeNode.isCanIterate();
-					if (!(oTextEl || oTimeNode.isCanIterate())) {
+					if (!(oTextEl || oTimeNode.isCanIterate() || oTimeNode.isForceTextAnimation())) {
 						return;
 					}
 					const oDocContent = oDrawing.getDocContent();
@@ -12746,7 +12767,12 @@
 					const sId = oAnimationDrawing.GetId();
 					if (!oThis.animations[sId]) {
 						oThis.animations[sId] = [];
-						oThis.drawings.push(oAnimationDrawing);
+						if (oAnimationDrawing.isShape()) {
+							oThis.drawings.unshift(oAnimationDrawing);
+						} else {
+							oThis.drawings.push(oAnimationDrawing);
+						}
+
 					}
 					oThis.animations[sId].push(oAnimation);
 				});
@@ -12882,10 +12908,7 @@
     };
     CAnimSandwich.prototype.getBrushPen = function(oDrawing) {
         let oAttributesMap = this.getAttributesMap(oDrawing.Get_Id());
-				let oFillColor;
-				if (!(!oDrawing.brush || oDrawing.brush.fill instanceof AscFormat.CNoFill) || !oDrawing.isShape()) {
-					oFillColor = oAttributesMap["fillcolor"] || oAttributesMap["style.color"];
-				}
+				let oFillColor = oAttributesMap["fillcolor"] || oAttributesMap["style.color"];
         let sFillType = oAttributesMap["fill.type"];
         let bFillOn = oAttributesMap["fill.on"];
 
@@ -12899,9 +12922,9 @@
             oCurBrush.fill = oDrawing.blipFill;
         }
         else {
-            oCurBrush = oDrawing.brush;
+            oCurBrush = oDrawing.getBrush();
         }
-        let oCurPen = oDrawing.pen;
+        let oCurPen = oDrawing.getPen();
         let oNewBrush = oCurBrush;
         let oNewPen = oCurPen;
         if (oFillColor || sFillType || bFillOn !== undefined || oStrokeColor || bStrokeOn !== undefined) {
