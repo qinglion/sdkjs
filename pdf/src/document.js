@@ -5700,8 +5700,9 @@ var CPresentation = CPresentation || function(){};
         }
 
         let oStamp = this.AddAnnotByProps(oProps);
+        let oXfrm = oStamp.getXfrm();
         oStamp.SetIconType(sType);
-        oStamp.SetRotate(nRotAngle);
+        oXfrm.setRot(-nRotAngle * (Math.PI / 180));
         oStamp.SetWidth(nLineW);
         
         if (oStampRender) {
