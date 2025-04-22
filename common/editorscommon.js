@@ -10901,6 +10901,20 @@
 		return result;
 	}
 	
+	function executeNoPreDelete(f, logicDocument, t, args)
+	{
+		if (!logicDocument
+			|| !logicDocument.IsDocumentEditor
+			|| !logicDocument.IsDocumentEditor())
+			return f.apply(t, args);
+		
+		let preventPreDelete = logicDocument.PreventPreDelete;
+		logicDocument.PreventPreDelete = true;
+		let result = f.apply(t, args);
+		logicDocument.PreventPreDelete = preventPreDelete;
+		return result;
+	}
+	
 	function ExecuteEditorAction(actionPr, f, logicDocument, t, args)
 	{
 		if (!logicDocument
@@ -15029,6 +15043,7 @@
 	window["AscCommon"].IsAscFontSupport = IsAscFontSupport;
 	window["AscCommon"].ExecuteNoHistory = ExecuteNoHistory;
 	window["AscCommon"].executeNoRevisions = executeNoRevisions;
+	window["AscCommon"].executeNoPreDelete = executeNoPreDelete;
 	window["AscCommon"].ExecuteEditorAction = ExecuteEditorAction;
 	window["AscCommon"].AddAndExecuteChange = AddAndExecuteChange;
 	window["AscCommon"].CompareStrings = CompareStrings;
