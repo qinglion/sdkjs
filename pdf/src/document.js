@@ -4241,6 +4241,7 @@ var CPresentation = CPresentation || function(){};
                 oDrDoc.TargetEnd();
 
             this.Viewer.onUpdateOverlay();
+            this.UpdateInterface();
         }
     };
     CPDFDoc.prototype.MoveCursorUp = function(isShiftKey, isCtrlKey) {
@@ -4285,6 +4286,7 @@ var CPresentation = CPresentation || function(){};
                 oDrDoc.TargetEnd();
 
             this.Viewer.onUpdateOverlay();
+            this.UpdateInterface();
         }
     };
     CPDFDoc.prototype.MoveCursorRight = function(isShiftKey, isCtrlKey) {
@@ -4317,6 +4319,7 @@ var CPresentation = CPresentation || function(){};
                 oDrDoc.TargetEnd();
 
             this.Viewer.onUpdateOverlay();
+            this.UpdateInterface();
         }
     };
     CPDFDoc.prototype.MoveCursorDown = function(isShiftKey, isCtrlKey) {
@@ -4363,6 +4366,7 @@ var CPresentation = CPresentation || function(){};
                 oDrDoc.TargetEnd();
 
             this.Viewer.onUpdateOverlay();
+            this.UpdateInterface();
         }
     };
     CPDFDoc.prototype.SelectAll = function() {
@@ -6485,6 +6489,7 @@ var CPresentation = CPresentation || function(){};
     CPDFDoc.prototype.TurnOnCheckChartSelection = function() {};
     CPDFDoc.prototype.UpdateRulers = function() {};
     CPDFDoc.prototype.UpdateSelection = function() {};
+    CPDFDoc.prototype.GetCurrentParagraph = function() {};
     CPDFDoc.prototype.StopRecalculate = function() {};
     CPDFDoc.prototype.StopSpellCheck = function() {};
     CPDFDoc.prototype.Check_GraphicFrameRowHeight = function(oGrFrame) {

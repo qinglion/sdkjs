@@ -1249,11 +1249,9 @@
 			if (nStartPos === undefined)
 				nStartPos = 0;
 
-			if (nEndPos === undefined)
-			{
-				oElement.CheckRunContent(calcSumPos);
+			oElement.CheckRunContent(calcSumPos);
+			if (nEndPos === undefined || nEndPos > nPosCount)
 				nEndPos = nPosCount;
-			}
 		}
 		correctPositions(oElement);
 
