@@ -1365,6 +1365,12 @@
     CWrapperBase.prototype.getObjectType = function () {
         return null;
     };
+		CWrapperBase.prototype.getBrush = function () {
+			return this.brush;
+		};
+	CWrapperBase.prototype.getPen = function () {
+		return this.pen;
+	};
 
 		function CWrapperMorphBase(oMorph, oTransform, oTheme, oColorMap, oFormatDrawing) {
 			this.morph = oMorph;

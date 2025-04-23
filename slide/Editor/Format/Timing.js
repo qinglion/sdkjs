@@ -308,6 +308,10 @@
     }
 
     InitClass(CTimeNodeBase, CBaseAnimObject, AscDFH.historyitem_type_Unknown);
+		CTimeNodeBase.prototype.isNodePlaceholder = function () {
+			const oAttributes = this.getAttributesObject();
+			return oAttributes && oAttributes.isNodePlaceholder();
+		};
     CTimeNodeBase.prototype.isTimingContainer = function () {
         return this.isPar() || this.isSeq() || this.isExcl();
     };
@@ -1246,7 +1250,7 @@
         if (!this.isDrawable()) {
             return;
         }
-        if (this.isTimingContainer()) {
+        if (this.isTimingContainer() && !this.isNodePlaceholder()) {
             var aChildren = this.getChildrenTimeNodes();
             for (var nChild = 0; nChild < aChildren.length; ++nChild) {
                 aChildren[nChild].traverseDrawable(oPlayer);
@@ -1434,16 +1438,7 @@
         if (!oObject) {
             return null;
         }
-				const oObjectBrush = oObject.getBrush();
-        if (!oObjectBrush || oObjectBrush.isNoFill()) {
-            var oBrush = AscFormat.CreateUniFillByUniColor(AscFormat.CreateUniColorRGB(255, 255, 255));
-            oBrush.fill.color.RGBA.R = 255;
-            oBrush.fill.color.RGBA.G = 255;
-            oBrush.fill.color.RGBA.B = 255;
-            oBrush.fill.color.RGBA.A = 255;
-            return oBrush;
-        }
-        return oObjectBrush;
+	    return oObject.getBrush();
     };
     CTimeNodeBase.prototype.getTargetObjectPen = function (oObject) {
         if (!oObject) {
@@ -5931,6 +5926,9 @@
 		}
 		return null;
 	};
+	CCTn.prototype.isNodePlaceholder = function () {
+		return !!this.nodePh;
+	};
 
 
     changesFactory[AscDFH.historyitem_CondRtn] = CChangeObject;
@@ -7201,9 +7199,27 @@
             var oBrush;
             if (sFirstAttrName === "stroke.color") {
                 var oPen = this.getTargetObjectPen(oTargetObject);
-                oBrush = oPen && oPen.Fill || AscFormat.CreateUnfilFromRGB(0, 0, 0);
+                oBrush = oPen && oPen.Fill;
+								if (!oBrush || oBrush.isNoFill()) {
+									if (this.clrSpc === TLColorSpaceRGB) {
+										oBrush = AscFormat.CreateUnfilFromRGB(0, 0, 0);
+									} else {
+										return;
+									}
+								}
             } else {
                 oBrush = this.getTargetObjectBrush(oTargetObject);
+								if (!oBrush || oBrush.isNoFill()) {
+									if (this.clrSpc === TLColorSpaceRGB) {
+										oBrush = AscFormat.CreateUniFillByUniColor(AscFormat.CreateUniColorRGB(255, 255, 255));
+										oBrush.fill.color.RGBA.R = 255;
+										oBrush.fill.color.RGBA.G = 255;
+										oBrush.fill.color.RGBA.B = 255;
+										oBrush.fill.color.RGBA.A = 255;
+									} else {
+										return;
+									}
+								}
             }
 
             if (oBrush) {
