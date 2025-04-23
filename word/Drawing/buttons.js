@@ -2664,7 +2664,7 @@
 
 									if (isFill)
 									{
-										ctx.rect(xText + widthName + CONTENT_CONTROL_TRACK_H * nIndexB, _y, cctw, cctw);
+										ctx.rect(xText + widthName + rPR * CONTENT_CONTROL_TRACK_H * nIndexB, _y, cctw, cctw);
 										ctx.fill();
 										ctx.beginPath();
 									}
