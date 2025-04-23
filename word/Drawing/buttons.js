@@ -1762,9 +1762,16 @@
 				}
 			}
 		}
-
-		// сортировка по Y
+		
+		let curPage = this.parent.getCurrentPage();
 		arrY.sort(function(a, b){
+			if (curPage === a.Page && curPage !== b.Page)
+				return -1;
+			else if (curPage !== a.Page && curPage !== b.Page)
+				return 1;
+			else if (a.Page !== b.Page)
+				return a.Page - b.Page;
+			
 			return a.Y - b.Y;
 		});
 
@@ -2937,6 +2944,10 @@
 			this.ContentControlsSaveLast();
 		};
 		
+		this.getCurrentPage = function()
+		{
+			return this.document.m_oWordControl && this.document.m_oWordControl.m_oLogicDocument ? this.document.m_oWordControl.m_oLogicDocument.CurPage : 0;
+		};
 		this.startCollectTracks = function()
 		{
 			// We can have many Track.In and just one Track.Hover
