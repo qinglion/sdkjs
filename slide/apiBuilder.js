@@ -112,6 +112,14 @@
         this.Slide = oSlide;
     }
 
+	/**
+	 * Class representing a notes page.
+	 * @constructor
+	 */
+	function ApiNotesPage(oNotes) {
+		this.NotesPage = oNotes;
+	}
+
     /**
      * Class representing a graphical object.
      * @constructor
@@ -3650,6 +3658,112 @@
 
         return new ApiGroup(oGroup);
     };
+
+	/**
+	 * Returns the notes page of the slide.
+	 * @typeofeditors ["CPE"]
+	 * @memberof ApiSlide
+	 * @returns {ApiNotesPage | null}
+	 * @see office-js-api/Examples/{Editor}/ApiSlide/Methods/GetNotesPage.js
+	  */
+	ApiSlide.prototype.GetNotesPage = function () {
+		if (this.Slide && this.Slide.notes) {
+			return new ApiNotesPage(this.Slide.notes);
+		}
+		return null;
+	};
+
+	/**
+	 * Adds text to the notes page of the slide.
+	 * @typeofeditors ["CPE"]
+	 * @memberof ApiSlide
+	 * @param {string} sText - The text to be added to the notes page.
+	 * @returns {boolean} - Returns true if text was added successfully, otherwise false.
+	 * @see office-js-api/Examples/{Editor}/ApiSlide/Methods/AddNotesText.js
+	 */
+	ApiSlide.prototype.AddNotesText = function (sText) {
+		let oNotesPage = this.GetNotesPage();
+		if (!oNotesPage) {
+			const presentation = private_GetPresentation();
+			const notes = AscCommonSlide.CreateNotes();
+			notes.setNotesMaster(presentation.notesMasters[0]);
+
+			notes.setSlide(this);
+			this.setNotes(notes);
+
+			oNotesPage = new ApiNotesPage(notes);
+		}
+
+		const oBodyShape = oNotesPage.GetBodyShape();
+		if (oBodyShape) {
+
+			const oDocContent = oBodyShape.GetDocContent();
+			if (oDocContent) {
+
+				const oParagraph = oDocContent.GetElement(0);
+				if (oParagraph) {
+
+					oParagraph.AddText(sText);
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	//------------------------------------------------------------------------------------------------------------------
+	//
+	// ApiNotesPage
+	//
+	//------------------------------------------------------------------------------------------------------------------
+
+	/**
+	 * Returns the shape with attribute type="body" from the current notes page
+	 * @typeofeditors ["CPE"]
+	 * @memberof ApiNotesPage
+	 * @returns {ApiShape | null}
+	 * @see office-js-api/Examples/{Editor}/ApiNotesPage/Methods/GetBodyShape.js
+	 */
+	ApiNotesPage.prototype.GetBodyShape = function () {
+		if (this.NotesPage) {
+
+			let bodyShape = this.NotesPage.getBodyShape();
+			if (!bodyShape) {
+				bodyShape = this.NotesPage.createBodyShape();
+			}
+
+			return new ApiShape(bodyShape);
+		}
+		return null;
+	};
+
+	/**
+	 * Adds text to the body shape of the current notes page.
+	 * @typeofeditors ["CPE"]
+	 * @memberof ApiNotesPage
+	 * @param {string} sText - The text to be added to the body shape.
+	 * @returns {boolean} - Returns true if text was added successfully, otherwise false.
+	 * @see office-js-api/Examples/{Editor}/ApiNotesPage/Methods/AddBodyShapeText.js
+	 */
+	ApiNotesPage.prototype.AddBodyShapeText = function (sText) {
+		const oBodyShape = this.GetBodyShape();
+		if (oBodyShape) {
+
+			const oDocContent = oBodyShape.GetDocContent();
+			if (oDocContent) {
+
+				const oParagraph = oDocContent.GetElement(0);
+				if (oParagraph) {
+
+					oParagraph.AddText(sText);
+					return true;
+				}
+			}
+		}
+
+		return false;
+	};
+
     //------------------------------------------------------------------------------------------------------------------
     //
     // ApiDrawing
