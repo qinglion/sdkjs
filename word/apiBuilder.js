@@ -21387,8 +21387,7 @@
 		var textDelta        = null;
 		var arrSelectedParas = null;
 
-		let oDocument = this.GetDocument();
-		let isTrackRevisions = oDocument.IsTrackRevisions();
+		let isTrackRevisions = null;
 
 		function GetRunInfo(oRun)
 		{
@@ -21801,6 +21800,8 @@
 		}
 		else 
 		{
+			let oDocument = this.GetDocument();
+			isTrackRevisions = oDocument && oDocument.IsTrackRevisions();
 			arrSelectedParas = oDocument.Document.GetSelectedParagraphs();
 			if(arrSelectedParas.length <= 0 )
 			{
