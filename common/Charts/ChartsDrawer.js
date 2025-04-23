@@ -11250,7 +11250,7 @@ drawHBarChart.prototype = {
 				drawVerges(this.sortZIndexPaths[i].seria, this.sortZIndexPaths[i].point,
 					this.sortZIndexPaths[i].frontPaths, null, this.sortZIndexPaths[i].verge, isNotPen);
 			}
-		} else {
+		} else if (this.sortParallelepipeds)  {
 			for (var i = 0; i < this.sortParallelepipeds.length; i++) {
 				index = this.sortParallelepipeds[i].nextIndex;
 				faces = this.temp[index].faces;
