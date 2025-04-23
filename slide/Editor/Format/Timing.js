@@ -10594,13 +10594,35 @@
     const RANDOM_BARS_ARRAY = [62, 4, 27, 42, 80, 34, 67, 20, 74, 32, 10, 54, 3, 77, 36, 55, 26, 53, 97, 90, 68, 65, 57, 12, 52, 70, 23, 64, 30, 73, 79, 22, 14, 51, 9, 0, 49, 1, 15, 71, 93, 86, 19, 28, 45, 41, 39, 60, 25, 7, 92, 46, 2, 98, 33, 40, 31, 72, 69, 24, 75, 84, 43, 47, 87, 50, 18, 56, 13, 61, 76, 17, 91, 37, 8, 11, 78, 6, 5, 48, 59, 95, 66, 63, 81, 96, 35, 88, 94, 89, 38, 99, 82, 29, 16, 83, 21, 58, 44, 85];
     const STRIPS_COUNT = 16;
 
-    function CBaseAnimTexture(oCanvas, fScale, nX, nY, bNoText) {
+    function CBaseAnimTexture(oCanvas, fScale, nX, nY, bNoText, brush, pen) {
         this.canvas = oCanvas;
         this.scale = fScale;
         this.x = nX;
         this.y = nY;
 				this.bNoText = bNoText;
+				this.brush = brush;
+				this.pen = pen;
     }
+		CBaseAnimTexture.prototype.isEqualsBrushPen = function (oBrush, oPen) {
+			let bBrushEquals = false;
+			const oObjectBrush = this.brush;
+			if (!oObjectBrush && !oBrush) {
+				bBrushEquals = true;
+			} else if (oObjectBrush) {
+					bBrushEquals = oObjectBrush.IsIdentical(oBrush);
+			}
+			if (!bBrushEquals) {
+				return false;
+			}
+			let bPenEquals = false;
+			const oObjectPen = this.pen;
+			if (oObjectPen) {
+				bPenEquals = oObjectPen.IsIdentical(oPen)
+			} else if (!oObjectPen && !oPen) {
+				bPenEquals = true;
+			}
+			return bPenEquals;
+		};
     CBaseAnimTexture.prototype.drawInRect = function(oGraphics, dAlpha, nX, nY, nW, nH) {
         if(this.canvas.width === 0 || this.canvas.height === 0 || nW === 0 || nH === 0) {
             return;
@@ -10663,8 +10685,8 @@
         return 0;
 	};
 
-    function CAnimTexture(oCache, oCanvas, fScale, nX, nY, bNoText) {
-        CBaseAnimTexture.call(this, oCanvas, fScale, nX, nY, bNoText);
+    function CAnimTexture(oCache, oCanvas, fScale, nX, nY, bNoText, brush, pen) {
+        CBaseAnimTexture.call(this, oCanvas, fScale, nX, nY, bNoText, brush, pen);
         this.cache = oCache;
         this.effectTexture = null;
     }
@@ -11718,10 +11740,14 @@
     function CTexturesCache() {
         this.map = {};
     }
-    CTexturesCache.prototype.checkTexture = function (sId, fScale, bMorph, bCheckSize, oAnimParams, bNoText) {
+    CTexturesCache.prototype.checkTexture = function (sId, fScale, bMorph, bCheckSize, oAnimParams, bNoText, oBrushPen) {
         let bCreate = false;
         if(!this.map[sId] || !this.map[sId].checkScale(fScale)) {
             bCreate = true;
+        }
+				else if (oBrushPen && !this.map[sId].isEqualsBrushPen(oBrushPen.brush, oBrushPen.pen)) {
+	        this.removeTexture(sId);
+	        bCreate = true;
         }
 				else if (!!this.map[sId].bNoText !== !!bNoText) {
 					this.removeTexture(sId);
@@ -11740,7 +11766,7 @@
             }
         }
         if (bCreate) {
-            const oTexture = this.createDrawingTexture(sId, fScale, bMorph, oAnimParams, bNoText);
+            const oTexture = this.createDrawingTexture(sId, fScale, bMorph, oAnimParams, bNoText, oBrushPen);
             if(oTexture) {
                 this.map[sId] = oTexture;
             }
@@ -11750,16 +11776,16 @@
     CTexturesCache.prototype.checkMorphTexture = function (sId, fScale, bCheckSize, oAnimParams, bNoText) {
         return this.checkTexture(sId, fScale, true, bCheckSize, oAnimParams, bNoText);
     };
-    CTexturesCache.prototype.createDrawingTexture = function (sId, fScale, bMorph, oAnimParams, bNoText) {
+    CTexturesCache.prototype.createDrawingTexture = function (sId, fScale, bMorph, oAnimParams, bNoText, oBrushPen) {
         var oDrawing = AscCommon.g_oTableId.Get_ById(sId);
         if (!oDrawing) {
             return undefined;
         }
-        var oBaseTexture = oDrawing.getAnimTexture(fScale, bMorph, oAnimParams, bNoText);
+        var oBaseTexture = oDrawing.getAnimTexture(fScale, bMorph, oAnimParams, bNoText, oBrushPen);
 		if(!oBaseTexture) {
 			return undefined;
 		}
-        return new CAnimTexture(this, oBaseTexture.canvas, oBaseTexture.scale, oBaseTexture.x, oBaseTexture.y, bNoText);
+        return new CAnimTexture(this, oBaseTexture.canvas, oBaseTexture.scale, oBaseTexture.x, oBaseTexture.y, bNoText, oBaseTexture.brush, oBaseTexture.pen);
     };
     CTexturesCache.prototype.removeTexture = function (sId) {
         if (this.map[sId]) {
@@ -12987,20 +13013,10 @@
         if(!this.isDrawingVisible(sId)) {
             return null;
         }
-        let oTexture = oTextureCache.checkTexture(sId, fScale, undefined, undefined, undefined, bNoText);
+	    const oNewBrushPen = this.getBrushPen(oDrawing);
+        let oTexture = oTextureCache.checkTexture(sId, fScale, undefined, undefined, undefined, bNoText, oNewBrushPen);
         if(!oTexture) {
             return null;
-        }
-        let oCurBrush = oDrawing.brush;
-        let oCurPen = oDrawing.pen;
-        const oNewBrushPen = this.getBrushPen(oDrawing);
-        if(!oDrawing.isEqualsBrushPen(oNewBrushPen.brush, oNewBrushPen.pen)) {
-            //get texture with new brush and pen
-            oDrawing.brush = oNewBrushPen.brush;
-            oDrawing.pen = oNewBrushPen.pen;
-            oTexture = oTextureCache.createDrawingTexture(sId, fScale, undefined, undefined, bNoText);
-            oDrawing.brush = oCurBrush;
-            oDrawing.pen = oCurPen;
         }
         let oTransform = this.getTransform(oDrawing);
         oTexture = this.checkEffectTexture(oTexture, sId);

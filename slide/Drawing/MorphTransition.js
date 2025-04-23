@@ -1355,9 +1355,7 @@
     };
     CWrapperBase.prototype.draw = function(oGraphics) {
     };
-    CWrapperBase.prototype.getAnimTexture = function (scale, bMorph, oAnimParams) {
-        return AscFormat.CGraphicObjectBase.prototype.getAnimTexture.call(this, scale, bMorph, oAnimParams);
-    };
+    CWrapperBase.prototype.getAnimTexture = AscFormat.CGraphicObjectBase.prototype.getAnimTexture;
     CWrapperBase.prototype.getBoundsByDrawing = function (bMorph) {
         return this.bounds;
     };
@@ -1459,7 +1457,6 @@
 			this.strikeoutUnderlineObjects[i].draw(oGraphics, undefined, this.transform, this.theme, this.colorMap);
 		}
 	};
-	CObjectForDrawArrayWrapper.prototype.isEqualsBrushPen = AscFormat.CGraphicObjectBase.prototype.isEqualsBrushPen;
 	CObjectForDrawArrayWrapper.prototype.draw = function(oGraphics) {
 		const oThis = this;
 		this.forEachObjectToDraw(function(oObjectToDraw) {
