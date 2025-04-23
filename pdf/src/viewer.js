@@ -562,6 +562,7 @@
 
 		this.onRepaintFormsCallbacks = [];
 		this.onRepaintAnnotsCallbacks = [];
+		this.onRepaintFinishCallbacks = [];
 
 		this.updateSkin = function()
 		{
@@ -909,7 +910,7 @@
 
 			this.scheduleRepaint();
 		};
-		this.scheduleRepaint = function(formsCallBack, annotsCallback) {
+		this.scheduleRepaint = function(formsCallBack, annotsCallback, otherCallback) {
 			let oThis = this;
 			if (this.scheduledRepaintTimer == null) {
 				this.scheduledRepaintTimer = setTimeout(function() {
@@ -922,8 +923,12 @@
 					oThis.onRepaintAnnotsCallbacks.forEach(function(callback) {
 						callback();
 					});
+					oThis.onRepaintFinishCallbacks.forEach(function(callback) {
+						callback();
+					});
 					oThis.onRepaintFormsCallbacks = [];
 					oThis.onRepaintAnnotsCallbacks = [];
+					oThis.onRepaintFinishCallbacks = [];
 
 					if (oThis.Api && oThis.Api.printPreview)
 						oThis.Api.printPreview.update();
@@ -936,6 +941,8 @@
 				this.onRepaintFormsCallbacks.push(formsCallBack);
 			if (annotsCallback)
 				this.onRepaintAnnotsCallbacks.push(annotsCallback);
+			if (otherCallback)
+				this.onRepaintFinishCallbacks.push(otherCallback);
 		};
 
 		this.onRepaintForms = function(pages) {
@@ -2223,6 +2230,7 @@
 				oThis.thumbnails.isInFocus = false;
 			}
 
+			Asc.editor.checkInterfaceElementBlur();
 			Asc.editor.checkLastWork();
 
 			if (oThis.touchManager && oThis.touchManager.checkTouchEvent(e))
