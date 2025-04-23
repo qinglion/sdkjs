@@ -1219,7 +1219,7 @@ var CPresentation = CPresentation || function(){};
         let oMouseDownField     = oViewer.getPageFieldByMouse();
         let oMouseDownAnnot     = oViewer.getPageAnnotByMouse();
         let oMouseDownDrawing   = oViewer.getPageDrawingByMouse();
-        let oFloatObject        = oMouseDownAnnot || oMouseDownDrawing;
+        let oFloatObject        = oMouseDownAnnot || oMouseDownDrawing || (this.IsEditFieldsMode() && oMouseDownField);
         let oCurObject          = this.GetMouseDownObject();
 
         // координаты клика на странице в MM
@@ -1274,11 +1274,11 @@ var CPresentation = CPresentation || function(){};
             }
         }
         
-        let isSameType = (oCurObject && oFloatObject) && (oCurObject.IsAnnot() && oFloatObject.IsAnnot() || oCurObject.IsDrawing() && oFloatObject.IsDrawing()); 
+        let isSameType = (oCurObject && oFloatObject) && ( (oCurObject.IsAnnot() && oFloatObject.IsAnnot()) || (oCurObject.IsDrawing() && oFloatObject.IsDrawing()) || (oCurObject.IsForm() && oFloatObject.IsForm()) ); 
         // докидываем в селект
         if (e.CtrlKey && (oCurObject && oFloatObject) && (oCurObject != oFloatObject) && isSameType) {
             oController.selection.groupSelection = null;
-            oController.selectObject(oFloatObject, oFloatObject.GetPage());
+            oController.selectObject(oFloatObject.IsForm() ? oFloatObject.GetEditShape() : oFloatObject, oFloatObject.GetPage());
             return;
         }
 
