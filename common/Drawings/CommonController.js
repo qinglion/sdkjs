@@ -8010,13 +8010,17 @@
 					}
 
 					let hyperlink_properties = null;
-					if(drawings.length === 1) {
-						let oDrawing = drawings[0];
-						const oDocContent = oDrawing.getDocContent && oDrawing.getDocContent();
-						let isStickyNote = oDrawing.IsAnnot && oDrawing.IsAnnot() && oDrawing.IsComment() || drawing.IsEditFieldShape && oDrawing.IsEditFieldShape(); // skip pdf text annot and form
-						const isValidType = oDrawing.isShape() || oDrawing.isImage();
+					if (drawings.length === 1) {
+						const oDrawing = drawings[0];
 
-						if (!isStickyNote && !oDocContent && isValidType) {
+						const oDrawingObjectsController = oDrawing.getDrawingObjectsController && oDrawing.getDrawingObjectsController();
+						const oTargetDocContent = oDrawingObjectsController && oDrawingObjectsController.getTargetDocContent();
+
+						const isValidType = oDrawing.isShape() || oDrawing.isImage();
+						const isStickyNote = oDrawing.IsAnnot && oDrawing.IsAnnot() && oDrawing.IsComment() ||
+							drawing.IsEditFieldShape && oDrawing.IsEditFieldShape(); // skip pdf text annot and form
+
+						if (!isStickyNote && isValidType && !oTargetDocContent) {
 							const oNvPr = oDrawing.getCNvProps();
 							if (oNvPr && oNvPr.hlinkClick && oNvPr.hlinkClick.id) {
 								hyperlink_properties = new Asc.CHyperlinkProperty();

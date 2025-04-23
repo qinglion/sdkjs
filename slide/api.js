@@ -6998,7 +6998,7 @@ background-repeat: no-repeat;\
 
 		return oTargetContent
 			? oPresentation.GetSelectedText(true)
-			: null;
+			: false;
 	};
 
 	// HyperProps - объект CHyperlinkProperty
