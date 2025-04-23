@@ -1426,7 +1426,7 @@ var CPresentation = CPresentation || function(){};
             return;
         }
 
-        if (oObject.IsDrawing() && oObject.IsShape() && this.IsEditFieldsMode()) {
+        if (oObject.IsDrawing && oObject.IsDrawing() && oObject.IsShape() && this.IsEditFieldsMode()) {
             if (oObject.GetEditField()) {
                 return;
             }
