@@ -1269,13 +1269,13 @@
 
 			if (image.support[index])
 			{
-				image.load(type, icon.normal, index);
+				image.load(type, icon["normal"], index);
 
-				if (icon.active)
-					image.loadActive(icon.active, index);
+				if (icon["active"])
+					image.loadActive(icon["active"], index);
 
-				if (icon.hover)
-					image.loadHover(icon.hover, index);
+				if (icon["hover"])
+					image.loadHover(icon["hover"], index);
 
 				if (!this.pluginImages[type])
 					this.pluginImages[type] = {};
