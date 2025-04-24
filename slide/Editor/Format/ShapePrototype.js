@@ -741,7 +741,7 @@ CShape.prototype.OnContentReDraw = function(){
     };
 		CShape.prototype.onRemoveContent = function () {
 			const oPresentation = this.getLogicDocument();
-			if (oPresentation) {
+			if (oPresentation && oPresentation.timing) {
 				oPresentation.timing.onRemoveContent(this.GetId());
 			}
 		};
