@@ -816,14 +816,15 @@
 		const oParent = this.getParentTimeNode();
 		const nIterationDelta = this.getIterationDelta();
 		const oAttr = oParent.getAttributesObject();
-		const nEffectDuration = oAttr && oAttr.getEffectDuration();
+		const nEffectDuration = oAttr && oAttr.getEffectDuration() || 0;
 		let nIterationTick;
 		let startIndex;
 		if (this.isSkipMainDrawing()) {
 			nIterationTick = startTick;
 			startIndex = 1;
 		} else {
-			nIterationTick = startTick + nEffectDuration;
+			const nDelay = oAttr && oAttr.getDelay() || 0;
+			nIterationTick = startTick + nEffectDuration + nDelay;
 			const oFirstIterationObject = arrDrawings[1];
 			oFirstIterationObject.forEachAnimationDrawing(function(oAnimationDrawing) {
 				oThis.startTick[oAnimationDrawing.GetId()] = nIterationTick;
@@ -12882,7 +12883,7 @@
 				return false;
 			}
 			const dScale = oGraphics.m_oCoordTransform.sx;
-				if (!oDrawer.isDrawingVisible(sDrawingId)) {
+				if (!oDrawer.isDrawingVisible(sDrawingId, this)) {
 					return true;
 				}
 				const oTextureData = this.getTextureData(oObjectToDraw, oTextureCache, dScale, bSkipDrawTxBody);
