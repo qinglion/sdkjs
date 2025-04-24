@@ -1735,7 +1735,7 @@
             return {nSelStart : preText.length, nSelEnd : preText.length + selectedText.length};
         }
 
-        let sValue      = this.GetValue(true);
+        let sValue = this.GetValue(true);
         let oSelRange   = GetSelectionRange(this.content.GetElement(0));
         let nSelStart   = oSelRange.nSelStart;
         let nSelEnd     = oSelRange.nSelEnd;
@@ -1774,6 +1774,9 @@
             "selEnd": nSelEnd
         });
 
+        if (!sValue) {
+            return isCanEnter;
+        }
         if (oActionRunScript) {
             oActionRunScript.RunScript();
             isCanEnter = oDoc.event["rc"];
