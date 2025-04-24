@@ -562,6 +562,7 @@
 
 		this.onRepaintFormsCallbacks = [];
 		this.onRepaintAnnotsCallbacks = [];
+		this.onRepaintFinishCallbacks = [];
 
 		this.updateSkin = function()
 		{
@@ -909,7 +910,7 @@
 
 			this.scheduleRepaint();
 		};
-		this.scheduleRepaint = function(formsCallBack, annotsCallback) {
+		this.scheduleRepaint = function(formsCallBack, annotsCallback, otherCallback) {
 			let oThis = this;
 			if (this.scheduledRepaintTimer == null) {
 				this.scheduledRepaintTimer = setTimeout(function() {
@@ -922,8 +923,12 @@
 					oThis.onRepaintAnnotsCallbacks.forEach(function(callback) {
 						callback();
 					});
+					oThis.onRepaintFinishCallbacks.forEach(function(callback) {
+						callback();
+					});
 					oThis.onRepaintFormsCallbacks = [];
 					oThis.onRepaintAnnotsCallbacks = [];
+					oThis.onRepaintFinishCallbacks = [];
 
 					if (oThis.Api && oThis.Api.printPreview)
 						oThis.Api.printPreview.update();
@@ -936,6 +941,8 @@
 				this.onRepaintFormsCallbacks.push(formsCallBack);
 			if (annotsCallback)
 				this.onRepaintAnnotsCallbacks.push(annotsCallback);
+			if (otherCallback)
+				this.onRepaintFinishCallbacks.push(otherCallback);
 		};
 
 		this.onRepaintForms = function(pages) {
@@ -1005,7 +1012,10 @@
 			{
 				if (!this.file.isNeedCMap())
 				{
-					this.onDocumentReady();
+					// can check CMap after merge -> dont call onDocumentReady
+					if (!this.isDocumentReady) {
+						this.onDocumentReady();
+					}
 					return;
 				}
 
@@ -1120,6 +1130,8 @@
 			if (this.drawingPages[0]) {
 				this.navigateToPage(0, 0, this.scrollMaxX / 2);
 			}
+
+			this.isDocumentReady = true;
 		};
 
 		this.open = function(data, password)
@@ -1440,10 +1452,10 @@
 				{
 					oForm.SetNoExport(Boolean(oFormInfo["noexport"]));
 				}
-				if (oFormInfo["readonly"])
+				if (oFormInfo["readOnly"])
 				{
 					// to do
-					oForm.SetReadOnly(Boolean(oFormInfo["readonly"]));
+					oForm.SetReadOnly(Boolean(oFormInfo["readOnly"]));
 				}
 				if (oFormInfo["required"])
 				{
@@ -2170,7 +2182,7 @@
 		};
 		this.canInteract = function() {
 			// не даем взаимодействовать с документом пока не произошла отрисовка
-			return this.scheduledRepaintTimer == null && this.isRepaint != true && this.initPaintDone == true;
+			return this.scheduledRepaintTimer == null && this.isRepaint != true && this.initPaintDone == true && !this.isCMapLoading;
 		};
 		this.getPageDrawingByMouse = function()
 		{
@@ -2214,6 +2226,11 @@
 
 		this.onMouseDown = function(e)
 		{
+			if (oThis.thumbnails) {
+				oThis.thumbnails.isInFocus = false;
+			}
+
+			Asc.editor.checkInterfaceElementBlur();
 			Asc.editor.checkLastWork();
 
 			if (oThis.touchManager && oThis.touchManager.checkTouchEvent(e))
@@ -2939,7 +2956,7 @@
 			let oDoc = this.getPDFDoc();
 			Asc.editor.checkLastWork();
 			
-			if (oDoc.fontLoader.isFontLoadInProgress() || this.IsOpenFormsInProgress || AscCommon.CollaborativeEditing.waitingImagesForLoad) {
+			if (oDoc.fontLoader.isFontLoadInProgress() || this.IsOpenFormsInProgress || AscCommon.CollaborativeEditing.waitingImagesForLoad || this.isCMapLoading) {
 				this.paint();
 				return;
 			}
@@ -4677,13 +4694,8 @@
 			}
 		});
 
-		// edit		- 0
-		// add		- 1
-		// delete	- 2
-
-		function writePageInfo(operation, originIndex) {
-			if (!oMemory)
-			{
+		function checkMemory() {
+			if (!oMemory) {
 				oMemory = new AscCommon.CMemory(true);
 				oMemory.Init(memoryInitSize);
 				oMemory.images = [];
@@ -4694,6 +4706,41 @@
 				oMemory.WriteByte("D".charCodeAt(0));
 				oMemory.WriteByte("F".charCodeAt(0));
 			}
+		}
+
+		if (oDoc.mergedPagesData.length != 0) {
+			checkMemory();
+
+			for (let i = 0; i < oDoc.mergedPagesData.length; i++) {
+				let oPrevData = oDoc.mergedPagesData[i - 1];
+				let oData = oDoc.mergedPagesData[i];
+				let aUint8Array = oData.binary;
+
+				let nMaxIdx = oData.maxId;
+				if (oPrevData && oPrevData.maxId == oData.maxId) {
+					nMaxIdx = 0; // means has no changes after prev merge
+				}
+
+				let nStartPos = oMemory.GetCurPosition();
+				oMemory.Skip(4);
+				oMemory.WriteByte(AscPDF.CommandType.mergePages);
+				oMemory.WriteLong(aUint8Array.length);
+				oMemory.WriteBuffer(aUint8Array, 0, aUint8Array.length);
+				oMemory.WriteLong(nMaxIdx);
+				oMemory.WriteString('Merged_' + i);
+				let nEndPos = oMemory.GetCurPosition();
+				oMemory.Seek(nStartPos);
+				oMemory.WriteLong(nEndPos - nStartPos);
+				oMemory.Seek(nEndPos);
+			}
+		}
+
+		// edit		- 0
+		// add		- 1
+		// delete	- 2
+
+		function writePageInfo(operation, originIndex) {
+			checkMemory();
 
 			let nCommandType = operation[0];
 			let curIndex = operation[1];

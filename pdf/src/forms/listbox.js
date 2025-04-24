@@ -518,6 +518,13 @@
             return;
         }
 
+        if (this.IsReadOnly()) {
+            return;
+        }
+        
+        if (!this._anchorIdx && this.GetCurIdxs().length)
+            this._anchorIdx = this.GetCurIdxs()[0];
+
         function callbackAfterFocus(x, y, e) {
             this.SetInForm(true);
             this.SetDrawHighlight(false);
@@ -542,21 +549,32 @@
                 this.AddToRedraw();
             }
 
-            if (this.IsMultipleSelection() == true) {
-                if (e.CtrlKey == true) {
-                    if (oShd && oShd.IsNil() == false) {
-                        this.UnselectOption(nPos);
+            if (this.IsMultipleSelection()) {
+                if (e.ShiftKey) {
+                    let anchor = (typeof this._anchorIdx === "number" ? this._anchorIdx : nPos);
+                    let start  = Math.min(anchor, nPos);
+                    let end    = Math.max(anchor, nPos);
+                    this.SelectOption(start, true);
+                    for (let i = start + 1; i <= end; i++) {
+                        this.SelectOption(i, false);
                     }
-                    else {
-                        this.SelectOption(nPos, false);
-                    }
+                }
+                else if (e.CtrlKey) {
+                    if (oShd && !oShd.IsNil())  this.UnselectOption(nPos);
+                    else                        this.SelectOption(nPos, false);
+
+                    if (typeof this._anchorIdx !== "number")
+                        this._anchorIdx = nPos;
                 }
                 else {
                     this.SelectOption(nPos, true);
+                    this._anchorIdx = nPos;
                 }
             }
             else {
+                // single-select
                 this.SelectOption(nPos, true);
+                this._anchorIdx = nPos;
             }
 
             if (this.IsNeedCommit()) {
@@ -612,6 +630,10 @@
         this.UpdateScroll(true);
     };
     CListBoxField.prototype.UpdateScroll = function(bShow) {
+        if (bShow && this.IsEditMode()) {
+            return;
+        }
+        
         let oContentBounds  = this.content.GetContentBounds(0);
         let oContentRect    = this.getFormRelRect();
         let aOrigRect       = this.GetOrigRect();

@@ -9373,7 +9373,7 @@ CPresentation.prototype.changeTheme = function (themeInfo, arrInd) {
 			}
 		}
 		bReplace = true;
-		if(oCurMaster.Theme.name === "Blank" || oCurMaster.Theme.name === "Office Theme") {
+		if(oCurMaster.Theme.name === "Blank" || oCurMaster.Theme.name === "Office Theme" || oCurMaster.isPreserve()) {
 			bReplace = false;
 		}
 		arr_ind = [];
@@ -9518,6 +9518,9 @@ CPresentation.prototype.changeTheme = function (themeInfo, arrInd) {
 	for(let nMaster = 0; nMaster < aReplacedMasters.length; ++nMaster) {
 		let oMaster = aReplacedMasters[nMaster];
 		let bFound = false;
+		if (oMaster.isPreserve()) {
+			continue;
+		}
 		for(let nSlide = 0; nSlide < this.Slides.length; ++nSlide) {
 			if(this.Slides[nSlide].getMaster() === oMaster) {
 				bFound = true;

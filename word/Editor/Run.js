@@ -11417,6 +11417,9 @@ ParaRun.prototype.GetLineByPosition = function(nPos)
  */
 ParaRun.prototype.PreDelete = function(isDeep)
 {
+	if (this.Paragraph && this.Paragraph.isPreventedPreDelete())
+		return;
+	
 	// TODO: Перенести это, когда удаляется непосредственно элемент из класса
 	//       Сейчас работает не совсем корректно, потому что при большой вложенности у элементов чистится Parent,
 	//       хотя по факту он должен чистится только у первого уровня элементов, с которых начинается удаление

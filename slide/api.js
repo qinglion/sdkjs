@@ -6977,24 +6977,28 @@ background-repeat: no-repeat;\
 	//-----------------------------------------------------------------
 	// Функции для работы с гиперссылками
 	//-----------------------------------------------------------------
-	asc_docs_api.prototype.can_AddHyperlink = function()
-	{
-		let oPresentation = this.private_GetLogicDocument();
-		if(!oPresentation) return false;
-		var bCanAdd = oPresentation.CanAddHyperlink(true);
-		if (true === bCanAdd)
-		{
-			let oController = oPresentation.GetCurrentController();
-			if(!oController)
-			{
-				return null;
-			}
-			let oTargetContent = oController.getTargetDocContent();
-			if(!oTargetContent) return null;
-			return oPresentation.GetSelectedText(true);
+	asc_docs_api.prototype.can_AddHyperlink = function () {
+		const oPresentation = this.private_GetLogicDocument();
+		if (!oPresentation) {
+			return false;
 		}
 
-		return false;
+		const oController = oPresentation.GetCurrentController();
+		if (!oController) {
+			return false;
+		}
+
+		const oTargetContent = oController.getTargetDocContent();
+		const bCheckInHyperlink = AscCommon.isRealObject(oTargetContent);
+		const bCanAdd = oPresentation.CanAddHyperlink(bCheckInHyperlink);
+
+		if (!bCanAdd) {
+			return false;
+		}
+
+		return oTargetContent
+			? oPresentation.GetSelectedText(true)
+			: false;
 	};
 
 	// HyperProps - объект CHyperlinkProperty

@@ -1382,7 +1382,15 @@
         }
 
         let _t = this;
-        Object.values(AscPDF.ACTIONS_TYPES).forEach(function(type) {
+
+        let aLogicActions = [
+            AscPDF.FORMS_TRIGGERS_TYPES.Keystroke,
+            AscPDF.FORMS_TRIGGERS_TYPES.Validate,
+            AscPDF.FORMS_TRIGGERS_TYPES.Calculate,
+            AscPDF.FORMS_TRIGGERS_TYPES.Format
+        ]
+
+        Object.values(aLogicActions).forEach(function(type) {
             _t.SetActions(type, oFieldToInherit.GetActions(type));
 
             if (bClearFrom !== false) {
@@ -1451,7 +1459,10 @@
                 }
                 // will be field-widget
                 else {
-                    this.DrainLogicFrom(oParent, false);
+                    if (oParent) {
+                        this.DrainLogicFrom(oParent, false);
+                    }
+                    
                     this.SetPartialName(sName);
                     return true;
                 }
@@ -1529,7 +1540,7 @@
         this._needDrawHighlight = bDraw;
     };
     CBaseField.prototype.IsNeedDrawHighlight = function() {
-        return this._needDrawHighlight;
+        return false == this.IsReadOnly() && this._needDrawHighlight;
     };
 
     CBaseField.prototype.DrawEdit = function(oGraphicsWord) {
@@ -1586,10 +1597,6 @@
 
         if (this._readOnly === bReadOnly) {
             return true;
-        }
-
-        if (this.GetType() === AscPDF.FIELD_TYPES.button) {
-            return false;
         }
 
         AscCommon.History.Add(new CChangesPDFFormReadOnly(this, this._readOnly, bReadOnly));
@@ -2382,7 +2389,10 @@
         else if (this.GetType() == AscPDF.FIELD_TYPES.button) {
             this.SetNeedUpdateImage(true);
         }
+
+        this.CalculateContentClipRect();
     };
+    CBaseField.prototype.CalculateContentClipRect = function() {};
     CBaseField.prototype.SetPosition = function(x, y) {
         let nExtX = this.GetWidth();
         let nExtY = this.GetHeight();

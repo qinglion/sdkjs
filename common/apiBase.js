@@ -5042,6 +5042,11 @@
 	{
 		this.sendEvent("onPluginToolbarMenu", [{ "guid" : guid, "tabs" : [] }]);
 	};
+	baseEditorsApi.prototype.onPluginClose = function(guid)
+	{
+		this.onPluginCloseToolbarMenuItem(guid);
+		this.onPluginCloseContextMenuItem(guid);
+	};
 
 	// ---------------------------------------------------- wopi ---------------------------------------------
 	baseEditorsApi.prototype.asc_wopi_renameFile = function(name) {
@@ -5547,6 +5552,10 @@
 	{
 		let results = window.g_asc_plugins.onPluginEvent2("onAIRequest", null, undefined, true, true);
 		return (0 !== results.length) ? true : false;
+	};
+
+	baseEditorsApi.prototype.onAttachPluginEvent = function(guid, name)
+	{
 	};
 
 	//----------------------------------------------------------export----------------------------------------------------

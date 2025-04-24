@@ -370,16 +370,28 @@
         this.SetHovered(false);
     };
     CBaseCheckBoxField.prototype.DrawPressed = function() {
+        if (this.IsReadOnly()) {
+            return;
+        }
+
         this.SetPressed(true);
         editor.getDocumentRenderer()._paint();
     };
     CBaseCheckBoxField.prototype.DrawUnpressed = function() {
+        if (this.IsReadOnly()) {
+            return;
+        }
+        
         this.SetPressed(false);
         editor.getDocumentRenderer()._paint();
     };
     CBaseCheckBoxField.prototype.onMouseUp = function() {
         let oDoc = this.GetDocument();
         let oViewer = oDoc.Viewer;
+
+        if (this.IsReadOnly()) {
+            return;
+        }
 
         let oThis = this;
         let bCommit = false;

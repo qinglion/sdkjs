@@ -3334,7 +3334,7 @@ var editor;
 		this.wb = new AscCommonExcel.WorkbookView(this.wbModel, this.controller, this.handlers, this.HtmlElement,
 			this.topLineEditorElement, this, this.collaborativeEditing, this.fontRenderingMode);
 
-		this.registerCustomFunctionsLibrary();
+		this.registerCustomFunctionsLibrary(undefined, true);
 
 		if (this.isCopyOutEnabled && this.topLineEditorElement) {
 			if (this.isCopyOutEnabled() === false) {
@@ -9616,10 +9616,10 @@ var editor;
 		return wb.customFunctionEngine && wb.customFunctionEngine.clear();
 	};
 
-	spreadsheet_api.prototype.recalculateCustomFunctions = function() {
+	spreadsheet_api.prototype.recalculateCustomFunctions = function(isNotUpdate) {
 		let needDraw = null;
 		if (this.wb && this.wb.customFunctionEngine && this.wb.customFunctionEngine.needRecalculate) {
-			if (this.wbModel.addCustomFunctionToChanged()) {
+			if (this.wbModel.addCustomFunctionToChanged(isNotUpdate)) {
 				needDraw = true;
 			}
 			this.wb.customFunctionEngine.needRecalculate = false;

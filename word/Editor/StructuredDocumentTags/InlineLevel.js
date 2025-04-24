@@ -3114,10 +3114,12 @@ CInlineLevelSdt.prototype.ConvertFormToFixed = function(nW, nH)
 	// 	oRun.Set_Position(oTextPr.Position - nTextDescent);
 	// 	oInnerRun.Recalc_CompiledPr(true);
 	// }
-
-	oParent.RemoveFromContent(nPosInParent, 1, true);
-	oParent.AddToContent(nPosInParent, oRun, true);
-
+	
+	AscCommon.executeNoPreDelete(function(){
+		oParent.RemoveFromContent(nPosInParent, 1, true);
+		oParent.AddToContent(nPosInParent, oRun, true);
+	}, oLogicDocument);
+	
 	if (this.IsAutoFitContent())
 		oLogicDocument.CheckFormAutoFit(this);
 
@@ -3246,12 +3248,15 @@ CInlineLevelSdt.prototype.ConvertFormToInline = function()
 	var nInRunParentPos = oRun.GetPosInParent(oRunParent);
 	if (!oRunParent || -1 === nInRunParentPos)
 		return null;
-
+	
+	let _t = this;
 	if (1 === oRun.GetElementsCount())
 	{
-		oParent.RemoveFromContent(nPosInParent, 1, true);
-		oRunParent.RemoveFromContent(nInRunParentPos, 1, true);
-		oRunParent.AddToContent(nInRunParentPos, this, true);
+		AscCommon.executeNoPreDelete(function(){
+			oParent.RemoveFromContent(nPosInParent, 1, true);
+			oRunParent.RemoveFromContent(nInRunParentPos, 1, true);
+			oRunParent.AddToContent(nInRunParentPos, _t, true);
+		}, this.GetLogicDocument());
 	}
 	else
 	{
@@ -3267,10 +3272,12 @@ CInlineLevelSdt.prototype.ConvertFormToInline = function()
 
 		if (-1 === nInRunPos)
 			return null;
-
-		oParent.RemoveFromContent(nPosInParent, 1, true);
-		oRun.RemoveFromContent(nInRunPos, 1);
-		oRunParent.AddToContent(nInRunParentPos, this, true);
+		
+		AscCommon.executeNoPreDelete(function(){
+			oParent.RemoveFromContent(nPosInParent, 1, true);
+			oRun.RemoveFromContent(nInRunPos, 1);
+			oRunParent.AddToContent(nInRunParentPos, _t, true);
+		}, this.GetLogicDocument());
 	}
 
 	var oTextPr = this.GetTextFormPr();
