@@ -1124,6 +1124,11 @@ var CPresentation = CPresentation || function(){};
     };
     CPDFDoc.prototype.private_CommitField = function(oField) {
         let isValid = true;
+        
+        if (oField.IsNeedRevertShiftView()) {
+            oField.RevertContentView();
+        }
+
         if ([AscPDF.FIELD_TYPES.text, AscPDF.FIELD_TYPES.combobox].includes(oField.GetType())) {
             isValid = oField.DoValidateAction(oField.GetValue(true));
         }
@@ -1171,10 +1176,6 @@ var CPresentation = CPresentation || function(){};
         else {
             oForm.SetDrawHighlight(true);
             oForm.UpdateScroll && oForm.UpdateScroll(false); // убираем скролл
-
-            if (oForm.IsNeedRevertShiftView()) {
-                oForm.RevertContentView();
-            }
 
             if (oForm.IsNeedCommit()) {
                 this.CommitField(oForm);

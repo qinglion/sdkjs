@@ -1647,10 +1647,8 @@
         }
 
         if (this.GetParentValue() != sNewValue) {
-            this.RevertContentView();
             this.SetParentValue(sNewValue);
         }
-
         // когда выравнивание посередине или справа, то после того
         // как ширина контента будет больше чем размер формы, выравнивание становится слева, пока текста вновь не станет меньше чем размер формы
         aFields.forEach(function(field) {
