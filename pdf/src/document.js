@@ -635,6 +635,8 @@ var CPresentation = CPresentation || function(){};
             // flags
             if (aParentsInfo[i]["editable"])
                 oParent.SetEditable(true);
+            if (aParentsInfo[i]["readOnly"])
+                oParent.SetReadOnly(true);
             if (aParentsInfo[i]["multiline"])
                 oParent.SetMultiline(true);
             if (aParentsInfo[i]["comb"])

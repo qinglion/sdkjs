@@ -795,6 +795,10 @@
         this.SetWasChanged(true);
     };
     CPushButtonField.prototype.DrawPressed = function() {
+        if (this.IsReadOnly()) {
+            return;
+        }
+
         this.SetPressed(true);
         this.AddToRedraw();
 
@@ -834,6 +838,10 @@
         }
     };
     CPushButtonField.prototype.DrawUnpressed = function() {
+        if (this.IsReadOnly()) {
+            return;
+        }
+
         this.SetPressed(false);
         this.AddToRedraw();
 
@@ -883,6 +891,10 @@
     CPushButtonField.prototype.DrawRollover = function() {
         // rollover состояние может быть только в push
         if (this.GetHighlight() != AscPDF.BUTTON_HIGHLIGHT_TYPES.push) {
+            return;
+        }
+
+        if (this.IsReadOnly()) {
             return;
         }
 
@@ -1351,6 +1363,10 @@
         this.OnEndRollover();
     };
     CPushButtonField.prototype.buttonImportIcon = function() {
+        if (this.IsReadOnly()) {
+            return;
+        }
+        
         let Api             = editor;
         let oThis           = this;
         let oDoc            = this.GetDocument();

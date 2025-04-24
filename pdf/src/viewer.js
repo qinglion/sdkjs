@@ -1452,10 +1452,10 @@
 				{
 					oForm.SetNoExport(Boolean(oFormInfo["noexport"]));
 				}
-				if (oFormInfo["readonly"])
+				if (oFormInfo["readOnly"])
 				{
 					// to do
-					oForm.SetReadOnly(Boolean(oFormInfo["readonly"]));
+					oForm.SetReadOnly(Boolean(oFormInfo["readOnly"]));
 				}
 				if (oFormInfo["required"])
 				{

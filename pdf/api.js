@@ -1821,6 +1821,24 @@
 			return true;
         }, AscDFH.historydescription_Pdf_ChangeField);
 	};
+	PDFEditorApi.prototype.SetFieldReadOnly = function(bValue) {
+		let oDoc = this.getPDFDoc();
+		let oController = oDoc.GetController();
+		let oForm = oDoc.activeForm;
+
+		if (!oForm) {
+			return false;
+		}
+
+		return oDoc.DoAction(function() {
+			oController.selectedObjects.forEach(function(shape) {
+				let field = shape.GetEditField();
+				field.SetReadOnly(bValue);
+			});
+
+			return true;
+        }, AscDFH.historydescription_Pdf_ChangeField);
+	};
 	PDFEditorApi.prototype.SetFieldDefaultValue = function(sValue) {
 		let oDoc = this.getPDFDoc();
 		let oController = oDoc.GetController();
@@ -4450,6 +4468,7 @@
 	PDFEditorApi.prototype['SetFieldStrokeStyle']		= PDFEditorApi.prototype.SetFieldStrokeStyle;
 	PDFEditorApi.prototype['SetFieldBgColor']			= PDFEditorApi.prototype.SetFieldBgColor;
 	PDFEditorApi.prototype['SetFieldRequired']			= PDFEditorApi.prototype.SetFieldRequired;
+	PDFEditorApi.prototype['SetFieldReadOnly']			= PDFEditorApi.prototype.SetFieldReadOnly;
 	PDFEditorApi.prototype['SetFieldDefaultValue']		= PDFEditorApi.prototype.SetFieldDefaultValue;
 	// text field
 	PDFEditorApi.prototype['SetTextFieldMultiline']		= PDFEditorApi.prototype.SetTextFieldMultiline;

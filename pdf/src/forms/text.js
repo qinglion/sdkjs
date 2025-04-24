@@ -128,7 +128,7 @@
     };
     CTextField.prototype.IsCanEditText = function() {
         let oDoc = this.GetDocument();
-        if (oDoc.activeForm == this && this.IsInForm())
+        if (oDoc.activeForm == this && this.IsInForm() && !this.IsReadOnly())
             return true;
         
         return false;

@@ -518,6 +518,10 @@
             return;
         }
 
+        if (this.IsReadOnly()) {
+            return;
+        }
+        
         if (!this._anchorIdx && this.GetCurIdxs().length)
             this._anchorIdx = this.GetCurIdxs()[0];
 
