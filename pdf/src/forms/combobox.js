@@ -289,6 +289,10 @@
             let hasOptions = aOptions && aOptions.length != 0;
 
             if (pageObject.x >= this._markRect.x1 && pageObject.x <= this._markRect.x2 && pageObject.y >= this._markRect.y1 && pageObject.y <= this._markRect.y2 && hasOptions) {
+                if (this.IsReadOnly()) {
+                    return;
+                }
+                
                 editor.sendEvent("asc_onShowPDFFormsActions", this, x, y);
                 this.content.MoveCursorToStartPos();
             }
@@ -637,7 +641,7 @@
     };
     CComboBoxField.prototype.IsCanEditText = function() {
         let oDoc = this.GetDocument();
-        if (oDoc.activeForm == this && this.IsEditable() && this.IsInForm())
+        if (oDoc.activeForm == this && this.IsEditable() && this.IsInForm() && !this.IsReadOnly())
             return true;
         
         return false;

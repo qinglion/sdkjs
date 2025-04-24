@@ -1540,7 +1540,7 @@
         this._needDrawHighlight = bDraw;
     };
     CBaseField.prototype.IsNeedDrawHighlight = function() {
-        return this._needDrawHighlight;
+        return false == this.IsReadOnly() && this._needDrawHighlight;
     };
 
     CBaseField.prototype.DrawEdit = function(oGraphicsWord) {
@@ -1597,10 +1597,6 @@
 
         if (this._readOnly === bReadOnly) {
             return true;
-        }
-
-        if (this.GetType() === AscPDF.FIELD_TYPES.button) {
-            return false;
         }
 
         AscCommon.History.Add(new CChangesPDFFormReadOnly(this, this._readOnly, bReadOnly));
@@ -2396,6 +2392,7 @@
 
         this.CalculateContentClipRect();
     };
+    CBaseField.prototype.CalculateContentClipRect = function() {};
     CBaseField.prototype.SetPosition = function(x, y) {
         let nExtX = this.GetWidth();
         let nExtY = this.GetHeight();

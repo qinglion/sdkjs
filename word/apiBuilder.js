@@ -6613,7 +6613,7 @@
 	 * process to arrange tables on the specified page.</note>
 	 * @memberof ApiDocument
 	 * @typeofeditors ["CDE"]
-	 * @param {number} nPage - The page number.
+	 * @param {number} nPage - The page index.
 	 * @return {ApiTable[]}
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/GetAllTablesOnPage.js
 	 */
@@ -6632,15 +6632,15 @@
 		return arrApiAllTables;
 	};
 	/**
-	 * Adds a shape to the specified page.
+	 * Adds a drawing to the specified page.
 	 * <note>This method can be a little bit slow, because it runs the document calculation
 	 * process to arrange tables on the specified page.</note>
 	 * @memberof ApiDocument
 	 * @typeofeditors ["CDE"]
-	 * @param oDrawing {ApiDrawing} - A shape to add to the page.
-	 * @param nPage {number} - The page number.
-	 * @param x {EMU} - The X coordinate in English measure units.
-	 * @param y {EMU} - The Y coordinate in English measure units.
+	 * @param {ApiDrawing} oDrawing - A drawing to add to the page.
+	 * @param {number} nPage - The page index.
+	 * @param {EMU} x - The X coordinate in English measure units.
+	 * @param {EMU} y - The Y coordinate in English measure units.
 	 * @return {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddDrawingToPage.js
 	 */

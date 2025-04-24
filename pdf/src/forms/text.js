@@ -128,7 +128,7 @@
     };
     CTextField.prototype.IsCanEditText = function() {
         let oDoc = this.GetDocument();
-        if (oDoc.activeForm == this && this.IsInForm())
+        if (oDoc.activeForm == this && this.IsInForm() && !this.IsReadOnly())
             return true;
         
         return false;
@@ -1207,6 +1207,10 @@
         this._scrollInfo = oInfo;
     };
     CTextField.prototype.UpdateScroll = function(bShow) {
+        if (bShow && this.IsEditMode()) {
+            return;
+        }
+
         if (this.IsMultiline() == false)
             return;
         
@@ -1647,10 +1651,8 @@
         }
 
         if (this.GetParentValue() != sNewValue) {
-            this.RevertContentView();
             this.SetParentValue(sNewValue);
         }
-
         // когда выравнивание посередине или справа, то после того
         // как ширина контента будет больше чем размер формы, выравнивание становится слева, пока текста вновь не станет меньше чем размер формы
         aFields.forEach(function(field) {
@@ -1735,7 +1737,7 @@
             return {nSelStart : preText.length, nSelEnd : preText.length + selectedText.length};
         }
 
-        let sValue      = this.GetValue(true);
+        let sValue = this.GetValue(true);
         let oSelRange   = GetSelectionRange(this.content.GetElement(0));
         let nSelStart   = oSelRange.nSelStart;
         let nSelEnd     = oSelRange.nSelEnd;
@@ -1774,6 +1776,9 @@
             "selEnd": nSelEnd
         });
 
+        if (!sValue) {
+            return isCanEnter;
+        }
         if (oActionRunScript) {
             oActionRunScript.RunScript();
             isCanEnter = oDoc.event["rc"];
