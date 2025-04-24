@@ -1545,6 +1545,15 @@ CSelectedElementsInfo.prototype.GetInlineLevelSdt = function()
 {
 	return this.m_oInlineLevelSdt;
 };
+CSelectedElementsInfo.prototype.GetCheckBox = function()
+{
+	if (this.m_oInlineLevelSdt && this.m_oInlineLevelSdt.IsCheckBox())
+		return this.m_oInlineLevelSdt;
+	else if (this.m_oBlockLevelSdt && this.m_oBlockLevelSdt.IsCheckBox())
+		return this.m_oBlockLevelSdt;
+	else
+		return null;
+};
 /**
  * @returns {?CInlineLevelSdt}
  */
@@ -9264,51 +9273,27 @@ CDocument.prototype.OnKeyDown = function(e)
 
 			var oSelectedInfo = this.GetSelectedElementsInfo();
 			var oMath         = oSelectedInfo.GetMath();
-			var oInlineSdt    = oSelectedInfo.GetInlineLevelSdt();
-			var oBlockSdt     = oSelectedInfo.GetBlockLevelSdt();
-
-			var oCheckBox;
-
-			if (oInlineSdt && oInlineSdt.IsCheckBox())
-				oCheckBox = oInlineSdt;
-			else if (oBlockSdt && oBlockSdt.IsCheckBox())
-				oCheckBox = oBlockSdt;
 
 			let isFormFieldEditing = this.IsFormFieldEditing();
-			if (oCheckBox)
+			if (!this.CheckEnterSpaceAction() && !this.IsSelectionLocked(AscCommon.changestype_Paragraph_Content, null, true, isFormFieldEditing))
 			{
-				oCheckBox.SkipSpecialContentControlLock(true);
-				if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_Content, null, true, isFormFieldEditing))
+				this.StartAction(AscDFH.historydescription_Document_SpaceButton);
+				
+				// Если мы находимся в формуле, тогда пытаемся выполнить автозамену
+				if (null !== oMath && true === oMath.Make_AutoCorrect())
 				{
-					this.StartAction(AscDFH.historydescription_Document_SpaceButton);
-					oCheckBox.ToggleCheckBox();
-					this.Recalculate();
-					this.FinalizeAction();
+					// Ничего тут не делаем. Все делается в автозамене
 				}
-				oCheckBox.SkipSpecialContentControlLock(false);
-			}
-			else
-			{
-				if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_Content, null, true, isFormFieldEditing))
+				else
 				{
-					this.StartAction(AscDFH.historydescription_Document_SpaceButton);
-
-					// Если мы находимся в формуле, тогда пытаемся выполнить автозамену
-					if (null !== oMath && true === oMath.Make_AutoCorrect())
-					{
-						// Ничего тут не делаем. Все делается в автозамене
-					}
-					else
-					{
-						this.DrawingDocument.TargetStart();
-						this.DrawingDocument.TargetShow();
-
-						this.CheckLanguageOnTextAdd = true;
-						this.AddToParagraph(new AscWord.CRunSpace());
-						this.CheckLanguageOnTextAdd = false;
-					}
-					this.FinalizeAction();
+					this.DrawingDocument.TargetStart();
+					this.DrawingDocument.TargetShow();
+					
+					this.CheckLanguageOnTextAdd = true;
+					this.AddToParagraph(new AscWord.CRunSpace());
+					this.CheckLanguageOnTextAdd = false;
 				}
+				this.FinalizeAction();
 			}
 
 			bRetValue = keydownresult_PreventNothing;
@@ -10404,6 +10389,25 @@ CDocument.prototype.OnKeyPress = function(e)
 
 	return false;
 };
+CDocument.prototype.CheckEnterSpaceAction = function()
+{
+	let checkBox = this.GetSelectedElementsInfo().GetCheckBox();
+	if (!checkBox || !this.IsFormFieldEditing())
+		return false;
+	
+	let result = false;
+	checkBox.SkipSpecialContentControlLock(true);
+	if (!this.IsSelectionLocked(AscCommon.changestype_Paragraph_Content, null, true, true))
+	{
+		this.StartAction(AscDFH.historydescription_Document_SpaceButton);
+		checkBox.ToggleCheckBox();
+		this.Recalculate();
+		this.FinalizeAction();
+		result = true;
+	}
+	checkBox.SkipSpecialContentControlLock(false);
+	return result;
+};
 CDocument.prototype.EnterText = function(value)
 {
 	if (undefined === value
@@ -10414,6 +10418,11 @@ CDocument.prototype.EnterText = function(value)
 	let codePoints = typeof(value) === "string" ? value.codePointsArray() : value;
 
 	this.private_CheckForbiddenPlaceOnTextAdd();
+	
+	if (1 === codePoints.length
+		&& AscCommon.IsSpace(codePoints[0])
+		&& this.CheckEnterSpaceAction())
+		return true;
 
 	if (this.IsSelectionLocked(AscCommon.changestype_Paragraph_AddText, null, true, this.IsFormFieldEditing()))
 		return false;
