@@ -2760,6 +2760,8 @@ CPresentation.prototype.Recalculate = function (RecalcData) {
 					}
 					let parent = oDrawingObject.parent;
 					if(oDrawingObject instanceof AscFormat.CTheme) {
+						b_check_layout = true;
+						bAttack = true;
 						let oThemeObjects = this.GetSlideObjectsWithTheme(oDrawingObject);
 						if(!this.IsMasterMode()) {
 							for(let nIdx = 0; nIdx < oThemeObjects.masters.length; ++nIdx) {
