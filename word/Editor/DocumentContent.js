@@ -7437,6 +7437,11 @@ CDocumentContent.prototype.GetSelectionState = function()
 		Flag     : this.Selection.Flag,
 		Data     : this.Selection.Data
 	};
+	
+	DocState.ShiftView = {
+		X : this.ShiftViewX,
+		Y : this.ShiftViewY
+	};
 
 	DocState.CurPage = this.CurPage;
 
@@ -7536,6 +7541,10 @@ CDocumentContent.prototype.SetSelectionState = function(State, StateIndex)
 		Flag     : DocState.Selection.Flag,
 		Data     : DocState.Selection.Data
 	};
+	
+	this.ResetShiftView();
+	if (DocState.ShiftView)
+		this.ShiftView(DocState.ShiftView.X, DocState.ShiftView.Y);
 
 	this.CurPage = DocState.CurPage;
 
