@@ -1207,6 +1207,10 @@
         this._scrollInfo = oInfo;
     };
     CTextField.prototype.UpdateScroll = function(bShow) {
+        if (bShow && this.IsEditMode()) {
+            return;
+        }
+
         if (this.IsMultiline() == false)
             return;
         

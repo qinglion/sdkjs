@@ -630,6 +630,10 @@
         this.UpdateScroll(true);
     };
     CListBoxField.prototype.UpdateScroll = function(bShow) {
+        if (bShow && this.IsEditMode()) {
+            return;
+        }
+        
         let oContentBounds  = this.content.GetContentBounds(0);
         let oContentRect    = this.getFormRelRect();
         let aOrigRect       = this.GetOrigRect();
