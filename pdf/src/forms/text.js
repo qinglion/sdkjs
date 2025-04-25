@@ -636,7 +636,7 @@
     };
     CTextField.prototype.SetDrawFromStream = function(bFromStream) {
         let nFormatType = this.GetFormatType();
-        if (this._bDrawFromStream && false == bFromStream && false == [AscPDF.FormatType.REGULAR, AscPDF.FormatType.NONE].includes(nFormatType)) {
+        if (this._bDrawFromStream && false == bFromStream && false == [AscPDF.FormatType.REGULAR, AscPDF.FormatType.NONE].includes(nFormatType) && this.IsChanged()) {
             this.Commit();
         }
 
