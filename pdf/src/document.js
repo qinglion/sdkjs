@@ -1222,7 +1222,7 @@ var CPresentation = CPresentation || function(){};
         let oMouseDownField     = oViewer.getPageFieldByMouse();
         let oMouseDownAnnot     = oViewer.getPageAnnotByMouse();
         let oMouseDownDrawing   = oViewer.getPageDrawingByMouse();
-        let oFloatObject        = oMouseDownAnnot || oMouseDownDrawing || (this.IsEditFieldsMode() && oMouseDownField);
+        let oFloatObject        = (this.IsEditFieldsMode() && oMouseDownField) || oMouseDownAnnot || oMouseDownDrawing;
         let oCurObject          = this.GetMouseDownObject();
 
         // координаты клика на странице в MM
@@ -2307,8 +2307,7 @@ var CPresentation = CPresentation || function(){};
                 let oSourceObj = aSourceObjects[i];
 
                 if (oSourceObj.IsForm()) {
-                    // в глобальной истории должен срабатывать commit
-                    if (AscCommon.History == this.History) {
+                    if (AscCommon.History == this.History && false == this.IsEditFieldsMode()) {
                         oDrDoc.TargetEnd(); // убираем курсор
                         
                         if (this.activeForm) {
@@ -2360,7 +2359,7 @@ var CPresentation = CPresentation || function(){};
                 let oSourceObj = aSourceObjects[i];
 
                 if (oSourceObj.IsForm()) {
-                    if (AscCommon.History == this.History) {
+                    if (AscCommon.History == this.History && false == this.IsEditFieldsMode()) {
                         oDrDoc.TargetEnd(); // убираем курсор
                             
                         if (this.activeForm) {
