@@ -9618,7 +9618,9 @@ background-repeat: no-repeat;\
 		this.demoBackgroundColor = sColor;
 		if(this.isSlideShow())
 		{
-			this.WordControl.DemonstrationManager.CheckBackgroundColor();
+			const oDemonstrationManager = this.WordControl.DemonstrationManager;
+			oDemonstrationManager.CheckBackgroundColor();
+			oDemonstrationManager.Resize(true);
 		}
 	};
 

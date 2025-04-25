@@ -423,7 +423,7 @@ function CTransitionAnimation(htmlpage)
             else
             {
                 _ctx1 = oThis.DemonstrationObject.Canvas.getContext('2d');
-                _ctx1.fillStyle = "#000000";
+                _ctx1.fillStyle = oThis.DemonstrationObject.Canvas.style.backgroundColor;
                 _ctx1.fillRect(0, 0, oThis.DemonstrationObject.Canvas.width, oThis.DemonstrationObject.Canvas.height);
             }
 
@@ -622,7 +622,7 @@ function CTransitionAnimation(htmlpage)
             else
             {
                 var _ctx1 = oThis.DemonstrationObject.Canvas.getContext('2d');
-                _ctx1.fillStyle = "#000000";
+                _ctx1.fillStyle = oThis.DemonstrationObject.Canvas.style.backgroundColor;
                 _ctx1.fillRect(0, 0, oThis.DemonstrationObject.Canvas.width, oThis.DemonstrationObject.Canvas.height);
             }
         }
@@ -758,7 +758,7 @@ function CTransitionAnimation(htmlpage)
             else
             {
                 _ctx1 = oThis.DemonstrationObject.Canvas.getContext('2d');
-                _ctx1.fillStyle = "#000000";
+                _ctx1.fillStyle = oThis.DemonstrationObject.Canvas.style.backgroundColor;
                 _ctx1.fillRect(0, 0, oThis.DemonstrationObject.Canvas.width, oThis.DemonstrationObject.Canvas.height);
             }
 
@@ -1333,7 +1333,7 @@ function CTransitionAnimation(htmlpage)
             else
             {
                 _ctx1 = oThis.DemonstrationObject.Canvas.getContext('2d');
-                _ctx1.fillStyle = "#000000";
+                _ctx1.fillStyle = oThis.DemonstrationObject.Canvas.style.backgroundColor;
                 _ctx1.fillRect(0, 0, oThis.DemonstrationObject.Canvas.width, oThis.DemonstrationObject.Canvas.height);
             }
             if (null != oThis.CacheImage1.Image)
@@ -1665,7 +1665,7 @@ function CTransitionAnimation(htmlpage)
             else
             {
                 _ctx1 = oThis.DemonstrationObject.Canvas.getContext('2d');
-                _ctx1.fillStyle = "#000000";
+                _ctx1.fillStyle = oThis.DemonstrationObject.Canvas.style.backgroundColor;
                 _ctx1.fillRect(0, 0, oThis.DemonstrationObject.Canvas.width, oThis.DemonstrationObject.Canvas.height);
             }
 
@@ -1816,7 +1816,7 @@ function CTransitionAnimation(htmlpage)
             else
             {
                 _ctx1 = oThis.DemonstrationObject.Canvas.getContext('2d');
-                _ctx1.fillStyle = "#000000";
+                _ctx1.fillStyle = oThis.DemonstrationObject.Canvas.style.backgroundColor;
                 _ctx1.fillRect(0, 0, oThis.DemonstrationObject.Canvas.width, oThis.DemonstrationObject.Canvas.height);
             }
 
@@ -1967,7 +1967,7 @@ function CTransitionAnimation(htmlpage)
             else
             {
                 _ctx1 = oThis.DemonstrationObject.Canvas.getContext('2d');
-                _ctx1.fillStyle = "#000000";
+                _ctx1.fillStyle = oThis.DemonstrationObject.Canvas.style.backgroundColor;
                 _ctx1.fillRect(0, 0, oThis.DemonstrationObject.Canvas.width, oThis.DemonstrationObject.Canvas.height);
             }
 
@@ -2439,7 +2439,7 @@ function CTransitionAnimation(htmlpage)
                 else
                 {
                     _ctx1 = oThis.DemonstrationObject.Canvas.getContext('2d');
-                    _ctx1.fillStyle = "#000000";
+                    _ctx1.fillStyle = oThis.DemonstrationObject.Canvas.style.backgroundColor;
                     _ctx1.fillRect(0, 0, oThis.DemonstrationObject.Canvas.width, oThis.DemonstrationObject.Canvas.height);
                 }
 
@@ -2498,7 +2498,7 @@ function CTransitionAnimation(htmlpage)
                 else
                 {
                     _ctx1 = oThis.DemonstrationObject.Canvas.getContext('2d');
-                    _ctx1.fillStyle = "#000000";
+                    _ctx1.fillStyle = oThis.DemonstrationObject.Canvas.style.backgroundColor;
                     _ctx1.fillRect(0, 0, oThis.DemonstrationObject.Canvas.width, oThis.DemonstrationObject.Canvas.height);
                 }
 
@@ -2559,7 +2559,7 @@ function CTransitionAnimation(htmlpage)
                     else
                     {
                         _ctx1 = oThis.DemonstrationObject.Canvas.getContext('2d');
-                        _ctx1.fillStyle = "#000000";
+                        _ctx1.fillStyle = oThis.DemonstrationObject.Canvas.style.backgroundColor;
                         _ctx1.fillRect(0, 0, oThis.DemonstrationObject.Canvas.width, oThis.DemonstrationObject.Canvas.height);
                     }
 
