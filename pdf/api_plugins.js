@@ -127,7 +127,7 @@
 			oViewer._drawFieldsOnCtx(nPage, ctx, false, true);
 		}
 
-		return ctx.canvas;
+		return ctx.canvas.toDataURL("image/png");
 	};
 
     /**

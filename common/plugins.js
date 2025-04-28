@@ -1269,7 +1269,10 @@
 		correctData : function(pluginData)
 		{
 			pluginData.setAttribute("editorType", this.api._editorNameById());
+			if (this.api.isPdfEditor())
+				pluginData.setAttribute("editorSubType", "pdf");
 			pluginData.setAttribute("mmToPx", AscCommon.g_dKoef_mm_to_pix);
+			pluginData.setAttribute("restrictions", this.api.restrictions);
 
 			if (undefined === pluginData.getAttribute("data"))
 				pluginData.setAttribute("data", "");
