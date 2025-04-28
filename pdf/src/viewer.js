@@ -356,7 +356,7 @@
 		let oFile       = oDoc.Viewer.file;
 		let nIndex		= this.GetIndex();
 
-		return oFile.pages[nIndex].Rotate;
+		return oFile.pages[nIndex].isRecognized;
 	};
 	CPageInfo.prototype.SetPosition = function(nNewPos) {
 		let nCurPos = this.GetIndex();
