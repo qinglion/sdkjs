@@ -9601,31 +9601,80 @@
 		};
 		
 		function CEffectStyle() {
-			CBaseNoIdObject.call(this);
+			CBaseFormatNoIdObject.call(this);
 			this.effectProperties = null;
-			//todo
 			this.scene3d = null;
 			this.sp3d = null;
 		}
-		InitClass(CEffectStyle, CBaseNoIdObject, AscDFH.historyitem_type_Unknown);
+		InitClass(CEffectStyle, CBaseFormatNoIdObject, AscDFH.historyitem_type_Unknown);
 
 		CEffectStyle.prototype.Write_ToBinary = function (w) {
 			writeObjectNoId(w, this.effectProperties);
+			writeObjectNoId(w, this.scene3d);
+			writeObjectNoId(w, this.sp3d);
 		};
 		CEffectStyle.prototype.Read_FromBinary = function (r) {
-			this.setEffectPr(readObjectNoId(r, CEffectProperties));
+			this.setEffectPr(readObjectNoId(r));
+			this.setScene3d(readObjectNoId(r));
+			this.setSp3d(readObjectNoId(r));
 		};
 		CEffectStyle.prototype.setEffectPr = function (pr) {
 			this.effectProperties = pr;
+		};
+		CEffectStyle.prototype.setScene3d = function (pr) {
+			this.scene3d = pr;
+		};
+		CEffectStyle.prototype.setSp3d = function (pr) {
+			this.sp3d = pr;
 		};
 		CEffectStyle.prototype.createDuplicate = function () {
 			const copy = new CEffectStyle();
 			if (this.effectProperties) {
 				copy.setEffectPr(this.effectProperties.createDuplicate());
 			}
+			if (this.scene3d) {
+				copy.setScene3d(this.scene3d.createDuplicate());
+			}
+			if (this.sp3d) {
+				copy.setSp3d(this.sp3d.createDuplicate());
+			}
 			return copy;
 		};
-
+		CEffectStyle.prototype.readAttribute = null;
+		CEffectStyle.prototype.readChild = function(nType, pReader) {
+			switch (nType) {
+				case 0:
+					this.setEffectPr(pReader.ReadEffectProperties());
+					break;
+				case 1:
+					this.setScene3d(new AscFormat.Scene3d());
+					this.scene3d.fromPPTY(pReader);
+					break;
+				case 2:
+					this.setSp3d(new AscFormat.Sp3d());
+					this.sp3d.fromPPTY(pReader);
+					break;
+				default:
+					return false;
+			}
+			return true;
+		};
+		CEffectStyle.prototype.writeChildren = function(pWriter) {
+			var oEffectPr = this.effectProperties;
+			if(oEffectPr)
+			{
+				if(oEffectPr.EffectLst)
+				{
+					pWriter.WriteRecord1(0, oEffectPr.EffectLst, pWriter.WriteEffectLst);
+				}
+				else if(oEffectPr.EffectDag)
+				{
+					pWriter.WriteRecord1(0, oEffectPr.EffectDag, pWriter.WriteEffectDag)
+				}
+			}
+			this.writeRecord2(pWriter, 1, this.scene3d);
+			this.writeRecord2(pWriter, 2, this.sp3d);
+		};
 
 		function ThemeElements(oTheme) {
 			CBaseNoIdObject.call(this);

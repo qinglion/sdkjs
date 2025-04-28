@@ -5302,8 +5302,13 @@ function BinaryPPTYLoader()
                 }
                 case 2:
                 {
-                    var _len = s.GetULong();
-                    s.Skip2(_len);
+									s.Skip2(4); // len
+                    var _c = s.GetULong();
+                    for (let i = 0; i < _c; i += 1) {
+											s.Skip2(1);
+											fmt.effectStyleLst[i] = new AscFormat.CEffectStyle();
+											fmt.effectStyleLst[i].fromPPTY(this);
+										}
                     break;
                 }
                 case 3:

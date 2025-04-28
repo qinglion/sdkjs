@@ -1618,6 +1618,7 @@ function CBinaryFileWriter()
 
         oThis.WriteRecordArray(0, 0, fmt.fillStyleLst, oThis.WriteUniFill);
         oThis.WriteRecordArray(1, 0, fmt.lnStyleLst, oThis.WriteLn);
+        oThis.WriteRecordArray(2, 0, fmt.effectStyleLst, function(oChild) {oChild.toPPTY(oThis)});
         oThis.WriteRecordArray(3, 0, fmt.bgFillStyleLst, oThis.WriteUniFill);
     };
 
