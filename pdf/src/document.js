@@ -5098,7 +5098,7 @@ var CPresentation = CPresentation || function(){};
         let nCurPage    = this.GetCurPage();
         let oPageInfo   = this.GetPageInfo(nCurPage);
 
-        if (true == this.Api.isRestrictionView() || oPageInfo.IsDeleteLock()) {
+        if (true == this.Api.isRestrictionView() || (oPageInfo.IsDeleteLock() && !aSelContent[nIndex].MergePagesInfo && !aSelContent[nIndex].MergePagesInfo.binaryData)) {
             return false;
         }
 
