@@ -7750,9 +7750,10 @@ function BinaryCustomsTableWriter(memory, doc, customXmlManager)
 	};
 	this.WriteCustomXml = function(customXml) {
 		var oThis = this;
-		for(var i = 0; i < customXml.uri.length; ++i){
+		let namespaces = customXml.getAllNamespaces();
+		for(var i = 0; i < namespaces.length; ++i){
 			this.bs.WriteItem(c_oSerCustoms.Uri, function () {
-				oThis.memory.WriteString3(customXml.getNamespaceUri());
+				oThis.memory.WriteString3(namespaces[i]);
 			});
 		}
 		if (null !== customXml.itemId) {

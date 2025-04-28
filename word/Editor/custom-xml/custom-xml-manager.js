@@ -122,7 +122,7 @@
 	 * Get custom xml data of content control by data binding property
 	 * @param dataBinding {window.AscWord.DataBinding}
 	 * @param oContentLink {CBlockLevelSdt | CInlineLevelSdt}
-	 * @return {string | undefined}
+	 * @return {string | null}
 	 */
 	CustomXmlManager.prototype.getContentByDataBinding = function(dataBinding, oContentLink)
 	{
@@ -131,7 +131,7 @@
 			let customXml			= this.xml[i];
 			customXml.oContentLink	= oContentLink;
 
-			if (dataBinding.storeItemID === customXml.itemId || customXml.checkUrl(dataBinding.prefixMappings))
+			if (dataBinding.storeItemID === customXml.itemId)
 			{
 				let xPath			= dataBinding.xpath;
 				let arrFind			= customXml.findElementByXPath(xPath);
@@ -140,6 +140,8 @@
 					return arrFind[0];
 			}
 		}
+
+		return null;
 	};
 	/**
 	 * Set custom xml data of content control by data binding property
@@ -266,9 +268,10 @@
 			return outputUString;
 		}, this.document, this, []);
 	};
-	CustomXmlManager.prototype.GetTextContentToWrite = function (contentControl) {
+	CustomXmlManager.prototype.GetDataFromContentControl = function (contentControl) {
+
 		if (!this.isSupported())
-			return;
+			return "";
 
 		if (contentControl instanceof AscWord.CBlockLevelSdt)
 			return this.GetRichTextContentToWrite(contentControl);

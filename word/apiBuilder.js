@@ -5977,6 +5977,23 @@
 	};
 
 	/**
+	 * Get XML data from the content control bound to custom XML.
+	 * @memberof ApiCustomXmlParts
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {ApiInlineLvlSdt | ApiBlockLvlSdt} sdt - The content control (inline or block level).
+	 * @returns {string} - The XML data as a string for block-level controls or inner text for inline-level controls.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlParts/Methods/GetDataFromContentControl.js
+	 */
+	ApiCustomXmlParts.prototype.GetDataFromContentControl = function(oApiSdt)
+	{
+		if (oApiSdt)
+			return this.customXMLManager.GetDataFromContentControl(oApiSdt.Sdt);
+
+		return "";
+	};
+
+	/**
 	 * Class representing a custom XML part.
 	 * @constructor
 	 * @typeofeditors ["CDE"]
@@ -6004,6 +6021,18 @@
 	ApiCustomXmlPart.prototype.GetClassType = function()
 	{
 		return "customXmlPart";
+	};
+
+	/**
+	 * Returns the ID of the custom XML part.
+	 * @memberof ApiCustomXmlPart
+	 * @typeofeditors ["CDE"]
+	 * @returns string
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlPart/Methods/GetId.js
+	 */
+	ApiCustomXmlPart.prototype.GetId = function()
+	{
+		return this.customXml.itemId;
 	};
 
 	/**
@@ -6088,6 +6117,21 @@
 	};
 
 	/**
+	 * Get an attribute from the XML node at the specified XPath.
+	 * @memberof ApiCustomXmlPart
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {string} xPath - The XPath of the node to insert the attribute into.
+	 * @param {string} name - The name of the attribute to find.
+	 * @returns {string | null} True if the attribute was successfully inserted.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlParts/Methods/GetAttribute.js
+	 */
+	ApiCustomXmlPart.prototype.GetAttribute = function(xPath, name)
+	{
+		return this.customXml.getAttribute(xPath, name);
+	};
+
+	/**
 	 * Updates the attribute of an XML node at the specified XPath.
 	 * @memberof ApiCustomXmlPart
 	 * @typeofeditors ["CDE"]
@@ -6160,10 +6204,7 @@
 	{
 		this.CustomXmlPart		= oParent;
 		this.CustomXmlContent	= oXmlContent;
-
 		this.baseName			= oXmlContent.nodeName;
-		this.namespaceUri		= oXmlContent.getNamespace();
-		//this.nodeType			= oXmlContent.nodeType;
 	}
 	ApiCustomXmlNode.prototype = Object.create(ApiCustomXmlNode.prototype);
 	ApiCustomXmlNode.prototype.constructor = ApiCustomXmlNode;
@@ -6207,7 +6248,20 @@
 	{
 		let parent		= this.GetParent();
 		let parentText	= parent ? parent.GetXPath() + "/" : "";
-		return parentText + this.baseName;
+		return parentText + this.CustomXmlContent.getNodeName();
+	};
+
+	/**
+	 * Returns the name of the current XML node.
+	 * @memberof ApiCustomXmlNode
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {string} The name of the current node.
+	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlNode/Methods/GetNodeName.js
+	 */
+	ApiCustomXmlNode.prototype.GetNodeName = function ()
+	{
+		return this.CustomXmlContent.getNodeName();
 	};
 
 	/**
@@ -6325,7 +6379,7 @@
 	 */
 	ApiCustomXmlNode.prototype.GetParent = function()
 	{
-		if (this.CustomXmlContent.parentNode)
+		if (this.CustomXmlContent.parentNode && this.CustomXmlContent.parentNode.getNodeName() !== "")
 			return new ApiCustomXmlNode(this.CustomXmlContent.parentNode, this.CustomXmlPart);
 
 		return null;
@@ -6458,7 +6512,7 @@
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
 	 * @param {string} name - The name of the attribute to retrieve.
-	 * @returns {string|null} The value of the attribute if it exists, or `null` if the attribute is not found.
+	 * @returns {string |null} The value of the attribute if it exists, or `null` if the attribute is not found.
 	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlNode/Methods/GetAttribute.js
 	 */
 	ApiCustomXmlNode.prototype.GetAttribute = function(name)
@@ -6477,6 +6531,9 @@
 	function ApiDataBinding(DataBinding)
 	{
 		this.DataBinding = DataBinding;
+		this.ItemId = DataBinding.getItemId();
+		this.Prefix = DataBinding.getPrefix();
+		this.xPath = DataBinding.getXPath();
 	}
 	ApiDataBinding.prototype = Object.create(ApiDataBinding.prototype);
 	ApiDataBinding.prototype.constructor = ApiDataBinding;
@@ -19648,14 +19705,20 @@
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @param {ApiDataBinding} oApiDataBinding - The data binding to associate with the content control.
-	 * @returns {void}
+	 * @param {ApiDataBinding | null} oApiDataBinding - The data binding to associate with the content control.
+	 * @returns {boolean}
 	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/SetDataBinding.js
 	 */
 	ApiInlineLvlSdt.prototype.SetDataBinding = function(oApiDataBinding)
 	{
+		if (oApiDataBinding === null)
+		{
+			this.Sdt.setDataBinding();
+			return true;
+		}
 		this.Sdt.setDataBinding(oApiDataBinding.DataBinding);
 		this.Sdt.checkDataBinding();
+		return true;
 	};
 
 	/**
@@ -19947,16 +20010,15 @@
 	 * @memberof ApiInlineLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @param {string} fullDate - The date value to set for the datepicker.
+	 * @param {Date} date - The date value to set for the datepicker.
 	 * @returns {boolean} Returns `true` if the date was successfully set, otherwise `false`.
 	 * @see office-js-api/Examples/{Editor}/ApiInlineLvlSdt/Methods/SetDate.js
 	 */
-	ApiInlineLvlSdt.prototype.SetDate = function(fullDate)
+	ApiInlineLvlSdt.prototype.SetDate = function(date)
 	{
 		if (this.Sdt.Pr.Date)
 		{
 			let dateTimePr = this.Sdt.Pr.Date.Copy();
-			let date = new Date(fullDate);
 			dateTimePr.SetFullDate(date);
 			this.Sdt.ApplyDatePickerPr(dateTimePr, true);
 			return true;
@@ -20510,14 +20572,20 @@
 	 * @memberof ApiBlockLvlSdt
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @param {ApiDataBinding} oApiDataBinding - The data binding to be applied to the content control.
+	 * @param {ApiDataBinding | null} oApiDataBinding - The data binding to be applied to the content control.
 	 * @returns {boolean} Returns `true` after successfully setting the data binding.
 	 * @constructor
 	 */
 	ApiBlockLvlSdt.prototype.SetDataBinding = function(oApiDataBinding)
 	{
+		if (oApiDataBinding === null)
+		{
+			this.Sdt.setDataBinding();
+			return true;
+		}
 		this.Sdt.setDataBinding(oApiDataBinding.DataBinding);
 		this.Sdt.checkDataBinding();
+		return true;
 	};
 
 	/**
@@ -25011,12 +25079,13 @@
 	ApiChartSeries.prototype["ChangeChartType"]   =  ApiChartSeries.prototype.ChangeChartType;
 	ApiChartSeries.prototype["GetChartType"]      =  ApiChartSeries.prototype.GetChartType;
 
-	ApiCustomXmlParts.prototype["Add"]				= ApiCustomXmlParts.prototype.Add;
-	ApiCustomXmlParts.prototype["GetById"]			= ApiCustomXmlParts.prototype.GetById;
-	ApiCustomXmlParts.prototype["GetByNamespace"]	= ApiCustomXmlParts.prototype.GetByNamespace;
-	ApiCustomXmlParts.prototype["GetAll"]			= ApiCustomXmlParts.prototype.GetAll;
-	ApiCustomXmlParts.prototype["GetCount"]			= ApiCustomXmlParts.prototype.GetCount;
-	ApiCustomXmlParts.prototype["GetClassType"]		= ApiCustomXmlParts.prototype.GetClassType;
+	ApiCustomXmlParts.prototype["Add"]							= ApiCustomXmlParts.prototype.Add;
+	ApiCustomXmlParts.prototype["GetById"]						= ApiCustomXmlParts.prototype.GetById;
+	ApiCustomXmlParts.prototype["GetByNamespace"]				= ApiCustomXmlParts.prototype.GetByNamespace;
+	ApiCustomXmlParts.prototype["GetAll"]						= ApiCustomXmlParts.prototype.GetAll;
+	ApiCustomXmlParts.prototype["GetCount"]						= ApiCustomXmlParts.prototype.GetCount;
+	ApiCustomXmlParts.prototype["GetClassType"]					= ApiCustomXmlParts.prototype.GetClassType;
+	ApiCustomXmlParts.prototype["GetDataFromContentControl"]	= ApiCustomXmlParts.prototype.GetDataFromContentControl;
 
 	ApiCustomXmlPart.prototype["Delete"]			= ApiCustomXmlPart.prototype.Delete;
 	ApiCustomXmlPart.prototype["DeleteAttribute"]	= ApiCustomXmlPart.prototype.DeleteAttribute;
@@ -25028,8 +25097,11 @@
 	ApiCustomXmlPart.prototype["UpdateAttribute"]	= ApiCustomXmlPart.prototype.UpdateAttribute;
 	ApiCustomXmlPart.prototype["UpdateElement"]		= ApiCustomXmlPart.prototype.UpdateElement;
 	ApiCustomXmlPart.prototype["GetClassType"]		= ApiCustomXmlPart.prototype.GetClassType;
+	ApiCustomXmlPart.prototype["GetId"]				= ApiCustomXmlPart.prototype.GetId;
+	ApiCustomXmlPart.prototype["GetAttribute"]		= ApiCustomXmlPart.prototype.GetAttribute;
 
 	ApiCustomXmlNode.prototype["Delete"]			= ApiCustomXmlNode.prototype.Delete;
+	ApiCustomXmlNode.prototype["GetNodeName"]		= ApiCustomXmlNode.prototype.GetNodeName;
 	ApiCustomXmlNode.prototype["DeleteAttribute"]	= ApiCustomXmlNode.prototype.DeleteAttribute;
 	ApiCustomXmlNode.prototype["GetAttribute"]		= ApiCustomXmlNode.prototype.GetAttribute;
 	ApiCustomXmlNode.prototype["GetAttributes"]		= ApiCustomXmlNode.prototype.GetAttributes;

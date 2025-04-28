@@ -199,7 +199,6 @@
 	CustomXml.prototype.findElementByXPath = function (xpath)
 	{
 		// add namespace support in the future
-
 		let arrParts		= xpath.split('/');
 		let currentElement	= this.content;
 		let arrResult		= [];
@@ -253,7 +252,7 @@
 			});
 
 			if (matchingChildren.length <= index)
-				break;
+				return false;
 
 			currentElement = matchingChildren[index];
 		}
@@ -298,6 +297,17 @@
 			}
 			return false;
 		}, this);
+	};
+	CustomXml.prototype.getAttribute = function(xPath, name)
+	{
+		let nodes = this.findElementByXPath(xPath);
+		if (nodes.length)
+		{
+			let el = nodes[0];
+			if (el.attributes[name])
+				return el.attributes[name];
+		}
+		return null;
 	};
 	CustomXml.prototype.deleteElement = function (xPath)
 	{
@@ -365,6 +375,10 @@
 	CustomXml.prototype.getNamespaceUri = function()
 	{
 		return this.nsManager.getNamespaceUri();
+	};
+	CustomXml.prototype.getAllNamespaces = function()
+	{
+		return Object.keys(this.nsManager.urls);
 	};
 
 	/**

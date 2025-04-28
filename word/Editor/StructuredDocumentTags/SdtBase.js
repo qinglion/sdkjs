@@ -1260,10 +1260,13 @@ CSdtBase.prototype.checkDataBinding = function()
 	}
 	else if (this.canFillWithComplexDataBindingContent())
 	{
-		let customXmlManager = logicDocument.getCustomXmlManager();
-		let arrContent       = customXmlManager.proceedLinearXMl(content);
+		let customXmlManager	= logicDocument.getCustomXmlManager();
+		let arrContent			= customXmlManager.proceedLinearXMl(content);
+		let str					= "";
 
-		let strContent = arrContent[0].GetText().trim();
+		arrContent.forEach(function(content){str += content.GetText()})
+		let strContent			= str.trim();
+
 		if (strContent === "" && content.length > 0)
 			this.SetInnerText(content);
 		else
