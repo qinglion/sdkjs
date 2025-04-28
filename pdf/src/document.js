@@ -4044,6 +4044,7 @@ var CPresentation = CPresentation || function(){};
         let oDrawingPr  = oController.getDrawingProps();
         let oCurObject  = this.GetActiveObject();
         let nCurPage    = this.GetCurPage();
+        let oCurPage    = this.GetPageInfo(nCurPage);
         
         if (oCurObject) {
             if (oCurObject.IsDrawing()) {
@@ -4099,8 +4100,9 @@ var CPresentation = CPresentation || function(){};
         if (oTargetTextObject && (!oTargetTextObject.group || !oTargetTextObject.group.IsAnnot())) {
             oTargetDocContent && oTargetDocContent.Document_UpdateInterfaceState();
         }
-        this.Api.sync_pagePropCallback(this.GetPageInfo(nCurPage));
+        this.Api.sync_pagePropCallback(oCurPage);
         this.Api.sync_EndCatchSelectedElements();
+        this.Api.sendEvent('asc_onCanEditPage', oCurPage.IsRecognized());
     };
     CPDFDoc.prototype.UpdateInterfaceTracks = function() {
         this.UpdateCommentPos();
