@@ -4946,18 +4946,19 @@ var CPresentation = CPresentation || function(){};
         AscCommon.History.EndNoHistoryMode();
 
         return oTextDrawer;
-    }    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    }
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// For drawings
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    CPDFDoc.prototype.EditPage = function(nPage) {
+    CPDFDoc.prototype.EditPage = function(nPage, aSpsXmls) {
         if (null == this.Viewer.pagesInfo.pages[nPage] || this.Viewer.file.pages[nPage].isRecognized) {
-            return;
+            return false;
         }
 
         let oFile = this.Viewer.file;
         let nOriginIndex = oFile.pages[nPage].originIndex;
         if (nOriginIndex == undefined) {
-            return;
+            return false;
         }
 
         this.BlurActiveObject();
@@ -4965,7 +4966,7 @@ var CPresentation = CPresentation || function(){};
         this.StartAction(AscDFH.historydescription_Pdf_EditPage);
         if (this.IsSelectionLocked(AscDFH.historydescription_Pdf_EditPage, [nPage])) {
             this.FinalizeAction(true);
-            return;
+            return false;
         }
 
         Asc.editor.canSave = false;
@@ -4974,7 +4975,9 @@ var CPresentation = CPresentation || function(){};
         let oPageInfo = this.GetPageInfo(nPage);
         oPageInfo.SetRecognized(true);
         
-        let aSpsXmls        = oFile.nativeFile["scanPage"](nOriginIndex, 1);
+        if (!aSpsXmls)
+            aSpsXmls = oFile.nativeFile["scanPage"](nOriginIndex, 1);
+
         let oParserContext  = new AscCommon.XmlParserContext();
         let oTableStyles    = this.GetTableStyles();
         Object.keys(this.TableStylesIdMap).forEach(function(styleId) {
@@ -5095,6 +5098,8 @@ var CPresentation = CPresentation || function(){};
         else {
             fEndCallback();
         }
+
+        return true;
     };
     CPDFDoc.prototype.InsertContent2 = function(aSelContent, nIndex) {
         let nCurPage    = this.GetCurPage();
