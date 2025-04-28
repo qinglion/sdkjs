@@ -623,6 +623,7 @@
 			}
 			return handled;
 		}
+		CLineStyle.prototype.privateWriteAttributes = undefined;
 		/**
 		 * Write children to stream for CLineStyle
 		 *
@@ -636,7 +637,7 @@
 			pWriter._WriteUInt2(2, this.lineEx.startSize);
 			pWriter._WriteUInt2(3, this.lineEx.end);
 			pWriter._WriteUInt2(4, this.lineEx.endSize);
-			pWriter._WriteUInt2(5, this.lineEx.pattern);
+			// pWriter._WriteUInt2(5, this.lineEx.pattern);
 			pWriter.WriteUChar(AscCommon.g_nodeAttributeEnd);
 			pWriter.EndRecord();
 			if (Object.keys(this.sketch).length > 0) {
