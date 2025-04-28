@@ -4102,7 +4102,7 @@ var CPresentation = CPresentation || function(){};
         }
         this.Api.sync_pagePropCallback(oCurPage);
         this.Api.sync_EndCatchSelectedElements();
-        this.Api.sendEvent('asc_onCanEditPage', oCurPage.IsRecognized());
+        this.Api.sendEvent('asc_onCanEditPage', oCurPage.IsEditPageLock() || oCurPage.IsRecognized());
     };
     CPDFDoc.prototype.UpdateInterfaceTracks = function() {
         this.UpdateCommentPos();
@@ -7709,7 +7709,7 @@ var CPresentation = CPresentation || function(){};
 
         oProps.asc_putDeleteLock(pageInfo.IsDeleteLock());
         oProps.asc_putRotateLock(pageInfo.IsRotateLock());
-        oProps.asc_putEditLock(pageInfo.IsEditPageLock());
+        oProps.asc_putEditLock(pageInfo.IsEditPageLock() || pageInfo.IsRecognized());
         return oProps;
     }
 
