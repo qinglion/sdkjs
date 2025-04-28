@@ -3633,6 +3633,7 @@ function CDemonstrationManager(htmlpage)
     {
         if(this.OnNextSlideAnimPlayer())
         {
+	        this.sendNextFromReporter(isNoSendFormReporter);
             return;
         }
         this.NextSlide(isNoSendFormReporter);
@@ -3651,6 +3652,14 @@ function CDemonstrationManager(htmlpage)
         return false;
     };
 
+		this.sendNextFromReporter = function (isNoSendFormReporter) {
+			if (this.HtmlPage.m_oApi.isReporterMode && !isNoSendFormReporter)
+				this.HtmlPage.m_oApi.sendFromReporter("{ \"reporter_command\" : \"next\" }");
+		};
+	this.sendPrevFromReporter = function (isNoSendFormReporter) {
+		if (this.HtmlPage.m_oApi.isReporterMode && !isNoSendFormReporter)
+			this.HtmlPage.m_oApi.sendFromReporter("{ \"reporter_command\" : \"prev\" }");
+	};
     this.NextSlide = function(isNoSendFormReporter, isNoFromEvent)
     {
         if (!this.Mode)
@@ -3658,11 +3667,7 @@ function CDemonstrationManager(htmlpage)
 
 		this.TmpSlideVisible = this.SlideNum;
         this.PauseAnimation(this.SlideNum);
-
-        if (this.HtmlPage.m_oApi.isReporterMode && !isNoSendFormReporter)
-			this.HtmlPage.m_oApi.sendFromReporter("{ \"reporter_command\" : \"next\" }");
-
-
+		this.sendNextFromReporter(isNoSendFormReporter);
         this.CorrectSlideNum();
 
         var _is_transition = this.Transition.IsPlaying();
@@ -3703,6 +3708,7 @@ function CDemonstrationManager(htmlpage)
         {
             if(oPlayer.onPrevSlide())
             {
+	            this.sendPrevFromReporter(isNoSendFormReporter);
                 return;
             }
         }
@@ -3715,10 +3721,7 @@ function CDemonstrationManager(htmlpage)
             return;
 
 		this.TmpSlideVisible = this.SlideNum;
-
-		if (this.HtmlPage.m_oApi.isReporterMode && !isNoSendFormReporter)
-			this.HtmlPage.m_oApi.sendFromReporter("{ \"reporter_command\" : \"prev\" }");
-
+		this.sendPrevFromReporter(isNoSendFormReporter);
         if (this.GetFirstVisibleSlide() !== this.SlideNum || this.isLoop())
         {
             this.CorrectSlideNum();
@@ -4101,14 +4104,14 @@ function CDemonstrationManager(htmlpage)
         return false;
     };
 
-    this.onMouseUp = function(e, isAttack, isFromMainToReporter)
+    this.onMouseUp = function(e, isAttack, isFromMainToReporter, isFromMainToReporterMouseDown)
     {
     	if (!oThis.isMouseDown && true !== isAttack)
     		return;
 
         AscCommon.global_mouseEvent.UnLockMouse();
 
-				const isMouseDown = oThis.isMouseDown;
+				const isMouseDown = oThis.isMouseDown || isFromMainToReporterMouseDown;
 				oThis.isMouseDown = false;
 		if (isFromMainToReporter && oThis.PointerDiv && oThis.HtmlPage.m_oApi.isReporterMode)
 		    oThis.PointerRemove();
@@ -4123,7 +4126,8 @@ function CDemonstrationManager(htmlpage)
 		{
 			var _msg_ = {
 				"main_command"  : true,
-				"mouseUp"       : true
+				"mouseUp"       : true,
+				"isMainMouseDown": isMouseDown
 			};
 
 			oThis.HtmlPage.m_oApi.sendToReporter(JSON.stringify(_msg_));

@@ -8165,7 +8165,7 @@ background-repeat: no-repeat;\
 			}
 			else if (undefined !== _obj["mouseUp"])
 			{
-				_this.WordControl.DemonstrationManager.onMouseUp({}, true, true);
+				_this.WordControl.DemonstrationManager.onMouseUp({}, true, true, !!_obj["isMainMouseDown"]);
 			}
 			else if (undefined !== _obj["mouseWhell"])
 			{
