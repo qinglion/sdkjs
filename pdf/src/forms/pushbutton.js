@@ -1195,7 +1195,13 @@
         else
             nImgType = undefined;
 
-        let originView      = this.GetOriginView(nImgType, oGraphicsPDF.GetDrawingPageW(), oGraphicsPDF.GetDrawingPageH());
+        let originView = this.GetOriginView(nImgType, oGraphicsPDF.GetDrawingPageW(), oGraphicsPDF.GetDrawingPageH());
+        if (!originView) {
+            this.DrawLocks(oGraphicsPDF);
+            this.DrawEdit(oGraphicsWord);
+            return;
+        }
+
         let oTr             = oGraphicsPDF.GetTransform();
         let highlightType   = this.GetHighlight();
 
