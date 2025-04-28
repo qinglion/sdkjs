@@ -6247,7 +6247,7 @@
 	ApiCustomXmlNode.prototype.GetXPath = function ()
 	{
 		let parent		= this.GetParent();
-		let parentText	= parent ? parent.GetXPath() + "/" : "";
+		let parentText	= parent ? parent.GetXPath() + "/" : "/";
 		return parentText + this.CustomXmlContent.getNodeName();
 	};
 
@@ -20586,6 +20586,75 @@
 		this.Sdt.setDataBinding(oApiDataBinding.DataBinding);
 		this.Sdt.checkDataBinding();
 		return true;
+	};
+
+	/**
+	 * Sets the content (image) of a content control picture.
+	 * This method updates the picture inside a content control by setting an image from a provided URL.
+	 * The URL should be an internet link to the image.
+	 *
+	 * @memberof ApiBlockLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @param {string} imageUrl - The URL of the image to be used for the content control.
+	 * Currently, only internet URLs are supported.
+	 * @returns {boolean} Returns `true` if the image was successfully set, otherwise `false`.
+	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/SetPicture.js
+	 */
+	ApiBlockLvlSdt.prototype.SetPicture = function(imageUrl)
+	{
+		if (!this.Sdt.IsPicture())
+			return false;
+
+		var oImg, paraDrawing;
+		var allDrawings = this.Sdt.GetAllDrawingObjects();
+		for (var nDrawing = 0; nDrawing < allDrawings.length; nDrawing++)
+		{
+			if (allDrawings[nDrawing].IsPicture())
+			{
+				oImg = allDrawings[nDrawing].GraphicObj;
+				paraDrawing = allDrawings[nDrawing];
+				break;
+			}
+		}
+
+		if (oImg)
+		{
+			let spPr = oImg.spPr;
+			if (!spPr)
+			{
+				spPr = new AscFormat.CSpPr();
+				oImg.setSpPr(spPr);
+				spPr.setParent(oImg);
+			}
+
+			oImg.setBlipFill(AscFormat.CreateBlipFillRasterImageId(imageUrl));
+
+			let paragraph   = this.Sdt.GetParagraph();
+			let parentShape = paragraph && paragraph.GetParent() ? paragraph.GetParent().Is_DrawingShape(true) : null;
+			if (parentShape && parentShape.recalculate)
+				parentShape.recalculate();
+
+			this.Sdt.SetShowingPlcHdr(false);
+			return true;
+		}
+
+		return false;
+	};
+
+	/**
+	 * Checks whether the content control is a picture type.
+	 * This method verifies if the content control is specifically a picture control.
+	 *
+	 * @memberof ApiBlockLvlSdt
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {boolean} Returns `true` if the content control is a picture, otherwise `false`.
+	 * @see office-js-api/Examples/{Editor}/ApiBlockLvlSdt/Methods/IsPicture.js
+	 */
+	ApiBlockLvlSdt.prototype.IsPicture = function()
+	{
+		return this.Sdt.IsPicture();
 	};
 
 	/**

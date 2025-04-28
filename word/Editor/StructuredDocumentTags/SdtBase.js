@@ -1209,7 +1209,8 @@ CSdtBase.prototype.checkDataBinding = function()
 			return false;
 
 		let drawing = allDrawings[0];
-		let imageData = "data:image/jpeg;base64," + content;
+
+		let imageData = !content.startsWith("data:image/png;base64,") ? "data:image/jpeg;base64," + content : content;
 		let editor = logicDocument.GetApi();
 		editor.ImageLoader.LoadImagesWithCallback([imageData], function(){}, 0, true);
 		

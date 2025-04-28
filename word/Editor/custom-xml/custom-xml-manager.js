@@ -134,6 +134,9 @@
 			if (dataBinding.storeItemID === customXml.itemId)
 			{
 				let xPath			= dataBinding.xpath;
+				if (!xPath)
+					return null;
+
 				let arrFind			= customXml.findElementByXPath(xPath);
 
 				if (arrFind.length)
@@ -274,9 +277,30 @@
 			return "";
 
 		if (contentControl instanceof AscWord.CBlockLevelSdt)
+		{
 			return this.GetRichTextContentToWrite(contentControl);
+		}
+		else if (contentControl.IsPicture())
+		{
+			var oImg;
+			var allDrawings = contentControl.GetAllDrawingObjects();
+			for (var nDrawing = 0; nDrawing < allDrawings.length; nDrawing++)
+			{
+				if (allDrawings[nDrawing].IsPicture())
+				{
+					oImg = allDrawings[nDrawing].GraphicObj;
+					break;
+				}
+			}
+			if (oImg)
+				return oImg.getBase64Img();
+
+			return "";
+		}
 		else if (contentControl.GetInnerText)
+		{
 			return contentControl.GetInnerText();
+		}
 	};
 	/**
 	 * Write linear xml data of content control in CustomXML
