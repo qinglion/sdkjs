@@ -7350,9 +7350,12 @@ Paragraph.prototype.Correct_Content = function(_StartPos, _EndPos, preserveEmpty
 			continue;
 		
 		var CurElement = this.Content[CurPos];
-
+		
 		if (CurElement.CorrectContent)
 			CurElement.CorrectContent();
+		
+		if (para_InlineLevelSdt === CurElement.Type && !CurElement.CanBeDeleted())
+			continue;
 		
 		if ((para_Hyperlink === CurElement.Type
 				|| para_Math === CurElement.Type
@@ -7367,17 +7370,11 @@ Paragraph.prototype.Correct_Content = function(_StartPos, _EndPos, preserveEmpty
 		else if (para_Run !== CurElement.Type)
 		{
 			if (CurPos === this.Content.length - 1 || para_Run !== this.Content[CurPos + 1].Type || CurPos === this.Content.length - 2)
-			{
-				var NewRun = new ParaRun(this);
-				this.Internal_Content_Add(CurPos + 1, NewRun);
-			}
+				this.Internal_Content_Add(CurPos + 1, new AscWord.Run());
 
 			// Для начального элемента проверим еще и предыдущий
 			if (StartPos === CurPos && ( 0 === CurPos || para_Run !== this.Content[CurPos - 1].Type  ))
-			{
-				var NewRun = new ParaRun(this);
-				this.Internal_Content_Add(CurPos, NewRun);
-			}
+				this.Internal_Content_Add(CurPos, new AscWord.Run());
 		}
 		else
 		{
@@ -7393,9 +7390,9 @@ Paragraph.prototype.Correct_Content = function(_StartPos, _EndPos, preserveEmpty
 	// Проверим, чтобы предпоследний элемент был Run
 	if (1 === this.Content.length || para_Run !== this.Content[this.Content.length - 2].Type)
 	{
-		var NewRun = new ParaRun(this);
-		NewRun.Set_Pr(this.TextPr.Value.Copy());
-		this.Internal_Content_Add(this.Content.length - 1, NewRun);
+		let run = new AscWord.Run();
+		run.Set_Pr(this.TextPr.Value.Copy());
+		this.Internal_Content_Add(this.Content.length - 1, run);
 	}
 
 	this.Correct_ContentPos2();
