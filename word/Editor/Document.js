@@ -8597,7 +8597,8 @@ CDocument.prototype.OnEndTextDrag = function(NearPos, bCopy)
 					this.DragAndDropAction   = false;
 					this.TrackMoveId         = null;
 					this.TrackMoveRelocation = false;
-
+					
+					NearPos.Paragraph.Clear_NearestPosArray();
 					this.FinalizeAction();
 					this.SetCheckContentControlsLock(true);
 					return;
@@ -8648,6 +8649,7 @@ CDocument.prototype.OnEndTextDrag = function(NearPos, bCopy)
                     this.Document_Undo();
                     this.History.Clear_Redo();
 					this.SetCheckContentControlsLock(true);
+					NearPos.Paragraph.Clear_NearestPosArray();
 					this.FinalizeAction(false);
                     return;
                 }
