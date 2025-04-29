@@ -189,18 +189,13 @@
 	SheetStorage.prototype.mergeElementArrays = function mergeElementArrays(masterElements, elementsToMerge, isParentInList) {
 		/**
 		 * find index of cell row or section
-		 * @param {SheetStorage} elementsObject
+		 * @param elementsObject
 		 * @param elementToFind
 		 * @returns {*}
 		 */
 		function findObjectIn(elementsObject, elementToFind) {
 			let objKey = AscVisio.createKeyFromSheetObject(elementToFind);
-			let inheritedElement = elementsObject.inheritedElements[objKey];
-			if (inheritedElement === undefined) {
-				let ownElement = elementsObject.elements[objKey];
-				return ownElement;
-			}
-			return inheritedElement;
+			return elementsObject[objKey];
 		}
 
 		/**
@@ -223,7 +218,7 @@
 		for (const key in masterElements) {
 			const masterElement = masterElements[key];
 
-			let overrideObject = findObjectIn(this, masterElement);
+			let overrideObject = findObjectIn(this.getElements(), masterElement);
 			let elementExistsAlready = overrideObject !== undefined;
 
 			let isElementInList = elementsToMerge !== undefined && elementsToMerge.includes(masterElement.n);
