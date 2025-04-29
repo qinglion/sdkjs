@@ -154,6 +154,7 @@
 			return oDoc.EditPage(nPage, oParams['xmls']);
 		}
 		else if (oParams['html']) {
+			oPageInfo.SetRecognized(true);
 			this['pluginMethod_PasteHtml'](oParams['html']);
 		}
 
