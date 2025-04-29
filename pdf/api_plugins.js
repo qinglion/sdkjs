@@ -145,52 +145,19 @@
     Api.prototype["pluginMethod_ReplacePageContent"] = function(nPage, oParams) {
 		let oDoc = this.getPDFDoc();
 		
+		let oPageInfo = oDoc.GetPageInfo(nPage);
+		if (null == oPageInfo || (oPageInfo && (oPageInfo.IsDeleteLock() || oPageInfo.IsRecognized())) || true == this.isRestrictionView()) {
+			return false;
+		}
+
 		if (oParams['xmls']) {
 			return oDoc.EditPage(nPage, oParams['xmls']);
 		}
 		else if (oParams['html']) {
-			let _elem = document.getElementById("pmpastehtml");
-			if (_elem)
-				return;
-
-			window.g_asc_plugins && window.g_asc_plugins.setPluginMethodReturnAsync();
-
-			_elem = document.createElement("div");
-			_elem.id = "pmpastehtml";
-			_elem.style.color = "rgb(0,0,0)";
-			_elem.innerHTML = oParams['html'];
-			document.body.appendChild(_elem);
-			
-			this.incrementCounterLongAction();
-			let b_old_save_format = AscCommon.g_clipboardBase.bSaveFormat;
-			AscCommon.g_clipboardBase.bSaveFormat = false;
-			let _t = this;
-
-			let currRestrictionType = this.restrictions;
-			this.asc_setRestriction(Asc.c_oAscRestrictionType.None);
-			this.asc_PasteData(AscCommon.c_oAscClipboardDataFormat.HtmlElement, _elem, undefined, undefined, undefined,
-				function () {
-					let oPageInfo = oDoc.GetPageInfo(nPage);
-        			oPageInfo.SetRecognized(true);
-
-					_t.decrementCounterLongAction();
-
-					let fCallback = function () {
-						document.body.removeChild(_elem);
-						_elem = null;
-						AscCommon.g_clipboardBase.bSaveFormat = b_old_save_format;
-					};
-					if (_t.checkLongActionCallback(fCallback, null)) {
-						fCallback();
-					}
-					window.g_asc_plugins &&	window.g_asc_plugins.onPluginMethodReturn(true);
-					_t.asc_setRestriction(currRestrictionType);
-				}
-			);
-			
-
-			return true;
+			this['pluginMethod_PasteHtml'](oParams['html']);
 		}
+
+		return true;
     };
 	
 })(window);

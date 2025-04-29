@@ -307,7 +307,7 @@
 		if (!AscCommon.g_clipboardBase)
 			return null;
 
-		if (!this.canEdit() || this.isPdfEditor())
+		if (!this.canEdit())
 			return null;
 
 		let _elem = document.getElementById("pmpastehtml");
@@ -321,7 +321,7 @@
 
 		if (this.editorId === AscCommon.c_oEditorId.Word || this.editorId === AscCommon.c_oEditorId.Presentation) {
 			let textPr = this.get_TextProps();
-			if (textPr) {
+			if (textPr && textPr.TextPr) {
 				if (undefined !== textPr.TextPr.FontSize)
 					_elem.style.fontSize = textPr.TextPr.FontSize + "pt";
 

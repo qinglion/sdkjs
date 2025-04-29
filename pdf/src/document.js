@@ -5131,30 +5131,61 @@ var CPresentation = CPresentation || function(){};
                 return pasteObj.Drawing;
             });
 
-            aDrToPaste.forEach(function(drawing, index) {
-                let oXfrm = drawing.getXfrm();
-                let oPos = oThis.private_computeDrawingAddingPos(nCurPage, oXfrm.extX, oXfrm.extY);
-                oXfrm.setOffX(oPos.x);
-                oXfrm.setOffY(oPos.y);
+            if (false == Asc.editor.replacePageContentAction) {
+                aDrToPaste.forEach(function(drawing, index) {
+                    let oXfrm = drawing.getXfrm();
+                    let oPos = oThis.private_computeDrawingAddingPos(nCurPage, oXfrm.extX, oXfrm.extY);
+                    oXfrm.setOffX(oPos.x);
+                    oXfrm.setOffY(oPos.y);
+    
+                    // чуть-чуть смещаем при вставке, чтобы было видно вставленную фигуру
+                    let nShift = oController.getDrawingsPasteShift([drawing]);
+    
+                    if (nShift > 0) {
+                        oXfrm.shift(nShift, nShift);
+                    }
+    
+                    oThis.AddDrawing(drawing, oThis.GetCurPage());
+    
+                    if (drawing.IsGraphicFrame()) {
+                        oController.Check_GraphicFrameRowHeight(drawing);
+                    }
+                    
+                    if (index == 0) {
+                        oThis.SetMouseDownObject(drawing);
+                    }
+                    drawing.select(oController, nCurPage);
+                });
+            }
+            else {
+                let nCurYmm = 10;
+                let nPageW = oThis.GetPageWidthMM(nCurPage);
 
-                // чуть-чуть смещаем при вставке, чтобы было видно вставленную фигуру
-                let nShift = oController.getDrawingsPasteShift([drawing]);
+                aDrToPaste.forEach(function(drawing, index) {
+                    let oXfrm = drawing.getXfrm();
+                    if (drawing.IsShape()) {
+                        oXfrm.setExtX(nPageW * 0.95);
+                        drawing.checkExtentsByDocContent();
+                    }
+                    
+                    oXfrm.setOffX(nPageW * 0.05 / 2);
+                    oXfrm.setOffY(nCurYmm);
 
-                if (nShift > 0) {
-                    oXfrm.shift(nShift, nShift);
-                }
+                    nCurYmm += oXfrm.extY + 2;
 
-                oThis.AddDrawing(drawing, oThis.GetCurPage());
-
-                if (drawing.IsGraphicFrame()) {
-                    oController.Check_GraphicFrameRowHeight(drawing);
-                }
-                
-                if (index == 0) {
-                    oThis.SetMouseDownObject(drawing);
-                }
-                drawing.select(oController, nCurPage);
-            });
+                    oThis.AddDrawing(drawing, oThis.GetCurPage());
+    
+                    if (drawing.IsGraphicFrame()) {
+                        oController.Check_GraphicFrameRowHeight(drawing);
+                    }
+                    
+                    if (index == 0) {
+                        oThis.SetMouseDownObject(drawing);
+                    }
+                    
+                    drawing.select(oController, nCurPage);
+                });
+            }
 
             bResult = true;
         }
