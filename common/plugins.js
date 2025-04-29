@@ -1847,6 +1847,10 @@
 			window.g_asc_plugins.onChangedSelectionData();
 		});
 
+		api.asc_registerCallback('asc_onChangeRestrictions', function(value) {
+			window.g_asc_plugins.onPluginEvent("onChangeRestrictions", value);
+		});
+
 		window.g_asc_plugins.api.asc_registerCallback('asc_onDocumentContentReady', function() {
 			setTimeout(function()
 			{
