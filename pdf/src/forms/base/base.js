@@ -332,7 +332,7 @@
 	 */
     CBaseField.prototype.GetAllWidgets = function() {
         let oParent = this.GetParent();
-        if (oParent && oParent.GetType() === this.GetType()) {
+        if (oParent && oParent.IsAllKidsWidgets()) {
             return oParent.GetAllWidgets()
         }
 
@@ -422,7 +422,7 @@
             case AscPDF.FORMS_TRIGGERS_TYPES.Calculate:
             case AscPDF.FORMS_TRIGGERS_TYPES.Format: {
                 let oParent = this.GetParent();
-                if (oParent && oParent.GetType() === this.GetType())
+                if (oParent && oParent.IsAllKidsWidgets())
                     return oParent.SetActions(nTriggerType, aActionsInfo);
             }
         }
@@ -521,7 +521,7 @@
             case AscPDF.FORMS_TRIGGERS_TYPES.Calculate:
             case AscPDF.FORMS_TRIGGERS_TYPES.Format: {
                 let oParent = this.GetParent();
-                if (oParent && oParent.GetType() === this.GetType())
+                if (oParent && oParent.IsAllKidsWidgets())
                     return oParent.GetActions(nTriggerType);
             }
         }
@@ -664,7 +664,7 @@
             case AscPDF.FORMS_TRIGGERS_TYPES.Calculate:
             case AscPDF.FORMS_TRIGGERS_TYPES.Format: {
                 let oParent = this.GetParent();
-                if (bInherit !== false && oParent && oParent.GetType() === this.GetType())
+                if (bInherit !== false && oParent && oParent.IsAllKidsWidgets())
                     return oParent.GetTrigger(nType);
             }
         }
@@ -1592,7 +1592,7 @@
 
     CBaseField.prototype.SetReadOnly = function(bReadOnly) {
         let oParent = this.GetParent();
-        if (oParent && oParent.GetType() === this.GetType())
+        if (oParent && oParent.IsAllKidsWidgets())
             return oParent.SetReadOnly(bReadOnly);
 
         if (this._readOnly === bReadOnly) {
@@ -1620,7 +1620,7 @@
     };
     CBaseField.prototype.IsReadOnly = function(bInherit) {
         let oParent = this.GetParent();
-        if (bInherit !== false && oParent && oParent.GetType() === this.GetType())
+        if (bInherit !== false && oParent && oParent.IsAllKidsWidgets())
             return oParent.IsReadOnly();
 
         return this._readOnly;
@@ -1628,7 +1628,7 @@
 
     CBaseField.prototype.SetNoExport = function(bNoExport) {
         let oParent = this.GetParent();
-        if (oParent && oParent.GetType() === this.GetType()) {
+        if (oParent && oParent.IsAllKidsWidgets()) {
             return oParent.SetNoExport(bNoExport);
         }
     
@@ -1646,7 +1646,7 @@
     };
     CBaseField.prototype.IsNoExport = function(bInherit) {
         let oParent = this.GetParent();
-        if (bInherit !== false && oParent && oParent.GetType() === this.GetType())
+        if (bInherit !== false && oParent && oParent.IsAllKidsWidgets())
             return oParent.IsNoExport();
 
         return this._noExport;
@@ -1654,7 +1654,7 @@
     
     CBaseField.prototype.SetRequired = function(bRequired) {
         let oParent = this.GetParent();
-        if (oParent && oParent.GetType() === this.GetType())
+        if (oParent && oParent.IsAllKidsWidgets())
             return oParent.SetRequired(bRequired);
 
         if (this._required === bRequired) {
@@ -1686,7 +1686,7 @@
     };
     CBaseField.prototype.IsRequired = function(bInherit) {
         let oParent = this.GetParent();
-        if (bInherit !== false && oParent && oParent.GetType() === this.GetType())
+        if (bInherit !== false && oParent && oParent.IsAllKidsWidgets())
             return oParent.IsRequired();
 
         return this._required;
@@ -1745,14 +1745,14 @@
     };
     CBaseField.prototype.GetDefaultValue = function(bInherit) {
         let oParent = this.GetParent();
-        if (bInherit !== false && oParent && oParent.GetType() === this.GetType())
+        if (bInherit !== false && oParent && oParent.IsAllKidsWidgets())
             return oParent.GetDefaultValue();
         
         return this._defaultValue;
     };
     CBaseField.prototype.SetDefaultValue = function(value) {
         let oParent = this.GetParent();
-        if (oParent && oParent.GetType() === this.GetType())
+        if (oParent && oParent.IsAllKidsWidgets())
             return oParent.SetDefaultValue(value);
 
         let sOldDefValue = this.GetDefaultValue();
@@ -2548,7 +2548,7 @@
     };
     CBaseField.prototype.CheckWidgetFlags = function(memory) {
         let oParent = this.GetParent();
-        if (oParent && oParent.GetType() === this.GetType()) {
+        if (oParent && oParent.IsAllKidsWidgets()) {
             let nCurPos = memory.GetCurPosition();
             memory.Seek(memory.posForWidgetFlags);
             memory.WriteLong(-1);

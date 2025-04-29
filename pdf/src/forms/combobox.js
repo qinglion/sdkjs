@@ -626,7 +626,7 @@
     
     CComboBoxField.prototype.SetEditable = function(bValue) {
         let oParent = this.GetParent();
-        if (oParent && oParent.GetType() === this.GetType()) {
+        if (oParent && oParent.IsAllKidsWidgets()) {
             oParent.SetEditable(bValue);
         }
         else {
@@ -638,7 +638,7 @@
     };
     CComboBoxField.prototype.IsEditable = function(bInherit) {
         let oParent = this.GetParent();
-        if (bInherit !== false && oParent && oParent.GetType() === this.GetType())
+        if (bInherit !== false && oParent && oParent.IsAllKidsWidgets())
             return oParent.IsEditable();
 
         return this._editable;
@@ -652,7 +652,7 @@
     };
     CComboBoxField.prototype.AddOption = function(option, nPos) {
         let oParent = this.GetParent();
-        if (oParent && oParent.GetType() === this.GetType())
+        if (oParent && oParent.IsAllKidsWidgets())
             return oParent.AddOption(option, nPos);
 
         if (option == null) return;
@@ -682,7 +682,7 @@
     };
     CComboBoxField.prototype.RemoveOption = function(nPos) {
         let oParent = this.GetParent();
-        if (oParent && oParent.GetType() === this.GetType())
+        if (oParent && oParent.IsAllKidsWidgets())
             return oParent.RemoveOption(nPos);
 
         if (Number.isInteger(nPos) && nPos >= 0 && nPos < this._options.length) {

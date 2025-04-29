@@ -452,7 +452,7 @@
     };
     CBaseCheckBoxField.prototype.SetNoToggleToOff = function(bValue) {
         let oParent = this.GetParent();
-        if (oParent && oParent.GetType() === this.GetType()) {
+        if (oParent && oParent.IsAllKidsWidgets()) {
             return oParent.SetNoToggleToOff(bValue);
         }
 
@@ -469,7 +469,7 @@
     };
     CBaseCheckBoxField.prototype.IsNoToggleToOff = function(bInherit) {
         let oParent = this.GetParent();
-        if (bInherit !== false && oParent && oParent.GetType() === this.GetType())
+        if (bInherit !== false && oParent && oParent.IsAllKidsWidgets())
             return oParent.IsNoToggleToOff();
 
         return this._noToggleToOff;
