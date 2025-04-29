@@ -88,24 +88,6 @@
 
     AscFormat.getAnimPresetsScript = getAnimPresetsScript;
 
-
-		function CInnerObjectWrapper(drawingObjects) {
-			this.Id = null;
-			this.drawingObjects = drawingObjects;
-			this.init();
-		}
-	CInnerObjectWrapper.prototype.init = function () {
-		AscFormat.ExecuteNoHistory(function() {
-			this.Id = AscCommon.g_oIdCounter.Get_NewId();
-			AscCommon.g_oTableId.TurnOn();
-			AscCommon.g_oTableId.Add(this, this.Id);
-			AscCommon.g_oTableId.TurnOff();
-		}, this, []);
-	};
-	CInnerObjectWrapper.prototype.GetId = function () {
-		return this.Id;
-	};
-
     function CBaseAnimObject() {
         CBaseFormatObject.call(this);
     }
