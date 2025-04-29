@@ -8234,6 +8234,8 @@ background-repeat: no-repeat;\
 
 		// Меняем тип состояния (на никакое)
 		this.advancedOptionsAction = c_oAscAdvancedOptionsAction.None;
+
+		this.initBroadcastChannelListeners();
 	};
 
 	asc_docs_api.prototype.UpdateInterfaceState = function()
@@ -14429,6 +14431,21 @@ background-repeat: no-repeat;\
 			&& this.WordControl
 			&& this.WordControl.m_oDrawingDocument)
 			this.WordControl.m_oDrawingDocument.contentControls.onAttachPluginEvent(guid);
+	};
+	asc_docs_api.prototype.initBroadcastChannelListeners = function() {
+		let oThis = this;
+		let docInfo = this.DocInfo;
+		let wb = oThis.wbModel;
+		let broadcastChannel = this.broadcastChannel;
+		if (broadcastChannel) {
+			broadcastChannel.onmessage = function(event) {
+				if ("ClipboardChange" === event.data.type) {
+					if (event.data.editor === oThis.getEditorId()) {
+						AscCommon.g_clipboardBase.ChangeLastCopy(event.data.data);
+					}
+				}
+			}
+		}
 	};
 	
 	//-------------------------------------------------------------export---------------------------------------------------

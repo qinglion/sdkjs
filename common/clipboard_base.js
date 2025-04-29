@@ -145,7 +145,10 @@
                 return;
 			}
 
-			return this.Api.asc_CheckCopy(this, formats);
+			let res = this.Api.asc_CheckCopy(this, formats);
+			this.SendCopyEvent();
+
+			return res;
 		},
 
 		_private_oncopy : function(e)
@@ -931,9 +934,7 @@
 
 		pushData : function(_format, _data)
 		{
-			if (null == this.LastCopyBinary)
-				this.LastCopyBinary = [];
-			this.LastCopyBinary.push({ type: _format, data : _data });
+			this.lastCopyPush(_format, _data)
 
 			if (this.ClosureParams.isDivCopy === true)
 			{
@@ -1002,11 +1003,14 @@
 
 		Copy_New : function(isCut)
 		{
+			let oThis = this;
 			if (navigator.clipboard)
 			{
+				this.LastCopyBinary = null;
 				let copy_data = {
 					data : {},
 					pushData: function (format, value) {
+						oThis.lastCopyPush(format, value);
 						this.data[format] = value;
 					}
 				};
@@ -1034,6 +1038,8 @@
 
 					if (isCut === true)
 						this.Api.asc_SelectionCut();
+
+					this.SendCopyEvent();
 
 					return true;
 				}
@@ -1129,8 +1135,9 @@
 			
 			if (this.isUseNewCopy())
 			{
-				if (this.Button_Copy_New())
+				if (this.Button_Copy_New()) {
 					return true;
+				}
 			}
 
 			if (this.inputContext)
@@ -1295,6 +1302,33 @@
 			if (this.Api && this.Api.isCopyOutEnabled)
 				return this.Api.isCopyOutEnabled();
 			return true;
+		},
+
+		ChangeLastCopy : function(arr)
+		{
+			if (arr) {
+				this.LastCopyBinary = null;
+				for (let i = 0; i < arr.length; i++) {
+					this.lastCopyPush(arr[i].type, arr[i].data);
+				}
+			}
+		},
+
+		SendCopyEvent : function () {
+			if (this.Api && this.Api.broadcastChannel) {
+				let obj = {
+					type: "ClipboardChange",
+					data: this.LastCopyBinary,
+					editor: this.Api.getEditorId()
+				};
+				this.Api.broadcastChannel.postMessage(obj);
+			}
+		},
+
+		lastCopyPush : function (_format, _data) {
+			if (null == this.LastCopyBinary)
+				this.LastCopyBinary = [];
+			this.LastCopyBinary.push({ type: _format, data : _data });
 		}
 	};
 

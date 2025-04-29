@@ -6270,6 +6270,7 @@ background-repeat: no-repeat;\
 		// Меняем тип состояния (на никакое)
 		this.advancedOptionsAction = AscCommon.c_oAscAdvancedOptionsAction.None;
 		this.goTo();
+		this.initBroadcastChannelListeners();
 	};
 	asc_docs_api.prototype.asc_IsStartDemonstrationOnOpen = function()
 	{
@@ -9675,6 +9676,21 @@ background-repeat: no-repeat;\
 	};
 	asc_docs_api.prototype.onChangeRTLInterface = function () {
 		this.onUpdateThumbnailsPosition();
+	};
+	asc_docs_api.prototype.initBroadcastChannelListeners = function() {
+		let oThis = this;
+		let docInfo = this.DocInfo;
+		let wb = oThis.wbModel;
+		let broadcastChannel = this.broadcastChannel;
+		if (broadcastChannel) {
+			broadcastChannel.onmessage = function(event) {
+				if ("ClipboardChange" === event.data.type) {
+					if (event.data.editor === oThis.getEditorId()) {
+						AscCommon.g_clipboardBase.ChangeLastCopy(event.data.data);
+					}
+				}
+			}
+		}
 	};
 
 	//-------------------------------------------------------------export---------------------------------------------------
