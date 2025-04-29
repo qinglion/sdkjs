@@ -782,6 +782,7 @@
 	CTimeNodeBase.prototype.initStartTicks = function(oPlayer) {
 		const startTick = oPlayer.getElapsedTicks();
 		this.startTick = {};
+		this.startTick[this.GetId()] = startTick;
 		const arrDrawings = this.getDrawingObjects(oPlayer.animationDrawer);
 		if (!arrDrawings.length) {
 			return;
@@ -12776,17 +12777,18 @@
     CAnimSandwich.prototype.checkOnAdd = function () {
     };
 	CAnimSandwich.prototype.checkRemoveOldAnim = function(sDrawingId) {
-		var oEntrEffect = null, oExitEffect = null;
+		const arrAnimations = this.animations[sDrawingId];
+		if (!arrAnimations) {
+			return;
+		}
 		while (true) {
-			const arrAnimations = this.animations[sDrawingId];
-			if (!arrAnimations) {
-				return;
-			}
-			for (var nAnim = 0; nAnim < arrAnimations.length; ++nAnim) {
-				var oAnim = arrAnimations[nAnim];
-				var oEffect = oAnim.getParentTimeNode();
+			let oEntrEffect = null;
+			let oExitEffect = null;
+			for (let nAnim = 0; nAnim < arrAnimations.length; ++nAnim) {
+				const oAnim = arrAnimations[nAnim];
+				const oEffect = oAnim.getParentTimeNode();
 				if (oEffect.isAnimEffect()) {
-					var oAttrObject = oEffect.getAttributesObject();
+					const oAttrObject = oEffect.getAttributesObject();
 					if (oAttrObject && AscFormat.PRESET_CLASS_EXIT === oAttrObject.presetClass) {
 						oExitEffect = oEffect;
 					}
@@ -12798,7 +12800,7 @@
 					}
 				}
 			}
-			var oEffectToDelete = null;
+			let oEffectToDelete = null;
 			if (oEntrEffect && oExitEffect) {
 				if (oEntrEffect.isAtEnd() && !oExitEffect.isAtEnd()) {
 					oEffectToDelete = oEntrEffect;
@@ -12808,7 +12810,7 @@
 				}
 
 				if (oEntrEffect.isAtEnd() && oExitEffect.isAtEnd()) {
-					if (oEntrEffect.startTick[sDrawingId] < oExitEffect.startTick[sDrawingId]) {
+					if (oEntrEffect.startTick[oEntrEffect.GetId()] < oExitEffect.startTick[oExitEffect.GetId()]) {
 						oEffectToDelete = oEntrEffect;
 					} else {
 						oEffectToDelete = oExitEffect;
@@ -12816,9 +12818,9 @@
 				}
 			}
 			if (oEffectToDelete) {
-				for (var nAnim = arrAnimations.length - 1; nAnim > -1; --nAnim) {
-					var oAnim = arrAnimations[nAnim];
-					var oEffect = oAnim.getParentTimeNode();
+				for (let nAnim = arrAnimations.length - 1; nAnim > -1; --nAnim) {
+					const oAnim = arrAnimations[nAnim];
+					const oEffect = oAnim.getParentTimeNode();
 					if (oEffect === oEffectToDelete) {
 						arrAnimations.splice(nAnim, 1);
 					}
@@ -12851,7 +12853,7 @@
 		for (var nAnim = 0; nAnim < arrAnimations.length; ++nAnim) {
 			const oAnimation = arrAnimations[nAnim];
 			const startTick = oAnimation.startTick[sDrawingId];
-			if (AscFormat.isRealNumber(startTick) && (this.elapsedTime - startTick >= 0)) {
+			if (AscFormat.isRealNumber(startTick) && (this.elapsedTime >= startTick) || oAnimation.isAtEnd()) {
 				oAnimation.calculateAttributes(this.elapsedTime, oAttributes, sDrawingId);
 			}
 		}
