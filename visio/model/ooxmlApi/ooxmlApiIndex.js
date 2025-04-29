@@ -189,13 +189,14 @@
 	SheetStorage.prototype.mergeElementArrays = function mergeElementArrays(masterElements, elementsToMerge, isParentInList) {
 		/**
 		 * find index of cell row or section
-		 * @param elementsObject
+		 * @param {SheetStorage} elementsObject
 		 * @param elementToFind
 		 * @returns {*}
 		 */
 		function findObjectIn(elementsObject, elementToFind) {
 			let objKey = AscVisio.createKeyFromSheetObject(elementToFind);
-			return elementsObject[objKey];
+			let element = elementsObject.getElement(objKey);
+			return element;
 		}
 
 		/**
@@ -218,7 +219,7 @@
 		for (const key in masterElements) {
 			const masterElement = masterElements[key];
 
-			let overrideObject = findObjectIn(this.getElements(), masterElement);
+			let overrideObject = findObjectIn(this, masterElement);
 			let elementExistsAlready = overrideObject !== undefined;
 
 			let isElementInList = elementsToMerge !== undefined && elementsToMerge.includes(masterElement.n);
@@ -246,7 +247,7 @@
 						// for future checks
 						isParentInList = isElementInList || isParentInList;
 						// recursive calls
-						overrideObject.mergeElementArrays(masterElement.elements, elementsToMerge, isParentInList);
+						overrideObject.mergeElementArrays(masterElement.getElements(), elementsToMerge, isParentInList);
 					}
 				}
 			}
@@ -297,7 +298,7 @@
 	 * @return {*|string|number|null}
 	 */
 	SheetStorageAndStyles.prototype.getLineStyle = function getLineStyle() {
-		if (!this.lineStyle) {
+		if (this.lineStyle === null || this.lineStyle === undefined) {
 			return this.inheritedLineStyle;
 		}
 		return this.lineStyle;
@@ -308,7 +309,7 @@
 	 * @return {*|string|number|null}
 	 */
 	SheetStorageAndStyles.prototype.getFillStyle = function getFillStyle() {
-		if (!this.fillStyle) {
+		if (this.fillStyle === null || this.fillStyle === undefined) {
 			return this.inheritedFillStyle;
 		}
 		return this.fillStyle;
@@ -319,7 +320,7 @@
 	 * @return {*|string|number|null}
 	 */
 	SheetStorageAndStyles.prototype.getTextStyle = function getTextStyle() {
-		if (!this.textStyle) {
+		if (this.textStyle === null || this.textStyle === undefined) {
 			return this.inheritedTextStyle;
 		}
 		return this.textStyle;
@@ -678,6 +679,7 @@
 	 * Always use it see Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive js docs for explanation.
 	 * if in formula we have both ix and n we should use findSection instead.
 	 * or if we use it with number in formula
+	 * low performance function! use if can't use get section
 	 * @param {String} formula
 	 * @memberof SheetStorage
 	 * @returns {Section_Type[] | null}
@@ -720,6 +722,7 @@
 	/**
 	 * Always use it see Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive js docs for explanation.
 	 * Used with no argument to get all rows
+	 * low performance function! use if can't use get row
 	 * @memberof SheetStorage
 	 * @returns {Row_Type[]}
 	 */
@@ -748,12 +751,28 @@
 
 	/**
 	 * Always use it see Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive js docs for explanation.
-	 * get elements inherited from shape sheet type
+	 * get elements inherited from shape sheet type and own.
+	 * low performance function! use if can't use getElement
 	 * @memberOf SheetStorage
-	 * @return {{*}}
+	 * @return {{}}
 	 */
 	SheetStorage.prototype.getElements = function () {
 		return Object.assign({}, this.elements, this.inheritedElements);
+	}
+
+	/**
+	 * Always use it see Shape_Type.prototype.realizeMasterToShapeInheritanceRecursive js docs for explanation.
+	 * @memberOf SheetStorage
+	 * @param {string} formula
+	 * @return {*}
+	 */
+	SheetStorage.prototype.getElement = function (formula) {
+		// Cells can have N only no IX
+		let element = this.inheritedElements[formula];
+		if (element === undefined) {
+			element = this.elements[formula];
+		}
+		return element;
 	}
 
 
