@@ -1017,6 +1017,8 @@
 
 				try
 				{
+					this.bCut = isCut;
+
 					this.Api.asc_CheckCopy(copy_data, c_oAscClipboardDataFormat.Text | c_oAscClipboardDataFormat.Html | c_oAscClipboardDataFormat.Internal | c_oAscClipboardDataFormat.Image);
 
 					let clipboardData = {};
@@ -1038,6 +1040,8 @@
 
 					if (isCut === true)
 						this.Api.asc_SelectionCut();
+
+					this.bCut = false;
 
 					this.SendCopyEvent();
 
@@ -1284,17 +1288,22 @@
 
 		ClearBuffer : function()
 		{
-            if (-1 != this.clearBufferTimerId)
-            {
-                // clear old timer (restart interval)
-                clearTimeout(this.clearBufferTimerId);
-            }
-            this.clearBufferTimerId = setTimeout(function(){
-                if (AscCommon.g_clipboardBase)
-                    AscCommon.g_clipboardBase.clearBufferTimerId = -1;
-            }, 500);
 
-			this.Button_Copy();
+			if (this.isUseNewCopy()) {
+				navigator.clipboard.writeText('');
+			} else {
+				if (-1 != this.clearBufferTimerId)
+				{
+					// clear old timer (restart interval)
+					clearTimeout(this.clearBufferTimerId);
+				}
+				this.clearBufferTimerId = setTimeout(function(){
+					if (AscCommon.g_clipboardBase)
+						AscCommon.g_clipboardBase.clearBufferTimerId = -1;
+				}, 500);
+
+				this.Button_Copy();
+			}
 		},
 
 		isCopyOutEnabled : function()

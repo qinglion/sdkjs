@@ -410,10 +410,10 @@
 					//в данном случае не вырезаем, а записываем
 					if (!ws.isNeedSelectionCut() && false === ws.isMultiSelect()) {
 						ws.workbook.cutIdSheet = ws.model.Id;
-						ws.copyCutRange = [ws.model.selectionRange.getLast()];
+						ws.setCutRange([ws.model.selectionRange.getLast()]);
 					}
 				} else if (!ws.objectRender.selectedGraphicObjectsExists()) {
-					ws.copyCutRange = ws.model.selectionRange.ranges;
+					ws.setCutRange(ws.model.selectionRange.ranges);
 				}
 			}
 		};
@@ -1968,7 +1968,7 @@
 				var pasteInOriginalDoc = this._checkPastedInOriginalDoc(pastedWb);
 				if (pasteInOriginalDoc && null !== window["Asc"]["editor"].wb.cutIdSheet) {
 					var wsFrom = window["Asc"]["editor"].wb.getWorksheetById(window["Asc"]["editor"].wb.cutIdSheet);
-					var fromRange = wsFrom ? wsFrom.copyCutRange : null;
+					var fromRange = wsFrom ? wsFrom.getCutRange() : null;
 					if (fromRange) {
 						fromRange = fromRange[0];
 						var aRange = ws.model.selectionRange.getLast();

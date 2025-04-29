@@ -6729,11 +6729,20 @@
 	};
 
 	WorksheetView.prototype._drawCutRange = function () {
-		if(this.copyCutRange) {
-			for (var i in this.copyCutRange) {
-				this._drawElements(this._drawSelectionElement, this.copyCutRange[i], AscCommonExcel.selectionLineType.DashThick, this.settings.activeCellBorderColor);
+		let cutRange = this.getCutRange();
+		if(cutRange) {
+			for (var i in cutRange) {
+				this._drawElements(this._drawSelectionElement, cutRange[i], AscCommonExcel.selectionLineType.DashThick, this.settings.activeCellBorderColor);
 			}
 		}
+	};
+
+	WorksheetView.prototype.setCutRange = function (val) {
+		this.copyCutRange = val;
+	};
+
+	WorksheetView.prototype.getCutRange = function () {
+		return this.copyCutRange;
 	};
 
 	WorksheetView.prototype.drawTraceDependents = function () {
@@ -8830,7 +8839,7 @@
 		//print lines view
 		let isTraceDependents = this.traceDependentsManager.isHaveData();
 		let searchSpecificRange = this.handlers.trigger('selectSearchingResults') && this.workbook.SearchEngine && this.workbook.SearchEngine.isSpecificRange();
-		if(this.viewPrintLines || this.copyCutRange || (this.isPageBreakPreview(true) && this.pagesModeData) || searchSpecificRange || isTraceDependents) {
+		if(this.viewPrintLines || this.getCutRange() || (this.isPageBreakPreview(true) && this.pagesModeData) || searchSpecificRange || isTraceDependents) {
 			this.overlayCtx.clear();
 			if (isTraceDependents) {
 				this.traceDependentsManager.clearCoordsData();
