@@ -4391,11 +4391,11 @@ function BinaryPPTYLoader()
                 var _spd = s.GetUChar();
                 if (!_presentDuration)
                 {
-                    _transition.TransitionDuration = 250;
+                    _transition.TransitionDuration = 500;
                     if (_spd == 1)
-                        _transition.TransitionDuration = 500;
-                    else if (_spd == 2)
                         _transition.TransitionDuration = 750;
+                    else if (_spd == 2)
+                        _transition.TransitionDuration = 1000;
                 }
             }
         }
