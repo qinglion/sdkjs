@@ -2766,7 +2766,8 @@ Paragraph.prototype.drawRunHighlight = function(CurPage, pGraphics, Pr, drawStat
 				}
 				pGraphics.rect(Element.x0, Element.y0, Element.x1 - Element.x0, Element.y1 - Element.y0, Element.Additional2);
 				pGraphics.df();
-				if (pGraphics.m_bIsTextDrawer) {
+				if (pGraphics.m_bIsTextDrawer)
+				{
 					pGraphics.addGroundElement(Element);
 				}
 				Element = aHigh.Get_Next();
@@ -3167,13 +3168,15 @@ Paragraph.prototype.drawRunContentLines = function(CurPage, pGraphics, drawState
 		var Element = aStrikeout.Get_Next();
 		while (null != Element)
 		{
-			if (pGraphics.m_bIsTextDrawer) {
+			if (pGraphics.m_bIsTextDrawer)
+			{
 				pGraphics.SetAdditionalProps(Element.Additional2);
 			}
 
 			pGraphics.p_color(Element.r, Element.g, Element.b, 255);
 			pGraphics.drawHorLine(c_oAscLineDrawingRule.Top, Element.y0, Element.x0, Element.x1, Element.w);
-			if (pGraphics.m_bIsTextDrawer) {
+			if (pGraphics.m_bIsTextDrawer)
+			{
 				pGraphics.addGroundElement(Element);
 			}
 			Element = aStrikeout.Get_Next();
@@ -3185,13 +3188,15 @@ Paragraph.prototype.drawRunContentLines = function(CurPage, pGraphics, drawState
 		Element = aDStrikeout.Get_Next();
 		while (null != Element)
 		{
-			if (pGraphics.m_bIsTextDrawer) {
+			if (pGraphics.m_bIsTextDrawer)
+			{
 				pGraphics.SetAdditionalProps(Element.Additional2);
 			}
 
 			pGraphics.p_color(Element.r, Element.g, Element.b, 255);
 			pGraphics.drawHorLine2(c_oAscLineDrawingRule.Top, Element.y0, Element.x0, Element.x1, Element.w);
-			if (pGraphics.m_bIsTextDrawer) {
+			if (pGraphics.m_bIsTextDrawer)
+			{
 				pGraphics.addGroundElement(Element);
 			}
 			Element = aDStrikeout.Get_Next();
@@ -3204,13 +3209,15 @@ Paragraph.prototype.drawRunContentLines = function(CurPage, pGraphics, drawState
 		Element = aUnderline.Get_Next();
 		while (null != Element)
 		{
-			if (pGraphics.m_bIsTextDrawer) {
+			if (pGraphics.m_bIsTextDrawer)
+			{
 				pGraphics.SetAdditionalProps(Element.Additional2);
 			}
 
 			pGraphics.p_color(Element.r, Element.g, Element.b, 255);
 			pGraphics.drawHorLine(0, Element.y0, Element.x0, Element.x1, Element.w);
-			if (pGraphics.m_bIsTextDrawer) {
+			if (pGraphics.m_bIsTextDrawer)
+			{
 				pGraphics.addGroundElement(Element);
 			}
 			Element = aUnderline.Get_Next();
@@ -3221,13 +3228,15 @@ Paragraph.prototype.drawRunContentLines = function(CurPage, pGraphics, drawState
 		Element = aDUnderline.Get_Next();
 		while (null != Element)
 		{
-			if (pGraphics.m_bIsTextDrawer) {
+			if (pGraphics.m_bIsTextDrawer)
+			{
 				pGraphics.SetAdditionalProps(Element.Additional2);
 			}
 
 			pGraphics.p_color(Element.r, Element.g, Element.b, 255);
 			pGraphics.drawHorLine2(c_oAscLineDrawingRule.Top, Element.y0, Element.x0, Element.x1, Element.w);
-			if (pGraphics.m_bIsTextDrawer) {
+			if (pGraphics.m_bIsTextDrawer)
+			{
 				pGraphics.addGroundElement(Element);
 			}
 			Element = aDUnderline.Get_Next();
