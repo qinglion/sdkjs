@@ -1315,71 +1315,74 @@
 
 		return null;
 	};
-    CTimeNodeBase.prototype.getRelativeTime = function (nElapsedTime, sDrawingId) {
-        var oAttr = this.getAttributesObject();
-        var oParentTimeNode = this.getParentTimeNode();
-        var oParentAttr = null;
-        if (oParentTimeNode) {
-            oParentAttr = oParentTimeNode.getAttributesObject();
-        }
-        var bAutoRev = oAttr.autoRev || (oParentAttr && oParentAttr.autoRev);
-        var sTmFilter = oAttr.tmFilter;
-        var fSimpleDur = this.simpleDuration.getVal();
-        let fRelTime = (nElapsedTime - this.startTick[sDrawingId]) / fSimpleDur;
-        if (bAutoRev) {
-            if (fRelTime <= 0.5) {
-                fRelTime *= 2;
-            } else {
-                fRelTime = (1 - fRelTime) * 2;
-            }
-        }
-
-        if (typeof sTmFilter === "string" && sTmFilter.length > 0) {
-            var aPairs = sTmFilter.split(";");
-            var aNumPairs = [];
-            for (var nPair = 0; nPair < aPairs.length; ++nPair) {
-                var aPair = aPairs[nPair].split(",");
-                if (aPair.length !== 2) {
-	                break;
-                }
-                var fNum1 = parseFloat(aPair[0]);
-                if (!AscFormat.isRealNumber(fNum1)) {
-	                break;
-                }
-                var fNum2 = parseFloat(aPair[1]);
-                if (!AscFormat.isRealNumber(fNum2)) {
-	                break;
-                }
-                if (AscFormat.fApproxEqual(fRelTime, fNum1)) {
-	                fRelTime = fNum2;
-									break;
-                }
-                if (fRelTime <= fNum1) {
-                    if (aNumPairs.length > 0) {
-                        var aPrevPair = aNumPairs[aNumPairs.length - 1];
-	                    fRelTime = aPrevPair[1] + (fRelTime - aPrevPair[0]) * ((fNum2 - aPrevPair[1]) / (fNum1 - aPrevPair[0]));
-                    }
-	                break;
-                } else {
-                    aNumPairs.push([fNum1, fNum2]);
-                }
-            }
-        } else if (oAttr.spd !== null && oAttr.spd < 0) {
-            fRelTime = 1 - fRelTime;
-        }
-        if (fRelTime > 1 || fRelTime < 0) {
-	        if (this.getRewind()) {
-		        fRelTime = 0.0;
-	        } else {
-		        if (bAutoRev) {
-			        fRelTime = 0.0;
-		        } else {
-			        fRelTime = 1.0;
-		        }
-	        }
-        }
-				return fRelTime;
-    };
+	CTimeNodeBase.prototype.getRelativeTime = function (nElapsedTime, sDrawingId) {
+		var oAttr = this.getAttributesObject();
+		var oParentTimeNode = this.getParentTimeNode();
+		var oParentAttr = null;
+		if (oParentTimeNode) {
+			oParentAttr = oParentTimeNode.getAttributesObject();
+		}
+		var bAutoRev = oAttr.autoRev || (oParentAttr && oParentAttr.autoRev);
+		var sTmFilter = oAttr.tmFilter;
+		var fRelTime = 0.0;
+		if (this.isFrozen() || this.isFinished()) {
+			if (this.getRewind()) {
+				fRelTime = 0.0;
+			} else {
+				if (bAutoRev) {
+					fRelTime = 0.0;
+				} else {
+					fRelTime = 1.0;
+				}
+			}
+		} else {
+			var fSimpleDur = this.simpleDuration.getVal();
+			fRelTime = (nElapsedTime - this.startTick[sDrawingId]) / fSimpleDur;
+			fRelTime = Math.min(1, Math.max(fRelTime, 0));
+			if (bAutoRev) {
+				if (fRelTime <= 0.5) {
+					fRelTime *= 2;
+				} else {
+					fRelTime = (1 - fRelTime) * 2;
+				}
+			}
+		}
+		if (typeof sTmFilter === "string" && sTmFilter.length > 0) {
+			var aPairs = sTmFilter.split(";");
+			var aNumPairs = [];
+			for (var nPair = 0; nPair < aPairs.length; ++nPair) {
+				var aPair = aPairs[nPair].split(",");
+				if (aPair.length !== 2) {
+					return fRelTime;
+				}
+				var fNum1 = parseFloat(aPair[0]);
+				if (!AscFormat.isRealNumber(fNum1)) {
+					return fRelTime;
+				}
+				var fNum2 = parseFloat(aPair[1]);
+				if (!AscFormat.isRealNumber(fNum2)) {
+					return fRelTime;
+				}
+				if (AscFormat.fApproxEqual(fRelTime, fNum1)) {
+					return fNum2;
+				}
+				if (fRelTime <= fNum1) {
+					if (aNumPairs.length > 0) {
+						var aPrevPair = aNumPairs[aNumPairs.length - 1];
+						return aPrevPair[1] + (fRelTime - aPrevPair[0]) * ((fNum2 - aPrevPair[1]) / (fNum1 - aPrevPair[0]));
+					} else {
+						return fRelTime;
+					}
+				} else {
+					aNumPairs.push([fNum1, fNum2]);
+				}
+			}
+		}
+		if (oAttr.spd !== null && oAttr.spd < 0) {
+			fRelTime = 1 - fRelTime;
+		}
+		return fRelTime;
+	};
     CTimeNodeBase.prototype.getSlideWidth = function () {
         return this.getPresentation().GetWidthMM();
     };
