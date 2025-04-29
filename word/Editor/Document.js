@@ -5871,6 +5871,8 @@ CDocument.prototype.Draw                                     = function(nPageInd
     this.DrawingObjects.drawBehindDoc(nPageIndex, pGraphics);
 
     this.Footnotes.Draw(nPageIndex, pGraphics);
+	
+	let compatibilityMode = this.GetCompatibilityMode();
 
     var Page = this.Pages[nPageIndex];
     for (var SectionIndex = 0, SectionsCount = Page.Sections.length; SectionIndex < SectionsCount; ++SectionIndex)
@@ -5896,10 +5898,15 @@ CDocument.prototype.Draw                                     = function(nPageInd
             if (ColumnsCount > 1)
             {
                 pGraphics.SaveGrState();
-
-                var X    = ColumnIndex === 0 ? 0 : Column.X - Column.SpaceBefore / 2;
-                var XEnd = (ColumnIndex >= ColumnsCount - 1 ? Page.Width : Column.XLimit + Column.SpaceAfter / 2);
-                pGraphics.AddClipRect(X, 0, XEnd - X, Page.Height);
+	
+				// For documents created in Word 2010, we clip the columns as it was done in Word 2010,
+				// despite the fact that in new versions of Word they are always not clipped
+				if (compatibilityMode <= AscCommon.document_compatibility_mode_Word14)
+				{
+					var X    = ColumnIndex === 0 ? 0 : Column.X - Column.SpaceBefore / 2;
+					var XEnd = (ColumnIndex >= ColumnsCount - 1 ? Page.Width : Column.XLimit + Column.SpaceAfter / 2);
+					pGraphics.AddClipRect(X, 0, XEnd - X, Page.Height);
+				}
             }
 
             for (var ContentPos = ColumnStartPos; ContentPos <= ColumnEndPos; ++ContentPos)

@@ -3871,7 +3871,7 @@
 		this.WritePivotCache = function(id, pivotCache) {
 			var oThis = this;
 			var oldId = pivotCache.id;
-			pivotCache.id = null;
+			pivotCache.id = "rId1";
 			this.bs.WriteItem(c_oSer_PivotTypes.id, function() {
 				oThis.memory.WriteLong(id - 0);
 			});

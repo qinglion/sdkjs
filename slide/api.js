@@ -8165,7 +8165,7 @@ background-repeat: no-repeat;\
 			}
 			else if (undefined !== _obj["mouseUp"])
 			{
-				_this.WordControl.DemonstrationManager.onMouseUp({}, true, true);
+				_this.WordControl.DemonstrationManager.onMouseUp({}, true, true, !!_obj["isMainMouseDown"]);
 			}
 			else if (undefined !== _obj["mouseWhell"])
 			{
@@ -9618,7 +9618,9 @@ background-repeat: no-repeat;\
 		this.demoBackgroundColor = sColor;
 		if(this.isSlideShow())
 		{
-			this.WordControl.DemonstrationManager.CheckBackgroundColor();
+			const oDemonstrationManager = this.WordControl.DemonstrationManager;
+			oDemonstrationManager.CheckBackgroundColor();
+			oDemonstrationManager.Resize(true);
 		}
 	};
 
