@@ -9641,6 +9641,7 @@
 			return copy;
 		};
 		CEffectStyle.prototype.readAttribute = null;
+		CEffectStyle.prototype.privateWriteAttributes = null;
 		CEffectStyle.prototype.readChild = function(nType, pReader) {
 			switch (nType) {
 				case 0:
