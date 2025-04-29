@@ -637,7 +637,7 @@
 			pWriter._WriteUInt2(2, this.lineEx.startSize);
 			pWriter._WriteUInt2(3, this.lineEx.end);
 			pWriter._WriteUInt2(4, this.lineEx.endSize);
-			// pWriter._WriteUInt2(5, this.lineEx.pattern);
+			pWriter._WriteUInt2(5, this.lineEx.pattern);
 			pWriter.WriteUChar(AscCommon.g_nodeAttributeEnd);
 			pWriter.EndRecord();
 			if (Object.keys(this.sketch).length > 0) {
@@ -651,8 +651,9 @@
 				pWriter.EndRecord();
 			}
 		};
+
 		function CVariationClrScheme() {
-			CBaseNoIdObject.call(this);
+			CBaseFormatNoIdObject.call(this);
 			/**
 			 *
 			 * @type {*}
@@ -664,7 +665,40 @@
 			 */
 			this.varColor = [];
 		}
-		InitClass(CVariationClrScheme, CBaseNoIdObject, 0);
+		InitClass(CVariationClrScheme, CBaseFormatNoIdObject, 0);
+		CVariationClrScheme.prototype.readAttribute = undefined;
+		/**
+		 * Read children from stream for CVariationClrScheme
+		 *
+		 * @param {number} elementType - The type of the element to read
+		 * @param {CBinaryFileReader} pReader - The binary reader
+		 * @return {boolean} True if the element was read, false otherwise
+		 */
+		CVariationClrScheme.prototype.readChild = function(elementType, pReader) {
+			let handled = true;
+			if (0 <= elementType && elementType < 7) {
+				let varColor = new CVarColor();
+				varColor.unicolor = pReader.ReadUniColor();
+				this.varColor[elementType] = varColor;
+			} else {
+				handled = false;
+			}
+			return handled;
+		}
+		CVariationClrScheme.prototype.privateWriteAttributes = undefined;
+		/**
+		 * Write children to stream for CLineStyle
+		 *
+		 * @param {CBinaryFileWriter} pWriter - The binary writer
+		 */
+		CVariationClrScheme.prototype.writeChildren = function(pWriter) {
+			for (let i = 0; i < this.varColor.length; i++) {
+				if (!this.varColor[i] || !this.varColor[i].unicolor) {
+					continue;
+				}
+				pWriter.WriteRecord1(i, this.varColor[i].unicolor, pWriter.WriteUniColor);
+			}
+		};
 
 		function CVarColor() {
 			CBaseNoIdObject.call(this);

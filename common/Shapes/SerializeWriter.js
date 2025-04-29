@@ -1752,6 +1752,24 @@ function CBinaryFileWriter()
                 oThis.WriteRecord1(i, scheme.colors[i], oThis.WriteUniColor);
             }
         }
+        if (scheme.clrSchemeExtLst)
+        {
+            if (scheme.clrSchemeExtLst.background && scheme.clrSchemeExtLst.background.unicolor)
+            {
+                oThis.StartRecord(20);
+                oThis.WriteRecord1(0, scheme.clrSchemeExtLst.background.unicolor, oThis.WriteUniColor);
+                oThis.EndRecord();
+            }
+            if (scheme.clrSchemeExtLst.variationClrSchemeLst.length > 0)
+            {
+                oThis.StartRecord(21);
+                for (let i = 0; i < scheme.clrSchemeExtLst.variationClrSchemeLst.length; i++)
+                {
+                    oThis.WriteRecordPPTY(0, scheme.clrSchemeExtLst.variationClrSchemeLst[i]);
+                }
+                oThis.EndRecord();
+            }
+        }
     };
     this.WriteClrMapOvr = function(clrmapovr)
     {
