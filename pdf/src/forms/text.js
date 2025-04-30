@@ -1780,7 +1780,7 @@
             "selEnd": nSelEnd
         });
 
-        if (!sValue) {
+        if (!sValue && aChars.length == 0) {
             return isCanEnter;
         }
         if (oActionRunScript) {
