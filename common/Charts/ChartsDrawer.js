@@ -2336,7 +2336,11 @@ CChartsDrawer.prototype =
 		var manualMax = props.manualMax;
 		var newStep = props.step;
 
-
+		
+		if (!newStep) {
+			return res;
+		}
+		
 		if (isOxAxis) {
 
 		} else {
@@ -15584,6 +15588,9 @@ axisChart.prototype = {
 	},
 
 	_calculateSerAxis: function () {
+		if (this.cChartDrawer.nDimensionCount !== 3) {
+			return;
+		}
 		var nullPositionOx = this.axis.posY * this.chartProp.pxToMM;
 		var perspectiveDepth = this.cChartDrawer.processor3D.depthPerspective;
 		var positionX = this.cChartDrawer.processor3D.calculateXPositionSerAxis();
@@ -15967,6 +15974,9 @@ axisChart.prototype = {
 	},
 
 	_calculateSerTickMark: function () {
+		if (this.cChartDrawer.nDimensionCount !== 3) {
+			return;
+		}
 		let perspectiveDepth = this.cChartDrawer.processor3D.depthPerspective;
 		let tickmarksProps = this._getTickmarksPropsSer();
 		let widthLine = tickmarksProps.widthLine;
