@@ -6119,15 +6119,24 @@ var CPresentation = CPresentation || function(){};
     CPDFDoc.prototype.GetPagesBinary = function(aIndexes, bytesToBase64) {
         let oDoc = this;
 
-        let aOriginIdexes = [];
+        let aOriginIndexes = [];
+        let nNewPagesStartIdx = this.Viewer.file.originalPagesCount;
+
         aIndexes.forEach(function(idx) {
             let oFilePage = oDoc.Viewer.file.pages[idx];
             if (oFilePage.originIndex != undefined) {
-                aOriginIdexes.push(oFilePage.originIndex);
+                aOriginIndexes.push(oFilePage.originIndex);
             }
-        })
+            else {
+                aOriginIndexes.push(nNewPagesStartIdx++);
+            }
+        });
 
-        let aUint8Array = this.Viewer.file.nativeFile["SplitPages"](aOriginIdexes); 
+        aOriginIndexes.sort(function(a, b) {
+            return a - b;
+        });
+
+        let aUint8Array = this.Viewer.file.nativeFile["SplitPages"](aOriginIndexes, oDoc.Viewer.SaveForSplit()); 
         let base64 = AscCommon.Base64.encode(aUint8Array, 0, aUint8Array.length);
         return bytesToBase64 != false ? base64 : aUint8Array;
     };

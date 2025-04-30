@@ -1336,9 +1336,6 @@ CopyProcessor.prototype =
 				if(i === 0) {
 					this.copyPDFContent(elementsContent[i], oDomTarget);
 				}
-				else {
-					this.copyPDFContent(elementsContent[i]);
-				}
 			}
 		}
 	},
