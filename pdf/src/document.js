@@ -4154,6 +4154,7 @@ var CPresentation = CPresentation || function(){};
         editor.sync_CanCopyCutCallback(oCanCopyCut.copy, oCanCopyCut.cut);
     };
     CPDFDoc.prototype.CanCopyCut = function() {
+        let _t              = this;
         let oViewer         = editor.getDocumentRenderer();
         let oActiveForm     = this.activeForm;
         let oActiveAnnot    = this.mouseDownAnnot;
@@ -4182,9 +4183,26 @@ var CPresentation = CPresentation || function(){};
             }
         }
 
+        let oThumbnails = this.Viewer.thumbnails;
+
         if (oContent && oContent.IsSelectionUse() && !oContent.IsSelectionEmpty()) {
             isCanCopy = true;
             isCanCut = true;
+        }
+        else if (oThumbnails && oThumbnails.isInFocus) {
+            let aSelectedPagesIdxs = oThumbnails.selectedPages;
+            isCanCopy = true;
+            isCanCut = false;
+
+            // cant cut last page
+            if (this.Viewer.file.pages.length > 1) {
+                aSelectedPagesIdxs.forEach(function(idx) {
+                    let oPageInfo = _t.GetPageInfo(idx);
+                    if (false == oPageInfo.IsDeleteLock()) {
+                        isCanCut = true;
+                    }
+                });
+            }
         }
 
         return {

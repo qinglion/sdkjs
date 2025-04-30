@@ -1009,6 +1009,8 @@
         }
     
         AscCommon.stopEvent(e);
+        Asc.editor.getPDFDoc().UpdateCopyCutState();
+        
         return false;
     };
     
