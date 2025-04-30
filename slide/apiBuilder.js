@@ -1130,37 +1130,17 @@
     };
 
 	/**
-	 * Returns the current visible slide, layout or master.
+	 * Returns the current visible slide.
 	 * @typeofeditors ["CPE"]
 	 * @memberof ApiPresentation
-	 * @returns {ApiSlide | ApiLayout | ApiMaster | null} - returns null if the current slide is not found.
+	 * @returns {ApiSlide | null} - returns null if the current slide is not found or not visible.
 	 * @see office-js-api/Examples/{Editor}/ApiPresentation/Methods/GetCurrentVisibleSlide.js
 	 */
 	ApiPresentation.prototype.GetCurrentVisibleSlide = function () {
-		const slideIndex = this.GetCurSlideIndex();
-
-		if (!Asc.editor.isMasterMode()) {
-			return this.GetSlideByIndex(slideIndex);
+		if (!Asc.editor.isNormalMode()) {
+			return null;
 		}
-
-		const aMasters = this.GetAllSlideMasters();
-		let accumulatedIndex = 0;
-
-		for (let i = 0; i < aMasters.length; i++) {
-			const master = aMasters[i];
-			if (accumulatedIndex === slideIndex) {
-				return master;
-			}
-
-			const layouts = master.GetAllLayouts();
-			if (slideIndex < accumulatedIndex + layouts.length + 1) {
-				return layouts[slideIndex - accumulatedIndex - 1];
-			}
-
-			accumulatedIndex += layouts.length + 1;
-		}
-
-		return null;
+		return this.GetSlideByIndex(this.GetCurSlideIndex());
 	};
 
     /**
