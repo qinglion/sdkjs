@@ -3307,6 +3307,262 @@ ParaMath.prototype.ProcessingOldEquationConvert = function()
 {
 	this.Root.ProcessingOldEquationConvert();
 };
+ParaMath.prototype.fromMathML = function (xml)
+{
+	const logicDocument = editor.WordControl.m_oLogicDocument;
+	logicDocument.StartAction(AscDFH.historydescription_Document_ConvertMathView);
+	AscCommon.executeNoRevisions(this._fromMathML, this.GetLogicDocument(), this, arguments);
+	logicDocument.Recalculate();
+	logicDocument.UpdateInterface();
+	logicDocument.UpdateTracks();
+	logicDocument.FinalizeAction();
+};
+function advanceStageIfNeeded(stack, context) {
+	const top = stack[stack.length - 1];
+	if (!top || !top.cfg) return context;
+
+	const config = top.cfg;
+	const idx = config.stages.indexOf(top.stage);
+	if (idx < 0) return context;
+
+	if (idx < config.stages.length - 1) {
+		top.stage = config.stages[idx + 1];
+		const newCtx = config.switchTo(top.model, top.stage);
+		if (newCtx) return newCtx;
+	} else {
+		stack.pop();
+		return top.parent;
+	}
+	return context;
+};
+
+function extractHexFromEntity(entity) {
+	const match = entity.match(/&#x([0-9A-Fa-f]+);/);
+	if (match) {
+		return match[1].toUpperCase();
+	}
+	return null;
+}
+
+ParaMath.prototype._fromMathML = function (xml)
+{
+	const leafTags = new Set(['mi','mo','mn','mtext','ms','mspace']);
+	const compositeConfig = {
+		msub:		{ stages: ['base','subscript'],					switchTo: function (m,_) {return m.getLowerIterator()} },
+		msup:		{ stages: ['base','superscript'],				switchTo: function (m,_) {return m.getUpperIterator()} },
+		mfrac:		{ stages: ['numerator','denominator'],			switchTo: function (m,_) {return m.getDenominatorMathContent()}},
+		mroot:		{ stages: ['base','index'],						switchTo: function (m,_) {return m.getDegree()} },
+		msqrt:		{ stages: ['base'],								switchTo: function (m,_) {return null}},
+		msubsup:	{ stages: ['base','subscript','superscript'],	switchTo: function (m,stage) {
+				return (stage === 'subscript')
+					? m.getLowerIterator()
+					: m.getUpperIterator();
+			}},
+		munder:		{ stages: ['base', 'script'],					switchTo: function (m,_) {return m} },
+		mover:		{ stages: ['base', 'script'],					switchTo: function (m,_) {return m} },
+		munderover:	{ stages: ['base','subscript','superscript'],	switchTo: function (m,stage) {
+				return (stage === 'subscript')
+					? m.getLowerIterator()
+					: m.getUpperIterator();
+			}},
+		// mtable:	{ stages: [], switchTo: function() {return null}},
+		// mtr:	{ stages: [], switchTo: function() {return null}},
+		// mtd:	{ stages: [], switchTo: function() {return null}}
+		//mmultiscripts: {},
+		//mprescripts: {},
+	};
+
+	let prev = AscMath.GetIsAllowAutoCorrect();
+	AscMath.SetIsAllowAutoCorrect(false);
+
+	//temp
+	this.Root.ClearContent()
+
+	const oStax = new StaxParser(xml);
+	const stack = [];
+	const root  = this.Root;
+	let current = root;
+
+	const Pr = { ctrPrp: editor.WordControl.m_oLogicDocument.GetDirectTextPr() };
+	Pr.ctrPrp.Italic = true;
+	Pr.ctrPrp.RFonts.SetAll("Cambria Math", -1);
+
+	stack.push({
+		tag:'root',
+		node:root,
+		parent:null,
+		childCount:0,
+		cfg:null
+	});
+
+	while(oStax.Read()) {
+		const ev  = oStax.GetEventType();
+		const tag = oStax.GetName();
+
+		if (ev === EasySAXEvent.START_ELEMENT) {
+			const cfg = compositeConfig[tag] || null;
+			const desc = {
+				tag: tag,
+				parent: current,
+				node: current,
+				cfg,
+				model: null,
+				childCount: 0,
+				stage: cfg ? cfg.stages[0] : null
+			};
+
+			if (desc.cfg) {
+				switch (tag) {
+					case 'msub': {
+						const sub = new CDegree({ ctrPrp:Pr.ctrPrp, type:DEGREE_SUBSCRIPT });
+						current.Add_Element(sub);
+						desc.model = sub;
+						desc.node  = sub.getBase();
+						break;
+					}
+					case 'msup': {
+						const sup = new CDegree({ ctrPrp:Pr.ctrPrp, type:DEGREE_SUPERSCRIPT });
+						current.Add_Element(sup);
+						desc.model = sup;
+						desc.node  = sup.getBase();
+						break;
+					}
+					case 'mfrac': {
+						const frac = current.Add_Fraction(Pr, null, null);
+						desc.model = frac;
+						desc.node  = frac.getNumeratorMathContent();
+						break;
+					}
+					case 'msqrt': {
+						const sqrt = current.Add_Radical({ ctrPrp:Pr.ctrPrp, degHide: true }, null, null);
+						desc.model = sqrt;
+						desc.node  = sqrt.getBase();
+						break;
+					}
+					case 'mroot': {
+						const rootNode = current.Add_Radical(Pr, null, null);
+						desc.model = rootNode;
+						desc.node  = rootNode.getBase();
+						break;
+					}
+					case 'msubsup': {
+						const subsup = new CDegreeSubSup({ ctrPrp:Pr.ctrPrp });
+						current.Add_Element(subsup);
+						desc.model = subsup;
+						desc.node  = subsup.getBase();
+						break;
+					}
+					case 'mover': {
+						let group = current.Add_GroupCharacter({ctrPrp : Pr.ctrPrp, pos : VJUST_TOP, vertJc : VJUST_BOT});
+						desc.model = group;
+						desc.node  = group.getBase();
+						break;
+					}
+					case 'munder': {
+						let group = current.Add_GroupCharacter({ctrPrp : Pr.ctrPrp });
+						desc.model = group;
+						desc.node  = group.getBase();
+						break;
+					};
+					case 'munderover': {
+						const subsup = new CDegreeSubSup({ ctrPrp:Pr.ctrPrp });
+						current.Add_Element(subsup);
+						desc.model = subsup;
+						desc.node  = subsup.getBase();
+						break;
+					};
+					// case 'mtable': {
+					// 	let matrix = new CMathMatrix({ ctrPrp:Pr.ctrPrp });
+					// 	current.Add_Element(matrix);
+					// 	desc.model = subsup;
+					// 	desc.node  = subsup.getBase();
+					//
+					// 	//Matrix.getContentElement(RowIndex, ColIndex)
+					// 	break;
+					// // };
+					// case 'mmultiscripts':
+					// {
+					// 	break;
+					// };
+					// case 'mprescripts':
+					// {
+					// 	break;
+					// };
+					default:
+						console.log(`Unknown MathML tag: ${tag}`);
+				}
+			}
+
+			stack.push(desc);
+			current = desc.node;
+			continue;
+		}
+
+		if (ev===EasySAXEvent.CHARACTERS) {
+			let txt = oStax.text.trim();
+			let char = extractHexFromEntity(txt);
+			if (char)
+				txt = String.fromCharCode(parseInt(char, 16));
+
+			if (txt)
+			{
+				if (current instanceof CGroupCharacter) //munder | mover
+				{
+					let copy = current.Pr.Copy();
+					copy.chr = txt.charCodeAt(0);
+					current.Pr.Set(copy);
+				}
+				else
+				{
+					current.Add_Text(txt);
+				}
+			}
+			continue;
+		}
+
+		if (ev===EasySAXEvent.END_ELEMENT) {
+			const finished = stack.pop();
+			const parent = stack[stack.length-1];
+			if (parent) parent.childCount++;
+
+			if (finished.tag === 'mrow') {
+				const nextCtx = advanceStageIfNeeded(stack, current);
+				if (nextCtx) current = nextCtx;
+				continue
+			}
+
+			if (leafTags.has(finished.tag))
+			{
+				current = finished.parent;
+				const top = stack[stack.length-1];
+				if (top.cfg && top.childCount < top.cfg.stages.length) {
+					const nextStage = top.cfg.stages[top.childCount];
+					current = top.cfg.switchTo(top.model, nextStage);
+				}
+				else if (top.cfg && top.childCount >= top.cfg.stages.length) {
+					current = top.parent;
+				}
+				continue;
+			}
+
+			if (finished.cfg && finished.cfg.stages.length === 1) {
+				const ctx = finished.parent;
+				current = advanceStageIfNeeded(stack, ctx) || ctx;
+				continue;
+			}
+
+			if (finished.tag === parent.tag) {
+				current = parent.parent;
+				continue;
+			}
+
+			current = finished.parent;
+		}
+	}
+
+	AscMath.SetIsAllowAutoCorrect(prev);
+	this.Root.Correct_Content(true);
+};
 
 function MatGetKoeffArgSize(FontSize, ArgSize)
 {

@@ -3668,7 +3668,7 @@ CMathContent.prototype.Add_Text = function(text, paragraph, mathStyle, oAddition
 	if (this.Content[this.Content.length - 1] !== oMathRun)
 	{
 		this.AddToContent(this.Content.length, oMathRun, false);
-		this.CurPos = this.Content.length;
+		this.CurPos = this.Content.length + 1;
 	}
 };
 CMathContent.prototype.Add_ToPrevParaRun = function(text)
