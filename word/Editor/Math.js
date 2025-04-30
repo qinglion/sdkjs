@@ -739,6 +739,29 @@ ParaMath.prototype.Add = function(Item)
 		NewElement.add(32);
 		Run.Add(NewElement, true);
 	}
+	else if (Item instanceof AscWord.ParaMath)
+	{
+		let contentPos = new AscWord.CParagraphContentPos();
+		
+		if (this.bSelectionUse)
+			this.Get_ParaContentPos(true, true, contentPos);
+		else
+			this.Get_ParaContentPos(false, false, contentPos);
+		
+		let rightRun = Run.Split2(Run.State.ContentPos);
+		
+		let pos = StartPos + 1;
+		for (let i = 0; i < Item.Root.Content.length; ++i, ++pos)
+		{
+			oContent.Internal_Content_Add(pos, Item.Root.Content[i], false);
+		}
+		
+		oContent.Internal_Content_Add(pos, rightRun, false);
+		oContent.CurPos = pos;
+		rightRun.MoveCursorToStartPos();
+		
+		oContent.Correct_ContentCurPos();
+	}
 	else if (para_Math === Type)
 	{
 		var ContentPos = new AscWord.CParagraphContentPos();
@@ -3307,45 +3330,41 @@ ParaMath.prototype.ProcessingOldEquationConvert = function()
 {
 	this.Root.ProcessingOldEquationConvert();
 };
-ParaMath.prototype.fromMathML = function (xml)
+ParaMath.fromMathML = function()
 {
-	const logicDocument = editor.WordControl.m_oLogicDocument;
-	logicDocument.StartAction(AscDFH.historydescription_Document_ConvertMathView);
-	AscCommon.executeNoRevisions(this._fromMathML, this.GetLogicDocument(), this, arguments);
-	logicDocument.Recalculate();
-	logicDocument.UpdateInterface();
-	logicDocument.UpdateTracks();
-	logicDocument.FinalizeAction();
+	let paraMath = new ParaMath();
+	paraMath._fromMathML.apply(paraMath, arguments);
+	return paraMath;
 };
-function advanceStageIfNeeded(stack, context) {
-	const top = stack[stack.length - 1];
-	if (!top || !top.cfg) return context;
-
-	const config = top.cfg;
-	const idx = config.stages.indexOf(top.stage);
-	if (idx < 0) return context;
-
-	if (idx < config.stages.length - 1) {
-		top.stage = config.stages[idx + 1];
-		const newCtx = config.switchTo(top.model, top.stage);
-		if (newCtx) return newCtx;
-	} else {
-		stack.pop();
-		return top.parent;
-	}
-	return context;
-};
-
-function extractHexFromEntity(entity) {
-	const match = entity.match(/&#x([0-9A-Fa-f]+);/);
-	if (match) {
-		return match[1].toUpperCase();
-	}
-	return null;
-}
-
-ParaMath.prototype._fromMathML = function (xml)
+ParaMath.prototype._fromMathML = function(xml, textPr)
 {
+	function advanceStageIfNeeded(stack, context) {
+		const top = stack[stack.length - 1];
+		if (!top || !top.cfg) return context;
+		
+		const config = top.cfg;
+		const idx = config.stages.indexOf(top.stage);
+		if (idx < 0) return context;
+		
+		if (idx < config.stages.length - 1) {
+			top.stage = config.stages[idx + 1];
+			const newCtx = config.switchTo(top.model, top.stage);
+			if (newCtx) return newCtx;
+		} else {
+			stack.pop();
+			return top.parent;
+		}
+		return context;
+	}
+	
+	function extractHexFromEntity(entity) {
+		const match = entity.match(/&#x([0-9A-Fa-f]+);/);
+		if (match) {
+			return match[1].toUpperCase();
+		}
+		return null;
+	}
+	
 	const leafTags = new Set(['mi','mo','mn','mtext','ms','mspace']);
 	const compositeConfig = {
 		msub:		{ stages: ['base','subscript'],					switchTo: function (m,_) {return m.getLowerIterator()} },
@@ -3382,8 +3401,8 @@ ParaMath.prototype._fromMathML = function (xml)
 	const stack = [];
 	const root  = this.Root;
 	let current = root;
-
-	const Pr = { ctrPrp: editor.WordControl.m_oLogicDocument.GetDirectTextPr() };
+	
+	const Pr = {ctrPrp : textPr};
 	Pr.ctrPrp.Italic = true;
 	Pr.ctrPrp.RFonts.SetAll("Cambria Math", -1);
 
@@ -3463,14 +3482,14 @@ ParaMath.prototype._fromMathML = function (xml)
 						desc.model = group;
 						desc.node  = group.getBase();
 						break;
-					};
+					}
 					case 'munderover': {
 						const subsup = new CDegreeSubSup({ ctrPrp:Pr.ctrPrp });
 						current.Add_Element(subsup);
 						desc.model = subsup;
 						desc.node  = subsup.getBase();
 						break;
-					};
+					}
 					// case 'mtable': {
 					// 	let matrix = new CMathMatrix({ ctrPrp:Pr.ctrPrp });
 					// 	current.Add_Element(matrix);
@@ -3489,7 +3508,10 @@ ParaMath.prototype._fromMathML = function (xml)
 					// 	break;
 					// };
 					default:
-						console.log(`Unknown MathML tag: ${tag}`);
+					{
+						//console.log(`Unknown MathML tag: ${tag}`);
+						break;
+					}
 				}
 			}
 

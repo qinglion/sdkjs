@@ -28172,6 +28172,30 @@ CDocument.prototype.ConvertAllMathView = function(isToLinear)
 	this.UpdateTracks();
 	this.FinalizeAction();
 };
+/**
+ * Add math equation specified with MathML
+ * @param xml
+ * @return {?AscWord.ParaMath}
+ */
+CDocument.prototype.AddMathML = function(xml)
+{
+	if (this.IsSelectionLocked(AscCommon.changestype_Paragraph_Content))
+		return null;
+	
+	this.StartAction(AscDFH.historydescription_Document_AddMathML);
+	
+	let textPr = this.GetDirectTextPr();
+	let paraMath = AscWord.ParaMath.fromMathML(xml, textPr);
+	
+	this.AddToParagraph(paraMath);
+	
+	this.Recalculate();
+	this.UpdateInterface();
+	this.UpdateTracks();
+	this.FinalizeAction();
+	
+	return paraMath;
+};
 CDocument.prototype.IsCheckFormPlaceholder = function()
 {
 	if (!this.IsFillingFormMode())
