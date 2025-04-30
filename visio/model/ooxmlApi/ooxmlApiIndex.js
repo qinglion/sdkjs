@@ -1613,7 +1613,7 @@
 
 			let masterElements = masterShapeToInheritFrom.getElements();
 			this.mergeElementArrays(masterElements);
-			if (masterShapeToInheritFrom.type === "Foreign") {
+			if (masterShapeToInheritFrom.type === AscVisio.SHAPE_TYPES_FOREIGN) {
 				if (masterShapeToInheritFrom.cImageShape) {
 					this.cImageShape = clone(masterShapeToInheritFrom.cImageShape);
 				}
