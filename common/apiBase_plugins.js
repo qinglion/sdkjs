@@ -352,6 +352,7 @@
 		let b_old_save_format = AscCommon.g_clipboardBase.bSaveFormat;
 		AscCommon.g_clipboardBase.bSaveFormat = false;
 		let _t = this;
+
 		this.asc_PasteData(AscCommon.c_oAscClipboardDataFormat.HtmlElement, _elem, undefined, undefined, undefined,
 			function () {
 				_t.decrementCounterLongAction();

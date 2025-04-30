@@ -3215,6 +3215,10 @@ var CPresentation = CPresentation || function(){};
     };
 
     CPDFDoc.prototype.FinalizeAction = function(checkEmptyAction) {
+		Asc.editor.htmlPasteSepParagraphs = true;
+		Asc.editor.htmlPastePageIdx = undefined;
+		this.Action.PasteHtmlAction = false;
+
 		let oCurHistory = AscCommon.History;
         
         if (this.GetActionDescription() == AscDFH.historydescription_Pdf_ExecActions) {
@@ -5131,7 +5135,7 @@ var CPresentation = CPresentation || function(){};
                 return pasteObj.Drawing;
             });
 
-            if (false == Asc.editor.replacePageContentAction) {
+            if (true !== this.Action.PasteHtmlAction) {
                 aDrToPaste.forEach(function(drawing, index) {
                     let oXfrm = drawing.getXfrm();
                     let oPos = oThis.private_computeDrawingAddingPos(nCurPage, oXfrm.extX, oXfrm.extY);
@@ -5158,6 +5162,10 @@ var CPresentation = CPresentation || function(){};
                 });
             }
             else {
+				if (Asc.editor.htmlPastePageIdx != undefined) {
+					nCurPage = Asc.editor.htmlPastePageIdx;
+				}
+				
                 let nCurYmm = 10;
                 let nPageW = oThis.GetPageWidthMM(nCurPage);
 
@@ -5173,7 +5181,7 @@ var CPresentation = CPresentation || function(){};
 
                     nCurYmm += oXfrm.extY + 2;
 
-                    oThis.AddDrawing(drawing, oThis.GetCurPage());
+                    oThis.AddDrawing(drawing, nCurPage);
     
                     if (drawing.IsGraphicFrame()) {
                         oController.Check_GraphicFrameRowHeight(drawing);

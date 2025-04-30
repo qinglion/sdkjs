@@ -422,6 +422,10 @@
 				return;
 			}
 
+			if (_format == AscCommon.c_oAscClipboardDataFormat.HtmlElement) {
+				oDoc.Action.PasteHtmlAction = true;
+			}
+
 			window['AscCommon'].g_specialPasteHelper.Paste_Process_Start(arguments[5]);
 			AscCommon.Editor_Paste_Exec(this, _format, data1, data2, text_data, undefined, callback);
 		}

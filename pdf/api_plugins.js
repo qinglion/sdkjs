@@ -34,6 +34,20 @@
 
 (function(window, undefined)
 {
+	/**
+	 * Options for replace page content by html
+	 * @typedef {Object} ReplaceHtmlOptions
+	 * @property {string} content - html content to replace
+	 * @property {boolean} [separateParagraphs=true] - will each paragraph be created a separate shape
+	 */
+
+	/**
+	 * Options for replace page content by html
+	 * @typedef {Object} ReplaceXmlOptions
+	 * @property {string[]} content - array with xml shapes to replace
+	 */
+
+
     /**
      * Base class.
      * @global
@@ -131,14 +145,14 @@
 	};
 
     /**
-     * Replace page content by xml
+     * Replace page content by params
      * @memberof Api
      * @typeofeditors ["PDFE"]
      * @alias ReplacePageContent
 	 * @param {number} nPage - page index
 	 * @param {object} oParams - replace params
-	 * @param {string} oParams.html - html to replace content
-	 * @param {string[]} oParams.xmls - array of xml shapes to replace content
+	 * @param {"xml" | "html"} oParams.type - type of content to replace (xml / html)
+	 * @param {ReplaceXmlOptions | ReplaceHtmlOptions} oParams.options - replace content options
 	 * @returns {boolean}
      * @see office-js-api/Examples/Plugins/PDF/Api/Methods/ReplacePageContent.js
 	 */
@@ -150,17 +164,22 @@
 			return false;
 		}
 
-		if (oParams['xmls']) {
-			return oDoc.EditPage(nPage, oParams['xmls']);
+		if (oParams['type'] === 'xml') {
+			return oDoc.EditPage(nPage, oParams['options']['content']);
 		}
-		else if (oParams['html']) {
+		else if (oParams['type'] === 'html') {
+			if (oDoc.IsSelectionLocked(AscDFH.historydescription_Pdf_EditPage, [nPage])) {
+				return false;
+			}
+
+			this.htmlPasteSepParagraphs = !!oParams["separateParagraphs"];
+			this.htmlPastePageIdx = nPage;
+			this['pluginMethod_PasteHtml'](oParams['options']['content']);
 			oPageInfo.SetRecognized(true);
-			this['pluginMethod_PasteHtml'](oParams['html']);
 		}
 
 		return true;
     };
-	
 })(window);
 
 
