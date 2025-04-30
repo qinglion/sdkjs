@@ -270,7 +270,7 @@
     
     CListBoxField.prototype.SetMultipleSelection = function(bValue) {
         let oParent = this.GetParent();
-        if (oParent && oParent.GetType() === this.GetType()) {
+        if (oParent && oParent.IsAllKidsWidgets()) {
             oParent.SetMultipleSelection(bValue);
             return;
         }
@@ -283,7 +283,7 @@
     };
     CListBoxField.prototype.IsMultipleSelection = function(bInherit) {
         let oParent = this.GetParent();
-        if (bInherit !== false && oParent && oParent.GetType() === this.GetType())
+        if (bInherit !== false && oParent && oParent.IsAllKidsWidgets())
             return oParent.IsMultipleSelection();
 
         return this._multipleSelection;
@@ -334,7 +334,7 @@
     };
     CListBoxField.prototype.AddOption = function(option, nPos) {
         let oParent = this.GetParent();
-        if (oParent && oParent.GetType() === this.GetType())
+        if (oParent && oParent.IsAllKidsWidgets())
             return oParent.AddOption(option, nPos);
 
         if (option == null) return;
@@ -393,7 +393,7 @@
     };
     CListBoxField.prototype.RemoveOption = function(nPos) {
         let oParent = this.GetParent();
-        if (oParent && oParent.GetType() === this.GetType())
+        if (oParent && oParent.IsAllKidsWidgets())
             return oParent.RemoveOption(nPos);
 
         function updateContent(widget) {
