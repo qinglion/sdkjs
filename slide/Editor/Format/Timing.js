@@ -1197,8 +1197,7 @@
 			this.cTn.presetID === 1 && this.cTn.presetClass === AscFormat.PRESET_CLASS_EXIT
 	}
 	CTimeNodeBase.prototype.isUntilEffect = function () {
-		return this.asc_getRepeatCount() === AscFormat.untilNextClick ||
-			this.asc_getRepeatCount() === AscFormat.untilNextSlide;
+		return false;
 	}
 
     CTimeNodeBase.prototype.getFullDelay = function() {
@@ -8772,6 +8771,10 @@
     }
 
     InitClass(CTimeNodeContainer, CTimeNodeBase, AscDFH.historyitem_type_TimeNodeContainer);
+	CTimeNodeContainer.prototype.isUntilEffect = function () {
+		return this.asc_getRepeatCount() === AscFormat.untilNextClick ||
+			this.asc_getRepeatCount() === AscFormat.untilNextSlide;
+	};
     CTimeNodeContainer.prototype.setCTn = function (pr) {
         oHistory.Add(new CChangeObject(this, AscDFH.historyitem_TimeNodeContainerCTn, this.cTn, pr));
         this.cTn = pr;
@@ -9678,19 +9681,19 @@
             var oThis = this;
             var oComplexTrigger = this.nextCondLst.createComplexTrigger(oPlayer);
             var aChildren = oThis.getChildrenTimeNodes();
-
-
+					const oLastChild = aChildren[aChildren.length - 1];
+					const bIsUntilEffect = oLastChild && oLastChild.traverseTimeNodes(function(oNode) {
+						if (oNode.isUntilEffect()) {
+							return true;
+						}
+					});
             oComplexTrigger.addTrigger(function () {
-                var oLastChild = aChildren[aChildren.length - 1];
                 if (oLastChild) {
                     if (oLastChild.isAtEnd()) {
                         return false;
                     }
-                    if (oLastChild.isActive()) {
-                        var oSimpleDuration = oLastChild.simpleDuration;
-                        if (oSimpleDuration && (oSimpleDuration.isIndefinite() || oSimpleDuration.isUnresolved())) {
-                            return false;
-                        }
+                    if (oLastChild.isActive() && bIsUntilEffect) {
+											return false;
                     }
                 }
                 return true;
