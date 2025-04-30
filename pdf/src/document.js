@@ -3215,6 +3215,10 @@ var CPresentation = CPresentation || function(){};
     };
 
     CPDFDoc.prototype.FinalizeAction = function(checkEmptyAction) {
+		Asc.editor.htmlPasteSepParagraphs = true;
+		Asc.editor.htmlPastePageIdx = undefined;
+		this.Action.PasteHtmlAction = false;
+
 		let oCurHistory = AscCommon.History;
         
         if (this.GetActionDescription() == AscDFH.historydescription_Pdf_ExecActions) {
@@ -4964,18 +4968,19 @@ var CPresentation = CPresentation || function(){};
         AscCommon.History.EndNoHistoryMode();
 
         return oTextDrawer;
-    }    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    }
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// For drawings
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-    CPDFDoc.prototype.EditPage = function(nPage) {
+    CPDFDoc.prototype.EditPage = function(nPage, aSpsXmls) {
         if (null == this.Viewer.pagesInfo.pages[nPage] || this.Viewer.file.pages[nPage].isRecognized) {
-            return;
+            return false;
         }
 
         let oFile = this.Viewer.file;
         let nOriginIndex = oFile.pages[nPage].originIndex;
         if (nOriginIndex == undefined) {
-            return;
+            return false;
         }
 
         this.BlurActiveObject();
@@ -4983,7 +4988,7 @@ var CPresentation = CPresentation || function(){};
         this.StartAction(AscDFH.historydescription_Pdf_EditPage);
         if (this.IsSelectionLocked(AscDFH.historydescription_Pdf_EditPage, [nPage])) {
             this.FinalizeAction(true);
-            return;
+            return false;
         }
 
         Asc.editor.canSave = false;
@@ -4992,7 +4997,9 @@ var CPresentation = CPresentation || function(){};
         let oPageInfo = this.GetPageInfo(nPage);
         oPageInfo.SetRecognized(true);
         
-        let aSpsXmls        = oFile.nativeFile["scanPage"](nOriginIndex, 1);
+        if (!aSpsXmls)
+            aSpsXmls = oFile.nativeFile["scanPage"](nOriginIndex, 1);
+
         let oParserContext  = new AscCommon.XmlParserContext();
         let oTableStyles    = this.GetTableStyles();
         Object.keys(this.TableStylesIdMap).forEach(function(styleId) {
@@ -5113,6 +5120,8 @@ var CPresentation = CPresentation || function(){};
         else {
             fEndCallback();
         }
+
+        return true;
     };
     CPDFDoc.prototype.InsertContent2 = function(aSelContent, nIndex) {
         let nCurPage    = this.GetCurPage();
@@ -5144,30 +5153,65 @@ var CPresentation = CPresentation || function(){};
                 return pasteObj.Drawing;
             });
 
-            aDrToPaste.forEach(function(drawing, index) {
-                let oXfrm = drawing.getXfrm();
-                let oPos = oThis.private_computeDrawingAddingPos(nCurPage, oXfrm.extX, oXfrm.extY);
-                oXfrm.setOffX(oPos.x);
-                oXfrm.setOffY(oPos.y);
+            if (true !== this.Action.PasteHtmlAction) {
+                aDrToPaste.forEach(function(drawing, index) {
+                    let oXfrm = drawing.getXfrm();
+                    let oPos = oThis.private_computeDrawingAddingPos(nCurPage, oXfrm.extX, oXfrm.extY);
+                    oXfrm.setOffX(oPos.x);
+                    oXfrm.setOffY(oPos.y);
+    
+                    // чуть-чуть смещаем при вставке, чтобы было видно вставленную фигуру
+                    let nShift = oController.getDrawingsPasteShift([drawing]);
+    
+                    if (nShift > 0) {
+                        oXfrm.shift(nShift, nShift);
+                    }
+    
+                    oThis.AddDrawing(drawing, oThis.GetCurPage());
+    
+                    if (drawing.IsGraphicFrame()) {
+                        oController.Check_GraphicFrameRowHeight(drawing);
+                    }
+                    
+                    if (index == 0) {
+                        oThis.SetMouseDownObject(drawing);
+                    }
+                    drawing.select(oController, nCurPage);
+                });
+            }
+            else {
+				if (Asc.editor.htmlPastePageIdx != undefined) {
+					nCurPage = Asc.editor.htmlPastePageIdx;
+				}
+				
+                let nCurYmm = 10;
+                let nPageW = oThis.GetPageWidthMM(nCurPage);
 
-                // чуть-чуть смещаем при вставке, чтобы было видно вставленную фигуру
-                let nShift = oController.getDrawingsPasteShift([drawing]);
+                aDrToPaste.forEach(function(drawing, index) {
+                    let oXfrm = drawing.getXfrm();
+                    if (drawing.IsShape()) {
+                        oXfrm.setExtX(nPageW * 0.95);
+                        drawing.checkExtentsByDocContent();
+                    }
+                    
+                    oXfrm.setOffX(nPageW * 0.05 / 2);
+                    oXfrm.setOffY(nCurYmm);
 
-                if (nShift > 0) {
-                    oXfrm.shift(nShift, nShift);
-                }
+                    nCurYmm += oXfrm.extY + 2;
 
-                oThis.AddDrawing(drawing, oThis.GetCurPage());
-
-                if (drawing.IsGraphicFrame()) {
-                    oController.Check_GraphicFrameRowHeight(drawing);
-                }
-                
-                if (index == 0) {
-                    oThis.SetMouseDownObject(drawing);
-                }
-                drawing.select(oController, nCurPage);
-            });
+                    oThis.AddDrawing(drawing, nCurPage);
+    
+                    if (drawing.IsGraphicFrame()) {
+                        oController.Check_GraphicFrameRowHeight(drawing);
+                    }
+                    
+                    if (index == 0) {
+                        oThis.SetMouseDownObject(drawing);
+                    }
+                    
+                    drawing.select(oController, nCurPage);
+                });
+            }
 
             bResult = true;
         }

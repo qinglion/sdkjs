@@ -307,7 +307,7 @@
 		if (!AscCommon.g_clipboardBase)
 			return null;
 
-		if (!this.canEdit() || this.isPdfEditor())
+		if (!this.canEdit())
 			return null;
 
 		let _elem = document.getElementById("pmpastehtml");
@@ -321,7 +321,7 @@
 
 		if (this.editorId === AscCommon.c_oEditorId.Word || this.editorId === AscCommon.c_oEditorId.Presentation) {
 			let textPr = this.get_TextProps();
-			if (textPr) {
+			if (textPr && textPr.TextPr) {
 				if (undefined !== textPr.TextPr.FontSize)
 					_elem.style.fontSize = textPr.TextPr.FontSize + "pt";
 
@@ -352,6 +352,7 @@
 		let b_old_save_format = AscCommon.g_clipboardBase.bSaveFormat;
 		AscCommon.g_clipboardBase.bSaveFormat = false;
 		let _t = this;
+
 		this.asc_PasteData(AscCommon.c_oAscClipboardDataFormat.HtmlElement, _elem, undefined, undefined, undefined,
 			function () {
 				_t.decrementCounterLongAction();
@@ -1961,6 +1962,16 @@
 	 * @see office-js-api/Examples/Plugins/{Editor}/Enumeration/ToolbarMenuMainItem.js
 	 */
 
+	function correctToolbarItems(api, items)
+	{
+		let baseUrl = api.pluginsManager.pluginsMap[items["guid"]].baseUrl;
+		for (let i = 0, len = items["tabs"].length; i < len; i++)
+		{
+			if (items["tabs"][i]["items"])
+				correctItemsWithData(items["tabs"][i]["items"], baseUrl);
+		}
+	}
+
 	/**
 	 * Adds an item to the toolbar menu.
 	 * @undocumented
@@ -1973,14 +1984,24 @@
 	 */
 	Api.prototype["pluginMethod_AddToolbarMenuItem"] = function(items)
 	{
-		let baseUrl = this.pluginsManager.pluginsMap[items["guid"]].baseUrl;
-		for (let i = 0, len = items["tabs"].length; i < len; i++)
-		{
-			if (items["tabs"][i]["items"])
-				correctItemsWithData(items["tabs"][i]["items"], baseUrl);
-		}
-
+		correctToolbarItems(this, items);
 		this.sendEvent("onPluginToolbarMenu", [items]);
+	};
+
+	/**
+	 * Update an item to the toolbar menu.
+	 * @undocumented
+	 * @memberof Api
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @alias UpdateToolbarMenuItem
+	 * @param {ToolbarMenuMainItem[]} items - An array containing the main toolbar menu items.
+	 * @since 8.1.0
+	 * @see office-js-api/Examples/Plugins/{Editor}/Api/Methods/UpdateToolbarMenuItem.js
+	 */
+	Api.prototype["pluginMethod_UpdateToolbarMenuItem"] = function(items)
+	{
+		correctToolbarItems(this, items);
+		this.sendEvent("onPluginUpdateToolbarMenu", [items]);
 	};
 
 	/**

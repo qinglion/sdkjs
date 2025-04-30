@@ -1544,7 +1544,7 @@
     };
 
     CBaseField.prototype.DrawEdit = function(oGraphicsWord) {
-        if (this.IsEditMode()) {
+        if (this.IsEditMode() && !oGraphicsWord.isSkipEditShapes) {
             this.editShape.Draw(oGraphicsWord);
         }
     };
