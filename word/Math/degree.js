@@ -1283,6 +1283,21 @@ CDegreeSubSup.prototype.GetTextOfElement = function(oMathText)
 
 	return oMathText;
 };
+CDegreeSubSup.fromMathML = function (reader, type)
+{
+	let depth = reader.GetDepth();
+	
+	let props = new CMathDegreeSubSupPr();
+	props.type = undefined !== type ? type : DEGREE_PreSubSup;
+	props.content = [];
+	
+	while (reader.ReadNextSiblingNode(depth))
+	{
+		props.content.push(AscWord.ParaMath.readMathMLContent(reader));
+	}
+	
+	return new AscMath.DegreeSubSup(props);
+};
 
 /**
  *

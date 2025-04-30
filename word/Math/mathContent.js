@@ -6366,6 +6366,16 @@ CMathContent.prototype.GetTextContent = function(bSelectedText, isLaTeX)
 	let strContent = oMathText.GetText();
 	return {str: strContent, content: oMathText};
 };
+CMathContent.prototype.fromMathML = function(reader)
+{
+	let depth = reader.GetDepth();
+	while (reader.ReadNextSiblingNode(depth))
+	{
+		let elem = AscWord.ParaMath.readMathMLNode(reader);
+		if (elem)
+			this.addElementToContent(elem);
+	}
+};
 
 var g_DefaultAutoCorrectMathFuncs =
 [
