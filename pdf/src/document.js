@@ -4154,6 +4154,7 @@ var CPresentation = CPresentation || function(){};
         editor.sync_CanCopyCutCallback(oCanCopyCut.copy, oCanCopyCut.cut);
     };
     CPDFDoc.prototype.CanCopyCut = function() {
+        let _t              = this;
         let oViewer         = editor.getDocumentRenderer();
         let oActiveForm     = this.activeForm;
         let oActiveAnnot    = this.mouseDownAnnot;
@@ -4182,9 +4183,26 @@ var CPresentation = CPresentation || function(){};
             }
         }
 
+        let oThumbnails = this.Viewer.thumbnails;
+
         if (oContent && oContent.IsSelectionUse() && !oContent.IsSelectionEmpty()) {
             isCanCopy = true;
             isCanCut = true;
+        }
+        else if (oThumbnails && oThumbnails.isInFocus) {
+            let aSelectedPagesIdxs = oThumbnails.selectedPages;
+            isCanCopy = true;
+            isCanCut = false;
+
+            // cant cut last page
+            if (this.Viewer.file.pages.length > 1) {
+                aSelectedPagesIdxs.forEach(function(idx) {
+                    let oPageInfo = _t.GetPageInfo(idx);
+                    if (false == oPageInfo.IsDeleteLock()) {
+                        isCanCut = true;
+                    }
+                });
+            }
         }
 
         return {
@@ -6119,15 +6137,24 @@ var CPresentation = CPresentation || function(){};
     CPDFDoc.prototype.GetPagesBinary = function(aIndexes, bytesToBase64) {
         let oDoc = this;
 
-        let aOriginIdexes = [];
+        let aOriginIndexes = [];
+        let nNewPagesStartIdx = this.Viewer.file.originalPagesCount;
+
         aIndexes.forEach(function(idx) {
             let oFilePage = oDoc.Viewer.file.pages[idx];
             if (oFilePage.originIndex != undefined) {
-                aOriginIdexes.push(oFilePage.originIndex);
+                aOriginIndexes.push(oFilePage.originIndex);
             }
-        })
+            else {
+                aOriginIndexes.push(nNewPagesStartIdx++);
+            }
+        });
 
-        let aUint8Array = this.Viewer.file.nativeFile["SplitPages"](aOriginIdexes); 
+        aOriginIndexes.sort(function(a, b) {
+            return a - b;
+        });
+
+        let aUint8Array = this.Viewer.file.nativeFile["SplitPages"](aOriginIndexes, oDoc.Viewer.SaveForSplit()); 
         let base64 = AscCommon.Base64.encode(aUint8Array, 0, aUint8Array.length);
         return bytesToBase64 != false ? base64 : aUint8Array;
     };
