@@ -3344,53 +3344,73 @@ ParaMath.fromMathML = function(xml, textPr)
 	
 	paraMath.Root.fromMathML(reader);
 	paraMath.Root.Correct_Content();
+	paraMath.SetParagraph(null);
+	
+	if (textPr)
+	{
+		textPr.RFonts.SetAll("Cambria Math");
+		paraMath.ApplyTextPr(textPr, undefined, true);
+	}
 	
 	return paraMath;
 };
 ParaMath.readMathMLNode = function(reader)
 {
-	let elem = null;
+	let elements = [];
 	let name = reader.GetNameNoNS();
 	switch (name)
 	{
 		case 'mi':
 		case 'mo':
 		case 'mn':
-			elem = new AscWord.Run(null, true);
-			elem.AddText(reader.GetText());
+			elements.push(new AscWord.Run(null, true));
+			elements[0].AddText(reader.GetText());
 			break;
 		case 'msub':
-			elem = new AscMath.DegreeSubSup.fromMathML(reader, DEGREE_SUBSCRIPT);
+			elements.push(new AscMath.DegreeSubSup.fromMathML(reader, DEGREE_SUBSCRIPT));
 			break;
 		case 'msup':
-			elem = new AscMath.DegreeSubSup.fromMathML(reader, DEGREE_SUPERSCRIPT);
+			elements.push(new AscMath.DegreeSubSup.fromMathML(reader, DEGREE_SUPERSCRIPT));
 			break;
 		case 'msubsup':
 		case 'munderover':
-			elem = new AscMath.DegreeSubSup.fromMathML(reader, DEGREE_SubSup);
+			elements.push(new AscMath.DegreeSubSup.fromMathML(reader, DEGREE_SubSup));
 			break;
 		case 'mfrac':
-			elem = AscMath.Fraction.fromMathML(reader);
+			elements.push(AscMath.Fraction.fromMathML(reader));
 			break;
 		case 'msqrt':
-			// TODO:
-			elem = AscMath.Radical.fromMathML(reader, false);
+			elements.push(AscMath.Radical.fromMathML(reader, false));
 			break;
-		case 'mroot': {
-			elem = AscMath.Radical.fromMathML(reader, true);
+		case 'mroot':
+			elements.push(AscMath.Radical.fromMathML(reader, true));
 			break;
-		}
+		case 'mrow':
+			elements = AscWord.ParaMath.readMathMLMRow(reader);
+			break;
 	}
 	
-	return elem;
+	return elements;
+};
+ParaMath.readMathMLMRow = function(reader)
+{
+	let result = []
+	let depth = reader.GetDepth();
+	while (reader.ReadNextSiblingNode(depth))
+	{
+		result = result.concat(AscWord.ParaMath.readMathMLNode(reader));
+	}
+	return result;
 };
 ParaMath.readMathMLContent = function(reader)
 {
 	let mathContent = new CMathContent();
-	let elem = ParaMath.readMathMLNode(reader);
+	let elements = AscWord.ParaMath.readMathMLNode(reader);
 	
-	if (elem)
-		mathContent.addElementToContent(elem);
+	for (let i = 0; i < elements.length; ++i)
+	{
+		mathContent.addElementToContent(elements[i]);
+	}
 	
 	mathContent.Correct_Content(true);
 	return mathContent;

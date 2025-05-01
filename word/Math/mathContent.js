@@ -6371,9 +6371,11 @@ CMathContent.prototype.fromMathML = function(reader)
 	let depth = reader.GetDepth();
 	while (reader.ReadNextSiblingNode(depth))
 	{
-		let elem = AscWord.ParaMath.readMathMLNode(reader);
-		if (elem)
-			this.addElementToContent(elem);
+		let elements = AscWord.ParaMath.readMathMLNode(reader);
+		for (let i = 0; i < elements.length; ++i)
+		{
+			this.addElementToContent(elements[i]);
+		}
 	}
 };
 
