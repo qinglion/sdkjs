@@ -733,11 +733,50 @@ CStyle.prototype =
 //-----------------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------------
-    Document_Get_AllFontNames : function(AllFonts)
-    {
-        if ( undefined != this.TextPr )
-            this.TextPr.Document_Get_AllFontNames(AllFonts);
-    },
+	Document_Get_AllFontNames : function(allFonts)
+	{
+		if (this.TextPr)
+			this.TextPr.Document_Get_AllFontNames(allFonts);
+		
+		if (this.TableBand1Horz && this.TableBand1Horz.TextPr)
+			this.TableBand1Horz.TextPr.Document_Get_AllFontNames(allFonts);
+		
+		if (this.TableBand1Vert && this.TableBand1Vert.TextPr)
+			this.TableBand1Vert.TextPr.Document_Get_AllFontNames(allFonts);
+		
+		if (this.TableBand2Horz && this.TableBand2Horz.TextPr)
+			this.TableBand2Horz.TextPr.Document_Get_AllFontNames(allFonts);
+		
+		if (this.TableBand2Vert && this.TableBand2Vert.TextPr)
+			this.TableBand2Vert.TextPr.Document_Get_AllFontNames(allFonts);
+		
+		if (this.TableFirstCol && this.TableFirstCol.TextPr)
+			this.TableFirstCol.TextPr.Document_Get_AllFontNames(allFonts);
+		
+		if (this.TableFirstRow && this.TableFirstRow.TextPr)
+			this.TableFirstRow.TextPr.Document_Get_AllFontNames(allFonts);
+		
+		if (this.TableLastCol && this.TableLastCol.TextPr)
+			this.TableLastCol.TextPr.Document_Get_AllFontNames(allFonts);
+		
+		if (this.TableLastRow && this.TableLastRow.TextPr)
+			this.TableLastRow.TextPr.Document_Get_AllFontNames(allFonts);
+		
+		if (this.TableTLCell && this.TableTLCell.TextPr)
+			this.TableTLCell.TextPr.Document_Get_AllFontNames(allFonts);
+		
+		if (this.TableTRCell && this.TableTRCell.TextPr)
+			this.TableTRCell.TextPr.Document_Get_AllFontNames(allFonts);
+		
+		if (this.TableBLCell && this.TableBLCell.TextPr)
+			this.TableBLCell.TextPr.Document_Get_AllFontNames(allFonts);
+		
+		if (this.TableBRCell && this.TableBRCell.TextPr)
+			this.TableBRCell.TextPr.Document_Get_AllFontNames(allFonts);
+		
+		if (this.TableWholeTable && this.TableWholeTable.TextPr)
+			this.TableWholeTable.TextPr.Document_Get_AllFontNames(allFonts);
+	},
 
 	private_CreateDefaultUnifillColor : function()
 	{
