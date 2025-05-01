@@ -4372,7 +4372,7 @@ CDocumentContent.prototype.MoveCursorToStartOfLine = function(AddToSelect)
 };
 CDocumentContent.prototype.MoveCursorToXY = function(X, Y, AddToSelect, bRemoveOldSelection, CurPage)
 {
-	if (this.Pages.length <= 0)
+	if (!this.IsRecalculated())
 		return;
 
 	if (undefined !== CurPage)
@@ -6224,6 +6224,9 @@ CDocumentContent.prototype.RemoveSelection = function(bNoCheckDrawing)
 };
 CDocumentContent.prototype.DrawSelectionOnPage = function(PageIndex, clipInfo)
 {
+	if (!this.IsRecalculated())
+		return;
+	
     var CurPage = PageIndex;
     if (CurPage < 0 || CurPage >= this.Pages.length)
         return;
@@ -6293,7 +6296,7 @@ CDocumentContent.prototype.DrawSelectionOnPage = function(PageIndex, clipInfo)
 };
 CDocumentContent.prototype.Selection_SetStart = function(X, Y, CurPage, MouseEvent)
 {
-	if (this.Pages.length <= 0)
+	if (!this.IsRecalculated())
 		return;
 
 	if (CurPage < 0)
@@ -6453,7 +6456,7 @@ CDocumentContent.prototype.Selection_SetStart = function(X, Y, CurPage, MouseEve
 // Если bEnd = true, тогда это конец селекта.
 CDocumentContent.prototype.Selection_SetEnd = function(X, Y, CurPage, MouseEvent)
 {
-	if (this.Pages.length <= 0)
+	if (!this.IsRecalculated())
 		return;
 
 	if (CurPage < 0)
@@ -7160,6 +7163,9 @@ CDocumentContent.prototype.DistributeTableCells = function(isHorizontally)
 //-----------------------------------------------------------------------------------
 CDocumentContent.prototype.Internal_GetContentPosByXY = function(X, Y, PageNum)
 {
+	if (!this.IsRecalculated())
+		return;
+	
     if (undefined === PageNum || null === PageNum)
         PageNum = this.CurPage;
 
@@ -8521,7 +8527,7 @@ CDocumentContent.prototype.RemoveTextSelection = function()
 };
 CDocumentContent.prototype.CanUpdateTarget = function(CurPage)
 {
-	if (this.Pages.length <= 0)
+	if (!this.IsRecalculated())
 		return false;
 
 	if (this.Pages.length <= CurPage)
