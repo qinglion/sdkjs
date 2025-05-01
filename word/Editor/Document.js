@@ -410,7 +410,6 @@ function CDocumentRecalculateState()
     this.ResetStartElement = false;
     this.MainStartPos      = -1;
 
-    this.UseRecursion = true;
     this.Continue     = false; // параметр сигнализирующий, о том что нужно продолжить пересчет (для нерекурсивного метода)
 
 	this.ScrollToTarget = true;
@@ -3347,12 +3346,8 @@ CDocument.prototype.Is_OnRecalculate = function()
 CDocument.prototype.RecalculateAllAtOnce = function(isFromStart, nPagesCount)
 {
 	//var nStartTime = new Date().getTime();
-
-	let isUseRecursion = this.FullRecalc.UseRecursion;
-
-	this.FullRecalc.UseRecursion = false;
-	this.FullRecalc.Continue     = false;
-
+	
+	this.FullRecalc.Continue = false;
 	if (isFromStart)
 	{
 		this.Reset_RecalculateCache();
@@ -3377,9 +3372,7 @@ CDocument.prototype.RecalculateAllAtOnce = function(isFromStart, nPagesCount)
 		if (undefined !== nPagesCount && null !== nPagesCount && nPagesCount > 0 && this.FullRecalc.PageIndex >= nPagesCount + 1)
 			break;
 	}
-
-	this.FullRecalc.UseRecursion = isUseRecursion;
-
+	
 	//console.log("RecalcTime: " + ((new Date().getTime() - nStartTime) / 1000));
 };
 /**
@@ -3726,7 +3719,6 @@ CDocument.prototype.private_Recalculate = function(_RecalcData, isForceStrictRec
 };
 CDocument.prototype.ContinueRecalculationLoop = function()
 {
-	this.FullRecalc.UseRecursion = false;
 	while (true)
 	{
 		this.FullRecalc.Continue = false;
@@ -4044,45 +4036,7 @@ CDocument.prototype.Recalculate_Page = function()
                 if (PrevSectInfo !== CurSectInfo)
                     this.FullRecalc.ResetStartElement = true;
 
-				if (this.FullRecalc.UseRecursion)
-				{
-					if (window["NATIVE_EDITOR_ENJINE_SYNC_RECALC"] === true)
-					{
-						if (this.private_IsStartTimeoutOnRecalc(PageIndex))
-						{
-							if (window["native"] && window["native"]["WC_CheckSuspendRecalculate"] !== undefined)
-							{
-								//if (window["native"]["WC_CheckSuspendRecalculate"]())
-								//    return;
-
-								this.FullRecalc.Id             = setTimeout(Document_Recalculate_Page, 10);
-								this.FullRecalc.TimerStartPage = PageIndex + 1;
-								return;
-							}
-						}
-
-						this.Recalculate_Page();
-						return;
-					}
-
-
-					if (this.private_IsStartTimeoutOnRecalc(PageIndex))
-					{
-						// console.log("Page " + _PageIndex);
-						// console.log("Pages delta " + (PageIndex + 1 - this.FullRecalc.TimerStartPage));
-						this.FullRecalc.Id             = setTimeout(Document_Recalculate_Page, 20);
-						this.FullRecalc.TimerStartPage = PageIndex + 1;
-					}
-					else
-					{
-						this.Recalculate_Page();
-					}
-				}
-				else
-				{
-					this.FullRecalc.Continue = true;
-				}
-
+				this.FullRecalc.Continue = true;
                 return;
             }
         }
@@ -4823,44 +4777,7 @@ CDocument.prototype.Recalculate_PageColumn                   = function()
         this.FullRecalc.ResetStartElement = _bResetStartElement;
         this.FullRecalc.MainStartPos      = _StartIndex;
         this.FullRecalc.Endnotes          = _bEndnotesContinue;
-
-        if (this.FullRecalc.UseRecursion)
-		{
-            if (window["NATIVE_EDITOR_ENJINE_SYNC_RECALC"] === true)
-            {
-				if (this.private_IsStartTimeoutOnRecalc(_PageIndex))
-                {
-                    if (window["native"] && window["native"]["WC_CheckSuspendRecalculate"] !== undefined)
-					{
-						//if (window["native"]["WC_CheckSuspendRecalculate"]())
-						//    return;
-
-						this.FullRecalc.Id             = setTimeout(Document_Recalculate_Page, 10);
-						this.FullRecalc.TimerStartPage = _PageIndex;
-						return;
-					}
-                }
-
-                this.Recalculate_Page();
-                return;
-            }
-
-			if (this.private_IsStartTimeoutOnRecalc(_PageIndex))
-			{
-				// console.log("Page " + _PageIndex);
-				// console.log("Pages delta " + (_PageIndex - this.FullRecalc.TimerStartPage));
-				this.FullRecalc.Id             = setTimeout(Document_Recalculate_Page, 20);
-				this.FullRecalc.TimerStartPage = _PageIndex;
-			}
-			else
-			{
-				this.Recalculate_Page();
-			}
-		}
-		else
-		{
-			this.FullRecalc.Continue = true;
-		}
+		this.FullRecalc.Continue          = true;
 	}
 	else
 	{
@@ -23607,14 +23524,12 @@ CDocument.prototype.private_AddRefToBookmark = function(sBookmarkName, nType, bH
     if(nType === Asc.c_oAscDocumentRefenceToType.PageNum)
     {
         this.FullRecalc.Continue = false;
-        this.FullRecalc.UseRecursion = false;
         this.private_Recalculate(undefined, true);
         while (this.FullRecalc.Continue)
         {
             this.FullRecalc.Continue = false;
             this.Recalculate_Page();
         }
-        this.FullRecalc.UseRecursion = true;
         oComplexField.Update(false);
     }
     return oComplexField;
@@ -23727,14 +23642,12 @@ CDocument.prototype.private_AddNoteRefToBookmark = function(sBookmarkName, nType
     if(nType !== Asc.c_oAscDocumentRefenceToType.AboveBelow)
     {
         this.FullRecalc.Continue = false;
-        this.FullRecalc.UseRecursion = false;
         this.private_Recalculate(undefined, true);
         while (this.FullRecalc.Continue)
         {
             this.FullRecalc.Continue = false;
             this.Recalculate_Page();
         }
-        this.FullRecalc.UseRecursion = true;
         oComplexField.Update(false);
     }
     return oComplexField;
