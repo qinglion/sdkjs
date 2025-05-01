@@ -12681,6 +12681,16 @@ background-repeat: no-repeat;\
 
 		return oMath.IsInlineMode();
 	};
+	asc_docs_api.prototype.asc_AddMathML = function(xml)
+	{
+		let logicDocument = this.private_GetLogicDocument();
+		AscCommon.g_font_loader.LoadFonts(["Cambria Math"],
+			function()
+			{
+				logicDocument.AddMathML(xml);
+			}
+		);
+	};
 	asc_docs_api.prototype.asc_GetAllNumberedParagraphs = function()
 	{
 		var oLogicDocument = this.private_GetLogicDocument();
@@ -15172,7 +15182,7 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype['asc_ConvertEquationToMath']                 = asc_docs_api.prototype.asc_ConvertEquationToMath;
 	asc_docs_api.prototype['asc_ConvertMathDisplayMode']                = asc_docs_api.prototype.asc_ConvertMathDisplayMode;
 	asc_docs_api.prototype['asc_IsInlineMath']                          = asc_docs_api.prototype.asc_IsInlineMath;
-
+	asc_docs_api.prototype['asc_AddMathML']                             = asc_docs_api.prototype.asc_AddMathML;
 
 	//cross-references
 	asc_docs_api.prototype['asc_GetAllNumberedParagraphs']              = asc_docs_api.prototype.asc_GetAllNumberedParagraphs;

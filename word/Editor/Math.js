@@ -3363,14 +3363,20 @@ ParaMath.readMathMLNode = function(reader)
 		case 'mi':
 		case 'mo':
 		case 'mn':
-			elements.push(new AscWord.Run(null, true));
-			elements[0].AddText(reader.GetText());
+			let text = reader.GetText();
+			text = text.replaceAll(String.fromCharCode(8290), ""); // invisible *
+			text = text.replaceAll(String.fromCharCode(8292), ""); // invisible +
+			if (text && text.length)
+			{
+				elements.push(new AscWord.Run(null, true));
+				elements[0].AddText(text);
+			}
 			break;
 		case 'msub':
-			elements.push(new AscMath.DegreeSubSup.fromMathML(reader, DEGREE_SUBSCRIPT));
+			elements.push(new AscMath.Degree.fromMathML(reader, DEGREE_SUBSCRIPT));
 			break;
 		case 'msup':
-			elements.push(new AscMath.DegreeSubSup.fromMathML(reader, DEGREE_SUPERSCRIPT));
+			elements.push(new AscMath.Degree.fromMathML(reader, DEGREE_SUPERSCRIPT));
 			break;
 		case 'msubsup':
 		case 'munderover':
