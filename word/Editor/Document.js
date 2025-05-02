@@ -16483,6 +16483,10 @@ CDocument.prototype.Get_DocumentPositionInfoForCollaborative = function()
 };
 CDocument.prototype.Update_ForeignCursor = function(CursorInfo, UserId, Show, UserShortId)
 {
+	// bug 70414
+	if (this.IsFillingOFormMode())
+		return;
+	
 	if (!this.Api.User)
 		return;
 

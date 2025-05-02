@@ -13888,6 +13888,9 @@ background-repeat: no-repeat;\
 				drawingDocument.FirePaint();
 			}
 		}
+		
+		if (oLogicDocument.IsFillingOFormMode())
+			AscCommon.CollaborativeEditing.Remove_AllForeignCursors();
 	};
 	asc_docs_api.prototype.isShowShapeAdjustments = function()
 	{
