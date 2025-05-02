@@ -1691,6 +1691,12 @@ CDocumentContent.prototype.CheckFormViewWindow = function()
 		else if (nCursorT + nCursorH > oFormBounds.H - nPad)
 			nDy = oFormBounds.H - nPad - nCursorT - nCursorH;
 	}
+	
+	// For multiline form we don't allow horizontal shift, for not multiline - don't allow vertical shift
+	if (oForm.IsMultiLineForm())
+		nDx = 0;
+	else
+		nDy = 0;
 
 	if (Math.abs(nDx) > 0.001 || Math.abs(nDy) > 0.001)
 	{
