@@ -2516,34 +2516,40 @@ ParaRun.prototype.IsContentSuitableForParagraphSimpleChanges = function()
 // Возвращаем строку и отрезок, в котором произошли простейшие изменения
 ParaRun.prototype.Get_SimpleChanges_ParaPos = function(Type, Pos)
 {
-    var CurLine  = 0;
-    var CurRange = 0;
-
-    var LinesCount = this.protected_GetLinesCount();
-    for (; CurLine < LinesCount; CurLine++)
-    {
-        var RangesCount = this.protected_GetRangesCount(CurLine);
-        for (CurRange = 0; CurRange < RangesCount; CurRange++)
-        {
-            var RangeStartPos = this.protected_GetRangeStartPos(CurLine, CurRange);
-            var RangeEndPos   = this.protected_GetRangeEndPos(CurLine, CurRange);
-
-            if  ( ( AscDFH.historyitem_ParaRun_AddItem === Type && Pos < RangeEndPos && Pos >= RangeStartPos ) || ( AscDFH.historyitem_ParaRun_RemoveItem === Type && Pos < RangeEndPos && Pos >= RangeStartPos ) || ( AscDFH.historyitem_ParaRun_RemoveItem === Type && Pos >= RangeEndPos && CurLine === LinesCount - 1 && CurRange === RangesCount - 1 ) )
-            {
-                // Если отрезок остается пустым, тогда надо все заново пересчитывать
-                if ( RangeStartPos === RangeEndPos )
-                    return null;
-
-                return new CParaPos( ( CurLine === 0 ? CurRange + this.StartRange : CurRange ), CurLine + this.StartLine, 0, 0 );
-            }
-        }
-    }
-
-    // Если отрезок остается пустым, тогда надо все заново пересчитывать
-    if (this.protected_GetRangeStartPos(0, 0) === this.protected_GetRangeEndPos(0, 0))
-        return null;
-
-    return new CParaPos( this.StartRange, this.StartLine, 0, 0 );
+	if (AscDFH.historyitem_ParaRun_AddItem !== Type && AscDFH.historyitem_ParaRun_RemoveItem !== Type)
+		return null;
+	
+	if (Pos < this.protected_GetRangeStartPos(0, 0))
+	{
+		// Если отрезок остается пустым, тогда надо все заново пересчитывать
+		if (this.protected_GetRangeStartPos(0, 0) === this.protected_GetRangeEndPos(0, 0))
+			return null;
+		
+		return new CParaPos(this.StartRange, this.StartLine, 0, 0);
+	}
+	else
+	{
+		for (let curLine = 0, lineCount = this.protected_GetLinesCount(); curLine < lineCount; ++curLine)
+		{
+			for (let curRange = 0, rangeCount = this.protected_GetRangesCount(curLine); curRange < rangeCount; ++curRange)
+			{
+				let rangeStartPos = this.protected_GetRangeStartPos(curLine, curRange);
+				let rangeEndPos   = this.protected_GetRangeEndPos(curLine, curRange);
+				
+				if ((rangeStartPos <= Pos && Pos < rangeEndPos)
+					|| (Pos >= rangeEndPos && curLine === lineCount - 1 && curRange === rangeCount - 1))
+				{
+					// Если отрезок остается пустым, тогда надо все заново пересчитывать
+					if (rangeStartPos === rangeEndPos)
+						return null;
+					
+					return new CParaPos((curLine === 0 ? curRange + this.StartRange : curRange), curLine + this.StartLine, 0, 0);
+				}
+			}
+		}
+	}
+	
+	return null;
 };
 
 ParaRun.prototype.Split = function (ContentPos, Depth)
