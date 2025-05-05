@@ -2295,6 +2295,10 @@
         
         AscCommon.History.Add(new CChangesPDFFormTextFont(this, this._textFontActual, sFontName));
 
+        if (false == Asc.editor.getDocumentRenderer().IsOpenFormsInProgress) {
+            this._textFont = sFontName;
+        }
+        
         this._textFontActual = sFontName;
 
         if (this.content)
@@ -2304,7 +2308,7 @@
 			this.contentFormat.SetFont(sFontName);
         
         this.SetWasChanged(true);
-        this.AddToRedraw();
+        this.SetNeedRecalc();
     };
     CBaseField.prototype.GetTextFontActual = function() {
         return this._textFontActual;
@@ -2328,6 +2332,7 @@
             this.contentFormat.SetItalic(oStyle.italic);
         }
     };
+    CBaseField.prototype.GetAlign = function() {};
     CBaseField.prototype.GetFontStyle = function() {
         return this._fontStyle;
     };
