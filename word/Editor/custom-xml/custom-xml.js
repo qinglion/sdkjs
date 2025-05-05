@@ -54,6 +54,7 @@
 			: new CustomXmlPrefixMappings(nsManager);
 
 		this.addContentByXMLString(content);
+		this.m_aCustomXmlData = '';
 
 		AscCommon.g_oTableId.Add(this, this.Id);
 	}
@@ -102,7 +103,6 @@
 
 		Writer.WriteString2(this.Id);
 		Writer.WriteString2(this.itemId);
-		Writer.WriteString2(this.getText());
 		this.nsManager.Write_ToBinary2(Writer);
 	};
 	CustomXml.prototype.Read_FromBinary2 = function(Reader)
@@ -112,8 +112,6 @@
 		// Array of Strings : массив с Id элементов
 		this.Id = Reader.GetString2();
 		this.itemId = Reader.GetString2();
-		this.addContentByXMLString(Reader.GetString2());
-
 		this.Parent = editor.WordControl.m_oLogicDocument.getCustomXmlManager();
 		this.nsManager.Read_FromBinary2(Reader);
 	};
@@ -124,6 +122,26 @@
 	CustomXml.prototype.Read_FromBinary = function (Reader) {
 		this.Read_FromBinary2(Reader);
 	};
+	CustomXml.prototype.writeContent = function(strPrevXml, strCustomXml)
+	{
+		const BINARY_PART_HISTORY_LIMIT = 1048576;
+		const maxLen = Math.max(strCustomXml.length, strPrevXml.length);
+		const oldParts = [];
+		const newParts = [];
+		const amountOfParts = Math.ceil(maxLen / BINARY_PART_HISTORY_LIMIT);
+		for (let i = 0; i < amountOfParts; i += 1) {
+			oldParts.push(strPrevXml.slice(i * BINARY_PART_HISTORY_LIMIT, (i + 1) * BINARY_PART_HISTORY_LIMIT));
+			newParts.push(strCustomXml.slice(i * BINARY_PART_HISTORY_LIMIT, (i + 1) * BINARY_PART_HISTORY_LIMIT));
+		}
+
+		AscCommon.History.Add(new CChangesStartCustomXml(this, null, null, false));
+		for (let i = 0; i < amountOfParts; i += 1) {
+			AscCommon.History.Add(new CChangesPartCustomXml(this, oldParts[i], newParts[i], false));
+		}
+		AscCommon.History.Add(new CChangesEndCustomXml(this, null, null, false));
+		this.m_aBinaryData = strCustomXml;
+	};
+
 	/**
 	 * Set UID of CustomXML
 	 * @param {uId} itemId
@@ -357,7 +375,7 @@
 		let strCurrentData	= this.getText();
 
 		if (strLast !== strCurrentData)
-			AscCommon.History.Add(new CChangesCustomXMLChange(this, this.lastContent.content, this.content));
+			this.writeContent(strLast, strCurrentData);
 
 		this.lastContent = undefined;
 	};

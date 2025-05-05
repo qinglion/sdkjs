@@ -116,6 +116,7 @@
 	{
 		let oXML = new AscWord.CustomXml(this, false, uri ? [uri] : null, content);
 		this.add(oXML);
+		oXML.writeContent("", oXML.getText());
 		return oXML;
 	};
 	/**

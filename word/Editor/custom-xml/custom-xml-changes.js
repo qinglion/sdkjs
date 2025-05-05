@@ -35,11 +35,9 @@
 AscDFH.changesFactory[AscDFH.historyitem_type_CustomXML_Add]			= CChangesCustomXmlAdd;
 AscDFH.changesFactory[AscDFH.historyitem_type_CustomXML_Remove]			= CChangesCustomXmlRemove;
 
-AscDFH.changesFactory[AscDFH.historyitem_type_ChangeCustomXML]			= CChangesCustomXMLChange;
-
-AscDFH.changesRelationMap[AscDFH.historyitem_type_ChangeCustomXML]		= [
-	AscDFH.historyitem_type_ChangeCustomXML
-];
+AscDFH.changesFactory[AscDFH.historyitem_type_ChangeCustomXMLStart]			= CChangesStartCustomXml;
+AscDFH.changesFactory[AscDFH.historyitem_type_ChangeCustomXMLPart]			= CChangesPartCustomXml;
+AscDFH.changesFactory[AscDFH.historyitem_type_ChangeCustomXMLEnd]			= CChangesEndCustomXml;
 
 AscDFH.changesRelationMap[AscDFH.historyitem_type_CustomXML_Add]		= [
 	AscDFH.historyitem_type_CustomXML_Add,
@@ -51,39 +49,68 @@ AscDFH.changesRelationMap[AscDFH.historyitem_type_CustomXML_Remove]		= [
 	AscDFH.historyitem_type_CustomXML_Remove
 ];
 
-/**
- * @constructor
- * @extends {AscDFH.CChangesBaseProperty}
- */
-function CChangesCustomXMLChange(Class, Old, New)
-{
-	AscDFH.CChangesBaseProperty.call(this, Class, Old, New);
+function CChangesStartCustomXml(Class, Old, New, Color) {
+	AscDFH.CChangesBaseProperty.call(this, Class, Old, New, Color);
 }
-CChangesCustomXMLChange.prototype = Object.create(AscDFH.CChangesBaseProperty.prototype);
-CChangesCustomXMLChange.prototype.constructor = CChangesCustomXMLChange;
-CChangesCustomXMLChange.prototype.Type = AscDFH.historyitem_type_ChangeCustomXML;
-CChangesCustomXMLChange.prototype.WriteToBinary = function(Writer)
-{
-	// Variable : New data
-	// Variable : Old data
-	this.New.Write_ToBinary2(Writer);
-	this.Old.Write_ToBinary2(Writer);
-};
-CChangesCustomXMLChange.prototype.ReadFromBinary = function(Reader)
-{
-	// Variable : New data
-	// Variable : Old data
-	this.New = new AscWord.CustomXmlContent(undefined, undefined, this.Class);
-	this.Old = new AscWord.CustomXmlContent();
-	this.New.Read_FromBinary2(Reader);
-	this.Old.Read_FromBinary2(Reader);
-};
-CChangesCustomXMLChange.prototype.private_SetValue = function(Value)
-{
-	this.Class.content = Value;
+CChangesStartCustomXml.prototype = Object.create(AscDFH.CChangesBaseProperty.prototype);
+CChangesStartCustomXml.prototype.constructor = CChangesStartCustomXml;
+CChangesStartCustomXml.prototype.Type = AscDFH.historyitem_type_ChangeCustomXMLStart;
+CChangesStartCustomXml.prototype.Undo = function () {
+	if (!this.Class.partsOfCustomXml) {
+		return this.Redo();
+	}
 
-	if (this.Class.oContentLink)
-		this.Class.oContentLink.checkDataBinding();
+	this.Class.m_aCustomXmlData = this.Class.partsOfCustomXml.reverse().join("");
+	this.Class.addContentByXMLString(this.Class.m_aCustomXmlData);
+	delete this.Class.partsOfCustomXml;
+};
+CChangesStartCustomXml.prototype.Redo = function () {
+	if (this.Class.partsOfCustomXml) {
+		return this.Undo();
+	}
+	this.Class.partsOfCustomXml = [];
+};
+
+function CChangesPartCustomXml(Class, Old, New, Color) {
+	AscDFH.CChangesBaseProperty.call(this, Class, Old, New, Color);
+}
+CChangesPartCustomXml.prototype = Object.create(AscDFH.CChangesBaseProperty.prototype);
+CChangesPartCustomXml.prototype.constructor = CChangesPartCustomXml;
+CChangesPartCustomXml.prototype.Type = AscDFH.historyitem_type_ChangeCustomXMLPart;
+CChangesPartCustomXml.prototype.private_SetValue = function (oPr) {
+	if (oPr.length) {
+		this.Class.partsOfCustomXml.push(oPr);
+	}
+};
+CChangesPartCustomXml.prototype.WriteToBinary = function (Writer) {
+	Writer.WriteString2(this.Old);
+	Writer.WriteString2(this.New);
+};
+CChangesPartCustomXml.prototype.ReadFromBinary = function (Reader) {
+	this.Old = Reader.GetString2();
+	this.New = Reader.GetString2();
+};
+
+function CChangesEndCustomXml(Class, Old, New, Color) {
+	AscDFH.CChangesBaseProperty.call(this, Class, Old, New, Color);
+}
+CChangesEndCustomXml.prototype = Object.create(AscDFH.CChangesBaseProperty.prototype);
+CChangesEndCustomXml.prototype.constructor = CChangesEndCustomXml;
+CChangesEndCustomXml.prototype.Type = AscDFH.historyitem_type_ChangeCustomXMLEnd;
+CChangesEndCustomXml.prototype.Undo = function () {
+	if (this.Class.partsOfCustomXml) {
+		return this.Redo();
+	}
+	this.Class.partsOfCustomXml = [];
+};
+CChangesEndCustomXml.prototype.Redo = function () {
+	if (!this.Class.partsOfCustomXml) {
+		return this.Undo();
+	}
+
+	this.Class.m_aCustomXmlData = this.Class.partsOfCustomXml.join("");
+	this.Class.addContentByXMLString(this.Class.m_aCustomXmlData);
+	delete this.Class.partsOfCustomXml;
 };
 
 /**

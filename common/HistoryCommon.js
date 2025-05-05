@@ -1441,6 +1441,9 @@
 	window['AscDFH'].historyitem_type_CustomXML_Add      = 72 << 16;
 	window['AscDFH'].historyitem_type_ChangeCustomXML    = 73 << 16;
 	window['AscDFH'].historyitem_type_CustomXML_Remove   = 74 << 16;
+	window['AscDFH'].historyitem_type_ChangeCustomXMLStart= 76 << 16;
+	window['AscDFH'].historyitem_type_ChangeCustomXMLPart = 77 << 16;
+	window['AscDFH'].historyitem_type_ChangeCustomXMLEnd  = 78 << 16;
 
 	window['AscDFH'].historyitem_type_CommonShape            = 1000 << 16; // Этот класс добавлен для элементов, у которых нет конкретного класса
 
