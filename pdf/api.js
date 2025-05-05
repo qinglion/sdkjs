@@ -648,7 +648,7 @@
 			AscFonts.IsCheckSymbols = false;
 		}, AscDFH.historydescription_Document_AddChart);
 	};
-	PDFEditorApi.prototype.asc_correctEnterText = function(oldValue, newValue) {
+	PDFEditorApi.prototype.asc_correctEnterText = function(oldCodePoints, newCodePoints) {
 		
 		if (!this.DocumentRenderer)
 			return false;
@@ -656,12 +656,58 @@
 		let viewer = this.DocumentRenderer;
 		let doc    = viewer.getPDFDoc();
 		
+		oldCodePoints = AscWord.CTextFormFormat.prototype.GetBuffer(oldCodePoints);
+		newCodePoints = AscWord.CTextFormFormat.prototype.GetBuffer(newCodePoints);
+
 		return doc.DoAction(function() {
 			let textController = doc.getTextController();
-			if (!textController)
+			if (!textController) {
 				return false;
+			}
+
+			let oContent = textController.GetDocContent();
+
+			let oldText = "";
+			for (let index = 0, count = oldCodePoints.length; index < count; ++index) {
+				oldText += String.fromCodePoint(oldCodePoints[index]);
+			}
+
+			let state    = oContent.GetSelectionState();
+			let paragraph= oContent.GetCurrentParagraph();
+			let startPos = paragraph.getCurrentPos();
+			let endPos   = startPos;
+
+			let paraSearchPos = new CParagraphSearchPos();
+
+			let maxShifts = oldCodePoints.length;
+			let selectedText;
+			oContent.StartSelectionFromCurPos();
+			while (maxShifts >= 0) {
+				paraSearchPos.Reset();
+				paragraph.Get_LeftPos(paraSearchPos, endPos);
+
+				if (!paraSearchPos.IsFound()) {
+					break;
+				}
+
+				endPos = paraSearchPos.GetPos().Copy();
+
+				paragraph.SetSelectionContentPos(startPos, endPos, false);
+				selectedText = paragraph.GetSelectedText(true);
+
+				if (!selectedText || selectedText === oldText) {
+					break;
+				}
+
+				maxShifts--;
+			}
+
+			if (selectedText !== oldText || doc.IsSelectionLocked(AscCommon.changestype_Paragraph_AddText, null, true, false)) {
+				oContent.SetSelectionState(state);
+				return false;
+			}
 			
-			return textController.CorrectEnterText(oldValue, newValue);
+			return textController.EnterText(newCodePoints, true);
 		}, AscDFH.historydescription_Document_AddLetter, this);
 	};
 	PDFEditorApi.prototype.asc_EditPage = function() {
