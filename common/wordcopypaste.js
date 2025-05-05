@@ -8166,7 +8166,8 @@ PasteProcessor.prototype =
 			}
 
 			//принудительно добавляю для математики шрифт Cambria Math
-			if (child && child.nodeName.toLowerCase() === "#comment" && this.isSupportPasteMathContent(child.nodeValue, true) && !this.pasteInExcel && this.apiEditor["asc_isSupportFeature"]("ooxml")) {
+			if ((child && (child.nodeName.toLowerCase() === "#comment" && this.isSupportPasteMathContent(child.nodeValue, true)
+				&& this.apiEditor["asc_isSupportFeature"]("ooxml")) || child.nodeName.toLowerCase() === "math") && !this.pasteInExcel) {
 				//TODO пока только в документы разрешаю вставку математики математику
 				var mathFont = "Cambria Math";
 				this.oFonts[mathFont] = {
@@ -9959,7 +9960,7 @@ PasteProcessor.prototype =
 		var prev = null;
 		for (var i = 0, length = this.aContent.length; i < length; ++i) {
 			var cur = this.aContent[i];
-			cur.Set_DocumentPrev(prev);
+			cur.Set_DocumentPrev && cur.Set_DocumentPrev(prev);
 			cur.Parent = oDoc;
 			if (prev)
 				prev.Set_DocumentNext(cur);
@@ -11856,6 +11857,15 @@ PasteProcessor.prototype =
 							pushMathContent(child);
 						}
 					}
+					return;
+				}
+
+				if (sChildNodeName === "math") {
+					let paraMath = AscWord.ParaMath.fromMathML(child.outerHTML);
+					bAddParagraph = oThis._Decide_AddParagraph(child, pPr, bAddParagraph);
+					let oAddedParaMath = paraMath;
+					oAddedParaMath.SetParagraph && oAddedParaMath.SetParagraph(oThis.oCurPar);
+					oThis._CommitElemToParagraph(oAddedParaMath);
 					return;
 				}
 
