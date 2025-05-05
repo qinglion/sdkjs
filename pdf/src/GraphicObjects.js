@@ -217,6 +217,7 @@
 
     CGraphicObjects.prototype.cursorMoveLeft = function(AddToSelect/*Shift*/, Word/*Ctrl*/) {
         let oViewer = Asc.editor.getDocumentRenderer();
+        let oDoc = Asc.editor.getPDFDoc()
 
         var target_text_object = AscFormat.getTargetTextObject(this);
         var oStartContent, oStartPara;
@@ -228,7 +229,6 @@
                     oStartPara = oStartContent.GetCurrentParagraph();
                 }
                 target_text_object.graphicObject.MoveCursorLeft(AddToSelect, Word);
-                // this.checkRedrawOnChangeCursorPosition(oStartContent, oStartPara);
             } else {
                 var content = this.getTargetDocContent(undefined, true);
                 if (content) {
@@ -237,10 +237,10 @@
                         oStartPara = oStartContent.GetCurrentParagraph();
                     }
                     content.MoveCursorLeft(AddToSelect, Word);
-                    // this.checkRedrawOnChangeCursorPosition(oStartContent, oStartPara);
                 }
             }
             oViewer.onUpdateOverlay();
+            oDoc.UpdateInterface();
         } else {
             if (this.selectedObjects.length === 0)
                 return;
@@ -250,7 +250,8 @@
     };
     CGraphicObjects.prototype.cursorMoveRight = function(AddToSelect, Word, bFromPaste) {
         let oViewer = Asc.editor.getDocumentRenderer();
-
+        let oDoc = Asc.editor.getPDFDoc();
+        
         var target_text_object = AscFormat.getTargetTextObject(this);
         var oStartContent, oStartPara;
         if (target_text_object) {
@@ -260,7 +261,6 @@
                     oStartPara = oStartContent.GetCurrentParagraph();
                 }
                 target_text_object.graphicObject.MoveCursorRight(AddToSelect, Word, bFromPaste);
-                // this.checkRedrawOnChangeCursorPosition(oStartContent, oStartPara);
             } else {
                 var content = this.getTargetDocContent(undefined, true);
                 if (content) {
@@ -269,10 +269,11 @@
                         oStartPara = oStartContent.GetCurrentParagraph();
                     }
                     content.MoveCursorRight(AddToSelect, Word, bFromPaste);
-                    // this.checkRedrawOnChangeCursorPosition(oStartContent, oStartPara);
                 }
             }
+
             oViewer.onUpdateOverlay();
+            oDoc.UpdateInterface();
         } else {
             if (this.selectedObjects.length === 0)
                 return;
@@ -284,6 +285,7 @@
 
     CGraphicObjects.prototype.cursorMoveUp = function(AddToSelect, Word) {
         let oViewer = Asc.editor.getDocumentRenderer();
+        let oDoc = Asc.editor.getPDFDoc();
 
         var target_text_object = AscFormat.getTargetTextObject(this);
         var oStartContent, oStartPara;
@@ -294,7 +296,6 @@
                     oStartPara = oStartContent.GetCurrentParagraph();
                 }
                 target_text_object.graphicObject.MoveCursorUp(AddToSelect);
-                // this.checkRedrawOnChangeCursorPosition(oStartContent, oStartPara);
             } else {
                 var content = this.getTargetDocContent(undefined, true);
                 if (content) {
@@ -303,10 +304,11 @@
                         oStartPara = oStartContent.GetCurrentParagraph();
                     }
                     content.MoveCursorUp(AddToSelect);
-                    // this.checkRedrawOnChangeCursorPosition(oStartContent, oStartPara);
                 }
             }
+
             oViewer.onUpdateOverlay();
+            oDoc.UpdateInterface();
         } else {
             if (this.selectedObjects.length === 0)
                 return;
@@ -316,6 +318,7 @@
 
     CGraphicObjects.prototype.cursorMoveDown = function(AddToSelect, Word) {
         let oViewer = Asc.editor.getDocumentRenderer();
+        let oDoc = Asc.editor.getPDFDoc();
 
         var target_text_object = AscFormat.getTargetTextObject(this);
         var oStartContent, oStartPara;
@@ -326,7 +329,6 @@
                     oStartPara = oStartContent.GetCurrentParagraph();
                 }
                 target_text_object.graphicObject.MoveCursorDown(AddToSelect);
-                // this.checkRedrawOnChangeCursorPosition(oStartContent, oStartPara);
             } else {
                 var content = this.getTargetDocContent(undefined, true);
                 if (content) {
@@ -335,10 +337,11 @@
                         oStartPara = oStartContent.GetCurrentParagraph();
                     }
                     content.MoveCursorDown(AddToSelect);
-                    // this.checkRedrawOnChangeCursorPosition(oStartContent, oStartPara);
                 }
             }
+            
             oViewer.onUpdateOverlay();
+            oDoc.UpdateInterface();
         } else {
             if (this.selectedObjects.length === 0)
                 return;

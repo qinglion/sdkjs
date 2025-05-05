@@ -795,6 +795,10 @@
         this.SetWasChanged(true);
     };
     CPushButtonField.prototype.DrawPressed = function() {
+        if (this.IsReadOnly()) {
+            return;
+        }
+
         this.SetPressed(true);
         this.AddToRedraw();
 
@@ -834,6 +838,10 @@
         }
     };
     CPushButtonField.prototype.DrawUnpressed = function() {
+        if (this.IsReadOnly()) {
+            return;
+        }
+
         this.SetPressed(false);
         this.AddToRedraw();
 
@@ -883,6 +891,10 @@
     CPushButtonField.prototype.DrawRollover = function() {
         // rollover состояние может быть только в push
         if (this.GetHighlight() != AscPDF.BUTTON_HIGHLIGHT_TYPES.push) {
+            return;
+        }
+
+        if (this.IsReadOnly()) {
             return;
         }
 
@@ -989,7 +1001,11 @@
         if (!this.content)
             return;
 
-        let aRect       = this.GetOrigRect();
+        let aRect = this.GetOrigRect();
+        if (!aRect) {
+            return;
+        }
+
         let X           = aRect[0];
         let Y           = aRect[1];
         let nWidth      = aRect[2] - aRect[0];
@@ -1179,7 +1195,13 @@
         else
             nImgType = undefined;
 
-        let originView      = this.GetOriginView(nImgType, oGraphicsPDF.GetDrawingPageW(), oGraphicsPDF.GetDrawingPageH());
+        let originView = this.GetOriginView(nImgType, oGraphicsPDF.GetDrawingPageW(), oGraphicsPDF.GetDrawingPageH());
+        if (!originView) {
+            this.DrawLocks(oGraphicsPDF);
+            this.DrawEdit(oGraphicsWord);
+            return;
+        }
+
         let oTr             = oGraphicsPDF.GetTransform();
         let highlightType   = this.GetHighlight();
 
@@ -1351,6 +1373,10 @@
         this.OnEndRollover();
     };
     CPushButtonField.prototype.buttonImportIcon = function() {
+        if (this.IsReadOnly()) {
+            return;
+        }
+        
         let Api             = editor;
         let oThis           = this;
         let oDoc            = this.GetDocument();

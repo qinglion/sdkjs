@@ -4589,6 +4589,9 @@ CParagraphContentWithParagraphLikeContent.prototype.GetElementsCount = function(
 };
 CParagraphContentWithParagraphLikeContent.prototype.PreDelete = function()
 {
+	if (this.Paragraph && this.Paragraph.isPreventedPreDelete())
+		return;
+	
 	for (var nIndex = 0, nCount = this.Content.length; nIndex < nCount; ++nIndex)
 	{
 		if (this.Content[nIndex] && this.Content[nIndex].PreDelete)

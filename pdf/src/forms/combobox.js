@@ -152,7 +152,11 @@
         if (!this.content)
             return;
 
-        let aRect       = this.GetOrigRect();
+        let aRect = this.GetOrigRect();
+        if (!aRect) {
+            return;
+        }
+
         let X           = aRect[0];
         let Y           = aRect[1];
         let nWidth      = aRect[2] - aRect[0];
@@ -289,6 +293,10 @@
             let hasOptions = aOptions && aOptions.length != 0;
 
             if (pageObject.x >= this._markRect.x1 && pageObject.x <= this._markRect.x2 && pageObject.y >= this._markRect.y1 && pageObject.y <= this._markRect.y2 && hasOptions) {
+                if (this.IsReadOnly()) {
+                    return;
+                }
+                
                 editor.sendEvent("asc_onShowPDFFormsActions", this, x, y);
                 this.content.MoveCursorToStartPos();
             }
@@ -618,7 +626,7 @@
     
     CComboBoxField.prototype.SetEditable = function(bValue) {
         let oParent = this.GetParent();
-        if (oParent && oParent.GetType() === this.GetType()) {
+        if (oParent && oParent.IsAllKidsWidgets()) {
             oParent.SetEditable(bValue);
         }
         else {
@@ -630,21 +638,21 @@
     };
     CComboBoxField.prototype.IsEditable = function(bInherit) {
         let oParent = this.GetParent();
-        if (bInherit !== false && oParent && oParent.GetType() === this.GetType())
+        if (bInherit !== false && oParent && oParent.IsAllKidsWidgets())
             return oParent.IsEditable();
 
         return this._editable;
     };
     CComboBoxField.prototype.IsCanEditText = function() {
         let oDoc = this.GetDocument();
-        if (oDoc.activeForm == this && this.IsEditable() && this.IsInForm())
+        if (oDoc.activeForm == this && this.IsEditable() && this.IsInForm() && !this.IsReadOnly())
             return true;
         
         return false;
     };
     CComboBoxField.prototype.AddOption = function(option, nPos) {
         let oParent = this.GetParent();
-        if (oParent && oParent.GetType() === this.GetType())
+        if (oParent && oParent.IsAllKidsWidgets())
             return oParent.AddOption(option, nPos);
 
         if (option == null) return;
@@ -674,7 +682,7 @@
     };
     CComboBoxField.prototype.RemoveOption = function(nPos) {
         let oParent = this.GetParent();
-        if (oParent && oParent.GetType() === this.GetType())
+        if (oParent && oParent.IsAllKidsWidgets())
             return oParent.RemoveOption(nPos);
 
         if (Number.isInteger(nPos) && nPos >= 0 && nPos < this._options.length) {

@@ -72,7 +72,7 @@
 
     CTextField.prototype.SetComb = function(bComb) {
         let oParent = this.GetParent();
-        if (oParent && oParent.GetType() === this.GetType()) {
+        if (oParent && oParent.IsAllKidsWidgets()) {
             return oParent.SetComb(bComb);
         }
 
@@ -120,7 +120,7 @@
     };
     CTextField.prototype.IsComb = function(bInherit) {
         let oParent = this.GetParent();
-        if (bInherit !== false && oParent && oParent.GetType() === this.GetType()) {
+        if (bInherit !== false && oParent && oParent.IsAllKidsWidgets()) {
             return oParent.IsComb();
         }
 
@@ -128,14 +128,14 @@
     };
     CTextField.prototype.IsCanEditText = function() {
         let oDoc = this.GetDocument();
-        if (oDoc.activeForm == this && this.IsInForm())
+        if (oDoc.activeForm == this && this.IsInForm() && !this.IsReadOnly())
             return true;
         
         return false;
     };
     CTextField.prototype.SetCharLimit = function(nChars) {
         let oParent = this.GetParent();
-        if (oParent && oParent.GetType() === this.GetType()) {
+        if (oParent && oParent.IsAllKidsWidgets()) {
             oParent.SetCharLimit(nChars);
             return false;
         }
@@ -171,7 +171,7 @@
     };
     CTextField.prototype.GetCharLimit = function(bInherit) {
         let oParent = this.GetParent();
-        if (bInherit !== false && oParent && oParent.GetType() === this.GetType()) {
+        if (bInherit !== false && oParent && oParent.IsAllKidsWidgets()) {
             return oParent.GetCharLimit();
         }
 
@@ -179,7 +179,7 @@
     };
     CTextField.prototype.SetDoNotScroll = function(bNot) {
         let oParent = this.GetParent();
-        if (oParent && oParent.GetType() === this.GetType()) {
+        if (oParent && oParent.IsAllKidsWidgets()) {
             oParent.SetDoNotScroll(bNot);
             return;
         }
@@ -192,14 +192,14 @@
     };
     CTextField.prototype.IsDoNotScroll = function(bInherit) {
         let oParent = this.GetParent();
-        if (bInherit !== false && oParent && oParent.GetType() === this.GetType())
+        if (bInherit !== false && oParent && oParent.IsAllKidsWidgets())
             return oParent.IsDoNotScroll();
 
         return this._doNotScroll;
     };
     CTextField.prototype.SetDoNotSpellCheck = function(bNot) {
         let oParent = this.GetParent();
-        if (oParent && oParent.GetType() === this.GetType()) {
+        if (oParent && oParent.IsAllKidsWidgets()) {
             oParent.SetDoNotSpellCheck(bNot);
             return;
         }
@@ -212,14 +212,14 @@
     };
     CTextField.prototype.IsDoNotSpellCheck = function(bInherit) {
         let oParent = this.GetParent();
-        if (bInherit !== false && oParent && oParent.GetType() === this.GetType())
+        if (bInherit !== false && oParent && oParent.IsAllKidsWidgets())
             return oParent.IsDoNotSpellCheck();
 
         return this._doNotSpellCheck;
     };
     CTextField.prototype.SetFileSelect = function(bFileSelect) {
         let oParent = this.GetParent();
-        if (oParent && oParent.GetType() === this.GetType()) {
+        if (oParent && oParent.IsAllKidsWidgets()) {
             oParent.SetFileSelect(bFileSelect);
             return;
         }
@@ -243,14 +243,14 @@
     };
     CTextField.prototype.IsFileSelect = function(bInherit) {
         let oParent = this.GetParent();
-        if (bInherit !== false && oParent && oParent.GetType() === this.GetType())
+        if (bInherit !== false && oParent && oParent.IsAllKidsWidgets())
             return oParent.IsFileSelect();
 
         return this._fileSelect;
     };
     CTextField.prototype.SetMultiline = function(bMultiline) {
         let oParent = this.GetParent();
-        if (oParent && oParent.GetType() === this.GetType()) {
+        if (oParent && oParent.IsAllKidsWidgets()) {
             oParent.SetMultiline(bMultiline);
             return;
         }
@@ -296,14 +296,14 @@
     };
     CTextField.prototype.IsMultiline = function(bInherit) {
         let oParent = this.GetParent();
-        if (bInherit !== false && oParent && oParent.GetType() === this.GetType())
+        if (bInherit !== false && oParent && oParent.IsAllKidsWidgets())
             return oParent.IsMultiline();
 
         return this._multiline;
     };
     CTextField.prototype.SetPassword = function(bPassword) {
         let oParent = this.GetParent();
-        if (oParent && oParent.GetType() === this.GetType())
+        if (oParent && oParent.IsAllKidsWidgets())
             return oParent.SetPassword(bPassword);
         
         if (this.IsPassword() == bPassword) {
@@ -323,7 +323,7 @@
     };
     CTextField.prototype.IsPassword = function(bInherit) {
         let oParent = this.GetParent();
-        if (bInherit !== false && oParent && oParent.GetType() === this.GetType())
+        if (bInherit !== false && oParent && oParent.IsAllKidsWidgets())
             return oParent.IsPassword();
 
         return this._password;
@@ -636,7 +636,7 @@
     };
     CTextField.prototype.SetDrawFromStream = function(bFromStream) {
         let nFormatType = this.GetFormatType();
-        if (this._bDrawFromStream && false == bFromStream && false == [AscPDF.FormatType.REGULAR, AscPDF.FormatType.NONE].includes(nFormatType)) {
+        if (this._bDrawFromStream && false == bFromStream && false == [AscPDF.FormatType.REGULAR, AscPDF.FormatType.NONE].includes(nFormatType) && this.IsChanged()) {
             this.Commit();
         }
 
@@ -1092,7 +1092,11 @@
         if (!this.content)
             return;
 
-        let aRect       = this.GetOrigRect();
+        let aRect = this.GetOrigRect();
+        if (!aRect) {
+            return;
+        }
+
         let X           = aRect[0];
         let Y           = aRect[1];
         let nWidth      = aRect[2] - aRect[0];
@@ -1207,6 +1211,10 @@
         this._scrollInfo = oInfo;
     };
     CTextField.prototype.UpdateScroll = function(bShow) {
+        if (bShow && this.IsEditMode()) {
+            return;
+        }
+
         if (this.IsMultiline() == false)
             return;
         
@@ -1647,10 +1655,8 @@
         }
 
         if (this.GetParentValue() != sNewValue) {
-            this.RevertContentView();
             this.SetParentValue(sNewValue);
         }
-
         // когда выравнивание посередине или справа, то после того
         // как ширина контента будет больше чем размер формы, выравнивание становится слева, пока текста вновь не станет меньше чем размер формы
         aFields.forEach(function(field) {
@@ -1735,7 +1741,7 @@
             return {nSelStart : preText.length, nSelEnd : preText.length + selectedText.length};
         }
 
-        let sValue      = this.GetValue(true);
+        let sValue = this.GetValue(true);
         let oSelRange   = GetSelectionRange(this.content.GetElement(0));
         let nSelStart   = oSelRange.nSelStart;
         let nSelEnd     = oSelRange.nSelEnd;
@@ -1774,6 +1780,9 @@
             "selEnd": nSelEnd
         });
 
+        if (!sValue && aChars.length == 0) {
+            return isCanEnter;
+        }
         if (oActionRunScript) {
             oActionRunScript.RunScript();
             isCanEnter = oDoc.event["rc"];

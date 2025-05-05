@@ -370,16 +370,28 @@
         this.SetHovered(false);
     };
     CBaseCheckBoxField.prototype.DrawPressed = function() {
+        if (this.IsReadOnly()) {
+            return;
+        }
+
         this.SetPressed(true);
         editor.getDocumentRenderer()._paint();
     };
     CBaseCheckBoxField.prototype.DrawUnpressed = function() {
+        if (this.IsReadOnly()) {
+            return;
+        }
+        
         this.SetPressed(false);
         editor.getDocumentRenderer()._paint();
     };
     CBaseCheckBoxField.prototype.onMouseUp = function() {
         let oDoc = this.GetDocument();
         let oViewer = oDoc.Viewer;
+
+        if (this.IsReadOnly()) {
+            return;
+        }
 
         let oThis = this;
         let bCommit = false;
@@ -440,7 +452,7 @@
     };
     CBaseCheckBoxField.prototype.SetNoToggleToOff = function(bValue) {
         let oParent = this.GetParent();
-        if (oParent && oParent.GetType() === this.GetType()) {
+        if (oParent && oParent.IsAllKidsWidgets()) {
             return oParent.SetNoToggleToOff(bValue);
         }
 
@@ -457,7 +469,7 @@
     };
     CBaseCheckBoxField.prototype.IsNoToggleToOff = function(bInherit) {
         let oParent = this.GetParent();
-        if (bInherit !== false && oParent && oParent.GetType() === this.GetType())
+        if (bInherit !== false && oParent && oParent.IsAllKidsWidgets())
             return oParent.IsNoToggleToOff();
 
         return this._noToggleToOff;

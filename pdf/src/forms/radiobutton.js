@@ -156,7 +156,7 @@
     
     CRadioButtonField.prototype.SetRadiosInUnison = function(bValue) {
         let oParent = this.GetParent();
-        if (oParent && oParent.GetType() === this.GetType())
+        if (oParent && oParent.IsAllKidsWidgets())
             return oParent.SetRadiosInUnison(bValue);
 
         if (this._radiosInUnison === bValue) {
@@ -173,7 +173,7 @@
     };
     CRadioButtonField.prototype.IsRadiosInUnison = function(bInherit) {
         let oParent = this.GetParent();
-        if (bInherit !== false && oParent && oParent.GetType() === this.GetType())
+        if (bInherit !== false && oParent && oParent.IsAllKidsWidgets())
             return oParent.IsRadiosInUnison();
 
         return this._radiosInUnison;
