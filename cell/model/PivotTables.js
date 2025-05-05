@@ -13724,6 +13724,15 @@ CT_Location.prototype.clone = function() {
 	res.colPageCount = this.colPageCount;
 	return res;
 };
+CT_Location.prototype.isEqual = function(location) {
+	return (null === this.ref && null === location.ref ||
+		this.ref && location.ref && this.ref.isEqual(location.ref)) &&
+		this.firstHeaderRow === location.firstHeaderRow &&
+		this.firstDataRow === location.firstDataRow &&
+		this.firstDataCol === location.firstDataCol &&
+		this.rowPageCount === location.rowPageCount &&
+		this.colPageCount === location.colPageCount;
+};
 CT_Location.prototype.readAttributes = function(attr, uq) {
 	if (attr()) {
 		var vals = attr();
