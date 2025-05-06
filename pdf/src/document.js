@@ -4569,7 +4569,6 @@ var CPresentation = CPresentation || function(){};
 
                     oMathShape = oController.createTextArt(0, false, null, "");
                     oMathShape.SetDocument(this);
-                    oMathShape.SetPage(nCurPage);
                     oMathShape.Recalculate();
 
                     let oXfrm       = oMathShape.getXfrm();
@@ -5324,7 +5323,6 @@ var CPresentation = CPresentation || function(){};
         let oTextArt = this.GetController().createTextArt(nStyle, false);
         oTextArt.SetDocument(this);
         oTextArt.setParent(oPagesInfo);
-        oTextArt.SetPage(nPage);
         oTextArt.Recalculate();
         oTextArt.checkExtentsByDocContent();
         
