@@ -6420,7 +6420,7 @@ function parserFormula( formula, parent, _ws ) {
 	this.promiseResult = null;
 
 	//mark function, when need reparse and recalculate on custom function change
-	this.bUnknownOrCustomFunction = null;
+	this.unknownOrCustomFunction = null;
 
 	if (AscFonts.IsCheckSymbols) {
 		AscFonts.FontPickerByCharacter.getFontsByString(this.Formula);
@@ -8566,13 +8566,13 @@ function parserFormula( formula, parent, _ws ) {
 					found_operator.isXLFN = (ph.operand_str.indexOf(xlfnFrefix) === 0);
 					found_operator.isXLWS = found_operator.isXLFN && xlfnFrefix.length === ph.operand_str.indexOf(xlwsFrefix);
 
-					t.bUnknownOrCustomFunction = true;
+					t.unknownOrCustomFunction = operandStr;
 				}
 
 				//mark function, when need reparse and recalculate on custom function change
 				let wb = Asc["editor"] && Asc["editor"].wb;
 				if (wb && wb.customFunctionEngine && wb.customFunctionEngine.getFunc(operandStr)) {
-					t.bUnknownOrCustomFunction = true;
+					t.unknownOrCustomFunction = operandStr;
 				}
 
 				if (found_operator !== null) {
@@ -8918,7 +8918,7 @@ function parserFormula( formula, parent, _ws ) {
 								isRef = true;
 							} else {
 								/* results of SEQUENCE, RANDARRAY etc... can return an array when using regular values ​​in arguments */
-								if (this.bUnknownOrCustomFunction && currentElement.returnValueType !== AscCommonExcel.cReturnFormulaType.array) {
+								if (this.unknownOrCustomFunction && currentElement.returnValueType !== AscCommonExcel.cReturnFormulaType.array) {
 									return false;
 								}
 								_tmp = currentElement.Calculate(arg, opt_bbox, null, this.ws, bIsSpecialFunction);
@@ -8958,7 +8958,7 @@ function parserFormula( formula, parent, _ws ) {
 		}
 	};
 	parserFormula.prototype.calculate = function (opt_defName, opt_bbox, opt_offset, checkMultiSelect, opt_oCalculateResult, opt_pivotCallback) {
-		if (AscCommonExcel.g_LockCustomFunctionRecalculate && this.bUnknownOrCustomFunction) {
+		if (AscCommonExcel.g_LockCustomFunctionRecalculate && this.unknownOrCustomFunction) {
 			return;
 		}
 		if (this.outStack.length < 1) {

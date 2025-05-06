@@ -3962,7 +3962,7 @@
 		var res = null;
 		let t = this;
 		this.dependencyFormulas.forEachFormula(function (fP) {
-			if (fP && fP.bUnknownOrCustomFunction && ((fP.ca && isNotUpdate) || !isNotUpdate)) {
+			if (fP && fP.unknownOrCustomFunction && ((fP.ca && isNotUpdate) || !isNotUpdate)) {
 				fP.isParsed = false;
 				fP.outStack = [];
 				fP.parse();
@@ -3974,7 +3974,7 @@
 		});
 		this.forEach(function (ws) {
 			ws.forEachFormula(function (fP) {
-				if (fP && fP.bUnknownOrCustomFunction && ((fP.ca && isNotUpdate) || !isNotUpdate)) {
+				if (fP && fP.unknownOrCustomFunction && ((fP.ca && isNotUpdate) || !isNotUpdate)) {
 					fP.isParsed = false;
 					fP.outStack = [];
 					fP.parse();
@@ -16045,10 +16045,19 @@
 			if (AscCommon.History.Is_On()) {
 				DataNew = this.getValueData();
 			}
-			if (AscCommon.History.Is_On() && parsed.bUnknownOrCustomFunction && !(DataNew.value && DataNew.value.type === CellValueType.Error && DataNew.value.text === AscCommon.cErrorOrigin['busy']) && !DataOld.isEqual(DataNew)) {
-				AscCommon.History.Add(AscCommonExcel.g_oUndoRedoCell, AscCH.historyitem_Cell_ChangeValue, this.ws.getId(),
-					new Asc.Range(this.nCol, this.nRow, this.nCol, this.nRow),
-					new UndoRedoData_CellSimpleData(this.nRow, this.nCol, DataOld, DataNew));
+			if (AscCommon.History.Is_On() && parsed.unknownOrCustomFunction && !(DataNew.value && DataNew.value.type === CellValueType.Error && DataNew.value.text === AscCommon.cErrorOrigin['busy'])) {
+				let wb = Asc["editor"] && Asc["editor"].wb;
+				let currentFunc = wb && wb.customFunctionEngine && wb.customFunctionEngine.getFunc(parsed.unknownOrCustomFunction);
+				if (currentFunc && currentFunc.replaceFormulaToVal) {
+					this.setFormulaInternal(null);
+					AscCommon.History.Add(AscCommonExcel.g_oUndoRedoCell, AscCH.historyitem_Cell_ChangeValue, this.ws.getId(),
+						new Asc.Range(this.nCol, this.nRow, this.nCol, this.nRow),
+						new UndoRedoData_CellSimpleData(this.nRow, this.nCol, DataOld, this.getValueData()));
+				} else if (!DataOld.isEqual(DataNew)) {
+					AscCommon.History.Add(AscCommonExcel.g_oUndoRedoCell, AscCH.historyitem_Cell_ChangeValue, this.ws.getId(),
+						new Asc.Range(this.nCol, this.nRow, this.nCol, this.nRow),
+						new UndoRedoData_CellSimpleData(this.nRow, this.nCol, DataOld, DataNew));
+				}
 			}
 
 			this.ws.workbook.dependencyFormulas.addToCleanCellCache(this.ws.getId(), this.nRow, this.nCol);
