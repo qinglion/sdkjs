@@ -506,6 +506,7 @@
 				document.oncopy           = function(e)
 				{
 					if (g_clipboardBase.isUseNewCopy()) {
+						e.preventDefault();
 						return g_clipboardBase.Copy_New();
 					} else {
 						return g_clipboardBase._private_oncopy(e)
@@ -514,6 +515,7 @@
 				document.oncut            = function(e)
 				{
 					if (g_clipboardBase.isUseNewCopy()) {
+						e.preventDefault();
 						return g_clipboardBase.Copy_New(true);
 					} else {
 						return g_clipboardBase._private_oncut(e)
