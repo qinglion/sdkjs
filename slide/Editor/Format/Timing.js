@@ -11746,8 +11746,9 @@
     function CTexturesCache() {
         this.map = {};
     }
-    CTexturesCache.prototype.checkTexture = function (sId, fScale, bMorph, bCheckSize, oAnimParams, bNoText, oBrushPen) {
+    CTexturesCache.prototype.checkTexture = function (oDrawing, fScale, bMorph, bCheckSize, oAnimParams, bNoText, oBrushPen) {
         let bCreate = false;
+				const sId = oDrawing.GetId();
         if(!this.map[sId] || !this.map[sId].checkScale(fScale)) {
             bCreate = true;
         }
@@ -11772,21 +11773,17 @@
             }
         }
         if (bCreate) {
-            const oTexture = this.createDrawingTexture(sId, fScale, bMorph, oAnimParams, bNoText, oBrushPen);
+            const oTexture = this.createDrawingTexture(oDrawing, fScale, bMorph, oAnimParams, bNoText, oBrushPen);
             if(oTexture) {
                 this.map[sId] = oTexture;
             }
         }
         return this.map[sId];
     };
-    CTexturesCache.prototype.checkMorphTexture = function (sId, fScale, bCheckSize, oAnimParams, bNoText) {
-        return this.checkTexture(sId, fScale, true, bCheckSize, oAnimParams, bNoText);
+    CTexturesCache.prototype.checkMorphTexture = function (oDrawing, fScale, bCheckSize, oAnimParams, bNoText) {
+        return this.checkTexture(oDrawing, fScale, true, bCheckSize, oAnimParams, bNoText);
     };
-    CTexturesCache.prototype.createDrawingTexture = function (sId, fScale, bMorph, oAnimParams, bNoText, oBrushPen) {
-        var oDrawing = AscCommon.g_oTableId.Get_ById(sId);
-        if (!oDrawing) {
-            return undefined;
-        }
+    CTexturesCache.prototype.createDrawingTexture = function (oDrawing, fScale, bMorph, oAnimParams, bNoText, oBrushPen) {
         var oBaseTexture = oDrawing.getAnimTexture(fScale, bMorph, oAnimParams, bNoText, oBrushPen);
 		if(!oBaseTexture) {
 			return undefined;
@@ -11952,8 +11949,8 @@
 	CAnimationDrawer.prototype.getDrawingTextCache = function(sDrawingId) {
 		return this.docStructureByDrawing[sDrawingId];
 	};
-	CAnimationDrawer.prototype.drawDrawingWithoutAnimation = function(oGraphics, sDrawingId, nScale, bSkipDrawTxBody) {
-		const oTexture = this.texturesCache.checkTexture(sDrawingId, nScale, undefined, undefined, undefined, bSkipDrawTxBody);
+	CAnimationDrawer.prototype.drawDrawingWithoutAnimation = function(oGraphics, oDrawing, nScale, bSkipDrawTxBody) {
+		const oTexture = this.texturesCache.checkTexture(oDrawing, nScale, undefined, undefined, undefined, bSkipDrawTxBody);
 		if (oTexture) {
 			oTexture.draw(oGraphics);
 		}
@@ -11993,7 +11990,7 @@
 				const sAnimationId = oAnimationDrawing.GetId();
 				const bIsSandwichObject = oSandwich.drawObject(oGraphics, this.texturesCache, bSkipDrawTxBody, this, oAnimationDrawing);
 				if (!bIsSandwichObject && this.isDrawingVisible(sAnimationId, oSandwich)) {
-					this.drawDrawingWithoutAnimation(oGraphics, sAnimationId, dScale, bSkipDrawTxBody);
+					this.drawDrawingWithoutAnimation(oGraphics, oAnimationDrawing, dScale, bSkipDrawTxBody);
 				}
 			}
 		} else {
@@ -12001,7 +11998,7 @@
 				const oAnimationDrawing = arrAllDrawingObjects[i];
 				const sAnimationId = oAnimationDrawing.GetId();
 				if (this.isDrawingVisible(sAnimationId)) {
-					this.drawDrawingWithoutAnimation(oGraphics, sAnimationId, dScale, bSkipDrawTxBody);
+					this.drawDrawingWithoutAnimation(oGraphics, oAnimationDrawing, dScale, bSkipDrawTxBody);
 				}
 			}
 		}
@@ -13021,7 +13018,7 @@
             return null;
         }
 	    const oNewBrushPen = this.getBrushPen(oDrawing);
-        let oTexture = oTextureCache.checkTexture(sId, fScale, undefined, undefined, undefined, bNoText, oNewBrushPen);
+        let oTexture = oTextureCache.checkTexture(oDrawing, fScale, undefined, undefined, undefined, bNoText, oNewBrushPen);
         if(!oTexture) {
             return null;
         }

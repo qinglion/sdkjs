@@ -1269,28 +1269,31 @@
 	CGraphicObjectBase.prototype.drawShdw = function (graphics) {
 		var outerShdw = this.getOuterShdw && this.getOuterShdw();
 		if (this.shdwSp && outerShdw && !graphics.isBoundsChecker()) {
-			var oTransform = new AscCommon.CMatrix();
-			var dist = outerShdw.dist ? outerShdw.dist / 36000 : 0;
-			var dir = outerShdw.dir ? outerShdw.dir : 0;
-			if(this.shdwSp.extX < this.extX && this.shdwSp.extY < this.extY) {
-				oTransform.tx = dist * Math.cos(AscFormat.cToRad * dir);
-				oTransform.ty = dist * Math.sin(AscFormat.cToRad * dir);
-			}
-			else {
-				oTransform.tx = dist * Math.cos(AscFormat.cToRad * dir) - (this.shdwSp.extX - this.extX) / 2.0;
-				oTransform.ty = dist * Math.sin(AscFormat.cToRad * dir) - (this.shdwSp.extY - this.extY) / 2.0;
-			}
-			if(this.shdwSp.flipH) {
-				oTransform.tx -= this.shdwSp.extX;
-			}
-			if(this.shdwSp.flipV) {
-				oTransform.ty += this.shdwSp.extY;
-			}
-			global_MatrixTransformer.MultiplyAppend(oTransform, this.transform);
-			this.shdwSp.transform = oTransform;
+			this.shdwSp.transform = this.shdwSp.getShdwTransform(outerShdw, this);
 			this.shdwSp.recalculateBounds();
 			this.shdwSp.draw(graphics);
 		}
+	};
+	CGraphicObjectBase.prototype.getShdwTransform = function(outerShdw, mainShape) {
+		var oTransform = new AscCommon.CMatrix();
+		var dist = outerShdw.dist ? outerShdw.dist / 36000 : 0;
+		var dir = outerShdw.dir ? outerShdw.dir : 0;
+		if(this.extX < mainShape.extX && this.extY < mainShape.extY) {
+			oTransform.tx = dist * Math.cos(AscFormat.cToRad * dir);
+			oTransform.ty = dist * Math.sin(AscFormat.cToRad * dir);
+		}
+		else {
+			oTransform.tx = dist * Math.cos(AscFormat.cToRad * dir) - (this.extX - mainShape.extX) / 2.0;
+			oTransform.ty = dist * Math.sin(AscFormat.cToRad * dir) - (this.extY - mainShape.extY) / 2.0;
+		}
+		if(this.flipH) {
+			oTransform.tx -= this.extX;
+		}
+		if(this.flipV) {
+			oTransform.ty += this.extY;
+		}
+		global_MatrixTransformer.MultiplyAppend(oTransform, mainShape.transform);
+		return  oTransform;
 	};
 	CGraphicObjectBase.prototype.drawAdjustments = function (drawingDocument) {
 	};
