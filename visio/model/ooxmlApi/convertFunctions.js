@@ -1821,6 +1821,13 @@
 				// AscCommon.consoleLog("LineColor was found for shape", lineColorCell);
 				lineUniFill = lineColorCell.calculateValue(this, pageInfo,
 					visioDocument.themes, themeValWasUsedFor);
+
+				let lineTransValue = this.getCellNumberValue("LineColorTrans");
+				if (!isNaN(lineTransValue)) {
+					// lineUniFill.transparent is opacity in fact
+					// setting RGBA.A doesn't work
+					lineUniFill.transparent = 255 - lineTransValue * 255;
+				}
 			} else {
 				AscCommon.consoleLog("LineColor cell for line stroke (border) was not found painting red");
 				lineUniFill = AscFormat.CreateUnfilFromRGB(255,0,0);
