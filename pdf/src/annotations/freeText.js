@@ -980,6 +980,12 @@
             }
         }
         else {
+            let oTextBoxShape = this.GetTextBoxShape();
+            if (false == oTextBoxShape.hitInTextRect(x, y)) {
+                this.Blur();
+                return;
+            }
+
             if (e.ShiftKey) {
                 this.GetDocContent().StartSelectionFromCurPos();
                 oDoc.SelectionSetEnd(x, y, e);

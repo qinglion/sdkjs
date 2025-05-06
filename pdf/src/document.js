@@ -1343,7 +1343,6 @@ var CPresentation = CPresentation || function(){};
     };
     CPDFDoc.prototype.BlurActiveObject = function() {
         let oActiveObj = this.GetActiveObject();
-
         if (!oActiveObj)
             return;
         
@@ -4218,6 +4217,7 @@ var CPresentation = CPresentation || function(){};
         }
     };
     CPDFDoc.prototype.UpdateParagraphProps = function() {
+        let oAcitveObj = this.GetActiveObject();
         let oParaPr = this.GetCalculatedParaPr();
 
         if (oParaPr) {
@@ -4228,6 +4228,20 @@ var CPresentation = CPresentation || function(){};
             
             Asc.editor.UpdateParagraphProp(oParaPr);
             Asc.editor.sync_PrPropCallback(oParaPr);
+        }
+        else if (oAcitveObj && oAcitveObj.IsForm()) {
+            let oController = this.GetController();
+            let nAlignType = oAcitveObj.GetAlign();
+
+            oController.selectedObjects.forEach(function(shape) {
+                let oField = shape.GetEditField();
+                
+                if (nAlignType != oField.GetAlign()) {
+                    nAlignType = undefined;
+                }
+            });
+
+            Asc.editor.sync_PrAlignCallBack(AscPDF.getInternalAlignByPdfType(nAlignType));
         }
     };
     CPDFDoc.prototype.UpdateTextProps = function() {
@@ -4570,7 +4584,6 @@ var CPresentation = CPresentation || function(){};
 
                     oMathShape = oController.createTextArt(0, false, null, "");
                     oMathShape.SetDocument(this);
-                    oMathShape.SetPage(nCurPage);
                     oMathShape.Recalculate();
 
                     let oXfrm       = oMathShape.getXfrm();
@@ -5267,13 +5280,10 @@ var CPresentation = CPresentation || function(){};
                         if (drawing.IsGraphicFrame()) {
                             oController.Check_GraphicFrameRowHeight(drawing);
                         }
-                        
-                        drawing.select(oController, nCurPage);
                     });
         
                     nInsertPos++;
                 }
-                
             }
         }
 
@@ -5328,7 +5338,6 @@ var CPresentation = CPresentation || function(){};
         let oTextArt = this.GetController().createTextArt(nStyle, false);
         oTextArt.SetDocument(this);
         oTextArt.setParent(oPagesInfo);
-        oTextArt.SetPage(nPage);
         oTextArt.Recalculate();
         oTextArt.checkExtentsByDocContent();
         

@@ -354,7 +354,7 @@
 
 		if (oDoc.CanCopyCut().cut) {
 			oDoc.DoAction(function() {
-				if (oThumbnails && oThumbnails.isInFocus) {
+				if (oThumbnails && oThumbnails.isInFocus && false == this.isRestrictionView()) {
 					oDoc.RemovePages(oThumbnails.selectedPages)
 				}
 				else {
@@ -427,10 +427,6 @@
 			if (this.isRestrictionView()) {
 				oDoc.FinalizeAction(true)
 				return;
-			}
-
-			if (_format == AscCommon.c_oAscClipboardDataFormat.HtmlElement) {
-				oDoc.Action.PasteHtmlAction = true;
 			}
 
 			window['AscCommon'].g_specialPasteHelper.Paste_Process_Start(arguments[5]);
