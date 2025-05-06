@@ -354,7 +354,7 @@
 
 		if (oDoc.CanCopyCut().cut) {
 			oDoc.DoAction(function() {
-				if (oThumbnails && oThumbnails.isInFocus) {
+				if (oThumbnails && oThumbnails.isInFocus && false == this.isRestrictionView()) {
 					oDoc.RemovePages(oThumbnails.selectedPages)
 				}
 				else {
