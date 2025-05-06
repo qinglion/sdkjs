@@ -2057,6 +2057,7 @@ CChartsDrawer.prototype =
 						n++;
 					}
 					numSeries++;
+
 				}
 
 				if(min === max) {
@@ -2078,8 +2079,11 @@ CChartsDrawer.prototype =
 							numCache = t.getNumCache(seria.val);
 							const ptCount = numCache && AscFormat.isRealNumber(numCache.ptCount) ? numCache.ptCount : 0;
 							// trendline can affect max value
+							const newMin = seria.trendline && seria.trendline.backward && ptCount > 1 ? min - Math.floor(seria.trendline.backward) : ptCount;
 							const newMax = seria.trendline && seria.trendline.forward && ptCount > 1 ? ptCount + seria.trendline.forward : ptCount;
 							max = Math.max(max, newMax);
+							min = Math.min(min, newMin);
+							console.log(min);
 						}
 					}
 				}
@@ -2107,8 +2111,10 @@ CChartsDrawer.prototype =
 
 				// check the impact of trendline on scatter chart
 				if (series[l].trendline) {
+					console.log(min, max);
 					min = series[l].trendline.backward ? min - series[l].trendline.backward : min;
 					max = series[l].trendline.forward ? max + series[l].trendline.forward : max;
+					console.log(min, max);
 				}
 			}
 		};
@@ -6495,7 +6501,7 @@ drawBarChart.prototype = {
 
 				//стартовая позиция колонки Y(+ высота с учётом поправок на накопительные диаграммы)
 				val = parseFloat(seria[j].val);
-				idx = seria[j].idx != null ? seria[j].idx : j;
+				idx = seria[j].idx != null ? seria[j].idx + Math.floor(this.chart.series[i].trendline && this.chart.series[i].trendline.backward ? this.chart.series[i].trendline.backward : 0) : j;
 				/*if (this.valAx && this.valAx.scaling.logBase) {
 					val = this.cChartDrawer.getLogarithmicValue(val, this.valAx.scaling.logBase);
 				}*/
@@ -8925,8 +8931,9 @@ drawAreaChart.prototype = {
 				if((null === val && this.cChartDrawer.nDimensionCount !== 3) || (isLog && val === 0)) {
 					continue;
 				}
+				let idx = n != null ? n + Math.floor(this.chart.series[i].trendline && this.chart.series[i].trendline.backward ? this.chart.series[i].trendline.backward : 0) : n;
+				x = this.xPoints[idx].pos;
 
-				x = this.xPoints[n].pos;
 				y = this.cChartDrawer.getYPosition(val, this.valAx);
 
 				if (!this.points) {
@@ -10471,7 +10478,7 @@ drawHBarChart.prototype = {
 
 		var defaultOverlap = (this.subType === "stacked" || this.subType === "stackedPer") ? 100 : 0;
 		var overlap = AscFormat.isRealNumber(this.chart.overlap) ? this.chart.overlap : defaultOverlap;
-		var ptCount = this.cChartDrawer.getPtCount(this.chart.series);
+		var ptCount = yPoints.length;
 		var height = heightGraph / ptCount;
 		var crossBetween = this.cChartSpace.getValAxisCrossType();
 		if (crossBetween) {
@@ -10526,7 +10533,7 @@ drawHBarChart.prototype = {
 				/*if (this.valAx && this.valAx.scaling.logBase) {
 					val = this.cChartDrawer.getLogarithmicValue(val, this.valAx.scaling.logBase, xPoints);
 				}*/
-				idx = seria[j].idx != null ? seria[j].idx : j;
+				idx = seria[j].idx != null ? seria[j].idx + Math.floor(this.chart.series[i].trendline && this.chart.series[i].trendline.backward ? this.chart.series[i].trendline.backward : 0) : j;
 
 
 				startXColumnPosition = this._getStartYColumnPosition(seriesHeight, idx, i, val, xPoints, shapeType);
@@ -17546,6 +17553,7 @@ CColorObj.prototype =
 			const type = attributes.trendlineType;
 			const catAxis = this.cChartDrawer._searchChangedAxis(oChart.axId[0]);
 			const valAxis = this.cChartDrawer._searchChangedAxis(oChart.axId[1]);
+			const EXCEL_BASED_BACKWARD_LIMITS = 0.5;
 			const coords = storageElement.getCoords();
 			// moving average differs much from other trendlines
 			if (type === AscFormat.TRENDLINE_TYPE_MOVING_AVG) {
@@ -17559,7 +17567,7 @@ CColorObj.prototype =
 				const equationStorage = this._obtainEquationStorage(type);
 				if (coefficients && equationStorage) {
 					let catMax = catAxis.max;
-					let catMin = catAxis.min;
+					let catMin = attributes.backward <= EXCEL_BASED_BACKWARD_LIMITS ? catAxis.min - attributes.backward : catAxis.min;
 					const midPointsNum = 100;
 					const lineBuilder = new CLineBuilder(coefficients, catMin, catMax, valAxis.scaling.min, valAxis.scaling.max, valAxis.scaling.logBase);
 					lineBuilder.setCalcYVal(equationStorage.calcYVal);
@@ -17602,7 +17610,7 @@ CColorObj.prototype =
 				const catAxis = this.cChartDrawer._searchChangedAxis(oChart.axId[0]);
 				const valAxis = this.cChartDrawer._searchChangedAxis(oChart.axId[1]);
 				boundary.catMax = Math.ceil(boundary.catMax);
-				boundary.catMin = Math.floor(boundary.catMin);
+				boundary.catMin = Math.ceil(boundary.catMin);
 
 				if (!boundaries[catAxis.Id]) {
 					boundaries[catAxis.Id] = {min: null, max: null};
