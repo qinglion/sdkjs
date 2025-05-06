@@ -2688,6 +2688,28 @@
             memory.widgetFlags |= (1 << 2);
         }
 
+        let oParent = this.GetParent();
+        let nFieldType = this.GetType();
+        let bWriteType = !oParent || !oParent.IsAllKidsWidgets();
+
+        let nWidgetFlags = 0;
+        if (bWriteType) {
+            switch (nFieldType) {
+                case AscPDF.FIELD_TYPES.radiobutton: {
+                    nWidgetFlags |= (1 << 15);
+                    break;
+                }
+                case AscPDF.FIELD_TYPES.button: {
+                    nWidgetFlags |= (1 << 16);
+                    break;
+                }
+                case AscPDF.FIELD_TYPES.combobox: {
+                    nWidgetFlags |= (1 << 17);
+                    break;
+                }
+            }    
+        }
+
         // сюда пойдут 2ые флаги полей
         memory.fieldDataFlags   = 0;
         memory.posForFieldDataFlags  = memory.GetCurPosition();
@@ -2744,7 +2766,6 @@
         }
 
         // parent
-        let oParent = this.GetParent();
         if (oParent != null) {
             memory.fieldDataFlags |= (1 << 17);
             memory.WriteLong(oParent.GetApIdx());
