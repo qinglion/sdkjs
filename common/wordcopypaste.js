@@ -6380,6 +6380,11 @@ PasteProcessor.prototype =
 		let isPasteTextIntoList = !!this.pasteTextIntoList;
 		let oAPI = oThis.api;
 
+		if (oAPI.isPdfEditor()) {
+			let oDoc = oAPI.getPDFDoc();
+			oDoc.Action.PasteHtmlAction = true;
+		}
+
 		let fPasteHtmlPresentationCallback = function (fonts, images) {
 			oThis.aContent = [];
 			let aShapes = [], aImages = [], aTables = [];

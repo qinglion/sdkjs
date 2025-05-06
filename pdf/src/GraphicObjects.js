@@ -1089,7 +1089,8 @@
 			oDoc.Recalculate();
 			oDoc.FinalizeAction(true);
         }
-    };    CGraphicObjects.prototype.selectObject = function (object, pageIndex) {
+    };
+    CGraphicObjects.prototype.selectObject = function (object, pageIndex) {
         let oDoc = this.document;
         object.select(this, pageIndex);
         if (this.selectedObjects.length == 1 && !oDoc.GetActiveObject()) {

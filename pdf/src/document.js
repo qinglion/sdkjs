@@ -1343,7 +1343,6 @@ var CPresentation = CPresentation || function(){};
     };
     CPDFDoc.prototype.BlurActiveObject = function() {
         let oActiveObj = this.GetActiveObject();
-
         if (!oActiveObj)
             return;
         
@@ -5267,13 +5266,10 @@ var CPresentation = CPresentation || function(){};
                         if (drawing.IsGraphicFrame()) {
                             oController.Check_GraphicFrameRowHeight(drawing);
                         }
-                        
-                        drawing.select(oController, nCurPage);
                     });
         
                     nInsertPos++;
                 }
-                
             }
         }
 
