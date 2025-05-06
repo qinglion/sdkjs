@@ -543,7 +543,7 @@
 		setUndoDefName: function(newUndoName, doNotChangeRef) {
 			this.name = newUndoName.name;
 			this.sheetId = newUndoName.sheetId;
-			this.hidden = false;
+			this.hidden = newUndoName.hidden;
 			this.type = newUndoName.type;
 			if (!doNotChangeRef && this.ref != newUndoName.ref) {
 				this.setRef(newUndoName.ref);
@@ -1086,7 +1086,7 @@
 			if (oldUndoName) {
 				res = this.getDefNameByName(oldUndoName.name, oldUndoName.sheetId);
 			} else {
-				res = this.addDefName(newUndoName.name, newUndoName.ref, newUndoName.sheetId, false, newUndoName.type, newUndoName.isXLNM);
+				res = this.addDefName(newUndoName.name, newUndoName.ref, newUndoName.sheetId, newUndoName.hidden, newUndoName.type, newUndoName.isXLNM);
 			}
 			AscCommon.History.Create_NewPoint();
 			if (res && oldUndoName) {
@@ -3144,6 +3144,7 @@
 
 		this.customXmls = null;//[]
 		this.oGoalSeek = null;
+		this.oSolver = null;
 
 		this.timelineCaches = [];
 		this.TimelineStyles = null;
@@ -3845,11 +3846,11 @@
 		this.dependencyFormulas.removeDefName( defName.sheetId, defName.name );
 		this.dependencyFormulas.calcTree();
 	};
-	Workbook.prototype.editDefinesNames = function ( oldName, newName ) {
+	Workbook.prototype.editDefinesNames = function (oldName, newName) {
 		return this.editDefinesNamesUndoRedo(this.getUndoDefName(oldName), this.getUndoDefName(newName));
 	};
-	Workbook.prototype.editDefinesNamesUndoRedo = function ( oldName, newName ) {
-		var res = this.dependencyFormulas.editDefinesNames( oldName, newName );
+	Workbook.prototype.editDefinesNamesUndoRedo = function (oldName, newName) {
+		var res = this.dependencyFormulas.editDefinesNames(oldName, newName);
 		this.dependencyFormulas.calcTree();
 		return res;
 	};
@@ -4508,7 +4509,7 @@
 			return ascName;
 		}
 		var sheetId = this.getSheetIdByIndex(ascName.LocalSheetId);
-		return new UndoRedoData_DefinedNames(ascName.Name, ascName.Ref, sheetId, ascName.type, ascName.isXLNM);
+		return new UndoRedoData_DefinedNames(ascName.Name, ascName.Ref, sheetId, ascName.type, ascName.isXLNM, ascName.Hidden);
 	};
 	Workbook.prototype.changeColorScheme = function (sSchemeName) {
 		var scheme = AscCommon.getColorSchemeByName(sSchemeName);
@@ -5861,6 +5862,24 @@
 
 	Workbook.prototype.stepGoalSeek = function() {
 		this.oGoalSeek && this.oGoalSeek.step();
+	};
+
+	/**
+	 * Sets Solver object
+	 * @memberof Workbook
+	 * @param {CSolver} oSolver
+	 */
+	Workbook.prototype.setSolver = function(oSolver) {
+		this.oSolver = oSolver;
+	};
+
+	/**
+	 * Returns Solver object
+	 * @memberof Workbook
+	 * @returns {CSolver}
+	 */
+	Workbook.prototype.getSolver = function() {
+		return this.oSolver;
 	};
 
 	Workbook.prototype.setDefaultDirection = function(val) {
@@ -15433,7 +15452,7 @@
 				const aExcludeFormulas = AscCommonExcel.aExcludeRecursiveFormulas;
 				const oCycleCells = new Map();
 
-				_foreachRefElements(function (oElem, nIndex, nLastIndex) {
+				foreachRefElements(function (oElem, nIndex, nLastIndex) {
 					if (oElem.containCell2(oListenerCell)) {
 						const nIndexWithFunction = nIndex + 2;
 						if (nIndexWithFunction > nLastIndex) {
@@ -15485,7 +15504,7 @@
 			return false;
 		}
 		let bContainsInFormula = false;
-		_foreachRefElements(function (oRange) {
+		foreachRefElements(function (oRange) {
 			if (oRange.containCell2(oThis)) {
 				bContainsInFormula = true;
 				return true;
@@ -15621,9 +15640,8 @@
 	 * Iterative extract reference elements from outStack attribute of parserFormula class.
 	 * @param {Function} fAction - Action with reference element
 	 * @param {[]} aRefElements
-	 * @private
 	 */
-	function _foreachRefElements (fAction, aRefElements) {
+	function foreachRefElements (fAction, aRefElements) {
 		if (!aRefElements.length) {
 			return;
 		}
@@ -15736,7 +15754,7 @@
 		const oThis = this;
 		let bRecursiveFormula = false;
 		aPassedCell = aPassedCell || [];
-		_foreachRefElements(function (oRange) {
+		foreachRefElements(function (oRange) {
 			oRange._foreachNoEmpty(function (oCell) {
 				let bCellIsPassed = aPassedCell.some(function (oElem) {
 					return oCell.compareCellIndex(oElem);
@@ -15791,7 +15809,7 @@
 		}
 
 		const aRefElements = _getRefElements(oFormulaParsed);
-		_foreachRefElements(function (oRange, nIndex, nLastRefElemIndex) {
+		foreachRefElements(function (oRange, nIndex, nLastRefElemIndex) {
 			oRange._foreachNoEmpty(function(oCell) {
 				let nCellIndex = getCellIndex(oCell.nRow, oCell.nCol);
 				let sCellWsName = oCell.ws.getName().toLowerCase();
@@ -23894,5 +23912,6 @@
 	window['AscCommonExcel'].CSerial = CSerial;
 	window['AscCommonExcel'].SweepLineRowIterator = SweepLineRowIterator;
 	window['AscCommonExcel'].BroadcastHelper = BroadcastHelper;
+	window['AscCommonExcel'].foreachRefElements = foreachRefElements;
 
 })(window);
