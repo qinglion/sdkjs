@@ -1554,13 +1554,13 @@
             } else if (this.parent && this.parent.GoToText) {
                 this.parent.GoToText();
                 this.resetSelection();
-                if (this.document && (docpostype_DrawingObjects !== this.document.GetDocPosType() || isRealObject(getTargetTextObject(this.document.DrawingObjects))) && CDocumentContent.prototype.AddNewParagraph === docContentFunction) {
+                if (this.document && (docpostype_DrawingObjects !== this.document.GetDocPosType() || isRealObject(AscFormat.getTargetTextObject(this.document.DrawingObjects))) && CDocumentContent.prototype.AddNewParagraph === docContentFunction) {
                     this.document.AddNewParagraph(args[0]);
                 }
             } else if (this.selectedObjects.length > 0 && this.selectedObjects[0].parent && this.selectedObjects[0].parent.GoToText) {
                 this.selectedObjects[0].parent.GoToText();
                 this.resetSelection();
-                if (this.document && (docpostype_DrawingObjects !== this.document.GetDocPosType() || isRealObject(getTargetTextObject(this))) && CDocumentContent.prototype.AddNewParagraph === docContentFunction) {
+                if (this.document && (docpostype_DrawingObjects !== this.document.GetDocPosType() || isRealObject(AscFormat.getTargetTextObject(this))) && CDocumentContent.prototype.AddNewParagraph === docContentFunction) {
                     this.document.AddNewParagraph(args[0]);
                 }
             }
