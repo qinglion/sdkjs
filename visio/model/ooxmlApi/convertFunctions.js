@@ -2328,13 +2328,16 @@
 				groupShape.Id = cShapeOrCGroupShape.Id + "_Group";
 
 
-				// add group geometry to bottom
-				if (cShapeOrCGroupShape instanceof CGroupShape) {
-					groupShape.addToSpTree(groupShape.spTree.length, cShapeOrCGroupShape.spTree[0]);
-				} else {
-					groupShape.addToSpTree(groupShape.spTree.length, cShapeOrCGroupShape);
+				// if DisplayMode is 1 add group geometry to bottom layer
+				if (this.getCellNumberValue("DisplayMode") === 1) {
+					// if it is group so there is geometry and text in it. We take geometry
+					if (cShapeOrCGroupShape instanceof CGroupShape) {
+						groupShape.addToSpTree(groupShape.spTree.length, cShapeOrCGroupShape.spTree[0]);
+					} else {
+						groupShape.addToSpTree(groupShape.spTree.length, cShapeOrCGroupShape);
+					}
+					groupShape.spTree[groupShape.spTree.length - 1].setGroup(groupShape);
 				}
-				groupShape.spTree[groupShape.spTree.length - 1].setGroup(groupShape);
 
 
 				cShapeOrCGroupShape.spPr.xfrm.setOffX(0);
@@ -2356,6 +2359,17 @@
 				for (let i = 0; i < subShapes.length; i++) {
 					const subShape = subShapes[i];
 					subShape.convertGroup(visioDocument, pageInfo, drawingPageScale, currentGroupHandling);
+				}
+
+				// it group geometry should be on the top layer
+				if (this.getCellNumberValue("DisplayMode") === 2) {
+					if (cShapeOrCGroupShape instanceof CGroupShape) {
+						// if it is group so there is geometry and text in it. We take geometry
+						groupShape.addToSpTree(groupShape.spTree.length, cShapeOrCGroupShape.spTree[0]);
+					} else {
+						groupShape.addToSpTree(groupShape.spTree.length, cShapeOrCGroupShape);
+					}
+					groupShape.spTree[groupShape.spTree.length - 1].setGroup(groupShape);
 				}
 
 				// add group text to top
