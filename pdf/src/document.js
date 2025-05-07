@@ -512,13 +512,19 @@ var CPresentation = CPresentation || function(){};
 
         let nFormNumber = 1;
 
-        while (Object.values(AscCommon.g_oTableId.m_aPairs).find(function(elm) {
-            return elm.IsForm && elm.IsForm() && elm.GetFullName() == sFormType + nFormNumber;
-        })) {
-            if (AscPDF.FIELD_TYPES.radiobutton == nFieldType) {
-                return sFormType + nFormNumber;
+        while (true) {
+            const fullName = sFormType + nFormNumber;
+            const oField = Object.values(AscCommon.g_oTableId.m_aPairs).find(elm =>
+                elm.IsForm?.() && elm.GetFullName() === fullName
+            );
+        
+            if (!oField) break;
+        
+            if (nFieldType === AscPDF.FIELD_TYPES.radiobutton &&
+                oField.GetType() === AscPDF.FIELD_TYPES.radiobutton) {
+                return fullName;
             }
-
+        
             nFormNumber = AscCommon.g_oIdCounter.GetNewIdForPdfForm();
         }
 
