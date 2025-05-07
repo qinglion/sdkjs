@@ -12616,9 +12616,9 @@ ParaRun.prototype.GetFontSlotByPosition = function(nPos)
 
 	return nFontSlot;
 };
-ParaRun.prototype.SetIsRecalculated = function(isRecalcuted)
+ParaRun.prototype.SetIsRecalculated = function(isRecalculated)
 {
-	if (!isRecalcuted && this.Paragraph)
+	if (!isRecalculated && this.Paragraph)
 		this.Paragraph.SetIsRecalculated(false);
 };
 
