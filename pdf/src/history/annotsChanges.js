@@ -885,7 +885,7 @@ CChangesPDFAnnotStampRect.prototype.Type = AscDFH.historyitem_Pdf_Stamp_Rect;
 CChangesPDFAnnotStampRect.prototype.private_SetValue = function(Value)
 {
 	let oAnnot = this.Class;
-	oAnnot.SetRect(Value, this.isOnRotate);
+	oAnnot._origRect = Value;
 };
 
 CChangesPDFAnnotStampRect.prototype.WriteToBinary = function(Writer)

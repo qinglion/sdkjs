@@ -980,8 +980,12 @@
             }
         }
         else {
+            let pageObject = oDoc.Viewer.getPageByCoords2(x, y);
+            if (!pageObject)
+                return false;
+
             let oTextBoxShape = this.GetTextBoxShape();
-            if (false == oTextBoxShape.hitInTextRect(x, y)) {
+            if (false == oTextBoxShape.hitInTextRect(pageObject.x, pageObject.y)) {
                 this.Blur();
                 return;
             }
@@ -1058,8 +1062,12 @@
             this._prevCallout = undefined;
         }
 
-        if (false == this.IsChanged()) {
-            this.SetDrawFromStream(!isIn);
+        if (this.IsNeedDrawFromStream()) {
+            this.SetDrawFromStream(false);
+            this.AddToRedraw();
+        }
+        else if (this.IsChanged() == false && !isIn) {
+            this.SetDrawFromStream(true);
             this.AddToRedraw();
         }
         

@@ -4272,6 +4272,14 @@
 		oDoc.FinalizeAction(true);
 	};
 
+	PDFEditorApi.prototype.get_TextProps = function() {
+		let oDoc    = this.WordControl.m_oLogicDocument;
+		let oParaPr = oDoc.GetCalculatedParaPr(true);
+		let oTextPr = oDoc.GetCalculatedTextPr(true);
+
+		return new Asc.CParagraphAndTextProp(oParaPr, oTextPr);
+	};
+
 	PDFEditorApi.prototype._waitPrint = function(actionType, options)
 	{
 		return false;
@@ -4405,6 +4413,7 @@
 	PDFEditorApi.prototype['Paste']                        = PDFEditorApi.prototype.Paste;
 	PDFEditorApi.prototype['asc_PasteData']                = PDFEditorApi.prototype.asc_PasteData;
 	PDFEditorApi.prototype['asc_CloseFile']                = PDFEditorApi.prototype.asc_CloseFile;
+	PDFEditorApi.prototype['get_TextProps']                = PDFEditorApi.prototype.get_TextProps;
 
 	PDFEditorApi.prototype['getSelectionState']            = PDFEditorApi.prototype.getSelectionState;
 	PDFEditorApi.prototype['getSpeechDescription']         = PDFEditorApi.prototype.getSpeechDescription;
