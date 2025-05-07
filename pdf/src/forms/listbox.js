@@ -371,6 +371,8 @@
                 let aFields = this.GetAllWidgets();
 
                 aFields.forEach(function(field) {
+                    AscCommon.History.StartNoHistoryMode();
+
                     AscFonts.FontPickerByCharacter.getFontsByString(sCaption);
                     let oPara = new AscWord.Paragraph(this.content, false);
                     let oRun = new AscWord.ParaRun(oPara, false);
@@ -382,6 +384,8 @@
                     oPara.Add(new ParaTextPr({Color: oDocColor}));
                     oPara.RecalcCompiledPr(true);
                     oPara.SetApplyToAll(false);
+
+                    AscCommon.History.EndNoHistoryMode();
 
                     field.SetWasChanged(true);
                     field.SetNeedRecalc(true);
@@ -397,7 +401,9 @@
             return oParent.RemoveOption(nPos);
 
         function updateContent(widget) {
-            widget.content.Internal_Content_Remove(nPos, 1);
+            AscCommon.History.StartNoHistoryMode();
+            widget.content.Internal_Content_Remove(nPos, 1, false);
+            AscCommon.History.EndNoHistoryMode();
 
             widget.SetNeedRecalc(true);
             widget.SetWasChanged(true);
