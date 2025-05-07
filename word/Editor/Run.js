@@ -11523,23 +11523,12 @@ ParaRun.prototype.GetAllFields = function(isUseSelection, arrFields)
 		var oItem = this.Content[nPos];
 		if (para_FieldChar === oItem.Type)
 		{
-			var oComplexField = oItem.GetComplexField();
-
-			// Поле еще может быть не собрано на данный момент
-			if (oComplexField)
+			let complexField = oItem.GetComplexField();
+			if (complexField
+				&& complexField.IsValid()
+				&& -1 === arrFields.indexOf(complexField))
 			{
-				var isNeedAdd = true;
-				for (var nFieldIndex = 0, nFieldsCount = arrFields.length; nFieldIndex < nFieldsCount; ++nFieldIndex)
-				{
-					if (oComplexField === arrFields[nFieldIndex])
-					{
-						isNeedAdd = false;
-						break;
-					}
-				}
-
-				if (isNeedAdd)
-					arrFields.push(oComplexField);
+				arrFields.push(complexField);
 			}
 		}
 		else if (para_Drawing === oItem.Type)
@@ -11561,7 +11550,7 @@ ParaRun.prototype.GetAllSeqFieldsByType = function(sType, aFields)
 		if (para_FieldChar === oItem.Type)
 		{
 			let complexField = oItem.GetComplexField();
-			let instruction  = complexField ? complexField.GetInstruction() : null;
+			let instruction  = complexField && complexField.IsValid() ? complexField.GetInstruction() : null;
 			if (instruction
 				&& instruction.Type === AscWord.fieldtype_SEQ
 				&& instruction.CheckId(sType)

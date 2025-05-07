@@ -97,6 +97,11 @@
 	 */
 	function private_checkRelativePos(firstPos, secondPos)
 	{
+		if (!firstPos || !Array.isArray(firstPos))
+			return 1;
+		else if (!secondPos || !Array.isArray(secondPos))
+			return -1;
+		
 		for (var nPos = 0, nLen = Math.min(firstPos.length, secondPos.length); nPos < nLen; ++nPos)
 		{
 			if (!secondPos[nPos] || !firstPos[nPos] || firstPos[nPos].Class !== secondPos[nPos].Class)
