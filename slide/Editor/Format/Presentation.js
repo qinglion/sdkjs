@@ -1175,7 +1175,18 @@ CPresentation.prototype.setHFProperties = function (oProps, bAll) {
 			let oSp = oSlideLikeObject.getMatchingShape(nPhType, null, false, {});
 			let oContent = oSp && oSp.getDocContent && oSp.getDocContent();
 			if (oContent) {
+				let oParaPr = null;
+				let oFirstParaOld = oContent.GetFirstParagraph();
+				if (oFirstParaOld) {
+					oParaPr = oFirstParaOld.GetDirectParaPr();
+				}
 				AscFormat.CheckContentTextAndAdd(oContent, sText);
+				if(oParaPr) {
+					let oFirstParaNew = oContent.GetFirstParagraph();
+					if (oFirstParaNew) {
+						oFirstParaNew.SetPr(oParaPr);
+					}
+				}
 			}
 		}
 	}
