@@ -3652,17 +3652,18 @@
 			if (hiddenRow || 0 === self._getColumnWidth(col)) {
 				return;
 			}
+			
+			if (!cell.isEmptyTextString()) {
+				maxCol = Math.max(maxCol, col);
+				maxRow = Math.max(maxRow, row);
+				return;
+			}
 
 			// Check cell style (fills and borders)
 			let style = cell.getStyle();
 			if (style && ((style.fill && style.fill.notEmpty()) || (style.border && style.border.notEmpty()))) {
 				maxCol = Math.max(maxCol, col);
 				maxRow = Math.max(maxRow, row);
-			}
-
-			// Skip empty cells
-			if (cell.isEmptyTextString()) {
-				return;
 			}
 
 			// Get cell properties
