@@ -360,8 +360,8 @@ ObjectToDraw.prototype =
     {
     },
 	getTextElementCode: function () {
-		if (this.TextElement) {
-			return this.TextElement.GetValue();
+		if (this.TextElement && this.TextElement.GetCharCode) {
+			return this.TextElement.GetCharCode();
 		}
 	},
 	addSpaceTextElement: function (oElement) {

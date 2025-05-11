@@ -18455,6 +18455,7 @@ function RangeDataManagerElem(bbox, data)
 		let translations = params.nameLocale;
 		let description = params.description;
 		let args = params.params;
+		let tags = params.tags;
 
 		let funcName = newFunc.prototype.name;
 
@@ -18509,6 +18510,8 @@ function RangeDataManagerElem(bbox, data)
 			this.funcsMapInfo[funcName].addLocalization = true;
 			this.funcsMapInfo[funcName].description = description;
 		}
+
+		this.funcsMapInfo[funcName].replaceFormulaToVal = tags["replaceFormulaToVal"];
 
 		AscCommonExcel.cFormulaFunctionGroup["Custom"].push(newFunc);
 		AscCommonExcel.addNewFunction(newFunc);

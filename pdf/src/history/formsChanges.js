@@ -1271,23 +1271,25 @@ CChangesPDFPushbuttonImage.prototype.private_SetValue = function(Value)
 	let oButtonField = this.Class;
 	oButtonField.lastValue = Value;
 
+	oButtonField.SetImageRasterId(Value, this.APType);
+
 	if (this.FromLoad && typeof Value === "string" && Value.length > 0) {
 		let sImageId = AscCommon.getFullImageSrc2(Value);
 		let _img = Asc.editor.ImageLoader.map_image_index[sImageId];
 		if (_img && _img.Status === AscFonts.ImageLoadStatus.Complete) {
-			oButtonField.AddImage2(Value, this.APType);
+			oButtonField.SetImage(Value);
 			return;
 		}
 
 		AscCommon.CollaborativeEditing.Add_NewImage(Value);
 		AscCommon.CollaborativeEditing.m_aEndLoadCallbacks.push(function() {
 			if (oButtonField.lastValue === Value) {
-				oButtonField.AddImage2(Value, this.APType);
+				oButtonField.SetImage(Value);
 			}
 		}.bind(oButtonField));
 	}
 	else {
-		oButtonField.AddImage2(Value, this.APType);
+		oButtonField.SetImage(Value);
 	}
 };
 

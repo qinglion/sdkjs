@@ -19096,23 +19096,24 @@ CColorObj.prototype =
 			}
 
 			const lastElem = this.storage[chartId][this.storage[chartId].length - 1];
-
-			// the jump indicates that everythin between lastIdx and current idx, is null
-			while (this.lastIdx < catPoint) {
-				if (lastElem[this.lastIdx]) {
-					lastElem[this.lastIdx] += 0;
-				} else {
-					lastElem.push({x: null, y: 0});
+			if (lastElem) {
+				// the jump indicates that everythin between lastIdx and current idx, is null
+				while (this.lastIdx < catPoint) {
+					if (lastElem[this.lastIdx]) {
+						lastElem[this.lastIdx] += 0;
+					} else {
+						lastElem.push({x: null, y: 0});
+					}
+					this.lastIdx += 1;
 				}
-				this.lastIdx += 1;
-			}
 
-			if (this.lastIdx === catPoint) {
-				if (lastElem[catPoint]) {
-					lastElem[catPoint].x = lastElem[catPoint].x === null ? catPoint : lastElem[catPoint].x;
-					lastElem[catPoint].y += valPoint;
-				} else {
-					lastElem.push({x: catPoint, y: valPoint});
+				if (this.lastIdx === catPoint) {
+					if (lastElem[catPoint]) {
+						lastElem[catPoint].x = lastElem[catPoint].x === null ? catPoint : lastElem[catPoint].x;
+						lastElem[catPoint].y += valPoint;
+					} else {
+						lastElem.push({x: catPoint, y: valPoint});
+					}
 				}
 			}
 

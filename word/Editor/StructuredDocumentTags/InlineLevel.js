@@ -1613,6 +1613,8 @@ CInlineLevelSdt.prototype.ReplaceContentWithPlaceHolder = function(isSelect, isF
 };
 CInlineLevelSdt.prototype.CorrectContent = function()
 {
+	AscCommon.History.skipFormFillingLockCheck(true);
+	
 	if (this.IsForm() && !this.IsComplexForm())
 	{
 		this.MakeSingleRunElement(false);
@@ -1621,6 +1623,8 @@ CInlineLevelSdt.prototype.CorrectContent = function()
 	{
 		CParagraphContentWithParagraphLikeContent.prototype.CorrectContent.apply(this, arguments);
 	}
+	
+	AscCommon.History.skipFormFillingLockCheck(false);
 };
 //----------------------------------------------------------------------------------------------------------------------
 // Выставление настроек

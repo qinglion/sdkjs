@@ -4781,6 +4781,15 @@
 	CChangesBase.prototype.CheckLock = function(lockData)
 	{
 	};
+	CChangesBase.prototype.CheckNeedRecalculate = function()
+	{
+		if (!this.IsNeedRecalculate())
+			return;
+		
+		let obj = this.GetClass();
+		if (obj && obj.SetIsRecalculated)
+			obj.SetIsRecalculated(false);
+	};
 	window['AscDFH'].CChangesBase = CChangesBase;
 	/**
 	 * Базовый класс для изменений, которые меняют содержимое родительского класса.*

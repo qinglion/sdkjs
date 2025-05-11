@@ -6380,6 +6380,11 @@ PasteProcessor.prototype =
 		let isPasteTextIntoList = !!this.pasteTextIntoList;
 		let oAPI = oThis.api;
 
+		if (oAPI.isPdfEditor()) {
+			let oDoc = oAPI.getPDFDoc();
+			oDoc.Action.PasteHtmlAction = true;
+		}
+
 		let fPasteHtmlPresentationCallback = function (fonts, images) {
 			oThis.aContent = [];
 			let aShapes = [], aImages = [], aTables = [];
@@ -8973,65 +8978,92 @@ PasteProcessor.prototype =
 							}
 						}
 					}
-					if (null == NumId && this.pasteInPresentationShape !== true) {
-						// Создаем нумерацию
-						var oNum = this.oLogicDocument.GetNumbering().CreateNum();
-						NumId = oNum.GetId();
-						if (Asc.c_oAscNumberingFormat.Bullet === num) {
-							oNum.CreateDefault(c_oAscMultiLevelNumbering.Bullet);
-							var LvlText = String.fromCharCode(0x00B7);
-							var NumTextPr = new CTextPr();
-							NumTextPr.RFonts.SetAll("Symbol", -1);
 
-							switch (type) {
-								case "disc": {
-									NumTextPr.RFonts.SetAll("Symbol", -1);
-									LvlText = String.fromCharCode(0x00B7);
-									break;
-								}
-								case "circle": {
-									NumTextPr.RFonts.SetAll("Courier New", -1);
-									LvlText = "o";
-									break;
-								}
-								case "square": {
-									NumTextPr.RFonts.SetAll("Wingdings", -1);
-									LvlText = String.fromCharCode(0x00A7);
-									break;
+					let LvlText, NumTextPr;
+					let _applyBulletPr = function (_oNum) {
+						_oNum.CreateDefault(c_oAscMultiLevelNumbering.Bullet);
+						LvlText = String.fromCharCode(0x00B7);
+						NumTextPr = new CTextPr();
+						NumTextPr.RFonts.SetAll("Symbol", -1);
+
+						if (type == null) {
+							if (curLvl % 3 === 0) {
+								type = "disc";
+							} else if (curLvl % 2 === 0) {
+								type = "square";
+							} else {
+								type = "circle";
+							}
+						}
+
+						switch (type) {
+							case "disc": {
+								NumTextPr.RFonts.SetAll("Symbol", -1);
+								LvlText = String.fromCharCode(0x00B7);
+								break;
+							}
+							case "circle": {
+								NumTextPr.RFonts.SetAll("Courier New", -1);
+								LvlText = "o";
+								break;
+							}
+							case "square": {
+								NumTextPr.RFonts.SetAll("Wingdings", -1);
+								LvlText = String.fromCharCode(0x00A7);
+								break;
+							}
+						}
+					};
+
+					let _setLvlByType = function (_oNum) {
+						if (num === Asc.c_oAscNumberingFormat.Bullet) {
+							_oNum.SetLvlByType(curLvl, c_oAscNumberingLevel.Bullet, LvlText, NumTextPr);
+						} else {
+							for (var iLvl = 0; iLvl <= 8; iLvl++) {
+								switch (num) {
+									case Asc.c_oAscNumberingFormat.Bullet     :
+										_oNum.SetLvlByType(iLvl, c_oAscNumberingLevel.Bullet, LvlText, NumTextPr);
+										break;
+									case Asc.c_oAscNumberingFormat.Decimal    :
+										_oNum.SetLvlByType(iLvl, c_oAscNumberingLevel.DecimalDot_Right);
+										break;
+									case Asc.c_oAscNumberingFormat.LowerRoman :
+										_oNum.SetLvlByType(iLvl, c_oAscNumberingLevel.LowerRomanDot_Right);
+										break;
+									case Asc.c_oAscNumberingFormat.UpperRoman :
+										_oNum.SetLvlByType(iLvl, c_oAscNumberingLevel.UpperRomanDot_Right);
+										break;
+									case Asc.c_oAscNumberingFormat.LowerLetter:
+										_oNum.SetLvlByType(iLvl, c_oAscNumberingLevel.LowerLetterDot_Left);
+										break;
+									case Asc.c_oAscNumberingFormat.UpperLetter:
+										_oNum.SetLvlByType(iLvl, c_oAscNumberingLevel.UpperLetterDot_Left);
+										break;
 								}
 							}
+						}
+					};
+
+					let curLvl = pNoHtmlPr.nLvl != null ? pNoHtmlPr.nLvl : 0;
+					if (null == NumId && this.pasteInPresentationShape !== true) {
+						// Создаем нумерацию
+						let oNum = this.oLogicDocument.GetNumbering().CreateNum();
+						NumId = oNum.GetId();
+						if (Asc.c_oAscNumberingFormat.Bullet === num) {
+							_applyBulletPr(oNum);
 						} else {
 							oNum.CreateDefault(c_oAscMultiLevelNumbering.Numbered);
 						}
-
-						for (var iLvl = 0; iLvl <= 8; iLvl++) {
-							switch (num) {
-								case Asc.c_oAscNumberingFormat.Bullet     :
-									oNum.SetLvlByType(iLvl, c_oAscNumberingLevel.Bullet, LvlText, NumTextPr);
-									break;
-								case Asc.c_oAscNumberingFormat.Decimal    :
-									oNum.SetLvlByType(iLvl, c_oAscNumberingLevel.DecimalDot_Right);
-									break;
-								case Asc.c_oAscNumberingFormat.LowerRoman :
-									oNum.SetLvlByType(iLvl, c_oAscNumberingLevel.LowerRomanDot_Right);
-									break;
-								case Asc.c_oAscNumberingFormat.UpperRoman :
-									oNum.SetLvlByType(iLvl, c_oAscNumberingLevel.UpperRomanDot_Right);
-									break;
-								case Asc.c_oAscNumberingFormat.LowerLetter:
-									oNum.SetLvlByType(iLvl, c_oAscNumberingLevel.LowerLetterDot_Left);
-									break;
-								case Asc.c_oAscNumberingFormat.UpperLetter:
-									oNum.SetLvlByType(iLvl, c_oAscNumberingLevel.UpperLetterDot_Left);
-									break;
-							}
-						}
-
+						_setLvlByType(oNum);
 						setListTextPr(oNum);
+					} else if (this.pasteInPresentationShape !== true) {
+						let prevNum = this.oLogicDocument.Numbering.GetNum(NumId)
+						_applyBulletPr(prevNum);
+						_setLvlByType(prevNum);
 					}
 
 					if (this.pasteInPresentationShape !== true && Para.bFromDocument === true) {
-						Para.ApplyNumPr(NumId, 0);
+						Para.ApplyNumPr(NumId, curLvl);
 					}
 				}
 			} else {
@@ -11399,6 +11431,13 @@ PasteProcessor.prototype =
 
 		var parseNumbering = function () {
 			if ("ul" === sNodeName || "ol" === sNodeName || "li" === sNodeName) {
+				if ("ul" === sNodeName || "ol" === sNodeName) {
+					if (pPr.nLvl == null) {
+						pPr.nLvl = 0;
+					} else {
+						pPr.nLvl++;
+					}
+				}
 				if (bPresentation) {
 					pPr.bNum = true;
 					if (PasteElementsId.g_bIsDocumentCopyPaste) {
