@@ -1356,6 +1356,53 @@ CPhantom.prototype.fillContent = function()
     this.elements[0][0] = this.getBase();
 };
 
+CPhantom.prototype.Draw_Elements = function(PDSE)
+{
+	var X = PDSE.X;
+
+	var PosLine = this.ParaMath.GetLinePosition(PDSE.Line, PDSE.Range);
+
+	if (this.Pr.show)
+		CMathBase.prototype.Draw_Elements.call(this, PDSE);
+
+	PDSE.X = X + this.size.width;
+};
+
+/**
+ *
+ * @param {MathTextAndStyles | boolean} oMathText
+ * @constructor
+ */
+CPhantom.prototype.GetTextOfElement = function(oMathText)
+{
+	oMathText = new AscMath.MathTextAndStyles(oMathText);
+
+	let base = this.getBase();
+
+	if (oMathText.IsLaTeX())
+	{
+		oMathText.AddText(new AscMath.MathText("\\phantom", this));
+		oMathText.Add(base, true, 1);
+	}
+	else
+	{
+		oMathText.AddText(new AscMath.MathText("\\mphantom", this));
+		oMathText.Add(base, true);
+	}
+
+	return oMathText;
+};
+
+CPhantom.fromMathML = function (reader)
+{
+	let props = new CMathPhantomPr();
+	props.show = false;
+	props.transp = true;
+	props.content = [AscWord.ParaMath.readMathMLContentOnLevel(reader)];
+
+	return new CPhantom(props);
+};
+
 //--------------------------------------------------------export----------------------------------------------------
 window['AscCommonWord'] = window['AscCommonWord'] || {};
 window['AscCommonWord'].CBar = CBar;

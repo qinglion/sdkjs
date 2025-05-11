@@ -3363,14 +3363,54 @@ ParaMath.readMathMLNode = function(reader)
 		case 'mi':
 		case 'mo':
 		case 'mn':
+		case 'mtext':
+			function decodeHexEntities(str) {
+				var result = '';
+				for (var i = 0; i < str.length; ) {
+					if (
+						str.charAt(i) === '&' &&
+						str.charAt(i + 1) === '#' &&
+						str.charAt(i + 2).toLowerCase() === 'x'
+					) {
+						var j = i + 3;
+						var hex = '';
+						while (j < str.length && str.charAt(j) !== ';') {
+							hex += str.charAt(j);
+							j++;
+						}
+						if (str.charAt(j) === ';') {
+							var code = parseInt(hex, 16);
+							if (!isNaN(code)) {
+								result += String.fromCharCode(code);
+								i = j + 1;
+								continue;
+							}
+						}
+					}
+
+					result += str.charAt(i);
+					i++;
+				}
+
+				return result;
+			}
+
 			let text = reader.GetText();
+			text = text.trim();
 			text = text.replaceAll(String.fromCharCode(8290), ""); // invisible *
 			text = text.replaceAll(String.fromCharCode(8292), ""); // invisible +
-			if (text && text.length)
+			text = text.replaceAll("\n", "");
+			text = text.replaceAll("\r", "");
+			text = decodeHexEntities(text);
+
+			if (text)
 			{
 				elements.push(new AscWord.Run(null, true));
 				elements[0].AddText(text);
 			}
+			break;
+		case 'mphantom':
+			elements.push(new AscMath.Phantom.fromMathML(reader));
 			break;
 		case 'msub':
 			elements.push(new AscMath.Degree.fromMathML(reader, DEGREE_SUBSCRIPT));
@@ -3394,9 +3434,57 @@ ParaMath.readMathMLNode = function(reader)
 		case 'mrow':
 			elements = AscWord.ParaMath.readMathMLMRow(reader);
 			break;
+		case 'munder':
+		{
+			let attributes = this.getAttributesMathML(reader);
+
+			if (attributes['accentunder'] && attributes['accentunder'] === 'true')
+				elements.push(AscMath.Accent.fromMathML(reader));
+			else
+				elements.push(AscMath.Limit.fromMathML(reader, true));
+			break;
+		}
+		case 'mover':
+		{
+			let attributes = this.getAttributesMathML(reader);
+
+			if (attributes['accent'] && attributes['accent'] === 'true')
+				elements.push(AscMath.Accent.fromMathML(reader));
+			else
+				elements.push(AscMath.Limit.fromMathML(reader, true, VJUST_TOP));
+			break;
+		}
+		case 'mtable':
+			elements.push(AscMath.Matrix.fromMathML(reader));
+			break;
+		// case 'mstack':
+		// 	elements.push(AscMath.Matrix.fromMathML(reader, true));
+		// 	break;
+		case 'mtr':
+			elements.push(AscMath.Matrix.fromMathML_mtr(reader));
+			break;
+		case 'mtd':
+			elements.push(AscMath.Matrix.fromMathML_mtd(reader))
+			break;
+		case 'mfenced':
+			elements.push(AscMath.Delimiter.fromMathML(reader));
+			break;
 	}
 	
 	return elements;
+};
+ParaMath.getAttributesMathML = function (reader)
+{
+	let attributes = {};
+
+	while (reader.MoveToNextAttribute())
+	{
+		let attributeName = reader.GetName();
+		let attributeValue = reader.GetValue();
+		attributes[attributeName] = attributeValue;
+	}
+
+	return attributes;
 };
 ParaMath.readMathMLMRow = function(reader)
 {
@@ -3421,6 +3509,25 @@ ParaMath.readMathMLContent = function(reader)
 	mathContent.Correct_Content(true);
 	return mathContent;
 };
+ParaMath.readMathMLContentOnLevel = function (reader)
+{
+	let content = [];
+	let mathContent = new CMathContent();
+	let depth = reader.GetDepth();
+
+	while (reader.ReadNextSiblingNode(depth))
+	{
+		content = content.concat(AscWord.ParaMath.readMathMLNode(reader));
+	}
+
+	for (let i = 0; i < content.length; i++)
+	{
+		mathContent.addElementToContent(content[i]);
+	}
+
+	mathContent.Correct_Content(true);
+	return mathContent;
+}
 
 function MatGetKoeffArgSize(FontSize, ArgSize)
 {

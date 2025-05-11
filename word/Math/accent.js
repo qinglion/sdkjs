@@ -762,6 +762,38 @@ CAccent.prototype.GetTextOfElement = function(oMathText)
 	return oMathText;
 };
 
+CAccent.fromMathML = function(reader, type)
+{
+	let props = new CMathAccentPr();
+	props.content = [];
+
+	if (type)
+		props.chrType = type;
+
+	let mContents = [];
+	let depth = reader.GetDepth();
+	while (reader.ReadNextSiblingNode(depth))
+	{
+		mContents.push(AscWord.ParaMath.readMathMLContent(reader));
+	}
+
+	if (mContents.length >= 2)
+	{
+		props.content[0] = mContents[0];
+		if (mContents[1])
+		{
+			let chrText = mContents[1].GetTextOfElement().GetText().trim();
+			props.chr = chrText.charCodeAt(0);
+		}
+	}
+	else
+	{
+		props.content[0] = mContents[0];
+	}
+
+	return new CAccent(props);
+};
+
 /**
  *
  * @param CMathMenuAccent
