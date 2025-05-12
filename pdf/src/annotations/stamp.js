@@ -317,6 +317,11 @@
         this.SetNeedRecalcSizes(!isOnRotate);
     };
     CAnnotationStamp.prototype.SetNeedRecalcSizes = function(bRecalc) {
+        let oDoc = Asc.editor.getPDFDoc();
+        if (oDoc.Viewer.IsOpenAnnotsInProgress) {
+            return;
+        }
+
         this._needRecalcSizes = bRecalc;
         this.recalcGeometry();
     };
