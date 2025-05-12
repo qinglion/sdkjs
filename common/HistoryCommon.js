@@ -1647,6 +1647,7 @@
 	window['AscDFH'].historyitem_type_ChartStyleEntry        = 1198 << 16;
 	window['AscDFH'].historyitem_type_MarkerLayout           = 1199 << 16;
 	window['AscDFH'].historyitem_type_TimelineSlicerView     = 1200 << 16;
+	window['AscDFH'].historyitem_type_ImageBlipFillPart      = 1201 << 16;
 
 
 	window['AscDFH'].historyitem_type_Address                          = 1201 << 16;
