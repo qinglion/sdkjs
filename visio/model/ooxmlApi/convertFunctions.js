@@ -2105,23 +2105,29 @@
 			}
 		}
 
-		let endArrowTypeCell = this.getCell("EndArrow");
-		let endArrowSizeCell = this.getCell("EndArrowSize");
-		let endArrowType = endArrowTypeCell ? endArrowTypeCell.calculateValue(this, pageInfo,
-			visioDocument.themes) : 0;
-		let endArrowSize = endArrowSizeCell ? endArrowSizeCell.calculateValue(this, pageInfo,
-			visioDocument.themes) : 1;
-		let endArrow = getEndArrow(endArrowType, endArrowSize);
-		oStroke.setTailEnd(endArrow);
+		// Each geometry section may have arrows
+		// Arrow are displayed only if that geometry section has NoFill cell equal to 1
+		// For now as we set arrow for all the shape let's check first geometry only
+		let firstGeometrySection = this.getSection("Geometry_0");
+		if (firstGeometrySection && firstGeometrySection.getCellNumberValue("NoFill") === 1) {
+			let endArrowTypeCell = this.getCell("EndArrow");
+			let endArrowSizeCell = this.getCell("EndArrowSize");
+			let endArrowType = endArrowTypeCell ? endArrowTypeCell.calculateValue(this, pageInfo,
+				visioDocument.themes) : 0;
+			let endArrowSize = endArrowSizeCell ? endArrowSizeCell.calculateValue(this, pageInfo,
+				visioDocument.themes) : 1;
+			let endArrow = getEndArrow(endArrowType, endArrowSize);
+			oStroke.setTailEnd(endArrow);
 
-		let beginArrowTypeCell = this.getCell("BeginArrow");
-		let beginArrowSizeCell = this.getCell("BeginArrowSize");
-		let beginArrowType = beginArrowTypeCell ? beginArrowTypeCell.calculateValue(this, pageInfo,
-			visioDocument.themes) : 0;
-		let beginArrowSize = beginArrowSizeCell ? beginArrowSizeCell.calculateValue(this, pageInfo,
-			visioDocument.themes) : 1;
-		let beginArrow = getEndArrow(beginArrowType, beginArrowSize);
-		oStroke.setHeadEnd(beginArrow);
+			let beginArrowTypeCell = this.getCell("BeginArrow");
+			let beginArrowSizeCell = this.getCell("BeginArrowSize");
+			let beginArrowType = beginArrowTypeCell ? beginArrowTypeCell.calculateValue(this, pageInfo,
+				visioDocument.themes) : 0;
+			let beginArrowSize = beginArrowSizeCell ? beginArrowSizeCell.calculateValue(this, pageInfo,
+				visioDocument.themes) : 1;
+			let beginArrow = getEndArrow(beginArrowType, beginArrowSize);
+			oStroke.setHeadEnd(beginArrow);
+		}
 
 
 		let flipHorizontally = this.getCellNumberValue("FlipX") === 1;
