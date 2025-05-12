@@ -17709,6 +17709,14 @@
 			// when creating new array formulas, it is necessary to transfer information about the dynamic array because regular ref is used
 			cell.setValue(_val, callback, isCopyPaste, byRef, ignoreHyperlink, dynamicRange);
 		});
+
+		//***array-formula***
+		let _sFormula = this.getFormula();
+		if(_sFormula && byRef) {
+			History.Add(AscCommonExcel.g_oUndoRedoArrayFormula, AscCH.historyitem_ArrayFromula_AddFormula, this.worksheet.getId(),
+				new Asc.Range(this.bbox.c1, this.bbox.r1, this.bbox.c2, this.bbox.r2), new AscCommonExcel.UndoRedoData_ArrayFormula(this.bbox, "=" + _sFormula));
+		}
+
 		AscCommon.History.EndTransaction();
 	};
 	Range.prototype.setValue2=function(array, pushOnlyFirstMergedCell){

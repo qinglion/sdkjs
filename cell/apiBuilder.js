@@ -11840,6 +11840,103 @@
 		}
 	};
 
+	/**
+	 * Sets the array formula of a range
+	 * @memberof ApiRange
+	 * @typeofeditors ["CSE"]
+	 * @param {string | boolean | number} data - The general value for the cell or cell range.
+	 * @returns {boolean} - returns false if such a range does not exist.
+	 * @see office-js-api/Examples/{Editor}/ApiRange/Methods/SetFormulaArray.js
+	 */
+	ApiRange.prototype.SetFormulaArray = function (data) {
+		if (!this.range) {
+			return false;
+		}
+
+		let worksheet = this.range.worksheet;
+
+		if (data === undefined || data === null) {
+			data = AscCommon.cErrorLocal["na"];
+		}
+
+		data = checkFormat(data);
+		let range = this.range;
+		let merged = range.hasMerged();
+		if (merged) {
+			range = this.range.worksheet.getRange3(merged.r1, merged.c1, merged.r1, merged.c1);
+		}
+
+		range.setValue(data.toString(), null, null, range.bbox);
+
+		if (data.type === AscCommonExcel.cElementType.number) {
+			range.setNumFormat(AscCommon.getShortDateFormat());
+		}
+
+		worksheet.workbook.handlers.trigger("cleanCellCache", worksheet.getId(), [range.bbox], true);
+		worksheet.workbook.oApi.onWorksheetChange(range.bbox);
+		return true;
+	};
+
+	/**
+	 * Returns the array formula of a range
+	 * @memberof ApiRange
+	 * @typeofeditors ["CSE"]
+	 * @returns {string | null}
+	 * @see office-js-api/Examples/{Editor}/ApiRange/Methods/GetFormulaArray.js
+	 */
+	ApiRange.prototype.GetFormulaArray = function () {
+		let bbox = this.range.bbox;
+		let nCol = bbox.c2 - bbox.c1 + 1;
+		let nRow = bbox.r2 - bbox.r1 + 1;
+		let res;
+		//returns:
+		//1) duplicated formulas
+		//2) duplicated values
+		//3) cells with 1 array formulas
+
+		let formulaRef, sFormula, sValue;
+		this.range.worksheet.getCell3(bbox.r1, bbox.c1)._foreachNoEmpty(function (cell) {
+			if (cell.isFormula()) {
+				let formulaParsed = cell.getFormulaParsed();
+				if (formulaParsed) {
+					formulaRef = formulaParsed.ref;
+					sFormula = cell.getValueForEdit();
+				}
+			} else {
+				sValue = cell.getValue();
+			}
+		});
+		if (!sFormula && !sValue) {
+			sValue = "";
+		}
+		if (formulaRef && formulaRef.containsRange(bbox)) {
+			res = sFormula;
+		} else {
+			res = sFormula ? sFormula : sValue;
+			for (let i = 0; i < nRow; i++) {
+				for (let k = 0; k < nCol; k++) {
+					let cell = this.range.worksheet.getRange3((bbox.r1 + i), (bbox.c1 + k), (bbox.r1 + i), (bbox.c1 + k));
+					if (sFormula && cell.getFormula() !== sFormula) {
+						return null;
+					} else if (cell.getValue() !== sValue) {
+						return null;
+					}
+				}
+			}
+		}
+
+		return res;
+	};
+
+	Object.defineProperty(ApiRange.prototype, "FormulaArray", {
+		get: function () {
+			return this.GetValue();
+		},
+		set: function (sValue) {
+			this.SetFormulaArray(sValue);
+		}
+	});
+
 	//------------------------------------------------------------------------------------------------------------------
 	//
 	// ApiDrawing
