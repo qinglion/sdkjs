@@ -5640,7 +5640,7 @@
 	 * Returns an array of all tables from the current document content.
 	 * @memberof ApiDocumentContent
 	 * @typeofeditors ["CDE"]
-	 * @return {ApiParagraph[]}
+	 * @return {ApiTable[]}
 	 * @see office-js-api/Examples/{Editor}/ApiDocumentContent/Methods/GetAllTables.js
 	 */
 	ApiDocumentContent.prototype.GetAllTables = function()
