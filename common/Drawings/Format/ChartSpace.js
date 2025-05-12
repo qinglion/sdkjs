@@ -513,25 +513,28 @@ function(window, undefined) {
 
 	function CPathMemory() {
 		this.size = 1000;
-		this.ArrPathCommand = new Float64Array(1000);
+		this.ArrPathCommand = new Float64Array(this.size);
 		this.curPos = -1;
 
 		this.path = new AscFormat.Path2(this);
 	}
 
-	CPathMemory.prototype.AllocPath = function () {
-
-		if (this.curPos + 1 >= this.ArrPathCommand.length) {
-			var aNewArray = new Float64Array((((3 / 2) * (this.curPos + 1)) >> 0) + 1);
-			for (var i = 0; i < this.ArrPathCommand.length; ++i) {
+	CPathMemory.prototype.CheckMemory = function(nSize) {
+		if (this.curPos + nSize >= this.ArrPathCommand.length) {
+			this.size = (((3 / 2) * (this.curPos + 1)) >> 0) + 1;
+			let aNewArray = new Float64Array(this.size);
+			for (let i = 0; i < this.ArrPathCommand.length; ++i) {
 				aNewArray[i] = this.ArrPathCommand[i];
 			}
 			this.ArrPathCommand = aNewArray;
-			this.path.ArrPathCommand = aNewArray;
 		}
+		return this.ArrPathCommand;
+	};
+	CPathMemory.prototype.AllocPath = function () {
+
+		this.CheckMemory(1);
 
 		this.path.startPos = ++this.curPos;
-		this.path.curLen = 0;
 		this.ArrPathCommand[this.curPos] = 0;
 		return this.path;
 	};
@@ -541,8 +544,14 @@ function(window, undefined) {
 	};
 	CPathMemory.prototype.GetPath = function (index) {
 		this.path.startPos = index;
-		this.path.curLen = 0;
 		return this.path;
+	};
+	CPathMemory.prototype.WriteNumber = function (dValue) {
+		this.CheckMemory(1);
+		this.ArrPathCommand[++this.curPos] = dValue;
+	};
+	CPathMemory.prototype.IncrementNumberInPos = function (nPos) {
+		this.ArrPathCommand[nPos] += 1;
 	};
 
 	drawingsChangesMap[AscDFH.historyitem_ChartSpace_SetNvGrFrProps] = function (oClass, value) {
