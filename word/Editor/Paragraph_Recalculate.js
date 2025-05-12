@@ -2565,6 +2565,7 @@ Paragraph.prototype.private_CheckNeedBeforeSpacing = function(CurPage, Parent, P
 
 		return (!oPrevElement
 			|| oPrevElement.GetAbsolutePage(oPrevElement.GetPagesCount() - 1) >= PageAbs
+			|| !oPrevElement.IsParagraph()
 			|| oPrevElement.Get_SectionPr());
 	}
 

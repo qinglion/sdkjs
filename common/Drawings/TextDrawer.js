@@ -1861,7 +1861,7 @@ CTextDrawer.prototype.Start_Command = function(commandId, param, index, nType)
 								const oDocStructure = this.m_aStack[this.m_aStack.length - 1];
 								if (oDocStructure) {
 									const oLastParagraph = oDocStructure.m_aContent[oDocStructure.m_aContent.length - 1];
-									if (oLastParagraph) {
+									if (oLastParagraph && oLastParagraph.m_oLastWordStart) {
 										oNewStructure.m_oLastWordStart.charIndex = oLastParagraph.m_oLastWordStart.charIndex;
 									}
 									this.setCurrentSplitOptions(oDocStructure.m_aContent.length);
