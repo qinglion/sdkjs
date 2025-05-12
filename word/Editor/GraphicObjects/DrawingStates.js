@@ -1102,9 +1102,12 @@ RotateState.prototype =
                         if(false === this.drawingObjects.document.Document_Is_SelectionLocked(changestype_Drawing_Props, {Type : changestype_2_ElementsArray_and_Type , Elements : aCheckParagraphs, CheckType : AscCommon.changestype_Paragraph_Content}, bNoNeedCheck))
                         {
                             this.drawingObjects.document.StartAction(AscDFH.historydescription_Document_RotateFlowDrawingNoCtrl);
-                            if(bMoveState && !this.drawingObjects.selection.cropSelection){
+                            if(bMoveState && !this.drawingObjects.selection.cropSelection)
+                            {
                                 this.drawingObjects.resetSelection();
                             }
+
+                            let aDrawingsToSelect = [];
                             for(i = 0; i < aDrawings.length; ++i)
                             {
                                 bounds = aBounds[i];
@@ -1152,7 +1155,7 @@ RotateState.prototype =
                                         this.drawingObjects.resetSelection();
                                         this.drawingObjects.selection.cropSelection = originalCopy.GraphicObj;
                                     }
-                                    this.drawingObjects.selectObject(originalCopy.GraphicObj, pageIndex);
+                                    aDrawingsToSelect.push({drawing: originalCopy.GraphicObj, pageIndex: pageIndex});
                                 }
                                 else
                                 {
@@ -1162,10 +1165,15 @@ RotateState.prototype =
                                     }
                                     if(bMoveState)
                                     {
-                                        this.drawingObjects.selectObject(original.GraphicObj, pageIndex);
+                                        aDrawingsToSelect.push({drawing: original.GraphicObj, pageIndex: pageIndex});
                                     }
                                 }
                                 this.drawingObjects.document.Recalculate();
+                            }
+                            for(let drawingIdx = 0; drawingIdx < aDrawingsToSelect.length; ++drawingIdx)
+                            {
+                                let oSelectInfo = aDrawingsToSelect[drawingIdx];
+                                this.drawingObjects.selectObject(oSelectInfo.drawing, oSelectInfo.pageIndex);
                             }
                             this.drawingObjects.document.FinalizeAction();
                         }
