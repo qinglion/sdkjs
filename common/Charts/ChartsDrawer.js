@@ -2057,7 +2057,6 @@ CChartsDrawer.prototype =
 						n++;
 					}
 					numSeries++;
-
 				}
 
 				if(min === max) {
@@ -2083,7 +2082,6 @@ CChartsDrawer.prototype =
 							const newMax = seria.trendline && seria.trendline.forward && ptCount > 1 ? ptCount + seria.trendline.forward : ptCount;
 							max = Math.max(max, newMax);
 							min = Math.min(min, newMin);
-							console.log(min);
 						}
 					}
 				}
@@ -2111,10 +2109,8 @@ CChartsDrawer.prototype =
 
 				// check the impact of trendline on scatter chart
 				if (series[l].trendline) {
-					console.log(min, max);
 					min = series[l].trendline.backward ? min - series[l].trendline.backward : min;
 					max = series[l].trendline.forward ? max + series[l].trendline.forward : max;
-					console.log(min, max);
 				}
 			}
 		};
