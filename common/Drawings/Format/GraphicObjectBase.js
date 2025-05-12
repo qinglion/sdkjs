@@ -1071,6 +1071,9 @@
 		}
 	};
 	CGraphicObjectBase.prototype.getOuterShdw = function () {
+		if (this.isShadowSp) {
+			return null;
+		}
 		let outerShdw = null;
 		if (this.spPr) {
 			outerShdw = this.spPr.getOuterShdw();
@@ -1121,6 +1124,8 @@
 				let track_object = new AscFormat.NewShapeTrack("rect", 0, 0, oParentObjects.theme, oParentObjects.master, oParentObjects.layout, oParentObjects.slide, 0);
 				track_object.track({}, 0, 0);
 				let shape = track_object.getShape(false, null, null);
+				shape.isShadowSp = true;
+				shape.setStyle(null);
 				let oSpPr = shape.spPr;
 				if (geometry) {
 					oSpPr.setGeometry(geometry.createDuplicate());
@@ -1190,7 +1195,6 @@
 				}
 				shape.recalculate();
 				this.shdwSp = shape;
-				shape.isShadowSp = true;
 			}, this, []);
 		}
 	};
