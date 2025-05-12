@@ -521,7 +521,7 @@ function(window, undefined) {
 
 	CPathMemory.prototype.CheckMemory = function(nSize) {
 		if (this.curPos + nSize >= this.ArrPathCommand.length) {
-			this.size = (((3 / 2) * (this.curPos + 1)) >> 0) + 1;
+			this.size = (((3 / 2) * (this.curPos + nSize)) >> 0) + 1;
 			let aNewArray = new Float64Array(this.size);
 			for (let i = 0; i < this.ArrPathCommand.length; ++i) {
 				aNewArray[i] = this.ArrPathCommand[i];
