@@ -526,6 +526,7 @@
 	{
 		if (!this.WordControl)
 			return;
+		this.WordControl.m_oLogicDocument.AfterOpenDocument();
 		this.WordControl.m_oLogicDocument.toCShapes();
 		this.WordControl.m_oLogicDocument.Recalculate({Drawings : {All : true, Map : {}}});
 	};
