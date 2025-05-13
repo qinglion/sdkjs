@@ -350,7 +350,7 @@
 			return;
 		
 		let oDoc = this.DocumentRenderer.getPDFDoc();
-		let oThumbnails		= oDoc.Viewer.thumbnails;
+		let oThumbnails = oDoc.Viewer.thumbnails;
 
 		if (oDoc.CanCopyCut().cut) {
 			oDoc.DoAction(function() {
@@ -360,7 +360,7 @@
 				else {
 					oDoc.Remove(1);
 				}
-			}, AscDFH.historydescription_Cut);
+			}, AscDFH.historydescription_Cut, this);
 		}
 	};
 	PDFEditorApi.prototype.onUpdateRestrictions = function() {
