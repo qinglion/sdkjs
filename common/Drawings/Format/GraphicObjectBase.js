@@ -1071,6 +1071,9 @@
 		}
 	};
 	CGraphicObjectBase.prototype.getOuterShdw = function () {
+		if (this.isShadowSp) {
+			return null;
+		}
 		let outerShdw = null;
 		if (this.spPr) {
 			outerShdw = this.spPr.getOuterShdw();
@@ -1121,6 +1124,8 @@
 				let track_object = new AscFormat.NewShapeTrack("rect", 0, 0, oParentObjects.theme, oParentObjects.master, oParentObjects.layout, oParentObjects.slide, 0);
 				track_object.track({}, 0, 0);
 				let shape = track_object.getShape(false, null, null);
+				shape.isShadowSp = true;
+				shape.setStyle(null);
 				let oSpPr = shape.spPr;
 				if (geometry) {
 					oSpPr.setGeometry(geometry.createDuplicate());
@@ -1249,6 +1254,9 @@
 	CGraphicObjectBase.prototype.isInk = function () {
 		return false;
 	};
+	CGraphicObjectBase.prototype.isHaveOnlyInks = function () {
+		return false;
+	};
 	CGraphicObjectBase.prototype.isPlaceholder = function () {
 		let oUniPr = this.getUniNvProps();
 		if (oUniPr) {
@@ -1265,28 +1273,31 @@
 	CGraphicObjectBase.prototype.drawShdw = function (graphics) {
 		var outerShdw = this.getOuterShdw && this.getOuterShdw();
 		if (this.shdwSp && outerShdw && !graphics.isBoundsChecker()) {
-			var oTransform = new AscCommon.CMatrix();
-			var dist = outerShdw.dist ? outerShdw.dist / 36000 : 0;
-			var dir = outerShdw.dir ? outerShdw.dir : 0;
-			if(this.shdwSp.extX < this.extX && this.shdwSp.extY < this.extY) {
-				oTransform.tx = dist * Math.cos(AscFormat.cToRad * dir);
-				oTransform.ty = dist * Math.sin(AscFormat.cToRad * dir);
-			}
-			else {
-				oTransform.tx = dist * Math.cos(AscFormat.cToRad * dir) - (this.shdwSp.extX - this.extX) / 2.0;
-				oTransform.ty = dist * Math.sin(AscFormat.cToRad * dir) - (this.shdwSp.extY - this.extY) / 2.0;
-			}
-			if(this.shdwSp.flipH) {
-				oTransform.tx -= this.shdwSp.extX;
-			}
-			if(this.shdwSp.flipV) {
-				oTransform.ty += this.shdwSp.extY;
-			}
-			global_MatrixTransformer.MultiplyAppend(oTransform, this.transform);
-			this.shdwSp.transform = oTransform;
+			this.shdwSp.transform = this.shdwSp.getShdwTransform(outerShdw, this);
 			this.shdwSp.recalculateBounds();
 			this.shdwSp.draw(graphics);
 		}
+	};
+	CGraphicObjectBase.prototype.getShdwTransform = function(outerShdw, mainShape) {
+		var oTransform = new AscCommon.CMatrix();
+		var dist = outerShdw.dist ? outerShdw.dist / 36000 : 0;
+		var dir = outerShdw.dir ? outerShdw.dir : 0;
+		if(this.extX < mainShape.extX && this.extY < mainShape.extY) {
+			oTransform.tx = dist * Math.cos(AscFormat.cToRad * dir);
+			oTransform.ty = dist * Math.sin(AscFormat.cToRad * dir);
+		}
+		else {
+			oTransform.tx = dist * Math.cos(AscFormat.cToRad * dir) - (this.extX - mainShape.extX) / 2.0;
+			oTransform.ty = dist * Math.sin(AscFormat.cToRad * dir) - (this.extY - mainShape.extY) / 2.0;
+		}
+		if(this.flipH) {
+			oTransform.tx -= this.extX;
+		}
+		if(this.flipV) {
+			oTransform.ty += this.extY;
+		}
+		global_MatrixTransformer.MultiplyAppend(oTransform, mainShape.transform);
+		return  oTransform;
 	};
 	CGraphicObjectBase.prototype.drawAdjustments = function (drawingDocument) {
 	};
@@ -3210,8 +3221,8 @@
 			h: oPresentation.GetHeightMM()
 		}
 	};
-	CGraphicObjectBase.prototype.getAnimTexture = function (scale, bMorph, oAnimParams) {
 
+	CGraphicObjectBase.prototype.getAnimTexture = function (scale, bMorph, oAnimParams, bNoText, oBrushPen) {
 		const oBounds = this.getBoundsByDrawing(bMorph);
 		const oCanvas = oBounds.createCanvas(scale);
 		if(!oCanvas) {
@@ -3225,17 +3236,31 @@
 		AscCommon.IsShapeToImageConverter = true;
 		let oOldBrush = this.brush;
 		let oOldPen = this.pen;
-		if(oAnimParams && IsTrueDrawing(this)) {
+		if(oAnimParams) {
 			this.brush = oAnimParams.brush;
 			this.pen = oAnimParams.pen;
 		}
-		this.draw(oGraphics);
-		if(oAnimParams && IsTrueDrawing(this)) {
-			this.brush = oOldBrush;
-			this.pen = oOldPen;
+		let oCurrentBrush;
+		let oCurrentPen;
+		if (oBrushPen) {
+			this.brush = oBrushPen.brush;
+			this.pen = oBrushPen.pen;
+			oCurrentBrush = this.brush;
+			oCurrentPen = this.pen;
+		} else {
+			oCurrentBrush = this.getBrush();
+			oCurrentPen = this.getPen();
 		}
+		let oOldTextBody = this.txBody;
+		if (bNoText) {
+			this.txBody = null;
+		}
+		this.draw(oGraphics);
+		this.txBody = oOldTextBody;
+		this.brush = oOldBrush;
+		this.pen = oOldPen;
 		AscCommon.IsShapeToImageConverter = false;
-		let oTexture = new AscFormat.CBaseAnimTexture(oCanvas, scale, nX, nY);
+		let oTexture = new AscFormat.CBaseAnimTexture(oCanvas, scale, nX, nY, bNoText, oCurrentBrush, oCurrentPen);
 		if(oAnimParams && oAnimParams.transform) {
 			let oNewBounds = oBounds.copy();
 			oNewBounds.transformRect(oAnimParams.transform);
@@ -3249,10 +3274,11 @@
 			oNewGraphics.m_oCoordTransform.tx = -nX;
 			oNewGraphics.m_oCoordTransform.ty = -nY;
 			oTexture.draw(oNewGraphics, oAnimParams.transform);
-			oTexture = new AscFormat.CBaseAnimTexture(oNewCanvas, scale, nX, nY);
+			oTexture = new AscFormat.CBaseAnimTexture(oNewCanvas, scale, nX, nY, bNoText, oCurrentBrush, oCurrentPen);
 		}
 		return oTexture;
 	};
+	CGraphicObjectBase.prototype.getDocStructure = function (oParagraphSplitOptions, oIdGenerator) {return null;};
 	CGraphicObjectBase.prototype.isOnProtectedSheet = function () {
 		if (this.worksheet) {
 			if (this.worksheet.getSheetProtection(Asc.c_oAscSheetProtectType.objects)) {
@@ -3799,6 +3825,19 @@
 	CGraphicObjectBase.prototype.generateLocalDrawingPart = function () {};
 	CGraphicObjectBase.prototype.generateSmartArtDrawingPart = function () {};
 	CGraphicObjectBase.prototype.checkDrawingPartWithHistory = function () {};
+	CGraphicObjectBase.prototype.getAllInks = function (arrInks) {return arrInks || []};
+	CGraphicObjectBase.prototype.isShapeCrop = function () {return false};
+	CGraphicObjectBase.prototype.forEachAnimationDrawing = function(fCallback) {
+		return !!fCallback(this);
+	};
+	CGraphicObjectBase.prototype.forEachObjectToDraw = function(fCallback) {};
+	CGraphicObjectBase.prototype.onRemoveContent = function () {};
+	CGraphicObjectBase.prototype.getBrush = function() {
+		return this.brush;
+	};
+	CGraphicObjectBase.prototype.getPen = function() {
+		return this.pen;
+	};
 	var ANIM_LABEL_WIDTH_PIX = 22;
 	var ANIM_LABEL_HEIGHT_PIX = 17;
 

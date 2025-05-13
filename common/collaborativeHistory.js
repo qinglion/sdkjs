@@ -354,13 +354,8 @@
 
 		for (let index = 0, count = reverseChanges.length; index < count; ++index)
 		{
-			let oClass = reverseChanges[index].GetClass();
 			reverseChanges[index].Load();
-
-			if (oClass && oClass.SetIsRecalculated && (!reverseChanges[index] || reverseChanges[index].IsNeedRecalculate()))
-				oClass.SetIsRecalculated(false);
-
-			this.AddChange(reverseChanges[index]);
+			reverseChanges[index].CheckNeedRecalculate();
 		}
 
 		// Создаем точку в истории. Делаем действия через обычные функции (с отключенным пересчетом), которые пишут в
@@ -385,6 +380,7 @@
 			}
 
 			changesToRecalc.push(historyChange);
+			this.AddChange(historyChange);
 		}
 		AscCommon.History.Remove_LastPoint();
 		this.CoEditing.Clear_DCChanges();

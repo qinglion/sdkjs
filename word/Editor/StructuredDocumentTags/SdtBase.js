@@ -49,7 +49,7 @@ CSdtBase.prototype.GetPlaceholderText = function()
 	if (oDocPart)
 	{
 		var oFirstParagraph = oDocPart.GetFirstParagraph();
-		return oFirstParagraph.GetText({ParaEndToSpace : false});
+		return oFirstParagraph.GetText({ParaSeparator : ""});
 	}
 
 	return String.fromCharCode(nbsp_charcode, nbsp_charcode, nbsp_charcode, nbsp_charcode);
@@ -512,17 +512,6 @@ CSdtBase.prototype.IsCurrent = function()
 CSdtBase.prototype.SetCurrent = function(isCurrent)
 {
 	this.Current = isCurrent;
-	
-	if (this.IsForm() && this.IsFixedForm())
-	{
-		let logicDocument   = this.GetLogicDocument();
-		let drawingDocument = logicDocument ? logicDocument.GetDrawingDocument() : null;
-		if (drawingDocument && !logicDocument.IsFillingOFormMode())
-		{
-			drawingDocument.OnDrawContentControl(null, AscCommon.ContentControlTrack.In);
-			drawingDocument.OnDrawContentControl(null, AscCommon.ContentControlTrack.Hover);
-		}
-	}
 };
 /**
  * Специальная функция, которая обновляет текстовые настройки у плейсхолдера для форм
@@ -1048,7 +1037,11 @@ CSdtBase.prototype.GetFieldMaster = function()
  */
 CSdtBase.prototype.GetFormRole = function()
 {
-	let fieldMaster = this.GetFieldMaster();
+	let mainForm = this.GetMainForm();
+	if (!mainForm)
+		mainForm = this;
+	
+	let fieldMaster = mainForm.GetFieldMaster();
 	let userMaster  = fieldMaster ? fieldMaster.getFirstUser() : null;
 	return userMaster ? userMaster.getRole() : "";
 };
@@ -1060,6 +1053,32 @@ CSdtBase.prototype.SetFormRole = function(roleName)
 	let formPr = this.GetFormPr().Copy();
 	formPr.SetRole(roleName);
 	this.SetFormPr(formPr);
+};
+CSdtBase.prototype.GetRoleColor = function()
+{
+	let logicDocument = this.GetLogicDocument();
+	
+	if (!logicDocument || !this.IsForm())
+		return null;
+	
+	let formPr = this.GetFormPr();
+	if (!this.IsMainForm())
+	{
+		let mainForm = this.GetMainForm();
+		if (!mainForm)
+			return null;
+		
+		formPr = mainForm.GetFormPr();
+	}
+	
+	if (!formPr)
+		return null;
+	
+	let fieldMaster = formPr.GetFieldMaster();
+	let userMaster  = fieldMaster ? fieldMaster.getFirstUser() : null;
+	let userColor   = userMaster ? userMaster.getColor() : null;
+	
+	return userColor ? userColor : null;
 };
 CSdtBase.prototype.SetFieldMaster = function(fieldMaster)
 {
@@ -1299,4 +1318,11 @@ CSdtBase.prototype.setBorderColor = function(color)
 		return;
 		
 	AscCommon.AddAndExecuteChange(new CChangesSdtPrBorderColor(this, this.Pr.BorderColor, color));
+};
+/**
+ * @param padding {number}
+ */
+CSdtBase.prototype.drawContentControlsTrackIn = function(padding)
+{
+	return this.DrawContentControlsTrack(AscCommon.ContentControlTrack.In, undefined, undefined, undefined, undefined, padding);
 };

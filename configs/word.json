@@ -38,7 +38,8 @@
 			"word/Editor/Table/TableLook.js",
 			"cell/utils/utils.js",
 			"pdf/src/defines.js",
-			"pdf/api.js"
+			"pdf/api.js",
+			"pdf/api_plugins.js"
 		],
 		"common": [
 			"common/api/actionOnTimer.js",
@@ -137,6 +138,7 @@
 			"common/Drawings/HatchPattern.js",
 			
 			"common/bidi/bidi-common.js",
+			"common/bidi/bidi-brackets.js",
 			"common/bidi/bidi-types.js",
 			"common/bidi/unicode-data.js",
 			
@@ -149,6 +151,7 @@
 			"common/wordcopypaste.js",
 			"common/intervalTree.js",
 
+			"cell/model/SheetMemory.js",
 			"cell/model/WorkbookElems.js",
 			"cell/model/Workbook.js",
 			"cell/model/Serialize.js",

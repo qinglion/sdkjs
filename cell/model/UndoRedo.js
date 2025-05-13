@@ -955,9 +955,9 @@ function (window, undefined) {
 		if (this.formula != val.formula) {
 			return false;
 		}
-		if ((this.formulaRef &&
-			!(this.formulaRef.r1 === val.r1 && this.formulaRef.c1 === val.c1 && this.formulaRef.r2 === val.r2 &&
-				this.formulaRef.c2 === val.c2)) || (this.formulaRef !== val)) {
+		if ((this.formulaRef && val.formulaRef &&
+			!(this.formulaRef.r1 === val.formulaRef.r1 && this.formulaRef.c1 === val.formulaRef.c1 && this.formulaRef.r2 === val.formulaRef.r2 &&
+				this.formulaRef.c2 === val.formulaRef.c2)) || (this.formulaRef !== val.formulaRef)) {
 			return false;
 		}
 		if (this.value.isEqual(val.value)) {
@@ -2008,16 +2008,17 @@ function (window, undefined) {
 		}
 	};
 
-	function UndoRedoData_DefinedNames(name, ref, sheetId, type, isXLNM) {
+	function UndoRedoData_DefinedNames(name, ref, sheetId, type, isXLNM, hidden) {
 		this.name = name;
 		this.ref = ref;
 		this.sheetId = sheetId;
 		this.type = type;
 		this.isXLNM = isXLNM;
+		this.hidden = hidden === undefined ? false : hidden;
 	}
 
 	UndoRedoData_DefinedNames.prototype.Properties = {
-		name: 0, ref: 1, sheetId: 2, type: 4, isXLNM: 5
+		name: 0, ref: 1, sheetId: 2, type: 4, isXLNM: 5, hidden: 6
 	};
 	UndoRedoData_DefinedNames.prototype.getType = function () {
 		return UndoRedoDataTypes.DefinedName;
@@ -2037,6 +2038,8 @@ function (window, undefined) {
 				return this.type;
 			case this.Properties.isXLNM:
 				return this.isXLNM;
+			case this.Properties.hidden:
+				return this.hidden;
 		}
 		return null;
 	};
@@ -2056,6 +2059,9 @@ function (window, undefined) {
 				break;
 			case this.Properties.isXLNM:
 				this.isXLNM = value;
+				break;
+			case this.Properties.hidden:
+				this.hidden = value;
 				break;
 		}
 	};
@@ -3448,7 +3454,6 @@ function (window, undefined) {
 			return;
 		}
 		var collaborativeEditing = wb.oApi.collaborativeEditing;
-		var workSheetView;
 		var changeFreezePane;
 		if (AscCH.historyitem_Worksheet_RemoveCell === Type) {
 			nRow = Data.nRow;
@@ -3530,9 +3535,9 @@ function (window, undefined) {
 
 			//нужно для того, чтобы грамотно выставлялись цвета в ф/т при ручном скрытии строк, затрагивающих ф/т(undo/redo)
 			//TODO для случая скрытия строк фильтром(undo), может два раза вызываться функция setColorStyleTable - пересмотреть
-			workSheetView = wb.oApi.wb.getWorksheetById(nSheetId);
-			if (workSheetView) {
-				workSheetView.model.autoFilters.reDrawFilter(null, index);
+			worksheetView = wb.oApi.wb.getWorksheetById(nSheetId);
+			if (worksheetView) {
+				worksheetView.model.autoFilters.reDrawFilter(null, index);
 			}
 		} else if (AscCH.historyitem_Worksheet_RowHide === Type) {
 			from = Data.from;
@@ -3556,9 +3561,9 @@ function (window, undefined) {
 
 			ws.setRowHidden(nRow, from, to);
 
-			workSheetView = wb.oApi.wb.getWorksheetById(nSheetId);
-			if (workSheetView) {
-				workSheetView.model.autoFilters.reDrawFilter(new Asc.Range(0, from, ws.nColsCount - 1, to));
+			worksheetView = wb.oApi.wb.getWorksheetById(nSheetId);
+			if (worksheetView) {
+				worksheetView.model.autoFilters.reDrawFilter(new Asc.Range(0, from, ws.nColsCount - 1, to));
 			}
 		} else if (AscCH.historyitem_Worksheet_AddRows === Type || AscCH.historyitem_Worksheet_RemoveRows === Type) {
 			from = Data.from;
@@ -3594,7 +3599,7 @@ function (window, undefined) {
 
 			// ToDo Так делать неправильно, нужно поправить (перенести логику в model, а отрисовку отделить)
 			worksheetView = wb.oApi.wb.getWorksheetById(nSheetId);
-			if (workSheetView) {
+			if (worksheetView) {
 				worksheetView.cellCommentator.updateCommentsDependencies(bInsert, operType, range);
 				worksheetView.shiftCellWatches(bInsert, operType, range);
 
@@ -3641,7 +3646,7 @@ function (window, undefined) {
 
 			// ToDo Так делать неправильно, нужно поправить (перенести логику в model, а отрисовку отделить)
 			worksheetView = wb.oApi.wb.getWorksheetById(nSheetId);
-			if (workSheetView) {
+			if (worksheetView) {
 				worksheetView.cellCommentator.updateCommentsDependencies(bInsert, operType, range);
 				worksheetView.shiftCellWatches(bInsert, operType, range);
 
@@ -3688,7 +3693,7 @@ function (window, undefined) {
 
 			// ToDo Так делать неправильно, нужно поправить (перенести логику в model, а отрисовку отделить)
 			worksheetView = wb.oApi.wb.getWorksheetById(nSheetId);
-			if (workSheetView) {
+			if (worksheetView) {
 				worksheetView.cellCommentator.updateCommentsDependencies(bInsert, operType, range.bbox);
 				worksheetView.shiftCellWatches(bInsert, operType, range.bbox);
 			}
@@ -3727,7 +3732,7 @@ function (window, undefined) {
 
 			// ToDo Так делать неправильно, нужно поправить (перенести логику в model, а отрисовку отделить)
 			worksheetView = wb.oApi.wb.getWorksheetById(nSheetId);
-			if (workSheetView) {
+			if (worksheetView) {
 				worksheetView.cellCommentator.updateCommentsDependencies(bInsert, operType, range.bbox);
 				worksheetView.shiftCellWatches(bInsert, operType, range.bbox);
 			}
@@ -3755,7 +3760,7 @@ function (window, undefined) {
 			range._sortByArray(bbox, places, null, sortByRow);
 
 			worksheetView = wb.oApi.wb.getWorksheetById(nSheetId);
-			if (workSheetView) {
+			if (worksheetView) {
 				worksheetView.model.autoFilters.resetTableStyles(bbox);
 			}
 		} else if (AscCH.historyitem_Worksheet_MoveRange == Type) {
@@ -3795,7 +3800,7 @@ function (window, undefined) {
 				}
 			}
 			worksheetView = wb.oApi.wb.getWorksheetById(nSheetId);
-			if (workSheetView) {
+			if (worksheetView) {
 				if (bUndo)//если на Undo перемещается диапазон из форматированной таблицы - стиль форматированной таблицы не должен цепляться
 				{
 					worksheetView.model.autoFilters._cleanStyleTable(to);
@@ -3933,7 +3938,7 @@ function (window, undefined) {
 				_c1 = updateData.c1;
 			}
 			worksheetView = wb.oApi.wb.getWorksheetById(nSheetId);
-			if (workSheetView) {
+			if (worksheetView) {
 				worksheetView._updateFreezePane(_c1, _r1, /*lockDraw*/true);
 			}
 		} else if (AscCH.historyitem_Worksheet_SetTabColor === Type) {

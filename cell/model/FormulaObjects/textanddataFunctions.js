@@ -1249,6 +1249,9 @@ function (window, undefined) {
 			if (!string) {
 				return false;
 			}
+			if (typeof string !== 'string') {
+				return false;
+			}
 
 			// protocol check
 			let protocols = ['http://', 'https://', 'ftp://'];
@@ -2466,6 +2469,12 @@ function (window, undefined) {
 	cTEXTJOIN.prototype.argumentsType = [argType.text, argType.logical, argType.text, [argType.text]];
 	//TODO все, кроме 2 аргумента - массивы
 	cTEXTJOIN.prototype.arrayIndexes = {0: 1, 2: 1, 3: 1, 4: 1, 5: 1, 6: 1, 7: 1, 8: 1};
+	cTEXTJOIN.prototype.getArrayIndex = function (index) {
+		if (index === 1) {
+			return undefined;
+		}
+		return 1;
+	};
 	cTEXTJOIN.prototype.Calculate = function (arg) {
 
 		var argClone = [arg[0], arg[1]];

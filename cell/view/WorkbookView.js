@@ -289,6 +289,7 @@
     this.selectionDialogMode = false;
     this.dialogAbsName = false;
     this.dialogSheetName = false;
+	this.dialogBookName = false;
     this.copyActiveSheet = -1;
 
     // Комментарии для всего документа
@@ -305,6 +306,8 @@
     this.MobileTouchManager = null;
 
     this.defNameAllowCreate = true;
+
+    this.externalSelectionController = new CExternalSelectionController(this);
 
     this._init(fontRenderingMode);
 
@@ -650,37 +653,45 @@
 				this.eventListeners.push(eventInfo);
 
 
-				eventInfo = new AscCommon.CEventListenerInfo(this.input, "keydown", function (event) {
-					if (this.isCellEditMode) {
-						this.handlers.trigger('asc_onInputKeyDown', event);
-						if (!event.defaultPrevented) {
-							this.cellEditor._onWindowKeyDown(event, true);
-						}
-					}
-				}.bind(this), false);
-				this.eventListeners.push(eventInfo);
-			}
+	      eventInfo = new AscCommon.CEventListenerInfo(this.input, "keydown", function (event) {
+		      if (this.isCellEditMode) {
+			      this.handlers.trigger('asc_onInputKeyDown', event);
+			      if (!event.defaultPrevented) {
+				      AscCommon.check_KeyboardEvent(event);
+				      const nRetValue = this.cellEditor._onWindowKeyDown(AscCommon.global_keyboardEvent);
+				      if (nRetValue & keydownresult_PreventPropagation) {
+					      event.stopPropagation();
+				      }
+				      if (nRetValue & keydownresult_PreventDefault) {
+					      event.preventDefault();
+				      }
+			      }
+		      }
+	      }.bind(this), false);
+	      this.eventListeners.push(eventInfo);
+      }
 
-      this.Api.onKeyDown = function (event) {
-        self.Api.sendEvent("asc_onBeforeKeyDown", event);
-        self.controller._onWindowKeyDown(event);
-        if (self.isCellEditMode) {
-          self.cellEditor._onWindowKeyDown(event, false);
-        }
-        self.Api.sendEvent("asc_onKeyDown", event);
-      };
-      this.Api.onKeyPress = function (event) {
-        self.controller._onWindowKeyPress(event);
-        if (self.isCellEditMode) {
-          self.cellEditor._onWindowKeyPress(event);
-        }
-      };
-      this.Api.onKeyUp = function (event) {
-        self.controller._onWindowKeyUp(event);
-        if (self.isCellEditMode) {
-          self.cellEditor._onWindowKeyUp(event);
-        }
-      };
+		  this.Api.onKeyDown = function (oEvent) {
+			  if (!self.enableKeyEvents && oEvent.emulated !== true && oEvent.keyCode !== 80) {
+				  return;
+			  }
+			  AscCommon.check_KeyboardEvent(oEvent);
+			  const nRetValue = self.onKeyDown(AscCommon.global_keyboardEvent);
+			  if (nRetValue & keydownresult_PreventPropagation) {
+				  oEvent.stopPropagation();
+			  }
+			  if (nRetValue & keydownresult_PreventDefault) {
+				  oEvent.preventDefault();
+			  }
+		  };
+		  this.Api.onKeyPress = function (oEvent) {
+			  AscCommon.check_KeyboardEvent(oEvent);
+			  self.onKeyPress(AscCommon.global_keyboardEvent);
+		  };
+		  this.Api.onKeyUp = function (oEvent) {
+			  AscCommon.check_KeyboardEvent(oEvent);
+			  self.onKeyUp(AscCommon.global_keyboardEvent);
+		  };
       this.Api.Begin_CompositeInput = function () {
         var oWSView = self.getWorksheet();
         if (oWSView && oWSView.isSelectOnShape) {
@@ -823,6 +834,7 @@
 			  }, "updated": function () {
 				  self.Api.checkLastWork();
 				  self._onUpdateCellEditor.apply(self, arguments);
+				  self.externalSelectionController && self.externalSelectionController.sendExternalChangeSelection();
 			  }, "gotFocus": function (hasFocus) {
 				  self.controller.setFocus(!hasFocus);
 			  }, "updateFormulaEditMod": function (val) {
@@ -864,6 +876,8 @@
 			      return self.isWizardMode;
               }, "getActiveWS": function () {
 			      return self.getActiveWS();
+			  }, "getActiveWSView": function () {
+				  return self.getWorksheet();
 			  }, "updateEditorSelectionInfo": function (xfs) {
 				  self.handlers.trigger("asc_onEditorSelectionChanged", xfs);
 			  }, "onContextMenu": function (event) {
@@ -874,6 +888,8 @@
 				  self.handlers.trigger("asc_onSelectionEnd");
 			  }, "doEditorFocus" : function () {
 				  self._setEditorFocus();
+			  }, "getExternalSelectionController" : function () {
+				  return self.externalSelectionController;
 			  }
 		  }, this.defaults.worksheetView.cells.padding);
 
@@ -959,11 +975,11 @@
         ws.changeWorksheet("update", val);
       }
     });
-    this.model.handlers.add("changeDocument", function(prop, arg1, arg2, wsId) {
+    this.model.handlers.add("changeDocument", function(prop, arg1, arg2, wsId, fMergeCellIndex) {
       self.SearchEngine && self.SearchEngine.changeDocument(prop, arg1, arg2);
       let ws = wsId && self.getWorksheetById(wsId, true);
       if (ws) {
-        ws.traceDependentsManager.changeDocument(prop, arg1, arg2);
+        ws.traceDependentsManager.changeDocument(prop, arg1, arg2, fMergeCellIndex);
       }
     });
     this.model.handlers.add("showWorksheet", function(wsId) {
@@ -1141,6 +1157,7 @@
     this.addEventListeners();
 
     this.initExternalReferenceUpdateTimer();
+	this.externalSelectionController.init();
 
     return this;
   };
@@ -1150,6 +1167,55 @@
     this.cellEditor.destroy();
     return this;
   };
+
+	WorkbookView.prototype.executeShortcut = function(nShortcutAction) {
+		const oObjectRender = this.getWorksheet().objectRender;
+		if (oObjectRender && oObjectRender.getSelectedGraphicObjects().length > 0 && !this.getCellEditMode() && !this.controller.isMousePressed && this.enableKeyEvents) {
+			const oGraphicRet = oObjectRender.controller.executeShortcut(nShortcutAction);
+			if (oGraphicRet) {
+				return true;
+			}
+		}
+
+		let oRetValue = this.controller.executeShortcut(nShortcutAction);
+		if (this.isCellEditMode && !this.controller.skipCellEditor) {
+			const oCellRetValue = this.cellEditor.executeShortcut(nShortcutAction);
+			oRetValue = oRetValue || oCellRetValue;
+		}
+		this.controller.setSkipCellEditor(false);
+		return !!oRetValue;
+	};
+	WorkbookView.prototype.onKeyDown = function (oEvent) {
+		this.Api.sendEvent("asc_onBeforeKeyDown", oEvent);
+		let nRetValue = keydownresult_PreventNothing;
+
+		if (!this.getCellEditMode() && !this.controller.isMousePressed && this.enableKeyEvents) {
+			nRetValue |= this.controller.handlers.trigger("graphicObjectWindowKeyDown", oEvent);
+		}
+		if (nRetValue === keydownresult_PreventNothing) {
+			nRetValue |= this.controller._onWindowKeyDown(oEvent);
+
+			if (this.isCellEditMode && !this.controller.skipCellEditor) {
+				nRetValue |= this.cellEditor._onWindowKeyDown(oEvent);
+			}
+			this.controller.setSkipCellEditor(false);
+		}
+		this.Api.sendEvent("asc_onKeyDown", oEvent);
+		return nRetValue;
+	};
+
+	WorkbookView.prototype.onKeyPress = function (oEvent) {
+		this.controller._onWindowKeyPress(oEvent);
+		if (this.isCellEditMode) {
+			this.cellEditor._onWindowKeyPress(oEvent);
+		}
+	};
+	WorkbookView.prototype.onKeyUp = function (oEvent) {
+		this.controller._onWindowKeyUp(oEvent);
+		if (this.isCellEditMode) {
+			this.cellEditor._onWindowKeyUp(oEvent);
+		}
+	};
 
 	WorkbookView.prototype.scrollToOleSize = function () {
 		var ws = this.getWorksheet();
@@ -2244,6 +2310,8 @@
 
     this.updateTargetForCollaboration();
     this.sendCursor();
+
+	this.externalSelectionController.sendExternalCloseEditor();
   };
 
   WorkbookView.prototype._onEmpty = function() {
@@ -2665,6 +2733,10 @@
         return this.dialogSheetName || !this.isActive();
     };
 
+	WorkbookView.prototype.getDialogBookName = function () {
+		return this.dialogBookName;
+	};
+
 	WorkbookView.prototype.setCellEditMode = function(mode) {
 		this.isCellEditMode = !!mode;
 		if (!this.isCellEditMode) {
@@ -2676,6 +2748,9 @@
     WorkbookView.prototype.setFormulaEditMode = function (mode) {
         this.isFormulaEditMode = mode;
         this.setSelectionDialogMode(mode ? c_oAscSelectionDialogType.Function : c_oAscSelectionDialogType.None, '');
+		if (mode) {
+			this.externalSelectionController.sendExternalSetFormulaEditMode();
+		}
     };
 
 	WorkbookView.prototype.setWizardMode = function (mode) {
@@ -2690,6 +2765,9 @@
 	};
 
 	WorkbookView.prototype.isActive = function () {
+		if (this.externalSelectionController.getExternalFormulaEditMode()) {
+			return false;
+		}
 		return (-1 === this.copyActiveSheet || this.wsActive === this.copyActiveSheet);
 	};
 
@@ -2800,6 +2878,7 @@
 
 	// Останавливаем ввод данных в редакторе ввода
 	WorkbookView.prototype.closeCellEditor = function (cancel) {
+		this.externalSelectionController.sendExternalCloseEditor();
 		return this.getCellEditMode() ? this.cellEditor.close(!cancel) : true;
 	};
 
@@ -3244,16 +3323,17 @@
 			this.cellEditor.changeCellText(sArguments);
 
 			if (name) {
-
-				var res = new AscCommonExcel.CFunctionInfo(name);
+				let res = new AscCommonExcel.CFunctionInfo(name);
 				if (needChange) {
 					res.asc_setArguments(args);
 				}
 				res.argumentsResult = [];
-				var argCalc = ws.calculateWizardFormula(args[argNum], argType);
+				let argCalc = ws.calculateWizardFormula(args[argNum], argType);
 				res.argumentsResult[argNum] = argCalc.str;
-				if (argCalc.obj && argCalc.obj.type !== AscCommonExcel.cElementType.error) {
-					var funcCalc = ws.calculateWizardFormula(name + '(' + sArguments + ')');
+				//second condition: if we haven't received the formulaResult, calculate with those arguments that exist in the array
+				if ((argCalc.obj && argCalc.obj.type !== AscCommonExcel.cElementType.error) ||
+					(argCalc.obj === null && res && !res.functionResult && args && sArguments)) {
+					let funcCalc = ws.calculateWizardFormula(name + '(' + sArguments + ')');
 					res.functionResult = funcCalc.str;
 					if (funcCalc.obj && funcCalc.obj.type !== AscCommonExcel.cElementType.error) {
 						res.formulaResult = ws.calculateWizardFormula(this.cellEditor.getText().substring(1)).str;
@@ -3450,6 +3530,7 @@
           c_oAscSelectionDialogType.PivotTableReport === selectionDialogType);
       this.dialogAbsName = (c_oAscSelectionDialogType.None !== selectionDialogType &&
           c_oAscSelectionDialogType.Function !== selectionDialogType);
+	  this.dialogBookName = c_oAscSelectionDialogType.Function !== selectionDialogType && this.externalSelectionController.getExternalFormulaEditMode();
   };
 
   WorkbookView.prototype.setOleSize = function (oPr) {
@@ -3962,6 +4043,14 @@
   		adjustPrint = new Asc.asc_CAdjustPrint();
 	}
 
+	let trueFormulaFunctionToLocale;
+  	let printOptionsJson = this.getPrintOptionsJson();
+	let spreadsheetLayout = printOptionsJson && printOptionsJson["spreadsheetLayout"];
+  	if (spreadsheetLayout && spreadsheetLayout["formulaProps"] && spreadsheetLayout["formulaProps"]["translate"]) {
+		trueFormulaFunctionToLocale = AscCommonExcel.cFormulaFunctionToLocale;
+  		AscCommonExcel.cFormulaFunctionToLocale = spreadsheetLayout["formulaProps"]["translate"];
+  	}
+
     var viewZoom = this.getZoom();
     this.changeZoom(1, true, true);
 
@@ -4002,6 +4091,10 @@
     }
 
     this.changeZoom(viewZoom, true, true);
+
+	if (trueFormulaFunctionToLocale) {
+		AscCommonExcel.cFormulaFunctionToLocale = trueFormulaFunctionToLocale;
+	}
 
     return printPagesData;
   };
@@ -4736,7 +4829,7 @@
 			}
 
 			if(ws) {
-				ws.copyCutRange = null;
+				ws.setCutRange(null);
 			}
 			this.cutIdSheet = null;
 
@@ -4756,16 +4849,16 @@
 		if(this.cutIdSheet == null) {
 			var activeWs = this.wsViews[this.wsActive];
 
-			var needUpdateSelection = bDrawSelection && activeWs && activeWs.copyCutRange;
+			var needUpdateSelection = bDrawSelection && activeWs && activeWs.getCutRange();
 			if(needUpdateSelection) {
 				activeWs.cleanSelection();
 			}
 
 			var isCopyHighlighted = false;
 			for(var i in this.wsViews) {
-				if (this.wsViews[i].copyCutRange != null) {
+				if (this.wsViews[i].getCutRange() != null) {
 					isCopyHighlighted = true;
-					this.wsViews[i].copyCutRange = null;
+					this.wsViews[i].setCutRange(null);
 				}
 			}
 
@@ -6093,6 +6186,152 @@
 	WorkbookView.prototype.stepGoalSeek = function() {
 		this.model.stepGoalSeek();
 	};
+
+	// Solver
+	/**
+	 * Returns solver parameters and options object.
+	 * @memberof WorkbookView
+	 * @returns {asc_CSolverParams}
+	 */
+	WorkbookView.prototype.getSolverParams = function() {
+		//open history point
+		History.Create_NewPoint();
+		History.StartTransaction();
+
+		const solverParams = new AscCommonExcel.asc_CSolverParams();
+		solverParams.getDefNames(this.model);
+
+		return solverParams;
+	}
+	/**
+	 * Starts find optimal solution.
+	 * @memberof WorkbookView
+	 * @param {asc_CSolverParams} oSolverParams
+	 */
+	WorkbookView.prototype.startSolver = function(oSolverParams) {
+		if (!this.model) {
+			return;
+		}
+
+		const CSolver = AscCommonExcel.CSolver;
+		const wbModel = this.model;
+		const ws = wbModel.getActiveWs();
+		const t = this;
+		let oSolver;
+
+		const callback = function (isSuccess) {
+			if (!isSuccess) {
+				t.handlers.trigger("asc_onError", c_oAscError.ID.LockedCellSolver, c_oAscError.Level.NoCritical);
+				return;
+			}
+			//open history point
+			History.Create_NewPoint();
+			History.StartTransaction();
+			// Init CSolver object
+			wbModel.setSolver(new CSolver(oSolverParams, ws))
+			oSolver = wbModel.getSolver();
+			oSolver.prepare();
+			// Run solver
+			if (oSolverParams.getOptions().getShowIterResults()) {
+				oSolver.step();
+			} else {
+				oSolver.setIntervalId(setInterval(function () {
+					let bIsFinish = oSolver.calculate();
+					if (bIsFinish) {
+						clearInterval(oSolver.getIntervalId());
+					}
+				}, oSolver.getDelay()));
+			}
+		};
+
+		//need lock
+		const aLocksInfo = [];
+		//cells locks info
+		const wsChangingCell = AscCommonExcel.actualWsByRef(oSolverParams.getChangingCells(), ws);
+		const sChangingCell = AscCommonExcel.convertToAbsoluteRef(oSolverParams.getChangingCells());
+		const oChangingCell = wsChangingCell && wsChangingCell.getRange2(sChangingCell);
+		if (oChangingCell) {
+			aLocksInfo.push(this.collaborativeEditing.getLockInfo(AscCommonExcel.c_oAscLockTypeElem.Range, null, wsChangingCell.getId(),
+				new AscCommonExcel.asc_CCollaborativeRange(oChangingCell.bbox.c1, oChangingCell.bbox.r1, oChangingCell.bbox.c2, oChangingCell.bbox.r2)));
+		}
+
+		const wsFormula = AscCommonExcel.actualWsByRef(oSolverParams.getObjectiveFunction(), ws);
+		const sFormulaCell = AscCommonExcel.convertToAbsoluteRef(oSolverParams.getObjectiveFunction());
+		const oFormulaCell = wsFormula && wsFormula.getRange2(sFormulaCell);
+		if (oFormulaCell) {
+			aLocksInfo.push(this.collaborativeEditing.getLockInfo(AscCommonExcel.c_oAscLockTypeElem.Range, null, wsFormula.getId(),
+				new AscCommonExcel.asc_CCollaborativeRange(oFormulaCell.bbox.c1, oFormulaCell.bbox.r1, oFormulaCell.bbox.c2, oFormulaCell.bbox.r2)));
+		}
+
+		this.collaborativeEditing.lock(aLocksInfo, callback);
+
+		const oChangedCell = oSolver && oSolver.getChangingCell();
+		if (oChangedCell) {
+			// update worksheet field
+			let ws = this.getWorksheetById(oChangedCell.worksheet.Id);
+			ws._updateRange(oChangedCell.bbox);
+			ws.draw();
+		}
+	};
+
+	/**
+	 * @memberof WorkbookView
+	 * @param {boolean} bSave true - save result of calculation, false - discard changes.
+	 * @param {asc_CSolverParams} oSolverParams - uses for saving Solver parameters.
+	 */
+	WorkbookView.prototype.closeSolver = function(bSave, oSolverParams) {
+		if (!this.model) {
+			return;
+		}
+
+		const oSolver = this.model.getSolver();
+		const oChangedCells = oSolver && oSolver.getChangingCell();
+
+		if (!bSave) {
+			const oStartChangedCells = oSolver && oSolver.getStartChangingCells();
+			oChangedCells && oChangedCells._foreachNoEmpty(function (oCell) {
+				const sOriginalValue = oStartChangedCells[oCell.getName()];
+				oCell.setValue(sOriginalValue);
+			});
+		}
+		oSolverParams.createDefNames(this.model);
+		if (oSolver) {
+			this.model.setSolver(null);
+		}
+
+		// close history point
+		History.EndTransaction();
+
+		if (oChangedCells) {
+			// update worksheet field
+			let ws = this.getWorksheetById(oChangedCells.worksheet.Id);
+			ws._updateRange(oChangedCells.bbox);
+			ws.draw();
+		}
+	};
+
+	/**
+	 * Runs only one iteration of solver calculation.
+	 * Uses when "Show iteration results" option is enabled.
+	 * @memberof WorkbookView
+	 */
+	WorkbookView.prototype.stepSolver = function() {
+		if (!this.model) {
+			return;
+		}
+
+		const oSolver = this.model.getSolver();
+		const oChangedCells = oSolver && oSolver.getChangingCell();
+
+		oSolver && oSolver.step();
+		if (oChangedCells) {
+			// update worksheet field
+			let ws = this.getWorksheetById(oChangedCells.worksheet.Id);
+			ws._updateRange(oChangedCells.bbox);
+			ws.draw();
+		}
+	};
+
 	WorkbookView.prototype.addToHistoryChangedRanges = function(sheetId, range, userColor) {
 		if (!range) {
 			return;
@@ -6372,6 +6611,26 @@
 			val = this.Api.DocInfo && this.Api.DocInfo.asc_getShowHorizontalScroll();
 		}
 		return val === true || val == null;
+	};
+	WorkbookView.prototype.removeAllInks = function() {
+		const oThis = this;
+		const oCurrentWs = this.getWorksheet();
+
+		const oCurrentController = oCurrentWs.objectRender && oCurrentWs.objectRender.controller;
+		if (oCurrentController) {
+			const oWbModel = this.model;
+			const arrInks = oWbModel.getAllInks();
+			if (arrInks.length > 0) {
+				oCurrentController.checkObjectsAndCallback(function() {
+					for (let i = 0; i < oWbModel.aWorksheets.length; i++) {
+						const oWs = oThis.getWorksheet(i);
+						oWs.removeAllInks();
+					}
+					oCurrentController.updateSelectionState();
+					oCurrentController.updateOverlay();
+				}, [], false, AscDFH.historydescription_RemoveAllInks, arrInks);
+			}
+		}
 	};
 
 
@@ -7036,6 +7295,327 @@
 	CDocumentSearchExcel.prototype.isSpecificRange = function () {
 		return this.props && this.props.specificRange;
 	};
+
+
+
+	/**
+	 * Controller for handling external selection and formula editing between worksheets/workbooks
+	 * @constructor
+	 * @param {WorkbookView} wb - Workbook view instance
+	 */
+	function CExternalSelectionController(wb) {
+		this.wb = wb;
+		this.externalFormulaEditMode = null;
+
+		this.activeTabFormula = null;
+		this.selfActiveTabFormula = null;
+
+		this.dontSendChangeEditMode = false;//only for supportVisibilityChangeOption = true mode
+		this.lockSendChangeSelection = false;//do not apply  unnecessary change selection event
+		this.lockApplyChangeSelection = false;//do not send  unnecessary change selection event
+
+		// Flag to enable handling of document visibility changes
+		this.supportVisibilityChangeOption = false;
+	}
+
+	/**
+	 * Cleans up controller state
+	 */
+	CExternalSelectionController.prototype.clean = function() {
+		this.lockApplyChangeSelection = false;
+		this.activeTabFormula = null;
+		this.selfActiveTabFormula = null;
+		this.lockSendChangeSelection = false;
+	};
+
+	/**
+	 * Initializes the controller with event handlers
+	 */
+	CExternalSelectionController.prototype.init = function() {
+		let oThis = this;
+
+		if (this.supportVisibilityChangeOption) {
+			document.addEventListener && document.addEventListener("visibilitychange", function() {
+				if (document.hidden === false) {
+					// Document has become visible
+					if (!oThis.getExternalFormulaEditMode()) {
+						return;
+					}
+
+					oThis.setSelfActiveTabFormula(oThis.activeTabFormula);
+
+					if (!oThis.wb.getCellEditMode()) {
+						oThis.onOpenCellEditor();
+					} else {
+						// Update existing editor with the formula state
+						oThis.wb.skipHelpSelector = true;
+						let val = "=" + (oThis.activeTabFormula ? oThis.activeTabFormula.range : "");
+						oThis.wb.cellEditor.selectAll();
+						oThis.wb.cellEditor._addChars(val);
+						oThis.wb.cellEditor.setSelectionState(oThis.activeTabFormula);
+						oThis.wb.skipHelpSelector = false;
+						oThis.wb.setFormulaEditMode(true);
+					}
+				} else {
+					// Document has become hidden
+					if (oThis.getExternalFormulaEditMode() && oThis.wb.getCellEditMode()) {
+						oThis.dontSendChangeEditMode = true;
+
+						// Temporarily turn off formula mode, close editor, and restore formula mode
+						let tmpMode = oThis.getExternalFormulaEditMode();
+						oThis.setExternalFormulaEditMode(false);
+						oThis.wb.closeCellEditor(true);
+						oThis.setExternalFormulaEditMode(tmpMode);
+
+						oThis.dontSendChangeEditMode = false;
+
+						// Save state to restore when visible again
+						oThis.setActiveTabFormula(oThis.selfActiveTabFormula);
+					}
+				}
+			});
+		}
+
+		// Handle page unload when in formula mode
+		let isClosing = false;
+		window.addEventListener && window.addEventListener('beforeunload', function(event) {
+			if (!!oThis.getExternalFormulaEditMode()) {
+				isClosing = true;
+				event.preventDefault();
+				event.returnValue = '';
+			}
+		});
+
+		window.addEventListener && window.addEventListener('unload', function() {
+			if (isClosing) {
+				oThis.sendExternalCloseEditor();
+			}
+		});
+	};
+
+	/**
+	 * Opens the cell editor for external formula editing
+	 */
+	CExternalSelectionController.prototype.onOpenCellEditor = function() {
+		if (this.wb.getCellEditMode()) {
+			return;
+		}
+
+		let oThis = this;
+		let editorEnterOptions = new AscCommonExcel.CEditorEnterOptions();
+		editorEnterOptions.newText = "=" + (oThis.activeTabFormula ? oThis.activeTabFormula.range : "");
+
+		oThis.lockApplyChangeSelection = true;
+		oThis.wb.input && oThis.wb.input.focus();
+		oThis.wb.setCellEditMode(true);
+
+		let ws = oThis.wb.getWorksheet();
+		let selectionRange = ws.model.selectionRange && ws.model.selectionRange.clone();
+
+		oThis.lockSendChangeSelection = true;
+		ws.openCellEditor(oThis.wb.cellEditor, editorEnterOptions, selectionRange);
+		oThis.wb.setFormulaEditMode(true);
+		//oThis.wb.cellEditor._topLineGotFocus();
+		oThis.wb.cellEditor.setSelectionState(oThis.activeTabFormula);
+		oThis.lockSendChangeSelection = false;
+
+		oThis.wb.input.disabled = false;
+		oThis.lockApplyChangeSelection = false;
+	};
+
+	/**
+	 * Handles selection changes from external source
+	 * @param {Object} data - Selection state data containing range, cell positions, and cursor information
+	 */
+	CExternalSelectionController.prototype.onExternalChangeSelection = function(data) {
+		if (this.lockApplyChangeSelection) {
+			return;
+		}
+
+		this.setActiveTabFormula(data);
+
+		if (!this.wb.isCellEditMode || this.wb.isWizardMode) {
+			return;
+		}
+
+		this.lockSendChangeSelection = true;
+		if ((!this.getExternalFormulaEditMode() && !this._isEqualEditorState(data)) || !this.supportVisibilityChangeOption) {
+			this.wb.setFormulaEditMode(true);
+			this.wb.skipHelpSelector = true;
+
+			if (!this.supportVisibilityChangeOption) {
+				this.wb.cellEditor.selectAll();
+				this.wb.cellEditor._addChars("=" + data.range);
+				this.wb.cellEditor.setSelectionState(data);
+			}
+			this.wb.cellEditor._draw();
+			this.wb.skipHelpSelector = false;
+		}
+		this.lockSendChangeSelection = false;
+	};
+
+	/**
+	 * Handles external formula mode setting
+	 * @param {Object} data - Formula mode parameters including isClose flag and document ID
+	 */
+	CExternalSelectionController.prototype.onExternalSetFormulaMode = function(data) {
+		const isExternalFormulaEditMode = this.getExternalFormulaEditMode();
+		this.setExternalFormulaEditMode(!data.isClose ? {id: data.id} : null);
+
+		if (this.wb.getCellEditMode() && data.isClose && (isExternalFormulaEditMode || !this.supportVisibilityChangeOption)) {
+			this.wb.closeCellEditor(!data.saveValue);
+			this.clean();
+		} else if (!this.supportVisibilityChangeOption && !this.wb.getCellEditMode() && !data.isClose) {
+			this.onOpenCellEditor();
+		}
+	};
+
+	/**
+	 * Captures current editor state and sends it to external subscribers
+	 */
+	CExternalSelectionController.prototype.sendExternalChangeSelection = function() {
+		if (this.lockSendChangeSelection) {
+			return;
+		}
+
+		const ws = this.wb.model.getActiveWs();
+		if (!this.wb.isFormulaEditMode || !this.wb.isCellEditMode || !this.wb.cellEditor) {
+			return;
+		}
+
+		let data = {
+			type: "ExternalChangeSelection",
+			id: this.wb.Api.DocInfo.Id,
+			range: this.wb.cellEditor.getText().substring(1),
+			worksheet: ws.sName,
+			bookName: this.wb.Api.DocInfo.Title,
+			selectionBegin: this.wb.cellEditor.selectionBegin,
+			selectionEnd: this.wb.cellEditor.selectionEnd,
+			lastRangePos: this.wb.cellEditor.lastRangePos,
+			lastRangeLength: this.wb.cellEditor.lastRangeLength,
+			cursorPos: this.wb.cellEditor.cursorPos
+		};
+
+		this.setSelfActiveTabFormula(data);
+		this.sendExternalEvent(data);
+	};
+
+	/**
+	 * Notifies external subscribers to close the editor
+	 * @param {boolean} saveValue - Whether to save the value when closing
+	 */
+	CExternalSelectionController.prototype.sendExternalCloseEditor = function(saveValue) {
+		if (this.dontSendChangeEditMode) {
+			return;
+		}
+
+		if (!this.supportVisibilityChangeOption) {
+			this.clean();
+			this.sendExternalEvent({
+				type: "SetFormulaEditMode",
+				id: this.wb.Api.DocInfo.Id,
+				isClose: true,
+				saveValue: saveValue
+			});
+		} else {
+			if (!this.getExternalFormulaEditMode()) {
+				this.sendExternalEvent({
+					type: "SetFormulaEditMode",
+					id: this.wb.Api.DocInfo.Id,
+					isClose: true
+				});
+			}
+		}
+	};
+
+	/**
+	 * Sets formula edit mode externally
+	 */
+	CExternalSelectionController.prototype.sendExternalSetFormulaEditMode = function() {
+		if (this.dontSendChangeEditMode) {
+			return;
+		}
+
+		if (!this.getExternalFormulaEditMode()) {
+			this.sendExternalEvent({
+				type: "SetFormulaEditMode",
+				id: this.wb.Api.DocInfo.Id
+			});
+		}
+	};
+
+	/**
+	 * Sends event through broadcast channel
+	 * @param {Object} data - Event data to send
+	 */
+	CExternalSelectionController.prototype.sendExternalEvent = function(data) {
+		if (this.wb.Api && this.wb.Api.broadcastChannel) {
+			this.wb.Api.broadcastChannel.postMessage(data);
+		}
+	};
+
+	/**
+	 * Sets the active tab formula state received from external source
+	 * @param {Object} data - Formula data including range and selection state
+	 */
+	CExternalSelectionController.prototype.setActiveTabFormula = function(data) {
+		this.activeTabFormula = data;
+	};
+
+	/**
+	 * Sets the self active tab formula state for this instance
+	 * @param {Object} data - Formula data including range and selection state
+	 */
+	CExternalSelectionController.prototype.setSelfActiveTabFormula = function(data) {
+		this.selfActiveTabFormula = data;
+	};
+
+	/**
+	 * Sets the external formula edit mode state
+	 * @param {Object|null} val - Formula edit mode data or null to disable
+	 */
+	CExternalSelectionController.prototype.setExternalFormulaEditMode = function(val) {
+		this.externalFormulaEditMode = val;
+	};
+
+	/**
+	 * Gets the current external formula edit mode state
+	 * @returns {Object|null} Current formula edit mode state
+	 */
+	CExternalSelectionController.prototype.getExternalFormulaEditMode = function() {
+		return this.externalFormulaEditMode;
+	};
+
+	/**
+	 * Checks if editor state matches the provided data
+	 * @param {Object} data - Editor state to compare
+	 * @returns {boolean} True if states match
+	 */
+	CExternalSelectionController.prototype._isEqualEditorState = function(data) {
+		if (!data) {
+			return false;
+		}
+
+		const editor = this.wb.cellEditor;
+		if (!editor) {
+			return false;
+		}
+
+		let editorText = editor.getText();
+		if (!editorText) {
+			return false;
+		}
+
+		editorText = editorText.substring(1);
+
+		return data.range === editorText &&
+			editor.selectionBegin === data.selectionBegin &&
+			editor.selectionEnd === data.selectionEnd &&
+			editor.lastRangePos === data.lastRangePos &&
+			editor.lastRangeLength === data.lastRangeLength &&
+			editor.cursorPos === data.cursorPos;
+	};
+
 
 	//------------------------------------------------------------export---------------------------------------------------
   window['AscCommonExcel'] = window['AscCommonExcel'] || {};

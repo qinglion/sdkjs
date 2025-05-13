@@ -967,7 +967,7 @@
             else if (this.selectedObjects.length <= this.spTree.length - 1) {
                 let _t = this;
                 // селектим все фигуры в группе (кроме перпендикулярной линии) если до сих пор не заселекчены
-                this.select(oController, this.selectStartPage);
+                this.select(oController, this.GetPage());
                 oController.selection.groupSelection = this;
                 this.selectedObjects.length = 0;
 
@@ -980,6 +980,16 @@
             }
         }
         else {
+            let pageObject = oDoc.Viewer.getPageByCoords2(x, y);
+            if (!pageObject)
+                return false;
+
+            let oTextBoxShape = this.GetTextBoxShape();
+            if (false == oTextBoxShape.hitInTextRect(pageObject.x, pageObject.y)) {
+                this.Blur();
+                return;
+            }
+
             if (e.ShiftKey) {
                 this.GetDocContent().StartSelectionFromCurPos();
                 oDoc.SelectionSetEnd(x, y, e);
@@ -1052,8 +1062,12 @@
             this._prevCallout = undefined;
         }
 
-        if (false == this.IsChanged()) {
-            this.SetDrawFromStream(!isIn);
+        if (this.IsNeedDrawFromStream()) {
+            this.SetDrawFromStream(false);
+            this.AddToRedraw();
+        }
+        else if (this.IsChanged() == false && !isIn) {
+            this.SetDrawFromStream(true);
             this.AddToRedraw();
         }
         
@@ -1152,7 +1166,7 @@
         let oContent    = this.GetDocContent();
 
         oContent.SetApplyToAll(true);
-		let sText = oContent.GetSelectedText(false, {NewLineParagraph: true, ParaSeparator: '\r'}).replace('\r', '');
+		let sText = oContent.GetSelectedText(false, {ParaSeparator: ''});
 		oContent.SetApplyToAll(false);
 
         let isNeedUpdateRC = this.IsNeedUpdateRC();
@@ -1347,7 +1361,8 @@
                 let yContent    = oTransform.TransformPointY(0, Y);
 
                 oController.resetSelection();
-
+                oController.selection.groupSelection = this;
+                
                 if (this.IsInTextBox() == false && false == this.Lock.Is_Locked()) {
                     oDoc.SetGlobalHistory();
                     oDoc.DoAction(function() {

@@ -885,7 +885,7 @@
 								wsView.shiftCellWatches(true, c_oAscInsertOptions.InsertCellsAndShiftDown, shiftRange.bbox);
 								moveToRange = new Asc.Range(filterRange.c1, filterRange.r1 + 1, filterRange.c2, filterRange.r2);
 							}
-							worksheet._moveRange(rangeWithoutDiff, moveToRange);
+							worksheet._moveRange(rangeWithoutDiff, moveToRange, null, null, true/* table created */);
 							wsView.cellCommentator.moveRangeComments(rangeWithoutDiff, moveToRange);
 							wsView.moveCellWatches(rangeWithoutDiff, moveToRange);
 						} else if (!addNameColumn && styleName) {
@@ -1555,6 +1555,12 @@
 
 				if (userRange) {
 					activeCells = AscCommonExcel.g_oRangeCache.getAscRange(userRange);
+					if (!activeCells) {
+						let aRanges = AscCommonExcel.getRangeByName(userRange, this.worksheet);
+						if (aRanges && aRanges.length === 1) {
+							activeCells = aRanges[0] && aRanges[0].bbox;
+						}
+					}
 				}
 
 				//данная функция возвращает false в двух случаях - при смене стиля ф/т или при поптыке добавить ф/т к части а/ф
@@ -1772,7 +1778,7 @@
 						if (!_doAdd)//добавляем фильтр
 						{
 							if (cloneData.TableStyleInfo) {
-								worksheet.addTablePart.push(cloneData);
+								worksheet.addTablePart(cloneData);
 								t._setColorStyleTable(cloneData.Ref, cloneData, null, true);
 								t.updateSlicer(cloneData.DisplayName);
 							} else {
@@ -4471,7 +4477,7 @@
 				return range;
 			},
 
-			expandRange: function (activeRange, ignoreFilter, doNotCheckEmpty) {
+			expandRange: function (activeRange, ignoreFilter, doNotCheckEmpty, checkLastEmpty) {
 				var ws = this.worksheet;
 
 				//если вдруг встретили мерженную ячейку в диапазоне, расширяем
@@ -4708,6 +4714,14 @@
 					rangeAfterTableCrop = range.clone();
 					range = activeRange.clone();
 					doExpand();
+				}
+
+
+				if (checkLastEmpty) {
+					let _cropRange = this.checkEmptyAreas(range, rangeAfterTableCrop);
+					if (_cropRange.r2 !== range.r2 || _cropRange.c2 !== range.c2) {
+						return activeRange;
+					}
 				}
 
 				//проверяем на наличие пустых колонок/строк
@@ -6225,19 +6239,29 @@
 			},
 
 			bIsExcludeHiddenRows: function (range, activeCell, checkHiddenRows) {
-				var worksheet = this.worksheet;
-				var result = false;
+				let worksheet = this.worksheet;
+				let result = false;
 
-				//если есть общий фильтр со скрытыми строками, чтобы мы не удаляли на странице, данные в скрытых строках не трогаем
-				if (worksheet.AutoFilter && worksheet.AutoFilter.isApplyAutoFilter()) {
-					result = true;
-				} else if (this._getTableIntersectionWithActiveCell(activeCell, true))//если activeCell лежит внутри таблицы c примененным фильтром
-				{
-					result = true;
+				let activeNamedSheetView = worksheet.getActiveNamedSheetViewId();
+
+				//if all filter or intersection activeCell with tables
+				if (activeNamedSheetView) {
+					let _table = this._getTableIntersectionWithActiveCell(activeCell);
+					let _obj = this.getAutoFilter(_table ? _table : worksheet.AutoFilter, activeNamedSheetView);
+					if (_obj && _obj.isApplyAutoFilter && _obj.isApplyAutoFilter()) {
+						result = true;
+					}
+				} else {
+					if (worksheet.AutoFilter && worksheet.AutoFilter.isApplyAutoFilter()) {
+						result = true;
+					} else if (this._getTableIntersectionWithActiveCell(activeCell, true))//activeCell inside table with applyed filter
+					{
+						result = true;
+					}
 				}
 
 				if (result && checkHiddenRows) {
-					var range3 = range && range.bbox ? range : worksheet.getRange3(range.r1, range.c1, range.r2, range.c2);
+					let range3 = range && range.bbox ? range : worksheet.getRange3(range.r1, range.c1, range.r2, range.c2);
 					result = false;
 					range3._foreachRow(function (row) {
 						if (row.getHidden()) {
@@ -6260,7 +6284,7 @@
 							ref = new Asc.Range(ref.c1, ref.r1 + 1, ref.c2, ref.r2);
 						}
 						if (ref.contains(activeCell.col, activeCell.row)) {
-							if (checkApplyFiltering && worksheet.TableParts[i].isApplyAutoFilter()) {
+							if ((checkApplyFiltering && worksheet.TableParts[i].isApplyAutoFilter()) || !checkApplyFiltering) {
 								result = worksheet.TableParts[i];
 								break;
 							}

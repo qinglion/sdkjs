@@ -138,6 +138,7 @@ function CDocumentContent(Parent, DrawingDocument, X, Y, XLimit, YLimit, Split, 
 
     this.m_oContentChanges = new AscCommon.CContentChanges(); // список изменений(добавление/удаление элементов)
     this.StartState = null;
+	this.Recalculated = false; // Flag only for the current level
 
     this.ReindexStartPos = 0;
 
@@ -200,7 +201,10 @@ CDocumentContent.prototype.Copy3 = function(Parent)//для заголовков
 	}
 	return DC;
 };
-
+CDocumentContent.prototype.IsRecalculated = function()
+{
+	return (this.Recalculated && this.Pages.length > 0);
+};
 CDocumentContent.prototype.isDocumentContentInSmartArtShape = function ()
 {
 	return this.Parent && this.Parent.isObjectInSmartArt && this.Parent.isObjectInSmartArt();
@@ -743,6 +747,8 @@ CDocumentContent.prototype.Reset_RecalculateCache = function()
 // Пересчитываем отдельную страницу DocumentContent
 CDocumentContent.prototype.Recalculate_Page               = function(PageIndex, bStart)
 {
+	this.Recalculated = true;
+	
 	this.ShiftViewX = 0;
 	this.ShiftViewY = 0;
 
@@ -1430,6 +1436,9 @@ CDocumentContent.prototype.OnContentReDraw = function(StartPage, EndPage)
 };
 CDocumentContent.prototype.Draw                           = function(nPageIndex, pGraphics)
 {
+	if (!this.IsRecalculated())
+		return;
+	
     var CurPage = nPageIndex - this.StartPage;
     if (CurPage < 0 || CurPage >= this.Pages.length)
         return;
@@ -1549,6 +1558,9 @@ CDocumentContent.prototype.GetAllFloatElements = function(FloatObjs)
 };
 CDocumentContent.prototype.Shift = function(CurPage, Dx, Dy, keepClip)
 {
+	if (!this.IsRecalculated())
+		return;
+	
 	this.Pages[CurPage].Shift(Dx, Dy);
 
 	if (this.ClipInfo[CurPage] && true !== keepClip)
@@ -1565,18 +1577,12 @@ CDocumentContent.prototype.Shift = function(CurPage, Dx, Dy, keepClip)
 };
 CDocumentContent.prototype.ShiftView = function(nDx, nDy)
 {
-	if (this.Pages.length <= 0)
-		return;
-
 	this.Shift(0, nDx, nDy);
 	this.ShiftViewX += nDx;
 	this.ShiftViewY += nDy;
 };
 CDocumentContent.prototype.ResetShiftView = function()
 {
-	if (this.Pages.length <= 0)
-		return;
-
 	this.Shift(0, -this.ShiftViewX, -this.ShiftViewY);
 	this.ShiftViewX = 0;
 	this.ShiftViewY = 0;
@@ -1678,11 +1684,19 @@ CDocumentContent.prototype.CheckFormViewWindow = function()
 
 	if (oPageBounds.Bottom - oPageBounds.Top > oFormBounds.H)
 	{
-		if (nCursorH > oFormBounds.H - nPad || nCursorT < oFormBounds.Y + nPad)
+		if (nCursorH > oFormBounds.H - nPad)
 			nDy = oFormBounds.Y + nPad - nCursorT - (nCursorH - oFormBounds.H - nPad);
+		else if (nCursorT < oFormBounds.Y + nPad)
+			nDy = oFormBounds.Y + nPad - nCursorT;
 		else if (nCursorT + nCursorH > oFormBounds.H - nPad)
 			nDy = oFormBounds.H - nPad - nCursorT - nCursorH;
 	}
+	
+	// For multiline form we don't allow horizontal shift, for not multiline - don't allow vertical shift
+	if (oForm.IsMultiLineForm())
+		nDx = 0;
+	else
+		nDy = 0;
 
 	if (Math.abs(nDx) > 0.001 || Math.abs(nDy) > 0.001)
 	{
@@ -1738,8 +1752,8 @@ CDocumentContent.prototype.RecalculateCurPos = function(bUpdateX, bUpdateY, isUp
 };
 CDocumentContent.prototype.Get_PageBounds = function(CurPage, Height, bForceCheckDrawings)
 {
-	if (this.Pages.length <= 0)
-		return new CDocumentBounds(0, 0, 0, 0);
+	if (!this.IsRecalculated())
+		return new AscWord.CDocumentBounds(0, 0, 0, 0);
 
 	if (CurPage < 0)
 		CurPage = 0;
@@ -1802,6 +1816,9 @@ CDocumentContent.prototype.GetPageBounds = function(nCurPage, nHeight, isForceCh
 };
 CDocumentContent.prototype.GetContentBounds = function(CurPage)
 {
+	if (!this.IsRecalculated())
+		return new AscWord.CDocumentBounds(0, 0, 0, 0);
+	
 	var oPage = this.Pages[CurPage];
 	if (!oPage || oPage.Pos > oPage.EndPos)
 		return this.Get_PageBounds(CurPage);
@@ -2779,6 +2796,9 @@ CDocumentContent.prototype.AddNewParagraph = function(bForceAdd)
 								NewParagraph.Style_Remove();
 							else
 								NewParagraph.Style_Add(NextId, true);
+							
+							let bidi = Item.GetDirectParaPr(false).Bidi;
+							NewParagraph.SetParagraphBidi(bidi);
 						}
 
 						var LastRun = Item.Content[Item.Content.length - 1];
@@ -4358,7 +4378,7 @@ CDocumentContent.prototype.MoveCursorToStartOfLine = function(AddToSelect)
 };
 CDocumentContent.prototype.MoveCursorToXY = function(X, Y, AddToSelect, bRemoveOldSelection, CurPage)
 {
-	if (this.Pages.length <= 0)
+	if (!this.IsRecalculated())
 		return;
 
 	if (undefined !== CurPage)
@@ -6210,6 +6230,9 @@ CDocumentContent.prototype.RemoveSelection = function(bNoCheckDrawing)
 };
 CDocumentContent.prototype.DrawSelectionOnPage = function(PageIndex, clipInfo)
 {
+	if (!this.IsRecalculated())
+		return;
+	
     var CurPage = PageIndex;
     if (CurPage < 0 || CurPage >= this.Pages.length)
         return;
@@ -6279,7 +6302,7 @@ CDocumentContent.prototype.DrawSelectionOnPage = function(PageIndex, clipInfo)
 };
 CDocumentContent.prototype.Selection_SetStart = function(X, Y, CurPage, MouseEvent)
 {
-	if (this.Pages.length <= 0)
+	if (!this.IsRecalculated())
 		return;
 
 	if (CurPage < 0)
@@ -6439,7 +6462,7 @@ CDocumentContent.prototype.Selection_SetStart = function(X, Y, CurPage, MouseEve
 // Если bEnd = true, тогда это конец селекта.
 CDocumentContent.prototype.Selection_SetEnd = function(X, Y, CurPage, MouseEvent)
 {
-	if (this.Pages.length <= 0)
+	if (!this.IsRecalculated())
 		return;
 
 	if (CurPage < 0)
@@ -7146,6 +7169,9 @@ CDocumentContent.prototype.DistributeTableCells = function(isHorizontally)
 //-----------------------------------------------------------------------------------
 CDocumentContent.prototype.Internal_GetContentPosByXY = function(X, Y, PageNum)
 {
+	if (!this.IsRecalculated())
+		return;
+	
     if (undefined === PageNum || null === PageNum)
         PageNum = this.CurPage;
 
@@ -7270,6 +7296,7 @@ CDocumentContent.prototype.Internal_Content_Add = function(Position, NewObject, 
 
 	this.private_ReindexContent(Position);
 	this.OnContentChange();
+	this.Recalculated = false;
 };
 CDocumentContent.prototype.Internal_Content_Remove = function(Position, Count, isCorrectContent)
 {
@@ -7305,6 +7332,7 @@ CDocumentContent.prototype.Internal_Content_Remove = function(Position, Count, i
 
 	this.private_ReindexContent(Position);
 	this.OnContentChange();
+	this.Recalculated = false;
 };
 CDocumentContent.prototype.Clear_ContentChanges = function()
 {
@@ -7420,6 +7448,11 @@ CDocumentContent.prototype.GetSelectionState = function()
 		Flag     : this.Selection.Flag,
 		Data     : this.Selection.Data
 	};
+	
+	DocState.ShiftView = {
+		X : this.ShiftViewX,
+		Y : this.ShiftViewY
+	};
 
 	DocState.CurPage = this.CurPage;
 
@@ -7438,14 +7471,17 @@ CDocumentContent.prototype.GetSelectionState = function()
 	{
 		// Работаем с колонтитулом
 		if (docpostype_DrawingObjects === this.CurPos.Type)
+		{
 			State = this.LogicDocument.DrawingObjects.getSelectionState();
-		else if (docpostype_Content === this.CurPos.Type)
+		}
+		else// if (docpostype_Content === this.CurPos.Type)
 		{
 			if (true === this.Selection.Use)
 			{
-				// Выделение нумерации
-				if (selectionflag_Numbering == this.Selection.Flag)
-					State = [];
+				if (selectionflag_Numbering === this.Selection.Flag)
+				{
+					State = [this.GetCurrentParagraph()];
+				}
 				else
 				{
 					var StartPos = this.Selection.StartPos;
@@ -7469,7 +7505,9 @@ CDocumentContent.prototype.GetSelectionState = function()
 				}
 			}
 			else
+			{
 				State = this.Content[this.CurPos.ContentPos].GetSelectionState();
+			}
 		}
 	}
 
@@ -7514,13 +7552,17 @@ CDocumentContent.prototype.SetSelectionState = function(State, StateIndex)
 		Flag     : DocState.Selection.Flag,
 		Data     : DocState.Selection.Data
 	};
+	
+	this.ResetShiftView();
+	if (DocState.ShiftView)
+		this.ShiftView(DocState.ShiftView.X, DocState.ShiftView.Y);
 
 	this.CurPage = DocState.CurPage;
 
 	var NewStateIndex = StateIndex - 1;
 
 	// Работаем с колонтитулом
-	if (docpostype_DrawingObjects == this.CurPos.Type)
+	if (docpostype_DrawingObjects === this.CurPos.Type)
 	{
 		this.LogicDocument.DrawingObjects.setSelectionState(State, NewStateIndex);
 	}
@@ -7528,18 +7570,25 @@ CDocumentContent.prototype.SetSelectionState = function(State, StateIndex)
 	{
 		if (true === this.Selection.Use)
 		{
-			if (selectionflag_Numbering == this.Selection.Flag)
+			if (selectionflag_Numbering === this.Selection.Flag)
 			{
-				if (type_Paragraph === this.Content[this.Selection.StartPos].Get_Type())
+				let curPara = State[NewStateIndex];
+				if (curPara && curPara.IsParagraph && curPara.IsParagraph())
 				{
-					var NumPr = this.Content[this.Selection.StartPos].GetNumPr();
-					if (undefined !== NumPr)
-						this.SelectNumbering(NumPr, this.Content[this.Selection.StartPos]);
+					let numPr     = curPara.GetNumPr();
+					let prevNumPr = curPara.GetPrChangeNumPr();
+					
+					if (numPr && numPr.IsValid())
+						this.SelectNumbering(numPr, curPara);
+					else if (prevNumPr && prevNumPr.IsValid())
+						this.SelectNumberingSingleParagraph(curPara);
 					else
 						this.LogicDocument.RemoveSelection();
 				}
 				else
+				{
 					this.LogicDocument.RemoveSelection();
+				}
 			}
 			else
 			{
@@ -8484,7 +8533,7 @@ CDocumentContent.prototype.RemoveTextSelection = function()
 };
 CDocumentContent.prototype.CanUpdateTarget = function(CurPage)
 {
-	if (this.Pages.length <= 0)
+	if (!this.IsRecalculated())
 		return false;
 
 	if (this.Pages.length <= CurPage)

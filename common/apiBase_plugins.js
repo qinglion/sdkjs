@@ -307,7 +307,7 @@
 		if (!AscCommon.g_clipboardBase)
 			return null;
 
-		if (!this.canEdit() || this.isPdfEditor())
+		if (!this.canEdit())
 			return null;
 
 		let _elem = document.getElementById("pmpastehtml");
@@ -321,7 +321,7 @@
 
 		if (this.editorId === AscCommon.c_oEditorId.Word || this.editorId === AscCommon.c_oEditorId.Presentation) {
 			let textPr = this.get_TextProps();
-			if (textPr) {
+			if (textPr && textPr.TextPr) {
 				if (undefined !== textPr.TextPr.FontSize)
 					_elem.style.fontSize = textPr.TextPr.FontSize + "pt";
 
@@ -352,6 +352,7 @@
 		let b_old_save_format = AscCommon.g_clipboardBase.bSaveFormat;
 		AscCommon.g_clipboardBase.bSaveFormat = false;
 		let _t = this;
+
 		this.asc_PasteData(AscCommon.c_oAscClipboardDataFormat.HtmlElement, _elem, undefined, undefined, undefined,
 			function () {
 				_t.decrementCounterLongAction();
@@ -584,7 +585,7 @@
     /**
 	 * An object containing the watermark properties.
      * @typedef {Object} watermark_on_draw
-     * @property {float} transparent The watermark transparency degree.
+     * @property {number} transparent The watermark transparency degree.
      * @property {string} type The {@link /docbuilder/global#ShapeType shape type} which specifies the preset shape geometry for the current watermark.
 	 * @property {number} width The watermark width measured in millimeters.
 	 * @property {number} height The watermark height measured in millimeters.
@@ -1126,15 +1127,13 @@
      * @typeofeditors ["CDE", "CPE", "CSE"]
      * @alias GetSelectedText
      * @param {object} prop - The resulting string display properties.
-     * @param {boolean} prop.NewLine - Defines if the resulting string will include line boundaries or not (they will be replaced with '\r').
-     * @param {boolean} prop.NewLineParagraph - Defines if the resulting string will include paragraph line boundaries or not.
      * @param {boolean} prop.Numbering - Defines if the resulting string will include numbering or not.
      * @param {boolean} prop.Math - Defines if the resulting string will include mathematical expressions or not.
-     * @param {string} prop.TableCellSeparator - Defines how the table cell separator will be specified in the resulting string.
-     * @param {string} prop.TableRowSeparator - Defines how the table row separator will be specified in the resulting string.
-     * @param {string} prop.ParaSeparator - Defines how the paragraph separator will be specified in the resulting string.
-     * @param {string} prop.TabSymbol - Defines how the tab will be specified in the resulting string.
-     * @param {string} prop.NewLineSeparator - Defines how the line separator will be specified in the resulting string (this property has the priority over *NewLine*).
+     * @param {string} [prop.TableCellSeparator='\t'] - Defines how the table cell separator will be specified in the resulting string. Any symbol can be used. The default separator is "\t".
+     * @param {string} [prop.TableRowSeparator='\r\n'] - Defines how the table row separator will be specified in the resulting string. Any symbol can be used. The default separator is "\r\n".
+     * @param {string} [prop.ParaSeparator='\r\n'] - Defines how the paragraph separator will be specified in the resulting string. Any symbol can be used. The default separator is "\r\n".
+     * @param {string} [prop.TabSymbol='\t'] - Defines how the tab will be specified in the resulting string. Any symbol can be used. The default symbol is "\t".
+     * @param {string} [prop.NewLineSeparator='\r'] - Defines how the line separator will be specified in the resulting string. Any symbol can be used. The default separator is "\r".
 	 * @return {string} - Selected text.
      * @since 7.1.0
      * @see office-js-api/Examples/Plugins/{Editor}/Api/Methods/GetSelectedText.js
@@ -1146,8 +1145,6 @@
         {
             properties =
             {
-                NewLine : (prop.hasOwnProperty("NewLine")) ? prop["NewLine"] : true,
-                NewLineParagraph : (prop.hasOwnProperty("NewLineParagraph")) ? prop["NewLineParagraph"] : true,
                 Numbering : (prop.hasOwnProperty("Numbering")) ? prop["Numbering"] : true,
                 Math : (prop.hasOwnProperty("Math")) ? prop["Math"] : true,
                 TableCellSeparator: prop["TableCellSeparator"],
@@ -1161,22 +1158,39 @@
         {
             properties =
             {
-                NewLine : true,
-                NewLineParagraph : true,
                 Numbering : true
             }
         }
 
         return this.asc_GetSelectedText(false, properties);
     };
+	/**
+	 * Returns the selected content in the specified format.
+	 * @memberof Api
+	 * @typeofeditors ["CDE", "CPE", "CSE"]
+	 * @alias GetSelectedContent
+	 * @param {object} prop  - The returned content properties.
+	 * @param {"text" | "html"} [prop.type="text"] - The format type of the returned content (text or HTML).
+	 * @returns {string} - The selected content.
+	 * @since 8.3.1
+	 * @see office-js-api/Examples/Plugins/{Editor}/Api/Methods/GetSelectedContent.js
+	 */
+	Api.prototype["pluginMethod_GetSelectedContent"] = function(prop)
+	{
+		let type = AscCommon.c_oAscClipboardDataFormat.Text;
+		if (prop && "html" === prop["type"])
+			type = AscCommon.c_oAscClipboardDataFormat.Html;
+			
+		return this.getSelectedContent(type);
+	};
     /**
      * Replaces each paragraph (or text in cell) in the select with the corresponding text from an array of strings.
      * @memberof Api
      * @typeofeditors ["CDE", "CSE", "CPE"]
      * @alias ReplaceTextSmart
-     * @param {Array} arrString - An array of replacement strings.
-     * @param {string} [sParaTab=" "] - A character which is used to specify the tab in the source text.
-     * @param {string} [sParaNewLine=" "] - A character which is used to specify the line break character in the source text.
+     * @param {string[]} arrString - An array of replacement strings.
+	 * @param {string} [sParaTab="\t"] - A character which is used to specify the tab in the source text. Any symbol can be used. The default separator is "\t".
+     * @param {string} [sParaNewLine="\r\n"] - A character which is used to specify the line break character in the source text. Any symbol can be used. The default separator is "\r\n".
      * @returns {boolean} - Always returns true.
      * @since 7.1.0
      * @see office-js-api/Examples/Plugins/{Editor}/Api/Methods/ReplaceTextSmart.js
@@ -1227,6 +1241,10 @@
 	Api.prototype["pluginMethod_GetFileToDownload"] = function(format)
 	{
 		window.g_asc_plugins && window.g_asc_plugins.setPluginMethodReturnAsync();
+		
+		if (format && typeof(format) === "string")
+			format = format.toUpperCase();
+		
 		let dwnldF = Asc.c_oAscFileType[format] || Asc.c_oAscFileType[this.DocInfo.Format.toUpperCase()];
 		let opts = new Asc.asc_CDownloadOptions(dwnldF);
 		let _t = this;
@@ -1859,6 +1877,7 @@
 
 	/**
 	 * Adds an item to the context menu.
+	 * @undocumented
 	 * @memberof Api
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @alias AddContextMenuItem
@@ -1872,9 +1891,9 @@
 		if (items["items"]) correctItemsWithData(items["items"], baseUrl);
 		this.onPluginAddContextMenuItem(items);
 	};
-
 	/**
 	 * Updates an item in the context menu with the specified items.
+	 * @undocumented
 	 * @memberof Api
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @alias UpdateContextMenuItem
@@ -1888,7 +1907,25 @@
 		if (items["items"]) correctItemsWithData(items["items"], baseUrl);
 		this.onPluginUpdateContextMenuItem([items]);
 	};
-
+	
+	/**
+	 * Add button to the specified content controls track
+	 * @undocumented
+	 * @memberof Api
+	 * @typeofeditors ["CDE"]
+	 * @alias AddContentControlButtons
+	 * @param buttons
+	 * @since 9.0.0
+	 */
+	Api.prototype["pluginMethod_AddContentControlButtons"] = function(buttons)
+	{
+		if (AscCommon.c_oEditorId.Word !== this.getEditorId() || !buttons)
+			return;
+		
+		buttons["baseUrl"] = this.pluginsManager.pluginsMap[buttons["guid"]].baseUrl;
+		this.WordControl.m_oLogicDocument.DrawingDocument.contentControls.addPluginButtons(buttons);
+	};
+	
 	/**
 	 * The possible values of the base which the relative vertical position of the toolbar menu item will be calculated from.
 	 * @typedef {("button" | "...")} ToolbarMenuItemType
@@ -1929,8 +1966,19 @@
 	 * @see office-js-api/Examples/Plugins/{Editor}/Enumeration/ToolbarMenuMainItem.js
 	 */
 
+	function correctToolbarItems(api, items)
+	{
+		let baseUrl = api.pluginsManager.pluginsMap[items["guid"]].baseUrl;
+		for (let i = 0, len = items["tabs"].length; i < len; i++)
+		{
+			if (items["tabs"][i]["items"])
+				correctItemsWithData(items["tabs"][i]["items"], baseUrl);
+		}
+	}
+
 	/**
 	 * Adds an item to the toolbar menu.
+	 * @undocumented
 	 * @memberof Api
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @alias AddToolbarMenuItem
@@ -1940,18 +1988,29 @@
 	 */
 	Api.prototype["pluginMethod_AddToolbarMenuItem"] = function(items)
 	{
-		let baseUrl = this.pluginsManager.pluginsMap[items["guid"]].baseUrl;
-		for (let i = 0, len = items["tabs"].length; i < len; i++)
-		{
-			if (items["tabs"][i]["items"])
-				correctItemsWithData(items["tabs"][i]["items"], baseUrl);
-		}
-
+		correctToolbarItems(this, items);
 		this.sendEvent("onPluginToolbarMenu", [items]);
 	};
 
 	/**
+	 * Update an item to the toolbar menu.
+	 * @undocumented
+	 * @memberof Api
+	 * @typeofeditors ["CDE", "CSE", "CPE"]
+	 * @alias UpdateToolbarMenuItem
+	 * @param {ToolbarMenuMainItem[]} items - An array containing the main toolbar menu items.
+	 * @since 8.1.0
+	 * @see office-js-api/Examples/Plugins/{Editor}/Api/Methods/UpdateToolbarMenuItem.js
+	 */
+	Api.prototype["pluginMethod_UpdateToolbarMenuItem"] = function(items)
+	{
+		correctToolbarItems(this, items);
+		this.sendEvent("onPluginUpdateToolbarMenu", [items]);
+	};
+
+	/**
 	 * Shows the plugin modal window.
+	 * @undocumented
 	 * @memberof Api
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {string} frameId - The frame ID.
@@ -1973,6 +2032,7 @@
 
 	/**
 	 * Activates (moves forward) the plugin window/panel.
+	 * @undocumented
 	 * @memberof Api
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {string} frameId - The frame ID.
@@ -1987,6 +2047,7 @@
 
 	/**
 	 * Closes the plugin modal window.
+	 * @undocumented
 	 * @memberof Api
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {string} frameId - The frame ID.
@@ -2001,6 +2062,7 @@
 
 	/**
 	 * Sends a message to the plugin modal window.
+	 * @undocumented
 	 * @memberof Api
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {string} windowID - The frame ID.
@@ -2017,6 +2079,7 @@
 
 	/**
 	 * Resizes the plugin modal window.
+	 * @undocumented
 	 * @memberof Api
 	 * @typeofeditors ["CDE", "CSE", "CPE"]
 	 * @param {string} frameId - The frame ID.
@@ -2081,6 +2144,76 @@
 	{
 		this.sendEvent("asc_onError", error, level);
 	};
+
+	/**
+	 * Callback from dockChangedEvents.
+	 * @undocumented
+	 * @memberof Api
+	 * @typeofeditors ["CDE", "CSE", "CPE", "PDF"]
+	 * @param {string} windowID - The frame ID.
+	 * @alias OnWindowDockChangedCallback
+	 * @since 8.2.2
+	 */
+	Api.prototype["pluginMethod_OnWindowDockChangedCallback"] = function(windowID)
+	{
+		let key = window.g_asc_plugins.getCurrentPluginGuid() + "_" + windowID;
+		if (window.g_asc_plugins.dockCallbacks[key])
+		{
+			window.g_asc_plugins.dockCallbacks[key]();
+			delete window.g_asc_plugins.dockCallbacks[key];
+		}
+	};
+
+	/**
+	 * Catch AI event from plugin
+	 * @memberof Api
+	 * @undocumented
+	 * @typeofeditors ["CDE", "CSE", "CPE", "PDF"]
+	 * @alias onAIRequest
+	 * @param {object} data - Data.
+	 * @since 9.0.0
+	 */
+	Api.prototype["pluginMethod_onAIRequest"] = function(data)
+	{
+		let curItem = this.aiResolvers[0];
+		this.aiResolvers.shift();
+
+		if (this.aiResolvers.length > 0)
+			this._AI();
+
+		curItem.resolve(data);
+	};
+
+	/**
+	 * Get local image path for image.
+	 * @memberof Api
+	 * @undocumented
+	 * @typeofeditors ["CDE", "CSE", "CPE", "PDF"]
+	 * @alias getLocalImagePath
+	 * @param {object} data - Data.
+	 * @since 9.0.0
+	 */
+	Api.prototype["pluginMethod_getLocalImagePath"] = function(url)
+	{
+		window.g_asc_plugins.setPluginMethodReturnAsync();
+		AscCommon.sendImgUrls(this, [url], function(data) {
+			let ret = {
+				"error" : true,
+				"url" : "",
+				"path" : ""
+			};
+
+			if (data[0] && data[0].path != null && data[0].url !== "error")
+			{
+				ret["error"] = false;
+				ret["url"] = AscCommon.g_oDocumentUrls.imagePath2Local(data[0].path);
+				ret["path"] = data[0].path;
+			}
+
+			window.g_asc_plugins.onPluginMethodReturn(ret);
+		});
+	};
+
 })(window);
 
 

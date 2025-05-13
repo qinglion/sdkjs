@@ -170,6 +170,9 @@
         this.forceSaveTimeoutTimeout = null;
 		this.forceSaveForm = null;
 		this.forceSaveUndoRequest = false; // Флаг нужен, чтобы мы знали, что данное сохранение пришло по запросу Undo в совместке
+		this.forceSaveSendFormRequest = false;
+		this.forceSaveDisconnectRequest = false;
+		this.forceSaveOformRequest = false;
 		this.saveRelativePrev = {};
 
 		// Version History
@@ -222,6 +225,8 @@
 		this.skinObject = config['skin'];
 		this.isDarkMode = false;
 
+		this.isRtlInterface = config['isRtlInterface'] === true;
+
 		this.Shortcuts = new AscCommon.CShortcuts();
 		this.initDefaultShortcuts();
 
@@ -239,6 +244,8 @@
 		this.eyedropper = new AscCommon.CEyedropper(this);
 		this.inkDrawer = new AscCommon.CInkDrawer(this);
 		this._correctEmbeddedWork();
+
+		this.broadcastChannel = null;
 
 		return this;
 	}
@@ -354,6 +361,8 @@
 				return false;
 			};
 		}
+
+		this.initBroadcastChannel();
 	};
 	baseEditorsApi.prototype._correctEmbeddedWork = function()
 	{
@@ -425,7 +434,7 @@
 				res = isOpenOoxml ? Asc.c_oAscFileType.PPTX : Asc.c_oAscFileType.CANVAS_PRESENTATION;
 				break;
 			case c_oEditorId.Visio:
-				res = Asc.c_oAscFileType.VSDX;
+				res = isOpenOoxml ? Asc.c_oAscFileType.VSDX : Asc.c_oAscFileType.CANVAS_DIAGRAM;
 				break;
 		}
 		return res;
@@ -473,7 +482,7 @@
 	{
 		if (!fonts)
 		{
-			fonts = ["Arial", "Symbol", "Wingdings", "Courier New", "Times New Roman"];
+			fonts = ["Arial", "Symbol", "Wingdings", "Courier New", "Times New Roman", "Calibri", "Calibri Light"];
 		}
 		this.FontLoader.LoadFontsFromServer(fonts);
 	};
@@ -1218,9 +1227,6 @@
 	{
 		this.sync_EndAction(c_oAscAsyncActionType.BlockInteraction, c_oAscAsyncAction.Open);
 	};
-	baseEditorsApi.prototype._openOnClient                       = function()
-	{
-	};
 	baseEditorsApi.prototype._onOpenCommand                      = function(data)
 	{
 		var t = this;
@@ -1236,7 +1242,6 @@
 			}
 			t.onEndLoadFile(result);
 		});
-		this._openOnClient();
 	};
 	baseEditorsApi.prototype.openFileCryptCallback               = function (stream)
 	{
@@ -1362,7 +1367,10 @@
 	};
 	baseEditorsApi.prototype.forceSave = function()
 	{
-		return this.CoAuthoringApi.forceSave();
+		if (!this.getViewMode()) {
+			return this.CoAuthoringApi.forceSave();
+		}
+		return false;
 	};
 	baseEditorsApi.prototype.saveFromChanges = function(data, timeout, callback) {
 		var t = this;
@@ -2855,8 +2863,14 @@
 		if (this.canSave && this._saveCheck() && this.canSendChanges()) {
 			this.IsUserSave = !isAutoSave;
 
-			if (this.asc_isDocumentCanSave() || this._haveChanges() || this._haveOtherChanges() ||
-				this.canUnlockDocument || this.forceSaveUndoRequest) {
+			if (this.asc_isDocumentCanSave()
+				|| this._haveChanges()
+				|| this._haveOtherChanges()
+				|| this.canUnlockDocument
+				|| this.forceSaveUndoRequest
+				|| this.forceSaveSendFormRequest
+				|| this.forceSaveDisconnectRequest
+				|| this.forceSaveOformRequest) {
 				if (this._prepareSave(isIdle)) {
 					// Не даем пользователю сохранять, пока не закончится сохранение (если оно началось)
 					this.canSave = false;
@@ -2949,9 +2963,6 @@
 	};
 
 	baseEditorsApi.prototype.openDocument  = function(file)
-	{
-	};
-	baseEditorsApi.prototype.openDocumentFromZip  = function()
 	{
 	};
 	baseEditorsApi.prototype.saveLogicDocumentToZip  = function(fileType, options, callback)
@@ -3404,6 +3415,11 @@
 	{
 		if (null != this.pluginsManager)
 			this.pluginsManager.buttonClick(id, guid, windowId);
+	};
+	baseEditorsApi.prototype.asc_pluginButtonDockChanged = function(type, guid, windowId, callback)
+	{
+		if (null != this.pluginsManager)
+			this.pluginsManager.onPluginWindowDockChanged(type, guid, windowId, callback);
 	};
 
 	baseEditorsApi.prototype.asc_pluginEnableMouseEvents = function(isEnable)
@@ -4859,17 +4875,21 @@
     	if (!this.internalEvents.hasOwnProperty(name))
             this.internalEvents[name] = {};
         this.internalEvents[name]["" + ((undefined === listenerId) ? 0 : listenerId)] = callback;
+
+		return true;
     };
     baseEditorsApi.prototype.detachEvent = function(name, listenerId)
     {
         if (!this.internalEvents.hasOwnProperty(name))
-        	return;
+        	return false;
         var obj = this.internalEvents[name];
         var prop = "" + ((undefined === listenerId) ? 0 : listenerId);
         if (obj[prop])
         	delete obj[prop];
         if (0 === Object.getOwnPropertyNames(obj).length)
         	delete this.internalEvents[name];
+
+		return true;
     };
     baseEditorsApi.prototype.sendInternalEvent = function()
 	{
@@ -5024,6 +5044,11 @@
 	baseEditorsApi.prototype.onPluginCloseToolbarMenuItem = function(guid)
 	{
 		this.sendEvent("onPluginToolbarMenu", [{ "guid" : guid, "tabs" : [] }]);
+	};
+	baseEditorsApi.prototype.onPluginClose = function(guid)
+	{
+		this.onPluginCloseToolbarMenuItem(guid);
+		this.onPluginCloseContextMenuItem(guid);
 	};
 
 	// ---------------------------------------------------- wopi ---------------------------------------------
@@ -5469,6 +5494,83 @@
 	baseEditorsApi.prototype.asc_isRtlTextDirection = function() {
 		return false;
 	};
+	
+	baseEditorsApi.prototype.asc_CheckCopy = function(data, format) {
+	};
+	baseEditorsApi.prototype.getSelectedContent = function(format) {
+		let text_data = {
+			data     : "",
+			pushData : function(format, value) {
+				this.data = value;
+			}
+		};
+		
+		this.asc_CheckCopy(text_data, format);
+		if (text_data.data == null)
+			text_data.data = "";
+		
+		return text_data.data;
+	};
+
+	baseEditorsApi.prototype.asc_SetRTLInterface = function(isRTL) {
+		this.isRtlInterface = isRTL;
+		this.onChangeRTLInterface();
+	};
+	baseEditorsApi.prototype.onChangeRTLInterface = function() {
+	};
+
+	baseEditorsApi.prototype._AI = function()
+	{
+		let curItem = this.aiResolvers[0];
+		if (!window.g_asc_plugins)
+		{
+			curItem.resolve({ "error" : "plugins manager does not initialized" });
+			this.aiResolvers.shift();
+			return;
+		}
+
+		// TODO: only one AI plugin must be presented!
+		//let testGuids = ["asc.{9DC93CDB-B576-4F0C-B55E-FCC9C48DD007}"];
+		let testGuids = undefined;
+		let results = window.g_asc_plugins.onPluginEvent2("onAIRequest", curItem.data, testGuids, true);
+		if (results.length === 0)
+		{
+			curItem.resolve({ "error" : "no registered AI plugins found" });
+			this.aiResolvers.shift();
+		}
+	};
+
+	baseEditorsApi.prototype["AI"] = baseEditorsApi.prototype.AI = function(data, resolve)
+	{
+		this.aiResolvers = this.aiResolvers || [];
+		this.aiResolvers.push({data : data, resolve: resolve});
+
+		if (this.aiResolvers.length > 1)
+			return;
+
+		this._AI();
+	};
+
+	baseEditorsApi.prototype["checkAI"] = baseEditorsApi.prototype.checkAI = function()
+	{
+		let results = window.g_asc_plugins.onPluginEvent2("onAIRequest", null, undefined, true, true);
+		return (0 !== results.length) ? true : false;
+	};
+
+	baseEditorsApi.prototype.onAttachPluginEvent = function(guid, name)
+	{
+	};
+
+	baseEditorsApi.prototype.initBroadcastChannel = function() {
+		if (!this.broadcastChannel) {
+			if (typeof BroadcastChannel !== "undefined") {
+				this.broadcastChannel = new BroadcastChannel("onlyofficeChannel");
+			}
+		}
+	};
+
+	baseEditorsApi.prototype.initBroadcastChannelListeners = function() {
+	};
 
 	//----------------------------------------------------------export----------------------------------------------------
 	window['AscCommon']                = window['AscCommon'] || {};
@@ -5551,6 +5653,7 @@
 	prot['asc_getInputLanguage'] = prot.asc_getInputLanguage;
 
 	prot['setPluginsOptions'] = prot.setPluginsOptions;
+	prot['asc_pluginButtonDockChanged'] = prot.asc_pluginButtonDockChanged;
 
 	// passwords
 	prot["asc_setCurrentPassword"] = prot.asc_setCurrentPassword;
@@ -5579,7 +5682,10 @@
 	prot["asc_removeCustomProperty"] = prot.asc_removeCustomProperty;
 	
 	prot["asc_setPdfViewer"] = prot.asc_setPdfViewer;
+
 	prot["asc_mergeSelectedShapes"] = prot.asc_mergeSelectedShapes;
+
+	prot["asc_SetRTLInterface"] = prot.asc_SetRTLInterface;
 
 	prot["callCommand"] = prot.callCommand;
 	prot["callMethod"] = prot.callMethod;

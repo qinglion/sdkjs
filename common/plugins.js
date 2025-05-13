@@ -162,6 +162,8 @@
 			"onDocumentContentReady" : true
 		};
 		this.mainEvents = {};
+
+		this.dockCallbacks = {};
 	}
 
 	CPluginsManager.prototype =
@@ -640,15 +642,15 @@
 		},
 
 		// plugin events
-		onPluginEvent : function(name, data)
+		onPluginEvent : function(name, data, isExclusive)
 		{
 			if (this.mainEventTypes[name])
 				this.mainEvents[name] = data;
 
-			return this.onPluginEvent2(name, data, undefined);
+			return this.onPluginEvent2(name, data, undefined, isExclusive);
 		},
 
-		onPluginEvent2 : function(name, data, guids)
+		onPluginEvent2 : function(name, data, guids, isExclusive, isOnlyCheck)
 		{
 			let needsGuids = [];
 			for (let guid in this.runnedPluginsMap)
@@ -669,16 +671,41 @@
 						runObject.waitEvents.push({ n : name, d : data });
 						continue;
 					}
-					var pluginData = new CPluginData();
-					pluginData.setAttribute("guid", plugin.guid);
-					pluginData.setAttribute("type", "onEvent");
-					pluginData.setAttribute("eventName", name);
-					pluginData.setAttribute("eventData", data);
 
-					this.sendMessageToFrame(runObject.isConnector ? "" : runObject.frameId, pluginData);
+					if (true !== isOnlyCheck)
+					{
+						var pluginData = new CPluginData();
+						pluginData.setAttribute("guid", plugin.guid);
+						pluginData.setAttribute("type", "onEvent");
+						pluginData.setAttribute("eventName", name);
+						pluginData.setAttribute("eventData", data);
+
+						this.sendMessageToFrame(runObject.isConnector ? "" : runObject.frameId, pluginData);
+					}
+
+					if (isExclusive === true)
+						break;
 				}
 			}
 			return needsGuids;
+		},
+
+		onPluginWindowDockChanged : function(type, guid, windowId, callback)
+		{
+			let runObject = this.runnedPluginsMap[guid];
+			if (!runObject)
+				return;
+
+			this.dockCallbacks[guid + "_" + windowId] = callback;
+
+			let pluginData = new CPluginData();
+			pluginData.setAttribute("guid", guid);
+			pluginData.setAttribute("type", "onWindowEvent");
+			pluginData.setAttribute("windowID",  windowId);
+			pluginData.setAttribute("eventName", "onDockedChanged");
+			pluginData.setAttribute("eventData", type);
+
+			this.sendMessageToFrame(runObject.isConnector ? "" : runObject.frameId, pluginData);
 		},
 
 		getPluginOptions : function(guid)
@@ -1079,6 +1106,16 @@
 
 			runObject.currentInit = false;
 
+			let eventMap = plugin.variations[runObject.currentVariation].eventsMap;
+			if (eventMap)
+			{
+				for (let nameEvent in eventMap)
+				{
+					if (eventMap.hasOwnProperty(nameEvent))
+						this.api.onAttachPluginEvent(plugin.guid, nameEvent);
+				}
+			}
+
 			if (AscCommon.AscBrowser.isIE && !AscCommon.AscBrowser.isIeEdge)
 			{
 				let ie_frame_id = runObject.frameId;
@@ -1127,8 +1164,7 @@
 			}
 
 			delete this.runnedPluginsMap[guid];
-			this.api.onPluginCloseContextMenuItem(guid);
-			this.api.onPluginCloseToolbarMenuItem(guid);
+			this.api.onPluginClose(guid);
 
 			if (this.runAndCloseData)
 			{
@@ -1233,7 +1269,10 @@
 		correctData : function(pluginData)
 		{
 			pluginData.setAttribute("editorType", this.api._editorNameById());
+			if (this.api.isPdfEditor())
+				pluginData.setAttribute("editorSubType", "pdf");
 			pluginData.setAttribute("mmToPx", AscCommon.g_dKoef_mm_to_pix);
+			pluginData.setAttribute("restrictions", this.api.restrictions);
 
 			if (undefined === pluginData.getAttribute("data"))
 				pluginData.setAttribute("data", "");
@@ -1295,6 +1334,7 @@
 					if (plugin && plugin.variations && plugin.variations[0])
 					{
 						plugin.variations[0].eventsMap[data["name"]] = true;
+						this.api.onAttachPluginEvent(data["guid"], data["name"]);
 					}
 					break;
 				}
@@ -1459,33 +1499,15 @@
 
 				if (task.interface)
 				{
-					try
-					{
-						AscCommon.safePluginEval(value);
-					}
-					catch (err)
-					{
-						console.error(err);
-					}
+					AscCommon.safePluginEval(value);
 				}
 				else if (!this.api.isLongAction() && (task.resize || this.api.canRunBuilderScript()))
 				{
 					this.api._beforeEvalCommand();
-					AscFonts.IsCheckSymbols = true;
-					try
-					{
-						commandReturnValue = AscCommon.safePluginEval(value);
-					}
-					catch (err)
-					{
-						commandReturnValue = undefined;
-						console.error(err);
-					}
+					commandReturnValue = AscCommon.safePluginEval(value);
 
 					if (!checkReturnCommand(commandReturnValue))
 						commandReturnValue = undefined;
-
-					AscFonts.IsCheckSymbols = false;
 					
 					let _t = this;
 					function onEndScript()
@@ -1781,7 +1803,10 @@
 				let plugin = window.g_asc_plugins.getPluginByGuid(guid);
 				if (plugin && plugin.variations && plugin.variations[runObject.currentVariation])
 				{
-					plugin.variations[runObject.currentVariation].eventsMap[pluginData.getAttribute("name")] = true;
+					let eventName = pluginData.getAttribute("name");
+					plugin.variations[runObject.currentVariation].eventsMap[eventName] = true;
+					window.g_asc_plugins.api.onAttachPluginEvent(guid, eventName);
+
 				}
 				break;
 			}
@@ -1820,6 +1845,10 @@
 
 		api.asc_registerCallback('asc_onSelectionEnd', function() {
 			window.g_asc_plugins.onChangedSelectionData();
+		});
+
+		api.asc_registerCallback('asc_onChangeRestrictions', function(value) {
+			window.g_asc_plugins.onPluginEvent("onChangeRestrictions", value);
 		});
 
 		window.g_asc_plugins.api.asc_registerCallback('asc_onDocumentContentReady', function() {

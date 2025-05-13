@@ -3871,7 +3871,7 @@
 		this.WritePivotCache = function(id, pivotCache) {
 			var oThis = this;
 			var oldId = pivotCache.id;
-			pivotCache.id = null;
+			pivotCache.id = "rId1";
 			this.bs.WriteItem(c_oSer_PivotTypes.id, function() {
 				oThis.memory.WriteLong(id - 0);
 			});
@@ -8933,11 +8933,13 @@
 		this.ReadPivotCache = function(type, length, pivotCache)
 		{
 			var res = c_oSerConstants.ReadOk;
-			if ( c_oSer_PivotTypes.id == type ) {
+			if ( c_oSer_PivotTypes.id === type ) {
 				pivotCache.id = this.stream.GetLong();
-			} else if ( c_oSer_PivotTypes.cache == type ) {
+			} else if ( c_oSer_PivotTypes.cache === type ) {
+				let idOld = pivotCache.id;
 				new AscCommon.openXml.SaxParserBase().parse(AscCommon.GetStringUtf8(this.stream, length), pivotCache);
-			} else if ( c_oSer_PivotTypes.record == type ) {
+				pivotCache.id = idOld;
+			} else if ( c_oSer_PivotTypes.record === type ) {
 				var cacheRecords = new Asc.CT_PivotCacheRecords();
 				new AscCommon.openXml.SaxParserBase().parse(AscCommon.GetStringUtf8(this.stream, length), cacheRecords);
 				pivotCache.cacheRecords = cacheRecords;
@@ -9748,6 +9750,9 @@
 				res = this.bcr.Read1(length, function(t, l) {
 					return oThis.ReadExternalCell(t, l, cell);
 				});
+				if (cell.CellType === Asc.ECellTypeType.celltypeError && cell.CellValue && AscCommon.rx_error && !cell.CellValue.match(AscCommon.rx_error)) {
+					cell.CellValue = null;
+				}
 				row.Cell.push(cell);
 			} else {
 				res = c_oSerConstants.ReadUnknown;
@@ -10081,9 +10086,15 @@
 					return oThis.ReadPivotCopyPaste(t, l, data);
 				});
 				var cacheDefinition = this.InitOpenManager.oReadResult.pivotCacheDefinitions[data.cacheId];
-				if(data.table && cacheDefinition){
-					data.table.cacheDefinition = cacheDefinition;
-					oWorksheet.insertPivotTable(data.table);
+				if (data.table && cacheDefinition) {
+					//ignore duplicate pivot tables(from 8.3.2). dont compare by name, excel can change it
+					const pivotIndex = oWorksheet.pivotTables.findIndex(function(elem){
+						return elem.location && data.table.location && elem.location.isEqual(data.table.location);
+					});
+					if (pivotIndex === -1) {
+						data.table.cacheDefinition = cacheDefinition;
+						oWorksheet.insertPivotTable(data.table);
+					}
 				}
             } else if (c_oSerWorksheetsTypes.Slicers === type || c_oSerWorksheetsTypes.SlicersExt === type) {
                 res = this.bcr.Read1(length, function(t, l) {
@@ -12594,11 +12605,11 @@
 				if (!this.InitOpenManager.copyPasteObj.isCopyPaste) {
 					this.InitOpenManager.PostLoadPrepare(wb);
 				}
-                wb.init(this.InitOpenManager.oReadResult.tableCustomFunc, this.InitOpenManager.oReadResult.tableIds, this.InitOpenManager.oReadResult.sheetIds, false, true);
+                wb.init(this.InitOpenManager.oReadResult, false, true);
             } else {
 				bwtr.ReadSheetDataExternal(true);
 				if(Asc["editor"] && Asc["editor"].wb) {
-					wb.init(this.InitOpenManager.oReadResult.tableCustomFunc, this.InitOpenManager.oReadResult.tableIds, this.InitOpenManager.oReadResult.sheetIds, true);
+					wb.init(this.InitOpenManager.oReadResult, true);
 				}
             }
             return res;
@@ -14488,34 +14499,6 @@
         this.slicerCachesIds = [];
         this.newDefinedNames = [];
     }
-
-    CT_Workbook.prototype.fromXmlSimple = function (reader) {
-        if (!reader.ReadNextNode()) {
-            return;
-        }
-        if ("workbook" !== reader.GetNameNoNS()) {
-            if (!reader.ReadNextNode()) {
-                return;
-            }
-        }
-
-        var t = this, val;
-        if ("workbook" === reader.GetNameNoNS()) {
-            var depth = reader.GetDepth();
-            while (reader.ReadNextSiblingNode(depth)) {
-                var name = reader.GetNameNoNS();
-                if ("sheets" === name) {
-                    var sheets = new AscCommonExcel.CT_Sheets(this.wb);
-                    sheets.fromXml(reader);
-                    this.sheets = sheets.sheets;
-                } else if ("pivotCaches" === name) {
-                    var pivotCaches = new AscCommonExcel.CT_PivotCaches();
-                    pivotCaches.fromXml(reader);
-                    this.pivotCaches = pivotCaches.pivotCaches;
-                }
-            }
-        }
-    };
 
     function CT_Sheets(wb) {
         this.wb = wb;

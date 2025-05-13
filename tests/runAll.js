@@ -40,13 +40,13 @@ const allTests = [
 	'cell/spreadsheet-calculation/autoFilterTests.html',
 	'cell/spreadsheet-calculation/UserProtectedRangesTest.html',
 	'cell/spreadsheet-calculation/FormulaTrace.html',
-	'cell/spreadsheet-calculation/GoalSeekTests.html',
+	'cell/spreadsheet-calculation/whatIfAnalysisTests.html',
 	'cell/spreadsheet-calculation/NumFormatParse.html',
 	'cell/spreadsheet-calculation/DataValidationTests.html',
 	'cell/spreadsheet-calculation/conditionalFormattingTests.html',
 	'cell/spreadsheet-calculation/ExternalReference.html',
 	'cell/spreadsheet-calculation/SheetMemoryTest.html',
-	
+
 	'word/unit-tests/paragraphContentPos.html',
 	'word/unit-tests/deleted-text-recovery.html',
 	'word/content-control/block-level/cursorAndSelection.html',
@@ -81,12 +81,13 @@ const allTests = [
 	'word/merge-documents/mergeDocuments.html',
 	'word/math-autocorrection/math-autocorrection.html',
 	'word/change-case/change-case.html',
+	'word/builder/api/replace-text-smart.html',
 
 	'cell/shortcuts/shortcuts.html',
 	'slide/shortcuts/shortcuts.html',
 	'word/shortcuts/shortcuts.html',
 
-	// related ooxml tests
+	//related ooxml tests
 	'oform/xml/oformXml.html',
 	'word/custom-xml/custom-xml-ooxml.html',
 ];

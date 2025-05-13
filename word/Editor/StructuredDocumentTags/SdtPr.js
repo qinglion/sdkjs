@@ -73,8 +73,8 @@ function CSdtPr()
 
 	this.OForm         = undefined;
 	
-	this.BorderColor = undefined;//new AscWord.CDocumentColorA(Math.random() * 255 | 0, Math.random() * 255 | 0, Math.random() * 255 | 0, Math.random() * 255 | 0);
-	this.ShdColor    = undefined;//new AscWord.CDocumentColorA(Math.random() * 255 | 0, Math.random() * 255 | 0, Math.random() * 255 | 0, Math.random() * 255 | 0);
+	this.BorderColor = undefined;
+	this.ShdColor    = undefined;
 }
 
 CSdtPr.prototype.Copy = function()
@@ -647,8 +647,9 @@ CContentControlPr.prototype.SetToContentControl = function(oContentControl)
 
 	if (undefined !== this.TextFormPr && oContentControl.IsInlineLevel())
 	{
-		let isCombChanged = (!oContentControl.Pr.TextForm || this.TextFormPr.Comb !== oContentControl.Pr.TextForm.Comb);
-		let isMaxChanged  = (!oContentControl.Pr.TextForm || this.TextFormPr.MaxCharacters !== oContentControl.Pr.TextForm.MaxCharacters);
+		let isCombChanged   = (!oContentControl.Pr.TextForm || this.TextFormPr.Comb !== oContentControl.Pr.TextForm.Comb);
+		let isMaxChanged    = (!oContentControl.Pr.TextForm || this.TextFormPr.MaxCharacters !== oContentControl.Pr.TextForm.MaxCharacters);
+		let isFormatChanged = (!oContentControl.Pr.TextForm || !this.TextFormPr.Format.IsEqual(oContentControl.Pr.TextForm.Format));
 
 		if (oContentControl.IsFixedForm() && isCombChanged)
 			oContentControl.UpdateFixedFormCombWidthByFormSize(this.TextFormPr);
@@ -665,6 +666,13 @@ CContentControlPr.prototype.SetToContentControl = function(oContentControl)
 
 		if (!this.TextFormPr.MultiLine)
 			oContentControl.CorrectSingleLineFormContent();
+		
+		if (isFormatChanged
+			&& !oContentControl.IsPlaceHolder()
+			&& !oContentControl.Pr.TextForm.CheckFormat(oContentControl.GetInnerText(), true))
+		{
+			oContentControl.ClearContentControlExt();
+		}
 	}
 
 	if (undefined !== this.PlaceholderText)

@@ -162,14 +162,21 @@
 	}
 	function GetParagraphText(paragraph)
 	{
-		return paragraph.GetText({ParaEndToSpace : false});
+		return paragraph.GetText({
+			ParaSeparator : "",
+			TableCellSeparator : "",
+			TableRowSeparator : "",
+		});
 	}
 	function GetParagraphReviewText(paragraph)
 	{
 		let result = [];
 		paragraph.CheckRunContent(function(run)
 		{
-			let text = run.GetText();
+			let text = run.GetText({
+				ParaSeparator : "",
+				Text : ""
+			});
 			if (!text || !text.length)
 				return;
 			
@@ -195,7 +202,10 @@
 		let result = [];
 		cc.CheckRunContent(function(run)
 		{
-			let text = run.GetText();
+			let text = run.GetText({
+				ParaSeparator : "",
+				Text : ""
+			});
 			if (!text || !text.length)
 				return;
 			
@@ -241,9 +251,9 @@
 		editor.restrictions = Asc.c_oAscRestrictionType.OnlyForms;
 
 		if (isOForm)
-			editor.DocInfo = {Format : "oform"};
+			editor.DocInfo = {Format : "oform", isFormatWithForms : function() {return true;}};
 		else
-			editor.DocInfo = {Format : "docx"};
+			editor.DocInfo = {Format : "docx", isFormatWithForms : function() {return false;}};
 	}
 	function SetEditingMode()
 	{
@@ -495,6 +505,14 @@
 		paragraph.SetSelectionContentPos(startPos, endPos, false);
 		paragraph.Document_SetThisElementCurrent();
 	}
+	function SelectParagraph(paragraph)
+	{
+		if (logicDocument)
+			logicDocument.RemoveSelection();
+		
+		paragraph.SelectAll();
+		paragraph.Document_SetThisElementCurrent();
+	}
 	function GetFinalSection()
 	{
 		if (!logicDocument)
@@ -586,6 +604,7 @@
 	AscTest.SyncCollaboration                = SyncCollaboration;
 	AscTest.EndCollaboration                 = EndCollaboration;
 	AscTest.SelectParagraphRange             = SelectParagraphRange;
+	AscTest.SelectParagraph                  = SelectParagraph;
 	AscTest.StartTextSpeaker                 = StartTextSpeaker;
 	AscTest.StopTextSpeaker                  = StopTextSpeaker;
 

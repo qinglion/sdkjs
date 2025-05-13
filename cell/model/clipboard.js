@@ -359,6 +359,15 @@
 					ws.model.ignoreWriteFormulas(true);
 				}
 
+
+				// IMAGE
+				if (_formats & AscCommon.c_oAscClipboardDataFormat.Image) {
+					let imageData = this.drawSelectedArea(ws, true);
+					if (imageData) {
+						_clipboard.pushData(AscCommon.c_oAscClipboardDataFormat.Image, imageData);
+					}
+				}
+
 				//TEXT
 				if (AscCommon.c_oAscClipboardDataFormat.Text & _formats) {
 					_data = this.copyProcessor.getText(activeRange, ws);
@@ -401,10 +410,10 @@
 					//в данном случае не вырезаем, а записываем
 					if (!ws.isNeedSelectionCut() && false === ws.isMultiSelect()) {
 						ws.workbook.cutIdSheet = ws.model.Id;
-						ws.copyCutRange = [ws.model.selectionRange.getLast()];
+						ws.setCutRange([ws.model.selectionRange.getLast()]);
 					}
 				} else if (!ws.objectRender.selectedGraphicObjectsExists()) {
-					ws.copyCutRange = ws.model.selectionRange.ranges;
+					ws.setCutRange(ws.model.selectionRange.ranges);
 				}
 			}
 		};
@@ -518,6 +527,88 @@
 				}
 			});
 		};
+
+		Clipboard.prototype.drawSelectedArea = function (ws, opt_get_bytes) {
+			let activeRange = ws.model.selectionRange.getLast();
+			let range = ws.getCellMetrics(activeRange.c1, activeRange.r1, true, true);
+			let rangeEnd = ws.getCellMetrics(activeRange.c2, activeRange.r2, true, true);
+
+			if (!range || !rangeEnd) {
+				return;
+			}
+
+			// Calculate dimensions
+			let width = rangeEnd.left + rangeEnd.width - range.left;
+			let height = rangeEnd.top + rangeEnd.height - range.top;
+
+			//TODO while add 1000px limit
+			let maxSize = 1000;
+			if (width > maxSize || height > maxSize) {
+				return;
+			}
+
+			// Create canvas and context
+			let canvas = document.createElement('canvas');
+			canvas.width = width * ws.getZoom();
+			canvas.height = height * ws.getZoom();
+			let ctx = canvas.getContext('2d');
+
+			//let zoom = ws.getZoom();
+			//ctx.scale(zoom, zoom);
+
+			ctx.save();
+
+			ctx.beginPath();
+			ctx.rect(0, 0, width, height);
+			ctx.clip();
+
+			// Calculate scroll offsets
+			let offsetX = range.left;
+			let offsetY = range.top;
+
+			// Translate context to draw from selected range start
+			//ctx.translate(-offsetX, -offsetY);
+
+			let oCtx = new Asc.DrawingContext({
+				canvas: canvas, units: 0/*px*/, fmgrGraphics: ws.workbook.fmgrGraphics, font: ws.workbook.m_oFont
+			});
+
+			oCtx.isNotDrawBackground = true;
+
+			// Draw worksheet elements
+			ws._drawGrid(oCtx, activeRange, offsetX, offsetY, undefined, undefined, undefined, true, true);
+			ws._drawCellsAndBorders(oCtx, activeRange, offsetX, offsetY);
+
+			ctx.restore();
+
+			let base64 = canvas.toDataURL();
+			if (opt_get_bytes) {
+				// Get base64 data without header
+				let base64Data = base64.split(',')[1];
+
+				// Convert base64 to binary
+				let byteCharacters = atob(base64Data);
+				let byteArrays = [];
+
+				for (let offset = 0; offset < byteCharacters.length; offset += 512) {
+					let slice = byteCharacters.slice(offset, offset + 512);
+					let byteNumbers = new Array(slice.length);
+
+					for (let i = 0; i < slice.length; i++) {
+						byteNumbers[i] = slice.charCodeAt(i);
+					}
+
+					let byteArray = new Uint8Array(byteNumbers);
+					byteArrays.push(byteArray);
+				}
+
+				return byteArrays;
+			}
+
+			// Get image data
+			return base64;
+		};
+
 
 
 		function CopyProcessorExcel() {
@@ -1877,7 +1968,7 @@
 				var pasteInOriginalDoc = this._checkPastedInOriginalDoc(pastedWb);
 				if (pasteInOriginalDoc && null !== window["Asc"]["editor"].wb.cutIdSheet) {
 					var wsFrom = window["Asc"]["editor"].wb.getWorksheetById(window["Asc"]["editor"].wb.cutIdSheet);
-					var fromRange = wsFrom ? wsFrom.copyCutRange : null;
+					var fromRange = wsFrom ? wsFrom.getCutRange() : null;
 					if (fromRange) {
 						fromRange = fromRange[0];
 						var aRange = ws.model.selectionRange.getLast();
@@ -3055,11 +3146,17 @@
 
 					//при специальной вставке в firefox _getComputedStyle возвращает null
 					//TODO пересмотреть функцию _getComputedStyle
-					if (window['AscCommon'].g_specialPasteHelper.specialPasteStart && window['AscCommon'].g_specialPasteHelper.specialPasteData.aContent) {
+					let specialPasteHelper = window['AscCommon'].g_specialPasteHelper;
+					let specialPasteProps = specialPasteHelper.specialPasteProps;
+					let props = specialPasteProps ? specialPasteProps.property : null;
+
+					if (window['AscCommon'].g_specialPasteHelper.specialPasteStart && window['AscCommon'].g_specialPasteHelper.specialPasteData.aContent && props !== Asc.c_oSpecialPasteProps.picture) {
 						oPasteProcessor.aContent = window['AscCommon'].g_specialPasteHelper.specialPasteData.aContent;
 					} else {
 						oPasteProcessor._Execute(node, {}, true, true, false);
-						window['AscCommon'].g_specialPasteHelper.specialPasteData.aContent = oPasteProcessor.aContent;
+						if (props !== Asc.c_oSpecialPasteProps.picture) {
+							window['AscCommon'].g_specialPasteHelper.specialPasteData.aContent = oPasteProcessor.aContent;
+						}
 					}
 
 					editor = oOldEditor;
