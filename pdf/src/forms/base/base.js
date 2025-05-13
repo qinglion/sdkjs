@@ -2692,19 +2692,18 @@
         let nFieldType = this.GetType();
         let bWriteType = !oParent || !oParent.IsAllKidsWidgets();
 
-        let nWidgetFlags = 0;
         if (bWriteType) {
             switch (nFieldType) {
                 case AscPDF.FIELD_TYPES.radiobutton: {
-                    nWidgetFlags |= (1 << 15);
+                    memory.widgetFlags |= (1 << 15);
                     break;
                 }
                 case AscPDF.FIELD_TYPES.button: {
-                    nWidgetFlags |= (1 << 16);
+                    memory.widgetFlags |= (1 << 16);
                     break;
                 }
                 case AscPDF.FIELD_TYPES.combobox: {
-                    nWidgetFlags |= (1 << 17);
+                    memory.widgetFlags |= (1 << 17);
                     break;
                 }
             }    
