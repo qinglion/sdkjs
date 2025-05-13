@@ -1112,6 +1112,47 @@
 		}
 		return oAscShdw;
 	};
+	CGraphicObjectBase.prototype.getShadowFill = function (oShadowColor, oShapeUniFill) {
+		let oShadowFill;
+		if (oShadowColor) {
+			const oMainFill = oShapeUniFill && oShapeUniFill.fill;
+			if (oMainFill && oMainFill.type === Asc.c_oAscFill.FILL_TYPE_GRAD) {
+				oShadowFill = new AscFormat.CUniFill();
+				oShadowFill.fill = new AscFormat.CGradFill();
+				oShadowFill.fill.setLin(oMainFill.lin ? oMainFill.lin.createDuplicate() : null);
+				oShadowFill.fill.setPath(oMainFill.path ? oMainFill.path.createDuplicate() : null);
+				oShadowFill.fill.rotateWithShape = oMainFill.rotateWithShape;
+				for (let i = 0; i < oMainFill.colors.length; i += 1) {
+					const oMainGs = oMainFill.colors[i];
+					const oMainUniColor = oMainGs.color;
+					const nMainColorAlphaValue = oMainUniColor && oMainUniColor.getModValue('alpha');
+
+					const oGs = new AscFormat.CGs();
+					const oNewColor = oShadowColor.createDuplicate();
+					if (AscFormat.isRealNumber(nMainColorAlphaValue)) {
+						let oAlphaMod = oNewColor.getMod('alpha');
+						if (!oAlphaMod) {
+							oAlphaMod = new AscFormat.CColorMod('alpha', 100000);
+							oNewColor.addColorMod(oAlphaMod);
+						}
+						oAlphaMod.val = oAlphaMod.val * nMainColorAlphaValue / 100000;
+					}
+					oGs.setColor(oNewColor);
+					oGs.setPos(oMainGs.pos);
+					oShadowFill.fill.addColor(oGs);
+				}
+			} else {
+				const nTransparency = oShadowColor.getTransparency();
+				const nAlpha = 255 - 255 * nTransparency / 100;
+				const nMainAlpha = oShapeUniFill && AscFormat.isRealNumber(oShapeUniFill.transparent) ? oShapeUniFill.transparent : 255;
+				oShadowFill = AscFormat.CreateUniFillByUniColorCopy(oShadowColor);
+				oShadowFill.transparent = nAlpha * nMainAlpha / 255;
+			}
+		} else {
+			oShadowFill = AscFormat.CreateUniFillByUniColor(AscFormat.CreateUniColorRGB(0, 0, 0));
+		}
+		return oShadowFill;
+	};
 	CGraphicObjectBase.prototype.recalculateShdw = function () {
 
 		this.shdwSp = null;
@@ -1130,33 +1171,18 @@
 				if (geometry) {
 					oSpPr.setGeometry(geometry.createDuplicate());
 				}
-				let oShadowFill;
-				let nTransparency = null;
-				if (outerShdw.color) {
-					oShadowFill = AscFormat.CreateUniFillByUniColorCopy(outerShdw.color);
-					nTransparency = outerShdw.color.getTransparency();
-					if(nTransparency === 0) {
-						oShadowFill.transparent = null;
-					}
-					else {
-						oShadowFill.transparent = 255 - 255 * nTransparency / 100
-					}
-				} else {
-					oShadowFill = AscFormat.CreateUniFillByUniColor(AscFormat.CreateUniColorRGB(0, 0, 0));
-				}
-
 				if (this.getObjectType() === AscDFH.historyitem_type_Shape
 					&& (!this.brush || !this.brush.isVisible())) {
 					if (this.pen && this.pen.isVisible()) {
 						oSpPr.Fill = AscFormat.CreateNoFillUniFill();
 						oSpPr.ln = this.pen.createDuplicate();
-						oSpPr.ln.Fill = oShadowFill;
+						oSpPr.ln.Fill = this.getShadowFill(outerShdw.color, this.pen.Fill);
 					} else {
 						oSpPr.Fill = AscFormat.CreateNoFillUniFill();
 						oSpPr.ln = AscFormat.CreateNoFillLine();
 					}
 				} else {
-					oSpPr.Fill = oShadowFill;
+					oSpPr.Fill = this.getShadowFill(outerShdw.color, this.brush);
 					oSpPr.ln = AscFormat.CreateNoFillLine();
 				}
 				let penW = 0;
