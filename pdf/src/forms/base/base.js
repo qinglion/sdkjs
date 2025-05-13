@@ -120,7 +120,8 @@
         this._print         = true;        // This property has been superseded by the display property and its use is discouraged.
         this._readOnly      = false;
         this._required      = false;       // for all except button
-        
+        this._locked        = false;
+
         this._delay         = false;
         this._noExport      = false;
         this._defaultValue  = undefined;
@@ -1691,6 +1692,25 @@
 
         return this._required;
     };
+    CBaseField.prototype.SetLocked = function(bLocked) {
+        if (this._locked === bLocked) {
+            return true;
+        }
+
+        AscCommon.History.Add(new CChangesPDFFormLocked(this, this._locked, bLocked));
+
+        this._locked = bLocked;
+        this.SetWasChanged(true);
+
+        return true;
+    };
+    CBaseField.prototype.IsLocked = function() {
+        return this._locked;
+    };
+    CBaseField.prototype.IsCoEditLocked = function() {
+        return false == [AscCommon.c_oAscLockTypes.kLockTypeNone, AscCommon.c_oAscLockTypes.kLockTypeMine].includes(this.Lock.Get_Type())
+    };
+    
     CBaseField.prototype.SetBorderColor = function(aColor) {
         if (aColor && aColor.length == 0) {
             return false;

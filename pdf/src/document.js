@@ -3450,7 +3450,9 @@ var CPresentation = CPresentation || function(){};
                 if (object.IsDrawing() && !Asc.editor.isRestrictionView()) {
                     if (object.IsShape() && object.GetEditField()) {
                         let field = object.GetEditField();
-                        oThis.RemoveField(field.GetId());
+                        if (false == field.IsLocked()) {
+                            oThis.RemoveField(field.GetId());
+                        }
                     }
                     else {
                         oThis.RemoveDrawing(object.GetId());
@@ -7595,6 +7597,8 @@ var CPresentation = CPresentation || function(){};
         oCommonProps.asc_putReadOnly(field.IsReadOnly());
         // oCommonProps.asc_putRot(field.GetRot());
         oCommonProps.asc_putDisplay(field.GetDisplay());
+        oCommonProps.asc_putPropLocked(field.IsLocked());
+        oCommonProps.put_Locked(field.IsCoEditLocked());
 
         // bg
         let aFillColor  = field.GetBackgroundColor();

@@ -1436,14 +1436,14 @@
 				}
 				if (oFormInfo["readOnly"])
 				{
-					// to do
 					oForm.SetReadOnly(Boolean(oFormInfo["readOnly"]));
 				}
 				if (oFormInfo["required"])
 				{
-					// to do
 					oForm.SetRequired(Boolean(oFormInfo["required"]));
 				}
+				if (oFormInfo["locked"])
+					oForm.SetLocked(Boolean(oFormInfo["locked"]));
 				
 				if (oFormInfo["curIdxs"])
 				{
