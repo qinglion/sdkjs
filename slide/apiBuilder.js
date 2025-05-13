@@ -1572,7 +1572,7 @@
 	 * @returns {object}
 	 * @see office-js-api/Examples/{Editor}/ApiPresentation/Methods/GetDocumentInfo.js
 	 */
-	ApiDocument.prototype.GetDocumentInfo = function()
+	ApiPresentation.prototype.GetDocumentInfo = function()
 	{
 		const oDocInfo = {
 			"Application": '',
