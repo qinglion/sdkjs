@@ -2874,6 +2874,10 @@ function (window, undefined) {
 	};
 
 	/**
+	 * @typedef {cNumber | cString | cBool | cError} LookUpElement
+	 */
+
+	/**
 	 * @constructor
 	 */
 	function VHLOOKUPCache(bHor) {
@@ -3056,6 +3060,45 @@ function (window, undefined) {
 
 		return resVal;
 	};
+	function SortedCache() {
+		/**
+		 * @type {{number: {offset: number, data: {number: Uint32Array}}}}
+		 */
+		this.data = {};
+	};
+	/**
+	 * @param {number} rowColIndex
+	 * @param {number} startOffset
+	 * @param {{number: LookUpElement[]}} data
+	 */
+	SortedCache.prototype.saveRange = function (rowColIndex, startOffset, data) {
+		const res = {};
+		for (let i in data) {
+			const typed = Uint32Array.from(data[i].map(function (elem) {
+				return elem.i;
+			}));
+			res[i] = typed;
+		}
+		this.data[rowColIndex] = {offset: startOffset, data: res};
+	};
+	SortedCache.prototype.sortRange = function (dataToSort) {
+		for(let i in dataToSort) {
+			if (i === String(cElementType.number)) {
+				dataToSort[i].sort(function (a, b) {
+					return a.v.value - b.v.value;
+				});
+			} else if (i !== String(cElementType.Empty)) {
+				dataToSort[i].sort(function (a, b) {
+					return String(a.v.value).toLowerCase().localeCompare(String(b.v.value).toLowerCase());
+				});
+			}
+		}
+		return dataToSort;
+	};
+	SortedCache.prototype.getSortedRange = function (rowColIndex) {
+		return this.data[rowColIndex];
+	};
+
 	VHLOOKUPCache.prototype._get = function (range, valueForSearching, arg3Value, opt_arg4, opt_arg5) {
 		var res, _this = this, wsId = range.getWorksheet().getId();
 		var opt_xlookup = opt_arg4 !== undefined;
@@ -3064,7 +3107,7 @@ function (window, undefined) {
 		AscCommonExcel.executeInR1C1Mode(false, function () {
 			sRangeName = wsId + g_cCharDelimiter + range.getName();
 		});
-
+		const ws = range.getWorksheet();
 		var cacheElem = this.cacheId[sRangeName];
 		if (!cacheElem) {
 			cacheElem = {elements: [], results: {}};
@@ -3077,32 +3120,28 @@ function (window, undefined) {
 			}
 			cacheRange.add(range.getBBox0(), cacheElem);
 		}
-		var sorted = this.sortedCache[sRangeName];
+		if (!this.sortedCache[wsId]) {
+			this.sortedCache[wsId] = {horizontal: new SortedCache(), vertical: new SortedCache()};
+		}
+		const sortedAxis = this.bHor ? this.sortedCache[wsId].horizontal : this.sortedCache[wsId].vertical;
+		const sortedIndex = this.bHor ? range.bbox.r1 : range.bbox.c1;
+		let sorted = sortedAxis.getSortedRange(sortedIndex);
 		if (!sorted) {
-			const tmpArrays = {};
-			sorted = {};
-			for (let i = 0; i < cacheElem.elements.length; i += 1) {
-				const elem = cacheElem.elements[i];
-				const type = elem.v.type;
-				if (!tmpArrays[type]) {
-					tmpArrays[type] = []
+			let tmpArrays = {};
+			let c2 = this.bHor ? AscCommon.gc_nMaxCol : range.bbox.c2;
+			let r2 = this.bHor ? range.bbox.r2 : AscCommon.gc_nMaxRow;
+			const fullRange = ws.getRange3(range.bbox.r1, range.bbox.c1, r2, c2);
+			const bHor = this.bHor;
+			fullRange._foreachNoEmpty(function (cell, r, c) {
+				const value = checkTypeCell(cell, true);
+				if (!tmpArrays[value.type]) {
+					tmpArrays[value.type] = [];
 				}
-				tmpArrays[type].push(i);
-			}
-			for (let i in tmpArrays) {
-				sorted[i] = Uint32Array.from(tmpArrays[i]);
-				if (i === String(cElementType.number)) {
-					sorted[i].sort(function (a, b) {
-						return cacheElem.elements[a].v.value - cacheElem.elements[b].v.value;
-					});
-				} else {
-					sorted[i].sort(function (a, b) {
-						return String(cacheElem.elements[a].v.value).toLowerCase().localeCompare(String(cacheElem.elements[b].v.value).toLowerCase());
-					});
-				}
-
-			}
-			this.sortedCache[sRangeName] = sorted;
+				tmpArrays[value.type].push({v: value, i: bHor ? c : r});
+			});
+			sortedAxis.sortRange(tmpArrays);
+			sortedAxis.saveRange(sortedIndex, this.bHor ? range.bbox.c1 : range.bbox.r1, tmpArrays);
+			sorted = sortedAxis.getSortedRange(sortedIndex);
 		}
 		var sInputKey;
 		if (!opt_xlookup) {
@@ -3114,74 +3153,300 @@ function (window, undefined) {
 		}
 		res = cacheElem.results[sInputKey];
 		if (!res) {
+			const startIndex = this.bHor ? range.bbox.c1 : range.bbox.r1;
+			const endIndex = this.bHor ? range.bbox.c2 : range.bbox.r2;
 			cacheElem.results[sInputKey] =
-				res = this._calculate(cacheElem.elements, valueForSearching, arg3Value, opt_arg4, opt_arg5, sorted);
+				res = this._calculate(cacheElem.elements,
+					valueForSearching,
+					arg3Value,
+					opt_arg4,
+					opt_arg5,
+					sorted,
+					ws,
+					sortedIndex,
+					startIndex,
+					endIndex);
 		}
 
 		return res;
 	};
-	VHLOOKUPCache.prototype._calculate = function (cacheArray, valueForSearching, lookup, opt_arg4, opt_arg5, sorted) {
-		let res = -1, i = 0, j, length = cacheArray.length, k, elem, val, nextVal;
-		let xlookup = opt_arg4 !== undefined && opt_arg5 !== undefined;
+	VHLOOKUPCache.prototype._compareValues = function (val1, val2, op, opt_arg4) {
+		if (opt_arg4 === 2 && val2.type === cElementType.string) {
+			let matchingInfo = AscCommonExcel.matchingValue(val1);
+			return AscCommonExcel.matching(val2, matchingInfo)
+		} else {
+			let res = _func[val1.type][val2.type](val1, val2, op, null, null, true);
+			return res;
+		}
+	};
+	/**
+	 * @private
+	 * @param {LookUpElement[]} array
+	 * @param {LookUpElement} valueForSearching
+	 * @param {LookUpElement} nextVal
+	 * @param {boolean} revert
+	 * @param {number} [opt_arg4]
+	 * @return {{found: number, nextVal: LookUpElement}}
+	 */
+	VHLOOKUPCache.prototype._simpleSearch = function (array, valueForSearching, nextVal, revert, opt_arg4) {
+		if (revert) {
+			for (let i = array.length - 1; i >= 0; i--) {
+				const elem = array[i];
+				const val = elem.v;
+				if (this._compareValues(valueForSearching, val, "=", opt_arg4)) {
+					if (!(valueForSearching.type !== cElementType.error && val.type === cElementType.error)) {
+						return {found: elem.i, nextVal: nextVal};
+					}
+				}
+				if (opt_arg4 !== undefined) {
+					nextVal = this._addNextOptVal(nextVal, elem, valueForSearching, opt_arg4)
+				}
+			}
+		} else {
+			for (let i = 0; i < array.length; i++) {
+				const elem = array[i];
+				const val = elem.v;
+				if (this._compareValues(valueForSearching, val, "=", opt_arg4)) {
+					if (!(valueForSearching.type !== cElementType.error && val.type === cElementType.error)) {
+						return {found: elem.i, nextVal: nextVal};
+					}
+				}
+				if (opt_arg4 === 1 || opt_arg4 === -1) {
+					nextVal = this._addNextOptVal(nextVal, elem, valueForSearching, opt_arg4)
+				}
+			}
+		}
+		return {found: -1, nextVal: nextVal};
+	};
+	/**
+	 * @private
+	 * @param {Uint32Array} array
+	 * @param {LookUpElement} valueForSearching
+	 * @param {LookUpElement} nextVal
+	 * @param {boolean} revert
+	 * @param {boolean} xlookup
+	 * @param {Worksheet} ws
+	 * @param {number} rowCol
+	 * @param {number} [opt_arg4]
+	 * @return {{found: number, nextVal: LookUpElement}}
+	 */
+	VHLOOKUPCache.prototype._indexedBinarySearch = function (array, valueForSearching, revert, ws, rowCol, opt_arg4) {
+		const t = this;
+		const getValue = function (i) {
+			const cell = ws.getCell3(t.bHor ? rowCol : i, t.bHor ? i : rowCol);
+			return checkTypeCell(cell, true);
+		}
+		let canCompare;
+		let i = 0;
+		let j = array.length - 1;
+		if (revert) {
+			while (i <= j) {
+				const k = Math.ceil((i + j) / 2);
+				let val = getValue(array[k]);
+				if (val.type === cElementType.empty) {
+					val = val.tocBool();
+				}
+				if (this._compareValues(valueForSearching, val, "=", opt_arg4)) {
+					return k;
+				} else if (this._compareValues(valueForSearching, val, "<", opt_arg4)) {
+					i = k + 1;
+				} else {
+					j = k - 1;
+				}
+			}
+		} else {
+			while (i <= j) {
+				const k = Math.floor((i + j) / 2);
+				let val = getValue(array[k]);
+				canCompare = true;
+				if (val.type === cElementType.empty) {
+					val = val.tocBool();
+				}
+				if (valueForSearching.type !== val.type) {
+					if (valueForSearching.type !== cElementType.string && val.type !== cElementType.string) {
+						canCompare = true;
+					} else {
+						canCompare = false;
+					}
+				}
 
+				if (this._compareValues(valueForSearching, val, "=", opt_arg4)) {
+					return k;
+				} else if (canCompare && this._compareValues(valueForSearching, val, "<", opt_arg4)) {
+					j = k - 1;
+				} else {
+					i = k + 1;
+				}
+			}
+		}
+		return -1;
+	};
+	/**
+	 * @private
+	 * @param {LookUpElement[]} array
+	 * @param {LookUpElement} valueForSearching
+	 * @param {LookUpElement} nextVal
+	 * @param {boolean} revert
+	 * @param {boolean} xlookup
+	 * @param {number} [opt_arg4]
+	 * @return {{found: number, nextVal: LookUpElement}}
+	 */
+	VHLOOKUPCache.prototype._defaultBinarySerach = function (array, valueForSearching, nextVal, revert, xlookup, opt_arg4) {
+		let canCompare;
+		let i = 0;
+		let j = array.length - 1;
+		if (revert) {
+			while (i <= j) {
+				const k = Math.ceil((i + j) / 2);
+				const elem = array[k];
+				let val = elem.v;
+				if (val.type === cElementType.empty) {
+					val = val.tocBool();
+				}
+				if (this._compareValues(valueForSearching, val, "=", opt_arg4)) {
+					return {found: elem.i, nextVal: nextVal};
+				} else if (this._compareValues(valueForSearching, val, "<", opt_arg4)) {
+					i = k + 1;
+					if (opt_arg4 !== undefined) {
+						nextVal = this._addNextOptVal(nextVal, elem, valueForSearching, opt_arg4, true);
+					}
+				} else {
+					j = k - 1;
+					if (opt_arg4 !== undefined) {
+						nextVal = this._addNextOptVal(nextVal, elem, valueForSearching, opt_arg4, false);
+					}
+				}
+			}
+		} else {
+			while (i <= j) {
+				const k = Math.floor((i + j) / 2);
+				const elem = array[k];
+				let val = elem.v;
+				canCompare = true;
+				if (val.type === cElementType.empty) {
+					val = val.tocBool();
+				}
+
+				if (valueForSearching.type !== val.type) {
+					if (valueForSearching.type !== cElementType.string && val.type !== cElementType.string) {
+						canCompare = true;
+					} else {
+						canCompare = false;
+					}
+				}
+
+				if (this._compareValues(valueForSearching, val, "=", opt_arg4)) {
+					return {found: elem.i, nextVal: nextVal};
+				} else if (canCompare && this._compareValues(valueForSearching, val, "<", opt_arg4)) {
+					j = k - 1;
+					if (opt_arg4 !== undefined) {
+						nextVal = this._addNextOptVal(nextVal, elem, valueForSearching, opt_arg4, true);
+					}
+				} else {
+					i = k + 1;
+					if (opt_arg4 !== undefined) {
+						nextVal = this._addNextOptVal(nextVal, elem, valueForSearching, opt_arg4, false);
+					}
+				}
+			}
+		}
+
+		if (xlookup) {
+			return {found: -1, nextVal: nextVal};
+		}
+
+		let _res = Math.min(i, j);
+		_res = -1 === _res ? {found: _res, nextVal: nextVal} : {found: array[_res].i, nextVal: nextVal};
+		return _res;
+	};
+	VHLOOKUPCache.prototype._findNearest = function (ws, sorted, expectedStart, expectedEnd, firstFound, valueForSearching, revert, rowCol) {
+		const t = this;
+		const getValue = function (i) {
+			const cell = ws.getCell3(t.bHor ? rowCol : i, t.bHor ? i : rowCol);
+			return checkTypeCell(cell, true);
+		};
+		let firstFoundInRange = null;
+		if (sorted[firstFound] < expectedStart) {
+			for (let i = firstFound + 1; i < sorted.length; i += 1) {
+				const value = getValue(sorted[i]);
+				if (this._compareValues(valueForSearching, value, "=")) {
+					if (sorted[i] >= expectedStart && sorted[i] <= expectedEnd) {
+						firstFoundInRange = i;
+						break;
+					}
+				} else {
+					return -1;
+				}
+			}
+		} else if (sorted[firstFound] > expectedEnd) {
+			for (let i = firstFound - 1; i >= 0; i -= 1) {
+				const value = getValue(sorted[i]);
+				if (this._compareValues(valueForSearching, value, "=")) {
+					if (sorted[i] <=expectedEnd && sorted[i] >= expectedStart) {
+						firstFoundInRange = i;
+						break;
+					}
+				} else {
+					return -1;
+				}
+			}
+		} else {
+			firstFoundInRange = firstFound;
+		}
+		let res = sorted[firstFoundInRange];
+		if (revert) {
+			for (let i = firstFoundInRange + 1; i < sorted.length; i += 1) {
+				const value = getValue(sorted[i]);
+				if (this._compareValues(valueForSearching, value, "=")) {
+					if (sorted[i] >= expectedStart && sorted[i] <= expectedEnd) {
+						res = sorted[i];
+					}
+				}
+			}
+		} else {
+			for (let i = firstFoundInRange - 1; i >= 0; i -= 1) {
+				const value = getValue(sorted[i]);
+				if (this._compareValues(valueForSearching, value, "=")) {
+					if (sorted[i] >= expectedStart && sorted[i] <= expectedEnd) {
+						res = sorted[i];
+					}
+				}
+			}
+		}
+		return res;
+	};
+	/**
+	 * @private
+	 * @param {LookUpElement} nextVal
+	 * @param {LookUpElement} arrayVal
+	 * @param {LookUpElement} searchVal
+	 * @param {number} [opt_arg4]
+	 * @param {boolean} [isGreater]
+	 * @returns {LookUpElement}
+	 */
+	VHLOOKUPCache.prototype._addNextOptVal = function (nextVal, arrayVal, searchVal, opt_arg4, isGreater) {
+		let _needPush;
+		if (opt_arg4 === -1 && (isGreater === false || (isGreater === undefined && this._compareValues(arrayVal.v, searchVal, "<", opt_arg4)))) {
+			_needPush = true;
+		} else if (opt_arg4 === 1 && (isGreater || (isGreater === undefined && this._compareValues(arrayVal.v, searchVal, ">", opt_arg4)))) {
+			_needPush = true;
+		}
+		if (_needPush) {
+			if (nextVal === undefined || this._compareValues(arrayVal.v, nextVal.v, opt_arg4 === 1 ? "<" : ">", opt_arg4)) {
+				return arrayVal;
+			}
+		}
+		return nextVal;
+	};
+	VHLOOKUPCache.prototype._calculate = function (cacheArray, valueForSearching, lookup, opt_arg4, opt_arg5, sortedRange, ws, rowCol, startIndex, endIndex) {
+		const t = this;
+		let res = -1;
+		let nextVal;
+		let xlookup = opt_arg4 !== undefined && opt_arg5 !== undefined;
+		const sorted = sortedRange && sortedRange.data[valueForSearching.type];
+		const revert = opt_arg5 < 0;
 		//TODO неверно работает функция, допустим для случая: VLOOKUP("12",A1:A5,1) 12.00 ; "qwe" ; "3" ; 3.00 ; 4.00
 		//ascending order: ..., -2, -1, 0, 1, 2, ..., A-Z, FALSE
-
-
-		const _compareValues = function (val1, val2, op) {
-			/*if (val2.type === cElementType.string) {
-				_cString.value = val2.getValue().toLowerCase();
-				val2 = _cString;
-			}*/
-			if (opt_arg4 === 2 && val2.type === cElementType.string) {
-				let matchingInfo = AscCommonExcel.matchingValue(val1);
-				return AscCommonExcel.matching(val2, matchingInfo)
-			} else {
-				let res = _func[val1.type][val2.type](val1, val2, op, null, null, true);
-				return res;
-			}
-		};
-
-		const addNextOptVal = function (arrayVal, searchVal, isGreater) {
-			let _needPush;
-			if (opt_arg4 === -1 && (isGreater === false || (isGreater === undefined && _compareValues(arrayVal.v, searchVal, "<")))) {
-				_needPush = true;
-			} else if (opt_arg4 === 1 && (isGreater || (isGreater === undefined && _compareValues(arrayVal.v, searchVal, ">")))) {
-				_needPush = true;
-			}
-			if (_needPush) {
-				if (nextVal === undefined || _compareValues(arrayVal.v, nextVal.v, opt_arg4 === 1 ? "<" : ">")) {
-					nextVal = arrayVal;
-				}
-			}
-		};
-
-		const simpleSearch = function (revert) {
-			if (revert) {
-				for (i = length - 1; i >= 0; i--) {
-					elem = cacheArray[i];
-					val = elem.v;
-					if (_compareValues(valueForSearching, val, "=")) {
-						if (!(valueForSearching.type !== cElementType.error && val.type === cElementType.error)) {
-							return elem.i;
-						}
-					}
-					opt_arg4 !== undefined && addNextOptVal(elem, valueForSearching);
-				}
-			} else {
-				for (i = 0; i < length; i++) {
-					elem = cacheArray[i];
-					val = elem.v;
-					if (_compareValues(valueForSearching, val, "=")) {
-						if (!(valueForSearching.type !== cElementType.error && val.type === cElementType.error)) {
-							return elem.i;
-						}
-					}
-					(opt_arg4 === 1 || opt_arg4 === -1) && addNextOptVal(elem, valueForSearching);
-				}
-			}
-			return -1;
-		};
 
 		//бинарный поиск для xlookup(так работает ms) бинарный поиск происходит до определенной длины массива
 		//как только длина становится меньше n(около 10), начинается линейный поиск
@@ -3191,77 +3456,6 @@ function (window, undefined) {
 		//мы делаем иначе: бинарный поиск происходит всегда и не зависит от длины массива, при поиске наибольшего(наименьшего)
 		//из обработанных элементов выбираем те, которые больше(меньше) -> из них уже ищем наименьший(наибольший)
 		//т.е. в итоге получаем следующий наименьший/наибольший элемент
-		const _binarySearch = function (revert, sortedCache) {
-			let canCompare;
-			
-			i = 0;
-			//TODO проверить обратный поиск
-			if (revert) {
-				j = length - 1;
-				while (i <= j) {
-					k = Math.ceil((i + j) / 2);
-					if (sortedCache) {
-						elem = cacheArray[sortedCache[k]]
-					} else {
-						elem = cacheArray[k];
-					}
-					val = elem.v;
-					if (val.type === cElementType.empty) {
-						val = val.tocBool();
-					}
-					if (_compareValues(valueForSearching, val, "=")) {
-						return elem.i;
-					} else if (_compareValues(valueForSearching, val, "<")) {
-						i = k + 1;
-						opt_arg4 !== undefined && addNextOptVal(elem, valueForSearching, true);
-					} else {
-						j = k - 1;
-						opt_arg4 !== undefined && addNextOptVal(elem, valueForSearching, false);
-					}
-				}
-			} else {
-				j = length - 1;
-				while (i <= j) {
-					k = Math.floor((i + j) / 2);
-					if (sortedCache) {
-						elem = cacheArray[sortedCache[k]]
-					} else {
-						elem = cacheArray[k];
-					}
-					val = elem.v;
-					canCompare = true;
-					if (val.type === cElementType.empty) {
-						val = val.tocBool();
-					}
-
-					if (valueForSearching.type !== val.type) {
-						if (valueForSearching.type !== cElementType.string && val.type !== cElementType.string) {
-							canCompare = true;
-						} else {
-							canCompare = false;
-						}
-					}
-
-					if (_compareValues(valueForSearching, val, "=")) {
-						return elem.i;
-					} else if (canCompare && _compareValues(valueForSearching, val, "<")) {
-						j = k - 1;
-						opt_arg4 !== undefined && addNextOptVal(elem, valueForSearching, true);
-					} else {
-						i = k + 1;
-						opt_arg4 !== undefined && addNextOptVal(elem, valueForSearching, false);
-					}
-				}
-			}
-
-			if (xlookup) {
-				return -1;
-			}
-
-			let _res = Math.min(i, j);
-			_res = -1 === _res ? _res : cacheArray[_res].i;
-			return _res;
-		};
 
 		if (valueForSearching.type === cElementType.string) {
 			valueForSearching = new cString(valueForSearching.getValue().toLowerCase());
@@ -3270,9 +3464,13 @@ function (window, undefined) {
 		//TODO opt_arg5 - пока не обрабатываю результат == 2( A wildcard match where *, ?, and ~ have)
 		if (xlookup) {
 			if (Math.abs(opt_arg5) === 1) {
-				res = simpleSearch(opt_arg5 < 0);
+				const searchRes = this._simpleSearch(cacheArray, valueForSearching, nextVal, revert, opt_arg4)
+				res = searchRes.found;
+				nextVal = searchRes.nextVal;
 			} else if (Math.abs(opt_arg5) === 2) {
-				res = _binarySearch(opt_arg5 < 0);
+				const searchRes = this._defaultBinarySerach(cacheArray,valueForSearching, nextVal, revert, xlookup, opt_arg4);
+				res = searchRes.found;
+				nextVal = searchRes.nextVal;
 			}
 
 			if (res === -1) {
@@ -3281,17 +3479,24 @@ function (window, undefined) {
 				}
 			}
 		} else if (lookup) {
-			res = _binarySearch();
+			const searchRes = this._defaultBinarySerach(cacheArray, valueForSearching, nextVal, false, xlookup, opt_arg4);
+			res = searchRes.found;
+			nextVal = searchRes.nextVal;
 			if (res === -1 && cElementType.string === valueForSearching.type) {
-				res = simpleSearch();
+				const searchRes = this._simpleSearch(cacheArray, valueForSearching, nextVal, false, opt_arg4);
+				res = searchRes.found;
+				nextVal = searchRes.nextVal;
 			}
 		} else {
-			xlookup = true;
-			const sortedCache = sorted[valueForSearching.type];
-			length = sortedCache.length;
-			res = _binarySearch(false, sortedCache);
+			if (sorted) {
+				const searchRes = this._indexedBinarySearch(sorted, valueForSearching, false, ws, rowCol);
+				if (searchRes !== -1) {
+					res = this._findNearest(ws, sorted, startIndex, endIndex, searchRes, valueForSearching, revert, rowCol);
+				}
+			} else {
+				const searchRes = this._simpleSearch(cacheArray, valueForSearching, nextVal, false, opt_arg4);
+			}
 		}
-
 		return res;
 	};
 	VHLOOKUPCache.prototype.remove = function (cell) {
@@ -3308,6 +3513,7 @@ function (window, undefined) {
 	VHLOOKUPCache.prototype.clean = function () {
 		this.cacheId = {};
 		this.cacheRanges = {};
+		this.sortedCache = {};
 	};
 	VHLOOKUPCache.prototype.generateElements = function (range, cacheElem) {
 		var _this = this;

@@ -22547,8 +22547,8 @@ $(function () {
 		wb.dependencyFormulas.lockRecal();
 
 		ws.getRange2("A1101:B1120").cleanAll();
-		ws.getRange2("A1101").setValue("BOMBaRDIRO CROCODILO");
-		ws.getRange2("A1102").setValue("B0MBoMBINI GUS1N1");
+		ws.getRange2("A1101").setValue("AnyStringValue2");
+		ws.getRange2("A1102").setValue("StringValue(Awesome)");
 		ws.getRange2("A1103").setValue("1.12");
 		ws.getRange2("A1104").setValue("2.24");
 		ws.getRange2("A1105").setValue("#VALUE!");
@@ -22575,9 +22575,9 @@ $(function () {
 		assert.ok(oParser.parse(), 'VLOOKUP(2.24,A1101:B1113,2,FALSE)');
 		assert.strictEqual(oParser.calculate().getValue(), 4, 'Result of VLOOKUP("2.24",A1101:B1113,2,FALSE)');
 
-		oParser = new parserFormula('VLOOKUP("B0MBoMBINI GUS1N1",A1101:B1113,2,FALSE)', "A2", ws);
-		assert.ok(oParser.parse(), 'VLOOKUP("B0MBoMBINI GUS1N1",A1101:B1113,2,FALSE)');
-		assert.strictEqual(oParser.calculate().getValue(), 2, 'Result of VLOOKUP("B0MBoMBINI GUS1N1",A1101:B1113,2,FALSE)');
+		oParser = new parserFormula('VLOOKUP("AnyStringValue2",A1101:B1113,2,FALSE)', "A2", ws);
+		assert.ok(oParser.parse(), 'VLOOKUP("AnyStringValue2",A1101:B1113,2,FALSE)');
+		assert.strictEqual(oParser.calculate().getValue(), 2, 'Result of VLOOKUP("AnyStringValue2",A1101:B1113,2,FALSE)');
 
 		// for bug 65016 - error tests when simpleSearch
 		ws.getRange2("A101:B120").cleanAll();
@@ -22607,6 +22607,7 @@ $(function () {
 
 		oParser = new parserFormula('VLOOKUP("SANDRA",A101:B113,2,FALSE)', "A2", ws);
 		assert.ok(oParser.parse(), 'VLOOKUP("SANDRA",A101:B113,2,FALSE)');
+		AscCommonExcel.g_oVLOOKUPCache.clean();
 		assert.strictEqual(oParser.calculate().getValue(), 9, 'Result of VLOOKUP("SANDRA",A101:B113,2,FALSE)');
 
 		oParser = new parserFormula('VLOOKUP(TRUE,A101:B113,2,FALSE)', "A2", ws);
@@ -23452,7 +23453,6 @@ $(function () {
 		ws.getRange2("C561").setValue("l");
 
 		ws.getRange2("C565").setValue("99");
-
 		oParser = new parserFormula("XLOOKUP(14,A551:A561,C551:C561)", "A2", ws);
 		assert.ok(oParser.parse());
 		assert.strictEqual(_getValue(oParser.calculate()), "u2");
