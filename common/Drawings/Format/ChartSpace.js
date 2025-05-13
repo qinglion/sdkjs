@@ -11925,6 +11925,7 @@ function(window, undefined) {
 		// fSpaceBetweenLabels stands for the amount of additional space that label should have, other than the width of its content;
 		// left space + right space = this.fSpaceBetweenLabels
 		this.fSpaceBetweenLabels = this.getSpaceBetweenLabels();
+		this.minLabelWidth = 6.48;
 		// the max width default is 20000;
 		this.maxLabelWidth = 20000;
 	}
@@ -11935,7 +11936,7 @@ function(window, undefined) {
 			case (AscDFH.historyitem_type_DateAx):
 				return 1.939;
 			case (AscDFH.historyitem_type_ValAx):
-				return 3.8;
+				return 1;
 			default:
 				return 0;
 		}
@@ -11981,7 +11982,8 @@ function(window, undefined) {
 		if (this.nLblTickSkip && this.nLabelsCount !== 0) {
 			// valAxis has additional space between labels, therefore its calculations are different
 			if (this.nAxisType === AscDFH.historyitem_type_ValAx) {
-				return this.bCalculated = Math.ceil(this.nLabelsCount / this.nLblTickSkip) * (this.fLabelWidth + this.fSpaceBetweenLabels) >= (fAxisLength + this.fSpaceBetweenLabels);
+				const fNewLabelWidth = Math.max(this.fLabelWidth, this.maxLabelWidth);
+				return this.bCalculated = Math.ceil(this.nLabelsCount / this.nLblTickSkip) * fNewLabelWidth >= fAxisLength;
 			} else {
 				return this.bCalculated = Math.ceil(this.nLabelsCount / this.nLblTickSkip) * this.fLabelWidth >= fAxisLength;
 			}
@@ -12135,8 +12137,8 @@ function(window, undefined) {
 		}
 
 		const createNewScale = function (newStep, oLabelsBox, nMultiplicator) {
-			const axisMin = oLabelsBox.axis.min;
-			const axisMax = oLabelsBox.axis.max;
+			let axisMin = oLabelsBox.axis.min;
+			let axisMax = oLabelsBox.axis.max;
 			let manualMin = oLabelsBox.axis.scaling && oLabelsBox.axis.scaling.min !== null ? oLabelsBox.axis.scaling.min : null;
 			let manualMax = oLabelsBox.axis.scaling && oLabelsBox.axis.scaling.max !== null ? oLabelsBox.axis.scaling.max : null;
 
@@ -12144,6 +12146,30 @@ function(window, undefined) {
 				// find max that is higher than axis max
 				const newMax = Math.ceil(oLabelsBox.axis.scale[oLabelsBox.axis.scale.length - 1] / (nMultiplicator)) * nMultiplicator;
 				return [oLabelsBox.axis.scale[0], newMax]
+			} else if (oLabelsBox.chartSpace.chart.plotArea.charts) {
+				let grouping, isStackedType, isScatterType, isCombinationChartTypes;
+				const axisCharts = oLabelsBox.chartSpace.chart.plotArea.charts;
+				const oChartsDrawer = oLabelsBox.chartSpace.chartObj;
+				for (let i = 0; i < axisCharts.length; i++) {
+					grouping = oChartsDrawer.getChartGrouping(axisCharts[i]);
+					if (AscDFH.historyitem_type_ScatterChart === axisCharts[i].getObjectType()) {
+						isScatterType = true;
+					}
+					if ("stackedPer" === grouping && !isStackedType) {
+						isStackedType = true;
+					}
+				}
+				for (let i = 0; i < axisCharts.length; i++) {
+					grouping = oChartsDrawer.getChartGrouping(axisCharts[i]);
+
+					if (grouping === "stacked" && isStackedType) {
+						isStackedType = false;
+					}
+				}
+				const minMaxResult = oChartsDrawer._getTrueMinMax(axisMin, axisMax, isStackedType, isScatterType, manualMax);
+				axisMax = manualMax !== null && manualMax !== undefined ? manualMax : minMaxResult.max;
+				axisMin = manualMin !== null && manualMin !== undefined ? manualMin : minMaxResult.min;
+				return oChartsDrawer._getArrayDataValues(newStep, axisMin, axisMax, manualMin, manualMax, false);
 			} else {
 				return oLabelsBox.chartSpace.chartObj._getArrayDataValues(newStep, axisMin, axisMax, manualMin, manualMax, false);
 			}
@@ -12154,11 +12180,11 @@ function(window, undefined) {
 		const nMultiplicator = getMultiplicator(nStep);
 
 		// adjust labelWidth and fAxisLength by alpha
-		const labelWidth = oLabelsBox.maxMinWidth + this.fSpaceBetweenLabels;
-		const fNewAxisLength = (fAxisLength + this.fSpaceBetweenLabels);
+		const labelWidth = Math.max(oLabelsBox.maxMinWidth, this.minLabelWidth);
+
 
 		// find nLabelCount
-		const nLabelCount = fAxisLength > 0 && fAxisLength >= labelWidth ? Math.floor( fNewAxisLength/ labelWidth) : 1;
+		const nLabelCount = fAxisLength > 0 && fAxisLength >= labelWidth ? Math.floor( fAxisLength/ labelWidth) : 1;
 
 		// find minimum tick skip
 		const lastNum = oLabelsBox.axis.scale[oLabelsBox.axis.scale.length - 1];
@@ -12212,7 +12238,8 @@ function(window, undefined) {
 
 				// crossAxis should also be affected by restructured valAx
 				if (oCrossAx) {
-					oCrossAx.posX = (((startingPoint - oLabelsBox.axis.scale[0]) / newStep) * oGrid.fStride + oGrid.fStart);
+					const stepBetween = newStep ? newStep : oLabelsBox.axis.scale.length > 1 ? oLabelsBox.axis.scale[1] - oLabelsBox.axis.scale[0] : 1;
+					oCrossAx.posX = (((startingPoint - oLabelsBox.axis.scale[0]) / stepBetween) * oGrid.fStride + oGrid.fStart);
 					if (oCrossAx.labels && oCrossAx.labels.extX) {
 						oCrossAx.labels.setX(oCrossAx.posX - startingPointForAxis);
 					}
