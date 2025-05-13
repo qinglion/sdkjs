@@ -12213,7 +12213,8 @@ function(window, undefined) {
 		const newStep = getNewStep(nMultiplicator, nLabelCount, nLblTickSkip);
 
 		// create new labels for valAx
-		const fPrecision = 0.01;
+		// precision should be small, or relatively small compared to new step
+		const fPrecision = Math.max(0.01, newStep / 1000);
 
 		let isSingleLabel = false
 		// check if axis is not logarithmic and if newStep is different than the previous;
