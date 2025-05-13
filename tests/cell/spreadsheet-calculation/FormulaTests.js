@@ -17997,6 +17997,18 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), 1);
 
+		oParser = new parserFormula("COUNT({\"7\",true,false,4,5})", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 2);
+
+		oParser = new parserFormula("COUNT({\"7\", true, false, false})", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0);
+
+		oParser = new parserFormula("COUNT({\"7\", true, false, false; \"7\", true, false, 2})", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 1);
+
 		testArrayFormula2(assert, "COUNT", 2, 2, null, true);
 	});
 
