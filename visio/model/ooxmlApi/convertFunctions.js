@@ -1821,6 +1821,13 @@
 				// AscCommon.consoleLog("LineColor was found for shape", lineColorCell);
 				lineUniFill = lineColorCell.calculateValue(this, pageInfo,
 					visioDocument.themes, themeValWasUsedFor);
+
+				let lineTransValue = this.getCellNumberValue("LineColorTrans");
+				if (!isNaN(lineTransValue)) {
+					// lineUniFill.transparent is opacity in fact
+					// setting RGBA.A doesn't work
+					lineUniFill.transparent = 255 - lineTransValue * 255;
+				}
 			} else {
 				AscCommon.consoleLog("LineColor cell for line stroke (border) was not found painting red");
 				lineUniFill = AscFormat.CreateUnfilFromRGB(255,0,0);
@@ -2098,23 +2105,29 @@
 			}
 		}
 
-		let endArrowTypeCell = this.getCell("EndArrow");
-		let endArrowSizeCell = this.getCell("EndArrowSize");
-		let endArrowType = endArrowTypeCell ? endArrowTypeCell.calculateValue(this, pageInfo,
-			visioDocument.themes) : 0;
-		let endArrowSize = endArrowSizeCell ? endArrowSizeCell.calculateValue(this, pageInfo,
-			visioDocument.themes) : 1;
-		let endArrow = getEndArrow(endArrowType, endArrowSize);
-		oStroke.setTailEnd(endArrow);
+		// Each geometry section may have arrows
+		// Arrow are displayed only if that geometry section has NoFill cell equal to 1
+		// For now as we set arrow for all the shape let's check first geometry only
+		let firstGeometrySection = this.getSection("Geometry_0");
+		if (firstGeometrySection && firstGeometrySection.getCellNumberValue("NoFill") === 1) {
+			let endArrowTypeCell = this.getCell("EndArrow");
+			let endArrowSizeCell = this.getCell("EndArrowSize");
+			let endArrowType = endArrowTypeCell ? endArrowTypeCell.calculateValue(this, pageInfo,
+				visioDocument.themes) : 0;
+			let endArrowSize = endArrowSizeCell ? endArrowSizeCell.calculateValue(this, pageInfo,
+				visioDocument.themes) : 1;
+			let endArrow = getEndArrow(endArrowType, endArrowSize);
+			oStroke.setTailEnd(endArrow);
 
-		let beginArrowTypeCell = this.getCell("BeginArrow");
-		let beginArrowSizeCell = this.getCell("BeginArrowSize");
-		let beginArrowType = beginArrowTypeCell ? beginArrowTypeCell.calculateValue(this, pageInfo,
-			visioDocument.themes) : 0;
-		let beginArrowSize = beginArrowSizeCell ? beginArrowSizeCell.calculateValue(this, pageInfo,
-			visioDocument.themes) : 1;
-		let beginArrow = getEndArrow(beginArrowType, beginArrowSize);
-		oStroke.setHeadEnd(beginArrow);
+			let beginArrowTypeCell = this.getCell("BeginArrow");
+			let beginArrowSizeCell = this.getCell("BeginArrowSize");
+			let beginArrowType = beginArrowTypeCell ? beginArrowTypeCell.calculateValue(this, pageInfo,
+				visioDocument.themes) : 0;
+			let beginArrowSize = beginArrowSizeCell ? beginArrowSizeCell.calculateValue(this, pageInfo,
+				visioDocument.themes) : 1;
+			let beginArrow = getEndArrow(beginArrowType, beginArrowSize);
+			oStroke.setHeadEnd(beginArrow);
+		}
 
 
 		let flipHorizontally = this.getCellNumberValue("FlipX") === 1;
@@ -2321,13 +2334,16 @@
 				groupShape.Id = cShapeOrCGroupShape.Id + "_Group";
 
 
-				// add group geometry to bottom
-				if (cShapeOrCGroupShape instanceof CGroupShape) {
-					groupShape.addToSpTree(groupShape.spTree.length, cShapeOrCGroupShape.spTree[0]);
-				} else {
-					groupShape.addToSpTree(groupShape.spTree.length, cShapeOrCGroupShape);
+				// if DisplayMode is 1 add group geometry to bottom layer
+				if (this.getCellNumberValue("DisplayMode") === 1) {
+					// if it is group so there is geometry and text in it. We take geometry
+					if (cShapeOrCGroupShape instanceof CGroupShape) {
+						groupShape.addToSpTree(groupShape.spTree.length, cShapeOrCGroupShape.spTree[0]);
+					} else {
+						groupShape.addToSpTree(groupShape.spTree.length, cShapeOrCGroupShape);
+					}
+					groupShape.spTree[groupShape.spTree.length - 1].setGroup(groupShape);
 				}
-				groupShape.spTree[groupShape.spTree.length - 1].setGroup(groupShape);
 
 
 				cShapeOrCGroupShape.spPr.xfrm.setOffX(0);
@@ -2349,6 +2365,17 @@
 				for (let i = 0; i < subShapes.length; i++) {
 					const subShape = subShapes[i];
 					subShape.convertGroup(visioDocument, pageInfo, drawingPageScale, currentGroupHandling);
+				}
+
+				// it group geometry should be on the top layer
+				if (this.getCellNumberValue("DisplayMode") === 2) {
+					if (cShapeOrCGroupShape instanceof CGroupShape) {
+						// if it is group so there is geometry and text in it. We take geometry
+						groupShape.addToSpTree(groupShape.spTree.length, cShapeOrCGroupShape.spTree[0]);
+					} else {
+						groupShape.addToSpTree(groupShape.spTree.length, cShapeOrCGroupShape);
+					}
+					groupShape.spTree[groupShape.spTree.length - 1].setGroup(groupShape);
 				}
 
 				// add group text to top
