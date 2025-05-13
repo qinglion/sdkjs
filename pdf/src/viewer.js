@@ -2076,10 +2076,10 @@
 					if (x >= aRect[0] && x <= aRect[2] &&
 						y >= aRect[1] && y <= aRect[3] || bHitToHandles) {
 						if (bGetHidden) {
-							return pageFields.fields[i];
+							return oField;
 						}
-						else if (pageFields.fields[i].IsHidden() == false) {
-							return pageFields.fields[i];
+						else if (oField.IsHidden() == false || oField.IsEditMode()) {
+							return oField;
 						}
 					}
 				}

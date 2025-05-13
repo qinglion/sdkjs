@@ -859,7 +859,7 @@
         return false;
     };
     CBaseField.prototype.DrawHighlight = function(oCtx) {
-        if (this.IsHidden() == true)
+        if (this.IsHidden() && !this.IsEditMode())
             return;
 
         let oViewer     = Asc.editor.getDocumentRenderer();
@@ -2170,7 +2170,7 @@
     };
 	
 	CBaseField.prototype.DrawOnPage = function(pdfGraphics, textBoxGraphics, pageIndex) {
-		if (this.IsHidden())
+		if (this.IsHidden() && !this.IsEditMode())
 			return;
 		
         if (pdfGraphics.isThumbnails) {
