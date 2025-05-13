@@ -520,6 +520,9 @@
 
 		this.LoadedObject = 1;
 		AscCommon.g_oIdCounter.Set_Load(false);
+
+		this.WordControl.m_oLogicDocument.toCShapes();
+		this.WordControl.m_oLogicDocument.Recalculate({Drawings : {All : true, Map : {}}});
 	};
 
 	window["VisioEditorApi"].prototype["asc_nativeCalculateFile"] = function()
