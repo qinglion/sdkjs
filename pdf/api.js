@@ -353,14 +353,16 @@
 		let oThumbnails = oDoc.Viewer.thumbnails;
 
 		if (oDoc.CanCopyCut().cut) {
-			oDoc.DoAction(function() {
-				if (oThumbnails && oThumbnails.isInFocus && false == this.isRestrictionView()) {
-					oDoc.RemovePages(oThumbnails.selectedPages)
-				}
-				else {
+			if (oThumbnails && oThumbnails.isInFocus && false == this.isRestrictionView()) {
+				oDoc.DoAction(function() {
+					oDoc.RemovePages(aPages);
+				}, AscDFH.historydescription_Pdf_RemovePage, this, oThumbnails.selectedPages);
+			}
+			else {
+				oDoc.DoAction(function() {
 					oDoc.Remove(1);
-				}
-			}, AscDFH.historydescription_Cut, this);
+				}, AscDFH.historydescription_Document_BackSpaceButton);
+			}
 		}
 	};
 	PDFEditorApi.prototype.onUpdateRestrictions = function() {

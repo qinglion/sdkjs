@@ -6777,6 +6777,22 @@ var CPresentation = CPresentation || function(){};
             }
             case AscDFH.historydescription_Pdf_RemovePage: {
                 let aSelectedPagesIdx = AdditionalData;
+                
+                // forbid delete if there are last pages without delete lock
+                let nPagesCount = this.GetPagesCount();
+                let canDelete = false;
+                for (let i = 0; i < nPagesCount; i++) {
+                    let oPageInfo = this.GetPageInfo(i);
+                    if (!aSelectedPagesIdx.includes(oPageInfo.GetIndex()) && !oPageInfo.IsDeleteLock()) {
+                        canDelete = true;
+                        break;
+                    }
+                }
+
+                if (!canDelete) {
+                    return true;
+                }
+
                 CheckPages(function(page) { return page.deleteLock }, aSelectedPagesIdx);
                 break;
             }
