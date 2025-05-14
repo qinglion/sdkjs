@@ -466,7 +466,6 @@
 
         return true;
     };
-
 	/**
 	 * Gets the value of current form (can be not commited).
 	 * @memberof CTextField
@@ -1094,11 +1093,11 @@
     };
     CTextField.prototype.CalculateContentClipRect = function() {
         if (!this.content)
-            return;
+            return null;
 
         let aRect = this.GetOrigRect();
         if (!aRect) {
-            return;
+            return null;
         }
 
         let X           = aRect[0];
@@ -1116,7 +1115,8 @@
             W: contentXLimit - contentX,
             H: (nHeight - (this.IsMultiline() ? 2.5 * oMargins.top : oMargins.top) - oMargins.bottom) * g_dKoef_pt_to_mm,
             Page: this.GetPage()
-        }
+        };
+		return this.contentClipRect;
     };
     CTextField.prototype.onMouseDown = function(x, y, e) {
         let oViewer         = editor.getDocumentRenderer();

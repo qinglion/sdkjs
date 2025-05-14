@@ -54,6 +54,7 @@
 	 * Class for working with rich text
 	 * @param parent - parent class in PDF structure
 	 * @param {AscPDF.CPDFDoc} pdfDocument - reference to the main class
+	 * @param isFormatContent
 	 * @constructor
 	 * @extends {AscWord.CDocumentContent}
 	 */
@@ -227,9 +228,45 @@
 		return this.ParentPDF.GetPage();
 	};
 	CTextBoxContent.prototype.Get_ParentTextTransform = function() {
-		if (this.ParentPDF) {
-			return this.ParentPDF.GetTextTransform();
+		let parentTransform = this.ParentPDF ? this.ParentPDF.GetTextTransform() : null;
+		if (this.transform && parentTransform)
+		{
+			let transform = new AscCommon.CMatrix();
+			global_MatrixTransformer.MultiplyAppend(transform, this.transform);
+			global_MatrixTransformer.MultiplyAppend(transform, parentTransform);
+			return transform;
 		}
+		return this.transform || parentTransform;
+	};
+	CTextBoxContent.prototype.SetRotate = function(angle, clipRect) {
+		
+		if (0 === angle)
+		{
+			this.transform = null;
+			return;
+		}
+		
+		let t = new AscCommon.CMatrix();
+		if (90 === angle)
+		{
+			global_MatrixTransformer.TranslateAppend(t, -clipRect.X, -clipRect.Y - clipRect.H / 2);
+			global_MatrixTransformer.RotateRadAppend(t, 0.5 *  Math.PI);
+			global_MatrixTransformer.TranslateAppend(t, clipRect.X + clipRect.W / 2, clipRect.Y + clipRect.H);
+		}
+		else if (180 === angle)
+		{
+			global_MatrixTransformer.TranslateAppend(t, -clipRect.X, -clipRect.Y - clipRect.H / 2);
+			global_MatrixTransformer.RotateRadAppend(t, Math.PI);
+			global_MatrixTransformer.TranslateAppend(t, clipRect.X + clipRect.W, clipRect.Y + clipRect.H / 2);
+		}
+		else if (270 === angle)
+		{
+			global_MatrixTransformer.TranslateAppend(t, -clipRect.X, -clipRect.Y - clipRect.H / 2);
+			global_MatrixTransformer.RotateRadAppend(t, -0.5 * Math.PI);
+			global_MatrixTransformer.TranslateAppend(t, clipRect.X + clipRect.W / 2, clipRect.Y);
+		}
+		
+		this.transform = t;
 	};
 	
 	function getInternalAlignByPdfType(nPdfType) {

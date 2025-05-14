@@ -125,7 +125,6 @@
         this._noExport      = false;
         this._defaultValue  = undefined;
         this._parent        = null;
-        this._rotation      = 0;
         this._rotate        = 0;
         this._submitName    = "";
         this._userName      = "";   // It is intended to be used as tooltip text whenever the cursor enters a field. 
@@ -2635,25 +2634,34 @@
         return this.editShape;
     };
     CBaseField.prototype.SetRotate = function(nAngle) {
-        if (this._rotate == nAngle) {
+        if (this._rotate === nAngle) {
             return;
         }
         
         AscCommon.History.Add(new CChangesPDFFormRotate(this, this._rotate, nAngle));
 
-        this._rotate = nAngle
+        this._rotate = nAngle;
         this.RecalcTextTransform();
     };
     CBaseField.prototype.GetRotate = function() {
         return this._rotate;
     };
     CBaseField.prototype.RecalculateTextTransform = function() {
-        if (this.content) {
-            AscCommon.global_MatrixTransformer.RotateRadAppend(this.textMatrix, -this.GetRotate() * (Math.PI / 180));
-            AscCommon.global_MatrixTransformer.TranslateAppend(this.textMatrix, this.content.X, this.content.Y);
-        }
-
-        this._needRecalcTxTransform = false;
+		
+		if (!this._needRecalcTxTransform)
+			return
+		
+		let clipRect = this.CalculateContentClipRect();
+		if (!clipRect)
+			return;
+		
+		if (this.content)
+			this.content.SetRotate(this._rotate, clipRect);
+		
+		if (this.contentFormat)
+			this.contentFormat.SetRotate(this._rotate, clipRect);
+		
+		this._needRecalcTxTransform = false;
     };
     CBaseField.prototype.RecalcTextTransform = function () {
         this._needRecalcTxTransform = true;
