@@ -481,7 +481,7 @@
 	};
         
     CTextField.prototype.Draw = function(oGraphicsPDF, oGraphicsWord) {
-        if (this.IsHidden() == true)
+        if (this.IsHidden() && !this.IsEditMode())
             return;
 
         let oDoc = this.GetDocument();

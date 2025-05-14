@@ -350,7 +350,7 @@
 			return;
 		
 		let oDoc = this.DocumentRenderer.getPDFDoc();
-		let oThumbnails		= oDoc.Viewer.thumbnails;
+		let oThumbnails = oDoc.Viewer.thumbnails;
 
 		if (oDoc.CanCopyCut().cut) {
 			oDoc.DoAction(function() {
@@ -360,7 +360,7 @@
 				else {
 					oDoc.Remove(1);
 				}
-			}, AscDFH.historydescription_Cut);
+			}, AscDFH.historydescription_Cut, this);
 		}
 	};
 	PDFEditorApi.prototype.onUpdateRestrictions = function() {
@@ -1276,15 +1276,10 @@
 		]
 	};
 	PDFEditorApi.prototype.asc_getFieldTimeFormatOptions = function() {
-		return [
-			"HH:MM",
-			"h:MM tt",
-			"HH:MM:ss",
-			"h:MM:ss tt"
-		]
+		return AscPDF.TimeFormatType;
 	};
-	PDFEditorApi.prototype.asc_getFieldDateTimeFormatExample = function(sFormat) {
-		return AscPDF.FormatDateValue(new Date().getTime(), sFormat);
+	PDFEditorApi.prototype.asc_getFieldDateTimeFormatExample = function(nFormat) {
+		return AscPDF.FormatDateValue(new Date().getTime(), nFormat);
 	};
 	PDFEditorApi.prototype.ClearFieldFormat = function() {
 		let oDoc = this.getPDFDoc();
@@ -1426,7 +1421,7 @@
 			return res;
 		}, AscDFH.historydescription_Pdf_ChangeField, this);
 	};
-	PDFEditorApi.prototype.SetFieldTimeFormat = function(sFormat) {
+	PDFEditorApi.prototype.SetFieldTimeFormat = function(nFormat) {
 		let oDoc = this.getPDFDoc();
 		let oField = oDoc.activeForm;
 		let oController = oDoc.GetController();
@@ -1447,13 +1442,13 @@
 
 				let aActionsFormat = [{
 					"S": AscPDF.ACTIONS_TYPES.JavaScript,
-					"JS": 'AFTime_Format("' + sFormat + '");'
+					"JS": 'AFTime_Format(' + nFormat + ');'
 				}]
 				oField.SetActions(AscPDF.FORMS_TRIGGERS_TYPES.Format, aActionsFormat);
 
 				let aActionsKeystroke = [{
 					"S": AscPDF.ACTIONS_TYPES.JavaScript,
-					"JS": 'AFTime_Keystroke("' + sFormat + '");'
+					"JS": 'AFTime_Keystroke(' + nFormat + ');'
 				}];
 				oField.SetActions(AscPDF.FORMS_TRIGGERS_TYPES.Keystroke, aActionsKeystroke);
 				oField.Commit();

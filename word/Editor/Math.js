@@ -3392,6 +3392,7 @@ ParaMath.readMathMLNode = function(reader)
 			elements.push(AscMath.Radical.fromMathML(reader, true));
 			break;
 		case 'mrow':
+		case 'semantics':
 			elements = AscWord.ParaMath.readMathMLMRow(reader);
 			break;
 	}

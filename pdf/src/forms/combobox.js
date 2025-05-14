@@ -58,7 +58,7 @@
     AscFormat.InitClass(CComboBoxField, AscPDF.CBaseListField, AscDFH.historyitem_type_Pdf_Combobox_Field);
 
     CComboBoxField.prototype.Draw = function(oGraphicsPDF, oGraphicsWord) {
-        if (this.IsHidden() == true)
+        if (this.IsHidden() && !this.IsEditMode())
             return;
 
         let oDoc = this.GetDocument();

@@ -917,6 +917,10 @@
 					oThis.scheduledRepaintTimer = null;
 					oThis.isRepaint = false;
 
+					let nFormsCallbacks = oThis.onRepaintFormsCallbacks.length;
+					let nAnnotCallbacks = oThis.onRepaintAnnotsCallbacks.length;
+					let nFinishCallbacks = oThis.onRepaintFinishCallbacks.length;
+
 					oThis.onRepaintFormsCallbacks.forEach(function(callback) {
 						callback();
 					});
@@ -926,9 +930,9 @@
 					oThis.onRepaintFinishCallbacks.forEach(function(callback) {
 						callback();
 					});
-					oThis.onRepaintFormsCallbacks = [];
-					oThis.onRepaintAnnotsCallbacks = [];
-					oThis.onRepaintFinishCallbacks = [];
+					oThis.onRepaintFormsCallbacks.splice(0, nFormsCallbacks);
+					oThis.onRepaintAnnotsCallbacks.splice(0, nAnnotCallbacks);
+					oThis.onRepaintFinishCallbacks .splice(0, nFinishCallbacks);
 
 					if (oThis.Api && oThis.Api.printPreview)
 						oThis.Api.printPreview.update();
@@ -2078,10 +2082,10 @@
 					if (x >= aRect[0] && x <= aRect[2] &&
 						y >= aRect[1] && y <= aRect[3] || bHitToHandles) {
 						if (bGetHidden) {
-							return pageFields.fields[i];
+							return oField;
 						}
-						else if (pageFields.fields[i].IsHidden() == false) {
-							return pageFields.fields[i];
+						else if (oField.IsHidden() == false || oField.IsEditMode()) {
+							return oField;
 						}
 					}
 				}
@@ -2184,7 +2188,7 @@
 		};
 		this.canInteract = function() {
 			// не даем взаимодействовать с документом пока не произошла отрисовка
-			return this.scheduledRepaintTimer == null && this.isRepaint != true && this.initPaintDone == true && !this.isCMapLoading;
+			return this.scheduledRepaintTimer == null && this.isRepaint != true && this.initPaintDone == true && !this.isCMapLoading && !Asc.editor.getPDFDoc().CollaborativeEditing.Get_GlobalLock();
 		};
 		this.getPageDrawingByMouse = function()
 		{

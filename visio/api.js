@@ -524,7 +524,11 @@
 
 	window["VisioEditorApi"].prototype["asc_nativeCalculateFile"] = function()
 	{
-		//todo
+		if (!this.WordControl)
+			return;
+		this.WordControl.m_oLogicDocument.AfterOpenDocument();
+		this.WordControl.m_oLogicDocument.toCShapes();
+		this.WordControl.m_oLogicDocument.Recalculate({Drawings : {All : true, Map : {}}});
 	};
 
 	window["VisioEditorApi"].prototype["asc_nativeApplyChanges"] = function(changes)
