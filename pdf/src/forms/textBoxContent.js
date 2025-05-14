@@ -238,7 +238,7 @@
 		}
 		return this.transform || parentTransform;
 	};
-	CTextBoxContent.prototype.SetRotate = function(angle, clipRect) {
+	CTextBoxContent.prototype.SetFieldRotate = function(angle, clipRect) {
 		
 		if (0 === angle)
 		{

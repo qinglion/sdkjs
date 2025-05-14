@@ -2656,10 +2656,10 @@
 			return;
 		
 		if (this.content)
-			this.content.SetRotate(this._rotate, clipRect);
+			this.content.SetFieldRotate(this._rotate, clipRect);
 		
 		if (this.contentFormat)
-			this.contentFormat.SetRotate(this._rotate, clipRect);
+			this.contentFormat.SetFieldRotate(this._rotate, clipRect);
 		
 		this._needRecalcTxTransform = false;
     };
