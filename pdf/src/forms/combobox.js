@@ -492,22 +492,6 @@
 		this._bAutoShiftContentView = true && this._doNotScroll == false;
 		return true;
 	};
-	CComboBoxField.prototype.CorrectEnterText = function(oldValue, newValue) {
-		if (!this.DoKeystrokeAction(newValue))
-			return false;
-		
-		let doc = this.GetDocument();
-		newValue = AscWord.CTextFormFormat.prototype.GetBuffer(doc.event["change"]);
-		if (!newValue.length && !oldValue.length)
-			return false;
-		
-		let result = this.content.CorrectEnterText(oldValue, newValue, function(run, inRunPos, codePoint){return true;});
-		
-		this.SetNeedRecalc(true);
-		this.SetNeedCommit(true); // флаг что значение будет применено к остальным формам с таким именем
-		this._bAutoShiftContentView = true && this._doNotScroll == false;
-		return result;
-	};
     /**
 	 * Applies value of this field to all field with the same name.
 	 * @memberof CComboBoxField
