@@ -9057,7 +9057,7 @@ function parserFormula( formula, parent, _ws ) {
 							this._endCalculate();
 							opt_oCalculateResult.setError(c_oAscError.ID.FrmlOperandExpected);
 							return this.value;
-						} else {
+						} else if (!(this.promiseResult && this.promiseResult[i])) {
 							formulaArray = cBaseFunction.prototype.checkFormulaArray.call(currentElement, arg, opt_bbox, opt_defName, this, bIsSpecialFunction, argumentsCount);
 						}
 
