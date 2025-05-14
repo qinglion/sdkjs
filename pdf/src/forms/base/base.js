@@ -126,7 +126,7 @@
         this._noExport      = false;
         this._defaultValue  = undefined;
         this._parent        = null;
-        this._rotation      = 0;
+        this._rotate        = 0;
         this._submitName    = "";
         this._userName      = "";   // It is intended to be used as tooltip text whenever the cursor enters a field. 
         //It can also be used as a user-friendly name, instead of the field name, when generating error messages.
@@ -163,6 +163,7 @@
         this.SetRect(aRect);
 
         this.kidsContentChanges = new AscCommon.CContentChanges();
+        this.textMatrix = new AscCommon.CMatrix();
     }
 
     CBaseField.prototype.constructor = CBaseField;
@@ -2651,6 +2652,45 @@
     };
     CBaseField.prototype.GetEditShape = function() {
         return this.editShape;
+    };
+    CBaseField.prototype.SetRotate = function(nAngle) {
+        if (this._rotate === nAngle) {
+            return;
+        }
+        
+        AscCommon.History.Add(new CChangesPDFFormRotate(this, this._rotate, nAngle));
+
+        this._rotate = nAngle;
+        this.RecalcTextTransform();
+    };
+    CBaseField.prototype.GetRotate = function() {
+        return this._rotate;
+    };
+    CBaseField.prototype.RecalculateTextTransform = function() {
+		
+		if (!this._needRecalcTxTransform)
+			return
+		
+		let clipRect = this.CalculateContentClipRect();
+		if (!clipRect)
+			return;
+		
+		if (this.content)
+			this.content.SetFieldRotate(this._rotate, clipRect);
+		
+		if (this.contentFormat)
+			this.contentFormat.SetFieldRotate(this._rotate, clipRect);
+		
+		this._needRecalcTxTransform = false;
+    };
+    CBaseField.prototype.RecalcTextTransform = function () {
+        this._needRecalcTxTransform = true;
+    };
+    CBaseField.prototype.IsNeedRecalcTextTransform = function() {
+        return this._needRecalcTxTransform;
+    };
+    CBaseField.prototype.GetTextTransform = function() {
+        return this.textMatrix;
     };
     CBaseField.prototype.WriteToBinaryBase2 = function(memory) {
         // font name

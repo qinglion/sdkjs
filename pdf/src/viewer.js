@@ -1363,6 +1363,8 @@
 					if (oFormInfo["IF"]["S"] != null)
 						oForm.SetScaleHow(oFormInfo["IF"]["S"]);
 				}
+				if (oFormInfo["rotate"] != null)
+					oForm.SetRotate(oFormInfo["rotate"]);
 
 				// combobox - listbox
 				if (oFormInfo["editable"])

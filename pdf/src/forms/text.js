@@ -466,7 +466,6 @@
 
         return true;
     };
-
 	/**
 	 * Gets the value of current form (can be not commited).
 	 * @memberof CTextField
@@ -1040,6 +1039,10 @@
             });
         }
 
+        if (this.IsNeedRecalcTextTransform()) {
+            this.RecalculateTextTransform();
+        }
+
         this.SetNeedRecalc(false);
     };
     CTextField.prototype.RecalculateContentRect = function() {
@@ -1051,15 +1054,20 @@
         let nHeight = ((aOrigRect[3]) - (aOrigRect[1]));
 
         let oMargins = this.GetMarginsFromBorders();
-        
-        let contentX = (this.IsComb() ? (X + oMargins.left) : (X + 2 * oMargins.left)) * g_dKoef_pt_to_mm;
+		
+		let contentW = nWidth;
+		let rot = this.GetRotate();
+		if (90 === rot || 270 === rot)
+			contentW = nHeight;
+		
+		let contentX = (this.IsComb() ? (X + oMargins.left) : (X + 2 * oMargins.left)) * g_dKoef_pt_to_mm;
         let contentY = (Y + (this.IsMultiline() ? (2.5 * oMargins.top) : (2 * oMargins.top))) * g_dKoef_pt_to_mm;
-        let contentXLimit = (this.IsComb() ? (X + nWidth - oMargins.left) : (X + nWidth - 2 * oMargins.left)) * g_dKoef_pt_to_mm;
+        let contentXLimit = (this.IsComb() ? (X + contentW - oMargins.left) : (X + contentW - 2 * oMargins.left)) * g_dKoef_pt_to_mm;
         
         if ((this.borderStyle == "solid" || this.borderStyle == "dashed") && 
         this.IsComb() == true && this.GetCharLimit() > 1) {
             contentX = (X) * g_dKoef_pt_to_mm;
-            contentXLimit = (X + nWidth) * g_dKoef_pt_to_mm;
+            contentXLimit = (X + contentW) * g_dKoef_pt_to_mm;
         }
         
         let contentYFormat = contentY;
@@ -1090,11 +1098,11 @@
     };
     CTextField.prototype.CalculateContentClipRect = function() {
         if (!this.content)
-            return;
+            return null;
 
         let aRect = this.GetOrigRect();
         if (!aRect) {
-            return;
+            return null;
         }
 
         let X           = aRect[0];
@@ -1112,7 +1120,8 @@
             W: contentXLimit - contentX,
             H: (nHeight - (this.IsMultiline() ? 2.5 * oMargins.top : oMargins.top) - oMargins.bottom) * g_dKoef_pt_to_mm,
             Page: this.GetPage()
-        }
+        };
+		return this.contentClipRect;
     };
     CTextField.prototype.onMouseDown = function(x, y, e) {
         let oViewer         = editor.getDocumentRenderer();
@@ -1882,17 +1891,28 @@
         // размеры всего контента
         let oPageBounds = this.content.GetContentBounds(0);
         let oFormBounds = this.getFormRelRect();
+		
+		let formX = oFormBounds.X;
+		let formY = oFormBounds.Y;
+		let formW = oFormBounds.W;
+		let formH = oFormBounds.H;
+		
+		let rot = this.GetRotate();
+		if (90 === rot || 270 === rot) {
+			formW = oFormBounds.H;
+			formH = oFormBounds.W;
+		}
 
         let oParagraph = this.content.GetElement(0);
         
         let nDx = 0, nDy = 0;
 
-        if (oPageBounds.Right - oPageBounds.Left > oFormBounds.W)
+        if (oPageBounds.Right - oPageBounds.Left > formW)
         {
-            if (oPageBounds.Left > oFormBounds.X)
-                nDx = -oPageBounds.Left + oFormBounds.X;
-            else if (oPageBounds.Right < oFormBounds.X + oFormBounds.W)
-                nDx = oFormBounds.X + oFormBounds.W - oPageBounds.Right;
+            if (oPageBounds.Left > formX)
+                nDx = -oPageBounds.Left + formX;
+            else if (oPageBounds.Right < formX + formW)
+                nDx = formX + formW - oPageBounds.Right;
         }
         else
         {
@@ -1915,34 +1935,34 @@
         var nCursorB = Math.max(oCursorPos.Y + oCursorPos.Height, oLineBounds.Bottom);
         var nCursorH = Math.max(0, nCursorB - nCursorT);
 
-        if (oPageBounds.Right - oPageBounds.Left > oFormBounds.W)
+        if (oPageBounds.Right - oPageBounds.Left > formW)
         {
-            if (oCursorPos.X < oFormBounds.X)
-                nDx = oFormBounds.X - oCursorPos.X;
-            else if (oCursorPos.X > oFormBounds.X + oFormBounds.W)
-                nDx = oFormBounds.X + oFormBounds.W - oCursorPos.X;
+            if (oCursorPos.X < formX)
+                nDx = formX - oCursorPos.X;
+            else if (oCursorPos.X > formX + formW)
+                nDx = formX + formW - oCursorPos.X;
         }
 
         if (this.IsMultiline && this.IsMultiline()) {
             // если высота контента больше чем высота формы
             if (oParagraph.IsSelectionUse()) {
                 if (oParagraph.GetSelectDirection() == 1) {
-                    if (nCursorT + nCursorH - nCursorH/4 > oFormBounds.Y + oFormBounds.H)
-                        nDy = oFormBounds.Y + oFormBounds.H - (nCursorT + nCursorH);
+                    if (nCursorT + nCursorH - nCursorH/4 > formY + formH)
+                        nDy = formY + formH - (nCursorT + nCursorH);
                 }
                 else {
-                    if (nCursorT + nCursorH/4 < oFormBounds.Y)
-                        nDy = oFormBounds.Y - nCursorT;
+                    if (nCursorT + nCursorH/4 < formY)
+                        nDy = formY - nCursorT;
                 }
             }
             else {
-                if (oPageBounds.Bottom - oPageBounds.Top > oFormBounds.H) {
-                    if (oLastLineBounds.Bottom - Math.floor(((oFormBounds.Y + oFormBounds.H) * 1000)) / 1000 < 0)
-                        nDy = oFormBounds.Y + oFormBounds.H - oLastLineBounds.Bottom;
-                    else if (nCursorT + nCursorH/4 < oFormBounds.Y)
-                        nDy = oFormBounds.Y - nCursorT;
-                    else if (nCursorT + nCursorH - nCursorH/4 > oFormBounds.Y + oFormBounds.H)
-                        nDy = oFormBounds.Y + oFormBounds.H - (nCursorT + nCursorH);
+                if (oPageBounds.Bottom - oPageBounds.Top > formH) {
+                    if (oLastLineBounds.Bottom - Math.floor(((formY + formH) * 1000)) / 1000 < 0)
+                        nDy = formY + formH - oLastLineBounds.Bottom;
+                    else if (nCursorT + nCursorH/4 < formY)
+                        nDy = formY - nCursorT;
+                    else if (nCursorT + nCursorH - nCursorH/4 > formY + formH)
+                        nDy = formY + formH - (nCursorT + nCursorH);
                 }
                 else
                     nDy = -this.content.ShiftViewY;

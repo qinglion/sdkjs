@@ -771,6 +771,24 @@ CChangesPDFFormLocked.prototype.private_SetValue = function(Value)
 	oForm.AddToRedraw();
 };
 
+/**
+ * @constructor
+ * @extends {AscDFH.CChangesBaseLongProperty}
+ */
+function CChangesPDFFormRotate(Class, Old, New, Color)
+{
+	AscDFH.CChangesBaseLongProperty.call(this, Class, Old, New, Color);
+}
+CChangesPDFFormRotate.prototype = Object.create(AscDFH.CChangesBaseLongProperty.prototype);
+CChangesPDFFormRotate.prototype.constructor = CChangesPDFFormRotate;
+CChangesPDFFormRotate.prototype.Type = AscDFH.historyitem_Pdf_Form_Rotate;
+CChangesPDFFormRotate.prototype.private_SetValue = function(Value)
+{
+	let oForm = this.Class;
+	oForm.SetRotate(Value);
+};
+
+
 //------------------------------------------------------------------------------------------------------------------
 //
 // Text Form
