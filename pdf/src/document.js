@@ -2610,7 +2610,7 @@ var CPresentation = CPresentation || function(){};
         let oController = this.GetController();
         
         if (oFile.pages.length == 1)
-            return false;
+            return null;
         if (!AscCommon.isNumber(nPos) || nPos < 0)
             nPos = 0;
 
@@ -2670,30 +2670,6 @@ var CPresentation = CPresentation || function(){};
             this.RemovePage(aIndexes[i] - i);
         }
     };
-    CPDFDoc.prototype.MovePage = function(nPage, nNewPos) {
-        let oPageInfo = this.GetPageInfo(nPage);
-        if (!oPageInfo) {
-            return false;
-        }
-
-        if (false == oPageInfo.SetPosition(nNewPos)) {
-            return false;
-        }
-
-        let aPagesRange = [];
-        let nStart = Math.min(nPage, nNewPos);
-        let nEnd = Math.max(nPage, nNewPos);
-        for (let i = nStart; i <= nEnd; i++) {
-            aPagesRange.push(i);
-        }
-
-        this.Viewer.resize(true);
-        this.Viewer.onUpdatePages(aPagesRange);
-        this.Viewer.onRepaintForms(aPagesRange);
-        this.Viewer.onRepaintAnnots(aPagesRange);
-
-        return true;
-    };
     CPDFDoc.prototype.MovePages = function(aIndexes, nNewPos) {
         if (!Array.isArray(aIndexes) || aIndexes.length === 0) return;
 
@@ -2743,7 +2719,8 @@ var CPresentation = CPresentation || function(){};
             let nOffset = aLowerIndexes.length > 0 ? 1 : 0;
             
             aHigherIndexes.forEach(function(oldIndex, i) {
-                _t.MovePage(oldIndex, nNewPos + nOffset + i);
+                let oPage = _t.RemovePage(oldIndex);
+                _t.AddPage(nNewPos + nOffset + i, oPage);
             });
         }
     };

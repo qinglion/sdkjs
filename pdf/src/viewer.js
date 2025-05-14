@@ -358,28 +358,6 @@
 
 		return oFile.pages[nIndex].isRecognized;
 	};
-	CPageInfo.prototype.SetPosition = function(nNewPos) {
-		let nCurPos = this.GetIndex();
-		if (nCurPos === nNewPos) return false;
-	
-		let oDoc 		= this.GetDocument();
-        let aFilePages  = oDoc.Viewer.file.pages;
-        let aPagesInfo  = oDoc.Viewer.pagesInfo.pages;
-
-        if (nNewPos < 0 || nNewPos >= aFilePages.length) {
-            return false;
-        }
-    
-        oDoc.History.Add(new CChangesPDFDocumentMovePage(this, nCurPos, nNewPos));
-
-        let oMovedFilePage = aFilePages.splice(nCurPos, 1)[0];
-        let oMovedPageInfo = aPagesInfo.splice(nCurPos, 1)[0];
-        
-        aFilePages.splice(nNewPos, 0, oMovedFilePage);
-        aPagesInfo.splice(nNewPos, 0, oMovedPageInfo);
-
-        return true;
-	};
 	CPageInfo.prototype.Is_Inline = function(){};
 
 	function PropLocker(objectId) {
