@@ -353,14 +353,16 @@
 		let oThumbnails = oDoc.Viewer.thumbnails;
 
 		if (oDoc.CanCopyCut().cut) {
-			oDoc.DoAction(function() {
-				if (oThumbnails && oThumbnails.isInFocus && false == this.isRestrictionView()) {
-					oDoc.RemovePages(oThumbnails.selectedPages)
-				}
-				else {
+			if (oThumbnails && oThumbnails.isInFocus && false == this.isRestrictionView()) {
+				oDoc.DoAction(function() {
+					oDoc.RemovePages(aPages);
+				}, AscDFH.historydescription_Pdf_RemovePage, this, oThumbnails.selectedPages);
+			}
+			else {
+				oDoc.DoAction(function() {
 					oDoc.Remove(1);
-				}
-			}, AscDFH.historydescription_Cut, this);
+				}, AscDFH.historydescription_Document_BackSpaceButton);
+			}
 		}
 	};
 	PDFEditorApi.prototype.onUpdateRestrictions = function() {
@@ -1916,6 +1918,24 @@
 			oController.selectedObjects.forEach(function(shape) {
 				let field = shape.GetEditField();
 				field.SetDefaultValue(sValue);
+			});
+
+			return true;
+        }, AscDFH.historydescription_Pdf_ChangeField);
+	};
+	PDFEditorApi.prototype.SetFieldLocked = function(bLocked) {
+		let oDoc = this.getPDFDoc();
+		let oController = oDoc.GetController();
+		let oForm = oDoc.activeForm;
+
+		if (!oForm) {
+			return false;
+		}
+
+		return oDoc.DoAction(function() {
+			oController.selectedObjects.forEach(function(shape) {
+				let field = shape.GetEditField();
+				field.SetLocked(bLocked);
 			});
 
 			return true;
@@ -4543,6 +4563,7 @@
 	PDFEditorApi.prototype['SetFieldRequired']			= PDFEditorApi.prototype.SetFieldRequired;
 	PDFEditorApi.prototype['SetFieldReadOnly']			= PDFEditorApi.prototype.SetFieldReadOnly;
 	PDFEditorApi.prototype['SetFieldDefaultValue']		= PDFEditorApi.prototype.SetFieldDefaultValue;
+	PDFEditorApi.prototype['SetFieldLocked']			= PDFEditorApi.prototype.SetFieldLocked;
 	// text field
 	PDFEditorApi.prototype['SetTextFieldMultiline']		= PDFEditorApi.prototype.SetTextFieldMultiline;
 	PDFEditorApi.prototype['SetTextFieldCharLimit']		= PDFEditorApi.prototype.SetTextFieldCharLimit;

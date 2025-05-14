@@ -43,7 +43,6 @@ AscDFH.changesFactory[AscDFH.historyitem_PDF_Document_RecognizePage]	= CChangesP
 AscDFH.changesFactory[AscDFH.historyitem_PDF_Document_SetDocument]      = CChangesPDFObjectSetDocument;
 AscDFH.changesFactory[AscDFH.historyitem_PDF_Document_PageLocks]        = CChangesPDFDocumentPageLocks;
 AscDFH.changesFactory[AscDFH.historyitem_PDF_PropLocker_ObjectId]	    = CChangesPDFPropLockerObjectId;
-AscDFH.changesFactory[AscDFH.historyitem_PDF_Document_MovePage]         = CChangesPDFDocumentMovePage;
 AscDFH.changesFactory[AscDFH.historyitem_Pdf_Document_Start_Merge_Pages]= CChangesPDFDocumentStartMergePages;
 AscDFH.changesFactory[AscDFH.historyitem_Pdf_Document_Part_Merge_Pages] = CChangesPDFDocumentPartMergePages;
 AscDFH.changesFactory[AscDFH.historyitem_Pdf_Document_End_Merge_Pages]  = CChangesPDFDocumentEndMergePages;
@@ -1199,42 +1198,6 @@ CChangesPDFPropLockerObjectId.prototype.Type = AscDFH.historyitem_PDF_PropLocker
 CChangesPDFPropLockerObjectId.prototype.private_SetValue = function(value)
 {
 	this.Class.objectId = value;
-};
-/**
- * @constructor
- * @extends {AscDFH.CChangesBaseLongProperty}
- */
-function CChangesPDFDocumentMovePage(Class, Old, New)
-{
-	AscDFH.CChangesBaseLongProperty.call(this, Class, Old, New);
-}
-CChangesPDFDocumentMovePage.prototype = Object.create(AscDFH.CChangesBaseLongProperty.prototype);
-CChangesPDFDocumentMovePage.prototype.constructor = CChangesPDFDocumentMovePage;
-CChangesPDFDocumentMovePage.prototype.Type = AscDFH.historyitem_PDF_Document_MovePage;
-CChangesPDFDocumentMovePage.prototype.private_SetValue = function(nNewPos)
-{
-    let oDoc        = this.Class.GetDocument();
-    let nCurPos     = this.Class.GetIndex();
-    let aFilePages  = oDoc.Viewer.file.pages;
-    let aPagesInfo  = oDoc.Viewer.pagesInfo.pages;
-
-    let oMovedFilePage = aFilePages.splice(nCurPos, 1)[0];
-    let oMovedPageInfo = aPagesInfo.splice(nCurPos, 1)[0];
-
-    aFilePages.splice(nNewPos, 0, oMovedFilePage);
-    aPagesInfo.splice(nNewPos, 0, oMovedPageInfo);
-
-    let aPagesRange = [];
-    let nStart = Math.min(nCurPos, nNewPos);
-    let nEnd = Math.max(nCurPos, nNewPos);
-    for (let i = nStart; i <= nEnd; i++) {
-        aPagesRange.push(i);
-    }
-
-    oDoc.Viewer.resize(true);
-    oDoc.Viewer.onUpdatePages(aPagesRange);
-    oDoc.Viewer.onRepaintForms(aPagesRange);
-    oDoc.Viewer.onRepaintAnnots(aPagesRange);
 };
 
 function CChangesPDFDocumentStartMergePages(Class, Old, New, Color) {

@@ -3465,7 +3465,7 @@ function (window, undefined) {
 		this.stroke				= null;
 		this.strokeWidth		= undefined;
 		this.strokeStyle		= undefined;
-		this.Locked				= false;
+		this.locked				= false;
 
 		this.fieldProps	= null;
 	}
@@ -3528,6 +3528,18 @@ function (window, undefined) {
 	};
 	asc_CBaseFieldProperty.prototype.asc_putStrokeStyle = function (v) {
 		this.strokeStyle = v;
+	};
+	asc_CBaseFieldProperty.prototype.asc_getPropLocked = function () {
+		return this.locked;
+	};
+	asc_CBaseFieldProperty.prototype.asc_putPropLocked = function (v) {
+		this.locked = v;
+	};
+	asc_CBaseFieldProperty.prototype.get_Locked = function () {
+		return this.coEditLocked;
+	};
+	asc_CBaseFieldProperty.prototype.put_Locked = function (v) {
+		this.coEditLocked = v;
 	};
 	asc_CBaseFieldProperty.prototype.asc_getFieldProps = function () {
 		return this.fieldProps;
@@ -7581,6 +7593,10 @@ function (window, undefined) {
 	prot["asc_putStrokeWidth"]	= prot.asc_putStrokeWidth;
 	prot["asc_getStrokeStyle"]	= prot.asc_getStrokeStyle;
 	prot["asc_putStrokeStyle"]	= prot.asc_putStrokeStyle;
+	prot["asc_getPropLocked"]	= prot.asc_getPropLocked;
+	prot["asc_putPropLocked"]	= prot.asc_putPropLocked;
+	prot["get_Locked"]			= prot.get_Locked;
+	prot["put_Locked"]			= prot.put_Locked;
 	prot["asc_getFieldProps"]	= prot.asc_getFieldProps;
 	prot["asc_putFieldProps"]	= prot.asc_putFieldProps;
 
