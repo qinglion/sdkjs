@@ -9186,7 +9186,15 @@
     CTimeNodeContainer.prototype.getObjectText = function () {
         const sObjectId = this.getObjectId();
         const oObject = AscCommon.g_oTableId.Get_ById(sObjectId);
-        return oObject && oObject.getText ? oObject.getText() : "";
+				if (oObject && oObject.getText) {
+					let sText = oObject.getText();
+					const nLastIndex = sText.lastIndexOf("\r\n");
+					if (nLastIndex !== -1) {
+						return sText.slice(0, nLastIndex);
+					}
+					return sText;
+				}
+				return "";
     };
     CTimeNodeContainer.prototype.asc_getStartType = function () {
         if (this.cTn) {

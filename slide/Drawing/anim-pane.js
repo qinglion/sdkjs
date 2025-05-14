@@ -77,7 +77,16 @@
 	}
 
 	InitClass(CControl, AscFormat.CShape, CONTROL_TYPE_UNKNOWN);
-
+	CControl.prototype.getSeqList = function () {
+		let oParentControl = this.parentControl;
+		while (oParentControl) {
+			if (oParentControl instanceof CSeqList) {
+				return oParentControl;
+			}
+			oParentControl = oParentControl.parentControl;
+		}
+		return null;
+	};
 	CControl.prototype.DEFALT_WRAP_OBJECT = {
 		oTxWarpStruct: null,
 		oTxWarpStructParamarks: null,
@@ -711,7 +720,6 @@
 
 	function CLabel(oParentControl, sString, nFontSize, bBold, nParaAlign) {
 		CControl.call(this, oParentControl);
-		this.string = sString;
 		this.fontSize = nFontSize;
 		this.bold = bBold;
 		this.paraAlign = nParaAlign;
@@ -738,6 +746,8 @@
 			this.bodyPr.resetInsets();
 			this.bodyPr.horzOverflow = AscFormat.nHOTClip;
 			this.bodyPr.vertOverflow = AscFormat.nVOTClip;
+			this.cachedMaxWidth = 0;
+			this.setString(sString);
 		}, this, []);
 	}
 
@@ -758,6 +768,14 @@
 
 		// this.recalculateGeometry();
 		this.recalculateTransform();
+	};
+	CLabel.prototype.setString = function(str) {
+		this.string = str;
+		this.initStringContent();
+	};
+	CLabel.prototype.initStringContent = function() {
+		this.txBody.checkContentFit(this.getString());
+		this.cachedMaxWidth = this.txBody.content.RecalculateMinMaxContentWidth().Max;
 	};
 	CLabel.prototype.canHandleEvents = function () {
 		return false;
@@ -1021,9 +1039,7 @@
 		this.moveDownButton.icon.src = AscCommon.GlobalSkin.type == 'light' ? arrowDownIcon_dark : arrowDownIcon_light;
 		this.closeButton.icon.src = AscCommon.GlobalSkin.type == 'light' ? closeIcon_dark : closeIcon_light;
 
-		this.label.setLayout(COMMON_LEFT_MARGIN, 0, HEADER_LABEL_WIDTH, this.getHeight());
-
-
+		this.label.setLayout(COMMON_LEFT_MARGIN, 0, Math.min(HEADER_LABEL_WIDTH, this.label.cachedMaxWidth), this.getHeight());
 
 		let sPlayButtonText = this.getPlayButtonText();
 		let sPlayButtonIcon = this.getPlayButtonIcon();
@@ -1032,15 +1048,8 @@
 		this.playButton.icon.setLayout(PLAY_BUTTON_LEFT_PADDING, gap, PLAY_BUTTON_ICON_SIZE, PLAY_BUTTON_ICON_SIZE);
 
 		let oButtonLabel = this.playButton.label;
-		oButtonLabel.string = sPlayButtonText;
-		oButtonLabel.setLayout(
-			this.playButton.icon.getRight() + PLAY_BUTTON_LABEL_LEFT_MARGIN,
-			0,
-			PLAY_BUTTON_MAX_LABEL_WIDTH,
-			PLAY_BUTTON_HEIGHT
-		);
-		// let dLabelWidth = Math.min(PLAY_BUTTON_MAX_LABEL_WIDTH, oButtonLabel.getContentOneStringSizes().w)
-		let dLabelWidth = PLAY_BUTTON_MAX_LABEL_WIDTH;
+		oButtonLabel.setString(sPlayButtonText);
+		let dLabelWidth = oButtonLabel.cachedMaxWidth;
 		oButtonLabel.setLayout(
 			this.playButton.icon.getRight() + PLAY_BUTTON_LABEL_LEFT_MARGIN,
 			0,
@@ -1155,10 +1164,11 @@
 		);
 		this.zoomInButton.icon.setLayout(0, 0, ZOOM_BUTTON_SIZE, ZOOM_BUTTON_SIZE);
 
+		const nZoomLabelWidth = Math.min(this.zoomLabel.cachedMaxWidth, ZOOM_LABEL_WIDTH) + 2 * ZOOM_LABEL_MARGIN;
 		this.zoomLabel.setLayout(
-			this.zoomInButton.getLeft() - ZOOM_LABEL_WIDTH,
+			this.zoomInButton.getLeft() - nZoomLabelWidth,
 			0,
-			ZOOM_LABEL_WIDTH,
+			nZoomLabelWidth,
 			this.getHeight()
 		);
 
@@ -1883,12 +1893,28 @@
 		CControlContainer.call(this, oParentControl);
 		// this.children - mainSeq, interactiveSeq
 
+		this.indexLabelWidth = null;
 		// Tmp field for animItems moving up/down
 		this.pressingPoint = null;
 		this.nPressedSlot = null;
 		this.nCurrentSlot = null;
 		this.bTopPart = false;
 
+		this.getIndexLabelWidth = function () {
+			if (this.indexLabelWidth === null) {
+				let nMaxIndexWidth = 0;
+				this.forEachAnimItem(function (oAnimItem) {
+					if (oAnimItem.indexLabel) {
+						const nIndexWidth = oAnimItem.indexLabel.cachedMaxWidth;
+						if (nIndexWidth > nMaxIndexWidth) {
+							nMaxIndexWidth = nIndexWidth;
+						}
+					}
+				});
+				this.indexLabelWidth = Math.min(nMaxIndexWidth, INDEX_LABEL_WIDTH);
+			}
+			return this.indexLabelWidth;
+		};
 		this.onMouseDownCallback = function (event, x, y) {
 			const oThis = this;
 			this.forEachAnimItem(function (animItem, index, groupIndex, seqIndex) {
@@ -1972,6 +1998,7 @@
 		}
 	};
 	CSeqList.prototype.recalculateChildrenLayout = function () {
+		this.indexLabelWidth = null;
 		let dLastBottom = 0;
 
 		for (let nChild = 0; nChild < this.children.length; ++nChild) {
@@ -2365,14 +2392,16 @@
 	InitClass(CAnimItem, CControlContainer, CONTROL_TYPE_ANIM_ITEM);
 
 	CAnimItem.prototype.recalculateChildrenLayout = function () {
-		if (this.indexLabel) this.indexLabel.setLayout(0, 0, INDEX_LABEL_WIDTH, ANIM_ITEM_HEIGHT)
+		const oSeqLst = this.getSeqList();
+		const nIndexLabelWidth = oSeqLst ? oSeqLst.getIndexLabelWidth() : 0;
+		if (this.indexLabel) this.indexLabel.setLayout(0, 0, nIndexLabelWidth, ANIM_ITEM_HEIGHT)
 
-		this.eventTypeImage.setLayout(INDEX_LABEL_WIDTH, 0, EVENT_TYPE_ICON_SIZE, EVENT_TYPE_ICON_SIZE);
+		this.eventTypeImage.setLayout(nIndexLabelWidth, 0, EVENT_TYPE_ICON_SIZE, EVENT_TYPE_ICON_SIZE);
 		this.effectTypeImage.src = this.getEffectImage().src;
 		this.effectTypeImage.setLayout(this.eventTypeImage.getRight(), 0, EFFECT_TYPE_ICON_SIZE, EFFECT_TYPE_ICON_SIZE);
 
 		const zeroPos = COMMON_LEFT_MARGIN + SCALE_BUTTON_LEFT_MARGIN + SCALE_BUTTON_WIDTH + TIMELINE_SCROLL_LEFT_MARGIN + TIMELINE_SCROLL_BUTTON_SIZE;
-		const labelWidth = zeroPos - COMMON_LEFT_MARGIN - (INDEX_LABEL_WIDTH + EVENT_TYPE_ICON_SIZE + EFFECT_TYPE_ICON_SIZE);
+		const labelWidth = zeroPos - COMMON_LEFT_MARGIN - (nIndexLabelWidth + EVENT_TYPE_ICON_SIZE + EFFECT_TYPE_ICON_SIZE);
 		const gap = (ANIM_ITEM_HEIGHT - EFFECT_BAR_HEIGHT) / 2;
 		this.effectLabel.setLayout(this.effectTypeImage.getRight(), gap, labelWidth, EFFECT_BAR_HEIGHT);
 
@@ -3028,7 +3057,8 @@
 
 	const ZOOM_BUTTON_SIZE = 20 * AscCommon.g_dKoef_pix_to_mm;
 	const ZOOM_LABEL_FONTSIZE = 9;
-	const ZOOM_LABEL_WIDTH = 40 * AscCommon.g_dKoef_pix_to_mm;
+	const ZOOM_LABEL_WIDTH = 80 * AscCommon.g_dKoef_pix_to_mm;
+	const ZOOM_LABEL_MARGIN = 5 * AscCommon.g_dKoef_pix_to_mm;
 
 	const SCALE_BUTTON_WIDTH = 76 * AscCommon.g_dKoef_pix_to_mm;
 	const SCALE_BUTTON_LEFT_MARGIN = 43 * AscCommon.g_dKoef_pix_to_mm;
