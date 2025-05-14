@@ -413,16 +413,6 @@
         this.checkExtentsByDocContent && this.checkExtentsByDocContent();
 		return result;
 	};
-	CPdfDrawingPrototype.prototype.CorrectEnterText = function(oldValue, newValue) {
-		let doc = this.GetDocument();
-		let content = this.GetDocContent();
-		if (!doc || !content)
-			return false;
-		
-		let result = content.CorrectEnterText(oldValue, newValue, function(run, inRunPos, codePoint){return true;});
-		content.RecalculateCurPos();
-		return result;
-	};
 	CPdfDrawingPrototype.prototype.canBeginCompositeInput = function() {
 		return true;
 	};

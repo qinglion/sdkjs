@@ -1114,17 +1114,6 @@
 		this.OnChangeTextContent();
 		return result;
 	};
-	CAnnotationFreeText.prototype.CorrectEnterText = function(oldValue, newValue) {
-		let doc = this.GetDocument();
-		let docContent = this.GetDocContent();
-		
-		// TODO: Нужно реализовать метод checkAsYouType, чтобы он проверял что иммено сейчас происходил ввод в данном месте
-		let result = docContent.CorrectEnterText(oldValue, newValue, function(run, inRunPos, codePoint){
-			return true;
-		});
-		this.OnChangeTextContent();
-		return result;
-	};
 	CAnnotationFreeText.prototype.canBeginCompositeInput = function() {
 		return true;
 	};

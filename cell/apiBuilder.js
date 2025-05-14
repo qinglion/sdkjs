@@ -17868,6 +17868,8 @@
 	ApiRange.prototype["PasteSpecial"] = ApiRange.prototype.PasteSpecial;
 	ApiRange.prototype["GetPivotTable"] = ApiRange.prototype.GetPivotTable;
 	ApiRange.prototype["SetAutoFilter"] = ApiRange.prototype.SetAutoFilter;
+	ApiRange.prototype["SetFormulaArray"] = ApiRange.prototype.SetFormulaArray;
+	ApiRange.prototype["GetFormulaArray"] = ApiRange.prototype.GetFormulaArray;
 
 
 

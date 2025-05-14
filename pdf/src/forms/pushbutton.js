@@ -1330,7 +1330,9 @@
         if (oDoc.IsEditFieldsMode()) {
             let oController = oDoc.GetController();
             this.editShape.select(oController, this.GetPage());
-            this.editShape.onMouseDown(x, y, e);
+            if (false == this.IsLocked()) {
+                this.editShape.onMouseDown(x, y, e)
+            }
             return;
         }
 

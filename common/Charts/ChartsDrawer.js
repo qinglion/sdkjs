@@ -17952,7 +17952,7 @@ CColorObj.prototype =
 						// (c) Add 2 rows
 
 						//if the matrix isn't square: exit (error)
-						if (M.length !== M[0].length) {
+						if (M && M[0] && M.length !== M[0].length) {
 							return;
 						}
 
