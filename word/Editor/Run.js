@@ -10371,12 +10371,12 @@ ParaRun.prototype.Check_ForcedBreak = function(bStart, bEnd)
 {
     return this.Math_GetPosForcedBreak(bStart, bEnd) !== null;
 };
-ParaRun.prototype.Set_MathForcedBreak = function(bInsert)
+ParaRun.prototype.Set_MathForcedBreak = function(bInsert, alnAt)
 {
 	if (bInsert == true && false == this.MathPrp.IsBreak())
 	{
-		AscCommon.History.Add(new CChangesRunMathForcedBreak(this, true, undefined));
-		this.MathPrp.Insert_ForcedBreak();
+		AscCommon.History.Add(new CChangesRunMathForcedBreak(this, true, alnAt));
+		this.MathPrp.Insert_ForcedBreak(alnAt);
 	}
 	else if (bInsert == false && true == this.MathPrp.IsBreak())
 	{
