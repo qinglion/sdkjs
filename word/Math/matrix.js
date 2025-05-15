@@ -1097,7 +1097,7 @@ CMathMatrix.fromMathML = function(reader)
 	while (reader.ReadNextSiblingNode(depth))
 	{
 		let name = reader.GetNameNoNS();
-		if (name === "mtr" && !isMstack)
+		if (name === "mtr")
 			props.mrs.push(AscWord.ParaMath.readMathMLMRow(reader));
 	}
 

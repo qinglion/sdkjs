@@ -4729,12 +4729,12 @@ CGroupCharacter.prototype.GetTextOfElement = function(oMathText)
 	return oMathText;
 };
 
-CGroupCharacter.fromMathML = function(reader, type)
+CGroupCharacter.fromMathML = function(reader, type, content)
 {
 	let props = new CMathGroupChrPr();
-	props.content = [];
+	props.content = content ? content : [];
 	props.pos = type;
-	props.vertJc = (type ===VJUST_BOT ) ? VJUST_BOT : undefined;
+	props.vertJc = (type === VJUST_TOP ) ? VJUST_BOT : undefined;
 
 	let mContents = [];
 	let depth = reader.GetDepth();
@@ -4745,10 +4745,15 @@ CGroupCharacter.fromMathML = function(reader, type)
 
 	if (mContents.length >= 2)
 	{
-		props.content[0] = mContents[0];
+		props.content.push(mContents[0]);
 		if (mContents[1])
 		{
 			let chrText = mContents[1].GetTextOfElement().GetText().trim();
+			if (chrText.length > 1)
+			{
+				return AscMath.Limit.fromMathML(reader, type, mContents)
+			}
+
 			props.chr = chrText.charCodeAt(0);
 		}
 	}

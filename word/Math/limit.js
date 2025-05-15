@@ -372,9 +372,9 @@ CLimit.prototype.GetTextOfElement = function(oMathText)
 	return oMathText;
 };
 
-CLimit.fromMathML = function(reader, isGroup, type) {
+CLimit.fromMathML = function(reader, type, content) {
 	let props = new CMathLimitPr();
-	props.content = [];
+	props.content = content ? content : content;
 	props.type = type;
 
 	let mContents = [];
@@ -384,14 +384,17 @@ CLimit.fromMathML = function(reader, isGroup, type) {
 		mContents.push(AscWord.ParaMath.readMathMLContent(reader));
 	}
 
-	if (mContents.length >= 2)
+	if (mContents.length)
 	{
-		props.content[0] = mContents[0];
-		props.content[1] = mContents[1];
-	}
-	else
-	{
-		props.content[0] = mContents[0];
+		if (mContents.length >= 2)
+		{
+			props.content[0] = mContents[0];
+			props.content[1] = mContents[1];
+		}
+		else
+		{
+			props.content[0] = mContents[0];
+		}
 	}
 
 	return new CLimit(props);
