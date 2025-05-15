@@ -561,8 +561,8 @@ CDocumentContent.prototype.Get_NearestPos = function(CurPage, X, Y, bAnchor, Dra
 	}
 	
 	let point = this.TransformPoint(X, Y);
-	X = point.x;
-	Y = point.y;
+	X = point.X;
+	Y = point.Y;
 
 	var ContentPos = this.Internal_GetContentPosByXY(X, Y, CurPage);
 
@@ -2755,8 +2755,8 @@ CDocumentContent.prototype.UpdateCursorType = function(X, Y, CurPage)
 		return;
 	
 	let point = this.TransformPoint(X, Y);
-	X = point.x;
-	Y = point.y;
+	X = point.X;
+	Y = point.Y;
 	
 	var ContentPos       = this.Internal_GetContentPosByXY(X, Y, CurPage);
 	var Item             = this.Content[ContentPos];
@@ -4454,8 +4454,8 @@ CDocumentContent.prototype.MoveCursorToXY = function(X, Y, AddToSelect, bRemoveO
 		return;
 	
 	let point = this.TransformPoint(X, Y);
-	X = point.x;
-	Y = point.y;
+	X = point.X;
+	Y = point.Y;
 	
 	if (undefined !== CurPage)
 	{
@@ -6390,8 +6390,8 @@ CDocumentContent.prototype.Selection_SetStart = function(X, Y, CurPage, MouseEve
 		return;
 	
 	let point = this.TransformPoint(X, Y);
-	X = point.x;
-	Y = point.y;
+	X = point.X;
+	Y = point.Y;
 
 	if (CurPage < 0)
 	{
@@ -6554,8 +6554,8 @@ CDocumentContent.prototype.Selection_SetEnd = function(X, Y, CurPage, MouseEvent
 		return;
 	
 	let point = this.TransformPoint(X, Y);
-	X = point.x;
-	Y = point.y;
+	X = point.X;
+	Y = point.Y;
 	
 	if (CurPage < 0)
 	{
@@ -6779,8 +6779,8 @@ CDocumentContent.prototype.CheckPosInSelection = function(X, Y, CurPage, NearPos
 	else //if ( docpostype_Content === this.CurPos.Type )
 	{
 		let point = this.TransformPoint(X, Y);
-		X = point.x;
-		Y = point.y;
+		X = point.X;
+		Y = point.Y;
 		
 		if (true === this.Selection.Use || true === this.ApplyToAll)
 		{
