@@ -1283,6 +1283,9 @@
 		layersArray.forEach(function (layerIndexString) {
 			let layerIndex = Number(layerIndexString);
 			let layerInfo = layersInfo.getRow(layerIndex);
+			if (layerInfo === undefined) {
+				return; // go to next iteration
+			}
 			let layerElements = layerInfo.getElements();
 
 			// Unlink original array
