@@ -4062,7 +4062,7 @@ CDelimiter.prototype.private_GetRightOperator = function(bHide)
 };
 CDelimiter.fromMathML = function(reader)
 {
-	let attributes = AscWord.ParaMath.getAttributesMathML(reader);
+	let attributes = reader.GetAttributes();
 	let props = new CMathDelimiterPr();
 	let open = attributes['open'] || "(";
 	let close = attributes['close'] || ")";

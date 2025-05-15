@@ -3402,7 +3402,79 @@ ParaMath.readMathMLNode = function(reader)
 
 				return result;
 			}
-			let attributes = AscWord.ParaMath.getAttributesMathML(reader);
+			
+			function proceedAttributes(name, text, attributes)
+			{
+				const GetMathFontChar = AscMath.GetMathFontChar;
+				switch (name)
+				{
+					case 'mi':
+					{
+						let type = -1;
+						switch (attributes['mathvariant'])
+						{
+							case 'bold':					type = 0; break;
+							case 'italic':					type = 1; break;
+							case 'bold-italic':				type = 2; break;
+							case 'double-struck':			type = 12; break;
+							case 'bold-fraktur':			type = 10; break;
+							case 'script':					type = 7; break;
+							case 'bold-script':				type = 8; break;
+							case 'fraktur':					type = 9; break;
+							case 'sans-serif':				type = 3; break;
+							case 'bold-sans-serif':			type = 4; break;
+							case 'sans-serif-italic':		type = 5; break;
+							case 'sans-serif-bold-italic':	type = 6; break;
+							case 'monospace':				type = 11; break;
+							default:						type = -1; break;
+						}
+						
+						// single character must be italic
+						if (text.length === 1 && type === -1)
+							type = 1;
+						
+						let convertedText = "";
+						for (let oIter = text.getUnicodeIterator(); oIter.check(); oIter.next())
+						{
+							let currentChar = String.fromCodePoint(oIter.value());
+							
+							if (GetMathFontChar[currentChar] && GetMathFontChar[currentChar][type])
+								convertedText += GetMathFontChar[currentChar][type];
+							else
+								convertedText += currentChar;
+						}
+						text = convertedText;
+						break;
+					}
+					case 'mo':
+					{
+						if (attributes['id'])
+							this.mathMLData['mo-id'][attributes['id']] = elements[0];
+						
+						if (name === 'mo' && attributes['linebreak'])
+						{
+							this.mathMLData['mo-linebreak-todo'].push({
+								element: elements[0],
+								type: attributes['linebreak'],
+								indentalign: attributes['indentalign'] === "id",
+								indenttarget: attributes['indenttarget']
+							});
+						}
+						
+						// indent
+						
+						break;
+					}
+					case 'mspace':
+					{
+						// for now skip spaces
+						text = " ";
+						break;
+					}
+				}
+				return text;
+			}
+			let attributes = reader.GetAttributes();
 
 			let text = reader.GetText();
 			text = text.trim();
@@ -3411,8 +3483,15 @@ ParaMath.readMathMLNode = function(reader)
 			text = text.replaceAll("\n", "");
 			text = text.replaceAll("\r", "");
 			text = decodeHexEntities(text);
-			this.attributeProceed(name, attributes, elements, text);
-
+			
+			text = proceedAttributes(name, text, attributes);
+			if (text)
+			{
+				elements.push(new AscWord.Run(null, true));
+				elements[0].AddText(text);
+			}
+			
+			
 			break;
 		case 'merror':
 		case 'menclose':
@@ -3448,7 +3527,7 @@ ParaMath.readMathMLNode = function(reader)
 			break;
 		case 'munder':
 		{
-			let attributes = this.getAttributesMathML(reader);
+			let attributes = reader.GetAttributes();
 
 			if (attributes['accentunder'] && attributes['accentunder'] === 'false')
 				elements.push(AscMath.GroupCharacter.fromMathML(reader, VJUST_BOT));
@@ -3459,7 +3538,7 @@ ParaMath.readMathMLNode = function(reader)
 		}
 		case 'mover':
 		{
-			let attributes = this.getAttributesMathML(reader);
+			let attributes = reader.GetAttributes();
 
 			if (attributes['accent'] && attributes['accent'] === 'false')
 				elements.push(AscMath.GroupCharacter.fromMathML(reader, VJUST_TOP));
@@ -3546,123 +3625,6 @@ ParaMath.proceedApply = function (reader)
 		}
 	}
 }
-ParaMath.attributeProceed = function(name, attributes, elements, text)
-{
-	const GetMathFontChar	= AscMath.GetMathFontChar;
-
-	switch (name)
-	{
-		case 'ms':
-		{
-			if (text)
-			{
-				elements.push(new AscWord.Run(null, true));
-				elements[0].AddText(text);
-			}
-			break;
-		}
-		case 'mi':
-		{
-			let type = -1;
-			switch (attributes['mathvariant'])
-			{
-				case 'bold':					type = 0; break;
-				case 'italic':					type = 1; break;
-				case 'bold-italic':				type = 2; break;
-				case 'double-struck':			type = 12; break;
-				case 'bold-fraktur':			type = 10; break;
-				case 'script':					type = 7; break;
-				case 'bold-script':				type = 8; break;
-				case 'fraktur':					type = 9; break;
-				case 'sans-serif':				type = 3; break;
-				case 'bold-sans-serif':			type = 4; break;
-				case 'sans-serif-italic':		type = 5; break;
-				case 'sans-serif-bold-italic':	type = 6; break;
-				case 'monospace':				type = 11; break;
-				default:						type = -1; break;
-			}
-
-			// single character must be italic
-			if (text.length === 1 && type === -1)
-				type = 1;
-
-			let convertedText = "";
-			for (let oIter = text.getUnicodeIterator(); oIter.check(); oIter.next())
-			{
-				let currentChar = String.fromCodePoint(oIter.value());
-
-				if (GetMathFontChar[currentChar] && GetMathFontChar[currentChar][type])
-					convertedText += GetMathFontChar[currentChar][type];
-				else
-					convertedText += currentChar;
-			}
-			text = convertedText;
-
-			if (text)
-			{
-				elements.push(new AscWord.Run(null, true));
-				elements[0].AddText(text);
-			}
-
-			break;
-		}
-		case 'mo':
-		{
-			if (text)
-			{
-				elements.push(new AscWord.Run(null, true));
-				elements[0].AddText(text);
-			}
-
-			if (attributes['id'])
-				this.mathMLData['mo-id'][attributes['id']] = elements[0];
-
-			if (name === 'mo' && attributes['linebreak'])
-			{
-				this.mathMLData['mo-linebreak-todo'].push({
-					element: elements[0],
-					type: attributes['linebreak'],
-					indentalign: attributes['indentalign'] === "id",
-					indenttarget: attributes['indenttarget']
-				});
-			}
-
-			// indent
-
-			break;
-		}
-		case 'mspace':
-		{
-			// for now skip spaces
-			elements.push(new AscWord.Run(null, true));
-			elements[0].AddText(' ');
-		}
-		case 'mtext':
-		case 'mn':
-		default:
-		{
-			if (text)
-			{
-				elements.push(new AscWord.Run(null, true));
-				elements[0].AddText(text);
-			}
-			break;
-		}
-	}
-};
-ParaMath.getAttributesMathML = function (reader)
-{
-	let attributes = {};
-
-	while (reader.MoveToNextAttribute())
-	{
-		let attributeName = reader.GetName();
-		let attributeValue = reader.GetValue();
-		attributes[attributeName] = attributeValue;
-	}
-
-	return attributes;
-};
 ParaMath.readMathMLMRow = function(reader)
 {
 	let result = []

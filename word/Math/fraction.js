@@ -710,7 +710,7 @@ CFraction.prototype.GetTextOfElement = function(oMathText)
 };
 CFraction.fromMathML = function (reader)
 {
-	let attributes = AscWord.ParaMath.getAttributesMathML(reader);
+	let attributes = reader.GetAttributes();
 	let props = new CMathFractionPr();
 	props.content = [];
 
