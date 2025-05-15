@@ -2393,6 +2393,18 @@
                 let extX = (aOrigRect[2] - aOrigRect[0]) * g_dKoef_pt_to_mm;
                 let extY = (aOrigRect[3] - aOrigRect[1]) * g_dKoef_pt_to_mm;
 
+                let oDoc = this.GetDocument();
+                let nPage = this.GetPage();
+                let nPageRotate = oDoc.Viewer.getPageRotate(nPage);
+                if (nPageRotate === 90 || nPageRotate === 270) {
+                    let tmp = extX;
+                    extX = extY;
+                    extY = tmp;
+
+                    offX -= (extX - extY) / 2;
+                    offY -= (extY - extX) / 2;
+                }
+
                 let oXfrm = oShape.getXfrm();
                 oXfrm.setExtX(extX);
                 oXfrm.setExtY(extY);
@@ -2603,6 +2615,18 @@
         let nExtX = aRectMM[2] - aRectMM[0];
         let nExtY = aRectMM[3] - aRectMM[1];
 
+        let oDoc = this.GetDocument();
+        let nPage = this.GetPage();
+        let nPageRotate = oDoc.Viewer.getPageRotate(nPage);
+        if (nPageRotate === 90 || nPageRotate === 270) {
+            let tmp = nExtX;
+            nExtX = nExtY;
+            nExtY = tmp;
+
+            nOffX -= (nExtX - nExtY) / 2;
+            nOffY -= (nExtY - nExtX) / 2;
+        }
+
         oPdfShape.setSpPr(new AscFormat.CSpPr());
         oPdfShape.spPr.setLn(new AscFormat.CLn());
         oPdfShape.setFLocksText(true);
@@ -2619,7 +2643,8 @@
         oPdfShape.spPr.xfrm.setOffY(nOffY);
         oPdfShape.spPr.xfrm.setExtX(nExtX);
         oPdfShape.spPr.xfrm.setExtY(nExtY);
-        
+        oPdfShape.spPr.xfrm.setRot(-nPageRotate * (Math.PI / 180));
+
         oPdfShape.spPr.setGeometry(AscFormat.CreateGeometry("rect"));
 
         oPdfShape.createTextBody();

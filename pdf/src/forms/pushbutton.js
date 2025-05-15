@@ -227,6 +227,9 @@
 		this.SetNeedUpdateImage(!this._SetImage());
 	};
 	CPushButtonField.prototype._SetImage = function() {
+        let oDoc = this.GetDocument();
+        let nPage = this.GetPage();
+        let nPageRotate = oDoc.Viewer.getPageRotate(nPage);
 		let sRasterId = this._rasterId;
 		
         if (!this.DoInitialRecalc()) {
@@ -274,8 +277,15 @@
                 break;
         }
 
-        const dFrmW = oRect.W;
-        const dFrmH = oRect.H;
+        let dFrmW = oRect.W;
+        let dFrmH = oRect.H;
+        
+        if (nPageRotate === 90 || nPageRotate === 270) {
+            let tmp = dFrmW;
+            dFrmW = dFrmH;
+            dFrmH = tmp;
+        }
+
         const dCW   = (dFrmW - nContentW)/dImgW;
         const dCH   = (dFrmH - nContentH)/dImgH;
         const dCoef = Math.min(dCW, dCH);
@@ -328,7 +338,7 @@
                 break;
             }
         }
-        const oDrawing  = new AscCommonWord.ParaDrawing(dDrawingW, dDrawingH, null, this.content.DrawingDocument, this.content, null);
+        const oDrawing = new AscCommonWord.ParaDrawing(dDrawingW, dDrawingH, null, this.content.DrawingDocument, this.content, null);
         oDrawing.Set_WrappingType(WRAPPING_TYPE_SQUARE);
         oDrawing.Set_DrawingType(drawing_Inline);
         
@@ -1031,6 +1041,7 @@
             H: (nHeight - 2 * oMargins.top -  2 * oMargins.bottom) * g_dKoef_pt_to_mm,
             Page: this.GetPage()
         };
+        return this.contentClipRect;
     };
     CPushButtonField.prototype.DoInitialRecalc = function() {
         if (null == this.contentClipRect || this.IsNeedRecalc()) {
@@ -1056,6 +1067,10 @@
             this.content.Recalculate_Page(0, false);
         }
 
+        if (this.IsNeedRecalcTextTransform()) {
+            this.RecalculateTextTransform();
+        }
+        
         this.SetNeedRecalc(false);
     };
     CPushButtonField.prototype.RecalculateContentRect = function() {

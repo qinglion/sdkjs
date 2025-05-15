@@ -531,9 +531,13 @@ var CPresentation = CPresentation || function(){};
         return sFormType + nFormNumber;
     };
     CPDFDoc.prototype.CreateTextField = function(bDateField) {
+        let x1 = 10, y1 = 10;
+        let width = 150, height = 22;
+        let rect = [x1, y1, x1 + width, y1 + height];
+    
         let sName = this.CreateNewFieldName(AscPDF.FIELD_TYPES.text);
-        let oTextField = this.CreateField(sName, AscPDF.FIELD_TYPES.text, [200, 50, 350, 72]);
-
+        let oTextField = this.CreateField(sName, AscPDF.FIELD_TYPES.text, rect);
+    
         if (bDateField) {
             oTextField.SetActions(AscPDF.FORMS_TRIGGERS_TYPES.Keystroke, [{
                 "S": AscPDF.ACTIONS_TYPES.JavaScript,
@@ -544,74 +548,84 @@ var CPresentation = CPresentation || function(){};
                 "JS": "AFDate_FormatEx(\"m/d/yy\");"
             }]);
         }
-
+    
         return oTextField;
     };
     CPDFDoc.prototype.CreateButtonField = function(bImage) {
+        let x1 = 10, y1 = 10;
+        let width = 72;
+        let height = bImage ? 80 : 20;
+        let rect = [x1, y1, x1 + width, y1 + height];
+    
         let sName = this.CreateNewFieldName(AscPDF.FIELD_TYPES.button);
-        let aRect = bImage ? [218, 44, 290, 124] : [49, 83, 121, 103];
-        let oButtonField = this.CreateField(sName, AscPDF.FIELD_TYPES.button, aRect);
-
+        let oButtonField = this.CreateField(sName, AscPDF.FIELD_TYPES.button, rect);
+    
         if (bImage) {
             oButtonField.SetActions(AscPDF.FORMS_TRIGGERS_TYPES.MouseUp, [{
                 "S": AscPDF.ACTIONS_TYPES.JavaScript,
                 "JS": "event.target.buttonImportIcon();"
             }]);
-
             oButtonField.SetLayout(AscPDF.Api.Types.position['iconOnly']);
             oButtonField.SetBorderColor([0.7529]);
-        }
-        else {
+        } else {
             oButtonField.SetBackgroundColor([0.7529]);
         }
-
+    
         oButtonField.SetBorderStyle(AscPDF.BORDER_TYPES.solid);
         oButtonField.SetBorderWidth(1);
-
+    
         return oButtonField;
     };
     CPDFDoc.prototype.CreateCheckboxField = function() {
+        let x1 = 10, y1 = 10;
+        let width = 18, height = 18;
+        let rect = [x1, y1, x1 + width, y1 + height];
+    
         let sName = this.CreateNewFieldName(AscPDF.FIELD_TYPES.checkbox);
-        let aRect = [320, 45, 338, 63];
-        
-        let oCheckboxField = this.CreateField(sName, AscPDF.FIELD_TYPES.checkbox, aRect);
+        let oCheckboxField = this.CreateField(sName, AscPDF.FIELD_TYPES.checkbox, rect);
+    
         oCheckboxField.SetBorderColor([0]);
         oCheckboxField.SetBorderStyle(AscPDF.BORDER_TYPES.solid);
         oCheckboxField.SetBorderWidth(1);
-
+    
         return oCheckboxField;
     };
     CPDFDoc.prototype.CreateRadiobuttonField = function() {
+        let x1 = 10, y1 = 10;
+        let width = 18, height = 18;
+        let rect = [x1, y1, x1 + width, y1 + height];
+    
         let sName = this.CreateNewFieldName(AscPDF.FIELD_TYPES.radiobutton);
-        let aRect = [320, 45, 338, 63];
-        
-        let oRadiobuttonField = this.CreateField(sName, AscPDF.FIELD_TYPES.radiobutton, aRect);
-
+        let oRadiobuttonField = this.CreateField(sName, AscPDF.FIELD_TYPES.radiobutton, rect);
+    
         oRadiobuttonField.SetBorderColor([0]);
         oRadiobuttonField.SetBorderStyle(AscPDF.BORDER_TYPES.inset);
         oRadiobuttonField.SetBorderWidth(1);
-
+    
         return oRadiobuttonField;
     };
     CPDFDoc.prototype.CreateComboboxField = function() {
+        let x1 = 10, y1 = 10;
+        let width = 72, height = 20;
+        let rect = [x1, y1, x1 + width, y1 + height];
+    
         let sName = this.CreateNewFieldName(AscPDF.FIELD_TYPES.combobox);
-        let aRect = [382, 45, 454, 65];
-        
-        let oComboboxField = this.CreateField(sName, AscPDF.FIELD_TYPES.combobox, aRect);
-
+        let oComboboxField = this.CreateField(sName, AscPDF.FIELD_TYPES.combobox, rect);
+    
         return oComboboxField;
     };
     CPDFDoc.prototype.CreateListboxField = function() {
+        let x1 = 10, y1 = 10;
+        let width = 100, height = 72;
+        let rect = [x1, y1, x1 + width, y1 + height];
+    
         let sName = this.CreateNewFieldName(AscPDF.FIELD_TYPES.listbox);
-        let aRect = [382, 81, 482, 153];
-        
-        let oListboxField = this.CreateField(sName, AscPDF.FIELD_TYPES.listbox, aRect);
-
+        let oListboxField = this.CreateField(sName, AscPDF.FIELD_TYPES.listbox, rect);
+    
         return oListboxField;
     };
     CPDFDoc.prototype.FillFormsParents = function(aParentsInfo) {
         let oChilds = this.GetParentsMap();
-        let oParents = {};
 
         for (let i = 0; i < aParentsInfo.length; i++) {
             let nIdx = aParentsInfo[i]["i"];
@@ -2873,6 +2887,19 @@ var CPresentation = CPresentation || function(){};
         if (isFromUI) {
             let nExtX = oField.GetWidth();
             let nExtY = oField.GetHeight();
+
+            let nPageRotate = this.Viewer.getPageRotate(nPage);
+            if (nPageRotate === 90 || nPageRotate === 270) {
+                let rect = oField.GetRect();
+                let x1 = rect[0];
+                let y1 = rect[1];
+                oField.SetRect([x1, y1, x1 + nExtY, y1 + nExtX]);
+                oField.SetRotate(nPageRotate);
+
+                let tmp = nExtX;
+                nExtX = nExtY;
+                nExtY = tmp;
+            }
 
             let oPos = this.private_computeFieldAddingPos(nPage, nExtX, nExtY);
             oField.SetPosition(oPos.x, oPos.y)
@@ -7244,16 +7271,16 @@ var CPresentation = CPresentation || function(){};
                 nPosY = nPageH * (oViewRect.y + (oViewRect.b - oViewRect.y) / 4) - nExtY / 2;
                 break;
             case 90:
-                nPosX = nPageW * ((oViewRect.y + oViewRect.b) / 2) - nExtX / 2;
-                nPosY = nPageH - nPageH * (oViewRect.x + (oViewRect.r - oViewRect.x) / 4) - nExtY / 2;
+                nPosX = nPageW * ((oViewRect.y + oViewRect.b) / 4) - nExtX / 2;
+                nPosY = nPageH - nPageH * (oViewRect.x + (oViewRect.r - oViewRect.x) / 2) - nExtY / 2;
                 break;
             case 180:
                 nPosX = nPageW - nPageW * ((oViewRect.x + oViewRect.r) / 2) - nExtX / 2;
                 nPosY = nPageH - nPageH * (oViewRect.y + (oViewRect.b - oViewRect.y) / 4) - nExtY / 2;
                 break;
             case 270:
-                nPosX = nPageW - nPageW * ((oViewRect.y + oViewRect.b) / 2) - nExtX / 2;
-                nPosY = nPageH * (oViewRect.x + (oViewRect.r - oViewRect.x) / 4) - nExtY / 2;
+                nPosX = nPageW - nPageW * ((oViewRect.y + oViewRect.b) / 4) - nExtX / 2;
+                nPosY = nPageH * (oViewRect.x + (oViewRect.r - oViewRect.x) / 2) - nExtY / 2;
                 break;
         }
     
