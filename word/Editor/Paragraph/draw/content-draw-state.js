@@ -691,10 +691,20 @@
 				para.IsThisElementCurrent() ||
 				para.Parent.IsSelectionUse() && para.Parent.IsSelectionEmpty() && para.Parent.Selection.StartPos === para.GetIndex())
 			{
-				if (Pr.ParaPr.Ind.FirstLine < 0)
-					numItem.Draw(X, Y, graphics, this);
+				if(!isRtl)
+				{
+					if (Pr.ParaPr.Ind.FirstLine < 0)
+						numItem.Draw(X, Y, graphics, this);
+					else
+						numItem.Draw(para.Pages[CurPage].X + Pr.ParaPr.Ind.Left, Y, graphics, this);
+				}
 				else
-					numItem.Draw(para.Pages[CurPage].X + Pr.ParaPr.Ind.Left, Y, graphics, this);
+				{
+					if (Pr.ParaPr.Ind.FirstLine < 0)
+						numItem.Draw(X + numItem.getVisibleWidth() / 2, Y, graphics, this);
+					else
+						numItem.Draw(para.Pages[CurPage].X + para.Pages[CurPage].XLimit - Pr.ParaPr.Ind.Right, Y, graphics, this);
+				}
 			}
 		}
 		
