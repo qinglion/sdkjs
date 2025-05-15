@@ -9434,7 +9434,7 @@ function BinaryPPTYLoader()
                 }
                 case 10:
                 {
-                    s.Skip2(1); // rtl
+                    para_pr.Bidi = s.GetBool();
                     break;
                 }
                 default:
