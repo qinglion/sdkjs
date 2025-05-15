@@ -2182,7 +2182,11 @@ CDocumentContent.prototype.Get_ParentTextTransform = function()
 		global_MatrixTransformer.MultiplyAppend(transform, parentTransform);
 		return transform;
 	}
-	return this.transform.CreateDublicate() || parentTransform;
+	if(this.transform)
+	{
+		return this.transform.CreateDublicate()
+	}
+	return parentTransform;
 };
 CDocumentContent.prototype.GetFullTransform = function()
 {
