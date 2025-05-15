@@ -2199,12 +2199,12 @@ CDocumentContent.prototype.GetCurrentTransform = function()
 CDocumentContent.prototype.TransformPoint = function(x, y)
 {
 	if (!this.transform)
-		return {x: x, y : y};
+		return {X: x, Y : y};
 	
 	let invert = global_MatrixTransformer.Invert(this.transform);
 	return {
-		x : invert.TransformPointX(x, y),
-		y : invert.TransformPointY(x, y)
+		X : invert.TransformPointX(x, y),
+		Y : invert.TransformPointY(x, y)
 	};
 };
 CDocumentContent.prototype.IsTableBorder = function(X, Y, CurPage)
