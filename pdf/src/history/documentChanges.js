@@ -884,22 +884,18 @@ CChangesPDFDocumentPagesContent.prototype.Undo = function() {
 CChangesPDFDocumentPagesContent.prototype.Redo = function() {
 	let oDocument	= this.Class;
 	let oDrDoc		= oDocument.GetDrawingDocument();
-	let oContentChanges = this.private_GetContentChanges();
 
     if (this.IsAdd()) {
         for (var nIndex = 0, nCount = this.Items.length; nIndex < nCount; ++nIndex) {
-            let nPos = oContentChanges.Check(AscCommon.contentchanges_Add, true !== this.UseArray ? this.Pos + nIndex : this.PosArray[nIndex]);
-            if (nPos === false) continue;
-
+            let nPos = true !== this.UseArray ? this.Pos : this.PosArray[nIndex];
             let oItem = this.Items[nIndex];
-            oDocument.AddPage(nPos, oItem)
+            oDocument.AddPage(nPos, oItem);
         }
     }
     else {
         for (var nIndex = 0, nCount = this.Items.length; nIndex < nCount; ++nIndex) {
-            let nPos = oContentChanges.Check(AscCommon.contentchanges_Remove, true !== this.UseArray ? this.Pos + nIndex : this.PosArray[nIndex]);
-            if (nPos === false) continue;
-            oDocument.RemovePage(nPos)
+            let nPos = true !== this.UseArray ? this.Pos : this.PosArray[nIndex];
+            oDocument.RemovePage(nPos);
         }
     }
 	
