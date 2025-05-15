@@ -4565,7 +4565,37 @@ CPresentation.prototype.ConvertEquationToMath = function (oEquation, isAll) {
 	}
 };
 
+CPresentation.prototype.SetParagraphBidi = function(isRtl)
+{
+	let paragraphs = this.GetSelectedParagraphs();
+	for (let i = 0; i < paragraphs.length; ++i)
+	{
+		let paragraph = paragraphs[i];
+		let isRtlParagraph = paragraph.GetParagraphBidi();
+		paragraph.SetParagraphBidi(isRtl);
+		if(isRtl !== isRtlParagraph)
+		{
+			let jc = paragraph.GetParagraphAlign();
+			switch (jc)
+			{
+				case AscCommon.align_Left :
+				{
+					paragraph.SetParagraphAlign(AscCommon.align_Right);
+					break;
+				}
+				case AscCommon.align_Right:
+				{
+					paragraph.SetParagraphAlign(AscCommon.align_Left);
+					break;
+				}
+			}
+		}
 
+	}
+	this.Recalculate();
+	this.UpdateInterface();
+	this.UpdateSelection();
+};
 CPresentation.prototype.SetParagraphAlign = function (Align) {
 
 	var oController = this.GetCurrentController();

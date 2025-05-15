@@ -3399,6 +3399,18 @@ background-repeat: no-repeat;\
 	{
 		this.setSlideObjectName(sName, AscDFH.historyitem_type_SlideLayout);
 	};
+	asc_docs_api.prototype.asc_setRtlTextDirection = function(isRtl)
+	{
+		let oPresentation = this.getLogicDocument();
+		if(!oPresentation) return;
+
+		if (oPresentation.IsSelectionLocked(AscCommon.changestype_Drawing_Props))
+			return;
+
+		oPresentation.StartAction(AscDFH.historydescription_Document_SetParagraphBidi);
+		oPresentation.SetParagraphBidi(isRtl);
+		oPresentation.FinalizeAction();
+	};
 
 	asc_docs_api.prototype.put_ShowParaMarks      = function(isShow)
 	{
@@ -9848,6 +9860,7 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype['asc_deleteGuide']                     = asc_docs_api.prototype.asc_deleteGuide;
 	asc_docs_api.prototype['asc_SetMasterName']                   = asc_docs_api.prototype.asc_SetMasterName;
 	asc_docs_api.prototype['asc_SetLayoutName']                   = asc_docs_api.prototype.asc_SetLayoutName;
+	asc_docs_api.prototype['asc_setRtlTextDirection']             = asc_docs_api.prototype.asc_setRtlTextDirection;
 	asc_docs_api.prototype['put_ShowParaMarks']                   = asc_docs_api.prototype.put_ShowParaMarks;
 	asc_docs_api.prototype['get_ShowParaMarks']                   = asc_docs_api.prototype.get_ShowParaMarks;
 	asc_docs_api.prototype['put_ShowTableEmptyLine']              = asc_docs_api.prototype.put_ShowTableEmptyLine;
