@@ -3667,7 +3667,7 @@
 			}
 
 			// Get cell properties
-			let align = cell.getAlign();
+			/*let align = cell.getAlign();
 			let angle = align.getAngle();
 			let cellType = cell.getType();
 			let verticalText = angle === AscCommonExcel.g_nVerticalTextAngle;
@@ -3687,7 +3687,7 @@
 			if (angle || verticalText || isNumberFormat || isWrapped) {
 				maxCol = Math.max(maxCol, col);
 				maxRow = Math.max(maxRow, row);
-			}
+			}*/
 
 			// Check formulas
 			if (cell.isFormula()) {
