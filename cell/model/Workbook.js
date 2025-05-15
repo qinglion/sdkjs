@@ -15445,10 +15445,11 @@
 	 * Iterative extract listeners of a cell
 	 * @param fAction {Function} Action on the listener.
 	 * @param oCell {Cell}
-	 * @param oListeners {object}
+	 * @param oCellListeners {object}
 	 * @private
 	 */
-	function _foreachListeners(fAction, oCell, oListeners) {
+	function _foreachListeners(fAction, oCell, oCellListeners) {
+		const oListeners = oCellListeners.listeners;
 		for (let i in oListeners) {
 			let oListenerCell = oListeners[i].getParent();
 			if (!oListenerCell) {
@@ -15480,6 +15481,14 @@
 						}
 					})
 				}
+			} else if (oListeners[i].getShared() && !oListeners[i].is3D && oCellListeners.bbox) {
+				const oShared = oListeners[i].getShared();
+				const oCurrentRange = new Asc.Range(oCell.nCol, oCell.nRow, oCell.nCol, oCell.nRow);
+				const oListenerSharedRange = oCellListeners.bbox.getSharedIntersect(oShared.ref, oCurrentRange);
+				oListenerCell.ws._getCell(oListenerSharedRange.r1, oListenerSharedRange.c1, function (oCell) {
+					oListenerCell = oCell;
+				});
+				nListenerCellIndex = getCellIndex(oListenerCell.nRow, oListenerCell.nCol);
 			} else {
 				nListenerCellIndex = getCellIndex(oListenerCell.nRow, oListenerCell.nCol);
 			}
@@ -15580,7 +15589,6 @@
 			g_cCalcRecursion.resetRecursionCounter();
 			return;
 		}
-		const oListeners = oCellListeners.listeners;
 		const nCellIndex = getCellIndex(this.nRow, this.nCol);
 		let oCellFromListener = null;
 		let nPrevCellIndex = oPrevCell ? getCellIndex(oPrevCell.nRow, oPrevCell.nCol) : null;
@@ -15636,7 +15644,7 @@
 					return true;
 				}
 			}
-		}, this, oListeners);
+		}, this, oCellListeners);
 		if (!g_cCalcRecursion.getStartCellIndex() && !bBreakFunction) {
 			let oTableStructOperand = oParserFormula && oParserFormula.outStack.find(function (oOperand) {
 				return oOperand.type === cElementType.table;
@@ -15737,7 +15745,6 @@
 			g_cCalcRecursion.resetRecursionCounter();
 			return;
 		}
-		const oListeners = oCellListeners.listeners;
 		_foreachListeners(function (oListenerCellWithFormula, oCell) {
 			const oWs = oCell.ws;
 			let oListenerCell = null;
@@ -15756,7 +15763,7 @@
 			g_cCalcRecursion.incRecursionCounter();
 			_changeCellsFromListener(oListenerCell);
 			}
-		}, oSourceCell, oListeners);
+		}, oSourceCell, oCellListeners);
 		g_cCalcRecursion.resetRecursionCounter();
 	}
 
@@ -15874,7 +15881,6 @@
 					if (!oCellListeners) {
 						return;
 					}
-					const oListeners = oCellListeners.listeners;
 					_foreachListeners(function (oListenerCell, oThis, nListenerCellIndex) {
 						let sThisWsName = oThis.ws.getName().toLowerCase();
 						let sListenerWsName = oListenerCell.ws.getName().toLowerCase();
@@ -15894,7 +15900,7 @@
 							});
 							return true;
 						}
-					}, oCell, oListeners);
+					}, oCell, oCellListeners);
 				}
 			});
 		}, aRefElements);
