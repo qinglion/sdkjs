@@ -3510,9 +3510,6 @@ ParaMath.proceedApply = function (reader)
 		}
 		else
 			operands.push(node[0]);
-
-
-		j++;
 	}
 
 	let operator = operands.shift();
