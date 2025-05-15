@@ -1951,8 +1951,7 @@ Paragraph.prototype.private_RecalculateLineAlign       = function(CurLine, CurPa
             Item.Recalculate_Range_Width( PRSC, CurLine, CurRange );
         }
 		
-		
-		let jc = ParaPr.Jc;
+
         var JustifyWord  = 0;
         var JustifySpace = 0;
         var RangeWidth   = Range.XEnd - Range.X;
@@ -1960,7 +1959,17 @@ Paragraph.prototype.private_RecalculateLineAlign       = function(CurLine, CurPa
         var X = 0;
 		
 		let rtlShift = PRSC.SpaceLen + Range.WBreak + PRSC.Range.WEnd;
-		let bRtlAlign = ParaPr.Bidi && this.bFromDocument;
+		let bRtlAlign = ParaPr.Bidi;
+		let jc = ParaPr.Jc;
+		
+		if(!this.bFromDocument && bRtlAlign)
+		{
+			if(jc === AscCommon.align_Left)
+				jc = AscCommon.align_Right;
+			else if(jc === AscCommon.align_Right)
+				jc = AscCommon.align_Left;
+		}
+
         // Если данный отрезок содержит только формулу, тогда прилегание данного отрезка определяется формулой
         var ParaMath = this.Check_Range_OnlyMath(CurRange, CurLine);
         if (null !== ParaMath)
