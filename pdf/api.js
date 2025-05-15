@@ -354,9 +354,11 @@
 
 		if (oDoc.CanCopyCut().cut) {
 			if (oThumbnails && oThumbnails.isInFocus && false == this.isRestrictionView()) {
+				let aPages = oThumbnails.getSelectedPages().slice();
+
 				oDoc.DoAction(function() {
 					oDoc.RemovePages(aPages);
-				}, AscDFH.historydescription_Pdf_RemovePage, this, oThumbnails.selectedPages);
+				}, AscDFH.historydescription_Pdf_RemovePage, this, aPages);
 			}
 			else {
 				oDoc.DoAction(function() {
