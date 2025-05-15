@@ -1627,13 +1627,6 @@
 		let x_inch = rotatedCenter.x + turquoiseVector.x;
 		let y_inch = rotatedCenter.y + turquoiseVector.y;
 
-		let x_mm = x_inch * g_dKoef_in_to_mm;
-		let y_mm = y_inch * g_dKoef_in_to_mm;
-
-		let shapeWidth_mm = shapeWidth_inch * g_dKoef_in_to_mm;
-		let shapeHeight_mm = shapeHeight_inch * g_dKoef_in_to_mm;
-
-
 		/**
 		 * Fill without pattern applied.
 		 * @type CUniFill */
@@ -2131,8 +2124,21 @@
 
 
 		let flipHorizontally = this.getCellNumberValue("FlipX") === 1;
+		if (flipHorizontally) {
+			x_inch = x_inch + 2 * (locPinX_inch - shapeWidth_inch / 2);
+		}
 
 		let flipVertically = this.getCellNumberValue("FlipY") === 1;
+		if (flipVertically) {
+			y_inch = y_inch + 2 * (locPinY_inch - shapeHeight_inch / 2);
+		}
+
+		let x_mm = x_inch * g_dKoef_in_to_mm;
+		let y_mm = y_inch * g_dKoef_in_to_mm;
+
+		let shapeWidth_mm = shapeWidth_inch * g_dKoef_in_to_mm;
+		let shapeHeight_mm = shapeHeight_inch * g_dKoef_in_to_mm;
+
 
 		let cShape = this.convertToCShapeUsingParamsObj({
 			x_mm: x_mm, y_mm: y_mm,

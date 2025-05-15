@@ -235,7 +235,6 @@
 		// if THEMEVAL was called with themeValue (argument like "FillColor") even if themeIndex is 0 we should
 		// use any theme otherwise if no themeValue argument was passed and 0 themeIndex is used we should return
 		// default value
-		// see colored rectangle in that file https://disk.yandex.ru/d/IzxVtx0a7GqbQA
 		let theme = themes[0];
 		if (themeIndex === 0) {
 			return initialDefaultValue;
