@@ -111,7 +111,8 @@
 		};
 
 		CImageShape.prototype.setBlipFill = function (pr) {
-			AscCommon.History.Add(new AscDFH.CChangesDrawingsObjectNoId(this, AscDFH.historyitem_ImageShapeSetBlipFill, this.blipFill, pr));
+			if(!Asc.editor.evalCommand)
+				AscCommon.History.Add(new AscDFH.CChangesDrawingsObjectNoId(this, AscDFH.historyitem_ImageShapeSetBlipFill, this.blipFill, pr));
 			this.blipFill = pr;
 		};
 

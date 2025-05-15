@@ -1031,7 +1031,7 @@
 	CGraphicObjectBase.prototype.Reassign_ImageUrls = function (mapUrl) {
 		var blip_fill;
 		if (this.blipFill) {
-			if (mapUrl[this.blipFill.RasterImageId]) {
+			if (mapUrl[this.blipFill.RasterImageId] && mapUrl[this.blipFill.RasterImageId] !== this.blipFill.RasterImageId) {
 				if (this.setBlipFill) {
 					blip_fill = this.blipFill.createDuplicate();
 					blip_fill.setRasterImageId(mapUrl[this.blipFill.RasterImageId]);
@@ -1040,7 +1040,7 @@
 			}
 		}
 		if (this.spPr && this.spPr.Fill && this.spPr.Fill.fill && this.spPr.Fill.fill.RasterImageId) {
-			if (mapUrl[this.spPr.Fill.fill.RasterImageId]) {
+			if (mapUrl[this.spPr.Fill.fill.RasterImageId] && mapUrl[this.spPr.Fill.fill.RasterImageId] !== this.spPr.Fill.fill.RasterImageId) {
 				blip_fill = this.spPr.Fill.fill.createDuplicate();
 				blip_fill.setRasterImageId(mapUrl[this.spPr.Fill.fill.RasterImageId]);
 				var oUniFill = this.spPr.Fill.createDuplicate();

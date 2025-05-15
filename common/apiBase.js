@@ -215,6 +215,8 @@
 
 		this.SaveAfterMacros = false;
 
+		this.evalCommand = false;
+
 		// Spell Checking
 		this.SpellCheckApi = new AscCommon.CSpellCheckApi();
 		this.isSpellCheckEnable = true;
@@ -4262,7 +4264,8 @@
 
 	baseEditorsApi.prototype._beforeEvalCommand = function()
 	{
-		var oApi = this;
+		let oApi = this;
+		this.evalCommand = true;
 		switch (this.editorId)
 		{
 			case AscCommon.c_oEditorId.Word:
@@ -4288,6 +4291,7 @@
 	baseEditorsApi.prototype._afterEvalCommand = function(endAction)
 	{
 		var oApi = this;
+		this.evalCommand = false;
 		switch (this.editorId)
 		{
 			case AscCommon.c_oEditorId.Word:
