@@ -2383,6 +2383,7 @@
         this._origRect = aOrigRect;
         this.SetWasChanged(true);
         this.SetNeedRecalc(true);
+		this.RecalcTextTransform();
 
         if (this.IsEditMode()) {
             let oShape = this.GetEditShape();
