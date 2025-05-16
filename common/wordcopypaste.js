@@ -11909,7 +11909,7 @@ PasteProcessor.prototype =
 					return;
 				}
 
-				if (child.className && -1 !== child.className.indexOf("oo-latex-display")) {
+				if (child.className && (-1 !== child.className.indexOf("oo-latex") || -1 !== child.className.indexOf("oo-latex-inline"))) {
 					let paraMath = AscWord.ParaMath.fromLatex(child.innerHTML);
 					bAddParagraph = oThis._Decide_AddParagraph(child, pPr, bAddParagraph);
 					let oAddedParaMath = paraMath;
