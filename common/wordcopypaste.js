@@ -9321,8 +9321,9 @@ PasteProcessor.prototype =
 				if (aPair && aPair.length > 1) {
 					var prop_name = trimString(aPair[0]);
 					var prop_value = trimString(aPair[1]);
-					if (null != this.MsoStyles[prop_name])
+					if (null != this.MsoStyles[prop_name]) {
 						pPr[prop_name] = prop_value;
+					}
 				}
 			}
 		}
@@ -11901,6 +11902,15 @@ PasteProcessor.prototype =
 
 				if (sChildNodeName === "math") {
 					let paraMath = AscWord.ParaMath.fromMathML(child.outerHTML);
+					bAddParagraph = oThis._Decide_AddParagraph(child, pPr, bAddParagraph);
+					let oAddedParaMath = paraMath;
+					oAddedParaMath.SetParagraph && oAddedParaMath.SetParagraph(oThis.oCurPar);
+					oThis._CommitElemToParagraph(oAddedParaMath);
+					return;
+				}
+
+				if (child.className && -1 !== child.className.indexOf("oo-latex-display")) {
+					let paraMath = AscWord.ParaMath.fromLatex(child.innerHTML);
 					bAddParagraph = oThis._Decide_AddParagraph(child, pPr, bAddParagraph);
 					let oAddedParaMath = paraMath;
 					oAddedParaMath.SetParagraph && oAddedParaMath.SetParagraph(oThis.oCurPar);
