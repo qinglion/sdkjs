@@ -3411,13 +3411,7 @@ background-repeat: no-repeat;\
 	{
 		let oPresentation = this.getLogicDocument();
 		if(!oPresentation) return;
-
-		if (oPresentation.IsSelectionLocked(AscCommon.changestype_Drawing_Props))
-			return;
-
-		oPresentation.StartAction(AscDFH.historydescription_Document_SetParagraphBidi);
 		oPresentation.SetParagraphBidi(isRtl);
-		oPresentation.FinalizeAction();
 	};
 
 	asc_docs_api.prototype.put_ShowParaMarks      = function(isShow)
