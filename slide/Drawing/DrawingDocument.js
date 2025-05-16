@@ -1605,6 +1605,15 @@ function CDrawingDocument()
 			this.m_oWordControl.OnScroll();
 			this.m_oWordControl.Thumbnails.LockMainObjType = false;
 		}
+
+		if(Asc.editor.isSlideShow())
+		{
+			let oDemonstration = Asc.editor.getDemoManager();
+			if(oDemonstration && oDemonstration.SlideNum === index)
+			{
+				oDemonstration.Redraw();
+			}
+		}
 	};
 
 	this.OnEndRecalculate = function()

@@ -3109,6 +3109,9 @@
 			} else {
 				w.WriteBool(false);
 			}
+			if(w.bWriteCompiledColors) {
+				w.WriteLong(((this.RGBA.R << 16) & 0xFF0000) + ((this.RGBA.G << 8) & 0xFF00) + this.RGBA.B);
+			}
 		};
 		CUniColor.prototype.Read_FromBinary = function (r) {
 			if (r.GetBool()) {
@@ -3149,6 +3152,12 @@
 				this.Mods.Read_FromBinary(r);
 			} else {
 				this.Mods = null;
+			}
+			if(r.bReadCompiledColors) {
+				let RGB = r.GetLong();
+				this.RGBA.R = (RGB >> 16) & 0xFF;
+				this.RGBA.G = (RGB >> 8) & 0xFF;
+				this.RGBA.B = RGB & 0xFF;
 			}
 		};
 		CUniColor.prototype.createDuplicate = function () {

@@ -2976,6 +2976,23 @@ function (window, undefined) {
 		oPath.recalculate({}, true);
 	};
 
+	Path2.prototype.Write_ToBinary = function(writer) {
+		AscFormat.writeBool(writer, this.extrusionOk);
+		AscFormat.writeString(writer, this.fill);
+		AscFormat.writeLong(writer, this.pathH);
+		AscFormat.writeLong(writer, this.pathW);
+		AscFormat.writeLong(writer, this.startPos);
+		AscFormat.writeBool(writer, this.stroke);
+	};
+	Path2.prototype.Read_FromBinary = function(reader) {
+		this.extrusionOk = AscFormat.readBool(reader);
+		this.fill = AscFormat.readString(reader);
+		this.pathH = AscFormat.readLong(reader);
+		this.pathW = AscFormat.readLong(reader);
+		this.startPos = AscFormat.readLong(reader);
+		this.stroke = AscFormat.readBool(reader);
+		this.PathMemory = reader.pathMemory;
+	};
 
 	function partition_bezier3(x0, y0, x1, y1, x2, y2, epsilon) {
 		let dx01 = x1 - x0;

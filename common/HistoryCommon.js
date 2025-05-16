@@ -4132,10 +4132,11 @@
 	AscDFH.historyitem_Pdf_Line_Points			= AscDFH.historyitem_type_Pdf_Annot_Line | 1;
 	
 	// annot stamp
-	AscDFH.historyitem_Pdf_Stamp_Type			= AscDFH.historyitem_type_Pdf_Annot_Stamp | 1;
-	AscDFH.historyitem_Pdf_Stamp_InRect			= AscDFH.historyitem_type_Pdf_Annot_Stamp | 2;
-	AscDFH.historyitem_Pdf_Stamp_Rect			= AscDFH.historyitem_type_Pdf_Annot_Stamp | 3;
-	
+	AscDFH.historyitem_Pdf_Stamp_Type			 = AscDFH.historyitem_type_Pdf_Annot_Stamp | 1;
+	AscDFH.historyitem_Pdf_Stamp_InRect			 = AscDFH.historyitem_type_Pdf_Annot_Stamp | 2;
+	AscDFH.historyitem_Pdf_Stamp_Rect			 = AscDFH.historyitem_type_Pdf_Annot_Stamp | 3;
+	AscDFH.historyitem_Pdf_Stamp_RenderStructure = AscDFH.historyitem_type_Pdf_Annot_Stamp | 4;
+
 	//------------------------------------------------------------------------------------------------------------------
 	// Типы изменений в PDF drawing prototype
 	//------------------------------------------------------------------------------------------------------------------
