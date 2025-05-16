@@ -2673,6 +2673,45 @@
 
         this.AddToRedraw();
     };
+    CBaseField.prototype.UpdateEditShape = function() {
+        if (!this.editShape) {
+            return false;
+        }
+
+        let aOrigRect = this.GetRect();
+        let aRectMM = aOrigRect ? aOrigRect.map(function(measure) {
+            return measure * g_dKoef_pt_to_mm;
+        }) : [];
+
+        let nOffX = aRectMM[0];
+        let nOffY = aRectMM[1];
+        let nExtX = aRectMM[2] - aRectMM[0];
+        let nExtY = aRectMM[3] - aRectMM[1];
+
+        let oDoc = this.GetDocument();
+        let nPage = this.GetPage();
+        let nPageRotate = oDoc.Viewer.getPageRotate(nPage);
+        if (nPageRotate === 90 || nPageRotate === 270) {
+            let tmp = nExtX;
+            nExtX = nExtY;
+            nExtY = tmp;
+
+            nOffX -= (nExtX - nExtY) / 2;
+            nOffY -= (nExtY - nExtX) / 2;
+        }
+
+        let oPdfShape = this.GetEditShape();
+        oPdfShape.spPr.xfrm.setOffX(nOffX);
+        oPdfShape.spPr.xfrm.setOffY(nOffY);
+        oPdfShape.spPr.xfrm.setExtX(nExtX);
+        oPdfShape.spPr.xfrm.setExtY(nExtY);
+        oPdfShape.spPr.xfrm.setRot(-nPageRotate * (Math.PI / 180));
+        oPdfShape.recalcContent();
+        oPdfShape.recalculate();
+
+        this.AddToRedraw();
+        return true;
+    };
     CBaseField.prototype.IsEditMode = function() {
         return !!this.editShape;
     };

@@ -1026,6 +1026,12 @@ CChangesPDFDocumentRotatePage.prototype.private_SetValue = function(Value)
             }
         });
         
+        if (oDoc.IsEditFieldsMode()) {
+			oDoc.Viewer.pagesInfo.pages[nPageIdx].fields.forEach(function(field) {
+				field.UpdateEditShape();
+			});
+		}
+
 		oDoc.Viewer.resize(true);
         oDoc.Viewer.paint();
     }

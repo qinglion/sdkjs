@@ -329,6 +329,12 @@
 
         oDoc.History.Add(new CChangesPDFDocumentRotatePage(this, oFile.pages[nIndex].Rotate, nAngle));
 		oFile.pages[nIndex].Rotate = nAngle;
+
+		if (oDoc.IsEditFieldsMode()) {
+			this.fields.forEach(function(field) {
+				field.UpdateEditShape();
+			});
+		}
 	};
 	CPageInfo.prototype.GetRotate = function() {
 		let oDoc		= this.GetDocument();
