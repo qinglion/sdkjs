@@ -2142,6 +2142,14 @@ background-repeat: no-repeat;\
 		this.sync_ParaStyleName(ParaPr.StyleName);
 		this.sync_ListType(ParaPr.ListType);
 		this.sync_PrPropCallback(ParaPr);
+
+		let bidi = ParaPr.Bidi;
+		if (undefined === bidi)
+		{
+			let paragraph = logicDocument.GetCurrentParagraph(false, false, {FirstInSelection : true});
+			bidi = paragraph ? paragraph.GetParagraphBidi() : undefined;
+		}
+		this.sendEvent("asc_onTextDirection", bidi);
 	};
 	/*----------------------------------------------------------------*/
 	/*functions for working with clipboard, document*/
