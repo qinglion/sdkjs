@@ -9188,9 +9188,11 @@
         const oObject = AscCommon.g_oTableId.Get_ById(sObjectId);
 				if (oObject && oObject.getText) {
 					let sText = oObject.getText();
-					const nLastIndex = sText.lastIndexOf("\r\n");
-					if (nLastIndex !== -1) {
-						return sText.slice(0, nLastIndex);
+					if (typeof sText === 'string') {
+						const nLastIndex = sText.lastIndexOf("\r\n");
+						if (nLastIndex !== -1) {
+							return sText.slice(0, nLastIndex);
+						}
 					}
 					return sText;
 				}
