@@ -685,6 +685,18 @@ function CPresentation(DrawingDocument) {
 }
 
 AscFormat.InitClass(CPresentation, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_Presentation);
+CPresentation.prototype.getFirstSlideImagesMap = function () {
+	const oRequiredSyncImagesMap = {};
+	const oFirstSlide = this.Slides[0];
+	if (oFirstSlide) {
+		const aImages = oFirstSlide.getAllRasterImagesOnSlide();
+		for (let i = 0; i < aImages.length; i++) {
+			const sImg = aImages[i];
+			oRequiredSyncImagesMap[sImg] = true;
+		}
+	}
+	return oRequiredSyncImagesMap;
+};
 CPresentation.prototype.sendEvent = function()
 {
 	if (!this.Api)
