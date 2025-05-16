@@ -8174,7 +8174,7 @@ PasteProcessor.prototype =
 			//принудительно добавляю для математики шрифт Cambria Math
 			if ((child && (child.nodeName.toLowerCase() === "#comment" && this.isSupportPasteMathContent(child.nodeValue, true)
 				&& this.apiEditor["asc_isSupportFeature"]("ooxml")) || child.nodeName.toLowerCase() === "math" ||
-				(child.className && -1 !== child.className.indexOf("oo-latex")) ||
+				(child.className && child.className.indexOf && -1 !== child.className.indexOf("oo-latex")) ||
 				(style && -1 !== style.indexOf("oo-latex"))) && !this.pasteInExcel) {
 				//TODO пока только в документы разрешаю вставку математики математику
 				var mathFont = "Cambria Math";
@@ -11911,12 +11911,15 @@ PasteProcessor.prototype =
 					let oAddedParaMath = paraMath;
 					oAddedParaMath.SetParagraph && oAddedParaMath.SetParagraph(oThis.oCurPar);
 					oThis._CommitElemToParagraph(oAddedParaMath);
+					let clonePr = oThis.oCurRun.Pr.Copy();
+					oThis.oCurRun = new ParaRun(oThis.oCurPar);
+					oThis.oCurRun.Set_Pr(clonePr);
 					return;
 				}
 
 				var latexFromStyle = pPr["oo-latex"];
-				let isLatex = (latexFromStyle && latexFromStyle === "display") || (child.className && -1 !== child.className.indexOf("oo-latex"));
-				let isLatexInline =  (latexFromStyle && latexFromStyle === "inline") || (child.className && -1 !== child.className.indexOf("oo-latex-inline"));
+				let isLatex = (latexFromStyle && latexFromStyle === "display") || (child.className && child.className.indexOf && -1 !== child.className.indexOf("oo-latex"));
+				let isLatexInline =  (latexFromStyle && latexFromStyle === "inline") || (child.className && child.className.indexOf && -1 !== child.className.indexOf("oo-latex-inline"));
 				if (isLatex|| isLatexInline) {
 					let paraMath = AscWord.ParaMath.fromLatex(latexFromStyle ? child.nodeValue : child.innerHTML);
 					bAddParagraph = oThis._Decide_AddParagraph(child, pPr, bAddParagraph);
@@ -11927,6 +11930,10 @@ PasteProcessor.prototype =
 					if (isLatexInline) {
 						paraMath.ConvertToInlineMode();
 					}
+
+					let clonePr = oThis.oCurRun.Pr.Copy();
+					oThis.oCurRun = new ParaRun(oThis.oCurPar);
+					oThis.oCurRun.Set_Pr(clonePr);
 
 					return;
 				}
