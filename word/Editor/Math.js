@@ -3330,6 +3330,27 @@ ParaMath.prototype.ProcessingOldEquationConvert = function()
 {
 	this.Root.ProcessingOldEquationConvert();
 };
+ParaMath.fromLatex = function(latex, textPr)
+{
+	let paraMath = new ParaMath();
+	
+	let run = new AscWord.Run(null, true);
+	run.AddText(latex);
+	
+	paraMath.Root.addElementToContent(run);
+	paraMath.Root.Correct_Content();
+	paraMath.SetParagraph(null);
+	
+	paraMath.ConvertView(false, Asc.c_oAscMathInputType.LaTeX);
+	
+	if (textPr)
+	{
+		textPr.RFonts.SetAll("Cambria Math");
+		paraMath.ApplyTextPr(textPr, undefined, true);
+	}
+	
+	return paraMath;
+};
 ParaMath.fromMathML = function(xml, textPr)
 {
 	let paraMath = new ParaMath();
