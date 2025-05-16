@@ -227,9 +227,6 @@
 		this.SetNeedUpdateImage(!this._SetImage());
 	};
 	CPushButtonField.prototype._SetImage = function() {
-        let oDoc = this.GetDocument();
-        let nPage = this.GetPage();
-        let nPageRotate = oDoc.Viewer.getPageRotate(nPage);
 		let sRasterId = this._rasterId;
 		
         if (!this.DoInitialRecalc()) {
@@ -280,7 +277,8 @@
         let dFrmW = oRect.W;
         let dFrmH = oRect.H;
         
-        if (nPageRotate === 90 || nPageRotate === 270) {
+        let nRotAngle = this.GetRotate();
+        if (nRotAngle === 90 || nRotAngle === 270) {
             let tmp = dFrmW;
             dFrmW = dFrmH;
             dFrmH = tmp;
