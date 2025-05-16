@@ -23357,7 +23357,8 @@
 
 
 			//фон для группировки
-			ctx.setFillStyle(this.settings.header.style[kHeaderDefault].background).fillRect(x1, y1, x2 - x1, y2 - y1);
+			ctx.setFillStyle(this.settings.header.style[kHeaderDefault].background);
+			this._fillRect(ctx, x1 + (this.getRightToLeft() ? 1 : 0), y1, x2 - x1 + (this.getRightToLeft() ? 1 : 0), y2 - y1);
 			ctx.setStrokeStyle(this.settings.header.editorBorder).setLineWidth(1).beginPath();
 			this._lineHorPrevPx(ctx, x1, y2, x2);
 			ctx.stroke();
@@ -23513,9 +23514,10 @@
 			x2 = this.groupWidth;
 			y2 = this._getRowTop(range.r2 + 1) - offsetY;
 
-			ctx.setFillStyle(this.settings.header.style[kHeaderDefault].background).fillRect(x1, y1, x2 - x1, y2 - y1);
+			ctx.setFillStyle(this.settings.header.style[kHeaderDefault].background);
+			t._fillRect(ctx, x1, y1, x2 - x1, y2 - y1);
 			ctx.setStrokeStyle(this.settings.header.editorBorder).setLineWidth(1).beginPath();
-			t._lineVerPrevPx(ctx, x2, y1, y2);
+			t._lineVerPrevPx(ctx, x2 - (this.getRightToLeft() ? 1 : 0), y1, y2);
 			ctx.stroke();
 
 			groupData = this.arrRowGroups ? this.arrRowGroups : this.getGroupDataArray(null, range.r1, range.r2);
@@ -23775,7 +23777,7 @@
 			x = x - offsetX;
 			y = y - offsetY;
 
-			ctx.AddClipRect(bCol ? pos.pos - offsetX : x, bCol ? y : pos.pos - offsetY, bCol ? pos.size : w, bCol ? h : pos.size);
+			this._AddClipRect(ctx, bCol ? pos.pos - offsetX : x, bCol ? y : pos.pos - offsetY, bCol ? pos.size : w, bCol ? h : pos.size);
 			ctx.beginPath();
 
 			var paddingLine = Math.floor((w - sizeLine - borderSize) / 2);
@@ -23886,9 +23888,11 @@
 			y2 = this.headersTop + this.headersHeight;
 		}
 
-		ctx.setFillStyle(st.background).fillRect(x1, y1, x2 - x1, y2 - y1);
+		ctx.setFillStyle(st.background);
+		this._fillRect(ctx, x1, y1, x2 - x1, y2 - y1);
 		//угол до кнопок
-		ctx.setFillStyle(st.background).fillRect(0, 0, this.headersLeft, this.headersTop);
+		ctx.setFillStyle(st.background);
+		this._fillRect(ctx, 0, 0, this.headersLeft, this.headersTop);
 
 		ctx.setStrokeStyle(this.settings.header.editorBorder).setLineWidth(1).beginPath();
 		this._lineHorPrevPx(ctx, x1, y2, x2);
