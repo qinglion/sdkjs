@@ -2118,9 +2118,11 @@ background-repeat: no-repeat;\
 	asc_docs_api.prototype.UpdateParagraphProp = function(ParaPr)
 	{
 
+		let presentation = this.getLogicDocument();
+		if(!presentation) return;
 		ParaPr.StyleName  = "";
-		var TextPr        = editor.WordControl.m_oLogicDocument.GetCalculatedTextPr();
-		var oDrawingProps = editor.WordControl.m_oLogicDocument.Get_GraphicObjectsProps();
+		var TextPr        = presentation.GetCalculatedTextPr();
+		var oDrawingProps = presentation.Get_GraphicObjectsProps();
 		if (oDrawingProps.shapeProps && oDrawingProps.shapeProps.locked
 			|| oDrawingProps.chartProps && oDrawingProps.chartProps.locked
 			|| oDrawingProps.tableProps && oDrawingProps.tableProps.Locked)
@@ -2146,7 +2148,7 @@ background-repeat: no-repeat;\
 		let bidi = ParaPr.Bidi;
 		if (undefined === bidi)
 		{
-			let paragraph = logicDocument.GetCurrentParagraph(false, false, {FirstInSelection : true});
+			let paragraph = presentation.GetCurrentParagraph(false, false, {FirstInSelection : true});
 			bidi = paragraph ? paragraph.GetParagraphBidi() : undefined;
 		}
 		this.sendEvent("asc_onTextDirection", bidi);
