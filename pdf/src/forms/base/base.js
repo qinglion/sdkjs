@@ -2731,6 +2731,55 @@
     CBaseField.prototype.GetRotate = function() {
         return this._rotate;
     };
+	CBaseField.prototype._isCenterAlign = function() {
+		return true;
+	};
+	CBaseField.prototype.GetRotateTransform = function() {
+		let angle = this.GetRotate();
+		if (0 === angle)
+			return null;
+		
+		let clipRect = this.CalculateContentClipRect();
+		
+		let t = new AscCommon.CMatrix();
+		
+		if (this._isCenterAlign()) {
+			if (90 === angle) {
+				global_MatrixTransformer.TranslateAppend(t, -clipRect.X, -clipRect.Y - clipRect.H / 2);
+				global_MatrixTransformer.RotateRadAppend(t, 0.5 * Math.PI);
+				global_MatrixTransformer.TranslateAppend(t, clipRect.X + clipRect.W / 2, clipRect.Y + clipRect.H);
+			}
+			else if (180 === angle) {
+				global_MatrixTransformer.TranslateAppend(t, -clipRect.X, -clipRect.Y - clipRect.H / 2);
+				global_MatrixTransformer.RotateRadAppend(t, Math.PI);
+				global_MatrixTransformer.TranslateAppend(t, clipRect.X + clipRect.W, clipRect.Y + clipRect.H / 2);
+			}
+			else if (270 === angle) {
+				global_MatrixTransformer.TranslateAppend(t, -clipRect.X, -clipRect.Y - clipRect.H / 2);
+				global_MatrixTransformer.RotateRadAppend(t, -0.5 * Math.PI);
+				global_MatrixTransformer.TranslateAppend(t, clipRect.X + clipRect.W / 2, clipRect.Y);
+			}
+		}
+		else {
+			if (90 === angle) {
+				global_MatrixTransformer.TranslateAppend(t, -clipRect.X, -clipRect.Y);
+				global_MatrixTransformer.RotateRadAppend(t, 0.5 *  Math.PI);
+				global_MatrixTransformer.TranslateAppend(t, clipRect.X, clipRect.Y + clipRect.H);
+			}
+			else if (180 === angle) {
+				global_MatrixTransformer.TranslateAppend(t, -clipRect.X, -clipRect.Y);
+				global_MatrixTransformer.RotateRadAppend(t, Math.PI);
+				global_MatrixTransformer.TranslateAppend(t, clipRect.X + clipRect.W, clipRect.Y + clipRect.H);
+			}
+			else if (270 === angle) {
+				global_MatrixTransformer.TranslateAppend(t, -clipRect.X, -clipRect.Y);
+				global_MatrixTransformer.RotateRadAppend(t, -0.5 * Math.PI);
+				global_MatrixTransformer.TranslateAppend(t, clipRect.X + clipRect.W, clipRect.Y);
+			}
+		}
+		
+		return t;
+	};
     CBaseField.prototype.RecalculateTextTransform = function() {
 		
 		if (!this._needRecalcTxTransform)
@@ -2740,11 +2789,13 @@
 		if (!clipRect)
 			return;
 		
+		let transform = this.GetRotateTransform();
+		
 		if (this.content)
-			this.content.SetFieldRotate(this._rotate, clipRect);
+			this.content.SetTransform(transform);
 		
 		if (this.contentFormat)
-			this.contentFormat.SetFieldRotate(this._rotate, clipRect);
+			this.contentFormat.SetTransform(transform);
 		
 		this._needRecalcTxTransform = false;
     };
