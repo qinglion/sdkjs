@@ -1088,6 +1088,38 @@ CMathMatrix.prototype.GetTextOfElement = function (oMathText)
 	return oMathText;
 };
 
+CMathMatrix.fromMathML = function(reader)
+{
+	let props = new CMathMatrixPr();
+	props.mrs = [];
+
+	let depth = reader.GetDepth();
+	while (reader.ReadNextSiblingNode(depth))
+	{
+		let name = reader.GetNameNoNS();
+		if (name === "mtr")
+			props.mrs.push(AscWord.ParaMath.readMathMLMRow(reader));
+	}
+
+	return new CMathMatrix(props);
+};
+
+CMathMatrix.fromMathML_mtr = function(reader)
+{
+	let depth = reader.GetDepth();
+	while (reader.ReadNextSiblingNode(depth))
+	{
+		let name = reader.GetNameNoNS();
+		if (name === "mtd")
+			return AscWord.ParaMath.readMathMLContent(reader);
+	}
+};
+
+CMathMatrix.fromMathML_mtd = function(reader)
+{
+	return AscWord.ParaMath.readMathMLContentOnLevel(reader);
+};
+
 /**
  *
  * @param CMathMenuMatrix
@@ -1678,6 +1710,21 @@ CEqArray.prototype.GetTextOfElement = function (oMathText)
 
 	return oMathText;
 };
+
+CEqArray.fromMathML = function(reader) {
+	let props = new CMathEqArrPr();
+	props.content = [];
+
+	let depth = reader.GetDepth();
+	while (reader.ReadNextSiblingNode(depth))
+	{
+		let name = reader.GetNameNoNS();
+		if (name !== "msline") //skip msline for now
+			props.content.push(AscWord.ParaMath.readMathMLContent(reader));
+	}
+
+	return new CEqArray(props);
+}
 
 /**
  *

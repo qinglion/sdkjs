@@ -2782,6 +2782,39 @@
 					this.applyDocContentFunction(CDocumentContent.prototype.SetParagraphSpacing, [Spacing], CTable.prototype.SetParagraphSpacing);
 				},
 
+
+				setParagraphBidi: function (isRtl) {
+					let oTargetContent = this.getTargetDocContent(false, true);
+					if (!oTargetContent) {
+						return [];
+					}
+					let paragraphs = [];
+					oTargetContent.GetCurrentParagraph(false, paragraphs, {});
+					for (let i = 0; i < paragraphs.length; ++i)
+					{
+						let paragraph = paragraphs[i];
+						let isRtlParagraph = paragraph.GetParagraphBidi();
+						paragraph.SetParagraphBidi(isRtl);
+						if(isRtl !== isRtlParagraph)
+						{
+							let jc = paragraph.GetParagraphAlign();
+							switch (jc)
+							{
+								case AscCommon.align_Left :
+								{
+									paragraph.SetParagraphAlign(AscCommon.align_Right);
+									break;
+								}
+								case AscCommon.align_Right:
+								{
+									paragraph.SetParagraphAlign(AscCommon.align_Left);
+									break;
+								}
+							}
+						}
+					}
+				},
+
 				setParagraphTabs: function (Tabs) {
 					this.applyTextFunction(CDocumentContent.prototype.SetParagraphTabs, CTable.prototype.SetParagraphTabs, [Tabs]);
 				},
@@ -8818,6 +8851,9 @@
 
 					if ("undefined" != typeof (Props.Spacing) && null != Props.Spacing)
 						this.setParagraphSpacing(Props.Spacing);
+
+					if (undefined !== Props.Bidi)
+						this.setParagraphBidi(Props.Bidi);
 
 					if (undefined != Props.Tabs) {
 						var Tabs = new CParaTabs();

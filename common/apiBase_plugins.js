@@ -1241,6 +1241,10 @@
 	Api.prototype["pluginMethod_GetFileToDownload"] = function(format)
 	{
 		window.g_asc_plugins && window.g_asc_plugins.setPluginMethodReturnAsync();
+		
+		if (format && typeof(format) === "string")
+			format = format.toUpperCase();
+		
 		let dwnldF = Asc.c_oAscFileType[format] || Asc.c_oAscFileType[this.DocInfo.Format.toUpperCase()];
 		let opts = new Asc.asc_CDownloadOptions(dwnldF);
 		let _t = this;

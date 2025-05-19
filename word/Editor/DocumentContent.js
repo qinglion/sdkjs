@@ -141,6 +141,8 @@ function CDocumentContent(Parent, DrawingDocument, X, Y, XLimit, YLimit, Split, 
 	this.Recalculated = false; // Flag only for the current level
 
     this.ReindexStartPos = 0;
+	
+	this.transform = null;
 
     // Добавляем данный класс в таблицу Id (обязательно в конце конструктора)
     AscCommon.g_oTableId.Add( this, this.Id );
@@ -557,6 +559,10 @@ CDocumentContent.prototype.Get_NearestPos = function(CurPage, X, Y, bAnchor, Dra
 				return NearestPos;
 		}
 	}
+	
+	let point = this.TransformPoint(X, Y);
+	X = point.x;
+	Y = point.y;
 
 	var ContentPos = this.Internal_GetContentPosByXY(X, Y, CurPage);
 
@@ -1459,6 +1465,12 @@ CDocumentContent.prototype.Draw                           = function(nPageIndex,
 		let clipY1 = undefined !== clipInfo.Y1 ? clipInfo.Y1 : pageBounds.Bottom;
 		pGraphics.AddClipRect(clipX0, clipY0, Math.abs(clipX1 - clipX0), Math.abs(clipY1 - clipY0));
 	}
+	
+	if (this.transform)
+	{
+		pGraphics.SaveGrState();
+		pGraphics.transform3(this.Get_ParentTextTransform());
+	}
 
     var oPage = this.Pages[CurPage];
     for (var nIndex = oPage.Pos; nIndex <= oPage.EndPos; ++nIndex)
@@ -1500,6 +1512,9 @@ CDocumentContent.prototype.Draw                           = function(nPageIndex,
 
 		pGraphics.RestoreGrState();
 	}
+	
+	if (this.transform)
+		pGraphics.RestoreGrState();
 	
 	if (clipInfo)
 		pGraphics.RestoreGrState();
@@ -1719,6 +1734,10 @@ CDocumentContent.prototype.RecalculateCurPos = function(bUpdateX, bUpdateY, isUp
 
 	if (docpostype_Content === this.CurPos.Type)
 	{
+		let drawingDocument = Asc.editor.getDrawingDocument();
+		if (this.transform && drawingDocument)
+			drawingDocument.MultiplyTargetTransform(this.transform.CreateDublicate());
+		
 		if (this.CurPos.ContentPos >= 0 && undefined !== this.Content[this.CurPos.ContentPos])
 		{
 			this.private_CheckCurPage();
@@ -2156,13 +2175,40 @@ CDocumentContent.prototype.StartFromNewPage = function()
 };
 CDocumentContent.prototype.Get_ParentTextTransform = function()
 {
-	if (this.Parent)
-		return this.Parent.Get_ParentTextTransform();
-
-	return null;
+	let parentTransform = this.Parent ? this.Parent.Get_ParentTextTransform() : null;
+	let transform = this.transform ? this.transform.CreateDublicate() : null;
+	if (transform && parentTransform)
+	{
+		global_MatrixTransformer.MultiplyAppend(transform, parentTransform);
+		return transform;
+	}
+	return transform || parentTransform;
+};
+CDocumentContent.prototype.GetFullTransform = function()
+{
+	return this.Get_ParentTextTransform();
+};
+CDocumentContent.prototype.GetCurrentTransform = function()
+{
+	return this.transform;
+};
+CDocumentContent.prototype.TransformPoint = function(x, y)
+{
+	if (!this.transform)
+		return {x: x, y : y};
+	
+	let invert = global_MatrixTransformer.Invert(this.transform);
+	return {
+		x : invert.TransformPointX(x, y),
+		y : invert.TransformPointY(x, y)
+	};
 };
 CDocumentContent.prototype.IsTableBorder = function(X, Y, CurPage)
 {
+	let point = this.TransformPoint(X, Y);
+	X = point.x;
+	Y = point.y;
+	
 	CurPage = Math.max(0, Math.min(this.Pages.length - 1, CurPage));
 
 	var ElementPos       = this.Internal_GetContentPosByXY(X, Y, CurPage);
@@ -2174,6 +2220,10 @@ CDocumentContent.prototype.IsInText = function(X, Y, CurPage)
 {
 	if (CurPage < 0 || CurPage >= this.Pages.length)
 		CurPage = 0;
+	
+	let point = this.TransformPoint(X, Y);
+	X = point.x;
+	Y = point.y;
 
 	var ContentPos       = this.Internal_GetContentPosByXY(X, Y, CurPage);
 	var Item             = this.Content[ContentPos];
@@ -2190,7 +2240,11 @@ CDocumentContent.prototype.IsInDrawing = function(X, Y, CurPage)
 	{
 		if (CurPage < 0 || CurPage >= this.Pages.length)
 			CurPage = 0;
-
+		
+		let point = this.TransformPoint(X, Y);
+		X = point.x;
+		Y = point.y;
+		
 		var ContentPos = this.Internal_GetContentPosByXY(X, Y, CurPage);
 		var Item       = this.Content[ContentPos];
 		if (type_Table == Item.GetType())
@@ -2522,6 +2576,11 @@ CDocumentContent.prototype.MoveCursorToEndPos = function(AddToSelect, StartSelec
 CDocumentContent.prototype.MoveCursorUpToLastRow = function(X, Y, AddToSelect)
 {
 	this.SetCurPosXY(X, Y);
+	
+	let point = this.TransformPoint(X, Y);
+	X = point.x;
+	Y = point.y;
+	
 	if (true === AddToSelect)
 	{
 		if (true !== this.Selection.Use)
@@ -2580,6 +2639,11 @@ CDocumentContent.prototype.MoveCursorUpToLastRow = function(X, Y, AddToSelect)
 CDocumentContent.prototype.MoveCursorDownToFirstRow = function(X, Y, AddToSelect)
 {
 	this.SetCurPosXY(X, Y);
+	
+	let point = this.TransformPoint(X, Y);
+	X = point.x;
+	Y = point.y;
+	
 	if (true === AddToSelect)
 	{
 		if (true !== this.Selection.Use)
@@ -2678,14 +2742,18 @@ CDocumentContent.prototype.UpdateCursorType = function(X, Y, CurPage)
 {
 	if (CurPage < 0 || CurPage >= this.Pages.length)
 		return this.DrawingDocument.SetCursorType("text", new AscCommon.CMouseMoveData());
-
+	
 	var bInText      = (null === this.IsInText(X, Y, CurPage) ? false : true);
 	var bTableBorder = (null === this.IsTableBorder(X, Y, CurPage) ? false : true);
 
 	// Ничего не делаем
 	if (this.Parent instanceof CHeaderFooter && true === this.LogicDocument.DrawingObjects.updateCursorType(this.Get_AbsolutePage(CurPage), X, Y, {}, ( true === bInText || true === bTableBorder ? true : false )))
 		return;
-
+	
+	let point = this.TransformPoint(X, Y);
+	X = point.x;
+	Y = point.y;
+	
 	var ContentPos       = this.Internal_GetContentPosByXY(X, Y, CurPage);
 	var Item             = this.Content[ContentPos];
 	var ElementPageIndex = this.private_GetElementPageIndexByXY(ContentPos, X, Y, CurPage);
@@ -4380,7 +4448,11 @@ CDocumentContent.prototype.MoveCursorToXY = function(X, Y, AddToSelect, bRemoveO
 {
 	if (!this.IsRecalculated())
 		return;
-
+	
+	let point = this.TransformPoint(X, Y);
+	X = point.x;
+	Y = point.y;
+	
 	if (undefined !== CurPage)
 	{
 		if (CurPage < 0)
@@ -4470,6 +4542,10 @@ CDocumentContent.prototype.GetCurPosXY = function()
 };
 CDocumentContent.prototype.SetCurPosXY = function(X, Y)
 {
+	let point = this.TransformPoint(X, Y);
+	X = point.x;
+	Y = point.y;
+	
 	this.CurPos.RealX = X;
 	this.CurPos.RealY = Y;
 };
@@ -6237,6 +6313,10 @@ CDocumentContent.prototype.DrawSelectionOnPage = function(PageIndex, clipInfo)
     if (CurPage < 0 || CurPage >= this.Pages.length)
         return;
 	
+	let drawingDocument = Asc.editor.getDrawingDocument();
+	if (this.transform && drawingDocument)
+		drawingDocument.MultiplyTargetTransform(this.transform.CreateDublicate());
+	
 	let pageClip = this.ClipInfo[CurPage];
 	if (!clipInfo && pageClip)
 		clipInfo = pageClip.clone();
@@ -6304,6 +6384,10 @@ CDocumentContent.prototype.Selection_SetStart = function(X, Y, CurPage, MouseEve
 {
 	if (!this.IsRecalculated())
 		return;
+	
+	let point = this.TransformPoint(X, Y);
+	X = point.x;
+	Y = point.y;
 
 	if (CurPage < 0)
 	{
@@ -6464,7 +6548,11 @@ CDocumentContent.prototype.Selection_SetEnd = function(X, Y, CurPage, MouseEvent
 {
 	if (!this.IsRecalculated())
 		return;
-
+	
+	let point = this.TransformPoint(X, Y);
+	X = point.x;
+	Y = point.y;
+	
 	if (CurPage < 0)
 	{
 		CurPage = 0;
@@ -6686,6 +6774,10 @@ CDocumentContent.prototype.CheckPosInSelection = function(X, Y, CurPage, NearPos
 	}
 	else //if ( docpostype_Content === this.CurPos.Type )
 	{
+		let point = this.TransformPoint(X, Y);
+		X = point.x;
+		Y = point.y;
+		
 		if (true === this.Selection.Use || true === this.ApplyToAll)
 		{
 			switch (this.Selection.Flag)

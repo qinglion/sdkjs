@@ -657,7 +657,6 @@ $(function () {
 		ws = wb.getWorksheet(wb.getActive());
 		AscCommonExcel.getFormulasInfo();
 	}
-
 	wb.dependencyFormulas.lockRecal();
 
 	QUnit.module("Formula");
@@ -1802,6 +1801,49 @@ $(function () {
 		bCaFromSelectedCell = getCaFromSelectedCell("B1079");
 		assert.strictEqual(bCaFromSelectedCell, false, "Test: Chain with recursion. A1079 -> B1079 -> C1079. When B1079 has a ref to C1079. C1079 - simple formula. B1079 - flag ca: false");
 		bCaFromSelectedCell = null;
+		// - Case: Chain without recursion. A1081 -> B1080 -> A1082 -> B1081 -> A1083 using shared. With disabled recursion settings. Bug #73472
+		g_cCalcRecursion.setIsEnabledRecursion(false);
+		ws.getRange2("A1080").setValue("5.96");
+		ws.getRange2("B1080").setValue("=A1080+2.92-MONTH(TODAY())")
+		ws.getRange2("A1081").setValue("=IF(B1080 = \"\", \"\", B1080");
+		ws.getRange2("A1082").setValue("0");
+		ws.getRange2("A1083").setValue("0");
+		ws.getRange2("B1081").setValue("0");
+		ws.getRange2("B1082").setValue("0");
+		ws.getRange2("B1083").setValue("0");
+
+		// Create bbox and cellWithFormula.
+		let bbox = ws.getRange2("A1081:A1083").bbox;
+		let bbox1 = ws.getRange2("B1080:B1083").bbox;
+		let cellWithFormula = new window['AscCommonExcel'].CCellWithFormula(ws, bbox.r1, bbox.c1);
+		let cellWithFormula1 = new window['AscCommonExcel'].CCellWithFormula(ws, bbox1.r1, bbox1.c1);
+		let oParser = selectCell("A1081").getFormulaParsed().clone();
+		let sharedRef = bbox.clone();
+		oParser.setShared(sharedRef, cellWithFormula);
+		oParser.parse();
+		oParser.calculate();
+		oParser.ca = true;
+		ws.getRange2("A1081:A1083")._foreachNoEmpty(function(oCell) {
+			oCell.setFormulaParsed(oParser);
+			oCell._BuildDependencies(true, true);
+
+		});
+		oParser = selectCell("B1080").getFormulaParsed().clone();
+		sharedRef = bbox1.clone();
+		oParser.setShared(sharedRef, cellWithFormula1);
+		oParser.parse();
+		oParser.calculate();
+		oParser.ca = true;
+		ws.getRange2("B1080:B1083")._foreachNoEmpty(function(oCell) {
+			oCell.setFormulaParsed(oParser);
+			oCell._BuildDependencies(true, true);
+
+		});
+		oCell = selectCell("B1080");
+		bCellHasRecursion = !!getStartCellForIterCalc(oCell);
+		assert.strictEqual(bCellHasRecursion, false, "Test: Chain without recursion. A1081 -> B1080 -> A1082 -> B1081 -> A1083 using shared. With disabled recursion settings. Case from bug-73472. B1080 - false");
+		bCellHasRecursion = null;
+		g_cCalcRecursion.setStartCellIndex(null);
 		// -- Test changeLinkedCell method.
 		oCell = selectCell("A1000");
 		let oCellNeedEnableRecalc = selectCell("B1000");
@@ -17994,6 +18036,18 @@ $(function () {
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), 1);
 		oParser = new parserFormula("COUNT(S6:S9)", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 1);
+
+		oParser = new parserFormula("COUNT({\"7\",true,false,4,5})", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 2);
+
+		oParser = new parserFormula("COUNT({\"7\", true, false, false})", "A1", ws);
+		assert.ok(oParser.parse());
+		assert.strictEqual(oParser.calculate().getValue(), 0);
+
+		oParser = new parserFormula("COUNT({\"7\", true, false, false; \"7\", true, false, 2})", "A1", ws);
 		assert.ok(oParser.parse());
 		assert.strictEqual(oParser.calculate().getValue(), 1);
 

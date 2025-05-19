@@ -1605,6 +1605,15 @@ function CDrawingDocument()
 			this.m_oWordControl.OnScroll();
 			this.m_oWordControl.Thumbnails.LockMainObjType = false;
 		}
+
+		if(Asc.editor.isSlideShow())
+		{
+			let oDemonstration = Asc.editor.getDemoManager();
+			if(oDemonstration && oDemonstration.SlideNum === index)
+			{
+				oDemonstration.Redraw();
+			}
+		}
 	};
 
 	this.OnEndRecalculate = function()
@@ -3353,11 +3362,18 @@ function CDrawingDocument()
 	this.CheckRasterImageOnScreen = function (src)
 	{
 		const oPresentation = oThis.m_oWordControl.m_oLogicDocument;
+		const oDemonstrationManager = oThis.m_oWordControl.DemonstrationManager;
+		let sCheckImage = AscCommon.getFullImageSrc2(src);
+		if (oDemonstrationManager && oDemonstrationManager.Mode) {
+			const oSlide = oDemonstrationManager.GetCurrentSlide();
+			if (oSlide && oSlide.checkImageDraw(sCheckImage)) {
+				oDemonstrationManager.Resize(true);
+			}
+		}
 		let oCurSlide = oPresentation.GetCurrentSlide();
 		if(!oCurSlide)
 			return;
 		let bRedraw = false;
-		let sCheckImage = AscCommon.getFullImageSrc2(src);
 		let nCurIdx = oPresentation.GetSlideIndex(oCurSlide);
 		if(oCurSlide.checkImageDraw(sCheckImage))
 		{

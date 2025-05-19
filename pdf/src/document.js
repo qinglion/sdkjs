@@ -2610,7 +2610,7 @@ var CPresentation = CPresentation || function(){};
         let oController = this.GetController();
         
         if (oFile.pages.length == 1)
-            return false;
+            return null;
         if (!AscCommon.isNumber(nPos) || nPos < 0)
             nPos = 0;
 
@@ -2670,30 +2670,6 @@ var CPresentation = CPresentation || function(){};
             this.RemovePage(aIndexes[i] - i);
         }
     };
-    CPDFDoc.prototype.MovePage = function(nPage, nNewPos) {
-        let oPageInfo = this.GetPageInfo(nPage);
-        if (!oPageInfo) {
-            return false;
-        }
-
-        if (false == oPageInfo.SetPosition(nNewPos)) {
-            return false;
-        }
-
-        let aPagesRange = [];
-        let nStart = Math.min(nPage, nNewPos);
-        let nEnd = Math.max(nPage, nNewPos);
-        for (let i = nStart; i <= nEnd; i++) {
-            aPagesRange.push(i);
-        }
-
-        this.Viewer.resize(true);
-        this.Viewer.onUpdatePages(aPagesRange);
-        this.Viewer.onRepaintForms(aPagesRange);
-        this.Viewer.onRepaintAnnots(aPagesRange);
-
-        return true;
-    };
     CPDFDoc.prototype.MovePages = function(aIndexes, nNewPos) {
         if (!Array.isArray(aIndexes) || aIndexes.length === 0) return;
 
@@ -2743,7 +2719,8 @@ var CPresentation = CPresentation || function(){};
             let nOffset = aLowerIndexes.length > 0 ? 1 : 0;
             
             aHigherIndexes.forEach(function(oldIndex, i) {
-                _t.MovePage(oldIndex, nNewPos + nOffset + i);
+                let oPage = _t.RemovePage(oldIndex);
+                _t.AddPage(nNewPos + nOffset + i, oPage);
             });
         }
     };
@@ -3473,7 +3450,9 @@ var CPresentation = CPresentation || function(){};
                 if (object.IsDrawing() && !Asc.editor.isRestrictionView()) {
                     if (object.IsShape() && object.GetEditField()) {
                         let field = object.GetEditField();
-                        oThis.RemoveField(field.GetId());
+                        if (false == field.IsLocked()) {
+                            oThis.RemoveField(field.GetId());
+                        }
                     }
                     else {
                         oThis.RemoveDrawing(object.GetId());
@@ -6224,6 +6203,7 @@ var CPresentation = CPresentation || function(){};
         let oFile = this.Viewer.file;
         let sMergeName = "Merged_" + this.mergedPagesData.length;
 
+        this.UpdateMaxApIdx(oFile.nativeFile["getStartID"]());
         this.SetMergedBinaryData(aUint8Array, AscCommon.g_oIdCounter.m_nIdCounterEdit, sMergeName);
 
         let res = oFile.nativeFile["MergePages"](aUint8Array, AscCommon.g_oIdCounter.m_nIdCounterEdit, sMergeName);
@@ -6776,6 +6756,22 @@ var CPresentation = CPresentation || function(){};
             }
             case AscDFH.historydescription_Pdf_RemovePage: {
                 let aSelectedPagesIdx = AdditionalData;
+                
+                // forbid delete if there are last pages without delete lock
+                let nPagesCount = this.GetPagesCount();
+                let canDelete = false;
+                for (let i = 0; i < nPagesCount; i++) {
+                    let oPageInfo = this.GetPageInfo(i);
+                    if (!aSelectedPagesIdx.includes(oPageInfo.GetIndex()) && !oPageInfo.IsDeleteLock()) {
+                        canDelete = true;
+                        break;
+                    }
+                }
+
+                if (!canDelete) {
+                    return true;
+                }
+
                 CheckPages(function(page) { return page.deleteLock }, aSelectedPagesIdx);
                 break;
             }
@@ -7601,6 +7597,8 @@ var CPresentation = CPresentation || function(){};
         oCommonProps.asc_putReadOnly(field.IsReadOnly());
         // oCommonProps.asc_putRot(field.GetRot());
         oCommonProps.asc_putDisplay(field.GetDisplay());
+        oCommonProps.asc_putPropLocked(field.IsLocked());
+        oCommonProps.put_Locked(field.IsCoEditLocked());
 
         // bg
         let aFillColor  = field.GetBackgroundColor();

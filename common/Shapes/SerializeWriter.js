@@ -1863,6 +1863,7 @@ function CBinaryFileWriter()
         }
 
         oThis._WriteInt2(7, tPr.lvl);
+        oThis._WriteBool2(10, pPr.Bidi);
 
         oThis.WriteUChar(g_nodeAttributeEnd);
 

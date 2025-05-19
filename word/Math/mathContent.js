@@ -6374,9 +6374,17 @@ CMathContent.prototype.fromMathML = function(reader)
 		let elements = AscWord.ParaMath.readMathMLNode(reader);
 		for (let i = 0; i < elements.length; ++i)
 		{
-			this.addElementToContent(elements[i]);
+			let current = elements[i];
+			this.addElementToContent(current);
+
+			let breakPos = AscWord.ParaMath.checkLinebreak(current)
+			if (breakPos !== null)
+			{
+				current.Set_MathForcedBreak(true, undefined);
+			}
 		}
 	}
+	AscWord.ParaMath.checkAfterAddContent();
 };
 
 var g_DefaultAutoCorrectMathFuncs =

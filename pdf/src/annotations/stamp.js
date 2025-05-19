@@ -134,18 +134,11 @@
         oStructure.draw(oGraphicsWord, oTr);
     }
     CAnnotationStamp.prototype.SetRenderStructure = function(oStructure) {
+        AscCommon.History.Add(new AscDFH.CChangesDrawingsObjectNoId(this, AscDFH.historyitem_Pdf_Stamp_RenderStructure, this.renderStructure, oStructure));
         this.renderStructure = oStructure;
     };
     CAnnotationStamp.prototype.GetRenderStructure = function() {
-        if (this.renderStructure) {
-            return this.renderStructure;
-        }
-        else {
-            let oDoc = this.GetDocument();
-            let oTextDrawer = oDoc.CreateStampRender(this.GetIconType(), this.GetAuthor(), this.GetCreationDate());
-            this.SetRenderStructure(oTextDrawer && oTextDrawer.m_aStack[0]);
-            return this.renderStructure;
-        }
+        return this.renderStructure;
     };
     CAnnotationStamp.prototype.SetInRect = function(aInRect) {
         AscCommon.History.Add(new CChangesPDFAnnotStampInRect(this, this.inRect, aInRect));
@@ -317,6 +310,11 @@
         this.SetNeedRecalcSizes(!isOnRotate);
     };
     CAnnotationStamp.prototype.SetNeedRecalcSizes = function(bRecalc) {
+        let oDoc = Asc.editor.getPDFDoc();
+        if (oDoc.Viewer.IsOpenAnnotsInProgress) {
+            return;
+        }
+
         this._needRecalcSizes = bRecalc;
         this.recalcGeometry();
     };

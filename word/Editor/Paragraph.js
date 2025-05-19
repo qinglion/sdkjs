@@ -16462,7 +16462,7 @@ Paragraph.prototype.GetParagraphBidi = function()
 };
 Paragraph.prototype.SetParagraphAlign = function(align)
 {
-	if (this.isRtlDirection())
+	if (this.isRtlDirection() && this.bFromDocument)
 	{
 		if (AscCommon.align_Left === align)
 			align = AscCommon.align_Right;

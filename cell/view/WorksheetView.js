@@ -3637,10 +3637,30 @@
 		let curRow = -1;
 		let rowCache;
 
+		let checkRightSideCell = function (_ct, _col, _row) {
+			let rightSide = 0;
+			if (!_ct.flags.isMerged() && !_ct.flags.wrapText) {
+				rightSide = _ct.sideR;
+			}
+
+			maxCol = Math.max(maxCol, _col + rightSide);
+			maxRow = Math.max(maxRow, _row);
+		};
+
 		// Helper function to check if cell content requires printing
-		function checkCellForPrinting(cell) {
-			let col = cell.nCol;
-			let row = cell.nRow;
+		let lastNoEmptyCell = null;
+		function checkCellForPrinting(c) {
+			let col = c.nCol;
+			let row = c.nRow;
+
+			if (lastNoEmptyCell && lastNoEmptyCell.row !== row) {
+				//we must check last cell(string type) in row. inside string can be more then column width. expand if text do not fits in cell
+				if (lastNoEmptyCell) {
+					let ct = self._addCellTextToCache(lastNoEmptyCell.col, lastNoEmptyCell.row, true);
+					checkRightSideCell(ct, lastNoEmptyCell.col, lastNoEmptyCell.row);
+					lastNoEmptyCell = null;
+				}
+			}
 
 			// Skip hidden rows and columns
 			let hiddenRow = false;
@@ -3652,44 +3672,45 @@
 			if (hiddenRow || 0 === self._getColumnWidth(col)) {
 				return;
 			}
+			
+			if (!c.isEmptyTextString()) {
+				maxCol = Math.max(maxCol, col);
+				maxRow = Math.max(maxRow, row);
+
+				let ct = self._getCellTextCache(col, row);
+				if (ct !== undefined) {
+					checkRightSideCell(ct, col, row);
+					lastNoEmptyCell = null;
+				} else {
+					let align = c.getAlign();
+					let angle = align.getAngle();
+					let cellType = c.getType();
+					let isNumberFormat = (null === cellType || CellValueType.String !== cellType);
+					let verticalText = angle === AscCommonExcel.g_nVerticalTextAngle;
+					let isWrapped = align.getWrap() || align.hor === AscCommon.align_Distributed;
+
+					if (isNumberFormat || verticalText || isWrapped) {
+						lastNoEmptyCell = null;
+					} else {
+						if (!lastNoEmptyCell) {
+							lastNoEmptyCell = {};
+						}
+						lastNoEmptyCell.col = col;
+						lastNoEmptyCell.row = row;
+					}
+				}
+				return;
+			}
 
 			// Check cell style (fills and borders)
-			let style = cell.getStyle();
+			let style = c.getStyle();
 			if (style && ((style.fill && style.fill.notEmpty()) || (style.border && style.border.notEmpty()))) {
 				maxCol = Math.max(maxCol, col);
 				maxRow = Math.max(maxRow, row);
 			}
 
-			// Skip empty cells
-			if (cell.isEmptyTextString()) {
-				return;
-			}
-
-			// Get cell properties
-			let align = cell.getAlign();
-			let angle = align.getAngle();
-			let cellType = cell.getType();
-			let verticalText = angle === AscCommonExcel.g_nVerticalTextAngle;
-			let isNumberFormat = (null === cellType || CellValueType.String !== cellType);
-
-			// Check text wrapping and distribution
-			let isWrapped = align.getWrap() || align.hor === AscCommon.align_Distributed;
-
-			// Check indent
-			let indent = align.getIndent();
-			if (indent && indent > 0) {
-				maxCol = Math.max(maxCol, col);
-				maxRow = Math.max(maxRow, row);
-			}
-
-			// Always include cells with special formatting
-			if (angle || verticalText || isNumberFormat || isWrapped) {
-				maxCol = Math.max(maxCol, col);
-				maxRow = Math.max(maxRow, row);
-			}
-
 			// Check formulas
-			if (cell.isFormula()) {
+			if (c.isFormula()) {
 				maxCol = Math.max(maxCol, col);
 				maxRow = Math.max(maxRow, row);
 			}
@@ -9299,7 +9320,7 @@
         }
     };
 
-    WorksheetView.prototype._addCellTextToCache = function (col, row) {
+    WorksheetView.prototype._addCellTextToCache = function (col, row, opt_GenerateCacheObj) {
         let self = this;
 
         function makeFnIsGoodNumFormat(flags, width, isWidth) {
@@ -9588,7 +9609,7 @@
             textBound.dy -= 1.5;
         }
 
-        let cache = this._fetchCellCache(col, row);
+        let cache = opt_GenerateCacheObj ? new CacheElementText() : this._fetchCellCache(col, row);
 		cache.state = this.stringRender.getInternalState();
 		cache.flags = fl;
 		cache.metrics = tm;
@@ -9602,6 +9623,10 @@
 		cache.angle = angle;
 		cache.textBound = textBound;
 		cache.indent = indent;
+
+		if (opt_GenerateCacheObj) {
+			return cache;
+		}
 
         this._fetchCellCacheText(col, row);
         //this._checkCacheInitSector(row);
@@ -18813,13 +18838,6 @@
 				return false;
 			}
 
-			// todo Add to history UndoRedo DynamicArray and add to AscCH historyitem_DynamicArrayFormula_AddFormula 
-			//***array-formula***
-			if(applyByArray) {
-				History.Add(AscCommonExcel.g_oUndoRedoArrayFormula, AscCH.historyitem_ArrayFromula_AddFormula, this.model.getId(),
-					new Asc.Range(c.bbox.c1, c.bbox.r1, c.bbox.c2, c.bbox.r2), new AscCommonExcel.UndoRedoData_ArrayFormula(c.bbox, "=" + c.getFormula()));
-			}
-
 			isFormula = c.isFormula();
 			this.model.checkChangeTablesContent(bbox);
 		} else {
@@ -23339,7 +23357,8 @@
 
 
 			//фон для группировки
-			ctx.setFillStyle(this.settings.header.style[kHeaderDefault].background).fillRect(x1, y1, x2 - x1, y2 - y1);
+			ctx.setFillStyle(this.settings.header.style[kHeaderDefault].background);
+			this._fillRect(ctx, x1 + (this.getRightToLeft() ? 1 : 0), y1, x2 - x1 + (this.getRightToLeft() ? 1 : 0), y2 - y1);
 			ctx.setStrokeStyle(this.settings.header.editorBorder).setLineWidth(1).beginPath();
 			this._lineHorPrevPx(ctx, x1, y2, x2);
 			ctx.stroke();
@@ -23495,9 +23514,10 @@
 			x2 = this.groupWidth;
 			y2 = this._getRowTop(range.r2 + 1) - offsetY;
 
-			ctx.setFillStyle(this.settings.header.style[kHeaderDefault].background).fillRect(x1, y1, x2 - x1, y2 - y1);
+			ctx.setFillStyle(this.settings.header.style[kHeaderDefault].background);
+			t._fillRect(ctx, x1, y1, x2 - x1, y2 - y1);
 			ctx.setStrokeStyle(this.settings.header.editorBorder).setLineWidth(1).beginPath();
-			t._lineVerPrevPx(ctx, x2, y1, y2);
+			t._lineVerPrevPx(ctx, x2 - (this.getRightToLeft() ? 1 : 0), y1, y2);
 			ctx.stroke();
 
 			groupData = this.arrRowGroups ? this.arrRowGroups : this.getGroupDataArray(null, range.r1, range.r2);
@@ -23757,7 +23777,7 @@
 			x = x - offsetX;
 			y = y - offsetY;
 
-			ctx.AddClipRect(bCol ? pos.pos - offsetX : x, bCol ? y : pos.pos - offsetY, bCol ? pos.size : w, bCol ? h : pos.size);
+			this._AddClipRect(ctx, bCol ? pos.pos - offsetX : x, bCol ? y : pos.pos - offsetY, bCol ? pos.size : w, bCol ? h : pos.size);
 			ctx.beginPath();
 
 			var paddingLine = Math.floor((w - sizeLine - borderSize) / 2);
@@ -23868,9 +23888,11 @@
 			y2 = this.headersTop + this.headersHeight;
 		}
 
-		ctx.setFillStyle(st.background).fillRect(x1, y1, x2 - x1, y2 - y1);
+		ctx.setFillStyle(st.background);
+		this._fillRect(ctx, x1, y1, x2 - x1, y2 - y1);
 		//угол до кнопок
-		ctx.setFillStyle(st.background).fillRect(0, 0, this.headersLeft, this.headersTop);
+		ctx.setFillStyle(st.background);
+		this._fillRect(ctx, 0, 0, this.headersLeft, this.headersTop);
 
 		ctx.setStrokeStyle(this.settings.header.editorBorder).setLineWidth(1).beginPath();
 		this._lineHorPrevPx(ctx, x1, y2, x2);

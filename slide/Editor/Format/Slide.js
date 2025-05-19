@@ -1103,6 +1103,20 @@ AscFormat.InitClass(Slide, AscFormat.CBaseFormatObject, AscDFH.historyitem_type_
 		});
     };
 
+	Slide.prototype.getAllRasterImagesOnSlide = function (aImages) {
+		aImages = aImages || [];
+		this.getAllRasterImages(aImages);
+		const oLayout = this.Layout;
+		if (oLayout) {
+			oLayout.getAllRasterImages(aImages);
+			const oMaster = oLayout.Master;
+			if (oMaster) {
+				oMaster.getAllRasterImages(aImages);
+			}
+		}
+		return aImages;
+	};
+
 
     Slide.prototype.getAllRasterImagesForDraw = function(images) {
         let aImages = images;

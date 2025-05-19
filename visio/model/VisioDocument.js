@@ -899,7 +899,7 @@ AscDFH.historyitem_type_VisioWindow = 328;
 	CVisioDocument.prototype.getCurrentPage = function() {
 		return this.pageIndex;
 	}
-	CVisioDocument.prototype.setCurrentPage = function(pageIndex) {
+	CVisioDocument.prototype.Set_CurPage = CVisioDocument.prototype.setCurrentPage = function(pageIndex) {
 		return this.pageIndex = pageIndex;
 	}
 	CVisioDocument.prototype.getFirstSlideNumber = function() {
@@ -1091,6 +1091,8 @@ AscDFH.historyitem_type_VisioWindow = 328;
 
 		this.api.sendEvent("asc_onKeyDown", e);
 		return bRetValue;
+	};
+	CVisioDocument.prototype.Viewer_OnChangePosition = function () {
 	};
 	// CVisioDocument.prototype.getMasterByID = function(ID) {
 	// 	// join Master_Type and MasterContents_Type

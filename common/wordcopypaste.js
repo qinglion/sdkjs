@@ -2745,6 +2745,7 @@ function PasteProcessor(api, bUploadImage, bUploadFonts, bNested, pasteInExcel, 
         "mso-border-left-alt": 1, "mso-border-top-alt": 1, "mso-border-right-alt": 1, "mso-border-bottom-alt": 1, "mso-border-between": 1, "mso-list": 1,
 		"mso-comment-reference": 1, "mso-comment-date": 1, "mso-comment-continuation": 1, "mso-data-placement": 1, "mso-table-layout-alt": 1, "mso-table-left": 1,
 		"mso-table-top": 1, "mso-ignore": 1};
+	this.OnlyOfficeStyles = {"oo-latex": 1}
     this.oBorderCache = {};
 
 	this.msoListMap = [];
@@ -8172,7 +8173,9 @@ PasteProcessor.prototype =
 
 			//принудительно добавляю для математики шрифт Cambria Math
 			if ((child && (child.nodeName.toLowerCase() === "#comment" && this.isSupportPasteMathContent(child.nodeValue, true)
-				&& this.apiEditor["asc_isSupportFeature"]("ooxml")) || child.nodeName.toLowerCase() === "math") && !this.pasteInExcel) {
+				&& this.apiEditor["asc_isSupportFeature"]("ooxml")) || child.nodeName.toLowerCase() === "math" ||
+				(child.className && child.className.indexOf && -1 !== child.className.indexOf("oo-latex")) ||
+				(style && -1 !== style.indexOf("oo-latex"))) && !this.pasteInExcel) {
 				//TODO пока только в документы разрешаю вставку математики математику
 				var mathFont = "Cambria Math";
 				this.oFonts[mathFont] = {
@@ -9321,8 +9324,11 @@ PasteProcessor.prototype =
 				if (aPair && aPair.length > 1) {
 					var prop_name = trimString(aPair[0]);
 					var prop_value = trimString(aPair[1]);
-					if (null != this.MsoStyles[prop_name])
+					if (null != this.MsoStyles[prop_name]) {
 						pPr[prop_name] = prop_value;
+					} else if (null != this.OnlyOfficeStyles[prop_name]) {
+						pPr[prop_name] = prop_value;
+					}
 				}
 			}
 		}
@@ -11905,6 +11911,30 @@ PasteProcessor.prototype =
 					let oAddedParaMath = paraMath;
 					oAddedParaMath.SetParagraph && oAddedParaMath.SetParagraph(oThis.oCurPar);
 					oThis._CommitElemToParagraph(oAddedParaMath);
+					let clonePr = oThis.oCurRun.Pr.Copy();
+					oThis.oCurRun = new ParaRun(oThis.oCurPar);
+					oThis.oCurRun.Set_Pr(clonePr);
+					return;
+				}
+
+				var latexFromStyle = pPr["oo-latex"];
+				let isLatex = (latexFromStyle && latexFromStyle === "display") || (child.className && child.className.indexOf && -1 !== child.className.indexOf("oo-latex"));
+				let isLatexInline =  (latexFromStyle && latexFromStyle === "inline") || (child.className && child.className.indexOf && -1 !== child.className.indexOf("oo-latex-inline"));
+				if (isLatex|| isLatexInline) {
+					let paraMath = AscWord.ParaMath.fromLatex(latexFromStyle ? child.nodeValue : child.innerHTML);
+					bAddParagraph = oThis._Decide_AddParagraph(child, pPr, bAddParagraph);
+					let oAddedParaMath = paraMath;
+					oAddedParaMath.SetParagraph && oAddedParaMath.SetParagraph(oThis.oCurPar);
+					oThis._CommitElemToParagraph(oAddedParaMath);
+
+					if (isLatexInline) {
+						paraMath.ConvertToInlineMode();
+					}
+
+					let clonePr = oThis.oCurRun.Pr.Copy();
+					oThis.oCurRun = new ParaRun(oThis.oCurPar);
+					oThis.oCurRun.Set_Pr(clonePr);
+
 					return;
 				}
 

@@ -120,12 +120,13 @@
         this._print         = true;        // This property has been superseded by the display property and its use is discouraged.
         this._readOnly      = false;
         this._required      = false;       // for all except button
-        
+        this._locked        = false;
+
         this._delay         = false;
         this._noExport      = false;
         this._defaultValue  = undefined;
         this._parent        = null;
-        this._rotation      = 0;
+        this._rotate        = 0;
         this._submitName    = "";
         this._userName      = "";   // It is intended to be used as tooltip text whenever the cursor enters a field. 
         //It can also be used as a user-friendly name, instead of the field name, when generating error messages.
@@ -162,6 +163,7 @@
         this.SetRect(aRect);
 
         this.kidsContentChanges = new AscCommon.CContentChanges();
+        this.textMatrix = new AscCommon.CMatrix();
     }
 
     CBaseField.prototype.constructor = CBaseField;
@@ -859,7 +861,7 @@
         return false;
     };
     CBaseField.prototype.DrawHighlight = function(oCtx) {
-        if (this.IsHidden() == true)
+        if (this.IsHidden() && !this.IsEditMode())
             return;
 
         let oViewer     = Asc.editor.getDocumentRenderer();
@@ -1691,6 +1693,25 @@
 
         return this._required;
     };
+    CBaseField.prototype.SetLocked = function(bLocked) {
+        if (this._locked === bLocked) {
+            return true;
+        }
+
+        AscCommon.History.Add(new CChangesPDFFormLocked(this, this._locked, bLocked));
+
+        this._locked = bLocked;
+        this.SetWasChanged(true);
+
+        return true;
+    };
+    CBaseField.prototype.IsLocked = function() {
+        return this._locked;
+    };
+    CBaseField.prototype.IsCoEditLocked = function() {
+        return false == [AscCommon.c_oAscLockTypes.kLockTypeNone, AscCommon.c_oAscLockTypes.kLockTypeMine].includes(this.Lock.Get_Type())
+    };
+    
     CBaseField.prototype.SetBorderColor = function(aColor) {
         if (aColor && aColor.length == 0) {
             return false;
@@ -2170,7 +2191,7 @@
     };
 	
 	CBaseField.prototype.DrawOnPage = function(pdfGraphics, textBoxGraphics, pageIndex) {
-		if (this.IsHidden())
+		if (this.IsHidden() && !this.IsEditMode())
 			return;
 		
         if (pdfGraphics.isThumbnails) {
@@ -2632,6 +2653,45 @@
     CBaseField.prototype.GetEditShape = function() {
         return this.editShape;
     };
+    CBaseField.prototype.SetRotate = function(nAngle) {
+        if (this._rotate === nAngle) {
+            return;
+        }
+        
+        AscCommon.History.Add(new CChangesPDFFormRotate(this, this._rotate, nAngle));
+
+        this._rotate = nAngle;
+        this.RecalcTextTransform();
+    };
+    CBaseField.prototype.GetRotate = function() {
+        return this._rotate;
+    };
+    CBaseField.prototype.RecalculateTextTransform = function() {
+		
+		if (!this._needRecalcTxTransform)
+			return
+		
+		let clipRect = this.CalculateContentClipRect();
+		if (!clipRect)
+			return;
+		
+		if (this.content)
+			this.content.SetFieldRotate(this._rotate, clipRect);
+		
+		if (this.contentFormat)
+			this.contentFormat.SetFieldRotate(this._rotate, clipRect);
+		
+		this._needRecalcTxTransform = false;
+    };
+    CBaseField.prototype.RecalcTextTransform = function () {
+        this._needRecalcTxTransform = true;
+    };
+    CBaseField.prototype.IsNeedRecalcTextTransform = function() {
+        return this._needRecalcTxTransform;
+    };
+    CBaseField.prototype.GetTextTransform = function() {
+        return this.textMatrix;
+    };
     CBaseField.prototype.WriteToBinaryBase2 = function(memory) {
         // font name
         let sFontName = this.GetTextFont() || "";
@@ -2692,19 +2752,18 @@
         let nFieldType = this.GetType();
         let bWriteType = !oParent || !oParent.IsAllKidsWidgets();
 
-        let nWidgetFlags = 0;
         if (bWriteType) {
             switch (nFieldType) {
                 case AscPDF.FIELD_TYPES.radiobutton: {
-                    nWidgetFlags |= (1 << 15);
+                    memory.widgetFlags |= (1 << 15);
                     break;
                 }
                 case AscPDF.FIELD_TYPES.button: {
-                    nWidgetFlags |= (1 << 16);
+                    memory.widgetFlags |= (1 << 16);
                     break;
                 }
                 case AscPDF.FIELD_TYPES.combobox: {
-                    nWidgetFlags |= (1 << 17);
+                    memory.widgetFlags |= (1 << 17);
                     break;
                 }
             }    
