@@ -5750,23 +5750,17 @@
 	};
 
 	/**
-	 * Returns the currently selected content control, or, if an ID is provided, returns the content control with the specified ID.
-	 * @memberof ApiDocument
+	 * Returns the currently selected content control.
+	 * @memberof ApiDocumentContent
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @param {string?} Id - The identifier of the content control to retrieve. If not provided, the currently selected content control is returned.
-	 * @returns {ApiBlockLvlSdt|ApiInlineLvlSdt|null}
-	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/GetContentControl.js
+	 * @returns {ApiBlockLvlSdt | ApiInlineLvlSdt | null}
+	 * @see office-js-api/Examples/{Editor}/ApiDocumentContent/Methods/GetCurrentContentControl.js
 	 */
-	ApiDocument.prototype.GetContentControl = function(Id)
+	ApiDocumentContent.prototype.GetCurrentContentControl = function()
 	{
-		var oContentControl = this.Document.GetContentControl(Id);
-		if (oContentControl)
-		{
-			var oApiContentControl = ToApiContentControl(oContentControl);
-			return oApiContentControl;
-		}
-		return null;
+		let contentControl = this.Document.GetCurrentContentControl();
+		return contentControl ? ToApiContentControl(contentControl) : null;
 	};
 
 	/**
@@ -24205,27 +24199,28 @@
 	Api.prototype["Mm2Px"]                           = Mm2Px;
 
 	ApiUnsupported.prototype["GetClassType"]         = ApiUnsupported.prototype.GetClassType;
-
-	ApiDocumentContent.prototype["GetClassType"]         = ApiDocumentContent.prototype.GetClassType;
-	ApiDocumentContent.prototype["GetElementsCount"]     = ApiDocumentContent.prototype.GetElementsCount;
-	ApiDocumentContent.prototype["GetElement"]           = ApiDocumentContent.prototype.GetElement;
-	ApiDocumentContent.prototype["AddElement"]           = ApiDocumentContent.prototype.AddElement;
-	ApiDocumentContent.prototype["Push"]                 = ApiDocumentContent.prototype.Push;
-	ApiDocumentContent.prototype["RemoveAllElements"]    = ApiDocumentContent.prototype.RemoveAllElements;
-	ApiDocumentContent.prototype["RemoveElement"]        = ApiDocumentContent.prototype.RemoveElement;
-	ApiDocumentContent.prototype["GetRange"]             = ApiDocumentContent.prototype.GetRange;
-	ApiDocumentContent.prototype["ToJSON"]               = ApiDocumentContent.prototype.ToJSON;
-	ApiDocumentContent.prototype["GetContent"]           = ApiDocumentContent.prototype.GetContent;
-	ApiDocumentContent.prototype["GetAllDrawingObjects"] = ApiDocumentContent.prototype.GetAllDrawingObjects;
-	ApiDocumentContent.prototype["GetAllShapes"]         = ApiDocumentContent.prototype.GetAllShapes;
-	ApiDocumentContent.prototype["GetAllImages"]         = ApiDocumentContent.prototype.GetAllImages;
-	ApiDocumentContent.prototype["GetAllCharts"]         = ApiDocumentContent.prototype.GetAllCharts;
-	ApiDocumentContent.prototype["GetAllOleObjects"]     = ApiDocumentContent.prototype.GetAllOleObjects;
-	ApiDocumentContent.prototype["GetAllParagraphs"]     = ApiDocumentContent.prototype.GetAllParagraphs;
-	ApiDocumentContent.prototype["GetAllTables"]         = ApiDocumentContent.prototype.GetAllTables;
-	ApiDocumentContent.prototype["GetText"]         	 = ApiDocumentContent.prototype.GetText;
-	ApiDocumentContent.prototype["GetCurrentParagraph"]  = ApiDocumentContent.prototype.GetCurrentParagraph;
-	ApiDocumentContent.prototype["GetCurrentRun"]  		 = ApiDocumentContent.prototype.GetCurrentRun;
+	
+	ApiDocumentContent.prototype["GetClassType"]             = ApiDocumentContent.prototype.GetClassType;
+	ApiDocumentContent.prototype["GetElementsCount"]         = ApiDocumentContent.prototype.GetElementsCount;
+	ApiDocumentContent.prototype["GetElement"]               = ApiDocumentContent.prototype.GetElement;
+	ApiDocumentContent.prototype["AddElement"]               = ApiDocumentContent.prototype.AddElement;
+	ApiDocumentContent.prototype["Push"]                     = ApiDocumentContent.prototype.Push;
+	ApiDocumentContent.prototype["RemoveAllElements"]        = ApiDocumentContent.prototype.RemoveAllElements;
+	ApiDocumentContent.prototype["RemoveElement"]            = ApiDocumentContent.prototype.RemoveElement;
+	ApiDocumentContent.prototype["GetRange"]                 = ApiDocumentContent.prototype.GetRange;
+	ApiDocumentContent.prototype["ToJSON"]                   = ApiDocumentContent.prototype.ToJSON;
+	ApiDocumentContent.prototype["GetContent"]               = ApiDocumentContent.prototype.GetContent;
+	ApiDocumentContent.prototype["GetAllDrawingObjects"]     = ApiDocumentContent.prototype.GetAllDrawingObjects;
+	ApiDocumentContent.prototype["GetAllShapes"]             = ApiDocumentContent.prototype.GetAllShapes;
+	ApiDocumentContent.prototype["GetAllImages"]             = ApiDocumentContent.prototype.GetAllImages;
+	ApiDocumentContent.prototype["GetAllCharts"]             = ApiDocumentContent.prototype.GetAllCharts;
+	ApiDocumentContent.prototype["GetAllOleObjects"]         = ApiDocumentContent.prototype.GetAllOleObjects;
+	ApiDocumentContent.prototype["GetAllParagraphs"]         = ApiDocumentContent.prototype.GetAllParagraphs;
+	ApiDocumentContent.prototype["GetAllTables"]             = ApiDocumentContent.prototype.GetAllTables;
+	ApiDocumentContent.prototype["GetText"]                  = ApiDocumentContent.prototype.GetText;
+	ApiDocumentContent.prototype["GetCurrentParagraph"]      = ApiDocumentContent.prototype.GetCurrentParagraph;
+	ApiDocumentContent.prototype["GetCurrentRun"]            = ApiDocumentContent.prototype.GetCurrentRun;
+	ApiDocumentContent.prototype["GetCurrentContentControl"] = ApiDocumentContent.prototype.GetCurrentContentControl;
 
 	ApiRange.prototype["GetClassType"]               = ApiRange.prototype.GetClassType;
 	ApiRange.prototype["GetParagraph"]               = ApiRange.prototype.GetParagraph;
@@ -24355,7 +24350,6 @@
 	ApiDocument.prototype["AddDatePickerContentControl"] = ApiDocument.prototype.AddDatePickerContentControl;
 	ApiDocument.prototype["AddDropDownListContentControl"] = ApiDocument.prototype.AddDropDownListContentControl;
 	ApiDocument.prototype["AddPictureContentControl"]    = ApiDocument.prototype.AddPictureContentControl;
-	ApiDocument.prototype["GetContentControl"]           = ApiDocument.prototype.GetContentControl;
 	ApiDocument.prototype["GetCustomXmlParts"]           = ApiDocument.prototype.GetCustomXmlParts;
 
 	ApiParagraph.prototype["GetClassType"]           = ApiParagraph.prototype.GetClassType;
