@@ -3692,6 +3692,15 @@
 					return false;
 				}
 			}
+			if (fill.Effects.length !== this.Effects.length) {
+				return false;
+			}
+			for (let i = 0; i < fill.Effects.length; i += 1) {
+				if (!fill.Effects[i].IsIdentical(this.Effects[i])) {
+					return false;
+				}
+			}
+
 			/*
          if(fill.rotWithShape !=  this.rotWithShape)
          {
@@ -4028,6 +4037,16 @@
 			oCopy.tresh = this.tresh;
 			return oCopy;
 		};
+		CAlphaBiLevel.prototype.IsIdentical = function (oEffect) {
+			if (this.Type !== oEffect.Type) {
+				return false;
+			}
+			if (this.tresh !== oEffect.tresh) {
+				return false;
+			}
+
+			return true;
+		};
 
 		function CAlphaCeiling() {
 			CBaseNoIdObject.call(this);
@@ -4044,7 +4063,12 @@
 			var oCopy = new CAlphaCeiling();
 			return oCopy;
 		};
-
+		CAlphaCeiling.prototype.IsIdentical = function (oEffect) {
+			if (this.Type !== oEffect.Type) {
+				return false;
+			}
+			return true;
+		};
 		function CAlphaFloor() {
 			CBaseNoIdObject.call(this);
 		}
@@ -4060,7 +4084,12 @@
 			var oCopy = new CAlphaFloor();
 			return oCopy;
 		};
-
+		CAlphaFloor.prototype.IsIdentical = function (oEffect) {
+			if (this.Type !== oEffect.Type) {
+				return false;
+			}
+			return true;
+		};
 		function CAlphaInv() {
 			CBaseNoIdObject.call(this);
 			this.unicolor = null;
@@ -4089,6 +4118,15 @@
 				oCopy.unicolor = this.unicolor.createDuplicate();
 			}
 			return oCopy;
+		};
+		CAlphaInv.prototype.IsIdentical = function (oEffect) {
+			if (this.Type !== oEffect.Type) {
+				return false;
+			}
+			if (!(this.unicolor && oEffect.unicolor && this.unicolor.IsIdentical(oEffect.unicolor) || !this.unicolor && !oEffect.unicolor)) {
+				return false;
+			}
+			return true;
 		};
 		var effectcontainertypeSib = 0;
 		var effectcontainertypeTree = 1;
@@ -4133,6 +4171,27 @@
 			}
 			return oCopy;
 		};
+		CEffectContainer.prototype.IsIdentical = function (oEffect) {
+			if (this.Type !== oEffect.Type) {
+				return false;
+			}
+			if (this.type !== oEffect.type) {
+				return false;
+			}
+			if (this.effectList.length !== oEffect.effectList.length) {
+				return false;
+			}
+			for (let i = 0; i < this.effectList.length; i += 1) {
+				if (!this.effectList[i].IsIdentical(oEffect.effectList[i])) {
+					return false;
+				}
+			}
+			// todo ?
+			/*if (this.name !== oEffect.name) {
+				return false;
+			}*/
+			return true;
+		};
 
 		function CAlphaMod() {
 			CBaseNoIdObject.call(this);
@@ -4152,6 +4211,15 @@
 			var oCopy = new CAlphaMod();
 			oCopy.cont = this.cont.createDuplicate();
 			return oCopy;
+		};
+		CAlphaMod.prototype.IsIdentical = function (oEffect) {
+			if (this.Type !== oEffect.Type) {
+				return false;
+			}
+			if (!(this.cont && oEffect.cont && this.cont.IsIdentical(oEffect.cont) || !this.cont && !oEffect.cont)) {
+				return false;
+			}
+			return true;
 		};
 
 		function CAlphaModFix() {
@@ -4173,6 +4241,15 @@
 			oCopy.amt = this.amt;
 			return oCopy;
 		};
+		CAlphaModFix.prototype.IsIdentical = function (oEffect) {
+			if (this.Type !== oEffect.Type) {
+				return false;
+			}
+			if (this.amt !== oEffect.amt) {
+				return false;
+			}
+			return true;
+		};
 
 		function CAlphaOutset() {
 			CBaseNoIdObject.call(this);
@@ -4192,6 +4269,16 @@
 			var oCopy = new CAlphaOutset();
 			oCopy.rad = this.rad;
 			return oCopy;
+		};
+		CAlphaOutset.prototype.IsIdentical = function (oEffect) {
+			if (this.Type !== oEffect.Type) {
+				return false;
+			}
+			if (this.rad !== oEffect.rad) {
+				return false;
+			}
+
+			return true;
 		};
 
 		function CAlphaRepl() {
@@ -4213,6 +4300,16 @@
 			oCopy.a = this.a;
 			return oCopy;
 		};
+		CAlphaRepl.prototype.IsIdentical = function (oEffect) {
+			if (this.Type !== oEffect.Type) {
+				return false;
+			}
+			if (this.a !== oEffect.a) {
+				return false;
+			}
+
+			return true;
+		};
 
 		function CBiLevel() {
 			CBaseNoIdObject.call(this);
@@ -4232,6 +4329,17 @@
 			var oCopy = new CBiLevel();
 			oCopy.thresh = this.thresh;
 			return oCopy;
+		};
+		CBiLevel.prototype.IsIdentical = function (oEffect) {
+			if (this.Type !== oEffect.Type) {
+				return false;
+			}
+
+			if (this.thresh !== oEffect.thresh) {
+				return false;
+			}
+
+			return true;
 		};
 
 		var blendmodeDarken = 0;
@@ -4263,6 +4371,18 @@
 			oCopy.cont = this.cont.createDuplicate();
 			return oCopy;
 		};
+		CBlend.prototype.IsIdentical = function (oEffect) {
+			if (this.Type !== oEffect.Type) {
+				return false;
+			}
+			if (this.blend !== oEffect.blend) {
+				return false;
+			}
+			if (!(this.cont && oEffect.cont && this.cont.IsIdentical(oEffect.cont) || !this.cont && !oEffect.cont)) {
+				return false;
+			}
+			return true;
+		};
 
 		function CBlur() {
 			CBaseNoIdObject.call(this);
@@ -4286,6 +4406,19 @@
 			oCopy.rad = this.rad;
 			oCopy.grow = this.grow;
 			return oCopy;
+		};
+		CBlur.prototype.IsIdentical = function (oEffect) {
+			if (this.Type !== oEffect.Type) {
+				return false;
+			}
+			if (this.rad !== oEffect.rad) {
+				return false;
+			}
+			if (this.grow !== oEffect.grow) {
+				return false;
+			}
+
+			return true;
 		};
 
 		function CClrChange() {
@@ -4316,6 +4449,21 @@
 			oCopy.useA = this.useA;
 			return oCopy;
 		};
+		CClrChange.prototype.IsIdentical = function (oEffect) {
+			if (this.Type !== oEffect.Type) {
+				return false;
+			}
+			if (!(this.clrFrom && oEffect.clrFrom && this.clrFrom.IsIdentical(oEffect.clrFrom) || !this.clrFrom && !oEffect.clrFrom)) {
+				return false;
+			}
+			if (!(this.clrTo && oEffect.clrTo && this.clrTo.IsIdentical(oEffect.clrTo) || !this.clrTo && !oEffect.clrTo)) {
+				return false;
+			}
+			if (this.useA !== oEffect.useA) {
+				return false;
+			}
+			return true;
+		};
 
 		function CClrRepl() {
 			CBaseNoIdObject.call(this);
@@ -4336,6 +4484,15 @@
 			var oCopy = new CClrRepl();
 			oCopy.color = this.color.createDuplicate();
 			return oCopy;
+		};
+		CClrRepl.prototype.IsIdentical = function (oEffect) {
+			if (this.Type !== oEffect.Type) {
+				return false;
+			}
+			if (!(this.color && oEffect.color && this.color.IsIdentical(oEffect.color) || !this.color && !oEffect.color)) {
+				return false;
+			}
+			return true;
 		};
 
 		function CDuotone() {
@@ -4367,6 +4524,23 @@
 			}
 			return oCopy;
 		};
+		CDuotone.prototype.IsIdentical = function (oEffect) {
+			if (this.Type !== oEffect.Type) {
+				return false;
+			}
+
+			if (this.colors.length !== oEffect.colors.length) {
+				return false;
+			}
+
+			for (let i = 0; i < this.colors.length; i += 1) {
+				if (!this.colors[i].IsIdentical(oEffect.colors[i])) {
+					return false;
+				}
+			}
+
+			return true;
+		};
 
 
 		function CEffectElement() {
@@ -4388,6 +4562,15 @@
 			oCopy.ref = this.ref;
 			return oCopy;
 		};
+		CEffectElement.prototype.IsIdentical = function (oEffect) {
+			if (this.Type !== oEffect.Type) {
+				return false;
+			}
+			if (this.ref !== oEffect.ref) {
+				return false;
+			}
+			return true;
+		};
 
 		function CFillEffect() {
 			CBaseNoIdObject.call(this);
@@ -4407,6 +4590,16 @@
 			var oCopy = new CFillEffect();
 			oCopy.fill = this.fill.createDuplicate();
 			return oCopy;
+		};
+		CFillEffect.prototype.IsIdentical = function (oEffect) {
+			if (this.Type !== oEffect.Type) {
+				return false;
+			}
+			if (!(this.fill && oEffect.fill && this.fill.IsIdentical(oEffect.fill) || !this.fill && !oEffect.fill)) {
+				return false;
+			}
+
+			return true;
 		};
 
 		function CFillOverlay() {
@@ -4432,6 +4625,21 @@
 			oCopy.blend = this.blend;
 			return oCopy;
 		};
+		CFillOverlay.prototype.IsIdentical = function (oEffect) {
+			if (this.Type !== oEffect.Type) {
+				return false;
+			}
+
+			if (!(this.fill && oEffect.fill && this.fill.IsIdentical(oEffect) || !this.fill && !oEffect.fill)) {
+				return false;
+			}
+
+			if (this.blend !== oEffect.blend) {
+				return false;
+			}
+
+			return true;
+		};
 
 		function CGlow() {
 			CBaseNoIdObject.call(this);
@@ -4456,6 +4664,18 @@
 			oCopy.rad = this.rad;
 			return oCopy;
 		};
+		CGlow.prototype.IsIdentical = function (oEffect) {
+			if (this.Type !== oEffect.Type) {
+				return false;
+			}
+			if (!(this.color && oEffect.color && this.color.IsIdentical(oEffect.color) || !this.color && !oEffect.color)) {
+				return false;
+			}
+			if (this.rad !== oEffect.rad) {
+				return false;
+			}
+			return true;
+		};
 
 		function CGrayscl() {
 			CBaseNoIdObject.call(this);
@@ -4472,7 +4692,13 @@
 			var oCopy = new CGrayscl();
 			return oCopy;
 		};
+		CGrayscl.prototype.IsIdentical = function (oEffect) {
+			if (this.Type !== oEffect.Type) {
+				return false;
+			}
 
+			return true;
+		};
 
 		function CHslEffect() {
 			CBaseNoIdObject.call(this);
@@ -4500,6 +4726,21 @@
 			oCopy.s = this.s;
 			oCopy.l = this.l;
 			return oCopy;
+		};
+		CHslEffect.prototype.IsIdentical = function (oEffect) {
+			if (this.Type !== oEffect.Type) {
+				return false;
+			}
+			if (this.h !== oEffect.h) {
+				return false;
+			}
+			if (this.s !== oEffect.s) {
+				return false;
+			}
+			if (this.l !== oEffect.l) {
+				return false;
+			}
+			return true;
 		};
 
 		function CInnerShdw() {
@@ -4533,7 +4774,29 @@
 			oCopy.dist = this.dist;
 			return oCopy;
 		};
+		CInnerShdw.prototype.IsIdentical = function (oEffect) {
+			if (this.Type !== oEffect.Type) {
+				return false;
+			}
 
+			if (!(this.color && oEffect.color && this.color.IsIdentical(oEffect.color) || !this.color && !oEffect.color)) {
+				return false;
+			}
+
+			if (this.blurRad !== oEffect.blurRad) {
+				return false;
+			}
+
+			if (this.dir !== oEffect.dir) {
+				return false;
+			}
+
+			if (this.dist !== oEffect.dist) {
+				return false;
+			}
+
+			return true;
+		};
 		function CLumEffect() {
 			CBaseNoIdObject.call(this);
 			this.bright = null;
@@ -4556,6 +4819,18 @@
 			oCopy.bright = this.bright;
 			oCopy.contrast = this.contrast;
 			return oCopy;
+		};
+		CLumEffect.prototype.IsIdentical = function (oEffect) {
+			if (this.Type !== oEffect.Type) {
+				return false;
+			}
+			if (this.bright !== oEffect.bright) {
+				return false;
+			}
+			if (this.contrast !== oEffect.contrast) {
+				return false;
+			}
+			return true;
 		};
 
 		function COuterShdw() {
@@ -4857,6 +5132,24 @@
 			oCopy.dist = this.dist;
 			return oCopy;
 		};
+		CPrstShdw.prototype.IsIdentical = function (oEffect) {
+			if (this.Type !== oEffect.Type) {
+				return false;
+			}
+			if (!(this.color && oEffect.color && this.color.IsIdentical(oEffect.color) || !this.color && !oEffect.color)) {
+				return false;
+			}
+			if (this.prst !== oEffect.prst) {
+				return false;
+			}
+			if (this.dir !== oEffect.dir) {
+				return false;
+			}
+			if (this.dist !== oEffect.dist) {
+				return false;
+			}
+			return true;
+		};
 
 		function CReflection() {
 			CBaseNoIdObject.call(this);
@@ -4929,7 +5222,54 @@
 			oCopy.sy = this.sy;
 			return oCopy;
 		};
-
+		CReflection.prototype.IsIdentical = function (oEffect) {
+			if (this.Type !== oEffect.Type) {
+				return false;
+			}
+			if (this.algn !== oEffect.algn) {
+				return false;
+			}
+			if (this.blurRad !== oEffect.blurRad) {
+				return false;
+			}
+			if (this.stA !== oEffect.stA) {
+				return false;
+			}
+			if (this.endA !== oEffect.endA) {
+				return false;
+			}
+			if (this.stPos !== oEffect.stPos) {
+				return false;
+			}
+			if (this.endPos !== oEffect.endPos) {
+				return false;
+			}
+			if (this.dir !== oEffect.dir) {
+				return false;
+			}
+			if (this.fadeDir !== oEffect.fadeDir) {
+				return false;
+			}
+			if (this.dist !== oEffect.dist) {
+				return false;
+			}
+			if (this.kx !== oEffect.kx) {
+				return false;
+			}
+			if (this.ky !== oEffect.ky) {
+				return false;
+			}
+			if (this.rotWithShape !== oEffect.rotWithShape) {
+				return false;
+			}
+			if (this.sx !== oEffect.sx) {
+				return false;
+			}
+			if (this.sy !== oEffect.sy) {
+				return false;
+			}
+			return true;
+		};
 		function CRelOff() {
 			CBaseNoIdObject.call(this);
 			this.tx = null;
@@ -4953,6 +5293,19 @@
 			oCopy.ty = this.ty;
 			return oCopy;
 		};
+		CRelOff.prototype.IsIdentical = function (oEffect) {
+			if (this.Type !== oEffect.Type) {
+				return false;
+			}
+			if (this.tx !== oEffect.tx) {
+				return false;
+			}
+			if (this.ty !== oEffect.ty) {
+				return false;
+			}
+
+			return true;
+		};
 		function CSoftEdge() {
 			CBaseNoIdObject.call(this);
 			this.rad = null;
@@ -4971,6 +5324,17 @@
 			var oCopy = new CSoftEdge();
 			oCopy.rad = this.rad;
 			return oCopy;
+		};
+		CSoftEdge.prototype.IsIdentical = function (oEffect) {
+			if (this.Type !== oEffect.Type) {
+				return false;
+			}
+
+			if (this.rad !== oEffect.rad) {
+				return false;
+			}
+
+			return true;
 		};
 
 		function CTintEffect() {
@@ -4996,7 +5360,21 @@
 			oCopy.hue = this.hue;
 			return oCopy;
 		};
+		CTintEffect.prototype.IsIdentical = function (oEffect) {
+			if (this.Type !== oEffect.Type) {
+				return false;
+			}
 
+			if (this.amt !== oEffect.amt) {
+				return false;
+			}
+
+			if (this.hue !== oEffect.hue) {
+				return false;
+			}
+
+			return true;
+		};
 		function CXfrmEffect() {
 			CBaseNoIdObject.call(this);
 			this.kx = null;
@@ -5035,6 +5413,31 @@
 			oCopy.tx = this.tx;
 			oCopy.ty = this.ty;
 			return oCopy;
+		};
+		CXfrmEffect.prototype.IsIdentical = function (oEffect) {
+			if (this.Type !== oEffect.Type) {
+				return false;
+			}
+			if (this.kx !== oEffect.kx) {
+				return false;
+			}
+			if (this.ky !== oEffect.ky) {
+				return false;
+			}
+			if (this.sx !== oEffect.sx) {
+				return false;
+			}
+			if (this.sy !== oEffect.sy) {
+				return false;
+			}
+			if (this.tx !== oEffect.tx) {
+				return false;
+			}
+			if (this.ty !== oEffect.ty) {
+				return false;
+			}
+
+			return true;
 		};
 
 //-----------------
@@ -19812,6 +20215,38 @@
 		window['AscFormat'].DRAW_TYPE_PEN = DRAW_TYPE_PEN;
 		window['AscFormat'].DRAW_TYPE_PENCIL = DRAW_TYPE_PENCIL;
 		window['AscFormat'].DRAW_TYPE_HIGHLITER = DRAW_TYPE_HIGHLITER;
+
+		window['AscFormat'].EFFECT_TYPE_NONE = EFFECT_TYPE_NONE;
+		window['AscFormat'].EFFECT_TYPE_OUTERSHDW = EFFECT_TYPE_OUTERSHDW;
+		window['AscFormat'].EFFECT_TYPE_GLOW = EFFECT_TYPE_GLOW;
+		window['AscFormat'].EFFECT_TYPE_DUOTONE = EFFECT_TYPE_DUOTONE;
+		window['AscFormat'].EFFECT_TYPE_XFRM = EFFECT_TYPE_XFRM;
+		window['AscFormat'].EFFECT_TYPE_BLUR = EFFECT_TYPE_BLUR;
+		window['AscFormat'].EFFECT_TYPE_PRSTSHDW = EFFECT_TYPE_PRSTSHDW;
+		window['AscFormat'].EFFECT_TYPE_INNERSHDW = EFFECT_TYPE_INNERSHDW;
+		window['AscFormat'].EFFECT_TYPE_REFLECTION = EFFECT_TYPE_REFLECTION;
+		window['AscFormat'].EFFECT_TYPE_SOFTEDGE = EFFECT_TYPE_SOFTEDGE;
+		window['AscFormat'].EFFECT_TYPE_FILLOVERLAY = EFFECT_TYPE_FILLOVERLAY;
+		window['AscFormat'].EFFECT_TYPE_ALPHACEILING = EFFECT_TYPE_ALPHACEILING;
+		window['AscFormat'].EFFECT_TYPE_ALPHAFLOOR = EFFECT_TYPE_ALPHAFLOOR;
+		window['AscFormat'].EFFECT_TYPE_TINTEFFECT = EFFECT_TYPE_TINTEFFECT;
+		window['AscFormat'].EFFECT_TYPE_RELOFF = EFFECT_TYPE_RELOFF;
+		window['AscFormat'].EFFECT_TYPE_LUM = EFFECT_TYPE_LUM;
+		window['AscFormat'].EFFECT_TYPE_HSL = EFFECT_TYPE_HSL;
+		window['AscFormat'].EFFECT_TYPE_GRAYSCL = EFFECT_TYPE_GRAYSCL;
+		window['AscFormat'].EFFECT_TYPE_ELEMENT = EFFECT_TYPE_ELEMENT;
+		window['AscFormat'].EFFECT_TYPE_ALPHAREPL = EFFECT_TYPE_ALPHAREPL;
+		window['AscFormat'].EFFECT_TYPE_ALPHAOUTSET = EFFECT_TYPE_ALPHAOUTSET;
+		window['AscFormat'].EFFECT_TYPE_ALPHAMODFIX = EFFECT_TYPE_ALPHAMODFIX;
+		window['AscFormat'].EFFECT_TYPE_ALPHABILEVEL = EFFECT_TYPE_ALPHABILEVEL;
+		window['AscFormat'].EFFECT_TYPE_BILEVEL = EFFECT_TYPE_BILEVEL;
+		window['AscFormat'].EFFECT_TYPE_DAG = EFFECT_TYPE_DAG;
+		window['AscFormat'].EFFECT_TYPE_FILL = EFFECT_TYPE_FILL;
+		window['AscFormat'].EFFECT_TYPE_CLRREPL = EFFECT_TYPE_CLRREPL;
+		window['AscFormat'].EFFECT_TYPE_CLRCHANGE = EFFECT_TYPE_CLRCHANGE;
+		window['AscFormat'].EFFECT_TYPE_ALPHAINV = EFFECT_TYPE_ALPHAINV;
+		window['AscFormat'].EFFECT_TYPE_ALPHAMOD = EFFECT_TYPE_ALPHAMOD;
+		window['AscFormat'].EFFECT_TYPE_BLEND = EFFECT_TYPE_BLEND;
 
 
 		window['AscFormat'].fCreateEffectByType = fCreateEffectByType;
