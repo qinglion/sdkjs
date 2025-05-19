@@ -2929,15 +2929,14 @@ function (window, undefined) {
 			arg0Val = arg0.getElementRowCol(0, 0);
 			valueForSearching = ('' + arg0Val.getValue()).toLowerCase();
 		} else {
-			arg0Val = arg0;
-			valueForSearching = ('' + arg0.getValue()).toLowerCase();
+			if (cElementType.cellsRange === arg0.type || cElementType.cellsRange3D === arg0.type) {
+				arg0Val = arg0.cross(argument1);
+			} else {
+				arg0Val = arg0;
+			}
+			valueForSearching = ('' + arg0Val.getValue()).toLowerCase();
 		}
 
-		if (cElementType.cellsRange === arg0Val.type) {
-			arg0Val = arg0Val.cross(argument1);
-		} else if (cElementType.cellsRange3D === arg0Val.type) {
-			arg0Val = arg0Val.cross(argument1);
-		}
 
 		if (cElementType.error === arg0Val.type) {
 			return arg0Val;
