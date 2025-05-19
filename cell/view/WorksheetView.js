@@ -3639,7 +3639,7 @@
 
 		let checkRightSideCell = function (_ct, _col, _row) {
 			let rightSide = 0;
-			if (!_ct.flags.isMerged() && !_ct.flags.wrapText) {
+			if (_ct && _ct.flags && !_ct.flags.isMerged() && !_ct.flags.wrapText) {
 				rightSide = _ct.sideR;
 			}
 
