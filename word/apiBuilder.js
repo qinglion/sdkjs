@@ -5764,98 +5764,6 @@
 	};
 
 	/**
-	 * Adds a new checkbox content control to the document.
-	 * This method creates a checkbox content control and sets its properties to default values.
-	 * @memberof ApiDocument
-	 * @since 9.0.0
-	 * @returns {ApiInlineLvlSdt} An instance of the ApiInlineLvlSdt representing the checkbox content control.
-	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddCheckBoxContentControl.js
-	 */
-	ApiDocument.prototype.AddCheckBoxContentControl = function()
-	{
-		var oCheckBoxCC = this.Document.AddContentControlCheckBox();
-		oCheckBoxCC.SetContentControlPr({});
-		return ToApiContentControl(oCheckBoxCC);
-	};
-
-	/**
-	 * Adds a new picture content control to the document.
-	 * This method creates a picture content control and sets its properties to default values.
-	 * @memberof ApiDocument
-	 * @since 9.0.0
-	 * @returns {ApiInlineLvlSdt} An instance of the ApiInlineLvlSdt representing the picture content control.
-	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddPictureContentControl.js
-	 */
-	ApiDocument.prototype.AddPictureContentControl = function()
-	{
-		var oPictureCC = this.Document.AddContentControlPicture();
-		oPictureCC.SetContentControlPr({});
-		return ToApiContentControl(oPictureCC);
-	};
-
-	/**
-	 * Adds a new combo box content control to the document.
-	 * @memberof ApiDocument
-	 * @typeofeditors ["CDE"]
-	 * @since 9.0.0
-	 * @returns {ApiInlineLvlSdt}
-	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddComboBoxContentControl.js
-	 */
-	ApiDocument.prototype.AddComboBoxContentControl = function()
-	{
-		var oComboBox = this.Document.AddContentControlComboBox();
-		oComboBox.SetContentControlPr({});
-		return ToApiContentControl(oComboBox);
-	};
-
-	/**
-	 * Adds a new dropdown list content control to the document.
-	 * @memberof ApiDocument
-	 * @typeofeditors ["CDE"]
-	 * @since 9.0.0
-	 * @returns {ApiInlineLvlSdt}
-	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddDropDownListContentControl.js
-	 */
-	ApiDocument.prototype.AddDropDownListContentControl = function()
-	{
-		var oDrowDown = this.Document.AddContentControlDropDownList();
-		oDrowDown.SetContentControlPr({});
-		return ToApiContentControl(oDrowDown);
-	};
-
-	/**
-	 * Adds a new date picker content control to the document.
-	 * @memberof ApiDocument
-	 * @typeofeditors ["CDE"]
-	 * @since 9.0.0
-	 * @returns {ApiInlineLvlSdt}
-	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddDatePickerContentControl.js
-	 */
-	ApiDocument.prototype.AddDatePickerContentControl = function()
-	{
-		var oDate = this.Document.AddContentControlDatePicker();
-		oDate.SetContentControlPr({});
-		return ToApiContentControl(oDate);
-	};
-
-	/**
-	 * Retrieves the custom XML manager associated with the document.
-	 * This manager allows manipulation and access to custom XML parts within the document.
-	 * @memberof ApiDocument
-	 * @since 9.0.0
-	 * @returns {ApiCustomXmlParts|null} Returns an instance of ApiCustomXmlParts if the custom XML manager exists, otherwise returns null.
-	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/GetCustomXmlParts.js
-	 */
-	ApiDocument.prototype.GetCustomXmlParts = function()
-	{
-		let oCustomXmlParts = new ApiCustomXmlParts(this.Document);
-		if (oCustomXmlParts.customXMLManager !== null)
-			return oCustomXmlParts;
-
-		return null;
-	};
-
-	/**
 	 * Class representing a custom XML manager, which provides methods to manage custom XML parts in the document.
 	 * @constructor
 	 * @typeofeditors ["CDE"]
@@ -8926,6 +8834,98 @@
 	{
 		let oRange = this.GetRange();
 		return oRange.MoveCursorToPos(nPos);
+	};
+	
+	/**
+	 * Adds a new checkbox content control to the document.
+	 * This method creates a checkbox content control and sets its properties to default values.
+	 * @memberof ApiDocument
+	 * @since 9.0.0
+	 * @returns {ApiInlineLvlSdt} An instance of the ApiInlineLvlSdt representing the checkbox content control.
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddCheckBoxContentControl.js
+	 */
+	ApiDocument.prototype.AddCheckBoxContentControl = function()
+	{
+		var oCheckBoxCC = this.Document.AddContentControlCheckBox();
+		oCheckBoxCC.SetContentControlPr({});
+		return ToApiContentControl(oCheckBoxCC);
+	};
+	
+	/**
+	 * Adds a new picture content control to the document.
+	 * This method creates a picture content control and sets its properties to default values.
+	 * @memberof ApiDocument
+	 * @since 9.0.0
+	 * @returns {ApiInlineLvlSdt} An instance of the ApiInlineLvlSdt representing the picture content control.
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddPictureContentControl.js
+	 */
+	ApiDocument.prototype.AddPictureContentControl = function()
+	{
+		var oPictureCC = this.Document.AddContentControlPicture();
+		oPictureCC.SetContentControlPr({});
+		return ToApiContentControl(oPictureCC);
+	};
+	
+	/**
+	 * Adds a new combo box content control to the document.
+	 * @memberof ApiDocument
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {ApiInlineLvlSdt}
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddComboBoxContentControl.js
+	 */
+	ApiDocument.prototype.AddComboBoxContentControl = function()
+	{
+		var oComboBox = this.Document.AddContentControlComboBox();
+		oComboBox.SetContentControlPr({});
+		return ToApiContentControl(oComboBox);
+	};
+	
+	/**
+	 * Adds a new dropdown list content control to the document.
+	 * @memberof ApiDocument
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {ApiInlineLvlSdt}
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddDropDownListContentControl.js
+	 */
+	ApiDocument.prototype.AddDropDownListContentControl = function()
+	{
+		var oDrowDown = this.Document.AddContentControlDropDownList();
+		oDrowDown.SetContentControlPr({});
+		return ToApiContentControl(oDrowDown);
+	};
+	
+	/**
+	 * Adds a new date picker content control to the document.
+	 * @memberof ApiDocument
+	 * @typeofeditors ["CDE"]
+	 * @since 9.0.0
+	 * @returns {ApiInlineLvlSdt}
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/AddDatePickerContentControl.js
+	 */
+	ApiDocument.prototype.AddDatePickerContentControl = function()
+	{
+		var oDate = this.Document.AddContentControlDatePicker();
+		oDate.SetContentControlPr({});
+		return ToApiContentControl(oDate);
+	};
+	
+	/**
+	 * Retrieves the custom XML manager associated with the document.
+	 * This manager allows manipulation and access to custom XML parts within the document.
+	 * @memberof ApiDocument
+	 * @since 9.0.0
+	 * @returns {ApiCustomXmlParts|null} Returns an instance of ApiCustomXmlParts if the custom XML manager exists, otherwise returns null.
+	 * @see office-js-api/Examples/{Editor}/ApiDocument/Methods/GetCustomXmlParts.js
+	 */
+	ApiDocument.prototype.GetCustomXmlParts = function()
+	{
+		let oCustomXmlParts = new ApiCustomXmlParts(this.Document);
+		if (oCustomXmlParts.customXMLManager !== null)
+			return oCustomXmlParts;
+		
+		return null;
 	};
 
 	//------------------------------------------------------------------------------------------------------------------
@@ -24263,94 +24263,94 @@
 	ApiRange.prototype["MoveCursorToPos"]            = ApiRange.prototype.MoveCursorToPos;
 	ApiRange.prototype["AddField"]                   = ApiRange.prototype.AddField;
 	
-	ApiDocument.prototype["GetClassType"]                = ApiDocument.prototype.GetClassType;
-	ApiDocument.prototype["CreateNewHistoryPoint"]       = ApiDocument.prototype.CreateNewHistoryPoint;
-	ApiDocument.prototype["GetDefaultTextPr"]            = ApiDocument.prototype.GetDefaultTextPr;
-	ApiDocument.prototype["GetDefaultParaPr"]            = ApiDocument.prototype.GetDefaultParaPr;
-	ApiDocument.prototype["GetStyle"]                    = ApiDocument.prototype.GetStyle;
-	ApiDocument.prototype["CreateStyle"]                 = ApiDocument.prototype.CreateStyle;
-	ApiDocument.prototype["GetDefaultStyle"]             = ApiDocument.prototype.GetDefaultStyle;
-	ApiDocument.prototype["GetFinalSection"]             = ApiDocument.prototype.GetFinalSection;
-	ApiDocument.prototype["CreateSection"]               = ApiDocument.prototype.CreateSection;
-	ApiDocument.prototype["SetEvenAndOddHdrFtr"]         = ApiDocument.prototype.SetEvenAndOddHdrFtr;
-	ApiDocument.prototype["CreateNumbering"]             = ApiDocument.prototype.CreateNumbering;
-	ApiDocument.prototype["InsertContent"]               = ApiDocument.prototype.InsertContent;
-	ApiDocument.prototype["GetCommentsReport"]           = ApiDocument.prototype.GetCommentsReport;
-	ApiDocument.prototype["GetReviewReport"]             = ApiDocument.prototype.GetReviewReport;
-	ApiDocument.prototype["InsertWatermark"]             = ApiDocument.prototype.InsertWatermark;
-	ApiDocument.prototype["GetWatermarkSettings"]        = ApiDocument.prototype.GetWatermarkSettings;
-	ApiDocument.prototype["SetWatermarkSettings"]        = ApiDocument.prototype.SetWatermarkSettings;
-	ApiDocument.prototype["RemoveWatermark"]             = ApiDocument.prototype.RemoveWatermark;
-	ApiDocument.prototype["SearchAndReplace"]            = ApiDocument.prototype.SearchAndReplace;
-	ApiDocument.prototype["GetAllContentControls"]       = ApiDocument.prototype.GetAllContentControls;
-	ApiDocument.prototype["GetTagsOfAllContentControls"] = ApiDocument.prototype.GetTagsOfAllContentControls;
-	ApiDocument.prototype["GetTagsOfAllForms"]           = ApiDocument.prototype.GetTagsOfAllForms;
-	ApiDocument.prototype["GetContentControlsByTag"]     = ApiDocument.prototype.GetContentControlsByTag;
-	ApiDocument.prototype["GetFormsByTag"]               = ApiDocument.prototype.GetFormsByTag;
-	ApiDocument.prototype["GetFormsData"]                = ApiDocument.prototype.GetFormsData;
-	ApiDocument.prototype["SetFormsData"]                = ApiDocument.prototype.SetFormsData;
-	ApiDocument.prototype["SetTrackRevisions"]           = ApiDocument.prototype.SetTrackRevisions;
-	ApiDocument.prototype["IsTrackRevisions"]            = ApiDocument.prototype.IsTrackRevisions;
-	ApiDocument.prototype["GetRange"]                    = ApiDocument.prototype.GetRange;
-	ApiDocument.prototype["GetRangeBySelect"]            = ApiDocument.prototype.GetRangeBySelect;
-	ApiDocument.prototype["Last"]                        = ApiDocument.prototype.Last;
-	ApiDocument.prototype["Push"]                        = ApiDocument.prototype.Push;
-	ApiDocument.prototype["DeleteBookmark"]              = ApiDocument.prototype.DeleteBookmark;
-	ApiDocument.prototype["GetBookmarkRange"]            = ApiDocument.prototype.GetBookmarkRange;
-	ApiDocument.prototype["GetSections"]                 = ApiDocument.prototype.GetSections;
-	ApiDocument.prototype["GetAllTablesOnPage"]          = ApiDocument.prototype.GetAllTablesOnPage;
-	ApiDocument.prototype["AddDrawingToPage"]            = ApiDocument.prototype.AddDrawingToPage;
-	ApiDocument.prototype["RemoveSelection"]             = ApiDocument.prototype.RemoveSelection;
-	ApiDocument.prototype["Search"]                      = ApiDocument.prototype.Search;
-	ApiDocument.prototype["ToMarkdown"]                  = ApiDocument.prototype.ToMarkdown;
-	ApiDocument.prototype["ToHtml"]                      = ApiDocument.prototype.ToHtml;
-	ApiDocument.prototype["GetAllNumberedParagraphs"]    = ApiDocument.prototype.GetAllNumberedParagraphs;
-	ApiDocument.prototype["GetAllHeadingParagraphs"]     = ApiDocument.prototype.GetAllHeadingParagraphs;
-	ApiDocument.prototype["GetFootnotesFirstParagraphs"] = ApiDocument.prototype.GetFootnotesFirstParagraphs;
-	ApiDocument.prototype["GetEndNotesFirstParagraphs"]  = ApiDocument.prototype.GetEndNotesFirstParagraphs;
-	ApiDocument.prototype["GetAllCaptionParagraphs"]     = ApiDocument.prototype.GetAllCaptionParagraphs;
-	ApiDocument.prototype["GetAllBookmarksNames"]        = ApiDocument.prototype.GetAllBookmarksNames;
-	ApiDocument.prototype["GetBookmark"]        		 = ApiDocument.prototype.GetBookmark;
-	ApiDocument.prototype["AddFootnote"]                 = ApiDocument.prototype.AddFootnote;
-	ApiDocument.prototype["AddEndnote"]                  = ApiDocument.prototype.AddEndnote;
-	ApiDocument.prototype["SetControlsHighlight"]        = ApiDocument.prototype.SetControlsHighlight;
-	ApiDocument.prototype["GetAllComments"]              = ApiDocument.prototype.GetAllComments;
-	ApiDocument.prototype["GetCommentById"]              = ApiDocument.prototype.GetCommentById;
-	ApiDocument.prototype["GetStatistics"]               = ApiDocument.prototype.GetStatistics;
-	ApiDocument.prototype["GetPageCount"]                = ApiDocument.prototype.GetPageCount;
-	ApiDocument.prototype["GetCurrentPage"]              = ApiDocument.prototype.GetCurrentPage;
-	ApiDocument.prototype["GetCurrentVisiblePages"]      = ApiDocument.prototype.GetCurrentVisiblePages;
-	ApiDocument.prototype["GetAllStyles"]                = ApiDocument.prototype.GetAllStyles;
-	ApiDocument.prototype["GetDocumentInfo"]             = ApiDocument.prototype.GetDocumentInfo;
-	ApiDocument.prototype["GetSelectedDrawings"]         = ApiDocument.prototype.GetSelectedDrawings;
-	ApiDocument.prototype["ReplaceCurrentImage"]         = ApiDocument.prototype.ReplaceCurrentImage;
-	ApiDocument.prototype["ReplaceDrawing"]              = ApiDocument.prototype.ReplaceDrawing;
-	ApiDocument.prototype["AcceptAllRevisionChanges"]    = ApiDocument.prototype.AcceptAllRevisionChanges;
-	ApiDocument.prototype["RejectAllRevisionChanges"]    = ApiDocument.prototype.RejectAllRevisionChanges;
-	ApiDocument.prototype["ToJSON"]                      = ApiDocument.prototype.ToJSON;
-	ApiDocument.prototype["UpdateAllTOC"]                = ApiDocument.prototype.UpdateAllTOC;
-	ApiDocument.prototype["UpdateAllTOF"]                = ApiDocument.prototype.UpdateAllTOF;
-	ApiDocument.prototype["UpdateAllFields"]             = ApiDocument.prototype.UpdateAllFields;
-	ApiDocument.prototype["AddTableOfContents"]          = ApiDocument.prototype.AddTableOfContents;
-	ApiDocument.prototype["AddTableOfFigures"]           = ApiDocument.prototype.AddTableOfFigures;
-	ApiDocument.prototype["GetAllForms"]                 = ApiDocument.prototype.GetAllForms;
-	ApiDocument.prototype["ClearAllFields"]              = ApiDocument.prototype.ClearAllFields;
-	ApiDocument.prototype["SetFormsHighlight"]           = ApiDocument.prototype.SetFormsHighlight;
-	ApiDocument.prototype["GetCurrentWord"]              = ApiDocument.prototype.GetCurrentWord;
-	ApiDocument.prototype["ReplaceCurrentWord"]          = ApiDocument.prototype.ReplaceCurrentWord;
-	ApiDocument.prototype["SelectCurrentWord"]           = ApiDocument.prototype.SelectCurrentWord;
-	ApiDocument.prototype["AddComment"]                  = ApiDocument.prototype.AddComment;
-	ApiDocument.prototype["GetCurrentSentence"]          = ApiDocument.prototype.GetCurrentSentence;
-	ApiDocument.prototype["ReplaceCurrentSentence"]      = ApiDocument.prototype.ReplaceCurrentSentence;
-	ApiDocument.prototype["AddMathEquation"]             = ApiDocument.prototype.AddMathEquation;
-	ApiDocument.prototype["GroupDrawings"]             	 = ApiDocument.prototype.GroupDrawings;
-	ApiDocument.prototype["MoveCursorToPos"]             = ApiDocument.prototype.MoveCursorToPos;
-	ApiDocument.prototype["AddCheckBoxContentControl"]   = ApiDocument.prototype.AddCheckBoxContentControl;
-	ApiDocument.prototype["AddComboBoxContentControl"]   = ApiDocument.prototype.AddComboBoxContentControl;
-	ApiDocument.prototype["AddDatePickerContentControl"] = ApiDocument.prototype.AddDatePickerContentControl;
+	ApiDocument.prototype["GetClassType"]                  = ApiDocument.prototype.GetClassType;
+	ApiDocument.prototype["CreateNewHistoryPoint"]         = ApiDocument.prototype.CreateNewHistoryPoint;
+	ApiDocument.prototype["GetDefaultTextPr"]              = ApiDocument.prototype.GetDefaultTextPr;
+	ApiDocument.prototype["GetDefaultParaPr"]              = ApiDocument.prototype.GetDefaultParaPr;
+	ApiDocument.prototype["GetStyle"]                      = ApiDocument.prototype.GetStyle;
+	ApiDocument.prototype["CreateStyle"]                   = ApiDocument.prototype.CreateStyle;
+	ApiDocument.prototype["GetDefaultStyle"]               = ApiDocument.prototype.GetDefaultStyle;
+	ApiDocument.prototype["GetFinalSection"]               = ApiDocument.prototype.GetFinalSection;
+	ApiDocument.prototype["CreateSection"]                 = ApiDocument.prototype.CreateSection;
+	ApiDocument.prototype["SetEvenAndOddHdrFtr"]           = ApiDocument.prototype.SetEvenAndOddHdrFtr;
+	ApiDocument.prototype["CreateNumbering"]               = ApiDocument.prototype.CreateNumbering;
+	ApiDocument.prototype["InsertContent"]                 = ApiDocument.prototype.InsertContent;
+	ApiDocument.prototype["GetCommentsReport"]             = ApiDocument.prototype.GetCommentsReport;
+	ApiDocument.prototype["GetReviewReport"]               = ApiDocument.prototype.GetReviewReport;
+	ApiDocument.prototype["InsertWatermark"]               = ApiDocument.prototype.InsertWatermark;
+	ApiDocument.prototype["GetWatermarkSettings"]          = ApiDocument.prototype.GetWatermarkSettings;
+	ApiDocument.prototype["SetWatermarkSettings"]          = ApiDocument.prototype.SetWatermarkSettings;
+	ApiDocument.prototype["RemoveWatermark"]               = ApiDocument.prototype.RemoveWatermark;
+	ApiDocument.prototype["SearchAndReplace"]              = ApiDocument.prototype.SearchAndReplace;
+	ApiDocument.prototype["GetAllContentControls"]         = ApiDocument.prototype.GetAllContentControls;
+	ApiDocument.prototype["GetTagsOfAllContentControls"]   = ApiDocument.prototype.GetTagsOfAllContentControls;
+	ApiDocument.prototype["GetTagsOfAllForms"]             = ApiDocument.prototype.GetTagsOfAllForms;
+	ApiDocument.prototype["GetContentControlsByTag"]       = ApiDocument.prototype.GetContentControlsByTag;
+	ApiDocument.prototype["GetFormsByTag"]                 = ApiDocument.prototype.GetFormsByTag;
+	ApiDocument.prototype["GetFormsData"]                  = ApiDocument.prototype.GetFormsData;
+	ApiDocument.prototype["SetFormsData"]                  = ApiDocument.prototype.SetFormsData;
+	ApiDocument.prototype["SetTrackRevisions"]             = ApiDocument.prototype.SetTrackRevisions;
+	ApiDocument.prototype["IsTrackRevisions"]              = ApiDocument.prototype.IsTrackRevisions;
+	ApiDocument.prototype["GetRange"]                      = ApiDocument.prototype.GetRange;
+	ApiDocument.prototype["GetRangeBySelect"]              = ApiDocument.prototype.GetRangeBySelect;
+	ApiDocument.prototype["Last"]                          = ApiDocument.prototype.Last;
+	ApiDocument.prototype["Push"]                          = ApiDocument.prototype.Push;
+	ApiDocument.prototype["DeleteBookmark"]                = ApiDocument.prototype.DeleteBookmark;
+	ApiDocument.prototype["GetBookmarkRange"]              = ApiDocument.prototype.GetBookmarkRange;
+	ApiDocument.prototype["GetSections"]                   = ApiDocument.prototype.GetSections;
+	ApiDocument.prototype["GetAllTablesOnPage"]            = ApiDocument.prototype.GetAllTablesOnPage;
+	ApiDocument.prototype["AddDrawingToPage"]              = ApiDocument.prototype.AddDrawingToPage;
+	ApiDocument.prototype["RemoveSelection"]               = ApiDocument.prototype.RemoveSelection;
+	ApiDocument.prototype["Search"]                        = ApiDocument.prototype.Search;
+	ApiDocument.prototype["ToMarkdown"]                    = ApiDocument.prototype.ToMarkdown;
+	ApiDocument.prototype["ToHtml"]                        = ApiDocument.prototype.ToHtml;
+	ApiDocument.prototype["GetAllNumberedParagraphs"]      = ApiDocument.prototype.GetAllNumberedParagraphs;
+	ApiDocument.prototype["GetAllHeadingParagraphs"]       = ApiDocument.prototype.GetAllHeadingParagraphs;
+	ApiDocument.prototype["GetFootnotesFirstParagraphs"]   = ApiDocument.prototype.GetFootnotesFirstParagraphs;
+	ApiDocument.prototype["GetEndNotesFirstParagraphs"]    = ApiDocument.prototype.GetEndNotesFirstParagraphs;
+	ApiDocument.prototype["GetAllCaptionParagraphs"]       = ApiDocument.prototype.GetAllCaptionParagraphs;
+	ApiDocument.prototype["GetAllBookmarksNames"]          = ApiDocument.prototype.GetAllBookmarksNames;
+	ApiDocument.prototype["GetBookmark"]                   = ApiDocument.prototype.GetBookmark;
+	ApiDocument.prototype["AddFootnote"]                   = ApiDocument.prototype.AddFootnote;
+	ApiDocument.prototype["AddEndnote"]                    = ApiDocument.prototype.AddEndnote;
+	ApiDocument.prototype["SetControlsHighlight"]          = ApiDocument.prototype.SetControlsHighlight;
+	ApiDocument.prototype["GetAllComments"]                = ApiDocument.prototype.GetAllComments;
+	ApiDocument.prototype["GetCommentById"]                = ApiDocument.prototype.GetCommentById;
+	ApiDocument.prototype["GetStatistics"]                 = ApiDocument.prototype.GetStatistics;
+	ApiDocument.prototype["GetPageCount"]                  = ApiDocument.prototype.GetPageCount;
+	ApiDocument.prototype["GetCurrentPage"]                = ApiDocument.prototype.GetCurrentPage;
+	ApiDocument.prototype["GetCurrentVisiblePages"]        = ApiDocument.prototype.GetCurrentVisiblePages;
+	ApiDocument.prototype["GetAllStyles"]                  = ApiDocument.prototype.GetAllStyles;
+	ApiDocument.prototype["GetDocumentInfo"]               = ApiDocument.prototype.GetDocumentInfo;
+	ApiDocument.prototype["GetSelectedDrawings"]           = ApiDocument.prototype.GetSelectedDrawings;
+	ApiDocument.prototype["ReplaceCurrentImage"]           = ApiDocument.prototype.ReplaceCurrentImage;
+	ApiDocument.prototype["ReplaceDrawing"]                = ApiDocument.prototype.ReplaceDrawing;
+	ApiDocument.prototype["AcceptAllRevisionChanges"]      = ApiDocument.prototype.AcceptAllRevisionChanges;
+	ApiDocument.prototype["RejectAllRevisionChanges"]      = ApiDocument.prototype.RejectAllRevisionChanges;
+	ApiDocument.prototype["ToJSON"]                        = ApiDocument.prototype.ToJSON;
+	ApiDocument.prototype["UpdateAllTOC"]                  = ApiDocument.prototype.UpdateAllTOC;
+	ApiDocument.prototype["UpdateAllTOF"]                  = ApiDocument.prototype.UpdateAllTOF;
+	ApiDocument.prototype["UpdateAllFields"]               = ApiDocument.prototype.UpdateAllFields;
+	ApiDocument.prototype["AddTableOfContents"]            = ApiDocument.prototype.AddTableOfContents;
+	ApiDocument.prototype["AddTableOfFigures"]             = ApiDocument.prototype.AddTableOfFigures;
+	ApiDocument.prototype["GetAllForms"]                   = ApiDocument.prototype.GetAllForms;
+	ApiDocument.prototype["ClearAllFields"]                = ApiDocument.prototype.ClearAllFields;
+	ApiDocument.prototype["SetFormsHighlight"]             = ApiDocument.prototype.SetFormsHighlight;
+	ApiDocument.prototype["GetCurrentWord"]                = ApiDocument.prototype.GetCurrentWord;
+	ApiDocument.prototype["ReplaceCurrentWord"]            = ApiDocument.prototype.ReplaceCurrentWord;
+	ApiDocument.prototype["SelectCurrentWord"]             = ApiDocument.prototype.SelectCurrentWord;
+	ApiDocument.prototype["AddComment"]                    = ApiDocument.prototype.AddComment;
+	ApiDocument.prototype["GetCurrentSentence"]            = ApiDocument.prototype.GetCurrentSentence;
+	ApiDocument.prototype["ReplaceCurrentSentence"]        = ApiDocument.prototype.ReplaceCurrentSentence;
+	ApiDocument.prototype["AddMathEquation"]               = ApiDocument.prototype.AddMathEquation;
+	ApiDocument.prototype["GroupDrawings"]                 = ApiDocument.prototype.GroupDrawings;
+	ApiDocument.prototype["MoveCursorToPos"]               = ApiDocument.prototype.MoveCursorToPos;
+	ApiDocument.prototype["AddCheckBoxContentControl"]     = ApiDocument.prototype.AddCheckBoxContentControl;
+	ApiDocument.prototype["AddComboBoxContentControl"]     = ApiDocument.prototype.AddComboBoxContentControl;
+	ApiDocument.prototype["AddDatePickerContentControl"]   = ApiDocument.prototype.AddDatePickerContentControl;
 	ApiDocument.prototype["AddDropDownListContentControl"] = ApiDocument.prototype.AddDropDownListContentControl;
-	ApiDocument.prototype["AddPictureContentControl"]    = ApiDocument.prototype.AddPictureContentControl;
-	ApiDocument.prototype["GetCustomXmlParts"]           = ApiDocument.prototype.GetCustomXmlParts;
+	ApiDocument.prototype["AddPictureContentControl"]      = ApiDocument.prototype.AddPictureContentControl;
+	ApiDocument.prototype["GetCustomXmlParts"]             = ApiDocument.prototype.GetCustomXmlParts;
 
 	ApiParagraph.prototype["GetClassType"]           = ApiParagraph.prototype.GetClassType;
 	ApiParagraph.prototype["AddText"]                = ApiParagraph.prototype.AddText;
