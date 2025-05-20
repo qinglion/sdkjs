@@ -375,7 +375,7 @@ function (window, undefined) {
 		var t = this;
 
 		let externalSelectionController = this.handlers.trigger("getExternalSelectionController");
-		if (externalSelectionController.getExternalFormulaEditMode()) {
+		if (externalSelectionController && externalSelectionController.getExternalFormulaEditMode()) {
 			if (!externalSelectionController.supportVisibilityChangeOption) {
 				externalSelectionController.sendExternalCloseEditor(saveValue);
 				saveValue = false;
@@ -1255,7 +1255,7 @@ function (window, undefined) {
 		this._cleanText();
 
 		let externalSelectionController = this.handlers.trigger("getExternalSelectionController");
-		if (!externalSelectionController.getExternalFormulaEditMode()) {
+		if (externalSelectionController && !externalSelectionController.getExternalFormulaEditMode()) {
 			this._cleanSelection();
 			this._adjustCanvas();
 			this._showCanvas();
