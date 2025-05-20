@@ -506,7 +506,9 @@
 				document.oncopy           = function(e)
 				{
 					if (g_clipboardBase.isUseNewCopy()) {
-						e.preventDefault();
+						if (g_clipboardBase.Api.asc_IsFocus(true) && !g_clipboardBase._isUseMobileNewCopy()) {
+							e.preventDefault();
+						}
 						return g_clipboardBase.Copy_New();
 					} else {
 						return g_clipboardBase._private_oncopy(e)
@@ -985,6 +987,15 @@
 			if (navigator.clipboard) {
 				return true;
 			}
+			if (this._isUseMobileNewCopy())
+			{
+				return true;
+			}
+			return false;
+		},
+
+		_isUseMobileNewCopy : function()
+		{
 			if (this.Api.isMobileVersion)
 			{
 				if (this.Api.isViewMode || this.Api.isRestrictionView())
@@ -1006,6 +1017,10 @@
 		Copy_New : function(isCut)
 		{
 			let oThis = this;
+			//todo add check on mobile version, because before all work without focus check
+			if (!this.Api.asc_IsFocus(true) && !this._isUseMobileNewCopy()) {
+				return;
+			}
 			if (navigator.clipboard)
 			{
 				this.LastCopyBinary = null;
