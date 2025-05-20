@@ -44,7 +44,7 @@
 	AscCommon.baseEditorsApi.prototype.onEndLoadFile2 = AscCommon.baseEditorsApi.prototype.onEndLoadFile;
 	AscCommon.baseEditorsApi.prototype.onEndLoadFile = function(result)
 	{
-		if (this.isFrameEditor())
+		if (this.isFrameEditor() || !window["AscDesktopEditor"])
 		{
 			return this.onEndLoadFile2(result);
 		}
