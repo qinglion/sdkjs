@@ -25094,24 +25094,25 @@
 	ApiCustomXmlPart.prototype["GetClassType"]		= ApiCustomXmlPart.prototype.GetClassType;
 	ApiCustomXmlPart.prototype["GetId"]				= ApiCustomXmlPart.prototype.GetId;
 	ApiCustomXmlPart.prototype["GetAttribute"]		= ApiCustomXmlPart.prototype.GetAttribute;
-
-	ApiCustomXmlNode.prototype["Delete"]			= ApiCustomXmlNode.prototype.Delete;
-	ApiCustomXmlNode.prototype["GetNodeName"]		= ApiCustomXmlNode.prototype.GetNodeName;
-	ApiCustomXmlNode.prototype["DeleteAttribute"]	= ApiCustomXmlNode.prototype.DeleteAttribute;
-	ApiCustomXmlNode.prototype["GetAttribute"]		= ApiCustomXmlNode.prototype.GetAttribute;
-	ApiCustomXmlNode.prototype["GetAttributes"]		= ApiCustomXmlNode.prototype.GetAttributes;
-	ApiCustomXmlNode.prototype["GetNodes"]			= ApiCustomXmlNode.prototype.GetNodes;
-	ApiCustomXmlNode.prototype["GetNodeValue"]		= ApiCustomXmlNode.prototype.GetNodeValue;
-	ApiCustomXmlNode.prototype["GetParent"]			= ApiCustomXmlNode.prototype.GetParent;
-	ApiCustomXmlNode.prototype["GetText"]			= ApiCustomXmlNode.prototype.GetText;
-	ApiCustomXmlNode.prototype["GetXml"]			= ApiCustomXmlNode.prototype.GetXml;
-	ApiCustomXmlNode.prototype["GetXPath"]			= ApiCustomXmlNode.prototype.GetXPath;
-	ApiCustomXmlNode.prototype["SetAttribute"]		= ApiCustomXmlNode.prototype.SetAttribute;
-	ApiCustomXmlNode.prototype["SetNodeValue"]		= ApiCustomXmlNode.prototype.SetNodeValue;
-	ApiCustomXmlNode.prototype["SetText"]			= ApiCustomXmlNode.prototype.SetText;
-	ApiCustomXmlNode.prototype["SetXml"]			= ApiCustomXmlNode.prototype.SetXml;
-	ApiCustomXmlNode.prototype["UpdateAttribute"]	= ApiCustomXmlNode.prototype.UpdateAttribute;
-	ApiCustomXmlNode.prototype["GetClassType"]		= ApiCustomXmlNode.prototype.GetClassType;
+	
+	ApiCustomXmlNode.prototype["Add"]             = ApiCustomXmlNode.prototype.Add;
+	ApiCustomXmlNode.prototype["Delete"]          = ApiCustomXmlNode.prototype.Delete;
+	ApiCustomXmlNode.prototype["GetNodeName"]     = ApiCustomXmlNode.prototype.GetNodeName;
+	ApiCustomXmlNode.prototype["DeleteAttribute"] = ApiCustomXmlNode.prototype.DeleteAttribute;
+	ApiCustomXmlNode.prototype["GetAttribute"]    = ApiCustomXmlNode.prototype.GetAttribute;
+	ApiCustomXmlNode.prototype["GetAttributes"]   = ApiCustomXmlNode.prototype.GetAttributes;
+	ApiCustomXmlNode.prototype["GetNodes"]        = ApiCustomXmlNode.prototype.GetNodes;
+	ApiCustomXmlNode.prototype["GetNodeValue"]    = ApiCustomXmlNode.prototype.GetNodeValue;
+	ApiCustomXmlNode.prototype["GetParent"]       = ApiCustomXmlNode.prototype.GetParent;
+	ApiCustomXmlNode.prototype["GetText"]         = ApiCustomXmlNode.prototype.GetText;
+	ApiCustomXmlNode.prototype["GetXml"]          = ApiCustomXmlNode.prototype.GetXml;
+	ApiCustomXmlNode.prototype["GetXPath"]        = ApiCustomXmlNode.prototype.GetXPath;
+	ApiCustomXmlNode.prototype["SetAttribute"]    = ApiCustomXmlNode.prototype.SetAttribute;
+	ApiCustomXmlNode.prototype["SetNodeValue"]    = ApiCustomXmlNode.prototype.SetNodeValue;
+	ApiCustomXmlNode.prototype["SetText"]         = ApiCustomXmlNode.prototype.SetText;
+	ApiCustomXmlNode.prototype["SetXml"]          = ApiCustomXmlNode.prototype.SetXml;
+	ApiCustomXmlNode.prototype["UpdateAttribute"] = ApiCustomXmlNode.prototype.UpdateAttribute;
+	ApiCustomXmlNode.prototype["GetClassType"]    = ApiCustomXmlNode.prototype.GetClassType;
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Export for internal usage
