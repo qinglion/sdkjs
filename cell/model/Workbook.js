@@ -12428,6 +12428,12 @@
 				}
 			});
 		}
+		wsTo && wsTo.forEachConditionalFormattingRules(function (_rule) {
+			_rule.updateFormulas();
+		});
+		wsFrom && wsFrom.forEachConditionalFormattingRules(function (_rule) {
+			_rule.updateFormulas();
+		});
 	};
 
 	Worksheet.prototype.clearConditionalFormattingRulesByRanges = function (ranges, exceptionRange) {

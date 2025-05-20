@@ -638,6 +638,17 @@
 		}
 	};
 
+	CConditionalFormattingRule.prototype.updateFormulas = function () {
+		if (this.aRuleElements && this.aRuleElements.length) {
+			for (let i = 0; i < this.aRuleElements.length; i++) {
+				let _formula = this.aRuleElements[i] && this.aRuleElements[i].getFormula && this.aRuleElements[i].getFormula();
+				if (_formula && _formula.Formula && this.aRuleElements[i] && this.aRuleElements[i].Text && this.aRuleElements[i].Text !== _formula.Formula) {
+					this.aRuleElements[i].Text = this.aRuleElements[i].getFormulaStr();
+				}
+			}
+		}
+	};
+
 	CConditionalFormattingRule.prototype.getUnionRange = function (opt_ranges) {
 		var res = null;
 
