@@ -5762,12 +5762,13 @@
 
 	/**
 	 * Class representing a custom XML manager, which provides methods to manage custom XML parts in the document.
+	 * @param doc
 	 * @constructor
 	 * @typeofeditors ["CDE"]
 	 */
-	function ApiCustomXmlParts(oDocument)
+	function ApiCustomXmlParts(doc)
 	{
-		this.customXMLManager = oDocument.getCustomXmlManager();
+		this.customXMLManager = doc ? doc.getCustomXmlManager() : new AscWord.CustomXmlManager(null);
 	}
 	ApiCustomXmlParts.prototype = Object.create(ApiCustomXmlParts.prototype);
 	ApiCustomXmlParts.prototype.constructor = ApiCustomXmlParts;
@@ -5783,9 +5784,8 @@
 	 */
 	ApiCustomXmlParts.prototype.Add = function(xml)
 	{
-		let oNewXml				= this.customXMLManager.createCustomXml(xml);
-		let oApiCustomXmlPart	= new ApiCustomXmlPart(oNewXml, this.customXMLManager);
-		return oApiCustomXmlPart;
+		let customXml = this.customXMLManager.createCustomXml(xml);
+		return new ApiCustomXmlPart(customXml, this.customXMLManager);
 	};
 
 	/**
@@ -5805,13 +5805,13 @@
 	 * @memberof ApiCustomXmlParts
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @param {string} id - The ID of the XML part.
+	 * @param {string} xmlPartId - The ID of the XML part.
 	 * @returns {ApiCustomXmlPart|null} The corresponding ApiCustomXmlPart object if found, or null if no match is found.
 	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlParts/Methods/GetById.js
 	 */
-	ApiCustomXmlParts.prototype.GetById = function(id)
+	ApiCustomXmlParts.prototype.GetById = function(xmlPartId)
 	{
-		let oFindXml = this.customXMLManager.getExactXml(id, null);
+		let oFindXml = this.customXMLManager.getExactXml(xmlPartId, null);
 		if (oFindXml)
 			return new ApiCustomXmlPart(oFindXml, this.customXMLManager);
 
@@ -5824,20 +5824,20 @@
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
 	 * @param {string} namespace - The namespace of the XML parts.
-	 * @returns {ApiCustomXmlPart[]|null} An array of ApiCustomXmlPart objects or null if no matching XML parts are found.
+	 * @returns {ApiCustomXmlPart[]} An array of ApiCustomXmlPart objects or null if no matching XML parts are found.
 	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlParts/Methods/GetByNamespace.js
 	 */
 	ApiCustomXmlParts.prototype.GetByNamespace = function(namespace)
 	{
 		let arrXml = this.customXMLManager.getXmlByNamespace(namespace);
-		let arrApiCustomXmlPart = [];
+		let xmlParts = [];
 
 		for (let i = 0; i < arrXml.length; i++)
 		{
-			arrApiCustomXmlPart.push(new ApiCustomXmlPart(arrXml[i], this.customXMLManager));
+			xmlParts.push(new ApiCustomXmlPart(arrXml[i], this.customXMLManager));
 		}
 
-		return arrApiCustomXmlPart;
+		return xmlParts;
 	};
 
 	/**
@@ -5863,15 +5863,16 @@
 	 */
 	ApiCustomXmlParts.prototype.GetAll = function()
 	{
-		let xmls = [];
-
-		for (let i = 0; i < this.customXMLManager.xml.length; i++){
+		let xmlParts = [];
+		
+		for (let i = 0; i < this.customXMLManager.xml.length; i++)
+		{
 			let currentXml = this.customXMLManager.xml[i];
 			if (currentXml)
-				xmls.push(new ApiCustomXmlPart(currentXml, this.customXMLManager))
+				xmlParts.push(new ApiCustomXmlPart(currentXml, this.customXMLManager))
 		}
 
-		return xmls;
+		return xmlParts;
 	};
 
 	/**
@@ -5896,15 +5897,14 @@
 	 * @constructor
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @param {Object} oCustomXml - The custom XML object.
-	 * @param {Object} oCustomXmlManager - The custom XML manager instance.
+	 * @param {Object} customXMl - The custom XML object.
+	 * @param {Object} customXmlManager - The custom XML manager instance.
 	 * @memberof ApiCustomXmlPart
 	 */
-	function ApiCustomXmlPart(oCustomXMl, oCustomXmlManager)
+	function ApiCustomXmlPart(customXMl, customXmlManager)
 	{
-		this.customXml			= oCustomXMl;
-		this.customXmlManager	= oCustomXmlManager;
-		this.id					= oCustomXMl.itemId;
+		this.customXml        = customXMl;
+		this.customXmlManager = customXmlManager;
 	}
 	ApiCustomXmlPart.prototype = Object.create(ApiCustomXmlPart.prototype);
 	ApiCustomXmlPart.prototype.constructor = ApiCustomXmlPart;
@@ -5939,7 +5939,7 @@
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
 	 * @param {string} xPath - The XPath expression to search for nodes.
-	 * @returns {arrApiCustomXmlNodes[]} An array of ApiCustomXmlNode objects corresponding to the found nodes.
+	 * @returns {ApiCustomXmlNode[]} An array of ApiCustomXmlNode objects corresponding to the found nodes.
 	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlParts/Methods/GetNodes.js
 	 */
 	ApiCustomXmlPart.prototype.GetNodes = function(xPath)
@@ -5979,8 +5979,7 @@
 	 */
 	ApiCustomXmlPart.prototype.Delete = function()
 	{
-		this.customXmlManager.deleteExactXml(this.id);
-		return true;
+		return this.customXmlManager.deleteExactXml(this.GetId());
 	};
 
 	/**
@@ -6094,15 +6093,14 @@
 	 * Class representing a custom xml node.
 	 * @constructor
 	 * @since 9.0.0
-	 * @param oXmlContent
-	 * @param oParent
+	 * @param xmlNode
+	 * @param xmlPart
 	 * @typeofeditors ["CDE"]
 	 */
-	function ApiCustomXmlNode(oXmlContent, oParent)
+	function ApiCustomXmlNode(xmlNode, xmlPart)
 	{
-		this.CustomXmlPart		= oParent;
-		this.CustomXmlContent	= oXmlContent;
-		this.baseName			= oXmlContent.nodeName;
+		this.CustomXmlPart    = xmlPart;
+		this.CustomXmlContent = xmlNode;
 	}
 	ApiCustomXmlNode.prototype = Object.create(ApiCustomXmlNode.prototype);
 	ApiCustomXmlNode.prototype.constructor = ApiCustomXmlNode;
@@ -6197,7 +6195,7 @@
 	 * @returns {string} The combined text content of the node and its descendants.
 	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlNode/Methods/GetText.js
 	 */
-	ApiCustomXmlNode.prototype.GetText = function ()
+	ApiCustomXmlNode.prototype.GetText = function()
 	{
 		return this.CustomXmlContent.getInnerText();
 	};
@@ -6207,13 +6205,13 @@
 	 * @memberof ApiCustomXmlNode
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @param {string} strXml - The XML string to set as the content of the current node.
+	 * @param {string} xml - The XML string to set as the content of the current node.
 	 * @returns {boolean} Returns `true` if the XML was successfully set.
 	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlNode/Methods/SetNodeValue.js
 	 */
-	ApiCustomXmlNode.prototype.SetNodeValue = function(strXml)
+	ApiCustomXmlNode.prototype.SetNodeValue = function(xml)
 	{
-		return this.SetXml(strXml);
+		return this.SetXml(xml);
 	};
 
 	/**
@@ -6225,7 +6223,7 @@
 	 * @returns {boolean} Returns `true` if the text was successfully set.
 	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlNode/Methods/SetText.js
 	 */
-	ApiCustomXmlNode.prototype.SetText = function (str)
+	ApiCustomXmlNode.prototype.SetText = function(str)
 	{
 		return this.CustomXmlPart.customXml.Change(function () {
 			this.CustomXmlContent.childNodes = [];
@@ -6312,7 +6310,6 @@
 	 * @memberof ApiCustomXmlNode
 	 * @typeofeditors ["CDE"]
 	 * @since 9.0.0
-	 * @param {string} strXml - The name of the XML node.
 	 * @returns {CustomXmlNodeAttribute[]} An array of attribute objects.
 	 * @see office-js-api/Examples/{Editor}/ApiCustomXmlNode/Methods/GetAttributes.js
 	 */
@@ -6325,7 +6322,7 @@
 		{
 			let data = this.CustomXmlContent.attributes[keys[i]];
 
-			attributes.push({name: keys[i], value: data});
+			attributes.push({"name": keys[i], "value": data});
 		}
 		return attributes;
 	};
@@ -8845,11 +8842,7 @@
 	 */
 	ApiDocument.prototype.GetCustomXmlParts = function()
 	{
-		let oCustomXmlParts = new ApiCustomXmlParts(this.Document);
-		if (oCustomXmlParts.customXMLManager !== null)
-			return oCustomXmlParts;
-		
-		return null;
+		return new ApiCustomXmlParts(this.Document);
 	};
 
 	//------------------------------------------------------------------------------------------------------------------

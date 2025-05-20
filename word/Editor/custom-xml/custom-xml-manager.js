@@ -93,7 +93,7 @@
 	CustomXmlManager.prototype.deleteExactXml = function (uId, prefix)
 	{
 		for (let nXmlCounter = 0; nXmlCounter < this.getCount(); nXmlCounter++)
-			{
+		{
 			let oCustomXml = this.getCustomXml(nXmlCounter);
 			if (uId === oCustomXml.itemId || oCustomXml.checkUrl(prefix))
 			{
@@ -190,7 +190,8 @@
 		else
 			this.setContentByDataBinding(dataBinding, contentControl.GetInnerText());
 	};
-	CustomXmlManager.prototype.GetRichTextContentToWrite = function (oCC, fCallback) {
+	CustomXmlManager.prototype.GetRichTextContentToWrite = function (oCC, fCallback)
+	{
 		function replaceSubstring(originalString, startPoint, endPoint, insertionString)
 		{
 			if (startPoint < 0 || endPoint >= originalString.length || startPoint > endPoint)
@@ -272,8 +273,8 @@
 			return outputUString;
 		}, this.document, this, []);
 	};
-	CustomXmlManager.prototype.GetDataFromContentControl = function (contentControl) {
-
+	CustomXmlManager.prototype.GetDataFromContentControl = function (contentControl)
+	{
 		if (!this.isSupported())
 			return "";
 
